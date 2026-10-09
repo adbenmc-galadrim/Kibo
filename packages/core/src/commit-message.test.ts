@@ -72,7 +72,14 @@ describe("messages", () => {
 });
 
 test("commitDefaults reads the ticket named by the branch", () => {
-  const doc = createProjectDoc({ id: "p", key: "KIB", name: "Kibo", folder: "/repo", color: "#F97316" });
+  const doc = createProjectDoc({
+    id: "p",
+    key: "KIB",
+    name: "Kibo",
+    folder: "/repo",
+    color: "#F97316",
+    worktree: null,
+  });
   const parent = createTicket(doc, { title: "Schéma Loro des tickets (LoroTree)" });
   createTicket(doc, { title: "Index SQLite dérivé", parentId: parent.id, statusId: "done" });
   const d = commitDefaults(readProject(doc), "kib-1", ["feat: premier jet"]);

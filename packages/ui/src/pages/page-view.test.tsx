@@ -3,22 +3,25 @@ import type { Page, ProjectSnapshot, RpcRequest } from "@kibo/schema";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { kiboProject } from "../agents/fixtures";
+import { apiMock } from "../api-mock";
 
 const LOCAL = { shared: false, keyAllocator: "local", role: null, access: "write", members: [] };
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      if (req.method === "listComponents") return Promise.resolve([]);
-      if (req.method === "getPresence") return Promise.resolve([]);
-      if (req.method === "componentCall" && req.call.kind === "presence.list") return Promise.resolve([]);
-      if (req.method === "componentCall" && req.call.kind === "sharing.get") return Promise.resolve(LOCAL);
-      return Promise.resolve(null);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        if (req.method === "listComponents") return Promise.resolve([]);
+        if (req.method === "getPresence") return Promise.resolve([]);
+        if (req.method === "componentCall" && req.call.kind === "presence.list") return Promise.resolve([]);
+        if (req.method === "componentCall" && req.call.kind === "sharing.get") return Promise.resolve(LOCAL);
+        return Promise.resolve(null);
+      },
+      subscribe: () => () => undefined,
+      subscribeTopic: () => () => undefined,
+      subscribeEvents: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-    subscribeTopic: () => () => undefined,
-    subscribeEvents: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { PageView } = await import("./PageView");
 const { HostProvider } = await import("../shell/Host");

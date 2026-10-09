@@ -146,7 +146,7 @@ export async function readStatus(h: WorktreeHandle): Promise<RepoStatus> {
   };
 }
 
-async function assertDiffable(path: string, sides: Promise<number | null>[]): Promise<void> {
+export async function assertDiffable(path: string, sides: Promise<number | null>[]): Promise<void> {
   const largest = Math.max(0, ...(await Promise.all(sides)).map((s) => s ?? 0));
   if (largest > MAX_DIFF_SIDE_BYTES)
     throw new KiboError(

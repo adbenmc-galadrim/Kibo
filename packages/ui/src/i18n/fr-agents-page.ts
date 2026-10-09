@@ -1,3 +1,14 @@
+import type { RunSession, SessionFreshReason } from "@kibo/schema";
+
+const turnsText = (n: number) => `${n} tour${n > 1 ? "s" : ""}`;
+const SESSION_REASONS: Record<SessionFreshReason, string> = {
+  no_previous: "première session du ticket",
+  profile_changed: "autre profil",
+  transcript_missing: "transcript introuvable",
+  workspace_changed: "autre dossier de travail",
+  user_reset: "repartie de zéro",
+};
+
 export const frAgentsPage = {
   subtitle: "Un run est le travail d'un agent sur un ticket.",
   stats: {
@@ -47,5 +58,37 @@ export const frAgentsPage = {
     plan: "Lecture seule (plan)",
     acceptEdits: "Modifications acceptées",
     default: "Demande à chaque action",
+    auto: "Automatique (l'agent décide, sans contournement)",
+  },
+  profile: {
+    allow: "Autorisations",
+    allowHelp:
+      "Une règle par ligne : Outil ou Outil(motif), par exemple Bash(pnpm *). Jamais de contournement des permissions.",
+    allowInvalid: (rule: string) => `Règle refusée : ${rule}`,
+    allowBash: "Une règle Bash doit porter un motif : Bash(pnpm *).",
+    allowTooMany: "50 règles au plus.",
+  },
+  setup: {
+    running: (command: string) => `Préparation : ${command} · en cours`,
+    done: (command: string, duration: string) => `Préparation : ${command} · terminée en ${duration}`,
+    failed: (command: string, duration: string) => `Préparation : ${command} · échec après ${duration}`,
+  },
+  assign: {
+    ticketBusy: "Un run de ce ticket est déjà en cours ou en file.",
+    invalidWorktreePath: "chemin invalide, voir Modifier le projet",
+    session: {
+      label: "Session",
+      resume: (label: string, turns: number, tokens: string) =>
+        `reprend ${label} (${turnsText(turns)}, ${tokens} tokens)`,
+      fresh: (reason: SessionFreshReason) => `nouvelle (${SESSION_REASONS[reason]})`,
+      reset: "Repartir de zéro",
+      reasons: SESSION_REASONS,
+    },
+  },
+  events: {
+    session: (mode: RunSession["mode"], detail: string) =>
+      mode === "resumed" ? `Session : reprise du run ${detail}` : `Session : nouvelle (${detail})`,
+    resumedRun: (label: string, turns: number) => `${label} (${turnsText(turns)})`,
+    previousRun: "précédent",
   },
 } as const;

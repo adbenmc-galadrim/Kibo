@@ -25,6 +25,7 @@ export function runFixture(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     profileName: "opus-dev",
     sessionId: `s-${p.id}`,
     brief: "",
+    resumedFrom: null,
     createdAt: NOW - 20 * MIN,
     label: "opus-dev",
     state: "queued",
@@ -50,6 +51,7 @@ export function runFixture(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     turns: 0,
     activeMs: p.startedAt != null && p.endedAt != null ? p.endedAt - p.startedAt : 0,
     turnStartedAt: p.state === "running" || p.state === "starting" ? (p.startedAt ?? null) : null,
+    session: null,
     ...p,
   };
 }
@@ -65,6 +67,7 @@ export const profilesFixture: AgentProfile[] = [
     maxParallel: 2,
     subagents: ["sonnet", "haiku"],
     enabled: true,
+    allow: [],
     system: false,
   },
   {
@@ -77,6 +80,7 @@ export const profilesFixture: AgentProfile[] = [
     maxParallel: 3,
     subagents: [],
     enabled: true,
+    allow: [],
     system: false,
   },
   {
@@ -89,6 +93,7 @@ export const profilesFixture: AgentProfile[] = [
     maxParallel: 1,
     subagents: [],
     enabled: true,
+    allow: [],
     system: false,
   },
 ];
@@ -246,6 +251,7 @@ export function agentsFixture(): AgentsState {
     },
     tokensToday: 1_200_000,
     resumable: [],
+    questions: [],
   };
 }
 
@@ -314,9 +320,11 @@ const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title"
   domainId: null,
   assignee: null,
   parentId: null,
+  labels: [],
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
   pendingSeq: null,
   keyLabel: p.key ?? "KIB-…",
   ...p,
@@ -324,7 +332,14 @@ const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title"
 
 export function kiboProject(): ProjectSnapshot {
   return {
-    meta: { id: "kibo", key: "KIB", name: "Kibo", folder: "/Users/adam/goinfre/Kibo", color: "#F97316" },
+    meta: {
+      id: "kibo",
+      key: "KIB",
+      name: "Kibo",
+      folder: "/Users/adam/goinfre/Kibo",
+      color: "#F97316",
+      worktree: null,
+    },
     workflow: DEFAULT_WORKFLOW,
     pages: [],
     tickets: [
@@ -359,6 +374,7 @@ export function kiboProject(): ProjectSnapshot {
       }),
     ],
     links: [{ id: "l1", from: "t12", to: "t15", type: "blocks" }],
+    questions: [],
     instances: [],
     rules: [],
     bindings: [],
@@ -374,6 +390,7 @@ export const projectsFixture: ProjectSummary[] = [
     name: "Kibo",
     folder: "/Users/adam/goinfre/Kibo",
     color: "#F97316",
+    worktree: null,
     counts: { backlog: 1, todo: 3, in_progress: 4, in_review: 2, blocked: 1, done: 2 },
   },
   {
@@ -382,6 +399,7 @@ export const projectsFixture: ProjectSummary[] = [
     name: "API Facturation",
     folder: null,
     color: "#22C55E",
+    worktree: null,
     counts: { backlog: 0, todo: 1, in_progress: 1, in_review: 0, blocked: 0, done: 0 },
   },
 ];

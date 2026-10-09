@@ -1,9 +1,10 @@
 import type { CiRun, MemberInfo, TicketRun, TicketView } from "@kibo/schema";
 import { AgentBadge, assigneeLabel, type CiTone, TicketKeyLabel, worstCiTone } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
-import { Bot } from "lucide-react";
+import { Bot, MessageCircleQuestion } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "./fr";
+import { LabelChips } from "./LabelChips";
 
 const CI_DOT = {
   ok: "bg-emerald-500",
@@ -11,6 +12,8 @@ const CI_DOT = {
   running: "bg-amber-500",
   neutral: "bg-muted-foreground/60",
 } as const satisfies Record<CiTone, string>;
+
+export const QUESTIONS_BADGE = "gap-1 border-orange-500/40 text-3xs text-orange-600 dark:text-orange-400";
 
 export const CARD_CLASS =
   "relative grid gap-2 rounded-md border bg-card p-2.5 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -43,6 +46,7 @@ export function KanbanCardContent({ ticket: t, run, ci, members, remote, menu, t
         {menu}
       </div>
       {title}
+      <LabelChips labels={t.labels} />
       {t.blockedReason && (
         <p className="text-2xs text-red-600 dark:text-red-400">{fr.blockedReason(t.blockedReason)}</p>
       )}
@@ -67,6 +71,12 @@ export function KanbanCardContent({ ticket: t, run, ci, members, remote, menu, t
             {fr.waitingOn(k)}
           </Badge>
         ))}
+        {t.openQuestions > 0 && (
+          <Badge variant="outline" className={QUESTIONS_BADGE}>
+            <MessageCircleQuestion aria-hidden className="size-3" />
+            {fr.questions(t.openQuestions)}
+          </Badge>
+        )}
         {ci && (
           <span
             title={fr.ci[ci.tone]}

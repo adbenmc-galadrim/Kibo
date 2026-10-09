@@ -1,6 +1,7 @@
 import { localSyncInfo, readInstanceData, readProject, writeInstanceData } from "@kibo/core";
 import {
   type ComponentManifest,
+  type DeliveryResult,
   KiboError,
   type PresencePeer,
   type ProjectSyncInfo,
@@ -26,6 +27,7 @@ export type GateHandlersDeps = {
   integrations?: () => ComponentIntegrationHooks | null;
   presence?: (projectId: string) => PresencePeer[];
   sharing?: (projectId: string) => ProjectSyncInfo;
+  deliverAnswers?: (projectId: string, ticketId: string) => DeliveryResult;
 };
 
 function readData(docs: Docs, projectId: string, instanceId: string, call: DataCall): unknown {
@@ -48,7 +50,13 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
         return ciRuns(projectId);
       }
       const snap = readProject(docs.project(projectId));
-      const lists = { ticket: snap.tickets, status: snap.workflow, link: snap.links, page: snap.pages };
+      const lists = {
+        ticket: snap.tickets,
+        status: snap.workflow,
+        link: snap.links,
+        page: snap.pages,
+        question: snap.questions,
+      };
       return lists[entity];
     },
     run: async (projectId, instanceId, command) =>
@@ -105,5 +113,9 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
     },
     presence: async (projectId) => deps.presence?.(projectId) ?? [],
     sharing: async (projectId) => deps.sharing?.(projectId) ?? localSyncInfo(docs.project(projectId)),
+    async questions(projectId, ticketId) {
+      if (!deps.deliverAnswers) throw new KiboError("NOT_CONNECTED", "agents not started");
+      return deps.deliverAnswers(projectId, ticketId);
+    },
   };
 }

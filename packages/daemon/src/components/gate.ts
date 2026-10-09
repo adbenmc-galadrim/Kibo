@@ -2,6 +2,7 @@ import {
   type BuiltinEntityType,
   type ComponentCall,
   covers,
+  type DeliveryResult,
   type FetchInit,
   type FetchResponse,
   type GrantedPermissions,
@@ -53,6 +54,7 @@ export type GateHandlers = {
   config(projectId: string, instance: Instance, patch: Record<string, unknown>): Promise<null>;
   presence(projectId: string): Promise<PresencePeer[]>;
   sharing(projectId: string): Promise<ProjectSyncInfo>;
+  questions(projectId: string, ticketId: string): Promise<DeliveryResult>;
 };
 export type GateDeps = {
   instance(projectId: string, instanceId: string): Instance;
@@ -119,6 +121,8 @@ function dispatch(
       return h.design(projectId, inst.id, call);
     case "config.set":
       return h.config(projectId, inst, call.patch);
+    case "questions.deliver":
+      return h.questions(projectId, call.ticketId);
     default:
       return h.notes(projectId, call);
   }

@@ -21,3 +21,5 @@ export function useHost(): Host {
   if (!host) throw new Error("useHost must be used inside <HostProvider>");
   return host;
 }
+
+export const useOptionalHost = (): Host | null => useContext(HostContext);

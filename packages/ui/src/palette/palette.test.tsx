@@ -18,9 +18,11 @@ const ticket = (n: number, title: string, statusId: TicketView["statusId"] = "in
   domainId: null,
   assignee: null,
   parentId: null,
+  labels: [],
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
 });
 const summary: ProjectSummary = {
   id: "p1",
@@ -28,6 +30,7 @@ const summary: ProjectSummary = {
   name: "Kibo",
   folder: "/repo",
   color: "#F97316",
+  worktree: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
 };
 const snapshot: ProjectSnapshot = {
@@ -44,6 +47,7 @@ const snapshot: ProjectSnapshot = {
     ticket(2, "Graphe"),
   ],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

@@ -26,6 +26,7 @@ const newRun = (id: string): NewRun => ({
   profileName: "opus-dev",
   sessionId: `s-${id}`,
   brief: "",
+  resumedFrom: null,
 });
 const spawned: RunEvent = { type: "spawned", pid: 1, resume: false, workspace: "isolated", guidelines: 0 };
 const question: RunEvent = {
@@ -38,6 +39,7 @@ const question: RunEvent = {
     detail: null,
     question: "?",
     agentId: null,
+    ask: null,
   },
 };
 const exit = (tokens: number): RunEvent => ({
@@ -143,6 +145,7 @@ const activity: RunEvent = {
     detail: null,
     question: null,
     agentId: null,
+    ask: null,
   },
 };
 
@@ -169,6 +172,7 @@ test("an interrupted run is closed at its last event, not at the restart; queued
     state: "failed",
     activeMs: 300,
     turnStartedAt: null,
+    session: null,
     endedAt: 1500,
     stateSince: 1500,
   });
@@ -218,5 +222,29 @@ test("a journal closed at the restart time by an older daemon replays unchanged"
   expect(again.get("r1")).toMatchObject({ state: "failed", activeMs: 3_800, endedAt: 5_000 });
   expect(again.interrupted()).toEqual([]);
   expect(reopened.log("r1").filter((e) => e.event.type === "failed")).toHaveLength(1);
+  reopened.close();
+});
+
+test("a replayed journal keeps the inherited origin, its session line and the session it ran", () => {
+  const h = home();
+  const store = openRunStore(h);
+  const reg = openRunRegistry(store, now);
+  reg.create(newRun("old"), 0);
+  reg.apply("old", { type: "admitted", lane: 1 });
+  reg.apply("old", spawned);
+  reg.create({ ...newRun("next"), sessionId: "s-old", resumedFrom: "old" }, 1);
+  reg.apply("next", { type: "admitted", lane: 2 });
+  reg.apply("next", { type: "session", mode: "fresh", reason: "transcript_missing" });
+  reg.apply("next", { ...spawned, sessionId: "s-fresh" });
+  store.close();
+
+  const reopened = openRunStore(h);
+  const again = openRunRegistry(reopened, now);
+  expect(again.get("old")).toMatchObject({ sessionId: "s-old", resumedFrom: null, session: null });
+  expect(again.get("next")).toMatchObject({
+    sessionId: "s-fresh",
+    resumedFrom: "old",
+    session: { mode: "fresh", reason: "transcript_missing" },
+  });
   reopened.close();
 });

@@ -3,7 +3,8 @@ import { createProjectDoc, writeMembers } from "@kibo/core";
 import { projectSyncInfo } from "./project-info";
 import type { SyncProjectRow } from "./sync-db";
 
-const doc = () => createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#14B8A6" });
+const doc = () =>
+  createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#14B8A6", worktree: null });
 const row: SyncProjectRow = {
   projectId: "p1",
   enabled: true,

@@ -72,6 +72,7 @@ test("built-ins come from the UI registry, installed versions one row each, sort
     ["Notes", "1.0.0", "builtin", 0, 0, false],
     ["PR en attente", "0.4.0", "pending", 0, 0, false],
     ["PR en attente", "0.3.0", "sandboxed", 1, 1, true],
+    ["Questions", "1.0.0", "builtin", 0, 0, false],
     ["Serpent", "1.0.0", "builtin", 0, 0, false],
     ["Source MCP", "1.0.0", "builtin", 0, 0, false],
     ["Tickets", "1.0.0", "builtin", 0, 0, false],

@@ -2,19 +2,22 @@ import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 import { KiboError, type RpcRequest, type SyncStatus } from "@kibo/schema";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let results: Partial<Record<RpcRequest["method"], () => Promise<unknown>>> = {};
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return (results[req.method] ?? (() => Promise.resolve(null)))();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return (results[req.method] ?? (() => Promise.resolve(null)))();
+      },
+      subscribeEvents: () => () => undefined,
     },
-    subscribeEvents: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { SyncSettingsPage } = await import("./SyncSettingsPage");
 const { SyncIndicator } = await import("../shell/SyncIndicator");

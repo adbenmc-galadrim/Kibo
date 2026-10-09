@@ -109,3 +109,29 @@ test("presence.list and sharing.get reach their handlers for the caller's projec
   expect(await gate.call("p2", "thirdparty", { kind: "sharing.get" })).toMatchObject({ shared: true });
   expect(asked).toEqual(["p1", "p2"]);
 });
+
+test("questions.deliver needs write:question and reaches the questions handler", async () => {
+  const deliver: ComponentCall = { kind: "questions.deliver", ticketId: "t1" };
+  const denied = testGate();
+  await refused(denied.gate.call("p1", "thirdparty", deliver), "PERMISSION_DENIED");
+  const allowed = testGate(createQuotas(), { ...granted, writes: ["question"] });
+  expect(await allowed.gate.call("p1", "thirdparty", deliver)).toEqual({ sent: 1, runId: "r1" });
+  expect(allowed.handled).toEqual(["questions:p1:t1"]);
+});
+
+test("a component reads and writes questions only with their permission, never marks them delivered", () => {
+  const create: ComponentCall = {
+    kind: "run",
+    command: { method: "createQuestion", ticketId: "t1", title: "?", createdBy: { kind: "human", ref: "x" } },
+  };
+  const mark: ComponentCall = {
+    kind: "run",
+    command: { method: "markAnswersDelivered", ticketId: "t1", questionIds: ["q1"], runId: "r1", at: 1 },
+  };
+  expect(missingPermission(granted, { kind: "list", entity: "question" })).toBe("read:question");
+  expect(missingPermission(granted, create)).toBe("write:question");
+  const questions: GrantedPermissions = { ...granted, reads: ["question"], writes: ["question"] };
+  expect(missingPermission(questions, { kind: "list", entity: "question" })).toBeNull();
+  expect(missingPermission(questions, create)).toBeNull();
+  expect(missingPermission(questions, mark)).toBe("write:markAnswersDelivered");
+});

@@ -58,6 +58,24 @@ test("modifier, workspace, en-tête, réglages et suppression d'un projet", asyn
   expect(text(saved, "color")).toBe("#6366F1");
   expect(text(saved, "icon")).not.toBe("");
 
+  await renamed.click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Modifier…" }).click();
+  const worktrees = edit.getByRole("group", { name: "Worktrees des agents" });
+  await expect(worktrees.getByLabel("Base")).toHaveValue("main");
+  await worktrees.getByLabel("Base").fill("origin/dev");
+  await worktrees.getByLabel("Chemin").fill("../emis-{slug}");
+  await worktrees.getByLabel("Commande de préparation").fill("pnpm worktree {branch}");
+  await shot(page, info, "ecran-167");
+  await edit.getByRole("button", { name: "Enregistrer", exact: true }).click();
+  await expect(edit).toBeHidden();
+  await renamed.click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Modifier…" }).click();
+  await expect(worktrees.getByLabel("Base")).toHaveValue("origin/dev");
+  await expect(worktrees.getByLabel("Chemin")).toHaveValue("../emis-{slug}");
+  await expect(worktrees.getByLabel("Commande de préparation")).toHaveValue("pnpm worktree {branch}");
+  await edit.getByRole("button", { name: "Annuler" }).click();
+  await expect(edit).toBeHidden();
+
   await page.goto("/#/settings/workspace");
   await expect(page.getByRole("heading", { level: 1, name: "Workspace" })).toBeVisible();
   await page.getByLabel("Nom", { exact: true }).fill("Maison");

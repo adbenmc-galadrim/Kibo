@@ -4,9 +4,11 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Bot } from "lucide-react";
 import { fr } from "../i18n/fr";
 import { KeyRequired } from "../shell/KeyRequired";
+import { importTitle } from "../shell/sheet/import-title";
 import { GithubLinkNote, GithubRefs } from "../shell/sheet/lazy-sections";
 import { descendantCount, TicketDetail } from "../shell/TicketDetail";
 import { canEdit } from "../state/access";
+import { LabelsField } from "../ticket/LabelsField";
 import { TicketActionsMenu } from "../ticket/TicketActionsMenu";
 import { TicketTitle } from "../ticket/TicketTitle";
 import { useTicketCommand } from "../ticket/use-ticket-command";
@@ -23,6 +25,7 @@ type Props = {
 
 export function TicketTab({ project, ticketId, domains, viewer, onAssign, onOpenFile, onOpenTicket }: Props) {
   const command = useTicketCommand(project.meta.id);
+  const labelsCommand = useTicketCommand(project.meta.id);
   const t = project.tickets.find((x) => x.id === ticketId);
   if (!t) return <p className="p-8 text-sm text-muted-foreground">{fr.tabs.missingTicket}</p>;
   const editable = canEdit(project);
@@ -43,7 +46,7 @@ export function TicketTab({ project, ticketId, domains, viewer, onAssign, onOpen
             />
           </span>
         </div>
-        <h1 className="text-lg font-semibold" aria-label={t.title}>
+        <h1 className="text-lg font-semibold" aria-label={t.title} title={importTitle(t.externalRefs)}>
           <TicketTitle
             title={t.title}
             editable={editable}
@@ -52,6 +55,7 @@ export function TicketTab({ project, ticketId, domains, viewer, onAssign, onOpen
             onCancel={command.clearError}
           />
         </h1>
+        <LabelsField ticket={t} editable={editable} command={labelsCommand} />
         <GithubLinkNote ticket={t} />
         {onAssign && !isInbox(project.meta.id) && (
           <KeyRequired ticket={t}>

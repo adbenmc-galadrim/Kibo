@@ -61,6 +61,7 @@ function harness(granted: Partial<GrantedPermissions>, quotas: Quotas = createQu
     sharing: async () => {
       throw new KiboError("INTERNAL", "unexpected");
     },
+    questions: async () => ({ sent: 0, runId: null }),
   };
   const gate = createGate({
     instance: (_p, id) => {

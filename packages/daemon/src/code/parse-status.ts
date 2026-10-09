@@ -126,3 +126,27 @@ export function parseWorktrees(raw: string): Worktree[] {
     .filter((d) => !d.bare)
     .map((d, index) => ({ path: d.path, head: d.head, branch: d.branch, isMain: index === 0 }));
 }
+
+export type NameStatus = { path: string; origPath: string | null; kind: ChangeKind };
+
+const NAME_STATUS_KIND: Record<string, ChangeKind> = { A: "added", D: "deleted", R: "renamed", C: "added" };
+
+export function parseNameStatus(raw: string): NameStatus[] {
+  const tokens = raw.split("\0");
+  const out: NameStatus[] = [];
+  let i = 0;
+  while (i < tokens.length) {
+    const letter = tokens[i]?.charAt(0) ?? "";
+    if (!letter) {
+      i += 1;
+      continue;
+    }
+    const kind = NAME_STATUS_KIND[letter] ?? "modified";
+    const twoPaths = letter === "R" || letter === "C";
+    const path = tokens[i + (twoPaths ? 2 : 1)] ?? "";
+    const origPath = letter === "R" ? (tokens[i + 1] ?? null) : null;
+    if (path) out.push({ path, origPath, kind });
+    i += twoPaths ? 3 : 2;
+  }
+  return out;
+}

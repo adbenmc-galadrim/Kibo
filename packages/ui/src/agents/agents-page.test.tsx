@@ -1,22 +1,25 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { KiboError, type RpcRequest, runSubject } from "@kibo/schema";
+import { type AgentProfile, KiboError, type RpcRequest, runSubject } from "@kibo/schema";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
+import { apiMock } from "../api-mock";
 import { frAgentsPage } from "../i18n/fr-agents-page";
 import { agentsFixture, configFixture, NOW, profilesFixture, projectsFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
 let respond: (req: RpcRequest) => Promise<unknown> = () => Promise.resolve(null);
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return respond(req);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return respond(req);
+      },
     },
-  },
-}));
+  }),
+);
 
 const { AgentsPage } = await import("./AgentsPage");
 const { ProfileSheet } = await import("./ProfileSheet");
@@ -260,6 +263,7 @@ test("a new profile is created with its guidelines", async () => {
           maxParallel: 2,
           subagents: ["sonnet"],
           enabled: true,
+          allow: [],
         },
       },
     },
@@ -293,9 +297,55 @@ test("a new profile starts with safe defaults", async () => {
         maxParallel: 1,
         subagents: [],
         enabled: true,
+        allow: [],
       },
     },
   });
+});
+
+const ruled: AgentProfile = {
+  id: "opus",
+  name: "opus-dev",
+  model: "opus",
+  execution: "cli",
+  permissionMode: "acceptEdits",
+  workspace: "worktree",
+  maxParallel: 2,
+  subagents: [],
+  enabled: true,
+  allow: ["Bash(pnpm *)", "Edit"],
+  system: false,
+};
+const editRuled = () =>
+  render(<ProfileSheet profile={ruled} config={configFixture()} hostSlots={3} onClose={() => {}} />);
+const sentPatch = () => {
+  const call = calls[0];
+  return call?.method === "config" && call.command.method === "updateProfile" ? call.command.patch : null;
+};
+
+test("saving a profile without touching its rules keeps them", async () => {
+  editRuled();
+  const user = userEvent.setup();
+  expect((sheet().getByLabelText("Autorisations") as HTMLTextAreaElement).value).toBe("Bash(pnpm *)\nEdit");
+  await user.click(sheet().getByText("Lecture seule (plan)"));
+  await user.click(sheet().getByRole("button", { name: "Enregistrer" }));
+  await waitFor(() => expect(calls).toHaveLength(1));
+  expect(sentPatch()).toMatchObject({ permissionMode: "plan", allow: ["Bash(pnpm *)", "Edit"] });
+});
+
+test("the automatic mode and edited rules are saved, an unsafe rule blocks the save", async () => {
+  editRuled();
+  const user = userEvent.setup();
+  await user.click(sheet().getByText("Automatique (l'agent décide, sans contournement)"));
+  const rules = sheet().getByLabelText("Autorisations");
+  fireEvent.change(rules, { target: { value: "Bash(pnpm *)\nBash" } });
+  await user.click(sheet().getByRole("button", { name: "Enregistrer" }));
+  expect(sheet().getByText("Une règle Bash doit porter un motif : Bash(pnpm *).")).toBeTruthy();
+  expect(calls).toEqual([]);
+  fireEvent.change(rules, { target: { value: "Bash(pnpm *)\nBash(git *)" } });
+  await user.click(sheet().getByRole("button", { name: "Enregistrer" }));
+  await waitFor(() => expect(calls).toHaveLength(1));
+  expect(sentPatch()).toMatchObject({ permissionMode: "auto", allow: ["Bash(pnpm *)", "Bash(git *)"] });
 });
 
 test("invalid names and guideline paths are refused before any call", async () => {

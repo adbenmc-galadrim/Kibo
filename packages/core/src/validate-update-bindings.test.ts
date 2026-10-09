@@ -13,7 +13,7 @@ import {
   writeMembers,
 } from "./index";
 
-const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" };
+const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null };
 const ADAM: UpdateAuthor = { userId: "u-adam", role: "owner" };
 const LEA: UpdateAuthor = { userId: "u-lea", role: "editor" };
 const MAX: UpdateAuthor = { userId: "u-max", role: "editor" };

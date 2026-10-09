@@ -1,9 +1,11 @@
-import type { HookEventName, HookPayload, RunEvent, RunLogEntry } from "@kibo/schema";
+import type { HookEventName, HookPayload, RunEvent, RunLogEntry, SetupStatus } from "@kibo/schema";
 import { LinkifiedText, RUN_TEXT } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
+import { useContext } from "react";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
-import { errorText, formatClock } from "./format";
+import { errorText, formatClock, formatDuration } from "./format";
+import { type JournalRun, JournalRuns } from "./journal-runs";
 import { useFollowBottom } from "./use-follow-bottom";
 
 type Tone = "blue" | "amber" | "green" | "red" | "muted";
@@ -63,7 +65,30 @@ function exitLine(event: Exit): Line | null {
   return denied ? { name: event.type, text: denied, tone: "amber" } : null;
 }
 
-function eventLine(event: RunEvent): Line | null {
+const SETUP_TONE: Record<SetupStatus, Tone> = { running: "blue", done: "green", failed: "red" };
+
+function setupLine(event: Extract<RunEvent, { type: "setup" }>): Line {
+  return {
+    name: event.type,
+    text: frAgentsPage.setup[event.status](event.command, formatDuration(event.durationMs ?? 0)),
+    tone: SETUP_TONE[event.status],
+  };
+}
+
+function sessionLine(event: Extract<RunEvent, { type: "session" }>, runs: readonly JournalRun[]): Line {
+  const e = frAgentsPage.events;
+  if (event.mode === "fresh")
+    return {
+      name: event.type,
+      text: e.session("fresh", frAgentsPage.assign.session.reasons[event.reason]),
+      tone: "muted",
+    };
+  const from = runs.find((r) => r.id === event.from);
+  const detail = from ? e.resumedRun(from.label, from.turns) : e.previousRun;
+  return { name: event.type, text: e.session("resumed", detail), tone: "muted" };
+}
+
+function eventLine(event: RunEvent, runs: readonly JournalRun[]): Line | null {
   const e = fr.agents.events;
   switch (event.type) {
     case "spawned":
@@ -84,6 +109,10 @@ function eventLine(event: RunEvent): Line | null {
       return { name: event.type, text: errorText(event.error), tone: "red" };
     case "prioritized":
       return event.priority ? { name: event.type, text: "", tone: "muted" } : null;
+    case "setup":
+      return setupLine(event);
+    case "session":
+      return sessionLine(event, runs);
     case "enqueued":
     case "admitted":
     case "reranked":
@@ -103,7 +132,7 @@ function turnEndings(log: RunLogEntry[]): Map<number, string> {
   return endings;
 }
 
-export function journalLines(log: RunLogEntry[]): JournalLine[] {
+export function journalLines(log: RunLogEntry[], runs: readonly JournalRun[] = []): JournalLine[] {
   const endings = turnEndings(log);
   const shown = new Set<number>();
   let turn = 0;
@@ -111,7 +140,7 @@ export function journalLines(log: RunLogEntry[]): JournalLine[] {
     if (event.type === "spawned") turn += 1;
     const ending = endings.get(turn);
     const endsTurn = (event.type === "hook" && event.payload.event === "Stop") || event.type === "exited";
-    if (!ending || !endsTurn) return [eventLine(event)].filter((l) => l !== null);
+    if (!ending || !endsTurn) return [eventLine(event, runs)].filter((l) => l !== null);
     const first = shown.has(turn) ? [] : [endingLine(ending)];
     shown.add(turn);
     const rest = event.type === "exited" ? [exitLine(event)].filter((l) => l !== null) : [];
@@ -164,7 +193,7 @@ export function RunJournal({ label, log, files, missing = false }: Props) {
 }
 
 function JournalList({ label, log, files }: Omit<Props, "missing">) {
-  const lines = journalLines(log);
+  const lines = journalLines(log, useContext(JournalRuns));
   const { ref, onScroll } = useFollowBottom<HTMLOListElement>(lines.length);
   return (
     <ol

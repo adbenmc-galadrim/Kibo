@@ -3,6 +3,7 @@ import {
   ExternalRef,
   formatTicketKey,
   KiboError,
+  normalizeLabels,
   type StatusId,
   type Ticket,
 } from "@kibo/schema";
@@ -10,6 +11,7 @@ import { type LoroDoc, LoroText, type LoroTreeNode, type TreeID } from "loro-crd
 import { getKeyAllocator, nextPendingSeq } from "./keys";
 import { pruneLinks } from "./links";
 import { getProjectMeta, nextTicketSeq } from "./project";
+import { pruneQuestions } from "./questions";
 import { getNode, moveNode, subtreeIds, walkDepthFirst } from "./tree";
 
 export type NewTicket = {
@@ -20,12 +22,14 @@ export type NewTicket = {
   parentId?: string | null;
   assignee?: Assignee | null;
   domainId?: string | null;
+  labels?: readonly string[];
 };
 export type TicketPatch = {
   title?: string;
   description?: string;
   domainId?: string | null;
   assignee?: Assignee | null;
+  labels?: readonly string[];
 };
 
 export const ticketTree = (doc: LoroDoc) => doc.getTree("tickets");
@@ -61,6 +65,7 @@ function readTicket(n: LoroTreeNode): Ticket {
     assignee: (d.get("assignee") as Assignee | null | undefined) ?? null,
     parentId: n.parent()?.id ?? null,
     externalRefs: readExternalRefs(n),
+    labels: (d.get("labels") as string[] | undefined) ?? [],
   };
 }
 
@@ -79,6 +84,7 @@ function writeDescription(n: LoroTreeNode, value: string): void {
 export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
   const blockedReason = input.statusId === "blocked" ? cleanReason(input.blockedReason) : null;
   const title = cleanTitle(input.title);
+  const labels = normalizeLabels(input.labels ?? []);
   const parent = input.parentId ? getNode(ticketTree(doc), input.parentId) : undefined;
   const serverKeys = getKeyAllocator(doc) === "server";
   const pendingSeq = serverKeys ? nextPendingSeq(doc) : null;
@@ -92,6 +98,7 @@ export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
   node.data.set("domainId", input.domainId ?? null);
   node.data.set("assignee", input.assignee ?? null);
   node.data.set("externalRefs", []);
+  node.data.set("labels", labels);
   writeDescription(node, input.description ?? "");
   doc.commit();
   return readTicket(node);
@@ -107,10 +114,12 @@ export function listTickets(doc: LoroDoc): Ticket[] {
 
 export function updateTicket(doc: LoroDoc, id: string, patch: TicketPatch): Ticket {
   const node = getNode(ticketTree(doc), id);
+  const labels = patch.labels === undefined ? undefined : normalizeLabels(patch.labels);
   if (patch.title !== undefined) node.data.set("title", cleanTitle(patch.title));
   if (patch.description !== undefined) writeDescription(node, patch.description);
   if (patch.domainId !== undefined) node.data.set("domainId", patch.domainId);
   if (patch.assignee !== undefined) node.data.set("assignee", patch.assignee);
+  if (labels !== undefined) node.data.set("labels", labels);
   doc.commit();
   return readTicket(node);
 }
@@ -132,6 +141,7 @@ export function deleteTicket(doc: LoroDoc, id: string): string[] {
   const ids = subtreeIds(getNode(ticketTree(doc), id));
   ticketTree(doc).delete(id as TreeID);
   pruneLinks(doc, ids);
+  pruneQuestions(doc, ids);
   return ids;
 }
 

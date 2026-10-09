@@ -162,6 +162,7 @@ export function AgentsPage({ state, config, projects, now, onOpenRun }: Props) {
         )}
       </section>
       <RunHistory
+        questions={state.questions}
         runs={runs}
         positions={positions}
         projectColumn={project === null ? projects : null}

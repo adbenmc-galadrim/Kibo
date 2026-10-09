@@ -110,7 +110,8 @@ describe("children done", () => {
 });
 
 describe("storage", () => {
-  const doc = () => createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
+  const doc = () =>
+    createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null });
   test("projects without rules use the defaults, and the snapshot carries them", () => {
     expect(readRules(doc())).toEqual(DEFAULT_RULES);
     expect(readProject(doc()).rules).toEqual(DEFAULT_RULES);

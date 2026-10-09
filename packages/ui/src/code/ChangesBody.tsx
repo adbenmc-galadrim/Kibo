@@ -1,8 +1,9 @@
-import type { CommitInfo, FileChange, FileRef, ProjectSnapshot, Worktree } from "@kibo/schema";
+import type { FileChange, FileRef, ProjectSnapshot, Worktree } from "@kibo/schema";
 import { useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { errorMessage } from "../lib/error-message";
+import { BranchFiles } from "./BranchFiles";
 import { ChangesFiles } from "./ChangesFiles";
 import { ChangesLayout } from "./ChangesLayout";
 import { CommitColumn } from "./CommitColumn";
@@ -14,9 +15,12 @@ import { type FileSelection, pickSelected } from "./FileList";
 import { ChangesAlerts } from "./OperationBanner";
 import { linkedTicketKey } from "./PrCard";
 import { PushPrDialog, type PushPrInput } from "./PushPrDialog";
+import { trackedPr } from "./tracked-pr";
+import { prBaseOf, useBranchView } from "./use-branch";
 import { useCodeStatus, useCommitDefaults, useCompare, useFileDiff, useRemoteInfo } from "./use-code";
 import { useCommitDraft } from "./use-commit-draft";
 import { useFileActions } from "./use-file-actions";
+import { useHistoryActions } from "./use-history-actions";
 import { usePush } from "./use-push";
 
 type Props = {
@@ -47,8 +51,9 @@ export function ChangesBody(props: Props) {
   const focusMessageOnClose = useRef(false);
 
   const files = status?.files ?? [];
-  const selected = pickSelected(files, selection);
   const statusKey = status ? JSON.stringify([status.files, status.commits.map((c) => c.sha)]) : "";
+  const branchView = useBranchView(projectId, current.path, statusKey, files.length > 0);
+  const selected = branchView.selected ? null : pickSelected(files, selection);
   const {
     diff,
     error: diffError,
@@ -73,7 +78,9 @@ export function ChangesBody(props: Props) {
     onSettled: reload,
   });
   const slots = useSlots(project, current.path, defaults?.ticketKey ?? null, worktrees);
-  const baseBranch = base ?? remote.remote?.defaultBase ?? null;
+  const branchBase = branchView.changes?.base ?? null;
+  const baseBranch = base ?? prBaseOf(branchBase, remote.remote) ?? remote.remote?.defaultBase ?? null;
+  const pr = trackedPr(remote.pr, project.tickets, branch);
   const head = status?.commits[0];
   const canAmend = head !== undefined && !head.pushed;
   const busy = working || pushing;
@@ -122,20 +129,12 @@ export function ChangesBody(props: Props) {
         if (ok) draft.clear();
       },
     );
-  const modify = (c: CommitInfo) => {
+  const history = useHistoryActions(w, reload, (c) => {
     draft.load(c);
     messageRef.current?.focus();
-  };
-  const reword = async (c: CommitInfo, next: string) => {
-    await client.code({ method: "reword", ...w, sha: c.sha, message: next });
-    reload();
-  };
-  const undo = async (c: CommitInfo) => {
-    await client.code({ method: "undoCommit", ...w, sha: c.sha });
-    reload();
-  };
+  });
   const createPr = async (input: PushPrInput) => {
-    const pr = await client.code({
+    const created = await client.code({
       method: "createPr",
       ...w,
       title: input.title,
@@ -146,19 +145,21 @@ export function ChangesBody(props: Props) {
       ticketId: input.link ? (defaults?.ticketId ?? null) : null,
     });
     setPrOpen(false);
-    setNotice(fr.pr.created(pr.number));
+    setNotice(fr.pr.created(created.number));
     remote.refresh();
     reload();
   };
 
   const unpushed = status?.commits.filter((c) => !c.pushed) ?? [];
+  const shownFile = branchView.selected ? { ...branchView.selected, area: null } : selected;
   const staged = files.filter((f) => f.area === "staged");
   const prBlocked = !branch
     ? fr.commit.noBranch
     : remote.gh && !remote.gh.available
       ? fr.commit.ghUnavailable
       : null;
-  const shownError = error ?? statusError ?? diffError ?? defaultsError ?? remote.error ?? compare.error;
+  const shownError =
+    error ?? statusError ?? diffError ?? branchView.error ?? defaultsError ?? remote.error ?? compare.error;
   const remoteName = remote.remote?.remote ?? "origin";
   const upToDate = status?.upstream && status.ahead === 0 ? status.upstream : null;
 
@@ -180,31 +181,36 @@ export function ChangesBody(props: Props) {
             current={current}
             ahead={status?.ahead ?? 0}
             files={status ? files : null}
+            branch={<BranchFiles view={branchView} />}
+            branchHasWork={Boolean(branchView.changes?.files.length)}
             selected={selected && { path: selected.path, area: selected.area }}
             busy={busy}
             readOnly={readOnly}
             onWorktreeChange={onWorktreeChange}
-            onSelect={(f) => setSelection({ path: f.path, area: f.area })}
+            onSelect={(f) => {
+              branchView.clear();
+              setSelection({ path: f.path, area: f.area });
+            }}
             onToggle={toggle}
             {...fileActions.handlers}
           />
         }
         diff={
           <DiffColumn
-            key={selected ? `${selected.area}:${selected.path}` : ""}
+            key={shownFile ? `${shownFile.area ?? "branch"}:${shownFile.path}` : ""}
             projectId={projectId}
             worktree={current.path}
-            file={selected}
-            diff={diff}
+            file={shownFile}
+            diff={branchView.selected ? branchView.diff : diff}
             mode={mode}
             onModeChange={setMode}
             busy={busy}
             readOnly={readOnly}
             onHunk={hunk}
-            onOpenFile={(line) => selected && onOpenFile({ ...w, path: selected.path, line, origin: null })}
+            onOpenFile={(line) => shownFile && onOpenFile({ ...w, path: shownFile.path, line, origin: null })}
             onOpenExternal={(line) =>
-              selected &&
-              void run(() => client.code({ method: "openInEditor", ...w, path: selected.path, line }))
+              shownFile &&
+              void run(() => client.code({ method: "openInEditor", ...w, path: shownFile.path, line }))
             }
             onSaved={reload}
           />
@@ -227,26 +233,25 @@ export function ChangesBody(props: Props) {
               banner: slots.commitBanner,
               messageRef,
             }}
-            unpushed={{
-              commits: status?.commits ?? [],
+            commits={{
+              base: branchBase,
+              commits: (branchBase ? branchView.changes?.commits : status?.commits) ?? [],
               busy,
-              onModify: modify,
-              onReword: reword,
-              onUndo: undo,
+              ...history,
             }}
             push={{
               target: status?.upstream ?? `${remoteName}/${branch ?? ""}`,
               remote: remoteName,
               branch,
-              base: baseBranch,
+              base: pr?.base ?? baseBranch,
               pending: unpushed,
-              prTicketKey: linkedTicketKey(project.tickets, remote.pr),
+              prTicketKey: linkedTicketKey(project.tickets, pr),
               canPush: branch !== null,
               upToDate,
               pushing,
               pushError,
               busy,
-              pr: remote.pr,
+              pr,
               prBlocked,
               canOpenPr: baseBranch !== null,
               onPush: push,

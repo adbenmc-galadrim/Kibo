@@ -150,3 +150,16 @@ test("design frames reach the design gate with the calling instance, or fail whe
       handlersWith(integrations).design("p", "i1", { kind: "design.frame", ...frame }),
     ).rejects.toThrow("NOT_CONNECTED");
 });
+
+test("delivering answers goes to the agents, and says so when they are not started", async () => {
+  const idle = createGateHandlers(stubHandlerDeps);
+  await expect(idle.questions("p1", "t1")).rejects.toThrow("NOT_CONNECTED");
+  const handlers = createGateHandlers({
+    ...stubHandlerDeps,
+    deliverAnswers: (projectId, ticketId) => ({
+      sent: projectId === "p1" && ticketId === "t1" ? 2 : 0,
+      runId: "r1",
+    }),
+  });
+  expect(await handlers.questions("p1", "t1")).toEqual({ sent: 2, runId: "r1" });
+});

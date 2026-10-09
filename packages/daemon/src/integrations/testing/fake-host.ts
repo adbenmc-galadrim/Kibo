@@ -29,7 +29,14 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
   const home = mkdtempSync(join(tmpdir(), "kibo-int-"));
   const db = new Database(join(home, "kibo.db"), { create: true, strict: true });
   migrateIntegrations(db);
-  const meta: ProjectMeta = { id: "p1", key: "KIB", name: "Kibo", folder: "/tmp/kibo", color: "#71717A" };
+  const meta: ProjectMeta = {
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: "/tmp/kibo",
+    color: "#71717A",
+    worktree: null,
+  };
   const doc = createProjectDoc(meta);
   const listeners = new Set<(e: CommandEvent) => void>();
   const interceptors = new Set<CommandInterceptor>();

@@ -2,6 +2,7 @@ import { afterAll, beforeEach, expect, mock, test } from "bun:test";
 import { type AiEvent, KiboError, type RpcRequest, surfaceFor } from "@kibo/schema";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { type BridgeDeps, createFrameBridge } from "../shell/frame-bridge";
 import { previewBox } from "./DraftPreviewWindow";
 import { DRAFT_ID, burndownManifest as manifest } from "./draft-fixtures";
@@ -25,24 +26,26 @@ let preview: (n: number) => unknown = () => ({
   path: `/c/drafts/${DRAFT_ID}/${HASH}/index.html`,
 });
 
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "getRuntimeInfo") return { sandboxOrigin: ORIGIN };
-      if (req.method === "previewComponentDraft") {
-        const out = preview(calls.filter((c) => c.method === "previewComponentDraft").length);
-        if (out instanceof Error) throw out;
-        return out;
-      }
-      throw new KiboError("INTERNAL", `unexpected ${req.method}`);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "getRuntimeInfo") return { sandboxOrigin: ORIGIN };
+        if (req.method === "previewComponentDraft") {
+          const out = preview(calls.filter((c) => c.method === "previewComponentDraft").length);
+          if (out instanceof Error) throw out;
+          return out;
+        }
+        throw new KiboError("INTERNAL", `unexpected ${req.method}`);
+      },
+      subscribeAi: (listener: (e: AiEvent) => void) => {
+        aiListeners.add(listener);
+        return () => aiListeners.delete(listener);
+      },
     },
-    subscribeAi: (listener: (e: AiEvent) => void) => {
-      aiListeners.add(listener);
-      return () => aiListeners.delete(listener);
-    },
-  },
-}));
+  }),
+);
 
 const { DraftPreviewFrame } = await import("./DraftPreviewFrame");
 

@@ -3,6 +3,7 @@ import * as kanban from "@kibo/component-kanban";
 import * as mcpSource from "@kibo/component-mcp-source";
 import * as mockup from "@kibo/component-mockup";
 import * as notes from "@kibo/component-notes";
+import * as questions from "@kibo/component-questions";
 import * as snake from "@kibo/component-snake";
 import * as tickets from "@kibo/component-tickets";
 import * as viewer3d from "@kibo/component-viewer-3d";
@@ -18,6 +19,7 @@ import {
   LayoutDashboard,
   ListTree,
   type LucideIcon,
+  MessageCircleQuestion,
   Network,
   Plug,
   SquareKanban,
@@ -32,6 +34,7 @@ export const BUILTIN_COMPONENTS: ComponentModule[] = [
   viewer3d,
   snake,
   mockup,
+  questions,
 ];
 
 const BUILTIN_ICONS: Record<string, LucideIcon> = {
@@ -43,6 +46,7 @@ const BUILTIN_ICONS: Record<string, LucideIcon> = {
   "viewer-3d": Box,
   snake: Gamepad,
   mockup: Frame,
+  questions: MessageCircleQuestion,
 };
 
 export const componentRef = (m: ComponentManifest): string => `${m.id}@${m.version}`;

@@ -47,6 +47,7 @@ describe("agentProfile", () => {
       maxParallel: 2,
       subagents: [],
       enabled: true,
+      allow: [],
     });
     expect(gaps).toEqual(["kibo-reviewer: tools (Read, Grep, Glob, Bash) not expressible in a profile"]);
   });

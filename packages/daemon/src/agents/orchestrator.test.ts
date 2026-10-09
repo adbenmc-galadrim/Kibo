@@ -1,8 +1,9 @@
 import { expect, spyOn, test } from "bun:test";
 import { existsSync, mkdirSync, realpathSync } from "node:fs";
 import { join } from "node:path";
-import type { Guideline, HookPayload, RunView } from "@kibo/schema";
+import { type Guideline, type HookPayload, type RunView, WORKTREE_DEFAULTS } from "@kibo/schema";
 import { fakeCalls, releaseFakeRun } from "./fake-claude-scenario";
+import { repo } from "./git-test-kit";
 import { createOrchestrator } from "./orchestrator";
 import { assign, cleanHarness, profile, run, setup, waitUntil } from "./orchestrator.test-helper";
 import { createRunLauncher, type LiveRun } from "./run-launch";
@@ -102,6 +103,7 @@ test("hooks need the live token of their own run", async () => {
     detail: "ping",
     question: null,
     agentId: null,
+    ask: null,
   };
   const post = (token: string | null) =>
     fetch(`${h.url}/hooks/${a.id}`, {
@@ -186,12 +188,13 @@ test("the preview says where a new run would enter the queue", async () => {
   ];
   const h = setup({ scenario: "hold", profiles: [profile({ maxParallel: 1 })], guidelines });
   const target = { projectId: "p1", ticketId: "t2", profileId: "opus" };
-  expect(h.orch.preview(target)).toEqual({ position: null, reason: null, guidelines: 2 });
+  expect(h.orch.preview(target)).toEqual({ position: null, reason: null, guidelines: 2, session: null });
   const r = assign(h, "t1");
   expect(h.orch.preview(target)).toEqual({
     position: 1,
     reason: { kind: "profile", profileName: "opus-dev", used: 1, total: 1 },
     guidelines: 2,
+    session: null,
   });
   expect(() => h.orch.preview({ ...target, profileId: "gone" })).toThrow("NOT_FOUND");
   expect(h.orch.activeRuns("opus")).toBe(1);
@@ -348,6 +351,7 @@ test("a PreToolUse without tool input reaches the guard as null, never as an emp
     detail: null,
     question: null,
     agentId: null,
+    ask: null,
   };
   expect(h.orch.hooks.receive(r.id, payload, null)).toEqual({ decision: "deny", reason: "no input" });
   expect(h.orch.hooks.receive(r.id, payload, { file_path: "ui.tsx" })).toBeNull();
@@ -434,6 +438,7 @@ test("a process ending while its run is queued again records no exit", async () 
         profileName: "opus-dev",
         sessionId: crypto.randomUUID(),
         brief: "",
+        resumedFrom: null,
       },
       0,
     );
@@ -450,6 +455,7 @@ test("a process ending while its run is queued again records no exit", async () 
         detail: null,
         question: "Quel port ?",
         agentId: null,
+        ask: null,
       },
     });
     registry.apply(view.id, {
@@ -499,4 +505,103 @@ test("the inbox and an unknown ticket are still refused before the write check",
   expect(() => h.orch.assign({ projectId: "p1", ticketId: "nope", profileId: "opus", brief: "" })).toThrow(
     "NOT_FOUND",
   );
+});
+
+test("a ticket runs one agent at a time: a second assign is refused until the first ends", async () => {
+  const h = setup({
+    scenario: "hold",
+    profiles: [profile({ maxParallel: 1 }), profile({ id: "b", name: "b-dev" })],
+  });
+  const blocker = assign(h, "t2");
+  const first = assign(h, "t1");
+  expect(run(h, first.id).state).toBe("queued");
+  const target = { projectId: "p1", ticketId: "t1", profileId: "b" };
+  expect(() => h.orch.assign({ ...target, brief: "" })).toThrow("CONFLICT");
+  expect(h.orch.state().runs).toHaveLength(2);
+  expect(h.assigned).toEqual(["t2:opus-dev", "t1:opus-dev"]);
+  expect(h.orch.preview(target)).toEqual({
+    position: null,
+    reason: { kind: "ticket_busy" },
+    guidelines: 0,
+    session: null,
+  });
+  h.orch.cancel(first.id);
+  const second = h.orch.assign({ ...target, brief: "" });
+  expect(run(h, second.id).ticketId).toBe("t1");
+  releaseFakeRun(h.state, blocker.sessionId);
+  await waitUntil(() => run(h, second.id).lastActivity?.event === "PreToolUse");
+  releaseFakeRun(h.state, second.sessionId);
+  await waitUntil(() => run(h, second.id).state === "done");
+}, 30_000);
+
+test("resuming an ended run is refused while another run of its ticket is active", async () => {
+  const h = setup({ scenario: "done" });
+  h.orch.setHost({ paused: true });
+  await h.orch.stop();
+  const registry = openRunRegistry(h.store);
+  const record = (id: string) => ({
+    id,
+    projectId: "p1",
+    ticketId: "t1",
+    ticketKey: "KIB-1",
+    ticketTitle: "Ticket KIB-1",
+    profileId: "opus",
+    profileName: "opus-dev",
+    sessionId: crypto.randomUUID(),
+    brief: "",
+    resumedFrom: null,
+  });
+  const active = registry.create(record("older-active"), 0);
+  const ended = registry.create(record("newer-ended"), 1);
+  registry.apply(ended.id, { type: "admitted", lane: 1 });
+  registry.apply(ended.id, {
+    type: "spawned",
+    pid: 1,
+    resume: false,
+    workspace: "isolated",
+    cwd: h.home,
+    guidelines: 0,
+  });
+  registry.apply(ended.id, {
+    type: "exited",
+    code: 0,
+    isError: false,
+    result: "ok",
+    tokens: 0,
+    costUsd: 0,
+    denied: [],
+  });
+  const orch = createOrchestrator({ ...h.options, tickMs: 60_000 });
+  try {
+    expect(orch.state().resumable).toContain(ended.id);
+    const events = orch.log(ended.id).length;
+    expect(() => orch.answer(ended.id, "Ajoute les tests")).toThrow("CONFLICT");
+    expect(orch.log(ended.id)).toHaveLength(events);
+    orch.cancel(active.id);
+    expect(orch.answer(ended.id, "Ajoute les tests").state).toBe("queued");
+  } finally {
+    await orch.stop();
+  }
+});
+
+test("the setup command of a worktree run is journaled before the agent starts", async () => {
+  const folder = await repo();
+  const h = setup({
+    scenario: "done",
+    profiles: [profile({ workspace: "worktree" })],
+    meta: { folder, worktree: { ...WORKTREE_DEFAULTS, setup: "git worktree add {path} {branch}" } },
+  });
+  const r = assign(h, "t1");
+  await waitUntil(() => run(h, r.id).state === "done");
+  const types = h.orch.log(r.id).map((entry) => entry.event.type);
+  expect(types.slice(types.indexOf("admitted"), types.indexOf("spawned") + 1)).toEqual([
+    "admitted",
+    "setup",
+    "setup",
+    "session",
+    "spawned",
+  ]);
+  const steps = h.orch.log(r.id).flatMap((entry) => (entry.event.type === "setup" ? [entry.event] : []));
+  expect(steps.map((step) => step.status)).toEqual(["running", "done"]);
+  expect(steps[0]?.command).toBe(`git worktree add ${realpathSync(folder)}/.kibo/worktrees/kib-1 kib-1`);
 });

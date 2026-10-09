@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { type AssignPreview, INBOX_ID, KiboError, type RpcRequest, type TicketView } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { configFixture, kiboProject } from "./fixtures";
 import { systemProfilesFixture } from "./system-profiles-fixture";
 
@@ -10,18 +11,21 @@ const QUEUED: AssignPreview = {
   position: 4,
   reason: { kind: "profile", profileName: "opus-dev", used: 2, total: 2 },
   guidelines: 6,
+  session: null,
 };
 let preview: () => Promise<unknown> = () => Promise.resolve(QUEUED);
 let assign: () => Promise<unknown> = () => Promise.resolve(null);
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return req.method === "previewAssign" ? preview() : assign();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return req.method === "previewAssign" ? preview() : assign();
+      },
     },
-  },
-}));
+  }),
+);
 
 const { AssignDialog } = await import("./AssignDialog");
 
@@ -47,6 +51,7 @@ test("assigning a waiting ticket warns, previews the queue and enqueues the run"
     await screen.findByText("attend une place du profil opus-dev (2/2) · entrera en file en position #4"),
   ).toBeTruthy();
   expect(screen.getByText("nouveau worktree kib-15 (depuis main)")).toBeTruthy();
+  expect(screen.getByText("/Users/adam/goinfre/Kibo/.kibo/worktrees/kib-15")).toBeTruthy();
   expect(screen.getByLabelText("Brief (optionnel)").tagName).toBe("INPUT");
   expect(screen.getByText("acceptEdits")).toBeTruthy();
   expect(screen.getByText("workspace · projet Kibo · domaine UI (6 fichiers .md)")).toBeTruthy();
@@ -62,6 +67,7 @@ test("assigning a waiting ticket warns, previews the queue and enqueues the run"
       ticketId: "t15",
       profileId: "opus",
       brief: "Garder l'ordre dans le LoroTree.",
+      fresh: false,
     },
   ]);
 });
@@ -80,9 +86,11 @@ test("a dependency still waiting for its key is shown by its label alone", () =>
     domainId: null,
     assignee: null,
     parentId: null,
+    labels: [],
     externalRefs: [],
     progress: { done: 0, total: 0 },
     waitingOn: [],
+    openQuestions: 0,
   };
   const tickets = project.tickets.map((t) => (t.id === "t15" ? { ...t, waitingOn: ["KIB-12", "KIB-…"] } : t));
   render(
@@ -106,6 +114,24 @@ test("a free slot means the run starts at once", async () => {
   render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
   expect(await screen.findByText("place libre · démarre tout de suite")).toBeTruthy();
   expect(screen.queryByText(/attend KIB/)).toBeNull();
+});
+
+test("a ticket that already has a run cannot be sent again, and the dialog says why", async () => {
+  preview = () => Promise.resolve({ position: null, reason: { kind: "ticket_busy" }, guidelines: 2 });
+  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  expect(await screen.findByText("Un run de ce ticket est déjà en cours ou en file.")).toBeTruthy();
+  expect(screen.queryByText("place libre · démarre tout de suite")).toBeNull();
+  expect(screen.getByRole("button", { name: "Mettre en file" }).hasAttribute("disabled")).toBe(true);
+});
+
+test("a run queued meanwhile turns the refusal into the busy message", async () => {
+  preview = () => Promise.resolve({ position: null, reason: null, guidelines: 2 });
+  assign = () => Promise.reject(new KiboError("CONFLICT", "ticket KIB-14 already has an active run"));
+  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  await userEvent.setup().click(screen.getByRole("button", { name: "Mettre en file" }));
+  expect((await screen.findByRole("alert")).textContent).toBe(
+    "Un run de ce ticket est déjà en cours ou en file.",
+  );
 });
 
 test("a refused assignment is shown and the dialog stays open", async () => {
@@ -150,17 +176,36 @@ test("without a profile or a project the dialog explains what to do", () => {
   expect(calls).toEqual([]);
 });
 
-test("the worktree base branch can be given", async () => {
+test("the worktree line recalls the project base and the computed path of the ticket branch", async () => {
+  const project = kiboProject();
+  const worktree = { baseRef: "origin/dev", pathTemplate: "../kibo-{slug}", setup: "pnpm worktree {branch}" };
+  const branch = { kind: "git_branch" as const, branch: "feat/drag", base: null };
+  const tickets = project.tickets.map((t) => (t.id === "t14" ? { ...t, externalRefs: [branch] } : t));
   render(
     <AssignDialog
-      project={kiboProject()}
+      project={{ ...project, meta: { ...project.meta, worktree }, tickets }}
       ticketId="t14"
       config={configFixture()}
-      baseBranch="develop"
       onClose={() => {}}
     />,
   );
-  expect(screen.getByText("nouveau worktree kib-14 (depuis develop)")).toBeTruthy();
+  expect(screen.getByText("nouveau worktree feat/drag (depuis origin/dev)")).toBeTruthy();
+  expect(screen.getByText("/Users/adam/goinfre/kibo-feat-drag")).toBeTruthy();
+  await waitFor(() => expect(calls.length).toBe(1));
+});
+
+test("an invalid path template is pointed to the project settings", async () => {
+  const project = kiboProject();
+  const worktree = { baseRef: "main", pathTemplate: "/tmp/{slug}", setup: null };
+  render(
+    <AssignDialog
+      project={{ ...project, meta: { ...project.meta, worktree } }}
+      ticketId="t14"
+      config={configFixture()}
+      onClose={() => {}}
+    />,
+  );
+  expect(screen.getByText("chemin invalide, voir Modifier le projet")).toBeTruthy();
   await waitFor(() => expect(calls.length).toBe(1));
 });
 
@@ -224,9 +269,11 @@ const provisional = (): TicketView => ({
   domainId: null,
   assignee: null,
   parentId: null,
+  labels: [],
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
 });
 
 test("a ticket without its key cannot be sent to an agent", async () => {
@@ -389,4 +436,44 @@ test("with a local folder no folder warning is shown", async () => {
   expect(screen.queryByRole("button", { name: "Modifier le projet" })).toBeNull();
   expect((screen.getByRole("button", { name: "Mettre en file" }) as HTMLButtonElement).disabled).toBe(false);
   await waitFor(() => expect(calls.length).toBe(1));
+});
+
+const RESUMABLE: AssignPreview = {
+  position: null,
+  reason: null,
+  guidelines: 2,
+  session: { runId: "r9", label: "opus-dev-2", turns: 3, tokens: 12_000, resumable: true, reason: null },
+};
+
+test("a resumable main session is announced and Start over sends fresh", async () => {
+  preview = () => Promise.resolve(RESUMABLE);
+  const onClose = mock(() => {});
+  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={onClose} />);
+  expect(await screen.findByText("reprend opus-dev-2 (3 tours, 12k tokens)")).toBeTruthy();
+  const reset = screen.getByRole("checkbox", { name: "Repartir de zéro" });
+  expect(reset.getAttribute("aria-checked")).toBe("false");
+  const user = userEvent.setup();
+  await user.click(reset);
+  expect(reset.getAttribute("aria-checked")).toBe("true");
+  await user.click(screen.getByRole("button", { name: "Mettre en file" }));
+  await waitFor(() => expect(onClose).toHaveBeenCalled());
+  expect(calls.at(-1)).toMatchObject({ method: "assignAgent", ticketId: "t14", fresh: true });
+});
+
+test("a session that cannot be resumed says why, without the reset box", async () => {
+  preview = () =>
+    Promise.resolve({
+      ...RESUMABLE,
+      session: { ...RESUMABLE.session, resumable: false, reason: "transcript_missing" },
+    });
+  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  expect(await screen.findByText("nouvelle (transcript introuvable)")).toBeTruthy();
+  expect(screen.queryByRole("checkbox", { name: "Repartir de zéro" })).toBeNull();
+});
+
+test("a ticket without a started run opens a first session", async () => {
+  preview = () => Promise.resolve({ ...RESUMABLE, session: null });
+  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  expect(await screen.findByText("nouvelle (première session du ticket)")).toBeTruthy();
+  expect(screen.queryByRole("checkbox")).toBeNull();
 });

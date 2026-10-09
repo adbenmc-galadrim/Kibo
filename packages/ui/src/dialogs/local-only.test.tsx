@@ -1,6 +1,7 @@
 import { expect, mock, test } from "bun:test";
 import { NO_PERMISSIONS, type PublishPreview, type RpcRequest } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 
 const preview: PublishPreview = {
   id: "pr-queue",
@@ -24,12 +25,14 @@ const preview: PublishPreview = {
     ok: true,
   },
 };
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => Promise.resolve(req.method === "previewPublish" ? preview : []),
-    subscribe: () => () => undefined,
-  },
-}));
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => Promise.resolve(req.method === "previewPublish" ? preview : []),
+      subscribe: () => () => undefined,
+    },
+  }),
+);
 const { TrustDialog } = await import("./TrustDialog");
 const { PublishDialog } = await import("../components-page/PublishDialog");
 

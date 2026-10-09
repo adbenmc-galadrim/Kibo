@@ -3,15 +3,18 @@ import type { RpcRequest, Topic } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { agentsFixture } from "../agents/fixtures";
+import { apiMock } from "../api-mock";
 import type { UpdateInfo, UpdateStatus } from "./update-state";
 import { createUpdateStore, type UpdaterPort, type UpdateSnapshot } from "./update-store";
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => Promise.resolve(req.method === "getAgents" ? agentsFixture() : []),
-    subscribeTopic: (_: Topic, __: () => void) => () => undefined,
-  },
-}));
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => Promise.resolve(req.method === "getAgents" ? agentsFixture() : []),
+      subscribeTopic: (_: Topic, __: () => void) => () => undefined,
+    },
+  }),
+);
 mock.module("../state/use-agents", () => ({ useAgents: () => agentsFixture() }));
 const { UpdateCard, UpdatePanel } = await import("./UpdateCard");
 
@@ -189,6 +192,37 @@ describe("update panel", () => {
       "https://github.com/adbenmc-galadrim/Kibo/releases",
     );
   });
+});
+
+test("a channel without release is a neutral status, an invalid release an alert with the releases link", () => {
+  const { rerender } = render(
+    <UpdatePanel
+      snapshot={snap({
+        phase: "error",
+        step: "check",
+        detail: "Could not fetch a valid release JSON from the remote",
+        update: null,
+      })}
+      activeRuns={0}
+      desktop
+      onCheck={noop}
+      onInstall={noop}
+    />,
+  );
+  expect(screen.getByText("Aucune version publiée sur ce canal pour l'instant.")).toBeTruthy();
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(screen.queryByText("Mise à jour impossible")).toBeNull();
+  rerender(
+    <UpdatePanel
+      snapshot={snap({ phase: "error", step: "install", detail: "Invalid signature", update })}
+      activeRuns={0}
+      desktop
+      onCheck={noop}
+      onInstall={noop}
+    />,
+  );
+  expect(screen.getByText(/La version publiée est invalide \(format ou signature\)/)).toBeTruthy();
+  expect(screen.getByRole("link", { name: "Page des releases" })).toBeTruthy();
 });
 
 describe("update card", () => {

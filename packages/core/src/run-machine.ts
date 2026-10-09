@@ -5,11 +5,16 @@ import {
   KiboError,
   type RunEvent,
   type RunRecord,
+  type RunSession,
   type RunState,
   type RunView,
 } from "@kibo/schema";
 
 type ExitEvent = Extract<RunEvent, { type: "exited" }>;
+type SessionEvent = Extract<RunEvent, { type: "session" }>;
+
+const sessionOf = (event: SessionEvent): RunSession =>
+  event.mode === "resumed" ? { mode: "resumed", from: event.from } : { mode: "fresh", reason: event.reason };
 
 export function runLabel(profileName: string, lane: number | null): string {
   return lane === null ? profileName : `${profileName}-${lane}`;
@@ -42,6 +47,7 @@ export function initRun(record: RunRecord, rank: number, at: number): RunView {
     turns: 0,
     activeMs: 0,
     turnStartedAt: null,
+    session: null,
   };
 }
 
@@ -140,6 +146,7 @@ export function reduceRun(view: RunView, event: RunEvent, at: number): RunView {
     case "spawned":
       requireState(view, event, ["starting"]);
       return enter(view, "running", at, {
+        sessionId: event.sessionId ?? view.sessionId,
         workspace: event.workspace,
         cwd: event.cwd ?? null,
         guidelines: event.guidelines,
@@ -178,5 +185,11 @@ export function reduceRun(view: RunView, event: RunEvent, at: number): RunView {
     case "prioritized":
       requireState(view, event, ["queued"]);
       return { ...view, priority: event.priority };
+    case "setup":
+      requireState(view, event, ["starting"]);
+      return view;
+    case "session":
+      requireState(view, event, ["starting"]);
+      return { ...view, session: sessionOf(event) };
   }
 }

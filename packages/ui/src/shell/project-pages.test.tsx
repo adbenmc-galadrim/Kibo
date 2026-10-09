@@ -3,17 +3,20 @@ import { DEFAULT_WORKFLOW, KiboError, type Page, type ProjectSnapshot, type RpcR
 import { SidebarMenu, SidebarMenuItem, SidebarProvider } from "@kibo/sdk/ui/sidebar";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      return answer(req);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        return answer(req);
+      },
     },
-  },
-}));
+  }),
+);
 const { ProjectPages } = await import("./ProjectPages");
 
 const page = (id: string, title: string, parentId: string | null): Page => ({
@@ -23,7 +26,7 @@ const page = (id: string, title: string, parentId: string | null): Page => ({
   parentId,
 });
 const project = (access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSnapshot => ({
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
+  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
   workflow: DEFAULT_WORKFLOW,
   pages: [
     page("dash", "Tableau de bord", null),
@@ -32,6 +35,7 @@ const project = (access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSn
   ],
   tickets: [],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

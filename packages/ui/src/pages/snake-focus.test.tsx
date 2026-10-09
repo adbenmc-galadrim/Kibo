@@ -3,16 +3,19 @@ import type { Instance, Page, ProjectSnapshot, RpcRequest } from "@kibo/schema";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { kiboProject } from "../agents/fixtures";
+import { apiMock } from "../api-mock";
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) =>
-      Promise.resolve(req.method === "listComponents" || req.method === "listDrafts" ? [] : null),
-    subscribe: () => () => undefined,
-    subscribeTopic: () => () => undefined,
-    subscribeEvents: () => () => undefined,
-  },
-}));
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) =>
+        Promise.resolve(req.method === "listComponents" || req.method === "listDrafts" ? [] : null),
+      subscribe: () => () => undefined,
+      subscribeTopic: () => () => undefined,
+      subscribeEvents: () => () => undefined,
+    },
+  }),
+);
 
 const { PageView } = await import("./PageView");
 const { HostProvider } = await import("../shell/Host");

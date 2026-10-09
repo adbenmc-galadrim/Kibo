@@ -14,6 +14,7 @@ const record: RunRecord = {
   sessionId: "s1",
   brief: "",
   createdAt: 100,
+  resumedFrom: null,
 };
 const hook = (event: HookEventName, extra: Partial<HookPayload> = {}): RunEvent => ({
   type: "hook",
@@ -25,6 +26,7 @@ const hook = (event: HookEventName, extra: Partial<HookPayload> = {}): RunEvent 
     detail: null,
     question: null,
     agentId: null,
+    ask: null,
     ...extra,
   },
 });
@@ -318,4 +320,38 @@ test("the question stays on the run until the next turn starts, so the queue can
   );
   const requeued = reduceRun(reduceRun(asked, exit(), 150), { type: "requeued", rank: 1 }, 151);
   expect(requeued).toMatchObject({ state: "queued", question: "Je continue ?", pendingAnswer: "Vas-y" });
+});
+
+test("a setup step is journaled while starting and changes nothing else", () => {
+  const starting = reduceRun(initRun(record, 5, 100), { type: "admitted", lane: 2 }, 110);
+  const step: RunEvent = { type: "setup", command: "pnpm worktree kib-14", status: "running" };
+  expect(reduceRun(starting, step, 130)).toEqual(starting);
+  expect(() => reduceRun(running(), step, 130)).toThrow("INVALID_TRANSITION");
+});
+
+test("the session decision is journaled while starting and sets the run session only", () => {
+  const starting = reduceRun(initRun(record, 5, 100), { type: "admitted", lane: 2 }, 110);
+  expect(starting.session).toBeNull();
+  const fresh: RunEvent = { type: "session", mode: "fresh", reason: "transcript_missing" };
+  expect(reduceRun(starting, fresh, 115)).toEqual({
+    ...starting,
+    session: { mode: "fresh", reason: "transcript_missing" },
+  });
+  const resumed = reduceRun(starting, { type: "session", mode: "resumed", from: "r0" }, 115);
+  expect(resumed.session).toEqual({ mode: "resumed", from: "r0" });
+  expect(() => reduceRun(running(), fresh, 130)).toThrow("INVALID_TRANSITION");
+});
+
+test("spawned replaces the session id only when it carries one", () => {
+  const starting = reduceRun(initRun(record, 5, 100), { type: "admitted", lane: 2 }, 110);
+  const withId: RunEvent = {
+    type: "spawned",
+    pid: 42,
+    resume: false,
+    workspace: "w",
+    guidelines: 0,
+    sessionId: "new",
+  };
+  expect(reduceRun(starting, withId, 120).sessionId).toBe("new");
+  expect(reduceRun(starting, spawned(false), 120).sessionId).toBe("s1");
 });

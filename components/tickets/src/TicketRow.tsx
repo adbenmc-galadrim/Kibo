@@ -5,10 +5,11 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
-import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, MessageCircleQuestion, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import type { TicketNode } from "./build-tree";
 import { fr } from "./fr";
+import { LabelChips } from "./LabelChips";
 import { TicketRowActions, TicketRowMenu } from "./TicketRowMenu";
 import { zoneId } from "./tree-drop";
 
@@ -157,6 +158,7 @@ export function TicketRow({
             >
               {t.title}
             </button>
+            <LabelChips labels={t.labels} />
             {t.blockedReason && (
               <span className={cn(WIDE_TEXT, "min-w-0 truncate text-2xs text-red-600 dark:text-red-400")}>
                 {t.blockedReason}
@@ -165,6 +167,15 @@ export function TicketRow({
             {t.waitingOn.length > 0 && (
               <Badge variant="outline" className={cn(WIDE_TEXT, "min-w-0 shrink justify-start text-3xs")}>
                 <span className="truncate">{fr.waitingOn(t.waitingOn)}</span>
+              </Badge>
+            )}
+            {t.openQuestions > 0 && (
+              <Badge
+                variant="outline"
+                className="hidden shrink-0 gap-1 border-orange-500/40 text-3xs text-orange-600 @md:inline-flex dark:text-orange-400"
+              >
+                <MessageCircleQuestion aria-hidden className="size-3" />
+                {fr.questions(t.openQuestions)}
               </Badge>
             )}
           </div>

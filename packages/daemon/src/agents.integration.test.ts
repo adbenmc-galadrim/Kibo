@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type {
@@ -8,11 +8,19 @@ import type {
   ChangeMessage,
   ProjectMeta,
   ProjectSnapshot,
+  Question,
+  RunLogEntry,
   RunView,
   Ticket,
   WorkspaceConfig,
 } from "@kibo/schema";
-import { FAKE_CLAUDE, releaseFakeRun, scenarioPath } from "./agents/fake-claude-scenario";
+import {
+  FAKE_CLAUDE,
+  type FakeScenarioName,
+  releaseFakeRun,
+  scenarioPath,
+} from "./agents/fake-claude-scenario";
+import { commit, git, cleanupTmp as removeRepos, repo } from "./agents/git-test-kit";
 import { defaultHookLauncher } from "./agents/hook-launcher";
 import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
 import { openRunStore, type RunStore } from "./agents/run-store";
@@ -31,7 +39,7 @@ type Stack = {
 };
 let stack: Stack | null = null;
 
-function boot(scenario: "question" | "hold"): Stack {
+function boot(scenario: FakeScenarioName): Stack {
   const home = mkdtempSync(join(tmpdir(), "kibo-int-"));
   mkdirSync(join(home, "fake"));
   const store = openStore(home);
@@ -84,6 +92,7 @@ const alive = (pid: number) => {
   }
 };
 
+afterEach(removeRepos);
 afterEach(async () => {
   if (!stack) return;
   const { orch } = stack;
@@ -232,3 +241,80 @@ test("four runs on three slots leave one queued", async () => {
     "in_progress",
   ]);
 }, 40_000);
+
+test("a second run resumes the main session with the branch commits and the answers in its brief", async () => {
+  const s = boot("done");
+  const rpc = await client(s);
+  const folder = await repo();
+  const p = await rpc<ProjectMeta>({ ...newProject, folder });
+  const t = await rpc<Ticket>({
+    method: "command",
+    projectId: p.id,
+    command: { method: "createTicket", title: "Hooks" },
+  });
+  const human = { kind: "human", ref: "adam" };
+  const q = await rpc<Question>({
+    method: "command",
+    projectId: p.id,
+    command: { method: "createQuestion", ticketId: t.id, title: "Port fixe ?", createdBy: human },
+  });
+  await rpc({
+    method: "command",
+    projectId: p.id,
+    command: {
+      method: "answerQuestion",
+      questionId: q.id,
+      answer: { kind: "text", text: "Non, dynamique" },
+      by: human,
+    },
+  });
+  const profile = await rpc<AgentProfile>({
+    method: "config",
+    command: { method: "createProfile", profile: { ...profileInput, workspace: "worktree", maxParallel: 1 } },
+  });
+  const agents = () => rpc<AgentsState>({ method: "getAgents" });
+  const assign = (fresh: boolean) =>
+    rpc<RunView>({
+      method: "assignAgent",
+      projectId: p.id,
+      ticketId: t.id,
+      profileId: profile.id,
+      brief: "",
+      fresh,
+    });
+  const finished = async (id: string): Promise<RunView> => {
+    const state = await until(agents, (a) => a.runs.some((r) => r.id === id && r.state === "done"));
+    const found = state.runs.find((r) => r.id === id);
+    if (!found) throw new Error(`run ${id} missing`);
+    return found;
+  };
+  const brief = (id: string) => readFileSync(join(s.home, "runs", id, "brief.md"), "utf8");
+  const session = async (id: string) =>
+    (await rpc<RunLogEntry[]>({ method: "getRunLog", runId: id })).find((e) => e.event.type === "session")
+      ?.event;
+
+  const first = await finished((await assign(false)).id);
+  expect(brief(first.id)).toContain("Non, dynamique");
+  const snap = await rpc<ProjectSnapshot>({ method: "getProject", projectId: p.id });
+  expect(snap.questions[0]?.answer).toMatchObject({ deliveredRunId: first.id });
+
+  const cwd = first.cwd ?? "";
+  writeFileSync(join(cwd, "hooks.ts"), "export {};\n");
+  await git(["add", "hooks.ts"], cwd);
+  await git([...commit, "-m", "feat: récepteur de hooks"], cwd);
+  const hash = await git(["rev-parse", "--short", "HEAD"], cwd);
+
+  const second = await assign(false);
+  expect(second.sessionId).toBe(first.sessionId);
+  await finished(second.id);
+  expect(await session(second.id)).toEqual({ type: "session", mode: "resumed", from: first.id });
+  const text = brief(second.id);
+  expect(text).toContain("## Commits de la branche");
+  expect(text).toContain(`- ${hash} feat: récepteur de hooks`);
+  expect(text).toContain("## Questions");
+
+  const reset = await assign(true);
+  expect(reset.sessionId).not.toBe(first.sessionId);
+  await finished(reset.id);
+  expect(await session(reset.id)).toEqual({ type: "session", mode: "fresh", reason: "user_reset" });
+}, 60_000);

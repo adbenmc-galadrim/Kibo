@@ -13,7 +13,16 @@ import { GITHUB_SECRET_HOSTS, IntegrationSecretNameSchema } from "./integrations
 import { NetRule } from "./net";
 import { SemVer } from "./semver";
 
-export const BuiltinEntityType = z.enum(["ticket", "status", "link", "page", "run", "note", "ci_run"]);
+export const BuiltinEntityType = z.enum([
+  "ticket",
+  "status",
+  "link",
+  "page",
+  "run",
+  "note",
+  "ci_run",
+  "question",
+]);
 export type BuiltinEntityType = z.infer<typeof BuiltinEntityType>;
 export const EntityType = BuiltinEntityType;
 export type EntityType = BuiltinEntityType;

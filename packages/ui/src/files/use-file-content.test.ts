@@ -1,6 +1,7 @@
 import { expect, mock, test } from "bun:test";
 import type { CodeEvent, CodeRequest, FileContent } from "@kibo/schema";
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 
 const reads: CodeRequest[] = [];
 const listeners = new Set<(e: CodeEvent) => void>();
@@ -18,20 +19,22 @@ const content: FileContent = {
   dirty: false,
 };
 
-mock.module("../api", () => ({
-  client: {
-    code: (req: CodeRequest) => {
-      if (req.method === "worktrees")
-        return Promise.resolve([{ path: "/repo", branch: "main", head: "a".repeat(40), isMain: true }]);
-      reads.push(req);
-      return Promise.resolve(content);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      code: (req: CodeRequest) => {
+        if (req.method === "worktrees")
+          return Promise.resolve([{ path: "/repo", branch: "main", head: "a".repeat(40), isMain: true }]);
+        reads.push(req);
+        return Promise.resolve(content);
+      },
+      subscribeCode: (l: (e: CodeEvent) => void) => {
+        listeners.add(l);
+        return () => listeners.delete(l);
+      },
     },
-    subscribeCode: (l: (e: CodeEvent) => void) => {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
-  },
-}));
+  }),
+);
 const { useFileContent } = await import("./use-file-content");
 
 const emit = (paths?: string[]) =>

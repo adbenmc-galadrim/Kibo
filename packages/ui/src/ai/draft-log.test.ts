@@ -17,6 +17,7 @@ const hook = (detail: string | null): RunLogEntry => ({
       detail,
       question: null,
       agentId: null,
+      ask: null,
     },
   },
 });

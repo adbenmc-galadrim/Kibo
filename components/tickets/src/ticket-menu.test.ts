@@ -16,9 +16,11 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   domainId: null,
   assignee: null,
   parentId: "12@1",
+  labels: [],
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
   ...patch,
 });
 const actions = (): TicketMenuActions => ({

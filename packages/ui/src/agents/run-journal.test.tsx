@@ -2,6 +2,7 @@ import { expect, mock, test } from "bun:test";
 import type { RunEvent, RunLogEntry, RunView, Worktree } from "@kibo/schema";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { agentsFixture, NOW } from "./fixtures";
 import { hook, RUN_LOG } from "./run-log-fixture";
 
@@ -9,14 +10,16 @@ const worktrees: Worktree[] = [
   { path: "/repo", branch: "main", head: "a1", isMain: true },
   { path: "/repo/.kibo/worktrees/kib-14", branch: "kib-14", head: "b2", isMain: false },
 ];
-mock.module("../api", () => ({
-  client: {
-    rpc: () => Promise.resolve(null),
-    code: () => Promise.resolve(worktrees),
-    subscribeCode: () => () => {},
-    subscribe: () => () => {},
-  },
-}));
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: () => Promise.resolve(null),
+      code: () => Promise.resolve(worktrees),
+      subscribeCode: () => () => {},
+      subscribe: () => () => {},
+    },
+  }),
+);
 
 const { AgentDrawer } = await import("./AgentDrawer");
 const { journalLines, RunJournal } = await import("./RunJournal");
@@ -164,6 +167,19 @@ test("daemon events keep their raw type as name", () => {
     expect(journalLines([{ id: 1, at: NOW, event }]).at(0)?.name ?? null).toBe(name);
   }
 });
+test("the setup command shows as a preparation line, with its status and duration", () => {
+  const command = "pnpm worktree feat/drag";
+  const log: RunLogEntry[] = [
+    { id: 1, at: NOW, event: { type: "setup", command, status: "running" } },
+    { id: 2, at: NOW, event: { type: "setup", command, status: "done", durationMs: 12_400 } },
+    { id: 3, at: NOW, event: { type: "setup", command, status: "failed", durationMs: 3_000 } },
+  ];
+  expect(journalLines(log).map((l) => [l.name, l.text, l.tone])).toEqual([
+    ["setup", "Préparation : pnpm worktree feat/drag · en cours", "blue"],
+    ["setup", "Préparation : pnpm worktree feat/drag · terminée en 12s", "green"],
+    ["setup", "Préparation : pnpm worktree feat/drag · échec après 3s", "red"],
+  ]);
+});
 test("the agent's last message and the user's messages are shown whole, on several lines", () => {
   const message = "Fait.\nDeux fichiers modifiés.\nVeux-tu des tests ?\nJe peux aussi documenter.";
   const log: RunLogEntry[] = [
@@ -253,4 +269,28 @@ test("the journal follows new lines unless the reader scrolled up", () => {
     <RunJournal label="opus-dev-2" log={[entry(1), entry(2), entry(3), entry(4)]} files={null} />,
   );
   expect(list.scrollTop).toBe(800);
+});
+
+test("the session line names the run it resumes, or why the session is new, in grey", () => {
+  const resumed: RunEvent = { type: "session", mode: "resumed", from: "r41" };
+  const fresh: RunEvent = { type: "session", mode: "fresh", reason: "transcript_missing" };
+  const runs = [{ ...run("r41"), turns: 3 }];
+  expect(journalLines([{ id: 1, at: NOW, event: resumed }], runs)).toMatchObject([
+    { name: "session", text: "Session : reprise du run opus-dev-2 (3 tours)", tone: "muted" },
+  ]);
+  expect(journalLines([{ id: 1, at: NOW, event: resumed }])).toMatchObject([
+    { text: "Session : reprise du run précédent" },
+  ]);
+  expect(journalLines([{ id: 2, at: NOW, event: fresh }])).toMatchObject([
+    { name: "session", text: "Session : nouvelle (transcript introuvable)", tone: "muted" },
+  ]);
+});
+
+test("the drawer journal knows the runs of the agents state", async () => {
+  const log: RunLogEntry[] = [
+    { id: 1, at: NOW, event: { type: "session", mode: "resumed", from: "r41" } },
+    ...RUN_LOG,
+  ];
+  renderDrawer({ ...run("r40"), projectId: "kibo" }, log);
+  expect(await screen.findByText(/^Session : reprise du run opus-dev-2 \(\d+ tours?\)$/)).toBeTruthy();
 });

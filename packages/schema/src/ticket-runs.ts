@@ -16,3 +16,12 @@ export function ticketRuns(state: AgentsState, projectId: string): TicketRun[] {
     position: positions.get(run.id) ?? null,
   }));
 }
+
+export function mainSessionOf(runs: readonly RunView[], ticketId: string): RunView | null {
+  let main: RunView | null = null;
+  for (const run of runs) {
+    if (run.ticketId !== ticketId || run.startedAt === null) continue;
+    if (main === null || run.seq > main.seq) main = run;
+  }
+  return main;
+}

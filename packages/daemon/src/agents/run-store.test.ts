@@ -3,7 +3,9 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { KiboError, RunEvent } from "@kibo/schema";
 import { holdWriteLock } from "@kibo/sync-server/testing/hold-write-lock";
+import { z } from "zod";
 import { type NewRun, openRunStore } from "./run-store";
 
 const dirs: string[] = [];
@@ -26,6 +28,7 @@ const newRun = (id: string): NewRun => ({
   profileName: "opus-dev",
   sessionId: `s-${id}`,
   brief: "",
+  resumedFrom: null,
 });
 
 test("runs get increasing sequence numbers and survive a reopen", () => {
@@ -142,4 +145,83 @@ test("vacuumInto writes a readable snapshot of the runs", () => {
   const db = new Database(target, { readonly: true });
   expect(db.query("SELECT id FROM runs").all()).toEqual([{ id: "r1" }]);
   db.close();
+});
+
+const V016_RUNS =
+  "CREATE TABLE runs (id TEXT PRIMARY KEY, seq INTEGER NOT NULL UNIQUE, project_id TEXT, " +
+  "ticket_id TEXT, ticket_key TEXT, ticket_title TEXT NOT NULL, profile_id TEXT NOT NULL, " +
+  "profile_name TEXT NOT NULL, session_id TEXT NOT NULL, brief TEXT NOT NULL, created_at INTEGER NOT NULL)";
+
+test("a v0.16 database opens, its runs resumed from nothing, and new runs keep their origin", () => {
+  const h = home();
+  const old = new Database(join(h, "runs.db"), { create: true });
+  old.exec(V016_RUNS);
+  old.exec(
+    "INSERT INTO runs VALUES ('r1', 1, 'p1', 't1', 'KIB-14', 'Récepteur de hooks', 'opus', 'opus-dev', 's-r1', '', 5)",
+  );
+  old.close();
+  const s = openRunStore(h);
+  s.create({ ...newRun("r2"), sessionId: "s-r1", resumedFrom: "r1" }, 1, 10);
+  s.close();
+  const again = openRunStore(h);
+  expect(again.records().map((r) => [r.id, r.sessionId, r.resumedFrom])).toEqual([
+    ["r1", "s-r1", null],
+    ["r2", "s-r1", "r1"],
+  ]);
+  again.close();
+});
+
+const V016_SPAWNED = z.object({
+  type: z.literal("spawned"),
+  pid: z.number().int(),
+  resume: z.boolean(),
+  workspace: z.string(),
+  cwd: z.string().optional(),
+  guidelines: z.number().int().nonnegative(),
+});
+const V016_EVENT = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("enqueued"), rank: z.number() }),
+  z.object({ type: z.literal("admitted"), lane: z.number().int().positive() }),
+  V016_SPAWNED,
+]);
+const replayByV016 = (h: string): string[] => {
+  const db = new Database(join(h, "runs.db"), { readonly: true });
+  const rows = db.query("SELECT data FROM run_events ORDER BY id").all() as { data: string }[];
+  db.close();
+  return rows.map((row) => {
+    const parsed = V016_EVENT.safeParse(JSON.parse(row.data));
+    if (!parsed.success) throw new KiboError("STORE_CORRUPT", parsed.error.message);
+    return parsed.data.type;
+  });
+};
+
+test("a journal with a session is refused by an older daemon, an old one reads unchanged", () => {
+  const withSession = home();
+  const s = openRunStore(withSession);
+  s.create(newRun("r1"), 0, 1);
+  s.append("r1", { type: "admitted", lane: 1 }, 2);
+  s.append("r1", { type: "session", mode: "fresh", reason: "transcript_missing" }, 3);
+  s.append(
+    "r1",
+    { type: "spawned", pid: 7, resume: false, workspace: "repo", sessionId: "s-new", guidelines: 0 },
+    4,
+  );
+  s.close();
+  expect(() => replayByV016(withSession)).toThrow("STORE_CORRUPT");
+
+  const old = home();
+  const legacy = openRunStore(old);
+  legacy.create(newRun("r1"), 0, 1);
+  legacy.append("r1", { type: "admitted", lane: 1 }, 2);
+  const spawned: RunEvent = { type: "spawned", pid: 7, resume: false, workspace: "repo", guidelines: 0 };
+  legacy.append("r1", spawned, 3);
+  legacy.close();
+  expect(replayByV016(old)).toEqual(["enqueued", "admitted", "spawned"]);
+  const reopened = openRunStore(old);
+  expect(reopened.log("r1").map((e) => e.event)).toEqual([
+    { type: "enqueued", rank: 0 },
+    { type: "admitted", lane: 1 },
+    RunEvent.parse(spawned),
+  ]);
+  reopened.close();
 });

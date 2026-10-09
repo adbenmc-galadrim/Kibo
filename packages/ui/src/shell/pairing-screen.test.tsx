@@ -2,17 +2,20 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const codes: string[] = [];
 let outcome: () => Promise<void> = () => Promise.resolve();
-mock.module("../api", () => ({
-  client: {
-    pairWithCode: (code: string) => {
-      codes.push(code);
-      return outcome();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      pairWithCode: (code: string) => {
+        codes.push(code);
+        return outcome();
+      },
     },
-  },
-}));
+  }),
+);
 const { PairingScreen } = await import("./PairingScreen");
 
 const values = () => screen.getAllByRole("textbox").map((b) => (b as HTMLInputElement).value);

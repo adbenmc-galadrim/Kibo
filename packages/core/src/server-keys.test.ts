@@ -15,7 +15,7 @@ import {
   writeMembers,
 } from "./index";
 
-const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" };
+const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null };
 
 function sharedServer(): LoroDoc {
   const doc = createProjectDoc(meta);

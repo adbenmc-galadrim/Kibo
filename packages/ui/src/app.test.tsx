@@ -1,36 +1,39 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { EMPTY_TABS, KiboError, type RpcRequest, type Session } from "@kibo/schema";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { apiMock } from "./api-mock";
 
 const adam: Session = { user: "adam", notifications: "browser" };
 let session: () => Promise<Session> = () => Promise.resolve(adam);
 let sessionCalls = 0;
 
-mock.module("./api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      if (req.method === "getSession") {
-        sessionCalls += 1;
-        return session();
-      }
-      if (req.method === "listProjects") return Promise.resolve([]);
-      if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
-      return Promise.resolve(null);
+mock.module("./api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        if (req.method === "getSession") {
+          sessionCalls += 1;
+          return session();
+        }
+        if (req.method === "listProjects") return Promise.resolve([]);
+        if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
+        return Promise.resolve(null);
+      },
+      pair: () => Promise.resolve(),
+      code: () => Promise.resolve(null),
+      subscribe: () => () => {},
+      subscribeTopic: () => () => {},
+      online: () => true,
+      onConnection: () => () => {},
+      subscribeCode: () => () => {},
+      subscribeEvents: () => () => {},
+      subscribeAi: () => () => {},
+      subscribeIntegrations: () => () => {},
     },
-    pair: () => Promise.resolve(),
-    code: () => Promise.resolve(null),
-    subscribe: () => () => {},
-    subscribeTopic: () => () => {},
-    online: () => true,
-    onConnection: () => () => {},
-    subscribeCode: () => () => {},
-    subscribeEvents: () => () => {},
-    subscribeAi: () => () => {},
-    subscribeIntegrations: () => () => {},
-  },
-  onUnauthorized: () => () => {},
-  onWrite: () => () => {},
-}));
+    onUnauthorized: () => () => {},
+    onWrite: () => () => {},
+  }),
+);
 
 const unmockedApp = "./App?unmocked";
 const { App }: typeof import("./App") = await import(unmockedApp);

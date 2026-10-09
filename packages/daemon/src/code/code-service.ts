@@ -1,5 +1,6 @@
 import { commitDefaults } from "@kibo/core";
 import {
+  branchRefOf,
   CODE_MUTATION_METHODS,
   CODE_READ_METHODS,
   type CodeEvent,
@@ -8,6 +9,7 @@ import {
 } from "@kibo/schema";
 import { type RpcContext, requireLocal } from "../rpc-extensions";
 import { call, type Service } from "../service";
+import { branchChanges, branchDiff } from "./branch-changes";
 import { editorCommand, openInEditor } from "./editor";
 import { abortOperation, commit, reword, undoCommit } from "./history-ops";
 import {
@@ -19,8 +21,9 @@ import {
   unstageFiles,
   writeFile,
 } from "./index-ops";
-import { type PrPoller, startPrPoller, triggerRules } from "./pr-poller";
-import { compare, readDiff, readFile, readStatus, remoteBranches } from "./read";
+import { type PrPoller, startPrPoller } from "./pr-poller";
+import { triggerRules } from "./pr-rules";
+import { compare, currentBranch, readDiff, readFile, readStatus, remoteBranches } from "./read";
 import { createPr, ghStatus, prForBranch, push } from "./remote-ops";
 import { openRepo, type WorktreeHandle } from "./repo";
 import type { Env } from "./run";
@@ -91,6 +94,15 @@ export function createCodeService(service: Service, opts: CodeServiceOptions = {
     );
   };
 
+  const baseCandidates = async (projectId: string, h: WorktreeHandle): Promise<(string | null)[]> => {
+    const branch = await currentBranch(h);
+    const snapshot = project(projectId);
+    const ticketBranch = snapshot.tickets
+      .map((t) => branchRefOf(t.externalRefs))
+      .find((ref) => ref !== null && ref.branch === branch);
+    return [ticketBranch?.base ?? null, snapshot.meta.worktree?.baseRef ?? null];
+  };
+
   const read = async (h: WorktreeHandle, req: Read): Promise<unknown> => {
     switch (req.method) {
       case "status":
@@ -110,6 +122,10 @@ export function createCodeService(service: Service, opts: CodeServiceOptions = {
         return prForBranch(h);
       case "commitDefaults":
         return defaults(req.projectId, h);
+      case "branchChanges":
+        return branchChanges(h, await baseCandidates(req.projectId, h));
+      case "branchDiff":
+        return branchDiff(h, await baseCandidates(req.projectId, h), req.path, req.origPath);
       case "openInEditor": {
         const file = resolveInWorktree(h.path, req.path);
         const editorEnv = { ...process.env, ...env };
@@ -127,8 +143,7 @@ export function createCodeService(service: Service, opts: CodeServiceOptions = {
         projectId: req.projectId,
         command: { method: "upsertExternalRef", ticketId: req.ticketId, ref: { kind: "github_pr", ...pr } },
       });
-      if (pr.state === "open")
-        triggerRules(service, req.projectId, { kind: "pr_opened", ticketId: req.ticketId });
+      triggerRules(service, req.projectId, { kind: "pr_opened", ticketId: req.ticketId });
     }
     return pr;
   };

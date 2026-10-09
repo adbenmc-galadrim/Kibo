@@ -91,7 +91,7 @@ test("screens and the inbox: settings crumbs stay text, the inbox crumb opens th
   ]);
   const inbox: ProjectSnapshot = {
     ...kibo,
-    meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B" },
+    meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B", worktree: null },
   };
   expect(
     crumbsFor({ kind: "ticket", projectId: INBOX_ID, ticketId: "t12" }, { project: inbox, branch: null }),

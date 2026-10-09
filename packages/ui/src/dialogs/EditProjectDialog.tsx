@@ -5,6 +5,8 @@ import {
   type KiboErrorCode,
   type ProjectPatch,
   type ProjectSummary,
+  WORKTREE_DEFAULTS,
+  type WorktreeSettings,
 } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
@@ -19,6 +21,7 @@ import { PROJECT_COLORS } from "../lib/project-colors";
 import { isRemoteView } from "../lib/remote-view";
 import { FolderField, type FolderFieldProps } from "./FolderField";
 import { IconField } from "./IconField";
+import { WorktreeFields, worktreeProblem } from "./WorktreeFields";
 
 type Props = {
   project: ProjectSummary;
@@ -27,10 +30,13 @@ type Props = {
   canBrowse?: boolean;
   pick?: FolderFieldProps["pick"];
 };
-type Fields = { name: string; color: string; folder: string };
+type Fields = { name: string; color: string; folder: string; worktree?: WorktreeSettings | null };
 
 const t = frProject.edit;
 const KNOWN: Partial<Record<KiboErrorCode, string>> = t.errors;
+
+const sameWorktree = (a: WorktreeSettings | null, b: WorktreeSettings | null) =>
+  JSON.stringify(a ?? WORKTREE_DEFAULTS) === JSON.stringify(b ?? WORKTREE_DEFAULTS);
 
 export function projectPatch(project: ProjectSummary, fields: Fields): ProjectPatch | null {
   const patch: ProjectPatch = {};
@@ -39,6 +45,8 @@ export function projectPatch(project: ProjectSummary, fields: Fields): ProjectPa
   if (fields.color !== project.color) patch.color = fields.color;
   const folder = fields.folder.trim() || null;
   if (folder !== project.folder) patch.folder = folder;
+  const worktree = fields.worktree;
+  if (worktree !== undefined && !sameWorktree(worktree, project.worktree)) patch.worktree = worktree;
   return Object.keys(patch).length === 0 ? null : patch;
 }
 
@@ -56,13 +64,21 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
   const [name, setName] = useState(project.name);
   const [color, setColor] = useState<string>(project.color);
   const [folder, setFolder] = useState(project.folder ?? "");
+  const [worktree, setWorktree] = useState<WorktreeSettings | null>(project.worktree ?? WORKTREE_DEFAULTS);
   const [pending, setPending] = useState<IconInput | null>(null);
   const [removed, setRemoved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const patch = projectPatch(project, { name, color, folder: remote ? (project.folder ?? "") : folder });
+  const showWorktree = !remote && folder.trim().length > 0;
+  const patch = projectPatch(project, {
+    name,
+    color,
+    folder: remote ? (project.folder ?? "") : folder,
+    ...(showWorktree && { worktree }),
+  });
   const iconChanged = pending !== null || (removed && Boolean(project.icon));
-  const dirty = name.trim().length > 0 && (patch !== null || iconChanged);
+  const worktreeInvalid = showWorktree && worktree !== null && worktreeProblem(worktree) !== null;
+  const dirty = name.trim().length > 0 && !worktreeInvalid && (patch !== null || iconChanged);
   const currentUrl = project.icon ? iconUrl({ kind: "project", projectId: project.id }, project.icon) : null;
 
   const submit = async (e: FormEvent) => {
@@ -148,6 +164,7 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
               </p>
             </div>
           )}
+          {showWorktree && <WorktreeFields value={worktree} onChange={setWorktree} disabled={busy} />}
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}

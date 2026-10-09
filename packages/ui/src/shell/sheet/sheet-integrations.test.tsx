@@ -9,6 +9,7 @@ import {
 } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../../api-mock";
 
 const FIGMA_URL = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34";
 const FILE = "11111111-1111-4111-8111-111111111111";
@@ -88,15 +89,17 @@ const replies: Record<string, (req: RpcRequest) => unknown> = {
     return reply();
   },
 };
-mock.module("../../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      return replies[req.method]?.(req) ?? null;
+mock.module("../../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        return replies[req.method]?.(req) ?? null;
+      },
+      subscribeIntegrations: () => () => undefined,
     },
-    subscribeIntegrations: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { TicketSheet } = await import("../TicketSheet");
 const { TicketTab } = await import("../../pages/TicketTab");
@@ -113,6 +116,7 @@ const ticket: TicketView = {
   assignee: null,
   domainId: null,
   blockedReason: null,
+  labels: [],
   externalRefs: [
     {
       kind: "github_issue",
@@ -122,7 +126,14 @@ const ticket: TicketView = {
       nodeId: "I_42",
       url: "https://github.com/adam/kibo/issues/42",
     },
-    { kind: "github_pr", url: "https://github.com/adam/kibo/pull/12", number: 12, state: "open" },
+    {
+      kind: "github_pr",
+      url: "https://github.com/adam/kibo/pull/12",
+      number: 12,
+      state: "open",
+      base: null,
+      head: null,
+    },
     {
       kind: "figma_node",
       fileKey: "AbC123xyz",
@@ -142,12 +153,14 @@ const ticket: TicketView = {
   ],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
 };
 const project: ProjectSnapshot = {
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
+  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],
@@ -218,6 +231,45 @@ test("a broken issue link shows a badge instead of a link", async () => {
   );
   expect(screen.getByText("L'issue a été supprimée ou transférée.")).toBeDefined();
   expect(screen.queryByRole("link", { name: "#42" })).toBeNull();
+});
+
+test("the branch chip sits beside the PR, a stacked merge names its parent, imports stay hidden", async () => {
+  const stacked: TicketView = {
+    ...ticket,
+    externalRefs: [
+      {
+        kind: "github_pr",
+        url: "https://github.com/adam/kibo/pull/12",
+        number: 12,
+        state: "merged",
+        base: "feat/a",
+        head: "feat/x",
+      },
+      { kind: "git_branch", branch: "feat/x", base: "feat/parent" },
+      { kind: "import_ref", source: "plan", id: "C0-9" },
+    ],
+  };
+  await show(stacked);
+  const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
+  if (!header) throw new Error("sheet has a header");
+  expect(within(header).getByRole("link", { name: "#12" }).getAttribute("title")).toBe(
+    "fusionnée dans feat/a",
+  );
+  const branch = within(header).getByText("feat/x").closest("[data-slot=badge]");
+  expect(branch?.getAttribute("title")).toBe("Base : feat/parent");
+  expect(branch?.tagName).not.toBe("A");
+  expect(header.textContent).not.toContain("C0-9");
+  expect(screen.getByRole("heading", { name: "Arbre" }).getAttribute("title")).toBe("Importé de plan · C0-9");
+});
+
+test("an unstacked branch chip names the branch", async () => {
+  await show({ ...ticket, externalRefs: [{ kind: "git_branch", branch: "feat/x", base: null }] });
+  const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
+  if (!header) throw new Error("sheet has a header");
+  expect(within(header).getByText("feat/x").closest("[data-slot=badge]")?.getAttribute("title")).toBe(
+    "Branche feat/x",
+  );
+  expect(screen.getByRole("heading", { name: "Arbre" }).getAttribute("title")).toBeNull();
 });
 
 test("a sync failure can be retried", async () => {

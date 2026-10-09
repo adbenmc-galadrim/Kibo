@@ -1,4 +1,11 @@
-import { type AgentsState, type RunState, type RunView, runSubject } from "@kibo/schema";
+import {
+  type AgentsState,
+  questionNotices,
+  type RunQuestions,
+  type RunState,
+  type RunView,
+  runSubject,
+} from "@kibo/schema";
 import { useEffect, useRef } from "react";
 import { fr } from "../i18n/fr";
 import { errorText } from "./format";
@@ -18,15 +25,24 @@ export function runNotices(previous: Map<string, RunState>, runs: RunView[]): Ru
   });
 }
 
+type Seen = { states: Map<string, RunState>; questions: RunQuestions[] };
+
 export function useRunNotifications(state: AgentsState | null, enabled: boolean): void {
-  const previous = useRef<Map<string, RunState> | null>(null);
+  const previous = useRef<Seen | null>(null);
   useEffect(() => {
     if (!state) return;
     const before = previous.current;
-    previous.current = new Map(state.runs.map((r) => [r.id, r.state]));
+    previous.current = {
+      states: new Map(state.runs.map((r) => [r.id, r.state])),
+      questions: state.questions,
+    };
     if (!before || !enabled || typeof Notification === "undefined" || Notification.permission !== "granted")
       return;
-    for (const notice of runNotices(before, state.runs)) {
+    const notices = [
+      ...runNotices(before.states, state.runs),
+      ...questionNotices(before.questions, state.questions, state.runs),
+    ];
+    for (const notice of notices) {
       const shown = new Notification(notice.title, { body: notice.body });
       shown.onclick = () => window.focus();
     }

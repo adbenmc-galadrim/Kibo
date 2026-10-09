@@ -8,22 +8,25 @@ import {
 } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
-      if (req.method === "getPresence") return [];
-      return answer(req);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
+        if (req.method === "getPresence") return [];
+        return answer(req);
+      },
+      subscribe: () => () => undefined,
+      subscribeEvents: () => () => undefined,
+      subscribeIntegrations: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-    subscribeEvents: () => () => undefined,
-    subscribeIntegrations: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { TicketSheet } = await import("../shell/TicketSheet");
 const { TicketTab } = await import("../pages/TicketTab");
@@ -40,9 +43,11 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   domainId: null,
   assignee: null,
   parentId: null,
+  labels: [],
   externalRefs: [],
   progress: { done: 3, total: 5 },
   waitingOn: [],
+  openQuestions: 0,
   ...patch,
 });
 const child = (n: number, parentId: string): TicketView =>
@@ -55,11 +60,12 @@ const child = (n: number, parentId: string): TicketView =>
     progress: { done: 0, total: 0 },
   });
 const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSnapshot => ({
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
+  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [main, child(20, main.id), child(21, "20@1")],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

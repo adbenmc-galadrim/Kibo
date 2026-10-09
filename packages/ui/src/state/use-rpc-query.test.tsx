@@ -1,23 +1,26 @@
 import { expect, mock, test } from "bun:test";
 import { KiboError, type Phase7Event, type RpcRequest } from "@kibo/schema";
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 
 const requests: RpcRequest[] = [];
 const listeners = new Set<(e: Phase7Event) => void>();
 let answer: () => Promise<unknown> = () => Promise.resolve([]);
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      requests.push(req);
-      return answer();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        requests.push(req);
+        return answer();
+      },
+      subscribeEvents: (listener: (e: Phase7Event) => void) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
     },
-    subscribeEvents: (listener: (e: Phase7Event) => void) => {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-  },
-}));
+  }),
+);
 
 const unmockedModule = "./use-rpc-query?unmocked";
 const { useRpcQuery }: typeof import("./use-rpc-query") = await import(unmockedModule);

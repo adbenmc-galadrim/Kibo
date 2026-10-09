@@ -8,6 +8,7 @@ import {
 } from "@kibo/schema";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const HOUR = 3_600_000;
 const requests: RpcRequest[] = [];
@@ -24,21 +25,23 @@ const backup = (id: string, createdAt: number, reason: BackupInfo["reason"]): Ba
   appVersion: "1.5.0",
 });
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      requests.push(req);
-      const answer = answers[req.method];
-      if (answer) return answer(req);
-      if (req.method === "getBackups") return Promise.resolve({ status, backups });
-      return Promise.resolve(null);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        requests.push(req);
+        const answer = answers[req.method];
+        if (answer) return answer(req);
+        if (req.method === "getBackups") return Promise.resolve({ status, backups });
+        return Promise.resolve(null);
+      },
+      subscribeEvents: (listener: (e: Phase7Event) => void) => {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
     },
-    subscribeEvents: (listener: (e: Phase7Event) => void) => {
-      listeners.add(listener);
-      return () => listeners.delete(listener);
-    },
-  },
-}));
+  }),
+);
 const { BackupsCard } = await import("./BackupsCard");
 
 const emit = (e: Phase7Event) => {

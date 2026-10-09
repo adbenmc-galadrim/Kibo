@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { type IntegrationStatus, KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let statuses: IntegrationStatus[] = [];
@@ -21,24 +22,27 @@ const status = (
   ...patch,
 });
 
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "listIntegrations") {
-        if (listError) throw listError;
-        return statuses;
-      }
-      if (req.method === "testIntegration") {
-        if (testError) throw testError;
-        return status(req.id, "connected");
-      }
-      if (req.method === "getGithubConnectOptions") return { ghAvailable: true, ghLogin: "adam", mode: "gh" };
-      return null;
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "listIntegrations") {
+          if (listError) throw listError;
+          return statuses;
+        }
+        if (req.method === "testIntegration") {
+          if (testError) throw testError;
+          return status(req.id, "connected");
+        }
+        if (req.method === "getGithubConnectOptions")
+          return { ghAvailable: true, ghLogin: "adam", mode: "gh" };
+        return null;
+      },
+      subscribeIntegrations: () => () => undefined,
     },
-    subscribeIntegrations: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { IntegrationsPage } = await import("./IntegrationsPage");
 

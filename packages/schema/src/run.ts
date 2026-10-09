@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { HostSettings } from "./agent";
+import { AskInput, type RunQuestions } from "./question";
 
 export const RunState = z.enum([
   "queued",
@@ -17,6 +18,8 @@ export const TERMINAL_STATES: readonly RunState[] = ["done", "failed", "cancelle
 export const isTerminal = (state: RunState): boolean => TERMINAL_STATES.includes(state);
 
 export const ASK_TOOL = "mcp__kibo__ask_user";
+export const ASK_QUESTION_TOOL = "mcp__kibo__ask_question";
+export const ASK_TOOLS: readonly string[] = [ASK_TOOL, ASK_QUESTION_TOOL];
 
 export const HookEventName = z.enum([
   "SessionStart",
@@ -55,6 +58,7 @@ export const HookPayload = z.object({
   detail: z.string().max(2000).nullable(),
   question: z.string().max(4000).nullable(),
   agentId: z.string().max(200).nullable(),
+  ask: AskInput.nullable().default(null),
 });
 export type HookPayload = z.infer<typeof HookPayload>;
 
@@ -65,7 +69,35 @@ export const HookPost = z.object({
 export type HookPost = z.infer<typeof HookPost>;
 export type GuardDecision = { decision: "allow" | "deny"; reason: string };
 
-export const RunEvent = z.discriminatedUnion("type", [
+export const SetupStatus = z.enum(["running", "done", "failed"]);
+export type SetupStatus = z.infer<typeof SetupStatus>;
+export const SetupStep = z.object({
+  command: z.string(),
+  status: SetupStatus,
+  durationMs: z.number().int().nonnegative().optional(),
+});
+export type SetupStep = z.infer<typeof SetupStep>;
+
+export const SessionFreshReason = z.enum([
+  "no_previous",
+  "profile_changed",
+  "transcript_missing",
+  "workspace_changed",
+  "user_reset",
+]);
+export type SessionFreshReason = z.infer<typeof SessionFreshReason>;
+
+const ResumedSession = z.object({ mode: z.literal("resumed"), from: z.string().min(1) });
+const FreshSession = z.object({ mode: z.literal("fresh"), reason: SessionFreshReason });
+export const RunSession = z.discriminatedUnion("mode", [ResumedSession, FreshSession]);
+export type RunSession = z.infer<typeof RunSession>;
+
+const SessionEvent = z.discriminatedUnion("mode", [
+  ResumedSession.extend({ type: z.literal("session") }),
+  FreshSession.extend({ type: z.literal("session") }),
+]);
+
+const LifecycleEvent = z.discriminatedUnion("type", [
   z.object({ type: z.literal("enqueued"), rank: z.number() }),
   z.object({ type: z.literal("admitted"), lane: z.number().int().positive() }),
   z.object({
@@ -74,6 +106,7 @@ export const RunEvent = z.discriminatedUnion("type", [
     resume: z.boolean(),
     workspace: z.string(),
     cwd: z.string().optional(),
+    sessionId: z.string().min(1).max(100).optional(),
     guidelines: z.number().int().nonnegative(),
   }),
   z.object({ type: z.literal("hook"), payload: HookPayload }),
@@ -93,7 +126,9 @@ export const RunEvent = z.discriminatedUnion("type", [
   z.object({ type: z.literal("failed"), error: z.string() }),
   z.object({ type: z.literal("reranked"), rank: z.number() }),
   z.object({ type: z.literal("prioritized"), priority: z.boolean() }),
+  SetupStep.extend({ type: z.literal("setup") }),
 ]);
+export const RunEvent = z.union([LifecycleEvent, SessionEvent]);
 export type RunEvent = z.infer<typeof RunEvent>;
 
 export type RunRecord = {
@@ -108,6 +143,7 @@ export type RunRecord = {
   sessionId: string;
   brief: string;
   createdAt: number;
+  resumedFrom: string | null;
 };
 
 export type RunActivity = { at: number; event: HookEventName; tool: string | null; detail: string | null };
@@ -138,6 +174,7 @@ export type RunView = RunRecord & {
   turns: number;
   activeMs: number;
   turnStartedAt: number | null;
+  session: RunSession | null;
 };
 
 export type HostLoad = { cpu: number; ram: number };
@@ -149,7 +186,8 @@ export type WaitReason =
   | { kind: "ram"; value: number; threshold: number }
   | { kind: "host"; used: number; total: number }
   | { kind: "profile"; profileName: string; used: number; total: number }
-  | { kind: "profile_missing" };
+  | { kind: "profile_missing" }
+  | { kind: "ticket_busy" };
 
 export type QueueEntry = { runId: string; position: number; reason: WaitReason | null };
 
@@ -169,8 +207,22 @@ export type AgentsState = {
   host: HostView;
   tokensToday: number;
   resumable: string[];
+  questions: RunQuestions[];
 };
-export type AssignPreview = { position: number | null; reason: WaitReason | null; guidelines: number };
+export type SessionPreview = {
+  runId: string;
+  label: string;
+  turns: number;
+  tokens: number;
+  resumable: boolean;
+  reason: SessionFreshReason | null;
+};
+export type AssignPreview = {
+  position: number | null;
+  reason: WaitReason | null;
+  guidelines: number;
+  session: SessionPreview | null;
+};
 export type RunLogEntry = { id: number; at: number; event: RunEvent };
 export const TicketRun = z.object({
   ticketId: z.string().min(1),

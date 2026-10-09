@@ -125,10 +125,25 @@ export const CompareResult = z.object({
 });
 export type CompareResult = z.infer<typeof CompareResult>;
 
+export const BranchFile = FileChange.omit({ area: true });
+export type BranchFile = z.infer<typeof BranchFile>;
+
+export const BranchChanges = z.object({
+  base: z.string().nullable(),
+  mergeBase: z.string().nullable(),
+  files: z.array(BranchFile),
+  additions: z.number().int().nonnegative(),
+  deletions: z.number().int().nonnegative(),
+  commits: z.array(CommitInfo),
+});
+export type BranchChanges = z.infer<typeof BranchChanges>;
+
 export const PrInfo = z.object({
   number: z.number().int().positive(),
   url: z.string().url(),
   state: PrState,
+  base: z.string().nullable().default(null),
+  head: z.string().nullable().default(null),
 });
 export type PrInfo = z.infer<typeof PrInfo>;
 
@@ -211,6 +226,8 @@ export const CodeRequest = z.discriminatedUnion("method", [
   z.object({ method: z.literal("commitDefaults"), ...W }),
   z.object({ method: z.literal("ghStatus"), ...W }),
   z.object({ method: z.literal("prForBranch"), ...W }),
+  z.object({ method: z.literal("branchChanges"), ...W }),
+  z.object({ method: z.literal("branchDiff"), ...W, path: RelPath, origPath: RelPath.nullable() }),
   z.object({
     method: z.literal("createPr"),
     ...W,
@@ -252,6 +269,8 @@ export type CodeResult = {
   commitDefaults: CommitDefaults;
   ghStatus: GhStatus;
   prForBranch: PrInfo | null;
+  branchChanges: BranchChanges;
+  branchDiff: FileDiff;
   createPr: PrInfo;
   openInEditor: null;
 };
@@ -287,4 +306,6 @@ export const CODE_READ_METHODS = [
   "commitDefaults",
   "ghStatus",
   "prForBranch",
+  "branchChanges",
+  "branchDiff",
 ] as const satisfies readonly CodeRequest["method"][];

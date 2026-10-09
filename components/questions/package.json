@@ -1,0 +1,25 @@
+{
+  "name": "@kibo/component-questions",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@kibo/schema": "workspace:*",
+    "@kibo/sdk": "workspace:*",
+    "lucide-react": "1.48.0"
+  },
+  "peerDependencies": {
+    "react": "19.1.1"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.0",
+    "@testing-library/user-event": "14.6.1",
+    "@types/react": "19.1.13",
+    "fast-check": "4.3.0",
+    "react": "19.1.1"
+  }
+}

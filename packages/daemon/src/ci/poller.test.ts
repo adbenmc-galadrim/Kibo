@@ -36,7 +36,14 @@ beforeEach(() => {
     {
       method: "upsertExternalRef",
       ticketId: t.id,
-      ref: { kind: "github_pr", url: "https://github.com/adam/kibo/pull/12", number: 12, state: "open" },
+      ref: {
+        kind: "github_pr",
+        url: "https://github.com/adam/kibo/pull/12",
+        number: 12,
+        state: "open",
+        base: null,
+        head: null,
+      },
     },
     USER,
   );

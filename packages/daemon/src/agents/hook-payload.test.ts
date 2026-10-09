@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { ASK_TOOL } from "@kibo/schema";
+import { ASK_QUESTION_TOOL, ASK_TOOL } from "@kibo/schema";
 import { clipToolInput, reduceHookInput, reduceHookPost } from "./hook-payload";
 
 const base = { session_id: "s1", transcript_path: "/t/s1.jsonl", cwd: "/w", permission_mode: "default" };
@@ -20,6 +20,7 @@ test("keeps only what Kibo needs from a tool event", () => {
     detail: "src/hooks/receiver.ts",
     question: null,
     agentId: null,
+    ask: null,
   });
 });
 
@@ -95,4 +96,66 @@ test("only a PreToolUse carries its tool input to the daemon", () => {
     tool_input: { command: "ls" },
   });
   expect(after.toolInput).toBeNull();
+});
+
+const askInput = { question: "Bloquer le dépôt ?", options: ["Oui", "Non"], provisional: "Non" };
+
+test("an ask_question call carries a non-blocking ask and no waiting question", () => {
+  const p = reduceHookInput({
+    ...base,
+    hook_event_name: "PostToolUse",
+    tool_name: ASK_QUESTION_TOOL,
+    tool_input: { ...askInput, ticketId: "another" },
+  });
+  expect(p.question).toBeNull();
+  expect(p.ask).toEqual({
+    title: "Bloquer le dépôt ?",
+    context: "",
+    options: ["Oui", "Non"],
+    provisional: "Non",
+    blocking: false,
+  });
+});
+
+test("an ask_user call carries its question and a blocking ask", () => {
+  const p = reduceHookInput({
+    ...base,
+    hook_event_name: "PostToolUse",
+    tool_name: ASK_TOOL,
+    tool_input: { question: "Quel port ?", context: "# Détail" },
+  });
+  expect(p.question).toBe("Quel port ?");
+  expect(p.ask).toEqual({
+    title: "Quel port ?",
+    context: "# Détail",
+    options: [],
+    provisional: null,
+    blocking: true,
+  });
+});
+
+test("no ask before the call nor for an invalid input, and huge inputs are cut", () => {
+  const pre = reduceHookInput({
+    ...base,
+    hook_event_name: "PreToolUse",
+    tool_name: ASK_QUESTION_TOOL,
+    tool_input: askInput,
+  });
+  expect(pre.ask).toBeNull();
+  const invalid = reduceHookInput({
+    ...base,
+    hook_event_name: "PostToolUse",
+    tool_name: ASK_QUESTION_TOOL,
+    tool_input: { ...askInput, provisional: "Peut-être" },
+  });
+  expect(invalid.ask).toBeNull();
+  const huge = reduceHookPost({
+    ...base,
+    hook_event_name: "PostToolUse",
+    tool_name: ASK_QUESTION_TOOL,
+    tool_input: { question: "q".repeat(100_000), context: "c".repeat(100_000), provisional: "Non" },
+  });
+  expect(huge.payload.ask?.title).toHaveLength(200);
+  expect(huge.payload.ask?.context).toHaveLength(8000);
+  expect(JSON.stringify(huge).length).toBeLessThan(20_000);
 });

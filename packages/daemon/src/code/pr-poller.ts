@@ -1,15 +1,13 @@
-import type { RuleTrigger } from "@kibo/core/rules";
-import type { ExternalRef, GithubPrRef, TicketView } from "@kibo/schema";
+import type { GithubPrRef, PrInfo, TicketView } from "@kibo/schema";
 import { call, type Service } from "../service";
+import { attachPr, type Candidate, discoveryCandidates, findPr } from "./pr-discovery";
+import { completeMerge, isFollowed, recordPr } from "./pr-rules";
 import { prState } from "./remote-ops";
 import type { Env } from "./run";
 
 export type PrPoller = { stop(): void };
 type Log = (what: string) => (e: unknown) => void;
 type Tracked = { projectId: string; folder: string; ticket: TicketView; ref: GithubPrRef };
-
-const isFollowed = (ref: ExternalRef): ref is GithubPrRef =>
-  ref.kind === "github_pr" && (ref.state === "open" || ref.state === "draft");
 
 function trackedRefs(service: Service): Tracked[] {
   const tracked: Tracked[] = [];
@@ -23,13 +21,8 @@ function trackedRefs(service: Service): Tracked[] {
   return tracked;
 }
 
-export function triggerRules(service: Service, projectId: string, trigger: RuleTrigger): void {
-  try {
-    service.triggerRules(projectId, trigger);
-  } catch (e) {
-    console.error(`[kibo-daemon] rules ${trigger.kind} failed for ticket ${trigger.ticketId}`, e);
-  }
-}
+const changed = (ref: GithubPrRef, info: PrInfo): boolean =>
+  ref.state !== info.state || ref.base !== info.base || ref.head !== info.head;
 
 export function startPrPoller(service: Service, env: Env, intervalMs: number, log: Log): PrPoller {
   let stopped = false;
@@ -37,15 +30,15 @@ export function startPrPoller(service: Service, env: Env, intervalMs: number, lo
 
   const update = async ({ projectId, folder, ticket, ref }: Tracked) => {
     const info = await prState(ref.url, folder, env);
-    if (stopped || info.state === ref.state) return;
-    call(service, {
-      method: "command",
-      projectId,
-      command: { method: "upsertExternalRef", ticketId: ticket.id, ref: { ...ref, state: info.state } },
-    });
-    if (ref.state === "draft" && info.state === "open")
-      triggerRules(service, projectId, { kind: "pr_opened", ticketId: ticket.id });
-    if (info.state === "merged") triggerRules(service, projectId, { kind: "pr_merged", ticketId: ticket.id });
+    if (stopped || !changed(ref, info)) return;
+    const next: GithubPrRef = { ...ref, state: info.state, base: info.base, head: info.head };
+    recordPr(service, projectId, ticket.id, next);
+    if (info.state === "merged") completeMerge(service, projectId, ticket.id, next);
+  };
+
+  const discover = async (candidate: Candidate) => {
+    const info = await findPr(candidate, env);
+    if (!stopped && info) attachPr(service, candidate, info);
   };
 
   const poll = async () => {
@@ -55,6 +48,10 @@ export function startPrPoller(service: Service, env: Env, intervalMs: number, lo
       for (const tracked of trackedRefs(service)) {
         if (stopped) return;
         await update(tracked).catch(log(`PR status failed for ${tracked.ref.url}`));
+      }
+      for (const candidate of discoveryCandidates(service)) {
+        if (stopped) return;
+        await discover(candidate).catch(log(`PR discovery failed for ${candidate.branch}`));
       }
     } finally {
       running = false;

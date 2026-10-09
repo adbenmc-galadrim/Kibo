@@ -3,6 +3,7 @@ import {
   type CiRun,
   type ComponentCall,
   type ComponentManifest,
+  type DeliveryResult,
   type EntityType,
   type FetchInit,
   type FetchResponse,
@@ -35,6 +36,7 @@ export type MockCallDeps = {
   peers(): PresencePeer[];
   access(): ProjectAccess;
   serverContext(): ServerContext;
+  deliver(ticketId: string): DeliveryResult;
   fetch?: MockFetch;
   server?: ServerDefinition;
   mcp?: Record<string, McpCallResult>;
@@ -55,6 +57,7 @@ function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
     run: () => deps.runs(),
     note: () => deps.folder.list(),
     ci_run: () => deps.ciRuns ?? [],
+    question: () => snapshot.questions,
   };
   return lists[entity]();
 }
@@ -146,6 +149,8 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
         return mockAssetUrl(deps.assets ?? [], c.name);
       case "design.frame":
         return mockDesignFrame(deps.frames ?? [], c.url, c.refresh);
+      case "questions.deliver":
+        return deps.deliver(c.ticketId);
       case "config.set": {
         const errors = validateConfig(deps.manifest.configSchema, c.patch);
         if (errors.length > 0) throw new KiboError("INVALID_INPUT", errors.join("; "));

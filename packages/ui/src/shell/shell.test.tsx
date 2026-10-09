@@ -12,11 +12,12 @@ import {
 } from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { targetToHash } from "../tabs/target-hash";
 
 const project: ProjectSnapshot = {
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
+  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
   workflow: DEFAULT_WORKFLOW,
   pages: [{ id: "1@1", title: "Board", kind: "view", parentId: null }],
   tickets: [
@@ -32,14 +33,24 @@ const project: ProjectSnapshot = {
       domainId: null,
       assignee: null,
       parentId: null,
+      labels: [],
       externalRefs: [
-        { kind: "github_pr", url: "https://github.com/kibo/test/pull/4", number: 4, state: "draft" },
+        {
+          kind: "github_pr",
+          url: "https://github.com/kibo/test/pull/4",
+          number: 4,
+          state: "draft",
+          base: null,
+          head: null,
+        },
       ],
       progress: { done: 0, total: 0 },
       waitingOn: [],
+      openQuestions: 0,
     },
   ],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],
@@ -48,7 +59,7 @@ const project: ProjectSnapshot = {
 };
 const repo: ProjectSnapshot = {
   ...project,
-  meta: { id: "p2", name: "Portfolio", key: "POR", folder: "/repo", color: "#8B5CF6" },
+  meta: { id: "p2", name: "Portfolio", key: "POR", folder: "/repo", color: "#8B5CF6", worktree: null },
   pages: [],
   tickets: [],
 };
@@ -69,7 +80,7 @@ const inboxTicket = (id: string, key: string, statusId: "todo" | "done") => {
 };
 const inbox: ProjectSnapshot = {
   ...project,
-  meta: { id: INBOX_ID, name: "Inbox", key: "INB", folder: null, color: "#64748B" },
+  meta: { id: INBOX_ID, name: "Inbox", key: "INB", folder: null, color: "#64748B", worktree: null },
   pages: [],
   tickets: [
     inboxTicket("i1", "INB-1", "todo"),
@@ -151,52 +162,54 @@ mock.module("../state/use-agents", () => ({
   useRunLog: () => ({ log: null, missing: false }),
   useDaemonOnline: () => false,
 }));
-mock.module("../api", () => ({
-  onWrite: () => () => {},
-  client: {
-    rpc: (req: RpcRequest) => {
-      if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
-      if (req.method === "getProject") return Promise.resolve(snapshots.get(req.projectId));
-      if (req.method === "getSyncStatus") return Promise.resolve(syncStatus);
-      if (req.method === "getPresence") return Promise.resolve([]);
-      if (req.method === "setPresence") return Promise.resolve(null);
-      saved.push(req);
-      if (req.method === "command" && req.command.method === "addPage")
-        return Promise.resolve({ id: "9@1", title: req.command.title, kind: "view", parentId: null });
-      return Promise.resolve(null);
+mock.module("../api", () =>
+  apiMock({
+    onWrite: () => () => {},
+    client: {
+      rpc: (req: RpcRequest) => {
+        if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
+        if (req.method === "getProject") return Promise.resolve(snapshots.get(req.projectId));
+        if (req.method === "getSyncStatus") return Promise.resolve(syncStatus);
+        if (req.method === "getPresence") return Promise.resolve([]);
+        if (req.method === "setPresence") return Promise.resolve(null);
+        saved.push(req);
+        if (req.method === "command" && req.command.method === "addPage")
+          return Promise.resolve({ id: "9@1", title: req.command.title, kind: "view", parentId: null });
+        return Promise.resolve(null);
+      },
+      code: (req: CodeRequest) => {
+        code.push(req);
+        if (req.method === "worktrees")
+          return Promise.resolve([{ path: "/repo", branch: "kib-12", head: null, isMain: true }]);
+        if (req.method === "status") return Promise.resolve(status);
+        if (req.method in changesResponses) return Promise.resolve(changesResponses[req.method]);
+        if (req.method === "readFile")
+          return Promise.resolve({
+            path: "src/a.ts",
+            revision: "worktree",
+            content: "a\nb\n  c\n",
+            hash: "a".repeat(40),
+            size: 7,
+            binary: false,
+            tooLarge: false,
+            lines: 3,
+            modifiedAt: null,
+            tracked: true,
+            dirty: false,
+          });
+        return Promise.resolve(null);
+      },
+      subscribe: () => () => {},
+      subscribeEvents: () => () => {},
+      subscribeAi: () => () => {},
+      subscribeIntegrations: () => () => undefined,
+      subscribeCode: (l: (e: CodeEvent) => void) => {
+        codeListeners.add(l);
+        return () => codeListeners.delete(l);
+      },
     },
-    code: (req: CodeRequest) => {
-      code.push(req);
-      if (req.method === "worktrees")
-        return Promise.resolve([{ path: "/repo", branch: "kib-12", head: null, isMain: true }]);
-      if (req.method === "status") return Promise.resolve(status);
-      if (req.method in changesResponses) return Promise.resolve(changesResponses[req.method]);
-      if (req.method === "readFile")
-        return Promise.resolve({
-          path: "src/a.ts",
-          revision: "worktree",
-          content: "a\nb\n  c\n",
-          hash: "a".repeat(40),
-          size: 7,
-          binary: false,
-          tooLarge: false,
-          lines: 3,
-          modifiedAt: null,
-          tracked: true,
-          dirty: false,
-        });
-      return Promise.resolve(null);
-    },
-    subscribe: () => () => {},
-    subscribeEvents: () => () => {},
-    subscribeAi: () => () => {},
-    subscribeIntegrations: () => () => undefined,
-    subscribeCode: (l: (e: CodeEvent) => void) => {
-      codeListeners.add(l);
-      return () => codeListeners.delete(l);
-    },
-  },
-}));
+  }),
+);
 
 const unmockedShell = "./Shell?unmocked";
 const { Shell }: typeof import("./Shell") = await import(unmockedShell);
@@ -457,6 +470,44 @@ test("openView goes to the view page showing the component, or offers to create 
     },
   ]);
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+});
+
+test("openView can target another project than the current one, by its snapshot", async () => {
+  const { useOpenView } = await import("./use-open-view");
+  const opened: TabTarget[] = [];
+  const graph = {
+    id: "k2",
+    pageId: "1@1",
+    component: "graph@1.0.0",
+    layout: { x: 0, y: 0, w: 12, h: 8 },
+    config: {},
+    componentHash: null,
+  };
+  const other: ProjectSnapshot = { ...project, meta: { ...project.meta, id: "p2" }, instances: [graph] };
+  function Harness() {
+    const { openView, dialog } = useOpenView(
+      () => project,
+      (t) => opened.push(t),
+      (projectId) => (projectId === "p2" ? other : null),
+    );
+    return (
+      <>
+        <button type="button" onClick={() => openView("graph", "p2")}>
+          open p2
+        </button>
+        <button type="button" onClick={() => openView("questions", "p2")}>
+          questions p2
+        </button>
+        {dialog}
+      </>
+    );
+  }
+  render(<Harness />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "open p2" }));
+  expect(opened).toEqual([{ kind: "page", projectId: "p2", pageId: "1@1" }]);
+  await user.click(screen.getByRole("button", { name: "questions p2" }));
+  expect(await screen.findByRole("dialog", { name: "Créer une page Questions ?" })).toBeTruthy();
 });
 
 test("a read-only project hides page and ticket creation and shows the banner", async () => {

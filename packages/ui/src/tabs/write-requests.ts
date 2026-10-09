@@ -7,6 +7,7 @@ const COMPONENT_WRITES: ReadonlySet<ComponentCall["kind"]> = new Set<ComponentCa
   "notes.rename",
   "notes.remove",
   "notes.attach",
+  "questions.deliver",
 ]);
 
 const CODE_WRITES: ReadonlySet<CodeRequest["method"]> = new Set<CodeRequest["method"]>([
@@ -25,7 +26,9 @@ const CODE_WRITES: ReadonlySet<CodeRequest["method"]> = new Set<CodeRequest["met
 ]);
 
 export const isProjectWrite = (req: RpcRequest): boolean =>
-  req.method === "command" || (req.method === "componentCall" && COMPONENT_WRITES.has(req.call.kind));
+  req.method === "command" ||
+  req.method === "deliverAnswers" ||
+  (req.method === "componentCall" && COMPONENT_WRITES.has(req.call.kind));
 
 export const isCodeWrite = (req: CodeRequest): boolean => CODE_WRITES.has(req.method);
 

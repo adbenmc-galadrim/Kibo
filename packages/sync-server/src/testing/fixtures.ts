@@ -30,7 +30,14 @@ export async function addMember(
 }
 
 export function ownerSnapshot(projectId = "p1"): Uint8Array {
-  const doc = createProjectDoc({ id: projectId, key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
+  const doc = createProjectDoc({
+    id: projectId,
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+  });
   createTicket(doc, { title: "Noyau de données" });
   createTicket(doc, { title: "Schéma Loro des tickets" });
   migrateForSharing(doc, { localUser: "adam", userId: "u-adam", domains: [] });

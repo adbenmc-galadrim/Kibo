@@ -1,0 +1,17 @@
+{
+  "name": "@kibo/import-emis",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "import": "bun import-emis.ts"
+  },
+  "dependencies": {
+    "@kibo/schema": "workspace:*",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2",
+    "fast-check": "4.3.0"
+  }
+}

@@ -1,4 +1,13 @@
-import { ASK_TOOL, HookInput, type HookPayload, type HookPost, KiboError } from "@kibo/schema";
+import {
+  ASK_QUESTION_TOOL,
+  ASK_TOOL,
+  type AskInput,
+  askInputFromTool,
+  HookInput,
+  type HookPayload,
+  type HookPost,
+  KiboError,
+} from "@kibo/schema";
 
 const text = (value: unknown): string | null =>
   typeof value === "string" && value.length > 0 ? value : null;
@@ -39,6 +48,12 @@ function parseHookInput(raw: unknown): HookInput {
   return parsed.data;
 }
 
+function askOf(h: HookInput): AskInput | null {
+  if (h.hook_event_name !== "PostToolUse") return null;
+  if (h.tool_name !== ASK_TOOL && h.tool_name !== ASK_QUESTION_TOOL) return null;
+  return askInputFromTool(h.tool_input ?? null, h.tool_name === ASK_TOOL);
+}
+
 function reduce(h: HookInput): HookPayload {
   const subagent = h.hook_event_name === "SubagentStart" || h.hook_event_name === "SubagentStop";
   const tool = subagent ? text(h.agent_type) : text(h.tool_name);
@@ -51,6 +66,7 @@ function reduce(h: HookInput): HookPayload {
     detail: clip(detailOf(h), 2000),
     question: clip(asked ? text(h.tool_input?.question) : null, 4000),
     agentId: clip(h.agent_id, 200),
+    ask: askOf(h),
   };
 }
 

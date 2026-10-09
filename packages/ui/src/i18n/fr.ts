@@ -7,6 +7,8 @@ import { frIntegrations } from "./fr-integrations";
 import { frMarket } from "./fr-market";
 import { frSecurity } from "./fr-security";
 
+const questionCount = (n: number) => `${n} question${n > 1 ? "s" : ""}`;
+
 export const fr = {
   app: {
     name: "Kibo",
@@ -254,7 +256,9 @@ export const fr = {
       done: "Terminé",
       failed: "Échec",
       cancelled: "Annulé",
+      doneWithQuestions: (n: number) => `Terminé · ${questionCount(n)}`,
     },
+    questionCount,
     position: (n: number) => `En file #${n}`,
     failedWith: (error: string) => `Échec : ${error}`,
     reasons: {
@@ -265,6 +269,7 @@ export const fr = {
       profile: (name: string, used: number, total: number) =>
         `attend une place du profil ${name} (${used}/${total})`,
       profileMissing: "profil supprimé",
+      ticketBusy: "un run de ce ticket est déjà en cours ou en file",
       next: "admission au prochain passage",
     },
     modelNames: { opus: "Claude Opus 5.5", sonnet: "Claude Sonnet 5", haiku: "Claude Haiku 4.5" },

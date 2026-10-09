@@ -1,11 +1,23 @@
 import { z } from "zod";
 import { ExternalRef, ExternalRefKind } from "./external-ref";
+import { ImportRef } from "./git-branch";
 import { NodeId, Sha256 } from "./ids";
 import { ComponentRef, DataKey, type Instance, Layout } from "./instance";
 import { Binding } from "./integrations";
+import { Labels } from "./label";
 import type { Link } from "./link";
 import type { EntityType } from "./manifest";
 import { type Page, PageKind } from "./page";
+import {
+  Actor,
+  AnswerInput,
+  QUESTION_CONTEXT_MAX,
+  QUESTION_OPTIONS_MAX,
+  QUESTIONS_PER_TICKET_MAX,
+  type Question,
+  QuestionOption,
+  QuestionTitle,
+} from "./question";
 import { StatusId } from "./status";
 import { Assignee, type Ticket } from "./ticket";
 
@@ -30,6 +42,7 @@ export const ProjectCommand = z.discriminatedUnion("method", [
     blockedReason: z.string().optional(),
     parentId: NodeId.nullable().optional(),
     assignee: Assignee.nullable().optional(),
+    labels: Labels.optional(),
   }),
   z.object({
     method: z.literal("updateTicket"),
@@ -38,6 +51,7 @@ export const ProjectCommand = z.discriminatedUnion("method", [
     description: z.string().optional(),
     domainId: z.string().nullable().optional(),
     assignee: Assignee.nullable().optional(),
+    labels: Labels.optional(),
   }),
   z.object({
     method: z.literal("setStatus"),
@@ -96,6 +110,33 @@ export const ProjectCommand = z.discriminatedUnion("method", [
     key: DataKey,
     value: z.unknown(),
   }),
+  z.object({
+    method: z.literal("createQuestion"),
+    ticketId: NodeId,
+    title: QuestionTitle,
+    context: z.string().max(QUESTION_CONTEXT_MAX).optional(),
+    options: z.array(QuestionOption).max(QUESTION_OPTIONS_MAX).optional(),
+    provisional: QuestionOption.nullable().optional(),
+    blocking: z.boolean().optional(),
+    runId: z.string().min(1).nullable().optional(),
+    createdBy: Actor,
+    importRef: ImportRef.nullable().optional(),
+  }),
+  z.object({
+    method: z.literal("answerQuestion"),
+    questionId: NodeId,
+    answer: AnswerInput,
+    by: Actor,
+    at: z.number().int().optional(),
+  }),
+  z.object({ method: z.literal("removeQuestion"), questionId: NodeId }),
+  z.object({
+    method: z.literal("markAnswersDelivered"),
+    ticketId: NodeId,
+    questionIds: z.array(NodeId).min(1).max(QUESTIONS_PER_TICKET_MAX),
+    runId: z.string().min(1),
+    at: z.number().int(),
+  }),
 ]);
 export type ProjectCommand = z.infer<typeof ProjectCommand>;
 
@@ -123,6 +164,10 @@ export const COMMAND_WRITES: Record<ProjectCommand["method"], EntityType | null>
   setInstanceLayout: null,
   setPageLayout: null,
   setInstanceData: null,
+  createQuestion: "question",
+  answerQuestion: "question",
+  removeQuestion: "question",
+  markAnswersDelivered: null,
 };
 
 export const isReservedCommand = (method: ProjectCommand["method"]): boolean =>
@@ -152,4 +197,8 @@ export type CommandResult = {
   setInstanceLayout: Instance;
   setPageLayout: Instance[];
   setInstanceData: null;
+  createQuestion: Question;
+  answerQuestion: Question;
+  removeQuestion: null;
+  markAnswersDelivered: Question[];
 };

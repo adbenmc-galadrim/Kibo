@@ -149,7 +149,7 @@ export function TicketsTree() {
         <TicketsEmpty readOnly={readOnly} onNewTicket={() => sdk.openNewTicket({})} />
       ) : (
         <>
-          <TicketsToolbar query={query} statuses={statuses} onChange={setQuery} />
+          <TicketsToolbar query={query} statuses={statuses} tickets={visible} onChange={setQuery} />
           {shown?.size === 0 ? (
             <TicketsNoMatch onClear={() => setQuery(EMPTY_QUERY)} />
           ) : (

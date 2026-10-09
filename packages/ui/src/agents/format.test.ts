@@ -9,6 +9,7 @@ import {
   queueHint,
   reasonText,
   runResultText,
+  runStateText,
   workspaceText,
 } from "./format";
 
@@ -33,6 +34,7 @@ test("wait reasons, workspaces and errors are said in French", () => {
   expect(reasonText({ kind: "host", used: 3, total: 3 })).toBe("attend une place sur la machine (3/3)");
   expect(reasonText({ kind: "cpu", value: 91, threshold: 85 })).toBe("CPU 91 % (seuil 85 %)");
   expect(reasonText(null)).toBe("admission au prochain passage");
+  expect(reasonText({ kind: "ticket_busy" })).toBe("un run de ce ticket est déjà en cours ou en file");
   expect(workspaceText("worktree:kib-14")).toBe("worktree kib-14");
   expect(workspaceText("isolated")).toBe("dossier isolé");
   expect(errorText("WORKSPACE_FAILED: the project has no local folder")).toBe(
@@ -85,4 +87,20 @@ test("the queue says why a resumed run waits: an answer, a message, or the usual
     "admission en pause",
   );
   expect(queueHint(runFixture({ id: "n", state: "queued", turns: 1 }), null)).toBe(reasonText(null));
+});
+
+test("a finished run with open questions says how many, the other states do not", () => {
+  const q = (runId: string, open: number) => ({ runId, open, undelivered: 0, latestTitle: "Quel port ?" });
+  const done = runFixture({ id: "a", state: "done" });
+  expect(runStateText(done, [q("a", 1)])).toEqual({ text: "Terminé · 1 question", open: 1 });
+  expect(runStateText(done, [q("b", 1), q("a", 2)])).toEqual({ text: "Terminé · 2 questions", open: 2 });
+  expect(runStateText(done, [q("a", 0)])).toEqual({ text: "Terminé", open: 0 });
+  expect(runStateText(runFixture({ id: "a", state: "running" }), [q("a", 1)])).toEqual({
+    text: "En cours",
+    open: 0,
+  });
+  expect(runStateText(runFixture({ id: "a", state: "queued" }), [], 3)).toEqual({
+    text: "En file #3",
+    open: 0,
+  });
 });

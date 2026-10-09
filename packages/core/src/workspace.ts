@@ -1,6 +1,7 @@
 import { KiboError, ProjectMeta, ProjectPatch } from "@kibo/schema";
 import { LoroDoc, type LoroList, LoroMap } from "loro-crdt";
 import { stored, valid } from "./config-store";
+import { LOCAL_ONLY_META, sharedMetaEntries } from "./project";
 
 export function createWorkspaceDoc(): LoroDoc {
   const doc = new LoroDoc();
@@ -10,7 +11,7 @@ export function createWorkspaceDoc(): LoroDoc {
 }
 
 export function listProjects(ws: LoroDoc): ProjectMeta[] {
-  return (ws.getList("projects").toJSON() as ProjectMeta[]).map((p) => ({ ...p }));
+  return (ws.getList("projects").toJSON() as ProjectMeta[]).map((p) => ({ ...p, worktree: null }));
 }
 
 export function registerProject(ws: LoroDoc, meta: ProjectMeta): void {
@@ -21,7 +22,7 @@ export function registerProject(ws: LoroDoc, meta: ProjectMeta): void {
   }
   const list: LoroList = ws.getList("projects");
   const entry = list.insertContainer(list.length, new LoroMap());
-  for (const [k, v] of Object.entries(meta)) entry.set(k, v);
+  for (const [k, v] of sharedMetaEntries(meta)) entry.set(k, v);
   ws.commit();
 }
 
@@ -44,7 +45,8 @@ export function updateRegisteredProject(
   const entry = list.get(index);
   if (!(entry instanceof LoroMap))
     throw new KiboError("STORE_CORRUPT", `project ${projectId} entry is not a map`);
-  for (const [key, value] of Object.entries(fields)) if (value !== undefined) entry.set(key, value);
+  for (const [key, value] of Object.entries(fields))
+    if (value !== undefined && key !== LOCAL_ONLY_META) entry.set(key, value);
   ws.commit();
   return stored(ProjectMeta.safeParse(listProjects(ws)[index]), "project");
 }

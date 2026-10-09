@@ -14,6 +14,7 @@ const record = (id: string, seq: number, ticketId: string | null = "t1"): RunRec
   profileName: "opus-dev",
   sessionId: `s-${id}`,
   brief: "",
+  resumedFrom: null,
   createdAt: 0,
 });
 const ended = (id: string, seq: number, ticketId: string | null = "t1"): RunView => ({

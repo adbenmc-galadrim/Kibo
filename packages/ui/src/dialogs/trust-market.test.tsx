@@ -1,8 +1,9 @@
 import { expect, mock, test } from "bun:test";
 import { NO_PERMISSIONS, type RpcRequest } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 
-mock.module("../api", () => ({ client: { rpc: (_: RpcRequest) => Promise.resolve(null) } }));
+mock.module("../api", () => apiMock({ client: { rpc: (_: RpcRequest) => Promise.resolve(null) } }));
 const { TrustDialog, trustTargetOfInstall } = await import("./TrustDialog");
 
 const result = (verified: boolean, newPublisher: boolean) => ({

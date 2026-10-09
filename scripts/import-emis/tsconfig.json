@@ -1,0 +1,6 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": { "outDir": "../../dist-types/import-emis", "rootDir": ".", "lib": ["ES2022", "DOM"] },
+  "include": ["."],
+  "references": [{ "path": "../../packages/schema" }]
+}

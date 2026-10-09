@@ -15,7 +15,8 @@ import { call, createService } from "../service";
 import { openStore } from "../store";
 import { applyRules } from "./data-port";
 
-const doc = () => createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
+const doc = () =>
+  createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null });
 
 test("a finished run leaves its ticket in its status, and a started one moves it on", () => {
   const d = doc();
@@ -109,4 +110,28 @@ test("a shared project takes its domains and domain guidelines from the project,
   expect(contents.sort()).toEqual(["domain:Partagé", "workspace:Local"]);
   store.close();
   rmSync(home, { recursive: true, force: true });
+});
+
+test("a run reads the local worktree settings of its project", () => {
+  const dir = mkdtempSync(join(tmpdir(), "kibo-port-"));
+  try {
+    const s = createService(openStore(dir), { user: "adam" });
+    const meta = call(s, {
+      method: "createProject",
+      name: "Emis",
+      key: "EMIS",
+      folder: null,
+      color: "#F97316",
+    }) as ProjectMeta;
+    const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: null };
+    s.docs.updateProjectMeta(meta.id, { worktree }, true);
+    const ticket = call(s, {
+      method: "command",
+      projectId: meta.id,
+      command: { method: "createTicket", title: "A" },
+    }) as Ticket;
+    expect(s.agentData.ticketContext(meta.id, ticket.id).project.meta.worktree).toEqual(worktree);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

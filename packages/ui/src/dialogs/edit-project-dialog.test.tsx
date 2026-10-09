@@ -2,21 +2,24 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type ProjectSummary, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let fail: KiboError | null = null;
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (fail) throw fail;
-      if (req.method === "updateProject")
-        return { id: "kibo", key: "KIB", name: "Noyau", folder: null, color: "#6366F1" };
-      if (req.method === "setIcon") return { icon: req.icon ? "abc" : null };
-      throw new Error(`unexpected ${req.method}`);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (fail) throw fail;
+        if (req.method === "updateProject")
+          return { id: "kibo", key: "KIB", name: "Noyau", folder: null, color: "#6366F1", worktree: null };
+        if (req.method === "setIcon") return { icon: req.icon ? "abc" : null };
+        throw new Error(`unexpected ${req.method}`);
+      },
     },
-  },
-}));
+  }),
+);
 const { EditProjectDialog } = await import("./EditProjectDialog");
 
 const project: ProjectSummary = {
@@ -25,6 +28,7 @@ const project: ProjectSummary = {
   name: "Kibo",
   folder: "/Users/adam/code/kibo",
   color: "#F97316",
+  worktree: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
   icon: "v1",
 };
@@ -153,4 +157,89 @@ test("a folder picker error then a save error leave a single alert, the latest o
     expect(screen.getByRole("alert").textContent).toBe("Format non pris en charge : PNG, JPEG ou WebP."),
   );
   expect(screen.getAllByRole("alert")).toHaveLength(1);
+});
+
+const worktreeSection = () => screen.queryByRole("group", { name: "Worktrees des agents" });
+const field = (name: string) => screen.getByLabelText(name) as HTMLInputElement;
+
+test("the worktree section needs a local folder and a local session (screen 167)", () => {
+  const { unmount } = render(
+    <EditProjectDialog project={{ ...project, folder: null }} remote={false} onClose={() => {}} />,
+  );
+  expect(worktreeSection()).toBeNull();
+  unmount();
+  const remote = render(<EditProjectDialog project={project} remote onClose={() => {}} />);
+  expect(worktreeSection()).toBeNull();
+  remote.unmount();
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  expect(worktreeSection()).toBeTruthy();
+  expect([field("Base").value, field("Chemin").value, field("Commande de préparation").value]).toEqual([
+    "main",
+    ".kibo/worktrees/{slug}",
+    "",
+  ]);
+  expect(saveButton().hasAttribute("disabled")).toBe(true);
+});
+
+test("saving the worktree section sends the local settings only", async () => {
+  const closed = mock(() => {});
+  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
+  const user = userEvent.setup();
+  await user.clear(field("Base"));
+  await user.type(field("Base"), "origin/dev");
+  await user.clear(field("Chemin"));
+  await user.type(field("Chemin"), "../emis-{{slug}");
+  await user.type(field("Commande de préparation"), "pnpm worktree {{branch}");
+  await user.click(saveButton());
+  await waitFor(() => expect(closed).toHaveBeenCalled());
+  expect(calls).toEqual([
+    {
+      method: "updateProject",
+      projectId: "kibo",
+      patch: {
+        worktree: { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: "pnpm worktree {branch}" },
+      },
+    },
+  ]);
+});
+
+test("a path out of the repository is explained and blocks the save", async () => {
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  const user = userEvent.setup();
+  await user.clear(field("Chemin"));
+  await user.type(field("Chemin"), "/tmp/{{slug}");
+  expect(screen.getByText("Le chemin doit rester dans le dépôt ou à côté de lui.")).toBeTruthy();
+  expect(saveButton().hasAttribute("disabled")).toBe(true);
+  await user.clear(field("Chemin"));
+  await user.type(field("Chemin"), "../x");
+  await user.clear(field("Base"));
+  await user.type(field("Base"), "origin/");
+  expect(
+    screen.getByText("La base doit être une branche (main) ou une branche distante (origin/dev)."),
+  ).toBeTruthy();
+  expect(saveButton().hasAttribute("disabled")).toBe(true);
+});
+
+test("a variable between single quotes is explained and blocks the save", async () => {
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  const user = userEvent.setup();
+  await user.type(field("Commande de préparation"), "pnpm worktree '{{branch}'");
+  expect(
+    screen.getByText(
+      "Une variable entre guillemets simples ne serait pas remplacée : utilise des guillemets doubles.",
+    ),
+  ).toBeTruthy();
+  expect(saveButton().hasAttribute("disabled")).toBe(true);
+});
+
+test("clearing the three fields forgets the settings", async () => {
+  const closed = mock(() => {});
+  const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: "make wt" };
+  render(<EditProjectDialog project={{ ...project, worktree }} remote={false} onClose={closed} />);
+  expect(field("Commande de préparation").value).toBe("make wt");
+  const user = userEvent.setup();
+  for (const name of ["Base", "Chemin", "Commande de préparation"]) await user.clear(field(name));
+  await user.click(saveButton());
+  await waitFor(() => expect(closed).toHaveBeenCalled());
+  expect(calls).toEqual([{ method: "updateProject", projectId: "kibo", patch: { worktree: null } }]);
 });

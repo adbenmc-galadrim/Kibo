@@ -1,4 +1,4 @@
-import type { RunView, WaitReason } from "@kibo/schema";
+import type { RunQuestions, RunView, WaitReason } from "@kibo/schema";
 import { fr } from "../i18n/fr";
 
 const oneDecimal = (n: number) => (Math.round(n * 10) / 10).toString().replace(".", ",");
@@ -47,6 +47,8 @@ export function reasonText(reason: WaitReason | null): string {
       return r.profile(reason.profileName, reason.used, reason.total);
     case "profile_missing":
       return r.profileMissing;
+    case "ticket_busy":
+      return r.ticketBusy;
   }
 }
 
@@ -73,4 +75,13 @@ export function runResultText(run: RunView, position: number | null): string {
   if (run.state === "queued" && position !== null) return fr.agents.position(position);
   if (run.state === "failed") return fr.agents.failedWith(errorText(run.error));
   return fr.agents.states[run.state];
+}
+
+export function runStateText(
+  run: RunView,
+  questions: readonly RunQuestions[],
+  position: number | null = null,
+): { text: string; open: number } {
+  const open = run.state === "done" ? (questions.find((q) => q.runId === run.id)?.open ?? 0) : 0;
+  return { text: open > 0 ? fr.agents.states.doneWithQuestions(open) : runResultText(run, position), open };
 }

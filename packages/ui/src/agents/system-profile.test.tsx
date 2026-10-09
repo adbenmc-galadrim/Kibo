@@ -2,20 +2,23 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { agentsFixture, configFixture, NOW, profilesFixture, projectsFixture } from "./fixtures";
 import { systemProfilesFixture } from "./system-profiles-fixture";
 
 const calls: RpcRequest[] = [];
 let respond: () => Promise<unknown> = () => Promise.resolve(null);
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return respond();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return respond();
+      },
     },
-  },
-}));
+  }),
+);
 
 const { AgentsPage } = await import("./AgentsPage");
 

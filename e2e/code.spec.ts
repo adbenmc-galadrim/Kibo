@@ -95,7 +95,11 @@ test("modifier → indexer un bloc → commit → amend → PR", async ({ page }
   await expect(page.getByRole("checkbox", { name: "Modifier le dernier commit (non poussé)" })).toBeChecked();
   await message.fill(`feat: schéma Loro complet (${key}-1)`);
   await page.getByRole("button", { name: `Modifier le commit sur ${repo.branch}` }).click();
-  await expect(page.getByText("Aucun changement dans ce worktree.")).toBeVisible();
+  await expect(page.getByText("Aucun changement non commité.")).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: /^Branche · 1 fichier · \+\d+ −\d+ depuis origin\/main$/ }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Commits de la branche" })).toBeVisible();
   expect(repo.git("log", "--format=%s", "main..HEAD").trim()).toBe(`feat: schéma Loro complet (${key}-1)`);
   expect(repo.git("show", "HEAD", "--", "src/ticket.ts")).toContain("line29 = 290");
 
@@ -141,7 +145,7 @@ test("push en cours, en échec puis réessayé", async ({ page }, info) => {
   ).toBeVisible();
   await expect(page.getByLabel("Message")).toHaveValue(`feat: push de test (${key}-1)`);
   await page.getByRole("button", { name: `Commit sur ${repo.branch}` }).click();
-  await expect(page.getByText("Aucun changement dans ce worktree.")).toBeVisible();
+  await expect(page.getByText("Aucun changement non commité.")).toBeVisible();
 
   try {
     await page.getByRole("button", { name: "Pousser", exact: true }).click();

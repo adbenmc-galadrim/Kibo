@@ -2,6 +2,7 @@ import { afterAll, beforeEach, expect, mock, test } from "bun:test";
 import { type ComponentDraftDetails, KiboError, MAX_DRAFT_REVISIONS, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import {
   aiReady,
   DRAFT_ID,
@@ -25,38 +26,40 @@ const calls: RpcRequest[] = [];
 let draft: ComponentDraftDetails = draftFixture({});
 let revise: () => unknown = () => null;
 
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      switch (req.method) {
-        case "getAiStatus":
-          return aiReady;
-        case "getComponentDraft":
-          return draft;
-        case "getRuntimeInfo":
-          return { sandboxOrigin: `http://127.0.0.1:${sandbox.port}` };
-        case "previewComponentDraft":
-          return { hash: HASH, path: `/c/drafts/${DRAFT_ID}/${HASH}/index.html` };
-        case "getAgents":
-          return null;
-        case "getRunLog":
-          return [];
-        case "reviseComponentDraft": {
-          const out = revise();
-          if (out instanceof Error) throw out;
-          return out;
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        switch (req.method) {
+          case "getAiStatus":
+            return aiReady;
+          case "getComponentDraft":
+            return draft;
+          case "getRuntimeInfo":
+            return { sandboxOrigin: `http://127.0.0.1:${sandbox.port}` };
+          case "previewComponentDraft":
+            return { hash: HASH, path: `/c/drafts/${DRAFT_ID}/${HASH}/index.html` };
+          case "getAgents":
+            return null;
+          case "getRunLog":
+            return [];
+          case "reviseComponentDraft": {
+            const out = revise();
+            if (out instanceof Error) throw out;
+            return out;
+          }
+          default:
+            throw new KiboError("INTERNAL", `unexpected ${req.method}`);
         }
-        default:
-          throw new KiboError("INTERNAL", `unexpected ${req.method}`);
-      }
+      },
+      subscribeAi: () => () => {},
+      subscribeTopic: () => () => {},
+      onConnection: () => () => {},
+      online: () => true,
     },
-    subscribeAi: () => () => {},
-    subscribeTopic: () => () => {},
-    onConnection: () => () => {},
-    online: () => true,
-  },
-}));
+  }),
+);
 
 const { AiDraftPanel } = await import("./AiDraftPanel");
 

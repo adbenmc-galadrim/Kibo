@@ -17,6 +17,7 @@ import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { type FormEvent, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { AllowRulesField } from "./AllowRulesField";
 import { DeleteProfileButton } from "./DeleteProfileButton";
 import { profileLabel } from "./demo-profile";
 import type { GuidelineDraft } from "./GuidelineRow";
@@ -32,7 +33,7 @@ type Props = {
 };
 
 const STRATEGIES = ["worktree", "isolated", "repo"] as const;
-const MODES = ["plan", "acceptEdits", "default"] as const;
+const MODES = ["plan", "acceptEdits", "default", "auto"] as const;
 
 function failure(e: unknown): string {
   return e instanceof KiboError && e.code === "PROFILE_IN_USE" ? fr.profile.inUse : fr.profile.failed;
@@ -46,6 +47,8 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
   const [permissionMode, setPermissionMode] = useState<PermissionMode>(profile?.permissionMode ?? "default");
   const [maxParallel, setMaxParallel] = useState(String(profile?.maxParallel ?? 1));
   const [subagents, setSubagents] = useState<AgentModel[]>(profile?.subagents ?? []);
+  const [allow, setAllow] = useState<string[]>(profile?.allow ?? []);
+  const [allowProblem, setAllowProblem] = useState<string | null>(null);
   const [drafts, setDrafts] = useState<GuidelineDraft[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,6 +75,7 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (allowProblem !== null) return;
     const input = ProfileInput.safeParse({
       name: name.trim(),
       model,
@@ -81,6 +85,7 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
       maxParallel: Number(maxParallel),
       subagents,
       enabled: profile?.enabled ?? true,
+      allow,
     });
     if (!input.success) {
       setError(ProfileName.safeParse(name.trim()).success ? fr.profile.failed : fr.profile.invalidName);
@@ -199,16 +204,18 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
                 aria-labelledby={`${id}-permissions`}
                 value={permissionMode}
                 onValueChange={pickMode}
-                className="w-full"
+                spacing={2}
+                className="grid w-full grid-cols-2"
               >
                 {MODES.map((m) => (
-                  <ToggleGroupItem key={m} value={m} className="flex-1">
+                  <ToggleGroupItem key={m} value={m} className="h-auto min-h-9 py-1.5 whitespace-normal">
                     {permissionModeLabel(m)}
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
               <p className="text-xs text-muted-foreground">{fr.profile.neverBypass}</p>
             </div>
+            <AllowRulesField value={allow} onChange={setAllow} onProblem={setAllowProblem} disabled={false} />
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor={`${id}-parallel`}>{fr.profile.parallel}</Label>

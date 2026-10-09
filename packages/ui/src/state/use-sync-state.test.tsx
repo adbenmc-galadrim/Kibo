@@ -1,23 +1,26 @@
 import { expect, mock, test } from "bun:test";
 import type { IntegrationEvent, RpcRequest, SyncState } from "@kibo/schema";
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 
 const requests: RpcRequest[] = [];
 const listeners = new Set<(e: IntegrationEvent) => void>();
 const empty: SyncState = { connected: true, bindings: [], pending: [], errors: [] };
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      requests.push(req);
-      return Promise.resolve(empty);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        requests.push(req);
+        return Promise.resolve(empty);
+      },
+      subscribeIntegrations: (l: (e: IntegrationEvent) => void) => {
+        listeners.add(l);
+        return () => listeners.delete(l);
+      },
     },
-    subscribeIntegrations: (l: (e: IntegrationEvent) => void) => {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
-  },
-}));
+  }),
+);
 
 const { useSyncState } = await import("./use-sync-state");
 

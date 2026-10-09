@@ -7,25 +7,28 @@ import {
   type RpcRequest,
 } from "@kibo/schema";
 import { act, render, screen, waitFor } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let peers: PresencePeer[] = [];
 const events = new Set<(event: Phase7Event) => void>();
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return Promise.resolve(req.method === "getPresence" ? peers : null);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return Promise.resolve(req.method === "getPresence" ? peers : null);
+      },
+      subscribe: () => () => undefined,
+      subscribeTopic: () => () => undefined,
+      subscribeIntegrations: () => () => undefined,
+      subscribeEvents: (listener: (event: Phase7Event) => void) => {
+        events.add(listener);
+        return () => events.delete(listener);
+      },
     },
-    subscribe: () => () => undefined,
-    subscribeTopic: () => () => undefined,
-    subscribeIntegrations: () => () => undefined,
-    subscribeEvents: (listener: (event: Phase7Event) => void) => {
-      events.add(listener);
-      return () => events.delete(listener);
-    },
-  },
-}));
+  }),
+);
 
 const { PresenceAvatars } = await import("./PresenceAvatars");
 const { TicketSheet } = await import("./TicketSheet");
@@ -44,7 +47,7 @@ const peer = (name: string, i: number, extra: Partial<PresencePeer> = {}): Prese
   ...extra,
 });
 const project: ProjectSnapshot = {
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
+  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
   workflow: DEFAULT_WORKFLOW,
   pages: [{ id: "pg1", title: "Kanban", kind: "view", parentId: null }],
   tickets: [
@@ -60,12 +63,15 @@ const project: ProjectSnapshot = {
       domainId: null,
       assignee: null,
       parentId: null,
+      labels: [],
       externalRefs: [],
       progress: { done: 0, total: 0 },
       waitingOn: [],
+      openQuestions: 0,
     },
   ],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

@@ -42,7 +42,14 @@ test("the inbox doc is created once, persisted under project:inbox, and never re
 
 test("a stored inbox that describes another project is refused as corrupt", () => {
   const store = openStore(tmp());
-  const other = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
+  const other = createProjectDoc({
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+  });
   store.save(projectDocId(INBOX_ID), other.export({ mode: "snapshot" }));
   expect(() => loadInbox(store)).toThrow("STORE_CORRUPT");
   store.close();

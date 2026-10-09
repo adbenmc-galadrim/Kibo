@@ -2,21 +2,24 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest } from "@kibo/schema";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { aiReady, draftFixture } from "./draft-fixtures";
 
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      const out = answer(req);
-      if (out instanceof Error) throw out;
-      return out;
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        const out = answer(req);
+        if (out instanceof Error) throw out;
+        return out;
+      },
+      subscribeAi: () => () => {},
     },
-    subscribeAi: () => () => {},
-  },
-}));
+  }),
+);
 
 const { DescribeCard } = await import("./DescribeCard");
 

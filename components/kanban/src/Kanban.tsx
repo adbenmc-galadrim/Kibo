@@ -27,7 +27,7 @@ import { BlockDialog } from "./BlockDialog";
 import { type ColumnOrder, orderColumn } from "./column-order";
 import { DragPreview } from "./DragPreview";
 import { commitDrop, type Drop, dropInColumn, nextOrder } from "./drop";
-import { filterTickets, type KanbanFilter } from "./filter";
+import { filterTickets, type KanbanFilter, projectLabels } from "./filter";
 import { fr } from "./fr";
 import { KanbanCard } from "./KanbanCard";
 import { type CardFacts, type CiChip, ciChipOf } from "./KanbanCardContent";
@@ -36,6 +36,7 @@ import { KanbanColumn } from "./KanbanColumn";
 import { KanbanToolbar } from "./KanbanToolbar";
 import { cardSteps } from "./keyboard-steps";
 import { useColumnOrder } from "./use-column-order";
+import { useLabelFilter } from "./use-label-filter";
 
 type Blocking = { ticket: TicketView; drop: Drop | null };
 
@@ -51,6 +52,7 @@ export function Kanban() {
   const sharing = useSharing();
   const readOnly = sharing.access !== "write";
   const columnOrder = useColumnOrder(sdk);
+  const labelFilter = useLabelFilter(sdk, !readOnly);
   const [selection, setSelection] = useSelection();
   const selected = selection ? new Set(selection.ids) : null;
   const sensors = useSensors(
@@ -66,7 +68,7 @@ export function Kanban() {
   const [targetColumn, setTargetColumn] = useState<StatusId | null>(null);
   const [dragged, setDragged] = useState<string | null>(null);
   const scoped = filterBySource(tickets, source);
-  const shown = filterTickets(scoped, filter, sdk.viewer);
+  const shown = filterTickets(scoped, filter, sdk.viewer, labelFilter.label);
   const ciOf = (t: TicketView): CiChip | undefined =>
     ciChipOf(ciRuns.filter((r) => t.key !== null && r.ticketKey === t.key));
   const factsOf = (t: TicketView): CardFacts => ({
@@ -135,7 +137,19 @@ export function Kanban() {
 
   return (
     <div className="flex h-full flex-col">
-      <KanbanToolbar filter={filter} onFilter={setFilter} shown={shown.length} total={scoped.length}>
+      <KanbanToolbar
+        filter={filter}
+        onFilter={setFilter}
+        label={labelFilter.label}
+        labels={projectLabels(scoped)}
+        onLabel={labelFilter.choose}
+        onShowAll={() => {
+          setFilter("all");
+          if (labelFilter.label !== null) labelFilter.choose(null);
+        }}
+        shown={shown.length}
+        total={scoped.length}
+      >
         <SelectionChip selection={selection} onClear={() => setSelection(null)} />
         {error && !blocking && (
           <p role="alert" className="truncate text-destructive">
@@ -145,6 +159,11 @@ export function Kanban() {
         {columnOrder.failed && (
           <p role="alert" className="truncate text-destructive">
             {fr.orderUnavailable}
+          </p>
+        )}
+        {labelFilter.failed && (
+          <p role="alert" className="truncate text-destructive">
+            {fr.labelFilter.failed}
           </p>
         )}
         {ciProblem && (

@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { PassThrough } from "node:stream";
-import { ASK_REPLY, handleMcpLine, serveMcp } from "./ask-mcp";
+import { ASK_QUESTION_REPLY, ASK_REPLY, handleMcpLine, serveMcp } from "./ask-mcp";
 
 const call = (method: string, params?: unknown) =>
   handleMcpLine(JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }));
@@ -20,7 +20,30 @@ test("answers the MCP handshake and lists the ask tool", () => {
   };
   expect(list.result.tools.map((t) => [t.name, t.inputSchema.required])).toEqual([
     ["ask_user", ["question"]],
+    ["ask_question", ["question", "provisional"]],
   ]);
+});
+
+test("both ask tools declare the question, its context, up to six options and a provisional choice", () => {
+  const list = call("tools/list") as {
+    result: { tools: Array<{ inputSchema: { properties: Record<string, Record<string, unknown>> } }> };
+  };
+  for (const tool of list.result.tools) {
+    const { question, context, options, provisional } = tool.inputSchema.properties;
+    expect(question).toMatchObject({ type: "string" });
+    expect(context).toMatchObject({ type: "string" });
+    expect(options).toMatchObject({ type: "array", items: { type: "string" }, maxItems: 6 });
+    expect(provisional).toMatchObject({ type: "string" });
+  }
+});
+
+test("calling ask_question tells the agent to go on with its provisional choice", () => {
+  expect(
+    call("tools/call", { name: "ask_question", arguments: { question: "?", provisional: "Non" } }),
+  ).toEqual({ jsonrpc: "2.0", id: 1, result: { content: [{ type: "text", text: ASK_QUESTION_REPLY }] } });
+  expect(ASK_QUESTION_REPLY).toBe(
+    "Question enregistrée dans Kibo, ouverte. Continue avec ton choix provisoire ; la réponse te sera transmise.",
+  );
 });
 
 test("calling ask_user tells the agent to end its turn", () => {

@@ -9,16 +9,19 @@ import {
 } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return Promise.resolve(TUTORIAL_NEVER);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return Promise.resolve(TUTORIAL_NEVER);
+      },
     },
-  },
-}));
+  }),
+);
 
 const { TutorialPanel } = await import("./TutorialPanel");
 

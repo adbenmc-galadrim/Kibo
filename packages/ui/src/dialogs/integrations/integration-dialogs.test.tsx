@@ -2,17 +2,20 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { type IntegrationStatus, KiboError, type McpServerView, type RpcRequest } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../../api-mock";
 
 const calls: RpcRequest[] = [];
 let reply: (req: RpcRequest) => Promise<unknown> = async () => null;
-mock.module("../../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return reply(req);
+mock.module("../../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return reply(req);
+      },
     },
-  },
-}));
+  }),
+);
 
 const { GithubConnectDialog } = await import("./GithubConnectDialog");
 const { FigmaConnectDialog } = await import("./FigmaConnectDialog");

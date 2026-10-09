@@ -2,22 +2,25 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { INBOX_ID, type ProjectSnapshot, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { fileSnapshots, fileTargets, inboxSnapshot } from "../inbox/fixtures";
 
 const calls: RpcRequest[] = [];
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return Promise.resolve(req.method === "fileTicket" ? { ticketId: "new-id", key: "KIB-25" } : null);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return Promise.resolve(req.method === "fileTicket" ? { ticketId: "new-id", key: "KIB-25" } : null);
+      },
+      subscribe: () => () => undefined,
+      subscribeTopic: () => () => undefined,
+      subscribeIntegrations: () => () => undefined,
+      subscribeEvents: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-    subscribeTopic: () => () => undefined,
-    subscribeIntegrations: () => () => undefined,
-    subscribeEvents: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { TicketSheet } = await import("./TicketSheet");
 const { TicketTab } = await import("../pages/TicketTab");

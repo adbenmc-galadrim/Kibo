@@ -42,6 +42,7 @@ function localProject() {
     name: "Kibo",
     folder: "/Users/adam/kibo",
     color: "#F97316",
+    worktree: null,
   });
   const mine = createTicket(doc, {
     title: "Mien",

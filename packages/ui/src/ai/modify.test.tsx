@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { type ComponentDraft, KiboError, type RpcRequest } from "@kibo/schema";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { draftFixture } from "./draft-fixtures";
 
 const DRAFT = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
@@ -18,20 +19,22 @@ let drafts: ComponentDraft[] = [];
 let demoProject = false;
 let start: () => Promise<unknown> = async () => ({ id: DRAFT, status: "generating" });
 
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "getAiStatus") return ok;
-      if (req.method === "listComponentDrafts") return drafts;
-      if (req.method === "listProjects") return [{ id: "p", demo: demoProject }];
-      if (req.method === "getComponentDraft")
-        return draftFixture({ id: req.draftId, mode: "modify", baseVersion: "0.1.0", status: "review" });
-      return start();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "getAiStatus") return ok;
+        if (req.method === "listComponentDrafts") return drafts;
+        if (req.method === "listProjects") return [{ id: "p", demo: demoProject }];
+        if (req.method === "getComponentDraft")
+          return draftFixture({ id: req.draftId, mode: "modify", baseVersion: "0.1.0", status: "review" });
+        return start();
+      },
+      subscribeAi: () => () => {},
     },
-    subscribeAi: () => () => {},
-  },
-}));
+  }),
+);
 const { ModifyWithAiDialog, modifiable } = await import("./ModifyWithAiDialog");
 const panelOf = async (draftId: string) => {
   await screen.findByRole("button", { name: "J'ai relu, continuer" });

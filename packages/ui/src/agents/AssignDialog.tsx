@@ -3,6 +3,7 @@ import {
   type AssignPreview,
   type Domain,
   isInbox,
+  KiboError,
   type ProjectSnapshot,
   type TicketView,
   type WorkspaceConfig,
@@ -28,7 +29,8 @@ import { frInbox } from "../i18n/fr-inbox";
 import { projectDomainsOf } from "../lib/project-domains";
 import { KeyRequired } from "../shell/KeyRequired";
 import { canEdit } from "../state/access";
-import { NoFolderAlert, Notice, needsFolder, spaceText, WaitingAlert } from "./AssignAlerts";
+import { NoFolderAlert, Notice, needsFolder, SpaceText, WaitingAlert } from "./AssignAlerts";
+import { AssignSession } from "./AssignSession";
 import { assignableProfiles, isDemoProfile } from "./demo-profile";
 import { reasonText } from "./format";
 
@@ -37,17 +39,13 @@ type Props = {
   demo?: boolean;
   ticketId: string | null;
   config: WorkspaceConfig | null;
-  baseBranch?: string;
   onClose: () => void;
   onEditProject?: (projectId: string) => void;
 };
 
-const DEFAULT_BASE_BRANCH = "main";
-
 type FormProps = {
   project: ProjectSnapshot;
   ticketId: string | null;
-  baseBranch: string;
   profiles: AgentProfile[];
   domains: Domain[];
   onClose: () => void;
@@ -56,7 +54,19 @@ type FormProps = {
 
 const assignable = (t: TicketView) => t.statusId !== "done" && t.key !== null;
 
-function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose, onEditProject }: FormProps) {
+function queueText(preview: AssignPreview | null): string {
+  if (!preview) return "-";
+  if (preview.reason?.kind === "ticket_busy") return frAgentsPage.assign.ticketBusy;
+  if (preview.position === null) return fr.assign.startsNow;
+  return fr.assign.entersQueue(reasonText(preview.reason), preview.position);
+}
+
+function queueTone(preview: AssignPreview | null): string | undefined {
+  if (!preview) return undefined;
+  return preview.reason?.kind === "ticket_busy" ? "text-destructive" : "text-cyan-600 dark:text-cyan-400";
+}
+
+function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProject }: FormProps) {
   const id = useId();
   const open = project.tickets.filter(assignable);
   const [chosenTicket, setChosenTicket] = useState(ticketId ?? open[0]?.id ?? "");
@@ -64,17 +74,20 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose,
   const [brief, setBrief] = useState("");
   const [preview, setPreview] = useState<AssignPreview | null>(null);
   const [previewFailed, setPreviewFailed] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [fresh, setFresh] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
   const ticket = project.tickets.find((t) => t.id === chosenTicket) ?? null;
   const profile = profiles.find((p) => p.id === profileId) ?? null;
   const domain = domains.find((d) => d.id === ticket?.domainId)?.name ?? null;
   const projectId = project.meta.id;
   const keyed = ticket?.key != null;
   const folderMissing = profile !== null && needsFolder(profile, project);
+  const busy = preview?.reason?.kind === "ticket_busy";
 
   useEffect(() => {
     setPreview(null);
     setPreviewFailed(false);
+    setFresh(false);
     if (!chosenTicket || !profileId || !keyed || folderMissing) return;
     let alive = true;
     client.rpc({ method: "previewAssign", projectId, ticketId: chosenTicket, profileId }).then(
@@ -88,8 +101,8 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose,
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!ticket || !profile || folderMissing) return;
-    setFailed(false);
+    if (!ticket || !profile || folderMissing || busy) return;
+    setFailure(null);
     try {
       await client.rpc({
         method: "assignAgent",
@@ -97,9 +110,14 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose,
         ticketId: ticket.id,
         profileId: profile.id,
         brief: brief.trim(),
+        fresh,
       });
-    } catch {
-      setFailed(true);
+    } catch (err) {
+      setFailure(
+        err instanceof KiboError && err.code === "CONFLICT"
+          ? frAgentsPage.assign.ticketBusy
+          : fr.assign.failed,
+      );
       return;
     }
     onClose();
@@ -108,7 +126,7 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose,
   const submitButton = (
     <Button
       type="submit"
-      disabled={!ticket || !profile || folderMissing}
+      disabled={!ticket || !profile || folderMissing || busy}
       className="bg-brand-strong text-white hover:bg-brand-strong/90"
     >
       {fr.assign.submit}
@@ -183,7 +201,9 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose,
           {ticket && profile && (
             <dl className="grid grid-cols-[9rem_1fr] gap-y-1.5 rounded-md border bg-muted/30 p-3 text-sm">
               <dt className="text-muted-foreground">{fr.assign.space}</dt>
-              <dd>{spaceText(profile, project, ticket, baseBranch)}</dd>
+              <dd>
+                <SpaceText profile={profile} project={project} ticket={ticket} />
+              </dd>
               <dt className="text-muted-foreground">{fr.assign.permissions}</dt>
               <dd>{profile.permissionMode}</dd>
               <dt className="text-muted-foreground">{fr.assign.guidelines}</dt>
@@ -191,13 +211,10 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose,
                 {preview ? fr.assign.guidelineChain(project.meta.name, domain, preview.guidelines) : "-"}
               </dd>
               <dt className="text-muted-foreground">{fr.assign.queue}</dt>
-              <dd className={preview ? "text-cyan-600 dark:text-cyan-400" : undefined}>
-                {preview
-                  ? preview.position === null
-                    ? fr.assign.startsNow
-                    : fr.assign.entersQueue(reasonText(preview.reason), preview.position)
-                  : "-"}
-              </dd>
+              <dd className={queueTone(preview)}>{queueText(preview)}</dd>
+              {preview && !busy && (
+                <AssignSession session={preview.session} fresh={fresh} onFreshChange={setFresh} />
+              )}
             </dl>
           )}
           {previewFailed && (
@@ -205,9 +222,9 @@ function AssignForm({ project, ticketId, baseBranch, profiles, domains, onClose,
               {fr.assign.previewFailed}
             </p>
           )}
-          {failed && (
+          {failure && (
             <p role="alert" className="text-sm text-destructive">
-              {fr.assign.failed}
+              {failure}
             </p>
           )}
           <DialogFooter>
@@ -226,15 +243,7 @@ function hasOpenTicket(project: ProjectSnapshot): boolean {
   return project.tickets.some(assignable);
 }
 
-export function AssignDialog({
-  project,
-  demo = false,
-  ticketId,
-  config,
-  baseBranch = DEFAULT_BASE_BRANCH,
-  onClose,
-  onEditProject,
-}: Props) {
+export function AssignDialog({ project, demo = false, ticketId, config, onClose, onEditProject }: Props) {
   if (!project) return <Notice title={fr.assign.launchTitle} text={fr.assign.noProject} onClose={onClose} />;
   if (isInbox(project.meta.id))
     return <Notice title={fr.assign.launchTitle} text={frInbox.noAgent} onClose={onClose} />;
@@ -250,7 +259,6 @@ export function AssignDialog({
     <AssignForm
       project={project}
       ticketId={ticketId}
-      baseBranch={baseBranch}
       profiles={assignable}
       domains={projectDomainsOf(project, config) ?? []}
       onClose={onClose}

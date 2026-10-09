@@ -2,20 +2,23 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type MarketSourceInfo, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let answers: Partial<Record<RpcRequest["method"], () => Promise<unknown>>> = {};
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      const answer = answers[req.method];
-      return answer ? answer() : Promise.resolve(null);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        const answer = answers[req.method];
+        return answer ? answer() : Promise.resolve(null);
+      },
+      subscribe: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { ComponentSourcesPage } = await import("./ComponentSourcesPage");
 const { AddSourceDialog } = await import("../dialogs/AddSourceDialog");

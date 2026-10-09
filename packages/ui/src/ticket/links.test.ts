@@ -14,9 +14,11 @@ const t = (n: number, title: string, statusId: TicketView["statusId"] = "todo"):
   domainId: null,
   assignee: null,
   parentId: null,
+  labels: [],
   externalRefs: [],
   progress: { done: 0, total: 0 },
   waitingOn: [],
+  openQuestions: 0,
 });
 const link = (id: string, from: number, to: number, type: Link["type"]): Link => ({
   id,
@@ -25,7 +27,7 @@ const link = (id: string, from: number, to: number, type: Link["type"]): Link =>
   type,
 });
 const project: ProjectSnapshot = {
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
+  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [
@@ -44,6 +46,7 @@ const project: ProjectSnapshot = {
     link("l4", 16, 12, "relates"),
     link("l5", 20, 21, "relates"),
   ],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],

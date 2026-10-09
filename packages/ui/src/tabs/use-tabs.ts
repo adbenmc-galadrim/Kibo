@@ -10,11 +10,10 @@ export type TabsApi = {
   dispatch(action: TabsAction): void;
   open(target: TabTarget | null, opts?: { newTab?: boolean; keep?: boolean }): void;
   closed: readonly TabTarget[];
-  closures: number;
   reopen(): void;
 };
 
-type TabsMemory = { tabs: TabsState; closed: TabTarget[]; closures: number };
+type TabsMemory = { tabs: TabsState; closed: TabTarget[] };
 
 const MAX_CLOSED = 10;
 const CLOSING: ReadonlySet<TabsAction["type"]> = new Set(["close", "closeOthers", "closeRight"]);
@@ -28,11 +27,7 @@ function applyAction(s: TabsMemory, action: TabsAction): TabsMemory {
     return { ...s, tabs, closed: s.closed.filter((t) => !inProject(t, action.projectId)) };
   const gone = CLOSING.has(action.type) ? closedTargets(s.tabs, tabs) : [];
   if (gone.length === 0) return { ...s, tabs };
-  return {
-    tabs,
-    closed: [...gone.reverse(), ...s.closed].slice(0, MAX_CLOSED),
-    closures: s.closures + 1,
-  };
+  return { tabs, closed: [...gone.reverse(), ...s.closed].slice(0, MAX_CLOSED) };
 }
 
 function reopenLast(s: TabsMemory, id: string): TabsMemory {
@@ -55,12 +50,12 @@ export function useTabs(): TabsApi | null {
       (s) => {
         if (!alive) return;
         lastSaved.current = JSON.stringify(s);
-        setAll({ tabs: s, closed: [], closures: 0 });
+        setAll({ tabs: s, closed: [] });
       },
       (e: unknown) => {
         if (!alive || (e instanceof KiboError && e.code === "UNAUTHORIZED")) return;
         lastSaved.current = JSON.stringify(EMPTY_TABS);
-        setAll({ tabs: EMPTY_TABS, closed: [], closures: 0 });
+        setAll({ tabs: EMPTY_TABS, closed: [] });
         setError(fr.tabs.loadFailed);
       },
     );
@@ -106,10 +101,7 @@ export function useTabs(): TabsApi | null {
     [dispatch],
   );
   return useMemo(
-    () =>
-      all
-        ? { state: all.tabs, error, dispatch, open, closed: all.closed, closures: all.closures, reopen }
-        : null,
+    () => (all ? { state: all.tabs, error, dispatch, open, closed: all.closed, reopen } : null),
     [all, error, dispatch, open, reopen],
   );
 }

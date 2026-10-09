@@ -9,6 +9,7 @@ import {
 } from "@kibo/schema";
 import { ALWAYS_VISIBLE, NO_FOCUS, NO_SELECTION } from "@kibo/sdk";
 import { act, render, screen, waitFor } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 import type { InstanceApis } from "../lib/instance-capabilities";
 
 const H = "d".repeat(64);
@@ -16,24 +17,26 @@ let components: ComponentSummary[] = [];
 let sandbox: SandboxStatus;
 const listeners = new Set<(e: Phase7Event) => void>();
 
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      if (req.method === "listComponents") return components;
-      if (req.method === "listDrafts" || req.method === "listComponentDrafts") return [];
-      if (req.method === "getRuntimeInfo")
-        throw new KiboError("INVALID_INPUT", "runtime left to instance.test");
-      if (req.method === "getSandboxStatus") return sandbox;
-      return null;
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        if (req.method === "listComponents") return components;
+        if (req.method === "listDrafts" || req.method === "listComponentDrafts") return [];
+        if (req.method === "getRuntimeInfo")
+          throw new KiboError("INVALID_INPUT", "runtime left to instance.test");
+        if (req.method === "getSandboxStatus") return sandbox;
+        return null;
+      },
+      subscribe: () => () => undefined,
+      subscribeTopic: () => () => undefined,
+      subscribeEvents: (l: (e: Phase7Event) => void) => {
+        listeners.add(l);
+        return () => listeners.delete(l);
+      },
     },
-    subscribe: () => () => undefined,
-    subscribeTopic: () => () => undefined,
-    subscribeEvents: (l: (e: Phase7Event) => void) => {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
-  },
-}));
+  }),
+);
 const { InstanceFrame } = await import("./InstanceFrame");
 const { HostProvider } = await import("../shell/Host");
 const APIS: InstanceApis = {

@@ -76,7 +76,7 @@ test("onglets épinglés persistés, raccourcis, palette et aperçu de fichier",
   await expect(palette).toBeHidden();
 });
 
-test("onglet fermé : Annuler, ⌘⇧T, et Backspace ne ferme rien", async ({ page }, info) => {
+test("onglet fermé : aucun toast, ⌘⇧T, et Backspace ne ferme rien", async ({ page }, info) => {
   const key = projectKey("TBC", info);
   await pairAndCreateProject(page, info, key);
   const bar = page.getByRole("tablist", { name: "Onglets" });
@@ -87,15 +87,11 @@ test("onglet fermé : Annuler, ⌘⇧T, et Backspace ne ferme rien", async ({ pa
   await expect(agents).toBeVisible();
   await page.keyboard.press("ControlOrMeta+w");
   await expect(agents).toHaveCount(0);
-  const toast = page.locator("[data-sonner-toast]").filter({ hasText: "Onglet fermé" });
-  await expect(toast).toBeVisible();
+  await expect(page.locator("[data-sonner-toast]")).toHaveCount(0);
   await shot(page, info, "onglet-ferme");
-  await toast.getByRole("button", { name: "Annuler" }).click();
-  await expect(agents).toHaveAttribute("aria-selected", "true");
-  await page.keyboard.press("ControlOrMeta+w");
-  await expect(agents).toHaveCount(0);
   await page.keyboard.press("ControlOrMeta+Shift+t");
   await expect(agents).toHaveAttribute("aria-selected", "true");
+  await expect(page.locator("[data-sonner-toast]")).toHaveCount(0);
 
   await createSidebarPage(page, `Kibo ${key}`, "Notes", "Vue");
   await addComponent(page, "Notes");
@@ -138,7 +134,6 @@ test("onglet d'aperçu : navigation, double-clic, modification, rechargement", a
   await expect(bar.getByRole("tab", { name: `${name} · Kanban` })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Historique des runs" })).toBeVisible();
   await expect(page.getByText("Chargement…")).toBeHidden();
-  await expect(page.getByText("Onglet fermé")).toBeHidden({ timeout: 15_000 });
   await shot(page, info, "ecran-165");
   await previews.click({ button: "right" });
   await expect(page.getByRole("menuitem", { name: "Garder ouvert" })).toBeVisible();

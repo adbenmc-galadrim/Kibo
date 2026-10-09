@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import type { RpcRequest } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../../api-mock";
 
 const context7 = {
   transport: "stdio",
@@ -17,11 +18,13 @@ const context7 = {
   secretsSet: [],
 };
 let servers: unknown[] = [context7];
-mock.module("../../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => (req.method === "listMcpServers" ? servers : null),
-  },
-}));
+mock.module("../../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => (req.method === "listMcpServers" ? servers : null),
+    },
+  }),
+);
 const { McpSourceStep } = await import("./McpSourceStep");
 
 beforeEach(() => {

@@ -68,15 +68,18 @@ function Downloading({ status }: { status: Extract<UpdateStatus, { phase: "downl
   );
 }
 
+const WITH_RELEASES = new Set(["install", "appImageOnly", "invalid"]);
+
 function Failure({ status }: { status: Extract<UpdateStatus, { phase: "error" }> }) {
   const kind = classifyUpdateFailure(status.step, status.detail);
+  if (kind === "noRelease") return <p className="text-sm text-muted-foreground">{t.errors.noRelease}</p>;
   return (
     <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
       <CircleX aria-hidden />
       <AlertTitle>{t.failed}</AlertTitle>
       <AlertDescription className="text-foreground/80!">
         <span>{t.errors[kind]}</span>
-        {(kind === "install" || kind === "appImageOnly") && (
+        {WITH_RELEASES.has(kind) && (
           <a href={RELEASES_URL} target="_blank" rel="noreferrer" className="underline underline-offset-2">
             {t.releases}
           </a>

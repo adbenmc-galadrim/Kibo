@@ -1,5 +1,6 @@
 import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
+import { QUESTION_OPTIONS_MAX } from "@kibo/schema";
 import { z } from "zod";
 
 const McpMessage = z.object({
@@ -19,16 +20,37 @@ export type McpReply = {
 export const ASK_REPLY =
   "Question transmise à l'utilisateur par Kibo. Termine ton tour maintenant, sans autre action : Kibo te relancera avec sa réponse.";
 
-const ASK_TOOL_SPEC = {
-  name: "ask_user",
-  description:
-    "Pose une question à l'utilisateur de Kibo, puis termine ton tour. Kibo te relance avec sa réponse.",
-  inputSchema: {
-    type: "object",
-    properties: { question: { type: "string", description: "La question, claire et autonome." } },
-    required: ["question"],
+export const ASK_QUESTION_REPLY =
+  "Question enregistrée dans Kibo, ouverte. Continue avec ton choix provisoire ; la réponse te sera transmise.";
+
+const ASK_PROPERTIES = {
+  question: { type: "string", description: "La question, claire et autonome." },
+  context: { type: "string", description: "Le contexte utile pour répondre, en Markdown." },
+  options: {
+    type: "array",
+    items: { type: "string" },
+    maxItems: QUESTION_OPTIONS_MAX,
+    description: "Les réponses possibles, s'il y en a.",
   },
+  provisional: { type: "string", description: "Ton choix provisoire, parmi les options s'il y en a." },
 };
+
+const ASK_TOOL_SPECS = [
+  {
+    name: "ask_user",
+    reply: ASK_REPLY,
+    description:
+      "Pose une question à l'utilisateur de Kibo, puis termine ton tour. Kibo te relance avec sa réponse.",
+    inputSchema: { type: "object", properties: ASK_PROPERTIES, required: ["question"] },
+  },
+  {
+    name: "ask_question",
+    reply: ASK_QUESTION_REPLY,
+    description:
+      "Enregistre dans Kibo une décision que tu prends provisoirement, puis continue avec ton choix provisoire. La réponse te sera transmise.",
+    inputSchema: { type: "object", properties: ASK_PROPERTIES, required: ["question", "provisional"] },
+  },
+];
 
 function parse(line: string): { ok: true; json: unknown } | { ok: false } {
   try {
@@ -64,11 +86,13 @@ export function handleMcpLine(line: string): McpReply | null {
     case "ping":
       return ok({});
     case "tools/list":
-      return ok({ tools: [ASK_TOOL_SPEC] });
-    case "tools/call":
-      return params?.name === ASK_TOOL_SPEC.name
-        ? ok({ content: [{ type: "text", text: ASK_REPLY }] })
+      return ok({ tools: ASK_TOOL_SPECS.map(({ reply: _reply, ...spec }) => spec) });
+    case "tools/call": {
+      const tool = ASK_TOOL_SPECS.find((t) => t.name === params?.name);
+      return tool
+        ? ok({ content: [{ type: "text", text: tool.reply }] })
         : fail(-32602, `unknown tool ${String(params?.name)}`);
+    }
     default:
       return fail(-32601, `method ${method} not found`);
   }

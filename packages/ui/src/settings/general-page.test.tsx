@@ -2,6 +2,7 @@ import { expect, mock, test } from "bun:test";
 import type { BackupStatus, RpcRequest } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const BACKUP_STATUS: BackupStatus = {
   settings: { enabled: true, dir: null },
@@ -12,18 +13,20 @@ const BACKUP_STATUS: BackupStatus = {
   running: false,
 };
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) =>
-      Promise.resolve(
-        req.method === "getBackups"
-          ? { status: BACKUP_STATUS, backups: [] }
-          : { path: "/Users/adam/.local/bin/kibo", installed: false },
-      ),
-    subscribe: () => () => undefined,
-    subscribeEvents: () => () => undefined,
-  },
-}));
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) =>
+        Promise.resolve(
+          req.method === "getBackups"
+            ? { status: BACKUP_STATUS, backups: [] }
+            : { path: "/Users/adam/.local/bin/kibo", installed: false },
+        ),
+      subscribe: () => () => undefined,
+      subscribeEvents: () => () => undefined,
+    },
+  }),
+);
 const { GeneralPage } = await import("./GeneralPage");
 
 test("the general settings hold the application card, the updates, the backups and the kibo command", async () => {

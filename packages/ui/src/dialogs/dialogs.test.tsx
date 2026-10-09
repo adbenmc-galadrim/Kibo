@@ -2,20 +2,23 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { DEFAULT_WORKFLOW, INBOX_ID, KiboError, type ProjectSnapshot, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { inboxMeta } from "../lib/inbox";
 
 const calls: RpcRequest[] = [];
 let outcome: () => Promise<unknown> = () => Promise.resolve(null);
 const snapshots = new Map<string, ProjectSnapshot>();
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return outcome();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return outcome();
+      },
     },
-  },
-}));
+  }),
+);
 
 const { NewPageDialog } = await import("./NewPageDialog");
 const { NewTicketDialog } = await import("./NewTicketDialog");
@@ -23,11 +26,12 @@ const { NewTicketDialog } = await import("./NewTicketDialog");
 const fail = () => Promise.reject(new KiboError("INTERNAL", "boom"));
 
 const project: ProjectSnapshot = {
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6" },
+  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],
@@ -37,12 +41,12 @@ const project: ProjectSnapshot = {
 
 const inbox: ProjectSnapshot = {
   ...project,
-  meta: { id: INBOX_ID, name: "Inbox", key: "INB", folder: null, color: "#64748B" },
+  meta: { id: INBOX_ID, name: "Inbox", key: "INB", folder: null, color: "#64748B", worktree: null },
   nextTicketKey: "INB-4",
 };
 const shared: ProjectSnapshot = {
   ...project,
-  meta: { id: "p2", name: "Portfolio", key: "POR", folder: null, color: "#8B5CF6" },
+  meta: { id: "p2", name: "Portfolio", key: "POR", folder: null, color: "#8B5CF6", worktree: null },
   nextTicketKey: null,
   viewer: "u-adam",
   sync: {
@@ -72,9 +76,11 @@ const kibo: ProjectSnapshot = {
       domainId: null,
       assignee: null,
       parentId: null,
+      labels: [],
       externalRefs: [],
       progress: { done: 0, total: 0 },
       waitingOn: [],
+      openQuestions: 0,
     },
   ],
 };

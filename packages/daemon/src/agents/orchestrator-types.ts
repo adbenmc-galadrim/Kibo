@@ -1,6 +1,8 @@
 import type {
+  Actor,
   AgentProfile,
   AgentsState,
+  AskInput,
   AssignPreview,
   Domain,
   GuardDecision,
@@ -10,7 +12,9 @@ import type {
   HostSettings,
   HostView,
   ProjectSnapshot,
+  Question,
   RunLogEntry,
+  RunQuestions,
   RunView,
   TicketView,
 } from "@kibo/schema";
@@ -30,6 +34,21 @@ export type AgentDataPort = {
   runStarted(projectId: string, ticketId: string): void;
   runDone(projectId: string, ticketId: string): void;
   isDemoProject(projectId: string): boolean;
+  createQuestion(
+    projectId: string,
+    ticketId: string,
+    run: { id: string; profileName: string },
+    ask: AskInput,
+  ): Question | null;
+  answerRunQuestion(projectId: string, runId: string, text: string, by: Actor): Question | null;
+  runQuestions(): RunQuestions[];
+  undeliveredAnswers(projectId: string, ticketId: string): Question[];
+  markAnswersDelivered(
+    projectId: string,
+    ticketId: string,
+    questionIds: readonly string[],
+    runId: string,
+  ): void;
 };
 
 export const DEMO_PROFILE_ID = "demo";
@@ -53,7 +72,13 @@ export type OrchestratorOptions = {
   newToken?: (runId: string) => { token: string; hash: string };
 };
 
-export type AssignInput = { projectId: string; ticketId: string; profileId: string; brief: string };
+export type AssignInput = {
+  projectId: string;
+  ticketId: string;
+  profileId: string;
+  brief: string;
+  fresh?: boolean;
+};
 export type ToolGuard = (call: {
   tool: string;
   input: Record<string, unknown> | null;

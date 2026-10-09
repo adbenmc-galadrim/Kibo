@@ -1,15 +1,25 @@
-import type { Domain, FileRef, ProjectSnapshot, TicketView } from "@kibo/schema";
+import {
+  type Domain,
+  type FileRef,
+  mainSessionOf,
+  type ProjectSnapshot,
+  type TicketView,
+} from "@kibo/schema";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frQuestions } from "../i18n/fr-questions";
 import { frTicketEdit } from "../i18n/fr-ticket-edit";
 import { canEdit } from "../state/access";
+import { useAgentsState } from "../state/agents-context";
 import { AssigneeSelect } from "../ticket/AssigneeSelect";
 import { DependenciesSection } from "../ticket/DependenciesSection";
 import { DescriptionEditor } from "../ticket/DescriptionEditor";
+import { QuestionsBadge } from "../ticket/QuestionsBadge";
 import { StatusSelect } from "../ticket/StatusSelect";
 import { useTicketCommand } from "../ticket/use-ticket-command";
+import { useOptionalHost } from "./Host";
 import { CiSection, DesignProperty, DesignSection, SyncStatus } from "./sheet/lazy-sections";
 
 type Props = {
@@ -79,6 +89,9 @@ function DomainSelect({
 
 export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, onOpenTicket }: Props) {
   const editable = canEdit(project);
+  const host = useOptionalHost();
+  const agents = useAgentsState();
+  const session = agents && mainSessionOf(agents.runs, t.id);
   const command = useTicketCommand(project.meta.id);
   const descriptionCommand = useTicketCommand(project.meta.id);
   const children = project.tickets.filter((x) => x.parentId === t.id);
@@ -93,6 +106,11 @@ export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, 
     });
   return (
     <div className="grid gap-4">
+      {t.openQuestions > 0 && (
+        <div className="px-4">
+          <QuestionsBadge count={t.openQuestions} onOpen={() => host?.openView("questions")} />
+        </div>
+      )}
       <SyncStatus projectId={project.meta.id} ticket={t} />
       <dl className="grid grid-cols-[120px_1fr] items-center gap-y-2 px-4 text-xs">
         <dt className="text-muted-foreground">{fr.ticket.status}</dt>
@@ -117,6 +135,12 @@ export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, 
             command={command}
           />
         </dd>
+        {session && (
+          <>
+            <dt className="text-muted-foreground">{frQuestions.session}</dt>
+            <dd className="font-mono">{frQuestions.mainSession(session.label, session.turns)}</dd>
+          </>
+        )}
         {t.blockedReason && (
           <>
             <dt className="text-muted-foreground">{fr.ticket.blockedReason}</dt>

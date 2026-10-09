@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ProjectAssetName } from "./asset";
 import { ProjectCommand } from "./command";
 import { DESIGN_URL_MAX } from "./design";
-import { Base64 } from "./ids";
+import { Base64, NodeId } from "./ids";
 import { DataKey } from "./instance";
 import { McpImportItem, McpServerId } from "./integrations";
 import { BuiltinEntityType } from "./manifest";
@@ -64,5 +64,6 @@ export const ComponentCall = z.discriminatedUnion("kind", [
     refresh: z.boolean().default(false),
   }),
   z.object({ kind: z.literal("config.set"), patch: z.record(z.string(), z.unknown()) }),
+  z.object({ kind: z.literal("questions.deliver"), ticketId: NodeId }),
 ]);
 export type ComponentCall = z.infer<typeof ComponentCall>;

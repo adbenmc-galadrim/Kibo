@@ -1,6 +1,13 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { type AgentModel, ASK_TOOL, HookEventName, KiboError, type PermissionMode } from "@kibo/schema";
+import {
+  type AgentModel,
+  AllowRules,
+  ASK_TOOLS,
+  HookEventName,
+  KiboError,
+  type PermissionMode,
+} from "@kibo/schema";
 import { z } from "zod";
 import { signalGroup } from "../process-group";
 import { type HookLauncher, hookShellCommand, mcpServerConfig } from "./hook-launcher";
@@ -17,6 +24,7 @@ export type LaunchInput = {
   prompt: string;
   systemPromptFile: string;
   hook: HookLauncher;
+  allow: readonly string[];
   hookUrl: string;
   token: string;
   baseEnv: Record<string, string | undefined>;
@@ -37,7 +45,15 @@ export type RunProcess = { pid: number; kill(): void; exited: Promise<ProcessOut
 
 const TOOL_EVENTS = new Set<string>(["PreToolUse", "PostToolUse"]);
 
-export function claudeSettings(hook: HookLauncher): string {
+function profileRules(allow: readonly string[]): string[] {
+  const rules = AllowRules.safeParse(allow.filter((rule) => !ASK_TOOLS.includes(rule)));
+  if (!rules.success)
+    throw new KiboError("INVALID_INPUT", "the profile carries an unsafe or malformed permission rule");
+  return [...new Set(rules.data)];
+}
+
+export function claudeSettings(hook: HookLauncher, allow: readonly string[] = []): string {
+  const rules = profileRules(allow);
   const command = hookShellCommand(hook);
   const hooks = Object.fromEntries(
     HookEventName.options.map((event) => [
@@ -50,7 +66,7 @@ export function claudeSettings(hook: HookLauncher): string {
       ],
     ]),
   );
-  return JSON.stringify({ hooks, permissions: { allow: [ASK_TOOL] } });
+  return JSON.stringify({ hooks, permissions: { allow: [...ASK_TOOLS, ...rules] } });
 }
 
 const RESERVED_ARGS = new Set([
@@ -67,7 +83,7 @@ const RESERVED_ARGS = new Set([
 export function claudeArgs(
   input: Pick<
     LaunchInput,
-    "model" | "permissionFlag" | "extraArgs" | "sessionId" | "resume" | "systemPromptFile" | "hook"
+    "model" | "permissionFlag" | "extraArgs" | "sessionId" | "resume" | "systemPromptFile" | "hook" | "allow"
   >,
 ): string[] {
   const refused = input.extraArgs.find(
@@ -85,7 +101,7 @@ export function claudeArgs(
     "--model",
     input.model,
     "--settings",
-    claudeSettings(input.hook),
+    claudeSettings(input.hook, input.allow),
     "--mcp-config",
     mcpServerConfig(input.hook),
     "--append-system-prompt-file",

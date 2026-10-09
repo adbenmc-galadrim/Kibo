@@ -2,18 +2,21 @@ import { expect, mock, test } from "bun:test";
 import type { RpcRequest } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { NO_DIALOG } from "./ShellDialogs";
 
 const calls: string[] = [];
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req.method);
-      return new Promise(() => {});
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req.method);
+        return new Promise(() => {});
+      },
+      subscribeEvents: () => () => undefined,
     },
-    subscribeEvents: () => () => undefined,
-  },
-}));
+  }),
+);
 const { HelpDialogs } = await import("./HelpDialogs");
 
 test("the shortcuts help opens from its key and closing clears it", async () => {

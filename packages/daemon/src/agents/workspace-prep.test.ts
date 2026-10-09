@@ -1,64 +1,17 @@
 import { afterEach, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { cleanupTmp, commit, git, repo, tmp } from "./git-test-kit";
 import { type GitRunner, prepareWorkspace, runGit, writeRunContext } from "./workspace-prep";
 
-const dirs: string[] = [];
-const tmp = () => {
-  const d = mkdtempSync(join(tmpdir(), "kibo-ws-"));
-  dirs.push(d);
-  return d;
-};
-afterEach(() => {
-  for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
-});
-
-const commit = [
-  "-c",
-  "user.email=t@kibo.test",
-  "-c",
-  "user.name=t",
-  "-c",
-  "commit.gpgsign=false",
-  "commit",
-  "-q",
-];
-
-async function git(args: string[], cwd: string): Promise<string> {
-  const r = await runGit(args, cwd);
-  if (r.code !== 0) throw new Error(r.stderr);
-  return r.stdout.trim();
-}
-
-async function repo(initialBranch = "main"): Promise<string> {
-  const d = tmp();
-  for (const args of [
-    ["init", "-q", "-b", initialBranch],
-    [
-      "-c",
-      "user.email=t@kibo.test",
-      "-c",
-      "user.name=t",
-      "-c",
-      "commit.gpgsign=false",
-      "commit",
-      "-q",
-      "--allow-empty",
-      "-m",
-      "init",
-    ],
-  ]) {
-    const r = await runGit(args, d);
-    if (r.code !== 0) throw new Error(r.stderr);
-  }
-  return d;
-}
+afterEach(cleanupTmp);
 
 test("worktree: one per ticket, branch named after the key, reused next time", async () => {
   const folder = await repo();
   const runDir = join(tmp(), "run");
   const first = await prepareWorkspace({
+    worktree: null,
+    branchRef: null,
     strategy: "worktree",
     projectFolder: folder,
     ticketKey: "KIB-15",
@@ -68,6 +21,8 @@ test("worktree: one per ticket, branch named after the key, reused next time", a
   expect(first.cwd.endsWith(join(".kibo", "worktrees", "kib-15"))).toBe(true);
   expect((await runGit(["branch", "--show-current"], first.cwd)).stdout.trim()).toBe("kib-15");
   const again = await prepareWorkspace({
+    worktree: null,
+    branchRef: null,
     strategy: "worktree",
     projectFolder: folder,
     ticketKey: "KIB-15",
@@ -82,10 +37,24 @@ test("worktree: one per ticket, branch named after the key, reused next time", a
 test("worktree needs a git folder", async () => {
   const runDir = join(tmp(), "run");
   await expect(
-    prepareWorkspace({ strategy: "worktree", projectFolder: tmp(), ticketKey: "KIB-1", runDir }),
+    prepareWorkspace({
+      worktree: null,
+      branchRef: null,
+      strategy: "worktree",
+      projectFolder: tmp(),
+      ticketKey: "KIB-1",
+      runDir,
+    }),
   ).rejects.toThrow("NOT_A_REPO");
   await expect(
-    prepareWorkspace({ strategy: "worktree", projectFolder: null, ticketKey: "KIB-1", runDir }),
+    prepareWorkspace({
+      worktree: null,
+      branchRef: null,
+      strategy: "worktree",
+      projectFolder: null,
+      ticketKey: "KIB-1",
+      runDir,
+    }),
   ).rejects.toThrow("PROJECT_FOLDER_MISSING");
 });
 
@@ -93,13 +62,23 @@ test("repo works in the project folder, isolated in a private run folder", async
   const folder = tmp();
   const runDir = join(tmp(), "run");
   expect(
-    await prepareWorkspace({ strategy: "repo", projectFolder: folder, ticketKey: "KIB-1", runDir }),
+    await prepareWorkspace({
+      worktree: null,
+      branchRef: null,
+      strategy: "repo",
+      projectFolder: folder,
+      ticketKey: "KIB-1",
+      runDir,
+    }),
   ).toEqual({
     cwd: folder,
     label: "repo",
+    commits: [],
   });
   await expect(
     prepareWorkspace({
+      worktree: null,
+      branchRef: null,
       strategy: "repo",
       projectFolder: join(folder, "missing"),
       ticketKey: "KIB-1",
@@ -107,12 +86,14 @@ test("repo works in the project folder, isolated in a private run folder", async
     }),
   ).rejects.toThrow("PROJECT_FOLDER_NOT_FOUND");
   const isolated = await prepareWorkspace({
+    worktree: null,
+    branchRef: null,
     strategy: "isolated",
     projectFolder: null,
     ticketKey: "KIB-1",
     runDir,
   });
-  expect(isolated).toEqual({ cwd: join(runDir, "workspace"), label: "isolated" });
+  expect(isolated).toEqual({ cwd: join(runDir, "workspace"), label: "isolated", commits: [] });
   expect(existsSync(isolated.cwd)).toBe(true);
 });
 
@@ -138,7 +119,14 @@ test("worktree refuses a ticket key that is not a ticket key", async () => {
   const runDir = join(tmp(), "run");
   for (const ticketKey of ["../../evil", "KIB-1/../x", "-b", ""]) {
     await expect(
-      prepareWorkspace({ strategy: "worktree", projectFolder: folder, ticketKey, runDir }),
+      prepareWorkspace({
+        worktree: null,
+        branchRef: null,
+        strategy: "worktree",
+        projectFolder: folder,
+        ticketKey,
+        runDir,
+      }),
     ).rejects.toThrow("WORKSPACE_FAILED");
   }
   expect(existsSync(join(folder, ".kibo"))).toBe(false);
@@ -149,6 +137,8 @@ test("worktree refuses a plain folder squatting its path", async () => {
   mkdirSync(join(folder, ".kibo", "worktrees", "kib-2"), { recursive: true });
   await expect(
     prepareWorkspace({
+      worktree: null,
+      branchRef: null,
       strategy: "worktree",
       projectFolder: folder,
       ticketKey: "KIB-2",
@@ -163,6 +153,8 @@ test("a new worktree starts from main, whatever branch is checked out", async ()
   await git(["checkout", "-q", "-b", "feature"], folder);
   await git([...commit, "--allow-empty", "-m", "feature"], folder);
   const ws = await prepareWorkspace({
+    worktree: null,
+    branchRef: null,
     strategy: "worktree",
     projectFolder: folder,
     ticketKey: "KIB-3",
@@ -176,6 +168,8 @@ test("without a main branch the new worktree starts from HEAD", async () => {
   await git([...commit, "--allow-empty", "-m", "second"], folder);
   const head = await git(["rev-parse", "HEAD"], folder);
   const ws = await prepareWorkspace({
+    worktree: null,
+    branchRef: null,
     strategy: "worktree",
     projectFolder: folder,
     ticketKey: "KIB-4",
@@ -187,17 +181,27 @@ test("without a main branch the new worktree starts from HEAD", async () => {
 test("each failure of the workspace has its own code", async () => {
   const runDir = join(tmp(), "run");
   const base = { ticketKey: "KIB-7", runDir };
-  await expect(prepareWorkspace({ ...base, strategy: "repo", projectFolder: null })).rejects.toMatchObject({
+  await expect(
+    prepareWorkspace({ ...base, worktree: null, branchRef: null, strategy: "repo", projectFolder: null }),
+  ).rejects.toMatchObject({
     code: "PROJECT_FOLDER_MISSING",
     detail: "the project has no local folder",
   });
   const gone = join(tmp(), "gone");
-  await expect(prepareWorkspace({ ...base, strategy: "repo", projectFolder: gone })).rejects.toMatchObject({
+  await expect(
+    prepareWorkspace({ ...base, worktree: null, branchRef: null, strategy: "repo", projectFolder: gone }),
+  ).rejects.toMatchObject({
     code: "PROJECT_FOLDER_NOT_FOUND",
     detail: `folder ${gone} does not exist`,
   });
   await expect(
-    prepareWorkspace({ ...base, strategy: "worktree", projectFolder: tmp() }),
+    prepareWorkspace({
+      ...base,
+      worktree: null,
+      branchRef: null,
+      strategy: "worktree",
+      projectFolder: tmp(),
+    }),
   ).rejects.toMatchObject({
     code: "NOT_A_REPO",
   });
@@ -211,6 +215,8 @@ test("a refusal of git is a GIT_FAILED with git's message", async () => {
       : runGit(args, cwd);
   await expect(
     prepareWorkspace({
+      worktree: null,
+      branchRef: null,
       strategy: "worktree",
       projectFolder: folder,
       ticketKey: "KIB-7",
@@ -221,4 +227,25 @@ test("a refusal of git is a GIT_FAILED with git's message", async () => {
     code: "GIT_FAILED",
     detail: "git worktree add failed: fatal: 'x' is a missing but locked",
   });
+});
+
+test("a worktree brings the commits of its branch since the base, other spaces bring none", async () => {
+  const folder = await repo();
+  const runDir = join(tmp(), "run");
+  const input = {
+    worktree: null,
+    branchRef: null,
+    strategy: "worktree" as const,
+    projectFolder: folder,
+    ticketKey: "KIB-15",
+    runDir,
+  };
+  const first = await prepareWorkspace(input);
+  expect(first.commits).toEqual([]);
+  await git([...commit, "--allow-empty", "-m", "feat: premier pas"], first.cwd);
+  const hash = await git(["rev-parse", "--short", "HEAD"], first.cwd);
+  const again = await prepareWorkspace(input);
+  expect(again.commits).toEqual([`${hash} feat: premier pas`]);
+  const inRepo = await prepareWorkspace({ ...input, strategy: "repo" });
+  expect(inRepo.commits).toEqual([]);
 });

@@ -2,19 +2,22 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import type { RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let answers: Partial<Record<RpcRequest["method"], () => Promise<unknown>>> = {};
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      const a = answers[req.method];
-      return a ? a() : Promise.resolve(null);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        const a = answers[req.method];
+        return a ? a() : Promise.resolve(null);
+      },
+      subscribe: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-  },
-}));
+  }),
+);
 let members = [
   { userId: "u-lea", name: "Léa", role: "owner" as const },
   { userId: "u-adam", name: "Adam", role: "editor" as const },

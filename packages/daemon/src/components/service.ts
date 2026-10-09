@@ -2,6 +2,7 @@ import type { Database } from "bun:sqlite";
 import { listProjects, readProject } from "@kibo/core";
 import { type BuildOutput, type Toolchain, validateComponent } from "@kibo/devkit";
 import {
+  type DeliveryResult,
   type Instance,
   KiboError,
   type PresencePeer,
@@ -51,6 +52,7 @@ export type ComponentsDeps = {
   integrations?: () => ComponentIntegrationHooks | null;
   presence?: (projectId: string) => PresencePeer[];
   sharing?: (projectId: string) => ProjectSyncInfo;
+  deliverAnswers?: (projectId: string, ticketId: string) => DeliveryResult;
   installCli?: () => Promise<{ path: string }>;
   cliStatus?: () => Promise<{ path: string; installed: boolean }>;
   jobTimers?: Pick<JobSchedulerDeps, "setInterval" | "clearInterval">;
@@ -146,6 +148,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       ...(deps.integrations && { integrations: deps.integrations }),
       ...(deps.presence && { presence: deps.presence }),
       ...(deps.sharing && { sharing: deps.sharing }),
+      ...(deps.deliverAnswers && { deliverAnswers: deps.deliverAnswers }),
     }),
   });
 

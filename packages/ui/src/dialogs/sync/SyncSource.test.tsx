@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { type IntegrationEvent, KiboError, type RpcRequest } from "@kibo/schema";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../../api-mock";
 
 const calls: RpcRequest[] = [];
 let listener: ((e: IntegrationEvent) => void) | null = null;
@@ -55,21 +56,23 @@ const syncState = () => ({
   errors: [],
 });
 
-mock.module("../../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      return replies[req.method]?.() ?? null;
+mock.module("../../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        return replies[req.method]?.() ?? null;
+      },
+      subscribe: () => () => undefined,
+      subscribeIntegrations: (l: (e: IntegrationEvent) => void) => {
+        listener = l;
+        return () => {
+          listener = null;
+        };
+      },
     },
-    subscribe: () => () => undefined,
-    subscribeIntegrations: (l: (e: IntegrationEvent) => void) => {
-      listener = l;
-      return () => {
-        listener = null;
-      };
-    },
-  },
-}));
+  }),
+);
 
 const { AddComponentDialog } = await import("../AddComponentDialog");
 const page = { id: "pg1", title: "Vue", kind: "view", parentId: null } as const;

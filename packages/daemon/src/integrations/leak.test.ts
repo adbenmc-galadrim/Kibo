@@ -196,7 +196,14 @@ async function githubScenario(): Promise<{ projectId: string; ticketId: string }
   await run(project.id, {
     method: "upsertExternalRef",
     ticketId: created.id,
-    ref: { kind: "github_pr", url: "https://github.com/adam/kibo/pull/12", number: 12, state: "open" },
+    ref: {
+      kind: "github_pr",
+      url: "https://github.com/adam/kibo/pull/12",
+      number: 12,
+      state: "open",
+      base: null,
+      head: null,
+    },
   });
   ciPoller.fire();
   const runs = () => ok({ method: "listCiRuns", projectId: project.id, ticketId: null });

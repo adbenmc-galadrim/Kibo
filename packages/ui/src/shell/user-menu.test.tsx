@@ -2,14 +2,17 @@ import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import type { RpcRequest, SyncStatus, TabTarget } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 let status: SyncStatus | null = null;
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => Promise.resolve(req.method === "getSyncStatus" ? status : null),
-    subscribeEvents: () => () => undefined,
-  },
-}));
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => Promise.resolve(req.method === "getSyncStatus" ? status : null),
+      subscribeEvents: () => () => undefined,
+    },
+  }),
+);
 const { UserMenu } = await import("./UserMenu");
 
 beforeEach(() => {

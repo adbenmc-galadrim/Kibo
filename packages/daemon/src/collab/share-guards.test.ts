@@ -113,7 +113,14 @@ function serverSends(bytes: Uint8Array, projectId = "p-remote"): void {
 }
 
 function localShapedDoc(id: string): LoroDoc {
-  const doc = createProjectDoc({ id, key: "REM", name: "Remote", folder: null, color: "#14B8A6" });
+  const doc = createProjectDoc({
+    id,
+    key: "REM",
+    name: "Remote",
+    folder: null,
+    color: "#14B8A6",
+    worktree: null,
+  });
   doc.getMap("meta").delete("folder");
   doc.commit();
   return doc;

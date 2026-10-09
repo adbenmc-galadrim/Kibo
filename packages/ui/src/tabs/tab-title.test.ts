@@ -7,7 +7,7 @@ import { describeTarget } from "./tab-title";
 const kibo = kiboProject();
 const inbox: ProjectSnapshot = {
   ...kibo,
-  meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B" },
+  meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B", worktree: null },
   tickets: (kibo.tickets[0] ? [kibo.tickets[0]] : []).map((t) => ({
     ...t,
     id: "i3",

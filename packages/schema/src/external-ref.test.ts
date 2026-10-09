@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { ExternalRef, ExternalRefKind, externalRefKey, externalRefTarget } from "./external-ref";
+import { branchRefOf, ExternalRef, ExternalRefKind, externalRefKey, externalRefTarget } from "./external-ref";
+import { GitBranchRef } from "./git-branch";
 
 const IDS = {
   file: "33333333-3333-4333-8333-333333333333",
@@ -34,4 +35,21 @@ test("a penpot board ref refuses an http instance off loopback", () => {
     name: "Accueil",
   };
   expect(ExternalRef.safeParse(ref).success).toBe(false);
+});
+
+test("branch and import refs have stable keys and a PR ref defaults base and head", () => {
+  const branch = GitBranchRef.parse({ kind: "git_branch", branch: "feat/x", base: "feat/parent" });
+  expect(externalRefKey(branch)).toBe("branch");
+  expect(externalRefTarget(ExternalRef.parse({ kind: "import_ref", source: "plan", id: "C0-9" }))).toBe(
+    "import_ref:plan:C0-9",
+  );
+  const pr = ExternalRef.parse({
+    kind: "github_pr",
+    url: "https://github.com/a/b/pull/4",
+    number: 4,
+    state: "open",
+  });
+  expect(pr).toMatchObject({ base: null, head: null });
+  expect(branchRefOf([pr, branch])).toEqual(branch);
+  expect(branchRefOf([pr])).toBeNull();
 });

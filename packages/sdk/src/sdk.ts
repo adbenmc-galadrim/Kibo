@@ -7,6 +7,7 @@ import {
   type ComponentCall,
   type ComponentManifest,
   capPermission,
+  type DeliveryResult,
   type DesignFrame,
   type EntityType,
   type FetchInitInput,
@@ -202,6 +203,7 @@ export function createSdk(
       run: () => backend.runs(),
       note: () => call<NoteMeta[]>({ kind: "list", entity: "note" }),
       ci_run: () => call<CiRun[]>({ kind: "list", entity: "ci_run" }),
+      question: async () => (await backend.snapshot()).questions,
     };
     return loaders[type]();
   };
@@ -261,6 +263,12 @@ export function createSdk(
     },
     assets: assetsApi(manifest, guard, call),
     design: designApi(manifest, guard, call),
+    questions: {
+      async deliver(ticketId) {
+        guard.needWrite("question");
+        return call<DeliveryResult>({ kind: "questions.deliver", ticketId });
+      },
+    },
     focus: ctx.focus ?? NO_FOCUS,
     visibility: ctx.visibility ?? ALWAYS_VISIBLE,
     selection: ctx.selection ?? NO_SELECTION,

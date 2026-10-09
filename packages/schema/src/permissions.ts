@@ -97,6 +97,8 @@ export function permissionOfCall(call: ComponentCall): string | null {
       return capPermission("assets");
     case "design.frame":
       return capPermission("design");
+    case "questions.deliver":
+      return "write:question";
   }
 }
 

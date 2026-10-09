@@ -22,9 +22,11 @@ export function mineTicket(
     domainId: null,
     assignee,
     parentId: null,
+    labels: [],
     externalRefs: [],
     progress: { done: 0, total: 0 },
     waitingOn,
+    openQuestions: 0,
   };
 }
 

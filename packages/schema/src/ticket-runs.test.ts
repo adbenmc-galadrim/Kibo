@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { AgentsState, RunView } from "./run";
-import { ticketRuns } from "./ticket-runs";
+import { mainSessionOf, ticketRuns } from "./ticket-runs";
 
 const run = (p: Pick<RunView, "id" | "seq" | "state"> & Partial<RunView>): RunView => ({
   projectId: "kibo",
@@ -35,6 +35,8 @@ const run = (p: Pick<RunView, "id" | "seq" | "state"> & Partial<RunView>): RunVi
   turns: 0,
   activeMs: 0,
   turnStartedAt: null,
+  resumedFrom: null,
+  session: null,
   ...p,
 });
 
@@ -56,6 +58,7 @@ const state = (runs: RunView[], queue: AgentsState["queue"] = []): AgentsState =
   },
   tokensToday: 0,
   resumable: [],
+  questions: [],
 });
 
 test("each ticket of the project keeps its latest run, with its place in the queue", () => {
@@ -70,4 +73,17 @@ test("each ticket of the project keeps its latest run, with its place in the que
     { ticketId: "t1", runId: "new", label: "opus-dev", state: "queued", position: 2 },
     { ticketId: "t2", runId: "wait", label: "opus-dev-2", state: "waiting_input", position: null },
   ]);
+});
+
+test("the main session of a ticket is its latest run that started", () => {
+  const runs = [
+    run({ id: "first", seq: 1, state: "done", startedAt: 10 }),
+    run({ id: "second", seq: 3, state: "done", startedAt: 30 }),
+    run({ id: "queued", seq: 5, state: "queued" }),
+    run({ id: "elsewhere", seq: 6, state: "done", startedAt: 60, ticketId: "t2" }),
+  ];
+  expect(mainSessionOf(runs, "t1")?.id).toBe("second");
+  expect(mainSessionOf(runs, "t2")?.id).toBe("elsewhere");
+  expect(mainSessionOf([run({ id: "never", seq: 1, state: "queued" })], "t1")).toBeNull();
+  expect(mainSessionOf([], "t1")).toBeNull();
 });

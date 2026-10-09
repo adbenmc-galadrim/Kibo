@@ -2,19 +2,22 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { INBOX_ID, KiboError, type RpcRequest, type TicketView } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { fileSnapshots, fileTargets, inboxSnapshot } from "../inbox/fixtures";
 
 const calls: RpcRequest[] = [];
 let outcome: () => Promise<unknown> = () => Promise.resolve({ ticketId: "new-id", key: "KIB-25" });
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return outcome();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return outcome();
+      },
     },
-  },
-}));
+  }),
+);
 
 const { FileTicketDialog } = await import("./FileTicketDialog");
 

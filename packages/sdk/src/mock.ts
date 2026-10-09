@@ -20,9 +20,12 @@ import {
   type Surface,
   type TicketRun,
 } from "@kibo/schema";
+import { actAs } from "./mock-actor";
 import { createMockCalls, type MockFetch } from "./mock-calls";
 import type { MockFrame } from "./mock-design";
 import { createMockNotes, type MockNote } from "./mock-notes";
+import { createNotifier } from "./mock-notifier";
+import { createMockDelivery } from "./mock-questions";
 import { createSdk } from "./sdk";
 import type { ServerContext, ServerDefinition } from "./server";
 import { createSignal, focusApi, selectionApi, visibilityApi } from "./signal";
@@ -40,6 +43,7 @@ export type MockSdk = {
   newTicketRequests: NewTicketDefaults[];
   openedFiles: FileTarget[];
   openedViews: string[];
+  deliveries: string[];
   data: Map<string, unknown>;
   configPatches: Record<string, unknown>[];
   notes: Map<string, MockNote>;
@@ -76,24 +80,10 @@ export type MockSdkOptions = {
   visible?: boolean;
   focus?: boolean;
   selection?: Selection | null;
+  deliveryRefused?: boolean;
 };
 
 const PROJECT_KEY = "KIB";
-
-const notifier = () => {
-  const listeners = new Set<() => void>();
-  return {
-    emit: () => {
-      for (const l of listeners) l();
-    },
-    subscribe: (l: () => void) => {
-      listeners.add(l);
-      return () => {
-        listeners.delete(l);
-      };
-    },
-  };
-};
 
 export function createMockSdk(
   manifestInput: ComponentManifest | ComponentManifestInput,
@@ -106,10 +96,11 @@ export function createMockSdk(
     name: "Mock",
     folder: null,
     color: "#71717A",
+    worktree: null,
   });
-  const changes = notifier();
-  const runChanges = notifier();
-  const presenceChanges = notifier();
+  const changes = createNotifier();
+  const runChanges = createNotifier();
+  const presenceChanges = createNotifier();
   let access: ProjectAccess = "write";
   let peers = opts.presence ?? [];
   if (opts.shared) enableServerAllocation(doc);
@@ -118,6 +109,8 @@ export function createMockSdk(
     changes.emit();
     return result;
   };
+  const viewer = opts.viewer ?? "adam";
+  const componentRun = (cmd: ProjectCommand) => run(actAs(cmd, viewer));
   opts.seed?.(run);
   let runs = opts.runs ?? [];
   const folder = createMockNotes(opts.notes ?? {}, opts.noteAges ?? {}, PROJECT_KEY, changes.emit);
@@ -129,6 +122,7 @@ export function createMockSdk(
   const newTicketRequests: NewTicketDefaults[] = [];
   const openedFiles: FileTarget[] = [];
   const openedViews: string[] = [];
+  const deliveries: string[] = [];
   const focusRequests: boolean[] = [];
   const selections: (Selection | null)[] = [];
   const focus = createSignal(opts.focus ?? false);
@@ -146,11 +140,11 @@ export function createMockSdk(
 
   const backend: ProjectBackend = {
     snapshot: async () => readProject(doc),
-    run: async (cmd) => run(cmd),
+    run: async (cmd) => componentRun(cmd),
     call: createMockCalls({
       ...opts,
       doc,
-      run,
+      run: componentRun,
       data,
       manifest,
       configPatches,
@@ -159,6 +153,12 @@ export function createMockSdk(
       peers: () => peers,
       access: () => access,
       serverContext,
+      deliver: createMockDelivery({
+        doc,
+        refused: opts.deliveryRefused ?? false,
+        deliveries,
+        changed: changes.emit,
+      }),
     }),
     subscribe: changes.subscribe,
     runs: async () => runs,
@@ -169,7 +169,7 @@ export function createMockSdk(
   const inner = createSdk(backend, manifest, {
     instanceId: "mock-instance",
     config: opts.config ?? {},
-    viewer: opts.viewer ?? "adam",
+    viewer,
     surface: opts.surface ?? (manifest.kind === "view" ? "view" : "widget"),
     format: opts.format ?? defaultFormatOf(manifest),
     openTicket: (id) => opened.push(id),
@@ -258,6 +258,10 @@ export function createMockSdk(
       frame: (url, opts) =>
         record(capPermission("design"), "cap:design", () => inner.design.frame(url, opts)),
     },
+    questions: {
+      deliver: (ticketId) =>
+        record("write:question", "write question", () => inner.questions.deliver(ticketId)),
+    },
   };
 
   return {
@@ -269,6 +273,7 @@ export function createMockSdk(
     newTicketRequests,
     openedFiles,
     openedViews,
+    deliveries,
     data,
     configPatches,
     notes: folder.notes,

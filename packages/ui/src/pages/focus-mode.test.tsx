@@ -5,6 +5,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useEffect } from "react";
 import { kiboProject } from "../agents/fixtures";
+import { apiMock } from "../api-mock";
 
 const H = "d".repeat(64);
 const calls: RpcRequest[] = [];
@@ -44,20 +45,25 @@ const summary = (id: string, title: string, capabilities: Capability[]): Compone
   ],
 });
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "listComponents")
-        return Promise.resolve([summary("arcade", "Arcade", ["fullscreen"]), summary("plain", "Plain", [])]);
-      if (req.method === "listDrafts") return Promise.resolve([]);
-      return Promise.resolve(null);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "listComponents")
+          return Promise.resolve([
+            summary("arcade", "Arcade", ["fullscreen"]),
+            summary("plain", "Plain", []),
+          ]);
+        if (req.method === "listDrafts") return Promise.resolve([]);
+        return Promise.resolve(null);
+      },
+      subscribe: () => () => undefined,
+      subscribeTopic: () => () => undefined,
+      subscribeEvents: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-    subscribeTopic: () => () => undefined,
-    subscribeEvents: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { loadTrusted } = await import("../shell/trusted-loader");
 const { PageView } = await import("./PageView");

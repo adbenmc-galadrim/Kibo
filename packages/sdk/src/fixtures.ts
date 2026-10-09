@@ -1,4 +1,4 @@
-import { type Assignee, type ProjectCommand, type StatusId, Ticket } from "@kibo/schema";
+import { type Assignee, type ProjectCommand, Question, type StatusId, Ticket } from "@kibo/schema";
 
 export { sampleGlb } from "./fixtures-glb";
 
@@ -38,6 +38,11 @@ const BLOCKS: [number, number][] = [
   [16, 22],
 ];
 
+const LABELS: Partial<Record<number, string[]>> = {
+  12: ["area:api", "phase:p1", "urgent"],
+  15: ["phase:p1"],
+};
+
 const LAST_KEY = 29;
 const BLOCKED_REASON = "Audit sécurité externe en attente";
 
@@ -61,6 +66,7 @@ export function seedDemo(run: (cmd: ProjectCommand) => unknown, viewer = "adam")
         title: row?.[1] ?? "—",
         parentId: parent === null ? null : idOf(parent),
         assignee: assignee(row?.[4] ?? null, viewer),
+        ...(LABELS[n] && { labels: LABELS[n] }),
         ...(status !== "blocked" && { statusId: status }),
       }),
     );
@@ -74,6 +80,35 @@ export function seedDemo(run: (cmd: ProjectCommand) => unknown, viewer = "adam")
   for (const [from, to] of BLOCKS) run({ method: "addLink", from: idOf(from), to: idOf(to), type: "blocks" });
   run({ method: "addLink", from: idOf(12), to: idOf(16), type: "relates" });
   return ids;
+}
+
+export function seedQuestions(run: (cmd: ProjectCommand) => unknown, ticketIds: readonly string[]): void {
+  const [first = "", second = first] = ticketIds;
+  run({
+    method: "createQuestion",
+    ticketId: first,
+    title: "Garder l'ordre des sous-tickets par index fractionnaire ?",
+    context: "Deux déplacements concurrents peuvent inverser l'ordre de deux sous-tickets.",
+    options: ["Oui", "Non"],
+    provisional: "Oui",
+    createdBy: { kind: "agent", ref: "opus-dev-1" },
+  });
+  const answered = Question.parse(
+    run({
+      method: "createQuestion",
+      ticketId: second,
+      title: "Refuser les hooks d'un processus mort ?",
+      options: ["Oui", "Non"],
+      provisional: "Oui",
+      createdBy: { kind: "agent", ref: "opus-dev-2" },
+    }),
+  );
+  run({
+    method: "answerQuestion",
+    questionId: answered.id,
+    answer: { kind: "confirm" },
+    by: { kind: "human", ref: "adam" },
+  });
 }
 
 export const DEMO_NOTES: Record<string, string> = {

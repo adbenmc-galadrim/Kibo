@@ -3,8 +3,8 @@ import { type CommitInfo, KiboError } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
+import { BranchCommits } from "./BranchCommits";
 import { CommitPanel } from "./CommitPanel";
-import { UnpushedCommits } from "./UnpushedCommits";
 
 const commit = (sha: string, subject: string, pushed = false): CommitInfo => ({
   sha: sha.padEnd(40, "0"),
@@ -106,7 +106,8 @@ test("nothing staged blocks a commit, amend unlocks it, a pushed head blocks ame
 test("only the latest unpushed commit can be modified, pushed ones have no action", async () => {
   const modified: string[] = [];
   render(
-    <UnpushedCommits
+    <BranchCommits
+      base="origin/dev"
       commits={commits}
       busy={false}
       onModify={(c) => modified.push(c.shortSha)}
@@ -129,7 +130,8 @@ test("reword submits the edited message, undo explains how many commits go back 
   const reworded: string[] = [];
   const undone: string[] = [];
   render(
-    <UnpushedCommits
+    <BranchCommits
+      base="origin/dev"
       commits={commits}
       busy={false}
       onModify={() => {}}
@@ -159,7 +161,8 @@ test("reword submits the edited message, undo explains how many commits go back 
 
 test("a refused reword is shown in an alert and keeps the dialog open", async () => {
   render(
-    <UnpushedCommits
+    <BranchCommits
+      base="origin/dev"
       commits={commits}
       busy={false}
       onModify={() => {}}
@@ -179,7 +182,8 @@ test("a refused reword is shown in an alert and keeps the dialog open", async ()
 
 test("a refused undo is shown in an alert and keeps the confirmation open", async () => {
   render(
-    <UnpushedCommits
+    <BranchCommits
+      base="origin/dev"
       commits={commits}
       busy={false}
       onModify={() => {}}
@@ -222,7 +226,8 @@ test("while the status loads the commit button stays neutral instead of naming a
 
 test("the unpushed counter is only highlighted when something is waiting to be pushed", () => {
   const { unmount } = render(
-    <UnpushedCommits
+    <BranchCommits
+      base="origin/dev"
       commits={commits}
       busy={false}
       onModify={() => {}}
@@ -233,7 +238,8 @@ test("the unpushed counter is only highlighted when something is waiting to be p
   expect(screen.getByText("↑2").className).toContain("text-orange");
   unmount();
   render(
-    <UnpushedCommits
+    <BranchCommits
+      base="origin/dev"
       commits={commits.filter((c) => c.pushed)}
       busy={false}
       onModify={() => {}}
@@ -242,4 +248,71 @@ test("the unpushed counter is only highlighted when something is waiting to be p
     />,
   );
   expect(screen.getByText("↑0").className).not.toContain("text-orange");
+});
+
+test("the branch commits are titled as such, each one says whether it is pushed", () => {
+  render(
+    <BranchCommits
+      base="origin/dev"
+      commits={commits}
+      busy={false}
+      onModify={() => {}}
+      onReword={async () => {}}
+      onUndo={async () => {}}
+    />,
+  );
+  expect(screen.getByRole("heading", { name: "Commits de la branche" })).toBeTruthy();
+  expect(screen.queryByText("Commits non poussés")).toBeNull();
+  expect(screen.getByTitle("2 commits non poussés").textContent).toBe("↑2");
+  const [latest, older, pushed] = screen.getAllByRole("listitem");
+  if (!latest || !older || !pushed) throw new Error("three commits expected");
+  expect(within(latest).getByText("Non poussé")).toBeTruthy();
+  expect(within(older).getByText("Non poussé")).toBeTruthy();
+  expect(within(pushed).queryByText("Non poussé")).toBeNull();
+});
+
+test("a branch with only pushed commits counts none to push, and lists them all", () => {
+  const pushedOnly = [
+    commit("ce43aa1", "feat(api): URL présignées", true),
+    commit("48d40fc", "build: MinIO", true),
+  ];
+  render(
+    <BranchCommits
+      base="origin/dev"
+      commits={pushedOnly}
+      busy={false}
+      onModify={() => {}}
+      onReword={async () => {}}
+      onUndo={async () => {}}
+    />,
+  );
+  expect(screen.getByText("↑0")).toBeTruthy();
+  expect(screen.getAllByRole("listitem")).toHaveLength(2);
+  expect(screen.getAllByText("Poussé · ne peut plus être modifié")).toHaveLength(2);
+});
+
+test("without a base the section shows the latest commits, an empty branch says so", () => {
+  const { unmount } = render(
+    <BranchCommits
+      base={null}
+      commits={commits}
+      busy={false}
+      onModify={() => {}}
+      onReword={async () => {}}
+      onUndo={async () => {}}
+    />,
+  );
+  expect(screen.getByRole("heading", { name: "Derniers commits" })).toBeTruthy();
+  unmount();
+  render(
+    <BranchCommits
+      base="origin/dev"
+      commits={[]}
+      busy={false}
+      onModify={() => {}}
+      onReword={async () => {}}
+      onUndo={async () => {}}
+    />,
+  );
+  expect(screen.getByText("Aucun commit depuis origin/dev.")).toBeTruthy();
 });

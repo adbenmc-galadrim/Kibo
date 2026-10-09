@@ -46,7 +46,15 @@ export function RunHistoryButton({ agents, notifications, now, onOpenRun }: Prop
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-90" aria-label={fr.header.runHistory}>
-        {open && <RunHistoryList runs={runs} now={now} notifications={notifications} onOpenRun={onOpenRun} />}
+        {open && (
+          <RunHistoryList
+            runs={runs}
+            questions={agents?.questions ?? []}
+            now={now}
+            notifications={notifications}
+            onOpenRun={onOpenRun}
+          />
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

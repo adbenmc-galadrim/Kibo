@@ -2,18 +2,21 @@ import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 import type { ConfigSchema, Instance, ProjectAsset, RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let outcome: () => Promise<unknown> = () => Promise.resolve(null);
 let assetsOutcome: () => Promise<ProjectAsset[]> = () => Promise.resolve([]);
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      return req.method === "listAssets" ? assetsOutcome() : outcome();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        return req.method === "listAssets" ? assetsOutcome() : outcome();
+      },
     },
-  },
-}));
+  }),
+);
 const { InstanceSettingsDialog } = await import("./InstanceSettingsDialog");
 
 const schema: ConfigSchema = {

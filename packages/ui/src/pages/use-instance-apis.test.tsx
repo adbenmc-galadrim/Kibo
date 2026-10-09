@@ -1,17 +1,20 @@
 import { expect, mock, test } from "bun:test";
 import type { ComponentSummary, Instance, RpcRequest } from "@kibo/schema";
 import { render } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 import type { InstanceApis } from "../lib/instance-capabilities";
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) =>
-      req.method === "listComponents" ? new Promise(() => undefined) : Promise.resolve([]),
-    subscribe: () => () => undefined,
-    subscribeTopic: () => () => undefined,
-    subscribeEvents: () => () => undefined,
-  },
-}));
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) =>
+        req.method === "listComponents" ? new Promise(() => undefined) : Promise.resolve([]),
+      subscribe: () => () => undefined,
+      subscribeTopic: () => () => undefined,
+      subscribeEvents: () => () => undefined,
+    },
+  }),
+);
 
 const { PageContext, usePageState } = await import("./PageContext");
 const { createSelectionBus } = await import("./selection-bus");

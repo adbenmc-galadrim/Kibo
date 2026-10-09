@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import type { RunView } from "@kibo/schema";
-import { noticeFor, stdoutNotifier } from "./notifier";
+import { answered } from "../questions/questions.test-helper";
+import { noticeFor, questionNotice, stdoutNotifier } from "./notifier";
 
 const run = (p: Partial<RunView>): RunView => ({
   id: "r1",
@@ -13,6 +14,7 @@ const run = (p: Partial<RunView>): RunView => ({
   profileName: "opus-dev",
   sessionId: "s1",
   brief: "",
+  resumedFrom: null,
   createdAt: 0,
   label: "opus-dev-2",
   state: "running",
@@ -38,6 +40,7 @@ const run = (p: Partial<RunView>): RunView => ({
   turns: 1,
   activeMs: 0,
   turnStartedAt: null,
+  session: null,
   ...p,
 });
 
@@ -67,4 +70,13 @@ test("the stdout line stays on one line", () => {
   const lines: string[] = [];
   stdoutNotifier((l) => lines.push(l))({ title: "a", body: "b\nc" });
   expect(lines).toEqual(['KIBO_NOTIFY {"title":"a","body":"b\\nc"}\n']);
+});
+
+test("a question to validate notifies, a blocking one leaves it to the waiting notice", () => {
+  const open = { ...answered("q1"), title: "Bloquer le dépôt ?", answer: null };
+  expect(questionNotice(run({ state: "running" }), open)).toEqual({
+    title: "opus-dev-2 a posé une question",
+    body: "KIB-14 · Bloquer le dépôt ?",
+  });
+  expect(questionNotice(run({ state: "running" }), { ...open, blocking: true })).toBeNull();
 });

@@ -277,9 +277,22 @@ test("createPr links the PR to the ticket, the poller follows its state", async 
     },
     LOCAL_CONTEXT,
   );
-  expect(pr).toEqual({ number: 1, url: "https://github.com/kibo/test/pull/1", state: "open" });
+  expect(pr).toEqual({
+    number: 1,
+    url: "https://github.com/kibo/test/pull/1",
+    state: "open",
+    base: "main",
+    head: "kib-1",
+  });
   expect(refs()).toEqual([
-    { kind: "github_pr", url: "https://github.com/kibo/test/pull/1", number: 1, state: "open" },
+    {
+      kind: "github_pr",
+      url: "https://github.com/kibo/test/pull/1",
+      number: 1,
+      state: "open",
+      base: "main",
+      head: "kib-1",
+    },
   ]);
   expect(events).toContainEqual(event());
   expect(statusOf()).toBe("in_review");
@@ -314,7 +327,14 @@ test("a PR without a ticket, or closed without merging, moves no ticket", async 
     command: {
       method: "upsertExternalRef",
       ticketId: ticket.id,
-      ref: { kind: "github_pr", url: "https://github.com/kibo/test/pull/1", number: 1, state: "open" },
+      ref: {
+        kind: "github_pr",
+        url: "https://github.com/kibo/test/pull/1",
+        number: 1,
+        state: "open",
+        base: null,
+        head: null,
+      },
     },
   });
   const state = gh.FAKE_GH_STATE ?? "";
@@ -346,15 +366,21 @@ const setFakePrs = (patch: Record<string, unknown>) => {
   writeFileSync(state, JSON.stringify(prs.map((p) => ({ ...p, ...patch }))));
 };
 
-test("a draft PR moves the ticket only once it is marked ready", async () => {
-  const c = start({ prPollMs: 50 });
-  const ticket = createTicket("Schéma");
-  await createLinkedPr(c, ticket.id, true);
-  expect(refs()?.[0]?.state).toBe("draft");
-  expect(statusOf()).toBe(ticket.statusId);
-  setFakePrs({ isDraft: false });
-  expect(await waitFor(() => refs()?.[0]?.state === "open")).toBe(true);
-  expect(statusOf()).toBe("in_review");
+test("a draft PR created by Kibo moves the ticket to review, ready does not retrigger", async () => {
+  const rules = spyOn(service, "triggerRules");
+  try {
+    const c = start({ prPollMs: 50 });
+    const ticket = createTicket("Schéma");
+    await createLinkedPr(c, ticket.id, true);
+    expect(refs()?.[0]?.state).toBe("draft");
+    expect(statusOf()).toBe("in_review");
+    setFakePrs({ isDraft: false });
+    expect(await waitFor(() => refs()?.[0]?.state === "open")).toBe(true);
+    expect(statusOf()).toBe("in_review");
+    expect(rules.mock.calls.map(([, t]) => t.kind)).toEqual(["pr_opened"]);
+  } finally {
+    rules.mockRestore();
+  }
 });
 
 test("a failing rule is logged, the PR is still created and followed", async () => {
@@ -389,7 +415,7 @@ test("a failing PR lookup is logged and does not stop the others", async () => {
         command: {
           method: "upsertExternalRef",
           ticketId: ticket.id,
-          ref: { kind: "github_pr", url, number, state: "open" },
+          ref: { kind: "github_pr", url, number, state: "open", base: null, head: null },
         },
       });
     upsert("https://example.test/not-a-pr", 7);

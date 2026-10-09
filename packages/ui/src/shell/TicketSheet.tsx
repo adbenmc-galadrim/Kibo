@@ -7,10 +7,12 @@ import { fr } from "../i18n/fr";
 import { frPresence } from "../i18n/fr-presence";
 import { canEdit } from "../state/access";
 import { usePresencePeers } from "../state/use-presence";
+import { LabelsField } from "../ticket/LabelsField";
 import { TicketActionsMenu } from "../ticket/TicketActionsMenu";
 import { TicketTitle } from "../ticket/TicketTitle";
 import { useTicketCommand } from "../ticket/use-ticket-command";
 import { KeyRequired } from "./KeyRequired";
+import { importTitle } from "./sheet/import-title";
 import { GithubLinkNote, GithubRefs } from "./sheet/lazy-sections";
 import { descendantCount, TicketDetail } from "./TicketDetail";
 
@@ -45,6 +47,7 @@ export function TicketSheet({
     (p) => !p.self && p.ticketId === ticketId,
   );
   const command = useTicketCommand(project.meta.id);
+  const labelsCommand = useTicketCommand(project.meta.id);
   const t = project.tickets.find((x) => x.id === ticketId);
   if (!t) return null;
   const editable = canEdit(project);
@@ -75,7 +78,7 @@ export function TicketSheet({
               />
             </span>
           </div>
-          <SheetTitle className="text-lg" aria-label={t.title}>
+          <SheetTitle className="text-lg" aria-label={t.title} title={importTitle(t.externalRefs)}>
             <TicketTitle
               title={t.title}
               editable={editable}
@@ -84,6 +87,7 @@ export function TicketSheet({
               onCancel={command.clearError}
             />
           </SheetTitle>
+          <LabelsField ticket={t} editable={editable} command={labelsCommand} />
           <GithubLinkNote ticket={t} />
           {!inbox && (
             <div className="mt-2 flex flex-wrap gap-2">

@@ -10,7 +10,7 @@ import {
 import { LAZY_FALLBACK_SELECTOR, SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, kanbanPanel, manifest } from "./index";
 import { seed } from "./test-seed";
@@ -203,7 +203,14 @@ const syncedSeed = (run: (cmd: ProjectCommand) => unknown) => {
   run({
     method: "upsertExternalRef",
     ticketId: b.id,
-    ref: { kind: "github_pr", url: "https://github.com/adam/kibo/pull/12", number: 12, state: "open" },
+    ref: {
+      kind: "github_pr",
+      url: "https://github.com/adam/kibo/pull/12",
+      number: 12,
+      state: "open",
+      base: null,
+      head: null,
+    },
   });
 };
 const ciRun = (overrides: Partial<CiRun>): CiRun => ({
@@ -439,4 +446,68 @@ test("without a selection: no chip and no fading", async () => {
   expect(card.getAttribute("data-selected")).toBe("false");
   expect(document.querySelector(".opacity-50")).toBeNull();
   expect(screen.queryByRole("button", { name: "Effacer la sélection" })).toBeNull();
+});
+
+const labelled = (run: (cmd: ProjectCommand) => unknown) => {
+  const mine = { kind: "human", ref: "adam" } as const;
+  run({ method: "createTicket", title: "API", assignee: mine, labels: ["area:api", "phase:p1", "urgent"] });
+  run({ method: "createTicket", title: "Web", assignee: mine, labels: ["area:web"] });
+  run({ method: "createTicket", title: "Nue", assignee: mine });
+};
+
+test("labels: cards show two chips then +n, the label menu narrows the board and is read back", async () => {
+  const m = createMockSdk(manifest, { seed: labelled, viewer: "adam" });
+  const mount = () =>
+    render(
+      <SdkProvider sdk={m.sdk}>
+        <Component />
+      </SdkProvider>,
+    );
+  mount();
+  const user = userEvent.setup();
+  const card = within(await screen.findByRole("article", { name: "KIB-1 API" }));
+  expect(card.getByText("area:api")).toBeTruthy();
+  expect(card.getByText("phase:p1")).toBeTruthy();
+  expect(card.queryByText("urgent")).toBeNull();
+  expect(card.getByText("+1")).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Étiquette : toutes" }));
+  const menu = await screen.findByRole("menu");
+  expect(
+    within(menu)
+      .getAllByRole("menuitemradio")
+      .map((i) => i.textContent),
+  ).toEqual(["Étiquette : toutes", "area:api", "area:web", "phase:p1", "urgent"]);
+  await user.click(within(menu).getByRole("menuitemradio", { name: "area:web" }));
+  expect(await screen.findByRole("button", { name: "Étiquette : area:web" })).toBeTruthy();
+  expect(screen.getByText("Web")).toBeTruthy();
+  expect(screen.queryByText("API")).toBeNull();
+  expect(screen.queryByText("Nue")).toBeNull();
+  expect(await m.sdk.data.get<string>("labelFilter")).toBe("area:web");
+  cleanup();
+  mount();
+  expect(await screen.findByRole("button", { name: "Étiquette : area:web" })).toBeTruthy();
+  expect(screen.queryByText("API")).toBeNull();
+  await user.click(screen.getByRole("button", { name: /Tout afficher/ }));
+  expect(await screen.findByText("API")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Étiquette : toutes" })).toBeTruthy();
+  expect(await m.sdk.data.get<string>("labelFilter")).toBe("*");
+});
+
+test("a card shows its open questions, never a zero", async () => {
+  const m = setup();
+  const sync = m.snapshot().tickets.find((t) => t.title === "Sync")?.id ?? "";
+  const ask = (title: string) =>
+    m.run({ method: "createQuestion", ticketId: sync, title, createdBy: { kind: "agent", ref: "opus-dev" } });
+  const todo = await screen.findByRole("region", { name: "À faire" });
+  expect(within(todo).queryByText(/question/)).toBeNull();
+  act(() => {
+    ask("Un admin non affecté accède-t-il aux fichiers ?");
+    ask("Bloquer le dépôt sur une affaire archivée ?");
+  });
+  const card = await within(todo).findByRole("article", { name: /Sync/ });
+  expect(await within(card).findByText("2 questions")).toBeTruthy();
+  expect(within(card).getByText("2 questions").closest("[data-slot=badge]")?.className).toContain(
+    "text-orange-600",
+  );
+  expect(within(todo).getAllByText(/questions?$/)).toHaveLength(1);
 });

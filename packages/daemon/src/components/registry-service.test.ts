@@ -50,7 +50,14 @@ let db: Database;
 
 beforeEach(() => {
   ws = createWorkspaceDoc();
-  project = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#71717A" });
+  project = createProjectDoc({
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#71717A",
+    worktree: null,
+  });
   store = createFakeStore();
   stopped = [];
   emitted = 0;
@@ -192,6 +199,7 @@ describe("listing and uninstall", () => {
       ["viewer-3d", true],
       ["snake", true],
       ["mockup", true],
+      ["questions", true],
       ["pr-queue", false],
     ]);
     expect(list[0]?.versions).toEqual([
@@ -224,6 +232,7 @@ describe("listing and uninstall", () => {
       "viewer-3d",
       "snake",
       "mockup",
+      "questions",
     ]);
   });
 });

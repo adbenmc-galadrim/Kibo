@@ -42,8 +42,9 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 22 · Installation & aide | 19, 19b, 19c, 78, 76, 76b, 76c, 112c, 136–139 (phase 14) ; **dessinés** |
 | 23 · Didacticiel | 140–146 (phase 14) ; **dessinés** |
 | 24 · Maquettes Figma & Penpot | 16, 16b, 53, 53b, 53c, 147, 148, 149, 4, 4b (phase 15) ; **dessinés** |
+| 25 · Questions & session | 166 à 173 (phase 17 : étiquettes, worktrees, mode Automatique, questions, session principale) ; **dessinés** |
 
-Pages 00 à 24 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 24.
+Pages 00 à 25 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 25.
 
 Règles :
 - Chaque écran existe en **sombre et en clair**, le clair nommé `… (clair)`. Modifier le sombre, puis régénérer le clair (`S.relight`).
@@ -133,9 +134,20 @@ Numéros : 136 à 149 (phases 14 et 15) et 150 à 160 (phases 12 et 13) suivent 
   53c jeton refusé · 147 Connecter Penpot · 147b jeton refusé · 147c adresse invalide · 147d déconnecter · 148 widget Maquette · 148b périmé, hors ligne ·
   148c vide et erreurs · 149 réglages du widget · 149b URL invalide · 4 fiche ticket, section Maquettes · 4b URL refusée, aperçu absent.
 
+## Phase 17 (page 25)
+
+`30-questions.js`, chargé après `29-maquettes` ; listes de job `S.QUESTIONS` (170 à 173) et `S.HERITES` (166 à 169). Après le dessin, `S.fixQNav()`
+dans un appel direct (élément « Questions » de la barre latérale sous « Notes »), puis `S.dropBases()`. Données : section « Questions » de `donnees-fictives.md`.
+
+- 25 · Questions & session : 166 fiche, étiquettes et branche (infobulle de la base) · 166b étiquette invalide · 167 Modifier le projet, worktrees des agents ·
+  167b guillemets simples refusés · 168 profil, mode Automatique et règles d'autorisation · 168b règle Bash sans motif · 169 Tickets, filtre d'étiquettes ·
+  170 widget Questions, réponse en ligne · 170b vue filtrée « Répondues » · 170c vue et dialogue « Nouvelle question » · 171 pastille « 2 questions » sur la carte
+  Kanban et la fiche (« Session principale : opus-dev-2 · 3 tours ») · 171b pastille dans la ligne Tickets · 172 tiroir du run « Terminé · 1 question », ligne
+  `session`, notification système · 172b réponses à transmettre · 173 Assigner, session reprise et « Repartir de zéro » · 173b nouvelle session (transcript introuvable).
+
 ## Exporter
 
-1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("24")` aujourd'hui (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
+1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("25")` aujourd'hui (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`.
 2. Source : menu du fichier → Exporter (.penpot), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
    que Penpot régénère : l'archive reste sous la limite de 100 Mo de GitHub).

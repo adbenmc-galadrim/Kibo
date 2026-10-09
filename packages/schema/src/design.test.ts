@@ -133,6 +133,13 @@ test("frameKeyOfRef reads figma and penpot refs only", () => {
     frameKeyOfRef({ kind: "figma_node", fileKey: "AbC123xyz", nodeId: "12:34", url: FIGMA, name: "Tickets" }),
   ).toEqual({ provider: "figma", fileKey: "AbC123xyz", nodeId: "12:34" });
   expect(
-    frameKeyOfRef({ kind: "github_pr", url: "https://github.com/a/b/pull/1", number: 1, state: "open" }),
+    frameKeyOfRef({
+      kind: "github_pr",
+      url: "https://github.com/a/b/pull/1",
+      number: 1,
+      state: "open",
+      base: null,
+      head: null,
+    }),
   ).toBeNull();
 });

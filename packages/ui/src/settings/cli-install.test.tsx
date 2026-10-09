@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type KiboErrorCode, type RpcRequest } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const PATH = "/Users/adam/.local/bin/kibo";
 let installed = false;
@@ -9,13 +10,15 @@ let install: () => Promise<unknown> = async () => {
   installed = true;
   return { path: PATH };
 };
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) =>
-      req.method === "cliStatus" ? Promise.resolve({ path: PATH, installed }) : install(),
-    subscribe: () => () => undefined,
-  },
-}));
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) =>
+        req.method === "cliStatus" ? Promise.resolve({ path: PATH, installed }) : install(),
+      subscribe: () => () => undefined,
+    },
+  }),
+);
 const { CliInstallCard } = await import("./CliInstallCard");
 
 beforeEach(() => {

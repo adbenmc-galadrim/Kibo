@@ -27,7 +27,14 @@ type Step =
   | { kind: "push"; replica: number }
   | { kind: "pull"; replica: number };
 
-const meta = { id: "p1", key: "KIB", name: "Kibo", folder: "/Users/adam/kibo", color: "#F97316" };
+const meta = {
+  id: "p1",
+  key: "KIB",
+  name: "Kibo",
+  folder: "/Users/adam/kibo",
+  color: "#F97316",
+  worktree: null,
+};
 
 const replicaIndex = fc.nat({ max: 4 });
 const pick = fc.nat({ max: 20 });

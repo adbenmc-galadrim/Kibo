@@ -10,21 +10,24 @@ import {
 } from "@kibo/schema";
 import { act, fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import type { TabsAction } from "./tabs-model";
 
 const saved: RpcRequest[] = [];
 let stored: TabsState = { tabs: [], activeId: null, recents: [] };
-mock.module("../api", () => ({
-  onWrite: () => () => {},
-  client: {
-    rpc: (req: RpcRequest) => {
-      if (req.method === "getTabs") return Promise.resolve(stored);
-      saved.push(req);
-      return Promise.resolve(null);
+mock.module("../api", () =>
+  apiMock({
+    onWrite: () => () => {},
+    client: {
+      rpc: (req: RpcRequest) => {
+        if (req.method === "getTabs") return Promise.resolve(stored);
+        saved.push(req);
+        return Promise.resolve(null);
+      },
     },
-  },
-}));
+  }),
+);
 const { TabBar } = await import("./TabBar");
 const { describeTarget } = await import("./tab-title");
 const unmockedModule = "./use-tabs?unmocked";
@@ -36,6 +39,7 @@ const summary: ProjectSummary = {
   name: "Kibo",
   folder: "/repo",
   color: "#F97316",
+  worktree: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
 };
 const snapshot: ProjectSnapshot = {
@@ -44,6 +48,7 @@ const snapshot: ProjectSnapshot = {
   pages: [{ id: "1@1", title: "Kanban", kind: "view", parentId: null }],
   tickets: [],
   links: [],
+  questions: [],
   instances: [],
   rules: [],
   bindings: [],
@@ -249,14 +254,13 @@ test("closing a project's tabs does not fill the closed pile", async () => {
   expect(api().closed).toEqual([]);
 });
 
-test("closing a tab and its duplicate counts two closes", async () => {
+test("closing a tab and its duplicate stacks both targets", async () => {
   const api = await mountTabs();
   act(() => api().open(pageTarget("1"), { newTab: true }));
   const first = api().state.activeId ?? "";
   act(() => api().dispatch({ type: "duplicate", id: first, newId: "copy" }));
   act(() => api().dispatch({ type: "close", id: "copy" }));
   act(() => api().dispatch({ type: "close", id: first }));
-  expect(api().closures).toBe(2);
   expect(api().closed).toEqual([pageTarget("1"), pageTarget("1")]);
 });
 

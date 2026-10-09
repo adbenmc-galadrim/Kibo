@@ -1,7 +1,8 @@
 import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 import { KiboError, type ProjectAsset, type RpcRequest } from "@kibo/schema";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let assets: ProjectAsset[] = [];
@@ -26,18 +27,20 @@ const answer = (req: RpcRequest): unknown => {
       return null;
   }
 };
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      calls.push(req);
-      if (req.method === "appendAssetUpload" && appendGate) await appendGate;
-      if (req.method === "listAssets" && listGate) await listGate;
-      const error = refuse(req);
-      if (error) throw error;
-      return answer(req);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        calls.push(req);
+        if (req.method === "appendAssetUpload" && appendGate) await appendGate;
+        if (req.method === "listAssets" && listGate) await listGate;
+        const error = refuse(req);
+        if (error) throw error;
+        return answer(req);
+      },
     },
-  },
-}));
+  }),
+);
 const { ProjectFilesDialog } = await import("./ProjectFilesDialog");
 
 const robot: ProjectAsset = {
@@ -245,35 +248,70 @@ const gate = () => {
   return { closed, open };
 };
 
-test("each file of a batch keeps its own bar, rises without going back, then leaves once all are listed", async () => {
-  const append = gate();
-  const list = gate();
-  appendGate = append.closed;
-  show();
-  await screen.findByRole("table");
-  const seen = new Map<string, number[]>();
-  const observer = new MutationObserver(() => {
-    for (const bar of Array.from(document.querySelectorAll('[role="progressbar"]'))) {
-      const name = bar.getAttribute("aria-label") ?? "";
-      seen.set(name, [...(seen.get(name) ?? []), Number(bar.getAttribute("aria-valuenow"))]);
-    }
+const manualFrames = () => {
+  let now = 0;
+  let next = 0;
+  let queued = new Map<number, FrameRequestCallback>();
+  const clock = spyOn(performance, "now").mockImplementation(() => now);
+  const request = spyOn(globalThis, "requestAnimationFrame").mockImplementation((callback) => {
+    next += 1;
+    queued.set(next, callback);
+    return next;
   });
-  observer.observe(document.body, { subtree: true, childList: true, attributeFilter: ["aria-valuenow"] });
-  pick(glb("a.glb"), glb("b.glb"));
-  const uploads = await screen.findByRole("list", { name: "Envois en cours" });
-  const bars = within(uploads).getAllByRole("progressbar");
-  expect(bars.map((b) => b.getAttribute("aria-label"))).toEqual(["Envoi de a.glb", "Envoi de b.glb"]);
-  expect(bars.map((b) => b.getAttribute("aria-valuenow"))).toEqual(["0", "0"]);
-  listGate = list.closed;
-  append.open();
-  await waitFor(() => expect(bars.map((b) => b.getAttribute("aria-valuenow"))).toEqual(["100", "100"]));
-  expect(within(uploads).getAllByText("Importé")).toHaveLength(2);
-  list.open();
-  await waitFor(() => expect(screen.queryAllByRole("progressbar")).toHaveLength(0));
-  observer.disconnect();
-  for (const name of ["Envoi de a.glb", "Envoi de b.glb"]) {
-    const values = seen.get(name) ?? [];
-    expect(values.length).toBeGreaterThan(2);
-    expect(values.every((v, i) => i === 0 || v >= (values[i - 1] ?? 0))).toBe(true);
+  const cancel = spyOn(globalThis, "cancelAnimationFrame").mockImplementation((handle) => {
+    queued.delete(handle);
+  });
+  const frame = async (ms: number) => {
+    await act(() => {
+      now += ms;
+      const due = [...queued.values()];
+      queued = new Map();
+      for (const callback of due) callback(now);
+    });
+    return queued.size > 0;
+  };
+  const restore = () => {
+    clock.mockRestore();
+    request.mockRestore();
+    cancel.mockRestore();
+  };
+  return { frame, restore };
+};
+
+test("each file of a batch keeps its own bar, rises without going back, then leaves once all are listed", async () => {
+  const frames = manualFrames();
+  try {
+    const append = gate();
+    const list = gate();
+    appendGate = append.closed;
+    show();
+    await screen.findByRole("table");
+    pick(glb("a.glb"), glb("b.glb"));
+    const uploads = await screen.findByRole("list", { name: "Envois en cours" });
+    const bars = within(uploads).getAllByRole("progressbar");
+    expect(bars.map((b) => b.getAttribute("aria-label"))).toEqual(["Envoi de a.glb", "Envoi de b.glb"]);
+    const values = () => bars.map((b) => Number(b.getAttribute("aria-valuenow")));
+    expect(values()).toEqual([0, 0]);
+    listGate = list.closed;
+    append.open();
+    await waitFor(() => expect(within(uploads).getAllByText("Importé")).toHaveLength(2));
+    const seen: number[][] = [values()];
+    let animating = true;
+    for (let i = 0; i < 200 && animating; i += 1) {
+      animating = await frames.frame(16);
+      seen.push(values());
+    }
+    expect(animating).toBe(false);
+    expect(values()).toEqual([100, 100]);
+    expect(screen.getAllByRole("progressbar")).toHaveLength(2);
+    list.open();
+    await waitFor(() => expect(screen.queryAllByRole("progressbar")).toHaveLength(0));
+    for (const index of [0, 1]) {
+      const bar = seen.map((row) => row[index] ?? 0);
+      expect(new Set(bar).size).toBeGreaterThan(2);
+      expect(bar.every((v, i) => i === 0 || v >= (bar[i - 1] ?? 0))).toBe(true);
+    }
+  } finally {
+    frames.restore();
   }
 });

@@ -1,22 +1,25 @@
 import { expect, mock, test } from "bun:test";
 import type { Phase7Event, RpcRequest, SandboxStatus } from "@kibo/schema";
 import { act, render, screen, waitFor } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 
 let sandbox: SandboxStatus;
 const listeners = new Set<(e: Phase7Event) => void>();
 
-mock.module("../api", () => ({
-  client: {
-    rpc: async (req: RpcRequest) => {
-      if (req.method === "getSandboxStatus") return sandbox;
-      throw new Error(`unexpected ${req.method}`);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: async (req: RpcRequest) => {
+        if (req.method === "getSandboxStatus") return sandbox;
+        throw new Error(`unexpected ${req.method}`);
+      },
+      subscribeEvents: (l: (e: Phase7Event) => void) => {
+        listeners.add(l);
+        return () => listeners.delete(l);
+      },
     },
-    subscribeEvents: (l: (e: Phase7Event) => void) => {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
-  },
-}));
+  }),
+);
 const { SandboxBanner } = await import("./SandboxBanner");
 
 const missing: SandboxStatus = {

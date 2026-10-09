@@ -6,7 +6,8 @@ import { createProjectDoc } from "./project";
 import { createTicket, getTicket } from "./tickets";
 import { getNode } from "./tree";
 
-const doc = () => createProjectDoc({ id: "p", key: "KIB", name: "Kibo", folder: null, color: "#71717A" });
+const doc = () =>
+  createProjectDoc({ id: "p", key: "KIB", name: "Kibo", folder: null, color: "#71717A", worktree: null });
 const issue = (patch: Partial<Extract<ExternalRef, { kind: "github_issue" }>> = {}): ExternalRef => ({
   kind: "github_issue",
   bindingId: "b1",
@@ -116,7 +117,14 @@ describe("external refs of every kind", () => {
   test("only http(s) urls are accepted, for every kind", () => {
     const d = doc();
     const t = createTicket(d, { title: "A" });
-    const pr: ExternalRef = { kind: "github_pr", url: "javascript:alert(1)", number: 1, state: "open" };
+    const pr: ExternalRef = {
+      kind: "github_pr",
+      url: "javascript:alert(1)",
+      number: 1,
+      state: "open",
+      base: null,
+      head: null,
+    };
     expect(() => upsertExternalRef(d, t.id, pr)).toThrow("INVALID_INPUT");
     expect(() => upsertExternalRef(d, t.id, { ...figma, url: "javascript:alert(1)" })).toThrow(
       "INVALID_INPUT",

@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { guidelineChain } from "@kibo/core/context";
 import { canResume, resumableRuns } from "@kibo/core/run-resume";
 import { headRank, orderQueue, planAdmissions, rankForMove, tailRank } from "@kibo/core/scheduler";
@@ -7,9 +8,10 @@ import {
   HostSettings,
   isTerminal,
   KiboError,
+  mainSessionOf,
   type RunView,
 } from "@kibo/schema";
-import { previewAssign } from "./assign-preview";
+import { activeRunOf, plannedCwd, previewAssign } from "./assign-preview";
 import { createHookSink } from "./hook-sink";
 import { hostSettingsOf, hostViewOf } from "./host-view";
 import { noticeFor } from "./notifier";
@@ -144,8 +146,12 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       const profile = ticketProfileOf(input.profileId, input.projectId);
       const { ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
       if (ticket.key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
+      if (activeRunOf(registry.all(), ticket.id))
+        throw new KiboError("CONFLICT", `ticket ${ticket.key} already has an active run`);
       opts.data.assertWritable(input.projectId);
       opts.data.assignTicket(input.projectId, ticket.id, profile.name);
+      const main = mainSessionOf(registry.all(), ticket.id);
+      const inherited = !input.fresh && main !== null && main.profileId === profile.id ? main : null;
       const view = enqueue({
         id: crypto.randomUUID(),
         projectId: input.projectId,
@@ -154,8 +160,9 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         ticketTitle: ticket.title,
         profileId: profile.id,
         profileName: profile.name,
-        sessionId: crypto.randomUUID(),
+        sessionId: inherited?.sessionId ?? crypto.randomUUID(),
         brief: input.brief,
+        resumedFrom: inherited?.id ?? null,
       });
       tick();
       return registry.get(view.id);
@@ -180,13 +187,14 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         profileName: profile.name,
         sessionId: task.resumeSessionId ?? crypto.randomUUID(),
         brief: task.prompt,
+        resumedFrom: null,
       });
       tick();
       return registry.get(id);
     },
     preview(input) {
       const profile = ticketProfileOf(input.profileId, input.projectId);
-      const { ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
+      const { project, ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
       const key = ticket.key;
       if (key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
       const guidelines = guidelineChain(opts.data.guidelines(input.projectId), {
@@ -203,6 +211,8 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         guidelines,
         at: now(),
         plan,
+        plannedCwd: plannedCwd(profile.workspace, project.meta, { ...ticket, key }),
+        transcriptExists: (path) => path !== null && existsSync(path),
       });
     },
     answer(runId, text) {
@@ -210,6 +220,8 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       if (isTerminal(target.state) && !canResume(target, resumeContext(registry.all()))) {
         throw new KiboError("INVALID_TRANSITION", `run ${runId} cannot be resumed`);
       }
+      if (isTerminal(target.state) && target.ticketId && activeRunOf(registry.all(), target.ticketId))
+        throw new KiboError("CONFLICT", `ticket ${target.ticketKey} already has an active run`);
       registry.apply(runId, { type: "answered", text, rank: headRank(registry.all()) });
       tick();
       return registry.get(runId);
@@ -250,6 +262,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         host: hostView(),
         tokensToday: registry.tokensSince(startOfDay(now())),
         resumable: resumableRuns(resumeContext(runs)),
+        questions: [],
       };
     },
     log: (runId) => registry.log(runId),

@@ -1,0 +1,33 @@
+{
+  "turns": [
+    {
+      "steps": [
+        {
+          "hook": "PreToolUse",
+          "tool": "mcp__kibo__ask_question",
+          "input": {
+            "question": "Bloquer le dépôt sur une affaire archivée ?",
+            "options": ["Oui", "Non"],
+            "provisional": "Non"
+          }
+        },
+        {
+          "hook": "PostToolUse",
+          "tool": "mcp__kibo__ask_question",
+          "input": {
+            "question": "Bloquer le dépôt sur une affaire archivée ?",
+            "options": ["Oui", "Non"],
+            "provisional": "Non"
+          }
+        }
+      ],
+      "result": "Livré avec le choix provisoire.",
+      "tokens": 1500
+    },
+    {
+      "steps": [],
+      "result": "Choix appliqué.",
+      "tokens": 600
+    }
+  ]
+}

@@ -27,7 +27,14 @@ const run: TicketRun = {
 };
 
 function setup(extra: Record<string, unknown>, mode: SdkMode = "builtin") {
-  const doc = createProjectDoc({ id: "p", key: "KIB", name: "Kibo", folder: null, color: "#71717A" });
+  const doc = createProjectDoc({
+    id: "p",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#71717A",
+    worktree: null,
+  });
   const calls: ComponentCall[] = [];
   const runs: unknown[] = [];
   const backend: ProjectBackend = {

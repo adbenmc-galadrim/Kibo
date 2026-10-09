@@ -11,21 +11,24 @@ import {
 } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let answers: Partial<Record<RpcRequest["method"], () => Promise<unknown>>> = {};
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req);
-      const answer = answers[req.method];
-      return answer ? answer() : Promise.resolve([]);
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req);
+        const answer = answers[req.method];
+        return answer ? answer() : Promise.resolve([]);
+      },
+      subscribe: () => () => undefined,
+      subscribeIntegrations: () => () => undefined,
     },
-    subscribe: () => () => undefined,
-    subscribeIntegrations: () => () => undefined,
-  },
-}));
+  }),
+);
 
 const { AddComponentDialog } = await import("./AddComponentDialog");
 const { MarketCatalogSection } = await import("./MarketCatalogSection");

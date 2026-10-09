@@ -1,6 +1,7 @@
 import { expect, mock, test } from "bun:test";
 import type { RpcRequest, RuntimeInfo } from "@kibo/schema";
 import { renderHook, waitFor } from "@testing-library/react";
+import { apiMock } from "../api-mock";
 
 const answers: (() => Promise<RuntimeInfo>)[] = [];
 const requests: RpcRequest[] = [];
@@ -13,7 +14,7 @@ const scriptedClient = () => ({
   },
   subscribe: () => () => {},
 });
-mock.module("../api", () => ({ client: scriptedClient() }));
+mock.module("../api", () => apiMock({ client: scriptedClient() }));
 
 const unmockedModule = "./use-runtime-info?unmocked";
 const { useRuntimeInfo }: typeof import("./use-runtime-info") = await import(unmockedModule);
@@ -48,20 +49,22 @@ test("the answer is remembered per client: a replaced client is asked again", as
   await waitFor(() => expect(before.result.current.info?.sandboxOrigin).toBe("http://127.0.0.1:4801"));
 
   const otherRequests: RpcRequest[] = [];
-  mock.module("../api", () => ({
-    client: {
-      rpc: (req: RpcRequest) => {
-        otherRequests.push(req);
-        return Promise.resolve({ sandboxOrigin: "http://127.0.0.1:4802" });
+  mock.module("../api", () =>
+    apiMock({
+      client: {
+        rpc: (req: RpcRequest) => {
+          otherRequests.push(req);
+          return Promise.resolve({ sandboxOrigin: "http://127.0.0.1:4802" });
+        },
+        subscribe: () => () => {},
       },
-      subscribe: () => () => {},
-    },
-  }));
+    }),
+  );
   try {
     const after = renderHook(() => useRuntimeInfo());
     await waitFor(() => expect(after.result.current.info?.sandboxOrigin).toBe("http://127.0.0.1:4802"));
     expect(otherRequests).toEqual([{ method: "getRuntimeInfo" }]);
   } finally {
-    mock.module("../api", () => ({ client: scriptedClient() }));
+    mock.module("../api", () => apiMock({ client: scriptedClient() }));
   }
 });

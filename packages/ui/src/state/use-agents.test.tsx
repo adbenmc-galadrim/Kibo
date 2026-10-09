@@ -2,33 +2,36 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest, type Topic } from "@kibo/schema";
 import { act, render } from "@testing-library/react";
 import { agentsFixture, configFixture } from "../agents/fixtures";
+import { apiMock } from "../api-mock";
 
 const calls: string[] = [];
 const topics = new Map<Topic, Set<() => void>>();
 const status = { online: false, listeners: new Set<() => void>() };
 let runLog: () => Promise<unknown> = () => Promise.resolve([]);
 
-mock.module("../api", () => ({
-  client: {
-    rpc: (req: RpcRequest) => {
-      calls.push(req.method);
-      if (req.method === "getAgents") return Promise.resolve(agentsFixture());
-      if (req.method === "getConfig") return Promise.resolve(configFixture());
-      return runLog();
+mock.module("../api", () =>
+  apiMock({
+    client: {
+      rpc: (req: RpcRequest) => {
+        calls.push(req.method);
+        if (req.method === "getAgents") return Promise.resolve(agentsFixture());
+        if (req.method === "getConfig") return Promise.resolve(configFixture());
+        return runLog();
+      },
+      subscribeTopic: (topic: Topic, listener: () => void) => {
+        const set = topics.get(topic) ?? new Set<() => void>();
+        set.add(listener);
+        topics.set(topic, set);
+        return () => set.delete(listener);
+      },
+      online: () => status.online,
+      onConnection: (listener: () => void) => {
+        status.listeners.add(listener);
+        return () => status.listeners.delete(listener);
+      },
     },
-    subscribeTopic: (topic: Topic, listener: () => void) => {
-      const set = topics.get(topic) ?? new Set<() => void>();
-      set.add(listener);
-      topics.set(topic, set);
-      return () => set.delete(listener);
-    },
-    online: () => status.online,
-    onConnection: (listener: () => void) => {
-      status.listeners.add(listener);
-      return () => status.listeners.delete(listener);
-    },
-  },
-}));
+  }),
+);
 
 const unmockedModule = "./use-agents?unmocked";
 const { useAgents, useConfig, useDaemonOnline, useRunLog }: typeof import("./use-agents") = await import(

@@ -14,7 +14,13 @@ const commit = (shortSha: string): CommitInfo => ({
   pushed: false,
 });
 
-const pr: PrInfo = { number: 12, url: "https://github.com/kibo/test/pull/12", state: "open" };
+const pr: PrInfo = {
+  number: 12,
+  url: "https://github.com/kibo/test/pull/12",
+  state: "open",
+  base: null,
+  head: null,
+};
 
 function renderActions(overrides: Partial<Parameters<typeof PushActions>[0]> = {}) {
   return render(

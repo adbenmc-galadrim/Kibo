@@ -73,7 +73,14 @@ beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), "kibo-publish-"));
   homes.push(home);
   ws = createWorkspaceDoc();
-  project = createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316" });
+  project = createProjectDoc({
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+  });
   updates = [];
   failFor = null;
   validationOk = true;
