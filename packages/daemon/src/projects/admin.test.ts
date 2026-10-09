@@ -11,7 +11,7 @@ import {
   type ProjectSyncInfo,
 } from "@kibo/schema";
 import { createProjectSettings } from "../notes/settings";
-import { LOCAL_FOLDER_KEY, LOCAL_WORKTREE_KEY } from "../project-folder";
+import { LOCAL_FOLDER_KEY, LOCAL_STORYBOOK_KEY, LOCAL_WORKTREE_KEY } from "../project-folder";
 import { LOCAL_CONTEXT, type RpcContext } from "../rpc-extensions";
 import { createService } from "../service";
 import { openStore } from "../store";
@@ -130,6 +130,33 @@ test("worktree settings are local, checked, and work on a read-only shared proje
   expect(s.snapshot().meta.worktree).toEqual(worktree);
   expect(s.summary()?.worktree).toEqual(worktree);
   expect(update({ worktree: null }).worktree).toBeNull();
+  s.close();
+});
+
+test("storybook settings are local, checked, and work on a read-only shared project", () => {
+  const s = setup({ sharing: SHARED_SYNC });
+  s.service.docs.setWriteGuard(() => {
+    throw new KiboError("FORBIDDEN", "read-only project");
+  });
+  const storybook = { origin: "https://sb.example.com", portEnv: "STORYBOOK_PORT" };
+  const update = (patch: object, ctx: RpcContext = LOCAL_CONTEXT) =>
+    s.admin.updateProject({ method: "updateProject", projectId: s.project.id, patch }, ctx);
+  expect(() => update({ storybook }, REMOTE)).toThrow("FORBIDDEN");
+  expect(() => update({ storybook: { ...storybook, origin: "http://192.168.1.10:6006" } })).toThrow(
+    "INVALID_INPUT",
+  );
+  expect(() => update({ storybook: { ...storybook, origin: "https://sb.example.com/path" } })).toThrow(
+    "INVALID_INPUT",
+  );
+  expect(() => update({ storybook: { ...storybook, portEnv: "storybook-port" } })).toThrow("INVALID_INPUT");
+  expect(s.settings.get(s.project.id, LOCAL_STORYBOOK_KEY)).toBeNull();
+  expect(update({ storybook }).storybook).toEqual(storybook);
+  expect(JSON.parse(s.settings.get(s.project.id, LOCAL_STORYBOOK_KEY) ?? "null")).toEqual(storybook);
+  expect(s.snapshot().meta.storybook).toEqual(storybook);
+  expect(s.summary()?.storybook).toEqual(storybook);
+  expect(update({ storybook: null }).storybook).toBeNull();
+  expect(s.settings.get(s.project.id, LOCAL_STORYBOOK_KEY)).toBeNull();
+  expect(s.summary()?.storybook).toBeNull();
   s.close();
 });
 

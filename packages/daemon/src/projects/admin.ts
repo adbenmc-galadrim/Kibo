@@ -95,6 +95,7 @@ export function createProjectAdmin(deps: ProjectAdminDeps): ProjectAdmin {
       const patch = parsePatch(req.patch);
       if (patch.folder !== undefined) checkFolder(projectId, patch.folder, ctx);
       if (patch.worktree !== undefined) checkWorktree(patch.worktree, ctx);
+      if (patch.storybook !== undefined) requireLocal(ctx);
       const outOfDoc = keepsFolderOutOfDoc(deps.sharing(projectId));
       const touchesDoc = patch.name !== undefined || patch.color !== undefined;
       if (touchesDoc || (patch.folder !== undefined && !outOfDoc)) deps.docs.assertWritable(projectId);
