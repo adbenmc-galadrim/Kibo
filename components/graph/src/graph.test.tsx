@@ -293,3 +293,26 @@ test("unassigned dependencies: hidden by « Moi + agents », drawn with the « a
   mount({ filter: "all" });
   expect(await screen.findByRole("button", { name: /Amont/ })).toBeTruthy();
 });
+
+test("minimap: never selectable, press and drag only move the view", async () => {
+  setup("view");
+  await screen.findByText("Chemin critique : 3 tickets · 1 bloqué");
+  const canvas = screen.getByRole("region", { name: "Graphe des dépendances" });
+  const minimap = screen.getByRole("img", { name: "Vue d'ensemble du graphe" });
+  expect(canvas.classList.contains("select-none")).toBe(true);
+  expect(minimap.classList.contains("select-none")).toBe(true);
+  const stage = () => canvas.querySelector<HTMLElement>("[data-stage]")?.style.transform ?? "";
+  expect(fireEvent.pointerDown(minimap, { clientX: 10, clientY: 10, pointerId: 1 })).toBe(false);
+  const pressed = stage();
+  fireEvent.pointerMove(minimap, { clientX: 60, clientY: 50, pointerId: 1 });
+  const dragged = stage();
+  expect(dragged).not.toBe(pressed);
+  fireEvent.pointerUp(minimap, { pointerId: 1 });
+  fireEvent.pointerMove(minimap, { clientX: 120, clientY: 90, pointerId: 1 });
+  expect(stage()).toBe(dragged);
+  fireEvent.pointerDown(minimap, { clientX: 10, clientY: 10, pointerId: 1 });
+  fireEvent.pointerLeave(minimap, { pointerId: 1 });
+  const left = stage();
+  fireEvent.pointerMove(minimap, { clientX: 90, clientY: 70, pointerId: 1 });
+  expect(stage()).toBe(left);
+});

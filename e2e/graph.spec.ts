@@ -36,6 +36,14 @@ async function openGraph(page: Page) {
   return canvas;
 }
 
+async function expectNoSelection(page: Page) {
+  const selection = await page.evaluate(() => {
+    const s = window.getSelection();
+    return { text: s?.toString() ?? "", collapsed: s === null || s.isCollapsed };
+  });
+  expect(selection).toEqual({ text: "", collapsed: true });
+}
+
 const transformOf = (page: Page) =>
   page.locator("[data-stage]").evaluate((el) => (el instanceof HTMLElement ? el.style.transform : ""));
 
@@ -76,6 +84,23 @@ test("trackpad : pincement, déplacement, Tout voir, double clic, minimap", asyn
   await minimap.click({ position: { x: 4, y: 4 } });
   await expect.poll(() => transformOf(page)).not.toBe(framed);
   await shot(page, info, "graphe-navigation");
+
+  const map = await minimap.boundingBox();
+  if (!map) throw new Error("no minimap box");
+  await minimap.dblclick({ position: { x: 20, y: 20 } });
+  await expectNoSelection(page);
+  await minimap.click({ position: { x: 20, y: 20 }, clickCount: 3 });
+  await expectNoSelection(page);
+  const pressed = await transformOf(page);
+  await page.mouse.move(map.x + 10, map.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(map.x + map.width - 10, map.y + map.height - 10, { steps: 6 });
+  await expect.poll(() => transformOf(page)).not.toBe(pressed);
+  await page.mouse.move(map.x - 300, map.y - 200, { steps: 6 });
+  await page.mouse.up();
+  await expectNoSelection(page);
+  await page.mouse.dblclick(box.x + 12, box.y + box.height - 12);
+  await expectNoSelection(page);
 });
 
 test("sélection : clic, Ouvrir, flèches, Entrée, boîte avec Shift", async ({ page }, info) => {
