@@ -6,7 +6,7 @@ import { frProjectAgent } from "../i18n/fr-project-agent";
 import { useHost } from "../shell/Host";
 import { useRunLog } from "../state/use-run-log";
 import type { Decision } from "./BatchCard";
-import type { StatusLabel } from "./batch-groups";
+import { projectLabels } from "./batch-groups";
 import { ComposeBox } from "./ComposeBox";
 import { ConversationView } from "./ConversationView";
 import { buildConversation, lastUserMessage, panelStatus } from "./conversation";
@@ -34,7 +34,7 @@ export function ProjectAgentPanel({ open, project, onClose }: Props) {
     () => buildConversation(log ?? [], view?.batches ?? [], view?.run ?? null),
     [log, view],
   );
-  const statusLabel: StatusLabel = (id) => project.workflow.find((s) => s.id === id)?.label ?? id;
+  const labels = useMemo(() => projectLabels(project), [project]);
 
   const send = async (text: string) => {
     await client.rpc({ method: "sendProjectAgentMessage", projectId, text });
@@ -98,7 +98,7 @@ export function ProjectAgentPanel({ open, project, onClose }: Props) {
             <ConversationView
               items={items}
               readOnly={readOnly}
-              statusLabel={statusLabel}
+              labels={labels}
               onTicket={openTicket}
               onRetry={retry}
               onDecide={decide}

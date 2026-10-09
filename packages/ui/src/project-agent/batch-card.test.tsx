@@ -3,14 +3,15 @@ import type { Batch } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BatchCard, type Decision } from "./BatchCard";
-import { partialBatch, pendingBatch } from "./fixtures";
+import { defaultLabels, projectLabels } from "./batch-groups";
+import { emisProject, partialBatch, pendingBatch } from "./fixtures";
 
 function show(batch: Batch, readOnly = false) {
   const decisions: Decision[] = [];
   render(
     <BatchCard
       batch={batch}
-      statusLabel={(id) => ({ in_progress: "En cours", in_review: "En review" })[id] ?? id}
+      labels={projectLabels(emisProject())}
       readOnly={readOnly}
       onDecide={async (d) => {
         decisions.push(d);
@@ -115,7 +116,7 @@ test("superseded, abandoned and rejected batches carry only their label", () => 
     const view = render(
       <BatchCard
         batch={pendingBatch({ status })}
-        statusLabel={(id) => id}
+        labels={defaultLabels}
         readOnly={false}
         onDecide={async () => {}}
       />,

@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { ProposedAction } from "@kibo/schema";
-import { actionDiff, actionTitle, groupActions, replacesContent } from "./batch-groups";
-import { pendingBatch } from "./fixtures";
+import { actionDiff, actionTitle, groupActions, projectLabels, replacesContent } from "./batch-groups";
+import { emisProject, pendingBatch } from "./fixtures";
 
 test("groupActions keeps Tickets, Agents, Questions, Notes and the id order inside each group", () => {
   const shuffled = [...pendingBatch().actions].reverse();
@@ -104,10 +104,36 @@ test("actionDiff shows before → after from the captured state", () => {
 
 test("custom workflow labels are used when given", () => {
   const status: ProposedAction = { id: 2, type: "setStatus", ticket: "EMIS-11", statusId: "done", why: "" };
-  expect(actionDiff(status, { actionId: 2, fields: { statusId: "todo" } }, (id) => id.toUpperCase())).toEqual(
-    {
-      before: "TODO",
-      after: "DONE",
-    },
-  );
+  const labels = { status: (id: string) => id.toUpperCase(), ticket: () => null };
+  expect(actionDiff(status, { actionId: 2, fields: { statusId: "todo" } }, labels)).toEqual({
+    before: "TODO",
+    after: "DONE",
+  });
+});
+
+test("a parent change shows the captured parentId as a key from the project, never a raw id", () => {
+  const labels = projectLabels(emisProject());
+  const move = (parent: string | null): ProposedAction => ({
+    id: 3,
+    type: "updateTicket",
+    ticket: "EMIS-12",
+    parent,
+    why: "",
+  });
+  expect(actionDiff(move("EMIS-11"), { actionId: 3, fields: { parentId: null } }, labels)).toEqual({
+    before: "aucun",
+    after: "EMIS-11",
+  });
+  expect(actionDiff(move(null), { actionId: 3, fields: { parentId: "t11" } }, labels)).toEqual({
+    before: "EMIS-11",
+    after: "aucun",
+  });
+  expect(
+    actionDiff(
+      move("new:1"),
+      { actionId: 3, fields: { parentId: "9f3c2a71-0000-4000-8000-000000000000" } },
+      labels,
+    ),
+  ).toEqual({ before: "ticket introuvable", after: "new:1" });
+  expect(actionDiff(move("EMIS-11"), undefined, labels)).toEqual({ before: "—", after: "EMIS-11" });
 });

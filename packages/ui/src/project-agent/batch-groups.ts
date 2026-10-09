@@ -4,19 +4,30 @@ import {
   type AnswerInput,
   DEFAULT_WORKFLOW,
   type ExpectedState,
+  type ProjectSnapshot,
   type ProposedAction,
 } from "@kibo/schema";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 
 export type BatchGroup = { group: ActionGroup; actions: ProposedAction[] };
 export type ActionDiff = { before: string; after: string };
-export type StatusLabel = (statusId: string) => string;
+export type DiffLabels = { status(statusId: string): string; ticket(ticketId: string): string | null };
 
 const ORDER: readonly ActionGroup[] = ["tickets", "agents", "questions", "notes"];
 const t = frProjectAgent.action;
 const NOTHING = "—";
 
-export const defaultStatusLabel: StatusLabel = (id) => DEFAULT_WORKFLOW.find((s) => s.id === id)?.label ?? id;
+export const defaultLabels: DiffLabels = {
+  status: (id) => DEFAULT_WORKFLOW.find((s) => s.id === id)?.label ?? id,
+  ticket: () => null,
+};
+
+export function projectLabels(project: ProjectSnapshot): DiffLabels {
+  return {
+    status: (id) => project.workflow.find((s) => s.id === id)?.label ?? id,
+    ticket: (id) => project.tickets.find((t) => t.id === id)?.keyLabel ?? null,
+  };
+}
 
 export function groupActions(actions: readonly ProposedAction[]): BatchGroup[] {
   const sorted = [...actions].sort((a, b) => a.id - b.id);
@@ -29,14 +40,14 @@ export function groupActions(actions: readonly ProposedAction[]): BatchGroup[] {
 const answerText = (answer: AnswerInput): string =>
   answer.kind === "option" ? (answer.option ?? "") : answer.kind === "text" ? (answer.text ?? "") : t.confirm;
 
-export function actionTitle(action: ProposedAction, label: StatusLabel = defaultStatusLabel): string {
+export function actionTitle(action: ProposedAction, labels: DiffLabels = defaultLabels): string {
   switch (action.type) {
     case "createTicket":
       return t.createTicket(action.title);
     case "updateTicket":
       return t.updateTicket(action.ticket);
     case "setStatus":
-      return t.setStatus(action.ticket, label(action.statusId));
+      return t.setStatus(action.ticket, labels.status(action.statusId));
     case "link":
       return t.link(action.from, action.to);
     case "unlink":
@@ -62,20 +73,28 @@ const textOf = (value: unknown): string => (typeof value === "string" && value !
 const listOf = (value: unknown): string =>
   Array.isArray(value) && value.length > 0 ? value.map(String).join(", ") : t.none;
 
+function parentOf(fields: Record<string, unknown>, labels: DiffLabels): string {
+  if (!("parentId" in fields)) return NOTHING;
+  const id = fields.parentId;
+  if (typeof id !== "string") return t.none;
+  return labels.ticket(id) ?? t.unknownTicket;
+}
+
 export function actionDiff(
   action: ProposedAction,
   expected: ExpectedState | undefined,
-  label: StatusLabel = defaultStatusLabel,
+  labels: DiffLabels = defaultLabels,
 ): ActionDiff | null {
   const fields = expected?.fields ?? {};
   if (action.type === "setStatus") {
-    const before = typeof fields.statusId === "string" ? label(fields.statusId) : NOTHING;
-    return { before, after: label(action.statusId) };
+    const before = typeof fields.statusId === "string" ? labels.status(fields.statusId) : NOTHING;
+    return { before, after: labels.status(action.statusId) };
   }
   if (action.type !== "updateTicket") return null;
   if (action.title !== undefined) return { before: textOf(fields.title), after: action.title };
   if (action.labels !== undefined) return { before: listOf(fields.labels), after: listOf(action.labels) };
-  if (action.parent !== undefined) return { before: textOf(fields.parent), after: action.parent ?? t.none };
+  if (action.parent !== undefined)
+    return { before: parentOf(fields, labels), after: action.parent ?? t.none };
   return null;
 }
 

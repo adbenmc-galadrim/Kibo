@@ -4,12 +4,12 @@ import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { ArrowRight } from "lucide-react";
 import { useId } from "react";
 import { frProjectAgent } from "../i18n/fr-project-agent";
-import { actionDiff, actionTitle, replacesContent, type StatusLabel } from "./batch-groups";
+import { actionDiff, actionTitle, type DiffLabels, replacesContent } from "./batch-groups";
 
 type Props = {
   action: ProposedAction;
   expected: ExpectedState | undefined;
-  statusLabel: StatusLabel;
+  labels: DiffLabels;
   selectable: boolean;
   checked: boolean;
   result: ActionResult | undefined;
@@ -35,18 +35,10 @@ function Outcome({ result }: { result: ActionResult }) {
   );
 }
 
-export function BatchActionRow({
-  action,
-  expected,
-  statusLabel,
-  selectable,
-  checked,
-  result,
-  onCheck,
-}: Props) {
+export function BatchActionRow({ action, expected, labels, selectable, checked, result, onCheck }: Props) {
   const id = useId();
-  const title = actionTitle(action, statusLabel);
-  const diff = actionDiff(action, expected, statusLabel);
+  const title = actionTitle(action, labels);
+  const diff = actionDiff(action, expected, labels);
   return (
     <li className="flex gap-2 py-1.5">
       {selectable && (

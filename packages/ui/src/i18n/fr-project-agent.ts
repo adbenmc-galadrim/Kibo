@@ -130,6 +130,7 @@ export const frProjectAgent = {
     updateNote: (path: string) => `Mettre à jour la note ${path}`,
     confirm: "Confirmer",
     none: "aucun",
+    unknownTicket: "ticket introuvable",
   },
   field: {
     title: "Titre",

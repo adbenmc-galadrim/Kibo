@@ -4,13 +4,13 @@ import { Textarea } from "@kibo/sdk/ui/textarea";
 import { useId, useState } from "react";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { BatchActionRow } from "./BatchActionRow";
-import { type BatchGroup, groupActions, type StatusLabel } from "./batch-groups";
+import { type BatchGroup, type DiffLabels, groupActions } from "./batch-groups";
 
 export type Decision = { decision: "apply"; actionIds: number[] } | { decision: "reject"; comment?: string };
 
 type Props = {
   batch: Batch;
-  statusLabel: StatusLabel;
+  labels: DiffLabels;
   readOnly: boolean;
   onDecide(d: Decision): Promise<void>;
 };
@@ -26,13 +26,13 @@ function statusText(batch: Batch): string | null {
 type GroupProps = {
   group: BatchGroup;
   batch: Batch;
-  statusLabel: StatusLabel;
+  labels: DiffLabels;
   selectable: boolean;
   checked: ReadonlySet<number>;
   onChange(ids: number[], on: boolean): void;
 };
 
-function Group({ group, batch, statusLabel, selectable, checked, onChange }: GroupProps) {
+function Group({ group, batch, labels, selectable, checked, onChange }: GroupProps) {
   const ids = group.actions.map((a) => a.id);
   const all = ids.every((id) => checked.has(id));
   const name = t.group(group.group);
@@ -52,7 +52,7 @@ function Group({ group, batch, statusLabel, selectable, checked, onChange }: Gro
             key={action.id}
             action={action}
             expected={batch.expected.find((e) => e.actionId === action.id)}
-            statusLabel={statusLabel}
+            labels={labels}
             selectable={selectable}
             checked={checked.has(action.id)}
             result={batch.results.find((r) => r.actionId === action.id)}
@@ -92,7 +92,7 @@ function RejectForm({ busy, onCancel, onConfirm }: RejectProps) {
   );
 }
 
-export function BatchCard({ batch, statusLabel, readOnly, onDecide }: Props) {
+export function BatchCard({ batch, labels, readOnly, onDecide }: Props) {
   const [checked, setChecked] = useState<ReadonlySet<number>>(() => new Set(batch.actions.map((a) => a.id)));
   const [rejecting, setRejecting] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -143,7 +143,7 @@ export function BatchCard({ batch, statusLabel, readOnly, onDecide }: Props) {
             key={group.group}
             group={group}
             batch={batch}
-            statusLabel={statusLabel}
+            labels={labels}
             selectable={selectable}
             checked={checked}
             onChange={change}

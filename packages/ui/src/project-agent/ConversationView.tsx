@@ -5,13 +5,13 @@ import { BookSearch, RotateCcw } from "lucide-react";
 import { useFollowBottom } from "../agents/use-follow-bottom";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { BatchCard, type Decision } from "./BatchCard";
-import type { StatusLabel } from "./batch-groups";
+import type { DiffLabels } from "./batch-groups";
 import type { ConversationItem } from "./conversation";
 
 type Props = {
   items: ConversationItem[];
   readOnly: boolean;
-  statusLabel: StatusLabel;
+  labels: DiffLabels;
   onTicket(key: string): void;
   onRetry(): void;
   onDecide(batchId: string, d: Decision): Promise<void>;
@@ -28,14 +28,7 @@ function readingText(tools: readonly string[]): string {
   );
 }
 
-function Item({
-  item,
-  readOnly,
-  statusLabel,
-  onTicket,
-  onRetry,
-  onDecide,
-}: Props & { item: ConversationItem }) {
+function Item({ item, readOnly, labels, onTicket, onRetry, onDecide }: Props & { item: ConversationItem }) {
   switch (item.kind) {
     case "user":
       return (
@@ -64,7 +57,7 @@ function Item({
         <li>
           <BatchCard
             batch={item.batch}
-            statusLabel={statusLabel}
+            labels={labels}
             readOnly={readOnly}
             onDecide={(d) => onDecide(item.batch.id, d)}
           />
