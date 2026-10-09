@@ -6,3 +6,6 @@ export const E2E_FIGMA_TOKEN = "figd_E2ETOKEN0123456789abcdefghijklmnop";
 export const E2E_PENPOT_TOKEN = "penpot-e2e-token-0123456789abcdefghijkl";
 export const fakeFigmaPort = (daemonPort: number): number => daemonPort + 3000;
 export const fakePenpotPort = (daemonPort: number): number => daemonPort + 4000;
+export const fakeItchPort = (daemonPort: number): number => daemonPort + 5000;
+export const fakeStorybookPort = (daemonPort: number): number => daemonPort + 6000;
+export const fakeBranchStorybookPort = (daemonPort: number): number => daemonPort + 7000;

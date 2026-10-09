@@ -2,8 +2,10 @@ import { chmodSync, copyFileSync, cpSync, mkdirSync, renameSync, rmSync, writeFi
 import { join, resolve } from "node:path";
 import { FAKE_FIGMA_IMAGE_HOST, startFakeFigma } from "../packages/daemon/src/testing/fake-figma";
 import { LOGS_HOST, startFakeGithub } from "../packages/daemon/src/testing/fake-github";
+import { startFakeItch } from "../packages/daemon/src/testing/fake-itch";
 import { startFakeMcpHttp } from "../packages/daemon/src/testing/fake-mcp";
 import { PENPOT_IDS, startFakePenpot } from "../packages/daemon/src/testing/fake-penpot";
+import { startFakeStorybook } from "../packages/daemon/src/testing/fake-storybook";
 import { e2eHome } from "./e2e-home";
 import { fakeGhDir, GIT_IDENTITY } from "./git-repo";
 import {
@@ -11,20 +13,25 @@ import {
   E2E_GH_TOKEN,
   E2E_PENPOT_TOKEN,
   E2E_TOKEN,
+  fakeBranchStorybookPort,
   fakeFigmaPort,
   fakeGithubPort,
+  fakeItchPort,
   fakeMcpPort,
   fakePenpotPort,
+  fakeStorybookPort,
 } from "./token";
 
 const root = resolve(import.meta.dir, "..");
 const INTEGRATIONS_FLAG = "--integrations";
 const NO_GH_FLAG = "--no-gh";
 const DESIGN_FLAG = "--design";
-const FLAGS = [INTEGRATIONS_FLAG, NO_GH_FLAG, DESIGN_FLAG];
+const EMBEDS_FLAG = "--embeds";
+const FLAGS = [INTEGRATIONS_FLAG, NO_GH_FLAG, DESIGN_FLAG, EMBEDS_FLAG];
 const argv = process.argv.slice(2);
 const integrations = argv.includes(INTEGRATIONS_FLAG);
 const design = argv.includes(DESIGN_FLAG);
+const embeds = argv.includes(EMBEDS_FLAG);
 const withGh = !argv.includes(NO_GH_FLAG);
 const [port = "4390", scenario = "question", ...drafts] = argv.filter((a) => !FLAGS.includes(a));
 const home = e2eHome(port);
@@ -82,7 +89,39 @@ function startDesignFakes() {
     },
   };
 }
-const fakes = integrations ? await startFakes() : design ? startDesignFakes() : null;
+function startStorybook(storybookPort: number) {
+  const storybook = startFakeStorybook({ port: storybookPort });
+  storybook.addStory("screens-home--default", "Screens", "Home");
+  storybook.addStory("screens-login--default", "Screens", "Login");
+  return storybook;
+}
+function startEmbedFakes() {
+  const itch = startFakeItch({ port: fakeItchPort(Number(port)) });
+  const storybook = startStorybook(fakeStorybookPort(Number(port)));
+  const branch = startStorybook(fakeBranchStorybookPort(Number(port)));
+  const penpot = startFakePenpot({ token: E2E_PENPOT_TOKEN, port: fakePenpotPort(Number(port)) });
+  penpot.addBoard(PENPOT_IDS.file, PENPOT_IDS.page, PENPOT_IDS.board, {
+    name: "Accueil",
+    width: 1440,
+    height: 900,
+  });
+  return {
+    args: ["--test-origins", `itch.io=${itch.url}`, "--memory-secrets"],
+    stop: async () => {
+      itch.stop();
+      storybook.stop();
+      branch.stop();
+      penpot.stop();
+    },
+  };
+}
+function startFakesFor() {
+  if (integrations) return startFakes();
+  if (design) return startDesignFakes();
+  if (embeds) return startEmbedFakes();
+  return null;
+}
+const fakes = await startFakesFor();
 const proc = Bun.spawn(
   [
     "bun",
