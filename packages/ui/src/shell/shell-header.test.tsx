@@ -135,3 +135,11 @@ test("the project agent button sits before Partager and carries a dot while a ba
   view.rerender(props(waiting("b1")));
   expect(screen.getByRole("button", { name: "Agent de projet · Un lot attend ta validation" })).toBeTruthy();
 });
+
+test("the creations indicator loads on demand: nothing shows while loading, then the button", async () => {
+  drafts = [review];
+  header();
+  expect(screen.queryByText("Chargement…")).toBeNull();
+  expect(await screen.findByRole("button", { name: "Créations · 1 attend une action" })).toBeTruthy();
+  expect(document.querySelector("[data-kibo-loading]:not(.sr-only)")).toBeNull();
+});
