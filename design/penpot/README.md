@@ -43,8 +43,9 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 23 · Didacticiel | 140–146 (phase 14) ; **dessinés** |
 | 24 · Maquettes Figma & Penpot | 16, 16b, 53, 53b, 53c, 147, 148, 149, 4, 4b (phase 15) ; **dessinés** |
 | 25 · Questions & session | 166 à 173 (phase 17 : étiquettes, worktrees, mode Automatique, questions, session principale) ; **dessinés** |
+| 26 · Agent de projet | 174 à 177 (phase 18 : panneau, lot à valider, anciens agents, profil) ; **dessinés** |
 
-Pages 00 à 25 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 25.
+Pages 00 à 26 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 26.
 
 Règles :
 - Chaque écran existe en **sombre et en clair**, le clair nommé `… (clair)`. Modifier le sombre, puis régénérer le clair (`S.relight`).
@@ -145,9 +146,20 @@ dans un appel direct (élément « Questions » de la barre latérale sous « No
   Kanban et la fiche (« Session principale : opus-dev-2 · 3 tours ») · 171b pastille dans la ligne Tickets · 172 tiroir du run « Terminé · 1 question », ligne
   `session`, notification système · 172b réponses à transmettre · 173 Assigner, session reprise et « Repartir de zéro » · 173b nouvelle session (transcript introuvable).
 
+## Phase 18 (page 26)
+
+`31-agent-projet.js`, chargé après `24-socle-suite` (indépendant de `30-questions`) ; liste de job `S.AGENT_PROJET`, puis `S.dropBases()`.
+Panneau à droite sous la barre du haut (440 px), pour garder visible le bouton « Agent de projet » et sa pastille. Données : section
+« Agent de projet (phase 18) » de `donnees-fictives.md`.
+
+- 26 · Agent de projet : 174 panneau ouvert sur le Kanban, bouton à pastille orange, conversation (session, message, lectures, réponse, début du lot) ·
+  175 lot n° 1 à valider (quatre groupes, cases, avant → après, pourquoi, « Valider (4) » / « Refuser ») · 175b après décision (Appliquée ×3, Périmée,
+  Ignorée) · 176 menu « ⋯ » · 176b anciens agents · 176c ancien agent en lecture seule (lot refusé) · 176d confirmation « Nouvel agent de projet ? » ·
+  177 profil « Agent de projet » (modèle, parallélisme fixé à 1, guidelines du profil).
+
 ## Exporter
 
-1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("25")` aujourd'hui (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
+1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("26")` aujourd'hui (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`.
 2. Source : menu du fichier → Exporter (.penpot), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
    que Penpot régénère : l'archive reste sous la limite de 100 Mo de GitHub).

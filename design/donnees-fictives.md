@@ -85,3 +85,27 @@ Les deux décisions d'EMIS-11, transposées : posées par opus-dev-2 sur KIB-14 
 | KIB-11 | Renouveler le jeton local à chaque démarrage ? | sonnet-review | Oui / Non · Non | Répondue « Non », transmise à sonnet-review |
 
 Pastilles : KIB-14 « 2 questions », KIB-11 « 1 question ». Session principale de KIB-14 : opus-dev-2 · 3 tours ; de KIB-11 : sonnet-review · 2 tours, 12 k tokens.
+
+## Agent de projet (phase 18)
+
+Panneau « Agent de projet · Kibo » ouvert sur le Kanban. Session actuelle : nouvelle (repartie de zéro). Anciens agents : « Session du 6 octobre à 18:42 »
+et « Session du 29 septembre à 10:05 ». Note mémoire : `agent-de-projet/memoire.md`. Profil « Agent de projet » : Claude Opus 5.5, 1 tour à la fois par
+projet, guidelines `guidelines/lots.md` (« Huit actions au plus par lot ; une raison courte pour chacune. ») et `guidelines/priorites.md`
+(« Les tickets urgents et les questions bloquantes d'abord. »).
+
+Conversation : Adam « Que proposes-tu pour la semaine ? » · lectures « lit le projet, lit 12 tickets, lit les questions » · réponse :
+KIB-11 en review depuis 2 jours (PR #15 relue par sonnet-review, il manque la review d'Adam) ; KIB-14, opus-dev-2 attend la réponse sur le port, une
+réponse est prête à transmettre ; KIB-21 bloqué par l'audit externe, bloque KIB-22 ; KIB-9, 2 sous-tickets sur 3 terminés.
+
+Lot n° 1 « Avancer KIB-9, débloquer KIB-14 et garder la mémoire à jour » (5 actions, 4 cochées, « Valider (4) ») ; après décision : Appliqué en partie.
+
+| Groupe | Action | Avant → après · pourquoi | Cochée | Résultat |
+|---|---|---|---|---|
+| Tickets | Créer le ticket « Tests du récepteur de hooks » | KIB-14 n'a pas encore de test d'intégration | oui | Appliquée, KIB-30 |
+| Tickets | KIB-9 : passer en En cours | À faire → En cours · 2 sous-tickets sur 3 terminés | oui | Périmée, statut modifié depuis la proposition |
+| Agents | Transmettre les réponses de KIB-14 | Une réponse attend depuis 5 min | oui | Appliquée |
+| Questions | Question sur KIB-21 : « Lancer l'audit sans attendre KIB-11 ? » | Bloqué depuis 6 jours | non | Ignorée |
+| Notes | Mettre à jour la note agent-de-projet/memoire.md | contenu remplacé · Mémoire de la semaine | oui | Appliquée |
+
+Ancien agent du 6 octobre (lecture seule) : « Qu'est-ce qui bloque KIB-21 ? » ; lot n° 1 « Relancer l'audit et préparer KIB-22 » refusé
+(KIB-22 : Backlog → À faire ; question sur KIB-21 « Faut-il un second auditeur ? »).
