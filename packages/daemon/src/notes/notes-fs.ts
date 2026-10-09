@@ -42,6 +42,8 @@ export async function listNoteFiles(dir: string): Promise<string[]> {
 }
 
 export async function readNoteFile(dir: string, rel: string): Promise<NoteFile> {
+  if (!isSafeNotePath(rel)) throw outside(rel);
+  if ((await lstatOrNull(dir)) === null) throw notFound(rel);
   const full = await resolveNotePath(dir, rel);
   try {
     const info = await stat(full);
