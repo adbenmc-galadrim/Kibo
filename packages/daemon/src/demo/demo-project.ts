@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import {
   DEMO_PROJECT_KEY,
   formatRef,
@@ -14,6 +13,7 @@ import {
   type TutorialSeed,
 } from "@kibo/schema";
 import type { z } from "zod";
+import { noteHashOf } from "../notes/note-hash";
 import type { ProjectSettings } from "../notes/settings";
 import { DEMO_COMPONENT_VERSION, DEMO_LINKS, DEMO_NOTE, DEMO_PAGES, DEMO_TICKETS } from "./demo-seed";
 
@@ -30,7 +30,7 @@ export type DemoProjectDeps = {
 export const isDemoProject = (settings: Pick<ProjectSettings, "get">, projectId: string): boolean =>
   settings.get(projectId, DEMO_FLAG) === "1";
 
-export const noteHashOf = (markdown: string): string => createHash("sha256").update(markdown).digest("hex");
+export { noteHashOf };
 
 export const linkKeyOf = (l: Pick<Link, "from" | "to" | "type">): string => `${l.from}>${l.to}:${l.type}`;
 
