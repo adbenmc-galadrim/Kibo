@@ -1,4 +1,4 @@
-import type { DesignFrame } from "@kibo/schema";
+import { isHtmlFrame } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import {
   type KeyboardEvent,
@@ -9,6 +9,8 @@ import {
   useRef,
   useState,
 } from "react";
+import type { CompareMode } from "./compare";
+import { FrameSurface, type Surface } from "./FrameSurface";
 import { fr } from "./fr";
 import { ZoomToolbar } from "./ZoomToolbar";
 import {
@@ -27,11 +29,18 @@ import {
   zoomAt,
 } from "./zoom";
 
-type Props = { frame: DesignFrame; fit: "contain" | "width" };
-type Frame = { fitted: Size; box: Size };
+type Props = {
+  surfaces: readonly Surface[];
+  size: Size | null;
+  mode: CompareMode | null;
+  fit: "contain" | "width";
+  name: string;
+};
+type Geometry = { fitted: Size; box: Size };
 
 const NONE: Size = { width: 0, height: 0 };
 const CENTER: Point = { x: 0, y: 0 };
+const SIDE_GAP = 8;
 
 function useBoxSize(box: RefObject<HTMLFieldSetElement | null>): Size {
   const [size, setSize] = useState<Size>(NONE);
@@ -47,7 +56,7 @@ function useBoxSize(box: RefObject<HTMLFieldSetElement | null>): Size {
   return size;
 }
 
-function applied(state: ZoomState, action: ZoomAction, focus: Point, { fitted, box }: Frame): ZoomState {
+function applied(state: ZoomState, action: ZoomAction, focus: Point, { fitted, box }: Geometry): ZoomState {
   if (action.kind === "zoom") return clampPan(zoomAt(state, action.factor, focus), fitted, box);
   if (action.kind === "pan") return clampPan(panBy(state, action.dx, action.dy), fitted, box);
   if (action.kind === "fit") return FITTED;
@@ -60,18 +69,34 @@ function focusIn(el: Element | null, e: { clientX: number; clientY: number }): P
   return { x: e.clientX - r.left - r.width / 2, y: e.clientY - r.top - r.height / 2 };
 }
 
-export function FrameViewer({ frame, fit }: Props) {
+const cellOf = (box: Size, mode: CompareMode | null): Size =>
+  mode === "side" ? { width: Math.max(0, (box.width - SIDE_GAP) / 2), height: box.height } : box;
+
+function contentSize(surfaces: readonly Surface[], size: Size | null, natural: Size, cell: Size): Size {
+  if (size) return size;
+  return surfaces.some((s) => !isHtmlFrame(s.frame)) ? natural : cell;
+}
+
+const displayed = (zoom: ZoomState, content: Size, fitted: Size): ZoomState => ({
+  ...zoom,
+  scale: content.width > 0 && fitted.width > 0 ? (zoom.scale * fitted.width) / content.width : zoom.scale,
+});
+
+export function FrameViewer({ surfaces, size, mode, fit, name }: Props) {
   const box = useRef<HTMLFieldSetElement>(null);
   const boxSize = useBoxSize(box);
-  const [image, setImage] = useState<Size>({ width: frame.width ?? 0, height: frame.height ?? 0 });
+  const [natural, setNatural] = useState<Size>(NONE);
   const [zoom, setZoom] = useState<ZoomState>(FITTED);
   const [dragFrom, setDragFrom] = useState<Point | null>(null);
-  const fitted = fittedSize(image, boxSize, fit);
-  const geometry = useRef<Frame>({ fitted, box: boxSize });
-  geometry.current = { fitted, box: boxSize };
-  const pannable = isPannable(zoom, fitted, boxSize);
+  const cell = cellOf(boxSize, mode);
+  const content = contentSize(surfaces, size, natural, cell);
+  const fitted = fittedSize(content, cell, fit);
+  const geometry = useRef<Geometry>({ fitted, box: cell });
+  geometry.current = { fitted, box: cell };
+  const pannable = isPannable(zoom, fitted, cell);
   const pannableRef = useRef(pannable);
   pannableRef.current = pannable;
+  const shown = displayed(zoom, content, fitted);
 
   const act = (action: ZoomAction, focus: Point = CENTER) =>
     setZoom((z) => applied(z, action, focus, geometry.current));
@@ -114,10 +139,14 @@ export function FrameViewer({ frame, fit }: Props) {
     act(action);
   };
 
+  const surface = (s: Surface) => (
+    <FrameSurface key={s.frame.id} surface={s} size={content} zoom={shown} onNaturalSize={setNatural} />
+  );
+
   return (
     <fieldset
       ref={box}
-      aria-label={fr.viewer(frame.name)}
+      aria-label={fr.viewer(name)}
       tabIndex={-1}
       data-dragging={dragFrom !== null}
       className={cn(
@@ -131,24 +160,17 @@ export function FrameViewer({ frame, fit }: Props) {
       onDoubleClick={onDoubleClick}
       onKeyDown={onKeyDown}
     >
-      <div className="absolute inset-0 grid place-items-center">
-        <img
-          src={frame.url}
-          alt={frame.name}
-          crossOrigin="anonymous"
-          decoding="async"
-          draggable={false}
-          onLoad={(e) =>
-            setImage({ width: e.currentTarget.naturalWidth, height: e.currentTarget.naturalHeight })
-          }
-          className="max-w-none shadow-sm"
-          style={{
-            width: fitted.width,
-            height: fitted.height,
-            transform: `translate(${zoom.pan.x}px, ${zoom.pan.y}px) scale(${zoom.scale})`,
-          }}
-        />
-      </div>
+      {mode === "side" ? (
+        <div className="absolute inset-0 grid grid-cols-2" style={{ gap: SIDE_GAP }}>
+          {surfaces.map((s) => (
+            <div key={s.frame.id} className="relative overflow-hidden">
+              {surface(s)}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="absolute inset-0">{surfaces.map(surface)}</div>
+      )}
       <ZoomToolbar zoom={zoom} onAction={act} />
     </fieldset>
   );

@@ -19,7 +19,15 @@ import {
   updateRegisteredProject,
 } from "./index";
 
-const meta = { id: "p1", key: "KIB", name: "Kibo", folder: "/tmp/kibo", color: "#F97316", worktree: null };
+const meta = {
+  id: "p1",
+  key: "KIB",
+  name: "Kibo",
+  folder: "/tmp/kibo",
+  color: "#F97316",
+  worktree: null,
+  storybook: null,
+};
 
 describe("workspace", () => {
   test("registers projects in order", () => {
@@ -137,4 +145,15 @@ test("a worktree patch is never written to the workspace nor the project doc", (
   expect(JSON.stringify(ws.toJSON())).not.toContain("make wt");
   expect(JSON.stringify(doc.toJSON())).not.toContain("make wt");
   expect(getProjectMeta(doc).name).toBe("Kibo 2");
+});
+
+test("local storybook settings never reach the project doc nor the workspace", () => {
+  const local = { ...meta, storybook: { origin: "https://sb.example.com", portEnv: "SB_PORT" } };
+  const ws = createWorkspaceDoc();
+  registerProject(ws, local);
+  const doc = createProjectDoc(local);
+  expect(doc.getMap("meta").get("storybook")).toBeUndefined();
+  expect(JSON.stringify(ws.toJSON())).not.toContain("sb.example.com");
+  expect(getProjectMeta(doc).storybook).toBeNull();
+  expect(listProjects(ws)[0]?.storybook).toBeNull();
 });

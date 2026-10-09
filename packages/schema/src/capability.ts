@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { ComponentKind } from "./manifest";
 
-export const CAPABILITIES = ["webgl", "audio", "fullscreen", "gamepad", "assets", "design"] as const;
+export const CAPABILITIES = ["webgl", "audio", "fullscreen", "gamepad", "assets", "design", "embed"] as const;
 export const Capability = z.enum(CAPABILITIES);
 export type Capability = z.infer<typeof Capability>;
 
@@ -15,7 +15,10 @@ export function capabilityOfPermission(entry: string): Capability | null {
   return parsed.success ? parsed.data : null;
 }
 
-type CapabilityFields = { capabilities?: readonly Capability[] | undefined };
+type CapabilityFields = {
+  capabilities?: readonly Capability[] | undefined;
+  embeds?: readonly string[] | undefined;
+};
 
 export const capabilitiesOf = (m: CapabilityFields): Capability[] => [...(m.capabilities ?? [])];
 
@@ -23,6 +26,11 @@ export function capabilityIssue(m: CapabilityFields & { kind: ComponentKind }): 
   const declared = m.capabilities ?? [];
   if (new Set(declared).size !== declared.length) return "INVALID_MANIFEST: capabilities must be unique";
   if (m.kind === "adapter" && declared.length > 0) return "INVALID_MANIFEST: an adapter has no capability";
+  const embeds = m.embeds ?? [];
+  if (declared.includes("embed") && embeds.length === 0) return "INVALID_MANIFEST: embed needs embeds";
+  if (!declared.includes("embed") && embeds.length > 0) {
+    return "INVALID_MANIFEST: embeds need the embed capability";
+  }
   return null;
 }
 

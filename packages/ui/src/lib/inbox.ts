@@ -21,6 +21,7 @@ export function inboxMeta(): ProjectMeta {
     folder: null,
     color: INBOX_COLOR,
     worktree: null,
+    storybook: null,
   };
 }
 

@@ -5,6 +5,12 @@ import { frProblems } from "./fr-problems";
 
 const INFO: ReadonlySet<Problem["kind"]> = new Set(["notConnected", "noThumbnail"]);
 
+function hostOf(key: DesignFrameKey | null): string {
+  if (key?.provider === "penpot") return new URL(key.instance).host;
+  if (key?.provider === "storybook") return new URL(key.origin).host;
+  return "";
+}
+
 export function FrameProblem({
   problem,
   frameKey,
@@ -15,7 +21,7 @@ export function FrameProblem({
   onRetry(): void;
 }) {
   const provider = frameKey?.provider ?? "figma";
-  const host = frameKey?.provider === "penpot" ? new URL(frameKey.instance).host : "";
+  const host = hostOf(frameKey);
   const text = frProblems[problem.kind]({
     provider,
     name: fr.provider[provider],

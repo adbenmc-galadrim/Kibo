@@ -13,6 +13,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { fr } from "../i18n/fr";
+import { frCollab } from "../i18n/fr-collab";
 import { targetToHash } from "../tabs/target-hash";
 
 export type SettingsScreen = Extract<
@@ -35,7 +36,7 @@ const ITEMS: Item[] = [
   { id: "appearance", label: fr.settings.appearance, icon: Palette, screen: "appearance" },
   { id: "domains", label: fr.settings.domains, icon: FileText, screen: "domains" },
   { id: "integrations", label: fr.settings.integrations, icon: Plug, screen: "integrations" },
-  { id: "sync", label: fr.sync.section, icon: Cloud, screen: "sync" },
+  { id: "sync", label: frCollab.sync.section, icon: Cloud, screen: "sync" },
   { id: "security", label: fr.settings.security, icon: Shield, screen: "security" },
   { id: "components", label: fr.marketSources.title, icon: Package, screen: "sources" },
   { id: "shortcuts", label: fr.settings.shortcuts, icon: Keyboard, screen: "shortcuts" },

@@ -1,7 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { addInstance, addPage, createProjectDoc, getInstance, setInstanceComponent } from "./index";
 
-const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null };
+const meta = {
+  id: "p1",
+  key: "KIB",
+  name: "Kibo",
+  folder: null,
+  color: "#F97316",
+  worktree: null,
+  storybook: null,
+};
 const HASH = "a".repeat(64);
 
 describe("componentHash", () => {

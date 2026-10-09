@@ -5,6 +5,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { fr } from "../i18n/fr";
 import { frComponentsList } from "../i18n/fr-components-list";
+import { frMarket } from "../i18n/fr-market";
 import type { FlashTone } from "../lib/use-flash";
 import { ComponentRowMenu } from "./ComponentRowMenu";
 import type { ComponentsQuery, SortKey } from "./filter-components";
@@ -47,7 +48,7 @@ function TrustCell({ row, onReview }: { row: ComponentRow; onReview(): void }) {
 }
 
 const originText = (row: ComponentRow) =>
-  row.market ? fr.market.originMarket(row.market.sourceName) : fr.components.origin[row.origin];
+  row.market ? frMarket.market.originMarket(row.market.sourceName) : fr.components.origin[row.origin];
 
 type SortHeadProps = { column: SortKey; label: string; query: ComponentsQuery; onSort(key: SortKey): void };
 

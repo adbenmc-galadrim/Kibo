@@ -2,7 +2,15 @@ import { describe, expect, test } from "bun:test";
 import { addPage, createProjectDoc, deletePage, listPages, movePage, renamePage } from "./index";
 
 const doc = () =>
-  createProjectDoc({ id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null });
+  createProjectDoc({
+    id: "p1",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+    storybook: null,
+  });
 
 describe("pages", () => {
   test("adds nested pages and lists them depth-first", () => {

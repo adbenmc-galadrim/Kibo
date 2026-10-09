@@ -1,9 +1,9 @@
 import { ShieldOff } from "lucide-react";
-import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 import { sandboxProblem, sandboxStopped } from "../lib/sandbox-problem";
 import { useRpcQuery } from "../state/use-rpc-query";
 
-const t = fr.security.isolation;
+const t = frSecurity.isolation;
 
 export function SandboxBanner() {
   const { data } = useRpcQuery({ method: "getSandboxStatus" }, ["sandbox.changed"]);

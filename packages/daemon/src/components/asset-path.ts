@@ -79,3 +79,10 @@ export function parseDesignPath(pathname: string): { token: string; name: string
   if (!FILE_TOKEN.test(token) || !DESIGN_NAME.test(name)) return null;
   return { token, name };
 }
+
+export function parseEmbedPath(pathname: string): { token: string } | null {
+  const parts = pathname.split("/");
+  if (parts.length !== 3 || parts[0] !== "" || parts[1] !== "e") return null;
+  const token = parts[2] ?? "";
+  return FILE_TOKEN.test(token) ? { token } : null;
+}

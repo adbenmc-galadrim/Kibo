@@ -4,7 +4,7 @@ import { Input } from "@kibo/sdk/ui/input";
 import { Plus, Search, Store } from "lucide-react";
 import { useState } from "react";
 import { AddSourceDialog } from "../dialogs/AddSourceDialog";
-import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { isRemoteView } from "../lib/remote-view";
 import { targetToHash } from "../tabs/target-hash";
 import { MarketCard } from "./MarketCard";
@@ -18,7 +18,7 @@ function Empty({ text }: { text: string }) {
 }
 
 function EmptySources({ remote, onAdded }: { remote: boolean; onAdded(): void }) {
-  const t = fr.market;
+  const t = frMarket.market;
   const [adding, setAdding] = useState(false);
   return (
     <div className="grid justify-items-center gap-3 rounded-lg border border-dashed p-10 text-center">
@@ -28,7 +28,7 @@ function EmptySources({ remote, onAdded }: { remote: boolean; onAdded(): void })
         <p className="max-w-md text-sm text-muted-foreground">{t.noSourceHelp}</p>
       </div>
       {remote ? (
-        <p className="max-w-md text-xs text-muted-foreground">{fr.marketSources.localOnly}</p>
+        <p className="max-w-md text-xs text-muted-foreground">{frMarket.marketSources.localOnly}</p>
       ) : (
         <Button size="sm" onClick={() => setAdding(true)}>
           <Plus aria-hidden />
@@ -49,7 +49,7 @@ function EmptySources({ remote, onAdded }: { remote: boolean; onAdded(): void })
 type Props = { onInstalled(result: MarketInstallResult): void; remote?: boolean };
 
 export function MarketplaceTab({ onInstalled, remote = isRemoteView() }: Props) {
-  const t = fr.market;
+  const t = frMarket.market;
   const { sources, error: loadError, reload } = useMarketSources();
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState<ComponentKind | null>(null);

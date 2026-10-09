@@ -17,12 +17,14 @@ import {
   type ProjectSnapshot,
   permissionOfCall,
   type Selection,
+  type StorybookOrigin,
   type Surface,
   type TicketRun,
 } from "@kibo/schema";
 import { actAs } from "./mock-actor";
 import { createMockCalls, type MockFetch } from "./mock-calls";
 import type { MockFrame } from "./mock-design";
+import { createMockEmbeds, type MockEmbedOptions, recordedFrameApis } from "./mock-embed";
 import { createMockNotes, type MockNote } from "./mock-notes";
 import { createNotifier } from "./mock-notifier";
 import { createMockDelivery } from "./mock-questions";
@@ -33,6 +35,7 @@ import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend 
 
 export type { MockFetch } from "./mock-calls";
 export type { MockFrame } from "./mock-design";
+export type { MockEmbedOptions } from "./mock-embed";
 export type { MockNote } from "./mock-notes";
 export type MockSdk = {
   sdk: KiboSdk;
@@ -44,6 +47,7 @@ export type MockSdk = {
   openedFiles: FileTarget[];
   openedViews: string[];
   deliveries: string[];
+  embedCalls: string[];
   data: Map<string, unknown>;
   configPatches: Record<string, unknown>[];
   notes: Map<string, MockNote>;
@@ -77,6 +81,8 @@ export type MockSdkOptions = {
   members?: MemberInfo[];
   assets?: ProjectAsset[];
   frames?: MockFrame[];
+  storybooks?: StorybookOrigin[];
+  embed?: MockEmbedOptions;
   visible?: boolean;
   focus?: boolean;
   selection?: Selection | null;
@@ -97,6 +103,7 @@ export function createMockSdk(
     folder: null,
     color: "#71717A",
     worktree: null,
+    storybook: null,
   });
   const changes = createNotifier();
   const runChanges = createNotifier();
@@ -123,6 +130,7 @@ export function createMockSdk(
   const openedFiles: FileTarget[] = [];
   const openedViews: string[] = [];
   const deliveries: string[] = [];
+  const embeds = createMockEmbeds(manifest.embeds, opts.embed);
   const focusRequests: boolean[] = [];
   const selections: (Selection | null)[] = [];
   const focus = createSignal(opts.focus ?? false);
@@ -153,6 +161,7 @@ export function createMockSdk(
       peers: () => peers,
       access: () => access,
       serverContext,
+      embeds,
       deliver: createMockDelivery({
         doc,
         refused: opts.deliveryRefused ?? false,
@@ -254,10 +263,7 @@ export function createMockSdk(
       list: () => useAssets(() => inner.assets.list()),
       url: (name) => useAssets(() => inner.assets.url(name)),
     },
-    design: {
-      frame: (url, opts) =>
-        record(capPermission("design"), "cap:design", () => inner.design.frame(url, opts)),
-    },
+    ...recordedFrameApis(inner, record),
     questions: {
       deliver: (ticketId) =>
         record("write:question", "write question", () => inner.questions.deliver(ticketId)),
@@ -274,6 +280,7 @@ export function createMockSdk(
     openedFiles,
     openedViews,
     deliveries,
+    embedCalls: embeds.calls,
     data,
     configPatches,
     notes: folder.notes,

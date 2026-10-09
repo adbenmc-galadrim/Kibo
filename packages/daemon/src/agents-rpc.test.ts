@@ -3,6 +3,8 @@ import { type AgentsState, INBOX_ID, type Question, type RpcRequest, type RunVie
 import { type AgentQuestions, type AgentsPort, handleAgentRequest } from "./agents-rpc";
 import { answered, HUMAN, runView } from "./questions/questions.test-helper";
 
+const IMPORT = { kind: "import", ref: "plan" } as const;
+
 function recordingPort(calls: string[]): AgentsPort {
   const record =
     (name: string) =>
@@ -86,6 +88,25 @@ test("the agents state carries the question counts of the runs and the project a
     questions: [{ runId: "r1", open: 1, undelivered: 0, latestTitle: "Quel port ?" }],
     projectAgents: [{ projectId: "p1", runId: "pa1", state: "running", pendingBatchId: "b1" }],
   });
+});
+
+test("the drawer counts only the answers given in Kibo as waiting for delivery", () => {
+  const calls: string[] = [];
+  const ended = runView({ id: "r1", state: "done" });
+  const fromPlan = answered("q1");
+  const imported = { ...fromPlan, answer: fromPlan.answer && { ...fromPlan.answer, by: IMPORT } };
+  const onlyImported = handleAgentRequest(
+    agentsPort(calls, [ended]),
+    { method: "getAgents" },
+    questionsStub(calls, [imported]),
+  );
+  expect(onlyImported).toMatchObject({ questions: [{ runId: "r1", open: 1, undelivered: 0 }] });
+  const withHuman = handleAgentRequest(
+    agentsPort(calls, [ended]),
+    { method: "getAgents" },
+    questionsStub(calls, [imported, answered("q2")]),
+  );
+  expect(withHuman).toMatchObject({ questions: [{ runId: "r1", open: 1, undelivered: 1 }] });
 });
 
 test("answering a waiting run from the drawer answers its blocking question, then marks it once sent", () => {

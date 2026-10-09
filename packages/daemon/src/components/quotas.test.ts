@@ -42,3 +42,17 @@ test("design frames are limited per instance on a one minute window", () => {
   const fallback = createQuotas({ now: () => 0 });
   expect(Array.from({ length: 31 }, () => fallback.take("a", "design")).filter(Boolean)).toHaveLength(30);
 });
+
+test("embed frames are limited to ten per minute and per instance by default", () => {
+  let now = 0;
+  const q = createQuotas({ now: () => now });
+  const taken = Array.from({ length: 11 }, () => q.take("a", "embed"));
+  expect(taken.filter(Boolean)).toHaveLength(10);
+  expect(taken.at(-1)).toBe(false);
+  expect(q.take("b", "embed")).toBe(true);
+  expect(q.take("a", "design")).toBe(true);
+  now = 60_001;
+  expect(q.take("a", "embed")).toBe(true);
+  const tight = createQuotas({ now: () => 0, embedPerMinute: 1 });
+  expect([tight.take("a", "embed"), tight.take("a", "embed")]).toEqual([true, false]);
+});

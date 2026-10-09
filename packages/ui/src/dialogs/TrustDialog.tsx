@@ -20,6 +20,7 @@ import { TriangleAlert } from "lucide-react";
 import { useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { permissionLines } from "../lib/permission-lines";
 import { isRemoteView } from "../lib/remote-view";
 import type { TrustTarget } from "../lib/trust-target";
@@ -75,15 +76,17 @@ function LevelCard({ value, title, help, warning }: LevelProps) {
 export function PermissionList({
   permissions,
   selection = false,
+  embeds = [],
   framed = true,
 }: {
   permissions: GrantedPermissions;
   selection?: boolean;
+  embeds?: readonly string[];
   framed?: boolean;
 }) {
   return (
     <ul className={framed ? "grid gap-3 rounded-lg border p-4" : "grid gap-3"}>
-      {permissionLines(permissions, { selection }).map((line) => (
+      {permissionLines(permissions, { selection, embeds }).map((line) => (
         <li key={line.title} className="flex items-start gap-3">
           <line.icon aria-hidden className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <span className="grid gap-0.5">
@@ -153,7 +156,11 @@ export function TrustDialog({
           </DialogDescription>
         </DialogHeader>
         <p className="text-sm font-medium">{t.asks}</p>
-        <PermissionList permissions={target.permissions} selection={target.selection ?? false} />
+        <PermissionList
+          permissions={target.permissions}
+          selection={target.selection ?? false}
+          embeds={target.embeds ?? []}
+        />
         <p className="text-sm font-medium">{t.level}</p>
         <RadioGroup
           value={level}
@@ -165,7 +172,7 @@ export function TrustDialog({
             value="trusted"
             title={t.trusted}
             help={t.trustedHelp}
-            warning={target.market ? fr.market.fromMarketplace : null}
+            warning={target.market ? frMarket.market.fromMarketplace : null}
           />
         </RadioGroup>
         <p className="text-xs text-muted-foreground">{t.footer}</p>

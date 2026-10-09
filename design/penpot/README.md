@@ -44,8 +44,10 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 24 · Maquettes Figma & Penpot | 16, 16b, 53, 53b, 53c, 147, 148, 149, 4, 4b (phase 15) ; **dessinés** |
 | 25 · Questions & session | 166 à 173 (phase 17 : étiquettes, worktrees, mode Automatique, questions, session principale) ; **dessinés** |
 | 26 · Agent de projet | 174 à 177 (phase 18 : panneau, lot à valider, anciens agents, profil) ; **dessinés** |
+| 27 · Jeux & Storybook | 178 à 182 (phase 19 : widget Jeu itch.io, story Storybook, comparaison, réglage Storybook) ; **dessinés** |
 
-Pages 00 à 26 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 26.
+Pages 00 à 27 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 27.
+Pages 28 et 28b : pistes de brainstorming (visibilité des agents), hors des PDF.
 
 Règles :
 - Chaque écran existe en **sombre et en clair**, le clair nommé `… (clair)`. Modifier le sombre, puis régénérer le clair (`S.relight`).
@@ -157,9 +159,18 @@ Panneau à droite sous la barre du haut (440 px), pour garder visible le bouton 
   Ignorée) · 176 menu « ⋯ » · 176b anciens agents · 176c ancien agent en lecture seule (lot refusé) · 176d confirmation « Nouvel agent de projet ? » ·
   177 profil « Agent de projet » (modèle, parallélisme fixé à 1, guidelines du profil).
 
+## Phase 19 (page 27)
+
+`32-jeux-storybook.js`, chargé après `24-socle-suite` ; liste de job `S.JEUX`, un écran par appel, puis `S.dropBases()`. Données : section
+« Jeux et Storybook (phase 19) » de `donnees-fictives.md`. Le contenu des cadres (jeu, story, maquette Figma) garde des couleurs fixes en sombre et en clair.
+
+- 27 · Jeux & Storybook : 178 widget Jeu itch.io (« Una war », « Fourni par itch.io ») · 178b hors ligne · 178c intégration refusée · 178d vide et dialogue Réglages ·
+  179 plein écran de Kibo · 180 widget Maquette, story `Screens / Home` · 180b Storybook injoignable · 180c menu des origines (Projet, `feat/login` injoignable) ·
+  181 comparaison côte à côte (story, cadre Figma « Accueil ») · 181b superposition (opacité 50 %, curseur 40 %) · 182 Modifier le projet, section Storybook.
+
 ## Exporter
 
-1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("26")` aujourd'hui (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
+1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")` aujourd'hui (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`.
 2. Source : menu du fichier → Exporter (.penpot), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
    que Penpot régénère : l'archive reste sous la limite de 100 Mo de GitHub).

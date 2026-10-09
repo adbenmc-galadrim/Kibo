@@ -8,9 +8,12 @@ import {
 } from "../integrations/bootstrap";
 import { createRedactor } from "../integrations/redact";
 import { createFakeHost, type FakeHost } from "../integrations/testing/fake-host";
+import { createProjectSettings } from "../notes/settings";
+import { LOCAL_STORYBOOK_KEY } from "../project-folder";
 import { FAKE_FIGMA_IMAGE_HOST, type FakeFigma, startFakeFigma } from "../testing/fake-figma";
 import { startFakeMcpHttp } from "../testing/fake-mcp";
 import { type FakePenpot, penpotBoardUrl, startFakePenpot } from "../testing/fake-penpot";
+import { startFakeStorybook } from "../testing/fake-storybook";
 
 const NODE_URL = "https://www.figma.com/design/AbC123xyz/Kibo?node-id=12-34";
 const FIGMA_TOKEN = "figd_TESTSECRET";
@@ -118,4 +121,53 @@ test("penpot: connect, link a board, render it, disconnect keeps the cache", asy
     stale: true,
     reachable: false,
   });
+});
+
+test("storybook: the shell and ticket links refuse a story, components list the project origins", async () => {
+  const sb = startFakeStorybook();
+  try {
+    createProjectSettings(host.db).set(
+      host.projectId,
+      LOCAL_STORYBOOK_KEY,
+      JSON.stringify({ origin: sb.url, portEnv: "STORYBOOK_PORT" }),
+    );
+    const story = `${sb.url}/?path=/story/screens-home--default`;
+    await expect(rpc.handle({ method: "getDesignFrame", url: story, refresh: false })).rejects.toMatchObject({
+      code: "INVALID_INPUT",
+    });
+    await expect(link(story)).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    const ctx = { projectId: host.projectId, instanceId: "w1" };
+    expect(await rpc.hooks.design?.storybooks(ctx)).toEqual([
+      { label: "Projet", origin: sb.url, branch: null, path: null, reachable: true },
+    ]);
+    await expect(
+      rpc.hooks.design?.frame(ctx, "http://localhost:6006/?path=/story/screens-home--default", false),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT" });
+    expect(sb.requests.map((r) => r.path)).toEqual(["/iframe.html"]);
+  } finally {
+    sb.stop();
+  }
+});
+
+test("storybook: a declared story is a text/html frame served by the relay", async () => {
+  const sb = startFakeStorybook();
+  try {
+    sb.addStory("screens-home--default", "Screens", "Home");
+    createProjectSettings(host.db).set(
+      host.projectId,
+      LOCAL_STORYBOOK_KEY,
+      JSON.stringify({ origin: sb.url, portEnv: "STORYBOOK_PORT" }),
+    );
+    const ctx = { projectId: host.projectId, instanceId: "w1" };
+    const frame = DesignFrame.parse(
+      await rpc.hooks.design?.frame(ctx, `${sb.url}/?path=/story/screens-home--default`, false),
+    );
+    expect(frame).toMatchObject({ provider: "storybook", mime: "text/html", name: "Screens / Home" });
+    expect(frame.url.startsWith(`${host.sandboxOrigin()}/e/`)).toBe(true);
+    const page = rpc.relay(tokenOf(frame.url));
+    expect(page?.headers["content-security-policy"]).toContain(`frame-src ${sb.url};`);
+    expect(page?.html).toContain(`src="${sb.url}/iframe.html?id=screens-home--default&amp;viewMode=story"`);
+  } finally {
+    sb.stop();
+  }
 });

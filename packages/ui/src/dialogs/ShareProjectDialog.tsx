@@ -13,6 +13,7 @@ import { Cloud, Info, Laptop, Loader2, Upload } from "lucide-react";
 import { type ComponentType, useEffect, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frCollab } from "../i18n/fr-collab";
 import { frShare } from "../i18n/fr-share";
 import { isRemoteView } from "../lib/remote-view";
 import { shareErrorText } from "../lib/share-errors";
@@ -59,7 +60,7 @@ function ServerBar({ status }: { status: SyncStatus }) {
       <span className="flex-1 truncate font-mono text-xs">{status.serverUrl}</span>
       <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <span aria-hidden className={cn("size-1.5 rounded-full", online ? "bg-green-500" : "bg-zinc-400")} />
-        {online ? fr.sync.online : fr.sync.offline}
+        {online ? frCollab.sync.online : frCollab.sync.offline}
       </span>
     </div>
   );

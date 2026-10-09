@@ -18,7 +18,15 @@ function inboxSnapshot(statuses: StatusId[]): ProjectSnapshot {
   if (!model) throw new Error("fixture without ticket");
   return {
     ...kibo,
-    meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B", worktree: null },
+    meta: {
+      id: INBOX_ID,
+      key: "INB",
+      name: "Inbox",
+      folder: null,
+      color: "#64748B",
+      worktree: null,
+      storybook: null,
+    },
     tickets: statuses.map((statusId, i) => ({
       ...model,
       id: `i${i}`,
@@ -54,6 +62,7 @@ test("the inbox summary counts its tickets by status and carries the inbox ident
     folder: null,
     color: "#64748B",
     worktree: null,
+    storybook: null,
   });
 });
 

@@ -3,6 +3,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { ShieldAlert, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { trustTargetOf } from "../lib/trust-target";
 import { TrustDialog } from "../shell/lazy-dialogs";
 import { OtherVersionMenu } from "./OtherVersionMenu";
@@ -34,7 +35,7 @@ export function PendingTrust({ id, title, version, summary, tampered, compact, .
         <p className="text-sm text-muted-foreground">{i.pendingHelp(title, version)}</p>
         {tampered && <p className="text-sm text-muted-foreground">{i.pendingChanged}</p>}
         {summary?.revoked && (
-          <p className="text-sm text-destructive">{fr.market.authRevoked(summary.revoked.reason)}</p>
+          <p className="text-sm text-destructive">{frMarket.market.authRevoked(summary.revoked.reason)}</p>
         )}
         <Button
           size="sm"

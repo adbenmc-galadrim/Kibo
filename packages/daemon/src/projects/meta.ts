@@ -2,9 +2,9 @@ import { setProjectMeta, updateRegisteredProject } from "@kibo/core";
 import type { ProjectMeta, ProjectPatch } from "@kibo/schema";
 import type { Docs } from "../docs";
 import type { ProjectSettings } from "../notes/settings";
-import { LOCAL_WORKTREE_KEY } from "../project-folder";
+import { LOCAL_STORYBOOK_KEY, LOCAL_WORKTREE_KEY } from "../project-folder";
 
-type SharedPatch = Omit<ProjectPatch, "worktree">;
+type SharedPatch = Omit<ProjectPatch, "worktree" | "storybook">;
 
 const docFields = (patch: SharedPatch): SharedPatch => ({
   ...(patch.name !== undefined && { name: patch.name }),
@@ -20,6 +20,12 @@ function writeLocalWorktree(settings: ProjectSettings, projectId: string, patch:
   if (patch.worktree === undefined) return;
   if (patch.worktree === null) settings.unset(projectId, LOCAL_WORKTREE_KEY);
   else settings.set(projectId, LOCAL_WORKTREE_KEY, JSON.stringify(patch.worktree));
+}
+
+function writeLocalStorybook(settings: ProjectSettings, projectId: string, patch: ProjectPatch): void {
+  if (patch.storybook === undefined) return;
+  if (patch.storybook === null) settings.unset(projectId, LOCAL_STORYBOOK_KEY);
+  else settings.set(projectId, LOCAL_STORYBOOK_KEY, JSON.stringify(patch.storybook));
 }
 
 function writeSharedFields(docs: Docs, projectId: string, patch: SharedPatch, folderInDoc: boolean): void {
@@ -39,6 +45,7 @@ export function writeProjectMeta(
   folderInDoc: boolean,
 ): ProjectMeta {
   writeLocalWorktree(settings, projectId, patch);
+  writeLocalStorybook(settings, projectId, patch);
   writeSharedFields(docs, projectId, sharedFields(patch), folderInDoc);
   docs.emit({ projectId });
   docs.emit({ projectId: null });

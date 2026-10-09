@@ -189,3 +189,37 @@ describe("design frames", () => {
     expect(events.list().map((e) => [e.kind, e.code])).toEqual([["design.frame", "RATE_LIMITED"]]);
   });
 });
+
+describe("embedded frames", () => {
+  const url = "https://itch.io/embed-upload/1?color=333";
+  const openCall: ComponentCall = { kind: "embed.open", url };
+  test("embed.open needs cap:embed and the refusal is journaled", async () => {
+    const denied = testGate();
+    await refused(denied.gate.call("p1", "thirdparty", openCall), "PERMISSION_DENIED");
+    expect(denied.handled).toEqual([]);
+    expect(denied.events.list().map((e) => [e.kind, e.code])).toEqual([["embed.open", "PERMISSION_DENIED"]]);
+    const allowed = testGate(createQuotas(), { ...granted, capabilities: ["embed"] });
+    await allowed.gate.call("p1", "thirdparty", openCall);
+    await allowed.gate.call("p1", "builtin", openCall);
+    expect(allowed.handled).toEqual([`embed:thirdparty:${url}`, `embed:builtin:${url}`]);
+  });
+  test("embed.open is limited to ten per minute and per instance", async () => {
+    const { gate: g, events, handled } = testGate(createQuotas({ now: () => 0 }));
+    for (let i = 0; i < 10; i++) await g.call("p1", "builtin", openCall);
+    await refused(g.call("p1", "builtin", openCall), "RATE_LIMITED");
+    expect(handled).toHaveLength(10);
+    expect(events.list().map((e) => [e.kind, e.code])).toEqual([["embed.open", "RATE_LIMITED"]]);
+  });
+  test("design.storybooks needs cap:design and reaches the design handler", async () => {
+    const call: ComponentCall = { kind: "design.storybooks" };
+    const denied = testGate();
+    await refused(denied.gate.call("p1", "thirdparty", call), "PERMISSION_DENIED");
+    const allowed = testGate(createQuotas(), { ...granted, capabilities: ["design"] });
+    await allowed.gate.call("p1", "thirdparty", call);
+    await allowed.gate.call("p1", "builtin", call);
+    expect(allowed.handled).toEqual([
+      "design:thirdparty:design.storybooks",
+      "design:builtin:design.storybooks",
+    ]);
+  });
+});

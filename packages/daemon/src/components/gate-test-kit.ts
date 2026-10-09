@@ -108,6 +108,7 @@ export const idleHandlers: GateHandlers = {
   mcp: async () => null,
   assets: async () => null,
   design: async () => null,
+  embed: async () => null,
   config: async () => null,
   presence: async () => [],
   sharing: async () => {
@@ -159,6 +160,10 @@ export function testGate(quotas: Quotas = createQuotas(), grantedToEvil: Granted
       },
       design: async (_projectId, instanceId, call) => {
         handled.push(`design:${instanceId}:${call.kind}`);
+        return null;
+      },
+      embed: async (_projectId, instance, url) => {
+        handled.push(`embed:${instance.id}:${url}`);
         return null;
       },
       config: async (_projectId, instance, patch) => {

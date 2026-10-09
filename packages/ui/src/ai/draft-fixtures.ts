@@ -90,6 +90,7 @@ export const burndownManifest: ComponentManifest = {
   secrets: [],
   mcp: [],
   capabilities: [],
+  embeds: [],
   selection: false,
   configVersion: 0,
   changes: [],

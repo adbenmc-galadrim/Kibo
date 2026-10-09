@@ -1,6 +1,9 @@
 import { KiboError } from "@kibo/schema";
 import type { IntegrationKit, IntegrationModule } from "../integrations/bootstrap";
+import type { IntegrationHost } from "../integrations/types";
 import type { McpHub } from "../mcp/hub";
+import { LOCAL_FOLDER_KEY, storybookSettingsOf } from "../project-folder";
+import { readEnvPort } from "./env-port";
 import { createFigmaAccount, type FigmaAccount } from "./figma-account";
 import { createFrameCache } from "./frame-cache";
 import { createFrameService, type FrameService, SHELL_INSTANCE } from "./frame-service";
@@ -10,7 +13,9 @@ import { createPenpotAccount } from "./penpot-account";
 import { createFigmaMcp, type FigmaMcp } from "./providers/figma-mcp";
 import { createFigmaRest, type FigmaRest } from "./providers/figma-rest";
 import { createPenpot } from "./providers/penpot";
+import { createStorybook, type StorybookClient } from "./providers/storybook";
 import type { DesignProviderClient } from "./providers/types";
+import { createStorybookOrigins, type StorybookOrigins } from "./storybook-origins";
 
 export type DesignModule = IntegrationModule & { gate: DesignGate; open: FrameService["open"] };
 
@@ -25,6 +30,22 @@ function figmaProvider(account: FigmaAccount, rest: FigmaRest, mcp: FigmaMcp): D
     metadata: (key) => active().metadata(key),
     render: (key) => active().render(key),
   };
+}
+
+const logStorybook = (message: string) => console.warn(`[kibo-daemon] ${message}`);
+
+function storybookOrigins(host: IntegrationHost, client: StorybookClient): StorybookOrigins {
+  return createStorybookOrigins({
+    settings: (projectId) => storybookSettingsOf(host.projectSettings, projectId),
+    folder: (projectId) =>
+      host.projectSettings.get(projectId, LOCAL_FOLDER_KEY) ??
+      host.projects().find((p) => p.id === projectId)?.folder ??
+      null,
+    worktrees: (folder) => host.worktrees(folder),
+    envPort: readEnvPort,
+    client,
+    log: logStorybook,
+  });
 }
 
 export function designModule(kit: IntegrationKit, hub: McpHub): DesignModule {
@@ -62,6 +83,8 @@ export function designModule(kit: IntegrationKit, hub: McpHub): DesignModule {
   const cache = createFrameCache({ db: host.db, home: host.home, now: host.now });
   cache.purge();
   const providers = { figma: figmaProvider(figmaAccount, rest, mcp), penpot };
+  const storybook = createStorybook({ fetch: kit.net.fetch, now: host.now, log: logStorybook });
+  const origins = storybookOrigins(host, storybook);
   const service = createFrameService({
     cache,
     providers,
@@ -69,6 +92,7 @@ export function designModule(kit: IntegrationKit, hub: McpHub): DesignModule {
     sandboxOrigin: () => host.sandboxOrigin(),
     now: host.now,
     events,
+    storybook: { client: storybook, origins, embed: kit.embed },
   });
   figmaAccount.start().catch((e) => events.log("figma", "error", `start failed: ${detailOf(e)}`));
   const changed = <T>(value: T): T => {
@@ -76,7 +100,7 @@ export function designModule(kit: IntegrationKit, hub: McpHub): DesignModule {
     return value;
   };
   return {
-    gate: createDesignGate(service),
+    gate: createDesignGate(service, origins),
     open: (token) => service.open(token),
     handlers: {
       connectFigma: async (req) => changed(await figmaAccount.connect(req.auth)),
@@ -88,7 +112,7 @@ export function designModule(kit: IntegrationKit, hub: McpHub): DesignModule {
           req.ticketId,
           req.url,
         ),
-      getDesignFrame: (req) => service.frame(SHELL_INSTANCE, req.url, req.refresh),
+      getDesignFrame: (req) => service.frame(SHELL_INSTANCE, req.url, req.refresh, null),
     },
     probes: [
       {

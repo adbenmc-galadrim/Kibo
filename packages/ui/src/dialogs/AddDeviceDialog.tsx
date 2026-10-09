@@ -10,13 +10,13 @@ import {
 } from "@kibo/sdk/ui/dialog";
 import { useEffect, useState } from "react";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frCollab } from "../i18n/fr-collab";
 import { frSyncPage } from "../i18n/fr-sync-page";
 import { hostOf } from "../lib/host-of";
 import { syncFailure } from "../lib/sync-errors";
 import { CopyButton } from "../settings/CopyButton";
 
-const t = fr.sync;
+const t = frCollab.sync;
 
 export const groupByFour = (code: string): string => code.match(/.{1,4}/g)?.join(" ") ?? code;
 

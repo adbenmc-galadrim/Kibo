@@ -1,4 +1,4 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 import {
   type CodeEvent,
   type CodeRequest,
@@ -17,9 +17,20 @@ import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { targetToHash } from "../tabs/target-hash";
 
 const project: ProjectSnapshot = {
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
+  meta: {
+    id: "p1",
+    name: "Kibo",
+    key: "KIB",
+    folder: null,
+    color: "#14B8A6",
+    worktree: null,
+    storybook: null,
+  },
   workflow: DEFAULT_WORKFLOW,
-  pages: [{ id: "1@1", title: "Board", kind: "view", parentId: null }],
+  pages: [
+    { id: "1@1", title: "Board", kind: "view", parentId: null },
+    { id: "5@1", title: "Tableau de bord", kind: "dashboard", parentId: null },
+  ],
   tickets: [
     {
       id: "7@1",
@@ -59,7 +70,15 @@ const project: ProjectSnapshot = {
 };
 const repo: ProjectSnapshot = {
   ...project,
-  meta: { id: "p2", name: "Portfolio", key: "POR", folder: "/repo", color: "#8B5CF6", worktree: null },
+  meta: {
+    id: "p2",
+    name: "Portfolio",
+    key: "POR",
+    folder: "/repo",
+    color: "#8B5CF6",
+    worktree: null,
+    storybook: null,
+  },
   pages: [],
   tickets: [],
 };
@@ -80,7 +99,15 @@ const inboxTicket = (id: string, key: string, statusId: "todo" | "done") => {
 };
 const inbox: ProjectSnapshot = {
   ...project,
-  meta: { id: INBOX_ID, name: "Inbox", key: "INB", folder: null, color: "#64748B", worktree: null },
+  meta: {
+    id: INBOX_ID,
+    name: "Inbox",
+    key: "INB",
+    folder: null,
+    color: "#64748B",
+    worktree: null,
+    storybook: null,
+  },
   pages: [],
   tickets: [
     inboxTicket("i1", "INB-1", "todo"),
@@ -250,8 +277,53 @@ test("navigation opens a « Projet · Page » tab and the breadcrumb follows", a
   expect(crumbs().getByText("Board").getAttribute("aria-current")).toBe("page");
   await waitFor(() => expect(saved.some((r) => r.method === "saveTabs")).toBe(true), { timeout: 1000 });
   fireEvent.click(crumbs().getByRole("button", { name: "Kibo" }));
-  await waitFor(() => expect(location.hash).toBe(targetToHash({ kind: "project", projectId: "p1" })));
-  expect(crumbs().queryByRole("button")).toBeNull();
+  await waitFor(() => expect(location.hash).toBe(targetToHash(dashboard)));
+  expect(crumbs().getByText("Tableau de bord").getAttribute("aria-current")).toBe("page");
+});
+
+const dashboard: TabTarget = { kind: "page", projectId: "p1", pageId: "5@1" };
+const sidebarProject = async (name: string) => {
+  const entry = (await screen.findAllByRole("button", { name })).find(
+    (b) => b.dataset.sidebar === "menu-button",
+  );
+  if (!entry) throw new Error(`no sidebar entry ${name}`);
+  return entry;
+};
+
+test("clicking a project in the sidebar opens its « Tableau de bord » page", async () => {
+  renderShell();
+  await go("#/");
+  fireEvent.click(await sidebarProject("Kibo"));
+  await waitFor(() => expect(location.hash).toBe(targetToHash(dashboard)));
+  expect(await screen.findByRole("tab", { name: "Kibo · Tableau de bord · aperçu" })).toBeTruthy();
+});
+
+test("landing on the dashboard replaces the project history entry", async () => {
+  renderShell();
+  await go(targetToHash({ kind: "page", projectId: "p3", pageId: "1@1" }));
+  const replace = spyOn(history, "replaceState");
+  try {
+    fireEvent.click(await sidebarProject("Kibo"));
+    await waitFor(() => expect(location.hash).toBe(targetToHash(dashboard)));
+    expect(replace.mock.calls.map((c) => c[2])).toContain(targetToHash(dashboard));
+  } finally {
+    replace.mockRestore();
+  }
+});
+
+test("a project tab without a page lands on the dashboard", async () => {
+  renderShell();
+  await go(targetToHash({ kind: "project", projectId: "p1" }));
+  await waitFor(() => expect(location.hash).toBe(targetToHash(dashboard)));
+  expect(screen.queryByRole("tab", { name: "Kibo · aperçu" })).toBeNull();
+});
+
+test("a project without pages shows its empty state, never a blank page", async () => {
+  renderShell();
+  await go("#/");
+  fireEvent.click(await sidebarProject("Portfolio"));
+  expect(await screen.findByText("Projet créé : Portfolio")).toBeTruthy();
+  expect(location.hash).toBe(targetToHash({ kind: "project", projectId: "p2" }));
 });
 
 test("⌘K opens the palette, ⌘W closes the tab and returns home", async () => {

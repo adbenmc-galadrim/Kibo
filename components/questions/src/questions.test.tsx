@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { ProjectCommand, Surface } from "@kibo/schema";
+import { type ProjectCommand, Question, type Surface } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { seedDemo, seedQuestions } from "@kibo/sdk/fixtures";
@@ -96,6 +96,44 @@ test("the widget offers the delivery of pending answers under its list", async (
   await user.click(await screen.findByRole("button", { name: "Transmettre à l'agent (1) · KIB-14" }));
   expect(await screen.findByText("Transmis à mock")).toBeTruthy();
   expect(m.deliveries).toHaveLength(1);
+});
+
+const IMPORT = { kind: "import", ref: "plan" } as const;
+
+const seedImported = (run: (cmd: ProjectCommand) => unknown) => {
+  const ids = seedDemo(run);
+  const imported = Question.parse(
+    run({
+      method: "createQuestion",
+      ticketId: ids["KIB-12"] ?? "",
+      title: "Arbitrage importé du plan ?",
+      blocking: true,
+      createdBy: IMPORT,
+    }),
+  );
+  run({
+    method: "answerQuestion",
+    questionId: imported.id,
+    answer: { kind: "text", text: "Tranché dans le plan" },
+    by: IMPORT,
+  });
+};
+
+test("an imported answer, not given in Kibo, offers nothing to deliver", async () => {
+  mount("view", { seed: seedImported });
+  const user = userEvent.setup();
+  expect(await screen.findByText("Aucune question ouverte.")).toBeTruthy();
+  await user.click(screen.getByRole("radio", { name: "Toutes" }));
+  const group = await screen.findByRole("region", { name: /KIB-12/ });
+  expect(within(group).getByText("Arbitrage importé du plan ?")).toBeTruthy();
+  expect(within(group).queryByText("à transmettre")).toBeNull();
+  expect(screen.queryByRole("button", { name: /Transmettre à l'agent/ })).toBeNull();
+});
+
+test("the widget offers no delivery for imported answers", async () => {
+  mount("widget", { seed: seedImported });
+  expect(await screen.findByText("Aucune question ouverte.")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /Transmettre à l'agent/ })).toBeNull();
 });
 
 test("read-only projects hide the forms", async () => {

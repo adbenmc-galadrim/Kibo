@@ -32,7 +32,15 @@ export function inboxTicket(n: number, title: string, statusId: StatusId, adam: 
 
 export const inboxSnapshot: ProjectSnapshot = {
   ...base,
-  meta: { id: INBOX_ID, key: "INB", name: "Inbox", folder: null, color: "#64748B", worktree: null },
+  meta: {
+    id: INBOX_ID,
+    key: "INB",
+    name: "Inbox",
+    folder: null,
+    color: "#64748B",
+    worktree: null,
+    storybook: null,
+  },
   tickets: [
     inboxTicket(1, "Idée : export CSV des tickets", "backlog", false),
     inboxTicket(2, "Appeler le comptable", "todo", true),

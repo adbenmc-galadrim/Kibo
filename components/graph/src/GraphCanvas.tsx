@@ -189,7 +189,7 @@ export function GraphCanvas({ tickets, edges, layout, critical, runs, compact = 
       aria-describedby={help}
       data-zoom={String(view.zoom)}
       className={cn(
-        "relative h-full cursor-grab touch-none overflow-hidden bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px] active:cursor-grabbing",
+        "relative h-full cursor-grab touch-none select-none overflow-hidden bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px] active:cursor-grabbing",
         !compact && "min-h-[320px]",
       )}
       onKeyDown={sel.onKeyDown}

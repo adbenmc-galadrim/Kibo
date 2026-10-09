@@ -16,6 +16,7 @@ import { CircleX, Upload } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { marketErrorText } from "../lib/market-errors";
 import { permissionLines } from "../lib/permission-lines";
 import { isRemoteView } from "../lib/remote-view";
@@ -34,7 +35,7 @@ type State =
   | { kind: "done"; serial: number }
   | { kind: "error"; text: string };
 
-const publishErrors: Readonly<Record<string, string>> = fr.market.publishErrors;
+const publishErrors: Readonly<Record<string, string>> = frMarket.market.publishErrors;
 
 const hostOf = (url: string | null): string | null => {
   if (!url) return null;
@@ -78,7 +79,7 @@ function useTeamSources(open: boolean, fail: (text: string) => void) {
 }
 
 function Summary({ target }: { target: PublishTarget }) {
-  const t = fr.market;
+  const t = frMarket.market;
   return (
     <div className="grid gap-2 rounded-lg border bg-muted/40 p-3 text-xs">
       <p className="text-sm font-medium">{t.publishSummary}</p>
@@ -99,7 +100,7 @@ function Summary({ target }: { target: PublishTarget }) {
 }
 
 function SourceChoice(props: { sources: MarketSourceInfo[]; value: string; onChange(id: string): void }) {
-  const t = fr.market;
+  const t = frMarket.market;
   const id = useId();
   return (
     <div className="grid gap-1.5">
@@ -122,7 +123,7 @@ function SourceChoice(props: { sources: MarketSourceInfo[]; value: string; onCha
 }
 
 export function PublishToMarketDialog({ target, open, onOpenChange, remote = isRemoteView() }: Props) {
-  const t = fr.market;
+  const t = frMarket.market;
   const nameId = useId();
   const [state, setState] = useState<State>({ kind: "idle" });
   const [fail] = useState(() => (text: string) => setState({ kind: "error", text }));

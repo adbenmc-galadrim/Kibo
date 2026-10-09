@@ -13,6 +13,7 @@ export type TabsAction =
   | { type: "pin"; id: string; pinned: boolean }
   | { type: "duplicate"; id: string; newId: string }
   | { type: "move"; id: string; toIndex: number }
+  | { type: "retarget"; id: string; target: TabTarget }
   | { type: "replace"; state: TabsState };
 
 export const sameTarget = (a: TabTarget, b: TabTarget): boolean => targetToHash(a) === targetToHash(b);
@@ -79,6 +80,14 @@ function move(state: TabsState, id: string, toIndex: number): TabsState {
   const [min, max] = tab.pinned ? [0, pinnedCount] : [pinnedCount, rest.length];
   const at = Math.min(max, Math.max(min, toIndex));
   return { ...state, tabs: [...rest.slice(0, at), { ...tab, preview: false }, ...rest.slice(at)] };
+}
+
+function retarget(state: TabsState, id: string, target: TabTarget): TabsState {
+  if (!state.tabs.some((t) => t.id === id)) return state;
+  const recents = remember(state.recents, target);
+  const existing = state.tabs.find((t) => t.id !== id && sameTarget(t.target, target));
+  if (existing) return { ...closeIds(state, new Set([id])), activeId: existing.id, recents };
+  return { ...state, tabs: state.tabs.map((t) => (t.id === id ? { ...t, target } : t)), recents };
 }
 
 export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
@@ -152,6 +161,8 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
     }
     case "move":
       return move(state, action.id, action.toIndex);
+    case "retarget":
+      return retarget(state, action.id, action.target);
     case "replace":
       return { ...action.state, tabs: singlePreview(action.state.tabs) };
   }

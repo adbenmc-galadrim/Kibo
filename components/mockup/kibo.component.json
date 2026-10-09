@@ -16,7 +16,7 @@
       "list": true,
       "default": [],
       "label": "Cadres",
-      "help": "Un cadre par ligne, dans l'ordre d'affichage : URL Figma ou Penpot. Les flèches passent d'un cadre à l'autre."
+      "help": "Un cadre par ligne, dans l'ordre d'affichage : URL Figma, Penpot ou Storybook. Les flèches passent d'un cadre à l'autre."
     },
     "fit": { "enum": ["contain", "width"], "default": "contain", "label": "Ajustement initial" }
   }

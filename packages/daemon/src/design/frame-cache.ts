@@ -5,8 +5,8 @@ import { join } from "node:path";
 import {
   DESIGN_CACHE_IDLE_MS,
   DesignProvider,
-  FrameMime,
   frameExtension,
+  ImageFrameMime,
   KiboError,
   MAX_DESIGN_CACHE_BYTES,
   MAX_DESIGN_FRAME_BYTES,
@@ -20,7 +20,7 @@ export type CachedFrame = {
   name: string;
   width: number | null;
   height: number | null;
-  mime: FrameMime;
+  mime: ImageFrameMime;
   path: string;
   version: string | null;
   fetchedAt: number;
@@ -65,7 +65,7 @@ const rowToFrame = (r: Row): CachedFrame => ({
   name: r.name,
   width: r.width,
   height: r.height,
-  mime: FrameMime.parse(r.mime),
+  mime: ImageFrameMime.parse(r.mime),
   path: r.path,
   version: r.version,
   fetchedAt: r.fetched_at,

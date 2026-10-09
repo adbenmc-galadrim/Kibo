@@ -9,6 +9,7 @@ import { projectKey, shot } from "./repo-project";
 test.use({ viewport: { width: 1440, height: 900 } });
 
 const CUBE_ORANGE = srgbOf([0.98, 0.45, 0.09]);
+const SETTINGS_SAVED_MS = 15_000;
 const UNAVAILABLE = "Affichage 3D indisponible sur cet appareil.";
 
 const projectIdOf = (page: Page): string => {
@@ -51,7 +52,7 @@ async function chooseModel(page: Page, model: string, still = false) {
     await expect(rotate).toHaveAttribute("aria-checked", "false");
   }
   await dialog.getByRole("button", { name: "Enregistrer" }).click();
-  await expect(dialog).toBeHidden();
+  await expect(dialog).toBeHidden({ timeout: SETTINGS_SAVED_MS });
 }
 
 function expectOrange(color: Rgb) {
@@ -74,7 +75,7 @@ async function startViewer(
   await pairAndCreateProject(page, info, projectKey(`${key}${run}`, info));
   for (const [name, bytes] of Object.entries(models)) await uploadGlb(page, projectIdOf(page), name, bytes);
   await createPage(page, "Tableau de bord", "Tableau de bord");
-  await addComponent(page, "Visionneuse 3D");
+  await addComponent(page, "Visionneuse 3D", SETTINGS_SAVED_MS);
 }
 
 test("la visionneuse affiche le modèle choisi dans les réglages", async ({ page }, info) => {

@@ -5,6 +5,7 @@ import { KiboError } from "./errors";
 import {
   AnswerInput,
   answerPrompt,
+  answersToDeliver,
   askedNotice,
   askInputFromTool,
   countOpenByRun,
@@ -182,6 +183,19 @@ test("undelivered answers of a ticket come in answer order, open and delivered o
   ]);
   expect(deliveryPrompt([early, late])).toBe(`${answerPrompt(early)}\n${answerPrompt(late)}`);
   expect(DeliveryResult.parse({ sent: 2, runId: "r1" })).toEqual({ sent: 2, runId: "r1" });
+});
+
+test("only answers given in Kibo wait for « Transmettre à l'agent », imported ones ride the brief", () => {
+  const human = answeredAt("q2", 20);
+  const delivered = answeredAt("q3", 30, 31);
+  const imported = Question.parse({
+    ...answeredAt("q4", 40),
+    createdBy: { kind: "import", ref: "plan" },
+    answer: { ...answeredAt("q4", 40).answer, by: { kind: "import", ref: "plan" } },
+  });
+  expect(answersToDeliver([imported], "t1")).toEqual([]);
+  expect(answersToDeliver([imported, delivered, human], "t1").map((q) => q.id)).toEqual(["q2"]);
+  expect(undeliveredAnswers([imported, delivered, human], "t1").map((q) => q.id)).toEqual(["q2", "q4"]);
 });
 
 test("run counts carry the answers still to deliver", () => {

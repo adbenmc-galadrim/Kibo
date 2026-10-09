@@ -21,3 +21,20 @@ test("project meta defaults worktree to null and the patch accepts it", () => {
   ).toBe(true);
   expect(ProjectPatch.safeParse({ worktree: null }).success).toBe(true);
 });
+
+test("project meta defaults storybook to null and the patch writes or clears it", () => {
+  expect(
+    ProjectMeta.parse({ id: "p", key: "AB", name: "n", folder: null, color: "#123456" }).storybook,
+  ).toBeNull();
+  expect(ProjectPatch.safeParse({ storybook: null }).success).toBe(true);
+  expect(
+    ProjectPatch.safeParse({ storybook: { origin: "https://sb.example.com", portEnv: "SB_PORT" } }).success,
+  ).toBe(true);
+  expect(
+    ProjectPatch.safeParse({ storybook: { origin: "http://192.168.1.10:6006", portEnv: "SB_PORT" } }).success,
+  ).toBe(false);
+  expect(
+    ProjectPatch.safeParse({ storybook: { origin: "http://localhost:6006", portEnv: "storybook-port" } })
+      .success,
+  ).toBe(false);
+});

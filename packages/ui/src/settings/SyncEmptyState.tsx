@@ -1,7 +1,7 @@
 import { Button } from "@kibo/sdk/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
 import { Cloud } from "lucide-react";
-import { fr } from "../i18n/fr";
+import { frCollab } from "../i18n/fr-collab";
 import { frSyncPage, SYNC_DOCS_URL } from "../i18n/fr-sync-page";
 
 const t = frSyncPage;
@@ -48,7 +48,7 @@ export function SyncEmptyState({ onConnect, onJoinDevice, remote }: Props) {
           </p>
         </div>
       </div>
-      {remote && <p className="text-sm text-muted-foreground">{fr.sync.localOnly}</p>}
+      {remote && <p className="text-sm text-muted-foreground">{frCollab.sync.localOnly}</p>}
       <div className="grid gap-3 md:grid-cols-2">
         <PathCard
           title={t.connectTitle}

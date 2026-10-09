@@ -3,10 +3,10 @@ import { LoroDoc } from "loro-crdt";
 import { valid } from "./config-store";
 import type { RegisteredProjectPatch } from "./workspace";
 
-export const LOCAL_ONLY_META = "worktree";
+export const LOCAL_ONLY_META: ReadonlySet<string> = new Set(["worktree", "storybook"]);
 
 export const sharedMetaEntries = (meta: ProjectMeta): [string, ProjectMeta[keyof ProjectMeta]][] =>
-  Object.entries(meta).filter(([key]) => key !== LOCAL_ONLY_META);
+  Object.entries(meta).filter(([key]) => !LOCAL_ONLY_META.has(key));
 
 export function createProjectDoc(meta: ProjectMeta): LoroDoc {
   const doc = new LoroDoc();
@@ -29,6 +29,7 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
     folder: (m.get("folder") as string | null) ?? null,
     color: m.get("color") as string,
     worktree: null,
+    storybook: null,
   };
 }
 

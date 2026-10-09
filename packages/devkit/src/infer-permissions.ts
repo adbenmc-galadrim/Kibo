@@ -106,6 +106,7 @@ function inferFile(ts: TypeScript, file: SourceText, used: Set<string>, issues: 
     else if (path.length === 2 && first === "capability") capability(call);
     else if (path.length === 3 && first === "assets") used.add(capPermission("assets"));
     else if (path.length === 3 && first === "design") used.add(capPermission("design"));
+    else if (path.length === 3 && first === "embed") used.add(capPermission("embed"));
     else if (path.length === 3 && first === "focus") used.add(capPermission("fullscreen"));
     else if (path.length === 2 && first === "run") run(call);
     else if (path.length === 2 && first === "fetch") fetch(call);

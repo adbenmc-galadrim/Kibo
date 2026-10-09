@@ -5,13 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/ui/collapsible";
 import { ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
-import { fr } from "../i18n/fr";
+import { frCollab } from "../i18n/fr-collab";
 import { frSyncPage } from "../i18n/fr-sync-page";
 import { hostOf } from "../lib/host-of";
 import { syncErrorText } from "../lib/sync-errors";
 import { UserAvatar } from "../shell/UserAvatar";
 
-const t = fr.sync;
+const t = frCollab.sync;
 
 function useTicking(active: boolean): number {
   const [now, setNow] = useState(Date.now);

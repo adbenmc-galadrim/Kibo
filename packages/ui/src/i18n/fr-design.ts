@@ -1,4 +1,9 @@
-import type { DesignUrlProblem, FrameProblemContext, FrameProblemKind } from "@kibo/schema";
+import type { DesignProvider, DesignUrlProblem, FrameProblemContext, FrameProblemKind } from "@kibo/schema";
+
+const PROVIDERS = { figma: "Figma", penpot: "Penpot", storybook: "Storybook" } satisfies Record<
+  DesignProvider,
+  string
+>;
 
 export const frDesign = {
   connect: {
@@ -81,15 +86,14 @@ export const frDesign = {
     placeholder: "Colle l'URL d'un cadre Figma ou d'un board Penpot",
     unlink: "Retirer",
     refresh: "Actualiser",
-    open: (provider: "figma" | "penpot") =>
-      provider === "figma" ? "Ouvrir dans Figma" : "Ouvrir dans Penpot",
+    open: (provider: DesignProvider) => `Ouvrir dans ${PROVIDERS[provider]}`,
   },
   field: {
     placeholder: "https://www.figma.com/design/…?node-id=… ou https://design.penpot.app/#/workspace/…",
     invalid: "URL de cadre invalide : lien Figma (node-id) ou Penpot (board-id) attendu.",
   },
   badges: { stale: "Périmé", offline: "Hors ligne" },
-  provider: { figma: "Figma", penpot: "Penpot" },
+  provider: PROVIDERS,
   retry: "Réessayer",
   urlProblems: {
     "not-a-url": "Ce n'est pas une adresse web.",
@@ -101,6 +105,10 @@ export const frDesign = {
     "penpot-page-missing": "L'adresse ne contient pas page-id : ouvre une page du fichier dans Penpot.",
     "penpot-board-missing":
       "Sélectionne un board dans Penpot avant de copier l'adresse : il manque board-id.",
+    "storybook-insecure":
+      "Ce Storybook est en http hors de ta machine : utilise https, ou http seulement en local.",
+    "storybook-story-missing":
+      "Ouvre une story dans Storybook et copie l'adresse de la page (…?path=/story/…) ou de l'iframe (iframe.html?id=…).",
   } satisfies Record<DesignUrlProblem, string>,
   problems: {
     notConnected: ({ name }) => `Connecte ${name} dans Paramètres › Intégrations.`,

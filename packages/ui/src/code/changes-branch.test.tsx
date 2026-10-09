@@ -120,7 +120,15 @@ const ticket: TicketView = {
   openQuestions: 0,
 };
 const project = (tickets: TicketView[]): ProjectSnapshot => ({
-  meta: { id: "p1", name: "Emis", key: "EMIS", folder: "/emis", color: "#F97316", worktree: null },
+  meta: {
+    id: "p1",
+    name: "Emis",
+    key: "EMIS",
+    folder: "/emis",
+    color: "#F97316",
+    worktree: null,
+    storybook: null,
+  },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets,

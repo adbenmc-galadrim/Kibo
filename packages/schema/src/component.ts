@@ -15,6 +15,7 @@ export const BUILTIN_IDS = [
   "snake",
   "mockup",
   "questions",
+  "itch",
 ] as const;
 export const BUILTIN_ADAPTER_IDS = ["github-issues"] as const;
 const BUILTIN_ANY: readonly string[] = [...BUILTIN_IDS, ...BUILTIN_ADAPTER_IDS];

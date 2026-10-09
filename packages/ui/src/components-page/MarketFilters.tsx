@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
-import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 
 const ANY = "*";
 const KINDS: ComponentKind[] = ["widget", "view", "both"];
@@ -61,7 +61,7 @@ type Props = {
 };
 
 export function MarketFilters({ sources, sourceId, kind, onSource, onKind, compact = false }: Props) {
-  const t = fr.market;
+  const t = frMarket.market;
   const sourceName = sources.find((s) => s.id === sourceId)?.name ?? null;
   return (
     <>

@@ -1,4 +1,4 @@
-import { type AnswerInput, isOpen, type Question, type TicketView, undeliveredAnswers } from "@kibo/schema";
+import { type AnswerInput, answersToDeliver, isOpen, type Question, type TicketView } from "@kibo/schema";
 import { fr } from "./fr";
 
 export type Scope = "open" | "answered" | "all";
@@ -44,7 +44,7 @@ export function viewGroups(
     .map((ticket) => ({
       ticket,
       questions: shown.filter((q) => q.ticketId === ticket.id).sort(byNewest),
-      undelivered: undeliveredAnswers(questions, ticket.id),
+      undelivered: answersToDeliver(questions, ticket.id),
     }))
     .filter((g) => g.questions.length > 0 || g.undelivered.length > 0);
 }

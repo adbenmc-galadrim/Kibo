@@ -1,3 +1,4 @@
+import { type PointerEvent, useRef } from "react";
 import { fr } from "./fr";
 import { type GraphLayout, NODE_H, NODE_W } from "./layout";
 import type { Point, Size, Viewport } from "./viewport";
@@ -31,6 +32,17 @@ export function Minimap({ layout, view, box, onJump }: Props) {
     x: (W - area.w * scale) / 2 - area.x * scale,
     y: (H - area.h * scale) / 2 - area.y * scale,
   };
+  const dragging = useRef(false);
+  const jumpTo = (e: PointerEvent<SVGSVGElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    onJump({
+      x: (e.clientX - r.left - offset.x) / scale,
+      y: (e.clientY - r.top - offset.y) / scale,
+    });
+  };
+  const stopDragging = () => {
+    dragging.current = false;
+  };
   const toMap = (r: Rect) => ({
     x: offset.x + r.x * scale,
     y: offset.y + r.y * scale,
@@ -44,14 +56,18 @@ export function Minimap({ layout, view, box, onJump }: Props) {
       width={W}
       height={H}
       viewBox={`0 0 ${W} ${H}`}
-      className="absolute right-3 bottom-12 cursor-pointer overflow-hidden rounded-md border bg-card/90"
+      className="absolute right-3 bottom-12 cursor-pointer select-none overflow-hidden rounded-md border bg-card/90"
       onPointerDown={(e) => {
-        const r = e.currentTarget.getBoundingClientRect();
-        onJump({
-          x: (e.clientX - r.left - offset.x) / scale,
-          y: (e.clientY - r.top - offset.y) / scale,
-        });
+        e.preventDefault();
+        dragging.current = true;
+        jumpTo(e);
       }}
+      onPointerMove={(e) => {
+        if (dragging.current) jumpTo(e);
+      }}
+      onPointerUp={stopDragging}
+      onPointerCancel={stopDragging}
+      onPointerLeave={stopDragging}
     >
       {layout.nodes.map((n) => (
         <rect

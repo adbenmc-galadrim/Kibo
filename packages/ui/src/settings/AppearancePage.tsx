@@ -1,10 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@kibo/sdk/ui/card";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
-import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 import { setThemePreference, THEME_PREFERENCES, type ThemePreference, useThemePreference } from "../theme";
 import { SettingsLayout } from "./SettingsLayout";
 
-const t = fr.security.appearance;
+const t = frSecurity.appearance;
 const SEGMENT =
   "h-7 rounded-md px-3 text-xs text-muted-foreground hover:bg-transparent data-[state=on]:bg-background data-[state=on]:text-foreground data-[state=on]:shadow-sm";
 const isPreference = (v: string): v is ThemePreference => THEME_PREFERENCES.some((p) => p === v);

@@ -15,7 +15,15 @@ import {
   restoreLocalAllocation,
 } from "./index";
 
-const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null };
+const meta = {
+  id: "p1",
+  key: "KIB",
+  name: "Kibo",
+  folder: null,
+  color: "#F97316",
+  worktree: null,
+  storybook: null,
+};
 
 function serverAllocated(): LoroDoc {
   const doc = createProjectDoc(meta);
@@ -130,6 +138,7 @@ test("restoreLocalAllocation keys pending tickets and gives allocation back to t
     folder: null,
     color: "#14B8A6",
     worktree: null,
+    storybook: null,
   });
   enableServerAllocation(doc);
   createTicket(doc, { title: "En attente" });

@@ -46,9 +46,9 @@ export async function createSidebarPage(page: Page, project: string, title: stri
   await fillNewPage(page, title, kind);
 }
 
-export async function addComponent(page: Page, title: string) {
+export async function addComponent(page: Page, title: string, closeTimeout?: number) {
   await page.getByRole("button", { name: "Ajouter un composant" }).click();
   await page.getByRole("radio", { name: title, exact: true }).click();
   await page.getByRole("button", { name: "Ajouter à la page" }).click();
-  await expect(page.getByRole("dialog")).toBeHidden();
+  await expect(page.getByRole("dialog")).toBeHidden({ timeout: closeTimeout });
 }

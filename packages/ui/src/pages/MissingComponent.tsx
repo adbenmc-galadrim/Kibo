@@ -6,7 +6,7 @@ import { client } from "../api";
 import { MarketPackageSheet, type MarketTarget } from "../components-page/MarketPackageSheet";
 import { PublisherChangedDialog } from "../dialogs/PublisherChangedDialog";
 import { TrustDialog, trustTargetOfInstall } from "../dialogs/TrustDialog";
-import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { marketErrorText } from "../lib/market-errors";
 import { useProject } from "../state/use-projects";
 
@@ -36,7 +36,7 @@ function useOffer(id: string, version: string, hash: string | null, fail: (text:
 }
 
 export function MissingComponent({ projectId, componentRef, hash, compact }: Props) {
-  const t = fr.market;
+  const t = frMarket.market;
   const { id, version } = splitRef(componentRef);
   const owner = useProject(projectId)?.sync.members.find((m) => m.role === "owner") ?? null;
   const [error, setError] = useState<string | null>(null);

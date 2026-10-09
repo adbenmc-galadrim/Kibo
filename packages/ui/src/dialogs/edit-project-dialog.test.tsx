@@ -13,7 +13,15 @@ mock.module("../api", () =>
         calls.push(req);
         if (fail) throw fail;
         if (req.method === "updateProject")
-          return { id: "kibo", key: "KIB", name: "Noyau", folder: null, color: "#6366F1", worktree: null };
+          return {
+            id: "kibo",
+            key: "KIB",
+            name: "Noyau",
+            folder: null,
+            color: "#6366F1",
+            worktree: null,
+            storybook: null,
+          };
         if (req.method === "setIcon") return { icon: req.icon ? "abc" : null };
         throw new Error(`unexpected ${req.method}`);
       },
@@ -29,6 +37,7 @@ const project: ProjectSummary = {
   folder: "/Users/adam/code/kibo",
   color: "#F97316",
   worktree: null,
+  storybook: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
   icon: "v1",
 };
@@ -242,4 +251,82 @@ test("clearing the three fields forgets the settings", async () => {
   await user.click(saveButton());
   await waitFor(() => expect(closed).toHaveBeenCalled());
   expect(calls).toEqual([{ method: "updateProject", projectId: "kibo", patch: { worktree: null } }]);
+});
+
+const storybookSection = () => screen.queryByRole("group", { name: "Storybook" });
+const ORIGIN = "Adresse";
+const PORT_ENV = "Variable du port dans .env des worktrees";
+
+test("the storybook section shows the defaults, never remote (screen 182)", () => {
+  const local = render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  expect(storybookSection()).toBeTruthy();
+  expect([field(ORIGIN).value, field(PORT_ENV).value]).toEqual(["http://localhost:6006", "STORYBOOK_PORT"]);
+  expect(saveButton().hasAttribute("disabled")).toBe(true);
+  local.unmount();
+  const noFolder = render(
+    <EditProjectDialog project={{ ...project, folder: null }} remote={false} onClose={() => {}} />,
+  );
+  expect(field(ORIGIN).value).toBe("http://localhost:6006");
+  expect(screen.queryByLabelText(PORT_ENV)).toBeNull();
+  noFolder.unmount();
+  render(<EditProjectDialog project={project} remote onClose={() => {}} />);
+  expect(storybookSection()).toBeNull();
+});
+
+test("a deployed storybook is saved with the default port variable", async () => {
+  const closed = mock(() => {});
+  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
+  const user = userEvent.setup();
+  await user.clear(field(ORIGIN));
+  await user.type(field(ORIGIN), "https://sb.example.com");
+  await user.click(saveButton());
+  await waitFor(() => expect(closed).toHaveBeenCalled());
+  expect(calls).toEqual([
+    {
+      method: "updateProject",
+      projectId: "kibo",
+      patch: { storybook: { origin: "https://sb.example.com", portEnv: "STORYBOOK_PORT" } },
+    },
+  ]);
+});
+
+test("an insecure address or a bad variable name is explained and blocks the save", async () => {
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  const user = userEvent.setup();
+  await user.clear(field(ORIGIN));
+  await user.type(field(ORIGIN), "http://sb.example.com");
+  expect(screen.getByText("Adresse refusée (https, ou http en local)")).toBeTruthy();
+  expect([field(ORIGIN), field(PORT_ENV)].map((f) => f.getAttribute("aria-invalid"))).toEqual([
+    "true",
+    "false",
+  ]);
+  expect(saveButton().hasAttribute("disabled")).toBe(true);
+  await user.clear(field(ORIGIN));
+  await user.type(field(ORIGIN), "http://localhost:6007");
+  expect(screen.queryByText("Adresse refusée (https, ou http en local)")).toBeNull();
+  await user.clear(field(PORT_ENV));
+  await user.type(field(PORT_ENV), "storybook-port");
+  expect(screen.getByText("Nom de variable invalide")).toBeTruthy();
+  expect(saveButton().hasAttribute("disabled")).toBe(true);
+});
+
+test("clearing both storybook fields forgets the settings", async () => {
+  const closed = mock(() => {});
+  const storybook = { origin: "https://sb.example.com", portEnv: "SB_PORT" };
+  render(<EditProjectDialog project={{ ...project, storybook }} remote={false} onClose={closed} />);
+  expect([field(ORIGIN).value, field(PORT_ENV).value]).toEqual(["https://sb.example.com", "SB_PORT"]);
+  const user = userEvent.setup();
+  await user.clear(field(ORIGIN));
+  await user.clear(field(PORT_ENV));
+  await user.click(saveButton());
+  await waitFor(() => expect(closed).toHaveBeenCalled());
+  expect(calls).toEqual([{ method: "updateProject", projectId: "kibo", patch: { storybook: null } }]);
+});
+
+test("the defaults typed back over an empty setting send no patch", async () => {
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  const user = userEvent.setup();
+  await user.clear(field(PORT_ENV));
+  await user.type(field(PORT_ENV), "STORYBOOK_PORT");
+  expect(saveButton().hasAttribute("disabled")).toBe(true);
 });

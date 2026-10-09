@@ -1,7 +1,8 @@
 import { KiboError, type KiboErrorCode } from "@kibo/schema";
 import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 
-const messages: Readonly<Record<string, string>> = fr.market.errors;
+const messages: Readonly<Record<string, string>> = frMarket.market.errors;
 
 export function marketErrorCodeText(code: string): string {
   return Object.hasOwn(messages, code) ? (messages[code] ?? fr.common.error) : fr.common.error;

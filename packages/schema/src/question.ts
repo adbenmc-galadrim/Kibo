@@ -156,6 +156,12 @@ export function undeliveredAnswers(questions: readonly Question[], ticketId: str
     .sort((a, b) => (a.answer?.at ?? 0) - (b.answer?.at ?? 0) || a.id.localeCompare(b.id));
 }
 
+export const awaitsDelivery = (q: Question): boolean => isUndelivered(q) && q.answer?.by.kind !== "import";
+
+export function answersToDeliver(questions: readonly Question[], ticketId: string): Question[] {
+  return undeliveredAnswers(questions, ticketId).filter(awaitsDelivery);
+}
+
 export function resolveAnswer(q: Question, input: AnswerInput): AnswerChoice {
   switch (input.kind) {
     case "option":

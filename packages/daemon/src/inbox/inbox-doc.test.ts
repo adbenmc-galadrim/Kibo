@@ -49,6 +49,7 @@ test("a stored inbox that describes another project is refused as corrupt", () =
     folder: null,
     color: "#F97316",
     worktree: null,
+    storybook: null,
   });
   store.save(projectDocId(INBOX_ID), other.export({ mode: "snapshot" }));
   expect(() => loadInbox(store)).toThrow("STORE_CORRUPT");

@@ -36,6 +36,7 @@ import { useAppHelp } from "./use-app-help";
 import { useOpenView, useSnapshotLookup } from "./use-open-view";
 import { useOpened } from "./use-opened";
 import { useProjectAgentPanel } from "./use-project-agent-panel";
+import { useProjectLanding } from "./use-project-landing";
 import { useShellDialogs } from "./use-shell-dialogs";
 import { useWorkspaceKeys } from "./use-workspace-keys";
 import { useWorkspaceSnapshots } from "./use-workspace-snapshots";
@@ -52,6 +53,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   const [lastProjectId, setLastProjectId] = useState<string | null>(activeProjectId);
   const ticketProject = useProject(activeProjectId ?? lastProjectId);
   const project = activeProjectId ? ticketProject : null;
+  useProjectLanding(tabs, project);
   const { snapshots, mineCount, inboxCount } = useWorkspaceSnapshots(projects, viewer);
   const config = useConfig();
   const now = useNow();

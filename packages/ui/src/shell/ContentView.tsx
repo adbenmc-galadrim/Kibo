@@ -52,6 +52,7 @@ export function ContentView(p: Props) {
   if (!p.project) return null;
   switch (t.kind) {
     case "project":
+      if (p.project.pages.length > 0) return null;
       return (
         <ProjectHome
           project={p.project}

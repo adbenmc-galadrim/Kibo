@@ -5,7 +5,15 @@ import type { LoroDoc } from "loro-crdt";
 import { createFileTicket, type FileTicketDeps } from "./file-ticket";
 import { INBOX_META } from "./inbox-doc";
 
-const kibo = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null };
+const kibo = {
+  id: "p1",
+  key: "KIB",
+  name: "Kibo",
+  folder: null,
+  color: "#F97316",
+  worktree: null,
+  storybook: null,
+};
 
 function fixture(
   opts: {

@@ -1,5 +1,6 @@
 import type { Environment, SandboxStatus } from "@kibo/schema";
 import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 import { abbreviateHome } from "../lib/home-path";
 import { sandboxActive, sandboxProblem, sandboxStopped } from "../lib/sandbox-problem";
 
@@ -46,7 +47,7 @@ function claudeCheck(env: Environment): CheckView {
 }
 
 function isolationCheck(sandbox: SandboxStatus): CheckView {
-  const s = fr.security;
+  const s = frSecurity;
   if (sandbox.available) return ok("isolation", s.welcome.title, sandboxActive(sandbox));
   const problem = sandboxProblem(sandbox);
   const detail = sandboxStopped(sandbox) ? s.welcome.stopped(problem) : s.isolation.unavailable(problem);

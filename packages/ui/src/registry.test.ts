@@ -7,6 +7,7 @@ import {
   FileText,
   Frame,
   Gamepad,
+  Joystick,
   LayoutDashboard,
   ListTree,
   MessageCircleQuestion,
@@ -19,6 +20,7 @@ import { BUILTIN_COMPONENTS, componentIcon, componentRef, findComponent, pageIco
 test("built-in components resolve by exact id@version", () => {
   expect(BUILTIN_COMPONENTS.map((c) => componentRef(c.manifest)).sort()).toEqual([
     "graph@1.0.0",
+    "itch@1.0.0",
     "kanban@1.0.0",
     "mcp-source@1.0.0",
     "mockup@1.0.0",
@@ -63,6 +65,7 @@ test("graph, notes, the MCP source, the snake and questions are built-ins with t
     "snake",
     "mockup",
     "questions",
+    "itch",
   ]);
   expect(componentIcon("mcp-source@1.0.0")).toBe(Plug);
   expect(componentIcon("viewer-3d@1.0.0")).toBe(Box);
@@ -71,6 +74,7 @@ test("graph, notes, the MCP source, the snake and questions are built-ins with t
   expect(componentIcon("graph@1.0.0")).toBe(Network);
   expect(componentIcon("notes@1.0.0")).toBe(FileText);
   expect(componentIcon("questions@1.0.0")).toBe(MessageCircleQuestion);
+  expect(componentIcon("itch@1.0.0")).toBe(Joystick);
   expect(BUILTIN_COMPONENTS.map((c) => c.manifest.id)).toEqual([...BUILTIN_IDS]);
 });
 
@@ -88,6 +92,7 @@ test("every built-in declares a size minimum that fits its formats", () => {
     snake: { w: 3, h: 3 },
     mockup: { w: 3, h: 3 },
     questions: { w: 4, h: 3 },
+    itch: { w: 4, h: 3 },
   });
   for (const c of BUILTIN_COMPONENTS) expect(sizeIssue(c.manifest)).toBeNull();
 });

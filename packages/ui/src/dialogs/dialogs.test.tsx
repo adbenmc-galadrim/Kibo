@@ -26,7 +26,15 @@ const { NewTicketDialog } = await import("./NewTicketDialog");
 const fail = () => Promise.reject(new KiboError("INTERNAL", "boom"));
 
 const project: ProjectSnapshot = {
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
+  meta: {
+    id: "p1",
+    name: "Kibo",
+    key: "KIB",
+    folder: null,
+    color: "#14B8A6",
+    worktree: null,
+    storybook: null,
+  },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [],
@@ -41,12 +49,28 @@ const project: ProjectSnapshot = {
 
 const inbox: ProjectSnapshot = {
   ...project,
-  meta: { id: INBOX_ID, name: "Inbox", key: "INB", folder: null, color: "#64748B", worktree: null },
+  meta: {
+    id: INBOX_ID,
+    name: "Inbox",
+    key: "INB",
+    folder: null,
+    color: "#64748B",
+    worktree: null,
+    storybook: null,
+  },
   nextTicketKey: "INB-4",
 };
 const shared: ProjectSnapshot = {
   ...project,
-  meta: { id: "p2", name: "Portfolio", key: "POR", folder: null, color: "#8B5CF6", worktree: null },
+  meta: {
+    id: "p2",
+    name: "Portfolio",
+    key: "POR",
+    folder: null,
+    color: "#8B5CF6",
+    worktree: null,
+    storybook: null,
+  },
   nextTicketKey: null,
   viewer: "u-adam",
   sync: {

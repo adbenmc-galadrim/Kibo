@@ -15,14 +15,14 @@ import { Label } from "@kibo/sdk/ui/label";
 import { ArrowLeft, Check, Fingerprint } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { groupFingerprint } from "../lib/fingerprint";
 import { marketErrorText } from "../lib/market-errors";
 
 type Props = { open: boolean; onOpenChange(open: boolean): void; onAdded(): void };
 
 function Steps({ current }: { current: 1 | 2 }) {
-  const t = fr.marketSources.dialog;
+  const t = frMarket.marketSources.dialog;
   return (
     <ol aria-label={t.stepsLabel} className="flex items-center gap-2">
       {t.steps.map((label, i) => {
@@ -60,7 +60,7 @@ function KeyLines({ fingerprint }: { fingerprint: string }) {
 }
 
 function ProbeStep({ probe }: { probe: MarketProbe }) {
-  const t = fr.marketSources.dialog;
+  const t = frMarket.marketSources.dialog;
   const nameId = useId();
   return (
     <div className="grid gap-4">
@@ -81,7 +81,7 @@ function ProbeStep({ probe }: { probe: MarketProbe }) {
 }
 
 export function AddSourceDialog({ open, onOpenChange, onAdded }: Props) {
-  const t = fr.marketSources.dialog;
+  const t = frMarket.marketSources.dialog;
   const urlId = useId();
   const [url, setUrl] = useState("");
   const [probe, setProbe] = useState<MarketProbe | null>(null);

@@ -6,6 +6,7 @@ import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { client } from "../api";
 import { AddSourceDialog } from "../dialogs/AddSourceDialog";
 import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { marketErrorText } from "../lib/market-errors";
 import { isRemoteView } from "../lib/remote-view";
 import { ConfirmDialog } from "../shell/lazy-dialogs";
@@ -33,7 +34,7 @@ function useSources() {
 }
 
 function SourcesTable({ children }: { children: ReactNode }) {
-  const t = fr.marketSources;
+  const t = frMarket.marketSources;
   return (
     <div className="overflow-hidden rounded-lg border bg-card">
       <Table>
@@ -54,7 +55,7 @@ function SourcesTable({ children }: { children: ReactNode }) {
 }
 
 export function ComponentSourcesPage({ remote = isRemoteView() }: { remote?: boolean }) {
-  const t = fr.marketSources;
+  const t = frMarket.marketSources;
   const { sources, error, setError, load } = useSources();
   const [adding, setAdding] = useState(false);
   const [pending, setPending] = useState<{ id: string; action: SourceAction } | null>(null);
@@ -89,7 +90,7 @@ export function ComponentSourcesPage({ remote = isRemoteView() }: { remote?: boo
       <div className="flex flex-col gap-4 p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-semibold">{t.title}</h1>
+            <h1 className="text-xl font-semibold">{fr.marketSources.title}</h1>
             <p className="text-sm text-muted-foreground">{t.subtitle}</p>
           </div>
           <div className="flex shrink-0 gap-2">

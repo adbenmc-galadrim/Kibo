@@ -47,7 +47,15 @@ const peer = (name: string, i: number, extra: Partial<PresencePeer> = {}): Prese
   ...extra,
 });
 const project: ProjectSnapshot = {
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: null, color: "#14B8A6", worktree: null },
+  meta: {
+    id: "p1",
+    name: "Kibo",
+    key: "KIB",
+    folder: null,
+    color: "#14B8A6",
+    worktree: null,
+    storybook: null,
+  },
   workflow: DEFAULT_WORKFLOW,
   pages: [{ id: "pg1", title: "Kanban", kind: "view", parentId: null }],
   tickets: [

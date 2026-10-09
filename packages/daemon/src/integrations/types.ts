@@ -18,10 +18,13 @@ import type {
   PushOp,
   SecretName,
   Ticket,
+  Worktree,
 } from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
 import type { DesignGate } from "../design/gate";
 import type { CommandEvent, CommandInterceptor, CommandMeta } from "../docs";
+import type { EmbedGate } from "../embed/types";
+import type { ProjectSettings } from "../notes/settings";
 
 export type { DesignGate } from "../design/gate";
 export type { CommandEvent, CommandInterceptor, CommandMeta, CommandOrigin } from "../docs";
@@ -46,6 +49,9 @@ export type IntegrationHost = {
   gh: GhRunner;
   now(): number;
   sandboxOrigin(): string | null;
+  projectSettings: Pick<ProjectSettings, "get">;
+  worktrees(folder: string): Promise<Worktree[]>;
+  uiOrigins(): string[];
 };
 
 export type SecretStore = {
@@ -123,5 +129,6 @@ export type ComponentIntegrationHooks = {
   secret: SecretResolver;
   mcp: McpComponentGate | null;
   design: DesignGate | null;
+  embed: EmbedGate | null;
   ciRuns: ((projectId: string) => Promise<CiRun[]>) | null;
 };

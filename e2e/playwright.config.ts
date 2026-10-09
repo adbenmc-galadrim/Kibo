@@ -185,6 +185,22 @@ const allDaemons = [
     scenario: "question",
     design: true,
   },
+  {
+    name: "embeds-dark",
+    scheme: "dark",
+    port: 4461,
+    spec: /embeds\.spec\.ts/,
+    scenario: "question",
+    embeds: true,
+  },
+  {
+    name: "embeds-light",
+    scheme: "light",
+    port: 4462,
+    spec: /embeds\.spec\.ts/,
+    scenario: "question",
+    embeds: true,
+  },
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 
@@ -241,6 +257,7 @@ export default defineConfig({
           "integrations" in d ? "--integrations" : "",
           "noGh" in d ? "--no-gh" : "",
           "design" in d ? "--design" : "",
+          "embeds" in d ? "--embeds" : "",
           "drafts" in d ? d.drafts : "",
         ]
           .filter((part) => part !== "")

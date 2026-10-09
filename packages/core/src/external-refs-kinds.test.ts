@@ -7,7 +7,15 @@ import { createTicket, getTicket } from "./tickets";
 import { getNode } from "./tree";
 
 const doc = () =>
-  createProjectDoc({ id: "p", key: "KIB", name: "Kibo", folder: null, color: "#71717A", worktree: null });
+  createProjectDoc({
+    id: "p",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#71717A",
+    worktree: null,
+    storybook: null,
+  });
 const issue = (patch: Partial<Extract<ExternalRef, { kind: "github_issue" }>> = {}): ExternalRef => ({
   kind: "github_issue",
   bindingId: "b1",

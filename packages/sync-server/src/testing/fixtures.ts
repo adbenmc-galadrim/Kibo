@@ -37,6 +37,7 @@ export function ownerSnapshot(projectId = "p1"): Uint8Array {
     folder: null,
     color: "#F97316",
     worktree: null,
+    storybook: null,
   });
   createTicket(doc, { title: "Noyau de données" });
   createTicket(doc, { title: "Schéma Loro des tickets" });

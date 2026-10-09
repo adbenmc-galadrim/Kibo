@@ -2,7 +2,7 @@ import { type MarketPackageDetail, type MarketVersionInfo, shortHash } from "@ki
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Fingerprint, type LucideIcon, Package, Store } from "lucide-react";
 import type { ReactNode } from "react";
-import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { AMBER_TEXT, BLUE_BADGE } from "./market-tones";
 import { PublisherMark } from "./PublisherMark";
 
@@ -28,7 +28,7 @@ export function PackageFacts({
   detail: MarketPackageDetail;
   sourceUrl: string | null;
 }) {
-  const t = fr.market;
+  const t = frMarket.market;
   const { name, verified } = detail.publisher;
   return (
     <dl className="grid gap-2">
@@ -62,14 +62,16 @@ const DATE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" }
 
 export function VersionList({ detail }: { detail: MarketPackageDetail }) {
   return (
-    <ul aria-label={fr.market.versions} className="overflow-hidden rounded-lg border">
+    <ul aria-label={frMarket.market.versions} className="overflow-hidden rounded-lg border">
       {newestFirst(detail.versions).map((v) => (
         <li key={v.version} className="flex items-center gap-3 border-b px-3 py-2 text-xs last:border-b-0">
           <span className={v.revoked ? "font-mono text-muted-foreground line-through" : "font-mono"}>
             {v.version}
           </span>
           <span className="text-muted-foreground">{DATE.format(new Date(v.publishedAt))}</span>
-          {v.revoked && <span className="ml-auto text-destructive">{fr.market.revoked(v.revoked)}</span>}
+          {v.revoked && (
+            <span className="ml-auto text-destructive">{frMarket.market.revoked(v.revoked)}</span>
+          )}
         </li>
       ))}
     </ul>

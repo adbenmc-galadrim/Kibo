@@ -78,7 +78,15 @@ const unmockedModule = "../shell/ContentView?unmocked";
 const { ContentView }: typeof import("../shell/ContentView") = await import(unmockedModule);
 
 const project = (rules = DEFAULT_RULES): ProjectSnapshot => ({
-  meta: { id: "p1", name: "Kibo", key: "KIB", folder: "/repo", color: "#F97316", worktree: null },
+  meta: {
+    id: "p1",
+    name: "Kibo",
+    key: "KIB",
+    folder: "/repo",
+    color: "#F97316",
+    worktree: null,
+    storybook: null,
+  },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [],

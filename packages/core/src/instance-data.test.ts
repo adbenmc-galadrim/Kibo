@@ -14,6 +14,7 @@ function setup() {
     folder: null,
     color: "#71717A",
     worktree: null,
+    storybook: null,
   });
   const page = executeProjectCommand(doc, { method: "addPage", title: "Board", kind: "dashboard" }) as Page;
   const inst = executeProjectCommand(doc, {
@@ -74,6 +75,7 @@ describe("instance data", () => {
           folder: null,
           color: "#71717A",
           worktree: null,
+          storybook: null,
         });
         copy.import(doc.export({ mode: "snapshot" }));
         expect(readInstanceData(copy, inst.id)).toEqual(model);

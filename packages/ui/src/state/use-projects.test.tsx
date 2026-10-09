@@ -10,7 +10,7 @@ import { act, render } from "@testing-library/react";
 import { apiMock } from "../api-mock";
 
 const snapshotOf = (id: string): ProjectSnapshot => ({
-  meta: { id, name: id, key: "KIB", folder: null, color: "#14B8A6", worktree: null },
+  meta: { id, name: id, key: "KIB", folder: null, color: "#14B8A6", worktree: null, storybook: null },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [],

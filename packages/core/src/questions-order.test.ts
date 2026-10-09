@@ -8,7 +8,15 @@ import { createTicket } from "./tickets";
 const AGENT: Actor = { kind: "agent", ref: "emis-livraison" };
 
 const newProjectDoc = (key: string) =>
-  createProjectDoc({ id: "p1", key, name: "Kibo", folder: null, color: "#F97316", worktree: null });
+  createProjectDoc({
+    id: "p1",
+    key,
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+    storybook: null,
+  });
 
 test("questions created in the same millisecond come back in creation order, every time", () => {
   fc.assert(

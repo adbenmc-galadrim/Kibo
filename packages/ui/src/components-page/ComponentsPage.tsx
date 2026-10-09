@@ -9,6 +9,7 @@ import { CreateComponentDialog } from "../dialogs/CreateComponentDialog";
 import { TrustDialog, trustTargetOfInstall } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
 import { frComponentsList } from "../i18n/fr-components-list";
+import { frMarket } from "../i18n/fr-market";
 import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
 import { type FlashTone, useFlash } from "../lib/use-flash";
 import { ModifyWithAiDialog } from "../shell/lazy-dialogs";
@@ -119,10 +120,10 @@ export function ComponentsPage({ onOpen }: ComponentsPageProps) {
         <Tabs defaultValue="installed" className="gap-4">
           <TabsList className="h-auto gap-1 bg-transparent p-0">
             <TabsTrigger value="installed" className={TAB}>
-              {fr.market.tabInstalled}
+              {frMarket.market.tabInstalled}
             </TabsTrigger>
             <TabsTrigger value="market" className={TAB}>
-              {fr.market.tabMarket}
+              {frMarket.market.tabMarket}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="installed" className="grid content-start gap-6">

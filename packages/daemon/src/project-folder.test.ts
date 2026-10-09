@@ -1,9 +1,25 @@
 import { Database } from "bun:sqlite";
 import { expect, spyOn, test } from "bun:test";
+import { STORYBOOK_DEFAULTS } from "@kibo/schema";
 import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
-import { LOCAL_FOLDER_KEY, LOCAL_WORKTREE_KEY, withLocalSettings } from "./project-folder";
+import {
+  LOCAL_FOLDER_KEY,
+  LOCAL_STORYBOOK_KEY,
+  LOCAL_WORKTREE_KEY,
+  localStorybook,
+  storybookSettingsOf,
+  withLocalSettings,
+} from "./project-folder";
 
-const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#14B8A6", worktree: null };
+const meta = {
+  id: "p1",
+  key: "KIB",
+  name: "Kibo",
+  folder: null,
+  color: "#14B8A6",
+  worktree: null,
+  storybook: null,
+};
 
 test("a shared project gets its folder back from the local settings", () => {
   const db = new Database(":memory:", { strict: true });
@@ -55,4 +71,39 @@ test("corrupt worktree settings are ignored with a warning, never thrown", () =>
   } finally {
     warn.mockRestore();
   }
+});
+
+const storybook = { origin: "https://sb.example.com", portEnv: "SB_PORT" };
+
+test("storybook settings come from the local settings only, shared or not", () => {
+  const settings = localSettings();
+  expect(localStorybook(settings, "p1")).toBeNull();
+  expect(withLocalSettings({ ...meta, storybook }, settings, false).storybook).toBeNull();
+  settings.set("p1", LOCAL_STORYBOOK_KEY, JSON.stringify(storybook));
+  expect(localStorybook(settings, "p1")).toEqual(storybook);
+  expect(withLocalSettings(meta, settings, false).storybook).toEqual(storybook);
+  expect(withLocalSettings(meta, settings, true).storybook).toEqual(storybook);
+});
+
+test("corrupt storybook settings are ignored with a warning and fall back to the defaults", () => {
+  const settings = localSettings();
+  const warn = spyOn(console, "error").mockImplementation(() => {});
+  try {
+    for (const raw of [
+      "{not json",
+      JSON.stringify({ ...storybook, origin: "http://192.168.1.10:6006" }),
+      "null",
+    ]) {
+      settings.set("p1", LOCAL_STORYBOOK_KEY, raw);
+      expect(localStorybook(settings, "p1")).toBeNull();
+      expect(storybookSettingsOf(settings, "p1")).toEqual(STORYBOOK_DEFAULTS);
+    }
+    expect(warn).toHaveBeenCalledTimes(6);
+  } finally {
+    warn.mockRestore();
+  }
+});
+
+test("a project without storybook settings uses the defaults", () => {
+  expect(storybookSettingsOf(localSettings(), "p1")).toEqual(STORYBOOK_DEFAULTS);
 });

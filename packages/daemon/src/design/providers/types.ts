@@ -1,9 +1,9 @@
-import type { DesignFrameKey, DesignProvider, FrameMime, KiboErrorCode } from "@kibo/schema";
+import type { DesignFrameKey, ImageDesignProvider, ImageFrameMime, KiboErrorCode } from "@kibo/schema";
 
 export type FrameMeta = { name: string; width: number | null; height: number | null };
-export type FrameRender = { meta: FrameMeta; body: Uint8Array; mime: FrameMime; version: string | null };
+export type FrameRender = { meta: FrameMeta; body: Uint8Array; mime: ImageFrameMime; version: string | null };
 export type DesignProviderClient = {
-  id: DesignProvider;
+  id: ImageDesignProvider;
   connected(): Promise<boolean>;
   version(key: DesignFrameKey): Promise<string | null>;
   metadata(key: DesignFrameKey): Promise<FrameMeta>;

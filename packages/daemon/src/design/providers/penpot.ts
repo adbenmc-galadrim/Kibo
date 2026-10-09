@@ -1,4 +1,10 @@
-import { type DesignFrameKey, FrameMime, KiboError, MAX_DESIGN_FRAME_BYTES, sniffImage } from "@kibo/schema";
+import {
+  type DesignFrameKey,
+  ImageFrameMime,
+  KiboError,
+  MAX_DESIGN_FRAME_BYTES,
+  sniffImage,
+} from "@kibo/schema";
 import { z } from "zod";
 import { PENPOT_AUTH, penpotRules } from "../../integrations/net";
 import type { Redactor } from "../../integrations/redact";
@@ -96,7 +102,7 @@ export function createPenpot(deps: {
     const image = await deps.fetch(url, { maxBytes: MAX_DESIGN_FRAME_BYTES }, penpotRules(new URL(instance)));
     if (image.status !== 200) throw remoteError("penpot", image.status, "", redact);
     if (image.truncated) throw new KiboError("TOO_LARGE", "frame image exceeds the limit");
-    const mime = FrameMime.safeParse(sniffImage(image.body));
+    const mime = ImageFrameMime.safeParse(sniffImage(image.body));
     if (!mime.success) throw new KiboError("REMOTE_REJECTED", "penpot thumbnail is not an image");
     return { body: image.body, mime: mime.data };
   };

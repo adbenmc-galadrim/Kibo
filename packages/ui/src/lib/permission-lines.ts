@@ -7,6 +7,7 @@ import {
   RESERVED_MCP_IDS,
 } from "@kibo/schema";
 import {
+  AppWindow,
   Box,
   Database,
   File,
@@ -50,16 +51,24 @@ const CAPABILITY_ICONS: Record<Capability, LucideIcon> = {
   gamepad: Gamepad2,
   assets: FolderOpen,
   design: Frame,
+  embed: AppWindow,
 };
 const CAPABILITY_HELP: Partial<Record<Capability, string>> = {
   webgl: caps.webglHelp,
   assets: caps.assetsHelp,
   design: caps.designHelp,
+  embed: caps.embedHelp,
 };
 
-function capabilityLine(c: Capability): PermissionLine {
+export type PermissionExtras = { selection?: boolean; embeds?: readonly string[] };
+
+function capabilityTitle(c: Capability, embeds: readonly string[]): string {
+  return c === "embed" && embeds.length > 0 ? caps.embedHosts(embeds.join(", ")) : caps[c];
+}
+
+function capabilityLine(c: Capability, embeds: readonly string[]): PermissionLine {
   const detail = CAPABILITY_HELP[c];
-  return { icon: CAPABILITY_ICONS[c], title: caps[c], ...(detail && { detail }) };
+  return { icon: CAPABILITY_ICONS[c], title: capabilityTitle(c, embeds), ...(detail && { detail }) };
 }
 
 export function permissionLabel(entry: string): string {
@@ -82,10 +91,7 @@ function closingLine(g: GrantedPermissions): PermissionLine | null {
   return null;
 }
 
-export function permissionLines(
-  g: GrantedPermissions,
-  extra: { selection?: boolean } = {},
-): PermissionLine[] {
+export function permissionLines(g: GrantedPermissions, extra: PermissionExtras = {}): PermissionLine[] {
   const t = fr.trust;
   const lines: PermissionLine[] = [];
   const reads = g.reads.filter((e) => e !== "note");
@@ -105,7 +111,8 @@ export function permissionLines(
   for (const s of g.secrets)
     lines.push({ icon: KeyRound, title: fr.integrations.permissions.secret(s.name, s.hosts) });
   for (const rule of g.mcp.filter(usableByThirdParty)) lines.push({ icon: Plug, title: mcpTitle(rule) });
-  for (const c of CAPABILITIES.filter((x) => g.capabilities.includes(x))) lines.push(capabilityLine(c));
+  for (const c of CAPABILITIES.filter((x) => g.capabilities.includes(x)))
+    lines.push(capabilityLine(c, extra.embeds ?? []));
   if (extra.selection) lines.push({ icon: MousePointerClick, title: caps.selection });
   const closing = closingLine(g);
   return closing ? [...lines, closing] : lines;

@@ -1,4 +1,4 @@
-import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 
 export function groupFingerprint(hex: string): string {
   return (hex.match(/.{1,4}/g) ?? []).join(" ");
@@ -26,5 +26,5 @@ export async function keyFingerprintHex(publicKey: string): Promise<string | nul
 }
 
 export function shortKeyPrint(hex: string): string {
-  return fr.market.keyPrint(hex.slice(0, 4), hex.slice(-4));
+  return frMarket.market.keyPrint(hex.slice(0, 4), hex.slice(-4));
 }

@@ -34,6 +34,7 @@ function setup(extra: Record<string, unknown>, mode: SdkMode = "builtin") {
     folder: null,
     color: "#71717A",
     worktree: null,
+    storybook: null,
   });
   const calls: ComponentCall[] = [];
   const runs: unknown[] = [];

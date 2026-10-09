@@ -2,7 +2,15 @@ import { describe, expect, test } from "bun:test";
 import { LoroDoc, LoroMap, type LoroTreeNode } from "loro-crdt";
 import { createProjectDoc, MAX_CONTAINER_DEPTH, MAX_TREE_DEPTH, projectDepthViolation } from "./index";
 
-const meta = { id: "p1", key: "KIB", name: "Kibo", folder: null, color: "#F97316", worktree: null };
+const meta = {
+  id: "p1",
+  key: "KIB",
+  name: "Kibo",
+  folder: null,
+  color: "#F97316",
+  worktree: null,
+  storybook: null,
+};
 
 function sharedCopy(build: (doc: LoroDoc) => void): LoroDoc {
   const source = createProjectDoc(meta);

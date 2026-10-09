@@ -109,6 +109,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     emit: (event) => service.docs.emit(event),
   });
   let sandboxOrigin = "";
+  let uiPort: number | null = null;
   const integrations = startIntegrations(
     createIntegrationHost({
       user: opts.user,
@@ -117,8 +118,9 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       service,
       notify: opts.notify ?? (() => {}),
       sandboxOrigin: () => sandboxOrigin || null,
+      uiPort: () => uiPort,
     }),
-    opts.integrations ?? NO_INTEGRATION_FLAGS,
+    { ...(opts.integrations ?? NO_INTEGRATION_FLAGS), devOrigins },
     redactor,
   );
   closers.push(service.attachIntegrations(integrations));
@@ -233,6 +235,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     handlers: [tutorial.guard, componentTrustGuard, market.handler, collab.handler, admin.handler],
   });
   front.push(() => server.stop());
+  uiPort = server.port;
   const started = createRemoteAccess({
     home: opts.home,
     settings: openLocalSettings(store),
@@ -256,6 +259,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     },
     files: { open: (token) => components.files.open(token) },
     designs: { open: (token) => integrations.design.open(token) },
+    embeds: { relay: (token) => integrations.relay(token) },
   });
   front.push(() => sandbox.stop());
   sandboxOrigin = sandbox.url;

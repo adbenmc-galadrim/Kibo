@@ -3,13 +3,13 @@ import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { fr } from "./fr";
 
-export function LinkedTickets({ tickets }: { tickets: TicketView[] }) {
+export function LinkedTickets({ tickets, story }: { tickets: TicketView[]; story: boolean }) {
   const sdk = useSdk();
   return (
     <section aria-label={fr.linked} className="max-h-24 shrink-0 overflow-auto border-t px-3 py-2">
       <p className="mb-1 text-xs text-muted-foreground">{fr.linked}</p>
       {tickets.length === 0 ? (
-        <p className="text-xs text-muted-foreground">{fr.noLinked}</p>
+        <p className="text-xs text-muted-foreground">{story ? fr.noLinkedStory : fr.noLinked}</p>
       ) : (
         <div className="flex flex-wrap gap-1">
           {tickets.map((t) => (

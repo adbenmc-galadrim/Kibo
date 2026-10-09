@@ -80,6 +80,7 @@ beforeEach(() => {
     folder: null,
     color: "#F97316",
     worktree: null,
+    storybook: null,
   });
   updates = [];
   failFor = null;

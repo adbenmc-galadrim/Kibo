@@ -28,6 +28,7 @@ export function openDaemonSide(home: string, gh: FakeGithub, now: () => number):
     notify: () => {},
     now,
     sandboxOrigin: () => null,
+    uiPort: () => null,
   });
   const integrations = startIntegrations(
     host,

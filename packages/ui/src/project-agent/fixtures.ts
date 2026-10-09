@@ -36,7 +36,15 @@ const ticket = (id: string, key: string, title: string, statusId: TicketView["st
 
 export function emisProject(access: "write" | "read-only" = "write"): ProjectSnapshot {
   return {
-    meta: { id: "emis", key: "EMIS", name: "Emis", folder: null, color: "#0EA5E9", worktree: null },
+    meta: {
+      id: "emis",
+      key: "EMIS",
+      name: "Emis",
+      folder: null,
+      color: "#0EA5E9",
+      worktree: null,
+      storybook: null,
+    },
     workflow: DEFAULT_WORKFLOW,
     pages: [],
     tickets: [

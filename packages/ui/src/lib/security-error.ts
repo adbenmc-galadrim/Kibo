@@ -1,7 +1,7 @@
 import { KiboError } from "@kibo/schema";
-import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 
-const { fallback, ...known } = fr.security.errors;
+const { fallback, ...known } = frSecurity.errors;
 const CODES: Readonly<Record<string, string>> = known;
 
 export function securityErrorText(code: string): string {

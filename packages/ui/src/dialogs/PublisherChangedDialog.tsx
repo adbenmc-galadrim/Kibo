@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { groupFingerprint } from "../lib/fingerprint";
 import { marketErrorText } from "../lib/market-errors";
 import { isRemoteView } from "../lib/remote-view";
@@ -26,7 +27,7 @@ type Props = {
 };
 
 function keyLines(detail: Detail): KeyLine[] {
-  const t = fr.market;
+  const t = frMarket.market;
   const next = {
     label: t.newKey,
     publicKey: detail.publisher.publicKey,
@@ -43,7 +44,7 @@ export function PublisherChangedDialog({
   onUnlocked,
   remote = isRemoteView(),
 }: Props) {
-  const t = fr.market;
+  const t = frMarket.market;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

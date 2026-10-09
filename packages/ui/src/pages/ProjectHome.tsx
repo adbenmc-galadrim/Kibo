@@ -1,20 +1,13 @@
 import type { ProjectSnapshot } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus, Sparkles } from "lucide-react";
-import { useEffect } from "react";
 import { fr } from "../i18n/fr";
 import { abbreviateHome } from "../lib/home-path";
-import { navigate } from "../route";
 import { canEdit } from "../state/access";
 
 type Props = { project: ProjectSnapshot; onNewPage: () => void; onSuggest: () => void };
 
 export function ProjectHome({ project, onNewPage, onSuggest }: Props) {
-  const first = project.pages[0];
-  useEffect(() => {
-    if (first) navigate(project.meta.id, first.id);
-  }, [first, project.meta.id]);
-  if (first) return null;
   return (
     <div className="p-6">
       <section className="grid gap-4 rounded-xl border bg-card p-6 text-card-foreground shadow-sm">

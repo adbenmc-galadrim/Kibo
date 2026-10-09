@@ -92,7 +92,16 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
     async design(projectId, instanceId, call) {
       const gate = deps.integrations?.()?.design ?? null;
       if (!gate) throw new KiboError("NOT_CONNECTED", "design integrations not started");
-      return gate.frame({ projectId, instanceId }, call.url, call.refresh);
+      const ctx = { projectId, instanceId };
+      return call.kind === "design.storybooks"
+        ? gate.storybooks(ctx)
+        : gate.frame(ctx, call.url, call.refresh);
+    },
+    async embed(projectId, instance, url) {
+      const gate = deps.integrations?.()?.embed ?? null;
+      if (!gate) throw new KiboError("NOT_CONNECTED", "embed gate not started");
+      const manifest = await deps.manifestOf(instance.component);
+      return gate.open({ projectId, instanceId: instance.id, manifest }, url);
     },
     assets: (projectId, instanceId, call) =>
       call.kind === "assets.list"

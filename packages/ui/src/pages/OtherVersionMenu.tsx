@@ -8,12 +8,12 @@ import {
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 
 type Props = { projectId: string; instanceId: string; versions: string[] };
 
 export function OtherVersionMenu({ projectId, instanceId, versions }: Props) {
-  const t = fr.market;
+  const t = frMarket.market;
   const [failed, setFailed] = useState(false);
   if (versions.length === 0) return null;
   const choose = async (to: string) => {

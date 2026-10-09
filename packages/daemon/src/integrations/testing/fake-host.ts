@@ -11,6 +11,7 @@ import {
   type ProjectMeta,
 } from "@kibo/schema";
 import type { CommandEvent, CommandInterceptor, CommandMeta } from "../../docs";
+import { createProjectSettings, ensureSettingsTable } from "../../notes/settings";
 import { migrateIntegrations } from "../db";
 import type { IntegrationHost, SystemNotification } from "../types";
 
@@ -29,6 +30,7 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
   const home = mkdtempSync(join(tmpdir(), "kibo-int-"));
   const db = new Database(join(home, "kibo.db"), { create: true, strict: true });
   migrateIntegrations(db);
+  ensureSettingsTable(db);
   const meta: ProjectMeta = {
     id: "p1",
     key: "KIB",
@@ -36,6 +38,7 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
     folder: "/tmp/kibo",
     color: "#71717A",
     worktree: null,
+    storybook: null,
   };
   const doc = createProjectDoc(meta);
   const listeners = new Set<(e: CommandEvent) => void>();
@@ -92,6 +95,9 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
     },
     now: () => host.clock.now,
     sandboxOrigin: () => "http://127.0.0.1:4999",
+    projectSettings: createProjectSettings(db),
+    worktrees: async () => [],
+    uiOrigins: () => [],
     close() {
       db.close();
       rmSync(home, { recursive: true, force: true });

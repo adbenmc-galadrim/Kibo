@@ -56,6 +56,7 @@ const kibo: ProjectSummary = {
   folder: "/Users/adam/goinfre/Kibo",
   color: "#14B8A6",
   worktree: null,
+  storybook: null,
   counts,
 };
 const portfolio: ProjectSummary = {
@@ -106,6 +107,7 @@ const empty: ProjectSnapshot = {
     folder: "/Users/adam/goinfre/Kibo",
     color: "#14B8A6",
     worktree: null,
+    storybook: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

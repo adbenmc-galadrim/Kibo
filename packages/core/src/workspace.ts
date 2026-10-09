@@ -11,7 +11,11 @@ export function createWorkspaceDoc(): LoroDoc {
 }
 
 export function listProjects(ws: LoroDoc): ProjectMeta[] {
-  return (ws.getList("projects").toJSON() as ProjectMeta[]).map((p) => ({ ...p, worktree: null }));
+  return (ws.getList("projects").toJSON() as ProjectMeta[]).map((p) => ({
+    ...p,
+    worktree: null,
+    storybook: null,
+  }));
 }
 
 export function registerProject(ws: LoroDoc, meta: ProjectMeta): void {
@@ -46,7 +50,7 @@ export function updateRegisteredProject(
   if (!(entry instanceof LoroMap))
     throw new KiboError("STORE_CORRUPT", `project ${projectId} entry is not a map`);
   for (const [key, value] of Object.entries(fields))
-    if (value !== undefined && key !== LOCAL_ONLY_META) entry.set(key, value);
+    if (value !== undefined && !LOCAL_ONLY_META.has(key)) entry.set(key, value);
   ws.commit();
   return stored(ProjectMeta.safeParse(listProjects(ws)[index]), "project");
 }

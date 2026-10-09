@@ -9,12 +9,13 @@ import { useState } from "react";
 import { client } from "../api";
 import { AddDeviceDialog } from "../dialogs/AddDeviceDialog";
 import { fr } from "../i18n/fr";
+import { frCollab } from "../i18n/fr-collab";
 import { frSyncPage } from "../i18n/fr-sync-page";
 import { relativeTime } from "../lib/relative-time";
 import { syncFailure } from "../lib/sync-errors";
 import { useRpcQuery } from "../state/use-rpc-query";
 
-const t = fr.sync;
+const t = frCollab.sync;
 const HEAD = "h-9 px-3 text-2xs font-normal text-muted-foreground";
 const CELL = "px-3 py-2.5";
 const day = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });

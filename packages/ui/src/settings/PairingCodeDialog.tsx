@@ -10,13 +10,13 @@ import {
 } from "@kibo/sdk/ui/dialog";
 import { useCallback, useEffect, useState } from "react";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 import { formatPairingCode, remaining } from "../lib/pairing-code";
 import { securityFailure } from "../lib/security-error";
 import { CopyButton } from "./CopyButton";
 
 type Props = { open: boolean; onOpenChange: (o: boolean) => void; now?: () => number };
-const t = fr.security.pairingCode;
+const t = frSecurity.pairingCode;
 
 export function PairingCodeDialog({ open, onOpenChange, now = Date.now }: Props) {
   const [code, setCode] = useState<PairingCode | null>(null);

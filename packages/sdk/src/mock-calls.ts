@@ -14,12 +14,14 @@ import {
   type ProjectAccess,
   type ProjectAsset,
   type ProjectCommand,
+  type StorybookOrigin,
   type TicketRun,
   validateConfig,
 } from "@kibo/schema";
 import { base64ToBytes, bytesToBase64 } from "./lib/base64";
 import { mockAssetUrl } from "./mock-assets";
 import { type MockFrame, mockDesignFrame } from "./mock-design";
+import type { MockEmbeds } from "./mock-embed";
 import type { MockNotesFolder } from "./mock-notes";
 import type { ServerContext, ServerDefinition } from "./server";
 import type { EntityMap } from "./types";
@@ -45,6 +47,8 @@ export type MockCallDeps = {
   members?: MemberInfo[];
   assets?: ProjectAsset[];
   frames?: MockFrame[];
+  storybooks?: StorybookOrigin[];
+  embeds: MockEmbeds;
 };
 
 function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
@@ -149,6 +153,10 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
         return mockAssetUrl(deps.assets ?? [], c.name);
       case "design.frame":
         return mockDesignFrame(deps.frames ?? [], c.url, c.refresh);
+      case "design.storybooks":
+        return deps.storybooks ?? [];
+      case "embed.open":
+        return deps.embeds.open(c.url);
       case "questions.deliver":
         return deps.deliver(c.ticketId);
       case "config.set": {

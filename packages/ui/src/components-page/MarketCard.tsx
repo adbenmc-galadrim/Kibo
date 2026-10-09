@@ -2,7 +2,7 @@ import type { MarketHit } from "@kibo/schema";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Card } from "@kibo/sdk/ui/card";
 import { Package } from "lucide-react";
-import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { DetailsBlock } from "./DetailsBlock";
 import { AMBER_TEXT, BLUE_BADGE } from "./market-tones";
 import { PublisherMark } from "./PublisherMark";
@@ -11,13 +11,13 @@ function InstallBadge({ hit }: { hit: MarketHit }) {
   if (hit.updateAvailable)
     return (
       <Badge variant="outline" className={`font-normal ${BLUE_BADGE}`}>
-        {fr.market.available(hit.updateAvailable)}
+        {frMarket.market.available(hit.updateAvailable)}
       </Badge>
     );
   if (!hit.installed) return null;
   return (
     <Badge variant="outline" className="font-normal text-muted-foreground">
-      {fr.market.installed(hit.installed)}
+      {frMarket.market.installed(hit.installed)}
     </Badge>
   );
 }
@@ -30,7 +30,7 @@ export function MarketCard({ hit, onOpen }: { hit: MarketHit; onOpen(): void }) 
         <Package aria-hidden className="size-4 shrink-0 text-muted-foreground" />
         <button
           type="button"
-          aria-label={fr.market.open(hit.title)}
+          aria-label={frMarket.market.open(hit.title)}
           onClick={onOpen}
           className="truncate text-left text-sm font-semibold outline-none after:absolute after:inset-0 after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring"
         >
@@ -43,15 +43,17 @@ export function MarketCard({ hit, onOpen }: { hit: MarketHit; onOpen(): void }) 
       <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">{hit.description}</p>
       <div className="mt-auto flex items-center gap-2 text-2xs">
         <Badge variant="secondary" className="rounded-sm px-1.5 font-medium">
-          {fr.market.kind[hit.kind]}
+          {frMarket.market.kind[hit.kind]}
         </Badge>
         <span className={`inline-flex items-center gap-1 ${verified ? "text-muted-foreground" : AMBER_TEXT}`}>
           <PublisherMark verified={verified} className="size-3" />
-          {verified ? fr.market.verifiedBy(hit.sourceName) : fr.market.unverifiedBy(hit.sourceName)}
+          {verified
+            ? frMarket.market.verifiedBy(hit.sourceName)
+            : frMarket.market.unverifiedBy(hit.sourceName)}
         </span>
         <span className="ml-auto font-mono text-muted-foreground">{hit.latest}</span>
       </div>
-      <DetailsBlock label={fr.market.details} className="relative z-10">
+      <DetailsBlock label={frMarket.market.details} className="relative z-10">
         <span>{hit.id}</span>
       </DetailsBlock>
     </Card>

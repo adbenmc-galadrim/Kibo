@@ -11,7 +11,7 @@ import {
 } from "@kibo/sdk/ui/dialog";
 import { ShieldAlert } from "lucide-react";
 import { KeyComparison, type KeyLine } from "../dialogs/KeyComparison";
-import { fr } from "../i18n/fr";
+import { frMarket } from "../i18n/fr-market";
 import { shortKeyPrint } from "../lib/fingerprint";
 
 export const REFUSAL_CODES = [
@@ -29,7 +29,7 @@ export const refusalOf = (code: string | null): RefusalCode | null =>
 const KEY_CODES: ReadonlySet<RefusalCode> = new Set(["SIGNATURE_INVALID", "PUBLISHER_CHANGED"]);
 
 function description(code: RefusalCode, detail: MarketPackageDetail): string {
-  const t = fr.market.refused;
+  const t = frMarket.market.refused;
   if (code === "SIGNATURE_INVALID") return t.signature(detail.sourceName);
   const reason = detail.versions.find((v) => v.version === detail.version)?.revoked;
   if (code === "REVOKED" && reason) return t.revoked(reason);
@@ -37,7 +37,7 @@ function description(code: RefusalCode, detail: MarketPackageDetail): string {
 }
 
 function keyLines(detail: MarketPackageDetail): KeyLine[] {
-  const t = fr.market;
+  const t = frMarket.market;
   const listed = detail.publisher.publicKey;
   const expected = detail.pinnedPublisher ?? listed;
   const nameOf = (key: string) => (key === listed ? detail.publisher.name : null);
@@ -55,7 +55,7 @@ type Props = {
 };
 
 export function InstallRefusedDialog({ code, detail, onClose, onUnlock }: Props) {
-  const t = fr.market.refused;
+  const t = frMarket.market.refused;
   const keyIssue = code !== null && KEY_CODES.has(code);
   return (
     <Dialog open={code !== null} onOpenChange={(o) => !o && onClose()}>
@@ -76,7 +76,7 @@ export function InstallRefusedDialog({ code, detail, onClose, onUnlock }: Props)
         <DialogFooter>
           {keyIssue && onUnlock && (
             <Button variant="ghost" onClick={() => onUnlock(detail)}>
-              {fr.market.unlock}
+              {frMarket.market.unlock}
             </Button>
           )}
           <Button onClick={onClose}>{t.close}</Button>

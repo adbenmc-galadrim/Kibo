@@ -114,6 +114,7 @@ const version = (v: string, patch: Partial<Version> = {}): Version => ({
     secrets: [],
     mcp: [],
     capabilities: [],
+    embeds: [],
     selection: false,
     configVersion: 0,
     changes: [],

@@ -24,7 +24,7 @@ import type { IconStore } from "../icons/icon-store";
 import type { createFileTicket } from "../inbox/file-ticket";
 import { assertProjectKeyAllowed } from "../inbox/inbox-rules";
 import type { ProjectSettings } from "../notes/settings";
-import { localWorktree } from "../project-folder";
+import { localStorybook, localWorktree } from "../project-folder";
 
 export type CollabPort = { syncInfo(projectId: string, doc: LoroDoc): ProjectSyncInfo };
 export type ProjectRpcDeps = {
@@ -53,6 +53,7 @@ function createProject(
     folder: req.folder,
     color: req.color,
     worktree: null,
+    storybook: null,
   };
   registerProject(deps.workspace, meta);
   deps.adopt(meta.id, createProjectDoc(meta));
@@ -94,6 +95,7 @@ export function handleProjectRequest(deps: ProjectRpcDeps, req: RpcRequest): unk
       return listProjects(deps.workspace).map((meta) => ({
         ...meta,
         worktree: localWorktree(deps.settings, meta.id),
+        storybook: localStorybook(deps.settings, meta.id),
         counts: countTicketsByStatus(deps.docs.project(meta.id)),
         icon: deps.icons.version(projectIcon(meta.id)),
         demo: isDemoProject(deps.settings, meta.id),

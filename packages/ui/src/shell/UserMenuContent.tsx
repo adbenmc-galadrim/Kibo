@@ -23,6 +23,7 @@ import {
   SunMoon,
 } from "lucide-react";
 import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { useSyncServerStatus } from "../state/use-sync-server";
 import { setThemePreference, THEME_PREFERENCES, type ThemePreference, useThemePreference } from "../theme";
@@ -97,7 +98,7 @@ export function UserMenuContent({ viewer, onOpen, onHelp }: Props) {
           >
             {THEME_PREFERENCES.map((p) => (
               <DropdownMenuRadioItem key={p} value={p}>
-                {fr.security.appearance[p]}
+                {frSecurity.appearance[p]}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>

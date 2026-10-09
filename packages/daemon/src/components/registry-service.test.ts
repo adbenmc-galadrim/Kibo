@@ -57,6 +57,7 @@ beforeEach(() => {
     folder: null,
     color: "#71717A",
     worktree: null,
+    storybook: null,
   });
   store = createFakeStore();
   stopped = [];
@@ -200,6 +201,7 @@ describe("listing and uninstall", () => {
       ["snake", true],
       ["mockup", true],
       ["questions", true],
+      ["itch", true],
       ["pr-queue", false],
     ]);
     expect(list[0]?.versions).toEqual([
@@ -233,6 +235,7 @@ describe("listing and uninstall", () => {
       "snake",
       "mockup",
       "questions",
+      "itch",
     ]);
   });
 });

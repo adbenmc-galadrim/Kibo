@@ -159,7 +159,15 @@ describe("inbox", () => {
   test("a project cannot be registered or replaced under the inbox id", () => {
     const s = createService(openStore(tmp()), { user: "adam" });
     const inbox = s.docs.project(INBOX_ID);
-    const meta = { id: INBOX_ID, key: "KIB", name: "Fake", folder: null, color: "#F97316", worktree: null };
+    const meta = {
+      id: INBOX_ID,
+      key: "KIB",
+      name: "Fake",
+      folder: null,
+      color: "#F97316",
+      worktree: null,
+      storybook: null,
+    };
     expect(() => s.docs.addProject(meta, inbox)).toThrow("INVALID_INPUT");
     expect(() => s.docs.replaceProject(INBOX_ID, inbox)).toThrow("INVALID_INPUT");
     expect(() => s.docs.removeProject(INBOX_ID)).toThrow("INVALID_INPUT");

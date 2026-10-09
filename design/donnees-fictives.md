@@ -109,3 +109,12 @@ Lot n° 1 « Avancer KIB-9, débloquer KIB-14 et garder la mémoire à jour » (
 
 Ancien agent du 6 octobre (lecture seule) : « Qu'est-ce qui bloque KIB-21 ? » ; lot n° 1 « Relancer l'audit et préparer KIB-22 » refusé
 (KIB-22 : Backlog → À faire ; question sur KIB-21 « Faut-il un second auditeur ? »).
+
+## Jeux et Storybook (phase 19)
+
+Tableau de bord du projet Kibo. Widget « Jeu itch.io » : jeu « Una war » de sigmatronic (`https://sigmatronic.itch.io/una-war`), code d'intégration
+collé depuis Partager › Intégrer (`https://itch.io/embed-upload/<id>`), « Fourni par itch.io ». Hors ligne : « Ce jeu a besoin d'Internet. » ;
+jeu non intégrable : « itch.io n'autorise pas l'intégration de ce jeu hors de son site. Ouvre-le sur itch.io. ».
+
+Storybook du projet : `http://localhost:6006`, variable `STORYBOOK_PORT` ; worktree `feat/login` avec `STORYBOOK_PORT=6007` (injoignable dans 180b et 180c).
+Stories : `Screens / Home` (montrée), `Screens / Login`. Maquette de référence : cadre Figma « Accueil » ; comparaison en superposition à 50 % d'opacité, curseur à 40 %.

@@ -18,6 +18,7 @@ import { TriangleAlert } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frSecurity } from "../i18n/fr-security";
 import { securityFailure } from "../lib/security-error";
 
 type Props = {
@@ -28,7 +29,7 @@ type Props = {
 };
 type TlsKind = RemoteTls["kind"];
 
-const t = fr.security.remote;
+const t = frSecurity.remote;
 const DEFAULT_PORT = 47832;
 const isLoopback = (address: string) => address.startsWith("127.") || address === "::1";
 

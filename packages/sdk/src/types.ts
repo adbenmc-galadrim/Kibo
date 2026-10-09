@@ -9,6 +9,7 @@ import type {
   ComponentManifest,
   DeliveryResult,
   DesignFrame,
+  EmbedView,
   EntityType,
   FetchInitInput,
   FetchResponse,
@@ -28,6 +29,7 @@ import type {
   Selection,
   Status,
   StatusId,
+  StorybookOrigin,
   Surface,
   Ticket,
   TicketRun,
@@ -77,7 +79,11 @@ export type McpApi = {
 };
 
 export type QuestionsApi = { deliver(ticketId: string): Promise<DeliveryResult> };
-export type DesignApi = { frame(url: string, opts?: { refresh?: boolean }): Promise<DesignFrame> };
+export type DesignApi = {
+  frame(url: string, opts?: { refresh?: boolean }): Promise<DesignFrame>;
+  storybooks(): Promise<StorybookOrigin[]>;
+};
+export type EmbedApi = { open(url: string): Promise<EmbedView> };
 export type AssetsApi = { list(): Promise<ProjectAsset[]>; url(name: string): Promise<AssetUrl> };
 export type FocusApi = {
   active(): boolean;
@@ -117,6 +123,7 @@ export type KiboSdk = {
   capability(name: Capability): void;
   assets: AssetsApi;
   design: DesignApi;
+  embed: EmbedApi;
   questions: QuestionsApi;
   focus: FocusApi;
   visibility: VisibilityApi;
