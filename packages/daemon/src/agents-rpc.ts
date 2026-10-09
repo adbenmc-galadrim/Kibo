@@ -1,4 +1,5 @@
 import {
+  awaitsDelivery,
   type DeliveryResult,
   KiboError,
   type ProjectAgentSummary,
@@ -56,7 +57,7 @@ function agentsState(port: AgentsPort, q: AgentQuestions) {
   const state = port.state();
   const known = new Set(q.projectIds());
   const undeliveredOf = (projectId: string, ticketId: string) =>
-    known.has(projectId) ? q.data.undeliveredAnswers(projectId, ticketId).length : 0;
+    known.has(projectId) ? q.data.undeliveredAnswers(projectId, ticketId).filter(awaitsDelivery).length : 0;
   return {
     ...state,
     questions: runTallies(q.data.runQuestions(), state.runs, undeliveredOf),

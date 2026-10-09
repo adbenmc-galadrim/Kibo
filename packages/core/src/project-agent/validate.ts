@@ -2,13 +2,13 @@ import {
   type ActionType,
   ANSWER_TEXT_MAX,
   type AnswerInput,
+  answersToDeliver,
   type Batch,
   type ExpectedState,
   isTerminal,
   type ProposeBatchInput,
   type ProposedAction,
   type Question,
-  undeliveredAnswers,
 } from "@kibo/schema";
 import { type BatchContext, captureExpected, ticketByKey, ticketRuns } from "./expected";
 import { assignableProfiles } from "./overview";
@@ -175,7 +175,7 @@ const checks: { [T in ActionType]: Check<T> } = {
   },
   deliverAnswers(scan, a) {
     const ticket = ticketByKey(scan.ctx.project)(a.ticket);
-    const pending = ticket ? undeliveredAnswers(scan.ctx.project.questions, ticket.id) : [];
+    const pending = ticket ? answersToDeliver(scan.ctx.project.questions, ticket.id) : [];
     return pending.length > 0
       ? touch(scan, `${a.ticket}.answers`)
       : [`aucune réponse à transmettre sur ${a.ticket}`];

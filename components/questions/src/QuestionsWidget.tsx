@@ -1,4 +1,4 @@
-import { isOpen, type Question, type TicketView, undeliveredAnswers } from "@kibo/schema";
+import { answersToDeliver, isOpen, type Question, type TicketView } from "@kibo/schema";
 import { TicketKeyLabel, useSdk } from "@kibo/sdk";
 import { useMemo, useState } from "react";
 import { DeliverButton, DeliveryMessage, type DeliveryNotice } from "./DeliverButton";
@@ -41,7 +41,7 @@ function QuestionRow({ question: q, ticket, data, now }: RowProps) {
 function PendingDeliveries({ data }: { data: QuestionsData }) {
   const [notice, setNotice] = useState<DeliveryNotice | null>(null);
   const pending = data.tickets
-    .map((ticket) => ({ ticket, count: undeliveredAnswers(data.questions, ticket.id).length }))
+    .map((ticket) => ({ ticket, count: answersToDeliver(data.questions, ticket.id).length }))
     .filter((p) => p.count > 0);
   return (
     <div className="grid gap-1.5">

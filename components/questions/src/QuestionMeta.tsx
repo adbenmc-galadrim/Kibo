@@ -1,4 +1,4 @@
-import type { Actor, Question } from "@kibo/schema";
+import { type Actor, awaitsDelivery, type Question } from "@kibo/schema";
 import { AgentBadge } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { fr } from "./fr";
@@ -37,13 +37,12 @@ export function QuestionAnswerLine({ question, now, runLabel }: AnswerProps) {
       <p className="font-medium">{fr.answer(answerValue(question))}</p>
       <p className="flex flex-wrap items-center gap-2 text-2xs text-muted-foreground">
         <span>{fr.answeredBy(a.by.ref, relativeAge(a.at, now))}</span>
-        {a.deliveredRunId === null ? (
+        {awaitsDelivery(question) && (
           <Badge variant="outline" className={`text-3xs ${AGENT_ACCENT}`}>
             {fr.toDeliver}
           </Badge>
-        ) : (
-          <span>{fr.deliveredTo(runLabel(a.deliveredRunId))}</span>
         )}
+        {a.deliveredRunId !== null && <span>{fr.deliveredTo(runLabel(a.deliveredRunId))}</span>}
       </p>
     </div>
   );

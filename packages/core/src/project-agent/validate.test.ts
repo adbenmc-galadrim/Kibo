@@ -36,6 +36,7 @@ const problems = (input: ProposeBatchInput, c = ctx()) => {
   return result.ok ? [] : result.problems.map((p) => `#${p.actionId} ${p.message}`);
 };
 const why = "";
+const IMPORT = { kind: "import", ref: "plan" } as const;
 
 describe("validateBatch refuses a batch that lies about its targets", () => {
   test("unknown ticket", () => {
@@ -121,6 +122,15 @@ describe("validateBatch refuses a batch that lies about its targets", () => {
       "#1 aucune réponse à transmettre sur EMIS-1",
     ]);
     expect(problems(batch({ id: 1, why, type: "deliverAnswers", ticket: "EMIS-3" }))).toEqual([]);
+  });
+
+  test("an imported answer is not an answer to deliver", () => {
+    const fromPlan = answered(question({ id: "q9", ticketId: "t2" }));
+    const imported = { ...fromPlan, answer: fromPlan.answer && { ...fromPlan.answer, by: IMPORT } };
+    const c = ctx({ project: { ...snapshot, questions: [...snapshot.questions, imported] } });
+    expect(problems(batch({ id: 1, why, type: "deliverAnswers", ticket: "EMIS-2" }), c)).toEqual([
+      "#1 aucune réponse à transmettre sur EMIS-2",
+    ]);
   });
 
   test("a link that creates a blocks cycle, including through new:", () => {
