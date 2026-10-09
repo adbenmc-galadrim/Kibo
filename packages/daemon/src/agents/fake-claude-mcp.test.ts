@@ -77,7 +77,6 @@ test("initializes the server, calls the tool, then closes it", async () => {
   } finally {
     delete process.env.FAKE_PARENT_SECRET;
   }
-  await Bun.sleep(50);
   const lines = readFileSync(log, "utf8").trim().split("\n");
   expect(lines.at(-1)).toBe("closed");
   const messages = lines.slice(0, -1).map((l) => JSON.parse(l) as { jsonrpc: string; method: string });

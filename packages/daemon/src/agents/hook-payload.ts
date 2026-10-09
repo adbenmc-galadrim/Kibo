@@ -31,11 +31,11 @@ const filters =
 
 const MCP_DETAILS: Record<ProjectAgentTool, (input: ToolInput) => string | null> = {
   project_overview: () => null,
-  list_tickets: filters("status", "label", "query", "cursor"),
+  list_tickets: filters("status", "label"),
   get_ticket: (input) => text(input.key),
   list_questions: filters("state", "ticketKey"),
   list_runs: filters("state"),
-  list_notes: filters("cursor"),
+  list_notes: () => null,
   read_note: (input) => text(input.path),
   list_profiles: () => null,
   project_changes: () => null,
