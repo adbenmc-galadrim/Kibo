@@ -1,4 +1,4 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 import {
   type CodeEvent,
   type CodeRequest,
@@ -296,6 +296,19 @@ test("clicking a project in the sidebar opens its « Tableau de bord » page", a
   fireEvent.click(await sidebarProject("Kibo"));
   await waitFor(() => expect(location.hash).toBe(targetToHash(dashboard)));
   expect(await screen.findByRole("tab", { name: "Kibo · Tableau de bord · aperçu" })).toBeTruthy();
+});
+
+test("landing on the dashboard replaces the project history entry", async () => {
+  renderShell();
+  await go(targetToHash({ kind: "page", projectId: "p3", pageId: "1@1" }));
+  const replace = spyOn(history, "replaceState");
+  try {
+    fireEvent.click(await sidebarProject("Kibo"));
+    await waitFor(() => expect(location.hash).toBe(targetToHash(dashboard)));
+    expect(replace.mock.calls.map((c) => c[2])).toContain(targetToHash(dashboard));
+  } finally {
+    replace.mockRestore();
+  }
 });
 
 test("a project tab without a page lands on the dashboard", async () => {

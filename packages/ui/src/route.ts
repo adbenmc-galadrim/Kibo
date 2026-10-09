@@ -41,6 +41,10 @@ export function navigateTo(target: TabTarget | null): void {
   location.hash = targetToHash(target);
 }
 
+export function replaceRoute(target: TabTarget | null): void {
+  history.replaceState(history.state, "", targetToHash(target));
+}
+
 export function navigate(projectId: string | null, pageId: string | null = null): void {
   navigateTo(
     projectId ? (pageId ? { kind: "page", projectId, pageId } : { kind: "project", projectId }) : null,

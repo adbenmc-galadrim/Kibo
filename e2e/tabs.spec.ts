@@ -148,6 +148,10 @@ test("onglet d'aperçu : navigation, double-clic, modification, rechargement", a
   await sidebar.getByRole("button", { name, exact: true }).click();
   await expect(tab(`${name} · Kanban · aperçu`)).toHaveAttribute("aria-selected", "true");
   await expect(tab(`${name} · aperçu`)).toHaveCount(0);
+  await page.goBack();
+  await expect(tab("Agents")).toHaveAttribute("aria-selected", "true");
+  await sidebar.getByRole("button", { name, exact: true }).click();
+  await expect(tab(`${name} · Kanban · aperçu`)).toHaveAttribute("aria-selected", "true");
   await sidebar.getByRole("button", { name: "Kanban", exact: true }).dblclick();
   await expect(tab(`${name} · Kanban`)).toHaveAttribute("aria-selected", "true");
   await expect(previews).toHaveCount(0);
