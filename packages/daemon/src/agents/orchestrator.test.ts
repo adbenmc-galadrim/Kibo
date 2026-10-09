@@ -438,6 +438,7 @@ test("a process ending while its run is queued again records no exit", async () 
         profileName: "opus-dev",
         sessionId: crypto.randomUUID(),
         brief: "",
+        kind: "ticket",
         resumedFrom: null,
       },
       0,
@@ -549,6 +550,7 @@ test("resuming an ended run is refused while another run of its ticket is active
     profileName: "opus-dev",
     sessionId: crypto.randomUUID(),
     brief: "",
+    kind: "ticket" as const,
     resumedFrom: null,
   });
   const active = registry.create(record("older-active"), 0);

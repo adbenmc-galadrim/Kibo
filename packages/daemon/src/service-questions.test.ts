@@ -46,6 +46,7 @@ function fakeAgents(runs: RunView[], answers: [string, string][]): AgentsPort {
     tokensToday: 0,
     resumable: [],
     questions: [],
+    projectAgents: [],
   });
   return {
     assign: unused,

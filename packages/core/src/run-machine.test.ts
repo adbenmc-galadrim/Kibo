@@ -14,6 +14,7 @@ const record: RunRecord = {
   sessionId: "s1",
   brief: "",
   createdAt: 100,
+  kind: "ticket",
   resumedFrom: null,
 };
 const hook = (event: HookEventName, extra: Partial<HookPayload> = {}): RunEvent => ({

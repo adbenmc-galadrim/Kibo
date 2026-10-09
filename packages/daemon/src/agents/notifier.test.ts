@@ -14,6 +14,7 @@ const run = (p: Partial<RunView>): RunView => ({
   profileName: "opus-dev",
   sessionId: "s1",
   brief: "",
+  kind: "ticket",
   resumedFrom: null,
   createdAt: 0,
   label: "opus-dev-2",

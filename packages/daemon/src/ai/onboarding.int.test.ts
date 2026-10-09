@@ -58,7 +58,7 @@ test("the system profiles exist at startup and the welcome screen reads its envi
       .filter((p) => p.system)
       .map((p) => p.id)
       .sort(),
-  ).toEqual(["assistant", "demo", "generateur"]);
+  ).toEqual(["assistant", "demo", "generateur", "project-agent"]);
   const env = await h.rpc({ method: "getEnvironment" });
   expect(env).toMatchObject({ ai: { available: true }, github: { connected: false } });
   expect(env.daemon.home).toBe(h.home);

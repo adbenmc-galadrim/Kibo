@@ -15,6 +15,7 @@ const record = (id: string, patch: Partial<RunRecord> = {}): RunRecord => ({
   sessionId: `s-${id}`,
   brief: "",
   createdAt: 0,
+  kind: "ticket",
   resumedFrom: null,
   ...patch,
 });

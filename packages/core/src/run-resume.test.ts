@@ -14,6 +14,7 @@ const record = (id: string, seq: number, ticketId: string | null = "t1"): RunRec
   profileName: "opus-dev",
   sessionId: `s-${id}`,
   brief: "",
+  kind: "ticket",
   resumedFrom: null,
   createdAt: 0,
 });

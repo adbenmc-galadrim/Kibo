@@ -261,6 +261,7 @@ describe("system profiles", () => {
       ["assistant", "default", "opus", true, 1, "isolated"],
       ["demo", "acceptEdits", "opus", true, 1, "isolated"],
       ["generateur", "acceptEdits", "opus", true, 2, "isolated"],
+      ["project-agent", "default", "opus", true, 1, "isolated"],
     ]);
   });
 
@@ -336,7 +337,7 @@ describe("system profiles", () => {
       listProfiles(ws)
         .filter((p) => p.system)
         .map((p) => p.id),
-    ).toEqual(["assistant", "demo", "generateur"]);
+    ).toEqual(["assistant", "demo", "generateur", "project-agent"]);
     expect(() => run(ws, { method: "deleteProfile", profileId: "assistant" })).toThrow("INVALID_INPUT");
   });
 

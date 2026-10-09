@@ -25,6 +25,7 @@ export function runFixture(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     profileName: "opus-dev",
     sessionId: `s-${p.id}`,
     brief: "",
+    kind: "ticket",
     resumedFrom: null,
     createdAt: NOW - 20 * MIN,
     label: "opus-dev",
@@ -252,6 +253,7 @@ export function agentsFixture(): AgentsState {
     tokensToday: 1_200_000,
     resumable: [],
     questions: [],
+    projectAgents: [],
   };
 }
 

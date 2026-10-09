@@ -66,6 +66,7 @@ function agentsPort(calls: string[], runs: RunView[]): AgentsPort {
     tokensToday: 0,
     resumable: [],
     questions: [],
+    projectAgents: [],
   };
   return {
     ...port,
@@ -82,6 +83,7 @@ test("the agents state carries the question counts of the runs", () => {
   const state = handleAgentRequest(agentsPort(calls, []), { method: "getAgents" }, questionsStub(calls));
   expect(state).toMatchObject({
     questions: [{ runId: "r1", open: 1, undelivered: 0, latestTitle: "Quel port ?" }],
+    projectAgents: [],
   });
 });
 

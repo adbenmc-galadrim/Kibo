@@ -23,6 +23,7 @@ const runOf = (id: string, ticketId: string, state: RunState): RunView => ({
       profileName: "opus-dev",
       sessionId: `s-${id}`,
       brief: "",
+      kind: "ticket",
       resumedFrom: null,
       createdAt: 0,
     },

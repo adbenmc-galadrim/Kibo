@@ -40,5 +40,5 @@ test("the counts add tickets and instances across projects", () => {
     },
     components: () => 5,
   });
-  expect(counts).toEqual({ projects: 2, tickets: 3, components: 5, instances: 1, profiles: 3 });
+  expect(counts).toEqual({ projects: 2, tickets: 3, components: 5, instances: 1, profiles: 4 });
 });

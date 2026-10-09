@@ -13,7 +13,7 @@ test("a new workspace runs two generators and one assistant at a time", () => {
   ensureSystemProfiles(ws);
   expect(getProfile(ws, "generateur").maxParallel).toBe(2);
   expect(getProfile(ws, "assistant").maxParallel).toBe(1);
-  expect(SYSTEM_DEFAULT_PARALLEL).toEqual({ assistant: 1, generateur: 2, demo: 1 });
+  expect(SYSTEM_DEFAULT_PARALLEL).toEqual({ assistant: 1, generateur: 2, demo: 1, "project-agent": 1 });
   expect(SYSTEM_MAX_PARALLEL).toBe(4);
 });
 

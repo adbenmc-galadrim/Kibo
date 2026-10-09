@@ -49,6 +49,7 @@ test("a demo guard that cannot be built denies the call and is logged", () => {
         profileName: "demo",
         sessionId: "s",
         brief: "",
+        kind: "ticket",
         resumedFrom: null,
       },
       0,

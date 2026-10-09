@@ -26,6 +26,7 @@ const newRun = (id: string): NewRun => ({
   profileName: "opus-dev",
   sessionId: `s-${id}`,
   brief: "",
+  kind: "ticket",
   resumedFrom: null,
 });
 const spawned: RunEvent = { type: "spawned", pid: 1, resume: false, workspace: "isolated", guidelines: 0 };
