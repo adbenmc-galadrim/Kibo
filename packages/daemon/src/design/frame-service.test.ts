@@ -37,6 +37,10 @@ const fakeProvider = (id: ImageDesignProvider) => ({
   }),
 });
 
+const unexpected = (): never => {
+  throw new KiboError("INTERNAL", "storybook is not part of these tests");
+};
+
 let host: FakeHost;
 let clock: { now: number };
 let figma: ReturnType<typeof fakeProvider>;
@@ -58,13 +62,18 @@ beforeEach(() => {
     sandboxOrigin: () => "http://127.0.0.1:4999",
     now: host.now,
     events: createEventLog(host.db, createRedactor(), host.now),
+    storybook: {
+      client: { probe: unexpected, index: unexpected, forget: unexpected },
+      origins: { list: unexpected, assertAllowed: unexpected },
+      embed: { open: unexpected },
+    },
   });
 });
 afterEach(() => host.close());
 
 test("a fresh cache answers without any provider call", async () => {
   figma.render.mockResolvedValueOnce(render("1"));
-  const first = await service.frame("i1", FIGMA_URL, false);
+  const first = await service.frame("i1", FIGMA_URL, false, null);
   expect(first).toMatchObject({
     provider: "figma",
     name: "Tickets",
@@ -75,75 +84,75 @@ test("a fresh cache answers without any provider call", async () => {
   });
   expect(first.url).toMatch(/^http:\/\/127\.0\.0\.1:4999\/d\/[0-9a-f]{64}\/frame\.png$/);
   clock.now += 30 * 60_000;
-  await service.frame("i1", FIGMA_URL, false);
+  await service.frame("i1", FIGMA_URL, false, null);
   expect(figma.version).not.toHaveBeenCalled();
   expect(figma.render).toHaveBeenCalledTimes(1);
 });
 
 test("after the fresh window the version is checked; unchanged means no download", async () => {
   figma.render.mockResolvedValueOnce(render("1"));
-  await service.frame("i1", FIGMA_URL, false);
+  await service.frame("i1", FIGMA_URL, false, null);
   clock.now += DESIGN_FRESH_MS + 1;
   figma.version.mockResolvedValueOnce("1");
-  const again = await service.frame("i1", FIGMA_URL, false);
+  const again = await service.frame("i1", FIGMA_URL, false, null);
   expect(again.stale).toBe(false);
   expect(again.fetchedAt).toBe(clock.now);
   expect(figma.render).toHaveBeenCalledTimes(1);
   figma.version.mockResolvedValueOnce("2");
   figma.render.mockResolvedValueOnce(render("2"));
   clock.now += DESIGN_FRESH_MS + 1;
-  await service.frame("i1", FIGMA_URL, false);
+  await service.frame("i1", FIGMA_URL, false, null);
   expect(figma.render).toHaveBeenCalledTimes(2);
 });
 
 test("an unknown version always renders again", async () => {
   figma.render.mockResolvedValue(render("1"));
-  await service.frame("i1", FIGMA_URL, false);
+  await service.frame("i1", FIGMA_URL, false, null);
   clock.now += DESIGN_FRESH_MS + 1;
-  await service.frame("i1", FIGMA_URL, false);
+  await service.frame("i1", FIGMA_URL, false, null);
   expect(figma.render).toHaveBeenCalledTimes(2);
 });
 
 test("refresh forces the version check even when fresh", async () => {
   figma.render.mockResolvedValueOnce(render("1"));
-  await service.frame("i1", FIGMA_URL, false);
+  await service.frame("i1", FIGMA_URL, false, null);
   figma.version.mockResolvedValueOnce("1");
-  await service.frame("i1", FIGMA_URL, true);
+  await service.frame("i1", FIGMA_URL, true, null);
   expect(figma.version).toHaveBeenCalledTimes(1);
 });
 
 test("offline with a cache serves a stale frame; offline without cache throws", async () => {
   figma.render.mockResolvedValueOnce(render("1"));
-  await service.frame("i1", FIGMA_URL, false);
+  await service.frame("i1", FIGMA_URL, false, null);
   clock.now += DESIGN_FRESH_MS + 1;
   figma.version.mockRejectedValueOnce(new KiboError("REMOTE_UNAVAILABLE", "down"));
-  expect(await service.frame("i1", FIGMA_URL, false)).toMatchObject({
+  expect(await service.frame("i1", FIGMA_URL, false, null)).toMatchObject({
     stale: true,
     reachable: false,
     name: "Tickets",
   });
   figma.version.mockRejectedValueOnce(new KiboError("RATE_LIMITED", "paused"));
-  expect(await service.frame("i1", FIGMA_URL, true)).toMatchObject({ stale: true, reachable: false });
+  expect(await service.frame("i1", FIGMA_URL, true, null)).toMatchObject({ stale: true, reachable: false });
   figma.render.mockRejectedValueOnce(new KiboError("REMOTE_UNAVAILABLE", "down"));
-  await expect(service.frame("i1", FIGMA_URL.replace("12-34", "1-1"), false)).rejects.toThrow(
+  await expect(service.frame("i1", FIGMA_URL.replace("12-34", "1-1"), false, null)).rejects.toThrow(
     "REMOTE_UNAVAILABLE",
   );
 });
 
 test("not connected: stale cache if any, NOT_CONNECTED otherwise; a deleted frame always throws", async () => {
   figma.render.mockResolvedValueOnce(render("1"));
-  await service.frame("i1", FIGMA_URL, false);
+  await service.frame("i1", FIGMA_URL, false, null);
   figma.connected.mockResolvedValue(false);
   clock.now += DESIGN_FRESH_MS + 1;
-  expect(await service.frame("i1", FIGMA_URL, false)).toMatchObject({ stale: true, reachable: false });
-  await expect(service.frame("i1", FIGMA_URL.replace("12-34", "1-1"), false)).rejects.toThrow(
+  expect(await service.frame("i1", FIGMA_URL, false, null)).toMatchObject({ stale: true, reachable: false });
+  await expect(service.frame("i1", FIGMA_URL.replace("12-34", "1-1"), false, null)).rejects.toThrow(
     "NOT_CONNECTED",
   );
   figma.connected.mockResolvedValue(true);
   figma.version.mockRejectedValueOnce(new KiboError("REMOTE_NOT_FOUND", "gone"));
-  await expect(service.frame("i1", FIGMA_URL, false)).rejects.toThrow("REMOTE_NOT_FOUND");
+  await expect(service.frame("i1", FIGMA_URL, false, null)).rejects.toThrow("REMOTE_NOT_FOUND");
   figma.version.mockRejectedValueOnce(new KiboError("REMOTE_REJECTED", "forbidden"));
-  await expect(service.frame("i1", FIGMA_URL, false)).rejects.toThrow("REMOTE_REJECTED");
+  await expect(service.frame("i1", FIGMA_URL, false, null)).rejects.toThrow("REMOTE_REJECTED");
 });
 
 test("a hostile url makes no request, a served token opens the cached file, a stale token does not", async () => {
@@ -153,11 +162,11 @@ test("a hostile url makes no request, a served token opens the cached file, a st
     "https://figma.com.evil.test/design/AbC123xyz/K?node-id=1-2",
     penpotUrl("http://design.penpot.app"),
   ])
-    await expect(service.frame("i1", raw, false)).rejects.toThrow("INVALID_INPUT");
+    await expect(service.frame("i1", raw, false, null)).rejects.toThrow("INVALID_INPUT");
   expect(figma.version).not.toHaveBeenCalled();
   expect(figma.connected).not.toHaveBeenCalled();
   figma.render.mockResolvedValueOnce(render("1"));
-  const frame = await service.frame("i1", FIGMA_URL, false);
+  const frame = await service.frame("i1", FIGMA_URL, false, null);
   expect(await service.open(tokenOf(frame.url))).toMatchObject({ name: "frame.png", mime: "image/png" });
   clock.now += ASSET_URL_TTL_MS + 1;
   expect(await service.open(tokenOf(frame.url))).toBeNull();
@@ -165,21 +174,23 @@ test("a hostile url makes no request, a served token opens the cached file, a st
 
 test("a penpot board of an instance other than the configured one makes no request", async () => {
   for (const instance of ["https://127.0.0.1", "https://design.penpot.app", "http://localhost:9011"])
-    await expect(service.frame("i1", penpotUrl(instance), false)).rejects.toThrow("INVALID_INPUT");
+    await expect(service.frame("i1", penpotUrl(instance), false, null)).rejects.toThrow("INVALID_INPUT");
   penpotInstance = null;
-  await expect(service.frame("i1", penpotUrl("https://127.0.0.1"), false)).rejects.toThrow("INVALID_INPUT");
+  await expect(service.frame("i1", penpotUrl("https://127.0.0.1"), false, null)).rejects.toThrow(
+    "INVALID_INPUT",
+  );
   expect(penpot.connected).not.toHaveBeenCalled();
   expect(penpot.render).not.toHaveBeenCalled();
 });
 
 test("a penpot board of the configured instance is rendered, then served stale once disconnected", async () => {
   penpot.render.mockResolvedValueOnce({ ...render("media-1"), meta: { name: "Fiche", width: 1, height: 1 } });
-  const frame = await service.frame("i1", penpotUrl("http://localhost:9010"), false);
+  const frame = await service.frame("i1", penpotUrl("http://localhost:9010"), false, null);
   expect(frame).toMatchObject({ provider: "penpot", name: "Fiche", stale: false });
   penpotInstance = null;
   penpot.connected.mockResolvedValue(false);
   clock.now += DESIGN_FRESH_MS + 1;
-  expect(await service.frame("i1", penpotUrl("http://localhost:9010"), false)).toMatchObject({
+  expect(await service.frame("i1", penpotUrl("http://localhost:9010"), false, null)).toMatchObject({
     stale: true,
     reachable: false,
   });
@@ -188,27 +199,27 @@ test("a penpot board of the configured instance is rendered, then served stale o
 test("a cached penpot frame whose thumbnail vanished is served stale", async () => {
   const url = penpotUrl("http://localhost:9010");
   penpot.render.mockResolvedValueOnce(render("m1"));
-  await service.frame("i1", url, false);
+  await service.frame("i1", url, false, null);
   clock.now += DESIGN_FRESH_MS + 1;
   penpot.version.mockResolvedValueOnce(null);
   penpot.render.mockRejectedValueOnce(new KiboError("REMOTE_NOT_RENDERED", "gone"));
-  expect(await service.frame("i1", url, false)).toMatchObject({
+  expect(await service.frame("i1", url, false, null)).toMatchObject({
     name: "Tickets",
     stale: true,
     reachable: false,
   });
   penpot.version.mockResolvedValueOnce(null);
   penpot.render.mockRejectedValueOnce(new KiboError("REMOTE_NOT_FOUND", "deleted"));
-  await expect(service.frame("i1", url, true)).rejects.toThrow("REMOTE_NOT_FOUND");
+  await expect(service.frame("i1", url, true, null)).rejects.toThrow("REMOTE_NOT_FOUND");
 });
 
 test("the shell instance may hold 256 tokens, a widget 64", async () => {
   figma.render.mockResolvedValueOnce(render("1"));
-  const first = await service.frame("i1", FIGMA_URL, false);
-  for (let i = 0; i < 64; i++) await service.frame("i1", FIGMA_URL, false);
+  const first = await service.frame("i1", FIGMA_URL, false, null);
+  for (let i = 0; i < 64; i++) await service.frame("i1", FIGMA_URL, false, null);
   expect(await service.open(tokenOf(first.url))).toBeNull();
-  const shellFirst = await service.frame("shell", FIGMA_URL, false);
-  for (let i = 0; i < 200; i++) await service.frame("shell", FIGMA_URL, false);
+  const shellFirst = await service.frame("shell", FIGMA_URL, false, null);
+  for (let i = 0; i < 200; i++) await service.frame("shell", FIGMA_URL, false, null);
   expect(await service.open(tokenOf(shellFirst.url))).not.toBeNull();
 });
 

@@ -81,3 +81,12 @@ test("an invalid url or another penpot instance is refused before any request", 
   expect(metadata).not.toHaveBeenCalled();
   expect(refsOfTicket()).toEqual([]);
 });
+
+test("a storybook story is never linked to a ticket", async () => {
+  await expect(link("http://localhost:6006/?path=/story/screens-home--default")).rejects.toMatchObject({
+    code: "INVALID_INPUT",
+    detail: expect.stringContaining("mockup widget"),
+  });
+  expect(metadata).not.toHaveBeenCalled();
+  expect(refsOfTicket()).toEqual([]);
+});

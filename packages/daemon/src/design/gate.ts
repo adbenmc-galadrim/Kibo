@@ -1,5 +1,6 @@
-import { type DesignFrame, KiboError, type StorybookOrigin } from "@kibo/schema";
+import type { DesignFrame, StorybookOrigin } from "@kibo/schema";
 import type { FrameService } from "./frame-service";
+import type { StorybookOrigins } from "./storybook-origins";
 
 export type DesignCallContext = { projectId: string; instanceId: string };
 export type DesignGate = {
@@ -7,11 +8,12 @@ export type DesignGate = {
   storybooks(ctx: DesignCallContext): Promise<StorybookOrigin[]>;
 };
 
-export function createDesignGate(service: Pick<FrameService, "frame">): DesignGate {
+export function createDesignGate(
+  service: Pick<FrameService, "frame">,
+  origins: Pick<StorybookOrigins, "list">,
+): DesignGate {
   return {
-    frame: (ctx, url, refresh) => service.frame(ctx.instanceId, url, refresh),
-    storybooks: async () => {
-      throw new KiboError("INTERNAL", "storybook origins not wired");
-    },
+    frame: (ctx, url, refresh) => service.frame(ctx.instanceId, url, refresh, ctx.projectId),
+    storybooks: (ctx) => origins.list(ctx.projectId),
   };
 }

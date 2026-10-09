@@ -15,9 +15,10 @@ import type { EventLog } from "../integrations/events";
 import type { CachedFrame, FrameCache } from "./frame-cache";
 import { parseFrameUrl } from "./frame-url";
 import { type DesignProviderClient, type FrameMeta, UNREACHABLE_CODES } from "./providers/types";
+import { type StoryFrameDeps, storyFrame, storyMetadata } from "./story-frame";
 
 export type FrameService = {
-  frame(instanceId: string, url: string, refresh: boolean): Promise<DesignFrame>;
+  frame(instanceId: string, url: string, refresh: boolean, projectId: string | null): Promise<DesignFrame>;
   metadata(key: DesignFrameKey): Promise<FrameMeta>;
   open(token: string): Promise<ServedFile | null>;
 };
@@ -29,14 +30,11 @@ export type FrameServiceDeps = {
   now(): number;
   events: EventLog;
   freshMs?: number;
+  storybook: StoryFrameDeps;
 };
 type Grant = { path: string; mime: CachedFrame["mime"]; size: number };
 
 export const SHELL_INSTANCE = "shell";
-const imageKey = (key: DesignFrameKey): Exclude<DesignFrameKey, { provider: "storybook" }> => {
-  if (key.provider === "storybook") throw new KiboError("INVALID_INPUT", "storybook frames are not wired");
-  return key;
-};
 const servesStale = (e: unknown) =>
   e instanceof KiboError && (UNREACHABLE_CODES.has(e.code) || e.code === "REMOTE_NOT_RENDERED");
 
@@ -107,10 +105,10 @@ export function createFrameService(deps: FrameServiceDeps): FrameService {
     return renderInto(provider, key, id);
   };
   return {
-    async frame(instanceId, raw, refresh) {
-      const parsed = parseFrameUrl(raw, deps.penpotInstance());
-      const key = imageKey(parsed.key);
-      const url = parsed.url;
+    async frame(instanceId, raw, refresh, projectId) {
+      const { key, url } = parseFrameUrl(raw, deps.penpotInstance());
+      if (key.provider === "storybook")
+        return storyFrame(deps.storybook, { instanceId, key, url, refresh }, projectId, deps.now());
       const id = designFrameId(key);
       const hit = deps.cache.get(id);
       if (hit && !refresh && deps.now() - hit.fetchedAt < fresh)
@@ -129,7 +127,10 @@ export function createFrameService(deps: FrameServiceDeps): FrameService {
         return view(instanceId, hit, url, true, false);
       }
     },
-    metadata: (key) => deps.providers[imageKey(key).provider].metadata(key),
+    metadata: (key) =>
+      key.provider === "storybook"
+        ? storyMetadata(deps.storybook, key)
+        : deps.providers[key.provider].metadata(key),
     async open(token) {
       const grant = widgetTokens.lookup(token) ?? shellTokens.lookup(token);
       if (!grant) return null;
