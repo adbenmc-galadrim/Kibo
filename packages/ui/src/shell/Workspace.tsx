@@ -12,14 +12,11 @@ import { useRoute } from "../route";
 import { canEdit } from "../state/access";
 import { useConfig, useNow } from "../state/use-agents";
 import { useProject } from "../state/use-projects";
-import { useDestructiveKeyGuard } from "../tabs/key-guard";
 import { TabBar } from "../tabs/TabBar";
 import { describeTarget } from "../tabs/tab-title";
 import { activeTarget } from "../tabs/tabs-model";
 import { targetToHash } from "../tabs/target-hash";
 import { useHashSync } from "../tabs/use-hash-sync";
-import { useKeepOnEdit } from "../tabs/use-keep-on-edit";
-import { useTabShortcuts } from "../tabs/use-tab-shortcuts";
 import type { TabsApi } from "../tabs/use-tabs";
 import { cycleTheme } from "../theme";
 import { AgentsShellProvider } from "./AgentsShellProvider";
@@ -39,7 +36,8 @@ import { useAppHelp } from "./use-app-help";
 import { useOpenView, useSnapshotLookup } from "./use-open-view";
 import { useOpened } from "./use-opened";
 import { useProjectAgentPanel } from "./use-project-agent-panel";
-import { anyDialogOpen, useShellDialogs } from "./use-shell-dialogs";
+import { useShellDialogs } from "./use-shell-dialogs";
+import { useWorkspaceKeys } from "./use-workspace-keys";
 import { useWorkspaceSnapshots } from "./use-workspace-snapshots";
 import { inTauri, openWindow } from "./workspace-actions";
 
@@ -106,21 +104,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     [activeProjectId, set, go, views.openView],
   );
 
-  useDestructiveKeyGuard();
-  useKeepOnEdit(tabs, anyDialogOpen(dialogs, palette));
-  useTabShortcuts((s) => {
-    if (s.kind === "palette") return setPalette({ newTab: false });
-    if (s.kind === "newTab") return setPalette({ newTab: true });
-    if (s.kind === "activate") return tabs.dispatch({ type: "activateIndex", index: s.index });
-    if (s.kind === "reopen") return tabs.reopen();
-    if (s.kind === "help") return set(helpPatch("shortcutsHelp"));
-    if (s.kind === "projectAgent") return agentPanel.toggle();
-    const id = tabs.state.activeId;
-    if (!id) return;
-    if (s.kind === "close") tabs.dispatch({ type: "close", id });
-    if (s.kind === "togglePin")
-      tabs.dispatch({ type: "pin", id, pinned: !tabs.state.tabs.find((t) => t.id === id)?.pinned });
-  });
+  useWorkspaceKeys({ tabs, dialogs, palette, set, setPalette, toggleAgent: agentPanel.toggle });
 
   const onAction = paletteActionHandler({ set, setFocusRun, go, activeProjectId, cycleTheme });
   const openFileTab = fileTabOpener({ editRequests: editRequests.current, set, go });
