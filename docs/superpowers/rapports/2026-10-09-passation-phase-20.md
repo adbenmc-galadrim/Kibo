@@ -4,7 +4,7 @@ Ce document permet de reprendre sans réanalyse. Délégation d'Adam du 2026-10-
 
 ## Où en est tout
 
-- **Phase 19** (jeux itch.io et Storybook) : toutes les tâches (T1 à T9) et trois correctifs intégrés dans `phase/19`, gate verte (budget 223,4 kB, 5 951 tests unitaires, 138 E2E). PR #20 `phase/19` → `main` ouverte ; à la fusion : tag annoté `v0.19.0-alpha.1` (`git tag -a v0.19.0-alpha.1 -m "Kibo 0.19.0-alpha.1"`), puis vérifier la release (`alpha/latest.json`). Rapport : `docs/superpowers/rapports/2026-10-09-jalon-v0.19.md`.
+- **Phase 19** (jeux itch.io et Storybook) : toutes les tâches (T1 à T9) et trois correctifs intégrés dans `phase/19`, gate verte (budget 223,4 kB, 5 951 tests unitaires, 138 E2E). PR #20 fusionnée (CI verte), tag `v0.19.0-alpha.1` posé, release publiée en pré-release avec `latest.json`. Rapport : `docs/superpowers/rapports/2026-10-09-jalon-v0.19.md`.
 - **Phase 20** (voir et comprendre ce que font les agents) : spec écrite sur la branche `docs/p20-spec` (worktree `.claude/worktrees/p20-spec`), §26.1 à §26.10 ; feuille de route à jour (phases 20 et 21). **En attente de la validation d'Adam.**
 - **Phase 21** (les agents parlent à l'agent de projet) : spec §27 sur la même branche, après la phase 20.
 - **Maquettes de travail** (pistes, hors PDF) : branche `docs/p20-pistes` (worktree `.claude/worktrees/p20-pistes`), page Penpot « 28 · Pistes visibilité agents » et « 28c · Graphe » ; scripts `32b` à `32e` ; captures `screens/2026-10-09-pistes-agents/` et `screens/2026-10-09-pistes-epurees/`.
@@ -34,10 +34,11 @@ Ce document permet de reprendre sans réanalyse. Délégation d'Adam du 2026-10-
 - Comparaison Maquette : bande vide au-dessus des surfaces quand la story est plus haute.
 - `packages/sdk/src/mock.ts` à 308 lignes.
 - E2E sensibles à la charge : `catalog.spec.ts:55` (près de sa limite de 240 s) et `design.spec.ts` (30 s) ; ne jamais lancer deux gates en parallèle (le verrou de `integ19.sh` est un `mkdir` en boucle : une seule gate à la fois, mais l'ordre n'est pas garanti).
+- Instables constatés sur `main` après la fusion de la PR #20 (verts à la relance) : `components/mockup/src/mockup-compare.test.tsx` « a mockup that fails to load is not offered… » (15 sur 15 en local) et `e2e/agents.spec.ts:174` (« pair this browser first »).
 
 ## État local
 
-- Démon d'Adam : relancé sur le code de la phase 19 (worktree `p19-t9`) pour la vérification ; à relancer sur `main` après la fusion. Sauvegarde : `~/.kibo-avant-phase19-2026-10-09`.
+- Démon d’Adam : lancé sur `v0.19.0-alpha.1` depuis le worktree détaché `.claude/worktrees/run-v0.19` (journal `~/.kibo-daemon-v019.log`). Sauvegarde : `~/.kibo-avant-phase19-2026-10-09`.
 - Penpot : backend `kibo-penpot-penpot-backend-1` (heap 4 Go, à redémarrer s'il dépasse 4,2 Gio), Chromium headless `hl/serve.mjs` (CDP 9333) dans le dossier temporaire de la session.
 - Worktrees supprimables après la fusion : `p19-spec`, `p19-t1` à `p19-t9`, `p19-projet`, `p19-questions`, `p19-minimap`, `p19-passation`.
 
