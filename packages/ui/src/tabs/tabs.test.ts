@@ -261,3 +261,16 @@ test("⌘⇧T asks to reopen the last closed tab", () => {
     kind: "reopen",
   });
 });
+
+test("retarget swaps a tab's target in place, or falls back to the tab already showing it", () => {
+  const project: TabTarget = { kind: "project", projectId: "p1" };
+  let s = tabsReducer(EMPTY_TABS, { type: "open", target: project, newTab: true, id: "t1" });
+  s = tabsReducer(s, { type: "retarget", id: "t1", target: page("dash") });
+  expect(s.tabs).toEqual([{ id: "t1", target: page("dash"), pinned: false, preview: false }]);
+  expect(s.activeId).toBe("t1");
+  expect(s.recents[0]).toEqual(page("dash"));
+  s = tabsReducer(s, { type: "open", target: project, newTab: true, id: "t2" });
+  s = tabsReducer(s, { type: "retarget", id: "t2", target: page("dash") });
+  expect(s.tabs.map((t) => t.id)).toEqual(["t1"]);
+  expect(s.activeId).toBe("t1");
+});
