@@ -91,7 +91,7 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
     color,
     folder: remote ? (project.folder ?? "") : folder,
     ...(showWorktree && { worktree }),
-    storybook,
+    ...(!remote && { storybook }),
   });
   const iconChanged = pending !== null || (removed && Boolean(project.icon));
   const worktreeInvalid = showWorktree && worktree !== null && worktreeProblem(worktree) !== null;
@@ -187,12 +187,14 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
             </div>
           )}
           {showWorktree && <WorktreeFields value={worktree} onChange={setWorktree} disabled={busy} />}
-          <StorybookFields
-            value={storybook}
-            onChange={setStorybook}
-            withPortEnv={showWorktree}
-            disabled={busy}
-          />
+          {!remote && (
+            <StorybookFields
+              value={storybook}
+              onChange={setStorybook}
+              withPortEnv={showWorktree}
+              disabled={busy}
+            />
+          )}
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}

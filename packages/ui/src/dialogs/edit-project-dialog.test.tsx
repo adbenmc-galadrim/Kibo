@@ -257,7 +257,7 @@ const storybookSection = () => screen.queryByRole("group", { name: "Storybook" }
 const ORIGIN = "Adresse";
 const PORT_ENV = "Variable du port dans .env des worktrees";
 
-test("the storybook section shows the defaults, the port variable only with a local folder (screen 182)", () => {
+test("the storybook section shows the defaults, never remote (screen 182)", () => {
   const local = render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
   expect(storybookSection()).toBeTruthy();
   expect([field(ORIGIN).value, field(PORT_ENV).value]).toEqual(["http://localhost:6006", "STORYBOOK_PORT"]);
@@ -270,9 +270,7 @@ test("the storybook section shows the defaults, the port variable only with a lo
   expect(screen.queryByLabelText(PORT_ENV)).toBeNull();
   noFolder.unmount();
   render(<EditProjectDialog project={project} remote onClose={() => {}} />);
-  expect(storybookSection()).toBeTruthy();
-  expect(field(ORIGIN).value).toBe("http://localhost:6006");
-  expect(screen.queryByLabelText(PORT_ENV)).toBeNull();
+  expect(storybookSection()).toBeNull();
 });
 
 test("a deployed storybook is saved with the default port variable", async () => {
