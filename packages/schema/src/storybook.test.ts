@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import fc from "fast-check";
 import {
+  findEnvPort,
   lookupStory,
   PortEnvName,
   parseEnvPort,
@@ -85,4 +86,28 @@ test("lookupStory names a story, reports it missing, or unknown without index", 
   });
   expect(lookupStory(index, "screens-home--other")).toEqual({ kind: "missing" });
   expect(lookupStory(null, "screens-home--default")).toEqual({ kind: "unknown" });
+});
+
+test("findEnvPort tells a missing definition from an invalid one", () => {
+  expect(findEnvPort("", "SB_PORT")).toEqual({ found: false });
+  expect(findEnvPort("OTHER=1\n# SB_PORT=6007", "SB_PORT")).toEqual({ found: false });
+  expect(findEnvPort("SB_PORT=abc\nSB_PORT=6007", "SB_PORT")).toEqual({ found: true, port: null });
+  expect(findEnvPort("SB_PORT=80", "SB_PORT")).toEqual({ found: true, port: null });
+  expect(findEnvPort("export SB_PORT='6007'", "SB_PORT")).toEqual({ found: true, port: 6007 });
+});
+
+test("findEnvPort finds a definition exactly when a NAME= line exists and agrees with parseEnvPort (property)", () => {
+  const line = fc.oneof(
+    fc.string({ maxLength: 40 }),
+    fc.constantFrom("SB_PORT=6007", "SB_PORT=abc", 'export SB_PORT="7000"', "SB_PORT=80", "# SB_PORT=1"),
+  );
+  fc.assert(
+    fc.property(fc.array(line, { maxLength: 6 }), (lines) => {
+      const text = lines.join("\n");
+      const result = findEnvPort(text, "SB_PORT");
+      const defined = text.split(/\r?\n/).some((l) => /^\s*(export\s+)?SB_PORT\s*=/.test(l));
+      expect(result.found).toBe(defined);
+      expect(result.found ? result.port : null).toBe(parseEnvPort(text, "SB_PORT"));
+    }),
+  );
 });

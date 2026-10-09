@@ -1,5 +1,5 @@
-import { afterEach, expect, test } from "bun:test";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { afterEach, expect, spyOn, test } from "bun:test";
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { ENV_FILE_MAX_BYTES } from "@kibo/schema";
@@ -49,4 +49,27 @@ test("an injected reader sees only the two env paths", () => {
   });
   expect(port).toBe(7000);
   expect(read).toEqual(["/repo/wt/.env.local", "/repo/wt/.env"]);
+});
+
+test("the first definition wins even when invalid, .env is then not used", () => {
+  for (const invalid of ["STORYBOOK_PORT=abc", "STORYBOOK_PORT=80"]) {
+    const dir = tmp();
+    writeFileSync(join(dir, ".env.local"), `${invalid}\n`);
+    writeFileSync(join(dir, ".env"), "STORYBOOK_PORT=6007\n");
+    expect(readEnvPort(dir, "STORYBOOK_PORT")).toBeNull();
+  }
+});
+
+test("an unreadable .env.local has no definition and .env is read, with a warning", () => {
+  const dir = tmp();
+  writeFileSync(join(dir, ".env.local"), "STORYBOOK_PORT=6009\n");
+  chmodSync(join(dir, ".env.local"), 0o000);
+  writeFileSync(join(dir, ".env"), "STORYBOOK_PORT=6007\n");
+  const warn = spyOn(console, "warn").mockImplementation(() => {});
+  try {
+    expect(readEnvPort(dir, "STORYBOOK_PORT")).toBe(6007);
+    expect(warn).toHaveBeenCalledTimes(1);
+  } finally {
+    warn.mockRestore();
+  }
 });

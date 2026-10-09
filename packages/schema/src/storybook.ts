@@ -49,12 +49,19 @@ const definitionOf = (line: string, name: string): string | null => {
   return trimmed.slice(eq + 1);
 };
 
-export function parseEnvPort(text: string, name: string): number | null {
+export type EnvPortLookup = { found: false } | { found: true; port: number | null };
+
+export function findEnvPort(text: string, name: string): EnvPortLookup {
   for (const line of text.split(/\r?\n/)) {
     const value = definitionOf(line, name);
-    if (value !== null) return portOf(value);
+    if (value !== null) return { found: true, port: portOf(value) };
   }
-  return null;
+  return { found: false };
+}
+
+export function parseEnvPort(text: string, name: string): number | null {
+  const lookup = findEnvPort(text, name);
+  return lookup.found ? lookup.port : null;
 }
 
 export function worktreeOrigin(configured: string, port: number): string {
