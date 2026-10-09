@@ -5,6 +5,8 @@ export function isSafeNotePath(p: string): boolean {
   return p.split("/").every((s) => s.length > 0 && s !== "." && s !== ".." && !s.startsWith("."));
 }
 
+export const MAX_NOTE_CHARS = 1_048_576;
+
 export const NotePath = z.string().min(4).max(512).refine(isSafeNotePath, "invalid note path");
 
 export const NoteMeta = z.object({

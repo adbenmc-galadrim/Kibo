@@ -131,8 +131,12 @@ const LifecycleEvent = z.discriminatedUnion("type", [
 export const RunEvent = z.union([LifecycleEvent, SessionEvent]);
 export type RunEvent = z.infer<typeof RunEvent>;
 
+export const RunKind = z.enum(["ticket", "project"]);
+export type RunKind = z.infer<typeof RunKind>;
+
 export type RunRecord = {
   id: string;
+  kind: RunKind;
   seq: number;
   projectId: string | null;
   ticketId: string | null;
@@ -145,6 +149,8 @@ export type RunRecord = {
   createdAt: number;
   resumedFrom: string | null;
 };
+
+export const isProjectRun = (run: Pick<RunRecord, "kind">): boolean => run.kind === "project";
 
 export type RunActivity = { at: number; event: HookEventName; tool: string | null; detail: string | null };
 export type ActiveSubagent = { id: string; type: string; since: number };
@@ -201,6 +207,13 @@ export type HostView = HostSettings & {
   ram: number;
 };
 
+export type ProjectAgentSummary = {
+  projectId: string;
+  runId: string;
+  state: RunState;
+  pendingBatchId: string | null;
+};
+
 export type AgentsState = {
   runs: RunView[];
   queue: QueueEntry[];
@@ -208,6 +221,7 @@ export type AgentsState = {
   tokensToday: number;
   resumable: string[];
   questions: RunQuestions[];
+  projectAgents: ProjectAgentSummary[];
 };
 export type SessionPreview = {
   runId: string;

@@ -35,6 +35,7 @@ import type { NotesInfo } from "./note";
 import type { Page } from "./page";
 import { PHASE14_RPC, type Phase14RpcResult } from "./phase14-rpc";
 import { type ProjectMeta, ProjectPatch } from "./project";
+import { PROJECT_AGENT_RPC, type ProjectAgentRpcResult } from "./project-agent-rpc";
 import type { DeliveryResult, Question } from "./question";
 import type { Rule } from "./rule";
 import type { AgentsState, AssignPreview, HostView, RunChanged, RunLogEntry, RunView } from "./run";
@@ -213,6 +214,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   ...MARKET_RPC_REQUESTS,
   ...SYNC_RPC_REQUESTS,
   ...PHASE14_RPC,
+  ...PROJECT_AGENT_RPC,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -268,7 +270,8 @@ export type RpcResult = {
   AiRpcResult &
   MarketRpcResult &
   SyncRpcResult &
-  Phase14RpcResult;
+  Phase14RpcResult &
+  ProjectAgentRpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }
