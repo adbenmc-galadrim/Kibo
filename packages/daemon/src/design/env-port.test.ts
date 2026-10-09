@@ -68,7 +68,7 @@ test("an unreadable .env.local has no definition and .env is read, with a warnin
   const warn = spyOn(console, "warn").mockImplementation(() => {});
   try {
     expect(readEnvPort(dir, "STORYBOOK_PORT")).toBe(6007);
-    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(join(dir, ".env.local")));
   } finally {
     warn.mockRestore();
   }
