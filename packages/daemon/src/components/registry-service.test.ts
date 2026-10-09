@@ -201,6 +201,7 @@ describe("listing and uninstall", () => {
       ["snake", true],
       ["mockup", true],
       ["questions", true],
+      ["itch", true],
       ["pr-queue", false],
     ]);
     expect(list[0]?.versions).toEqual([
@@ -234,6 +235,7 @@ describe("listing and uninstall", () => {
       "snake",
       "mockup",
       "questions",
+      "itch",
     ]);
   });
 });

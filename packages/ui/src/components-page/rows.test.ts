@@ -67,6 +67,7 @@ test("built-ins come from the UI registry, installed versions one row each, sort
     componentRows(summaries).map((r) => [r.title, r.version, r.trust, r.pages, r.projects, r.used]),
   ).toEqual([
     ["Graphe de dépendances", "1.0.0", "builtin", 0, 0, false],
+    ["Jeu itch.io", "1.0.0", "builtin", 0, 0, false],
     ["Kanban", "1.0.0", "builtin", 3, 2, true],
     ["Maquette", "1.0.0", "builtin", 0, 0, false],
     ["Notes", "1.0.0", "builtin", 0, 0, false],

@@ -1,4 +1,5 @@
 import * as graph from "@kibo/component-graph";
+import * as itch from "@kibo/component-itch";
 import * as kanban from "@kibo/component-kanban";
 import * as mcpSource from "@kibo/component-mcp-source";
 import * as mockup from "@kibo/component-mockup";
@@ -16,6 +17,7 @@ import {
   FileText,
   Frame,
   Gamepad,
+  Joystick,
   LayoutDashboard,
   ListTree,
   type LucideIcon,
@@ -35,6 +37,7 @@ export const BUILTIN_COMPONENTS: ComponentModule[] = [
   snake,
   mockup,
   questions,
+  itch,
 ];
 
 const BUILTIN_ICONS: Record<string, LucideIcon> = {
@@ -47,6 +50,7 @@ const BUILTIN_ICONS: Record<string, LucideIcon> = {
   snake: Gamepad,
   mockup: Frame,
   questions: MessageCircleQuestion,
+  itch: Joystick,
 };
 
 export const componentRef = (m: ComponentManifest): string => `${m.id}@${m.version}`;

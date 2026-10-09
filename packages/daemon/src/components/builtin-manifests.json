@@ -292,5 +292,34 @@
     "writes": ["question"],
     "selection": false,
     "configSchema": { "scope": { "enum": ["open", "all"], "default": "open", "label": "Afficher" } }
+  },
+  {
+    "id": "itch",
+    "version": "1.0.0",
+    "kind": "both",
+    "formats": ["medium", "large", "half", "full"],
+    "size": { "min": { "w": 4, "h": 3 } },
+    "title": "Jeu itch.io",
+    "description": "Un jeu HTML5 d'itch.io dans un cadre isolé",
+    "reads": [],
+    "writes": [],
+    "capabilities": ["embed", "fullscreen", "gamepad", "audio"],
+    "embeds": ["itch.io"],
+    "configSchema": {
+      "embed": {
+        "type": "string",
+        "nullable": true,
+        "default": null,
+        "label": "Jeu",
+        "help": "Sur la page du jeu : Partager › Intégrer, puis colle le code ou l'adresse https://itch.io/embed-upload/<id>."
+      },
+      "page": {
+        "type": "string",
+        "nullable": true,
+        "default": null,
+        "label": "Page du jeu",
+        "help": "Adresse de la page itch.io du jeu, pour le lien « Ouvrir sur itch.io »."
+      }
+    }
   }
 ]
