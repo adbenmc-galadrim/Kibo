@@ -15,9 +15,14 @@ type Field = keyof StorybookSettings;
 const t = frProject.edit;
 const EMPTY: StorybookSettings = { origin: "", portEnv: "" };
 
+const VALID: Record<Field, (text: string) => boolean> = {
+  origin: (text) => StorybookOriginUrl.safeParse(text).success,
+  portEnv: (text) => PortEnvName.safeParse(text).success,
+};
+
 export function storybookProblem(value: StorybookSettings): string | null {
-  if (!StorybookOriginUrl.safeParse(value.origin).success) return t.storybookErrors.origin;
-  if (!PortEnvName.safeParse(value.portEnv).success) return t.storybookErrors.portEnv;
+  if (!VALID.origin(value.origin)) return t.storybookErrors.origin;
+  if (!VALID.portEnv(value.portEnv)) return t.storybookErrors.portEnv;
   return null;
 }
 
@@ -65,7 +70,7 @@ export function StorybookFields({ value, onChange, withPortEnv, disabled }: Prop
               spellCheck={false}
               className="font-mono text-xs"
               aria-describedby={ids.help}
-              aria-invalid={problem !== null}
+              aria-invalid={value !== null && !VALID[f.field](f.text)}
               onChange={set(f.field)}
             />
           </div>

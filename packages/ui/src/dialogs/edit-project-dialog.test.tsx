@@ -298,6 +298,10 @@ test("an insecure address or a bad variable name is explained and blocks the sav
   await user.clear(field(ORIGIN));
   await user.type(field(ORIGIN), "http://sb.example.com");
   expect(screen.getByText("Adresse refusée (https, ou http en local)")).toBeTruthy();
+  expect([field(ORIGIN), field(PORT_ENV)].map((f) => f.getAttribute("aria-invalid"))).toEqual([
+    "true",
+    "false",
+  ]);
   expect(saveButton().hasAttribute("disabled")).toBe(true);
   await user.clear(field(ORIGIN));
   await user.type(field(ORIGIN), "http://localhost:6007");

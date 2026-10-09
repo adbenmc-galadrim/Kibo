@@ -122,7 +122,10 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
+      <DialogContent
+        className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md"
+        aria-describedby={undefined}
+      >
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>
             <DialogTitle>{t.title}</DialogTitle>
