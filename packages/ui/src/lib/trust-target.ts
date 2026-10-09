@@ -15,6 +15,7 @@ export type TrustTarget = {
   permissions: GrantedPermissions;
   market?: MarketTrustInfo | null;
   selection?: boolean;
+  embeds?: readonly string[];
 };
 
 export function trustTargetOf(id: string, title: string, v: ComponentVersionSummary): TrustTarget | null {
@@ -27,5 +28,6 @@ export function trustTargetOf(id: string, title: string, v: ComponentVersionSumm
     origin: v.origin,
     permissions: grantedOf(v.manifest),
     selection: v.manifest.selection,
+    embeds: v.manifest.embeds,
   };
 }

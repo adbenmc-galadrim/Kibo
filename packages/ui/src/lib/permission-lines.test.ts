@@ -141,3 +141,24 @@ test("capabilities and selection get plain-language lines", () => {
   expect(permissionLabel("cap:assets")).toBe("Lire les fichiers du projet");
   expect(permissionLabel("cap:unknown")).toBe("Permission cap:unknown");
 });
+
+test("the embed line names the declared hosts, the generic text stays without hosts", () => {
+  const g = { ...NO_PERMISSIONS, capabilities: ["embed" as const] };
+  const embedLine = (extra: Parameters<typeof permissionLines>[1]) =>
+    permissionLines(g, extra).map((l) => [l.title, l.detail ?? null])[0];
+  expect(embedLine({ embeds: ["itch.io"] })).toEqual([
+    "Afficher des pages de itch.io dans un cadre isolé",
+    "sans accès à tes données ni à Kibo",
+  ]);
+  expect(embedLine({ embeds: ["itch.io", "example.com"] })?.[0]).toBe(
+    "Afficher des pages de itch.io, example.com dans un cadre isolé",
+  );
+  for (const extra of [{}, { embeds: [] }])
+    expect(embedLine(extra)).toEqual([
+      "Afficher des pages d'un site déclaré dans un cadre isolé",
+      "sans accès à tes données ni à Kibo",
+    ]);
+  expect(permissionLines(NO_PERMISSIONS, { embeds: ["itch.io"] }).map((l) => l.title)).toEqual([
+    "Aucun accès réseau, aucun fichier local",
+  ]);
+});

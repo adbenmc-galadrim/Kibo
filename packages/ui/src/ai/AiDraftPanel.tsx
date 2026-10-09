@@ -156,6 +156,7 @@ export function AiDraftPanel({ draftId, target, onDone, onStatus }: Props) {
             hash: approval.hash,
             origin: "ai",
             permissions: grantedOf(approval.manifest),
+            embeds: approval.manifest.embeds,
           }}
           onOpenChange={(o) => !o && !finished.current && setRefused(true)}
           onCloseAutoFocus={(e) => {
