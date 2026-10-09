@@ -134,7 +134,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     <HostProvider host={host}>
       <AgentsShellProvider agents={agents} openView={views.openView}>
         <PageActionsProvider>
-          <div className="flex h-svh flex-col [--tabbar-h:2.5rem]">
+          <div className="flex h-svh flex-col">
             <TabBar
               state={tabs.state}
               describe={(t) => describeTarget(t, { projects, snapshots })}

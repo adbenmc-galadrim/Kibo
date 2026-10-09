@@ -66,7 +66,7 @@ export function ProjectAgentPanel({ open, project, onClose }: Props) {
         side="right"
         showCloseButton={false}
         className="gap-0 p-0 sm:max-w-none"
-        style={{ width }}
+        style={{ width, top: "var(--shell-top)", height: "auto" }}
         onInteractOutside={(e) => e.preventDefault()}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >

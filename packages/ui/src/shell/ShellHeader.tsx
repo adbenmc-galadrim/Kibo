@@ -61,7 +61,7 @@ export function ShellHeader({
   onHelp,
 }: Props) {
   return (
-    <header className="flex h-12 shrink-0 select-none items-center gap-2 border-b px-3">
+    <header className="flex h-(--header-h) shrink-0 select-none items-center gap-2 border-b px-3">
       <SidebarTrigger />
       <Breadcrumb
         crumbs={crumbsFor(active, { project, branch })}

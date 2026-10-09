@@ -40,6 +40,14 @@ async function seed(page: Page, projectId: string): Promise<void> {
 
 const panelOf = (page: Page): Locator => page.getByRole("dialog", { name: `Agent de projet · ${PROJECT}` });
 
+async function expectBelow(panel: Locator, header: Locator): Promise<void> {
+  const panelBox = await panel.boundingBox();
+  const headerBox = await header.boundingBox();
+  if (!panelBox || !headerBox) throw new Error("panel or header not laid out");
+  expect(panelBox.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height);
+  expect(panelBox.width).toBe(440);
+}
+
 async function say(panel: Locator, message: string): Promise<void> {
   await panel.getByRole("textbox", { name: "Message à l'agent de projet" }).fill(message);
   await panel.getByRole("button", { name: "Envoyer" }).click();
@@ -62,6 +70,14 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
   const button = page.getByRole("button", { name: "Agent de projet", exact: true });
   await button.click();
   const panel = panelOf(page);
+  await expect(panel).toBeVisible();
+  await expect(button).toBeVisible();
+  await expect(button).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: "Partager", exact: true })).toBeVisible();
+  await expectBelow(panel, button);
+  await button.click();
+  await expect(panel).toBeHidden();
+  await button.click();
   await expect(panel).toBeVisible();
   await panel.getByRole("button", { name: "Fermer le panneau" }).click();
   await expect(panel).toBeHidden();
