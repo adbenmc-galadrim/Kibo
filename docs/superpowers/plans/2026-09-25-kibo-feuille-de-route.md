@@ -142,7 +142,7 @@ Demande d'Adam du 2026-10-06, planifiée le 2026-10-09 après l'agent de projet 
 
 Spec : conception §26 (amende §7, §8, §23.12). Plan à écrire après validation de la spec par Adam.
 
-Demande d'Adam du 2026-10-09 (« les agents sont tous cachés ») : fil narratif tiré de la transcription et copié dans Kibo, plan et compte rendu tenus par l'agent (`ticket_progress`, partagés avec le ticket), rappels sans blocage, volet du pied de page cliquable et redimensionnable en trois colonnes, onglet Activité du ticket, mentions d'agent cliquables (carte, volet, page dédiée), page Questions refondue avec destinataires par projet, export et réponse collée. Écrans 183 à 187.
+Demande d'Adam du 2026-10-09 (« les agents sont tous cachés ») : fil narratif tiré de la transcription et copié dans Kibo, plan et compte rendu tenus par l'agent (`ticket_progress`, partagés avec le ticket), rappels sans blocage, volet du pied de page cliquable et redimensionnable en trois colonnes, onglet Activité du ticket, mentions d'agent cliquables (carte, volet, page dédiée), page Questions refondue avec destinataires par projet, export et réponse collée, tickets démarrables (état calculé), graphe lisible (vagues, terminés repliés, liens réduits, focus). Écrans 183 à 188.
 
 ## Phase 21 · Les agents parlent à l'agent de projet (v0.21.0-alpha.1)
 
