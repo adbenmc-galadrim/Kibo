@@ -2,11 +2,13 @@ import {
   ActionOutcome,
   type Batch,
   type BatchStatus,
+  type ProjectFingerprint,
   type ProjectSnapshot,
+  type QuestionPrint,
   type RunState,
   type RunView,
+  type TicketPrint,
 } from "@kibo/schema";
-import type { ProjectFingerprint, QuestionPrint, TicketPrint } from "./fingerprint";
 
 export type ChangeCategory = "runs" | "tickets" | "questions" | "notes";
 export type Change = { category: ChangeCategory; key: string; text: string };

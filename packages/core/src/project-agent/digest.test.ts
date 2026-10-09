@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { type Batch, RunState } from "@kibo/schema";
+import { type Batch, type ProjectFingerprint, RunState, type TicketPrint } from "@kibo/schema";
 import fc from "fast-check";
 import { type ChangeNames, changeNames, diffFingerprints, renderDigest } from "./digest";
-import { fingerprint, type ProjectFingerprint, type TicketPrint } from "./fingerprint";
+import { fingerprint } from "./fingerprint";
 import { HUMAN, project, question, run, ticket } from "./test-kit";
 
 const names: ChangeNames = {

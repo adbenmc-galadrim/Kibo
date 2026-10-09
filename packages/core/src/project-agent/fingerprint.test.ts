@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { fingerprint, ProjectFingerprintSchema } from "./fingerprint";
+import { fingerprint } from "./fingerprint";
 import { answered, project, question, run, ticket } from "./test-kit";
 
 const snapshot = project({
@@ -65,11 +65,5 @@ describe("fingerprint", () => {
     expect(Object.keys(fp.tickets)).toEqual(["t1", "t2"]);
     expect(Object.keys(fp.questions)).toEqual(["q1", "q2"]);
     expect(Object.keys(fp.notes)).toEqual(["a.md", "b.md"]);
-  });
-
-  test("the schema reads its own JSON back and refuses garbage", () => {
-    const fp = fingerprint({ project: snapshot, runs: [run({ id: "r1" })], notes: [] });
-    expect(ProjectFingerprintSchema.parse(JSON.parse(JSON.stringify(fp)))).toEqual(fp);
-    expect(ProjectFingerprintSchema.safeParse({ tickets: 1 }).success).toBe(false);
   });
 });
