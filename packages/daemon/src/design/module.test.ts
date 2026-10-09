@@ -148,3 +148,26 @@ test("storybook: the shell and ticket links refuse a story, components list the 
     sb.stop();
   }
 });
+
+test("storybook: a declared story is a text/html frame served by the relay", async () => {
+  const sb = startFakeStorybook();
+  try {
+    sb.addStory("screens-home--default", "Screens", "Home");
+    createProjectSettings(host.db).set(
+      host.projectId,
+      LOCAL_STORYBOOK_KEY,
+      JSON.stringify({ origin: sb.url, portEnv: "STORYBOOK_PORT" }),
+    );
+    const ctx = { projectId: host.projectId, instanceId: "w1" };
+    const frame = DesignFrame.parse(
+      await rpc.hooks.design?.frame(ctx, `${sb.url}/?path=/story/screens-home--default`, false),
+    );
+    expect(frame).toMatchObject({ provider: "storybook", mime: "text/html", name: "Screens / Home" });
+    expect(frame.url.startsWith(`${host.sandboxOrigin()}/e/`)).toBe(true);
+    const page = rpc.relay(tokenOf(frame.url));
+    expect(page?.headers["content-security-policy"]).toContain(`frame-src ${sb.url};`);
+    expect(page?.html).toContain(`src="${sb.url}/iframe.html?id=screens-home--default&amp;viewMode=story"`);
+  } finally {
+    sb.stop();
+  }
+});

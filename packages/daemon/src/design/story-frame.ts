@@ -1,22 +1,19 @@
 import {
   type DesignFrame,
   designFrameId,
-  type EmbedView,
   KiboError,
   lookupStory,
   type StorybookFrameKey,
 } from "@kibo/schema";
+import type { EmbedService } from "../embed/types";
 import type { StorybookClient } from "./providers/storybook";
 import type { FrameMeta } from "./providers/types";
 import type { StorybookOrigins } from "./storybook-origins";
 
-export type EmbedOpener = {
-  open(instanceId: string, kind: "storybook", target: string, title: string): EmbedView;
-};
 export type StoryFrameDeps = {
   client: StorybookClient;
   origins: StorybookOrigins;
-  embed: EmbedOpener;
+  embed: Pick<EmbedService, "open">;
 };
 type StoryRequest = { instanceId: string; key: StorybookFrameKey; url: string; refresh: boolean };
 

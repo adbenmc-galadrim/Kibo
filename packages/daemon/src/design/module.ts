@@ -15,7 +15,6 @@ import { createFigmaRest, type FigmaRest } from "./providers/figma-rest";
 import { createPenpot } from "./providers/penpot";
 import { createStorybook, type StorybookClient } from "./providers/storybook";
 import type { DesignProviderClient } from "./providers/types";
-import type { EmbedOpener } from "./story-frame";
 import { createStorybookOrigins, type StorybookOrigins } from "./storybook-origins";
 
 export type DesignModule = IntegrationModule & { gate: DesignGate; open: FrameService["open"] };
@@ -34,12 +33,6 @@ function figmaProvider(account: FigmaAccount, rest: FigmaRest, mcp: FigmaMcp): D
 }
 
 const logStorybook = (message: string) => console.warn(`[kibo-daemon] ${message}`);
-
-const EMBED_NOT_WIRED: EmbedOpener = {
-  open: () => {
-    throw new KiboError("INTERNAL", "embed relay not wired");
-  },
-};
 
 function storybookOrigins(host: IntegrationHost, client: StorybookClient): StorybookOrigins {
   return createStorybookOrigins({
@@ -99,7 +92,7 @@ export function designModule(kit: IntegrationKit, hub: McpHub): DesignModule {
     sandboxOrigin: () => host.sandboxOrigin(),
     now: host.now,
     events,
-    storybook: { client: storybook, origins, embed: EMBED_NOT_WIRED },
+    storybook: { client: storybook, origins, embed: kit.embed },
   });
   figmaAccount.start().catch((e) => events.log("figma", "error", `start failed: ${detailOf(e)}`));
   const changed = <T>(value: T): T => {
