@@ -130,7 +130,7 @@ Demande d'Adam du 2026-10-09 : un agent de gestion de projet par projet, dans un
 
 ## Phase 19 · Jeux itch.io et Storybook (v0.19.0-alpha.1)
 
-Plan : `2026-10-09-kibo-phase-19.md` · Spec : conception §25 (amende §6, §8, §11, §19, §21, §22.9, §23.4), composants §4.2 et §19.
+Plan : `2026-10-09-kibo-phase-19.md` (livrée) · Spec : conception §25 (amende §6, §8, §11, §19, §21, §22.9, §23.4), composants §4.2 et §19.
 
 Demande d'Adam du 2026-10-06, planifiée le 2026-10-09 après l'agent de projet ; toutes les décisions prises par le chef d'équipe (délégation d'Adam du 2026-10-09). Un seul mécanisme pour les deux fonctions : la **page relais** `GET /e/<jeton>` du port bac à sable, sans script, dont la CSP `frame-src` ne cite que l'origine vérifiée par le démon ; la CSP de l'interface ne change pas, un composant ne choisit jamais l'origine ni les attributs de l'iframe.
 
