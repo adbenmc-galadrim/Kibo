@@ -7,8 +7,7 @@ const PROVIDERS = { figma: "Figma", penpot: "Penpot", storybook: "Storybook" } a
 
 export const fr = {
   title: "Maquette",
-  empty:
-    "Colle l'URL d'un cadre Figma, d'un board Penpot ou d'une story Storybook dans les réglages du widget.",
+  empty: "Colle l'URL d'un cadre Figma ou d'un board Penpot dans les réglages du widget.",
   loading: "Chargement de la maquette…",
   retry: "Réessayer",
   stale: "Périmé",
