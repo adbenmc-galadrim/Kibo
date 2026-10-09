@@ -7,7 +7,8 @@ const PROVIDERS = { figma: "Figma", penpot: "Penpot", storybook: "Storybook" } a
 
 export const fr = {
   title: "Maquette",
-  empty: "Colle l'URL d'un cadre Figma ou d'un board Penpot dans les réglages du widget.",
+  empty:
+    "Colle l'URL d'un cadre Figma, d'un board Penpot ou d'une story Storybook dans les réglages du widget.",
   loading: "Chargement de la maquette…",
   retry: "Réessayer",
   stale: "Périmé",
@@ -25,5 +26,25 @@ export const fr = {
   },
   linked: "Tickets liés",
   noLinked: "Aucun ticket lié à ce cadre.",
+  noLinkedStory: "Aucun ticket lié à une story.",
   ticket: (key: string, title: string) => `${key} · ${title}`,
+  origins: {
+    trigger: (label: string) => `Storybook : ${label}`,
+    unreachable: "injoignable",
+  },
+  compare: {
+    open: "Comparer",
+    bar: "Comparaison",
+    reference: (label: string) => `Référence : ${label}`,
+    frame: (position: number, provider: string) => `Cadre ${position} (${provider})`,
+    mode: "Mode de comparaison",
+    side: "Côte à côte",
+    overlay: "Superposition",
+    top: (swapped: boolean) => (swapped ? "Story" : "Maquette"),
+    opacity: (top: string, value: number) => `${top} ${value} %`,
+    wipe: "Curseur de comparaison",
+    wipeValue: (value: number) => `Curseur ${value} %`,
+    swap: "Permuter",
+    close: "Fermer la comparaison",
+  },
 };
