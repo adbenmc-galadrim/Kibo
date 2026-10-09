@@ -4,6 +4,10 @@ import { ciModule } from "../ci/module";
 import { createCiPoller } from "../ci/poller";
 import type { ServedFile } from "../components/file-response";
 import { designModule } from "../design/module";
+import { createEmbedChecker } from "../embed/embed-check";
+import { createEmbedGate } from "../embed/embed-gate";
+import { createEmbedService } from "../embed/embed-service";
+import type { EmbedGate, EmbedService } from "../embed/types";
 import { createGithubApi, type GithubApi } from "../github/api";
 import { createGithubAccount, type GithubAccount } from "../github/auth";
 import { githubModule } from "../github/handlers";
@@ -31,7 +35,7 @@ import type {
   SecretStore,
 } from "./types";
 
-export type IntegrationFlags = { testOrigins: string[]; memorySecrets: boolean };
+export type IntegrationFlags = { testOrigins: string[]; memorySecrets: boolean; devOrigins?: string[] };
 export type IntegrationKit = {
   host: IntegrationHost;
   flags: IntegrationFlags;
@@ -42,6 +46,7 @@ export type IntegrationKit = {
   hooks: ComponentIntegrationHooks;
   net: IntegrationNet;
   github: { account: GithubAccount; api: GithubApi };
+  embed: EmbedService;
 };
 export type IntegrationNet = { fetch: IntegrationFetch; gate: RateLimitGate; aliases: Map<string, URL> };
 export type IntegrationModule = {
@@ -74,6 +79,8 @@ export function parseIntegrationFlags(values: {
 export type StartedIntegrations = IntegrationRpc & {
   secrets: SecretStore;
   design: { open(token: string): Promise<ServedFile | null> };
+  embed: EmbedGate;
+  relay: EmbedService["relay"];
 };
 
 function secretStoreFor(flags: IntegrationFlags, redactor: Redactor): SecretStore {
@@ -124,6 +131,17 @@ export function startIntegrations(
   });
   const secret: SecretResolver = (name) => (name === "github" ? account.token() : secrets.get(name));
   const mcpHub = createMcpHub({ host, secrets, events, redact: redactor.redact });
+  const embedService = createEmbedService({
+    now: host.now,
+    sandboxOrigin: () => host.sandboxOrigin(),
+    uiOrigins: () => host.uiOrigins(),
+    devOrigins: flags.devOrigins ?? [],
+    aliases,
+  });
+  const embedGate = createEmbedGate({
+    service: embedService,
+    checker: createEmbedChecker({ fetch: net.fetch, now: host.now, uiOrigins: () => host.uiOrigins() }),
+  });
   const kit: IntegrationKit = {
     host,
     flags,
@@ -138,9 +156,11 @@ export function startIntegrations(
       secret,
       ciRuns: (projectId) => ciPoller.runs(projectId, null),
       mcp: createMcpGate(mcpHub, host),
+      embed: embedGate,
     },
     net,
     github,
+    embed: embedService,
   };
   const design = designModule(kit, mcpHub);
   kit.hooks.design = design.gate;
@@ -159,5 +179,11 @@ export function startIntegrations(
     hooks: kit.hooks,
     redact: redactor.redact,
   });
-  return { ...rpc, secrets, design: { open: design.open } };
+  return {
+    ...rpc,
+    secrets,
+    design: { open: design.open },
+    embed: embedGate,
+    relay: (token) => embedService.relay(token),
+  };
 }

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { type CiRun, KiboError } from "@kibo/schema";
+import { type CiRun, ComponentManifest, type EmbedView, type Instance, KiboError } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import type { FilesService } from "../files/service";
 import type { ComponentIntegrationHooks, McpCallContext } from "../integrations/types";
@@ -42,6 +42,7 @@ function hooks(seen: unknown[]): ComponentIntegrationHooks {
     observe: () => {},
     secret: async () => null,
     design: null,
+    embed: null,
     ciRuns: async (projectId) => {
       seen.push(["ci", projectId]);
       return [ciRun];
@@ -141,11 +142,18 @@ test("design frames reach the design gate with the calling instance, or fail whe
         seen.push([ctx.projectId, ctx.instanceId, url, refresh]);
         return unused();
       },
-      storybooks: async () => unused(),
+      storybooks: async (ctx) => {
+        seen.push([ctx.projectId, ctx.instanceId, "storybooks"]);
+        return [];
+      },
     },
   });
   await expect(h.design("p", "i1", { kind: "design.frame", ...frame })).rejects.toThrow("unused");
-  expect(seen).toEqual([["p", "i1", frame.url, true]]);
+  expect(await h.design("p", "i1", { kind: "design.storybooks" })).toEqual([]);
+  expect(seen).toEqual([
+    ["p", "i1", frame.url, true],
+    ["p", "i1", "storybooks"],
+  ]);
   for (const integrations of [undefined, null, hooks([])])
     await expect(
       handlersWith(integrations).design("p", "i1", { kind: "design.frame", ...frame }),
@@ -163,4 +171,59 @@ test("delivering answers goes to the agents, and says so when they are not start
     }),
   });
   expect(await handlers.questions("p1", "t1")).toEqual({ sent: 2, runId: "r1" });
+});
+
+test("embedded frames reach the embed gate with the manifest of the calling instance", async () => {
+  const manifest = ComponentManifest.parse({
+    id: "itch",
+    version: "1.0.0",
+    kind: "both",
+    title: "Jeu itch.io",
+    reads: [],
+    writes: [],
+    capabilities: ["embed"],
+    embeds: ["itch.io"],
+  });
+  const instance: Instance = {
+    id: "i1",
+    pageId: "pg",
+    component: "itch@1.0.0",
+    layout: { x: 0, y: 0, w: 6, h: 4 },
+    config: {},
+    componentHash: null,
+  };
+  const view: EmbedView = {
+    url: "http://127.0.0.1:1/e/x",
+    kind: "game",
+    sandbox: "",
+    allow: "",
+    expiresAt: 1,
+    target: "https://itch.io/embed-upload/1",
+  };
+  const seen: unknown[] = [];
+  const h = createGateHandlers({
+    ...stubHandlerDeps,
+    manifestOf: async (ref) => {
+      seen.push(["manifest", ref]);
+      return manifest;
+    },
+    integrations: () => ({
+      ...hooks([]),
+      embed: {
+        open: async (ctx, url) => {
+          seen.push([ctx.projectId, ctx.instanceId, ctx.manifest.embeds, url]);
+          return view;
+        },
+      },
+    }),
+  });
+  expect(await h.embed("p", instance, view.target)).toEqual(view);
+  expect(seen).toEqual([
+    ["manifest", "itch@1.0.0"],
+    ["p", "i1", ["itch.io"], view.target],
+  ]);
+  for (const integrations of [undefined, null, hooks([])])
+    await expect(handlersWith(integrations).embed("p", instance, view.target)).rejects.toThrow(
+      "NOT_CONNECTED",
+    );
 });

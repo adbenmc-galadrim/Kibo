@@ -120,7 +120,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       sandboxOrigin: () => sandboxOrigin || null,
       uiPort: () => uiPort,
     }),
-    opts.integrations ?? NO_INTEGRATION_FLAGS,
+    { ...(opts.integrations ?? NO_INTEGRATION_FLAGS), devOrigins },
     redactor,
   );
   closers.push(service.attachIntegrations(integrations));
@@ -259,6 +259,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     },
     files: { open: (token) => components.files.open(token) },
     designs: { open: (token) => integrations.design.open(token) },
+    embeds: { relay: (token) => integrations.relay(token) },
   });
   front.push(() => sandbox.stop());
   sandboxOrigin = sandbox.url;

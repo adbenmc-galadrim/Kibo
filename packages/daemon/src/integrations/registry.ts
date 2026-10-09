@@ -21,6 +21,7 @@ export const NEUTRAL_HOOKS: ComponentIntegrationHooks = {
   secret: async () => null,
   mcp: null,
   design: null,
+  embed: null,
   ciRuns: null,
 };
 

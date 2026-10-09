@@ -32,7 +32,7 @@ export type NotesCall =
   | { kind: "list"; entity: "note" };
 export type McpCall = Extract<ComponentCall, { kind: `mcp.${string}` }>;
 export type AssetsCall = Extract<ComponentCall, { kind: "assets.list" | "assets.url" }>;
-export type DesignCall = Extract<ComponentCall, { kind: "design.frame" }>;
+export type DesignCall = Extract<ComponentCall, { kind: "design.frame" | "design.storybooks" }>;
 
 export type GateHandlers = {
   list(projectId: string, entity: Exclude<BuiltinEntityType, "note">): Promise<unknown>;
@@ -51,6 +51,7 @@ export type GateHandlers = {
   mcp(projectId: string, instanceId: string, call: McpCall): Promise<unknown>;
   assets(projectId: string, instanceId: string, call: AssetsCall): Promise<unknown>;
   design(projectId: string, instanceId: string, call: DesignCall): Promise<unknown>;
+  embed(projectId: string, instance: Instance, url: string): Promise<unknown>;
   config(projectId: string, instance: Instance, patch: Record<string, unknown>): Promise<null>;
   presence(projectId: string): Promise<PresencePeer[]>;
   sharing(projectId: string): Promise<ProjectSyncInfo>;
@@ -118,14 +119,14 @@ function dispatch(
     case "assets.url":
       return h.assets(projectId, inst.id, call);
     case "design.frame":
+    case "design.storybooks":
       return h.design(projectId, inst.id, call);
+    case "embed.open":
+      return h.embed(projectId, inst, call.url);
     case "config.set":
       return h.config(projectId, inst, call.patch);
     case "questions.deliver":
       return h.questions(projectId, call.ticketId);
-    case "embed.open":
-    case "design.storybooks":
-      throw new KiboError("INTERNAL", `${call.kind} is not wired`);
     default:
       return h.notes(projectId, call);
   }
@@ -149,6 +150,9 @@ function takeQuotas(quotas: Quotas, instanceId: string, ref: string, call: Compo
   }
   if (call.kind === "design.frame" && !quotas.take(instanceId, "design")) {
     throw new KiboError("RATE_LIMITED", `${ref} renders design frames too often`);
+  }
+  if (call.kind === "embed.open" && !quotas.take(instanceId, "embed")) {
+    throw new KiboError("RATE_LIMITED", `${ref} opens embedded frames too often`);
   }
 }
 

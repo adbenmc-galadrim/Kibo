@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
+import { createEmbedService } from "../embed/embed-service";
 import { migrateIntegrations } from "../integrations/db";
 import { createEventLog } from "../integrations/events";
 import { createMemorySecretStore } from "../integrations/memory-secret-store";
@@ -54,10 +55,18 @@ function rpc(wrap: (s: SecretStore) => SecretStore = (s) => s) {
       secret: async () => null,
       mcp: null,
       design: null,
+      embed: null,
       ciRuns: null,
     },
     net: { fetch, gate, aliases },
     github: { account, api },
+    embed: createEmbedService({
+      now: host.now,
+      sandboxOrigin: () => null,
+      uiOrigins: () => [],
+      devOrigins: [],
+      aliases,
+    }),
   };
   const m = githubModule(kit, kit.github);
   return createIntegrationRpc({

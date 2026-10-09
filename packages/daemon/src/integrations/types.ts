@@ -23,6 +23,7 @@ import type {
 import type { Notice } from "../agents/notifier";
 import type { DesignGate } from "../design/gate";
 import type { CommandEvent, CommandInterceptor, CommandMeta } from "../docs";
+import type { EmbedGate } from "../embed/types";
 import type { ProjectSettings } from "../notes/settings";
 
 export type { DesignGate } from "../design/gate";
@@ -128,5 +129,6 @@ export type ComponentIntegrationHooks = {
   secret: SecretResolver;
   mcp: McpComponentGate | null;
   design: DesignGate | null;
+  embed: EmbedGate | null;
   ciRuns: ((projectId: string) => Promise<CiRun[]>) | null;
 };

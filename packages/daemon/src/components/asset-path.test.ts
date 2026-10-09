@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { parseDesignPath, parseDraftAssetPath, parseFilePath } from "./asset-path";
+import { parseDesignPath, parseDraftAssetPath, parseEmbedPath, parseFilePath } from "./asset-path";
 
 const ID = "0b5c1f3e-7a51-4d2a-9c1e-2f0d6f1b8a11";
 const H = "c".repeat(64);
@@ -80,4 +80,21 @@ test("parseDesignPath refuses anything else", () => {
     `//d/${token}/frame.png`,
   ])
     expect(parseDesignPath(path)).toBeNull();
+});
+
+test("parseEmbedPath reads a relay token and nothing else", () => {
+  const token = "a".repeat(64);
+  expect(parseEmbedPath(`/e/${token}`)).toEqual({ token });
+  for (const path of [
+    `/e/${"A".repeat(64)}`,
+    `/e/${"a".repeat(63)}`,
+    `/e/${"a".repeat(65)}`,
+    `/e/${token}/`,
+    `/e/${token}/frame.html`,
+    `/f/${token}`,
+    `/e//${token}`,
+    "/e/",
+    "/e",
+  ])
+    expect(parseEmbedPath(path)).toBeNull();
 });

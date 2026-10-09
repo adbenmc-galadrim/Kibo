@@ -1,11 +1,13 @@
 import type { Capability, SandboxFile } from "@kibo/schema";
 import type { DraftAssets } from "../ai/draft-preview";
+import type { EmbedService } from "../embed/types";
 import {
   type AssetLookup,
   lookupAsset,
   parseAssetPath,
   parseDesignPath,
   parseDraftAssetPath,
+  parseEmbedPath,
   parseFilePath,
 } from "./asset-path";
 import { type FileOpener, fileResponse } from "./file-response";
@@ -25,6 +27,8 @@ const TYPES: Record<SandboxFile, string> = {
   "ui.css": "text/css; charset=utf-8",
 };
 
+const FRAMING: ReadonlySet<Capability> = new Set(["design", "embed"]);
+
 export function sandboxHeaders(
   uiPort: number,
   extraAncestors: readonly string[] = [],
@@ -33,10 +37,11 @@ export function sandboxHeaders(
   const ancestors = [`http://127.0.0.1:${uiPort}`, `http://localhost:${uiPort}`, ...extraAncestors].join(" ");
   const media = capabilities.includes("audio") ? "media-src 'self' blob: data:; " : "";
   const connect = capabilities.includes("assets") ? "'self'" : "'none'";
+  const frames = capabilities.some((c) => FRAMING.has(c)) ? "frame-src 'self'; " : "";
   return {
     "content-security-policy":
       "default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; " +
-      `${media}connect-src ${connect}; frame-ancestors ${ancestors}; base-uri 'none'; form-action 'none'`,
+      `${media}connect-src ${connect}; ${frames}frame-ancestors ${ancestors}; base-uri 'none'; form-action 'none'`,
     "x-content-type-options": "nosniff",
     "referrer-policy": "no-referrer",
     "cross-origin-resource-policy": "same-site",
@@ -52,6 +57,7 @@ export type SandboxServerOptions = {
   drafts?: DraftAssets;
   files?: FileOpener;
   designs?: FileOpener;
+  embeds?: Pick<EmbedService, "relay">;
 };
 
 const reason = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -89,11 +95,21 @@ export function startSandboxServer(opts: SandboxServerOptions): { url: string; p
       return plain("not found", 404);
     }
   };
+  const serveRelay = (token: string, method: string): Response => {
+    if (method !== "GET") return plain("method not allowed", 405);
+    const relay = opts.embeds?.relay(token) ?? null;
+    if (relay === null) return plain("not found", 404);
+    return new Response(relay.html, {
+      headers: { ...relay.headers, "content-type": "text/html; charset=utf-8" },
+    });
+  };
   const serve = (req: Request, port: number): Response | Promise<Response> => {
     if (![`127.0.0.1:${port}`, `localhost:${port}`].includes(req.headers.get("host") ?? "")) {
       return plain("forbidden host", 403);
     }
     const pathname = new URL(req.url).pathname;
+    const embed = parseEmbedPath(pathname);
+    if (embed) return serveRelay(embed.token, req.method);
     const project = parseFilePath(pathname);
     if (project) {
       if (req.method !== "GET" && req.method !== "HEAD") return plain("method not allowed", 405);
