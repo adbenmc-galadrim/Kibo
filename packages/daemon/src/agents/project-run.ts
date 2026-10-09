@@ -96,9 +96,3 @@ export function projectLaunch(input: {
     }),
   };
 }
-
-export const unwiredProjectTurns: ProjectTurnPort = {
-  prepare: async () => {
-    throw new KiboError("INTERNAL", "the project agent is not available yet");
-  },
-};

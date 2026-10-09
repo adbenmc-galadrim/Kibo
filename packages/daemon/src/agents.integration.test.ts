@@ -23,13 +23,18 @@ import {
 import { commit, git, cleanupTmp as removeRepos, repo } from "./agents/git-test-kit";
 import { defaultHookLauncher } from "./agents/hook-launcher";
 import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
-import { unwiredProjectTurns } from "./agents/project-run";
+import type { ProjectTurnPort } from "./agents/orchestrator-types";
 import { openRunStore, type RunStore } from "./agents/run-store";
 import { startServer } from "./server";
 import { createService } from "./service";
 import { openStore, type Store } from "./store";
 
 const TOKEN = "c".repeat(64);
+const noProjectTurns: ProjectTurnPort = {
+  prepare: async () => {
+    throw new Error("no project run in these tests");
+  },
+};
 type Stack = {
   home: string;
   store: Store;
@@ -70,7 +75,7 @@ function boot(scenario: FakeScenarioName): Stack {
     sampler: () => ({ cpu: 5, ram: 5 }),
     hostInfo: { cores: 8, ramGb: 16 },
     notify: () => {},
-    projectTurns: unwiredProjectTurns,
+    projectTurns: noProjectTurns,
     env: {
       PATH: process.env.PATH,
       HOME: process.env.HOME,

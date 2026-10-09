@@ -1,38 +1,48 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import type { ChangeMessage } from "@kibo/schema";
-import type { Orchestrator } from "../agents/orchestrator";
+import { PROJECT_AGENT_PROFILE_ID, type ProjectAgentSummary } from "@kibo/schema";
+import { runView } from "../questions/questions.test-helper";
 import { startProjectAgent } from "./bootstrap";
+import { type Harness, harness } from "./fakes.test-helper";
 
-const dirs: string[] = [];
+const open: Harness[] = [];
 afterEach(() => {
-  for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
+  for (const h of open.splice(0)) h.close();
 });
 
-test("the project agent attaches its summaries to the service and detaches on stop", () => {
-  const home = mkdtempSync(join(tmpdir(), "kibo-pa-boot-"));
-  dirs.push(home);
+function boot() {
+  const h = harness();
+  open.push(h);
   const attached: string[] = [];
-  const emitted: ChangeMessage[] = [];
-  const boot = startProjectAgent({
-    home,
+  const project = runView({ id: "p-run", projectId: h.project.id, ticketId: null, state: "running" });
+  h.agents.runs.push({ ...project, kind: "project", profileId: PROJECT_AGENT_PROFILE_ID });
+  const started = startProjectAgent({
+    home: h.dir,
     service: {
-      docs: { emit: (m: ChangeMessage) => emitted.push(m) },
-      deliverAnswers: () => ({ sent: 0, runId: null }),
-      attachProjectAgent(port) {
+      docs: h.service.docs,
+      agentData: h.service.agentData,
+      deliverAnswers: h.service.deliverAnswers,
+      attachProjectAgent(port: { summaries(): ProjectAgentSummary[] }) {
         attached.push(`attach:${port.summaries().length}`);
         return () => attached.push("detach");
       },
     },
-    orchestrator: (): Orchestrator => {
-      throw new Error("no orchestrator in this test");
-    },
+    notes: h.notes,
+    settings: { get: () => null },
+    orchestrator: () => ({ ...h.agents, hooks: { verify: () => true, receive: () => null } }),
     notify: () => {},
   });
-  expect(() => boot.agent.view("p1")).toThrow("the project agent is not available yet");
-  boot.stop();
+  return { h, started, attached };
+}
+
+test("the project agent is wired to the real project data and tools, and detaches on stop", async () => {
+  const { h, started, attached } = boot();
+  h.ticket("Récepteur de hooks");
+  expect(started.agent.view(h.project.id)).toMatchObject({ session: null, batches: [], past: [] });
+  const sheet = await started.agent.mcp.call("p-run", { tool: "get_ticket", input: { key: "EMIS-1" } });
+  expect(JSON.parse(sheet)).toMatchObject({ key: "EMIS-1", title: "Récepteur de hooks", statusId: "todo" });
+  await expect(started.agent.mcp.call("p-run", { tool: "propose_batch", input: {} })).rejects.toThrow(
+    "INVALID_INPUT",
+  );
+  started.stop();
   expect(attached).toEqual(["attach:0", "detach"]);
-  expect(emitted).toEqual([]);
 });

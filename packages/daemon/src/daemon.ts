@@ -1,6 +1,6 @@
 import { homedir } from "node:os";
 import { osSandbox, type Toolchain } from "@kibo/devkit";
-import { BACKUP_TICK_MS, type HostLoad, isTerminal, KiboError, type Session, ticketRuns } from "@kibo/schema";
+import { BACKUP_TICK_MS, type HostLoad, isTerminal, type Session, ticketRuns } from "@kibo/schema";
 import { defaultHookLauncher } from "./agents/hook-launcher";
 import { createLoadSampler, readHostInfo } from "./agents/host-load";
 import type { Notice } from "./agents/notifier";
@@ -126,13 +126,6 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
   closers.push(() => collab.stop());
   let agents: Orchestrator | null = null;
-  const projectAgent = startProjectAgent({
-    home: opts.home,
-    service,
-    orchestrator: () => ready(agents, "INTERNAL", "agents are not ready"),
-    notify: opts.notify ?? (() => {}),
-  });
-  closers.push(() => projectAgent.stop());
   const components = createComponentsService({
     home: opts.home,
     toolchain: opts.toolchain,
@@ -156,6 +149,15 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   closers.push(service.attachComponents(components));
   closers.push(() => components.stop());
   await components.start();
+  const projectAgent = startProjectAgent({
+    home: opts.home,
+    service,
+    notes: components.notes,
+    settings: createProjectSettings(store.db),
+    orchestrator: () => ready(agents, "INTERNAL", "agents are not ready"),
+    notify: opts.notify ?? (() => {}),
+  });
+  closers.push(() => projectAgent.stop());
   const market = await startMarket({
     home: opts.home,
     toolchain: opts.toolchain,
@@ -196,10 +198,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   closers.push(() => code.stop());
   const pairingCodes = new PairingCodes(Date.now);
   let remote: RemoteAccess | null = null;
-  const remoteAccess = () => {
-    if (!remote) throw new KiboError("INTERNAL", "remote access is not initialised");
-    return remote;
-  };
+  const remoteAccess = () => ready(remote, "INTERNAL", "remote access is not initialised");
   const app = startAppDiagnostics({
     home: opts.home,
     userHome: opts.userHome ?? homedir(),
