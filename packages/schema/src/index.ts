@@ -46,6 +46,7 @@ export * from "./permissions";
 export * from "./phase14-rpc";
 export * from "./project";
 export * from "./project-agent";
+export * from "./project-agent-fingerprint";
 export * from "./project-agent-rpc";
 export * from "./project-agent-tool-specs";
 export * from "./project-agent-tools";
