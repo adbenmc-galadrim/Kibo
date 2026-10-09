@@ -127,7 +127,7 @@ export function ProfileSheet({ profile, config, hostSlots, onClose }: Props) {
           <SheetHeader>
             <SheetTitle>{fr.profile.editTitle(profileLabel(profile))}</SheetTitle>
           </SheetHeader>
-          <SystemProfileFields profile={profile} onSaved={onClose} />
+          <SystemProfileFields profile={profile} config={config} onSaved={onClose} />
         </SheetContent>
       </Sheet>
     );

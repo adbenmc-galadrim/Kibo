@@ -70,6 +70,8 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(help\/ShortcutsDialog\.tsx|settings\/(ShortcutList\.tsx|shortcuts\.ts)|report\/[A-Za-z-]+\.tsx?|i18n\/fr-report\.ts)$/,
   /\/packages\/ui\/src\/(backups\/[A-Za-z-]+\.tsx?|i18n\/fr-backups\.ts|desktop\/reveal\.ts)$/,
   /\/packages\/ui\/src\/(tutorial\/[A-Za-z-]+\.tsx?|i18n\/fr-tutorial\.ts)$/,
+  /\/packages\/ui\/src\/(project-agent\/[A-Za-z-]+\.tsx?|i18n\/fr-project-agent\.ts)$/,
+  /\/packages\/ui\/src\/(pages\/(PendingTrust|OtherVersionMenu)|shell\/CreationsIndicator)\.tsx$/,
   /\/packages\/schema\/src\/(design-url|config-validate|design-problem)\.ts$/,
   /\/packages\/ui\/src\/(i18n\/fr-design\.ts|dialogs\/integrations\/((FigmaConnectDialog|PenpotConnectDialog)\.tsx|design-problem\.ts))$/,
   /\/packages\/ui\/src\/(shell\/sheet\/((DesignSection|DesignProperty)\.tsx|design-refs\.ts)|dialogs\/FrameField\.tsx)$/,

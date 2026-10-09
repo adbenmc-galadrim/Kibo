@@ -13,9 +13,8 @@ import { fr } from "../i18n/fr";
 import { displayName, inboxMeta } from "../lib/inbox";
 import { canEdit } from "../state/access";
 import { Breadcrumb, crumbsFor } from "./Breadcrumb";
-import { CreationsIndicator } from "./CreationsIndicator";
 import type { HelpDialog } from "./help-dialogs";
-import { ScreenActions, ShareButton } from "./lazy-screens";
+import { CreationsIndicator, ProjectAgentButton, ScreenActions, ShareButton } from "./lazy-screens";
 import { PageActionsSlot } from "./page-actions";
 import { RunHistoryButton } from "./RunHistoryButton";
 import { UserMenu } from "./UserMenu";
@@ -28,6 +27,7 @@ type Props = {
   branch: string | null;
   gitError: string | null;
   agents: AgentsState | null;
+  agentPanel: { available: boolean; open: boolean; toggle(): void };
   viewer: string;
   notifications: Session["notifications"];
   now: number;
@@ -49,6 +49,7 @@ export function ShellHeader({
   branch,
   gitError,
   agents,
+  agentPanel,
   viewer,
   notifications,
   now,
@@ -75,6 +76,14 @@ export function ShellHeader({
         </p>
       )}
       <ScreenActions screen={screen} agents={agents} onNewProfile={onNewProfile} />
+      {project && agentPanel.available && (
+        <ProjectAgentButton
+          projectId={project.meta.id}
+          agents={agents}
+          open={agentPanel.open}
+          onToggle={agentPanel.toggle}
+        />
+      )}
       {project && !isInbox(project.meta.id) && <ShareButton onShare={onShare} />}
       <Button
         size="sm"

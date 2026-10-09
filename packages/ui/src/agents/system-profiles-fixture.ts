@@ -18,4 +18,5 @@ export const systemProfilesFixture: AgentProfile[] = [
   systemProfile("assistant", "default"),
   systemProfile("generateur", "acceptEdits"),
   systemProfile("demo", "acceptEdits"),
+  systemProfile("project-agent", "default"),
 ];

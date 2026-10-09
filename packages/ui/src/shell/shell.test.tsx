@@ -172,6 +172,8 @@ mock.module("../api", () =>
         if (req.method === "getSyncStatus") return Promise.resolve(syncStatus);
         if (req.method === "getPresence") return Promise.resolve([]);
         if (req.method === "setPresence") return Promise.resolve(null);
+        if (req.method === "getProjectAgent")
+          return Promise.resolve({ session: null, run: null, batches: [], past: [], memoryPath: "m.md" });
         saved.push(req);
         if (req.method === "command" && req.command.method === "addPage")
           return Promise.resolve({ id: "9@1", title: req.command.title, kind: "view", parentId: null });
@@ -202,6 +204,7 @@ mock.module("../api", () =>
       subscribe: () => () => {},
       subscribeEvents: () => () => {},
       subscribeAi: () => () => {},
+      subscribeTopic: () => () => {},
       subscribeIntegrations: () => () => undefined,
       subscribeCode: (l: (e: CodeEvent) => void) => {
         codeListeners.add(l);
@@ -224,6 +227,7 @@ const crumbs = () => within(screen.getByRole("navigation", { name: "Fil d'Ariane
 
 beforeEach(() => {
   syncStatus = unconfigured;
+  localStorage.removeItem("kibo.projectAgent.open");
   saved.length = 0;
   code.length = 0;
   location.hash = "";
@@ -568,4 +572,33 @@ test("the header and the project menu open the share dialog", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Actions de Portfolio" }));
   await userEvent.click(await screen.findByRole("menuitem", { name: "Partager" }));
   expect(await screen.findByRole("dialog", { name: "Partager « Portfolio »" })).toBeTruthy();
+});
+
+test("the project agent opens from the header and ⌘J, follows the project pages and closes without project", async () => {
+  renderShell();
+  await go("#/p/p1/1%401");
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Agent de projet" }));
+  expect(await screen.findByRole("dialog", { name: "Agent de projet · Kibo" })).toBeTruthy();
+  await go("#/p/p1/");
+  expect(screen.getByRole("dialog", { name: "Agent de projet · Kibo" })).toBeTruthy();
+  fireEvent.keyDown(window, { key: "j", metaKey: true });
+  fireEvent.keyDown(window, { key: "j", ctrlKey: true });
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Agent de projet · Kibo" })).toBeNull());
+  fireEvent.keyDown(window, { key: "j", metaKey: isMac(), ctrlKey: !isMac() });
+  expect(await screen.findByRole("dialog", { name: "Agent de projet · Kibo" })).toBeTruthy();
+  await go("#/");
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: /^Agent de projet/ })).toBeNull());
+  expect(screen.queryByRole("button", { name: "Agent de projet" })).toBeNull();
+});
+
+test("a read-only project has no project agent: no button, ⌘J does nothing", async () => {
+  renderShell();
+  await go("#/p/p3/");
+  await screen.findByText("Lecture seule — tu es lecteur de ce projet.");
+  expect(screen.queryByRole("button", { name: /^Agent de projet/ })).toBeNull();
+  fireEvent.keyDown(window, { key: "j", metaKey: isMac(), ctrlKey: !isMac() });
+  await act(async () => {});
+  expect(screen.queryByRole("dialog", { name: /^Agent de projet/ })).toBeNull();
+  expect(localStorage.getItem("kibo.projectAgent.open")).toBeNull();
 });

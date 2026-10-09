@@ -270,6 +270,24 @@ describe("bundle report", () => {
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });
 
+  test("the project agent, the pending trust screen and the creations indicator are forbidden in the entry", () => {
+    const paths = [
+      "/x/packages/ui/src/project-agent/ProjectAgentButton.tsx",
+      "/x/packages/ui/src/project-agent/ProjectAgentPanel.tsx",
+      "/x/packages/ui/src/project-agent/BatchCard.tsx",
+      "/x/packages/ui/src/project-agent/conversation.ts",
+      "/x/packages/ui/src/project-agent/use-project-agent.ts",
+      "/x/packages/ui/src/i18n/fr-project-agent.ts",
+      "/x/packages/ui/src/pages/PendingTrust.tsx",
+      "/x/packages/ui/src/pages/OtherVersionMenu.tsx",
+      "/x/packages/ui/src/shell/CreationsIndicator.tsx",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    expect(
+      FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/shell/use-project-agent-panel.ts")),
+    ).toBe(false);
+  });
+
   test("the whole tutorial and its texts are forbidden in the entry", () => {
     const paths = [
       "/x/packages/ui/src/tutorial/TutorialSlot.tsx",

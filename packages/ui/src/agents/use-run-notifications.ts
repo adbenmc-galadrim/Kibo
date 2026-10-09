@@ -25,7 +25,15 @@ export function runNotices(previous: Map<string, RunState>, runs: RunView[]): Ru
   });
 }
 
-type Seen = { states: Map<string, RunState>; questions: RunQuestions[] };
+export function batchNotices(previous: Map<string, string | null>, state: AgentsState): RunNotice[] {
+  return state.projectAgents.flatMap((p): RunNotice[] => {
+    if (p.pendingBatchId === null || previous.get(p.projectId) === p.pendingBatchId) return [];
+    const run = state.runs.find((r) => r.id === p.runId);
+    return [{ title: fr.notify.batch, body: run?.ticketTitle ?? "" }];
+  });
+}
+
+type Seen = { states: Map<string, RunState>; questions: RunQuestions[]; batches: Map<string, string | null> };
 
 export function useRunNotifications(state: AgentsState | null, enabled: boolean): void {
   const previous = useRef<Seen | null>(null);
@@ -35,12 +43,14 @@ export function useRunNotifications(state: AgentsState | null, enabled: boolean)
     previous.current = {
       states: new Map(state.runs.map((r) => [r.id, r.state])),
       questions: state.questions,
+      batches: new Map(state.projectAgents.map((p) => [p.projectId, p.pendingBatchId])),
     };
     if (!before || !enabled || typeof Notification === "undefined" || Notification.permission !== "granted")
       return;
     const notices = [
       ...runNotices(before.states, state.runs),
       ...questionNotices(before.questions, state.questions, state.runs),
+      ...batchNotices(before.batches, state),
     ];
     for (const notice of notices) {
       const shown = new Notification(notice.title, { body: notice.body });

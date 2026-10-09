@@ -28,7 +28,7 @@ import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
 import { helpPatch } from "./help-dialogs";
 import { CommandPalette, TutorialSlot } from "./lazy-dialogs";
-import { ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
+import { ProjectAgentPanel, ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
 import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
 import type { ShellProps } from "./Shell";
@@ -38,6 +38,7 @@ import { fileTabOpener, paletteActionHandler } from "./shell-actions";
 import { useAppHelp } from "./use-app-help";
 import { useOpenView, useSnapshotLookup } from "./use-open-view";
 import { useOpened } from "./use-opened";
+import { useProjectAgentPanel } from "./use-project-agent-panel";
 import { anyDialogOpen, useShellDialogs } from "./use-shell-dialogs";
 import { useWorkspaceSnapshots } from "./use-workspace-snapshots";
 import { inTauri, openWindow } from "./workspace-actions";
@@ -59,6 +60,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   const git = useProjectGit(project?.meta.id ?? null, project?.meta.folder ?? null);
   const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = useShellDialogs();
   const paletteOpened = useOpened(palette !== null);
+  const agentPanel = useProjectAgentPanel(project);
   useAppHelp(set);
   const editRequests = useRef(new Set<string>());
   const projectRef = useRef(project);
@@ -112,6 +114,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     if (s.kind === "activate") return tabs.dispatch({ type: "activateIndex", index: s.index });
     if (s.kind === "reopen") return tabs.reopen();
     if (s.kind === "help") return set(helpPatch("shortcutsHelp"));
+    if (s.kind === "projectAgent") return agentPanel.toggle();
     const id = tabs.state.activeId;
     if (!id) return;
     if (s.kind === "close") tabs.dispatch({ type: "close", id });
@@ -197,6 +200,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                   branch={branch}
                   gitError={git.error}
                   agents={agents}
+                  agentPanel={agentPanel}
                   viewer={viewer}
                   notifications={notifications}
                   now={now}
@@ -257,6 +261,14 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                   onOpenFile={(ref) => set({ preview: ref })}
                 />
               </SidebarInset>
+              {agentPanel.opened && project && (
+                <ProjectAgentPanel
+                  key={project.meta.id}
+                  open={agentPanel.open}
+                  project={project}
+                  onClose={agentPanel.close}
+                />
+              )}
               <ShellDialogs
                 state={dialogs}
                 set={set}

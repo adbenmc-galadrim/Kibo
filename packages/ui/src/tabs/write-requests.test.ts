@@ -69,3 +69,14 @@ test("delivering answers to the agent is a write of the project, from the drawer
     }),
   ).toBe(true);
 });
+
+test("project agent messages, decisions and resets are writes, reading the agent is not", () => {
+  expect(isProjectWrite({ method: "sendProjectAgentMessage", projectId: "p1", text: "Où en est-on ?" })).toBe(
+    true,
+  );
+  expect(isProjectWrite({ method: "decideBatch", projectId: "p1", batchId: "b1", decision: "apply" })).toBe(
+    true,
+  );
+  expect(isProjectWrite({ method: "resetProjectAgent", projectId: "p1" })).toBe(true);
+  expect(isProjectWrite({ method: "getProjectAgent", projectId: "p1" })).toBe(false);
+});

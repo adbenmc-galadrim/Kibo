@@ -15,6 +15,7 @@ export const frShortcuts = {
     lastTab: "Dernier onglet",
     togglePin: "Épingler ou détacher l'onglet",
     help: "Aide des raccourcis",
+    projectAgent: "Agent de projet",
     openSelection: "Ouvrir la sélection",
     openInSheet: "Ouvrir un ticket dans le Sheet",
     nextFilter: "Filtre suivant (Tout, Tickets, Pages…)",

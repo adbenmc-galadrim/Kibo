@@ -3,7 +3,7 @@ import type { AgentsState, AiEvent, ComponentDraft, RpcRequest, TabTarget } from
 import { SidebarProvider } from "@kibo/sdk/ui/sidebar";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { agentsFixture, NOW, runFixture } from "../agents/fixtures";
+import { agentsFixture, kiboProject, NOW, runFixture } from "../agents/fixtures";
 import { draftFixture } from "../ai/draft-fixtures";
 import { apiMock } from "../api-mock";
 
@@ -46,6 +46,7 @@ function header(onOpen: (t: TabTarget) => void = () => {}) {
         branch={null}
         gitError={null}
         agents={agents()}
+        agentPanel={{ available: false, open: false, toggle: () => {} }}
         viewer="adam"
         notifications="browser"
         now={NOW}
@@ -93,4 +94,44 @@ test("the indicator follows draft.changed and disappears once every creation is 
     for (const l of aiListeners) l({ type: "draft.changed", draftId: review.id, status: "done" });
   });
   await waitFor(() => expect(screen.queryByRole("button", { name: /^Créations/ })).toBeNull());
+});
+
+test("the project agent button sits before Partager and carries a dot while a batch waits", async () => {
+  const toggled: string[] = [];
+  const waiting = (pendingBatchId: string | null): AgentsState => ({
+    ...agents(),
+    projectAgents: [{ projectId: "kibo", runId: "pa1", state: "done", pendingBatchId }],
+  });
+  const props = (state: AgentsState) => (
+    <SidebarProvider>
+      <ShellHeader
+        active={{ kind: "project", projectId: "kibo" }}
+        screen={null}
+        project={kiboProject()}
+        ticketProject={kiboProject()}
+        branch={null}
+        gitError={null}
+        agents={state}
+        agentPanel={{ available: true, open: false, toggle: () => toggled.push("toggle") }}
+        viewer="adam"
+        notifications="browser"
+        now={NOW}
+        onNewProfile={() => {}}
+        onNewTicket={() => {}}
+        onShare={() => {}}
+        onOpenRun={() => {}}
+        onOpen={() => {}}
+        onHelp={() => {}}
+      />
+    </SidebarProvider>
+  );
+  const view = render(props(waiting(null)));
+  const button = await screen.findByRole("button", { name: "Agent de projet" });
+  expect(button.getAttribute("aria-pressed")).toBe("false");
+  const share = await screen.findByRole("button", { name: "Partager" });
+  expect(button.compareDocumentPosition(share) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  await userEvent.setup().click(button);
+  expect(toggled).toEqual(["toggle"]);
+  view.rerender(props(waiting("b1")));
+  expect(screen.getByRole("button", { name: "Agent de projet · Un lot attend ta validation" })).toBeTruthy();
 });

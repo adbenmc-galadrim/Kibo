@@ -165,3 +165,42 @@ test("the generateur sheet keeps its parallel choice and no demo mention", async
   expect(sheet().getByRole("combobox", { name: "Runs en parallèle (profil)" })).toBeTruthy();
   expect(sheet().queryByText(/^Sans effet/)).toBeNull();
 });
+
+test("the project agent profile is named, keeps its model choice, a fixed parallel run and its guidelines", async () => {
+  const withGuideline = {
+    ...config(),
+    guidelines: [
+      {
+        id: "g-pa",
+        owner: { scope: "profile" as const, profileId: "project-agent" },
+        path: "chef-de-projet.md",
+        content: "Propose des lots courts.",
+      },
+    ],
+  };
+  render(
+    <AgentsPage
+      state={agentsFixture()}
+      config={withGuideline}
+      projects={projectsFixture}
+      now={NOW}
+      onOpenRun={() => {}}
+    />,
+  );
+  const card = within(screen.getByRole("article", { name: "Agent de projet" }));
+  expect(card.getByText("Système")).toBeTruthy();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Modifier le profil Agent de projet" }));
+  expect(sheet().getByText("Profil Agent de projet")).toBeTruthy();
+  expect(sheet().getByRole("combobox", { name: "Modèle" })).toBeTruthy();
+  expect(sheet().queryByRole("combobox", { name: "Runs en parallèle (profil)" })).toBeNull();
+  expect(sheet().getByText("1")).toBeTruthy();
+  expect(sheet().getByText("Consignes : guidelines du profil")).toBeTruthy();
+  expect(sheet().getByText("chef-de-projet.md")).toBeTruthy();
+});
+
+test("other system profiles show no guidelines", async () => {
+  show();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Modifier le profil assistant" }));
+  expect(sheet().queryByText("Consignes : guidelines du profil")).toBeNull();
+});

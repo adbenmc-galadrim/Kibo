@@ -310,3 +310,8 @@ test("the window port ignores other senders and invalid messages", () => {
   );
   expect(seen).toEqual([{ kibo: 1, type: "changed" }]);
 });
+
+test("mod+J is relayed so the project agent opens from inside a frame", () => {
+  expect(comboOf(new KeyboardEvent("keydown", { key: "j", metaKey: true }))).toBe("mod+j");
+  expect(comboOf(new KeyboardEvent("keydown", { key: "J", ctrlKey: true }))).toBe("mod+j");
+});
