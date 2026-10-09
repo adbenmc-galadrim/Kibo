@@ -146,3 +146,32 @@ export function recordMcpCalls(callsFile: string, calls: readonly McpCallLog[]):
   const last = z.record(z.string(), z.unknown()).parse(JSON.parse(lines.pop() ?? "{}"));
   writeFileSync(callsFile, `${[...lines, JSON.stringify({ ...last, mcp: calls })].join("\n")}\n`);
 }
+
+const PROFILE_REF = /^\{\{profile:(.+)\}\}$/;
+const ListedProfiles = z.array(z.object({ id: z.string(), name: z.string() }));
+
+function profileId(name: string, calls: readonly McpCallLog[]): string {
+  const listed = [...calls].reverse().find((c) => c.tool === "list_profiles" && !c.isError);
+  if (!listed) throw new Error(`no list_profiles reply to resolve profile ${name}`);
+  const profile = ListedProfiles.parse(JSON.parse(listed.text)).find((p) => p.name === name);
+  if (!profile) throw new Error(`no profile named ${name}`);
+  return profile.id;
+}
+
+function bindValue(value: unknown, calls: readonly McpCallLog[]): unknown {
+  if (typeof value === "string") {
+    const name = PROFILE_REF.exec(value)?.[1];
+    return name === undefined ? value : profileId(name, calls);
+  }
+  if (Array.isArray(value)) return value.map((v) => bindValue(v, calls));
+  if (typeof value === "object" && value !== null)
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, bindValue(v, calls)]));
+  return value;
+}
+
+export function bindProfiles(
+  input: Record<string, unknown>,
+  calls: readonly McpCallLog[],
+): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(input).map(([k, v]) => [k, bindValue(v, calls)]));
+}

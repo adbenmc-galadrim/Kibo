@@ -1,0 +1,40 @@
+{
+  "turns": [
+    {
+      "steps": [
+        {
+          "mcp": "propose_batch",
+          "input": {
+            "summary": "Renommer le récepteur",
+            "actions": [
+              {
+                "id": 1,
+                "why": "Titre plus clair.",
+                "type": "updateTicket",
+                "ticket": "KIB-999",
+                "title": "Récepteur de hooks"
+              }
+            ]
+          }
+        },
+        {
+          "mcp": "propose_batch",
+          "input": {
+            "summary": "Renommer le récepteur",
+            "actions": [
+              {
+                "id": 1,
+                "why": "Titre plus clair.",
+                "type": "updateTicket",
+                "ticket": "KIB-1",
+                "title": "Récepteur de hooks"
+              }
+            ]
+          }
+        }
+      ],
+      "result": "Lot corrigé.",
+      "tokens": 700
+    }
+  ]
+}

@@ -13,8 +13,8 @@ import {
   resolveStepInput,
   runWriteStep,
 } from "./fake-claude-ai";
-import { callMcpTool, type McpCallLog, mcpServerFrom, recordMcpCalls } from "./fake-claude-mcp";
-import { FakeScenario, type FakeStep, scenarioFor } from "./fake-claude-scenario";
+import { bindProfiles, callMcpTool, type McpCallLog, mcpServerFrom, recordMcpCalls } from "./fake-claude-mcp";
+import { FakeScenario, type FakeStep, turnScenario } from "./fake-claude-scenario";
 
 const Settings = z.object({
   hooks: z
@@ -104,13 +104,13 @@ async function main(): Promise<number> {
   appendFileSync(callsFile, `${JSON.stringify(call)}\n`);
   const turnIndex = readFileSync(callsFile, "utf8").trim().split("\n").length - 1;
   const chosenFile = join(stateDir, `${sessionId}.scenario`);
-  const chosen = scenarioFor(
+  const chosen = turnScenario(
     scenarioFile,
     prompt,
     existsSync(chosenFile) ? readFileSync(chosenFile, "utf8") : null,
   );
-  writeFileSync(chosenFile, chosen);
-  const scenario = FakeScenario.parse(JSON.parse(readFileSync(chosen, "utf8")));
+  writeFileSync(chosenFile, chosen.session);
+  const scenario = FakeScenario.parse(JSON.parse(readFileSync(chosen.turn, "utf8")));
   const turn = scenario.turns[Math.min(turnIndex, scenario.turns.length - 1)];
   if (!turn) return fail("empty scenario", 2);
 
@@ -155,14 +155,14 @@ async function main(): Promise<number> {
   const play = async (step: FakeStep) => {
     if ("mcp" in step) {
       const server = mcpServerFrom(argv);
-      const call = { tool_name: mcpToolName(step.mcp), tool_input: step.input };
+      const call = { tool_name: mcpToolName(step.mcp), tool_input: bindProfiles(step.input, mcpCalls) };
       const refused = denied(await runHooks("PreToolUse", call));
-      appendToolUse(stateDir, sessionId, { tool: call.tool_name, input: step.input, denied: refused });
+      appendToolUse(stateDir, sessionId, { tool: call.tool_name, input: call.tool_input, denied: refused });
       if (refused) {
         denials.push(call.tool_name);
         return;
       }
-      const reply = await callMcpTool(server, step.mcp, step.input);
+      const reply = await callMcpTool(server, step.mcp, call.tool_input);
       mcpCalls.push({ tool: step.mcp, ...reply });
       await runHooks("PostToolUse", { ...call, tool_response: [{ type: "text", text: reply.text }] });
       return;

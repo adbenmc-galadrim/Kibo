@@ -32,6 +32,7 @@ export type FakeScenario = z.infer<typeof FakeScenario>;
 export const FakeRoutes = z.object({
   routes: z.array(z.object({ prompt: z.string().min(1), scenario: z.string().min(1) })),
   fallback: z.string().min(1),
+  perTurn: z.boolean().default(false),
 });
 
 export function scenarioFor(file: string, prompt: string, remembered: string | null): string {
@@ -40,6 +41,21 @@ export function scenarioFor(file: string, prompt: string, remembered: string | n
   if (!routes.success) return file;
   const route = routes.data.routes.find((r) => prompt.includes(r.prompt));
   return resolve(dirname(file), route?.scenario ?? routes.data.fallback);
+}
+
+export function turnScenario(
+  file: string,
+  prompt: string,
+  remembered: string | null,
+): { turn: string; session: string } {
+  const routes = FakeRoutes.safeParse(JSON.parse(readFileSync(file, "utf8")));
+  if (!routes.success || !routes.data.perTurn) {
+    const chosen = scenarioFor(file, prompt, remembered);
+    return { turn: chosen, session: chosen };
+  }
+  const session = remembered ?? resolve(dirname(file), routes.data.fallback);
+  const route = routes.data.routes.find((r) => prompt.includes(r.prompt));
+  return { turn: route ? resolve(dirname(file), route.scenario) : session, session };
 }
 
 export const FakeCall = z.object({
