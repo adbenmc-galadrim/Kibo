@@ -1225,9 +1225,26 @@ Version **`0.19.0-alpha.1`**, rapport `docs/superpowers/rapports/<date>-jalon-v0
 - La transcription n'est lue que pour un run du démon, à un chemin vérifié (§26.2) ; jamais envoyée ni synchronisée ; seuls le plan et le compte rendu (texte écrit par l'agent pour être lu) partent dans le CRDT. `ticket_progress` n'écrit que sur le ticket du run (le projet et le ticket sont imposés par le démon).
 - Tests sans token : unitaires (analyse de transcription sur des fichiers d'exemple, dont formats inconnus et lignes tronquées ; libellés ; masquage, propriétés fast-check ; plan et compte rendu ; comparaison de fichiers ; rappels une seule fois) ; intégration (faux `claude` qui écrit une transcription et appelle `ticket_progress`) ; E2E (barre cliquable et redimensionnable, volet, onglet Activité dans les deux largeurs, mention → carte → volet → page, page Questions filtrée, export, réponse collée), sombre et clair.
 
-### 26.8 Jalon
+### 26.8 Tickets démarrables (demande d'Adam du 2026-10-09)
 
-Version **`0.20.0-alpha.1`**, rapport `docs/superpowers/rapports/<date>-jalon-v0.20.md`, tag posé par le chef d'équipe après sa vérification de bout en bout sur un vrai run. Écrans Penpot : reprendre la page 28 (P1 à P6) en écrans numérotés **183** (barre), **184** (volet), **185** et **185b** (Activité large et étroite), **186** à **186c** (mention : carte, volet, page), **187** à **187c** (Questions : page, export, réponse collée, destinataires).
+- **Demande** : « un statut démarrable, c'est-à-dire qu'aucune dépendance bloquante n'existe et que la conception peut démarrer. » **Décision** (recommandation acceptée par Adam) : un **état calculé**, pas une colonne du workflow (un statut se déplace à la main, « démarrable » se vérifie ; calculé, il est toujours juste, zéro token).
+- **Règle** (pure, `@kibo/schema`, partagée par le démon, l'interface et l'agent de projet) : un ticket est démarrable si son statut est dans la catégorie « pas commencé » (Backlog, À faire, ou tout statut ajouté avant le premier statut « en cours » du workflow), si tous les tickets qui le bloquent (`blocks`) sont dans un statut final, si aucune **question bloquante** n'est ouverte sur lui, et si aucun run n'est actif sur lui (en file, en cours, en attente). `TicketView.startable: boolean`, dérivé dans `readProject` comme `openQuestions`.
+- **Interface** : pastille « Démarrable » (neutre, zinc) sur les cartes du Kanban et dans Tickets ; filtre « Démarrables » dans Kanban, Tickets et Graphe ; l'agent de projet le reçoit dans `list_tickets` et l'instantané.
+
+### 26.9 Graphe lisible (demande d'Adam du 2026-10-09, amende §22.1 et composants §8.1)
+
+- **Constat** : sur Emis (projet moyen), le graphe est illisible : tous les tickets terminés sont dessinés, cartes de même poids à tout zoom, liens redondants empilés, rien ne guide l'œil ; la minimap pouvait être sélectionnée (corrigé en phase 19).
+- **Par défaut** (recommandation acceptée par Adam) :
+  - **colonnes par vague** : colonne 1 = tickets démarrables (§26.8) et en cours ; colonne n+1 = ce que la colonne n débloque ; le graphe se lit comme un ordre de démarrage, de gauche à droite ;
+  - **terminés repliés** : masqués par défaut, bouton « Afficher les terminés (n) » ;
+  - **liens réduits** : un lien impliqué par un chemin (A→C quand A→B→C) n'est pas tracé (réduction transitive), il apparaît au survol de A ou C ;
+  - **mode focus** : un clic sur un ticket montre ses bloqueurs et ce qu'il débloque sur deux niveaux, le reste s'estompe ; Échap sort.
+- **En option** (menu « Affichage ») : **regroupement par étiquette** (préfixe au choix, ex. `chapitre:`) en cadres repliables, un cadre replié = un nœud « C2 · 8 tickets » ; **zoom sémantique** (de loin : clé et pastille ; de près : titre et étiquettes).
+- Écrans Penpot à dessiner avec les données d'Emis (phase 20) : **188** (vagues, terminés repliés), **188b** (focus), **188c** (regroupement par étiquette), **188d** (zoom éloigné).
+
+### 26.10 Jalon
+
+Version **`0.20.0-alpha.1`**, rapport `docs/superpowers/rapports/<date>-jalon-v0.20.md`, tag posé par le chef d'équipe après sa vérification de bout en bout sur un vrai run. Écrans Penpot : reprendre la page 28 (P1 à P6) en écrans numérotés **183** (barre), **184** (volet), **185** et **185b** (Activité large et étroite), **186** à **186c** (mention : carte, volet, page), **187** à **187c** (Questions : page, export, réponse collée, destinataires), **188** à **188d** (graphe, §26.9).
 
 ## 27. Décisions de la phase 21 : les agents parlent à l'agent de projet (demande d'Adam du 2026-10-09)
 
