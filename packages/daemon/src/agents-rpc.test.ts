@@ -39,6 +39,7 @@ function questionsStub(calls: string[], undelivered: Question[] = [], blocking: 
       },
     },
     projectIds: () => ["p1"],
+    projectAgents: () => [{ projectId: "p1", runId: "pa1", state: "running", pendingBatchId: "b1" }],
     viewer: () => HUMAN.ref,
     assertWritable: (projectId) => calls.push(`writable:${projectId}`),
   };
@@ -78,12 +79,12 @@ function agentsPort(calls: string[], runs: RunView[]): AgentsPort {
   };
 }
 
-test("the agents state carries the question counts of the runs", () => {
+test("the agents state carries the question counts of the runs and the project agents", () => {
   const calls: string[] = [];
   const state = handleAgentRequest(agentsPort(calls, []), { method: "getAgents" }, questionsStub(calls));
   expect(state).toMatchObject({
     questions: [{ runId: "r1", open: 1, undelivered: 0, latestTitle: "Quel port ?" }],
-    projectAgents: [],
+    projectAgents: [{ projectId: "p1", runId: "pa1", state: "running", pendingBatchId: "b1" }],
   });
 });
 

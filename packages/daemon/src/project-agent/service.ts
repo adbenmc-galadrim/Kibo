@@ -79,10 +79,10 @@ function reset(ctx: AgentContext, projectId: string): ProjectAgentView {
 }
 
 function summaries(ctx: AgentContext): ProjectAgentSummary[] {
+  const open = ctx.store.openSessions();
+  if (open.length === 0) return [];
   const { runs } = ctx.agents().state();
-  return ctx.store
-    .openSessions()
-    .flatMap((s) => summaryOf(s, runs, ctx.store.pendingBatch(s.projectId)?.id ?? null) ?? []);
+  return open.flatMap((s) => summaryOf(s, runs, ctx.store.pendingBatch(s.projectId)?.id ?? null) ?? []);
 }
 
 function projectRun(ctx: AgentContext, runId: string): RunView {

@@ -5,7 +5,6 @@ import { defaultHookLauncher } from "./agents/hook-launcher";
 import { createLoadSampler, readHostInfo } from "./agents/host-load";
 import type { Notice } from "./agents/notifier";
 import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
-import { unwiredProjectTurns } from "./agents/project-run";
 import { openRunStore } from "./agents/run-store";
 import { startAi } from "./ai/bootstrap";
 import type { DraftAssets } from "./ai/draft-preview";
@@ -20,6 +19,7 @@ import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { startSandboxServer } from "./components/sandbox-server";
 import { type ComponentsDeps, createComponentsService } from "./components/service";
 import { componentTrustGuard } from "./components/trust-guard";
+import { type Closers, shutdown } from "./daemon-shutdown";
 import { demoAgentBin } from "./demo/agent-bin";
 import { demoAgentEnv } from "./demo/agent-env";
 import { ensureDemoAgentFiles } from "./demo/agent-scenarios";
@@ -31,6 +31,7 @@ import { createRedactor, type Redactor } from "./integrations/redact";
 import { createLogBuffer, type LogBuffer } from "./log-buffer";
 import { startMarket } from "./market/bootstrap";
 import { createProjectSettings } from "./notes/settings";
+import { startProjectAgent } from "./project-agent/bootstrap";
 import { createProjectAdmin } from "./projects/admin";
 import { agentQuestionHooks } from "./questions/agent-hooks";
 import { listInterfaces } from "./remote/interfaces";
@@ -41,6 +42,7 @@ import { sandboxRpc } from "./sandbox/rpc";
 import { createSandboxService } from "./sandbox/sandbox-service";
 import { startServer } from "./server";
 import { call, createService } from "./service";
+import { ready } from "./service-ports";
 import { openSessionStore } from "./sessions/session-store";
 import { openLocalSettings } from "./settings";
 import { DaemonRunning, findRunningDaemon, type Probe } from "./single-instance";
@@ -73,29 +75,6 @@ export type DaemonOptions = {
 export type Daemon = { url: string; port: number; sandboxPort: number; token: string; stop(): Promise<void> };
 
 const VITE_ORIGIN = "http://localhost:5173";
-
-type Closer = () => void | Promise<void>;
-type Closers = { front: Closer[]; back: Closer[] };
-
-async function closeAll(closers: Closer[]): Promise<void> {
-  const failures: unknown[] = [];
-  for (const close of closers.splice(0).reverse()) {
-    try {
-      await close();
-    } catch (e) {
-      failures.push(e);
-    }
-  }
-  if (failures.length > 0) throw new AggregateError(failures, "daemon shutdown failed");
-}
-
-async function shutdown(closers: Closers): Promise<void> {
-  try {
-    await closeAll(closers.front);
-  } finally {
-    await closeAll(closers.back);
-  }
-}
 
 async function assemble(opts: DaemonOptions, { front, back: closers }: Closers): Promise<Daemon> {
   const running = await findRunningDaemon(opts.home, opts.probe);
@@ -147,6 +126,13 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
   closers.push(() => collab.stop());
   let agents: Orchestrator | null = null;
+  const projectAgent = startProjectAgent({
+    home: opts.home,
+    service,
+    orchestrator: () => ready(agents, "INTERNAL", "agents are not ready"),
+    notify: opts.notify ?? (() => {}),
+  });
+  closers.push(() => projectAgent.stop());
   const components = createComponentsService({
     home: opts.home,
     toolchain: opts.toolchain,
@@ -234,11 +220,13 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       backupsRpc(backups),
       app.rpc,
       tutorial.rpc,
+      projectAgent.agent.rpc,
     ],
     port: opts.port,
     uiDir: opts.uiDir,
     extraOrigins: devOrigins,
     hooks: agentQuestionHooks(() => agents, service.agentData, opts.notify ?? (() => {})),
+    agentMcp: projectAgent.agent.mcp,
     assets: components.assets,
     icons: service.icons,
     sandboxOrigin: () => sandboxOrigin || null,
@@ -283,7 +271,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     sampler: opts.sampler ?? createLoadSampler(),
     hostInfo: readHostInfo(),
     notify: opts.notify ?? (() => {}),
-    projectTurns: unwiredProjectTurns,
+    projectTurns: projectAgent.agent.turns,
     ...(opts.agentEnv && { env: opts.agentEnv }),
   });
   closers.push(() => orchestrator.stop());

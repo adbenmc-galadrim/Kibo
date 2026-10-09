@@ -1,4 +1,10 @@
-import { type DeliveryResult, KiboError, type RpcRequest, type RunView } from "@kibo/schema";
+import {
+  type DeliveryResult,
+  KiboError,
+  type ProjectAgentSummary,
+  type RpcRequest,
+  type RunView,
+} from "@kibo/schema";
 import type { AgentDataPort, Orchestrator } from "./agents/orchestrator";
 import { answerFromDrawer, type DeliveryDeps, deliverAnswers } from "./agents/question-delivery";
 import { assertNotInboxForAgents } from "./inbox/inbox-rules";
@@ -26,6 +32,7 @@ export type AgentQuestions = {
     "runQuestions" | "undeliveredAnswers" | "markAnswersDelivered" | "answerRunQuestion"
   >;
   projectIds(): readonly string[];
+  projectAgents(): ProjectAgentSummary[];
   viewer(projectId: string): string;
   assertWritable(projectId: string): void;
 };
@@ -53,7 +60,7 @@ function agentsState(port: AgentsPort, q: AgentQuestions) {
   return {
     ...state,
     questions: runTallies(q.data.runQuestions(), state.runs, undeliveredOf),
-    projectAgents: [],
+    projectAgents: q.projectAgents(),
   };
 }
 

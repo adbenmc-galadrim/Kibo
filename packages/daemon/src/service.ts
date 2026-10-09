@@ -12,6 +12,7 @@ import {
   INBOX_ID,
   isInbox,
   KiboError,
+  type ProjectAgentSummary,
   type ProjectCommand,
   type RpcRequest,
   type RpcResult,
@@ -39,6 +40,7 @@ import { type CollabPort, handleProjectRequest, NOT_HANDLED } from "./projects/p
 import { createProjectRemoval } from "./projects/remove";
 import { questionActorInterceptor } from "./questions/question-actor";
 import { afterQuestionCommands } from "./questions/question-events";
+import { portSlot, ready } from "./service-ports";
 import { loadDoc, type Store } from "./store";
 import { readTabs, saveTabs } from "./tabs-store";
 import { readConfig, runConfigCommand } from "./workspace-config";
@@ -63,11 +65,13 @@ export type Service = {
   attachIntegrations(rpc: IntegrationRpc): () => void;
   attachAi(port: AiPort): () => void;
   attachCollab(port: CollabPort): () => void;
+  attachProjectAgent(port: ProjectAgentSummaries): () => void;
   triggerRules(projectId: string, trigger: RuleTrigger): void;
   transaction<T>(fn: () => T): T;
   commands: CommandHub;
 };
 
+type ProjectAgentSummaries = { summaries(): ProjectAgentSummary[] };
 type ServiceOptions = { user: string; notifications?: Session["notifications"] };
 
 const changesDomainUsage = (cmd: ProjectCommand) =>
@@ -88,10 +92,11 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   projects.set(INBOX_ID, loadInbox(store));
   const listeners = new Set<(message: ChangeMessage) => void>();
   let agents: AgentsPort | null = null;
-  let components: ComponentsPort | null = null;
-  let integrations: IntegrationRpc | null = null;
-  let ai: AiPort | null = null;
-  let collab: CollabPort | null = null;
+  const components = portSlot<ComponentsPort>();
+  const integrations = portSlot<IntegrationRpc>();
+  const ai = portSlot<AiPort>();
+  const collab = portSlot<CollabPort>();
+  const projectAgent = portSlot<ProjectAgentSummaries>();
   let writeGuard: ((projectId: string) => void) | null = null;
   const osIdentity = () => opts.user;
   let identity: (projectId: string) => string = osIdentity;
@@ -125,7 +130,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     published(projectId, done) {
       docs.emit({ projectId });
       if (done.some((e) => changesDomainUsage(e.command))) docs.emit({ topic: "config" });
-      components?.afterCommand(projectId);
+      components.get()?.afterCommand(projectId);
       afterQuestionCommands(done, { emit: (m) => docs.emit(m), agents, questions });
     },
   });
@@ -174,7 +179,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     imported(projectId) {
       docs.save(projectId);
       docs.emit({ projectId });
-      components?.afterCommand(projectId);
+      components.get()?.afterCommand(projectId);
     },
     onProjectDoc(listener) {
       docListeners.add(listener);
@@ -205,32 +210,21 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   const questions: AgentQuestions = {
     data: agentData,
     projectIds: () => docs.projectIds(),
+    projectAgents: () => projectAgent.get()?.summaries() ?? [],
     viewer: (projectId) => docs.identity(projectId),
     assertWritable: (projectId) => docs.assertWritable(projectId),
   };
   path.commands.intercept(questionActorInterceptor(questions.viewer));
-  const componentsReady = (): ComponentsPort => {
-    if (!components) throw new KiboError("INTERNAL", "components are not ready");
-    return components;
-  };
-  const integrationsReady = (): IntegrationRpc => {
-    if (!integrations) throw new KiboError("INTERNAL", "integrations are not ready");
-    return integrations;
-  };
-  const aiReady = (): AiPort => {
-    if (!ai) throw new KiboError("AI_UNAVAILABLE", "the AI is not started");
-    return ai;
-  };
-  const agentsReady = (): AgentsPort => {
-    if (!agents) throw new KiboError("INTERNAL", "agents are not ready");
-    return agents;
-  };
+  const componentsReady = () => ready(components.get(), "INTERNAL", "components are not ready");
+  const integrationsReady = () => ready(integrations.get(), "INTERNAL", "integrations are not ready");
+  const aiReady = () => ready(ai.get(), "AI_UNAVAILABLE", "the AI is not started");
+  const agentsReady = () => ready(agents, "INTERNAL", "agents are not ready");
   const projectRpc = {
     workspace,
     docs,
     icons,
     settings,
-    collab: () => collab,
+    collab: () => collab.get(),
     adopt,
     fileTicket: createFileTicket({ docs, store, restore }),
   };
@@ -253,30 +247,11 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         agents = null;
       };
     },
-    attachComponents(port) {
-      components = port;
-      return () => {
-        components = null;
-      };
-    },
-    attachIntegrations(rpc) {
-      integrations = rpc;
-      return () => {
-        integrations = null;
-      };
-    },
-    attachAi(port) {
-      ai = port;
-      return () => {
-        ai = null;
-      };
-    },
-    attachCollab(port) {
-      collab = port;
-      return () => {
-        collab = null;
-      };
-    },
+    attachComponents: components.attach,
+    attachIntegrations: integrations.attach,
+    attachAi: ai.attach,
+    attachCollab: collab.attach,
+    attachProjectAgent: projectAgent.attach,
     triggerRules(projectId, trigger) {
       docs.trigger(projectId, trigger);
     },
