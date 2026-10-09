@@ -3,6 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { HookSink } from "./agents/hook-route";
+import type { AgentMcpSink } from "./project-agent/types";
 import { startServer } from "./server";
 import { createService } from "./service";
 import { openStore, type Store } from "./store";
@@ -85,5 +86,36 @@ describe("agents routes", () => {
     expect(ok.headers.get("cache-control")).toBe("no-store");
     expect(notUuid.status).toBe(404);
     expect(received).toEqual([`${RUN}:Stop`]);
+  });
+
+  test("agent-mcp posts skip the session but need the run token and a local Host", async () => {
+    const bearer = { authorization: `Bearer ${"b".repeat(64)}` };
+    const toolTo = (url: string, headers: Record<string, string>) =>
+      fetch(`${url}/agent-mcp/${RUN}`, {
+        method: "POST",
+        headers: { "content-type": "application/json", ...headers },
+        body: JSON.stringify({ tool: "list_tickets", input: {} }),
+      });
+    expect((await toolTo(server.url, bearer)).status).toBe(404);
+    const sink: AgentMcpSink = {
+      verify: (runId, token) => runId === RUN && token === "b".repeat(64),
+      call: async (runId, req) => `${req.tool}:${runId}`,
+    };
+    const served = startServer({
+      service: createService(store, { user: "adam" }),
+      token: TOKEN,
+      port: 0,
+      uiDir: null,
+      agentMcp: sink,
+    });
+    const anonymous = await toolTo(served.url, {});
+    const foreign = await toolTo(served.url, { ...bearer, host: "evil.test" });
+    const ok = await toolTo(served.url, bearer);
+    served.stop();
+    expect(anonymous.status).toBe(401);
+    expect(foreign.status).toBe(403);
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get("cache-control")).toBe("no-store");
+    expect(await ok.json()).toEqual({ ok: true, text: `list_tickets:${RUN}` });
   });
 });

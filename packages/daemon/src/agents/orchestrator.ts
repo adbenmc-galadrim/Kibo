@@ -22,6 +22,7 @@ import {
   type OrchestratorOptions,
   type TaskSpec,
 } from "./orchestrator-types";
+import { createProjectRun } from "./project-run";
 import { createRunLauncher, type LiveRun } from "./run-launch";
 import { openRunRegistry } from "./run-registry";
 import type { NewRun } from "./run-store";
@@ -33,6 +34,7 @@ export type {
   DemoAgent,
   Orchestrator,
   OrchestratorOptions,
+  ProjectTurnPort,
   TaskInput,
   TicketContext,
   ToolGuard,
@@ -162,6 +164,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         profileName: profile.name,
         sessionId: inherited?.sessionId ?? crypto.randomUUID(),
         brief: input.brief,
+        kind: "ticket",
         resumedFrom: inherited?.id ?? null,
       });
       tick();
@@ -187,8 +190,14 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         profileName: profile.name,
         sessionId: task.resumeSessionId ?? crypto.randomUUID(),
         brief: task.prompt,
+        kind: "ticket",
         resumedFrom: null,
       });
+      tick();
+      return registry.get(id);
+    },
+    startProjectRun(input) {
+      const id = createProjectRun({ registry, profileOf, assertWritable: opts.data.assertWritable }, input);
       tick();
       return registry.get(id);
     },
@@ -263,6 +272,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         tokensToday: registry.tokensSince(startOfDay(now())),
         resumable: resumableRuns(resumeContext(runs)),
         questions: [],
+        projectAgents: [],
       };
     },
     log: (runId) => registry.log(runId),

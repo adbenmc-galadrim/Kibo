@@ -1,4 +1,11 @@
-import { askedNotice, type Question, type RunState, type RunView, runSubject } from "@kibo/schema";
+import {
+  askedNotice,
+  type Batch,
+  type Question,
+  type RunState,
+  type RunView,
+  runSubject,
+} from "@kibo/schema";
 import { fr } from "./fr";
 
 export type Notice = { title: string; body: string };
@@ -19,6 +26,10 @@ export function noticeFor(previous: RunState, run: RunView): Notice | null {
 
 export function questionNotice(run: RunView, question: Question): Notice | null {
   return question.blocking ? null : askedNotice(run, question.title);
+}
+
+export function batchNotice(projectName: string, batch: Pick<Batch, "seq">): Notice {
+  return { title: fr.batchTitle, body: fr.batchBody(projectName, batch.seq) };
 }
 
 export function stdoutNotifier(write: (line: string) => void): (notice: Notice) => void {

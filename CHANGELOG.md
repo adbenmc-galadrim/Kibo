@@ -6,6 +6,13 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.18.0-alpha.1 — 2026-10-09
+
+- Agent de projet : un chef de projet par projet, dans un panneau latéral (⌘J). Il lit le projet, garde sa mémoire et propose des lots d'actions (tickets, agents, questions, notes) que tu valides d'un clic ; aucune action sans ta validation.
+- Il reste à jour : à chaque message, il reçoit ce qui a changé depuis son dernier tour ; « Nouvel agent de projet » repart d'une session neuve en gardant la note mémoire, et les anciens agents restent lisibles.
+- Lot à valider : actions groupées, avant → après, raison, cases à cocher ; une action dont la cible a changé entre-temps est marquée « Périmée » et n'écrase rien.
+- Fiabilité : arrêt du démon sans erreur avalée, note absente lue sans erreur au premier tour.
+
 ## 0.17.0-alpha.1 — 2026-10-09
 
 - Étiquettes sur les tickets (`clé:valeur`), dans la fiche, avec filtres et pastilles dans Tickets et Kanban.

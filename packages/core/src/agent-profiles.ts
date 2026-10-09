@@ -21,6 +21,7 @@ const SYSTEM_FIELDS: Record<SystemProfileId, Pick<AgentProfile, "name" | "permis
   assistant: { name: "assistant", permissionMode: "default" },
   generateur: { name: "generateur", permissionMode: "acceptEdits" },
   demo: { name: "demo", permissionMode: "acceptEdits" },
+  "project-agent": { name: "project-agent", permissionMode: "default" },
 };
 const SYSTEM_EDITABLE = new Set(["model", "enabled", "maxParallel"]);
 export const SYSTEM_MAX_PARALLEL = 4;
@@ -28,6 +29,7 @@ export const SYSTEM_DEFAULT_PARALLEL: Readonly<Record<SystemProfileId, number>> 
   assistant: 1,
   generateur: 2,
   demo: 1,
+  "project-agent": 1,
 };
 
 const systemParallel = (id: SystemProfileId, current: AgentProfile | null): number => {

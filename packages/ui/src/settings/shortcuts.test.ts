@@ -14,6 +14,7 @@ test("groups follow screen 77, with platform labels", () => {
     ["Aller à un onglet", ["⌘2", "⌘8"], true],
     ["Dernier onglet", ["⌘9"], false],
     ["Aide des raccourcis", ["⌘/"], false],
+    ["Agent de projet", ["⌘J"], false],
   ]);
   expect(mac[1]?.items.map((i) => i.keys)).toEqual([["↵"], ["⌘↵"], ["Tab"]]);
   expect(mac[2]?.items.map((i) => i.keys)).toEqual([["⌘S"], ["⌘⇧O"], ["⌘↵"]]);
@@ -21,5 +22,6 @@ test("groups follow screen 77, with platform labels", () => {
   expect(pc[0]?.items[0]?.keys).toEqual(["Ctrl+K"]);
   expect(pc[0]?.items[6]?.keys).toEqual(["Ctrl+2", "Ctrl+8"]);
   expect(pc[0]?.items[8]?.keys).toEqual(["Ctrl+/"]);
+  expect(pc[0]?.items[9]?.keys).toEqual(["Ctrl+J"]);
   expect(pc[1]?.items.map((i) => i.keys)).toEqual([["↵"], ["Ctrl+↵"], ["Tab"]]);
 });

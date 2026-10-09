@@ -159,7 +159,7 @@ export function TabBar({
     />
   );
   return (
-    <div className="flex h-10 shrink-0 select-none items-stretch border-b bg-sidebar text-sidebar-foreground">
+    <div className="flex h-(--tabbar-h) shrink-0 select-none items-stretch border-b bg-sidebar text-sidebar-foreground">
       <div
         role="tablist"
         aria-label={fr.tabs.bar}

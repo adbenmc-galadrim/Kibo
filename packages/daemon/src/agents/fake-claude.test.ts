@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { cleanFakeDirs, finish, readHooks, settings, start, tmp } from "./fake-claude.test-helper";
 import { FAKE_CLAUDE, fakeCalls, releaseFakeRun, scenarioPath } from "./fake-claude-scenario";
@@ -199,4 +200,85 @@ test("a routing file picks the scenario from the prompt and keeps it on resume",
   const held = start(["--session-id", "s2"], env, "# KIB-12 · Schéma Loro");
   releaseFakeRun(state, "s2");
   expect((await finish(held)).lines.at(-1)).toMatchObject({ result: "Tests verts." });
+});
+
+const mcpScenario = (state: string) => {
+  const file = join(state, "mcp.json");
+  const step = { mcp: "list_tickets", input: { status: "done" } };
+  writeFileSync(file, JSON.stringify({ turns: [{ steps: [step], result: "Lu." }] }));
+  return file;
+};
+
+test("an mcp step launches the configured kibo server and calls the daemon through it", async () => {
+  const state = tmp();
+  const hooks = join(state, "hooks.jsonl");
+  const seen: Array<{ path: string; auth: string | null; body: unknown }> = [];
+  const daemon = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    async fetch(req) {
+      seen.push({
+        path: new URL(req.url).pathname,
+        auth: req.headers.get("authorization"),
+        body: await req.json(),
+      });
+      return Response.json({ ok: true, text: "[]" });
+    },
+  });
+  try {
+    const token = "c".repeat(64);
+    const kibo = {
+      command: "bun",
+      args: [join(import.meta.dir, "kibo-hook.ts"), "mcp"],
+      env: { KIBO_MCP_URL: `http://127.0.0.1:${daemon.port}/agent-mcp/r1`, KIBO_RUN_TOKEN: token },
+    };
+    const env = {
+      KIBO_FAKE_CLAUDE_SCENARIO: mcpScenario(state),
+      KIBO_FAKE_CLAUDE_STATE: state,
+      KIBO_MCP_URL: "http://127.0.0.1:1/agent-mcp/inherited",
+    };
+    const args = ["--session-id", "m1", "--settings", settings(hooks), "--mcp-config"];
+    const run = await finish(start([...args, JSON.stringify({ mcpServers: { kibo } })], env));
+    expect(run.code).toBe(0);
+    expect(run.lines.at(-1)).toMatchObject({ is_error: false, result: "Lu." });
+    expect(seen).toEqual([
+      {
+        path: "/agent-mcp/r1",
+        auth: `Bearer ${token}`,
+        body: { tool: "list_tickets", input: { status: "done" } },
+      },
+    ]);
+    const tools = readHooks(hooks).filter((h) => String(h.hook_event_name).endsWith("ToolUse"));
+    expect(tools.map((h) => [h.hook_event_name, h.tool_name, h.tool_input])).toEqual([
+      ["PreToolUse", "mcp__kibo__list_tickets", { status: "done" }],
+      ["PostToolUse", "mcp__kibo__list_tickets", { status: "done" }],
+    ]);
+    expect(fakeCalls(state, "m1")[0]?.mcp).toEqual([{ tool: "list_tickets", text: "[]", isError: false }]);
+  } finally {
+    daemon.stop(true);
+  }
+});
+
+test("an mcp step denied by a hook never reaches the server", async () => {
+  const state = tmp();
+  const deny = JSON.stringify({
+    hookSpecificOutput: { hookEventName: "PreToolUse", permissionDecision: "deny" },
+  });
+  const guard = JSON.stringify({
+    hooks: { PreToolUse: [{ matcher: "*", hooks: [{ type: "command", command: `echo '${deny}'` }] }] },
+  });
+  const kibo = { command: "bun", args: ["-e", "process.exit(9)"] };
+  const env = { KIBO_FAKE_CLAUDE_SCENARIO: mcpScenario(state), KIBO_FAKE_CLAUDE_STATE: state };
+  const config = JSON.stringify({ mcpServers: { kibo } });
+  const run = await finish(start(["--session-id", "m3", "--settings", guard, "--mcp-config", config], env));
+  expect(run.lines.at(-1)).toMatchObject({ permission_denials: [{ tool_name: "mcp__kibo__list_tickets" }] });
+  expect(fakeCalls(state, "m3")[0]?.mcp).toEqual([]);
+});
+
+test("an mcp step without --mcp-config fails the turn loudly", async () => {
+  const state = tmp();
+  const env = { KIBO_FAKE_CLAUDE_SCENARIO: mcpScenario(state), KIBO_FAKE_CLAUDE_STATE: state };
+  const run = await finish(start(["--session-id", "m2"], env));
+  expect(run.code).toBe(1);
+  expect(run.lines.at(-1)).toMatchObject({ type: "result", is_error: true, result: "no --mcp-config" });
 });

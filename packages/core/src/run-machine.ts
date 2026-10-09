@@ -91,7 +91,8 @@ const resumeHead = (view: RunView, at: number, rank: number, patch: Partial<RunV
   });
 
 export function canWriteAfterEnd(view: RunView): boolean {
-  return isTerminal(view.state) && view.ticketId !== null && view.startedAt !== null;
+  if (!isTerminal(view.state)) return false;
+  return view.kind === "project" || (view.ticketId !== null && view.startedAt !== null);
 }
 
 function applyHook(view: RunView, p: HookPayload, at: number): RunView {
@@ -161,7 +162,8 @@ export function reduceRun(view: RunView, event: RunEvent, at: number): RunView {
     case "exited":
       return applyExit(view, event, at);
     case "answered":
-      if (view.ticketId === null && view.state !== "waiting_input") refuse(view, event);
+      if (view.ticketId === null && view.kind !== "project" && view.state !== "waiting_input")
+        refuse(view, event);
       if (isTerminal(view.state) && !canWriteAfterEnd(view)) refuse(view, event);
       if (WORKING.includes(view.state)) return { ...view, pendingAnswer: pendingWith(view, event.text) };
       return resumeHead(view, at, event.rank, { pendingAnswer: pendingWith(view, event.text) });

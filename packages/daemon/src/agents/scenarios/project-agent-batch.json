@@ -1,0 +1,66 @@
+{
+  "turns": [
+    {
+      "steps": [
+        { "mcp": "project_overview" },
+        { "mcp": "list_tickets", "input": { "status": "todo" } },
+        { "mcp": "get_ticket", "input": { "key": "KIB-1" } },
+        { "mcp": "list_profiles" },
+        {
+          "mcp": "propose_batch",
+          "input": {
+            "summary": "Lancer KIB-1 et noter le plan",
+            "actions": [
+              {
+                "id": 1,
+                "why": "Le récepteur est prêt à démarrer.",
+                "type": "setStatus",
+                "ticket": "KIB-1",
+                "statusId": "in_progress"
+              },
+              {
+                "id": 2,
+                "why": "Opus est libre.",
+                "type": "assignAgent",
+                "ticket": "KIB-1",
+                "profileId": "{{profile:opus}}"
+              },
+              {
+                "id": 3,
+                "why": "Les tests méritent leur ticket.",
+                "type": "createTicket",
+                "ref": "new:1",
+                "title": "Tests du récepteur",
+                "parent": "KIB-1"
+              },
+              {
+                "id": 4,
+                "why": "La doc n'est pas tranchée.",
+                "type": "createQuestion",
+                "ticket": "KIB-1",
+                "title": "Faut-il la doc ?",
+                "options": ["Oui", "Non"],
+                "provisional": "Non"
+              },
+              {
+                "id": 5,
+                "why": "Garder le fil.",
+                "type": "updateNote",
+                "path": "agent-de-projet/memoire.md",
+                "content": "# Mémoire\n- KIB-1 lancé"
+              }
+            ]
+          }
+        }
+      ],
+      "result": "J'ai proposé un lot de 5 actions.",
+      "tokens": 1800
+    },
+    {
+      "steps": [{ "mcp": "project_changes" }],
+      "result": "Je vois le résultat du lot.",
+      "tokens": 900
+    },
+    { "steps": [], "result": "Rien de plus.", "tokens": 300 }
+  ]
+}

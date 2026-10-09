@@ -367,5 +367,5 @@ test("phase 14 events and the help combo", () => {
   expect(Phase7Event.safeParse({ type: "backups.changed" }).success).toBe(true);
   expect(Phase7Event.safeParse({ type: "tutorial.changed" }).success).toBe(true);
   expect(KeyCombo.safeParse("mod+/").success).toBe(true);
-  expect(SYSTEM_PROFILE_IDS).toEqual(["assistant", "generateur", "demo"]);
+  expect(SYSTEM_PROFILE_IDS).toEqual(["assistant", "generateur", "demo", "project-agent"]);
 });

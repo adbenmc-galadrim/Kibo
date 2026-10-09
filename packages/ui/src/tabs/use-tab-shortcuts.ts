@@ -7,6 +7,7 @@ export type TabShortcut =
   | { kind: "togglePin" }
   | { kind: "reopen" }
   | { kind: "help" }
+  | { kind: "projectAgent" }
   | { kind: "activate"; index: number };
 type KeyInput = { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean; altKey: boolean };
 
@@ -21,6 +22,7 @@ export function shortcutFor(e: KeyInput, mac: boolean): TabShortcut | null {
   if (key === "t") return { kind: "newTab" };
   if (key === "k") return { kind: "palette" };
   if (key === "w") return { kind: "close" };
+  if (key === "j") return { kind: "projectAgent" };
   if (/^[1-9]$/.test(key)) return { kind: "activate", index: Number(key) - 1 };
   return null;
 }

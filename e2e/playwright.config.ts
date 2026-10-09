@@ -114,6 +114,20 @@ const allDaemons = [
   { name: "questions-dark", scheme: "dark", port: 4457, spec: /questions\.spec\.ts/, scenario: "question" },
   { name: "questions-light", scheme: "light", port: 4458, spec: /questions\.spec\.ts/, scenario: "question" },
   {
+    name: "project-agent-dark",
+    scheme: "dark",
+    port: 4459,
+    spec: /project-agent\.spec\.ts/,
+    scenario: "project-agent-routes",
+  },
+  {
+    name: "project-agent-light",
+    scheme: "light",
+    port: 4460,
+    spec: /project-agent\.spec\.ts/,
+    scenario: "project-agent-routes",
+  },
+  {
     name: "files-dark",
     scheme: "dark",
     port: 4435,

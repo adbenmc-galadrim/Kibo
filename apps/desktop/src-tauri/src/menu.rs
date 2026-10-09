@@ -16,6 +16,7 @@ pub const RESERVED_FOR_WEBVIEW: &[&str] = &[
     "CmdOrCtrl+8",
     "CmdOrCtrl+9",
     "CmdOrCtrl+/",
+    "CmdOrCtrl+J",
 ];
 
 pub const CLOSE_WINDOW: &str = "close-window";

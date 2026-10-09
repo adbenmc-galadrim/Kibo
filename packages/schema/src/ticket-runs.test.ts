@@ -35,6 +35,7 @@ const run = (p: Pick<RunView, "id" | "seq" | "state"> & Partial<RunView>): RunVi
   turns: 0,
   activeMs: 0,
   turnStartedAt: null,
+  kind: "ticket",
   resumedFrom: null,
   session: null,
   ...p,
@@ -59,6 +60,7 @@ const state = (runs: RunView[], queue: AgentsState["queue"] = []): AgentsState =
   tokensToday: 0,
   resumable: [],
   questions: [],
+  projectAgents: [],
 });
 
 test("each ticket of the project keeps its latest run, with its place in the queue", () => {

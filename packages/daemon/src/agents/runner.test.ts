@@ -2,12 +2,22 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { ALLOW_MAX, ASK_QUESTION_TOOL, ASK_TOOL, HookEventName, KiboError } from "@kibo/schema";
+import {
+  ALLOW_MAX,
+  ASK_QUESTION_TOOL,
+  ASK_TOOL,
+  HookEventName,
+  KiboError,
+  PROJECT_AGENT_DENY,
+  PROJECT_AGENT_MCP_TOOLS,
+  PROJECT_AGENT_READ_TOOLS,
+} from "@kibo/schema";
 import { FAKE_CLAUDE, fakeCalls, releaseFakeRun, scenarioPath } from "./fake-claude-scenario";
 import {
   childEnv,
   claudeArgs,
   claudeSettings,
+  cleanEnv,
   killGroup,
   type LaunchInput,
   launch,
@@ -32,7 +42,7 @@ afterEach(() => {
 const kiboHook = { command: "/k/kibo-hook", args: [] };
 const base: Pick<
   LaunchInput,
-  "model" | "permissionFlag" | "extraArgs" | "systemPromptFile" | "hook" | "allow"
+  "model" | "permissionFlag" | "extraArgs" | "systemPromptFile" | "hook" | "allow" | "deny" | "mcpConfigFile"
 > = {
   model: "opus",
   permissionFlag: "manual",
@@ -40,6 +50,8 @@ const base: Pick<
   systemPromptFile: "/r/CLAUDE.md",
   hook: kiboHook,
   allow: [],
+  deny: [],
+  mcpConfigFile: null,
 };
 
 test("the command line never bypasses permissions and pins the session", () => {
@@ -77,6 +89,50 @@ test("the command line never bypasses permissions and pins the session", () => {
       "INVALID_INPUT",
     );
   }
+});
+
+test("a project run passes its private MCP config file and its deny rules", () => {
+  const args = claudeArgs({
+    ...base,
+    allow: [...PROJECT_AGENT_MCP_TOOLS, ...PROJECT_AGENT_READ_TOOLS],
+    deny: PROJECT_AGENT_DENY,
+    mcpConfigFile: "/r/mcp.json",
+    sessionId: "s1",
+    resume: false,
+  });
+  expect(args[args.indexOf("--mcp-config") + 1]).toBe("/r/mcp.json");
+  const settings = JSON.parse(args[args.indexOf("--settings") + 1] ?? "");
+  expect(settings.permissions).toEqual({
+    allow: [ASK_TOOL, ASK_QUESTION_TOOL, ...PROJECT_AGENT_MCP_TOOLS, ...PROJECT_AGENT_READ_TOOLS],
+    deny: [...PROJECT_AGENT_DENY],
+  });
+  expect(args.join(" ")).not.toContain("KIBO_RUN_TOKEN");
+});
+
+test("settings carry deny rules only when there are some", () => {
+  expect(JSON.parse(claudeSettings(kiboHook, ["Read"], [])).permissions).toEqual({
+    allow: [ASK_TOOL, ASK_QUESTION_TOOL, "Read"],
+  });
+  expect(JSON.parse(claudeSettings(kiboHook, [], ["Bash", "Edit"])).permissions.deny).toEqual([
+    "Bash",
+    "Edit",
+  ]);
+});
+
+test("the MCP URL reaches the child environment only for a project run", () => {
+  const extra = { hookUrl: "u", token: "t" };
+  expect(childEnv({ PATH: "/bin", KIBO_MCP_URL: "stale" }, { ...extra, mcpUrl: null })).toEqual({
+    PATH: "/bin",
+    KIBO_HOOK_URL: "u",
+    KIBO_RUN_TOKEN: "t",
+  });
+  expect(childEnv({ PATH: "/bin" }, { ...extra, mcpUrl: "http://h/agent-mcp/r1" }).KIBO_MCP_URL).toBe(
+    "http://h/agent-mcp/r1",
+  );
+  expect(
+    childEnv({}, { ...extra, mcpUrl: null, env: { KIBO_MCP_URL: "forged" } }).KIBO_MCP_URL,
+  ).toBeUndefined();
+  expect(cleanEnv({ KIBO_MCP_URL: "x", HOME: "/h" })).toEqual({ HOME: "/h" });
 });
 
 test("the permission mode follows what the installed CLI accepts", () => {
@@ -213,6 +269,7 @@ function fakeLaunch(scenario: "done" | "fail" | "hold", sessionId: string) {
     hook: { command: "sh", args: ["-c", `cat >> ${hooks}; echo >> ${hooks}`, "sh"] },
     hookUrl: "http://127.0.0.1:1/hooks/r1",
     token: "t".repeat(64),
+    mcpUrl: null,
     baseEnv: {
       ...process.env,
       KIBO_FAKE_CLAUDE_SCENARIO: scenarioPath(scenario),

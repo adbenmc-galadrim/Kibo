@@ -8,12 +8,13 @@ import {
   isSafeNotePath,
   KiboError,
   MAX_ASSET_BYTES,
+  MAX_NOTE_CHARS,
   sniffImage,
 } from "@kibo/schema";
 import { lstatOrNull, outside, resolveInside } from "../fs/resolve-inside";
 
 export type NoteFile = { markdown: string; mtime: number; size: number };
-export const MAX_NOTE_BYTES = 1_048_576;
+export const MAX_NOTE_BYTES = MAX_NOTE_CHARS;
 
 const tooLarge = (p: string) => new KiboError("QUOTA_EXCEEDED", `${p} is larger than 1 MiB`);
 const notFound = (p: string) => new KiboError("NOT_FOUND", `note ${p} not found`);
@@ -41,6 +42,8 @@ export async function listNoteFiles(dir: string): Promise<string[]> {
 }
 
 export async function readNoteFile(dir: string, rel: string): Promise<NoteFile> {
+  if (!isSafeNotePath(rel)) throw outside(rel);
+  if ((await lstatOrNull(dir)) === null) throw notFound(rel);
   const full = await resolveNotePath(dir, rel);
   try {
     const info = await stat(full);

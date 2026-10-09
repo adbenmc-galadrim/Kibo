@@ -15,7 +15,7 @@ import type { Docs } from "../docs";
 import { createFilesService, type FilesService } from "../files/service";
 import type { ComponentIntegrationHooks } from "../integrations/types";
 import { ensureNotesTables } from "../notes/index";
-import { createNotesService } from "../notes/service";
+import { createNotesService, type NotesService } from "../notes/service";
 import { ensureSettingsTable } from "../notes/settings";
 import { createBackends } from "./backends";
 import { approvedHashOf, stampComponentHash } from "./component-hash";
@@ -67,6 +67,7 @@ export type ComponentsService = {
   publishLock: PublishLock;
   events: EventLog;
   files: FilesService;
+  notes: Pick<NotesService, "handle" | "info">;
   notesDir(projectId: string): string;
   usageChanged(): void;
   start(): Promise<void>;
@@ -319,6 +320,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     publishLock,
     events,
     files,
+    notes,
     notesDir: (projectId) => notes.info(projectId).dir,
     usageChanged,
     afterCommand: () => usageChanged(),

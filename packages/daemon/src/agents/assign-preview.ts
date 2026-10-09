@@ -88,6 +88,7 @@ export function previewAssign(input: PreviewInput): AssignPreview {
       sessionId: PREVIEW_ID,
       brief: "",
       createdAt: at,
+      kind: "ticket",
       resumedFrom: null,
     },
     tailRank(runs),

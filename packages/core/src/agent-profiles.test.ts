@@ -1,7 +1,9 @@
 import { expect, test } from "bun:test";
 import {
+  assertDeletableProfile,
   ensureSystemProfiles,
   getProfile,
+  listProfiles,
   SYSTEM_DEFAULT_PARALLEL,
   SYSTEM_MAX_PARALLEL,
   updateProfile,
@@ -13,7 +15,7 @@ test("a new workspace runs two generators and one assistant at a time", () => {
   ensureSystemProfiles(ws);
   expect(getProfile(ws, "generateur").maxParallel).toBe(2);
   expect(getProfile(ws, "assistant").maxParallel).toBe(1);
-  expect(SYSTEM_DEFAULT_PARALLEL).toEqual({ assistant: 1, generateur: 2, demo: 1 });
+  expect(SYSTEM_DEFAULT_PARALLEL).toEqual({ assistant: 1, generateur: 2, demo: 1, "project-agent": 1 });
   expect(SYSTEM_MAX_PARALLEL).toBe(4);
 });
 
@@ -77,4 +79,28 @@ test("the demo profile parallelism stays at 1, its model and enabled flag can ch
   expect(updateProfile(ws, "demo", { maxParallel: 1 }).maxParallel).toBe(1);
   expect(updateProfile(ws, "demo", { enabled: false }).enabled).toBe(false);
   expect(updateProfile(ws, "demo", { model: "haiku" }).model).toBe("haiku");
+});
+
+test("the project agent profile is a system profile limited to its model, switch and parallelism", () => {
+  const ws = createWorkspaceDoc();
+  ensureSystemProfiles(ws);
+  expect(getProfile(ws, "project-agent")).toMatchObject({
+    name: "project-agent",
+    system: true,
+    permissionMode: "default",
+    maxParallel: 1,
+    workspace: "isolated",
+    subagents: [],
+  });
+  expect(listProfiles(ws).find((p) => p.id === "project-agent")?.system).toBe(true);
+  expect(updateProfile(ws, "project-agent", { model: "opus" }).model).toBe("opus");
+  expect(updateProfile(ws, "project-agent", { enabled: false }).enabled).toBe(false);
+  expect(updateProfile(ws, "project-agent", { maxParallel: 4 }).maxParallel).toBe(4);
+  expect(() => updateProfile(ws, "project-agent", { maxParallel: 5 })).toThrow("INVALID_INPUT");
+  expect(() => updateProfile(ws, "project-agent", { allow: ["Read"] })).toThrow("INVALID_INPUT");
+  expect(() => updateProfile(ws, "project-agent", { name: "chef" })).toThrow("INVALID_INPUT");
+  expect(() => updateProfile(ws, "project-agent", { permissionMode: "acceptEdits" })).toThrow(
+    "INVALID_INPUT",
+  );
+  expect(() => assertDeletableProfile(ws, "project-agent")).toThrow("INVALID_INPUT");
 });

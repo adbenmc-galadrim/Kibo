@@ -137,3 +137,18 @@ const daemonUnreachable = () => import("./DaemonUnreachable").then((m) => m.Daem
 
 export const preloadDaemonUnreachable = daemonUnreachable;
 export const DaemonUnreachable = lazyPanel(daemonUnreachable, fr.lazy);
+export const CreationsIndicator = lazyPanel(
+  () => import("./CreationsIndicator").then((m) => m.CreationsIndicator),
+  fr.lazy,
+  { fallback: "children" },
+);
+const agentEntry = () => import("../project-agent/project-agent-entry");
+
+export const ProjectAgentButton = lazyPanel(() => agentEntry().then((m) => m.ProjectAgentButton), fr.lazy, {
+  fallback: "children",
+});
+export const ProjectAgentPanel = lazyPanel(
+  () => agentEntry().then((m) => m.ProjectAgentPanel),
+  fr.lazy,
+  hidden,
+);

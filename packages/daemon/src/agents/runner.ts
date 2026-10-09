@@ -7,6 +7,7 @@ import {
   HookEventName,
   KiboError,
   type PermissionMode,
+  PROJECT_AGENT_MCP_TOOLS,
 } from "@kibo/schema";
 import { z } from "zod";
 import { signalGroup } from "../process-group";
@@ -25,6 +26,9 @@ export type LaunchInput = {
   systemPromptFile: string;
   hook: HookLauncher;
   allow: readonly string[];
+  deny: readonly string[];
+  mcpUrl: string | null;
+  mcpConfigFile: string | null;
   hookUrl: string;
   token: string;
   baseEnv: Record<string, string | undefined>;
@@ -45,14 +49,21 @@ export type RunProcess = { pid: number; kill(): void; exited: Promise<ProcessOut
 
 const TOOL_EVENTS = new Set<string>(["PreToolUse", "PostToolUse"]);
 
+const isKiboTool = (rule: string) => ASK_TOOLS.includes(rule) || PROJECT_AGENT_MCP_TOOLS.includes(rule);
+
 function profileRules(allow: readonly string[]): string[] {
-  const rules = AllowRules.safeParse(allow.filter((rule) => !ASK_TOOLS.includes(rule)));
+  const rules = AllowRules.safeParse(allow.filter((rule) => !isKiboTool(rule)));
   if (!rules.success)
     throw new KiboError("INVALID_INPUT", "the profile carries an unsafe or malformed permission rule");
-  return [...new Set(rules.data)];
+  const kiboTools = allow.filter((rule) => isKiboTool(rule) && !ASK_TOOLS.includes(rule));
+  return [...new Set([...kiboTools, ...rules.data])];
 }
 
-export function claudeSettings(hook: HookLauncher, allow: readonly string[] = []): string {
+export function claudeSettings(
+  hook: HookLauncher,
+  allow: readonly string[] = [],
+  deny: readonly string[] = [],
+): string {
   const rules = profileRules(allow);
   const command = hookShellCommand(hook);
   const hooks = Object.fromEntries(
@@ -66,7 +77,8 @@ export function claudeSettings(hook: HookLauncher, allow: readonly string[] = []
       ],
     ]),
   );
-  return JSON.stringify({ hooks, permissions: { allow: [...ASK_TOOLS, ...rules] } });
+  const permissions = { allow: [...ASK_TOOLS, ...rules], ...(deny.length > 0 ? { deny: [...deny] } : {}) };
+  return JSON.stringify({ hooks, permissions });
 }
 
 const RESERVED_ARGS = new Set([
@@ -83,7 +95,16 @@ const RESERVED_ARGS = new Set([
 export function claudeArgs(
   input: Pick<
     LaunchInput,
-    "model" | "permissionFlag" | "extraArgs" | "sessionId" | "resume" | "systemPromptFile" | "hook" | "allow"
+    | "model"
+    | "permissionFlag"
+    | "extraArgs"
+    | "sessionId"
+    | "resume"
+    | "systemPromptFile"
+    | "hook"
+    | "allow"
+    | "deny"
+    | "mcpConfigFile"
   >,
 ): string[] {
   const refused = input.extraArgs.find(
@@ -101,9 +122,9 @@ export function claudeArgs(
     "--model",
     input.model,
     "--settings",
-    claudeSettings(input.hook, input.allow),
+    claudeSettings(input.hook, input.allow, input.deny),
     "--mcp-config",
-    mcpServerConfig(input.hook),
+    input.mcpConfigFile ?? mcpServerConfig(input.hook),
     "--append-system-prompt-file",
     input.systemPromptFile,
     ...input.extraArgs,
@@ -114,7 +135,8 @@ export function claudeArgs(
 const dropped = (key: string) =>
   (key.startsWith("CLAUDE") && key !== "CLAUDE_CONFIG_DIR") ||
   key.startsWith("KIBO_HOOK_") ||
-  key === "KIBO_RUN_TOKEN";
+  key === "KIBO_RUN_TOKEN" ||
+  key === "KIBO_MCP_URL";
 
 export function cleanEnv(base: Record<string, string | undefined>): Record<string, string> {
   const env: Record<string, string> = {};
@@ -126,13 +148,14 @@ export function cleanEnv(base: Record<string, string | undefined>): Record<strin
 
 export function childEnv(
   base: Record<string, string | undefined>,
-  extra: { hookUrl: string; token: string; env?: Record<string, string> },
+  extra: { hookUrl: string; token: string; mcpUrl?: string | null; env?: Record<string, string> },
 ): Record<string, string> {
   return {
     ...cleanEnv(base),
     ...cleanEnv(extra.env ?? {}),
     KIBO_HOOK_URL: extra.hookUrl,
     KIBO_RUN_TOKEN: extra.token,
+    ...(extra.mcpUrl ? { KIBO_MCP_URL: extra.mcpUrl } : {}),
   };
 }
 
@@ -233,6 +256,7 @@ export function launch(input: LaunchInput): RunProcess {
     env: childEnv(input.baseEnv, {
       hookUrl: input.hookUrl,
       token: input.token,
+      mcpUrl: input.mcpUrl,
       env: input.extraEnv,
     }),
     stdin: new Blob([input.prompt]),

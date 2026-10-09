@@ -102,6 +102,12 @@ describe("writes", () => {
   });
 });
 
+test("reading a note of a notes folder that does not exist yet is NOT_FOUND", async () => {
+  const { root } = folder();
+  await expect(readNoteFile(join(root, "absent"), "agent-de-projet/memoire.md")).rejects.toThrow("NOT_FOUND");
+  await expect(readNoteFile(join(root, "absent"), "../secret.md")).rejects.toThrow("PATH_OUTSIDE_PROJECT");
+});
+
 test("createNoteFile writes a new file and refuses an existing one without touching it", async () => {
   const { dir } = folder();
   const created = await createNoteFile(dir, "idees.md", "# Idées\n");

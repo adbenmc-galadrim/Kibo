@@ -75,7 +75,7 @@ export async function forwardHook({
 if (import.meta.main) {
   const mode = process.argv[2];
   if (mode === "mcp") {
-    await serveMcp(process.stdin, process.stdout);
+    await serveMcp(process.stdin, process.stdout, process.env);
   } else if (mode === "event") {
     process.exit(await forwardHook({ stdin: await Bun.stdin.text(), env: process.env }));
   } else {

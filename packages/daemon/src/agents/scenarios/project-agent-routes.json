@@ -1,0 +1,9 @@
+{
+  "routes": [
+    { "prompt": "\n- Domaine : ", "scenario": "done.json" },
+    { "prompt": "lot invalide", "scenario": "project-agent-invalid.json" },
+    { "prompt": " refusé : ", "scenario": "project-agent-reject.json" }
+  ],
+  "fallback": "project-agent-batch.json",
+  "perTurn": true
+}

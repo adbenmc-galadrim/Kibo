@@ -217,6 +217,7 @@ describe("service", () => {
       ["assistant", true, false],
       ["demo", true, true],
       ["generateur", true, true],
+      ["project-agent", true, true],
     ]);
     store2.close();
   });

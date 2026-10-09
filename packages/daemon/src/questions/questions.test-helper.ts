@@ -13,6 +13,7 @@ export function runView(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     profileName: "opus-dev",
     sessionId: `s-${p.id}`,
     brief: "",
+    kind: "ticket",
     resumedFrom: null,
     createdAt: 1,
     label: "opus-dev",

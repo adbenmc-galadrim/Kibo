@@ -1,5 +1,11 @@
 import type { CodeRequest, ComponentCall, RpcRequest } from "@kibo/schema";
 
+const PROJECT_AGENT_WRITES: ReadonlySet<RpcRequest["method"]> = new Set<RpcRequest["method"]>([
+  "sendProjectAgentMessage",
+  "decideBatch",
+  "resetProjectAgent",
+]);
+
 const COMPONENT_WRITES: ReadonlySet<ComponentCall["kind"]> = new Set<ComponentCall["kind"]>([
   "run",
   "notes.write",
@@ -28,6 +34,7 @@ const CODE_WRITES: ReadonlySet<CodeRequest["method"]> = new Set<CodeRequest["met
 export const isProjectWrite = (req: RpcRequest): boolean =>
   req.method === "command" ||
   req.method === "deliverAnswers" ||
+  PROJECT_AGENT_WRITES.has(req.method) ||
   (req.method === "componentCall" && COMPONENT_WRITES.has(req.call.kind));
 
 export const isCodeWrite = (req: CodeRequest): boolean => CODE_WRITES.has(req.method);

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import type { AgentsState, RunState } from "@kibo/schema";
 import { renderHook } from "@testing-library/react";
 import { agentsFixture, runFixture } from "./fixtures";
-import { runNotices, useRunNotifications } from "./use-run-notifications";
+import { batchNotices, runNotices, useRunNotifications } from "./use-run-notifications";
 
 test("only entries into waiting, done or failed are announced", () => {
   const previous = new Map<string, RunState>([
@@ -127,5 +127,32 @@ test("a question asked by a running agent is announced once, with its ticket", (
     view.rerender({ state: asked(1) });
     view.rerender({ state: asked(0) });
     expect(shown).toEqual([`${run.label} a posé une question`]);
+  });
+});
+
+const withBatch = (state: AgentsState, pendingBatchId: string | null): AgentsState => ({
+  ...state,
+  runs: [
+    ...state.runs,
+    runFixture({ id: "pa1", kind: "project", ticketKey: null, ticketTitle: "Agent de projet · Emis" }),
+  ],
+  projectAgents: [{ projectId: "emis", runId: "pa1", state: "done", pendingBatchId }],
+});
+
+test("a batch waiting for validation is announced once as « Lot à valider »", () => {
+  const first = agentsFixture();
+  expect(batchNotices(new Map(), withBatch(first, "b1"))).toEqual([
+    { title: "Lot à valider", body: "Agent de projet · Emis" },
+  ]);
+  expect(batchNotices(new Map([["emis", "b1"]]), withBatch(first, "b1"))).toEqual([]);
+  expect(batchNotices(new Map([["emis", "b1"]]), withBatch(first, null))).toEqual([]);
+  withNotification("granted", (shown) => {
+    const view = renderHook(({ state }) => useRunNotifications(state, true), {
+      initialProps: { state: withBatch(first, null) },
+    });
+    view.rerender({ state: withBatch(first, "b1") });
+    view.rerender({ state: withBatch(first, "b1") });
+    view.rerender({ state: withBatch(first, "b2") });
+    expect(shown).toEqual(["Lot à valider", "Lot à valider"]);
   });
 });

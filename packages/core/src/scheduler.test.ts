@@ -15,6 +15,7 @@ function run(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     profileName: "opus-dev",
     sessionId: `s-${p.id}`,
     brief: "",
+    kind: "ticket",
     resumedFrom: null,
     createdAt: 0,
     label: "opus-dev",

@@ -12,14 +12,11 @@ import { useRoute } from "../route";
 import { canEdit } from "../state/access";
 import { useConfig, useNow } from "../state/use-agents";
 import { useProject } from "../state/use-projects";
-import { useDestructiveKeyGuard } from "../tabs/key-guard";
 import { TabBar } from "../tabs/TabBar";
 import { describeTarget } from "../tabs/tab-title";
 import { activeTarget } from "../tabs/tabs-model";
 import { targetToHash } from "../tabs/target-hash";
 import { useHashSync } from "../tabs/use-hash-sync";
-import { useKeepOnEdit } from "../tabs/use-keep-on-edit";
-import { useTabShortcuts } from "../tabs/use-tab-shortcuts";
 import type { TabsApi } from "../tabs/use-tabs";
 import { cycleTheme } from "../theme";
 import { AgentsShellProvider } from "./AgentsShellProvider";
@@ -28,7 +25,7 @@ import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
 import { helpPatch } from "./help-dialogs";
 import { CommandPalette, TutorialSlot } from "./lazy-dialogs";
-import { ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
+import { ProjectAgentPanel, ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
 import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
 import type { ShellProps } from "./Shell";
@@ -38,7 +35,9 @@ import { fileTabOpener, paletteActionHandler } from "./shell-actions";
 import { useAppHelp } from "./use-app-help";
 import { useOpenView, useSnapshotLookup } from "./use-open-view";
 import { useOpened } from "./use-opened";
-import { anyDialogOpen, useShellDialogs } from "./use-shell-dialogs";
+import { useProjectAgentPanel } from "./use-project-agent-panel";
+import { useShellDialogs } from "./use-shell-dialogs";
+import { useWorkspaceKeys } from "./use-workspace-keys";
 import { useWorkspaceSnapshots } from "./use-workspace-snapshots";
 import { inTauri, openWindow } from "./workspace-actions";
 
@@ -59,6 +58,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   const git = useProjectGit(project?.meta.id ?? null, project?.meta.folder ?? null);
   const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = useShellDialogs();
   const paletteOpened = useOpened(palette !== null);
+  const agentPanel = useProjectAgentPanel(project);
   useAppHelp(set);
   const editRequests = useRef(new Set<string>());
   const projectRef = useRef(project);
@@ -104,20 +104,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     [activeProjectId, set, go, views.openView],
   );
 
-  useDestructiveKeyGuard();
-  useKeepOnEdit(tabs, anyDialogOpen(dialogs, palette));
-  useTabShortcuts((s) => {
-    if (s.kind === "palette") return setPalette({ newTab: false });
-    if (s.kind === "newTab") return setPalette({ newTab: true });
-    if (s.kind === "activate") return tabs.dispatch({ type: "activateIndex", index: s.index });
-    if (s.kind === "reopen") return tabs.reopen();
-    if (s.kind === "help") return set(helpPatch("shortcutsHelp"));
-    const id = tabs.state.activeId;
-    if (!id) return;
-    if (s.kind === "close") tabs.dispatch({ type: "close", id });
-    if (s.kind === "togglePin")
-      tabs.dispatch({ type: "pin", id, pinned: !tabs.state.tabs.find((t) => t.id === id)?.pinned });
-  });
+  useWorkspaceKeys({ tabs, dialogs, palette, set, setPalette, toggleAgent: agentPanel.toggle });
 
   const onAction = paletteActionHandler({ set, setFocusRun, go, activeProjectId, cycleTheme });
   const openFileTab = fileTabOpener({ editRequests: editRequests.current, set, go });
@@ -147,7 +134,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     <HostProvider host={host}>
       <AgentsShellProvider agents={agents} openView={views.openView}>
         <PageActionsProvider>
-          <div className="flex h-svh flex-col [--tabbar-h:2.5rem]">
+          <div className="flex h-svh flex-col">
             <TabBar
               state={tabs.state}
               describe={(t) => describeTarget(t, { projects, snapshots })}
@@ -197,6 +184,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                   branch={branch}
                   gitError={git.error}
                   agents={agents}
+                  agentPanel={agentPanel}
                   viewer={viewer}
                   notifications={notifications}
                   now={now}
@@ -257,6 +245,14 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                   onOpenFile={(ref) => set({ preview: ref })}
                 />
               </SidebarInset>
+              {agentPanel.opened && project && (
+                <ProjectAgentPanel
+                  key={project.meta.id}
+                  open={agentPanel.open}
+                  project={project}
+                  onClose={agentPanel.close}
+                />
+              )}
               <ShellDialogs
                 state={dialogs}
                 set={set}

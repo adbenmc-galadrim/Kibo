@@ -1,7 +1,7 @@
 import { Database } from "bun:sqlite";
 import { chmodSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { HostSettings, KiboError, RunEvent, type RunLogEntry, type RunRecord } from "@kibo/schema";
+import { HostSettings, KiboError, RunEvent, RunKind, type RunLogEntry, type RunRecord } from "@kibo/schema";
 import { immediateTransaction, SQLITE_BUSY_TIMEOUT_MS } from "../sqlite-busy";
 import { vacuumFileInto } from "../sqlite-vacuum";
 
@@ -51,11 +51,19 @@ type RunRow = {
   brief: string;
   created_at: number;
   resumed_from: string | null;
+  kind: string;
 };
 type EventRow = { id: number; run_id: string; at: number; data: string };
 
+function toKind(r: RunRow): RunKind {
+  const parsed = RunKind.safeParse(r.kind);
+  if (!parsed.success) throw new KiboError("STORE_CORRUPT", `run ${r.id}: unknown kind ${r.kind}`);
+  return parsed.data;
+}
+
 const toRecord = (r: RunRow): RunRecord => ({
   id: r.id,
+  kind: toKind(r),
   seq: r.seq,
   projectId: r.project_id,
   ticketId: r.ticket_id,
@@ -73,6 +81,12 @@ function addResumedFrom(db: Database): void {
   const columns = db.query("PRAGMA table_info(runs)").all() as { name: string }[];
   if (!columns.some((c) => c.name === "resumed_from"))
     db.exec("ALTER TABLE runs ADD COLUMN resumed_from TEXT");
+}
+
+function addKind(db: Database): void {
+  const columns = db.query("PRAGMA table_info(runs)").all() as { name: string }[];
+  if (!columns.some((c) => c.name === "kind"))
+    db.exec("ALTER TABLE runs ADD COLUMN kind TEXT NOT NULL DEFAULT 'ticket'");
 }
 
 function parseJson(text: string, what: string): unknown {
@@ -101,6 +115,7 @@ export function openRunStore(home: string): RunStore {
     db.exec("PRAGMA foreign_keys = ON");
     for (const sql of SCHEMA) db.exec(sql);
     addResumedFrom(db);
+    addKind(db);
     const check = db.query("PRAGMA integrity_check").get() as { integrity_check: string } | null;
     if (check?.integrity_check !== "ok") throw new Error(check?.integrity_check ?? "integrity_check failed");
   } catch (e) {
@@ -111,8 +126,8 @@ export function openRunStore(home: string): RunStore {
   const nextSeq = db.query("SELECT COALESCE(MAX(seq), 0) + 1 AS seq FROM runs");
   const insertRun = db.query(
     "INSERT INTO runs (id, seq, project_id, ticket_id, ticket_key, ticket_title, profile_id, profile_name, " +
-      "session_id, brief, created_at, resumed_from) VALUES ($id, $seq, $project_id, $ticket_id, $ticket_key, " +
-      "$ticket_title, $profile_id, $profile_name, $session_id, $brief, $created_at, $resumed_from)",
+      "session_id, brief, created_at, resumed_from, kind) VALUES ($id, $seq, $project_id, $ticket_id, $ticket_key, " +
+      "$ticket_title, $profile_id, $profile_name, $session_id, $brief, $created_at, $resumed_from, $kind)",
   );
   const runExists = db.query("SELECT 1 AS found FROM runs WHERE id = $id");
   const insertEvent = db.query(
@@ -139,6 +154,7 @@ export function openRunStore(home: string): RunStore {
       brief: run.brief,
       created_at: at,
       resumed_from: run.resumedFrom,
+      kind: run.kind,
     });
     const enqueued: RunEvent = { type: "enqueued", rank };
     insertEvent.get({ run_id: run.id, at, data: JSON.stringify(enqueued) });

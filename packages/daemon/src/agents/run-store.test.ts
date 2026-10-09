@@ -20,6 +20,7 @@ afterEach(() => {
 
 const newRun = (id: string): NewRun => ({
   id,
+  kind: "ticket",
   projectId: "p1",
   ticketId: "t1",
   ticketKey: "KIB-14",
@@ -167,6 +168,27 @@ test("a v0.16 database opens, its runs resumed from nothing, and new runs keep t
   expect(again.records().map((r) => [r.id, r.sessionId, r.resumedFrom])).toEqual([
     ["r1", "s-r1", null],
     ["r2", "s-r1", "r1"],
+  ]);
+  again.close();
+});
+
+test("a database without run kinds opens, old runs are ticket runs, and a project run keeps its kind", () => {
+  const h = home();
+  const old = new Database(join(h, "runs.db"), { create: true });
+  old.exec(V016_RUNS);
+  old.exec("ALTER TABLE runs ADD COLUMN resumed_from TEXT");
+  old.exec(
+    "INSERT INTO runs VALUES ('r1', 1, 'p1', 't1', 'KIB-14', 'Récepteur de hooks', 'opus', 'opus-dev', 's-r1', '', 5, NULL)",
+  );
+  old.close();
+  const s = openRunStore(h);
+  const project = { ...newRun("r2"), kind: "project" as const, ticketId: null, ticketKey: null };
+  s.create(project, 1, 10);
+  s.close();
+  const again = openRunStore(h);
+  expect(again.records().map((r) => [r.id, r.kind])).toEqual([
+    ["r1", "ticket"],
+    ["r2", "project"],
   ]);
   again.close();
 });

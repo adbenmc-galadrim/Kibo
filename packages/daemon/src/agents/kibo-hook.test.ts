@@ -171,3 +171,57 @@ test("the executable posts to a real daemon and prints its decision", async () =
     server.stop(true);
   }
 });
+
+test("the MCP executable reads its environment and asks the daemon for project tools", async () => {
+  const seen: Array<{ path: string; auth: string | null; body: unknown }> = [];
+  const server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    async fetch(req) {
+      seen.push({
+        path: new URL(req.url).pathname,
+        auth: req.headers.get("authorization"),
+        body: await req.json(),
+      });
+      return Response.json({ ok: true, text: '{"items":[],"nextCursor":null,"total":0}' });
+    },
+  });
+  try {
+    const lines = [
+      { jsonrpc: "2.0", id: 1, method: "tools/list" },
+      {
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/call",
+        params: { name: "list_tickets", arguments: { status: "done" } },
+      },
+    ];
+    const proc = run("mcp", lines.map((l) => `${JSON.stringify(l)}\n`).join(""), {
+      PATH: process.env.PATH ?? "",
+      KIBO_MCP_URL: `http://127.0.0.1:${server.port}/agent-mcp/r1`,
+      KIBO_RUN_TOKEN: TOKEN,
+    });
+    const out = await new Response(proc.stdout).text();
+    expect(await proc.exited).toBe(0);
+    const replies = new Map(
+      out
+        .trim()
+        .split("\n")
+        .map((l) => JSON.parse(l) as { id: number; result: { tools?: unknown[]; content?: unknown } })
+        .map((r) => [r.id, r.result]),
+    );
+    expect(replies.get(1)?.tools).toHaveLength(12);
+    expect(replies.get(2)?.content).toEqual([
+      { type: "text", text: '{"items":[],"nextCursor":null,"total":0}' },
+    ]);
+    expect(seen).toEqual([
+      {
+        path: "/agent-mcp/r1",
+        auth: `Bearer ${TOKEN}`,
+        body: { tool: "list_tickets", input: { status: "done" } },
+      },
+    ]);
+  } finally {
+    server.stop(true);
+  }
+});

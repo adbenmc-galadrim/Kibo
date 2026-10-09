@@ -21,8 +21,10 @@ import { loadTrusted, type TrustedModule } from "../shell/trusted-loader";
 import { useComponents } from "../state/use-components";
 import { useRuntimeInfo } from "../state/use-runtime-info";
 import { BackendGate } from "./BackendStopped";
-import { PendingTrust } from "./PendingTrust";
 
+const PendingTrust = lazyPanel(() => import("./PendingTrust").then((m) => m.PendingTrust), fr.lazy, {
+  fallback: "sr-only",
+});
 const MissingComponent = lazyPanel(
   () => import("./MissingComponent").then((m) => m.MissingComponent),
   fr.lazy,

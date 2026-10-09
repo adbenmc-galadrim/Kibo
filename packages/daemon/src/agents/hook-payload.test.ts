@@ -159,3 +159,32 @@ test("no ask before the call nor for an invalid input, and huge inputs are cut",
   expect(huge.payload.ask?.context).toHaveLength(8000);
   expect(JSON.stringify(huge).length).toBeLessThan(20_000);
 });
+
+const mcpDetail = (tool: string, input: Record<string, unknown>) =>
+  reduceHookInput({
+    ...base,
+    hook_event_name: "PostToolUse",
+    tool_name: `mcp__kibo__${tool}`,
+    tool_input: input,
+  }).detail;
+
+test("project tool reads are summarized by what they target", () => {
+  expect(mcpDetail("get_ticket", { key: "EMIS-11" })).toBe("EMIS-11");
+  expect(mcpDetail("read_note", { path: "agent-de-projet/memoire.md" })).toBe("agent-de-projet/memoire.md");
+  expect(mcpDetail("list_tickets", { status: "done", label: "x" })).toBe("status=done label=x");
+  expect(mcpDetail("list_tickets", {})).toBeNull();
+  expect(mcpDetail("list_tickets", { query: "SECRET", cursor: "50" })).toBeNull();
+  expect(mcpDetail("list_questions", { state: "all", ticketKey: "EMIS-2" })).toBe(
+    "state=all ticketKey=EMIS-2",
+  );
+  expect(mcpDetail("list_runs", { state: "running" })).toBe("state=running");
+  expect(mcpDetail("project_overview", {})).toBeNull();
+  expect(mcpDetail("list_notes", { cursor: "50" })).toBeNull();
+});
+
+test("a proposed batch is summarized by its size, never by its summary", () => {
+  const actions = [{ id: 1 }, { id: 2 }, { id: 3 }];
+  const detail = mcpDetail("propose_batch", { summary: "SECRET plan", actions, path: "x.md" });
+  expect(detail).toBe("3 actions");
+  expect(mcpDetail("propose_batch", { summary: "SECRET plan" })).toBe("0 actions");
+});

@@ -14,6 +14,7 @@ export const FakeStep = z.union([
   z.object({ hold: z.literal(true) }),
   z.object({ stderr: z.string() }),
   z.object({ write: z.string().min(1), fixture: z.string().min(1), bypassHooks: z.boolean().default(false) }),
+  z.object({ mcp: z.string().min(1), input: z.record(z.string(), z.unknown()).default({}) }),
 ]);
 export type FakeStep = z.infer<typeof FakeStep>;
 
@@ -31,6 +32,7 @@ export type FakeScenario = z.infer<typeof FakeScenario>;
 export const FakeRoutes = z.object({
   routes: z.array(z.object({ prompt: z.string().min(1), scenario: z.string().min(1) })),
   fallback: z.string().min(1),
+  perTurn: z.boolean().default(false),
 });
 
 export function scenarioFor(file: string, prompt: string, remembered: string | null): string {
@@ -41,18 +43,41 @@ export function scenarioFor(file: string, prompt: string, remembered: string | n
   return resolve(dirname(file), route?.scenario ?? routes.data.fallback);
 }
 
+export function turnScenario(
+  file: string,
+  prompt: string,
+  remembered: string | null,
+): { turn: string; session: string } {
+  const routes = FakeRoutes.safeParse(JSON.parse(readFileSync(file, "utf8")));
+  if (!routes.success || !routes.data.perTurn) {
+    const chosen = scenarioFor(file, prompt, remembered);
+    return { turn: chosen, session: chosen };
+  }
+  const session = remembered ?? resolve(dirname(file), routes.data.fallback);
+  const route = routes.data.routes.find((r) => prompt.includes(r.prompt));
+  return { turn: route ? resolve(dirname(file), route.scenario) : session, session };
+}
+
 export const FakeCall = z.object({
   argv: z.array(z.string()),
   cwd: z.string(),
   prompt: z.string(),
   hasToken: z.boolean(),
   hookUrl: z.string().nullable(),
+  mcp: z.array(z.object({ tool: z.string(), text: z.string(), isError: z.boolean() })).default([]),
 });
 export type FakeCall = z.infer<typeof FakeCall>;
 
 export const FAKE_CLAUDE = join(import.meta.dir, "fake-claude.ts");
 
-export type FakeScenarioName = "done" | "question" | "hold" | "fail" | "guard" | "routes";
+export type FakeScenarioName =
+  | "done"
+  | "question"
+  | "hold"
+  | "fail"
+  | "guard"
+  | "routes"
+  | "project-agent-routes";
 
 export function scenarioPath(name: FakeScenarioName): string {
   return join(import.meta.dir, "scenarios", `${name}.json`);

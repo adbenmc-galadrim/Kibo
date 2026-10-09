@@ -6,6 +6,7 @@ import { headRank } from "@kibo/core/scheduler";
 import {
   type AgentProfile,
   branchRefOf,
+  isProjectRun,
   isTerminal,
   KiboError,
   mainSessionOf,
@@ -15,6 +16,7 @@ import {
   undeliveredAnswers,
 } from "@kibo/schema";
 import { DEMO_PROFILE_ID, type OrchestratorOptions, type TaskSpec } from "./orchestrator-types";
+import { PROJECT_WORKSPACE_LABEL, prepareProjectTurn, projectLaunch } from "./project-run";
 import type { RunRegistry } from "./run-registry";
 import { newRunToken } from "./run-token";
 import {
@@ -27,7 +29,7 @@ import {
   readCliCaps,
   resolveClaudeBin,
 } from "./runner";
-import { decideSession, type SessionDecision } from "./session-decision";
+import { decideProjectSession, decideSession, type SessionDecision } from "./session-decision";
 import { transcriptTokensAt } from "./transcript";
 import { prepareWorkspace, writeRunContext } from "./workspace-prep";
 
@@ -122,6 +124,11 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
     return { cwd: task.cwd, label: task.cwd, guidelines: 0, brief: run.brief, systemPromptFile, answers: [] };
   }
 
+  async function prepareProjectRun(run: RunView, runDir: string): Promise<Prepared> {
+    const turn = await prepareProjectTurn(opts.projectTurns, run, runDir);
+    return { ...turn, label: PROJECT_WORKSPACE_LABEL, guidelines: 0, brief: turn.prompt, answers: [] };
+  }
+
   function recordExit(runId: string, outcome: ProcessOutcome, task: TaskSpec | undefined): RunView | null {
     const before = registry.get(runId);
     if (!EXIT_STATES.has(before.state)) {
@@ -152,6 +159,10 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       transcriptExists,
       newId: () => crypto.randomUUID(),
     });
+    return journalSession(current, decision);
+  }
+
+  function journalSession(current: RunView, decision: SessionDecision): SessionDecision {
     registry.apply(
       current.id,
       decision.resume
@@ -180,18 +191,21 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
 
   async function run(runId: string): Promise<void> {
     const initial = registry.get(runId);
-    const task = initial.ticketId === null ? tasks.get(runId) : undefined;
+    const project = isProjectRun(initial);
+    const task = initial.ticketId === null && !project ? tasks.get(runId) : undefined;
     const runDir = join(opts.home, "runs", runId);
     try {
-      if (initial.ticketId === null && !task) {
+      if (initial.ticketId === null && !project && !task) {
         registry.apply(runId, { type: "failed", error: LOST_TASK });
         return;
       }
       const resume = initial.turns > 0 || (task?.resume ?? false);
       const profile = deps.profileOf(initial.profileId);
-      const prepared = task
-        ? prepareTaskRun(initial, profile, task, runDir)
-        : await prepareTicketRun(initial, profile, runDir);
+      const prepared = project
+        ? await prepareProjectRun(initial, runDir)
+        : task
+          ? prepareTaskRun(initial, profile, task, runDir)
+          : await prepareTicketRun(initial, profile, runDir);
       const demo = profile.id === DEMO_PROFILE_ID;
       const claudeBin = demo
         ? opts.demoAgent.bin
@@ -202,11 +216,20 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       const cwd = realpathSync(prepared.cwd);
       const ticketId = task ? null : current.ticketId;
       const firstTicketTurn = ticketId !== null && current.turns === 0;
-      const session = firstTicketTurn
-        ? chooseSession(current, ticketId, cwd)
-        : { resume, sessionId: current.sessionId };
+      const session = project
+        ? journalSession(
+            current,
+            decideProjectSession(current, transcriptExists, () => crypto.randomUUID()),
+          )
+        : firstTicketTurn
+          ? chooseSession(current, ticketId, cwd)
+          : { resume, sessionId: current.sessionId };
       const { token, hash } = mint(runId);
       opts.store.saveTokenHash(runId, hash, now());
+      const baseUrl = opts.baseUrl();
+      const tools = project
+        ? projectLaunch({ profile, baseUrl, runId, runDir, hook: opts.hook, token })
+        : { allow: profile.allow, deny: [], mcpUrl: null, mcpConfigFile: null };
       const proc = launch({
         claudeBin,
         cwd,
@@ -215,14 +238,15 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         extraArgs: task?.extraArgs ?? [],
         sessionId: session.sessionId,
         resume: session.resume,
-        prompt:
-          current.turns > 0
+        prompt: project
+          ? prepared.brief
+          : current.turns > 0
             ? (current.pendingAnswer ?? "")
             : firstPrompt(prepared.brief, current.pendingAnswer),
         systemPromptFile: prepared.systemPromptFile,
         hook: opts.hook,
-        allow: profile.allow,
-        hookUrl: `${opts.baseUrl()}/hooks/${runId}`,
+        ...tools,
+        hookUrl: `${baseUrl}/hooks/${runId}`,
         token,
         baseEnv: env,
         extraEnv: { ...(task?.env ?? {}), ...(demo ? opts.demoAgent.env() : {}) },

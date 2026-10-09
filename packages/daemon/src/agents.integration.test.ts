@@ -14,6 +14,7 @@ import type {
   Ticket,
   WorkspaceConfig,
 } from "@kibo/schema";
+import { z } from "zod";
 import {
   FAKE_CLAUDE,
   type FakeScenarioName,
@@ -23,12 +24,19 @@ import {
 import { commit, git, cleanupTmp as removeRepos, repo } from "./agents/git-test-kit";
 import { defaultHookLauncher } from "./agents/hook-launcher";
 import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
+import type { ProjectTurnPort } from "./agents/orchestrator-types";
 import { openRunStore, type RunStore } from "./agents/run-store";
 import { startServer } from "./server";
 import { createService } from "./service";
 import { openStore, type Store } from "./store";
 
 const TOKEN = "c".repeat(64);
+const RpcReply = z.object({ ok: z.boolean(), result: z.unknown().optional() });
+const noProjectTurns: ProjectTurnPort = {
+  prepare: async () => {
+    throw new Error("no project run in these tests");
+  },
+};
 type Stack = {
   home: string;
   store: Store;
@@ -69,6 +77,7 @@ function boot(scenario: FakeScenarioName): Stack {
     sampler: () => ({ cpu: 5, ram: 5 }),
     hostInfo: { cores: 8, ramGb: 16 },
     notify: () => {},
+    projectTurns: noProjectTurns,
     env: {
       PATH: process.env.PATH,
       HOME: process.env.HOME,
@@ -124,7 +133,7 @@ async function client(s: Stack) {
       headers: { "content-type": "application/json", origin, cookie },
       body: JSON.stringify(body),
     });
-    const json = (await res.json()) as { ok: boolean; result?: T };
+    const json = RpcReply.parse(await res.json());
     expect({ status: res.status, body: json }).toMatchObject({ status });
     return json.result as T;
   };

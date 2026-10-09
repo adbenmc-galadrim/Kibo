@@ -9,6 +9,8 @@ import { serveTrusted } from "./components/trusted-route";
 import { fail, respond, unredacted } from "./http-response";
 import { serveIcon } from "./icons/icon-route";
 import type { IconStore } from "./icons/icon-store";
+import { AGENT_MCP_PATH, handleAgentMcp } from "./project-agent/mcp-route";
+import type { AgentMcpSink } from "./project-agent/types";
 import { PairingCodes } from "./remote/pairing-codes";
 import type { RemoteListen } from "./remote/remote-access";
 import { dispatchRpc, type RpcContext, type RpcExtension, type RpcHandler } from "./rpc-extensions";
@@ -28,6 +30,7 @@ export type ServerOptions = {
   uiDir: string | null;
   extraOrigins?: string[];
   hooks?: HookSink;
+  agentMcp?: AgentMcpSink;
   code?: CodeService;
   assets?: AssetLookup;
   icons?: Pick<IconStore, "get">;
@@ -61,6 +64,12 @@ function sessionStoreOf(given: SessionStore | undefined): { sessions: SessionSto
 }
 
 const HEALTH_HEADERS = { "cache-control": "no-store" };
+
+async function localOnly(l: ListenInfo, handle: (() => Promise<Response>) | null): Promise<Response> {
+  const res = handle && !l.remote ? await handle() : new Response("not found", { status: 404 });
+  res.headers.set("cache-control", "no-store");
+  return res;
+}
 
 export function healthResponse(l: ListenInfo, method: string): Response | null {
   if (l.remote || method !== "GET") return null;
@@ -185,14 +194,11 @@ export function startServer(opts: ServerOptions): RunningServer {
         return healthResponse(l, req.method) ?? new Response("not found", { status: 404 });
       }
       const hookRun = HOOK_PATH.exec(url.pathname)?.[1];
-      if (hookRun) {
-        const res =
-          opts.hooks && !l.remote
-            ? await handleHook(req, hookRun, opts.hooks)
-            : new Response("not found", { status: 404 });
-        res.headers.set("cache-control", "no-store");
-        return res;
-      }
+      const hooks = opts.hooks;
+      if (hookRun) return localOnly(l, hooks ? () => handleHook(req, hookRun, hooks) : null);
+      const agentRun = AGENT_MCP_PATH.exec(url.pathname)?.[1];
+      const agentMcp = opts.agentMcp;
+      if (agentRun) return localOnly(l, agentMcp ? () => handleAgentMcp(req, agentRun, agentMcp) : null);
       if (url.pathname.startsWith("/components/")) {
         return serveTrusted(req, url, { assets: opts.assets, origins: () => allowedOrigins(l), hasSession });
       }

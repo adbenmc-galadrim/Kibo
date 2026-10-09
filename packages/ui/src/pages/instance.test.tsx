@@ -541,3 +541,22 @@ test("modify with AI: offered on an ai instance, not on a marketplace one", asyn
   expect(await screen.findByRole("dialog", { name: "Modifier « Burndown » avec l'IA" })).toBeTruthy();
   expect(screen.getByText("Version actuelle 0.1.0 · Créé par l'IA")).toBeTruthy();
 });
+
+test("the trust request loads on demand without a visible loading flash", async () => {
+  components = prQueue(version("0.3.0", { active: false, trust: null }));
+  wrap(
+    <InstanceFrame
+      apis={APIS}
+      projectId="p1"
+      instance={inst("pr-queue@0.3.0")}
+      viewer="adam"
+      surface="widget"
+      format="large"
+    />,
+  );
+  const loading = Array.from(document.querySelectorAll("[data-kibo-loading]"));
+  expect(loading.every((el) => el.classList.contains("sr-only"))).toBe(true);
+  expect(await screen.findByText("Autorisation requise")).toBeTruthy();
+  expect(document.querySelector("[data-kibo-loading]")).toBeNull();
+  expect(screen.getByRole("button", { name: "Examiner et autoriser" })).toBeTruthy();
+});
