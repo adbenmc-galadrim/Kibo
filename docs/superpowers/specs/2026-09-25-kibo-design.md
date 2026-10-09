@@ -236,6 +236,7 @@ Toutes les maquettes sont dans Penpot, en **thème sombre et en thème clair**.
   - Menu contextuel d'un onglet : Épingler / Désépingler, Dupliquer, Fermer les autres, Ouvrir dans une nouvelle fenêtre.
   - Les onglets sont **persistés par workspace** (donnée locale, hors CRDT partagé).
 - **Sidebar** (issue de la variante A) : sélecteur de workspace (en-tête et renommage en phase 4 ; création et bascule entre workspaces : point E6 du plan de phase 4), recherche `⌘K`, Vue d'ensemble, Mes tickets, Agents, arbre des projets et de leurs pages, puis Composants et Paramètres. Repliable en **rail d'icônes** (issu de la variante B).
+  - **Ouvrir un projet** (2026-10-09) : cliquer sur le nom d'un projet ouvre sa page « Tableau de bord » ; à défaut (supprimée ou renommée), sa première page ; sans aucune page, l'état vide « Projet créé » avec l'ajout d'une page, jamais une page blanche. Même règle pour toute entrée qui mène au projet sans page précise (palette `⌘K`, lien de projet, onglet restauré sans page).
 - **Deux types de pages :**
   - **Tableau de bord** : grille de widgets (variante A) ;
   - **Vue** : un composant en plein écran (variante B).
