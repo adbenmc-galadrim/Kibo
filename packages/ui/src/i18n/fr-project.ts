@@ -23,6 +23,16 @@ export const frProject = {
       setupQuoted:
         "Une variable entre guillemets simples ne serait pas remplacée : utilise des guillemets doubles.",
     },
+    storybook: "Storybook",
+    storybookOrigin: "Adresse",
+    storybookOriginHelp: "Storybook local (pnpm storybook) ou déployé en https ; http seulement en local.",
+    storybookPortEnv: "Variable du port dans .env des worktrees",
+    storybookPortEnvHelp:
+      "Chaque worktree qui définit cette variable dans .env ou .env.local apparaît comme un Storybook de sa branche.",
+    storybookErrors: {
+      origin: "Adresse refusée (https, ou http en local)",
+      portEnv: "Nom de variable invalide",
+    },
     save: "Enregistrer",
     cancel: "Annuler",
     folderBusy: "Un agent travaille sur ce projet : attends la fin de ses runs pour changer le dossier.",

@@ -5,6 +5,8 @@ import {
   type KiboErrorCode,
   type ProjectPatch,
   type ProjectSummary,
+  STORYBOOK_DEFAULTS,
+  type StorybookSettings,
   WORKTREE_DEFAULTS,
   type WorktreeSettings,
 } from "@kibo/schema";
@@ -21,6 +23,7 @@ import { PROJECT_COLORS } from "../lib/project-colors";
 import { isRemoteView } from "../lib/remote-view";
 import { FolderField, type FolderFieldProps } from "./FolderField";
 import { IconField } from "./IconField";
+import { StorybookFields, storybookProblem } from "./StorybookFields";
 import { WorktreeFields, worktreeProblem } from "./WorktreeFields";
 
 type Props = {
@@ -30,13 +33,21 @@ type Props = {
   canBrowse?: boolean;
   pick?: FolderFieldProps["pick"];
 };
-type Fields = { name: string; color: string; folder: string; worktree?: WorktreeSettings | null };
+type Fields = {
+  name: string;
+  color: string;
+  folder: string;
+  worktree?: WorktreeSettings | null;
+  storybook?: StorybookSettings | null;
+};
 
 const t = frProject.edit;
 const KNOWN: Partial<Record<KiboErrorCode, string>> = t.errors;
 
 const sameWorktree = (a: WorktreeSettings | null, b: WorktreeSettings | null) =>
   JSON.stringify(a ?? WORKTREE_DEFAULTS) === JSON.stringify(b ?? WORKTREE_DEFAULTS);
+const sameStorybook = (a: StorybookSettings | null, b: StorybookSettings | null) =>
+  JSON.stringify(a ?? STORYBOOK_DEFAULTS) === JSON.stringify(b ?? STORYBOOK_DEFAULTS);
 
 export function projectPatch(project: ProjectSummary, fields: Fields): ProjectPatch | null {
   const patch: ProjectPatch = {};
@@ -47,6 +58,8 @@ export function projectPatch(project: ProjectSummary, fields: Fields): ProjectPa
   if (folder !== project.folder) patch.folder = folder;
   const worktree = fields.worktree;
   if (worktree !== undefined && !sameWorktree(worktree, project.worktree)) patch.worktree = worktree;
+  const storybook = fields.storybook;
+  if (storybook !== undefined && !sameStorybook(storybook, project.storybook)) patch.storybook = storybook;
   return Object.keys(patch).length === 0 ? null : patch;
 }
 
@@ -65,6 +78,9 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
   const [color, setColor] = useState<string>(project.color);
   const [folder, setFolder] = useState(project.folder ?? "");
   const [worktree, setWorktree] = useState<WorktreeSettings | null>(project.worktree ?? WORKTREE_DEFAULTS);
+  const [storybook, setStorybook] = useState<StorybookSettings | null>(
+    project.storybook ?? STORYBOOK_DEFAULTS,
+  );
   const [pending, setPending] = useState<IconInput | null>(null);
   const [removed, setRemoved] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -75,10 +91,13 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
     color,
     folder: remote ? (project.folder ?? "") : folder,
     ...(showWorktree && { worktree }),
+    storybook,
   });
   const iconChanged = pending !== null || (removed && Boolean(project.icon));
   const worktreeInvalid = showWorktree && worktree !== null && worktreeProblem(worktree) !== null;
-  const dirty = name.trim().length > 0 && !worktreeInvalid && (patch !== null || iconChanged);
+  const storybookInvalid = storybook !== null && storybookProblem(storybook) !== null;
+  const dirty =
+    name.trim().length > 0 && !worktreeInvalid && !storybookInvalid && (patch !== null || iconChanged);
   const currentUrl = project.icon ? iconUrl({ kind: "project", projectId: project.id }, project.icon) : null;
 
   const submit = async (e: FormEvent) => {
@@ -165,6 +184,12 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
             </div>
           )}
           {showWorktree && <WorktreeFields value={worktree} onChange={setWorktree} disabled={busy} />}
+          <StorybookFields
+            value={storybook}
+            onChange={setStorybook}
+            withPortEnv={showWorktree}
+            disabled={busy}
+          />
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}
