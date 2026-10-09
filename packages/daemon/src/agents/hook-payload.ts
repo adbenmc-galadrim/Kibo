@@ -7,6 +7,9 @@ import {
   type HookPayload,
   type HookPost,
   KiboError,
+  mcpToolName,
+  PROJECT_AGENT_TOOLS,
+  type ProjectAgentTool,
 } from "@kibo/schema";
 
 const text = (value: unknown): string | null =>
@@ -14,18 +17,48 @@ const text = (value: unknown): string | null =>
 const clip = (value: string | null | undefined, max: number): string | null =>
   value ? value.slice(0, max) : null;
 
-function detailOf(h: HookInput): string | null {
+type ToolInput = Record<string, unknown>;
+
+const filters =
+  (...keys: string[]) =>
+  (input: ToolInput): string | null => {
+    const parts = keys.flatMap((k) => {
+      const v = text(input[k]);
+      return v ? [`${k}=${v}`] : [];
+    });
+    return parts.length > 0 ? parts.join(" ") : null;
+  };
+
+const MCP_DETAILS: Record<ProjectAgentTool, (input: ToolInput) => string | null> = {
+  project_overview: () => null,
+  list_tickets: filters("status", "label", "query", "cursor"),
+  get_ticket: (input) => text(input.key),
+  list_questions: filters("state", "ticketKey"),
+  list_runs: filters("state"),
+  list_notes: filters("cursor"),
+  read_note: (input) => text(input.path),
+  list_profiles: () => null,
+  project_changes: () => null,
+  propose_batch: (input) => `${Array.isArray(input.actions) ? input.actions.length : 0} actions`,
+};
+
+const projectToolOf = (name: string | null | undefined): ProjectAgentTool | null =>
+  PROJECT_AGENT_TOOLS.find((tool) => mcpToolName(tool) === name) ?? null;
+
+function toolDetail(h: HookInput): string | null {
   const input = h.tool_input ?? {};
+  const projectTool = projectToolOf(h.tool_name);
+  if (projectTool) return MCP_DETAILS[projectTool](input);
+  return (
+    text(input.file_path) ?? text(input.path) ?? text(input.command) ?? text(input.pattern) ?? text(input.url)
+  );
+}
+
+function detailOf(h: HookInput): string | null {
   switch (h.hook_event_name) {
     case "PreToolUse":
     case "PostToolUse":
-      return (
-        text(input.file_path) ??
-        text(input.path) ??
-        text(input.command) ??
-        text(input.pattern) ??
-        text(input.url)
-      );
+      return toolDetail(h);
     case "Notification":
       return text(h.message);
     case "Stop":

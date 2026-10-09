@@ -14,6 +14,7 @@ export const FakeStep = z.union([
   z.object({ hold: z.literal(true) }),
   z.object({ stderr: z.string() }),
   z.object({ write: z.string().min(1), fixture: z.string().min(1), bypassHooks: z.boolean().default(false) }),
+  z.object({ mcp: z.string().min(1), input: z.record(z.string(), z.unknown()).default({}) }),
 ]);
 export type FakeStep = z.infer<typeof FakeStep>;
 
@@ -47,12 +48,20 @@ export const FakeCall = z.object({
   prompt: z.string(),
   hasToken: z.boolean(),
   hookUrl: z.string().nullable(),
+  mcp: z.array(z.object({ tool: z.string(), text: z.string(), isError: z.boolean() })).default([]),
 });
 export type FakeCall = z.infer<typeof FakeCall>;
 
 export const FAKE_CLAUDE = join(import.meta.dir, "fake-claude.ts");
 
-export type FakeScenarioName = "done" | "question" | "hold" | "fail" | "guard" | "routes";
+export type FakeScenarioName =
+  | "done"
+  | "question"
+  | "hold"
+  | "fail"
+  | "guard"
+  | "routes"
+  | "project-agent-routes";
 
 export function scenarioPath(name: FakeScenarioName): string {
   return join(import.meta.dir, "scenarios", `${name}.json`);

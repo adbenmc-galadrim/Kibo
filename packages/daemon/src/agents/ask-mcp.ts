@@ -1,7 +1,8 @@
 import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
-import { QUESTION_OPTIONS_MAX } from "@kibo/schema";
+import { QUESTION_OPTIONS_MAX, TOOL_SPECS } from "@kibo/schema";
 import { z } from "zod";
+import { callDaemonTool, type McpToolReply } from "./mcp-client";
 
 const McpMessage = z.object({
   jsonrpc: z.literal("2.0"),
@@ -52,6 +53,22 @@ const ASK_TOOL_SPECS = [
   },
 ];
 
+export type McpTools = { project: boolean };
+export type DaemonCall = (tool: string, input: unknown) => Promise<McpToolReply>;
+
+const PROJECT_TOOL_SPECS = TOOL_SPECS.map(({ name, description, inputSchema }) => ({
+  name,
+  description,
+  inputSchema,
+}));
+
+const listedTools = (tools: McpTools) => [
+  ...ASK_TOOL_SPECS.map(({ reply: _reply, ...spec }) => spec),
+  ...(tools.project ? PROJECT_TOOL_SPECS : []),
+];
+
+const argumentsOf = (params: Record<string, unknown> | undefined): unknown => params?.arguments ?? {};
+
 function parse(line: string): { ok: true; json: unknown } | { ok: false } {
   try {
     return { ok: true, json: JSON.parse(line) };
@@ -60,7 +77,11 @@ function parse(line: string): { ok: true; json: unknown } | { ok: false } {
   }
 }
 
-export function handleMcpLine(line: string): McpReply | null {
+export async function handleMcpLine(
+  line: string,
+  tools: McpTools,
+  call: DaemonCall,
+): Promise<McpReply | null> {
   const read = parse(line);
   if (!read.ok) return { jsonrpc: "2.0", id: null, error: { code: -32700, message: "parse error" } };
   const parsed = McpMessage.safeParse(read.json);
@@ -86,22 +107,36 @@ export function handleMcpLine(line: string): McpReply | null {
     case "ping":
       return ok({});
     case "tools/list":
-      return ok({ tools: ASK_TOOL_SPECS.map(({ reply: _reply, ...spec }) => spec) });
+      return ok({ tools: listedTools(tools) });
     case "tools/call": {
-      const tool = ASK_TOOL_SPECS.find((t) => t.name === params?.name);
-      return tool
-        ? ok({ content: [{ type: "text", text: tool.reply }] })
-        : fail(-32602, `unknown tool ${String(params?.name)}`);
+      const name = params?.name;
+      const ask = ASK_TOOL_SPECS.find((t) => t.name === name);
+      if (ask) return ok({ content: [{ type: "text", text: ask.reply }] });
+      if (!tools.project || !PROJECT_TOOL_SPECS.some((t) => t.name === name))
+        return fail(-32602, `unknown tool ${String(name)}`);
+      const reply = await call(String(name), argumentsOf(params));
+      return ok({ content: [{ type: "text", text: reply.text }], isError: reply.isError });
     }
     default:
       return fail(-32601, `method ${method} not found`);
   }
 }
 
-export async function serveMcp(input: Readable, output: Writable): Promise<void> {
+export async function serveMcp(
+  input: Readable,
+  output: Writable,
+  env: Record<string, string | undefined>,
+): Promise<void> {
+  const tools: McpTools = { project: Boolean(env.KIBO_MCP_URL) };
+  const call: DaemonCall = (tool, args) => callDaemonTool(env, tool, args);
+  const pending: Promise<void>[] = [];
   for await (const line of createInterface({ input, crlfDelay: Number.POSITIVE_INFINITY })) {
     if (!line.trim()) continue;
-    const reply = handleMcpLine(line);
-    if (reply) output.write(`${JSON.stringify(reply)}\n`);
+    pending.push(
+      handleMcpLine(line, tools, call).then((reply) => {
+        if (reply) output.write(`${JSON.stringify(reply)}\n`);
+      }),
+    );
   }
+  await Promise.all(pending);
 }
