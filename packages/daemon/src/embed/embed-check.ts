@@ -87,7 +87,7 @@ export function createEmbedChecker(deps: {
       [{ host: new URL(target).hostname, suffix: false, auth: false }],
     );
     const check = embedCheckOf(res.status, res.headers, deps.uiOrigins());
-    remember(target, check);
+    if (check.ok || check.code !== "REMOTE_UNAVAILABLE") remember(target, check);
     return check;
   };
   return {

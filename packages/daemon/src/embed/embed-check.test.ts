@@ -104,6 +104,16 @@ describe("createEmbedChecker", () => {
     expect(seen).toHaveLength(2);
   });
 
+  test("a 5xx answer is thrown and never cached, so the server's return is seen at once", async () => {
+    let status = 503;
+    const { fetch, seen } = fakeFetch(() => ({ status }));
+    const checker = createEmbedChecker({ fetch, now: () => 0, uiOrigins: () => UI });
+    await expect(checker.check(TARGET, false)).rejects.toThrow("REMOTE_UNAVAILABLE");
+    status = 200;
+    await checker.check(TARGET, false);
+    expect(seen).toHaveLength(2);
+  });
+
   test("a transport failure is thrown as is and never cached", async () => {
     let failure: Error = new KiboError("TIMEOUT", "request to itch.io timed out");
     const { fetch, seen } = fakeFetch(() => failure);

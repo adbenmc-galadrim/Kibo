@@ -83,8 +83,6 @@ test("itch refusals are reported by code: refused, not found, offline", async ()
   await fetch(`${itch.url}/__test/offline`, { method: "POST" });
   expect(await refusal(instanceId, later)).toMatchObject({ code: "REMOTE_UNAVAILABLE" });
   await fetch(`${itch.url}/__test/online`, { method: "POST" });
-  expect(await refusal(instanceId, later)).toMatchObject({ code: "REMOTE_UNAVAILABLE" });
-  setSystemTime(new Date(Date.now() + 61_000));
   expect((await open(instanceId, later)).target).toBe(later);
 });
 
