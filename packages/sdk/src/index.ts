@@ -4,6 +4,7 @@ export * from "./agent-badge";
 export * from "./client";
 export * from "./file-link";
 export * from "./lazy";
+export * from "./markdown-lite";
 export * from "./members";
 export * from "./react";
 export * from "./sdk";
