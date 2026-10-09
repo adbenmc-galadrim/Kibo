@@ -27,7 +27,7 @@ test("storybook settings default to localhost:6006 and validate each field", () 
   expect(PortEnvName.safeParse("STORYBOOK_PORT").success).toBe(true);
 });
 
-test("parseEnvPort reads the first valid NAME=value line", () => {
+test("parseEnvPort reads the first NAME=value definition", () => {
   expect(parseEnvPort("STORYBOOK_PORT=6007\n", "STORYBOOK_PORT")).toBe(6007);
   expect(parseEnvPort('export STORYBOOK_PORT="6008"', "STORYBOOK_PORT")).toBe(6008);
   expect(parseEnvPort("STORYBOOK_PORT='6009'", "STORYBOOK_PORT")).toBe(6009);
