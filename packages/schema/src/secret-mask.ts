@@ -43,5 +43,7 @@ export function hasSecret(text: string): boolean {
 export function maskSecretsWithin(text: string, max: number): string {
   const masked = maskSecrets(text);
   if (masked.length <= max) return masked;
+  const cut = masked.slice(0, max);
+  if (!hasSecret(cut)) return cut;
   return maskSecrets(masked.slice(0, Math.max(0, max - MASKED.length)));
 }

@@ -84,5 +84,7 @@ test("masking within a length never exceeds it and never leaves a cut secret beh
 
 test("masking within a length keeps a short clean text and re-masks a cut mask", () => {
   expect(maskSecretsWithin("Je corrige la validation.", 100)).toBe("Je corrige la validation.");
-  expect(maskSecretsWithin("PASSWORD=hunter2 fin", 20)).toBe(`PASSWORD=${MASKED}`);
+  expect(maskSecretsWithin("Je corrige la validation.", 10)).toBe("Je corrige");
+  expect(maskSecretsWithin("PASSWORD=hunter2 fin", 20)).toBe(`PASSWORD=${MASKED} fi`);
+  expect(maskSecretsWithin("PASSWORD=hunter2 fin", 12)).toBe("PASS");
 });
