@@ -77,6 +77,6 @@ Dans `design/penpot/scripts/32e-graphe-lisible.js` (branche `docs/p20-pistes`, w
 ## Reprise
 
 1. Si la PR #20 n'est pas fusionnée : `gh pr checks 20`, corriger la CI jusqu'au vert, `gh pr merge 20 --merge`, tag `v0.19.0-alpha.1`, vérifier la release.
-2. Retirer les composants « Jeu itch.io » et « Serpent » et passer « Ajouter un composant » en deux volets (sections dédiées), en un correctif isolé : branche depuis `main`, gate, PR, version `0.19.1-alpha.1` si livré avant la phase 20.
+2. Retirer les composants « Jeu itch.io » et « Serpent » et passer « Ajouter un composant » en deux volets (sections dédiées), en un correctif isolé : branche depuis `main`, gate, PR, version `0.19.0-alpha.2` (règle `0.<phase>.0-alpha.N`) si livré avant la phase 20.
 3. Redessiner les maquettes du graphe (section ci-dessus) par un `kibo-dev`, avec Penpot.
 4. Attendre la validation d'Adam sur `docs/p20-spec`, puis faire écrire le plan de la phase 20 par `kibo-lead` (`docs/superpowers/plans/<date>-kibo-phase-20.md`), en suivant §26 et les maquettes 183 à 188d.
