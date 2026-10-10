@@ -1248,6 +1248,13 @@ Version **`0.19.0-alpha.1`**, rapport `docs/superpowers/rapports/<date>-jalon-v0
 
 Version **`0.20.0-alpha.1`**, rapport `docs/superpowers/rapports/<date>-jalon-v0.20.md`, tag posé par le chef d'équipe après sa vérification de bout en bout sur un vrai run. Écrans Penpot : reprendre la page 28 (P1 à P6) en écrans numérotés **183** (barre), **184** (volet), **185** et **185b** (Activité large et étroite), **186** à **186c** (mention : carte, volet, page), **187** à **187c** (Questions : page, export, réponse collée, destinataires), **188** à **188d** (graphe, §26.9).
 
+### 26.11 Retrait des composants « Jeu itch.io » et « Serpent » (décision d'Adam du 2026-10-10)
+
+- **Constat** (jalon v0.19) : aucun jeu itch.io réel ne s'affiche hors d'itch.io (défi Cloudflare sur l'iframe, refusé par le navigateur) et l'aide du widget citait un menu « Partager › Intégrer » qui n'existe pas. Le Serpent n'a plus d'usage.
+- **Décision** : les composants intégrés `itch` et `snake` sont retirés (`BUILTIN_IDS`, `builtin-manifests.json`, registre et dépendances de l'interface, `components/itch`, `components/snake`, textes). Un widget déjà posé sur une page s'affiche comme un composant introuvable (comportement existant), avec l'action « Retirer de la page ».
+- **Ce qui reste** : la capacité `embed`, la page relais `/e/<jeton>` et la vérification d'intégrabilité servent Storybook (§25) ; le faux itch.io des tests reste s'il couvre encore la vérification générique, sinon il est remplacé par un faux site neutre. Les capacités `fullscreen`, `audio` et `gamepad` doivent garder une preuve par un composant intégré ou par la suite de conformité ; sinon un composant de démonstration minimal les couvre dans les tests uniquement.
+- **Tests** : `e2e/game.spec.ts` et la partie jeu de `e2e/embeds.spec.ts` disparaissent ou sont réécrits ; le budget de l'entrée doit baisser (aucun relèvement).
+
 ## 27. Décisions de la phase 21 : les agents parlent à l'agent de projet (demande d'Adam du 2026-10-09)
 
 **Demande** : « Les agents peuvent communiquer avec l'agent de projet : création de nouveaux tickets, remontée de contexte et autre. » Choix d'Adam au brainstorming du 2026-10-09 ; le détail sera écrit avant le plan de la phase 21.
