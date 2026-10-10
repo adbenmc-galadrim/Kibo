@@ -28,6 +28,17 @@ Ce document permet de reprendre sans réanalyse. Délégation d'Adam du 2026-10-
 - 188k : filtre « Démarrables » avant « Grouper ».
 - En clair, logo de l'espace de travail absent de l'en-tête de la barre latérale du modèle Kanban partagé.
 
+## Retrait des composants « Jeu itch.io » et « Serpent » (décision d'Adam du 2026-10-10)
+
+Spec §26.11. À faire comme **première tâche de la phase 20** (ou en correctif isolé avant elle), en TDD, branche dédiée depuis `main` :
+
+1. Retirer `itch` et `snake` de `BUILTIN_IDS` (`packages/schema/src/component.ts`), de `packages/daemon/src/components/builtin-manifests.json`, du registre de l'interface (`packages/ui/src/registry.ts`, `packages/ui/package.json`, `packages/ui/tsconfig.json`) et du `package.json` racine ; supprimer `components/itch` et `components/snake`.
+2. Mettre à jour les tests qui les citent : `registry.test.ts`, `registry-service.test.ts`, `gate-handlers.test.ts`, `embed-gate.test.ts`, `bootstrap.test.ts` ; `e2e/game.spec.ts` (Serpent) et la partie jeu de `e2e/embeds.spec.ts` disparaissent ou sont réécrites. Garder `fake-itch.ts` seulement s'il couvre encore la vérification d'intégrabilité générique (sinon faux site neutre).
+3. Vérifier qu'un widget déjà posé (comme sur le tableau de bord d'un vrai projet) s'affiche « composant introuvable » avec « Retirer de la page », sans erreur.
+4. Garder une preuve des capacités `fullscreen`, `audio`, `gamepad` (composant intégré restant ou suite de conformité ; sinon composant de démonstration réservé aux tests).
+5. La capacité `embed`, le relais `/e/<jeton>` et la vérification restent pour Storybook. Le budget de l'entrée doit baisser ; noter le nouveau chiffre.
+6. Écrans Penpot du Serpent (157) et du jeu (178 à 179) : marquer comme retirés dans `design/penpot/README.md` au prochain export.
+
 ## Maquettes du graphe à redessiner (avant le plan de la phase 20)
 
 Dans `design/penpot/scripts/32e-graphe-lisible.js` (branche `docs/p20-pistes`, worktree `.claude/worktrees/p20-pistes`), page Penpot « 28c · Graphe », sombre et clair, puis réexport des 10 captures `screens/2026-10-09-pistes-agents/p7-graphe-*-{dark,light}.png` :
@@ -40,7 +51,7 @@ Dans `design/penpot/scripts/32e-graphe-lisible.js` (branche `docs/p20-pistes`, w
 
 ## Points ouverts hérités de la phase 19
 
-- Aucun jeu itch.io réel ne s'affiche hors d'itch.io (défi Cloudflare sur l'iframe) ; le composant reste livré.
+- Aucun jeu itch.io réel ne s'affiche hors d'itch.io (défi Cloudflare sur l'iframe) : le composant est retiré (voir plus haut).
 - Dialogue « Ajouter un composant » : pied non fixe (bouton sous le pli à 860 px).
 - Comparaison Maquette : bande vide au-dessus des surfaces quand la story est plus haute.
 - `packages/sdk/src/mock.ts` à 308 lignes.
@@ -62,5 +73,6 @@ Dans `design/penpot/scripts/32e-graphe-lisible.js` (branche `docs/p20-pistes`, w
 ## Reprise
 
 1. Si la PR #20 n'est pas fusionnée : `gh pr checks 20`, corriger la CI jusqu'au vert, `gh pr merge 20 --merge`, tag `v0.19.0-alpha.1`, vérifier la release.
-2. Redessiner les maquettes du graphe (section ci-dessus) par un `kibo-dev`, avec Penpot.
-3. Attendre la validation d'Adam sur `docs/p20-spec`, puis faire écrire le plan de la phase 20 par `kibo-lead` (`docs/superpowers/plans/<date>-kibo-phase-20.md`), en suivant §26 et les maquettes 183 à 188d.
+2. Retirer les composants « Jeu itch.io » et « Serpent » (section dédiée).
+3. Redessiner les maquettes du graphe (section ci-dessus) par un `kibo-dev`, avec Penpot.
+4. Attendre la validation d'Adam sur `docs/p20-spec`, puis faire écrire le plan de la phase 20 par `kibo-lead` (`docs/superpowers/plans/<date>-kibo-phase-20.md`), en suivant §26 et les maquettes 183 à 188d.
