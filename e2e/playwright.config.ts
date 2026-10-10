@@ -146,6 +146,20 @@ const allDaemons = [
   { name: "retired-dark", scheme: "dark", port: 4439, spec: /retired\.spec\.ts/, scenario: "question" },
   { name: "retired-light", scheme: "light", port: 4440, spec: /retired\.spec\.ts/, scenario: "question" },
   {
+    name: "add-component-dark",
+    scheme: "dark",
+    port: 4463,
+    spec: /add-component\.spec\.ts/,
+    scenario: "question",
+  },
+  {
+    name: "add-component-light",
+    scheme: "light",
+    port: 4464,
+    spec: /add-component\.spec\.ts/,
+    scenario: "question",
+  },
+  {
     name: "onboarding-dark",
     scheme: "dark",
     port: 4443,
