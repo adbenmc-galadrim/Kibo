@@ -27,6 +27,7 @@ export function crumbsFor(
   ctx: { project: ProjectSnapshot | null; branch: string | null },
 ): Crumb[] {
   if (target?.kind === "screen") return screenCrumbs(target.screen);
+  if (target?.kind === "run") return screenCrumbs("agents");
   const p = ctx.project;
   if (!target || !p) return [text(fr.nav.overview)];
   const project = projectCrumb(p);

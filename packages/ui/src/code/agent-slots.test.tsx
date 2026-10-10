@@ -92,6 +92,7 @@ const project = (rules = DEFAULT_RULES): ProjectSnapshot => ({
   tickets: [],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules,
   bindings: [],

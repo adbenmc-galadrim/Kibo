@@ -1,4 +1,5 @@
 import {
+  EMPTY_PROGRESS,
   INBOX_ID,
   type ProjectSnapshot,
   type ProjectSummary,
@@ -27,6 +28,8 @@ export function inboxTicket(n: number, title: string, statusId: StatusId, adam: 
     progress: { done: 0, total: 0 },
     waitingOn: [],
     openQuestions: 0,
+    startable: false,
+    agentProgress: EMPTY_PROGRESS,
   };
 }
 

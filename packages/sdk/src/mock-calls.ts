@@ -14,6 +14,7 @@ import {
   type ProjectAccess,
   type ProjectAsset,
   type ProjectCommand,
+  type RunPeek,
   type StorybookOrigin,
   type TicketRun,
   validateConfig,
@@ -39,6 +40,7 @@ export type MockCallDeps = {
   access(): ProjectAccess;
   serverContext(): ServerContext;
   deliver(ticketId: string): DeliveryResult;
+  peek(runId: string): RunPeek;
   fetch?: MockFetch;
   server?: ServerDefinition;
   mcp?: Record<string, McpCallResult>;
@@ -159,6 +161,8 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
         return deps.embeds.open(c.url);
       case "questions.deliver":
         return deps.deliver(c.ticketId);
+      case "run.peek":
+        return deps.peek(c.runId);
       case "config.set": {
         const errors = validateConfig(deps.manifest.configSchema, c.patch);
         if (errors.length > 0) throw new KiboError("INVALID_INPUT", errors.join("; "));

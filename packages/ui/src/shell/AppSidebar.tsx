@@ -1,4 +1,12 @@
-import type { AgentsState, Page, ProjectMeta, ProjectSnapshot, Screen, TabTarget } from "@kibo/schema";
+import {
+  type AgentsState,
+  type Page,
+  type ProjectMeta,
+  type ProjectSnapshot,
+  type Screen,
+  type TabTarget,
+  targetProjectId,
+} from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import {
   Sidebar,
@@ -113,10 +121,7 @@ export function AppSidebar(p: Props) {
   const { active, activeTarget, screen, changesCount, onOpen } = p;
   const editable = active !== null && canEdit(active);
   const onTarget = (kind: TabTarget["kind"], projectId: string) =>
-    activeTarget !== null &&
-    activeTarget.kind !== "screen" &&
-    activeTarget.kind === kind &&
-    activeTarget.projectId === projectId;
+    activeTarget !== null && activeTarget.kind === kind && targetProjectId(activeTarget) === projectId;
   const link: Link = (target) => ({
     onClick: (e: MouseEvent) => onOpen(target, wantsNewTab(e)),
     onAuxClick: (e: MouseEvent) => {

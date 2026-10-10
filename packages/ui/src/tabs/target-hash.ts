@@ -23,6 +23,7 @@ const SCREEN_HASHES: Record<Screen, string> = {
 export function targetToHash(target: TabTarget | null): string {
   if (!target) return "#/";
   if (target.kind === "screen") return SCREEN_HASHES[target.screen];
+  if (target.kind === "run") return `#/runs/${enc(target.runId)}`;
   const base = `#/p/${enc(target.projectId)}`;
   switch (target.kind) {
     case "project":

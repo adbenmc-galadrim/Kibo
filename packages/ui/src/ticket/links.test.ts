@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { DEFAULT_WORKFLOW, type Link, type ProjectSnapshot, type TicketView } from "@kibo/schema";
+import {
+  DEFAULT_WORKFLOW,
+  EMPTY_PROGRESS,
+  type Link,
+  type ProjectSnapshot,
+  type TicketView,
+} from "@kibo/schema";
 import { linkCandidates, linksOf } from "./links";
 
 const t = (n: number, title: string, statusId: TicketView["statusId"] = "todo"): TicketView => ({
@@ -19,6 +25,8 @@ const t = (n: number, title: string, statusId: TicketView["statusId"] = "todo"):
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 });
 const link = (id: string, from: number, to: number, type: Link["type"]): Link => ({
   id,
@@ -55,6 +63,7 @@ const project: ProjectSnapshot = {
     link("l5", 20, 21, "relates"),
   ],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],

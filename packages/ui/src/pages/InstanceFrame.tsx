@@ -76,6 +76,7 @@ function Mounted({ projectId, instance, viewer, surface, format, mod, mode, apis
               origin: r.origin ?? null,
             }),
           openView: host.openView,
+          openRun: host.openRun,
           focus,
           visibility,
           selection,

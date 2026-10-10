@@ -50,6 +50,7 @@ const snapshot: ProjectSnapshot = {
   tickets: [],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],

@@ -2,6 +2,7 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import {
   DEFAULT_WORKFLOW,
   type DesignFrame,
+  EMPTY_PROGRESS,
   KiboError,
   type ProjectSnapshot,
   type RpcRequest,
@@ -154,6 +155,8 @@ const ticket: TicketView = {
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 };
 const project: ProjectSnapshot = {
   meta: {
@@ -169,6 +172,7 @@ const project: ProjectSnapshot = {
   pages: [],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],

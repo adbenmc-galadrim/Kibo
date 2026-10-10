@@ -1,5 +1,12 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { DEFAULT_WORKFLOW, INBOX_ID, KiboError, type ProjectSnapshot, type RpcRequest } from "@kibo/schema";
+import {
+  DEFAULT_WORKFLOW,
+  EMPTY_PROGRESS,
+  INBOX_ID,
+  KiboError,
+  type ProjectSnapshot,
+  type RpcRequest,
+} from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
@@ -40,6 +47,7 @@ const project: ProjectSnapshot = {
   tickets: [],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],
@@ -105,6 +113,8 @@ const kibo: ProjectSnapshot = {
       progress: { done: 0, total: 0 },
       waitingOn: [],
       openQuestions: 0,
+      startable: false,
+      agentProgress: EMPTY_PROGRESS,
     },
   ],
 };

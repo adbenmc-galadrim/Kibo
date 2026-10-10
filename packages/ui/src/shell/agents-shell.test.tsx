@@ -1,6 +1,7 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import {
   type AgentsState,
+  EMPTY_PROGRESS,
   EMPTY_TABS,
   INBOX_ID,
   type ProjectSnapshot,
@@ -39,6 +40,8 @@ const mineTicket = (id: string, key: string, title: string, statusId: StatusId):
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 });
 
 function snapshotOf(projectId: string): ProjectSnapshot {

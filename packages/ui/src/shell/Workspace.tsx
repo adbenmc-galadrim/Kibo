@@ -1,4 +1,10 @@
-import { type AgentsState, iconUrl, type ProjectSummary, type TabTarget } from "@kibo/schema";
+import {
+  type AgentsState,
+  iconUrl,
+  type ProjectSummary,
+  type TabTarget,
+  targetProjectId,
+} from "@kibo/schema";
 import { SidebarInset, SidebarProvider } from "@kibo/sdk/ui/sidebar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgentPanel } from "../agents/AgentPanel";
@@ -49,7 +55,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   useHashSync(tabs, route.target);
   const active = activeTarget(tabs.state);
   const screen = active?.kind === "screen" ? active.screen : null;
-  const activeProjectId = active && active.kind !== "screen" ? active.projectId : null;
+  const activeProjectId = active ? targetProjectId(active) : null;
   const [lastProjectId, setLastProjectId] = useState<string | null>(activeProjectId);
   const ticketProject = useProject(activeProjectId ?? lastProjectId);
   const project = activeProjectId ? ticketProject : null;

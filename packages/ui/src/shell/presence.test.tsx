@@ -1,6 +1,7 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import {
   DEFAULT_WORKFLOW,
+  EMPTY_PROGRESS,
   type Phase7Event,
   type PresencePeer,
   type ProjectSnapshot,
@@ -76,10 +77,13 @@ const project: ProjectSnapshot = {
       progress: { done: 0, total: 0 },
       waitingOn: [],
       openQuestions: 0,
+      startable: false,
+      agentProgress: EMPTY_PROGRESS,
     },
   ],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],

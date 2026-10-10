@@ -1,5 +1,12 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { type AssignPreview, INBOX_ID, KiboError, type RpcRequest, type TicketView } from "@kibo/schema";
+import {
+  type AssignPreview,
+  EMPTY_PROGRESS,
+  INBOX_ID,
+  KiboError,
+  type RpcRequest,
+  type TicketView,
+} from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
@@ -91,6 +98,8 @@ test("a dependency still waiting for its key is shown by its label alone", () =>
     progress: { done: 0, total: 0 },
     waitingOn: [],
     openQuestions: 0,
+    startable: false,
+    agentProgress: EMPTY_PROGRESS,
   };
   const tickets = project.tickets.map((t) => (t.id === "t15" ? { ...t, waitingOn: ["KIB-12", "KIB-…"] } : t));
   render(
@@ -274,6 +283,8 @@ const provisional = (): TicketView => ({
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 });
 
 test("a ticket without its key cannot be sent to an agent", async () => {

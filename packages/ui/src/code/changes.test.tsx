@@ -153,6 +153,7 @@ const project: ProjectSnapshot = {
   tickets: [],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],

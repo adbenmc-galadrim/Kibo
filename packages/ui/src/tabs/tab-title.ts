@@ -28,6 +28,8 @@ export function describeTarget(target: TabTarget, ctx: DescribeContext): TabDesc
     const { title, icon } = SCREENS[target.screen];
     return { title, icon, color: null, missing: false };
   }
+  if (target.kind === "run")
+    return { title: target.runId, icon: SCREENS.agents.icon, color: null, missing: false };
   const project: ProjectMeta | undefined = isInbox(target.projectId)
     ? inboxMeta()
     : ctx.projects.find((p) => p.id === target.projectId);

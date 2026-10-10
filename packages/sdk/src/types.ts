@@ -26,6 +26,7 @@ import type {
   ProjectSnapshot,
   ProjectSyncInfo,
   Question,
+  RunPeek,
   Selection,
   Status,
   StatusId,
@@ -79,6 +80,7 @@ export type McpApi = {
 };
 
 export type QuestionsApi = { deliver(ticketId: string): Promise<DeliveryResult> };
+export type RunsApi = { peek(runId: string): Promise<RunPeek> };
 export type DesignApi = {
   frame(url: string, opts?: { refresh?: boolean }): Promise<DesignFrame>;
   storybooks(): Promise<StorybookOrigin[]>;
@@ -125,6 +127,8 @@ export type KiboSdk = {
   design: DesignApi;
   embed: EmbedApi;
   questions: QuestionsApi;
+  runs: RunsApi;
+  openRun(runId: string): void;
   focus: FocusApi;
   visibility: VisibilityApi;
   selection: SelectionApi;
@@ -157,7 +161,7 @@ export type SdkContext = Pick<
   | "openFile"
   | "openView"
 > &
-  Partial<Pick<KiboSdk, "focus" | "visibility" | "selection">>;
+  Partial<Pick<KiboSdk, "focus" | "visibility" | "selection" | "openRun">>;
 export type SdkMode = "builtin" | "gated";
 
 export type ComponentModule = { manifest: ComponentManifest; Component: ComponentType };

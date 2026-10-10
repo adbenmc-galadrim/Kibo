@@ -18,6 +18,8 @@ const hook = (detail: string | null): RunLogEntry => ({
       question: null,
       agentId: null,
       ask: null,
+      todos: null,
+      stopHookActive: false,
     },
   },
 });

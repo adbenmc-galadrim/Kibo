@@ -4,6 +4,7 @@ import {
   type CodeEvent,
   type CodeRequest,
   DEFAULT_WORKFLOW,
+  EMPTY_PROGRESS,
   type FileDiff,
   type ProjectSnapshot,
   type RepoStatus,
@@ -118,6 +119,8 @@ const ticket: TicketView = {
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 };
 const project = (tickets: TicketView[]): ProjectSnapshot => ({
   meta: {
@@ -134,6 +137,7 @@ const project = (tickets: TicketView[]): ProjectSnapshot => ({
   tickets,
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],

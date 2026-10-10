@@ -28,6 +28,7 @@ import {
   type Ticket,
 } from "@kibo/schema";
 import { base64ToBytes, bytesToBase64 } from "./lib/base64";
+import { openRunOf, runsApi } from "./runs-api";
 import { ALWAYS_VISIBLE, NO_FOCUS, NO_SELECTION } from "./signal";
 import type {
   AssetsApi,
@@ -289,6 +290,8 @@ export function createSdk(
         return call<DeliveryResult>({ kind: "questions.deliver", ticketId });
       },
     },
+    runs: runsApi(guard.needRead, call),
+    openRun: openRunOf(ctx),
     focus: ctx.focus ?? NO_FOCUS,
     visibility: ctx.visibility ?? ALWAYS_VISIBLE,
     selection: ctx.selection ?? NO_SELECTION,

@@ -18,6 +18,7 @@ const project = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot => 
   tickets: [],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],

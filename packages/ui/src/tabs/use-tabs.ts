@@ -1,4 +1,4 @@
-import { EMPTY_TABS, KiboError, type TabsState, type TabTarget } from "@kibo/schema";
+import { EMPTY_TABS, KiboError, type TabsState, type TabTarget, targetProjectId } from "@kibo/schema";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
@@ -18,8 +18,7 @@ type TabsMemory = { tabs: TabsState; closed: TabTarget[] };
 const MAX_CLOSED = 10;
 const CLOSING: ReadonlySet<TabsAction["type"]> = new Set(["close", "closeOthers", "closeRight"]);
 
-const inProject = (target: TabTarget, projectId: string): boolean =>
-  target.kind !== "screen" && target.projectId === projectId;
+const inProject = (target: TabTarget, projectId: string): boolean => targetProjectId(target) === projectId;
 
 function applyAction(s: TabsMemory, action: TabsAction): TabsMemory {
   const tabs = tabsReducer(s.tabs, action);

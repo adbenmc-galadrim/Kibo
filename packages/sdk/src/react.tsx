@@ -4,6 +4,7 @@ import {
   type MemberInfo,
   type PresencePeer,
   type ProjectSyncInfo,
+  type RunPeek,
   type Selection,
 } from "@kibo/schema";
 import { createContext, type ReactNode, useContext, useEffect, useState, useSyncExternalStore } from "react";
@@ -124,4 +125,11 @@ export function useFocusMode(): FocusMode {
 export function useSelection(): [Selection | null, (selection: Selection | null) => void] {
   const { selection } = useSdk();
   return [useSyncExternalStore(selection.subscribe, selection.get, selection.get), selection.set];
+}
+
+export type AgentMentionHandlers = { peek(runId: string): Promise<RunPeek>; onOpen(runId: string): void };
+
+export function useAgentMention(): AgentMentionHandlers {
+  const sdk = useSdk();
+  return { peek: sdk.runs.peek, onOpen: sdk.openRun };
 }
