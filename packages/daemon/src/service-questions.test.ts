@@ -7,6 +7,7 @@ import {
   type AnswerInput,
   answerPrompt,
   type ChangeMessage,
+  type ProjectCommand,
   Question,
   type RunView,
   Ticket,
@@ -199,4 +200,26 @@ test("the agents state still answers when a run belongs to a removed project", (
   const { s, run, runs } = setup("done");
   runs.push({ ...run, id: "r9", seq: 9, projectId: "removed", ticketId: "t9" });
   expect(call(s, { method: "getAgents" }).questions).toEqual([]);
+});
+
+test("recipient commands update the snapshot and announce the project", () => {
+  const { s, project, agentQuestion, messages, snapshot } = setup("done");
+  const command = (cmd: ProjectCommand) =>
+    call(s, { method: "command", projectId: project.id, command: cmd });
+  command({ method: "addQuestionRecipient", name: "Juridique" });
+  expect(snapshot().questionRecipients.map((r) => r.name)).toEqual([
+    "Moi (technique)",
+    "Produit",
+    "Client",
+    "Juridique",
+  ]);
+  const q = agentQuestion("Quel tarif ?", false);
+  messages.length = 0;
+  command({ method: "setQuestionRecipient", questionId: q?.id ?? "", recipient: "client" });
+  command({ method: "markQuestionSent", questionId: q?.id ?? "", at: 42 });
+  expect(snapshot().questions[0]).toMatchObject({ recipient: "client", sentAt: 42 });
+  expect(messages).toContainEqual({ projectId: project.id });
+  expect(() => command({ method: "removeQuestionRecipient", recipientId: "client" })).toThrow(
+    expect.objectContaining({ code: "CONFLICT" }),
+  );
 });
