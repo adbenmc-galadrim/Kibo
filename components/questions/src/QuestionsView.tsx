@@ -1,11 +1,21 @@
 import { useSdk } from "@kibo/sdk";
 import { useMemo, useState } from "react";
 import { DeliverButton, DeliveryMessage, type DeliveryNotice } from "./DeliverButton";
+import { ExportButton } from "./ExportButton";
+import type { ExportEntry } from "./export-text";
 import { fr } from "./fr";
 import { NewQuestionDialog } from "./NewQuestionDialog";
 import { QuestionCard } from "./QuestionCard";
 import { QuestionsToolbar } from "./QuestionsToolbar";
-import { type Scope, type ViewGroup, viewGroups } from "./questions-logic";
+import {
+  filterQuestions,
+  recipientCounts,
+  recipientName,
+  type Scope,
+  type ViewGroup,
+  viewGroups,
+} from "./questions-logic";
+import { RecipientFilters } from "./RecipientFilters";
 import { type QuestionsData, useQuestions } from "./use-questions";
 
 const configScope = (value: unknown): Scope => (value === "all" ? "all" : "open");
@@ -40,6 +50,8 @@ function QuestionGroup({ group, data, now }: { group: ViewGroup; data: Questions
         <QuestionCard
           key={q.id}
           question={q}
+          ticket={t}
+          recipients={data.recipients}
           now={now}
           readOnly={data.readOnly}
           viewer={data.viewer}
@@ -51,16 +63,31 @@ function QuestionGroup({ group, data, now }: { group: ViewGroup; data: Questions
   );
 }
 
+function exportEntries(
+  data: QuestionsData,
+  ticketId: string | null,
+  recipient: string | null,
+): ExportEntry[] {
+  const name = recipient === null ? "" : recipientName(data.recipients, recipient);
+  return filterQuestions(data.questions, "open", ticketId, recipient).flatMap((question) => {
+    const ticket = data.ticketOf(question.ticketId);
+    return ticket ? [{ question, ticket, recipient: name }] : [];
+  });
+}
+
 export function QuestionsView() {
   const sdk = useSdk();
   const data = useQuestions();
   const [scope, setScope] = useState<Scope>(() => configScope(sdk.config.scope));
   const [ticketId, setTicketId] = useState<string | null>(null);
+  const [recipient, setRecipient] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const groups = useMemo(
-    () => viewGroups(data.questions, data.tickets, scope, ticketId),
-    [data.questions, data.tickets, scope, ticketId],
+    () => viewGroups(data.questions, data.tickets, scope, ticketId, recipient),
+    [data.questions, data.tickets, scope, ticketId, recipient],
   );
+  const counts = useMemo(() => recipientCounts(data.questions), [data.questions]);
+  const toExport = useMemo(() => exportEntries(data, ticketId, recipient), [data, ticketId, recipient]);
   const asked = useMemo(
     () => data.tickets.filter((t) => data.questions.some((q) => q.ticketId === t.id)),
     [data.tickets, data.questions],
@@ -84,6 +111,17 @@ export function QuestionsView() {
         onTicket={setTicketId}
         onNew={() => setCreating(true)}
       />
+      <RecipientFilters
+        recipients={data.recipients}
+        counts={counts}
+        value={recipient}
+        readOnly={data.readOnly}
+        onChange={setRecipient}
+      >
+        {!data.readOnly && recipient !== null && toExport.length > 0 && (
+          <ExportButton label={fr.exporting.all(toExport.length)} entries={toExport} />
+        )}
+      </RecipientFilters>
       <div className="grid min-h-0 flex-1 content-start gap-6 overflow-y-auto p-4">
         {!data.loading && groups.length === 0 && (
           <p className="text-sm text-muted-foreground">{scope === "open" ? fr.emptyOpen : fr.empty}</p>
