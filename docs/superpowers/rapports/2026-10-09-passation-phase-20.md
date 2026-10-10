@@ -39,6 +39,10 @@ Spec §26.11. À faire comme **première tâche de la phase 20** (ou en correcti
 5. La capacité `embed`, le relais `/e/<jeton>` et la vérification restent pour Storybook. Le budget de l'entrée doit baisser ; noter le nouveau chiffre.
 6. Écrans Penpot du Serpent (157) et du jeu (178 à 179) : marquer comme retirés dans `design/penpot/README.md` au prochain export.
 
+## Dialogue « Ajouter un composant » en deux volets (demande d'Adam du 2026-10-10)
+
+Spec §26.12, avec le retrait ci-dessus (même correctif isolé, avant la phase 20). Fichiers : `packages/ui/src/dialogs/AddComponentDialog.tsx`, `ComponentDetails.tsx`, `DraftRow.tsx`, tests `component-dialogs.test.tsx` et `market-catalog.test.tsx`. Hauteur bornée à la fenêtre, en-tête et pied toujours visibles, liste à gauche et description à droite défilant chacune seule, « Créer un composant » fixé sous la liste ; E2E à 1280 × 720 avec quinze composants, bouton visible sans défilement ; captures sombre et clair dans `screens/`. Maquette Penpot à réexporter si l'écran du catalogue change.
+
 ## Maquettes du graphe à redessiner (avant le plan de la phase 20)
 
 Dans `design/penpot/scripts/32e-graphe-lisible.js` (branche `docs/p20-pistes`, worktree `.claude/worktrees/p20-pistes`), page Penpot « 28c · Graphe », sombre et clair, puis réexport des 10 captures `screens/2026-10-09-pistes-agents/p7-graphe-*-{dark,light}.png` :
@@ -52,7 +56,7 @@ Dans `design/penpot/scripts/32e-graphe-lisible.js` (branche `docs/p20-pistes`, w
 ## Points ouverts hérités de la phase 19
 
 - Aucun jeu itch.io réel ne s'affiche hors d'itch.io (défi Cloudflare sur l'iframe) : le composant est retiré (voir plus haut).
-- Dialogue « Ajouter un composant » : pied non fixe (bouton sous le pli à 860 px).
+- Dialogue « Ajouter un composant » : pied non fixe (bouton sous le pli à 860 px) ; corrigé par §26.12 (voir plus haut).
 - Comparaison Maquette : bande vide au-dessus des surfaces quand la story est plus haute.
 - `packages/sdk/src/mock.ts` à 308 lignes.
 - E2E sensibles à la charge : `catalog.spec.ts:55` (près de sa limite de 240 s) et `design.spec.ts` (30 s) ; ne jamais lancer deux gates en parallèle (le verrou de `integ19.sh` est un `mkdir` en boucle : une seule gate à la fois, mais l'ordre n'est pas garanti).
@@ -73,6 +77,6 @@ Dans `design/penpot/scripts/32e-graphe-lisible.js` (branche `docs/p20-pistes`, w
 ## Reprise
 
 1. Si la PR #20 n'est pas fusionnée : `gh pr checks 20`, corriger la CI jusqu'au vert, `gh pr merge 20 --merge`, tag `v0.19.0-alpha.1`, vérifier la release.
-2. Retirer les composants « Jeu itch.io » et « Serpent » (section dédiée).
+2. Retirer les composants « Jeu itch.io » et « Serpent » et passer « Ajouter un composant » en deux volets (sections dédiées), en un correctif isolé : branche depuis `main`, gate, PR, version `0.19.1-alpha.1` si livré avant la phase 20.
 3. Redessiner les maquettes du graphe (section ci-dessus) par un `kibo-dev`, avec Penpot.
 4. Attendre la validation d'Adam sur `docs/p20-spec`, puis faire écrire le plan de la phase 20 par `kibo-lead` (`docs/superpowers/plans/<date>-kibo-phase-20.md`), en suivant §26 et les maquettes 183 à 188d.
