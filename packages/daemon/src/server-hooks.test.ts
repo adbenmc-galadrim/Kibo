@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { HookSink } from "./agents/hook-route";
 import type { AgentMcpSink } from "./project-agent/types";
+import { runView } from "./questions/questions.test-helper";
 import { startServer } from "./server";
 import { createService } from "./service";
 import { openStore, type Store } from "./store";
@@ -117,7 +118,8 @@ describe("agents routes", () => {
     expect((await toolTo(server.url, bearer)).status).toBe(404);
     const sink: AgentMcpSink = {
       verify: (runId, token) => runId === RUN && token === "b".repeat(64),
-      call: async (runId, req) => `${req.tool}:${runId}`,
+      run: (runId) => runView({ id: runId, kind: "project", ticketId: null }),
+      call: async (run, tool) => `${tool}:${run.id}`,
     };
     const served = startServer({
       service: createService(store, { user: "adam" }),

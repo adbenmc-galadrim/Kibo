@@ -220,6 +220,7 @@ test("the MCP executable reads its environment and asks the daemon for project t
       PATH: process.env.PATH ?? "",
       KIBO_MCP_URL: `http://127.0.0.1:${server.port}/agent-mcp/r1`,
       KIBO_RUN_TOKEN: TOKEN,
+      KIBO_MCP_TOOLS: "project",
     });
     const out = await new Response(proc.stdout).text();
     expect(await proc.exited).toBe(0);

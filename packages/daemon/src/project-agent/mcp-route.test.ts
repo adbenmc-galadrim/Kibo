@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { type AgentMcpRequest, KiboError, TOOL_INPUTS } from "@kibo/schema";
+import { type AgentMcpRequest, KiboError, type RunView, TOOL_INPUTS } from "@kibo/schema";
+import { runView } from "../questions/questions.test-helper";
 import { AGENT_MCP_PATH, handleAgentMcp, MAX_AGENT_MCP_BYTES } from "./mcp-route";
 import type { AgentMcpSink } from "./types";
 
@@ -9,19 +10,22 @@ const DONE_RUN = "33333333-3333-4333-8333-333333333333";
 const GOOD = "a".repeat(64);
 const TICKET_TOKEN = "b".repeat(64);
 
+const PROJECT = runView({ id: PROJECT_RUN, kind: "project", ticketId: null, state: "running" });
+const TICKET = runView({ id: TICKET_RUN, kind: "ticket", state: "running" });
+const RUNS = new Map([PROJECT, TICKET].map((r) => [r.id, r]));
+
 function sink(
-  call: AgentMcpSink["call"] = async (_runId, req) => `${req.tool}:${JSON.stringify(req.input)}`,
+  call: AgentMcpSink["call"] = async (_run, tool, input) => `${tool}:${JSON.stringify(input)}`,
+  runOf: AgentMcpSink["run"] = (runId) => RUNS.get(runId) ?? null,
 ) {
-  const calls: string[] = [];
+  const calls: RunView[] = [];
   const s: AgentMcpSink = {
-    verify(runId, token) {
-      if (runId === TICKET_RUN && token === TICKET_TOKEN)
-        throw new KiboError("FORBIDDEN", "not a project run");
-      return runId === PROJECT_RUN && token === GOOD;
-    },
-    call: (runId, req) => {
-      calls.push(runId);
-      return call(runId, req);
+    verify: (runId, token) =>
+      (runId === PROJECT_RUN && token === GOOD) || (runId === TICKET_RUN && token === TICKET_TOKEN),
+    run: runOf,
+    call: (run, tool, input) => {
+      calls.push(run);
+      return call(run, tool, input);
     },
   };
   return { s, calls };
@@ -35,6 +39,7 @@ const post = (runId: string, headers: Record<string, string>, body: unknown, met
     ...(method === "GET" ? {} : { body: typeof body === "string" ? body : JSON.stringify(body) }),
   });
 const LIST: AgentMcpRequest = { tool: "list_tickets", input: { status: "done" } };
+const PROGRESS: AgentMcpRequest = { tool: "ticket_progress", input: { plan: [] } };
 
 test("the path takes a run id", () => {
   expect(AGENT_MCP_PATH.exec(`/agent-mcp/${PROJECT_RUN}`)?.[1]).toBe(PROJECT_RUN);
@@ -46,17 +51,55 @@ test("a project run with its live token reaches the tools and gets the text back
   const res = await handleAgentMcp(post(PROJECT_RUN, bearer(GOOD), LIST), PROJECT_RUN, s);
   expect(res.status).toBe(200);
   expect(await res.json()).toEqual({ ok: true, text: 'list_tickets:{"status":"done"}' });
-  expect(calls).toEqual([PROJECT_RUN]);
+  expect(calls).toEqual([PROJECT]);
 });
 
-test("no bearer, another run's bearer, or a finished turn is unauthorized; a ticket run is forbidden", async () => {
+test("a ticket run reaches ticket_progress with its own run, never the project tools", async () => {
+  const { s, calls } = sink();
+  const res = await handleAgentMcp(post(TICKET_RUN, bearer(TICKET_TOKEN), PROGRESS), TICKET_RUN, s);
+  expect(await res.json()).toEqual({ ok: true, text: 'ticket_progress:{"plan":[]}' });
+  expect(calls).toEqual([TICKET]);
+  const project = await handleAgentMcp(post(TICKET_RUN, bearer(TICKET_TOKEN), LIST), TICKET_RUN, s);
+  expect(project.status).toBe(403);
+  expect(await project.json()).toEqual({
+    ok: false,
+    error: { code: "FORBIDDEN", message: "list_tickets is not a ticket run tool" },
+  });
+  expect(calls).toHaveLength(1);
+});
+
+test("a project run cannot write a ticket's progress", async () => {
+  const { s, calls } = sink();
+  const res = await handleAgentMcp(post(PROJECT_RUN, bearer(GOOD), PROGRESS), PROJECT_RUN, s);
+  expect(res.status).toBe(403);
+  expect(await res.json()).toEqual({
+    ok: false,
+    error: { code: "FORBIDDEN", message: "ticket_progress is not a project run tool" },
+  });
+  expect(calls).toEqual([]);
+});
+
+test("a verified run that the agents no longer know is not found", async () => {
+  const { s, calls } = sink(undefined, () => null);
+  expect((await handleAgentMcp(post(PROJECT_RUN, bearer(GOOD), LIST), PROJECT_RUN, s)).status).toBe(404);
+  expect(calls).toEqual([]);
+});
+
+test("no bearer, another run's bearer or a finished turn is unauthorized; a refusing sink is forbidden", async () => {
   const { s, calls } = sink();
   expect((await handleAgentMcp(post(PROJECT_RUN, {}, LIST), PROJECT_RUN, s)).status).toBe(401);
   expect((await handleAgentMcp(post(PROJECT_RUN, bearer(TICKET_TOKEN), LIST), PROJECT_RUN, s)).status).toBe(
     401,
   );
+  expect((await handleAgentMcp(post(TICKET_RUN, bearer(GOOD), PROGRESS), TICKET_RUN, s)).status).toBe(401);
   expect((await handleAgentMcp(post(DONE_RUN, bearer(GOOD), LIST), DONE_RUN, s)).status).toBe(401);
-  const ticket = await handleAgentMcp(post(TICKET_RUN, bearer(TICKET_TOKEN), LIST), TICKET_RUN, s);
+  const refusing: AgentMcpSink = {
+    ...s,
+    verify: () => {
+      throw new KiboError("FORBIDDEN", "not a project run");
+    },
+  };
+  const ticket = await handleAgentMcp(post(TICKET_RUN, bearer(TICKET_TOKEN), LIST), TICKET_RUN, refusing);
   expect(ticket.status).toBe(403);
   expect(await ticket.json()).toMatchObject({
     ok: false,

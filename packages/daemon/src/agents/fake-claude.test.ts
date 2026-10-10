@@ -230,7 +230,11 @@ test("an mcp step launches the configured kibo server and calls the daemon throu
     const kibo = {
       command: "bun",
       args: [join(import.meta.dir, "kibo-hook.ts"), "mcp"],
-      env: { KIBO_MCP_URL: `http://127.0.0.1:${daemon.port}/agent-mcp/r1`, KIBO_RUN_TOKEN: token },
+      env: {
+        KIBO_MCP_URL: `http://127.0.0.1:${daemon.port}/agent-mcp/r1`,
+        KIBO_RUN_TOKEN: token,
+        KIBO_MCP_TOOLS: "project",
+      },
     };
     const env = {
       KIBO_FAKE_CLAUDE_SCENARIO: mcpScenario(state),

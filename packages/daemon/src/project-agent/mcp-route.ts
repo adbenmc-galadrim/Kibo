@@ -1,4 +1,10 @@
-import { type AgentMcpReply, AgentMcpRequest, KiboError } from "@kibo/schema";
+import {
+  type AgentMcpReply,
+  AgentMcpRequest,
+  KiboError,
+  PROGRESS_TOOL_NAME,
+  type RunView,
+} from "@kibo/schema";
 import { STATUS } from "../http-response";
 import { parseJson, readBounded } from "../read-bounded";
 import type { AgentMcpSink } from "./types";
@@ -23,12 +29,17 @@ function verified(req: Request, runId: string, sink: AgentMcpSink): Response | n
   return new Response("unauthorized", { status: 401 });
 }
 
-async function answer(runId: string, req: AgentMcpRequest, sink: AgentMcpSink): Promise<Response> {
+const toolFits = (run: RunView, tool: AgentMcpRequest["tool"]): boolean =>
+  run.kind === "ticket" ? tool === PROGRESS_TOOL_NAME : run.kind === "project" && tool !== PROGRESS_TOOL_NAME;
+
+async function answer(run: RunView, req: AgentMcpRequest, sink: AgentMcpSink): Promise<Response> {
+  if (!toolFits(run, req.tool))
+    return refusal(new KiboError("FORBIDDEN", `${req.tool} is not a ${run.kind} run tool`));
   try {
-    return reply({ ok: true, text: await sink.call(runId, req) });
+    return reply({ ok: true, text: await sink.call(run, req.tool, req.input) });
   } catch (e) {
     if (e instanceof KiboError) return reply({ ok: false, error: { code: e.code, message: e.detail } });
-    console.error(`[kibo-daemon] agent tool ${req.tool} of run ${runId} failed`, e);
+    console.error(`[kibo-daemon] agent tool ${req.tool} of run ${run.id} failed`, e);
     return reply({ ok: false, error: { code: "INTERNAL", message: "internal error" } });
   }
 }
@@ -41,5 +52,7 @@ export async function handleAgentMcp(req: Request, runId: string, sink: AgentMcp
   if (text === null) return new Response("payload too large", { status: 413 });
   const parsed = AgentMcpRequest.safeParse(parseJson(text));
   if (!parsed.success) return new Response("invalid tool call", { status: 400 });
-  return answer(runId, parsed.data, sink);
+  const run = sink.run(runId);
+  if (!run) return refusal(new KiboError("NOT_FOUND", `run ${runId} not found`));
+  return answer(run, parsed.data, sink);
 }

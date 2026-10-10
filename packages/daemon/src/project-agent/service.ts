@@ -112,8 +112,12 @@ function mcpSink(ctx: AgentContext): AgentMcpSink {
       projectRun(ctx, runId);
       return true;
     },
-    call: async (runId, req: AgentMcpRequest) =>
-      ctx.ops.tool(projectRun(ctx, runId), projectTool(req.tool), req.input),
+    run: (runId) =>
+      ctx
+        .agents()
+        .state()
+        .runs.find((r) => r.id === runId) ?? null,
+    call: async (run, tool, input) => ctx.ops.tool(projectRun(ctx, run.id), projectTool(tool), input),
   };
 }
 

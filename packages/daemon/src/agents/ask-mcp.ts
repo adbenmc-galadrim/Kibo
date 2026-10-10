@@ -1,6 +1,6 @@
 import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
-import { QUESTION_OPTIONS_MAX, TOOL_SPECS } from "@kibo/schema";
+import { QUESTION_OPTIONS_MAX, RECIPIENT_ID_MAX, TICKET_PROGRESS_SPEC, TOOL_SPECS } from "@kibo/schema";
 import { z } from "zod";
 import { callDaemonTool, type McpToolReply } from "./mcp-client";
 
@@ -34,6 +34,11 @@ const ASK_PROPERTIES = {
     description: "Les réponses possibles, s'il y en a.",
   },
   provisional: { type: "string", description: "Ton choix provisoire, parmi les options s'il y en a." },
+  recipient: {
+    type: "string",
+    maxLength: RECIPIENT_ID_MAX,
+    description: "Le destinataire de la question (id ou nom, voir tes consignes), sinon me.",
+  },
 };
 
 const ASK_TOOL_SPECS = [
@@ -53,7 +58,7 @@ const ASK_TOOL_SPECS = [
   },
 ];
 
-export type McpTools = { project: boolean };
+export type McpTools = "project" | "ticket" | null;
 export type DaemonCall = (tool: string, input: unknown) => Promise<McpToolReply>;
 
 const PROJECT_TOOL_SPECS = TOOL_SPECS.map(({ name, description, inputSchema }) => ({
@@ -62,10 +67,19 @@ const PROJECT_TOOL_SPECS = TOOL_SPECS.map(({ name, description, inputSchema }) =
   inputSchema,
 }));
 
+const DAEMON_TOOL_SPECS = { project: PROJECT_TOOL_SPECS, ticket: [TICKET_PROGRESS_SPEC] };
+
+const daemonTools = (tools: McpTools) => (tools === null ? [] : DAEMON_TOOL_SPECS[tools]);
+
 const listedTools = (tools: McpTools) => [
   ...ASK_TOOL_SPECS.map(({ reply: _reply, ...spec }) => spec),
-  ...(tools.project ? PROJECT_TOOL_SPECS : []),
+  ...daemonTools(tools),
 ];
+
+export function mcpToolsOf(env: Record<string, string | undefined>): McpTools {
+  const tools = env.KIBO_MCP_TOOLS;
+  return tools === "project" || tools === "ticket" ? tools : null;
+}
 
 const argumentsOf = (params: Record<string, unknown> | undefined): unknown => params?.arguments ?? {};
 
@@ -112,7 +126,7 @@ export async function handleMcpLine(
       const name = params?.name;
       const ask = ASK_TOOL_SPECS.find((t) => t.name === name);
       if (ask) return ok({ content: [{ type: "text", text: ask.reply }] });
-      if (!tools.project || !PROJECT_TOOL_SPECS.some((t) => t.name === name))
+      if (!daemonTools(tools).some((t) => t.name === name))
         return fail(-32602, `unknown tool ${String(name)}`);
       const reply = await call(String(name), argumentsOf(params));
       return ok({ content: [{ type: "text", text: reply.text }], isError: reply.isError });
@@ -127,7 +141,7 @@ export async function serveMcp(
   output: Writable,
   env: Record<string, string | undefined>,
 ): Promise<void> {
-  const tools: McpTools = { project: Boolean(env.KIBO_MCP_URL) };
+  const tools = mcpToolsOf(env);
   const call: DaemonCall = (tool, args) => callDaemonTool(env, tool, args);
   const pending: Promise<void>[] = [];
   for await (const line of createInterface({ input, crlfDelay: Number.POSITIVE_INFINITY })) {

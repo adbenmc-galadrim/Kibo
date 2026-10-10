@@ -8,9 +8,11 @@ import {
   ASK_TOOL,
   HookEventName,
   KiboError,
+  PROGRESS_TOOL,
   PROJECT_AGENT_DENY,
   PROJECT_AGENT_MCP_TOOLS,
   PROJECT_AGENT_READ_TOOLS,
+  TICKET_MCP_TOOLS,
 } from "@kibo/schema";
 import { FAKE_CLAUDE, fakeCalls, releaseFakeRun, scenarioPath } from "./fake-claude-scenario";
 import {
@@ -42,7 +44,15 @@ afterEach(() => {
 const kiboHook = { command: "/k/kibo-hook", args: [] };
 const base: Pick<
   LaunchInput,
-  "model" | "permissionFlag" | "extraArgs" | "systemPromptFile" | "hook" | "allow" | "deny" | "mcpConfigFile"
+  | "model"
+  | "permissionFlag"
+  | "extraArgs"
+  | "systemPromptFile"
+  | "hook"
+  | "allow"
+  | "deny"
+  | "mcpConfigFile"
+  | "mcpTools"
 > = {
   model: "opus",
   permissionFlag: "manual",
@@ -52,6 +62,7 @@ const base: Pick<
   allow: [],
   deny: [],
   mcpConfigFile: null,
+  mcpTools: null,
 };
 
 test("the command line never bypasses permissions and pins the session", () => {
@@ -107,6 +118,38 @@ test("a project run passes its private MCP config file and its deny rules", () =
     deny: [...PROJECT_AGENT_DENY],
   });
   expect(args.join(" ")).not.toContain("KIBO_RUN_TOKEN");
+});
+
+test("a ticket run allows ticket_progress right after the ask tools; no profile can grant it elsewhere", () => {
+  const args = claudeArgs({
+    ...base,
+    allow: ["Edit", PROGRESS_TOOL],
+    mcpTools: "ticket",
+    mcpConfigFile: "/r/mcp.json",
+    sessionId: "s1",
+    resume: false,
+  });
+  const settings = JSON.parse(args[args.indexOf("--settings") + 1] ?? "");
+  expect(settings.permissions.allow).toEqual([...TICKET_MCP_TOOLS, "Edit"]);
+  expect(JSON.parse(claudeSettings(kiboHook, [PROGRESS_TOOL, "Edit"])).permissions.allow).toEqual([
+    ASK_TOOL,
+    ASK_QUESTION_TOOL,
+    "Edit",
+  ]);
+  expect(JSON.parse(claudeSettings(kiboHook, [PROGRESS_TOOL], [], "project")).permissions.allow).toEqual([
+    ASK_TOOL,
+    ASK_QUESTION_TOOL,
+  ]);
+});
+
+test("the tool set of the run reaches the child environment and cannot be forged", () => {
+  const extra = { hookUrl: "u", token: "t", mcpUrl: "http://h/agent-mcp/r1" };
+  expect(childEnv({}, { ...extra, mcpTools: "ticket" }).KIBO_MCP_TOOLS).toBe("ticket");
+  expect(childEnv({}, { ...extra, mcpTools: "project" }).KIBO_MCP_TOOLS).toBe("project");
+  expect(
+    childEnv({ KIBO_MCP_TOOLS: "project" }, { ...extra, mcpTools: null, env: { KIBO_MCP_TOOLS: "project" } }),
+  ).not.toHaveProperty("KIBO_MCP_TOOLS");
+  expect(cleanEnv({ KIBO_MCP_TOOLS: "ticket", HOME: "/h" })).toEqual({ HOME: "/h" });
 });
 
 test("settings carry deny rules only when there are some", () => {
