@@ -1,4 +1,4 @@
-import { localSyncInfo, readProject } from "@kibo/core";
+import { listQuestionRecipients, localSyncInfo, readProject } from "@kibo/core";
 import {
   type CiRun,
   type ComponentCall,
@@ -164,6 +164,8 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
         return deps.deliver(c.ticketId);
       case "run.peek":
         return deps.peek(c.runId);
+      case "questions.recipients":
+        return listQuestionRecipients(deps.doc);
       case "config.set": {
         const errors = validateConfig(deps.manifest.configSchema, c.patch);
         if (errors.length > 0) throw new KiboError("INVALID_INPUT", errors.join("; "));

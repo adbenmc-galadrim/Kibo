@@ -1,9 +1,11 @@
 import {
+  DEFAULT_RECIPIENTS,
   type EntityType,
   KiboError,
   type MemberInfo,
   type PresencePeer,
   type ProjectSyncInfo,
+  type QuestionRecipient,
   type RunPeek,
   type Selection,
 } from "@kibo/schema";
@@ -70,7 +72,7 @@ function useSdkValue<T>(read: Read<T>, watch: Watch, initial: T): T {
     const load = () =>
       read(sdk).then(
         (v) => alive && setValue(v),
-        (e: unknown) => console.error(`[kibo-sdk] ${sdk.instanceId}: cannot read sharing or presence`, e),
+        (e: unknown) => console.error(`[kibo-sdk] ${sdk.instanceId}: cannot read a project value`, e),
       );
     void load();
     const off = watch(sdk, () => void load());
@@ -132,4 +134,11 @@ export type AgentMentionHandlers = { peek(runId: string): Promise<RunPeek>; onOp
 export function useAgentMention(): AgentMentionHandlers {
   const sdk = useSdk();
   return { peek: sdk.runs.peek, onOpen: sdk.openRun };
+}
+
+const readRecipients: Read<QuestionRecipient[]> = (sdk) => sdk.questions.recipients();
+const FIRST_RECIPIENTS: QuestionRecipient[] = [...DEFAULT_RECIPIENTS];
+
+export function useQuestionRecipients(): QuestionRecipient[] {
+  return useSdkValue(readRecipients, watchProject, FIRST_RECIPIENTS);
 }

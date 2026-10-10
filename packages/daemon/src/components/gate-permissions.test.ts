@@ -119,6 +119,16 @@ test("questions.deliver needs write:question and reaches the questions handler",
   expect(allowed.handled).toEqual(["questions:p1:t1"]);
 });
 
+test("questions.recipients needs read:question and reaches the recipients handler", async () => {
+  const recipients: ComponentCall = { kind: "questions.recipients" };
+  const denied = testGate();
+  await refused(denied.gate.call("p1", "thirdparty", recipients), "PERMISSION_DENIED");
+  expect(denied.handled).toEqual([]);
+  const allowed = testGate(createQuotas(), { ...granted, reads: ["question"] });
+  expect(await allowed.gate.call("p1", "thirdparty", recipients)).toEqual([{ id: "me", name: "Moi" }]);
+  expect(allowed.handled).toEqual(["recipients:p1"]);
+});
+
 test("a component reads and writes questions only with their permission, never marks them delivered", () => {
   const create: ComponentCall = {
     kind: "run",

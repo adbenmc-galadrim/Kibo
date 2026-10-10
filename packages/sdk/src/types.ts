@@ -26,6 +26,7 @@ import type {
   ProjectSnapshot,
   ProjectSyncInfo,
   Question,
+  QuestionRecipient,
   RunPeek,
   Selection,
   Status,
@@ -79,7 +80,10 @@ export type McpApi = {
   importItem(server: string, item: McpImportItem): Promise<Ticket>;
 };
 
-export type QuestionsApi = { deliver(ticketId: string): Promise<DeliveryResult> };
+export type QuestionsApi = {
+  deliver(ticketId: string): Promise<DeliveryResult>;
+  recipients(): Promise<QuestionRecipient[]>;
+};
 export type RunsApi = { peek(runId: string): Promise<RunPeek> };
 export type DesignApi = {
   frame(url: string, opts?: { refresh?: boolean }): Promise<DesignFrame>;

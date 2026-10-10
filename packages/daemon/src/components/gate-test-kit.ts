@@ -116,6 +116,7 @@ export const idleHandlers: GateHandlers = {
     throw new KiboError("INTERNAL", "unexpected");
   },
   questions: async () => ({ sent: 0, runId: null }),
+  recipients: async () => [],
 };
 
 export const findInstance = (_p: string, id: string): Instance => {
@@ -181,6 +182,10 @@ export function testGate(quotas: Quotas = createQuotas(), grantedToEvil: Granted
       questions: async (projectId, ticketId) => {
         handled.push(`questions:${projectId}:${ticketId}`);
         return { sent: 1, runId: "r1" };
+      },
+      recipients: async (projectId) => {
+        handled.push(`recipients:${projectId}`);
+        return [{ id: "me", name: "Moi" }];
       },
     },
     quotas,

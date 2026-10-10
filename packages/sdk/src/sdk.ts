@@ -7,7 +7,6 @@ import {
   type ComponentCall,
   type ComponentManifest,
   capPermission,
-  type DeliveryResult,
   type DesignFrame,
   type EmbedView,
   type EntityType,
@@ -28,6 +27,7 @@ import {
   type Ticket,
 } from "@kibo/schema";
 import { base64ToBytes, bytesToBase64 } from "./lib/base64";
+import { questionsApi } from "./questions-api";
 import { openRunOf, runsApi } from "./runs-api";
 import { ALWAYS_VISIBLE, NO_FOCUS, NO_SELECTION } from "./signal";
 import type {
@@ -284,12 +284,7 @@ export function createSdk(
     assets: assetsApi(manifest, guard, call),
     design: designApi(manifest, guard, call),
     embed: embedApi(manifest, guard, call),
-    questions: {
-      async deliver(ticketId) {
-        guard.needWrite("question");
-        return call<DeliveryResult>({ kind: "questions.deliver", ticketId });
-      },
-    },
+    questions: questionsApi({ read: guard.needRead, write: guard.needWrite }, call, backend, mode),
     runs: runsApi(guard.needRead, call),
     openRun: openRunOf(ctx),
     focus: ctx.focus ?? NO_FOCUS,

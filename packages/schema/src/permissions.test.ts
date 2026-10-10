@@ -28,6 +28,10 @@ test("delivering answers to the agent is a write of questions", () => {
   );
 });
 
+test("reading the question recipients is a read of questions", () => {
+  expect(permissionOfCall(ComponentCall.parse({ kind: "questions.recipients" }))).toBe("read:question");
+});
+
 test("peeking at a run is a read of runs", () => {
   expect(permissionOfCall(ComponentCall.parse({ kind: "run.peek", runId: "r1" }))).toBe("read:run");
   expect(ComponentCall.safeParse({ kind: "run.peek", runId: "" }).success).toBe(false);

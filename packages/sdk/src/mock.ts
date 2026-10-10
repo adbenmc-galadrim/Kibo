@@ -211,6 +211,7 @@ export function createMockSdk(
     questions: {
       deliver: (ticketId) =>
         record("write:question", "write question", () => inner.questions.deliver(ticketId)),
+      recipients: () => record("read:question", "read question", () => inner.questions.recipients()),
     },
     runs: { peek: (runId) => record("read:run", "read run", () => inner.runs.peek(runId)) },
   };

@@ -102,6 +102,8 @@ export function permissionOfCall(call: ComponentCall): string | null {
       return capPermission("embed");
     case "questions.deliver":
       return "write:question";
+    case "questions.recipients":
+      return "read:question";
     case "run.peek":
       return "read:run";
   }

@@ -1,4 +1,10 @@
-import { localSyncInfo, readInstanceData, readProject, writeInstanceData } from "@kibo/core";
+import {
+  listQuestionRecipients,
+  localSyncInfo,
+  readInstanceData,
+  readProject,
+  writeInstanceData,
+} from "@kibo/core";
 import {
   type ComponentManifest,
   type DeliveryResult,
@@ -126,5 +132,6 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       if (!deps.deliverAnswers) throw new KiboError("NOT_CONNECTED", "agents not started");
       return deps.deliverAnswers(projectId, ticketId);
     },
+    recipients: async (projectId) => listQuestionRecipients(docs.project(projectId)),
   };
 }

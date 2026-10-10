@@ -1,6 +1,13 @@
 import { expect, test } from "bun:test";
 import { createProjectDoc, createTicket } from "@kibo/core";
-import { type CiRun, ComponentManifest, type EmbedView, type Instance, KiboError } from "@kibo/schema";
+import {
+  type CiRun,
+  ComponentManifest,
+  DEFAULT_RECIPIENTS,
+  type EmbedView,
+  type Instance,
+  KiboError,
+} from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import { z } from "zod";
 import type { FilesService } from "../files/service";
@@ -128,6 +135,13 @@ test("the tickets listed to a component are not startable while a run is active 
     ["A", false],
     ["B", true],
   ]);
+});
+
+test("the question recipients are read from the project, defaults included, without writing", async () => {
+  const project = new LoroDoc();
+  const h = createGateHandlers({ ...stubHandlerDeps, docs: { ...stubDocs, project: () => project } });
+  expect(await h.recipients("p")).toEqual([...DEFAULT_RECIPIENTS]);
+  expect(project.oplogVersion().length()).toBe(0);
 });
 
 test("instance data writes go through the project write guard", async () => {

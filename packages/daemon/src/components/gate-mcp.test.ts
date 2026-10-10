@@ -63,6 +63,7 @@ function harness(granted: Partial<GrantedPermissions>, quotas: Quotas = createQu
       throw new KiboError("INTERNAL", "unexpected");
     },
     questions: async () => ({ sent: 0, runId: null }),
+    recipients: async () => [],
   };
   const gate = createGate({
     instance: (_p, id) => {
