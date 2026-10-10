@@ -99,10 +99,10 @@ test("embedded frames are checked against the aliased site and relayed with its 
       createRedactor(),
     );
     const manifest = ComponentManifest.parse({
-      id: "itch",
+      id: "frame",
       version: "1.0.0",
       kind: "both",
-      title: "Jeu itch.io",
+      title: "Cadre intégré",
       reads: [],
       writes: [],
       capabilities: ["embed"],
