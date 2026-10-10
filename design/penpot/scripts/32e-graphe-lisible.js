@@ -35,14 +35,31 @@ const edgesSvg = (g, P, o = {}) => { const w = Math.round(g.width), h = Math.rou
     const on = o.hl ? o.hl.has(a + ">" + b) : true; return `<path d="M${sx} ${sy} C${mx} ${sy} ${mx} ${ey} ${ex} ${ey}" stroke="${on && o.hl ? C.fg : C.mfg}" stroke-width="${on && o.hl ? 1.5 : 1}" stroke-opacity="${on ? (o.hl ? 1 : 0.55) : 0.15}" fill="none"/>`; }).join("");
   const s = penpot.createShapeFromSvg(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${paths}</svg>`); s.name = "Edges"; g.appendChild(s); penpotUtils.setParentXY(s, 0, 0); s.sendToBack(); return s; };
 const edgesBack = async (g) => { await wait(2000); g.children.filter(c => /Edges$/.test(c.name)).forEach(c => c.sendToBack()); };
-const startable = (p) => { const b = S.box(p, { name: "Startable", stroke: C.border, radius: 999, dir: "row", pad: [1, 6], hs: "auto", vs: "auto" }); S.txt(b, "Démarrable", { size: 10, weight: 500, color: C.mfg }); return b; };
-const node = (g, [k, t, st, , ok], x, y, o = {}) => { const n = S.box(g, { name: "Node-" + k, fill: C.card, stroke: o.ring ? C.fg : C.border, sw: o.ring ? 2 : 1, radius: 8, w: L.w, h: L.h, dir: "column", gap: 2, pad: [5, 10] }); penpotUtils.setParentXY(n, x, y);
-  const r = S.row(n, { gap: 6 }); S.statusDot(r, st, 7); S.txt(r, k, { size: 10, mono: true, color: C.dim }); if (ok) startable(r);
-  S.txt(n, t, { size: 12, weight: 500 }); if (o.dim) n.opacity = 0.25; return n; };
+
+// ---------- Couleur du statut sur la carte (variante A de 32f) : fond teint ~15 % et bordure pleine ----------
+const PAL = { dark: { gray: "#A1A1AA", blue: "#3B82F6", purple: "#A855F7", red: "#EF4444", green: "#22C55E" },
+  light: { gray: "#71717A", blue: "#2563EB", purple: "#9333EA", red: "#DC2626", green: "#16A34A" } };
+const HUE = { "Backlog": "gray", "À faire": "gray", "En cours": "blue", "En review": "purple", "Bloqué": "red", "Terminé": "green" };
+const stColor = st => PAL[S.mode === "light" ? "light" : "dark"][HUE[st]];
+const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+const hex = a => "#" + a.map(v => Math.round(v).toString(16).padStart(2, "0")).join("").toUpperCase();
+const mix = (c, a) => { const f = rgb(c), b = rgb(C.card); return hex(f.map((v, i) => v * a + b[i] * (1 - a))); };
+const neutral = () => S.mode === "light" ? "#A1A1AA" : "#52525B";
+const keep = s => { if (S.fresh) S.fresh.add(s.id); return s; };
+const tinted = (p, name, st, o) => keep(S.box(p, { ...o, name, fill: mix(stColor(st), 0.15), stroke: stColor(st), sw: o.sw || 1 }));
+const startable = (p) => { const b = keep(S.box(p, { name: "Startable", fill: C.bg, stroke: neutral(), radius: 999, dir: "row", pad: [1, 7], hs: "auto", vs: "auto", align: "center" }));
+  S.txt(b, "Démarrable", { size: 11, weight: 500, color: C.fg }); return b; };
+const node = (g, [k, t, st, , ok], x, y, o = {}) => { const n = tinted(g, "Node-" + k, st, { sw: o.ring ? 2 : 1, radius: 8, w: L.w, h: L.h, dir: "column", gap: 2, pad: [5, 10] }); penpotUtils.setParentXY(n, x, y);
+  const r = S.row(n, { gap: 6, align: "center" }); S.txt(r, k, { size: 10, mono: true, color: C.mfg }); if (ok) startable(r);
+  S.txt(n, t, { size: 12, weight: 500 }); if (o.dim) n.opacity = 0.35; return n; };
 const waveHeads = (g, o = L) => WAVES.forEach((t, j) => { const x = S.txt(g, t, { size: o.small ? 10 : 11, weight: 600, color: C.dim }); penpotUtils.setParentXY(x, o.x0 + j * o.colW, o.small ? o.y0 - 22 : 22); });
 const legend = (g) => { const l = S.panel(g, { gap: 4, pad: [8, 12], radius: 8, w: 310 }); S.txt(l, "Bloque · 36 liens tracés", { size: 11, color: C.mfg }); S.txt(l, "24 liens implicites masqués (survol pour les voir)", { size: 11, color: C.dim }); penpotUtils.setParentXY(l, 1144 - 326, 560); return l; };
 const zoomBar = (g, z) => { const b = S.box(g, { name: "ZoomBar", fill: C.card, stroke: C.border, radius: 8, dir: "row", gap: 2, pad: 3, hs: "auto", vs: "auto", align: "center" }); iconButton(b, "scan"); iconButton(b, "plus"); S.txt(b, z, { size: 11, mono: true }); iconButton(b, "minus"); penpotUtils.setParentXY(b, 1144 - 150, 652); return b; };
-const screen = async (name, col, row, o = {}) => { const r = await appScreen(PAGE, name, col, row, "Graphe", ["Kibo", "Graphe"], ["graph", "Kibo · Graphe"]); S.topAction(r.frame, "Partager", "outline", "share2");
+const placeWhere = async (p, shape, ok) => { for (let i = 0; i < p.children.length && !ok(); i++) { p.insertChild(i, shape); await wait(600); } return ok(); };
+const relayLogos = async (f) => { if (S.mode !== "light") return; penpotUtils.findShapes(s => s.name === "logo", f).forEach(l => { const p = l.parent; p.insertChild(p.children.findIndex(c => c.id === l.id), l); });
+  const ws = find(f, "WorkspaceSwitcher"); const logo = ws && ws.children.find(c => c.name === "logo"); const name = ws && ws.children.find(c => c.name === "ws-name");
+  if (logo && name) { await wait(600); await placeWhere(ws, logo, () => logo.x < name.x); } };
+const screen = async (name, col, row, o = {}) => { const r = await appScreen(PAGE, name, col, row, "Graphe", ["Kibo", "Graphe"], ["graph", "Kibo · Graphe"]); await relayLogos(r.frame); S.topAction(r.frame, "Partager", "outline", "share2");
   const c = r.content; const tb = S.row(c, { gap: 8 }); S.fx.segmented(tb, ["Vagues", "Hiérarchique"], "Vagues");
   S.button(tb, o.shown ? "Masquer les terminés" : "Afficher les terminés (31)", "outline", { sm: true }); S.button(tb, "Démarrables", o.startable ? "secondary" : "outline", { sm: true, icon: "filter" });
   S.button(tb, o.group ? "Affichage · chapitre:" : "Affichage", "outline", { sm: true, icon: "sliders" }); S.spacer(tb); S.txt(tb, "69 tickets · 38 ouverts · 7 démarrables", { size: 12, color: C.mfg });
@@ -67,7 +84,7 @@ S.draw["188b"] = async () => { const { frame: f, g } = await screen("188b · Gra
 const group = (g, [id, name, n, open], x, y, w) => { const fr = S.box(g, { name: "Group-" + id, fill: C.card, stroke: C.border, radius: 10, w, dir: "column", gap: 6, pad: [8, 10], vs: "auto" }); penpotUtils.setParentXY(fr, x, y);
   const h = S.row(fr, { gap: 6 }); S.icon(h, open ? "chevDown" : "chevRight", 13, C.mfg); S.txt(h, id + " · " + (open ? name : n + " tickets"), { size: 12, weight: 600 }); S.spacer(h);
   if (open) S.txt(h, n + " tickets", { size: 11, color: C.dim });
-  if (open) W.flat().filter(t => t[3] === id).forEach(t => { const r = S.row(fr, { name: "Row-" + t[0], gap: 6, pad: [5, 8], radius: 6, stroke: C.border }); S.statusDot(r, t[2], 7); S.txt(r, t[0], { size: 10, mono: true, color: C.dim });
+  if (open) W.flat().filter(t => t[3] === id).forEach(t => { const r = tinted(fr, "Row-" + t[0], t[2], { dir: "row", gap: 6, pad: [5, 8], radius: 6, h: 30, vs: "auto", align: "center" }); S.fillX(r); S.txt(r, t[0], { size: 10, mono: true, color: C.mfg });
     S.fillX(S.txt(r, t[1], { size: 11 })); if (t[4]) startable(r); });
   if (!open) S.txt(fr, name + (id <= "C2" ? " · terminés" : ""), { size: 11, color: C.dim }); return fr; };
 S.draw["188c"] = async () => { const { frame: f, g } = await screen("188c · Graphe : regroupement par chapitre", 0, 1, { group: true });
@@ -76,20 +93,22 @@ S.draw["188c"] = async () => { const { frame: f, g } = await screen("188c · Gra
   const ys = id => at[id][1] + 18; const svg = lines.map(([a, b]) => { const sx = at[a][0] + at[a][2], ex = at[b][0], sy = ys(a), ey = ys(b), mx = (sx + ex) / 2; return `<path d="M${sx} ${sy} C${mx} ${sy} ${mx} ${ey} ${ex} ${ey}" stroke="${C.mfg}" stroke-opacity="0.55" fill="none"/>`; }).join("");
   const s = penpot.createShapeFromSvg(`<svg xmlns="http://www.w3.org/2000/svg" width="1144" height="700" viewBox="0 0 1144 700">${svg}</svg>`); s.name = "GroupEdges"; g.appendChild(s); penpotUtils.setParentXY(s, 0, 0); s.sendToBack();
   CHAPTERS.forEach(c => group(g, c, ...at[c[0]]));
-  await wait(1500); menu(f, 727, 92 + 24 + 34, ["Affichage", ["Regrouper par étiquette", "check", { hint: "chapitre:" }], ["Zoom sémantique", "check"], "-", ["Déplier tous les cadres", null, { noSlot: false }], ["Replier tous les cadres", null]], 280);
+  await wait(1500); menu(f, 727, 92 + 24 + 34, ["Affichage", ["Regrouper par étiquette", "check", { hint: "chapitre:" }], "-", ["Déplier tous les cadres", null, { noSlot: false }], ["Replier tous les cadres", null]], 280);
   zoomBar(g, "100 %"); await edgesBack(g); S.frontAbs(f); return f.id; };
 
 // ---------- 188d · Zoom éloigné : clé et pastille ----------
 S.draw["188d"] = async () => { const { frame: f, g } = await screen("188d · Graphe : zoom éloigné", 2, 1); const o = { x0: 150, colW: 180, y0: 120, step: 40, w: 86, h: 24, small: true }; const P = pos(o);
   waveHeads(g, o); edgesSvg(g, P, { w: o.w, h: o.h });
-  W.flat().forEach(([k, , st]) => { const n = S.box(g, { name: "Pill-" + k, fill: C.card, stroke: C.border, radius: 999, w: o.w, h: o.h, dir: "row", gap: 5, pad: [0, 8], align: "center" }); penpotUtils.setParentXY(n, ...P[k]);
-    S.statusDot(n, st, 7); S.txt(n, k, { size: 10, mono: true }); });
+  W.flat().forEach(([k, , st]) => { const n = tinted(g, "Pill-" + k, st, { radius: 999, w: o.w, h: o.h, dir: "row", justify: "center", align: "center" }); penpotUtils.setParentXY(n, ...P[k]);
+    S.txt(n, k, { size: 10, mono: true, weight: 500 }); });
   const h = S.txt(g, "De loin : clé et pastille · de près : titre et étiquettes", { size: 11, color: C.dim }); penpotUtils.setParentXY(h, 24, 660); zoomBar(g, "40 %"); await edgesBack(g); return f.id; };
 
 // ---------- Kanban : pastille « Démarrable » ----------
-S.draw["188k"] = async () => { const { frame: f, content } = await kanbanAt(PAGE, "188k · Kanban : pastille Démarrable", 0, 2);
+S.draw["188k"] = async () => { const { frame: f, content } = await kanbanAt(PAGE, "188k · Kanban : pastille Démarrable", 0, 2); await relayLogos(f);
   const cd = find(content, "TicketCard / KIB-9"); const meta = cd && cd.children.find(x => x.name === "meta"); if (meta) startable(meta);
-  const g = find(f, "Filter-Grouper : statut"); const tb = g && g.parent; if (tb) { const btn = S.button(tb, "Démarrables", "outline", { sm: true, icon: "filter" }); await wait(1500); btn.setParentIndex(tb.children.indexOf(g) + 1); } return f.id; };
+  const g = find(f, "Filter-Grouper : statut"); const tb = g && g.parent;
+  if (tb) { const btn = S.button(null, "Démarrables", "outline", { sm: true, icon: "filter" }); tb.insertChild(0, btn); await wait(1000);
+    await placeWhere(tb, btn, () => btn.x > g.x && !tb.children.some(c => c.x > g.x && c.x < btn.x)); } return f.id; };
 
 S.GRAPHE = [188, "188b", "188c", "188d", "188k"];
 return "graphe ok";
