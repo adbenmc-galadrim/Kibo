@@ -1255,6 +1255,12 @@ Version **`0.20.0-alpha.1`**, rapport `docs/superpowers/rapports/<date>-jalon-v0
 - **Ce qui reste** : la capacité `embed`, la page relais `/e/<jeton>` et la vérification d'intégrabilité servent Storybook (§25) ; le faux itch.io des tests reste s'il couvre encore la vérification générique, sinon il est remplacé par un faux site neutre. Les capacités `fullscreen`, `audio` et `gamepad` doivent garder une preuve par un composant intégré ou par la suite de conformité ; sinon un composant de démonstration minimal les couvre dans les tests uniquement.
 - **Tests** : `e2e/game.spec.ts` et la partie jeu de `e2e/embeds.spec.ts` disparaissent ou sont réécrits ; le budget de l'entrée doit baisser (aucun relèvement).
 
+### 26.12 Dialogue « Ajouter un composant » en deux volets (demande d'Adam du 2026-10-10)
+
+- **Constat** : avec dix intégrés et trois composants personnels, le dialogue dépasse la hauteur de l'écran ; « Annuler » et « Ajouter à la page » passent sous le pli (constaté au jalon v0.19 à 860 px de haut).
+- **Décision** : hauteur bornée à la fenêtre (marge comprise) ; en-tête (titre, recherche) et pied (« Annuler », « Ajouter à la page ») **toujours visibles** ; corps en **deux volets** côte à côte : à gauche la **liste** des composants (intégrés, mes composants, marketplace), défilante seule, avec « Créer un composant (code ou IA) » fixé sous la liste ; à droite la **description** du composant choisi (aperçu, texte, affichage, confiance et permissions), défilante seule si besoin. Aucun défilement de la boîte entière. Sous 720 px de large, les deux volets s'empilent et le pied reste fixe.
+- **Tests** : unitaires (structure, pied présent quelle que soit la longueur de la liste) et E2E à 1280 × 720 : le bouton « Ajouter à la page » est visible sans défilement avec quinze composants ; captures sombre et clair.
+
 ## 27. Décisions de la phase 21 : les agents parlent à l'agent de projet (demande d'Adam du 2026-10-09)
 
 **Demande** : « Les agents peuvent communiquer avec l'agent de projet : création de nouveaux tickets, remontée de contexte et autre. » Choix d'Adam au brainstorming du 2026-10-09 ; le détail sera écrit avant le plan de la phase 21.
