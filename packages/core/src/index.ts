@@ -8,6 +8,7 @@ export * from "./keys";
 export * from "./links";
 export * from "./pages";
 export * from "./project";
+export * from "./question-recipients";
 export * from "./questions";
 export * from "./registry";
 export * from "./share-migration";

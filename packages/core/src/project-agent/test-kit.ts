@@ -1,6 +1,8 @@
 import {
   type AgentProfile,
+  DEFAULT_RECIPIENTS,
   DEFAULT_WORKFLOW,
+  EMPTY_PROGRESS,
   type Link,
   type ProjectSnapshot,
   type Question,
@@ -25,10 +27,12 @@ export function ticket(p: Partial<TicketView> & Pick<TicketView, "id">): TicketV
     parentId: null,
     externalRefs: [],
     labels: [],
+    agentProgress: EMPTY_PROGRESS,
     progress: { done: 0, total: 0 },
     waitingOn: [],
     keyLabel: key ?? "EMIS-…",
     openQuestions: 0,
+    startable: false,
     ...p,
   };
 }
@@ -45,6 +49,8 @@ export function question(p: Partial<Question> & Pick<Question, "id" | "ticketId"
     createdAt: 0,
     importRef: null,
     answer: null,
+    recipient: "me",
+    sentAt: null,
     ...p,
   };
 }
@@ -87,6 +93,7 @@ export function project(p: Partial<ProjectSnapshot> = {}): ProjectSnapshot {
     tickets: [],
     links: [],
     questions: [],
+    questionRecipients: [...DEFAULT_RECIPIENTS],
     instances: [],
     rules: [],
     bindings: [],

@@ -28,6 +28,8 @@ const hook = (event: HookEventName, extra: Partial<HookPayload> = {}): RunEvent 
     question: null,
     agentId: null,
     ask: null,
+    todos: null,
+    stopHookActive: false,
     ...extra,
   },
 });

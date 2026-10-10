@@ -10,6 +10,7 @@ export function ticketCard(project: ProjectSnapshot, ticket: TicketView): Ticket
     assignee: assigneeOf(ticket),
     parent: ticket.parentId === null ? null : ticketKeyOf(project, ticket.parentId),
     openQuestions: ticket.openQuestions,
+    startable: ticket.startable,
     branch: branchOf(ticket.externalRefs),
     pr: prOf(ticket.externalRefs),
   };

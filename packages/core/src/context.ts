@@ -7,9 +7,12 @@ import {
   estimateTokens,
   type Guideline,
   type GuidelineScope,
+  PROGRESS_TOOL,
   type ProjectSnapshot,
   type PrState,
   type Question,
+  type QuestionRecipient,
+  type Step,
   type TicketView,
 } from "@kibo/schema";
 
@@ -21,6 +24,7 @@ export type BriefInput = {
   note: string;
   commits?: readonly string[];
 };
+export type RunProtocol = { progress: boolean; recipients: readonly QuestionRecipient[] };
 export type ContextFile = { path: string; content: string };
 export type RunContext = { files: ContextFile[]; systemPrompt: string; brief: string; tokens: number };
 
@@ -108,6 +112,11 @@ function workSections(project: ProjectSnapshot, ticket: TicketView, commits: rea
   ];
 }
 
+function stepLine(step: Step): string {
+  const state = step.status === "doing" ? " (en cours)" : step.status === "blocked" ? " (bloquée)" : "";
+  return `- [${step.status === "done" ? "x" : " "}] ${step.title}${state}`;
+}
+
 export function buildBrief({ project, ticket, domain, note, commits = [] }: BriefInput): string {
   const label = (id: string) => project.workflow.find((s) => s.id === id)?.label ?? id;
   const children = project.tickets.filter((t) => t.parentId === ticket.id);
@@ -147,12 +156,34 @@ export function buildBrief({ project, ticket, domain, note, commits = [] }: Brie
   if (mockups.length > 0) {
     lines.push("", "## Maquettes", "", ...mockups.map((m) => `- ${m.name} : ${m.url}`));
   }
+  lines.push(...section("Plan en cours", ticket.agentProgress.plan.map(stepLine)));
   lines.push(...workSections(project, ticket, commits));
   if (note.trim()) lines.push("", "## Consignes", "", note.trim());
   return `${lines.join("\n")}\n`;
 }
 
-export function buildSystemPrompt(chain: Guideline[], subagents: AgentModel[]): string {
+function progressRules(protocol: RunProtocol | undefined): string[] {
+  if (!protocol?.progress) return [];
+  return [
+    `- Avant de modifier un fichier, déclare ton plan avec \`${PROGRESS_TOOL}\` (\`plan\` : toutes les étapes, une seule \`doing\`), puis tiens-le à jour à chaque étape.`,
+    `- Avant de terminer, remplis ton compte rendu avec \`${PROGRESS_TOOL}\` (\`report\` : done, decisions, toCheck, files, next).`,
+    "- Tes phrases s'affichent dans le fil du ticket : écris-les pour un lecteur humain, courtes et claires.",
+  ];
+}
+
+function recipientRules(protocol: RunProtocol | undefined): string[] {
+  if (!protocol || protocol.recipients.length === 0) return [];
+  return [
+    "- Destinataire d'une question (`recipient`, id ou nom), sinon `me` :",
+    ...protocol.recipients.map((r) => `  - ${r.id} — ${r.name}`),
+  ];
+}
+
+export function buildSystemPrompt(
+  chain: Guideline[],
+  subagents: AgentModel[],
+  protocol?: RunProtocol,
+): string {
   const allowed = subagents.length > 0 ? subagents.map((m) => MODEL_NAME[m]).join(", ") : "aucun";
   return [
     "# Guidelines Kibo",
@@ -165,16 +196,18 @@ export function buildSystemPrompt(chain: Guideline[], subagents: AgentModel[]): 
     `- Décision à prendre par l'utilisateur avant de continuer ⇒ \`${ASK_TOOL}\`, puis termine ton tour sans autre action. Kibo te relancera avec sa réponse.`,
     `- Décision que tu peux prendre provisoirement ⇒ \`${ASK_QUESTION_TOOL}\` avec ton choix provisoire, puis continue.`,
     "- Jamais de décision à valider dans ton texte final : Kibo ne le lit pas.",
+    ...recipientRules(protocol),
+    ...progressRules(protocol),
     `- Sous-agents autorisés : ${allowed}.`,
     "",
   ].join("\n");
 }
 
 export function buildRunContext(
-  input: BriefInput & { chain: Guideline[]; subagents: AgentModel[] },
+  input: BriefInput & { chain: Guideline[]; subagents: AgentModel[]; protocol?: RunProtocol },
 ): RunContext {
   const brief = buildBrief(input);
-  const systemPrompt = buildSystemPrompt(input.chain, input.subagents);
+  const systemPrompt = buildSystemPrompt(input.chain, input.subagents, input.protocol);
   const files: ContextFile[] = [
     ...input.chain.map((g) => ({ path: `context/${FOLDER[g.owner.scope]}/${g.path}`, content: g.content })),
     { path: "CLAUDE.md", content: systemPrompt },

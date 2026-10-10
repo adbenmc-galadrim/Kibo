@@ -83,7 +83,8 @@ function cardLine(card: TicketCard): string {
     ...(card.pr ? [`PR ${card.pr}`] : []),
   ];
   const head = `- ${card.key} · ${truncate(card.title, OVERVIEW_TITLE_MAX)} [${card.statusId}]`;
-  return facts.length > 0 ? `${head} ${facts.join(" · ")}` : head;
+  const line = facts.length > 0 ? `${head} ${facts.join(" · ")}` : head;
+  return card.startable ? `${line} · démarrable` : line;
 }
 
 function section(title: string, lines: readonly string[], empty: string): string[] {
