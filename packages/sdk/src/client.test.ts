@@ -319,3 +319,39 @@ test("a revoked session (close 4401) stops the reconnection and reports it", asy
   off();
   server.stop(true);
 });
+
+test("run moments reach moment listeners only, never a project reload", async () => {
+  const moment = {
+    id: 1,
+    runId: "r1",
+    seq: 0,
+    at: 1,
+    stepId: null,
+    data: { kind: "message", text: "Bonjour" },
+  };
+  const server = Bun.serve({
+    hostname: "127.0.0.1",
+    port: 0,
+    fetch: (req, srv) => (srv.upgrade(req) ? undefined : new Response("upgrade required", { status: 400 })),
+    websocket: {
+      open(ws) {
+        ws.send(JSON.stringify({ type: "run.moments", runId: "r1", moments: [moment] }));
+        ws.send(JSON.stringify({ projectId: "p1" }));
+      },
+      message() {},
+    },
+  });
+  const client = createClient({ baseUrl: `http://127.0.0.1:${server.port}` });
+  const seen: string[] = [];
+  const done = Promise.withResolvers<void>();
+  const offProject = client.subscribe((id) => {
+    seen.push(`project:${id}`);
+    done.resolve();
+  });
+  const offMoments = client.subscribeMoments((e) => seen.push(`${e.runId}:${e.moments.length}`));
+  await done.promise;
+  expect(seen).toEqual(["r1:1", "project:p1"]);
+  offProject();
+  offMoments();
+  server.stop(true);
+});
