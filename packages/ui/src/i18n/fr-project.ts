@@ -45,6 +45,22 @@ export const frProject = {
       NOT_FOUND: "Ce projet n'existe plus.",
     },
   },
+  recipients: {
+    title: "Destinataires des questions",
+    help: "L'agent propose un destinataire en posant sa question ; tu le corriges d'un clic. Les questions s'exportent en texte.",
+    byDefault: "par défaut",
+    open: (n: number) =>
+      n === 0 ? "aucune question ouverte" : `${n} question${n > 1 ? "s" : ""} ouverte${n > 1 ? "s" : ""}`,
+    rename: (name: string) => `Renommer ${name}`,
+    newName: (name: string) => `Nouveau nom de ${name}`,
+    remove: (name: string) => `Supprimer ${name}`,
+    add: "Ajouter",
+    addLabel: "Nouveau destinataire",
+    addPlaceholder: "Juridique, Design…",
+    inUse: (n: number) => `Utilisé par ${n} question${n > 1 ? "s" : ""} ouverte${n > 1 ? "s" : ""}`,
+    quota: "20 destinataires au plus.",
+    failed: "Impossible de modifier les destinataires.",
+  },
   remove: {
     title: (name: string) => `Supprimer le projet ${name} ?`,
     leaveTitle: (name: string) => `Quitter le projet ${name} ?`,
