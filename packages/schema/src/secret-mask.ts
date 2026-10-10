@@ -7,7 +7,7 @@ const firstGroup = (_match: string, kept: string): string => kept;
 
 const RULES: readonly SecretRule[] = [
   {
-    pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/g,
+    pattern: /-----BEGIN [A-Z ]*PRIVATE KEY-----(?:[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----|[\s\S]*$)/g,
     kept: whole,
   },
   { pattern: /(authorization:[ \t]*)[^\r\n]+/gi, kept: firstGroup },
@@ -38,4 +38,10 @@ export function hasSecret(text: string): boolean {
       (m) => m[0].slice(rule.kept(m[0], ...m.slice(1)).length) !== MASKED,
     ),
   );
+}
+
+export function maskSecretsWithin(text: string, max: number): string {
+  const masked = maskSecrets(text);
+  if (masked.length <= max) return masked;
+  return maskSecrets(masked.slice(0, Math.max(0, max - MASKED.length)));
 }

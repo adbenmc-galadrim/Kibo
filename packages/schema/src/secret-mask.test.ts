@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import fc from "fast-check";
-import { hasSecret, MASKED, maskSecrets } from "./secret-mask";
+import { hasSecret, MASKED, maskSecrets, maskSecretsWithin } from "./secret-mask";
 
 const SAMPLES: readonly RegExp[] = [
   /^sk-[A-Za-z0-9_-]{16,40}$/,
@@ -12,6 +12,7 @@ const SAMPLES: readonly RegExp[] = [
   /^[A-Z]{1,8}_(TOKEN|KEY|SECRET|PASSWORD)=[A-Za-z0-9]{1,30}$/,
   /^PASSWORD=[A-Za-z0-9]{1,30}$/,
   /^-----BEGIN RSA PRIVATE KEY-----\n[A-Za-z0-9+/\n]{1,60}\n-----END RSA PRIVATE KEY-----$/,
+  /^-----BEGIN EC PRIVATE KEY-----\n[A-Za-z0-9+/\n]{0,60}$/,
 ];
 
 test("each kind of secret is masked", () => {
@@ -33,6 +34,13 @@ test("each kind of secret is masked", () => {
     expect(maskSecrets(text)).toBe(masked);
     expect(hasSecret(maskSecrets(text))).toBe(false);
   }
+});
+
+test("a private key block cut before its END line is masked to the end of the text", () => {
+  const text = "cat id_rsa\n-----BEGIN OPENSSH PRIVATE KEY-----\nb3BlbnNzaC1rZXktdjEAAAAA\nAAAB";
+  expect(hasSecret(text)).toBe(true);
+  expect(maskSecrets(text)).toBe(`cat id_rsa\n${MASKED}`);
+  expect(hasSecret(maskSecrets(text))).toBe(false);
 });
 
 test("ordinary text is left alone", () => {
@@ -61,4 +69,20 @@ test("text without a secret is unchanged", () => {
       if (!hasSecret(text)) expect(maskSecrets(text)).toBe(text);
     }),
   );
+});
+
+test("masking within a length never exceeds it and never leaves a cut secret behind", () => {
+  const secret = fc.constantFrom(...SAMPLES).chain((pattern) => fc.stringMatching(pattern));
+  fc.assert(
+    fc.property(fc.string(), secret, fc.string(), fc.nat(120), (before, value, after, max) => {
+      const masked = maskSecretsWithin(`${before} ${value} ${after}`, max);
+      expect(masked.length).toBeLessThanOrEqual(max);
+      expect(hasSecret(masked)).toBe(false);
+    }),
+  );
+});
+
+test("masking within a length keeps a short clean text and re-masks a cut mask", () => {
+  expect(maskSecretsWithin("Je corrige la validation.", 100)).toBe("Je corrige la validation.");
+  expect(maskSecretsWithin("PASSWORD=hunter2 fin", 20)).toBe(`PASSWORD=${MASKED}`);
 });
