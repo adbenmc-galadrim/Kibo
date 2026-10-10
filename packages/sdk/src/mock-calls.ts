@@ -24,6 +24,7 @@ import { mockAssetUrl } from "./mock-assets";
 import { type MockFrame, mockDesignFrame } from "./mock-design";
 import type { MockEmbeds } from "./mock-embed";
 import type { MockNotesFolder } from "./mock-notes";
+import { activityOf } from "./mock-runs";
 import type { ServerContext, ServerDefinition } from "./server";
 import type { EntityMap } from "./types";
 
@@ -54,7 +55,7 @@ export type MockCallDeps = {
 };
 
 function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
-  const snapshot = readProject(deps.doc);
+  const snapshot = readProject(deps.doc, activityOf(deps.runs()));
   const lists: { [K in EntityType]: () => EntityMap[K][] } = {
     ticket: () => snapshot.tickets,
     status: () => snapshot.workflow,

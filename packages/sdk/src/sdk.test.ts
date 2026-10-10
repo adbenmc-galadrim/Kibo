@@ -61,7 +61,7 @@ test("openFile and openView are forwarded to the host and recorded by the mock",
   expect(m.sdk.surface).toBe("view");
 });
 
-test("runs are read only when declared, and their listeners hear run changes", async () => {
+test("runs are read only when declared; a run change is heard by run and ticket listeners", async () => {
   const withRuns = createMockSdk({ ...manifest, reads: ["ticket", "run"] });
   const heard: string[] = [];
   const off = withRuns.sdk.subscribe(() => heard.push("run"), "run");
@@ -73,7 +73,7 @@ test("runs are read only when declared, and their listeners hear run changes", a
   expect(await withRuns.sdk.list("run")).toEqual([
     { ticketId: t.id, runId: "r1", label: "opus-dev-1", state: "running", position: null },
   ]);
-  expect(heard).toEqual(["ticket", "run"]);
+  expect(heard).toEqual(["ticket", "run", "ticket"]);
   const without = createMockSdk(manifest);
   await expect(without.sdk.list("run")).rejects.toThrow("PERMISSION_DENIED");
   expect(without.violations).toEqual(["read run"]);

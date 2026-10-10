@@ -17,7 +17,7 @@ import { createMockEmbeds, recordedFrameApis } from "./mock-embed";
 import { createMockNotes } from "./mock-notes";
 import { createNotifier } from "./mock-notifier";
 import { createMockDelivery } from "./mock-questions";
-import { createMockRuns } from "./mock-runs";
+import { activityOf, createMockRuns } from "./mock-runs";
 import type { MockSdk, MockSdkOptions } from "./mock-types";
 import { createSdk } from "./sdk";
 import type { ServerContext } from "./server";
@@ -89,7 +89,7 @@ export function createMockSdk(
   });
 
   const backend: ProjectBackend = {
-    snapshot: async () => readProject(doc),
+    snapshot: async () => readProject(doc, activityOf(runs)),
     run: async (cmd) => componentRun(cmd),
     call: createMockCalls({
       ...opts,
@@ -231,10 +231,11 @@ export function createMockSdk(
     configPatches,
     notes: folder.notes,
     run,
-    snapshot: () => readProject(doc),
+    snapshot: () => readProject(doc, activityOf(runs)),
     setRuns: (next) => {
       runs = next;
       runChanges.emit();
+      changes.emit();
     },
     touchNote: folder.touch,
     setAccess: (next) => {

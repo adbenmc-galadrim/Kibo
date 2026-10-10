@@ -274,3 +274,31 @@ test("a refused delivery says there is no session to resume", async () => {
   await expect(m.sdk.questions.deliver("t1")).rejects.toThrow("INVALID_TRANSITION");
   expect(m.deliveries).toEqual(["t1"]);
 });
+
+test("a ticket with a live run is not startable in snapshot() nor in list('ticket')", async () => {
+  const m = createMockSdk(
+    { ...base, reads: ["ticket"], writes: [] },
+    {
+      seed: (run) => {
+        run({ method: "createTicket", title: "A" });
+        run({ method: "createTicket", title: "B" });
+      },
+    },
+  );
+  const [a, b] = m.snapshot().tickets;
+  if (!a || !b) throw new Error("seed failed");
+  expect(a.startable).toBe(true);
+  let changes = 0;
+  m.sdk.subscribe(() => changes++, "ticket");
+  m.setRuns([
+    { ticketId: a.id, runId: "r1", label: "opus-dev-1", state: "waiting_input", position: null },
+    { ticketId: b.id, runId: "r2", label: "opus-dev-2", state: "done", position: null },
+  ]);
+  expect(changes).toBeGreaterThan(0);
+  const startable = (tickets: { id: string; startable: boolean }[]) =>
+    Object.fromEntries(tickets.map((t) => [t.id, t.startable]));
+  expect(startable(m.snapshot().tickets)).toEqual({ [a.id]: false, [b.id]: true });
+  expect(startable(await m.sdk.list("ticket"))).toEqual({ [a.id]: false, [b.id]: true });
+  m.setRuns([]);
+  expect(m.snapshot().tickets.find((t) => t.id === a.id)?.startable).toBe(true);
+});

@@ -1,4 +1,8 @@
-import { KiboError, type RunPeek } from "@kibo/schema";
+import { isTerminal, KiboError, type ProjectActivity, type RunPeek, type TicketRun } from "@kibo/schema";
+
+export const activityOf = (runs: readonly TicketRun[]): ProjectActivity => ({
+  busyTickets: new Set(runs.filter((r) => !isTerminal(r.state)).map((r) => r.ticketId)),
+});
 
 export type MockRuns = { peek(runId: string): RunPeek; open(runId: string): void; opened: string[] };
 
