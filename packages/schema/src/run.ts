@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { HostSettings } from "./agent";
+import type { RunProgressSummary } from "./progress";
 import { AskInput, type RunQuestions } from "./question";
+import { TodoItem } from "./todo-item";
 
 export const RunState = z.enum([
   "queued",
@@ -47,6 +49,7 @@ export const HookInput = z.object({
   error: z.string().nullish(),
   agent_id: z.string().nullish(),
   agent_type: z.string().nullish(),
+  stop_hook_active: z.boolean().nullish(),
 });
 export type HookInput = z.infer<typeof HookInput>;
 
@@ -59,6 +62,8 @@ export const HookPayload = z.object({
   question: z.string().max(4000).nullable(),
   agentId: z.string().max(200).nullable(),
   ask: AskInput.nullable().default(null),
+  todos: z.array(TodoItem).max(100).nullable().default(null),
+  stopHookActive: z.boolean().default(false),
 });
 export type HookPayload = z.infer<typeof HookPayload>;
 
@@ -68,6 +73,15 @@ export const HookPost = z.object({
 });
 export type HookPost = z.infer<typeof HookPost>;
 export type GuardDecision = { decision: "allow" | "deny"; reason: string };
+export type HookReply =
+  | { kind: "permission"; decision: "allow" | "deny"; reason: string; additionalContext: string | null }
+  | { kind: "stop"; reason: string };
+export const permissionReply = (d: GuardDecision, additionalContext: string | null = null): HookReply => ({
+  kind: "permission",
+  decision: d.decision,
+  reason: d.reason,
+  additionalContext,
+});
 
 export const SetupStatus = z.enum(["running", "done", "failed"]);
 export type SetupStatus = z.infer<typeof SetupStatus>;
@@ -222,6 +236,7 @@ export type AgentsState = {
   resumable: string[];
   questions: RunQuestions[];
   projectAgents: ProjectAgentSummary[];
+  progress: RunProgressSummary[];
 };
 export type SessionPreview = {
   runId: string;

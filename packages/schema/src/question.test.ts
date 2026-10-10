@@ -105,6 +105,7 @@ test("the tool input of ask_user and ask_question is reduced and bounded", () =>
     options: ["80", "443"],
     provisional: "443",
     blocking: false,
+    recipient: null,
   });
   expect(askInputFromTool({ question: "Quel port ?" }, true)).toEqual({
     title: "Quel port ?",
@@ -112,6 +113,7 @@ test("the tool input of ask_user and ask_question is reduced and bounded", () =>
     options: [],
     provisional: null,
     blocking: true,
+    recipient: null,
   });
   expect(askInputFromTool({ question: "" }, true)).toBeNull();
   expect(askInputFromTool({ question: "x" }, false)).toBeNull();
@@ -233,6 +235,7 @@ test("an ask_question provisional choice is kept when the agent gives no options
     options: [],
     provisional: "Oui",
     blocking: false,
+    recipient: null,
   });
   expect(askInputFromTool({ question: "x", provisional: "Oui" }, true)?.provisional).toBe("Oui");
 });

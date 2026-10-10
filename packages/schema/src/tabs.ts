@@ -37,8 +37,12 @@ export const TabTarget = z.discriminatedUnion("kind", [
   }),
   z.object({ kind: z.literal("ticket"), projectId: ProjectId, ticketId: NodeId }),
   z.object({ kind: z.literal("screen"), screen: Screen }),
+  z.object({ kind: z.literal("run"), runId: z.string().min(1) }),
 ]);
 export type TabTarget = z.infer<typeof TabTarget>;
+
+export const targetProjectId = (target: TabTarget): string | null =>
+  "projectId" in target ? target.projectId : null;
 
 export const Tab = z.object({
   id: z.string().min(1),

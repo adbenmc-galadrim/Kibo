@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ExternalRef } from "./external-ref";
 import { NodeId, TicketKey } from "./ids";
 import { Labels } from "./label";
+import { EMPTY_PROGRESS, TicketProgress } from "./progress";
 import { StatusId } from "./status";
 
 export const Assignee = z.object({ kind: z.enum(["human", "agent"]), ref: z.string().min(1) });
@@ -21,6 +22,7 @@ export const Ticket = z
     parentId: NodeId.nullable(),
     externalRefs: z.array(ExternalRef),
     labels: Labels.default([]),
+    agentProgress: TicketProgress.default(EMPTY_PROGRESS),
   })
   .superRefine((t, ctx) => {
     const hasReason = t.blockedReason !== null && t.blockedReason.trim().length > 0;

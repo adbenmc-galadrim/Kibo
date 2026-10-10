@@ -8,6 +8,7 @@ import { Labels } from "./label";
 import type { Link } from "./link";
 import type { EntityType } from "./manifest";
 import { type Page, PageKind } from "./page";
+import { FileCheck, Plan, RunReportInput } from "./progress";
 import {
   Actor,
   AnswerInput,
@@ -18,11 +19,13 @@ import {
   QuestionOption,
   QuestionTitle,
 } from "./question";
+import { QuestionRecipient, RECIPIENT_ID_MAX } from "./question-recipient";
 import { StatusId } from "./status";
 import { Assignee, type Ticket } from "./ticket";
 
 const index = z.number().int().nonnegative().optional();
 const JsonRecord = z.record(z.string(), z.unknown());
+const RecipientId = z.string().min(1).max(RECIPIENT_ID_MAX);
 
 export const ProjectCommand = z.discriminatedUnion("method", [
   z.object({
@@ -137,6 +140,24 @@ export const ProjectCommand = z.discriminatedUnion("method", [
     runId: z.string().min(1),
     at: z.number().int(),
   }),
+  z.object({
+    method: z.literal("setTicketProgress"),
+    ticketId: NodeId,
+    runId: z.string().min(1),
+    at: z.number().int(),
+    plan: Plan.optional(),
+    report: RunReportInput.optional(),
+    check: FileCheck.optional(),
+  }),
+  z.object({ method: z.literal("addQuestionRecipient"), name: QuestionRecipient.shape.name }),
+  z.object({
+    method: z.literal("renameQuestionRecipient"),
+    recipientId: RecipientId,
+    name: QuestionRecipient.shape.name,
+  }),
+  z.object({ method: z.literal("removeQuestionRecipient"), recipientId: RecipientId }),
+  z.object({ method: z.literal("setQuestionRecipient"), questionId: NodeId, recipient: RecipientId }),
+  z.object({ method: z.literal("markQuestionSent"), questionId: NodeId, at: z.number().int().optional() }),
 ]);
 export type ProjectCommand = z.infer<typeof ProjectCommand>;
 
@@ -168,6 +189,12 @@ export const COMMAND_WRITES: Record<ProjectCommand["method"], EntityType | null>
   answerQuestion: "question",
   removeQuestion: "question",
   markAnswersDelivered: null,
+  setTicketProgress: null,
+  addQuestionRecipient: "question",
+  renameQuestionRecipient: "question",
+  removeQuestionRecipient: "question",
+  setQuestionRecipient: "question",
+  markQuestionSent: "question",
 };
 
 export const isReservedCommand = (method: ProjectCommand["method"]): boolean =>
@@ -201,4 +228,10 @@ export type CommandResult = {
   answerQuestion: Question;
   removeQuestion: null;
   markAnswersDelivered: Question[];
+  setTicketProgress: Ticket;
+  addQuestionRecipient: QuestionRecipient;
+  renameQuestionRecipient: QuestionRecipient;
+  removeQuestionRecipient: null;
+  setQuestionRecipient: Question;
+  markQuestionSent: Question;
 };

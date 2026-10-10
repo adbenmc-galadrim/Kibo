@@ -2,6 +2,7 @@ import { z } from "zod";
 import { KiboError } from "./errors";
 import { ImportRef } from "./git-branch";
 import { NodeId } from "./ids";
+import { ME_RECIPIENT, RECIPIENT_ID_MAX } from "./question-recipient";
 import type { RunView } from "./run";
 
 export const QUESTION_TITLE_MAX = 200;
@@ -79,6 +80,8 @@ export const Question = z
     createdAt: z.number().int(),
     importRef: ImportRef.nullable().default(null),
     answer: QuestionAnswer.nullable(),
+    recipient: z.string().max(RECIPIENT_ID_MAX).default(ME_RECIPIENT),
+    sentAt: z.number().int().nullable().default(null),
   })
   .superRefine((q, ctx) => {
     const problem = questionProblem(q);
@@ -99,6 +102,7 @@ export const AskInput = z.object({
   options: QuestionOptions,
   provisional: QuestionOption.nullable(),
   blocking: z.boolean(),
+  recipient: z.string().max(RECIPIENT_ID_MAX).nullable().default(null),
 });
 export type AskInput = z.infer<typeof AskInput>;
 
@@ -238,12 +242,14 @@ export function askInputFromTool(
   if (!question || context === null || provisionalRaw === null || options === null) return null;
   const provisional = toolProvisional(provisionalRaw, options, blocking);
   if (provisional === undefined) return null;
+  const recipient = stringField(toolInput, "recipient");
   const parsed = AskInput.safeParse({
     title: cut(question, QUESTION_TITLE_MAX),
     context: (context ?? "").slice(0, QUESTION_CONTEXT_MAX),
     options,
     provisional,
     blocking,
+    recipient: recipient ? cut(recipient, RECIPIENT_ID_MAX) || null : null,
   });
   return parsed.success ? parsed.data : null;
 }
