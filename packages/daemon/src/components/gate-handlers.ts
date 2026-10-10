@@ -49,7 +49,7 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
         if (!ciRuns) throw new KiboError("NOT_CONNECTED", "ci not started");
         return ciRuns(projectId);
       }
-      const snap = readProject(docs.project(projectId));
+      const snap = readProject(docs.project(projectId), docs.activity(projectId));
       const lists = {
         ticket: snap.tickets,
         status: snap.workflow,

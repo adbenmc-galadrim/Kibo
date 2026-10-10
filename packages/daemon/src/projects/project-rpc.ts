@@ -66,7 +66,7 @@ function createProject(
 function getProject(deps: ProjectRpcDeps, projectId: string) {
   const doc = deps.docs.project(projectId);
   const snapshot = {
-    ...readProject(doc),
+    ...readProject(doc, deps.docs.activity(projectId)),
     meta: deps.docs.projectMeta(projectId),
     viewer: deps.docs.identity(projectId),
     icon: deps.icons.version(projectIcon(projectId)),

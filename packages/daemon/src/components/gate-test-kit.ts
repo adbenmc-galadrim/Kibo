@@ -69,6 +69,7 @@ export const stubDocs: Docs = {
   updateProjectMeta: unused,
   identity: unused,
   setIdentity: unused,
+  activity: unused,
 };
 export const stubNotes: NotesService = {
   info: unused,

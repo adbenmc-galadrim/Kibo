@@ -12,6 +12,7 @@ import {
   INBOX_ID,
   isInbox,
   KiboError,
+  NO_ACTIVITY,
   type ProjectAgentSummary,
   type ProjectCommand,
   type RpcRequest,
@@ -33,6 +34,7 @@ import { assertInboxCommand, assertNotInbox } from "./inbox/inbox-rules";
 import { isIntegrationRequest } from "./integrations/methods";
 import type { IntegrationRpc } from "./integrations/registry";
 import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
+import { type ActivityTracker, createActivityTracker } from "./project-activity";
 import { withLocalSettings } from "./project-folder";
 import { projectDocId, WORKSPACE_DOC_ID } from "./projects/doc-ids";
 import { writeProjectMeta } from "./projects/meta";
@@ -92,6 +94,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   projects.set(INBOX_ID, loadInbox(store));
   const listeners = new Set<(message: ChangeMessage) => void>();
   let agents: AgentsPort | null = null;
+  let tracker: ActivityTracker | null = null;
   const components = portSlot<ComponentsPort>();
   const integrations = portSlot<IntegrationRpc>();
   const ai = portSlot<AiPort>();
@@ -205,6 +208,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         if (identity === fn) identity = osIdentity;
       };
     },
+    activity: (projectId) => tracker?.activity(projectId) ?? NO_ACTIVITY,
   };
   const agentData = createDataPort(docs, settings);
   const questions: AgentQuestions = {
@@ -237,14 +241,19 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       deliverTicketAnswers(agentsReady(), questions, projectId, ticketId),
     attachAgents(port) {
       agents = port;
+      const activity = createActivityTracker(port.state().runs);
+      tracker = activity;
       const offTopic = port.onChange(() => docs.emit({ topic: "agents" }));
-      const offRuns = port.onRunState((run) =>
-        docs.emit({ type: "run.changed", runId: run.id, state: run.state }),
-      );
+      const offRuns = port.onRunState((run) => {
+        activity.track(run);
+        docs.emit({ type: "run.changed", runId: run.id, state: run.state });
+        if (run.projectId !== null && projects.has(run.projectId)) docs.emit({ projectId: run.projectId });
+      });
       return () => {
         offTopic();
         offRuns();
         agents = null;
+        if (tracker === activity) tracker = null;
       };
     },
     attachComponents: components.attach,

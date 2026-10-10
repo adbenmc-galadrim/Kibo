@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test";
+import { createProjectDoc, createTicket } from "@kibo/core";
 import { type CiRun, ComponentManifest, type EmbedView, type Instance, KiboError } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
+import { z } from "zod";
 import type { FilesService } from "../files/service";
 import type { ComponentIntegrationHooks, McpCallContext } from "../integrations/types";
 import { createGateHandlers } from "./gate-handlers";
@@ -102,6 +104,30 @@ test("ci runs are listed per project", async () => {
   const seen: unknown[] = [];
   expect(await handlersWith(hooks(seen)).list("p", "ci_run")).toEqual([ciRun]);
   expect(seen).toEqual([["ci", "p"]]);
+});
+
+test("the tickets listed to a component are not startable while a run is active on them", async () => {
+  const project = createProjectDoc({
+    id: "p",
+    key: "KIB",
+    name: "Kibo",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+    storybook: null,
+  });
+  const busy = createTicket(project, { title: "A", statusId: "todo" });
+  createTicket(project, { title: "B", statusId: "todo" });
+  const handlers = createGateHandlers({
+    ...stubHandlerDeps,
+    docs: { ...stubDocs, project: () => project, activity: () => ({ busyTickets: new Set([busy.id]) }) },
+  });
+  const Listed = z.array(z.object({ title: z.string(), startable: z.boolean() }));
+  const tickets = Listed.parse(await handlers.list("p", "ticket"));
+  expect(tickets.map((t) => [t.title, t.startable])).toEqual([
+    ["A", false],
+    ["B", true],
+  ]);
 });
 
 test("instance data writes go through the project write guard", async () => {

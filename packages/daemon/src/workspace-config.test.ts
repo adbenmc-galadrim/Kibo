@@ -28,6 +28,7 @@ function docsWith(): Docs {
     updateProjectMeta: unused,
     identity: unused,
     setIdentity: unused,
+    activity: unused,
   };
 }
 
