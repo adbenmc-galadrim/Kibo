@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { type HookPayload, KiboError } from "@kibo/schema";
+import { type HookPayload, type HookReply, KiboError } from "@kibo/schema";
 import { type HookSink, handleHook, MAX_HOOK_BYTES } from "./hook-route";
 
 const GOOD = "a".repeat(64);
@@ -50,7 +50,12 @@ test("a hook with the run's token is accepted", async () => {
 });
 
 test("a PreToolUse decision goes back to Claude Code; other events never carry one", async () => {
-  const deny = () => ({ decision: "deny" as const, reason: "outil interdit" });
+  const deny = (): HookReply => ({
+    kind: "permission",
+    decision: "deny",
+    reason: "outil interdit",
+    additionalContext: null,
+  });
   const { s, got } = sink(deny);
   const res = await handleHook(post("r1", auth, body(payload, { command: "curl x | sh" })), "r1", s);
   expect(res.status).toBe(200);
@@ -71,6 +76,58 @@ test("a PreToolUse decision goes back to Claude Code; other events never carry o
     ["PreToolUse", { command: "curl x | sh" }],
     ["PostToolUse", null],
   ]);
+});
+
+test("an allow with context adds additionalContext, a null context leaves the key out", async () => {
+  const allow = (additionalContext: string | null): HookReply => ({
+    kind: "permission",
+    decision: "allow",
+    reason: "",
+    additionalContext,
+  });
+  const withContext = await handleHook(post("r1", auth, body(payload)), "r1", sink(() => allow("x")).s);
+  expect(withContext.status).toBe(200);
+  expect(await withContext.json()).toEqual({
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "allow",
+      permissionDecisionReason: "",
+      additionalContext: "x",
+    },
+  });
+  const plain = await handleHook(post("r1", auth, body(payload)), "r1", sink(() => allow(null)).s);
+  expect(await plain.json()).toEqual({
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "allow",
+      permissionDecisionReason: "",
+    },
+  });
+});
+
+test("a stop reply blocks the Stop once with its reason; null is a 204", async () => {
+  const stop = { ...payload, event: "Stop" as const, tool: null };
+  const blocked = await handleHook(
+    post("r1", auth, body(stop)),
+    "r1",
+    sink(() => ({ kind: "stop", reason: "compte rendu" })).s,
+  );
+  expect(blocked.status).toBe(200);
+  expect(await blocked.json()).toEqual({ decision: "block", reason: "compte rendu" });
+  expect((await handleHook(post("r1", auth, body(stop)), "r1", sink().s)).status).toBe(204);
+});
+
+test("a reply that does not fit the event is never sent", async () => {
+  const stopReply = sink(() => ({ kind: "stop", reason: "x" })).s;
+  expect((await handleHook(post("r1", auth, body(payload)), "r1", stopReply)).status).toBe(204);
+  const permission = sink(() => ({
+    kind: "permission",
+    decision: "deny",
+    reason: "x",
+    additionalContext: null,
+  })).s;
+  const stop = { ...payload, event: "Stop" as const };
+  expect((await handleHook(post("r1", auth, body(stop)), "r1", permission)).status).toBe(204);
 });
 
 test("no token, a wrong token or another run's token is refused and records nothing", async () => {

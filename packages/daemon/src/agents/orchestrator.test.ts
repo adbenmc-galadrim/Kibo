@@ -357,7 +357,7 @@ test("a PreToolUse without tool input reaches the guard as null, never as an emp
     todos: null,
     stopHookActive: false,
   };
-  expect(h.orch.hooks.receive(r.id, payload, null)).toEqual({ decision: "deny", reason: "no input" });
+  expect(h.orch.hooks.receive(r.id, payload, null)).toMatchObject({ decision: "deny", reason: "no input" });
   expect(h.orch.hooks.receive(r.id, payload, { file_path: "ui.tsx" })).toBeNull();
   expect(inputs).toEqual([null, { file_path: "ui.tsx" }]);
   h.orch.cancel(r.id);

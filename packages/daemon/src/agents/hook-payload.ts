@@ -10,6 +10,7 @@ import {
   mcpToolName,
   PROJECT_AGENT_TOOLS,
   type ProjectAgentTool,
+  TodoItem,
 } from "@kibo/schema";
 
 const text = (value: unknown): string | null =>
@@ -87,6 +88,28 @@ function askOf(h: HookInput): AskInput | null {
   return askInputFromTool(h.tool_input ?? null, h.tool_name === ASK_TOOL);
 }
 
+export const MAX_TODOS = 100;
+const TODO_TEXT_MAX = 160;
+
+function todoOf(raw: unknown): TodoItem[] {
+  if (typeof raw !== "object" || raw === null) return [];
+  const item: Record<string, unknown> = { ...raw };
+  const clipped = {
+    ...item,
+    content: typeof item.content === "string" ? item.content.slice(0, TODO_TEXT_MAX) : item.content,
+    activeForm: typeof item.activeForm === "string" ? item.activeForm.slice(0, TODO_TEXT_MAX) : undefined,
+  };
+  const parsed = TodoItem.safeParse(clipped);
+  return parsed.success ? [parsed.data] : [];
+}
+
+function todosOf(h: HookInput): TodoItem[] | null {
+  if (h.hook_event_name !== "PostToolUse" || h.tool_name !== "TodoWrite") return null;
+  const todos = h.tool_input?.todos;
+  if (!Array.isArray(todos)) return null;
+  return todos.flatMap(todoOf).slice(0, MAX_TODOS);
+}
+
 function reduce(h: HookInput): HookPayload {
   const subagent = h.hook_event_name === "SubagentStart" || h.hook_event_name === "SubagentStop";
   const tool = subagent ? text(h.agent_type) : text(h.tool_name);
@@ -100,8 +123,8 @@ function reduce(h: HookInput): HookPayload {
     question: clip(asked ? text(h.tool_input?.question) : null, 4000),
     agentId: clip(h.agent_id, 200),
     ask: askOf(h),
-    todos: null,
-    stopHookActive: false,
+    todos: todosOf(h),
+    stopHookActive: h.stop_hook_active === true,
   };
 }
 

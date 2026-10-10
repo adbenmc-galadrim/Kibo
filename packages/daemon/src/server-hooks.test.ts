@@ -88,6 +88,24 @@ describe("agents routes", () => {
     expect(received).toEqual([`${RUN}:Stop`]);
   });
 
+  test("a stop reply of the sink reaches Claude Code as a block", async () => {
+    const sink: HookSink = {
+      verify: (runId, token) => runId === RUN && token === "b".repeat(64),
+      receive: () => ({ kind: "stop", reason: "compte rendu" }),
+    };
+    const hooked = startServer({
+      service: createService(store, { user: "adam" }),
+      token: TOKEN,
+      port: 0,
+      uiDir: null,
+      hooks: sink,
+    });
+    const res = await hookTo(hooked.url, RUN, { authorization: `Bearer ${"b".repeat(64)}` });
+    hooked.stop();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ decision: "block", reason: "compte rendu" });
+  });
+
   test("agent-mcp posts skip the session but need the run token and a local Host", async () => {
     const bearer = { authorization: `Bearer ${"b".repeat(64)}` };
     const toolTo = (url: string, headers: Record<string, string>) =>
