@@ -38,13 +38,15 @@ export function DockFeed({
   onOpenFile,
 }: Props) {
   const files = useRunFileContext(run);
-  const { ref, onScroll } = useFollowBottom<HTMLDivElement>(moments.length);
+  const { ref, onScroll, release } = useFollowBottom<HTMLDivElement>(moments.length);
   useEffect(() => {
     if (!highlightStep) return;
     const steps = ref.current ? Array.from(ref.current.querySelectorAll<HTMLElement>("[data-step]")) : [];
     const first = steps.find((el) => el.dataset.step === highlightStep);
-    first?.scrollIntoView({ block: "start", behavior: "smooth" });
-  }, [highlightStep, ref]);
+    if (!first) return;
+    release();
+    first.scrollIntoView({ block: "start" });
+  }, [highlightStep, ref, release]);
   return (
     <RunDetail run={run} resumable={resumable} questions={questions} now={now}>
       <div

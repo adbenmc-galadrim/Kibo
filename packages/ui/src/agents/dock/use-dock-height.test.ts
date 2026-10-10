@@ -38,3 +38,15 @@ test("reset goes back to the default height", () => {
   expect(result.current.height).toBe(450);
   expect(window.sessionStorage.getItem(DOCK_HEIGHT_KEY)).toBeNull();
 });
+
+test("the highest height follows the window when it is resized", () => {
+  window.sessionStorage.setItem(DOCK_HEIGHT_KEY, "700");
+  const { result } = renderHook(() => useDockHeight());
+  expect(result.current.max).toBe(800);
+  act(() => {
+    Object.defineProperty(window, "innerHeight", { configurable: true, value: 600 });
+    window.dispatchEvent(new Event("resize"));
+  });
+  expect(result.current.max).toBe(480);
+  expect(result.current.height).toBe(480);
+});

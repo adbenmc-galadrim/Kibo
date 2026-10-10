@@ -13,5 +13,19 @@ export function useFollowBottom<T extends HTMLElement>(count: number) {
     const el = ref.current;
     if (el && following.current && count > 0) el.scrollTop = el.scrollHeight;
   }, [count]);
-  return { ref, onScroll };
+  useLayoutEffect(() => {
+    void count;
+    const el = ref.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      if (following.current) el.scrollTop = el.scrollHeight;
+    });
+    observer.observe(el);
+    for (const child of Array.from(el.children)) observer.observe(child);
+    return () => observer.disconnect();
+  }, [count]);
+  const release = useCallback(() => {
+    following.current = false;
+  }, []);
+  return { ref, onScroll, release };
 }

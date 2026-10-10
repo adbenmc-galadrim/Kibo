@@ -48,12 +48,7 @@ export function AgentDock({
   const column = "flex min-h-0 flex-col overflow-y-auto p-3";
   return (
     <div className="flex flex-col" style={{ height: dock.height }}>
-      <ResizeBar
-        height={dock.height}
-        max={Math.round(window.innerHeight * 0.8)}
-        onResize={dock.set}
-        onReset={dock.reset}
-      />
+      <ResizeBar height={dock.height} max={dock.max} onResize={dock.set} onReset={dock.reset} />
       <AgentBar
         state={state}
         now={now}
@@ -63,7 +58,7 @@ export function AgentDock({
         onSelect={onSelect}
         onLaunch={onLaunch}
       />
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)_minmax(15rem,19rem)] border-t">
+      <div className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] grid-cols-[minmax(15rem,18rem)_minmax(0,1fr)_minmax(15rem,19rem)] border-t">
         <section aria-label={t.runs} className={`${column} border-r p-2`}>
           <DockRuns
             groups={dockGroups(state, now)}
@@ -74,7 +69,7 @@ export function AgentDock({
             onSelect={onSelect}
           />
         </section>
-        <section aria-label={t.feed} className={column}>
+        <section aria-label={t.feed} className="flex min-h-0 flex-col overflow-hidden p-3">
           {selected ? (
             <DockFeed
               key={selected.id}
