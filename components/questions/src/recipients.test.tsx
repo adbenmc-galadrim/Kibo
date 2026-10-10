@@ -140,3 +140,20 @@ test("read-only projects show the recipient without its menu, and no export", as
   expect(screen.queryByRole("button", { name: "Exporter" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Destinataire" })).toBeNull();
 });
+
+test("a 21st recipient is refused with the quota", async () => {
+  const full = (run: (cmd: ProjectCommand) => unknown) => {
+    seed(run);
+    for (let i = 1; i <= 17; i++) run({ method: "addQuestionRecipient", name: `Équipe ${i}` });
+  };
+  const m = createMockSdk(manifest, { seed: full, surface: "view" });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Destinataire" }));
+  await user.type(screen.getByRole("textbox", { name: "Nouveau destinataire" }), "Juridique{Enter}");
+  expect((await screen.findByRole("alert")).textContent).toBe("20 destinataires au plus.");
+});

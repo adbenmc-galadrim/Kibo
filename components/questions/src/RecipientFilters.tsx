@@ -1,4 +1,4 @@
-import type { QuestionRecipient } from "@kibo/schema";
+import { KiboError, type QuestionRecipient } from "@kibo/schema";
 import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
@@ -35,7 +35,7 @@ function Pill({ value, name, count }: { value: string; name: string; count: numb
 function AddRecipient() {
   const sdk = useSdk();
   const [name, setName] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
   if (name === null)
     return (
       <Button variant="ghost" size="sm" className="h-7 text-xs font-normal" onClick={() => setName("")}>
@@ -47,13 +47,14 @@ function AddRecipient() {
     e.preventDefault();
     const trimmed = name.trim();
     if (trimmed === "") return setName(null);
-    setFailed(false);
+    setFailure(null);
     try {
       await sdk.run({ method: "addQuestionRecipient", name: trimmed });
       setName(null);
     } catch (err) {
+      if (err instanceof KiboError && err.code === "QUOTA_EXCEEDED") return setFailure(fr.recipients.quota);
       console.error(err);
-      setFailed(true);
+      setFailure(fr.recipients.addFailed);
     }
   };
   return (
@@ -68,9 +69,9 @@ function AddRecipient() {
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => e.key === "Escape" && setName(null)}
       />
-      {failed && (
+      {failure !== null && (
         <span role="alert" className="text-xs text-destructive">
-          {fr.recipients.addFailed}
+          {failure}
         </span>
       )}
     </form>

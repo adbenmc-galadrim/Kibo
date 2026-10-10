@@ -139,6 +139,15 @@ test("removes a recipient, and says how many open questions use a refused one", 
   expect((await screen.findByRole("alert")).textContent).toBe("Utilisé par 2 questions ouvertes");
 });
 
+test("a recipient over the quota is explained", async () => {
+  render(<RecipientsFields projectId="kibo" />);
+  const user = userEvent.setup();
+  refuse = new KiboError("QUOTA_EXCEEDED", "too many recipients");
+  await user.type(await screen.findByRole("textbox", { name: "Nouveau destinataire" }), "Juridique");
+  await user.click(screen.getByRole("button", { name: "Ajouter" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("20 destinataires au plus.");
+});
+
 test("a read-only project shows no recipient section", async () => {
   snapshot = { ...base, sync: { ...base.sync, access: "read-only" } };
   const { container } = render(<RecipientsFields projectId="kibo" />);

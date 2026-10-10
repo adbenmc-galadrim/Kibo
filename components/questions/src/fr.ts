@@ -50,6 +50,7 @@ export const fr = {
     add: "Destinataire",
     addLabel: "Nouveau destinataire",
     addFailed: "Impossible d'ajouter le destinataire.",
+    quota: "20 destinataires au plus.",
     menu: (name: string) => `Destinataire : ${name}`,
     shown: (name: string) => `Pour : ${name}`,
     changeFailed: "Impossible de changer le destinataire.",
@@ -58,7 +59,6 @@ export const fr = {
   exporting: {
     one: "Exporter",
     all: (n: number) => `Exporter tout (${n})`,
-    copied: "Texte copié",
     fallback: "Texte à copier",
     fallbackHelp: "La copie automatique a échoué : copie ce texte toi-même.",
     failed: "Impossible de marquer la question envoyée.",
