@@ -1,12 +1,13 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import type { Assignee, MemberInfo, TicketRun } from "@kibo/schema";
-import { AgentBadge, assigneeLabel, StatusDot, TicketKeyLabel, useSdk } from "@kibo/sdk";
+import { assigneeLabel, StatusDot, TicketKeyLabel, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { ChevronDown, ChevronRight, MessageCircleQuestion, Plus } from "lucide-react";
 import type { ReactNode } from "react";
+import { AgentChip } from "./AgentChip";
 import type { TicketNode } from "./build-tree";
 import { fr } from "./fr";
 import { LabelChips } from "./LabelChips";
@@ -18,6 +19,8 @@ export const COLUMNS =
 export const WIDE_CELL = "hidden @md:inline";
 export const WIDE_TEXT = "sr-only @md:not-sr-only";
 export const ASSIGNEE_CELL = "hidden min-w-0 @3xl:flex";
+export const STARTABLE_BADGE =
+  "hidden shrink-0 border-zinc-400 bg-background text-2xs font-medium text-zinc-700 @md:inline-flex dark:border-zinc-500 dark:text-zinc-200";
 
 type AssigneeProps = { assignee: Assignee | null; run: TicketRun | null; members: MemberInfo[] };
 
@@ -25,10 +28,9 @@ function AssigneeCell({ assignee, run, members }: AssigneeProps) {
   if (assignee?.kind === "agent" || (run && !assignee))
     return (
       <span className={cn(ASSIGNEE_CELL, "items-center")}>
-        <AgentBadge
+        <AgentChip
           agent={assignee?.ref ?? null}
           run={run}
-          texts={fr.run}
           className="min-w-0 shrink justify-start truncate text-xs"
         />
       </span>
@@ -167,6 +169,11 @@ export function TicketRow({
             {t.waitingOn.length > 0 && (
               <Badge variant="outline" className={cn(WIDE_TEXT, "min-w-0 shrink justify-start text-3xs")}>
                 <span className="truncate">{fr.waitingOn(t.waitingOn)}</span>
+              </Badge>
+            )}
+            {t.startable && (
+              <Badge variant="outline" className={STARTABLE_BADGE}>
+                {fr.startable}
               </Badge>
             )}
             {t.openQuestions > 0 && (

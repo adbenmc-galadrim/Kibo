@@ -1,8 +1,9 @@
 import type { CiRun, MemberInfo, TicketRun, TicketView } from "@kibo/schema";
-import { AgentBadge, assigneeLabel, type CiTone, TicketKeyLabel, worstCiTone } from "@kibo/sdk";
+import { assigneeLabel, type CiTone, TicketKeyLabel, worstCiTone } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Bot, MessageCircleQuestion } from "lucide-react";
 import type { ReactNode } from "react";
+import { AgentChip } from "./AgentChip";
 import { fr } from "./fr";
 import { LabelChips } from "./LabelChips";
 
@@ -14,6 +15,9 @@ const CI_DOT = {
 } as const satisfies Record<CiTone, string>;
 
 export const QUESTIONS_BADGE = "gap-1 border-orange-500/40 text-3xs text-orange-600 dark:text-orange-400";
+
+export const STARTABLE_BADGE =
+  "border-zinc-400 bg-background text-2xs font-medium text-zinc-700 dark:border-zinc-500 dark:text-zinc-200";
 
 export const CARD_CLASS =
   "relative grid gap-2 rounded-md border bg-card p-2.5 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -51,7 +55,12 @@ export function KanbanCardContent({ ticket: t, run, ci, members, remote, menu, t
         <p className="text-2xs text-red-600 dark:text-red-400">{fr.blockedReason(t.blockedReason)}</p>
       )}
       <div className="flex flex-wrap items-center gap-1.5">
-        <AgentBadge agent={t.assignee?.kind === "agent" ? t.assignee.ref : null} run={run} texts={fr.run} />
+        {t.startable && (
+          <Badge variant="outline" className={STARTABLE_BADGE}>
+            {fr.startable}
+          </Badge>
+        )}
+        <AgentChip agent={t.assignee?.kind === "agent" ? t.assignee.ref : null} run={run} />
         {remote.map((r) => (
           <span
             key={r.label}

@@ -62,13 +62,14 @@ export function Kanban() {
   const [filter, setFilter] = useState<KanbanFilter>(
     source !== null || sdk.config.filter === "all" ? "all" : "mine-and-agents",
   );
+  const [startable, setStartable] = useState(false);
   const [blocking, setBlocking] = useState<Blocking | null>(null);
   const [removing, setRemoving] = useState<TicketView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [targetColumn, setTargetColumn] = useState<StatusId | null>(null);
   const [dragged, setDragged] = useState<string | null>(null);
   const scoped = filterBySource(tickets, source);
-  const shown = filterTickets(scoped, filter, sdk.viewer, labelFilter.label);
+  const shown = filterTickets(scoped, filter, sdk.viewer, labelFilter.label, startable);
   const ciOf = (t: TicketView): CiChip | undefined =>
     ciChipOf(ciRuns.filter((r) => t.key !== null && r.ticketKey === t.key));
   const factsOf = (t: TicketView): CardFacts => ({
@@ -143,8 +144,11 @@ export function Kanban() {
         label={labelFilter.label}
         labels={projectLabels(scoped)}
         onLabel={labelFilter.choose}
+        startable={startable}
+        onStartable={setStartable}
         onShowAll={() => {
           setFilter("all");
+          setStartable(false);
           if (labelFilter.label !== null) labelFilter.choose(null);
         }}
         shown={shown.length}

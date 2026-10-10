@@ -1,4 +1,4 @@
-import type { StatusId, Ticket } from "@kibo/schema";
+import type { StatusId, Ticket, TicketView } from "@kibo/schema";
 
 export type AssigneeFilter = "all" | "me" | "agents" | "nobody";
 export type TicketsQuery = {
@@ -6,6 +6,7 @@ export type TicketsQuery = {
   statuses: ReadonlySet<StatusId>;
   assignee: AssigneeFilter;
   labels: ReadonlySet<string>;
+  startable: boolean;
 };
 
 export const EMPTY_QUERY: TicketsQuery = {
@@ -13,10 +14,11 @@ export const EMPTY_QUERY: TicketsQuery = {
   statuses: new Set(),
   assignee: "all",
   labels: new Set(),
+  startable: false,
 };
 
 export const isActive = (q: TicketsQuery): boolean =>
-  q.text.trim() !== "" || q.statuses.size > 0 || q.assignee !== "all" || q.labels.size > 0;
+  q.text.trim() !== "" || q.statuses.size > 0 || q.assignee !== "all" || q.labels.size > 0 || q.startable;
 
 export const projectLabels = (tickets: readonly Ticket[]): string[] =>
   [...new Set(tickets.flatMap((t) => t.labels))].sort();
@@ -35,13 +37,14 @@ const assigneeMatches = (t: Ticket, filter: AssigneeFilter, viewer: string): boo
 
 export type FilteredTree = { visible: Set<string>; context: Set<string> };
 
-export function filterTree(tickets: readonly Ticket[], q: TicketsQuery, viewer: string): FilteredTree {
+export function filterTree(tickets: readonly TicketView[], q: TicketsQuery, viewer: string): FilteredTree {
   const needle = normalize(q.text.trim());
-  const matches = (t: Ticket) =>
+  const matches = (t: TicketView) =>
     (!needle || normalize(t.title).includes(needle) || normalize(t.key ?? "").includes(needle)) &&
     (q.statuses.size === 0 || q.statuses.has(t.statusId)) &&
     assigneeMatches(t, q.assignee, viewer) &&
-    labelsMatch(t, q.labels);
+    labelsMatch(t, q.labels) &&
+    (!q.startable || t.startable);
   const parentOf = new Map(tickets.map((t) => [t.id, t.parentId]));
   const matched = new Set(tickets.filter(matches).map((t) => t.id));
   const visible = new Set<string>();
@@ -55,5 +58,5 @@ export function filterTree(tickets: readonly Ticket[], q: TicketsQuery, viewer: 
   return { visible, context: new Set([...visible].filter((id) => !matched.has(id))) };
 }
 
-export const filterTickets = (tickets: readonly Ticket[], q: TicketsQuery, viewer: string): Set<string> =>
+export const filterTickets = (tickets: readonly TicketView[], q: TicketsQuery, viewer: string): Set<string> =>
   filterTree(tickets, q, viewer).visible;
