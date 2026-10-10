@@ -7,7 +7,8 @@ import { layoutGraph } from "./layout";
 export function initialFilter(config: Record<string, unknown>): GraphFilter {
   return {
     assignee: config.filter === "all" ? "all" : "mine-and-agents",
-    hideDone: config.hideDone === true,
+    showDone: config.hideDone !== true,
+    startable: false,
     domain: null,
   };
 }

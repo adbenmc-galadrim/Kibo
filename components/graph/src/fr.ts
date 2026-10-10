@@ -38,6 +38,7 @@ export const fr = {
     reason ? `${key} · bloqué : ${reason}` : `${key} · bloqué`,
   more: (n: number) => `+${n}`,
   isolated: "Sans dépendance",
+  groupLabel: (value: string, n: number) => `${value} · ${n} ticket${s(n)}`,
   emptyView: "Aucune dépendance entre les tickets affichés.",
   emptyWidget: "Aucun chemin critique : aucun ticket bloquant.",
   loadFailed: "Impossible de charger les tickets.",

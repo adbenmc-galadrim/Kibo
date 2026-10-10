@@ -41,8 +41,8 @@ export function GraphFramed() {
           size="sm"
           variant="outline"
           className={TOGGLE}
-          aria-pressed={filter.hideDone}
-          onClick={() => setFilter((f) => ({ ...f, hideDone: !f.hideDone }))}
+          aria-pressed={!filter.showDone}
+          onClick={() => setFilter((f) => ({ ...f, showDone: !f.showDone }))}
         >
           {fr.hideDone}
         </Button>

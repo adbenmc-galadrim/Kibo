@@ -3,7 +3,8 @@ import type { GraphEdge } from "./critical-path";
 
 export type GraphFilter = {
   assignee: "mine-and-agents" | "all";
-  hideDone: boolean;
+  showDone: boolean;
+  startable: boolean;
   domain: string | null;
 };
 
@@ -11,7 +12,8 @@ const visible = (t: TicketView, f: GraphFilter, viewer: string): boolean =>
   (f.assignee === "all" ||
     t.assignee?.kind === "agent" ||
     (t.assignee?.kind === "human" && t.assignee.ref === viewer)) &&
-  (!f.hideDone || t.statusId !== "done") &&
+  (f.showDone || t.statusId !== "done") &&
+  (!f.startable || t.startable) &&
   (f.domain === null || t.domainId === f.domain);
 
 export function graphInput(

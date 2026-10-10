@@ -39,14 +39,14 @@ test("assignee, done and domain filters drop tickets and the edges that touch th
     ticket("D", { assignee: { kind: "agent", ref: "opus-dev" }, domainId: "Core" }),
   ];
   const links = [link("A", "B"), link("A", "C"), link("A", "D"), link("B", "D", "relates")];
-  const f = { assignee: "mine-and-agents" as const, hideDone: false, domain: null };
+  const f = { assignee: "mine-and-agents" as const, showDone: true, startable: false, domain: null };
   expect(graphInput(tickets, links, f, "adam").tickets.map((t) => t.id)).toEqual(["A", "B", "D"]);
   expect(graphInput(tickets, links, f, "adam").edges).toEqual([
     { from: "A", to: "B", type: "blocks" },
     { from: "A", to: "D", type: "blocks" },
     { from: "B", to: "D", type: "relates" },
   ]);
-  expect(graphInput(tickets, links, { ...f, hideDone: true }, "adam").edges).toEqual([
+  expect(graphInput(tickets, links, { ...f, showDone: false }, "adam").edges).toEqual([
     { from: "A", to: "D", type: "blocks" },
   ]);
   expect(graphInput(tickets, links, { ...f, domain: "Core" }, "adam").tickets.map((t) => t.id)).toEqual([
@@ -54,4 +54,13 @@ test("assignee, done and domain filters drop tickets and the edges that touch th
   ]);
   expect(graphInput(tickets, links, { ...f, assignee: "all" }, "adam").tickets).toHaveLength(4);
   expect(domainsOf(tickets)).toEqual(["Core"]);
+});
+
+test("the startable filter keeps only tickets that can start now", () => {
+  const tickets = [ticket("A", { startable: true }), ticket("B"), ticket("C", { startable: true })];
+  const links = [link("A", "B"), link("A", "C")];
+  const f = { assignee: "all" as const, showDone: false, startable: true, domain: null };
+  const input = graphInput(tickets, links, f, "adam");
+  expect(input.tickets.map((t) => t.id)).toEqual(["A", "C"]);
+  expect(input.edges).toEqual([{ from: "A", to: "C", type: "blocks" }]);
 });
