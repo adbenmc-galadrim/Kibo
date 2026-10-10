@@ -18,7 +18,8 @@ Ce document permet de reprendre sans réanalyse. Délégation d'Adam du 2026-10-
 - Progression : plan et compte rendu par l'outil MCP `ticket_progress` (fichiers vérifiés contre le diff git), repli sur TodoWrite ; rappels par hooks, jamais bloquants.
 - Questions : destinataire proposé par l'agent et corrigeable ; liste des destinataires **par projet et modifiable** (`moi`, `produit`, `client` par défaut) ; export et collage de réponse (P6).
 - Tickets **démarrables** : calculés (aucune dépendance bloquante ouverte), pastille neutre et filtre.
-- Graphe lisible : vagues, tickets terminés repliés, réduction transitive, focus ; en option groupement par étiquette et zoom sémantique (188 à 188d, 188k).
+- Graphe lisible, **validé écran par écran le 2026-10-10** (spec §26.8 et §26.9) : 188 vagues tel quel (terminés repliés, liens directs seulement, bascule Vagues / Hiérarchique) ; 188b focus sur deux niveaux ; 188c regroupement par étiquette en option du menu « Affichage », désactivé par défaut ; 188d **zoom sémantique toujours actif** ; 188k pastille et filtre « Démarrables », filtre **après** « Grouper ».
+- Couleurs du graphe, **variante A choisie le 2026-10-10** : fond teint à environ 15 % de la couleur du statut et bordure pleine de la même couleur, aussi sur les pilules du zoom éloigné ; plus de petite pastille de statut sur les cartes ; badge « Démarrable » neutre agrandi (11 px, contour, fond opaque). Couleurs : en sombre `#A1A1AA` (Backlog, À faire), `#3B82F6` (En cours), `#A855F7` (En review), `#EF4444` (Bloqué), `#22C55E` (Terminé) ; en clair `#71717A`, `#2563EB`, `#9333EA`, `#DC2626`, `#16A34A`. Planche de comparaison : page Penpot « 28d · Couleurs du graphe », script `32f-couleurs-graphe.js`, captures `screens/2026-10-10-couleurs-graphe/variante-{A..E}-{dark,light}.png`.
 - Deux phases (20 puis 21).
 
 ## Écarts connus des maquettes
@@ -26,6 +27,16 @@ Ce document permet de reprendre sans réanalyse. Délégation d'Adam du 2026-10-
 - 188c : liens entre chapitres d'une même colonne non tracés.
 - 188k : filtre « Démarrables » avant « Grouper ».
 - En clair, logo de l'espace de travail absent de l'en-tête de la barre latérale du modèle Kanban partagé.
+
+## Maquettes du graphe à redessiner (avant le plan de la phase 20)
+
+Dans `design/penpot/scripts/32e-graphe-lisible.js` (branche `docs/p20-pistes`, worktree `.claude/worktrees/p20-pistes`), page Penpot « 28c · Graphe », sombre et clair, puis réexport des 10 captures `screens/2026-10-09-pistes-agents/p7-graphe-*-{dark,light}.png` :
+
+1. Style A sur 188, 188b, 188c (cartes dans les cadres), 188d (pilules) ; retirer la pastille de statut des cartes ; badge « Démarrable » neutre 11 px avec contour.
+2. 188b : cartes estompées teintées mais atténuées ; cartes mises en avant gardent leur bordure colorée (plus de bordure blanche).
+3. 188c : retirer « Zoom sémantique » du menu « Affichage » (il reste « Regrouper par étiquette », « Déplier tous les cadres », « Replier tous les cadres »).
+4. 188k : filtre « Démarrables » après « Grouper » ; badge agrandi ; corriger le logo manquant en clair si possible sans casser les autres pages.
+5. Vérifier le nombre de formes serveur = local et relire chaque capture. Une première tentative a été interrompue le 2026-10-10 : la page 28c sur le serveur peut différer du script, qui fait foi (le script redessine la page).
 
 ## Points ouverts hérités de la phase 19
 
@@ -44,11 +55,12 @@ Ce document permet de reprendre sans réanalyse. Délégation d'Adam du 2026-10-
 
 ## Pour Adam
 
-- Relire et valider la spec de la phase 20 (`docs/p20-spec`, §26 et §27) et les maquettes (`screens/2026-10-09-pistes-agents/`).
+- Relire et valider le reste de la spec de la phase 20 (`docs/p20-spec`, §26.1 à §26.7 et §27 ; le graphe et « démarrable » sont validés) et les maquettes (`screens/2026-10-09-pistes-agents/`).
 - Alertes Dependabot (1 élevée, 1 modérée) sur la branche par défaut.
 - Fichiers temporaires à supprimer : artefacts Playwright, `/tmp/kibo-*`.
 
 ## Reprise
 
 1. Si la PR #20 n'est pas fusionnée : `gh pr checks 20`, corriger la CI jusqu'au vert, `gh pr merge 20 --merge`, tag `v0.19.0-alpha.1`, vérifier la release.
-2. Attendre la validation d'Adam sur `docs/p20-spec`, puis faire écrire le plan de la phase 20 par `kibo-lead` (`docs/superpowers/plans/<date>-kibo-phase-20.md`), en suivant §26 et les maquettes 183 à 188d.
+2. Redessiner les maquettes du graphe (section ci-dessus) par un `kibo-dev`, avec Penpot.
+3. Attendre la validation d'Adam sur `docs/p20-spec`, puis faire écrire le plan de la phase 20 par `kibo-lead` (`docs/superpowers/plans/<date>-kibo-phase-20.md`), en suivant §26 et les maquettes 183 à 188d.
