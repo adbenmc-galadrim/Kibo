@@ -145,6 +145,7 @@ test("read-only projects hide the forms", async () => {
   expect(screen.queryByRole("button", { name: "Nouvelle question" })).toBeNull();
   expect(screen.queryByRole("button", { name: /Transmettre à l'agent/ })).toBeNull();
   expect(screen.queryByRole("button", { name: "Supprimer" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Coller la réponse" })).toBeNull();
 });
 
 test("the view filters by state and ticket", async () => {
@@ -235,4 +236,51 @@ test("the widget links to the view", async () => {
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Ouvrir les questions →" }));
   expect(m.openedViews).toEqual(["questions"]);
+});
+
+const RUN_ID = "run-opus-2";
+
+const seedWithRun = (run: (cmd: ProjectCommand) => unknown) => {
+  const ids = seedDemo(run);
+  run({
+    method: "createQuestion",
+    ticketId: ids["KIB-16"] ?? "",
+    title: "Le client modifie-t-il les règles ?",
+    options: ["Oui", "Non"],
+    runId: RUN_ID,
+    createdBy: { kind: "agent", ref: "opus-dev-2" },
+  });
+};
+
+test("an agent question names its run with a mention that opens the run", async () => {
+  const m = mount("view", { seed: seedWithRun });
+  const ticketId = m.snapshot().tickets.find((t) => t.key === "KIB-16")?.id ?? "";
+  act(() => m.setRuns([{ ticketId, runId: RUN_ID, label: "opus-dev-2", state: "done", position: null }]));
+  const user = userEvent.setup();
+  const card = await screen.findByRole("article", { name: "Le client modifie-t-il les règles ?" });
+  await user.click(await within(card).findByRole("button", { name: /opus-dev-2/ }));
+  expect(m.openedRuns).toEqual([RUN_ID]);
+});
+
+test("« Coller la réponse » records a text answer, then offers the delivery", async () => {
+  const m = mount("view");
+  const user = userEvent.setup();
+  const card = await screen.findByRole("article", { name: OPEN });
+  await user.click(within(card).getByRole("button", { name: "Coller la réponse" }));
+  const save = within(card).getByRole("button", { name: "Enregistrer" });
+  expect(save.hasAttribute("disabled")).toBe(true);
+  await user.type(
+    within(card).getByRole("textbox", { name: "Réponse reçue" }),
+    "Oui, à la racine.{Enter}— Claire",
+  );
+  await user.click(save);
+  await waitFor(() =>
+    expect(questionNamed(m, OPEN)?.answer).toMatchObject({
+      kind: "text",
+      text: "Oui, à la racine.\n— Claire",
+      by: { kind: "human", ref: "adam" },
+    }),
+  );
+  const group = screen.getByRole("region", { name: /KIB-12/ });
+  expect(await within(group).findByRole("button", { name: "Transmettre à l'agent (1)" })).toBeTruthy();
 });

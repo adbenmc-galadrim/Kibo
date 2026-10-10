@@ -44,6 +44,7 @@ function QuestionGroup({ group, data, now }: { group: ViewGroup; data: Questions
           readOnly={data.readOnly}
           viewer={data.viewer}
           runLabel={data.runLabel}
+          runOf={data.runOf}
         />
       ))}
     </section>

@@ -1,10 +1,11 @@
-import { isOpen, type Question } from "@kibo/schema";
+import { isOpen, type Question, type TicketRun } from "@kibo/schema";
 import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { fr } from "./fr";
+import { PasteAnswerForm } from "./PasteAnswerForm";
 import { QuestionAnswerForm } from "./QuestionAnswerForm";
 import { QuestionAnswerLine, QuestionAuthor } from "./QuestionMeta";
 import { relativeAge } from "./questions-logic";
@@ -16,12 +17,13 @@ type Props = {
   readOnly: boolean;
   viewer: string;
   runLabel(runId: string): string;
+  runOf(runId: string | null): TicketRun | null;
 };
 
 export const canRemove = (q: Question, viewer: string): boolean =>
   !isOpen(q) || (q.createdBy.kind === "human" && q.createdBy.ref === viewer);
 
-export function QuestionCard({ question: q, now, readOnly, viewer, runLabel }: Props) {
+export function QuestionCard({ question: q, now, readOnly, viewer, runLabel, runOf }: Props) {
   const sdk = useSdk();
   const [removing, setRemoving] = useState(false);
   const context = renderContext(q.context);
@@ -29,7 +31,7 @@ export function QuestionCard({ question: q, now, readOnly, viewer, runLabel }: P
     <article aria-label={q.title} className="grid gap-2 rounded-md border bg-card p-3 text-sm">
       <header className="flex flex-wrap items-center gap-2">
         <h4 className="min-w-0 flex-1 font-medium">{q.title}</h4>
-        <QuestionAuthor actor={q.createdBy} />
+        <QuestionAuthor actor={q.createdBy} run={runOf(q.runId)} />
         <span className="text-2xs text-muted-foreground">{relativeAge(q.createdAt, now)}</span>
         {!readOnly && canRemove(q, viewer) && (
           <Button
@@ -52,6 +54,11 @@ export function QuestionCard({ question: q, now, readOnly, viewer, runLabel }: P
       )}
       <QuestionAnswerLine question={q} now={now} runLabel={runLabel} />
       {isOpen(q) && !readOnly && <QuestionAnswerForm question={q} />}
+      {isOpen(q) && !readOnly && (
+        <div className="flex flex-wrap justify-end gap-2">
+          <PasteAnswerForm question={q} />
+        </div>
+      )}
       <ConfirmDialog
         open={removing}
         onOpenChange={setRemoving}
