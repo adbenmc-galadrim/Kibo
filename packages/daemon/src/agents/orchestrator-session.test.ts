@@ -135,6 +135,8 @@ const answered = (id: string, title: string, text: string, at: number): Question
     deliveredAt: null,
     deliveredRunId: null,
   },
+  recipient: "me",
+  sentAt: null,
 });
 
 test("spawned marks the ticket's undelivered answers as delivered by this run", async () => {

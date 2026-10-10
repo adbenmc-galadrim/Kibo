@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import type { Link, TicketView } from "@kibo/schema";
+import { EMPTY_PROGRESS } from "@kibo/schema";
 import { domainsOf, graphInput } from "./filter";
 
 const ticket = (id: string, patch: Partial<TicketView> = {}): TicketView => ({
@@ -19,6 +20,8 @@ const ticket = (id: string, patch: Partial<TicketView> = {}): TicketView => ({
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
   ...patch,
 });
 const link = (from: string, to: string, type: Link["type"] = "blocks"): Link => ({

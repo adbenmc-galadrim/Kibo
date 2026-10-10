@@ -273,6 +273,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         resumable: resumableRuns(resumeContext(runs)),
         questions: [],
         projectAgents: [],
+        progress: [],
       };
     },
     log: (runId) => registry.log(runId),

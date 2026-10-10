@@ -3,7 +3,13 @@ import { mkdirSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { initRun } from "@kibo/core/run-machine";
 import type { Plan } from "@kibo/core/scheduler";
-import { type RunState, type RunView, type TicketView, WORKTREE_DEFAULTS } from "@kibo/schema";
+import {
+  EMPTY_PROGRESS,
+  type RunState,
+  type RunView,
+  type TicketView,
+  WORKTREE_DEFAULTS,
+} from "@kibo/schema";
 import { activeRunOf, plannedCwd, previewAssign } from "./assign-preview";
 import { cleanupTmp, tmp } from "./git-test-kit";
 import { profile } from "./orchestrator.test-helper";
@@ -50,6 +56,8 @@ const ticket: TicketView & { key: string } = {
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 };
 
 const admitAll = (runs: RunView[]): Plan => ({

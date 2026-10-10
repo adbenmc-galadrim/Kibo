@@ -21,7 +21,7 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-const ask = { context: "", options: ["Oui", "Non"], provisional: "Non" };
+const ask = { context: "", options: ["Oui", "Non"], provisional: "Non", recipient: null };
 
 function fakeAgents(runs: RunView[], answers: [string, string][]): AgentsPort {
   const unused = () => {
@@ -47,6 +47,7 @@ function fakeAgents(runs: RunView[], answers: [string, string][]): AgentsPort {
     resumable: [],
     questions: [],
     projectAgents: [],
+    progress: [],
   });
   return {
     assign: unused,

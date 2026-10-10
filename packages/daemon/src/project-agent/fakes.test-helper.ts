@@ -102,6 +102,7 @@ export function fakeAgents(): FakeAgents {
       resumable: [],
       questions: [],
       projectAgents: [],
+      progress: [],
     }),
     assign(input) {
       if (fake.failAssign) throw fake.failAssign;

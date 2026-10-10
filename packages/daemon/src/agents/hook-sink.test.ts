@@ -29,6 +29,8 @@ const write: HookPayload = {
   question: null,
   agentId: null,
   ask: null,
+  todos: null,
+  stopHookActive: false,
 };
 
 test("a demo guard that cannot be built denies the call and is logged", () => {
@@ -82,6 +84,7 @@ const ASK: AskInput = {
   options: ["Oui", "Non"],
   provisional: "Non",
   blocking: false,
+  recipient: null,
 };
 const asked: HookPayload = { ...write, event: "PostToolUse", tool: ASK_QUESTION_TOOL, ask: ASK };
 

@@ -12,7 +12,16 @@ const asked: HookPayload = {
   detail: null,
   question: null,
   agentId: null,
-  ask: { title: "Question q1", context: "", options: [], provisional: "Non", blocking: false },
+  ask: {
+    title: "Question q1",
+    context: "",
+    options: [],
+    provisional: "Non",
+    blocking: false,
+    recipient: null,
+  },
+  todos: null,
+  stopHookActive: false,
 };
 
 test("without agents no hook is verified nor received", () => {

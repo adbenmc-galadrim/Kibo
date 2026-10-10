@@ -4,7 +4,9 @@ import {
   isTerminal,
   KiboError,
   MEMORY_NOTE_PATH,
+  PROGRESS_TOOL_NAME,
   type ProjectAgentSummary,
+  type ProjectAgentTool,
   type ProjectAgentView,
   type ProjectFingerprint,
   type RunView,
@@ -98,6 +100,11 @@ function projectRun(ctx: AgentContext, runId: string): RunView {
   return run;
 }
 
+function projectTool(tool: AgentMcpRequest["tool"]): ProjectAgentTool {
+  if (tool === PROGRESS_TOOL_NAME) throw new KiboError("FORBIDDEN", `${tool} is a ticket run tool`);
+  return tool;
+}
+
 function mcpSink(ctx: AgentContext): AgentMcpSink {
   return {
     verify(runId, token) {
@@ -105,7 +112,8 @@ function mcpSink(ctx: AgentContext): AgentMcpSink {
       projectRun(ctx, runId);
       return true;
     },
-    call: async (runId, req: AgentMcpRequest) => ctx.ops.tool(projectRun(ctx, runId), req.tool, req.input),
+    call: async (runId, req: AgentMcpRequest) =>
+      ctx.ops.tool(projectRun(ctx, runId), projectTool(req.tool), req.input),
   };
 }
 

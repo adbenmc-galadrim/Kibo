@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { type Question, QuestionAnswer, resolveAnswer, type TicketView } from "@kibo/schema";
+import { EMPTY_PROGRESS, type Question, QuestionAnswer, resolveAnswer, type TicketView } from "@kibo/schema";
 import fc from "fast-check";
 import { answerFrom, filterQuestions, groupByTicket, relativeAge, viewGroups } from "./questions-logic";
 
@@ -20,6 +20,8 @@ const question = (over: Partial<Question>): Question => ({
   createdAt: 1,
   importRef: null,
   answer: null,
+  recipient: "me",
+  sentAt: null,
   ...over,
 });
 
@@ -54,6 +56,8 @@ const ticket = (id: string, keyLabel: string): TicketView => ({
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 });
 
 test("filterQuestions keeps open, answered or all questions, optionally of one ticket", () => {

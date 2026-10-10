@@ -21,6 +21,8 @@ test("keeps only what Kibo needs from a tool event", () => {
     question: null,
     agentId: null,
     ask: null,
+    todos: null,
+    stopHookActive: false,
   });
 });
 
@@ -114,6 +116,7 @@ test("an ask_question call carries a non-blocking ask and no waiting question", 
     options: ["Oui", "Non"],
     provisional: "Non",
     blocking: false,
+    recipient: null,
   });
 });
 
@@ -131,6 +134,7 @@ test("an ask_user call carries its question and a blocking ask", () => {
     options: [],
     provisional: null,
     blocking: true,
+    recipient: null,
   });
 });
 

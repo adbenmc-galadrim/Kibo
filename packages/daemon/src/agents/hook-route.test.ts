@@ -13,6 +13,8 @@ const payload: HookPayload = {
   question: null,
   agentId: null,
   ask: null,
+  todos: null,
+  stopHookActive: false,
 };
 
 function sink(receive: HookSink["receive"] = () => null) {

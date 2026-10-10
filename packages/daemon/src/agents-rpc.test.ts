@@ -70,6 +70,7 @@ function agentsPort(calls: string[], runs: RunView[]): AgentsPort {
     resumable: [],
     questions: [],
     projectAgents: [],
+    progress: [],
   };
   return {
     ...port,

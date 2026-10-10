@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import type { TicketView } from "@kibo/schema";
+import { EMPTY_PROGRESS } from "@kibo/schema";
 import { buildTree, mineOnly, withAncestors } from "./build-tree";
 
 const t = (id: string, parentId: string | null, assignee: TicketView["assignee"] = null): TicketView => ({
@@ -19,6 +20,8 @@ const t = (id: string, parentId: string | null, assignee: TicketView["assignee"]
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 });
 
 test("nests children under their parent, keeping order and depth", () => {

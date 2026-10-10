@@ -5,6 +5,7 @@ import { join } from "node:path";
 import {
   type AgentProfile,
   DEFAULT_WORKFLOW,
+  EMPTY_PROGRESS,
   type Guideline,
   type HostLoad,
   KiboError,
@@ -45,6 +46,8 @@ const ticket = (id: string, key: string | null): TicketView => ({
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 });
 
 const project: ProjectSnapshot = {
@@ -62,6 +65,7 @@ const project: ProjectSnapshot = {
   tickets: [...[1, 2, 3, 4].map((n) => ticket(`t${n}`, `KIB-${n}`)), ticket("pending", null)],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],

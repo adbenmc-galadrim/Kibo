@@ -127,6 +127,8 @@ function dispatch(
       return h.config(projectId, inst, call.patch);
     case "questions.deliver":
       return h.questions(projectId, call.ticketId);
+    case "run.peek":
+      throw new KiboError("NOT_FOUND", `run ${call.runId} cannot be peeked yet`);
     default:
       return h.notes(projectId, call);
   }
