@@ -1,19 +1,9 @@
-import {
-  type FileRef,
-  isTerminal,
-  type RunLogEntry,
-  type RunQuestions,
-  type RunView,
-  runSubject,
-  type Worktree,
-} from "@kibo/schema";
+import { isTerminal, type RunQuestions, type RunView, runSubject } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { Bot, Square } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { client } from "../api";
-import { owningWorktree } from "../code/agent-slots";
-import { useWorktrees } from "../code/use-worktrees";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
 import { frRunChat } from "../i18n/fr-run-chat";
@@ -21,42 +11,19 @@ import { isDemoProfile } from "./demo-profile";
 import { elapsed, formatDuration, workspaceText } from "./format";
 import { ReplyBox } from "./ReplyBox";
 import { ReviewButton } from "./ReviewButton";
-import { type JournalFiles, RunJournal } from "./RunJournal";
 import { RunQuestionsBar } from "./RunQuestionsBar";
 import { chatBox } from "./run-chat";
-
-function journalFiles(
-  run: RunView,
-  worktrees: Worktree[] | null,
-  onOpenFile: (ref: FileRef) => void,
-): JournalFiles | null {
-  const { projectId, cwd } = run;
-  if (!projectId || !cwd || !worktrees || run.workspace === "isolated") return null;
-  const worktree = owningWorktree(
-    worktrees.map((w) => w.path),
-    cwd,
-  );
-  if (!worktree) return null;
-  return {
-    worktree,
-    ticketKey: run.ticketKey,
-    open: (path, line, origin) => onOpenFile({ projectId, worktree, path, line, origin }),
-  };
-}
 
 type DetailProps = {
   run: RunView;
   resumable: boolean;
   questions: RunQuestions | null;
   now: number;
-  log: RunLogEntry[] | null;
-  missing: boolean;
-  onOpenFile: (ref: FileRef) => void;
+  children: ReactNode;
 };
 
-export function RunDetail({ run, resumable, questions, now, log, missing, onOpenFile }: DetailProps) {
+export function RunDetail({ run, resumable, questions, now, children }: DetailProps) {
   const [stopping, setStopping] = useState(false);
-  const { worktrees } = useWorktrees(run.cwd && run.workspace !== "isolated" ? run.projectId : null);
   const stop = async () => {
     await client.rpc({ method: "cancelRun", runId: run.id });
   };
@@ -93,12 +60,7 @@ export function RunDetail({ run, resumable, questions, now, log, missing, onOpen
         onConfirm={stop}
         describeError={() => fr.agents.stopFailed}
       />
-      <RunJournal
-        label={run.label}
-        log={log ?? []}
-        missing={missing}
-        files={journalFiles(run, worktrees, onOpenFile)}
-      />
+      {children}
       <RunQuestionsBar run={run} questions={questions} />
       {box && (
         <ReplyBox

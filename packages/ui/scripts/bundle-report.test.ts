@@ -330,4 +330,24 @@ describe("bundle report", () => {
     const report = reportEntry(chunks, { budget: 1_000_000, forbidden: FORBIDDEN_IN_ENTRY, gzip: rawSize });
     expect(report.forbidden).toEqual([{ file: "index.js", module: market }]);
   });
+  test("the agents dock, the feed, their texts, the mention and the hover card are forbidden in the entry", () => {
+    const paths = [
+      "/x/packages/ui/src/agents/dock/AgentDock.tsx",
+      "/x/packages/ui/src/agents/dock/use-dock-height.ts",
+      "/x/packages/ui/src/moments/Feed.tsx",
+      "/x/packages/ui/src/moments/use-run-moments.ts",
+      "/x/packages/ui/src/i18n/fr-moments.ts",
+      "/x/packages/sdk/src/ui/hover-card.tsx",
+      "/x/packages/sdk/src/agent-mention.tsx",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    const entry = [
+      "agents/AgentBar.tsx",
+      "agents/BarRuns.tsx",
+      "agents/bar-summary.ts",
+      "agents/AgentPanel.tsx",
+    ];
+    for (const p of entry)
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`))).toBe(false);
+  });
 });

@@ -114,8 +114,11 @@ export const PresenceAvatars = lazyPanel(
   hidden,
 );
 export const PairingScreen = lazyPanel(() => import("./PairingScreen").then((m) => m.PairingScreen), fr.lazy);
-export const AgentDrawer = lazyPanel(
-  () => import("../agents/AgentDrawer").then((m) => m.AgentDrawer),
+export const BarRuns = lazyPanel(() => import("../agents/dock/BarRuns").then((m) => m.BarRuns), fr.lazy, {
+  fallback: "children",
+});
+export const AgentDock = lazyPanel(
+  () => import("../agents/dock/AgentDock").then((m) => m.AgentDock),
   fr.lazy,
 );
 export const ScreenActions = lazyPanel(

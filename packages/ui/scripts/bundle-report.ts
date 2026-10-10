@@ -23,7 +23,7 @@ export const ENTRY_GZIP_BUDGET = 230_000;
 export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/node_modules\/(@codemirror|@lezer|@shikijs)\//,
   /\/node_modules\/(codemirror|markdown-it|shiki|sonner|next-themes)\//,
-  /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage|AgentDrawer)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/(ChangesView|ChangesBody|DiscardDialog)|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome|PairingScreen)|pages\/SourceHeader|dialogs\/mcp-source\/McpSourceStep|ai\/[A-Za-z]+)\.tsx$/,
+  /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/(ChangesView|ChangesBody|DiscardDialog)|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome|PairingScreen)|pages\/SourceHeader|dialogs\/mcp-source\/McpSourceStep|ai\/[A-Za-z]+)\.tsx$/,
   /\/packages\/ui\/src\/(dialogs\/(NewProjectDialog|NewPageDialog|NewTicketDialog)|agents\/(AssignDialog|ProfileSheet)|shell\/TicketSheet|palette\/CommandPalette|components-page\/PublishDialog|onboarding\/StarterDialog)\.tsx$/,
   /\/components\/(graph\/src\/GraphView|kanban\/src\/Kanban|notes\/src\/NotesView|mcp-source\/src\/McpSource|viewer-3d\/src\/Viewer3d|snake\/src\/Snake|mockup\/src\/Mockup)\.tsx$/,
   /\/packages\/ui\/src\/(pages\/TicketTab|shell\/(TicketDetail|PresenceAvatars|ProjectPresence|KeyRequired))\.tsx$/,
@@ -76,6 +76,9 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(i18n\/fr-design\.ts|dialogs\/integrations\/((FigmaConnectDialog|PenpotConnectDialog)\.tsx|design-problem\.ts))$/,
   /\/packages\/ui\/src\/(shell\/sheet\/((DesignSection|DesignProperty)\.tsx|design-refs\.ts)|dialogs\/FrameField\.tsx)$/,
   /\/packages\/ui\/src\/i18n\/fr-(market|security|collab)\.ts$/,
+  /\/packages\/ui\/src\/(agents\/dock\/|moments\/)[A-Za-z-]+\.tsx?$/,
+  /\/packages\/ui\/src\/i18n\/fr-moments\.ts$/,
+  /\/packages\/sdk\/src\/(ui\/hover-card|agent-mention)\.tsx$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

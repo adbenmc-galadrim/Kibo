@@ -1,109 +1,62 @@
-import { type AgentsState, runSubject } from "@kibo/schema";
-import { RunDot } from "@kibo/sdk";
+import type { AgentsState } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
-import { Bot, ChevronUp } from "lucide-react";
-import { type ReactNode, useRef } from "react";
+import { Bot, ChevronDown, ChevronUp, Plus } from "lucide-react";
+import type { ReactNode } from "react";
 import { fr } from "../i18n/fr";
-import { elapsed, formatDuration } from "./format";
+import { BarRuns } from "../shell/lazy-screens";
+import { barSummary } from "./bar-summary";
 import { SlotMeter } from "./SlotMeter";
-import { useWrappedCount } from "./use-wrapped-count";
 
 type Props = {
   state: AgentsState;
   now: number;
   online: boolean;
   indicator?: ReactNode;
-  onExpand: () => void;
-  onSelect: (runId: string) => void;
+  expanded: boolean;
+  onToggle(): void;
+  onSelect(runId: string): void;
+  onLaunch?(): void;
 };
 
-export function AgentBar({ state, now, online, indicator, onExpand, onSelect }: Props) {
-  const running = state.runs
-    .filter((r) => r.state === "running" || r.state === "starting")
-    .sort((a, b) => (a.startedAt ?? 0) - (b.startedAt ?? 0));
-  const waiting = state.runs.filter((r) => r.state === "waiting_input");
-  const listRef = useRef<HTMLUListElement>(null);
-  const hidden = useWrappedCount(listRef, running.map((r) => r.id).join(" "));
-  const visible = running.length - hidden;
+export function AgentBar({ state, now, online, indicator, expanded, onToggle, onSelect, onLaunch }: Props) {
+  const Chevron = expanded ? ChevronDown : ChevronUp;
   return (
-    <div className="flex h-10 items-center gap-3 overflow-hidden px-3 text-[11px]">
-      <span className="flex shrink-0 items-center gap-2 text-xs font-medium">
-        <Bot aria-hidden className="size-4" />
-        {fr.agents.bar}
-      </span>
-      <span className="flex shrink-0 items-center gap-1.5">
-        <SlotMeter used={state.host.used} total={state.host.hostSlots} />
-        <span className="font-mono">{fr.agents.slots(state.host.used, state.host.hostSlots)}</span>
-      </span>
-      <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
-        <RunDot state="queued" />
-        {fr.agents.queued(state.queue.length)}
-      </span>
-      <ul ref={listRef} className="flex h-4 min-w-0 flex-wrap items-center gap-x-3 overflow-hidden">
-        {running.map((r, index) => (
-          <li
-            key={r.id}
-            data-run={r.id}
-            aria-hidden={index >= visible || undefined}
-            className="flex h-4 shrink-0 items-center"
-          >
-            <button
-              type="button"
-              tabIndex={index >= visible ? -1 : undefined}
-              onClick={() => onSelect(r.id)}
-              className="flex items-center gap-1.5 whitespace-nowrap"
-            >
-              <RunDot state={r.state} />
-              <span className="font-mono">{r.label}</span>
-              <span className="text-muted-foreground">{runSubject(r, formatDuration(elapsed(r, now)))}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      {hidden > 0 && (
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-6 shrink-0 px-1.5 font-mono text-xs"
-          aria-label={fr.agents.moreRuns(hidden)}
-          onClick={onExpand}
-        >
-          {`+${hidden}`}
-        </Button>
-      )}
-      {waiting.map((r) => (
-        <span key={r.id} className="flex shrink-0 items-center gap-1.5 border-l pl-3">
-          <RunDot state="waiting_input" />
-          <span className="font-mono">{r.label}</span>
-          <span className="text-muted-foreground">{runSubject(r, fr.agents.waitingShort)}</span>
-          <Button
-            size="sm"
-            className="h-6 px-2.5 text-xs bg-brand-strong text-white hover:bg-brand-strong/90"
-            aria-label={fr.agents.answerTo(r.label)}
-            onClick={() => onSelect(r.id)}
-          >
-            {fr.agents.answer}
+    <div className="group/bar relative h-10 text-[11px]">
+      <button
+        type="button"
+        aria-expanded={expanded}
+        aria-label={expanded ? fr.agents.collapse : fr.agents.expand}
+        onClick={onToggle}
+        className="absolute inset-0 cursor-pointer outline-none hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+      />
+      <div className="pointer-events-none relative flex h-full items-center gap-3 overflow-hidden px-3 [&_a]:pointer-events-auto [&_button]:pointer-events-auto">
+        <span className="flex shrink-0 items-center gap-2 text-xs font-medium">
+          <Bot aria-hidden className="size-4" />
+          {fr.agents.bar}
+        </span>
+        <SlotMeter used={state.host.used} total={state.host.hostSlots} className="shrink-0" />
+        <span className="shrink-0 text-muted-foreground">{barSummary(state, fr.agents)}</span>
+        {!expanded && <BarRuns state={state} now={now} onSelect={onSelect} onMore={onToggle} />}
+        <span className="flex-1" />
+        {!expanded &&
+          (indicator ?? (
+            <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
+              <span
+                aria-hidden
+                className={cn("size-1.5 rounded-full", online ? "bg-green-500" : "bg-red-500")}
+              />
+              {online ? fr.agents.daemon : fr.agents.daemonOffline}
+            </span>
+          ))}
+        {expanded && onLaunch && (
+          <Button size="sm" variant="outline" className="h-7" onClick={onLaunch}>
+            <Plus />
+            {fr.agents.launch}
           </Button>
-        </span>
-      ))}
-      <span className="flex-1" />
-      {indicator ?? (
-        <span className="flex shrink-0 items-center gap-1.5 text-muted-foreground">
-          <span aria-hidden className={cn("size-1.5 rounded-full", online ? "bg-green-500" : "bg-red-500")} />
-          {online ? fr.agents.daemon : fr.agents.daemonOffline}
-        </span>
-      )}
-      <Button
-        size="icon"
-        variant="ghost"
-        className="size-7"
-        aria-label={fr.agents.expand}
-        aria-expanded={false}
-        onClick={onExpand}
-      >
-        <ChevronUp />
-      </Button>
+        )}
+        <Chevron aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+      </div>
     </div>
   );
 }
