@@ -38,8 +38,9 @@ const home = e2eHome(port);
 rmSync(home, { recursive: true, force: true });
 mkdirSync(home, { recursive: true, mode: 0o700 });
 writeFileSync(join(home, "token"), `${E2E_TOKEN}\n`, { mode: 0o600 });
-const fakeState = join(home, "fake-claude");
-mkdirSync(fakeState);
+const claudeConfig = join(home, "claude");
+const fakeState = join(claudeConfig, "projects");
+mkdirSync(fakeState, { recursive: true });
 for (const draft of drafts) {
   const dir = join(home, "components", "src", draft);
   cpSync(join(import.meta.dir, "fixtures", "components", draft), dir, { recursive: true });
@@ -145,6 +146,7 @@ const proc = Bun.spawn(
       KIBO_HOME: home,
       KIBO_FAKE_CLAUDE_SCENARIO: join(agents, "scenarios", `${scenario}.json`),
       KIBO_FAKE_CLAUDE_STATE: fakeState,
+      CLAUDE_CONFIG_DIR: claudeConfig,
       KIBO_GH: gh,
       FAKE_GH_STATE: join(ghDir, "state.json"),
       FAKE_GH_LOG: join(ghDir, "log.jsonl"),
