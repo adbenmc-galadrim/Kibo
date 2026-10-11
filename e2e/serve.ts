@@ -2,7 +2,6 @@ import { chmodSync, copyFileSync, cpSync, mkdirSync, renameSync, rmSync, writeFi
 import { join, resolve } from "node:path";
 import { FAKE_FIGMA_IMAGE_HOST, startFakeFigma } from "../packages/daemon/src/testing/fake-figma";
 import { LOGS_HOST, startFakeGithub } from "../packages/daemon/src/testing/fake-github";
-import { startFakeItch } from "../packages/daemon/src/testing/fake-itch";
 import { startFakeMcpHttp } from "../packages/daemon/src/testing/fake-mcp";
 import { PENPOT_IDS, startFakePenpot } from "../packages/daemon/src/testing/fake-penpot";
 import { startFakeStorybook } from "../packages/daemon/src/testing/fake-storybook";
@@ -16,7 +15,6 @@ import {
   fakeBranchStorybookPort,
   fakeFigmaPort,
   fakeGithubPort,
-  fakeItchPort,
   fakeMcpPort,
   fakePenpotPort,
   fakeStorybookPort,
@@ -96,7 +94,6 @@ function startStorybook(storybookPort: number) {
   return storybook;
 }
 function startEmbedFakes() {
-  const itch = startFakeItch({ port: fakeItchPort(Number(port)) });
   const storybook = startStorybook(fakeStorybookPort(Number(port)));
   const branch = startStorybook(fakeBranchStorybookPort(Number(port)));
   const penpot = startFakePenpot({ token: E2E_PENPOT_TOKEN, port: fakePenpotPort(Number(port)) });
@@ -106,9 +103,8 @@ function startEmbedFakes() {
     height: 900,
   });
   return {
-    args: ["--test-origins", `itch.io=${itch.url}`, "--memory-secrets"],
+    args: ["--test-origins", `design.penpot.app=${penpot.url}`, "--memory-secrets"],
     stop: async () => {
-      itch.stop();
       storybook.stop();
       branch.stop();
       penpot.stop();

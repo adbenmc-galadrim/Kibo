@@ -17,8 +17,8 @@ export function DraftRow({
       <span className="grid size-8 shrink-0 place-items-center rounded-md border bg-background">
         <Blocks aria-hidden className="size-4" />
       </span>
-      <span className="flex flex-1 items-center gap-2 text-sm font-medium">
-        {draft.title}
+      <span className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium">
+        <span className="truncate">{draft.title}</span>
         <Badge variant="secondary">{fr.addComponent.draft}</Badge>
       </span>
       {onPublish ? (

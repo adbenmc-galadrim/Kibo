@@ -14,11 +14,13 @@ const Published = z.object({ version: z.object({ hash: z.string() }) });
 let itch: FakeItch;
 let kibo: EmbedDaemon;
 let projectId = "";
+let embedder = "";
 
 beforeAll(async () => {
   itch = startFakeItch();
   kibo = await bootEmbedDaemon(`itch.io=${itch.url}`);
   projectId = await kibo.project(null);
+  embedder = await publishSandboxed("embedder");
 }, 60_000);
 afterAll(async () => {
   await kibo.stop();
@@ -28,14 +30,24 @@ afterEach(() => {
   setSystemTime();
 });
 
-const game = () => kibo.widget(projectId, "itch@1.0.0", { embed: GAME });
+async function publishSandboxed(id: string): Promise<string> {
+  const fixture = copyFixture(id, { linkModules: false });
+  cpSync(fixture.dir, join(kibo.home, "components", "src", id), { recursive: true });
+  fixture.dispose();
+  const published = await kibo.client.ok({ method: "publishComponent", id, strategy: "new-version" });
+  const { hash } = Published.parse(published).version;
+  await kibo.client.ok({ method: "approveComponent", id, version: "0.1.0", hash, trust: "sandboxed" });
+  return `${id}@0.1.0`;
+}
+
+const game = () => kibo.widget(projectId, embedder);
 const open = async (instanceId: string, url: string) =>
   EmbedView.parse(await kibo.client.ok(kibo.call(projectId, instanceId, { kind: "embed.open", url })));
 const refusal = (instanceId: string, url: string) =>
   kibo.client.refused(kibo.call(projectId, instanceId, { kind: "embed.open", url }));
 const relay = (url: string, init: RequestInit = {}) => fetch(url, init);
 
-test("a builtin game widget gets a relay page whose iframe targets the faked itch.io", async () => {
+test("a component declaring embed gets a relay page whose iframe targets the faked itch.io", async () => {
   const view = await open(await game(), GAME);
   expect(view).toMatchObject({ kind: "game", target: GAME, ...EMBED_ATTRIBUTES.game });
   expect(view.url.startsWith(`http://127.0.0.1:${kibo.daemon.sandboxPort}/e/`)).toBe(true);
@@ -65,7 +77,7 @@ test("the relay refuses foreign hosts, expired tokens and non-GET methods", asyn
   expect((await relay(view.url)).status).toBe(404);
 });
 
-test("itch refusals are reported by code: refused, not found, offline", async () => {
+test("refusals are reported by code: refused, not found, offline", async () => {
   const instanceId = await game();
   expect(await refusal(instanceId, "https://itch.io/embed-upload/2")).toMatchObject({
     code: "EMBED_REFUSED",
@@ -93,23 +105,7 @@ test("a Cloudflare challenge is not conclusive: the game is allowed", async () =
 });
 
 test("a sandboxed component without cap:embed is refused and journaled", async () => {
-  const fixture = copyFixture("undeclared", { linkModules: false });
-  cpSync(fixture.dir, join(kibo.home, "components", "src", "undeclared"), { recursive: true });
-  fixture.dispose();
-  const published = await kibo.client.ok({
-    method: "publishComponent",
-    id: "undeclared",
-    strategy: "new-version",
-  });
-  const { hash } = Published.parse(published).version;
-  await kibo.client.ok({
-    method: "approveComponent",
-    id: "undeclared",
-    version: "0.1.0",
-    hash,
-    trust: "sandboxed",
-  });
-  const instanceId = await kibo.widget(projectId, "undeclared@0.1.0");
+  const instanceId = await kibo.widget(projectId, await publishSandboxed("undeclared"));
   expect(await refusal(instanceId, GAME)).toEqual({ status: 403, code: "PERMISSION_DENIED" });
   expect(readJournal(kibo.home, "undeclared@0.1.0")).toContainEqual({
     kind: "embed.open",

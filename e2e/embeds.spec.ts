@@ -1,6 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { expect, type FrameLocator, type Locator, type Page, type TestInfo, test } from "@playwright/test";
+import { expect, type FrameLocator, type Page, type TestInfo, test } from "@playwright/test";
 import { PENPOT_IDS, penpotBoardUrl } from "../packages/daemon/src/testing/penpot-ids";
 import { createE2eRepo } from "./git-repo";
 import { addComponent, createPage } from "./helpers";
@@ -9,7 +9,6 @@ import {
   E2E_PENPOT_TOKEN,
   E2E_TOKEN,
   fakeBranchStorybookPort,
-  fakeItchPort,
   fakePenpotPort,
   fakeStorybookPort,
 } from "./token";
@@ -17,10 +16,6 @@ import {
 test.use({ viewport: { width: 1440, height: 900 } });
 test.describe.configure({ mode: "serial" });
 
-const GAME_CODE =
-  '<iframe frameborder="0" src="https://itch.io/embed-upload/1?color=333333" allowfullscreen="" width="640" height="380">' +
-  '<a href="https://sigmatronic.itch.io/una-war">Play una-war on itch.io</a></iframe>';
-const REFUSED_GAME = "https://itch.io/embed-upload/2?color=333333";
 const STORY = "screens-home--default";
 
 const portOf = (baseURL: string | undefined) => Number(new URL(baseURL ?? "").port);
@@ -34,7 +29,7 @@ async function openProject(page: Page, info: TestInfo, base: string) {
   if (info.project.name.endsWith("dark")) await expect(html).toHaveClass(/dark/);
   else await expect(html).not.toHaveClass(/dark/);
   await createRepoProject(page, `Kibo ${key}`, key, repo.repo);
-  await createPage(page, "Jeux et maquettes", "Tableau de bord");
+  await createPage(page, "Maquettes", "Tableau de bord");
   return { key, repo, name: `Kibo ${key}` };
 }
 
@@ -56,87 +51,8 @@ async function setFormat(page: Page, title: string, format: RegExp) {
   await expect(page.getByRole("toolbar", { name: "Disposition" })).toHaveCount(0);
 }
 
-async function fillField(dialog: Locator, index: number, label: string, value: string) {
-  await dialog.getByRole("checkbox", { name: "Aucune valeur" }).nth(index).click();
-  await dialog.getByRole("textbox", { name: label, exact: true }).fill(value);
-}
-
-const game = (page: Page): FrameLocator =>
-  page.frameLocator('iframe[title="Jeu itch.io"]').first().frameLocator("iframe");
 const story = (page: Page, name = "Screens / Home"): FrameLocator =>
   page.frameLocator(`iframe[title="${name}"]`).frameLocator("iframe");
-
-function watchRelays(page: Page): string[] {
-  const served: string[] = [];
-  page.on("response", (res) => {
-    if (new URL(res.url()).pathname.startsWith("/e/")) served.push(res.url());
-  });
-  return served;
-}
-
-test("jeu itch.io : intégration, plein écran, hors ligne, jeu refusé", async ({ page, baseURL }, info) => {
-  const itch = local(fakeItchPort(portOf(baseURL)));
-  const relays = watchRelays(page);
-  const { repo } = await openProject(page, info, "JEU");
-  const main = page.getByRole("main");
-  try {
-    await addComponent(page, "Jeu itch.io");
-    await setFormat(page, "Jeu itch.io", /^Demi-page/);
-    await expect(main.getByRole("status").filter({ hasText: "Colle le code d'intégration" })).toBeVisible();
-    const settings = await openSettings(page, "Jeu itch.io");
-    await fillField(settings, 0, "Jeu", GAME_CODE);
-    await shot(page, info, "ecran-178d");
-    await settings.getByRole("button", { name: "Enregistrer" }).click();
-    await expect(settings).toBeHidden();
-
-    await expect(main.getByText("Una war", { exact: true })).toBeVisible();
-    await expect(main.getByText("Fourni par itch.io")).toBeVisible();
-    const play = game(page).getByRole("button", { name: "Jouer" });
-    await play.click();
-    await play.click();
-    await expect(game(page).getByText("Parties : 2")).toBeVisible();
-    await shot(page, info, "ecran-178");
-
-    const before = relays.length;
-    await main.getByTitle("Plein écran").click();
-    const focused = page.getByRole("dialog", { name: "Jeu itch.io" });
-    await expect(focused).toBeVisible();
-    expect((await focused.boundingBox())?.width).toBeGreaterThan(1400);
-    await expect(game(page).getByText("Parties : 2")).toBeVisible();
-    await shot(page, info, "ecran-179");
-    await page.keyboard.press("Escape");
-    await expect(focused).toBeHidden();
-    await expect(game(page).getByText("Parties : 2")).toBeVisible();
-    expect(relays.length).toBe(before);
-
-    expect((await fetch(`${itch}/__test/offline`, { method: "POST" })).ok).toBe(true);
-    await page.context().setOffline(true);
-    const offline = main.getByRole("alert").filter({ hasText: "Ce jeu a besoin d'Internet." });
-    await expect(offline).toBeVisible();
-    await offline.getByRole("button", { name: "Réessayer" }).click();
-    await expect(offline).toBeVisible();
-    await shot(page, info, "ecran-178b");
-    expect((await fetch(`${itch}/__test/online`, { method: "POST" })).ok).toBe(true);
-    await page.context().setOffline(false);
-    await expect(game(page).getByText("Parties : 2")).toBeVisible();
-
-    await addComponent(page, "Jeu itch.io");
-    const second = await openSettings(page, "Jeu itch.io");
-    await fillField(second, 0, "Jeu", REFUSED_GAME);
-    await fillField(second, 1, "Page du jeu", "https://sigmatronic.itch.io/una-war");
-    await second.getByRole("button", { name: "Enregistrer" }).click();
-    const refused = main.getByRole("alert").filter({ hasText: "itch.io n'autorise pas l'intégration" });
-    await expect(refused).toBeVisible();
-    await expect(refused.getByRole("link", { name: "Ouvrir sur itch.io" })).toHaveAttribute(
-      "href",
-      "https://sigmatronic.itch.io/una-war",
-    );
-    await refused.scrollIntoViewIfNeeded();
-    await shot(page, info, "ecran-178c");
-  } finally {
-    repo.remove();
-  }
-});
 
 async function connectPenpot(page: Page, instance: string) {
   await page.getByRole("button", { name: "Paramètres", exact: true }).click();
