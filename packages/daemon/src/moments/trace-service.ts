@@ -46,6 +46,7 @@ const PASS_EVENTS: ReadonlySet<string> = new Set(["PostToolUse", "Stop", "Subage
 const UNKNOWN_FORMAT_LINES = 3;
 const LONG_LINE_HEAD = 64 * 1024;
 const STEP_TITLE_MAX = 160;
+export const HELD_MOMENTS_MAX = 20;
 
 type Live = {
   fold: FoldState;
@@ -214,6 +215,7 @@ export function createTraceService(deps: TraceDeps): TraceService {
     const moments = hookMoments(state.group, payload, ctx(trace));
     if (trace.source === "hooks") write(runId, moments);
     else state.held.push(...moments);
+    if (state.held.length > HELD_MOMENTS_MAX) toHooks(trace, "path-rejected");
   }
 
   function settle(runId: string): RunTrace {

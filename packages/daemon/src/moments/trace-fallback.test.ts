@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { appendFileSync, chmodSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { cleanTraceDirs, hook, kinds, SESSION, setup, tmp } from "./trace.test-helper";
+import { HELD_MOMENTS_MAX } from "./trace-service";
 
 cleanTraceDirs();
 
@@ -56,6 +57,20 @@ test("a null transcript path decides nothing until a path is known", async () =>
   await s.trace.onHook(s.run, hook("Stop", { transcriptPath: s.path }));
   expect(s.trace.trace(s.run.id)).toMatchObject({ source: "transcript", partial: null });
   expect(kinds(s)).toEqual(["message"]);
+});
+
+test("a pending run that holds too many moments falls back on hooks", async () => {
+  const s = setup();
+  const pathless = { ...s.run, transcriptPath: null };
+  for (let i = 0; i < HELD_MOMENTS_MAX; i += 1)
+    await s.trace.onHook(pathless, hook("Stop", { detail: `Tour ${i}.` }));
+  expect(kinds(s)).toEqual([]);
+  await s.trace.onHook(pathless, hook("Stop", { detail: "De trop." }));
+  expect(s.trace.trace(s.run.id)).toMatchObject({ source: "hooks", partial: "path-rejected" });
+  const data = s.store.list(s.run.id).map((m) => m.data);
+  expect(data[0]).toEqual({ kind: "raw", text: "", partial: "path-rejected" });
+  expect(data.slice(1)).toHaveLength(HELD_MOMENTS_MAX + 1);
+  expect(data.at(-1)).toEqual({ kind: "message", text: "De trop." });
 });
 
 test("a store failure while receiving a hook rejects the promise, never throws", async () => {
