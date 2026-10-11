@@ -12,6 +12,7 @@ import {
   type RunView,
 } from "@kibo/schema";
 import type { TaskInput, ToolGuard } from "../agents/orchestrator-types";
+import { tryKill } from "../process-group";
 import { BUILTIN_STARTERS } from "./builtin-starters";
 import type {
   AgentRuns,
@@ -73,7 +74,7 @@ export function createExecPort(env: Record<string, string | undefined>): Exec {
     const resolved = bin ? resolveBin(bin, env) : null;
     const proc = resolved ? spawnOrNull([resolved, ...args], env) : null;
     if (!proc) return null;
-    const timer = setTimeout(() => proc.kill(), timeoutMs);
+    const timer = setTimeout(() => tryKill(`stopping ${bin}`, () => proc.kill()), timeoutMs);
     try {
       const [stdout, stderr, code] = await Promise.all([
         new Response(proc.stdout).text(),

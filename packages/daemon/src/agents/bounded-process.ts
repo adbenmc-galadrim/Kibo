@@ -1,12 +1,6 @@
-export type BoundedResult = { code: number; stdout: string; stderr: string; timedOut: boolean };
+import { signalGroup, tryKill } from "../process-group";
 
-function killGroup(pid: number): void {
-  try {
-    process.kill(-pid, "SIGKILL");
-  } catch (e) {
-    if (!(e instanceof Error && "code" in e && e.code === "ESRCH")) throw e;
-  }
-}
+export type BoundedResult = { code: number; stdout: string; stderr: string; timedOut: boolean };
 
 export async function runBounded(
   argv: string[],
@@ -26,7 +20,7 @@ export async function runBounded(
       ? undefined
       : setTimeout(() => {
           timedOut = true;
-          killGroup(proc.pid);
+          tryKill(`killing process group ${proc.pid}`, () => signalGroup(proc.pid, "SIGKILL"));
         }, opts.timeoutMs);
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),

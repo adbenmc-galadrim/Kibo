@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createGit, firstLine, MAX_STDERR_BYTES, MAX_STDOUT_BYTES, run, runGh } from "./run";
@@ -142,4 +142,49 @@ test("runGh uses KIBO_GH and passes stdin", async () => {
 
 test("firstLine trims and keeps one line", () => {
   expect(firstLine("  fatal: x\nhint: y")).toBe("fatal: x");
+});
+
+const killThatFails = (code: string) => {
+  const realKill = process.kill.bind(process);
+  return spyOn(process, "kill").mockImplementation((pid: number, signal?: string | number) => {
+    realKill(pid, signal);
+    throw Object.assign(new Error(`kill() failed: ${code}`), { code });
+  });
+};
+
+test("a timeout still rejects when macOS refuses to kill the group", async () => {
+  const kill = killThatFails("EPERM");
+  try {
+    await expect(
+      run(["sleep", "5"], { cwd: fx.repo, timeoutMs: 50, failCode: "GH_UNAVAILABLE" }),
+    ).rejects.toThrow("sleep 5 timed out");
+  } finally {
+    kill.mockRestore();
+  }
+});
+
+test("a timeout still rejects and logs when killing the group fails", async () => {
+  const kill = killThatFails("EINVAL");
+  const log = spyOn(console, "error").mockImplementation(() => {});
+  try {
+    await expect(run(["sleep", "5"], { cwd: fx.repo, timeoutMs: 50 })).rejects.toThrow("sleep 5 timed out");
+    expect(log).toHaveBeenCalled();
+  } finally {
+    kill.mockRestore();
+    log.mockRestore();
+  }
+});
+
+test("an overflow still reports TOO_LARGE when killing the group fails", async () => {
+  const kill = killThatFails("EINVAL");
+  const log = spyOn(console, "error").mockImplementation(() => {});
+  try {
+    await expect(run(["sh", "-c", "exec yes >&2"], { cwd: fx.repo })).rejects.toMatchObject({
+      code: "TOO_LARGE",
+    });
+    expect(log).toHaveBeenCalled();
+  } finally {
+    kill.mockRestore();
+    log.mockRestore();
+  }
 });
