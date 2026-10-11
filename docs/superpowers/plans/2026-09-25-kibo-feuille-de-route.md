@@ -149,3 +149,13 @@ Demande d'Adam du 2026-10-09 (« les agents sont tous cachés ») : fil narratif
 Plan : `2026-10-11-kibo-phase-21.md` · Spec : conception §27.1 à §27.10 (amende §23.12.2, §24.3, §24.4, §24.5, §24.7, §26.2, §26.3 ; agents §3). **Planifiée** le 2026-10-11 (cadre validé par Adam le 2026-10-10, détail tranché par le lead dev).
 
 Outil `signal_project` (ticket à créer, contexte, blocage, question) pour les runs de ticket, signaux stockés par le démon et visibles dans le fil du run ; réveil automatique de l'agent de projet pour les tickets à créer et les blocages, au plus une fois par 10 minutes par projet, signaux regroupés ; boîte à signaux dans le panneau de l'agent de projet (onglet Signaux, pastille chiffrée) ; les lots citent les signaux (`signals`, `dismissSignal`) et les règlent à la validation ; rien n'est créé sans lot validé. Écrans 189 à 191 (page Penpot 30).
+
+## Phase 22 · Agents et skills (v0.22.0-alpha.1)
+
+Spec : conception §28 (amende §5, §7, §8, §20.5, §24.2, §26.4 ; agents §3, §5, §7, §8). **Spécifiée** le 2026-10-12, **maquettes à valider** par Adam (page Penpot 31, écrans 192 à 196) avant le plan.
+
+Demande d'Adam du 2026-10-12 : des **agents** (plus de « rôles » ni de profils), chacun avec sa spec façon `CLAUDE.md`, **globaux** (`~/.claude/agents`) ou **propres à un projet** (`<projet>/.claude/agents`), stockés dans les fichiers Claude Code avec un historique des versions restaurable ; sous-agents appelables (un chef d'orchestre appelle Livraison, Review et SEO), skills autorisés appliqués par une garde déterministe ; espace **Skills** (cet ordinateur, projets, plugins en lecture seule avec « Copier pour modifier »), éditeur avec aperçu, historique ; **review des skills** par l'agent en fin de run (outil MCP `skill_review`, rappel sans blocage), notes à **intégrer** (diff) ou **ignorer** ; migration des profils et des guidelines de profil ; détection des skills utilisés sans token dans la transcription ; écriture concurrente détectée par empreinte, jamais d'écrasement silencieux.
+
+## Phase 23 · Éviter le code dupliqué entre agents
+
+Spec : conception §29, **à spécifier**. Les doublons de code entre agents (plusieurs agents qui réécrivent la même chose) : détection, partage et consignes communes.
