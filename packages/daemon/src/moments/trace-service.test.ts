@@ -121,10 +121,27 @@ test("the turn end makes a final pass, flushes and closes a finished run", async
 
   const reads = s.reads.count;
   s.transcript.say("Trop tard.");
-  await s.trace.onHook(s.run, hook("PostToolUse"));
+  await s.trace.onHook({ ...s.run, state: "done" }, hook("PostToolUse"));
   await s.trace.onTurnEnd({ ...s.run, state: "done" });
   expect(s.reads.count).toBe(reads);
   expect(kinds(s)).toHaveLength(3);
+});
+
+test("a finished run resumed by an answer is read again from where it stopped", async () => {
+  const s = setup();
+  s.transcript.say("Veux-tu des tests ?");
+  await s.trace.onTurnEnd({ ...s.run, state: "done" });
+  expect(s.trace.trace(s.run.id)?.closedAt).not.toBeNull();
+
+  s.transcript.say("Tout passe.");
+  await s.trace.onHook({ ...s.run, state: "running" }, hook("Stop"));
+  expect(s.trace.trace(s.run.id)?.closedAt).toBeNull();
+  await s.trace.onTurnEnd({ ...s.run, state: "done" });
+  expect(s.store.list(s.run.id).map((m) => m.data)).toEqual([
+    { kind: "message", text: "Veux-tu des tests ?" },
+    { kind: "message", text: "Tout passe." },
+  ]);
+  expect(s.trace.trace(s.run.id)?.closedAt).not.toBeNull();
 });
 
 test("a run that never sent a path is closed without a partial line", async () => {

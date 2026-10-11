@@ -245,7 +245,13 @@ export function createTraceService(deps: TraceDeps): TraceService {
     return next;
   }
 
+  function reopen(run: RunView): void {
+    const trace = traceOf(run.id);
+    if (trace.closedAt !== null && !isTerminal(run.state)) store.saveTrace({ ...trace, closedAt: null });
+  }
+
   async function turnEnd(run: RunView): Promise<void> {
+    reopen(run);
     const trace = traceOf(run.id);
     if (trace.closedAt !== null) return;
     if (run.transcriptPath !== null) resolve(trace, run, run.transcriptPath);
@@ -261,6 +267,7 @@ export function createTraceService(deps: TraceDeps): TraceService {
 
   return {
     async onHook(run, payload) {
+      reopen(run);
       if (traceOf(run.id).closedAt !== null) return;
       if (payload.todos !== null) store.saveInternalPlan(run.id, maskedPlan(payload.todos), deps.now());
       if (!PASS_EVENTS.has(payload.event)) return;
