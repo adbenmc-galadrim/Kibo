@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import {
   doingStep,
   EMPTY_PROGRESS,
+  isTicketToolName,
   latestReport,
   PLAN_MAX,
   Plan,
@@ -16,6 +17,7 @@ import {
   Step,
   TICKET_MCP_TOOLS,
   TICKET_PROGRESS_SPEC,
+  TICKET_TOOL_SPECS,
   TicketProgress,
   todosToPlan,
 } from "./progress";
@@ -116,5 +118,13 @@ test("an empty progress parses to the default", () => {
 test("the ticket tool is described for the agent", () => {
   expect(TICKET_PROGRESS_SPEC.name).toBe("ticket_progress");
   expect(Object.keys(TICKET_PROGRESS_SPEC.inputSchema.properties ?? {})).toEqual(["plan", "report"]);
-  expect(TICKET_MCP_TOOLS).toEqual([...ASK_TOOLS, PROGRESS_TOOL]);
+  expect(TICKET_MCP_TOOLS).toEqual([...ASK_TOOLS, PROGRESS_TOOL, "mcp__kibo__signal_project"]);
+});
+
+test("ticket runs may signal the project agent", () => {
+  expect(TICKET_MCP_TOOLS).toContain("mcp__kibo__signal_project");
+  expect(isTicketToolName("signal_project")).toBe(true);
+  expect(isTicketToolName("ticket_progress")).toBe(true);
+  expect(isTicketToolName("list_tickets")).toBe(false);
+  expect(TICKET_TOOL_SPECS.map((s) => s.name)).toEqual(["ticket_progress", "signal_project"]);
 });

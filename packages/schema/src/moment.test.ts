@@ -66,3 +66,10 @@ test("a stored moment parses with its step", () => {
   expect(RunMoment.parse(moment)).toEqual(moment);
   expect(RunMoment.safeParse({ ...moment, seq: -1 }).success).toBe(false);
 });
+
+test("a signal moment carries its reference and kind", () => {
+  const signal = { kind: "signal", signalId: "s1", ref: "sig:1", signalKind: "blocker", title: "x" } as const;
+  expect(MomentData.parse(signal)).toEqual(signal);
+  expect(MomentData.safeParse({ ...signal, ref: "nope" }).success).toBe(false);
+  expect(MomentData.safeParse({ ...signal, title: "x".repeat(201) }).success).toBe(false);
+});

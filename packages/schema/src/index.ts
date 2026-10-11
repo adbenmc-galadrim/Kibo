@@ -64,6 +64,8 @@ export * from "./secret-mask";
 export * from "./security";
 export * from "./semver";
 export * from "./sharing";
+export * from "./signal";
+export * from "./signal-rpc";
 export * from "./startable";
 export * from "./status";
 export * from "./status-projection";

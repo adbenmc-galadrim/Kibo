@@ -154,3 +154,18 @@ test("a group of actions is summarised in a fixed order", () => {
   expect(actionsFailed(actions)).toBe(true);
   expect(actionsFailed(actions.slice(0, 5))).toBe(false);
 });
+
+test("a signal to the project agent is its own action", () => {
+  const input = { kind: "ticket", title: "Tests du récepteur" };
+  expect(classifyTool("mcp__kibo__signal_project", input)).toEqual({
+    kind: "signal",
+    target: "Tests du récepteur",
+  });
+  const signal = actionOf(call({ tool: "mcp__kibo__signal_project", input }));
+  expect(signal.label).toBe("A signalé « Tests du récepteur » à l'agent de projet");
+  expect(summarizeActions([signal])).toBe("A envoyé 1 signal");
+  expect(summarizeActions([signal, signal])).toBe("A envoyé 2 signaux");
+  expect(summarizeActions([action({ kind: "read", target: "a.ts" }), signal])).toBe(
+    "A lu 1 fichier et envoyé 1 signal",
+  );
+});

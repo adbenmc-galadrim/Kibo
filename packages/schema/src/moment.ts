@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Step } from "./progress";
 import type { RunState } from "./run";
+import { SIGNAL_TITLE_MAX, SignalKind, SignalRef } from "./signal";
 
 export const MOMENT_MESSAGE_MAX = 8_000;
 export const MOMENT_DETAIL_MAX = 4_000;
@@ -22,6 +23,7 @@ export const ACTION_KINDS = [
   "todo",
   "mcp",
   "subagent",
+  "signal",
   "other",
 ] as const;
 export const ActionKind = z.enum(ACTION_KINDS);
@@ -57,6 +59,13 @@ export const MomentData = z.discriminatedUnion("kind", [
   }),
   z.object({ kind: z.literal("reasoning"), text: z.string().max(MOMENT_MESSAGE_MAX) }),
   z.object({ kind: z.literal("reminder"), reminder: z.enum(["plan", "report"]) }),
+  z.object({
+    kind: z.literal("signal"),
+    signalId: z.string().min(1),
+    ref: SignalRef,
+    signalKind: SignalKind,
+    title: z.string().max(SIGNAL_TITLE_MAX),
+  }),
   z.object({
     kind: z.literal("raw"),
     text: z.string().max(MOMENT_RAW_MAX),

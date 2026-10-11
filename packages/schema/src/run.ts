@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { HostSettings } from "./agent";
 import type { RunProgressSummary } from "./progress";
 import { AskInput, type RunQuestions } from "./question";
+import type { ProjectSignalCount } from "./signal";
 import { TodoItem } from "./todo-item";
 
 export const RunState = z.enum([
@@ -237,6 +238,7 @@ export type AgentsState = {
   questions: RunQuestions[];
   projectAgents: ProjectAgentSummary[];
   progress: RunProgressSummary[];
+  signals: ProjectSignalCount[];
 };
 export type SessionPreview = {
   runId: string;

@@ -43,6 +43,7 @@ import type { Rule } from "./rule";
 import type { AgentsState, AssignPreview, HostView, RunChanged, RunLogEntry, RunView } from "./run";
 import { SemVer } from "./semver";
 import type { ProjectSyncInfo } from "./sharing";
+import { SIGNAL_RPC, type SignalRpcResult } from "./signal-rpc";
 import type { Status, StatusId } from "./status";
 import type { Phase7Event } from "./sync";
 import { SYNC_RPC_REQUESTS, type SyncRpcResult } from "./sync-rpc";
@@ -222,6 +223,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   ...PHASE14_RPC,
   ...PROJECT_AGENT_RPC,
   ...VISIBILITY_RPC,
+  ...SIGNAL_RPC,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -279,7 +281,8 @@ export type RpcResult = {
   SyncRpcResult &
   Phase14RpcResult &
   ProjectAgentRpcResult &
-  VisibilityRpcResult;
+  VisibilityRpcResult &
+  SignalRpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }

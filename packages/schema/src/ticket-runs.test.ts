@@ -62,6 +62,7 @@ const state = (runs: RunView[], queue: AgentsState["queue"] = []): AgentsState =
   questions: [],
   projectAgents: [],
   progress: [],
+  signals: [],
 });
 
 test("each ticket of the project keeps its latest run, with its place in the queue", () => {

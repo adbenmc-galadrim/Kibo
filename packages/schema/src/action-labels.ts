@@ -1,6 +1,7 @@
 import { type ActionKind, MOMENT_DETAIL_MAX, type RunAction } from "./moment";
 import { PROGRESS_TOOL } from "./progress";
 import { ASK_TOOLS } from "./run";
+import { SIGNAL_TOOL } from "./signal";
 
 export type ToolCall = {
   tool: string;
@@ -45,6 +46,7 @@ export function classifyTool(tool: string, input: Record<string, unknown>): Clas
   if (tool === "Task" || tool === "Agent") return { kind: "subagent", target: text(input, "subagent_type") };
   if (ASK_TOOLS.includes(tool)) return { kind: "question", target: text(input, "question") };
   if (tool === PROGRESS_TOOL) return { kind: "progress", target: progressTarget(input) };
+  if (tool === SIGNAL_TOOL) return { kind: "signal", target: String(input.title ?? "") };
   if (tool.startsWith("mcp__")) return { kind: "mcp", target: tool.split("__").at(-1) ?? tool };
   return { kind: "other", target: null };
 }
@@ -169,6 +171,8 @@ function phrase(a: Omit<RunAction, "label">): string {
       return "mis à jour sa liste de tâches";
     case "subagent":
       return named("lancé un sous-agent", a.target);
+    case "signal":
+      return `signalé « ${a.target ?? ""} » à l'agent de projet`;
     case "mcp":
       return named("appelé", a.target);
     case "other":
@@ -199,6 +203,7 @@ const GROUPS: readonly { kind: ActionKind; many(actions: readonly RunAction[]): 
     { kind: "progress", many: () => "mis à jour sa progression" },
     { kind: "todo", always: true, many: () => "mis à jour sa liste de tâches" },
     { kind: "subagent", many: (g) => `lancé ${g.length} sous-agents` },
+    { kind: "signal", always: true, many: (g) => `envoyé ${plural(g.length, "signal", "signaux")}` },
     { kind: "mcp", many: (g) => `appelé ${g.length} outils` },
     { kind: "other", many: (g) => `utilisé ${g.length} outils` },
   ];
