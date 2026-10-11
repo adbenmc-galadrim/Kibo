@@ -83,6 +83,7 @@ export type FakeScenarioName =
   | "routes"
   | "project-agent-routes"
   | "progress"
+  | "progress-hold"
   | "progress-no-plan"
   | "progress-routes";
 

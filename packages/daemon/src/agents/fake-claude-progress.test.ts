@@ -199,13 +199,18 @@ test("without a block, onStopBlock is never played", async () => {
 });
 
 test("the progress scenarios and their routes are valid", () => {
-  for (const name of ["progress", "progress-no-plan"] as const) {
+  for (const name of ["progress", "progress-hold", "progress-no-plan"] as const) {
     expect(() => FakeScenario.parse(JSON.parse(readFileSync(scenarioPath(name), "utf8")))).not.toThrow();
   }
   const routes = FakeRoutes.parse(JSON.parse(readFileSync(scenarioPath("progress-routes"), "utf8")));
   expect(routes.routes.map((r) => [r.prompt, r.scenario])).toEqual([
-    ["KIB-14", "progress.json"],
+    ["KIB-14", "progress-hold.json"],
     ["KIB-16", "progress-no-plan.json"],
   ]);
   expect(routes.fallback).toBe("done.json");
+  const held = FakeScenario.parse(JSON.parse(readFileSync(scenarioPath("progress-hold"), "utf8")));
+  const plain = FakeScenario.parse(JSON.parse(readFileSync(scenarioPath("progress"), "utf8")));
+  expect(held.turns[0]?.steps.filter((step) => !("hold" in step || "think" in step))).toEqual(
+    plain.turns[0]?.steps ?? [],
+  );
 });
