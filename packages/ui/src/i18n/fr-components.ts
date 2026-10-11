@@ -2,6 +2,8 @@ export const frComponents = {
   addComponent: {
     title: "Ajouter un composant",
     search: "Rechercher un composant…",
+    listLabel: "Composants disponibles",
+    detailsLabel: "Description du composant",
     builtin: "Intégrés",
     mine: "Mes composants",
     draft: "Brouillon",

@@ -21,7 +21,6 @@
     { "path": "../../components/kanban" },
     { "path": "../../components/mcp-source" },
     { "path": "../../components/notes" },
-    { "path": "../../components/snake" },
     { "path": "../../components/tickets" }
   ]
 }

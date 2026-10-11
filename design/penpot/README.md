@@ -129,7 +129,7 @@ Numéros : 136 à 149 (phases 14 et 15) et 150 à 160 (phases 12 et 13) suivent 
   153 graphe, navigation (minimap, zoom, légende) et sélection · 153b sélection multiple · 154 widget Graphe par format · 155 toast « Onglet fermé · Annuler ».
   Rend obsolètes le fantôme rouge de 127b et « Pas de place » de 128 (§18.2).
 - 21 · Composants riches : 30b autoriser un composant, capacités · 156 Visionneuse 3D · 156b sans modèle · 156c réglages (fichier du projet) · 157 Serpent ·
-  157b plein écran de Kibo · 157c partie perdue · 158 sélection partagée · 159 Fichiers du projet · 159b envois et refus · 159c supprimer un fichier · 160 gabarits.
+  157b plein écran de Kibo · 157c partie perdue (157 à 157c **retirés**, §26.11 : composant Serpent supprimé) · 158 sélection partagée · 159 Fichiers du projet · 159b envois et refus · 159c supprimer un fichier · 160 gabarits.
 - 22 · Installation & aide : 19 premier lancement complété · 19b Claude Code non connecté · 19c aide dépliée · 78 Claude Code introuvable ·
   76 Général (Application, Mises à jour, Sauvegardes, Commande kibo ; version de bureau) · 76b supprimer une sauvegarde · 76c sauvegarde en cours, dossier refusé ·
   112c menu de l'avatar, groupe Aide · 136 À propos · 137 Quoi de neuf · 137b aucune note · 138 Signaler un problème · 139 Raccourcis (dialogue `⌘/`).
@@ -166,7 +166,7 @@ Panneau à droite sous la barre du haut (440 px), pour garder visible le bouton 
 `32-jeux-storybook.js`, chargé après `24-socle-suite` ; liste de job `S.JEUX`, un écran par appel, puis `S.dropBases()`. Données : section
 « Jeux et Storybook (phase 19) » de `donnees-fictives.md`. Le contenu des cadres (jeu, story, maquette Figma) garde des couleurs fixes en sombre et en clair.
 
-- 27 · Jeux & Storybook : 178 widget Jeu itch.io (« Una war », « Fourni par itch.io ») · 178b hors ligne · 178c intégration refusée · 178d vide et dialogue Réglages ·
+- 27 · Jeux & Storybook : (178 à 179 **retirés**, §26.11 : composant Jeu itch.io supprimé) 178 widget Jeu itch.io (« Una war », « Fourni par itch.io ») · 178b hors ligne · 178c intégration refusée · 178d vide et dialogue Réglages ·
   179 plein écran de Kibo · 180 widget Maquette, story `Screens / Home` · 180b Storybook injoignable · 180c menu des origines (Projet, `feat/login` injoignable) ·
   181 comparaison côte à côte (story, cadre Figma « Accueil ») · 181b superposition (opacité 50 %, curseur 40 %) · 182 Modifier le projet, section Storybook.
 

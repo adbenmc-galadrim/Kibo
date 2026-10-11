@@ -4,10 +4,10 @@ import { createEmbedGate } from "./embed-gate";
 import type { EmbedChecker, EmbedService } from "./types";
 
 const manifest = ComponentManifest.parse({
-  id: "itch",
+  id: "frame",
   version: "1.0.0",
   kind: "both",
-  title: "Jeu itch.io",
+  title: "Cadre intégré",
   reads: [],
   writes: [],
   capabilities: ["embed"],

@@ -215,10 +215,10 @@ test("delivering answers goes to the agents, and says so when they are not start
 
 test("embedded frames reach the embed gate with the manifest of the calling instance", async () => {
   const manifest = ComponentManifest.parse({
-    id: "itch",
+    id: "frame",
     version: "1.0.0",
     kind: "both",
-    title: "Jeu itch.io",
+    title: "Cadre intégré",
     reads: [],
     writes: [],
     capabilities: ["embed"],
@@ -227,7 +227,7 @@ test("embedded frames reach the embed gate with the manifest of the calling inst
   const instance: Instance = {
     id: "i1",
     pageId: "pg",
-    component: "itch@1.0.0",
+    component: "frame@1.0.0",
     layout: { x: 0, y: 0, w: 6, h: 4 },
     config: {},
     componentHash: null,
@@ -259,7 +259,7 @@ test("embedded frames reach the embed gate with the manifest of the calling inst
   });
   expect(await h.embed("p", instance, view.target)).toEqual(view);
   expect(seen).toEqual([
-    ["manifest", "itch@1.0.0"],
+    ["manifest", "frame@1.0.0"],
     ["p", "i1", ["itch.io"], view.target],
   ]);
   for (const integrations of [undefined, null, hooks([])])

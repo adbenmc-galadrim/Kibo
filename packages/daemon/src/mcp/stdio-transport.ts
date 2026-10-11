@@ -2,6 +2,7 @@ import { KiboError } from "@kibo/schema";
 import { ReadBuffer, serializeMessage } from "@modelcontextprotocol/sdk/shared/stdio.js";
 import type { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
 import type { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
+import { signalGroup } from "../process-group";
 
 export type StdioOptions = { id: string; cmd: string[]; env: Record<string, string>; cwd: string };
 const MAX_STDERR_LINE = 500;
@@ -29,27 +30,15 @@ async function relayStderr(id: string, stream: ReadableStream<Uint8Array>): Prom
   }
 }
 
-const isGone = (e: unknown) =>
-  e instanceof Error && "code" in e && (e.code === "ESRCH" || e.code === "EPERM");
-
-function killGroup(pid: number, signal: NodeJS.Signals): void {
-  try {
-    process.kill(-pid, signal);
-  } catch (e) {
-    // macOS answers EPERM, not ESRCH, for a group whose members are all zombies
-    if (!isGone(e)) throw e;
-  }
-}
-
 async function terminate(proc: ReturnType<typeof spawnServer>): Promise<void> {
-  killGroup(proc.pid, "SIGTERM");
+  signalGroup(proc.pid, "SIGTERM");
   let timer: ReturnType<typeof setTimeout> | undefined;
   const grace = new Promise<void>((resolve) => {
     timer = setTimeout(resolve, KILL_GRACE_MS);
   });
   await Promise.race([proc.exited.then(() => undefined), grace]);
   clearTimeout(timer);
-  killGroup(proc.pid, "SIGKILL");
+  signalGroup(proc.pid, "SIGKILL");
   await proc.exited;
 }
 
@@ -73,7 +62,7 @@ export class BunStdioTransport implements Transport {
   private exited(proc: ReturnType<typeof spawnServer>): void {
     if (this.proc === proc) {
       this.proc = null;
-      killGroup(proc.pid, "SIGKILL");
+      signalGroup(proc.pid, "SIGKILL");
     }
     this.onclose?.();
   }

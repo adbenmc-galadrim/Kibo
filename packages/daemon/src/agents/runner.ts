@@ -11,7 +11,7 @@ import {
   TICKET_MCP_TOOLS,
 } from "@kibo/schema";
 import { z } from "zod";
-import { signalGroup } from "../process-group";
+import { signalGroup, tryKill } from "../process-group";
 import type { McpTools } from "./ask-mcp";
 import { childEnv } from "./child-env";
 import { type HookLauncher, hookShellCommand, mcpServerConfig } from "./hook-launcher";
@@ -153,7 +153,7 @@ export function parseHelp(text: string): CliCaps {
 
 export async function readCliCaps(claudeBin: string, env: Record<string, string>): Promise<CliCaps> {
   const proc = Bun.spawn([claudeBin, "--help"], { env, stdin: "ignore", stdout: "pipe", stderr: "pipe" });
-  const timer = setTimeout(() => proc.kill(), 5000);
+  const timer = setTimeout(() => tryKill(`stopping ${claudeBin} --help`, () => proc.kill()), 5000);
   const [text, code] = await Promise.all([new Response(proc.stdout).text(), proc.exited]);
   clearTimeout(timer);
   if (code !== 0) throw new KiboError("AGENT_CLI_NOT_FOUND", `${claudeBin} --help exited with ${code}`);
@@ -172,13 +172,10 @@ export const KILL_GRACE_MS = 5000;
 
 export function killGroup(pid: number, graceMs = KILL_GRACE_MS): void {
   if (!signalGroup(pid, "SIGTERM")) return;
-  const escalate = setTimeout(() => {
-    try {
-      if (signalGroup(pid, 0)) signalGroup(pid, "SIGKILL");
-    } catch (e) {
-      console.error(`[kibo-daemon] cannot kill process group ${pid}`, e);
-    }
-  }, graceMs);
+  const escalate = setTimeout(
+    () => tryKill(`killing process group ${pid}`, () => signalGroup(pid, 0) && signalGroup(pid, "SIGKILL")),
+    graceMs,
+  );
   escalate.unref();
 }
 

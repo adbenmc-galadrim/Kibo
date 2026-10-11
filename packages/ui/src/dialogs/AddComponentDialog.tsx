@@ -14,23 +14,20 @@ import {
 import { Button } from "@kibo/sdk/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
-import { RadioGroup } from "@kibo/sdk/ui/radio-group";
-import { Blocks, Search, Sparkles } from "lucide-react";
+import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { nextLayout } from "../lib/format-grid";
 import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
-import { BUILTIN_COMPONENTS, componentIcon, findBuiltin } from "../registry";
+import { BUILTIN_COMPONENTS, findBuiltin } from "../registry";
 import { navigateTo } from "../route";
 import { useComponents } from "../state/use-components";
+import { AddComponentList } from "./AddComponentList";
 import { ApprovalScope, useApprovalScope } from "./approval-scope";
-import { CatalogRow, CatalogSection, VersionPill } from "./CatalogRow";
 import { Details } from "./ComponentDetails";
 import { CreateComponentDialog } from "./CreateComponentDialog";
 import { builtinChoices, type Choice, matches, mineChoices } from "./catalog-choices";
-import { DraftRow } from "./DraftRow";
-import { MarketCatalogSection } from "./MarketCatalogSection";
 import { McpSourceStep } from "./mcp-source/McpSourceStep";
 import { FirstSyncStatus } from "./sync/FirstSyncStatus";
 import { type LinkedRepos, repoKey } from "./sync/linked-repos";
@@ -80,7 +77,6 @@ export function AddComponentDialog({
   const [failed, setFailed] = useState(false);
   const [trust, setTrust] = useState<TrustTarget | null>(null);
   const [creating, setCreating] = useState(false);
-  const [marketCount, setMarketCount] = useState(0);
   const scope = useApprovalScope();
 
   const mine = mineChoices(components ?? []);
@@ -163,76 +159,41 @@ export function AddComponentDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
           hidden={scope.hidden}
-          className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-4xl"
+          className="flex h-[min(46rem,calc(100dvh-2rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl"
         >
-          <DialogHeader>
+          <DialogHeader className="gap-3 border-b px-6 pt-6 pb-4">
             <DialogTitle>{a.title}</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 sm:grid-cols-[1fr_1.1fr]">
-            <div className="grid content-start gap-1">
-              <div className="relative">
-                <Search aria-hidden className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
-                <Input
-                  className="pl-8"
-                  placeholder={a.search}
-                  aria-label={a.search}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-              </div>
-              <RadioGroup value={ref ?? ""} onValueChange={setRef} className="grid gap-0.5">
-                {shownBuiltins.length > 0 && <CatalogSection label={a.builtin} />}
-                {shownBuiltins.map((c) => (
-                  <CatalogRow
-                    key={c.ref}
-                    value={c.ref}
-                    icon={componentIcon(c.ref)}
-                    title={c.title}
-                    description={c.description}
-                    aside={<VersionPill version={c.version} />}
-                  />
-                ))}
-                {(shownMine.length > 0 || shownDrafts.length > 0) && <CatalogSection label={a.mine} />}
-                {shownMine.map((c) => (
-                  <CatalogRow
-                    key={c.ref}
-                    value={c.ref}
-                    icon={Blocks}
-                    title={c.title}
-                    description={c.line}
-                    aside={<VersionPill version={c.version} />}
-                  />
-                ))}
-              </RadioGroup>
-              {shownDrafts.map((d) => (
-                <DraftRow key={d.id} draft={d} onPublish={onPublishDraft} />
-              ))}
-              <MarketCatalogSection
-                query={query}
-                onCount={setMarketCount}
-                onInstalled={(r) => {
-                  setRef(null);
-                  setTrust(trustTargetOfInstall(r));
-                }}
+            <div className="relative">
+              <Search aria-hidden className="absolute top-2.5 left-2.5 size-4 text-muted-foreground" />
+              <Input
+                className="pl-8"
+                placeholder={a.search}
+                aria-label={a.search}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
               />
-              {shownBuiltins.length + shownMine.length + shownDrafts.length + marketCount === 0 && (
-                <p className="py-6 text-center text-sm text-muted-foreground">{a.noResult}</p>
-              )}
-              <button
-                type="button"
-                onClick={() => setCreating(true)}
-                className="mt-1 flex items-center gap-2 rounded-lg border border-dashed px-3 py-2.5 text-sm font-medium hover:bg-accent/60"
-              >
-                <Sparkles aria-hidden className="size-4" />
-                {a.create}
-              </button>
-              {error && (
-                <p role="alert" className="text-sm text-destructive">
-                  {a.loadFailed}
-                </p>
-              )}
             </div>
-            <div className="grid content-start gap-4 rounded-lg border bg-muted/30 p-4 text-sm sm:max-h-[calc(100dvh-14rem)] sm:overflow-y-auto">
+          </DialogHeader>
+          <div className="grid min-h-0 flex-1 grid-rows-2 min-[720px]:grid-cols-[1fr_1.1fr] min-[720px]:grid-rows-1">
+            <AddComponentList
+              query={query}
+              builtins={shownBuiltins}
+              mine={shownMine}
+              drafts={shownDrafts}
+              selected={ref}
+              onSelect={setRef}
+              onPublishDraft={onPublishDraft}
+              onMarketInstalled={(r) => {
+                setRef(null);
+                setTrust(trustTargetOfInstall(r));
+              }}
+              onCreate={() => setCreating(true)}
+              loadFailed={error}
+            />
+            <section
+              aria-label={a.detailsLabel}
+              className="grid min-h-0 content-start gap-4 overflow-y-auto bg-muted/30 p-4 text-sm"
+            >
               {selected ? (
                 <Details
                   choice={selected}
@@ -264,41 +225,43 @@ export function AddComponentDialog({
               ) : (
                 <p className="text-muted-foreground">{a.pick}</p>
               )}
-            </div>
+            </section>
           </div>
-          {failed && (
-            <p role="alert" className="text-sm text-destructive">
-              {a.failed}
-            </p>
-          )}
-          {(syncError ?? firstSync.error) && (
-            <p role="alert" className="text-sm text-destructive">
-              {syncError ?? firstSync.error}
-            </p>
-          )}
-          <DialogFooter className="sm:items-center">
-            <div className="sm:mr-auto">
-              <FirstSyncStatus sync={firstSync} />
-            </div>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              {fr.common.cancel}
-            </Button>
-            {canRetry ? (
-              <Button onClick={() => void firstSync.retry()}>{src.retry}</Button>
-            ) : (
-              <Button
-                disabled={
-                  !selected ||
-                  (synced && (toBindingConfig(form) === null || holder !== null)) ||
-                  (mcpSource && mcpConfig === null) ||
-                  firstSync.binding !== null
-                }
-                onClick={submit}
-              >
-                {synced ? src.submit : a.submit}
-              </Button>
+          <div className="grid gap-2 border-t px-6 py-4">
+            {failed && (
+              <p role="alert" className="text-sm text-destructive">
+                {a.failed}
+              </p>
             )}
-          </DialogFooter>
+            {(syncError ?? firstSync.error) && (
+              <p role="alert" className="text-sm text-destructive">
+                {syncError ?? firstSync.error}
+              </p>
+            )}
+            <DialogFooter className="sm:items-center">
+              <div className="sm:mr-auto">
+                <FirstSyncStatus sync={firstSync} />
+              </div>
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                {fr.common.cancel}
+              </Button>
+              {canRetry ? (
+                <Button onClick={() => void firstSync.retry()}>{src.retry}</Button>
+              ) : (
+                <Button
+                  disabled={
+                    !selected ||
+                    (synced && (toBindingConfig(form) === null || holder !== null)) ||
+                    (mcpSource && mcpConfig === null) ||
+                    firstSync.binding !== null
+                  }
+                  onClick={submit}
+                >
+                  {synced ? src.submit : a.submit}
+                </Button>
+              )}
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
       {trust && (

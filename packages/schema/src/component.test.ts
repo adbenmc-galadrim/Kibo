@@ -11,6 +11,7 @@ import {
   GrantedPermissions,
   grantedOf,
   isActive,
+  isBuiltinId,
   isEmbeddedSpecifier,
   isSafeNotePath,
   NetRule,
@@ -25,6 +26,12 @@ import {
 } from "./index";
 
 const v0 = { id: "kanban", version: "1.0.0", kind: "both", title: "Kanban", reads: ["ticket"], writes: [] };
+
+test("the game and the snake are no longer built-ins", () => {
+  expect(isBuiltinId("mockup")).toBe(true);
+  expect(isBuiltinId("itch")).toBe(false);
+  expect(isBuiltinId("snake")).toBe(false);
+});
 
 describe("manifest v1", () => {
   test("a v0 manifest is accepted with defaults", () => {

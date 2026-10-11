@@ -11,7 +11,7 @@ import {
   type RegistryVersion,
   type RpcRequest,
 } from "@kibo/schema";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 
@@ -133,6 +133,35 @@ test("screen 3: built-ins and my components, search, preview and display", async
   await user.clear(search());
   await user.type(search(), "zzz");
   expect(screen.getByText("Aucun composant ne correspond.")).toBeTruthy();
+});
+
+test("header and footer stay outside the two scrolling panes, whatever the list length", async () => {
+  const many = Array.from({ length: 40 }, (_, i) => ({ ...burndown, id: `c${i}`, title: `Composant ${i}` }));
+  components = () => Promise.resolve(many);
+  render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={() => {}} />);
+  const list = await screen.findByRole("region", { name: "Composants disponibles" });
+  await within(list).findByRole("radio", { name: "Composant 39" });
+  const details = screen.getByRole("region", { name: "Description du composant" });
+  const dialog = screen.getByRole("dialog", { name: "Ajouter un composant" });
+  expect(dialog.className).toContain("overflow-hidden");
+  expect(dialog.className).not.toContain("overflow-y-auto");
+  const fixed = [
+    search(),
+    screen.getByRole("button", { name: "Annuler" }),
+    screen.getByRole("button", { name: "Ajouter à la page" }),
+  ];
+  for (const el of fixed) {
+    expect(list.contains(el)).toBe(false);
+    expect(details.contains(el)).toBe(false);
+  }
+  const scroller = within(list).getByRole("radiogroup").closest(".overflow-y-auto");
+  expect(scroller && list.contains(scroller)).toBe(true);
+  const create = within(list).getByRole("button", { name: "Créer un composant (code ou IA)" });
+  expect(scroller?.contains(create)).toBe(false);
+  expect(details.className).toContain("overflow-y-auto");
+  expect(details.textContent).toBe("Choisis un composant pour voir ce qu'il lit et modifie.");
+  await userEvent.setup().click(within(list).getByRole("radio", { name: "Composant 39" }));
+  expect(within(details).getByText("Composant 39")).toBeTruthy();
 });
 
 test("a third-party line names origin, trust and network hosts", async () => {

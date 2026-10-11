@@ -110,8 +110,9 @@ const renderDialog = () =>
 
 test("screen 3 lists marketplace packages from the cached index, without adapters", async () => {
   renderDialog();
-  expect(await screen.findByRole("button", { name: "Voir Calendrier des jalons" })).toBeTruthy();
-  expect(screen.getByText("Marketplace")).toBeTruthy();
+  const list = screen.getByRole("region", { name: "Composants disponibles" });
+  expect(await within(list).findByRole("button", { name: "Voir Calendrier des jalons" })).toBeTruthy();
+  expect(within(list).getByText("Marketplace")).toBeTruthy();
   expect(screen.getByText("milestones · vérifié · Équipe")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Voir Jira" })).toBeNull();
 });
