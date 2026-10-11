@@ -10,11 +10,16 @@ const KIND: Record<string, FeedExtra["kind"]> = {
   session: "system",
 };
 
+const askedBy = (entry: RunLogEntry): boolean =>
+  entry.event.type === "hook" && entry.event.payload.question !== null;
+
 export function exchangeOf(log: RunLogEntry[] | null, runs: readonly JournalRun[]): FeedExtra[] {
   if (!log) return [];
+  const asked = new Set(log.filter(askedBy).map((entry) => entry.id));
   return journalLines(log, runs).flatMap((line) => {
     const resumed = line.name === "SessionStart" && line.text === fr.agents.events.resumed;
     const kind = resumed ? "system" : KIND[line.name];
-    return kind ? [{ key: `${line.id}-${line.name}`, at: line.at, kind, text: line.text }] : [];
+    if (!kind || (kind === "question" && !asked.has(line.id))) return [];
+    return [{ key: `${line.id}-${line.name}`, at: line.at, kind, text: line.text }];
   });
 }

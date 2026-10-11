@@ -31,3 +31,24 @@ test("the exchange keeps the question, the human replies and the session lines, 
 test("without a log there is no exchange", () => {
   expect(exchangeOf(null, [])).toEqual([]);
 });
+
+test("a Notification hook of the CLI never doubles the question asked by the agent", () => {
+  const log: RunLogEntry[] = [
+    {
+      id: 1,
+      at: at(3),
+      event: {
+        type: "hook",
+        payload: hook("PostToolUse", { tool: "mcp__kibo__ask_user", question: "Quel port ?" }),
+      },
+    },
+    {
+      id: 2,
+      at: at(2),
+      event: { type: "hook", payload: hook("Notification", { detail: "Claude is waiting for your input" }) },
+    },
+  ];
+  expect(exchangeOf(log, [])).toEqual([
+    { key: "1-Notification", at: at(3), kind: "question", text: "Quel port ?" },
+  ]);
+});
