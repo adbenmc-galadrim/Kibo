@@ -1,8 +1,6 @@
 import { lazyPanel } from "@kibo/sdk";
 import { fr } from "../i18n/fr";
 
-export const AgentsPage = lazyPanel(() => import("../agents/AgentsPage").then((m) => m.AgentsPage), fr.lazy);
-export const QueuePage = lazyPanel(() => import("../agents/QueuePage").then((m) => m.QueuePage), fr.lazy);
 export const GeneralPage = lazyPanel(
   () => import("../settings/GeneralPage").then((m) => m.GeneralPage),
   fr.lazy,
@@ -53,10 +51,6 @@ export const MyTicketsPage = lazyPanel(
 );
 export const InboxPage = lazyPanel(() => import("../inbox/InboxPage").then((m) => m.InboxPage), fr.lazy);
 export const TicketTab = lazyPanel(() => import("../pages/TicketTab").then((m) => m.TicketTab), fr.lazy);
-export const ActivityTab = lazyPanel(
-  () => import("../ticket/activity/ActivityTab").then((m) => m.ActivityTab),
-  fr.lazy,
-);
 export const Welcome = lazyPanel(() => import("./Welcome").then((m) => m.Welcome), fr.lazy);
 export const ChangesView = lazyPanel(() => import("../code/ChangesView").then((m) => m.ChangesView), fr.lazy);
 export const FileTabView = lazyPanel(
@@ -121,11 +115,14 @@ export const PairingScreen = lazyPanel(() => import("./PairingScreen").then((m) 
 export const BarRuns = lazyPanel(() => import("../agents/dock/BarRuns").then((m) => m.BarRuns), fr.lazy, {
   fallback: "children",
 });
-const mentionEntry = () => import("../agents/mention/mention-entry");
+const agentsEntry = () => import("../agents/mention/agents-entry");
 
-export const AgentDock = lazyPanel(() => mentionEntry().then((m) => m.AgentDock), fr.lazy);
-export const RunSidePanel = lazyPanel(() => mentionEntry().then((m) => m.RunSidePanel), fr.lazy, hidden);
-export const RunPage = lazyPanel(() => mentionEntry().then((m) => m.RunPage), fr.lazy);
+export const AgentsPage = lazyPanel(() => agentsEntry().then((m) => m.AgentsPage), fr.lazy);
+export const QueuePage = lazyPanel(() => agentsEntry().then((m) => m.QueuePage), fr.lazy);
+export const AgentDock = lazyPanel(() => agentsEntry().then((m) => m.AgentDock), fr.lazy);
+export const ActivityTab = lazyPanel(() => agentsEntry().then((m) => m.ActivityTab), fr.lazy);
+export const RunSidePanel = lazyPanel(() => agentsEntry().then((m) => m.RunSidePanel), fr.lazy, hidden);
+export const RunPage = lazyPanel(() => agentsEntry().then((m) => m.RunPage), fr.lazy);
 export const ScreenActions = lazyPanel(
   () => import("./ScreenActions").then((m) => m.ScreenActions),
   fr.lazy,
