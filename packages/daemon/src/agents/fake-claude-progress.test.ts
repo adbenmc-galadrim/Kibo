@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { cleanFakeDirs, readHooks, tmp } from "./fake-claude.test-helper";
 import { fakeToolUses } from "./fake-claude-ai";
@@ -27,7 +27,7 @@ process.stdin.on("data", (chunk) => {
 });
 `;
 
-const EVENTS = ["SessionStart", "PreToolUse", "PostToolUse", "Stop", "SessionEnd"];
+const EVENTS = ["SessionStart", "PreToolUse", "PostToolUse", "Stop", "StopFailure", "SessionEnd"];
 
 function settings(dir: string, blockStop: boolean): string {
   const file = join(dir, "hooks.jsonl");
@@ -46,8 +46,10 @@ function settings(dir: string, blockStop: boolean): string {
   return JSON.stringify({ hooks });
 }
 
-async function play(name: "progress" | "progress-no-plan", blockStop: boolean) {
+async function play(name: "progress" | "progress-no-plan" | null, blockStop: boolean, turn?: unknown) {
   const dir = tmp();
+  const scenario = join(dir, "scenario.json");
+  if (turn !== undefined) writeFileSync(scenario, JSON.stringify({ turns: [turn] }));
   const log = join(dir, "mcp.jsonl");
   const kibo = { command: "bun", args: ["-e", MCP_SERVER], env: { LOG: log } };
   const args = ["-p", "--output-format", "stream-json", "--verbose", "--session-id", "p1"];
@@ -56,19 +58,28 @@ async function play(name: "progress" | "progress-no-plan", blockStop: boolean) {
     [FAKE_CLAUDE, ...args, "--settings", settings(dir, blockStop), "--mcp-config", config],
     {
       cwd: dir,
-      env: { ...process.env, KIBO_FAKE_CLAUDE_SCENARIO: scenarioPath(name), KIBO_FAKE_CLAUDE_STATE: dir },
+      env: {
+        ...process.env,
+        KIBO_FAKE_CLAUDE_SCENARIO: name ? scenarioPath(name) : scenario,
+        KIBO_FAKE_CLAUDE_STATE: dir,
+      },
       stdin: new TextEncoder().encode("Corrige KIB-14."),
       stdout: "pipe",
       stderr: "pipe",
     },
   );
-  const [err, code] = await Promise.all([new Response(proc.stderr).text(), proc.exited]);
+  const [out, err, code] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
   const transcript = readFileSync(join(dir, "p1.jsonl"), "utf8")
     .trim()
     .split("\n")
     .map((l) => JSON.parse(l) as { type: string; message: { content: unknown }; toolUseResult?: unknown });
   const mcp = existsSync(log) ? readFileSync(log, "utf8").trim().split("\n") : [];
-  return { dir, err, code, transcript, hooks: readHooks(join(dir, "hooks.jsonl")), mcp };
+  const result = JSON.parse(out.trim().split("\n").at(-1) ?? "{}") as Record<string, unknown>;
+  return { dir, err, code, transcript, hooks: readHooks(join(dir, "hooks.jsonl")), mcp, result };
 }
 
 type Block = Record<string, unknown>;
@@ -154,6 +165,31 @@ test("a Stop blocked by a hook plays onStopBlock, then stops again with stop_hoo
     "use:mcp__kibo__ticket_progress",
     "tool_result",
   ]);
+});
+
+test("the replayed Stop carries the last sentence said after the block", async () => {
+  const run = await play(null, true, {
+    steps: [{ say: "Avant." }],
+    result: "Fini.",
+    onStopBlock: [{ say: "Rapport." }],
+  });
+  const stops = run.hooks.filter((h) => h.hook_event_name === "Stop").map((h) => h.last_assistant_message);
+  expect(stops).toEqual(["Fini.", "Rapport."]);
+  const silent = await play(null, true, { steps: [{ say: "Avant." }], result: "Fini.", onStopBlock: [] });
+  const again = silent.hooks.filter((h) => h.hook_event_name === "Stop").map((h) => h.last_assistant_message);
+  expect(again).toEqual(["Fini.", "Fini."]);
+});
+
+test("a failing onStopBlock ends the turn in error with StopFailure", async () => {
+  const run = await play(null, true, {
+    steps: [],
+    result: "Fini.",
+    onStopBlock: [{ write: "a.txt", fixture: "absent/nothing.fixture" }],
+  });
+  expect(run.code).toBe(1);
+  expect(run.result).toMatchObject({ type: "result", is_error: true });
+  expect(run.result.result).not.toBe("Fini.");
+  expect(run.hooks.map((h) => h.hook_event_name).slice(-3)).toEqual(["Stop", "StopFailure", "SessionEnd"]);
 });
 
 test("without a block, onStopBlock is never played", async () => {

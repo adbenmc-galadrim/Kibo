@@ -156,13 +156,8 @@ async function main(): Promise<number> {
     if (refused && tool) trail.denied(tool);
     return { runs, refused };
   };
-  let lastSaid: string | null = null;
   const play = async (step: FakeStep) => {
-    if ("say" in step) {
-      transcript.say(step.say);
-      lastSaid = step.say;
-      return;
-    }
+    if ("say" in step) return transcript.say(step.say);
     if ("think" in step) return transcript.think(step.think);
     if ("raw" in step) return transcript.raw(step.raw);
     if ("mcp" in step) {
@@ -238,9 +233,10 @@ async function main(): Promise<number> {
     }
     return null;
   };
+  const lastSayOf = (steps: readonly FakeStep[]): string | null =>
+    steps.flatMap((step) => ("say" in step ? [step.say] : [])).at(-1) ?? null;
   let failure = await playAll(turn.steps);
-  const isError = failure !== null || turn.isError;
-  const result = failure ?? turn.result;
+  let result = failure ?? turn.result;
   const input = Math.floor(turn.tokens / 2);
   const usage = {
     input_tokens: input,
@@ -249,15 +245,23 @@ async function main(): Promise<number> {
     cache_read_input_tokens: 0,
   };
   transcript.say(result, usage);
-  if (isError) await runHooks("StopFailure", { error: result, last_assistant_message: result });
+  const stopFailure = (error: string) => runHooks("StopFailure", { error, last_assistant_message: error });
+  if (failure !== null || turn.isError) await stopFailure(result);
   else {
     const stops = await runHooks("Stop", { stop_hook_active: false, last_assistant_message: result });
     if (stops.some((r) => r.code === 2 || (r.code === 0 && blocksStop(r.stdout)))) {
-      lastSaid = result;
-      failure = await playAll(turn.onStopBlock ?? []);
-      await runHooks("Stop", { stop_hook_active: true, last_assistant_message: lastSaid });
+      const steps = turn.onStopBlock ?? [];
+      failure = await playAll(steps);
+      if (failure !== null) {
+        result = failure;
+        await stopFailure(failure);
+      } else {
+        const said = lastSayOf(steps) ?? result;
+        await runHooks("Stop", { stop_hook_active: true, last_assistant_message: said });
+      }
     }
   }
+  const isError = failure !== null || turn.isError;
   recordMcpCalls(callsFile, mcpCalls);
   await runHooks("SessionEnd", { reason: "other" });
   print({
