@@ -30,6 +30,8 @@ import { createIntegrationHost } from "./integrations/host";
 import { createRedactor, type Redactor } from "./integrations/redact";
 import { createLogBuffer, type LogBuffer } from "./log-buffer";
 import { startMarket } from "./market/bootstrap";
+import { startRunTrace } from "./moments/bootstrap";
+import { transcriptRootOf } from "./moments/transcript-path";
 import { createProjectSettings } from "./notes/settings";
 import { startProjectAgent } from "./project-agent/bootstrap";
 import { createProjectAdmin } from "./projects/admin";
@@ -65,6 +67,7 @@ export type DaemonOptions = {
   logBuffer?: LogBuffer;
   userHome?: string;
   agentEnv?: Record<string, string | undefined>;
+  transcriptRoot?: string;
   assistantTimeoutMs?: number;
   marketAllowLoopback?: boolean;
   probe?: Probe;
@@ -128,6 +131,13 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
   closers.push(() => collab.stop());
   let agents: Orchestrator | null = null;
+  const runTrace = startRunTrace({
+    home: opts.home,
+    root: opts.transcriptRoot ?? transcriptRootOf(opts.agentEnv ?? process.env, opts.userHome ?? homedir()),
+    emit: (event) => service.docs.emit(event),
+    runs: () => agents?.state().runs ?? [],
+  });
+  closers.push(() => runTrace.close());
   const components = createComponentsService({
     home: opts.home,
     toolchain: opts.toolchain,
@@ -222,11 +232,12 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       app.rpc,
       tutorial.rpc,
       projectAgent.agent.rpc,
+      runTrace.rpc,
     ],
     port: opts.port,
     uiDir: opts.uiDir,
     extraOrigins: devOrigins,
-    hooks: agentQuestionHooks(() => agents, service.agentData, opts.notify ?? (() => {})),
+    hooks: runTrace.hooks(agentQuestionHooks(() => agents, service.agentData, opts.notify ?? (() => {}))),
     agentMcp: projectAgent.agent.mcp,
     assets: components.assets,
     icons: service.icons,
