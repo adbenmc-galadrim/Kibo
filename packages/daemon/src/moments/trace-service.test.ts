@@ -99,10 +99,42 @@ test("a reminder is a moment, after the actions that preceded it", async () => {
   const t = s.transcript;
   t.toolResult(t.toolUse("Read", { file_path: "a.ts" }), { content: "x", isError: false });
   await s.trace.onHook(s.run, hook("PostToolUse"));
-  const moment = s.trace.reminder(s.run.id, "plan");
+  const moment = s.trace.note(s.run.id, { kind: "reminder", reminder: "plan" });
   expect(moment.data).toEqual({ kind: "reminder", reminder: "plan" });
   expect(kinds(s)).toEqual(["actions", "reminder"]);
   expect(s.events.at(-1)?.moments).toEqual([moment]);
+});
+
+const SIGNAL = {
+  kind: "signal" as const,
+  signalId: "sig-id-1",
+  ref: "sig:1",
+  signalKind: "ticket" as const,
+  title: "Tests du récepteur de hooks",
+};
+
+test("a signal note comes after the moments of the lines not read yet", async () => {
+  const s = setup();
+  s.transcript.say("Je lis le récepteur.");
+  await s.trace.onHook(s.run, hook("PostToolUse"));
+  s.transcript.say("Il manque des tests.");
+  s.transcript.say("Je le signale.");
+  s.transcript.toolUse("mcp__kibo__signal_project", { kind: "ticket", title: SIGNAL.title });
+  const moment = s.trace.note(s.run.id, SIGNAL);
+  const moments = s.store.list(s.run.id);
+  expect(moments.map((m) => m.data.kind)).toEqual(["message", "message", "message", "signal"]);
+  expect(moment.data).toEqual(SIGNAL);
+  expect(moment.seq).toBe(Math.max(...moments.map((m) => m.seq)));
+  expect(s.events.at(-1)?.moments).toEqual([moment]);
+});
+
+test("a note on a finished run is still written", async () => {
+  const s = setup();
+  s.transcript.say("Fini.");
+  await s.trace.onTurnEnd({ ...s.run, state: "done" });
+  expect(s.trace.trace(s.run.id)?.closedAt).not.toBeNull();
+  expect(s.trace.note(s.run.id, SIGNAL).data).toEqual(SIGNAL);
+  expect(kinds(s)).toEqual(["message", "signal"]);
 });
 
 test("the turn end makes a final pass, flushes and closes a finished run", async () => {

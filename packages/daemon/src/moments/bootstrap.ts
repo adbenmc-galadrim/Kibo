@@ -95,7 +95,7 @@ export function startVisibility(
         run,
         hasPlan: (r) => progress.hasPlan(r),
         hasReport: (r) => progress.hasReport(r),
-        moment: (runId, kind) => trace.reminder(runId, kind),
+        moment: (runId, kind) => trace.note(runId, { kind: "reminder", reminder: kind }),
       });
       forgets.push((runId) => reminded.forget(runId));
       return withTrace(reminded, { trace, run });
