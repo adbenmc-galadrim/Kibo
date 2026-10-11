@@ -6,6 +6,10 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.19.0-alpha.3 — 2026-10-11
+
+- Le démon ne s'arrête plus quand GitHub met trop de temps à répondre : une commande qui dépasse son délai est abandonnée, et si le système refuse de l'arrêter, Kibo le note dans son journal et continue.
+
 ## 0.19.0-alpha.2 — 2026-10-10
 
 - Les composants « Jeu itch.io » et « Serpent » sont retirés : les jeux d'itch.io refusent de s'afficher hors de leur site. Un widget déjà posé s'affiche comme composant absent et se retire de la page depuis son menu. Storybook dans le widget Maquette reste inchangé.

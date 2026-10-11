@@ -1,5 +1,5 @@
 import { KiboError } from "@kibo/schema";
-import { signalGroup } from "../process-group";
+import { signalGroup, tryKill } from "../process-group";
 
 export type Env = Record<string, string>;
 export type RunResult = { code: number; stdout: string; bytes: Uint8Array; stderr: string };
@@ -100,7 +100,8 @@ export async function run(cmd: string[], opts: RunOptions): Promise<RunResult> {
   const failCode = opts.failCode ?? "GIT_FAILED";
   const proc = start(cmd, opts, failCode);
   const label = `${cmd[0]} ${cmd[1] ?? ""}`.trim();
-  const killAll = () => signalGroup(proc.pid, "SIGKILL");
+  const killAll = () =>
+    tryKill(`killing ${label} process group ${proc.pid}`, () => signalGroup(proc.pid, "SIGKILL"));
   const overflow = (name: string, max: number) => (size: number) => {
     killAll();
     return new KiboError("TOO_LARGE", `${label} wrote more than ${max} bytes on ${name} (${size} read)`);
