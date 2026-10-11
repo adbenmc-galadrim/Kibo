@@ -95,7 +95,10 @@ export function Feed(props: FeedProps) {
   const shown = moments.filter((m) => showReasoning || m.data.kind !== "reasoning");
   const entries = entriesOf(shown, extras);
   const list = (
-    <ol aria-label={label ? texts.feed(label) : undefined} className="grid content-start gap-3">
+    <ol
+      aria-label={label ? texts.feed(label) : undefined}
+      className="grid grid-cols-[minmax(0,1fr)] content-start gap-3"
+    >
       {entries.map((entry) =>
         "extra" in entry ? (
           <li key={`x-${entry.extra.key}`} data-kind={entry.extra.kind}>
