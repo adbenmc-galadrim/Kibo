@@ -78,7 +78,7 @@ export function ActivityTab({ project, ticket, onOpenFile }: Props) {
     entries,
     leading: segments.find((s) => s.run === null)?.items ?? [],
     plan: activityPlan(ticket.agentProgress, shown, pages),
-    moments: [...momentsByRun.values()].flat(),
+    moments: [...momentsByRun.values()].flat().filter((m) => m.data.kind !== "reasoning"),
     now,
     onOpenFile,
   };

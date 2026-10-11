@@ -15,6 +15,7 @@ import { apiMock } from "../../api-mock";
 import { dockState, FEED_RUN, MOMENTS_PAGE, progressProject, REPORTED_RUN } from "../../moments/fixtures";
 
 const calls: RpcRequest[] = [];
+const moments = { on: 0, off: 0 };
 const page: RunMomentsPage = MOMENTS_PAGE;
 
 mock.module("../../api", () =>
@@ -32,7 +33,12 @@ mock.module("../../api", () =>
       subscribeCode: () => () => undefined,
       subscribeEvents: () => () => undefined,
       subscribeIntegrations: () => () => undefined,
-      subscribeMoments: () => () => undefined,
+      subscribeMoments: () => {
+        moments.on += 1;
+        return () => {
+          moments.off += 1;
+        };
+      },
     },
   }),
 );
@@ -67,6 +73,8 @@ const resizeTo = (next: number) => {
 
 beforeEach(() => {
   calls.length = 0;
+  moments.on = 0;
+  moments.off = 0;
   width = 1_200;
   window.sessionStorage.clear();
   globalThis.ResizeObserver = FakeObserver;
@@ -236,4 +244,24 @@ test("the ticket page offers the same tabs and the choice holds for the session"
   expect(
     await screen.findByText("Je relis le récepteur et ses tests avant de toucher au port."),
   ).toBeTruthy();
+});
+
+test("the plan counts the moments of a step without the reasoning", async () => {
+  sheet();
+  const panel = await openActivity();
+  const plan = await within(panel).findByRole("region", { name: "Plan" });
+  const step = within(plan).getByRole("button", { name: /Corriger la validation du corps/ });
+  await waitFor(() => expect(step.textContent).toContain("3 moments"));
+});
+
+test("the moments subscription ends with the tab and with the sheet", async () => {
+  const view = sheet();
+  await openActivity();
+  await waitFor(() => expect(moments.on).toBe(1));
+  await userEvent.setup().click(screen.getByRole("tab", { name: "Détails" }));
+  await waitFor(() => expect(moments.off).toBe(1));
+  await openActivity();
+  await waitFor(() => expect(moments.on).toBe(2));
+  view.unmount();
+  expect(moments.off).toBe(2);
 });
