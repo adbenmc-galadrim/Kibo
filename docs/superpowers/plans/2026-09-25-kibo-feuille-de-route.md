@@ -140,12 +140,12 @@ Demande d'Adam du 2026-10-06, planifiée le 2026-10-09 après l'agent de projet 
 
 ## Phase 20 · Voir et comprendre les agents (v0.20.0-alpha.1)
 
-Plan : `2026-10-10-kibo-phase-20.md` · Spec : conception §26 (amende §7, §8, §22.1, §23.12 ; agents §3, §4, §8, §18). **Planifiée** le 2026-10-10 (spec validée par Adam le même jour) ; §26.11 et §26.12 livrés par le correctif `0.19.0-alpha.2`, hors du plan.
+Plan : `2026-10-10-kibo-phase-20.md` (livrée) · Spec : conception §26 (amende §7, §8, §22.1, §23.12 ; agents §3, §4, §8, §18). **Livrée** le 2026-10-11 (`v0.20.0-alpha.1`, rapport `rapports/2026-10-11-jalon-v0.20.md`) ; planifiée le 2026-10-10 (spec validée par Adam le même jour) ; §26.11 et §26.12 livrés par le correctif `0.19.0-alpha.2`, hors du plan.
 
 Demande d'Adam du 2026-10-09 (« les agents sont tous cachés ») : fil narratif tiré de la transcription et copié dans Kibo, plan et compte rendu tenus par l'agent (`ticket_progress`, partagés avec le ticket), rappels sans blocage, volet du pied de page cliquable et redimensionnable en trois colonnes, onglet Activité du ticket, mentions d'agent cliquables (carte, volet, page dédiée), page Questions refondue avec destinataires par projet, export et réponse collée, tickets démarrables (état calculé), graphe lisible (vagues, terminés repliés, liens réduits, focus). Écrans 183 à 188k (page Penpot 29).
 
 ## Phase 21 · Les agents parlent à l'agent de projet (v0.21.0-alpha.1)
 
-Spec : conception §27, détaillée avant le plan.
+Spec : conception §27, détaillée avant le plan. **À planifier.**
 
 Outil `signal_project` (ticket à créer, contexte, blocage, question), réveil automatique plafonné de l'agent de projet pour les tickets à créer et les blocages, boîte de signaux ; rien n'est créé sans lot validé.

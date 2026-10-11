@@ -1265,6 +1265,17 @@ Version **`0.20.0-alpha.1`**, rapport `docs/superpowers/rapports/<date>-jalon-v0
 - **Décision** : hauteur bornée à la fenêtre (marge comprise) ; en-tête (titre, recherche) et pied (« Annuler », « Ajouter à la page ») **toujours visibles** ; corps en **deux volets** côte à côte : à gauche la **liste** des composants (intégrés, mes composants, marketplace), défilante seule, avec « Créer un composant (code ou IA) » fixé sous la liste ; à droite la **description** du composant choisi (aperçu, texte, affichage, confiance et permissions), défilante seule si besoin. Aucun défilement de la boîte entière. Sous 720 px de large, les deux volets s'empilent et le pied reste fixe.
 - **Tests** : unitaires (structure, pied présent quelle que soit la longueur de la liste) et E2E à 1280 × 720 : le bouton « Ajouter à la page » est visible sans défilement avec quinze composants ; captures sombre et clair.
 
+### 26.13 Écarts constatés à l'exécution (jalon v0.20, 2026-10-11)
+
+- §26.3 : le champ du ticket s'appelle **`agentProgress`** (`progress` est déjà pris par la progression des sous-tickets).
+- §26.3 : la comparaison des fichiers déclarés avec le diff se fait à la **fin de chaque tour** (sortie du processus, qui suit le `Stop`).
+- §26.2 : les transcriptions sont lues sous `<CLAUDE_CONFIG_DIR ?? ~/.claude>/projects/`. Les enregistrements de métadonnées du CLI (`atis-latch`, `last-prompt`, `cost-state`, comme `summary`, `system`, `attachment`…) sont ignorés. Un run sans transcription connue garde au plus 20 moments en attente, puis passe sur les hooks en fil partiel.
+- §26.2 : le hook `Notification` reste un déclencheur de passe, sans effet s'il n'arrive jamais ; une notification du CLI n'est pas une question (seule `ask_question` en crée une).
+- §26.5 : les destinataires sont lus par les composants via l'appel `questions.recipients`, sous la permission `read:question` ; poser un destinataire proposé se fait en deux commandes.
+- §26.8 : le filtre « Démarrables » du Kanban suit le menu des étiquettes (il n'y a pas de bouton « Grouper »).
+- §26.9 : les étiquettes de regroupement s'affichent en minuscules (« c2 · 8 tickets ») ; le regroupement n'existe qu'en mode Vagues.
+- §26.10 : les écrans Questions sont **187, 187b, 187c, 187d** ; la page 29 compte 183 à 188k (dont 188k, Kanban « Démarrable »).
+
 ## 27. Décisions de la phase 21 : les agents parlent à l'agent de projet (demande d'Adam du 2026-10-09)
 
 **Demande** : « Les agents peuvent communiquer avec l'agent de projet : création de nouveaux tickets, remontée de contexte et autre. » Choix d'Adam au brainstorming du 2026-10-09 ; le détail sera écrit avant le plan de la phase 21.
