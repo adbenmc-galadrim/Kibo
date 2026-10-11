@@ -42,7 +42,7 @@ test("modifier, workspace, en-tête, réglages et suppression d'un projet", asyn
   const edit = page.getByRole("dialog", { name: "Modifier le projet" });
   await expect(edit.getByLabel("Dossier")).toHaveValue(created.repo);
   await expect(edit.getByRole("button", { name: "Parcourir…" })).toHaveCount(0);
-  await edit.getByLabel("Nom").fill(`${name} bis`);
+  await edit.getByLabel("Nom", { exact: true }).fill(`${name} bis`);
   await edit.getByRole("radio", { name: "Couleur #6366F1" }).click();
   await edit
     .getByLabel("Choisir une image…")
