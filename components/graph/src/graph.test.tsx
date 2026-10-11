@@ -65,9 +65,11 @@ test("screen 10: nodes, critical path summary, legend and zoom", async () => {
       .getByRole("button", { name: /KIB-12/ })
       .getAttribute("data-critical"),
   ).toBe("false");
-  expect(within(canvas).getByRole("button", { name: /KIB-5 / }).className).toContain("opacity-45");
+  expect(within(canvas).queryByRole("button", { name: /KIB-5 / })).toBeNull();
   expect(screen.getByText("Lié à")).toBeTruthy();
   const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: /^Afficher les terminés/ }));
+  expect(within(canvas).getByRole("button", { name: /KIB-5 / }).className).toContain("opacity-45");
   await user.click(node);
   expect(node.getAttribute("data-selected")).toBe("true");
   expect(m.opened).toEqual([]);
@@ -101,12 +103,14 @@ test("keyboard: arrows walk the neighbors, Enter opens, Escape clears; shift-dra
   expect(screen.getByRole("status").textContent).toMatch(/sélectionnés$/);
 });
 
-test("toolbar: hide done, critical path toggle, zoom", async () => {
+test("toolbar: show done, critical path toggle, zoom", async () => {
   setup("view");
   const user = userEvent.setup();
   await screen.findByText("Chemin critique : 3 tickets · 1 bloqué");
-  expect(screen.getByRole("button", { name: "Hiérarchique" }).hasAttribute("disabled")).toBe(true);
-  await user.click(screen.getByRole("button", { name: "Masquer terminés" }));
+  const showDone = screen.getByRole("button", { name: /^Afficher les terminés \(\d+\)$/ });
+  await user.click(showDone);
+  expect(screen.getByRole("button", { name: /KIB-5 / })).toBeTruthy();
+  await user.click(showDone);
   expect(screen.queryByRole("button", { name: /KIB-5 / })).toBeNull();
   await user.click(screen.getByRole("button", { name: "Chemin critique" }));
   expect(screen.getByRole("button", { name: /KIB-21/ }).getAttribute("data-critical")).toBe("false");
@@ -183,7 +187,7 @@ test("small: three counters; medium: chain and waiting list; large: framed graph
   cleanup();
 
   setup("widget", seed, "full");
-  expect(await screen.findByRole("button", { name: "Masquer terminés" })).toBeTruthy();
+  expect(await screen.findByRole("button", { name: /^Afficher les terminés/ })).toBeTruthy();
 });
 
 test("small counts blocked and ready tickets of the widget's tickets", async () => {
@@ -203,11 +207,13 @@ const seedLinked = (run: (cmd: ProjectCommand) => unknown) => {
   run({ method: "addLink", from: create("Amont"), to: create("Aval"), type: "blocks" });
 };
 
-test("§22.1: the isolated block is labelled, and only when there is one", async () => {
+test("§22.1: in the hierarchical layout the isolated block is labelled, and only when there is one", async () => {
   setup("view", seed, "full");
+  await userEvent.setup().click(await screen.findByRole("radio", { name: "Hiérarchique" }));
   expect(await screen.findByText("Sans dépendance")).toBeTruthy();
   cleanup();
   setup("view", seedLinked, "full");
+  await userEvent.setup().click(await screen.findByRole("radio", { name: "Hiérarchique" }));
   await screen.findByRole("button", { name: /Amont/ });
   expect(screen.queryByText("Sans dépendance")).toBeNull();
 });

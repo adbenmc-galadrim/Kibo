@@ -3,7 +3,9 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Maximize, Minus, Plus } from "lucide-react";
 import { fr } from "./fr";
 
-export function Legend({ compact }: { compact: boolean }) {
+type LegendProps = { compact: boolean; implied: number; zoomedOut: boolean };
+
+export function Legend({ compact, implied, zoomedOut }: LegendProps) {
   return (
     <div
       className={cn(
@@ -23,6 +25,8 @@ export function Legend({ compact }: { compact: boolean }) {
         <span aria-hidden="true" className="w-5 border-t border-dashed border-muted-foreground" />
         {fr.legend.relates}
       </span>
+      {!compact && implied > 0 && <span>{fr.impliedHidden(implied)}</span>}
+      {!compact && zoomedOut && <span>{fr.zoomHint}</span>}
     </div>
   );
 }
@@ -68,6 +72,18 @@ export function ZoomControls({ zoom, onZoom, onFit }: ZoomProps) {
       >
         <Minus aria-hidden="true" />
       </Button>
+    </div>
+  );
+}
+
+type FocusBarProps = { keyLabel: string; title: string; up: number; down: number };
+
+export function FocusBar({ keyLabel, title, up, down }: FocusBarProps) {
+  return (
+    <div className="absolute bottom-3 left-3 flex max-w-[calc(100%-14rem)] items-center gap-3 rounded-md border bg-card px-3 py-2 text-xs">
+      <span className="truncate font-medium">{fr.focus(keyLabel, title)}</span>
+      <span className="shrink-0 text-muted-foreground">{fr.focusSummary(up, down)}</span>
+      <span className="shrink-0 text-muted-foreground/80">{fr.focusExit}</span>
     </div>
   );
 }

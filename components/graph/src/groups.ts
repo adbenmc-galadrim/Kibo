@@ -23,6 +23,8 @@ const groupValue = (t: Labelled, prefix: string): string | null => {
   return null;
 };
 
+export const isGroupNode = (id: string): boolean => id.startsWith(`${GROUP_ID_PREFIX}${SEPARATOR}`);
+
 export const groupNodeId = (prefix: string, value: string): string => `${GROUP_ID_PREFIX}:${prefix}:${value}`;
 
 export function labelPrefixes(tickets: readonly Labelled[]): string[] {

@@ -8,6 +8,15 @@ export type GraphFilter = {
   domain: string | null;
 };
 
+export function initialFilter(config: Record<string, unknown>): GraphFilter {
+  return {
+    assignee: config.filter === "all" ? "all" : "mine-and-agents",
+    showDone: config.showDone === true,
+    startable: false,
+    domain: null,
+  };
+}
+
 const visible = (t: TicketView, f: GraphFilter, viewer: string): boolean =>
   (f.assignee === "all" ||
     t.assignee?.kind === "agent" ||

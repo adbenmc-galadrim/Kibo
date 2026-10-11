@@ -67,9 +67,10 @@
         "enum": ["mine-and-agents", "all"],
         "default": "mine-and-agents"
       },
-      "hideDone": {
+      "showDone": {
         "type": "boolean",
-        "default": false
+        "default": false,
+        "label": "Afficher les terminés"
       }
     }
   },

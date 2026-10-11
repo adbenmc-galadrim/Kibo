@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { Link, TicketView } from "@kibo/schema";
 import { EMPTY_PROGRESS } from "@kibo/schema";
-import { domainsOf, graphInput } from "./filter";
+import { domainsOf, graphInput, initialFilter } from "./filter";
 
 const ticket = (id: string, patch: Partial<TicketView> = {}): TicketView => ({
   id,
@@ -63,4 +63,18 @@ test("the startable filter keeps only tickets that can start now", () => {
   const input = graphInput(tickets, links, f, "adam");
   expect(input.tickets.map((t) => t.id)).toEqual(["A", "C"]);
   expect(input.edges).toEqual([{ from: "A", to: "C", type: "blocks" }]);
+});
+
+test("done tickets are hidden by default; the former hideDone key is tolerated, showDone decides", () => {
+  expect(initialFilter({})).toEqual({
+    assignee: "mine-and-agents",
+    showDone: false,
+    startable: false,
+    domain: null,
+  });
+  expect(initialFilter({ filter: "all" }).assignee).toBe("all");
+  expect(initialFilter({ hideDone: true }).showDone).toBe(false);
+  expect(initialFilter({ hideDone: false }).showDone).toBe(false);
+  expect(initialFilter({ showDone: true, hideDone: true }).showDone).toBe(true);
+  expect(initialFilter({ showDone: "yes" }).showDone).toBe(false);
 });

@@ -11,6 +11,6 @@
   "writes": [],
   "configSchema": {
     "filter": { "enum": ["mine-and-agents", "all"], "default": "mine-and-agents" },
-    "hideDone": { "type": "boolean", "default": false }
+    "showDone": { "type": "boolean", "default": false, "label": "Afficher les terminés" }
   }
 }

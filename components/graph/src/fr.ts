@@ -1,12 +1,52 @@
+import type { RunState } from "@kibo/schema";
+
 const s = (n: number) => (n > 1 ? "s" : "");
 
+const RUN_STATES: Record<RunState, string> = {
+  queued: "En file",
+  starting: "Démarrage",
+  running: "En cours",
+  waiting_input: "Attend une réponse",
+  done: "Terminé",
+  failed: "Échec",
+  cancelled: "Annulé",
+};
+
 export const fr = {
-  lazy: { loading: "Chargement du graphe…", failed: "Impossible de charger le graphe.", retry: "Réessayer" },
   canvas: "Graphe des dépendances",
+  layout: "Mise en page",
+  waves: "Vagues",
   hierarchical: "Hiérarchique",
-  hierarchicalHelp: "Seule mise en page disponible pour l'instant",
   critical: "Chemin critique",
-  hideDone: "Masquer terminés",
+  showDone: (n: number) => `Afficher les terminés (${n})`,
+  startableFilter: "Démarrables",
+  startable: "Démarrable",
+  view: "Affichage",
+  viewGrouped: (prefix: string) => `Affichage · ${prefix}:`,
+  groupBy: "Regrouper par étiquette",
+  groupNone: "Aucun regroupement",
+  groupPrefix: (prefix: string) => `${prefix}:`,
+  expandAll: "Déplier tous les cadres",
+  collapseAll: "Replier tous les cadres",
+  expandFrame: (value: string) => `Déplier ${value}`,
+  collapseFrame: (value: string) => `Replier ${value}`,
+  wave: (n: number) => (n === 1 ? "Vague 1 · démarrables et en cours" : `Vague ${n}`),
+  doneColumn: "Terminés",
+  counts: (total: number, open: number, startable: number) =>
+    `${total} ticket${s(total)} · ${open} ouvert${s(open)} · ${startable} démarrable${s(startable)}`,
+  impliedHidden: (n: number) => `${n} lien${s(n)} implicite${s(n)} masqué${s(n)} (survol pour les voir)`,
+  zoomHint: "De loin : clé et statut · de près : titre et étiquettes",
+  focus: (key: string, title: string) => `Focus : ${key} · ${title}`,
+  focusSummary: (up: number, down: number) =>
+    `${up} bloqueur${s(up)} · débloque ${down} ticket${s(down)}, sur deux niveaux`,
+  focusExit: "Échap pour sortir",
+  mention: {
+    history: "Voir l'historique",
+    reply: "Répondre",
+    step: (index: number, total: number, title: string) => `${index}/${total} · ${title}`,
+    state: (state: RunState) => RUN_STATES[state],
+    waiting: "Attend une réponse",
+  },
   filter: "Filtrer",
   assignee: "Assigné",
   mineAndAgents: "Moi + agents",
