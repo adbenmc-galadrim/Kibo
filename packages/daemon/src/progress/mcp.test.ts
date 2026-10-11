@@ -1,21 +1,29 @@
 import { expect, test } from "bun:test";
 import type { ProgressInput, RunView } from "@kibo/schema";
 import { runView } from "../questions/questions.test-helper";
-import { handleTicketTool } from "./mcp";
-import type { ProgressService } from "./service";
+import { handleTicketTool, type TicketToolServices } from "./mcp";
 
 const RUN = runView({ id: "r1", state: "running" });
 const step = (i: number) => ({ id: `s${i}`, title: `Étape ${i}`, status: "todo" as const });
 
 function fakeService() {
   const recorded: { run: RunView; input: ProgressInput }[] = [];
-  const service: Pick<ProgressService, "record"> = {
-    record: async (run, input) => {
-      recorded.push({ run, input });
-      return "Plan enregistré.";
+  const signaled: { run: RunView; input: unknown }[] = [];
+  const service: TicketToolServices = {
+    progress: {
+      record: async (run, input) => {
+        recorded.push({ run, input });
+        return "Plan enregistré.";
+      },
+    },
+    signals: {
+      record: async (run, input) => {
+        signaled.push({ run, input });
+        return "Signal sig:1 enregistré.";
+      },
     },
   };
-  return { service, recorded };
+  return { service, recorded, signaled };
 }
 
 test("a valid call is recorded for the run and its reply comes back", async () => {
@@ -42,9 +50,18 @@ test("an invalid input names the field and records nothing", async () => {
   expect(recorded).toEqual([]);
 });
 
+test("signal_project goes to the signal service with its raw input", async () => {
+  const { service, recorded, signaled } = fakeService();
+  const input = { kind: "ticket", title: "Tests" };
+  expect(await handleTicketTool(service, RUN, "signal_project", input)).toBe("Signal sig:1 enregistré.");
+  expect(signaled).toEqual([{ run: RUN, input }]);
+  expect(recorded).toEqual([]);
+});
+
 test("any other tool is unknown", async () => {
-  const { service } = fakeService();
+  const { service, signaled } = fakeService();
   await expect(handleTicketTool(service, RUN, "list_tickets", {})).rejects.toMatchObject({
     code: "NOT_FOUND",
   });
+  expect(signaled).toEqual([]);
 });

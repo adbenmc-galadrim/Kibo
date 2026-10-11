@@ -185,3 +185,12 @@ test("the preview offers to resume the main session, unless the transcript is go
     reason: "transcript_missing",
   });
 }, 30_000);
+
+test("the instructions of a ticket run teach ticket_progress and signal_project", async () => {
+  const { h } = inRepo();
+  const first = await finished(h, assign(h, "t1").id);
+  const instructions = readFileSync(join(h.home, "runs", first.id, "CLAUDE.md"), "utf8");
+  expect(instructions).toContain("mcp__kibo__ticket_progress");
+  expect(instructions).toContain("mcp__kibo__signal_project");
+  expect(instructions).toContain("Tu ne crées jamais de ticket");
+}, 30_000);

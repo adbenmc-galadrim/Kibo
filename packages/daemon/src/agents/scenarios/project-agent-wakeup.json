@@ -1,0 +1,38 @@
+{
+  "turns": [
+    {
+      "steps": [
+        { "mcp": "list_signals" },
+        {
+          "mcp": "propose_batch",
+          "input": {
+            "summary": "Traiter les signaux",
+            "actions": [
+              {
+                "id": 1,
+                "type": "createTicket",
+                "ref": "new:1",
+                "title": "Tests du récepteur de hooks",
+                "parent": "KIB-14",
+                "why": "Signalé par l'agent de KIB-14.",
+                "signals": ["sig:1"]
+              },
+              {
+                "id": 2,
+                "type": "setStatus",
+                "ticket": "KIB-16",
+                "statusId": "blocked",
+                "blockedReason": "attend KIB-12",
+                "why": "Blocage signalé.",
+                "signals": ["sig:2"]
+              },
+              { "id": 3, "type": "dismissSignal", "signal": "sig:3", "why": "Contexte noté, rien à faire." }
+            ]
+          }
+        }
+      ],
+      "result": "J'ai proposé un lot pour 3 signaux.",
+      "tokens": 1600
+    }
+  ]
+}

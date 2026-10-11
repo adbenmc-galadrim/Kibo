@@ -1,0 +1,9 @@
+{
+  "routes": [
+    { "prompt": "Réveil automatique", "scenario": "project-agent-wakeup.json" },
+    { "prompt": "lot invalide", "scenario": "project-agent-invalid.json" },
+    { "prompt": "# KIB-14 · ", "scenario": "signal.json" }
+  ],
+  "fallback": "project-agent-batch.json",
+  "perTurn": true
+}

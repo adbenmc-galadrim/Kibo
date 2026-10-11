@@ -18,6 +18,7 @@ import { agentMcpSink } from "../progress/agent-mcp";
 import { createProgressService, type ProgressDocs, type ProgressService } from "../progress/service";
 import type { AgentMcpSink } from "../project-agent/types";
 import type { RpcExtension } from "../rpc-extensions";
+import type { SignalService } from "../signals/service";
 import { withTrace } from "./hooks";
 import { handleVisibilityRequest } from "./rpc";
 import { openMomentStore } from "./store";
@@ -37,7 +38,7 @@ export type Visibility = {
   progress: ProgressService;
   rpc: RpcExtension;
   hooks(sink: HookSink): HookSink;
-  mcp(project: AgentMcpSink): AgentMcpSink;
+  mcp(project: AgentMcpSink, signals?: SignalRecorder): AgentMcpSink;
   agents(port: AgentsPort): AgentsPort;
   lifecycle: { onSpawned(run: RunView): Promise<void>; onTurnEnd(run: RunView): Promise<void> };
   peek(projectId: string, runId: string): RunPeek;
@@ -45,6 +46,11 @@ export type Visibility = {
 };
 
 const METHODS = VISIBILITY_RPC.map((schema) => schema.shape.method.value);
+
+type SignalRecorder = Pick<SignalService, "record">;
+const UNWIRED_SIGNALS: SignalRecorder = {
+  record: () => Promise.reject(new KiboError("INTERNAL", "signals are not wired")),
+};
 
 function progressDocs(docs: VisibilityDocs): ProgressDocs {
   return {
@@ -100,11 +106,12 @@ export function startVisibility(
       forgets.push((runId) => reminded.forget(runId));
       return withTrace(reminded, { trace, run });
     },
-    mcp: (project) =>
+    mcp: (project, signals = UNWIRED_SIGNALS) =>
       agentMcpSink({
         project,
         run,
         progress,
+        signals,
         live: (runId, token) => agents()?.hooks.verify(runId, token) ?? false,
       }),
     agents: (port) => withRunProgress(port, progress),
