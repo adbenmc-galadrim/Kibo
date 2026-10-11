@@ -3,7 +3,12 @@ import type { ProjectFingerprint } from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
 import type { Orchestrator } from "../agents/orchestrator";
 import type { ProjectAgentStore } from "./store";
-import type { ProjectAgentAgentsPort, ProjectAgentDataPort, ProjectAgentOps } from "./types";
+import type {
+  ProjectAgentAgentsPort,
+  ProjectAgentDataPort,
+  ProjectAgentOps,
+  ProjectAgentSignalsPort,
+} from "./types";
 
 export type ProjectAgentAgents = ProjectAgentAgentsPort & Pick<Orchestrator, "hooks">;
 
@@ -12,9 +17,11 @@ export type ProjectAgentDeps = {
   data: ProjectAgentDataPort;
   agents: () => ProjectAgentAgents;
   ops: ProjectAgentOps;
+  signals: ProjectAgentSignalsPort;
   notify: (notice: Notice) => void;
   emit: () => void;
   now?: () => number;
+  formatTime?: (at: number) => string;
 };
 
 export type AgentContext = Required<ProjectAgentDeps> & {

@@ -3,6 +3,7 @@ import { KiboError, type RpcRequest, Ticket } from "@kibo/schema";
 import { shareProject } from "../collab/share";
 import { LOCAL_CONTEXT } from "../rpc-extensions";
 import { call } from "../service";
+import { fakeSignals } from "../signals/signals.test-helper";
 import { type HarnessDaemon, type SyncHarness, startSyncHarness } from "../testing/sync-harness";
 import { type ProjectAgentBoot, startProjectAgent } from "./bootstrap";
 import { type FakeAgents, fakeAgents } from "./fakes.test-helper";
@@ -42,6 +43,7 @@ function readerAgent(agents: FakeAgents): ProjectAgentBoot {
     settings: { get: () => null },
     orchestrator: () => ({ ...agents, hooks: { verify: () => true, receive: () => null } }),
     notify: () => {},
+    signals: fakeSignals(),
   });
 }
 

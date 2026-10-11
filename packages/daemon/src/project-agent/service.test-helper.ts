@@ -10,6 +10,7 @@ import {
   type RunView,
 } from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
+import { type FakeSignals, fakeSignals } from "../signals/signals.test-helper";
 import { createProjectAgentService, type ProjectAgentAgents, type ProjectAgentService } from "./service";
 import { openProjectAgentStore, type ProjectAgentStore } from "./store";
 import type { ProjectAgentDataPort, ProjectAgentOps } from "./types";
@@ -34,6 +35,7 @@ const HOST: AgentsState["host"] = {
 export type Kit = {
   svc: ProjectAgentService;
   store: ProjectAgentStore;
+  signals: FakeSignals;
   calls: string[];
   notices: Notice[];
   emits: () => number;
@@ -151,9 +153,11 @@ export function serviceKit(): Kit {
     },
   };
   const agents = fakeAgents(runs, calls);
+  const signals = fakeSignals();
   const svc = createProjectAgentService({
     store,
     data,
+    signals,
     agents: () => agents,
     ops: {
       tool: async (target, tool) => `${tool}:${target.id}`,
@@ -163,6 +167,7 @@ export function serviceKit(): Kit {
       },
     },
     notify: (notice) => notices.push(notice),
+    formatTime: (at) => `t${at}`,
     emit: () => {
       emitted += 1;
     },
@@ -174,6 +179,7 @@ export function serviceKit(): Kit {
   return {
     svc,
     store,
+    signals,
     calls,
     notices,
     emits: () => emitted,

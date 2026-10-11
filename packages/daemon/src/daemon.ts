@@ -33,6 +33,7 @@ import { startMarket } from "./market/bootstrap";
 import { startVisibility } from "./moments/bootstrap";
 import { createProjectSettings } from "./notes/settings";
 import { startProjectAgent } from "./project-agent/bootstrap";
+import { NO_SIGNALS } from "./project-agent/no-signals";
 import { createProjectAdmin } from "./projects/admin";
 import { agentQuestionHooks } from "./questions/agent-hooks";
 import { listInterfaces } from "./remote/interfaces";
@@ -162,6 +163,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     settings: createProjectSettings(store.db),
     orchestrator: () => ready(agents, "INTERNAL", "agents are not ready"),
     notify: opts.notify ?? (() => {}),
+    signals: NO_SIGNALS,
   });
   closers.push(() => projectAgent.stop());
   const market = await startMarket({

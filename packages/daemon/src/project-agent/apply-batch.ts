@@ -16,11 +16,13 @@ import {
   type ProposedAction,
   Ticket,
 } from "@kibo/schema";
+import { type SignalRefsPort, signalRefs } from "./signal-refs";
 import type { ProjectAgentAgentsPort, ProjectAgentDataPort } from "./types";
 
 export type ApplyBatchDeps = {
   data: ProjectAgentDataPort;
   agents: () => ProjectAgentAgentsPort;
+  signals: SignalRefsPort;
   now?: () => number;
 };
 
@@ -46,7 +48,7 @@ async function contextOf(deps: ApplyBatchDeps, batch: Batch): Promise<BatchConte
     profiles: data.profiles(),
     demoProject: data.isDemoProject(batch.projectId),
     viewer: data.viewer(batch.projectId),
-    signals: [],
+    ...signalRefs(deps.signals, batch.projectId),
   };
 }
 

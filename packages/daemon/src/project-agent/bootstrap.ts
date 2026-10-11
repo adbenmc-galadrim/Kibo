@@ -7,7 +7,12 @@ import { createProjectAgentDataPort, type ProjectAgentDataDeps } from "./data-po
 import { createProjectAgentService, type ProjectAgentAgents, type ProjectAgentService } from "./service";
 import { openProjectAgentStore, type ProjectAgentStore } from "./store";
 import { handleProjectTool } from "./tools";
-import type { ProjectAgentAgentsPort, ProjectAgentDataPort, ProjectAgentOps } from "./types";
+import type {
+  ProjectAgentAgentsPort,
+  ProjectAgentDataPort,
+  ProjectAgentOps,
+  ProjectAgentSignalsPort,
+} from "./types";
 
 export type ProjectAgentBoot = { agent: ProjectAgentService; stop(): void };
 
@@ -18,19 +23,22 @@ export type ProjectAgentBootInput = {
   settings: ProjectAgentDataDeps["settings"];
   orchestrator: () => Omit<ProjectAgentAgents, "deliverAnswers">;
   notify: (notice: Notice) => void;
+  signals: ProjectAgentSignalsPort;
 };
 
 type OpsDeps = {
   data: ProjectAgentDataPort;
   agents: () => ProjectAgentAgentsPort;
+  signals: ProjectAgentSignalsPort;
   store: ProjectAgentStore;
   agent: () => ProjectAgentService;
 };
 
-function projectAgentOps({ data, agents, store, agent }: OpsDeps): ProjectAgentOps {
+function projectAgentOps({ data, agents, signals, store, agent }: OpsDeps): ProjectAgentOps {
   const toolDeps = {
     data,
     agents,
+    signals,
     store: {
       fingerprint: (runId: string) => agent().baseline(runId),
       lastDecided: (projectId: string, since: number) => store.lastDecided(projectId, since),
@@ -40,7 +48,7 @@ function projectAgentOps({ data, agents, store, agent }: OpsDeps): ProjectAgentO
   };
   return {
     tool: (run, tool, input) => handleProjectTool(toolDeps, run, tool, input),
-    apply: (batch, chosen, by) => applyBatch({ data, agents }, batch, chosen, by),
+    apply: (batch, chosen, by) => applyBatch({ data, agents, signals }, batch, chosen, by),
   };
 }
 
@@ -59,9 +67,11 @@ export function startProjectAgent(input: ProjectAgentBootInput): ProjectAgentBoo
   const agent = createProjectAgentService({
     store,
     data,
+    signals: input.signals,
     ops: projectAgentOps({
       data,
       agents,
+      signals: input.signals,
       store,
       agent: () => ready(self, "INTERNAL", "the project agent is not ready"),
     }),

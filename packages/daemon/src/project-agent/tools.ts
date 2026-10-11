@@ -1,7 +1,14 @@
 import { changeNames, diffFingerprints, renderDigest } from "@kibo/core/project-agent/digest";
 import { fingerprint } from "@kibo/core/project-agent/fingerprint";
 import { assignableProfiles, projectOverview, ticketSheet } from "@kibo/core/project-agent/overview";
-import { compactJson, listQuestions, listRuns, listTickets, pageOf } from "@kibo/core/project-agent/tools";
+import {
+  compactJson,
+  listQuestions,
+  listRuns,
+  listSignals,
+  listTickets,
+  pageOf,
+} from "@kibo/core/project-agent/tools";
 import {
   type Batch,
   CursorInput,
@@ -9,6 +16,7 @@ import {
   KiboError,
   ListQuestionsInput,
   ListRunsInput,
+  ListSignalsInput,
   ListTicketsInput,
   MEMORY_NOTE_PATH,
   type ProjectAgentTool,
@@ -17,7 +25,7 @@ import {
   type RunView,
 } from "@kibo/schema";
 import type { z } from "zod";
-import type { ProjectAgentAgentsPort, ProjectAgentDataPort } from "./types";
+import type { ProjectAgentAgentsPort, ProjectAgentDataPort, ProjectAgentSignalsPort } from "./types";
 
 export const TOOL_REPLY_MAX = 200_000;
 
@@ -29,6 +37,7 @@ export type ProjectToolDeps = {
     lastDecided(projectId: string, since: number): Batch | null;
   };
   propose: (run: RunView, input: unknown) => string;
+  signals: Pick<ProjectAgentSignalsPort, "list" | "openCount">;
 };
 
 type ToolCall = { deps: ProjectToolDeps; run: RunView; projectId: string; input: unknown };
@@ -50,7 +59,7 @@ async function overview({ deps, projectId }: ToolCall) {
     profiles: data.profiles(),
     demoProject: data.isDemoProject(projectId),
     memory: (await data.readNote(projectId, MEMORY_NOTE_PATH)) ?? "",
-    openSignals: 0,
+    openSignals: deps.signals.openCount(projectId),
   });
 }
 
@@ -116,6 +125,8 @@ async function reply(tool: ProjectAgentTool, call: ToolCall): Promise<unknown> {
       return changes(call);
     case "propose_batch":
       return deps.propose(call.run, input);
+    case "list_signals":
+      return listSignals(deps.signals.list(projectId).signals, parse(ListSignalsInput, input));
   }
 }
 

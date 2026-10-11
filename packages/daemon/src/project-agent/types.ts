@@ -10,6 +10,9 @@ import type {
   ProjectCommand,
   ProjectSnapshot,
   RunView,
+  Signal,
+  SignalRef,
+  SignalsView,
 } from "@kibo/schema";
 import type { Orchestrator } from "../agents/orchestrator-types";
 
@@ -42,4 +45,12 @@ export type AgentMcpSink = {
   verify(runId: string, token: string): boolean;
   run(runId: string): RunView | null;
   call(run: RunView, tool: AgentMcpRequest["tool"], input: unknown): Promise<string>;
+};
+
+export type ProjectAgentSignalsPort = {
+  markRead(projectId: string, runId: string): Signal[];
+  openRefs(projectId: string): SignalRef[];
+  openCount(projectId: string): number;
+  settle(batch: Batch, results: readonly ActionResult[], by: Actor): void;
+  list(projectId: string): SignalsView;
 };

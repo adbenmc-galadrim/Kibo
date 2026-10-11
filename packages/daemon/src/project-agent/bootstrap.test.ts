@@ -30,6 +30,7 @@ function boot() {
     settings: { get: () => null },
     orchestrator: () => ({ ...h.agents, hooks: { verify: () => true, receive: () => null } }),
     notify: () => {},
+    signals: h.signals,
   });
   return { h, started, attached };
 }
@@ -43,6 +44,10 @@ test("the project agent is wired to the real project data and tools, and detache
   const sheet = await started.agent.mcp.call(run, "get_ticket", { key: "EMIS-1" });
   expect(JSON.parse(sheet)).toMatchObject({ key: "EMIS-1", title: "Récepteur de hooks", statusId: "todo" });
   await expect(started.agent.mcp.call(run, "propose_batch", {})).rejects.toThrow("INVALID_INPUT");
+  h.signals.add(1, { projectId: h.project.id, title: "Tests du récepteur" });
+  const listed = JSON.parse(await started.agent.mcp.call(run, "list_signals", {}));
+  expect(listed).toMatchObject({ items: [{ ref: "sig:1", title: "Tests du récepteur" }], total: 1 });
+  expect(started.agent.signals).toBe(h.signals);
   started.stop();
   expect(attached).toEqual(["attach:0", "detach"]);
 });

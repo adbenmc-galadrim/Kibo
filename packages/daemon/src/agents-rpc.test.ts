@@ -1,6 +1,12 @@
 import { expect, test } from "bun:test";
 import { type AgentsState, INBOX_ID, type Question, type RpcRequest, type RunView } from "@kibo/schema";
-import { type AgentQuestions, type AgentsPort, handleAgentRequest, withRunProgress } from "./agents-rpc";
+import {
+  type AgentQuestions,
+  type AgentsPort,
+  handleAgentRequest,
+  withRunProgress,
+  withSignalCounts,
+} from "./agents-rpc";
 import { answered, HUMAN, runView } from "./questions/questions.test-helper";
 
 const IMPORT = { kind: "import", ref: "plan" } as const;
@@ -201,4 +207,12 @@ test("the agents state carries the progress of the live runs and of the runs end
     ],
   });
   expect(port.state().runs).toBe(runs);
+});
+
+test("the agents state carries the open signal counts of each project", () => {
+  const counts = [{ projectId: "p1", open: 3, unread: 2 }];
+  const port = withSignalCounts(agentsPort([], []), { counts: () => counts });
+  const state = handleAgentRequest(port, { method: "getAgents" }, questionsStub([]));
+  expect(state).toMatchObject({ signals: counts });
+  expect(port.state().signals).toEqual(counts);
 });

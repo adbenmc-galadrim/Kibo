@@ -4,6 +4,7 @@ import {
   isTerminal,
   KiboError,
   type ProjectAgentSummary,
+  type ProjectSignalCount,
   type RpcRequest,
   type RunProgressSummary,
   type RunView,
@@ -57,6 +58,13 @@ export function withRunProgress(
       const shown = state.runs.filter((r) => !isTerminal(r.state) || (r.endedAt ?? 0) >= since);
       return { ...state, progress: progress.summaries(shown) };
     },
+  };
+}
+
+export function withSignalCounts(port: AgentsPort, signals: { counts(): ProjectSignalCount[] }): AgentsPort {
+  return {
+    ...port,
+    state: () => ({ ...port.state(), signals: signals.counts() }),
   };
 }
 
