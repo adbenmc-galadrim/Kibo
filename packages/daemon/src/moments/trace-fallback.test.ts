@@ -108,3 +108,47 @@ test("a transcript of unknown format becomes partial, an isolated unknown line d
     partial: "unknown-format",
   });
 });
+
+test("pending hook actions are dropped once an accepted path arrives", async () => {
+  const s = setup();
+  const pathless = { ...s.run, transcriptPath: null };
+  const t = s.transcript;
+  t.toolResult(t.toolUse("Read", { file_path: "a.ts" }), { content: "x", isError: false });
+  await s.trace.onHook(pathless, hook("PostToolUse", { tool: "Read", detail: "a.ts" }));
+  t.say("Lu.");
+  await s.trace.onHook(s.run, hook("Stop", { transcriptPath: s.path, detail: "Lu." }));
+  const moments = s.store.list(s.run.id).map((m) => m.data);
+  expect(moments.map((m) => m.kind)).toEqual(["actions", "message"]);
+  expect(moments[0]?.kind === "actions" && moments[0].actions.length).toBe(1);
+});
+
+test("pending hook actions are written after a rejected path", async () => {
+  const outside = join(tmp(), `${SESSION}.jsonl`);
+  const s = setup();
+  const pathless = { ...s.run, transcriptPath: null };
+  await s.trace.onHook(pathless, hook("PostToolUse", { tool: "Edit", detail: "src/a.ts" }));
+  await s.trace.onHook(pathless, hook("PostToolUse", { tool: "Read", detail: "src/b.ts" }));
+  await s.trace.onHook(s.run, hook("Stop", { transcriptPath: outside, detail: "Fini." }));
+  expect(s.trace.trace(s.run.id)).toMatchObject({ source: "hooks", partial: "path-rejected" });
+  expect(s.store.list(s.run.id).map((m) => m.data)).toEqual([
+    { kind: "raw", text: "", partial: "path-rejected" },
+    expect.objectContaining({ kind: "actions", summary: "A lu 1 fichier et modifié 1 fichier" }),
+    { kind: "message", text: "Fini." },
+  ]);
+});
+
+test("a finished run still pending writes its buffered actions as a partial thread", async () => {
+  const s = setup();
+  const pathless = { ...s.run, transcriptPath: null };
+  for (let i = 0; i <= 200; i++)
+    await s.trace.onHook(pathless, hook("PostToolUse", { tool: "Read", detail: `f${i}.ts` }));
+  expect(kinds(s)).toEqual([]);
+  await s.trace.onTurnEnd({ ...pathless, state: "done" });
+  expect(s.trace.trace(s.run.id)).toMatchObject({
+    source: "hooks",
+    partial: "path-rejected",
+    closedAt: 5_000,
+  });
+  const data = s.store.list(s.run.id).map((m) => m.data);
+  expect(data.map((m) => (m.kind === "actions" ? m.actions.length : m.kind))).toEqual(["raw", 200, 1]);
+});

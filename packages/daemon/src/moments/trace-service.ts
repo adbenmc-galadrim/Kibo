@@ -19,6 +19,7 @@ import {
 } from "@kibo/schema";
 import { HookGroup, hookMoments } from "./hook-group";
 import type { MomentStore, RunTrace } from "./store";
+import { pageOf, peekOf } from "./trace-read";
 import { acceptedTranscriptPath } from "./transcript-path";
 import { readLongLine, readTranscriptSlice, type TranscriptSlice } from "./transcript-reader";
 
@@ -44,7 +45,6 @@ export type TraceService = {
 const PASS_EVENTS: ReadonlySet<string> = new Set(["PostToolUse", "Stop", "SubagentStop", "Notification"]);
 const UNKNOWN_FORMAT_LINES = 3;
 const LONG_LINE_HEAD = 64 * 1024;
-const PEEK_MESSAGE_MAX = 200;
 const STEP_TITLE_MAX = 160;
 
 type Live = {
@@ -53,6 +53,7 @@ type Live = {
   group: HookGroup;
   from: string | null;
   scanFrom: number | null;
+  held: FoldedMoment[];
 };
 
 const nextTick = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
@@ -88,6 +89,7 @@ export function createTraceService(deps: TraceDeps): TraceService {
       group: new HookGroup(),
       from: null,
       scanFrom: null,
+      held: [],
     };
     lives.set(runId, created);
     return created;
@@ -121,6 +123,9 @@ export function createTraceService(deps: TraceDeps): TraceService {
     const next: RunTrace = { ...trace, source: "hooks", partial: reason };
     store.saveTrace(next);
     write(trace.runId, [moment(trace, { kind: "raw", text: "", partial: reason })]);
+    const state = live(trace.runId);
+    write(trace.runId, state.held);
+    state.held = [];
     return next;
   }
 
@@ -140,6 +145,8 @@ export function createTraceService(deps: TraceDeps): TraceService {
       unknownLines: 0,
       from: path,
       scanFrom: null,
+      group: new HookGroup(),
+      held: [],
     });
     const next: RunTrace = { ...trace, source: "transcript", path: accepted, offset: 0, partial: null };
     store.saveTrace(next);
@@ -202,8 +209,11 @@ export function createTraceService(deps: TraceDeps): TraceService {
 
   function hookStep(runId: string, payload: HookPayload): void {
     const trace = traceOf(runId);
-    if (trace.source !== "hooks") return;
-    write(runId, hookMoments(live(runId).group, payload, ctx(trace)));
+    if (trace.source === "transcript") return;
+    const state = live(runId);
+    const moments = hookMoments(state.group, payload, ctx(trace));
+    if (trace.source === "hooks") write(runId, moments);
+    else state.held.push(...moments);
   }
 
   function settle(runId: string): RunTrace {
@@ -215,6 +225,12 @@ export function createTraceService(deps: TraceDeps): TraceService {
     }
     if (traceOf(runId).source === "hooks") write(runId, live(runId).group.flush(ctx(trace)));
     return traceOf(runId);
+  }
+
+  function writeHeld(trace: RunTrace): void {
+    const state = live(trace.runId);
+    state.held.push(...state.group.flush(ctx(trace)));
+    if (state.held.length > 0) toHooks(trace, "path-rejected");
   }
 
   function enqueue(runId: string, job: () => Promise<void>): Promise<void> {
@@ -236,6 +252,7 @@ export function createTraceService(deps: TraceDeps): TraceService {
     if (current.source === "transcript") flushFold(current, false);
     if (current.source === "hooks") write(run.id, live(run.id).group.flush(ctx(current)));
     if (!isTerminal(run.state)) return;
+    if (current.source === "pending") writeHeld(current);
     store.saveTrace({ ...traceOf(run.id), closedAt: deps.now() });
     lives.delete(run.id);
   }
@@ -268,28 +285,7 @@ export function createTraceService(deps: TraceDeps): TraceService {
       store.saveTrace({ ...traceOf(runId), baseHead: head });
     },
     trace: (runId) => store.trace(runId),
-    page(runId, after) {
-      const trace = store.trace(runId);
-      return {
-        moments: store.list(runId, after),
-        internalPlan: store.internalPlan(runId),
-        partial: trace?.partial ?? null,
-        source: trace?.source ?? "pending",
-      };
-    },
-    peek(run, progress) {
-      const last = store.lastOfKind(run.id, "message")?.data;
-      return {
-        runId: run.id,
-        label: run.label,
-        profileName: run.profileName,
-        state: run.state,
-        ticketKey: run.ticketKey,
-        ticketTitle: run.ticketTitle,
-        step: progress?.step ?? null,
-        lastMessage: last?.kind === "message" ? maskSecretsWithin(last.text, PEEK_MESSAGE_MAX) : null,
-        waiting: run.state === "waiting_input",
-      };
-    },
+    page: (runId, after) => pageOf(store, runId, after),
+    peek: (run, progress) => peekOf(store, run, progress),
   };
 }
