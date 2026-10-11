@@ -28,6 +28,7 @@ const ctx = (p: Partial<BatchContext> = {}): BatchContext => ({
   demoProject: false,
   viewer: "adam",
   signals: [],
+  closedSignals: [],
   ...p,
 });
 

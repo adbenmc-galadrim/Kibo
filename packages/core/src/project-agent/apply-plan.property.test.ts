@@ -20,6 +20,7 @@ const base: BatchContext = {
   demoProject: false,
   viewer: "adam",
   signals: [],
+  closedSignals: [],
 };
 
 const why = "";

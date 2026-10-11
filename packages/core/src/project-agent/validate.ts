@@ -59,7 +59,7 @@ function refProblem(scan: Scan, ref: string, index: number): string | null {
 
 function signalProblem(scan: Scan, ref: string): string | null {
   if (scan.ctx.signals.includes(ref)) return null;
-  return scan.ctx.closedSignals?.includes(ref) ? `signal déjà clos « ${ref} »` : `signal inconnu « ${ref} »`;
+  return scan.ctx.closedSignals.includes(ref) ? `signal déjà clos « ${ref} »` : `signal inconnu « ${ref} »`;
 }
 
 function touch(scan: Scan, target: string): string[] {

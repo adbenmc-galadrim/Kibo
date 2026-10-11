@@ -18,7 +18,7 @@ export type BatchContext = {
   demoProject: boolean;
   viewer: string;
   signals: readonly SignalRef[];
-  closedSignals?: readonly SignalRef[];
+  closedSignals: readonly SignalRef[];
 };
 
 export type TicketLookup = (ref: string) => TicketView | null;
