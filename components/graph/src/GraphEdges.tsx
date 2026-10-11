@@ -75,7 +75,7 @@ export function GraphEdges({ edges, implied, hovered, layout, critical, focus, h
   return (
     <svg
       aria-hidden="true"
-      className="absolute inset-0 overflow-visible"
+      className="pointer-events-none absolute inset-0 overflow-visible"
       width={layout.width}
       height={layout.height}
     >
