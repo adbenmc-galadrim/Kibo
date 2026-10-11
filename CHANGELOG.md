@@ -6,6 +6,16 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.20.0-alpha.1 — 2026-10-11
+
+- Tu vois ce que font les agents : un fil lisible par run (phrases de l'agent, actions en français, détail technique au dépli), un plan et un compte rendu tenus par l'agent et gardés sur le ticket, des rappels sans blocage.
+- La barre des agents s'ouvre d'un clic sur toute sa largeur et se redimensionne ; le volet montre les runs, le fil et le plan.
+- La fiche gagne un onglet Activité : compte rendu, chronologie, plan.
+- Chaque nom d'agent est cliquable : carte au survol, volet au clic, page dédiée.
+- Questions : un destinataire par question (Moi, Produit, Client, modifiables par projet), export prêt à coller, réponse collée.
+- Tickets démarrables : pastille et filtre dans Kanban et Tickets.
+- Graphe lisible : colonnes par vague, terminés repliés, liens réduits, focus, zoom sémantique, couleur du statut, regroupement par étiquette.
+
 ## 0.19.0-alpha.3 — 2026-10-11
 
 - Le démon ne s'arrête plus quand GitHub met trop de temps à répondre : une commande qui dépasse son délai est abandonnée, et si le système refuse de l'arrêter, Kibo le note dans son journal et continue.
