@@ -3,9 +3,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Maximize, Minus, Plus } from "lucide-react";
 import { fr } from "./fr";
 
-type LegendProps = { compact: boolean; implied: number; zoomedOut: boolean };
-
-export function Legend({ compact, implied, zoomedOut }: LegendProps) {
+export function Legend({ compact }: { compact: boolean }) {
   return (
     <div
       className={cn(
@@ -25,8 +23,6 @@ export function Legend({ compact, implied, zoomedOut }: LegendProps) {
         <span aria-hidden="true" className="w-5 border-t border-dashed border-muted-foreground" />
         {fr.legend.relates}
       </span>
-      {!compact && implied > 0 && <span>{fr.impliedHidden(implied)}</span>}
-      {!compact && zoomedOut && <span>{fr.zoomHint}</span>}
     </div>
   );
 }

@@ -83,7 +83,7 @@ test("implied links are drawn only while one of their ends is hovered", async ()
   setup();
   await ready();
   expect(canvas().querySelectorAll("[data-implied]")).toHaveLength(0);
-  expect(screen.getByText("1 lien implicite masqué (survol pour les voir)")).toBeTruthy();
+  expect(screen.getByText("1 lien implicite masqué (survol pour les voir)").closest("section")).toBeNull();
   const user = userEvent.setup();
   await user.hover(node("Amont"));
   expect(canvas().querySelectorAll("[data-implied]")).toHaveLength(1);
@@ -117,6 +117,10 @@ test("semantic zoom: a pill below 0.6, the full card from 0.6; the status colors
   expect(within(card).getByText("Démarrable").className).toContain("text-[11px]");
   for (let i = 0; i < 5; i += 1) await user.click(screen.getByRole("button", { name: "Zoom arrière" }));
   expect(canvas().getAttribute("data-zoom")).toBe("0.5");
+  const header = within(canvas()).getByText("Vague 1 · démarrables et en cours");
+  expect(header.style.fontSize).toBe("24px");
+  expect(header.getAttribute("title")).toBe("Vague 1 · démarrables et en cours");
+  expect(within(canvas()).getByText("De loin : clé et statut · de près : titre et étiquettes")).toBeTruthy();
   const pill = node("Amont");
   expect(pill.getAttribute("data-variant")).toBe("pill");
   expect(pill.className).toContain(statusCardClass("todo"));

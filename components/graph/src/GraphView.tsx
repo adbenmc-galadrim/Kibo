@@ -52,6 +52,11 @@ export function GraphView() {
         <span className="text-xs text-muted-foreground">
           {fr.counts(counts.total, counts.open, counts.startable)}
         </span>
+        {data.model.implied.length > 0 && (
+          <span className="text-xs text-muted-foreground/80">
+            {fr.impliedHidden(data.model.implied.length)}
+          </span>
+        )}
         {path.length > 0 && (
           <span className="text-xs text-muted-foreground">{fr.summary(path.length, blocked)}</span>
         )}

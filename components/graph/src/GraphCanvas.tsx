@@ -7,9 +7,9 @@ import { FocusBar, Legend, ZoomControls } from "./GraphControls";
 import { GraphEdges } from "./GraphEdges";
 import { GraphNode, NodeMention, type NodeVariant, OpenButton } from "./GraphNode";
 import { GroupFrame, GroupNode } from "./GroupFrame";
-import { type GraphModel, SEMANTIC_ZOOM } from "./graph-model";
+import { type GraphModel, SEMANTIC_ZOOM, WAVE_HEADER_H } from "./graph-model";
 import { ROW_H } from "./group-layout";
-import { NODE_H, NODE_W } from "./layout";
+import { GAP_X, NODE_H, NODE_W } from "./layout";
 import { Minimap } from "./Minimap";
 import { boxRect, type SelectionBox, useGraphSelection } from "./use-graph-selection";
 import { useGraphViewport } from "./use-graph-viewport";
@@ -27,12 +27,21 @@ type Props = {
 const NODE_SIZE = { width: NODE_W, height: NODE_H };
 const NO_TOGGLE = () => undefined;
 
-function Headers({ model }: { model: GraphModel }) {
+const HEADER_PX = 12;
+const HEADER_GAP = 6;
+
+function Headers({ model, zoom }: { model: GraphModel; zoom: number }) {
   return model.headers.map((h) => (
     <span
       key={h.x}
-      className="absolute top-0 truncate text-xs text-muted-foreground"
-      style={{ left: h.x, width: NODE_W }}
+      title={h.label}
+      className="absolute -translate-y-full truncate leading-tight text-muted-foreground"
+      style={{
+        left: h.x,
+        top: WAVE_HEADER_H - HEADER_GAP,
+        width: NODE_W + GAP_X - HEADER_GAP,
+        fontSize: HEADER_PX / zoom,
+      }}
     >
       {h.label}
     </span>
@@ -107,13 +116,11 @@ function Overlay({
   tickets,
   sel,
   compact,
-  implied,
   zoomedOut,
 }: {
   tickets: TicketView[];
   sel: Selection;
   compact: boolean;
-  implied: number;
   zoomedOut: boolean;
 }) {
   const focused = sel.focus ? tickets.find((t) => t.id === sel.focus?.id) : undefined;
@@ -127,7 +134,16 @@ function Overlay({
       />
     );
   }
-  return <Legend compact={compact} implied={implied} zoomedOut={zoomedOut} />;
+  return (
+    <>
+      <Legend compact={compact} />
+      {!compact && zoomedOut && (
+        <span className="pointer-events-none absolute right-36 bottom-5 text-2xs text-muted-foreground">
+          {fr.zoomHint}
+        </span>
+      )}
+    </>
+  );
 }
 
 export function GraphCanvas(props: Props) {
@@ -180,7 +196,7 @@ export function GraphCanvas(props: Props) {
             {fr.isolated}
           </span>
         )}
-        <Headers model={model} />
+        <Headers model={model} zoom={view.zoom} />
         {model.frames.map((f) => (
           <GroupFrame key={f.id} frame={f} onToggle={onToggleFrame} />
         ))}
@@ -207,13 +223,7 @@ export function GraphCanvas(props: Props) {
       </div>
       {sel.box && <BoxOverlay box={sel.box} />}
       <output className="sr-only">{sel.selected.size > 1 ? fr.selected(sel.selected.size) : ""}</output>
-      <Overlay
-        tickets={tickets}
-        sel={sel}
-        compact={compact}
-        implied={model.implied.length}
-        zoomedOut={view.zoom < SEMANTIC_ZOOM}
-      />
+      <Overlay tickets={tickets} sel={sel} compact={compact} zoomedOut={view.zoom < SEMANTIC_ZOOM} />
       {!compact && <Minimap layout={layout} view={view} box={vp.box} onJump={vp.centerOn} />}
       <ZoomControls zoom={view.zoom} onZoom={vp.zoomTo} onFit={vp.fit} />
     </section>
