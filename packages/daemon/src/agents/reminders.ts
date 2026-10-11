@@ -44,26 +44,39 @@ function reminderOf(
   return { kind: "report", reply: { kind: "stop", reason: REPORT_REMINDER } };
 }
 
-export function withReminders(sink: HookSink, deps: ReminderDeps): HookSink {
+export type ReminderSink = HookSink & { forget(runId: string): void };
+
+const logFailure = (what: string, runId: string) => (e: unknown) =>
+  console.error(`[kibo-daemon] ${what} of run ${runId} failed`, e);
+
+function attempt<T>(fn: () => T, onError: (e: unknown) => void): T | null {
+  try {
+    return fn();
+  } catch (e) {
+    onError(e);
+    return null;
+  }
+}
+
+export function withReminders(sink: HookSink, deps: ReminderDeps): ReminderSink {
   const sent = new Map<string, Set<ReminderKind>>();
   const remind = (runId: string, payload: HookPayload, reply: HookReply | null): HookReply | null => {
-    const run = deps.run(runId);
+    const run = attempt(() => deps.run(runId), logFailure("reminder lookup", runId));
     if (run?.kind !== "ticket") return reply;
     const done = sent.get(runId) ?? new Set<ReminderKind>();
-    const reminder = reminderOf(deps, run, payload, reply);
+    const reminder = attempt(() => reminderOf(deps, run, payload, reply), logFailure("reminder", runId));
     if (!reminder || done.has(reminder.kind)) return reply;
     sent.set(runId, done.add(reminder.kind));
-    try {
-      deps.moment(runId, reminder.kind);
-    } catch (e) {
-      console.error(`[kibo-daemon] reminder moment of run ${runId} failed`, e);
-    }
+    attempt(() => deps.moment(runId, reminder.kind), logFailure("reminder moment", runId));
     return reminder.reply;
   };
   return {
     verify: (runId, token) => sink.verify(runId, token),
     receive(runId, payload, toolInput) {
       return remind(runId, payload, sink.receive(runId, payload, toolInput));
+    },
+    forget: (runId) => {
+      sent.delete(runId);
     },
   };
 }

@@ -141,3 +141,36 @@ test("a failing moment is logged and never turns the reminder into a refusal", (
     errors.mockRestore();
   }
 });
+
+test("a failing plan, report or run lookup is logged and keeps the sink reply", () => {
+  const errors = spyOn(console, "error").mockImplementation(() => {});
+  const boom = () => {
+    throw new Error("store closed");
+  };
+  try {
+    const allow: HookReply = { kind: "permission", decision: "allow", reason: "ok", additionalContext: null };
+    const inner: HookSink = { verify: () => true, receive: (_, p) => (p.event === "Stop" ? null : allow) };
+    const base: ReminderDeps = {
+      run: () => runView({ id: "r1" }),
+      hasPlan: () => false,
+      hasReport: () => false,
+      moment: () => {},
+    };
+    expect(withReminders(inner, { ...base, hasPlan: boom }).receive("r1", edit, null)).toEqual(allow);
+    expect(withReminders(inner, { ...base, hasReport: boom }).receive("r1", stop, null)).toBeNull();
+    const lost = withReminders(inner, { ...base, run: boom });
+    expect(lost.receive("r1", edit, null)).toEqual(allow);
+    expect(lost.receive("r1", stop, null)).toBeNull();
+    expect(errors).toHaveBeenCalledTimes(4);
+  } finally {
+    errors.mockRestore();
+  }
+});
+
+test("a finished run is forgotten and a new turn of the same id is reminded again", () => {
+  const { sink, moments } = setup();
+  expect(sink.receive("r1", edit, null)).toEqual(planReminder);
+  sink.forget("r1");
+  expect(sink.receive("r1", edit, null)).toEqual(planReminder);
+  expect(moments).toEqual(["r1:plan", "r1:plan"]);
+});
