@@ -18,6 +18,7 @@ import {
 import { ticketLaunch } from "./mcp-launch";
 import { DEMO_PROFILE_ID, type OrchestratorOptions, type TaskSpec } from "./orchestrator-types";
 import { PROJECT_WORKSPACE_LABEL, prepareProjectTurn, projectLaunch } from "./project-run";
+import { notifyLifecycle } from "./run-lifecycle";
 import type { RunRegistry } from "./run-registry";
 import { newRunToken } from "./run-token";
 import {
@@ -266,6 +267,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         guidelines: prepared.guidelines,
         ...(session.sessionId === current.sessionId ? {} : { sessionId: session.sessionId }),
       });
+      notifyLifecycle("spawn hook", opts.onSpawned, registry.get(runId));
       if (firstTicketTurn) markAnswersDelivered(current, prepared.answers);
       if (current.projectId && current.ticketId) startRules(runId, current.projectId, current.ticketId);
       const outcome = await proc.exited;
@@ -279,6 +281,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       if (after && after.pendingAnswer !== null && after.state !== "cancelled") {
         registry.apply(runId, { type: "requeued", rank: headRank(registry.all()) });
       }
+      if (after) notifyLifecycle("turn end hook", opts.onTurnEnd, registry.get(runId));
     } catch (e) {
       live.get(runId)?.proc.kill();
       live.delete(runId);

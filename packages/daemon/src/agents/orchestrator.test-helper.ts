@@ -131,6 +131,7 @@ type Setup = {
   meta?: Partial<ProjectSnapshot["meta"]>;
   questions?: Question[];
   markFails?: boolean;
+  lifecycle?: Pick<OrchestratorOptions, "onSpawned" | "onTurnEnd">;
 };
 
 let current: Harness | null = null;
@@ -232,6 +233,7 @@ export function setup(o: Setup): Harness {
       tokens.set(runId, minted.token);
       return minted;
     },
+    ...o.lifecycle,
   };
   orch = createOrchestrator(options);
   current = {
