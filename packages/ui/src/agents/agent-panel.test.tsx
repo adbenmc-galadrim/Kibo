@@ -30,6 +30,13 @@ mock.module("../state/use-agents", () => ({
   useDaemonOnline: () => true,
 }));
 
+const unmockedProjects = "../state/use-projects?unmocked";
+const realProjects: typeof import("../state/use-projects") = await import(unmockedProjects);
+mock.module("../state/use-projects", () => ({
+  useProject: realProjects.useProject,
+  useProjects: realProjects.useProjects,
+}));
+
 const { AgentDock } = await import("./dock/AgentDock");
 const { AgentPanel } = await import("./AgentPanel");
 const { ReplyBox } = await import("./ReplyBox");
