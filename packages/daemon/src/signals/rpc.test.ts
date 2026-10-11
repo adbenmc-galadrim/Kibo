@@ -62,3 +62,15 @@ test("another method is refused", async () => {
   await expect(rpc.handle(req, LOCAL_CONTEXT)).rejects.toMatchObject({ code: "INTERNAL" });
   expect(calls).toEqual([]);
 });
+
+test("a remote session is refused before the service", async () => {
+  const { rpc, calls } = rig();
+  const remote = { sessionHash: "h", remote: true };
+  await expect(rpc.handle({ method: "listSignals", projectId: "p1" }, remote)).rejects.toMatchObject({
+    code: "FORBIDDEN",
+  });
+  await expect(
+    rpc.handle({ method: "ignoreSignal", projectId: "p1", signalId: "s1" }, remote),
+  ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  expect(calls).toEqual([]);
+});
