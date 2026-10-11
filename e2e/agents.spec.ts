@@ -271,7 +271,12 @@ test("un run pose une question à valider, la réponse attend « Transmettre à 
   await page.keyboard.press("Escape");
   await expect(panel).toBeHidden();
   const expand = page.getByRole("button", { name: "Déplier les agents" });
-  if ((await expand.count()) > 0) await expand.press("Enter");
+  if ((await expand.count()) > 0) {
+    const label = await expand.locator("xpath=..").getByText("Agents", { exact: true }).boundingBox();
+    if (!label) throw new Error("bar label not laid out");
+    await page.mouse.click(label.x + label.width / 2, label.y + label.height / 2);
+  }
+  await expect(page.getByRole("button", { name: "Replier les agents" })).toBeVisible();
   const drawer = page.getByRole("region", { name: "Agents" });
   await drawer
     .getByRole("list", { name: /^Terminés depuis 24 h · \d+$/ })
