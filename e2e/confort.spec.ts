@@ -124,7 +124,7 @@ test("agents : historique cliquable et confirmation d'arrêt", async ({ page }, 
     .click();
   await page.getByRole("button", { name: /^opus-dev · KIB-12/ }).click();
   const drawer = page.getByRole("region", { name: "Agents" });
-  await expect(drawer.getByRole("list", { name: /^Journal de opus-dev-\d+$/ })).toBeVisible();
+  await expect(drawer.getByRole("list", { name: /^Fil de opus-dev-\d+$/ })).toBeVisible();
   await drawer.getByRole("button", { name: "Arrêter", exact: true }).click();
   const confirm = page.getByRole("alertdialog", { name: /^Arrêter le run opus-dev-\d+ sur KIB-12 \?$/ });
   await expect(confirm.getByText("L'agent est interrompu ; le ticket reste assigné.")).toBeVisible();

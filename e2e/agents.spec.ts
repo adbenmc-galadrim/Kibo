@@ -127,7 +127,7 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   await expect(page.getByRole("dialog")).toBeHidden();
 
   await page.getByRole("button", { name: "Répondre à opus-dev-2" }).click();
-  const journal = page.getByRole("list", { name: "Journal de opus-dev-2" });
+  const journal = page.getByRole("list", { name: "Fil de opus-dev-2" });
   await expect(journal.getByText("Quel port pour le récepteur ?")).toBeVisible();
   await expect(page.getByText("worktree kib-14")).toBeVisible();
   await shot(page, info, "ecran-5");
@@ -193,9 +193,9 @@ test("l'historique ouvre le run cliqué, pour trois agents différents", async (
       .getByRole("cell")
       .nth(2)
       .click();
-    await expect(
-      drawer.getByRole("list", { name: new RegExp(`^Journal de ${profile}(-\\d+)?$`) }),
-    ).toBeVisible();
+    const feed = drawer.getByRole("region", { name: "Fil" });
+    await expect(feed.getByRole("list", { name: new RegExp(`^Fil de ${profile}(-\\d+)?$`) })).toBeAttached();
+    await expect(feed.getByText(new RegExp(`^${profile}(-\\d+)?$`)).first()).toBeVisible();
     await expect(drawer.getByText(new RegExp(`^${key} · `)).first()).toBeVisible();
   }
   await shot(page, info, "historique-trois-agents");
@@ -269,7 +269,9 @@ test("un run pose une question à valider, la réponse attend « Transmettre à 
   await row.getByRole("cell").nth(2).click();
   const drawer = page.getByRole("region", { name: "Agents" });
   await expect(drawer.getByText("1 question ouverte")).toBeVisible();
-  await expect(drawer.getByRole("list", { name: "Terminé" })).toContainText("KIB-22 · Terminé · 1 question");
+  await expect(drawer.getByRole("list", { name: /^Terminés depuis 24 h · \d+$/ })).toContainText(
+    /KIB-22 · .+ · 1 question/,
+  );
   await shot(page, info, "ecran-172");
 
   await rpc(page, {
@@ -290,7 +292,7 @@ test("un run pose une question à valider, la réponse attend « Transmettre à 
   await drawer.getByRole("button", { name: "Transmettre à l'agent" }).click();
   await expect.poll(() => runProgress(page, runId), { timeout: 30_000 }).toBe("done:2");
   await expect(drawer.getByText("1 réponse à transmettre")).toHaveCount(0);
-  await expect(drawer.getByRole("list", { name: /^Journal de emis-livraison/ })).toContainText(
+  await expect(drawer.getByRole("list", { name: /^Fil de emis-livraison/ })).toContainText(
     "reprise de la session",
   );
   expect((await askedQuestions(page, projectId, ticketId))[0]?.deliveredRunId).toBe(runId);
