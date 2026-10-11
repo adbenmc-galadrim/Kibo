@@ -1,165 +1,51 @@
 import type { TicketRun, TicketView } from "@kibo/schema";
-import { liveRun, RunDot, StatusDot } from "@kibo/sdk";
+import { liveRun } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
-import { Button } from "@kibo/sdk/ui/button";
-import { Bot } from "lucide-react";
 import { useId, useRef } from "react";
-import type { GraphEdge } from "./critical-path";
 import { fr } from "./fr";
-import { Legend, ZoomControls } from "./GraphControls";
-import { type GraphLayout, NODE_H, NODE_W, type NodePosition } from "./layout";
+import { FocusBar, Legend, ZoomControls } from "./GraphControls";
+import { GraphEdges } from "./GraphEdges";
+import { GraphNode, NodeMention, type NodeVariant, OpenButton } from "./GraphNode";
+import { GroupFrame, GroupNode } from "./GroupFrame";
+import { type GraphModel, SEMANTIC_ZOOM, WAVE_HEADER_H } from "./graph-model";
+import { ROW_H } from "./group-layout";
+import { GAP_X, NODE_H, NODE_W } from "./layout";
 import { Minimap } from "./Minimap";
 import { boxRect, type SelectionBox, useGraphSelection } from "./use-graph-selection";
 import { useGraphViewport } from "./use-graph-viewport";
-import type { Point } from "./viewport";
 
 type Props = {
   tickets: TicketView[];
-  edges: GraphEdge[];
-  layout: GraphLayout;
+  model: GraphModel;
   critical: ReadonlySet<string>;
   runs: ReadonlyMap<string, TicketRun>;
   compact?: boolean;
   onOpen(id: string): void;
+  onToggleFrame?(value: string): void;
 };
 
 const NODE_SIZE = { width: NODE_W, height: NODE_H };
+const NO_TOGGLE = () => undefined;
 
-function edgePath(a: Point, b: Point, relates: boolean): string {
-  if (relates && Math.abs(a.x - b.x) < 1) {
-    const x = a.x + NODE_W / 2;
-    return a.y < b.y ? `M${x} ${a.y + NODE_H} V${b.y}` : `M${x} ${a.y} V${b.y + NODE_H}`;
-  }
-  const x1 = a.x + NODE_W;
-  const y1 = a.y + NODE_H / 2;
-  const x2 = b.x;
-  const y2 = b.y + NODE_H / 2;
-  const mid = (x1 + x2) / 2;
-  return `M${x1} ${y1} C${mid} ${y1} ${mid} ${y2} ${x2} ${y2}`;
-}
+const HEADER_PX = 12;
+const HEADER_GAP = 6;
 
-function ArrowMarker({ id, className }: { id: string; className: string }) {
-  return (
-    <marker
-      id={id}
-      viewBox="0 0 8 8"
-      refX="7"
-      refY="4"
-      markerUnits="userSpaceOnUse"
-      markerWidth="7"
-      markerHeight="7"
-      orient="auto-start-reverse"
+function Headers({ model, zoom }: { model: GraphModel; zoom: number }) {
+  return model.headers.map((h) => (
+    <span
+      key={h.x}
+      title={h.label}
+      className="absolute -translate-y-full truncate leading-tight text-muted-foreground"
+      style={{
+        left: h.x,
+        top: WAVE_HEADER_H - HEADER_GAP,
+        width: NODE_W + GAP_X - HEADER_GAP,
+        fontSize: HEADER_PX / zoom,
+      }}
     >
-      <path d="M0 0 L8 4 L0 8 z" className={className} />
-    </marker>
-  );
-}
-
-function Edges({ edges, layout, critical }: Pick<Props, "edges" | "layout" | "critical">) {
-  const pos = new Map<string, NodePosition>(layout.nodes.map((n) => [n.id, n]));
-  const arrow = useId();
-  const hotArrow = useId();
-  return (
-    <svg
-      aria-hidden="true"
-      className="absolute inset-0 overflow-visible"
-      width={layout.width}
-      height={layout.height}
-    >
-      <defs>
-        <ArrowMarker id={arrow} className="fill-muted-foreground" />
-        <ArrowMarker id={hotArrow} className="fill-foreground" />
-      </defs>
-      {edges.map((e) => {
-        const a = pos.get(e.from);
-        const b = pos.get(e.to);
-        if (!a || !b) return null;
-        const hot = e.type === "blocks" && critical.has(e.from) && critical.has(e.to);
-        return (
-          <path
-            key={`${e.from}-${e.to}-${e.type}`}
-            d={edgePath(a, b, e.type === "relates")}
-            fill="none"
-            strokeWidth={hot ? 2 : 1}
-            strokeDasharray={e.type === "relates" ? "4 4" : undefined}
-            className={hot ? "stroke-foreground" : "stroke-muted-foreground"}
-            markerEnd={e.type === "blocks" ? `url(#${hot ? hotArrow : arrow})` : undefined}
-          />
-        );
-      })}
-    </svg>
-  );
-}
-
-type NodeProps = {
-  ticket: TicketView;
-  at: NodePosition;
-  hot: boolean;
-  run: TicketRun | null;
-  selected: boolean;
-  neighbor: boolean;
-  dimmed: boolean;
-  onSelect(id: string): void;
-  onFrame(at: Point): void;
-};
-
-function OpenButton({
-  ticket,
-  at,
-  onOpen,
-}: {
-  ticket: TicketView;
-  at: NodePosition;
-  onOpen(id: string): void;
-}) {
-  return (
-    <Button
-      size="sm"
-      variant="secondary"
-      data-open
-      className="absolute h-6 border px-2 text-2xs"
-      style={{ left: at.x, top: at.y + NODE_H + 6 }}
-      aria-label={fr.openTicket(ticket.keyLabel)}
-      onClick={() => onOpen(ticket.id)}
-    >
-      {fr.openShort}
-    </Button>
-  );
-}
-
-function Node({ ticket, at, hot, run, selected, neighbor, dimmed, onSelect, onFrame }: NodeProps) {
-  return (
-    <button
-      type="button"
-      data-node={ticket.id}
-      data-critical={hot ? "true" : "false"}
-      data-selected={selected ? "true" : "false"}
-      data-neighbor={neighbor ? "true" : "false"}
-      aria-label={`${ticket.keyLabel} ${ticket.title}`}
-      aria-pressed={selected}
-      onClick={() => onSelect(ticket.id)}
-      onDoubleClick={() => onFrame(at)}
-      className={cn(
-        "absolute grid content-center gap-1 rounded-md border bg-card px-3 text-left transition-opacity hover:bg-accent",
-        hot && "border-2 border-foreground",
-        ticket.statusId === "done" && "opacity-45",
-        dimmed && "opacity-60",
-        selected && "ring-2 ring-ring ring-offset-2 ring-offset-background",
-      )}
-      style={{ left: at.x, top: at.y, width: NODE_W, height: NODE_H }}
-    >
-      <span className="flex items-center gap-1.5">
-        <StatusDot statusId={ticket.statusId} />
-        <span className="font-mono text-2xs text-muted-foreground">{ticket.keyLabel}</span>
-        <span className="flex-1" />
-        {run && <RunDot state={run.state} />}
-        {ticket.assignee?.kind === "agent" && (
-          <Bot aria-label={fr.agent} className="size-3.5 text-muted-foreground" />
-        )}
-      </span>
-      <span className="truncate text-sm font-medium">{ticket.title}</span>
-    </button>
-  );
+      {h.label}
+    </span>
+  ));
 }
 
 function BoxOverlay({ box }: { box: SelectionBox }) {
@@ -173,14 +59,101 @@ function BoxOverlay({ box }: { box: SelectionBox }) {
   );
 }
 
-export function GraphCanvas({ tickets, edges, layout, critical, runs, compact = false, onOpen }: Props) {
+type Selection = ReturnType<typeof useGraphSelection>;
+
+type NodesProps = Pick<Props, "tickets" | "model" | "critical" | "runs" | "onOpen"> & {
+  sel: Selection;
+  zoom: number;
+  onToggleFrame(value: string): void;
+  onFrame(at: { x: number; y: number }): void;
+};
+
+function Nodes({ tickets, model, critical, runs, onOpen, sel, zoom, onToggleFrame, onFrame }: NodesProps) {
+  const byId = new Map(tickets.map((t) => [t.id, t]));
+  const variantOf = (id: string): NodeVariant =>
+    model.rows.has(id) ? "row" : zoom < SEMANTIC_ZOOM ? "pill" : "card";
+  const heightOf = (id: string) => (model.rows.has(id) ? ROW_H : NODE_H);
+  return model.layout.nodes.map((n) => {
+    const group = model.groupNodes.get(n.id);
+    if (group) {
+      return (
+        <GroupNode
+          key={n.id}
+          info={group}
+          at={n}
+          focus={sel.focusOf(n.id)}
+          onToggle={onToggleFrame}
+          onHover={sel.hover}
+        />
+      );
+    }
+    const t = byId.get(n.id);
+    if (!t) return null;
+    const run = liveRun(runs.get(t.id) ?? null);
+    const variant = variantOf(t.id);
+    return (
+      <div key={t.id} className="contents">
+        <GraphNode
+          ticket={t}
+          at={n}
+          variant={variant}
+          hot={critical.has(t.id)}
+          run={run}
+          selected={sel.selected.has(t.id)}
+          focus={sel.focusOf(t.id)}
+          onSelect={sel.select}
+          onFrame={onFrame}
+          onHover={sel.hover}
+        />
+        {run && variant === "card" && <NodeMention run={run} at={n} />}
+        {sel.selected.has(t.id) && <OpenButton ticket={t} at={n} height={heightOf(t.id)} onOpen={onOpen} />}
+      </div>
+    );
+  });
+}
+
+function Overlay({
+  tickets,
+  sel,
+  compact,
+  zoomedOut,
+}: {
+  tickets: TicketView[];
+  sel: Selection;
+  compact: boolean;
+  zoomedOut: boolean;
+}) {
+  const focused = sel.focus ? tickets.find((t) => t.id === sel.focus?.id) : undefined;
+  if (!compact && sel.focus && focused) {
+    return (
+      <FocusBar
+        keyLabel={focused.keyLabel}
+        title={focused.title}
+        up={sel.focus.up.size}
+        down={sel.focus.down.size}
+      />
+    );
+  }
+  return (
+    <>
+      <Legend compact={compact} />
+      {!compact && zoomedOut && (
+        <span className="pointer-events-none absolute right-36 bottom-5 text-2xs text-muted-foreground">
+          {fr.zoomHint}
+        </span>
+      )}
+    </>
+  );
+}
+
+export function GraphCanvas(props: Props) {
+  const { tickets, model, critical, runs, compact = false, onOpen, onToggleFrame = NO_TOGGLE } = props;
+  const { layout } = model;
   const section = useRef<HTMLElement>(null);
   const help = useId();
   const vp = useGraphViewport(section, layout);
   const { view } = vp;
-  const sel = useGraphSelection({ layout, edges, view, onOpen });
-  const byId = new Map(tickets.map((t) => [t.id, t]));
-  const isDimmed = (id: string) => sel.selected.size > 0 && !sel.selected.has(id) && !sel.related.has(id);
+  const sel = useGraphSelection({ layout, edges: model.edges, view, onOpen });
 
   return (
     <section
@@ -223,34 +196,34 @@ export function GraphCanvas({ tickets, edges, layout, critical, runs, compact = 
             {fr.isolated}
           </span>
         )}
-        <Edges edges={edges} layout={layout} critical={critical} />
-        {layout.nodes.map((n) => {
-          const t = byId.get(n.id);
-          return t ? (
-            <Node
-              key={t.id}
-              ticket={t}
-              at={n}
-              hot={critical.has(t.id)}
-              run={liveRun(runs.get(t.id) ?? null)}
-              selected={sel.selected.has(t.id)}
-              neighbor={sel.related.has(t.id)}
-              dimmed={isDimmed(t.id)}
-              onSelect={sel.select}
-              onFrame={(at) => vp.frame(at, NODE_SIZE)}
-            />
-          ) : null;
-        })}
-        {layout.nodes.map((n) => {
-          const t = byId.get(n.id);
-          return t && sel.selected.has(t.id) ? (
-            <OpenButton key={`open-${t.id}`} ticket={t} at={n} onOpen={onOpen} />
-          ) : null;
-        })}
+        <Headers model={model} zoom={view.zoom} />
+        {model.frames.map((f) => (
+          <GroupFrame key={f.id} frame={f} onToggle={onToggleFrame} />
+        ))}
+        <GraphEdges
+          edges={model.edges}
+          implied={model.implied}
+          hovered={sel.hovered}
+          layout={layout}
+          critical={critical}
+          focus={sel.focus}
+          heightOf={(id) => (model.rows.has(id) ? ROW_H : NODE_H)}
+        />
+        <Nodes
+          tickets={tickets}
+          model={model}
+          critical={critical}
+          runs={runs}
+          onOpen={onOpen}
+          sel={sel}
+          zoom={view.zoom}
+          onToggleFrame={onToggleFrame}
+          onFrame={(at) => vp.frame(at, NODE_SIZE)}
+        />
       </div>
       {sel.box && <BoxOverlay box={sel.box} />}
       <output className="sr-only">{sel.selected.size > 1 ? fr.selected(sel.selected.size) : ""}</output>
-      <Legend compact={compact} />
+      <Overlay tickets={tickets} sel={sel} compact={compact} zoomedOut={view.zoom < SEMANTIC_ZOOM} />
       {!compact && <Minimap layout={layout} view={view} box={vp.box} onJump={vp.centerOn} />}
       <ZoomControls zoom={view.zoom} onZoom={vp.zoomTo} onFit={vp.fit} />
     </section>

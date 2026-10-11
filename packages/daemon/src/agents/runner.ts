@@ -8,11 +8,16 @@ import {
   KiboError,
   type PermissionMode,
   PROJECT_AGENT_MCP_TOOLS,
+  TICKET_MCP_TOOLS,
 } from "@kibo/schema";
 import { z } from "zod";
 import { signalGroup, tryKill } from "../process-group";
+import type { McpTools } from "./ask-mcp";
+import { childEnv } from "./child-env";
 import { type HookLauncher, hookShellCommand, mcpServerConfig } from "./hook-launcher";
 import { parseJsonLine, Usage, usageTokens } from "./transcript";
+
+export { childEnv, cleanEnv } from "./child-env";
 
 export type LaunchInput = {
   claudeBin: string;
@@ -29,6 +34,7 @@ export type LaunchInput = {
   deny: readonly string[];
   mcpUrl: string | null;
   mcpConfigFile: string | null;
+  mcpTools: McpTools;
   hookUrl: string;
   token: string;
   baseEnv: Record<string, string | undefined>;
@@ -49,20 +55,24 @@ export type RunProcess = { pid: number; kill(): void; exited: Promise<ProcessOut
 
 const TOOL_EVENTS = new Set<string>(["PreToolUse", "PostToolUse"]);
 
-const isKiboTool = (rule: string) => ASK_TOOLS.includes(rule) || PROJECT_AGENT_MCP_TOOLS.includes(rule);
+const isKiboTool = (rule: string) =>
+  TICKET_MCP_TOOLS.includes(rule) || PROJECT_AGENT_MCP_TOOLS.includes(rule);
 
 function profileRules(allow: readonly string[]): string[] {
   const rules = AllowRules.safeParse(allow.filter((rule) => !isKiboTool(rule)));
   if (!rules.success)
     throw new KiboError("INVALID_INPUT", "the profile carries an unsafe or malformed permission rule");
-  const kiboTools = allow.filter((rule) => isKiboTool(rule) && !ASK_TOOLS.includes(rule));
+  const kiboTools = allow.filter((rule) => isKiboTool(rule) && !TICKET_MCP_TOOLS.includes(rule));
   return [...new Set([...kiboTools, ...rules.data])];
 }
+
+const baseTools = (tools: McpTools): readonly string[] => (tools === "ticket" ? TICKET_MCP_TOOLS : ASK_TOOLS);
 
 export function claudeSettings(
   hook: HookLauncher,
   allow: readonly string[] = [],
   deny: readonly string[] = [],
+  tools: McpTools = null,
 ): string {
   const rules = profileRules(allow);
   const command = hookShellCommand(hook);
@@ -77,7 +87,10 @@ export function claudeSettings(
       ],
     ]),
   );
-  const permissions = { allow: [...ASK_TOOLS, ...rules], ...(deny.length > 0 ? { deny: [...deny] } : {}) };
+  const permissions = {
+    allow: [...baseTools(tools), ...rules],
+    ...(deny.length > 0 ? { deny: [...deny] } : {}),
+  };
   return JSON.stringify({ hooks, permissions });
 }
 
@@ -105,6 +118,7 @@ export function claudeArgs(
     | "allow"
     | "deny"
     | "mcpConfigFile"
+    | "mcpTools"
   >,
 ): string[] {
   const refused = input.extraArgs.find(
@@ -122,7 +136,7 @@ export function claudeArgs(
     "--model",
     input.model,
     "--settings",
-    claudeSettings(input.hook, input.allow, input.deny),
+    claudeSettings(input.hook, input.allow, input.deny, input.mcpTools),
     "--mcp-config",
     input.mcpConfigFile ?? mcpServerConfig(input.hook),
     "--append-system-prompt-file",
@@ -130,33 +144,6 @@ export function claudeArgs(
     ...input.extraArgs,
     ...(input.resume ? ["--resume", input.sessionId] : ["--session-id", input.sessionId]),
   ];
-}
-
-const dropped = (key: string) =>
-  (key.startsWith("CLAUDE") && key !== "CLAUDE_CONFIG_DIR") ||
-  key.startsWith("KIBO_HOOK_") ||
-  key === "KIBO_RUN_TOKEN" ||
-  key === "KIBO_MCP_URL";
-
-export function cleanEnv(base: Record<string, string | undefined>): Record<string, string> {
-  const env: Record<string, string> = {};
-  for (const [key, value] of Object.entries(base)) {
-    if (value !== undefined && !dropped(key)) env[key] = value;
-  }
-  return env;
-}
-
-export function childEnv(
-  base: Record<string, string | undefined>,
-  extra: { hookUrl: string; token: string; mcpUrl?: string | null; env?: Record<string, string> },
-): Record<string, string> {
-  return {
-    ...cleanEnv(base),
-    ...cleanEnv(extra.env ?? {}),
-    KIBO_HOOK_URL: extra.hookUrl,
-    KIBO_RUN_TOKEN: extra.token,
-    ...(extra.mcpUrl ? { KIBO_MCP_URL: extra.mcpUrl } : {}),
-  };
 }
 
 export function parseHelp(text: string): CliCaps {
@@ -254,6 +241,7 @@ export function launch(input: LaunchInput): RunProcess {
       hookUrl: input.hookUrl,
       token: input.token,
       mcpUrl: input.mcpUrl,
+      mcpTools: input.mcpTools,
       env: input.extraEnv,
     }),
     stdin: new Blob([input.prompt]),

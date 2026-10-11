@@ -1,6 +1,7 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import {
   DEFAULT_WORKFLOW,
+  EMPTY_PROGRESS,
   KiboError,
   type ProjectSnapshot,
   type RpcRequest,
@@ -47,6 +48,8 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
   ...patch,
 });
 const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSnapshot => ({
@@ -64,6 +67,7 @@ const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "
   tickets: [main],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],

@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { readFileSync, realpathSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { orderQueue } from "@kibo/core/scheduler";
-import { PROJECT_AGENT_DENY, PROJECT_AGENT_MCP_TOOLS } from "@kibo/schema";
+import { PROJECT_AGENT_DENY, PROJECT_AGENT_MCP_TOOLS, TICKET_MCP_TOOLS } from "@kibo/schema";
 import { fakeCalls, releaseFakeRun } from "./fake-claude-scenario";
 import { createOrchestrator } from "./orchestrator";
 import {
@@ -78,6 +78,7 @@ test("a project run launches with its kibo tools, its deny rules and a private M
   expect(config.mcpServers.kibo.env).toEqual({
     KIBO_MCP_URL: `${h.url}/agent-mcp/${r.id}`,
     KIBO_RUN_TOKEN: h.tokens.get(r.id),
+    KIBO_MCP_TOOLS: "project",
   });
   expect(statSync(configFile).mode & 0o777).toBe(0o600);
   expect(statSync(join(h.home, "runs", r.id)).mode & 0o777).toBe(0o700);
@@ -189,13 +190,22 @@ test("answer on a project run that is not the latest of its project is refused",
   expect(h.orch.answer(newer.id, "y").pendingAnswer).toBe("y");
 }, 30_000);
 
-test("a ticket run is untouched: no deny rules, inline MCP config without env", async () => {
+test("a ticket run gets no deny rules and a private MCP config limited to the ticket tools", async () => {
   const h = setup({ scenario: "done", profiles });
   const r = assign(h, "t1");
   await waitUntil(() => run(h, r.id).state === "done");
   const argv = fakeCalls(h.state, r.sessionId)[0]?.argv ?? [];
-  expect(JSON.parse(flagOf(argv, "--settings")).permissions.deny).toBeUndefined();
-  expect(JSON.parse(flagOf(argv, "--mcp-config")).mcpServers.kibo.env).toBeUndefined();
+  const settings = JSON.parse(flagOf(argv, "--settings"));
+  expect(settings.permissions.deny).toBeUndefined();
+  expect(settings.permissions.allow.slice(0, TICKET_MCP_TOOLS.length)).toEqual([...TICKET_MCP_TOOLS]);
+  const configFile = flagOf(argv, "--mcp-config");
+  expect(configFile).toBe(join(h.home, "runs", r.id, "mcp.json"));
+  expect(JSON.parse(readFileSync(configFile, "utf8")).mcpServers.kibo.env).toEqual({
+    KIBO_MCP_URL: `${h.url}/agent-mcp/${r.id}`,
+    KIBO_RUN_TOKEN: h.tokens.get(r.id),
+    KIBO_MCP_TOOLS: "ticket",
+  });
+  expect(argv.join(" ")).not.toContain(h.tokens.get(r.id) ?? "?");
 }, 30_000);
 
 test("cancelling a turn drops the waiting message and keeps the session for the next one", async () => {

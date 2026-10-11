@@ -15,11 +15,15 @@ export const FakeStep = z.union([
   z.object({ stderr: z.string() }),
   z.object({ write: z.string().min(1), fixture: z.string().min(1), bypassHooks: z.boolean().default(false) }),
   z.object({ mcp: z.string().min(1), input: z.record(z.string(), z.unknown()).default({}) }),
+  z.object({ say: z.string() }),
+  z.object({ think: z.string() }),
+  z.object({ raw: z.string() }),
 ]);
 export type FakeStep = z.infer<typeof FakeStep>;
 
 export const FakeTurn = z.object({
   steps: z.array(FakeStep),
+  onStopBlock: z.array(FakeStep).optional(),
   result: z.string().default("ok"),
   isError: z.boolean().default(false),
   exitCode: z.number().int().default(0),
@@ -77,7 +81,11 @@ export type FakeScenarioName =
   | "fail"
   | "guard"
   | "routes"
-  | "project-agent-routes";
+  | "project-agent-routes"
+  | "progress"
+  | "progress-hold"
+  | "progress-no-plan"
+  | "progress-routes";
 
 export function scenarioPath(name: FakeScenarioName): string {
   return join(import.meta.dir, "scenarios", `${name}.json`);

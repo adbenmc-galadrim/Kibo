@@ -33,7 +33,7 @@ const isNotFound = (e: unknown): boolean => e instanceof KiboError && e.code ===
 function snapshotOf(docs: Docs, projectId: string): ProjectSnapshot {
   const doc = docs.project(projectId);
   return {
-    ...readProject(doc),
+    ...readProject(doc, docs.activity(projectId)),
     meta: docs.projectMeta(projectId),
     viewer: docs.identity(projectId),
     ...(getKeyAllocator(doc) === "server" && { domains: listProjectDomains(doc) }),

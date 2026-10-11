@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { EMPTY_PROGRESS } from "./progress";
 import { Ticket } from "./ticket";
 
 test("a ticket without labels parses to an empty list and labels are validated", () => {
@@ -17,4 +18,21 @@ test("a ticket without labels parses to an empty list and labels are validated",
   };
   expect(Ticket.parse(base).labels).toEqual([]);
   expect(Ticket.safeParse({ ...base, labels: ["Bad"] }).success).toBe(false);
+});
+
+test("a ticket without agent progress parses to the empty progress", () => {
+  const ticket = Ticket.parse({
+    id: "t1",
+    key: "KIB-1",
+    pendingSeq: null,
+    title: "x",
+    description: "",
+    statusId: "todo",
+    blockedReason: null,
+    domainId: null,
+    assignee: null,
+    parentId: null,
+    externalRefs: [],
+  });
+  expect(ticket.agentProgress).toEqual(EMPTY_PROGRESS);
 });

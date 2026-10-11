@@ -1,6 +1,6 @@
 import { Database } from "bun:sqlite";
 import { expect } from "bun:test";
-import { type GrantedPermissions, type Instance, KiboError } from "@kibo/schema";
+import { type GrantedPermissions, type Instance, KiboError, type RunPeek } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import type { Docs } from "../docs";
 import type { FilesService } from "../files/service";
@@ -69,6 +69,7 @@ export const stubDocs: Docs = {
   updateProjectMeta: unused,
   identity: unused,
   setIdentity: unused,
+  activity: unused,
 };
 export const stubNotes: NotesService = {
   info: unused,
@@ -98,6 +99,18 @@ export const stubHandlerDeps: GateHandlersDeps = {
   manifestOf: unused,
 };
 
+export const PEEK: RunPeek = {
+  runId: "r1",
+  label: "opus-dev-1",
+  profileName: "opus-dev",
+  state: "running",
+  ticketKey: "KIB-14",
+  ticketTitle: "Valider le formulaire",
+  step: null,
+  lastMessage: null,
+  waiting: false,
+};
+
 export const idleHandlers: GateHandlers = {
   list: async () => null,
   run: async () => null,
@@ -115,6 +128,10 @@ export const idleHandlers: GateHandlers = {
     throw new KiboError("INTERNAL", "unexpected");
   },
   questions: async () => ({ sent: 0, runId: null }),
+  recipients: async () => [],
+  peek: async (_projectId, runId) => {
+    throw new KiboError("NOT_FOUND", `run ${runId}`);
+  },
 };
 
 export const findInstance = (_p: string, id: string): Instance => {
@@ -180,6 +197,14 @@ export function testGate(quotas: Quotas = createQuotas(), grantedToEvil: Granted
       questions: async (projectId, ticketId) => {
         handled.push(`questions:${projectId}:${ticketId}`);
         return { sent: 1, runId: "r1" };
+      },
+      recipients: async (projectId) => {
+        handled.push(`recipients:${projectId}`);
+        return [{ id: "me", name: "Moi" }];
+      },
+      peek: async (projectId, runId) => {
+        handled.push(`peek:${projectId}:${runId}`);
+        return PEEK;
       },
     },
     quotas,

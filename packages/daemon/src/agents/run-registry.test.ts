@@ -41,6 +41,8 @@ const question: RunEvent = {
     question: "?",
     agentId: null,
     ask: null,
+    todos: null,
+    stopHookActive: false,
   },
 };
 const exit = (tokens: number): RunEvent => ({
@@ -147,6 +149,8 @@ const activity: RunEvent = {
     question: null,
     agentId: null,
     ask: null,
+    todos: null,
+    stopHookActive: false,
   },
 };
 

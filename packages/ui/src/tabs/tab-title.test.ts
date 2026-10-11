@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { INBOX_ID, type ProjectSnapshot, type TabTarget } from "@kibo/schema";
-import { kiboProject, projectsFixture } from "../agents/fixtures";
+import { kiboProject, projectsFixture, runFixture } from "../agents/fixtures";
 import { crumbsFor } from "../shell/Breadcrumb";
 import { describeTarget } from "./tab-title";
 
@@ -37,4 +37,23 @@ test("the breadcrumb names the inbox in French", () => {
     crumbsFor(target, { project, branch: null }).map((c) => c.label);
   expect(labels(inboxTicket, inbox)).toEqual(["Boîte de réception", "INB-3"]);
   expect(labels({ kind: "screen", screen: "inbox" }, null)).toEqual(["Boîte de réception"]);
+});
+
+const runTab: TabTarget = { kind: "run", runId: "r9" };
+const known = runFixture({ id: "r9", label: "opus-dev-2", ticketKey: "KIB-14" });
+
+test("a run tab is titled after its run when the run is known", () => {
+  expect(describeTarget(runTab, { ...ctx, runs: [known] }).title).toBe("Run opus-dev-2 · KIB-14");
+  expect(describeTarget(runTab, { ...ctx, runs: [{ ...known, ticketKey: null }] }).title).toBe(
+    "Run opus-dev-2",
+  );
+  expect(describeTarget(runTab, ctx).title).toBe("Run");
+  expect(describeTarget(runTab, ctx).missing).toBe(false);
+});
+
+test("the breadcrumb of a run page leads back to the agents", () => {
+  const crumbs = crumbsFor(runTab, { project: null, branch: null, runs: [known] });
+  expect(crumbs.map((c) => c.label)).toEqual(["Agents", "opus-dev-2"]);
+  expect(crumbs[0]?.target).toEqual({ kind: "screen", screen: "agents" });
+  expect(crumbsFor(runTab, { project: null, branch: null }).map((c) => c.label)).toEqual(["Agents", "Run"]);
 });

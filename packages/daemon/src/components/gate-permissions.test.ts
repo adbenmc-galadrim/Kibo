@@ -2,7 +2,16 @@ import { expect, test } from "bun:test";
 import { BuiltinEntityType, type ComponentCall, type GrantedPermissions, type Instance } from "@kibo/schema";
 import { createEventLog } from "./events";
 import { createGate, missingPermission } from "./gate";
-import { eventsDb, findInstance, granted, idleHandlers, instances, refused, testGate } from "./gate-test-kit";
+import {
+  eventsDb,
+  findInstance,
+  granted,
+  idleHandlers,
+  instances,
+  PEEK,
+  refused,
+  testGate,
+} from "./gate-test-kit";
 import { createQuotas } from "./quotas";
 
 test("missingPermission names what is lacking", () => {
@@ -117,6 +126,25 @@ test("questions.deliver needs write:question and reaches the questions handler",
   const allowed = testGate(createQuotas(), { ...granted, writes: ["question"] });
   expect(await allowed.gate.call("p1", "thirdparty", deliver)).toEqual({ sent: 1, runId: "r1" });
   expect(allowed.handled).toEqual(["questions:p1:t1"]);
+});
+
+test("questions.recipients needs read:question and reaches the recipients handler", async () => {
+  const recipients: ComponentCall = { kind: "questions.recipients" };
+  const denied = testGate();
+  await refused(denied.gate.call("p1", "thirdparty", recipients), "PERMISSION_DENIED");
+  expect(denied.handled).toEqual([]);
+  const allowed = testGate(createQuotas(), { ...granted, reads: ["question"] });
+  expect(await allowed.gate.call("p1", "thirdparty", recipients)).toEqual([{ id: "me", name: "Moi" }]);
+  expect(allowed.handled).toEqual(["recipients:p1"]);
+});
+
+test("run.peek needs read:run and reaches the peek handler with the project of the instance", async () => {
+  const peek: ComponentCall = { kind: "run.peek", runId: "r1" };
+  const denied = testGate();
+  await refused(denied.gate.call("p1", "thirdparty", peek), "PERMISSION_DENIED");
+  const allowed = testGate(createQuotas(), { ...granted, reads: ["run"] });
+  expect(await allowed.gate.call("p1", "thirdparty", peek)).toEqual(PEEK);
+  expect(allowed.handled).toEqual(["peek:p1:r1"]);
 });
 
 test("a component reads and writes questions only with their permission, never marks them delivered", () => {

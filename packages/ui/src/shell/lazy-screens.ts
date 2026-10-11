@@ -1,8 +1,6 @@
 import { lazyPanel } from "@kibo/sdk";
 import { fr } from "../i18n/fr";
 
-export const AgentsPage = lazyPanel(() => import("../agents/AgentsPage").then((m) => m.AgentsPage), fr.lazy);
-export const QueuePage = lazyPanel(() => import("../agents/QueuePage").then((m) => m.QueuePage), fr.lazy);
 export const GeneralPage = lazyPanel(
   () => import("../settings/GeneralPage").then((m) => m.GeneralPage),
   fr.lazy,
@@ -114,10 +112,17 @@ export const PresenceAvatars = lazyPanel(
   hidden,
 );
 export const PairingScreen = lazyPanel(() => import("./PairingScreen").then((m) => m.PairingScreen), fr.lazy);
-export const AgentDrawer = lazyPanel(
-  () => import("../agents/AgentDrawer").then((m) => m.AgentDrawer),
-  fr.lazy,
-);
+export const BarRuns = lazyPanel(() => import("../agents/dock/BarRuns").then((m) => m.BarRuns), fr.lazy, {
+  fallback: "children",
+});
+const agentsEntry = () => import("../agents/mention/agents-entry");
+
+export const AgentsPage = lazyPanel(() => agentsEntry().then((m) => m.AgentsPage), fr.lazy);
+export const QueuePage = lazyPanel(() => agentsEntry().then((m) => m.QueuePage), fr.lazy);
+export const AgentDock = lazyPanel(() => agentsEntry().then((m) => m.AgentDock), fr.lazy);
+export const ActivityTab = lazyPanel(() => agentsEntry().then((m) => m.ActivityTab), fr.lazy);
+export const RunSidePanel = lazyPanel(() => agentsEntry().then((m) => m.RunSidePanel), fr.lazy, hidden);
+export const RunPage = lazyPanel(() => agentsEntry().then((m) => m.RunPage), fr.lazy);
 export const ScreenActions = lazyPanel(
   () => import("./ScreenActions").then((m) => m.ScreenActions),
   fr.lazy,

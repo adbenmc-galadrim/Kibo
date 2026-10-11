@@ -1,7 +1,10 @@
 import { expect, test } from "bun:test";
 import { DEFAULT_WORKFLOW, type ProjectSnapshot } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
+import { agentsFixture } from "../agents/fixtures";
+import { AgentsProvider } from "../state/agents-context";
 import { ContentView } from "./ContentView";
+import { type Host, HostProvider } from "./Host";
 
 const summary = {
   id: "p1",
@@ -20,6 +23,7 @@ const project: ProjectSnapshot = {
   tickets: [],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],
@@ -50,4 +54,40 @@ test("a reopened tab whose page was deleted shows « Page introuvable »", () =>
     />,
   );
   expect(screen.getByText("Page introuvable")).toBeTruthy();
+});
+
+test("a run target shows the run's own page, even without an open project", async () => {
+  const host: Host = {
+    openTicket: noop,
+    openNewTicket: noop,
+    openAssign: noop,
+    openFile: noop,
+    openView: noop,
+    openTarget: noop,
+  };
+  render(
+    <HostProvider host={host}>
+      <AgentsProvider agents={agentsFixture()}>
+        <ContentView
+          target={{ kind: "run", runId: "gone" }}
+          viewer="me"
+          projects={[summary]}
+          inboxCount={0}
+          project={null}
+          domains={[]}
+          startEditing={false}
+          onNewProject={noop}
+          onImportProject={noop}
+          onTutorial={noop}
+          onNewPage={noop}
+          onSuggestPages={noop}
+          onOpen={noop}
+          onOpenFile={noop}
+          onAssign={noop}
+          onOpenTicket={noop}
+        />
+      </AgentsProvider>
+    </HostProvider>,
+  );
+  expect(await screen.findByText("Run introuvable")).toBeTruthy();
 });

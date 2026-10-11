@@ -1,5 +1,11 @@
 import { expect, mock, test } from "bun:test";
-import { type AgentsState, DEFAULT_WORKFLOW, type ProjectSnapshot, type TicketView } from "@kibo/schema";
+import {
+  type AgentsState,
+  DEFAULT_WORKFLOW,
+  EMPTY_PROGRESS,
+  type ProjectSnapshot,
+  type TicketView,
+} from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
@@ -41,6 +47,8 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
   ...patch,
 });
 
@@ -58,6 +66,7 @@ const project = (t: TicketView): ProjectSnapshot => ({
   pages: [],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],

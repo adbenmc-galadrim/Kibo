@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { ASK_QUESTION_TOOL, ASK_TOOL } from "@kibo/schema";
+import { ASK_QUESTION_TOOL, ASK_TOOL, type TodoItem } from "@kibo/schema";
 import { clipToolInput, reduceHookInput, reduceHookPost } from "./hook-payload";
 
 const base = { session_id: "s1", transcript_path: "/t/s1.jsonl", cwd: "/w", permission_mode: "default" };
@@ -21,6 +21,8 @@ test("keeps only what Kibo needs from a tool event", () => {
     question: null,
     agentId: null,
     ask: null,
+    todos: null,
+    stopHookActive: false,
   });
 });
 
@@ -114,6 +116,7 @@ test("an ask_question call carries a non-blocking ask and no waiting question", 
     options: ["Oui", "Non"],
     provisional: "Non",
     blocking: false,
+    recipient: null,
   });
 });
 
@@ -131,6 +134,7 @@ test("an ask_user call carries its question and a blocking ask", () => {
     options: [],
     provisional: null,
     blocking: true,
+    recipient: null,
   });
 });
 
@@ -187,4 +191,72 @@ test("a proposed batch is summarized by its size, never by its summary", () => {
   const detail = mcpDetail("propose_batch", { summary: "SECRET plan", actions, path: "x.md" });
   expect(detail).toBe("3 actions");
   expect(mcpDetail("propose_batch", { summary: "SECRET plan" })).toBe("0 actions");
+});
+
+const todo = (i: number): TodoItem => ({
+  content: `Étape ${i}`,
+  status: "pending",
+  activeForm: `En cours ${i}`,
+});
+
+test("a TodoWrite call carries its todos, cut to 100 items of 160 characters", () => {
+  const p = reduceHookInput({
+    ...base,
+    hook_event_name: "PostToolUse",
+    tool_name: "TodoWrite",
+    tool_input: {
+      todos: [
+        { content: "c".repeat(161), status: "in_progress", activeForm: "a".repeat(200) },
+        ...Array.from({ length: 100 }, (_, i) => todo(i)),
+      ],
+    },
+  });
+  expect(p.todos).toHaveLength(100);
+  expect(p.todos?.[0]).toEqual({
+    content: "c".repeat(160),
+    status: "in_progress",
+    activeForm: "a".repeat(160),
+  });
+  expect(p.todos?.[1]).toEqual({ content: "Étape 0", status: "pending", activeForm: "En cours 0" });
+});
+
+test("todos are read only from a TodoWrite after the call, invalid items are dropped", () => {
+  const input = { todos: [todo(1), { content: "x", status: "maybe" }, { status: "completed" }, "y"] };
+  const p = reduceHookInput({
+    ...base,
+    hook_event_name: "PostToolUse",
+    tool_name: "TodoWrite",
+    tool_input: input,
+  });
+  expect(p.todos).toEqual([todo(1)]);
+  const pre = reduceHookInput({
+    ...base,
+    hook_event_name: "PreToolUse",
+    tool_name: "TodoWrite",
+    tool_input: input,
+  });
+  expect(pre.todos).toBeNull();
+  const other = reduceHookInput({
+    ...base,
+    hook_event_name: "PostToolUse",
+    tool_name: "Write",
+    tool_input: input,
+  });
+  expect(other.todos).toBeNull();
+  const notList = reduceHookInput({
+    ...base,
+    hook_event_name: "PostToolUse",
+    tool_name: "TodoWrite",
+    tool_input: { todos: "x" },
+  });
+  expect(notList.todos).toBeNull();
+});
+
+test("a Stop carries stop_hook_active", () => {
+  const stop = (extra: Record<string, unknown>) =>
+    reduceHookInput({ ...base, hook_event_name: "Stop", ...extra }).stopHookActive;
+  expect(stop({ stop_hook_active: true })).toBe(true);
+  expect(stop({ stop_hook_active: false })).toBe(false);
+  expect(stop({})).toBe(false);
+  expect(stop({ stop_hook_active: null })).toBe(false);
 });

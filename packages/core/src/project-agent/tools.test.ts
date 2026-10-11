@@ -49,6 +49,7 @@ describe("listTickets", () => {
           assignee: null,
           parent: null,
           openQuestions: 0,
+          startable: false,
           branch: null,
           pr: null,
         },

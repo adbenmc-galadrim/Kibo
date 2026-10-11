@@ -1,4 +1,12 @@
-import { MAX_RECENTS, MAX_TABS, singlePreview, type Tab, type TabsState, type TabTarget } from "@kibo/schema";
+import {
+  MAX_RECENTS,
+  MAX_TABS,
+  singlePreview,
+  type Tab,
+  type TabsState,
+  type TabTarget,
+  targetProjectId,
+} from "@kibo/schema";
 import { targetToHash } from "./target-hash";
 
 export type TabsAction =
@@ -133,8 +141,7 @@ export function tabsReducer(state: TabsState, action: TabsAction): TabsState {
       );
     }
     case "closeProject": {
-      const ofProject = (target: TabTarget) =>
-        target.kind !== "screen" && target.projectId === action.projectId;
+      const ofProject = (target: TabTarget) => targetProjectId(target) === action.projectId;
       const ids = new Set(state.tabs.filter((t) => ofProject(t.target)).map((t) => t.id));
       const recents = state.recents.filter((r) => !ofProject(r));
       if (ids.size === 0 && recents.length === state.recents.length) return state;

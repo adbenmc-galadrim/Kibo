@@ -74,6 +74,22 @@ describe("componentCall checks, in order", () => {
     );
     expect(handled).toEqual([]);
   });
+  test("the ticket progress is written by the daemon only, never by a component", async () => {
+    const { gate: g, handled } = testGate();
+    const progress: ComponentCall = {
+      kind: "run",
+      command: {
+        method: "setTicketProgress",
+        ticketId: "t1",
+        runId: "r1",
+        at: 1,
+        plan: [{ id: "s1", title: "Lire", status: "doing", note: null }],
+      },
+    };
+    await refused(g.call("p1", "thirdparty", progress), "PERMISSION_DENIED");
+    await refused(g.call("p1", "builtin", progress), "PERMISSION_DENIED");
+    expect(handled).toEqual([]);
+  });
   test("external refs and bindings are refused to every component", async () => {
     const { gate: g, handled } = testGate();
     const binding: Binding = {

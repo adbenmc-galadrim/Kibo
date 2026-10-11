@@ -25,10 +25,13 @@ mock.module("../api", () =>
     client: {
       rpc: (req: RpcRequest) => {
         calls.push(req);
+        if (req.method === "getRunLog") return Promise.resolve([]);
         if (req.method === "answerRun") return answer();
         return Promise.resolve(req.method === "getProject" ? project() : null);
       },
       subscribe: () => () => {},
+      subscribeMoments: () => () => {},
+      subscribeTopic: () => () => {},
       code: () => Promise.resolve([]),
       subscribeCode: () => () => {},
     },
@@ -42,7 +45,7 @@ mock.module("../state/use-projects", () => ({
   useProjects: realProjects.useProjects,
 }));
 
-const { AgentDrawer } = await import("./AgentDrawer");
+const { AgentDock } = await import("./dock/AgentDock");
 
 beforeEach(() => {
   calls.length = 0;
@@ -68,11 +71,11 @@ const ticketRun = (p: Partial<RunView>): RunView =>
 const drawer = (run: RunView, resumable: string[] = []) => {
   const state: AgentsState = { ...agentsFixture(), runs: [run], queue: [], resumable };
   return (
-    <AgentDrawer
+    <AgentDock
       state={state}
       now={NOW}
+      online
       selected={run}
-      log={[]}
       onSelect={() => {}}
       onCollapse={() => {}}
       onLaunch={() => {}}

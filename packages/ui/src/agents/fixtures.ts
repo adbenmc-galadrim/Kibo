@@ -3,6 +3,7 @@ import {
   type AgentsState,
   DEFAULT_WORKFLOW,
   type Domain,
+  EMPTY_PROGRESS,
   type Guideline,
   type ProjectSnapshot,
   type ProjectSummary,
@@ -254,6 +255,7 @@ export function agentsFixture(): AgentsState {
     resumable: [],
     questions: [],
     projectAgents: [],
+    progress: [],
   };
 }
 
@@ -327,6 +329,8 @@ const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title"
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
   pendingSeq: null,
   keyLabel: p.key ?? "KIB-…",
   ...p,
@@ -378,6 +382,7 @@ export function kiboProject(): ProjectSnapshot {
     ],
     links: [{ id: "l1", from: "t12", to: "t15", type: "blocks" }],
     questions: [],
+    questionRecipients: [],
     instances: [],
     rules: [],
     bindings: [],

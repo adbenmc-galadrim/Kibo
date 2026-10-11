@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { DEFAULT_WORKFLOW, type ProjectSnapshot, type ProjectSummary, type TicketView } from "@kibo/schema";
+import {
+  DEFAULT_WORKFLOW,
+  EMPTY_PROGRESS,
+  type ProjectSnapshot,
+  type ProjectSummary,
+  type TicketView,
+} from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { agentsFixture, runFixture } from "../agents/fixtures";
@@ -23,6 +29,8 @@ const ticket = (n: number, title: string, statusId: TicketView["statusId"] = "in
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 });
 const summary: ProjectSummary = {
   id: "p1",
@@ -49,6 +57,7 @@ const snapshot: ProjectSnapshot = {
   ],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],

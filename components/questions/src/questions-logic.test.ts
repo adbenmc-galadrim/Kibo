@@ -1,7 +1,22 @@
 import { expect, test } from "bun:test";
-import { type Question, QuestionAnswer, resolveAnswer, type TicketView } from "@kibo/schema";
+import {
+  DEFAULT_RECIPIENTS,
+  EMPTY_PROGRESS,
+  type Question,
+  QuestionAnswer,
+  resolveAnswer,
+  type TicketView,
+} from "@kibo/schema";
 import fc from "fast-check";
-import { answerFrom, filterQuestions, groupByTicket, relativeAge, viewGroups } from "./questions-logic";
+import {
+  answerFrom,
+  filterQuestions,
+  groupByTicket,
+  recipientCounts,
+  recipientName,
+  relativeAge,
+  viewGroups,
+} from "./questions-logic";
 
 const T1 = "11111111-1111-4111-8111-111111111111";
 const T2 = "22222222-2222-4222-8222-222222222222";
@@ -20,6 +35,8 @@ const question = (over: Partial<Question>): Question => ({
   createdAt: 1,
   importRef: null,
   answer: null,
+  recipient: "me",
+  sentAt: null,
   ...over,
 });
 
@@ -54,6 +71,8 @@ const ticket = (id: string, keyLabel: string): TicketView => ({
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 });
 
 test("filterQuestions keeps open, answered or all questions, optionally of one ticket", () => {
@@ -65,6 +84,41 @@ test("filterQuestions keeps open, answered or all questions, optionally of one t
   expect(filterQuestions(all, "all", null)).toEqual(all);
   expect(filterQuestions(all, "all", T2)).toEqual([done]);
   expect(filterQuestions(all, "open", T2)).toEqual([]);
+});
+
+test("filterQuestions keeps one recipient, or all of them for « Tous »", () => {
+  const me = question({ id: "a" });
+  const client = question({ id: "b", recipient: "client" });
+  const done = answered({ id: "c", recipient: "client" });
+  const all = [me, client, done];
+  expect(filterQuestions(all, "open", null, null)).toEqual([me, client]);
+  expect(filterQuestions(all, "open", null, "client")).toEqual([client]);
+  expect(filterQuestions(all, "all", null, "client")).toEqual([client, done]);
+  expect(filterQuestions(all, "open", T2, "client")).toEqual([]);
+});
+
+test("recipientCounts counts the open questions of each recipient and their total", () => {
+  const all = [
+    question({ id: "a" }),
+    question({ id: "b", recipient: "client" }),
+    question({ id: "c", recipient: "client" }),
+    question({ id: "d", recipient: "gone" }),
+    answered({ id: "e", recipient: "product" }),
+  ];
+  const counts = recipientCounts(all);
+  expect(counts.total).toBe(4);
+  expect([...counts.byRecipient]).toEqual([
+    ["me", 1],
+    ["client", 2],
+    ["gone", 1],
+  ]);
+  expect(recipientCounts([])).toEqual({ total: 0, byRecipient: new Map() });
+});
+
+test("recipientName reads the name of a recipient, « (supprimé) » once it is gone", () => {
+  expect(recipientName(DEFAULT_RECIPIENTS, "client")).toBe("Client");
+  expect(recipientName([...DEFAULT_RECIPIENTS, { id: "x1", name: "Design" }], "x1")).toBe("Design");
+  expect(recipientName(DEFAULT_RECIPIENTS, "x1")).toBe("(supprimé)");
 });
 
 test("groupByTicket follows ticket keys, newest question first, and skips empty tickets", () => {
@@ -95,6 +149,16 @@ test("viewGroups keeps a ticket whose answers wait for delivery even when the fi
     ["KIB-2", [], ["pending"]],
   ]);
   expect(viewGroups([open, pending, sent], tickets, "open", T1).map((g) => g.ticket.id)).toEqual([T1]);
+});
+
+test("viewGroups filtered by recipient keeps only that recipient's questions", () => {
+  const tickets = [ticket(T1, "KIB-1"), ticket(T2, "KIB-2")];
+  const mine = question({ id: "mine", ticketId: T1 });
+  const theirs = question({ id: "theirs", ticketId: T2, recipient: "client" });
+  const groups = viewGroups([mine, theirs], tickets, "open", null, "client");
+  expect(groups.map((g) => [g.ticket.keyLabel, g.questions.map((q) => q.id)])).toEqual([
+    ["KIB-2", ["theirs"]],
+  ]);
 });
 
 test("answerFrom prefers the confirmation, then the option, then the trimmed text", () => {

@@ -1,3 +1,15 @@
+import type { RunState } from "@kibo/schema";
+
+const RUN_STATES: Record<RunState, string> = {
+  queued: "En file",
+  starting: "Démarrage",
+  running: "En cours",
+  waiting_input: "Attend une réponse",
+  done: "Terminé",
+  failed: "Échec",
+  cancelled: "Annulé",
+};
+
 export const fr = {
   filter: { label: "Tickets affichés", mineAndAgents: "Moi + agents", all: "Tous" },
   counter: (shown: number, total: number, filter: string) => `${shown} / ${total} · ${filter}`,
@@ -35,6 +47,15 @@ export const fr = {
   blockedReason: (reason: string) => `Motif : ${reason}`,
   ci: { ok: "CI réussie", error: "CI cassée", running: "CI en cours", neutral: "CI sans verdict" },
   ciUnavailable: (message: string) => `CI indisponible : ${message}`,
+  startable: "Démarrable",
+  startableFilter: "Démarrables",
+  mention: {
+    history: "Voir l'historique",
+    reply: "Répondre",
+    step: (index: number, total: number, title: string) => `${index}/${total} · ${title}`,
+    state: (state: RunState) => RUN_STATES[state],
+    waiting: "Attend une réponse",
+  },
   run: {
     queued: (position: number | null) => (position === null ? "En file" : `En file #${position}`),
     waiting: "Attend",

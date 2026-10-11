@@ -1,17 +1,17 @@
 import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { useMemo, useState } from "react";
-import type { GraphFilter } from "./filter";
+import { type GraphFilter, initialFilter } from "./filter";
 import { fr } from "./fr";
 import { GraphCanvas } from "./GraphCanvas";
-import { initialFilter, useGraphData } from "./use-graph-data";
+import { useGraphData } from "./use-graph-data";
 
 const TOGGLE = "h-6 bg-card px-2 text-2xs aria-pressed:bg-accent dark:aria-pressed:bg-accent";
 
 export function GraphFramed() {
   const sdk = useSdk();
   const [filter, setFilter] = useState<GraphFilter>(() => initialFilter(sdk.config));
-  const { input, layout, path, runs, loading, failed, hasBlocks } = useGraphData(filter);
+  const { input, model, path, runs, loading, failed, empty, doneCount } = useGraphData(filter);
   const critical = useMemo(() => new Set(path), [path]);
 
   if (failed) {
@@ -23,14 +23,13 @@ export function GraphFramed() {
   }
   return (
     <div className="relative h-full">
-      {!loading && !hasBlocks ? (
+      {!loading && empty ? (
         <p className="grid h-full place-items-center p-6 text-sm text-muted-foreground">{fr.emptyView}</p>
       ) : (
         <GraphCanvas
           compact
           tickets={input.tickets}
-          edges={input.edges}
-          layout={layout}
+          model={model}
           critical={critical}
           runs={runs}
           onOpen={(id) => sdk.openTicket(id)}
@@ -41,10 +40,10 @@ export function GraphFramed() {
           size="sm"
           variant="outline"
           className={TOGGLE}
-          aria-pressed={filter.hideDone}
-          onClick={() => setFilter((f) => ({ ...f, hideDone: !f.hideDone }))}
+          aria-pressed={filter.showDone}
+          onClick={() => setFilter((f) => ({ ...f, showDone: !f.showDone }))}
         >
-          {fr.hideDone}
+          {fr.showDone(doneCount)}
         </Button>
         <Button
           size="sm"

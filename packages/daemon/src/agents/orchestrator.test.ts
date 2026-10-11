@@ -104,6 +104,8 @@ test("hooks need the live token of their own run", async () => {
     question: null,
     agentId: null,
     ask: null,
+    todos: null,
+    stopHookActive: false,
   };
   const post = (token: string | null) =>
     fetch(`${h.url}/hooks/${a.id}`, {
@@ -352,8 +354,10 @@ test("a PreToolUse without tool input reaches the guard as null, never as an emp
     question: null,
     agentId: null,
     ask: null,
+    todos: null,
+    stopHookActive: false,
   };
-  expect(h.orch.hooks.receive(r.id, payload, null)).toEqual({ decision: "deny", reason: "no input" });
+  expect(h.orch.hooks.receive(r.id, payload, null)).toMatchObject({ decision: "deny", reason: "no input" });
   expect(h.orch.hooks.receive(r.id, payload, { file_path: "ui.tsx" })).toBeNull();
   expect(inputs).toEqual([null, { file_path: "ui.tsx" }]);
   h.orch.cancel(r.id);
@@ -457,6 +461,8 @@ test("a process ending while its run is queued again records no exit", async () 
         question: "Quel port ?",
         agentId: null,
         ask: null,
+        todos: null,
+        stopHookActive: false,
       },
     });
     registry.apply(view.id, {

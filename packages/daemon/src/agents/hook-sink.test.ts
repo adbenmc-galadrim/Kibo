@@ -29,6 +29,8 @@ const write: HookPayload = {
   question: null,
   agentId: null,
   ask: null,
+  todos: null,
+  stopHookActive: false,
 };
 
 test("a demo guard that cannot be built denies the call and is logged", () => {
@@ -66,8 +68,10 @@ test("a demo guard that cannot be built denies the call and is logged", () => {
     });
     const sink = createHookSink({ live: new Map(), tasks: new Map(), registry });
     expect(sink.receive("r1", write, { file_path: join(gone, "notes.md") })).toEqual({
+      kind: "permission",
       decision: "deny",
       reason: "guard error",
+      additionalContext: null,
     });
     expect(errors.mock.calls.some((c) => String(c[0]).includes("guard of run r1 failed"))).toBe(true);
   } finally {
@@ -82,6 +86,7 @@ const ASK: AskInput = {
   options: ["Oui", "Non"],
   provisional: "Non",
   blocking: false,
+  recipient: null,
 };
 const asked: HookPayload = { ...write, event: "PostToolUse", tool: ASK_QUESTION_TOOL, ask: ASK };
 
@@ -196,10 +201,15 @@ test("the sink denies a shell call of a project run even when the CLI let it thr
     ]);
     const sink = createHookSink({ live: new Map(), tasks, registry });
     const bash = { ...write, tool: "Bash" };
-    expect(sink.receive("p", bash, { command: "ls" })).toMatchObject({ decision: "deny" });
+    expect(sink.receive("p", bash, { command: "ls" })).toMatchObject({
+      kind: "permission",
+      decision: "deny",
+    });
     expect(sink.receive("p", { ...write, tool: "mcp__kibo__get_ticket" }, { key: "EMIS-1" })).toEqual({
+      kind: "permission",
       decision: "allow",
       reason: "task",
+      additionalContext: null,
     });
     expect(sink.receive("t", bash, { command: "ls" })).toBeNull();
   } finally {

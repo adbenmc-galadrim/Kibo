@@ -44,6 +44,25 @@ function parseJson(text: string): unknown {
   }
 }
 
+function hookJson(text: string): unknown {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith("{")) return null;
+  try {
+    return JSON.parse(trimmed);
+  } catch (error) {
+    process.stderr.write(`fake-claude: hook output is not JSON: ${String(error)}\n`);
+    return null;
+  }
+}
+
+export function decisionOf(text: string): string | null {
+  const parsed = Decision.safeParse(hookJson(text));
+  return parsed.success ? parsed.data.hookSpecificOutput.permissionDecision : null;
+}
+
+const StopBlock = z.object({ decision: z.literal("block") });
+export const blocksStop = (text: string): boolean => StopBlock.safeParse(hookJson(text)).success;
+
 export const aiScenarioPath = (name: string): string => join(AI_SCENARIOS_DIR, name);
 
 export function denialReason(stdouts: string[]): string | null {

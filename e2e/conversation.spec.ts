@@ -63,10 +63,10 @@ test("conversation avec un run terminé, puis passage en review à la demande", 
   await expect(doing.getByRole("article").filter({ hasText: "KIB-1" })).toBeVisible();
   await page.getByRole("button", { name: "Déplier les agents" }).click();
   await page
-    .getByRole("navigation", { name: "Runs" })
+    .getByRole("region", { name: "Runs" })
     .getByRole("button", { name: /opus-dev-1/ })
     .click();
-  const journal = page.getByRole("list", { name: "Journal de opus-dev-1" });
+  const journal = page.getByRole("list", { name: "Fil de opus-dev-1" });
   await expect(journal.getByText("Veux-tu que j'ajoute des tests ?")).toBeVisible();
   await expect(page.getByText("Écrire à l'agent")).toBeVisible();
   await expect(page.getByRole("button", { name: "Passer en review" })).toBeVisible();
@@ -152,11 +152,11 @@ test("réassigner un ticket reprend sa session principale", async ({ page }, inf
 
     await page.getByRole("button", { name: "Déplier les agents" }).click();
     await page
-      .getByRole("navigation", { name: "Runs" })
+      .getByRole("region", { name: "Runs" })
       .getByRole("button", { name: /repo-dev-1/ })
       .first()
       .click();
-    const journal = page.getByRole("list", { name: "Journal de repo-dev-1" });
+    const journal = page.getByRole("list", { name: "Fil de repo-dev-1" });
     await expect(journal.getByText("Session : reprise du run repo-dev-1 (1 tour)")).toBeVisible();
     await shot(page, info, "journal-session");
   } finally {

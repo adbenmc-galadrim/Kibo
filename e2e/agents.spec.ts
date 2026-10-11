@@ -1,7 +1,16 @@
 import { rmSync } from "node:fs";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { assign, createGitRepo, list, rpc, runState, type Seeded, seedWorkspace, text } from "./agents-seed";
-import { E2E_TOKEN } from "./token";
+import {
+  assign,
+  createGitRepo,
+  list,
+  pairBrowser,
+  rpc,
+  runState,
+  type Seeded,
+  seedWorkspace,
+  text,
+} from "./agents-seed";
 
 test.setTimeout(180_000);
 test.use({ viewport: { width: 1440, height: 900 } });
@@ -86,8 +95,7 @@ async function filterByProject(page: Page, info: TestInfo) {
 }
 
 test("agents au travail : cartes, file, journal, réponse, review", async ({ page }, info) => {
-  await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
+  await pairBrowser(page);
   await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
   await createOpusProfile(page, info);
 
@@ -127,7 +135,7 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   await expect(page.getByRole("dialog")).toBeHidden();
 
   await page.getByRole("button", { name: "Répondre à opus-dev-2" }).click();
-  const journal = page.getByRole("list", { name: "Journal de opus-dev-2" });
+  const journal = page.getByRole("list", { name: "Fil de opus-dev-2" });
   await expect(journal.getByText("Quel port pour le récepteur ?")).toBeVisible();
   await expect(page.getByText("worktree kib-14")).toBeVisible();
   await shot(page, info, "ecran-5");
@@ -173,7 +181,7 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
 
 test("l'historique ouvre le run cliqué, pour trois agents différents", async ({ page }, info) => {
   if (!seeded) throw new Error("seed missing");
-  await page.goto(`/#pair=${E2E_TOKEN}`);
+  await pairBrowser(page);
   await assign(page, seeded, 9, "haiku-tests", "queued");
   await page.goto("/#/agents");
   await expect(page.getByRole("heading", { level: 1, name: "Agents" })).toBeVisible();
@@ -182,7 +190,6 @@ test("l'historique ouvre le run cliqué, pour trois agents différents", async (
     .getByRole("radio", { name: "Tous" })
     .click();
   await filterByProject(page, info);
-  const drawer = page.getByRole("region", { name: "Agents" });
   for (const [profile, key] of [
     ["sonnet-review", "KIB-7"],
     ["haiku-tests", "KIB-9"],
@@ -193,10 +200,10 @@ test("l'historique ouvre le run cliqué, pour trois agents différents", async (
       .getByRole("cell")
       .nth(2)
       .click();
-    await expect(
-      drawer.getByRole("list", { name: new RegExp(`^Journal de ${profile}(-\\d+)?$`) }),
-    ).toBeVisible();
-    await expect(drawer.getByText(new RegExp(`^${key} · `)).first()).toBeVisible();
+    const panel = page.getByRole("dialog", { name: new RegExp(`^Run ${profile}(-\\d+)? · ${key}$`) });
+    await expect(panel.getByRole("list", { name: new RegExp(`^Fil de ${profile}(-\\d+)?$`) })).toBeAttached();
+    await expect(panel.getByRole("heading", { name: new RegExp(`^${profile}(-\\d+)?$`) })).toBeVisible();
+    await expect(panel.getByRole("button", { name: new RegExp(`^${key} · `) })).toBeVisible();
   }
   await shot(page, info, "historique-trois-agents");
 });
@@ -230,7 +237,7 @@ test("un run pose une question à valider, la réponse attend « Transmettre à 
   if (!seeded) throw new Error("seed missing");
   const { projectId } = seeded;
   const ticketId = seeded.tickets.get(22) ?? "";
-  await page.goto(`/#pair=${E2E_TOKEN}`);
+  await pairBrowser(page);
   await rpc(page, { method: "setHost", patch: { hostSlots: 12 } });
   const profile = await rpc(page, {
     method: "config",
@@ -267,9 +274,26 @@ test("un run pose une question à valider, la réponse attend « Transmettre à 
   const row = page.getByRole("row", { name: /^KIB-22 · / });
   await expect(row).toContainText("Terminé · 1 question");
   await row.getByRole("cell").nth(2).click();
+  const panel = page.getByRole("dialog", { name: /^Run emis-livraison(-\d+)? · KIB-22$/ });
+  await expect(panel.getByRole("list", { name: /^Fil de emis-livraison/ })).toBeAttached();
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
+  const expand = page.getByRole("button", { name: "Déplier les agents" });
+  if ((await expand.count()) > 0) {
+    const label = await expand.locator("xpath=..").getByText("Agents", { exact: true }).boundingBox();
+    if (!label) throw new Error("bar label not laid out");
+    await page.mouse.click(label.x + label.width / 2, label.y + label.height / 2);
+  }
+  await expect(page.getByRole("button", { name: "Replier les agents" })).toBeVisible();
   const drawer = page.getByRole("region", { name: "Agents" });
+  await drawer
+    .getByRole("list", { name: /^Terminés depuis 24 h · \d+$/ })
+    .getByRole("button", { name: /KIB-22/ })
+    .click();
   await expect(drawer.getByText("1 question ouverte")).toBeVisible();
-  await expect(drawer.getByRole("list", { name: "Terminé" })).toContainText("KIB-22 · Terminé · 1 question");
+  await expect(drawer.getByRole("list", { name: /^Terminés depuis 24 h · \d+$/ })).toContainText(
+    /KIB-22 · .+ · 1 question/,
+  );
   await shot(page, info, "ecran-172");
 
   await rpc(page, {
@@ -290,7 +314,7 @@ test("un run pose une question à valider, la réponse attend « Transmettre à 
   await drawer.getByRole("button", { name: "Transmettre à l'agent" }).click();
   await expect.poll(() => runProgress(page, runId), { timeout: 30_000 }).toBe("done:2");
   await expect(drawer.getByText("1 réponse à transmettre")).toHaveCount(0);
-  await expect(drawer.getByRole("list", { name: /^Journal de emis-livraison/ })).toContainText(
+  await expect(drawer.getByRole("list", { name: /^Fil de emis-livraison/ })).toContainText(
     "reprise de la session",
   );
   expect((await askedQuestions(page, projectId, ticketId))[0]?.deliveredRunId).toBe(runId);

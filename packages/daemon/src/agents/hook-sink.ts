@@ -1,4 +1,11 @@
-import { ASK_TOOLS, type GuardDecision, type HookPayload, type Question, type RunView } from "@kibo/schema";
+import {
+  ASK_TOOLS,
+  type GuardDecision,
+  type HookPayload,
+  permissionReply,
+  type Question,
+  type RunView,
+} from "@kibo/schema";
 import { demoRunGuard } from "./demo-guard";
 import type { HookSink } from "./hook-route";
 import type { AgentDataPort, TaskSpec, ToolGuard } from "./orchestrator-types";
@@ -38,7 +45,9 @@ export function createHookSink({ live, tasks, registry }: HookSinkDeps): HookSin
         (c: Parameters<ToolGuard>[0]) => demoRunGuard(run)?.(c) ?? null,
         projectRunGuard(run),
       ].flatMap((guard) => (guard ? [decide(runId, guard, call)] : []));
-      return decisions.find((d) => d?.decision === "deny") ?? decisions.find((d) => d !== null) ?? null;
+      const decision =
+        decisions.find((d) => d?.decision === "deny") ?? decisions.find((d) => d !== null) ?? null;
+      return decision ? permissionReply(decision) : null;
     },
   };
 }
@@ -86,9 +95,9 @@ export function withAgentQuestions(sink: HookSink, deps: QuestionHookDeps): Hook
   return {
     verify: (runId, token) => sink.verify(runId, token),
     receive(runId, payload, toolInput) {
-      const decision = sink.receive(runId, payload, toolInput);
+      const reply = sink.receive(runId, payload, toolInput);
       if (payload.event === "PostToolUse") record(runId, payload);
-      return decision;
+      return reply;
     },
   };
 }

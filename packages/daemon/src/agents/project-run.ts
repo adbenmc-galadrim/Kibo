@@ -10,7 +10,7 @@ import {
   PROJECT_AGENT_READ_TOOLS,
   type RunView,
 } from "@kibo/schema";
-import { type HookLauncher, writeMcpConfig } from "./hook-launcher";
+import { type McpLaunch, type McpLaunchInput, mcpRoute } from "./mcp-launch";
 import type { ProjectRunInput, ProjectTurnPort } from "./orchestrator-types";
 import type { RunRegistry } from "./run-registry";
 import { writeRunContext } from "./workspace-prep";
@@ -70,29 +70,12 @@ export async function prepareProjectTurn(
   return { cwd: turn.cwd, prompt: turn.prompt, systemPromptFile };
 }
 
-export type ProjectLaunch = {
-  allow: string[];
-  deny: readonly string[];
-  mcpUrl: string;
-  mcpConfigFile: string;
-};
+export type ProjectLaunch = McpLaunch;
 
-export function projectLaunch(input: {
-  profile: AgentProfile;
-  baseUrl: string;
-  runId: string;
-  runDir: string;
-  hook: HookLauncher;
-  token: string;
-}): ProjectLaunch {
-  const mcpUrl = `${input.baseUrl}/agent-mcp/${input.runId}`;
+export function projectLaunch(input: McpLaunchInput): ProjectLaunch {
   return {
     allow: [...PROJECT_AGENT_MCP_TOOLS, ...PROJECT_AGENT_READ_TOOLS, ...input.profile.allow],
     deny: PROJECT_AGENT_DENY,
-    mcpUrl,
-    mcpConfigFile: writeMcpConfig(input.runDir, input.hook, {
-      KIBO_MCP_URL: mcpUrl,
-      KIBO_RUN_TOKEN: input.token,
-    }),
+    ...mcpRoute(input, "project"),
   };
 }

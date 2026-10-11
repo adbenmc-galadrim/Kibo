@@ -44,6 +44,7 @@ const project = (access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSn
   tickets: [],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],

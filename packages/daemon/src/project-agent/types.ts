@@ -40,5 +40,6 @@ export type ProjectAgentOps = {
 
 export type AgentMcpSink = {
   verify(runId: string, token: string): boolean;
-  call(runId: string, req: AgentMcpRequest): Promise<string>;
+  run(runId: string): RunView | null;
+  call(run: RunView, tool: AgentMcpRequest["tool"], input: unknown): Promise<string>;
 };

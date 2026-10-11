@@ -12,6 +12,8 @@ export const hook = (event: HookEventName, p: Partial<HookPayload>): HookPayload
   question: null,
   agentId: null,
   ask: null,
+  todos: null,
+  stopHookActive: false,
   ...p,
 });
 

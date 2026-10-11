@@ -75,6 +75,8 @@ export type OrchestratorOptions = {
   now?: () => number;
   tickMs?: number;
   newToken?: (runId: string) => { token: string; hash: string };
+  onSpawned?: (run: RunView) => Promise<void>;
+  onTurnEnd?: (run: RunView) => Promise<void>;
 };
 
 export type AssignInput = {

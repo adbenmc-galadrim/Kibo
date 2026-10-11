@@ -3,6 +3,7 @@ import type { KiboErrorCode } from "./errors";
 import { TicketKey } from "./ids";
 import { LabelName } from "./label";
 import { NotePath } from "./note";
+import { PROGRESS_TOOL_NAME } from "./progress";
 import { ProposeBatchInput } from "./project-agent";
 import { RunState } from "./run";
 import { StatusId } from "./status";
@@ -67,7 +68,7 @@ export const TOOL_INPUTS: Record<ProjectAgentTool, z.ZodTypeAny> = {
 };
 
 export const AgentMcpRequest = z.object({
-  tool: z.enum(PROJECT_AGENT_TOOLS),
+  tool: z.enum([...PROJECT_AGENT_TOOLS, PROGRESS_TOOL_NAME]),
   input: z.record(z.string(), z.unknown()).default({}),
 });
 export type AgentMcpRequest = z.infer<typeof AgentMcpRequest>;
@@ -85,6 +86,7 @@ export type TicketCard = {
   assignee: string | null;
   parent: string | null;
   openQuestions: number;
+  startable: boolean;
   branch: string | null;
   pr: string | null;
 };

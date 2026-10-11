@@ -1,4 +1,5 @@
 import type { Assignee, ProjectMeta, ProjectSnapshot, StatusId, TicketView } from "@kibo/schema";
+import { EMPTY_PROGRESS } from "@kibo/schema";
 import { kiboProject } from "../agents/fixtures";
 
 let seq = 0;
@@ -27,6 +28,8 @@ export function mineTicket(
     progress: { done: 0, total: 0 },
     waitingOn,
     openQuestions: 0,
+    startable: false,
+    agentProgress: EMPTY_PROGRESS,
   };
 }
 

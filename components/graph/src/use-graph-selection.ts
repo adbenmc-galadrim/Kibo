@@ -2,6 +2,8 @@ import type { Selection } from "@kibo/schema";
 import { useSelection } from "@kibo/sdk";
 import { type KeyboardEvent, type PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import type { GraphEdge } from "./critical-path";
+import { focusSet } from "./focus";
+import { isGroupNode } from "./groups";
 import type { GraphLayout } from "./layout";
 import { type Dir, neighborOf, nodesInRect, type Rect } from "./neighbors";
 import type { Point, Viewport } from "./viewport";
@@ -49,10 +51,20 @@ const singleOf = (s: Selection | null) => (s?.ids.length === 1 ? (s.ids[0] ?? nu
 const ticketSelection = (ids: readonly string[]): Selection | null =>
   ids.length === 0 ? null : { kind: "ticket", ids: ids.slice(0, MAX_SELECTED) };
 
-function relatedTo(edges: readonly GraphEdge[], id: string | null): ReadonlySet<string> {
-  if (id === null) return new Set();
-  return new Set(edges.flatMap((e) => (e.from === id ? [e.to] : e.to === id ? [e.from] : [])));
+export type FocusState = "in" | "out" | null;
+export type Focus = { id: string; up: ReadonlySet<string>; down: ReadonlySet<string> };
+
+const FOCUS_DEPTH = 2;
+
+function focusOn(layout: GraphLayout, edges: readonly GraphEdge[], id: string | null): Focus | null {
+  if (id === null || !layout.nodes.some((n) => n.id === id)) return null;
+  return { id, ...focusSet(edges, id, FOCUS_DEPTH) };
 }
+
+const stateIn = (focus: Focus | null, id: string): FocusState => {
+  if (focus === null) return null;
+  return id === focus.id || focus.up.has(id) || focus.down.has(id) ? "in" : "out";
+};
 
 type Input = {
   layout: GraphLayout;
@@ -66,6 +78,7 @@ export function useGraphSelection({ layout, edges, view, onOpen }: Input) {
   const known = useRef<Selection | null>(selection);
   const [focused, setFocused] = useState<string | null>(() => singleOf(selection));
   const [box, setBox] = useState<SelectionBox | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
   const boxRef = useRef<SelectionBox | null>(null);
   const selected = useMemo<ReadonlySet<string>>(() => new Set(selection?.ids ?? []), [selection]);
 
@@ -88,11 +101,16 @@ export function useGraphSelection({ layout, edges, view, onOpen }: Input) {
     setBox(next);
   };
 
+  const focus = useMemo(() => focusOn(layout, edges, focused), [layout, edges, focused]);
+
   return {
     selected,
     focused,
+    focus,
+    focusOf: (id: string) => stateIn(focus, id),
+    hovered,
+    hover: setHovered,
     box,
-    related: relatedTo(edges, focused),
     select,
     pointer: {
       onPointerDown: (e: PointerEvent<HTMLElement>): boolean => {
@@ -116,7 +134,8 @@ export function useGraphSelection({ layout, edges, view, onOpen }: Input) {
         const current = boxRef.current;
         if (!current) return false;
         updateBox(null);
-        emit(ticketSelection(nodesInRect(layout, toScene(boxRect(current), view))), null);
+        const ids = nodesInRect(layout, toScene(boxRect(current), view)).filter((id) => !isGroupNode(id));
+        emit(ticketSelection(ids), null);
         return true;
       },
     },

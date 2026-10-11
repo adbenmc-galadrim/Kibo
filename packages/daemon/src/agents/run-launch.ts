@@ -15,8 +15,10 @@ import {
   type SetupStep,
   undeliveredAnswers,
 } from "@kibo/schema";
+import { ticketLaunch } from "./mcp-launch";
 import { DEMO_PROFILE_ID, type OrchestratorOptions, type TaskSpec } from "./orchestrator-types";
 import { PROJECT_WORKSPACE_LABEL, prepareProjectTurn, projectLaunch } from "./project-run";
+import { notifyLifecycle } from "./run-lifecycle";
 import type { RunRegistry } from "./run-registry";
 import { newRunToken } from "./run-token";
 import {
@@ -104,6 +106,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       chain,
       subagents: profile.subagents,
       commits: workspace.commits,
+      protocol: { progress: true, recipients: ctx.project.questionRecipients },
     });
     const { systemPromptFile } = writeRunContext(runDir, context.files);
     return {
@@ -227,9 +230,12 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       const { token, hash } = mint(runId);
       opts.store.saveTokenHash(runId, hash, now());
       const baseUrl = opts.baseUrl();
+      const route = { profile, baseUrl, runId, runDir, hook: opts.hook, token };
       const tools = project
-        ? projectLaunch({ profile, baseUrl, runId, runDir, hook: opts.hook, token })
-        : { allow: profile.allow, deny: [], mcpUrl: null, mcpConfigFile: null };
+        ? projectLaunch(route)
+        : task
+          ? { allow: profile.allow, deny: [], mcpUrl: null, mcpConfigFile: null, mcpTools: null }
+          : ticketLaunch(route);
       const proc = launch({
         claudeBin,
         cwd,
@@ -261,6 +267,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         guidelines: prepared.guidelines,
         ...(session.sessionId === current.sessionId ? {} : { sessionId: session.sessionId }),
       });
+      notifyLifecycle("spawn hook", opts.onSpawned, registry.get(runId));
       if (firstTicketTurn) markAnswersDelivered(current, prepared.answers);
       if (current.projectId && current.ticketId) startRules(runId, current.projectId, current.ticketId);
       const outcome = await proc.exited;
@@ -274,6 +281,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       if (after && after.pendingAnswer !== null && after.state !== "cancelled") {
         registry.apply(runId, { type: "requeued", rank: headRank(registry.all()) });
       }
+      if (after) notifyLifecycle("turn end hook", opts.onTurnEnd, registry.get(runId));
     } catch (e) {
       live.get(runId)?.proc.kill();
       live.delete(runId);

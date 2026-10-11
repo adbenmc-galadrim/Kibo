@@ -38,11 +38,11 @@ test("the project agent is wired to the real project data and tools, and detache
   const { h, started, attached } = boot();
   h.ticket("Récepteur de hooks");
   expect(started.agent.view(h.project.id)).toMatchObject({ session: null, batches: [], past: [] });
-  const sheet = await started.agent.mcp.call("p-run", { tool: "get_ticket", input: { key: "EMIS-1" } });
+  const run = started.agent.mcp.run("p-run");
+  if (!run) throw new Error("p-run is not known");
+  const sheet = await started.agent.mcp.call(run, "get_ticket", { key: "EMIS-1" });
   expect(JSON.parse(sheet)).toMatchObject({ key: "EMIS-1", title: "Récepteur de hooks", statusId: "todo" });
-  await expect(started.agent.mcp.call("p-run", { tool: "propose_batch", input: {} })).rejects.toThrow(
-    "INVALID_INPUT",
-  );
+  await expect(started.agent.mcp.call(run, "propose_batch", {})).rejects.toThrow("INVALID_INPUT");
   started.stop();
   expect(attached).toEqual(["attach:0", "detach"]);
 });

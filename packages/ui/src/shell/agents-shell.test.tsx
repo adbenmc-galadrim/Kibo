@@ -1,6 +1,7 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import {
   type AgentsState,
+  EMPTY_PROGRESS,
   EMPTY_TABS,
   INBOX_ID,
   type ProjectSnapshot,
@@ -39,6 +40,8 @@ const mineTicket = (id: string, key: string, title: string, statusId: StatusId):
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 });
 
 function snapshotOf(projectId: string): ProjectSnapshot {
@@ -87,6 +90,7 @@ mock.module("../api", () =>
       rpc: (req: RpcRequest) => {
         calls.push(req);
         if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
+        if (req.method === "getRunLog") return Promise.resolve([]);
         if (req.method === "cliStatus")
           return Promise.resolve({ path: "/Users/adam/.local/bin/kibo", installed: false });
         if (req.method === "getProject") return Promise.resolve(snapshotOf(req.projectId));
@@ -104,6 +108,8 @@ mock.module("../api", () =>
       subscribeIntegrations: () => () => {},
       subscribeEvents: () => () => {},
       subscribeAi: () => () => {},
+      subscribeMoments: () => () => {},
+      subscribeTopic: () => () => {},
     },
   }),
 );
@@ -122,6 +128,13 @@ mock.module("../state/use-agents", () => ({
 }));
 
 const { Shell } = await import("./Shell");
+
+async function expectDockOn(label: string) {
+  const runs = within(await screen.findByRole("region", { name: "Runs" }));
+  expect(runs.getByRole("button", { pressed: true }).textContent).toContain(label);
+}
+
+afterEach(() => window.sessionStorage.clear());
 const { TicketSheet } = await import("./TicketSheet");
 const { NotifyButton } = await import("./NotifyButton");
 const { parseRoute } = await import("../route");
@@ -268,7 +281,7 @@ test("answering from the queue opens the drawer on that run", async () => {
   await go("#/agents/queue");
   const waiting = within(await screen.findByRole("region", { name: "En attente de réponse" }));
   await userEvent.setup().click(waiting.getByRole("button", { name: "Répondre à opus-dev-2" }));
-  expect(await screen.findByRole("list", { name: "Journal de opus-dev-2" })).toBeTruthy();
+  await expectDockOn("opus-dev-2");
 });
 
 test("answering from the palette opens the drawer on that run", async () => {
@@ -279,7 +292,7 @@ test("answering from the palette opens the drawer on that run", async () => {
   fireEvent.keyDown(window, { key: "k", ctrlKey: true });
   const palette = await screen.findByRole("dialog", { name: "Palette de commandes" });
   await user.click(within(palette).getByRole("option", { name: "Répondre à opus-dev-2 (KIB-14)" }));
-  expect(await screen.findByRole("list", { name: "Journal de opus-dev-2" })).toBeTruthy();
+  await expectDockOn("opus-dev-2");
 });
 
 test("launching an agent from the drawer opens the assign dialog", async () => {
@@ -287,7 +300,7 @@ test("launching an agent from the drawer opens the assign dialog", async () => {
   await go("#/p/kibo/");
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Déplier les agents" }));
-  await user.click(screen.getByRole("button", { name: "Lancer un agent" }));
+  await user.click(await screen.findByRole("button", { name: "Lancer un agent" }));
   expect(await screen.findByRole("dialog")).toBeTruthy();
   expect(within(screen.getByRole("dialog")).getByText("Lancer un agent")).toBeTruthy();
 });
@@ -348,7 +361,7 @@ test("replying from the bell menu opens the drawer on that run", async () => {
   await user.click(header().getByRole("button", { name: /Historique des runs/ }));
   const menu = await screen.findByRole("menu", { name: "Historique des runs" });
   await user.click(await within(menu).findByRole("menuitem", { name: /^opus-dev-2 · KIB-14/ }));
-  expect(await screen.findByRole("list", { name: "Journal de opus-dev-2" })).toBeTruthy();
+  await expectDockOn("opus-dev-2");
 });
 
 test("right click and the ellipsis open the same project menu; edit and delete open their dialogs", async () => {

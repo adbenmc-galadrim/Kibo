@@ -3,7 +3,16 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { listProjects } from "@kibo/core";
-import { type ChangeMessage, INBOX_ID, ProjectMeta, type ProjectSummary } from "@kibo/schema";
+import {
+  type ChangeMessage,
+  INBOX_ID,
+  type ProjectCommand,
+  ProjectMeta,
+  type ProjectSnapshot,
+  type ProjectSummary,
+  type Step,
+  Ticket,
+} from "@kibo/schema";
 import { createProjectSettings } from "../notes/settings";
 import { createService } from "../service";
 import { openStore } from "../store";
@@ -72,6 +81,25 @@ test("a command aimed at an inbox instance is refused", () => {
     command: { method: "createTicket", title: "T" },
   } as const;
   expect(() => handleProjectRequest(deps, req)).toThrow("the inbox has no component instances");
+});
+
+test("the command RPC refuses to write a ticket's progress, which only the daemon may do", () => {
+  const { deps, service } = setup();
+  const project = ProjectMeta.parse(
+    service.handle({ method: "createProject", name: "Kibo", key: "KIB", folder: null, color: "#F97316" }),
+  );
+  const command = (cmd: ProjectCommand) =>
+    handleProjectRequest(deps, { method: "command", projectId: project.id, command: cmd });
+  const ticket = Ticket.parse(command({ method: "createTicket", title: "Formulaire" }));
+  const seen: ChangeMessage[] = [];
+  service.onChange((m) => seen.push(m));
+  const plan: Step[] = [{ id: "s1", title: "Lire", status: "doing", note: null }];
+  expect(() =>
+    command({ method: "setTicketProgress", ticketId: ticket.id, runId: "r1", at: 1, plan }),
+  ).toThrow("PERMISSION_DENIED");
+  const snapshot = service.handle({ method: "getProject", projectId: project.id }) as ProjectSnapshot;
+  expect(snapshot.tickets[0]?.agentProgress.plan).toEqual([]);
+  expect(seen).toEqual([]);
 });
 
 test("listProjects flags the demo project from the project settings", () => {

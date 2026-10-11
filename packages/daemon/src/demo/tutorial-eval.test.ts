@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import type { Instance, Link, TicketView, TutorialState } from "@kibo/schema";
+import { EMPTY_PROGRESS } from "@kibo/schema";
 import { evaluateTutorial, type TutorialRun, type TutorialSnapshot } from "./tutorial-eval";
 
 const SEED = {
@@ -35,6 +36,8 @@ const ticket = (id: string, statusId: TicketView["statusId"]): TicketView => ({
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
   keyLabel: `DEMO-${id}`,
 });
 const link = (from: string, to: string): Link => ({ id: `${from}${to}`, from, to, type: "blocks" });

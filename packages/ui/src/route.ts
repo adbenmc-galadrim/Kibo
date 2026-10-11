@@ -1,4 +1,4 @@
-import type { TabTarget } from "@kibo/schema";
+import { type TabTarget, targetProjectId } from "@kibo/schema";
 import { useSyncExternalStore } from "react";
 import { hashToTarget, targetToHash } from "./tabs/target-hash";
 
@@ -11,7 +11,7 @@ export type Route = {
 export function parseRoute(hash: string): Route {
   const target = hashToTarget(hash);
   return {
-    projectId: target && target.kind !== "screen" ? target.projectId : null,
+    projectId: target ? targetProjectId(target) : null,
     pageId: target?.kind === "page" ? target.pageId : null,
     target,
   };

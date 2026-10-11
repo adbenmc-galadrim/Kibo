@@ -7,6 +7,8 @@ import { z } from "zod";
 import {
   appendToolUse,
   appendWrite,
+  blocksStop,
+  decisionOf,
   denialReason,
   fakeMeta,
   isDemoAgent,
@@ -15,6 +17,16 @@ import {
 } from "./fake-claude-ai";
 import { bindProfiles, callMcpTool, type McpCallLog, mcpServerFrom, recordMcpCalls } from "./fake-claude-mcp";
 import { FakeScenario, type FakeStep, turnScenario } from "./fake-claude-scenario";
+import {
+  asInput,
+  hookExtra,
+  hookOutcome,
+  mcpOutcome,
+  openTranscript,
+  type ToolOutcome,
+  toolTrail,
+  writeOutcome,
+} from "./fake-claude-transcript";
 
 const Settings = z.object({
   hooks: z
@@ -29,26 +41,6 @@ const Settings = z.object({
     )
     .optional(),
 });
-
-const Decision = z.object({
-  hookSpecificOutput: z.object({ permissionDecision: z.enum(["allow", "deny", "ask"]) }),
-});
-
-const parseJson = (text: string): unknown => {
-  try {
-    return JSON.parse(text);
-  } catch (error) {
-    process.stderr.write(`fake-claude: hook output is not JSON: ${String(error)}\n`);
-    return null;
-  }
-};
-
-const decisionOf = (text: string) => {
-  const trimmed = text.trim();
-  if (!trimmed.startsWith("{")) return null;
-  const parsed = Decision.safeParse(parseJson(trimmed));
-  return parsed.success ? parsed.data.hookSpecificOutput.permissionDecision : null;
-};
 
 const flag = (argv: string[], name: string): string | null => {
   const i = argv.indexOf(name);
@@ -152,11 +144,26 @@ async function main(): Promise<number> {
 
   const denials: string[] = [];
   const mcpCalls: McpCallLog[] = [];
+  const transcript = openTranscript(transcriptPath, sessionId, process.cwd());
+  const trail = toolTrail(transcript);
+  const toolHooks = async (event: string, extra: Record<string, unknown>, outcome: () => ToolOutcome) => {
+    const tool = typeof extra.tool_name === "string" ? extra.tool_name : "";
+    const input = asInput(extra.tool_input);
+    if (event === "PreToolUse" && tool) trail.before(tool, input);
+    if (event === "PostToolUse" && tool) trail.after(tool, input, outcome());
+    const runs = await runHooks(event, extra);
+    const refused = event === "PreToolUse" && denied(runs);
+    if (refused && tool) trail.denied(tool);
+    return { runs, refused };
+  };
   const play = async (step: FakeStep) => {
+    if ("say" in step) return transcript.say(step.say);
+    if ("think" in step) return transcript.think(step.think);
+    if ("raw" in step) return transcript.raw(step.raw);
     if ("mcp" in step) {
       const server = mcpServerFrom(argv);
       const call = { tool_name: mcpToolName(step.mcp), tool_input: bindProfiles(step.input, mcpCalls) };
-      const refused = denied(await runHooks("PreToolUse", call));
+      const { refused } = await toolHooks("PreToolUse", call, () => mcpOutcome("", false));
       appendToolUse(stateDir, sessionId, { tool: call.tool_name, input: call.tool_input, denied: refused });
       if (refused) {
         denials.push(call.tool_name);
@@ -164,15 +171,18 @@ async function main(): Promise<number> {
       }
       const reply = await callMcpTool(server, step.mcp, call.tool_input);
       mcpCalls.push({ tool: step.mcp, ...reply });
-      await runHooks("PostToolUse", { ...call, tool_response: [{ type: "text", text: reply.text }] });
+      const response = { tool_response: [{ type: "text", text: reply.text }] };
+      await toolHooks("PostToolUse", { ...call, ...response }, () => mcpOutcome(reply.text, reply.isError));
       return;
     }
     if ("hook" in step) {
       const resolved = resolveStepInput(step.input, process.env);
       const tool = step.tool ? { tool_name: step.tool } : {};
       const input = resolved ? { tool_input: resolved } : {};
-      const runs = await runHooks(step.hook, { ...tool, ...input, ...step.extra });
-      const refused = step.hook === "PreToolUse" && denied(runs);
+      const extra = { ...tool, ...input, ...hookExtra(step.extra) };
+      const { refused } = await toolHooks(step.hook, extra, () =>
+        hookOutcome(step.extra ?? {}, resolved ?? {}),
+      );
       if (refused) denials.push(step.tool ?? "?");
       if (step.hook === "PreToolUse" && step.tool)
         appendToolUse(stateDir, sessionId, { tool: step.tool, input: resolved ?? {}, denied: refused });
@@ -183,10 +193,8 @@ async function main(): Promise<number> {
         cwd: process.cwd(),
         allowBypass: !isDemoAgent(import.meta.dir, process.env),
         hook: async (event, extra) => {
-          const runs = await runHooks(event, extra);
-          return event === "PreToolUse" && denied(runs)
-            ? (denialReason(runs.map((r) => r.stdout)) ?? "denied")
-            : null;
+          const { runs, refused } = await toolHooks(event, extra, () => writeOutcome(extra));
+          return refused ? (denialReason(runs.map((r) => r.stdout)) ?? "denied") : null;
         },
         log: (logged) => appendWrite(stateDir, sessionId, logged),
       });
@@ -212,23 +220,23 @@ async function main(): Promise<number> {
 
   print({ type: "system", subtype: "init", session_id: sessionId, cwd: process.cwd(), permissionMode: mode });
   await runHooks("SessionStart", { source: resumeId ? "resume" : "startup" });
-  appendFileSync(
-    transcriptPath,
-    `${JSON.stringify({ type: "user", sessionId, message: { role: "user", content: prompt } })}\n`,
-  );
-  let failure: string | null = null;
-  for (const step of turn.steps) {
-    try {
-      await play(step);
-    } catch (e) {
-      failure = e instanceof Error ? e.message : String(e);
-      process.stderr.write(`fake-claude: ${failure}\n`);
-      break;
+  transcript.user(prompt);
+  const playAll = async (steps: readonly FakeStep[]): Promise<string | null> => {
+    for (const step of steps) {
+      try {
+        await play(step);
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        process.stderr.write(`fake-claude: ${message}\n`);
+        return message;
+      }
     }
-  }
-  recordMcpCalls(callsFile, mcpCalls);
-  const isError = failure !== null || turn.isError;
-  const result = failure ?? turn.result;
+    return null;
+  };
+  const lastSayOf = (steps: readonly FakeStep[]): string | null =>
+    steps.flatMap((step) => ("say" in step ? [step.say] : [])).at(-1) ?? null;
+  let failure = await playAll(turn.steps);
+  let result = failure ?? turn.result;
   const input = Math.floor(turn.tokens / 2);
   const usage = {
     input_tokens: input,
@@ -236,10 +244,25 @@ async function main(): Promise<number> {
     cache_creation_input_tokens: 0,
     cache_read_input_tokens: 0,
   };
-  const assistant = { role: "assistant", content: [{ type: "text", text: result }], usage };
-  appendFileSync(transcriptPath, `${JSON.stringify({ type: "assistant", sessionId, message: assistant })}\n`);
-  if (isError) await runHooks("StopFailure", { error: result, last_assistant_message: result });
-  else await runHooks("Stop", { stop_hook_active: false, last_assistant_message: result });
+  transcript.say(result, usage);
+  const stopFailure = (error: string) => runHooks("StopFailure", { error, last_assistant_message: error });
+  if (failure !== null || turn.isError) await stopFailure(result);
+  else {
+    const stops = await runHooks("Stop", { stop_hook_active: false, last_assistant_message: result });
+    if (stops.some((r) => r.code === 2 || (r.code === 0 && blocksStop(r.stdout)))) {
+      const steps = turn.onStopBlock ?? [];
+      failure = await playAll(steps);
+      if (failure !== null) {
+        result = failure;
+        await stopFailure(failure);
+      } else {
+        const said = lastSayOf(steps) ?? result;
+        await runHooks("Stop", { stop_hook_active: true, last_assistant_message: said });
+      }
+    }
+  }
+  const isError = failure !== null || turn.isError;
+  recordMcpCalls(callsFile, mcpCalls);
   await runHooks("SessionEnd", { reason: "other" });
   print({
     type: "result",

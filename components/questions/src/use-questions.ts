@@ -1,16 +1,25 @@
-import type { AnswerInput, KiboError, Question, TicketRun, TicketView } from "@kibo/schema";
-import { useEntities, useReadOnly, useSdk } from "@kibo/sdk";
+import type {
+  AnswerInput,
+  KiboError,
+  Question,
+  QuestionRecipient,
+  TicketRun,
+  TicketView,
+} from "@kibo/schema";
+import { useEntities, useQuestionRecipients, useReadOnly, useSdk } from "@kibo/sdk";
 import { useCallback, useMemo } from "react";
 
 export type QuestionsData = {
   questions: Question[];
   tickets: TicketView[];
   runs: TicketRun[];
+  recipients: QuestionRecipient[];
   loading: boolean;
   error: KiboError | null;
   readOnly: boolean;
   viewer: string;
   runLabel(runId: string): string;
+  runOf(runId: string | null): TicketRun | null;
   ticketOf(id: string): TicketView | null;
 };
 
@@ -20,8 +29,13 @@ export function useQuestions(): QuestionsData {
   const tickets = useEntities("ticket");
   const runs = useEntities("run");
   const readOnly = useReadOnly();
+  const recipients = useQuestionRecipients();
   const runLabel = useCallback(
     (runId: string) => runs.data.find((r) => r.runId === runId)?.label ?? runId,
+    [runs.data],
+  );
+  const runOf = useCallback(
+    (runId: string | null) => (runId === null ? null : (runs.data.find((r) => r.runId === runId) ?? null)),
     [runs.data],
   );
   const byId = useMemo(() => new Map(tickets.data.map((t) => [t.id, t])), [tickets.data]);
@@ -30,11 +44,13 @@ export function useQuestions(): QuestionsData {
     questions: questions.data,
     tickets: tickets.data,
     runs: runs.data,
+    recipients,
     loading: questions.loading || tickets.loading,
     error: questions.error ?? tickets.error,
     readOnly,
     viewer: sdk.viewer,
     runLabel,
+    runOf,
     ticketOf,
   };
 }

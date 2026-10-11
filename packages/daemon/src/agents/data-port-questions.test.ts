@@ -20,6 +20,7 @@ const ask = (title: string, blocking = false): AskInput => ({
   options: ["Oui", "Non"],
   provisional: blocking ? null : "Non",
   blocking,
+  recipient: null,
 });
 
 function setup() {

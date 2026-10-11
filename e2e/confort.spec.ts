@@ -123,15 +123,18 @@ test("agents : historique cliquable et confirmation d'arrêt", async ({ page }, 
     .getByRole("radio", { name: "Tous" })
     .click();
   await page.getByRole("button", { name: /^opus-dev · KIB-12/ }).click();
-  const drawer = page.getByRole("region", { name: "Agents" });
-  await expect(drawer.getByRole("list", { name: /^Journal de opus-dev-\d+$/ })).toBeVisible();
-  await drawer.getByRole("button", { name: "Arrêter", exact: true }).click();
+  const panel = page.getByRole("dialog", { name: /^Run opus-dev-\d+ · KIB-12$/ });
+  await expect(panel.getByRole("list", { name: /^Fil de opus-dev-\d+$/ })).toBeVisible();
+  await panel.getByRole("button", { name: "Ouvrir en grand" }).click();
+  await expect(page).toHaveURL(/#\/runs\//);
+  const header = page.locator("header", { has: page.getByRole("heading", { name: /^opus-dev-\d+$/ }) });
+  await header.getByRole("button", { name: "Arrêter", exact: true }).click();
   const confirm = page.getByRole("alertdialog", { name: /^Arrêter le run opus-dev-\d+ sur KIB-12 \?$/ });
   await expect(confirm.getByText("L'agent est interrompu ; le ticket reste assigné.")).toBeVisible();
   await shot(page, info, "ecran-121");
   await confirm.getByRole("button", { name: "Annuler" }).click();
   await expect(confirm).toBeHidden();
-  await expect(drawer.getByRole("button", { name: "Arrêter", exact: true })).toBeVisible();
+  await expect(header.getByRole("button", { name: "Arrêter", exact: true })).toBeVisible();
 });
 
 test("changements en toutes lettres, retour à la ligne mémorisé et recherche", async ({ page }, info) => {

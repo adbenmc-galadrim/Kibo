@@ -1,5 +1,5 @@
-import { type Actor, awaitsDelivery, type Question } from "@kibo/schema";
-import { AgentBadge } from "@kibo/sdk";
+import { type Actor, awaitsDelivery, type Question, type TicketRun } from "@kibo/schema";
+import { AgentBadge, AgentMention, type MentionTexts, useAgentMention } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { fr } from "./fr";
 import { AGENT_ACCENT } from "./QuestionAnswerForm";
@@ -7,7 +7,30 @@ import { relativeAge } from "./questions-logic";
 
 const RUN_TEXTS = { queued: () => "", waiting: "", failed: "" };
 
-export function QuestionAuthor({ actor }: { actor: Actor }) {
+const MENTION_TEXTS: MentionTexts = {
+  history: fr.mention.history,
+  reply: fr.mention.reply,
+  waiting: fr.mention.waiting,
+  step: fr.mention.step,
+  state: (state) => fr.mention.states[state],
+};
+
+function RunMention({ run }: { run: TicketRun }) {
+  const handlers = useAgentMention();
+  return (
+    <AgentMention
+      runId={run.runId}
+      label={run.label}
+      state={run.state}
+      className="text-2xs"
+      texts={MENTION_TEXTS}
+      {...handlers}
+    />
+  );
+}
+
+export function QuestionAuthor({ actor, run = null }: { actor: Actor; run?: TicketRun | null }) {
+  if (actor.kind === "agent" && run !== null) return <RunMention run={run} />;
   if (actor.kind === "agent") return <AgentBadge agent={actor.ref} run={null} texts={RUN_TEXTS} />;
   if (actor.kind === "import")
     return <span className="text-2xs text-muted-foreground">{fr.imported(actor.ref)}</span>;

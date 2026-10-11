@@ -18,6 +18,7 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
 import { elapsed, formatDuration } from "./format";
+import { Mention } from "./mention/Mention";
 import { ProjectFilter } from "./ProjectFilter";
 import { effectiveProject, projectRuns } from "./project-filter";
 import { useAgentsProject } from "./project-pref";
@@ -65,6 +66,7 @@ function RunLine({ run, text, now, since }: { run: RunView; text?: string; now: 
   return (
     <li className="flex min-w-0 items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs">
       <RunDot state={run.state} />
+      <Mention runId={run.id} label={run.label} className="shrink-0" />
       <span className="min-w-0 flex-1 truncate">{text ?? runSubject(run)}</span>
       <span className="font-mono text-3xs text-muted-foreground">
         {formatDuration(since === undefined ? elapsed(run, now) : now - since)}
@@ -206,8 +208,9 @@ export function QueuePage({ state, profiles, projects, now, onAnswer }: Props) {
                 key={r.id}
                 className="grid gap-2 rounded-md border border-amber-400 bg-amber-50 p-3 dark:border-amber-600/70 dark:bg-amber-500/10"
               >
-                <span className="font-mono text-xs">
-                  {[r.label, r.ticketKey].filter(Boolean).join(" · ")}
+                <span className="flex min-w-0 items-center gap-1 text-xs">
+                  <Mention runId={r.id} label={r.label} />
+                  {r.ticketKey && <span className="font-mono">{`· ${r.ticketKey}`}</span>}
                 </span>
                 {r.question && <p className="text-2xs text-muted-foreground">{`« ${r.question} »`}</p>}
                 <Button

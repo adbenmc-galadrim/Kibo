@@ -7,6 +7,7 @@ import { useState } from "react";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
 import { elapsed, formatDuration, formatTokens } from "./format";
+import { Mention } from "./mention/Mention";
 import { RunStateLabel } from "./RunStateLabel";
 import { filterRuns, RUN_FILTERS, type RunFilter } from "./run-filter";
 
@@ -69,7 +70,9 @@ function HistoryRow({
       </TableCell>
       <TableCell>{subject}</TableCell>
       {project !== undefined && <ProjectCell project={project} />}
-      <TableCell className="font-mono">{run.profileName}</TableCell>
+      <TableCell>
+        <Mention runId={run.id} label={run.label} />
+      </TableCell>
       <TableCell className="font-mono">
         {run.startedAt === null ? "-" : formatDuration(elapsed(run, now))}
       </TableCell>

@@ -207,11 +207,16 @@ export const fr = {
   },
   agents: {
     bar: "Agents",
-    runs: "Runs",
-    slots: (used: number, total: number) => `${used}/${total}`,
-    queued: (n: number) => `${n} en file`,
     summary: (used: number, total: number, queued: number, waiting: number) =>
-      `${used}/${total} places · ${queued} en file · ${waiting} attend${waiting > 1 ? "ent" : ""} une réponse`,
+      [
+        `${used}/${total} place${used > 1 ? "s" : ""}`,
+        queued > 0 && `${queued} en file`,
+        waiting > 0 && `${waiting} attend${waiting > 1 ? "ent" : ""} une réponse`,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    stepShort: (index: number, total: number, title: string) => `${index}/${total} · ${title}`,
+    resize: "Redimensionner le volet des agents",
     waitingShort: "attend une réponse",
     answer: "Répondre",
     answerTo: (label: string) => `Répondre à ${label}`,
@@ -221,14 +226,6 @@ export const fr = {
     moreRuns: (n: number) => `${n} autre${n > 1 ? "s" : ""} run${n > 1 ? "s" : ""} en cours`,
     collapse: "Replier les agents",
     launch: "Lancer un agent",
-    groups: {
-      running: (used: number, total: number) => `En cours · ${used}/${total} places`,
-      waiting: "Attend une réponse · place libérée",
-      queued: (n: number) => `En file · ${n}`,
-      finished: "Terminé",
-    },
-    empty: "Aucun run pour l'instant.",
-    pick: "Choisis un run pour voir son journal.",
     journal: (label: string) => `Journal de ${label}`,
     reply: {
       label: (label: string) => `Réponse à ${label}`,

@@ -16,8 +16,11 @@ export function filterTickets(
   filter: KanbanFilter,
   viewer: string,
   label: string | null = null,
+  startable = false,
 ): TicketView[] {
-  const byLabel = label === null ? tickets : tickets.filter((t) => t.labels.includes(label));
+  const byLabel = tickets.filter(
+    (t) => (label === null || t.labels.includes(label)) && (!startable || t.startable),
+  );
   if (filter === "all") return byLabel;
   return byLabel.filter(
     (t) => t.assignee?.kind === "agent" || (t.assignee?.kind === "human" && t.assignee.ref === viewer),

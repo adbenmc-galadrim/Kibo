@@ -1,13 +1,9 @@
-import { type GuardDecision, type HookPayload, HookPost, KiboError } from "@kibo/schema";
+import { type HookEventName, type HookPayload, HookPost, type HookReply, KiboError } from "@kibo/schema";
 import { parseJson, readBounded } from "../read-bounded";
 
 export type HookSink = {
   verify(runId: string, token: string): boolean;
-  receive(
-    runId: string,
-    payload: HookPayload,
-    toolInput: Record<string, unknown> | null,
-  ): GuardDecision | null;
+  receive(runId: string, payload: HookPayload, toolInput: Record<string, unknown> | null): HookReply | null;
 };
 
 export const MAX_HOOK_BYTES = 262_144;
@@ -24,19 +20,26 @@ export async function handleHook(req: Request, runId: string, sink: HookSink): P
   const parsed = HookPost.safeParse(parseJson(text));
   if (!parsed.success) return new Response("invalid hook payload", { status: 400 });
   const { payload, toolInput } = parsed.data;
-  let decision: GuardDecision | null;
+  let reply: HookReply | null;
   try {
-    decision = sink.receive(runId, payload, payload.event === "PreToolUse" ? toolInput : null);
+    reply = sink.receive(runId, payload, payload.event === "PreToolUse" ? toolInput : null);
   } catch (e) {
     if (e instanceof KiboError) return new Response(e.code, { status: 409 });
     throw e;
   }
-  if (!decision || payload.event !== "PreToolUse") return new Response(null, { status: 204 });
-  return Response.json({
+  const body = reply ? replyBody(payload.event, reply) : null;
+  return body ? Response.json(body) : new Response(null, { status: 204 });
+}
+
+function replyBody(event: HookEventName, reply: HookReply): Record<string, unknown> | null {
+  if (reply.kind === "stop") return event === "Stop" ? { decision: "block", reason: reply.reason } : null;
+  if (event !== "PreToolUse") return null;
+  return {
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
-      permissionDecision: decision.decision,
-      permissionDecisionReason: decision.reason,
+      permissionDecision: reply.decision,
+      permissionDecisionReason: reply.reason,
+      ...(reply.additionalContext === null ? {} : { additionalContext: reply.additionalContext }),
     },
-  });
+  };
 }

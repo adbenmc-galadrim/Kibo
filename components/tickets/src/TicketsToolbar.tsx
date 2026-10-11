@@ -8,8 +8,9 @@ import {
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
 import { Input } from "@kibo/sdk/ui/input";
+import { Toggle } from "@kibo/sdk/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, ListFilter, Search } from "lucide-react";
 import { type AssigneeFilter, EMPTY_QUERY, isActive, type TicketsQuery } from "./filter-tickets";
 import { fr } from "./fr";
 import { LabelsMenu } from "./LabelsMenu";
@@ -72,6 +73,16 @@ export function TicketsToolbar({ query, statuses, tickets, onChange }: Props) {
         </DropdownMenuContent>
       </DropdownMenu>
       <LabelsMenu tickets={tickets} query={query} onChange={onChange} />
+      <Toggle
+        variant="outline"
+        size="sm"
+        pressed={query.startable}
+        onPressedChange={(startable) => onChange({ ...query, startable })}
+        className="h-7 gap-1 px-2.5 text-xs font-normal"
+      >
+        <ListFilter aria-hidden className="size-3.5" />
+        {fr.startableFilter}
+      </Toggle>
       <div className="flex items-center gap-2">
         <span className="text-xs text-muted-foreground">{fr.assigneeFilter}</span>
         <ToggleGroup

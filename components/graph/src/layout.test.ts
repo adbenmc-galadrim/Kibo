@@ -53,7 +53,7 @@ test("the demo project fits the page at 100 % and a large widget above 0.7", asy
   const input = graphInput(
     await m.sdk.list("ticket"),
     await m.sdk.list("link"),
-    { assignee: "all", hideDone: false, domain: null },
+    { assignee: "all", showDone: true, startable: false, domain: null },
     "adam",
   );
   const l = layoutGraph(input.tickets, input.edges);

@@ -1,9 +1,11 @@
 import {
   awaitsDelivery,
   type DeliveryResult,
+  isTerminal,
   KiboError,
   type ProjectAgentSummary,
   type RpcRequest,
+  type RunProgressSummary,
   type RunView,
 } from "@kibo/schema";
 import type { AgentDataPort, Orchestrator } from "./agents/orchestrator";
@@ -37,6 +39,26 @@ export type AgentQuestions = {
   viewer(projectId: string): string;
   assertWritable(projectId: string): void;
 };
+
+export type RunProgressPort = { summaries(runs: readonly RunView[]): RunProgressSummary[] };
+
+export const PROGRESS_WINDOW_MS = 24 * 3_600_000;
+
+export function withRunProgress(
+  port: AgentsPort,
+  progress: RunProgressPort,
+  now: () => number = Date.now,
+): AgentsPort {
+  return {
+    ...port,
+    state() {
+      const state = port.state();
+      const since = now() - PROGRESS_WINDOW_MS;
+      const shown = state.runs.filter((r) => !isTerminal(r.state) || (r.endedAt ?? 0) >= since);
+      return { ...state, progress: progress.summaries(shown) };
+    },
+  };
+}
 
 export function deliveryDeps(port: Pick<AgentsPort, "state" | "answer">, q: AgentQuestions): DeliveryDeps {
   return { runs: () => port.state().runs, answer: (runId, text) => port.answer(runId, text), data: q.data };

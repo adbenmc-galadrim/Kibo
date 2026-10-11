@@ -1,35 +1,26 @@
 import { createProjectDoc, enableServerAllocation, executeProjectCommand, readProject } from "@kibo/core";
 import {
-  type CiRun,
-  type ComponentFormat,
   ComponentManifest,
   type ComponentManifestInput,
   capPermission,
   defaultFormatOf,
   type EntityType,
   KiboError,
-  type McpCallResult,
-  type MemberInfo,
-  type PresencePeer,
   type ProjectAccess,
-  type ProjectAsset,
   type ProjectCommand,
-  type ProjectSnapshot,
   permissionOfCall,
   type Selection,
-  type StorybookOrigin,
-  type Surface,
-  type TicketRun,
 } from "@kibo/schema";
 import { actAs } from "./mock-actor";
-import { createMockCalls, type MockFetch } from "./mock-calls";
-import type { MockFrame } from "./mock-design";
-import { createMockEmbeds, type MockEmbedOptions, recordedFrameApis } from "./mock-embed";
-import { createMockNotes, type MockNote } from "./mock-notes";
+import { createMockCalls } from "./mock-calls";
+import { createMockEmbeds, recordedFrameApis } from "./mock-embed";
+import { createMockNotes } from "./mock-notes";
 import { createNotifier } from "./mock-notifier";
 import { createMockDelivery } from "./mock-questions";
+import { activityOf, createMockRuns } from "./mock-runs";
+import type { MockSdk, MockSdkOptions } from "./mock-types";
 import { createSdk } from "./sdk";
-import type { ServerContext, ServerDefinition } from "./server";
+import type { ServerContext } from "./server";
 import { createSignal, focusApi, selectionApi, visibilityApi } from "./signal";
 import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
 
@@ -37,57 +28,7 @@ export type { MockFetch } from "./mock-calls";
 export type { MockFrame } from "./mock-design";
 export type { MockEmbedOptions } from "./mock-embed";
 export type { MockNote } from "./mock-notes";
-export type MockSdk = {
-  sdk: KiboSdk;
-  backend: ProjectBackend;
-  violations: string[];
-  used: string[];
-  opened: string[];
-  newTicketRequests: NewTicketDefaults[];
-  openedFiles: FileTarget[];
-  openedViews: string[];
-  deliveries: string[];
-  embedCalls: string[];
-  data: Map<string, unknown>;
-  configPatches: Record<string, unknown>[];
-  notes: Map<string, MockNote>;
-  run(cmd: ProjectCommand): unknown;
-  snapshot(): ProjectSnapshot;
-  setRuns(runs: TicketRun[]): void;
-  touchNote(path: string, markdown: string): void;
-  setAccess(access: ProjectAccess): void;
-  setPresence(peers: PresencePeer[]): void;
-  focusRequests: boolean[];
-  selections: (Selection | null)[];
-  setVisible(visible: boolean): void;
-  setFocus(active: boolean): void;
-  setSelection(selection: Selection | null): void;
-};
-export type MockSdkOptions = {
-  seed?: (run: (cmd: ProjectCommand) => unknown) => void;
-  viewer?: string;
-  config?: Record<string, unknown>;
-  surface?: Surface;
-  format?: ComponentFormat;
-  runs?: TicketRun[];
-  fetch?: MockFetch;
-  server?: ServerDefinition;
-  notes?: Record<string, string>;
-  noteAges?: Record<string, number>;
-  mcp?: Record<string, McpCallResult>;
-  ciRuns?: CiRun[];
-  presence?: PresencePeer[];
-  shared?: boolean;
-  members?: MemberInfo[];
-  assets?: ProjectAsset[];
-  frames?: MockFrame[];
-  storybooks?: StorybookOrigin[];
-  embed?: MockEmbedOptions;
-  visible?: boolean;
-  focus?: boolean;
-  selection?: Selection | null;
-  deliveryRefused?: boolean;
-};
+export type { MockSdk, MockSdkOptions } from "./mock-types";
 
 const PROJECT_KEY = "KIB";
 
@@ -136,6 +77,7 @@ export function createMockSdk(
   const focus = createSignal(opts.focus ?? false);
   const visible = createSignal(opts.visible ?? true);
   const selection = createSignal<Selection | null>(opts.selection ?? null);
+  const mockRuns = createMockRuns(opts.peeks ?? {});
 
   const serverContext = (): ServerContext => ({
     instanceId: sdk.instanceId,
@@ -147,7 +89,7 @@ export function createMockSdk(
   });
 
   const backend: ProjectBackend = {
-    snapshot: async () => readProject(doc),
+    snapshot: async () => readProject(doc, activityOf(runs)),
     run: async (cmd) => componentRun(cmd),
     call: createMockCalls({
       ...opts,
@@ -162,6 +104,7 @@ export function createMockSdk(
       access: () => access,
       serverContext,
       embeds,
+      peek: mockRuns.peek,
       deliver: createMockDelivery({
         doc,
         refused: opts.deliveryRefused ?? false,
@@ -185,6 +128,7 @@ export function createMockSdk(
     openNewTicket: (d) => newTicketRequests.push(d),
     openFile: (target) => openedFiles.push(target),
     openView: (componentId) => openedViews.push(componentId),
+    openRun: mockRuns.open,
     focus: focusApi(focus, (on) => focusRequests.push(on)),
     visibility: visibilityApi(visible),
     selection: selectionApi(selection, (next) => selections.push(next)),
@@ -267,7 +211,9 @@ export function createMockSdk(
     questions: {
       deliver: (ticketId) =>
         record("write:question", "write question", () => inner.questions.deliver(ticketId)),
+      recipients: () => record("read:question", "read question", () => inner.questions.recipients()),
     },
+    runs: { peek: (runId) => record("read:run", "read run", () => inner.runs.peek(runId)) },
   };
 
   return {
@@ -279,16 +225,18 @@ export function createMockSdk(
     newTicketRequests,
     openedFiles,
     openedViews,
+    openedRuns: mockRuns.opened,
     deliveries,
     embedCalls: embeds.calls,
     data,
     configPatches,
     notes: folder.notes,
     run,
-    snapshot: () => readProject(doc),
+    snapshot: () => readProject(doc, activityOf(runs)),
     setRuns: (next) => {
       runs = next;
       runChanges.emit();
+      changes.emit();
     },
     touchNote: folder.touch,
     setAccess: (next) => {

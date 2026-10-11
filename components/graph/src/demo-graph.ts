@@ -1,4 +1,5 @@
 import type { GraphEdge, GraphTicket } from "./critical-path";
+import type { WaveTicket } from "./waves";
 
 const t = (key: string, statusId: GraphTicket["statusId"]): GraphTicket => ({ id: key, key, statusId });
 
@@ -27,3 +28,22 @@ export const DEMO_EDGES: GraphEdge[] = [
   b("KIB-16", "KIB-22"),
   { from: "KIB-12", to: "KIB-16", type: "relates" },
 ];
+
+const STARTABLE = new Set(["KIB-18", "KIB-9"]);
+
+export const DEMO_LABELS: Readonly<Record<string, readonly string[]>> = {
+  "KIB-5": ["chapitre:c1"],
+  "KIB-13": ["chapitre:c1"],
+  "KIB-12": ["chapitre:c1", "area:api"],
+  "KIB-15": ["chapitre:c1"],
+  "KIB-11": ["chapitre:c2"],
+  "KIB-21": ["chapitre:c2"],
+  "KIB-22": ["chapitre:c2"],
+};
+
+export const DEMO_WAVE_TICKETS: WaveTicket[] = DEMO_TICKETS.map((t) => ({
+  ...t,
+  startable: STARTABLE.has(t.id),
+  live: false,
+  labels: DEMO_LABELS[t.id] ?? [],
+}));

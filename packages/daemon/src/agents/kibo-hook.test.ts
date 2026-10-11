@@ -66,6 +66,26 @@ test("a PreToolUse decision from the daemon is printed for Claude Code", async (
   expect(JSON.parse(c.printed.join(""))).toEqual(decision);
 });
 
+test("a Stop block and an additionalContext from the daemon are printed as they are", async () => {
+  const block = { decision: "block", reason: "compte rendu" };
+  const c = capture();
+  const blocking: PostFn = async () => Response.json(block);
+  expect(await forwardHook({ stdin: stop, env: ENV, fetch: blocking, out: c.out })).toBe(0);
+  expect(JSON.parse(c.printed.join(""))).toEqual(block);
+  const reminder = {
+    hookSpecificOutput: {
+      hookEventName: "PreToolUse",
+      permissionDecision: "allow",
+      permissionDecisionReason: "",
+      additionalContext: "plan",
+    },
+  };
+  const d = capture();
+  const reminding: PostFn = async () => Response.json(reminder);
+  expect(await forwardHook({ stdin: input, env: ENV, fetch: reminding, out: d.out })).toBe(0);
+  expect(JSON.parse(d.printed.join(""))).toEqual(reminder);
+});
+
 test("every PreToolUse the daemon could not check is refused", async () => {
   const refused: PostFn = async () => new Response("unauthorized", { status: 401 });
   const cases: Array<Omit<Parameters<typeof forwardHook>[0], "out" | "log">> = [
@@ -200,6 +220,7 @@ test("the MCP executable reads its environment and asks the daemon for project t
       PATH: process.env.PATH ?? "",
       KIBO_MCP_URL: `http://127.0.0.1:${server.port}/agent-mcp/r1`,
       KIBO_RUN_TOKEN: TOKEN,
+      KIBO_MCP_TOOLS: "project",
     });
     const out = await new Response(proc.stdout).text();
     expect(await proc.exited).toBe(0);

@@ -1,15 +1,48 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { KiboError, type ProjectSummary, type RpcRequest } from "@kibo/schema";
-import { render, screen, waitFor } from "@testing-library/react";
+import {
+  DEFAULT_RECIPIENTS,
+  DEFAULT_WORKFLOW,
+  KiboError,
+  type ProjectAccess,
+  type ProjectSnapshot,
+  type ProjectSummary,
+  type RpcRequest,
+} from "@kibo/schema";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let fail: KiboError | null = null;
+let access: ProjectAccess = "write";
+const snapshot = (): ProjectSnapshot => ({
+  meta: {
+    id: "kibo",
+    name: "Kibo",
+    key: "KIB",
+    folder: null,
+    color: "#F97316",
+    worktree: null,
+    storybook: null,
+  },
+  workflow: DEFAULT_WORKFLOW,
+  pages: [],
+  tickets: [],
+  links: [],
+  questions: [],
+  questionRecipients: [...DEFAULT_RECIPIENTS],
+  instances: [],
+  rules: [],
+  bindings: [],
+  nextTicketKey: "KIB-1",
+  sync: { shared: false, keyAllocator: "local", role: null, access, members: [] },
+});
 mock.module("../api", () =>
   apiMock({
     client: {
+      subscribe: () => () => {},
       rpc: async (req: RpcRequest) => {
+        if (req.method === "getProject") return snapshot();
         calls.push(req);
         if (fail) throw fail;
         if (req.method === "updateProject")
@@ -48,6 +81,20 @@ const saveButton = () => screen.getByRole("button", { name: "Enregistrer" });
 beforeEach(() => {
   calls.length = 0;
   fail = null;
+  access = "write";
+});
+
+test("a writable project shows its question recipients (screen 187d)", async () => {
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  expect(await screen.findByRole("list", { name: "Destinataires des questions" })).toBeTruthy();
+  expect(screen.getByText("Moi (technique)")).toBeTruthy();
+});
+
+test("a read-only project hides the question recipients", async () => {
+  access = "read-only";
+  render(<EditProjectDialog project={project} remote onClose={() => {}} />);
+  await act(() => new Promise((r) => setTimeout(r, 20)));
+  expect(screen.queryByText("Destinataires des questions")).toBeNull();
 });
 
 test("shows the current values and saves only the changed fields, then the icon (screen 107)", async () => {

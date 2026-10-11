@@ -12,6 +12,18 @@ const DOT: Record<StatusId, string> = {
 
 export const statusDotClass = (statusId: StatusId): string => DOT[statusId];
 
+const ZINC_CARD = "border-zinc-500 bg-zinc-500/15 dark:border-zinc-400 dark:bg-zinc-400/15";
+const CARD: Record<StatusId, string> = {
+  backlog: ZINC_CARD,
+  todo: ZINC_CARD,
+  in_progress: "border-blue-600 bg-blue-600/15 dark:border-blue-500 dark:bg-blue-500/15",
+  in_review: "border-purple-600 bg-purple-600/15 dark:border-purple-500 dark:bg-purple-500/15",
+  blocked: "border-red-600 bg-red-600/15 dark:border-red-500 dark:bg-red-500/15",
+  done: "border-green-600 bg-green-600/15 dark:border-green-500 dark:bg-green-500/15",
+};
+
+export const statusCardClass = (statusId: StatusId): string => CARD[statusId];
+
 export function StatusDot({ statusId, className }: { statusId: StatusId; className?: string }) {
   return (
     <span

@@ -3,6 +3,7 @@ import {
   type ProjectMeta,
   type ProjectSnapshot,
   type ProjectSummary,
+  type RunView,
   type TabTarget,
 } from "@kibo/schema";
 import {
@@ -19,7 +20,11 @@ import { pageIcon } from "../registry";
 import { SCREENS } from "./screens";
 
 export type TabDescription = { title: string; icon: LucideIcon; color: string | null; missing: boolean };
-export type DescribeContext = { projects: ProjectSummary[]; snapshots: Map<string, ProjectSnapshot> };
+export type DescribeContext = {
+  projects: ProjectSummary[];
+  snapshots: Map<string, ProjectSnapshot>;
+  runs?: readonly RunView[];
+};
 
 const basename = (path: string) => path.slice(path.lastIndexOf("/") + 1);
 
@@ -27,6 +32,11 @@ export function describeTarget(target: TabTarget, ctx: DescribeContext): TabDesc
   if (target.kind === "screen") {
     const { title, icon } = SCREENS[target.screen];
     return { title, icon, color: null, missing: false };
+  }
+  if (target.kind === "run") {
+    const run = ctx.runs?.find((r) => r.id === target.runId);
+    const title = run ? fr.tabs.runTitle(run.label, run.ticketKey) : fr.tabs.run;
+    return { title, icon: SCREENS.agents.icon, color: null, missing: false };
   }
   const project: ProjectMeta | undefined = isInbox(target.projectId)
     ? inboxMeta()

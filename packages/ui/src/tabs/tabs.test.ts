@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { EMPTY_TABS, salvageTabsState, singlePreview, TabsState, type TabTarget } from "@kibo/schema";
+import {
+  EMPTY_TABS,
+  salvageTabsState,
+  singlePreview,
+  TabsState,
+  type TabTarget,
+  targetProjectId,
+} from "@kibo/schema";
 import { activeTarget, closedTargets, tabsReducer } from "./tabs-model";
 import { hashToTarget, targetToHash } from "./target-hash";
 import { shortcutFor } from "./use-tab-shortcuts";
@@ -77,7 +84,7 @@ describe("tabsReducer", () => {
     const out = tabsReducer(s, { type: "closeProject", projectId: "p1" });
     expect(out.tabs.map((t) => t.id)).toEqual(["t3", "t4"]);
     expect(out.activeId).toBe("t3");
-    expect(out.recents.every((r) => r.kind === "screen" || r.projectId !== "p1")).toBe(true);
+    expect(out.recents.every((r) => targetProjectId(r) !== "p1")).toBe(true);
     expect(out.recents.some((r) => r.kind === "project" && r.projectId === "p2")).toBe(true);
     expect(tabsReducer(out, { type: "closeProject", projectId: "nope" })).toBe(out);
   });

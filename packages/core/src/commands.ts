@@ -1,8 +1,15 @@
 import {
+  isOpen,
+  isStartable,
   KiboError,
+  type Link,
+  NO_ACTIVITY,
+  type ProjectActivity,
   type ProjectCommand,
   type ProjectSnapshot,
+  type Question,
   type StatusId,
+  type Ticket,
   ticketKeyLabel,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
@@ -23,6 +30,14 @@ import { addLink, listLinks, removeLink, waitingOn } from "./links";
 import { addPage, deletePage, listPages, movePage, renamePage } from "./pages";
 import { getProjectMeta, getWorkflow, peekTicketKey } from "./project";
 import {
+  addQuestionRecipient,
+  listQuestionRecipients,
+  markQuestionSent,
+  removeQuestionRecipient,
+  renameQuestionRecipient,
+  setQuestionRecipient,
+} from "./question-recipients";
+import {
   answerQuestion,
   createQuestion,
   listQuestions,
@@ -38,6 +53,7 @@ import {
   listTickets,
   moveTicket,
   setStatus,
+  setTicketProgress,
   updateTicket,
 } from "./tickets";
 
@@ -119,6 +135,20 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
       const { method: _method, ...mark } = cmd;
       return markAnswersDelivered(doc, mark);
     }
+    case "setTicketProgress": {
+      const { method: _method, ...update } = cmd;
+      return setTicketProgress(doc, update);
+    }
+    case "addQuestionRecipient":
+      return addQuestionRecipient(doc, cmd.name, crypto.randomUUID());
+    case "renameQuestionRecipient":
+      return renameQuestionRecipient(doc, cmd.recipientId, cmd.name);
+    case "removeQuestionRecipient":
+      return removeQuestionRecipient(doc, cmd.recipientId);
+    case "setQuestionRecipient":
+      return setQuestionRecipient(doc, cmd.questionId, cmd.recipient);
+    case "markQuestionSent":
+      return markQuestionSent(doc, cmd.questionId, cmd.at ?? Date.now());
   }
 }
 
@@ -126,6 +156,7 @@ const DAEMON_ONLY_COMMANDS: ReadonlySet<ProjectCommand["method"]> = new Set([
   "setInstanceComponent",
   "setInstanceData",
   "markAnswersDelivered",
+  "setTicketProgress",
 ]);
 
 export function assertShellCommand(cmd: ProjectCommand): void {
@@ -134,23 +165,50 @@ export function assertShellCommand(cmd: ProjectCommand): void {
   }
 }
 
-export function readProject(doc: LoroDoc): ProjectSnapshot {
+type StartableFacts = { tickets: readonly Ticket[]; links: readonly Link[]; questions: readonly Question[] };
+
+function startableOf(facts: StartableFacts, activity: ProjectActivity): (t: Ticket) => boolean {
+  const status = new Map(facts.tickets.map((t) => [t.id, t.statusId]));
+  const blockers = new Map<string, StatusId[]>();
+  for (const l of facts.links) {
+    const from = status.get(l.from);
+    if (l.type === "blocks" && from !== undefined) blockers.set(l.to, [...(blockers.get(l.to) ?? []), from]);
+  }
+  const blocking = new Map<string, number>();
+  for (const q of facts.questions) {
+    if (q.blocking && isOpen(q)) blocking.set(q.ticketId, (blocking.get(q.ticketId) ?? 0) + 1);
+  }
+  return (t) =>
+    isStartable({
+      statusId: t.statusId,
+      blockerStatuses: blockers.get(t.id) ?? [],
+      openBlockingQuestions: blocking.get(t.id) ?? 0,
+      busy: activity.busyTickets.has(t.id),
+    });
+}
+
+export function readProject(doc: LoroDoc, activity: ProjectActivity = NO_ACTIVITY): ProjectSnapshot {
   const meta = getProjectMeta(doc);
   const questions = listQuestions(doc);
   const open = openCountByTicket(questions);
+  const tickets = listTickets(doc);
+  const links = listLinks(doc);
+  const startable = startableOf({ tickets, links, questions }, activity);
   return {
     meta,
     workflow: getWorkflow(doc),
     pages: listPages(doc),
-    tickets: listTickets(doc).map((t) => ({
+    tickets: tickets.map((t) => ({
       ...t,
       progress: childProgress(doc, t.id),
       waitingOn: waitingOn(doc, t.id),
       keyLabel: ticketKeyLabel(t, meta.key),
       openQuestions: open.get(t.id) ?? 0,
+      startable: startable(t),
     })),
-    links: listLinks(doc),
+    links,
     questions,
+    questionRecipients: listQuestionRecipients(doc),
     instances: listInstances(doc),
     rules: readRules(doc),
     bindings: listBindings(doc),

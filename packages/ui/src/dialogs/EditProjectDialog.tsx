@@ -23,6 +23,7 @@ import { PROJECT_COLORS } from "../lib/project-colors";
 import { isRemoteView } from "../lib/remote-view";
 import { FolderField, type FolderFieldProps } from "./FolderField";
 import { IconField } from "./IconField";
+import { RecipientsFields } from "./RecipientsFields";
 import { StorybookFields, storybookProblem } from "./StorybookFields";
 import { WorktreeFields, worktreeProblem } from "./WorktreeFields";
 
@@ -195,6 +196,7 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
               disabled={busy}
             />
           )}
+          <RecipientsFields projectId={project.id} />
           {error && (
             <p role="alert" className="text-sm text-destructive">
               {error}

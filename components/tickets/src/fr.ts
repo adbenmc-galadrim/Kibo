@@ -1,3 +1,15 @@
+import type { RunState } from "@kibo/schema";
+
+const RUN_STATES: Record<RunState, string> = {
+  queued: "En file",
+  starting: "Démarrage",
+  running: "En cours",
+  waiting_input: "Attend une réponse",
+  done: "Terminé",
+  failed: "Échec",
+  cancelled: "Annulé",
+};
+
 export const fr = {
   title: "Tickets",
   mine: "Mes tickets",
@@ -42,6 +54,15 @@ export const fr = {
     placeholder: "Informations attendues du client",
     cancel: "Annuler",
     confirm: "Bloquer",
+  },
+  startable: "Démarrable",
+  startableFilter: "Démarrables",
+  mention: {
+    history: "Voir l'historique",
+    reply: "Répondre",
+    step: (index: number, total: number, title: string) => `${index}/${total} · ${title}`,
+    state: (state: RunState) => RUN_STATES[state],
+    waiting: "Attend une réponse",
   },
   run: {
     queued: (position: number | null) => (position === null ? "En file" : `En file #${position}`),

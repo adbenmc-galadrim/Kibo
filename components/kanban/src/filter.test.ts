@@ -1,9 +1,15 @@
 import { expect, test } from "bun:test";
 import type { TicketView } from "@kibo/schema";
+import { EMPTY_PROGRESS } from "@kibo/schema";
 import fc from "fast-check";
 import { filterTickets, labelFilterOf, projectLabels } from "./filter";
 
-const t = (key: string, assignee: TicketView["assignee"], labels: string[] = []): TicketView => ({
+const t = (
+  key: string,
+  assignee: TicketView["assignee"],
+  labels: string[] = [],
+  startable = false,
+): TicketView => ({
   id: key,
   key,
   pendingSeq: null,
@@ -20,6 +26,8 @@ const t = (key: string, assignee: TicketView["assignee"], labels: string[] = [])
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable,
+  agentProgress: EMPTY_PROGRESS,
 });
 
 test("'mine and agents' keeps my tickets and every agent ticket", () => {
@@ -45,6 +53,30 @@ test("the label filter keeps the tickets carrying it and combines with 'mine and
   expect(filterTickets(all, "mine-and-agents", "adam", "phase:p1").map((x) => x.key)).toEqual(["KIB-3"]);
   expect(filterTickets(all, "all", "adam", "gone")).toEqual([]);
   expect(projectLabels(all)).toEqual(["area:api", "phase:p1"]);
+});
+
+test("the startable filter keeps only startable tickets and combines with labels and assignee", () => {
+  const adam = { kind: "human", ref: "adam" } as const;
+  const all = [
+    t("KIB-1", adam, ["area:api"], true),
+    t("KIB-2", adam, ["area:api"], false),
+    t("KIB-3", { kind: "human", ref: "lea" }, ["area:api"], true),
+    t("KIB-4", { kind: "agent", ref: "opus-dev" }, [], true),
+  ];
+  expect(filterTickets(all, "all", "adam", null, true).map((x) => x.key)).toEqual([
+    "KIB-1",
+    "KIB-3",
+    "KIB-4",
+  ]);
+  expect(filterTickets(all, "all", "adam", "area:api", true).map((x) => x.key)).toEqual(["KIB-1", "KIB-3"]);
+  expect(filterTickets(all, "mine-and-agents", "adam", null, true).map((x) => x.key)).toEqual([
+    "KIB-1",
+    "KIB-4",
+  ]);
+  expect(filterTickets(all, "mine-and-agents", "adam", "area:api", true).map((x) => x.key)).toEqual([
+    "KIB-1",
+  ]);
+  expect(filterTickets(all, "all", "adam", null, false)).toHaveLength(4);
 });
 
 test("the saved label filter reads back only a label, '*' and anything else mean all", () => {

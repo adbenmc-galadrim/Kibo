@@ -7,11 +7,13 @@ import { fr } from "../i18n/fr";
 import { frPresence } from "../i18n/fr-presence";
 import { canEdit } from "../state/access";
 import { usePresencePeers } from "../state/use-presence";
+import { TicketTabs, useTicketTab } from "../ticket/activity/TicketTabs";
 import { LabelsField } from "../ticket/LabelsField";
 import { TicketActionsMenu } from "../ticket/TicketActionsMenu";
 import { TicketTitle } from "../ticket/TicketTitle";
 import { useTicketCommand } from "../ticket/use-ticket-command";
 import { KeyRequired } from "./KeyRequired";
+import { ActivityTab } from "./lazy-screens";
 import { importTitle } from "./sheet/import-title";
 import { GithubLinkNote, GithubRefs } from "./sheet/lazy-sections";
 import { descendantCount, TicketDetail } from "./TicketDetail";
@@ -48,6 +50,7 @@ export function TicketSheet({
   );
   const command = useTicketCommand(project.meta.id);
   const labelsCommand = useTicketCommand(project.meta.id);
+  const [tab, setTab] = useTicketTab();
   const t = project.tickets.find((x) => x.id === ticketId);
   if (!t) return null;
   const editable = canEdit(project);
@@ -105,13 +108,20 @@ export function TicketSheet({
             </div>
           )}
         </SheetHeader>
-        <TicketDetail
-          project={project}
-          ticket={t}
-          domains={domains}
-          viewer={viewer}
-          onOpenFile={onOpenFile}
-          onOpenTicket={onOpenTicket}
+        <TicketTabs
+          tab={tab}
+          onTab={setTab}
+          details={
+            <TicketDetail
+              project={project}
+              ticket={t}
+              domains={domains}
+              viewer={viewer}
+              onOpenFile={onOpenFile}
+              onOpenTicket={onOpenTicket}
+            />
+          }
+          activity={<ActivityTab project={project} ticket={t} onOpenFile={onOpenFile} />}
         />
       </SheetContent>
     </Sheet>

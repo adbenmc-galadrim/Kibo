@@ -1,9 +1,12 @@
-import type { ActionResult, ExpectedState, ProposedAction } from "@kibo/schema";
+import type { ActionResult, AgentsState, ExpectedState, ProposedAction, RunView } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { ArrowRight } from "lucide-react";
 import { useId } from "react";
+import { Mention } from "../agents/mention/Mention";
+import { newestFirst } from "../agents/mention/use-run-view";
 import { frProjectAgent } from "../i18n/fr-project-agent";
+import { useAgentsState } from "../state/agents-context";
 import { actionDiff, actionTitle, type DiffLabels, replacesContent } from "./batch-groups";
 
 type Props = {
@@ -35,10 +38,27 @@ function Outcome({ result }: { result: ActionResult }) {
   );
 }
 
+function runOf(action: ProposedAction, agents: AgentsState | null): RunView | null {
+  const runs = agents?.runs ?? [];
+  if (action.type === "cancelRun") return runs.find((r) => r.id === action.runId) ?? null;
+  if (action.type !== "assignAgent") return null;
+  return newestFirst(runs.filter((r) => r.ticketKey === action.ticket))[0] ?? null;
+}
+
+function RunMention({ run, label }: { run: RunView; label: string }) {
+  return (
+    <p className="flex items-center gap-1 text-xs text-muted-foreground">
+      {`${label} :`}
+      <Mention runId={run.id} label={run.label} state={run.state} />
+    </p>
+  );
+}
+
 export function BatchActionRow({ action, expected, labels, selectable, checked, result, onCheck }: Props) {
   const id = useId();
   const title = actionTitle(action, labels);
   const diff = actionDiff(action, expected, labels);
+  const run = runOf(action, useAgentsState());
   return (
     <li className="flex gap-2 py-1.5">
       {selectable && (
@@ -62,6 +82,7 @@ export function BatchActionRow({ action, expected, labels, selectable, checked, 
           </p>
         )}
         {!diff && replacesContent(action) && <p className="text-xs text-muted-foreground">{t.replaced}</p>}
+        {run && <RunMention run={run} label={action.type === "cancelRun" ? t.run : t.lastRun} />}
         {action.why && (
           <p className="text-xs text-muted-foreground" title={t.why}>
             {action.why}

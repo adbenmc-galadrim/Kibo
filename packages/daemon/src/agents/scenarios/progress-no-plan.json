@@ -1,0 +1,30 @@
+{
+  "turns": [
+    {
+      "steps": [
+        { "hook": "PreToolUse", "tool": "Edit", "input": { "file_path": "src/Signup.tsx" } },
+        {
+          "hook": "PostToolUse",
+          "tool": "Edit",
+          "input": { "file_path": "src/Signup.tsx" },
+          "extra": { "tool_response": "ok", "patch": { "added": 2, "removed": 1 } }
+        },
+        { "say": "J'ai corrigé le libellé du bouton." }
+      ],
+      "onStopBlock": [
+        {
+          "mcp": "ticket_progress",
+          "input": {
+            "report": {
+              "done": "Libellé du bouton corrigé.",
+              "files": ["src/Signup.tsx"],
+              "next": ""
+            }
+          }
+        }
+      ],
+      "result": "Libellé corrigé.",
+      "tokens": 900
+    }
+  ]
+}

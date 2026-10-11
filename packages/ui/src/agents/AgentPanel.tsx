@@ -1,10 +1,11 @@
 import type { AgentsState, FileRef, RunView } from "@kibo/schema";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fr } from "../i18n/fr";
-import { AgentDrawer } from "../shell/lazy-screens";
+import { AgentDock } from "../shell/lazy-screens";
 import { SyncIndicator } from "../shell/SyncIndicator";
-import { useAgents, useDaemonOnline, useNow, useRunLog } from "../state/use-agents";
+import { useAgents, useDaemonOnline, useNow } from "../state/use-agents";
 import { AgentBar } from "./AgentBar";
+import { readSessionPref, writeSessionPref } from "./session-pref";
 
 type Props = {
   onLaunch: () => void;
@@ -12,6 +13,8 @@ type Props = {
   onFocused: () => void;
   onOpenFile: (ref: FileRef) => void;
 };
+
+export const DOCK_OPEN_KEY = "kibo.agents.dock.open";
 
 export function pickRun(state: AgentsState, picked: string | null): RunView | null {
   return (
@@ -22,20 +25,27 @@ export function pickRun(state: AgentsState, picked: string | null): RunView | nu
   );
 }
 
+function useDockOpen(): [boolean, (open: boolean) => void] {
+  const [open, setOpen] = useState(() => readSessionPref(DOCK_OPEN_KEY) === "1");
+  const set = useCallback((next: boolean) => {
+    writeSessionPref(DOCK_OPEN_KEY, next ? "1" : null);
+    setOpen(next);
+  }, []);
+  return [open, set];
+}
+
 export function AgentPanel({ onLaunch, focusRunId, onFocused, onOpenFile }: Props) {
   const state = useAgents();
   const now = useNow();
   const online = useDaemonOnline();
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useDockOpen();
   const [picked, setPicked] = useState<string | null>(null);
   useEffect(() => {
     if (!focusRunId) return;
     setPicked(focusRunId);
     setExpanded(true);
     onFocused();
-  }, [focusRunId, onFocused]);
-  const selected = state ? pickRun(state, picked) : null;
-  const { log, missing, empty } = useRunLog(expanded ? (selected?.id ?? null) : null);
+  }, [focusRunId, onFocused, setExpanded]);
   if (!state) return null;
   const open = (runId: string) => {
     setPicked(runId);
@@ -44,13 +54,11 @@ export function AgentPanel({ onLaunch, focusRunId, onFocused, onOpenFile }: Prop
   return (
     <section aria-label={fr.agents.bar} className="shrink-0 border-t bg-background">
       {expanded ? (
-        <AgentDrawer
+        <AgentDock
           state={state}
           now={now}
-          selected={selected}
-          log={log}
-          missing={missing}
-          empty={empty}
+          online={online}
+          selected={pickRun(state, picked)}
           onSelect={setPicked}
           onCollapse={() => setExpanded(false)}
           onLaunch={onLaunch}
@@ -62,7 +70,8 @@ export function AgentPanel({ onLaunch, focusRunId, onFocused, onOpenFile }: Prop
           now={now}
           online={online}
           indicator={<SyncIndicator online={online} />}
-          onExpand={() => setExpanded(true)}
+          expanded={false}
+          onToggle={() => setExpanded(true)}
           onSelect={open}
         />
       )}

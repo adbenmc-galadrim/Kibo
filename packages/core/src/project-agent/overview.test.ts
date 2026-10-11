@@ -75,6 +75,7 @@ describe("projectOverview", () => {
       assignee: "opus",
       parent: "EMIS-1",
       openQuestions: 1,
+      startable: false,
       branch: "feat/ecran",
       pr: "#7 (open)",
     });
@@ -122,6 +123,14 @@ describe("renderOverview", () => {
 });
 
 describe("ticket card and sheet", () => {
+  test("a card says whether the ticket is startable", () => {
+    const ready = ticket({ id: "t8", title: "Prêt", statusId: "in_progress", startable: true });
+    expect(ticketCard(snapshot, ready).startable).toBe(true);
+    expect(ticketCard(snapshot, ticket({ id: "t7" })).startable).toBe(false);
+    const text = renderOverview(projectOverview(input({ project: project({ tickets: [ready] }) })));
+    expect(text).toContain("- EMIS-8 · Prêt [in_progress] · démarrable");
+  });
+
   test("a pending ticket shows its key label", () => {
     const pending = ticket({ id: "t9", key: null, pendingSeq: 1 });
     expect(ticketCard(snapshot, pending).key).toBe("EMIS-…");

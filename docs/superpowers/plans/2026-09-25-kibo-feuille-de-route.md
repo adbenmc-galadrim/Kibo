@@ -137,3 +137,15 @@ Demande d'Adam du 2026-10-06, planifiée le 2026-10-09 après l'agent de projet 
 1. **Jeu itch.io** : composant intégré « Jeu itch.io » (`components/itch`), capacité `embed` et déclaration `embeds: ["itch.io"]` dans le manifeste ; le code d'intégration d'itch.io (ou l'adresse `itch.io/embed-upload/<id>`) est la seule saisie, jamais l'URL `html.itch.zone` ; vérification d'intégrabilité par en-têtes (`EMBED_REFUSED` sur `x-frame-options` ou `frame-ancestors`, cache une heure), « Ce jeu a besoin d'Internet. » hors ligne, plein écran par le mode focus, sauvegardes du jeu dans le stockage de son origine hors de Kibo, aucun compte, attribution « Fourni par itch.io ».
 2. **Storybook** : fournisseur `storybook` de `DesignFrameKey` et `parseDesignUrl` (`iframe.html?id=…`, `?path=/story/…`, normalisée), rendu par iframe sans cache ni vignette (« Storybook injoignable » quand le serveur est éteint, nom lu dans `index.json`), origine déclarée par projet (réglage local `storybook`, défaut `http://localhost:6006`, section du dialogue « Modifier le projet ») et origines des worktrees (port lu dans `.env`/`.env.local`, menu « Storybook : Projet ▾ » du widget), comparaison avec un cadre Figma ou Penpot côte à côte ou en superposition (opacité, curseur, mêmes dimensions, zoom partagé) ; une story ne se lie pas encore à un ticket.
 3. Tests sans réseau : faux itch.io (port + 5000) et faux Storybook (port + 6000), `embeds.spec.ts` sur 4461–4462 (plage E2E portée à 4470, démos 4471–4499). Budget ≤ 226,4 kB avec compensation en T1 (textes marketplace, sécurité et collab sortis de l'entrée). Écrans 178 à 182 (page Penpot 27).
+
+## Phase 20 · Voir et comprendre les agents (v0.20.0-alpha.1)
+
+Plan : `2026-10-10-kibo-phase-20.md` (livrée) · Spec : conception §26 (amende §7, §8, §22.1, §23.12 ; agents §3, §4, §8, §18). **Livrée** le 2026-10-11 (`v0.20.0-alpha.1`, rapport `rapports/2026-10-11-jalon-v0.20.md`) ; planifiée le 2026-10-10 (spec validée par Adam le même jour) ; §26.11 et §26.12 livrés par le correctif `0.19.0-alpha.2`, hors du plan.
+
+Demande d'Adam du 2026-10-09 (« les agents sont tous cachés ») : fil narratif tiré de la transcription et copié dans Kibo, plan et compte rendu tenus par l'agent (`ticket_progress`, partagés avec le ticket), rappels sans blocage, volet du pied de page cliquable et redimensionnable en trois colonnes, onglet Activité du ticket, mentions d'agent cliquables (carte, volet, page dédiée), page Questions refondue avec destinataires par projet, export et réponse collée, tickets démarrables (état calculé), graphe lisible (vagues, terminés repliés, liens réduits, focus). Écrans 183 à 188k (page Penpot 29).
+
+## Phase 21 · Les agents parlent à l'agent de projet (v0.21.0-alpha.1)
+
+Spec : conception §27, détaillée avant le plan. **À planifier.**
+
+Outil `signal_project` (ticket à créer, contexte, blocage, question), réveil automatique plafonné de l'agent de projet pour les tickets à créer et les blocages, boîte de signaux ; rien n'est créé sans lot validé.

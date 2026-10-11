@@ -8,6 +8,7 @@ import {
   readProject,
 } from "@kibo/core";
 import { listDomains, listGuidelines, listProfiles } from "@kibo/core/agent-config";
+import { listQuestionRecipients } from "@kibo/core/question-recipients";
 import { evaluateRules, type RuleTrigger, readRules } from "@kibo/core/rules";
 import {
   type Actor,
@@ -18,6 +19,7 @@ import {
   OPEN_PER_RUN_MAX,
   type ProjectCommand,
   Question,
+  resolveRecipient,
   undeliveredAnswers,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
@@ -81,7 +83,18 @@ function createRunQuestion(
     },
     FROM_DAEMON,
   );
-  return Question.parse(created);
+  return withRecipient(docs, projectId, Question.parse(created), ask.recipient);
+}
+
+function withRecipient(docs: Docs, projectId: string, question: Question, proposed: string | null): Question {
+  const recipient = resolveRecipient(listQuestionRecipients(docs.project(projectId)), proposed);
+  if (recipient === question.recipient) return question;
+  const routed = docs.run(
+    projectId,
+    { method: "setQuestionRecipient", questionId: question.id, recipient },
+    FROM_DAEMON,
+  );
+  return Question.parse(routed);
 }
 
 function answerRunQuestion(docs: Docs, projectId: string, runId: string, text: string, by: Actor) {
@@ -123,7 +136,10 @@ export function createDataPort(
     ...questionsPort(docs, now),
     profiles: () => listProfiles(docs.workspace),
     ticketContext(projectId, ticketId) {
-      const project = { ...readProject(docs.project(projectId)), meta: docs.projectMeta(projectId) };
+      const project = {
+        ...readProject(docs.project(projectId), docs.activity(projectId)),
+        meta: docs.projectMeta(projectId),
+      };
       const ticket = project.tickets.find((t) => t.id === ticketId);
       if (!ticket) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
       const domain = domainsOf(docs, projectId).find((d) => d.id === ticket.domainId) ?? null;

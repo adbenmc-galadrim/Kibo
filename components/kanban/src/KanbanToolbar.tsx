@@ -7,8 +7,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
+import { Toggle } from "@kibo/sdk/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ListFilter } from "lucide-react";
 import type { ReactNode } from "react";
 import { type KanbanFilter, LABEL_ALL } from "./filter";
 import { fr } from "./fr";
@@ -19,6 +20,8 @@ type Props = {
   label: string | null;
   labels: readonly string[];
   onLabel: (label: string | null) => void;
+  startable: boolean;
+  onStartable: (startable: boolean) => void;
   onShowAll: () => void;
   shown: number;
   total: number;
@@ -70,7 +73,7 @@ function LabelMenu({ label, labels, onLabel }: LabelMenuProps) {
 }
 
 export function KanbanToolbar(props: Props) {
-  const { filter, onFilter, label, onShowAll, shown, total, children } = props;
+  const { filter, onFilter, label, startable, onShowAll, shown, total, children } = props;
   const filterLabel = FILTERS.find((f) => f.value === filter)?.label ?? "";
   const hidden = total - shown;
   return (
@@ -90,11 +93,21 @@ export function KanbanToolbar(props: Props) {
         ))}
       </ToggleGroup>
       <LabelMenu label={label} labels={props.labels} onLabel={props.onLabel} />
+      <Toggle
+        variant="outline"
+        size="sm"
+        pressed={startable}
+        onPressedChange={props.onStartable}
+        className="h-7 shrink-0 gap-1 px-2.5 text-xs font-normal"
+      >
+        <ListFilter aria-hidden className="size-3.5" />
+        {fr.startableFilter}
+      </Toggle>
       {children}
       <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">
         {fr.counter(shown, total, filterLabel)}
       </span>
-      {(filter !== "all" || label !== null) && hidden > 0 && (
+      {(filter !== "all" || label !== null || startable) && hidden > 0 && (
         <Button size="sm" variant="link" className="h-auto shrink-0 px-0 text-xs" onClick={onShowAll}>
           {fr.hidden(hidden)}
         </Button>

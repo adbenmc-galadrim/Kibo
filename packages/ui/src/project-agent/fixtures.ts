@@ -1,6 +1,7 @@
 import {
   type Batch,
   DEFAULT_WORKFLOW,
+  EMPTY_PROGRESS,
   type HookPayload,
   MEMORY_NOTE_PATH,
   type ProjectAgentSession,
@@ -32,6 +33,8 @@ const ticket = (id: string, key: string, title: string, statusId: TicketView["st
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 });
 
 export function emisProject(access: "write" | "read-only" = "write"): ProjectSnapshot {
@@ -53,6 +56,7 @@ export function emisProject(access: "write" | "read-only" = "write"): ProjectSna
     ],
     links: [],
     questions: [],
+    questionRecipients: [],
     instances: [],
     rules: [],
     bindings: [],
@@ -93,6 +97,8 @@ const hook = (event: HookPayload["event"], tool: string | null, detail: string |
   question: null,
   agentId: null,
   ask: null,
+  todos: null,
+  stopHookActive: false,
 });
 
 const spawned = (id: number, at: number): RunLogEntry => ({

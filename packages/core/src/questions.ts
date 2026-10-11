@@ -42,13 +42,13 @@ export function listQuestions(doc: LoroDoc): Question[] {
     .sort(byCreation);
 }
 
-function getQuestion(doc: LoroDoc, id: string): Question {
+export function getQuestion(doc: LoroDoc, id: string): Question {
   const raw: unknown = questions(doc).get(id);
   if (raw === undefined) throw new KiboError("NOT_FOUND", `question ${id} not found`);
   return readQuestion(id, raw);
 }
 
-function store(doc: LoroDoc, candidate: unknown): Question {
+export function storeQuestion(doc: LoroDoc, candidate: unknown): Question {
   const parsed = Question.safeParse(candidate);
   if (!parsed.success) {
     throw new KiboError("INVALID_INPUT", parsed.error.issues[0]?.message ?? "invalid question");
@@ -78,7 +78,7 @@ export function createQuestion(doc: LoroDoc, input: NewQuestion): Question {
       `ticket ${input.ticketId} already has ${QUESTIONS_PER_TICKET_MAX} questions`,
     );
   }
-  return store(doc, {
+  return storeQuestion(doc, {
     id: crypto.randomUUID(),
     ticketId: input.ticketId,
     runId: input.runId ?? null,
@@ -103,7 +103,7 @@ export function answerQuestion(
 ): Question {
   const question = getQuestion(doc, id);
   if (!isOpen(question)) throw new KiboError("INVALID_TRANSITION", `question ${id} is already answered`);
-  return store(doc, { ...question, answer: { ...resolveAnswer(question, input), by, at } });
+  return storeQuestion(doc, { ...question, answer: { ...resolveAnswer(question, input), by, at } });
 }
 
 export type DeliveryMark = { ticketId: string; questionIds: readonly string[]; runId: string; at: number };

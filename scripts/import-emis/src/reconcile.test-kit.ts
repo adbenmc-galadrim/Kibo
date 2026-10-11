@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import {
+  EMPTY_PROGRESS,
   type ExternalRef,
   externalRefKey,
   type ImportRef,
@@ -56,6 +57,7 @@ export function withTicket(snapshot: ReconcileSnapshot, patch: Partial<Ticket>):
     parentId: null,
     externalRefs: [],
     labels: [],
+    agentProgress: EMPTY_PROGRESS,
     ...patch,
   };
   return { ...snapshot, tickets: [...snapshot.tickets, ticket] };
@@ -112,6 +114,8 @@ function createLocally(snapshot: ReconcileSnapshot, c: Cmd<"createQuestion">): R
     createdAt: 0,
     importRef: c.importRef ?? null,
     answer: null,
+    recipient: "me",
+    sentAt: null,
   };
   return { ...snapshot, questions: [...snapshot.questions, question] };
 }

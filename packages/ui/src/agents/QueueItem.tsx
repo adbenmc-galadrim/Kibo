@@ -14,6 +14,7 @@ import {
 import { GripVertical, MoreHorizontal } from "lucide-react";
 import { fr } from "../i18n/fr";
 import { queueHint } from "./format";
+import { Mention } from "./mention/Mention";
 
 type Props = {
   run: RunView;
@@ -58,6 +59,7 @@ export function QueueItem({ run, entry, prev, next, onMove, onPriority, onCancel
         {`#${entry.position}`}
       </span>
       <span className="flex min-w-0 flex-1 flex-col">
+        <Mention runId={run.id} label={run.label} className="w-fit max-w-full" />
         <span className="line-clamp-2 break-words" title={runSubject(run)}>
           {runSubject(run)}
         </span>

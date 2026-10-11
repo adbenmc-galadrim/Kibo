@@ -11,6 +11,7 @@ import {
   type Ticket,
 } from "@kibo/schema";
 import { z } from "zod";
+import { fakeAgentsPort } from "../agents-port.test-helper";
 import { runView } from "../questions/questions.test-helper";
 import { type Harness, HUMAN, harness } from "./fakes.test-helper";
 import { handleProjectTool, TOOL_REPLY_MAX } from "./tools";
@@ -130,6 +131,26 @@ describe("read tools", () => {
     expect(sheet.questions).toHaveLength(2);
     expect(await codeOf(w.tool("get_ticket", { key: "AUTRE-1" }))).toBe("NOT_FOUND");
     expect(await codeOf(w.tool("get_ticket", { key: "EMIS-999" }))).toBe("NOT_FOUND");
+  });
+
+  test("list_tickets and get_ticket say a ticket with a live run is not startable", async () => {
+    const w = await world();
+    const Card = z.object({ key: z.string(), startable: z.boolean() });
+    const startable = async () => {
+      const page = Page.parse(await w.json("list_tickets", { status: "todo" }));
+      return z
+        .array(Card)
+        .parse(page.items)
+        .find((c) => c.key === "EMIS-6")?.startable;
+    };
+    const sheet = async () => Card.parse(await w.json("get_ticket", { key: "EMIS-6" })).startable;
+    expect(await startable()).toBe(true);
+    expect(await sheet()).toBe(true);
+    const ticketId = w.tickets[5]?.id ?? "";
+    const live = runView({ id: "r6", projectId: w.h.project.id, ticketId, state: "waiting_input" });
+    w.h.service.attachAgents(fakeAgentsPort([live]));
+    expect(await startable()).toBe(false);
+    expect(await sheet()).toBe(false);
   });
 
   test("list_questions filters by state and ticket", async () => {

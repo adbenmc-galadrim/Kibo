@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { HookSink } from "./agents/hook-route";
 import type { AgentMcpSink } from "./project-agent/types";
+import { runView } from "./questions/questions.test-helper";
 import { startServer } from "./server";
 import { createService } from "./service";
 import { openStore, type Store } from "./store";
@@ -88,6 +89,24 @@ describe("agents routes", () => {
     expect(received).toEqual([`${RUN}:Stop`]);
   });
 
+  test("a stop reply of the sink reaches Claude Code as a block", async () => {
+    const sink: HookSink = {
+      verify: (runId, token) => runId === RUN && token === "b".repeat(64),
+      receive: () => ({ kind: "stop", reason: "compte rendu" }),
+    };
+    const hooked = startServer({
+      service: createService(store, { user: "adam" }),
+      token: TOKEN,
+      port: 0,
+      uiDir: null,
+      hooks: sink,
+    });
+    const res = await hookTo(hooked.url, RUN, { authorization: `Bearer ${"b".repeat(64)}` });
+    hooked.stop();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ decision: "block", reason: "compte rendu" });
+  });
+
   test("agent-mcp posts skip the session but need the run token and a local Host", async () => {
     const bearer = { authorization: `Bearer ${"b".repeat(64)}` };
     const toolTo = (url: string, headers: Record<string, string>) =>
@@ -99,7 +118,8 @@ describe("agents routes", () => {
     expect((await toolTo(server.url, bearer)).status).toBe(404);
     const sink: AgentMcpSink = {
       verify: (runId, token) => runId === RUN && token === "b".repeat(64),
-      call: async (runId, req) => `${req.tool}:${runId}`,
+      run: (runId) => runView({ id: runId, kind: "project", ticketId: null }),
+      call: async (run, tool) => `${tool}:${run.id}`,
     };
     const served = startServer({
       service: createService(store, { user: "adam" }),

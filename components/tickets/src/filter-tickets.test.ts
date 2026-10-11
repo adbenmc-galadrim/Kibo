@@ -79,6 +79,22 @@ test("label filter keeps tickets carrying every chosen label", () => {
   expect(projectLabels([a, b, c])).toEqual(["area:api", "area:web", "phase:p1"]);
 });
 
+test("the startable filter keeps startable tickets, their ancestors as context, and combines", () => {
+  const parent = { ...bare("p", ["area:api"]), startable: false };
+  const child = { ...bare("c", ["area:api"]), parentId: "p", startable: true };
+  const other = { ...bare("o", []), startable: true };
+  const idle = { ...bare("i", ["area:api"]), startable: false };
+  const all = [parent, child, other, idle];
+  const q = { ...EMPTY_QUERY, startable: true };
+  expect(isActive(q)).toBe(true);
+  const { visible, context } = filterTree(all, q, "me");
+  expect([...visible].sort()).toEqual(["c", "o", "p"]);
+  expect([...context]).toEqual(["p"]);
+  expect([...filterTickets(all, { ...q, labels: new Set(["area:api"]) }, "me")].sort()).toEqual(["c", "p"]);
+  expect(visible.size - context.size).toBe(2);
+  expect(filterTickets(all, EMPTY_QUERY, "me").size).toBe(4);
+});
+
 const label = fc.stringMatching(/^[a-z]{1,3}(:[a-z]{1,3})?$/);
 
 test("a ticket without labels passes only the empty label filter", () => {

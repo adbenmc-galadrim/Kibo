@@ -71,3 +71,15 @@ export function ZoomControls({ zoom, onZoom, onFit }: ZoomProps) {
     </div>
   );
 }
+
+type FocusBarProps = { keyLabel: string; title: string; up: number; down: number };
+
+export function FocusBar({ keyLabel, title, up, down }: FocusBarProps) {
+  return (
+    <div className="absolute bottom-3 left-3 flex max-w-[calc(100%-14rem)] items-center gap-3 rounded-md border bg-card px-3 py-2 text-xs">
+      <span className="truncate font-medium">{fr.focus(keyLabel, title)}</span>
+      <span className="shrink-0 text-muted-foreground">{fr.focusSummary(up, down)}</span>
+      <span className="shrink-0 text-muted-foreground/80">{fr.focusExit}</span>
+    </div>
+  );
+}

@@ -241,8 +241,9 @@ test("the MCP sink accepts only a live project run token and hands the run to th
   expect(kit.svc.mcp.verify(run.id, "b".repeat(64))).toBe(false);
   expect(kit.svc.mcp.verify(run.id, GOOD_TOKEN)).toBe(true);
   expect(() => kit.svc.mcp.verify(ticketRun.id, GOOD_TOKEN)).toThrow("not a project run");
-  expect(await kit.svc.mcp.call(run.id, { tool: "list_tickets", input: {} })).toBe(`list_tickets:${run.id}`);
-  await expect(kit.svc.mcp.call(ticketRun.id, { tool: "list_tickets", input: {} })).rejects.toMatchObject({
-    code: "FORBIDDEN",
-  });
+  expect(kit.svc.mcp.run(run.id)).toEqual(run);
+  expect(kit.svc.mcp.run(crypto.randomUUID())).toBeNull();
+  expect(await kit.svc.mcp.call(run, "list_tickets", {})).toBe(`list_tickets:${run.id}`);
+  await expect(kit.svc.mcp.call(ticketRun, "list_tickets", {})).rejects.toMatchObject({ code: "FORBIDDEN" });
+  await expect(kit.svc.mcp.call(run, "ticket_progress", {})).rejects.toMatchObject({ code: "FORBIDDEN" });
 });

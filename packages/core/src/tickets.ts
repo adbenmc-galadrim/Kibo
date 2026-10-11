@@ -1,11 +1,18 @@
 import {
   type Assignee,
+  EMPTY_PROGRESS,
   ExternalRef,
+  type FileCheck,
   formatTicketKey,
   KiboError,
   normalizeLabels,
+  REPORTS_MAX,
+  type RunReport,
+  type RunReportInput,
   type StatusId,
+  type Step,
   type Ticket,
+  TicketProgress,
 } from "@kibo/schema";
 import { type LoroDoc, LoroText, type LoroTreeNode, type TreeID } from "loro-crdt";
 import { getKeyAllocator, nextPendingSeq } from "./keys";
@@ -32,6 +39,15 @@ export type TicketPatch = {
   labels?: readonly string[];
 };
 
+export type TicketProgressUpdate = {
+  ticketId: string;
+  runId: string;
+  at: number;
+  plan?: Step[];
+  report?: RunReportInput;
+  check?: FileCheck;
+};
+
 export const ticketTree = (doc: LoroDoc) => doc.getTree("tickets");
 
 const RefList = ExternalRef.array();
@@ -41,6 +57,14 @@ export function readExternalRefs(node: LoroTreeNode): ExternalRef[] {
   if (raw === undefined || raw === null) return [];
   const parsed = RefList.safeParse(raw);
   if (!parsed.success) throw new KiboError("STORE_CORRUPT", `invalid external refs on ${node.id}`);
+  return parsed.data;
+}
+
+function readProgress(node: LoroTreeNode): TicketProgress {
+  const raw = node.data.get("agentProgress");
+  if (raw === undefined || raw === null) return EMPTY_PROGRESS;
+  const parsed = TicketProgress.safeParse(raw);
+  if (!parsed.success) throw new KiboError("STORE_CORRUPT", `invalid agent progress on ${node.id}`);
   return parsed.data;
 }
 
@@ -66,6 +90,7 @@ function readTicket(n: LoroTreeNode): Ticket {
     parentId: n.parent()?.id ?? null,
     externalRefs: readExternalRefs(n),
     labels: (d.get("labels") as string[] | undefined) ?? [],
+    agentProgress: readProgress(n),
   };
 }
 
@@ -148,4 +173,31 @@ export function deleteTicket(doc: LoroDoc, id: string): string[] {
 export function childProgress(doc: LoroDoc, id: string): { done: number; total: number } {
   const children = getNode(ticketTree(doc), id).children() ?? [];
   return { done: children.filter((c) => c.data.get("statusId") === "done").length, total: children.length };
+}
+
+function withReport(reports: readonly RunReport[], report: RunReport): RunReport[] {
+  const others = reports.filter((r) => r.runId !== report.runId);
+  return [...others, report].sort((a, b) => a.at - b.at).slice(-REPORTS_MAX);
+}
+
+function withCheck(reports: readonly RunReport[], runId: string, check: FileCheck): RunReport[] {
+  if (!reports.some((r) => r.runId === runId)) throw new KiboError("NOT_FOUND", `run ${runId} has no report`);
+  return reports.map((r) => (r.runId === runId ? { ...r, check } : r));
+}
+
+export function setTicketProgress(doc: LoroDoc, update: TicketProgressUpdate): Ticket {
+  const node = getNode(ticketTree(doc), update.ticketId);
+  let next = readProgress(node);
+  if (update.plan) next = { ...next, plan: update.plan, planRunId: update.runId, planAt: update.at };
+  if (update.report) {
+    const report = { ...update.report, runId: update.runId, at: update.at, check: null };
+    next = { ...next, reports: withReport(next.reports, report) };
+  }
+  if (update.check) next = { ...next, reports: withCheck(next.reports, update.runId, update.check) };
+  const parsed = TicketProgress.safeParse(next);
+  if (!parsed.success)
+    throw new KiboError("INVALID_INPUT", parsed.error.issues[0]?.message ?? "invalid progress");
+  node.data.set("agentProgress", parsed.data);
+  doc.commit();
+  return readTicket(node);
 }

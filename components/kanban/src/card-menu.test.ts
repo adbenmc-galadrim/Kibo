@@ -1,5 +1,5 @@
 import { expect, mock, test } from "bun:test";
-import { DEFAULT_WORKFLOW, type TicketView } from "@kibo/schema";
+import { DEFAULT_WORKFLOW, EMPTY_PROGRESS, type TicketView } from "@kibo/schema";
 import { isSeparator, isSubmenu } from "@kibo/sdk/ui/menu-entries";
 import { type CardMenuActions, cardMenuEntries } from "./card-menu";
 import { fr } from "./fr";
@@ -21,6 +21,8 @@ const ticket = {
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 } satisfies TicketView;
 const actions = (): CardMenuActions => ({
   open: mock(() => {}),

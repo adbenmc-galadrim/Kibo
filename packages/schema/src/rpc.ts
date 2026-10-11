@@ -31,12 +31,14 @@ import { INTEGRATION_RPC, type IntegrationRpcResult } from "./integrations-rpc";
 import type { Link } from "./link";
 import { ComponentId } from "./manifest";
 import { MARKET_RPC_REQUESTS, type MarketRpcResult } from "./market-rpc";
+import type { RunMomentsEvent } from "./moment";
 import type { NotesInfo } from "./note";
 import type { Page } from "./page";
 import { PHASE14_RPC, type Phase14RpcResult } from "./phase14-rpc";
 import { type ProjectMeta, ProjectPatch } from "./project";
 import { PROJECT_AGENT_RPC, type ProjectAgentRpcResult } from "./project-agent-rpc";
 import type { DeliveryResult, Question } from "./question";
+import type { QuestionRecipient } from "./question-recipient";
 import type { Rule } from "./rule";
 import type { AgentsState, AssignPreview, HostView, RunChanged, RunLogEntry, RunView } from "./run";
 import { SemVer } from "./semver";
@@ -46,12 +48,14 @@ import type { Phase7Event } from "./sync";
 import { SYNC_RPC_REQUESTS, type SyncRpcResult } from "./sync-rpc";
 import { TabsState } from "./tabs";
 import type { Ticket } from "./ticket";
+import { VISIBILITY_RPC, type VisibilityRpcResult } from "./visibility-rpc";
 
 export type TicketView = Ticket & {
   progress: { done: number; total: number };
   waitingOn: string[];
   keyLabel: string;
   openQuestions: number;
+  startable: boolean;
 };
 export type ProjectSnapshot = {
   meta: ProjectMeta;
@@ -60,6 +64,7 @@ export type ProjectSnapshot = {
   tickets: TicketView[];
   links: Link[];
   questions: Question[];
+  questionRecipients: QuestionRecipient[];
   instances: Instance[];
   rules: Rule[];
   bindings: Binding[];
@@ -83,7 +88,8 @@ export type ChangeMessage =
   | CodeEvent
   | IntegrationEvent
   | AiEvent
-  | Phase7Event;
+  | Phase7Event
+  | RunMomentsEvent;
 
 export const RpcRequest = z.discriminatedUnion("method", [
   z.object({ method: z.literal("getSession") }),
@@ -215,6 +221,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   ...SYNC_RPC_REQUESTS,
   ...PHASE14_RPC,
   ...PROJECT_AGENT_RPC,
+  ...VISIBILITY_RPC,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -271,7 +278,8 @@ export type RpcResult = {
   MarketRpcResult &
   SyncRpcResult &
   Phase14RpcResult &
-  ProjectAgentRpcResult;
+  ProjectAgentRpcResult &
+  VisibilityRpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }

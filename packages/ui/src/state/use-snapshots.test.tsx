@@ -10,6 +10,7 @@ const snapshot = (id: string): ProjectSnapshot => ({
   tickets: [],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],

@@ -1,6 +1,7 @@
 import { expect, mock, test } from "bun:test";
 import {
   DEFAULT_WORKFLOW,
+  EMPTY_PROGRESS,
   type ProjectCommand,
   type ProjectSnapshot,
   type RpcRequest,
@@ -49,6 +50,8 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
   ...patch,
 });
 
@@ -131,6 +134,7 @@ const project = (main: TicketView): ProjectSnapshot => ({
   tickets: [main],
   links: [],
   questions: [],
+  questionRecipients: [],
   instances: [],
   rules: [],
   bindings: [],

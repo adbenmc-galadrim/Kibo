@@ -1,4 +1,4 @@
-import { localSyncInfo, readProject } from "@kibo/core";
+import { listQuestionRecipients, localSyncInfo, readProject } from "@kibo/core";
 import {
   type CiRun,
   type ComponentCall,
@@ -14,6 +14,7 @@ import {
   type ProjectAccess,
   type ProjectAsset,
   type ProjectCommand,
+  type RunPeek,
   type StorybookOrigin,
   type TicketRun,
   validateConfig,
@@ -23,6 +24,7 @@ import { mockAssetUrl } from "./mock-assets";
 import { type MockFrame, mockDesignFrame } from "./mock-design";
 import type { MockEmbeds } from "./mock-embed";
 import type { MockNotesFolder } from "./mock-notes";
+import { activityOf } from "./mock-runs";
 import type { ServerContext, ServerDefinition } from "./server";
 import type { EntityMap } from "./types";
 
@@ -39,6 +41,7 @@ export type MockCallDeps = {
   access(): ProjectAccess;
   serverContext(): ServerContext;
   deliver(ticketId: string): DeliveryResult;
+  peek(runId: string): RunPeek;
   fetch?: MockFetch;
   server?: ServerDefinition;
   mcp?: Record<string, McpCallResult>;
@@ -52,7 +55,7 @@ export type MockCallDeps = {
 };
 
 function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
-  const snapshot = readProject(deps.doc);
+  const snapshot = readProject(deps.doc, activityOf(deps.runs()));
   const lists: { [K in EntityType]: () => EntityMap[K][] } = {
     ticket: () => snapshot.tickets,
     status: () => snapshot.workflow,
@@ -159,6 +162,10 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
         return deps.embeds.open(c.url);
       case "questions.deliver":
         return deps.deliver(c.ticketId);
+      case "run.peek":
+        return deps.peek(c.runId);
+      case "questions.recipients":
+        return listQuestionRecipients(deps.doc);
       case "config.set": {
         const errors = validateConfig(deps.manifest.configSchema, c.patch);
         if (errors.length > 0) throw new KiboError("INVALID_INPUT", errors.join("; "));

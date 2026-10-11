@@ -199,6 +199,8 @@ const question = (ticketId: string, over: Partial<Question>): Question => ({
   createdAt: 1,
   importRef: null,
   answer: null,
+  recipient: "me",
+  sentAt: null,
   ...over,
 });
 

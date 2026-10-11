@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import type { TicketView } from "@kibo/schema";
+import { EMPTY_PROGRESS } from "@kibo/schema";
 import { filterBySource, matchesSource, readSource } from "./source";
 
 const ticket = (refs: TicketView["externalRefs"]): TicketView => ({
@@ -19,6 +20,8 @@ const ticket = (refs: TicketView["externalRefs"]): TicketView => ({
   progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
+  startable: false,
+  agentProgress: EMPTY_PROGRESS,
 });
 
 test("a synced instance only shows tickets of its binding", () => {

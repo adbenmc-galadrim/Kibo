@@ -1,4 +1,12 @@
-import { type AnswerInput, answersToDeliver, isOpen, type Question, type TicketView } from "@kibo/schema";
+import {
+  type AnswerInput,
+  answersToDeliver,
+  isOpen,
+  openCountByRecipient,
+  type Question,
+  type QuestionRecipient,
+  type TicketView,
+} from "@kibo/schema";
 import { fr } from "./fr";
 
 export type Scope = "open" | "answered" | "all";
@@ -8,13 +16,31 @@ export type ViewGroup = TicketGroup & { undelivered: Question[] };
 
 const inScope = (q: Question, scope: Scope): boolean => scope === "all" || (scope === "open") === isOpen(q);
 
+export type RecipientCounts = { total: number; byRecipient: Map<string, number> };
+
 export function filterQuestions(
   questions: readonly Question[],
   scope: Scope,
   ticketId: string | null,
+  recipient: string | null = null,
 ): Question[] {
-  return questions.filter((q) => inScope(q, scope) && (ticketId === null || q.ticketId === ticketId));
+  return questions.filter(
+    (q) =>
+      inScope(q, scope) &&
+      (ticketId === null || q.ticketId === ticketId) &&
+      (recipient === null || q.recipient === recipient),
+  );
 }
+
+export function recipientCounts(questions: readonly Question[]): RecipientCounts {
+  const byRecipient = openCountByRecipient(questions);
+  let total = 0;
+  for (const n of byRecipient.values()) total += n;
+  return { total, byRecipient };
+}
+
+export const recipientName = (recipients: readonly QuestionRecipient[], id: string): string =>
+  recipients.find((r) => r.id === id)?.name ?? fr.removedRecipient;
 
 export const byNewest = (a: Question, b: Question): number => b.createdAt - a.createdAt;
 
@@ -36,8 +62,9 @@ export function viewGroups(
   tickets: readonly TicketView[],
   scope: Scope,
   ticketId: string | null,
+  recipient: string | null = null,
 ): ViewGroup[] {
-  const shown = filterQuestions(questions, scope, ticketId);
+  const shown = filterQuestions(questions, scope, ticketId, recipient);
   return [...tickets]
     .filter((t) => ticketId === null || t.id === ticketId)
     .sort(byKey)
@@ -46,7 +73,7 @@ export function viewGroups(
       questions: shown.filter((q) => q.ticketId === ticket.id).sort(byNewest),
       undelivered: answersToDeliver(questions, ticket.id),
     }))
-    .filter((g) => g.questions.length > 0 || g.undelivered.length > 0);
+    .filter((g) => g.questions.length > 0 || (recipient === null && g.undelivered.length > 0));
 }
 
 export function answerFrom(form: AnswerForm): AnswerInput | null {

@@ -46,7 +46,7 @@ function useSummary(): { summary: Summary; loading: boolean; failed: boolean } {
     const input = graphInput(
       tickets.data,
       links.data,
-      { assignee, hideDone: true, domain: null },
+      { assignee, showDone: false, startable: false, domain: null },
       sdk.viewer,
     );
     return summarize(input.tickets, input.edges);

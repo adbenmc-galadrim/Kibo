@@ -18,10 +18,13 @@ mock.module("../api", () =>
     client: {
       rpc: (req: RpcRequest) => {
         calls.push(req);
+        if (req.method === "getRunLog") return Promise.resolve([]);
         if (req.method === "deliverAnswers") return deliver();
         return Promise.resolve(req.method === "getProject" ? project() : null);
       },
       subscribe: () => () => {},
+      subscribeMoments: () => () => {},
+      subscribeTopic: () => () => {},
       code: () => Promise.resolve([]),
       subscribeCode: () => () => {},
     },
@@ -35,7 +38,7 @@ mock.module("../state/use-projects", () => ({
   useProjects: realProjects.useProjects,
 }));
 
-const { AgentDrawer } = await import("./AgentDrawer");
+const { AgentDock } = await import("./dock/AgentDock");
 const { OpenQuestionsProvider } = await import("./open-questions");
 const { RunHistory } = await import("./RunHistory");
 const { RunHistoryList } = await import("../shell/RunHistoryList");
@@ -63,11 +66,11 @@ const run: RunView = runFixture({
 function drawer(questions: RunQuestions[], opened: string[] | null = null) {
   const state: AgentsState = { ...agentsFixture(), runs: [run], queue: [], resumable: [run.id], questions };
   const view = (
-    <AgentDrawer
+    <AgentDock
       state={state}
       now={NOW}
+      online
       selected={run}
-      log={[]}
       onSelect={() => {}}
       onCollapse={() => {}}
       onLaunch={() => {}}
@@ -88,7 +91,7 @@ const tally = (open: number, undelivered: number): RunQuestions => ({
 test("a finished run with open questions says so in the list and opens the questions view", async () => {
   const opened: string[] = [];
   render(drawer([tally(2, 0)], opened));
-  const finished = screen.getByRole("list", { name: "Terminé" });
+  const finished = screen.getByRole("list", { name: "Terminés depuis 24 h · 1" });
   expect(within(finished).getByText("2 questions").className).toContain("text-orange-600");
   expect(screen.getByText("2 questions ouvertes")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Transmettre à l'agent" })).toBeNull();

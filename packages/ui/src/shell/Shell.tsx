@@ -1,5 +1,4 @@
 import type { Session } from "@kibo/schema";
-import { useRunNotifications } from "../agents/use-run-notifications";
 import { useAgents } from "../state/use-agents";
 import { useProjects } from "../state/use-projects";
 import { useTabs } from "../tabs/use-tabs";
@@ -15,7 +14,6 @@ export function Shell({ viewer, notifications }: ShellProps) {
   const { projects, error, retry } = useProjects();
   const tabs = useTabs();
   const agents = useAgents();
-  useRunNotifications(agents, notifications === "browser");
   useUpdateSchedule();
   if (error) return <DaemonUnreachable error={error} inApp={inTauri()} nextRetryInMs={0} onRetry={retry} />;
   if (!projects || !tabs) return <LoadingScreen />;
