@@ -143,11 +143,20 @@ test("clicking anywhere on a history row opens that run, and only once", async (
   const expected = agentsFixture().runs.find((r) => runSubject(r) === second.getAttribute("aria-label"))?.id;
   if (!expected) throw new Error("no run for the second row");
   expect(opened).toEqual([expected]);
-  await user.click(within(second).getByRole("button"));
+  const seq = within(second).getAllByRole("button")[0];
+  if (!seq) throw new Error("no run button");
+  await user.click(seq);
   expect(opened).toEqual([expected, expected]);
   for (const row of rows) {
-    expect(within(row).getByRole("button").className).not.toContain("after:absolute");
+    for (const button of within(row).getAllByRole("button"))
+      expect(button.className).not.toContain("after:absolute");
   }
+});
+
+test("a history row names its run with an agent mention", () => {
+  show();
+  const row = screen.getByRole("row", { name: /^KIB-14/ });
+  expect(within(row).getByRole("button", { name: "opus-dev-2" }).querySelector(".font-mono")).not.toBeNull();
 });
 
 const slotsText = () => {

@@ -100,6 +100,8 @@ export const frProjectAgent = {
   },
   batch: {
     region: (seq: number) => `Lot n° ${seq}`,
+    lastRun: "Dernier run",
+    run: "Run",
     group: (group: ActionGroup) => GROUPS[group],
     checkAll: "Tout cocher",
     uncheckAll: "Tout décocher",

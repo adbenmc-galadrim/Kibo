@@ -302,3 +302,15 @@ test("the filter chosen on the agents page is the one of the queue page", async 
   await user.click(await screen.findByRole("menuitemradio", { name: "API Facturation" }));
   expect(localStorage.getItem("kibo.agents.project")).toBe("fac");
 });
+
+test("waiting, running and queued runs are named with agent mentions", () => {
+  show();
+  const waiting = within(screen.getByRole("region", { name: "En attente de réponse" }));
+  expect(waiting.getByRole("button", { name: "opus-dev-2" })).toBeTruthy();
+  const opus = within(screen.getByRole("region", { name: "opus-dev" }));
+  expect(opus.getByRole("button", { name: "opus-dev-1" })).toBeTruthy();
+  const queued = opus.getAllByRole("listitem").filter((li) => li.getAttribute("data-queued") === "true");
+  expect(queued.length).toBeGreaterThan(0);
+  for (const item of queued)
+    expect(within(item).getAllByRole("button", { name: /^opus-dev/ }).length).toBe(1);
+});

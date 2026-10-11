@@ -2,6 +2,8 @@ import { expect, test } from "bun:test";
 import type { Batch } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { agentsFixture, runFixture } from "../agents/fixtures";
+import { AgentsProvider } from "../state/agents-context";
 import { BatchCard, type Decision } from "./BatchCard";
 import { defaultLabels, projectLabels } from "./batch-groups";
 import { emisProject, partialBatch, pendingBatch } from "./fixtures";
@@ -133,4 +135,33 @@ test("a pending batch read from an old agent cannot be decided", () => {
   const { card } = show(pendingBatch(), true);
   expect(card.queryAllByRole("checkbox")).toHaveLength(0);
   expect(card.queryByRole("button", { name: /Valider/ })).toBeNull();
+});
+
+test("an agent action names the existing run of its ticket, and a cancel names its run, as mentions", () => {
+  const base = agentsFixture();
+  const agents = {
+    ...base,
+    runs: [
+      ...base.runs,
+      runFixture({ id: "e1", ticketKey: "EMIS-12", label: "opus-dev-4", state: "done", createdAt: 1 }),
+      runFixture({ id: "e2", ticketKey: "EMIS-12", label: "opus-dev-5", state: "running", createdAt: 2 }),
+    ],
+  };
+  const batch = pendingBatch({
+    actions: [...pendingBatch().actions, { id: 8, type: "cancelRun", runId: "e1", why: "Doublon" }],
+  });
+  render(
+    <AgentsProvider agents={agents}>
+      <BatchCard
+        batch={batch}
+        labels={projectLabels(emisProject())}
+        readOnly={false}
+        onDecide={async () => {}}
+      />
+    </AgentsProvider>,
+  );
+  const agentsGroup = within(screen.getByRole("group", { name: "Agents" }));
+  expect(agentsGroup.getByText("Assigner EMIS-12 à opus")).toBeTruthy();
+  expect(agentsGroup.getByRole("button", { name: "opus-dev-5" })).toBeTruthy();
+  expect(agentsGroup.getByRole("button", { name: "opus-dev-4" })).toBeTruthy();
 });
