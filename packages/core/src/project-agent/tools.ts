@@ -1,5 +1,7 @@
 import {
+  isOpenSignal,
   type ListQuestionsInput,
+  type ListSignalsInput,
   type ListTicketsInput,
   PAGE_SIZE,
   type ProjectOverview,
@@ -7,6 +9,9 @@ import {
   type QueueEntry,
   type RunState,
   type RunView,
+  type Signal,
+  type SignalLine,
+  signalLine,
   type TicketCard,
   type ToolPage,
 } from "@kibo/schema";
@@ -77,6 +82,17 @@ export function listRuns(
       subject: r.ticketKey ?? r.ticketTitle,
       position: queue.find((q) => q.runId === r.id)?.position ?? null,
     }));
+}
+
+const inState = (signal: Signal, state: ListSignalsInput["state"]): boolean =>
+  state === "all" || (state === "open") === isOpenSignal(signal);
+
+export function listSignals(signals: readonly Signal[], input: ListSignalsInput): ToolPage<SignalLine> {
+  const lines = signals
+    .filter((s) => inState(s, input.state))
+    .sort((a, b) => a.seq - b.seq)
+    .map(signalLine);
+  return pageOf(lines, input.cursor);
 }
 
 export const compactJson = (value: unknown): string => JSON.stringify(value);

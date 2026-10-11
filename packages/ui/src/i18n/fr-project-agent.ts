@@ -15,6 +15,7 @@ const GROUPS: Record<ActionGroup, string> = {
   agents: "Agents",
   questions: "Questions",
   notes: "Notes",
+  signals: "Signaux",
 };
 
 const OUTCOMES: Record<ActionOutcome, string> = {
@@ -130,6 +131,7 @@ export const frProjectAgent = {
     createQuestion: (ticket: string, title: string) => `Question sur ${ticket} : « ${title} »`,
     createNote: (path: string) => `Créer la note ${path}`,
     updateNote: (path: string) => `Mettre à jour la note ${path}`,
+    dismissSignal: (ref: string) => `Classer le signal ${ref} sans suite`,
     confirm: "Confirmer",
     none: "aucun",
     unknownTicket: "ticket introuvable",

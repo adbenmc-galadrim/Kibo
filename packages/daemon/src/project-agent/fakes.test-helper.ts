@@ -103,6 +103,7 @@ export function fakeAgents(): FakeAgents {
       questions: [],
       projectAgents: [],
       progress: [],
+      signals: [],
     }),
     assign(input) {
       if (fake.failAssign) throw fake.failAssign;
@@ -212,6 +213,7 @@ export async function contextOf(h: Harness): Promise<BatchContext> {
     profiles: PROFILES,
     demoProject: false,
     viewer: "adam",
+    signals: [],
   };
 }
 

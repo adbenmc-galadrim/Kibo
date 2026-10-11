@@ -10,6 +10,7 @@ import {
   type ProjectAgentView,
   type ProjectFingerprint,
   type RunView,
+  SIGNAL_TOOL_NAME,
 } from "@kibo/schema";
 import type { ProjectTurnPort } from "../agents/orchestrator-types";
 import type { RpcExtension } from "../rpc-extensions";
@@ -101,7 +102,8 @@ function projectRun(ctx: AgentContext, runId: string): RunView {
 }
 
 function projectTool(tool: AgentMcpRequest["tool"]): ProjectAgentTool {
-  if (tool === PROGRESS_TOOL_NAME) throw new KiboError("FORBIDDEN", `${tool} is a ticket run tool`);
+  if (tool === PROGRESS_TOOL_NAME || tool === SIGNAL_TOOL_NAME)
+    throw new KiboError("FORBIDDEN", `${tool} is a ticket run tool`);
   return tool;
 }
 

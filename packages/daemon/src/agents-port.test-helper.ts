@@ -46,6 +46,7 @@ export function fakeAgentsPort(runs: RunView[]): FakeAgentsPort {
       questions: [],
       projectAgents: [],
       progress: [],
+      signals: [],
     }),
     change(run) {
       for (const listener of listeners) listener(run);

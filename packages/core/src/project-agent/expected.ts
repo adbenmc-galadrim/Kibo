@@ -4,6 +4,7 @@ import {
   type ProjectSnapshot,
   type ProposedAction,
   type RunView,
+  type SignalRef,
   type TicketView,
   undeliveredAnswers,
 } from "@kibo/schema";
@@ -16,6 +17,8 @@ export type BatchContext = {
   profiles: readonly AgentProfile[];
   demoProject: boolean;
   viewer: string;
+  signals: readonly SignalRef[];
+  closedSignals?: readonly SignalRef[];
 };
 
 export type TicketLookup = (ref: string) => TicketView | null;
@@ -84,6 +87,7 @@ export function capture(
     case "link":
     case "unlink":
     case "createQuestion":
+    case "dismissSignal":
       return {};
   }
 }

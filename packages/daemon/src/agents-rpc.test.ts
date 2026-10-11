@@ -71,6 +71,7 @@ function agentsPort(calls: string[], runs: RunView[]): AgentsPort {
     questions: [],
     projectAgents: [],
     progress: [],
+    signals: [],
   };
   return {
     ...port,

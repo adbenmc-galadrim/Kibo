@@ -274,6 +274,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         questions: [],
         projectAgents: [],
         progress: [],
+        signals: [],
       };
     },
     log: (runId) => registry.log(runId),

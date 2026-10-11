@@ -92,6 +92,7 @@ function fakeAgents(runs: Map<string, RunView>, calls: string[]): ProjectAgentAg
       questions: [],
       projectAgents: [],
       progress: [],
+      signals: [],
     }),
     hooks: { verify: (_runId, token) => token === GOOD_TOKEN, receive: () => null },
   };

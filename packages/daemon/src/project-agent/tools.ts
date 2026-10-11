@@ -50,6 +50,7 @@ async function overview({ deps, projectId }: ToolCall) {
     profiles: data.profiles(),
     demoProject: data.isDemoProject(projectId),
     memory: (await data.readNote(projectId, MEMORY_NOTE_PATH)) ?? "",
+    openSignals: 0,
   });
 }
 

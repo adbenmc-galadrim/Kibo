@@ -106,7 +106,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       chain,
       subagents: profile.subagents,
       commits: workspace.commits,
-      protocol: { progress: true, recipients: ctx.project.questionRecipients },
+      protocol: { progress: true, recipients: ctx.project.questionRecipients, signals: false },
     });
     const { systemPromptFile } = writeRunContext(runDir, context.files);
     return {

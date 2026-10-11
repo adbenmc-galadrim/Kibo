@@ -49,6 +49,7 @@ function fakeAgents(runs: RunView[], answers: [string, string][]): AgentsPort {
     questions: [],
     projectAgents: [],
     progress: [],
+    signals: [],
   });
   return {
     assign: unused,

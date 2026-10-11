@@ -19,6 +19,7 @@ const base: BatchContext = {
   profiles: PROFILES,
   demoProject: false,
   viewer: "adam",
+  signals: [],
 };
 
 const why = "";

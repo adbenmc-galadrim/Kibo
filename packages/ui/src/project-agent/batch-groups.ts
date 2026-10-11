@@ -76,6 +76,8 @@ export function actionTitle(action: ProposedAction, labels: DiffLabels = default
       return t.createNote(action.path);
     case "updateNote":
       return t.updateNote(action.path);
+    case "dismissSignal":
+      return t.dismissSignal(action.signal);
   }
 }
 

@@ -141,9 +141,9 @@ test("calling ticket_progress asks the daemon and relays its text or its error",
   expect(project.calls).toEqual([]);
 });
 
-test("a project run lists the question tools and the ten project tools with their schemas", async () => {
+test("a project run lists the question tools and the eleven project tools with their schemas", async () => {
   const names = await toolNames(PROJECT_RUN);
-  expect(names).toHaveLength(12);
+  expect(names).toHaveLength(13);
   expect(names).toEqual(["ask_user", "ask_question", ...PROJECT_AGENT_TOOLS]);
   const list = (await call("tools/list", undefined, PROJECT_RUN)) as {
     result: { tools: Array<{ name: string; description: string; inputSchema: unknown }> };
@@ -219,7 +219,7 @@ test("the served tools depend on KIBO_MCP_TOOLS and a down daemon never kills th
     { jsonrpc: "2.0", id: 3, method: "ping" },
   ]);
   const byId = new Map(replies.map((r) => [r.id, r]));
-  expect(byId.get(1)?.result.tools).toHaveLength(12);
+  expect(byId.get(1)?.result.tools).toHaveLength(13);
   expect(byId.get(2)?.result.isError).toBe(true);
   expect(byId.get(3)?.result).toEqual({});
 });

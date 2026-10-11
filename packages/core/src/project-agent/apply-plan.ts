@@ -131,6 +131,7 @@ export function commandsFor(
     case "cancelRun":
     case "createNote":
     case "updateNote":
+    case "dismissSignal":
       return [];
   }
 }

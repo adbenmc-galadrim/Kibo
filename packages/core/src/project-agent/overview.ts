@@ -24,6 +24,7 @@ export type OverviewInput = {
   profiles: readonly AgentProfile[];
   demoProject: boolean;
   memory: string;
+  openSignals: number;
 };
 
 export const ACTIVE_STATUSES: readonly string[] = ["in_progress", "in_review", "blocked"];
@@ -62,6 +63,7 @@ export function projectOverview(input: OverviewInput): ProjectOverview {
       model: p.model,
     })),
     memory: input.memory,
+    openSignals: input.openSignals,
   };
 }
 
@@ -130,6 +132,11 @@ export function renderOverview(overview: ProjectOverview): string {
     ...section(
       "Profils assignables",
       overview.profiles.map((p) => `- ${p.id} (${p.name}, ${p.model})`),
+      "Aucun.",
+    ),
+    ...section(
+      "Signaux",
+      overview.openSignals > 0 ? [`Signaux ouverts : ${overview.openSignals}`] : [],
       "Aucun.",
     ),
     ...section(

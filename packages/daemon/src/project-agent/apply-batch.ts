@@ -46,6 +46,7 @@ async function contextOf(deps: ApplyBatchDeps, batch: Batch): Promise<BatchConte
     profiles: data.profiles(),
     demoProject: data.isDemoProject(batch.projectId),
     viewer: data.viewer(batch.projectId),
+    signals: [],
   };
 }
 

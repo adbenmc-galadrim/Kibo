@@ -45,8 +45,9 @@ function overviewPrompt(ctx: AgentContext, state: TurnState, memory: string, mes
     profiles: ctx.data.profiles(),
     demoProject: ctx.data.isDemoProject(state.projectId),
     memory,
+    openSignals: 0,
   });
-  return firstTurnPrompt(renderOverview(overview), message);
+  return firstTurnPrompt(renderOverview(overview), "", message);
 }
 
 function digestPrompt(
@@ -59,7 +60,7 @@ function digestPrompt(
 ): string {
   const since = ctx.store.sessions(state.projectId).find((s) => s.runId === run.id)?.lastTurnAt ?? 0;
   const changes = diffFingerprints(previous, current, changeNames(state.project, state.runs, previous));
-  return nextTurnPrompt(renderDigest(changes, ctx.store.lastDecided(state.projectId, since)), message);
+  return nextTurnPrompt(renderDigest(changes, ctx.store.lastDecided(state.projectId, since)), "", message);
 }
 
 function systemPrompt(ctx: AgentContext, projectId: string, projectName: string): string {

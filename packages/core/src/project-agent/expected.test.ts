@@ -33,6 +33,7 @@ const ctx = (p: Partial<BatchContext> = {}): BatchContext => ({
   profiles: PROFILES,
   demoProject: false,
   viewer: "adam",
+  signals: [],
   ...p,
 });
 

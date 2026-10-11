@@ -256,6 +256,7 @@ export function agentsFixture(): AgentsState {
     questions: [],
     projectAgents: [],
     progress: [],
+    signals: [],
   };
 }
 
