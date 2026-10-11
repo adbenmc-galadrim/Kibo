@@ -215,7 +215,7 @@ export function createTraceService(deps: TraceDeps): TraceService {
     const moments = hookMoments(state.group, payload, ctx(trace));
     if (trace.source === "hooks") write(runId, moments);
     else state.held.push(...moments);
-    if (state.held.length > HELD_MOMENTS_MAX) toHooks(trace, "path-rejected");
+    if (state.held.length > HELD_MOMENTS_MAX) toHooks(trace, "unreadable");
   }
 
   function settle(runId: string): RunTrace {

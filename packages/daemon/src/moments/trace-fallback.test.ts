@@ -66,9 +66,9 @@ test("a pending run that holds too many moments falls back on hooks", async () =
     await s.trace.onHook(pathless, hook("Stop", { detail: `Tour ${i}.` }));
   expect(kinds(s)).toEqual([]);
   await s.trace.onHook(pathless, hook("Stop", { detail: "De trop." }));
-  expect(s.trace.trace(s.run.id)).toMatchObject({ source: "hooks", partial: "path-rejected" });
+  expect(s.trace.trace(s.run.id)).toMatchObject({ source: "hooks", partial: "unreadable" });
   const data = s.store.list(s.run.id).map((m) => m.data);
-  expect(data[0]).toEqual({ kind: "raw", text: "", partial: "path-rejected" });
+  expect(data[0]).toEqual({ kind: "raw", text: "", partial: "unreadable" });
   expect(data.slice(1)).toHaveLength(HELD_MOMENTS_MAX + 1);
   expect(data.at(-1)).toEqual({ kind: "message", text: "De trop." });
 });
