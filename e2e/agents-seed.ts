@@ -3,6 +3,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, type Page } from "@playwright/test";
+import { E2E_TOKEN } from "./token";
 
 type Body = Record<string, unknown>;
 type Status = "backlog" | "todo" | "in_progress" | "in_review" | "blocked" | "done";
@@ -119,6 +120,11 @@ export function list(value: unknown, key: string): unknown[] {
   const found = field(value, key);
   if (!Array.isArray(found)) throw new Error(`${key} is not a list`);
   return found;
+}
+
+export async function pairBrowser(page: Page): Promise<void> {
+  await page.goto(`/#pair=${E2E_TOKEN}`);
+  await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
 }
 
 export async function rpc(page: Page, body: Body): Promise<unknown> {

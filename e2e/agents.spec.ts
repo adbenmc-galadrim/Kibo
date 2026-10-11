@@ -1,7 +1,16 @@
 import { rmSync } from "node:fs";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { assign, createGitRepo, list, rpc, runState, type Seeded, seedWorkspace, text } from "./agents-seed";
-import { E2E_TOKEN } from "./token";
+import {
+  assign,
+  createGitRepo,
+  list,
+  pairBrowser,
+  rpc,
+  runState,
+  type Seeded,
+  seedWorkspace,
+  text,
+} from "./agents-seed";
 
 test.setTimeout(180_000);
 test.use({ viewport: { width: 1440, height: 900 } });
@@ -86,8 +95,7 @@ async function filterByProject(page: Page, info: TestInfo) {
 }
 
 test("agents au travail : cartes, file, journal, réponse, review", async ({ page }, info) => {
-  await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
+  await pairBrowser(page);
   await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
   await createOpusProfile(page, info);
 
@@ -173,7 +181,7 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
 
 test("l'historique ouvre le run cliqué, pour trois agents différents", async ({ page }, info) => {
   if (!seeded) throw new Error("seed missing");
-  await page.goto(`/#pair=${E2E_TOKEN}`);
+  await pairBrowser(page);
   await assign(page, seeded, 9, "haiku-tests", "queued");
   await page.goto("/#/agents");
   await expect(page.getByRole("heading", { level: 1, name: "Agents" })).toBeVisible();
@@ -229,7 +237,7 @@ test("un run pose une question à valider, la réponse attend « Transmettre à 
   if (!seeded) throw new Error("seed missing");
   const { projectId } = seeded;
   const ticketId = seeded.tickets.get(22) ?? "";
-  await page.goto(`/#pair=${E2E_TOKEN}`);
+  await pairBrowser(page);
   await rpc(page, { method: "setHost", patch: { hostSlots: 12 } });
   const profile = await rpc(page, {
     method: "config",
