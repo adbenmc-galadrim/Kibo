@@ -1,3 +1,4 @@
+import { homedir } from "node:os";
 import { type RunMomentsEvent, type RunView, VISIBILITY_RPC } from "@kibo/schema";
 import type { HookSink } from "../agents/hook-route";
 import type { RpcExtension } from "../rpc-extensions";
@@ -5,6 +6,7 @@ import { withTrace } from "./hooks";
 import { handleVisibilityRequest } from "./rpc";
 import { openMomentStore } from "./store";
 import { createTraceService, type TraceService } from "./trace-service";
+import { transcriptRootOf } from "./transcript-path";
 
 export type RunTraceDeps = {
   home: string;
@@ -34,4 +36,25 @@ export function startRunTrace(deps: RunTraceDeps): RunTraceWiring {
     hooks: (sink) => withTrace(sink, { trace, run }),
     close: () => store.close(),
   };
+}
+
+export type RunTraceOptions = {
+  home: string;
+  transcriptRoot?: string;
+  agentEnv?: Record<string, string | undefined>;
+  userHome?: string;
+};
+
+export function startRunTraceFor(
+  opts: RunTraceOptions,
+  docs: { emit(event: RunMomentsEvent): void },
+  agents: () => { state(): { runs: readonly RunView[] } } | null,
+): RunTraceWiring {
+  const env = opts.agentEnv ?? process.env;
+  return startRunTrace({
+    home: opts.home,
+    root: opts.transcriptRoot ?? transcriptRootOf(env, opts.userHome ?? homedir()),
+    emit: (event) => docs.emit(event),
+    runs: () => agents()?.state().runs ?? [],
+  });
 }

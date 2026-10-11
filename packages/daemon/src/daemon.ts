@@ -30,8 +30,7 @@ import { createIntegrationHost } from "./integrations/host";
 import { createRedactor, type Redactor } from "./integrations/redact";
 import { createLogBuffer, type LogBuffer } from "./log-buffer";
 import { startMarket } from "./market/bootstrap";
-import { startRunTrace } from "./moments/bootstrap";
-import { transcriptRootOf } from "./moments/transcript-path";
+import { startRunTraceFor } from "./moments/bootstrap";
 import { createProjectSettings } from "./notes/settings";
 import { startProjectAgent } from "./project-agent/bootstrap";
 import { createProjectAdmin } from "./projects/admin";
@@ -131,12 +130,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
   closers.push(() => collab.stop());
   let agents: Orchestrator | null = null;
-  const runTrace = startRunTrace({
-    home: opts.home,
-    root: opts.transcriptRoot ?? transcriptRootOf(opts.agentEnv ?? process.env, opts.userHome ?? homedir()),
-    emit: (event) => service.docs.emit(event),
-    runs: () => agents?.state().runs ?? [],
-  });
+  const runTrace = startRunTraceFor(opts, service.docs, () => agents);
   closers.push(() => runTrace.close());
   const components = createComponentsService({
     home: opts.home,
