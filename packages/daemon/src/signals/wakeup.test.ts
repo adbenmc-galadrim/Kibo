@@ -151,6 +151,42 @@ describe("createWakeupScheduler", () => {
     errors.mockRestore();
   });
 
+  test("a timer whose project throws is logged and the next project still wakes up", () => {
+    const errors = spyOn(console, "error").mockImplementation(() => undefined);
+    const r = rig({
+      writable: (projectId) => {
+        if (projectId === "p1") throw new KiboError("NOT_FOUND", "project deleted");
+        return true;
+      },
+    });
+    r.store.kinds.set("p2", ["ticket"]);
+    r.store.saveWakeup({ projectId: "p1", lastAt: T0 - 5 * MIN, dueAt: T0 + MIN });
+    r.store.saveWakeup({ projectId: "p2", lastAt: T0 - 5 * MIN, dueAt: T0 + MIN });
+    r.scheduler.start();
+    expect(() => r.fireDue(T0 + MIN)).not.toThrow();
+    expect(r.sent.map((s) => s.projectId)).toEqual(["p2"]);
+    expect(String(errors.mock.calls[0]?.[0])).toContain("p1");
+    expect(r.live()).toHaveLength(0);
+    errors.mockRestore();
+  });
+
+  test("a store failure while replaying one project does not stop the others", () => {
+    const errors = spyOn(console, "error").mockImplementation(() => undefined);
+    const r = rig();
+    const open = r.store.open;
+    r.store.open = (projectId) => {
+      if (projectId === "p1") throw new Error("database is closed");
+      return open(projectId);
+    };
+    r.store.kinds.set("p2", ["blocker"]);
+    r.store.saveWakeup({ projectId: "p1", lastAt: T0 - 20 * MIN, dueAt: T0 - 1 });
+    r.store.saveWakeup({ projectId: "p2", lastAt: T0 - 20 * MIN, dueAt: T0 - 1 });
+    expect(() => r.scheduler.start()).not.toThrow();
+    expect(r.sent.map((s) => s.projectId)).toEqual(["p2"]);
+    expect(errors.mock.calls.some((c) => String(c[0]).includes("p1"))).toBe(true);
+    errors.mockRestore();
+  });
+
   test("two wake-ups of a project are always a window apart", () => {
     fc.assert(
       fc.property(

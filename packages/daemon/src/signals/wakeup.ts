@@ -55,8 +55,15 @@ export function createWakeupScheduler(deps: WakeupDeps): WakeupScheduler {
     }
   }
 
-  function fire(projectId: string): void {
-    clear(projectId);
+  function guarded(projectId: string, what: string, action: () => void): void {
+    try {
+      action();
+    } catch (e) {
+      console.error(`[kibo-daemon] ${what} of ${projectId} failed`, e);
+    }
+  }
+
+  function wake(projectId: string): void {
     const current = deps.store.wakeup(projectId);
     const triggers = deps.store.open(projectId).filter((s) => WAKE_KINDS.includes(s.kind));
     if (!deps.writable(projectId) || triggers.length === 0) {
@@ -66,6 +73,11 @@ export function createWakeupScheduler(deps: WakeupDeps): WakeupScheduler {
     const at = now();
     send(projectId, triggers);
     deps.store.saveWakeup({ projectId, lastAt: at, dueAt: null });
+  }
+
+  function fire(projectId: string): void {
+    clear(projectId);
+    guarded(projectId, "the project agent wake-up", () => wake(projectId));
   }
 
   function schedule(projectId: string, at: number): void {
@@ -90,9 +102,12 @@ export function createWakeupScheduler(deps: WakeupDeps): WakeupScheduler {
     },
     start() {
       for (const wakeup of deps.store.due()) {
-        if (wakeup.dueAt === null) continue;
-        if (wakeup.dueAt <= now()) fire(wakeup.projectId);
-        else schedule(wakeup.projectId, wakeup.dueAt);
+        const { projectId, dueAt } = wakeup;
+        if (dueAt === null) continue;
+        guarded(projectId, "replaying the wake-up", () => {
+          if (dueAt <= now()) fire(projectId);
+          else schedule(projectId, dueAt);
+        });
       }
     },
     stop() {
