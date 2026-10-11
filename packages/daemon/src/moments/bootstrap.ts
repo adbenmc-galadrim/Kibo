@@ -38,7 +38,7 @@ export type Visibility = {
   progress: ProgressService;
   rpc: RpcExtension;
   hooks(sink: HookSink): HookSink;
-  mcp(project: AgentMcpSink, signals?: SignalRecorder): AgentMcpSink;
+  mcp(project: AgentMcpSink, signals: Pick<SignalService, "record">): AgentMcpSink;
   agents(port: AgentsPort): AgentsPort;
   lifecycle: { onSpawned(run: RunView): Promise<void>; onTurnEnd(run: RunView): Promise<void> };
   peek(projectId: string, runId: string): RunPeek;
@@ -46,11 +46,6 @@ export type Visibility = {
 };
 
 const METHODS = VISIBILITY_RPC.map((schema) => schema.shape.method.value);
-
-type SignalRecorder = Pick<SignalService, "record">;
-const UNWIRED_SIGNALS: SignalRecorder = {
-  record: () => Promise.reject(new KiboError("INTERNAL", "signals are not wired")),
-};
 
 function progressDocs(docs: VisibilityDocs): ProgressDocs {
   return {
@@ -106,7 +101,7 @@ export function startVisibility(
       forgets.push((runId) => reminded.forget(runId));
       return withTrace(reminded, { trace, run });
     },
-    mcp: (project, signals = UNWIRED_SIGNALS) =>
+    mcp: (project, signals) =>
       agentMcpSink({
         project,
         run,

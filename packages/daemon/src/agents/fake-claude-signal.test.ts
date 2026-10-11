@@ -38,12 +38,17 @@ test("the wake-up turn reads the signals and proposes a batch that cites sig:1, 
   ]);
 });
 
-test("the signal routes send the wake-up before any ticket key, the KIB-14 brief to the signal run", () => {
+test("the signal routes send the wake-up before any ticket key and each ticket brief to its scenario", () => {
   const file = scenarioPath("signal-routes");
   const routes = FakeRoutes.parse(JSON.parse(readFileSync(file, "utf8")));
   expect(routes).toMatchObject({ fallback: "project-agent-batch.json", perTurn: true });
   const turn = (prompt: string) => turnScenario(file, prompt, null).turn.split("/").at(-1);
   expect(turn("# KIB-14 · Récepteur de hooks\n\nBrief")).toBe("signal.json");
+  expect(turn("# KIB-16 · Moteur de règles\n\nBrief")).toBe("signal.json");
+  expect(turn("# KIB-15 · Bavard\n\nBrief")).toBe("signal-spam.json");
+  expect(turn("# KIB-13 · Long\n\nBrief")).toBe("signal-hold.json");
+  expect(turn("# Projet\n\n- KIB-13 · Long\n\n# Message\n\nTiens la ligne.")).toBe("signal-hold.json");
+  expect(turn("# KIB-1 · Récepteur\n\nBrief")).toBe("project-agent-batch.json");
   expect(turn("# Projet\n\n- KIB-14 · Récepteur\n\n# Message\n\nRéveil automatique : 2 signaux")).toBe(
     "project-agent-wakeup.json",
   );

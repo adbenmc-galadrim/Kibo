@@ -2,6 +2,7 @@
   "turns": [
     {
       "steps": [
+        { "sleepMs": 1500 },
         { "mcp": "list_signals" },
         {
           "mcp": "propose_batch",
