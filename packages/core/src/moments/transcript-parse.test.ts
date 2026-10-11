@@ -186,3 +186,12 @@ test("parsing never throws, whatever the line", () => {
     }),
   );
 });
+
+test("session metadata written by the CLI is ignored", () => {
+  const lines = [
+    { type: "atis-latch", atis: "2bb01393fe0c7041", sessionId: "s1" },
+    { type: "last-prompt", lastPrompt: "# CAL-1 · Ajouter la soustraction", leafUuid: "u1", sessionId: "s1" },
+    { type: "cost-state", sessionId: "s1", totalCostUSD: 0.16, modelUsage: {} },
+  ];
+  for (const line of lines) expect(parseTranscriptLine(JSON.stringify(line))).toEqual({ kind: "ignored" });
+});

@@ -39,6 +39,9 @@ export const IGNORED_ENTRY_TYPES: readonly string[] = [
   "file-history-snapshot",
   "queue-operation",
   "attachment",
+  "atis-latch",
+  "last-prompt",
+  "cost-state",
 ];
 
 const IGNORED: ParsedLine = { kind: "ignored" };
