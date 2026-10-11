@@ -80,6 +80,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/i18n\/fr-moments\.ts$/,
   /\/packages\/sdk\/src\/(ui\/hover-card|agent-mention)\.tsx$/,
   /\/packages\/ui\/src\/ticket\/activity\/[A-Za-z-]+\.tsx?$/,
+  /\/packages\/ui\/src\/(project-agent\/signals\/[A-Za-z-]+\.tsx?|moments\/SignalMoment\.tsx|i18n\/fr-signals\.ts)$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

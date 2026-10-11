@@ -1,3 +1,4 @@
+import type { Signal } from "@kibo/schema";
 import { renderMarkdownLite } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
@@ -12,6 +13,7 @@ type Props = {
   items: ConversationItem[];
   readOnly: boolean;
   labels: DiffLabels;
+  signals: readonly Signal[];
   onTicket(key: string): void;
   onRetry(): void;
   onDecide(batchId: string, d: Decision): Promise<void>;
@@ -28,7 +30,15 @@ function readingText(tools: readonly string[]): string {
   );
 }
 
-function Item({ item, readOnly, labels, onTicket, onRetry, onDecide }: Props & { item: ConversationItem }) {
+function Item({
+  item,
+  readOnly,
+  labels,
+  signals,
+  onTicket,
+  onRetry,
+  onDecide,
+}: Props & { item: ConversationItem }) {
   switch (item.kind) {
     case "user":
       return (
@@ -58,6 +68,8 @@ function Item({ item, readOnly, labels, onTicket, onRetry, onDecide }: Props & {
           <BatchCard
             batch={item.batch}
             labels={labels}
+            signals={signals}
+            afterWakeup={item.afterWakeup}
             readOnly={readOnly}
             onDecide={(d) => onDecide(item.batch.id, d)}
           />

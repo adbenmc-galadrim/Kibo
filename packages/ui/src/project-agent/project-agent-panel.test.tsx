@@ -1,15 +1,19 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { ProjectAgentView, RpcRequest, RunLogEntry } from "@kibo/schema";
+import type { ProjectAgentView, RpcRequest, RunLogEntry, SignalsView } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { apiMock } from "../api-mock";
 import { type Host, HostProvider } from "../shell/Host";
+import type { ProjectAgentTab } from "../shell/use-project-agent-panel";
 import { CONVERSATION_LOG, emisProject, emptyView, pendingBatch, projectRun, viewFixture } from "./fixtures";
+import { emptySignals, signalsView } from "./signals/fixtures";
 
 const calls: RpcRequest[] = [];
 let current: ProjectAgentView = viewFixture();
 let past: ProjectAgentView = viewFixture();
 let log: RunLogEntry[] = CONVERSATION_LOG;
+let signals: SignalsView = signalsView();
 
 mock.module("../api", () =>
   apiMock({
@@ -18,6 +22,7 @@ mock.module("../api", () =>
         calls.push(req);
         if (req.method === "getProjectAgent") return Promise.resolve(req.runId ? past : current);
         if (req.method === "getRunLog") return Promise.resolve(log);
+        if (req.method === "listSignals") return Promise.resolve(signals);
         if (req.method === "decideBatch") return Promise.resolve(pendingBatch({ status: "rejected" }));
         if (req.method === "resetProjectAgent") return Promise.resolve(emptyView());
         return Promise.resolve(projectRun({ state: "queued" }));
@@ -53,12 +58,18 @@ beforeEach(() => {
     past: [],
   });
   log = CONVERSATION_LOG;
+  signals = signalsView();
 });
 
-const show = () =>
+function Panel({ initial }: { initial: ProjectAgentTab }) {
+  const [tab, setTab] = useState(initial);
+  return <ProjectAgentPanel open project={emisProject()} tab={tab} onTab={setTab} onClose={() => {}} />;
+}
+
+const show = (initial: ProjectAgentTab = "conversation") =>
   render(
     <HostProvider host={host}>
-      <ProjectAgentPanel open project={emisProject()} onClose={() => {}} />
+      <Panel initial={initial} />
     </HostProvider>,
   );
 const panel = () => within(screen.getByRole("dialog"));
@@ -201,4 +212,44 @@ test("the width is bounded, remembered, and the edge resizes with Shift+arrows",
   localStorage.setItem("kibo.projectAgent.width", "10");
   window.dispatchEvent(new StorageEvent("storage", { key: "kibo.projectAgent.width" }));
   await waitFor(() => expect(screen.getByRole("dialog").style.width).toBe("360px"));
+});
+
+test("two tabs: Conversation, and Signaux with the open count; the compose box stays under Conversation", async () => {
+  show();
+  const user = userEvent.setup();
+  expect(await panel().findByRole("tab", { name: "Signaux · 3" })).toBeTruthy();
+  expect(panel().getByRole("tab", { name: "Conversation", selected: true })).toBeTruthy();
+  await user.click(panel().getByRole("tab", { name: "Signaux · 3" }));
+  expect(await panel().findByRole("region", { name: "En boîte · 3" })).toBeTruthy();
+  expect(panel().queryByRole("textbox", { name: "Message à l'agent de projet" })).toBeNull();
+});
+
+test("tab signals opens the box directly, and an empty box has no zero count", async () => {
+  signals = emptySignals();
+  show("signals");
+  expect(await panel().findByText(/^Aucun signal\./)).toBeTruthy();
+  expect(panel().getByRole("tab", { name: "Signaux", selected: true })).toBeTruthy();
+});
+
+test("a batch after a wakeup says so, names the source of each action and groups dismissals", async () => {
+  log = [
+    {
+      id: 1,
+      at: 1,
+      event: { type: "answered", text: "Réveil automatique : 3 signaux à traiter (…).", rank: 0 },
+    },
+  ];
+  const actions = [
+    { id: 1, type: "createTicket" as const, ref: "new:1", title: "Tests", why: "", signals: ["sig:1"] },
+    { id: 2, type: "dismissSignal" as const, signal: "sig:3", why: "Déjà connu" },
+  ];
+  current = viewFixture({ batches: [pendingBatch({ createdAt: 2, actions, expected: [] })] });
+  show();
+  expect(await panel().findByText("Réveil automatique · 3 signaux")).toBeTruthy();
+  const card = within(await panel().findByRole("region", { name: /Lot n° 1/ }));
+  expect(card.getByText("2 actions · après réveil")).toBeTruthy();
+  expect(await card.findByText("signal Ticket à créer de")).toBeTruthy();
+  expect(card.getByRole("button", { name: /opus-dev-2/ })).toBeTruthy();
+  const group = within(card.getByRole("group", { name: "Signaux" }));
+  expect(group.getByText("Signal sig:3 : sans suite")).toBeTruthy();
 });

@@ -14,6 +14,8 @@ function show(batch: Batch, readOnly = false) {
     <BatchCard
       batch={batch}
       labels={projectLabels(emisProject())}
+      signals={[]}
+      afterWakeup={false}
       readOnly={readOnly}
       onDecide={async (d) => {
         decisions.push(d);
@@ -119,6 +121,8 @@ test("superseded, abandoned and rejected batches carry only their label", () => 
       <BatchCard
         batch={pendingBatch({ status })}
         labels={defaultLabels}
+        signals={[]}
+        afterWakeup={false}
         readOnly={false}
         onDecide={async () => {}}
       />,
@@ -155,6 +159,8 @@ test("an agent action names the existing run of its ticket, and a cancel names i
       <BatchCard
         batch={batch}
         labels={projectLabels(emisProject())}
+        signals={[]}
+        afterWakeup={false}
         readOnly={false}
         onDecide={async () => {}}
       />

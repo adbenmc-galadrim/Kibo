@@ -1,4 +1,4 @@
-import type { ActionResult, AgentsState, ExpectedState, ProposedAction, RunView } from "@kibo/schema";
+import type { ActionResult, AgentsState, ExpectedState, ProposedAction, RunView, Signal } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { ArrowRight } from "lucide-react";
@@ -6,13 +6,15 @@ import { useId } from "react";
 import { Mention } from "../agents/mention/Mention";
 import { newestFirst } from "../agents/mention/use-run-view";
 import { frProjectAgent } from "../i18n/fr-project-agent";
+import { frSignals } from "../i18n/fr-signals";
 import { useAgentsState } from "../state/agents-context";
-import { actionDiff, actionTitle, type DiffLabels, replacesContent } from "./batch-groups";
+import { actionDiff, actionTitle, citedSignals, type DiffLabels, replacesContent } from "./batch-groups";
 
 type Props = {
   action: ProposedAction;
   expected: ExpectedState | undefined;
   labels: DiffLabels;
+  signals: readonly Signal[];
   selectable: boolean;
   checked: boolean;
   result: ActionResult | undefined;
@@ -54,7 +56,17 @@ function RunMention({ run, label }: { run: RunView; label: string }) {
   );
 }
 
-export function BatchActionRow({ action, expected, labels, selectable, checked, result, onCheck }: Props) {
+function Provenance({ signal }: { signal: Signal }) {
+  return (
+    <p className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+      {frSignals.provenancePrefix(frSignals.kinds[signal.kind])}
+      <Mention runId={signal.runId} label={signal.runLabel} />
+    </p>
+  );
+}
+
+export function BatchActionRow(props: Props) {
+  const { action, expected, labels, signals, selectable, checked, result, onCheck } = props;
   const id = useId();
   const title = actionTitle(action, labels);
   const diff = actionDiff(action, expected, labels);
@@ -82,6 +94,9 @@ export function BatchActionRow({ action, expected, labels, selectable, checked, 
           </p>
         )}
         {!diff && replacesContent(action) && <p className="text-xs text-muted-foreground">{t.replaced}</p>}
+        {citedSignals(action, signals).map((signal) => (
+          <Provenance key={signal.id} signal={signal} />
+        ))}
         {run && <RunMention run={run} label={action.type === "cancelRun" ? t.run : t.lastRun} />}
         {action.why && (
           <p className="text-xs text-muted-foreground" title={t.why}>

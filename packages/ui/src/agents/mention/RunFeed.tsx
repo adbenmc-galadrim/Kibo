@@ -2,6 +2,7 @@ import type { RunMoment, RunView, Step } from "@kibo/schema";
 import { useEffect, useRef } from "react";
 import { frMoments } from "../../i18n/fr-moments";
 import { Feed } from "../../moments/Feed";
+import { useOpenSignal } from "../../moments/use-open-signal";
 import { useRunFileContext } from "../../moments/use-run-file-context";
 import { useHost } from "../../shell/Host";
 import { useRunLog } from "../../state/use-run-log";
@@ -32,6 +33,7 @@ export function RunFeed(props: Props) {
 function LoadedFeed({ run, runs, moments, steps, showReasoning = false, highlightStep = null }: Props) {
   const host = useHost();
   const files = useRunFileContext(run);
+  const openSignal = useOpenSignal();
   const { log } = useRunLog(run.id);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -49,6 +51,7 @@ function LoadedFeed({ run, runs, moments, steps, showReasoning = false, highligh
         showReasoning={showReasoning}
         highlightStep={highlightStep}
         onOpenFile={host.openFile}
+        onOpenSignal={openSignal}
         label={run.label}
         texts={frMoments}
       />

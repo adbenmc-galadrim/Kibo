@@ -3,6 +3,7 @@ import { type RefObject, useMemo } from "react";
 import { canEdit } from "../state/access";
 import type { Host } from "./Host";
 import type { DialogsState } from "./ShellDialogs";
+import type { ProjectAgentTab } from "./use-project-agent-panel";
 
 type Deps = {
   activeProjectId: string | null;
@@ -12,10 +13,11 @@ type Deps = {
   openView: Host["openView"];
   openRun(runId: string): void;
   answerRun(runId: string): void;
+  showProjectAgent(tab: ProjectAgentTab): void;
 };
 
 export function useWorkspaceHost(d: Deps): Host {
-  const { activeProjectId, projectRef, set, go, openView, openRun, answerRun } = d;
+  const { activeProjectId, projectRef, set, go, openView, openRun, answerRun, showProjectAgent } = d;
   return useMemo<Host>(
     () => ({
       openTicket: (ticketId) => {
@@ -31,7 +33,8 @@ export function useWorkspaceHost(d: Deps): Host {
       openView,
       openRun,
       answerRun,
+      openProjectAgent: ({ tab }) => showProjectAgent(tab),
     }),
-    [activeProjectId, projectRef, set, go, openView, openRun, answerRun],
+    [activeProjectId, projectRef, set, go, openView, openRun, answerRun, showProjectAgent],
   );
 }

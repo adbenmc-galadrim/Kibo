@@ -1,4 +1,4 @@
-import { type Batch, isDecidable } from "@kibo/schema";
+import { type Batch, isDecidable, type Signal } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { useId, useState } from "react";
@@ -11,6 +11,8 @@ export type Decision = { decision: "apply"; actionIds: number[] } | { decision: 
 type Props = {
   batch: Batch;
   labels: DiffLabels;
+  signals: readonly Signal[];
+  afterWakeup: boolean;
   readOnly: boolean;
   onDecide(d: Decision): Promise<void>;
 };
@@ -27,12 +29,13 @@ type GroupProps = {
   group: BatchGroup;
   batch: Batch;
   labels: DiffLabels;
+  signals: readonly Signal[];
   selectable: boolean;
   checked: ReadonlySet<number>;
   onChange(ids: number[], on: boolean): void;
 };
 
-function Group({ group, batch, labels, selectable, checked, onChange }: GroupProps) {
+function Group({ group, batch, labels, signals, selectable, checked, onChange }: GroupProps) {
   const ids = group.actions.map((a) => a.id);
   const all = ids.every((id) => checked.has(id));
   const name = t.group(group.group);
@@ -53,6 +56,7 @@ function Group({ group, batch, labels, selectable, checked, onChange }: GroupPro
             action={action}
             expected={batch.expected.find((e) => e.actionId === action.id)}
             labels={labels}
+            signals={signals}
             selectable={selectable}
             checked={checked.has(action.id)}
             result={batch.results.find((r) => r.actionId === action.id)}
@@ -92,7 +96,7 @@ function RejectForm({ busy, onCancel, onConfirm }: RejectProps) {
   );
 }
 
-export function BatchCard({ batch, labels, readOnly, onDecide }: Props) {
+export function BatchCard({ batch, labels, signals, afterWakeup, readOnly, onDecide }: Props) {
   const [checked, setChecked] = useState<ReadonlySet<number>>(() => new Set(batch.actions.map((a) => a.id)));
   const [rejecting, setRejecting] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -129,7 +133,11 @@ export function BatchCard({ batch, labels, readOnly, onDecide }: Props) {
       <header className="grid gap-1">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-semibold">{t.region(batch.seq)}</h3>
-          <span className="text-xs text-muted-foreground">{t.count(batch.actions.length)}</span>
+          <span className="text-xs text-muted-foreground">
+            {afterWakeup
+              ? `${t.count(batch.actions.length)} · ${t.afterWakeup}`
+              : t.count(batch.actions.length)}
+          </span>
         </div>
         <p className="text-sm">{batch.summary}</p>
         {status && <p className="text-xs font-medium text-muted-foreground">{status}</p>}
@@ -144,6 +152,7 @@ export function BatchCard({ batch, labels, readOnly, onDecide }: Props) {
             group={group}
             batch={batch}
             labels={labels}
+            signals={signals}
             selectable={selectable}
             checked={checked}
             onChange={change}

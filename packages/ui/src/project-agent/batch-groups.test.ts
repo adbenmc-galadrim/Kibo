@@ -7,8 +7,10 @@ import {
   groupActions,
   projectLabels,
   replacesContent,
+  signalProvenance,
 } from "./batch-groups";
 import { emisProject, pendingBatch } from "./fixtures";
+import { OPEN_SIGNALS } from "./signals/fixtures";
 
 test("groupActions keeps Tickets, Agents, Questions, Notes and the id order inside each group", () => {
   const shuffled = [...pendingBatch().actions].reverse();
@@ -150,4 +152,27 @@ test("an assignment names the profile, never its id", () => {
   const labels = projectLabels(emisProject(), [{ id: "p-42", name: "opus-dev" }]);
   expect(actionTitle(assign, labels)).toBe("Assigner EMIS-1 à opus-dev");
   expect(actionTitle({ ...assign, profileId: "gone" }, labels)).toBe("Assigner EMIS-1 à gone");
+});
+
+test("dismissSignal goes to the Signaux group, after Notes, with its own title", () => {
+  const dismiss: ProposedAction = { id: 9, type: "dismissSignal", signal: "sig:3", why: "Déjà connu" };
+  const groups = groupActions([...pendingBatch().actions, dismiss]);
+  expect(groups.at(-1)).toEqual({ group: "signals", actions: [dismiss] });
+  expect(actionTitle(dismiss)).toBe("Signal sig:3 : sans suite");
+});
+
+test("signalProvenance names the kind and the run of each cited signal", () => {
+  const cited: ProposedAction = {
+    id: 1,
+    type: "createTicket",
+    ref: "new:1",
+    title: "Tests",
+    why: "",
+    signals: ["sig:1", "sig:2", "sig:9"],
+  };
+  expect(signalProvenance(cited, OPEN_SIGNALS)).toEqual([
+    "signal Ticket à créer de opus-dev-2",
+    "signal Blocage de opus-dev-3",
+  ]);
+  expect(signalProvenance({ ...cited, signals: undefined }, OPEN_SIGNALS)).toEqual([]);
 });

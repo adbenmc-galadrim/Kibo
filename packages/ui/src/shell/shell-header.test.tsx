@@ -46,7 +46,7 @@ function header(onOpen: (t: TabTarget) => void = () => {}) {
         branch={null}
         gitError={null}
         agents={agents()}
-        agentPanel={{ available: false, open: false, toggle: () => {} }}
+        agentPanel={{ available: false, open: false, toggle: () => {}, show: () => {} }}
         viewer="adam"
         notifications="browser"
         now={NOW}
@@ -112,7 +112,12 @@ test("the project agent button sits before Partager and carries a dot while a ba
         branch={null}
         gitError={null}
         agents={state}
-        agentPanel={{ available: true, open: false, toggle: () => toggled.push("toggle") }}
+        agentPanel={{
+          available: true,
+          open: false,
+          toggle: () => toggled.push("toggle"),
+          show: () => toggled.push("signals"),
+        }}
         viewer="adam"
         notifications="browser"
         now={NOW}
@@ -134,6 +139,10 @@ test("the project agent button sits before Partager and carries a dot while a ba
   expect(toggled).toEqual(["toggle"]);
   view.rerender(props(waiting("b1")));
   expect(screen.getByRole("button", { name: "Agent de projet · Un lot attend ta validation" })).toBeTruthy();
+  view.rerender(props({ ...waiting("b1"), signals: [{ projectId: "kibo", open: 2, unread: 1 }] }));
+  expect(screen.getByRole("button", { name: "Agent de projet · 2 signaux en boîte" })).toBeTruthy();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Ouvrir la boîte à signaux" }));
+  expect(toggled).toEqual(["toggle", "signals"]);
 });
 
 test("the creations indicator loads on demand: nothing shows while loading, then the button", async () => {

@@ -163,3 +163,24 @@ describe("questionExtras", () => {
     expect(questionExtras(buildTimeline([], new Map(), [q]))[0]?.kind).toBe("system");
   });
 });
+
+test("a signal moment enters the chronology, reasoning stays out", () => {
+  const signal: MomentData = {
+    kind: "signal",
+    signalId: "s1",
+    ref: "sig:1",
+    signalKind: "ticket",
+    title: "Tests",
+  };
+  const moments = new Map([
+    [
+      "r1",
+      [
+        moment("r1", 1, NOW - 58 * MIN, signal),
+        moment("r1", 2, NOW - 57 * MIN, { kind: "reasoning", text: "…" }),
+      ],
+    ],
+  ]);
+  const items = buildTimeline([first], moments, []);
+  expect(items.filter((i) => i.kind === "moment").map((i) => i.moment?.data.kind)).toEqual(["signal"]);
+});
