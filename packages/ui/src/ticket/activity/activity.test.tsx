@@ -219,6 +219,7 @@ test("only the ten latest runs are loaded until older ones are asked for", async
   expect(loaded().has("old-0")).toBe(false);
   await userEvent.setup().click(older);
   await waitFor(() => expect(loaded().size).toBe(12));
+  expect(calls.filter((c) => c.method === "runMoments")).toHaveLength(12);
   expect(within(panel).queryByRole("button", { name: "Charger les runs plus anciens" })).toBeNull();
 });
 

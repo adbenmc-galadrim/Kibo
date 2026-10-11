@@ -1,5 +1,5 @@
 import { KiboError, type RunMoment, type RunMomentsPage } from "@kibo/schema";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { client } from "../../api";
 import { mergeMoments } from "../../moments/use-run-moments";
 
@@ -15,11 +15,13 @@ function withMoments(page: RunMomentsPage, moments: readonly RunMoment[]): RunMo
 export function useRunsMoments(runIds: readonly string[]): RunsMoments {
   const key = runIds.join("\n");
   const [state, setState] = useState<RunsMoments>({ pages: new Map(), error: null });
+  const loadedIds = useRef(new Set<string>());
   useEffect(() => {
-    const ids = key === "" ? [] : key.split("\n");
-    if (ids.length === 0) return;
+    const all = key === "" ? [] : key.split("\n");
+    if (all.length === 0) return;
     let alive = true;
-    const wanted = new Set(ids);
+    const wanted = new Set(all);
+    const ids = all.filter((runId) => !loadedIds.current.has(runId));
     const early = new Map<string, RunMoment[]>();
     const off = client.subscribeMoments((event) => {
       if (!wanted.has(event.runId)) return;
@@ -33,6 +35,7 @@ export function useRunsMoments(runIds: readonly string[]): RunsMoments {
     Promise.all(ids.map((runId) => client.rpc({ method: "runMoments", runId }))).then(
       (loaded) => {
         if (!alive) return;
+        for (const runId of ids) loadedIds.current.add(runId);
         setState((s) => {
           const pages = new Map(s.pages);
           loaded.forEach((page, i) => {
