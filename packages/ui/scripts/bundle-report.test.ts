@@ -350,4 +350,13 @@ describe("bundle report", () => {
     for (const p of entry)
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`))).toBe(false);
   });
+  test("the activity tab of a ticket is forbidden in the entry", () => {
+    const paths = [
+      "/x/packages/ui/src/ticket/activity/ActivityTab.tsx",
+      "/x/packages/ui/src/ticket/activity/ChronologyWide.tsx",
+      "/x/packages/ui/src/ticket/activity/timeline.ts",
+      "/x/packages/ui/src/ticket/activity/use-runs-moments.ts",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+  });
 });

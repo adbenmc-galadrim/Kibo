@@ -53,6 +53,10 @@ export const MyTicketsPage = lazyPanel(
 );
 export const InboxPage = lazyPanel(() => import("../inbox/InboxPage").then((m) => m.InboxPage), fr.lazy);
 export const TicketTab = lazyPanel(() => import("../pages/TicketTab").then((m) => m.TicketTab), fr.lazy);
+export const ActivityTab = lazyPanel(
+  () => import("../ticket/activity/ActivityTab").then((m) => m.ActivityTab),
+  fr.lazy,
+);
 export const Welcome = lazyPanel(() => import("./Welcome").then((m) => m.Welcome), fr.lazy);
 export const ChangesView = lazyPanel(() => import("../code/ChangesView").then((m) => m.ChangesView), fr.lazy);
 export const FileTabView = lazyPanel(
