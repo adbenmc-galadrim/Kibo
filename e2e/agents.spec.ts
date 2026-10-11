@@ -182,7 +182,6 @@ test("l'historique ouvre le run cliqué, pour trois agents différents", async (
     .getByRole("radio", { name: "Tous" })
     .click();
   await filterByProject(page, info);
-  const drawer = page.getByRole("region", { name: "Agents" });
   for (const [profile, key] of [
     ["sonnet-review", "KIB-7"],
     ["haiku-tests", "KIB-9"],
@@ -193,10 +192,10 @@ test("l'historique ouvre le run cliqué, pour trois agents différents", async (
       .getByRole("cell")
       .nth(2)
       .click();
-    const feed = drawer.getByRole("region", { name: "Fil" });
-    await expect(feed.getByRole("list", { name: new RegExp(`^Fil de ${profile}(-\\d+)?$`) })).toBeAttached();
-    await expect(feed.getByText(new RegExp(`^${profile}(-\\d+)?$`)).first()).toBeVisible();
-    await expect(drawer.getByText(new RegExp(`^${key} · `)).first()).toBeVisible();
+    const panel = page.getByRole("dialog", { name: new RegExp(`^Run ${profile}(-\\d+)? · ${key}$`) });
+    await expect(panel.getByRole("list", { name: new RegExp(`^Fil de ${profile}(-\\d+)?$`) })).toBeAttached();
+    await expect(panel.getByRole("heading", { name: new RegExp(`^${profile}(-\\d+)?$`) })).toBeVisible();
+    await expect(panel.getByRole("button", { name: new RegExp(`^${key} · `) })).toBeVisible();
   }
   await shot(page, info, "historique-trois-agents");
 });
@@ -267,7 +266,17 @@ test("un run pose une question à valider, la réponse attend « Transmettre à 
   const row = page.getByRole("row", { name: /^KIB-22 · / });
   await expect(row).toContainText("Terminé · 1 question");
   await row.getByRole("cell").nth(2).click();
+  const panel = page.getByRole("dialog", { name: /^Run emis-livraison(-\d+)? · KIB-22$/ });
+  await expect(panel.getByRole("list", { name: /^Fil de emis-livraison/ })).toBeAttached();
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
+  const expand = page.getByRole("button", { name: "Déplier les agents" });
+  if ((await expand.count()) > 0) await expand.press("Enter");
   const drawer = page.getByRole("region", { name: "Agents" });
+  await drawer
+    .getByRole("list", { name: /^Terminés depuis 24 h · \d+$/ })
+    .getByRole("button", { name: /KIB-22/ })
+    .click();
   await expect(drawer.getByText("1 question ouverte")).toBeVisible();
   await expect(drawer.getByRole("list", { name: /^Terminés depuis 24 h · \d+$/ })).toContainText(
     /KIB-22 · .+ · 1 question/,
