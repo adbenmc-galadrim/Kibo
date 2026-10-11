@@ -218,14 +218,14 @@ const allDaemons = [
   {
     name: "visibility-dark",
     scheme: "dark",
-    port: 4463,
+    port: 4465,
     spec: /visibility\.spec\.ts/,
     scenario: "progress-routes",
   },
   {
     name: "visibility-light",
     scheme: "light",
-    port: 4464,
+    port: 4466,
     spec: /visibility\.spec\.ts/,
     scenario: "progress-routes",
   },
