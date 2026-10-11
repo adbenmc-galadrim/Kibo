@@ -30,7 +30,7 @@ import { createIntegrationHost } from "./integrations/host";
 import { createRedactor, type Redactor } from "./integrations/redact";
 import { createLogBuffer, type LogBuffer } from "./log-buffer";
 import { startMarket } from "./market/bootstrap";
-import { startRunTraceFor } from "./moments/bootstrap";
+import { startVisibility } from "./moments/bootstrap";
 import { createProjectSettings } from "./notes/settings";
 import { startProjectAgent } from "./project-agent/bootstrap";
 import { createProjectAdmin } from "./projects/admin";
@@ -130,8 +130,8 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
   closers.push(() => collab.stop());
   let agents: Orchestrator | null = null;
-  const runTrace = startRunTraceFor(opts, service.docs, () => agents);
-  closers.push(() => runTrace.close());
+  const visibility = startVisibility(opts, service.docs, () => agents);
+  closers.push(visibility.close);
   const components = createComponentsService({
     home: opts.home,
     toolchain: opts.toolchain,
@@ -149,11 +149,11 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     presence: (projectId) => collab.presence.peers(projectId),
     sharing: (projectId) => collab.syncInfo(projectId),
     deliverAnswers: (projectId, ticketId) => service.deliverAnswers(projectId, ticketId),
+    peekRun: visibility.peek,
     ...(opts.installCli && { installCli: opts.installCli }),
     ...(opts.cliStatus && { cliStatus: opts.cliStatus }),
   });
-  closers.push(service.attachComponents(components));
-  closers.push(() => components.stop());
+  closers.push(service.attachComponents(components), () => components.stop());
   await components.start();
   const projectAgent = startProjectAgent({
     home: opts.home,
@@ -226,13 +226,13 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       app.rpc,
       tutorial.rpc,
       projectAgent.agent.rpc,
-      runTrace.rpc,
+      visibility.rpc,
     ],
     port: opts.port,
     uiDir: opts.uiDir,
     extraOrigins: devOrigins,
-    hooks: runTrace.hooks(agentQuestionHooks(() => agents, service.agentData, opts.notify ?? (() => {}))),
-    agentMcp: projectAgent.agent.mcp,
+    hooks: visibility.hooks(agentQuestionHooks(() => agents, service.agentData, opts.notify ?? (() => {}))),
+    agentMcp: visibility.mcp(projectAgent.agent.mcp),
     assets: components.assets,
     icons: service.icons,
     sandboxOrigin: () => sandboxOrigin || null,
@@ -281,11 +281,11 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     notify: opts.notify ?? (() => {}),
     projectTurns: projectAgent.agent.turns,
     ...(opts.agentEnv && { env: opts.agentEnv }),
+    ...visibility.lifecycle,
   });
   closers.push(() => orchestrator.stop());
   agents = orchestrator;
-  closers.push(collab.attachRuns(orchestrator));
-  closers.push(service.attachAgents(orchestrator));
+  closers.push(collab.attachRuns(orchestrator), service.attachAgents(visibility.agents(orchestrator)));
   const ai = await startAi({
     home: opts.home,
     toolchain: opts.toolchain,

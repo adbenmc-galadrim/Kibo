@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { type AgentsState, INBOX_ID, type Question, type RpcRequest, type RunView } from "@kibo/schema";
-import { type AgentQuestions, type AgentsPort, handleAgentRequest } from "./agents-rpc";
+import { type AgentQuestions, type AgentsPort, handleAgentRequest, withRunProgress } from "./agents-rpc";
 import { answered, HUMAN, runView } from "./questions/questions.test-helper";
 
 const IMPORT = { kind: "import", ref: "plan" } as const;
@@ -171,4 +171,33 @@ test("a project ticket still reaches the orchestrator", () => {
     ),
   ).toThrow("preview should not be reached");
   expect(calls).toEqual(["preview"]);
+});
+
+test("the agents state carries the progress of the live runs and of the runs ended within 24 h", () => {
+  const now = 100 * 3_600_000;
+  const runs = [
+    runView({ id: "live", state: "running" }),
+    runView({ id: "recent", state: "done", endedAt: now - 23 * 3_600_000 }),
+    runView({ id: "old", state: "done", endedAt: now - 25 * 3_600_000 }),
+  ];
+  const asked: string[][] = [];
+  const port = withRunProgress(
+    agentsPort([], runs),
+    {
+      summaries: (seen) => {
+        asked.push(seen.map((r) => r.id));
+        return seen.map((r) => ({ runId: r.id, step: null, report: { toCheck: 2, undeclared: 1 } }));
+      },
+    },
+    () => now,
+  );
+  const state = handleAgentRequest(port, { method: "getAgents" }, questionsStub([]));
+  expect(asked).toEqual([["live", "recent"]]);
+  expect(state).toMatchObject({
+    progress: [
+      { runId: "live", report: { toCheck: 2 } },
+      { runId: "recent", report: { toCheck: 2 } },
+    ],
+  });
+  expect(port.state().runs).toBe(runs);
 });
