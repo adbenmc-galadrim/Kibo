@@ -67,7 +67,13 @@ export function startVisibility(
     now: Date.now,
     emit: (event: RunMomentsEvent) => docs.emit(event),
   });
-  const progress = createProgressService({ docs: progressDocs(docs), git: runGit, trace, now: Date.now });
+  const progress = createProgressService({
+    docs: progressDocs(docs),
+    git: runGit,
+    trace,
+    now: Date.now,
+    changed: () => docs.emit({ topic: "agents" }),
+  });
   const run = (runId: string): RunView | null =>
     agents()
       ?.state()

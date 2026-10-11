@@ -30,7 +30,13 @@ export type ProgressTrace = {
   setBaseHead(runId: string, head: string | null): void;
   trace(runId: string): { baseHead: string | null } | null;
 };
-export type ProgressDeps = { docs: ProgressDocs; git: GitRunner; trace: ProgressTrace; now: () => number };
+export type ProgressDeps = {
+  docs: ProgressDocs;
+  git: GitRunner;
+  trace: ProgressTrace;
+  now: () => number;
+  changed?: () => void;
+};
 export type ProgressService = {
   record(run: RunView, input: ProgressInput): Promise<string>;
   onSpawned(run: RunView): Promise<void>;
@@ -68,12 +74,14 @@ export function createProgressService(deps: ProgressDeps): ProgressService {
     return snapshot.tickets.find((t) => t.id === run.ticketId)?.agentProgress ?? null;
   };
 
-  const write = (run: TicketRun, update: ProgressUpdate) =>
+  const write = (run: TicketRun, update: ProgressUpdate) => {
     docs.run(
       run.projectId,
       { method: "setTicketProgress", ticketId: run.ticketId, runId: run.id, at: now(), ...update },
       FROM_AGENT,
     );
+    deps.changed?.();
+  };
 
   async function record(run: RunView, input: ProgressInput): Promise<string> {
     write(ticketRun(run), input);

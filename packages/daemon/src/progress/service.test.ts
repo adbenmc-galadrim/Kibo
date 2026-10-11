@@ -27,6 +27,7 @@ function kit(gitReplies: Record<string, { code: number; stdout: string }> = {}) 
   const commands: { projectId: string; cmd: ProjectCommand; meta: CommandMeta }[] = [];
   const traces = new Map<string, { doing: string | null; baseHead: string | null }>();
   const gitCalls: string[][] = [];
+  const changes: number[] = [];
   const git: GitRunner = async (args) => {
     gitCalls.push(args);
     const reply = gitReplies[args[0] ?? ""] ?? { code: 128, stdout: "" };
@@ -52,10 +53,11 @@ function kit(gitReplies: Record<string, { code: number; stdout: string }> = {}) 
     git,
     trace,
     now: () => 1_000,
+    changed: () => changes.push(commands.length),
   });
   const run = runView({ id: "r1", projectId: "p1", ticketId: ticket.id, cwd: "/repo", state: "running" });
   const progressOf = () => readProject(doc).tickets.find((t) => t.id === ticket.id)?.agentProgress;
-  return { service, run, ticket, commands, traces, gitCalls, progressOf };
+  return { service, run, ticket, commands, traces, gitCalls, progressOf, changes };
 }
 
 test("a plan is written on the run's ticket by the daemon and the doing step is traced", async () => {
@@ -132,6 +134,7 @@ test("the end of a turn checks the reported files against the workspace", async 
     undeclared: ["src/extra.ts"],
     unchanged: ["README.md"],
   });
+  expect(k.changes).toEqual([1, 2]);
 });
 
 test("without a base or outside git the files stay unchecked", async () => {
