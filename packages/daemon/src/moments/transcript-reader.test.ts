@@ -44,15 +44,31 @@ test("a line longer than maxBytes yields nothing but more, and is read apart", (
   const long = "x".repeat(20);
   const path = file(`${long}\nok\n`);
   expect(readTranscriptSlice(path, 0, 10)).toEqual({ lines: [], offset: 0, more: true });
-  expect(readLongLine(path, 0, 8)).toEqual({ head: "xxxxxxxx", offset: 21 });
+  expect(readLongLine(path, { offset: 0, scanFrom: 0, headBytes: 8, maxScan: 64 })).toEqual({
+    kind: "end",
+    head: "xxxxxxxx",
+    offset: 21,
+  });
   expect(readTranscriptSlice(path, 21, 10)).toEqual({ lines: ["ok"], offset: 24, more: false });
 });
 
 test("a long line still being written is not skipped", () => {
   const path = file("x".repeat(30));
-  expect(readLongLine(path, 0, 8)).toBeNull();
+  expect(readLongLine(path, { offset: 0, scanFrom: 0, headBytes: 8, maxScan: 64 })).toEqual({
+    kind: "scanning",
+    scannedTo: 30,
+    more: false,
+  });
 });
 
 test("a missing file is NOT_FOUND", () => {
   expect(() => readTranscriptSlice(join(tmpdir(), "kibo-absent", "s.jsonl"), 0)).toThrow("NOT_FOUND");
+});
+
+test("a line longer than two passes is scanned a bounded slice at a time", () => {
+  const path = file(`${"x".repeat(25)}\nok\n`);
+  const scan = (scanFrom: number) => readLongLine(path, { offset: 0, scanFrom, headBytes: 8, maxScan: 10 });
+  expect(scan(0)).toEqual({ kind: "scanning", scannedTo: 10, more: true });
+  expect(scan(10)).toEqual({ kind: "scanning", scannedTo: 20, more: true });
+  expect(scan(20)).toEqual({ kind: "end", head: "xxxxxxxx", offset: 26 });
 });

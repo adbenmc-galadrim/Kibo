@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { initRun } from "@kibo/core/run-machine";
 import type { HookPayload, RunMomentsEvent, RunView } from "@kibo/schema";
 import { openTranscript, structuredPatch } from "../agents/fake-claude-transcript";
-import { openMomentStore } from "./store";
+import { type MomentStore, openMomentStore } from "./store";
 import { createTraceService } from "./trace-service";
 import { readTranscriptSlice } from "./transcript-reader";
 
@@ -41,7 +41,13 @@ export const hook = (event: HookPayload["event"], p: Partial<HookPayload> = {}):
   ...p,
 });
 
-export function setup(options: { maxBytes?: number; transcriptPath?: string } = {}) {
+export type SetupOptions = {
+  maxBytes?: number;
+  transcriptPath?: string;
+  wrapStore?: (store: MomentStore) => MomentStore;
+};
+
+export function setup(options: SetupOptions = {}) {
   const home = tmp();
   const root = join(home, "projects");
   mkdirSync(join(root, "proj"), { recursive: true });
@@ -51,7 +57,8 @@ export function setup(options: { maxBytes?: number; transcriptPath?: string } = 
   const clock = { now: 5_000 };
   const reads = { count: 0 };
   const trace = createTraceService({
-    store,
+    store: options.wrapStore?.(store) ?? store,
+    ...(options.maxBytes !== undefined && { passBytes: options.maxBytes }),
     root,
     now: () => clock.now,
     emit: (e) => events.push(e),

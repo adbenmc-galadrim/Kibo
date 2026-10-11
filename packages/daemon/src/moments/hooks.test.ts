@@ -21,7 +21,7 @@ function fakes(onHook: TraceService["onHook"]) {
   return { sink, trace, received };
 }
 
-test("the sink reply is returned without waiting for the pass", () => {
+test("the sink reply is returned without waiting for the pass", async () => {
   const seen: Array<[RunView, HookPayload]> = [];
   let finish = () => {};
   const { sink, trace, received } = fakes((run, payload) => {
@@ -33,6 +33,7 @@ test("the sink reply is returned without waiting for the pass", () => {
   const traced = withTrace(sink, { trace, run: () => RUN });
   expect(traced.receive("run-1", PAYLOAD, null)).toBe(REPLY);
   expect(received).toEqual(["run-1"]);
+  await Bun.sleep(0);
   expect(seen).toEqual([[RUN, PAYLOAD]]);
   expect(traced.verify("run-1", "ok")).toBe(true);
   expect(traced.verify("run-1", "ko")).toBe(false);
@@ -57,4 +58,16 @@ test("an unknown run is not traced", () => {
   const traced = withTrace(sink, { trace, run: () => null });
   expect(traced.receive("run-1", PAYLOAD, null)).toBe(REPLY);
   expect(calls).toBe(0);
+});
+
+test("a pass that throws synchronously is logged and the sink reply is kept", async () => {
+  const error = spyOn(console, "error").mockImplementation(() => {});
+  const { sink, trace } = fakes(() => {
+    throw new Error("SQLITE_BUSY");
+  });
+  const traced = withTrace(sink, { trace, run: () => RUN });
+  expect(traced.receive("run-1", PAYLOAD, null)).toBe(REPLY);
+  await Bun.sleep(0);
+  expect(error).toHaveBeenCalledTimes(1);
+  error.mockRestore();
 });

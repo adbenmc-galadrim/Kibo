@@ -2,7 +2,10 @@ import { closeSync, fstatSync, openSync, readSync } from "node:fs";
 import { KiboError, TRANSCRIPT_PASS_MAX_BYTES } from "@kibo/schema";
 
 export type TranscriptSlice = { lines: string[]; offset: number; more: boolean };
-export type LongLine = { head: string; offset: number };
+export type LongLineScan = { offset: number; scanFrom: number; headBytes: number; maxScan: number };
+export type LongLine =
+  | { kind: "end"; head: string; offset: number }
+  | { kind: "scanning"; scannedTo: number; more: boolean };
 
 const NEWLINE = 0x0a;
 const SCAN_CHUNK = 1024 * 1024;
@@ -48,16 +51,17 @@ export function readTranscriptSlice(
   });
 }
 
-export function readLongLine(path: string, offset: number, headBytes: number): LongLine | null {
+export function readLongLine(path: string, scan: LongLineScan): LongLine {
   return withFile(path, (fd, size) => {
-    const head = readAt(fd, offset, Math.min(headBytes, Math.max(0, size - offset)));
-    for (let at = offset; at < size; at += SCAN_CHUNK) {
-      const index = readAt(fd, at, Math.min(SCAN_CHUNK, size - at)).indexOf(NEWLINE);
+    const end = Math.min(size, scan.scanFrom + scan.maxScan);
+    for (let at = scan.scanFrom; at < end; at += SCAN_CHUNK) {
+      const index = readAt(fd, at, Math.min(SCAN_CHUNK, end - at)).indexOf(NEWLINE);
       if (index >= 0) {
-        const line = head.subarray(0, Math.min(head.length, at + index - offset));
-        return { head: line.toString("utf8"), offset: at + index + 1 };
+        const length = Math.min(scan.headBytes, at + index - scan.offset);
+        const head = readAt(fd, scan.offset, length).toString("utf8");
+        return { kind: "end", head, offset: at + index + 1 };
       }
     }
-    return null;
+    return { kind: "scanning", scannedTo: end, more: end < size };
   });
 }

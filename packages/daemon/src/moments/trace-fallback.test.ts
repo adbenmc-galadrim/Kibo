@@ -45,10 +45,34 @@ test("a rejected path falls back on hook actions, once", async () => {
   expect(s.reads.count).toBe(0);
 });
 
-test("a null transcript path is rejected", async () => {
+test("a null transcript path decides nothing until a path is known", async () => {
   const s = setup();
-  await s.trace.onHook({ ...s.run, transcriptPath: null }, hook("PostToolUse", { tool: "Read" }));
-  expect(s.trace.trace(s.run.id)).toMatchObject({ source: "hooks", partial: "path-rejected" });
+  const pathless = { ...s.run, transcriptPath: null };
+  await s.trace.onHook(pathless, hook("PostToolUse", { tool: "Read" }));
+  await s.trace.onHook(pathless, hook("Stop"));
+  expect(s.trace.trace(s.run.id)?.source ?? "pending").toBe("pending");
+  expect(kinds(s)).toEqual([]);
+  s.transcript.say("Enfin.");
+  await s.trace.onHook(s.run, hook("Stop", { transcriptPath: s.path }));
+  expect(s.trace.trace(s.run.id)).toMatchObject({ source: "transcript", partial: null });
+  expect(kinds(s)).toEqual(["message"]);
+});
+
+test("a store failure while receiving a hook rejects the promise, never throws", async () => {
+  const s = setup({
+    wrapStore: (store) => ({
+      ...store,
+      saveInternalPlan: () => {
+        throw new Error("SQLITE_FULL");
+      },
+    }),
+  });
+  const todos = [{ content: "Lire", status: "pending" as const }];
+  let result: Promise<void> | null = null;
+  expect(() => {
+    result = s.trace.onHook(s.run, hook("PostToolUse", { tool: "TodoWrite", todos }));
+  }).not.toThrow();
+  await expect(result ?? Promise.resolve()).rejects.toThrow("SQLITE_FULL");
 });
 
 test("an unreadable transcript switches to hooks with a partial line", async () => {

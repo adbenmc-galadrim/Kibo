@@ -11,9 +11,11 @@ export function withTrace(sink: HookSink, deps: TraceHookDeps): HookSink {
       const reply = sink.receive(runId, payload, toolInput);
       const run = deps.run(runId);
       if (run)
-        deps.trace.onHook(run, payload).catch((e: unknown) => {
-          console.error(`[kibo-daemon] trace of run ${runId} failed`, e);
-        });
+        Promise.resolve()
+          .then(() => deps.trace.onHook(run, payload))
+          .catch((e: unknown) => {
+            console.error(`[kibo-daemon] trace of run ${runId} failed`, e);
+          });
       return reply;
     },
   };

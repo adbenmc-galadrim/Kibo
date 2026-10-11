@@ -14,6 +14,7 @@ import {
   type RunProgressSummary,
   type RunView,
   type TodoItem,
+  TRANSCRIPT_PASS_MAX_BYTES,
   todosToPlan,
 } from "@kibo/schema";
 import { HookGroup, hookMoments } from "./hook-group";
@@ -27,6 +28,7 @@ export type TraceDeps = {
   now: () => number;
   emit(event: RunMomentsEvent): void;
   read?: (path: string, offset: number) => TranscriptSlice;
+  passBytes?: number;
 };
 export type TraceService = {
   onHook(run: RunView, payload: HookPayload): Promise<void>;
@@ -45,7 +47,13 @@ const LONG_LINE_HEAD = 64 * 1024;
 const PEEK_MESSAGE_MAX = 200;
 const STEP_TITLE_MAX = 160;
 
-type Live = { fold: FoldState; unknownLines: number; group: HookGroup; from: string | null };
+type Live = {
+  fold: FoldState;
+  unknownLines: number;
+  group: HookGroup;
+  from: string | null;
+  scanFrom: number | null;
+};
 
 const nextTick = (): Promise<void> => new Promise((resolve) => setImmediate(resolve));
 
@@ -65,7 +73,8 @@ const maskedPlan = (todos: readonly TodoItem[]) =>
 
 export function createTraceService(deps: TraceDeps): TraceService {
   const { store } = deps;
-  const read = deps.read ?? readTranscriptSlice;
+  const passBytes = deps.passBytes ?? TRANSCRIPT_PASS_MAX_BYTES;
+  const read = deps.read ?? ((path: string, offset: number) => readTranscriptSlice(path, offset, passBytes));
   const lives = new Map<string, Live>();
   const chains = new Map<string, Promise<void>>();
 
@@ -73,7 +82,13 @@ export function createTraceService(deps: TraceDeps): TraceService {
   const live = (runId: string): Live => {
     const found = lives.get(runId);
     if (found) return found;
-    const created: Live = { fold: emptyFold(), unknownLines: 0, group: new HookGroup(), from: null };
+    const created: Live = {
+      fold: emptyFold(),
+      unknownLines: 0,
+      group: new HookGroup(),
+      from: null,
+      scanFrom: null,
+    };
     lives.set(runId, created);
     return created;
   };
@@ -110,8 +125,8 @@ export function createTraceService(deps: TraceDeps): TraceService {
   }
 
   function resolve(trace: RunTrace, run: RunView, path: string | null): RunTrace {
-    if (trace.source === "hooks") return trace;
-    if (trace.source === "transcript" && (path === null || path === live(trace.runId).from)) return trace;
+    if (trace.source === "hooks" || path === null) return trace;
+    if (trace.source === "transcript" && path === live(trace.runId).from) return trace;
     const accepted = acceptedTranscriptPath(deps.root, run.sessionId, path);
     if (accepted === null) return toHooks(trace, "path-rejected");
     if (accepted === trace.path) {
@@ -119,15 +134,32 @@ export function createTraceService(deps: TraceDeps): TraceService {
       return trace;
     }
     if (trace.source === "transcript") flushFold(trace, false);
-    lives.set(trace.runId, { ...live(trace.runId), fold: emptyFold(), unknownLines: 0, from: path });
+    lives.set(trace.runId, {
+      ...live(trace.runId),
+      fold: emptyFold(),
+      unknownLines: 0,
+      from: path,
+      scanFrom: null,
+    });
     const next: RunTrace = { ...trace, source: "transcript", path: accepted, offset: 0, partial: null };
     store.saveTrace(next);
     return next;
   }
 
   function skipLongLine(trace: RunTrace, path: string): boolean {
-    const line = readLongLine(path, trace.offset, LONG_LINE_HEAD);
-    if (line === null) return false;
+    const state = live(trace.runId);
+    const scanFrom = state.scanFrom ?? trace.offset;
+    const line = readLongLine(path, {
+      offset: trace.offset,
+      scanFrom,
+      headBytes: LONG_LINE_HEAD,
+      maxScan: passBytes,
+    });
+    if (line.kind === "scanning") {
+      state.scanFrom = line.scannedTo;
+      return line.more;
+    }
+    state.scanFrom = null;
     write(trace.runId, [
       moment(trace, { kind: "raw", text: maskSecretsWithin(line.head, MOMENT_RAW_MAX), partial: null }),
     ]);
@@ -153,6 +185,7 @@ export function createTraceService(deps: TraceDeps): TraceService {
     const trace = traceOf(runId);
     if (trace.source !== "transcript" || trace.path === null || trace.closedAt !== null) return false;
     try {
+      if (live(runId).scanFrom !== null) return skipLongLine(trace, trace.path);
       const slice = read(trace.path, trace.offset);
       if (slice.lines.length === 0 && slice.more) return skipLongLine(trace, trace.path);
       return foldSlice(trace, slice);
@@ -208,11 +241,11 @@ export function createTraceService(deps: TraceDeps): TraceService {
   }
 
   return {
-    onHook(run, payload) {
-      if (traceOf(run.id).closedAt !== null) return Promise.resolve();
+    async onHook(run, payload) {
+      if (traceOf(run.id).closedAt !== null) return;
       if (payload.todos !== null) store.saveInternalPlan(run.id, maskedPlan(payload.todos), deps.now());
-      if (!PASS_EVENTS.has(payload.event)) return Promise.resolve();
-      return enqueue(run.id, async () => {
+      if (!PASS_EVENTS.has(payload.event)) return;
+      await enqueue(run.id, async () => {
         const trace = traceOf(run.id);
         if (trace.closedAt !== null) return;
         resolve(trace, run, payload.transcriptPath ?? run.transcriptPath);
