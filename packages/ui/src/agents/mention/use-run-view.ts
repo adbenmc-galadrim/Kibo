@@ -24,8 +24,8 @@ export type RunViewData = {
 export const newestFirst = (runs: readonly RunView[]): RunView[] =>
   [...runs].sort((a, b) => b.createdAt - a.createdAt || b.seq - a.seq);
 
-const lastReport = (progress: TicketProgress): RunReport | null =>
-  [...progress.reports].sort((a, b) => b.at - a.at)[0] ?? null;
+export const lastReport = (progress: TicketProgress): RunReport | null =>
+  progress.reports.reduce<RunReport | null>((last, r) => (last === null || r.at >= last.at ? r : last), null);
 
 export function useRunView(runId: string): RunViewData {
   const agents = useAgentsState();
