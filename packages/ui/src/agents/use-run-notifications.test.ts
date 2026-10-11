@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, mock, test } from "bun:test";
 import type { AgentsState, RunState } from "@kibo/schema";
 import { renderHook } from "@testing-library/react";
 import { agentsFixture, runFixture } from "./fixtures";
@@ -39,9 +39,9 @@ test("only entries into waiting, done or failed are announced", () => {
     runFixture({ id: "f", state: "done" }),
   ];
   expect(runNotices(previous, runs)).toEqual([
-    { title: "opus-dev-2 attend une réponse", body: "KIB-14 · Quel port ?" },
-    { title: "opus-dev-1 a terminé", body: "KIB-12 · Schéma Loro" },
-    { title: "opus-dev-3 a échoué", body: "KIB-16 · espace de travail indisponible" },
+    { title: "opus-dev-2 attend une réponse", body: "KIB-14 · Quel port ?", runId: "a" },
+    { title: "opus-dev-1 a terminé", body: "KIB-12 · Schéma Loro", runId: "b" },
+    { title: "opus-dev-3 a échoué", body: "KIB-16 · espace de travail indisponible", runId: "c" },
   ]);
 });
 
@@ -56,7 +56,7 @@ test("a failed run names the cause of its failure", () => {
     }),
   ];
   expect(runNotices(new Map<string, RunState>([["c", "running"]]), runs)).toEqual([
-    { title: "opus-dev-3 a échoué", body: "KIB-16 · dossier du projet introuvable" },
+    { title: "opus-dev-3 a échoué", body: "KIB-16 · dossier du projet introuvable", runId: "c" },
   ]);
 });
 
@@ -142,7 +142,7 @@ const withBatch = (state: AgentsState, pendingBatchId: string | null): AgentsSta
 test("a batch waiting for validation is announced once as « Lot à valider »", () => {
   const first = agentsFixture();
   expect(batchNotices(new Map(), withBatch(first, "b1"))).toEqual([
-    { title: "Lot à valider", body: "Agent de projet · Emis" },
+    { title: "Lot à valider", body: "Agent de projet · Emis", runId: null },
   ]);
   expect(batchNotices(new Map([["emis", "b1"]]), withBatch(first, "b1"))).toEqual([]);
   expect(batchNotices(new Map([["emis", "b1"]]), withBatch(first, null))).toEqual([]);
@@ -155,4 +155,35 @@ test("a batch waiting for validation is announced once as « Lot à valider »",
     view.rerender({ state: withBatch(first, "b2") });
     expect(shown).toEqual(["Lot à valider", "Lot à valider"]);
   });
+});
+
+test("a click on a run's notification opens the run's side panel", () => {
+  const clicks: (() => void)[] = [];
+  const saved = globalThis.Notification;
+  class ClickableNotification {
+    static permission = "granted";
+    constructor() {
+      clicks.push(() => this.onclick?.());
+    }
+    onclick: (() => void) | null = null;
+  }
+  Object.assign(globalThis, { Notification: ClickableNotification });
+  try {
+    const first = agentsFixture();
+    const run = first.runs.find((r) => r.state === "running");
+    if (!run) throw new Error("fixture has no running run");
+    const onOpen = mock((_: string) => {});
+    const asked: AgentsState = {
+      ...first,
+      questions: [{ runId: run.id, open: 1, undelivered: 0, latestTitle: "Bloquer le dépôt ?" }],
+    };
+    const view = renderHook(({ state }) => useRunNotifications(state, true, onOpen), {
+      initialProps: { state: first },
+    });
+    view.rerender({ state: finish(asked, "r42") });
+    for (const click of clicks) click();
+    expect(onOpen.mock.calls.map((c) => c[0]).sort()).toEqual([run.id, "r42"].sort());
+  } finally {
+    Object.assign(globalThis, { Notification: saved });
+  }
 });

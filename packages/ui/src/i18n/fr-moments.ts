@@ -1,4 +1,5 @@
-import type { ActionKind, PartialReason, RunActionOutcome, StepStatus } from "@kibo/schema";
+import type { ActionKind, PartialReason, RunActionOutcome, RunState, StepStatus } from "@kibo/schema";
+import { fr } from "./fr";
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
@@ -108,5 +109,24 @@ export const frMoments = {
     noRuns: "Aucun run sur ce ticket.",
     unavailable: "Fil indisponible pour l'instant.",
     confirmed: "Confirmé",
+  },
+  mention: {
+    history: "Voir l'historique",
+    reply: "Répondre",
+    step: (index: number, total: number, title: string) => `${index}/${total} · ${title}`,
+    state: (state: RunState) => fr.agents.states[state],
+    waiting: "Attend une réponse",
+  },
+  run: {
+    missing: "Run introuvable",
+    profile: (profile: string) => `Profil ${profile}`,
+    expand: "Ouvrir en grand",
+    close: "Fermer",
+    resize: "Redimensionner le volet du run",
+    feed: "Fil narratif",
+    reasoning: "Afficher le raisonnement",
+    ticketRuns: "Runs du ticket",
+    history: "Historique des runs",
+    report: (previous: boolean) => (previous ? "Compte rendu du run précédent" : "Compte rendu"),
   },
 };

@@ -8,6 +8,7 @@ import {
 import { SidebarInset, SidebarProvider } from "@kibo/sdk/ui/sidebar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgentPanel } from "../agents/AgentPanel";
+import { useRunNotifications } from "../agents/use-run-notifications";
 import { useProjectGit } from "../code/use-project-git";
 import { resolveWorktree } from "../code/use-worktrees";
 import { useDesktopIntegration } from "../desktop/use-desktop-integration";
@@ -15,7 +16,6 @@ import { useWindowTitle } from "../desktop/use-window-title";
 import { projectDomainsOf } from "../lib/project-domains";
 import type { PaletteContext } from "../palette/palette-items";
 import { useRoute } from "../route";
-import { canEdit } from "../state/access";
 import { useConfig, useNow } from "../state/use-agents";
 import { useProject } from "../state/use-projects";
 import { TabBar } from "../tabs/TabBar";
@@ -28,10 +28,10 @@ import { cycleTheme } from "../theme";
 import { AgentsShellProvider } from "./AgentsShellProvider";
 import { AppSidebar } from "./AppSidebar";
 import { ContentView } from "./ContentView";
-import { type Host, HostProvider } from "./Host";
+import { HostProvider } from "./Host";
 import { helpPatch } from "./help-dialogs";
 import { CommandPalette, TutorialSlot } from "./lazy-dialogs";
-import { ProjectAgentPanel, ProjectPresence, ProjectStatusBanner } from "./lazy-screens";
+import { ProjectAgentPanel, ProjectPresence, ProjectStatusBanner, RunSidePanel } from "./lazy-screens";
 import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
 import type { ShellProps } from "./Shell";
@@ -43,7 +43,9 @@ import { useOpenView, useSnapshotLookup } from "./use-open-view";
 import { useOpened } from "./use-opened";
 import { useProjectAgentPanel } from "./use-project-agent-panel";
 import { useProjectLanding } from "./use-project-landing";
+import { useRunPanel } from "./use-run-panel";
 import { useShellDialogs } from "./use-shell-dialogs";
+import { useWorkspaceHost } from "./use-workspace-host";
 import { useWorkspaceKeys } from "./use-workspace-keys";
 import { useWorkspaceSnapshots } from "./use-workspace-snapshots";
 import { inTauri, openWindow } from "./workspace-actions";
@@ -67,12 +69,16 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = useShellDialogs();
   const paletteOpened = useOpened(palette !== null);
   const agentPanel = useProjectAgentPanel(project);
+  const runPanel = useRunPanel(activeProjectId, agentPanel);
+  useRunNotifications(agents, notifications === "browser", runPanel.open);
   useAppHelp(set);
   const editRequests = useRef(new Set<string>());
   const projectRef = useRef(project);
   const { open } = tabs;
 
-  useWindowTitle(active ? describeTarget(active, { projects, snapshots }).title : null);
+  const runs = agents?.runs;
+  const describe = (t: TabTarget) => describeTarget(t, { projects, snapshots, runs });
+  useWindowTitle(active ? describe(active).title : null);
   useDesktopIntegration();
   useEffect(() => {
     if (activeProjectId) setLastProjectId(activeProjectId);
@@ -95,22 +101,15 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   };
   const views = useOpenView(currentProject, go, useSnapshotLookup(snapshots));
 
-  const host = useMemo<Host>(
-    () => ({
-      openTicket: (ticketId) => {
-        if (activeProjectId) set({ sheet: { projectId: activeProjectId, ticketId } });
-      },
-      openNewTicket: (d) => {
-        if (projectRef.current && !canEdit(projectRef.current)) return;
-        set({ newTicket: activeProjectId ? { ...d, projectId: activeProjectId } : d });
-      },
-      openAssign: (ticketId) => set({ assign: { projectId: null, ticketId } }),
-      openFile: (ref) => set({ preview: ref }),
-      openTarget: (target, opts) => go(target, opts?.newTab, opts?.keep),
-      openView: views.openView,
-    }),
-    [activeProjectId, set, go, views.openView],
-  );
+  const host = useWorkspaceHost({
+    activeProjectId,
+    projectRef,
+    set,
+    go,
+    openView: views.openView,
+    openRun: runPanel.open,
+    answerRun: setFocusRun,
+  });
 
   useWorkspaceKeys({ tabs, dialogs, palette, set, setPalette, toggleAgent: agentPanel.toggle });
 
@@ -145,7 +144,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
           <div className="flex h-svh flex-col">
             <TabBar
               state={tabs.state}
-              describe={(t) => describeTarget(t, { projects, snapshots })}
+              describe={describe}
               isDirty={isDirty}
               dispatch={tabs.dispatch}
               onNewTab={() => setPalette({ newTab: true })}
@@ -217,6 +216,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                       config={config}
                       now={now}
                       onAnswer={setFocusRun}
+                      onOpenRun={runPanel.open}
                       onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
                       onAssign={(projectId, ticketId) => set({ assign: { projectId, ticketId } })}
                       onFile={(ticketId) => set({ fileTicket: { ticketId } })}
@@ -259,6 +259,13 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                   open={agentPanel.open}
                   project={project}
                   onClose={agentPanel.close}
+                />
+              )}
+              {runPanel.runId && (
+                <RunSidePanel
+                  runId={runPanel.runId}
+                  onClose={runPanel.close}
+                  onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
                 />
               )}
               <ShellDialogs

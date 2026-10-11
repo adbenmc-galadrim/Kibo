@@ -121,10 +121,11 @@ export const PairingScreen = lazyPanel(() => import("./PairingScreen").then((m) 
 export const BarRuns = lazyPanel(() => import("../agents/dock/BarRuns").then((m) => m.BarRuns), fr.lazy, {
   fallback: "children",
 });
-export const AgentDock = lazyPanel(
-  () => import("../agents/dock/AgentDock").then((m) => m.AgentDock),
-  fr.lazy,
-);
+const mentionEntry = () => import("../agents/mention/mention-entry");
+
+export const AgentDock = lazyPanel(() => mentionEntry().then((m) => m.AgentDock), fr.lazy);
+export const RunSidePanel = lazyPanel(() => mentionEntry().then((m) => m.RunSidePanel), fr.lazy, hidden);
+export const RunPage = lazyPanel(() => mentionEntry().then((m) => m.RunPage), fr.lazy);
 export const ScreenActions = lazyPanel(
   () => import("./ScreenActions").then((m) => m.ScreenActions),
   fr.lazy,

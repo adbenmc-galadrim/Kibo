@@ -35,6 +35,7 @@ type Props = {
   config: WorkspaceConfig | null;
   now: number;
   onAnswer(runId: string): void;
+  onOpenRun(runId: string): void;
   onOpenTicket(projectId: string, ticketId: string): void;
   onAssign(projectId: string, ticketId: string): void;
   onFile(ticketId: string): void;
@@ -52,6 +53,7 @@ export function ScreenView(props: Props) {
     config,
     now,
     onAnswer,
+    onOpenRun,
     onOpen,
     onShare,
     onDeleteProject,
@@ -94,7 +96,7 @@ export function ScreenView(props: Props) {
   if (screen === "domains") return <DomainsPage config={config} projects={projects} />;
   if (!agents) return null;
   if (screen === "agents")
-    return <AgentsPage state={agents} config={config} projects={projects} now={now} onOpenRun={onAnswer} />;
+    return <AgentsPage state={agents} config={config} projects={projects} now={now} onOpenRun={onOpenRun} />;
   return (
     <QueuePage state={agents} profiles={config.profiles} projects={projects} now={now} onAnswer={onAnswer} />
   );

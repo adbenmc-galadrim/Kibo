@@ -67,16 +67,20 @@ function screenTarget(hash: string): TabTarget | null {
   return screen ? { kind: "screen", screen } : null;
 }
 
+function pathCandidate(path: string, query: string): unknown {
+  const run = /^\/runs\/([^/]+)\/?$/.exec(path);
+  if (run?.[1]) return { kind: "run", runId: decodeURIComponent(run[1]) };
+  const m = /^\/p\/([^/]+)(?:\/(.*))?$/.exec(path);
+  if (!m?.[1]) return null;
+  return candidate(decodeURIComponent(m[1]), m[2] ?? "", new URLSearchParams(query));
+}
+
 export function hashToTarget(hash: string): TabTarget | null {
   const screen = screenTarget(hash);
   if (screen) return screen;
   const [path = "", query = ""] = hash.replace(/^#/, "").split("?");
-  const m = /^\/p\/([^/]+)(?:\/(.*))?$/.exec(path);
-  if (!m?.[1]) return null;
   try {
-    const parsed = TabTarget.safeParse(
-      candidate(decodeURIComponent(m[1]), m[2] ?? "", new URLSearchParams(query)),
-    );
+    const parsed = TabTarget.safeParse(pathCandidate(path, query));
     return parsed.success ? parsed.data : null;
   } catch (e) {
     if (e instanceof URIError) return null;

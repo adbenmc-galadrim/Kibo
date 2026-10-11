@@ -4,7 +4,7 @@ import { fr } from "../i18n/fr";
 import { PageView } from "../pages/PageView";
 import { ProjectHome } from "../pages/ProjectHome";
 import { targetToHash } from "../tabs/target-hash";
-import { ChangesView, FileTabView, TicketTab, Welcome } from "./lazy-screens";
+import { ChangesView, FileTabView, RunPage, TicketTab, Welcome } from "./lazy-screens";
 import { Overview } from "./Overview";
 
 type Props = {
@@ -49,6 +49,7 @@ export function ContentView(p: Props) {
         onOpenInbox={() => p.onOpen({ kind: "screen", screen: "inbox" })}
       />
     );
+  if (t.kind === "run") return <RunPage key={t.runId} runId={t.runId} />;
   if (!p.project) return null;
   switch (t.kind) {
     case "project":

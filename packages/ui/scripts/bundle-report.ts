@@ -76,7 +76,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(i18n\/fr-design\.ts|dialogs\/integrations\/((FigmaConnectDialog|PenpotConnectDialog)\.tsx|design-problem\.ts))$/,
   /\/packages\/ui\/src\/(shell\/sheet\/((DesignSection|DesignProperty)\.tsx|design-refs\.ts)|dialogs\/FrameField\.tsx)$/,
   /\/packages\/ui\/src\/i18n\/fr-(market|security|collab)\.ts$/,
-  /\/packages\/ui\/src\/(agents\/dock\/|moments\/)[A-Za-z-]+\.tsx?$/,
+  /\/packages\/ui\/src\/(agents\/(dock|mention)\/|moments\/)[A-Za-z-]+\.tsx?$/,
   /\/packages\/ui\/src\/i18n\/fr-moments\.ts$/,
   /\/packages\/sdk\/src\/(ui\/hover-card|agent-mention)\.tsx$/,
   /\/packages\/ui\/src\/ticket\/activity\/[A-Za-z-]+\.tsx?$/,

@@ -332,6 +332,10 @@ describe("bundle report", () => {
   });
   test("the agents dock, the feed, their texts, the mention and the hover card are forbidden in the entry", () => {
     const paths = [
+      "/x/packages/ui/src/agents/mention/Mention.tsx",
+      "/x/packages/ui/src/agents/mention/RunSidePanel.tsx",
+      "/x/packages/ui/src/agents/mention/RunPage.tsx",
+      "/x/packages/ui/src/agents/mention/use-run-peek.ts",
       "/x/packages/ui/src/agents/dock/AgentDock.tsx",
       "/x/packages/ui/src/agents/dock/use-dock-height.ts",
       "/x/packages/ui/src/moments/Feed.tsx",
@@ -342,6 +346,7 @@ describe("bundle report", () => {
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
     const entry = [
+      "shell/use-run-panel.ts",
       "agents/AgentBar.tsx",
       "agents/BarRuns.tsx",
       "agents/bar-summary.ts",

@@ -64,7 +64,7 @@ export function ShellHeader({
     <header className="flex h-(--header-h) shrink-0 select-none items-center gap-2 border-b px-3">
       <SidebarTrigger />
       <Breadcrumb
-        crumbs={crumbsFor(active, { project, branch })}
+        crumbs={crumbsFor(active, { project, branch, runs: agents?.runs })}
         heading={screen !== null && HEADING_SCREENS.has(screen)}
         onOpen={onOpen}
       />
