@@ -8,6 +8,7 @@ import { type Host, HostProvider } from "../../shell/Host";
 import { AgentsProvider } from "../../state/agents-context";
 
 const calls: RpcRequest[] = [];
+let momentsFail = false;
 const worktrees: Worktree[] = [
   { path: "/Users/adam/goinfre/Kibo", branch: "main", head: "a1", isMain: true },
 ];
@@ -18,6 +19,7 @@ mock.module("../../api", () =>
       rpc: (req: RpcRequest) => {
         calls.push(req);
         if (req.method === "getProject") return Promise.resolve(progressProject());
+        if (req.method === "runMoments" && momentsFail) return Promise.reject(new Error("down"));
         if (req.method === "runMoments")
           return Promise.resolve(req.runId === FEED_RUN ? MOMENTS_PAGE : { ...MOMENTS_PAGE, moments: [] });
         if (req.method === "getRunLog") return Promise.resolve([]);
@@ -68,6 +70,7 @@ function renderPage(runId = FEED_RUN, state: AgentsState | null = dockState()) {
 const REASONING = "Le corps vide passe parce que le test ne couvre que null.";
 
 beforeEach(() => {
+  momentsFail = false;
   calls.length = 0;
   window.localStorage.clear();
 });
@@ -128,4 +131,26 @@ test("an unknown run says so", () => {
 test("nothing is claimed missing while the agents are still loading", () => {
   renderPage(FEED_RUN, null);
   expect(screen.queryByText("Run introuvable")).toBeNull();
+});
+
+test("the run is named once, with « Répondre » and « Arrêter » in the page header", async () => {
+  renderPage();
+  const header = screen.getByRole("banner");
+  expect(within(header).getByRole("heading", { name: "opus-dev-2" })).toBeTruthy();
+  expect(screen.getAllByText("opus-dev-2", { selector: "h2, span.font-semibold" })).toHaveLength(1);
+  expect(within(header).getByRole("button", { name: "Arrêter" })).toBeTruthy();
+  await userEvent.setup().click(within(header).getByRole("button", { name: "Répondre" }));
+  expect(document.activeElement).toBe(screen.getByLabelText("Réponse à opus-dev-2"));
+});
+
+test("a feed that fails to load says so instead of looking empty", async () => {
+  momentsFail = true;
+  renderPage();
+  expect(await screen.findByText("Impossible de charger le fil de ce run.")).toBeTruthy();
+  expect(screen.queryByText("Rien dans le fil pour l'instant.")).toBeNull();
+});
+
+test("a feed still loading says so discreetly", () => {
+  renderPage();
+  expect(screen.getByText("Chargement du fil…")).toBeTruthy();
 });

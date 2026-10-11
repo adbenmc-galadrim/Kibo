@@ -17,6 +17,8 @@ export type RunViewData = {
   moments: RunMoment[];
   shown: ShownPlan | null;
   report: RunReport | null;
+  loading: boolean;
+  failed: boolean;
 };
 
 export const newestFirst = (runs: readonly RunView[]): RunView[] =>
@@ -28,13 +30,15 @@ const lastReport = (progress: TicketProgress): RunReport | null =>
 export function useRunView(runId: string): RunViewData {
   const agents = useAgentsState();
   const run = agents?.runs.find((r) => r.id === runId) ?? null;
-  const { page } = useRunMoments(run ? run.id : null);
+  const { page, loading, error } = useRunMoments(run ? run.id : null);
   const project = useProject(run?.projectId ?? null);
   const progress = project?.tickets.find((t) => t.id === run?.ticketId)?.agentProgress ?? null;
   return {
     agents,
     run,
     moments: page?.moments ?? [],
+    loading,
+    failed: error !== null,
     shown: run ? shownPlan(progress, run.id, page?.internalPlan ?? null) : null,
     report: run && progress ? (reportOfRun(progress, run.id) ?? lastReport(progress)) : null,
   };

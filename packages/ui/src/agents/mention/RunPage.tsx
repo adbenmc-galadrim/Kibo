@@ -1,12 +1,14 @@
+import { Button } from "@kibo/sdk/ui/button";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { Label } from "@kibo/sdk/ui/label";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
+import { fr } from "../../i18n/fr";
 import { frMoments } from "../../i18n/fr-moments";
 import { usePref } from "../../lib/local-pref";
 import { useHost } from "../../shell/Host";
-import { useNow } from "../../state/use-agents";
 import { DockPlan } from "../dock/DockPlan";
-import { RunDetail } from "../RunDetail";
+import { ReviewButton } from "../ReviewButton";
+import { RunReply, RunStop } from "../RunDetail";
 import { ProfileRuns } from "./ProfileRuns";
 import { RunFeed } from "./RunFeed";
 import { RunHeading } from "./RunHeading";
@@ -30,21 +32,36 @@ function ReasoningToggle() {
   );
 }
 
+function AnswerButton({ onAnswer }: { onAnswer(): void }) {
+  return (
+    <Button size="sm" className="bg-brand-strong text-white hover:bg-brand-strong/90" onClick={onAnswer}>
+      {fr.agents.answer}
+    </Button>
+  );
+}
+
 export function RunPage({ runId }: { runId: string }) {
   const t = frMoments.run;
   const host = useHost();
-  const now = useNow();
+  const reply = useRef<HTMLDivElement>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
   const [reasoning] = usePref(REASONING_PREF, "0");
-  const { agents, run, moments, shown, report } = useRunView(runId);
+  const { agents, run, moments, shown, report, loading, failed } = useRunView(runId);
   if (!agents) return null;
   if (!run) return <p className="p-8 text-sm text-muted-foreground">{t.missing}</p>;
+  const focusReply = () => reply.current?.querySelector("input")?.focus();
   return (
     <div className="grid content-start gap-5 p-6">
       <RunHeading
         run={run}
         onOpenTicket={(projectId, ticketId) => host.openTarget({ kind: "ticket", projectId, ticketId })}
-      />
+      >
+        <div className="flex shrink-0 items-center gap-2">
+          <ReviewButton run={run} />
+          {run.state === "waiting_input" && <AnswerButton onAnswer={focusReply} />}
+          <RunStop run={run} />
+        </div>
+      </RunHeading>
       <div className="grid items-start gap-4 lg:grid-cols-[15rem_minmax(0,1fr)_20rem]">
         <ProfileRuns run={run} agents={agents} />
         <section aria-label={t.feed} className={CARD}>
@@ -52,21 +69,23 @@ export function RunPage({ runId }: { runId: string }) {
             <h3 className="flex-1 text-sm font-semibold">{t.feed}</h3>
             <ReasoningToggle />
           </div>
-          <RunDetail
+          <RunFeed
             run={run}
-            resumable={agents.resumable.includes(run.id)}
-            questions={agents.questions.find((q) => q.runId === run.id) ?? null}
-            now={now}
-          >
-            <RunFeed
+            runs={agents.runs}
+            moments={moments}
+            steps={shown?.plan ?? []}
+            showReasoning={reasoning === "1"}
+            highlightStep={highlight}
+            loading={loading}
+            failed={failed}
+          />
+          <div ref={reply} className="grid gap-3">
+            <RunReply
               run={run}
-              runs={agents.runs}
-              moments={moments}
-              steps={shown?.plan ?? []}
-              showReasoning={reasoning === "1"}
-              highlightStep={highlight}
+              resumable={agents.resumable.includes(run.id)}
+              questions={agents.questions.find((q) => q.runId === run.id) ?? null}
             />
-          </RunDetail>
+          </div>
         </section>
         <aside className="grid content-start gap-4">
           {shown && (

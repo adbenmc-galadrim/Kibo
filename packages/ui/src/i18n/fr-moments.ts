@@ -127,6 +127,8 @@ export const frMoments = {
     reasoning: "Afficher le raisonnement",
     ticketRuns: "Runs du ticket",
     history: "Historique des runs",
+    loading: "Chargement du fil…",
+    failed: "Impossible de charger le fil de ce run.",
     report: (previous: boolean) => (previous ? "Compte rendu du run précédent" : "Compte rendu"),
   },
 };

@@ -14,9 +14,22 @@ type Props = {
   steps: Step[];
   showReasoning?: boolean;
   highlightStep?: string | null;
+  loading?: boolean;
+  failed?: boolean;
 };
 
-export function RunFeed({ run, runs, moments, steps, showReasoning = false, highlightStep = null }: Props) {
+export function RunFeed(props: Props) {
+  if (props.failed)
+    return (
+      <p role="alert" className="text-sm text-destructive">
+        {frMoments.run.failed}
+      </p>
+    );
+  if (props.loading) return <p className="text-xs text-muted-foreground">{frMoments.run.loading}</p>;
+  return <LoadedFeed {...props} />;
+}
+
+function LoadedFeed({ run, runs, moments, steps, showReasoning = false, highlightStep = null }: Props) {
   const host = useHost();
   const files = useRunFileContext(run);
   const { log } = useRunLog(run.id);
