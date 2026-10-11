@@ -2,9 +2,10 @@ import {
   ASK_TOOL,
   type Batch,
   type HookPayload,
+  isWakeupMessage,
   type RunLogEntry,
   type RunView,
-  WAKEUP_PREFIX,
+  wakeupCount,
 } from "@kibo/schema";
 import { errorText } from "../agents/format";
 import { frProjectAgent } from "../i18n/fr-project-agent";
@@ -23,13 +24,9 @@ export type PanelStatus = "ready" | "queued" | "thinking" | "batch";
 const KIBO_PREFIX = "mcp__kibo__";
 const NOT_READS: ReadonlySet<string> = new Set(["propose_batch", "ask_user", "ask_question"]);
 const t = frProjectAgent.conversation;
-const WAKEUP_COUNT = /^(\d+) signa(?:l|ux) /;
-
-export const isWakeup = (text: string): boolean => text.startsWith(WAKEUP_PREFIX);
-
 export function wakeupText(text: string): string {
-  const count = WAKEUP_COUNT.exec(text.slice(WAKEUP_PREFIX.length))?.[1];
-  return count === undefined ? frSignals.wakeup.label : frSignals.wakeup.event(Number(count));
+  const count = wakeupCount(text);
+  return count === null ? frSignals.wakeup.label : frSignals.wakeup.event(count);
 }
 
 export function readingTool(payload: HookPayload): string | null {
@@ -93,7 +90,7 @@ class Builder {
 
   answered(entry: RunLogEntry, text: string): void {
     this.flushBatches(entry.at - 1);
-    this.wakeup = isWakeup(text);
+    this.wakeup = isWakeupMessage(text);
     if (this.wakeup) this.event(entry, wakeupText(text), "muted");
     else if (this.failedTurn && text === this.lastUser) this.event(entry, t.retried, "muted");
     else this.push({ kind: "user", id: `log-${entry.id}`, at: entry.at, text });
@@ -156,7 +153,7 @@ export function buildConversation(
 export function lastUserMessage(log: readonly RunLogEntry[]): string | null {
   for (let i = log.length - 1; i >= 0; i--) {
     const e = log[i]?.event;
-    if (e?.type === "answered" && !isWakeup(e.text)) return e.text;
+    if (e?.type === "answered" && !isWakeupMessage(e.text)) return e.text;
   }
   return null;
 }

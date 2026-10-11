@@ -1,13 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { type SignalKind, type SignalLine, WAKEUP_PREFIX } from "@kibo/schema";
-import {
-  isWakeupMessage,
-  renderSignalsSection,
-  SIGNAL_KIND_FR,
-  signalReply,
-  wakeupCount,
-  wakeupMessage,
-} from "./messages";
+import { isWakeupMessage, type SignalKind, type SignalLine, WAKEUP_PREFIX, wakeupCount } from "@kibo/schema";
+import { renderSignalsSection, SIGNAL_KIND_FR, signalReply, wakeupMessage } from "./messages";
 
 const fmt = (at: number): string =>
   `${String(Math.floor(at / 60)).padStart(2, "0")}:${String(at % 60).padStart(2, "0")}`;

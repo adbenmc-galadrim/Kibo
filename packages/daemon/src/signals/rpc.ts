@@ -1,17 +1,8 @@
-import {
-  type Actor,
-  isSignalRequest,
-  KiboError,
-  SIGNAL_RPC,
-  type Signal,
-  type SignalsView,
-} from "@kibo/schema";
+import { type Actor, isSignalRequest, KiboError, SIGNAL_RPC } from "@kibo/schema";
 import { type RpcExtension, requireLocal } from "../rpc-extensions";
+import type { SignalService } from "./service";
 
-export type SignalRpcService = {
-  list(projectId: string): SignalsView;
-  ignore(projectId: string, signalId: string, by: Actor): Signal;
-};
+export type SignalRpcService = Pick<SignalService, "list" | "ignore">;
 
 export type SignalRpcData = {
   assertWritable(projectId: string): void;

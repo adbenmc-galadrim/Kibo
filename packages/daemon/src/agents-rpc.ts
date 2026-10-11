@@ -4,7 +4,6 @@ import {
   isTerminal,
   KiboError,
   type ProjectAgentSummary,
-  type ProjectSignalCount,
   type RpcRequest,
   type RunProgressSummary,
   type RunView,
@@ -13,6 +12,7 @@ import type { AgentDataPort, Orchestrator } from "./agents/orchestrator";
 import { answerFromDrawer, type DeliveryDeps, deliverAnswers } from "./agents/question-delivery";
 import { assertNotInboxForAgents } from "./inbox/inbox-rules";
 import { runTallies } from "./questions/run-tallies";
+import type { SignalService } from "./signals/service";
 
 export type AgentsPort = Pick<
   Orchestrator,
@@ -61,7 +61,7 @@ export function withRunProgress(
   };
 }
 
-export function withSignalCounts(port: AgentsPort, signals: { counts(): ProjectSignalCount[] }): AgentsPort {
+export function withSignalCounts(port: AgentsPort, signals: Pick<SignalService, "counts">): AgentsPort {
   return {
     ...port,
     state: () => ({ ...port.state(), signals: signals.counts() }),

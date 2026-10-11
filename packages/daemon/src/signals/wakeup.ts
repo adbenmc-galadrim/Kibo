@@ -1,13 +1,9 @@
 import { type WakeReply, wakeupMessage } from "@kibo/core/signals/messages";
 import { planWakeup } from "@kibo/core/signals/wakeup";
-import { SIGNAL_WAKE_WINDOW_MS, type Signal, type SignalKind, WAKE_KINDS, type Wakeup } from "@kibo/schema";
+import { SIGNAL_WAKE_WINDOW_MS, type Signal, type SignalKind, WAKE_KINDS } from "@kibo/schema";
+import type { SignalStore } from "./store";
 
-export type WakeupStore = {
-  wakeup(projectId: string): Wakeup;
-  saveWakeup(wakeup: Wakeup): void;
-  due(): Wakeup[];
-  open(projectId: string): Signal[];
-};
+export type WakeupStore = Pick<SignalStore, "wakeup" | "saveWakeup" | "due" | "open">;
 
 export type WakeupDeps = {
   store: WakeupStore;

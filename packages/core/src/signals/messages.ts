@@ -65,16 +65,6 @@ export function wakeupMessage(signals: readonly Pick<Signal, "kind">[]): string 
   return `${WAKEUP_PREFIX}${counted(signals.length, "signal", "signaux")} à traiter (${byKind.join(", ")}). Lis « Signaux à traiter » et propose un lot : cite chaque signal (\`signals\`) dans l'action qui y répond, ou \`dismissSignal\` s'il n'appelle aucune action.`;
 }
 
-const WAKEUP_COUNT = /^(\d+) signa(?:l|ux) à traiter/;
-
-export const isWakeupMessage = (text: string): boolean => text.startsWith(WAKEUP_PREFIX);
-
-export function wakeupCount(text: string): number | null {
-  if (!isWakeupMessage(text)) return null;
-  const match = WAKEUP_COUNT.exec(text.slice(WAKEUP_PREFIX.length));
-  return match?.[1] === undefined ? null : Number(match[1]);
-}
-
 function signalItem(line: SignalLine, formatTime: (at: number) => string): string[] {
   const head = [
     line.ref,

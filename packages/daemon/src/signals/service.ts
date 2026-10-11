@@ -22,7 +22,7 @@ import type { z } from "zod";
 import type { Notice } from "../agents/notifier";
 import { guarded } from "../agents/orchestrator-support";
 import type { TraceService } from "../moments/trace-service";
-import { clockTime } from "./messages";
+import { formatClock } from "./clock";
 import { blockerNotice } from "./notices";
 import type { NewSignal, SignalStore } from "./store";
 
@@ -69,7 +69,7 @@ function parsed(input: unknown): SignalInput {
 export function createSignalService(deps: SignalDeps): SignalService {
   const { store } = deps;
   const now = deps.now ?? Date.now;
-  const formatTime = deps.formatTime ?? clockTime;
+  const formatTime = deps.formatTime ?? formatClock;
 
   function targets(run: TicketRun, key: string | undefined): { origin: TicketRef; target: TicketRef } {
     const snapshot = deps.project(run.projectId);
