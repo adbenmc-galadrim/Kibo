@@ -33,7 +33,7 @@ export function RunFeed(props: Props) {
 function LoadedFeed({ run, runs, moments, steps, showReasoning = false, highlightStep = null }: Props) {
   const host = useHost();
   const files = useRunFileContext(run);
-  const openSignal = useOpenSignal();
+  const openSignal = useOpenSignal(run.projectId);
   const { log } = useRunLog(run.id);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {

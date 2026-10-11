@@ -13,6 +13,7 @@ export type Host = {
   openRun?(runId: string): void;
   answerRun?(runId: string): void;
   openProjectAgent?(opts: { tab: ProjectAgentTab }): void;
+  projectId?: string | null;
 };
 const HostContext = createContext<Host | null>(null);
 

@@ -44,7 +44,7 @@ export function DockFeed({
   onOpenFile,
 }: Props) {
   const files = useRunFileContext(run);
-  const openSignal = useOpenSignal();
+  const openSignal = useOpenSignal(run.projectId);
   const { log } = useRunLog(run.id);
   const extras = exchangeOf(log, runs);
   const { ref, onScroll, release } = useFollowBottom<HTMLDivElement>(moments.length + extras.length);

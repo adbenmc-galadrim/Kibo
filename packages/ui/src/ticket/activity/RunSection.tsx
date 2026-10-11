@@ -82,7 +82,7 @@ export function RunHeading({ entry, now }: { entry: RunEntry; now: number }) {
 
 export function RunFeed({ entry, options }: { entry: RunEntry; options: FeedOptions }) {
   const files = useRunFileContext(entry.run);
-  const openSignal = useOpenSignal();
+  const openSignal = useOpenSignal(entry.run.projectId);
   const moments = entry.items.flatMap((i) => (i.moment ? [i.moment] : []));
   const extras = questionExtras(entry.items);
   if (moments.length === 0 && extras.length === 0 && isTerminal(entry.run.state)) return null;

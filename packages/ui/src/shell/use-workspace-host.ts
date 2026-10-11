@@ -34,6 +34,7 @@ export function useWorkspaceHost(d: Deps): Host {
       openRun,
       answerRun,
       openProjectAgent: ({ tab }) => showProjectAgent(tab),
+      projectId: activeProjectId,
     }),
     [activeProjectId, projectRef, set, go, openView, openRun, answerRun, showProjectAgent],
   );

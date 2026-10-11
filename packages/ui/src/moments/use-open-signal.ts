@@ -1,6 +1,9 @@
 import { useOptionalHost } from "../shell/Host";
 
-export function useOpenSignal(): ((signalId: string) => void) | undefined {
-  const open = useOptionalHost()?.openProjectAgent;
-  return open ? () => open({ tab: "signals" }) : undefined;
+export function useOpenSignal(projectId: string | null): ((signalId: string) => void) | undefined {
+  const host = useOptionalHost();
+  const open = host?.openProjectAgent;
+  return open && projectId !== null && host.projectId === projectId
+    ? () => open({ tab: "signals" })
+    : undefined;
 }
