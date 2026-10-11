@@ -201,6 +201,20 @@ const allDaemons = [
     scenario: "question",
     embeds: true,
   },
+  {
+    name: "visibility-dark",
+    scheme: "dark",
+    port: 4463,
+    spec: /visibility\.spec\.ts/,
+    scenario: "progress-routes",
+  },
+  {
+    name: "visibility-light",
+    scheme: "light",
+    port: 4464,
+    spec: /visibility\.spec\.ts/,
+    scenario: "progress-routes",
+  },
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 
