@@ -118,3 +118,41 @@ jeu non intégrable : « itch.io n'autorise pas l'intégration de ce jeu hors de
 
 Storybook du projet : `http://localhost:6006`, variable `STORYBOOK_PORT` ; worktree `feat/login` avec `STORYBOOK_PORT=6007` (injoignable dans 180b et 180c).
 Stories : `Screens / Home` (montrée), `Screens / Login`. Maquette de référence : cadre Figma « Accueil » ; comparaison en superposition à 50 % d'opacité, curseur à 40 %.
+
+## Visibilité des agents (phase 20)
+
+Barre repliée : 3/3 places · 3 en file · 1 attend une réponse ; puces opus-dev-1 KIB-12 · 12m, opus-dev-3 KIB-16 · 2/5 · Corriger la validation,
+sonnet-review KIB-7 · 1m, puis opus-dev-2 KIB-14 · attend et « Répondre ». Volet : Actifs · 4 (les mêmes, opus-dev-2 sélectionné, 0s), En file · 3
+(opus-dev KIB-10 Watcher git et gh, KIB-18 Adaptateur GitHub Issues, KIB-29 Migration v0 → v1).
+
+Run 3 de KIB-14 (opus-dev-2, worktree `kib-14`, aujourd'hui 10:37, attend une réponse). Plan 2/5 tenu par l'agent (`ticket_progress`) :
+
+| Étape | Texte | État |
+|---|---|---|
+| 1 | Relire le récepteur et ses tests | Faite · 2 moments |
+| 2 | Corriger la validation du corps | En cours · 4 moments |
+| 3 | Choisir le port du récepteur | À faire |
+| 4 | Brancher le récepteur sur le démon | Bloquée · attend KIB-12 |
+| 5 | Documenter le format des hooks | À faire |
+
+Fil : « Kibo a rappelé de déclarer le plan » ; 10:37 Étape 1 « Je relis le récepteur et ses tests avant de toucher au port. » (A lu 2 fichiers) ;
+10:39 Étape 2 « La validation laisse passer un corps vide. Je la corrige dans receiver.ts. » (A modifié 1 fichier et lancé les tests, 12 réussis,
+1 échec : Modifié `packages/daemon/src/hooks/receiver.ts` +8 −3, Tests `bun test packages/daemon/src/hooks` 12 ✓ 1 ✗) ; 10:40 raisonnement « Le corps
+vide passe parce que le test ne couvre que null. » ; 10:42 Étape 2 « Un test échoue encore : quel port veux-tu pour le récepteur ? » et la question
+« Quel port pour le récepteur : 7420 fixe ou un port libre choisi au lancement ? ».
+
+Compte rendu du run 2 (hier 17:52 → 18:40, « Fait, 2 points à vérifier, 1 fichier non mentionné ») : fait « Le récepteur accepte les hooks signés et
+rejette les corps vides. » ; décision « Port 7420 gardé pour l'instant : la question à Adam est encore ouverte. » ; à vérifier « Le délai de 5 s
+convient-il aux gros dépôts ? », « Le message d'erreur est-il assez clair ? » ; fichiers `packages/daemon/src/hooks/receiver.ts`,
+`packages/daemon/src/hooks/README.md`, 1 fichier modifié non mentionné, 1 fichier cité sans modification ; suite « Brancher le récepteur sur le démon. ».
+Run 1 (opus-dev-1, 7 oct. 10:04 → 10:31) : annulé, pas de compte rendu.
+
+Destinataires des questions du projet Kibo : Moi (technique) par défaut (4 ouvertes), Produit (3), Client (2), Design (aucune). Questions montrées :
+« Quel port pour le récepteur ? » (KIB-14, Moi, bloquante) ; « Un composant non autorisé lit-il les fichiers du projet ? » (KIB-14, Produit proposé par
+l'agent, provisoire Non) ; « Faut-il garder l'historique des tickets supprimés ? » (KIB-12, Client, envoyée il y a 2 j) ; « Le client modifie-t-il
+lui-même les règles d'automatisation ? » (KIB-16, Client) avec la réponse collée « Oui pour les règles simples (statut, assignation). Les règles qui
+touchent la facturation restent chez Adam. — Claire, côté client ». Filtre Client : « Exporter tout (2) ».
+
+Graphe (188 à 188d) : projet de la taille d'Emis repris de `32e-graphe-lisible.js` (69 tickets, 38 ouverts sur 5 vagues, 31 terminés repliés,
+6 démarrables, chapitres C0 à C9, 36 liens tracés et 24 implicites masqués, focus sur KIB-65). Kanban 188k : « Démarrable » sur KIB-22 et KIB-9 ;
+KIB-18 (en file #2) et KIB-15 (attend KIB-12) ne le sont pas.

@@ -38,16 +38,18 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 18 · Agents, code & démarrage | 121–124 (vague 3) ; **dessinés** |
 | 19 · Formats & créations | 127–135 (vague 4) ; **dessinés** |
 | 20 · Notes, graphe & disposition | 150–155 (phase 12) ; **dessinés** |
-| 21 · Composants riches | 30b, 156–160 (phase 13) ; **dessinés** |
+| 21 · Composants riches | 30b, 156–160 (phase 13) ; **dessinés** ; 157 : composant retiré (§26.11) |
 | 22 · Installation & aide | 19, 19b, 19c, 78, 76, 76b, 76c, 112c, 136–139 (phase 14) ; **dessinés** |
 | 23 · Didacticiel | 140–146 (phase 14) ; **dessinés** |
 | 24 · Maquettes Figma & Penpot | 16, 16b, 53, 53b, 53c, 147, 148, 149, 4, 4b (phase 15) ; **dessinés** |
 | 25 · Questions & session | 166 à 173 (phase 17 : étiquettes, worktrees, mode Automatique, questions, session principale) ; **dessinés** |
 | 26 · Agent de projet | 174 à 177 (phase 18 : panneau, lot à valider, anciens agents, profil) ; **dessinés** |
-| 27 · Jeux & Storybook | 178 à 182 (phase 19 : widget Jeu itch.io, story Storybook, comparaison, réglage Storybook) ; **dessinés** |
+| 27 · Jeux & Storybook | 178 à 182 (phase 19 : widget Jeu itch.io, story Storybook, comparaison, réglage Storybook) ; **dessinés** ; 178, 179 : composant retiré (§26.11) |
+| 28 à 28d · Pistes | pistes de brainstorming de la phase 20 (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF |
+| 29 · Visibilité des agents | 183 à 188k (phase 20 : barre et volet des agents, onglet Activité, mention d'agent, Questions et destinataires, graphe lisible, Kanban « Démarrable ») ; **dessinés** |
 
-Pages 00 à 27 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 27.
-Pages 28 et 28b : pistes de brainstorming (visibilité des agents), hors des PDF.
+Pages 00 à 27 et 29 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 29.
+Pages 28 à 28d : pistes de brainstorming (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF ; scripts `32b` à `32f`, pistes eux aussi.
 
 Règles :
 - Chaque écran existe en **sombre et en clair**, le clair nommé `… (clair)`. Modifier le sombre, puis régénérer le clair (`S.relight`).
@@ -168,9 +170,27 @@ Panneau à droite sous la barre du haut (440 px), pour garder visible le bouton 
   179 plein écran de Kibo · 180 widget Maquette, story `Screens / Home` · 180b Storybook injoignable · 180c menu des origines (Projet, `feat/login` injoignable) ·
   181 comparaison côte à côte (story, cadre Figma « Accueil ») · 181b superposition (opacité 50 %, curseur 40 %) · 182 Modifier le projet, section Storybook.
 
+## Phase 20 (page 29)
+
+`33-visibilite-agents.js`, chargé après `24-socle-suite` et les pistes `32b-pistes-agents` et `32d-pistes-questions` (dont il réutilise les primitives :
+`S.vis`, `S.visQ`) ; il recharge lui-même `32e-graphe-lisible` sur la page 29 (`S.graphePage`) et y branche la barre d'outils réelle du graphe
+(`S.grapheScreen`). Listes de job `S.VISIBILITE` (183 à 187d) puis `S.VIS_GRAPHE` (188 à 188k, placés trois rangées plus bas) ; après le dessin,
+`S.fixVisNav()` et `S.fixVisLogos()` dans un appel direct (élément « Questions » de la barre latérale, logo de l'espace de travail resté à la
+position de la base en clair), puis `S.dropBases()`. 185 est une page entière (1440 × 1420).
+Pour redessiner la piste 28c, recharger les scripts sans `33` (`S.grapheScreen` et `S.grapheLegend` restent dans `storage`).
+Données : section « Visibilité des agents (phase 20) » de `donnees-fictives.md` ; d'après les captures `screens/2026-10-1x-p20-t7` à `t13`.
+
+- 29 · Visibilité des agents : 183 barre des agents repliée (places, file, puces avec étape, « Répondre », poignée) · 184 volet trois colonnes (runs actifs
+  et en file, fil avec action en erreur dépliée et réponse, plan 2/5) · 185 fiche en page, Activité large (compte rendu, chronologie plan et fil mêlés,
+  plan) · 185b fiche étroite, Activité empilée · 186 carte au survol d'une mention sur le Kanban · 186b volet latéral du run · 186c page dédiée
+  (historique des runs, fil avec raisonnement, « Répondre » et « Arrêter le run » dans l'en-tête) · 187 Questions, filtre Tous avec compteurs et menu
+  du destinataire · 187b filtre Client, « Exporter tout (2) », question envoyée · 187c « Coller la réponse » · 187d Modifier le projet, destinataires
+  des questions · 188 graphe en vagues · 188b focus · 188c regroupement par étiquette `chapitre:` · 188d zoom éloigné · 188k Kanban, pastille
+  « Démarrable » et filtre.
+
 ## Exporter
 
-1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")` aujourd'hui (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
+1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")` puis `("29")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`.
 2. Source : menu du fichier → Exporter (.penpot), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
    que Penpot régénère : l'archive reste sous la limite de 100 Mo de GitHub).
