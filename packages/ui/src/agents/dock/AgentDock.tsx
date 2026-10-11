@@ -78,6 +78,7 @@ export function AgentDock({
               questions={state.questions.find((q) => q.runId === selected.id) ?? null}
               now={now}
               moments={moments}
+              runs={state.runs}
               steps={shown?.plan ?? []}
               report={progress ? reportOfRun(progress, selected.id) : null}
               highlightStep={current}

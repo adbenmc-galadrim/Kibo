@@ -90,6 +90,7 @@ mock.module("../api", () =>
       rpc: (req: RpcRequest) => {
         calls.push(req);
         if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
+        if (req.method === "getRunLog") return Promise.resolve([]);
         if (req.method === "cliStatus")
           return Promise.resolve({ path: "/Users/adam/.local/bin/kibo", installed: false });
         if (req.method === "getProject") return Promise.resolve(snapshotOf(req.projectId));
@@ -108,6 +109,7 @@ mock.module("../api", () =>
       subscribeEvents: () => () => {},
       subscribeAi: () => () => {},
       subscribeMoments: () => () => {},
+      subscribeTopic: () => () => {},
     },
   }),
 );

@@ -44,6 +44,7 @@ export const frMoments = {
   },
   partial,
   reasoning: "Raisonnement",
+  exchange: { question: "Question de l'agent", human: "Toi" },
   detail: "Voir le détail",
   kinds,
   outcomes,

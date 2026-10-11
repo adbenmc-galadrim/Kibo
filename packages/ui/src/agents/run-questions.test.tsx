@@ -18,11 +18,13 @@ mock.module("../api", () =>
     client: {
       rpc: (req: RpcRequest) => {
         calls.push(req);
+        if (req.method === "getRunLog") return Promise.resolve([]);
         if (req.method === "deliverAnswers") return deliver();
         return Promise.resolve(req.method === "getProject" ? project() : null);
       },
       subscribe: () => () => {},
       subscribeMoments: () => () => {},
+      subscribeTopic: () => () => {},
       code: () => Promise.resolve([]),
       subscribeCode: () => () => {},
     },

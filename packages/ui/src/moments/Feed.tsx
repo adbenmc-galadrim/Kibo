@@ -4,6 +4,7 @@ import { Badge } from "@kibo/sdk/ui/badge";
 import { formatClock } from "../agents/format";
 import type { frMoments } from "../i18n/fr-moments";
 import { ActionsMoment } from "./ActionsMoment";
+import { ExchangeLine, type FeedExtra } from "./ExchangeLine";
 import type { FileContext } from "./file-context";
 import { MessageMoment } from "./MessageMoment";
 import { RawMoment } from "./RawMoment";
@@ -17,8 +18,21 @@ export type FeedProps = {
   highlightStep?: string | null;
   steps?: Step[];
   label?: string;
+  extras?: readonly FeedExtra[];
   texts: typeof frMoments;
 };
+
+export type { FeedExtra };
+
+type Entry = { at: number; moment: RunMoment } | { at: number; extra: FeedExtra };
+
+function entriesOf(moments: readonly RunMoment[], extras: readonly FeedExtra[]): Entry[] {
+  const all: Entry[] = [
+    ...moments.map((moment) => ({ at: moment.at, moment })),
+    ...extras.map((extra) => ({ at: extra.at, extra })),
+  ];
+  return all.sort((a, b) => a.at - b.at);
+}
 
 function MomentBody({
   moment,
@@ -77,28 +91,57 @@ function MomentMeta({
 }
 
 export function Feed(props: FeedProps) {
-  const { moments, showReasoning = false, highlightStep = null, label, texts } = props;
+  const { moments, showReasoning = false, highlightStep = null, label, extras = [], texts } = props;
   const shown = moments.filter((m) => showReasoning || m.data.kind !== "reasoning");
-  if (shown.length === 0) return <p className="text-sm text-muted-foreground">{texts.empty}</p>;
-  return (
+  const entries = entriesOf(shown, extras);
+  const list = (
     <ol aria-label={label ? texts.feed(label) : undefined} className="grid content-start gap-3">
-      {shown.map((moment) => (
-        <li
-          key={moment.seq}
-          data-seq={moment.seq}
-          data-step={moment.stepId ?? undefined}
-          data-step-current={(highlightStep !== null && moment.stepId === highlightStep) || undefined}
-          className={cn(
-            "grid gap-1.5 rounded-md scroll-mt-2",
-            highlightStep !== null && moment.stepId === highlightStep && "bg-accent/40 -mx-2 px-2 py-1",
-          )}
-        >
-          {(moment.data.kind === "message" || moment.data.kind === "reasoning") && (
-            <MomentMeta moment={moment} steps={props.steps} texts={texts} />
-          )}
-          <MomentBody moment={moment} {...props} />
-        </li>
-      ))}
+      {entries.map((entry) =>
+        "extra" in entry ? (
+          <li key={`x-${entry.extra.key}`} data-kind={entry.extra.kind}>
+            <ExchangeLine extra={entry.extra} />
+          </li>
+        ) : (
+          <MomentItem
+            key={entry.moment.seq}
+            moment={entry.moment}
+            highlightStep={highlightStep}
+            feed={props}
+          />
+        ),
+      )}
     </ol>
+  );
+  if (entries.length > 0) return list;
+  return (
+    <>
+      {label && list}
+      <p className="text-sm text-muted-foreground">{texts.empty}</p>
+    </>
+  );
+}
+
+function MomentItem({
+  moment,
+  highlightStep,
+  feed,
+}: {
+  moment: RunMoment;
+  highlightStep: string | null;
+  feed: FeedProps;
+}) {
+  const current = highlightStep !== null && moment.stepId === highlightStep;
+  return (
+    <li
+      data-seq={moment.seq}
+      data-step={moment.stepId ?? undefined}
+      data-step-current={current || undefined}
+      className={cn("grid gap-1.5 rounded-md scroll-mt-2", current && "bg-accent/40 -mx-2 px-2 py-1")}
+    >
+      {(moment.data.kind === "message" || moment.data.kind === "reasoning") && (
+        <MomentMeta moment={moment} steps={feed.steps} texts={feed.texts} />
+      )}
+      <MomentBody moment={moment} {...feed} />
+    </li>
   );
 }

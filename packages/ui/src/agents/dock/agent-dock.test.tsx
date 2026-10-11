@@ -1,5 +1,13 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { FileRef, RpcRequest, RunMomentsEvent, RunMomentsPage, RunView, Worktree } from "@kibo/schema";
+import type {
+  FileRef,
+  RpcRequest,
+  RunLogEntry,
+  RunMomentsEvent,
+  RunMomentsPage,
+  RunView,
+  Worktree,
+} from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../../api-mock";
@@ -16,6 +24,14 @@ import {
 } from "../../moments/fixtures";
 import { NOW } from "../fixtures";
 
+const RUN_EXCHANGE: RunLogEntry[] = [
+  {
+    id: 30,
+    at: NOW - 60_000,
+    event: { type: "answered", text: "Port 4747, écrit dans daemon.json.", rank: 0 },
+  },
+];
+
 const worktrees: Worktree[] = [
   { path: "/Users/adam/goinfre/Kibo", branch: "main", head: "a1", isMain: true },
   { path: WORKTREE, branch: "kib-14", head: "b2", isMain: false },
@@ -31,6 +47,7 @@ mock.module("../../api", () =>
       rpc: (req: RpcRequest) => {
         calls.push(req);
         if (req.method === "getProject") return Promise.resolve(project);
+        if (req.method === "getRunLog") return Promise.resolve(req.runId === FEED_RUN ? RUN_EXCHANGE : []);
         if (req.method === "runMoments")
           return Promise.resolve(req.runId === FEED_RUN ? page : { ...page, moments: [] });
         return Promise.resolve(null);
@@ -53,6 +70,10 @@ mock.module("../../state/use-projects", () => ({
   useProject: realProjects.useProject,
   useProjects: realProjects.useProjects,
 }));
+
+const unmockedRunLog = "../../state/use-run-log?unmocked";
+const realRunLog: typeof import("../../state/use-run-log") = await import(unmockedRunLog);
+mock.module("../../state/use-run-log", () => realRunLog);
 
 const { AgentDock } = await import("./AgentDock");
 
@@ -144,8 +165,8 @@ test("new moments arrive live, in order and without duplicates", async () => {
       l({ type: "run.moments", runId: FEED_RUN, moments: MOMENTS.slice(1, 4) });
   });
   const seqs = () =>
-    Array.from(screen.getByRole("list", { name: "Fil de opus-dev-2" }).children).map((li) =>
-      li.getAttribute("data-seq"),
+    Array.from(screen.getByRole("list", { name: "Fil de opus-dev-2" }).querySelectorAll("[data-seq]")).map(
+      (li) => li.getAttribute("data-seq"),
     );
   expect(seqs()).toEqual(["1", "2", "3", "4"]);
 });
@@ -237,4 +258,11 @@ test("the unfolded bar folds the dock back", async () => {
   await userEvent.setup().click(screen.getByRole("button", { name: "Replier les agents" }));
   expect(onCollapse).toHaveBeenCalledTimes(1);
   expect(screen.getByText("Choisis un run pour voir son fil.")).toBeTruthy();
+});
+
+test("the human replies of the run are woven into its feed", async () => {
+  renderDock();
+  const feed = within(screen.getByRole("region", { name: "Fil" }));
+  expect(await feed.findByText("Port 4747, écrit dans daemon.json.")).toBeTruthy();
+  expect(feed.getByText("Toi")).toBeTruthy();
 });

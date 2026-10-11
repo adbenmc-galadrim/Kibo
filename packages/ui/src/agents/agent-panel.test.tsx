@@ -13,10 +13,12 @@ mock.module("../api", () =>
     client: {
       rpc: (req: RpcRequest) => {
         calls.push(req);
+        if (req.method === "getRunLog") return Promise.resolve([]);
         return outcome();
       },
       subscribeEvents: () => () => undefined,
       subscribeMoments: () => () => undefined,
+      subscribeTopic: () => () => undefined,
       subscribe: () => () => undefined,
     },
   }),
@@ -48,7 +50,7 @@ beforeEach(() => {
   outcome = () => Promise.resolve(null);
 });
 
-const actions = () => calls.filter((c) => c.method !== "getProject" && c.method !== "runMoments");
+const actions = () => calls.filter((c) => !["getProject", "runMoments", "getRunLog"].includes(c.method));
 
 const run = (id: string) => {
   const found = agentsFixture().runs.find((r) => r.id === id);

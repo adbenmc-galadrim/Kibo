@@ -168,3 +168,23 @@ test("an internal plan says it is the agent's own list", () => {
   render(<PlanSteps plan={PLAN} internal />);
   expect(screen.getByText("plan interne de l'agent")).toBeTruthy();
 });
+
+test("the exchange with the human is woven into the feed by time", () => {
+  const extras = [
+    { key: "q", at: nth(MOMENTS, 6).at + 1, kind: "question" as const, text: "Quel port ?" },
+    { key: "a", at: nth(MOMENTS, 6).at + 2, kind: "human" as const, text: "4747,\npar défaut." },
+    { key: "s", at: nth(MOMENTS, 0).at - 1, kind: "system" as const, text: "reprise de la session" },
+  ];
+  render(<Feed moments={MOMENTS} extras={extras} label="opus-dev-2" texts={frMoments} />);
+  const items = Array.from(screen.getByRole("list", { name: "Fil de opus-dev-2" }).children);
+  expect(items.at(0)?.textContent).toContain("reprise de la session");
+  expect(items.at(-2)?.textContent).toContain("Quel port ?");
+  expect(items.at(-1)?.getAttribute("data-kind")).toBe("human");
+  expect(screen.getByText("4747, par défaut.", { normalizer: (t) => t.replace(/\s+/g, " ") })).toBeTruthy();
+});
+
+test("a labelled feed keeps its list even before the first moment", () => {
+  render(<Feed moments={[]} label="opus-dev-2" texts={frMoments} />);
+  expect(screen.getByRole("list", { name: "Fil de opus-dev-2" })).toBeTruthy();
+  expect(screen.getByText("Rien dans le fil pour l'instant.")).toBeTruthy();
+});
