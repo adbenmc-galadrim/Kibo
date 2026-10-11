@@ -13,7 +13,7 @@ import { z } from "zod";
 import type { FilesService } from "../files/service";
 import type { ComponentIntegrationHooks, McpCallContext } from "../integrations/types";
 import { createGateHandlers } from "./gate-handlers";
-import { stubDocs, stubFiles, stubHandlerDeps, unused } from "./gate-test-kit";
+import { PEEK, stubDocs, stubFiles, stubHandlerDeps, unused } from "./gate-test-kit";
 
 const fileCalls: unknown[] = [];
 const files: FilesService = {
@@ -266,4 +266,14 @@ test("embedded frames reach the embed gate with the manifest of the calling inst
     await expect(handlersWith(integrations).embed("p", instance, view.target)).rejects.toThrow(
       "NOT_CONNECTED",
     );
+});
+
+test("peeking a run goes to the agents, and says so when they are not started", async () => {
+  const idle = createGateHandlers(stubHandlerDeps);
+  await expect(idle.peek("p1", "r1")).rejects.toThrow("NOT_CONNECTED");
+  const handlers = createGateHandlers({
+    ...stubHandlerDeps,
+    peekRun: (projectId, runId) => ({ ...PEEK, runId: `${projectId}/${runId}` }),
+  });
+  expect(await handlers.peek("p1", "r1")).toEqual({ ...PEEK, runId: "p1/r1" });
 });

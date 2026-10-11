@@ -64,6 +64,9 @@ function harness(granted: Partial<GrantedPermissions>, quotas: Quotas = createQu
     },
     questions: async () => ({ sent: 0, runId: null }),
     recipients: async () => [],
+    peek: async (_p, runId) => {
+      throw new KiboError("NOT_FOUND", `run ${runId}`);
+    },
   };
   const gate = createGate({
     instance: (_p, id) => {

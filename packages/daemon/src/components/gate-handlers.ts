@@ -11,6 +11,7 @@ import {
   KiboError,
   type PresencePeer,
   type ProjectSyncInfo,
+  type RunPeek,
   type TicketRun,
   validateConfig,
 } from "@kibo/schema";
@@ -34,6 +35,7 @@ export type GateHandlersDeps = {
   presence?: (projectId: string) => PresencePeer[];
   sharing?: (projectId: string) => ProjectSyncInfo;
   deliverAnswers?: (projectId: string, ticketId: string) => DeliveryResult;
+  peekRun?: (projectId: string, runId: string) => RunPeek;
 };
 
 function readData(docs: Docs, projectId: string, instanceId: string, call: DataCall): unknown {
@@ -133,5 +135,9 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
       return deps.deliverAnswers(projectId, ticketId);
     },
     recipients: async (projectId) => listQuestionRecipients(docs.project(projectId)),
+    async peek(projectId, runId) {
+      if (!deps.peekRun) throw new KiboError("NOT_CONNECTED", "agents not started");
+      return deps.peekRun(projectId, runId);
+    },
   };
 }

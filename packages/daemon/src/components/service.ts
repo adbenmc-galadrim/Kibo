@@ -7,6 +7,7 @@ import {
   KiboError,
   type PresencePeer,
   type ProjectSyncInfo,
+  type RunPeek,
   type TicketRun,
   type ValidationReport,
 } from "@kibo/schema";
@@ -53,6 +54,7 @@ export type ComponentsDeps = {
   presence?: (projectId: string) => PresencePeer[];
   sharing?: (projectId: string) => ProjectSyncInfo;
   deliverAnswers?: (projectId: string, ticketId: string) => DeliveryResult;
+  peekRun?: (projectId: string, runId: string) => RunPeek;
   installCli?: () => Promise<{ path: string }>;
   cliStatus?: () => Promise<{ path: string; installed: boolean }>;
   jobTimers?: Pick<JobSchedulerDeps, "setInterval" | "clearInterval">;
@@ -150,6 +152,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       ...(deps.presence && { presence: deps.presence }),
       ...(deps.sharing && { sharing: deps.sharing }),
       ...(deps.deliverAnswers && { deliverAnswers: deps.deliverAnswers }),
+      ...(deps.peekRun && { peekRun: deps.peekRun }),
     }),
   });
 

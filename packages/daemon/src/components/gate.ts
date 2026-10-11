@@ -17,6 +17,7 @@ import {
   permissionList,
   permissionOfCall,
   type QuestionRecipient,
+  type RunPeek,
   splitRef,
 } from "@kibo/schema";
 import type { EventLog } from "./events";
@@ -58,6 +59,7 @@ export type GateHandlers = {
   sharing(projectId: string): Promise<ProjectSyncInfo>;
   questions(projectId: string, ticketId: string): Promise<DeliveryResult>;
   recipients(projectId: string): Promise<QuestionRecipient[]>;
+  peek(projectId: string, runId: string): Promise<RunPeek>;
 };
 export type GateDeps = {
   instance(projectId: string, instanceId: string): Instance;
@@ -132,7 +134,7 @@ function dispatch(
     case "questions.recipients":
       return h.recipients(projectId);
     case "run.peek":
-      throw new KiboError("NOT_FOUND", `run ${call.runId} cannot be peeked yet`);
+      return h.peek(projectId, call.runId);
     default:
       return h.notes(projectId, call);
   }
