@@ -49,7 +49,7 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 29 · Visibilité des agents | 183 à 188k (phase 20 : barre et volet des agents, onglet Activité, mention d'agent, Questions et destinataires, graphe lisible, Kanban « Démarrable ») ; **dessinés** |
 | 30 · Signaux des agents | 189 à 191 (phase 21 : boîte à signaux, lot après réveil, fil du run émetteur, Activité, pastille et notification) ; **dessinés** |
 | 31 · Agents et skills | 192 à 196 (phase 22 : page Agents et fiche, nouvel agent, « Ce que reçoit l'agent », conflit d'écriture, page Skills, éditeur, notes de review, intégration en diff, historique, fil du run) ; **dessinés** |
-| 32 · Doublons entre agents | 197 à 201b (phase 23 : recouvrement dans le fil des deux runs, lien automatique et annulation, liens du ticket « par Kibo », barre et page du run, réglages « Doublons entre agents », « Ce que reçoit l'agent ») ; à dessiner |
+| 32 · Doublons entre agents | 197 à 201b (phase 23 : fil `other` et `owner`, lien posé et annulé, fiche et Activité, barre et page du run, réglages, « Ce que reçoit l'agent ») ; **dessinés, à ajuster après implémentation** ; hors des PDF et de `kibo.penpot.xz` jusqu'au jalon de la phase 23 |
 
 Pages 00 à 27 et 29 à 31 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 31 (la page 32, phase 23, est dans le fichier mais hors des PDF).
 Pages 28 à 28d : pistes de brainstorming (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF ; scripts `32b` à `32f`, pistes eux aussi.
@@ -228,6 +228,25 @@ intégration en diff sans actions par bloc ; dans le fil, « A utilisé le skill
   l'agent » · 193e conflit d'écriture · 194 page Skills (Cet ordinateur, Projet, Plugins) · 194b skill de plugin en lecture seule, « Copier pour
   modifier » · 195 éditeur de skill, côte à côte et fichiers annexes · 195b notes de review · 195c intégration en diff · 195d historique des
   versions · 196 fil du run et bloc « Reviews de skills » de l'onglet Activité.
+
+## Phase 23 (page 32)
+
+`36-doublons-agents.js`, chargé après `24-socle-suite`, `32b-pistes-agents` et `32d-pistes-questions` (primitives `S.vis`, `S.visQ`) et
+`35-agents-skills` (`S.one`, `S.fixTabX`) ; liste `S.DOUBLONS`. Comme pour la page 31, **un écran par appel direct** avec `await S.one(n)` (sombre
+puis clair, export PNG des deux) ; un appel qui dépasse 120 s continue en tâche de fond : attendre ses PNG avant l'appel suivant, sinon deux écrans
+se dessinent en même temps. Après le dessin, `S.fixDoublonsNav()` (sous-entrées « Files d'attente » et « Skills » sous « Agents ») puis `S.dropBases()`.
+Projet Boutique (BOU) : `toBoutique` renomme Kibo et KIB-… dans la barre latérale, les onglets et le fil d'Ariane de la base. Écrans de 1 040 px
+de haut (1 120 pour 199, 1 240 pour 201 et 201b) ; rangées espacées de 1,4 × 1 040 px. Données : section « Doublons entre agents (phase 23) » de
+`donnees-fictives.md`. Recouvrement en zinc avec l'icône `Copy`, lien automatique avec l'icône `Link` ; l'orange reste aux agents.
+
+- 32 · Doublons entre agents : 197 page du run `bou · livraison · BOU-15` (`other`) : ligne « Recouvrement avec … · `formatDate` exporté deux
+  fois », « à factoriser », « Ouvert », « Voir les fichiers » et « Ignorer », puis « A regardé le travail de BOU-12 » (`peek_work`) et « Kibo a
+  rappelé de factoriser » · 197b run `bou · livraison · BOU-12` (`owner`) : « repris par bou · livraison · BOU-15 », « Réglé 14:52 », information
+  au propriétaire · 198 « Kibo a lié BOU-12 → BOU-15 (BOU-12 bloque BOU-15) », `src/lib/format-date.ts` repris de BOU-12, « Annuler » ·
+  198b « Annulé par Adam 15:03 », bouton disparu · 199 fiche BOU-15 : « Bloqué par » BOU-12 avec le badge « par Kibo » et son infobulle,
+  Activité avec les lignes de recouvrement et de lien, « Recouvrements : 1 réglé · 0 ouvert » sous le compte rendu · 200 barre du pied de page
+  (puces avec ⧉ 1, « 2/3 places · 1 recouvrement », infobulle) et page du run avec « Travail en parallèle » · 201 « Modifier le projet », section
+  « Doublons entre agents » · 201b « Ce que reçoit l'agent » sur BOU-15, `brief.md` déplié sur « ## Travail en cours sur le projet ».
 
 ## Exporter
 

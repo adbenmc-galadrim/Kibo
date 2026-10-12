@@ -235,3 +235,56 @@ Historique de `porte-qualite/SKILL.md` : 12 oct. 14:32 Intégration (actuelle, 4
 9 oct. 16:20 Restauration ; 6 oct. 09:12 Kibo. Fil du run `global · livraison · KIB-14` (14:05 → 14:23) : a utilisé
 `superpowers:test-driven-development` puis `porte-qualite`, Kibo a refusé `clean-pr`, rappel de la review, review de 2 skills ; le run de la
 veille (17:52 → 18:40) : « Pas de review des skills ».
+
+## Doublons entre agents (phase 23)
+
+Projet **Boutique** (clé `BOU`, dossier `~/code/boutique`, Storybook `http://localhost:6006`), à côté de Kibo, Portfolio et API Facturation.
+Tickets : **BOU-12** « Format des dates de livraison », **BOU-15** « Page de suivi de commande », BOU-9 « Codes promo du panier ».
+Agent `livraison` de portée Projet · Boutique (`~/code/boutique/.claude/agents/livraison.md`). Runs, 2/3 places :
+
+| Run | Ticket | Espace | Démarré | Plan déclaré |
+|---|---|---|---|---|
+| `bou · livraison · BOU-12` (`owner`) | BOU-12 | worktree `bou-12` | 14:28 | 2/4 : Lire les formats de date existants (faite), Écrire formatDate et formatDeliveryWindow (faite), Brancher le format sur le récapitulatif (en cours), Tests des formats |
+| `bou · livraison · BOU-15` (`other`) | BOU-15 | worktree `bou-15` | 14:40, fini 14:57 | 2/4 : Relire la page de suivi et l'API commandes (faite), Afficher la date de livraison estimée (faite), Reprendre formatDate de BOU-12 (en cours), Tests de la page de suivi |
+| `bou · review-pr · BOU-9` | BOU-9 | | 11:02 | fait |
+
+Travail de BOU-12 : `src/lib/format-date.ts` ajouté (+24 −0 ; exporte `formatDate` et `formatDeliveryWindow`), `src/lib/format.ts` modifié
+(+3 −1, réexporte `formatDate`), `src/i18n/fr.ts` modifié (+6 −2). BOU-15 écrit son propre `formatDate` dans `src/utils/date.ts` à 14:46.
+
+Chronologie : 14:48 recouvrement `export` ouvert, « `formatDate` exporté deux fois » (`src/lib/format.ts` chez BOU-12, `src/utils/date.ts`
+chez BOU-15) ; 14:49 alerte livrée à BOU-15 (« à factoriser ») et information à BOU-12 (« ne le renomme pas et ne le déplace pas ») ;
+14:49 BOU-15 « A regardé le travail de BOU-12 » (`peek_work`) ; 14:50 « Kibo a rappelé de factoriser » ; 14:52 BOU-15 supprime sa copie et
+reprend `src/lib/format-date.ts` à l'identique (9 tests réussis), le recouvrement est **réglé 14:52** ; 14:52 lien automatique « Kibo a lié
+BOU-12 → BOU-15 (BOU-12 bloque BOU-15) : `src/lib/format-date.ts` repris de BOU-12 » (raison `copy`), badge « par Kibo » sur la fiche ;
+15:03 lien **annulé par Adam**. Compte rendu de BOU-15 : « La page de suivi affiche la date de livraison estimée », décision « Repris `formatDate`
+de BOU-12 (`src/lib/format-date.ts`) », suite « Fusionner BOU-12 avant BOU-15 » ; « Recouvrements : 1 réglé · 0 ouvert ».
+`src/i18n/fr.ts`, modifié des deux côtés : recouvrement `file` **ignoré** par Adam le 12 oct.
+
+Réglages « Doublons entre agents » de Boutique : détection activée, lignes minimales d'un bloc **8**, tests exclus, fichiers ignorés
+`src/generated/**`, exports génériques `default`, `main`, `handler`, `config`, `index`, `Props`, `GET`, `POST` et `schema` (ajouté par Adam),
+recouvrement ignoré `src/i18n/fr.ts` · fichier · 12 oct. · « Réactiver ».
+
+Section « Travail en cours sur le projet » telle que la reçoit BOU-15 (premier tour, dans `brief.md` après « ## Commits de la branche ») :
+
+```
+## Travail en cours sur le projet
+### bou · livraison · BOU-12 — Format des dates de livraison
+démarré il y a 12 min · étape en cours : Brancher le format sur le récapitulatif
+espace : worktree bou-12
+plan (2/4) : ✓ Lire les formats · ✓ Écrire formatDate et formatDeliveryWindow
+  ▸ Brancher le format sur le récapitulatif · ○ Tests des formats
+fichiers : src/lib/format-date.ts +24 −0 · src/lib/format.ts +3 −1 · src/i18n/fr.ts +6 −2
+exports nouveaux : formatDate, formatDeliveryWindow (src/lib/format-date.ts)
+
+### bou · livraison · BOU-9 — Codes promo du panier
+démarré il y a 31 min · étape en cours : Valider le code côté serveur
+espace : worktree bou-9
+aucun plan déclaré
+fichiers : src/cart/promo.ts +41 −0 · src/cart/cart.ts +12 −3
+exports nouveaux : applyPromoCode (src/cart/promo.ts)
+
+Avant de créer un utilitaire, un type ou un composant, vérifie qu'il n'existe pas déjà dans le code ni dans ce qui précède ;
+mcp__kibo__peek_work lit le travail d'un autre run.
+```
+
+Le second run (BOU-9) est un exemple propre à « Ce que reçoit l'agent » ; la barre des agents des écrans 197 à 201 n'en montre que deux.
