@@ -50,7 +50,8 @@ export function ContentView(p: Props) {
       />
     );
   if (t.kind === "run") return <RunPage key={t.runId} runId={t.runId} />;
-  if (t.kind === "skill") return <SkillsPage projects={p.projects} initialSkill={t.skillId} />;
+  if (t.kind === "skill")
+    return <SkillsPage key={t.skillId} projects={p.projects} initialSkill={t.skillId} />;
   if (!p.project) return null;
   switch (t.kind) {
     case "project":

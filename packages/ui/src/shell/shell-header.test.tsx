@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { AgentsState, AiEvent, ComponentDraft, RpcRequest, TabTarget } from "@kibo/schema";
+import type { AgentsState, AiEvent, ComponentDraft, RpcRequest, Screen, TabTarget } from "@kibo/schema";
 import { SidebarProvider } from "@kibo/sdk/ui/sidebar";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -35,12 +35,14 @@ const agents = (): AgentsState => ({
   runs: [runFixture({ id: "r9", state: "running" })],
 });
 
-function header(onOpen: (t: TabTarget) => void = () => {}) {
+type HeaderOver = { screen?: Screen | null; onNewAgent?(): void; onNewSkill?(): void };
+
+function header(onOpen: (t: TabTarget) => void = () => {}, over: HeaderOver = {}) {
   return render(
     <SidebarProvider>
       <ShellHeader
         active={null}
-        screen={null}
+        screen={over.screen ?? null}
         project={null}
         ticketProject={null}
         branch={null}
@@ -50,7 +52,8 @@ function header(onOpen: (t: TabTarget) => void = () => {}) {
         viewer="adam"
         notifications="browser"
         now={NOW}
-        onNewProfile={() => {}}
+        onNewAgent={over.onNewAgent ?? (() => {})}
+        onNewSkill={over.onNewSkill ?? (() => {})}
         onNewTicket={() => {}}
         onShare={() => {}}
         onOpenRun={() => {}}
@@ -121,7 +124,8 @@ test("the project agent button sits before Partager and carries a dot while a ba
         viewer="adam"
         notifications="browser"
         now={NOW}
-        onNewProfile={() => {}}
+        onNewAgent={() => {}}
+        onNewSkill={() => {}}
         onNewTicket={() => {}}
         onShare={() => {}}
         onOpenRun={() => {}}
@@ -151,4 +155,15 @@ test("the creations indicator loads on demand: nothing shows while loading, then
   expect(screen.queryByText("Chargement…")).toBeNull();
   expect(await screen.findByRole("button", { name: "Créations · 1 attend une action" })).toBeTruthy();
   expect(document.querySelector("[data-kibo-loading]:not(.sr-only)")).toBeNull();
+});
+
+test("the header offers Nouvel agent on Agents and Nouveau skill on Skills", async () => {
+  const calls: string[] = [];
+  const view = header(() => {}, { screen: "skills", onNewSkill: () => calls.push("skill") });
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Nouveau skill" }));
+  view.unmount();
+  header(() => {}, { screen: "agents", onNewAgent: () => calls.push("agent") });
+  await user.click(await screen.findByRole("button", { name: "Nouvel agent" }));
+  expect(calls).toEqual(["skill", "agent"]);
 });

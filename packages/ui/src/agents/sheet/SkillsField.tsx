@@ -6,6 +6,7 @@ import { Info } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { client } from "../../api";
 import { frAgentsSkills } from "../../i18n/fr-agents-skills";
+import { matchesSkill } from "../../skills/skill-sections";
 import { projectName } from "../catalog/agent-labels";
 import { FoldSection } from "./FoldSection";
 
@@ -21,15 +22,12 @@ type Props = {
 type Group = { title: string; skills: Skill[] };
 const t = frAgentsSkills.skills;
 
-const plain = (text: string) => text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-
 export function skillGroups(
   skills: readonly Skill[],
   query: string,
   projects: readonly ProjectSummary[],
 ): Group[] {
-  const q = plain(query.trim());
-  const shown = skills.filter((s) => q === "" || plain(`${s.id} ${s.name} ${s.description}`).includes(q));
+  const shown = skills.filter((s) => matchesSkill(s, query));
   const of = (source: Skill["source"]) => shown.filter((s) => s.source === source);
   const projectIds = [...new Set(of("project").map((s) => s.projectId))];
   return [

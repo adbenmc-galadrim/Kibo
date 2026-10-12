@@ -8,7 +8,7 @@ type Props = {
   screen: Screen | null;
   agents: AgentsState | null;
   onNewAgent: () => void;
-  onNewSkill?: () => void;
+  onNewSkill: () => void;
 };
 
 function NewButton({ label, onClick }: { label: string; onClick: () => void }) {
@@ -22,7 +22,7 @@ function NewButton({ label, onClick }: { label: string; onClick: () => void }) {
 
 export function ScreenActions({ screen, agents, onNewAgent, onNewSkill }: Props) {
   if (screen === "agents") return <NewButton label={fr.nav.newAgent} onClick={onNewAgent} />;
-  if (screen === "skills" && onNewSkill) return <NewButton label={fr.nav.newSkill} onClick={onNewSkill} />;
+  if (screen === "skills") return <NewButton label={fr.nav.newSkill} onClick={onNewSkill} />;
   if (screen === "queue" && agents) return <PauseAdmission paused={agents.host.paused} />;
   return null;
 }

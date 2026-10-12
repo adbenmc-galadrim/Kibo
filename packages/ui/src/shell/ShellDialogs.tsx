@@ -26,6 +26,7 @@ import {
   NewAgentDialog,
   NewPageDialog,
   NewProjectDialog,
+  NewSkillDialog,
   NewTicketDialog,
   RenamePageDialog,
   StarterDialog,
@@ -48,6 +49,7 @@ export type DialogsState = {
   fileTicket: { ticketId: string } | null;
   assign: { projectId: string | null; ticketId: string | null } | null;
   newAgent: boolean;
+  newSkill: boolean;
   preview: FileRef | null;
   share: string | null;
   join: boolean;
@@ -72,6 +74,7 @@ export const NO_DIALOG: DialogsState = {
   fileTicket: null,
   assign: null,
   newAgent: false,
+  newSkill: false,
   preview: null,
   share: null,
   join: false,
@@ -243,6 +246,16 @@ export function ShellDialogs({
         />
       )}
       {state.newAgent && <NewAgentDialog projects={projects} onClose={() => set({ newAgent: false })} />}
+      {state.newSkill && (
+        <NewSkillDialog
+          projects={projects}
+          onClose={() => set({ newSkill: false })}
+          onCreated={(skill) => {
+            set({ newSkill: false });
+            p.onOpenTarget({ kind: "skill", skillId: skill.id }, false);
+          }}
+        />
+      )}
       {shareProject && (
         <ShareProjectDialog project={shareProject} open onOpenChange={(o) => !o && set({ share: null })} />
       )}

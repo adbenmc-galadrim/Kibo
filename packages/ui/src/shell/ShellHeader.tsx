@@ -31,8 +31,8 @@ type Props = {
   viewer: string;
   notifications: Session["notifications"];
   now: number;
-  onNewProfile: () => void;
-  onNewSkill?: () => void;
+  onNewAgent: () => void;
+  onNewSkill: () => void;
   onNewTicket: () => void;
   onShare: () => void;
   onOpenRun(runId: string): void;
@@ -54,7 +54,7 @@ export function ShellHeader({
   viewer,
   notifications,
   now,
-  onNewProfile,
+  onNewAgent,
   onNewSkill,
   onNewTicket,
   onShare,
@@ -77,7 +77,7 @@ export function ShellHeader({
           {gitError}
         </p>
       )}
-      <ScreenActions screen={screen} agents={agents} onNewAgent={onNewProfile} onNewSkill={onNewSkill} />
+      <ScreenActions screen={screen} agents={agents} onNewAgent={onNewAgent} onNewSkill={onNewSkill} />
       {project && agentPanel.available && (
         <ProjectAgentButton
           projectId={project.meta.id}
