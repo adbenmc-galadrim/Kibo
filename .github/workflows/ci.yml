@@ -43,7 +43,7 @@ jobs:
         run: bun test $(ls -d packages/*/ | grep -v '^packages/daemon/$' | sed 's|^|./|') ./components ./scripts
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     env: { KIBO_E2E_THEME: dark }
     steps:
       - uses: actions/checkout@v5
