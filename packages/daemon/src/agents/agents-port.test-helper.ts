@@ -1,4 +1,10 @@
-import { type Agent, type AgentSettings, type SystemAgentId, systemAgentRef } from "@kibo/schema";
+import {
+  type Agent,
+  type AgentFile,
+  type AgentSettings,
+  type SystemAgentId,
+  systemAgentRef,
+} from "@kibo/schema";
 import { type AgentSource, memoryAgent, memoryAgentSource, NEUTRAL_SYSTEM_AGENTS } from "./neutral-agents";
 
 export type TestAgentInput = Partial<AgentSettings> & {
@@ -6,6 +12,10 @@ export type TestAgentInput = Partial<AgentSettings> & {
   name?: string;
   model?: string;
   system?: boolean;
+  projectId?: string;
+  body?: string;
+  tools?: string[];
+  file?: AgentFile | null;
 };
 
 const isSystemId = (id: string): id is SystemAgentId =>
@@ -13,15 +23,42 @@ const isSystemId = (id: string): id is SystemAgentId =>
 
 export const testRef = (id: string): string => (id.includes(":") ? id : `global:${id}`);
 
-export function testAgent(p: TestAgentInput = {}): Agent {
-  const { id = "opus", name = "opus-dev", model = "opus", system = false, ...settings } = p;
-  const ref = system && isSystemId(id) ? systemAgentRef(id) : testRef(id);
-  return memoryAgent({
-    ref,
-    scope: system ? "system" : "global",
+const testFile = (name: string, model: string, body: string, tools: string[] | undefined): AgentFile => ({
+  frontmatter: {
     name,
+    description: `Agent ${name}`,
+    model,
+    ...(tools === undefined ? {} : { tools }),
+    extra: "",
+    extraKeys: [],
+  },
+  body,
+});
+
+function refOf(id: string, system: boolean, projectId: string | undefined): string {
+  if (system && isSystemId(id)) return systemAgentRef(id);
+  return projectId === undefined ? testRef(id) : `project:${projectId}:${id}`;
+}
+
+export function testAgent(p: TestAgentInput = {}): Agent {
+  const {
+    id = "opus",
+    name = "opus-dev",
+    model = "opus",
+    system = false,
+    projectId,
+    body = "",
+    tools,
+    file,
+    ...settings
+  } = p;
+  return memoryAgent({
+    ref: refOf(id, system, projectId),
+    scope: system ? "system" : projectId === undefined ? "global" : "project",
+    name,
+    projectId: projectId ?? null,
     settings: { permissionMode: "acceptEdits", workspace: "isolated", maxParallel: 4, ...settings },
-    file: { frontmatter: { name, description: `Agent ${name}`, model, extra: "", extraKeys: [] }, body: "" },
+    file: file === undefined ? testFile(name, model, body, tools) : file,
   });
 }
 

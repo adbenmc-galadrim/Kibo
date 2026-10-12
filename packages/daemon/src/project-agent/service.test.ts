@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { DEFAULT_PROJECT_AGENT_BODY } from "@kibo/core/agents/compose";
 import { MEMORY_NOTE_PATH, type ProposeBatchInput, type RunView } from "@kibo/schema";
+import { projectAgentAgent } from "../agents/agents-port.test-helper";
+import { projectAgentBody } from "./bootstrap";
 import { GOOD_TOKEN, type Kit, PROJECT_ID, serviceKit } from "./service.test-helper";
 
 let kit: Kit;
@@ -246,4 +249,25 @@ test("the MCP sink accepts only a live project run token and hands the run to th
   expect(await kit.svc.mcp.call(run, "list_tickets", {})).toBe(`list_tickets:${run.id}`);
   await expect(kit.svc.mcp.call(ticketRun, "list_tickets", {})).rejects.toMatchObject({ code: "FORBIDDEN" });
   await expect(kit.svc.mcp.call(run, "ticket_progress", {})).rejects.toMatchObject({ code: "FORBIDDEN" });
+});
+
+test("the project agent's prompt takes the body of its file, and falls back to Kibo's role", async () => {
+  const run = kit.svc.send(PROJECT_ID, "Bonjour");
+  const fallback = await kit.svc.turns.prepare(run, kit.dir);
+  expect(fallback.systemPrompt).toContain("chef de projet du projet Emis");
+  kit.setAgentBody("Tu es le chef d'orchestre de l'équipe.");
+  const custom = await kit.svc.turns.prepare({ ...run, turns: 1, pendingAnswer: "Et ensuite ?" }, kit.dir);
+  expect(custom.systemPrompt).toContain("Tu es le chef d'orchestre de l'équipe.");
+  expect(custom.systemPrompt).not.toContain("chef de projet du projet Emis");
+});
+
+test("the body of kibo-project-agent.md feeds the project agent, Kibo's default role otherwise", () => {
+  const file = (body: string) => ({
+    frontmatter: { name: "kibo-project-agent", description: "Chef", extra: "", extraKeys: [] },
+    body,
+  });
+  const withFile = projectAgentAgent();
+  expect(projectAgentBody({ agentOf: () => ({ ...withFile, file: file("Mon rôle") }) })).toBe("Mon rôle");
+  expect(projectAgentBody({ agentOf: () => ({ ...withFile, file: null }) })).toBe(DEFAULT_PROJECT_AGENT_BODY);
+  expect(projectAgentBody({ agentOf: () => null })).toBe(DEFAULT_PROJECT_AGENT_BODY);
 });

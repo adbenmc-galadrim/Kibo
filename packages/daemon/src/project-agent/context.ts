@@ -22,6 +22,7 @@ export type ProjectAgentDeps = {
   emit: () => void;
   now?: () => number;
   formatTime?: (at: number) => string;
+  agentBody?: () => string;
 };
 
 export type AgentContext = Required<ProjectAgentDeps> & {

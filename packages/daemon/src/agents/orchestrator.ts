@@ -4,7 +4,6 @@ import { canResume, resumableRuns } from "@kibo/core/run-resume";
 import { headRank, orderQueue, planAdmissions, rankForMove, tailRank } from "@kibo/core/scheduler";
 import {
   type Agent,
-  DEMO_AGENT_REF,
   type HostLoad,
   HostSettings,
   isTerminal,
@@ -12,12 +11,13 @@ import {
   mainSessionOf,
   type RunView,
 } from "@kibo/schema";
+import { agentGuardOf } from "./agent-guard";
 import { activeRunOf, plannedCwd, previewAssign } from "./assign-preview";
 import { createHookSink } from "./hook-sink";
 import { hostSettingsOf, hostViewOf } from "./host-view";
 import { noticeFor } from "./notifier";
-import { guarded, startOfDay } from "./orchestrator-support";
-import type { Orchestrator, OrchestratorOptions, TaskSpec } from "./orchestrator-types";
+import { guarded, knownAgent, startOfDay, ticketAgent } from "./orchestrator-support";
+import type { Orchestrator, OrchestratorOptions, TaskSpec, ToolGuard } from "./orchestrator-types";
 import { createProjectRun } from "./project-run";
 import { createRunLauncher, type LiveRun } from "./run-launch";
 import { openRunRegistry } from "./run-registry";
@@ -41,6 +41,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   const registry = openRunRegistry(opts.store, now);
   const live = new Map<string, LiveRun>();
   const tasks = new Map<string, TaskSpec>();
+  const guards = new Map<string, ToolGuard>();
   const listeners = new Set<() => void>();
   const stateListeners = new Set<(run: RunView) => void>();
   let load: HostLoad = { cpu: 0, ram: 0 };
@@ -65,21 +66,8 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   });
 
   const settings = () => hostSettingsOf(opts.store, opts.hostInfo);
-  const agentOf = (ref: string): Agent => {
-    const found = opts.data.agentOf(ref);
-    if (!found) throw new KiboError("AGENT_NOT_FOUND", `agent ${ref} not found`);
-    return found;
-  };
-  const ticketAgentOf = (ref: string, projectId: string): Agent => {
-    const found = agentOf(ref);
-    if (found.ref === DEMO_AGENT_REF) {
-      if (opts.data.isDemoProject(projectId)) return found;
-      throw new KiboError("INVALID_INPUT", "the demo agent only works in the demo project");
-    }
-    if (found.scope === "system")
-      throw new KiboError("INVALID_INPUT", `agent ${found.name} is reserved to Kibo`);
-    return found;
-  };
+  const agentOf = (ref: string): Agent => knownAgent(opts.data, ref);
+  const ticketAgentOf = (ref: string, projectId: string): Agent => ticketAgent(opts.data, ref, projectId);
   const schedulerAgents = () =>
     opts.data.agents(null).map((a) => ({ ref: a.ref, name: a.name, maxParallel: a.settings.maxParallel }));
   const plan = (runs: RunView[]) =>
@@ -97,6 +85,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
     tasks,
     live,
     agentOf,
+    guards,
     stopping: () => stopping,
   });
 
@@ -117,7 +106,12 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   }
 
   const hostView = () => hostViewOf(opts.store, opts.hostInfo, registry.all(), load);
-  const hooks = createHookSink({ live, tasks, registry });
+  const hooks = createHookSink({
+    live,
+    tasks,
+    registry,
+    agentGuard: (run) => guards.get(run.id) ?? agentGuardOf(opts.data.agentOf(run.profileId)),
+  });
 
   for (const run of registry.interrupted()) {
     const spawned = registry

@@ -3,15 +3,15 @@ import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { FAKE_CLAUDE, fakeCalls, scenarioPath } from "./fake-claude-scenario";
-import { cleanHarness, profile, run, setup, waitUntil } from "./orchestrator.test-helper";
+import { cleanHarness, run, setup, testAgent, waitUntil } from "./orchestrator.test-helper";
 
 cleanHarness();
 
-const demo = profile({ id: "demo", name: "demo", system: true, maxParallel: 1 });
-const assistant = profile({ id: "assistant", name: "assistant", system: true, maxParallel: 1 });
+const demo = testAgent({ id: "demo", name: "kibo-demo", system: true, maxParallel: 1 });
+const assistant = testAgent({ id: "assistant", name: "assistant", system: true, maxParallel: 1 });
 
 test("the demo profile cannot be assigned outside the demo project", () => {
-  const h = setup({ scenario: "done", profiles: [profile(), demo] });
+  const h = setup({ scenario: "done", profiles: [testAgent(), demo] });
   const input = { projectId: "p1", ticketId: "t1", profileId: "system:demo", brief: "" };
   expect(() => h.orch.assign(input)).toThrow(/the demo agent only works in the demo project/);
   expect(() => h.orch.preview(input)).toThrow(/the demo agent only works in the demo project/);
@@ -22,13 +22,13 @@ test("the demo profile cannot be assigned outside the demo project", () => {
 test("in the demo project the demo agent runs with its own binary and env, other system profiles stay reserved", async () => {
   const h = setup({
     scenario: "hold",
-    profiles: [profile(), demo, assistant],
+    profiles: [testAgent(), demo, assistant],
     demoProject: true,
     claudeBin: "/nonexistent/claude",
     demoAgent: { bin: FAKE_CLAUDE, env: () => ({ KIBO_FAKE_CLAUDE_SCENARIO: scenarioPath("done") }) },
   });
   const first = h.orch.assign({ projectId: "p1", ticketId: "t1", profileId: "system:demo", brief: "" });
-  expect(first.profileId).toBe("system:demo");
+  expect(first).toMatchObject({ profileId: "system:demo", label: "kib · kibo-demo · KIB-1" });
   expect(() =>
     h.orch.assign({ projectId: "p1", ticketId: "t2", profileId: "system:assistant", brief: "" }),
   ).toThrow(/reserved to Kibo/);

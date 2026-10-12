@@ -15,7 +15,7 @@ import {
   type TicketView,
   undeliveredAnswers,
 } from "@kibo/schema";
-import { agentsPort, projectAgentAgent, testAgent, testRef } from "./agents-port.test-helper";
+import { agentsPort, testAgent, testRef } from "./agents-port.test-helper";
 import { FAKE_CLAUDE, type FakeScenarioName, scenarioPath } from "./fake-claude-scenario";
 import { defaultHookLauncher } from "./hook-launcher";
 import { type HookSink, handleHook } from "./hook-route";
@@ -50,7 +50,7 @@ const ticket = (id: string, key: string | null): TicketView => ({
   agentProgress: EMPTY_PROGRESS,
 });
 
-const project: ProjectSnapshot = {
+export const testProject: ProjectSnapshot = {
   meta: {
     id: "p1",
     key: "KIB",
@@ -73,8 +73,7 @@ const project: ProjectSnapshot = {
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 
-export const profile = testAgent;
-export const projectAgentProfile = projectAgentAgent;
+export { projectAgentAgent, testAgent } from "./agents-port.test-helper";
 
 export type Harness = {
   orch: Orchestrator;
@@ -111,6 +110,7 @@ type Setup = {
   questions?: Question[];
   markFails?: boolean;
   lifecycle?: Pick<OrchestratorOptions, "onSpawned" | "onTurnEnd">;
+  cliFallbacks?: OrchestratorOptions["cliFallbacks"];
 };
 
 let current: Harness | null = null;
@@ -130,16 +130,16 @@ export function setup(o: Setup): Harness {
   const projectDir = join(home, "project");
   mkdirSync(projectDir);
   const questions = o.questions ?? [];
-  const profiles = o.profiles ?? [profile()];
+  const profiles = o.profiles ?? [testAgent()];
   const data: AgentDataPort = {
     ...agentsPort(profiles),
-    projectKey: () => project.meta.key,
+    projectKey: () => testProject.meta.key,
     skills: () => [],
     ticketContext: (projectId, ticketId) => {
-      const t = project.tickets.find((x) => x.id === ticketId);
+      const t = testProject.tickets.find((x) => x.id === ticketId);
       if (projectId !== "p1" || !t) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
-      const meta = { ...project.meta, ...o.meta };
-      return { project: { ...project, meta, questions }, ticket: t, domain: null };
+      const meta = { ...testProject.meta, ...o.meta };
+      return { project: { ...testProject, meta, questions }, ticket: t, domain: null };
     },
     guidelines: () => o.guidelines ?? [],
     assertWritable: (projectId) => {
@@ -215,6 +215,7 @@ export function setup(o: Setup): Harness {
       return minted;
     },
     ...o.lifecycle,
+    cliFallbacks: o.cliFallbacks,
   };
   orch = createOrchestrator(options);
   current = {

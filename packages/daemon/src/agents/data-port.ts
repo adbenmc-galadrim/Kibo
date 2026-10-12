@@ -139,7 +139,7 @@ export function createDataPort(
     agents: (projectId) => agentSource.agents(projectId),
     agentOf: (ref) => agentSource.agentOf(ref),
     projectKey: (projectId) => docs.projectMeta(projectId).key,
-    skills: () => [],
+    skills: (projectId) => agentSource.skills?.(projectId) ?? [],
     ticketContext(projectId, ticketId) {
       const project = {
         ...readProject(docs.project(projectId), docs.activity(projectId)),

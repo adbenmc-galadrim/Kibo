@@ -1,29 +1,26 @@
 import { existsSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { NO_AGENT } from "@kibo/core/agents/compose";
-import { buildRunContext, buildSystemPrompt, guidelineChain } from "@kibo/core/context";
 import { headRank } from "@kibo/core/scheduler";
 import {
   type Agent,
-  branchRefOf,
   DEMO_AGENT_REF,
   isProjectRun,
   isTerminal,
-  KiboError,
   mainSessionOf,
   RunEvent,
   type RunView,
   type SetupStep,
-  undeliveredAnswers,
 } from "@kibo/schema";
+import { NO_CLI_FALLBACKS } from "./cli-flags";
 import { ticketLaunch } from "./mcp-launch";
-import { agentModelOf } from "./neutral-agents";
-import type { OrchestratorOptions, TaskSpec } from "./orchestrator-types";
-import { PROJECT_WORKSPACE_LABEL, prepareProjectTurn, projectLaunch } from "./project-run";
+import type { OrchestratorOptions, TaskSpec, ToolGuard } from "./orchestrator-types";
+import { projectLaunch } from "./project-run";
 import { notifyLifecycle } from "./run-lifecycle";
+import { createTurnPreparer } from "./run-prepare";
 import type { RunRegistry } from "./run-registry";
 import { newRunToken } from "./run-token";
+import { createRunTurns } from "./run-turns";
 import {
   type CliCaps,
   cleanEnv,
@@ -36,7 +33,6 @@ import {
 } from "./runner";
 import { decideProjectSession, decideSession, type SessionDecision } from "./session-decision";
 import { transcriptTokensAt } from "./transcript";
-import { prepareWorkspace, writeRunContext } from "./workspace-prep";
 
 export type LiveRun = { hash: string; proc: RunProcess };
 export type LaunchDeps = {
@@ -45,22 +41,15 @@ export type LaunchDeps = {
   tasks: Map<string, TaskSpec>;
   live: Map<string, LiveRun>;
   agentOf: (ref: string) => Agent;
+  guards: Map<string, ToolGuard>;
   stopping: () => boolean;
-};
-
-type Prepared = {
-  cwd: string;
-  label: string;
-  guidelines: number;
-  brief: string;
-  systemPromptFile: string;
-  answers: string[];
 };
 
 const LOST_TASK = "INTERRUPTED: the task was lost when the daemon restarted";
 const EXIT_STATES = new Set(["starting", "running", "done", "failed", "cancelled"]);
 const firstPrompt = (brief: string, pending: string | null) =>
   pending === null ? brief : `${brief}\n\n${pending}`;
+const titled = (title: string | null, prompt: string) => (title === null ? prompt : `${title}\n\n${prompt}`);
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const transcriptExists = (path: string | null) => path !== null && existsSync(path);
 
@@ -80,64 +69,16 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
     return read;
   };
 
-  function journalSetup(runId: string, step: SetupStep): void {
-    if (registry.get(runId).state === "starting") registry.apply(runId, { type: "setup", ...step });
-  }
-
-  async function prepareTicketRun(run: RunView, agent: Agent, runDir: string): Promise<Prepared> {
-    if (!run.projectId || !run.ticketId) throw new KiboError("INVALID_INPUT", `run ${run.id} has no ticket`);
-    const ctx = opts.data.ticketContext(run.projectId, run.ticketId);
-    if (ctx.ticket.key === null)
-      throw new KiboError("INVALID_INPUT", `ticket ${ctx.ticket.id} has no key yet`);
-    const workspace = await prepareWorkspace({
-      strategy: agent.settings.workspace,
-      projectFolder: ctx.project.meta.folder,
-      ticketKey: ctx.ticket.key,
-      runDir,
-      worktree: ctx.project.meta.worktree,
-      branchRef: branchRefOf(ctx.ticket.externalRefs),
-      onSetup: (step) => journalSetup(run.id, step),
-    });
-    const chain = guidelineChain(opts.data.guidelines(run.projectId), {
-      projectId: run.projectId,
-      domainId: ctx.ticket.domainId,
-    });
-    const context = buildRunContext({
-      ...ctx,
-      note: run.brief,
-      chain,
-      agent: NO_AGENT,
-      commits: workspace.commits,
-      protocol: {
-        progress: true,
-        recipients: ctx.project.questionRecipients,
-        signals: true,
-        skillReview: false,
-      },
-    });
-    const { systemPromptFile } = writeRunContext(runDir, context.files);
-    return {
-      cwd: workspace.cwd,
-      label: workspace.label,
-      guidelines: chain.length,
-      brief: context.brief,
-      systemPromptFile,
-      answers: undeliveredAnswers(ctx.project.questions, ctx.ticket.id).map((q) => q.id),
-    };
-  }
-
-  function prepareTaskRun(run: RunView, task: TaskSpec, runDir: string): Prepared {
-    const { systemPromptFile } = writeRunContext(runDir, [
-      { path: "CLAUDE.md", content: buildSystemPrompt([], NO_AGENT) },
-      { path: "brief.md", content: run.brief },
-    ]);
-    return { cwd: task.cwd, label: task.cwd, guidelines: 0, brief: run.brief, systemPromptFile, answers: [] };
-  }
-
-  async function prepareProjectRun(run: RunView, runDir: string): Promise<Prepared> {
-    const turn = await prepareProjectTurn(opts.projectTurns, run, runDir);
-    return { ...turn, label: PROJECT_WORKSPACE_LABEL, guidelines: 0, brief: turn.prompt, answers: [] };
-  }
+  const turns = createRunTurns({
+    opts,
+    preparer: createTurnPreparer({
+      data: opts.data,
+      fallbacks: { ...NO_CLI_FALLBACKS, ...opts.cliFallbacks },
+    }),
+    journalSetup(runId: string, step: SetupStep): void {
+      if (registry.get(runId).state === "starting") registry.apply(runId, { type: "setup", ...step });
+    },
+  });
 
   function recordExit(runId: string, outcome: ProcessOutcome, task: TaskSpec | undefined): RunView | null {
     const before = registry.get(runId);
@@ -212,10 +153,11 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       const resume = initial.turns > 0 || (task?.resume ?? false);
       const agent = deps.agentOf(initial.profileId);
       const prepared = project
-        ? await prepareProjectRun(initial, runDir)
+        ? await turns.project(initial, runDir)
         : task
-          ? prepareTaskRun(initial, task, runDir)
-          : await prepareTicketRun(initial, agent, runDir);
+          ? turns.task(initial, task, runDir)
+          : await turns.ticket(initial, agent, runDir);
+      const { turn } = prepared;
       const demo = agent.ref === DEMO_AGENT_REF;
       const claudeBin = demo
         ? opts.demoAgent.bin
@@ -243,20 +185,23 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         : task
           ? { allow: agent.settings.allow, deny: [], mcpUrl: null, mcpConfigFile: null, mcpTools: null }
           : ticketLaunch(route);
+      deps.guards.set(runId, turn.guard);
+      const prompt = project
+        ? turn.brief
+        : current.turns > 0
+          ? (current.pendingAnswer ?? "")
+          : firstPrompt(turn.brief, current.pendingAnswer);
       const proc = launch({
         claudeBin,
         cwd,
-        model: agentModelOf(agent),
+        model: turn.flags.model,
         permissionFlag: flag,
         extraArgs: task?.extraArgs ?? [],
         sessionId: session.sessionId,
         resume: session.resume,
-        prompt: project
-          ? prepared.brief
-          : current.turns > 0
-            ? (current.pendingAnswer ?? "")
-            : firstPrompt(prepared.brief, current.pendingAnswer),
-        systemPromptFile: prepared.systemPromptFile,
+        prompt: session.resume ? prompt : titled(turn.promptTitle, prompt),
+        systemPromptFile: turn.systemPromptFile,
+        agentFlags: turn.agentFlags,
         hook: opts.hook,
         ...tools,
         hookUrl: `${baseUrl}/hooks/${runId}`,
@@ -279,6 +224,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       if (current.projectId && current.ticketId) startRules(runId, current.projectId, current.ticketId);
       const outcome = await proc.exited;
       live.delete(runId);
+      deps.guards.delete(runId);
       if (deps.stopping()) return;
       const after = recordExit(runId, outcome, task);
       if (after?.state === "failed" || after?.state === "cancelled") proc.kill();
@@ -292,6 +238,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
     } catch (e) {
       live.get(runId)?.proc.kill();
       live.delete(runId);
+      deps.guards.delete(runId);
       if (isTerminal(registry.get(runId).state)) console.error(`[kibo-daemon] run ${runId}`, e);
       else registry.apply(runId, { type: "failed", error: message(e) });
     }

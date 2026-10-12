@@ -8,12 +8,10 @@ import {
   PROJECT_AGENT_MCP_TOOLS,
   PROJECT_AGENT_READ_TOOLS,
   PROJECT_AGENT_REF,
-  type RunView,
 } from "@kibo/schema";
 import { type McpLaunch, type McpLaunchInput, mcpRoute } from "./mcp-launch";
-import type { ProjectRunInput, ProjectTurnPort } from "./orchestrator-types";
+import type { ProjectRunInput } from "./orchestrator-types";
 import type { RunRegistry } from "./run-registry";
-import { writeRunContext } from "./workspace-prep";
 
 export const PROJECT_WORKSPACE_LABEL = "projet";
 
@@ -56,21 +54,6 @@ export function createProjectRun(
   registry.apply(id, { type: "prioritized", priority: true });
   registry.apply(id, { type: "answered", text: input.text, rank: headRank(registry.all()) });
   return id;
-}
-
-export type PreparedProjectTurn = { cwd: string; prompt: string; systemPromptFile: string };
-
-export async function prepareProjectTurn(
-  port: ProjectTurnPort,
-  run: RunView,
-  runDir: string,
-): Promise<PreparedProjectTurn> {
-  const turn = await port.prepare(run, runDir);
-  const { systemPromptFile } = writeRunContext(runDir, [
-    { path: "CLAUDE.md", content: turn.systemPrompt },
-    { path: "brief.md", content: turn.prompt },
-  ]);
-  return { cwd: turn.cwd, prompt: turn.prompt, systemPromptFile };
 }
 
 export type ProjectLaunch = McpLaunch;

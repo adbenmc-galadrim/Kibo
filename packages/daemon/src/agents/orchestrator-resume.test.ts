@@ -7,9 +7,9 @@ import {
   assign,
   cleanHarness,
   type Harness,
-  profile,
   run,
   setup,
+  testAgent,
   waitUntil,
 } from "./orchestrator.test-helper";
 
@@ -77,9 +77,9 @@ test("runs that never started, have no ticket or were replaced cannot be written
   const h = setup({
     scenario: "done",
     profiles: [
-      profile(),
-      profile({ id: "repo", name: "repo-dev", workspace: "repo" }),
-      profile({ id: "assistant", name: "assistant", system: true, maxParallel: 1 }),
+      testAgent(),
+      testAgent({ id: "repo", name: "repo-dev", workspace: "repo" }),
+      testAgent({ id: "assistant", name: "assistant", system: true, maxParallel: 1 }),
     ],
   });
   const broken = assign(h, "t1", "repo");
@@ -151,7 +151,7 @@ test("a resumed turn cancelled while starting, then written to again, spawns one
 }, 30_000);
 
 test("a run whose profile was deleted cannot be written to", async () => {
-  const profiles = [profile()];
+  const profiles = [testAgent()];
   const h = setup({ scenario: "done", profiles });
   const r = assign(h, "t1");
   await waitUntil(() => run(h, r.id).state === "done");

@@ -1,4 +1,5 @@
 import { existsSync, realpathSync } from "node:fs";
+import { runModel } from "@kibo/core/agents/compose";
 import { initRun } from "@kibo/core/run-machine";
 import { orderQueue, type Plan, tailRank } from "@kibo/core/scheduler";
 import {
@@ -23,7 +24,7 @@ export type PreviewInput = {
   runs: RunView[];
   projectId: string;
   ticket: TicketView & { key: string };
-  agent: Pick<Agent, "ref" | "name" | "scope">;
+  agent: Pick<Agent, "ref" | "name" | "scope" | "file">;
   projectKey: string | null;
   guidelines: number;
   at: number;
@@ -69,8 +70,10 @@ export function plannedCwd(
 
 export function previewAssign(input: PreviewInput): AssignPreview {
   const { runs, ticket, agent, guidelines, at } = input;
+  const model = runModel(agent.file?.frontmatter ?? null);
+  const base = { guidelines, model: model.model, inherited: model.inherited };
   if (activeRunOf(runs, ticket.id))
-    return { position: null, reason: { kind: "ticket_busy" }, guidelines, session: null };
+    return { position: null, reason: { kind: "ticket_busy" }, ...base, session: null };
   const session = sessionPreview(mainSessionOf(runs, ticket.id), {
     profileId: agent.ref,
     cwd: input.plannedCwd,
@@ -100,8 +103,8 @@ export function previewAssign(input: PreviewInput): AssignPreview {
   const withCandidate = [...runs, candidate];
   const next = input.plan(withCandidate);
   if (next.admit.some((a) => a.runId === PREVIEW_ID))
-    return { position: null, reason: null, guidelines, session };
+    return { position: null, reason: null, ...base, session };
   const position = orderQueue(withCandidate).findIndex((r) => r.id === PREVIEW_ID) + 1;
   const reason = next.waiting.find((w) => w.runId === PREVIEW_ID)?.reason ?? null;
-  return { position, reason, guidelines, session };
+  return { position, reason, ...base, session };
 }

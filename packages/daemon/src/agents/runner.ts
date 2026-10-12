@@ -13,6 +13,7 @@ import { z } from "zod";
 import { signalGroup, tryKill } from "../process-group";
 import type { McpTools } from "./ask-mcp";
 import { childEnv } from "./child-env";
+import { type AgentFlags, agentArgs, checkedSkillRules, reservedAgentArgs } from "./cli-flags";
 import { type HookLauncher, hookShellCommand, mcpServerConfig } from "./hook-launcher";
 import { parseJsonLine, Usage, usageTokens } from "./transcript";
 
@@ -38,6 +39,7 @@ export type LaunchInput = {
   token: string;
   baseEnv: Record<string, string | undefined>;
   extraEnv: Record<string, string>;
+  agentFlags: AgentFlags;
 };
 export type StreamResult = {
   isError: boolean;
@@ -72,8 +74,9 @@ export function claudeSettings(
   allow: readonly string[] = [],
   deny: readonly string[] = [],
   tools: McpTools = null,
+  skillRules: readonly string[] = [],
 ): string {
-  const rules = profileRules(allow);
+  const rules = [...profileRules(allow), ...checkedSkillRules(skillRules)];
   const command = hookShellCommand(hook);
   const hooks = Object.fromEntries(
     HookEventName.options.map((event) => [
@@ -104,24 +107,25 @@ const RESERVED_ARGS = new Set([
   "--resume",
 ]);
 
-export function claudeArgs(
-  input: Pick<
-    LaunchInput,
-    | "model"
-    | "permissionFlag"
-    | "extraArgs"
-    | "sessionId"
-    | "resume"
-    | "systemPromptFile"
-    | "hook"
-    | "allow"
-    | "deny"
-    | "mcpConfigFile"
-    | "mcpTools"
-  >,
-): string[] {
+type ArgsInput = Pick<
+  LaunchInput,
+  | "model"
+  | "permissionFlag"
+  | "extraArgs"
+  | "sessionId"
+  | "resume"
+  | "systemPromptFile"
+  | "hook"
+  | "allow"
+  | "deny"
+  | "mcpConfigFile"
+  | "mcpTools"
+> & { agentFlags?: AgentFlags };
+
+export function claudeArgs(input: ArgsInput): string[] {
+  const reserved = new Set([...RESERVED_ARGS, ...reservedAgentArgs(input.agentFlags)]);
   const refused = input.extraArgs.find(
-    (a) => RESERVED_ARGS.has(a.split("=")[0] ?? a) || a.includes("bypassPermissions"),
+    (a) => reserved.has(a.split("=")[0] ?? a) || a.includes("bypassPermissions"),
   );
   if (refused) throw new KiboError("INVALID_INPUT", `argument ${refused} is reserved to Kibo`);
   return [
@@ -135,11 +139,12 @@ export function claudeArgs(
     "--model",
     input.model,
     "--settings",
-    claudeSettings(input.hook, input.allow, input.deny, input.mcpTools),
+    claudeSettings(input.hook, input.allow, input.deny, input.mcpTools, input.agentFlags?.skillRules),
     "--mcp-config",
     input.mcpConfigFile ?? mcpServerConfig(input.hook),
     "--append-system-prompt-file",
     input.systemPromptFile,
+    ...agentArgs(input.agentFlags, input.resume),
     ...input.extraArgs,
     ...(input.resume ? ["--resume", input.sessionId] : ["--session-id", input.sessionId]),
   ];

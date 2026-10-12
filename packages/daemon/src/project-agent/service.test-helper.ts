@@ -47,6 +47,7 @@ export type Kit = {
   setWritable(writable: boolean): void;
   setFolder(folder: string | null): void;
   setApply(apply: ProjectAgentOps["apply"]): void;
+  setAgentBody(body: string): void;
   cleanup(): void;
 };
 
@@ -123,6 +124,7 @@ export function serviceKit(): Kit {
   let folder: string | null = null;
   let apply = applyAll;
   let clock = 100;
+  let agentBody = "";
   let emitted = 0;
   const calls: string[] = [];
   const notices: Notice[] = [];
@@ -168,6 +170,7 @@ export function serviceKit(): Kit {
     },
     notify: (notice) => notices.push(notice),
     formatTime: (at) => `t${at}`,
+    agentBody: () => agentBody,
     emit: () => {
       emitted += 1;
     },
@@ -198,6 +201,9 @@ export function serviceKit(): Kit {
     },
     setApply: (next) => {
       apply = next;
+    },
+    setAgentBody: (next) => {
+      agentBody = next;
     },
     cleanup() {
       store.close();

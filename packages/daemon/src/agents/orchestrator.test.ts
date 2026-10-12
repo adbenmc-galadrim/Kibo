@@ -5,7 +5,7 @@ import { type Guideline, type HookPayload, type RunView, WORKTREE_DEFAULTS } fro
 import { fakeCalls, releaseFakeRun } from "./fake-claude-scenario";
 import { repo } from "./git-test-kit";
 import { createOrchestrator } from "./orchestrator";
-import { assign, cleanHarness, profile, run, setup, waitUntil } from "./orchestrator.test-helper";
+import { assign, cleanHarness, run, setup, testAgent, waitUntil } from "./orchestrator.test-helper";
 import { createRunLauncher, type LiveRun } from "./run-launch";
 import { openRunRegistry } from "./run-registry";
 
@@ -145,7 +145,7 @@ test("cancelling a running run stops its process and frees the slot", async () =
 }, 30_000);
 
 test("queued runs can be moved and prioritized; running ones cannot", async () => {
-  const h = setup({ scenario: "hold", profiles: [profile({ maxParallel: 1 })] });
+  const h = setup({ scenario: "hold", profiles: [testAgent({ maxParallel: 1 })] });
   const [a, b, c] = ["t1", "t2", "t3"].map((t) => assign(h, t));
   if (!a || !b || !c) throw new Error("runs missing");
   expect(h.orch.state().queue.map((q) => q.runId)).toEqual([b.id, c.id]);
@@ -165,7 +165,7 @@ test("queued runs can be moved and prioritized; running ones cannot", async () =
 test("a workspace failure fails the run with its code and notifies", async () => {
   const h = setup({
     scenario: "done",
-    profiles: [profile({ id: "repo", name: "repo-dev", workspace: "repo" })],
+    profiles: [testAgent({ id: "repo", name: "repo-dev", workspace: "repo" })],
   });
   const r = assign(h, "t1", "repo");
   await waitUntil(() => run(h, r.id).state === "failed");
@@ -189,15 +189,24 @@ test("the preview says where a new run would enter the queue", async () => {
     { id: "g2", owner: { scope: "project", projectId: "p1" }, path: "kibo.md", content: "# K" },
     { id: "g3", owner: { scope: "domain", domainId: "ui" }, path: "ui.md", content: "# U" },
   ];
-  const h = setup({ scenario: "hold", profiles: [profile({ maxParallel: 1 })], guidelines });
+  const h = setup({ scenario: "hold", profiles: [testAgent({ maxParallel: 1 })], guidelines });
   const target = { projectId: "p1", ticketId: "t2", profileId: "global:opus" };
-  expect(h.orch.preview(target)).toEqual({ position: null, reason: null, guidelines: 2, session: null });
+  expect(h.orch.preview(target)).toEqual({
+    position: null,
+    reason: null,
+    guidelines: 2,
+    session: null,
+    model: "opus",
+    inherited: false,
+  });
   const r = assign(h, "t1");
   expect(h.orch.preview(target)).toEqual({
     position: 1,
     reason: { kind: "agent", agentName: "opus-dev", used: 1, total: 1 },
     guidelines: 2,
     session: null,
+    model: "opus",
+    inherited: false,
   });
   expect(() => h.orch.preview({ ...target, profileId: "gone" })).toThrow("NOT_FOUND");
   expect(h.orch.activeRuns("global:opus")).toBe(1);
@@ -207,7 +216,7 @@ test("the preview says where a new run would enter the queue", async () => {
 test("a run without ticket uses its own folder, its guard and keeps its result line", async () => {
   const h = setup({
     scenario: "guard",
-    profiles: [profile({ id: "gen", name: "generateur", permissionMode: "default" })],
+    profiles: [testAgent({ id: "gen", name: "generateur", permissionMode: "default" })],
   });
   const cwd = join(h.home, "draft");
   mkdirSync(cwd);
@@ -252,7 +261,7 @@ test("a run without ticket uses its own folder, its guard and keeps its result l
 test("a system profile cannot take a ticket but runs tasks without ticket", async () => {
   const h = setup({
     scenario: "done",
-    profiles: [profile(), profile({ id: "assistant", name: "assistant", system: true, maxParallel: 1 })],
+    profiles: [testAgent(), testAgent({ id: "assistant", name: "assistant", system: true, maxParallel: 1 })],
   });
   expect(() => assign(h, "t1", "system:assistant")).toThrow("INVALID_INPUT");
   expect(() => h.orch.preview({ projectId: "p1", ticketId: "t1", profileId: "system:assistant" })).toThrow(
@@ -436,7 +445,8 @@ test("a process ending while its run is queued again records no exit", async () 
       registry,
       tasks: new Map(),
       live,
-      agentOf: () => profile(),
+      agentOf: () => testAgent(),
+      guards: new Map(),
       stopping: () => false,
     });
     const view = registry.create(
@@ -528,7 +538,7 @@ test("the inbox and an unknown ticket are still refused before the write check",
 test("a ticket runs one agent at a time: a second assign is refused until the first ends", async () => {
   const h = setup({
     scenario: "hold",
-    profiles: [profile({ maxParallel: 1 }), profile({ id: "b", name: "b-dev" })],
+    profiles: [testAgent({ maxParallel: 1 }), testAgent({ id: "b", name: "b-dev" })],
   });
   const blocker = assign(h, "t2");
   const first = assign(h, "t1");
@@ -542,6 +552,8 @@ test("a ticket runs one agent at a time: a second assign is refused until the fi
     reason: { kind: "ticket_busy" },
     guidelines: 0,
     session: null,
+    model: "opus",
+    inherited: false,
   });
   h.orch.cancel(first.id);
   const second = h.orch.assign({ ...target, brief: "" });
@@ -609,7 +621,7 @@ test("the setup command of a worktree run is journaled before the agent starts",
   const folder = await repo();
   const h = setup({
     scenario: "done",
-    profiles: [profile({ workspace: "worktree" })],
+    profiles: [testAgent({ workspace: "worktree" })],
     meta: { folder, worktree: { ...WORKTREE_DEFAULTS, setup: "git worktree add {path} {branch}" } },
   });
   const r = assign(h, "t1");

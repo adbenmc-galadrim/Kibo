@@ -259,6 +259,8 @@ export type AssignPreview = {
   reason: WaitReason | null;
   guidelines: number;
   session: SessionPreview | null;
+  model?: string;
+  inherited?: boolean;
 };
 export type RunLogEntry = { id: number; at: number; event: RunEvent };
 export const TicketRun = z.object({

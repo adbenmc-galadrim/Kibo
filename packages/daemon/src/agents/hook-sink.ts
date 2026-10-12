@@ -18,6 +18,7 @@ export type HookSinkDeps = {
   live: Map<string, LiveRun>;
   tasks: Map<string, TaskSpec>;
   registry: RunRegistry;
+  agentGuard: (run: RunView) => ToolGuard | null;
 };
 
 function decide(runId: string, guard: ToolGuard, call: Parameters<ToolGuard>[0]): GuardDecision | null {
@@ -29,7 +30,7 @@ function decide(runId: string, guard: ToolGuard, call: Parameters<ToolGuard>[0])
   }
 }
 
-export function createHookSink({ live, tasks, registry }: HookSinkDeps): HookSink {
+export function createHookSink({ live, tasks, registry, agentGuard }: HookSinkDeps): HookSink {
   return {
     verify(runId, token) {
       const entry = live.get(runId);
@@ -42,6 +43,7 @@ export function createHookSink({ live, tasks, registry }: HookSinkDeps): HookSin
       const run = registry.get(runId);
       const decisions = [
         tasks.get(runId)?.guard,
+        (c: Parameters<ToolGuard>[0]) => agentGuard(run)?.(c) ?? null,
         (c: Parameters<ToolGuard>[0]) => demoRunGuard(run)?.(c) ?? null,
         projectRunGuard(run),
       ].flatMap((guard) => (guard ? [decide(runId, guard, call)] : []));

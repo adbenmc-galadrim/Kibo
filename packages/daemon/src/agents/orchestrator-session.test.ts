@@ -7,17 +7,17 @@ import {
   assign,
   cleanHarness,
   type Harness,
-  profile,
   run,
   setup,
+  testAgent,
   waitUntil,
 } from "./orchestrator.test-helper";
 
 cleanHarness();
 
 const repoProfiles = [
-  profile({ workspace: "repo" }),
-  profile({ id: "sonnet", name: "sonnet-dev", workspace: "repo" }),
+  testAgent({ workspace: "repo" }),
+  testAgent({ id: "sonnet", name: "sonnet-dev", workspace: "repo" }),
 ];
 
 function inRepo(extra: { questions?: Question[]; markFails?: boolean } = {}) {

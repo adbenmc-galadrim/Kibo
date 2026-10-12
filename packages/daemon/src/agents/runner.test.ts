@@ -15,6 +15,7 @@ import {
   SIGNAL_TOOL,
   TICKET_MCP_TOOLS,
 } from "@kibo/schema";
+import { NO_AGENT_FLAGS } from "./cli-flags";
 import { FAKE_CLAUDE, fakeCalls, releaseFakeRun, scenarioPath } from "./fake-claude-scenario";
 import {
   childEnv,
@@ -326,6 +327,7 @@ function fakeLaunch(scenario: "done" | "fail" | "hold", sessionId: string) {
       KIBO_FAKE_CLAUDE_STATE: state,
     },
     extraEnv: {},
+    agentFlags: NO_AGENT_FLAGS,
   });
   return { proc, state, hooks };
 }

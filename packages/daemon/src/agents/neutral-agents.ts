@@ -6,6 +6,7 @@ import {
   type AgentScope,
   type AgentSettings,
   DEFAULT_AGENT_SETTINGS,
+  type Skill,
   SYSTEM_AGENT_IDS,
   systemAgentName,
   systemAgentRef,
@@ -51,12 +52,17 @@ export const NEUTRAL_SYSTEM_AGENTS: readonly Agent[] = SYSTEM_AGENT_IDS.map((id)
 export type AgentSource = {
   agents(projectId: string | null): Agent[];
   agentOf(ref: AgentRef): Agent | null;
+  skills?(projectId: string | null): Skill[];
 };
 
-export function memoryAgentSource(agents: readonly Agent[]): AgentSource {
+const visibleFrom = (projectId: string | null) => (item: { projectId: string | null }) =>
+  projectId === null || item.projectId === null || item.projectId === projectId;
+
+export function memoryAgentSource(agents: readonly Agent[], skills: readonly Skill[] = []): AgentSource {
   return {
-    agents: (projectId) => agents.filter((a) => a.projectId === null || a.projectId === projectId),
+    agents: (projectId) => agents.filter(visibleFrom(projectId)),
     agentOf: (ref) => agents.find((a) => a.ref === ref) ?? null,
+    skills: (projectId) => skills.filter(visibleFrom(projectId)),
   };
 }
 

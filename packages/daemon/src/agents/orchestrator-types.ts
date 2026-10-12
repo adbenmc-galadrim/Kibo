@@ -20,6 +20,7 @@ import type {
   Skill,
   TicketView,
 } from "@kibo/schema";
+import type { CliFallbacks } from "./cli-flags";
 import type { HookLauncher } from "./hook-launcher";
 import type { HookSink } from "./hook-route";
 import type { Notice } from "./notifier";
@@ -79,6 +80,7 @@ export type OrchestratorOptions = {
   now?: () => number;
   tickMs?: number;
   newToken?: (runId: string) => { token: string; hash: string };
+  cliFallbacks?: Partial<CliFallbacks>;
   onSpawned?: (run: RunView) => Promise<void>;
   onTurnEnd?: (run: RunView) => Promise<void>;
 };
