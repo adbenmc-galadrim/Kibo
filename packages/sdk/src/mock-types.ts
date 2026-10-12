@@ -10,6 +10,7 @@ import type {
   ProjectSnapshot,
   RunPeek,
   Selection,
+  Spotlight,
   StorybookOrigin,
   Surface,
   TicketRun,
@@ -30,6 +31,7 @@ export type MockSdk = {
   newTicketRequests: NewTicketDefaults[];
   openedFiles: FileTarget[];
   openedViews: string[];
+  viewRequests: { componentId: string; question: string | null }[];
   openedRuns: string[];
   deliveries: string[];
   embedCalls: string[];
@@ -47,6 +49,7 @@ export type MockSdk = {
   setVisible(visible: boolean): void;
   setFocus(active: boolean): void;
   setSelection(selection: Selection | null): void;
+  setSpotlight(spotlight: Spotlight | null): void;
 };
 export type MockSdkOptions = {
   seed?: (run: (cmd: ProjectCommand) => unknown) => void;
@@ -71,6 +74,7 @@ export type MockSdkOptions = {
   visible?: boolean;
   focus?: boolean;
   selection?: Selection | null;
+  spotlight?: Spotlight | null;
   deliveryRefused?: boolean;
   peeks?: Record<string, RunPeek>;
 };

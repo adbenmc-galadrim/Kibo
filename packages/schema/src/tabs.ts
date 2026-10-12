@@ -28,7 +28,12 @@ export type Screen = z.infer<typeof Screen>;
 
 export const TabTarget = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("project"), projectId: ProjectId }),
-  z.object({ kind: z.literal("page"), projectId: ProjectId, pageId: NodeId }),
+  z.object({
+    kind: z.literal("page"),
+    projectId: ProjectId,
+    pageId: NodeId,
+    question: NodeId.nullable().optional(),
+  }),
   z.object({ kind: z.literal("changes"), projectId: ProjectId, worktree: WorktreePath }),
   z.object({
     kind: z.literal("file"),

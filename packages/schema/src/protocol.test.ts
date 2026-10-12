@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { BackendToDaemon, DaemonToBackend, FrameToHost, HostToFrame } from "./index";
+import { BackendToDaemon, DaemonToBackend, FrameToHost, HostToFrame, Spotlight } from "./index";
 
 test("frame messages are validated and never carry an instance id", () => {
   const call = FrameToHost.parse({
@@ -79,4 +79,18 @@ test("init carries capabilities, focus, visibility and selection, all optional o
   expect(
     FrameToHost.safeParse({ kibo: 1, type: "selection", selection: { kind: "ticket", ids: [] } }).success,
   ).toBe(false);
+});
+
+test("openView may name a question, the host sends the spotlight", () => {
+  const open = { kibo: 1, type: "openView", componentId: "questions" };
+  expect(FrameToHost.parse({ ...open, question: "q1" })).toMatchObject({ question: "q1" });
+  expect(FrameToHost.safeParse(open).success).toBe(true);
+  expect(FrameToHost.safeParse({ ...open, question: "" }).success).toBe(false);
+  const spotlight = { kind: "question", id: "q1" };
+  expect(HostToFrame.safeParse({ kibo: 1, type: "spotlight", spotlight }).success).toBe(true);
+  expect(HostToFrame.safeParse({ kibo: 1, type: "spotlight", spotlight: null }).success).toBe(true);
+  expect(
+    HostToFrame.safeParse({ kibo: 1, type: "spotlight", spotlight: { kind: "ticket", id: "t" } }).success,
+  ).toBe(false);
+  expect(Spotlight.safeParse({ kind: "question", id: "" }).success).toBe(false);
 });

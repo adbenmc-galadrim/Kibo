@@ -30,6 +30,7 @@ import { base64ToBytes, bytesToBase64 } from "./lib/base64";
 import { questionsApi } from "./questions-api";
 import { openRunOf, runsApi } from "./runs-api";
 import { ALWAYS_VISIBLE, NO_FOCUS, NO_SELECTION } from "./signal";
+import { NO_SPOTLIGHT } from "./spotlight";
 import type {
   AssetsApi,
   DesignApi,
@@ -290,5 +291,6 @@ export function createSdk(
     focus: ctx.focus ?? NO_FOCUS,
     visibility: ctx.visibility ?? ALWAYS_VISIBLE,
     selection: ctx.selection ?? NO_SELECTION,
+    spotlight: ctx.spotlight ?? NO_SPOTLIGHT,
   };
 }

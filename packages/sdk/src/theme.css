@@ -140,3 +140,54 @@
   --color-brand: var(--brand);
   --color-brand-strong: var(--brand-strong);
 }
+
+:root {
+  --kibo-spotlight: rgb(249 115 22 / 0.2);
+  --kibo-spotlight-ring: rgb(249 115 22 / 0.55);
+}
+
+.dark {
+  --kibo-spotlight: rgb(251 146 60 / 0.14);
+  --kibo-spotlight-ring: rgb(251 146 60 / 0.45);
+}
+
+@keyframes kibo-spotlight-fade {
+  0%,
+  25% {
+    box-shadow:
+      inset 0 0 0 100vmax var(--kibo-spotlight),
+      0 0 0 2px var(--kibo-spotlight-ring);
+  }
+  100% {
+    box-shadow:
+      inset 0 0 0 100vmax transparent,
+      0 0 0 2px transparent;
+  }
+}
+
+@keyframes kibo-spotlight-bounce {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  40% {
+    translate: 0 -6px;
+  }
+}
+
+[data-spotlight] {
+  animation: kibo-spotlight-fade 1.5s ease-out forwards;
+}
+
+[data-spotlight="bounce"] {
+  animation:
+    kibo-spotlight-fade 1.5s ease-out forwards,
+    kibo-spotlight-bounce 450ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-spotlight],
+  [data-spotlight="bounce"] {
+    animation: kibo-spotlight-fade 1.5s ease-out forwards;
+  }
+}

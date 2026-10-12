@@ -22,6 +22,7 @@ import type { MockSdk, MockSdkOptions } from "./mock-types";
 import { createSdk } from "./sdk";
 import type { ServerContext } from "./server";
 import { createSignal, focusApi, selectionApi, visibilityApi } from "./signal";
+import { createSpotlightStore } from "./spotlight";
 import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
 
 export type { MockFetch } from "./mock-calls";
@@ -71,6 +72,7 @@ export function createMockSdk(
   const newTicketRequests: NewTicketDefaults[] = [];
   const openedFiles: FileTarget[] = [];
   const openedViews: string[] = [];
+  const viewRequests: MockSdk["viewRequests"] = [];
   const deliveries: string[] = [];
   const embeds = createMockEmbeds(manifest.embeds, opts.embed);
   const focusRequests: boolean[] = [];
@@ -78,6 +80,7 @@ export function createMockSdk(
   const focus = createSignal(opts.focus ?? false);
   const visible = createSignal(opts.visible ?? true);
   const selection = createSignal<Selection | null>(opts.selection ?? null);
+  const spotlight = createSpotlightStore(opts.spotlight ?? null);
   const mockRuns = createMockRuns(opts.peeks ?? {});
 
   const serverContext = (): ServerContext => ({
@@ -128,11 +131,15 @@ export function createMockSdk(
     openTicket: (id) => opened.push(id),
     openNewTicket: (d) => newTicketRequests.push(d),
     openFile: (target) => openedFiles.push(target),
-    openView: (componentId) => openedViews.push(componentId),
+    openView: (componentId, viewOpts) => {
+      openedViews.push(componentId);
+      viewRequests.push({ componentId, question: viewOpts?.question ?? null });
+    },
     openRun: mockRuns.open,
     focus: focusApi(focus, (on) => focusRequests.push(on)),
     visibility: visibilityApi(visible),
     selection: selectionApi(selection, (next) => selections.push(next)),
+    spotlight,
   });
 
   const markUsed = (permission: string) => {
@@ -226,6 +233,7 @@ export function createMockSdk(
     newTicketRequests,
     openedFiles,
     openedViews,
+    viewRequests,
     openedRuns: mockRuns.opened,
     deliveries,
     embedCalls: embeds.calls,
@@ -253,5 +261,6 @@ export function createMockSdk(
     setVisible: visible.set,
     setFocus: focus.set,
     setSelection: selection.set,
+    setSpotlight: spotlight.set,
   };
 }
