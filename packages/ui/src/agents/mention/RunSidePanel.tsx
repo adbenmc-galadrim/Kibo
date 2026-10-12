@@ -32,9 +32,7 @@ function PanelBody({ runId, onClose, onOpenTicket }: Props) {
     </Button>
   );
   const title = (
-    <SheetTitle className="sr-only">
-      {run ? fr.tabs.runTitle(run.label, run.ticketKey) : fr.tabs.run}
-    </SheetTitle>
+    <SheetTitle className="sr-only">{run ? fr.tabs.runTitle(run.label) : fr.tabs.run}</SheetTitle>
   );
   if (!agents || !run)
     return (

@@ -35,8 +35,7 @@ export const frAgentsPage = {
   searchPlaceholder: "KIB-12",
   noMatch: "Aucun run ne correspond à ce filtre.",
   openRun: (profile: string, subject: string) => `${profile} · ${subject}`,
-  stopTitle: (label: string, key: string | null) =>
-    key ? `Arrêter le run ${label} sur ${key} ?` : `Arrêter le run ${label} ?`,
+  stopTitle: (label: string) => `Arrêter le run ${label} ?`,
   stopHelp: "L'agent est interrompu ; le ticket reste assigné.",
   stopConfirm: "Arrêter",
   cancelTitle: (key: string) => `Retirer ${key} de la file ?`,

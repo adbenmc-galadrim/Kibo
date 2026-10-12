@@ -21,7 +21,7 @@ function TicketLink({ run, onOpenTicket }: Pick<Props, "run" | "onOpenTicket">) 
   return (
     <button
       type="button"
-      className="truncate rounded-sm hover:text-foreground hover:underline"
+      className="max-w-full truncate rounded-sm hover:text-foreground hover:underline"
       onClick={() => onOpenTicket(projectId, ticketId)}
     >
       {runSubject(run)}
@@ -46,7 +46,7 @@ export function RunHeading({ run, onOpenTicket, children }: Props) {
             {fr.agents.states[run.state]}
           </Badge>
         </div>
-        <p className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+        <p className="flex min-w-0 flex-wrap items-center gap-x-1 text-xs text-muted-foreground">
           <span className="shrink-0">{frMoments.run.agent(run.agentName, runScopeText(run))}</span>
           <span aria-hidden>·</span>
           <TicketLink run={run} onOpenTicket={onOpenTicket} />

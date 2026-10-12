@@ -76,7 +76,7 @@ test("stopping a run is confirmed, then cancels it, and a refusal is shown", asy
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Arrêter" }));
   const dialog = within(await screen.findByRole("alertdialog"));
-  expect(dialog.getByText("Arrêter le run opus-dev-1 sur KIB-12 ?")).toBeTruthy();
+  expect(dialog.getByText("Arrêter le run opus-dev-1 ?")).toBeTruthy();
   expect(dialog.getByText("L'agent est interrompu ; le ticket reste assigné.")).toBeTruthy();
   await user.click(dialog.getByRole("button", { name: "Annuler" }));
   expect(actions()).toEqual([]);
