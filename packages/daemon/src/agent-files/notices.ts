@@ -20,3 +20,15 @@ export function createNoticeBox(initial: readonly MigrationNotice[] = []): Notic
     },
   };
 }
+
+export const renamedNotice = (profileName: string, name: string, existed: boolean): MigrationNotice => ({
+  profileName,
+  text: existed
+    ? `Profil ${profileName} : migré sous le nom ${name} ; un agent de ce nom existait déjà, ses guidelines sont dans l'historique de ${name}`
+    : `Profil ${profileName} : migré sous le nom ${name}, son ancien nom n'est pas valide pour Claude Code`,
+});
+
+export const unreadableNotice = (profileName: string, name: string): MigrationNotice => ({
+  profileName,
+  text: `Profil ${profileName} illisible : ses guidelines sont dans l'historique de l'agent ${name}, restaurables depuis cette version`,
+});
