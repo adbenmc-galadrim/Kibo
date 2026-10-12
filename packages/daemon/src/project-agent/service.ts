@@ -129,6 +129,7 @@ export function createProjectAgentService(deps: ProjectAgentDeps): ProjectAgentS
     ...deps,
     now: deps.now ?? Date.now,
     formatTime: deps.formatTime ?? formatClock,
+    agentBody: deps.agentBody ?? (() => ""),
     turnNotes: new Map(),
     baselines: new Map(),
   };

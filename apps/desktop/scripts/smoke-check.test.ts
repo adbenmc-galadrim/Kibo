@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { cleanUpSmokeHome, isAlive, recordedPid, smokeCommand } from "./smoke-check";
+import { cleanUpSmokeHome, isAlive, recordedPid, smokeCommand, smokeHomeEnv } from "./smoke-check";
 
 test("the recorded pid comes from daemon.json, or nothing when the daemon cleaned up", () => {
   const home = mkdtempSync(join(tmpdir(), "kibo-smoke-"));
@@ -44,4 +44,11 @@ test("cleaning up a home without a live daemon only removes it", () => {
   writeFileSync(join(other, "daemon.json"), JSON.stringify({ pid: gone }));
   expect(cleanUpSmokeHome(other)).toBeNull();
   expect(existsSync(other)).toBe(false);
+});
+
+test("a smoke daemon keeps its Claude Code files in its own home, never in ~/.claude", () => {
+  expect(smokeHomeEnv("/tmp/kibo-smoke-home")).toEqual({
+    KIBO_HOME: "/tmp/kibo-smoke-home",
+    CLAUDE_CONFIG_DIR: "/tmp/kibo-smoke-home/claude",
+  });
 });

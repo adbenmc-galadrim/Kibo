@@ -3,19 +3,19 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  type AgentProfile,
+  type Agent,
   DEFAULT_WORKFLOW,
   EMPTY_PROGRESS,
   type Guideline,
   type HostLoad,
   KiboError,
-  PROJECT_AGENT_PROFILE_ID,
   type ProjectSnapshot,
   type Question,
   type RunView,
   type TicketView,
   undeliveredAnswers,
 } from "@kibo/schema";
+import { agentsPort, testAgent, testRef } from "./agents-port.test-helper";
 import { FAKE_CLAUDE, type FakeScenarioName, scenarioPath } from "./fake-claude-scenario";
 import { defaultHookLauncher } from "./hook-launcher";
 import { type HookSink, handleHook } from "./hook-route";
@@ -50,7 +50,7 @@ const ticket = (id: string, key: string | null): TicketView => ({
   agentProgress: EMPTY_PROGRESS,
 });
 
-const project: ProjectSnapshot = {
+export const testProject: ProjectSnapshot = {
   meta: {
     id: "p1",
     key: "KIB",
@@ -73,29 +73,7 @@ const project: ProjectSnapshot = {
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 
-export const profile = (p: Partial<AgentProfile> = {}): AgentProfile => ({
-  id: "opus",
-  name: "opus-dev",
-  model: "opus",
-  execution: "cli",
-  permissionMode: "acceptEdits",
-  workspace: "isolated",
-  maxParallel: 4,
-  subagents: [],
-  enabled: true,
-  allow: [],
-  system: false,
-  ...p,
-});
-
-export const projectAgentProfile = (): AgentProfile =>
-  profile({
-    id: PROJECT_AGENT_PROFILE_ID,
-    name: "project-agent",
-    permissionMode: "default",
-    maxParallel: 1,
-    system: true,
-  });
+export { projectAgentAgent, testAgent } from "./agents-port.test-helper";
 
 export type Harness = {
   orch: Orchestrator;
@@ -119,7 +97,7 @@ export type Delivery = { ticketId: string; questionIds: string[]; runId: string 
 
 type Setup = {
   scenario: FakeScenarioName;
-  profiles?: AgentProfile[];
+  profiles?: Agent[];
   load?: () => HostLoad;
   claudeBin?: string | null;
   env?: Record<string, string>;
@@ -132,6 +110,7 @@ type Setup = {
   questions?: Question[];
   markFails?: boolean;
   lifecycle?: Pick<OrchestratorOptions, "onSpawned" | "onTurnEnd">;
+  cliFallbacks?: OrchestratorOptions["cliFallbacks"];
 };
 
 let current: Harness | null = null;
@@ -151,14 +130,16 @@ export function setup(o: Setup): Harness {
   const projectDir = join(home, "project");
   mkdirSync(projectDir);
   const questions = o.questions ?? [];
-  const profiles = o.profiles ?? [profile()];
+  const profiles = o.profiles ?? [testAgent()];
   const data: AgentDataPort = {
-    profiles: () => profiles,
+    ...agentsPort(profiles),
+    projectKey: () => testProject.meta.key,
+    skills: () => [],
     ticketContext: (projectId, ticketId) => {
-      const t = project.tickets.find((x) => x.id === ticketId);
+      const t = testProject.tickets.find((x) => x.id === ticketId);
       if (projectId !== "p1" || !t) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
-      const meta = { ...project.meta, ...o.meta };
-      return { project: { ...project, meta, questions }, ticket: t, domain: null };
+      const meta = { ...testProject.meta, ...o.meta };
+      return { project: { ...testProject, meta, questions }, ticket: t, domain: null };
     },
     guidelines: () => o.guidelines ?? [],
     assertWritable: (projectId) => {
@@ -234,6 +215,7 @@ export function setup(o: Setup): Harness {
       return minted;
     },
     ...o.lifecycle,
+    cliFallbacks: o.cliFallbacks,
   };
   orch = createOrchestrator(options);
   current = {
@@ -283,4 +265,4 @@ export const run = (h: Harness, id: string): RunView => {
 };
 
 export const assign = (h: Harness, ticketId: string, profileId = "opus", fresh = false) =>
-  h.orch.assign({ projectId: "p1", ticketId, profileId, brief: "", fresh });
+  h.orch.assign({ projectId: "p1", ticketId, profileId: testRef(profileId), brief: "", fresh });

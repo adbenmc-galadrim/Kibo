@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { ASK_TOOL, type HookEventName, type HookPayload, type RunEvent, type RunRecord } from "@kibo/schema";
-import { initRun, reduceRun, runLabel } from "./run-machine";
+import { runName } from "./agents/run-name";
+import { initRun, reduceRun } from "./run-machine";
 
 const record: RunRecord = {
   id: "r1",
@@ -9,8 +10,10 @@ const record: RunRecord = {
   ticketId: "t1",
   ticketKey: "KIB-14",
   ticketTitle: "Récepteur de hooks",
-  profileId: "opus",
+  profileId: "global:opus-dev",
   profileName: "opus-dev",
+  agentScope: "global",
+  projectKey: "KIB",
   sessionId: "s1",
   brief: "",
   createdAt: 100,
@@ -27,6 +30,7 @@ const hook = (event: HookEventName, extra: Partial<HookPayload> = {}): RunEvent 
     detail: null,
     question: null,
     agentId: null,
+    toolUseId: null,
     ask: null,
     todos: null,
     stopHookActive: false,
@@ -54,16 +58,19 @@ const spawned = (resume: boolean): RunEvent => ({
 const running = () =>
   reduceRun(reduceRun(initRun(record, 5, 100), { type: "admitted", lane: 2 }, 110), spawned(false), 120);
 
-test("labels carry the lane once admitted", () => {
-  expect(runLabel("opus-dev", null)).toBe("opus-dev");
-  expect(runLabel("opus-dev", 2)).toBe("opus-dev-2");
+test("the label names the scope, the agent and the ticket, whatever the lane", () => {
+  const view = initRun(record, 5, 100);
+  expect(view.label).toBe(runName({ ...record, agentName: record.profileName }));
+  expect(view.label).toBe("global · opus-dev · KIB-14");
+  expect(view.agentName).toBe("opus-dev");
+  expect(reduceRun(view, { type: "admitted", lane: 2 }, 110).label).toBe("global · opus-dev · KIB-14");
 });
 
 test("full cycle: queue, run, question, answer, resume, done", () => {
   let v = initRun(record, 5, 100);
-  expect(v).toMatchObject({ state: "queued", label: "opus-dev", rank: 5, stateSince: 100 });
+  expect(v).toMatchObject({ state: "queued", rank: 5, stateSince: 100 });
   v = reduceRun(v, { type: "admitted", lane: 2 }, 110);
-  expect([v.state, v.label]).toEqual(["starting", "opus-dev-2"]);
+  expect([v.state, v.lane]).toEqual(["starting", 2]);
   v = reduceRun(v, spawned(false), 120);
   expect(v).toMatchObject({
     state: "running",
@@ -77,12 +84,12 @@ test("full cycle: queue, run, question, answer, resume, done", () => {
   expect(v).toMatchObject({ state: "running", question: "Quel port pour le récepteur ?" });
   expect(v.lastActivity).toEqual({ at: 130, event: "PostToolUse", tool: ASK_TOOL, detail: null });
   v = reduceRun(v, exit(), 140);
-  expect(v).toMatchObject({ state: "waiting_input", label: "opus-dev-2", tokens: 100 });
+  expect(v).toMatchObject({ state: "waiting_input", lane: 2, tokens: 100 });
   v = reduceRun(v, { type: "answered", text: "Port dynamique", rank: -1 }, 150);
   expect(v).toMatchObject({
     state: "queued",
     lane: null,
-    label: "opus-dev",
+    label: "global · opus-dev · KIB-14",
     priority: true,
     rank: -1,
     question: "Quel port pour le récepteur ?",
@@ -180,7 +187,7 @@ test("a ticket run that has started can be written to once it ended", () => {
       state: "queued",
       stateSince: 300,
       lane: null,
-      label: "opus-dev",
+      label: "global · opus-dev · KIB-14",
       priority: true,
       rank: -3,
       question: null,
@@ -364,7 +371,7 @@ const projectRecord: RunRecord = {
   ticketId: null,
   ticketKey: null,
   ticketTitle: "Agent de projet · Emis",
-  profileId: "project-agent",
+  profileId: "system:project-agent",
   profileName: "project-agent",
   kind: "project",
 };

@@ -12,7 +12,7 @@ import {
 } from "@kibo/schema";
 import { activeRunOf, plannedCwd, previewAssign } from "./assign-preview";
 import { cleanupTmp, tmp } from "./git-test-kit";
-import { profile } from "./orchestrator.test-helper";
+import { testAgent } from "./orchestrator.test-helper";
 
 afterEach(cleanupTmp);
 
@@ -25,8 +25,10 @@ const runOf = (id: string, ticketId: string, state: RunState): RunView => ({
       ticketId,
       ticketKey: "KIB-1",
       ticketTitle: "Ticket",
-      profileId: "opus",
+      profileId: "global:opus",
       profileName: "opus-dev",
+      agentScope: "global",
+      projectKey: null,
       sessionId: `s-${id}`,
       brief: "",
       kind: "ticket",
@@ -70,7 +72,8 @@ const preview = (runs: RunView[], cwd: string | null = "/repo") =>
     runs,
     projectId: "p1",
     ticket,
-    profile: profile(),
+    agent: testAgent(),
+    projectKey: "KIB",
     guidelines: 2,
     at: 0,
     plan: admitAll,
@@ -97,12 +100,16 @@ test("the preview says the ticket is busy before any other reason", () => {
     reason: { kind: "ticket_busy" },
     guidelines: 2,
     session: null,
+    model: "opus",
+    inherited: false,
   });
   expect(preview([runOf("r1", "t1", "done")])).toEqual({
     position: null,
     reason: null,
     guidelines: 2,
     session: null,
+    model: "opus",
+    inherited: false,
   });
 });
 
@@ -132,7 +139,9 @@ test("the preview announces the main session of the ticket and whether it resume
     reason: "transcript_missing",
   });
   expect(preview([started({})], "/elsewhere").session).toMatchObject({ reason: "workspace_changed" });
-  expect(preview([started({ profileId: "sonnet" })]).session).toMatchObject({ reason: "profile_changed" });
+  expect(preview([started({ profileId: "global:sonnet" })]).session).toMatchObject({
+    reason: "agent_changed",
+  });
 });
 
 test("the planned folder follows the profile space: project folder, ticket worktree, never an isolated one", () => {
@@ -147,4 +156,15 @@ test("the planned folder follows the profile space: project folder, ticket workt
   expect(plannedCwd("worktree", meta, ticket)).toBe(join(real, ".kibo", "worktrees", "kib-1"));
   const outside = { ...WORKTREE_DEFAULTS, pathTemplate: "../../x/{slug}" };
   expect(plannedCwd("worktree", { ...meta, worktree: outside }, ticket)).toBeNull();
+});
+
+test("the preview names the model the agent will run with", () => {
+  const inherit = testAgent({ model: "inherit" });
+  const base = { runs: [], projectId: "p1", ticket, projectKey: "KIB", guidelines: 0, at: 0, plan: admitAll };
+  const common = { ...base, plannedCwd: null, transcriptExists: () => false };
+  expect(previewAssign({ ...common, agent: inherit })).toMatchObject({ model: "sonnet", inherited: true });
+  expect(previewAssign({ ...common, agent: testAgent({ model: "fable" }) })).toMatchObject({
+    model: "fable",
+    inherited: false,
+  });
 });

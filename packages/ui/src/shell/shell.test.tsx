@@ -210,6 +210,8 @@ mock.module("../api", () =>
         if (req.method === "getProjectAgent")
           return Promise.resolve({ session: null, run: null, batches: [], past: [], memoryPath: "m.md" });
         if (req.method === "listSignals") return Promise.resolve(signalsView());
+        if (req.method === "agents.list")
+          return Promise.resolve({ agents: [], notices: [], partialWatch: false });
         saved.push(req);
         if (req.method === "command" && req.command.method === "addPage")
           return Promise.resolve({ id: "9@1", title: req.command.title, kind: "view", parentId: null });

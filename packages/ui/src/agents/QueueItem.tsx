@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
 import { GripVertical, MoreHorizontal } from "lucide-react";
-import { fr } from "../i18n/fr";
+import { frAgentsSkills } from "../i18n/fr-agents-skills";
 import { queueHint } from "./format";
 import { Mention } from "./mention/Mention";
 
@@ -48,7 +48,7 @@ export function QueueItem({ run, entry, prev, next, onMove, onPriority, onCancel
     >
       <button
         type="button"
-        aria-label={fr.queue.drag(run.ticketKey ?? run.ticketTitle)}
+        aria-label={frAgentsSkills.queue.drag(run.ticketKey ?? run.ticketTitle)}
         className="shrink-0 cursor-grab text-muted-foreground"
         {...drag.listeners}
         {...drag.attributes}
@@ -72,7 +72,7 @@ export function QueueItem({ run, entry, prev, next, onMove, onPriority, onCancel
           variant="outline"
           className="shrink-0 px-1 text-3xs border-brand/40 text-brand-strong dark:text-brand"
         >
-          {fr.queue.priority}
+          {frAgentsSkills.queue.priority}
         </Badge>
       )}
       <DropdownMenu>
@@ -81,24 +81,24 @@ export function QueueItem({ run, entry, prev, next, onMove, onPriority, onCancel
             size="icon"
             variant="ghost"
             className="size-5 shrink-0"
-            aria-label={fr.queue.actions(run.ticketKey ?? run.ticketTitle)}
+            aria-label={frAgentsSkills.queue.actions(run.ticketKey ?? run.ticketTitle)}
           >
             <MoreHorizontal className="size-3.5" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem disabled={prev === null} onSelect={() => prev && onMove(prev.position - 1)}>
-            {fr.queue.moveUp}
+            {frAgentsSkills.queue.moveUp}
           </DropdownMenuItem>
           <DropdownMenuItem disabled={next === null} onSelect={() => next && onMove(next.position - 1)}>
-            {fr.queue.moveDown}
+            {frAgentsSkills.queue.moveDown}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => onPriority(!run.priority)}>
-            {run.priority ? fr.queue.unprioritize : fr.queue.prioritize}
+            {run.priority ? frAgentsSkills.queue.unprioritize : frAgentsSkills.queue.prioritize}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onSelect={onCancel}>
-            {fr.queue.cancel}
+            {frAgentsSkills.queue.cancel}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

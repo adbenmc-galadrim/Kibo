@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { AgentProfile, AgentsState, ProjectMeta, RunLogEntry, RunView, Ticket } from "@kibo/schema";
+import type { AgentsState, ProjectMeta, RunLogEntry, RunView } from "@kibo/schema";
 import { FAKE_CLAUDE, scenarioPath } from "./agents/fake-claude-scenario";
 
 const alive = (pid: number) => {
@@ -81,32 +81,10 @@ test("stopping the daemon process kills the agent runs in progress", async () =>
       folder: null,
       color: "#F97316",
     });
-    const ticket = await rpc<Ticket>({
-      method: "command",
-      projectId: project.id,
-      command: { method: "createTicket", title: "Hooks", statusId: "in_progress" },
-    });
-    const profile = await rpc<AgentProfile>({
-      method: "config",
-      command: {
-        method: "createProfile",
-        profile: {
-          name: "opus-dev",
-          model: "opus",
-          execution: "cli",
-          permissionMode: "acceptEdits",
-          workspace: "isolated",
-          subagents: [],
-          maxParallel: 1,
-        },
-      },
-    });
     const run = await rpc<RunView>({
-      method: "assignAgent",
+      method: "sendProjectAgentMessage",
       projectId: project.id,
-      ticketId: ticket.id,
-      profileId: profile.id,
-      brief: "",
+      text: "Fais le point.",
     });
     await waitFor(async () => {
       const state = await rpc<AgentsState>({ method: "getAgents" });

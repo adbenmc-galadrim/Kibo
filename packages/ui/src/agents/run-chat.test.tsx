@@ -165,7 +165,7 @@ test("without write access to the project there is no review button", async () =
 });
 
 test("a demo run says in the drawer that it spends no token, another run does not", () => {
-  const { unmount } = render(drawer(ticketRun({ profileId: "demo", label: "demo-1" })));
+  const { unmount } = render(drawer(ticketRun({ profileId: "system:demo", label: "demo-1" })));
   expect(screen.getByText("Agent de démonstration · aucun token consommé")).toBeTruthy();
   unmount();
   render(drawer(ticketRun({})));

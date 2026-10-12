@@ -17,7 +17,7 @@ type DecisionInput = {
 type ResumeCheck = { profileId: string; cwd: string | null; transcriptExists: TranscriptCheck };
 
 function resumeBlocker(previous: RunView, check: ResumeCheck): SessionFreshReason | null {
-  if (previous.profileId !== check.profileId) return "profile_changed";
+  if (previous.profileId !== check.profileId) return "agent_changed";
   if (!check.transcriptExists(previous.transcriptPath)) return "transcript_missing";
   if (check.cwd === null || previous.cwd !== check.cwd) return "workspace_changed";
   return null;
@@ -25,7 +25,7 @@ function resumeBlocker(previous: RunView, check: ResumeCheck): SessionFreshReaso
 
 function ownReason(run: RunRecord, previous: RunView | null): SessionFreshReason {
   if (previous === null) return "no_previous";
-  return previous.profileId === run.profileId ? "user_reset" : "profile_changed";
+  return previous.profileId === run.profileId ? "user_reset" : "agent_changed";
 }
 
 export function decideSession(input: DecisionInput): SessionDecision {

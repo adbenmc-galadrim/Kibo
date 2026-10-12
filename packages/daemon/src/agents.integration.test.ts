@@ -3,7 +3,6 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type {
-  AgentProfile,
   AgentsState,
   ChangeMessage,
   ProjectMeta,
@@ -12,9 +11,9 @@ import type {
   RunLogEntry,
   RunView,
   Ticket,
-  WorkspaceConfig,
 } from "@kibo/schema";
 import { z } from "zod";
+import { type TestAgentSource, testAgent, testAgentSource } from "./agents/agents-port.test-helper";
 import {
   FAKE_CLAUDE,
   type FakeScenarioName,
@@ -44,6 +43,7 @@ type Stack = {
   orch: Orchestrator;
   server: ReturnType<typeof startServer>;
   messages: ChangeMessage[];
+  agents: TestAgentSource;
 };
 let stack: Stack | null = null;
 
@@ -52,7 +52,8 @@ function boot(scenario: FakeScenarioName): Stack {
   mkdirSync(join(home, "fake"));
   const store = openStore(home);
   const runs = openRunStore(home);
-  const service = createService(store, { user: "adam" });
+  const agents = testAgentSource();
+  const service = createService(store, { user: "adam", agents: agents.source });
   const messages: ChangeMessage[] = [];
   service.onChange((m) => messages.push(m));
   let orch: Orchestrator | null = null;
@@ -88,7 +89,7 @@ function boot(scenario: FakeScenarioName): Stack {
     tickMs: 100,
   });
   service.attachAgents(orch);
-  stack = { home, store, runs, orch, server, messages };
+  stack = { home, store, runs, orch, server, messages, agents };
   return stack;
 }
 
@@ -149,14 +150,6 @@ async function until<T>(read: () => Promise<T>, ok: (value: T) => boolean, ms = 
   }
 }
 
-const profileInput = {
-  name: "opus-dev",
-  model: "opus",
-  execution: "cli",
-  permissionMode: "acceptEdits",
-  workspace: "isolated",
-  subagents: [],
-};
 const newProject = { method: "createProject", name: "Kibo", key: "KIB", folder: null, color: "#F97316" };
 
 test("assign, question, answer, done: the ticket stays in progress until asked", async () => {
@@ -168,21 +161,17 @@ test("assign, question, answer, done: the ticket stays in progress until asked",
     projectId: p.id,
     command: { method: "createTicket", title: "Hooks", statusId: "in_progress" },
   });
-  const profile = await rpc<AgentProfile>({
-    method: "config",
-    command: { method: "createProfile", profile: { ...profileInput, maxParallel: 2 } },
-  });
+  const profile = s.agents.add(testAgent({ id: "opus-dev", name: "opus-dev", maxParallel: 2 }));
   const run = await rpc<RunView>({
     method: "assignAgent",
     projectId: p.id,
     ticketId: t.id,
-    profileId: profile.id,
+    profileId: profile.ref,
     brief: "",
   });
   const agents = () => rpc<AgentsState>({ method: "getAgents" });
   const find = (state: AgentsState) => state.runs.find((r) => r.id === run.id);
   await until(agents, (a) => find(a)?.state === "waiting_input");
-  await rpc({ method: "config", command: { method: "deleteProfile", profileId: profile.id } }, 409);
   await rpc({ method: "answerRun", runId: run.id, text: "Port dynamique" });
   await until(agents, (a) => find(a)?.state === "done");
   const snap = await rpc<ProjectSnapshot>({ method: "getProject", projectId: p.id });
@@ -196,26 +185,19 @@ test("assign, question, answer, done: the ticket stays in progress until asked",
   expect(s.messages).toContainEqual({ type: "run.changed", runId: run.id, state: "waiting_input" });
   expect(s.messages).toContainEqual({ type: "run.changed", runId: run.id, state: "done" });
   expect(s.messages).toContainEqual({ topic: "agents" });
-  expect(s.messages).toContainEqual({ topic: "config" });
   const unauth = await fetch(`${s.server.url}/hooks/${run.id}`, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${"0".repeat(64)}` },
     body: "{}",
   });
   expect(unauth.status).toBe(401);
-  await rpc({ method: "config", command: { method: "deleteProfile", profileId: profile.id } });
-  const config = await rpc<WorkspaceConfig>({ method: "getConfig" });
-  expect(config.profiles).toEqual([]);
 }, 40_000);
 
 test("four runs on three slots leave one queued", async () => {
   const s = boot("hold");
   const rpc = await client(s);
   const p = await rpc<ProjectMeta>(newProject);
-  const profile = await rpc<AgentProfile>({
-    method: "config",
-    command: { method: "createProfile", profile: { ...profileInput, maxParallel: 4 } },
-  });
+  const profile = s.agents.add(testAgent({ id: "opus-dev", name: "opus-dev", maxParallel: 4 }));
   const runs: RunView[] = [];
   for (const title of ["A", "B", "C", "D"]) {
     const t = await rpc<Ticket>({
@@ -228,7 +210,7 @@ test("four runs on three slots leave one queued", async () => {
         method: "assignAgent",
         projectId: p.id,
         ticketId: t.id,
-        profileId: profile.id,
+        profileId: profile.ref,
         brief: "",
       }),
     );
@@ -277,17 +259,16 @@ test("a second run resumes the main session with the branch commits and the answ
       by: human,
     },
   });
-  const profile = await rpc<AgentProfile>({
-    method: "config",
-    command: { method: "createProfile", profile: { ...profileInput, workspace: "worktree", maxParallel: 1 } },
-  });
+  const profile = s.agents.add(
+    testAgent({ id: "opus-dev", name: "opus-dev", workspace: "worktree", maxParallel: 1 }),
+  );
   const agents = () => rpc<AgentsState>({ method: "getAgents" });
   const assign = (fresh: boolean) =>
     rpc<RunView>({
       method: "assignAgent",
       projectId: p.id,
       ticketId: t.id,
-      profileId: profile.id,
+      profileId: profile.ref,
       brief: "",
       fresh,
     });

@@ -8,7 +8,6 @@ import {
   missingDomains,
   missingInstances,
   missingPages,
-  missingProfiles,
   planGuidelines,
   planTickets,
 } from "./plan";
@@ -16,7 +15,6 @@ import {
 export const SEED_KINDS = [
   "project",
   "domain",
-  "profile",
   "guideline",
   "page",
   "instance",
@@ -35,7 +33,6 @@ export type SeedReport = {
 const zero = (): Record<SeedKind, number> => ({
   project: 0,
   domain: 0,
-  profile: 0,
   guideline: 0,
   page: 0,
   instance: 0,
@@ -66,23 +63,13 @@ async function ensureConfig({ client, desired, report }: Step, projectId: string
   const domains = missingDomains(before.domains, desired.domains);
   for (const domain of domains)
     await client.rpc({ method: "config", command: { method: "createDomain", domain } });
-  const profiles = missingProfiles(
-    before.profiles,
-    desired.profiles.map((p) => p.profile),
-  );
-  for (const profile of profiles)
-    await client.rpc({ method: "config", command: { method: "createProfile", profile } });
   report.created.domain = domains.length;
   report.kept.domain = desired.domains.length - domains.length;
-  report.created.profile = profiles.length;
-  report.kept.profile = desired.profiles.length - profiles.length;
-  report.warnings.push(...desired.profiles.flatMap((p) => p.gaps));
 
   const config = await client.rpc({ method: "getConfig" });
   const ids: ResolvedIds = {
     projectId,
     domains: new Map(config.domains.map((d) => [d.name, d.id])),
-    profiles: new Map(config.profiles.map((p) => [p.name, p.id])),
   };
   const plan = planGuidelines(config.guidelines, desired.guidelines, ids);
   for (const g of plan.add) await client.rpc({ method: "config", command: { method: "addGuideline", ...g } });

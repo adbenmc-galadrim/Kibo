@@ -1,10 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { type Guideline, MEMORY_NOTE_PATH } from "@kibo/schema";
-import { buildProjectAgentPrompt, firstTurnPrompt, nextTurnPrompt } from "./prompt";
+import {
+  buildProjectAgentPrompt,
+  DEFAULT_PROJECT_AGENT_BODY,
+  firstTurnPrompt,
+  nextTurnPrompt,
+} from "./prompt";
 
 const guideline = (path: string, content: string): Guideline => ({
   id: path,
-  owner: { scope: "profile", profileId: "project-agent" },
+  owner: { scope: "workspace" },
   path,
   content,
 });
@@ -15,6 +20,7 @@ describe("buildProjectAgentPrompt", () => {
     chain: [guideline("a.md", "Toujours en français."), guideline("b.md", "Petits lots.")],
     memoryPath: MEMORY_NOTE_PATH,
     viewer: "adam",
+    agentBody: "",
   });
 
   test("states the role, the protocol, the memory and the forbidden moves", () => {
@@ -61,6 +67,7 @@ describe("buildProjectAgentPrompt", () => {
         chain: [],
         memoryPath: MEMORY_NOTE_PATH,
         viewer: "adam",
+        agentBody: "",
       }),
     ).toBe(
       buildProjectAgentPrompt({
@@ -68,8 +75,32 @@ describe("buildProjectAgentPrompt", () => {
         chain: [],
         memoryPath: MEMORY_NOTE_PATH,
         viewer: "adam",
+        agentBody: "",
       }),
     );
+  });
+});
+
+describe("the spec of the project agent", () => {
+  const input = { projectName: "Emis", chain: [], memoryPath: MEMORY_NOTE_PATH, viewer: "adam" };
+  test("replaces the role lines when its file has a body", () => {
+    const prompt = buildProjectAgentPrompt({ ...input, agentBody: "Tu es le chef." });
+    expect(prompt).toStartWith("Tu es le chef.\n");
+    expect(prompt).not.toContain("# Agent de projet Kibo");
+    expect(prompt).toContain("propose_batch");
+  });
+  test("an empty body keeps the former prompt", () => {
+    expect(buildProjectAgentPrompt({ ...input, agentBody: "" })).toContain(
+      "Tu es le chef de projet du projet Emis.",
+    );
+    expect(buildProjectAgentPrompt({ ...input, agentBody: "  " })).toBe(
+      buildProjectAgentPrompt({ ...input, agentBody: "" }),
+    );
+  });
+  test("the default body is the role, for any project", () => {
+    expect(DEFAULT_PROJECT_AGENT_BODY).toStartWith("# Agent de projet Kibo\n");
+    expect(DEFAULT_PROJECT_AGENT_BODY).toContain("Tu es le chef de projet du projet courant.");
+    expect(DEFAULT_PROJECT_AGENT_BODY).toContain("tu conseilles l'utilisateur");
   });
 });
 

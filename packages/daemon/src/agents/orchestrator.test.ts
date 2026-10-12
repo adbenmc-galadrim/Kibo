@@ -5,7 +5,7 @@ import { type Guideline, type HookPayload, type RunView, WORKTREE_DEFAULTS } fro
 import { fakeCalls, releaseFakeRun } from "./fake-claude-scenario";
 import { repo } from "./git-test-kit";
 import { createOrchestrator } from "./orchestrator";
-import { assign, cleanHarness, profile, run, setup, waitUntil } from "./orchestrator.test-helper";
+import { assign, cleanHarness, run, setup, testAgent, waitUntil } from "./orchestrator.test-helper";
 import { createRunLauncher, type LiveRun } from "./run-launch";
 import { openRunRegistry } from "./run-registry";
 
@@ -16,21 +16,21 @@ test("a question suspends the run, the answer resumes it, and the ticket moves o
   const first = h.orch.assign({
     projectId: "p1",
     ticketId: "t1",
-    profileId: "opus",
+    profileId: "global:opus",
     brief: "Garder l'ordre.",
   });
   expect(h.assigned).toEqual(["t1:opus-dev"]);
   await waitUntil(() => run(h, first.id).state === "waiting_input");
   expect(run(h, first.id)).toMatchObject({
     question: "Quel port pour le récepteur ?",
-    label: "opus-dev-1",
+    label: "global · opus-dev · KIB-1",
     workspace: "isolated",
     cwd: realpathSync(join(h.home, "runs", first.id, "workspace")),
   });
   expect(h.orch.state().host.used).toBe(0);
   await waitUntil(() => h.notices.length > 0);
   expect(h.notices).toContainEqual({
-    title: "opus-dev-1 attend une réponse",
+    title: "global · opus-dev · KIB-1 attend une réponse",
     body: "KIB-1 · Quel port pour le récepteur ?",
   });
 
@@ -103,6 +103,7 @@ test("hooks need the live token of their own run", async () => {
     detail: "ping",
     question: null,
     agentId: null,
+    toolUseId: null,
     ask: null,
     todos: null,
     stopHookActive: false,
@@ -144,7 +145,7 @@ test("cancelling a running run stops its process and frees the slot", async () =
 }, 30_000);
 
 test("queued runs can be moved and prioritized; running ones cannot", async () => {
-  const h = setup({ scenario: "hold", profiles: [profile({ maxParallel: 1 })] });
+  const h = setup({ scenario: "hold", profiles: [testAgent({ maxParallel: 1 })] });
   const [a, b, c] = ["t1", "t2", "t3"].map((t) => assign(h, t));
   if (!a || !b || !c) throw new Error("runs missing");
   expect(h.orch.state().queue.map((q) => q.runId)).toEqual([b.id, c.id]);
@@ -164,13 +165,13 @@ test("queued runs can be moved and prioritized; running ones cannot", async () =
 test("a workspace failure fails the run with its code and notifies", async () => {
   const h = setup({
     scenario: "done",
-    profiles: [profile({ id: "repo", name: "repo-dev", workspace: "repo" })],
+    profiles: [testAgent({ id: "repo", name: "repo-dev", workspace: "repo" })],
   });
   const r = assign(h, "t1", "repo");
   await waitUntil(() => run(h, r.id).state === "failed");
   expect(run(h, r.id).error).toStartWith("PROJECT_FOLDER_MISSING: ");
   expect(h.orch.state().host.used).toBe(0);
-  expect(h.notices.map((n) => n.title)).toContain("repo-dev-1 a échoué");
+  expect(h.notices.map((n) => n.title)).toContain("global · repo-dev · KIB-1 a échoué");
 });
 
 const claudeInCommonPlaces = ["/opt/homebrew/bin/claude", "/usr/local/bin/claude"].some((p) => existsSync(p));
@@ -188,31 +189,40 @@ test("the preview says where a new run would enter the queue", async () => {
     { id: "g2", owner: { scope: "project", projectId: "p1" }, path: "kibo.md", content: "# K" },
     { id: "g3", owner: { scope: "domain", domainId: "ui" }, path: "ui.md", content: "# U" },
   ];
-  const h = setup({ scenario: "hold", profiles: [profile({ maxParallel: 1 })], guidelines });
-  const target = { projectId: "p1", ticketId: "t2", profileId: "opus" };
-  expect(h.orch.preview(target)).toEqual({ position: null, reason: null, guidelines: 2, session: null });
+  const h = setup({ scenario: "hold", profiles: [testAgent({ maxParallel: 1 })], guidelines });
+  const target = { projectId: "p1", ticketId: "t2", profileId: "global:opus" };
+  expect(h.orch.preview(target)).toEqual({
+    position: null,
+    reason: null,
+    guidelines: 2,
+    session: null,
+    model: "opus",
+    inherited: false,
+  });
   const r = assign(h, "t1");
   expect(h.orch.preview(target)).toEqual({
     position: 1,
-    reason: { kind: "profile", profileName: "opus-dev", used: 1, total: 1 },
+    reason: { kind: "agent", agentName: "opus-dev", used: 1, total: 1 },
     guidelines: 2,
     session: null,
+    model: "opus",
+    inherited: false,
   });
   expect(() => h.orch.preview({ ...target, profileId: "gone" })).toThrow("NOT_FOUND");
-  expect(h.orch.activeRuns("opus")).toBe(1);
+  expect(h.orch.activeRuns("global:opus")).toBe(1);
   releaseFakeRun(h.state, r.sessionId);
 }, 30_000);
 
 test("a run without ticket uses its own folder, its guard and keeps its result line", async () => {
   const h = setup({
     scenario: "guard",
-    profiles: [profile({ id: "gen", name: "generateur", permissionMode: "default" })],
+    profiles: [testAgent({ id: "gen", name: "generateur", permissionMode: "default" })],
   });
   const cwd = join(h.home, "draft");
   mkdirSync(cwd);
   const seen: string[] = [];
   const r = h.orch.submit({
-    profileId: "gen",
+    profileId: "global:gen",
     projectId: null,
     title: "Générer un composant",
     cwd,
@@ -251,24 +261,30 @@ test("a run without ticket uses its own folder, its guard and keeps its result l
 test("a system profile cannot take a ticket but runs tasks without ticket", async () => {
   const h = setup({
     scenario: "done",
-    profiles: [profile(), profile({ id: "assistant", name: "assistant", system: true, maxParallel: 1 })],
+    profiles: [testAgent(), testAgent({ id: "assistant", name: "assistant", system: true, maxParallel: 1 })],
   });
-  expect(() => assign(h, "t1", "assistant")).toThrow("INVALID_INPUT");
-  expect(() => h.orch.preview({ projectId: "p1", ticketId: "t1", profileId: "assistant" })).toThrow(
+  expect(() => assign(h, "t1", "system:assistant")).toThrow("INVALID_INPUT");
+  expect(() => h.orch.preview({ projectId: "p1", ticketId: "t1", profileId: "system:assistant" })).toThrow(
     "INVALID_INPUT",
   );
   expect(h.orch.state().runs).toEqual([]);
   expect(h.assigned).toEqual([]);
   const cwd = join(h.home, "tmp");
   mkdirSync(cwd);
-  const r = h.orch.submit({ profileId: "assistant", projectId: null, title: "Suggérer", cwd, prompt: "x" });
+  const r = h.orch.submit({
+    profileId: "system:assistant",
+    projectId: null,
+    title: "Suggérer",
+    cwd,
+    prompt: "x",
+  });
   expect(r).toMatchObject({ ticketId: null, profileName: "assistant" });
   await waitUntil(() => run(h, r.id).state === "done");
 }, 30_000);
 
 test("refuses to assign or preview a ticket that has no key yet", () => {
   const h = setup({ scenario: "done" });
-  const input = { projectId: "p1", ticketId: "pending", profileId: "opus" };
+  const input = { projectId: "p1", ticketId: "pending", profileId: "global:opus" };
   expect(() => h.orch.preview(input)).toThrow("INVALID_INPUT");
   expect(() => h.orch.assign({ ...input, brief: "" })).toThrow("INVALID_INPUT");
   expect(h.orch.state().runs).toEqual([]);
@@ -311,7 +327,7 @@ test("a launch refused by the runner fails the run instead of throwing", async (
   const cwd = join(h.home, "draft");
   mkdirSync(cwd);
   const r = h.orch.submit({
-    profileId: "opus",
+    profileId: "global:opus",
     projectId: null,
     title: "Tâche",
     cwd,
@@ -335,7 +351,7 @@ test("a PreToolUse without tool input reaches the guard as null, never as an emp
   mkdirSync(cwd);
   const inputs: unknown[] = [];
   const r = h.orch.submit({
-    profileId: "opus",
+    profileId: "global:opus",
     projectId: null,
     title: "Tâche gardée",
     cwd,
@@ -353,6 +369,7 @@ test("a PreToolUse without tool input reaches the guard as null, never as an emp
     detail: null,
     question: null,
     agentId: null,
+    toolUseId: null,
     ask: null,
     todos: null,
     stopHookActive: false,
@@ -370,7 +387,7 @@ test("a guard that throws denies the tool, logs the error and lets the run finis
     const cwd = join(h.home, "draft");
     mkdirSync(cwd);
     const r = h.orch.submit({
-      profileId: "opus",
+      profileId: "global:opus",
       projectId: null,
       title: "Tâche gardée",
       cwd,
@@ -428,7 +445,8 @@ test("a process ending while its run is queued again records no exit", async () 
       registry,
       tasks: new Map(),
       live,
-      profileOf: () => profile(),
+      agentOf: () => testAgent(),
+      guards: new Map(),
       stopping: () => false,
     });
     const view = registry.create(
@@ -438,8 +456,10 @@ test("a process ending while its run is queued again records no exit", async () 
         ticketId: "t1",
         ticketKey: "KIB-1",
         ticketTitle: "Ticket KIB-1",
-        profileId: "opus",
+        profileId: "global:opus",
         profileName: "opus-dev",
+        agentScope: "global" as const,
+        projectKey: null,
         sessionId: crypto.randomUUID(),
         brief: "",
         kind: "ticket",
@@ -460,6 +480,7 @@ test("a process ending while its run is queued again records no exit", async () 
         detail: null,
         question: "Quel port ?",
         agentId: null,
+        toolUseId: null,
         ask: null,
         todos: null,
         stopHookActive: false,
@@ -490,9 +511,9 @@ test("a process ending while its run is queued again records no exit", async () 
 
 test("assigning on a read-only project is refused before anything is queued", () => {
   const h = setup({ scenario: "done", readOnly: true });
-  expect(() => h.orch.assign({ projectId: "p1", ticketId: "t1", profileId: "opus", brief: "" })).toThrow(
-    "FORBIDDEN",
-  );
+  expect(() =>
+    h.orch.assign({ projectId: "p1", ticketId: "t1", profileId: "global:opus", brief: "" }),
+  ).toThrow("FORBIDDEN");
   expect(h.orch.state().runs).toEqual([]);
   expect(h.assigned).toEqual([]);
   expect(h.store.records()).toEqual([]);
@@ -500,29 +521,29 @@ test("assigning on a read-only project is refused before anything is queued", ()
 
 test("a refused ticket write queues nothing either", () => {
   const h = setup({ scenario: "done", assignFails: true });
-  expect(() => h.orch.assign({ projectId: "p1", ticketId: "t1", profileId: "opus", brief: "" })).toThrow(
-    "INVALID_INPUT",
-  );
+  expect(() =>
+    h.orch.assign({ projectId: "p1", ticketId: "t1", profileId: "global:opus", brief: "" }),
+  ).toThrow("INVALID_INPUT");
   expect(h.orch.state().runs).toEqual([]);
   expect(h.store.records()).toEqual([]);
 });
 
 test("the inbox and an unknown ticket are still refused before the write check", () => {
   const h = setup({ scenario: "done", readOnly: true });
-  expect(() => h.orch.assign({ projectId: "p1", ticketId: "nope", profileId: "opus", brief: "" })).toThrow(
-    "NOT_FOUND",
-  );
+  expect(() =>
+    h.orch.assign({ projectId: "p1", ticketId: "nope", profileId: "global:opus", brief: "" }),
+  ).toThrow("NOT_FOUND");
 });
 
 test("a ticket runs one agent at a time: a second assign is refused until the first ends", async () => {
   const h = setup({
     scenario: "hold",
-    profiles: [profile({ maxParallel: 1 }), profile({ id: "b", name: "b-dev" })],
+    profiles: [testAgent({ maxParallel: 1 }), testAgent({ id: "b", name: "b-dev" })],
   });
   const blocker = assign(h, "t2");
   const first = assign(h, "t1");
   expect(run(h, first.id).state).toBe("queued");
-  const target = { projectId: "p1", ticketId: "t1", profileId: "b" };
+  const target = { projectId: "p1", ticketId: "t1", profileId: "global:b" };
   expect(() => h.orch.assign({ ...target, brief: "" })).toThrow("CONFLICT");
   expect(h.orch.state().runs).toHaveLength(2);
   expect(h.assigned).toEqual(["t2:opus-dev", "t1:opus-dev"]);
@@ -531,6 +552,8 @@ test("a ticket runs one agent at a time: a second assign is refused until the fi
     reason: { kind: "ticket_busy" },
     guidelines: 0,
     session: null,
+    model: "opus",
+    inherited: false,
   });
   h.orch.cancel(first.id);
   const second = h.orch.assign({ ...target, brief: "" });
@@ -552,8 +575,10 @@ test("resuming an ended run is refused while another run of its ticket is active
     ticketId: "t1",
     ticketKey: "KIB-1",
     ticketTitle: "Ticket KIB-1",
-    profileId: "opus",
+    profileId: "global:opus",
     profileName: "opus-dev",
+    agentScope: "global" as const,
+    projectKey: null,
     sessionId: crypto.randomUUID(),
     brief: "",
     kind: "ticket" as const,
@@ -596,7 +621,7 @@ test("the setup command of a worktree run is journaled before the agent starts",
   const folder = await repo();
   const h = setup({
     scenario: "done",
-    profiles: [profile({ workspace: "worktree" })],
+    profiles: [testAgent({ workspace: "worktree" })],
     meta: { folder, worktree: { ...WORKTREE_DEFAULTS, setup: "git worktree add {path} {branch}" } },
   });
   const r = assign(h, "t1");

@@ -23,7 +23,7 @@ import {
   RpcRequest,
   Sha256,
   StartComponentDraftInput,
-  SYSTEM_PROFILE_IDS,
+  SYSTEM_AGENT_IDS,
   sniffImage,
   Ticket,
   TicketKey,
@@ -235,6 +235,12 @@ describe("mcp and ci_run permissions", () => {
   });
 });
 
+test("the agent error codes replace the profile one", () => {
+  for (const code of ["AGENT_IN_USE", "READ_ONLY", "AGENT_NOT_FOUND"])
+    expect(isKiboErrorCode(code)).toBe(true);
+  expect(isKiboErrorCode("PROFILE_IN_USE")).toBe(false);
+});
+
 describe("phase 7 error codes", () => {
   test("new codes are accepted by KiboError", () => {
     const codes = [
@@ -367,5 +373,5 @@ test("phase 14 events and the help combo", () => {
   expect(Phase7Event.safeParse({ type: "backups.changed" }).success).toBe(true);
   expect(Phase7Event.safeParse({ type: "tutorial.changed" }).success).toBe(true);
   expect(KeyCombo.safeParse("mod+/").success).toBe(true);
-  expect(SYSTEM_PROFILE_IDS).toEqual(["assistant", "generateur", "demo", "project-agent"]);
+  expect(SYSTEM_AGENT_IDS).toEqual(["assistant", "generateur", "demo", "project-agent"]);
 });

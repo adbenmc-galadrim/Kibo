@@ -15,6 +15,7 @@ import {
   SIGNAL_TOOL,
   TICKET_MCP_TOOLS,
 } from "@kibo/schema";
+import { NO_AGENT_FLAGS } from "./cli-flags";
 import { FAKE_CLAUDE, fakeCalls, releaseFakeRun, scenarioPath } from "./fake-claude-scenario";
 import {
   childEnv,
@@ -306,6 +307,15 @@ test("only a well-formed result line is read", () => {
   });
 });
 
+test("a denied Task, the historical name of the Agent tool, is told as Agent", () => {
+  const line = JSON.stringify({
+    type: "result",
+    is_error: false,
+    permission_denials: [{ tool_name: "Task" }, { tool_name: "Agent" }, { tool_name: "Bash" }],
+  });
+  expect(parseResultLine(line)?.denied).toEqual(["Agent", "Agent", "Bash"]);
+});
+
 function fakeLaunch(scenario: "done" | "fail" | "hold", sessionId: string) {
   const state = tmp();
   const hooks = join(state, "hooks.jsonl");
@@ -326,6 +336,7 @@ function fakeLaunch(scenario: "done" | "fail" | "hold", sessionId: string) {
       KIBO_FAKE_CLAUDE_STATE: state,
     },
     extraEnv: {},
+    agentFlags: NO_AGENT_FLAGS,
   });
   return { proc, state, hooks };
 }

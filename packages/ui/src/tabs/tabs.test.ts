@@ -25,6 +25,8 @@ describe("hash codec", () => {
     { kind: "file", projectId: "p1", worktree: "/wt", path: "packages/core/ticket.ts", line: 42 },
     { kind: "screen", screen: "agents" },
     { kind: "screen", screen: "queue" },
+    { kind: "screen", screen: "skills" },
+    { kind: "skill", skillId: "superpowers:brainstorming" },
     { kind: "screen", screen: "general" },
     { kind: "screen", screen: "domains" },
     { kind: "screen", screen: "components" },
@@ -49,6 +51,9 @@ describe("hash codec", () => {
   });
   test("screens keep their addresses", () => {
     expect(targetToHash({ kind: "screen", screen: "queue" })).toBe("#/agents/queue");
+    expect(hashToTarget("#/agents/skills")).toEqual({ kind: "screen", screen: "skills" });
+    expect(hashToTarget("#/skills/a%3Ab")).toEqual({ kind: "skill", skillId: "a:b" });
+    expect(targetToHash({ kind: "skill", skillId: "a:b" })).toBe("#/skills/a%3Ab");
     expect(hashToTarget("#/settings/domains/")).toEqual({ kind: "screen", screen: "domains" });
     expect(targetToHash({ kind: "screen", screen: "creations" })).toBe("#/creations");
     expect(hashToTarget("#/creations")).toEqual({ kind: "screen", screen: "creations" });

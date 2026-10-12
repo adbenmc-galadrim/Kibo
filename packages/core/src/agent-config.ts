@@ -7,7 +7,6 @@ import {
   WorkspacePatch,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
-import { assertDeletableProfile, createProfile, getProfile, updateProfile } from "./agent-profiles";
 import {
   assertUniqueName,
   byName,
@@ -21,14 +20,6 @@ import {
   stored,
   valid,
 } from "./config-store";
-
-export {
-  assertDeletableProfile,
-  ensureSystemProfiles,
-  getProfile,
-  listProfiles,
-  systemModel,
-} from "./agent-profiles";
 
 export function workspaceName(ws: LoroDoc): string | null {
   const name = settingsMap(ws).get("name");
@@ -52,8 +43,19 @@ function getDomain(ws: LoroDoc, id: string): Domain {
   return found;
 }
 
+const LEGACY_PROFILE_SCOPE = "profile";
+
+function isLegacyProfileGuideline(value: unknown): boolean {
+  if (typeof value !== "object" || value === null || !("owner" in value)) return false;
+  const { owner } = value;
+  return (
+    typeof owner === "object" && owner !== null && "scope" in owner && owner.scope === LEGACY_PROFILE_SCOPE
+  );
+}
+
 export function listGuidelines(doc: LoroDoc): Guideline[] {
   return entries(guidelinesMap(doc))
+    .filter((v) => !isLegacyProfileGuideline(v))
     .map((v) => stored(Guideline.safeParse(v), "guideline"))
     .sort((a, b) => a.path.localeCompare(b.path));
 }
@@ -66,8 +68,6 @@ function ownerKey(o: GuidelineOwner): string {
       return `project:${o.projectId}`;
     case "domain":
       return `domain:${o.domainId}`;
-    case "profile":
-      return `profile:${o.profileId}`;
   }
 }
 
@@ -80,7 +80,6 @@ function assertOwner(doc: LoroDoc, owner: GuidelineOwner): void {
   }
   requireWorkspace(doc);
   if (owner.scope === "domain") getDomain(doc, owner.domainId);
-  if (owner.scope === "profile") getProfile(doc, owner.profileId);
 }
 
 function assertUniquePath(doc: LoroDoc, g: Guideline): void {
@@ -102,6 +101,17 @@ function dropGuidelines(doc: LoroDoc, owner: GuidelineOwner): void {
   }
 }
 
+export function dropProfiles(doc: LoroDoc): { profiles: number; guidelines: number } {
+  const profiles = profilesMap(doc);
+  const ids = Object.keys(profiles.toJSON());
+  const guidelines = guidelinesMap(doc);
+  const legacy = Object.entries(guidelines.toJSON()).filter(([, v]) => isLegacyProfileGuideline(v));
+  for (const id of ids) profiles.delete(id);
+  for (const [id] of legacy) guidelines.delete(id);
+  if (ids.length > 0 || legacy.length > 0) doc.commit();
+  return { profiles: ids.length, guidelines: legacy.length };
+}
+
 export function configTarget(cmd: ConfigCommand): string | null {
   switch (cmd.method) {
     case "addGuideline":
@@ -115,18 +125,6 @@ export function configTarget(cmd: ConfigCommand): string | null {
 
 export function executeConfigCommand(doc: LoroDoc, cmd: ConfigCommand): unknown {
   switch (cmd.method) {
-    case "createProfile":
-      return createProfile(doc, cmd.profile);
-    case "updateProfile":
-      return updateProfile(doc, cmd.profileId, cmd.patch);
-    case "deleteProfile": {
-      requireWorkspace(doc);
-      assertDeletableProfile(doc, cmd.profileId);
-      profilesMap(doc).delete(cmd.profileId);
-      dropGuidelines(doc, { scope: "profile", profileId: cmd.profileId });
-      doc.commit();
-      return null;
-    }
     case "createDomain": {
       requireWorkspace(doc);
       const domain = valid(Domain.safeParse({ ...cmd.domain, id: crypto.randomUUID() }));

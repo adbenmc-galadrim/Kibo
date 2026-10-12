@@ -5,7 +5,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
 import { Progress } from "@kibo/sdk/ui/progress";
 import { type FormEvent, useId, useState } from "react";
-import { fr } from "../i18n/fr";
+import { frAgentsSkills } from "../i18n/fr-agents-skills";
 import { elapsed, formatDuration, formatGb } from "./format";
 import { byStart, holdsSlot } from "./queue-runs";
 
@@ -28,7 +28,7 @@ function Gauge({
       <div className="flex items-baseline gap-2 text-xs">
         <span>{label}</span>
         <span className="flex-1" />
-        <span className="font-mono text-2xs text-muted-foreground">{`${text} · ${fr.queue.threshold(threshold)}`}</span>
+        <span className="font-mono text-2xs text-muted-foreground">{`${text} · ${frAgentsSkills.queue.threshold(threshold)}`}</span>
       </div>
       <div className="relative">
         <Progress
@@ -62,19 +62,19 @@ function HostSlotsEditor({ host, onSave }: { host: HostView; onSave: (slots: num
       <p className="text-2xs text-muted-foreground">
         <span>
           {host.slotsFixed
-            ? fr.queue.hostSlotsFixed(host.hostSlots, host.autoSlots)
-            : fr.queue.hostSlots(host.hostSlots, host.cores, host.ramGb)}
+            ? frAgentsSkills.queue.hostSlotsFixed(host.hostSlots, host.autoSlots)
+            : frAgentsSkills.queue.hostSlots(host.hostSlots, host.cores, host.ramGb)}
         </span>
         {" · "}
         <button type="button" className="underline-offset-2 hover:underline" onClick={() => setEditing(true)}>
-          {fr.queue.edit}
+          {frAgentsSkills.queue.edit}
         </button>
       </p>
     );
   }
   return (
     <form onSubmit={submit} className="flex items-center gap-2 text-xs">
-      <label htmlFor={id}>{fr.queue.slotsLabel}</label>
+      <label htmlFor={id}>{frAgentsSkills.queue.slotsLabel}</label>
       <Input
         id={id}
         type="number"
@@ -85,7 +85,7 @@ function HostSlotsEditor({ host, onSave }: { host: HostView; onSave: (slots: num
         className="h-7 w-16"
       />
       <Button type="submit" size="sm" className="h-7" disabled={!parsed.success}>
-        {fr.queue.save}
+        {frAgentsSkills.queue.save}
       </Button>
     </form>
   );
@@ -109,9 +109,9 @@ export function QueueCapacity({
     <section aria-labelledby={titleId} className="grid gap-3 rounded-lg border bg-card p-4">
       <div>
         <h2 id={titleId} className="text-md font-semibold">
-          {fr.queue.capacity}
+          {frAgentsSkills.queue.capacity}
         </h2>
-        <p className="text-xs text-muted-foreground">{fr.queue.capacityHelp}</p>
+        <p className="text-xs text-muted-foreground">{frAgentsSkills.queue.capacityHelp}</p>
       </div>
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
         <ul className="grid grid-cols-[repeat(auto-fill,minmax(10rem,1fr))] gap-3">
@@ -125,7 +125,7 @@ export function QueueCapacity({
                   run ? "border-blue-500/70" : "border-dashed",
                 )}
               >
-                <span className="text-3xs text-muted-foreground">{fr.queue.slot(slot)}</span>
+                <span className="text-3xs text-muted-foreground">{frAgentsSkills.queue.slot(slot)}</span>
                 {run ? (
                   <>
                     <RunDot state={run.state} className="absolute top-2.5 right-2.5" />
@@ -135,7 +135,7 @@ export function QueueCapacity({
                     </span>
                   </>
                 ) : (
-                  <span className="text-xs text-muted-foreground">{fr.queue.free}</span>
+                  <span className="text-xs text-muted-foreground">{frAgentsSkills.queue.free}</span>
                 )}
               </li>
             );
@@ -143,17 +143,17 @@ export function QueueCapacity({
         </ul>
         <div className="grid content-start gap-3">
           <Gauge
-            label={fr.queue.cpu}
+            label={frAgentsSkills.queue.cpu}
             value={host.cpu}
             threshold={host.cpuThreshold}
-            text={fr.queue.percent(host.cpu)}
+            text={frAgentsSkills.queue.percent(host.cpu)}
             tone="[&_[data-slot=progress-indicator]]:bg-blue-500"
           />
           <Gauge
-            label={fr.queue.ram}
+            label={frAgentsSkills.queue.ram}
             value={host.ram}
             threshold={host.ramThreshold}
-            text={fr.queue.ramUsage(ramUsed, host.ramGb)}
+            text={frAgentsSkills.queue.ramUsage(ramUsed, host.ramGb)}
             tone="[&_[data-slot=progress-indicator]]:bg-amber-500"
           />
           <HostSlotsEditor key={host.hostSlots} host={host} onSave={onSlots} />

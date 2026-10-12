@@ -1,8 +1,8 @@
-import type { AgentProfile } from "@kibo/schema";
+import type { Agent } from "@kibo/schema";
 import { type HookLauncher, writeMcpConfig } from "./hook-launcher";
 
 export type McpLaunchInput = {
-  profile: AgentProfile;
+  agent: Pick<Agent, "settings">;
   baseUrl: string;
   runId: string;
   runDir: string;
@@ -26,5 +26,5 @@ export function mcpRoute(input: McpLaunchInput, tools: McpRoute["mcpTools"]): Mc
 }
 
 export function ticketLaunch(input: McpLaunchInput): McpLaunch {
-  return { allow: [...input.profile.allow], deny: [], ...mcpRoute(input, "ticket") };
+  return { allow: [...input.agent.settings.allow], deny: [], ...mcpRoute(input, "ticket") };
 }

@@ -1,6 +1,6 @@
-import { getKeyAllocator, listProjectDomains, readProject } from "@kibo/core";
+import { agentSummary, getKeyAllocator, listProjectDomains, readProject } from "@kibo/core";
 import {
-  type AgentProfile,
+  type Agent,
   type Guideline,
   KiboError,
   NoteContent,
@@ -19,7 +19,7 @@ export type ProjectAgentDataDeps = {
   docs: Docs;
   notes: Pick<NotesService, "handle" | "info">;
   settings: Pick<ProjectSettings, "get">;
-  profiles(): AgentProfile[];
+  agents(projectId: string): Agent[];
   guidelines(projectId: string): Guideline[];
 };
 
@@ -85,7 +85,7 @@ export function createProjectAgentDataPort(deps: ProjectAgentDataDeps): ProjectA
     projectFolder: (projectId) => docs.projectMeta(projectId).folder,
     assertWritable: (projectId) => docs.assertWritable(projectId),
     viewer: (projectId) => docs.identity(projectId),
-    profiles: () => deps.profiles(),
+    agents: (projectId) => deps.agents(projectId).map(agentSummary),
     guidelines: (projectId) => deps.guidelines(projectId),
     isDemoProject: (projectId) => isDemoProject(deps.settings, projectId),
     ...notesPort(deps.notes),

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { DEFAULT_RECIPIENTS, PROGRESS_TOOL, type Ticket } from "@kibo/schema";
+import { NO_AGENT } from "./agents/compose";
 import { executeProjectCommand, readProject } from "./commands";
 import { buildBrief, buildRunContext, buildSystemPrompt } from "./context";
 import { createProjectDoc } from "./project";
@@ -36,10 +37,11 @@ function project(plan: boolean) {
 }
 
 test("the protocol asks for a plan, a report, a readable feed and lists the recipients", () => {
-  const prompt = buildSystemPrompt([], [], {
+  const prompt = buildSystemPrompt([], NO_AGENT, {
     progress: true,
     recipients: DEFAULT_RECIPIENTS,
     signals: false,
+    skillReview: false,
   });
   expect(prompt).toContain(`\`${PROGRESS_TOOL}\``);
   expect(prompt).toContain("plan");
@@ -50,25 +52,27 @@ test("the protocol asks for a plan, a report, a readable feed and lists the reci
 });
 
 test("without a protocol the prompt is unchanged", () => {
-  const prompt = buildSystemPrompt([], ["sonnet"]);
+  const prompt = buildSystemPrompt([], NO_AGENT);
   expect(prompt).not.toContain(PROGRESS_TOOL);
-  expect(prompt).toBe(buildSystemPrompt([], ["sonnet"], { progress: false, recipients: [], signals: false }));
-  expect(prompt.endsWith("- Sous-agents autorisés : Sonnet.\n")).toBe(true);
+  expect(prompt).toBe(
+    buildSystemPrompt([], NO_AGENT, { progress: false, recipients: [], signals: false, skillReview: false }),
+  );
+  expect(prompt.endsWith("- Skills : tous ceux de la machine et du projet.\n")).toBe(true);
 });
 
 test("the run context passes the protocol to the system prompt", () => {
   const { project: snapshot, ticket } = project(false);
-  const protocol = { progress: true, recipients: DEFAULT_RECIPIENTS, signals: true };
+  const protocol = { progress: true, recipients: DEFAULT_RECIPIENTS, signals: true, skillReview: false };
   const ctx = buildRunContext({
     project: snapshot,
     ticket,
     domain: null,
     note: "",
     chain: [],
-    subagents: [],
+    agent: NO_AGENT,
     protocol,
   });
-  expect(ctx.systemPrompt).toBe(buildSystemPrompt([], [], protocol));
+  expect(ctx.systemPrompt).toBe(buildSystemPrompt([], NO_AGENT, protocol));
   expect(ctx.files.find((f) => f.path === "CLAUDE.md")?.content).toContain(PROGRESS_TOOL);
 });
 
@@ -86,12 +90,20 @@ test("the brief carries the plan of the ticket over to the next run", () => {
 });
 
 test("ticket runs are told to signal instead of creating tickets", () => {
-  const base = { progress: true, recipients: DEFAULT_RECIPIENTS };
-  const prompt = buildSystemPrompt([], [], { ...base, signals: true });
+  const base = { progress: true, recipients: DEFAULT_RECIPIENTS, skillReview: false };
+  const prompt = buildSystemPrompt([], NO_AGENT, { ...base, signals: true });
   expect(prompt).toContain("`mcp__kibo__signal_project`");
   expect(prompt).toContain("Tu ne crées jamais de ticket");
   expect(prompt).toContain("Vingt signaux au plus par run");
-  const without = buildSystemPrompt([], [], { ...base, signals: false });
+  const without = buildSystemPrompt([], NO_AGENT, { ...base, signals: false });
   expect(without).not.toContain("signal_project");
   expect(prompt.replace(without.slice(0, without.indexOf("- Sous-agents")), "")).toStartWith("- Tu ne crées");
+});
+
+test("the skill review rule is added when the run may review its skills", () => {
+  const base = { progress: true, recipients: [], signals: false };
+  const prompt = buildSystemPrompt([], NO_AGENT, { ...base, skillReview: true });
+  expect(prompt).toContain("`mcp__kibo__skill_review`");
+  expect(prompt).toContain("Rien n'est modifié sans validation de l'utilisateur.");
+  expect(buildSystemPrompt([], NO_AGENT, { ...base, skillReview: false })).not.toContain("skill_review");
 });

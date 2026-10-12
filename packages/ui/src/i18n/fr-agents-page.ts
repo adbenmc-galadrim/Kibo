@@ -3,7 +3,7 @@ import type { RunSession, SessionFreshReason } from "@kibo/schema";
 const turnsText = (n: number) => `${n} tour${n > 1 ? "s" : ""}`;
 const SESSION_REASONS: Record<SessionFreshReason, string> = {
   no_previous: "première session du ticket",
-  profile_changed: "autre profil",
+  agent_changed: "autre agent",
   transcript_missing: "transcript introuvable",
   workspace_changed: "autre dossier de travail",
   user_reset: "repartie de zéro",
@@ -35,8 +35,7 @@ export const frAgentsPage = {
   searchPlaceholder: "KIB-12",
   noMatch: "Aucun run ne correspond à ce filtre.",
   openRun: (profile: string, subject: string) => `${profile} · ${subject}`,
-  stopTitle: (label: string, key: string | null) =>
-    key ? `Arrêter le run ${label} sur ${key} ?` : `Arrêter le run ${label} ?`,
+  stopTitle: (label: string) => `Arrêter le run ${label} ?`,
   stopHelp: "L'agent est interrompu ; le ticket reste assigné.",
   stopConfirm: "Arrêter",
   cancelTitle: (key: string) => `Retirer ${key} de la file ?`,

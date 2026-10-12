@@ -34,7 +34,7 @@ function setup() {
   const snapshot = createTutorialSnapshot({
     docs: service.docs,
     notesDir: () => notesDir,
-    runs: () => [{ profileId: "demo", projectId: meta.id, state: "done" }],
+    runs: () => [{ profileId: "system:demo", projectId: meta.id, state: "done" }],
   });
   return { service, meta, notesDir, snapshot };
 }
@@ -66,7 +66,7 @@ test("the snapshot reads the demo doc, the welcome note, the runs and the ai com
   const snap = snapshot(meta.id);
   expect(snap?.tickets.map((t) => [t.id, t.statusId])).toEqual([[ticket.id, "in_progress"]]);
   expect(snap?.noteHash).toBe(noteHashOf("# Bienvenue\n"));
-  expect(snap?.runs).toEqual([{ profileId: "demo", projectId: meta.id, state: "done" }]);
+  expect(snap?.runs).toEqual([{ profileId: "system:demo", projectId: meta.id, state: "done" }]);
   expect(snap?.aiComponentIds).toEqual(["chart"]);
 });
 

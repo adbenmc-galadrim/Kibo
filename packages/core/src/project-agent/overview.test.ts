@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { type OverviewInput, projectOverview, renderOverview, ticketCard, ticketSheet } from "./overview";
-import { answered, link, PROFILES, project, question, run, ticket } from "./test-kit";
+import { AGENTS, answered, link, project, question, run, ticket } from "./test-kit";
 
 const pr = {
   kind: "github_pr" as const,
@@ -45,7 +45,7 @@ const input = (p: Partial<OverviewInput> = {}): OverviewInput => ({
   ],
   queue: [{ runId: "r2", position: 1, reason: null }],
   notes: [{ path: "agent-de-projet/memoire.md", title: "Mémoire" }],
-  profiles: PROFILES,
+  agents: AGENTS,
   demoProject: false,
   memory: "- Adam préfère les petits lots.",
   openSignals: 0,
@@ -64,7 +64,7 @@ describe("projectOverview", () => {
     ]);
   });
 
-  test("details the active tickets, active runs, open questions, notes, profiles and memory", () => {
+  test("details the active tickets, active runs, open questions, notes, agents and memory", () => {
     const overview = projectOverview(input());
     expect(overview).toMatchObject({ name: "Emis", key: "EMIS", memory: "- Adam préfère les petits lots." });
     expect(overview.active.map((c) => c.key)).toEqual(["EMIS-2", "EMIS-3", "EMIS-4"]);
@@ -88,11 +88,22 @@ describe("projectOverview", () => {
       { id: "q1", ticket: "EMIS-2", title: "Couleur ?", blocking: true },
     ]);
     expect(overview.notes).toEqual([{ path: "agent-de-projet/memoire.md", title: "Mémoire" }]);
-    expect(overview.profiles).toEqual([{ id: "opus", name: "opus-dev", model: "opus" }]);
+    expect(overview.profiles).toEqual([
+      {
+        id: "global:opus-dev",
+        name: "opus-dev",
+        scope: "global",
+        description: "Agent opus-dev",
+        model: "opus",
+      },
+    ]);
   });
 
-  test("the demo profile is assignable only in the demo project, project-agent never", () => {
-    expect(projectOverview(input({ demoProject: true })).profiles.map((p) => p.id)).toEqual(["opus", "demo"]);
+  test("the demo agent is assignable only in the demo project, the project agent never", () => {
+    expect(projectOverview(input({ demoProject: true })).profiles.map((p) => p.id)).toEqual([
+      "global:opus-dev",
+      "system:demo",
+    ]);
   });
 });
 

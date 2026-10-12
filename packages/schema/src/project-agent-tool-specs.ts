@@ -50,7 +50,7 @@ const ACTION = object(
     blockedReason: { type: "string" },
     labels,
     parent: { ...ticketRef, description: "Ticket parent." },
-    profileId: { type: "string", description: "Profil assignable (list_profiles)." },
+    profileId: { type: "string", description: "Agent assignable : son id (list_profiles)." },
     brief: text("Consigne pour l'agent.", ACTION_BRIEF_MAX),
     fresh: { type: "boolean" },
     runId: { type: "string" },
@@ -127,7 +127,7 @@ export const TOOL_SPECS: readonly ToolSpec[] = [
   },
   {
     name: "list_profiles",
-    description: "Profils d'agents assignables à un ticket du projet.",
+    description: "Agents assignables à un ticket du projet : id, nom, portée, description, modèle.",
     inputSchema: object(),
   },
   {

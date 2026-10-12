@@ -7,6 +7,7 @@ import {
   classifyTool,
   denialOf,
   MODIFYING_TOOLS,
+  standsAlone,
   summarizeActions,
   type ToolCall,
   testCounts,
@@ -168,4 +169,58 @@ test("a signal to the project agent is its own action", () => {
   expect(summarizeActions([action({ kind: "read", target: "a.ts" }), signal])).toBe(
     "A lu 1 fichier et envoyé 1 signal",
   );
+});
+
+test("a skill call is its own action, read tolerantly", () => {
+  expect(classifyTool("Skill", { skill: "brainstorming" })).toEqual({
+    kind: "skill",
+    target: "brainstorming",
+  });
+  expect(classifyTool("Skill", { name: "x" })).toEqual({ kind: "skill", target: "x" });
+  expect(classifyTool("Skill", { command: "y" })).toEqual({ kind: "skill", target: "y" });
+  expect(classifyTool("Skill", {})).toEqual({ kind: "skill", target: null });
+  const used = action({ tool: "Skill", kind: "skill", target: "brainstorming" });
+  expect(actionLabel(used)).toBe("A utilisé le skill `brainstorming`");
+  expect(actionLabel(action({ tool: "Skill", kind: "skill", target: null }))).toBe("A utilisé un skill");
+  expect(summarizeActions([used])).toBe("A utilisé le skill `brainstorming`");
+  expect(summarizeActions([used, used])).toBe("A utilisé 2 skills");
+});
+
+test("a skill review is an mcp action labelled with the number of reviewed skills", () => {
+  const input = { reviews: [{ skill: "a" }, { skill: "b" }] };
+  expect(classifyTool("mcp__kibo__skill_review", input)).toEqual({ kind: "mcp", target: "skill_review" });
+  const reviewed = actionOf(
+    call({ tool: "mcp__kibo__skill_review", input, output: "2 reviews enregistrées" }),
+  );
+  expect(reviewed.label).toBe("A laissé une review de 2 skills");
+  const one = action({ tool: "mcp__kibo__skill_review", kind: "mcp", target: "skill_review" });
+  expect(actionLabel(one, { reviews: [{ skill: "a" }] })).toBe("A laissé une review de 1 skill");
+  expect(actionLabel(one)).toBe("A laissé une review des skills");
+});
+
+test("a refusal of the Kibo guard is a denial, with or without its target", () => {
+  expect(denialOf("skill non autorisé par Kibo : deploy")).toBe(true);
+  expect(denialOf("sous-agent non autorisé par Kibo")).toBe(true);
+  expect(denialOf("Permission to use Skill has been denied. Kibo a refusé le skill `deploy`")).toBe(true);
+});
+
+test("a skill use or a refusal by the guard stands alone and is named in full", () => {
+  const used = action({ tool: "Skill", kind: "skill", target: "brainstorming" });
+  const refused = action({ tool: "Skill", kind: "skill", target: "deploy", outcome: "denied" });
+  const subagent = action({ tool: "Agent", kind: "subagent", target: "seo", outcome: "denied" });
+  expect([used, refused, subagent].map(standsAlone)).toEqual([true, true, true]);
+  expect(standsAlone(action({ tool: "Agent", kind: "subagent", target: "review" }))).toBe(false);
+  expect(summarizeActions([used])).toBe("A utilisé le skill `brainstorming`");
+  expect(summarizeActions([refused])).toBe("Kibo a refusé le skill `deploy`");
+  expect(summarizeActions([subagent])).toBe("Kibo a refusé le sous-agent `seo`");
+});
+
+test("a lone skill review keeps the number of skills of its label", () => {
+  const review = action({
+    tool: "mcp__kibo__skill_review",
+    kind: "mcp",
+    target: "skill_review",
+    label: "A laissé une review de 2 skills",
+  });
+  expect(summarizeActions([review])).toBe("A laissé une review de 2 skills");
 });

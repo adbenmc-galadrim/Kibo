@@ -59,9 +59,11 @@ test("only a demo run is guarded, and a demo run without workspace yet touches n
   const dir = runDir();
   const cwd = join(dir, "workspace");
   const outside = { tool: "Write", input: { file_path: join(dir, "escape.md") } };
-  expect(demoRunGuard({ profileId: "opus", cwd, ticketId: "t1" })).toBeNull();
-  expect(demoRunGuard({ profileId: "demo", cwd, ticketId: "t1" })?.(outside)?.decision).toBe("deny");
-  expect(demoRunGuard({ profileId: "demo", cwd: null, ticketId: "t1" })?.(outside)?.decision).toBe("deny");
+  expect(demoRunGuard({ profileId: "global:opus", cwd, ticketId: "t1" })).toBeNull();
+  expect(demoRunGuard({ profileId: "system:demo", cwd, ticketId: "t1" })?.(outside)?.decision).toBe("deny");
+  expect(demoRunGuard({ profileId: "system:demo", cwd: null, ticketId: "t1" })?.(outside)?.decision).toBe(
+    "deny",
+  );
 });
 
 test("a path the hook may have clipped, or that is not text, is denied", () => {
@@ -78,10 +80,10 @@ test("a draft run of the demo agent has no brief to read outside its folder", ()
   const dir = runDir();
   const cwd = join(dir, "workspace");
   const readBrief = { tool: "Read", input: { file_path: join(dir, "brief.md") } };
-  expect(demoRunGuard({ profileId: "demo", cwd, ticketId: "t1" })?.(readBrief)).toBeNull();
-  expect(demoRunGuard({ profileId: "demo", cwd, ticketId: null })?.(readBrief)?.decision).toBe("deny");
+  expect(demoRunGuard({ profileId: "system:demo", cwd, ticketId: "t1" })?.(readBrief)).toBeNull();
+  expect(demoRunGuard({ profileId: "system:demo", cwd, ticketId: null })?.(readBrief)?.decision).toBe("deny");
   expect(
-    demoRunGuard({ profileId: "demo", cwd, ticketId: null })?.({
+    demoRunGuard({ profileId: "system:demo", cwd, ticketId: null })?.({
       tool: "Read",
       input: { file_path: "ui.tsx" },
     }),

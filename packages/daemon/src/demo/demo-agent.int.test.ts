@@ -36,7 +36,7 @@ test("the whole demo run goes through the queue, asks a question, resumes and fi
     method: "assignAgent",
     projectId,
     ticketId: ticket.id,
-    profileId: "demo",
+    profileId: "system:demo",
     brief: "",
     fresh: false,
   });
@@ -86,7 +86,7 @@ test("a component draft of the demo project is written by the demo agent, withou
   expect(review.projectId).toBe(projectId);
   const { runs } = await h.rpc({ method: "getAgents" });
   const run = runs.find((r) => r.id === review.runId);
-  expect(run).toMatchObject({ profileId: "demo", state: "done", tokens: 0, costUsd: 0 });
+  expect(run).toMatchObject({ profileId: "system:demo", state: "done", tokens: 0, costUsd: 0 });
   const project = await h.rpc({ method: "getProject", projectId });
   const page = project.pages.find((p) => p.title === "Tableau de bord");
   if (!page) throw new Error("dashboard missing");

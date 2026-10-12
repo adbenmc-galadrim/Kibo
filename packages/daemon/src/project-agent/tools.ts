@@ -1,6 +1,11 @@
 import { changeNames, diffFingerprints, renderDigest } from "@kibo/core/project-agent/digest";
 import { fingerprint } from "@kibo/core/project-agent/fingerprint";
-import { assignableProfiles, projectOverview, ticketSheet } from "@kibo/core/project-agent/overview";
+import {
+  assignableAgents,
+  assignableEntry,
+  projectOverview,
+  ticketSheet,
+} from "@kibo/core/project-agent/overview";
 import {
   compactJson,
   listQuestions,
@@ -56,7 +61,7 @@ async function overview({ deps, projectId }: ToolCall) {
     runs,
     queue,
     notes: await data.notes(projectId),
-    profiles: data.profiles(),
+    agents: data.agents(projectId),
     demoProject: data.isDemoProject(projectId),
     memory: (await data.readNote(projectId, MEMORY_NOTE_PATH)) ?? "",
     openSignals: deps.signals.openCount(projectId),
@@ -116,11 +121,9 @@ async function reply(tool: ProjectAgentTool, call: ToolCall): Promise<unknown> {
     case "read_note":
       return noteOf(call);
     case "list_profiles":
-      return assignableProfiles(deps.data.profiles(), deps.data.isDemoProject(projectId)).map((p) => ({
-        id: p.id,
-        name: p.name,
-        model: p.model,
-      }));
+      return assignableAgents(deps.data.agents(projectId), deps.data.isDemoProject(projectId)).map(
+        assignableEntry,
+      );
     case "project_changes":
       return changes(call);
     case "propose_batch":

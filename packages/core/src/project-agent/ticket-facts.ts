@@ -1,4 +1,5 @@
 import {
+  assigneeName,
   branchRefOf,
   type ExternalRef,
   type GithubPrRef,
@@ -7,7 +8,8 @@ import {
   type Ticket,
 } from "@kibo/schema";
 
-export const assigneeOf = (ticket: Pick<Ticket, "assignee">): string | null => ticket.assignee?.ref ?? null;
+export const assigneeOf = (ticket: Pick<Ticket, "assignee">): string | null =>
+  ticket.assignee ? assigneeName(ticket.assignee) : null;
 
 export const branchOf = (refs: readonly ExternalRef[]): string | null => branchRefOf(refs)?.branch ?? null;
 

@@ -89,7 +89,9 @@ describe("integration errors", () => {
 describe("domain errors", () => {
   test("domain errors answer their HTTP status", async () => {
     const cases = [
-      ["PROFILE_IN_USE", 409],
+      ["AGENT_IN_USE", 409],
+      ["AGENT_NOT_FOUND", 404],
+      ["READ_ONLY", 403],
       ["INVALID_TRANSITION", 409],
       ["GIT_PUSHED", 409],
       ["PATH_OUTSIDE_PROJECT", 403],

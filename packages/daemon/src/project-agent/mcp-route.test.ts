@@ -42,6 +42,10 @@ const LIST: AgentMcpRequest = { tool: "list_tickets", input: { status: "done" } 
 const PROGRESS: AgentMcpRequest = { tool: "ticket_progress", input: { plan: [] } };
 const SIGNAL: AgentMcpRequest = { tool: "signal_project", input: { kind: "ticket", title: "Tests" } };
 const LIST_SIGNALS: AgentMcpRequest = { tool: "list_signals", input: {} };
+const REVIEW: AgentMcpRequest = {
+  tool: "skill_review",
+  input: { reviews: [{ skill: "brainstorming", verdict: "ok", note: "Bien." }] },
+};
 
 test("the path takes a run id", () => {
   expect(AGENT_MCP_PATH.exec(`/agent-mcp/${PROJECT_RUN}`)?.[1]).toBe(PROJECT_RUN);
@@ -100,6 +104,18 @@ test("a project run cannot signal itself", async () => {
     error: { code: "FORBIDDEN", message: "signal_project is not a project run tool" },
   });
   expect(calls).toEqual([]);
+});
+
+test("skill_review is shared: a ticket run and a project run both reach it", async () => {
+  const { s, calls } = sink(async (_run, tool) => `${tool}:ok`);
+  for (const [runId, token] of [
+    [TICKET_RUN, TICKET_TOKEN],
+    [PROJECT_RUN, GOOD],
+  ] as const) {
+    const res = await handleAgentMcp(post(runId, bearer(token), REVIEW), runId, s);
+    expect(await res.json()).toEqual({ ok: true, text: "skill_review:ok" });
+  }
+  expect(calls).toEqual([TICKET, PROJECT]);
 });
 
 test("a verified run that the agents no longer know is not found", async () => {

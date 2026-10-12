@@ -170,19 +170,21 @@ test("notes carry their source and the tickets they cite; the repo readmes are l
     "- Toute décision non tranchée passe par `ask_question` (choix provisoire, tu continues) ou `ask_user` (tu attends) ; **jamais dans le texte final**, Kibo ne le lit pas.",
   );
   expect(desired.guidelines[1]?.content).not.toContain("Toute question passe par `ask_user`");
-  expect(desired.profile).toMatchObject({
+  expect(desired.agent).toEqual({
     name: "emis-livraison",
     model: "opus",
-    permissionMode: "auto",
-    workspace: "worktree",
-    maxParallel: 2,
-    allow: [
-      "Bash(pnpm *)",
-      "Bash(git *)",
-      "Bash(gh pr *)",
-      "Bash(docker compose *)",
-      "Bash(npx playwright *)",
-    ],
+    settings: {
+      permissionMode: "auto",
+      workspace: "worktree",
+      maxParallel: 2,
+      allow: [
+        "Bash(pnpm *)",
+        "Bash(git *)",
+        "Bash(gh pr *)",
+        "Bash(docker compose *)",
+        "Bash(npx playwright *)",
+      ],
+    },
   });
 });
 

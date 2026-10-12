@@ -94,6 +94,8 @@ mock.module("../api", () =>
         if (req.method === "cliStatus")
           return Promise.resolve({ path: "/Users/adam/.local/bin/kibo", installed: false });
         if (req.method === "getProject") return Promise.resolve(snapshotOf(req.projectId));
+        if (req.method === "agents.list")
+          return Promise.resolve({ agents: [], notices: [], partialWatch: false });
         if (req.method === "listIntegrations")
           return Promise.resolve([
             { id: "git", state: "active", account: null, servers: [], error: null, resumeAt: null },
@@ -213,6 +215,13 @@ test("the sidebar leads to the agents, the queue and the settings", async () => 
   const crumbs = within(screen.getByRole("navigation", { name: "Fil d'Ariane" }));
   expect(crumbs.getByText("Agents")).toBeTruthy();
   expect(crumbs.getByText("Files d'attente").getAttribute("aria-current")).toBe("page");
+  await user.click(screen.getByRole("button", { name: "Skills" }));
+  expect(location.hash).toBe("#/agents/skills");
+  expect(await screen.findByRole("heading", { level: 1, name: "Skills" })).toBeTruthy();
+  expect(
+    screen.getByRole("button", { name: "Skills" }).closest("[data-active]")?.getAttribute("data-active"),
+  ).toBe("true");
+  expect(crumbs.getByText("Skills").getAttribute("aria-current")).toBe("page");
   await user.click(screen.getByRole("button", { name: "Paramètres" }));
   expect(await screen.findByRole("heading", { level: 1, name: "Général" })).toBeTruthy();
   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
@@ -249,7 +258,9 @@ test("my tickets: sidebar count, rows of every project, sheet and assign in the 
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   const kibo = screen.getByRole("region", { name: "Kibo" });
   await user.click(within(kibo).getByRole("button", { name: "Assigner" }));
-  expect(within(await screen.findByRole("dialog")).getByText("Assigner KIB-9 à un agent")).toBeTruthy();
+  expect(
+    within(await screen.findByRole("dialog")).getByText("Crée d'abord un agent dans la page Agents."),
+  ).toBeTruthy();
 });
 
 test("the workspace header leads to the workspace settings", async () => {
@@ -267,10 +278,9 @@ test("the header carries the actions of the agent screens", async () => {
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/agents");
   const user = userEvent.setup();
-  await user.click(await header().findByRole("button", { name: "Nouveau profil" }));
-  expect(within(await screen.findByRole("dialog")).getByText("Nouveau profil d'agent")).toBeTruthy();
+  await user.click(await header().findByRole("button", { name: "Nouvel agent" }));
+  expect(await screen.findByRole("dialog", { name: "Nouvel agent" })).toBeTruthy();
   await user.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   await go("#/agents/queue");
   await user.click(await header().findByRole("button", { name: "Mettre en pause l'admission" }));
   expect(calls).toContainEqual({ method: "setHost", patch: { paused: true } });

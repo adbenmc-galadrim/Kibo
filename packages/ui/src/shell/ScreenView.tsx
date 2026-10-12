@@ -22,6 +22,7 @@ import {
   QueuePage,
   SecurityPage,
   ShortcutsPage,
+  SkillsPage,
   SyncSettingsPage,
   WorkspacePage,
 } from "./lazy-screens";
@@ -92,12 +93,11 @@ export function ScreenView(props: Props) {
       />
     );
   if (screen === "workspace") return <WorkspacePage config={config} />;
+  if (screen === "skills") return <SkillsPage projects={projects} />;
   if (!config) return null;
   if (screen === "domains") return <DomainsPage config={config} projects={projects} />;
   if (!agents) return null;
   if (screen === "agents")
-    return <AgentsPage state={agents} config={config} projects={projects} now={now} onOpenRun={onOpenRun} />;
-  return (
-    <QueuePage state={agents} profiles={config.profiles} projects={projects} now={now} onAnswer={onAnswer} />
-  );
+    return <AgentsPage state={agents} projects={projects} now={now} onOpenRun={onOpenRun} />;
+  return <QueuePage state={agents} projects={projects} now={now} onAnswer={onAnswer} />;
 }

@@ -1,0 +1,35 @@
+import type { Toolchain } from "@kibo/devkit";
+import type { HostLoad, Session } from "@kibo/schema";
+import type { AgentSource } from "./agents/neutral-agents";
+import type { Notice } from "./agents/notifier";
+import type { ComponentsDeps } from "./components/service";
+import type { IntegrationFlags } from "./integrations/bootstrap";
+import type { Redactor } from "./integrations/redact";
+import type { LogBuffer } from "./log-buffer";
+import type { Probe } from "./single-instance";
+
+export type DaemonOptions = {
+  home: string;
+  port: number;
+  sandboxPort: number;
+  uiDir: string | null;
+  dev: boolean;
+  toolchain: Toolchain;
+  user: string;
+  notifications?: Session["notifications"];
+  notify?: (notice: Notice) => void;
+  claudeBin?: string | null;
+  sampler?: () => HostLoad;
+  integrations?: IntegrationFlags;
+  redactor?: Redactor;
+  logBuffer?: LogBuffer;
+  userHome?: string;
+  agentEnv?: Record<string, string | undefined>;
+  transcriptRoot?: string;
+  assistantTimeoutMs?: number;
+  marketAllowLoopback?: boolean;
+  probe?: Probe;
+  agentSource?: AgentSource;
+} & Partial<
+  Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli" | "cliStatus">
+>;

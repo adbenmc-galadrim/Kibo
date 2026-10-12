@@ -4,7 +4,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { frMoments } from "../i18n/fr-moments";
 import { Feed } from "./Feed";
-import { FEED_RUN, MOMENTS, PLAN, REPORT, WORKTREE } from "./fixtures";
+import { actions, FEED_RUN, MOMENTS, PLAN, REPORT, SKILL_ACTIONS, WORKTREE } from "./fixtures";
 import { PlanSteps } from "./PlanSteps";
 import { ReportCard } from "./ReportCard";
 
@@ -217,4 +217,48 @@ test("without a handler the signal moment is plain text", () => {
   render(<Feed moments={[signal]} texts={frMoments} />);
   expect(screen.getByText("Signal à l'agent de projet · Blocage · « Attend KIB-12 »")).toBeTruthy();
   expect(screen.queryByRole("button")).toBeNull();
+});
+
+test("screen 196: skills used, refused and reviewed read as sentences", async () => {
+  render(<Feed moments={[raw(actions(SKILL_ACTIONS))]} texts={frMoments} />);
+  await userEvent.setup().click(groupButton(0));
+  const rows = screen.getAllByRole("listitem").filter((li) => li.hasAttribute("data-outcome"));
+  expect(rows.map((r) => r.querySelector("[data-phrase]")?.textContent)).toEqual([
+    "A utilisé le skill brainstorming",
+    "Kibo a refusé le skill deploy",
+    "Kibo a refusé le sous-agent seo",
+    "A laissé une review de 2 skills skill_review",
+  ]);
+  expect(within(nth(rows, 0)).getByText("Skill")).toBeTruthy();
+  expect(within(nth(rows, 1)).getByLabelText("refusé")).toBeTruthy();
+  expect(within(nth(rows, 0)).getByText("brainstorming").tagName).toBe("CODE");
+});
+
+test("the skills reminders say what Kibo asked", () => {
+  render(
+    <Feed
+      moments={[
+        raw({ kind: "reminder", reminder: "skills" }),
+        { ...raw({ kind: "reminder", reminder: "report_skills" }), seq: 100 },
+      ]}
+      texts={frMoments}
+    />,
+  );
+  expect(screen.getByText("Kibo a rappelé la review des skills")).toBeTruthy();
+  expect(screen.getByText("Kibo a rappelé le compte rendu et la review des skills")).toBeTruthy();
+});
+
+test("screen 196: a skill use and a refusal each stand on their own line, the refusal in red", () => {
+  const used = nth(SKILL_ACTIONS, 0);
+  const refused = nth(SKILL_ACTIONS, 1);
+  render(
+    <Feed
+      moments={[raw(actions([used])), { ...raw(actions([refused])), id: 100, seq: 100 }]}
+      texts={frMoments}
+    />,
+  );
+  const line = screen.getByRole("button", { name: "A utilisé le skill brainstorming" });
+  expect(within(line).getByText("brainstorming").tagName).toBe("CODE");
+  const refusal = screen.getByRole("button", { name: "Kibo a refusé le skill deploy" });
+  expect(refusal.className).toContain("text-destructive");
 });

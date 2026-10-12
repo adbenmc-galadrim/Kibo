@@ -4,7 +4,7 @@ import { cleanHarness, run, setup, waitUntil } from "./orchestrator.test-helper"
 cleanHarness();
 
 const assignT1 = (h: ReturnType<typeof setup>) =>
-  h.orch.assign({ projectId: "p1", ticketId: "t1", profileId: "opus", brief: "" });
+  h.orch.assign({ projectId: "p1", ticketId: "t1", profileId: "global:opus", brief: "" });
 
 test("each turn tells the lifecycle when the process is spawned and after its exit is recorded", async () => {
   const seen: string[] = [];

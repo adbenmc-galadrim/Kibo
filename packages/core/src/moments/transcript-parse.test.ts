@@ -83,9 +83,18 @@ test("every ignored entry type is ignored", () => {
   }
 });
 
-test("unknown formats become raw lines", () => {
-  const lines = fixtureLines("unknown-format");
+test("unreadable lines become raw lines", () => {
+  const lines = fixtureLines("unknown-format").filter((l) => !l.includes("mystery"));
   expect(lines.map(parseTranscriptLine)).toEqual(lines.map((text) => ({ kind: "raw", text })));
+});
+
+test("an entry of an unknown type is skipped, never raw", () => {
+  const lines = [
+    { type: "mystery", value: 1 },
+    { type: "custom-title-v2", customTitle: "pan", sessionId: "s1" },
+    { type: "notice", message: { content: "texte" } },
+  ];
+  for (const line of lines) expect(parseTranscriptLine(JSON.stringify(line))).toEqual({ kind: "skipped" });
 });
 
 test("a line cut in the middle is raw, never a half parsed entry", () => {
@@ -169,7 +178,7 @@ test("patches count added and removed lines, not file headers", () => {
   expect(patchOf({ structuredPatch: "x" })).toBeNull();
 });
 
-const KINDS: readonly ParsedLine["kind"][] = ["assistant", "user", "ignored", "raw"];
+const KINDS: readonly ParsedLine["kind"][] = ["assistant", "user", "ignored", "skipped", "raw"];
 
 test("parsing never throws, whatever the line", () => {
   const anyJson = fc.jsonValue().map((v) => JSON.stringify(v));
@@ -192,6 +201,8 @@ test("session metadata written by the CLI is ignored", () => {
     { type: "atis-latch", atis: "2bb01393fe0c7041", sessionId: "s1" },
     { type: "last-prompt", lastPrompt: "# CAL-1 · Ajouter la soustraction", leafUuid: "u1", sessionId: "s1" },
     { type: "cost-state", sessionId: "s1", totalCostUSD: 0.16, modelUsage: {} },
+    { type: "custom-title", customTitle: "pan · livraison · PAN-1", sessionId: "s1" },
+    { type: "agent-name", agentName: "pan · livraison · PAN-1", sessionId: "s1" },
   ];
   for (const line of lines) expect(parseTranscriptLine(JSON.stringify(line))).toEqual({ kind: "ignored" });
 });

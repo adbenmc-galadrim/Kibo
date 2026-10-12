@@ -7,13 +7,11 @@ import {
   createWorkspaceDoc,
   registerProject,
 } from "@kibo/core";
-import { ensureSystemProfiles } from "@kibo/core/agent-profiles";
 import type { LoroDoc } from "loro-crdt";
 import { diagnosticCounts } from "./counts";
 
 test("the counts add tickets and instances across projects", () => {
   const workspace = createWorkspaceDoc();
-  ensureSystemProfiles(workspace);
   const docs = new Map<string, LoroDoc>();
   for (const [id, key] of [
     ["p1", "KIB"],
@@ -39,6 +37,7 @@ test("the counts add tickets and instances across projects", () => {
       return doc;
     },
     components: () => 5,
+    agents: () => 3,
   });
-  expect(counts).toEqual({ projects: 2, tickets: 3, components: 5, instances: 1, profiles: 4 });
+  expect(counts).toEqual({ projects: 2, tickets: 3, components: 5, instances: 1, profiles: 3 });
 });

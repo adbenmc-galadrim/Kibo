@@ -27,6 +27,7 @@ function home(): string {
   for (const name of [
     "components/src/hello",
     "notes/DEMO",
+    "history/agents/global/review-pr/agent.md",
     "files/DEMO",
     "runs/r1",
     "mcp",
@@ -39,6 +40,7 @@ function home(): string {
   writeFileSync(join(h, "daemon.json"), "{}");
   writeFileSync(join(h, "components/src/hello/ui.tsx"), "export const x = 1;");
   writeFileSync(join(h, "notes/DEMO/bienvenue.md"), "# Bienvenue");
+  writeFileSync(join(h, "history/agents/global/review-pr/agent.md/1000-abcdef12"), "# Version");
   writeFileSync(join(h, "files/DEMO/big.glb"), "glTF");
   writeFileSync(join(h, "remote/cert.pem"), "cert");
   return h;
@@ -70,7 +72,7 @@ const input = (h: string, databases: { file: string; vacuumInto(path: string): v
   databases,
 });
 
-test("a backup copies both databases as consistent snapshots plus components and notes, never secrets", async () => {
+test("a backup copies both databases as consistent snapshots plus components, notes and history, never secrets", async () => {
   const h = home();
   const kibo = database(h, "kibo.db");
   const runs = database(h, "runs.db");
@@ -88,6 +90,9 @@ test("a backup copies both databases as consistent snapshots plus components and
   expect(existsSync(join(dir, "runs.db"))).toBe(true);
   expect(readFileSync(join(dir, "components/src/hello/ui.tsx"), "utf8")).toBe("export const x = 1;");
   expect(readFileSync(join(dir, "notes/DEMO/bienvenue.md"), "utf8")).toBe("# Bienvenue");
+  expect(readFileSync(join(dir, "history/agents/global/review-pr/agent.md/1000-abcdef12"), "utf8")).toBe(
+    "# Version",
+  );
   for (const name of BACKUP_EXCLUDED) expect(existsSync(join(dir, name))).toBe(false);
   expect(statSync(dir).mode & 0o777).toBe(0o700);
   expect(statSync(join(dir, "kibo.db")).mode & 0o777).toBe(0o600);
@@ -98,7 +103,7 @@ test("a backup copies both databases as consistent snapshots plus components and
     reason: "manual",
     appVersion: "1.5.0",
     createdAt: 10,
-    entries: ["kibo.db", "runs.db", "components", "notes"],
+    entries: ["kibo.db", "runs.db", "components", "notes", "history"],
   });
   expect(info.bytes).toBeGreaterThan(0);
   expect(await readBackups(dest)).toEqual([info]);

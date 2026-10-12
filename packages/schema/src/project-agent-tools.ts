@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { AgentScope } from "./agent";
 import type { KiboErrorCode } from "./errors";
 import { TicketKey } from "./ids";
 import { LabelName } from "./label";
@@ -7,6 +8,7 @@ import { TICKET_TOOL_NAMES } from "./progress";
 import { ProposeBatchInput } from "./project-agent";
 import { RunState } from "./run";
 import { PROJECT_SIGNAL_TOOLS } from "./signal";
+import { SHARED_TOOL_NAMES, SKILL_REVIEW_TOOL } from "./skill";
 import { StatusId } from "./status";
 
 export const PROJECT_AGENT_TOOLS = [
@@ -25,7 +27,10 @@ export const PROJECT_AGENT_TOOLS = [
 export type ProjectAgentTool = (typeof PROJECT_AGENT_TOOLS)[number];
 
 export const mcpToolName = (tool: string): string => `mcp__kibo__${tool}`;
-export const PROJECT_AGENT_MCP_TOOLS: readonly string[] = PROJECT_AGENT_TOOLS.map(mcpToolName);
+export const PROJECT_AGENT_MCP_TOOLS: readonly string[] = [
+  ...PROJECT_AGENT_TOOLS.map(mcpToolName),
+  SKILL_REVIEW_TOOL,
+];
 export const PROJECT_AGENT_READ_TOOLS: readonly string[] = ["Read", "Grep", "Glob"];
 export const PROJECT_AGENT_DENY: readonly string[] = [
   "Bash",
@@ -75,13 +80,21 @@ export const TOOL_INPUTS: Record<ProjectAgentTool, z.ZodTypeAny> = {
 };
 
 export const AgentMcpRequest = z.object({
-  tool: z.enum([...PROJECT_AGENT_TOOLS, ...TICKET_TOOL_NAMES]),
+  tool: z.enum([...PROJECT_AGENT_TOOLS, ...TICKET_TOOL_NAMES, ...SHARED_TOOL_NAMES]),
   input: z.record(z.string(), z.unknown()).default({}),
 });
 export type AgentMcpRequest = z.infer<typeof AgentMcpRequest>;
 export type AgentMcpReply =
   | { ok: true; text: string }
   | { ok: false; error: { code: KiboErrorCode; message: string } };
+
+export type AssignableAgent = {
+  id: string;
+  name: string;
+  scope: AgentScope;
+  description: string;
+  model: string;
+};
 
 export type ToolPage<T> = { items: T[]; nextCursor: string | null; total: number };
 
@@ -116,7 +129,7 @@ export type ProjectOverview = {
   runs: { id: string; label: string; state: RunState; subject: string; position: number | null }[];
   openQuestions: { id: string; ticket: string; title: string; blocking: boolean }[];
   notes: { path: string; title: string }[];
-  profiles: { id: string; name: string; model: string }[];
+  profiles: AssignableAgent[];
   memory: string;
   openSignals: number;
 };

@@ -106,6 +106,7 @@ test("a question asked through ask_user is shown as an agent message", () => {
           detail: null,
           question: "Quel ticket d'abord ?",
           agentId: null,
+          toolUseId: null,
           ask: null,
           todos: null,
           stopHookActive: false,

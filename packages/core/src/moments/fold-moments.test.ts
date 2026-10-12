@@ -1,17 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import { hasSecret, MOMENT_ACTIONS_MAX, MOMENT_RAW_MAX, MomentData, type RunAction } from "@kibo/schema";
+import { hasSecret, MOMENT_ACTIONS_MAX, MOMENT_RAW_MAX, MomentData } from "@kibo/schema";
 import fc from "fast-check";
-import { emptyFold, type FoldContext, type Folded, flushActions, foldLines } from "./fold-moments";
-
-const fixtureLines = (name: string): string[] => {
-  const parts = readFileSync(join(import.meta.dir, "fixtures", "transcripts", `${name}.jsonl`), "utf8").split(
-    "\n",
-  );
-  parts.pop();
-  return parts;
-};
+import { emptyFold, type Folded, flushActions, foldLines } from "./fold-moments";
+import { actionsOf, CTX, fixtureLines, foldAll } from "./fold-moments.test-helper";
 
 const stringsOf = (value: unknown): string[] => {
   if (typeof value === "string") return [value];
@@ -19,16 +10,6 @@ const stringsOf = (value: unknown): string[] => {
   if (typeof value === "object" && value !== null) return Object.values(value).flatMap(stringsOf);
   return [];
 };
-
-const CTX: FoldContext = { stepId: "s2", now: 1_000 };
-
-const foldAll = (lines: readonly string[], ctx: FoldContext = CTX): Folded["moments"] => {
-  const folded = foldLines(emptyFold(), lines, ctx);
-  return [...folded.moments, ...flushActions(folded.state, ctx).moments];
-};
-
-const actionsOf = (moments: Folded["moments"]): RunAction[] =>
-  moments.flatMap((m) => (m.data.kind === "actions" ? m.data.actions : []));
 
 describe("a real edit and test session", () => {
   const moments = foldAll(fixtureLines("real-edit-bash"));
@@ -109,7 +90,6 @@ test("unknown lines become raw moments, bounded, and mark the fold as unknown", 
   const folded = foldLines(emptyFold(), fixtureLines("unknown-format"), CTX);
   expect(folded.moments.map((m) => m.data)).toEqual([
     { kind: "raw", text: "ceci n'est pas du JSON", partial: null },
-    { kind: "raw", text: '{"type":"mystery","value":1}', partial: null },
     { kind: "raw", text: "{}", partial: null },
     { kind: "raw", text: '{"type":"assistant"}', partial: null },
   ]);
@@ -117,6 +97,11 @@ test("unknown lines become raw moments, bounded, and mark the fold as unknown", 
   expect(folded.state.known).toBe(false);
   const long = foldLines(emptyFold(), ["x".repeat(5_000)], CTX).moments[0]?.data;
   expect(long?.kind === "raw" && long.text.length).toBe(MOMENT_RAW_MAX);
+});
+
+test("an entry of an unknown type yields nothing and leaves the fold unknown", () => {
+  const folded = foldLines(emptyFold(), [JSON.stringify({ type: "mystery", value: 1 })], CTX);
+  expect(folded).toEqual({ state: emptyFold(), moments: [] });
 });
 
 test("a recognized line marks the fold as known", () => {

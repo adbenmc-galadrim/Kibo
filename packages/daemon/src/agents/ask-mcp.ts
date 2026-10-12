@@ -1,6 +1,12 @@
 import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
-import { QUESTION_OPTIONS_MAX, RECIPIENT_ID_MAX, TICKET_TOOL_SPECS, TOOL_SPECS } from "@kibo/schema";
+import {
+  QUESTION_OPTIONS_MAX,
+  RECIPIENT_ID_MAX,
+  SHARED_TOOL_SPECS,
+  TICKET_TOOL_SPECS,
+  TOOL_SPECS,
+} from "@kibo/schema";
 import { z } from "zod";
 import { callDaemonTool, type McpToolReply } from "./mcp-client";
 
@@ -61,11 +67,10 @@ const ASK_TOOL_SPECS = [
 export type McpTools = "project" | "ticket" | null;
 export type DaemonCall = (tool: string, input: unknown) => Promise<McpToolReply>;
 
-const PROJECT_TOOL_SPECS = TOOL_SPECS.map(({ name, description, inputSchema }) => ({
-  name,
-  description,
-  inputSchema,
-}));
+const PROJECT_TOOL_SPECS = [
+  ...TOOL_SPECS.map(({ name, description, inputSchema }) => ({ name, description, inputSchema })),
+  ...SHARED_TOOL_SPECS,
+];
 
 const DAEMON_TOOL_SPECS = { project: PROJECT_TOOL_SPECS, ticket: TICKET_TOOL_SPECS };
 

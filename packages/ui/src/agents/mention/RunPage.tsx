@@ -5,6 +5,7 @@ import { useId, useRef, useState } from "react";
 import { fr } from "../../i18n/fr";
 import { frMoments } from "../../i18n/fr-moments";
 import { usePref } from "../../lib/local-pref";
+import { RunSkillReviews } from "../../moments/SkillReviewsBlock";
 import { useHost } from "../../shell/Host";
 import { DockPlan } from "../dock/DockPlan";
 import { ReviewButton } from "../ReviewButton";
@@ -95,6 +96,7 @@ export function RunPage({ runId }: { runId: string }) {
           )}
           <div className={CARD}>
             <RunReportSection runId={run.id} report={report} />
+            <RunSkillReviews runId={run.id} moments={moments} />
           </div>
         </aside>
       </div>

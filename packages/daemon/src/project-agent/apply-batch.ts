@@ -45,7 +45,7 @@ async function contextOf(deps: ApplyBatchDeps, batch: Batch): Promise<BatchConte
     project,
     runs: deps.agents().state().runs,
     notes: notes.map((n) => ({ path: n.path, hash: n.hash })),
-    profiles: data.profiles(),
+    agents: data.agents(batch.projectId),
     demoProject: data.isDemoProject(batch.projectId),
     viewer: data.viewer(batch.projectId),
     ...signalRefs(deps.signals, batch.projectId),

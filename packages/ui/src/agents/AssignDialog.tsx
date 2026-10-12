@@ -1,10 +1,11 @@
 import {
-  type AgentProfile,
+  type AgentSummary,
   type AssignPreview,
   type Domain,
   isInbox,
   KiboError,
   type ProjectSnapshot,
+  type ProjectSummary,
   type TicketView,
   type WorkspaceConfig,
 } from "@kibo/schema";
@@ -25,13 +26,16 @@ import { type FormEvent, useEffect, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
+import { frAgentsSkills } from "../i18n/fr-agents-skills";
 import { frInbox } from "../i18n/fr-inbox";
 import { projectDomainsOf } from "../lib/project-domains";
 import { KeyRequired } from "../shell/KeyRequired";
 import { canEdit } from "../state/access";
 import { NoFolderAlert, Notice, needsFolder, SpaceText, WaitingAlert } from "./AssignAlerts";
 import { AssignSession } from "./AssignSession";
-import { assignableProfiles, isDemoProfile } from "./demo-profile";
+import { assignableAgents, isDemoAgent } from "./assignable";
+import { modelText, scopeText } from "./catalog/agent-labels";
+import { useAgentList } from "./catalog/use-agent-list";
 import { reasonText } from "./format";
 
 type Props = {
@@ -39,26 +43,32 @@ type Props = {
   demo?: boolean;
   ticketId: string | null;
   config: WorkspaceConfig | null;
+  projects?: readonly ProjectSummary[];
   onClose: () => void;
   onEditProject?: (projectId: string) => void;
 };
 
+type ViewProps = Props & { agents: AgentSummary[] };
+
 type FormProps = {
+  projects: readonly ProjectSummary[];
   project: ProjectSnapshot;
   ticketId: string | null;
-  profiles: AgentProfile[];
+  agents: AgentSummary[];
   domains: Domain[];
   onClose: () => void;
   onEditProject?: (projectId: string) => void;
 };
+
+const t = frAgentsSkills.assign;
 
 const assignable = (t: TicketView) => t.statusId !== "done" && t.key !== null;
 
 function queueText(preview: AssignPreview | null): string {
   if (!preview) return "-";
   if (preview.reason?.kind === "ticket_busy") return frAgentsPage.assign.ticketBusy;
-  if (preview.position === null) return fr.assign.startsNow;
-  return fr.assign.entersQueue(reasonText(preview.reason), preview.position);
+  if (preview.position === null) return t.startsNow;
+  return t.entersQueue(reasonText(preview.reason), preview.position);
 }
 
 function queueTone(preview: AssignPreview | null): string | undefined {
@@ -66,18 +76,28 @@ function queueTone(preview: AssignPreview | null): string | undefined {
   return preview.reason?.kind === "ticket_busy" ? "text-destructive" : "text-cyan-600 dark:text-cyan-400";
 }
 
-function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProject }: FormProps) {
+function AgentOption({ agent, projects }: { agent: AgentSummary; projects: readonly ProjectSummary[] }) {
+  if (isDemoAgent(agent)) return <>{frAgentsPage.demo.option}</>;
+  return (
+    <span className="grid min-w-0 text-left">
+      <span className="truncate">{t.agentOption(agent.name, scopeText(agent, projects))}</span>
+      <span className="truncate text-xs text-muted-foreground">{agent.description}</span>
+    </span>
+  );
+}
+
+function AssignForm({ projects, project, ticketId, agents, domains, onClose, onEditProject }: FormProps) {
   const id = useId();
   const open = project.tickets.filter(assignable);
   const [chosenTicket, setChosenTicket] = useState(ticketId ?? open[0]?.id ?? "");
-  const [profileId, setProfileId] = useState(profiles[0]?.id ?? "");
+  const [profileId, setProfileId] = useState(agents[0]?.ref ?? "");
   const [brief, setBrief] = useState("");
   const [preview, setPreview] = useState<AssignPreview | null>(null);
   const [previewFailed, setPreviewFailed] = useState(false);
   const [fresh, setFresh] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const ticket = project.tickets.find((t) => t.id === chosenTicket) ?? null;
-  const profile = profiles.find((p) => p.id === profileId) ?? null;
+  const profile = agents.find((p) => p.ref === profileId) ?? null;
   const domain = domains.find((d) => d.id === ticket?.domainId)?.name ?? null;
   const projectId = project.meta.id;
   const keyed = ticket?.key != null;
@@ -108,15 +128,13 @@ function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProje
         method: "assignAgent",
         projectId,
         ticketId: ticket.id,
-        profileId: profile.id,
+        profileId: profile.ref,
         brief: brief.trim(),
         fresh,
       });
     } catch (err) {
       setFailure(
-        err instanceof KiboError && err.code === "CONFLICT"
-          ? frAgentsPage.assign.ticketBusy
-          : fr.assign.failed,
+        err instanceof KiboError && err.code === "CONFLICT" ? frAgentsPage.assign.ticketBusy : t.failed,
       );
       return;
     }
@@ -129,7 +147,7 @@ function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProje
       disabled={!ticket || !profile || folderMissing || busy}
       className="bg-brand-strong text-white hover:bg-brand-strong/90"
     >
-      {fr.assign.submit}
+      {t.submit}
     </Button>
   );
 
@@ -138,14 +156,12 @@ function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProje
       <DialogContent className="sm:max-w-[600px]">
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>
-            <DialogTitle>
-              {ticketId && ticket ? fr.assign.title(ticket.keyLabel) : fr.assign.launchTitle}
-            </DialogTitle>
-            {ticket && <DialogDescription>{fr.assign.subtitle(ticket.title, domain)}</DialogDescription>}
+            <DialogTitle>{ticketId && ticket ? t.title(ticket.keyLabel) : t.launchTitle}</DialogTitle>
+            {ticket && <DialogDescription>{t.subtitle(ticket.title, domain)}</DialogDescription>}
           </DialogHeader>
           {!ticketId && (
             <div className="grid gap-2">
-              <Label htmlFor={`${id}-ticket`}>{fr.assign.ticket}</Label>
+              <Label htmlFor={`${id}-ticket`}>{t.ticket}</Label>
               <Select value={chosenTicket} onValueChange={setChosenTicket}>
                 <SelectTrigger id={`${id}-ticket`} className="w-full">
                   <SelectValue />
@@ -162,22 +178,16 @@ function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProje
             </div>
           )}
           <div className="grid gap-2">
-            <Label htmlFor={`${id}-profile`}>{fr.assign.profile}</Label>
+            <Label htmlFor={`${id}-profile`}>{t.agent}</Label>
             <Select value={profileId} onValueChange={setProfileId}>
               <SelectTrigger id={`${id}-profile`} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {profiles.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
+                {agents.map((p) => (
+                  <SelectItem key={p.ref} value={p.ref}>
                     <Bot aria-hidden />
-                    {isDemoProfile(p)
-                      ? frAgentsPage.demo.option
-                      : fr.assign.profileOption(
-                          p.name,
-                          fr.agents.modelNames[p.model],
-                          fr.strategiesShort[p.workspace],
-                        )}
+                    <AgentOption agent={p} projects={projects} />
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -190,27 +200,27 @@ function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProje
             />
           )}
           <div className="grid gap-2">
-            <Label htmlFor={`${id}-brief`}>{fr.assign.brief}</Label>
+            <Label htmlFor={`${id}-brief`}>{t.brief}</Label>
             <Input
               id={`${id}-brief`}
               value={brief}
-              placeholder={fr.assign.briefPlaceholder}
+              placeholder={t.briefPlaceholder}
               onChange={(e) => setBrief(e.target.value)}
             />
           </div>
           {ticket && profile && (
             <dl className="grid grid-cols-[9rem_1fr] gap-y-1.5 rounded-md border bg-muted/30 p-3 text-sm">
-              <dt className="text-muted-foreground">{fr.assign.space}</dt>
+              <dt className="text-muted-foreground">{t.space}</dt>
               <dd>
-                <SpaceText profile={profile} project={project} ticket={ticket} />
+                <SpaceText agent={profile} project={project} ticket={ticket} />
               </dd>
-              <dt className="text-muted-foreground">{fr.assign.permissions}</dt>
-              <dd>{profile.permissionMode}</dd>
-              <dt className="text-muted-foreground">{fr.assign.guidelines}</dt>
-              <dd>
-                {preview ? fr.assign.guidelineChain(project.meta.name, domain, preview.guidelines) : "-"}
-              </dd>
-              <dt className="text-muted-foreground">{fr.assign.queue}</dt>
+              <dt className="text-muted-foreground">{t.model}</dt>
+              <dd>{modelText(profile.model)}</dd>
+              <dt className="text-muted-foreground">{t.permissions}</dt>
+              <dd>{profile.settings.permissionMode}</dd>
+              <dt className="text-muted-foreground">{t.guidelines}</dt>
+              <dd>{preview ? t.guidelineChain(project.meta.name, domain, preview.guidelines) : "-"}</dd>
+              <dt className="text-muted-foreground">{t.queue}</dt>
               <dd className={queueTone(preview)}>{queueText(preview)}</dd>
               {preview && !busy && (
                 <AssignSession session={preview.session} fresh={fresh} onFreshChange={setFresh} />
@@ -219,7 +229,7 @@ function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProje
           )}
           {previewFailed && (
             <p role="alert" className="text-sm text-destructive">
-              {fr.assign.previewFailed}
+              {t.previewFailed}
             </p>
           )}
           {failure && (
@@ -243,26 +253,45 @@ function hasOpenTicket(project: ProjectSnapshot): boolean {
   return project.tickets.some(assignable);
 }
 
-export function AssignDialog({ project, demo = false, ticketId, config, onClose, onEditProject }: Props) {
-  if (!project) return <Notice title={fr.assign.launchTitle} text={fr.assign.noProject} onClose={onClose} />;
+export function AssignDialogView({
+  project,
+  demo = false,
+  ticketId,
+  config,
+  agents,
+  projects = [],
+  onClose,
+  onEditProject,
+}: ViewProps) {
+  if (!project) return <Notice title={t.launchTitle} text={t.noProject} onClose={onClose} />;
   if (isInbox(project.meta.id))
-    return <Notice title={fr.assign.launchTitle} text={frInbox.noAgent} onClose={onClose} />;
+    return <Notice title={t.launchTitle} text={frInbox.noAgent} onClose={onClose} />;
   if (!config) return null;
-  const assignable = assignableProfiles(config.profiles, demo);
+  const assignable = assignableAgents(agents, demo);
   if (assignable.length === 0) {
-    return <Notice title={fr.assign.launchTitle} text={fr.assign.noProfile} onClose={onClose} />;
+    return <Notice title={t.launchTitle} text={t.noAgent} onClose={onClose} />;
   }
   if (!ticketId && !hasOpenTicket(project)) {
-    return <Notice title={fr.assign.launchTitle} text={fr.assign.noTicket} onClose={onClose} />;
+    return <Notice title={t.launchTitle} text={t.noTicket} onClose={onClose} />;
   }
   return (
     <AssignForm
+      projects={projects}
       project={project}
       ticketId={ticketId}
-      profiles={assignable}
+      agents={assignable}
       domains={projectDomainsOf(project, config) ?? []}
       onClose={onClose}
       onEditProject={onEditProject}
     />
   );
+}
+
+export function AssignDialog(props: Props) {
+  const list = useAgentList(props.project?.meta.id ?? null);
+  if (props.project && !isInbox(props.project.meta.id) && list.agents === null) {
+    if (!list.failed) return null;
+    return <Notice title={t.launchTitle} text={t.loadFailed} onClose={props.onClose} />;
+  }
+  return <AssignDialogView {...props} agents={list.agents ?? []} />;
 }

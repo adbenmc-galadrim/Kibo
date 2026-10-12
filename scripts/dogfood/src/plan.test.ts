@@ -6,7 +6,6 @@ import {
   missingDomains,
   missingInstances,
   missingPages,
-  missingProfiles,
   planGuidelines,
   planTickets,
 } from "./plan";
@@ -29,7 +28,6 @@ const instance = (pageId: string, component: string): Instance => ({
 const ids: ResolvedIds = {
   projectId: "p1",
   domains: new Map([["Sync", "d1"]]),
-  profiles: new Map([["kibo-dev", "pr1"]]),
 };
 
 describe("missingDomains", () => {
@@ -47,22 +45,12 @@ describe("missingDomains", () => {
   });
 });
 
-describe("missingProfiles", () => {
-  test("keeps only the profiles whose name is unknown", () => {
-    const existing = [{ name: "kibo-dev" }];
-    expect(missingProfiles(existing, [{ name: "kibo-dev" }, { name: "kibo-lead" }])).toEqual([
-      { name: "kibo-lead" },
-    ]);
-  });
-});
-
 describe("planGuidelines", () => {
   const desired: DesiredGuideline[] = [
     { owner: { scope: "workspace" }, path: "conventions.md", content: "A" },
     { owner: { scope: "project" }, path: "kibo.md", content: "B" },
     { owner: { scope: "domain", name: "Sync" }, path: "sync.md", content: "C" },
     { owner: { scope: "domain", name: "Absent" }, path: "absent.md", content: "D" },
-    { owner: { scope: "profile", name: "kibo-dev" }, path: "consignes.md", content: "E" },
   ];
 
   test("adds every resolvable guideline on an empty workspace", () => {
@@ -71,7 +59,6 @@ describe("planGuidelines", () => {
       [{ scope: "workspace" }, "conventions.md"],
       [{ scope: "project", projectId: "p1" }, "kibo.md"],
       [{ scope: "domain", domainId: "d1" }, "sync.md"],
-      [{ scope: "profile", profileId: "pr1" }, "consignes.md"],
     ]);
     expect(plan.unresolved).toEqual(["domain Absent: absent.md"]);
   });

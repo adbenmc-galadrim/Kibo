@@ -1,38 +1,18 @@
 import { describe, expect, test } from "bun:test";
-import {
-  type AgentProfile,
-  ConfigCommand,
-  type Domain,
-  type Guideline,
-  type ProfileInput,
-} from "@kibo/schema";
+import { ConfigCommand, type Domain, type Guideline } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import {
   configTarget,
-  ensureSystemProfiles,
+  dropProfiles,
   executeConfigCommand,
-  getProfile,
   listDomains,
   listGuidelines,
-  listProfiles,
   workspaceDescription,
   workspaceName,
 } from "./agent-config";
-import { updateProfile } from "./agent-profiles";
 import { createProjectDoc } from "./project";
 import { createWorkspaceDoc } from "./workspace";
 
-const opus: ProfileInput = {
-  name: "opus-dev",
-  model: "opus",
-  execution: "cli",
-  permissionMode: "acceptEdits",
-  workspace: "worktree",
-  maxParallel: 2,
-  subagents: ["sonnet", "haiku"],
-  enabled: true,
-  allow: [],
-};
 const run = <T>(doc: LoroDoc, cmd: ConfigCommand) => executeConfigCommand(doc, cmd) as T;
 const project = () =>
   createProjectDoc({
@@ -44,59 +24,6 @@ const project = () =>
     worktree: null,
     storybook: null,
   });
-
-describe("profiles", () => {
-  test("are created, listed, updated and deleted", () => {
-    const ws = createWorkspaceDoc();
-    const p = run<AgentProfile>(ws, { method: "createProfile", profile: opus });
-    expect(p.id).toBeString();
-    expect(p).toEqual({ ...opus, id: p.id, system: false });
-    expect(listProfiles(ws)).toEqual([p]);
-    const updated = run<AgentProfile>(ws, {
-      method: "updateProfile",
-      profileId: p.id,
-      patch: { maxParallel: 3 },
-    });
-    expect(getProfile(ws, p.id)).toEqual({ ...p, maxParallel: 3 });
-    expect(updated.maxParallel).toBe(3);
-    run(ws, { method: "deleteProfile", profileId: p.id });
-    expect(listProfiles(ws)).toEqual([]);
-    expect(() => getProfile(ws, p.id)).toThrow("NOT_FOUND");
-  });
-
-  test("a patch that leaves the rules out keeps them, an explicit list replaces them", () => {
-    const ws = createWorkspaceDoc();
-    const rules = ["Bash(pnpm *)", "Edit"];
-    const p = run<AgentProfile>(ws, { method: "createProfile", profile: { ...opus, allow: rules } });
-    const { allow: _omitted, ...withoutRules } = opus;
-    const parsed = ConfigCommand.parse({
-      method: "updateProfile",
-      profileId: p.id,
-      patch: { ...withoutRules, maxParallel: 3 },
-    });
-    expect(run<AgentProfile>(ws, parsed).allow).toEqual(rules);
-    expect(updateProfile(ws, p.id, { maxParallel: 4, allow: undefined }).allow).toEqual(rules);
-    expect(getProfile(ws, p.id)).toMatchObject({ maxParallel: 4, allow: rules });
-    expect(() => updateProfile(ws, p.id, { allow: ["Bash(*)"] })).toThrow("INVALID_INPUT");
-    expect(
-      run<AgentProfile>(ws, { method: "updateProfile", profileId: p.id, patch: { allow: [] } }).allow,
-    ).toEqual([]);
-  });
-
-  test("names are unique and values are validated", () => {
-    const ws = createWorkspaceDoc();
-    const p = run<AgentProfile>(ws, { method: "createProfile", profile: opus });
-    expect(() => run(ws, { method: "createProfile", profile: opus })).toThrow("INVALID_INPUT");
-    expect(() => run(ws, { method: "updateProfile", profileId: p.id, patch: { maxParallel: 0 } })).toThrow(
-      "INVALID_INPUT",
-    );
-    expect(() => run(ws, { method: "updateProfile", profileId: "nope", patch: {} })).toThrow("NOT_FOUND");
-  });
-
-  test("live in the workspace doc only", () => {
-    expect(() => run(project(), { method: "createProfile", profile: opus })).toThrow("INVALID_INPUT");
-  });
-});
 
 describe("domains", () => {
   test("names are unique regardless of case, deleting one drops its guidelines", () => {
@@ -129,9 +56,8 @@ describe("domains", () => {
 });
 
 describe("guidelines", () => {
-  test("workspace, domain and profile guidelines live in the workspace doc", () => {
+  test("workspace and domain guidelines live in the workspace doc", () => {
     const ws = createWorkspaceDoc();
-    const p = run<AgentProfile>(ws, { method: "createProfile", profile: opus });
     const d = run<Domain>(ws, { method: "createDomain", domain: { name: "Core", color: "#14B8A6" } });
     run(ws, { method: "addGuideline", owner: { scope: "workspace" }, path: "general.md", content: "a" });
     run(ws, {
@@ -140,17 +66,11 @@ describe("guidelines", () => {
       path: "core.md",
       content: "b",
     });
-    run(ws, {
-      method: "addGuideline",
-      owner: { scope: "profile", profileId: p.id },
-      path: "front.md",
-      content: "c",
-    });
     expect(
       listGuidelines(ws)
         .map((g) => g.owner.scope)
         .sort(),
-    ).toEqual(["domain", "profile", "workspace"]);
+    ).toEqual(["domain", "workspace"]);
     expect(() =>
       run(ws, {
         method: "addGuideline",
@@ -159,8 +79,6 @@ describe("guidelines", () => {
         content: "",
       }),
     ).toThrow("NOT_FOUND");
-    run(ws, { method: "deleteProfile", profileId: p.id });
-    expect(listGuidelines(ws).some((g) => g.owner.scope === "profile")).toBe(false);
   });
 
   test("project guidelines live in their own project doc", () => {
@@ -255,138 +173,51 @@ describe("workspace name", () => {
   });
 });
 
-describe("system profiles", () => {
-  test("ensureSystemProfiles creates the system profiles once, with the first user model", () => {
-    const ws = createWorkspaceDoc();
-    run(ws, { method: "createProfile", profile: { ...opus, name: "zed", model: "haiku" } });
-    run(ws, { method: "createProfile", profile: { ...opus, name: "alpha", model: "opus" } });
-    expect(ensureSystemProfiles(ws)).toBe(true);
-    expect(ensureSystemProfiles(ws)).toBe(false);
-    const system = listProfiles(ws).filter((p) => p.system);
-    expect(
-      system.map((p) => [p.id, p.permissionMode, p.model, p.enabled, p.maxParallel, p.workspace]),
-    ).toEqual([
-      ["assistant", "default", "opus", true, 1, "isolated"],
-      ["demo", "acceptEdits", "opus", true, 1, "isolated"],
-      ["generateur", "acceptEdits", "opus", true, 2, "isolated"],
-      ["project-agent", "default", "opus", true, 1, "isolated"],
-    ]);
-  });
-
-  test("without user profiles the model is sonnet; model and enabled survive a restart", () => {
-    const ws = createWorkspaceDoc();
-    ensureSystemProfiles(ws);
-    expect(getProfile(ws, "assistant").model).toBe("sonnet");
-    run(ws, { method: "updateProfile", profileId: "generateur", patch: { model: "opus", enabled: false } });
-    expect(ensureSystemProfiles(ws)).toBe(false);
-    expect(getProfile(ws, "generateur")).toMatchObject({
-      model: "opus",
-      enabled: false,
-      permissionMode: "acceptEdits",
+describe("legacy profiles", () => {
+  const legacy = (ws: LoroDoc) => {
+    ws.getMap("profiles").set("p1", { id: "p1", name: "opus-dev" });
+    ws.getMap("profiles").set("p2", { id: "p2", name: "haiku-tests" });
+    const guidelines = ws.getMap("guidelines");
+    guidelines.set("g1", {
+      id: "g1",
+      owner: { scope: "profile", profileId: "p1" },
+      path: "a.md",
+      content: "a",
     });
+    guidelines.set("g2", {
+      id: "g2",
+      owner: { scope: "profile", profileId: "p2" },
+      path: "b.md",
+      content: "b",
+    });
+    guidelines.set("g3", { id: "g3", owner: { scope: "workspace" }, path: "c.md", content: "c" });
+    ws.commit();
+  };
+
+  test("their guidelines are ignored when reading", () => {
+    const ws = createWorkspaceDoc();
+    legacy(ws);
+    expect(listGuidelines(ws).map((g) => g.id)).toEqual(["g3"]);
   });
 
-  test("a tampered system profile is restored to its fixed values", () => {
+  test("dropProfiles empties the profiles and their guidelines, once", () => {
     const ws = createWorkspaceDoc();
-    ensureSystemProfiles(ws);
-    ws.getMap("profiles").set("assistant", {
-      ...getProfile(ws, "assistant"),
-      maxParallel: 9,
-      model: "haiku",
+    legacy(ws);
+    expect(dropProfiles(ws)).toEqual({ profiles: 2, guidelines: 2 });
+    expect(ws.getMap("profiles").size).toBe(0);
+    expect(Object.keys(ws.getMap("guidelines").toJSON())).toEqual(["g3"]);
+    expect(dropProfiles(ws)).toEqual({ profiles: 0, guidelines: 0 });
+  });
+
+  test("a guideline that is neither legacy nor valid still reads as corrupt", () => {
+    const ws = createWorkspaceDoc();
+    ws.getMap("guidelines").set("bad", {
+      id: "bad",
+      owner: { scope: "workspace" },
+      path: "../x.md",
+      content: "",
     });
     ws.commit();
-    expect(ensureSystemProfiles(ws)).toBe(true);
-    expect(getProfile(ws, "assistant")).toMatchObject({ maxParallel: 1, model: "haiku", system: true });
-  });
-
-  test("a system profile only changes its model and enabled flag, and cannot be deleted", () => {
-    const ws = createWorkspaceDoc();
-    ensureSystemProfiles(ws);
-    expect(() =>
-      run(ws, { method: "updateProfile", profileId: "assistant", patch: { permissionMode: "acceptEdits" } }),
-    ).toThrow("INVALID_INPUT");
-    expect(() => run(ws, { method: "updateProfile", profileId: "assistant", patch: { name: "x" } })).toThrow(
-      "INVALID_INPUT",
-    );
-    expect(() => run(ws, { method: "deleteProfile", profileId: "generateur" })).toThrow("INVALID_INPUT");
-    expect(getProfile(ws, "generateur").system).toBe(true);
-  });
-
-  test("a user profile cannot take a system profile name", () => {
-    const ws = createWorkspaceDoc();
-    ensureSystemProfiles(ws);
-    expect(() => run(ws, { method: "createProfile", profile: { ...opus, name: "assistant" } })).toThrow(
-      "INVALID_INPUT",
-    );
-  });
-
-  test("a user profile already named like a system profile keeps working", () => {
-    const ws = createWorkspaceDoc();
-    ws.getMap("profiles").set("legacy", { ...opus, name: "assistant", id: "legacy" });
-    ws.commit();
-    const old = getProfile(ws, "legacy");
-    ensureSystemProfiles(ws);
-    run(ws, { method: "updateProfile", profileId: old.id, patch: { maxParallel: 3 } });
-    run(ws, { method: "updateProfile", profileId: "assistant", patch: { model: "haiku" } });
-    expect(getProfile(ws, old.id).maxParallel).toBe(3);
-    expect(getProfile(ws, "assistant").model).toBe("haiku");
-  });
-
-  test("the system flag comes from the id, not from the stored value", () => {
-    const ws = createWorkspaceDoc();
-    ensureSystemProfiles(ws);
-    const { system: _system, ...rewritten } = getProfile(ws, "assistant");
-    ws.getMap("profiles").set("assistant", rewritten);
-    ws.getMap("profiles").set("u1", { ...opus, name: "forged", id: "u1", system: true });
-    ws.commit();
-    expect(getProfile(ws, "assistant").system).toBe(true);
-    expect(getProfile(ws, "u1").system).toBe(false);
-    expect(
-      listProfiles(ws)
-        .filter((p) => p.system)
-        .map((p) => p.id),
-    ).toEqual(["assistant", "demo", "generateur", "project-agent"]);
-    expect(() => run(ws, { method: "deleteProfile", profileId: "assistant" })).toThrow("INVALID_INPUT");
-  });
-
-  test("a create or a patch cannot set the system flag", () => {
-    const ws = createWorkspaceDoc();
-    const user = run<AgentProfile>(ws, { method: "createProfile", profile: opus });
-    const patch = { maxParallel: 3, system: true };
-    expect(() => run(ws, { method: "updateProfile", profileId: user.id, patch })).toThrow("INVALID_INPUT");
-    expect(getProfile(ws, user.id)).toMatchObject({ system: false, maxParallel: 2 });
-    const profile = { ...opus, name: "sneaky", system: true };
-    expect(() => run(ws, { method: "createProfile", profile })).toThrow("INVALID_INPUT");
-    expect(listProfiles(ws).map((p) => p.name)).toEqual(["opus-dev"]);
-  });
-
-  test("a system profile name is reserved even before the system profiles exist", () => {
-    const ws = createWorkspaceDoc();
-    expect(() => run(ws, { method: "createProfile", profile: { ...opus, name: "generateur" } })).toThrow(
-      "INVALID_INPUT",
-    );
-    const user = run<AgentProfile>(ws, { method: "createProfile", profile: opus });
-    expect(() =>
-      run(ws, { method: "updateProfile", profileId: user.id, patch: { name: "assistant" } }),
-    ).toThrow("INVALID_INPUT");
-    expect(listProfiles(ws).map((p) => p.name)).toEqual(["opus-dev"]);
-  });
-
-  test("a legacy user profile named like a system profile can be renamed away", () => {
-    const ws = createWorkspaceDoc();
-    ws.getMap("profiles").set("old", { ...opus, name: "assistant", id: "old" });
-    ws.commit();
-    ensureSystemProfiles(ws);
-    run(ws, { method: "updateProfile", profileId: "old", patch: { name: "assistant", maxParallel: 3 } });
-    run(ws, { method: "updateProfile", profileId: "old", patch: { name: "legacy" } });
-    expect(getProfile(ws, "old")).toMatchObject({ name: "legacy", maxParallel: 3, system: false });
-  });
-
-  test("a stored profile written before phase 6 reads as a user profile, enabled", () => {
-    const ws = createWorkspaceDoc();
-    const { enabled: _enabled, ...legacy } = opus;
-    ws.getMap("profiles").set("old", { ...legacy, id: "old" });
-    ws.commit();
-    expect(getProfile(ws, "old")).toMatchObject({ system: false, enabled: true });
+    expect(() => listGuidelines(ws)).toThrow("STORE_CORRUPT");
   });
 });

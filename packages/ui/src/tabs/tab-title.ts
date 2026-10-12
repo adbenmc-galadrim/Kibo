@@ -35,9 +35,11 @@ export function describeTarget(target: TabTarget, ctx: DescribeContext): TabDesc
   }
   if (target.kind === "run") {
     const run = ctx.runs?.find((r) => r.id === target.runId);
-    const title = run ? fr.tabs.runTitle(run.label, run.ticketKey) : fr.tabs.run;
+    const title = run ? fr.tabs.runTitle(run.label) : fr.tabs.run;
     return { title, icon: SCREENS.agents.icon, color: null, missing: false };
   }
+  if (target.kind === "skill")
+    return { title: target.skillId, icon: SCREENS.skills.icon, color: null, missing: false };
   const project: ProjectMeta | undefined = isInbox(target.projectId)
     ? inboxMeta()
     : ctx.projects.find((p) => p.id === target.projectId);

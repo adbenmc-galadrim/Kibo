@@ -81,6 +81,7 @@ export async function startAiHarness(opts: AiHarnessOptions): Promise<AiHarness>
     agentEnv: {
       PATH: process.env.PATH,
       HOME: process.env.HOME,
+      CLAUDE_CONFIG_DIR: join(home, "claude"),
       KIBO_FAKE_CLAUDE_SCENARIO: aiScenarioPath(opts.scenario),
       KIBO_FAKE_CLAUDE_STATE: fakeState,
     },

@@ -4,7 +4,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type {
-  AgentProfile,
   AgentsState,
   DeliveryResult,
   ProjectMeta,
@@ -12,6 +11,7 @@ import type {
   RunView,
   Ticket,
 } from "@kibo/schema";
+import { testAgent, testAgentSource } from "../agents/agents-port.test-helper";
 import { FAKE_CLAUDE } from "../agents/fake-claude-scenario";
 import type { Notice } from "../agents/notifier";
 import { type Daemon, startDaemon } from "../daemon";
@@ -52,10 +52,13 @@ async function waitFor<T>(read: () => Promise<T | undefined>, ms = 20_000): Prom
   }
 }
 
+const LIVRAISON = testAgent({ id: "emis-livraison", name: "emis-livraison", maxParallel: 1 });
+
 async function start(notices: Notice[]) {
   const home = mkdtempSync(join(tmpdir(), "kibo-ask-question-"));
   mkdirSync(join(home, "fake"));
   const d = await startDaemon({
+    agentSource: testAgentSource([LIVRAISON]).source,
     home,
     port: 0,
     sandboxPort: 0,
@@ -94,26 +97,11 @@ test("a run asks a question to validate, ends done, and gets the answer only whe
     projectId: project.id,
     command: { method: "createTicket", title: "Stockage", statusId: "in_progress" },
   });
-  const profile = await rpc<AgentProfile>({
-    method: "config",
-    command: {
-      method: "createProfile",
-      profile: {
-        name: "emis-livraison",
-        model: "opus",
-        execution: "cli",
-        permissionMode: "acceptEdits",
-        workspace: "isolated",
-        subagents: [],
-        maxParallel: 1,
-      },
-    },
-  });
   const run = await rpc<RunView>({
     method: "assignAgent",
     projectId: project.id,
     ticketId: ticket.id,
-    profileId: profile.id,
+    profileId: LIVRAISON.ref,
     brief: "ask_question",
   });
   const runOf = async () =>
@@ -134,7 +122,7 @@ test("a run asks a question to validate, ends done, and gets the answer only whe
     { runId: run.id, open: 1, undelivered: 0, latestTitle: "Bloquer le dépôt sur une affaire archivée ?" },
   ]);
   expect(notices).toContainEqual({
-    title: "emis-livraison-1 a posé une question",
+    title: "global · emis-livraison · EMIS-1 a posé une question",
     body: "EMIS-1 · Bloquer le dépôt sur une affaire archivée ?",
   });
 

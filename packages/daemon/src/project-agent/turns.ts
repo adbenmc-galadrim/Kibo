@@ -9,7 +9,6 @@ import { renderSignalsSection } from "@kibo/core/signals/messages";
 import {
   isOpenSignal,
   MEMORY_NOTE_PATH,
-  PROJECT_AGENT_PROFILE_ID,
   type ProjectFingerprint,
   type ProjectSnapshot,
   type RunView,
@@ -50,7 +49,7 @@ function overviewPrompt(ctx: AgentContext, state: TurnState, memory: string, mes
     runs: state.runs,
     queue: ctx.agents().state().queue,
     notes: state.notes.map(({ path, title }) => ({ path, title })),
-    profiles: ctx.data.profiles(),
+    agents: ctx.data.agents(state.projectId),
     demoProject: ctx.data.isDemoProject(state.projectId),
     memory,
     openSignals: state.signals.length,
@@ -76,13 +75,13 @@ function systemPrompt(ctx: AgentContext, projectId: string, projectName: string)
   const chain = guidelineChain(ctx.data.guidelines(projectId), {
     projectId,
     domainId: null,
-    profileId: PROJECT_AGENT_PROFILE_ID,
   });
   return buildProjectAgentPrompt({
     projectName,
     chain,
     memoryPath: MEMORY_NOTE_PATH,
     viewer: ctx.data.viewer(projectId),
+    agentBody: ctx.agentBody(),
   });
 }
 

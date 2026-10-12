@@ -26,7 +26,7 @@ export function entries(map: LoroMap): unknown[] {
 
 export function requireWorkspace(doc: LoroDoc): void {
   if (projectIdOf(doc) !== undefined) {
-    throw new KiboError("INVALID_INPUT", "profiles, domains and shared guidelines live in the workspace");
+    throw new KiboError("INVALID_INPUT", "domains and shared guidelines live in the workspace");
   }
 }
 

@@ -86,6 +86,6 @@ test("getDiagnostics never contains the pairing token", async () => {
   expect(report).toMatchObject({
     app: { daemonPid: process.pid },
     environment: { daemon: { home: `~/${basename(home)}` } },
-    counts: { projects: expect.any(Number), profiles: 4 },
+    counts: { projects: expect.any(Number), profiles: 0 },
   });
 }, 30_000);

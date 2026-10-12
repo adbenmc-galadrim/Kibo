@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { afterEach, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { MEMORY_NOTE_PATH, type NotesInfo } from "@kibo/schema";
@@ -10,10 +10,13 @@ import {
   send,
   snapshotOf,
   startStack,
+  stopDaemons,
   turnDone,
   viewOf,
   waitFor,
 } from "./integration.test-helper";
+
+afterEach(stopDaemons);
 
 const memoryOf = async (rpc: Rpc, projectId: string): Promise<string> => {
   const info = await rpc<NotesInfo>({ method: "getNotesDir", projectId });
@@ -22,7 +25,7 @@ const memoryOf = async (rpc: Rpc, projectId: string): Promise<string> => {
 
 test("a project turn reads the project through the real MCP server, its batch is applied as the human, and the next turn reads the digest", async () => {
   const stack = await startStack();
-  const { project, receiver, opus } = await seedKibo(stack.rpc);
+  const { project, receiver, livraison } = await seedKibo(stack.rpc);
   const started = await send(stack.rpc, project.id, "Où en est-on ?");
   expect(started).toMatchObject({ kind: "project", ticketTitle: "Agent de projet · Kibo" });
   await turnDone(stack.rpc, started.id, 1);
@@ -46,7 +49,7 @@ test("a project turn reads the project through the real MCP server, its batch is
   expect(view.session).toMatchObject({ runId: started.id, closedAt: null });
   expect(batch).toMatchObject({ seq: 1, status: "pending", summary: "Lancer KIB-1 et noter le plan" });
   expect(batch?.expected).toContainEqual({ actionId: 1, fields: { statusId: "todo" } });
-  expect(batch?.actions.find((a) => a.type === "assignAgent")).toMatchObject({ profileId: opus.id });
+  expect(batch?.actions.find((a) => a.type === "assignAgent")).toMatchObject({ profileId: livraison.ref });
   expect(stack.notices).toContainEqual({ title: "Lot à valider", body: "Agent de projet · Kibo : lot n° 1" });
   expect((await agentsOf(stack.rpc)).projectAgents).toEqual([
     { projectId: project.id, runId: started.id, state: "done", pendingBatchId: batch?.id ?? "" },
@@ -80,9 +83,9 @@ test("a project turn reads the project through the real MCP server, its batch is
   const assigned = await waitFor(async () =>
     (await agentsOf(stack.rpc)).runs.find((r) => r.ticketId === receiver.id && r.state === "done"),
   );
-  expect(assigned).toMatchObject({ kind: "ticket", profileId: opus.id, projectId: project.id });
+  expect(assigned).toMatchObject({ kind: "ticket", profileId: livraison.ref, projectId: project.id });
   expect((await snapshotOf(stack.rpc, project.id)).tickets.find((t) => t.id === receiver.id)).toMatchObject({
-    assignee: { kind: "agent", ref: "opus" },
+    assignee: { kind: "agent", ref: "livraison" },
   });
 
   await send(stack.rpc, project.id, "Et maintenant ?");

@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { createWorkspaceDoc } from "@kibo/core/workspace";
-import { KiboError } from "@kibo/schema";
+import { KiboError, RpcRequest } from "@kibo/schema";
 import type { Docs } from "./docs";
-import { ensureSystemProfiles, runConfigCommand } from "./workspace-config";
+import { runConfigCommand } from "./workspace-config";
 
 function docsWith(): Docs {
   const unused = () => {
@@ -32,9 +32,15 @@ function docsWith(): Docs {
   };
 }
 
-test("deleting a system profile with active runs is refused as invalid, not in use", () => {
+test("the profile commands are refused before reaching the workspace", () => {
+  for (const method of ["createProfile", "updateProfile", "deleteProfile"]) {
+    const req = { method: "config", command: { method, profileId: "assistant", profile: {}, patch: {} } };
+    expect(RpcRequest.safeParse(req).success).toBe(false);
+  }
+});
+
+test("a workspace command still runs", () => {
   const docs = docsWith();
-  ensureSystemProfiles(docs);
-  const del = () => runConfigCommand(docs, { method: "deleteProfile", profileId: "assistant" }, () => 1);
-  expect(del).toThrow("INVALID_INPUT");
+  const result = runConfigCommand(docs, { method: "updateWorkspace", patch: { name: "Maison" } });
+  expect(result).toEqual({ name: "Maison", description: null });
 });

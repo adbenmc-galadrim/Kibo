@@ -1,4 +1,4 @@
-import { type RunView, runSubject } from "@kibo/schema";
+import { type RunView, runSubjectBeside } from "@kibo/schema";
 import { RUN_TEXT, RunDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Badge } from "@kibo/sdk/ui/badge";
@@ -6,6 +6,8 @@ import { Bot } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "../../i18n/fr";
 import { frMoments } from "../../i18n/fr-moments";
+import { runScopeText } from "../catalog/agent-labels";
+import { formatClock } from "../format";
 
 type Props = {
   run: RunView;
@@ -15,14 +17,14 @@ type Props = {
 
 function TicketLink({ run, onOpenTicket }: Pick<Props, "run" | "onOpenTicket">) {
   const { projectId, ticketId } = run;
-  if (!projectId || !ticketId) return <span>{runSubject(run)}</span>;
+  if (!projectId || !ticketId) return <span>{runSubjectBeside(run)}</span>;
   return (
     <button
       type="button"
-      className="truncate rounded-sm hover:text-foreground hover:underline"
+      className="max-w-full truncate rounded-sm hover:text-foreground hover:underline"
       onClick={() => onOpenTicket(projectId, ticketId)}
     >
-      {runSubject(run)}
+      {runSubjectBeside(run)}
     </button>
   );
 }
@@ -44,10 +46,18 @@ export function RunHeading({ run, onOpenTicket, children }: Props) {
             {fr.agents.states[run.state]}
           </Badge>
         </div>
-        <p className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
-          <span className="shrink-0">{frMoments.run.profile(run.profileName)}</span>
+        <p className="flex min-w-0 flex-wrap items-center gap-x-1 text-xs text-muted-foreground">
+          <span className="shrink-0">{frMoments.run.agent(run.agentName, runScopeText(run))}</span>
           <span aria-hidden>·</span>
           <TicketLink run={run} onOpenTicket={onOpenTicket} />
+          {run.startedAt !== null && (
+            <>
+              <span aria-hidden>·</span>
+              <span className="shrink-0 font-mono">
+                {frMoments.run.startedAt(formatClock(run.startedAt))}
+              </span>
+            </>
+          )}
         </p>
       </div>
       {children}

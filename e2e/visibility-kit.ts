@@ -1,7 +1,16 @@
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Browser, Page, TestInfo } from "@playwright/test";
-import { createGitRepo, pairBrowser, rpc, type Seeded, seedWorkspace, text } from "./agents-seed";
+import {
+  createAgent,
+  createGitRepo,
+  livraisonOpus,
+  pairBrowser,
+  rpc,
+  type Seeded,
+  seedWorkspace,
+  text,
+} from "./agents-seed";
 import { homeOf } from "./e2e-home";
 
 export const WIDE = { width: 1440, height: 900 };
@@ -22,21 +31,7 @@ export async function openVisibility(browser: Browser, info: TestInfo): Promise<
   const page = await context.newPage();
   await pairBrowser(page);
   await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
-  await rpc(page, {
-    method: "config",
-    command: {
-      method: "createProfile",
-      profile: {
-        name: "opus-dev",
-        model: "opus",
-        execution: "cli",
-        permissionMode: "acceptEdits",
-        workspace: "repo",
-        subagents: [],
-        maxParallel: 2,
-      },
-    },
-  });
+  await createAgent(page, livraisonOpus("repo"));
   const repo = createGitRepo();
   return { page, repo, seeded: await seedWorkspace(page, repo) };
 }
@@ -51,7 +46,7 @@ export async function assignOpus(v: Visibility, n: number): Promise<string> {
     method: "assignAgent",
     projectId: v.seeded.projectId,
     ticketId: ticketOf(v, n),
-    profileId: v.seeded.profiles.get("opus-dev"),
+    profileId: v.seeded.agents.get("livraison-opus"),
     brief: "",
   });
   return text(run, "id");
@@ -78,7 +73,7 @@ export async function askQuestion(v: Visibility, n: number, title: string, recip
     context: "Le formulaire d'inscription garde l'ancien libellé.",
     options: ["Oui", "Non"],
     provisional: "Non",
-    createdBy: { kind: "agent", ref: "opus-dev-1" },
+    createdBy: { kind: "agent", ref: "livraison-opus" },
   });
   if (recipient)
     await command(v, { method: "setQuestionRecipient", questionId: text(question, "id"), recipient });

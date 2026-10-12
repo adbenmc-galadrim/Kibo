@@ -1,102 +1,33 @@
-import {
-  type AgentProfile,
-  type AgentsState,
-  type ProjectSummary,
-  type RunState,
-  SLOT_STATES,
-  type WorkspaceConfig,
-} from "@kibo/schema";
-import { RunDot } from "@kibo/sdk";
-import { Badge } from "@kibo/sdk/ui/badge";
-import { Bot } from "lucide-react";
+import type { AgentRef, AgentSummary, AgentsState, ProjectSummary, RunState } from "@kibo/schema";
+import { lazyPanel, RunDot } from "@kibo/sdk";
+import { Alert, AlertDescription } from "@kibo/sdk/ui/alert";
+import { Button } from "@kibo/sdk/ui/button";
 import { useState } from "react";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
-import { isDemoProfile, profileLabel } from "./demo-profile";
+import { frAgentsSkills } from "../i18n/fr-agents-skills";
+import { AgentsSection } from "./catalog/AgentsSection";
+import { SystemAgentsSection } from "./catalog/SystemAgentsSection";
+import { useAgentList } from "./catalog/use-agent-list";
 import { formatTokens } from "./format";
-import { ProfileSheet } from "./ProfileSheet";
 import { ProjectFilter } from "./ProjectFilter";
-import { permissionModeLabel } from "./permission-mode";
 import { effectiveProject, projectRuns } from "./project-filter";
 import { useAgentsProject } from "./project-pref";
 import { RunHistory } from "./RunHistory";
 
+const AgentSheet = lazyPanel(() => import("./sheet/AgentSheet").then((m) => m.AgentSheet), fr.lazy);
+
 type Props = {
   state: AgentsState;
-  config: WorkspaceConfig;
   projects: ProjectSummary[];
   now: number;
   onOpenRun: (runId: string) => void;
 };
 
-function ProfileCard({
-  profile,
-  active,
-  onEdit,
-}: {
-  profile: AgentProfile;
-  active: number;
-  onEdit: () => void;
-}) {
-  const f = fr.agentsPage.fields;
-  const label = profileLabel(profile);
-  const fields: [string, string][] = [
-    [f.workspace, fr.strategiesShort[profile.workspace]],
-    [f.permissions, permissionModeLabel(profile.permissionMode)],
-    [f.parallel, fr.agentsPage.parallel(profile.maxParallel)],
-    [f.subagents, profile.subagents.map((m) => fr.modelsShort[m]).join(", ") || fr.agentsPage.none],
-  ];
-  return (
-    <article
-      aria-label={label}
-      className="relative grid gap-3 rounded-lg border bg-card p-4 hover:bg-accent/40"
-    >
-      <header className="flex items-center gap-3">
-        <span className="grid size-9 place-items-center rounded-md border">
-          <Bot aria-hidden className="size-4" />
-        </span>
-        <div className="grid min-w-0 flex-1">
-          <h3 className="font-mono text-sm font-semibold">
-            <button
-              type="button"
-              aria-label={fr.agentsPage.editProfile(label)}
-              className="after:absolute after:inset-0"
-              onClick={onEdit}
-            >
-              {label}
-            </button>
-          </h3>
-          <span className="text-2xs text-muted-foreground">
-            {fr.agentsPage.modelLine(fr.agents.modelNames[profile.model])}
-          </span>
-          {isDemoProfile(profile) && (
-            <span className="text-2xs text-muted-foreground">{frAgentsPage.demo.noTokens}</span>
-          )}
-        </div>
-        {profile.system && (
-          <Badge variant="secondary" className="text-3xs">
-            {fr.agentsPage.system}
-          </Badge>
-        )}
-        {active > 0 && (
-          <Badge variant="secondary" className="text-3xs bg-blue-500/15 text-blue-600 dark:text-blue-400">
-            {fr.agentsPage.active(active)}
-          </Badge>
-        )}
-      </header>
-      <dl className="grid grid-cols-[7rem_1fr] gap-y-1.5 text-2xs">
-        {fields.map(([label, value]) => (
-          <div key={label} className="contents">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
-    </article>
-  );
-}
-
 type StatProps = { state: RunState; value: string; label: string; help?: string };
+type Opened = { ref: AgentRef; rename: boolean };
+
+const t = frAgentsSkills.page;
 
 function Stat({ state, value, label, help }: StatProps) {
   return (
@@ -111,56 +42,98 @@ function Stat({ state, value, label, help }: StatProps) {
   );
 }
 
-export function AgentsPage({ state, config, projects, now, onOpenRun }: Props) {
-  const [editing, setEditing] = useState<AgentProfile | null>(null);
+const inProject = (projectId: string | null) => (a: AgentSummary) =>
+  projectId === null || a.scope !== "project" || a.projectId === projectId;
+
+function Catalog({
+  projectId,
+  state,
+  projects,
+  onOpen,
+}: {
+  projectId: string | null;
+  state: AgentsState;
+  projects: ProjectSummary[];
+  onOpen(opened: Opened): void;
+}) {
+  const list = useAgentList(projectId);
+  if (list.failed && list.agents === null)
+    return (
+      <Alert variant="destructive">
+        <AlertDescription className="flex items-center gap-3">
+          {t.failed}
+          <Button size="sm" variant="outline" onClick={list.retry}>
+            {t.retry}
+          </Button>
+        </AlertDescription>
+      </Alert>
+    );
+  if (list.agents === null) return <p className="text-sm text-muted-foreground">{t.loading}</p>;
+  const shown = list.agents.filter(inProject(projectId));
+  const open = (agent: AgentSummary, rename: boolean) => onOpen({ ref: agent.ref, rename });
+  const common = { projects, runs: state.runs, onOpen: open };
+  return (
+    <>
+      {list.notices.length > 0 && (
+        <Alert>
+          <AlertDescription className="grid gap-1">
+            {list.notices.map((n) => (
+              <p key={`${n.profileName}-${n.text}`}>{n.text}</p>
+            ))}
+          </AlertDescription>
+        </Alert>
+      )}
+      {list.partialWatch && <p className="text-xs text-muted-foreground">{t.partialWatch}</p>}
+      <AgentsSection agents={shown.filter((a) => a.scope !== "system")} {...common} />
+      <SystemAgentsSection agents={shown.filter((a) => a.scope === "system")} {...common} />
+    </>
+  );
+}
+
+export function AgentsPage({ state, projects, now, onOpenRun }: Props) {
   const [pref, setPref] = useAgentsProject();
+  const [opened, setOpened] = useState<Opened | null>(null);
   const project = effectiveProject(pref, projects);
   const runs = projectRuns(state.runs, project?.id ?? null);
   const runIds = new Set(runs.map((r) => r.id));
   const queued = state.queue.filter((q) => runIds.has(q.runId)).length;
   const positions = new Map(state.queue.map((q) => [q.runId, q.position]));
   const waiting = runs.filter((r) => r.state === "waiting_input").length;
-  const s = fr.agentsPage.stats;
+  if (opened)
+    return (
+      <AgentSheet
+        key={opened.ref}
+        agentRef={opened.ref}
+        projects={projects}
+        hostSlots={state.host.hostSlots}
+        startRename={opened.rename}
+        onClose={() => setOpened(null)}
+        onRenamed={(ref) => setOpened({ ref, rename: false })}
+      />
+    );
   return (
     <div className="grid content-start gap-6 p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <p className="text-sm text-muted-foreground">{frAgentsPage.subtitle}</p>
+        <p className="text-sm text-muted-foreground">{t.subtitle}</p>
         <span className="flex-1" />
         <ProjectFilter projects={projects} value={pref} onChange={setPref} />
       </div>
-      <ul aria-label={fr.agentsPage.title} className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <ul aria-label={t.title} className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat
           state="running"
           value={frAgentsPage.stats.slots(state.host.used, state.host.hostSlots)}
-          label={s.running}
+          label={t.stats.running}
         />
-        <Stat state="queued" value={String(queued)} label={s.queued} />
-        <Stat state="waiting_input" value={String(waiting)} label={s.waiting} />
+        <Stat state="queued" value={String(queued)} label={t.stats.queued} />
+        <Stat state="waiting_input" value={String(waiting)} label={t.stats.waiting} />
         <Stat
           state="cancelled"
           value={formatTokens(state.tokensToday)}
-          label={s.tokens}
+          label={t.stats.tokens}
           help={frAgentsPage.stats.tokensHelp}
         />
       </ul>
-      <section className="grid gap-3">
-        <h2 className="text-md font-semibold">{fr.agentsPage.profiles}</h2>
-        {!config.profiles.some((p) => !p.system) && (
-          <p className="text-sm text-muted-foreground">{fr.agentsPage.noProfile}</p>
-        )}
-        {config.profiles.length > 0 && (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] gap-4">
-            {config.profiles.map((p) => (
-              <ProfileCard
-                key={p.id}
-                profile={p}
-                active={runs.filter((r) => r.profileId === p.id && SLOT_STATES.includes(r.state)).length}
-                onEdit={() => setEditing(p)}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      <Catalog projectId={project?.id ?? null} state={state} projects={projects} onOpen={setOpened} />
       <RunHistory
         questions={state.questions}
         runs={runs}
@@ -169,14 +142,6 @@ export function AgentsPage({ state, config, projects, now, onOpenRun }: Props) {
         now={now}
         onOpenRun={onOpenRun}
       />
-      {editing && (
-        <ProfileSheet
-          profile={editing}
-          config={config}
-          hostSlots={state.host.hostSlots}
-          onClose={() => setEditing(null)}
-        />
-      )}
     </div>
   );
 }

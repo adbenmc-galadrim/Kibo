@@ -6,6 +6,13 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.22.0-alpha.1 — 2026-10-12
+
+- Des agents, plus de profils : chaque agent est un fichier Claude Code (`~/.claude/agents` ou `.claude/agents` du projet) avec sa spec, ses sous-agents appelables et ses skills autorisés. Tes profils ont été migrés en fichiers ; les instances restées en 0.21 ne les verront plus.
+- Un espace Skills montre les skills de l'ordinateur, des projets et des plugins, avec un éditeur, un historique des versions restaurable et une protection contre l'écrasement.
+- En fin de run, chaque agent laisse une review des skills qu'il a utilisés : tu l'intègres en diff ou tu l'ignores.
+- Les runs portent un nom lisible, projet · agent · ticket, repris comme nom de session dans Claude Code.
+
 ## 0.21.0-alpha.1 — 2026-10-12
 
 - Les agents parlent à l'agent de projet : un agent qui travaille sur un ticket peut lui signaler un ticket à créer, un blocage, un contexte utile ou une question.

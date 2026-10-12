@@ -12,6 +12,7 @@ function setup() {
   const recorded: { run: string; input: ProgressInput }[] = [];
   const projectCalls: string[] = [];
   const signaled: string[] = [];
+  const reviewed: string[] = [];
   const project: AgentMcpSink = {
     verify: (runId) => {
       if (runId !== "p1") throw new Error("not a project run");
@@ -39,8 +40,14 @@ function setup() {
         return "Signal sig:1 enregistré.";
       },
     },
+    reviews: {
+      record: async (run: RunView) => {
+        reviewed.push(run.id);
+        return "1 review enregistrée";
+      },
+    },
   });
-  return { sink, recorded, projectCalls, signaled };
+  return { sink, recorded, projectCalls, signaled, reviewed };
 }
 
 test("a ticket run is verified by its live token, a project run by the project agent", () => {
@@ -73,4 +80,13 @@ test("an invalid progress input is an INVALID_INPUT error, nothing is recorded",
   const { sink, recorded } = setup();
   await expect(sink.call(TICKET, "ticket_progress", {})).rejects.toThrow("INVALID_INPUT");
   expect(recorded).toEqual([]);
+});
+
+test("skill_review of a ticket run and of a project run reaches the skill reviews", async () => {
+  const { sink, reviewed, projectCalls } = setup();
+  const input = { reviews: [{ skill: "a", verdict: "ok", note: "Bien." }] };
+  expect(await sink.call(TICKET, "skill_review", input)).toBe("1 review enregistrée");
+  expect(await sink.call(PROJECT, "skill_review", input)).toBe("1 review enregistrée");
+  expect(reviewed).toEqual(["t1", "p1"]);
+  expect(projectCalls).toEqual([]);
 });

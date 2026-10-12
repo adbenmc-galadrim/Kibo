@@ -7,9 +7,9 @@ import {
   assign,
   cleanHarness,
   type Harness,
-  profile,
   run,
   setup,
+  testAgent,
   waitUntil,
 } from "./orchestrator.test-helper";
 
@@ -48,7 +48,11 @@ test("writing to a finished ticket run resumes the same session at the head of t
   expect(calls).toHaveLength(2);
   expect(calls[1]?.argv.slice(-2)).toEqual(["--resume", first.sessionId]);
   expect(calls[1]?.prompt).toBe("Ajoute aussi les tests\nsur deux lignes.\n\nencore");
-  expect(run(h, first.id)).toMatchObject({ tokens: 2400, label: "opus-dev-1", pendingAnswer: null });
+  expect(run(h, first.id)).toMatchObject({
+    tokens: 2400,
+    label: "global · opus-dev · KIB-1",
+    pendingAnswer: null,
+  });
   expect(h.started.filter((t) => t === "t1")).toEqual(["t1", "t1"]);
   await waitUntil(() => ticketDone(h, "KIB-1").length === 2);
 }, 30_000);
@@ -73,16 +77,16 @@ test("runs that never started, have no ticket or were replaced cannot be written
   const h = setup({
     scenario: "done",
     profiles: [
-      profile(),
-      profile({ id: "repo", name: "repo-dev", workspace: "repo" }),
-      profile({ id: "assistant", name: "assistant", system: true, maxParallel: 1 }),
+      testAgent(),
+      testAgent({ id: "repo", name: "repo-dev", workspace: "repo" }),
+      testAgent({ id: "assistant", name: "assistant", system: true, maxParallel: 1 }),
     ],
   });
   const broken = assign(h, "t1", "repo");
   const cwd = join(h.home, "draft");
   mkdirSync(cwd);
   const task = h.orch.submit({
-    profileId: "assistant",
+    profileId: "system:assistant",
     projectId: null,
     title: "Brouillon",
     cwd,
@@ -147,7 +151,7 @@ test("a resumed turn cancelled while starting, then written to again, spawns one
 }, 30_000);
 
 test("a run whose profile was deleted cannot be written to", async () => {
-  const profiles = [profile()];
+  const profiles = [testAgent()];
   const h = setup({ scenario: "done", profiles });
   const r = assign(h, "t1");
   await waitUntil(() => run(h, r.id).state === "done");

@@ -40,20 +40,19 @@ test("the breadcrumb names the inbox in French", () => {
 });
 
 const runTab: TabTarget = { kind: "run", runId: "r9" };
-const known = runFixture({ id: "r9", label: "opus-dev-2", ticketKey: "KIB-14" });
+const known = runFixture({ id: "r9", label: "global · livraison · KIB-14", ticketKey: "KIB-14" });
 
-test("a run tab is titled after its run when the run is known", () => {
-  expect(describeTarget(runTab, { ...ctx, runs: [known] }).title).toBe("Run opus-dev-2 · KIB-14");
-  expect(describeTarget(runTab, { ...ctx, runs: [{ ...known, ticketKey: null }] }).title).toBe(
-    "Run opus-dev-2",
-  );
+test("a run tab is titled after its run name, which already carries the ticket", () => {
+  expect(describeTarget(runTab, { ...ctx, runs: [known] }).title).toBe("Run global · livraison · KIB-14");
+  const project = { ...known, label: "kibo · kibo-project-agent", ticketKey: null };
+  expect(describeTarget(runTab, { ...ctx, runs: [project] }).title).toBe("Run kibo · kibo-project-agent");
   expect(describeTarget(runTab, ctx).title).toBe("Run");
   expect(describeTarget(runTab, ctx).missing).toBe(false);
 });
 
 test("the breadcrumb of a run page leads back to the agents", () => {
   const crumbs = crumbsFor(runTab, { project: null, branch: null, runs: [known] });
-  expect(crumbs.map((c) => c.label)).toEqual(["Agents", "opus-dev-2"]);
+  expect(crumbs.map((c) => c.label)).toEqual(["Agents", "global · livraison · KIB-14"]);
   expect(crumbs[0]?.target).toEqual({ kind: "screen", screen: "agents" });
   expect(crumbsFor(runTab, { project: null, branch: null }).map((c) => c.label)).toEqual(["Agents", "Run"]);
 });

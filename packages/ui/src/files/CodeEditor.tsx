@@ -19,6 +19,7 @@ type Props = {
   layout: EditorLayout;
   label: string;
   wrap: boolean;
+  readOnly?: boolean;
   onChange(value: string): void;
   onSave(): void;
 };
@@ -29,7 +30,17 @@ type Mounted = { views: EditorView[]; compartments: Compartments; destroy(): voi
 const modeOf = (dark: boolean) => EditorView.darkTheme.of(dark);
 const wrappingOf = (wrap: boolean): Extension => (wrap ? EditorView.lineWrapping : []);
 
-export function CodeEditor({ initial, original, path, layout, label, wrap, onChange, onSave }: Props) {
+export function CodeEditor({
+  initial,
+  original,
+  path,
+  layout,
+  label,
+  wrap,
+  readOnly = false,
+  onChange,
+  onSave,
+}: Props) {
   const host = useRef<HTMLDivElement>(null);
   const handlers = useRef({ onChange, onSave });
   handlers.current = { onChange, onSave };
@@ -57,6 +68,8 @@ export function CodeEditor({ initial, original, path, layout, label, wrap, onCha
     const editable: Extension[] = [
       ...shared,
       EditorView.contentAttributes.of({ "aria-label": label }),
+      EditorState.readOnly.of(readOnly),
+      EditorView.editable.of(!readOnly),
       keymap.of([
         {
           key: "Mod-s",
@@ -91,7 +104,7 @@ export function CodeEditor({ initial, original, path, layout, label, wrap, onCha
       mounted.current = null;
       next.destroy();
     };
-  }, [original, path, layout, label]);
+  }, [original, path, layout, label, readOnly]);
 
   useEffect(() => {
     const current = mounted.current;

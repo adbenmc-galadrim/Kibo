@@ -4,7 +4,7 @@ const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
 
 const FRESH_REASONS: Record<SessionFreshReason, string> = {
   no_previous: "première session",
-  profile_changed: "autre profil",
+  agent_changed: "autre agent",
   transcript_missing: "transcript introuvable",
   workspace_changed: "autre dossier de travail",
   user_reset: "repartie de zéro",

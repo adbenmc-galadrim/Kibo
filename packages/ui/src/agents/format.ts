@@ -43,10 +43,10 @@ export function reasonText(reason: WaitReason | null): string {
       return r.ram(reason.value, reason.threshold);
     case "host":
       return r.host(reason.used, reason.total);
-    case "profile":
-      return r.profile(reason.profileName, reason.used, reason.total);
-    case "profile_missing":
-      return r.profileMissing;
+    case "agent":
+      return r.agent(reason.agentName, reason.used, reason.total);
+    case "agent_missing":
+      return r.agentMissing;
     case "ticket_busy":
       return r.ticketBusy;
   }
@@ -54,7 +54,7 @@ export function reasonText(reason: WaitReason | null): string {
 
 export function queueHint(run: RunView, reason: WaitReason | null): string {
   if (run.pendingAnswer === null || run.turns === 0) return reasonText(reason);
-  return run.question === null ? fr.queue.messageHint : fr.queue.resumeHint;
+  return run.question === null ? fr.agents.messageHint : fr.agents.resumeHint;
 }
 
 export function workspaceText(label: string | null): string {

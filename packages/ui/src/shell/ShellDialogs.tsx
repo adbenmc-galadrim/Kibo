@@ -23,10 +23,11 @@ import {
   EditProjectDialog,
   FileTicketDialog,
   HelpDialogs,
+  NewAgentDialog,
   NewPageDialog,
   NewProjectDialog,
+  NewSkillDialog,
   NewTicketDialog,
-  ProfileSheet,
   RenamePageDialog,
   StarterDialog,
   TicketSheet,
@@ -47,7 +48,8 @@ export type DialogsState = {
   newTicket: NewTicketRequest | null;
   fileTicket: { ticketId: string } | null;
   assign: { projectId: string | null; ticketId: string | null } | null;
-  newProfile: boolean;
+  newAgent: boolean;
+  newSkill: boolean;
   preview: FileRef | null;
   share: string | null;
   join: boolean;
@@ -71,7 +73,8 @@ export const NO_DIALOG: DialogsState = {
   newTicket: null,
   fileTicket: null,
   assign: null,
-  newProfile: false,
+  newAgent: false,
+  newSkill: false,
   preview: null,
   share: null,
   join: false,
@@ -237,16 +240,20 @@ export function ShellDialogs({
           demo={projects.some((x) => x.id === assignProject?.meta.id && x.demo)}
           ticketId={state.assign.ticketId}
           config={config}
+          projects={projects}
           onClose={() => set({ assign: null })}
           onEditProject={(projectId) => set({ assign: null, editProject: projectId })}
         />
       )}
-      {state.newProfile && config && agents && (
-        <ProfileSheet
-          profile={null}
-          config={config}
-          hostSlots={agents.host.hostSlots}
-          onClose={() => set({ newProfile: false })}
+      {state.newAgent && <NewAgentDialog projects={projects} onClose={() => set({ newAgent: false })} />}
+      {state.newSkill && (
+        <NewSkillDialog
+          projects={projects}
+          onClose={() => set({ newSkill: false })}
+          onCreated={(skill) => {
+            set({ newSkill: false });
+            p.onOpenTarget({ kind: "skill", skillId: skill.id }, false);
+          }}
         />
       )}
       {shareProject && (

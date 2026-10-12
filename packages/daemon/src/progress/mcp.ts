@@ -1,11 +1,20 @@
-import { KiboError, PROGRESS_TOOL_NAME, ProgressInput, type RunView, SIGNAL_TOOL_NAME } from "@kibo/schema";
+import {
+  KiboError,
+  PROGRESS_TOOL_NAME,
+  ProgressInput,
+  type RunView,
+  SIGNAL_TOOL_NAME,
+  SKILL_REVIEW_TOOL_NAME,
+} from "@kibo/schema";
 import type { z } from "zod";
 import type { SignalService } from "../signals/service";
+import type { SkillReviews } from "../skills/reviews";
 import type { ProgressService } from "./service";
 
 export type TicketToolServices = {
   progress: Pick<ProgressService, "record">;
   signals: Pick<SignalService, "record">;
+  reviews: Pick<SkillReviews, "record">;
 };
 
 const issueText = (issue: z.ZodIssue): string =>
@@ -29,5 +38,6 @@ export async function handleTicketTool(
 ): Promise<string> {
   if (tool === PROGRESS_TOOL_NAME) return recordProgress(services.progress, run, input);
   if (tool === SIGNAL_TOOL_NAME) return services.signals.record(run, input);
+  if (tool === SKILL_REVIEW_TOOL_NAME) return services.reviews.record(run, input);
   throw new KiboError("NOT_FOUND", `tool ${tool} not found`);
 }

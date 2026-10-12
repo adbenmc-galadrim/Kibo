@@ -2,23 +2,28 @@ import { expect, test } from "bun:test";
 import { readFileSync, realpathSync, rmSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { orderQueue } from "@kibo/core/scheduler";
-import { PROJECT_AGENT_DENY, PROJECT_AGENT_MCP_TOOLS, TICKET_MCP_TOOLS } from "@kibo/schema";
+import {
+  PROJECT_AGENT_DENY,
+  PROJECT_AGENT_MCP_TOOLS,
+  PROJECT_AGENT_REF,
+  TICKET_MCP_TOOLS,
+} from "@kibo/schema";
 import { fakeCalls, releaseFakeRun } from "./fake-claude-scenario";
 import { createOrchestrator } from "./orchestrator";
 import {
   assign,
   cleanHarness,
   type Harness,
-  profile,
-  projectAgentProfile,
+  projectAgentAgent,
   run,
   setup,
+  testAgent,
   waitUntil,
 } from "./orchestrator.test-helper";
 
 cleanHarness();
 
-const profiles = [profile(), projectAgentProfile()];
+const profiles = [testAgent(), projectAgentAgent()];
 const start = (h: Harness, text = "Où en est-on ?", projectId = "p1") =>
   h.orch.startProjectRun({ projectId, projectName: "Emis", text });
 const flagOf = (argv: string[], name: string) => argv[argv.indexOf(name) + 1] ?? "";
@@ -31,7 +36,8 @@ test("startProjectRun queues a project run at the head with its first message", 
   expect(r).toMatchObject({
     kind: "project",
     ticketId: null,
-    profileId: "project-agent",
+    profileId: PROJECT_AGENT_REF,
+    label: "kib · kibo-project-agent",
     ticketTitle: "Agent de projet · Emis",
     brief: "",
     state: "queued",

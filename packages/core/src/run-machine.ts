@@ -9,6 +9,7 @@ import {
   type RunState,
   type RunView,
 } from "@kibo/schema";
+import { runName } from "./agents/run-name";
 
 type ExitEvent = Extract<RunEvent, { type: "exited" }>;
 type SessionEvent = Extract<RunEvent, { type: "session" }>;
@@ -16,14 +17,11 @@ type SessionEvent = Extract<RunEvent, { type: "session" }>;
 const sessionOf = (event: SessionEvent): RunSession =>
   event.mode === "resumed" ? { mode: "resumed", from: event.from } : { mode: "fresh", reason: event.reason };
 
-export function runLabel(profileName: string, lane: number | null): string {
-  return lane === null ? profileName : `${profileName}-${lane}`;
-}
-
 export function initRun(record: RunRecord, rank: number, at: number): RunView {
   return {
     ...record,
-    label: record.profileName,
+    label: runName({ ...record, agentName: record.profileName }),
+    agentName: record.profileName,
     state: "queued",
     lane: null,
     priority: false,
@@ -61,11 +59,7 @@ function requireState(view: RunView, event: RunEvent, allowed: RunState[]): void
 
 function enter(view: RunView, state: RunState, at: number, patch: Partial<RunView> = {}): RunView {
   const next = { ...view, ...patch, state, stateSince: at };
-  return {
-    ...next,
-    label: runLabel(next.profileName, next.lane),
-    endedAt: isTerminal(state) ? at : next.endedAt,
-  };
+  return { ...next, endedAt: isTerminal(state) ? at : next.endedAt };
 }
 
 const closedTurn = (view: RunView, at: number): Pick<RunView, "activeMs" | "turnStartedAt"> => ({

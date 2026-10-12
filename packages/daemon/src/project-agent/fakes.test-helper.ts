@@ -1,9 +1,10 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { agentSummary } from "@kibo/core/agents/summary";
 import { type BatchContext, renderProblems, validateBatch } from "@kibo/core/project-agent/validate";
 import {
-  type AgentProfile,
+  type Agent,
   type AgentsState,
   type Batch,
   type DeliveryResult,
@@ -17,6 +18,7 @@ import {
   type StatusId,
   Ticket,
 } from "@kibo/schema";
+import { testAgent } from "../agents/agents-port.test-helper";
 import type { AssignInput } from "../agents/orchestrator-types";
 import { ensureNotesTables } from "../notes/index";
 import { createNotesService, type NotesService } from "../notes/service";
@@ -30,33 +32,16 @@ import type { ProjectAgentAgentsPort, ProjectAgentDataPort } from "./types";
 
 export const HUMAN = { kind: "human", ref: "adam" } as const;
 
-export const PROFILES: AgentProfile[] = [
-  {
-    id: "opus",
-    name: "opus-dev",
-    model: "opus",
-    execution: "cli",
-    permissionMode: "acceptEdits",
-    workspace: "isolated",
-    maxParallel: 2,
-    subagents: [],
-    enabled: true,
-    allow: [],
-    system: false,
-  },
-  {
+export const AGENTS: Agent[] = [
+  testAgent({ id: "opus", name: "opus-dev", maxParallel: 2 }),
+  testAgent({
     id: "assistant",
-    name: "assistant",
+    name: "kibo-assistant",
     model: "sonnet",
-    execution: "cli",
     permissionMode: "default",
-    workspace: "isolated",
     maxParallel: 1,
-    subagents: [],
-    enabled: true,
-    allow: [],
     system: true,
-  },
+  }),
 ];
 
 export type FakeAgents = ProjectAgentAgentsPort & {
@@ -162,7 +147,7 @@ export function harness(): Harness {
     docs: service.docs,
     notes,
     settings: { get: () => null },
-    profiles: () => PROFILES,
+    agents: () => AGENTS,
     guidelines: () => [],
   });
   const commands: ProjectCommand[] = [];
@@ -214,7 +199,7 @@ export async function contextOf(h: Harness): Promise<BatchContext> {
     project: h.data.project(h.project.id),
     runs: h.agents.state().runs,
     notes: notes.map((n) => ({ path: n.path, hash: n.hash })),
-    profiles: PROFILES,
+    agents: AGENTS.map(agentSummary),
     demoProject: false,
     viewer: "adam",
     ...signalRefs(h.signals, h.project.id),

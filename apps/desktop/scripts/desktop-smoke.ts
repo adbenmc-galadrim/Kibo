@@ -1,7 +1,7 @@
 import { existsSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { cleanUpSmokeHome, isAlive, recordedPid, smokeCommand } from "./smoke-check";
+import { cleanUpSmokeHome, isAlive, recordedPid, smokeCommand, smokeHomeEnv } from "./smoke-check";
 
 const root = resolve(import.meta.dir, "../../..");
 const binary = join(root, "apps/desktop/src-tauri/target/debug/kibo");
@@ -31,7 +31,7 @@ function buildShell(): string | null {
 async function runShell(home: string, started: number): Promise<string | null> {
   const shell = Bun.spawnSync(smokeCommand(binary, process.platform), {
     cwd: root,
-    env: { ...process.env, KIBO_SMOKE: "1", KIBO_HOME: home, WEBKIT_DISABLE_DMABUF_RENDERER: "1" },
+    env: { ...process.env, KIBO_SMOKE: "1", ...smokeHomeEnv(home), WEBKIT_DISABLE_DMABUF_RENDERER: "1" },
     stdout: "inherit",
     stderr: "inherit",
     timeout: SMOKE_TIMEOUT_MS,

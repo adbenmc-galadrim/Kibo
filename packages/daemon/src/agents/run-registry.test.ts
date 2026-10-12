@@ -22,8 +22,10 @@ const newRun = (id: string): NewRun => ({
   ticketId: `t-${id}`,
   ticketKey: "KIB-14",
   ticketTitle: "Récepteur",
-  profileId: "opus",
+  profileId: "global:opus-dev",
   profileName: "opus-dev",
+  agentScope: "global",
+  projectKey: "KIB",
   sessionId: `s-${id}`,
   brief: "",
   kind: "ticket",
@@ -40,6 +42,7 @@ const question: RunEvent = {
     detail: null,
     question: "?",
     agentId: null,
+    toolUseId: null,
     ask: null,
     todos: null,
     stopHookActive: false,
@@ -66,7 +69,7 @@ test("creates and advances runs, telling listeners the previous state", () => {
   clock = 1100;
   expect(reg.apply("r1", { type: "admitted", lane: 1 })).toMatchObject({
     state: "starting",
-    label: "opus-dev-1",
+    label: "global · opus-dev · KIB-14",
   });
   expect(seen).toEqual(["->queued", "queued>starting"]);
   expect(reg.log("r1").map((e) => e.event.type)).toEqual(["enqueued", "admitted"]);
@@ -148,6 +151,7 @@ const activity: RunEvent = {
     detail: null,
     question: null,
     agentId: null,
+    toolUseId: null,
     ask: null,
     todos: null,
     stopHookActive: false,

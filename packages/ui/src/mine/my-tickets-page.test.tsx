@@ -75,7 +75,7 @@ describe("my tickets page", () => {
     expect(within(kibo).queryByRole("button", { name: "Assigner" })).toBeNull();
   });
 
-  test("my agents falls back on the assignee ref without a known profile", () => {
+  test("my agents names the agent from its ref, without a config", () => {
     render(
       <MyTicketsPage
         viewer="adam"
@@ -88,7 +88,7 @@ describe("my tickets page", () => {
       />,
     );
     fireEvent.click(screen.getByRole("radio", { name: "Mes agents" }));
-    expect(within(screen.getByRole("region", { name: "Kibo" })).getByText("opus")).toBeTruthy();
+    expect(within(screen.getByRole("region", { name: "Kibo" })).getByText("opus-dev")).toBeTruthy();
   });
 
   test("an empty tab says so", () => {

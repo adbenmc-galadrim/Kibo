@@ -1,8 +1,9 @@
 import { existsSync, realpathSync } from "node:fs";
+import { runModel } from "@kibo/core/agents/compose";
 import { initRun } from "@kibo/core/run-machine";
 import { orderQueue, type Plan, tailRank } from "@kibo/core/scheduler";
 import {
-  type AgentProfile,
+  type Agent,
   type AssignPreview,
   branchRefOf,
   isTerminal,
@@ -23,7 +24,8 @@ export type PreviewInput = {
   runs: RunView[];
   projectId: string;
   ticket: TicketView & { key: string };
-  profile: AgentProfile;
+  agent: Pick<Agent, "ref" | "name" | "scope" | "file">;
+  projectKey: string | null;
   guidelines: number;
   at: number;
   plan: (runs: RunView[]) => Plan;
@@ -67,11 +69,13 @@ export function plannedCwd(
 }
 
 export function previewAssign(input: PreviewInput): AssignPreview {
-  const { runs, ticket, profile, guidelines, at } = input;
+  const { runs, ticket, agent, guidelines, at } = input;
+  const model = runModel(agent.file?.frontmatter ?? null);
+  const base = { guidelines, model: model.model, inherited: model.inherited };
   if (activeRunOf(runs, ticket.id))
-    return { position: null, reason: { kind: "ticket_busy" }, guidelines, session: null };
+    return { position: null, reason: { kind: "ticket_busy" }, ...base, session: null };
   const session = sessionPreview(mainSessionOf(runs, ticket.id), {
-    profileId: profile.id,
+    profileId: agent.ref,
     cwd: input.plannedCwd,
     transcriptExists: input.transcriptExists,
   });
@@ -83,8 +87,10 @@ export function previewAssign(input: PreviewInput): AssignPreview {
       ticketId: ticket.id,
       ticketKey: ticket.key,
       ticketTitle: ticket.title,
-      profileId: profile.id,
-      profileName: profile.name,
+      profileId: agent.ref,
+      profileName: agent.name,
+      agentScope: agent.scope,
+      projectKey: input.projectKey,
       sessionId: PREVIEW_ID,
       brief: "",
       createdAt: at,
@@ -97,8 +103,8 @@ export function previewAssign(input: PreviewInput): AssignPreview {
   const withCandidate = [...runs, candidate];
   const next = input.plan(withCandidate);
   if (next.admit.some((a) => a.runId === PREVIEW_ID))
-    return { position: null, reason: null, guidelines, session };
+    return { position: null, reason: null, ...base, session };
   const position = orderQueue(withCandidate).findIndex((r) => r.id === PREVIEW_ID) + 1;
   const reason = next.waiting.find((w) => w.runId === PREVIEW_ID)?.reason ?? null;
-  return { position, reason, guidelines, session };
+  return { position, reason, ...base, session };
 }

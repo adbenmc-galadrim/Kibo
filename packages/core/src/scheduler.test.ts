@@ -11,8 +11,11 @@ function run(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     ticketId: `t-${p.id}`,
     ticketKey: "KIB-1",
     ticketTitle: "Ticket",
-    profileId: "opus",
+    profileId: "global:opus-dev",
     profileName: "opus-dev",
+    agentName: "opus-dev",
+    agentScope: "global",
+    projectKey: "KIB",
     sessionId: `s-${p.id}`,
     brief: "",
     kind: "ticket",
@@ -46,10 +49,10 @@ function run(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     ...p,
   };
 }
-const sonnet = { profileId: "sonnet", profileName: "sonnet-review" };
-const profiles = [
-  { id: "opus", name: "opus-dev", maxParallel: 2 },
-  { id: "sonnet", name: "sonnet-review", maxParallel: 3 },
+const sonnet = { profileId: "global:sonnet-review", profileName: "sonnet-review" };
+const agents = [
+  { ref: "global:opus-dev", name: "opus-dev", maxParallel: 2 },
+  { ref: "global:sonnet-review", name: "sonnet-review", maxParallel: 3 },
 ];
 const settings: HostSettings = { hostSlots: 3, cpuThreshold: 85, ramThreshold: 90, paused: false };
 const idle = { cpu: 10, ram: 40 };
@@ -59,7 +62,7 @@ describe("admission", () => {
     const runs = ["a", "b", "c", "d"].map((id) => run({ id, ...sonnet }));
     const plan = planAdmissions({
       runs,
-      profiles: [{ id: "sonnet", name: "sonnet-review", maxParallel: 4 }],
+      agents: [{ ref: "global:sonnet-review", name: "sonnet-review", maxParallel: 4 }],
       settings,
       load: idle,
     });
@@ -71,17 +74,17 @@ describe("admission", () => {
     expect(plan.waiting).toEqual([{ runId: "d", position: 1, reason: { kind: "host", used: 3, total: 3 } }]);
   });
 
-  test("a full profile does not block a run of another profile behind it", () => {
+  test("a full agent does not block a run of another agent behind it", () => {
     const runs = [
       run({ id: "r1", state: "running", lane: 1 }),
       run({ id: "r2", state: "starting", lane: 2 }),
       run({ id: "q1" }),
       run({ id: "q2", ...sonnet }),
     ];
-    const plan = planAdmissions({ runs, profiles, settings, load: idle });
+    const plan = planAdmissions({ runs, agents, settings, load: idle });
     expect(plan.admit).toEqual([{ runId: "q2", lane: 1 }]);
     expect(plan.waiting).toEqual([
-      { runId: "q1", position: 1, reason: { kind: "profile", profileName: "opus-dev", used: 2, total: 2 } },
+      { runId: "q1", position: 1, reason: { kind: "agent", agentName: "opus-dev", used: 2, total: 2 } },
     ]);
   });
 
@@ -91,9 +94,7 @@ describe("admission", () => {
       run({ id: "w2", state: "waiting_input", lane: 2 }),
       run({ id: "q1" }),
     ];
-    expect(planAdmissions({ runs, profiles, settings, load: idle }).admit).toEqual([
-      { runId: "q1", lane: 3 },
-    ]);
+    expect(planAdmissions({ runs, agents, settings, load: idle }).admit).toEqual([{ runId: "q1", lane: 3 }]);
   });
 
   test("terminal runs hold nothing", () => {
@@ -102,31 +103,29 @@ describe("admission", () => {
       run({ id: "f1", state: "failed", lane: 2 }),
       run({ id: "q1" }),
     ];
-    expect(planAdmissions({ runs, profiles, settings, load: idle }).admit).toEqual([
-      { runId: "q1", lane: 1 },
-    ]);
+    expect(planAdmissions({ runs, agents, settings, load: idle }).admit).toEqual([{ runId: "q1", lane: 1 }]);
   });
 
   test("pause, then CPU, then RAM stop every admission", () => {
     const runs = [run({ id: "q1" }), run({ id: "q2", ...sonnet })];
-    const paused = planAdmissions({ runs, profiles, settings: { ...settings, paused: true }, load: idle });
+    const paused = planAdmissions({ runs, agents, settings: { ...settings, paused: true }, load: idle });
     expect(paused.admit).toEqual([]);
     expect(paused.waiting.map((w) => w.reason)).toEqual([{ kind: "paused" }, { kind: "paused" }]);
-    const cpu = planAdmissions({ runs, profiles, settings, load: { cpu: 85, ram: 95 } });
+    const cpu = planAdmissions({ runs, agents, settings, load: { cpu: 85, ram: 95 } });
     expect(cpu.waiting[0]?.reason).toEqual({ kind: "cpu", value: 85, threshold: 85 });
-    const ram = planAdmissions({ runs, profiles, settings, load: { cpu: 84.4, ram: 90.2 } });
+    const ram = planAdmissions({ runs, agents, settings, load: { cpu: 84.4, ram: 90.2 } });
     expect(ram.admit).toEqual([]);
     expect(ram.waiting[0]?.reason).toEqual({ kind: "ram", value: 90, threshold: 90 });
   });
 
-  test("a run whose profile is gone never starts", () => {
+  test("a run whose agent is gone never starts", () => {
     const plan = planAdmissions({
       runs: [run({ id: "q1", profileId: "gone" })],
-      profiles,
+      agents,
       settings,
       load: idle,
     });
-    expect(plan.waiting).toEqual([{ runId: "q1", position: 1, reason: { kind: "profile_missing" } }]);
+    expect(plan.waiting).toEqual([{ runId: "q1", position: 1, reason: { kind: "agent_missing" } }]);
   });
 });
 

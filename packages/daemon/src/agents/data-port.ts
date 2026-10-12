@@ -7,7 +7,7 @@ import {
   listTickets,
   readProject,
 } from "@kibo/core";
-import { listDomains, listGuidelines, listProfiles } from "@kibo/core/agent-config";
+import { listDomains, listGuidelines } from "@kibo/core/agent-config";
 import { listQuestionRecipients } from "@kibo/core/question-recipients";
 import { evaluateRules, type RuleTrigger, readRules } from "@kibo/core/rules";
 import {
@@ -26,6 +26,7 @@ import type { LoroDoc } from "loro-crdt";
 import { isDemoProject } from "../demo/demo-project";
 import type { CommandMeta, Docs } from "../docs";
 import type { ProjectSettings } from "../notes/settings";
+import { type AgentSource, NEUTRAL_AGENT_SOURCE } from "./neutral-agents";
 import type { AgentDataPort } from "./orchestrator";
 
 export function applyRules(doc: LoroDoc, trigger: RuleTrigger): ProjectCommand[] {
@@ -131,10 +132,14 @@ export function createDataPort(
   docs: Docs,
   settings: Pick<ProjectSettings, "get">,
   now: () => number = Date.now,
+  agentSource: AgentSource = NEUTRAL_AGENT_SOURCE,
 ): AgentDataPort {
   return {
     ...questionsPort(docs, now),
-    profiles: () => listProfiles(docs.workspace),
+    agents: (projectId) => agentSource.agents(projectId),
+    agentOf: (ref) => agentSource.agentOf(ref),
+    projectKey: (projectId) => docs.projectMeta(projectId).key,
+    skills: (projectId) => agentSource.skills?.(projectId) ?? [],
     ticketContext(projectId, ticketId) {
       const project = {
         ...readProject(docs.project(projectId), docs.activity(projectId)),

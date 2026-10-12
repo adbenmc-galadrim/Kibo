@@ -1,12 +1,9 @@
 import { listTickets } from "@kibo/core";
 import {
-  assertDeletableProfile,
   configTarget,
-  ensureSystemProfiles as ensureSystemProfilesIn,
   executeConfigCommand,
   listDomains,
   listGuidelines,
-  listProfiles,
   workspaceDescription,
   workspaceName,
 } from "@kibo/core/agent-config";
@@ -26,7 +23,6 @@ export function domainUsage(docs: Docs): Record<string, number> {
 
 export function readConfig(docs: Docs, icons: Pick<IconStore, "version">): WorkspaceConfig {
   return {
-    profiles: listProfiles(docs.workspace),
     domains: listDomains(docs.workspace),
     guidelines: [
       ...listGuidelines(docs.workspace),
@@ -39,17 +35,7 @@ export function readConfig(docs: Docs, icons: Pick<IconStore, "version">): Works
   };
 }
 
-export function runConfigCommand(
-  docs: Docs,
-  cmd: ConfigCommand,
-  activeRuns: (profileId: string) => number,
-): unknown {
-  if (cmd.method === "deleteProfile") {
-    assertDeletableProfile(docs.workspace, cmd.profileId);
-    if (activeRuns(cmd.profileId) > 0) {
-      throw new KiboError("PROFILE_IN_USE", `profile ${cmd.profileId} has active runs`);
-    }
-  }
+export function runConfigCommand(docs: Docs, cmd: ConfigCommand): unknown {
   if (cmd.method === "deleteDomain") {
     const used = domainUsage(docs)[cmd.domainId] ?? 0;
     if (used > 0) throw new KiboError("INVALID_INPUT", `domain ${cmd.domainId} is used by ${used} tickets`);
@@ -60,10 +46,4 @@ export function runConfigCommand(
   docs.save(target);
   docs.emit({ topic: "config" });
   return result;
-}
-
-export function ensureSystemProfiles(docs: Docs): void {
-  if (!ensureSystemProfilesIn(docs.workspace)) return;
-  docs.save(null);
-  docs.emit({ topic: "config" });
 }

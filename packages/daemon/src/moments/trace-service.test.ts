@@ -1,8 +1,9 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import { statSync } from "node:fs";
 import { join } from "node:path";
+import type { RunAction } from "@kibo/schema";
 import { openTranscript } from "../agents/fake-claude-transcript";
-import { cleanTraceDirs, hook, kinds, playEditAndTests, setup } from "./trace.test-helper";
+import { cleanTraceDirs, hook, kinds, playEditAndTests, setup, tmp } from "./trace.test-helper";
 
 cleanTraceDirs();
 
@@ -233,4 +234,64 @@ test("page and peek read what is stored, without reading the transcript", async 
   expect(peek.lastMessage?.length).toBe(200);
   expect(s.trace.peek(s.run, null)).toMatchObject({ step: null, waiting: false });
   expect(s.reads.count).toBe(reads);
+});
+
+const actionsSeen = () => {
+  const seen: { runId: string; actions: RunAction[]; at: number }[] = [];
+  return {
+    seen,
+    onActions: (runId: string, actions: readonly RunAction[], at: number) =>
+      seen.push({ runId, actions: [...actions], at }),
+  };
+};
+
+test("onActions receives the actions of every actions moment written from the transcript", async () => {
+  const { seen, onActions } = actionsSeen();
+  const s = setup({ onActions });
+  const t = s.transcript;
+  const id = t.toolUse("Skill", { skill: "brainstorming" });
+  t.toolResult(id, { content: "Launching skill: brainstorming", isError: false });
+  t.say("Fini.");
+  await s.trace.onHook(s.run, hook("Stop"));
+  expect(seen).toHaveLength(1);
+  expect(seen[0]?.runId).toBe(s.run.id);
+  expect(seen[0]?.actions).toMatchObject([{ kind: "skill", target: "brainstorming", callId: id }]);
+});
+
+test("onActions receives the hook actions in the hooks fallback, with the tool use id", async () => {
+  const { seen, onActions } = actionsSeen();
+  const outside = join(tmp(), "sess-1.jsonl");
+  const s = setup({ transcriptPath: outside, onActions });
+  const skill = hook("PostToolUse", {
+    tool: "Skill",
+    detail: "deploy",
+    toolUseId: "toolu_9",
+    transcriptPath: outside,
+  });
+  await s.trace.onHook(s.run, skill);
+  await s.trace.onHook(s.run, hook("Stop", { transcriptPath: outside }));
+  expect(seen.flatMap((x) => x.actions)).toMatchObject([
+    { kind: "skill", target: "deploy", callId: "toolu_9" },
+  ]);
+});
+
+test("a failing onActions is logged and never loses the moment", async () => {
+  const errors = spyOn(console, "error").mockImplementation(() => {});
+  try {
+    const s = setup({
+      onActions: () => {
+        throw new Error("db closed");
+      },
+    });
+    playEditAndTests(s);
+    await s.trace.onHook(s.run, hook("PostToolUse", { tool: "Bash" }));
+    expect(kinds(s)).toEqual(["message", "actions", "reasoning", "message"]);
+    const notCounted = errors.mock.calls.filter(
+      ([message]) =>
+        typeof message === "string" && message.includes(`actions of run ${s.run.id} were not counted`),
+    );
+    expect(notCounted).toHaveLength(1);
+  } finally {
+    errors.mockRestore();
+  }
 });

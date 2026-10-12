@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { type HookPayload, hasSecret, MASKED } from "@kibo/schema";
+import { type HookPayload, hasSecret, MASKED, SKILL_REVIEW_TOOL } from "@kibo/schema";
 import { actionFromHook } from "./hook-actions";
 
 const hook = (p: Partial<HookPayload>): HookPayload => ({
@@ -10,6 +10,7 @@ const hook = (p: Partial<HookPayload>): HookPayload => ({
   detail: null,
   question: null,
   agentId: null,
+  toolUseId: null,
   ask: null,
   todos: null,
   stopHookActive: false,
@@ -52,4 +53,28 @@ test("a secret in the hook detail is masked everywhere", () => {
   expect([action?.label, action?.target].some((t) => hasSecret(t ?? ""))).toBe(false);
   const long = actionFromHook(hook({ tool: "Bash", detail: `${"x ".repeat(55)}API_KEY=abcdefghijklmnop` }));
   expect([long?.label, long?.target].some((t) => hasSecret(t ?? ""))).toBe(false);
+});
+
+test("a PostToolUse of Skill is a skill action identified by its tool use id", () => {
+  expect(
+    actionFromHook(hook({ tool: "Skill", detail: "brainstorming", toolUseId: "toolu_1" })),
+  ).toMatchObject({
+    tool: "Skill",
+    kind: "skill",
+    target: "brainstorming",
+    label: "A utilisé le skill `brainstorming`",
+    callId: "toolu_1",
+  });
+  expect(actionFromHook(hook({ tool: "Skill" }))).toMatchObject({
+    kind: "skill",
+    label: "A utilisé un skill",
+  });
+  expect(actionFromHook(hook({ tool: "Read", detail: "a.ts" }))?.callId).toBeUndefined();
+  expect(actionFromHook(hook({ tool: "Read", toolUseId: "x".repeat(65) }))?.callId).toBeUndefined();
+});
+
+test("a skill review after the call is labelled with the number of reviewed skills", () => {
+  const action = actionFromHook(hook({ tool: SKILL_REVIEW_TOOL, detail: "2 skills" }));
+  expect(action?.label).toBe("A laissé une review de 2 skills");
+  expect(actionFromHook(hook({ tool: SKILL_REVIEW_TOOL }))?.label).toBe("A laissé une review des skills");
 });

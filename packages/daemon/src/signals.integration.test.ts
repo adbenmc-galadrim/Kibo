@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { afterEach, expect, test } from "bun:test";
 import { join } from "node:path";
 import {
   type RunMomentsPage,
@@ -23,10 +23,13 @@ import {
   send,
   snapshotOf,
   startStack,
+  stopDaemons,
   turnDone,
   viewOf,
   waitFor,
 } from "./project-agent/integration.test-helper";
+
+afterEach(stopDaemons);
 
 type Kibo = Seeded & { keys: Map<string, Ticket> };
 
@@ -52,7 +55,7 @@ function assign(rpc: Rpc, kibo: Kibo, key: string): Promise<RunView> {
     method: "assignAgent",
     projectId: kibo.project.id,
     ticketId: kibo.keys.get(key)?.id,
-    profileId: kibo.opus.id,
+    profileId: kibo.livraison.ref,
     brief: "",
   });
 }

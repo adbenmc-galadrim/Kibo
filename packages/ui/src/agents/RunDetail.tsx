@@ -7,7 +7,7 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
 import { frRunChat } from "../i18n/fr-run-chat";
-import { isDemoProfile } from "./demo-profile";
+import { isDemoAgent } from "./assignable";
 import { elapsed, formatDuration, workspaceText } from "./format";
 import { ReplyBox } from "./ReplyBox";
 import { ReviewButton } from "./ReviewButton";
@@ -37,7 +37,7 @@ export function RunStop({ run }: { run: RunView }) {
       <ConfirmDialog
         open={stopping}
         onOpenChange={setStopping}
-        title={frAgentsPage.stopTitle(run.label, run.ticketKey)}
+        title={frAgentsPage.stopTitle(run.label)}
         description={frAgentsPage.stopHelp}
         confirmLabel={frAgentsPage.stopConfirm}
         cancelLabel={fr.common.cancel}
@@ -72,11 +72,11 @@ export function RunDetail({ run, resumable, questions, now, children }: DetailPr
   const where = [workspaceText(run.workspace), formatDuration(elapsed(run, now))].filter(Boolean).join(" · ");
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className="flex items-center gap-2 text-sm">
-        <Bot aria-hidden className="size-4 text-brand" />
-        <span className="shrink-0 font-mono font-semibold">{run.label}</span>
+      <div className="flex min-w-0 items-center gap-2 text-sm">
+        <Bot aria-hidden className="size-4 shrink-0 text-brand" />
+        <span className="min-w-0 truncate font-mono font-semibold">{run.label}</span>
         <span className="min-w-0 truncate text-muted-foreground">{runSubject(run)}</span>
-        {isDemoProfile({ id: run.profileId }) && (
+        {isDemoAgent({ ref: run.profileId }) && (
           <span className="shrink-0 text-xs text-brand-strong dark:text-brand">
             {frAgentsPage.demo.option}
           </span>

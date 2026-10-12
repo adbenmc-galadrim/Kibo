@@ -1,5 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import {
+  type AgentSummary,
   type AssignPreview,
   EMPTY_PROGRESS,
   INBOX_ID,
@@ -10,16 +11,28 @@ import {
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
-import { configFixture, kiboProject } from "./fixtures";
-import { systemProfilesFixture } from "./system-profiles-fixture";
+import { catalogFixture } from "./catalog/fixtures";
+import {
+  agentsSummaryFixture as AGENTS,
+  agentSummaryFixture,
+  configFixture,
+  kiboProject,
+  projectsFixture,
+} from "./fixtures";
 
 const calls: RpcRequest[] = [];
 const QUEUED: AssignPreview = {
   position: 4,
-  reason: { kind: "profile", profileName: "opus-dev", used: 2, total: 2 },
+  reason: { kind: "agent", agentName: "opus-dev", used: 2, total: 2 },
   guidelines: 6,
   session: null,
 };
+const kiboAgent = (id: "demo" | "generateur"): AgentSummary => ({
+  ...agentSummaryFixture(`kibo-${id}`, null, { workspace: "isolated" }),
+  ref: `system:${id}`,
+  scope: "system",
+});
+const KIBO_AGENTS = [kiboAgent("demo"), kiboAgent("generateur")];
 let preview: () => Promise<unknown> = () => Promise.resolve(QUEUED);
 let assign: () => Promise<unknown> = () => Promise.resolve(null);
 
@@ -28,13 +41,16 @@ mock.module("../api", () =>
     client: {
       rpc: (req: RpcRequest) => {
         calls.push(req);
+        if (req.method === "agents.list")
+          return Promise.resolve({ agents: catalogFixture(), notices: [], partialWatch: false });
         return req.method === "previewAssign" ? preview() : assign();
       },
+      subscribeTopic: () => () => {},
     },
   }),
 );
 
-const { AssignDialog } = await import("./AssignDialog");
+const { AssignDialog, AssignDialogView } = await import("./AssignDialog");
 
 beforeEach(() => {
   calls.length = 0;
@@ -44,18 +60,24 @@ beforeEach(() => {
 
 test("assigning a waiting ticket warns, previews the queue and enqueues the run", async () => {
   const onClose = mock(() => {});
-  render(<AssignDialog project={kiboProject()} ticketId="t15" config={configFixture()} onClose={onClose} />);
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t15"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={onClose}
+    />,
+  );
   expect(screen.getByText("Assigner KIB-15 à un agent")).toBeTruthy();
   expect(screen.getByText("Kanban : drag & drop entre colonnes · domaine UI")).toBeTruthy();
   expect(screen.getByRole("status").textContent).toBe(
     "KIB-15 attend KIB-12 (en cours). L'agent peut démarrer, mais son résultat dépendra de « Schéma Loro des tickets (LoroTree) ».",
   );
   expect(screen.queryByRole("alert")).toBeNull();
-  expect(screen.getByRole("combobox", { name: "Profil" }).textContent).toBe(
-    "opus-dev · Claude Opus 5.5 · worktree par ticket",
-  );
+  expect(screen.getByRole("combobox", { name: "Agent" }).textContent).toBe("opus-dev · Globalopus-dev");
   expect(
-    await screen.findByText("attend une place du profil opus-dev (2/2) · entrera en file en position #4"),
+    await screen.findByText("attend une place de l'agent opus-dev (2/2) · entrera en file en position #4"),
   ).toBeTruthy();
   expect(screen.getByText("nouveau worktree kib-15 (depuis main)")).toBeTruthy();
   expect(screen.getByText("/Users/adam/goinfre/Kibo/.kibo/worktrees/kib-15")).toBeTruthy();
@@ -67,12 +89,12 @@ test("assigning a waiting ticket warns, previews the queue and enqueues the run"
   await user.click(screen.getByRole("button", { name: "Mettre en file" }));
   await waitFor(() => expect(onClose).toHaveBeenCalled());
   expect(calls).toEqual([
-    { method: "previewAssign", projectId: "kibo", ticketId: "t15", profileId: "opus" },
+    { method: "previewAssign", projectId: "kibo", ticketId: "t15", profileId: "global:opus-dev" },
     {
       method: "assignAgent",
       projectId: "kibo",
       ticketId: "t15",
-      profileId: "opus",
+      profileId: "global:opus-dev",
       brief: "Garder l'ordre dans le LoroTree.",
       fresh: false,
     },
@@ -103,10 +125,11 @@ test("a dependency still waiting for its key is shown by its label alone", () =>
   };
   const tickets = project.tickets.map((t) => (t.id === "t15" ? { ...t, waitingOn: ["KIB-12", "KIB-…"] } : t));
   render(
-    <AssignDialog
+    <AssignDialogView
       project={{ ...project, tickets: [...tickets, pending] }}
       ticketId="t15"
       config={configFixture()}
+      agents={AGENTS}
       onClose={() => {}}
     />,
   );
@@ -120,14 +143,30 @@ test("a dependency still waiting for its key is shown by its label alone", () =>
 
 test("a free slot means the run starts at once", async () => {
   preview = () => Promise.resolve({ position: null, reason: null, guidelines: 2 });
-  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={() => {}}
+    />,
+  );
   expect(await screen.findByText("place libre · démarre tout de suite")).toBeTruthy();
   expect(screen.queryByText(/attend KIB/)).toBeNull();
 });
 
 test("a ticket that already has a run cannot be sent again, and the dialog says why", async () => {
   preview = () => Promise.resolve({ position: null, reason: { kind: "ticket_busy" }, guidelines: 2 });
-  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={() => {}}
+    />,
+  );
   expect(await screen.findByText("Un run de ce ticket est déjà en cours ou en file.")).toBeTruthy();
   expect(screen.queryByText("place libre · démarre tout de suite")).toBeNull();
   expect(screen.getByRole("button", { name: "Mettre en file" }).hasAttribute("disabled")).toBe(true);
@@ -136,7 +175,15 @@ test("a ticket that already has a run cannot be sent again, and the dialog says 
 test("a run queued meanwhile turns the refusal into the busy message", async () => {
   preview = () => Promise.resolve({ position: null, reason: null, guidelines: 2 });
   assign = () => Promise.reject(new KiboError("CONFLICT", "ticket KIB-14 already has an active run"));
-  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={() => {}}
+    />,
+  );
   await userEvent.setup().click(screen.getByRole("button", { name: "Mettre en file" }));
   expect((await screen.findByRole("alert")).textContent).toBe(
     "Un run de ce ticket est déjà en cours ou en file.",
@@ -146,7 +193,15 @@ test("a run queued meanwhile turns the refusal into the busy message", async () 
 test("a refused assignment is shown and the dialog stays open", async () => {
   assign = () => Promise.reject(new KiboError("NOT_FOUND", "profile opus not found"));
   const onClose = mock(() => {});
-  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={onClose} />);
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={onClose}
+    />,
+  );
   await userEvent.setup().click(screen.getByRole("button", { name: "Mettre en file" }));
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible de mettre le run en file.");
   expect(onClose).not.toHaveBeenCalled();
@@ -154,33 +209,60 @@ test("a refused assignment is shown and the dialog stays open", async () => {
 
 test("a failed preview is said, and assignment stays possible", async () => {
   preview = () => Promise.reject(new KiboError("INTERNAL", "boom"));
-  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={() => {}}
+    />,
+  );
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible d'estimer la file d'attente.");
   expect(screen.getByRole("button", { name: "Mettre en file" }).hasAttribute("disabled")).toBe(false);
 });
 
 test("launching from the drawer picks the first open ticket", async () => {
   render(
-    <AssignDialog project={kiboProject()} ticketId={null} config={configFixture()} onClose={() => {}} />,
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId={null}
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={() => {}}
+    />,
   );
   expect(screen.getByText("Lancer un agent")).toBeTruthy();
   expect(screen.getByLabelText("Ticket")).toBeTruthy();
   await waitFor(() =>
     expect(calls).toEqual([
-      { method: "previewAssign", projectId: "kibo", ticketId: "t12", profileId: "opus" },
+      { method: "previewAssign", projectId: "kibo", ticketId: "t12", profileId: "global:opus-dev" },
     ]),
   );
 });
 
-test("without a profile or a project the dialog explains what to do", () => {
-  const noProfile = { ...configFixture(), profiles: [] };
+test("without an agent or a project the dialog explains what to do", () => {
   const view = render(
-    <AssignDialog project={kiboProject()} ticketId="t14" config={noProfile} onClose={() => {}} />,
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={[]}
+      onClose={() => {}}
+    />,
   );
-  expect(screen.getByText("Crée d'abord un profil d'agent dans la page Agents.")).toBeTruthy();
+  expect(screen.getByText("Crée d'abord un agent dans la page Agents.")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Mettre en file" })).toBeNull();
   view.unmount();
-  render(<AssignDialog project={null} ticketId={null} config={configFixture()} onClose={() => {}} />);
+  render(
+    <AssignDialogView
+      project={null}
+      ticketId={null}
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={() => {}}
+    />,
+  );
   expect(screen.getByText("Ouvre un projet pour lancer un agent.")).toBeTruthy();
   expect(calls).toEqual([]);
 });
@@ -191,10 +273,11 @@ test("the worktree line recalls the project base and the computed path of the ti
   const branch = { kind: "git_branch" as const, branch: "feat/drag", base: null };
   const tickets = project.tickets.map((t) => (t.id === "t14" ? { ...t, externalRefs: [branch] } : t));
   render(
-    <AssignDialog
+    <AssignDialogView
       project={{ ...project, meta: { ...project.meta, worktree }, tickets }}
       ticketId="t14"
       config={configFixture()}
+      agents={AGENTS}
       onClose={() => {}}
     />,
   );
@@ -207,10 +290,11 @@ test("an invalid path template is pointed to the project settings", async () => 
   const project = kiboProject();
   const worktree = { baseRef: "main", pathTemplate: "/tmp/{slug}", setup: null };
   render(
-    <AssignDialog
+    <AssignDialogView
       project={{ ...project, meta: { ...project.meta, worktree } }}
       ticketId="t14"
       config={configFixture()}
+      agents={AGENTS}
       onClose={() => {}}
     />,
   );
@@ -221,48 +305,87 @@ test("an invalid path template is pointed to the project settings", async () => 
 test("without an open ticket the drawer launch explains what to do", () => {
   const project = kiboProject();
   const closed = { ...project, tickets: project.tickets.map((t) => ({ ...t, statusId: "done" as const })) };
-  render(<AssignDialog project={closed} ticketId={null} config={configFixture()} onClose={() => {}} />);
+  render(
+    <AssignDialogView
+      project={closed}
+      ticketId={null}
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={() => {}}
+    />,
+  );
   expect(screen.getByText("Aucun ticket ouvert : crée d'abord un ticket à confier à un agent.")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Mettre en file" })).toBeNull();
   expect(calls).toEqual([]);
 });
 
-test("system profiles are never offered for a ticket", () => {
+test("agents of Kibo are never offered for a ticket", () => {
   const config = configFixture();
-  const withSystem = { ...config, profiles: [...systemProfilesFixture, ...config.profiles] };
   const view = render(
-    <AssignDialog project={kiboProject()} ticketId="t14" config={withSystem} onClose={() => {}} />,
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={config}
+      agents={[...KIBO_AGENTS, ...AGENTS]}
+      onClose={() => {}}
+    />,
   );
-  expect(screen.getByRole("combobox", { name: "Profil" }).textContent).toBe(
-    "opus-dev · Claude Opus 5.5 · worktree par ticket",
-  );
+  expect(screen.getByRole("combobox", { name: "Agent" }).textContent).toBe("opus-dev · Globalopus-dev");
   view.unmount();
-  const onlySystem = { ...config, profiles: systemProfilesFixture };
-  render(<AssignDialog project={kiboProject()} ticketId="t14" config={onlySystem} onClose={() => {}} />);
-  expect(screen.getByText("Crée d'abord un profil d'agent dans la page Agents.")).toBeTruthy();
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={config}
+      agents={KIBO_AGENTS}
+      onClose={() => {}}
+    />,
+  );
+  expect(screen.getByText("Crée d'abord un agent dans la page Agents.")).toBeTruthy();
 });
 
 test("in the demo project the demo agent is offered first and preselected, with its honesty line", async () => {
-  const config = configFixture();
-  const withSystem = { ...config, profiles: [...systemProfilesFixture, ...config.profiles] };
-  render(<AssignDialog project={kiboProject()} demo ticketId="t14" config={withSystem} onClose={() => {}} />);
-  expect(screen.getByRole("combobox", { name: "Profil" }).textContent).toBe(
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      demo
+      ticketId="t14"
+      config={configFixture()}
+      agents={[...KIBO_AGENTS, ...AGENTS]}
+      onClose={() => {}}
+    />,
+  );
+  expect(screen.getByRole("combobox", { name: "Agent" }).textContent).toBe(
     "Agent de démonstration · aucun token consommé",
   );
   await userEvent.setup().click(screen.getByRole("button", { name: "Mettre en file" }));
   await waitFor(() =>
-    expect(calls.at(-1)).toMatchObject({ method: "assignAgent", ticketId: "t14", profileId: "demo" }),
+    expect(calls.at(-1)).toMatchObject({ method: "assignAgent", ticketId: "t14", profileId: "system:demo" }),
   );
 });
 
 test("the demo agent alone is enough in the demo project, and never shows elsewhere", () => {
-  const onlySystem = { ...configFixture(), profiles: systemProfilesFixture };
   const view = render(
-    <AssignDialog project={kiboProject()} demo ticketId="t14" config={onlySystem} onClose={() => {}} />,
+    <AssignDialogView
+      project={kiboProject()}
+      demo
+      ticketId="t14"
+      config={configFixture()}
+      agents={KIBO_AGENTS}
+      onClose={() => {}}
+    />,
   );
-  expect(screen.getByRole("combobox", { name: "Profil" }).textContent).toContain("Agent de démonstration");
+  expect(screen.getByRole("combobox", { name: "Agent" }).textContent).toContain("Agent de démonstration");
   view.unmount();
-  render(<AssignDialog project={kiboProject()} ticketId="t14" config={onlySystem} onClose={() => {}} />);
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={KIBO_AGENTS}
+      onClose={() => {}}
+    />,
+  );
   expect(screen.queryByText(/Agent de démonstration/)).toBeNull();
 });
 
@@ -290,10 +413,11 @@ const provisional = (): TicketView => ({
 test("a ticket without its key cannot be sent to an agent", async () => {
   const project = kiboProject();
   render(
-    <AssignDialog
+    <AssignDialogView
       project={{ ...project, tickets: [...project.tickets, provisional()] }}
       ticketId="p9"
       config={configFixture()}
+      agents={AGENTS}
       onClose={() => {}}
     />,
   );
@@ -310,10 +434,11 @@ test("a ticket without its key cannot be sent to an agent", async () => {
 test("the launcher does not offer tickets waiting for their key", async () => {
   const project = kiboProject();
   render(
-    <AssignDialog
+    <AssignDialogView
       project={{ ...project, tickets: [provisional(), ...project.tickets] }}
       ticketId={null}
       config={configFixture()}
+      agents={AGENTS}
       onClose={() => {}}
     />,
   );
@@ -324,7 +449,15 @@ test("the launcher does not offer tickets waiting for their key", async () => {
 
 test("an inbox ticket cannot go to an agent: the dialog says to file it first", () => {
   const inbox = { ...kiboProject(), meta: { ...kiboProject().meta, id: INBOX_ID, key: "INB", folder: null } };
-  render(<AssignDialog project={inbox} ticketId="t15" config={configFixture()} onClose={() => {}} />);
+  render(
+    <AssignDialogView
+      project={inbox}
+      ticketId="t15"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={() => {}}
+    />,
+  );
   expect(
     screen.getByText(
       "Rattache d'abord ce ticket à un projet : un agent travaille dans le dossier d'un projet.",
@@ -339,16 +472,17 @@ const withoutFolder = () => {
   return { ...project, meta: { ...project.meta, folder: null } };
 };
 const NO_FOLDER =
-  "Ce projet n'a pas de dossier local : ce profil travaille dans le dépôt du projet. Renseigne le champ Dossier (menu du projet, Modifier…) ou choisis un profil en dossier isolé.";
+  "Ce projet n'a pas de dossier local : cet agent travaille dans le dépôt du projet. Renseigne le champ Dossier (menu du projet, Modifier…) ou choisis un agent en dossier isolé.";
 
-test("without a local folder a worktree profile is not launchable and the dialog says why", async () => {
+test("without a local folder a worktree agent is not launchable and the dialog says why", async () => {
   const onEditProject = mock((_projectId: string) => {});
   const onClose = mock(() => {});
   render(
-    <AssignDialog
+    <AssignDialogView
       project={withoutFolder()}
       ticketId="t14"
       config={configFixture()}
+      agents={AGENTS}
       onClose={onClose}
       onEditProject={onEditProject}
     />,
@@ -366,10 +500,17 @@ test("without a local folder a worktree profile is not launchable and the dialog
   expect(calls).toEqual([]);
 });
 
-test("without a local folder a repo profile is refused too, and the edit button needs a handler", async () => {
-  const config = configFixture();
-  const repo = { ...config, profiles: config.profiles.map((p) => ({ ...p, workspace: "repo" as const })) };
-  render(<AssignDialog project={withoutFolder()} ticketId="t14" config={repo} onClose={() => {}} />);
+test("without a local folder a repo agent is refused too, and the edit button needs a handler", async () => {
+  const repo = AGENTS.map((a) => ({ ...a, settings: { ...a.settings, workspace: "repo" as const } }));
+  render(
+    <AssignDialogView
+      project={withoutFolder()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={repo}
+      onClose={() => {}}
+    />,
+  );
   expect(screen.getByRole("status").textContent).toBe(NO_FOLDER);
   expect(screen.queryByText("dossier du projet")).toBeNull();
   expect(screen.queryByRole("button", { name: "Modifier le projet" })).toBeNull();
@@ -381,10 +522,11 @@ test("without a local folder a repo profile is refused too, and the edit button 
 test("an empty folder counts as no folder", async () => {
   const project = kiboProject();
   render(
-    <AssignDialog
+    <AssignDialogView
       project={{ ...project, meta: { ...project.meta, folder: "" } }}
       ticketId="t14"
       config={configFixture()}
+      agents={AGENTS}
       onClose={() => {}}
     />,
   );
@@ -394,14 +536,20 @@ test("an empty folder counts as no folder", async () => {
   expect(calls).toEqual([]);
 });
 
-test("switching to an isolated profile lifts the folder warning", async () => {
+test("switching to an isolated agent lifts the folder warning", async () => {
   const onClose = mock(() => {});
   render(
-    <AssignDialog project={withoutFolder()} ticketId="t14" config={configFixture()} onClose={onClose} />,
+    <AssignDialogView
+      project={withoutFolder()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={onClose}
+    />,
   );
   expect(screen.getByRole("status")).toBeTruthy();
   const user = userEvent.setup();
-  screen.getByRole("combobox", { name: "Profil" }).focus();
+  screen.getByRole("combobox", { name: "Agent" }).focus();
   await user.keyboard("{Enter}");
   await user.click(screen.getByRole("option", { name: /^sonnet-review ·/ }));
   expect(screen.queryByRole("status")).toBeNull();
@@ -416,10 +564,11 @@ test("switching to an isolated profile lifts the folder warning", async () => {
 test("a read-only viewer sees the folder warning without the edit button", async () => {
   const project = withoutFolder();
   render(
-    <AssignDialog
+    <AssignDialogView
       project={{ ...project, sync: { ...project.sync, access: "read-only" } }}
       ticketId="t14"
       config={configFixture()}
+      agents={AGENTS}
       onClose={() => {}}
       onEditProject={() => {}}
     />,
@@ -429,20 +578,35 @@ test("a read-only viewer sees the folder warning without the edit button", async
   await Bun.sleep(10);
 });
 
-test("without a local folder an isolated profile still launches", async () => {
-  const config = configFixture();
-  const isolated = { ...config, profiles: config.profiles.filter((p) => p.workspace === "isolated") };
+test("without a local folder an isolated agent still launches", async () => {
+  const isolated = AGENTS.filter((a) => a.settings.workspace === "isolated");
   const onClose = mock(() => {});
-  render(<AssignDialog project={withoutFolder()} ticketId="t14" config={isolated} onClose={onClose} />);
+  render(
+    <AssignDialogView
+      project={withoutFolder()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={isolated}
+      onClose={onClose}
+    />,
+  );
   expect(screen.queryByRole("status")).toBeNull();
   expect(screen.getByText("dossier isolé")).toBeTruthy();
   await userEvent.setup().click(screen.getByRole("button", { name: "Mettre en file" }));
   await waitFor(() => expect(onClose).toHaveBeenCalled());
-  expect(calls.some((c) => c.method === "assignAgent" && c.profileId === "sonnet")).toBe(true);
+  expect(calls.some((c) => c.method === "assignAgent" && c.profileId === "global:sonnet-review")).toBe(true);
 });
 
 test("with a local folder no folder warning is shown", async () => {
-  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={() => {}}
+    />,
+  );
   expect(screen.queryByRole("status")).toBeNull();
   expect(screen.queryByRole("button", { name: "Modifier le projet" })).toBeNull();
   expect((screen.getByRole("button", { name: "Mettre en file" }) as HTMLButtonElement).disabled).toBe(false);
@@ -459,7 +623,15 @@ const RESUMABLE: AssignPreview = {
 test("a resumable main session is announced and Start over sends fresh", async () => {
   preview = () => Promise.resolve(RESUMABLE);
   const onClose = mock(() => {});
-  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={onClose} />);
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={onClose}
+    />,
+  );
   expect(await screen.findByText("reprend opus-dev-2 (3 tours, 12k tokens)")).toBeTruthy();
   const reset = screen.getByRole("checkbox", { name: "Repartir de zéro" });
   expect(reset.getAttribute("aria-checked")).toBe("false");
@@ -477,14 +649,53 @@ test("a session that cannot be resumed says why, without the reset box", async (
       ...RESUMABLE,
       session: { ...RESUMABLE.session, resumable: false, reason: "transcript_missing" },
     });
-  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={() => {}}
+    />,
+  );
   expect(await screen.findByText("nouvelle (transcript introuvable)")).toBeTruthy();
   expect(screen.queryByRole("checkbox", { name: "Repartir de zéro" })).toBeNull();
 });
 
 test("a ticket without a started run opens a first session", async () => {
   preview = () => Promise.resolve({ ...RESUMABLE, session: null });
-  render(<AssignDialog project={kiboProject()} ticketId="t14" config={configFixture()} onClose={() => {}} />);
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={() => {}}
+    />,
+  );
   expect(await screen.findByText("nouvelle (première session du ticket)")).toBeTruthy();
   expect(screen.queryByRole("checkbox")).toBeNull();
+});
+
+test("the dialog lists the agents of the project with scope and description, shadowed ones aside", async () => {
+  render(
+    <AssignDialog
+      project={kiboProject()}
+      ticketId="t15"
+      config={configFixture()}
+      projects={projectsFixture}
+      onClose={() => {}}
+    />,
+  );
+  const agent = await screen.findByRole("combobox", { name: "Agent" });
+  expect(calls[0]).toEqual({ method: "agents.list", projectId: "kibo" });
+  expect(agent.textContent).toBe(
+    "opus-dev · GlobalLivre un ticket : lit le ticket, planifie, code en TDD, commite et ouvre la PR.",
+  );
+  expect(screen.getByText("Opus")).toBeTruthy();
+  agent.focus();
+  await userEvent.setup().keyboard("{Enter}");
+  const options = (await screen.findAllByRole("option")).map((o) => o.textContent?.split("·")[0]?.trim());
+  expect(options).toEqual(["opus-dev", "review-pr", "sonnet-dev"]);
+  expect(screen.getByRole("option", { name: /^review-pr · Projet · Kibo/ })).toBeTruthy();
 });

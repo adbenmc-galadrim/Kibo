@@ -25,6 +25,8 @@ mock.module("../api", () =>
         if (req.method === "listSignals") return Promise.resolve(signals);
         if (req.method === "decideBatch") return Promise.resolve(pendingBatch({ status: "rejected" }));
         if (req.method === "resetProjectAgent") return Promise.resolve(emptyView());
+        if (req.method === "agents.list")
+          return Promise.resolve({ agents: [], notices: [], partialWatch: false });
         return Promise.resolve(projectRun({ state: "queued" }));
       },
       subscribeTopic: () => () => {},

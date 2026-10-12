@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { isTerminal, type ProposedAction, RunState, StatusId } from "@kibo/schema";
 import fc from "fast-check";
 import { commandsFor, isSkipped, resolveRefs, staleReason } from "./apply-plan";
-import { answered, HUMAN, PROFILES, project, question, run, ticket } from "./test-kit";
+import { AGENTS, answered, HUMAN, project, question, run, ticket } from "./test-kit";
 import { type BatchContext, captureExpected, validateBatch } from "./validate";
 
 const base: BatchContext = {
@@ -16,7 +16,7 @@ const base: BatchContext = {
   }),
   runs: [run({ id: "r1", ticketId: "t2", state: "running" })],
   notes: [{ path: "a.md", hash: "h1" }],
-  profiles: PROFILES,
+  agents: AGENTS,
   demoProject: false,
   viewer: "adam",
   signals: [],
@@ -33,7 +33,7 @@ const ACTIONS: ProposedAction[] = [
   { id: 6, why, type: "createNote", path: "b.md", content: "x" },
   { id: 7, why, type: "cancelRun", runId: "r1" },
   { id: 8, why, type: "deliverAnswers", ticket: "EMIS-3" },
-  { id: 9, why, type: "assignAgent", ticket: "EMIS-3", profileId: "opus" },
+  { id: 9, why, type: "assignAgent", ticket: "EMIS-3", profileId: "global:opus-dev" },
   { id: 10, why, type: "link", from: "EMIS-1", to: "EMIS-3", kind: "blocks" },
 ];
 

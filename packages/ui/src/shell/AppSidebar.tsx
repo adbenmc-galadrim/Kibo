@@ -40,6 +40,7 @@ import type { MouseEvent } from "react";
 import { fr } from "../i18n/fr";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { canEdit } from "../state/access";
+import { SCREENS } from "../tabs/screens";
 import { JoinProjectEntry } from "./lazy-screens";
 import { type Link, ProjectEntry } from "./ProjectEntry";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
@@ -86,7 +87,8 @@ const SETTINGS_SCREENS: ReadonlySet<Screen> = new Set([
 type AgentsEntryProps = { screen: Screen | null; agents: AgentsState | null; link: Link };
 
 function AgentsEntry({ screen, agents, link }: AgentsEntryProps) {
-  const inAgents = screen === "agents" || screen === "queue";
+  const inAgents = screen === "agents" || screen === "queue" || screen === "skills";
+  const SkillsIcon = SCREENS.skills.icon;
   return (
     <SidebarMenuItem>
       <SidebarMenuButton isActive={inAgents} {...link(screenTarget("agents"))}>
@@ -108,6 +110,14 @@ function AgentsEntry({ screen, agents, link }: AgentsEntryProps) {
               <button type="button" {...link(screenTarget("queue"))}>
                 <ListOrdered />
                 <span>{fr.nav.queue}</span>
+              </button>
+            </SidebarMenuSubButton>
+          </SidebarMenuSubItem>
+          <SidebarMenuSubItem>
+            <SidebarMenuSubButton asChild isActive={screen === "skills"}>
+              <button type="button" {...link(screenTarget("skills"))}>
+                <SkillsIcon />
+                <span>{fr.nav.skills}</span>
               </button>
             </SidebarMenuSubButton>
           </SidebarMenuSubItem>

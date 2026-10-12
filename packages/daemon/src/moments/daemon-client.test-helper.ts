@@ -3,7 +3,8 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
-import type { AgentProfile, AgentsState, ProjectMeta, RunView, Ticket } from "@kibo/schema";
+import type { Agent, AgentsState, ProjectMeta, RunView, Ticket, WorkspaceStrategy } from "@kibo/schema";
+import { type TestAgentSource, testAgent, testAgentSource } from "../agents/agents-port.test-helper";
 import { FAKE_CLAUDE } from "../agents/fake-claude-scenario";
 import { type Daemon, startDaemon } from "../daemon";
 
@@ -19,9 +20,10 @@ export type Client = {
   home: string;
   rpc<T>(body: unknown): Promise<T>;
   events: unknown[];
+  agents: TestAgentSource;
 };
 
-async function connect(daemon: Daemon, home: string): Promise<Client> {
+async function connect(daemon: Daemon, home: string, agents: TestAgentSource): Promise<Client> {
   const headers = { "content-type": "application/json", origin: daemon.url };
   const paired = await fetch(`${daemon.url}/api/pair`, {
     method: "POST",
@@ -48,7 +50,7 @@ async function connect(daemon: Daemon, home: string): Promise<Client> {
     if (!json.ok) throw new Error(`rpc ${JSON.stringify(body)} failed: ${JSON.stringify(json)}`);
     return json.result;
   };
-  return { daemon, home, rpc, events };
+  return { daemon, home, rpc, events, agents };
 }
 
 export async function waitFor<T>(read: () => Promise<T | undefined>, ms = 20_000): Promise<T> {
@@ -69,7 +71,9 @@ export type TestDaemonOptions = {
 export async function startTestDaemon(o: TestDaemonOptions): Promise<Client> {
   const home = mkdtempSync(join(tmpdir(), "kibo-visibility-"));
   mkdirSync(join(home, "fake", "projects"), { recursive: true });
+  const agents = testAgentSource();
   const daemon = await startDaemon({
+    agentSource: agents.source,
     home,
     port: 0,
     sandboxPort: 0,
@@ -90,14 +94,14 @@ export async function startTestDaemon(o: TestDaemonOptions): Promise<Client> {
     await daemon.stop();
     rmSync(home, { recursive: true, force: true });
   });
-  return connect(daemon, home);
+  return connect(daemon, home, agents);
 }
 
-export type Seeded = { project: ProjectMeta; ticket: Ticket; profile: AgentProfile };
+export type Seeded = { project: ProjectMeta; ticket: Ticket; profile: Agent };
 
 export async function seed(
-  { rpc }: Client,
-  o: { folder?: string | null; workspace?: AgentProfile["workspace"]; title?: string } = {},
+  { rpc, agents }: Client,
+  o: { folder?: string | null; workspace?: WorkspaceStrategy; title?: string } = {},
 ): Promise<Seeded> {
   const project = await rpc<ProjectMeta>({
     method: "createProject",
@@ -111,21 +115,9 @@ export async function seed(
     projectId: project.id,
     command: { method: "createTicket", title: o.title ?? "Fil", statusId: "todo" },
   });
-  const profile = await rpc<AgentProfile>({
-    method: "config",
-    command: {
-      method: "createProfile",
-      profile: {
-        name: "opus-dev",
-        model: "opus",
-        execution: "cli",
-        permissionMode: "acceptEdits",
-        workspace: o.workspace ?? "isolated",
-        subagents: [],
-        maxParallel: 1,
-      },
-    },
-  });
+  const profile = agents.add(
+    testAgent({ id: "opus-dev", name: "opus-dev", workspace: o.workspace ?? "isolated", maxParallel: 1 }),
+  );
   return { project, ticket, profile };
 }
 
@@ -134,7 +126,7 @@ export async function assign({ rpc }: Client, s: Seeded): Promise<RunView> {
     method: "assignAgent",
     projectId: s.project.id,
     ticketId: s.ticket.id,
-    profileId: s.profile.id,
+    profileId: s.profile.ref,
     brief: "",
   });
 }

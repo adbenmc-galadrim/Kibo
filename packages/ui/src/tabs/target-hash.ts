@@ -5,6 +5,7 @@ const enc = encodeURIComponent;
 const SCREEN_HASHES: Record<Screen, string> = {
   agents: "#/agents",
   queue: "#/agents/queue",
+  skills: "#/agents/skills",
   general: "#/settings/general",
   domains: "#/settings/domains",
   components: "#/components",
@@ -24,6 +25,7 @@ export function targetToHash(target: TabTarget | null): string {
   if (!target) return "#/";
   if (target.kind === "screen") return SCREEN_HASHES[target.screen];
   if (target.kind === "run") return `#/runs/${enc(target.runId)}`;
+  if (target.kind === "skill") return `#/skills/${enc(target.skillId)}`;
   const base = `#/p/${enc(target.projectId)}`;
   switch (target.kind) {
     case "project":
@@ -70,6 +72,8 @@ function screenTarget(hash: string): TabTarget | null {
 function pathCandidate(path: string, query: string): unknown {
   const run = /^\/runs\/([^/]+)\/?$/.exec(path);
   if (run?.[1]) return { kind: "run", runId: decodeURIComponent(run[1]) };
+  const skill = /^\/skills\/([^/]+)\/?$/.exec(path);
+  if (skill?.[1]) return { kind: "skill", skillId: decodeURIComponent(skill[1]) };
   const m = /^\/p\/([^/]+)(?:\/(.*))?$/.exec(path);
   if (!m?.[1]) return null;
   return candidate(decodeURIComponent(m[1]), m[2] ?? "", new URLSearchParams(query));

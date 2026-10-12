@@ -3,7 +3,7 @@ import { dirname, join, resolve } from "node:path";
 import { HookEventName } from "@kibo/schema";
 import { z } from "zod";
 
-export const FakeStep = z.union([
+const BASE_STEPS = [
   z.object({
     hook: HookEventName,
     tool: z.string().optional(),
@@ -18,8 +18,13 @@ export const FakeStep = z.union([
   z.object({ say: z.string() }),
   z.object({ think: z.string() }),
   z.object({ raw: z.string() }),
-]);
-export type FakeStep = z.infer<typeof FakeStep>;
+  z.object({ skill: z.string().min(1), args: z.string().optional(), denied: z.boolean().default(false) }),
+] as const;
+const BaseStep = z.union(BASE_STEPS);
+export type FakeStep = z.infer<typeof BaseStep> | { subagent: string; steps: FakeStep[] };
+export const FakeStep: z.ZodType<FakeStep, z.ZodTypeDef, unknown> = z.lazy(() =>
+  z.union([...BASE_STEPS, z.object({ subagent: z.string().min(1), steps: z.array(FakeStep) })]),
+);
 
 export const FakeTurn = z.object({
   steps: z.array(FakeStep),
@@ -89,7 +94,11 @@ export type FakeScenarioName =
   | "signal"
   | "signal-spam"
   | "project-agent-wakeup"
-  | "signal-routes";
+  | "signal-routes"
+  | "skills-review"
+  | "skills-no-review"
+  | "skills-denied"
+  | "skills-routes";
 
 export function scenarioPath(name: FakeScenarioName): string {
   return join(import.meta.dir, "scenarios", `${name}.json`);

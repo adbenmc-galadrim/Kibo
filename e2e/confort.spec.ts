@@ -1,6 +1,14 @@
 import { rmSync } from "node:fs";
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { assign, createGitRepo, rpc, type Seeded, seedWorkspace } from "./agents-seed";
+import {
+  assign,
+  createAgent,
+  createGitRepo,
+  livraisonOpus,
+  rpc,
+  type Seeded,
+  seedWorkspace,
+} from "./agents-seed";
 import { createE2eRepo, type E2eRepo } from "./git-repo";
 import { addComponent, createSidebarPage } from "./helpers";
 import { createRepoProject, projectKey, shot } from "./repo-project";
@@ -28,21 +36,7 @@ async function seed(page: Page): Promise<Seeded> {
   const folder = createGitRepo();
   cleanups.push(() => rmSync(folder, { recursive: true, force: true }));
   await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
-  await rpc(page, {
-    method: "config",
-    command: {
-      method: "createProfile",
-      profile: {
-        name: "opus-dev",
-        model: "opus",
-        permissionMode: "acceptEdits",
-        maxParallel: 2,
-        execution: "cli",
-        subagents: [],
-        workspace: "isolated",
-      },
-    },
-  });
+  await createAgent(page, livraisonOpus("isolated"));
   seeded = await seedWorkspace(page, folder);
   return seeded;
 }
@@ -115,21 +109,25 @@ test("synchronisation : état vide et connexion d'un autre appareil", async ({ p
 test("agents : historique cliquable et confirmation d'arrêt", async ({ page }, info) => {
   await pair(page);
   const seededWorkspace = await seed(page);
-  await assign(page, seededWorkspace, 12, "opus-dev", "waiting_input");
+  await assign(page, seededWorkspace, 12, "livraison-opus", "waiting_input");
   await page.goto("/#/agents");
   await expect(page.getByRole("heading", { level: 1, name: "Agents" })).toBeVisible();
   await page
     .getByRole("radiogroup", { name: "Filtrer par état" })
     .getByRole("radio", { name: "Tous" })
     .click();
-  await page.getByRole("button", { name: /^opus-dev · KIB-12/ }).click();
-  const panel = page.getByRole("dialog", { name: /^Run opus-dev-\d+ · KIB-12$/ });
-  await expect(panel.getByRole("list", { name: /^Fil de opus-dev-\d+$/ })).toBeVisible();
+  await page.getByRole("button", { name: /^livraison-opus · KIB-12/ }).click();
+  const panel = page.getByRole("dialog", { name: "Run global · livraison-opus · KIB-12" });
+  await expect(panel.getByRole("list", { name: "Fil de global · livraison-opus · KIB-12" })).toBeVisible();
   await panel.getByRole("button", { name: "Ouvrir en grand" }).click();
   await expect(page).toHaveURL(/#\/runs\//);
-  const header = page.locator("header", { has: page.getByRole("heading", { name: /^opus-dev-\d+$/ }) });
+  const header = page.locator("header", {
+    has: page.getByRole("heading", { name: "global · livraison-opus · KIB-12" }),
+  });
   await header.getByRole("button", { name: "Arrêter", exact: true }).click();
-  const confirm = page.getByRole("alertdialog", { name: /^Arrêter le run opus-dev-\d+ sur KIB-12 \?$/ });
+  const confirm = page.getByRole("alertdialog", {
+    name: "Arrêter le run global · livraison-opus · KIB-12 ?",
+  });
   await expect(confirm.getByText("L'agent est interrompu ; le ticket reste assigné.")).toBeVisible();
   await shot(page, info, "ecran-121");
   await confirm.getByRole("button", { name: "Annuler" }).click();

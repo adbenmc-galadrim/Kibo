@@ -56,7 +56,7 @@ function launch(demo: boolean) {
 test("a demo draft runs under the demo profile, any other under the generator, both guarded", () => {
   const demo = launch(true);
   const regular = launch(false);
-  expect(demo?.profileId).toBe("demo");
-  expect(regular?.profileId).toBe("generateur");
+  expect(demo?.profileId).toBe("system:demo");
+  expect(regular?.profileId).toBe("system:generateur");
   expect(demo?.guard({ toolName: "Write", toolInput: { file_path: "/etc/x" } }).decision).toBe("deny");
 });

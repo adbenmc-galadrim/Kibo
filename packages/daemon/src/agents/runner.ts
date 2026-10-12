@@ -1,7 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 import {
-  type AgentModel,
   AllowRules,
   ASK_TOOLS,
   HookEventName,
@@ -14,6 +13,7 @@ import { z } from "zod";
 import { signalGroup, tryKill } from "../process-group";
 import type { McpTools } from "./ask-mcp";
 import { childEnv } from "./child-env";
+import { type AgentFlags, agentArgs, checkedSkillRules, reservedAgentArgs } from "./cli-flags";
 import { type HookLauncher, hookShellCommand, mcpServerConfig } from "./hook-launcher";
 import { parseJsonLine, Usage, usageTokens } from "./transcript";
 
@@ -22,7 +22,7 @@ export { childEnv, cleanEnv } from "./child-env";
 export type LaunchInput = {
   claudeBin: string;
   cwd: string;
-  model: AgentModel;
+  model: string;
   permissionFlag: string | null;
   extraArgs: string[];
   sessionId: string;
@@ -39,6 +39,7 @@ export type LaunchInput = {
   token: string;
   baseEnv: Record<string, string | undefined>;
   extraEnv: Record<string, string>;
+  agentFlags: AgentFlags;
 };
 export type StreamResult = {
   isError: boolean;
@@ -62,7 +63,7 @@ function profileRules(allow: readonly string[]): string[] {
   const rules = AllowRules.safeParse(allow.filter((rule) => !isKiboTool(rule)));
   if (!rules.success)
     throw new KiboError("INVALID_INPUT", "the profile carries an unsafe or malformed permission rule");
-  const kiboTools = allow.filter((rule) => isKiboTool(rule) && !TICKET_MCP_TOOLS.includes(rule));
+  const kiboTools = allow.filter((rule) => PROJECT_AGENT_MCP_TOOLS.includes(rule));
   return [...new Set([...kiboTools, ...rules.data])];
 }
 
@@ -73,8 +74,9 @@ export function claudeSettings(
   allow: readonly string[] = [],
   deny: readonly string[] = [],
   tools: McpTools = null,
+  skillRules: readonly string[] = [],
 ): string {
-  const rules = profileRules(allow);
+  const rules = [...profileRules(allow), ...checkedSkillRules(skillRules)];
   const command = hookShellCommand(hook);
   const hooks = Object.fromEntries(
     HookEventName.options.map((event) => [
@@ -105,24 +107,25 @@ const RESERVED_ARGS = new Set([
   "--resume",
 ]);
 
-export function claudeArgs(
-  input: Pick<
-    LaunchInput,
-    | "model"
-    | "permissionFlag"
-    | "extraArgs"
-    | "sessionId"
-    | "resume"
-    | "systemPromptFile"
-    | "hook"
-    | "allow"
-    | "deny"
-    | "mcpConfigFile"
-    | "mcpTools"
-  >,
-): string[] {
+type ArgsInput = Pick<
+  LaunchInput,
+  | "model"
+  | "permissionFlag"
+  | "extraArgs"
+  | "sessionId"
+  | "resume"
+  | "systemPromptFile"
+  | "hook"
+  | "allow"
+  | "deny"
+  | "mcpConfigFile"
+  | "mcpTools"
+> & { agentFlags?: AgentFlags };
+
+export function claudeArgs(input: ArgsInput): string[] {
+  const reserved = new Set([...RESERVED_ARGS, ...reservedAgentArgs(input.agentFlags)]);
   const refused = input.extraArgs.find(
-    (a) => RESERVED_ARGS.has(a.split("=")[0] ?? a) || a.includes("bypassPermissions"),
+    (a) => reserved.has(a.split("=")[0] ?? a) || a.includes("bypassPermissions"),
   );
   if (refused) throw new KiboError("INVALID_INPUT", `argument ${refused} is reserved to Kibo`);
   return [
@@ -136,11 +139,12 @@ export function claudeArgs(
     "--model",
     input.model,
     "--settings",
-    claudeSettings(input.hook, input.allow, input.deny, input.mcpTools),
+    claudeSettings(input.hook, input.allow, input.deny, input.mcpTools, input.agentFlags?.skillRules),
     "--mcp-config",
     input.mcpConfigFile ?? mcpServerConfig(input.hook),
     "--append-system-prompt-file",
     input.systemPromptFile,
+    ...agentArgs(input.agentFlags, input.resume),
     ...input.extraArgs,
     ...(input.resume ? ["--resume", input.sessionId] : ["--session-id", input.sessionId]),
   ];
@@ -200,6 +204,8 @@ const ResultLine = z.object({
   permission_denials: z.array(z.object({ tool_name: z.string().optional() })).optional(),
 });
 
+const deniedToolName = (name: string | undefined): string => (name === "Task" ? "Agent" : (name ?? "?"));
+
 export function parseResultLine(line: string): StreamResult | null {
   const parsed = ResultLine.safeParse(parseJsonLine(line));
   if (!parsed.success) return null;
@@ -209,7 +215,7 @@ export function parseResultLine(line: string): StreamResult | null {
     result: r.result ?? null,
     tokens: usageTokens(r.usage),
     costUsd: r.total_cost_usd ?? 0,
-    denied: (r.permission_denials ?? []).map((d) => d.tool_name ?? "?"),
+    denied: (r.permission_denials ?? []).map((d) => deniedToolName(d.tool_name)),
     raw: line,
   };
 }

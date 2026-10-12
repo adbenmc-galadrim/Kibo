@@ -1,32 +1,14 @@
 #!/usr/bin/env bun
-import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { mcpToolName } from "@kibo/schema";
 import { z } from "zod";
-import {
-  appendToolUse,
-  appendWrite,
-  blocksStop,
-  decisionOf,
-  denialReason,
-  fakeMeta,
-  isDemoAgent,
-  resolveStepInput,
-  runWriteStep,
-} from "./fake-claude-ai";
-import { bindProfiles, callMcpTool, type McpCallLog, mcpServerFrom, recordMcpCalls } from "./fake-claude-mcp";
+import { blocksStop, fakeMeta } from "./fake-claude-ai";
+import { launchOf, writeLaunch } from "./fake-claude-launch";
+import { type McpCallLog, recordMcpCalls } from "./fake-claude-mcp";
+import { createPlayer, type HookRun } from "./fake-claude-play";
 import { FakeScenario, type FakeStep, turnScenario } from "./fake-claude-scenario";
-import {
-  asInput,
-  hookExtra,
-  hookOutcome,
-  mcpOutcome,
-  openTranscript,
-  type ToolOutcome,
-  toolTrail,
-  writeOutcome,
-} from "./fake-claude-transcript";
+import { openTranscript, toolTrail } from "./fake-claude-transcript";
 
 const Settings = z.object({
   hooks: z
@@ -55,8 +37,6 @@ const fail = (message: string, code: number) => {
 const matches = (matcher: string | undefined, tool: string) =>
   matcher === undefined || matcher === "" || matcher === "*" || new RegExp(`^(${matcher})$`).test(tool);
 
-type HookRun = { code: number; stdout: string };
-
 const launcher = process.ppid;
 
 async function main(): Promise<number> {
@@ -77,6 +57,12 @@ async function main(): Promise<number> {
   const resumeId = flag(argv, "--resume");
   const sessionId = resumeId ?? flag(argv, "--session-id");
   if (!sessionId) return fail("--session-id or --resume is required", 2);
+  let launch: ReturnType<typeof launchOf>;
+  try {
+    launch = launchOf(argv);
+  } catch (e) {
+    return fail(e instanceof Error ? e.message : String(e), 1);
+  }
   const scenarioFile = process.env.KIBO_FAKE_CLAUDE_SCENARIO;
   if (!scenarioFile) return fail("KIBO_FAKE_CLAUDE_SCENARIO is required", 2);
   const stateDir = process.env.KIBO_FAKE_CLAUDE_STATE ?? join(tmpdir(), "kibo-fake-claude");
@@ -94,6 +80,7 @@ async function main(): Promise<number> {
     hookUrl: process.env.KIBO_HOOK_URL ?? null,
   };
   appendFileSync(callsFile, `${JSON.stringify(call)}\n`);
+  writeLaunch(stateDir, sessionId, launch);
   const turnIndex = readFileSync(callsFile, "utf8").trim().split("\n").length - 1;
   const chosenFile = join(stateDir, `${sessionId}.scenario`);
   const chosen = turnScenario(
@@ -139,100 +126,25 @@ async function main(): Promise<number> {
     }
     return runs;
   };
-  const denied = (runs: HookRun[]) =>
-    runs.some((r) => r.code === 2 || (r.code === 0 && decisionOf(r.stdout) === "deny"));
-
   const denials: string[] = [];
   const mcpCalls: McpCallLog[] = [];
   const transcript = openTranscript(transcriptPath, sessionId, process.cwd());
-  const trail = toolTrail(transcript);
-  const toolHooks = async (event: string, extra: Record<string, unknown>, outcome: () => ToolOutcome) => {
-    const tool = typeof extra.tool_name === "string" ? extra.tool_name : "";
-    const input = asInput(extra.tool_input);
-    if (event === "PreToolUse" && tool) trail.before(tool, input);
-    if (event === "PostToolUse" && tool) trail.after(tool, input, outcome());
-    const runs = await runHooks(event, extra);
-    const refused = event === "PreToolUse" && denied(runs);
-    if (refused && tool) trail.denied(tool);
-    return { runs, refused };
-  };
-  const play = async (step: FakeStep) => {
-    if ("say" in step) return transcript.say(step.say);
-    if ("think" in step) return transcript.think(step.think);
-    if ("raw" in step) return transcript.raw(step.raw);
-    if ("mcp" in step) {
-      const server = mcpServerFrom(argv);
-      const call = { tool_name: mcpToolName(step.mcp), tool_input: bindProfiles(step.input, mcpCalls) };
-      const { refused } = await toolHooks("PreToolUse", call, () => mcpOutcome("", false));
-      appendToolUse(stateDir, sessionId, { tool: call.tool_name, input: call.tool_input, denied: refused });
-      if (refused) {
-        denials.push(call.tool_name);
-        return;
-      }
-      const reply = await callMcpTool(server, step.mcp, call.tool_input);
-      mcpCalls.push({ tool: step.mcp, ...reply });
-      const response = { tool_response: [{ type: "text", text: reply.text }] };
-      await toolHooks("PostToolUse", { ...call, ...response }, () => mcpOutcome(reply.text, reply.isError));
-      return;
-    }
-    if ("hook" in step) {
-      const resolved = resolveStepInput(step.input, process.env);
-      const tool = step.tool ? { tool_name: step.tool } : {};
-      const input = resolved ? { tool_input: resolved } : {};
-      const extra = { ...tool, ...input, ...hookExtra(step.extra) };
-      const { refused } = await toolHooks(step.hook, extra, () =>
-        hookOutcome(step.extra ?? {}, resolved ?? {}),
-      );
-      if (refused) denials.push(step.tool ?? "?");
-      if (step.hook === "PreToolUse" && step.tool)
-        appendToolUse(stateDir, sessionId, { tool: step.tool, input: resolved ?? {}, denied: refused });
-      return;
-    }
-    if ("write" in step) {
-      const entry = await runWriteStep(step, {
-        cwd: process.cwd(),
-        allowBypass: !isDemoAgent(import.meta.dir, process.env),
-        hook: async (event, extra) => {
-          const { runs, refused } = await toolHooks(event, extra, () => writeOutcome(extra));
-          return refused ? (denialReason(runs.map((r) => r.stdout)) ?? "denied") : null;
-        },
-        log: (logged) => appendWrite(stateDir, sessionId, logged),
-      });
-      if ("denied" in entry) denials.push("Write");
-      return;
-    }
-    if ("sleepMs" in step) {
-      await Bun.sleep(step.sleepMs);
-      return;
-    }
-    if ("hold" in step) {
-      const release = join(stateDir, `${sessionId}.release`);
-      while (!existsSync(release)) {
-        if (process.ppid !== launcher) process.exit(1);
-        await Bun.sleep(25);
-      }
-      rmSync(release);
-      return;
-    }
-    process.stderr.write(`${step.stderr}\n`);
-  };
+  const { playAll } = createPlayer({
+    argv,
+    stateDir,
+    sessionId,
+    launcher,
+    transcript,
+    trail: toolTrail(transcript),
+    runHooks,
+    denials,
+    mcpCalls,
+  });
   const print = (line: unknown) => process.stdout.write(`${JSON.stringify(line)}\n`);
 
   print({ type: "system", subtype: "init", session_id: sessionId, cwd: process.cwd(), permissionMode: mode });
   await runHooks("SessionStart", { source: resumeId ? "resume" : "startup" });
   transcript.user(prompt);
-  const playAll = async (steps: readonly FakeStep[]): Promise<string | null> => {
-    for (const step of steps) {
-      try {
-        await play(step);
-      } catch (e) {
-        const message = e instanceof Error ? e.message : String(e);
-        process.stderr.write(`fake-claude: ${message}\n`);
-        return message;
-      }
-    }
-    return null;
-  };
   const lastSayOf = (steps: readonly FakeStep[]): string | null =>
     steps.flatMap((step) => ("say" in step ? [step.say] : [])).at(-1) ?? null;
   let failure = await playAll(turn.steps);

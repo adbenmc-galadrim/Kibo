@@ -1,5 +1,4 @@
 import {
-  type AgentProfile,
   type HostInfo,
   type HostLoad,
   type HostSettings,
@@ -9,10 +8,10 @@ import {
   type WaitReason,
 } from "@kibo/schema";
 
-export type SchedulerProfile = Pick<AgentProfile, "id" | "name" | "maxParallel">;
+export type SchedulerAgent = { ref: string; name: string; maxParallel: number };
 export type SchedulerInput = {
   runs: RunView[];
-  profiles: SchedulerProfile[];
+  agents: SchedulerAgent[];
   settings: HostSettings;
   load: HostLoad;
 };
@@ -86,12 +85,12 @@ export function planAdmissions(input: SchedulerInput): Plan {
   const admit: Admission[] = [];
   const waiting: QueueEntry[] = [];
   for (const run of orderQueue(input.runs)) {
-    const profile = input.profiles.find((p) => p.id === run.profileId);
+    const agent = input.agents.find((a) => a.ref === run.profileId);
     const used = perProfile.get(run.profileId) ?? 0;
     let reason: WaitReason | null = blocked;
-    if (!reason && !profile) reason = { kind: "profile_missing" };
-    if (!reason && profile && used >= profile.maxParallel) {
-      reason = { kind: "profile", profileName: profile.name, used, total: profile.maxParallel };
+    if (!reason && !agent) reason = { kind: "agent_missing" };
+    if (!reason && agent && used >= agent.maxParallel) {
+      reason = { kind: "agent", agentName: agent.name, used, total: agent.maxParallel };
     }
     if (!reason && hostUsed >= settings.hostSlots) {
       reason = { kind: "host", used: hostUsed, total: settings.hostSlots };

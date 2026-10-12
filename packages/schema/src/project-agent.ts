@@ -14,7 +14,6 @@ import type { RunView } from "./run";
 import { ActionId, SIGNAL_REFS_MAX, SignalRef } from "./signal";
 import { StatusId } from "./status";
 
-export const PROJECT_AGENT_PROFILE_ID = "project-agent";
 export const MEMORY_NOTE_PATH = "agent-de-projet/memoire.md";
 export const BATCH_SUMMARY_MAX = 2_000;
 export const WHY_MAX = 300;

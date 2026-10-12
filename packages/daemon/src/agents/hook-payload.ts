@@ -10,6 +10,8 @@ import {
   mcpToolName,
   PROJECT_AGENT_TOOLS,
   type ProjectAgentTool,
+  SKILL_REVIEW_TOOL,
+  skillTarget,
   TodoItem,
 } from "@kibo/schema";
 
@@ -47,10 +49,18 @@ const MCP_DETAILS: Record<ProjectAgentTool, (input: ToolInput) => string | null>
 const projectToolOf = (name: string | null | undefined): ProjectAgentTool | null =>
   PROJECT_AGENT_TOOLS.find((tool) => mcpToolName(tool) === name) ?? null;
 
+function reviewedCount(input: ToolInput): string | null {
+  const reviews = input.reviews;
+  if (!Array.isArray(reviews)) return null;
+  return `${reviews.length} ${reviews.length > 1 ? "skills" : "skill"}`;
+}
+
 function toolDetail(h: HookInput): string | null {
   const input = h.tool_input ?? {};
   const projectTool = projectToolOf(h.tool_name);
   if (projectTool) return MCP_DETAILS[projectTool](input);
+  if (h.tool_name === "Skill") return skillTarget(input);
+  if (h.tool_name === SKILL_REVIEW_TOOL) return reviewedCount(input);
   return (
     text(input.file_path) ?? text(input.path) ?? text(input.command) ?? text(input.pattern) ?? text(input.url)
   );
@@ -123,6 +133,7 @@ function reduce(h: HookInput): HookPayload {
     detail: clip(detailOf(h), 2000),
     question: clip(asked ? text(h.tool_input?.question) : null, 4000),
     agentId: clip(h.agent_id, 200),
+    toolUseId: clip(h.tool_use_id, 200),
     ask: askOf(h),
     todos: todosOf(h),
     stopHookActive: h.stop_hook_active === true,

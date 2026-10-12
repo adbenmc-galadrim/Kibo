@@ -1,4 +1,4 @@
-import { type Layout, layoutFor, type PrInfo, type ProfileInput } from "@kibo/schema";
+import { type AgentSettingsPatch, type Layout, layoutFor, type PrInfo } from "@kibo/schema";
 import { type DesiredNote, desiredNotes } from "./desired-notes";
 import { type DesiredQuestion, desiredQuestions } from "./desired-questions";
 import { type DesiredLink, type DesiredTicket, desiredLinks, desiredTickets } from "./desired-tickets";
@@ -11,6 +11,7 @@ export type { DesiredLink, DesiredNote, DesiredQuestion, DesiredTicket };
 export type DesiredInstance = { componentId: string; config: Record<string, unknown>; layout?: Layout };
 export type DesiredPage = { title: string; kind: "dashboard" | "view"; instances: DesiredInstance[] };
 export type DesiredGuideline = { path: string; content: string };
+export type DesiredAgent = { name: string; model: string; settings: AgentSettingsPatch };
 export type Desired = {
   project: { name: "Emis"; key: "EMIS"; color: string };
   tickets: DesiredTicket[];
@@ -18,7 +19,7 @@ export type Desired = {
   questions: DesiredQuestion[];
   notes: DesiredNote[];
   pages: DesiredPage[];
-  profile: ProfileInput;
+  agent: DesiredAgent;
   guidelines: DesiredGuideline[];
 };
 export type DesiredInput = {
@@ -60,16 +61,10 @@ export const PAGES: DesiredPage[] = [
   view("Notes", "notes"),
 ];
 
-export const PROFILE: ProfileInput = {
+export const AGENT: DesiredAgent = {
   name: "emis-livraison",
   model: "opus",
-  execution: "cli",
-  permissionMode: "auto",
-  workspace: "worktree",
-  maxParallel: 2,
-  subagents: [],
-  enabled: true,
-  allow: PROFILE_ALLOW,
+  settings: { permissionMode: "auto", workspace: "worktree", maxParallel: 2, allow: PROFILE_ALLOW },
 };
 
 function guidelines(input: DesiredInput): DesiredGuideline[] {
@@ -91,7 +86,7 @@ export function desiredState(input: DesiredInput): Desired {
     questions: desiredQuestions(input.plan, input.answers),
     notes: desiredNotes(input.plan, input.files),
     pages: PAGES,
-    profile: PROFILE,
+    agent: AGENT,
     guidelines: guidelines(input),
   };
 }

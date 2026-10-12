@@ -41,7 +41,7 @@ async function expectDemoWidgets(page: Page) {
 
 async function demoRuns(page: Page) {
   const agents = await rpc(page, { method: "getAgents" });
-  return list(agents, "runs").filter((r) => text(r, "profileId") === "demo");
+  return list(agents, "runs").filter((r) => text(r, "profileId") === "system:demo");
 }
 
 test("the tutorial walks the six steps in the demo project, then deletes it in one click", async ({
@@ -119,7 +119,7 @@ test("the tutorial walks the six steps in the demo project, then deletes it in o
     .click();
   await page.getByRole("dialog").getByRole("button", { name: "Assigner à un agent" }).click();
   const assign = page.getByRole("dialog");
-  await expect(assign.getByLabel("Profil")).toHaveText("Agent de démonstration · aucun token consommé");
+  await expect(assign.getByLabel("Agent")).toHaveText("Agent de démonstration · aucun token consommé");
   await shot(page, info, "assigner-demo");
   await assign.getByRole("button", { name: "Mettre en file" }).click();
   await expect(assign).toBeHidden();
@@ -174,7 +174,8 @@ test("the tutorial walks the six steps in the demo project, then deletes it in o
   await expect(dot(page, "Créer un ticket et le déplacer", "en cours")).toBeVisible();
 
   await page.goto("/#/agents");
-  const demoCard = page.getByRole("article", { name: "Agent de démonstration" });
-  await expect(demoCard.getByText("aucun token consommé")).toBeVisible();
+  await page.getByRole("button", { name: /^Agents de Kibo/ }).click();
+  const demoCard = page.getByRole("article", { name: "kibo-demo" });
+  await expect(demoCard.getByText("Joue les tickets du projet de démonstration de Kibo")).toBeVisible();
   await shot(page, info, "agents-demo");
 });

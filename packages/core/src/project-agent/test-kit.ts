@@ -1,5 +1,6 @@
 import {
-  type AgentProfile,
+  type AgentSummary,
+  DEFAULT_AGENT_SETTINGS,
   DEFAULT_RECIPIENTS,
   DEFAULT_WORKFLOW,
   EMPTY_PROGRESS,
@@ -113,8 +114,11 @@ export function run(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     ticketId: null,
     ticketKey: null,
     ticketTitle: "Ticket",
-    profileId: "opus",
+    profileId: "global:opus-dev",
     profileName: "opus-dev",
+    agentName: "opus-dev",
+    agentScope: "global",
+    projectKey: "EMIS",
     sessionId: `s-${p.id}`,
     brief: "",
     resumedFrom: null,
@@ -148,26 +152,35 @@ export function run(p: Partial<RunView> & Pick<RunView, "id">): RunView {
   };
 }
 
-export function profile(p: Partial<AgentProfile> & Pick<AgentProfile, "id">): AgentProfile {
+export function agent(p: Partial<AgentSummary> & Pick<AgentSummary, "ref" | "name">): AgentSummary {
   return {
-    name: p.id,
+    scope: "global",
+    projectId: null,
+    path: `/home/.claude/agents/${p.name}.md`,
+    hash: null,
+    problem: null,
+    nameWarning: null,
+    settings: DEFAULT_AGENT_SETTINGS,
+    shadowedBy: null,
+    activeRuns: 0,
+    modifiedAt: null,
+    description: `Agent ${p.name}`,
     model: "opus",
-    execution: "cli",
-    permissionMode: "default",
-    workspace: "worktree",
-    maxParallel: 1,
-    subagents: [],
-    enabled: true,
-    allow: [],
-    system: false,
+    skillsCount: null,
+    subagentsCount: 0,
     ...p,
   };
 }
 
-export const PROFILES: AgentProfile[] = [
-  profile({ id: "opus", name: "opus-dev" }),
-  profile({ id: "off", name: "off-dev", enabled: false }),
-  profile({ id: "assistant", system: true, workspace: "isolated" }),
-  profile({ id: "demo", system: true, workspace: "isolated" }),
-  profile({ id: "project-agent", system: true, workspace: "isolated" }),
+const system = (id: string): AgentSummary =>
+  agent({ ref: `system:${id}`, name: `kibo-${id}`, scope: "system", model: null });
+
+export const AGENTS: AgentSummary[] = [
+  agent({ ref: "global:opus-dev", name: "opus-dev" }),
+  agent({ ref: "global:off-dev", name: "off-dev", settings: { ...DEFAULT_AGENT_SETTINGS, enabled: false } }),
+  agent({ ref: "global:hidden", name: "hidden", shadowedBy: "project:x:hidden" }),
+  agent({ ref: "global:broken", name: "broken", problem: "frontmatter illisible : name manquant" }),
+  system("assistant"),
+  system("demo"),
+  system("project-agent"),
 ];

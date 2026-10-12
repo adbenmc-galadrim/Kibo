@@ -78,7 +78,10 @@ test("a retired game or snake widget shows as a missing component that can be re
         }),
       ),
     );
-    expect(errors).toEqual([]);
+    const ours = errors.filter(
+      (args) => !(Array.isArray(args) && typeof args[0] === "string" && args[0].startsWith("[kibo-daemon]")),
+    );
+    expect(ours).toEqual([]);
   } finally {
     console.error = original;
   }

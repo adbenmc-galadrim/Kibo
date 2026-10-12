@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { PROFILES, PROJECT_ID, project, run, ticket } from "@kibo/core/project-agent/test-kit";
+import { AGENTS, PROJECT_ID, project, run, ticket } from "@kibo/core/project-agent/test-kit";
 import {
   type ActionResult,
   type AgentsState,
@@ -47,6 +47,7 @@ export type Kit = {
   setWritable(writable: boolean): void;
   setFolder(folder: string | null): void;
   setApply(apply: ProjectAgentOps["apply"]): void;
+  setAgentBody(body: string): void;
   cleanup(): void;
 };
 
@@ -123,6 +124,7 @@ export function serviceKit(): Kit {
   let folder: string | null = null;
   let apply = applyAll;
   let clock = 100;
+  let agentBody = "";
   let emitted = 0;
   const calls: string[] = [];
   const notices: Notice[] = [];
@@ -139,7 +141,7 @@ export function serviceKit(): Kit {
       if (!writable) throw new KiboError("FORBIDDEN", "read only");
     },
     viewer: () => "adam",
-    profiles: () => PROFILES,
+    agents: () => AGENTS,
     guidelines: () => [],
     isDemoProject: () => false,
     notes: async () => [...notes].map(([path, content]) => ({ path, title: path, hash: `h:${content}` })),
@@ -168,6 +170,7 @@ export function serviceKit(): Kit {
     },
     notify: (notice) => notices.push(notice),
     formatTime: (at) => `t${at}`,
+    agentBody: () => agentBody,
     emit: () => {
       emitted += 1;
     },
@@ -198,6 +201,9 @@ export function serviceKit(): Kit {
     },
     setApply: (next) => {
       apply = next;
+    },
+    setAgentBody: (next) => {
+      agentBody = next;
     },
     cleanup() {
       store.close();

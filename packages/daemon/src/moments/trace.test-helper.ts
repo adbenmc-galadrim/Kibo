@@ -3,7 +3,7 @@ import { chmodSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { initRun } from "@kibo/core/run-machine";
-import type { HookPayload, RunMomentsEvent, RunView } from "@kibo/schema";
+import type { HookPayload, RunAction, RunMomentsEvent, RunView } from "@kibo/schema";
 import { openTranscript, structuredPatch } from "../agents/fake-claude-transcript";
 import { type MomentStore, openMomentStore } from "./store";
 import { createTraceService } from "./trace-service";
@@ -35,6 +35,7 @@ export const hook = (event: HookPayload["event"], p: Partial<HookPayload> = {}):
   detail: null,
   question: null,
   agentId: null,
+  toolUseId: null,
   ask: null,
   todos: null,
   stopHookActive: false,
@@ -45,6 +46,7 @@ export type SetupOptions = {
   maxBytes?: number;
   transcriptPath?: string;
   wrapStore?: (store: MomentStore) => MomentStore;
+  onActions?: (runId: string, actions: readonly RunAction[], at: number) => void;
 };
 
 export function setup(options: SetupOptions = {}) {
@@ -62,6 +64,7 @@ export function setup(options: SetupOptions = {}) {
     root,
     now: () => clock.now,
     emit: (e) => events.push(e),
+    ...(options.onActions !== undefined && { onActions: options.onActions }),
     read: (p, offset) => {
       reads.count += 1;
       return readTranscriptSlice(p, offset, options.maxBytes);
@@ -75,8 +78,10 @@ export function setup(options: SetupOptions = {}) {
     ticketId: "t1",
     ticketKey: "KIB-14",
     ticketTitle: "Corriger la validation",
-    profileId: "opus",
+    profileId: "global:opus",
     profileName: "opus-dev",
+    agentScope: "global" as const,
+    projectKey: null,
     sessionId: SESSION,
     brief: "",
     createdAt: 0,

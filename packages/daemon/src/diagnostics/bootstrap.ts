@@ -38,6 +38,7 @@ export function startAppDiagnostics(deps: AppDiagnosticsDeps): { appInfo: () => 
         workspace: service.docs.workspace,
         project: (id) => service.docs.project(id),
         components: () => deps.components.registry.list().length,
+        agents: () => service.agentData.agents(null).filter((agent) => agent.scope !== "system").length,
       }),
     integrations: async () =>
       (await call(service, { method: "listIntegrations" })).map(({ id, state }) => ({ id, state })),

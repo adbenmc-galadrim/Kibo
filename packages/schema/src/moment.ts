@@ -24,6 +24,7 @@ export const ACTION_KINDS = [
   "mcp",
   "subagent",
   "signal",
+  "skill",
   "other",
 ] as const;
 export const ActionKind = z.enum(ACTION_KINDS);
@@ -43,8 +44,12 @@ export const RunAction = z.object({
   detail: z.string().max(MOMENT_DETAIL_MAX).nullable(),
   patch: z.object({ added: Count, removed: Count }).nullable(),
   tests: z.object({ passed: Count, failed: Count }).nullable(),
+  callId: z.string().max(64).optional(),
 });
 export type RunAction = z.infer<typeof RunAction>;
+
+export const REMINDER_KINDS = ["plan", "report", "skills", "report_skills"] as const;
+export type ReminderKind = (typeof REMINDER_KINDS)[number];
 
 export const PartialReason = z.enum(["path-rejected", "unreadable", "unknown-format"]);
 export type PartialReason = z.infer<typeof PartialReason>;
@@ -58,7 +63,7 @@ export const MomentData = z.discriminatedUnion("kind", [
     failed: z.boolean(),
   }),
   z.object({ kind: z.literal("reasoning"), text: z.string().max(MOMENT_MESSAGE_MAX) }),
-  z.object({ kind: z.literal("reminder"), reminder: z.enum(["plan", "report"]) }),
+  z.object({ kind: z.literal("reminder"), reminder: z.enum(REMINDER_KINDS) }),
   z.object({
     kind: z.literal("signal"),
     signalId: z.string().min(1),

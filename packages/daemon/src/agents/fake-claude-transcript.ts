@@ -4,7 +4,13 @@ import type { Usage } from "./transcript";
 
 export const FAKE_CLAUDE_VERSION = "2.1.283";
 
-export type LineContext = { sessionId: string; cwd: string; parentUuid: string | null; at?: Date };
+export type LineContext = {
+  sessionId: string;
+  cwd: string;
+  parentUuid: string | null;
+  at?: Date;
+  sidechain?: boolean;
+};
 
 export type TranscriptLine = {
   parentUuid: string | null;
@@ -26,7 +32,7 @@ export type FakePatch = { added: number; removed: number };
 
 const base = (ctx: LineContext, type: TranscriptLine["type"]): Omit<TranscriptLine, "message"> => ({
   parentUuid: ctx.parentUuid,
-  isSidechain: false,
+  isSidechain: ctx.sidechain === true,
   userType: "external",
   cwd: ctx.cwd,
   sessionId: ctx.sessionId,
@@ -109,8 +115,8 @@ export function hookOutcome(extra: Record<string, unknown>, input: Record<string
 export const hookExtra = (extra: Record<string, unknown> | undefined): Record<string, unknown> =>
   Object.fromEntries(Object.entries(extra ?? {}).filter(([key]) => key !== "patch" && key !== "is_error"));
 
-export const denialOutcome = (tool: string): ToolOutcome => ({
-  content: `Permission to use ${tool} has been denied.`,
+export const denialOutcome = (tool: string, reason: string | null = null): ToolOutcome => ({
+  content: `Permission to use ${tool} has been denied.${reason ? ` ${reason}` : ""}`,
   isError: true,
 });
 
@@ -152,12 +158,14 @@ export type Transcript = {
   raw(line: string): void;
   toolUse(tool: string, input: Record<string, unknown>): string;
   toolResult(id: string, outcome: ToolOutcome): void;
+  sidechain(on: boolean): void;
 };
 
 export function openTranscript(path: string, sessionId: string, cwd: string): Transcript {
   let parentUuid = lastUuid(path);
+  let sidechain = false;
   const add = (make: (ctx: LineContext) => TranscriptLine) => {
-    const line = make({ sessionId, cwd, parentUuid });
+    const line = make({ sessionId, cwd, parentUuid, sidechain });
     appendTranscript(path, line);
     parentUuid = line.uuid;
   };
@@ -172,13 +180,16 @@ export function openTranscript(path: string, sessionId: string, cwd: string): Tr
       return id;
     },
     toolResult: (id, outcome) => add((ctx) => toolResultLine(ctx, id, outcome)),
+    sidechain(on) {
+      sidechain = on;
+    },
   };
 }
 
 export type ToolTrail = {
-  before(tool: string, input: Record<string, unknown>): void;
-  denied(tool: string): void;
-  after(tool: string, input: Record<string, unknown>, outcome: ToolOutcome): void;
+  before(tool: string, input: Record<string, unknown>): string;
+  denied(tool: string, reason?: string | null): void;
+  after(tool: string, input: Record<string, unknown>, outcome: ToolOutcome): string;
 };
 
 export function toolTrail(transcript: Transcript): ToolTrail {
@@ -189,12 +200,19 @@ export function toolTrail(transcript: Transcript): ToolTrail {
     return id;
   };
   return {
-    before: (tool, input) => pending.set(tool, transcript.toolUse(tool, input)),
-    denied(tool) {
-      const id = take(tool);
-      if (id) transcript.toolResult(id, denialOutcome(tool));
+    before(tool, input) {
+      const id = transcript.toolUse(tool, input);
+      pending.set(tool, id);
+      return id;
     },
-    after: (tool, input, outcome) =>
-      transcript.toolResult(take(tool) ?? transcript.toolUse(tool, input), outcome),
+    denied(tool, reason = null) {
+      const id = take(tool);
+      if (id) transcript.toolResult(id, denialOutcome(tool, reason));
+    },
+    after(tool, input, outcome) {
+      const id = take(tool) ?? transcript.toolUse(tool, input);
+      transcript.toolResult(id, outcome);
+      return id;
+    },
   };
 }

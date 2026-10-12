@@ -50,17 +50,11 @@ test("claude missing ⇒ AI_UNAVAILABLE", async () => {
   );
 }, 30_000);
 
-test("the system profiles exist at startup and the welcome screen reads its environment", async () => {
+test("the Kibo agents are enabled at startup and the welcome screen reads its environment", async () => {
   h = await startAiHarness({ scenario: "onboarding-ok.json" });
-  const config = await h.rpc({ method: "getConfig" });
-  expect(
-    config.profiles
-      .filter((p) => p.system)
-      .map((p) => p.id)
-      .sort(),
-  ).toEqual(["assistant", "demo", "generateur", "project-agent"]);
   const env = await h.rpc({ method: "getEnvironment" });
-  expect(env).toMatchObject({ ai: { available: true }, github: { connected: false } });
+  expect(env).toMatchObject({ ai: { available: true, profiles: { assistant: true, generateur: true } } });
+  expect(env).toMatchObject({ github: { connected: false } });
   expect(env.daemon.home).toBe(h.home);
   expect(env.capacity.cores).toBeGreaterThan(0);
   expect(await h.rpc({ method: "listComponentDrafts" })).toEqual([]);

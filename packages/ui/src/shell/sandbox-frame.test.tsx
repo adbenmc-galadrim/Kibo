@@ -1,4 +1,4 @@
-import { expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import type { Capability, FileRef, HostToFrame, Phase7Event, RpcRequest, Selection } from "@kibo/schema";
 import { createSignal, focusApi, type NewTicketDefaults, selectionApi, visibilityApi } from "@kibo/sdk";
 import { act, render } from "@testing-library/react";
@@ -6,7 +6,7 @@ import { apiMock } from "../api-mock";
 import type { InstanceApis } from "../lib/instance-capabilities";
 import type { Host } from "./Host";
 
-const DEADLINE = 30;
+const DEADLINE = 600_000;
 const requests: RpcRequest[] = [];
 let refusalFailure: Error | null = null;
 const listeners = new Set<(projectId: string | null) => void>();
@@ -31,6 +31,37 @@ mock.module("../api", () =>
     },
   }),
 );
+
+const deadlines = new Map<number, () => void>();
+let deadlineSeq = 0;
+const realSetTimeout = globalThis.setTimeout;
+const realClearTimeout = globalThis.clearTimeout;
+
+function replaceGlobal(name: "setTimeout" | "clearTimeout", value: unknown) {
+  Object.defineProperty(globalThis, name, { value, configurable: true, writable: true });
+}
+
+beforeEach(() => {
+  replaceGlobal("setTimeout", (...params: unknown[]) => {
+    const [handler, ms] = params;
+    if (ms !== DEADLINE || typeof handler !== "function")
+      return Reflect.apply(realSetTimeout, globalThis, params);
+    deadlineSeq -= 1;
+    deadlines.set(deadlineSeq, () => handler());
+    return deadlineSeq;
+  });
+  replaceGlobal("clearTimeout", (...params: unknown[]) => {
+    const [id] = params;
+    if (typeof id === "number" && deadlines.delete(id)) return;
+    Reflect.apply(realClearTimeout, globalThis, params);
+  });
+});
+
+afterEach(() => {
+  replaceGlobal("setTimeout", realSetTimeout);
+  replaceGlobal("clearTimeout", realClearTimeout);
+  deadlines.clear();
+});
 
 const unmockedModule = "./SandboxFrame?unmocked";
 const { SandboxFrame }: typeof import("./SandboxFrame") = await import(unmockedModule);
@@ -249,8 +280,11 @@ test("only the presence of the frame's own project reaches it", () => {
 });
 
 const pastDeadline = () =>
-  act(async () => {
-    await new Promise((r) => setTimeout(r, DEADLINE * 2));
+  act(() => {
+    for (const [id, fire] of [...deadlines]) {
+      deadlines.delete(id);
+      fire();
+    }
   });
 
 function captureErrors() {
@@ -271,7 +305,7 @@ test("ready before the first load keeps the frame", async () => {
   const { iframe, view, fromFrame, loaded } = mount();
   fromFrame(ready);
   await loaded();
-  await pastDeadline();
+  pastDeadline();
   expect(view.container.querySelector("iframe")).toBe(iframe);
   expect(view.queryByRole("alert")).toBeNull();
   view.unmount();
@@ -281,7 +315,7 @@ test("ready after the first load, within the deadline, keeps the frame", async (
   const { iframe, view, fromFrame, loaded } = mount();
   await loaded();
   fromFrame(ready);
-  await pastDeadline();
+  pastDeadline();
   expect(view.container.querySelector("iframe")).toBe(iframe);
   expect(view.queryByRole("alert")).toBeNull();
   view.unmount();
@@ -293,7 +327,7 @@ test("a navigation before the first load is caught when ready never comes", asyn
     const { view, posted, fromFrame, loaded } = mount();
     await loaded();
     expect(view.queryByRole("alert")).toBeNull();
-    await pastDeadline();
+    pastDeadline();
     expect(view.container.querySelector("iframe")).toBeNull();
     expect(view.getByRole("alert").textContent).toContain("Recharge la page");
     expect(capture.errors).toHaveLength(1);
@@ -334,10 +368,10 @@ test("a new src gets its own first load, with its own ready", async () => {
     await loaded();
     await changeSrc("about:blank#b");
     fromFrame(ready);
-    await pastDeadline();
+    pastDeadline();
     expect(view.container.querySelector("iframe")).toBe(iframe);
     await changeSrc("about:blank#c");
-    await pastDeadline();
+    pastDeadline();
     expect(view.container.querySelector("iframe")).toBeNull();
     expect(capture.errors).toHaveLength(1);
     view.unmount();
@@ -351,8 +385,10 @@ test("unmounting while waiting for ready leaves no timer behind", async () => {
   try {
     const { view, loaded } = mount();
     await loaded();
+    expect(deadlines.size).toBe(1);
     view.unmount();
-    await pastDeadline();
+    expect(deadlines.size).toBe(0);
+    pastDeadline();
     expect(capture.errors).toHaveLength(0);
   } finally {
     capture.restore();
@@ -390,7 +426,7 @@ test("a navigation caught by the missing ready is reported too", async () => {
   try {
     const { view, loaded } = mount();
     await loaded();
-    await pastDeadline();
+    pastDeadline();
     await settle();
     expect(refusals()).toHaveLength(1);
     view.unmount();

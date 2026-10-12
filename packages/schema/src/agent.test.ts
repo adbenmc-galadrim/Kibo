@@ -1,50 +1,133 @@
 import { describe, expect, test } from "bun:test";
 import {
-  AgentProfile,
+  AGENT_TEMPLATES,
+  AgentCreateInput,
+  AgentFrontmatter,
+  AgentRef,
+  AgentSettings,
+  AgentSettingsPatch,
+  agentRef,
   ConfigCommand,
+  DEFAULT_AGENT_SETTINGS,
   DEFAULT_RULES,
   estimateTokens,
   Guideline,
   GuidelinePath,
   HookInput,
   HookPost,
+  isReservedAgentName,
   PermissionMode,
-  ProfileInput,
+  parseAgentRef,
   RpcRequest,
   Rule,
   RunEvent,
   runSubject,
+  systemAgentName,
+  systemAgentRef,
+  systemAgentSettings,
+  systemIdOfName,
   WorkspacePatch,
 } from "./index";
 
-const profile = {
-  id: "p1",
-  name: "opus-dev",
-  model: "opus",
-  execution: "cli",
-  permissionMode: "acceptEdits",
-  workspace: "worktree",
-  maxParallel: 2,
-  subagents: ["sonnet", "haiku"],
-};
+const UUID = "0d3c7a8e-2b1f-4c5d-9e6a-7b8c9d0e1f2a";
 
-describe("agent profile", () => {
-  test("accepts the four safe permission modes only", () => {
+describe("agent refs", () => {
+  test("accept the three scopes and refuse anything else", () => {
+    for (const ok of ["global:review-pr", `project:${UUID}:review-pr`, "system:demo"]) {
+      expect(AgentRef.safeParse(ok).success).toBe(true);
+    }
+    for (const ko of ["global:Review", "system:dev", "project:x:review"]) {
+      expect(AgentRef.safeParse(ko).success).toBe(false);
+    }
+  });
+  test("parse back into their parts", () => {
+    expect(parseAgentRef("global:review-pr")).toEqual({ scope: "global", name: "review-pr" });
+    expect(parseAgentRef(`project:${UUID}:review-pr`)).toEqual({
+      scope: "project",
+      projectId: UUID,
+      name: "review-pr",
+    });
+    expect(parseAgentRef("system:project-agent")).toEqual({ scope: "system", id: "project-agent" });
+  });
+  test("are built from a scope, a project and a name", () => {
+    expect(agentRef("project", UUID, "a")).toBe(`project:${UUID}:a`);
+    expect(agentRef("global", null, "a")).toBe("global:a");
+    expect(systemAgentRef("project-agent")).toBe("system:project-agent");
+    expect(systemAgentName("generateur")).toBe("kibo-generateur");
+  });
+  test("the names of the Kibo agents are reserved, other kibo- names are not", () => {
+    expect(isReservedAgentName("kibo-demo")).toBe(true);
+    expect(isReservedAgentName("kibo-dev")).toBe(false);
+    expect(systemIdOfName("kibo-project-agent")).toBe("project-agent");
+    expect(systemIdOfName("kibo-dev")).toBeNull();
+  });
+});
+
+describe("agent settings", () => {
+  test("default to a worktree, all skills and the generic subagents", () => {
+    expect(AgentSettings.parse({})).toEqual({
+      workspace: "worktree",
+      permissionMode: "default",
+      allow: [],
+      maxParallel: 1,
+      enabled: true,
+      subagents: [],
+      genericSubagents: true,
+      skills: { mode: "all" },
+    });
+    expect(DEFAULT_AGENT_SETTINGS).toEqual(AgentSettings.parse({}));
+  });
+  test("bound the subagents and the allowed skills", () => {
+    const refs = Array.from({ length: 21 }, (_, i) => `global:a${i}`);
+    expect(AgentSettings.safeParse({ subagents: refs }).success).toBe(false);
+    expect(AgentSettings.safeParse({ skills: { mode: "list", ids: ["a:b", "c"] } }).success).toBe(true);
+    const ids = Array.from({ length: 51 }, (_, i) => `s${i}`);
+    expect(AgentSettings.safeParse({ skills: { mode: "list", ids } }).success).toBe(false);
+  });
+  test("accept the four safe permission modes only", () => {
     for (const mode of ["default", "acceptEdits", "plan", "auto"]) {
-      expect(AgentProfile.safeParse({ ...profile, permissionMode: mode }).success).toBe(true);
+      expect(AgentSettings.safeParse({ permissionMode: mode }).success).toBe(true);
     }
     for (const mode of ["bypassPermissions", "dontAsk", "manual"]) {
-      expect(AgentProfile.safeParse({ ...profile, permissionMode: mode }).success).toBe(false);
+      expect(AgentSettings.safeParse({ permissionMode: mode }).success).toBe(false);
     }
+    expect(AgentSettings.safeParse({ maxParallel: 0 }).success).toBe(false);
+    expect(AgentSettings.safeParse({ allow: ["Bash"] }).success).toBe(false);
   });
-  test("names are short lowercase slugs", () => {
-    expect(AgentProfile.safeParse({ ...profile, name: "Opus Dev" }).success).toBe(false);
-    expect(AgentProfile.safeParse({ ...profile, name: "-dev" }).success).toBe(false);
-    expect(AgentProfile.safeParse({ ...profile, maxParallel: 0 }).success).toBe(false);
+  test("a patch is strict", () => {
+    expect(AgentSettingsPatch.safeParse({ enabled: false }).success).toBe(true);
+    expect(AgentSettingsPatch.safeParse({ model: "opus" }).success).toBe(false);
   });
-  test("a bypass profile cannot even be sent as a command", () => {
-    const cmd = { method: "createProfile", profile: { ...profile, permissionMode: "bypassPermissions" } };
-    expect(ConfigCommand.safeParse(cmd).success).toBe(false);
+  test("the Kibo agents keep their fixed settings", () => {
+    expect(systemAgentSettings("demo", { maxParallel: 3 }).maxParallel).toBe(1);
+    const generator = systemAgentSettings("generateur", { maxParallel: 9 });
+    expect(generator.maxParallel).toBe(4);
+    expect(generator.skills).toEqual({ mode: "list", ids: [] });
+    expect(generator.genericSubagents).toBe(false);
+    expect(generator.subagents).toEqual([]);
+    expect(generator.workspace).toBe("isolated");
+    expect(generator.permissionMode).toBe("acceptEdits");
+    expect(systemAgentSettings("assistant", { enabled: false, permissionMode: "auto" })).toMatchObject({
+      enabled: false,
+      permissionMode: "default",
+    });
+  });
+});
+
+describe("agent files", () => {
+  test("the model is an alias or a full name in lower case", () => {
+    expect(
+      AgentFrontmatter.safeParse({ name: "a", description: "d", model: "claude-opus-4-1" }).success,
+    ).toBe(true);
+    expect(AgentFrontmatter.safeParse({ name: "a", description: "d", model: "Opus" }).success).toBe(false);
+    expect(AgentFrontmatter.parse({ name: "a", description: "d" })).toMatchObject({
+      extra: "",
+      extraKeys: [],
+    });
+  });
+  test("creation leaves the project check to the service", () => {
+    expect(AgentCreateInput.parse({ scope: "project", name: "x", description: "d" }).template).toBe("blank");
+    expect(AGENT_TEMPLATES).toContain("conductor");
   });
 });
 
@@ -133,13 +216,26 @@ describe("runs and hooks", () => {
     expect(RunEvent.parse({ ...spawned, sessionId: "s2" })).toEqual({ ...spawned, sessionId: "s2" });
   });
   test("assignAgent starts from the main session unless asked to start fresh", () => {
-    const assign = { method: "assignAgent", projectId: "p", ticketId: "1@1", profileId: "p1", brief: "" };
+    const assign = {
+      method: "assignAgent",
+      projectId: "p",
+      ticketId: "1@1",
+      profileId: "global:p1",
+      brief: "",
+    };
     expect(RpcRequest.parse(assign)).toMatchObject({ fresh: false });
     expect(RpcRequest.parse({ ...assign, fresh: true })).toMatchObject({ fresh: true });
   });
   test("agent rpc requests are validated", () => {
-    const assign = { method: "assignAgent", projectId: "p", ticketId: "1@1", profileId: "p1", brief: "" };
+    const assign = {
+      method: "assignAgent",
+      projectId: "p",
+      ticketId: "1@1",
+      profileId: "global:p1",
+      brief: "",
+    };
     expect(RpcRequest.safeParse(assign).success).toBe(true);
+    expect(RpcRequest.safeParse({ ...assign, profileId: "p1" }).success).toBe(false);
     expect(RpcRequest.safeParse({ method: "answerRun", runId: "r", text: "" }).success).toBe(false);
     expect(RpcRequest.safeParse({ method: "setHost", patch: { cpuThreshold: 5 } }).success).toBe(false);
     expect(RpcRequest.safeParse({ method: "moveRun", runId: "r", index: -1 }).success).toBe(false);
@@ -161,17 +257,9 @@ test("a workspace patch needs a field; the description is bounded and can be cle
   });
 });
 
-test("profiles accept auto and default allow to an empty list", () => {
-  const p = ProfileInput.parse({
-    name: "x",
-    model: "opus",
-    execution: "cli",
-    permissionMode: "auto",
-    workspace: "worktree",
-    maxParallel: 2,
-    subagents: [],
-  });
-  expect(p.allow).toEqual([]);
-  expect(ProfileInput.safeParse({ ...p, allow: ["Bash"] }).success).toBe(false);
+test("the profile commands are gone and the profile guidelines with them", () => {
+  expect(ConfigCommand.safeParse({ method: "createProfile", profile: {} }).success).toBe(false);
+  const g = { id: "g", owner: { scope: "profile", profileId: "p" }, path: "a.md", content: "" };
+  expect(Guideline.safeParse(g).success).toBe(false);
   expect(PermissionMode.safeParse("bypassPermissions").success).toBe(false);
 });

@@ -4,9 +4,9 @@ import { Input } from "@kibo/sdk/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { useState } from "react";
-import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
-import { elapsed, formatDuration, formatTokens } from "./format";
+import { frAgentsSkills } from "../i18n/fr-agents-skills";
+import { elapsed, formatClock, formatDuration, formatTokens } from "./format";
 import { Mention } from "./mention/Mention";
 import { RunStateLabel } from "./RunStateLabel";
 import { filterRuns, RUN_FILTERS, type RunFilter } from "./run-filter";
@@ -71,7 +71,12 @@ function HistoryRow({
       <TableCell>{subject}</TableCell>
       {project !== undefined && <ProjectCell project={project} />}
       <TableCell>
-        <Mention runId={run.id} label={run.label} />
+        <span className="flex items-center gap-2">
+          <Mention runId={run.id} label={run.label} />
+          {run.startedAt !== null && (
+            <span className="font-mono text-2xs text-muted-foreground">{formatClock(run.startedAt)}</span>
+          )}
+        </span>
       </TableCell>
       <TableCell className="font-mono">
         {run.startedAt === null ? "-" : formatDuration(elapsed(run, now))}
@@ -91,12 +96,12 @@ export function RunHistory({ runs, questions, positions, projectColumn, now, onO
   const [filter, setFilter] = useState<RunFilter>("all");
   const [query, setQuery] = useState("");
   const t = frAgentsPage.filters;
-  const c = fr.agentsPage.columns;
+  const c = frAgentsSkills.page.columns;
   const shown = filterRuns(runs, filter, query);
   return (
     <section className="grid gap-3">
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-md font-semibold">{fr.agentsPage.history}</h2>
+        <h2 className="text-md font-semibold">{frAgentsSkills.page.history}</h2>
         <span className="flex-1" />
         <ToggleGroup
           type="single"
@@ -122,7 +127,7 @@ export function RunHistory({ runs, questions, positions, projectColumn, now, onO
         />
       </div>
       {runs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{fr.agentsPage.noRuns}</p>
+        <p className="text-sm text-muted-foreground">{frAgentsSkills.page.noRuns}</p>
       ) : shown.length === 0 ? (
         <p className="text-sm text-muted-foreground">{frAgentsPage.noMatch}</p>
       ) : (
@@ -133,7 +138,7 @@ export function RunHistory({ runs, questions, positions, projectColumn, now, onO
                 <TableHead>{c.run}</TableHead>
                 <TableHead>{c.ticket}</TableHead>
                 {projectColumn && <TableHead>{frAgentsPage.project.column}</TableHead>}
-                <TableHead>{c.profile}</TableHead>
+                <TableHead>{c.agent}</TableHead>
                 <TableHead>{c.duration}</TableHead>
                 <TableHead>{c.tokens}</TableHead>
                 <TableHead>{c.result}</TableHead>

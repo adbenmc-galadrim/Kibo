@@ -20,7 +20,7 @@ export const frCode = {
     missingPage: "Page introuvable",
     missingTicket: "Ticket introuvable",
     run: "Run",
-    runTitle: (label: string, key: string | null) => (key ? `Run ${label} · ${key}` : `Run ${label}`),
+    runTitle: (label: string) => `Run ${label}`,
     dirty: "Changements non commités",
     title: (project: string, item: string) => `${project} · ${item}`,
     saveFailed: "Impossible d'enregistrer les onglets.",

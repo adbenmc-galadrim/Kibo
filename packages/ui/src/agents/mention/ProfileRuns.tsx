@@ -1,4 +1,4 @@
-import type { AgentsState, RunView } from "@kibo/schema";
+import { type AgentsState, keyBesideLabel, type RunView } from "@kibo/schema";
 import { RUN_TEXT, RunDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { frMoments } from "../../i18n/fr-moments";
@@ -38,7 +38,7 @@ export function RunList({ label, runs, current, agents }: ListProps) {
           <RunDot state={run.state} />
           <span className="flex min-w-0 items-center gap-2">
             <Mention runId={run.id} label={run.label} className="text-[13px] font-medium" />
-            {run.ticketKey && (
+            {keyBesideLabel(run.label, run.ticketKey) && (
               <span className="shrink-0 font-mono text-muted-foreground">{run.ticketKey}</span>
             )}
           </span>

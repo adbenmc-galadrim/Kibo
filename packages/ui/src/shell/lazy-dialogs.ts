@@ -33,8 +33,13 @@ export const AssignDialog = lazyPanel(
   fr.lazy,
   hidden,
 );
-export const ProfileSheet = lazyPanel(
-  () => import("../agents/ProfileSheet").then((m) => m.ProfileSheet),
+export const NewAgentDialog = lazyPanel(
+  () => import("../agents/catalog/NewAgentDialog").then((m) => m.NewAgentDialog),
+  fr.lazy,
+  hidden,
+);
+export const NewSkillDialog = lazyPanel(
+  () => import("../skills/NewSkillDialog").then((m) => m.NewSkillDialog),
   fr.lazy,
   hidden,
 );

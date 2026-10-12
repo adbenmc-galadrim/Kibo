@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import { PROJECT_AGENT_PROFILE_ID, type ProjectAgentSummary } from "@kibo/schema";
+import { PROJECT_AGENT_REF, type ProjectAgentSummary } from "@kibo/schema";
 import { runView } from "../questions/questions.test-helper";
 import { startProjectAgent } from "./bootstrap";
 import { type Harness, harness } from "./fakes.test-helper";
@@ -14,7 +14,7 @@ function boot() {
   open.push(h);
   const attached: string[] = [];
   const project = runView({ id: "p-run", projectId: h.project.id, ticketId: null, state: "running" });
-  h.agents.runs.push({ ...project, kind: "project", profileId: PROJECT_AGENT_PROFILE_ID });
+  h.agents.runs.push({ ...project, kind: "project", profileId: PROJECT_AGENT_REF });
   const started = startProjectAgent({
     home: h.dir,
     service: {

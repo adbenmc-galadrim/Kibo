@@ -10,10 +10,11 @@ import {
   migrateForSharing,
   setStatus,
 } from "@kibo/core";
-import type { Domain, ProjectMeta, Ticket } from "@kibo/schema";
+import type { Domain, ProjectMeta, Skill, Ticket } from "@kibo/schema";
 import { call, createService } from "../service";
 import { openStore } from "../store";
 import { applyRules } from "./data-port";
+import { memoryAgent, memoryAgentSource, NEUTRAL_SYSTEM_AGENTS } from "./neutral-agents";
 
 const doc = () =>
   createProjectDoc({
@@ -139,6 +140,67 @@ test("a run reads the local worktree settings of its project", () => {
       command: { method: "createTicket", title: "A" },
     }) as Ticket;
     expect(s.agentData.ticketContext(meta.id, ticket.id).project.meta.worktree).toEqual(worktree);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+const skill = (id: string, projectId: string | null): Skill => ({
+  id,
+  source: projectId === null ? "user" : "project",
+  projectId,
+  plugin: null,
+  name: id,
+  description: `Skill ${id}`,
+  path: "",
+  file: null,
+  problem: null,
+  hash: null,
+  readOnly: false,
+  shadowedBy: null,
+  files: [],
+  usage: { last: null, runs30d: 0 },
+  reviews: { open: 0 },
+  modifiedAt: null,
+});
+
+test("the port serves the agents and skills of a project from its sources, and the project key from the doc", () => {
+  const dir = mkdtempSync(join(tmpdir(), "kibo-port-"));
+  try {
+    const p2 = "22222222-2222-4222-8222-222222222222";
+    const store = openStore(dir);
+    const placeholder = createService(store, { user: "adam" });
+    const meta = call(placeholder, {
+      method: "createProject",
+      name: "Boutique",
+      key: "BOU",
+      folder: null,
+      color: "#F97316",
+    }) as ProjectMeta;
+    const own = memoryAgent({
+      ref: `project:${meta.id}:review-pr`,
+      scope: "project",
+      name: "review-pr",
+      projectId: meta.id,
+    });
+    const other = memoryAgent({ ref: `project:${p2}:seo`, scope: "project", name: "seo", projectId: p2 });
+    const global = memoryAgent({ ref: "global:livraison", scope: "global", name: "livraison" });
+    const source = memoryAgentSource(
+      [...NEUTRAL_SYSTEM_AGENTS, global, own, other],
+      [skill("deploy", null), skill("tests", meta.id), skill("x", p2)],
+    );
+    const s = createService(store, { user: "adam", agents: source });
+    const refs = s.agentData.agents(meta.id).map((a) => a.ref);
+    expect(refs).toContain("global:livraison");
+    expect(refs).toContain("system:project-agent");
+    expect(refs).toContain(own.ref);
+    expect(refs).not.toContain(other.ref);
+    expect(s.agentData.agents(null).map((a) => a.ref)).toContain(other.ref);
+    expect(s.agentData.agentOf(own.ref)?.name).toBe("review-pr");
+    expect(s.agentData.agentOf("global:absent")).toBeNull();
+    expect(s.agentData.projectKey(meta.id)).toBe("BOU");
+    expect(s.agentData.skills(meta.id).map((k) => k.id)).toEqual(["deploy", "tests"]);
+    store.close();
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -1,4 +1,4 @@
-import { isOpenSignal, type Signal, type SignalKind } from "@kibo/schema";
+import { isOpenSignal, keyBesideLabel, type Signal, type SignalKind } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Info, type LucideIcon, MessageCircleQuestionMark, Ticket, TriangleAlert } from "lucide-react";
@@ -43,14 +43,18 @@ function Origin({ signal, onTicket }: Pick<Props, "signal" | "onTicket">) {
       <KindName kind={signal.kind} />
       <span className="text-muted-foreground">{t.from}</span>
       <Mention runId={signal.runId} label={signal.runLabel} state={run?.state} />
-      <span className="text-muted-foreground">{t.on}</span>
-      <button
-        type="button"
-        className="font-mono text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-        onClick={() => onTicket(signal.ticketKey)}
-      >
-        {signal.ticketKey}
-      </button>
+      {keyBesideLabel(signal.runLabel, signal.ticketKey) && (
+        <>
+          <span className="text-muted-foreground">{t.on}</span>
+          <button
+            type="button"
+            className="font-mono text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            onClick={() => onTicket(signal.ticketKey)}
+          >
+            {signal.ticketKey}
+          </button>
+        </>
+      )}
       <span className="ml-auto font-mono text-muted-foreground">{formatClock(signal.createdAt)}</span>
     </p>
   );

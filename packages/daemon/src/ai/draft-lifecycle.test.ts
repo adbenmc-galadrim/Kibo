@@ -76,7 +76,7 @@ describe("start", () => {
     expect(readFileSync(join(paths.dir, "CLAUDE.md"), "utf8")).toContain("ui.tsx");
     const req = runs.runs[0]?.req;
     expect(req).toMatchObject({
-      profileId: "generateur",
+      profileId: "system:generateur",
       cwd: paths.dir,
       resumeSessionId: null,
       env: { PATH: "/kibo/bin" },

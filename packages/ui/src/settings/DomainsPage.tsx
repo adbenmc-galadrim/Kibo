@@ -36,8 +36,7 @@ const owns = (g: Guideline, owner: GuidelineOwner | null) => {
   const o = g.owner;
   if (owner.scope === "workspace") return o.scope === "workspace";
   if (owner.scope === "project") return o.scope === "project" && o.projectId === owner.projectId;
-  if (owner.scope === "domain") return o.scope === "domain" && o.domainId === owner.domainId;
-  return o.scope === "profile" && o.profileId === owner.profileId;
+  return o.scope === "domain" && o.domainId === owner.domainId;
 };
 
 export function DomainsPage({ config, projects }: Props) {

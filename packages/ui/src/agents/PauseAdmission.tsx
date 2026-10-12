@@ -18,12 +18,12 @@ export function PauseAdmission({ paused }: { paused: boolean }) {
     <>
       {failed && (
         <span role="alert" className="text-xs text-destructive">
-          {fr.queue.failed}
+          {fr.agents.pauseFailed}
         </span>
       )}
       <Button variant="outline" size="sm" className="h-7" onClick={() => void toggle()}>
         {paused ? <Play /> : <Pause />}
-        {paused ? fr.queue.resume : fr.queue.pause}
+        {paused ? fr.agents.resume : fr.agents.pause}
       </Button>
     </>
   );

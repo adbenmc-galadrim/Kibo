@@ -243,6 +243,20 @@ const allDaemons = [
     spec: /signals\.spec\.ts/,
     scenario: "signal-routes",
   },
+  {
+    name: "agents-skills-dark",
+    scheme: "dark",
+    port: 4469,
+    spec: /agents-skills\.spec\.ts/,
+    scenario: "skills-routes",
+  },
+  {
+    name: "agents-skills-light",
+    scheme: "light",
+    port: 4470,
+    spec: /agents-skills\.spec\.ts/,
+    scenario: "skills-routes",
+  },
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 

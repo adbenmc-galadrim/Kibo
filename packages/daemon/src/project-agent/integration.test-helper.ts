@@ -1,10 +1,9 @@
-import { afterEach } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import type {
-  AgentProfile,
+  Agent,
   AgentsState,
   Batch,
   ProjectAgentView,
@@ -15,6 +14,7 @@ import type {
   Ticket,
 } from "@kibo/schema";
 import { z } from "zod";
+import { testAgent, testAgentSource } from "../agents/agents-port.test-helper";
 import {
   FAKE_CLAUDE,
   type FakeCall,
@@ -28,9 +28,10 @@ import { type Daemon, startDaemon } from "../daemon";
 export type Rpc = <T>(body: Record<string, unknown>) => Promise<T>;
 
 const cleanups: (() => Promise<void>)[] = [];
-afterEach(async () => {
+
+export async function stopDaemons(): Promise<void> {
   for (const cleanup of cleanups.splice(0)) await cleanup();
-});
+}
 
 const RpcReply = z.object({ ok: z.boolean(), result: z.unknown() });
 
@@ -73,8 +74,11 @@ export type Stack = {
   restart(): Promise<void>;
 };
 
+export const LIVRAISON_AGENT: Agent = testAgent({ id: "livraison", name: "livraison", maxParallel: 1 });
+
 async function boot(home: string, notices: Notice[], scenario: FakeScenarioName): Promise<Daemon> {
   return startDaemon({
+    agentSource: testAgentSource([LIVRAISON_AGENT]).source,
     home,
     port: 0,
     sandboxPort: 0,
@@ -120,7 +124,7 @@ export async function startStack(scenario: FakeScenarioName = "project-agent-rou
   return stack;
 }
 
-export type Seeded = { project: ProjectMeta; receiver: Ticket; docs: Ticket; opus: AgentProfile };
+export type Seeded = { project: ProjectMeta; receiver: Ticket; docs: Ticket; livraison: Agent };
 
 export async function seedKibo(rpc: Rpc): Promise<Seeded> {
   const project = await rpc<ProjectMeta>({
@@ -138,22 +142,7 @@ export async function seedKibo(rpc: Rpc): Promise<Seeded> {
     });
   const receiver = await ticket("Récepteur de hooks", "Recevoir les hooks de Claude Code.");
   const docs = await ticket("Documentation", "Écrire le guide.");
-  const opus = await rpc<AgentProfile>({
-    method: "config",
-    command: {
-      method: "createProfile",
-      profile: {
-        name: "opus",
-        model: "opus",
-        execution: "cli",
-        permissionMode: "acceptEdits",
-        workspace: "isolated",
-        subagents: [],
-        maxParallel: 1,
-      },
-    },
-  });
-  return { project, receiver, docs, opus };
+  return { project, receiver, docs, livraison: LIVRAISON_AGENT };
 }
 
 export const agentsOf = (rpc: Rpc) => rpc<AgentsState>({ method: "getAgents" });

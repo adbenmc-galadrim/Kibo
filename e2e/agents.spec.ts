@@ -2,6 +2,7 @@ import { rmSync } from "node:fs";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
 import {
   assign,
+  createAgent,
   createGitRepo,
   list,
   pairBrowser,
@@ -29,19 +30,45 @@ async function shot(page: Page, info: TestInfo, name: string) {
   await page.screenshot({ path: info.outputPath(`${name}.png`), fullPage: true });
 }
 
-async function createOpusProfile(page: Page, info: TestInfo) {
+const prop = (value: unknown, key: string): unknown =>
+  typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined;
+
+const DELIVERY = "Livre un ticket en TDD avec des commits propres";
+
+async function maxParallelOf(page: Page, name: string): Promise<unknown> {
+  const listed = list(await rpc(page, { method: "agents.list" }), "agents");
+  const agent = listed.find((a) => prop(a, "name") === name);
+  return prop(prop(agent, "settings"), "maxParallel");
+}
+
+async function createDeliveryAgent(page: Page, info: TestInfo) {
   await page.getByRole("button", { name: "Agents", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Agents" })).toBeVisible();
-  await page.getByRole("button", { name: "Nouveau profil" }).click();
-  const sheet = page.getByRole("dialog");
-  await sheet.getByLabel("Nom").fill("opus-dev");
-  await sheet.getByText("Modifications acceptées").click();
-  await sheet.getByLabel("Runs en parallèle (profil)").fill("2");
-  await sheet.getByRole("button", { name: "Sonnet", exact: true }).click();
-  await sheet.getByRole("button", { name: "Haiku", exact: true }).click();
+  await page.getByRole("button", { name: "Nouvel agent" }).click();
+  const dialog = page.getByRole("dialog", { name: "Nouvel agent" });
+  await dialog.getByLabel("Nom", { exact: true }).fill("livraison");
+  await expect(dialog.getByRole("radio", { name: "Global" })).toHaveAttribute("data-state", "on");
+  await dialog.getByLabel("Description").fill(DELIVERY);
+  await dialog.getByLabel("Modèle").click();
+  await page.getByRole("option", { name: "Opus" }).click();
+  await dialog.getByText("Livraison", { exact: true }).click();
+  await expect(dialog.getByRole("radio", { name: /^Livraison/ })).toBeChecked();
+  await dialog.getByRole("button", { name: "Créer l'agent" }).click();
+  await expect(dialog).toBeHidden();
+  const card = page.getByRole("article", { name: "livraison" });
+  await expect(card).toBeVisible();
+
+  await card.getByRole("button", { name: "Ouvrir l'agent livraison" }).click();
+  const settings = page.getByRole("button", { name: /^Réglages techniques/ });
+  await expect(settings).toHaveAttribute("aria-expanded", "false");
+  await settings.click();
+  await expect(settings).toHaveAttribute("aria-expanded", "true");
+  await page.getByRole("radio", { name: "Modifications acceptées" }).click();
+  await page.getByLabel("Runs en parallèle").fill("2");
+  await expect.poll(() => maxParallelOf(page, "livraison")).toBe(2);
   await shot(page, info, "ecran-28");
-  await sheet.getByRole("button", { name: "Créer le profil" }).click();
-  await expect(page.getByRole("article", { name: "opus-dev" })).toBeVisible();
+  await page.locator('[data-sidebar="sidebar"]').getByRole("button", { name: "Agents", exact: true }).click();
+  await expect(page.getByRole("article", { name: "livraison" })).toBeVisible();
 }
 
 const projectFilter = (page: Page) => page.getByRole("button", { name: "Filtrer par projet" });
@@ -97,17 +124,17 @@ async function filterByProject(page: Page, info: TestInfo) {
 test("agents au travail : cartes, file, journal, réponse, review", async ({ page }, info) => {
   await pairBrowser(page);
   await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
-  await createOpusProfile(page, info);
+  await createDeliveryAgent(page, info);
 
   repo = createGitRepo();
   seeded = await seedWorkspace(page, repo);
-  await assign(page, seeded, 12, "opus-dev", "running");
-  await assign(page, seeded, 14, "opus-dev", "waiting_input");
-  const rules = await assign(page, seeded, 16, "opus-dev", "running");
-  await assign(page, seeded, 7, "sonnet-review", "running");
-  const watcher = await assign(page, seeded, 10, "opus-dev", "queued");
-  await assign(page, seeded, 18, "opus-dev", "queued");
-  await assign(page, seeded, 29, "opus-dev", "queued");
+  await assign(page, seeded, 12, "livraison", "running");
+  await assign(page, seeded, 14, "livraison", "waiting_input");
+  const rules = await assign(page, seeded, 16, "livraison", "running");
+  await assign(page, seeded, 7, "review-plan", "running");
+  const watcher = await assign(page, seeded, 10, "livraison", "queued");
+  await assign(page, seeded, 18, "livraison", "queued");
+  await assign(page, seeded, 29, "livraison", "queued");
   await rpc(page, { method: "setRunPriority", runId: watcher, priority: true });
 
   await page.goto(`/#/p/${seeded.projectId}/${encodeURIComponent(seeded.board)}`);
@@ -122,8 +149,8 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   await page.getByRole("dialog").getByRole("button", { name: "Assigner à un agent" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("Assigner KIB-15 à un agent")).toBeVisible();
-  await dialog.getByLabel("Profil").click();
-  await page.getByRole("option", { name: /^opus-dev ·/ }).click();
+  await dialog.getByRole("combobox", { name: "Agent" }).click();
+  await page.getByRole("option", { name: /^livraison ·/ }).click();
   await dialog
     .getByLabel("Brief (optionnel)")
     .fill("Implémenter le drag & drop avec @dnd-kit ; garder l'ordre dans le LoroTree.");
@@ -134,8 +161,8 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   await dialog.getByRole("button", { name: "Annuler" }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
 
-  await page.getByRole("button", { name: "Répondre à opus-dev-2" }).click();
-  const journal = page.getByRole("list", { name: "Fil de opus-dev-2" });
+  await page.getByRole("button", { name: "Répondre à global · livraison · KIB-14" }).click();
+  const journal = page.getByRole("list", { name: "Fil de global · livraison · KIB-14" });
   await expect(journal.getByText("Quel port pour le récepteur ?")).toBeVisible();
   await expect(page.getByText("worktree kib-14")).toBeVisible();
   await shot(page, info, "ecran-5");
@@ -147,7 +174,11 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   await expect(capacity.getByText(/seuil 85 %/)).toBeVisible();
   await expect(capacity.getByText(/seuil 90 %/)).toBeVisible();
   await expect(capacity.getByText(/Places sur la machine : 3 \(fixé · auto : \d+\)/)).toBeVisible();
-  await expect(page.getByRole("region", { name: "En attente de réponse" }).getByText("KIB-14")).toBeVisible();
+  await expect(
+    page
+      .getByRole("region", { name: "En attente de réponse" })
+      .getByRole("button", { name: "global · livraison · KIB-14", exact: true }),
+  ).toBeVisible();
   await shot(page, info, "ecran-17");
 
   await page.getByRole("button", { name: "Agents", exact: true }).click();
@@ -167,8 +198,10 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   await shot(page, info, "ecran-14");
 
   await page.goto(`/#/p/${seeded.projectId}/${encodeURIComponent(seeded.board)}`);
-  await page.getByRole("button", { name: "Répondre à opus-dev-2" }).click();
-  await page.getByLabel("Réponse à opus-dev-2").fill("Port dynamique, écrit dans ~/.kibo/daemon.json");
+  await page.getByRole("button", { name: "Répondre à global · livraison · KIB-14" }).click();
+  await page
+    .getByLabel("Réponse à global · livraison · KIB-14")
+    .fill("Port dynamique, écrit dans ~/.kibo/daemon.json");
   await page.getByRole("button", { name: "Envoyer" }).click();
   await rpc(page, { method: "cancelRun", runId: rules });
   await expect.poll(() => runState(page, "KIB-14"), { timeout: 45_000 }).toBe("done");
@@ -176,13 +209,15 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   await page.getByRole("button", { name: "Passer en review" }).click();
   const review = page.getByRole("region", { name: "En review" });
   await expect(review.getByText("KIB-14")).toBeVisible();
-  await expect(review.getByRole("article").filter({ hasText: "KIB-14" }).getByText("opus-dev")).toBeVisible();
+  await expect(
+    review.getByRole("article").filter({ hasText: "KIB-14" }).getByText("livraison"),
+  ).toBeVisible();
 });
 
 test("l'historique ouvre le run cliqué, pour trois agents différents", async ({ page }, info) => {
   if (!seeded) throw new Error("seed missing");
   await pairBrowser(page);
-  await assign(page, seeded, 9, "haiku-tests", "queued");
+  await assign(page, seeded, 9, "tests-rapides", "queued");
   await page.goto("/#/agents");
   await expect(page.getByRole("heading", { level: 1, name: "Agents" })).toBeVisible();
   await page
@@ -190,26 +225,24 @@ test("l'historique ouvre le run cliqué, pour trois agents différents", async (
     .getByRole("radio", { name: "Tous" })
     .click();
   await filterByProject(page, info);
-  for (const [profile, key] of [
-    ["sonnet-review", "KIB-7"],
-    ["haiku-tests", "KIB-9"],
-    ["opus-dev", "KIB-12"],
+  for (const [agent, key, title] of [
+    ["review-plan", "KIB-7", "Tokens shadcn + thème sombre"],
+    ["tests-rapides", "KIB-9", "Setup Tauri + sidecar Bun"],
+    ["livraison", "KIB-12", "Schéma Loro des tickets (LoroTree)"],
   ] as const) {
+    const label = `global · ${agent} · ${key}`;
     await page
       .getByRole("row", { name: new RegExp(`^${key} · `) })
       .getByRole("cell")
       .nth(2)
       .click();
-    const panel = page.getByRole("dialog", { name: new RegExp(`^Run ${profile}(-\\d+)? · ${key}$`) });
-    await expect(panel.getByRole("list", { name: new RegExp(`^Fil de ${profile}(-\\d+)?$`) })).toBeAttached();
-    await expect(panel.getByRole("heading", { name: new RegExp(`^${profile}(-\\d+)?$`) })).toBeVisible();
-    await expect(panel.getByRole("button", { name: new RegExp(`^${key} · `) })).toBeVisible();
+    const panel = page.getByRole("dialog", { name: `Run ${label}`, exact: true });
+    await expect(panel.getByRole("list", { name: `Fil de ${label}` })).toBeAttached();
+    await expect(panel.getByRole("heading", { name: label, exact: true })).toBeVisible();
+    await expect(panel.getByRole("button", { name: title, exact: true })).toBeVisible();
   }
   await shot(page, info, "historique-trois-agents");
 });
-
-const prop = (value: unknown, key: string): unknown =>
-  typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined;
 
 type AskedQuestion = { id: string; title: string; deliveredRunId: string | null };
 
@@ -239,26 +272,17 @@ test("un run pose une question à valider, la réponse attend « Transmettre à 
   const ticketId = seeded.tickets.get(22) ?? "";
   await pairBrowser(page);
   await rpc(page, { method: "setHost", patch: { hostSlots: 12 } });
-  const profile = await rpc(page, {
-    method: "config",
-    command: {
-      method: "createProfile",
-      profile: {
-        name: "emis-livraison",
-        model: "opus",
-        execution: "cli",
-        permissionMode: "acceptEdits",
-        workspace: "isolated",
-        subagents: [],
-        maxParallel: 1,
-      },
-    },
+  const agent = await createAgent(page, {
+    name: "emis-livraison",
+    description: "Livre un ticket d'Emis et pose ses questions avant de trancher",
+    model: "opus",
+    settings: { permissionMode: "acceptEdits", workspace: "isolated", maxParallel: 1 },
   });
   const run = await rpc(page, {
     method: "assignAgent",
     projectId,
     ticketId,
-    profileId: text(profile, "id"),
+    profileId: agent,
     brief: "Toute décision non tranchée passe par ask_question.",
   });
   const runId = text(run, "id");
@@ -274,8 +298,8 @@ test("un run pose une question à valider, la réponse attend « Transmettre à 
   const row = page.getByRole("row", { name: /^KIB-22 · / });
   await expect(row).toContainText("Terminé · 1 question");
   await row.getByRole("cell").nth(2).click();
-  const panel = page.getByRole("dialog", { name: /^Run emis-livraison(-\d+)? · KIB-22$/ });
-  await expect(panel.getByRole("list", { name: /^Fil de emis-livraison/ })).toBeAttached();
+  const panel = page.getByRole("dialog", { name: "Run global · emis-livraison · KIB-22", exact: true });
+  await expect(panel.getByRole("list", { name: "Fil de global · emis-livraison · KIB-22" })).toBeAttached();
   await page.keyboard.press("Escape");
   await expect(panel).toBeHidden();
   const expand = page.getByRole("button", { name: "Déplier les agents" });
@@ -314,7 +338,7 @@ test("un run pose une question à valider, la réponse attend « Transmettre à 
   await drawer.getByRole("button", { name: "Transmettre à l'agent" }).click();
   await expect.poll(() => runProgress(page, runId), { timeout: 30_000 }).toBe("done:2");
   await expect(drawer.getByText("1 réponse à transmettre")).toHaveCount(0);
-  await expect(drawer.getByRole("list", { name: /^Fil de emis-livraison/ })).toContainText(
+  await expect(drawer.getByRole("list", { name: "Fil de global · emis-livraison · KIB-22" })).toContainText(
     "reprise de la session",
   );
   expect((await askedQuestions(page, projectId, ticketId))[0]?.deliveredRunId).toBe(runId);

@@ -18,6 +18,7 @@ const kinds: Record<ActionKind, string> = {
   mcp: "Outil",
   subagent: "Sous-agent",
   signal: "Signal",
+  skill: "Skill",
   other: "Outil",
 };
 
@@ -43,6 +44,8 @@ export const frMoments = {
   reminders: {
     plan: "Kibo a rappelé de déclarer le plan",
     report: "Kibo a rappelé de remplir le compte rendu",
+    skills: "Kibo a rappelé la review des skills",
+    report_skills: "Kibo a rappelé le compte rendu et la review des skills",
   },
   partial,
   reasoning: "Raisonnement",
@@ -50,6 +53,11 @@ export const frMoments = {
   detail: "Voir le détail",
   kinds,
   outcomes,
+  phrases: {
+    skill: "A utilisé le skill",
+    deniedSkill: "Kibo a refusé le skill",
+    deniedSubagent: "Kibo a refusé le sous-agent",
+  },
   patch: (added: number, removed: number) => `+${added} −${removed}`,
   tests: (passed: number, failed: number) => `${passed} ✓ ${failed} ✗`,
   plan: {
@@ -120,7 +128,8 @@ export const frMoments = {
   },
   run: {
     missing: "Run introuvable",
-    profile: (profile: string) => `Profil ${profile}`,
+    agent: (name: string, scope: string) => `Agent ${name} · ${scope}`,
+    startedAt: (clock: string) => `démarré à ${clock}`,
     expand: "Ouvrir en grand",
     close: "Fermer",
     resize: "Redimensionner le volet du run",
@@ -131,5 +140,6 @@ export const frMoments = {
     loading: "Chargement du fil…",
     failed: "Impossible de charger le fil de ce run.",
     report: (previous: boolean) => (previous ? "Compte rendu du run précédent" : "Compte rendu"),
+    reviews: "Reviews de skills",
   },
 };

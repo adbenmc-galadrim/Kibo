@@ -11,12 +11,12 @@ import {
   type Question,
 } from "@kibo/schema";
 import { type BatchContext, captureExpected, ticketByKey, ticketRuns } from "./expected";
-import { assignableProfiles } from "./overview";
+import { assignableAgents } from "./overview";
 import { isNewRef, signalRefsOf, ticketRefsOf } from "./refs";
 
 export type { BatchContext } from "./expected";
 export { captureExpected } from "./expected";
-export { assignableProfiles } from "./overview";
+export { assignableAgents, assignableEntry } from "./overview";
 
 export type ActionProblem = { actionId: number; type: ActionType; message: string };
 export type ValidBatch = { actions: ProposedAction[]; expected: ExpectedState[] };
@@ -173,10 +173,10 @@ const checks: { [T in ActionType]: Check<T> } = {
     return [];
   },
   assignAgent(scan, a) {
-    const assignable = assignableProfiles(scan.ctx.profiles, scan.ctx.demoProject).some(
-      (p) => p.id === a.profileId,
+    const assignable = assignableAgents(scan.ctx.agents, scan.ctx.demoProject).some(
+      (p) => p.ref === a.profileId,
     );
-    return assignable ? touch(scan, `${a.ticket}.agent`) : [`profil non assignable « ${a.profileId} »`];
+    return assignable ? touch(scan, `${a.ticket}.agent`) : [`agent non assignable « ${a.profileId} »`];
   },
   deliverAnswers(scan, a) {
     const ticket = ticketByKey(scan.ctx.project)(a.ticket);

@@ -2,6 +2,9 @@ import { type ActionKind, MOMENT_DETAIL_MAX, type RunAction } from "./moment";
 import { PROGRESS_TOOL } from "./progress";
 import { ASK_TOOLS } from "./run";
 import { SIGNAL_TOOL } from "./signal";
+import { SKILL_REVIEW_TOOL } from "./skill";
+
+const SKILL_INPUT_KEYS = ["skill", "name", "command"] as const;
 
 export type ToolCall = {
   tool: string;
@@ -36,6 +39,14 @@ const FILE_KINDS: Record<string, Classified["kind"]> = {
   Write: "create",
 };
 
+export function skillTarget(input: Record<string, unknown>): string | null {
+  for (const key of SKILL_INPUT_KEYS) {
+    const value = text(input, key);
+    if (value !== null) return value;
+  }
+  return null;
+}
+
 export function classifyTool(tool: string, input: Record<string, unknown>): Classified {
   const fileKind = FILE_KINDS[tool];
   if (fileKind) return { kind: fileKind, target: text(input, "file_path") };
@@ -44,6 +55,7 @@ export function classifyTool(tool: string, input: Record<string, unknown>): Clas
   if (tool === "Bash") return classifyCommand(text(input, "command") ?? "");
   if (tool === "TodoWrite") return { kind: "todo", target: null };
   if (tool === "Task" || tool === "Agent") return { kind: "subagent", target: text(input, "subagent_type") };
+  if (tool === "Skill") return { kind: "skill", target: skillTarget(input) };
   if (ASK_TOOLS.includes(tool)) return { kind: "question", target: text(input, "question") };
   if (tool === PROGRESS_TOOL) return { kind: "progress", target: progressTarget(input) };
   if (tool === SIGNAL_TOOL) return { kind: "signal", target: String(input.title ?? "") };
@@ -98,7 +110,7 @@ export function testCounts(output: string): Counts | null {
   return passed === null && failed === null ? null : { passed: passed ?? 0, failed: failed ?? 0 };
 }
 
-const DENIAL = /\bdenied\b|\bblocked by\b|doesn't want to proceed|\brefusé/i;
+const DENIAL = /\bdenied\b|\bblocked by\b|doesn't want to proceed|\brefusé|non autorisé par Kibo/i;
 export const denialOf = (output: string | null): boolean => output !== null && DENIAL.test(output);
 
 const FAILED_EXIT = /Exit code [1-9]/;
@@ -116,7 +128,7 @@ export function actionOf(call: ToolCall): RunAction {
     patch: call.patch,
     tests,
   };
-  return { ...base, label: actionLabel(base) };
+  return { ...base, label: actionLabel(base, call.input) };
 }
 
 const plural = (n: number, one: string, many: string): string => `${n} ${n > 1 ? many : one}`;
@@ -144,7 +156,14 @@ function progressPhrase(target: string | null): string {
   ].join(" et ");
 }
 
-function phrase(a: Omit<RunAction, "label">): string {
+function reviewPhrase(input: Record<string, unknown>): string {
+  const reviews = input.reviews;
+  return Array.isArray(reviews)
+    ? `laissé une review de ${plural(reviews.length, "skill", "skills")}`
+    : "laissé une review des skills";
+}
+
+function phrase(a: Omit<RunAction, "label">, input: Record<string, unknown> = {}): string {
   const named = (prefix: string, name: string | null) => (name ? `${prefix} ${name}` : prefix);
   switch (a.kind) {
     case "read":
@@ -173,14 +192,17 @@ function phrase(a: Omit<RunAction, "label">): string {
       return named("lancé un sous-agent", a.target);
     case "signal":
       return `signalé « ${a.target ?? ""} » à l'agent de projet`;
+    case "skill":
+      return a.target ? `utilisé le skill \`${a.target}\`` : "utilisé un skill";
     case "mcp":
-      return named("appelé", a.target);
+      return a.tool === SKILL_REVIEW_TOOL ? reviewPhrase(input) : named("appelé", a.target);
     case "other":
       return named("utilisé un outil", a.tool || null);
   }
 }
 
-export const actionLabel = (a: Omit<RunAction, "label">): string => `A ${phrase(a)}`.slice(0, 200);
+export const actionLabel = (a: Omit<RunAction, "label">, input: Record<string, unknown> = {}): string =>
+  `A ${phrase(a, input)}`.slice(0, 200);
 
 const distinct = (actions: readonly RunAction[]): number =>
   new Set(actions.map((a, i) => a.target ?? `#${i}`)).size;
@@ -204,16 +226,31 @@ const GROUPS: readonly { kind: ActionKind; many(actions: readonly RunAction[]): 
     { kind: "todo", always: true, many: () => "mis à jour sa liste de tâches" },
     { kind: "subagent", many: (g) => `lancé ${g.length} sous-agents` },
     { kind: "signal", always: true, many: (g) => `envoyé ${plural(g.length, "signal", "signaux")}` },
+    { kind: "skill", always: true, many: (g) => `utilisé ${plural(g.length, "skill", "skills")}` },
     { kind: "mcp", many: (g) => `appelé ${g.length} outils` },
     { kind: "other", many: (g) => `utilisé ${g.length} outils` },
   ];
 
+const lonePhrase = (a: RunAction): string =>
+  a.tool === SKILL_REVIEW_TOOL && a.label.startsWith("A ") ? a.label.slice(2) : phrase(a);
+
+export const standsAlone = (a: Pick<RunAction, "kind" | "outcome">): boolean =>
+  a.kind === "skill" || (a.kind === "subagent" && a.outcome === "denied");
+
+function aloneLabel(a: RunAction): string {
+  if (a.outcome !== "denied") return actionLabel(a);
+  const what = a.kind === "skill" ? "le skill" : "le sous-agent";
+  return a.target ? `Kibo a refusé ${what} \`${a.target}\`` : `Kibo a refusé ${what}`;
+}
+
 export function summarizeActions(actions: readonly RunAction[]): string {
+  const [alone] = actions;
+  if (actions.length === 1 && alone && standsAlone(alone)) return aloneLabel(alone).slice(0, 300);
   const parts = GROUPS.flatMap((group) => {
     const members = actions.filter((a) => a.kind === group.kind);
     if (members.length === 0) return [];
     const [only] = members;
-    return [members.length === 1 && only && !group.always ? phrase(only) : group.many(members)];
+    return [members.length === 1 && only && !group.always ? lonePhrase(only) : group.many(members)];
   });
   if (parts.length === 0) return "";
   const last = parts.pop();

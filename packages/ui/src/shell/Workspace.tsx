@@ -44,6 +44,7 @@ import { useOpened } from "./use-opened";
 import { useProjectAgentPanel } from "./use-project-agent-panel";
 import { useProjectLanding } from "./use-project-landing";
 import { useRunPanel } from "./use-run-panel";
+import { useScreenVisit } from "./use-screen-visit";
 import { useShellDialogs } from "./use-shell-dialogs";
 import { useWorkspaceHost } from "./use-workspace-host";
 import { useWorkspaceKeys } from "./use-workspace-keys";
@@ -100,6 +101,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     go(null);
   };
   const views = useOpenView(currentProject, go, useSnapshotLookup(snapshots));
+  const screenVisit = useScreenVisit(screen, go);
 
   const host = useWorkspaceHost({
     activeProjectId,
@@ -172,7 +174,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                 workspaceIcon={
                   config?.workspaceIcon ? iconUrl({ kind: "workspace" }, config.workspaceIcon) : null
                 }
-                onOpen={go}
+                onOpen={screenVisit.open}
                 onSearch={() => setPalette({ newTab: false })}
                 onNewProject={() => set({ newProject: true })}
                 onNewPage={(parentId) => set({ newPageParent: parentId })}
@@ -196,7 +198,8 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                   viewer={viewer}
                   notifications={notifications}
                   now={now}
-                  onNewProfile={() => set({ newProfile: true })}
+                  onNewAgent={() => set({ newAgent: true })}
+                  onNewSkill={() => set({ newSkill: true })}
                   onNewTicket={() => set({ newTicket: {} })}
                   onShare={() => project && set({ share: project.meta.id })}
                   onOpenRun={setFocusRun}
@@ -209,6 +212,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                 <div className="min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
                   {screen ? (
                     <ScreenView
+                      key={`${screen}-${screenVisit.visit}`}
                       screen={screen}
                       viewer={viewer}
                       projects={projects}

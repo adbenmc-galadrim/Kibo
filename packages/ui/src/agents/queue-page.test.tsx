@@ -3,7 +3,8 @@ import { KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
-import { agentsFixture, NOW, profilesFixture, projectsFixture } from "./fixtures";
+import { catalogFixture } from "./catalog/fixtures";
+import { agentsFixture, agentsSummaryFixture, NOW, projectsFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
 let outcome: () => Promise<unknown> = () => Promise.resolve(null);
@@ -15,11 +16,12 @@ mock.module("../api", () =>
         calls.push(req);
         return outcome();
       },
+      subscribeTopic: () => () => {},
     },
   }),
 );
 
-const { moveTarget, QueuePage } = await import("./QueuePage");
+const { moveTarget, QueueBoard, QueuePage } = await import("./QueuePage");
 const { PauseAdmission } = await import("./PauseAdmission");
 
 beforeEach(() => {
@@ -30,9 +32,9 @@ beforeEach(() => {
 
 const show = (onAnswer: (runId: string) => void = () => {}) =>
   render(
-    <QueuePage
+    <QueueBoard
       state={agentsFixture()}
-      profiles={profilesFixture}
+      agents={agentsSummaryFixture}
       projects={projectsFixture}
       now={NOW}
       onAnswer={onAnswer}
@@ -54,12 +56,12 @@ test("capacity shows one card per place, the gauges and the admission rule", () 
   expect(capacity.getByText("Places sur la machine : 3 (auto : 8 cœurs, 16 Go)")).toBeTruthy();
 });
 
-test("profiles with runs come first, then the idle ones, each group by name", () => {
-  const byName = [...profilesFixture].sort((a, b) => a.name.localeCompare(b.name));
+test("agents with runs come first, then the idle ones, each group by name", () => {
+  const byName = [...agentsSummaryFixture].sort((a, b) => a.name.localeCompare(b.name));
   render(
-    <QueuePage
+    <QueueBoard
       state={agentsFixture()}
-      profiles={byName}
+      agents={byName}
       projects={projectsFixture}
       now={NOW}
       onAnswer={() => {}}
@@ -68,8 +70,8 @@ test("profiles with runs come first, then the idle ones, each group by name", ()
   const columns = screen
     .getAllByRole("region")
     .map((r) => r.getAttribute("aria-label"))
-    .filter((name) => profilesFixture.some((p) => p.name === name));
-  expect(columns).toEqual(["opus-dev", "sonnet-review", "haiku-tests"]);
+    .filter((name) => agentsSummaryFixture.some((p) => `${p.name} · Global` === name));
+  expect(columns).toEqual(["opus-dev · Global", "sonnet-review · Global", "haiku-tests · Global"]);
 });
 
 test("a first turn with a message keeps its queue reason", () => {
@@ -78,18 +80,18 @@ test("a first turn with a message keeps its queue reason", () => {
     r.id === "q18" ? { ...r, pendingAnswer: "Commence par les tests." } : r,
   );
   render(
-    <QueuePage
+    <QueueBoard
       state={{ ...state, runs }}
-      profiles={profilesFixture}
+      agents={agentsSummaryFixture}
       projects={projectsFixture}
       now={NOW}
       onAnswer={() => {}}
     />,
   );
-  const opus = within(screen.getByRole("region", { name: "opus-dev" }));
+  const opus = within(screen.getByRole("region", { name: "opus-dev · Global" }));
   const q18 = opus.getAllByRole("listitem").find((li) => li.dataset.run === "q18");
   if (!q18) throw new Error("queue item q18 missing");
-  expect(within(q18).getByText("attend une place du profil opus-dev (2/2)")).toBeTruthy();
+  expect(within(q18).getByText("attend une place de l'agent opus-dev (2/2)")).toBeTruthy();
   expect(within(q18).queryByText("réponse reçue · reprise de la session")).toBeNull();
 });
 
@@ -99,15 +101,15 @@ test("a message that resumes a finished run says so, an answer to a question say
     r.id === "q29" ? { ...r, turns: 1, pendingAnswer: "Ajoute les tests.", question: null } : r,
   );
   render(
-    <QueuePage
+    <QueueBoard
       state={{ ...state, runs }}
-      profiles={profilesFixture}
+      agents={agentsSummaryFixture}
       projects={projectsFixture}
       now={NOW}
       onAnswer={() => {}}
     />,
   );
-  const opus = within(screen.getByRole("region", { name: "opus-dev" }));
+  const opus = within(screen.getByRole("region", { name: "opus-dev · Global" }));
   const item = (runId: string) => {
     const li = opus.getAllByRole("listitem").find((x) => x.dataset.run === runId);
     if (!li) throw new Error(`queue item ${runId} missing`);
@@ -121,9 +123,9 @@ test("a message that resumes a finished run says so, an answer to a question say
 test("fixed host slots say so and still give the automatic value", () => {
   const state = agentsFixture();
   render(
-    <QueuePage
+    <QueueBoard
       state={{ ...state, host: { ...state.host, autoSlots: 5, slotsFixed: true } }}
-      profiles={profilesFixture}
+      agents={agentsSummaryFixture}
       projects={projectsFixture}
       now={NOW}
       onAnswer={() => {}}
@@ -134,9 +136,9 @@ test("fixed host slots say so and still give the automatic value", () => {
   expect(capacity.getByRole("button", { name: "modifiable" })).toBeTruthy();
 });
 
-test("each profile lists its running runs and its queue in order", () => {
+test("each agent lists its running runs and its queue in order", () => {
   show();
-  const opus = within(screen.getByRole("region", { name: "opus-dev" }));
+  const opus = within(screen.getByRole("region", { name: "opus-dev · Global" }));
   expect(opus.getByText("2/2")).toBeTruthy();
   expect(opus.getByText("KIB-12 · Schéma Loro des tickets")).toBeTruthy();
   const items = opus.getAllByRole("listitem").filter((li) => li.dataset.queued === "true");
@@ -150,7 +152,7 @@ test("each profile lists its running runs and its queue in order", () => {
   expect(item("q10").getByText("Prioritaire")).toBeTruthy();
   expect(item("q10").getByText("réponse reçue · reprise de la session")).toBeTruthy();
   expect(item("q29").getByText("attend une place sur la machine (3/3)")).toBeTruthy();
-  const sonnet = within(screen.getByRole("region", { name: "sonnet-review" }));
+  const sonnet = within(screen.getByRole("region", { name: "sonnet-review · Global" }));
   expect(sonnet.getByText("1/3")).toBeTruthy();
   expect(sonnet.getByText("Vide")).toBeTruthy();
 });
@@ -158,7 +160,7 @@ test("each profile lists its running runs and its queue in order", () => {
 test("sub-agents run in their parent's slot and the waiting column offers an answer", async () => {
   const onAnswer = mock((_: string) => {});
   show(onAnswer);
-  const haiku = within(screen.getByRole("region", { name: "haiku-tests" }));
+  const haiku = within(screen.getByRole("region", { name: "haiku-tests · Global" }));
   expect(haiku.getByText("sous-agent")).toBeTruthy();
   expect(haiku.getByText("Dans la place de opus-dev-1")).toBeTruthy();
   expect(haiku.getByText("KIB-12 · Schéma Loro des tickets")).toBeTruthy();
@@ -256,7 +258,7 @@ test("screen 163: the project filter hides other projects' runs but keeps the ma
   const capacity = within(screen.getByRole("region", { name: "Capacité de la machine" }));
   expect(capacity.getAllByRole("listitem")).toHaveLength(3);
   expect(capacity.getByText("62 % · seuil 85 %")).toBeTruthy();
-  const opusRegion = screen.getByRole("region", { name: "opus-dev" });
+  const opusRegion = screen.getByRole("region", { name: "opus-dev · Global" });
   const opus = within(opusRegion);
   expect(opus.getByText("2/2")).toBeTruthy();
   expect(opus.queryByText("KIB-12 · Schéma Loro des tickets")).toBeNull();
@@ -268,7 +270,7 @@ test("screen 163: the project filter hides other projects' runs but keeps the ma
   expect(
     within(screen.getByRole("region", { name: "En attente de réponse" })).queryByText(/KIB-14/),
   ).toBeNull();
-  expect(screen.queryByRole("region", { name: "haiku-tests" })?.textContent ?? "").not.toContain(
+  expect(screen.queryByRole("region", { name: "haiku-tests · Global" })?.textContent ?? "").not.toContain(
     "Dans la place de",
   );
 });
@@ -277,7 +279,7 @@ test("without a filter the queue page shows everything and no reminder", () => {
   show();
   expect(projectTrigger().textContent).toContain("Projet : tous");
   expect(screen.queryByText(/toute la machine/)).toBeNull();
-  expect(queuedItems(screen.getByRole("region", { name: "opus-dev" }))).toHaveLength(4);
+  expect(queuedItems(screen.getByRole("region", { name: "opus-dev · Global" }))).toHaveLength(4);
 });
 
 test("under a filter, up and down move among the visible runs only", async () => {
@@ -307,10 +309,38 @@ test("waiting, running and queued runs are named with agent mentions", () => {
   show();
   const waiting = within(screen.getByRole("region", { name: "En attente de réponse" }));
   expect(waiting.getByRole("button", { name: "opus-dev-2" })).toBeTruthy();
-  const opus = within(screen.getByRole("region", { name: "opus-dev" }));
+  const opus = within(screen.getByRole("region", { name: "opus-dev · Global" }));
   expect(opus.getByRole("button", { name: "opus-dev-1" })).toBeTruthy();
   const queued = opus.getAllByRole("listitem").filter((li) => li.getAttribute("data-queued") === "true");
   expect(queued.length).toBeGreaterThan(0);
   for (const item of queued)
     expect(within(item).getAllByRole("button", { name: /^opus-dev/ }).length).toBe(1);
+});
+
+test("the page asks the agents of the filtered project and titles each column with its scope", async () => {
+  outcome = () => Promise.resolve({ agents: catalogFixture(), notices: [], partialWatch: false });
+  render(<QueuePage state={agentsFixture()} projects={projectsFixture} now={NOW} onAnswer={() => {}} />);
+  expect(await screen.findByRole("heading", { name: "Files par agent" })).toBeTruthy();
+  expect(calls[0]).toEqual({ method: "agents.list" });
+  expect(await screen.findByRole("region", { name: "opus-dev · Global" })).toBeTruthy();
+  expect(screen.getByRole("region", { name: "review-pr · Kibo" })).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "review-pr · Global" })).toBeNull();
+});
+
+test("a waiting run whose name holds its ticket does not repeat the key", () => {
+  const state = agentsFixture();
+  const runs = state.runs.map((r) =>
+    r.state === "waiting_input" ? { ...r, label: `global · opus-dev · ${r.ticketKey ?? ""}` } : r,
+  );
+  render(
+    <QueueBoard
+      state={{ ...state, runs }}
+      agents={agentsSummaryFixture}
+      projects={projectsFixture}
+      now={NOW}
+      onAnswer={() => {}}
+    />,
+  );
+  const waiting = within(screen.getByRole("region", { name: "En attente de réponse" }));
+  expect(waiting.queryByText(/^· KIB-/)).toBeNull();
 });

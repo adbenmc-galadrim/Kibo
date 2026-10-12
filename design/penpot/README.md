@@ -48,8 +48,10 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 28 à 28d · Pistes | pistes de brainstorming de la phase 20 (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF |
 | 29 · Visibilité des agents | 183 à 188k (phase 20 : barre et volet des agents, onglet Activité, mention d'agent, Questions et destinataires, graphe lisible, Kanban « Démarrable ») ; **dessinés** |
 | 30 · Signaux des agents | 189 à 191 (phase 21 : boîte à signaux, lot après réveil, fil du run émetteur, Activité, pastille et notification) ; **dessinés** |
+| 31 · Agents et skills | 192 à 196 (phase 22 : page Agents et fiche, nouvel agent, « Ce que reçoit l'agent », conflit d'écriture, page Skills, éditeur, notes de review, intégration en diff, historique, fil du run) ; **dessinés** |
+| 32 · Doublons entre agents | 197 à 201b (phase 23 : recouvrement dans le fil des deux runs, lien automatique et annulation, liens du ticket « par Kibo », barre et page du run, réglages « Doublons entre agents », « Ce que reçoit l'agent ») ; à dessiner |
 
-Pages 00 à 27, 29 et 30 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 30.
+Pages 00 à 27 et 29 à 31 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 31 (la page 32, phase 23, est dans le fichier mais hors des PDF).
 Pages 28 à 28d : pistes de brainstorming (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF ; scripts `32b` à `32f`, pistes eux aussi.
 
 Règles :
@@ -203,9 +205,33 @@ Données : section « Visibilité des agents (phase 20) » de `donnees-fictives.
   (« Appliquée » ×3, KIB-31) · 190 page dédiée du run opus-dev-2 (KIB-14), ligne de signal et action « Signalé » dépliée · 190b fiche KIB-14, onglet
   Activité, ligne de signal dans la chronologie · 191 Kanban, pastille « 4 » et notification « Blocage signalé par opus-dev-3 · KIB-16 ».
 
+## Phase 22 (page 31)
+
+`35-agents-skills.js`, chargé après `24-socle-suite`, `32b-pistes-agents` et `32d-pistes-questions` (primitives `S.vis`, `S.visQ`) ; liste
+`S.AGENTS_SKILLS`. Dessiner **un écran par appel direct** avec `await S.one(n)` (sombre puis clair par `S.both`, puis export PNG des deux
+dans `exports/pages/<n>-dark.png` et `<n>-light.png`) : un appel qui dépasse 120 s continue et finit bien, mais une chaîne détachée
+(`.then`, `S.job`) perd l'ordre des sous-entrées « Files d'attente » et « Skills » et met la croix des onglets en tête. Après le dessin,
+`await S.fixAgSk()` dans un appel direct (sous-entrées sous « Agents », croix des onglets en dernier), puis `S.dropBases()`.
+Écrans de 1 120 à 1 180 px de haut pour 192, 192b, 193b, 194, 194b ; rangées espacées de 1,4 × 1 040 px.
+Données : section « Agents et skills (phase 22) » de `donnees-fictives.md` ; noms de runs `portée ou projet · agent · ticket` (§28.12).
+Ajustés après implémentation sur les captures `screens/2026-10-12-t8` (T9) : fiche d'agent et éditeur de skill ouverts dans la page, fil d'Ariane
+« Agents › nom » ou « Skills › nom » sous l'en-tête (qui garde « Agents » ou « Agents › Skills » et son bouton « Nouvel agent » ou « Nouveau skill »),
+onglet « Agents » ou « Skills » (icône sparkles), bouton « Renommer » ; historique des runs en colonnes Run, Ticket, Projet, Agent (nom du run
+et heure), Durée, Tokens, Résultat, avec la recherche ; 193d en niveaux avec leur chemin `context/…`, puis `CLAUDE.md` complet, `brief.md` et
+`agents.json` repliés ; 194b : skill de plugin dans l'éditeur, « Copier pour modifier » en dialogue ; notes de review en troisième colonne ;
+intégration en diff sans actions par bloc ; dans le fil, « A utilisé le skill », le refus en rouge et « A laissé une review de 2 skills ».
+
+- 31 · Agents et skills : 192 page Agents (statistiques, cartes « Mes agents » avec portée, modèle, skills et sous-agents, run en cours,
+  « masqué », « Nom peu parlant », « fichier illisible », agents de Kibo repliés, historique des runs) · 192b « Nouvel agent » (nom, portée,
+  description obligatoire, modèle, gabarits Vide, Livraison, Review, SEO, Chef d'orchestre, aperçu « Dans Claude Code », chemin du fichier) ·
+  193 fiche agent, spec en premier · 193b réglages techniques dépliés · 193c sous-agents appelables et skills autorisés · 193d « Ce que reçoit
+  l'agent » · 193e conflit d'écriture · 194 page Skills (Cet ordinateur, Projet, Plugins) · 194b skill de plugin en lecture seule, « Copier pour
+  modifier » · 195 éditeur de skill, côte à côte et fichiers annexes · 195b notes de review · 195c intégration en diff · 195d historique des
+  versions · 196 fil du run et bloc « Reviews de skills » de l'onglet Activité.
+
 ## Exporter
 
-1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, `("29")` puis `("30")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
+1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("31")` aujourd'hui (la page 32 attend le jalon de la phase 23) (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`.
 2. Source : menu du fichier → Exporter (.penpot), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
    que Penpot régénère : l'archive reste sous la limite de 100 Mo de GitHub).

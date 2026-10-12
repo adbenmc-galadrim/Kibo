@@ -89,7 +89,6 @@ test("imports the fixture once, then finds everything, then repairs a missing im
       4 +
       1 +
       2 +
-      1 +
       1,
   );
   const second = await withClient((c) => applyDesired(c, desired, options));
@@ -131,10 +130,6 @@ test("imports the fixture once, then finds everything, then repairs a missing im
   expect(snap.questions.find((q) => q.importRef?.id === "Q3")?.answer?.deliveredAt).toBeNull();
   const c02 = snap.tickets.find((t) => t.title.startsWith("C0-2 · "));
   expect(readFileSync(join(notes, "briefs", "C0-2.md"), "utf8")).toContain(`tickets: [${c02?.key}]`);
-  const config = await withClient((c) => c.rpc({ method: "getConfig" }));
-  expect(config.profiles.find((p) => p.name === "emis-livraison")).toMatchObject({
-    permissionMode: "auto",
-  });
   expect(await withClient((c) => c.rpc({ method: "getNotesDir", projectId }))).toMatchObject({
     dir: notes,
   });

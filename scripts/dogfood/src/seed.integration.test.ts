@@ -60,7 +60,6 @@ test("seeds the Kibo project once, then finds everything on a second run", async
   expect(first.created).toMatchObject({
     project: 1,
     domain: desired.domains.length,
-    profile: 4,
     guideline: desired.guidelines.length,
     page: desired.pages.length,
     instance: desired.pages.reduce((n, p) => n + p.instances.length, 0),

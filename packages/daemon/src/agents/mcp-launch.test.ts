@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { PROJECT_AGENT_MCP_TOOLS } from "@kibo/schema";
 import { ticketLaunch } from "./mcp-launch";
-import { profile } from "./orchestrator.test-helper";
+import { testAgent } from "./orchestrator.test-helper";
 import { projectLaunch } from "./project-run";
 
 const dirs: string[] = [];
@@ -16,7 +16,7 @@ const input = () => {
   const home = mkdtempSync(join(tmpdir(), "kibo-mcp-launch-"));
   dirs.push(home);
   return {
-    profile: profile({ allow: ["Bash(bun test *)"] }),
+    agent: testAgent({ allow: ["Bash(bun test *)"] }),
     baseUrl: "http://127.0.0.1:4100",
     runId: "r1",
     runDir: join(home, "runs", "r1"),

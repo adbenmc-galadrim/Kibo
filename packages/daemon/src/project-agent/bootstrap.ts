@@ -1,4 +1,7 @@
+import { DEFAULT_PROJECT_AGENT_BODY } from "@kibo/core/agents/compose";
+import { PROJECT_AGENT_REF } from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
+import type { AgentDataPort } from "../agents/orchestrator-types";
 import type { Docs } from "../docs";
 import type { Service } from "../service";
 import { ready } from "../service-ports";
@@ -24,7 +27,11 @@ export type ProjectAgentBootInput = {
   orchestrator: () => Omit<ProjectAgentAgents, "deliverAnswers">;
   notify: (notice: Notice) => void;
   signals: ProjectAgentSignalsPort;
+  agentBody?: () => string;
 };
+
+export const projectAgentBody = (data: Pick<AgentDataPort, "agentOf">): string =>
+  data.agentOf(PROJECT_AGENT_REF)?.file?.body ?? DEFAULT_PROJECT_AGENT_BODY;
 
 type OpsDeps = {
   data: ProjectAgentDataPort;
@@ -59,7 +66,7 @@ export function startProjectAgent(input: ProjectAgentBootInput): ProjectAgentBoo
     docs: service.docs,
     notes: input.notes,
     settings: input.settings,
-    profiles: () => service.agentData.profiles(),
+    agents: (projectId) => service.agentData.agents(projectId),
     guidelines: (projectId) => service.agentData.guidelines(projectId),
   });
   const agents = () => ({ ...input.orchestrator(), deliverAnswers: service.deliverAnswers });
@@ -77,6 +84,7 @@ export function startProjectAgent(input: ProjectAgentBootInput): ProjectAgentBoo
     }),
     agents,
     notify: input.notify,
+    agentBody: input.agentBody ?? (() => projectAgentBody(service.agentData)),
     emit: () => service.docs.emit({ topic: "agents" }),
   });
   self = agent;

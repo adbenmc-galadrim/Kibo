@@ -16,3 +16,9 @@ test("a run is a target a tab can open", () => {
   expect(targetProjectId({ kind: "screen", screen: "agents" })).toBeNull();
   expect(targetProjectId({ kind: "ticket", projectId: "p1", ticketId: "t1" })).toBe("p1");
 });
+
+test("skills is a screen and a skill a target", () => {
+  expect(Screen.parse("skills")).toBe("skills");
+  expect(TabTarget.parse({ kind: "skill", skillId: "a:b" })).toEqual({ kind: "skill", skillId: "a:b" });
+  expect(TabTarget.safeParse({ kind: "skill", skillId: "Bad" }).success).toBe(false);
+});

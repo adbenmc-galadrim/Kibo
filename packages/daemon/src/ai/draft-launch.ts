@@ -59,7 +59,7 @@ export function launchDraft(deps: LaunchDeps, input: LaunchInput): ComponentDraf
   let runId: string;
   try {
     runId = deps.runs.enqueue({
-      profileId: input.demo ? "demo" : "generateur",
+      profileId: input.demo ? "system:demo" : "system:generateur",
       label: `Composant ${d.title}`,
       cwd: p.dir,
       prompt: input.prompt,

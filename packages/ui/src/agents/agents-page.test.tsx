@@ -1,14 +1,27 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { type AgentProfile, KiboError, type RpcRequest, runSubject } from "@kibo/schema";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { type RpcRequest, runSubject, type Topic } from "@kibo/schema";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
 import { apiMock } from "../api-mock";
 import { frAgentsPage } from "../i18n/fr-agents-page";
-import { agentsFixture, configFixture, NOW, profilesFixture, projectsFixture } from "./fixtures";
+import { agentFixture, catalogFixture } from "./catalog/fixtures";
+import { agentsFixture, NOW, projectsFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
-let respond: (req: RpcRequest) => Promise<unknown> = () => Promise.resolve(null);
+const topics = new Map<Topic, () => void>();
+const NOTICE = {
+  profileName: "opus",
+  text: "Profil opus : un agent du même nom existait déjà, il a été gardé.",
+};
+const listed = (notices = [NOTICE]) =>
+  Promise.resolve({ agents: catalogFixture(), notices, partialWatch: false });
+const answer = (req: RpcRequest): Promise<unknown> => {
+  if (req.method === "agents.list") return listed();
+  if (req.method === "agents.read") return Promise.resolve(agentFixture({ name: "opus-dev", ref: req.ref }));
+  if (req.method === "skills.list") return Promise.resolve({ skills: [], partialWatch: false });
+  return Promise.resolve(null);
+};
+let respond: (req: RpcRequest) => Promise<unknown> = answer;
 
 mock.module("../api", () =>
   apiMock({
@@ -17,40 +30,25 @@ mock.module("../api", () =>
         calls.push(req);
         return respond(req);
       },
+      subscribeTopic: (topic: Topic, listener: () => void) => {
+        topics.set(topic, listener);
+        return () => topics.delete(topic);
+      },
     },
   }),
 );
 
 const { AgentsPage } = await import("./AgentsPage");
-const { ProfileSheet } = await import("./ProfileSheet");
 
 beforeEach(() => {
   localStorage.clear();
   calls.length = 0;
-  respond = () => Promise.resolve(null);
+  topics.clear();
+  respond = answer;
 });
 
 const show = (onOpenRun: (runId: string) => void = () => {}) =>
-  render(
-    <AgentsPage
-      state={agentsFixture()}
-      config={configFixture()}
-      projects={projectsFixture}
-      now={NOW}
-      onOpenRun={onOpenRun}
-    />,
-  );
-const sheet = () => within(screen.getByRole("dialog"));
-
-function NewProfile() {
-  const [open, setOpen] = useState(true);
-  return open ? (
-    <ProfileSheet profile={null} config={configFixture()} hostSlots={3} onClose={() => setOpen(false)} />
-  ) : null;
-}
-
-const showNew = () => render(<NewProfile />);
-
+  render(<AgentsPage state={agentsFixture()} projects={projectsFixture} now={NOW} onOpenRun={onOpenRun} />);
 test("the page counts places, queue, waiting runs and today's tokens", () => {
   show();
   const stats = within(screen.getByRole("list", { name: "Agents" }));
@@ -65,23 +63,86 @@ test("the page counts places, queue, waiting runs and today's tokens", () => {
 test("the page leaves its title and actions to the shell header", () => {
   show();
   expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Nouveau profil" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Nouvel agent" })).toBeNull();
 });
 
-test("profile cards describe each profile", () => {
+const mine = async () => within(await screen.findByRole("region", { name: "Mes agents" }));
+const card = (region: ReturnType<typeof within>, index: number) => {
+  const found = region.getAllByRole("article")[index];
+  if (!found) throw new Error(`no card ${index}`);
+  return within(found);
+};
+const names = (region: ReturnType<typeof within>) =>
+  region.getAllByRole("article").map((a: HTMLElement) => a.getAttribute("aria-label"));
+
+test("screen 192: my agents are cards with description, scope, model, skills and runs", async () => {
   show();
-  const opus = within(screen.getByRole("article", { name: "opus-dev" }));
-  expect(opus.getByText("Claude Opus 5.5 · Claude Code")).toBeTruthy();
-  expect(opus.getByText("2 actifs")).toBeTruthy();
-  for (const text of ["worktree par ticket", "Modifications acceptées", "2 max", "Sonnet, Haiku"]) {
-    expect(opus.getByText(text)).toBeTruthy();
-  }
-  const sonnet = within(screen.getByRole("article", { name: "sonnet-review" }));
-  for (const text of ["dossier isolé", "Lecture seule (plan)", "3 max", "aucun"])
-    expect(sonnet.getByText(text)).toBeTruthy();
-  expect(sonnet.getByText("Claude Sonnet 5 · Claude Code")).toBeTruthy();
-  const haiku = within(screen.getByRole("article", { name: "haiku-tests" }));
-  expect(haiku.getByText("Claude Haiku 4.5 · Claude Code")).toBeTruthy();
+  const region = await mine();
+  expect(names(region)).toEqual(["opus-dev", "review-pr", "review-pr", "sonnet-dev", "ux-audit"]);
+  const delivery = card(region, 0);
+  expect(
+    delivery.getByText("Livre un ticket : lit le ticket, planifie, code en TDD, commite et ouvre la PR."),
+  ).toBeTruthy();
+  expect(delivery.getByText("Global")).toBeTruthy();
+  expect(delivery.getByText("Opus · 3 skills · 0 sous-agent")).toBeTruthy();
+  expect(delivery.getByText("En cours :")).toBeTruthy();
+  expect(delivery.getByRole("button", { name: "opus-dev-3" })).toBeTruthy();
+  const shadowed = card(region, 1);
+  expect(shadowed.getByText("Sonnet · 2 skills · 1 sous-agent")).toBeTruthy();
+  expect(shadowed.getByText("masqué dans Kibo par un agent du même nom")).toBeTruthy();
+  expect(card(region, 2).getByText("Projet · Kibo")).toBeTruthy();
+  expect(card(region, 2).getByText("Sonnet · Tous les skills · 0 sous-agent")).toBeTruthy();
+  expect(card(region, 3).getByText("fable · Tous les skills · 0 sous-agent")).toBeTruthy();
+  expect(card(region, 3).getByText("Nom peu parlant")).toBeTruthy();
+  expect(card(region, 3).getByRole("button", { name: "Renommer" })).toBeTruthy();
+  expect(card(region, 4).getByText("fichier illisible")).toBeTruthy();
+  expect(card(region, 4).getByText("frontmatter illisible : description")).toBeTruthy();
+  expect(screen.getByText("~/.claude/agents · Kibo : .claude/agents")).toBeTruthy();
+});
+
+test("the agents of Kibo are folded until asked", async () => {
+  show();
+  await mine();
+  const trigger = screen.getByRole("button", { name: /Agents de Kibo/ });
+  expect(trigger.getAttribute("aria-expanded")).toBe("false");
+  expect(screen.queryByRole("article", { name: "kibo-demo" })).toBeNull();
+  await userEvent.setup().click(trigger);
+  const system = within(screen.getByRole("region", { name: "Agents de Kibo" }));
+  expect(names(system)).toEqual(["kibo-assistant", "kibo-generateur", "kibo-demo", "kibo-project-agent"]);
+});
+
+test("a migration notice shows once, and the file topic reloads the list", async () => {
+  show();
+  await mine();
+  expect(screen.getByRole("alert").textContent).toContain(NOTICE.text);
+  const before = calls.filter((c) => c.method === "agents.list").length;
+  respond = (req) => (req.method === "agents.list" ? listed([]) : answer(req));
+  await act(async () => topics.get("agent-files")?.());
+  await waitFor(() => expect(calls.filter((c) => c.method === "agents.list").length).toBe(before + 1));
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
+});
+
+test("the project filter asks the agents of that project and hides the others", async () => {
+  show();
+  await mine();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Filtrer par projet" }));
+  await user.click(await screen.findByRole("menuitemradio", { name: "API Facturation" }));
+  await waitFor(() => expect(calls).toContainEqual({ method: "agents.list", projectId: "fac" }));
+  const region = await mine();
+  expect(region.queryByText("Projet · Kibo")).toBeNull();
+  expect(names(region)).toEqual(["opus-dev", "review-pr", "sonnet-dev", "ux-audit"]);
+});
+
+test("opening a card shows the agent in the page, and Agents goes back", async () => {
+  show();
+  const region = await mine();
+  const user = userEvent.setup();
+  await user.click(card(region, 0).getByRole("button", { name: "Ouvrir l'agent opus-dev" }));
+  expect(await screen.findByRole("heading", { level: 2, name: "opus-dev" })).toBeTruthy();
+  expect(calls).toContainEqual({ method: "agents.read", ref: "global:opus-dev" });
+  await user.click(screen.getByRole("button", { name: "Agents" }));
+  expect(await screen.findByRole("region", { name: "Mes agents" })).toBeTruthy();
 });
 
 test("the history lists runs newest first with their result", () => {
@@ -112,7 +173,7 @@ test("the history lists runs newest first with their result", () => {
 test("screen 121: a history line opens the run, the filter and the key search narrow it", () => {
   const opened: string[] = [];
   show((id) => opened.push(id));
-  expect(screen.getByText("Un run est le travail d'un agent sur un ticket.")).toBeTruthy();
+  expect(screen.getByText(/^Un agent est un fichier Claude Code/)).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: /^sonnet-review · KIB-11/ }));
   expect(opened).toEqual(["r40"]);
   fireEvent.click(screen.getByRole("radio", { name: "En échec" }));
@@ -169,7 +230,7 @@ const stat = (label: string) =>
     .getAllByRole("listitem")
     .find((li) => li.textContent?.includes(label));
 
-test("screen 162: the project filter narrows queue, waiting, profile counts and history, and is remembered", async () => {
+test("screen 162: the project filter narrows queue, waiting and history, and is remembered", async () => {
   show();
   const user = userEvent.setup();
   expect(projectTrigger().textContent).toContain("Projet : tous");
@@ -183,7 +244,6 @@ test("screen 162: the project filter narrows queue, waiting, profile counts and 
   expect(stat("attend")?.textContent).toBe("0attend une réponse (place libérée)");
   expect(stat("en cours")?.textContent).toBe(`${slotsText()}runs en cours`);
   expect(stat("tokens")?.textContent).toContain("1,2M");
-  expect(within(screen.getByRole("article", { name: "opus-dev" })).queryByText("2 actifs")).toBeNull();
   fireEvent.click(screen.getByRole("radio", { name: "En échec" }));
   expect(screen.getByText("Aucun run ne correspond à ce filtre.")).toBeTruthy();
 });
@@ -224,249 +284,4 @@ test("the history names the project of each run under all projects only", async 
   await user.click(projectTrigger());
   await user.click(await screen.findByRole("menuitemradio", { name: "Kibo" }));
   expect(screen.queryByRole("columnheader", { name: "Projet" })).toBeNull();
-});
-
-test("a new profile is created with its guidelines", async () => {
-  respond = (req) =>
-    Promise.resolve(
-      req.method === "config" && req.command.method === "createProfile"
-        ? { ...req.command.profile, id: "new-id" }
-        : null,
-    );
-  showNew();
-  const user = userEvent.setup();
-  expect(sheet().getByText("Nouveau profil d'agent")).toBeTruthy();
-  await user.type(sheet().getByLabelText("Nom"), "opus-front");
-  await user.click(sheet().getByText("Dossier isolé"));
-  await user.click(sheet().getByText("Lecture seule (plan)"));
-  const parallel = sheet().getByLabelText("Runs en parallèle (profil)");
-  await user.clear(parallel);
-  await user.type(parallel, "2");
-  await user.click(sheet().getByText("Sonnet"));
-  expect(
-    sheet().getByText(
-      "Les sous-agents travaillent dans la place de leur parent. La limite de la machine (3) s'applique en plus.",
-    ),
-  ).toBeTruthy();
-  expect(sheet().getByRole("combobox", { name: "Modèle" }).textContent).toBe("Claude Opus 5.5");
-  await user.type(sheet().getByLabelText("Fichier"), "guidelines/front.md");
-  await user.click(sheet().getByRole("button", { name: "Ajouter" }));
-  expect(sheet().queryByLabelText("Contenu")).toBeNull();
-  await user.click(sheet().getByRole("button", { name: "guidelines/front.md" }));
-  await user.type(sheet().getByLabelText("Contenu"), "# Front");
-  await user.click(sheet().getByRole("button", { name: "Enregistrer guidelines/front.md" }));
-  expect(sheet().queryByLabelText("Contenu")).toBeNull();
-  await user.click(sheet().getByRole("button", { name: "Créer le profil" }));
-  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-  expect(calls).toEqual([
-    {
-      method: "config",
-      command: {
-        method: "createProfile",
-        profile: {
-          name: "opus-front",
-          model: "opus",
-          execution: "cli",
-          permissionMode: "plan",
-          workspace: "isolated",
-          maxParallel: 2,
-          subagents: ["sonnet"],
-          enabled: true,
-          allow: [],
-        },
-      },
-    },
-    {
-      method: "config",
-      command: {
-        method: "addGuideline",
-        owner: { scope: "profile", profileId: "new-id" },
-        path: "guidelines/front.md",
-        content: "# Front",
-      },
-    },
-  ]);
-});
-
-test("a new profile starts with safe defaults", async () => {
-  showNew();
-  const user = userEvent.setup();
-  await user.type(sheet().getByLabelText("Nom"), "haiku-tests");
-  await user.click(sheet().getByRole("button", { name: "Créer le profil" }));
-  expect(calls[0]).toEqual({
-    method: "config",
-    command: {
-      method: "createProfile",
-      profile: {
-        name: "haiku-tests",
-        model: "opus",
-        execution: "cli",
-        permissionMode: "default",
-        workspace: "worktree",
-        maxParallel: 1,
-        subagents: [],
-        enabled: true,
-        allow: [],
-      },
-    },
-  });
-});
-
-const ruled: AgentProfile = {
-  id: "opus",
-  name: "opus-dev",
-  model: "opus",
-  execution: "cli",
-  permissionMode: "acceptEdits",
-  workspace: "worktree",
-  maxParallel: 2,
-  subagents: [],
-  enabled: true,
-  allow: ["Bash(pnpm *)", "Edit"],
-  system: false,
-};
-const editRuled = () =>
-  render(<ProfileSheet profile={ruled} config={configFixture()} hostSlots={3} onClose={() => {}} />);
-const sentPatch = () => {
-  const call = calls[0];
-  return call?.method === "config" && call.command.method === "updateProfile" ? call.command.patch : null;
-};
-
-test("saving a profile without touching its rules keeps them", async () => {
-  editRuled();
-  const user = userEvent.setup();
-  expect((sheet().getByLabelText("Autorisations") as HTMLTextAreaElement).value).toBe("Bash(pnpm *)\nEdit");
-  await user.click(sheet().getByText("Lecture seule (plan)"));
-  await user.click(sheet().getByRole("button", { name: "Enregistrer" }));
-  await waitFor(() => expect(calls).toHaveLength(1));
-  expect(sentPatch()).toMatchObject({ permissionMode: "plan", allow: ["Bash(pnpm *)", "Edit"] });
-});
-
-test("the automatic mode and edited rules are saved, an unsafe rule blocks the save", async () => {
-  editRuled();
-  const user = userEvent.setup();
-  await user.click(sheet().getByText("Automatique (l'agent décide, sans contournement)"));
-  const rules = sheet().getByLabelText("Autorisations");
-  fireEvent.change(rules, { target: { value: "Bash(pnpm *)\nBash" } });
-  await user.click(sheet().getByRole("button", { name: "Enregistrer" }));
-  expect(sheet().getByText("Une règle Bash doit porter un motif : Bash(pnpm *).")).toBeTruthy();
-  expect(calls).toEqual([]);
-  fireEvent.change(rules, { target: { value: "Bash(pnpm *)\nBash(git *)" } });
-  await user.click(sheet().getByRole("button", { name: "Enregistrer" }));
-  await waitFor(() => expect(calls).toHaveLength(1));
-  expect(sentPatch()).toMatchObject({ permissionMode: "auto", allow: ["Bash(pnpm *)", "Bash(git *)"] });
-});
-
-test("invalid names and guideline paths are refused before any call", async () => {
-  showNew();
-  const user = userEvent.setup();
-  await user.type(sheet().getByLabelText("Nom"), "Opus Front");
-  await user.click(sheet().getByRole("button", { name: "Créer le profil" }));
-  expect(sheet().getByRole("alert").textContent).toBe("Nom invalide : minuscules, chiffres et tirets.");
-  await user.type(sheet().getByLabelText("Fichier"), "../secrets.md");
-  await user.click(sheet().getByRole("button", { name: "Ajouter" }));
-  expect(sheet().getByRole("alert").textContent).toBe(
-    "Chemin invalide : minuscules, chiffres et tirets, terminé par .md.",
-  );
-  expect(calls).toEqual([]);
-});
-
-test("editing saves the whole profile; deleting is confirmed and a busy profile is refused", async () => {
-  show();
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
-  expect(sheet().getByText("Profil opus-dev")).toBeTruthy();
-  await user.click(sheet().getByRole("button", { name: "Enregistrer" }));
-  const { id, system, ...input } = profilesFixture[0] ?? { id: "", system: false };
-  expect([id, system]).toEqual(["opus", false]);
-  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-  expect(calls).toEqual([
-    { method: "config", command: { method: "updateProfile", profileId: "opus", patch: input } },
-  ]);
-  calls.length = 0;
-  await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
-  respond = () => Promise.reject(new KiboError("PROFILE_IN_USE", "opus has active runs"));
-  await user.click(sheet().getByRole("button", { name: "Supprimer le profil" }));
-  const confirm = within(await screen.findByRole("alertdialog"));
-  expect(confirm.getByText("Supprimer le profil opus-dev ?")).toBeTruthy();
-  expect(confirm.getByText("Ses runs passés restent dans l'historique.")).toBeTruthy();
-  expect(calls).toEqual([]);
-  await user.click(confirm.getByRole("button", { name: "Supprimer" }));
-  expect(calls).toEqual([{ method: "config", command: { method: "deleteProfile", profileId: "opus" } }]);
-  expect((await confirm.findByRole("alert")).textContent).toBe("Ce profil a des runs en cours ou en file.");
-});
-
-test("in edit mode a guideline is added to the profile at once", async () => {
-  show();
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
-  await user.type(sheet().getByLabelText("Fichier"), "guidelines/review.md");
-  await user.click(sheet().getByRole("button", { name: "Ajouter" }));
-  expect(calls).toEqual([
-    {
-      method: "config",
-      command: {
-        method: "addGuideline",
-        owner: { scope: "profile", profileId: "opus" },
-        path: "guidelines/review.md",
-        content: "",
-      },
-    },
-  ]);
-});
-
-test("enter in the guideline field adds the file without submitting the profile", async () => {
-  showNew();
-  const user = userEvent.setup();
-  await user.type(sheet().getByLabelText("Fichier"), "guidelines/front.md{Enter}");
-  expect(sheet().getByText("guidelines/front.md")).toBeTruthy();
-  expect(sheet().getByLabelText("Fichier")).toHaveProperty("value", "");
-  expect(calls).toEqual([]);
-});
-
-test("in edit mode a guideline's content is edited in place", async () => {
-  const config = configFixture();
-  config.guidelines.push({
-    id: "g1",
-    owner: { scope: "profile", profileId: "opus" },
-    path: "guidelines/review.md",
-    content: "# Review",
-  });
-  render(
-    <AgentsPage
-      state={agentsFixture()}
-      config={config}
-      projects={projectsFixture}
-      now={NOW}
-      onOpenRun={() => {}}
-    />,
-  );
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
-  const row = sheet().getByRole("button", { name: "guidelines/review.md" });
-  expect(row.getAttribute("aria-expanded")).toBe("false");
-  await user.click(row);
-  expect(row.getAttribute("aria-expanded")).toBe("true");
-  const editor = sheet().getByLabelText("Contenu");
-  expect(editor).toHaveProperty("value", "# Review");
-  await user.clear(editor);
-  await user.type(editor, "# Relecture");
-  await user.click(sheet().getByRole("button", { name: "Enregistrer guidelines/review.md" }));
-  expect(calls).toEqual([
-    {
-      method: "config",
-      command: {
-        method: "updateGuideline",
-        owner: { scope: "profile", profileId: "opus" },
-        guidelineId: "g1",
-        content: "# Relecture",
-      },
-    },
-  ]);
-  await waitFor(() => expect(sheet().queryByLabelText("Contenu")).toBeNull());
-  respond = () => Promise.reject(new KiboError("NOT_FOUND", "guideline g1"));
-  await user.click(row);
-  await user.click(sheet().getByRole("button", { name: "Enregistrer guidelines/review.md" }));
-  expect((await sheet().findByRole("alert")).textContent).toBe("Impossible d'enregistrer le profil.");
-  expect(sheet().getByLabelText("Contenu")).toBeTruthy();
 });

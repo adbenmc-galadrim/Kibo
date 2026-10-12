@@ -11,6 +11,7 @@ import {
   maskSecrets,
   maskSecretsWithin,
   type RunAction,
+  standsAlone,
   summarizeActions,
 } from "@kibo/schema";
 import {
@@ -53,13 +54,23 @@ function maskValue(value: unknown): unknown {
 const maskInput = (input: object): Record<string, unknown> =>
   Object.fromEntries(Object.entries(input).map(([key, value]) => [key, maskValue(value)]));
 
-function maskedAction(call: PendingCall, result: ToolResult | null, toolUseResult: unknown): RunAction {
+const CALL_ID_MAX = 64;
+const callIdOf = (id: string): { callId?: string } =>
+  id.length > 0 && id.length <= CALL_ID_MAX ? { callId: id } : {};
+
+function maskedAction(
+  id: string,
+  call: PendingCall,
+  result: ToolResult | null,
+  toolUseResult: unknown,
+): RunAction {
   const content = result?.content ?? null;
   const output = content === null ? null : maskSecrets(content);
   const isError = result?.is_error ?? false;
+  const input = maskInput(call.input);
   const action = actionOf({
     tool: call.tool,
-    input: maskInput(call.input),
+    input,
     output,
     isError,
     denied: isError && denialOf(output),
@@ -68,7 +79,7 @@ function maskedAction(call: PendingCall, result: ToolResult | null, toolUseResul
   const target = action.target === null ? null : maskSecretsWithin(action.target, TARGET_MAX);
   const detail = action.detail === null ? null : maskSecretsWithin(action.detail, MOMENT_DETAIL_MAX);
   const base = { ...action, target, detail };
-  return { ...base, label: maskSecretsWithin(actionLabel(base), LABEL_MAX) };
+  return { ...base, label: maskSecretsWithin(actionLabel(base, input), LABEL_MAX), ...callIdOf(id) };
 }
 
 class Folder {
@@ -97,6 +108,7 @@ class Folder {
       this.raw(parsed.text);
       return;
     }
+    if (parsed.kind === "skipped") return;
     this.known = true;
     if (parsed.kind === "assistant") for (const block of parsed.blocks) this.block(block, parsed);
     if (parsed.kind === "user") {
@@ -106,7 +118,7 @@ class Folder {
   }
 
   flushPending(): void {
-    for (const call of this.pending.values()) this.push(maskedAction(call, null, null), null);
+    for (const [id, call] of this.pending) this.push(maskedAction(id, call, null, null), null);
     this.pending.clear();
     this.flush();
   }
@@ -135,13 +147,14 @@ class Folder {
   private result(result: ToolResult, toolUseResult: unknown, at: number | null): void {
     const call = this.pending.get(result.tool_use_id) ?? { tool: "", input: {}, sidechain: false };
     this.pending.delete(result.tool_use_id);
-    this.push(maskedAction(call, result, toolUseResult), at);
+    this.push(maskedAction(result.tool_use_id, call, result, toolUseResult), at);
   }
 
   private push(action: RunAction, at: number | null): void {
-    if (this.actions.length >= MOMENT_ACTIONS_MAX) this.flush();
+    if (this.actions.length >= MOMENT_ACTIONS_MAX || standsAlone(action)) this.flush();
     if (this.actions.length === 0) this.actionsAt = at;
     this.actions.push(action);
+    if (standsAlone(action)) this.flush();
   }
 
   private flush(): void {
