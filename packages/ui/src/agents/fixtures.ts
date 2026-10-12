@@ -265,14 +265,16 @@ export function agentsFixture(): AgentsState {
   };
 }
 
+const WORKSPACE = { scope: "workspace" } as const;
+
 export const domainsFixture: Domain[] = [
-  { id: "core", name: "Core", color: "#14B8A6" },
-  { id: "agents", name: "Agents", color: "#6366F1" },
-  { id: "ui", name: "UI", color: "#EC4899" },
-  { id: "securite", name: "Sécurité", color: "#B45309" },
-  { id: "devops", name: "DevOps", color: "#64748B" },
-  { id: "integrations", name: "Intégrations", color: "#84CC16" },
-  { id: "facturation", name: "Facturation", color: "#D946EF" },
+  { id: "core", name: "Core", color: "#14B8A6", owner: WORKSPACE },
+  { id: "agents", name: "Agents", color: "#6366F1", owner: WORKSPACE },
+  { id: "ui", name: "UI", color: "#EC4899", owner: WORKSPACE },
+  { id: "securite", name: "Sécurité", color: "#B45309", owner: WORKSPACE },
+  { id: "devops", name: "DevOps", color: "#64748B", owner: WORKSPACE },
+  { id: "integrations", name: "Intégrations", color: "#84CC16", owner: WORKSPACE },
+  { id: "facturation", name: "Facturation", color: "#D946EF", owner: WORKSPACE },
 ];
 
 const CORE = [
@@ -302,7 +304,7 @@ const guideline = (
 
 export function configFixture(): WorkspaceConfig {
   const kibo = { scope: "project", projectId: "kibo" } as const;
-  const core = { scope: "domain", domainId: "core" } as const;
+  const core = { scope: "domain", domainId: "core", projectId: null } as const;
   return {
     domains: domainsFixture,
     guidelines: [

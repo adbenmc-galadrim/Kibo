@@ -22,6 +22,7 @@ export * from "./config-validate";
 export * from "./design";
 export * from "./design-problem";
 export * from "./design-url";
+export * from "./domain-scope";
 export * from "./embed";
 export * from "./errors";
 export * from "./external-ref";

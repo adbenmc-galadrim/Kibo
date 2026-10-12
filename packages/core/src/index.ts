@@ -28,6 +28,7 @@ export * from "./overlaps/section";
 export * from "./overlaps/windows";
 export * from "./pages";
 export * from "./project";
+export * from "./project-domains";
 export * from "./question-recipients";
 export * from "./questions";
 export * from "./registry";

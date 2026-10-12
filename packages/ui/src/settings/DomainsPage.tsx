@@ -55,7 +55,9 @@ export function DomainsPage({ config, projects }: Props) {
   const ownerOf = (l: Level): GuidelineOwner | null => {
     if (l.kind === "workspace") return { scope: "workspace" };
     if (l.kind === "project") return projectId ? { scope: "project", projectId } : null;
-    return { scope: "domain", domainId: l.domainId };
+    const found = config.domains.find((d) => d.id === l.domainId);
+    const owner = found?.owner.scope === "project" ? found.owner.projectId : null;
+    return { scope: "domain", domainId: l.domainId, projectId: owner };
   };
   const owner = ownerOf(level);
   const filesOf = (l: Level) => config.guidelines.filter((g) => owns(g, ownerOf(l)));
@@ -120,7 +122,10 @@ export function DomainsPage({ config, projects }: Props) {
     if (!domain) return false;
     setError(null);
     try {
-      await client.rpc({ method: "config", command: { method: "updateDomain", domainId: domain.id, patch } });
+      await client.rpc({
+        method: "config",
+        command: { method: "updateDomain", domainId: domain.id, patch, owner: domain.owner },
+      });
       return true;
     } catch (e) {
       setError(e instanceof KiboError && e.code === "INVALID_INPUT" ? frDomains.duplicate : frDomains.failed);
@@ -148,7 +153,10 @@ export function DomainsPage({ config, projects }: Props) {
   };
   const confirmDeleteDomain = async () => {
     if (!domain) return;
-    await client.rpc({ method: "config", command: { method: "deleteDomain", domainId: domain.id } });
+    await client.rpc({
+      method: "config",
+      command: { method: "deleteDomain", domainId: domain.id, owner: domain.owner },
+    });
     pick({ kind: "workspace" });
   };
 

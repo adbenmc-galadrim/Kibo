@@ -29,6 +29,7 @@ import { localSyncInfo } from "./keys";
 import { addLink, listLinks, removeLink, waitingOn } from "./links";
 import { addPage, deletePage, listPages, movePage, renamePage } from "./pages";
 import { getProjectMeta, getWorkflow, peekTicketKey } from "./project";
+import { listProjectDomains } from "./project-domains";
 import {
   addQuestionRecipient,
   listQuestionRecipients,
@@ -231,6 +232,7 @@ export function readProject(doc: LoroDoc, activity: ProjectActivity = NO_ACTIVIT
     bindings: listBindings(doc),
     nextTicketKey: peekTicketKey(doc),
     sync: localSyncInfo(doc),
+    domains: listProjectDomains(doc),
   };
 }
 

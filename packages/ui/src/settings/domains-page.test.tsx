@@ -29,7 +29,7 @@ beforeEach(() => {
   outcome = () => Promise.resolve(null);
 });
 
-const core = { scope: "domain", domainId: "core" } as const;
+const core = { scope: "domain", domainId: "core", projectId: null } as const;
 const show = () => render(<DomainsPage config={configFixture()} projects={projectsFixture} />);
 
 test("the first domain opens with its files, usage and injection chain", () => {
@@ -143,7 +143,10 @@ test("domains are created with the next palette color, and a used domain is neve
   await user.type(screen.getByLabelText("Nom du domaine"), "Billing");
   await user.click(screen.getByRole("button", { name: "Créer" }));
   expect(calls).toEqual([
-    { method: "config", command: { method: "deleteDomain", domainId: "facturation" } },
+    {
+      method: "config",
+      command: { method: "deleteDomain", domainId: "facturation", owner: { scope: "workspace" } },
+    },
     { method: "config", command: { method: "createDomain", domain: { name: "Billing", color: "#14B8A6" } } },
   ]);
 });
@@ -156,7 +159,15 @@ test("renaming a domain sends updateDomain; a duplicate name is explained", asyn
   await user.clear(field);
   await user.type(field, "Noyau{Enter}");
   expect(calls).toEqual([
-    { method: "config", command: { method: "updateDomain", domainId: "core", patch: { name: "Noyau" } } },
+    {
+      method: "config",
+      command: {
+        method: "updateDomain",
+        domainId: "core",
+        patch: { name: "Noyau" },
+        owner: { scope: "workspace" },
+      },
+    },
   ]);
   outcome = () => Promise.reject(new KiboError("INVALID_INPUT", "domain name already used"));
   await user.click(screen.getByRole("button", { name: "Renommer le domaine Core" }));
@@ -172,7 +183,15 @@ test("picking a color sends updateDomain with the color", async () => {
   await user.click(screen.getByRole("button", { name: "Couleur du domaine Core" }));
   await user.click(await screen.findByRole("menuitem", { name: "Couleur #EC4899" }));
   expect(calls).toEqual([
-    { method: "config", command: { method: "updateDomain", domainId: "core", patch: { color: "#EC4899" } } },
+    {
+      method: "config",
+      command: {
+        method: "updateDomain",
+        domainId: "core",
+        patch: { color: "#EC4899" },
+        owner: { scope: "workspace" },
+      },
+    },
   ]);
 });
 

@@ -12,11 +12,11 @@ const g = (id: string, owner: Guideline["owner"], path: string, content = `# ${p
   content,
 });
 const all: Guideline[] = [
-  g("1", { scope: "domain", domainId: "core" }, "guidelines/core.md"),
+  g("1", { scope: "domain", domainId: "core", projectId: null }, "guidelines/core.md"),
   g("2", { scope: "workspace" }, "guidelines/git.md"),
   g("3", { scope: "project", projectId: "p1" }, "guidelines/kibo.md"),
   g("5", { scope: "workspace" }, "guidelines/general.md"),
-  g("6", { scope: "domain", domainId: "ui" }, "guidelines/ui.md"),
+  g("6", { scope: "domain", domainId: "ui", projectId: null }, "guidelines/ui.md"),
   g("7", { scope: "project", projectId: "p2" }, "guidelines/other.md"),
 ];
 
@@ -57,7 +57,7 @@ test("the brief lists the ticket, its sub-tickets, its dependencies and the note
   const brief = buildBrief({
     project,
     ticket,
-    domain: { id: "ui", name: "UI", color: "#EC4899" },
+    domain: { id: "ui", name: "UI", color: "#EC4899", owner: { scope: "workspace" } },
     note: "Utilise dnd-kit.",
   });
   expect(brief).toBe(

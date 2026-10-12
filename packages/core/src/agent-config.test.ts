@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import { ConfigCommand, type Domain, type Guideline } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import {
-  configTarget,
   dropProfiles,
   executeConfigCommand,
   listDomains,
@@ -11,12 +10,13 @@ import {
   workspaceName,
 } from "./agent-config";
 import { createProjectDoc } from "./project";
+import { listProjectDomainGuidelines, listProjectDomains } from "./project-domains";
 import { createWorkspaceDoc } from "./workspace";
 
 const run = <T>(doc: LoroDoc, cmd: ConfigCommand) => executeConfigCommand(doc, cmd) as T;
-const project = () =>
+const project = (id = "p1") =>
   createProjectDoc({
-    id: "p1",
+    id,
     key: "KIB",
     name: "Kibo",
     folder: null,
@@ -37,7 +37,7 @@ describe("domains", () => {
     expect(listDomains(ws).map((d) => d.name)).toEqual(["Noyau"]);
     run(ws, {
       method: "addGuideline",
-      owner: { scope: "domain", domainId: core.id },
+      owner: { scope: "domain", domainId: core.id, projectId: null },
       path: "guidelines/core.md",
       content: "# Core",
     });
@@ -63,7 +63,7 @@ describe("guidelines", () => {
     run(ws, { method: "addGuideline", owner: { scope: "workspace" }, path: "general.md", content: "a" });
     run(ws, {
       method: "addGuideline",
-      owner: { scope: "domain", domainId: d.id },
+      owner: { scope: "domain", domainId: d.id, projectId: null },
       path: "core.md",
       content: "b",
     });
@@ -75,7 +75,7 @@ describe("guidelines", () => {
     expect(() =>
       run(ws, {
         method: "addGuideline",
-        owner: { scope: "domain", domainId: "nope" },
+        owner: { scope: "domain", domainId: "nope", projectId: null },
         path: "x.md",
         content: "",
       }),
@@ -123,21 +123,123 @@ describe("guidelines", () => {
       content: "# A",
     });
     expect(edited).toEqual({ ...g, content: "# A" });
-    const wrong = { scope: "domain", domainId: "x" } as const;
+    const wrong = { scope: "domain", domainId: "x", projectId: null } as const;
     expect(() => run(ws, { method: "removeGuideline", owner: wrong, guidelineId: g.id })).toThrow(
       "NOT_FOUND",
     );
     run(ws, { method: "removeGuideline", owner, guidelineId: g.id });
     expect(listGuidelines(ws).map((x) => x.path)).toEqual(["b.md"]);
   });
+});
 
-  test("configTarget routes project guidelines to their project", () => {
-    const owner = { scope: "project", projectId: "p1" } as const;
-    expect(configTarget({ method: "addGuideline", owner, path: "a.md", content: "" })).toBe("p1");
-    expect(
-      configTarget({ method: "removeGuideline", owner: { scope: "workspace" }, guidelineId: "g" }),
-    ).toBeNull();
-    expect(configTarget({ method: "deleteDomain", domainId: "d" })).toBeNull();
+describe("project domains", () => {
+  const inP1 = { scope: "project", projectId: "p1" } as const;
+  const create = (doc: LoroDoc, name: string) =>
+    run<Domain>(doc, { method: "createDomain", domain: { name, color: "#14B8A6" }, owner: inP1 });
+  const file = (domainId: string, path: string, content = "") =>
+    ({
+      method: "addGuideline",
+      owner: { scope: "domain", domainId, projectId: "p1" },
+      path,
+      content,
+    }) as const;
+
+  test("createDomain in a project doc stores it in projectDomains with its owner", () => {
+    const doc = project();
+    const sync = create(doc, "Sync");
+    expect(sync).toEqual({ id: sync.id, name: "Sync", color: "#14B8A6", owner: inP1 });
+    expect(doc.getMap("projectDomains").toJSON()).toEqual({
+      [sync.id]: { name: "Sync", color: "#14B8A6", guidelines: [] },
+    });
+    expect(listProjectDomains(doc)).toEqual([sync]);
+    expect(listDomains(doc)).toEqual([]);
+  });
+
+  test("domain guidelines are nested in their project domain", () => {
+    const doc = project();
+    const sync = create(doc, "Sync");
+    const g = run<Guideline>(doc, file(sync.id, "sync.md", "# Sync"));
+    expect(g).toEqual({
+      id: `${sync.id}:sync.md`,
+      owner: { scope: "domain", domainId: sync.id, projectId: "p1" },
+      path: "sync.md",
+      content: "# Sync",
+    });
+    expect(() => run(doc, file(sync.id, "sync.md"))).toThrow("INVALID_INPUT");
+    const owner = g.owner;
+    const moved = run<Guideline>(doc, {
+      method: "updateGuideline",
+      owner,
+      guidelineId: g.id,
+      path: "guidelines/sync.md",
+      content: "# Sync v2",
+    });
+    expect(moved).toMatchObject({ id: `${sync.id}:guidelines/sync.md`, content: "# Sync v2" });
+    expect(listProjectDomainGuidelines(doc)).toEqual([moved]);
+    expect(() => run(doc, { method: "removeGuideline", owner, guidelineId: g.id })).toThrow("NOT_FOUND");
+    run(doc, { method: "removeGuideline", owner, guidelineId: moved.id });
+    expect(listProjectDomainGuidelines(doc)).toEqual([]);
+    expect(() => run(doc, file("nope", "x.md"))).toThrow("NOT_FOUND");
+  });
+
+  test("updateDomain and deleteDomain, which drops its guidelines", () => {
+    const doc = project();
+    const sync = create(doc, "Sync");
+    run(doc, file(sync.id, "sync.md"));
+    const renamed = run<Domain>(doc, {
+      method: "updateDomain",
+      domainId: sync.id,
+      patch: { name: "Synchro", color: "#6366F1" },
+      owner: inP1,
+    });
+    expect(renamed).toEqual({ ...sync, name: "Synchro", color: "#6366F1" });
+    expect(listProjectDomainGuidelines(doc)).toHaveLength(1);
+    run(doc, { method: "deleteDomain", domainId: sync.id, owner: inP1 });
+    expect(listProjectDomains(doc)).toEqual([]);
+    expect(listProjectDomainGuidelines(doc)).toEqual([]);
+    expect(() => run(doc, { method: "deleteDomain", domainId: sync.id, owner: inP1 })).toThrow("NOT_FOUND");
+    expect(() =>
+      run(doc, { method: "updateDomain", domainId: "nope", patch: { name: "X" }, owner: inP1 }),
+    ).toThrow("NOT_FOUND");
+  });
+
+  test("names are unique per doc, case ignored", () => {
+    const a = project("p1");
+    create(a, "UI");
+    expect(() => create(a, "ui")).toThrow("INVALID_INPUT");
+    const b = project("p2");
+    run(b, {
+      method: "createDomain",
+      domain: { name: "UI", color: "#14B8A6" },
+      owner: { scope: "project", projectId: "p2" },
+    });
+    const ws = createWorkspaceDoc();
+    run(ws, { method: "createDomain", domain: { name: "UI", color: "#14B8A6" } });
+    expect(listDomains(ws).map((d) => d.name)).toEqual(["UI"]);
+  });
+
+  test("a command sent to the wrong doc is refused", () => {
+    const ws = createWorkspaceDoc();
+    const doc = project();
+    const domain = { name: "UI", color: "#14B8A6" };
+    expect(() => run(ws, { method: "createDomain", domain, owner: inP1 })).toThrow("INVALID_INPUT");
+    expect(() => run(doc, { method: "createDomain", domain })).toThrow("INVALID_INPUT");
+    expect(() =>
+      run(doc, { method: "createDomain", domain, owner: { scope: "project", projectId: "p2" } }),
+    ).toThrow("INVALID_INPUT");
+    const sync = create(doc, "Sync");
+    expect(() => run(ws, file(sync.id, "a.md"))).toThrow("INVALID_INPUT");
+    expect(() =>
+      run(doc, {
+        method: "addGuideline",
+        owner: { scope: "domain", domainId: sync.id, projectId: null },
+        path: "a.md",
+        content: "",
+      }),
+    ).toThrow("INVALID_INPUT");
+    expect(() => run(ws, { method: "deleteDomain", domainId: sync.id, owner: inP1 })).toThrow(
+      "INVALID_INPUT",
+    );
   });
 });
 
@@ -170,7 +272,6 @@ describe("workspace name", () => {
     });
     expect(workspaceDescription(ws)).toBeNull();
     expect(() => executeConfigCommand(ws, { method: "updateWorkspace", patch: {} })).toThrow("INVALID_INPUT");
-    expect(configTarget({ method: "updateWorkspace", patch: { name: "x" } })).toBeNull();
   });
 });
 

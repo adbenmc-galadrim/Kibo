@@ -15,6 +15,16 @@ const doc = () =>
   });
 
 describe("project commands", () => {
+  test("the snapshot carries the project's own domains, none by default", () => {
+    const d = doc();
+    expect(readProject(d).domains).toEqual([]);
+    d.getMap("projectDomains").set("sync", { name: "Sync", color: "#14B8A6", guidelines: [] });
+    d.commit();
+    expect(readProject(d).domains).toEqual([
+      { id: "sync", name: "Sync", color: "#14B8A6", owner: { scope: "project", projectId: "p1" } },
+    ]);
+  });
+
   test("builds a page with a kanban and a ticket, visible in the snapshot", () => {
     const d = doc();
     const page = executeProjectCommand(d, { method: "addPage", title: "Kanban", kind: "view" }) as Page;

@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DomainHeader } from "./DomainHeader";
 
-const core = { id: "core", name: "Core", color: "#14B8A6" };
+const core = { id: "core", name: "Core", color: "#14B8A6", owner: { scope: "workspace" } } as const;
 const show = (onRename = mock((_n: string) => Promise.resolve(true))) => {
   const onColor = mock((_c: string) => Promise.resolve(true));
   const onDelete = mock(() => {});
