@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { ProposeBatchInput, ProposedAction } from "@kibo/schema";
-import { answered, link, PROFILES, project, question, run, ticket } from "./test-kit";
+import { AGENTS, answered, link, project, question, run, ticket } from "./test-kit";
 import {
   type BatchContext,
   captureExpected,
@@ -30,7 +30,7 @@ const ctx = (p: Partial<BatchContext> = {}): BatchContext => ({
     run({ id: "r3", projectId: "other", ticketId: "x", state: "running" }),
   ],
   notes: [{ path: "a.md", hash: "h1" }],
-  profiles: PROFILES,
+  agents: AGENTS,
   demoProject: false,
   viewer: "adam",
   signals: [],
@@ -70,7 +70,9 @@ describe("captureExpected", () => {
     expect(capture({ id: 1, why, type: "deliverAnswers", ticket: "EMIS-3" })).toEqual({
       undelivered: ["q2"],
     });
-    expect(capture({ id: 1, why, type: "assignAgent", ticket: "EMIS-2", profileId: "opus" })).toEqual({
+    expect(
+      capture({ id: 1, why, type: "assignAgent", ticket: "EMIS-2", profileId: "global:opus-dev" }),
+    ).toEqual({
       activeRun: "r1",
     });
     expect(capture({ id: 1, why, type: "link", from: "EMIS-1", to: "EMIS-3", kind: "blocks" })).toEqual({});

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { type ProposedAction, StatusId } from "@kibo/schema";
 import fc from "fast-check";
 import { isNewRef, ticketRefsOf } from "./refs";
-import { answered, link, PROFILES, project, question, run, ticket } from "./test-kit";
+import { AGENTS, answered, link, project, question, run, ticket } from "./test-kit";
 import { type BatchContext, validateBatch } from "./validate";
 
 const ctx: BatchContext = {
@@ -19,7 +19,7 @@ const ctx: BatchContext = {
     run({ id: "r3", projectId: "other", state: "running" }),
   ],
   notes: [{ path: "a.md", hash: "h1" }],
-  profiles: PROFILES,
+  agents: AGENTS,
   demoProject: false,
   viewer: "adam",
   signals: [],
@@ -70,7 +70,7 @@ const draft: fc.Arbitrary<Draft> = fc.oneof(
     why,
     type: fc.constant("assignAgent" as const),
     ticket: ref,
-    profileId: fc.constantFrom("opus", "assistant", "demo", "nope"),
+    profileId: fc.constantFrom("global:opus-dev", "system:assistant", "system:demo", "nope"),
   }),
   fc.record({ why, type: fc.constant("deliverAnswers" as const), ticket: ref }),
   fc.record({ why, type: fc.constant("cancelRun" as const), runId: fc.constantFrom("r1", "r3", "rx") }),

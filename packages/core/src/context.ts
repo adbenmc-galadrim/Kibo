@@ -1,5 +1,4 @@
 import {
-  type AgentModel,
   ASK_QUESTION_TOOL,
   ASK_TOOL,
   branchRefOf,
@@ -13,11 +12,13 @@ import {
   type Question,
   type QuestionRecipient,
   SIGNAL_TOOL,
+  SKILL_REVIEW_TOOL,
   type Step,
   type TicketView,
 } from "@kibo/schema";
+import type { AgentContext } from "./agents/compose";
 
-export type ChainTarget = { projectId: string; domainId: string | null; profileId: string | null };
+export type ChainTarget = { projectId: string; domainId: string | null };
 export type BriefInput = {
   project: ProjectSnapshot;
   ticket: TicketView;
@@ -25,24 +26,27 @@ export type BriefInput = {
   note: string;
   commits?: readonly string[];
 };
-export type RunProtocol = { progress: boolean; recipients: readonly QuestionRecipient[]; signals: boolean };
+export type RunProtocol = {
+  progress: boolean;
+  recipients: readonly QuestionRecipient[];
+  signals: boolean;
+  skillReview: boolean;
+};
 export type ContextFile = { path: string; content: string };
 export type RunContext = { files: ContextFile[]; systemPrompt: string; brief: string; tokens: number };
 
-const ORDER: GuidelineScope[] = ["workspace", "project", "domain", "profile"];
-const FOLDER: Record<GuidelineScope, string> = {
+const ORDER: GuidelineScope[] = ["workspace", "project", "domain"];
+export const FOLDER: Record<GuidelineScope | "agent", string> = {
   workspace: "1-workspace",
   project: "2-projet",
   domain: "3-domaine",
-  profile: "4-profil",
+  agent: "4-agent",
 };
 const SCOPE_LABEL: Record<GuidelineScope, string> = {
   workspace: "workspace",
   project: "projet",
   domain: "domaine",
-  profile: "profil",
 };
-const MODEL_NAME: Record<AgentModel, string> = { opus: "Opus", sonnet: "Sonnet", haiku: "Haiku" };
 
 function applies(g: Guideline, target: ChainTarget): boolean {
   switch (g.owner.scope) {
@@ -52,8 +56,6 @@ function applies(g: Guideline, target: ChainTarget): boolean {
       return g.owner.projectId === target.projectId;
     case "domain":
       return g.owner.domainId === target.domainId;
-    case "profile":
-      return g.owner.profileId === target.profileId;
   }
 }
 
@@ -188,18 +190,39 @@ function recipientRules(protocol: RunProtocol | undefined): string[] {
   ];
 }
 
-export function buildSystemPrompt(
-  chain: Guideline[],
-  subagents: AgentModel[],
-  protocol?: RunProtocol,
-): string {
-  const allowed = subagents.length > 0 ? subagents.map((m) => MODEL_NAME[m]).join(", ") : "aucun";
+function skillReviewRules(protocol: RunProtocol | undefined): string[] {
+  if (!protocol?.skillReview) return [];
+  return [
+    `- Avant de terminer, si tu as utilisé un skill, laisse une review avec \`${SKILL_REVIEW_TOOL}\` : par skill, \`ok\` ou \`improve\`, une note de trois lignes au plus (ce qui a aidé, ce qui a manqué, ce que tu changerais), et, si tu proposes une modification, le contenu complet corrigé de \`SKILL.md\` dans \`suggestion\`. Rien n'est modifié sans validation de l'utilisateur.`,
+  ];
+}
+
+const described = (items: readonly { id: string; description: string }[]): string =>
+  items.map((i) => (i.description ? `\`${i.id}\` — ${i.description}` : `\`${i.id}\``)).join(", ");
+
+function agentRules(agent: AgentContext): string[] {
+  const subagents = described(agent.subagents.map((s) => ({ id: s.name, description: s.description })));
+  return [
+    agent.subagents.length > 0
+      ? `- Sous-agents appelables : ${subagents} (aucun autre).`
+      : "- Sous-agents appelables : aucun.",
+    agent.skills.mode === "all"
+      ? "- Skills : tous ceux de la machine et du projet."
+      : `- Skills autorisés : ${agent.skills.entries.length > 0 ? described(agent.skills.entries) : "aucun"}.`,
+  ];
+}
+
+const agentSection = (agent: AgentContext): string[] =>
+  agent.body.trim() ? [`## agent · ${agent.name}`, "", agent.body.trim(), ""] : [];
+
+export function buildSystemPrompt(chain: Guideline[], agent: AgentContext, protocol?: RunProtocol): string {
   return [
     "# Guidelines Kibo",
     "",
-    "Ordre d'injection : workspace → projet → domaine → profil.",
+    "Ordre d'injection : workspace → projet → domaine du ticket → spec de l'agent.",
     "",
     ...chain.flatMap((g) => [`## ${SCOPE_LABEL[g.owner.scope]} · ${g.path}`, "", g.content.trim(), ""]),
+    ...agentSection(agent),
     "## Protocole Kibo",
     "",
     `- Décision à prendre par l'utilisateur avant de continuer ⇒ \`${ASK_TOOL}\`, puis termine ton tour sans autre action. Kibo te relancera avec sa réponse.`,
@@ -208,18 +231,23 @@ export function buildSystemPrompt(
     ...recipientRules(protocol),
     ...progressRules(protocol),
     ...signalRules(protocol),
-    `- Sous-agents autorisés : ${allowed}.`,
+    ...skillReviewRules(protocol),
+    ...agentRules(agent),
     "",
   ].join("\n");
 }
 
 export function buildRunContext(
-  input: BriefInput & { chain: Guideline[]; subagents: AgentModel[]; protocol?: RunProtocol },
+  input: BriefInput & { chain: Guideline[]; agent: AgentContext; protocol?: RunProtocol },
 ): RunContext {
   const brief = buildBrief(input);
-  const systemPrompt = buildSystemPrompt(input.chain, input.subagents, input.protocol);
+  const systemPrompt = buildSystemPrompt(input.chain, input.agent, input.protocol);
+  const agentFile = input.agent.body.trim()
+    ? [{ path: `context/${FOLDER.agent}/${input.agent.name}.md`, content: input.agent.body }]
+    : [];
   const files: ContextFile[] = [
     ...input.chain.map((g) => ({ path: `context/${FOLDER[g.owner.scope]}/${g.path}`, content: g.content })),
+    ...agentFile,
     { path: "CLAUDE.md", content: systemPrompt },
     { path: "brief.md", content: brief },
   ];

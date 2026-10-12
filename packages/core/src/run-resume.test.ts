@@ -17,6 +17,8 @@ const record = (
   ticketTitle: "Récepteur",
   profileId: "opus",
   profileName: "opus-dev",
+  agentScope: "global",
+  projectKey: null,
   sessionId: `s-${id}`,
   brief: "",
   kind,

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { DEFAULT_WORKFLOW, type ProposeBatchInput, type ProposedAction } from "@kibo/schema";
-import { answered, link, PROFILES, project, question, run, ticket } from "./test-kit";
+import { AGENTS, answered, link, project, question, run, ticket } from "./test-kit";
 import { type BatchContext, validateBatch } from "./validate";
 
 const snapshot = project({
@@ -24,7 +24,7 @@ const ctx = (p: Partial<BatchContext> = {}): BatchContext => ({
     run({ id: "r3", projectId: "other", ticketId: "x", state: "running" }),
   ],
   notes: [{ path: "a.md", hash: "h1" }],
-  profiles: PROFILES,
+  agents: AGENTS,
   demoProject: false,
   viewer: "adam",
   signals: [],
@@ -62,21 +62,21 @@ describe("validateBatch refuses a batch that lies about its targets", () => {
     );
   });
 
-  test("system profiles are not assignable, demo only in the demo project, disabled profiles neither", () => {
+  test("Kibo agents are not assignable, demo only in the demo project, nor disabled, shadowed or unreadable agents", () => {
     const assign = (profileId: string) =>
       batch({ id: 1, why, type: "assignAgent", ticket: "EMIS-3", profileId });
-    expect(problems(assign("assistant"))).toEqual(["#1 profil non assignable « assistant »"]);
-    expect(problems(assign("project-agent"))).toEqual(["#1 profil non assignable « project-agent »"]);
-    expect(problems(assign("demo"))).toEqual(["#1 profil non assignable « demo »"]);
-    expect(problems(assign("demo"), ctx({ demoProject: true }))).toEqual([]);
-    expect(problems(assign("off"))).toEqual(["#1 profil non assignable « off »"]);
-    expect(problems(assign("nope"))).toEqual(["#1 profil non assignable « nope »"]);
+    for (const ref of ["system:assistant", "system:project-agent", "system:demo", "global:off-dev", "nope"]) {
+      expect(problems(assign(ref))).toEqual([`#1 agent non assignable « ${ref} »`]);
+    }
+    expect(problems(assign("system:demo"), ctx({ demoProject: true }))).toEqual([]);
+    expect(problems(assign("global:hidden"))).toEqual(["#1 agent non assignable « global:hidden »"]);
+    expect(problems(assign("global:broken"))).toEqual(["#1 agent non assignable « global:broken »"]);
   });
 
   test("assigning a ticket that already has an active run is accepted here", () => {
-    expect(problems(batch({ id: 1, why, type: "assignAgent", ticket: "EMIS-2", profileId: "opus" }))).toEqual(
-      [],
-    );
+    expect(
+      problems(batch({ id: 1, why, type: "assignAgent", ticket: "EMIS-2", profileId: "global:opus-dev" })),
+    ).toEqual([]);
   });
 
   test("questions of another project or already answered", () => {

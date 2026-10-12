@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { KiboError, type ProposedAction } from "@kibo/schema";
 import { commandsFor, isSkipped, type RefTable, resolveRefs, staleReason } from "./apply-plan";
-import { answered, HUMAN, link, PROFILES, project, question, run, ticket } from "./test-kit";
+import { AGENTS, answered, HUMAN, link, project, question, run, ticket } from "./test-kit";
 import type { BatchContext } from "./validate";
 import { captureExpected } from "./validate";
 
@@ -19,7 +19,7 @@ const ctx = (p: Partial<BatchContext> = {}): BatchContext => ({
   project: snapshot,
   runs: [run({ id: "r1", ticketId: "t2", state: "running" })],
   notes: [{ path: "a.md", hash: "h1" }],
-  profiles: PROFILES,
+  agents: AGENTS,
   demoProject: false,
   viewer: "adam",
   signals: [],
@@ -129,7 +129,7 @@ describe("staleReason", () => {
     ).toBe("modifié depuis la proposition : undelivered");
     expect(
       stale(
-        { id: 1, why, type: "assignAgent", ticket: "EMIS-3", profileId: "opus" },
+        { id: 1, why, type: "assignAgent", ticket: "EMIS-3", profileId: "global:opus-dev" },
         { runs: [run({ id: "r7", ticketId: "t3", state: "queued" })] },
       ),
     ).toBe("modifié depuis la proposition : activeRun");
@@ -235,7 +235,7 @@ describe("commandsFor", () => {
 
   test("agents and notes are run by the daemon", () => {
     for (const action of [
-      { id: 1, why, type: "assignAgent", ticket: "EMIS-1", profileId: "opus" },
+      { id: 1, why, type: "assignAgent", ticket: "EMIS-1", profileId: "global:opus-dev" },
       { id: 1, why, type: "deliverAnswers", ticket: "EMIS-3" },
       { id: 1, why, type: "cancelRun", runId: "r1" },
       { id: 1, why, type: "createNote", path: "b.md", content: "" },

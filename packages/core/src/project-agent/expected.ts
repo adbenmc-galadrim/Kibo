@@ -1,5 +1,5 @@
 import {
-  type AgentProfile,
+  type AgentSummary,
   isTerminal,
   type ProjectSnapshot,
   type ProposedAction,
@@ -14,7 +14,7 @@ export type BatchContext = {
   project: ProjectSnapshot;
   runs: readonly RunView[];
   notes: readonly NoteHash[];
-  profiles: readonly AgentProfile[];
+  agents: readonly AgentSummary[];
   demoProject: boolean;
   viewer: string;
   signals: readonly SignalRef[];

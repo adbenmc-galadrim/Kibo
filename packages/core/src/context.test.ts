@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { ASK_QUESTION_TOOL, ASK_TOOL, type Guideline, type Question, type Ticket } from "@kibo/schema";
+import { NO_AGENT } from "./agents/compose";
 import { executeProjectCommand, readProject } from "./commands";
 import { buildBrief, buildRunContext, buildSystemPrompt, guidelineChain } from "./context";
 import { createProjectDoc } from "./project";
@@ -14,20 +15,15 @@ const all: Guideline[] = [
   g("1", { scope: "domain", domainId: "core" }, "guidelines/core.md"),
   g("2", { scope: "workspace" }, "guidelines/git.md"),
   g("3", { scope: "project", projectId: "p1" }, "guidelines/kibo.md"),
-  g("4", { scope: "profile", profileId: "opus" }, "front.md"),
   g("5", { scope: "workspace" }, "guidelines/general.md"),
   g("6", { scope: "domain", domainId: "ui" }, "guidelines/ui.md"),
   g("7", { scope: "project", projectId: "p2" }, "guidelines/other.md"),
 ];
 
-test("the chain keeps what applies, from workspace to profile", () => {
-  const chain = guidelineChain(all, { projectId: "p1", domainId: "core", profileId: "opus" });
-  expect(chain.map((x) => x.id)).toEqual(["5", "2", "3", "1", "4"]);
-  expect(guidelineChain(all, { projectId: "p1", domainId: null, profileId: null }).map((x) => x.id)).toEqual([
-    "5",
-    "2",
-    "3",
-  ]);
+test("the chain keeps what applies, from workspace to domain", () => {
+  const chain = guidelineChain(all, { projectId: "p1", domainId: "core" });
+  expect(chain.map((x) => x.id)).toEqual(["5", "2", "3", "1"]);
+  expect(guidelineChain(all, { projectId: "p1", domainId: null }).map((x) => x.id)).toEqual(["5", "2", "3"]);
 });
 
 function kibo() {
@@ -92,33 +88,83 @@ test("the brief lists the ticket, its sub-tickets, its dependencies and the note
 });
 
 test("the system prompt concatenates the chain and ends with the Kibo protocol", () => {
-  const chain = guidelineChain(all, { projectId: "p1", domainId: "core", profileId: null });
-  const prompt = buildSystemPrompt(chain, ["sonnet", "haiku"]);
+  const chain = guidelineChain(all, { projectId: "p1", domainId: "core" });
+  const prompt = buildSystemPrompt(chain, NO_AGENT);
   expect(prompt.indexOf("## workspace · guidelines/general.md")).toBeLessThan(
     prompt.indexOf("## domaine · guidelines/core.md"),
   );
   expect(prompt).toContain(`\`${ASK_TOOL}\``);
   expect(prompt).toContain(`\`${ASK_QUESTION_TOOL}\``);
   expect(prompt).toContain("Jamais de décision à valider dans ton texte final");
-  expect(prompt).toContain("Sous-agents autorisés : Sonnet, Haiku.");
-  expect(buildSystemPrompt([], [])).toContain("Sous-agents autorisés : aucun.");
+  expect(prompt).toContain("Ordre d'injection : workspace → projet → domaine du ticket → spec de l'agent.");
+  expect(prompt).not.toContain("## agent ·");
+});
+
+const REVIEW_AGENT = {
+  ...NO_AGENT,
+  name: "review-pr",
+  body: "Tu relis.",
+  subagents: [{ name: "livraison", description: "Livre" }],
+  skills: { mode: "list" as const, entries: [{ id: "a", description: "A" }] },
+};
+
+test("the agent spec comes after the guidelines, with its subagents and skills", () => {
+  const prompt = buildSystemPrompt([], REVIEW_AGENT, {
+    progress: true,
+    recipients: [],
+    signals: true,
+    skillReview: true,
+  });
+  for (const fragment of [
+    "## agent · review-pr",
+    "Tu relis.",
+    "Sous-agents appelables : `livraison` — Livre (aucun autre)",
+    "Skills autorisés : `a` — A",
+    "skill_review",
+  ]) {
+    expect(prompt).toContain(fragment);
+  }
+  expect(prompt.indexOf("## agent · review-pr")).toBeLessThan(prompt.indexOf("## Protocole Kibo"));
+  expect(buildSystemPrompt([], NO_AGENT)).toContain("Skills : tous ceux de la machine et du projet");
+});
+
+test("the neutral agent keeps the former prompt but for the agent lines", () => {
+  expect(buildSystemPrompt([], NO_AGENT)).toBe(
+    [
+      "# Guidelines Kibo",
+      "",
+      "Ordre d'injection : workspace → projet → domaine du ticket → spec de l'agent.",
+      "",
+      "## Protocole Kibo",
+      "",
+      `- Décision à prendre par l'utilisateur avant de continuer ⇒ \`${ASK_TOOL}\`, puis termine ton tour sans autre action. Kibo te relancera avec sa réponse.`,
+      `- Décision que tu peux prendre provisoirement ⇒ \`${ASK_QUESTION_TOOL}\` avec ton choix provisoire, puis continue.`,
+      "- Jamais de décision à valider dans ton texte final : Kibo ne le lit pas.",
+      "- Sous-agents appelables : aucun.",
+      "- Skills : tous ceux de la machine et du projet.",
+      "",
+    ].join("\n"),
+  );
 });
 
 test("the run context lists every file to materialize", () => {
   const { project, ticket } = kibo();
-  const chain = guidelineChain(all, { projectId: "p1", domainId: "core", profileId: "opus" });
-  const ctx = buildRunContext({ project, ticket, domain: null, note: "", chain, subagents: [] });
+  const chain = guidelineChain(all, { projectId: "p1", domainId: "core" });
+  const ctx = buildRunContext({ project, ticket, domain: null, note: "", chain, agent: REVIEW_AGENT });
   expect(ctx.files.map((f) => f.path)).toEqual([
     "context/1-workspace/guidelines/general.md",
     "context/1-workspace/guidelines/git.md",
     "context/2-projet/guidelines/kibo.md",
     "context/3-domaine/guidelines/core.md",
-    "context/4-profil/front.md",
+    "context/4-agent/review-pr.md",
     "CLAUDE.md",
     "brief.md",
   ]);
   expect(ctx.tokens).toBe(Math.ceil((ctx.systemPrompt.length + ctx.brief.length) / 4));
   expect(ctx.brief).not.toContain("## Consignes");
+  expect(ctx.files.find((f) => f.path === "context/4-agent/review-pr.md")?.content).toBe("Tu relis.");
+  const bare = buildRunContext({ project, ticket, domain: null, note: "", chain, agent: NO_AGENT });
+  expect(bare.files.some((f) => f.path.startsWith("context/4-agent/"))).toBe(false);
 });
 
 test("the brief lists the linked mockups, only their URL", () => {

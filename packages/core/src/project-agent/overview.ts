@@ -1,5 +1,7 @@
 import {
-  type AgentProfile,
+  type AgentSummary,
+  type AssignableAgent,
+  DEMO_AGENT_REF,
   isOpen,
   isTerminal,
   MEMORY_NOTE_PATH,
@@ -9,6 +11,7 @@ import {
   type RunView,
   type TicketCard,
 } from "@kibo/schema";
+import { runModel } from "../agents/compose";
 import { RUN_STATE_TEXT } from "./digest";
 import { ticketCard } from "./ticket-card";
 import { ticketKeyOf, truncate } from "./ticket-facts";
@@ -21,7 +24,7 @@ export type OverviewInput = {
   runs: readonly RunView[];
   queue: readonly QueueEntry[];
   notes: readonly { path: string; title: string }[];
-  profiles: readonly AgentProfile[];
+  agents: readonly AgentSummary[];
   demoProject: boolean;
   memory: string;
   openSignals: number;
@@ -31,9 +34,22 @@ export const ACTIVE_STATUSES: readonly string[] = ["in_progress", "in_review", "
 export const OVERVIEW_TITLE_MAX = 80;
 const BUDGET = { tickets: 2_400, runs: 600, questions: 800, notes: 600 };
 
-export function assignableProfiles(profiles: readonly AgentProfile[], demoProject: boolean): AgentProfile[] {
-  return profiles.filter((p) => p.enabled && (!p.system || (demoProject && p.id === "demo")));
+const usable = (a: AgentSummary): boolean =>
+  a.settings.enabled && a.shadowedBy === null && a.problem === null;
+const assignableScope = (a: AgentSummary, demoProject: boolean): boolean =>
+  a.scope !== "system" || (demoProject && a.ref === DEMO_AGENT_REF);
+
+export function assignableAgents(agents: readonly AgentSummary[], demoProject: boolean): AgentSummary[] {
+  return agents.filter((a) => usable(a) && assignableScope(a, demoProject));
 }
+
+export const assignableEntry = (a: AgentSummary): AssignableAgent => ({
+  id: a.ref,
+  name: a.name,
+  scope: a.scope,
+  description: a.description,
+  model: runModel(a.model === null ? null : { model: a.model }).model,
+});
 
 export function projectOverview(input: OverviewInput): ProjectOverview {
   const { project } = input;
@@ -57,11 +73,7 @@ export function projectOverview(input: OverviewInput): ProjectOverview {
       blocking: q.blocking,
     })),
     notes: input.notes.map((n) => ({ path: n.path, title: n.title })),
-    profiles: assignableProfiles(input.profiles, input.demoProject).map((p) => ({
-      id: p.id,
-      name: p.name,
-      model: p.model,
-    })),
+    profiles: assignableAgents(input.agents, input.demoProject).map(assignableEntry),
     memory: input.memory,
     openSignals: input.openSignals,
   };
@@ -130,8 +142,8 @@ export function renderOverview(overview: ProjectOverview): string {
       "Aucune.",
     ),
     ...section(
-      "Profils assignables",
-      overview.profiles.map((p) => `- ${p.id} (${p.name}, ${p.model})`),
+      "Agents assignables",
+      overview.profiles.map((p) => `- ${p.id} (${p.name}, ${p.model}) : ${p.description}`),
       "Aucun.",
     ),
     ...section(
