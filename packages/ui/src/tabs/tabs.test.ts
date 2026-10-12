@@ -297,3 +297,12 @@ test("a page tab is not doubled by a question, it is aimed at it", () => {
   expect(activeTarget(s)).toEqual({ ...page, question: "q1" });
   expect(s.recents[0]).toEqual(page);
 });
+
+test("the domains tab is not doubled by a project folder, it is aimed at it", () => {
+  const domains = { kind: "screen", screen: "domains" } as const;
+  let s = tabsReducer(EMPTY_TABS, { type: "open", target: domains, newTab: true, id: "t1" });
+  s = tabsReducer(s, { type: "open", target: { ...domains, projectId: "p1" }, newTab: true, id: "t2" });
+  expect(s.tabs.map((t) => t.id)).toEqual(["t1"]);
+  expect(activeTarget(s)).toEqual({ ...domains, projectId: "p1" });
+  expect(s.recents[0]).toEqual(domains);
+});

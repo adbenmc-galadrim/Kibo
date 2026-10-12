@@ -259,7 +259,14 @@ export function ShellDialogs({
       {shareProject && (
         <ShareProjectDialog project={shareProject} open onOpenChange={(o) => !o && set({ share: null })} />
       )}
-      {editing && <EditProjectDialog project={editing} onClose={() => set({ editProject: null })} />}
+      {editing && (
+        <EditProjectDialog
+          project={editing}
+          onClose={() => set({ editProject: null })}
+          config={config}
+          go={(target) => p.onOpenTarget(target, false)}
+        />
+      )}
       {doomedProject && (
         <DeleteProjectDialog
           project={doomedProject}

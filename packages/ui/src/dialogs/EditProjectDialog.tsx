@@ -8,7 +8,9 @@ import {
   type ProjectSummary,
   STORYBOOK_DEFAULTS,
   type StorybookSettings,
+  type TabTarget,
   WORKTREE_DEFAULTS,
+  type WorkspaceConfig,
   type WorktreeSettings,
 } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
@@ -24,6 +26,7 @@ import { PROJECT_COLORS } from "../lib/project-colors";
 import { isRemoteView } from "../lib/remote-view";
 import { DuplicationFields, sameDuplication } from "../overlaps/DuplicationFields";
 import { FolderField, type FolderFieldProps } from "./FolderField";
+import { GuidelinesField } from "./GuidelinesField";
 import { IconField } from "./IconField";
 import { RecipientsFields } from "./RecipientsFields";
 import { StorybookFields, storybookProblem } from "./StorybookFields";
@@ -35,6 +38,8 @@ type Props = {
   remote?: boolean;
   canBrowse?: boolean;
   pick?: FolderFieldProps["pick"];
+  config?: WorkspaceConfig | null;
+  go?(target: TabTarget): void;
 };
 type Fields = {
   name: string;
@@ -77,7 +82,15 @@ export function editFailure(e: unknown): string {
   return `${t.failed} ${known ?? errorMessage(e)}`;
 }
 
-export function EditProjectDialog({ project, onClose, remote = isRemoteView(), canBrowse, pick }: Props) {
+export function EditProjectDialog({
+  project,
+  onClose,
+  remote = isRemoteView(),
+  canBrowse,
+  pick,
+  config,
+  go,
+}: Props) {
   const nameId = useId();
   const folderId = useId();
   const folderHelpId = useId();
@@ -201,6 +214,16 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
               onChange={setStorybook}
               withPortEnv={showWorktree}
               disabled={busy}
+            />
+          )}
+          {config && go && (
+            <GuidelinesField
+              project={project}
+              config={config}
+              go={(target) => {
+                onClose();
+                go(target);
+              }}
             />
           )}
           <DuplicationFields

@@ -24,8 +24,11 @@ export type TabsAction =
   | { type: "retarget"; id: string; target: TabTarget }
   | { type: "replace"; state: TabsState };
 
-const placeOf = (t: TabTarget): TabTarget =>
-  t.kind === "page" && t.question ? { kind: "page", projectId: t.projectId, pageId: t.pageId } : t;
+const placeOf = (t: TabTarget): TabTarget => {
+  if (t.kind === "page" && t.question) return { kind: "page", projectId: t.projectId, pageId: t.pageId };
+  if (t.kind === "screen" && t.projectId) return { kind: "screen", screen: t.screen };
+  return t;
+};
 
 export const sameTarget = (a: TabTarget, b: TabTarget): boolean =>
   targetToHash(placeOf(a)) === targetToHash(placeOf(b));

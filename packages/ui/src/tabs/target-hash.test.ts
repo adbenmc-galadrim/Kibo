@@ -30,3 +30,12 @@ test("a page address may name one question, read back the same way", () => {
   expect(targetToHash({ kind: "page", projectId: "p1", pageId: "pg", question: null })).toBe("#/p/p1/pg");
   expect(hashToTarget("#/p/p1/pg?question=")).toEqual({ kind: "page", projectId: "p1", pageId: "pg" });
 });
+
+test("the domains page may open on one project folder", () => {
+  const aimed: TabTarget = { kind: "screen", screen: "domains", projectId: "p 1" };
+  expect(targetToHash(aimed)).toBe("#/settings/domains?project=p%201");
+  expect(hashToTarget("#/settings/domains?project=p%201")).toEqual(aimed);
+  expect(hashToTarget("#/settings/domains")).toEqual({ kind: "screen", screen: "domains" });
+  expect(hashToTarget("#/settings/domains?project=")).toEqual({ kind: "screen", screen: "domains" });
+  expect(targetToHash({ kind: "screen", screen: "domains", projectId: null })).toBe("#/settings/domains");
+});

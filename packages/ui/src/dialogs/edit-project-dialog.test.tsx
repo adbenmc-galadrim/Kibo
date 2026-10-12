@@ -8,9 +8,11 @@ import {
   type ProjectSnapshot,
   type ProjectSummary,
   type RpcRequest,
+  type TabTarget,
 } from "@kibo/schema";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { configFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
@@ -87,6 +89,23 @@ beforeEach(() => {
   calls.length = 0;
   fail = null;
   access = "write";
+});
+
+test("the guidelines section closes the dialog and opens the project's folder (screen 209b)", async () => {
+  const closed = mock(() => {});
+  const go = mock((_target: TabTarget) => {});
+  render(
+    <EditProjectDialog project={project} remote={false} onClose={closed} config={configFixture()} go={go} />,
+  );
+  expect(screen.getByText("6 fichiers .md · 2 domaines")).toBeTruthy();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Ouvrir le dossier de guidelines →" }));
+  expect(closed).toHaveBeenCalledTimes(1);
+  expect(go).toHaveBeenCalledWith({ kind: "screen", screen: "domains", projectId: "kibo" });
+});
+
+test("without the configuration the guidelines section is not shown", () => {
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  expect(screen.queryByRole("heading", { name: "Guidelines" })).toBeNull();
 });
 
 test("a writable project shows its question recipients (screen 187d)", async () => {

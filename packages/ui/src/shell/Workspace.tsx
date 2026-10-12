@@ -214,6 +214,8 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                     <ScreenView
                       key={`${screen}-${screenVisit.visit}`}
                       screen={screen}
+                      projectId={active?.kind === "screen" ? active.projectId : null}
+                      currentProjectId={lastProjectId}
                       viewer={viewer}
                       projects={projects}
                       snapshots={snapshots}

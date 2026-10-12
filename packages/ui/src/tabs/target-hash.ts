@@ -23,7 +23,8 @@ const SCREEN_HASHES: Record<Screen, string> = {
 
 export function targetToHash(target: TabTarget | null): string {
   if (!target) return "#/";
-  if (target.kind === "screen") return SCREEN_HASHES[target.screen];
+  if (target.kind === "screen")
+    return `${SCREEN_HASHES[target.screen]}${target.projectId ? `?project=${enc(target.projectId)}` : ""}`;
   if (target.kind === "run") return `#/runs/${enc(target.runId)}`;
   if (target.kind === "skill") return `#/skills/${enc(target.skillId)}`;
   const base = `#/p/${enc(target.projectId)}`;
@@ -70,9 +71,12 @@ function candidate(projectId: string, rest: string, q: URLSearchParams): unknown
 }
 
 function screenTarget(hash: string): TabTarget | null {
-  const bare = hash.replace(/\/$/, "");
+  const [path = "", query = ""] = hash.split("?");
+  const bare = path.replace(/\/$/, "");
   const screen = Screen.options.find((s) => SCREEN_HASHES[s] === bare);
-  return screen ? { kind: "screen", screen } : null;
+  if (!screen) return null;
+  const projectId = new URLSearchParams(query).get("project");
+  return projectId ? { kind: "screen", screen, projectId } : { kind: "screen", screen };
 }
 
 function pathCandidate(path: string, query: string): unknown {

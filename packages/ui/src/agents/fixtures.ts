@@ -304,9 +304,9 @@ const guideline = (
 
 export function configFixture(): WorkspaceConfig {
   const kibo = { scope: "project", projectId: "kibo" } as const;
-  const core = { scope: "domain", domainId: "core", projectId: null } as const;
+  const core = { scope: "domain", domainId: "core", projectId: "kibo" } as const;
   return {
-    domains: domainsFixture,
+    domains: domainsFixture.map((d) => (d.id === "core" || d.id === "agents" ? { ...d, owner: kibo } : d)),
     guidelines: [
       guideline("w1", { scope: "workspace" }, "guidelines/general.md"),
       guideline("w2", { scope: "workspace" }, "guidelines/git.md"),

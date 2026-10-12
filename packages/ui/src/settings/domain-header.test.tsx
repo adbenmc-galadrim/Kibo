@@ -8,7 +8,18 @@ const core = { id: "core", name: "Core", color: "#14B8A6", owner: { scope: "work
 const show = (onRename = mock((_n: string) => Promise.resolve(true))) => {
   const onColor = mock((_c: string) => Promise.resolve(true));
   const onDelete = mock(() => {});
-  render(<DomainHeader domain={core} usage={9} onRename={onRename} onColor={onColor} onDelete={onDelete} />);
+  render(
+    <DomainHeader
+      domain={core}
+      usage={9}
+      projects={1}
+      scope={null}
+      readOnly={false}
+      onRename={onRename}
+      onColor={onColor}
+      onDelete={onDelete}
+    />,
+  );
   return { onRename, onColor, onDelete, user: userEvent.setup() };
 };
 
@@ -49,4 +60,38 @@ test("the trash asks the page to delete", async () => {
   const { user, onDelete } = show();
   await user.click(screen.getByRole("button", { name: "Supprimer le domaine Core" }));
   expect(onDelete).toHaveBeenCalledTimes(1);
+});
+
+test("the header says whose domain it is and where it is used", () => {
+  const noop = () => Promise.resolve(true);
+  const { rerender } = render(
+    <DomainHeader
+      domain={core}
+      usage={6}
+      projects={2}
+      scope={null}
+      readOnly={false}
+      onRename={noop}
+      onColor={noop}
+      onDelete={() => {}}
+    />,
+  );
+  expect(screen.getByText("domaine du workspace")).toBeTruthy();
+  expect(screen.getByText("utilisé par 6 tickets dans 2 projets")).toBeTruthy();
+  const sync = { ...core, name: "Sync", owner: { scope: "project", projectId: "kibo" } } as const;
+  rerender(
+    <DomainHeader
+      domain={sync}
+      usage={8}
+      projects={1}
+      scope={{ name: "Kibo", color: "#F97316" }}
+      readOnly
+      onRename={noop}
+      onColor={noop}
+      onDelete={() => {}}
+    />,
+  );
+  expect(screen.getByText("domaine de Kibo")).toBeTruthy();
+  expect(screen.getByText("utilisé par 8 tickets")).toBeTruthy();
+  expect(screen.queryByRole("button")).toBeNull();
 });

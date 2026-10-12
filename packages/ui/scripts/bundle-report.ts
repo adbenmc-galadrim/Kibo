@@ -78,6 +78,8 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/i18n\/fr-(market|security|collab)\.ts$/,
   /\/packages\/ui\/src\/(agents\/(dock|mention)\/|moments\/)[A-Za-z-]+\.tsx?$/,
   /\/packages\/ui\/src\/i18n\/fr-moments\.ts$/,
+  /\/packages\/ui\/src\/settings\/(FolderTree|NodeHeader|EmptyNode|HowAgentsAreConfigured|DomainHeader)\.tsx$/,
+  /\/packages\/ui\/src\/(settings\/(domains-tree|domains-entries|folder-tree-keys|use-domains-page)\.tsx?|dialogs\/GuidelinesField\.tsx)$/,
   /\/packages\/sdk\/src\/(ui\/hover-card|agent-mention)\.tsx$/,
   /\/packages\/ui\/src\/ticket\/activity\/[A-Za-z-]+\.tsx?$/,
   /\/packages\/ui\/src\/(project-agent\/signals\/[A-Za-z-]+\.tsx?|moments\/SignalMoment\.tsx|i18n\/fr-signals\.ts)$/,

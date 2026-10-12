@@ -31,3 +31,14 @@ test("a page target may point at one question, none by default", () => {
   expect(TabTarget.safeParse({ ...page, question: "" }).success).toBe(false);
   expect(TabTarget.safeParse({ ...page, question: 3 }).success).toBe(false);
 });
+
+test("the domains screen may aim at one project, which never makes it a project tab", () => {
+  const aimed = TabTarget.parse({ kind: "screen", screen: "domains", projectId: "p1" });
+  expect(aimed).toEqual({ kind: "screen", screen: "domains", projectId: "p1" });
+  expect(targetProjectId(aimed)).toBeNull();
+  expect(TabTarget.parse({ kind: "screen", screen: "domains" })).toEqual({
+    kind: "screen",
+    screen: "domains",
+  });
+  expect(TabTarget.safeParse({ kind: "screen", screen: "domains", projectId: "" }).success).toBe(false);
+});
