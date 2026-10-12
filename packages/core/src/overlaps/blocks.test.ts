@@ -30,6 +30,14 @@ describe("commonBlocks", () => {
     expect(commonBlocks(a, b, 4, sha256)).toHaveLength(1);
   });
 
+  test("minLines 4 finds a four line block and nothing under it", () => {
+    const four = text("four", 4);
+    expect(commonBlocks(hashed([...text("a", 2), ...four]), hashed(four), 4, sha256)).toEqual([
+      expect.objectContaining({ aStart: 2, bStart: 0, lines: 4 }),
+    ]);
+    expect(commonBlocks(hashed(four.slice(0, 3)), hashed(four.slice(0, 3)), 4, sha256)).toEqual([]);
+  });
+
   test("returns short-character blocks, the char threshold is applied later", () => {
     const short = text("s", 10, 5).map((t) => t.slice(0, 5));
     const blocks = commonBlocks(hashed(short), hashed(short), 8, sha256);

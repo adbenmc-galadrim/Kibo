@@ -8,9 +8,9 @@ import {
 } from "@kibo/schema";
 import { type Block, blockKey, blocksBetween, positionsOf } from "./blocks";
 import { isCandidateExport } from "./exports";
-import { isCodePath, isIgnoredPath } from "./ignore";
+import { isCodePath, isIgnoredPath, isTestPath } from "./ignore";
 import type { Hasher } from "./normalize";
-import { type LineWindow, windowsOf } from "./windows";
+import { type LineWindow, windowSizeFor, windowsOf } from "./windows";
 
 export type CandidateSide = { path: string; start: number | null };
 
@@ -92,10 +92,11 @@ const exportCandidates = (
 
 type Windowed = { file: IndexedFile; windows: LineWindow[] };
 
-const windowed = (files: readonly IndexedFile[], hash: Hasher): Windowed[] =>
+const windowed = (files: readonly IndexedFile[], settings: DuplicationSettings, hash: Hasher): Windowed[] =>
   files
-    .filter((f) => !f.clipped && f.lines.length >= DUPLICATION_LIMITS.windowLines)
-    .map((file) => ({ file, windows: windowsOf(file.lines, hash) }));
+    .filter((f) => !f.clipped && f.lines.length >= settings.minLines)
+    .filter((f) => settings.compareTests || !isTestPath(f.path))
+    .map((file) => ({ file, windows: windowsOf(file.lines, hash, windowSizeFor(settings.minLines)) }));
 
 const filesByWindow = (files: readonly Windowed[]): Map<string, Set<number>> => {
   const out = new Map<string, Set<number>>();
@@ -123,8 +124,8 @@ const blockCandidates = (
   settings: DuplicationSettings,
   hash: Hasher,
 ): Candidate[] => {
-  const ours = windowed(a, hash);
-  const theirs = windowed(b, hash);
+  const ours = windowed(a, settings, hash);
+  const theirs = windowed(b, settings, hash);
   const index = filesByWindow(theirs);
   const positions = new Map<number, Map<string, number[]>>();
   return ours.flatMap(({ file: fa, windows }) => {

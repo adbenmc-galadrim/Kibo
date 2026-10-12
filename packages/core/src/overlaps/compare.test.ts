@@ -52,6 +52,41 @@ describe("file criterion", () => {
   });
 });
 
+describe("tests in file and export criteria", () => {
+  test("a test file changed on both sides is a file overlap", () => {
+    expect(
+      keys(
+        indexOf("A", [{ path: "src/a.test.ts", texts: ["one"] }]),
+        indexOf("B", [{ path: "src/a.test.ts", texts: ["two"] }]),
+      ),
+    ).toEqual(["file:src/a.test.ts"]);
+  });
+
+  test("an export added in two test helpers is an export overlap", () => {
+    expect(
+      keys(
+        indexOf("A", [{ path: "src/a.test.ts", texts: ["export const makeUser = 1;"] }]),
+        indexOf("B", [{ path: "src/b.test.ts", texts: ["export const makeUser = 2;"] }]),
+      ),
+    ).toEqual(["export:makeUser"]);
+  });
+
+  test("other ignored paths stay out of every criterion", () => {
+    expect(
+      keys(
+        indexOf("A", [
+          { path: "bun.lock", texts: ["one"] },
+          { path: ".env", texts: ["a"] },
+        ]),
+        indexOf("B", [
+          { path: "bun.lock", texts: ["two"] },
+          { path: ".env", texts: ["b"] },
+        ]),
+      ),
+    ).toEqual([]);
+  });
+});
+
 describe("export criterion", () => {
   test("the same name added in two files", () => {
     const found = find(
@@ -121,11 +156,19 @@ describe("block criterion", () => {
     ).toEqual([]);
   });
 
-  test("tests are compared only when asked", () => {
+  test("tests are left out of blocks unless compared", () => {
     const a = indexOf("A", [{ path: "src/a.test.ts", texts: shared }]);
     const b = indexOf("B", [{ path: "src/b.test.ts", texts: shared }]);
     expect(keys(a, b)).toEqual([]);
     expect(find(a, b, settingsWith({ compareTests: true })).map((c) => c.kind)).toEqual(["block"]);
+  });
+
+  test("a four line block is found with minLines 4", () => {
+    const four = codeLines("four", 4).map((l) => `${l} // ${"x".repeat(30)}`);
+    const a = indexOf("A", [{ path: "src/a.ts", texts: four }]);
+    const b = indexOf("B", [{ path: "src/b.ts", texts: four }]);
+    expect(keys(a, b)).toEqual([]);
+    expect(find(a, b, settingsWith({ minLines: 4 })).map((c) => [c.kind, c.lines])).toEqual([["block", 4]]);
   });
 
   test("a block at the same path is left to the file criterion", () => {

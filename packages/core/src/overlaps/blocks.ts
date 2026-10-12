@@ -1,6 +1,6 @@
-import { DUPLICATION_LIMITS, type LineHash, overlapKey } from "@kibo/schema";
+import { type LineHash, overlapKey } from "@kibo/schema";
 import type { Hasher } from "./normalize";
-import { type LineWindow, windowsOf } from "./windows";
+import { type LineWindow, windowSizeFor, windowsOf } from "./windows";
 
 export type Block = {
   aStart: number;
@@ -47,7 +47,6 @@ export function blocksBetween(
       const diagonal = w.at - bStart;
       if (w.at < (coveredUntil.get(diagonal) ?? 0)) continue;
       const lines = runLength(a, w.at, b, bStart);
-      if (lines < DUPLICATION_LIMITS.windowLines) continue;
       coveredUntil.set(diagonal, w.at + lines);
       if (lines < minLines) continue;
       blocks.push({
@@ -69,7 +68,8 @@ export function commonBlocks(
   minLines: number,
   hash: Hasher,
 ): Block[] {
-  return blocksBetween(a, windowsOf(a, hash), b, positionsOf(windowsOf(b, hash)), minLines);
+  const size = windowSizeFor(minLines);
+  return blocksBetween(a, windowsOf(a, hash, size), b, positionsOf(windowsOf(b, hash, size)), minLines);
 }
 
 export function blockKey(a: readonly LineHash[], block: Block, hash: Hasher): string {

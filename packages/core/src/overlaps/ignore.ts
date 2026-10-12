@@ -64,16 +64,12 @@ export const isCodePath = (path: string): boolean => DUPLICATION_CODE_EXTENSIONS
 export const isBinaryPath = (path: string): boolean =>
   DUPLICATION_BINARY_EXTENSIONS.includes(extensionOf(path));
 
-export function isIgnoredPath(
-  path: string,
-  settings: Pick<DuplicationSettings, "ignore" | "compareTests">,
-): boolean {
+export function isIgnoredPath(path: string, settings: Pick<DuplicationSettings, "ignore">): boolean {
   return (
     matchesAny(path, DUPLICATION_IGNORE_DIRS) ||
     matchesAny(path, DUPLICATION_IGNORE_GLOBS) ||
     isSecretPath(path) ||
     isBinaryPath(path) ||
-    matchesAny(path, settings.ignore) ||
-    (!settings.compareTests && isTestPath(path))
+    matchesAny(path, settings.ignore)
   );
 }

@@ -24,6 +24,10 @@ describe("windowsOf", () => {
     expect(windowsOf(hashed(8), sha256).map((w) => w.at)).toEqual([0, 1, 2]);
   });
 
+  test("a smaller size makes smaller windows", () => {
+    expect(windowsOf(hashed(5), sha256, 4).map((w) => w.at)).toEqual([0, 1]);
+  });
+
   test("identical lines give identical windows", () => {
     expect(windowsOf(hashed(7), sha256)).toEqual(windowsOf(hashed(7), sha256));
     expect(windowsOf(hashed(6, "x"), sha256)).not.toEqual(windowsOf(hashed(6), sha256));

@@ -58,14 +58,14 @@ describe("isIgnoredPath", () => {
     expect(isIgnoredPath("src/a.ts", settings)).toBe(false);
   });
 
-  test("tests are ignored unless compared", () => {
-    expect(isIgnoredPath("a.test.ts", { ignore: [], compareTests: false })).toBe(true);
-    expect(isIgnoredPath("a.test.ts", { ignore: [], compareTests: true })).toBe(false);
+  test("tests are not ignored paths", () => {
+    expect(isIgnoredPath("a.test.ts", settings)).toBe(false);
+    expect(isIgnoredPath("fixtures/x.json", settings)).toBe(false);
   });
 
   test("project globs are added", () => {
-    expect(isIgnoredPath("docs/a.md", { ignore: ["docs/**"], compareTests: false })).toBe(true);
-    expect(isIgnoredPath("src/docs/a.md", { ignore: ["docs/**"], compareTests: false })).toBe(false);
+    expect(isIgnoredPath("docs/a.md", { ignore: ["docs/**"] })).toBe(true);
+    expect(isIgnoredPath("src/docs/a.md", { ignore: ["docs/**"] })).toBe(false);
   });
 });
 

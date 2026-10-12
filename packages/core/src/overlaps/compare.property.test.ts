@@ -98,13 +98,13 @@ describe("findOverlaps properties", () => {
     );
   });
 
-  test("(d) tests, short names and generic names never yield a candidate by default", () => {
+  test("(d) tests never yield a block, short and generic names never an export, by default", () => {
     fc.assert(
       fc.property(
         arbShared.chain((shared) => fc.tuple(arbIndex("A", shared), arbIndex("B", shared))),
         ([a, b]) => {
           for (const c of findOverlaps(a, b, DEFAULT_DUPLICATION_SETTINGS, sha256)) {
-            expect(isTestPath(c.a.path) || isTestPath(c.b.path)).toBe(false);
+            if (c.kind === "block") expect(isTestPath(c.a.path) || isTestPath(c.b.path)).toBe(false);
             if (c.name === null) continue;
             expect(c.name.length).toBeGreaterThanOrEqual(DUPLICATION_LIMITS.exportNameMin);
             expect(DEFAULT_DUPLICATION_SETTINGS.genericExports).not.toContain(c.name);
