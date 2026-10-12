@@ -28,8 +28,8 @@ export function AgentBadge({ agent, run, texts, className }: Props) {
   return (
     <Badge variant="outline" className={cn("gap-1 text-3xs font-normal text-muted-foreground", className)}>
       {live && <RunDot state={live.state} className="size-1.5" />}
-      <Bot aria-hidden className="size-3" />
-      <span className="font-mono text-foreground/80">{name}</span>
+      <Bot aria-hidden className="size-3 shrink-0" />
+      <span className="truncate font-mono text-foreground/80">{name}</span>
       {live && text && <span className={RUN_TEXT[live.state]}>{`· ${text}`}</span>}
     </Badge>
   );

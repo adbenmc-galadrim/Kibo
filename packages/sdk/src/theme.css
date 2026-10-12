@@ -140,3 +140,10 @@
   --color-brand: var(--brand);
   --color-brand-strong: var(--brand-strong);
 }
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -9,8 +9,8 @@ export function LabelChips({ labels, max = 2 }: Props) {
   return (
     <div className="flex flex-wrap items-center gap-1">
       {shown.map((l) => (
-        <Badge key={l} variant="outline" className="px-1 font-mono text-3xs">
-          {l}
+        <Badge key={l} variant="outline" className="max-w-full px-1 font-mono text-3xs">
+          <span className="truncate">{l}</span>
         </Badge>
       ))}
       {rest > 0 && <span className="text-3xs text-muted-foreground">+{rest}</span>}
