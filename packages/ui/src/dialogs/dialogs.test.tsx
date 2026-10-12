@@ -41,6 +41,7 @@ const project: ProjectSnapshot = {
     color: "#14B8A6",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -65,6 +66,7 @@ const inbox: ProjectSnapshot = {
     color: "#64748B",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   nextTicketKey: "INB-4",
 };
@@ -78,6 +80,7 @@ const shared: ProjectSnapshot = {
     color: "#8B5CF6",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   nextTicketKey: null,
   viewer: "u-adam",

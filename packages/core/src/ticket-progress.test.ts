@@ -13,6 +13,7 @@ const newDoc = () =>
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
 
 const step = (id: string, status: Step["status"]): Step => ({ id, title: `Étape ${id}`, status, note: null });

@@ -23,6 +23,7 @@ const meta = {
   color: "#F97316",
   worktree: null,
   storybook: null,
+  duplication: null,
 };
 
 function serverAllocated(): LoroDoc {
@@ -139,6 +140,7 @@ test("restoreLocalAllocation keys pending tickets and gives allocation back to t
     color: "#14B8A6",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
   enableServerAllocation(doc);
   createTicket(doc, { title: "En attente" });

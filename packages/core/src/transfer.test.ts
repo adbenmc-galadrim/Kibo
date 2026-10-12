@@ -21,6 +21,7 @@ const inboxMeta = {
   color: "#64748B",
   worktree: null,
   storybook: null,
+  duplication: null,
 };
 const kibo = {
   id: "p1",
@@ -30,6 +31,7 @@ const kibo = {
   color: "#F97316",
   worktree: null,
   storybook: null,
+  duplication: null,
 };
 
 function seeded() {

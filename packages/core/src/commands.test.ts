@@ -11,6 +11,7 @@ const doc = () =>
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
 
 describe("project commands", () => {

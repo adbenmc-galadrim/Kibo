@@ -14,6 +14,7 @@ function project(plan: boolean) {
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
   const created = executeProjectCommand(doc, { method: "createTicket", title: "Formulaire" });
   const id = typeof created === "object" && created !== null && "id" in created ? String(created.id) : "";

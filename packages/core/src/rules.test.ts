@@ -119,6 +119,7 @@ describe("storage", () => {
       color: "#F97316",
       worktree: null,
       storybook: null,
+      duplication: null,
     });
   test("projects without rules use the defaults, and the snapshot carries them", () => {
     expect(readRules(doc())).toEqual(DEFAULT_RULES);

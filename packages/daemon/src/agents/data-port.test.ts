@@ -25,6 +25,7 @@ const doc = () =>
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
 
 test("a finished run leaves its ticket in its status, and a started one moves it on", () => {

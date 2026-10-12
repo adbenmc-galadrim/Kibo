@@ -43,6 +43,7 @@ export const inboxSnapshot: ProjectSnapshot = {
     color: "#64748B",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   tickets: [
     inboxTicket(1, "Idée : export CSV des tickets", "backlog", false),

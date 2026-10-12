@@ -39,6 +39,7 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
     color: "#71717A",
     worktree: null,
     storybook: null,
+    duplication: null,
   };
   const doc = createProjectDoc(meta);
   const listeners = new Set<(e: CommandEvent) => void>();

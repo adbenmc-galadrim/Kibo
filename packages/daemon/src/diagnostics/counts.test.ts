@@ -17,7 +17,16 @@ test("the counts add tickets and instances across projects", () => {
     ["p1", "KIB"],
     ["p2", "OPS"],
   ] as const) {
-    const meta = { id, key, name: key, folder: null, color: "#F97316", worktree: null, storybook: null };
+    const meta = {
+      id,
+      key,
+      name: key,
+      folder: null,
+      color: "#F97316",
+      worktree: null,
+      storybook: null,
+      duplication: null,
+    };
     registerProject(workspace, meta);
     docs.set(id, createProjectDoc(meta));
   }

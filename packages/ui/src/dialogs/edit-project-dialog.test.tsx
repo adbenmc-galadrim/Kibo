@@ -24,6 +24,7 @@ const snapshot = (): ProjectSnapshot => ({
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -54,6 +55,7 @@ mock.module("../api", () =>
             color: "#6366F1",
             worktree: null,
             storybook: null,
+            duplication: null,
           };
         if (req.method === "setIcon") return { icon: req.icon ? "abc" : null };
         throw new Error(`unexpected ${req.method}`);
@@ -71,6 +73,7 @@ const project: ProjectSummary = {
   color: "#F97316",
   worktree: null,
   storybook: null,
+  duplication: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
   icon: "v1",
 };

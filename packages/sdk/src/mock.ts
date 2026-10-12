@@ -45,6 +45,7 @@ export function createMockSdk(
     color: "#71717A",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
   const changes = createNotifier();
   const runChanges = createNotifier();

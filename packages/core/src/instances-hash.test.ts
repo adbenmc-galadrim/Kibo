@@ -9,6 +9,7 @@ const meta = {
   color: "#F97316",
   worktree: null,
   storybook: null,
+  duplication: null,
 };
 const HASH = "a".repeat(64);
 

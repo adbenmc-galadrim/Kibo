@@ -19,6 +19,7 @@ const meta = {
   color: "#14B8A6",
   worktree: null,
   storybook: null,
+  duplication: null,
 };
 
 test("a shared project gets its folder back from the local settings", () => {

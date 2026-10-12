@@ -54,6 +54,7 @@ function createProject(
     color: req.color,
     worktree: null,
     storybook: null,
+    duplication: null,
   };
   registerProject(deps.workspace, meta);
   deps.adopt(meta.id, createProjectDoc(meta));

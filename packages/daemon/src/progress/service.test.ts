@@ -22,6 +22,7 @@ function kit(gitReplies: Record<string, { code: number; stdout: string }> = {}) 
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
   const ticket = Ticket.parse(executeProjectCommand(doc, { method: "createTicket", title: "Formulaire" }));
   const commands: { projectId: string; cmd: ProjectCommand; meta: CommandMeta }[] = [];

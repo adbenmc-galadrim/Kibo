@@ -99,6 +99,7 @@ test("screens and the inbox: settings crumbs stay text, the inbox crumb opens th
       color: "#64748B",
       worktree: null,
       storybook: null,
+      duplication: null,
     },
   };
   expect(

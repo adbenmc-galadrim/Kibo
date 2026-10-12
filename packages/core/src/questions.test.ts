@@ -26,6 +26,7 @@ const newProjectDoc = (key: string) =>
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
 
 const stored = (ticketId: string) => ({

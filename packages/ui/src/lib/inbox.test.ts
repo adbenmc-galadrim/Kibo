@@ -26,6 +26,7 @@ function inboxSnapshot(statuses: StatusId[]): ProjectSnapshot {
       color: "#64748B",
       worktree: null,
       storybook: null,
+      duplication: null,
     },
     tickets: statuses.map((statusId, i) => ({
       ...model,
@@ -63,6 +64,7 @@ test("the inbox summary counts its tickets by status and carries the inbox ident
     color: "#64748B",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
 });
 

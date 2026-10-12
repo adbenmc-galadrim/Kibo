@@ -47,6 +47,7 @@ export function emisProject(access: "write" | "read-only" = "write"): ProjectSna
       color: "#0EA5E9",
       worktree: null,
       storybook: null,
+      duplication: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],

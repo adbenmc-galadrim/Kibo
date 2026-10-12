@@ -57,6 +57,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
         color: "#64748B",
         worktree: null,
         storybook: null,
+        duplication: null,
       },
       tickets: [mineTicket("i2", "INB-2", "Appeler le comptable", "todo")],
       links: [],
@@ -77,6 +78,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
       color: "#22C55E",
       worktree: null,
       storybook: null,
+      duplication: null,
     },
     tickets: [mineTicket("f31", "FAC-31", "Export PDF des factures", "in_progress")],
   };

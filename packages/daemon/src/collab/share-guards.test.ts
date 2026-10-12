@@ -121,6 +121,7 @@ function localShapedDoc(id: string): LoroDoc {
     color: "#14B8A6",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
   doc.getMap("meta").delete("folder");
   doc.commit();

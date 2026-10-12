@@ -351,6 +351,7 @@ export function kiboProject(): ProjectSnapshot {
       color: "#F97316",
       worktree: null,
       storybook: null,
+      duplication: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],
@@ -405,6 +406,7 @@ export const projectsFixture: ProjectSummary[] = [
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
     counts: { backlog: 1, todo: 3, in_progress: 4, in_review: 2, blocked: 1, done: 2 },
   },
   {
@@ -415,6 +417,7 @@ export const projectsFixture: ProjectSummary[] = [
     color: "#22C55E",
     worktree: null,
     storybook: null,
+    duplication: null,
     counts: { backlog: 0, todo: 1, in_progress: 1, in_review: 0, blocked: 0, done: 0 },
   },
 ];

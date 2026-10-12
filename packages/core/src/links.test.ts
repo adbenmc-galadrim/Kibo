@@ -19,6 +19,7 @@ const setup = () => {
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
   const [a, b, c] = ["A", "B", "C"].map((title) => createTicket(d, { title }));
   if (!a || !b || !c) throw new Error("setup");

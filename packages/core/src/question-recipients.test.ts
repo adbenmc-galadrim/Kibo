@@ -24,6 +24,7 @@ const newDoc = () =>
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
 
 const code = (work: () => unknown): string | null => {

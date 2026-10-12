@@ -15,6 +15,7 @@ const doc = () =>
     color: "#71717A",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
 const issue = (patch: Partial<Extract<ExternalRef, { kind: "github_issue" }>> = {}): ExternalRef => ({
   kind: "github_issue",

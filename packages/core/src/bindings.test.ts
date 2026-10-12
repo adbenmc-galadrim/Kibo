@@ -21,6 +21,7 @@ test("bindings are stored in the project doc and listed in the snapshot", () => 
     color: "#71717A",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
   addBinding(d, binding);
   expect(() => addBinding(d, binding)).toThrow("INVALID_INPUT");
@@ -42,6 +43,7 @@ test("an invalid binding never reaches the doc", () => {
     color: "#71717A",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
   expect(() => addBinding(d, { ...binding, config: { ...binding.config, repo: "nope" } })).toThrow();
   expect(listBindings(d)).toEqual([]);
