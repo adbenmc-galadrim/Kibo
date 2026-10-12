@@ -1,6 +1,7 @@
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { smokeHomeEnv } from "./smoke-check";
 import { type SmokeDaemon, startSmokeDaemon } from "./smoke-daemon";
 
 const root = resolve(import.meta.dir, "../../..");
@@ -8,7 +9,7 @@ const work = mkdtempSync(join(tmpdir(), "kibo-cli-smoke-"));
 const bin = join(work, "kibo-daemon");
 const toolchain = join(work, "toolchain");
 const home = join(work, "home");
-const env = { ...process.env, KIBO_HOME: home, KIBO_TOOLCHAIN: undefined };
+const env = { ...process.env, ...smokeHomeEnv(home), KIBO_TOOLCHAIN: undefined };
 
 function run(cmd: string[], expectedExit = 0): string {
   const p = Bun.spawnSync(cmd, { cwd: work, env, stdout: "pipe", stderr: "inherit", timeout: 300_000 });

@@ -34,3 +34,7 @@ export function cleanUpSmokeHome(home: string): number | null {
   rmSync(home, { recursive: true, force: true });
   return killed;
 }
+
+export function smokeHomeEnv(home: string): { KIBO_HOME: string; CLAUDE_CONFIG_DIR: string } {
+  return { KIBO_HOME: home, CLAUDE_CONFIG_DIR: join(home, "claude") };
+}
