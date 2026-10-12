@@ -87,7 +87,31 @@ test("a question changes recipient from its menu", async () => {
   await user.click(within(card).getByRole("button", { name: "Destinataire : Moi (technique)" }));
   await user.click(await screen.findByRole("menuitemradio", { name: "Produit" }));
   await waitFor(() => expect(named(m, OPEN)?.recipient).toBe("product"));
+  expect(named(m, OPEN)?.history).toMatchObject([
+    { kind: "updated", by: { kind: "human", ref: "adam" }, previous: { recipient: "me" } },
+  ]);
   expect(await within(card).findByRole("button", { name: "Destinataire : Produit" })).toBeTruthy();
+});
+
+test("« Nouvelle question » picks a recipient, « Moi (technique) » by default", async () => {
+  const m = mount();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Nouvelle question" }));
+  const dialog = await screen.findByRole("dialog");
+  const recipient = within(dialog).getByRole("combobox", { name: "Destinataire" });
+  expect(recipient.textContent).toContain("Moi (technique)");
+  const ticket = within(dialog).getByRole("combobox", { name: "Ticket" });
+  ticket.focus();
+  await user.keyboard("{Enter}");
+  await user.click(await screen.findByRole("option", { name: /KIB-9/ }));
+  recipient.focus();
+  await user.keyboard("{Enter}");
+  await user.click(await screen.findByRole("option", { name: "Client" }));
+  await user.type(within(dialog).getByRole("textbox", { name: "Question" }), "Quel logo ?");
+  await user.click(within(dialog).getByRole("button", { name: "Créer la question" }));
+  await waitFor(() => expect(named(m, "Quel logo ?")?.recipient).toBe("client"));
+  const card = await screen.findByRole("article", { name: "Quel logo ?" });
+  expect(within(card).getByRole("button", { name: "Destinataire : Client" })).toBeTruthy();
 });
 
 test("« Exporter » copies the ready text, then marks the question sent", async () => {

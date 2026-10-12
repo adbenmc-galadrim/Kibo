@@ -74,7 +74,7 @@ test("answers wait for « Transmettre à l'agent » and the button calls the SDK
   expect(await within(group).findByText("Transmis à mock")).toBeTruthy();
   expect(m.deliveries).toEqual([questionNamed(m, ANSWERED)?.ticketId ?? ""]);
   await waitFor(() => expect(within(group).queryByText("à transmettre")).toBeNull());
-  expect(within(group).getByText("transmise à mock")).toBeTruthy();
+  expect(within(group).getByText("transmise à mock · figée")).toBeTruthy();
   expect(within(group).queryByRole("button", { name: /Transmettre à l'agent/ })).toBeNull();
 });
 
@@ -144,7 +144,7 @@ test("read-only projects hide the forms", async () => {
   expect(screen.queryByRole("button", { name: "Valider le choix provisoire" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Nouvelle question" })).toBeNull();
   expect(screen.queryByRole("button", { name: /Transmettre à l'agent/ })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Supprimer" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Archiver" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Coller la réponse" })).toBeNull();
 });
 
@@ -199,18 +199,6 @@ test("a question is created by hand, as the viewer, with six options at most", a
     m.snapshot().tickets.find((t) => t.key === "KIB-9")?.id ?? "",
   );
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-});
-
-test("only the human author removes an open question, any editor an answered one", async () => {
-  const m = mount("view");
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("radio", { name: "Toutes" }));
-  const open = screen.getByRole("article", { name: OPEN });
-  expect(within(open).queryByRole("button", { name: "Supprimer" })).toBeNull();
-  const answered = screen.getByRole("article", { name: ANSWERED });
-  await user.click(within(answered).getByRole("button", { name: "Supprimer" }));
-  await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Supprimer" }));
-  await waitFor(() => expect(questionNamed(m, ANSWERED)).toBeUndefined());
 });
 
 test("the context is rendered without raw HTML", async () => {

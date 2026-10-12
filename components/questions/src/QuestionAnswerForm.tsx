@@ -1,4 +1,4 @@
-import type { Question } from "@kibo/schema";
+import type { AnswerInput, Question, QuestionAnswer } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
 import { Check } from "lucide-react";
@@ -10,11 +10,26 @@ import { useAnswer } from "./use-questions";
 export const AGENT_ACCENT =
   "border-orange-500/40 text-orange-600 hover:bg-orange-500/10 dark:text-orange-400";
 
-type Props = { question: Question };
+type Props = {
+  question: Question;
+  initial?: QuestionAnswer;
+  onSubmit?(input: AnswerInput): Promise<void>;
+  onCancel?(): void;
+};
 
-export function QuestionAnswerForm({ question }: Props) {
+const EMPTY: AnswerForm = { option: null, text: "", confirm: false };
+
+const formOf = (a: QuestionAnswer | undefined): AnswerForm => {
+  if (a === undefined) return EMPTY;
+  if (a.kind === "confirm") return { ...EMPTY, confirm: true };
+  if (a.kind === "option") return { ...EMPTY, option: a.option };
+  return { ...EMPTY, text: a.text };
+};
+
+export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Props) {
   const answer = useAnswer();
-  const [text, setText] = useState("");
+  const editing = initial !== undefined;
+  const [choice, setChoice] = useState<AnswerForm>(() => formOf(initial));
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const send = async (form: AnswerForm) => {
@@ -23,19 +38,26 @@ export function QuestionAnswerForm({ question }: Props) {
     setBusy(true);
     setFailed(false);
     try {
-      await answer(question, input);
+      await (onSubmit ? onSubmit(input) : answer(question, input));
     } catch (e) {
       console.error(e);
       setFailed(true);
       setBusy(false);
     }
   };
+  const pick = (form: AnswerForm) => (editing ? setChoice(form) : void send(form));
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    void send({ option: null, text, confirm: false });
+    void send(editing ? choice : { ...EMPTY, text: choice.text });
   };
+  const pressed = (on: boolean) => (editing ? on : undefined);
+  const ready = editing ? answerFrom(choice) !== null : choice.text.trim() !== "";
   return (
-    <form aria-label={fr.answerTo(question.title)} className="grid gap-2" onSubmit={submit}>
+    <form
+      aria-label={editing ? fr.answerEditTo(question.title) : fr.answerTo(question.title)}
+      className="grid gap-2"
+      onSubmit={submit}
+    >
       {(question.options.length > 0 || question.provisional !== null) && (
         <div className="flex flex-wrap gap-1.5">
           {question.provisional !== null && (
@@ -43,9 +65,10 @@ export function QuestionAnswerForm({ question }: Props) {
               type="button"
               variant="outline"
               size="sm"
-              className={`h-7 text-xs ${AGENT_ACCENT}`}
+              aria-pressed={pressed(choice.confirm)}
+              className={`h-7 text-xs ${AGENT_ACCENT} aria-pressed:border-orange-500 aria-pressed:bg-orange-500/15`}
               disabled={busy}
-              onClick={() => void send({ option: null, text: "", confirm: true })}
+              onClick={() => pick({ ...EMPTY, confirm: true })}
             >
               <Check aria-hidden />
               {fr.confirm}
@@ -57,9 +80,10 @@ export function QuestionAnswerForm({ question }: Props) {
               type="button"
               variant="outline"
               size="sm"
-              className="h-7 text-xs font-normal"
+              aria-pressed={pressed(!choice.confirm && choice.option === option)}
+              className="h-7 text-xs font-normal aria-pressed:border-foreground aria-pressed:bg-accent"
               disabled={busy}
-              onClick={() => void send({ option, text: "", confirm: false })}
+              onClick={() => pick({ ...EMPTY, option })}
             >
               {option}
             </Button>
@@ -71,12 +95,17 @@ export function QuestionAnswerForm({ question }: Props) {
           aria-label={fr.other}
           placeholder={fr.other}
           className="h-7 text-xs"
-          value={text}
+          value={choice.text}
           disabled={busy}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => setChoice({ ...EMPTY, text: e.target.value })}
         />
-        <Button type="submit" size="sm" className="h-7 text-xs" disabled={busy || text.trim() === ""}>
-          {fr.reply}
+        {editing && (
+          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={onCancel}>
+            {fr.cancel}
+          </Button>
+        )}
+        <Button type="submit" size="sm" className="h-7 text-xs" disabled={busy || !ready}>
+          {editing ? fr.save : fr.reply}
         </Button>
       </div>
       {failed && (

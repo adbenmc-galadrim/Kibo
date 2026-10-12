@@ -15,7 +15,7 @@ import { useState } from "react";
 import { fr } from "./fr";
 import type { Scope } from "./questions-logic";
 
-const SCOPES: readonly Scope[] = ["open", "answered", "all"];
+const SCOPES: readonly Scope[] = ["open", "answered", "all", "archived"];
 
 type Props = {
   scope: Scope;

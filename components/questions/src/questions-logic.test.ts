@@ -10,11 +10,13 @@ import {
 import fc from "fast-check";
 import {
   answerFrom,
+  canArchive,
   filterQuestions,
   groupByTicket,
   recipientCounts,
   recipientName,
   relativeAge,
+  scopeFor,
   viewGroups,
 } from "./questions-logic";
 
@@ -197,4 +199,44 @@ test("relativeAge reads as now, minutes, hours or days", () => {
   expect(relativeAge(now - 3 * 60_000, now)).toBe("il y a 3 min");
   expect(relativeAge(now - 5 * 3_600_000, now)).toBe("il y a 5 h");
   expect(relativeAge(now - 2 * 86_400_000, now)).toBe("il y a 2 j");
+});
+
+const ARCHIVED = { archivedAt: 9, archivedBy: { kind: "human", ref: "adam" } } as const;
+
+test("« Archivées » keeps archived questions only, and no other scope shows them", () => {
+  const qs = [question({ id: "o" }), answered({ id: "a" }), question({ id: "x", ...ARCHIVED })];
+  const ids = (scope: Parameters<typeof filterQuestions>[1]) =>
+    filterQuestions(qs, scope, null).map((q) => q.id);
+  expect(ids("archived")).toEqual(["x"]);
+  expect(ids("all")).toEqual(["o", "a"]);
+  expect(ids("open")).toEqual(["o"]);
+  expect(ids("answered")).toEqual(["a"]);
+  expect(viewGroups(qs, [ticket(T1, "KIB-1")], "archived", null)[0]?.questions.map((q) => q.id)).toEqual([
+    "x",
+  ]);
+});
+
+test("scopeFor opens « Archivées » for an archived question, « Toutes » otherwise", () => {
+  expect(scopeFor(question({ ...ARCHIVED }))).toBe("archived");
+  expect(scopeFor(answered({}))).toBe("all");
+  expect(scopeFor(question({}))).toBe("all");
+});
+
+test("canArchive follows the author rule and spares an open question of an active run", () => {
+  const mine = question({ createdBy: { kind: "human", ref: "adam" } });
+  const run = (state: "running" | "done") => ({
+    ticketId: T1,
+    runId: "r",
+    label: "opus",
+    state,
+    position: null,
+  });
+  expect(canArchive(mine, "adam", null)).toBe(true);
+  expect(canArchive(mine, "lea", null)).toBe(false);
+  expect(canArchive(question({}), "adam", null)).toBe(false);
+  expect(canArchive(answered({}), "lea", null)).toBe(true);
+  expect(canArchive(question({ ...ARCHIVED }), "adam", null)).toBe(false);
+  expect(canArchive({ ...mine, runId: "r" }, "adam", run("running"))).toBe(false);
+  expect(canArchive({ ...mine, runId: "r" }, "adam", run("done"))).toBe(true);
+  expect(canArchive(answered({ runId: "r" }), "adam", run("running"))).toBe(true);
 });

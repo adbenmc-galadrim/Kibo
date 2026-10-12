@@ -17,8 +17,11 @@ import {
 } from "./questions-logic";
 import { RecipientFilters } from "./RecipientFilters";
 import { type QuestionsData, useQuestions } from "./use-questions";
+import { useSpotlightFilters } from "./use-spotlight-filters";
 
 const configScope = (value: unknown): Scope => (value === "all" ? "all" : "open");
+
+const keyOf = (data: QuestionsData) => (id: string) => data.ticketOf(id)?.keyLabel ?? id;
 
 function QuestionGroup({ group, data, now }: { group: ViewGroup; data: QuestionsData; now: number }) {
   const sdk = useSdk();
@@ -57,6 +60,7 @@ function QuestionGroup({ group, data, now }: { group: ViewGroup; data: Questions
           viewer={data.viewer}
           runLabel={data.runLabel}
           runOf={data.runOf}
+          ticketLabel={keyOf(data)}
         />
       ))}
     </section>
@@ -82,6 +86,11 @@ export function QuestionsView() {
   const [ticketId, setTicketId] = useState<string | null>(null);
   const [recipient, setRecipient] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  useSpotlightFilters(data.questions, { scope, ticketId, recipient }, (shown) => {
+    setScope(shown.scope);
+    setTicketId(shown.ticketId);
+    setRecipient(shown.recipient);
+  });
   const groups = useMemo(
     () => viewGroups(data.questions, data.tickets, scope, ticketId, recipient),
     [data.questions, data.tickets, scope, ticketId, recipient],
@@ -130,7 +139,9 @@ export function QuestionsView() {
           <QuestionGroup key={g.ticket.id} group={g} data={data} now={now} />
         ))}
       </div>
-      {creating && <NewQuestionDialog tickets={data.tickets} onOpenChange={setCreating} />}
+      {creating && (
+        <NewQuestionDialog tickets={data.tickets} recipients={data.recipients} onOpenChange={setCreating} />
+      )}
     </div>
   );
 }
