@@ -1,5 +1,5 @@
 // Page « 31 · Agents et skills » : écrans 192 à 196 (phase 22, spec §28.8 et §28.13). Requiert 18-socle.js, 24-socle-suite.js, 32b et 32d.
-// D'après les captures screens/2026-10-12-roles-agents et 2026-10-11-p20-reel ; données : design/donnees-fictives.md, section « Agents et skills (phase 22) ».
+// D'après les captures screens/2026-10-12-roles-agents et 2026-10-11-p20-reel, ajusté sur screens/2026-10-12-t8 (implémentation) ; données : design/donnees-fictives.md, section « Agents et skills (phase 22) ».
 const S = storage, C = S.C;
 S.draw = S.draw || {};
 const PAGE = "31 · Agents et skills";
@@ -13,6 +13,7 @@ Object.assign(S.ICONS, {
   eyeOff: '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
   history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
   chevUp: '<path d="m18 15-6-6-6 6"/>',
+  messageSquareText: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7"/><path d="M17 12H7"/>',
 });
 
 // ---------- Données (donnees-fictives.md, « Agents et skills (phase 22) ») ----------
@@ -21,13 +22,13 @@ const A = {
   livraison: { name: "livraison", scope: "Global", desc: "Livre un ticket : lit le ticket, planifie, code en TDD, commite et ouvre la PR.", model: "Opus", skills: "3 skills", subs: "0 sous-agent", run: "global · livraison · KIB-14" },
   review: { name: "review-pr", scope: "Global", desc: "Relit une PR en lecture seule et rend un verdict accepté ou refusé, avec des remarques actionnables.", model: "Sonnet", skills: "2 skills", subs: "0 sous-agent", masked: "masqué dans Kibo" },
   seo: { name: "seo-contenu", scope: "Global", desc: "Audite les pages publiques et propose des corrections SEO classées par impact.", model: "Sonnet", skills: "1 skill", subs: "0 sous-agent" },
-  chef: { name: "chef-orchestre", scope: "Global", desc: "Enchaîne livraison, review-pr puis seo-contenu comme sous-agents et rend un compte rendu.", model: "Opus", skills: "Tous les skills", subs: "3 sous-agents" },
-  dev: { name: "kibo-dev", scope: KIBO, desc: "Implémente une tâche d'un plan de phase Kibo en TDD, dans le worktree et la branche fournis.", model: "Opus", skills: "Tous les skills", subs: "génériques", note: "Écrit à la main · réglages par défaut" },
+  chef: { name: "chef-orchestre", scope: "Global", desc: "Enchaîne livraison, review-pr puis seo-contenu comme sous-agents et rend un compte rendu.", model: "Opus", skills: "3 skills", subs: "3 sous-agents" },
+  dev: { name: "kibo-dev", scope: KIBO, desc: "Implémente une tâche d'un plan de phase Kibo en TDD, dans le worktree et la branche fournis.", model: "Opus", skills: "Tous les skills", subs: "0 sous-agent", note: "Écrit à la main · réglages par défaut" },
   reviewKibo: { name: "review-pr", scope: KIBO, desc: "Relit une PR de Kibo selon CLAUDE.md : Biome, TDD, commits en français, aucun commentaire.", model: "Sonnet", skills: "2 skills", subs: "0 sous-agent", run: "kibo · review-pr · KIB-12" },
-  sonnet: { name: "sonnet-dev", scope: "Global", desc: "Agent migré du profil Kibo sonnet-dev.", model: "Sonnet", skills: "Tous les skills", subs: "génériques", rename: true },
+  sonnet: { name: "sonnet-dev", scope: "Global", desc: "Agent migré du profil Kibo sonnet-dev.", model: "Sonnet", skills: "Tous les skills", subs: "0 sous-agent", rename: true },
   ux: { name: "ux-audit", scope: "Global", desc: "Frontmatter illisible : ligne 3, « description » sans valeur.", model: "—", skills: "—", subs: "—", broken: true },
 };
-const KIBO_AGENTS = ["kibo-assistant", "kibo-generateur", "kibo-demo", "kibo-project-agent"];
+const KIBO_AGENTS = ["kibo-assistant", "kibo-demo", "kibo-generateur", "kibo-project-agent"];
 const SPEC_LIVRAISON = ["# Livraison", "Tu livres un ticket Kibo de bout en bout.", "", "## Workflow", "1. Lis le ticket et son brief ; relis les fichiers cités.",
   "2. Déclare ton plan avec ticket_progress avant de coder.", "3. TDD : le test d'abord, le voir échouer, puis le code minimal.", "4. Commits en français, une ligne, préfixe conventionnel.",
   "5. Ouvre la PR en brouillon et remplis le compte rendu.", "", "## Règles", "- Pose une question avec ask_question plutôt que deviner.", "- Jamais de --no-verify ni de push forcé.", "- Passe le skill porte-qualite avant de pousser."];
@@ -62,7 +63,7 @@ const scopeBadge = (p, sc) => sc === "Global" ? S.badge(p, "Global", C.mfg, { ro
   : S.badge(p, sc, C.mfg, { round: true, dot: C.brand });
 const warnBadge = (p, t, icon = "alert") => S.badge(p, t, C.amber, { round: true, icon, stroke: "#78350F" });
 const sidebarAgents = (f, active) => { const sb = find(f, "Sidebar"); const ag = S.fx.item(f, "Agents"); if (!sb || !ag) return;
-  const q = S.navItem(null, "listOrdered", "Files d'attente", { indent: 14 }); const sk = S.navItem(null, "bookOpen", "Skills", { indent: 14, active: active === "Skills" });
+  const q = S.navItem(null, "listOrdered", "Files d'attente", { indent: 14 }); const sk = S.navItem(null, "sparkles", "Skills", { indent: 14, active: active === "Skills" });
   [q, sk].forEach(x => { sb.insertChild(0, x); S.fillX(x); }); sb.insertChild(sb.children.findIndex(c => c.id === ag.id) + 1, q); sb.insertChild(sb.children.findIndex(c => c.id === q.id) + 1, sk);
   if (!active) S.activate(f, "Agents"); else if (active !== "Skills") S.activate(f, active); S.fixIconOrder(f); };
 S.fixAgSkNav = () => penpot.currentPage.root.children.filter(c => c.type === "board" && /^19[2-6]/.test(c.name)).reduce((n, f) => { const sb = find(f, "Sidebar"), ag = S.fx.item(f, "Agents"),
@@ -74,7 +75,7 @@ const agentBar = (f) => { const bar = find(f, "AgentStatusBar"); if (!bar) retur
   S.spacer(bar); S.dot(bar, C.green, 6); S.txt(bar, "Kibo · connecté", { size: 11, color: C.mfg }); S.icon(bar, "chevUp", 14, C.mfg); };
 const ROW = 1.4;
 const screen = async (name, col, row, crumbs, o = {}) => { const skills = o.nav === "Skills";
-  const r = await appScreen(PAGE, name, col, row * ROW, "Agents", crumbs, o.tab || (skills ? ["bookOpen", "Agents · Skills"] : ["bot", crumbs.join(" · ")]));
+  const r = await appScreen(PAGE, name, col, row * ROW, "Agents", crumbs, o.tab || (skills ? ["sparkles", "Skills"] : ["bot", "Agents"]));
   if (o.h) r.frame.resize(1440, o.h); sidebarAgents(r.frame, o.nav); agentBar(r.frame); if (o.action) S.topAction(r.frame, o.action[0], "outline", o.action[1]); return r; };
 const codeLines = (p, lines, o = {}) => { const b = S.box(p, { name: o.name || "CodeEditor", fill: o.fill || C.bg, stroke: o.stroke === false ? null : C.border, radius: 8, dir: "row", gap: 0, vs: "auto" }); S.fillX(b); b.clipContent = true;
   const g = S.box(b, { name: "Gutter", dir: "column", gap: 0, pad: [10, 10, 10, 8], w: 40, vs: "auto", align: "end" });
@@ -90,6 +91,9 @@ const section = (p, title, sum, open) => { const s = S.panel(p, { name: "Section
   S.icon(h, open ? "chevDown" : "chevRight", 14, C.mfg); S.txt(h, title, { size: 13, weight: 600 }); if (sum) S.fillX(S.txt(h, sum, { size: 12, color: C.mfg })); return s; };
 const inClaude = (p, name, desc) => { const r = S.box(p, { name: "ClaudeCodePreview", fill: C.muted, radius: 6, dir: "row", gap: 8, pad: [8, 10], vs: "auto", align: "center" }); S.fillX(r);
   S.icon(r, "terminal", 13, C.mfg); S.txt(r, "Dans Claude Code :", { size: 12, color: C.mfg }); S.txt(r, name, { size: 12, mono: true, weight: 600 }); S.fillX(S.txt(r, "— " + desc, { size: 12, color: C.mfg })); return r; };
+
+const pageCrumb = (c, parent, name, o = {}) => { const r = S.row(c, { name: "PageBreadcrumb", gap: 6 }); S.txt(r, parent, { size: 13, color: C.mfg }); S.icon(r, "chevRight", 13, C.dim);
+  S.txt(r, name, { size: 13, weight: 500, mono: !!o.mono }); return r; };
 
 // ---------- 192 · Page Agents ----------
 const stat = (p, col, big, sub, extra) => { const s = S.panel(p, { name: "Stat", gap: 4, pad: 16, fillX: false }); S.child(s, { h: "fill" }); const r = S.row(s, { gap: 8 }); S.dot(r, col, 7);
@@ -109,7 +113,7 @@ const agentCard = (p, a) => { const c = S.panel(p, { name: "AgentCard-" + a.name
 const resultCell = (t, col) => (cell) => { S.dot(cell, col, 7); S.txt(cell, t, { size: 12 }); };
 const agentsPage = (c) => { c.flex.rowGap = 16;
   const top = S.row(c, { gap: 8 }); S.fillX(S.txt(top, "Un agent est un fichier Claude Code : sa spec, sa description et son modèle. Kibo y ajoute ses réglages techniques.", { size: 13, color: C.mfg })); select(top, "Projet : tous");
-  const st = S.row(c, { gap: 16, align: "start" }); stat(st, C.blue, "2 places sur 4", "runs en cours"); stat(st, C.cyan, "1", "run en file d'attente"); stat(st, C.amber, "0", "attend une réponse (place libérée)");
+  const st = S.row(c, { gap: 16, align: "start" }); stat(st, C.blue, "2 places sur 4", "runs en cours"); stat(st, C.cyan, "1", "runs en file d'attente"); stat(st, C.amber, "0", "attend une réponse (place libérée)");
   stat(st, C.mfg, "1,2 M", "tokens aujourd'hui", "Comptés par Claude Code sur ton abonnement.");
   const h = S.row(c, { gap: 8 }); S.txt(h, "Mes agents", { size: 15, weight: 600 }); S.txt(h, "8", { size: 12, mono: true, color: C.mfg }); S.spacer(h);
   S.txt(h, "~/.claude/agents · Kibo : .claude/agents", { size: 12, mono: true, color: C.dim });
@@ -117,17 +121,21 @@ const agentsPage = (c) => { c.flex.rowGap = 16;
   const k = S.panel(c, { name: "KiboAgents", dir: "row", gap: 10, pad: [12, 16], align: "center" }); S.icon(k, "chevRight", 14, C.mfg); S.txt(k, "Agents de Kibo", { size: 13, weight: 600 });
   S.badge(k, "4", C.mfg, { round: true }); S.fillX(S.txt(k, KIBO_AGENTS.join(", "), { size: 12, mono: true, color: C.dim })); S.txt(k, "repliés · réglages fixés", { size: 12, color: C.dim });
   const hh = S.row(c, { gap: 8 }); S.fillX(S.txt(hh, "Historique des runs", { size: 15, weight: 600 })); segmented(hh, ["Tous", "Terminés", "En échec", "Annulés", "En attente"], "Tous");
-  S.table(c, [["Ticket", null], ["Nom du run", 300, "mono"], ["Durée", 60], ["Tokens", 70], ["Résultat", 190]], [
-    ["Récepteur de hooks Claude Code", "global · livraison · KIB-14", "18m", "312k", resultCell("En cours", C.blue)],
-    ["Schéma Loro des tickets", "kibo · review-pr · KIB-12", "6m", "88k", resultCell("En cours", C.blue)],
-    ["Moteur de règles déclaratif", "global · chef-orchestre · KIB-16", "41m", "1,1M", resultCell("Fait, 1 point à vérifier", C.green)],
-    ["Export PDF des factures", "global · sonnet-dev · FAC-4", "12m", "240k", resultCell("Échec", C.red)]]); };
+  input(hh, "KIB-12", { placeholder: true, w: 160 });
+  const seq = (n) => (cell) => S.txt(cell, "#" + n, { size: 12, mono: true, color: C.mfg });
+  const proj = (name, col) => (cell) => { S.dot(cell, col, 7); S.txt(cell, name, { size: 12 }); };
+  const runCell = (label, at) => (cell) => { mention(cell, label, { size: 11 }); S.txt(cell, at, { size: 11, mono: true, color: C.mfg }); };
+  S.table(c, [["Run", 40], ["Ticket", null], ["Projet", 120], ["Agent", 300], ["Durée", 50], ["Tokens", 50], ["Résultat", 170]], [
+    [seq(4), "KIB-14 · Récepteur de hooks Claude Code", proj("Kibo", C.brand), runCell("global · livraison · KIB-14", "14:05"), "18m", "312k", resultCell("En cours", C.blue)],
+    [seq(3), "KIB-12 · Schéma Loro des tickets", proj("Kibo", C.brand), runCell("kibo · review-pr · KIB-12", "14:17"), "6m", "88k", resultCell("En cours", C.blue)],
+    [seq(2), "KIB-16 · Moteur de règles déclaratif", proj("Kibo", C.brand), runCell("global · chef-orchestre · KIB-16", "13:02"), "41m", "1,1M", resultCell("Fait, 1 point à vérifier", C.green)],
+    [seq(1), "FAC-4 · Export PDF des factures", proj("API Facturation", C.green), runCell("global · sonnet-dev · FAC-4", "11:40"), "12m", "240k", resultCell("Échec", C.red)]]); };
 S.draw[192] = async () => { const { frame: f, content: c } = await screen("192 · Agents : cartes, portées, agents de Kibo", 0, 0, ["Agents"], { h: 1120, action: ["Nouvel agent", "plus"] }); agentsPage(c); return f.id; };
 
 // ---------- 192b · Nouvel agent ----------
 const TEMPLATES = [["Vide", "Une spec à écrire"], ["Livraison", "Ticket, plan, TDD, commits, PR"], ["Review", "Lecture seule, verdict"], ["SEO", "Audit et recommandations"], ["Chef d'orchestre", "Appelle les trois autres"]];
 S.draw["192b"] = async () => { const { frame: f, content: c } = await screen("192b · Nouvel agent : portée et gabarit", 2, 0, ["Agents"], { h: 1120, action: ["Nouvel agent", "plus"] }); agentsPage(c);
-  const d = formDialog(f, "Nouvel agent", 620, "Un fichier Claude Code ordinaire, lisible et modifiable aussi dans le terminal."); d.flex.rowGap = 14;
+  const d = formDialog(f, "Nouvel agent", 620, "Un fichier Claude Code ordinaire, lisible et modifiable aussi dans le terminal."); d.flex.rowGap = 14; abs(f, d, 410, 110);
   labeled(d, "Nom", x => input(x, "chef-orchestre", { mono: true, focus: true }), { help: "Un nom qui dit ce que fait l'agent : review-pr, livraison-front" });
   labeled(d, "Portée", x => { const r = S.row(x, { gap: 8 }); segmented(r, [["Global", "globe"], ["Projet", "folder"]], "Global"); select(r, "Kibo", { disabled: true, lead: s => S.dot(s, C.brand, 7) }); });
   labeled(d, "Description", x => input(x, "Enchaîne livraison, review-pr puis seo-contenu comme sous-agents et rend un compte rendu."), { help: "Obligatoire. Une phrase qui commence par un verbe : Claude Code s'en sert pour choisir l'agent" });
@@ -135,30 +143,32 @@ S.draw["192b"] = async () => { const { frame: f, content: c } = await screen("19
   labeled(d, "Gabarit", x => { const r = S.row(x, { gap: 8, align: "start" }); TEMPLATES.forEach(([t, s]) => { const on = t === "Chef d'orchestre";
     const b = S.box(r, { name: "Template-" + t, fill: on ? C.accent : null, stroke: on ? C.mfg : C.border, radius: 8, dir: "column", gap: 4, pad: [8, 10], vs: "auto" }); S.child(b, { h: "fill" });
     S.txt(b, t, { size: 12, weight: 600 }); S.fillX(S.txt(b, s, { size: 11, color: C.mfg, lh: 1.35 })); }); });
-  S.alert(d, "Sous-agents appelables posés : livraison, review-pr, seo-contenu", "muted", { icon: "info", desc: "Ils existent en Global. Le corps du gabarit reste modifiable et n'est jamais régénéré." });
+  S.alert(d, "Sous-agents appelables posés : livraison, review et seo, s'ils existent dans la même portée.", "muted", { icon: "info", desc: "Le corps du gabarit reste modifiable et n'est jamais régénéré." });
   inClaude(d, "chef-orchestre", "Enchaîne livraison, review-pr puis seo-contenu…");
   const p = S.row(d, { gap: 6 }); S.icon(p, "fileText", 13, C.dim); S.txt(p, "Fichier créé :", { size: 12, color: C.mfg }); S.txt(p, "~/.claude/agents/chef-orchestre.md", { size: 12, mono: true });
+  const ms = S.panel(d, { name: "MissingSubagents", dir: "row", gap: 8, pad: [10, 14], align: "center" }); S.txt(ms, "Sous-agents manquants : review, seo", { size: 12, color: C.mfg }); S.spacer(ms);
+  S.button(ms, "Créer review", "outline", { sm: true }); S.button(ms, "Créer seo", "outline", { sm: true });
   S.footer(d, "Annuler", "Créer l'agent"); return f.id; };
 
 // ---------- 193 · Fiche agent ----------
 const agentHead = (c, a, o = {}) => { const h = S.row(c, { gap: 12 }); const av = S.box(h, { name: "AgentAvatar", fill: C.brandSoft, radius: 999, w: 40, h: 40, dir: "row", align: "center", justify: "center" }); S.icon(av, "bot", 20, C.brand);
-  const tv = S.col(h, { gap: 4 }); const r = S.row(tv, { gap: 8 }); S.txt(r, a.name, { size: 18, mono: true, weight: 600 }); scopeBadge(r, o.system ? "Kibo" : a.scope); if (o.dirty) S.badge(r, "modifié, non enregistré", C.mfg, { round: true, dot: C.amber });
+  const tv = S.col(h, { gap: 4, hs: "auto" }); const r = S.row(tv, { gap: 8, hs: "auto" }); S.txt(r, a.name, { size: 18, mono: true, weight: 600 }); scopeBadge(r, o.system ? "Kibo" : a.scope); if (o.dirty) S.badge(r, "modifié, non enregistré", C.mfg, { round: true, dot: C.amber });
   const pr = S.row(tv, { gap: 6 }); S.icon(pr, "fileText", 12, C.dim); const pt = S.txt(pr, o.path || "~/.claude/agents/" + a.name + ".md", { size: 12, mono: true, color: C.mfg }); pt.textDecoration = "underline"; S.icon(pr, "external", 12, C.dim);
-  S.spacer(h); S.button(h, "Ce que reçoit l'agent", "outline", { sm: true, icon: "eye" }); S.button(h, "Historique", "outline", { sm: true, icon: "history" }); iconButton(h, "trash", { outline: true });
+  S.spacer(h); S.button(h, "Ce que reçoit l'agent", "outline", { sm: true, icon: "eye" }); S.button(h, "Historique", "outline", { sm: true, icon: "history" }); S.button(h, "Renommer", "outline", { sm: true, icon: "pencil" }); iconButton(h, "trash", { outline: true });
   S.button(h, "Enregistrer", "default", { sm: true, disabled: !o.dirty }); return h; };
 const specFields = (c, a, o = {}) => { const r = S.row(c, { gap: 16, align: "start" }); labeled(r, "Description", x => input(x, a.desc), { help: "Une phrase qui commence par un verbe : Claude Code s'en sert pour choisir l'agent" });
   labeledW(r, "Modèle", 220, x => select(x, a.model, { fill: true })); inClaude(c, a.name, a.desc.length > 70 ? a.desc.slice(0, 68) + "…" : a.desc); };
 const collapsedRest = (c, o = {}) => { if (o.settings !== false) section(c, "Réglages techniques", "Worktree par ticket · Demande à chaque action · 2 runs en parallèle · activé");
   if (o.subs !== false) section(c, "Sous-agents appelables", o.subsSum || "aucun · sous-agents génériques de Claude Code autorisés");
   if (o.skills !== false) section(c, "Skills autorisés", o.skillsSum || "Liste · 3 skills : porte-qualite, apply-review, superpowers:test-driven-development"); };
-const agentPage = async (name, col, row, a, o = {}) => { const r = await screen(name, col, row, ["Agents", a.name], { h: o.h }); const c = r.content; c.flex.rowGap = 14;
-  agentHead(c, a, o); if (o.running) S.alert(c, "1 run en cours : les changements s'appliquent à son prochain tour.", "blue", { icon: "info" });
+const agentPage = async (name, col, row, a, o = {}) => { const r = await screen(name, col, row, ["Agents"], { h: o.h, action: ["Nouvel agent", "plus"] }); const c = r.content; c.flex.rowGap = 14;
+  pageCrumb(c, "Agents", a.name); agentHead(c, a, o); if (o.running) S.alert(c, "1 run en cours : les changements s'appliquent à son prochain tour.", "blue", { icon: "info" });
   specFields(c, a); modeBar(c, o.mode || "Édition"); const body = o.body || SPEC_LIVRAISON; codeLines(c, o.lines ? body.slice(0, o.lines) : body); return r; };
 S.draw[193] = async () => { const { frame: f, content: c } = await agentPage("193 · Fiche agent : spec en premier", 4, 0, A.livraison, { dirty: true, running: true }); collapsedRest(c); return f.id; };
 
 // ---------- 193b · Réglages techniques ----------
 S.draw["193b"] = async () => { const { frame: f, content: c } = await agentPage("193b · Fiche agent : réglages techniques dépliés", 6, 0, A.livraison, { lines: 4, h: 1300 });
-  const s = section(c, "Réglages techniques", "réglages de Kibo, propres à cette machine : ils ne sont pas dans le fichier", true);
+  const s = section(c, "Réglages techniques", "Worktree par ticket · Demande à chaque action · 2 runs en parallèle · activé", true); help(s, "réglages de Kibo, propres à cette machine : ils ne sont pas dans le fichier", C.mfg);
   labeled(s, "Espace de travail", x => segmented(x, ["Worktree par ticket", "Dossier isolé", "Dossier du projet"], "Worktree par ticket"));
   labeled(s, "Permissions", x => segmented(x, ["Lecture seule (plan)", "Modifications acceptées", "Demande à chaque action", "Automatique"], "Demande à chaque action"), { help: "Les permissions ne sont jamais contournées." });
   labeled(s, "Autorisations", x => input(x, "Bash(bun test *)\nBash(git commit *)", { mono: true, size: 12, h: 60 }), { help: "Une règle par ligne : Outil ou Outil(motif). Les skills autorisés ajoutent leurs règles Skill(nom)." });
@@ -175,12 +185,12 @@ const subRow = (p, on, name, scope, desc, o = {}) => { const r = S.row(p, { gap:
 S.draw["193c"] = async () => { const { frame: f, content: c } = await agentPage("193c · Fiche agent : sous-agents et skills", 0, 1, A.chef, { lines: 3, body: SPEC_CHEF, h: 1100 });
   section(c, "Réglages techniques", "Worktree par ticket · Demande à chaque action · 1 run en parallèle · activé");
   const row = S.row(c, { gap: 16, align: "start" });
-  const s = section(row, "Sous-agents appelables", "3 sur 4", true); s.flex.rowGap = 4;
+  const s = section(row, "Sous-agents appelables", "3 sur 4 · livraison, review-pr, seo-contenu · génériques", true); s.flex.rowGap = 4;
   subRow(s, true, "livraison", "Global", A.livraison.desc); subRow(s, true, "review-pr", "Global", A.review.desc); subRow(s, true, "seo-contenu", "Global", A.seo.desc);
   subRow(s, false, "ux-audit", "Global", "Fichier illisible : non appelable.", { dis: true }); hline(s);
   const g = S.row(s, { gap: 10, pad: [8, 0, 0, 0] }); S.check(g, true); S.txt(g, "Sous-agents génériques de Claude Code", { size: 13 }); S.txt(g, "general-purpose, Explore, Plan", { size: 12, mono: true, color: C.dim });
   help(s, "Un agent global n'appelle que des agents globaux. Pendant le run, Kibo refuse tout autre sous-agent.");
-  const k = section(row, "Skills autorisés", "Liste · 3 sur 11", true); k.flex.rowGap = 6; segmented(k, ["Tous", "Liste"], "Liste"); input(k, "Rechercher un skill…", { icon: "search", placeholder: true });
+  const k = section(row, "Skills autorisés", "Liste · 3 skills : porte-qualite, apply-review, superpowers:test-driven-development", true); k.flex.rowGap = 6; segmented(k, ["Tous", "Liste"], "Liste"); input(k, "Rechercher un skill…", { icon: "search", placeholder: true });
   [["CET ORDINATEUR", [[true, "porte-qualite", "Porte qualité d'une branche avant son push."], [true, "apply-review", "Traite les reviews d'une PR, corrige et pousse."], [false, "clean-pr", "Démonte l'environnement local d'une PR fusionnée."]]],
    ["PLUGINS", [[true, "superpowers:test-driven-development", "Le test d'abord, puis le code minimal."], [false, "superpowers:brainstorming", "Explore l'intention avant un travail créatif."]]]]
     .forEach(([t, list]) => { S.txt(k, t, { size: 10, weight: 600, color: C.dim }); list.forEach(([on, n, d]) => subRow(k, on, n, null, d)); });
@@ -194,32 +204,34 @@ const level = (p, t, tok, open, lines) => { const b = S.box(p, { name: "Level-" 
 S.draw["193d"] = async () => { const { frame: f, content: c } = await agentPage("193d · Ce que reçoit l'agent", 2, 1, A.chef, { lines: 6, body: SPEC_CHEF }); collapsedRest(c, { subsSum: "livraison, review-pr, seo-contenu · génériques" });
   S.overlay(f); const W = 640; const sh = S.box(f, { name: "Sheet", fill: C.bg, stroke: C.border, w: W, h: 940, dir: "column", gap: 12, pad: [20, 20] }); shadow(sh); abs(f, sh, 1440 - W, 0); sh.clipContent = true;
   const h = S.row(sh, { gap: 8 }); S.icon(h, "eye", 16, C.fg); S.fillX(S.txt(h, "Ce que reçoit l'agent", { size: 16, weight: 600 })); iconButton(h, "x");
-  const t = S.row(sh, { gap: 8 }); S.txt(t, "chef-orchestre", { size: 12, mono: true, weight: 600 }); S.txt(t, "sur", { size: 12, color: C.mfg }); select(t, "Ticket d'exemple : KIB-16 · Moteur de règles déclaratif");
-  label(sh, "CLAUDE.md composé · 3 140 tokens estimés");
-  level(sh, "Workspace", "420"); level(sh, "Projet · Kibo", "1 380"); level(sh, "Domaine · Agents", "260");
-  level(sh, "Agent · chef-orchestre", "610");
-  level(sh, "Protocole Kibo", "470", true, ["Sous-agents appelables : livraison — Livre un ticket…, review-pr — Relit une PR…,", "seo-contenu — Audite les pages… (aucun autre)", "Skills autorisés : porte-qualite, apply-review, superpowers:test-driven-development", "Avant de terminer, laisse une review des skills utilisés avec skill_review."]);
-  level(sh, "brief.md · KIB-16", "540"); level(sh, "agents.json · 3 sous-agents", "1 920");
+  const t = S.row(sh, { gap: 8 }); S.txt(t, "chef-orchestre", { size: 12, mono: true, weight: 600 }); S.txt(t, "sur", { size: 12, color: C.mfg }); select(t, "KIB-16 · Moteur de règles déclaratif");
+  label(sh, "CLAUDE.md composé · 2 670 tokens estimés");
+  const lv = S.col(sh, { gap: 4 });
+  [["Workspace", "context/1-workspace/conventions.md", "420"], ["Projet", "context/2-projet/kibo.md", "1 380"], ["Domaine", "context/3-domaine/agents.md", "260"],
+   ["Agent · chef-orchestre", "context/4-agent/chef-orchestre.md", "610"]].forEach(([n, path, tok]) => { const b = S.box(lv, { name: "Level-" + n, stroke: C.border, radius: 6, dir: "row", gap: 8, pad: [8, 12], vs: "auto", align: "center" }); S.fillX(b);
+    const tv = S.col(b, { gap: 2 }); S.txt(tv, n, { size: 13 }); S.txt(tv, path, { size: 11, mono: true, color: C.mfg }); S.txt(b, tok, { size: 12, mono: true }); });
+  level(sh, "CLAUDE.md complet", ""); level(sh, "brief.md", ""); level(sh, "agents.json", "");
   label(sh, "Commande");
-  const kv = S.panel(sh, { name: "Command", gap: 6, pad: [10, 12] }); [["Modèle", "opus"], ["Permissions", "default · demande à chaque action"], ["Outils", "tous (pas de champ tools)"],
-    ["Règles allow", "mcp__kibo__*, Bash(bun test *), Skill(porte-qualite)…"], ["Sous-agents", "--agents agents.json · génériques autorisés"]].forEach(([k, v]) => { const r = S.row(kv, { gap: 8 });
-    const l = S.box(r, { name: "k", w: 110, dir: "row", vs: "auto" }); S.txt(l, k, { size: 12, color: C.mfg }); S.fillX(S.txt(r, v, { size: 12, mono: true })); });
+  const kv = S.panel(sh, { name: "Command", gap: 6, pad: [10, 12] }); [["Modèle", "opus"], ["Permissions", "Demande à chaque action"], ["Outils", "tous (pas de champ tools)"],
+    ["Règles allow", "Skill(porte-qualite), Skill(apply-review), Skill(superpowers:test-driven-development)"], ["Sous-agents", "livraison, review-pr, seo-contenu"],
+    ["Skills", "porte-qualite, apply-review, superpowers:test-driven-development"]].forEach(([k, v]) => { const r = S.row(kv, { gap: 8, align: "start" });
+    const l = S.box(r, { name: "k", w: 110, dir: "row", vs: "auto" }); S.txt(l, k, { size: 12, color: C.mfg }); S.fillX(S.txt(r, v, { size: 12, mono: true, lh: 1.45 })); });
   help(sh, "Aucun secret : ni le jeton du run ni les variables d'environnement."); S.frontAbs(f); return f.id; };
 
 // ---------- 193e · Conflit d'écriture ----------
 const diffLine = (p, sign, t, o = {}) => { const fill = sign === "+" ? "#0D1F12" : sign === "−" ? "#2A0F0F" : null; const r = S.box(p, { name: "DiffLine", fill, dir: "row", gap: 8, pad: [2, 10], vs: "auto", align: "center" }); S.fillX(r);
   if (o.n !== undefined) { const nb = S.box(r, { name: "ln", w: 22, dir: "row", vs: "auto", justify: "end" }); S.txt(nb, String(o.n), { size: 11, mono: true, color: C.dim }); }
-  S.txt(r, sign || " ", { size: 12, mono: true, color: sign === "+" ? C.green : sign === "−" ? C.red : C.dim }); S.txt(r, t || " ", { size: 12, mono: true, lh: 1.55, color: sign ? C.fg : C.mfg }); return r; };
+  S.txt(r, sign || " ", { size: 12, mono: true, color: sign === "+" ? C.green : sign === "−" ? C.red : C.dim }); S.fillX(S.txt(r, t || " ", { size: 12, mono: true, lh: 1.55, color: sign ? C.fg : C.mfg })); return r; };
 const diffPane = (p, title, lines, o = {}) => { const c = S.box(p, { name: "DiffPane-" + title, fill: C.bg, stroke: C.border, radius: 8, dir: "column", gap: 0, vs: "auto" }); S.child(c, { h: "fill" }); c.clipContent = true;
   const h = S.row(c, { gap: 8, pad: [8, 10] }); S.fillX(S.txt(h, title, { size: 12, weight: 600 })); if (o.sub) S.txt(h, o.sub, { size: 11, color: C.dim }); hline(c);
   const b = S.col(c, { gap: 0, pad: [6, 0] }); lines.forEach(([s, t], i) => diffLine(b, s, t, { n: (o.from || 1) + i })); return c; };
 S.draw["193e"] = async () => { const { frame: f, content: c } = await agentPage("193e · Conflit d'écriture", 4, 1, A.livraison, { dirty: true }); collapsedRest(c);
   S.overlay(f); const W = 820; const d = S.box(f, { name: "Dialog-conflit", fill: C.card, stroke: C.border, radius: 12, w: W, dir: "column", gap: 16, pad: 24, vs: "auto" }); shadow(d); abs(f, d, (1440 - W) / 2, 200);
-  const tv = S.col(d, { gap: 6 }); S.txt(tv, "Le fichier a changé sur le disque", { size: 17, weight: 600 });
-  const dsc = S.row(tv, { gap: 0 }); inline(dsc, [{ m: "~/.claude/agents/livraison.md" }, " a été modifié hors de Kibo il y a 2 min (dans le terminal). Rien n'a été écrit."], { color: C.mfg });
+  const th = S.row(d, { gap: 8, align: "start" }); const tv = S.col(th, { gap: 6 }); iconButton(th, "x"); S.txt(tv, "Le fichier a changé sur le disque", { size: 17, weight: 600 });
+  const dsc = S.row(tv, { gap: 0 }); inline(dsc, [{ m: "~/.claude/agents/livraison.md" }, " Il a été modifié hors de Kibo (terminal, Claude Code, git…). Rien n'a été écrit."], { color: C.mfg });
   const r = S.row(d, { gap: 12, align: "start" });
   diffPane(r, "Ma version", [[null, "## Règles"], ["−", "- Jamais de --no-verify ni de push forcé."], ["+", "- Jamais de --no-verify."], [null, "- Passe porte-qualite avant de pousser."], ["+", "- Une PR par ticket, en brouillon."]], { sub: "non enregistrée", from: 11 });
-  diffPane(r, "Sur le disque", [[null, "## Règles"], [null, "- Jamais de --no-verify ni de push forcé."], [null, "- Passe porte-qualite avant de pousser."], ["+", "- Lance bun run check avant de commiter."]], { sub: "modifié 14:02", from: 11 });
+  diffPane(r, "Sur le disque", [[null, "## Règles"], [null, "- Jamais de --no-verify ni de push forcé."], [null, "- Passe porte-qualite avant de pousser."], ["+", "- Lance bun run check avant de commiter."]], { sub: "14:02", from: 11 });
   help(d, "« Recharger » reprend le disque et garde ton édition en brouillon. « Écraser » dépose d'abord la version du disque dans l'historique (Externe).");
   const ft = S.row(d, { gap: 8 }); S.spacer(ft); S.button(ft, "Annuler", "outline"); S.button(ft, "Recharger", "outline", { icon: "refresh" }); S.button(ft, "Écraser avec ma version", "default");
   S.frontAbs(f); return f.id; };
@@ -236,52 +248,48 @@ const skillGroup = (p, icon, title, path, rows, o = {}) => { const g = S.panel(p
   S.fillX(S.txt(h, path, { size: 12, mono: true, color: C.dim })); if (o.right) o.right(h);
   rows.forEach(x => { hline(g); skillRow(g, o.ro ? [x[0], x[1], x[2], x[3], { ro: true }] : x, o.sel === x[0]); }); return g; };
 const skillsPage = (c, o = {}) => { c.flex.rowGap = 14;
-  const t = S.row(c, { gap: 8 }); input(t, "Rechercher un skill…", { icon: "search", placeholder: true, w: 420 }); select(t, "Tous les projets"); S.spacer(t);
+  const t = S.row(c, { gap: 8 }); input(t, "Rechercher un skill…", { icon: "search", placeholder: true, w: 420 }); S.spacer(t);
   S.txt(t, "4 notes à traiter", { size: 12, weight: 500, color: C.brand });
   skillGroup(c, "laptop", "Cet ordinateur", "~/.claude/skills", SK.user);
   skillGroup(c, null, "Projet · Kibo", "~/code/kibo/.claude/skills", SK.kibo, { dot: C.brand });
   skillGroup(c, null, "Projet · API Facturation", "~/code/api-facturation/.claude/skills", SK.fact, { dot: C.green });
   const pl = S.col(c, { gap: 8 }); const ph = S.row(pl, { gap: 8 }); S.icon(ph, "package", 15, C.mfg); S.txt(ph, "Plugins", { size: 13, weight: 600 }); S.txt(ph, "lecture seule · ~/.claude/plugins/cache", { size: 12, mono: true, color: C.dim });
-  skillGroup(pl, "package", "superpowers", "5.0.7", SK.superpowers, { ro: true, sel: o.sel }); skillGroup(pl, "package", "frontend-design", "1.2.0", SK.design, { ro: true }); };
+  skillGroup(pl, "package", "superpowers 5.0.7", "", SK.superpowers, { ro: true, sel: o.sel }); skillGroup(pl, "package", "frontend-design 1.2.0", "", SK.design, { ro: true }); };
 S.draw[194] = async () => { const { frame: f, content: c } = await screen("194 · Skills : trois sources", 0, 2, ["Agents", "Skills"], { nav: "Skills", h: 1180, action: ["Nouveau skill", "plus"] }); skillsPage(c); return f.id; };
 
 // ---------- 194b · Skill de plugin ----------
-S.draw["194b"] = async () => { const { frame: f, content: c } = await screen("194b · Skill de plugin en lecture seule, copier pour modifier", 2, 2, ["Agents", "Skills"], { nav: "Skills", h: 1180, action: ["Nouveau skill", "plus"] });
-  skillsPage(c, { sel: "superpowers:brainstorming" }); S.overlay(f);
-  const W = 620; const sh = S.box(f, { name: "Sheet", fill: C.bg, stroke: C.border, w: W, h: 1180, dir: "column", gap: 14, pad: [20, 20] }); shadow(sh); abs(f, sh, 1440 - W, 0); sh.clipContent = true;
-  const h = S.row(sh, { gap: 8 }); S.icon(h, "bookOpen", 16, C.fg); S.fillX(S.txt(h, "superpowers:brainstorming", { size: 15, mono: true, weight: 600 })); iconButton(h, "x");
-  const m = S.row(sh, { gap: 8 }); S.badge(m, "Plugin superpowers 5.0.7", C.mfg, { round: true, icon: "package" }); S.badge(m, "lecture seule", C.mfg, { round: true, icon: "lock" }); S.txt(m, "6 runs/30 j", { size: 12, color: C.dim });
-  S.fillX(S.txt(sh, "~/.claude/plugins/cache/…/superpowers/5.0.7/skills/brainstorming/SKILL.md", { size: 11, mono: true, color: C.dim }));
-  S.alert(sh, "Ce skill vient d'un plugin : il se lit ici, il ne se modifie pas.", "muted", { icon: "lock", desc: "1 note de review l'attend : copie-le pour l'intégrer à ta copie." });
-  const a = S.row(sh, { gap: 8 }); S.button(a, "Copier pour modifier", "default", { sm: true, icon: "copy" }); S.button(a, "Notes de review (1)", "outline", { sm: true, icon: "messagePlus" });
-  const pop = S.box(sh, { name: "CopyPopover", fill: C.card, stroke: C.border, radius: 10, dir: "column", gap: 12, pad: 16, vs: "auto" }); S.fillX(pop); shadow(pop, 0.35);
-  S.txt(pop, "Copier pour modifier", { size: 14, weight: 600 });
-  labeled(pop, "Destination", x => segmented(x, [["Cet ordinateur", "laptop"], ["Projet · Kibo", "folder"]], "Cet ordinateur"));
-  labeled(pop, "Nom de la copie", x => input(x, "brainstorming-kibo", { mono: true, focus: true }));
-  S.alert(pop, "Nouvel identifiant pour les agents", "amber", { desc: "brainstorming-kibo est un autre skill que superpowers:brainstorming. 2 agents autorisent l'original : livraison et chef-orchestre." });
-  S.check(pop, true, "Autoriser aussi la copie pour ces 2 agents");
-  const ft = S.row(pop, { gap: 8 }); S.spacer(ft); S.button(ft, "Annuler", "outline", { sm: true }); S.button(ft, "Copier", "default", { sm: true });
-  S.txt(sh, "SKILL.md", { size: 12, mono: true, weight: 600 }); codeLines(sh, ["# Brainstorming", "Turn an idea into a design through dialogue.", "", "## Process", "- Ask one question at a time.", "- Propose two or three approaches."], { fill: C.muted });
-  S.frontAbs(f); return f.id; };
+const BRAIN = ["# Brainstorming", "Turn an idea into a design through dialogue.", "", "## Process", "- Ask one question at a time.", "- Propose two or three approaches."];
+S.draw["194b"] = async () => { const plugin = { name: "superpowers:brainstorming", badge: ["Plugin superpowers 5.0.7", "package"], runs: "6 runs/30 j", ro: true, notes: 1,
+    path: "~/.claude/plugins/cache/…/superpowers/5.0.7/skills/brainstorming/SKILL.md" };
+  const { frame: f, m } = await editorShell("194b · Skill de plugin en lecture seule, copier pour modifier", 2, 2, { skill: plugin, files: [["SKILL.md", "1,2 Ko", true]],
+    before: c => S.alert(c, "Ce skill vient d'un plugin : il se lit ici, il ne se modifie pas.", "muted", { icon: "lock", desc: "1 note de review l'attend : copie-le pour l'intégrer à ta copie." }) });
+  frontFields(m, { ro: true, desc: "Explore l'intention, les besoins et la conception avant tout travail créatif." }); modeBar(m, "Édition", null, true); codeLines(m, BRAIN);
+  const d = formDialog(f, "Copier pour modifier", 500); d.flex.rowGap = 14; abs(f, d, 470, 250);
+  labeled(d, "Destination", x => segmented(x, [["Cet ordinateur", "laptop"], ["Projet · Kibo", "folder"]], "Cet ordinateur"));
+  labeled(d, "Nom de la copie", x => input(x, "brainstorming-kibo", { mono: true, focus: true }));
+  S.alert(d, "Nouvel identifiant pour les agents", "amber", { desc: "`brainstorming-kibo` est un autre skill que `superpowers:brainstorming` : les agents qui autorisent l'original ne voient pas la copie." });
+  S.footer(d, "Annuler", "Copier"); S.frontAbs(f); return f.id; };
 
 // ---------- 195 · Éditeur de skill ----------
 const FILES = [["SKILL.md", "1,9 Ko", true], ["volets/correctness.md", "2,4 Ko", true], ["volets/conventions.md", "1,7 Ko", true], ["scripts/diff-stat.sh", "0,6 Ko", true], ["exemple-verdict.png", "48 Ko", false]];
-const skillHead = (c, o = {}) => { const h = S.row(c, { gap: 12 }); const av = S.box(h, { name: "SkillIcon", stroke: C.border, radius: 8, w: 40, h: 40, dir: "row", align: "center", justify: "center" }); S.icon(av, "bookOpen", 18, C.mfg);
-  const tv = S.col(h, { gap: 4 }); const r = S.row(tv, { gap: 8 }); S.txt(r, "porte-qualite", { size: 18, mono: true, weight: 600 }); S.badge(r, "Cet ordinateur", C.mfg, { round: true, icon: "laptop" });
-  S.txt(r, "9 runs/30 j", { size: 12, color: C.dim });
-  const pr = S.row(tv, { gap: 6 }); S.icon(pr, "folder", 12, C.dim); S.txt(pr, "~/.claude/skills/porte-qualite/SKILL.md", { size: 12, mono: true, color: C.mfg });
-  S.spacer(h); if (!o.notesOpen) { const b = S.button(h, "Notes de review (2)", "outline", { sm: true, icon: "messagePlus" }); } S.button(h, "Historique", "outline", { sm: true, icon: "history" }); iconButton(h, "trash", { outline: true });
+const PQ = { name: "porte-qualite", badge: ["Cet ordinateur", "laptop"], runs: "9 runs/30 j", path: "~/.claude/skills/porte-qualite/SKILL.md", notes: 2 };
+const skillHead = (c, o = {}) => { const k = o.skill || PQ; const h = S.row(c, { gap: 12 }); const av = S.box(h, { name: "SkillIcon", stroke: C.border, radius: 8, w: 40, h: 40, dir: "row", align: "center", justify: "center" }); S.icon(av, "bookOpen", 18, C.mfg);
+  const tv = S.col(h, { gap: 4, hs: "auto" }); const r = S.row(tv, { gap: 8, hs: "auto" }); S.txt(r, k.name, { size: 18, mono: true, weight: 600 }); S.badge(r, k.badge[0], C.mfg, { round: true, icon: k.badge[1] });
+  if (k.ro) S.badge(r, "lecture seule", C.mfg, { round: true, icon: "lock" }); S.txt(r, k.runs, { size: 12, color: C.dim });
+  S.txt(tv, k.path, { size: 12, mono: true, color: C.mfg });
+  S.spacer(h); if (k.ro) { S.button(h, "Copier pour modifier", "secondary", { sm: true, icon: "copy" }); S.button(h, "Notes de review (" + k.notes + ")", "outline", { sm: true, icon: "messageSquareText" }); return h; }
+  S.button(h, "Notes de review (" + (o.notesCount ?? k.notes) + ")", "outline", { sm: true, icon: "messageSquareText" }); S.button(h, "Historique", "outline", { sm: true, icon: "history" }); iconButton(h, "trash", { outline: true });
   S.button(h, "Enregistrer", "default", { sm: true, disabled: !o.dirty }); return h; };
-const filesCol = (p) => { const f = S.panel(p, { name: "Files", gap: 2, pad: 10, w: 270 }); label(f, "Fichiers"); S.box(f, { name: "gap", w: 1, h: 4 });
-  FILES.forEach(([n, size, text], i) => { const r = S.box(f, { name: "File-" + n, fill: i === 0 ? C.accent : null, radius: 6, dir: "row", gap: 6, pad: [5, 6], vs: "auto", align: "center" }); S.fillX(r); if (!text) r.opacity = 0.6;
+const filesCol = (p, files = FILES, o = {}) => { const f = S.panel(p, { name: "Files", gap: 2, pad: 10, w: 240 }); label(f, "Fichiers"); S.box(f, { name: "gap", w: 1, h: 4 });
+  files.forEach(([n, size, text], i) => { const r = S.box(f, { name: "File-" + n, fill: i === 0 ? C.accent : null, radius: 6, dir: "row", gap: 6, pad: [5, 6], vs: "auto", align: "center" }); S.fillX(r); if (!text) r.opacity = 0.6;
     S.icon(r, text ? "fileText" : "image", 13, C.mfg); S.fillX(S.txt(r, n, { size: 12, mono: true })); S.txt(r, size, { size: 11, color: C.dim }); });
-  help(f, "Les fichiers non texte sont listés, pas ouverts."); S.button(f, "Ajouter un fichier", "outline", { sm: true, icon: "plus" }); return f; };
-const frontFields = (p) => { const s = S.panel(p, { name: "Frontmatter", gap: 12, pad: 14 }); labeled(s, "Description", x => input(x, "Porte qualité d'une branche avant son push, à deux volets : correctness et conventions."));
-  const r = S.row(s, { gap: 20, align: "start" }); labeled(r, "allowed-tools", x => input(x, "Read, Grep, Bash(git diff *)", { mono: true, size: 12 }));
-  const t = S.col(r, { gap: 8, w: 300 }); [["disable-model-invocation", false], ["user-invocable", true]].forEach(([k, on]) => { const x = S.row(t, { gap: 8 }); S.toggle(x, on); S.txt(x, k, { size: 12, mono: true }); });
-  const o = S.row(s, { gap: 6 }); S.icon(o, "lock", 12, C.dim); inline(o, ["Autres champs, lecture seule : ", { m: "context: fork" }], { color: C.mfg }); return s; };
-const editorShell = async (name, col, row, o = {}) => { const r = await screen(name, col, row, ["Agents", "Skills", "porte-qualite"], { nav: "Skills", h: o.h }); const c = r.content; c.flex.rowGap = 14;
-  skillHead(c, o); const cols = S.row(c, { name: "EditorCols", gap: 16, align: "start" }); if (!o.noFiles) filesCol(cols); const m = S.col(cols, { name: "EditorMain", gap: 12 }); return { ...r, cols, m }; };
+  if (o.ro) return f; help(f, "Les fichiers non texte sont listés, pas ouverts."); S.button(f, "Ajouter un fichier", "outline", { sm: true, icon: "plus" }); return f; };
+const frontFields = (p, o = {}) => { const s = S.panel(p, { name: "Frontmatter", gap: 12, pad: 14 }); if (o.ro) s.opacity = 0.7; labeled(s, "Description", x => input(x, o.desc || "Porte qualité d'une branche avant son push, à deux volets : correctness et conventions."));
+  const r = S.row(s, { gap: 20, align: "start" }); labeled(r, "allowed-tools", x => input(x, o.ro ? "Outils séparés par des virgules" : "Read, Grep, Bash(git diff *)", { mono: true, size: 12, placeholder: o.ro }));
+  const t = S.col(r, { gap: 8, w: 230 }); [["disable-model-invocation", false], ["user-invocable", true]].forEach(([k, on]) => { const x = S.row(t, { gap: 8 }); S.toggle(x, on); S.txt(x, k, { size: 12, mono: true }); });
+  if (o.ro) return s; const x = S.row(s, { gap: 6 }); S.icon(x, "lock", 12, C.dim); inline(x, ["Autres champs, lecture seule : ", { m: "context: fork" }], { color: C.mfg }); return s; };
+const editorShell = async (name, col, row, o = {}) => { const r = await screen(name, col, row, ["Agents", "Skills"], { nav: "Skills", h: o.h, action: ["Nouveau skill", "plus"] }); const c = r.content; c.flex.rowGap = 14;
+  pageCrumb(c, "Skills", (o.skill || PQ).name, { mono: true }); skillHead(c, o); if (o.before) o.before(c); const cols = S.row(c, { name: "EditorCols", gap: 16, align: "start" }); if (!o.noFiles) filesCol(cols, o.files, { ro: o.skill && o.skill.ro }); const m = S.col(cols, { name: "EditorMain", gap: 12 }); return { ...r, cols, m }; };
 S.draw[195] = async () => { const { frame: f, m } = await editorShell("195 · Éditeur de skill : aperçu et fichiers", 4, 2, { dirty: true });
   frontFields(m); modeBar(m, "Côte à côte", null, true); const sbs = S.row(m, { gap: 0, align: "start", stroke: C.border, radius: 8 }); sbs.clipContent = true;
   const l = S.col(sbs, { gap: 0 }); codeLines(l, SKILL_BODY, { stroke: false }); const rp = S.col(sbs, { gap: 0, fill: C.card }); preview(rp, SKILL_BODY); return f.id; };
@@ -290,38 +298,34 @@ S.draw[195] = async () => { const { frame: f, m } = await editorShell("195 · É
 const verdictBadge = (p, v) => v === "ok" ? S.badge(p, "OK", C.green, { round: true, stroke: "#14532D" }) : S.badge(p, "À améliorer", C.amber, { round: true, stroke: "#78350F" });
 const noteCard = (p, n, o = {}) => { const c = S.panel(p, { name: "ReviewNote", gap: 8, pad: 12 }); if (o.hl) c.strokes = [{ strokeColor: C.brand, strokeWidth: 1, strokeAlignment: "inner", strokeOpacity: 0.7 }];
   const h = S.row(c, { gap: 6 }); verdictBadge(h, n.verdict); S.spacer(h); S.txt(h, n.when, { size: 11, color: C.dim });
-  S.fillX(S.txt(c, n.text, { size: 12, lh: 1.45 })); const m = S.row(c, { gap: 6 }); S.icon(m, "bot", 12, C.brand); mention(m, n.by, { size: 11 });
+  S.fillX(S.txt(c, n.text, { size: 12, lh: 1.45 })); const m = S.row(c, { gap: 6 }); S.txt(m, n.by, { size: 11, mono: true, color: C.mfg });
   if (n.suggestion) S.txt(m, "· suggestion jointe", { size: 11, color: C.mfg });
   if (o.actions !== false) { const a = S.row(c, { gap: 8 }); if (n.suggestion) orangeButton(a, "Intégrer", "merge"); else S.button(a, "Ouvrir ici", "outline", { sm: true }); S.button(a, "Ignorer", "ghost", { sm: true }); } return c; };
 const notesPane = (p, o = {}) => { const pn = S.box(p, { name: "NotesPane", w: 330, dir: "column", gap: 10, vs: "auto" });
-  const h = S.row(pn, { gap: 8 }); S.icon(h, "messagePlus", 15, C.brand); S.fillX(S.txt(h, "Notes de review", { size: 14, weight: 600 })); S.badge(h, "2 à traiter", C.brand, { round: true, stroke: C.brand }); iconButton(h, "x");
+  const h = S.row(pn, { gap: 8 }); S.icon(h, "messageSquareText", 15, C.brand); S.fillX(S.txt(h, "Notes de review", { size: 14, weight: 600 })); S.badge(h, "2 à traiter", C.brand, { round: true, stroke: C.brand }); iconButton(h, "x");
   help(pn, "Laissées par les agents en fin de run. Rien n'est modifié sans ton clic."); noteCard(pn, NOTES[0], { hl: o.hl }); noteCard(pn, NOTES[1]);
   const t = S.row(pn, { gap: 8, pad: [4, 0] }); S.icon(t, "chevRight", 13, C.mfg); S.txt(t, "Traitées · 3", { size: 13, weight: 500 }); S.txt(t, "2 intégrées, 1 ignorée", { size: 12, color: C.dim }); return pn; };
-S.draw["195b"] = async () => { const { frame: f, cols, m } = await editorShell("195b · Éditeur de skill : notes de review", 6, 2, { notesOpen: true, noFiles: true });
+S.draw["195b"] = async () => { const { frame: f, cols, m } = await editorShell("195b · Éditeur de skill : notes de review", 6, 2, {});
   frontFields(m); modeBar(m, "Édition", null, true); codeLines(m, SKILL_BODY); notesPane(cols); return f.id; };
 
 // ---------- 195c · Intégration en diff ----------
 const hunk = (p, title, rows, accepted) => { const h = S.box(p, { name: "Hunk", stroke: C.border, radius: 8, dir: "column", gap: 0, vs: "auto" }); S.fillX(h); h.clipContent = true;
-  const bar = S.row(h, { gap: 8, pad: [6, 10], fill: C.muted }); S.txt(bar, title, { size: 12, mono: true, color: C.mfg }); S.spacer(bar);
-  if (accepted) { S.badge(bar, "accepté", C.green, { round: true, icon: "check", stroke: "#14532D" }); S.button(bar, "Annuler", "ghost", { sm: true }); }
-  else { S.button(bar, "Accepter ce bloc", "outline", { sm: true, icon: "check" }); S.button(bar, "Rejeter", "ghost", { sm: true }); }
   const two = S.row(h, { gap: 0, align: "start" }); [0, 1].forEach(side => { const c = S.col(two, { gap: 0, pad: [4, 0] }); if (!side) c.strokes = [{ strokeColor: C.border, strokeWidth: 1, strokeAlignment: "inner", strokeOpacity: 1 }];
     rows.forEach(([l, r]) => { const v = side ? r : l; if (v === undefined) { diffLine(c, null, "", {}).opacity = 0.4; return; } const [s, t, n] = v; diffLine(c, s, t, { n }); }); }); return h; };
-S.draw["195c"] = async () => { const { frame: f, cols, m } = await editorShell("195c · Intégrer une review : diff", 0, 3, { dirty: true, noFiles: true, notesOpen: true });
-  const t = S.row(m, { gap: 8 }); S.icon(t, "merge", 15, C.brand); inline(t, ["Intégrer la review de ", { m: "global · livraison · KIB-14", color: C.fg }], { size: 13 }); S.spacer(t); segmented(t, ["Côte à côte", "Unifié"], "Côte à côte");
-  S.alert(m, "Le skill a changé depuis cette review", "amber", { desc: "Le diff est calculé contre le fichier courant (modifié hier hors de Kibo)." });
+S.draw["195c"] = async () => { const { frame: f, cols, m } = await editorShell("195c · Intégrer une review : diff", 0, 3, { dirty: true });
+  const t = S.row(m, { gap: 8 }); S.icon(t, "merge", 15, C.brand); S.fillX(S.txt(t, "Intégrer la review de global · livraison · KIB-14", { size: 13, weight: 600 })); S.spacer(t); segmented(t, ["Côte à côte", "Unifié"], "Côte à côte");
+  S.alert(m, "Le skill a changé depuis cette review", "amber", { desc: "Le diff est calculé contre le fichier courant." });
   const lg = S.row(m, { gap: 0 }); const a = S.col(lg, { gap: 0 }); S.txt(a, "Fichier courant", { size: 12, weight: 600 }); const b = S.col(lg, { gap: 0, pad: [0, 0, 0, 12] }); S.txt(b, "Suggestion de l'agent", { size: 12, weight: 600 });
   hunk(m, "@@ Volet conventions", [[[null, "## Volet conventions", 7], [null, "## Volet conventions", 7]], [["−", "Relis les fichiers touchés par la branche.", 8], ["+", "Relis uniquement les lignes modifiées.", 8]],
     [[null, "Vérifie le format des commits et le lint.", 9], [null, "Vérifie le format des commits et le lint.", 9]], [undefined, ["+", "Signale tout commentaire ajouté.", 10]]], true);
   hunk(m, "@@ Verdict", [[[null, "## Verdict", 11], [null, "## Verdict", 12]], [[null, "« Prêt » ou la liste des points bloquants.", 12], [null, "« Prêt » ou la liste des points bloquants.", 13]], [undefined, ["+", "Un verdict tient en trois lignes au plus.", 14]]], false);
-  const ft = S.row(m, { gap: 8 }); S.txt(ft, "1 bloc sur 2 accepté", { size: 12, color: C.mfg }); S.spacer(ft); S.button(ft, "Annuler", "outline", { sm: true }); S.button(ft, "Enregistrer", "default", { sm: true });
-  const pn = S.box(cols, { name: "NotesPane", w: 330, dir: "column", gap: 10, vs: "auto" }); const h = S.row(pn, { gap: 8 }); S.icon(h, "messagePlus", 15, C.brand); S.txt(h, "Review intégrée", { size: 14, weight: 600 });
-  noteCard(pn, NOTES[0], { hl: true, actions: false }); help(pn, "Enregistrer crée une version « Intégration » et marque la review intégrée."); return f.id; };
+  const ft = S.row(m, { gap: 8 }); help(ft, "Enregistrer crée une version « Intégration » et marque la review intégrée.", C.mfg); S.button(ft, "Annuler", "outline", { sm: true }); S.button(ft, "Enregistrer", "default", { sm: true });
+  notesPane(cols, { hl: true }); return f.id; };
 
 // ---------- 195d · Historique ----------
 const VERSIONS = [["12 oct. 14:32", "Intégration", "Adam · review intégrée", "4,1 Ko", "actuelle"], ["11 oct. 18:40", "Externe", "modifié hors de Kibo", "3,9 Ko"],
   ["11 oct. 10:05", "Kibo", "Adam", "3,8 Ko", null, true], ["9 oct. 16:20", "Restauration", "Adam", "3,6 Ko"], ["6 oct. 09:12", "Kibo", "Adam", "3,6 Ko"]];
-S.draw["195d"] = async () => { const { frame: f, cols, m } = await editorShell("195d · Historique des versions", 2, 3, { noFiles: true }); modeBar(m, "Édition", null, true); codeLines(m, SKILL_BODY);
+S.draw["195d"] = async () => { const { frame: f, cols, m } = await editorShell("195d · Historique des versions", 2, 3, {}); frontFields(m); modeBar(m, "Édition", null, true); codeLines(m, SKILL_BODY);
   S.overlay(f); const W = 980; const d = S.box(f, { name: "Dialog-historique", fill: C.card, stroke: C.border, radius: 12, w: W, dir: "column", gap: 14, pad: 24, vs: "auto" }); shadow(d); abs(f, d, (1440 - W) / 2, 120);
   const h = S.row(d, { gap: 8 }); S.icon(h, "history", 16, C.fg); S.txt(h, "Historique", { size: 17, weight: 600 }); S.fillX(S.txt(h, "porte-qualite · SKILL.md · 5 versions sur 100 gardées", { size: 12, color: C.mfg })); iconButton(h, "x");
   const r = S.row(d, { gap: 16, align: "start" }); const l = S.box(r, { name: "Versions", w: 330, dir: "column", gap: 2, vs: "auto" });
@@ -341,8 +345,8 @@ const pill = (p, parts, o = {}) => { const b = S.box(p, { name: "ActionPill", fi
   if (o.body) o.body(b); return b; };
 const say = (p, time, step, text) => { const c = S.col(p, { gap: 6 }); const h = S.row(c, { gap: 8 }); S.txt(h, time, { size: 12, mono: true, color: C.mfg }); S.badge(h, step, C.fg, { round: true });
   S.fillX(S.txt(c, text, { size: 13, weight: 500, lh: 1.45 })); return c; };
-const reviewsBlock = (p) => { const b = S.panel(p, { name: "SkillReviews", gap: 10, pad: 14 }); const h = S.row(b, { gap: 8 }); S.icon(h, "bookOpen", 14, C.mfg); S.fillX(S.txt(h, "Reviews de skills", { size: 13, weight: 600 })); S.txt(h, "run de 14:05 · 2 skills", { size: 12, color: C.dim });
-  [[NOTES[0], "À traiter", C.brand, "Ouvrir le skill"], [{ skill: "apply-review", verdict: "ok", text: "Les étapes ont suffi pour les 3 remarques de la PR.\nRien à changer." }, "Ignorée", C.mfg]].forEach(([n, st, col, link], i) => {
+const reviewsBlock = (p) => { const b = S.panel(p, { name: "SkillReviews", gap: 10, pad: 14 }); const h = S.row(b, { gap: 8 }); S.icon(h, "bookOpen", 14, C.mfg); S.fillX(S.txt(h, "Reviews de skills", { size: 13, weight: 600 })); S.txt(h, "2 skills utilisés", { size: 12, color: C.dim });
+  [[NOTES[0], "À traiter", C.brand], [{ skill: "apply-review", verdict: "ok", text: "Les étapes ont suffi pour les 3 remarques de la PR.\nRien à changer." }, "Ignorée", C.mfg]].forEach(([n, st, col, link], i) => {
     if (i) hline(b); const c = S.col(b, { gap: 5 }); const r = S.row(c, { gap: 6 }); S.txt(r, n.skill, { size: 12, mono: true, weight: 600 }); verdictBadge(r, n.verdict); S.spacer(r);
     S.txt(r, st, { size: 12, weight: 500, color: col }); if (link) { const l = S.txt(r, link, { size: 12, weight: 500 }); l.textDecoration = "underline"; }
     S.fillX(S.txt(c, n.text, { size: 12, color: C.mfg, lh: 1.45 })); }); return b; };
@@ -362,9 +366,9 @@ S.draw[196] = async () => { const { frame: f, content: c } = await screen("196 �
   pill(fl, ["A utilisé le skill ", { m: "superpowers:test-driven-development" }], { icon: "bookOpen" });
   say(fl, "14:15", "Étape 2", "Le test du corps vide échoue ; je borne la taille du corps et je relance les tests."); pill(fl, ["A modifié 2 fichiers et lancé les tests (15 réussis)"]);
   pill(fl, ["A utilisé le skill ", { m: "porte-qualite" }], { icon: "bookOpen" });
-  pill(fl, ["Kibo a refusé le skill ", { m: "clean-pr" }, " · skill non autorisé par Kibo"], { icon: "shieldAlert", iconColor: C.red, color: C.red });
+  pill(fl, ["Kibo a refusé le skill ", { m: "clean-pr" }], { icon: "shieldAlert", iconColor: C.red, color: C.red });
   notice(fl, "Kibo a rappelé la review des skills");
-  pill(fl, ["A laissé une review de 2 skills ", { m: "skill_review" }], { icon: "messagePlus", open: true, body: b => { const x = S.col(b, { gap: 4, pad: [0, 0, 0, 20] });
+  pill(fl, ["A laissé une review de 2 skills"], { icon: "messageSquareText", open: true, body: b => { const x = S.col(b, { gap: 4, pad: [0, 0, 0, 20] });
     inline(x, [{ m: "porte-qualite" }, " · à améliorer · suggestion jointe"], { color: C.mfg }); inline(x, [{ m: "apply-review" }, " · OK"], { color: C.mfg }); } });
   say(fl, "14:23", "Fin", "Compte rendu rempli. Le récepteur est prêt pour la review.");
   const r3 = S.row(t, { gap: 8, pad: [8, 0, 0, 0] }); S.icon(r3, "chevRight", 13, C.mfg); S.dot(r3, C.green, 8); mention(r3, "global · livraison · KIB-14", { size: 12 });

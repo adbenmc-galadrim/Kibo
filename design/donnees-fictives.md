@@ -199,7 +199,7 @@ Agents de Kibo (repliés) : `kibo-assistant`, `kibo-generateur`, `kibo-demo`, `k
 Réglages de `livraison` : worktree par ticket, demande à chaque action, `Bash(bun test *)` et `Bash(git commit *)`, 2 runs en parallèle, activé ;
 autres champs du frontmatter `color: orange`, `maxTurns: 80`, `effort: high`. Skills autorisés de `chef-orchestre` : `porte-qualite`,
 `apply-review`, `superpowers:test-driven-development` ; préchargé par le fichier : `porte-qualite`. « Ce que reçoit l'agent » sur KIB-16 :
-3 140 tokens (workspace 420, projet 1 380, domaine Agents 260, agent 610, protocole 470), `brief.md` 540, `agents.json` 1 920.
+2 670 tokens (workspace 420, projet 1 380, domaine Agents 260, agent 610), puis `CLAUDE.md` complet, `brief.md` et `agents.json` repliés.
 Conflit d'écriture : `~/.claude/agents/livraison.md` modifié dans le terminal à 14:02 (ligne « Lance bun run check avant de commiter. »).
 Historique des runs : `global · livraison · KIB-14` 18m 312k en cours ; `kibo · review-pr · KIB-12` 6m 88k en cours ;
 `global · chef-orchestre · KIB-16` 41m 1,1M « Fait, 1 point à vérifier » ; `global · sonnet-dev · FAC-4` 12m 240k échec.
