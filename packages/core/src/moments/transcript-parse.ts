@@ -30,6 +30,7 @@ export type ParsedLine =
       at: number | null;
     }
   | { kind: "ignored" }
+  | { kind: "skipped" }
   | { kind: "raw"; text: string };
 
 export const IGNORED_ENTRY_TYPES: readonly string[] = [
@@ -42,9 +43,12 @@ export const IGNORED_ENTRY_TYPES: readonly string[] = [
   "atis-latch",
   "last-prompt",
   "cost-state",
+  "custom-title",
+  "agent-name",
 ];
 
 const IGNORED: ParsedLine = { kind: "ignored" };
+const SKIPPED: ParsedLine = { kind: "skipped" };
 
 function jsonOf(line: string): unknown {
   try {
@@ -114,10 +118,10 @@ export function parseTranscriptLine(line: string): ParsedLine {
   if (!parsed.success) return raw;
   const entry = parsed.data;
   if (IGNORED_ENTRY_TYPES.includes(entry.type)) return IGNORED;
+  if (entry.type !== "user" && entry.type !== "assistant") return SKIPPED;
   const content = entry.message?.content;
   if (content === undefined) return raw;
   if (entry.type === "user") return userLine(entry, content);
-  if (entry.type !== "assistant") return raw;
   return {
     kind: "assistant",
     blocks: blocksOf(content).flatMap(assistantBlock),

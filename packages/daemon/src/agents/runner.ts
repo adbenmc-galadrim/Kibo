@@ -204,6 +204,8 @@ const ResultLine = z.object({
   permission_denials: z.array(z.object({ tool_name: z.string().optional() })).optional(),
 });
 
+const deniedToolName = (name: string | undefined): string => (name === "Task" ? "Agent" : (name ?? "?"));
+
 export function parseResultLine(line: string): StreamResult | null {
   const parsed = ResultLine.safeParse(parseJsonLine(line));
   if (!parsed.success) return null;
@@ -213,7 +215,7 @@ export function parseResultLine(line: string): StreamResult | null {
     result: r.result ?? null,
     tokens: usageTokens(r.usage),
     costUsd: r.total_cost_usd ?? 0,
-    denied: (r.permission_denials ?? []).map((d) => d.tool_name ?? "?"),
+    denied: (r.permission_denials ?? []).map((d) => deniedToolName(d.tool_name)),
     raw: line,
   };
 }

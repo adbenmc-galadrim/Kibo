@@ -90,7 +90,6 @@ test("unknown lines become raw moments, bounded, and mark the fold as unknown", 
   const folded = foldLines(emptyFold(), fixtureLines("unknown-format"), CTX);
   expect(folded.moments.map((m) => m.data)).toEqual([
     { kind: "raw", text: "ceci n'est pas du JSON", partial: null },
-    { kind: "raw", text: '{"type":"mystery","value":1}', partial: null },
     { kind: "raw", text: "{}", partial: null },
     { kind: "raw", text: '{"type":"assistant"}', partial: null },
   ]);
@@ -98,6 +97,11 @@ test("unknown lines become raw moments, bounded, and mark the fold as unknown", 
   expect(folded.state.known).toBe(false);
   const long = foldLines(emptyFold(), ["x".repeat(5_000)], CTX).moments[0]?.data;
   expect(long?.kind === "raw" && long.text.length).toBe(MOMENT_RAW_MAX);
+});
+
+test("an entry of an unknown type yields nothing and leaves the fold unknown", () => {
+  const folded = foldLines(emptyFold(), [JSON.stringify({ type: "mystery", value: 1 })], CTX);
+  expect(folded).toEqual({ state: emptyFold(), moments: [] });
 });
 
 test("a recognized line marks the fold as known", () => {

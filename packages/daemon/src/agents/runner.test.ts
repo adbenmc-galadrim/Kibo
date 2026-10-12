@@ -307,6 +307,15 @@ test("only a well-formed result line is read", () => {
   });
 });
 
+test("a denied Task, the historical name of the Agent tool, is told as Agent", () => {
+  const line = JSON.stringify({
+    type: "result",
+    is_error: false,
+    permission_denials: [{ tool_name: "Task" }, { tool_name: "Agent" }, { tool_name: "Bash" }],
+  });
+  expect(parseResultLine(line)?.denied).toEqual(["Agent", "Agent", "Bash"]);
+});
+
 function fakeLaunch(scenario: "done" | "fail" | "hold", sessionId: string) {
   const state = tmp();
   const hooks = join(state, "hooks.jsonl");

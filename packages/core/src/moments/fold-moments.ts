@@ -108,6 +108,7 @@ class Folder {
       this.raw(parsed.text);
       return;
     }
+    if (parsed.kind === "skipped") return;
     this.known = true;
     if (parsed.kind === "assistant") for (const block of parsed.blocks) this.block(block, parsed);
     if (parsed.kind === "user") {
