@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { changeNames, diffFingerprints } from "./digest";
 import { fingerprint } from "./fingerprint";
-import { answered, project, question, run, ticket } from "./test-kit";
+import { answered, link, project, question, run, ticket } from "./test-kit";
 
 const snapshot = project({
   tickets: [
@@ -48,6 +48,7 @@ describe("fingerprint", () => {
       assignee: "opus",
       branch: "feat/deux",
       pr: "#12 (open)",
+      blockedBy: [],
     });
     expect(fp.questions).toEqual({ q1: "answered", q2: "open" });
     expect(fp.runs).toEqual({ r1: "running" });
@@ -79,5 +80,28 @@ describe("fingerprint", () => {
     expect(Object.keys(fp.tickets)).toEqual(["t1", "t2"]);
     expect(Object.keys(fp.questions)).toEqual(["q1", "q2"]);
     expect(Object.keys(fp.notes)).toEqual(["a.md", "b.md"]);
+  });
+});
+
+describe("blocking links", () => {
+  test("a ticket keeps the sorted keys of the tickets that block it", () => {
+    const blocked = project({
+      tickets: [
+        ticket({ id: "t15", key: "BOU-15" }),
+        ticket({ id: "t13", key: "BOU-13" }),
+        ticket({ id: "t12", key: "BOU-12" }),
+        ticket({ id: "t9", key: null }),
+      ],
+      links: [
+        link("l1", "t13", "t15"),
+        link("l2", "t12", "t15"),
+        link("l3", "t12", "t13", "relates"),
+        link("l4", "t9", "t13"),
+      ],
+    });
+    const fp = fingerprint({ project: blocked, runs: [], notes: [] });
+    expect(fp.tickets.t15?.blockedBy).toEqual(["BOU-12", "BOU-13"]);
+    expect(fp.tickets.t13?.blockedBy).toEqual(["t9"]);
+    expect(fp.tickets.t12?.blockedBy).toEqual([]);
   });
 });

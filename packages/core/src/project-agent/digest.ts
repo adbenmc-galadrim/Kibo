@@ -33,7 +33,7 @@ export const RUN_STATE_TEXT: Record<RunState, string> = {
   cancelled: "annulé",
 };
 
-type Field = { name: keyof TicketPrint; label: string; none: string };
+type Field = { name: Exclude<keyof TicketPrint, "blockedBy">; label: string; none: string };
 const TICKET_FIELDS: readonly Field[] = [
   { name: "title", label: "titre", none: "aucun" },
   { name: "statusId", label: "statut", none: "aucun" },
@@ -65,6 +65,13 @@ function fieldText(field: Field, value: TicketPrint[keyof TicketPrint], parentKe
   return field.name === "parentId" ? parentKey(value) : value;
 }
 
+function blockerLines(name: string, old: readonly string[], next: readonly string[]): string[] {
+  return [
+    ...next.filter((k) => !old.includes(k)).map((k) => `${name} : bloqué par ${k}`),
+    ...old.filter((k) => !next.includes(k)).map((k) => `${name} : plus bloqué par ${k}`),
+  ];
+}
+
 function ticketLines(
   name: string,
   old: TicketPrint | undefined,
@@ -73,10 +80,13 @@ function ticketLines(
 ): string[] {
   if (old === undefined) return next === undefined ? [] : [`Ticket créé : ${name}`];
   if (next === undefined) return [`Ticket supprimé : ${name}`];
-  return TICKET_FIELDS.filter((f) => JSON.stringify(old[f.name]) !== JSON.stringify(next[f.name])).map(
-    (f) =>
-      `${name} : ${f.label} ${fieldText(f, old[f.name], parentKey)} → ${fieldText(f, next[f.name], parentKey)}`,
-  );
+  return [
+    ...TICKET_FIELDS.filter((f) => JSON.stringify(old[f.name]) !== JSON.stringify(next[f.name])).map(
+      (f) =>
+        `${name} : ${f.label} ${fieldText(f, old[f.name], parentKey)} → ${fieldText(f, next[f.name], parentKey)}`,
+    ),
+    ...blockerLines(name, old.blockedBy, next.blockedBy),
+  ];
 }
 
 function questionLines(name: string, old: QuestionPrint | undefined, next: QuestionPrint | undefined) {
