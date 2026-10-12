@@ -2,13 +2,13 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { ChevronRight } from "lucide-react";
 import { useId } from "react";
 import { formatTokens } from "../agents/format";
-import { fr } from "../i18n/fr";
+import { frDomains } from "../i18n/fr-domains";
 
 export function InjectionChain({ labels, tokens }: { labels: string[]; tokens: number }) {
   const id = useId();
   return (
     <footer className="flex items-center gap-2 border-t px-4 py-2 text-2xs text-muted-foreground">
-      <span id={id}>{fr.domains.injection}</span>
+      <span id={id}>{frDomains.injection}</span>
       <ol aria-labelledby={id} className="flex items-center gap-2">
         {labels.map((label, i) => (
           <li key={label} className="flex items-center gap-2">
@@ -25,7 +25,7 @@ export function InjectionChain({ labels, tokens }: { labels: string[]; tokens: n
         ))}
       </ol>
       <span className="flex-1" />
-      <span className="font-mono">{fr.domains.tokens(formatTokens(tokens))}</span>
+      <span className="font-mono">{frDomains.tokens(formatTokens(tokens))}</span>
     </footer>
   );
 }

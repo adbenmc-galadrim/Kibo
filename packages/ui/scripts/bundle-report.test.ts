@@ -422,4 +422,10 @@ describe("bundle report", () => {
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`))).toBe(true);
     expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/agents/format.ts"))).toBe(false);
   });
+  test("vague 23, repli des textes de fr.ts", () => {
+    for (const p of ["fr-domains.ts"])
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/i18n/${p}`))).toBe(true);
+    for (const p of ["fr.ts"])
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/i18n/${p}`))).toBe(false);
+  });
 });

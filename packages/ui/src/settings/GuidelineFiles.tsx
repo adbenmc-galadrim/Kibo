@@ -4,7 +4,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
 import { FileText, Plus } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
-import { fr } from "../i18n/fr";
+import { frDomains } from "../i18n/fr-domains";
 
 type Props = {
   title: string;
@@ -53,7 +53,7 @@ export function GuidelineFiles({ title, files, selectedId, canAdd, onSelect, onA
           size="icon"
           variant="outline"
           className="size-7"
-          aria-label={fr.domains.addFile}
+          aria-label={frDomains.addFile}
           disabled={!canAdd}
           onClick={() => setAdding(true)}
         >
@@ -63,18 +63,18 @@ export function GuidelineFiles({ title, files, selectedId, canAdd, onSelect, onA
       {adding && (
         <form onSubmit={submit} className="flex items-center gap-2 px-4 pt-3">
           <label htmlFor={id} className="sr-only">
-            {fr.domains.filePath}
+            {frDomains.filePath}
           </label>
           <Input
             id={id}
             value={path}
-            placeholder={fr.domains.filePlaceholder}
+            placeholder={frDomains.filePlaceholder}
             className="font-mono text-xs"
             onChange={(e) => setPath(e.target.value)}
             autoFocus
           />
           <Button type="submit" size="sm" disabled={!path.trim()}>
-            {fr.domains.add}
+            {frDomains.add}
           </Button>
         </form>
       )}

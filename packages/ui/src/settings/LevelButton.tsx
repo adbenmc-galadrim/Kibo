@@ -1,6 +1,6 @@
 import { cn } from "@kibo/sdk/lib/utils";
 import type { ReactNode } from "react";
-import { fr } from "../i18n/fr";
+import { frDomains } from "../i18n/fr-domains";
 
 type Props = {
   active: boolean;
@@ -24,7 +24,7 @@ export function LevelButton({ active, icon, label, count, onClick }: Props) {
       {icon}
       <span className="flex-1 truncate">{label}</span>{" "}
       {count !== undefined && (
-        <span className="font-mono text-2xs text-muted-foreground">{fr.domains.count(count)}</span>
+        <span className="font-mono text-2xs text-muted-foreground">{frDomains.count(count)}</span>
       )}
     </button>
   );

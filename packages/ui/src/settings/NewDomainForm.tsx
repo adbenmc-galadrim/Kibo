@@ -2,7 +2,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
 import { Plus } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
-import { fr } from "../i18n/fr";
+import { frDomains } from "../i18n/fr-domains";
 
 export function NewDomainForm({ onCreate }: { onCreate: (name: string) => Promise<boolean> }) {
   const id = useId();
@@ -27,24 +27,24 @@ export function NewDomainForm({ onCreate }: { onCreate: (name: string) => Promis
         className="flex items-center gap-2 px-2 py-1.5 text-left text-xs text-muted-foreground hover:text-foreground"
       >
         <Plus aria-hidden className="size-4" />
-        {fr.domains.newDomain}
+        {frDomains.newDomain}
       </button>
     );
   }
   return (
     <form onSubmit={submit} className="grid gap-2 px-2 pt-1">
       <label htmlFor={id} className="sr-only">
-        {fr.domains.domainName}
+        {frDomains.domainName}
       </label>
       <Input
         id={id}
         value={name}
-        placeholder={fr.domains.domainName}
+        placeholder={frDomains.domainName}
         onChange={(e) => setName(e.target.value)}
         autoFocus
       />
       <Button type="submit" size="sm" disabled={!name.trim()}>
-        {fr.domains.create}
+        {frDomains.create}
       </Button>
     </form>
   );

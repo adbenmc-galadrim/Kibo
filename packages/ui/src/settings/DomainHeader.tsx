@@ -9,7 +9,7 @@ import {
 import { Input } from "@kibo/sdk/ui/input";
 import { Pencil, Trash2 } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
-import { fr } from "../i18n/fr";
+import { frDomains } from "../i18n/fr-domains";
 
 type Props = {
   domain: Domain;
@@ -35,7 +35,7 @@ export function DomainHeader({ domain, usage, onRename, onColor, onDelete }: Pro
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label={fr.domains.pickColor(domain.name)}
+            aria-label={frDomains.pickColor(domain.name)}
             className="size-3 rounded-[3px] ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
             style={{ background: domain.color }}
           />
@@ -44,7 +44,7 @@ export function DomainHeader({ domain, usage, onRename, onColor, onDelete }: Pro
           {DOMAIN_COLORS.map((color) => (
             <DropdownMenuItem
               key={color}
-              aria-label={fr.domains.colorOption(color)}
+              aria-label={frDomains.colorOption(color)}
               className="size-7 justify-center p-0"
               onSelect={() => void onColor(color)}
             >
@@ -55,12 +55,12 @@ export function DomainHeader({ domain, usage, onRename, onColor, onDelete }: Pro
       </DropdownMenu>
       {draft === null ? (
         <>
-          <h2 className="text-md font-semibold">{fr.domains.domainTitle(domain.name)}</h2>
+          <h2 className="text-md font-semibold">{frDomains.domainTitle(domain.name)}</h2>
           <Button
             size="icon"
             variant="ghost"
             className="size-6"
-            aria-label={fr.domains.rename(domain.name)}
+            aria-label={frDomains.rename(domain.name)}
             onClick={() => setDraft(domain.name)}
           >
             <Pencil className="size-3.5" />
@@ -69,23 +69,23 @@ export function DomainHeader({ domain, usage, onRename, onColor, onDelete }: Pro
       ) : (
         <span className="grid gap-0.5">
           <Input
-            aria-label={fr.domains.renameField}
+            aria-label={frDomains.renameField}
             value={draft}
             autoFocus
             className="h-7 w-56"
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={onKeyDown}
           />
-          <span className="text-3xs text-muted-foreground">{fr.domains.renameHint}</span>
+          <span className="text-3xs text-muted-foreground">{frDomains.renameHint}</span>
         </span>
       )}
-      <span className="text-xs text-muted-foreground">{fr.domains.usedBy(usage)}</span>
+      <span className="text-xs text-muted-foreground">{frDomains.usedBy(usage)}</span>
       <span className="flex-1" />
       <Button
         size="icon"
         variant="ghost"
         className="size-7"
-        aria-label={fr.domains.deleteDomain(domain.name)}
+        aria-label={frDomains.deleteDomain(domain.name)}
         onClick={onDelete}
       >
         <Trash2 className="size-3.5" />

@@ -1,5 +1,6 @@
 import type { Domain } from "@kibo/schema";
 import { fr } from "../i18n/fr";
+import { frDomains } from "../i18n/fr-domains";
 import { errorMessage } from "../lib/error-message";
 import { ConfirmDialog } from "../shell/lazy-dialogs";
 
@@ -30,8 +31,8 @@ export function DomainConfirmations({
       <ConfirmDialog
         open
         onOpenChange={onOpenChange}
-        title={fr.domains.deleteTitle(domain.name)}
-        description={fr.domains.deleteHelp(files)}
+        title={frDomains.deleteTitle(domain.name)}
+        description={frDomains.deleteHelp(files)}
         confirmLabel={fr.common.delete}
         cancelLabel={fr.common.cancel}
         onConfirm={onDeleteDomain}
@@ -44,8 +45,8 @@ export function DomainConfirmations({
       <ConfirmDialog
         open
         onOpenChange={onOpenChange}
-        title={fr.domains.removeFileTitle(confirming.path)}
-        description={fr.domains.removeFileHelp}
+        title={frDomains.removeFileTitle(confirming.path)}
+        description={frDomains.removeFileHelp}
         confirmLabel={fr.common.delete}
         cancelLabel={fr.common.cancel}
         onConfirm={() => onRemoveFile(confirming.guidelineId)}

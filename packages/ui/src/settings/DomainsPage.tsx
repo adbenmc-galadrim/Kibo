@@ -16,7 +16,7 @@ import { Textarea } from "@kibo/sdk/ui/textarea";
 import { Folder, LayoutGrid } from "lucide-react";
 import { useState } from "react";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frDomains } from "../i18n/fr-domains";
 import { DomainConfirmations, type DomainConfirming } from "./DomainConfirmations";
 import { DomainHeader } from "./DomainHeader";
 import { GuidelineFiles } from "./GuidelineFiles";
@@ -64,10 +64,10 @@ export function DomainsPage({ config, projects }: Props) {
   const content = selected ? (drafts[selected.id] ?? selected.content) : "";
   const title =
     level.kind === "workspace"
-      ? fr.domains.workspace
+      ? frDomains.workspace
       : level.kind === "project"
-        ? fr.domains.project(project?.name ?? "")
-        : fr.domains.domainTitle(domain?.name ?? "");
+        ? frDomains.project(project?.name ?? "")
+        : frDomains.domainTitle(domain?.name ?? "");
   const chainLevels: Level[] = [
     { kind: "workspace" },
     ...(level.kind !== "workspace" && projectId ? [{ kind: "project" } as const] : []),
@@ -75,10 +75,10 @@ export function DomainsPage({ config, projects }: Props) {
   ];
   const chainLabel = (l: Level) =>
     l.kind === "workspace"
-      ? fr.domains.chainWorkspace
+      ? frDomains.chainWorkspace
       : l.kind === "project"
-        ? fr.domains.chainProject(project?.name ?? "")
-        : fr.domains.chainDomain(domain?.name ?? "");
+        ? frDomains.chainProject(project?.name ?? "")
+        : frDomains.chainDomain(domain?.name ?? "");
   const tokens = chainLevels.flatMap(filesOf).reduce((n, g) => n + estimateTokens(g.content), 0);
 
   const send = async (req: RpcRequest): Promise<boolean> => {
@@ -87,7 +87,7 @@ export function DomainsPage({ config, projects }: Props) {
       await client.rpc(req);
       return true;
     } catch {
-      setError(fr.domains.failed);
+      setError(frDomains.failed);
       return false;
     }
   };
@@ -108,7 +108,7 @@ export function DomainsPage({ config, projects }: Props) {
     if (!owner) return false;
     const parsed = GuidelinePath.safeParse(path);
     if (!parsed.success) {
-      setError(fr.domains.invalidPath);
+      setError(frDomains.invalidPath);
       return false;
     }
     return send({
@@ -123,9 +123,7 @@ export function DomainsPage({ config, projects }: Props) {
       await client.rpc({ method: "config", command: { method: "updateDomain", domainId: domain.id, patch } });
       return true;
     } catch (e) {
-      setError(
-        e instanceof KiboError && e.code === "INVALID_INPUT" ? fr.domains.duplicate : fr.domains.failed,
-      );
+      setError(e instanceof KiboError && e.code === "INVALID_INPUT" ? frDomains.duplicate : frDomains.failed);
       return false;
     }
   };
@@ -143,7 +141,7 @@ export function DomainsPage({ config, projects }: Props) {
   const deleteDomain = async () => {
     if (!domain) return;
     if ((config.domainUsage[domain.id] ?? 0) > 0) {
-      setError(fr.domains.inUse);
+      setError(frDomains.inUse);
       return;
     }
     setConfirming({ kind: "domain" });
@@ -160,21 +158,21 @@ export function DomainsPage({ config, projects }: Props) {
     <SettingsLayout active="domains">
       <div className="flex flex-col gap-4 p-8">
         <div>
-          <h1 className="text-xl font-semibold">{fr.domains.title}</h1>
-          <p className="text-sm text-muted-foreground">{fr.domains.subtitle}</p>
+          <h1 className="text-xl font-semibold">{frDomains.title}</h1>
+          <p className="text-sm text-muted-foreground">{frDomains.subtitle}</p>
         </div>
         <div className="grid min-h-[32rem] flex-1 grid-cols-[17rem_1fr] gap-4">
           <nav
-            aria-label={fr.domains.levels}
+            aria-label={frDomains.levels}
             className="grid content-start gap-1 rounded-lg border bg-card p-2"
           >
             <p className="px-2 text-3xs font-medium uppercase tracking-wide text-muted-foreground">
-              {fr.domains.levels}
+              {frDomains.levels}
             </p>
             <LevelButton
               active={isActive({ kind: "workspace" })}
               icon={<LayoutGrid aria-hidden className="size-4" />}
-              label={fr.domains.workspace}
+              label={frDomains.workspace}
               count={filesOf({ kind: "workspace" }).length}
               onClick={() => pick({ kind: "workspace" })}
             />
@@ -182,7 +180,7 @@ export function DomainsPage({ config, projects }: Props) {
               <LevelButton
                 active={isActive({ kind: "project" })}
                 icon={<Folder aria-hidden className="size-4" />}
-                label={fr.domains.project(project?.name ?? "")}
+                label={frDomains.project(project?.name ?? "")}
                 count={filesOf({ kind: "project" }).length}
                 onClick={() => pick({ kind: "project" })}
               />
@@ -193,7 +191,7 @@ export function DomainsPage({ config, projects }: Props) {
                   pick({ kind: "project" });
                 }}
               >
-                <SelectTrigger aria-label={fr.domains.pickProject} size="sm" className="w-8 px-1.5" />
+                <SelectTrigger aria-label={frDomains.pickProject} size="sm" className="w-8 px-1.5" />
                 <SelectContent>
                   {projects.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
@@ -204,7 +202,7 @@ export function DomainsPage({ config, projects }: Props) {
               </Select>
             </div>
             <p className="px-2 pt-2 text-3xs font-medium uppercase tracking-wide text-muted-foreground">
-              {fr.domains.domains}
+              {frDomains.domains}
             </p>
             {config.domains.map((d) => (
               <LevelButton
@@ -235,8 +233,8 @@ export function DomainsPage({ config, projects }: Props) {
                   </>
                 )}
                 <TabsList>
-                  <TabsTrigger value="edit">{fr.domains.edit}</TabsTrigger>
-                  <TabsTrigger value="preview">{fr.domains.preview}</TabsTrigger>
+                  <TabsTrigger value="edit">{frDomains.edit}</TabsTrigger>
+                  <TabsTrigger value="preview">{frDomains.preview}</TabsTrigger>
                 </TabsList>
               </header>
               <GuidelineFiles
@@ -257,29 +255,29 @@ export function DomainsPage({ config, projects }: Props) {
                 {selected ? (
                   <>
                     <Textarea
-                      aria-label={fr.domains.content(selected.path)}
+                      aria-label={frDomains.content(selected.path)}
                       value={content}
                       onChange={(e) => setDrafts((d) => ({ ...d, [selected.id]: e.target.value }))}
                       className="min-h-[18rem] flex-1 resize-none rounded-none border-none bg-transparent px-0 font-mono text-xs leading-5 shadow-none focus-visible:ring-0 md:text-xs dark:bg-transparent"
                     />
                     <div className="flex gap-2">
                       <Button size="sm" onClick={() => void save()}>
-                        {fr.domains.save}
+                        {frDomains.save}
                       </Button>
                       <Button size="sm" variant="ghost" className="text-destructive" onClick={removeFile}>
-                        {fr.domains.removeFile}
+                        {frDomains.removeFile}
                       </Button>
                     </div>
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">{fr.domains.noFile}</p>
+                  <p className="text-sm text-muted-foreground">{frDomains.noFile}</p>
                 )}
               </TabsContent>
               <TabsContent value="preview" className="flex-1 p-4">
                 {selected ? (
                   <GuidelinePreview content={content} />
                 ) : (
-                  <p className="text-sm text-muted-foreground">{fr.domains.noFile}</p>
+                  <p className="text-sm text-muted-foreground">{frDomains.noFile}</p>
                 )}
               </TabsContent>
               <InjectionChain labels={chainLevels.map(chainLabel)} tokens={tokens} />
