@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TicketKey } from "./ids";
-import type { McpToolSpec } from "./progress";
+import type { McpToolSpec } from "./mcp-spec";
 import { Actor } from "./question";
 
 export const SIGNAL_KINDS = ["ticket", "context", "blocker", "question"] as const;

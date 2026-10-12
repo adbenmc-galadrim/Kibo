@@ -3,6 +3,8 @@ import { PROGRESS_TOOL } from "./progress";
 import { ASK_TOOLS } from "./run";
 import { SIGNAL_TOOL } from "./signal";
 
+const SKILL_INPUT_KEYS = ["skill", "name", "command"] as const;
+
 export type ToolCall = {
   tool: string;
   input: Record<string, unknown>;
@@ -36,6 +38,14 @@ const FILE_KINDS: Record<string, Classified["kind"]> = {
   Write: "create",
 };
 
+export function skillTarget(input: Record<string, unknown>): string | null {
+  for (const key of SKILL_INPUT_KEYS) {
+    const value = text(input, key);
+    if (value !== null) return value;
+  }
+  return null;
+}
+
 export function classifyTool(tool: string, input: Record<string, unknown>): Classified {
   const fileKind = FILE_KINDS[tool];
   if (fileKind) return { kind: fileKind, target: text(input, "file_path") };
@@ -44,6 +54,7 @@ export function classifyTool(tool: string, input: Record<string, unknown>): Clas
   if (tool === "Bash") return classifyCommand(text(input, "command") ?? "");
   if (tool === "TodoWrite") return { kind: "todo", target: null };
   if (tool === "Task" || tool === "Agent") return { kind: "subagent", target: text(input, "subagent_type") };
+  if (tool === "Skill") return { kind: "skill", target: skillTarget(input) };
   if (ASK_TOOLS.includes(tool)) return { kind: "question", target: text(input, "question") };
   if (tool === PROGRESS_TOOL) return { kind: "progress", target: progressTarget(input) };
   if (tool === SIGNAL_TOOL) return { kind: "signal", target: String(input.title ?? "") };
@@ -173,6 +184,8 @@ function phrase(a: Omit<RunAction, "label">): string {
       return named("lancé un sous-agent", a.target);
     case "signal":
       return `signalé « ${a.target ?? ""} » à l'agent de projet`;
+    case "skill":
+      return a.target ? `utilisé le skill \`${a.target}\`` : "utilisé un skill";
     case "mcp":
       return named("appelé", a.target);
     case "other":
@@ -204,6 +217,7 @@ const GROUPS: readonly { kind: ActionKind; many(actions: readonly RunAction[]): 
     { kind: "todo", always: true, many: () => "mis à jour sa liste de tâches" },
     { kind: "subagent", many: (g) => `lancé ${g.length} sous-agents` },
     { kind: "signal", always: true, many: (g) => `envoyé ${plural(g.length, "signal", "signaux")}` },
+    { kind: "skill", always: true, many: (g) => `utilisé ${plural(g.length, "skill", "skills")}` },
     { kind: "mcp", many: (g) => `appelé ${g.length} outils` },
     { kind: "other", many: (g) => `utilisé ${g.length} outils` },
   ];

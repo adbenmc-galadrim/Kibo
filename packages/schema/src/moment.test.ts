@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import {
+  ACTION_KINDS,
   MOMENT_ACTIONS_MAX,
   MOMENT_MESSAGE_MAX,
   MOMENT_RAW_MAX,
@@ -72,4 +73,12 @@ test("a signal moment carries its reference and kind", () => {
   expect(MomentData.parse(signal)).toEqual(signal);
   expect(MomentData.safeParse({ ...signal, ref: "nope" }).success).toBe(false);
   expect(MomentData.safeParse({ ...signal, title: "x".repeat(201) }).success).toBe(false);
+});
+
+test("a skill is an action kind and an action keeps its call id", () => {
+  expect(ACTION_KINDS).toContain("skill");
+  expect(RunAction.safeParse({ ...READ, callId: "toolu_1" }).success).toBe(true);
+  expect(RunAction.safeParse({ ...READ, callId: "x".repeat(65) }).success).toBe(false);
+  expect(MomentData.safeParse({ kind: "reminder", reminder: "report_skills" }).success).toBe(true);
+  expect(MomentData.safeParse({ kind: "reminder", reminder: "skills" }).success).toBe(true);
 });

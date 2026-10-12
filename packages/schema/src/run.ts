@@ -1,9 +1,10 @@
 import { z } from "zod";
-import type { HostSettings } from "./agent";
+import type { AgentScope } from "./agent";
 import type { RunProgressSummary } from "./progress";
 import { AskInput, type RunQuestions } from "./question";
 import type { ProjectSignalCount } from "./signal";
 import { TodoItem } from "./todo-item";
+import type { HostSettings } from "./workspace-config";
 
 export const RunState = z.enum([
   "queued",
@@ -50,6 +51,7 @@ export const HookInput = z.object({
   error: z.string().nullish(),
   agent_id: z.string().nullish(),
   agent_type: z.string().nullish(),
+  tool_use_id: z.string().nullish(),
   stop_hook_active: z.boolean().nullish(),
 });
 export type HookInput = z.infer<typeof HookInput>;
@@ -62,6 +64,7 @@ export const HookPayload = z.object({
   detail: z.string().max(2000).nullable(),
   question: z.string().max(4000).nullable(),
   agentId: z.string().max(200).nullable(),
+  toolUseId: z.string().max(200).nullable().default(null),
   ask: AskInput.nullable().default(null),
   todos: z.array(TodoItem).max(100).nullable().default(null),
   stopHookActive: z.boolean().default(false),
@@ -95,7 +98,7 @@ export type SetupStep = z.infer<typeof SetupStep>;
 
 export const SessionFreshReason = z.enum([
   "no_previous",
-  "profile_changed",
+  "agent_changed",
   "transcript_missing",
   "workspace_changed",
   "user_reset",
@@ -159,6 +162,8 @@ export type RunRecord = {
   ticketTitle: string;
   profileId: string;
   profileName: string;
+  agentScope: AgentScope;
+  projectKey: string | null;
   sessionId: string;
   brief: string;
   createdAt: number;
@@ -172,6 +177,7 @@ export type ActiveSubagent = { id: string; type: string; since: number };
 
 export type RunView = RunRecord & {
   label: string;
+  agentName: string;
   state: RunState;
   lane: number | null;
   priority: boolean;
@@ -206,8 +212,8 @@ export type WaitReason =
   | { kind: "cpu"; value: number; threshold: number }
   | { kind: "ram"; value: number; threshold: number }
   | { kind: "host"; used: number; total: number }
-  | { kind: "profile"; profileName: string; used: number; total: number }
-  | { kind: "profile_missing" }
+  | { kind: "agent"; agentName: string; used: number; total: number }
+  | { kind: "agent_missing" }
   | { kind: "ticket_busy" };
 
 export type QueueEntry = { runId: string; position: number; reason: WaitReason | null };

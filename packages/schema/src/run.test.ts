@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { HookInput, HookPayload, permissionReply } from "./run";
+import { PROJECT_AGENT_MCP_TOOLS } from "./project-agent-tools";
+import { HookInput, HookPayload, permissionReply, type RunRecord } from "./run";
 
 const PAYLOAD = {
   event: "Stop",
@@ -41,4 +42,34 @@ test("a guard decision becomes a permission reply", () => {
     reason: "",
     additionalContext: "Déclare ton plan.",
   });
+});
+
+test("a hook input may carry the tool use id", () => {
+  expect(
+    HookInput.parse({ hook_event_name: "PreToolUse", session_id: "s", tool_use_id: "toolu_1" }).tool_use_id,
+  ).toBe("toolu_1");
+  expect(HookInput.safeParse({ hook_event_name: "PreToolUse", session_id: "s" }).success).toBe(true);
+  expect(HookPayload.parse(PAYLOAD).toolUseId).toBeNull();
+});
+
+test("a run record names its agent scope and project key", () => {
+  const record: RunRecord = {
+    id: "r",
+    kind: "ticket",
+    seq: 1,
+    projectId: "p",
+    ticketId: "t",
+    ticketKey: "BOU-12",
+    ticketTitle: "T",
+    profileId: "global:review-pr",
+    profileName: "review-pr",
+    agentScope: "project",
+    projectKey: "BOU",
+    sessionId: "s",
+    brief: "",
+    createdAt: 0,
+    resumedFrom: null,
+  };
+  expect(record.agentScope).toBe("project");
+  expect(PROJECT_AGENT_MCP_TOOLS).toContain("mcp__kibo__skill_review");
 });

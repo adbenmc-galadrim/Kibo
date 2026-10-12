@@ -14,6 +14,7 @@ import {
   RunReport,
   RunReportInput,
   reportOfRun,
+  SHARED_TOOL_SPECS,
   Step,
   TICKET_MCP_TOOLS,
   TICKET_PROGRESS_SPEC,
@@ -118,7 +119,12 @@ test("an empty progress parses to the default", () => {
 test("the ticket tool is described for the agent", () => {
   expect(TICKET_PROGRESS_SPEC.name).toBe("ticket_progress");
   expect(Object.keys(TICKET_PROGRESS_SPEC.inputSchema.properties ?? {})).toEqual(["plan", "report"]);
-  expect(TICKET_MCP_TOOLS).toEqual([...ASK_TOOLS, PROGRESS_TOOL, "mcp__kibo__signal_project"]);
+  expect(TICKET_MCP_TOOLS).toEqual([
+    ...ASK_TOOLS,
+    PROGRESS_TOOL,
+    "mcp__kibo__signal_project",
+    "mcp__kibo__skill_review",
+  ]);
 });
 
 test("ticket runs may signal the project agent", () => {
@@ -126,5 +132,6 @@ test("ticket runs may signal the project agent", () => {
   expect(isTicketToolName("signal_project")).toBe(true);
   expect(isTicketToolName("ticket_progress")).toBe(true);
   expect(isTicketToolName("list_tickets")).toBe(false);
-  expect(TICKET_TOOL_SPECS.map((s) => s.name)).toEqual(["ticket_progress", "signal_project"]);
+  expect(TICKET_TOOL_SPECS.map((s) => s.name)).toEqual(["ticket_progress", "signal_project", "skill_review"]);
+  expect(SHARED_TOOL_SPECS.map((s) => s.name)).toEqual(["skill_review"]);
 });

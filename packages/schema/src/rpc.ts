@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { ConfigCommand, type Domain, HostSettings, type WorkspaceConfig } from "./agent";
+import { AgentRef } from "./agent";
+import { AGENT_RPC, type AgentRpcResult } from "./agent-rpc";
 import type { AiEvent } from "./ai";
 import { AI_RPC, type AiRpcResult } from "./ai-rpc";
 import {
@@ -44,12 +45,14 @@ import type { AgentsState, AssignPreview, HostView, RunChanged, RunLogEntry, Run
 import { SemVer } from "./semver";
 import type { ProjectSyncInfo } from "./sharing";
 import { SIGNAL_RPC, type SignalRpcResult } from "./signal-rpc";
+import { SKILL_RPC, type SkillRpcResult } from "./skill-rpc";
 import type { Status, StatusId } from "./status";
 import type { Phase7Event } from "./sync";
 import { SYNC_RPC_REQUESTS, type SyncRpcResult } from "./sync-rpc";
 import { TabsState } from "./tabs";
 import type { Ticket } from "./ticket";
 import { VISIBILITY_RPC, type VisibilityRpcResult } from "./visibility-rpc";
+import { ConfigCommand, type Domain, HostSettings, type WorkspaceConfig } from "./workspace-config";
 
 export type TicketView = Ticket & {
   progress: { done: number; total: number };
@@ -81,7 +84,7 @@ export type ProjectSummary = ProjectMeta & {
   demo?: boolean;
 };
 export type Session = { user: string; notifications: "native" | "browser" };
-export type Topic = "agents" | "config";
+export type Topic = "agents" | "config" | "agent-files" | "skills";
 export type ChangeMessage =
   | { projectId: string | null }
   | { topic: Topic }
@@ -126,13 +129,13 @@ export const RpcRequest = z.discriminatedUnion("method", [
     method: z.literal("previewAssign"),
     projectId: z.string().min(1),
     ticketId: NodeId,
-    profileId: z.string().min(1),
+    profileId: AgentRef,
   }),
   z.object({
     method: z.literal("assignAgent"),
     projectId: z.string().min(1),
     ticketId: NodeId,
-    profileId: z.string().min(1),
+    profileId: AgentRef,
     brief: z.string().max(10_000),
     fresh: z.boolean().default(false),
   }),
@@ -224,6 +227,8 @@ export const RpcRequest = z.discriminatedUnion("method", [
   ...PROJECT_AGENT_RPC,
   ...VISIBILITY_RPC,
   ...SIGNAL_RPC,
+  ...AGENT_RPC,
+  ...SKILL_RPC,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -282,7 +287,9 @@ export type RpcResult = {
   Phase14RpcResult &
   ProjectAgentRpcResult &
   VisibilityRpcResult &
-  SignalRpcResult;
+  SignalRpcResult &
+  AgentRpcResult &
+  SkillRpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }

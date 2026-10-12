@@ -169,3 +169,18 @@ test("a signal to the project agent is its own action", () => {
     "A lu 1 fichier et envoyé 1 signal",
   );
 });
+
+test("a skill call is its own action, read tolerantly", () => {
+  expect(classifyTool("Skill", { skill: "brainstorming" })).toEqual({
+    kind: "skill",
+    target: "brainstorming",
+  });
+  expect(classifyTool("Skill", { name: "x" })).toEqual({ kind: "skill", target: "x" });
+  expect(classifyTool("Skill", { command: "y" })).toEqual({ kind: "skill", target: "y" });
+  expect(classifyTool("Skill", {})).toEqual({ kind: "skill", target: null });
+  const used = action({ tool: "Skill", kind: "skill", target: "brainstorming" });
+  expect(actionLabel(used)).toBe("A utilisé le skill `brainstorming`");
+  expect(actionLabel(action({ tool: "Skill", kind: "skill", target: null }))).toBe("A utilisé un skill");
+  expect(summarizeActions([used])).toBe("A utilisé 1 skill");
+  expect(summarizeActions([used, used])).toBe("A utilisé 2 skills");
+});
