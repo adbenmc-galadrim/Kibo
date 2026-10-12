@@ -1,100 +1,19 @@
-import {
-  type AgentProfile,
-  type AgentsState,
-  type ProjectSummary,
-  type RunState,
-  SLOT_STATES,
-  type WorkspaceConfig,
-} from "@kibo/schema";
+import type { AgentsState, ProjectSummary, RunState } from "@kibo/schema";
 import { RunDot } from "@kibo/sdk";
-import { Badge } from "@kibo/sdk/ui/badge";
-import { Bot } from "lucide-react";
-import { useState } from "react";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
-import { isDemoProfile, profileLabel } from "./demo-profile";
 import { formatTokens } from "./format";
-import { ProfileSheet } from "./ProfileSheet";
 import { ProjectFilter } from "./ProjectFilter";
-import { permissionModeLabel } from "./permission-mode";
 import { effectiveProject, projectRuns } from "./project-filter";
 import { useAgentsProject } from "./project-pref";
 import { RunHistory } from "./RunHistory";
 
 type Props = {
   state: AgentsState;
-  config: WorkspaceConfig;
   projects: ProjectSummary[];
   now: number;
   onOpenRun: (runId: string) => void;
 };
-
-function ProfileCard({
-  profile,
-  active,
-  onEdit,
-}: {
-  profile: AgentProfile;
-  active: number;
-  onEdit: () => void;
-}) {
-  const f = fr.agentsPage.fields;
-  const label = profileLabel(profile);
-  const fields: [string, string][] = [
-    [f.workspace, fr.strategiesShort[profile.workspace]],
-    [f.permissions, permissionModeLabel(profile.permissionMode)],
-    [f.parallel, fr.agentsPage.parallel(profile.maxParallel)],
-    [f.subagents, profile.subagents.map((m) => fr.modelsShort[m]).join(", ") || fr.agentsPage.none],
-  ];
-  return (
-    <article
-      aria-label={label}
-      className="relative grid gap-3 rounded-lg border bg-card p-4 hover:bg-accent/40"
-    >
-      <header className="flex items-center gap-3">
-        <span className="grid size-9 place-items-center rounded-md border">
-          <Bot aria-hidden className="size-4" />
-        </span>
-        <div className="grid min-w-0 flex-1">
-          <h3 className="font-mono text-sm font-semibold">
-            <button
-              type="button"
-              aria-label={fr.agentsPage.editProfile(label)}
-              className="after:absolute after:inset-0"
-              onClick={onEdit}
-            >
-              {label}
-            </button>
-          </h3>
-          <span className="text-2xs text-muted-foreground">
-            {fr.agentsPage.modelLine(fr.agents.modelNames[profile.model])}
-          </span>
-          {isDemoProfile(profile) && (
-            <span className="text-2xs text-muted-foreground">{frAgentsPage.demo.noTokens}</span>
-          )}
-        </div>
-        {profile.system && (
-          <Badge variant="secondary" className="text-3xs">
-            {fr.agentsPage.system}
-          </Badge>
-        )}
-        {active > 0 && (
-          <Badge variant="secondary" className="text-3xs bg-blue-500/15 text-blue-600 dark:text-blue-400">
-            {fr.agentsPage.active(active)}
-          </Badge>
-        )}
-      </header>
-      <dl className="grid grid-cols-[7rem_1fr] gap-y-1.5 text-2xs">
-        {fields.map(([label, value]) => (
-          <div key={label} className="contents">
-            <dt className="text-muted-foreground">{label}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
-    </article>
-  );
-}
 
 type StatProps = { state: RunState; value: string; label: string; help?: string };
 
@@ -111,8 +30,7 @@ function Stat({ state, value, label, help }: StatProps) {
   );
 }
 
-export function AgentsPage({ state, config, projects, now, onOpenRun }: Props) {
-  const [editing, setEditing] = useState<AgentProfile | null>(null);
+export function AgentsPage({ state, projects, now, onOpenRun }: Props) {
   const [pref, setPref] = useAgentsProject();
   const project = effectiveProject(pref, projects);
   const runs = projectRuns(state.runs, project?.id ?? null);
@@ -144,22 +62,8 @@ export function AgentsPage({ state, config, projects, now, onOpenRun }: Props) {
         />
       </ul>
       <section className="grid gap-3">
-        <h2 className="text-md font-semibold">{fr.agentsPage.profiles}</h2>
-        {!config.profiles.some((p) => !p.system) && (
-          <p className="text-sm text-muted-foreground">{fr.agentsPage.noProfile}</p>
-        )}
-        {config.profiles.length > 0 && (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(20rem,1fr))] gap-4">
-            {config.profiles.map((p) => (
-              <ProfileCard
-                key={p.id}
-                profile={p}
-                active={runs.filter((r) => r.profileId === p.id && SLOT_STATES.includes(r.state)).length}
-                onEdit={() => setEditing(p)}
-              />
-            ))}
-          </div>
-        )}
+        <h2 className="text-md font-semibold">{fr.agentsPage.title}</h2>
+        <p className="text-sm text-muted-foreground">{fr.lazy.loading}</p>
       </section>
       <RunHistory
         questions={state.questions}
@@ -169,14 +73,6 @@ export function AgentsPage({ state, config, projects, now, onOpenRun }: Props) {
         now={now}
         onOpenRun={onOpenRun}
       />
-      {editing && (
-        <ProfileSheet
-          profile={editing}
-          config={config}
-          hostSlots={state.host.hostSlots}
-          onClose={() => setEditing(null)}
-        />
-      )}
     </div>
   );
 }

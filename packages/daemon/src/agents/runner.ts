@@ -1,7 +1,6 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 import {
-  type AgentModel,
   AllowRules,
   ASK_TOOLS,
   HookEventName,
@@ -22,7 +21,7 @@ export { childEnv, cleanEnv } from "./child-env";
 export type LaunchInput = {
   claudeBin: string;
   cwd: string;
-  model: AgentModel;
+  model: string;
   permissionFlag: string | null;
   extraArgs: string[];
   sessionId: string;
@@ -62,7 +61,7 @@ function profileRules(allow: readonly string[]): string[] {
   const rules = AllowRules.safeParse(allow.filter((rule) => !isKiboTool(rule)));
   if (!rules.success)
     throw new KiboError("INVALID_INPUT", "the profile carries an unsafe or malformed permission rule");
-  const kiboTools = allow.filter((rule) => isKiboTool(rule) && !TICKET_MCP_TOOLS.includes(rule));
+  const kiboTools = allow.filter((rule) => PROJECT_AGENT_MCP_TOOLS.includes(rule));
   return [...new Set([...kiboTools, ...rules.data])];
 }
 

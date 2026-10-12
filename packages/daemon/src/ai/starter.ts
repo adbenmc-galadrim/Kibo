@@ -85,7 +85,7 @@ export function createStarterService(deps: StarterDeps): {
       let runId: string;
       try {
         runId = deps.runs.enqueue({
-          profileId: "assistant",
+          profileId: "system:assistant",
           label: "Suggestion de pages",
           cwd,
           prompt: deps.prompt({ role, text, catalog }),

@@ -34,7 +34,7 @@ export function mineTicket(
 }
 
 const adam: Assignee = { kind: "human", ref: "adam" };
-const agent: Assignee = { kind: "agent", ref: "opus" };
+const agent: Assignee = { kind: "agent", ref: "global:opus-dev" };
 const base = kiboProject();
 
 export const mineMeta = (

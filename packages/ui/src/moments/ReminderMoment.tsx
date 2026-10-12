@@ -1,7 +1,8 @@
+import type { ReminderKind } from "@kibo/schema";
 import { BellRing } from "lucide-react";
 import { frMoments } from "../i18n/fr-moments";
 
-export function ReminderMoment({ reminder }: { reminder: "plan" | "report" }) {
+export function ReminderMoment({ reminder }: { reminder: ReminderKind }) {
   return (
     <p className="flex items-center gap-2 text-xs text-muted-foreground">
       <BellRing aria-hidden className="size-3.5" />

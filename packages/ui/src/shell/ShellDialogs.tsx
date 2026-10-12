@@ -26,7 +26,6 @@ import {
   NewPageDialog,
   NewProjectDialog,
   NewTicketDialog,
-  ProfileSheet,
   RenamePageDialog,
   StarterDialog,
   TicketSheet,
@@ -47,7 +46,7 @@ export type DialogsState = {
   newTicket: NewTicketRequest | null;
   fileTicket: { ticketId: string } | null;
   assign: { projectId: string | null; ticketId: string | null } | null;
-  newProfile: boolean;
+  newAgent: boolean;
   preview: FileRef | null;
   share: string | null;
   join: boolean;
@@ -71,7 +70,7 @@ export const NO_DIALOG: DialogsState = {
   newTicket: null,
   fileTicket: null,
   assign: null,
-  newProfile: false,
+  newAgent: false,
   preview: null,
   share: null,
   join: false,
@@ -237,16 +236,9 @@ export function ShellDialogs({
           demo={projects.some((x) => x.id === assignProject?.meta.id && x.demo)}
           ticketId={state.assign.ticketId}
           config={config}
+          agents={[]}
           onClose={() => set({ assign: null })}
           onEditProject={(projectId) => set({ assign: null, editProject: projectId })}
-        />
-      )}
-      {state.newProfile && config && agents && (
-        <ProfileSheet
-          profile={null}
-          config={config}
-          hostSlots={agents.host.hostSlots}
-          onClose={() => set({ newProfile: false })}
         />
       )}
       {shareProject && (

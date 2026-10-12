@@ -111,7 +111,7 @@ function fakeOrchestrator() {
 
 describe("runsFromOrchestrator", () => {
   const request = {
-    profileId: "generateur" as const,
+    profileId: "system:generateur" as const,
     label: "Composant Burndown",
     cwd: "/tmp/draft",
     prompt: "p",
@@ -130,7 +130,7 @@ describe("runsFromOrchestrator", () => {
     expect(ports.enqueue(request)).toBe("r1");
     const task = f.submitted[0];
     expect(task).toMatchObject({
-      profileId: "generateur",
+      profileId: "system:generateur",
       projectId: null,
       title: "Composant Burndown",
       extraArgs: ["--tools", "Read"],

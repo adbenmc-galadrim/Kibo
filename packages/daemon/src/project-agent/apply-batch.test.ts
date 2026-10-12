@@ -63,7 +63,7 @@ describe("applyBatch", () => {
       { id: 2, why, type: "setStatus", ticket: "new:1", statusId: "in_progress" },
       { id: 3, why, type: "link", from: "EMIS-1", to: "new:1", kind: "blocks" },
       { id: 4, why, type: "updateTicket", ticket: "EMIS-2", title: "Deux renommé" },
-      { id: 5, why, type: "assignAgent", ticket: "new:1", profileId: "opus", brief: "Vas-y" },
+      { id: 5, why, type: "assignAgent", ticket: "new:1", profileId: "global:opus", brief: "Vas-y" },
       { id: 6, why, type: "answerQuestion", questionId: s.open.id, answer: { kind: "text", text: "8080" } },
       { id: 7, why, type: "updateNote", path: MEMORY_NOTE_PATH, content: "# Mémoire\n" },
     ]);
@@ -81,7 +81,7 @@ describe("applyBatch", () => {
     expect(snap.links.some((l) => l.from === s.tickets[0]?.id && l.to === created?.id)).toBe(true);
     expect(titleOf(h, "EMIS-2")).toBe("Deux renommé");
     expect(h.agents.assigned).toEqual([
-      { projectId: h.project.id, ticketId: created?.id ?? "", profileId: "opus", brief: "Vas-y" },
+      { projectId: h.project.id, ticketId: created?.id ?? "", profileId: "global:opus", brief: "Vas-y" },
     ]);
     const answered = snap.questions.find((q) => q.id === s.open.id);
     expect(answered?.answer?.by).toEqual(HUMAN);
@@ -137,7 +137,7 @@ describe("applyBatch", () => {
     const h = setup();
     await seed(h);
     const batch = await propose(h, [
-      { id: 1, why, type: "assignAgent", ticket: "EMIS-3", profileId: "opus" },
+      { id: 1, why, type: "assignAgent", ticket: "EMIS-3", profileId: "global:opus" },
     ]);
     h.agents.failAssign = new KiboError("CONFLICT", "ticket already has an active run");
     const results = await apply(h, batch);
@@ -190,7 +190,7 @@ describe("stale targets are never overwritten", () => {
       { id: 4, why, type: "createNote", path: "c.md", content: "# C\n" },
       { id: 5, why, type: "cancelRun", runId: s.runId },
       { id: 6, why, type: "deliverAnswers", ticket: "EMIS-6" },
-      { id: 7, why, type: "assignAgent", ticket: "EMIS-4", profileId: "opus" },
+      { id: 7, why, type: "assignAgent", ticket: "EMIS-4", profileId: "global:opus" },
     ]);
     const [t3, t4, t6] = [s.tickets[2]?.id ?? "", s.tickets[3]?.id ?? "", s.tickets[5]?.id ?? ""];
     h.command({ method: "setStatus", ticketId: t3, statusId: "in_review" });

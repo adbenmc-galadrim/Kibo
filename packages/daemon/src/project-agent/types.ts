@@ -2,7 +2,7 @@ import type {
   ActionResult,
   Actor,
   AgentMcpRequest,
-  AgentProfile,
+  AgentSummary,
   Batch,
   DeliveryResult,
   Guideline,
@@ -20,7 +20,7 @@ export type ProjectAgentDataPort = {
   projectFolder(projectId: string): string | null;
   assertWritable(projectId: string): void;
   viewer(projectId: string): string;
-  profiles(): AgentProfile[];
+  agents(projectId: string): AgentSummary[];
   guidelines(projectId: string): Guideline[];
   isDemoProject(projectId: string): boolean;
   notes(projectId: string): Promise<{ path: string; title: string; hash: string }[]>;

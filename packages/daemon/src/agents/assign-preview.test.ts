@@ -25,8 +25,10 @@ const runOf = (id: string, ticketId: string, state: RunState): RunView => ({
       ticketId,
       ticketKey: "KIB-1",
       ticketTitle: "Ticket",
-      profileId: "opus",
+      profileId: "global:opus",
       profileName: "opus-dev",
+      agentScope: "global",
+      projectKey: null,
       sessionId: `s-${id}`,
       brief: "",
       kind: "ticket",
@@ -70,7 +72,8 @@ const preview = (runs: RunView[], cwd: string | null = "/repo") =>
     runs,
     projectId: "p1",
     ticket,
-    profile: profile(),
+    agent: profile(),
+    projectKey: "KIB",
     guidelines: 2,
     at: 0,
     plan: admitAll,
@@ -132,7 +135,9 @@ test("the preview announces the main session of the ticket and whether it resume
     reason: "transcript_missing",
   });
   expect(preview([started({})], "/elsewhere").session).toMatchObject({ reason: "workspace_changed" });
-  expect(preview([started({ profileId: "sonnet" })]).session).toMatchObject({ reason: "profile_changed" });
+  expect(preview([started({ profileId: "global:sonnet" })]).session).toMatchObject({
+    reason: "agent_changed",
+  });
 });
 
 test("the planned folder follows the profile space: project folder, ticket worktree, never an isolated one", () => {

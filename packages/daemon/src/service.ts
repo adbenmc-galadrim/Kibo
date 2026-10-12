@@ -21,6 +21,7 @@ import {
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { createDataPort } from "./agents/data-port";
+import type { AgentSource } from "./agents/neutral-agents";
 import type { AgentDataPort } from "./agents/orchestrator";
 import { type AgentQuestions, type AgentsPort, deliverTicketAnswers, handleAgentRequest } from "./agents-rpc";
 import { type AiPort, isAiRequest } from "./ai/methods";
@@ -74,7 +75,7 @@ export type Service = {
 };
 
 type ProjectAgentSummaries = { summaries(): ProjectAgentSummary[] };
-type ServiceOptions = { user: string; notifications?: Session["notifications"] };
+type ServiceOptions = { user: string; notifications?: Session["notifications"]; agents?: AgentSource };
 
 const changesDomainUsage = (cmd: ProjectCommand) =>
   (cmd.method === "updateTicket" && cmd.domainId !== undefined) || cmd.method === "deleteTicket";
@@ -210,7 +211,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     },
     activity: (projectId) => tracker?.activity(projectId) ?? NO_ACTIVITY,
   };
-  const agentData = createDataPort(docs, settings);
+  const agentData = createDataPort(docs, settings, Date.now, opts.agents);
   const questions: AgentQuestions = {
     data: agentData,
     projectIds: () => docs.projectIds(),
@@ -278,7 +279,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
         case "getConfig":
           return readConfig(docs, icons);
         case "config":
-          return runConfigCommand(docs, req.command, (profileId) => agents?.activeRuns(profileId) ?? 0);
+          return runConfigCommand(docs, req.command);
         case "getTabs":
           return readTabs(store);
         case "saveTabs":

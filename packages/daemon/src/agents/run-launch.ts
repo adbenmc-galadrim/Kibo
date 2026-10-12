@@ -1,11 +1,13 @@
 import { existsSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { NO_AGENT } from "@kibo/core/agents/compose";
 import { buildRunContext, buildSystemPrompt, guidelineChain } from "@kibo/core/context";
 import { headRank } from "@kibo/core/scheduler";
 import {
-  type AgentProfile,
+  type Agent,
   branchRefOf,
+  DEMO_AGENT_REF,
   isProjectRun,
   isTerminal,
   KiboError,
@@ -16,7 +18,8 @@ import {
   undeliveredAnswers,
 } from "@kibo/schema";
 import { ticketLaunch } from "./mcp-launch";
-import { DEMO_PROFILE_ID, type OrchestratorOptions, type TaskSpec } from "./orchestrator-types";
+import { agentModelOf } from "./neutral-agents";
+import type { OrchestratorOptions, TaskSpec } from "./orchestrator-types";
 import { PROJECT_WORKSPACE_LABEL, prepareProjectTurn, projectLaunch } from "./project-run";
 import { notifyLifecycle } from "./run-lifecycle";
 import type { RunRegistry } from "./run-registry";
@@ -41,7 +44,7 @@ export type LaunchDeps = {
   registry: RunRegistry;
   tasks: Map<string, TaskSpec>;
   live: Map<string, LiveRun>;
-  profileOf: (profileId: string) => AgentProfile;
+  agentOf: (ref: string) => Agent;
   stopping: () => boolean;
 };
 
@@ -81,13 +84,13 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
     if (registry.get(runId).state === "starting") registry.apply(runId, { type: "setup", ...step });
   }
 
-  async function prepareTicketRun(run: RunView, profile: AgentProfile, runDir: string): Promise<Prepared> {
+  async function prepareTicketRun(run: RunView, agent: Agent, runDir: string): Promise<Prepared> {
     if (!run.projectId || !run.ticketId) throw new KiboError("INVALID_INPUT", `run ${run.id} has no ticket`);
     const ctx = opts.data.ticketContext(run.projectId, run.ticketId);
     if (ctx.ticket.key === null)
       throw new KiboError("INVALID_INPUT", `ticket ${ctx.ticket.id} has no key yet`);
     const workspace = await prepareWorkspace({
-      strategy: profile.workspace,
+      strategy: agent.settings.workspace,
       projectFolder: ctx.project.meta.folder,
       ticketKey: ctx.ticket.key,
       runDir,
@@ -98,15 +101,19 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
     const chain = guidelineChain(opts.data.guidelines(run.projectId), {
       projectId: run.projectId,
       domainId: ctx.ticket.domainId,
-      profileId: profile.id,
     });
     const context = buildRunContext({
       ...ctx,
       note: run.brief,
       chain,
-      subagents: profile.subagents,
+      agent: NO_AGENT,
       commits: workspace.commits,
-      protocol: { progress: true, recipients: ctx.project.questionRecipients, signals: true },
+      protocol: {
+        progress: true,
+        recipients: ctx.project.questionRecipients,
+        signals: true,
+        skillReview: false,
+      },
     });
     const { systemPromptFile } = writeRunContext(runDir, context.files);
     return {
@@ -119,9 +126,9 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
     };
   }
 
-  function prepareTaskRun(run: RunView, profile: AgentProfile, task: TaskSpec, runDir: string): Prepared {
+  function prepareTaskRun(run: RunView, task: TaskSpec, runDir: string): Prepared {
     const { systemPromptFile } = writeRunContext(runDir, [
-      { path: "CLAUDE.md", content: buildSystemPrompt([], profile.subagents) },
+      { path: "CLAUDE.md", content: buildSystemPrompt([], NO_AGENT) },
       { path: "brief.md", content: run.brief },
     ]);
     return { cwd: task.cwd, label: task.cwd, guidelines: 0, brief: run.brief, systemPromptFile, answers: [] };
@@ -203,17 +210,17 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         return;
       }
       const resume = initial.turns > 0 || (task?.resume ?? false);
-      const profile = deps.profileOf(initial.profileId);
+      const agent = deps.agentOf(initial.profileId);
       const prepared = project
         ? await prepareProjectRun(initial, runDir)
         : task
-          ? prepareTaskRun(initial, profile, task, runDir)
-          : await prepareTicketRun(initial, profile, runDir);
-      const demo = profile.id === DEMO_PROFILE_ID;
+          ? prepareTaskRun(initial, task, runDir)
+          : await prepareTicketRun(initial, agent, runDir);
+      const demo = agent.ref === DEMO_AGENT_REF;
       const claudeBin = demo
         ? opts.demoAgent.bin
         : resolveClaudeBin(opts.claudeBin, env, opts.userHome ?? homedir());
-      const flag = permissionFlag(profile.permissionMode, await capsOf(claudeBin));
+      const flag = permissionFlag(agent.settings.permissionMode, await capsOf(claudeBin));
       const current = registry.get(runId);
       if (deps.stopping() || current.state !== "starting") return;
       const cwd = realpathSync(prepared.cwd);
@@ -230,16 +237,16 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       const { token, hash } = mint(runId);
       opts.store.saveTokenHash(runId, hash, now());
       const baseUrl = opts.baseUrl();
-      const route = { profile, baseUrl, runId, runDir, hook: opts.hook, token };
+      const route = { agent, baseUrl, runId, runDir, hook: opts.hook, token };
       const tools = project
         ? projectLaunch(route)
         : task
-          ? { allow: profile.allow, deny: [], mcpUrl: null, mcpConfigFile: null, mcpTools: null }
+          ? { allow: agent.settings.allow, deny: [], mcpUrl: null, mcpConfigFile: null, mcpTools: null }
           : ticketLaunch(route);
       const proc = launch({
         claudeBin,
         cwd,
-        model: profile.model,
+        model: agentModelOf(agent),
         permissionFlag: flag,
         extraArgs: task?.extraArgs ?? [],
         sessionId: session.sessionId,

@@ -1,7 +1,15 @@
 import { Database } from "bun:sqlite";
 import { chmodSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { HostSettings, KiboError, RunEvent, RunKind, type RunLogEntry, type RunRecord } from "@kibo/schema";
+import {
+  type AgentScope,
+  HostSettings,
+  KiboError,
+  RunEvent,
+  RunKind,
+  type RunLogEntry,
+  type RunRecord,
+} from "@kibo/schema";
 import { immediateTransaction, SQLITE_BUSY_TIMEOUT_MS } from "../sqlite-busy";
 import { vacuumFileInto } from "../sqlite-vacuum";
 
@@ -61,6 +69,10 @@ function toKind(r: RunRow): RunKind {
   return parsed.data;
 }
 
+const scopeOfRef = (ref: string): AgentScope =>
+  ref.startsWith("project:") ? "project" : ref.startsWith("system:") ? "system" : "global";
+const keyOfTicket = (ticketKey: string | null): string | null => ticketKey?.split("-")[0] ?? null;
+
 const toRecord = (r: RunRow): RunRecord => ({
   id: r.id,
   kind: toKind(r),
@@ -71,6 +83,8 @@ const toRecord = (r: RunRow): RunRecord => ({
   ticketTitle: r.ticket_title,
   profileId: r.profile_id,
   profileName: r.profile_name,
+  agentScope: scopeOfRef(r.profile_id),
+  projectKey: keyOfTicket(r.ticket_key),
   sessionId: r.session_id,
   brief: r.brief,
   createdAt: r.created_at,

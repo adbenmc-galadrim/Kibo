@@ -44,11 +44,6 @@ export function missingDomains(existing: Domain[], desired: { name: string }[]):
     }));
 }
 
-export function missingProfiles<P extends { name: string }>(existing: { name: string }[], desired: P[]): P[] {
-  const known = new Set(existing.map((p) => p.name));
-  return desired.filter((p) => !known.has(p.name));
-}
-
 const sameOwner = (a: GuidelineOwner, b: GuidelineOwner): boolean => {
   switch (a.scope) {
     case "workspace":
@@ -57,15 +52,11 @@ const sameOwner = (a: GuidelineOwner, b: GuidelineOwner): boolean => {
       return b.scope === "project" && b.projectId === a.projectId;
     case "domain":
       return b.scope === "domain" && b.domainId === a.domainId;
-    case "profile":
-      return b.scope === "profile" && b.profileId === a.profileId;
   }
 };
 
 const ownerLabel = (g: DesiredGuideline) =>
-  g.owner.scope === "domain" || g.owner.scope === "profile"
-    ? `${g.owner.scope} ${g.owner.name}`
-    : g.owner.scope;
+  g.owner.scope === "domain" ? `${g.owner.scope} ${g.owner.name}` : g.owner.scope;
 
 export function planGuidelines(
   existing: Guideline[],

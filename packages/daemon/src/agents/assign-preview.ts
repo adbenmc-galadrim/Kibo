@@ -2,7 +2,7 @@ import { existsSync, realpathSync } from "node:fs";
 import { initRun } from "@kibo/core/run-machine";
 import { orderQueue, type Plan, tailRank } from "@kibo/core/scheduler";
 import {
-  type AgentProfile,
+  type Agent,
   type AssignPreview,
   branchRefOf,
   isTerminal,
@@ -23,7 +23,8 @@ export type PreviewInput = {
   runs: RunView[];
   projectId: string;
   ticket: TicketView & { key: string };
-  profile: AgentProfile;
+  agent: Pick<Agent, "ref" | "name" | "scope">;
+  projectKey: string | null;
   guidelines: number;
   at: number;
   plan: (runs: RunView[]) => Plan;
@@ -67,11 +68,11 @@ export function plannedCwd(
 }
 
 export function previewAssign(input: PreviewInput): AssignPreview {
-  const { runs, ticket, profile, guidelines, at } = input;
+  const { runs, ticket, agent, guidelines, at } = input;
   if (activeRunOf(runs, ticket.id))
     return { position: null, reason: { kind: "ticket_busy" }, guidelines, session: null };
   const session = sessionPreview(mainSessionOf(runs, ticket.id), {
-    profileId: profile.id,
+    profileId: agent.ref,
     cwd: input.plannedCwd,
     transcriptExists: input.transcriptExists,
   });
@@ -83,8 +84,10 @@ export function previewAssign(input: PreviewInput): AssignPreview {
       ticketId: ticket.id,
       ticketKey: ticket.key,
       ticketTitle: ticket.title,
-      profileId: profile.id,
-      profileName: profile.name,
+      profileId: agent.ref,
+      profileName: agent.name,
+      agentScope: agent.scope,
+      projectKey: input.projectKey,
       sessionId: PREVIEW_ID,
       brief: "",
       createdAt: at,

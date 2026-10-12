@@ -54,8 +54,7 @@ function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign, onF
   const { project, tickets } = group;
   const domainOf = (id: string | null) =>
     projectDomainsOf(snapshot, config)?.find((d) => d.id === id) ?? null;
-  const agentName = (ref: string) =>
-    config?.profiles.find((p) => p.id === ref || p.name === ref)?.name ?? ref;
+  const agentName = (ref: string) => ref.slice(ref.lastIndexOf(":") + 1);
   return (
     <section aria-labelledby={titleId} className="grid gap-2">
       <h2 className="flex items-center gap-2 px-1">

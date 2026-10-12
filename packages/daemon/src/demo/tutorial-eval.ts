@@ -1,4 +1,5 @@
 import {
+  DEMO_AGENT_REF,
   type Instance,
   type Link,
   type RunView,
@@ -8,7 +9,7 @@ import {
   type TutorialState,
   type TutorialStep,
 } from "@kibo/schema";
-import { DEMO_AGENT_PROFILE, linkKeyOf } from "./demo-project";
+import { linkKeyOf } from "./demo-project";
 
 export type TutorialRun = Pick<RunView, "profileId" | "projectId" | "state">;
 export type TutorialSnapshot = {
@@ -41,7 +42,7 @@ const CHECKS: Record<TutorialStep, Check> = {
   dashboard: (seed, _state, snap) => snap.instances.some((i) => layoutChanged(seed, i)),
   agent: (_seed, state, snap) =>
     snap.runs.some(
-      (r) => r.profileId === DEMO_AGENT_PROFILE && r.projectId === state.projectId && r.state === "done",
+      (r) => r.profileId === DEMO_AGENT_REF && r.projectId === state.projectId && r.state === "done",
     ),
   component: (_seed, _state, snap) =>
     snap.instances.some((i) => snap.aiComponentIds.includes(componentIdOf(i.component))),

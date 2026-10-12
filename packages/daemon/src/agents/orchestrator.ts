@@ -3,7 +3,8 @@ import { guidelineChain } from "@kibo/core/context";
 import { canResume, resumableRuns } from "@kibo/core/run-resume";
 import { headRank, orderQueue, planAdmissions, rankForMove, tailRank } from "@kibo/core/scheduler";
 import {
-  type AgentProfile,
+  type Agent,
+  DEMO_AGENT_REF,
   type HostLoad,
   HostSettings,
   isTerminal,
@@ -16,12 +17,7 @@ import { createHookSink } from "./hook-sink";
 import { hostSettingsOf, hostViewOf } from "./host-view";
 import { noticeFor } from "./notifier";
 import { guarded, startOfDay } from "./orchestrator-support";
-import {
-  DEMO_PROFILE_ID,
-  type Orchestrator,
-  type OrchestratorOptions,
-  type TaskSpec,
-} from "./orchestrator-types";
+import type { Orchestrator, OrchestratorOptions, TaskSpec } from "./orchestrator-types";
 import { createProjectRun } from "./project-run";
 import { createRunLauncher, type LiveRun } from "./run-launch";
 import { openRunRegistry } from "./run-registry";
@@ -69,22 +65,25 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   });
 
   const settings = () => hostSettingsOf(opts.store, opts.hostInfo);
-  const profileOf = (id: string): AgentProfile => {
-    const found = opts.data.profiles().find((p) => p.id === id);
-    if (!found) throw new KiboError("NOT_FOUND", `profile ${id} not found`);
+  const agentOf = (ref: string): Agent => {
+    const found = opts.data.agentOf(ref);
+    if (!found) throw new KiboError("AGENT_NOT_FOUND", `agent ${ref} not found`);
     return found;
   };
-  const ticketProfileOf = (id: string, projectId: string): AgentProfile => {
-    const found = profileOf(id);
-    if (found.id === DEMO_PROFILE_ID) {
+  const ticketAgentOf = (ref: string, projectId: string): Agent => {
+    const found = agentOf(ref);
+    if (found.ref === DEMO_AGENT_REF) {
       if (opts.data.isDemoProject(projectId)) return found;
       throw new KiboError("INVALID_INPUT", "the demo agent only works in the demo project");
     }
-    if (found.system) throw new KiboError("INVALID_INPUT", `profile ${found.name} is reserved to Kibo`);
+    if (found.scope === "system")
+      throw new KiboError("INVALID_INPUT", `agent ${found.name} is reserved to Kibo`);
     return found;
   };
+  const schedulerAgents = () =>
+    opts.data.agents(null).map((a) => ({ ref: a.ref, name: a.name, maxParallel: a.settings.maxParallel }));
   const plan = (runs: RunView[]) =>
-    planAdmissions({ runs, profiles: opts.data.profiles(), settings: settings(), load });
+    planAdmissions({ runs, agents: schedulerAgents(), settings: settings(), load });
   const sample = () => {
     try {
       load = opts.sampler();
@@ -97,7 +96,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
     registry,
     tasks,
     live,
-    profileOf,
+    agentOf,
     stopping: () => stopping,
   });
 
@@ -138,30 +137,32 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   const resumeContext = (runs: RunView[]) => ({
     runs,
     alive: (id: string) => live.has(id),
-    profileIds: new Set(opts.data.profiles().map((p) => p.id)),
+    profileIds: new Set(opts.data.agents(null).map((a) => a.ref)),
   });
 
   const enqueue = (run: NewRun): RunView => registry.create(run, tailRank(registry.all()));
 
   return {
     assign(input) {
-      const profile = ticketProfileOf(input.profileId, input.projectId);
+      const agent = ticketAgentOf(input.profileId, input.projectId);
       const { ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
       if (ticket.key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
       if (activeRunOf(registry.all(), ticket.id))
         throw new KiboError("CONFLICT", `ticket ${ticket.key} already has an active run`);
       opts.data.assertWritable(input.projectId);
-      opts.data.assignTicket(input.projectId, ticket.id, profile.name);
+      opts.data.assignTicket(input.projectId, ticket.id, agent.name);
       const main = mainSessionOf(registry.all(), ticket.id);
-      const inherited = !input.fresh && main !== null && main.profileId === profile.id ? main : null;
+      const inherited = !input.fresh && main !== null && main.profileId === agent.ref ? main : null;
       const view = enqueue({
         id: crypto.randomUUID(),
         projectId: input.projectId,
         ticketId: ticket.id,
         ticketKey: ticket.key,
         ticketTitle: ticket.title,
-        profileId: profile.id,
-        profileName: profile.name,
+        profileId: agent.ref,
+        profileName: agent.name,
+        agentScope: agent.scope,
+        projectKey: opts.data.projectKey(input.projectId),
         sessionId: inherited?.sessionId ?? crypto.randomUUID(),
         brief: input.brief,
         kind: "ticket",
@@ -171,7 +172,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       return registry.get(view.id);
     },
     submit(task) {
-      const profile = profileOf(task.profileId);
+      const agent = agentOf(task.profileId);
       const id = crypto.randomUUID();
       tasks.set(id, {
         cwd: task.cwd,
@@ -186,8 +187,10 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         ticketId: null,
         ticketKey: null,
         ticketTitle: task.title,
-        profileId: profile.id,
-        profileName: profile.name,
+        profileId: agent.ref,
+        profileName: agent.name,
+        agentScope: agent.scope,
+        projectKey: task.projectId === null ? null : opts.data.projectKey(task.projectId),
         sessionId: task.resumeSessionId ?? crypto.randomUUID(),
         brief: task.prompt,
         kind: "ticket",
@@ -197,30 +200,33 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       return registry.get(id);
     },
     startProjectRun(input) {
-      const id = createProjectRun({ registry, profileOf, assertWritable: opts.data.assertWritable }, input);
+      const id = createProjectRun(
+        { registry, agentOf, assertWritable: opts.data.assertWritable, projectKey: opts.data.projectKey },
+        input,
+      );
       tick();
       return registry.get(id);
     },
     preview(input) {
-      const profile = ticketProfileOf(input.profileId, input.projectId);
+      const agent = ticketAgentOf(input.profileId, input.projectId);
       const { project, ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
       const key = ticket.key;
       if (key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
       const guidelines = guidelineChain(opts.data.guidelines(input.projectId), {
         projectId: input.projectId,
         domainId: ticket.domainId,
-        profileId: profile.id,
       }).length;
       const runs = registry.all();
       return previewAssign({
         runs,
         projectId: input.projectId,
         ticket: { ...ticket, key },
-        profile,
+        agent,
+        projectKey: opts.data.projectKey(input.projectId),
         guidelines,
         at: now(),
         plan,
-        plannedCwd: plannedCwd(profile.workspace, project.meta, { ...ticket, key }),
+        plannedCwd: plannedCwd(agent.settings.workspace, project.meta, { ...ticket, key }),
         transcriptExists: (path) => path !== null && existsSync(path),
       });
     },
@@ -278,8 +284,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       };
     },
     log: (runId) => registry.log(runId),
-    activeRuns: (profileId) =>
-      registry.all().filter((r) => r.profileId === profileId && !isTerminal(r.state)).length,
+    activeRuns: (ref) => registry.all().filter((r) => r.profileId === ref && !isTerminal(r.state)).length,
     hooks,
     onChange(listener) {
       listeners.add(listener);

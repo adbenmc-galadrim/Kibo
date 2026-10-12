@@ -93,7 +93,7 @@ describe("executor properties", () => {
             { id: 2, why, type: "updateTicket", ticket: "EMIS-1", title: "Renommé" },
             { id: 3, why, type: "setStatus", ticket: "EMIS-2", statusId: "done" },
             { id: 4, why, type: "link", from: "EMIS-3", to: "EMIS-4", kind: "blocks" },
-            { id: 5, why, type: "assignAgent", ticket: "EMIS-5", profileId: "opus" },
+            { id: 5, why, type: "assignAgent", ticket: "EMIS-5", profileId: "global:opus" },
             { id: 6, why, type: "deliverAnswers", ticket: "EMIS-6" },
             { id: 7, why, type: "cancelRun", runId: s.runId },
             {

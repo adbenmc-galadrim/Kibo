@@ -86,7 +86,7 @@ test("the history lists every run of the same profile, newest first, each as a m
   renderPage();
   const history = within(screen.getByRole("list", { name: "Historique des runs" }));
   const expected = dockState()
-    .runs.filter((r) => r.profileId === "opus")
+    .runs.filter((r) => r.profileId === "global:opus-dev")
     .sort((a, b) => b.createdAt - a.createdAt || b.seq - a.seq)
     .map((r) => r.id);
   const rows = history.getAllByRole("listitem");

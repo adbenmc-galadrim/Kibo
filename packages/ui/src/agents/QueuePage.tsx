@@ -1,7 +1,7 @@
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import {
   type ActiveSubagent,
-  type AgentProfile,
+  type AgentSummary,
   type AgentsState,
   type ProjectSummary,
   type QueueEntry,
@@ -24,12 +24,12 @@ import { effectiveProject, projectRuns } from "./project-filter";
 import { useAgentsProject } from "./project-pref";
 import { QueueCapacity } from "./QueueCapacity";
 import { QueueItem } from "./QueueItem";
-import { byStart, holdsSlot, orderProfiles, queueNeighbours } from "./queue-runs";
+import { byStart, holdsSlot, orderAgents, queueNeighbours } from "./queue-runs";
 import { SlotMeter } from "./SlotMeter";
 
 type Props = {
   state: AgentsState;
-  profiles: AgentProfile[];
+  agents: AgentSummary[];
   projects: ProjectSummary[];
   now: number;
   onAnswer: (runId: string) => void;
@@ -75,7 +75,7 @@ function RunLine({ run, text, now, since }: { run: RunView; text?: string; now: 
   );
 }
 
-export function QueuePage({ state, profiles, projects, now, onAnswer }: Props) {
+export function QueuePage({ state, agents, projects, now, onAnswer }: Props) {
   const [failed, setFailed] = useState(false);
   const [cancelling, setCancelling] = useState<RunView | null>(null);
   const act = async (req: RpcRequest) => {
@@ -101,7 +101,7 @@ export function QueuePage({ state, profiles, projects, now, onAnswer }: Props) {
     for (const sub of parent.subagents)
       subagents.set(sub.type, [...(subagents.get(sub.type) ?? []), { parent, sub }]);
   }
-  const profileNames = new Set(profiles.map((p) => p.name));
+  const agentNames = new Set(agents.map((p) => p.name));
   const waiting = runs.filter((r) => r.state === "waiting_input");
   const onDragEnd = (e: DragEndEvent) => {
     const runId = String(e.active.id);
@@ -128,19 +128,19 @@ export function QueuePage({ state, profiles, projects, now, onAnswer }: Props) {
       <h2 className="text-md font-semibold">{fr.queue.byProfile}</h2>
       <DndContext onDragEnd={onDragEnd}>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4">
-          {orderProfiles(profiles, runs, visibleQueue).map((p) => {
-            const running = runs.filter((r) => r.profileId === p.id && holdsSlot(r)).sort(byStart);
-            const slotsUsed = state.runs.filter((r) => r.profileId === p.id && holdsSlot(r)).length;
-            const mine = queued.filter(({ run }) => run.profileId === p.id);
+          {orderAgents(agents, runs, visibleQueue).map((p) => {
+            const running = runs.filter((r) => r.profileId === p.ref && holdsSlot(r)).sort(byStart);
+            const slotsUsed = state.runs.filter((r) => r.profileId === p.ref && holdsSlot(r)).length;
+            const mine = queued.filter(({ run }) => run.profileId === p.ref);
             const subs = subagents.get(p.name) ?? [];
             return (
               <Column
-                key={p.id}
+                key={p.ref}
                 label={p.name}
                 aside={
                   <span className="flex items-center gap-1.5 font-mono text-2xs">
-                    <SlotMeter used={slotsUsed} total={p.maxParallel} />
-                    {`${slotsUsed}/${p.maxParallel}`}
+                    <SlotMeter used={slotsUsed} total={p.settings.maxParallel} />
+                    {`${slotsUsed}/${p.settings.maxParallel}`}
                   </span>
                 }
               >
@@ -184,7 +184,7 @@ export function QueuePage({ state, profiles, projects, now, onAnswer }: Props) {
             );
           })}
           {[...subagents]
-            .filter(([type]) => !profileNames.has(type))
+            .filter(([type]) => !agentNames.has(type))
             .map(([type, items]) => (
               <Column
                 key={type}

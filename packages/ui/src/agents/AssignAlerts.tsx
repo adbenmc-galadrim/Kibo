@@ -1,5 +1,5 @@
 import {
-  type AgentProfile,
+  type AgentSummary,
   branchRefOf,
   KiboError,
   type ProjectSnapshot,
@@ -23,8 +23,8 @@ import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
 import { frProject } from "../i18n/fr-project";
 
-export function needsFolder(profile: AgentProfile, project: ProjectSnapshot): boolean {
-  return profile.workspace !== "isolated" && !project.meta.folder;
+export function needsFolder(agent: AgentSummary, project: ProjectSnapshot): boolean {
+  return agent.settings.workspace !== "isolated" && !project.meta.folder;
 }
 
 function worktreeSpace(project: ProjectSnapshot, ticket: TicketView, folder: string): ReactNode {
@@ -48,18 +48,19 @@ function worktreeSpace(project: ProjectSnapshot, ticket: TicketView, folder: str
 }
 
 export function SpaceText({
-  profile,
+  agent,
   project,
   ticket,
 }: {
-  profile: AgentProfile;
+  agent: AgentSummary;
   project: ProjectSnapshot;
   ticket: TicketView;
 }) {
   const folder = project.meta.folder;
-  if (needsFolder(profile, project)) return fr.assign.noFolderSpace;
-  if (profile.workspace === "worktree" && folder) return worktreeSpace(project, ticket, folder);
-  return profile.workspace === "repo" ? fr.agents.workspace.repo : fr.agents.workspace.isolated;
+  const workspace = agent.settings.workspace;
+  if (needsFolder(agent, project)) return fr.assign.noFolderSpace;
+  if (workspace === "worktree" && folder) return worktreeSpace(project, ticket, folder);
+  return workspace === "repo" ? fr.agents.workspace.repo : fr.agents.workspace.isolated;
 }
 
 export function Notice({ title, text, onClose }: { title: string; text: string; onClose: () => void }) {

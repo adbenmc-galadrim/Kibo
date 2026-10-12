@@ -3,7 +3,7 @@ import { KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
-import { agentsFixture, NOW, profilesFixture, projectsFixture } from "./fixtures";
+import { agentsFixture, agentsSummaryFixture, NOW, projectsFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
 let outcome: () => Promise<unknown> = () => Promise.resolve(null);
@@ -32,7 +32,7 @@ const show = (onAnswer: (runId: string) => void = () => {}) =>
   render(
     <QueuePage
       state={agentsFixture()}
-      profiles={profilesFixture}
+      agents={agentsSummaryFixture}
       projects={projectsFixture}
       now={NOW}
       onAnswer={onAnswer}
@@ -54,12 +54,12 @@ test("capacity shows one card per place, the gauges and the admission rule", () 
   expect(capacity.getByText("Places sur la machine : 3 (auto : 8 cœurs, 16 Go)")).toBeTruthy();
 });
 
-test("profiles with runs come first, then the idle ones, each group by name", () => {
-  const byName = [...profilesFixture].sort((a, b) => a.name.localeCompare(b.name));
+test("agents with runs come first, then the idle ones, each group by name", () => {
+  const byName = [...agentsSummaryFixture].sort((a, b) => a.name.localeCompare(b.name));
   render(
     <QueuePage
       state={agentsFixture()}
-      profiles={byName}
+      agents={byName}
       projects={projectsFixture}
       now={NOW}
       onAnswer={() => {}}
@@ -68,7 +68,7 @@ test("profiles with runs come first, then the idle ones, each group by name", ()
   const columns = screen
     .getAllByRole("region")
     .map((r) => r.getAttribute("aria-label"))
-    .filter((name) => profilesFixture.some((p) => p.name === name));
+    .filter((name) => agentsSummaryFixture.some((p) => p.name === name));
   expect(columns).toEqual(["opus-dev", "sonnet-review", "haiku-tests"]);
 });
 
@@ -80,7 +80,7 @@ test("a first turn with a message keeps its queue reason", () => {
   render(
     <QueuePage
       state={{ ...state, runs }}
-      profiles={profilesFixture}
+      agents={agentsSummaryFixture}
       projects={projectsFixture}
       now={NOW}
       onAnswer={() => {}}
@@ -89,7 +89,7 @@ test("a first turn with a message keeps its queue reason", () => {
   const opus = within(screen.getByRole("region", { name: "opus-dev" }));
   const q18 = opus.getAllByRole("listitem").find((li) => li.dataset.run === "q18");
   if (!q18) throw new Error("queue item q18 missing");
-  expect(within(q18).getByText("attend une place du profil opus-dev (2/2)")).toBeTruthy();
+  expect(within(q18).getByText("attend une place de l'agent opus-dev (2/2)")).toBeTruthy();
   expect(within(q18).queryByText("réponse reçue · reprise de la session")).toBeNull();
 });
 
@@ -101,7 +101,7 @@ test("a message that resumes a finished run says so, an answer to a question say
   render(
     <QueuePage
       state={{ ...state, runs }}
-      profiles={profilesFixture}
+      agents={agentsSummaryFixture}
       projects={projectsFixture}
       now={NOW}
       onAnswer={() => {}}
@@ -123,7 +123,7 @@ test("fixed host slots say so and still give the automatic value", () => {
   render(
     <QueuePage
       state={{ ...state, host: { ...state.host, autoSlots: 5, slotsFixed: true } }}
-      profiles={profilesFixture}
+      agents={agentsSummaryFixture}
       projects={projectsFixture}
       now={NOW}
       onAnswer={() => {}}
@@ -134,7 +134,7 @@ test("fixed host slots say so and still give the automatic value", () => {
   expect(capacity.getByRole("button", { name: "modifiable" })).toBeTruthy();
 });
 
-test("each profile lists its running runs and its queue in order", () => {
+test("each agent lists its running runs and its queue in order", () => {
   show();
   const opus = within(screen.getByRole("region", { name: "opus-dev" }));
   expect(opus.getByText("2/2")).toBeTruthy();

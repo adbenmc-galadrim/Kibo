@@ -59,7 +59,7 @@ export function startProjectAgent(input: ProjectAgentBootInput): ProjectAgentBoo
     docs: service.docs,
     notes: input.notes,
     settings: input.settings,
-    profiles: () => service.agentData.profiles(),
+    agents: (projectId) => service.agentData.agents(projectId),
     guidelines: (projectId) => service.agentData.guidelines(projectId),
   });
   const agents = () => ({ ...input.orchestrator(), deliverAnswers: service.deliverAnswers });

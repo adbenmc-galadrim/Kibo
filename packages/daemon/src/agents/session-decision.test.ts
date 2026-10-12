@@ -15,8 +15,10 @@ const record = (id: string, patch: Partial<RunRecord> = {}): RunRecord => ({
   ticketId: "t1",
   ticketKey: "KIB-1",
   ticketTitle: "Ticket",
-  profileId: "opus",
+  profileId: "global:opus",
   profileName: "opus-dev",
+  agentScope: "global",
+  projectKey: null,
   sessionId: `s-${id}`,
   brief: "",
   createdAt: 0,
@@ -64,16 +66,16 @@ test("an inherited run starts a new session with a new id when the transcript or
 test("a run that did not inherit keeps its own new session and says why", () => {
   const own = record("r2");
   expect(decide(own, null)).toEqual({ resume: false, sessionId: "s-r2", reason: "no_previous" });
-  expect(decide(own, { ...previous, profileId: "sonnet" })).toEqual({
+  expect(decide(own, { ...previous, profileId: "global:sonnet" })).toEqual({
     resume: false,
     sessionId: "s-r2",
-    reason: "profile_changed",
+    reason: "agent_changed",
   });
   expect(decide(own, previous)).toEqual({ resume: false, sessionId: "s-r2", reason: "user_reset" });
 });
 
 test("the preview announces the main session and whether it can be resumed", () => {
-  const check = { profileId: "opus", cwd: "/repo", transcriptExists: known };
+  const check = { profileId: "global:opus", cwd: "/repo", transcriptExists: known };
   expect(sessionPreview(null, check)).toBeNull();
   expect(sessionPreview(previous, check)).toEqual({
     runId: "r1",
@@ -83,9 +85,9 @@ test("the preview announces the main session and whether it can be resumed", () 
     resumable: true,
     reason: null,
   });
-  expect(sessionPreview(previous, { ...check, profileId: "sonnet" })).toMatchObject({
+  expect(sessionPreview(previous, { ...check, profileId: "global:sonnet" })).toMatchObject({
     resumable: false,
-    reason: "profile_changed",
+    reason: "agent_changed",
   });
   expect(sessionPreview(previous, { ...check, transcriptExists: () => false })).toMatchObject({
     resumable: false,

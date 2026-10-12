@@ -100,7 +100,7 @@ test("the MCP route answers only the live turn of a project run", async () => {
     method: "assignAgent",
     projectId: project.id,
     ticketId: docs.id,
-    profileId: opus.id,
+    profileId: opus.ref,
     brief: "Écrire le guide",
   });
   expect((await postMcp(stack.url, ticketRun.id, token)).status).toBe(401);

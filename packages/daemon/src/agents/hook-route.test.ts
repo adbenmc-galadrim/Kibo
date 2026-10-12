@@ -12,6 +12,7 @@ const payload: HookPayload = {
   detail: "a.ts",
   question: null,
   agentId: null,
+  toolUseId: null,
   ask: null,
   todos: null,
   stopHookActive: false,

@@ -1,6 +1,8 @@
 import {
-  type AgentProfile,
+  type AgentSettings,
+  type AgentSummary,
   type AgentsState,
+  DEFAULT_AGENT_SETTINGS,
   DEFAULT_WORKFLOW,
   type Domain,
   EMPTY_PROGRESS,
@@ -22,8 +24,11 @@ export function runFixture(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     ticketId: `t-${p.id}`,
     ticketKey: "KIB-1",
     ticketTitle: "Ticket",
-    profileId: "opus",
+    profileId: "global:opus-dev",
     profileName: "opus-dev",
+    agentName: "opus-dev",
+    agentScope: "global",
+    projectKey: "KIB",
     sessionId: `s-${p.id}`,
     brief: "",
     kind: "ticket",
@@ -58,50 +63,47 @@ export function runFixture(p: Partial<RunView> & Pick<RunView, "id">): RunView {
   };
 }
 
-export const profilesFixture: AgentProfile[] = [
-  {
-    id: "opus",
-    name: "opus-dev",
-    model: "opus",
-    execution: "cli",
-    permissionMode: "acceptEdits",
-    workspace: "worktree",
-    maxParallel: 2,
-    subagents: ["sonnet", "haiku"],
-    enabled: true,
-    allow: [],
-    system: false,
-  },
-  {
-    id: "sonnet",
-    name: "sonnet-review",
-    model: "sonnet",
-    execution: "cli",
+export function agentSummaryFixture(
+  name: string,
+  model: string | null,
+  settings: Partial<AgentSettings>,
+): AgentSummary {
+  return {
+    ref: `global:${name}`,
+    scope: "global",
+    projectId: null,
+    name,
+    path: `~/.claude/agents/${name}.md`,
+    hash: null,
+    problem: null,
+    nameWarning: null,
+    settings: { ...DEFAULT_AGENT_SETTINGS, ...settings },
+    shadowedBy: null,
+    activeRuns: 0,
+    modifiedAt: null,
+    description: name,
+    model,
+    skillsCount: null,
+    subagentsCount: 0,
+  };
+}
+
+export const agentsSummaryFixture: AgentSummary[] = [
+  agentSummaryFixture("opus-dev", "opus", { maxParallel: 2, permissionMode: "acceptEdits" }),
+  agentSummaryFixture("sonnet-review", "sonnet", {
+    maxParallel: 3,
     permissionMode: "plan",
     workspace: "isolated",
-    maxParallel: 3,
-    subagents: [],
-    enabled: true,
-    allow: [],
-    system: false,
-  },
-  {
-    id: "haiku",
-    name: "haiku-tests",
-    model: "haiku",
-    execution: "cli",
-    permissionMode: "acceptEdits",
-    workspace: "worktree",
-    maxParallel: 1,
-    subagents: [],
-    enabled: true,
-    allow: [],
-    system: false,
-  },
+  }),
+  agentSummaryFixture("haiku-tests", "haiku", { maxParallel: 1, permissionMode: "acceptEdits" }),
 ];
 
 export function agentsFixture(): AgentsState {
-  const sonnet = { profileId: "sonnet", profileName: "sonnet-review" };
+  const sonnet = {
+    profileId: "global:sonnet-review",
+    profileName: "sonnet-review",
+    agentName: "sonnet-review",
+  };
   return {
     runs: [
       runFixture({
@@ -216,8 +218,11 @@ export function agentsFixture(): AgentsState {
         ticketId: null,
         ticketKey: null,
         ticketTitle: "Composant Graphique",
-        profileId: "generateur",
+        profileId: "system:generateur",
         profileName: "generateur",
+        agentName: "kibo-generateur",
+        agentScope: "system",
+        projectKey: null,
         label: "generateur-1",
         state: "done",
         startedAt: NOW - 25 * MIN,
@@ -233,8 +238,8 @@ export function agentsFixture(): AgentsState {
       }),
     ],
     queue: [
-      { runId: "q10", position: 1, reason: { kind: "profile", profileName: "opus-dev", used: 2, total: 2 } },
-      { runId: "q18", position: 2, reason: { kind: "profile", profileName: "opus-dev", used: 2, total: 2 } },
+      { runId: "q10", position: 1, reason: { kind: "agent", agentName: "opus-dev", used: 2, total: 2 } },
+      { runId: "q18", position: 2, reason: { kind: "agent", agentName: "opus-dev", used: 2, total: 2 } },
       { runId: "q29", position: 3, reason: { kind: "host", used: 3, total: 3 } },
       { runId: "q60", position: 4, reason: { kind: "host", used: 3, total: 3 } },
     ],
@@ -299,7 +304,6 @@ export function configFixture(): WorkspaceConfig {
   const kibo = { scope: "project", projectId: "kibo" } as const;
   const core = { scope: "domain", domainId: "core" } as const;
   return {
-    profiles: profilesFixture,
     domains: domainsFixture,
     guidelines: [
       guideline("w1", { scope: "workspace" }, "guidelines/general.md"),

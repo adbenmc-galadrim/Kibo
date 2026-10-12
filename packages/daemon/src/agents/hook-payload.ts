@@ -123,6 +123,7 @@ function reduce(h: HookInput): HookPayload {
     detail: clip(detailOf(h), 2000),
     question: clip(asked ? text(h.tool_input?.question) : null, 4000),
     agentId: clip(h.agent_id, 200),
+    toolUseId: clip(h.tool_use_id, 200),
     ask: askOf(h),
     todos: todosOf(h),
     stopHookActive: h.stop_hook_active === true,

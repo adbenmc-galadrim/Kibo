@@ -1,7 +1,7 @@
 import {
   ACTION_GROUPS,
   type ActionGroup,
-  type AgentProfile,
+  type AgentSummary,
   type AnswerInput,
   DEFAULT_WORKFLOW,
   type ExpectedState,
@@ -32,12 +32,12 @@ export const defaultLabels: DiffLabels = {
 
 export function projectLabels(
   project: ProjectSnapshot,
-  profiles: readonly Pick<AgentProfile, "id" | "name">[] = [],
+  agents: readonly Pick<AgentSummary, "ref" | "name">[] = [],
 ): DiffLabels {
   return {
     status: (id) => project.workflow.find((s) => s.id === id)?.label ?? id,
     ticket: (id) => project.tickets.find((t) => t.id === id)?.keyLabel ?? null,
-    profile: (id) => profiles.find((p) => p.id === id)?.name ?? id,
+    profile: (id) => agents.find((a) => a.ref === id)?.name ?? id.slice(id.lastIndexOf(":") + 1),
   };
 }
 

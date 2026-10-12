@@ -22,6 +22,7 @@ const asked: HookPayload = {
   detail: null,
   question: null,
   agentId: null,
+  toolUseId: null,
   ask: {
     title: "Question q1",
     context: "",

@@ -46,7 +46,7 @@ test("a project turn reads the project through the real MCP server, its batch is
   expect(view.session).toMatchObject({ runId: started.id, closedAt: null });
   expect(batch).toMatchObject({ seq: 1, status: "pending", summary: "Lancer KIB-1 et noter le plan" });
   expect(batch?.expected).toContainEqual({ actionId: 1, fields: { statusId: "todo" } });
-  expect(batch?.actions.find((a) => a.type === "assignAgent")).toMatchObject({ profileId: opus.id });
+  expect(batch?.actions.find((a) => a.type === "assignAgent")).toMatchObject({ profileId: opus.ref });
   expect(stack.notices).toContainEqual({ title: "Lot à valider", body: "Agent de projet · Kibo : lot n° 1" });
   expect((await agentsOf(stack.rpc)).projectAgents).toEqual([
     { projectId: project.id, runId: started.id, state: "done", pendingBatchId: batch?.id ?? "" },
@@ -80,7 +80,7 @@ test("a project turn reads the project through the real MCP server, its batch is
   const assigned = await waitFor(async () =>
     (await agentsOf(stack.rpc)).runs.find((r) => r.ticketId === receiver.id && r.state === "done"),
   );
-  expect(assigned).toMatchObject({ kind: "ticket", profileId: opus.id, projectId: project.id });
+  expect(assigned).toMatchObject({ kind: "ticket", profileId: opus.ref, projectId: project.id });
   expect((await snapshotOf(stack.rpc, project.id)).tickets.find((t) => t.id === receiver.id)).toMatchObject({
     assignee: { kind: "agent", ref: "opus" },
   });

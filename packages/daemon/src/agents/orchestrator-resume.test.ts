@@ -48,7 +48,11 @@ test("writing to a finished ticket run resumes the same session at the head of t
   expect(calls).toHaveLength(2);
   expect(calls[1]?.argv.slice(-2)).toEqual(["--resume", first.sessionId]);
   expect(calls[1]?.prompt).toBe("Ajoute aussi les tests\nsur deux lignes.\n\nencore");
-  expect(run(h, first.id)).toMatchObject({ tokens: 2400, label: "opus-dev-1", pendingAnswer: null });
+  expect(run(h, first.id)).toMatchObject({
+    tokens: 2400,
+    label: "global · opus-dev · KIB-1",
+    pendingAnswer: null,
+  });
   expect(h.started.filter((t) => t === "t1")).toEqual(["t1", "t1"]);
   await waitUntil(() => ticketDone(h, "KIB-1").length === 2);
 }, 30_000);
@@ -82,7 +86,7 @@ test("runs that never started, have no ticket or were replaced cannot be written
   const cwd = join(h.home, "draft");
   mkdirSync(cwd);
   const task = h.orch.submit({
-    profileId: "assistant",
+    profileId: "system:assistant",
     projectId: null,
     title: "Brouillon",
     cwd,

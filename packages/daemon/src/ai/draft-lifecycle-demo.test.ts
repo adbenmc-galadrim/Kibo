@@ -13,11 +13,11 @@ test("a draft of the demo project runs on the demo agent without claude, for eve
   });
   const started = await life.start({ ...create, projectId: "p-demo" });
   expect(started.projectId).toBe("p-demo");
-  expect(runs.runs[0]?.req.profileId).toBe("demo");
+  expect(runs.runs[0]?.req.profileId).toBe("system:demo");
   runs.end(runs.runs[0]?.id ?? "", { state: "done", sessionId: "s1", stdout: "", error: null });
   await life.idle();
   life.retry(started.id);
-  expect(runs.runs.map((r) => r.req.profileId)).toEqual(["demo", "demo"]);
+  expect(runs.runs.map((r) => r.req.profileId)).toEqual(["system:demo", "system:demo"]);
 });
 
 test("without claude an ordinary draft is refused, with or without a project", async () => {

@@ -126,7 +126,7 @@ describe("createStarterService", () => {
     const req = runs.runs[0]?.req;
     expect(runId).toBe("run-1");
     expect(req).toMatchObject({
-      profileId: "assistant",
+      profileId: "system:assistant",
       prompt: "pm|Je pilote trois équipes|kanban",
       args: ["--tools", ""],
     });

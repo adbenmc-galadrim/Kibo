@@ -101,7 +101,7 @@ describe("revise", () => {
     expect(last?.prompt).not.toContain("1-a.png");
     expect(last?.prompt).toContain("kibo component test .");
     expect(last?.env.KIBO_DRAFT_ATTACHMENTS).toBe(paths.attachmentsDir);
-    expect(last?.profileId).toBe("generateur");
+    expect(last?.profileId).toBe("system:generateur");
     await expect(life.revise({ draftId: d.id, feedback: "encore", attachments: [] })).rejects.toMatchObject({
       code: "INVALID_INPUT",
     });

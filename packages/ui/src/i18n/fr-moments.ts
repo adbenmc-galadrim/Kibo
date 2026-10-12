@@ -18,6 +18,7 @@ const kinds: Record<ActionKind, string> = {
   mcp: "Outil",
   subagent: "Sous-agent",
   signal: "Signal",
+  skill: "Skill",
   other: "Outil",
 };
 
@@ -43,6 +44,8 @@ export const frMoments = {
   reminders: {
     plan: "Kibo a rappelé de déclarer le plan",
     report: "Kibo a rappelé de remplir le compte rendu",
+    skills: "Kibo a rappelé la review des skills",
+    report_skills: "Kibo a rappelé le compte rendu et la review des skills",
   },
   partial,
   reasoning: "Raisonnement",

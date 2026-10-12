@@ -1,6 +1,7 @@
 import type {
   Actor,
-  AgentProfile,
+  Agent,
+  AgentRef,
   AgentsState,
   AskInput,
   AssignPreview,
@@ -16,6 +17,7 @@ import type {
   RunLogEntry,
   RunQuestions,
   RunView,
+  Skill,
   TicketView,
 } from "@kibo/schema";
 import type { HookLauncher } from "./hook-launcher";
@@ -26,7 +28,10 @@ import type { RunStore } from "./run-store";
 export type TicketContext = { project: ProjectSnapshot; ticket: TicketView; domain: Domain | null };
 
 export type AgentDataPort = {
-  profiles(): AgentProfile[];
+  agents(projectId: string | null): Agent[];
+  agentOf(ref: AgentRef): Agent | null;
+  projectKey(projectId: string): string | null;
+  skills(projectId: string | null): Skill[];
   ticketContext(projectId: string, ticketId: string): TicketContext;
   guidelines(projectId: string): Guideline[];
   assertWritable(projectId: string): void;
@@ -51,7 +56,6 @@ export type AgentDataPort = {
   ): void;
 };
 
-export const DEMO_PROFILE_ID = "demo";
 export type DemoAgent = { bin: string; env(): Record<string, string> };
 
 export type ProjectTurn = { cwd: string; systemPrompt: string; prompt: string };
@@ -82,7 +86,7 @@ export type OrchestratorOptions = {
 export type AssignInput = {
   projectId: string;
   ticketId: string;
-  profileId: string;
+  profileId: AgentRef;
   brief: string;
   fresh?: boolean;
 };
@@ -91,7 +95,7 @@ export type ToolGuard = (call: {
   input: Record<string, unknown> | null;
 }) => GuardDecision | null;
 export type TaskInput = {
-  profileId: string;
+  profileId: AgentRef;
   projectId: string | null;
   title: string;
   cwd: string;
@@ -114,7 +118,7 @@ export type Orchestrator = {
   setHost(patch: Partial<HostSettings>): HostView;
   state(): AgentsState;
   log(runId: string): RunLogEntry[];
-  activeRuns(profileId: string): number;
+  activeRuns(ref: AgentRef): number;
   hooks: HookSink;
   onChange(listener: () => void): () => void;
   onRunState(listener: (run: RunView) => void): () => void;

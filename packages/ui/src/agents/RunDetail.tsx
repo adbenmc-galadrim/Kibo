@@ -7,7 +7,7 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
 import { frRunChat } from "../i18n/fr-run-chat";
-import { isDemoProfile } from "./demo-profile";
+import { isDemoAgent } from "./assignable";
 import { elapsed, formatDuration, workspaceText } from "./format";
 import { ReplyBox } from "./ReplyBox";
 import { ReviewButton } from "./ReviewButton";
@@ -76,7 +76,7 @@ export function RunDetail({ run, resumable, questions, now, children }: DetailPr
         <Bot aria-hidden className="size-4 text-brand" />
         <span className="shrink-0 font-mono font-semibold">{run.label}</span>
         <span className="min-w-0 truncate text-muted-foreground">{runSubject(run)}</span>
-        {isDemoProfile({ id: run.profileId }) && (
+        {isDemoAgent({ ref: run.profileId }) && (
           <span className="shrink-0 text-xs text-brand-strong dark:text-brand">
             {frAgentsPage.demo.option}
           </span>

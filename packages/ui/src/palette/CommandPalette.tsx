@@ -67,6 +67,7 @@ const ICONS = {
   about: Info,
   agents: SCREENS.agents.icon,
   queue: SCREENS.queue.icon,
+  skills: SCREENS.skills.icon,
   general: SCREENS.general.icon,
   domains: SCREENS.domains.icon,
   components: SCREENS.components.icon,

@@ -10,6 +10,7 @@ const hook = (p: Partial<HookPayload>): HookPayload => ({
   detail: null,
   question: null,
   agentId: null,
+  toolUseId: null,
   ask: null,
   todos: null,
   stopHookActive: false,

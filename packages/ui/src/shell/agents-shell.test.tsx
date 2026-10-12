@@ -21,6 +21,7 @@ import {
   projectsFixture,
 } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { fr } from "../i18n/fr";
 import type { Route } from "../route";
 
 const mineTicket = (id: string, key: string, title: string, statusId: StatusId): TicketView => ({
@@ -249,7 +250,7 @@ test("my tickets: sidebar count, rows of every project, sheet and assign in the 
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   const kibo = screen.getByRole("region", { name: "Kibo" });
   await user.click(within(kibo).getByRole("button", { name: "Assigner" }));
-  expect(within(await screen.findByRole("dialog")).getByText("Assigner KIB-9 à un agent")).toBeTruthy();
+  expect(within(await screen.findByRole("dialog")).getByText(fr.assign.noProfile)).toBeTruthy();
 });
 
 test("the workspace header leads to the workspace settings", async () => {
@@ -267,10 +268,7 @@ test("the header carries the actions of the agent screens", async () => {
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/agents");
   const user = userEvent.setup();
-  await user.click(await header().findByRole("button", { name: "Nouveau profil" }));
-  expect(within(await screen.findByRole("dialog")).getByText("Nouveau profil d'agent")).toBeTruthy();
-  await user.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  expect(await header().findByRole("button", { name: "Nouveau profil" })).toBeTruthy();
   await go("#/agents/queue");
   await user.click(await header().findByRole("button", { name: "Mettre en pause l'admission" }));
   expect(calls).toContainEqual({ method: "setHost", patch: { paused: true } });

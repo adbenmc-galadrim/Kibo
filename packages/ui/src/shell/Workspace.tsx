@@ -196,7 +196,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                   viewer={viewer}
                   notifications={notifications}
                   now={now}
-                  onNewProfile={() => set({ newProfile: true })}
+                  onNewProfile={() => set({ newAgent: true })}
                   onNewTicket={() => set({ newTicket: {} })}
                   onShare={() => project && set({ share: project.meta.id })}
                   onOpenRun={setFocusRun}

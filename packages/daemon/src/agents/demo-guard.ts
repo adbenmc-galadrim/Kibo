@@ -1,8 +1,8 @@
 import { existsSync, realpathSync } from "node:fs";
 import { basename, dirname, join, resolve, sep } from "node:path";
-import type { GuardDecision, RunView } from "@kibo/schema";
+import { DEMO_AGENT_REF, type GuardDecision, type RunView } from "@kibo/schema";
 import { MAX_TEXT } from "./hook-payload";
-import { DEMO_PROFILE_ID, type ToolGuard } from "./orchestrator-types";
+import type { ToolGuard } from "./orchestrator-types";
 
 const PATH_KEYS = ["file_path", "notebook_path", "path"] as const;
 const DENIED: GuardDecision = { decision: "deny", reason: "the demo agent stays in its workspace" };
@@ -29,6 +29,6 @@ export function demoWorkspaceGuard(cwd: string, readsBrief: boolean): ToolGuard 
 }
 
 export function demoRunGuard(run: Pick<RunView, "profileId" | "cwd" | "ticketId">): ToolGuard | null {
-  if (run.profileId !== DEMO_PROFILE_ID) return null;
+  if (run.profileId !== DEMO_AGENT_REF) return null;
   return run.cwd === null ? () => DENIED : demoWorkspaceGuard(run.cwd, run.ticketId !== null);
 }

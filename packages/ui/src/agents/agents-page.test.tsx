@@ -1,11 +1,10 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { type AgentProfile, KiboError, type RpcRequest, runSubject } from "@kibo/schema";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { type RpcRequest, runSubject } from "@kibo/schema";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
 import { apiMock } from "../api-mock";
 import { frAgentsPage } from "../i18n/fr-agents-page";
-import { agentsFixture, configFixture, NOW, profilesFixture, projectsFixture } from "./fixtures";
+import { agentsFixture, NOW, projectsFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
 let respond: (req: RpcRequest) => Promise<unknown> = () => Promise.resolve(null);
@@ -22,7 +21,6 @@ mock.module("../api", () =>
 );
 
 const { AgentsPage } = await import("./AgentsPage");
-const { ProfileSheet } = await import("./ProfileSheet");
 
 beforeEach(() => {
   localStorage.clear();
@@ -31,26 +29,7 @@ beforeEach(() => {
 });
 
 const show = (onOpenRun: (runId: string) => void = () => {}) =>
-  render(
-    <AgentsPage
-      state={agentsFixture()}
-      config={configFixture()}
-      projects={projectsFixture}
-      now={NOW}
-      onOpenRun={onOpenRun}
-    />,
-  );
-const sheet = () => within(screen.getByRole("dialog"));
-
-function NewProfile() {
-  const [open, setOpen] = useState(true);
-  return open ? (
-    <ProfileSheet profile={null} config={configFixture()} hostSlots={3} onClose={() => setOpen(false)} />
-  ) : null;
-}
-
-const showNew = () => render(<NewProfile />);
-
+  render(<AgentsPage state={agentsFixture()} projects={projectsFixture} now={NOW} onOpenRun={onOpenRun} />);
 test("the page counts places, queue, waiting runs and today's tokens", () => {
   show();
   const stats = within(screen.getByRole("list", { name: "Agents" }));
@@ -68,20 +47,10 @@ test("the page leaves its title and actions to the shell header", () => {
   expect(screen.queryByRole("button", { name: "Nouveau profil" })).toBeNull();
 });
 
-test("profile cards describe each profile", () => {
+test("the agents section waits for the agent catalogue", () => {
   show();
-  const opus = within(screen.getByRole("article", { name: "opus-dev" }));
-  expect(opus.getByText("Claude Opus 5.5 · Claude Code")).toBeTruthy();
-  expect(opus.getByText("2 actifs")).toBeTruthy();
-  for (const text of ["worktree par ticket", "Modifications acceptées", "2 max", "Sonnet, Haiku"]) {
-    expect(opus.getByText(text)).toBeTruthy();
-  }
-  const sonnet = within(screen.getByRole("article", { name: "sonnet-review" }));
-  for (const text of ["dossier isolé", "Lecture seule (plan)", "3 max", "aucun"])
-    expect(sonnet.getByText(text)).toBeTruthy();
-  expect(sonnet.getByText("Claude Sonnet 5 · Claude Code")).toBeTruthy();
-  const haiku = within(screen.getByRole("article", { name: "haiku-tests" }));
-  expect(haiku.getByText("Claude Haiku 4.5 · Claude Code")).toBeTruthy();
+  expect(screen.getByRole("heading", { level: 2, name: "Agents" })).toBeTruthy();
+  expect(screen.getByText("Chargement…")).toBeTruthy();
 });
 
 test("the history lists runs newest first with their result", () => {
@@ -169,7 +138,7 @@ const stat = (label: string) =>
     .getAllByRole("listitem")
     .find((li) => li.textContent?.includes(label));
 
-test("screen 162: the project filter narrows queue, waiting, profile counts and history, and is remembered", async () => {
+test("screen 162: the project filter narrows queue, waiting and history, and is remembered", async () => {
   show();
   const user = userEvent.setup();
   expect(projectTrigger().textContent).toContain("Projet : tous");
@@ -183,7 +152,6 @@ test("screen 162: the project filter narrows queue, waiting, profile counts and 
   expect(stat("attend")?.textContent).toBe("0attend une réponse (place libérée)");
   expect(stat("en cours")?.textContent).toBe(`${slotsText()}runs en cours`);
   expect(stat("tokens")?.textContent).toContain("1,2M");
-  expect(within(screen.getByRole("article", { name: "opus-dev" })).queryByText("2 actifs")).toBeNull();
   fireEvent.click(screen.getByRole("radio", { name: "En échec" }));
   expect(screen.getByText("Aucun run ne correspond à ce filtre.")).toBeTruthy();
 });
@@ -224,249 +192,4 @@ test("the history names the project of each run under all projects only", async 
   await user.click(projectTrigger());
   await user.click(await screen.findByRole("menuitemradio", { name: "Kibo" }));
   expect(screen.queryByRole("columnheader", { name: "Projet" })).toBeNull();
-});
-
-test("a new profile is created with its guidelines", async () => {
-  respond = (req) =>
-    Promise.resolve(
-      req.method === "config" && req.command.method === "createProfile"
-        ? { ...req.command.profile, id: "new-id" }
-        : null,
-    );
-  showNew();
-  const user = userEvent.setup();
-  expect(sheet().getByText("Nouveau profil d'agent")).toBeTruthy();
-  await user.type(sheet().getByLabelText("Nom"), "opus-front");
-  await user.click(sheet().getByText("Dossier isolé"));
-  await user.click(sheet().getByText("Lecture seule (plan)"));
-  const parallel = sheet().getByLabelText("Runs en parallèle (profil)");
-  await user.clear(parallel);
-  await user.type(parallel, "2");
-  await user.click(sheet().getByText("Sonnet"));
-  expect(
-    sheet().getByText(
-      "Les sous-agents travaillent dans la place de leur parent. La limite de la machine (3) s'applique en plus.",
-    ),
-  ).toBeTruthy();
-  expect(sheet().getByRole("combobox", { name: "Modèle" }).textContent).toBe("Claude Opus 5.5");
-  await user.type(sheet().getByLabelText("Fichier"), "guidelines/front.md");
-  await user.click(sheet().getByRole("button", { name: "Ajouter" }));
-  expect(sheet().queryByLabelText("Contenu")).toBeNull();
-  await user.click(sheet().getByRole("button", { name: "guidelines/front.md" }));
-  await user.type(sheet().getByLabelText("Contenu"), "# Front");
-  await user.click(sheet().getByRole("button", { name: "Enregistrer guidelines/front.md" }));
-  expect(sheet().queryByLabelText("Contenu")).toBeNull();
-  await user.click(sheet().getByRole("button", { name: "Créer le profil" }));
-  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-  expect(calls).toEqual([
-    {
-      method: "config",
-      command: {
-        method: "createProfile",
-        profile: {
-          name: "opus-front",
-          model: "opus",
-          execution: "cli",
-          permissionMode: "plan",
-          workspace: "isolated",
-          maxParallel: 2,
-          subagents: ["sonnet"],
-          enabled: true,
-          allow: [],
-        },
-      },
-    },
-    {
-      method: "config",
-      command: {
-        method: "addGuideline",
-        owner: { scope: "profile", profileId: "new-id" },
-        path: "guidelines/front.md",
-        content: "# Front",
-      },
-    },
-  ]);
-});
-
-test("a new profile starts with safe defaults", async () => {
-  showNew();
-  const user = userEvent.setup();
-  await user.type(sheet().getByLabelText("Nom"), "haiku-tests");
-  await user.click(sheet().getByRole("button", { name: "Créer le profil" }));
-  expect(calls[0]).toEqual({
-    method: "config",
-    command: {
-      method: "createProfile",
-      profile: {
-        name: "haiku-tests",
-        model: "opus",
-        execution: "cli",
-        permissionMode: "default",
-        workspace: "worktree",
-        maxParallel: 1,
-        subagents: [],
-        enabled: true,
-        allow: [],
-      },
-    },
-  });
-});
-
-const ruled: AgentProfile = {
-  id: "opus",
-  name: "opus-dev",
-  model: "opus",
-  execution: "cli",
-  permissionMode: "acceptEdits",
-  workspace: "worktree",
-  maxParallel: 2,
-  subagents: [],
-  enabled: true,
-  allow: ["Bash(pnpm *)", "Edit"],
-  system: false,
-};
-const editRuled = () =>
-  render(<ProfileSheet profile={ruled} config={configFixture()} hostSlots={3} onClose={() => {}} />);
-const sentPatch = () => {
-  const call = calls[0];
-  return call?.method === "config" && call.command.method === "updateProfile" ? call.command.patch : null;
-};
-
-test("saving a profile without touching its rules keeps them", async () => {
-  editRuled();
-  const user = userEvent.setup();
-  expect((sheet().getByLabelText("Autorisations") as HTMLTextAreaElement).value).toBe("Bash(pnpm *)\nEdit");
-  await user.click(sheet().getByText("Lecture seule (plan)"));
-  await user.click(sheet().getByRole("button", { name: "Enregistrer" }));
-  await waitFor(() => expect(calls).toHaveLength(1));
-  expect(sentPatch()).toMatchObject({ permissionMode: "plan", allow: ["Bash(pnpm *)", "Edit"] });
-});
-
-test("the automatic mode and edited rules are saved, an unsafe rule blocks the save", async () => {
-  editRuled();
-  const user = userEvent.setup();
-  await user.click(sheet().getByText("Automatique (l'agent décide, sans contournement)"));
-  const rules = sheet().getByLabelText("Autorisations");
-  fireEvent.change(rules, { target: { value: "Bash(pnpm *)\nBash" } });
-  await user.click(sheet().getByRole("button", { name: "Enregistrer" }));
-  expect(sheet().getByText("Une règle Bash doit porter un motif : Bash(pnpm *).")).toBeTruthy();
-  expect(calls).toEqual([]);
-  fireEvent.change(rules, { target: { value: "Bash(pnpm *)\nBash(git *)" } });
-  await user.click(sheet().getByRole("button", { name: "Enregistrer" }));
-  await waitFor(() => expect(calls).toHaveLength(1));
-  expect(sentPatch()).toMatchObject({ permissionMode: "auto", allow: ["Bash(pnpm *)", "Bash(git *)"] });
-});
-
-test("invalid names and guideline paths are refused before any call", async () => {
-  showNew();
-  const user = userEvent.setup();
-  await user.type(sheet().getByLabelText("Nom"), "Opus Front");
-  await user.click(sheet().getByRole("button", { name: "Créer le profil" }));
-  expect(sheet().getByRole("alert").textContent).toBe("Nom invalide : minuscules, chiffres et tirets.");
-  await user.type(sheet().getByLabelText("Fichier"), "../secrets.md");
-  await user.click(sheet().getByRole("button", { name: "Ajouter" }));
-  expect(sheet().getByRole("alert").textContent).toBe(
-    "Chemin invalide : minuscules, chiffres et tirets, terminé par .md.",
-  );
-  expect(calls).toEqual([]);
-});
-
-test("editing saves the whole profile; deleting is confirmed and a busy profile is refused", async () => {
-  show();
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
-  expect(sheet().getByText("Profil opus-dev")).toBeTruthy();
-  await user.click(sheet().getByRole("button", { name: "Enregistrer" }));
-  const { id, system, ...input } = profilesFixture[0] ?? { id: "", system: false };
-  expect([id, system]).toEqual(["opus", false]);
-  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-  expect(calls).toEqual([
-    { method: "config", command: { method: "updateProfile", profileId: "opus", patch: input } },
-  ]);
-  calls.length = 0;
-  await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
-  respond = () => Promise.reject(new KiboError("PROFILE_IN_USE", "opus has active runs"));
-  await user.click(sheet().getByRole("button", { name: "Supprimer le profil" }));
-  const confirm = within(await screen.findByRole("alertdialog"));
-  expect(confirm.getByText("Supprimer le profil opus-dev ?")).toBeTruthy();
-  expect(confirm.getByText("Ses runs passés restent dans l'historique.")).toBeTruthy();
-  expect(calls).toEqual([]);
-  await user.click(confirm.getByRole("button", { name: "Supprimer" }));
-  expect(calls).toEqual([{ method: "config", command: { method: "deleteProfile", profileId: "opus" } }]);
-  expect((await confirm.findByRole("alert")).textContent).toBe("Ce profil a des runs en cours ou en file.");
-});
-
-test("in edit mode a guideline is added to the profile at once", async () => {
-  show();
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
-  await user.type(sheet().getByLabelText("Fichier"), "guidelines/review.md");
-  await user.click(sheet().getByRole("button", { name: "Ajouter" }));
-  expect(calls).toEqual([
-    {
-      method: "config",
-      command: {
-        method: "addGuideline",
-        owner: { scope: "profile", profileId: "opus" },
-        path: "guidelines/review.md",
-        content: "",
-      },
-    },
-  ]);
-});
-
-test("enter in the guideline field adds the file without submitting the profile", async () => {
-  showNew();
-  const user = userEvent.setup();
-  await user.type(sheet().getByLabelText("Fichier"), "guidelines/front.md{Enter}");
-  expect(sheet().getByText("guidelines/front.md")).toBeTruthy();
-  expect(sheet().getByLabelText("Fichier")).toHaveProperty("value", "");
-  expect(calls).toEqual([]);
-});
-
-test("in edit mode a guideline's content is edited in place", async () => {
-  const config = configFixture();
-  config.guidelines.push({
-    id: "g1",
-    owner: { scope: "profile", profileId: "opus" },
-    path: "guidelines/review.md",
-    content: "# Review",
-  });
-  render(
-    <AgentsPage
-      state={agentsFixture()}
-      config={config}
-      projects={projectsFixture}
-      now={NOW}
-      onOpenRun={() => {}}
-    />,
-  );
-  const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Modifier le profil opus-dev" }));
-  const row = sheet().getByRole("button", { name: "guidelines/review.md" });
-  expect(row.getAttribute("aria-expanded")).toBe("false");
-  await user.click(row);
-  expect(row.getAttribute("aria-expanded")).toBe("true");
-  const editor = sheet().getByLabelText("Contenu");
-  expect(editor).toHaveProperty("value", "# Review");
-  await user.clear(editor);
-  await user.type(editor, "# Relecture");
-  await user.click(sheet().getByRole("button", { name: "Enregistrer guidelines/review.md" }));
-  expect(calls).toEqual([
-    {
-      method: "config",
-      command: {
-        method: "updateGuideline",
-        owner: { scope: "profile", profileId: "opus" },
-        guidelineId: "g1",
-        content: "# Relecture",
-      },
-    },
-  ]);
-  await waitFor(() => expect(sheet().queryByLabelText("Contenu")).toBeNull());
-  respond = () => Promise.reject(new KiboError("NOT_FOUND", "guideline g1"));
-  await user.click(row);
-  await user.click(sheet().getByRole("button", { name: "Enregistrer guidelines/review.md" }));
-  expect((await sheet().findByRole("alert")).textContent).toBe("Impossible d'enregistrer le profil.");
-  expect(sheet().getByLabelText("Contenu")).toBeTruthy();
 });

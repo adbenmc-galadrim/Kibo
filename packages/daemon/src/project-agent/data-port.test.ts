@@ -92,9 +92,12 @@ test("assertWritable and runCommand refuse a read-only project", async () => {
   );
 });
 
-test("profiles, guidelines and the demo flag come from the injected dependencies", () => {
+test("agents, guidelines and the demo flag come from the injected dependencies", () => {
   const h = setup();
-  expect(h.data.profiles().map((p) => p.id)).toEqual(["opus", "assistant"]);
+  expect(h.data.agents(h.project.id).map((a) => [a.ref, a.description])).toEqual([
+    ["global:opus", "Agent opus-dev"],
+    ["system:assistant", "Agent kibo-assistant"],
+  ]);
   expect(h.data.guidelines(h.project.id)).toEqual([]);
   expect(h.data.isDemoProject(h.project.id)).toBe(false);
 });

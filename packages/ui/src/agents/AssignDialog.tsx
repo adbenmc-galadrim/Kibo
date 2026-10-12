@@ -1,5 +1,5 @@
 import {
-  type AgentProfile,
+  type AgentSummary,
   type AssignPreview,
   type Domain,
   isInbox,
@@ -31,7 +31,7 @@ import { KeyRequired } from "../shell/KeyRequired";
 import { canEdit } from "../state/access";
 import { NoFolderAlert, Notice, needsFolder, SpaceText, WaitingAlert } from "./AssignAlerts";
 import { AssignSession } from "./AssignSession";
-import { assignableProfiles, isDemoProfile } from "./demo-profile";
+import { assignableAgents, isDemoAgent } from "./assignable";
 import { reasonText } from "./format";
 
 type Props = {
@@ -39,6 +39,7 @@ type Props = {
   demo?: boolean;
   ticketId: string | null;
   config: WorkspaceConfig | null;
+  agents: AgentSummary[];
   onClose: () => void;
   onEditProject?: (projectId: string) => void;
 };
@@ -46,10 +47,16 @@ type Props = {
 type FormProps = {
   project: ProjectSnapshot;
   ticketId: string | null;
-  profiles: AgentProfile[];
+  agents: AgentSummary[];
   domains: Domain[];
   onClose: () => void;
   onEditProject?: (projectId: string) => void;
+};
+
+const MODEL_NAMES: Record<string, string> = fr.agents.modelNames;
+const modelName = (model: string | null): string => {
+  const name = model ?? "sonnet";
+  return MODEL_NAMES[name] ?? name;
 };
 
 const assignable = (t: TicketView) => t.statusId !== "done" && t.key !== null;
@@ -66,18 +73,18 @@ function queueTone(preview: AssignPreview | null): string | undefined {
   return preview.reason?.kind === "ticket_busy" ? "text-destructive" : "text-cyan-600 dark:text-cyan-400";
 }
 
-function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProject }: FormProps) {
+function AssignForm({ project, ticketId, agents, domains, onClose, onEditProject }: FormProps) {
   const id = useId();
   const open = project.tickets.filter(assignable);
   const [chosenTicket, setChosenTicket] = useState(ticketId ?? open[0]?.id ?? "");
-  const [profileId, setProfileId] = useState(profiles[0]?.id ?? "");
+  const [profileId, setProfileId] = useState(agents[0]?.ref ?? "");
   const [brief, setBrief] = useState("");
   const [preview, setPreview] = useState<AssignPreview | null>(null);
   const [previewFailed, setPreviewFailed] = useState(false);
   const [fresh, setFresh] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const ticket = project.tickets.find((t) => t.id === chosenTicket) ?? null;
-  const profile = profiles.find((p) => p.id === profileId) ?? null;
+  const profile = agents.find((p) => p.ref === profileId) ?? null;
   const domain = domains.find((d) => d.id === ticket?.domainId)?.name ?? null;
   const projectId = project.meta.id;
   const keyed = ticket?.key != null;
@@ -108,7 +115,7 @@ function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProje
         method: "assignAgent",
         projectId,
         ticketId: ticket.id,
-        profileId: profile.id,
+        profileId: profile.ref,
         brief: brief.trim(),
         fresh,
       });
@@ -168,15 +175,15 @@ function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProje
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {profiles.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
+                {agents.map((p) => (
+                  <SelectItem key={p.ref} value={p.ref}>
                     <Bot aria-hidden />
-                    {isDemoProfile(p)
+                    {isDemoAgent(p)
                       ? frAgentsPage.demo.option
                       : fr.assign.profileOption(
                           p.name,
-                          fr.agents.modelNames[p.model],
-                          fr.strategiesShort[p.workspace],
+                          modelName(p.model),
+                          fr.strategiesShort[p.settings.workspace],
                         )}
                   </SelectItem>
                 ))}
@@ -202,10 +209,10 @@ function AssignForm({ project, ticketId, profiles, domains, onClose, onEditProje
             <dl className="grid grid-cols-[9rem_1fr] gap-y-1.5 rounded-md border bg-muted/30 p-3 text-sm">
               <dt className="text-muted-foreground">{fr.assign.space}</dt>
               <dd>
-                <SpaceText profile={profile} project={project} ticket={ticket} />
+                <SpaceText agent={profile} project={project} ticket={ticket} />
               </dd>
               <dt className="text-muted-foreground">{fr.assign.permissions}</dt>
-              <dd>{profile.permissionMode}</dd>
+              <dd>{profile.settings.permissionMode}</dd>
               <dt className="text-muted-foreground">{fr.assign.guidelines}</dt>
               <dd>
                 {preview ? fr.assign.guidelineChain(project.meta.name, domain, preview.guidelines) : "-"}
@@ -243,12 +250,20 @@ function hasOpenTicket(project: ProjectSnapshot): boolean {
   return project.tickets.some(assignable);
 }
 
-export function AssignDialog({ project, demo = false, ticketId, config, onClose, onEditProject }: Props) {
+export function AssignDialog({
+  project,
+  demo = false,
+  ticketId,
+  config,
+  agents,
+  onClose,
+  onEditProject,
+}: Props) {
   if (!project) return <Notice title={fr.assign.launchTitle} text={fr.assign.noProject} onClose={onClose} />;
   if (isInbox(project.meta.id))
     return <Notice title={fr.assign.launchTitle} text={frInbox.noAgent} onClose={onClose} />;
   if (!config) return null;
-  const assignable = assignableProfiles(config.profiles, demo);
+  const assignable = assignableAgents(agents, demo);
   if (assignable.length === 0) {
     return <Notice title={fr.assign.launchTitle} text={fr.assign.noProfile} onClose={onClose} />;
   }
@@ -259,7 +274,7 @@ export function AssignDialog({ project, demo = false, ticketId, config, onClose,
     <AssignForm
       project={project}
       ticketId={ticketId}
-      profiles={assignable}
+      agents={assignable}
       domains={projectDomainsOf(project, config) ?? []}
       onClose={onClose}
       onEditProject={onEditProject}

@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { PROFILES, PROJECT_ID, project, run, ticket } from "@kibo/core/project-agent/test-kit";
+import { AGENTS, PROJECT_ID, project, run, ticket } from "@kibo/core/project-agent/test-kit";
 import {
   type ActionResult,
   type AgentsState,
@@ -139,7 +139,7 @@ export function serviceKit(): Kit {
       if (!writable) throw new KiboError("FORBIDDEN", "read only");
     },
     viewer: () => "adam",
-    profiles: () => PROFILES,
+    agents: () => AGENTS,
     guidelines: () => [],
     isDemoProject: () => false,
     notes: async () => [...notes].map(([path, content]) => ({ path, title: path, hash: `h:${content}` })),

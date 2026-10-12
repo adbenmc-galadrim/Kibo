@@ -52,7 +52,7 @@ function assign(rpc: Rpc, kibo: Kibo, key: string): Promise<RunView> {
     method: "assignAgent",
     projectId: kibo.project.id,
     ticketId: kibo.keys.get(key)?.id,
-    profileId: kibo.opus.id,
+    profileId: kibo.opus.ref,
     brief: "",
   });
 }

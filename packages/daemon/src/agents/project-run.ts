@@ -1,13 +1,13 @@
 import { headRank } from "@kibo/core/scheduler";
 import {
-  type AgentProfile,
+  type Agent,
   isProjectRun,
   isTerminal,
   KiboError,
   PROJECT_AGENT_DENY,
   PROJECT_AGENT_MCP_TOOLS,
-  PROJECT_AGENT_PROFILE_ID,
   PROJECT_AGENT_READ_TOOLS,
+  PROJECT_AGENT_REF,
   type RunView,
 } from "@kibo/schema";
 import { type McpLaunch, type McpLaunchInput, mcpRoute } from "./mcp-launch";
@@ -19,15 +19,16 @@ export const PROJECT_WORKSPACE_LABEL = "projet";
 
 type CreateDeps = {
   registry: RunRegistry;
-  profileOf: (profileId: string) => AgentProfile;
+  agentOf: (ref: string) => Agent;
   assertWritable: (projectId: string) => void;
+  projectKey: (projectId: string) => string | null;
 };
 
 export function createProjectRun(
-  { registry, profileOf, assertWritable }: CreateDeps,
+  { registry, agentOf, assertWritable, projectKey }: CreateDeps,
   input: ProjectRunInput,
 ): string {
-  const agent = profileOf(PROJECT_AGENT_PROFILE_ID);
+  const agent = agentOf(PROJECT_AGENT_REF);
   assertWritable(input.projectId);
   const open = registry
     .all()
@@ -41,8 +42,10 @@ export function createProjectRun(
       ticketId: null,
       ticketKey: null,
       ticketTitle: `Agent de projet · ${input.projectName}`,
-      profileId: agent.id,
+      profileId: agent.ref,
       profileName: agent.name,
+      agentScope: agent.scope,
+      projectKey: projectKey(input.projectId),
       sessionId: crypto.randomUUID(),
       brief: "",
       kind: "project",
@@ -74,7 +77,7 @@ export type ProjectLaunch = McpLaunch;
 
 export function projectLaunch(input: McpLaunchInput): ProjectLaunch {
   return {
-    allow: [...PROJECT_AGENT_MCP_TOOLS, ...PROJECT_AGENT_READ_TOOLS, ...input.profile.allow],
+    allow: [...PROJECT_AGENT_MCP_TOOLS, ...PROJECT_AGENT_READ_TOOLS, ...input.agent.settings.allow],
     deny: PROJECT_AGENT_DENY,
     ...mcpRoute(input, "project"),
   };

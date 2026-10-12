@@ -1,12 +1,6 @@
 import type { ProjectCommand } from "@kibo/schema";
 import { z } from "zod";
-import {
-  ensureNotesDir,
-  ensurePages,
-  ensureProfileAndGuidelines,
-  ensureProject,
-  type Step,
-} from "./apply-config";
+import { ensureGuidelines, ensureNotesDir, ensurePages, ensureProject, type Step } from "./apply-config";
 import type { SeedClient } from "./daemon-client";
 import type { Desired } from "./desired";
 import { refKey } from "./desired-tickets";
@@ -79,7 +73,7 @@ export async function applyDesired(
   if (project) await ensureNotesDir(step, project, options.notesDir);
   else step.changes.push({ kind: "created", what: "notesDir", detail: options.notesDir });
   const projectId = project?.id ?? null;
-  await ensureProfileAndGuidelines(step, projectId);
+  await ensureGuidelines(step, projectId);
   await ensurePages(step, projectId, options.manifestVersions);
   const after = await ensureTickets(step, projectId, options.notesDir);
   step.changes.push(

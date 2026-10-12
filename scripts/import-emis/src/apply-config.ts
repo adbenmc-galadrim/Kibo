@@ -68,24 +68,9 @@ async function config(step: Step, command: ConfigCommand): Promise<void> {
   await step.client.rpc({ method: "config", command });
 }
 
-export async function ensureProfileAndGuidelines(step: Step, projectId: string | null): Promise<void> {
+export async function ensureGuidelines(step: Step, projectId: string | null): Promise<void> {
   const current = await step.client.rpc({ method: "getConfig" });
-  const { profile, guidelines } = step.desired;
-  const existing = current.profiles.find((p) => p.name === profile.name);
-  if (!existing) {
-    record(step, "created", `profile ${profile.name}`);
-    await config(step, { method: "createProfile", profile });
-  } else if (
-    existing.permissionMode !== profile.permissionMode ||
-    existing.allow.join("\n") !== profile.allow.join("\n")
-  ) {
-    record(step, "updated", `profile ${profile.name}`, "permissionMode, allow");
-    await config(step, {
-      method: "updateProfile",
-      profileId: existing.id,
-      patch: { permissionMode: profile.permissionMode, allow: profile.allow },
-    });
-  } else record(step, "kept", `profile ${profile.name}`);
+  const { guidelines } = step.desired;
 
   const owner: GuidelineOwner = { scope: "project", projectId: projectId ?? "new-project" };
   for (const g of guidelines) {

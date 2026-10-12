@@ -1,4 +1,5 @@
-import type { DesiredPage, DesiredProject, ProfileSettings } from "../src/desired";
+import type { AgentSettingsPatch } from "@kibo/schema";
+import type { DesiredPage, DesiredProject } from "../src/desired";
 
 export const PROJECT: DesiredProject = { name: "Kibo", key: "KIB", color: "#6366F1" };
 
@@ -41,10 +42,9 @@ export const DOMAINS: { name: string; file: string }[] = [
 export const GUIDELINE_PATHS = {
   workspace: "conventions.md",
   project: "kibo.md",
-  profile: "consignes.md",
 } as const;
 
-export const AGENT_SETTINGS: Record<string, ProfileSettings> = {
+export const AGENT_SETTINGS: Record<string, AgentSettingsPatch> = {
   "kibo-lead": { permissionMode: "default", workspace: "worktree", maxParallel: 1 },
   "kibo-dev": { permissionMode: "acceptEdits", workspace: "worktree", maxParallel: 2 },
   "kibo-reviewer": { permissionMode: "plan", workspace: "worktree", maxParallel: 2 },

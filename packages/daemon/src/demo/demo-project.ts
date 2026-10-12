@@ -18,7 +18,6 @@ import type { ProjectSettings } from "../notes/settings";
 import { DEMO_COMPONENT_VERSION, DEMO_LINKS, DEMO_NOTE, DEMO_PAGES, DEMO_TICKETS } from "./demo-seed";
 
 export const DEMO_FLAG = "demo";
-export const DEMO_AGENT_PROFILE = "demo";
 export const DEMO_PROJECT_NAME = "Démo Kibo";
 const DEMO_COLOR = "#F97316";
 

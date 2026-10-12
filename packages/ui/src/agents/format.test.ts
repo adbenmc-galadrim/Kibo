@@ -28,8 +28,8 @@ test("durations and token counts read like the mockups", () => {
 });
 
 test("wait reasons, workspaces and errors are said in French", () => {
-  expect(reasonText({ kind: "profile", profileName: "opus-dev", used: 2, total: 2 })).toBe(
-    "attend une place du profil opus-dev (2/2)",
+  expect(reasonText({ kind: "agent", agentName: "opus-dev", used: 2, total: 2 })).toBe(
+    "attend une place de l'agent opus-dev (2/2)",
   );
   expect(reasonText({ kind: "host", used: 3, total: 3 })).toBe("attend une place sur la machine (3/3)");
   expect(reasonText({ kind: "cpu", value: 91, threshold: 85 })).toBe("CPU 91 % (seuil 85 %)");

@@ -35,6 +35,7 @@ export const fr = {
     deleteProject: "Supprimer…",
     agents: "Agents",
     queue: "Files d'attente",
+    skills: "Skills",
     settings: "Paramètres",
     general: "Général",
     domains: "Domaines & guidelines",
@@ -260,9 +261,9 @@ export const fr = {
       cpu: (value: number, threshold: number) => `CPU ${value} % (seuil ${threshold} %)`,
       ram: (value: number, threshold: number) => `RAM ${value} % (seuil ${threshold} %)`,
       host: (used: number, total: number) => `attend une place sur la machine (${used}/${total})`,
-      profile: (name: string, used: number, total: number) =>
-        `attend une place du profil ${name} (${used}/${total})`,
-      profileMissing: "profil supprimé",
+      agent: (name: string, used: number, total: number) =>
+        `attend une place de l'agent ${name} (${used}/${total})`,
+      agentMissing: "agent supprimé",
       ticketBusy: "un run de ce ticket est déjà en cours ou en file",
       next: "admission au prochain passage",
     },

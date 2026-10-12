@@ -33,6 +33,7 @@ export function crumbsFor(
 ): Crumb[] {
   if (target?.kind === "screen") return screenCrumbs(target.screen);
   if (target?.kind === "run") return runCrumbs(target.runId, ctx.runs);
+  if (target?.kind === "skill") return [...screenCrumbs("skills"), text(target.skillId)];
   const p = ctx.project;
   if (!target || !p) return [text(fr.nav.overview)];
   const project = projectCrumb(p);

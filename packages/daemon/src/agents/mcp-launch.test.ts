@@ -16,7 +16,7 @@ const input = () => {
   const home = mkdtempSync(join(tmpdir(), "kibo-mcp-launch-"));
   dirs.push(home);
   return {
-    profile: profile({ allow: ["Bash(bun test *)"] }),
+    agent: profile({ allow: ["Bash(bun test *)"] }),
     baseUrl: "http://127.0.0.1:4100",
     runId: "r1",
     runDir: join(home, "runs", "r1"),

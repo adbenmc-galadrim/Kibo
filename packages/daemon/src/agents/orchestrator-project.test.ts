@@ -31,7 +31,7 @@ test("startProjectRun queues a project run at the head with its first message", 
   expect(r).toMatchObject({
     kind: "project",
     ticketId: null,
-    profileId: "project-agent",
+    profileId: "system:project-agent",
     ticketTitle: "Agent de projet · Emis",
     brief: "",
     state: "queued",

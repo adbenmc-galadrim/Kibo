@@ -9,24 +9,12 @@ const REPO = join(import.meta.dir, "..", "..", "..");
 const desired = loadDesired(REPO, "/tmp/kibo-folder");
 
 describe("loadDesired", () => {
-  test("imports the four agents of the repository with their consignes", () => {
-    expect(desired.profiles.map((p) => p.profile.name)).toEqual([
-      "kibo-dev",
-      "kibo-lead",
-      "kibo-reviewer",
-      "kibo-runner",
-    ]);
-    const reviewer = desired.profiles.find((p) => p.profile.name === "kibo-reviewer");
-    expect(reviewer?.profile.permissionMode).toBe("plan");
-    expect(reviewer?.guideline).toContain("en lecture seule");
-  });
-
-  test("chains guidelines from workspace to profile", () => {
+  test("chains guidelines from workspace to domain, the agents stay in their files", () => {
     const scopes = desired.guidelines.map((g) => g.owner.scope);
     expect(scopes.filter((s) => s === "workspace")).toHaveLength(1);
     expect(scopes.filter((s) => s === "project")).toHaveLength(1);
     expect(scopes.filter((s) => s === "domain")).toHaveLength(DOMAINS.length);
-    expect(scopes.filter((s) => s === "profile")).toHaveLength(4);
+    expect(scopes).toHaveLength(2 + DOMAINS.length);
     expect(desired.guidelines.every((g) => g.content.trim().length > 0)).toBe(true);
   });
 

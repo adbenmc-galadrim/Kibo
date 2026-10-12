@@ -50,7 +50,7 @@ const instance = (id: string, component: string, x = 0): Instance => ({
   componentHash: null,
 });
 const run = (over: Partial<TutorialRun>): TutorialRun => ({
-  profileId: "demo",
+  profileId: "system:demo",
   projectId: "demo",
   state: "done",
   ...over,

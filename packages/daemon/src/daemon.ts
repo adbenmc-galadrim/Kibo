@@ -3,6 +3,7 @@ import { osSandbox, type Toolchain } from "@kibo/devkit";
 import { BACKUP_TICK_MS, type HostLoad, isTerminal, type Session, ticketRuns } from "@kibo/schema";
 import { defaultHookLauncher } from "./agents/hook-launcher";
 import { createLoadSampler, readHostInfo } from "./agents/host-load";
+import type { AgentSource } from "./agents/neutral-agents";
 import type { Notice } from "./agents/notifier";
 import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
 import { openRunStore } from "./agents/run-store";
@@ -72,6 +73,7 @@ export type DaemonOptions = {
   assistantTimeoutMs?: number;
   marketAllowLoopback?: boolean;
   probe?: Probe;
+  agentSource?: AgentSource;
 } & Partial<
   Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli" | "cliStatus">
 >;
@@ -95,6 +97,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const service = createService(store, {
     user: opts.user,
     ...(opts.notifications && { notifications: opts.notifications }),
+    ...(opts.agentSource && { agents: opts.agentSource }),
   });
   const sandboxService = createSandboxService({
     sandbox: osSandbox(),
@@ -315,6 +318,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     address: `127.0.0.1:${server.port}`,
     listIntegrations: async () => call(service, { method: "listIntegrations" }),
     appInfo: app.appInfo,
+    agentEnabled: (ref) => service.agentData.agentOf(ref)?.settings.enabled ?? false,
     ...(opts.assistantTimeoutMs !== undefined && { assistantTimeoutMs: opts.assistantTimeoutMs }),
   });
   draftAssets = ai.draftAssets;

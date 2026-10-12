@@ -5,7 +5,6 @@ import { client } from "../api";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { useHost } from "../shell/Host";
 import type { ProjectAgentTab } from "../shell/use-project-agent-panel";
-import { useConfig } from "../state/use-agents";
 import { useRunLog } from "../state/use-run-log";
 import type { Decision } from "./BatchCard";
 import { projectLabels } from "./batch-groups";
@@ -48,8 +47,7 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
     () => buildConversation(log ?? [], view?.batches ?? [], view?.run ?? null),
     [log, view],
   );
-  const profiles = useConfig()?.profiles;
-  const labels = useMemo(() => projectLabels(project, profiles), [project, profiles]);
+  const labels = useMemo(() => projectLabels(project), [project]);
 
   const send = async (text: string) => {
     await client.rpc({ method: "sendProjectAgentMessage", projectId, text });

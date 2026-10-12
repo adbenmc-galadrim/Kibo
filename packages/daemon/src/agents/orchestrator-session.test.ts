@@ -69,7 +69,7 @@ test("another profile or a reset starts a fresh main session from the assignment
   expect(other.sessionId).not.toBe(first.sessionId);
   expect(other.resumedFrom).toBeNull();
   await finished(h, other.id);
-  expect(sessionEvent(h, other.id)).toEqual({ type: "session", mode: "fresh", reason: "profile_changed" });
+  expect(sessionEvent(h, other.id)).toEqual({ type: "session", mode: "fresh", reason: "agent_changed" });
   expect(fakeCalls(h.state, other.sessionId).map((c) => flagOf(c.argv))).toEqual(["--session-id"]);
 
   const reset = assign(h, "t1", "sonnet", true);
@@ -166,9 +166,9 @@ test("a refused delivery mark is logged and the run goes on", async () => {
 test("the preview offers to resume the main session, unless the transcript is gone", async () => {
   const { h } = inRepo();
   const target = { projectId: "p1", ticketId: "t1" };
-  expect(h.orch.preview({ ...target, profileId: "opus" }).session).toBeNull();
+  expect(h.orch.preview({ ...target, profileId: "global:opus" }).session).toBeNull();
   const first = await finished(h, assign(h, "t1").id);
-  expect(h.orch.preview({ ...target, profileId: "opus" }).session).toEqual({
+  expect(h.orch.preview({ ...target, profileId: "global:opus" }).session).toEqual({
     runId: first.id,
     label: first.label,
     turns: 1,
@@ -176,11 +176,11 @@ test("the preview offers to resume the main session, unless the transcript is go
     resumable: true,
     reason: null,
   });
-  expect(h.orch.preview({ ...target, profileId: "sonnet" }).session).toMatchObject({
-    reason: "profile_changed",
+  expect(h.orch.preview({ ...target, profileId: "global:sonnet" }).session).toMatchObject({
+    reason: "agent_changed",
   });
   rmSync(first.transcriptPath ?? "");
-  expect(h.orch.preview({ ...target, profileId: "opus" }).session).toMatchObject({
+  expect(h.orch.preview({ ...target, profileId: "global:opus" }).session).toMatchObject({
     resumable: false,
     reason: "transcript_missing",
   });

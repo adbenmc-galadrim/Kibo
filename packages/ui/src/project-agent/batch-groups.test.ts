@@ -147,11 +147,11 @@ test("a parent change shows the captured parentId as a key from the project, nev
   expect(actionDiff(move("EMIS-11"), undefined, labels)).toEqual({ before: "—", after: "EMIS-11" });
 });
 
-test("an assignment names the profile, never its id", () => {
+test("an assignment names the agent, never its ref", () => {
   const assign: ProposedAction = { id: 1, type: "assignAgent", ticket: "EMIS-1", profileId: "p-42", why: "" };
-  const labels = projectLabels(emisProject(), [{ id: "p-42", name: "opus-dev" }]);
+  const labels = projectLabels(emisProject(), [{ ref: "p-42", name: "opus-dev" }]);
   expect(actionTitle(assign, labels)).toBe("Assigner EMIS-1 à opus-dev");
-  expect(actionTitle({ ...assign, profileId: "gone" }, labels)).toBe("Assigner EMIS-1 à gone");
+  expect(actionTitle({ ...assign, profileId: "global:gone" }, labels)).toBe("Assigner EMIS-1 à gone");
 });
 
 test("dismissSignal goes to the Signaux group, after Notes, with its own title", () => {

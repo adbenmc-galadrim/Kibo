@@ -3,7 +3,7 @@ import type { RunSession, SessionFreshReason } from "@kibo/schema";
 const turnsText = (n: number) => `${n} tour${n > 1 ? "s" : ""}`;
 const SESSION_REASONS: Record<SessionFreshReason, string> = {
   no_previous: "première session du ticket",
-  profile_changed: "autre profil",
+  agent_changed: "autre agent",
   transcript_missing: "transcript introuvable",
   workspace_changed: "autre dossier de travail",
   user_reset: "repartie de zéro",

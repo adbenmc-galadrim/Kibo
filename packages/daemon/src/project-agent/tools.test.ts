@@ -115,7 +115,7 @@ describe("read tools", () => {
     const overview = JSON.parse(text);
     expect(overview).toMatchObject({ name: "Emis", key: "EMIS", memory: "# Mémoire\n\nRien.\n" });
     expect(overview.runs.map((r: { id: string }) => r.id)).toEqual(["r1"]);
-    expect(overview.profiles.map((p: { id: string }) => p.id)).toEqual(["opus"]);
+    expect(overview.profiles.map((p: { id: string }) => p.id)).toEqual(["global:opus"]);
     expect(overview.openSignals).toBe(2);
   });
 
@@ -205,9 +205,11 @@ describe("read tools", () => {
     expect(await codeOf(w.tool("read_note", { path: "absente.md" }))).toBe("NOT_FOUND");
   });
 
-  test("list_profiles lists only the assignable profiles", async () => {
+  test("list_profiles lists only the assignable agents, with their scope and description", async () => {
     const w = await world();
-    expect(await w.json("list_profiles")).toEqual([{ id: "opus", name: "opus-dev", model: "opus" }]);
+    expect(await w.json("list_profiles")).toEqual([
+      { id: "global:opus", name: "opus-dev", scope: "global", description: "Agent opus-dev", model: "opus" },
+    ]);
   });
 
   test("project_changes renders the whole digest since the saved fingerprint", async () => {
