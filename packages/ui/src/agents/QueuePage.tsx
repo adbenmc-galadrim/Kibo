@@ -3,6 +3,7 @@ import {
   type ActiveSubagent,
   type AgentSummary,
   type AgentsState,
+  keyBesideLabel,
   type ProjectSummary,
   type QueueEntry,
   type RpcRequest,
@@ -231,7 +232,9 @@ export function QueueBoard({ state, agents, projects, now, onAnswer }: BoardProp
               >
                 <span className="flex min-w-0 items-center gap-1 text-xs">
                   <Mention runId={r.id} label={r.label} />
-                  {r.ticketKey && <span className="font-mono">{`· ${r.ticketKey}`}</span>}
+                  {keyBesideLabel(r.label, r.ticketKey) && (
+                    <span className="font-mono">{`· ${r.ticketKey}`}</span>
+                  )}
                 </span>
                 {r.question && <p className="text-2xs text-muted-foreground">{`« ${r.question} »`}</p>}
                 <Button

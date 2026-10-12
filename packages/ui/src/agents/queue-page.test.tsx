@@ -326,3 +326,21 @@ test("the page asks the agents of the filtered project and titles each column wi
   expect(screen.getByRole("region", { name: "review-pr · Kibo" })).toBeTruthy();
   expect(screen.queryByRole("region", { name: "review-pr · Global" })).toBeNull();
 });
+
+test("a waiting run whose name holds its ticket does not repeat the key", () => {
+  const state = agentsFixture();
+  const runs = state.runs.map((r) =>
+    r.state === "waiting_input" ? { ...r, label: `global · opus-dev · ${r.ticketKey ?? ""}` } : r,
+  );
+  render(
+    <QueueBoard
+      state={{ ...state, runs }}
+      agents={agentsSummaryFixture}
+      projects={projectsFixture}
+      now={NOW}
+      onAnswer={() => {}}
+    />,
+  );
+  const waiting = within(screen.getByRole("region", { name: "En attente de réponse" }));
+  expect(waiting.queryByText(/^· KIB-/)).toBeNull();
+});

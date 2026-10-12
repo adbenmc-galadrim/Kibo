@@ -1,4 +1,4 @@
-import type { Skill, SkillReview } from "@kibo/schema";
+import { keyBesideLabel, type Skill, type SkillReview } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
@@ -51,7 +51,7 @@ function Origin({ review }: { review: SkillReview }) {
   return (
     <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
       <Mention runId={review.runId} label={review.runLabel} />
-      {review.ticketKey && ticketId && (
+      {keyBesideLabel(review.runLabel, review.ticketKey) && ticketId && (
         <button
           type="button"
           aria-label={t.openTicket(review.ticketKey)}

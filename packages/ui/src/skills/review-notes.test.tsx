@@ -96,9 +96,8 @@ test("screen 195b: each open review shows its verdict, its note, its run, its ti
   expect(first.getByText("il y a 2 h")).toBeTruthy();
   expect(first.getByText(/Le volet conventions a relu tout le fichier/)).toBeTruthy();
   expect(first.getByText("· suggestion jointe")).toBeTruthy();
+  expect(first.queryByRole("button", { name: "Ouvrir KIB-14" })).toBeNull();
   const user = userEvent.setup();
-  await user.click(first.getByRole("button", { name: "Ouvrir KIB-14" }));
-  expect(h.opened).toEqual(["t14"]);
   await user.click(first.getByRole("button", { name: "Intégrer" }));
   expect(handlers.onIntegrate.mock.calls[0]?.[0].id).toBe("rv1");
   const second = within(panel.getByRole("article", { name: "kibo · review-pr · KIB-12" }));

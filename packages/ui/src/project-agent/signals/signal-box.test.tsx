@@ -110,3 +110,13 @@ test("an empty box explains what will land here and that no wakeup is planned", 
   expect(screen.getByText("aucun réveil prévu")).toBeTruthy();
   expect(screen.queryByRole("region", { name: "Traités" })).toBeNull();
 });
+
+test("a signal whose run name holds its ticket does not repeat the key", async () => {
+  current = {
+    ...signalsView(),
+    signals: OPEN_SIGNALS.map((s) => ({ ...s, runLabel: `global · livraison · ${s.ticketKey}` })),
+  };
+  render(<Box />);
+  const box = within(await screen.findByRole("region", { name: "En boîte · 3" }));
+  expect(box.queryByRole("button", { name: /^KIB-\d+$/ })).toBeNull();
+});

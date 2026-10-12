@@ -1,4 +1,4 @@
-import { type RunView, runSubject } from "@kibo/schema";
+import { type RunView, runSubjectBeside } from "@kibo/schema";
 import { RUN_TEXT, RunDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Badge } from "@kibo/sdk/ui/badge";
@@ -17,14 +17,14 @@ type Props = {
 
 function TicketLink({ run, onOpenTicket }: Pick<Props, "run" | "onOpenTicket">) {
   const { projectId, ticketId } = run;
-  if (!projectId || !ticketId) return <span>{runSubject(run)}</span>;
+  if (!projectId || !ticketId) return <span>{runSubjectBeside(run)}</span>;
   return (
     <button
       type="button"
       className="max-w-full truncate rounded-sm hover:text-foreground hover:underline"
       onClick={() => onOpenTicket(projectId, ticketId)}
     >
-      {runSubject(run)}
+      {runSubjectBeside(run)}
     </button>
   );
 }

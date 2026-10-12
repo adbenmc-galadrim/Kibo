@@ -279,3 +279,12 @@ export function runSubject(
 ): string {
   return run.ticketKey ? `${run.ticketKey} · ${text}` : text;
 }
+
+export const keyBesideLabel = (label: string, key: string | null): string | null =>
+  key !== null && !label.split(" · ").includes(key) ? key : null;
+
+export function runSubjectBeside(
+  run: Pick<RunRecord, "ticketKey" | "ticketTitle"> & { label: string },
+): string {
+  return keyBesideLabel(run.label, run.ticketKey) === null ? run.ticketTitle : runSubject(run);
+}

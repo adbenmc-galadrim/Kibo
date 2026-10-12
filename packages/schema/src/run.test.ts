@@ -1,6 +1,13 @@
 import { expect, test } from "bun:test";
 import { PROJECT_AGENT_MCP_TOOLS } from "./project-agent-tools";
-import { HookInput, HookPayload, permissionReply, type RunRecord } from "./run";
+import {
+  HookInput,
+  HookPayload,
+  keyBesideLabel,
+  permissionReply,
+  type RunRecord,
+  runSubjectBeside,
+} from "./run";
 
 const PAYLOAD = {
   event: "Stop",
@@ -72,4 +79,13 @@ test("a run record names its agent scope and project key", () => {
   };
   expect(record.agentScope).toBe("project");
   expect(PROJECT_AGENT_MCP_TOOLS).toContain("mcp__kibo__skill_review");
+});
+
+test("a run name that already names the ticket does not get its key a second time", () => {
+  expect(keyBesideLabel("kib · kibo-dev · KIB-14", "KIB-14")).toBeNull();
+  expect(keyBesideLabel("opus-dev-2", "KIB-14")).toBe("KIB-14");
+  expect(keyBesideLabel("kib · kibo-project-agent", null)).toBeNull();
+  const run = { label: "global · livraison · KIB-14", ticketKey: "KIB-14", ticketTitle: "Récepteur" };
+  expect(runSubjectBeside(run)).toBe("Récepteur");
+  expect(runSubjectBeside({ ...run, label: "opus-dev-2" })).toBe("KIB-14 · Récepteur");
 });

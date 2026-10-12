@@ -1,4 +1,10 @@
-import { type RunProgressSummary, type RunQuestions, type RunView, runSubject } from "@kibo/schema";
+import {
+  keyBesideLabel,
+  type RunProgressSummary,
+  type RunQuestions,
+  type RunView,
+  runSubject,
+} from "@kibo/schema";
 import { RunDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import type { ReactNode } from "react";
@@ -91,20 +97,20 @@ export function DockRuns({ groups, progress, questions, now, selected, onSelect 
   const active: Row[] = [
     ...groups.active.map((run) => ({
       run,
-      ticket: run.ticketKey,
+      ticket: keyBesideLabel(run.label, run.ticketKey),
       aside: age(run),
       line: stepChip(byRun.get(run.id)) ?? run.ticketTitle,
     })),
     ...groups.waiting.map((run) => ({
       run,
-      ticket: run.ticketKey,
+      ticket: keyBesideLabel(run.label, run.ticketKey),
       aside: age(run),
       line: <span className="text-brand-strong dark:text-brand">{t.waiting}</span>,
     })),
   ];
   const queued: Row[] = groups.queued.map((run) => ({
     run,
-    ticket: run.ticketKey,
+    ticket: keyBesideLabel(run.label, run.ticketKey),
     aside: "",
     line: run.ticketTitle,
   }));

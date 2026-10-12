@@ -19,6 +19,8 @@ test("the heading names the run, its agent with its scope, and when it started",
   render(<RunHeading run={run("a", NOW - 3_600_000)} onOpenTicket={() => {}} />);
   expect(screen.getByRole("heading", { level: 2, name: "global · review-pr · KIB-3" })).toBeTruthy();
   expect(screen.getByText("Agent review-pr · Global")).toBeTruthy();
+  expect(screen.getByRole("button", { name: run("a", NOW).ticketTitle })).toBeTruthy();
+  expect(screen.queryByText(/KIB-3 · /)).toBeNull();
 });
 
 test("two runs of the same agent on the same ticket differ by their start time", () => {

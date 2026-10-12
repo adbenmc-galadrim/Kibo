@@ -1,4 +1,4 @@
-import type { RunQuestions, RunView, Session } from "@kibo/schema";
+import { keyBesideLabel, type RunQuestions, type RunView, type Session } from "@kibo/schema";
 import { DropdownMenuItem, DropdownMenuLabel } from "@kibo/sdk/ui/dropdown-menu";
 import { RunStateLabel } from "../agents/RunStateLabel";
 import { fr } from "../i18n/fr";
@@ -24,7 +24,7 @@ export function RunHistoryList({ runs, questions, now, notifications, onOpenRun 
       {runs.map((run) => (
         <DropdownMenuItem key={run.id} className="grid gap-0.5" onSelect={() => onOpenRun(run.id)}>
           <span className="truncate text-sm">
-            {run.label} · {run.ticketKey && `${run.ticketKey} · `}
+            {run.label} · {keyBesideLabel(run.label, run.ticketKey) && `${run.ticketKey} · `}
             <RunStateLabel run={run} questions={questions} short /> · {relativeTime(runMoment(run), now)}
           </span>
           {run.state === "waiting_input" && <span className="text-xs text-brand">{fr.header.reply}</span>}
