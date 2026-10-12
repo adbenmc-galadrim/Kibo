@@ -28,6 +28,14 @@ test("the screens are pages of the palette and open as targets", () => {
   );
 });
 
+test("Skills is a page of the palette under the agents", () => {
+  const item = searchItems(buildItems(context), "skills", "pages")[0]?.items[0];
+  expect([item?.label, item?.run]).toEqual([
+    "Skills",
+    { kind: "target", target: { kind: "screen", screen: "skills" } },
+  ]);
+});
+
 test("Créations is a page of the palette that opens the screen", () => {
   const item = searchItems(buildItems(context), "creations", "pages")[0]?.items[0];
   expect([item?.label, item?.run]).toEqual([

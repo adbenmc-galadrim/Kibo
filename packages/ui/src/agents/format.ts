@@ -54,7 +54,7 @@ export function reasonText(reason: WaitReason | null): string {
 
 export function queueHint(run: RunView, reason: WaitReason | null): string {
   if (run.pendingAnswer === null || run.turns === 0) return reasonText(reason);
-  return run.question === null ? fr.queue.messageHint : fr.queue.resumeHint;
+  return run.question === null ? fr.agents.messageHint : fr.agents.resumeHint;
 }
 
 export function workspaceText(label: string | null): string {

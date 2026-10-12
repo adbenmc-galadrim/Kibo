@@ -32,6 +32,7 @@ type Props = {
   notifications: Session["notifications"];
   now: number;
   onNewProfile: () => void;
+  onNewSkill?: () => void;
   onNewTicket: () => void;
   onShare: () => void;
   onOpenRun(runId: string): void;
@@ -39,7 +40,7 @@ type Props = {
   onHelp(key: HelpDialog): void;
 };
 
-const HEADING_SCREENS: ReadonlySet<Screen> = new Set(["agents", "queue", "mine"]);
+const HEADING_SCREENS: ReadonlySet<Screen> = new Set(["agents", "queue", "skills", "mine"]);
 
 export function ShellHeader({
   active,
@@ -54,6 +55,7 @@ export function ShellHeader({
   notifications,
   now,
   onNewProfile,
+  onNewSkill,
   onNewTicket,
   onShare,
   onOpenRun,
@@ -75,7 +77,7 @@ export function ShellHeader({
           {gitError}
         </p>
       )}
-      <ScreenActions screen={screen} agents={agents} onNewProfile={onNewProfile} />
+      <ScreenActions screen={screen} agents={agents} onNewAgent={onNewProfile} onNewSkill={onNewSkill} />
       {project && agentPanel.available && (
         <ProjectAgentButton
           projectId={project.meta.id}

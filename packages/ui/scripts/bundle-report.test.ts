@@ -379,4 +379,20 @@ describe("bundle report", () => {
       FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/shell/use-project-agent-panel.ts")),
     ).toBe(false);
   });
+  test("the agents catalogue, the agent sheet, the file editor, skills and their texts stay out of the entry", () => {
+    const paths = [
+      "/x/packages/ui/src/agents/catalog/AgentCard.tsx",
+      "/x/packages/ui/src/agents/catalog/NewAgentDialog.tsx",
+      "/x/packages/ui/src/agents/catalog/use-agent-list.ts",
+      "/x/packages/ui/src/agents/sheet/AgentSheet.tsx",
+      "/x/packages/ui/src/agents/sheet/use-agent-sheet.ts",
+      "/x/packages/ui/src/file-editor/MarkdownPane.tsx",
+      "/x/packages/ui/src/file-editor/use-file-editor.ts",
+      "/x/packages/ui/src/skills/SkillsPage.tsx",
+      "/x/packages/ui/src/i18n/fr-agents-skills.ts",
+      "/x/packages/ui/src/i18n/fr-skills.ts",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/tabs/screens.ts"))).toBe(false);
+  });
 });

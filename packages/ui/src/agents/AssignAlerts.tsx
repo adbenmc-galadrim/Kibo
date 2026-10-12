@@ -21,6 +21,7 @@ import { TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
+import { frAgentsSkills } from "../i18n/fr-agents-skills";
 import { frProject } from "../i18n/fr-project";
 
 export function needsFolder(agent: AgentSummary, project: ProjectSnapshot): boolean {
@@ -37,7 +38,7 @@ function worktreeSpace(project: ProjectSnapshot, ticket: TicketView, folder: str
     });
     return (
       <>
-        <span className="block">{fr.assign.newWorktree(plan.branch, plan.base)}</span>
+        <span className="block">{frAgentsSkills.assign.newWorktree(plan.branch, plan.base)}</span>
         <span className="block break-all font-mono text-xs text-muted-foreground">{plan.path}</span>
       </>
     );
@@ -58,7 +59,7 @@ export function SpaceText({
 }) {
   const folder = project.meta.folder;
   const workspace = agent.settings.workspace;
-  if (needsFolder(agent, project)) return fr.assign.noFolderSpace;
+  if (needsFolder(agent, project)) return frAgentsSkills.assign.noFolderSpace;
   if (workspace === "worktree" && folder) return worktreeSpace(project, ticket, folder);
   return workspace === "repo" ? fr.agents.workspace.repo : fr.agents.workspace.isolated;
 }
@@ -88,10 +89,10 @@ function waitingText(project: ProjectSnapshot, ticket: TicketView): string {
   const labels = deps.map((dep) => {
     if (typeof dep === "string") return dep;
     const status = project.workflow.find((s) => s.id === dep.statusId)?.label.toLowerCase();
-    return status ? fr.assign.dependency(dep.keyLabel, status) : dep.keyLabel;
+    return status ? frAgentsSkills.assign.dependency(dep.keyLabel, status) : dep.keyLabel;
   });
   const titles = deps.map((dep) => (typeof dep === "string" ? dep : `« ${dep.title} »`));
-  return fr.assign.waiting(ticket.keyLabel, labels.join(", "), titles.join(", "));
+  return frAgentsSkills.assign.waiting(ticket.keyLabel, labels.join(", "), titles.join(", "));
 }
 
 function WarningAlert({ children }: { children: ReactNode }) {
@@ -115,7 +116,7 @@ export function NoFolderAlert({ onEditProject }: { onEditProject?: () => void })
   return (
     <WarningAlert>
       <AlertDescription className="text-inherit">
-        <p>{fr.assign.noFolder(frProject.edit.folder, fr.nav.editProject)}</p>
+        <p>{frAgentsSkills.assign.noFolder(frProject.edit.folder, fr.nav.editProject)}</p>
         {onEditProject && (
           <Button
             type="button"

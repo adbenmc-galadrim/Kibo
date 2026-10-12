@@ -6,6 +6,8 @@ import { Bot } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "../../i18n/fr";
 import { frMoments } from "../../i18n/fr-moments";
+import { runScopeText } from "../catalog/agent-labels";
+import { formatClock } from "../format";
 
 type Props = {
   run: RunView;
@@ -45,9 +47,17 @@ export function RunHeading({ run, onOpenTicket, children }: Props) {
           </Badge>
         </div>
         <p className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
-          <span className="shrink-0">{frMoments.run.profile(run.profileName)}</span>
+          <span className="shrink-0">{frMoments.run.agent(run.agentName, runScopeText(run))}</span>
           <span aria-hidden>·</span>
           <TicketLink run={run} onOpenTicket={onOpenTicket} />
+          {run.startedAt !== null && (
+            <>
+              <span aria-hidden>·</span>
+              <span className="shrink-0 font-mono">
+                {frMoments.run.startedAt(formatClock(run.startedAt))}
+              </span>
+            </>
+          )}
         </p>
       </div>
       {children}

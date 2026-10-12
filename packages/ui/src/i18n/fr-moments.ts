@@ -123,7 +123,8 @@ export const frMoments = {
   },
   run: {
     missing: "Run introuvable",
-    profile: (profile: string) => `Profil ${profile}`,
+    agent: (name: string, scope: string) => `Agent ${name} · ${scope}`,
+    startedAt: (clock: string) => `démarré à ${clock}`,
     expand: "Ouvrir en grand",
     close: "Fermer",
     resize: "Redimensionner le volet du run",

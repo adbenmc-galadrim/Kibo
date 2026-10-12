@@ -123,6 +123,7 @@ export const AgentDock = lazyPanel(() => agentsEntry().then((m) => m.AgentDock),
 export const ActivityTab = lazyPanel(() => agentsEntry().then((m) => m.ActivityTab), fr.lazy);
 export const RunSidePanel = lazyPanel(() => agentsEntry().then((m) => m.RunSidePanel), fr.lazy, hidden);
 export const RunPage = lazyPanel(() => agentsEntry().then((m) => m.RunPage), fr.lazy);
+export const SkillsPage = lazyPanel(() => import("../skills/SkillsPage").then((m) => m.SkillsPage), fr.lazy);
 export const ScreenActions = lazyPanel(
   () => import("./ScreenActions").then((m) => m.ScreenActions),
   fr.lazy,

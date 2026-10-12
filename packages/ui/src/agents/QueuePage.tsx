@@ -17,6 +17,9 @@ import { type ReactNode, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
+import { frAgentsSkills } from "../i18n/fr-agents-skills";
+import { projectName, scopeText } from "./catalog/agent-labels";
+import { useAgentList } from "./catalog/use-agent-list";
 import { elapsed, formatDuration } from "./format";
 import { Mention } from "./mention/Mention";
 import { ProjectFilter } from "./ProjectFilter";
@@ -29,11 +32,19 @@ import { SlotMeter } from "./SlotMeter";
 
 type Props = {
   state: AgentsState;
-  agents: AgentSummary[];
   projects: ProjectSummary[];
   now: number;
   onAnswer: (runId: string) => void;
 };
+type BoardProps = Props & { agents: AgentSummary[] };
+
+const q = frAgentsSkills.queue;
+
+function columnLabel(agent: AgentSummary, projects: readonly ProjectSummary[]): string {
+  const scope =
+    agent.scope === "project" ? projectName(agent.projectId, projects) : scopeText(agent, projects);
+  return q.column(agent.name, scope);
+}
 
 export function moveTarget(queue: QueueEntry[], activeId: string, overId: string | null): number | null {
   if (!overId || overId === activeId) return null;
@@ -75,7 +86,17 @@ function RunLine({ run, text, now, since }: { run: RunView; text?: string; now: 
   );
 }
 
-export function QueuePage({ state, agents, projects, now, onAnswer }: Props) {
+export function QueuePage(props: Props) {
+  const [pref] = useAgentsProject();
+  const project = effectiveProject(pref, props.projects);
+  const list = useAgentList(project?.id ?? null);
+  const agents = (list.agents ?? []).filter(
+    (a) => a.shadowedBy === null && (project === null || a.scope !== "project" || a.projectId === project.id),
+  );
+  return <QueueBoard {...props} agents={agents} />;
+}
+
+export function QueueBoard({ state, agents, projects, now, onAnswer }: BoardProps) {
   const [failed, setFailed] = useState(false);
   const [cancelling, setCancelling] = useState<RunView | null>(null);
   const act = async (req: RpcRequest) => {
@@ -117,7 +138,7 @@ export function QueuePage({ state, agents, projects, now, onAnswer }: Props) {
       </div>
       {failed && (
         <p role="alert" className="text-sm text-destructive">
-          {fr.queue.failed}
+          {q.failed}
         </p>
       )}
       <QueueCapacity
@@ -125,7 +146,7 @@ export function QueuePage({ state, agents, projects, now, onAnswer }: Props) {
         now={now}
         onSlots={(hostSlots) => void act({ method: "setHost", patch: { hostSlots } })}
       />
-      <h2 className="text-md font-semibold">{fr.queue.byProfile}</h2>
+      <h2 className="text-md font-semibold">{q.byAgent}</h2>
       <DndContext onDragEnd={onDragEnd}>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(16rem,1fr))] gap-4">
           {orderAgents(agents, runs, visibleQueue).map((p) => {
@@ -136,7 +157,7 @@ export function QueuePage({ state, agents, projects, now, onAnswer }: Props) {
             return (
               <Column
                 key={p.ref}
-                label={p.name}
+                label={columnLabel(p, projects)}
                 aside={
                   <span className="flex items-center gap-1.5 font-mono text-2xs">
                     <SlotMeter used={slotsUsed} total={p.settings.maxParallel} />
@@ -144,9 +165,9 @@ export function QueuePage({ state, agents, projects, now, onAnswer }: Props) {
                   </span>
                 }
               >
-                <Label>{fr.queue.running}</Label>
+                <Label>{q.running}</Label>
                 {running.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">{fr.queue.empty}</p>
+                  <p className="text-xs text-muted-foreground">{q.empty}</p>
                 ) : (
                   <ul className="grid grid-cols-1 gap-1.5">
                     {running.map((r) => (
@@ -154,9 +175,9 @@ export function QueuePage({ state, agents, projects, now, onAnswer }: Props) {
                     ))}
                   </ul>
                 )}
-                <Label>{fr.queue.queued}</Label>
+                <Label>{q.queued}</Label>
                 {mine.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">{fr.queue.empty}</p>
+                  <p className="text-xs text-muted-foreground">{q.empty}</p>
                 ) : (
                   <ul className="grid grid-cols-1 gap-1.5">
                     {mine.map(({ run, entry }) => (
@@ -176,7 +197,7 @@ export function QueuePage({ state, agents, projects, now, onAnswer }: Props) {
                 )}
                 {subs.length > 0 && (
                   <>
-                    <Label>{fr.queue.subagent}</Label>
+                    <Label>{q.subagent}</Label>
                     <SubagentSlots items={subs} now={now} />
                   </>
                 )}
@@ -189,20 +210,20 @@ export function QueuePage({ state, agents, projects, now, onAnswer }: Props) {
               <Column
                 key={type}
                 label={type}
-                aside={<span className="text-2xs text-muted-foreground">{fr.queue.subagent}</span>}
+                aside={<span className="text-2xs text-muted-foreground">{q.subagent}</span>}
               >
                 <SubagentSlots items={items} now={now} />
               </Column>
             ))}
           <section
-            aria-label={fr.queue.waiting}
+            aria-label={q.waiting}
             className="grid min-w-0 grid-cols-1 content-start gap-2 rounded-lg border bg-card p-3"
           >
             <header className="flex items-center gap-2 text-sm font-semibold">
               <Bell aria-hidden className="size-4 text-amber-500" />
-              {fr.queue.waiting}
+              {q.waiting}
             </header>
-            <p className="text-2xs text-muted-foreground">{fr.queue.waitingHelp}</p>
+            <p className="text-2xs text-muted-foreground">{q.waitingHelp}</p>
             {waiting.map((r) => (
               <div
                 key={r.id}
@@ -236,7 +257,7 @@ export function QueuePage({ state, agents, projects, now, onAnswer }: Props) {
         onConfirm={async () => {
           if (cancelling) await client.rpc({ method: "cancelRun", runId: cancelling.id });
         }}
-        describeError={() => fr.queue.failed}
+        describeError={() => q.failed}
       />
     </div>
   );
@@ -247,13 +268,13 @@ function SubagentSlots({ items, now }: { items: { parent: RunView; sub: ActiveSu
     <>
       {items.map(({ parent, sub }) => (
         <div key={sub.id} className="grid gap-1.5">
-          <Label>{fr.queue.inSlotOf(parent.label)}</Label>
+          <Label>{q.inSlotOf(parent.label)}</Label>
           <ul>
             <RunLine run={parent} now={now} since={sub.since} />
           </ul>
         </div>
       ))}
-      <p className="text-2xs text-muted-foreground">{fr.queue.subagentHelp}</p>
+      <p className="text-2xs text-muted-foreground">{q.subagentHelp}</p>
     </>
   );
 }

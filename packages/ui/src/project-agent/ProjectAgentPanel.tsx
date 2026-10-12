@@ -1,6 +1,7 @@
 import type { ProjectSnapshot } from "@kibo/schema";
 import { Sheet, SheetContent } from "@kibo/sdk/ui/sheet";
 import { useMemo, useState } from "react";
+import { useAgentList } from "../agents/catalog/use-agent-list";
 import { client } from "../api";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { useHost } from "../shell/Host";
@@ -47,7 +48,8 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
     () => buildConversation(log ?? [], view?.batches ?? [], view?.run ?? null),
     [log, view],
   );
-  const labels = useMemo(() => projectLabels(project), [project]);
+  const agentList = useAgentList(projectId);
+  const labels = useMemo(() => projectLabels(project, agentList.agents ?? []), [project, agentList.agents]);
 
   const send = async (text: string) => {
     await client.rpc({ method: "sendProjectAgentMessage", projectId, text });

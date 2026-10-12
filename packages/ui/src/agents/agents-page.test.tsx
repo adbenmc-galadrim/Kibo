@@ -1,13 +1,27 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { type RpcRequest, runSubject } from "@kibo/schema";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { type RpcRequest, runSubject, type Topic } from "@kibo/schema";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 import { frAgentsPage } from "../i18n/fr-agents-page";
+import { agentFixture, catalogFixture } from "./catalog/fixtures";
 import { agentsFixture, NOW, projectsFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
-let respond: (req: RpcRequest) => Promise<unknown> = () => Promise.resolve(null);
+const topics = new Map<Topic, () => void>();
+const NOTICE = {
+  profileName: "opus",
+  text: "Profil opus : un agent du même nom existait déjà, il a été gardé.",
+};
+const listed = (notices = [NOTICE]) =>
+  Promise.resolve({ agents: catalogFixture(), notices, partialWatch: false });
+const answer = (req: RpcRequest): Promise<unknown> => {
+  if (req.method === "agents.list") return listed();
+  if (req.method === "agents.read") return Promise.resolve(agentFixture({ name: "opus-dev", ref: req.ref }));
+  if (req.method === "skills.list") return Promise.resolve({ skills: [], partialWatch: false });
+  return Promise.resolve(null);
+};
+let respond: (req: RpcRequest) => Promise<unknown> = answer;
 
 mock.module("../api", () =>
   apiMock({
@@ -15,6 +29,10 @@ mock.module("../api", () =>
       rpc: (req: RpcRequest) => {
         calls.push(req);
         return respond(req);
+      },
+      subscribeTopic: (topic: Topic, listener: () => void) => {
+        topics.set(topic, listener);
+        return () => topics.delete(topic);
       },
     },
   }),
@@ -25,7 +43,8 @@ const { AgentsPage } = await import("./AgentsPage");
 beforeEach(() => {
   localStorage.clear();
   calls.length = 0;
-  respond = () => Promise.resolve(null);
+  topics.clear();
+  respond = answer;
 });
 
 const show = (onOpenRun: (runId: string) => void = () => {}) =>
@@ -44,13 +63,86 @@ test("the page counts places, queue, waiting runs and today's tokens", () => {
 test("the page leaves its title and actions to the shell header", () => {
   show();
   expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Nouveau profil" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Nouvel agent" })).toBeNull();
 });
 
-test("the agents section waits for the agent catalogue", () => {
+const mine = async () => within(await screen.findByRole("region", { name: "Mes agents" }));
+const card = (region: ReturnType<typeof within>, index: number) => {
+  const found = region.getAllByRole("article")[index];
+  if (!found) throw new Error(`no card ${index}`);
+  return within(found);
+};
+const names = (region: ReturnType<typeof within>) =>
+  region.getAllByRole("article").map((a: HTMLElement) => a.getAttribute("aria-label"));
+
+test("screen 192: my agents are cards with description, scope, model, skills and runs", async () => {
   show();
-  expect(screen.getByRole("heading", { level: 2, name: "Agents" })).toBeTruthy();
-  expect(screen.getByText("Chargement…")).toBeTruthy();
+  const region = await mine();
+  expect(names(region)).toEqual(["opus-dev", "review-pr", "review-pr", "sonnet-dev", "ux-audit"]);
+  const delivery = card(region, 0);
+  expect(
+    delivery.getByText("Livre un ticket : lit le ticket, planifie, code en TDD, commite et ouvre la PR."),
+  ).toBeTruthy();
+  expect(delivery.getByText("Global")).toBeTruthy();
+  expect(delivery.getByText("Opus · 3 skills · 0 sous-agent")).toBeTruthy();
+  expect(delivery.getByText("En cours :")).toBeTruthy();
+  expect(delivery.getByRole("button", { name: "opus-dev-3" })).toBeTruthy();
+  const shadowed = card(region, 1);
+  expect(shadowed.getByText("Sonnet · 2 skills · 1 sous-agent")).toBeTruthy();
+  expect(shadowed.getByText("masqué dans Kibo par un agent du même nom")).toBeTruthy();
+  expect(card(region, 2).getByText("Projet · Kibo")).toBeTruthy();
+  expect(card(region, 2).getByText("Sonnet · Tous les skills · 0 sous-agent")).toBeTruthy();
+  expect(card(region, 3).getByText("fable · Tous les skills · 0 sous-agent")).toBeTruthy();
+  expect(card(region, 3).getByText("Nom peu parlant")).toBeTruthy();
+  expect(card(region, 3).getByRole("button", { name: "Renommer" })).toBeTruthy();
+  expect(card(region, 4).getByText("fichier illisible")).toBeTruthy();
+  expect(card(region, 4).getByText("frontmatter illisible : description")).toBeTruthy();
+  expect(screen.getByText("~/.claude/agents · Kibo : .claude/agents")).toBeTruthy();
+});
+
+test("the agents of Kibo are folded until asked", async () => {
+  show();
+  await mine();
+  const trigger = screen.getByRole("button", { name: /Agents de Kibo/ });
+  expect(trigger.getAttribute("aria-expanded")).toBe("false");
+  expect(screen.queryByRole("article", { name: "kibo-demo" })).toBeNull();
+  await userEvent.setup().click(trigger);
+  const system = within(screen.getByRole("region", { name: "Agents de Kibo" }));
+  expect(names(system)).toEqual(["kibo-assistant", "kibo-generateur", "kibo-demo", "kibo-project-agent"]);
+});
+
+test("a migration notice shows once, and the file topic reloads the list", async () => {
+  show();
+  await mine();
+  expect(screen.getByRole("alert").textContent).toContain(NOTICE.text);
+  const before = calls.filter((c) => c.method === "agents.list").length;
+  respond = (req) => (req.method === "agents.list" ? listed([]) : answer(req));
+  await act(async () => topics.get("agent-files")?.());
+  await waitFor(() => expect(calls.filter((c) => c.method === "agents.list").length).toBe(before + 1));
+  expect(screen.getAllByRole("alert")).toHaveLength(1);
+});
+
+test("the project filter asks the agents of that project and hides the others", async () => {
+  show();
+  await mine();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Filtrer par projet" }));
+  await user.click(await screen.findByRole("menuitemradio", { name: "API Facturation" }));
+  await waitFor(() => expect(calls).toContainEqual({ method: "agents.list", projectId: "fac" }));
+  const region = await mine();
+  expect(region.queryByText("Projet · Kibo")).toBeNull();
+  expect(names(region)).toEqual(["opus-dev", "review-pr", "sonnet-dev", "ux-audit"]);
+});
+
+test("opening a card shows the agent in the page, and Agents goes back", async () => {
+  show();
+  const region = await mine();
+  const user = userEvent.setup();
+  await user.click(card(region, 0).getByRole("button", { name: "Ouvrir l'agent opus-dev" }));
+  expect(await screen.findByRole("heading", { level: 2, name: "opus-dev" })).toBeTruthy();
+  expect(calls).toContainEqual({ method: "agents.read", ref: "global:opus-dev" });
+  await user.click(screen.getByRole("button", { name: "Agents" }));
+  expect(await screen.findByRole("region", { name: "Mes agents" })).toBeTruthy();
 });
 
 test("the history lists runs newest first with their result", () => {
@@ -81,7 +173,7 @@ test("the history lists runs newest first with their result", () => {
 test("screen 121: a history line opens the run, the filter and the key search narrow it", () => {
   const opened: string[] = [];
   show((id) => opened.push(id));
-  expect(screen.getByText("Un run est le travail d'un agent sur un ticket.")).toBeTruthy();
+  expect(screen.getByText(/^Un agent est un fichier Claude Code/)).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: /^sonnet-review · KIB-11/ }));
   expect(opened).toEqual(["r40"]);
   fireEvent.click(screen.getByRole("radio", { name: "En échec" }));

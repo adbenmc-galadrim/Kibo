@@ -23,6 +23,7 @@ import {
   EditProjectDialog,
   FileTicketDialog,
   HelpDialogs,
+  NewAgentDialog,
   NewPageDialog,
   NewProjectDialog,
   NewTicketDialog,
@@ -236,11 +237,12 @@ export function ShellDialogs({
           demo={projects.some((x) => x.id === assignProject?.meta.id && x.demo)}
           ticketId={state.assign.ticketId}
           config={config}
-          agents={[]}
+          projects={projects}
           onClose={() => set({ assign: null })}
           onEditProject={(projectId) => set({ assign: null, editProject: projectId })}
         />
       )}
+      {state.newAgent && <NewAgentDialog projects={projects} onClose={() => set({ newAgent: false })} />}
       {shareProject && (
         <ShareProjectDialog project={shareProject} open onOpenChange={(o) => !o && set({ share: null })} />
       )}

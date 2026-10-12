@@ -78,7 +78,7 @@ beforeEach(() => {
 test("the page heads with the run, its state and its profile", () => {
   renderPage();
   expect(screen.getByRole("heading", { name: "opus-dev-2" })).toBeTruthy();
-  expect(screen.getByText("Profil opus-dev")).toBeTruthy();
+  expect(screen.getByText("Agent opus-dev · Global")).toBeTruthy();
   expect(screen.getByRole("button", { name: "KIB-14 · Récepteur de hooks Claude Code" })).toBeTruthy();
 });
 
