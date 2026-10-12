@@ -193,7 +193,7 @@ export function VersionHistory({
           <p className="text-sm text-muted-foreground">{t.empty}</p>
         ) : (
           <div className="grid gap-4 md:grid-cols-[18rem_minmax(0,1fr)]">
-            <ul aria-label="Versions" className="grid max-h-96 content-start gap-0.5 overflow-auto">
+            <ul aria-label={t.list} className="grid max-h-96 content-start gap-0.5 overflow-auto">
               {versions.map((v) => (
                 <VersionRow
                   key={v.id}

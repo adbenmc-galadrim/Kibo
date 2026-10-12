@@ -248,6 +248,7 @@ export const frAgentsSkills = {
     missing: "contenu de version manquant",
     empty: "Aucune version gardée pour ce fichier.",
     loading: "Chargement de l'historique…",
+    list: "Versions",
     failed: "Impossible de lire l'historique.",
     pick: "Choisis une version pour la comparer.",
     size: (bytes: number) =>
