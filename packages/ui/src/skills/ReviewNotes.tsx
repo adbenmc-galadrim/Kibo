@@ -48,17 +48,18 @@ export function statusText(review: SkillReview): string {
 function Origin({ review }: { review: SkillReview }) {
   const host = useOptionalHost();
   const ticketId = review.ticketId;
+  const ticketKey = keyBesideLabel(review.runLabel, review.ticketKey);
   return (
     <p className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs text-muted-foreground">
       <Mention runId={review.runId} label={review.runLabel} />
-      {keyBesideLabel(review.runLabel, review.ticketKey) && ticketId && (
+      {ticketKey && ticketId && (
         <button
           type="button"
-          aria-label={t.openTicket(review.ticketKey)}
+          aria-label={t.openTicket(ticketKey)}
           className="font-mono underline-offset-2 hover:text-foreground hover:underline"
           onClick={() => host?.openTicket(ticketId)}
         >
-          {review.ticketKey}
+          {ticketKey}
         </button>
       )}
       {review.suggestion !== null && <span>· {t.suggestion}</span>}
