@@ -19,6 +19,7 @@ import { createProgressService, type ProgressDocs, type ProgressService } from "
 import type { AgentMcpSink } from "../project-agent/types";
 import type { RpcExtension } from "../rpc-extensions";
 import type { SignalService } from "../signals/service";
+import { withSkillUses } from "../skills/hook-uses";
 import { createSkillReviews, type SkillReviews } from "../skills/reviews";
 import { openSkillReviewStore } from "../skills/reviews-store";
 import { openRunsDatabase } from "../skills/runs-db";
@@ -114,7 +115,7 @@ export function startVisibility(
         moment: (runId, kind) => trace.note(runId, { kind: "reminder", reminder: kind }),
       });
       forgets.push((runId) => reminded.forget(runId));
-      return withTrace(reminded, { trace, run });
+      return withTrace(withSkillUses(reminded, uses), { trace, run });
     },
     mcp: (project, signals) =>
       agentMcpSink({
