@@ -1,4 +1,4 @@
-import type { FileRef, RunAction } from "@kibo/schema";
+import { type FileRef, type RunAction, SKILL_REVIEW_TOOL } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Ban, Check, X } from "lucide-react";
 import { frMoments } from "../i18n/fr-moments";
@@ -8,7 +8,31 @@ type Props = { action: RunAction; files?: FileContext | null; onOpenFile?(ref: F
 
 const OUTCOME_ICON = { ok: Check, error: X, denied: Ban } as const;
 
+function phraseOf(action: RunAction): string | null {
+  const t = frMoments.phrases;
+  if (action.kind === "skill") return action.outcome === "denied" ? t.deniedSkill : t.skill;
+  if (action.kind === "subagent" && action.outcome === "denied") return t.deniedSubagent;
+  if (action.kind === "mcp" && action.tool === SKILL_REVIEW_TOOL) return action.label;
+  return null;
+}
+
+function Phrase({ action, phrase }: { action: RunAction; phrase: string }) {
+  return (
+    <span data-phrase className="min-w-0 truncate">
+      {phrase}
+      {action.target && (
+        <>
+          {" "}
+          <code className="font-mono">{action.target}</code>
+        </>
+      )}
+    </span>
+  );
+}
+
 function Target({ action, files, onOpenFile }: Props) {
+  const phrase = phraseOf(action);
+  if (phrase !== null) return <Phrase action={action} phrase={phrase} />;
   if (!action.target) return <span className="min-w-0 truncate">{action.label}</span>;
   const ref = onOpenFile ? fileRefOf(files, action.kind, action.target) : null;
   if (!ref || !onOpenFile) return <span className="min-w-0 truncate font-mono">{action.target}</span>;

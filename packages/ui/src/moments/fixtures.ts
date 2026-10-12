@@ -63,7 +63,37 @@ const EDITS: RunAction[] = [
   }),
 ];
 
-const actions = (list: RunAction[]): MomentData => ({
+export const SKILL_ACTIONS: RunAction[] = [
+  action({
+    tool: "Skill",
+    kind: "skill",
+    label: "A utilisé le skill `brainstorming`",
+    target: "brainstorming",
+  }),
+  action({
+    tool: "Skill",
+    kind: "skill",
+    label: "A utilisé le skill `deploy`",
+    target: "deploy",
+    outcome: "denied",
+    detail: "skill non autorisé par Kibo",
+  }),
+  action({
+    tool: "Agent",
+    kind: "subagent",
+    label: "A lancé un sous-agent seo",
+    target: "seo",
+    outcome: "denied",
+  }),
+  action({
+    tool: "mcp__kibo__skill_review",
+    kind: "mcp",
+    label: "A laissé une review de 2 skills",
+    target: "skill_review",
+  }),
+];
+
+export const actions = (list: RunAction[]): MomentData => ({
   kind: "actions",
   actions: list,
   summary: summarizeActions(list),

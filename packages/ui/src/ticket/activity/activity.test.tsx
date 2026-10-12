@@ -13,6 +13,7 @@ import type { ReactNode } from "react";
 import { NOW, runFixture } from "../../agents/fixtures";
 import { apiMock } from "../../api-mock";
 import { dockState, FEED_RUN, MOMENTS_PAGE, progressProject, REPORTED_RUN } from "../../moments/fixtures";
+import { reviewFixture } from "../../skills/fixtures";
 
 const calls: RpcRequest[] = [];
 const moments = { on: 0, off: 0 };
@@ -26,10 +27,12 @@ mock.module("../../api", () =>
         if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
         if (req.method === "getPresence") return [];
         if (req.method === "runMoments") return req.runId === FEED_RUN ? page : { ...page, moments: [] };
+        if (req.method === "skillReviews.list") return [reviewFixture({ runId: req.runId ?? "" })];
         return null;
       },
       code: () => Promise.resolve([]),
       subscribe: () => () => undefined,
+      subscribeTopic: () => () => undefined,
       subscribeCode: () => () => undefined,
       subscribeEvents: () => () => undefined,
       subscribeIntegrations: () => () => undefined,
@@ -130,6 +133,17 @@ test("Activité leads with the report of the last run", async () => {
   }
   expect(within(report).getByText("1 fichier modifié non mentionné")).toBeTruthy();
   expect(within(report).getByText("1 fichier cité sans modification")).toBeTruthy();
+});
+
+test("screen 196: the skill reviews of the last run sit under the report", async () => {
+  sheet();
+  const panel = await openActivity();
+  const block = await within(panel).findByRole("region", { name: "Reviews de skills" });
+  expect(within(block).getByRole("button", { name: "porte-qualite" })).toBeTruthy();
+  const asked = calls.flatMap((c) => (c.method === "skillReviews.list" && c.runId ? [c.runId] : []));
+  expect(asked.length).toBeGreaterThan(0);
+  const report = within(panel).getByRole("region", { name: "Compte rendu" });
+  expect(report.compareDocumentPosition(block) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });
 
 test("without a report, the tab says so", async () => {

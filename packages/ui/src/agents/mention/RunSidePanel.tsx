@@ -4,6 +4,7 @@ import { Maximize2, X } from "lucide-react";
 import { useState } from "react";
 import { fr } from "../../i18n/fr";
 import { frMoments } from "../../i18n/fr-moments";
+import { RunSkillReviews } from "../../moments/SkillReviewsBlock";
 import { ResizeEdge } from "../../project-agent/ResizeEdge";
 import { usePanelWidth } from "../../project-agent/use-panel-width";
 import { navigateTo } from "../../route";
@@ -75,6 +76,7 @@ function PanelBody({ runId, onClose, onOpenTicket }: Props) {
           />
         </section>
         <RunReportSection runId={run.id} report={report} />
+        <RunSkillReviews runId={run.id} moments={moments} />
         <section className="grid gap-2">
           <h3 className={SECTION_TITLE}>{t.ticketRuns}</h3>
           <RunList

@@ -14,6 +14,7 @@ import { useState } from "react";
 import type { ShownPlan } from "../../agents/dock/DockPlan";
 import { frMoments } from "../../i18n/fr-moments";
 import { ReportCard } from "../../moments/ReportCard";
+import { RunSkillReviews } from "../../moments/SkillReviewsBlock";
 import { useAgentsState } from "../../state/agents-context";
 import { useNow } from "../../state/use-agents";
 import { ChronologyStacked } from "./ChronologyStacked";
@@ -65,6 +66,7 @@ export function ActivityTab({ project, ticket, onOpenFile }: Props) {
   const questions = project.questions.filter((q) => q.ticketId === ticket.id && q.createdAt >= from);
   const momentsByRun = new Map([...pages].map(([id, page]) => [id, page.moments]));
   const segments = segmentsOf(buildTimeline(shown, momentsByRun, questions));
+  const last = runs.at(-1);
   const entries: RunEntry[] = segments
     .flatMap((s) => (s.run ? [{ run: s.run, items: s.items }] : []))
     .map(({ run, items }) => ({
@@ -85,6 +87,7 @@ export function ActivityTab({ project, ticket, onOpenFile }: Props) {
   return (
     <div ref={ref} className="grid grid-cols-[minmax(0,1fr)] gap-6 px-4 pb-6">
       <ReportHead report={latestReport(ticket.agentProgress)} runs={runs} />
+      {last && <RunSkillReviews runId={last.id} moments={momentsByRun.get(last.id) ?? []} />}
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {frMoments.activity.unavailable}

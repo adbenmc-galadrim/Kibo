@@ -1,10 +1,11 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { AgentsState, RpcRequest, Worktree } from "@kibo/schema";
+import type { AgentsState, RpcRequest, TabTarget, Worktree } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../../api-mock";
 import { dockState, FEED_RUN, MOMENTS_PAGE, progressProject } from "../../moments/fixtures";
 import { type Host, HostProvider } from "../../shell/Host";
+import { reviewFixture } from "../../skills/fixtures";
 import { AgentsProvider } from "../../state/agents-context";
 
 const calls: RpcRequest[] = [];
@@ -23,6 +24,8 @@ mock.module("../../api", () =>
         if (req.method === "runMoments")
           return Promise.resolve(req.runId === FEED_RUN ? MOMENTS_PAGE : { ...MOMENTS_PAGE, moments: [] });
         if (req.method === "getRunLog") return Promise.resolve([]);
+        if (req.method === "skillReviews.list")
+          return Promise.resolve([reviewFixture({ runId: req.runId ?? "" })]);
         return Promise.resolve(null);
       },
       code: () => Promise.resolve(worktrees),
@@ -47,13 +50,14 @@ mock.module("../../state/use-run-log", () => realRunLog);
 
 const { RunPage } = await import("./RunPage");
 
+const opened: TabTarget[] = [];
 const host: Host = {
   openTicket: () => {},
   openNewTicket: () => {},
   openAssign: () => {},
   openFile: () => {},
   openView: () => {},
-  openTarget: () => {},
+  openTarget: (target) => opened.push(target),
   openRun: () => {},
 };
 
@@ -153,4 +157,12 @@ test("a feed that fails to load says so instead of looking empty", async () => {
 test("a feed still loading says so discreetly", () => {
   renderPage();
   expect(screen.getByText("Chargement du fil…")).toBeTruthy();
+});
+
+test("screen 196: the skill reviews of the run sit under its report and open the skill", async () => {
+  renderPage();
+  const block = await screen.findByRole("region", { name: "Reviews de skills" });
+  expect(calls).toContainEqual({ method: "skillReviews.list", runId: FEED_RUN });
+  await userEvent.setup().click(within(block).getByRole("button", { name: "porte-qualite" }));
+  expect(opened).toContainEqual({ kind: "skill", skillId: "porte-qualite" });
 });

@@ -53,6 +53,11 @@ export const frMoments = {
   detail: "Voir le détail",
   kinds,
   outcomes,
+  phrases: {
+    skill: "A utilisé le skill",
+    deniedSkill: "Kibo a refusé le skill",
+    deniedSubagent: "Kibo a refusé le sous-agent",
+  },
   patch: (added: number, removed: number) => `+${added} −${removed}`,
   tests: (passed: number, failed: number) => `${passed} ✓ ${failed} ✗`,
   plan: {
@@ -135,5 +140,6 @@ export const frMoments = {
     loading: "Chargement du fil…",
     failed: "Impossible de charger le fil de ce run.",
     report: (previous: boolean) => (previous ? "Compte rendu du run précédent" : "Compte rendu"),
+    reviews: "Reviews de skills",
   },
 };
