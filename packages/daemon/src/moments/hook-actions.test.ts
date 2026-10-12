@@ -54,3 +54,21 @@ test("a secret in the hook detail is masked everywhere", () => {
   const long = actionFromHook(hook({ tool: "Bash", detail: `${"x ".repeat(55)}API_KEY=abcdefghijklmnop` }));
   expect([long?.label, long?.target].some((t) => hasSecret(t ?? ""))).toBe(false);
 });
+
+test("a PostToolUse of Skill is a skill action identified by its tool use id", () => {
+  expect(
+    actionFromHook(hook({ tool: "Skill", detail: "brainstorming", toolUseId: "toolu_1" })),
+  ).toMatchObject({
+    tool: "Skill",
+    kind: "skill",
+    target: "brainstorming",
+    label: "A utilisé le skill `brainstorming`",
+    callId: "toolu_1",
+  });
+  expect(actionFromHook(hook({ tool: "Skill" }))).toMatchObject({
+    kind: "skill",
+    label: "A utilisé un skill",
+  });
+  expect(actionFromHook(hook({ tool: "Read", detail: "a.ts" }))?.callId).toBeUndefined();
+  expect(actionFromHook(hook({ tool: "Read", toolUseId: "x".repeat(65) }))?.callId).toBeUndefined();
+});

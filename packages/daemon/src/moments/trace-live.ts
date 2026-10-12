@@ -1,6 +1,7 @@
 import { emptyFold, type FoldedMoment, type FoldState, flushActions } from "@kibo/core";
 import {
   type MomentData,
+  type RunAction,
   type RunMoment,
   type RunMomentsEvent,
   TRANSCRIPT_PASS_MAX_BYTES,
@@ -14,6 +15,7 @@ export type TraceDeps = {
   root: string;
   now: () => number;
   emit(event: RunMomentsEvent): void;
+  onActions?(runId: string, actions: readonly RunAction[], at: number): void;
   read?: (path: string, offset: number) => TranscriptSlice;
   passBytes?: number;
 };
@@ -78,9 +80,21 @@ export function createTraceCore(deps: TraceDeps): TraceCore {
   };
   const ctx = (trace: RunTrace) => ({ stepId: trace.doingStep, now: deps.now() });
 
+  function notifyActions(runId: string, moments: readonly RunMoment[]): void {
+    for (const m of moments) {
+      if (m.data.kind !== "actions") continue;
+      try {
+        deps.onActions?.(runId, m.data.actions, m.at);
+      } catch (e) {
+        console.error(`[kibo-daemon] actions of run ${runId} were not counted`, e);
+      }
+    }
+  }
+
   function write(runId: string, items: readonly FoldedMoment[]): RunMoment[] {
     const moments = items.map((m) => store.append(runId, m.data, m.stepId, m.at));
     if (moments.length > 0) deps.emit({ type: "run.moments", runId, moments });
+    notifyActions(runId, moments);
     return moments;
   }
 

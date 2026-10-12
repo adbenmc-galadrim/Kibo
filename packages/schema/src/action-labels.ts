@@ -2,6 +2,7 @@ import { type ActionKind, MOMENT_DETAIL_MAX, type RunAction } from "./moment";
 import { PROGRESS_TOOL } from "./progress";
 import { ASK_TOOLS } from "./run";
 import { SIGNAL_TOOL } from "./signal";
+import { SKILL_REVIEW_TOOL } from "./skill";
 
 const SKILL_INPUT_KEYS = ["skill", "name", "command"] as const;
 
@@ -109,7 +110,7 @@ export function testCounts(output: string): Counts | null {
   return passed === null && failed === null ? null : { passed: passed ?? 0, failed: failed ?? 0 };
 }
 
-const DENIAL = /\bdenied\b|\bblocked by\b|doesn't want to proceed|\brefusé/i;
+const DENIAL = /\bdenied\b|\bblocked by\b|doesn't want to proceed|\brefusé|non autorisé par Kibo/i;
 export const denialOf = (output: string | null): boolean => output !== null && DENIAL.test(output);
 
 const FAILED_EXIT = /Exit code [1-9]/;
@@ -127,7 +128,7 @@ export function actionOf(call: ToolCall): RunAction {
     patch: call.patch,
     tests,
   };
-  return { ...base, label: actionLabel(base) };
+  return { ...base, label: actionLabel(base, call.input) };
 }
 
 const plural = (n: number, one: string, many: string): string => `${n} ${n > 1 ? many : one}`;
@@ -155,7 +156,14 @@ function progressPhrase(target: string | null): string {
   ].join(" et ");
 }
 
-function phrase(a: Omit<RunAction, "label">): string {
+function reviewPhrase(input: Record<string, unknown>): string {
+  const reviews = input.reviews;
+  return Array.isArray(reviews)
+    ? `laissé une review de ${plural(reviews.length, "skill", "skills")}`
+    : "laissé une review des skills";
+}
+
+function phrase(a: Omit<RunAction, "label">, input: Record<string, unknown> = {}): string {
   const named = (prefix: string, name: string | null) => (name ? `${prefix} ${name}` : prefix);
   switch (a.kind) {
     case "read":
@@ -187,13 +195,14 @@ function phrase(a: Omit<RunAction, "label">): string {
     case "skill":
       return a.target ? `utilisé le skill \`${a.target}\`` : "utilisé un skill";
     case "mcp":
-      return named("appelé", a.target);
+      return a.tool === SKILL_REVIEW_TOOL ? reviewPhrase(input) : named("appelé", a.target);
     case "other":
       return named("utilisé un outil", a.tool || null);
   }
 }
 
-export const actionLabel = (a: Omit<RunAction, "label">): string => `A ${phrase(a)}`.slice(0, 200);
+export const actionLabel = (a: Omit<RunAction, "label">, input: Record<string, unknown> = {}): string =>
+  `A ${phrase(a, input)}`.slice(0, 200);
 
 const distinct = (actions: readonly RunAction[]): number =>
   new Set(actions.map((a, i) => a.target ?? `#${i}`)).size;

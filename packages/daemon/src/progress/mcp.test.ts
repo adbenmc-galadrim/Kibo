@@ -9,6 +9,7 @@ const step = (i: number) => ({ id: `s${i}`, title: `Étape ${i}`, status: "todo"
 function fakeService() {
   const recorded: { run: RunView; input: ProgressInput }[] = [];
   const signaled: { run: RunView; input: unknown }[] = [];
+  const reviewed: { run: RunView; input: unknown }[] = [];
   const service: TicketToolServices = {
     progress: {
       record: async (run, input) => {
@@ -22,8 +23,14 @@ function fakeService() {
         return "Signal sig:1 enregistré.";
       },
     },
+    reviews: {
+      record: async (run, input) => {
+        reviewed.push({ run, input });
+        return "1 review enregistrée";
+      },
+    },
   };
-  return { service, recorded, signaled };
+  return { service, recorded, signaled, reviewed };
 }
 
 test("a valid call is recorded for the run and its reply comes back", async () => {
@@ -55,6 +62,14 @@ test("signal_project goes to the signal service with its raw input", async () =>
   const input = { kind: "ticket", title: "Tests" };
   expect(await handleTicketTool(service, RUN, "signal_project", input)).toBe("Signal sig:1 enregistré.");
   expect(signaled).toEqual([{ run: RUN, input }]);
+  expect(recorded).toEqual([]);
+});
+
+test("skill_review goes to the skill reviews with its raw input", async () => {
+  const { service, reviewed, recorded } = fakeService();
+  const input = { reviews: [{ skill: "a", verdict: "ok", note: "Bien." }] };
+  expect(await handleTicketTool(service, RUN, "skill_review", input)).toBe("1 review enregistrée");
+  expect(reviewed).toEqual([{ run: RUN, input }]);
   expect(recorded).toEqual([]);
 });
 

@@ -66,9 +66,10 @@ function maskedAction(
   const content = result?.content ?? null;
   const output = content === null ? null : maskSecrets(content);
   const isError = result?.is_error ?? false;
+  const input = maskInput(call.input);
   const action = actionOf({
     tool: call.tool,
-    input: maskInput(call.input),
+    input,
     output,
     isError,
     denied: isError && denialOf(output),
@@ -77,7 +78,7 @@ function maskedAction(
   const target = action.target === null ? null : maskSecretsWithin(action.target, TARGET_MAX);
   const detail = action.detail === null ? null : maskSecretsWithin(action.detail, MOMENT_DETAIL_MAX);
   const base = { ...action, target, detail };
-  return { ...base, label: maskSecretsWithin(actionLabel(base), LABEL_MAX), ...callIdOf(id) };
+  return { ...base, label: maskSecretsWithin(actionLabel(base, input), LABEL_MAX), ...callIdOf(id) };
 }
 
 class Folder {

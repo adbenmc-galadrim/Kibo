@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { hasSecret, MOMENT_ACTIONS_MAX, MOMENT_RAW_MAX, MomentData, type RunAction } from "@kibo/schema";
 import fc from "fast-check";
+import { agentGuard } from "../agents/guard";
 import { emptyFold, type FoldContext, type Folded, flushActions, foldLines } from "./fold-moments";
 
 const fixtureLines = (name: string): string[] => {
@@ -260,4 +261,42 @@ test("every tool use becomes exactly one action and no group of actions is empty
       }
     }),
   );
+});
+
+describe("a session that uses skills", () => {
+  const moments = foldAll(fixtureLines("skill"));
+  const actions = actionsOf(moments);
+
+  test("a Skill call is a skill action carrying its tool use id", () => {
+    expect(actions[0]).toMatchObject({
+      tool: "Skill",
+      kind: "skill",
+      target: "superpowers:brainstorming",
+      label: "A utilisé le skill `superpowers:brainstorming`",
+      outcome: "ok",
+      callId: "toolu_skill_ok",
+    });
+  });
+
+  test("a Skill refused by the Kibo guard is denied", () => {
+    const reason = agentGuard({ subagents: [], genericSubagents: false, skills: { mode: "list", ids: [] } })({
+      tool: "Skill",
+      input: { skill: "deploy" },
+    })?.reason;
+    expect(reason).toBe("skill non autorisé par Kibo : deploy");
+    expect(actions[1]).toMatchObject({
+      kind: "skill",
+      target: "deploy",
+      outcome: "denied",
+      callId: "toolu_skill_denied",
+    });
+  });
+
+  test("a skill review is labelled with its number of skills", () => {
+    expect(actions[2]).toMatchObject({
+      kind: "mcp",
+      target: "skill_review",
+      label: "A laissé une review de 1 skill",
+    });
+  });
 });

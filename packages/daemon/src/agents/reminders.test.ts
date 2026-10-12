@@ -2,7 +2,14 @@ import { expect, spyOn, test } from "bun:test";
 import type { HookPayload, HookReply, RunView } from "@kibo/schema";
 import { runView } from "../questions/questions.test-helper";
 import type { HookSink } from "./hook-route";
-import { PLAN_REMINDER, REPORT_REMINDER, type ReminderDeps, withReminders } from "./reminders";
+import {
+  PLAN_REMINDER,
+  REPORT_REMINDER,
+  REPORT_SKILLS_REMINDER,
+  type ReminderDeps,
+  SKILLS_REMINDER,
+  withReminders,
+} from "./reminders";
 
 const hook = (event: HookPayload["event"], tool: string | null, stopHookActive = false): HookPayload => ({
   event,
@@ -27,9 +34,23 @@ const planReminder: HookReply = {
 };
 const stopReminder: HookReply = { kind: "stop", reason: REPORT_REMINDER };
 
-type Setup = { under?: HookReply | null; runs?: RunView[]; plan?: boolean; report?: boolean };
+type Setup = {
+  under?: HookReply | null;
+  runs?: RunView[];
+  plan?: boolean;
+  report?: boolean;
+  skills?: number;
+  reviewed?: boolean;
+};
 
-function setup({ under = null, runs = [runView({ id: "r1" })], plan = false, report = false }: Setup = {}) {
+function setup({
+  under = null,
+  runs = [runView({ id: "r1" })],
+  plan = false,
+  report = false,
+  skills = 0,
+  reviewed = false,
+}: Setup = {}) {
   const moments: string[] = [];
   const received: string[] = [];
   const inner: HookSink = {
@@ -43,6 +64,8 @@ function setup({ under = null, runs = [runView({ id: "r1" })], plan = false, rep
     run: (runId) => runs.find((r) => r.id === runId) ?? null,
     hasPlan: () => plan,
     hasReport: () => report,
+    usedSkills: () => skills,
+    hasSkillReview: () => reviewed,
     moment: (runId, kind) => moments.push(`${runId}:${kind}`),
   };
   return { sink: withReminders(inner, deps), moments, received };
@@ -132,6 +155,8 @@ test("a failing moment is logged and never turns the reminder into a refusal", (
       run: () => runView({ id: "r1" }),
       hasPlan: () => false,
       hasReport: () => false,
+      usedSkills: () => 0,
+      hasSkillReview: () => false,
       moment: () => {
         throw new Error("disk full");
       },
@@ -155,6 +180,8 @@ test("a failing plan, report or run lookup is logged and keeps the sink reply", 
       run: () => runView({ id: "r1" }),
       hasPlan: () => false,
       hasReport: () => false,
+      usedSkills: () => 0,
+      hasSkillReview: () => false,
       moment: () => {},
     };
     expect(withReminders(inner, { ...base, hasPlan: boom }).receive("r1", edit, null)).toEqual(allow);
@@ -174,4 +201,52 @@ test("a finished run is forgotten and a new turn of the same id is reminded agai
   sink.forget("r1");
   expect(sink.receive("r1", edit, null)).toEqual(planReminder);
   expect(moments).toEqual(["r1:plan", "r1:plan"]);
+});
+
+test("a run that used a skill without review is reminded of it once at Stop", () => {
+  const { sink, moments } = setup({ report: true, skills: 2 });
+  expect(sink.receive("r1", stop, null)).toEqual({ kind: "stop", reason: SKILLS_REMINDER });
+  expect(sink.receive("r1", stop, null)).toBeNull();
+  expect(moments).toEqual(["r1:skills"]);
+});
+
+test("a missing report and a missing review give one combined reminder", () => {
+  const { sink, moments } = setup({ skills: 1 });
+  expect(sink.receive("r1", stop, null)).toEqual({ kind: "stop", reason: REPORT_SKILLS_REMINDER });
+  expect(sink.receive("r1", stop, null)).toBeNull();
+  expect(moments).toEqual(["r1:report_skills"]);
+});
+
+test("a run with its review, or without skill, keeps the report reminder alone", () => {
+  const reviewed = setup({ skills: 1, reviewed: true });
+  expect(reviewed.sink.receive("r1", stop, null)).toEqual(stopReminder);
+  expect(reviewed.moments).toEqual(["r1:report"]);
+  const done = setup({ report: true, skills: 1, reviewed: true });
+  expect(done.sink.receive("r1", stop, null)).toBeNull();
+  expect(done.moments).toEqual([]);
+});
+
+test("after the report reminder a later Stop is never blocked for the skills", () => {
+  let skills = 0;
+  const inner: HookSink = { verify: () => true, receive: () => null };
+  const moments: string[] = [];
+  const sink = withReminders(inner, {
+    run: () => runView({ id: "r1" }),
+    hasPlan: () => true,
+    hasReport: () => skills > 0,
+    usedSkills: () => skills,
+    hasSkillReview: () => false,
+    moment: (runId, kind) => moments.push(`${runId}:${kind}`),
+  });
+  expect(sink.receive("r1", stop, null)).toEqual(stopReminder);
+  skills = 1;
+  expect(sink.receive("r1", stop, null)).toBeNull();
+  expect(moments).toEqual(["r1:report"]);
+});
+
+test("the plan reminder and the stop reminder are both given in the same run", () => {
+  const { sink, moments } = setup({ skills: 1 });
+  expect(sink.receive("r1", edit, null)).toEqual(planReminder);
+  expect(sink.receive("r1", stop, null)).toEqual({ kind: "stop", reason: REPORT_SKILLS_REMINDER });
+  expect(moments).toEqual(["r1:plan", "r1:report_skills"]);
 });

@@ -184,3 +184,21 @@ test("a skill call is its own action, read tolerantly", () => {
   expect(summarizeActions([used])).toBe("A utilisé 1 skill");
   expect(summarizeActions([used, used])).toBe("A utilisé 2 skills");
 });
+
+test("a skill review is an mcp action labelled with the number of reviewed skills", () => {
+  const input = { reviews: [{ skill: "a" }, { skill: "b" }] };
+  expect(classifyTool("mcp__kibo__skill_review", input)).toEqual({ kind: "mcp", target: "skill_review" });
+  const reviewed = actionOf(
+    call({ tool: "mcp__kibo__skill_review", input, output: "2 reviews enregistrées" }),
+  );
+  expect(reviewed.label).toBe("A laissé une review de 2 skills");
+  const one = action({ tool: "mcp__kibo__skill_review", kind: "mcp", target: "skill_review" });
+  expect(actionLabel(one, { reviews: [{ skill: "a" }] })).toBe("A laissé une review de 1 skill");
+  expect(actionLabel(one)).toBe("A laissé une review des skills");
+});
+
+test("a refusal of the Kibo guard is a denial, with or without its target", () => {
+  expect(denialOf("skill non autorisé par Kibo : deploy")).toBe(true);
+  expect(denialOf("sous-agent non autorisé par Kibo")).toBe(true);
+  expect(denialOf("Permission to use Skill has been denied. Kibo a refusé le skill `deploy`")).toBe(true);
+});

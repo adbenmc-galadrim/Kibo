@@ -9,7 +9,8 @@ import {
 
 const TARGET_MAX = 500;
 const LABEL_MAX = 200;
-const INPUT_KEYS = ["file_path", "notebook_path", "pattern", "command"] as const;
+const INPUT_KEYS = ["file_path", "notebook_path", "pattern", "command", "skill"] as const;
+const CALL_ID_MAX = 64;
 
 const inputOf = (detail: string | null): Record<string, unknown> =>
   detail === null ? {} : Object.fromEntries(INPUT_KEYS.map((key) => [key, detail]));
@@ -27,5 +28,10 @@ export function actionFromHook(payload: HookPayload): RunAction | null {
   });
   const target = action.target === null ? null : maskSecretsWithin(action.target, TARGET_MAX);
   const base = { ...action, target };
-  return { ...base, label: maskSecretsWithin(actionLabel(base), LABEL_MAX) };
+  const callId = payload.toolUseId;
+  return {
+    ...base,
+    label: maskSecretsWithin(actionLabel(base), LABEL_MAX),
+    ...(callId !== null && callId.length <= CALL_ID_MAX ? { callId } : {}),
+  };
 }

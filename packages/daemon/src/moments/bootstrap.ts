@@ -19,6 +19,10 @@ import { createProgressService, type ProgressDocs, type ProgressService } from "
 import type { AgentMcpSink } from "../project-agent/types";
 import type { RpcExtension } from "../rpc-extensions";
 import type { SignalService } from "../signals/service";
+import { createSkillReviews, type SkillReviews } from "../skills/reviews";
+import { openSkillReviewStore } from "../skills/reviews-store";
+import { openRunsDatabase } from "../skills/runs-db";
+import { createSkillUses, type SkillUses } from "../skills/uses-store";
 import { withTrace } from "./hooks";
 import { handleVisibilityRequest } from "./rpc";
 import { openMomentStore } from "./store";
@@ -42,6 +46,7 @@ export type Visibility = {
   agents(port: AgentsPort): AgentsPort;
   lifecycle: { onSpawned(run: RunView): Promise<void>; onTurnEnd(run: RunView): Promise<void> };
   peek(projectId: string, runId: string): RunPeek;
+  skills: { uses: SkillUses; reviews: SkillReviews };
   close(): void;
 };
 
@@ -62,11 +67,19 @@ export function startVisibility(
 ): Visibility {
   const env = opts.agentEnv ?? process.env;
   const store = openMomentStore(opts.home);
+  const uses = createSkillUses(openRunsDatabase(opts.home, "skill use"));
+  const reviews = createSkillReviews({
+    store: openSkillReviewStore(opts.home),
+    uses,
+    skillPath: () => null,
+    emit: (topic) => docs.emit({ topic }),
+  });
   const trace = createTraceService({
     store,
     root: opts.transcriptRoot ?? transcriptRootOf(env, opts.userHome ?? homedir()),
     now: Date.now,
     emit: (event: RunMomentsEvent) => docs.emit(event),
+    onActions: (runId, actions, at) => uses.record(runId, actions, at),
   });
   const progress = createProgressService({
     docs: progressDocs(docs),
@@ -96,6 +109,8 @@ export function startVisibility(
         run,
         hasPlan: (r) => progress.hasPlan(r),
         hasReport: (r) => progress.hasReport(r),
+        usedSkills: (runId) => uses.byRun(runId).length,
+        hasSkillReview: (runId) => reviews.hasReview(runId),
         moment: (runId, kind) => trace.note(runId, { kind: "reminder", reminder: kind }),
       });
       forgets.push((runId) => reminded.forget(runId));
@@ -107,6 +122,7 @@ export function startVisibility(
         run,
         progress,
         signals,
+        reviews,
         live: (runId, token) => agents()?.hooks.verify(runId, token) ?? false,
       }),
     agents: (port) => withRunProgress(port, progress),
@@ -126,6 +142,11 @@ export function startVisibility(
       if (found?.projectId !== projectId) throw new KiboError("NOT_FOUND", `run ${runId} not found`);
       return trace.peek(found, progress.summary(found));
     },
-    close: () => store.close(),
+    skills: { uses, reviews },
+    close() {
+      store.close();
+      uses.close();
+      reviews.store.close();
+    },
   };
 }

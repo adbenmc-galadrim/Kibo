@@ -10,6 +10,7 @@ import {
   mcpToolName,
   PROJECT_AGENT_TOOLS,
   type ProjectAgentTool,
+  skillTarget,
   TodoItem,
 } from "@kibo/schema";
 
@@ -51,6 +52,7 @@ function toolDetail(h: HookInput): string | null {
   const input = h.tool_input ?? {};
   const projectTool = projectToolOf(h.tool_name);
   if (projectTool) return MCP_DETAILS[projectTool](input);
+  if (h.tool_name === "Skill") return skillTarget(input);
   return (
     text(input.file_path) ?? text(input.path) ?? text(input.command) ?? text(input.pattern) ?? text(input.url)
   );

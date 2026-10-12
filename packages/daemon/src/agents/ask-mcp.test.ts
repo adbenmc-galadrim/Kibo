@@ -176,18 +176,30 @@ test("calling signal_project asks the daemon and relays its text or its error", 
   expect(project.calls).toEqual([]);
 });
 
-test("a project run lists the question tools and the eleven project tools with their schemas", async () => {
+test("a project run lists the question tools, the eleven project tools and skill_review with their schemas", async () => {
   const names = await toolNames(PROJECT_RUN);
-  expect(names).toHaveLength(13);
+  expect(names).toHaveLength(14);
   expect(names).toContain("list_signals");
   expect(names).not.toContain("signal_project");
-  expect(names).toEqual(["ask_user", "ask_question", ...PROJECT_AGENT_TOOLS]);
+  expect(names).toEqual(["ask_user", "ask_question", ...PROJECT_AGENT_TOOLS, "skill_review"]);
   const list = (await call("tools/list", undefined, PROJECT_RUN)) as {
     result: { tools: Array<{ name: string; description: string; inputSchema: unknown }> };
   };
-  expect(list.result.tools.slice(2)).toEqual(
-    TOOL_SPECS.map((s) => ({ name: s.name, description: s.description, inputSchema: s.inputSchema })),
-  );
+  expect(list.result.tools.slice(2)).toEqual([
+    ...TOOL_SPECS.map((s) => ({ name: s.name, description: s.description, inputSchema: s.inputSchema })),
+    SKILL_REVIEW_SPEC,
+  ]);
+});
+
+test("calling skill_review from a project run asks the daemon", async () => {
+  const input = { reviews: [{ skill: "a", verdict: "ok", note: "Bien." }] };
+  const ok = daemon({ text: "1 review enregistrée", isError: false });
+  expect(
+    await call("tools/call", { name: "skill_review", arguments: input }, PROJECT_RUN, ok.fn),
+  ).toMatchObject({
+    result: { content: [{ type: "text", text: "1 review enregistrée" }], isError: false },
+  });
+  expect(ok.calls).toEqual([{ tool: "skill_review", input }]);
 });
 
 test("calling a project tool asks the daemon and relays its text or its error", async () => {
@@ -256,7 +268,7 @@ test("the served tools depend on KIBO_MCP_TOOLS and a down daemon never kills th
     { jsonrpc: "2.0", id: 3, method: "ping" },
   ]);
   const byId = new Map(replies.map((r) => [r.id, r]));
-  expect(byId.get(1)?.result.tools).toHaveLength(13);
+  expect(byId.get(1)?.result.tools).toHaveLength(14);
   expect(byId.get(2)?.result.isError).toBe(true);
   expect(byId.get(3)?.result).toEqual({});
 });

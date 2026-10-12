@@ -3,7 +3,7 @@ import { chmodSync, mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { initRun } from "@kibo/core/run-machine";
-import type { HookPayload, RunMomentsEvent, RunView } from "@kibo/schema";
+import type { HookPayload, RunAction, RunMomentsEvent, RunView } from "@kibo/schema";
 import { openTranscript, structuredPatch } from "../agents/fake-claude-transcript";
 import { type MomentStore, openMomentStore } from "./store";
 import { createTraceService } from "./trace-service";
@@ -46,6 +46,7 @@ export type SetupOptions = {
   maxBytes?: number;
   transcriptPath?: string;
   wrapStore?: (store: MomentStore) => MomentStore;
+  onActions?: (runId: string, actions: readonly RunAction[], at: number) => void;
 };
 
 export function setup(options: SetupOptions = {}) {
@@ -63,6 +64,7 @@ export function setup(options: SetupOptions = {}) {
     root,
     now: () => clock.now,
     emit: (e) => events.push(e),
+    ...(options.onActions !== undefined && { onActions: options.onActions }),
     read: (p, offset) => {
       reads.count += 1;
       return readTranscriptSlice(p, offset, options.maxBytes);
