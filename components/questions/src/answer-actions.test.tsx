@@ -101,6 +101,34 @@ test("a delivered answer is frozen, with only « Rouvrir »", async () => {
   await waitFor(() => expect(named(m, ANSWERED)?.answer).toBeNull());
 });
 
+const headerOf = (card: HTMLElement) => {
+  const header = card.querySelector("header");
+  if (header === null) throw new Error("card without header");
+  return within(header);
+};
+
+test("answer actions sit in the card header, next to « Archiver »", async () => {
+  mount();
+  const user = userEvent.setup();
+  const card = await screen.findByRole("article", { name: ANSWERED });
+  const header = headerOf(card);
+  const names = header.getAllByRole("button").map((b) => b.textContent);
+  expect(names).toEqual(["Modifier la réponse", "Retirer la réponse", "Archiver"]);
+  await user.click(header.getByRole("button", { name: "Modifier la réponse" }));
+  const form = within(card).getByRole("form", { name: `Modifier la réponse à ${ANSWERED}` });
+  expect(form.closest("header")).toBeNull();
+  expect(header.queryByRole("button", { name: "Modifier la réponse" })).toBeNull();
+  await user.click(within(form).getByRole("button", { name: "Annuler" }));
+  const group = await screen.findByRole("region", { name: /KIB-14/ });
+  await user.click(within(group).getByRole("button", { name: "Transmettre à l'agent (1)" }));
+  await within(card).findByText("transmise à mock · figée");
+  expect(
+    headerOf(card)
+      .getAllByRole("button")
+      .map((b) => b.textContent),
+  ).toEqual(["Rouvrir", "Archiver"]);
+});
+
 test("an imported answer not delivered stays editable", async () => {
   const seedImported = (run: (cmd: ProjectCommand) => unknown) => {
     const ids = seedDemo(run);

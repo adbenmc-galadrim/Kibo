@@ -1,5 +1,6 @@
 import {
   isArchived,
+  isEditableAnswer,
   isOpen,
   type Question,
   type QuestionRecipient,
@@ -11,7 +12,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { Archive, ArchiveRestore, Send } from "lucide-react";
 import { useState } from "react";
-import { AnswerActions } from "./AnswerActions";
+import { AnswerActionButtons, AnswerEditForm } from "./AnswerActions";
 import { ExportButton } from "./ExportButton";
 import { fr } from "./fr";
 import { PasteAnswerForm } from "./PasteAnswerForm";
@@ -87,11 +88,13 @@ export function QuestionCard(props: Props) {
   const { question: q, ticket, recipients, now, readOnly, viewer, runLabel, runOf } = props;
   const sdk = useSdk();
   const [archiving, setArchiving] = useState(false);
+  const [editing, setEditing] = useState(false);
   const spotlight = useSpotlightCard(q.id);
   const archived = isArchived(q);
   const open = isOpen(q) && !readOnly;
   const by = { kind: "human", ref: sdk.viewer } as const;
   const context = renderContext(q.context);
+  const editedAnswer = !readOnly && editing && isEditableAnswer(q) ? q.answer : null;
   return (
     <article
       ref={spotlight.ref}
@@ -101,14 +104,19 @@ export function QuestionCard(props: Props) {
       className="grid scroll-my-4 gap-2 rounded-md border bg-card p-3 text-sm outline-none"
     >
       <header className="flex flex-wrap items-center gap-2">
-        <h4 className="min-w-0 flex-1 font-medium">{q.title}</h4>
-        {!readOnly && archived && <RestoreButton questionId={q.id} />}
-        {!readOnly && canArchive(q, viewer, runOf(q.runId)) && (
-          <Button variant="ghost" size="sm" className={HEADER_ACTION} onClick={() => setArchiving(true)}>
-            <Archive aria-hidden />
-            {fr.archive}
-          </Button>
-        )}
+        <h4 className="min-w-48 flex-1 break-words font-medium">{q.title}</h4>
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
+          {!readOnly && editedAnswer === null && (
+            <AnswerActionButtons question={q} onEdit={() => setEditing(true)} />
+          )}
+          {!readOnly && archived && <RestoreButton questionId={q.id} />}
+          {!readOnly && canArchive(q, viewer, runOf(q.runId)) && (
+            <Button variant="ghost" size="sm" className={HEADER_ACTION} onClick={() => setArchiving(true)}>
+              <Archive aria-hidden />
+              {fr.archive}
+            </Button>
+          )}
+        </div>
       </header>
       <div className="flex flex-wrap items-center gap-2">
         <RecipientMenu question={q} recipients={recipients} readOnly={readOnly || archived} />
@@ -126,7 +134,9 @@ export function QuestionCard(props: Props) {
         </p>
       )}
       <QuestionAnswerLine question={q} now={now} runLabel={runLabel} />
-      {!readOnly && <AnswerActions question={q} />}
+      {editedAnswer !== null && (
+        <AnswerEditForm question={q} answer={editedAnswer} onClose={() => setEditing(false)} />
+      )}
       {open && <QuestionAnswerForm question={q} />}
       {open && (
         <div className="flex flex-wrap justify-end gap-2">
