@@ -1,4 +1,5 @@
 import {
+  type DuplicationSettings,
   type IconInput,
   iconUrl,
   KiboError,
@@ -21,6 +22,7 @@ import { frProject } from "../i18n/fr-project";
 import { errorMessage } from "../lib/error-message";
 import { PROJECT_COLORS } from "../lib/project-colors";
 import { isRemoteView } from "../lib/remote-view";
+import { DuplicationFields, sameDuplication } from "../overlaps/DuplicationFields";
 import { FolderField, type FolderFieldProps } from "./FolderField";
 import { IconField } from "./IconField";
 import { RecipientsFields } from "./RecipientsFields";
@@ -40,6 +42,7 @@ type Fields = {
   folder: string;
   worktree?: WorktreeSettings | null;
   storybook?: StorybookSettings | null;
+  duplication?: DuplicationSettings | null;
 };
 
 const t = frProject.edit;
@@ -61,6 +64,9 @@ export function projectPatch(project: ProjectSummary, fields: Fields): ProjectPa
   if (worktree !== undefined && !sameWorktree(worktree, project.worktree)) patch.worktree = worktree;
   const storybook = fields.storybook;
   if (storybook !== undefined && !sameStorybook(storybook, project.storybook)) patch.storybook = storybook;
+  const duplication = fields.duplication;
+  if (duplication !== undefined && !sameDuplication(duplication, project.duplication))
+    patch.duplication = sameDuplication(duplication, null) ? null : duplication;
   return Object.keys(patch).length === 0 ? null : patch;
 }
 
@@ -82,6 +88,7 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
   const [storybook, setStorybook] = useState<StorybookSettings | null>(
     project.storybook ?? STORYBOOK_DEFAULTS,
   );
+  const [duplication, setDuplication] = useState<DuplicationSettings | null>(project.duplication);
   const [pending, setPending] = useState<IconInput | null>(null);
   const [removed, setRemoved] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -92,7 +99,7 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
     color,
     folder: remote ? (project.folder ?? "") : folder,
     ...(showWorktree && { worktree }),
-    ...(!remote && { storybook }),
+    ...(!remote && { storybook, duplication }),
   });
   const iconChanged = pending !== null || (removed && Boolean(project.icon));
   const worktreeInvalid = showWorktree && worktree !== null && worktreeProblem(worktree) !== null;
@@ -196,6 +203,12 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
               disabled={busy}
             />
           )}
+          <DuplicationFields
+            value={duplication}
+            onChange={setDuplication}
+            projectId={project.id}
+            disabled={remote}
+          />
           <RecipientsFields projectId={project.id} />
           {error && (
             <p role="alert" className="text-sm text-destructive">

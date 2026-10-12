@@ -406,7 +406,12 @@ describe("bundle report", () => {
       "/x/packages/ui/src/overlaps/use-open-overlap.ts",
       "/x/packages/ui/src/moments/OverlapMoment.tsx",
       "/x/packages/ui/src/moments/AutoLinkMoment.tsx",
+      "/x/packages/ui/src/overlaps/DuplicationFields.tsx",
+      "/x/packages/ui/src/overlaps/IgnoredOverlaps.tsx",
+      "/x/packages/ui/src/overlaps/GenericExportsField.tsx",
+      "/x/packages/ui/src/overlaps/AutoLinkBadge.tsx",
       "/x/packages/ui/src/i18n/fr-overlaps.ts",
+      "/x/packages/ui/src/i18n/fr-overlaps-settings.ts",
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
     for (const p of ["agents/bar-summary.ts", "agents/AgentBar.tsx", "i18n/fr.ts"])

@@ -16,10 +16,12 @@ let answer: (req: RpcRequest) => unknown = () => null;
 mock.module("../api", () =>
   apiMock({
     client: {
+      subscribeTopic: () => () => {},
       rpc: async (req: RpcRequest) => {
         calls.push(req);
         if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
         if (req.method === "getPresence") return [];
+        if (req.method === "autoLinks.list") return [];
         return answer(req);
       },
       subscribe: () => () => undefined,
