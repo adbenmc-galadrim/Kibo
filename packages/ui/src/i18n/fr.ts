@@ -2,7 +2,7 @@ import type { KiboErrorCode } from "@kibo/schema";
 import { frAi } from "./fr-ai";
 import { frCode } from "./fr-code";
 import { frComponents } from "./fr-components";
-import { frIntegrations } from "./fr-integrations";
+import { frIntegrationRows } from "./fr-integration-rows";
 
 const questionCount = (n: number) => `${n} question${n > 1 ? "s" : ""}`;
 
@@ -295,7 +295,7 @@ export const fr = {
     failed: (label: string) => `${label} a échoué`,
     batch: "Lot à valider",
   },
-  integrations: frIntegrations,
+  integrations: { rows: frIntegrationRows },
   security: {
     remoteFrame:
       "Composant sandboxé indisponible à distance : ouvre Kibo sur l'appareil qui l'héberge (127.0.0.1).",

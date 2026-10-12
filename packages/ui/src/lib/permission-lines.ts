@@ -27,14 +27,15 @@ import {
   X,
 } from "lucide-react";
 import { fr } from "../i18n/fr";
+import { frIntegrations } from "../i18n/fr-integrations";
 import { frTrustCapabilities as caps } from "../i18n/fr-trust-capabilities";
 
 export type PermissionLine = { icon: LucideIcon; title: string; detail?: string };
 
 const mcpTitle = (rule: string): string =>
   rule === CONFIG_SERVER_RULE
-    ? fr.integrations.permissions.mcpFromConfig
-    : fr.integrations.permissions.mcp(rule);
+    ? frIntegrations.permissions.mcpFromConfig
+    : frIntegrations.permissions.mcp(rule);
 
 const usableByThirdParty = (rule: string): boolean =>
   rule !== CONFIG_SERVER_RULE && !RESERVED_MCP_IDS.includes(rule.split("/")[0] ?? rule);
@@ -76,7 +77,7 @@ export function permissionLabel(entry: string): string {
   const capability = CAPABILITIES.find((c) => entry === capPermission(c));
   if (capability) return caps[capability];
   const secret = SECRET_ENTRY.exec(entry);
-  if (secret?.[1] && secret[2]) return fr.integrations.permissions.secret(secret[1], [secret[2]]);
+  if (secret?.[1] && secret[2]) return frIntegrations.permissions.secret(secret[1], [secret[2]]);
   return fr.publish.permission(entry);
 }
 
@@ -109,7 +110,7 @@ export function permissionLines(g: GrantedPermissions, extra: PermissionExtras =
   if (g.net.length > 0)
     lines.push({ icon: Globe, title: t.network, detail: t.networkHelp(g.net.join(", ")) });
   for (const s of g.secrets)
-    lines.push({ icon: KeyRound, title: fr.integrations.permissions.secret(s.name, s.hosts) });
+    lines.push({ icon: KeyRound, title: frIntegrations.permissions.secret(s.name, s.hosts) });
   for (const rule of g.mcp.filter(usableByThirdParty)) lines.push({ icon: Plug, title: mcpTitle(rule) });
   for (const c of CAPABILITIES.filter((x) => g.capabilities.includes(x)))
     lines.push(capabilityLine(c, extra.embeds ?? []));

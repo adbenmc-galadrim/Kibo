@@ -3,12 +3,12 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Clock, XCircle } from "lucide-react";
 import { useState } from "react";
 import { client } from "../../api";
-import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import { failureOf, syncErrorText } from "../../lib/sync-error-text";
 import { useSyncState } from "../../state/use-sync-state";
 import { DropSendDialog } from "./DropSendDialog";
 
-const t = fr.integrations.sheet;
+const t = frIntegrations.sheet;
 
 export function SyncStatus({ projectId, ticket }: { projectId: string; ticket: TicketView }) {
   const { state, error, reload } = useSyncState(projectId);

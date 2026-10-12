@@ -1,5 +1,5 @@
 import type { CiRun } from "@kibo/schema";
-import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 
 type RunState = Pick<CiRun, "status" | "conclusion">;
 
@@ -14,9 +14,9 @@ export function formatDuration(ms: number): string {
 }
 
 export function conclusionLabel(run: RunState): string {
-  const labels: Record<string, string> = fr.integrations.sheet.conclusion;
-  if (WAITING.has(run.status)) return fr.integrations.sheet.conclusion.queued;
-  if (run.status !== "completed") return fr.integrations.sheet.conclusion.running;
+  const labels: Record<string, string> = frIntegrations.sheet.conclusion;
+  if (WAITING.has(run.status)) return frIntegrations.sheet.conclusion.queued;
+  if (run.status !== "completed") return frIntegrations.sheet.conclusion.running;
   const key = run.conclusion ?? "neutral";
   return labels[key] ?? key;
 }

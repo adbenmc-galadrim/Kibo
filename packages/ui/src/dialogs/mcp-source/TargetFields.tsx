@@ -4,11 +4,11 @@ import { Label } from "@kibo/sdk/ui/label";
 import { RadioGroup, RadioGroupItem } from "@kibo/sdk/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { useId } from "react";
-import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import type { McpSourceDraft, SourceMode } from "./mcp-source-draft";
 
 type Props = { draft: McpSourceDraft; tools: McpToolInfo[]; onChange(next: McpSourceDraft): void };
-const t = fr.integrations.mcpSource;
+const t = frIntegrations.mcpSource;
 
 function ModeOption({ value, label }: { value: SourceMode; label: string }) {
   const id = useId();

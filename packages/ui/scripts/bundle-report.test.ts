@@ -308,7 +308,9 @@ describe("bundle report", () => {
       "/x/packages/ui/src/dialogs/integrations/design-problem.ts",
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
-    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/i18n/fr-integrations.ts"))).toBe(false);
+    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/i18n/fr-integration-rows.ts"))).toBe(
+      false,
+    );
   });
 
   test("the mockups section, its property and the frame field are forbidden in the entry", () => {
@@ -423,9 +425,9 @@ describe("bundle report", () => {
     expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/agents/format.ts"))).toBe(false);
   });
   test("vague 23, repli des textes de fr.ts", () => {
-    for (const p of ["fr-domains.ts"])
+    for (const p of ["fr-domains.ts", "fr-integrations.ts"])
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/i18n/${p}`))).toBe(true);
-    for (const p of ["fr.ts"])
+    for (const p of ["fr.ts", "fr-integration-rows.ts"])
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/i18n/${p}`))).toBe(false);
   });
 });

@@ -3,7 +3,7 @@ import { Input } from "@kibo/sdk/ui/input";
 import { RadioGroup, RadioGroupItem } from "@kibo/sdk/ui/radio-group";
 import { useEffect, useId, useState } from "react";
 import { client } from "../../api";
-import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import { failureOf, syncErrorText } from "../../lib/sync-error-text";
 import { type LinkedRepos, repoKey } from "./linked-repos";
 
@@ -14,7 +14,7 @@ type Props = {
   onChange(r: GithubRepo): void;
   onError(message: string): void;
 };
-const t = fr.integrations.source;
+const t = frIntegrations.source;
 
 function RepoRow({ name, linked }: { name: string; linked: boolean }) {
   const id = useId();

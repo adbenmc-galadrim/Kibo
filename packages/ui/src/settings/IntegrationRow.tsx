@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
 import { MoreHorizontal, RefreshCw } from "lucide-react";
-import { fr } from "../i18n/fr";
+import { frIntegrations } from "../i18n/fr-integrations";
 import type { RowAction, RowMenuItem, RowView } from "./integration-rows";
 
 const DOT = { ok: "bg-green-500", warn: "bg-amber-500", error: "bg-red-500" } as const;
@@ -21,7 +21,7 @@ const LABEL = {
 type Props = { row: RowView; onAction(action: RowAction): void; onMenu(item: RowMenuItem): void };
 
 function ActionButton({ action, onAction }: { action: RowAction; onAction(action: RowAction): void }) {
-  const t = fr.integrations.state;
+  const t = frIntegrations.state;
   return (
     <Button variant="outline" size="sm" onClick={() => onAction(action)}>
       {action === "retry" && <RefreshCw aria-hidden />}
@@ -31,7 +31,7 @@ function ActionButton({ action, onAction }: { action: RowAction; onAction(action
 }
 
 function RowMenu({ row, onMenu }: Pick<Props, "row" | "onMenu">) {
-  const t = fr.integrations.menu;
+  const t = frIntegrations.menu;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

@@ -12,12 +12,13 @@ import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import { FormError } from "./FormError";
 import { McpServerFields } from "./McpServerFields";
 import { type McpForm, slugId, toServerInput } from "./mcp-form";
 import { Notice } from "./Notice";
 
-const t = fr.integrations.mcpServer;
+const t = frIntegrations.mcpServer;
 
 type Props = { open: boolean; onOpenChange(open: boolean): void; onAdded(): void; takenIds: string[] };
 type Pending = { server: McpServerInput; secrets: Record<string, string>; commandLine: string };

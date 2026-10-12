@@ -5,11 +5,11 @@ import { RadioGroup } from "@kibo/sdk/ui/radio-group";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { Globe, Plus, Terminal, Trash2 } from "lucide-react";
 import { type ReactNode, useId } from "react";
-import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import { ChoiceCard } from "../ChoiceCard";
 import type { McpForm } from "./mcp-form";
 
-const t = fr.integrations.mcpServer;
+const t = frIntegrations.mcpServer;
 
 type Props = {
   form: McpForm;
@@ -63,7 +63,7 @@ function EnvRows({ env, onChange }: { env: McpForm["env"]; onChange(env: McpForm
           <Button
             variant="ghost"
             size="icon"
-            aria-label={fr.integrations.mcpServers.remove}
+            aria-label={frIntegrations.mcpServers.remove}
             onClick={() => onChange(env.filter((_, j) => j !== i))}
           >
             <Trash2 aria-hidden className="size-4" />

@@ -4,10 +4,11 @@ import { Button } from "@kibo/sdk/ui/button";
 import { useCallback, useEffect, useState } from "react";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import { failureText } from "../../lib/remote-error";
 import { conclusionLabel, runDuration } from "./ci-format";
 
-const t = fr.integrations.sheet;
+const t = frIntegrations.sheet;
 const DOT: Record<CiTone, string> = {
   ok: "bg-emerald-500",
   error: "bg-red-500",

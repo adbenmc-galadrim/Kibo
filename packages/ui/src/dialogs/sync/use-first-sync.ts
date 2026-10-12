@@ -1,7 +1,7 @@
 import type { Binding } from "@kibo/schema";
 import { useCallback, useEffect, useState } from "react";
 import { client } from "../../api";
-import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import { failureOf, syncErrorText } from "../../lib/sync-error-text";
 
 export type SyncProgress = { imported: number; running: boolean };
@@ -13,7 +13,7 @@ export type FirstSync = {
   retry(): Promise<void>;
 };
 
-const failedText = (text: string) => `${fr.integrations.source.failed} ${text}`;
+const failedText = (text: string) => `${frIntegrations.source.failed} ${text}`;
 
 function useBindingProgress(projectId: string, bindingId: string | null) {
   const [progress, setProgress] = useState<SyncProgress | null>(null);

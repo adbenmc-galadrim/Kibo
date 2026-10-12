@@ -3,10 +3,10 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Switch } from "@kibo/sdk/ui/switch";
 import { Plug } from "lucide-react";
-import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import { FormError } from "./FormError";
 
-const t = fr.integrations.mcpServers;
+const t = frIntegrations.mcpServers;
 
 type Props = {
   server: McpServerView;
@@ -23,7 +23,7 @@ function stateOf(server: McpServerView): { label: string; dot: string } {
 }
 
 const kindOf = (server: McpServerView) =>
-  server.transport === "stdio" ? fr.integrations.mcpServer.stdio : fr.integrations.mcpServer.http;
+  server.transport === "stdio" ? frIntegrations.mcpServer.stdio : frIntegrations.mcpServer.http;
 
 export function McpServerRow({ server, error, onToggle, onRemove }: Props) {
   const state = stateOf(server);
@@ -52,7 +52,7 @@ export function McpServerRow({ server, error, onToggle, onRemove }: Props) {
         </Button>
       </div>
       {server.enabled && server.state === "error" && server.error && (
-        <p className="pl-7 text-xs text-destructive">{fr.integrations.errors.mcpServer}</p>
+        <p className="pl-7 text-xs text-destructive">{frIntegrations.errors.mcpServer}</p>
       )}
       <FormError message={error} />
     </li>

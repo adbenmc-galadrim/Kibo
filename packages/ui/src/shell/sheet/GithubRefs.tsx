@@ -3,9 +3,10 @@ import { Badge } from "@kibo/sdk/ui/badge";
 import { CircleCheck, CircleDot, GitBranch, GitPullRequest, Unlink } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import { frRefs } from "./fr-refs";
 
-const t = fr.integrations.sheet;
+const t = frIntegrations.sheet;
 
 function chip(href: string, title: string, icon: ReactNode, label: string) {
   return (

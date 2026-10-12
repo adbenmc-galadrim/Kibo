@@ -1,6 +1,7 @@
 import { KiboError } from "@kibo/schema";
 import { fr } from "../../i18n/fr";
 import { frDesign } from "../../i18n/fr-design";
+import { frIntegrations } from "../../i18n/fr-integrations";
 
 const t = frDesign.connect;
 const LACKS_TOOLS = /lacks tools: (.+)$/;
@@ -58,7 +59,7 @@ export function connectProblem(mode: ConnectMode, e: unknown, address: string): 
     case "INVALID_INPUT":
       return { tone: "error", ...t.invalidUrl, field: "address" };
     case "SECRET_STORE_UNAVAILABLE":
-      return { tone: "error", title: fr.integrations.keychainUnavailable, detail: "", field: null };
+      return { tone: "error", title: frIntegrations.keychainUnavailable, detail: "", field: null };
     default:
       return unreachable(mode, address);
   }

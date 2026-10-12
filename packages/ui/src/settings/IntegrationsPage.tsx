@@ -2,7 +2,7 @@ import type { IntegrationId } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { useState } from "react";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frIntegrations } from "../i18n/fr-integrations";
 import { integrationErrorText, failureText as message } from "../lib/remote-error";
 import { useFlash } from "../lib/use-flash";
 import { useIntegrations } from "../state/use-integrations";
@@ -20,7 +20,7 @@ const hasDialog = (id: IntegrationId) => {
 const KEYCHAIN = "SECRET_STORE_UNAVAILABLE";
 
 export function IntegrationsPage() {
-  const t = fr.integrations;
+  const t = frIntegrations;
   const { statuses, error, reload } = useIntegrations();
   const flash = useFlash();
   const [dialog, setDialog] = useState<IntegrationDialogId | null>(null);

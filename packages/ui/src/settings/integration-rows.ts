@@ -11,7 +11,7 @@ import {
   Plug,
   SquareTerminal,
 } from "lucide-react";
-import { fr } from "../i18n/fr";
+import { frIntegrations } from "../i18n/fr-integrations";
 import { integrationErrorText } from "../lib/remote-error";
 
 export type RowMenuItem = "configure" | "test" | "disconnect";
@@ -58,7 +58,7 @@ const errorAction = (s: IntegrationStatus): RowAction =>
     : "retry";
 
 function describe(s: IntegrationStatus): { title: string; description: string } {
-  const r = fr.integrations.rows;
+  const r = frIntegrations.rows;
   switch (s.id) {
     case "github":
       return { title: r.github.title, description: r.github.description(s.account) };
@@ -76,7 +76,7 @@ export function integrationRow(
   s: IntegrationStatus,
   opts: { hasDialog(id: IntegrationId): boolean; time(ms: number): string },
 ): RowView {
-  const t = fr.integrations.state;
+  const t = frIntegrations.state;
   const base = { id: s.id, icon: ICONS[s.id], ...describe(s), error: null, menu: MENUS[s.id] };
   switch (s.state) {
     case "active":

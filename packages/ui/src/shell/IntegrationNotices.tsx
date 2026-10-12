@@ -3,7 +3,7 @@ import { Toaster } from "@kibo/sdk/ui/sonner";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frIntegrations } from "../i18n/fr-integrations";
 import { useTheme } from "../theme";
 
 function showNotice(e: Extract<IntegrationEvent, { type: "notice" }>): void {
@@ -17,7 +17,7 @@ export function IntegrationNotices({ notifications }: { notifications: Session["
   useEffect(
     () =>
       client.subscribeIntegrations((e) => {
-        if (e.type === "sync.conflict") toast(fr.integrations.conflict(e.ticketKey, e.field));
+        if (e.type === "sync.conflict") toast(frIntegrations.conflict(e.ticketKey, e.field));
         if (e.type === "notice" && notifications === "browser") showNotice(e);
       }),
     [notifications],

@@ -1,10 +1,10 @@
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { useId } from "react";
-import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import { type McpSourceDraft, POINTER_KEYS, type PointerKey } from "./mcp-source-draft";
 
-const t = fr.integrations.mcpSource;
+const t = frIntegrations.mcpSource;
 const LABELS: Record<PointerKey, string> = {
   itemsPointer: t.items,
   idPointer: t.id,

@@ -6,11 +6,11 @@ import { Switch } from "@kibo/sdk/ui/switch";
 import { Search } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { client } from "../../api";
-import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import { failureText } from "../../lib/remote-error";
 import { visibleLines } from "./log-lines";
 
-const t = fr.integrations.sheet;
+const t = frIntegrations.sheet;
 const subtitleOf = (run: CiRun) => [
   run.workflow,
   ...(run.prNumber === null ? [] : [t.ciPr([run.prNumber])]),
