@@ -31,7 +31,7 @@ export function targetToHash(target: TabTarget | null): string {
     case "project":
       return `${base}/`;
     case "page":
-      return `${base}/${enc(target.pageId)}`;
+      return `${base}/${enc(target.pageId)}${target.question ? `?question=${enc(target.question)}` : ""}`;
     case "ticket":
       return `${base}/t/${enc(target.ticketId)}`;
     case "changes":
@@ -60,7 +60,13 @@ function candidate(projectId: string, rest: string, q: URLSearchParams): unknown
   }
   if (rest.startsWith("t/"))
     return { kind: "ticket", projectId, ticketId: decodeURIComponent(rest.slice(2)) };
-  return { kind: "page", projectId, pageId: decodeURIComponent(rest) };
+  const question = q.get("question");
+  return {
+    kind: "page",
+    projectId,
+    pageId: decodeURIComponent(rest),
+    ...(question !== null && { question }),
+  };
 }
 
 function screenTarget(hash: string): TabTarget | null {

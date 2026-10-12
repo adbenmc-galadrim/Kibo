@@ -5,6 +5,7 @@ import {
   type AnswerInput,
   DEFAULT_WORKFLOW,
   type ExpectedState,
+  findRecipient,
   type ProjectSnapshot,
   type ProposedAction,
   type Signal,
@@ -13,21 +14,26 @@ import { frProjectAgent } from "../i18n/fr-project-agent";
 import { frSignals } from "../i18n/fr-signals";
 
 export type BatchGroup = { group: ActionGroup; actions: ProposedAction[] };
-export type ActionDiff = { before: string; after: string };
+export type ActionDiff = { field?: string; before: string; after: string };
 export type DiffLabels = {
   status(statusId: string): string;
   ticket(ticketId: string): string | null;
   profile(profileId: string): string;
+  question(questionId: string): string | null;
+  recipient(recipient: string): string;
 };
 
 const ORDER: readonly ActionGroup[] = ["tickets", "agents", "questions", "notes", "signals"];
 const t = frProjectAgent.action;
+const field = frProjectAgent.field;
 const NOTHING = "—";
 
 export const defaultLabels: DiffLabels = {
   status: (id) => DEFAULT_WORKFLOW.find((s) => s.id === id)?.label ?? id,
   ticket: () => null,
   profile: (id) => id,
+  question: () => null,
+  recipient: (id) => id,
 };
 
 export function projectLabels(
@@ -38,6 +44,8 @@ export function projectLabels(
     status: (id) => project.workflow.find((s) => s.id === id)?.label ?? id,
     ticket: (id) => project.tickets.find((t) => t.id === id)?.keyLabel ?? null,
     profile: (id) => agents.find((a) => a.ref === id)?.name ?? id.slice(id.lastIndexOf(":") + 1),
+    question: (id) => project.questions.find((q) => q.id === id)?.title ?? null,
+    recipient: (raw) => findRecipient(project.questionRecipients, raw)?.name ?? raw,
   };
 }
 
@@ -51,6 +59,8 @@ export function groupActions(actions: readonly ProposedAction[]): BatchGroup[] {
 
 const answerText = (answer: AnswerInput): string =>
   answer.kind === "option" ? (answer.option ?? "") : answer.kind === "text" ? (answer.text ?? "") : t.confirm;
+
+const questionTitle = (id: string, labels: DiffLabels): string => labels.question(id) ?? t.unknownQuestion;
 
 export function actionTitle(action: ProposedAction, labels: DiffLabels = defaultLabels): string {
   switch (action.type) {
@@ -73,13 +83,15 @@ export function actionTitle(action: ProposedAction, labels: DiffLabels = default
     case "answerQuestion":
       return t.answerQuestion(answerText(action.answer));
     case "createQuestion":
-      return t.createQuestion(action.ticket, action.title);
+      return action.recipient === undefined
+        ? t.createQuestion(action.ticket, action.title)
+        : t.createQuestionFor(action.ticket, labels.recipient(action.recipient), action.title);
     case "updateQuestion":
-      return t.updateQuestion(action.questionId);
+      return t.updateQuestion(questionTitle(action.questionId, labels));
     case "reopenQuestion":
-      return t.reopenQuestion(action.questionId);
+      return t.reopenQuestion(questionTitle(action.questionId, labels));
     case "deleteQuestion":
-      return t.deleteQuestion(action.questionId);
+      return t.deleteQuestion(questionTitle(action.questionId, labels));
     case "addRecipient":
       return t.addRecipient(action.name);
     case "createNote":
@@ -120,8 +132,65 @@ export function actionDiff(
   return null;
 }
 
+type QuestionUpdate = Extract<ProposedAction, { type: "updateQuestion" }>;
+
+const recipientOf = (value: unknown, labels: DiffLabels): string =>
+  typeof value === "string" ? labels.recipient(value) : NOTHING;
+
+const ticketOf = (value: unknown, labels: DiffLabels): string =>
+  typeof value === "string" ? (labels.ticket(value) ?? t.unknownTicket) : NOTHING;
+
+const choiceOf = (value: unknown): string => (typeof value === "string" ? value : t.none);
+
+function questionDiffs(
+  action: QuestionUpdate,
+  fields: Record<string, unknown>,
+  labels: DiffLabels,
+): ActionDiff[] {
+  const lines: ActionDiff[] = [];
+  if (action.title !== undefined)
+    lines.push({ field: field.title, before: textOf(fields.title), after: action.title });
+  if (action.recipient !== undefined)
+    lines.push({
+      field: field.recipient,
+      before: recipientOf(fields.recipient, labels),
+      after: labels.recipient(action.recipient),
+    });
+  if (action.ticket !== undefined)
+    lines.push({ field: field.ticket, before: ticketOf(fields.ticketId, labels), after: action.ticket });
+  if (action.options !== undefined)
+    lines.push({ field: field.options, before: listOf(fields.options), after: listOf(action.options) });
+  if (action.provisional !== undefined)
+    lines.push({
+      field: field.provisional,
+      before: choiceOf(fields.provisional),
+      after: choiceOf(action.provisional),
+    });
+  return lines;
+}
+
+export function actionDiffs(
+  action: ProposedAction,
+  expected: ExpectedState | undefined,
+  labels: DiffLabels = defaultLabels,
+): ActionDiff[] {
+  if (action.type === "updateQuestion") return questionDiffs(action, expected?.fields ?? {}, labels);
+  const diff = actionDiff(action, expected, labels);
+  return diff ? [diff] : [];
+}
+
+export const questionOf = (action: ProposedAction): string | null =>
+  action.type === "updateQuestion" ||
+  action.type === "reopenQuestion" ||
+  action.type === "deleteQuestion" ||
+  action.type === "answerQuestion"
+    ? action.questionId
+    : null;
+
 export const replacesContent = (action: ProposedAction): boolean =>
-  action.type === "updateNote" || (action.type === "updateTicket" && action.description !== undefined);
+  action.type === "updateNote" ||
+  (action.type === "updateTicket" && action.description !== undefined) ||
+  (action.type === "updateQuestion" && action.context !== undefined);
 
 export function citedSignals(action: ProposedAction, signals: readonly Signal[]): Signal[] {
   const refs = action.type === "dismissSignal" ? [action.signal] : (action.signals ?? []);

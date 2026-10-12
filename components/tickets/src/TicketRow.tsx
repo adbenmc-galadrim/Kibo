@@ -1,11 +1,18 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import type { Assignee, MemberInfo, TicketRun } from "@kibo/schema";
-import { assigneeLabel, StatusDot, TicketKeyLabel, useSdk } from "@kibo/sdk";
+import {
+  assigneeLabel,
+  QuestionsChip,
+  type QuestionsChipData,
+  StatusDot,
+  TicketKeyLabel,
+  useSdk,
+} from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
-import { ChevronDown, ChevronRight, MessageCircleQuestion, Plus } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { AgentChip } from "./AgentChip";
 import type { TicketNode } from "./build-tree";
@@ -59,6 +66,7 @@ type Props = {
   canDrag: boolean;
   run: TicketRun | null;
   members: MemberInfo[];
+  questions: QuestionsChipData;
   statusLabel: string;
   context: boolean;
   selected: boolean | null;
@@ -75,6 +83,7 @@ export function TicketRow({
   canDrag,
   run,
   members,
+  questions,
   statusLabel,
   context,
   selected,
@@ -177,13 +186,13 @@ export function TicketRow({
               </Badge>
             )}
             {t.openQuestions > 0 && (
-              <Badge
-                variant="outline"
-                className="hidden shrink-0 gap-1 border-orange-500/40 text-3xs text-orange-600 @md:inline-flex dark:text-orange-400"
-              >
-                <MessageCircleQuestion aria-hidden className="size-3" />
-                {fr.questions(t.openQuestions)}
-              </Badge>
+              <QuestionsChip
+                {...questions}
+                ticket={t}
+                text={fr.questions(t.openQuestions)}
+                label={fr.questionsOpen(t.openQuestions)}
+                className="hidden @md:inline-flex"
+              />
             )}
           </div>
           <span data-cell="status" className="flex items-center gap-2 text-xs">

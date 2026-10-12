@@ -1,4 +1,5 @@
 import { KiboError, type RunQuestions, type RunView } from "@kibo/schema";
+import { firstOpenQuestion, QuestionPreview } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { MessageCircleQuestion } from "lucide-react";
 import { useState } from "react";
@@ -23,6 +24,11 @@ export function RunQuestionsBar({ run, questions }: Props) {
   const undelivered = writable ? (questions?.undelivered ?? 0) : 0;
   const { projectId, ticketId } = run;
   if (open === 0 && undelivered === 0) return null;
+  const first = project && ticketId ? firstOpenQuestion(project.questions, ticketId) : null;
+  const show = (questionId: string | null) => {
+    if (openQuestions && projectId) openQuestions(projectId, questionId ?? undefined);
+  };
+  const label = <span className="text-orange-600 dark:text-orange-400">{frRunChat.openQuestions(open)}</span>;
   const deliver = async () => {
     if (!projectId || !ticketId) return;
     setFailure(null);
@@ -40,9 +46,24 @@ export function RunQuestionsBar({ run, questions }: Props) {
       {open > 0 && (
         <p className="flex items-center gap-2">
           <MessageCircleQuestion aria-hidden className="size-3.5 text-orange-600 dark:text-orange-400" />
-          <span className="text-orange-600 dark:text-orange-400">{frRunChat.openQuestions(open)}</span>
+          {project && ticketId ? (
+            <QuestionPreview
+              mode="ticket"
+              questions={project.questions}
+              recipients={project.questionRecipients}
+              ticket={{ id: ticketId, keyLabel: run.ticketKey ?? "", title: run.ticketTitle ?? "" }}
+              runLabel={(runId) => (runId === run.id ? run.label : runId)}
+              onOpen={show}
+            >
+              <button type="button" className="rounded-sm hover:underline" onClick={() => show(first)}>
+                {label}
+              </button>
+            </QuestionPreview>
+          ) : (
+            label
+          )}
           {openQuestions && projectId && (
-            <Button size="sm" variant="link" className="h-6 px-0" onClick={() => openQuestions(projectId)}>
+            <Button size="sm" variant="link" className="h-6 px-0" onClick={() => show(first)}>
               {frRunChat.openQuestionsLink}
             </Button>
           )}

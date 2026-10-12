@@ -421,9 +421,15 @@ test("a row shows its open questions after the waiting badge, never a zero", asy
         createdBy: { kind: "agent", ref: "opus-dev" },
       });
   });
-  const badge = (await screen.findByText("2 questions")).closest("[data-slot=badge]");
-  expect(badge?.classList.contains("hidden")).toBe(true);
-  expect(badge?.classList.contains("@md:inline-flex")).toBe(true);
-  expect(badge?.className).toContain("text-orange-600");
+  const chip = await screen.findByRole("button", { name: "2 questions, ouvrir" });
+  expect(chip.classList.contains("hidden")).toBe(true);
+  expect(chip.classList.contains("@md:inline-flex")).toBe(true);
+  expect(chip.className).toContain("text-orange-600");
   expect(screen.getAllByText(/questions?$/)).toHaveLength(1);
+  fireEvent.focus(chip);
+  expect(await screen.findByText("Jeton par appareil ?")).toBeTruthy();
+  fireEvent.click(chip);
+  const first = m.snapshot().questions.find((q) => q.title === "Port du démon ?")?.id ?? "";
+  expect(m.viewRequests).toEqual([{ componentId: "questions", question: first }]);
+  expect(m.opened).toEqual([]);
 });

@@ -7,6 +7,7 @@ import {
   type KeyCombo,
   KiboError,
   type Selection,
+  type Spotlight,
   type Theme,
 } from "@kibo/schema";
 import type { FileOpenRequest, NewTicketDefaults } from "@kibo/sdk";
@@ -21,7 +22,7 @@ export type BridgeDeps = {
   onOpenTicket(ticketId: string): void;
   onOpenNewTicket(defaults: NewTicketDefaults): void;
   onOpenFile(request: FileOpenRequest): void;
-  onOpenView(componentId: string): void;
+  onOpenView(componentId: string, question?: string): void;
   onKey(combo: KeyCombo): void;
   onResize(height: number): void;
   onReady(): void;
@@ -37,6 +38,7 @@ export type FrameBridge = {
   focus(active: boolean): void;
   visibility(visible: boolean): void;
   selection(selection: Selection | null): void;
+  spotlight(spotlight: Spotlight | null): void;
   dispose(): void;
 };
 
@@ -97,7 +99,8 @@ export function createFrameBridge(deps: BridgeDeps): FrameBridge {
         deps.onOpenFile({ path: m.path, line: m.line ?? null, origin: null });
         return;
       case "openView":
-        deps.onOpenView(m.componentId);
+        if (m.question === undefined) deps.onOpenView(m.componentId);
+        else deps.onOpenView(m.componentId, m.question);
         return;
       case "key":
         deps.onKey(m.combo);
@@ -134,6 +137,7 @@ export function createFrameBridge(deps: BridgeDeps): FrameBridge {
     focus: (active) => send({ kibo: 1, type: "focus", active }),
     visibility: (visible) => send({ kibo: 1, type: "visibility", visible }),
     selection: (selection) => send({ kibo: 1, type: "selection", selection }),
+    spotlight: (spotlight) => send({ kibo: 1, type: "spotlight", spotlight }),
     dispose: () => {
       disposed = true;
     },

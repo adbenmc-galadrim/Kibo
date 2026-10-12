@@ -156,7 +156,7 @@ describe("questionExtras", () => {
     });
     const items = buildTimeline([], new Map(), [q]);
     expect(questionExtras(items)).toEqual([
-      { key: "q-q1", at: NOW - 30 * MIN, kind: "question", text: "Quel port ?" },
+      { key: "q-q1", at: NOW - 30 * MIN, kind: "question", text: "Quel port ?", questionId: "q1" },
       { key: "a-q1", at: NOW - 25 * MIN, kind: "human", text: "Port 4747" },
     ]);
   });

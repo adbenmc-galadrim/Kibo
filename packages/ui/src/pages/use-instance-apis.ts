@@ -40,9 +40,10 @@ export function useInstanceApis(
   );
   const visibility = useMemo(() => visibilityApi(visible), [visible]);
   const selection = useMemo(() => (bus ? bus.api(selects) : NO_SELECTION), [bus, selects]);
+  const spotlight = page?.spotlight;
   const apis = useMemo(
-    () => ({ capabilities, focus, visibility, selection }),
-    [capabilities, focus, visibility, selection],
+    () => ({ capabilities, focus, visibility, selection, spotlight }),
+    [capabilities, focus, visibility, selection, spotlight],
   );
   return manifest !== null || components !== null ? apis : null;
 }

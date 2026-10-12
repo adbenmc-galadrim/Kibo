@@ -10,7 +10,7 @@ import {
 import { LAZY_FALLBACK_SELECTOR, SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, kanbanPanel, manifest } from "./index";
 import { seed } from "./test-seed";
@@ -505,9 +505,27 @@ test("a card shows its open questions, never a zero", async () => {
     ask("Bloquer le dépôt sur une affaire archivée ?");
   });
   const card = await within(todo).findByRole("article", { name: /Sync/ });
-  expect(await within(card).findByText("2 questions")).toBeTruthy();
-  expect(within(card).getByText("2 questions").closest("[data-slot=badge]")?.className).toContain(
-    "text-orange-600",
-  );
+  const chip = await within(card).findByRole("button", { name: "2 questions, ouvrir" });
+  expect(chip.textContent).toBe("2 questions");
+  expect(chip.className).toContain("text-orange-600");
   expect(within(todo).getAllByText(/questions?$/)).toHaveLength(1);
+});
+
+test("the questions chip previews them on hover and opens the first one", async () => {
+  const m = setup();
+  const sync = m.snapshot().tickets.find((t) => t.title === "Sync")?.id ?? "";
+  const ask = (title: string) =>
+    m.run({ method: "createQuestion", ticketId: sync, title, createdBy: { kind: "agent", ref: "opus-dev" } });
+  const todo = await screen.findByRole("region", { name: "À faire" });
+  act(() => {
+    ask("Un admin non affecté accède-t-il aux fichiers ?");
+    ask("Bloquer le dépôt sur une affaire archivée ?");
+  });
+  const chip = await within(todo).findByRole("button", { name: "2 questions, ouvrir" });
+  fireEvent.focus(chip);
+  expect(await screen.findByText("Bloquer le dépôt sur une affaire archivée ?")).toBeTruthy();
+  fireEvent.click(chip);
+  const first = m.snapshot().questions.find((q) => q.title.startsWith("Un admin"))?.id;
+  expect(m.viewRequests).toEqual([{ componentId: "questions", question: first ?? "" }]);
+  expect(m.opened).toEqual([]);
 });

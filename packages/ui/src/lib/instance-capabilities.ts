@@ -5,7 +5,7 @@ import {
   type Instance,
   splitRef,
 } from "@kibo/schema";
-import type { FocusApi, SelectionApi, VisibilityApi } from "@kibo/sdk";
+import type { FocusApi, SelectionApi, SpotlightApi, VisibilityApi } from "@kibo/sdk";
 import { findComponent } from "../registry";
 
 export type InstanceApis = {
@@ -13,6 +13,7 @@ export type InstanceApis = {
   focus: FocusApi;
   visibility: VisibilityApi;
   selection: SelectionApi;
+  spotlight?: SpotlightApi;
 };
 
 export function manifestOf(

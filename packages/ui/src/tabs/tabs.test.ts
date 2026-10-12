@@ -286,3 +286,14 @@ test("retarget swaps a tab's target in place, or falls back to the tab already s
   expect(s.tabs.map((t) => t.id)).toEqual(["t1"]);
   expect(s.activeId).toBe("t1");
 });
+
+test("a page tab is not doubled by a question, it is aimed at it", () => {
+  const page = { kind: "page", projectId: "p1", pageId: "pg" } as const;
+  let s = tabsReducer(EMPTY_TABS, { type: "open", target: page, newTab: true, id: "t1" });
+  s = tabsReducer(s, { type: "open", target: { kind: "screen", screen: "agents" }, newTab: true, id: "t2" });
+  s = tabsReducer(s, { type: "open", target: { ...page, question: "q1" }, newTab: true, id: "t3" });
+  expect(s.tabs.map((t) => t.id)).toEqual(["t1", "t2"]);
+  expect(s.activeId).toBe("t1");
+  expect(activeTarget(s)).toEqual({ ...page, question: "q1" });
+  expect(s.recents[0]).toEqual(page);
+});

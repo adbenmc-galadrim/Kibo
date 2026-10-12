@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useAgentList } from "../agents/catalog/use-agent-list";
 import { client } from "../api";
 import { frProjectAgent } from "../i18n/fr-project-agent";
+import { projectQuestionLinks, QuestionLinksContext } from "../moments/QuestionText";
 import { useHost } from "../shell/Host";
 import type { ProjectAgentTab } from "../shell/use-project-agent-panel";
 import { useRunLog } from "../state/use-run-log";
@@ -50,6 +51,10 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
   );
   const agentList = useAgentList(projectId);
   const labels = useMemo(() => projectLabels(project, agentList.agents ?? []), [project, agentList.agents]);
+  const links = useMemo(
+    () => projectQuestionLinks(project, (id) => host.openView("questions", projectId, id)),
+    [project, host, projectId],
+  );
 
   const send = async (text: string) => {
     await client.rpc({ method: "sendProjectAgentMessage", projectId, text });
@@ -73,15 +78,17 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
   };
   const back = () => setMode({ kind: "current" });
   const conversation = (
-    <ConversationView
-      items={items}
-      readOnly={readOnly}
-      labels={labels}
-      signals={signals.view?.signals ?? []}
-      onTicket={openTicket}
-      onRetry={retry}
-      onDecide={decide}
-    />
+    <QuestionLinksContext.Provider value={links}>
+      <ConversationView
+        items={items}
+        readOnly={readOnly}
+        labels={labels}
+        signals={signals.view?.signals ?? []}
+        onTicket={openTicket}
+        onRetry={retry}
+        onDecide={decide}
+      />
+    </QuestionLinksContext.Provider>
   );
 
   return (

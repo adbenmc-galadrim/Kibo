@@ -17,7 +17,7 @@ function setup({ call = async () => ["ok"], surface = "widget" }: Options = {}) 
     onOpenTicket: mock((_: string) => {}),
     onOpenNewTicket: mock(() => {}),
     onOpenFile: mock((_: FileOpenRequest) => {}),
-    onOpenView: mock((_: string) => {}),
+    onOpenView: mock((_: string, _question?: string) => {}),
     onKey: mock(() => {}),
     onResize: mock((_: number) => {}),
     onReady: mock(() => {}),
@@ -270,5 +270,18 @@ test("focus, visibility and selection are pushed to the frame until disposed", (
     { kibo: 1, type: "visibility", visible: false },
     { kibo: 1, type: "selection", selection: { kind: "ticket", ids: ["t2"] } },
     { kibo: 1, type: "selection", selection: null },
+  ]);
+});
+
+test("openView may aim at a question, and the spotlight reaches the frame", () => {
+  const { bridge, messages, frame, handlers, from } = setup();
+  from(frame, { kibo: 1, type: "openView", componentId: "questions", question: "q1" });
+  from(frame, { kibo: 1, type: "openView", componentId: "questions", question: "" });
+  expect(handlers.onOpenView.mock.calls).toEqual([["questions", "q1"]]);
+  bridge.spotlight({ kind: "question", id: "q1" });
+  bridge.spotlight(null);
+  expect(messages()).toEqual([
+    { kibo: 1, type: "spotlight", spotlight: { kind: "question", id: "q1" } },
+    { kibo: 1, type: "spotlight", spotlight: null },
   ]);
 });

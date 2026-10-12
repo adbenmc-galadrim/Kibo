@@ -4,8 +4,18 @@ import { viewPageFor } from "../pages/view-page";
 import { componentRef, findBuiltin } from "../registry";
 import { OpenViewDialog } from "./lazy-dialogs";
 
-type Pending = { projectId: string; componentId: string };
-export type OpenView = { openView(componentId: string, projectId?: string): void; dialog: ReactNode };
+type Pending = { projectId: string; componentId: string; question: string | null };
+export type OpenView = {
+  openView(componentId: string, projectId?: string, question?: string): void;
+  dialog: ReactNode;
+};
+
+const pageTarget = (projectId: string, pageId: string, question: string | null): TabTarget => ({
+  kind: "page",
+  projectId,
+  pageId,
+  ...(question !== null && { question }),
+});
 
 export function useOpenView(
   current: () => ProjectSnapshot | null,
@@ -14,13 +24,14 @@ export function useOpenView(
 ): OpenView {
   const [pending, setPending] = useState<Pending | null>(null);
   const openView = useCallback(
-    (componentId: string, projectId?: string) => {
+    (componentId: string, projectId?: string, question?: string) => {
       const project = projectId === undefined ? current() : snapshotOf(projectId);
       const id = projectId ?? project?.meta.id;
       if (id === undefined) return;
       const page = project && viewPageFor(project, componentId);
-      if (page) go({ kind: "page", projectId: id, pageId: page.id });
-      else if (findBuiltin(componentId)) setPending({ projectId: id, componentId });
+      if (page) go(pageTarget(id, page.id, question ?? null));
+      else if (findBuiltin(componentId))
+        setPending({ projectId: id, componentId, question: question ?? null });
     },
     [current, go, snapshotOf],
   );
@@ -32,7 +43,7 @@ export function useOpenView(
       title={target.manifest.title}
       open
       onOpenChange={(open) => !open && setPending(null)}
-      onCreated={(pageId) => go({ kind: "page", projectId: pending.projectId, pageId })}
+      onCreated={(pageId) => go(pageTarget(pending.projectId, pageId, pending.question))}
     />
   );
   return { openView, dialog };

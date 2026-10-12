@@ -7,7 +7,10 @@ import type { OpenView } from "./use-open-view";
 type Props = { agents: AgentsState | null; openView: OpenView["openView"]; children: ReactNode };
 
 export function AgentsShellProvider({ agents, openView, children }: Props) {
-  const openQuestions = useCallback((projectId: string) => openView("questions", projectId), [openView]);
+  const openQuestions = useCallback(
+    (projectId: string, questionId?: string) => openView("questions", projectId, questionId),
+    [openView],
+  );
   return (
     <AgentsProvider agents={agents}>
       <OpenQuestionsProvider value={openQuestions}>{children}</OpenQuestionsProvider>

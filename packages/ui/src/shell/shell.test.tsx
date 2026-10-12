@@ -601,6 +601,44 @@ test("openView can target another project than the current one, by its snapshot"
   expect(await screen.findByRole("dialog", { name: "Créer une page Questions ?" })).toBeTruthy();
 });
 
+test("openView aims the view page at one question, even through the page it creates", async () => {
+  const { useOpenView } = await import("./use-open-view");
+  const opened: TabTarget[] = [];
+  const questions = {
+    id: "k3",
+    pageId: "1@1",
+    component: "questions@1.0.0",
+    layout: { x: 0, y: 0, w: 12, h: 8 },
+    config: {},
+    componentHash: null,
+  };
+  let current: ProjectSnapshot = { ...project, instances: [questions] };
+  function Harness() {
+    const { openView, dialog } = useOpenView(
+      () => current,
+      (t) => opened.push(t),
+    );
+    return (
+      <>
+        <button type="button" onClick={() => openView("questions", undefined, "q1")}>
+          open
+        </button>
+        {dialog}
+      </>
+    );
+  }
+  render(<Harness />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "open" }));
+  expect(opened).toEqual([{ kind: "page", projectId: "p1", pageId: "1@1", question: "q1" }]);
+  current = project;
+  await user.click(screen.getByRole("button", { name: "open" }));
+  await user.click(await screen.findByRole("button", { name: "Créer la page" }));
+  await waitFor(() =>
+    expect(opened.at(-1)).toEqual({ kind: "page", projectId: "p1", pageId: "9@1", question: "q1" }),
+  );
+});
+
 test("a read-only project hides page and ticket creation and shows the banner", async () => {
   renderShell();
   await go("#/p/p3/");

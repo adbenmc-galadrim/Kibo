@@ -108,7 +108,14 @@ export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, 
     <div className="grid gap-4">
       {t.openQuestions > 0 && (
         <div className="px-4">
-          <QuestionsBadge count={t.openQuestions} onOpen={() => host?.openView("questions")} />
+          <QuestionsBadge
+            count={t.openQuestions}
+            questions={project.questions}
+            recipients={project.questionRecipients}
+            ticket={t}
+            runLabel={(runId) => runId}
+            onOpen={(id) => host?.openView("questions", undefined, id ?? undefined)}
+          />
         </div>
       )}
       <SyncStatus projectId={project.meta.id} ticket={t} />

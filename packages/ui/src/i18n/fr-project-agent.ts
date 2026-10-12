@@ -135,6 +135,8 @@ export const frProjectAgent = {
     cancelRun: (runId: string) => `Annuler le run ${runId}`,
     answerQuestion: (answer: string) => `Répondre « ${answer} »`,
     createQuestion: (ticket: string, title: string) => `Question sur ${ticket} : « ${title} »`,
+    createQuestionFor: (ticket: string, recipient: string, title: string) =>
+      `Question sur ${ticket} pour ${recipient} : « ${title} »`,
     updateQuestion: (title: string) => `Modifier la question « ${title} »`,
     reopenQuestion: (title: string) => `Rouvrir « ${title} » (réponse retirée)`,
     deleteQuestion: (title: string) => `Archiver « ${title} »`,
@@ -145,6 +147,7 @@ export const frProjectAgent = {
     confirm: "Confirmer",
     none: "aucun",
     unknownTicket: "ticket introuvable",
+    unknownQuestion: "question introuvable",
   },
   field: {
     title: "Titre",
@@ -152,6 +155,10 @@ export const frProjectAgent = {
     labels: "Étiquettes",
     parent: "Parent",
     status: "Statut",
+    recipient: "Destinataire",
+    ticket: "Ticket",
+    options: "Options",
+    provisional: "Choix provisoire",
   },
   button: "Agent de projet",
   buttonTitle: (shortcut: string) => `Agent de projet (${shortcut})`,

@@ -27,8 +27,8 @@ const PublishDialog = lazyPanel(
   { fallback: "sr-only" },
 );
 
-type Props = { project: ProjectSnapshot; page: Page; viewer: string };
-export function PageView({ project, page, viewer }: Props) {
+type Props = { project: ProjectSnapshot; page: Page; viewer: string; question?: string | null };
+export function PageView({ project, page, viewer, question = null }: Props) {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(false);
   const [publishing, setPublishing] = useState<string | null>(null);
@@ -44,7 +44,7 @@ export function PageView({ project, page, viewer }: Props) {
   );
   const layoutMode = editable && wide && page.kind === "dashboard" && first !== undefined;
   const grid = page.kind === "dashboard" && first !== undefined && !(editing && layoutMode);
-  const state = usePageState(grid ? instances.map((i) => i.id) : []);
+  const state = usePageState(grid ? instances.map((i) => i.id) : [], question);
   return (
     <PageContext.Provider value={state}>
       <div className="flex h-full flex-col">

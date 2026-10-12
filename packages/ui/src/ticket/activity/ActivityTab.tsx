@@ -14,9 +14,11 @@ import { Button } from "@kibo/sdk/ui/button";
 import { useState } from "react";
 import type { ShownPlan } from "../../agents/dock/DockPlan";
 import { frMoments } from "../../i18n/fr-moments";
+import { QuestionLinksContext } from "../../moments/QuestionText";
 import { ReportCard } from "../../moments/ReportCard";
 import { RunSkillReviews } from "../../moments/SkillReviewsBlock";
 import { OverlapCounts } from "../../overlaps/OverlapCounts";
+import { useOptionalHost } from "../../shell/Host";
 import { useAgentsState } from "../../state/agents-context";
 import { useNow } from "../../state/use-agents";
 import { ChronologyStacked } from "./ChronologyStacked";
@@ -64,6 +66,7 @@ const withOverlaps = (runs: readonly RunView[], moments: ReadonlyMap<string, Run
 
 export function ActivityTab({ project, ticket, onOpenFile }: Props) {
   const agents = useAgentsState();
+  const host = useOptionalHost();
   const now = useNow(60_000);
   const [limit, setLimit] = useState(ACTIVITY_PAGE);
   const { ref, width } = useContainerWidth<HTMLDivElement>();
@@ -92,30 +95,39 @@ export function ActivityTab({ project, ticket, onOpenFile }: Props) {
     now,
     onOpenFile,
   };
+  const links = {
+    questions,
+    recipients: project.questionRecipients,
+    ticketOf: () => ticket,
+    runLabel: (runId: string) => runs.find((r) => r.id === runId)?.label ?? runId,
+    open: (questionId: string) => host?.openView("questions", undefined, questionId),
+  };
   return (
-    <div ref={ref} className="grid grid-cols-[minmax(0,1fr)] gap-6 px-4 pb-6">
-      <ReportHead
-        report={latestReport(ticket.agentProgress)}
-        runs={runs}
-        overlapRuns={withOverlaps(shown, momentsByRun)}
-      />
-      {last && <RunSkillReviews runId={last.id} moments={momentsByRun.get(last.id) ?? []} />}
-      {error && (
-        <p role="alert" className="text-sm text-destructive">
-          {frMoments.activity.unavailable}
-        </p>
-      )}
-      {width >= WIDE_ACTIVITY_MIN ? <ChronologyWide {...props} /> : <ChronologyStacked {...props} />}
-      {runs.length > shown.length && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="w-fit"
-          onClick={() => setLimit((n) => n + ACTIVITY_PAGE)}
-        >
-          {frMoments.activity.older}
-        </Button>
-      )}
-    </div>
+    <QuestionLinksContext.Provider value={links}>
+      <div ref={ref} className="grid grid-cols-[minmax(0,1fr)] gap-6 px-4 pb-6">
+        <ReportHead
+          report={latestReport(ticket.agentProgress)}
+          runs={runs}
+          overlapRuns={withOverlaps(shown, momentsByRun)}
+        />
+        {last && <RunSkillReviews runId={last.id} moments={momentsByRun.get(last.id) ?? []} />}
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {frMoments.activity.unavailable}
+          </p>
+        )}
+        {width >= WIDE_ACTIVITY_MIN ? <ChronologyWide {...props} /> : <ChronologyStacked {...props} />}
+        {runs.length > shown.length && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-fit"
+            onClick={() => setLimit((n) => n + ACTIVITY_PAGE)}
+          >
+            {frMoments.activity.older}
+          </Button>
+        )}
+      </div>
+    </QuestionLinksContext.Provider>
   );
 }

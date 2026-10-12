@@ -1,6 +1,7 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { Overlap, RpcRequest, RunMomentsPage } from "@kibo/schema";
-import { render, screen, waitFor } from "@testing-library/react";
+import type { Overlap, Question, RpcRequest, RunMomentsPage } from "@kibo/schema";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { NOW } from "../../agents/fixtures";
 import { apiMock } from "../../api-mock";
 import { dockState, FEED_RUN, MOMENTS_PAGE, progressProject } from "../../moments/fixtures";
 import {
@@ -12,6 +13,7 @@ import {
   overlapMoment,
   RESOLVED_AT,
 } from "../../overlaps/fixtures";
+import type { Host } from "../../shell/Host";
 import { AgentsProvider } from "../../state/agents-context";
 
 const calls: RpcRequest[] = [];
@@ -40,6 +42,7 @@ mock.module("../../api", () =>
 );
 
 const { ActivityTab } = await import("./ActivityTab");
+const { HostProvider } = await import("../../shell/Host");
 
 const withOverlapMoments = (): RunMomentsPage => ({
   ...MOMENTS_PAGE,
@@ -91,4 +94,50 @@ test("without any overlap there is no count and no overlap call", async () => {
   await screen.findByText("Je relis le récepteur et ses tests avant de toucher au port.");
   expect(screen.queryByText(/^Recouvrements :/)).toBeNull();
   expect(calls.some((c) => c.method === "overlaps.list" || c.method === "autoLinks.list")).toBe(false);
+});
+
+test("a question line of the chronology previews its question and opens it", async () => {
+  const project = progressProject();
+  const ticket = project.tickets.find((t) => t.id === "t14");
+  if (!ticket) throw new Error("no ticket t14");
+  const asked: Question = {
+    id: "q-port",
+    ticketId: "t14",
+    runId: FEED_RUN,
+    title: "Quel port pour le récepteur ?",
+    context: "Le port **4317** est pris par OpenTelemetry.",
+    options: ["4318", "4400"],
+    provisional: null,
+    blocking: true,
+    createdBy: { kind: "agent", ref: "opus-dev-2" },
+    createdAt: NOW - 210 * 60_000,
+    importRef: null,
+    answer: null,
+    recipient: "me",
+    sentAt: null,
+    history: [],
+    archivedAt: null,
+    archivedBy: null,
+  };
+  const opened: (string | undefined)[] = [];
+  const host: Host = {
+    openTicket: () => {},
+    openNewTicket: () => {},
+    openAssign: () => {},
+    openFile: () => {},
+    openView: (_id, _project, question) => opened.push(question),
+    openTarget: () => {},
+  };
+  render(
+    <HostProvider host={host}>
+      <AgentsProvider agents={dockState()}>
+        <ActivityTab project={{ ...project, questions: [asked] }} ticket={ticket} onOpenFile={() => {}} />
+      </AgentsProvider>
+    </HostProvider>,
+  );
+  const line = await screen.findByRole("button", { name: "Quel port pour le récepteur ?" });
+  fireEvent.focus(line);
+  expect(await screen.findByText("Le port 4317 est pris par OpenTelemetry.")).toBeTruthy();
+  fireEvent.click(line);
+  expect(opened).toEqual(["q-port"]);
 });

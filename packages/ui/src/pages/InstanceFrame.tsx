@@ -53,7 +53,7 @@ function useSameContent<T>(value: T): T {
 function Mounted({ projectId, instance, viewer, surface, format, mod, mode, apis }: MountedProps) {
   const host = useHost();
   const config = useSameContent(instance.config);
-  const { focus, visibility, selection } = apis;
+  const { focus, visibility, selection, spotlight } = apis;
   const sdk = useMemo(
     () =>
       createSdk(
@@ -75,15 +75,30 @@ function Mounted({ projectId, instance, viewer, surface, format, mod, mode, apis
               line: r.line ?? null,
               origin: r.origin ?? null,
             }),
-          openView: host.openView,
+          openView: (componentId, opts) => host.openView(componentId, undefined, opts?.question),
           openRun: host.openRun,
           focus,
           visibility,
           selection,
+          spotlight,
         },
         mode,
       ),
-    [mod, mode, projectId, instance.id, config, viewer, surface, format, host, focus, visibility, selection],
+    [
+      mod,
+      mode,
+      projectId,
+      instance.id,
+      config,
+      viewer,
+      surface,
+      format,
+      host,
+      focus,
+      visibility,
+      selection,
+      spotlight,
+    ],
   );
   return (
     <SdkProvider sdk={sdk}>

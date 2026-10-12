@@ -1,7 +1,14 @@
 import type { CiRun, MemberInfo, TicketRun, TicketView } from "@kibo/schema";
-import { assigneeLabel, type CiTone, TicketKeyLabel, worstCiTone } from "@kibo/sdk";
+import {
+  assigneeLabel,
+  type CiTone,
+  QuestionsChip,
+  type QuestionsChipData,
+  TicketKeyLabel,
+  worstCiTone,
+} from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
-import { Bot, MessageCircleQuestion } from "lucide-react";
+import { Bot } from "lucide-react";
 import type { ReactNode } from "react";
 import { AgentChip } from "./AgentChip";
 import { fr } from "./fr";
@@ -13,8 +20,6 @@ const CI_DOT = {
   running: "bg-amber-500",
   neutral: "bg-muted-foreground/60",
 } as const satisfies Record<CiTone, string>;
-
-export const QUESTIONS_BADGE = "gap-1 border-orange-500/40 text-3xs text-orange-600 dark:text-orange-400";
 
 export const STARTABLE_BADGE =
   "border-zinc-400 bg-background text-2xs font-medium text-zinc-700 dark:border-zinc-500 dark:text-zinc-200";
@@ -37,11 +42,12 @@ export type CardFacts = {
   ci?: CiChip;
   members: MemberInfo[];
   remote: { label: string; state: string }[];
+  questions: QuestionsChipData;
 };
 
 type Props = CardFacts & { menu: ReactNode; title: ReactNode };
 
-export function KanbanCardContent({ ticket: t, run, ci, members, remote, menu, title }: Props) {
+export function KanbanCardContent({ ticket: t, run, ci, members, remote, questions, menu, title }: Props) {
   return (
     <>
       <div className="flex h-6 items-center gap-2">
@@ -81,10 +87,12 @@ export function KanbanCardContent({ ticket: t, run, ci, members, remote, menu, t
           </Badge>
         ))}
         {t.openQuestions > 0 && (
-          <Badge variant="outline" className={QUESTIONS_BADGE}>
-            <MessageCircleQuestion aria-hidden className="size-3" />
-            {fr.questions(t.openQuestions)}
-          </Badge>
+          <QuestionsChip
+            {...questions}
+            ticket={t}
+            text={fr.questions(t.openQuestions)}
+            label={fr.questionsOpen(t.openQuestions)}
+          />
         )}
         {ci && (
           <span
