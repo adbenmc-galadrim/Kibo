@@ -19,6 +19,9 @@ const question = (over: Partial<Question>): Question => ({
   answer: null,
   recipient: "client",
   sentAt: null,
+  history: [],
+  archivedAt: null,
+  archivedBy: null,
   ...over,
 });
 

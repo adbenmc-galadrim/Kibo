@@ -52,6 +52,9 @@ export function question(p: Partial<Question> & Pick<Question, "id" | "ticketId"
     answer: null,
     recipient: "me",
     sentAt: null,
+    history: [],
+    archivedAt: null,
+    archivedBy: null,
     ...p,
   };
 }

@@ -29,6 +29,9 @@ const question = (patch: Partial<Question> & Pick<Question, "id" | "createdAt">)
   answer: null,
   recipient: "me",
   sentAt: null,
+  history: [],
+  archivedAt: null,
+  archivedBy: null,
   ...patch,
 });
 

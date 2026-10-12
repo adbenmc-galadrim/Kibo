@@ -249,6 +249,9 @@ const question = (ticketId: string, over: Partial<Question>): Question => ({
   answer: null,
   recipient: "me",
   sentAt: null,
+  history: [],
+  archivedAt: null,
+  archivedBy: null,
   ...over,
 });
 

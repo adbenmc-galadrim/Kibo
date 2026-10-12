@@ -65,6 +65,7 @@ export * from "./project-agent-tool-specs";
 export * from "./project-agent-tools";
 export * from "./protocol";
 export * from "./question";
+export * from "./question-history";
 export * from "./question-recipient";
 export * from "./rpc";
 export * from "./rule";

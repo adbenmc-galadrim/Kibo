@@ -28,6 +28,9 @@ const question = (n: number, recipient: string): Question => ({
   answer: null,
   recipient,
   sentAt: null,
+  history: [],
+  archivedAt: null,
+  archivedBy: null,
 });
 
 const base: ProjectSnapshot = {
