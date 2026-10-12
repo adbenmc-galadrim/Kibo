@@ -40,9 +40,8 @@ const ActionTitle = z.string().trim().min(1).max(ACTION_TITLE_MAX);
 const ActionDescription = z.string().max(ACTION_DESCRIPTION_MAX);
 const NoteBody = z.string().max(MAX_NOTE_CHARS);
 const RecipientName = z.string().trim().min(1).max(RECIPIENT_ID_MAX);
-const QUESTION_UPDATE_FIELDS = ["title", "context", "options", "provisional", "ticket", "recipient"] as const;
 
-const ProposedActionUnion = z.discriminatedUnion("type", [
+export const ProposedAction = z.discriminatedUnion("type", [
   z.object({
     ...base,
     type: z.literal("createTicket"),
@@ -114,12 +113,6 @@ const ProposedActionUnion = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("updateNote"), path: NotePath, content: NoteBody }),
   z.object({ ...base, type: z.literal("dismissSignal"), signal: SignalRef }),
 ]);
-export const PROPOSED_ACTION_TYPES = ProposedActionUnion.options.map((o) => o.shape.type.value);
-export const ProposedAction = ProposedActionUnion.superRefine((action, ctx) => {
-  if (action.type === "updateQuestion" && QUESTION_UPDATE_FIELDS.every((f) => action[f] === undefined)) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "updateQuestion changes nothing" });
-  }
-});
 export type ProposedAction = z.infer<typeof ProposedAction>;
 export type ActionType = ProposedAction["type"];
 export type ActionGroup = "tickets" | "agents" | "questions" | "notes" | "signals";

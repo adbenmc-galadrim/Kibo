@@ -7,7 +7,6 @@ import {
   batchStatusOfResults,
   foldBatch,
   isDecidable,
-  PROPOSED_ACTION_TYPES,
   ProposeBatchInput,
   ProposedAction,
   TicketRef,
@@ -124,7 +123,7 @@ describe("project agent schema", () => {
   });
 
   test("ACTION_GROUPS covers every action type", () => {
-    for (const type of PROPOSED_ACTION_TYPES) {
+    for (const type of ProposedAction.options.map((o) => o.shape.type.value)) {
       expect(ACTION_GROUPS[type]).toBeDefined();
     }
   });
@@ -151,9 +150,10 @@ describe("question actions in a batch", () => {
   const qid = "0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0";
   const update = { id: 1, why: "", type: "updateQuestion", questionId: qid, title: "B" } as const;
 
-  test("updateQuestion needs at least one field and never changes blocking", () => {
+  test("updateQuestion never changes blocking and leaves an empty update to the batch validation", () => {
     expect(ProposedAction.parse(update)).toEqual(update);
-    expect(ProposedAction.safeParse({ ...update, title: undefined }).success).toBe(false);
+    const empty = { id: 1, why: "", type: "updateQuestion", questionId: qid } as const;
+    expect(ProposeBatchInput.parse({ summary: "s", actions: [empty] }).actions).toEqual([empty]);
     expect(ProposedAction.safeParse({ ...update, blocking: true }).success).toBe(false);
     expect(ProposedAction.parse({ ...update, recipient: "Client", ticket: "EMIS-2" })).toMatchObject({
       recipient: "Client",
