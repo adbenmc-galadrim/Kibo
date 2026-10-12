@@ -67,10 +67,7 @@ async function createDeliveryAgent(page: Page, info: TestInfo) {
   await page.getByLabel("Runs en parallèle").fill("2");
   await expect.poll(() => maxParallelOf(page, "livraison")).toBe(2);
   await shot(page, info, "ecran-28");
-  await page
-    .getByRole("navigation", { name: "Fil d'Ariane de l'agent" })
-    .getByRole("button", { name: "Agents" })
-    .click();
+  await page.locator('[data-sidebar="sidebar"]').getByRole("button", { name: "Agents", exact: true }).click();
   await expect(page.getByRole("article", { name: "livraison" })).toBeVisible();
 }
 
@@ -228,10 +225,10 @@ test("l'historique ouvre le run cliqué, pour trois agents différents", async (
     .getByRole("radio", { name: "Tous" })
     .click();
   await filterByProject(page, info);
-  for (const [agent, key] of [
-    ["review-plan", "KIB-7"],
-    ["tests-rapides", "KIB-9"],
-    ["livraison", "KIB-12"],
+  for (const [agent, key, title] of [
+    ["review-plan", "KIB-7", "Tokens shadcn + thème sombre"],
+    ["tests-rapides", "KIB-9", "Setup Tauri + sidecar Bun"],
+    ["livraison", "KIB-12", "Schéma Loro des tickets (LoroTree)"],
   ] as const) {
     const label = `global · ${agent} · ${key}`;
     await page
@@ -242,7 +239,7 @@ test("l'historique ouvre le run cliqué, pour trois agents différents", async (
     const panel = page.getByRole("dialog", { name: `Run ${label}`, exact: true });
     await expect(panel.getByRole("list", { name: `Fil de ${label}` })).toBeAttached();
     await expect(panel.getByRole("heading", { name: label, exact: true })).toBeVisible();
-    await expect(panel.getByRole("button", { name: new RegExp(`^${key} · `) })).toBeVisible();
+    await expect(panel.getByRole("button", { name: title, exact: true })).toBeVisible();
   }
   await shot(page, info, "historique-trois-agents");
 });

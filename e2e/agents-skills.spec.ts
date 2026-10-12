@@ -175,10 +175,12 @@ test("196 · un run qui utilise des skills laisse une review, visible au fil et 
   reviewedRun = await assignTo("KIB-14", ref("kibo-dev"));
   await page.goto(`/#/runs/${reviewedRun}`);
   const feed = page.getByRole("region", { name: "Fil narratif" });
-  await feed.getByRole("button", { name: "A lu 1 fichier et utilisé 1 skill" }).click();
-  await expect(feed.getByText("A utilisé le skill brainstorming")).toBeVisible();
+  await expect(feed.getByRole("button", { name: "A utilisé le skill brainstorming" })).toBeVisible();
+  await expect(
+    feed.getByRole("button", { name: "A utilisé le skill superpowers:brainstorming" }),
+  ).toBeVisible();
   await expect(feed.getByText("Kibo a rappelé la review des skills")).toBeVisible();
-  await expect(feed.getByRole("button", { name: /^A laissé une review/ })).toBeVisible();
+  await expect(feed.getByRole("button", { name: "A laissé une review de 2 skills" })).toBeVisible();
   const reviews = page.getByRole("region", { name: "Reviews de skills" });
   await expect(reviews.getByText("Manque un exemple.", { exact: false })).toBeVisible();
   await capture(info, "196");
@@ -197,8 +199,11 @@ async function openNotes() {
 const skillsPage = async () => {
   await kit.page.goto("/#/agents/skills");
   await expect(kit.page.getByRole("heading", { level: 1, name: "Skills" })).toBeVisible();
-  const back = kit.page.getByRole("navigation", { name: "Fil d'Ariane du skill" }).getByRole("button");
-  if ((await back.count()) > 0) await back.click();
+  await kit.page
+    .locator('[data-sidebar="sidebar"]')
+    .getByRole("button", { name: "Skills", exact: true })
+    .click();
+  await expect(kit.page.getByRole("navigation", { name: "Fil d'Ariane du skill" })).toHaveCount(0);
 };
 
 test("194 · la page Skills : trois sources, plugin en lecture seule, copie", async () => {
@@ -279,9 +284,9 @@ test("le garde refuse un skill et un sous-agent hors liste, le fil le montre", a
   const runId = await assignTo("KIB-15", ref("kibo-dev"));
   await page.goto(`/#/runs/${runId}`);
   const feed = page.getByRole("region", { name: "Fil narratif" });
-  await feed.getByRole("button", { name: /^A lancé 2 sous-agents/ }).click();
-  await expect(feed.getByText("Kibo a refusé le skill")).toBeVisible();
-  await expect(feed.getByText("deploy", { exact: true })).toBeVisible();
-  await expect(feed.getByText("Kibo a refusé le sous-agent")).toBeVisible();
-  await expect(feed.getByText("seo", { exact: true })).toBeVisible();
+  const refusedSkill = feed.getByRole("button", { name: "Kibo a refusé le skill deploy" });
+  await expect(refusedSkill).toBeVisible();
+  await expect(refusedSkill).toHaveClass(/text-destructive/);
+  await expect(feed.getByRole("button", { name: "Kibo a refusé le sous-agent seo" })).toBeVisible();
+  await expect(feed.getByText("Kibo a rappelé la review des skills")).toHaveCount(0);
 });
