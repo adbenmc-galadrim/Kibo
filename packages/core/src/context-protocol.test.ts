@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { DEFAULT_RECIPIENTS, PROGRESS_TOOL, type Ticket } from "@kibo/schema";
+import {
+  DEFAULT_RECIPIENTS,
+  PARALLEL_RULES,
+  PARALLEL_RULES_TITLE,
+  PROGRESS_TOOL,
+  type Ticket,
+} from "@kibo/schema";
 import { NO_AGENT } from "./agents/compose";
 import { executeProjectCommand, readProject } from "./commands";
 import { buildBrief, buildRunContext, buildSystemPrompt } from "./context";
@@ -43,6 +49,7 @@ test("the protocol asks for a plan, a report, a readable feed and lists the reci
     recipients: DEFAULT_RECIPIENTS,
     signals: false,
     skillReview: false,
+    parallel: false,
   });
   expect(prompt).toContain(`\`${PROGRESS_TOOL}\``);
   expect(prompt).toContain("plan");
@@ -56,14 +63,26 @@ test("without a protocol the prompt is unchanged", () => {
   const prompt = buildSystemPrompt([], NO_AGENT);
   expect(prompt).not.toContain(PROGRESS_TOOL);
   expect(prompt).toBe(
-    buildSystemPrompt([], NO_AGENT, { progress: false, recipients: [], signals: false, skillReview: false }),
+    buildSystemPrompt([], NO_AGENT, {
+      progress: false,
+      recipients: [],
+      signals: false,
+      skillReview: false,
+      parallel: false,
+    }),
   );
   expect(prompt.endsWith("- Skills : tous ceux de la machine et du projet.\n")).toBe(true);
 });
 
 test("the run context passes the protocol to the system prompt", () => {
   const { project: snapshot, ticket } = project(false);
-  const protocol = { progress: true, recipients: DEFAULT_RECIPIENTS, signals: true, skillReview: false };
+  const protocol = {
+    progress: true,
+    recipients: DEFAULT_RECIPIENTS,
+    signals: true,
+    skillReview: false,
+    parallel: true,
+  };
   const ctx = buildRunContext({
     project: snapshot,
     ticket,
@@ -91,7 +110,7 @@ test("the brief carries the plan of the ticket over to the next run", () => {
 });
 
 test("ticket runs are told to signal instead of creating tickets", () => {
-  const base = { progress: true, recipients: DEFAULT_RECIPIENTS, skillReview: false };
+  const base = { progress: true, recipients: DEFAULT_RECIPIENTS, skillReview: false, parallel: false };
   const prompt = buildSystemPrompt([], NO_AGENT, { ...base, signals: true });
   expect(prompt).toContain("`mcp__kibo__signal_project`");
   expect(prompt).toContain("Tu ne crées jamais de ticket");
@@ -102,9 +121,22 @@ test("ticket runs are told to signal instead of creating tickets", () => {
 });
 
 test("the skill review rule is added when the run may review its skills", () => {
-  const base = { progress: true, recipients: [], signals: false };
+  const base = { progress: true, recipients: [], signals: false, parallel: false };
   const prompt = buildSystemPrompt([], NO_AGENT, { ...base, skillReview: true });
   expect(prompt).toContain("`mcp__kibo__skill_review`");
   expect(prompt).toContain("Rien n'est modifié sans validation de l'utilisateur.");
   expect(buildSystemPrompt([], NO_AGENT, { ...base, skillReview: false })).not.toContain("skill_review");
+});
+
+test("ticket runs get the parallel work rules after the Kibo protocol", () => {
+  const base = { progress: true, recipients: [], signals: true, skillReview: false };
+  const prompt = buildSystemPrompt([], NO_AGENT, { ...base, parallel: true });
+  const protocolAt = prompt.indexOf("## Protocole Kibo");
+  const rulesAt = prompt.indexOf(
+    `${PARALLEL_RULES_TITLE}\n\n${PARALLEL_RULES.map((r) => `- ${r}`).join("\n")}\n`,
+  );
+  expect(protocolAt).toBeGreaterThanOrEqual(0);
+  expect(rulesAt).toBeGreaterThan(protocolAt);
+  expect(prompt.endsWith("\n")).toBe(true);
+  expect(buildSystemPrompt([], NO_AGENT, { ...base, parallel: false })).not.toContain(PARALLEL_RULES_TITLE);
 });

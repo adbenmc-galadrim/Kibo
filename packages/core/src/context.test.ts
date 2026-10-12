@@ -115,6 +115,7 @@ test("the agent spec comes after the guidelines, with its subagents and skills",
     recipients: [],
     signals: true,
     skillReview: true,
+    parallel: false,
   });
   for (const fragment of [
     "## agent · review-pr",
@@ -351,4 +352,25 @@ test("a text answer is quoted as is, and nothing is added without question, comm
   expect(bare).not.toContain("## Questions");
   expect(bare).not.toContain("## Commits de la branche");
   expect(bare).not.toContain("## PR");
+});
+
+test("the work in progress of the other runs comes right after the branch commits", () => {
+  const { project, ticket } = kibo();
+  const work = "## Travail en cours sur le projet\n\n### bou · livraison · BOU-12 · Dates";
+  const brief = buildBrief({
+    project,
+    ticket,
+    domain: null,
+    note: "Utilise dnd-kit.",
+    commits: ["abc1234 feat: drag"],
+    work,
+  });
+  expect(brief).toContain(
+    ["## Commits de la branche", "", "- abc1234 feat: drag", "", work, "", "## Consignes"].join("\n"),
+  );
+  const alone = buildBrief({ project, ticket, domain: null, note: "", work });
+  expect(alone.endsWith(`${work}\n`)).toBe(true);
+  expect(buildBrief({ project, ticket, domain: null, note: "", work: null })).not.toContain(
+    "Travail en cours",
+  );
 });
