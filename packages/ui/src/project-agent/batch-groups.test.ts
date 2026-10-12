@@ -64,9 +64,13 @@ const titles: [ProposedAction, string][] = [
   ],
   [{ id: 1, type: "createNote", path: "a/b.md", content: "", why: "" }, "Créer la note a/b.md"],
   [{ id: 1, type: "updateNote", path: "a/b.md", content: "", why: "" }, "Mettre à jour la note a/b.md"],
+  [{ id: 1, type: "updateQuestion", questionId: "q", title: "B", why: "" }, "Modifier la question « q »"],
+  [{ id: 1, type: "reopenQuestion", questionId: "q", why: "" }, "Rouvrir « q » (réponse retirée)"],
+  [{ id: 1, type: "deleteQuestion", questionId: "q", why: "" }, "Archiver « q »"],
+  [{ id: 1, type: "addRecipient", name: "Galadrim", why: "" }, "Ajouter le destinataire « Galadrim »"],
 ];
 
-test("actionTitle names each of the twelve action types", () => {
+test("actionTitle names each action type", () => {
   for (const [action, title] of titles) expect(actionTitle(action)).toBe(title);
 });
 

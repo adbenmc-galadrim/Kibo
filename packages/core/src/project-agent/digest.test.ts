@@ -9,6 +9,7 @@ const names: ChangeNames = {
   ticket: (id) => `T(${id})`,
   question: (id) => `Q(${id})`,
   run: (id) => `R(${id})`,
+  recipient: (id) => `D(${id})`,
 };
 
 const print = (p: Partial<TicketPrint> = {}): TicketPrint => ({

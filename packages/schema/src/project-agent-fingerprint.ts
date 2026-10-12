@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isArchived, isOpen, type Question } from "./question";
 import { RunState } from "./run";
 
 export const TicketPrintSchema = z.object({
@@ -14,8 +15,16 @@ export const TicketPrintSchema = z.object({
 });
 export type TicketPrint = z.infer<typeof TicketPrintSchema>;
 
-export const QuestionPrintSchema = z.enum(["open", "answered"]);
+export const QuestionPrintSchema = z.union([
+  z.enum(["open", "answered"]),
+  z.object({ state: z.enum(["open", "answered", "archived"]), title: z.string(), recipient: z.string() }),
+]);
 export type QuestionPrint = z.infer<typeof QuestionPrintSchema>;
+
+export function questionPrintOf(q: Question): QuestionPrint {
+  const state = isArchived(q) ? "archived" : isOpen(q) ? "open" : "answered";
+  return { state, title: q.title, recipient: q.recipient };
+}
 
 export const ProjectFingerprintSchema = z.object({
   tickets: z.record(z.string(), TicketPrintSchema),

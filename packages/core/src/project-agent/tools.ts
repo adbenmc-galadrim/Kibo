@@ -1,11 +1,16 @@
 import {
+  findRecipient,
+  isArchived,
+  isDelivered,
   isOpenSignal,
+  KiboError,
   type ListQuestionsInput,
   type ListSignalsInput,
   type ListTicketsInput,
   PAGE_SIZE,
   type ProjectOverview,
   type ProjectSnapshot,
+  type Question,
   type QueueEntry,
   type RunState,
   type RunView,
@@ -16,7 +21,7 @@ import {
   type ToolPage,
 } from "@kibo/schema";
 import { ticketCard } from "./ticket-card";
-import { answerText, ticketKeyOf } from "./ticket-facts";
+import { answerText, questionState, ticketKeyOf } from "./ticket-facts";
 
 export function pageOf<T>(items: readonly T[], cursor: string | undefined, size = PAGE_SIZE): ToolPage<T> {
   const offset = cursor === undefined ? 0 : Number(cursor);
@@ -43,27 +48,59 @@ export function listTickets(project: ProjectSnapshot, input: ListTicketsInput): 
   return pageOf(cards, input.cursor);
 }
 
+export type QuestionState = "open" | "answered" | "archived";
+
 export type QuestionLine = {
   id: string;
   ticket: string;
   title: string;
-  state: "open" | "answered";
+  state: QuestionState;
   blocking: boolean;
   answer: string | null;
+  recipient: string;
+  recipientName: string;
+  delivered: boolean;
+  sentAt: number | null;
 };
 
+const stateOf = (q: Question): QuestionState => (isArchived(q) ? "archived" : questionState(q));
+
+const inQuestionState = (state: QuestionState, wanted: ListQuestionsInput["state"]): boolean =>
+  wanted === "all" ? state !== "archived" : state === wanted;
+
+function recipientFilter(project: ProjectSnapshot, raw: string | undefined): string | null {
+  if (raw === undefined) return null;
+  const found = findRecipient(project.questionRecipients, raw.trim());
+  if (found) return found.id;
+  const names = project.questionRecipients.map((r) => r.name).join(", ");
+  throw new KiboError(
+    "INVALID_INPUT",
+    `destinataire inconnu « ${raw} » ; destinataires du projet : ${names}`,
+  );
+}
+
+function questionLine(project: ProjectSnapshot, q: Question): QuestionLine {
+  return {
+    id: q.id,
+    ticket: ticketKeyOf(project, q.ticketId),
+    title: q.title,
+    state: stateOf(q),
+    blocking: q.blocking,
+    answer: answerText(q),
+    recipient: q.recipient,
+    recipientName: findRecipient(project.questionRecipients, q.recipient)?.name ?? q.recipient,
+    delivered: isDelivered(q),
+    sentAt: q.sentAt,
+  };
+}
+
 export function listQuestions(project: ProjectSnapshot, input: ListQuestionsInput): QuestionLine[] {
+  const recipient = recipientFilter(project, input.recipient);
   return project.questions
-    .map((q) => ({
-      id: q.id,
-      ticket: ticketKeyOf(project, q.ticketId),
-      title: q.title,
-      state: q.answer === null ? ("open" as const) : ("answered" as const),
-      blocking: q.blocking,
-      answer: answerText(q),
-    }))
-    .filter((q) => input.state === "all" || q.state === input.state)
-    .filter((q) => input.ticketKey === undefined || q.ticket === input.ticketKey);
+    .map((q) => questionLine(project, q))
+    .filter((q) => inQuestionState(q.state, input.state))
+    .filter((q) => input.ticketKey === undefined || q.ticket === input.ticketKey)
+    .filter((q) => recipient === null || q.recipient === recipient);
 }
 
 export function listRuns(

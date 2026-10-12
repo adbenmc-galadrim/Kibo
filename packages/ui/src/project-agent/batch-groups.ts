@@ -74,6 +74,14 @@ export function actionTitle(action: ProposedAction, labels: DiffLabels = default
       return t.answerQuestion(answerText(action.answer));
     case "createQuestion":
       return t.createQuestion(action.ticket, action.title);
+    case "updateQuestion":
+      return t.updateQuestion(action.questionId);
+    case "reopenQuestion":
+      return t.reopenQuestion(action.questionId);
+    case "deleteQuestion":
+      return t.deleteQuestion(action.questionId);
+    case "addRecipient":
+      return t.addRecipient(action.name);
     case "createNote":
       return t.createNote(action.path);
     case "updateNote":

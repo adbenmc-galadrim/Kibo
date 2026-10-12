@@ -13,11 +13,16 @@ export function ticketRefsOf(action: ProposedAction): string[] {
     case "deliverAnswers":
     case "createQuestion":
       return [action.ticket];
+    case "updateQuestion":
+      return action.ticket === undefined ? [] : [action.ticket];
     case "link":
     case "unlink":
       return [action.from, action.to];
     case "cancelRun":
     case "answerQuestion":
+    case "reopenQuestion":
+    case "deleteQuestion":
+    case "addRecipient":
     case "createNote":
     case "updateNote":
     case "dismissSignal":

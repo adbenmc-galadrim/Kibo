@@ -1,5 +1,14 @@
-import type { Link, ProjectSnapshot, RunView, TicketCard, TicketSheet, TicketView } from "@kibo/schema";
-import { answerText, assigneeOf, branchOf, prOf, ticketKeyOf } from "./ticket-facts";
+import {
+  isArchived,
+  isDelivered,
+  type Link,
+  type ProjectSnapshot,
+  type RunView,
+  type TicketCard,
+  type TicketSheet,
+  type TicketView,
+} from "@kibo/schema";
+import { answerText, assigneeOf, branchOf, prOf, questionState, ticketKeyOf } from "./ticket-facts";
 
 export function ticketCard(project: ProjectSnapshot, ticket: TicketView): TicketCard {
   return {
@@ -44,12 +53,15 @@ export function ticketSheet(
     ),
     relates: keysOf(project, relates, (l) => (l.from === ticket.id ? l.to : l.from)),
     questions: project.questions
-      .filter((q) => q.ticketId === ticket.id)
+      .filter((q) => q.ticketId === ticket.id && !isArchived(q))
       .map((q) => ({
         id: q.id,
         title: q.title,
-        state: q.answer === null ? ("open" as const) : ("answered" as const),
+        state: questionState(q),
         answer: answerText(q),
+        recipient: q.recipient,
+        blocking: q.blocking,
+        delivered: isDelivered(q),
       })),
     runs: runs
       .filter((r) => r.ticketId === ticket.id)

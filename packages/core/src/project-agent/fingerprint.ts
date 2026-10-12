@@ -1,10 +1,11 @@
-import type {
-  Link,
-  ProjectFingerprint,
-  ProjectSnapshot,
-  RunView,
-  TicketPrint,
-  TicketView,
+import {
+  type Link,
+  type ProjectFingerprint,
+  type ProjectSnapshot,
+  questionPrintOf,
+  type RunView,
+  type TicketPrint,
+  type TicketView,
 } from "@kibo/schema";
 import { assigneeOf, branchOf, prOf } from "./ticket-facts";
 
@@ -51,9 +52,7 @@ export function fingerprint(input: {
         (t) => [t.id, ticketPrint(t, blockersOf(t.id, project.links, project.tickets))] as const,
       ),
     ),
-    questions: sortedRecord(
-      project.questions.map((q) => [q.id, q.answer === null ? "open" : "answered"] as const),
-    ),
+    questions: sortedRecord(project.questions.map((q) => [q.id, questionPrintOf(q)] as const)),
     runs: sortedRecord(
       input.runs
         .filter((r) => r.projectId === project.meta.id && r.kind !== "project")

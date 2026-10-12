@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import {
   type ProjectFingerprint,
   ProjectFingerprintSchema,
+  QuestionPrintSchema,
   TicketPrintSchema,
 } from "./project-agent-fingerprint";
 
@@ -37,4 +38,11 @@ test("a ticket fingerprint without blockers reads as blocked by nobody", () => {
     TicketPrintSchema.parse({ ...print, assignee: null, branch: null, pr: null, blockedBy: ["BOU-12"] })
       .blockedBy,
   ).toEqual(["BOU-12"]);
+});
+
+test("a question fingerprint is either an old state or a state with title and recipient", () => {
+  expect(QuestionPrintSchema.parse("open")).toBe("open");
+  const print = { state: "archived", title: "t", recipient: "me" } as const;
+  expect(QuestionPrintSchema.parse(print)).toEqual(print);
+  expect(QuestionPrintSchema.safeParse({ state: "gone", title: "t", recipient: "me" }).success).toBe(false);
 });

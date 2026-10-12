@@ -66,6 +66,18 @@ function signalLines(): string[] {
   ];
 }
 
+function questionLines(): string[] {
+  return [
+    "",
+    "## Questions",
+    "",
+    "- Les destinataires du projet sont dans `project_overview.recipients` (id et nom) ; `createQuestion` et `updateQuestion` acceptent `recipient` (id ou nom) ; un destinataire absent se propose par `addRecipient` plus haut dans le même lot.",
+    "- `updateQuestion` modifie titre, contexte, options, choix provisoire, ticket ou destinataire ; une question dont la réponse a été transmise à un agent se rouvre d'abord (`reopenQuestion`), ce qui retire sa réponse.",
+    "- `deleteQuestion` archive : l'utilisateur peut restaurer.",
+    "- Lis `delivered` et `recipient` dans `list_questions` avant de proposer.",
+  ];
+}
+
 function forbiddenLines(): string[] {
   return [
     "",
@@ -88,6 +100,7 @@ export function buildProjectAgentPrompt(input: ProjectAgentPromptInput): string 
     ...protocolLines(input.viewer),
     ...memoryLines(input.memoryPath),
     ...signalLines(),
+    ...questionLines(),
     ...forbiddenLines(),
     ...guidelineLines(input.chain),
   ]

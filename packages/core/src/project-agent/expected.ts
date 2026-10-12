@@ -1,8 +1,13 @@
 import {
   type AgentSummary,
+  findRecipient,
+  isArchived,
+  isDelivered,
+  isOpen,
   isTerminal,
   type ProjectSnapshot,
   type ProposedAction,
+  type Question,
   type RunView,
   type SignalRef,
   type TicketView,
@@ -57,6 +62,27 @@ function onTicket(ref: string, ticketOf: TicketLookup, fields: (t: TicketView) =
   return t ? fields(t) : {};
 }
 
+type QuestionUpdate = Extract<ProposedAction, { type: "updateQuestion" }>;
+
+function questionFields(action: QuestionUpdate, q: Question): Record<string, unknown> {
+  return {
+    ...(action.title !== undefined ? { title: q.title } : {}),
+    ...(action.context !== undefined ? { context: q.context } : {}),
+    ...(action.options !== undefined ? { options: [...q.options] } : {}),
+    ...(action.provisional !== undefined ? { provisional: q.provisional } : {}),
+    ...(action.ticket !== undefined ? { ticketId: q.ticketId } : {}),
+    ...(action.recipient !== undefined ? { recipient: q.recipient } : {}),
+    delivered: isDelivered(q),
+  };
+}
+
+function onQuestion(ctx: BatchContext, id: string, fields: (q: Question) => Record<string, unknown>) {
+  const q = ctx.project.questions.find((x) => x.id === id);
+  return q ? fields(q) : {};
+}
+
+const answerAt = (q: Question): number | null => q.answer?.at ?? null;
+
 export function capture(
   action: ProposedAction,
   ctx: BatchContext,
@@ -77,8 +103,16 @@ export function capture(
     }
     case "answerQuestion": {
       const q = ctx.project.questions.find((x) => x.id === action.questionId);
-      return { answered: q ? q.answer !== null : true };
+      return { answered: q ? !isOpen(q) : true };
     }
+    case "updateQuestion":
+      return onQuestion(ctx, action.questionId, (q) => questionFields(action, q));
+    case "reopenQuestion":
+      return onQuestion(ctx, action.questionId, (q) => ({ answerAt: answerAt(q) }));
+    case "deleteQuestion":
+      return onQuestion(ctx, action.questionId, (q) => ({ archived: isArchived(q), answerAt: answerAt(q) }));
+    case "addRecipient":
+      return { exists: findRecipient(ctx.project.questionRecipients, action.name.trim()) !== null };
     case "createNote":
       return { exists: ctx.notes.some((n) => n.path === action.path) };
     case "updateNote":

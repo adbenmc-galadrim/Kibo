@@ -153,6 +153,7 @@ const digestOf = (before: ProjectFingerprint, after: ProjectFingerprint): string
     ticket: (id: string) => after.tickets[id]?.key ?? id,
     question: (id: string) => id,
     run: (id: string) => id,
+    recipient: (id: string) => id,
   };
   return renderDigest(diffFingerprints(before, after, names), null);
 };

@@ -50,7 +50,10 @@ describe("fingerprint", () => {
       pr: "#12 (open)",
       blockedBy: [],
     });
-    expect(fp.questions).toEqual({ q1: "answered", q2: "open" });
+    expect(fp.questions).toEqual({
+      q1: { state: "answered", title: "Question q1", recipient: "me" },
+      q2: { state: "open", title: "Question q2", recipient: "me" },
+    });
     expect(fp.runs).toEqual({ r1: "running" });
     expect(fp.notes).toEqual({ "a.md": "h1", "b.md": "h2" });
   });

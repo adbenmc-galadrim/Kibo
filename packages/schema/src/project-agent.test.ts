@@ -7,6 +7,7 @@ import {
   batchStatusOfResults,
   foldBatch,
   isDecidable,
+  PROPOSED_ACTION_TYPES,
   ProposeBatchInput,
   ProposedAction,
   TicketRef,
@@ -123,7 +124,7 @@ describe("project agent schema", () => {
   });
 
   test("ACTION_GROUPS covers every action type", () => {
-    for (const type of ProposedAction.options.map((o) => o.shape.type.value)) {
+    for (const type of PROPOSED_ACTION_TYPES) {
       expect(ACTION_GROUPS[type]).toBeDefined();
     }
   });
@@ -143,5 +144,50 @@ describe("signals in a batch", () => {
     expect(ProposedAction.parse(dismiss)).toEqual(dismiss);
     expect(ProposedAction.safeParse({ ...dismiss, signal: "3" }).success).toBe(false);
     expect(ACTION_GROUPS.dismissSignal).toBe("signals");
+  });
+});
+
+describe("question actions in a batch", () => {
+  const qid = "0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0";
+  const update = { id: 1, why: "", type: "updateQuestion", questionId: qid, title: "B" } as const;
+
+  test("updateQuestion needs at least one field and never changes blocking", () => {
+    expect(ProposedAction.parse(update)).toEqual(update);
+    expect(ProposedAction.safeParse({ ...update, title: undefined }).success).toBe(false);
+    expect(ProposedAction.safeParse({ ...update, blocking: true }).success).toBe(false);
+    expect(ProposedAction.parse({ ...update, recipient: "Client", ticket: "EMIS-2" })).toMatchObject({
+      recipient: "Client",
+      ticket: "EMIS-2",
+    });
+  });
+
+  test("reopenQuestion, deleteQuestion and addRecipient", () => {
+    expect(
+      ProposedAction.safeParse({ id: 2, why: "", type: "reopenQuestion", questionId: qid }).success,
+    ).toBe(true);
+    expect(
+      ProposedAction.safeParse({ id: 3, why: "", type: "deleteQuestion", questionId: qid }).success,
+    ).toBe(true);
+    const add = { id: 4, why: "", type: "addRecipient", name: "Galadrim" } as const;
+    expect(ProposedAction.parse(add)).toEqual(add);
+    expect(ProposedAction.safeParse({ ...add, name: "x".repeat(41) }).success).toBe(false);
+  });
+
+  test("createQuestion may name its recipient", () => {
+    const create = {
+      id: 5,
+      why: "",
+      type: "createQuestion",
+      ticket: "EMIS-1",
+      title: "Q",
+      recipient: "Client",
+    };
+    expect(ProposedAction.parse(create)).toMatchObject({ recipient: "Client" });
+  });
+
+  test("the four question actions belong to the questions group", () => {
+    for (const type of ["updateQuestion", "reopenQuestion", "deleteQuestion", "addRecipient"] as const) {
+      expect(ACTION_GROUPS[type]).toBe("questions");
+    }
   });
 });

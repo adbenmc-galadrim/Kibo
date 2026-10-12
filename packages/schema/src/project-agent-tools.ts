@@ -6,6 +6,7 @@ import { LabelName } from "./label";
 import { NotePath } from "./note";
 import { TICKET_TOOL_NAMES } from "./progress";
 import { ProposeBatchInput } from "./project-agent";
+import { type QuestionRecipient, RECIPIENT_ID_MAX } from "./question-recipient";
 import { RunState } from "./run";
 import { PROJECT_SIGNAL_TOOLS } from "./signal";
 import { SHARED_TOOL_NAMES, SKILL_REVIEW_TOOL } from "./skill";
@@ -53,8 +54,9 @@ export const ListTicketsInput = CursorInput.extend({
 export type ListTicketsInput = z.infer<typeof ListTicketsInput>;
 export const GetTicketInput = z.object({ key: TicketKey });
 export const ListQuestionsInput = z.object({
-  state: z.enum(["open", "answered", "all"]).default("open"),
+  state: z.enum(["open", "answered", "archived", "all"]).default("open"),
   ticketKey: TicketKey.optional(),
+  recipient: z.string().trim().min(1).max(RECIPIENT_ID_MAX).optional(),
 });
 export type ListQuestionsInput = z.infer<typeof ListQuestionsInput>;
 export const ListSignalsInput = CursorInput.extend({
@@ -117,7 +119,15 @@ export type TicketSheet = TicketCard & {
   blocks: string[];
   blockedBy: string[];
   relates: string[];
-  questions: { id: string; title: string; state: "open" | "answered"; answer: string | null }[];
+  questions: {
+    id: string;
+    title: string;
+    state: "open" | "answered";
+    answer: string | null;
+    recipient: string;
+    blocking: boolean;
+    delivered: boolean;
+  }[];
   runs: { id: string; label: string; state: RunState; turns: number }[];
 };
 
@@ -127,7 +137,8 @@ export type ProjectOverview = {
   statuses: { id: string; name: string; count: number }[];
   active: TicketCard[];
   runs: { id: string; label: string; state: RunState; subject: string; position: number | null }[];
-  openQuestions: { id: string; ticket: string; title: string; blocking: boolean }[];
+  openQuestions: { id: string; ticket: string; title: string; blocking: boolean; recipient: string }[];
+  recipients: QuestionRecipient[];
   notes: { path: string; title: string }[];
   profiles: AssignableAgent[];
   memory: string;
