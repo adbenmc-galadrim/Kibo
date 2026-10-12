@@ -1735,3 +1735,79 @@ Livré avec la **0.23.0-alpha.1** (§29.14), même rapport et même PR. Écrans 
 - L'historique vit dans le document du projet (partagé, borné à 20) plutôt que dans SQLite : il suit la question d'un poste à l'autre et se lit sans RPC nouvelle.
 - Aperçu au survol : aucune maquette antérieure ; spécifié ici et dessiné en T12.
 - Budget de l'entrée : les seuls ajouts non différables sont des schémas Zod (`Question` : trois champs ; `ProjectCommand` : cinq membres ; cible de page : un champ) et la signature d'`openView` ; mesure et repli au plan (§29.15, plafond 223 400 inchangé).
+
+## 31. Décisions de la phase 23, volet guidelines : page « Domaines & guidelines » en dossiers, domaines par projet (demande d'Adam du 2026-10-12)
+
+**Constat d'Adam** sur Réglages › Domaines & guidelines : « j'ai plusieurs projets et pourtant seuls le workspace et Mediba apparaissent ; je ne comprends pas comment sont configurés les agents » ; le chevron qui bascule de projet n'est même pas cliquable ; il faut un dossier par projet ; « Projet · Mediba » doit concerner Mediba seul ; les domaines de Kibo (Agents, CI, Démon…) apparaissent alors qu'il travaille sur Mediba, Gereco, Emis et Test ; « la page ne fait pas sens ». **Demande** : une refonte, pas des retouches : navigation en arbre de dossiers comme un explorateur (Workspace, puis un dossier par projet), plus de sélecteur de projet nulle part ; rattacher les domaines à un projet ; garder l'encart explicatif et le panneau Injection ; un accès direct au dossier de guidelines depuis les réglages d'un projet ; maquettes en sombre et en clair **avant** le code.
+
+**Vérifié sur le code** (2026-10-12) : aucun `.md` de guideline n'est sur le disque : les guidelines vivent dans les docs Loro (`kibo.db`), matérialisées dans le dossier du run au lancement (§5, §7). Les domaines et leurs guidelines sont dans le **doc workspace** (local à la machine, jamais synchronisé, sync §3.4) ; les guidelines **projet** sont dans le doc du projet (synchronisé s'il est partagé) ; `ticket.domainId` est dans le CRDT du projet, sans vérification d'existence. Au premier partage d'un projet, `migrateForSharing` copie dans le doc du projet (`projectDomains`) les domaines du workspace utilisés par ses tickets, avec leurs guidelines ; un projet partagé ne lit ensuite que cette copie, que **rien** ne permet d'éditer (la spec sync §3.3 disait « puis édités là » : jamais implémenté). Le dogfood crée neuf domaines de Kibo au niveau workspace (Sync, Marketplace, UI, Démon, Sécurité, Devkit et SDK, Desktop, Agents, CI) ; l'import Emis n'en crée aucun. Le sélecteur de projet de la page est un `SelectTrigger` de 32 px sans contenu, à côté d'un bouton `w-full` sans `shrink-0` ; aucun test ne le clique.
+
+**Décisions** (lead dev, délégation d'Adam ; amende §5, §8 écran 14, §13, §14.4, §28.8, spec agents §7-§8, spec sync §3.3) :
+
+### 31.1 Principe
+
+- **Un domaine appartient à un projet ou au workspace.** Un domaine de projet vit dans le doc de ce projet (map `projectDomains`, déjà existante pour les copies de partage), avec ses guidelines ; il n'apparaît que dans ce projet, dans ses tickets, dans sa chaîne d'injection et dans son dossier de la page. Un domaine du workspace reste dans le doc workspace et sert à tous les projets **locaux** ; un projet **partagé** ne voit que ses propres domaines (comme aujourd'hui avec la copie de partage). Les guidelines d'un domaine de projet partagé sont donc **éditables et synchronisées**, ce qui comble l'écart de la spec sync §3.3.
+- **La page est un explorateur** : un arbre de dossiers à gauche (Workspace, puis un dossier par projet), le contenu du nœud choisi à droite (fichiers, éditeur, aperçu, chaîne d'injection). Plus aucun sélecteur de projet ; un projet se parcourt dans son dossier, jamais depuis celui d'un autre.
+- **Migration unique** des domaines existants vers le projet qui les utilise, sûre (jamais de duplication), journalisée, rejouable sans effet.
+- Zéro token, local-first : rien ne change dans la composition du contexte des runs (ordre workspace → projet → domaine du ticket → agent, §28.4) ; seule la **provenance** des domaines change.
+
+### 31.2 Modèle (`packages/schema/src/workspace-config.ts`, amende §5)
+
+```ts
+DomainOwner = { scope: "workspace" } | { scope: "project", projectId: ProjectId }
+Domain = { id, name (≤ 40), color, owner: DomainOwner (défaut { scope: "workspace" }) }
+GuidelineOwner.domain += projectId: ProjectId | null (défaut null)   // null = domaine du workspace
+ConfigCommand : createDomain { domain: DomainInput, owner?: DomainOwner (défaut workspace) } ; updateDomain { domainId, patch, owner? } ; deleteDomain { domainId, owner? }
+WorkspaceConfig.domains : tous les domaines (workspace et projets locaux ou partagés lisibles), chacun avec son owner ; domainUsage inchangé (nombre de tickets par id de domaine, tous projets)
+ProjectSnapshot.domains : Domain[] (toujours présent : les domaines du projet ; vide s'il n'en a pas)
+```
+
+- **Routage** (`configTarget`) : une commande dont l'owner (du domaine ou de la guideline de domaine) porte un `projectId` s'exécute dans le doc de ce projet (`assertWritable` : `FORBIDDEN` pour un lecteur, `CONFLICT` pendant un partage) ; sinon dans le doc workspace. Les guidelines d'un domaine de projet sont rangées dans `projectDomains[id].guidelines[]` (forme existante `{ path, content }`, id dérivé `<domainId>:<path>`), celles d'un domaine du workspace restent dans la map `guidelines` du workspace.
+- **Unicité du nom** par doc (casse ignorée) : deux projets peuvent avoir chacun un domaine « UI » ; un projet et le workspace aussi (l'interface montre la portée). **Suppression** refusée (`INVALID_INPUT`) tant que des tickets l'utilisent : tous projets pour un domaine du workspace, le projet seul pour un domaine de projet ; supprimer un domaine supprime ses guidelines.
+- **Domaines d'un projet** (`domainsOf(projectId)`, démon et interface) : projet local ⇒ ses domaines puis ceux du workspace ; projet partagé ⇒ ses domaines seuls. `ticket.domainId` continue de ne pas être vérifié à l'écriture (un domaine absent ⇒ « Domaine : aucun » dans le brief, comme aujourd'hui) ; l'interface n'offre que les domaines du projet.
+- **Partage** (`migrateForSharing`) : inchangé pour les domaines du workspace utilisés par le projet (copiés dans `projectDomains`) ; les domaines déjà au projet y sont déjà.
+
+### 31.3 Migration (une fois par machine, au premier démarrage de la 0.23 ; modèle §28.4)
+
+- Pour chaque domaine du doc workspace : compter ses tickets par projet (`docs.projectIds()`, boîte de réception exclue). Utilisé par **exactement un projet** et ce projet est **modifiable** par ce poste (local, ou partagé en éditeur hors partage en cours) ⇒ **déplacé** dans `projectDomains` de ce projet (même id, nom, couleur, guidelines) puis retiré du workspace ; si `projectDomains[id]` existe déjà (copie de partage), la copie est gardée telle quelle et le domaine est seulement retiré du workspace. Utilisé par **plusieurs projets**, par **aucun**, ou par un projet non modifiable ⇒ reste au workspace. **Jamais de duplication.**
+- Idempotente : un marqueur `domainsScopedAt` dans les réglages du doc workspace ; rejouer ne fait rien. Une ligne de journal par domaine (« domaine Sync → projet Kibo », « domaine Sécurité gardé au workspace : utilisé par 2 projets »). Aucun ticket n'est modifié (`domainId` conservé). Appelée au même point que la migration des profils de la 0.22, **hors** de `daemon.ts` si possible.
+- Le dogfood (`scripts/dogfood`) crée désormais les domaines de Kibo **dans le projet Kibo** (`createDomain { owner: { scope: "project", projectId } }`) ; rejoué sur une instance migrée, il ne crée rien (réconciliation par nom dans le projet). L'import Emis ne change pas (aucun domaine).
+
+### 31.4 Lecture et chaîne d'injection
+
+- `readConfig` : `domains` = workspace + projets ; `guidelines` = workspace + projets + domaines de projet (owner complet) ; `domainUsage` inchangé. `guidelineChain(all, { projectId, domainId })` ne change pas (`applies` compare `domainId`) ; le brief, `buildSystemPrompt`, « Ce que reçoit l'agent » (§28.8) et `AssignDialog` ne changent pas de forme.
+- Panneau **Injection** de la page : conservé tel quel (`InjectionChain`), alimenté par le nœud choisi : Workspace ⇒ « Workspace » ; projet ⇒ « Workspace → Projet X » ; domaine de projet ⇒ « Workspace → Projet X → Domaine Y » ; domaine du workspace ⇒ « Workspace → Domaine Y » (il s'applique à tout projet local).
+
+### 31.5 Interface (§8, écran 14 refondu)
+
+- **Arbre** (`<nav aria-label="Dossiers">`, `role="tree"`, clavier : flèches, Entrée, Origine/Fin, type-ahead par première lettre) : **Workspace** (icône `LayoutGrid`, « n .md ») déplié par défaut : ses fichiers, puis le sous-dossier **« Domaines du workspace »** (un nœud par domaine : puce carrée de couleur, « n .md »), puis « + Nouveau domaine » ; ensuite **un dossier par projet** (ordre : projet courant d'abord, puis par nom ; puce de la couleur du projet, nom, « n .md » = fichiers du projet et de ses domaines), déplié au clic : ses fichiers, sous-dossier « Domaines » (ses domaines) et « + Nouveau domaine ». Les projets partagés en lecture sont visibles mais sans ajout ni édition (« Lecture seule »). Plus aucun `Select` de projet ; l'adresse `#/settings/domains?project=<id>` ouvre la page sur le dossier d'un projet.
+- **Panneau de droite** : en-tête du nœud (Workspace ; « Projet · Mediba » avec sa couleur ; « Domaine · Facturation » avec la pastille de couleur, le renommage en ligne, « utilisé par n tickets », la corbeille, et la portée « domaine de Mediba » ou « domaine du workspace ») ; onglets Éditer / Aperçu ; liste des fichiers ; éditeur ; **Injection**. **État vide** d'un nœud sans fichier : « Aucune guideline pour ce projet. » (ou « … pour ce domaine. » / « … dans le workspace. ») avec le bouton **« Ajouter un fichier »** en évidence ; pour un projet sans domaine : « Aucun domaine. Un domaine range des guidelines par catégorie de ticket. » et « Nouveau domaine ».
+- **Encart « Comment les agents sont configurés »** en tête de page, repliable (`Collapsible`), état mémorisé par préférence locale (`usePref`, déplié la première fois) : « Chaque agent reçoit, dans cet ordre : les guidelines du **workspace**, celles du **projet** du ticket, celles du **domaine** du ticket, puis la spec de son **profil** (page Agents) et ses skills. » avec deux liens : « Ouvrir la page Agents → » (`#/agents`) et « Skills → » (`#/agents/skills`), et la mention « Le panneau Injection, en bas, montre la chaîne du dossier choisi. »
+- **Fiche ticket** : le sélecteur de domaine est **groupé** : « Domaines de <projet> » puis « Domaines du workspace » (projet local) ; projet partagé : ses domaines seuls ; « Aucun » en tête. **Modifier le projet** : section **« Guidelines »** : « n fichiers .md · m domaines » et le lien « Ouvrir le dossier de guidelines → » (`#/settings/domains?project=<id>`).
+- **Le chevron** : le bogue est reproduit par un test E2E sur la page actuelle avant la refonte (mesure de la boîte du déclencheur à 1 440 px et tentative de clic ; cause probable : rétrécissement du déclencheur de 32 px dans la rangée flex à côté d'un bouton `w-full`), puis le test est réécrit pour la nouvelle page (chaque dossier de projet est cliquable et montre ses propres fichiers) : la régression est couverte par le remplacement, pas par une rustine.
+- Textes dans `packages/ui/src/i18n/fr-domains.ts` (différé, chargé avec la page : le bloc `fr.domains` **sort** de `fr.ts`, ce qui allège l'entrée) ; shadcn/ui, tokens zinc, sombre et clair.
+
+### 31.6 Sécurité et synchronisation
+
+- Un domaine de projet suit les droits du projet (`assertWritable`) ; un lecteur voit, n'édite pas. Les guidelines d'un domaine de projet partagé sont synchronisées comme ses guidelines de projet (contenu ≤ 100 000 caractères, déjà borné).
+- Un pair en 0.22 d'un projet partagé lit `projectDomains` (déjà le cas) : il voit les domaines du projet et leurs guidelines ; il ne les édite pas (aucune commande) ; une guideline éditée en 0.23 lui parvient par la synchronisation.
+- La migration n'écrit jamais dans un projet en lecture seule ni pendant un partage en cours ; dans ce cas le domaine reste au workspace et le journal le dit.
+
+### 31.7 Tests sans token
+
+- **Noyau** : commandes de domaine et de guideline de domaine dans un doc projet ; unicité par doc ; suppression refusée selon la portée ; `domainsOf` local et partagé ; migration pure (`planDomainScopes(domains, usageByProject, writable)`, fast-check : jamais deux fois le même id, un domaine déplacé est utilisé par exactement un projet modifiable, rejouer un plan vide ne change rien).
+- **Démon** : `readConfig` fusionné ; migration sur un `KIBO_HOME` temporaire avec trois projets (un domaine par projet, un partagé par deux, un inutilisé, un projet en lecture seule), marqueur, rejouée sans effet ; dogfood sur une instance migrée ⇒ 0 création.
+- **Interface** (happy-dom) : arbre (dossiers, compteurs, clavier), nœud vide, encart replié/déplié mémorisé, en-tête de domaine avec sa portée, Injection selon le nœud, sélecteur groupé de la fiche, section Guidelines de « Modifier le projet », adresse `?project=`.
+- **E2E** (`agents.spec.ts`, ports 4392-4393, sombre et clair) : reproduction du chevron sur l'ancienne page (commit distinct, test ensuite réécrit), puis la nouvelle page : dossiers, fichiers propres à chaque projet, état vide, création d'un domaine dans un projet, ouverture depuis « Modifier le projet », capture `ecran-14` remplacée et écrans 207 à 209b.
+
+### 31.8 Jalon
+
+Livré avec la **0.23.0-alpha.1**. Écrans Penpot, page **34 · Domaines & guidelines** (données « Domaines & guidelines (phase 23) » dans `donnees-fictives.md` : workspace `conventions.md`, `git.md`, domaine du workspace « Sécurité » (utilisé par Kibo et Portail) ; Kibo : `kibo.md`, `tests.md`, `ui.md` et les domaines Sync, UI, CI, Démon ; Portail : `portail.md` ; Facturation : aucun fichier ; Boutique : domaine « Livraison »), **dessinés avant le code** : **207** page, arbre déplié (Workspace, ses fichiers, « Domaines du workspace », puis Kibo, Portail, Facturation, Boutique), nœud « Projet · Kibo » ouvert, encart déplié ; **207b** dossier « Facturation » : état vide « Aucune guideline pour ce projet. Ajouter un fichier » ; **208** domaine « Sync » de Kibo : en-tête (portée « domaine de Kibo », utilisé par 8 tickets), fichiers, éditeur, Injection « Workspace → Projet Kibo → Domaine Sync » ; **208b** encart replié et domaine du workspace « Sécurité » (Injection « Workspace → Domaine Sécurité ») ; **209** fiche ticket, sélecteur de domaine groupé ; **209b** « Modifier le projet », section Guidelines avec le lien. Ajustés après implémentation, exportés avec les pages 32 et 33.
+
+### 31.9 Écarts et interprétations
+
+- « Rattacher chaque domaine à un projet » : retenu, avec le workspace comme portée de repli (domaine partagé par plusieurs projets ou inutilisé) ; jamais de duplication (un domaine dupliqué divergerait et doublerait `domainUsage`).
+- Le domaine d'un projet vit dans le doc du projet plutôt que dans le doc workspace avec un `projectId` : c'est la forme déjà utilisée par la copie de partage, elle rend les domaines partagés éditables et suit le projet s'il change de machine.
+- Pas de déplacement d'un domaine d'une portée à l'autre dans l'interface (supprimer puis recréer, ou garder au workspace) : à demander si le besoin apparaît.
+- Le filtre de projets envisagé au-delà de huit projets n'est pas retenu (l'arbre se parcourt au clavier et les dossiers se replient).
+- Le bogue du chevron n'a pas de cause certaine dans le code : il est reproduit par un test avant la refonte, et la refonte supprime l'élément.
