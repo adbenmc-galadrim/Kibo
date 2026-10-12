@@ -36,7 +36,7 @@ import { AssignSession } from "./AssignSession";
 import { assignableAgents, isDemoAgent } from "./assignable";
 import { modelText, scopeText } from "./catalog/agent-labels";
 import { useAgentList } from "./catalog/use-agent-list";
-import { reasonText } from "./format";
+import { reasonText } from "./run-state-text";
 
 type Props = {
   project: ProjectSnapshot | null;

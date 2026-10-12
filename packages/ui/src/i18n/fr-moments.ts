@@ -1,5 +1,5 @@
 import type { ActionKind, PartialReason, RunActionOutcome, RunState, StepStatus } from "@kibo/schema";
-import { fr } from "./fr";
+import { frAgentBar } from "./fr-agent-bar";
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
@@ -124,7 +124,7 @@ export const frMoments = {
     history: "Voir l'historique",
     reply: "Répondre",
     step: (index: number, total: number, title: string) => `${index}/${total} · ${title}`,
-    state: (state: RunState) => fr.agents.states[state],
+    state: (state: RunState) => frAgentBar.states[state],
     waiting: "Attend une réponse",
   },
   run: {

@@ -13,8 +13,8 @@ import {
 } from "@kibo/sdk/ui/dropdown-menu";
 import { GripVertical, MoreHorizontal } from "lucide-react";
 import { frAgentsSkills } from "../i18n/fr-agents-skills";
-import { queueHint } from "./format";
 import { Mention } from "./mention/Mention";
+import { queueHint } from "./run-state-text";
 
 type Props = {
   run: RunView;

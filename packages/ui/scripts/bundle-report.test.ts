@@ -412,4 +412,9 @@ describe("bundle report", () => {
     for (const p of ["agents/bar-summary.ts", "agents/AgentBar.tsx", "i18n/fr.ts"])
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`))).toBe(false);
   });
+  test("vague 23, repli des questions", () => {
+    for (const p of ["agents/run-state-text.ts", "i18n/fr-agent-bar.ts"])
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`))).toBe(true);
+    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/agents/format.ts"))).toBe(false);
+  });
 });

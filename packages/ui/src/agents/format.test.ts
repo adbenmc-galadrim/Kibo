@@ -1,17 +1,7 @@
 import { expect, test } from "bun:test";
 import { NOW, runFixture } from "./fixtures";
-import {
-  elapsed,
-  errorText,
-  formatDuration,
-  formatGb,
-  formatTokens,
-  queueHint,
-  reasonText,
-  runResultText,
-  runStateText,
-  workspaceText,
-} from "./format";
+import { elapsed, errorText, formatDuration, formatGb, formatTokens, workspaceText } from "./format";
+import { queueHint, reasonText, runResultText, runStateText } from "./run-state-text";
 
 const MIN = 60_000;
 

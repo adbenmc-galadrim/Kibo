@@ -14,7 +14,8 @@ import { frMoments } from "../../i18n/fr-moments";
 import { frOverlaps } from "../../i18n/fr-overlaps";
 import type { OverlapLine } from "../../overlaps/overlap-labels";
 import { stepChip } from "../bar-summary";
-import { elapsed, formatDuration, runStateText } from "../format";
+import { elapsed, formatDuration } from "../format";
+import { runStateText } from "../run-state-text";
 import type { DockGroups } from "./dock-runs";
 
 type Props = {

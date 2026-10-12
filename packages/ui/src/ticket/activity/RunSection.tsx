@@ -10,7 +10,7 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/ui/collapsible";
 import { ChevronRight } from "lucide-react";
 import { formatClock } from "../../agents/format";
-import { fr } from "../../i18n/fr";
+import { frAgentBar } from "../../i18n/fr-agent-bar";
 import { frMoments } from "../../i18n/fr-moments";
 import { Feed } from "../../moments/Feed";
 import { useOpenSignal } from "../../moments/use-open-signal";
@@ -55,7 +55,7 @@ function spanText(run: RunView, now: number): string {
 const capitalized = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
 function outcomeText(run: RunView, report: RunReport | null): string {
-  const state = fr.agents.states[run.state];
+  const state = frAgentBar.states[run.state];
   if (!isTerminal(run.state)) return state;
   if (!report) return `${state} · ${frMoments.report.none}`;
   const undeclared = report.check?.undeclared.length ?? 0;
