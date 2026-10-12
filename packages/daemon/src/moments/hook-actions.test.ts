@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { type HookPayload, hasSecret, MASKED } from "@kibo/schema";
+import { type HookPayload, hasSecret, MASKED, SKILL_REVIEW_TOOL } from "@kibo/schema";
 import { actionFromHook } from "./hook-actions";
 
 const hook = (p: Partial<HookPayload>): HookPayload => ({
@@ -71,4 +71,10 @@ test("a PostToolUse of Skill is a skill action identified by its tool use id", (
   });
   expect(actionFromHook(hook({ tool: "Read", detail: "a.ts" }))?.callId).toBeUndefined();
   expect(actionFromHook(hook({ tool: "Read", toolUseId: "x".repeat(65) }))?.callId).toBeUndefined();
+});
+
+test("a skill review after the call is labelled with the number of reviewed skills", () => {
+  const action = actionFromHook(hook({ tool: SKILL_REVIEW_TOOL, detail: "2 skills" }));
+  expect(action?.label).toBe("A laissé une review de 2 skills");
+  expect(actionFromHook(hook({ tool: SKILL_REVIEW_TOOL }))?.label).toBe("A laissé une review des skills");
 });
