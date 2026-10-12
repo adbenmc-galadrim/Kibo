@@ -6,6 +6,7 @@ import {
   estimateTokens,
   type Guideline,
   type GuidelineScope,
+  isArchived,
   PARALLEL_RULES,
   PARALLEL_RULES_TITLE,
   PROGRESS_TOOL,
@@ -108,7 +109,9 @@ function workSections(
   commits: readonly string[],
   work: string | null,
 ): string[] {
-  const questions = project.questions.filter((q) => q.ticketId === ticket.id).map(questionLine);
+  const questions = project.questions
+    .filter((q) => q.ticketId === ticket.id && !isArchived(q))
+    .map(questionLine);
   const prs = ticket.externalRefs.flatMap((r) =>
     r.kind === "github_pr"
       ? [`- ${r.url} (${[PR_STATE[r.state], ...(r.base ? [`base ${r.base}`] : [])].join(", ")})`]

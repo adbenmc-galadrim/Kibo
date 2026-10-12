@@ -81,21 +81,11 @@ function createRunQuestion(
       blocking: ask.blocking,
       runId: run.id,
       createdBy: { kind: "agent", ref: run.profileName },
+      recipient: resolveRecipient(listQuestionRecipients(docs.project(projectId)), ask.recipient),
     },
     FROM_DAEMON,
   );
-  return withRecipient(docs, projectId, Question.parse(created), ask.recipient);
-}
-
-function withRecipient(docs: Docs, projectId: string, question: Question, proposed: string | null): Question {
-  const recipient = resolveRecipient(listQuestionRecipients(docs.project(projectId)), proposed);
-  if (recipient === question.recipient) return question;
-  const routed = docs.run(
-    projectId,
-    { method: "setQuestionRecipient", questionId: question.id, recipient },
-    FROM_DAEMON,
-  );
-  return Question.parse(routed);
+  return Question.parse(created);
 }
 
 function answerRunQuestion(docs: Docs, projectId: string, runId: string, text: string, by: Actor) {

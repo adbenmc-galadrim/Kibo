@@ -10,6 +10,7 @@ import {
   setQuestionRecipient,
 } from "./question-recipients";
 import { answerQuestion, createQuestion, listQuestions } from "./questions";
+import { archiveQuestion } from "./questions-edit";
 import { createTicket } from "./tickets";
 
 const AGENT: Actor = { kind: "agent", ref: "kibo-dev" };
@@ -104,4 +105,11 @@ test("marking a question as sent is idempotent", () => {
   expect(markQuestionSent(doc, question.id, 10).sentAt).toBe(10);
   expect(markQuestionSent(doc, question.id, 20).sentAt).toBe(10);
   expect(code(() => markQuestionSent(doc, "missing", 1))).toBe("NOT_FOUND");
+});
+
+test("a recipient used by archived questions only can be removed", () => {
+  const { doc, question } = withQuestion();
+  setQuestionRecipient(doc, question.id, "client");
+  archiveQuestion(doc, { method: "archiveQuestion", questionId: question.id, by: HUMAN });
+  expect(removeQuestionRecipient(doc, "client")).toBeNull();
 });

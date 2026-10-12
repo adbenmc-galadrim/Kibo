@@ -164,7 +164,29 @@ describe("visibility commands", () => {
     expect(startable(d, held.id)).toBe(true);
     askOn(d, held.id, false);
     expect(startable(d, held.id)).toBe(true);
-    askOn(d, held.id, true);
+    const blocking = askOn(d, held.id, true);
     expect(startable(d, held.id)).toBe(false);
+    executeProjectCommand(d, { method: "archiveQuestion", questionId: blocking.id, by: AGENT });
+    expect(startable(d, held.id)).toBe(true);
+  });
+
+  test("the question edit commands are routed", () => {
+    const d = doc();
+    const question = askOn(d, ticketIn(d, "Formulaire").id, false);
+    const by = AGENT;
+    const questionId = question.id;
+    const run = (cmd: Parameters<typeof executeProjectCommand>[1]) => executeProjectCommand(d, cmd);
+    expect(run({ method: "updateQuestion", questionId, by, title: "Renommée ?" })).toMatchObject({
+      title: "Renommée ?",
+    });
+    run({ method: "answerQuestion", questionId, by, answer: { kind: "text", text: "Oui" } });
+    expect(
+      run({ method: "updateAnswer", questionId, by, answer: { kind: "text", text: "Non" } }),
+    ).toMatchObject({
+      answer: { text: "Non" },
+    });
+    expect(run({ method: "reopenQuestion", questionId, by })).toMatchObject({ answer: null });
+    expect(run({ method: "archiveQuestion", questionId, by, at: 7 })).toMatchObject({ archivedAt: 7 });
+    expect(run({ method: "restoreQuestion", questionId, by })).toMatchObject({ archivedAt: null });
   });
 });

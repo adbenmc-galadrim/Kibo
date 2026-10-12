@@ -105,3 +105,23 @@ test("run counts span every project, and delivery marks answers with the reserve
   s.agentData.markAnswersDelivered(a.id, ta.id, [], "r5");
   expect(events).toHaveLength(1);
 });
+
+test("an agent question is routed to its recipient in a single command", () => {
+  const { s, project, ticket, events } = setup();
+  const p = project("EMIS");
+  const t = ticket(p.id);
+  events.length = 0;
+  const routed = s.agentData.createQuestion(p.id, t.id, RUN, {
+    ...ask("Pour le client ?"),
+    recipient: "Client",
+  });
+  expect(routed?.recipient).toBe("client");
+  expect(events.map((e) => e.command)).toEqual([
+    expect.objectContaining({ method: "createQuestion", recipient: "client" }),
+  ]);
+  const unknown = s.agentData.createQuestion(p.id, t.id, RUN, {
+    ...ask("Pour Galadrim ?"),
+    recipient: "Galadrim",
+  });
+  expect(unknown?.recipient).toBe("me");
+});

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { ProjectCommand } from "@kibo/schema";
+import type { Actor, ProjectCommand } from "@kibo/schema";
 import type { CommandMeta } from "../docs";
 import { questionActorInterceptor } from "./question-actor";
 
@@ -34,4 +34,22 @@ test("an import keeps its label, the daemon and the sync keep theirs, other comm
   expect(intercept("p1", answer, { origin: "sync", instanceId: null })).toBe(answer);
   const other: ProjectCommand = { method: "removeQuestion", questionId: "q1" };
   expect(intercept("p1", other, USER)).toBe(other);
+});
+
+const editsBy = (by: Actor): ProjectCommand[] => [
+  { method: "updateQuestion", questionId: "q1", by, title: "B" },
+  { method: "updateAnswer", questionId: "q1", answer: { kind: "text", text: "x" }, by },
+  { method: "reopenQuestion", questionId: "q1", by },
+  { method: "archiveQuestion", questionId: "q1", by },
+  { method: "restoreQuestion", questionId: "q1", by },
+];
+
+test("the five question edits are written as the viewer, an import keeps its label", () => {
+  const asViewer = editsBy({ kind: "human", ref: "adam" });
+  editsBy({ kind: "agent", ref: "x" }).forEach((edit, i) => {
+    expect(intercept("p1", edit, USER)).toEqual(asViewer[i] ?? edit);
+    expect(intercept("p1", edit, { origin: "sync", instanceId: null })).toBe(edit);
+  });
+  for (const imported of editsBy({ kind: "import", ref: "plan" }))
+    expect(intercept("p1", imported, USER)).toBe(imported);
 });

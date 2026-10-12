@@ -45,6 +45,13 @@ import {
   openCountByTicket,
   removeQuestion,
 } from "./questions";
+import {
+  archiveQuestion,
+  reopenQuestion,
+  restoreQuestion,
+  updateAnswer,
+  updateQuestion,
+} from "./questions-edit";
 import { readRules } from "./rules";
 import {
   childProgress,
@@ -149,6 +156,16 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
       return setQuestionRecipient(doc, cmd.questionId, cmd.recipient);
     case "markQuestionSent":
       return markQuestionSent(doc, cmd.questionId, cmd.at ?? Date.now());
+    case "updateQuestion":
+      return updateQuestion(doc, cmd);
+    case "updateAnswer":
+      return updateAnswer(doc, cmd);
+    case "reopenQuestion":
+      return reopenQuestion(doc, cmd);
+    case "archiveQuestion":
+      return archiveQuestion(doc, cmd);
+    case "restoreQuestion":
+      return restoreQuestion(doc, cmd);
   }
 }
 

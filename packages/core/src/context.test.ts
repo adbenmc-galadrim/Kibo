@@ -377,3 +377,28 @@ test("the work in progress of the other runs comes right after the branch commit
     "Travail en cours",
   );
 });
+
+test("the brief leaves the archived questions out", () => {
+  const { project, ticket } = kibo();
+  const archived = question(ticket.id, {
+    id: "q9",
+    title: "Question archivée ?",
+    archivedAt: 5,
+    archivedBy: { kind: "human", ref: "adam" },
+  });
+  const brief = buildBrief({
+    project: { ...project, questions: [question(ticket.id, {}), archived] },
+    ticket,
+    domain: null,
+    note: "",
+  });
+  expect(brief).toContain("- [ouverte] Bloquer le dépôt ?");
+  expect(brief).not.toContain("Question archivée");
+  const alone = buildBrief({
+    project: { ...project, questions: [archived] },
+    ticket,
+    domain: null,
+    note: "",
+  });
+  expect(alone).not.toContain("## Questions");
+});
