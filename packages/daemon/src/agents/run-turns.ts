@@ -45,9 +45,10 @@ export function createRunTurns(deps: RunTurnsDeps) {
       projectId: run.projectId,
       domainId: ctx.ticket.domainId,
     });
+    const work = run.turns === 0 ? ((await deps.opts.turnPrefix?.briefSection(run)) ?? null) : null;
     const turn = deps.preparer.prepare(run, runDir, {
       kind: "ticket",
-      brief: { ...ctx, note: run.brief, commits: workspace.commits },
+      brief: { ...ctx, note: run.brief, commits: workspace.commits, work },
       chain,
       recipients: ctx.project.questionRecipients,
     });

@@ -193,3 +193,20 @@ test("fallback: a subagent too long for the command line is refused", () => {
     preparer([reviewPr(), livraison, huge], fallbacks).prepare(run, runDir(), ticketContent),
   ).toThrow(/INVALID_INPUT.*command line/);
 });
+
+test("a ticket turn carries the parallel work rules and the work in progress of the other runs", () => {
+  const dir = runDir();
+  const work = "## Travail en cours sur le projet\n\n### bou · livraison · BOU-12 · Dates";
+  const turn = preparer([reviewPr(), livraison, seo]).prepare(run, dir, {
+    ...ticketContent,
+    brief: { ...ticketContent.brief, work },
+  });
+  expect(readFileSync(turn.systemPromptFile, "utf8")).toContain("## Travail en parallèle");
+  expect(readFileSync(turn.briefFile, "utf8")).toContain(work);
+  expect(turn.brief).toContain(work);
+  const task = preparer([reviewPr(), livraison, seo]).prepare(run, runDir(), {
+    kind: "task",
+    brief: "Tâche",
+  });
+  expect(readFileSync(task.systemPromptFile, "utf8")).not.toContain("## Travail en parallèle");
+});

@@ -13,6 +13,7 @@ function setup() {
   const projectCalls: string[] = [];
   const signaled: string[] = [];
   const reviewed: string[] = [];
+  const peeked: string[] = [];
   const project: AgentMcpSink = {
     verify: (runId) => {
       if (runId !== "p1") throw new Error("not a project run");
@@ -46,8 +47,14 @@ function setup() {
         return "1 review enregistrée";
       },
     },
+    peek: {
+      call: async (run: RunView) => {
+        peeked.push(run.id);
+        return "{}";
+      },
+    },
   });
-  return { sink, recorded, projectCalls, signaled, reviewed };
+  return { sink, recorded, projectCalls, signaled, reviewed, peeked };
 }
 
 test("a ticket run is verified by its live token, a project run by the project agent", () => {
@@ -88,5 +95,12 @@ test("skill_review of a ticket run and of a project run reaches the skill review
   expect(await sink.call(TICKET, "skill_review", input)).toBe("1 review enregistrée");
   expect(await sink.call(PROJECT, "skill_review", input)).toBe("1 review enregistrée");
   expect(reviewed).toEqual(["t1", "p1"]);
+  expect(projectCalls).toEqual([]);
+});
+
+test("peek_work of a ticket run reaches the peek service", async () => {
+  const { sink, peeked, projectCalls } = setup();
+  expect(await sink.call(TICKET, "peek_work", { run: "BOU-12" })).toBe("{}");
+  expect(peeked).toEqual(["t1"]);
   expect(projectCalls).toEqual([]);
 });

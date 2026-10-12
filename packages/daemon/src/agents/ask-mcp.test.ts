@@ -188,6 +188,7 @@ test("a project run lists the question tools, the eleven project tools and skill
   expect(names).toHaveLength(14);
   expect(names).toContain("list_signals");
   expect(names).not.toContain("signal_project");
+  expect(names).not.toContain("peek_work");
   expect(names).toEqual(["ask_user", "ask_question", ...PROJECT_AGENT_TOOLS, "skill_review"]);
   const list = (await call("tools/list", undefined, PROJECT_RUN)) as {
     result: { tools: Array<{ name: string; description: string; inputSchema: unknown }> };

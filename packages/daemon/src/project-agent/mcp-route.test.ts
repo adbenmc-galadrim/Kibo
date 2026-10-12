@@ -41,6 +41,7 @@ const post = (runId: string, headers: Record<string, string>, body: unknown, met
 const LIST: AgentMcpRequest = { tool: "list_tickets", input: { status: "done" } };
 const PROGRESS: AgentMcpRequest = { tool: "ticket_progress", input: { plan: [] } };
 const SIGNAL: AgentMcpRequest = { tool: "signal_project", input: { kind: "ticket", title: "Tests" } };
+const PEEK: AgentMcpRequest = { tool: "peek_work", input: { run: "BOU-12" } };
 const LIST_SIGNALS: AgentMcpRequest = { tool: "list_signals", input: {} };
 const REVIEW: AgentMcpRequest = {
   tool: "skill_review",
@@ -189,4 +190,18 @@ test("no tool input names a project: the project always comes from the run", () 
     const parsed = schema.safeParse({ projectId: "other" });
     if (parsed.success) expect(parsed.data).not.toHaveProperty("projectId");
   }
+});
+
+test("peek_work is a ticket run tool, never a project run tool", async () => {
+  const { s, calls } = sink();
+  const res = await handleAgentMcp(post(TICKET_RUN, bearer(TICKET_TOKEN), PEEK), TICKET_RUN, s);
+  expect(await res.json()).toEqual({ ok: true, text: 'peek_work:{"run":"BOU-12"}' });
+  expect(calls).toEqual([TICKET]);
+  const project = await handleAgentMcp(post(PROJECT_RUN, bearer(GOOD), PEEK), PROJECT_RUN, s);
+  expect(project.status).toBe(403);
+  expect(await project.json()).toEqual({
+    ok: false,
+    error: { code: "FORBIDDEN", message: "peek_work is not a project run tool" },
+  });
+  expect(calls).toEqual([TICKET]);
 });

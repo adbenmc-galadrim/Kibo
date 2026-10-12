@@ -12,6 +12,7 @@ import {
   type RunView,
   type SetupStep,
 } from "@kibo/schema";
+import { withSection } from "../overlaps/turn-prefix";
 import { NO_CLI_FALLBACKS } from "./cli-flags";
 import { ticketLaunch } from "./mcp-launch";
 import type { OrchestratorOptions, TaskSpec, ToolGuard } from "./orchestrator-types";
@@ -79,6 +80,11 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       if (registry.get(runId).state === "starting") registry.apply(runId, { type: "setup", ...step });
     },
   });
+
+  async function laterSection(run: RunView, isTask: boolean): Promise<string | null> {
+    if (isTask || run.turns === 0 || opts.turnPrefix === undefined) return null;
+    return opts.turnPrefix.changedSection(run);
+  }
 
   function recordExit(runId: string, outcome: ProcessOutcome, task: TaskSpec | undefined): RunView | null {
     const before = registry.get(runId);
@@ -163,6 +169,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         ? opts.demoAgent.bin
         : resolveClaudeBin(opts.claudeBin, env, opts.userHome ?? homedir());
       const flag = permissionFlag(agent.settings.permissionMode, await capsOf(claudeBin));
+      const section = project ? null : await laterSection(initial, task !== undefined);
       const current = registry.get(runId);
       if (deps.stopping() || current.state !== "starting") return;
       const cwd = realpathSync(prepared.cwd);
@@ -189,7 +196,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       const prompt = project
         ? turn.brief
         : current.turns > 0
-          ? (current.pendingAnswer ?? "")
+          ? withSection(section, current.pendingAnswer ?? "")
           : firstPrompt(turn.brief, current.pendingAnswer);
       const proc = launch({
         claudeBin,

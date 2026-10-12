@@ -10,6 +10,7 @@ function fakeService() {
   const recorded: { run: RunView; input: ProgressInput }[] = [];
   const signaled: { run: RunView; input: unknown }[] = [];
   const reviewed: { run: RunView; input: unknown }[] = [];
+  const peeked: { run: RunView; input: unknown }[] = [];
   const service: TicketToolServices = {
     progress: {
       record: async (run, input) => {
@@ -29,8 +30,14 @@ function fakeService() {
         return "1 review enregistrée";
       },
     },
+    peek: {
+      call: async (run, input) => {
+        peeked.push({ run, input });
+        return '{"run":{"id":"r12"}}';
+      },
+    },
   };
-  return { service, recorded, signaled, reviewed };
+  return { service, recorded, signaled, reviewed, peeked };
 }
 
 test("a valid call is recorded for the run and its reply comes back", async () => {
@@ -81,10 +88,10 @@ test("any other tool is unknown", async () => {
   expect(signaled).toEqual([]);
 });
 
-test("peek_work is listed for ticket runs but not served yet", async () => {
-  const { service, signaled } = fakeService();
-  await expect(handleTicketTool(service, RUN, "peek_work", { run: "BOU-12" })).rejects.toMatchObject({
-    code: "NOT_FOUND",
-  });
+test("peek_work goes to the peek service with its raw input", async () => {
+  const { service, peeked, signaled } = fakeService();
+  const input = { run: "BOU-12", path: "src/lib/format.ts" };
+  expect(await handleTicketTool(service, RUN, "peek_work", input)).toBe('{"run":{"id":"r12"}}');
+  expect(peeked).toEqual([{ run: RUN, input }]);
   expect(signaled).toEqual([]);
 });

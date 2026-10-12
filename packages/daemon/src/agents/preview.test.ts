@@ -75,3 +75,16 @@ test("without a ticket the brief is the example ticket, without a project only t
 test("an unknown agent is AGENT_NOT_FOUND", async () => {
   await expect(preview({ ref: "global:absent" })).rejects.toThrow("AGENT_NOT_FOUND");
 });
+
+test("the preview shows the work in progress of two example runs and the parallel work rules", async () => {
+  for (const req of [{ projectId: "p1" }, { projectId: "p1", ticketId: "t3" }]) {
+    const result = await preview({ ref: "global:review-pr", ...req });
+    expect(result.brief).toContain("## Travail en cours sur le projet");
+    expect(result.brief).toContain("### kib · livraison · KIB-1");
+    expect(result.brief).toContain("### kib · livraison · KIB-2");
+    expect(result.brief).toContain("**Recouvrements ouverts avec toi**");
+    expect(result.systemPrompt).toContain("## Travail en parallèle");
+  }
+  const machine = await preview({ ref: "global:livraison" });
+  expect(machine.systemPrompt).toContain("## Travail en parallèle");
+});
