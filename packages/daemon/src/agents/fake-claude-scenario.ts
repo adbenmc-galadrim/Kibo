@@ -108,6 +108,7 @@ export type FakeScenarioName =
   | "overlap-bash"
   | "overlap-keep"
   | "overlap-import"
+  | "overlap-twin"
   | "overlap-routes";
 
 export function scenarioPath(name: FakeScenarioName): string {

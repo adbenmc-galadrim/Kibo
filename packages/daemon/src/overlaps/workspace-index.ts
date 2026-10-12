@@ -1,28 +1,25 @@
 import { lstat, open } from "node:fs/promises";
 import { join } from "node:path";
 import {
-  type CodeImport,
+  exportsOf,
+  type Hasher,
+  importsOf,
+  isCodePath,
+  isIgnoredPath,
+  isSecretPath,
+  lineHashes,
+} from "@kibo/core";
+import {
   DUPLICATION_BINARY_EXTENSIONS,
   DUPLICATION_LIMITS,
   type DuplicationSettings,
   type IndexedFile,
-  type LineHash,
   type WorkspaceIndex,
 } from "@kibo/schema";
 import type { GitRunner } from "../agents/workspace-prep";
 import { type AddedLine, addedLinesOf, type DiffFile, type GitDiff, gitDiffSummary } from "./git-diff";
-import type { Hasher } from "./hash";
 import { createIndexCache, type FileContent, type FileStat, type IndexCache } from "./index-cache";
 import type { WorkspaceRef } from "./workspace";
-
-export type LineTools = {
-  lineHashes(lines: readonly AddedLine[], hash: Hasher): LineHash[];
-  exportsOf(lines: readonly string[], generic: readonly string[]): string[];
-  importsOf(lines: readonly AddedLine[]): CodeImport[];
-  isIgnoredPath(path: string, settings: Pick<DuplicationSettings, "ignore">): boolean;
-  isSecretPath(path: string): boolean;
-  isCodePath(path: string): boolean;
-};
 
 export type IndexFs = {
   stat(p: string): Promise<FileStat | null>;
@@ -42,7 +39,6 @@ export type IndexerDeps = {
   now: () => number;
   hash: Hasher;
   log: (line: string) => void;
-  tools: LineTools;
   cache?: IndexCache;
 };
 
@@ -95,7 +91,7 @@ const extension = (path: string): string => path.slice(path.lastIndexOf(".") + 1
 const withoutLines = (f: IndexedFile): IndexedFile => ({ ...f, lines: [] });
 
 export function createWorkspaceIndexer(deps: IndexerDeps): WorkspaceIndexer {
-  const { git, fs, tools, log } = deps;
+  const { git, fs, log } = deps;
   const cache = deps.cache ?? createIndexCache(DUPLICATION_LIMITS.cacheFiles);
   const indexes = new Map<string, WorkspaceIndex>();
 
@@ -105,11 +101,11 @@ export function createWorkspaceIndexer(deps: IndexerDeps): WorkspaceIndexer {
   };
 
   const admitted = (path: string, settings: DuplicationSettings): boolean => {
-    if (tools.isSecretPath(path)) {
+    if (isSecretPath(path)) {
       log(`overlaps: secret file ${path} never indexed`);
       return false;
     }
-    return !tools.isIgnoredPath(path, settings) && !DUPLICATION_BINARY_EXTENSIONS.includes(extension(path));
+    return !isIgnoredPath(path, settings) && !DUPLICATION_BINARY_EXTENSIONS.includes(extension(path));
   };
 
   async function addedLines(pass: Pass, entry: Entry, text: string): Promise<AddedLine[] | null> {
@@ -126,17 +122,17 @@ export function createWorkspaceIndexer(deps: IndexerDeps): WorkspaceIndexer {
     const lines = await addedLines(pass, entry, text);
     if (!lines) return null;
     const clipped = lines.length > DUPLICATION_LIMITS.addedLinesPerFile;
-    const code = tools.isCodePath(entry.path);
+    const code = isCodePath(entry.path);
     return {
       hash: deps.hash(text),
       exports: code
-        ? tools.exportsOf(
+        ? exportsOf(
             lines.map((l) => l.text),
             pass.settings.genericExports,
           )
         : [],
-      imports: code ? tools.importsOf(lines) : [],
-      lines: clipped ? [] : tools.lineHashes(lines, deps.hash),
+      imports: code ? importsOf(lines) : [],
+      lines: clipped ? [] : lineHashes(lines, deps.hash),
       clipped,
       added: lines.length,
     };

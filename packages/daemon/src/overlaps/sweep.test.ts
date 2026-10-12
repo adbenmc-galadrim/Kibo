@@ -118,3 +118,20 @@ test("stop clears the timer", () => {
   scheduler.stop();
   expect(timers.cleared).toBe(1);
 });
+
+test("stop waits for the running sweeps and refuses new ones", async () => {
+  const { scheduler, swept, release } = setup();
+  scheduler.onTurnEnd(ticketRun("P"));
+  let stopped = false;
+  const stopping = scheduler.stop().then(() => {
+    stopped = true;
+  });
+  scheduler.onTurnEnd(ticketRun("Q"));
+  scheduler.onSpawned(ticketRun("Q"), 2);
+  await new Promise((resolve) => setTimeout(resolve, 1));
+  expect(stopped).toBe(false);
+  await release();
+  await stopping;
+  expect(stopped).toBe(true);
+  expect(swept).toEqual(["P"]);
+});

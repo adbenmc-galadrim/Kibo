@@ -215,12 +215,14 @@ describe("overlap scenarios", () => {
     expect(other.some((s) => "mcp" in s && s.mcp === "peek_work")).toBe(true);
     expect(writes("overlap-bash").every((s) => s.bypassHooks)).toBe(true);
     expect(read("overlap-keep").turns[0]?.onStopBlock).toEqual([{ say: "Je garde ma copie." }]);
+    expect(writes("overlap-twin").map((s) => s.write)).toEqual(["src/utils/when.ts"]);
   });
 
   test("the routes pick a scenario per ticket", () => {
     const routes = FakeRoutes.parse(JSON.parse(readFileSync(scenarioPath("overlap-routes"), "utf8")));
     expect(routes.routes.map((r) => [r.prompt, r.scenario])).toEqual([
       ["# BOU-12", "overlap-owner.json"],
+      ["# BOU-13", "overlap-twin.json"],
       ["# BOU-15", "overlap-other.json"],
       ["# BOU-16", "overlap-bash.json"],
       ["# BOU-17", "overlap-keep.json"],

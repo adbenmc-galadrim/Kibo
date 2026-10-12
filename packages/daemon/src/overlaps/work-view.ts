@@ -11,13 +11,7 @@ import {
 } from "@kibo/schema";
 import type { GitRunner } from "../agents/workspace-prep";
 import type { PathScreen, PeekFs } from "./peek-path";
-
-export type WorkspaceRef = {
-  key: string;
-  kind: "worktree" | "repo";
-  worktreeName: string | null;
-  baseHead: string;
-};
+import type { WorkspaceRef } from "./workspace";
 
 export type PeekServices = {
   runs(): RunView[];

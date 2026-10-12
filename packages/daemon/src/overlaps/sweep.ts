@@ -10,7 +10,7 @@ export type SweepSchedulerDeps = {
 
 export type SweepScheduler = {
   start(): void;
-  stop(): void;
+  stop(): Promise<void>;
   onSpawned(run: RunView, workspaces: number): void;
   onTurnEnd(run: RunView): void;
 };
@@ -25,15 +25,17 @@ const SYSTEM_TIMERS: ScheduleTimers = {
 
 export function createSweepScheduler(deps: SweepSchedulerDeps): SweepScheduler {
   const timers = deps.timers ?? SYSTEM_TIMERS;
-  const running = new Set<string>();
+  const running = new Map<string, Promise<void>>();
   let cancel: (() => void) | null = null;
+  let stopped = false;
 
   const sweep = (projectId: string | null): void => {
-    if (!projectId || running.has(projectId)) return;
-    running.add(projectId);
-    new Promise((resolve) => resolve(deps.detector.sweep(projectId)))
+    if (stopped || !projectId || running.has(projectId)) return;
+    const done = new Promise((resolve) => resolve(deps.detector.sweep(projectId)))
+      .then(() => undefined)
       .catch((e: unknown) => deps.log(`overlaps: sweep of ${projectId} failed: ${String(e)}`))
       .finally(() => running.delete(projectId));
+    running.set(projectId, done);
   };
 
   const sweepAll = (): void => {
@@ -44,9 +46,11 @@ export function createSweepScheduler(deps: SweepSchedulerDeps): SweepScheduler {
     start() {
       cancel ??= timers.every(sweepAll, DUPLICATION_LIMITS.sweepMs);
     },
-    stop() {
+    async stop() {
+      stopped = true;
       cancel?.();
       cancel = null;
+      await Promise.all(running.values());
     },
     onSpawned(run, workspaces) {
       if (workspaces >= 2) sweep(run.projectId);

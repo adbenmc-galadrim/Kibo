@@ -31,6 +31,7 @@ export type AutoLinkEvaluator = {
 export type DetectorDeps = ApplyDeps & {
   indexer: WorkspaceIndexer;
   workspaces(projectId: string): Promise<DetectorSpace[]>;
+  gone(workspace: string): boolean;
   projectOf(runId: string): string | null;
   settings(projectId: string): DuplicationSettings;
   autoLinker: AutoLinkEvaluator | null;
@@ -170,10 +171,36 @@ export function createOverlapDetector(deps: DetectorDeps): OverlapDetector {
     return { findings, clean, compared, interrupted: false };
   }
 
+  function settleGone(projectId: string, spaces: readonly DetectorSpace[]): void {
+    const listedKeys = new Set(spaces.map((s) => s.ws.key));
+    const vanished = (key: string) => !listedKeys.has(key) && deps.gone(key);
+    const resolve = deps.store
+      .open(projectId)
+      .filter((o) => vanished(o.ownerWorkspace) || vanished(o.otherWorkspace))
+      .map((o) => o.id);
+    if (resolve.length > 0)
+      applyReconciliation(deps, projectId, { create: [], touch: [], resolve }, runsOf(spaces));
+  }
+
+  async function evaluateLinks(projectId: string, indexed: Indexed[]): Promise<void> {
+    if (!deps.autoLinker) return;
+    const runs = indexed.flatMap((x) => oldest(x.space) ?? []);
+    try {
+      await deps.autoLinker.evaluate(
+        projectId,
+        indexed.map((x) => x.index),
+        runs,
+      );
+    } catch (e) {
+      deps.log(`overlaps: auto links of ${projectId} failed: ${String(e)}`);
+    }
+  }
+
   async function sweep(projectId: string): Promise<SweepResult> {
     const settings = deps.settings(projectId);
     if (!settings.enabled) return NOTHING;
     const all = await listed(projectId);
+    settleGone(projectId, all);
     const ordered = all
       .flatMap((space) => {
         const first = oldest(space);
@@ -194,14 +221,7 @@ export function createOverlapDetector(deps: DetectorDeps): OverlapDetector {
     partial ||= interrupted;
     const resolvable = (o: Overlap) => !partial || clean.has(pairOf(o.ownerWorkspace, o.otherWorkspace));
     settle(projectId, findings, { kind: "sweep" }, resolvable, all);
-    if (!interrupted && deps.autoLinker) {
-      const runs = indexed.flatMap((x) => oldest(x.space) ?? []);
-      await deps.autoLinker.evaluate(
-        projectId,
-        indexed.map((x) => x.index),
-        runs,
-      );
-    }
+    if (!interrupted) await evaluateLinks(projectId, indexed);
     return { compared, partial };
   }
 

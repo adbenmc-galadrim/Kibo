@@ -21,6 +21,7 @@ import { startAppDiagnostics } from "./diagnostics/bootstrap";
 import { createLogBuffer } from "./log-buffer";
 import { startMarket } from "./market/bootstrap";
 import { createProjectSettings } from "./notes/settings";
+import { startOverlaps } from "./overlaps/bootstrap";
 import { startProjectAgent } from "./project-agent/bootstrap";
 import { createProjectAdmin } from "./projects/admin";
 import { agentQuestionHooks } from "./questions/agent-hooks";
@@ -105,6 +106,15 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   });
   closers.push(() => projectAgent.stop());
   signals.start();
+  const overlaps = startOverlaps({
+    home: opts.home,
+    docs: service.docs,
+    settings: createProjectSettings(store.db),
+    trace: visibility.trace,
+    runs: () => (agents ? agents.state().runs : []),
+    viewer: opts.user,
+  });
+  closers.push(overlaps.stop);
   const market = await startMarket({
     home: opts.home,
     toolchain: opts.toolchain,
@@ -169,13 +179,17 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       projectAgent.agent.rpc,
       visibility.rpc,
       signals.rpc,
+      overlaps.rpc,
       ...extensions,
     ],
     port: opts.port,
     uiDir: opts.uiDir,
     extraOrigins: devOrigins,
-    hooks: visibility.hooks(agentQuestionHooks(() => agents, service.agentData, opts.notify ?? (() => {}))),
-    agentMcp: visibility.mcp(projectAgent.agent.mcp, signals.service),
+    hooks: visibility.hooks(
+      overlaps.hooks(agentQuestionHooks(() => agents, service.agentData, opts.notify ?? (() => {}))),
+      overlaps.reminders,
+    ),
+    agentMcp: visibility.mcp(projectAgent.agent.mcp, signals.service, overlaps.peek),
     assets: components.assets,
     icons: service.icons,
     sandboxOrigin: () => sandboxOrigin || null,
@@ -212,12 +226,13 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       baseUrl: () => server.url,
       port: server.port,
       projectTurns: projectAgent.agent.turns,
-      lifecycle: visibility.lifecycle,
+      lifecycle: { ...overlaps.lifecycle(visibility.lifecycle), turnPrefix: overlaps.prefixer },
       ready: (orchestrator) => {
         agents = orchestrator;
       },
       attachRuns: (source) => collab.attachRuns(source),
-      agentsPort: (orchestrator) => withSignalCounts(visibility.agents(orchestrator), signals.service),
+      agentsPort: (orchestrator) =>
+        overlaps.agents(withSignalCounts(visibility.agents(orchestrator), signals.service)),
       ai: { db: store.db, components, appInfo: app.appInfo },
     },
     closers,

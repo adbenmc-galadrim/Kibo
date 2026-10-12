@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import type { Finding } from "@kibo/core";
 import {
   Actor,
   foldOverlap,
@@ -18,14 +19,10 @@ import { type AutoLinkStore, autoLinkStore } from "./auto-link-store";
 import { openOverlapDatabase } from "./store-schema";
 import { stored } from "./stored";
 
-export type OverlapFinding = Pick<
-  OverlapRow,
-  "kind" | "key" | "ownerWorkspace" | "otherWorkspace" | "ownerRunId" | "otherRunId" | "detail"
->;
 export type OverlapQuery = { projectId?: string; runId?: string; state?: OverlapStatus };
 
 export type OverlapStore = {
-  create(f: OverlapFinding, projectId: string, at: number): Overlap;
+  create(f: Finding, projectId: string, at: number): Overlap;
   touch(ids: string[], at: number): void;
   event(id: string, e: OverlapEvent): Overlap;
   open(projectId: string): Overlap[];
@@ -143,7 +140,7 @@ export function openOverlapStore(home: string): OverlapStore {
       .query("SELECT * FROM run_overlap_ignores WHERE project_id = $p AND active = 1 ORDER BY at, id")
       .all({ p: projectId }) as IgnoreDbRow[];
 
-  function create(f: OverlapFinding, projectId: string, at: number): Overlap {
+  function create(f: Finding, projectId: string, at: number): Overlap {
     const id = randomUUID();
     try {
       insert.run({

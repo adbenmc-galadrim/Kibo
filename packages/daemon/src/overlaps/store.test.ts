@@ -3,8 +3,9 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { Finding } from "@kibo/core";
 import { type Actor, type AutoLinkRow, KiboError } from "@kibo/schema";
-import { type OverlapFinding, type OverlapStore, openOverlapStore } from "./store";
+import { type OverlapStore, openOverlapStore } from "./store";
 
 const homes: string[] = [];
 const stores: OverlapStore[] = [];
@@ -24,7 +25,7 @@ function open(): { store: OverlapStore; home: string } {
 
 const ADAM: Actor = { kind: "human", ref: "adam" };
 
-const finding = (p: Partial<OverlapFinding> = {}): OverlapFinding => ({
+const finding = (p: Partial<Finding> = {}): Finding => ({
   kind: "export",
   key: "export:formatDate",
   ownerRunId: "r12",

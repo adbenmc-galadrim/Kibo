@@ -10,7 +10,8 @@ import {
   type RunView,
 } from "@kibo/schema";
 import { readPeekFile, resolvePeekPath } from "./peek-path";
-import { isPeerOf, type PeekServices, startOf, type WorkspaceRef } from "./work-view";
+import { isPeerOf, type PeekServices, startOf } from "./work-view";
+import type { WorkspaceRef } from "./workspace";
 
 type Target = { run: RunView; ws: WorkspaceRef };
 

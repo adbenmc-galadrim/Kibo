@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { DEFAULT_DUPLICATION_SETTINGS, type IndexedFile } from "@kibo/schema";
 import { cleanupTmp, commit, git, repo, worktree } from "../agents/git-test-kit";
 import { type GitRunner, runGit } from "../agents/workspace-prep";
-import { fakeLineTools, testHash } from "./fakes.test-helper";
+import { sha256Hex as testHash } from "./hash";
 import type { WorkspaceRef } from "./workspace";
 import { createWorkspaceIndexer, type IndexFs, nodeIndexFs } from "./workspace-index";
 
@@ -44,7 +44,6 @@ function setup(git: GitRunner = runGit) {
     now: () => 42,
     hash: testHash,
     log: (line) => logs.push(line),
-    tools: fakeLineTools,
   });
   return { indexer, logs, reads: () => reads };
 }
@@ -98,7 +97,6 @@ describe("workspace indexer", () => {
         line(1, 'import { helper } from "./helper";'),
         line(3, "export function formatDate(d) {"),
         line(4, "return d;"),
-        line(5, "}"),
       ],
       clipped: false,
     });

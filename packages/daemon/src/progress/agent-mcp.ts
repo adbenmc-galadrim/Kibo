@@ -1,4 +1,4 @@
-import { isSharedToolName, KiboError, type RunView } from "@kibo/schema";
+import { isSharedToolName, type RunView } from "@kibo/schema";
 import type { AgentMcpSink } from "../project-agent/types";
 import type { SignalService } from "../signals/service";
 import type { SkillReviews } from "../skills/reviews";
@@ -12,13 +12,7 @@ export type AgentMcpDeps = {
   progress: Pick<ProgressService, "record">;
   signals: Pick<SignalService, "record">;
   reviews: Pick<SkillReviews, "record">;
-  peek?: TicketToolServices["peek"];
-};
-
-const UNWIRED_PEEK: TicketToolServices["peek"] = {
-  call: async () => {
-    throw new KiboError("NOT_FOUND", "peek_work is not available in this daemon");
-  },
+  peek: TicketToolServices["peek"];
 };
 
 export function agentMcpSink(deps: AgentMcpDeps): AgentMcpSink {
@@ -26,7 +20,7 @@ export function agentMcpSink(deps: AgentMcpDeps): AgentMcpSink {
     progress: deps.progress,
     signals: deps.signals,
     reviews: deps.reviews,
-    peek: deps.peek ?? UNWIRED_PEEK,
+    peek: deps.peek,
   };
   return {
     verify(runId, token) {

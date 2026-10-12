@@ -3,7 +3,8 @@ import type { IndexedFile, Overlap, RunView, Step, WorkspaceIndex } from "@kibo/
 import { runGit } from "../agents/workspace-prep";
 import { runView } from "../questions/questions.test-helper";
 import type { PathScreen, PeekFs } from "./peek-path";
-import type { PeekServices, WorkspaceRef } from "./work-view";
+import type { PeekServices } from "./work-view";
+import type { WorkspaceRef } from "./workspace";
 
 export const NOW = 10 * 86_400_000;
 export const HOUR = 3_600_000;

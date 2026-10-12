@@ -10,11 +10,12 @@ import {
 } from "@kibo/schema";
 import type { HookSink } from "../agents/hook-route";
 import type { Orchestrator } from "../agents/orchestrator-types";
-import { withReminders } from "../agents/reminders";
+import { type ReminderDeps, withReminders } from "../agents/reminders";
 import { runGit } from "../agents/workspace-prep";
 import { type AgentsPort, withRunProgress } from "../agents-rpc";
 import type { Docs } from "../docs";
 import { agentMcpSink } from "../progress/agent-mcp";
+import type { TicketToolServices } from "../progress/mcp";
 import { createProgressService, type ProgressDocs, type ProgressService } from "../progress/service";
 import type { AgentMcpSink } from "../project-agent/types";
 import type { RpcExtension } from "../rpc-extensions";
@@ -38,6 +39,7 @@ export type VisibilityOptions = {
   agentEnv?: Record<string, string | undefined>;
   userHome?: string;
 };
+export type OverlapReminders = Required<Pick<ReminderDeps, "openDeliveredOverlaps">>;
 export type VisibilityDocs = Pick<Docs, "emit" | "run" | "project" | "projectIds">;
 export type VisibilityAgents = () => Pick<Orchestrator, "state" | "hooks"> | null;
 export type VisibilitySkills = () => Pick<SkillsService, "byId"> | null;
@@ -45,8 +47,12 @@ export type Visibility = {
   trace: TraceService;
   progress: ProgressService;
   rpc: RpcExtension;
-  hooks(sink: HookSink): HookSink;
-  mcp(project: AgentMcpSink, signals: Pick<SignalService, "record">): AgentMcpSink;
+  hooks(sink: HookSink, overlaps: OverlapReminders): HookSink;
+  mcp(
+    project: AgentMcpSink,
+    signals: Pick<SignalService, "record">,
+    peek: TicketToolServices["peek"],
+  ): AgentMcpSink;
   agents(port: AgentsPort): AgentsPort;
   lifecycle: { onSpawned(run: RunView): Promise<void>; onTurnEnd(run: RunView): Promise<void> };
   peek(projectId: string, runId: string): RunPeek;
@@ -109,8 +115,9 @@ export function startVisibility(
       methods: METHODS,
       handle: async (req) => handleVisibilityRequest(trace, { run, progress: summary }, req),
     },
-    hooks(sink) {
+    hooks(sink, overlaps) {
       const reminded = withReminders(sink, {
+        ...overlaps,
         run,
         hasPlan: (r) => progress.hasPlan(r),
         hasReport: (r) => progress.hasReport(r),
@@ -121,9 +128,10 @@ export function startVisibility(
       forgets.push((runId) => reminded.forget(runId));
       return withTrace(withSkillUses(reminded, uses), { trace, run });
     },
-    mcp: (project, signals) =>
+    mcp: (project, signals, peek) =>
       agentMcpSink({
         project,
+        peek,
         run,
         progress,
         signals,

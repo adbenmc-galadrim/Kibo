@@ -1,84 +1,19 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { DEFAULT_DUPLICATION_SETTINGS, overlapSummary } from "@kibo/schema";
+import { fakeIndexer, indexedFile, indexOf } from "./detector-fakes.test-helper";
 import {
-  DEFAULT_DUPLICATION_SETTINGS,
-  type DuplicationSettings,
-  type MomentData,
-  overlapSummary,
-  type WorkspaceIndex,
-  type WorkspaceRun,
-} from "@kibo/schema";
-import { createOverlapDetector, type DetectorSpace } from "./detector";
-import { type FakeIndexer, fakeIndexer, indexedFile, indexOf, wsRef } from "./detector-fakes.test-helper";
-import { sha256Hex } from "./hash";
-import { type OverlapStore, openOverlapStore } from "./store";
+  cleanDetectors,
+  formatIn,
+  run,
+  setup,
+  space,
+  staleFinding,
+  WS1,
+  WS2,
+  writeSetup,
+} from "./detector-setup.test-helper";
 
-const homes: string[] = [];
-const stores: OverlapStore[] = [];
-
-afterEach(() => {
-  for (const s of stores.splice(0)) s.close();
-  for (const h of homes.splice(0)) rmSync(h, { recursive: true, force: true });
-});
-
-const WS1 = "/w/ws1";
-const WS2 = "/w/ws2";
-const run = (key: string, runId: string, startedAt: number): WorkspaceRun => ({ key, runId, startedAt });
-const space = (key: string, runs: WorkspaceRun[]): DetectorSpace => ({
-  ws: wsRef(key),
-  runs,
-  allRunIds: runs.map((r) => r.runId),
-});
-const formatIn = (key: string, path: string): WorkspaceIndex =>
-  indexOf(key, [indexedFile(path, ["formatDate"])]);
-
-type Setup = { spaces?: DetectorSpace[]; settings?: DuplicationSettings; indexer?: FakeIndexer };
-
-function setup({
-  spaces = [space(WS1, [run(WS1, "r1", 100)]), space(WS2, [run(WS2, "r2", 200), run(WS2, "r3", 250)])],
-  settings = DEFAULT_DUPLICATION_SETTINGS,
-  indexer = fakeIndexer(),
-}: Setup = {}) {
-  const home = mkdtempSync(join(tmpdir(), "kibo-detector-"));
-  homes.push(home);
-  const store = openOverlapStore(home);
-  stores.push(store);
-  const moments: { runId: string; data: MomentData }[] = [];
-  const logs: string[] = [];
-  const evaluated: { projectId: string; indexes: string[]; runs: string[] }[] = [];
-  const clock = { now: 1_000 };
-  const state = { spaces, settings, emits: 0 };
-  const detector = createOverlapDetector({
-    store,
-    indexer,
-    workspaces: async () => state.spaces,
-    projectOf: (runId) => (state.spaces.some((s) => s.allRunIds.includes(runId)) ? "P" : null),
-    settings: () => state.settings,
-    runName: (runId) => `bou · livraison · ${runId}`,
-    moment: (runId, data) => moments.push({ runId, data }),
-    emit: () => {
-      state.emits += 1;
-    },
-    now: () => clock.now,
-    log: (line) => logs.push(line),
-    hash: sha256Hex,
-    autoLinker: {
-      evaluate: async (projectId, indexes, runs) => {
-        evaluated.push({ projectId, indexes: indexes.map((i) => i.key), runs: runs.map((r) => r.runId) });
-      },
-    },
-  });
-  return { detector, store, indexer, moments, logs, evaluated, clock, state };
-}
-
-function writeSetup() {
-  const indexer = fakeIndexer();
-  indexer.preload(formatIn(WS1, "src/lib/format.ts"));
-  indexer.single.set(`${WS2}:src/utils/date.ts`, formatIn(WS2, "src/utils/date.ts"));
-  return setup({ indexer });
-}
+afterEach(cleanDetectors);
 
 test("a write that exports a name already exported elsewhere opens an overlap with the writer as other", async () => {
   const { detector, store, moments, state, indexer } = writeSetup();
@@ -169,16 +104,6 @@ test("a sweep with a single workspace does nothing", async () => {
   const { detector, indexer } = setup({ spaces: [space(WS1, [run(WS1, "r1", 100)])] });
   expect(await detector.sweep("P")).toEqual({ compared: 0, partial: false });
   expect(indexer.calls).toEqual([]);
-});
-
-const staleFinding = (otherWorkspace = WS2) => ({
-  kind: "file" as const,
-  key: "file:src/old.ts",
-  ownerRunId: "r1",
-  otherRunId: "r2",
-  ownerWorkspace: WS1,
-  otherWorkspace,
-  detail: { kind: "file" as const, path: "src/old.ts" },
 });
 
 test("a sweep indexes every workspace, opens new overlaps for the oldest and youngest runs and resolves absent ones", async () => {

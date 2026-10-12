@@ -76,9 +76,14 @@ export type Stack = {
 
 export const LIVRAISON_AGENT: Agent = testAgent({ id: "livraison", name: "livraison", maxParallel: 1 });
 
-async function boot(home: string, notices: Notice[], scenario: FakeScenarioName): Promise<Daemon> {
+async function boot(
+  home: string,
+  notices: Notice[],
+  scenario: FakeScenarioName,
+  agents: readonly Agent[],
+): Promise<Daemon> {
   return startDaemon({
-    agentSource: testAgentSource([LIVRAISON_AGENT]).source,
+    agentSource: testAgentSource(agents).source,
     home,
     port: 0,
     sandboxPort: 0,
@@ -98,11 +103,14 @@ async function boot(home: string, notices: Notice[], scenario: FakeScenarioName)
   });
 }
 
-export async function startStack(scenario: FakeScenarioName = "project-agent-routes"): Promise<Stack> {
+export async function startStack(
+  scenario: FakeScenarioName = "project-agent-routes",
+  agents: readonly Agent[] = [LIVRAISON_AGENT],
+): Promise<Stack> {
   const home = mkdtempSync(join(tmpdir(), "kibo-project-agent-it-"));
   mkdirSync(join(home, "fake"));
   const notices: Notice[] = [];
-  let daemon: Daemon | null = await boot(home, notices, scenario);
+  let daemon: Daemon | null = await boot(home, notices, scenario, agents);
   const stack: Stack = {
     home,
     url: daemon.url,
@@ -111,7 +119,7 @@ export async function startStack(scenario: FakeScenarioName = "project-agent-rou
     calls: (sessionId) => fakeCalls(join(home, "fake"), sessionId),
     async restart() {
       await daemon?.stop();
-      daemon = await boot(home, notices, scenario);
+      daemon = await boot(home, notices, scenario, agents);
       stack.url = daemon.url;
       stack.rpc = await client(daemon);
     },
