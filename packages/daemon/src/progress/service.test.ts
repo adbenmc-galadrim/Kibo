@@ -131,6 +131,14 @@ test("a resumed run keeps the base of the first traced run of its ticket in the 
   expect(k.gitCalls).toEqual([]);
 });
 
+test("a run in the project folder takes HEAD even after a traced run of its ticket", async () => {
+  const earlier = (ticketId: string) => [runView({ id: "r0", ticketId, cwd: "/repo", createdAt: 10 })];
+  const k = kit({ "rev-parse": { code: 0, stdout: "head9\n" } }, earlier);
+  k.traces.set("r0", { doing: null, baseHead: "old" });
+  await k.service.onSpawned({ ...k.run, workspace: "repo", createdAt: 20 });
+  expect(k.traces.get("r1")?.baseHead).toBe("head9");
+});
+
 test("a worktree run without traced predecessor takes the merge-base with its base branch", async () => {
   const k = kit({ "merge-base": { code: 0, stdout: "fork42\n" }, "rev-parse": { code: 0, stdout: "head9" } });
   await k.service.onSpawned({ ...k.run, workspace: "worktree:kib-1" });

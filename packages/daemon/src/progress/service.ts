@@ -116,10 +116,10 @@ export function createProgressService(deps: ProgressDeps): ProgressService {
 
   async function baseOf(run: RunView): Promise<string | null> {
     if (run.cwd === null) return null;
-    const origin = hasTicket(run) ? originBase(run) : null;
-    if (origin !== null) return origin;
-    const forked = hasTicket(run) && isWorktree(run) ? await mergeBaseOf(git, run.cwd, baseRefOf(run)) : null;
-    return forked ?? (await headOf(git, run.cwd));
+    if (!hasTicket(run) || !isWorktree(run)) return headOf(git, run.cwd);
+    return (
+      originBase(run) ?? (await mergeBaseOf(git, run.cwd, baseRefOf(run))) ?? (await headOf(git, run.cwd))
+    );
   }
 
   async function onSpawned(run: RunView): Promise<void> {
