@@ -85,7 +85,7 @@ test("une mention du Kanban ouvre la carte, le volet du run puis sa page", async
   await page.goto(`/#/p/${seeded.projectId}/${encodeURIComponent(seeded.board)}`);
   if ((await page.getByRole("button", { name: "Replier les agents" }).count()) > 0) await bar().click();
   const card = page.getByRole("article").filter({ hasText: "KIB-14" });
-  const mention = card.getByRole("button", { name: "opus-dev-1" });
+  const mention = card.getByRole("button", { name: "global · livraison-opus · KIB-14" });
   await mention.hover();
   const peek = page.locator("[data-slot=hover-card-content]");
   await expect(peek.getByText("2/5 · Corriger la validation")).toBeVisible();
@@ -94,7 +94,7 @@ test("une mention du Kanban ouvre la carte, le volet du run puis sa page", async
   await capture(page, info, "186");
 
   await mention.click();
-  const panel = page.getByRole("dialog", { name: /^Run opus-dev-1 · KIB-14$/ });
+  const panel = page.getByRole("dialog", { name: "Run global · livraison-opus · KIB-14" });
   await expect(
     panel.getByRole("region", { name: "Fil narratif" }).getByText("Je lis le formulaire."),
   ).toBeVisible();

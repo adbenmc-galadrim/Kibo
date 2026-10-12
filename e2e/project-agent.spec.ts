@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { rpc } from "./agents-seed";
+import { createAgent, rpc } from "./agents-seed";
 import { addComponent, createPage, pairAndCreateProject } from "./helpers";
 import { shot } from "./repo-project";
 
@@ -21,22 +21,15 @@ async function seed(page: Page, projectId: string): Promise<void> {
       projectId,
       command: { method: "createTicket", title, statusId: "todo" },
     });
-  await rpc(page, {
-    method: "config",
-    command: {
-      method: "createProfile",
-      profile: {
-        name: "opus",
-        model: "opus",
-        execution: "cli",
-        permissionMode: "acceptEdits",
-        workspace: "isolated",
-        subagents: [],
-        maxParallel: 1,
-      },
-    },
-  });
+  await createAgent(page, livraison);
 }
+
+const livraison = {
+  name: "livraison",
+  description: "Livre un ticket en TDD avec des commits propres",
+  model: "opus",
+  settings: { permissionMode: "acceptEdits", workspace: "isolated", maxParallel: 1 },
+} as const;
 
 const panelOf = (page: Page): Locator => page.getByRole("dialog", { name: `Agent de projet · ${PROJECT}` });
 
@@ -65,7 +58,9 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
   const kanban = page.locator("[data-instance]").first();
   const all = kanban.getByRole("radio", { name: "Tous" });
   if ((await all.getAttribute("aria-checked")) !== "true") await all.click();
-  await expect(kanban.getByRole("region", { name: "À faire" }).getByText("KIB-1")).toBeVisible();
+  await expect(
+    kanban.getByRole("region", { name: "À faire" }).getByText("KIB-1", { exact: true }),
+  ).toBeVisible();
 
   const button = page.getByRole("button", { name: "Agent de projet", exact: true });
   await button.click();
@@ -99,10 +94,12 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
   await expect(card.getByText("Appliqué en partie")).toBeVisible();
   await expect(card.getByText("Appliquée", { exact: true })).toHaveCount(4);
   await expect(card.getByText("Ignorée", { exact: true })).toHaveCount(1);
-  await expect(card.getByText("KIB-3")).toBeVisible();
+  await expect(card.getByText("KIB-3", { exact: true })).toBeVisible();
   await expect(card.getByRole("button", { name: /^Valider/ })).toHaveCount(0);
   await shot(page, info, "ecran-175b");
-  await expect(kanban.getByRole("region", { name: "En cours" }).getByText("KIB-1")).toBeVisible();
+  await expect(
+    kanban.getByRole("region", { name: "En cours" }).getByText("KIB-1", { exact: true }),
+  ).toBeVisible();
 
   await say(panel, "Propose un lot invalide");
   await expect(panel.getByText("Lot corrigé.")).toBeVisible({ timeout: 30_000 });
@@ -130,8 +127,9 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
   await page.getByRole("button", { name: "Agents", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Agents" })).toBeVisible();
   await expect(page.getByText(`Agent de projet · ${PROJECT}`).first()).toBeVisible();
-  await page.getByRole("button", { name: "Modifier le profil Agent de projet" }).click();
-  const sheet = page.getByRole("dialog");
-  await expect(sheet.getByText("1 tour à la fois par projet")).toBeVisible();
+  await page.getByRole("button", { name: /^Agents de Kibo/ }).click();
+  await page.getByRole("button", { name: "Ouvrir l'agent kibo-project-agent" }).click();
+  await page.getByRole("button", { name: /^Réglages techniques/ }).click();
+  await expect(page.getByText("Agent de Kibo : ces réglages sont fixés par Kibo.")).toBeVisible();
   await shot(page, info, "ecran-177");
 });

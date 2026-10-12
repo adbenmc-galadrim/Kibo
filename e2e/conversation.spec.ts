@@ -2,7 +2,7 @@ import { mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { list, rpc, runState, text } from "./agents-seed";
+import { createAgent, list, rpc, runState, text } from "./agents-seed";
 import { E2E_TOKEN } from "./token";
 
 test.setTimeout(120_000);
@@ -33,22 +33,13 @@ async function seed(page: Page) {
     await command({ method: "createTicket", title: "Récepteur de hooks", statusId: "todo" }),
     "id",
   );
-  const profile = await rpc(page, {
-    method: "config",
-    command: {
-      method: "createProfile",
-      profile: {
-        name: "opus-dev",
-        model: "opus",
-        execution: "cli",
-        permissionMode: "acceptEdits",
-        workspace: "isolated",
-        subagents: [],
-        maxParallel: 2,
-      },
-    },
+  const agent = await createAgent(page, {
+    name: "livraison",
+    description: "Livre un ticket en TDD avec des commits propres",
+    model: "opus",
+    settings: { permissionMode: "acceptEdits", workspace: "isolated", maxParallel: 2 },
   });
-  await rpc(page, { method: "assignAgent", projectId, ticketId, profileId: text(profile, "id"), brief: "" });
+  await rpc(page, { method: "assignAgent", projectId, ticketId, profileId: agent, brief: "" });
   return { projectId, board };
 }
 
@@ -64,15 +55,15 @@ test("conversation avec un run terminé, puis passage en review à la demande", 
   await page.getByRole("button", { name: "Déplier les agents" }).click();
   await page
     .getByRole("region", { name: "Runs" })
-    .getByRole("button", { name: /opus-dev-1/ })
+    .getByRole("button", { name: /global · livraison · KIB-1/ })
     .click();
-  const journal = page.getByRole("list", { name: "Fil de opus-dev-1" });
+  const journal = page.getByRole("list", { name: "Fil de global · livraison · KIB-1" });
   await expect(journal.getByText("Veux-tu que j'ajoute des tests ?")).toBeVisible();
   await expect(page.getByText("Écrire à l'agent")).toBeVisible();
   await expect(page.getByRole("button", { name: "Passer en review" })).toBeVisible();
   await shot(page, info, "run-termine");
 
-  const field = page.getByLabel("Écrire à opus-dev-1");
+  const field = page.getByLabel("Écrire à global · livraison · KIB-1");
   await field.fill("Oui, ajoute les tests du récepteur.");
   await page.getByRole("button", { name: "Envoyer" }).click();
   await expect(page.getByText(NEXT_TURN)).toBeVisible();
@@ -111,26 +102,17 @@ test("réassigner un ticket reprend sa session principale", async ({ page }, inf
     const board = text(await command({ method: "addPage", title: "Kanban", kind: "view" }), "id");
     await command({ method: "addInstance", pageId: board, component: "kanban@1.0.0" });
     const ticketId = text(await command({ method: "createTicket", title: "Brief de reprise" }), "id");
-    const profile = await rpc(page, {
-      method: "config",
-      command: {
-        method: "createProfile",
-        profile: {
-          name: "repo-dev",
-          model: "opus",
-          execution: "cli",
-          permissionMode: "acceptEdits",
-          workspace: "repo",
-          subagents: [],
-          maxParallel: 1,
-        },
-      },
+    const agent = await createAgent(page, {
+      name: "livraison-depot",
+      description: "Livre un ticket directement dans le dépôt du projet",
+      model: "opus",
+      settings: { permissionMode: "acceptEdits", workspace: "repo", maxParallel: 1 },
     });
     await rpc(page, {
       method: "assignAgent",
       projectId,
       ticketId,
-      profileId: text(profile, "id"),
+      profileId: agent,
       brief: "",
     });
     await expect.poll(() => runState(page, "SES-1"), { timeout: 20_000 }).toBe("done");
@@ -139,9 +121,11 @@ test("réassigner un ticket reprend sa session principale", async ({ page }, inf
     await page.getByRole("button", { name: "Brief de reprise" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Assigner à un agent" }).click();
     const dialog = page.getByRole("dialog");
-    await dialog.getByRole("combobox", { name: "Profil" }).click();
-    await page.getByRole("option", { name: /^repo-dev · / }).click();
-    await expect(dialog.getByText(/^reprend repo-dev-1 \(1 tour, 1,5k tokens\)$/)).toBeVisible();
+    await dialog.getByRole("combobox", { name: "Agent" }).click();
+    await page.getByRole("option", { name: /^livraison-depot · / }).click();
+    await expect(
+      dialog.getByText("reprend global · livraison-depot · SES-1 (1 tour, 1,5k tokens)"),
+    ).toBeVisible();
     const reset = dialog.getByRole("checkbox", { name: "Repartir de zéro" });
     await expect(reset).not.toBeChecked();
     await shot(page, info, "assigner-session");
@@ -153,11 +137,13 @@ test("réassigner un ticket reprend sa session principale", async ({ page }, inf
     await page.getByRole("button", { name: "Déplier les agents" }).click();
     await page
       .getByRole("region", { name: "Runs" })
-      .getByRole("button", { name: /repo-dev-1/ })
+      .getByRole("button", { name: /global · livraison-depot · SES-1/ })
       .first()
       .click();
-    const journal = page.getByRole("list", { name: "Fil de repo-dev-1" });
-    await expect(journal.getByText("Session : reprise du run repo-dev-1 (1 tour)")).toBeVisible();
+    const journal = page.getByRole("list", { name: "Fil de global · livraison-depot · SES-1" });
+    await expect(
+      journal.getByText("Session : reprise du run global · livraison-depot · SES-1 (1 tour)"),
+    ).toBeVisible();
     await shot(page, info, "journal-session");
   } finally {
     rmSync(folder, { recursive: true, force: true });

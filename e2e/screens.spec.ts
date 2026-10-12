@@ -3,7 +3,7 @@ import { appendFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFile
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { type Browser, expect, type Locator, type Page, type TestInfo, test } from "@playwright/test";
-import { assign, rpc, type Seeded, seedWorkspace } from "./agents-seed";
+import { assign, createAgent, livraisonOpus, rpc, type Seeded, seedWorkspace } from "./agents-seed";
 import { GIT_IDENTITY } from "./git-repo";
 import { E2E_TOKEN } from "./token";
 
@@ -175,21 +175,7 @@ test.beforeAll(async ({ browser }, info) => {
   await page.goto(`/#pair=${E2E_TOKEN}`);
   await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
   await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
-  await rpc(page, {
-    method: "config",
-    command: {
-      method: "createProfile",
-      profile: {
-        name: "opus-dev",
-        model: "opus",
-        permissionMode: "acceptEdits",
-        maxParallel: 2,
-        execution: "cli",
-        subagents: [],
-        workspace: "worktree",
-      },
-    },
-  });
+  await createAgent(page, livraisonOpus("worktree"));
   seeded = await seedWorkspace(page, mockup.repo);
   await rpc(page, {
     method: "command",
@@ -200,8 +186,8 @@ test.beforeAll(async ({ browser }, info) => {
       description: "Arbre des tickets sur LoroTree : voir packages/core/ticket.ts:43 pour le schéma.",
     },
   });
-  await assign(page, seeded, 12, "opus-dev", "running");
-  await assign(page, seeded, 14, "opus-dev", "waiting_input");
+  await assign(page, seeded, 12, "livraison-opus", "running");
+  await assign(page, seeded, 14, "livraison-opus", "waiting_input");
 });
 
 test.afterAll(async () => {
@@ -265,7 +251,9 @@ test("21 · Changements, fichier indexé sélectionné", async () => {
   await expect(page.getByRole("button", { name: "Retirer le bloc du commit" }).first()).toBeVisible();
   await expect(page.getByText("↑2").first()).toBeVisible();
   await expect(page.getByLabel("Message")).not.toHaveValue("");
-  await expect(page.getByText("opus-dev-1 travaille dans ce worktree.", { exact: false })).toBeVisible();
+  await expect(
+    page.getByText("global · livraison-opus · KIB-12 travaille dans ce worktree.", { exact: false }),
+  ).toBeVisible();
   await capture(info, "21");
 });
 

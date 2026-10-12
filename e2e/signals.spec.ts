@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { list, rpc, runState, text } from "./agents-seed";
+import { createAgent, list, rpc, runState, text } from "./agents-seed";
 import { addComponent, createPage, pairAndCreateProject } from "./helpers";
 import { capture } from "./visibility-kit";
 
@@ -44,22 +44,13 @@ async function seed(page: Page, projectId: string): Promise<Kibo> {
     });
     tickets.set(`KIB-${i + 1}`, text(ticket, "id"));
   }
-  const profile = await rpc(page, {
-    method: "config",
-    command: {
-      method: "createProfile",
-      profile: {
-        name: "opus",
-        model: "opus",
-        execution: "cli",
-        permissionMode: "acceptEdits",
-        workspace: "isolated",
-        subagents: [],
-        maxParallel: 1,
-      },
-    },
+  const profileId = await createAgent(page, {
+    name: "livraison",
+    description: "Livre un ticket en TDD avec des commits propres",
+    model: "opus",
+    settings: { permissionMode: "acceptEdits", workspace: "isolated", maxParallel: 1 },
   });
-  return { projectId, tickets, profileId: text(profile, "id") };
+  return { projectId, tickets, profileId };
 }
 
 async function assignDone(page: Page, kibo: Kibo, key: string): Promise<{ id: string; label: string }> {
