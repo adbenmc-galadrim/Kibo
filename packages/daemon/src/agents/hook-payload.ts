@@ -62,7 +62,12 @@ function toolDetail(h: HookInput): string | null {
   if (h.tool_name === "Skill") return skillTarget(input);
   if (h.tool_name === SKILL_REVIEW_TOOL) return reviewedCount(input);
   return (
-    text(input.file_path) ?? text(input.path) ?? text(input.command) ?? text(input.pattern) ?? text(input.url)
+    text(input.file_path) ??
+    text(input.notebook_path) ??
+    text(input.path) ??
+    text(input.command) ??
+    text(input.pattern) ??
+    text(input.url)
   );
 }
 

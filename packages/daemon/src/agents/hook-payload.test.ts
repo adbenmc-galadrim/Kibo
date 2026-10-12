@@ -291,3 +291,20 @@ test("a skill review is summarized by the number of reviewed skills", () => {
   expect(review({ reviews: [{ skill: "a" }] })).toBe("1 skill");
   expect(review({})).toBeNull();
 });
+
+test("a notebook edit and a multi edit are summarized by their path", () => {
+  const notebook = reduceHookInput({
+    ...base,
+    hook_event_name: "PostToolUse",
+    tool_name: "NotebookEdit",
+    tool_input: { notebook_path: "/n.ipynb", new_source: "x" },
+  });
+  expect(notebook.detail).toBe("/n.ipynb");
+  const multi = reduceHookInput({
+    ...base,
+    hook_event_name: "PostToolUse",
+    tool_name: "MultiEdit",
+    tool_input: { file_path: "/w/src/a.ts", edits: [{ old_string: "a", new_string: "b" }] },
+  });
+  expect(multi.detail).toBe("/w/src/a.ts");
+});
