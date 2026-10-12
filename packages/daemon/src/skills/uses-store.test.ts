@@ -90,3 +90,10 @@ test("usage of a run unknown to the run store has no ticket", () => {
   uses.record("ghost", [action("skill", "a", "t1")], 100);
   expect(uses.usage("a", 0).last).toEqual({ runId: "ghost", ticketKey: null, at: 100 });
 });
+
+test("a skill refused by the guard is not a use", () => {
+  const { uses } = rig();
+  uses.record("r1", [{ ...action("skill", "deploy", "t1"), outcome: "denied" }], 10);
+  expect(uses.byRun("r1")).toEqual([]);
+  expect(uses.usage("deploy", 0)).toEqual({ last: null, runs30d: 0 });
+});

@@ -20,7 +20,9 @@ const SCHEMA = [
 type LastRow = { run_id: string; last_at: number };
 
 const skillOf = (action: RunAction): SkillId | null =>
-  action.kind === "skill" && SkillId.safeParse(action.target).success ? action.target : null;
+  action.kind === "skill" && action.outcome !== "denied" && SkillId.safeParse(action.target).success
+    ? action.target
+    : null;
 
 export function createSkillUses(db: Database): SkillUses {
   for (const sql of SCHEMA) db.exec(sql);
