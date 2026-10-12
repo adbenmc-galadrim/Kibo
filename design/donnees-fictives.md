@@ -156,3 +156,60 @@ touchent la facturation restent chez Adam. — Claire, côté client ». Filtre 
 Graphe (188 à 188d) : projet de la taille d'Emis repris de `32e-graphe-lisible.js` (69 tickets, 38 ouverts sur 5 vagues, 31 terminés repliés,
 6 démarrables, chapitres C0 à C9, 36 liens tracés et 24 implicites masqués, focus sur KIB-65). Kanban 188k : « Démarrable » sur KIB-22 et KIB-9 ;
 KIB-18 (en file #2) et KIB-15 (attend KIB-12) ne le sont pas.
+
+## Agents et skills (phase 22)
+
+Noms parlants (§28.12) ; un run porte le nom `portée ou projet · agent · ticket`, deux runs du même agent sur le même ticket se distinguent
+par leur heure de début.
+
+| Agent | Portée | Fichier | Description | Modèle | Skills · sous-agents | État |
+|---|---|---|---|---|---|---|
+| `livraison` | Global | `~/.claude/agents/livraison.md` | Livre un ticket : lit le ticket, planifie, code en TDD, commite et ouvre la PR. | Opus | Liste de 3 · aucun | run `global · livraison · KIB-14` en cours |
+| `review-pr` | Global | `~/.claude/agents/review-pr.md` | Relit une PR en lecture seule et rend un verdict accepté ou refusé, avec des remarques actionnables. | Sonnet | 2 · aucun | masqué dans Kibo par l'agent de projet du même nom |
+| `seo-contenu` | Global | `~/.claude/agents/seo-contenu.md` | Audite les pages publiques et propose des corrections SEO classées par impact. | Sonnet | 1 · aucun | |
+| `chef-orchestre` | Global | `~/.claude/agents/chef-orchestre.md` | Enchaîne livraison, review-pr puis seo-contenu comme sous-agents et rend un compte rendu. | Opus | Liste de 3 · `livraison`, `review-pr`, `seo-contenu` + génériques | gabarit « Chef d'orchestre » |
+| `kibo-dev` | Projet Kibo | `~/code/kibo/.claude/agents/kibo-dev.md` | Implémente une tâche d'un plan de phase Kibo en TDD, dans le worktree et la branche fournis. | Opus | Tous · génériques | écrit à la main, réglages par défaut |
+| `review-pr` | Projet Kibo | `~/code/kibo/.claude/agents/review-pr.md` | Relit une PR de Kibo selon CLAUDE.md : Biome, TDD, commits en français, aucun commentaire. | Sonnet | 2 · aucun | run `kibo · review-pr · KIB-12` en cours |
+| `sonnet-dev` | Global | `~/.claude/agents/sonnet-dev.md` | Agent migré du profil Kibo sonnet-dev. | Sonnet | Tous · génériques | « Nom peu parlant : renommer » |
+| `ux-audit` | Global | `~/.claude/agents/ux-audit.md` | — | — | — | fichier illisible : ligne 3, « description » sans valeur |
+
+Agents de Kibo (repliés) : `kibo-assistant`, `kibo-generateur`, `kibo-demo`, `kibo-project-agent` dans `~/.claude/agents/`.
+Réglages de `livraison` : worktree par ticket, demande à chaque action, `Bash(bun test *)` et `Bash(git commit *)`, 2 runs en parallèle, activé ;
+autres champs du frontmatter `color: orange`, `maxTurns: 80`, `effort: high`. Skills autorisés de `chef-orchestre` : `porte-qualite`,
+`apply-review`, `superpowers:test-driven-development` ; préchargé par le fichier : `porte-qualite`. « Ce que reçoit l'agent » sur KIB-16 :
+3 140 tokens (workspace 420, projet 1 380, domaine Agents 260, agent 610, protocole 470), `brief.md` 540, `agents.json` 1 920.
+Conflit d'écriture : `~/.claude/agents/livraison.md` modifié dans le terminal à 14:02 (ligne « Lance bun run check avant de commiter. »).
+Historique des runs : `global · livraison · KIB-14` 18m 312k en cours ; `kibo · review-pr · KIB-12` 6m 88k en cours ;
+`global · chef-orchestre · KIB-16` 41m 1,1M « Fait, 1 point à vérifier » ; `global · sonnet-dev · FAC-4` 12m 240k échec.
+
+Skills (4 notes à traiter) :
+
+| Source | Skill | Description | Notes | Usage |
+|---|---|---|---|---|
+| Cet ordinateur | `porte-qualite` | Porte qualité d'une branche avant son push, à deux volets : correctness et conventions. | 2 | il y a 2 h · 9 runs/30 j |
+| Cet ordinateur | `apply-review` | Récupère les reviews d'une PR, traite chaque point, corrige, vérifie, commite et pousse. | 1 | il y a 1 j · 4 runs/30 j |
+| Cet ordinateur | `clean-pr` | Démonte l'environnement local d'une PR fusionnée : worktree, branche, conteneurs. | | il y a 5 j · 2 runs/30 j |
+| Cet ordinateur | `captures-ui` | Capture chaque écran modifié en sombre et en clair dans screens/. | | jamais utilisé |
+| Projet Kibo | `penpot-maquettes` | Dessine un écran Kibo dans Penpot avec les scripts de design/penpot. | | il y a 3 j · 3 runs/30 j |
+| Projet Kibo | `clean-pr` | masqué par le skill personnel du même nom | | jamais utilisé |
+| Projet API Facturation | `factures-pdf` | Génère une facture PDF de test à partir d'un devis du dossier fixtures/. | | il y a 9 j · 1 run/30 j |
+| Plugin superpowers 5.0.7 | `superpowers:brainstorming`, `superpowers:test-driven-development`, `superpowers:writing-plans` | lecture seule | 1 (brainstorming) | |
+| Plugin frontend-design 1.2.0 | `frontend-design:frontend-design` | lecture seule | | jamais utilisé |
+
+`porte-qualite` : `~/.claude/skills/porte-qualite/SKILL.md` (1,9 Ko), annexes `volets/correctness.md`, `volets/conventions.md`,
+`scripts/diff-stat.sh`, `exemple-verdict.png` (48 Ko, non texte) ; `allowed-tools: Read, Grep, Bash(git diff *)`, `context: fork`.
+Copie du plugin : `brainstorming-kibo` sur Cet ordinateur, autorisée aussi pour `livraison` et `chef-orchestre`.
+
+Notes de review :
+
+| Skill | Verdict | Run | Quand | Note | Suite |
+|---|---|---|---|---|---|
+| `porte-qualite` | À améliorer | `global · livraison · KIB-14` | il y a 2 h | Le volet conventions a relu tout le fichier au lieu du diff. Il manque la règle « aucun commentaire » de CLAUDE.md. Je bornerais la relecture aux lignes modifiées. | suggestion jointe, intégrée en 195c (1 bloc sur 2) |
+| `porte-qualite` | OK | `kibo · review-pr · KIB-12` | hier | Les deux volets ont trouvé le test manquant de receiver.ts. Rien à changer. | « Ouvrir ici » |
+| `apply-review` | À améliorer | `global · livraison · KIB-16` | il y a 3 j | Le skill ne dit pas quoi faire d'un commentaire déjà résolu sur GitHub. J'ai perdu un tour à le retraiter. | suggestion jointe |
+| `apply-review` | OK | `global · livraison · KIB-14` | aujourd'hui | Les étapes ont suffi pour les 3 remarques de la PR. Rien à changer. | ignorée |
+
+Historique de `porte-qualite/SKILL.md` : 12 oct. 14:32 Intégration (actuelle, 4,1 Ko) ; 11 oct. 18:40 Externe ; 11 oct. 10:05 Kibo (comparée) ;
+9 oct. 16:20 Restauration ; 6 oct. 09:12 Kibo. Fil du run `global · livraison · KIB-14` (14:05 → 14:23) : a utilisé
+`superpowers:test-driven-development` puis `porte-qualite`, Kibo a refusé `clean-pr`, rappel de la review, review de 2 skills ; le run de la
+veille (17:52 → 18:40) : « Pas de review des skills ».

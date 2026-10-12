@@ -48,7 +48,7 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 28 à 28d · Pistes | pistes de brainstorming de la phase 20 (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF |
 | 29 · Visibilité des agents | 183 à 188k (phase 20 : barre et volet des agents, onglet Activité, mention d'agent, Questions et destinataires, graphe lisible, Kanban « Démarrable ») ; **dessinés** |
 | 30 · Signaux des agents | 189 à 191 (phase 21 : boîte à signaux, fil du run, pastille) ; à dessiner (tâche T5 de la phase 21) |
-| 31 · Agents et skills | 192 à 196 (phase 22 : page Agents et fiche, nouvel agent, « Ce que reçoit l'agent », conflit d'écriture, page Skills, éditeur, notes de review, intégration en diff, historique, fil du run) ; **à dessiner, à valider par Adam** |
+| 31 · Agents et skills | 192 à 196 (phase 22 : page Agents et fiche, nouvel agent, « Ce que reçoit l'agent », conflit d'écriture, page Skills, éditeur, notes de review, intégration en diff, historique, fil du run) ; **dessinés, validés (délégation d'Adam du 2026-10-12)** ; hors des PDF et de `kibo.penpot.xz` jusqu'au jalon de la phase 22 |
 | 32 · Doublons entre agents | 197 à 201b (phase 23 : recouvrement dans le fil des deux runs, lien automatique et annulation, liens du ticket « par Kibo », barre et page du run, réglages « Doublons entre agents », « Ce que reçoit l'agent ») ; à dessiner |
 
 Pages 00 à 27 et 29 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 29.
@@ -190,6 +190,24 @@ Données : section « Visibilité des agents (phase 20) » de `donnees-fictives.
   du destinataire · 187b filtre Client, « Exporter tout (2) », question envoyée · 187c « Coller la réponse » · 187d Modifier le projet, destinataires
   des questions · 188 graphe en vagues · 188b focus · 188c regroupement par étiquette `chapitre:` · 188d zoom éloigné · 188k Kanban, pastille
   « Démarrable » et filtre.
+
+## Phase 22 (page 31)
+
+`35-agents-skills.js`, chargé après `24-socle-suite`, `32b-pistes-agents` et `32d-pistes-questions` (primitives `S.vis`, `S.visQ`) ; liste
+`S.AGENTS_SKILLS`. Dessiner **un écran par appel direct** avec `await S.one(n)` (sombre puis clair par `S.both`, puis export PNG des deux
+dans `exports/pages/<n>-dark.png` et `<n>-light.png`) : un appel qui dépasse 120 s continue et finit bien, mais une chaîne détachée
+(`.then`, `S.job`) perd l'ordre des sous-entrées « Files d'attente » et « Skills » et met la croix des onglets en tête. Après le dessin,
+`await S.fixAgSk()` dans un appel direct (sous-entrées sous « Agents », croix des onglets en dernier), puis `S.dropBases()`.
+Écrans de 1 120 à 1 180 px de haut pour 192, 192b, 193b, 194, 194b ; rangées espacées de 1,4 × 1 040 px.
+Données : section « Agents et skills (phase 22) » de `donnees-fictives.md` ; noms de runs `portée ou projet · agent · ticket` (§28.12).
+
+- 31 · Agents et skills : 192 page Agents (statistiques, cartes « Mes agents » avec portée, modèle, skills et sous-agents, run en cours,
+  « masqué », « Nom peu parlant », « fichier illisible », agents de Kibo repliés, historique des runs) · 192b « Nouvel agent » (nom, portée,
+  description obligatoire, modèle, gabarits Vide, Livraison, Review, SEO, Chef d'orchestre, aperçu « Dans Claude Code », chemin du fichier) ·
+  193 fiche agent, spec en premier · 193b réglages techniques dépliés · 193c sous-agents appelables et skills autorisés · 193d « Ce que reçoit
+  l'agent » · 193e conflit d'écriture · 194 page Skills (Cet ordinateur, Projet, Plugins) · 194b skill de plugin en lecture seule, « Copier pour
+  modifier » · 195 éditeur de skill, côte à côte et fichiers annexes · 195b notes de review · 195c intégration en diff · 195d historique des
+  versions · 196 fil du run et bloc « Reviews de skills » de l'onglet Activité.
 
 ## Exporter
 
