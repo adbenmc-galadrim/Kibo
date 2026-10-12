@@ -15,7 +15,7 @@ import {
   runWriteStep,
   type WriteLog,
 } from "./fake-claude-ai";
-import { bindProfiles, callMcpTool, type McpCallLog, mcpServerFrom } from "./fake-claude-mcp";
+import { bindPlaceholders, callMcpTool, type McpCallLog, mcpServerFrom } from "./fake-claude-mcp";
 import type { FakeStep } from "./fake-claude-scenario";
 import {
   asInput,
@@ -79,7 +79,7 @@ export function createPlayer(ctx: PlayContext): Player {
 
   async function mcp(step: { mcp: string; input: Record<string, unknown> }): Promise<void> {
     const server = mcpServerFrom(ctx.argv);
-    const call = { tool_name: mcpToolName(step.mcp), tool_input: bindProfiles(step.input, ctx.mcpCalls) };
+    const call = { tool_name: mcpToolName(step.mcp), tool_input: bindPlaceholders(step.input, ctx.mcpCalls) };
     const { refused } = await toolHooks("PreToolUse", call, () => mcpOutcome("", false));
     logUse(call.tool_name, call.tool_input, refused);
     if (refused) {

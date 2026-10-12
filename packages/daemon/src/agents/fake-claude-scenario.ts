@@ -89,6 +89,8 @@ export type FakeScenarioName =
   | "guard"
   | "routes"
   | "project-agent-routes"
+  | "project-agent-questions"
+  | "project-agent-questions-invalid"
   | "progress"
   | "progress-hold"
   | "progress-no-plan"

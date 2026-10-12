@@ -180,6 +180,37 @@ describe("read tools", () => {
     ]);
   });
 
+  test("questions carry their recipient; archived ones are listed on demand only", async () => {
+    const w = await world();
+    const Lines = z.array(z.object({ id: z.string(), title: z.string() }));
+    const port = Lines.parse(await w.json("list_questions")).find((q) => q.title === "Quel port ?");
+    w.h.command({ method: "archiveQuestion", questionId: port?.id ?? "", by: HUMAN });
+    expect(await w.json("list_questions")).toHaveLength(1);
+    expect(await w.json("list_questions", { state: "all" })).toHaveLength(2);
+    expect(await w.json("list_questions", { state: "archived" })).toMatchObject([
+      {
+        id: port?.id,
+        state: "archived",
+        recipient: "me",
+        recipientName: "Moi (technique)",
+        delivered: false,
+      },
+    ]);
+    expect(await w.json("list_questions", { state: "all", recipient: "Client" })).toEqual([]);
+    expect(await codeOf(w.tool("list_questions", { recipient: "Galadrim" }))).toBe("INVALID_INPUT");
+    expect(await w.json("get_ticket", { key: "EMIS-1" })).toMatchObject({
+      questions: [{ title: "Quelle base ?", recipient: "me", blocking: false, delivered: false }],
+    });
+    expect(await w.json("project_overview")).toMatchObject({
+      recipients: [
+        { id: "me", name: "Moi (technique)" },
+        { id: "product", name: "Produit" },
+        { id: "client", name: "Client" },
+      ],
+      openQuestions: [{ title: "Quelle base ?", recipient: "me" }],
+    });
+  });
+
   test("list_runs lists the ticket runs of the project with their queue position", async () => {
     const w = await world();
     expect(await w.json("list_runs")).toEqual([
