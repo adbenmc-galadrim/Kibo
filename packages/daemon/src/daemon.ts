@@ -1,82 +1,41 @@
 import { homedir } from "node:os";
-import { osSandbox, type Toolchain } from "@kibo/devkit";
-import { BACKUP_TICK_MS, type HostLoad, isTerminal, type Session, ticketRuns } from "@kibo/schema";
-import { defaultHookLauncher } from "./agents/hook-launcher";
-import { createLoadSampler, readHostInfo } from "./agents/host-load";
-import type { AgentSource } from "./agents/neutral-agents";
-import type { Notice } from "./agents/notifier";
-import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
-import { openRunStore } from "./agents/run-store";
+import { isTerminal, ticketRuns } from "@kibo/schema";
+import type { Orchestrator } from "./agents/orchestrator";
 import { withSignalCounts } from "./agents-rpc";
-import { startAi } from "./ai/bootstrap";
 import type { DraftAssets } from "./ai/draft-preview";
-import { appVersion } from "./app-version";
-import { loadOrCreateToken } from "./auth";
 import { backupsRpc } from "./backups/rpc";
-import { startBackupSchedule } from "./backups/schedule";
-import { createBackupsService } from "./backups/service";
 import { createCodeService } from "./code/code-service";
 import { startCollab } from "./collab/bootstrap";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
-import { startSandboxServer } from "./components/sandbox-server";
-import { type ComponentsDeps, createComponentsService } from "./components/service";
 import { componentTrustGuard } from "./components/trust-guard";
+import { startAgents } from "./daemon-agents";
+import { startDaemonComponents, startDaemonIntegrations } from "./daemon-components";
+import { startDaemonSandbox, startRemote } from "./daemon-network";
+import type { DaemonOptions } from "./daemon-options";
 import { type Closers, shutdown } from "./daemon-shutdown";
-import { demoAgentBin } from "./demo/agent-bin";
-import { demoAgentEnv } from "./demo/agent-env";
-import { ensureDemoAgentFiles } from "./demo/agent-scenarios";
+import { createLocalServices, openDaemonStores } from "./daemon-stores";
 import { startTutorial } from "./demo/bootstrap";
 import { startAppDiagnostics } from "./diagnostics/bootstrap";
-import { type IntegrationFlags, NO_INTEGRATION_FLAGS, startIntegrations } from "./integrations/bootstrap";
-import { createIntegrationHost } from "./integrations/host";
-import { createRedactor, type Redactor } from "./integrations/redact";
-import { createLogBuffer, type LogBuffer } from "./log-buffer";
+import { createLogBuffer } from "./log-buffer";
 import { startMarket } from "./market/bootstrap";
 import { startVisibility } from "./moments/bootstrap";
 import { createProjectSettings } from "./notes/settings";
 import { startProjectAgent } from "./project-agent/bootstrap";
 import { createProjectAdmin } from "./projects/admin";
 import { agentQuestionHooks } from "./questions/agent-hooks";
-import { listInterfaces } from "./remote/interfaces";
 import { PairingCodes } from "./remote/pairing-codes";
-import { createRemoteAccess, type RemoteAccess } from "./remote/remote-access";
+import type { RemoteAccess } from "./remote/remote-access";
 import { remoteRpc } from "./remote/rpc";
 import { sandboxRpc } from "./sandbox/rpc";
-import { createSandboxService } from "./sandbox/sandbox-service";
 import { startServer } from "./server";
-import { call, createService } from "./service";
+import { createService } from "./service";
 import { ready } from "./service-ports";
 import { openSessionStore } from "./sessions/session-store";
 import { openLocalSettings } from "./settings";
 import { startSignals } from "./signals/bootstrap";
-import { DaemonRunning, findRunningDaemon, type Probe } from "./single-instance";
-import { openStore } from "./store";
+import { DaemonRunning, findRunningDaemon } from "./single-instance";
 
-export type DaemonOptions = {
-  home: string;
-  port: number;
-  sandboxPort: number;
-  uiDir: string | null;
-  dev: boolean;
-  toolchain: Toolchain;
-  user: string;
-  notifications?: Session["notifications"];
-  notify?: (notice: Notice) => void;
-  claudeBin?: string | null;
-  sampler?: () => HostLoad;
-  integrations?: IntegrationFlags;
-  redactor?: Redactor;
-  logBuffer?: LogBuffer;
-  userHome?: string;
-  agentEnv?: Record<string, string | undefined>;
-  transcriptRoot?: string;
-  assistantTimeoutMs?: number;
-  marketAllowLoopback?: boolean;
-  probe?: Probe;
-  agentSource?: AgentSource;
-} & Partial<
-  Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli" | "cliStatus">
->;
+export type { DaemonOptions } from "./daemon-options";
 
 export type Daemon = { url: string; port: number; sandboxPort: number; token: string; stop(): Promise<void> };
 
@@ -86,80 +45,42 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const running = await findRunningDaemon(opts.home, opts.probe);
   if (running) throw new DaemonRunning(opts.home, running);
   const devOrigins = opts.dev ? [VITE_ORIGIN] : [];
-  const store = openStore(opts.home);
-  closers.push(() => store.close());
-  const runs = openRunStore(opts.home);
-  closers.push(() => runs.close());
-  const token = loadOrCreateToken(opts.home);
-  const redactor = opts.redactor ?? createRedactor();
-  redactor.add(token);
+  const { store, runs, token, redactor } = openDaemonStores(opts, closers);
   const startedAt = Date.now();
   const service = createService(store, {
     user: opts.user,
     ...(opts.notifications && { notifications: opts.notifications }),
     ...(opts.agentSource && { agents: opts.agentSource }),
   });
-  const sandboxService = createSandboxService({
-    sandbox: osSandbox(),
-    settings: openLocalSettings(store),
-    emit: (message) => service.docs.emit(message),
-  });
-  const backups = createBackupsService({
-    home: opts.home,
-    userHome: opts.userHome ?? homedir(),
-    settings: openLocalSettings(store),
-    databases: [
-      { file: "kibo.db", vacuumInto: store.vacuumInto },
-      { file: "runs.db", vacuumInto: runs.vacuumInto },
-    ],
-    appVersion: appVersion(),
-    emit: (event) => service.docs.emit(event),
-  });
+  const local = createLocalServices(opts, { store, runs }, (message) => service.docs.emit(message));
   let sandboxOrigin = "";
   let uiPort: number | null = null;
-  const integrations = startIntegrations(
-    createIntegrationHost({
-      user: opts.user,
-      home: opts.home,
-      store,
-      service,
-      notify: opts.notify ?? (() => {}),
-      sandboxOrigin: () => sandboxOrigin || null,
-      uiPort: () => uiPort,
-    }),
-    { ...(opts.integrations ?? NO_INTEGRATION_FLAGS), devOrigins },
-    redactor,
+  const integrations = startDaemonIntegrations(
+    opts,
+    { store, service, sandboxOrigin: () => sandboxOrigin || null, uiPort: () => uiPort },
+    { devOrigins, redactor },
+    closers,
   );
-  closers.push(service.attachIntegrations(integrations));
-  closers.push(() => integrations.stop());
   const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
   closers.push(() => collab.stop());
   let agents: Orchestrator | null = null;
   const visibility = startVisibility(opts, service.docs, () => agents);
   closers.push(visibility.close);
-  const components = createComponentsService({
-    home: opts.home,
-    toolchain: opts.toolchain,
-    db: store.db,
-    docs: service.docs,
-    commands: service.commands,
-    sandboxOrigin: () => sandboxOrigin,
-    runs: (projectId) => (agents ? ticketRuns(agents.state(), projectId) : []),
-    ...(opts.build && { build: opts.build }),
-    ...(opts.validate && { validate: opts.validate }),
-    ...(opts.processCommand && { processCommand: opts.processCommand }),
-    allowUnsandboxed: () => sandboxService.allowUnsandboxed(),
-    ...(opts.net && { net: opts.net }),
-    integrations: () => integrations.hooks,
-    presence: (projectId) => collab.presence.peers(projectId),
-    sharing: (projectId) => collab.syncInfo(projectId),
-    deliverAnswers: (projectId, ticketId) => service.deliverAnswers(projectId, ticketId),
-    peekRun: visibility.peek,
-    ...(opts.installCli && { installCli: opts.installCli }),
-    ...(opts.cliStatus && { cliStatus: opts.cliStatus }),
-  });
-  closers.push(service.attachComponents(components), () => components.stop());
-  await components.start();
+  const components = await startDaemonComponents(
+    opts,
+    service,
+    {
+      db: store.db,
+      sandboxOrigin: () => sandboxOrigin,
+      runs: (projectId) => (agents ? ticketRuns(agents.state(), projectId) : []),
+      allowUnsandboxed: () => local.sandbox.allowUnsandboxed(),
+      integrations: () => integrations.hooks,
+      presence: (projectId) => collab.presence.peers(projectId),
+      sharing: (projectId) => collab.syncInfo(projectId),
+      peekRun: visibility.peek,
+    },
+    closers,
+  );
   const signals = startSignals({
     home: opts.home,
     docs: service.docs,
@@ -236,8 +157,8 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     pairingCodes,
     extensions: [
       remoteRpc(remoteAccess, pairingCodes),
-      sandboxRpc(sandboxService),
-      backupsRpc(backups),
+      sandboxRpc(local.sandbox),
+      backupsRpc(local.backups),
       app.rpc,
       tutorial.rpc,
       projectAgent.agent.rpc,
@@ -257,79 +178,46 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   });
   front.push(() => server.stop());
   uiPort = server.port;
-  const started = createRemoteAccess({
-    home: opts.home,
-    settings: openLocalSettings(store),
-    secrets: integrations.secrets,
-    interfaces: () => listInterfaces(),
-    listen: (input) => server.listenRemote(input),
-    log: (message) => console.warn(`[kibo-daemon] ${message}`),
-  });
-  remote = started;
-  front.push(() => started.stop());
-  await started.resume();
+  remote = await startRemote(
+    { home: opts.home, settings: openLocalSettings(store), secrets: integrations.secrets },
+    server,
+    front,
+  );
   let draftAssets: DraftAssets | null = null;
-  const sandbox = startSandboxServer({
-    port: opts.sandboxPort,
-    uiPort: server.port,
-    assets: components.assets,
-    extraAncestors: devOrigins,
-    drafts: {
-      lookup: async (...a) => (draftAssets ? draftAssets.lookup(...a) : null),
-      manifest: async (draftId) => (draftAssets ? draftAssets.manifest(draftId) : null),
+  const sandbox = startDaemonSandbox(
+    {
+      port: opts.sandboxPort,
+      uiPort: server.port,
+      assets: components.assets,
+      extraAncestors: devOrigins,
+      files: { open: (token) => components.files.open(token) },
+      designs: { open: (token) => integrations.design.open(token) },
+      embeds: { relay: (token) => integrations.relay(token) },
     },
-    files: { open: (token) => components.files.open(token) },
-    designs: { open: (token) => integrations.design.open(token) },
-    embeds: { relay: (token) => integrations.relay(token) },
-  });
-  front.push(() => sandbox.stop());
+    () => draftAssets,
+    front,
+  );
   sandboxOrigin = sandbox.url;
-  const orchestrator = createOrchestrator({
-    home: opts.home,
-    store: runs,
-    data: service.agentData,
-    claudeBin: opts.claudeBin ?? null,
-    hook: defaultHookLauncher(),
-    demoAgent: { bin: demoAgentBin(), env: () => demoAgentEnv(ensureDemoAgentFiles(opts.home)) },
-    baseUrl: () => server.url,
-    sampler: opts.sampler ?? createLoadSampler(),
-    hostInfo: readHostInfo(),
-    notify: opts.notify ?? (() => {}),
-    projectTurns: projectAgent.agent.turns,
-    ...(opts.agentEnv && { env: opts.agentEnv }),
-    ...visibility.lifecycle,
-  });
-  closers.push(() => orchestrator.stop());
-  agents = orchestrator;
-  closers.push(
-    collab.attachRuns(orchestrator),
-    service.attachAgents(withSignalCounts(visibility.agents(orchestrator), signals.service)),
+  const { ai } = await startAgents(
+    {
+      opts,
+      runs,
+      service,
+      baseUrl: () => server.url,
+      port: server.port,
+      projectTurns: projectAgent.agent.turns,
+      lifecycle: visibility.lifecycle,
+      ready: (orchestrator) => {
+        agents = orchestrator;
+      },
+      attachRuns: (source) => collab.attachRuns(source),
+      agentsPort: (orchestrator) => withSignalCounts(visibility.agents(orchestrator), signals.service),
+      ai: { db: store.db, components, appInfo: app.appInfo },
+    },
+    closers,
   );
-  const ai = await startAi({
-    home: opts.home,
-    toolchain: opts.toolchain,
-    db: store.db,
-    docs: service.docs,
-    orchestrator,
-    components,
-    validate: opts.validate ?? null,
-    claudeBin: opts.claudeBin ?? null,
-    agentEnv: opts.agentEnv ?? process.env,
-    address: `127.0.0.1:${server.port}`,
-    listIntegrations: async () => call(service, { method: "listIntegrations" }),
-    appInfo: app.appInfo,
-    agentEnabled: (ref) => service.agentData.agentOf(ref)?.settings.enabled ?? false,
-    ...(opts.assistantTimeoutMs !== undefined && { assistantTimeoutMs: opts.assistantTimeoutMs }),
-  });
   draftAssets = ai.draftAssets;
-  closers.push(service.attachAi(ai.port));
-  closers.push(() => ai.stop());
-  closers.push(
-    startBackupSchedule(backups, {
-      intervalMs: BACKUP_TICK_MS,
-      log: (message, error) => console.error(`[kibo-daemon] ${message}`, error),
-    }),
-  );
+  closers.push(local.scheduleBackups());
   writeDaemonInfo(opts.home, { port: server.port, sandboxPort: sandbox.port, pid: process.pid });
   front.push(() => removeDaemonInfo(opts.home));
   return {

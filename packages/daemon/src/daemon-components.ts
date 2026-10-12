@@ -1,0 +1,56 @@
+import { type ComponentsDeps, type ComponentsService, createComponentsService } from "./components/service";
+import type { DaemonOptions } from "./daemon-options";
+import type { Closer } from "./daemon-shutdown";
+import { NO_INTEGRATION_FLAGS, type StartedIntegrations, startIntegrations } from "./integrations/bootstrap";
+import { createIntegrationHost, type HostParts } from "./integrations/host";
+import type { Redactor } from "./integrations/redact";
+import type { Service } from "./service";
+
+export type DaemonComponentsInput = Pick<
+  ComponentsDeps,
+  "db" | "sandboxOrigin" | "runs" | "allowUnsandboxed" | "integrations" | "presence" | "sharing" | "peekRun"
+>;
+
+export async function startDaemonComponents(
+  opts: DaemonOptions,
+  service: Service,
+  input: DaemonComponentsInput,
+  closers: Closer[],
+): Promise<ComponentsService> {
+  const components = createComponentsService({
+    ...input,
+    home: opts.home,
+    toolchain: opts.toolchain,
+    docs: service.docs,
+    commands: service.commands,
+    ...(opts.build && { build: opts.build }),
+    ...(opts.validate && { validate: opts.validate }),
+    ...(opts.processCommand && { processCommand: opts.processCommand }),
+    ...(opts.net && { net: opts.net }),
+    deliverAnswers: (projectId, ticketId) => service.deliverAnswers(projectId, ticketId),
+    ...(opts.installCli && { installCli: opts.installCli }),
+    ...(opts.cliStatus && { cliStatus: opts.cliStatus }),
+  });
+  closers.push(service.attachComponents(components), () => components.stop());
+  await components.start();
+  return components;
+}
+
+export function startDaemonIntegrations(
+  opts: DaemonOptions,
+  parts: Omit<HostParts, "user" | "home" | "notify">,
+  origins: { devOrigins: string[]; redactor: Redactor },
+  closers: Closer[],
+): StartedIntegrations {
+  const host = createIntegrationHost({
+    ...parts,
+    user: opts.user,
+    home: opts.home,
+    notify: opts.notify ?? (() => {}),
+  });
+  const flags = { ...(opts.integrations ?? NO_INTEGRATION_FLAGS), devOrigins: origins.devOrigins };
+  const integrations = startIntegrations(host, flags, origins.redactor);
+  closers.push(parts.service.attachIntegrations(integrations));
+  closers.push(() => integrations.stop());
+  return integrations;
+}
