@@ -86,6 +86,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(overlaps\/[A-Za-z-]+\.tsx?|moments\/(OverlapMoment|AutoLinkMoment)\.tsx|i18n\/fr-overlaps\.ts)$/,
   /\/packages\/ui\/src\/(agents\/run-state-text|i18n\/fr-agent-bar)\.ts$/,
   /\/packages\/ui\/src\/i18n\/fr-(domains|integrations)\.ts$/,
+  /\/packages\/sdk\/src\/question-preview-content\.tsx$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

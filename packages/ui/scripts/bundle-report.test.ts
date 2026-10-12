@@ -429,4 +429,9 @@ describe("bundle report", () => {
     for (const p of ["fr.ts", "fr-integration-rows.ts"])
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/i18n/${p}`))).toBe(false);
   });
+  test("vague 23, contenu de l'aperçu de question", () => {
+    const sdk = (p: string) => FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/sdk/src/${p}`));
+    expect(sdk("question-preview-content.tsx")).toBe(true);
+    expect(sdk("question-preview.tsx")).toBe(false);
+  });
 });
