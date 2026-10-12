@@ -204,5 +204,6 @@ export function overlapAgents(open = 1): AgentsState {
       { runId: OWNER_RUN, open },
       { runId: OTHER_RUN, open },
     ],
+    overlapTotal: open,
   };
 }

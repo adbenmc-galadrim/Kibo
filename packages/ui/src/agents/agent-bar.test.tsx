@@ -139,7 +139,8 @@ test("screen 200: the summary counts the open overlaps and each run shows its ch
       { runId: "r43", open: 1 },
       { runId: "r42", open: 1 },
     ],
+    overlapTotal: 1,
   });
-  expect(screen.getByText(`${barText()} · 2 recouvrements`)).toBeTruthy();
+  expect(screen.getByText(`${barText()} · 1 recouvrement`)).toBeTruthy();
   expect(await screen.findAllByRole("img", { name: "1 recouvrement ouvert" })).not.toHaveLength(0);
 });
