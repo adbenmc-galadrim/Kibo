@@ -52,7 +52,7 @@ type Props = {
   activeTarget: TabTarget | null;
   screen: Screen | null;
   agents: AgentsState | null;
-  changesCount: number | null;
+  changes: { count: number | null } | null;
   mineCount: number | null;
   inboxCount: number | null;
   workspaceName: string | null;
@@ -128,7 +128,7 @@ function AgentsEntry({ screen, agents, link }: AgentsEntryProps) {
 }
 
 export function AppSidebar(p: Props) {
-  const { active, activeTarget, screen, changesCount, onOpen } = p;
+  const { active, activeTarget, screen, changes, onOpen } = p;
   const editable = active !== null && canEdit(active);
   const onTarget = (kind: TabTarget["kind"], projectId: string) =>
     activeTarget !== null && activeTarget.kind === kind && targetProjectId(activeTarget) === projectId;
@@ -145,19 +145,23 @@ export function AppSidebar(p: Props) {
     },
   });
   const changesEntry = (projectId: string) =>
-    changesCount !== null && (
+    changes && (
       <SidebarMenuSubItem>
         <SidebarMenuSubButton asChild isActive={onTarget("changes", projectId)}>
           <button
             type="button"
-            aria-label={`${fr.nav.changes} · ${fr.nav.changesCount(changesCount)}`}
+            aria-label={
+              changes.count === null
+                ? fr.nav.changes
+                : `${fr.nav.changes} · ${fr.nav.changesCount(changes.count)}`
+            }
             {...link({ kind: "changes", projectId, worktree: null })}
           >
             <GitCommitHorizontal />
             <span>{fr.nav.changes}</span>
-            {changesCount > 0 && (
+            {!!changes.count && (
               <span className="ml-auto font-mono text-2xs text-muted-foreground tabular-nums">
-                {changesCount}
+                {changes.count}
               </span>
             )}
           </button>

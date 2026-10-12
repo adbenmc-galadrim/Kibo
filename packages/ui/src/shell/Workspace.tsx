@@ -66,7 +66,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   const { snapshots, mineCount, inboxCount } = useWorkspaceSnapshots(projects, viewer);
   const config = useConfig();
   const now = useNow();
-  const git = useProjectGit(project?.meta.id ?? null, project?.meta.folder ?? null);
+  const git = useProjectGit(ticketProject?.meta.id ?? null, ticketProject?.meta.folder ?? null);
   const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = useShellDialogs();
   const paletteOpened = useOpened(palette !== null);
   const agentPanel = useProjectAgentPanel(project);
@@ -123,7 +123,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     active?.kind === "changes" ? (resolveWorktree(git.worktrees, active.worktree)?.branch ?? null) : null;
   const isDirty = (t: TabTarget) =>
     t.kind === "changes" &&
-    t.projectId === project?.meta.id &&
+    t.projectId === ticketProject?.meta.id &&
     (t.worktree === null || t.worktree === git.main?.path) &&
     (git.changesCount ?? 0) > 0;
   const sheetProjectId = dialogs.sheet?.projectId ?? null;
@@ -167,7 +167,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                 activeTarget={active}
                 screen={screen}
                 agents={agents}
-                changesCount={git.worktrees ? git.changesCount : null}
+                changes={git.hasRepo ? { count: git.changesCount } : null}
                 mineCount={mineCount}
                 inboxCount={inboxCount}
                 workspaceName={config?.workspaceName ?? null}
@@ -192,7 +192,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                   project={project}
                   ticketProject={ticketProject}
                   branch={branch}
-                  gitError={git.error}
+                  gitError={project ? git.error : null}
                   agents={agents}
                   agentPanel={agentPanel}
                   viewer={viewer}
