@@ -156,3 +156,25 @@ touchent la facturation restent chez Adam. — Claire, côté client ». Filtre 
 Graphe (188 à 188d) : projet de la taille d'Emis repris de `32e-graphe-lisible.js` (69 tickets, 38 ouverts sur 5 vagues, 31 terminés repliés,
 6 démarrables, chapitres C0 à C9, 36 liens tracés et 24 implicites masqués, focus sur KIB-65). Kanban 188k : « Démarrable » sur KIB-22 et KIB-9 ;
 KIB-18 (en file #2) et KIB-15 (attend KIB-12) ne le sont pas.
+
+## Signaux des agents (phase 21)
+
+Quatre signaux du projet Kibo (P5), du plus récent au plus ancien : `sig:4` Blocage de opus-dev-3 sur KIB-16, 14:28, « Attend le schéma Loro de
+KIB-12 pour brancher les transitions » ; `sig:3` Ticket à créer de opus-dev-2 sur KIB-14, 14:26, « Tests du récepteur de hooks » ; `sig:2` Question
+de sonnet-review sur KIB-7, 14:12, « Garder deux tons de zinc pour les bordures ? » ; `sig:1` Contexte de opus-dev-1 sur KIB-12, 13:52, « Le
+reparentage garde l'ordre des enfants : rien à changer côté Kanban ». Notification système à 14:28 : « Blocage signalé par opus-dev-3 · KIB-16 ».
+
+Réveil automatique à 14:31 (« Réveil automatique · 2 signaux »), prochain réveil à 14:41 ; l'agent de projet lit `list_signals`, KIB-14, KIB-16 et
+KIB-12, puis propose le lot n° 2 « Traiter les signaux de opus-dev-2 et opus-dev-3 », 3 actions, après réveil : Tickets « Créer le ticket « Tests du
+récepteur de hooks » » (parent KIB-14 ; signal Ticket à créer de opus-dev-2) et « KIB-16 : passer en Bloqué » (En cours → Bloqué, motif « attend
+KIB-12 » ; signal Blocage de opus-dev-3) ; Liens « Lier KIB-12 → KIB-16 (bloque) » (signal Blocage de opus-dev-3). Avant validation : 4 signaux en
+boîte, pastille « 4 ». Après « Valider (3) » : trois actions « Appliquée », ticket **KIB-31** créé ; `sig:3` « traité dans le lot n° 2 · KIB-31 »,
+`sig:4` « traité dans le lot n° 2 » ; en boîte, Question et Contexte ; pastille « 2 ».
+
+Run 4 de KIB-14 (opus-dev-2, worktree `kib-14`, aujourd'hui 14:21, en cours, session reprise du run 3, 4 tours ; nom de run au format de la phase 21).
+Plan 3/5 : Relire le récepteur et ses tests (faite), Corriger la validation du corps (faite), Choisir le port du récepteur (faite, réponse d'Adam :
+7420), Brancher le récepteur sur le démon (bloquée, attend KIB-12), Documenter le format des hooks (en cours). Fil : 14:22 Étape 3 « Adam a choisi le
+port 7420. Je le fixe dans la config et je relance les tests. » (14 réussis) ; 14:25 Étape 5 « Le récepteur n'a aucun test d'intégration. Je le
+signale à l'agent de projet plutôt que de créer un ticket moi-même. », ligne « Signal à l'agent de projet · Ticket à créer · « Tests du récepteur
+de hooks » · 14:26 », action « Signalé « Tests du récepteur de hooks » à l'agent de projet » (`sig:3`) ; 14:27 Étape 5 « Je documente le format des
+hooks dans le README du récepteur. ». Run 3 (opus-dev-2, 11 oct. 10:37 → 11:20) : fait, 2 points à vérifier.
