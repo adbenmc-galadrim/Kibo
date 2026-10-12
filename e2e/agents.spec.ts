@@ -196,6 +196,13 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   await expect(page.getByText("skills/loro-patterns.md")).toBeVisible();
   await expect(page.getByRole("tab", { name: "Éditer" })).toHaveAttribute("aria-selected", "true");
   await shot(page, info, "ecran-14");
+  const trigger = page.getByRole("combobox", { name: "Projet" });
+  const width = (await trigger.boundingBox())?.width ?? 0;
+  info.annotations.push({ type: "chevron-width", description: String(width) });
+  await shot(page, info, "ecran-14-chevron");
+  expect(width).toBeGreaterThanOrEqual(24);
+  await trigger.click({ timeout: 5_000 });
+  await expect(page.getByRole("option")).toHaveCount(3);
 
   await page.goto(`/#/p/${seeded.projectId}/${encodeURIComponent(seeded.board)}`);
   await page.getByRole("button", { name: "Répondre à global · livraison · KIB-14" }).click();
