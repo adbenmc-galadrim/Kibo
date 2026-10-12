@@ -249,3 +249,103 @@ test("a journal with a session is refused by an older daemon, an old one reads u
   ]);
   reopened.close();
 });
+
+const oldDatabase = (h: string) => {
+  const old = new Database(join(h, "runs.db"), { create: true, strict: true });
+  old.exec(V016_RUNS);
+  old.exec("ALTER TABLE runs ADD COLUMN resumed_from TEXT");
+  old.exec("ALTER TABLE runs ADD COLUMN kind TEXT NOT NULL DEFAULT 'ticket'");
+  old.exec(
+    "CREATE TRIGGER runs_no_update BEFORE UPDATE ON runs BEGIN SELECT RAISE(ABORT, 'append-only'); END",
+  );
+  const insert = old.query(
+    "INSERT INTO runs VALUES ($id, $seq, 'p1', $ticket, $key, 'Titre', $profile, $name, $sid, '', 5, NULL, $kind)",
+  );
+  insert.run({
+    id: "r1",
+    seq: 1,
+    ticket: "t1",
+    key: "KIB-14",
+    profile: "uuid-opus",
+    name: "opus",
+    sid: "s1",
+    kind: "ticket",
+  });
+  insert.run({
+    id: "r2",
+    seq: 2,
+    ticket: null,
+    key: null,
+    profile: "project-agent",
+    name: "project-agent",
+    sid: "s2",
+    kind: "project",
+  });
+  insert.run({
+    id: "r3",
+    seq: 3,
+    ticket: "t2",
+    key: "KIB-15",
+    profile: "uuid-gone",
+    name: "ancien",
+    sid: "s3",
+    kind: "ticket",
+  });
+  old.close();
+};
+
+test("the agent columns are added once, the scope defaults to global", () => {
+  const h = home();
+  oldDatabase(h);
+  openRunStore(h).close();
+  const s = openRunStore(h);
+  expect(s.records().map((r) => [r.id, r.agentScope])).toEqual([
+    ["r1", "global"],
+    ["r2", "global"],
+    ["r3", "global"],
+  ]);
+  s.close();
+});
+
+test("agent references are rewritten in a transaction and the runs stay append-only afterwards", () => {
+  const h = home();
+  oldDatabase(h);
+  const s = openRunStore(h);
+  const count = s.rewriteAgentRefs(
+    { "uuid-opus": "global:opus", "project-agent": "system:project-agent" },
+    { p1: "KIB" },
+  );
+  expect(count).toBe(2);
+  expect(s.records().map((r) => [r.profileId, r.profileName, r.agentScope, r.projectKey])).toEqual([
+    ["global:opus", "opus", "global", "KIB"],
+    ["system:project-agent", "kibo-project-agent", "system", "KIB"],
+    ["uuid-gone", "ancien", "global", "KIB"],
+  ]);
+  s.close();
+  const raw = new Database(join(h, "runs.db"));
+  expect(() => raw.exec("UPDATE runs SET brief = ''")).toThrow("append-only");
+  raw.close();
+});
+
+test("a new run keeps its agent scope and project key", () => {
+  const h = home();
+  const s = openRunStore(h);
+  s.create(
+    { ...newRun("r1"), profileId: "system:project-agent", agentScope: "system", projectKey: "BOU" },
+    0,
+    1,
+  );
+  expect(s.records()[0]).toMatchObject({ agentScope: "system", projectKey: "BOU" });
+  s.close();
+});
+
+test("markers are kept next to the host settings without disturbing them", () => {
+  const h = home();
+  const s = openRunStore(h);
+  expect(s.marker("agents_migrated_at")).toBeNull();
+  s.saveHostSettings({ hostSlots: 3 });
+  s.setMarker("agents_migrated_at", "2026-10-12T10:00:00.000Z");
+  expect(s.marker("agents_migrated_at")).toBe("2026-10-12T10:00:00.000Z");
+  expect(s.hostSettings()).toEqual({ hostSlots: 3 });
+  s.close();
+});

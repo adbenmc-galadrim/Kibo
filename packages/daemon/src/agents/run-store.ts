@@ -2,13 +2,16 @@ import { Database } from "bun:sqlite";
 import { chmodSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import {
-  type AgentScope,
+  AgentRef,
+  AgentScope,
   HostSettings,
   KiboError,
+  parseAgentRef,
   RunEvent,
   RunKind,
   type RunLogEntry,
   type RunRecord,
+  systemAgentName,
 } from "@kibo/schema";
 import { immediateTransaction, SQLITE_BUSY_TIMEOUT_MS } from "../sqlite-busy";
 import { vacuumFileInto } from "../sqlite-vacuum";
@@ -25,11 +28,20 @@ export type RunStore = {
   tokenHash(runId: string): string | null;
   hostSettings(): Partial<HostSettings>;
   saveHostSettings(patch: Partial<HostSettings>): void;
+  marker(key: string): string | null;
+  setMarker(key: string, value: string): void;
+  rewriteAgentRefs(
+    map: Readonly<Record<string, AgentRef>>,
+    projectKeys?: Readonly<Record<string, string>>,
+  ): number;
   vacuumInto(path: string): void;
   close(): void;
 };
 
 const APPEND_ONLY = ["runs", "run_events", "run_tokens"];
+const noUpdate = (table: string) =>
+  `CREATE TRIGGER IF NOT EXISTS ${table}_no_update BEFORE UPDATE ON ${table} BEGIN SELECT RAISE(ABORT, 'append-only'); END`;
+const RUNS_NO_UPDATE = noUpdate("runs");
 const SCHEMA = [
   "CREATE TABLE IF NOT EXISTS runs (id TEXT PRIMARY KEY, seq INTEGER NOT NULL UNIQUE, project_id TEXT, " +
     "ticket_id TEXT, ticket_key TEXT, ticket_title TEXT NOT NULL, profile_id TEXT NOT NULL, " +
@@ -41,7 +53,7 @@ const SCHEMA = [
     "hash TEXT NOT NULL, at INTEGER NOT NULL)",
   "CREATE TABLE IF NOT EXISTS host_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
   ...APPEND_ONLY.flatMap((t) => [
-    `CREATE TRIGGER IF NOT EXISTS ${t}_no_update BEFORE UPDATE ON ${t} BEGIN SELECT RAISE(ABORT, 'append-only'); END`,
+    noUpdate(t),
     `CREATE TRIGGER IF NOT EXISTS ${t}_no_delete BEFORE DELETE ON ${t} BEGIN SELECT RAISE(ABORT, 'append-only'); END`,
   ]),
 ];
@@ -60,6 +72,8 @@ type RunRow = {
   created_at: number;
   resumed_from: string | null;
   kind: string;
+  agent_scope: string;
+  project_key: string | null;
 };
 type EventRow = { id: number; run_id: string; at: number; data: string };
 
@@ -73,6 +87,18 @@ const scopeOfRef = (ref: string): AgentScope =>
   ref.startsWith("project:") ? "project" : ref.startsWith("system:") ? "system" : "global";
 const keyOfTicket = (ticketKey: string | null): string | null => ticketKey?.split("-")[0] ?? null;
 
+function toScope(r: RunRow): AgentScope {
+  const parsed = AgentScope.safeParse(r.agent_scope);
+  if (!parsed.success)
+    throw new KiboError("STORE_CORRUPT", `run ${r.id}: unknown agent scope ${r.agent_scope}`);
+  return parsed.data;
+}
+
+function agentNameOf(ref: AgentRef): string {
+  const parsed = parseAgentRef(ref);
+  return parsed.scope === "system" ? systemAgentName(parsed.id) : parsed.name;
+}
+
 const toRecord = (r: RunRow): RunRecord => ({
   id: r.id,
   kind: toKind(r),
@@ -83,8 +109,8 @@ const toRecord = (r: RunRow): RunRecord => ({
   ticketTitle: r.ticket_title,
   profileId: r.profile_id,
   profileName: r.profile_name,
-  agentScope: scopeOfRef(r.profile_id),
-  projectKey: keyOfTicket(r.ticket_key),
+  agentScope: toScope(r),
+  projectKey: r.project_key ?? keyOfTicket(r.ticket_key),
   sessionId: r.session_id,
   brief: r.brief,
   createdAt: r.created_at,
@@ -101,6 +127,13 @@ function addKind(db: Database): void {
   const columns = db.query("PRAGMA table_info(runs)").all() as { name: string }[];
   if (!columns.some((c) => c.name === "kind"))
     db.exec("ALTER TABLE runs ADD COLUMN kind TEXT NOT NULL DEFAULT 'ticket'");
+}
+
+function addAgentColumns(db: Database): void {
+  const columns = db.query("PRAGMA table_info(runs)").all() as { name: string }[];
+  if (!columns.some((c) => c.name === "agent_scope"))
+    db.exec("ALTER TABLE runs ADD COLUMN agent_scope TEXT NOT NULL DEFAULT 'global'");
+  if (!columns.some((c) => c.name === "project_key")) db.exec("ALTER TABLE runs ADD COLUMN project_key TEXT");
 }
 
 function parseJson(text: string, what: string): unknown {
@@ -130,6 +163,7 @@ export function openRunStore(home: string): RunStore {
     for (const sql of SCHEMA) db.exec(sql);
     addResumedFrom(db);
     addKind(db);
+    addAgentColumns(db);
     const check = db.query("PRAGMA integrity_check").get() as { integrity_check: string } | null;
     if (check?.integrity_check !== "ok") throw new Error(check?.integrity_check ?? "integrity_check failed");
   } catch (e) {
@@ -140,8 +174,9 @@ export function openRunStore(home: string): RunStore {
   const nextSeq = db.query("SELECT COALESCE(MAX(seq), 0) + 1 AS seq FROM runs");
   const insertRun = db.query(
     "INSERT INTO runs (id, seq, project_id, ticket_id, ticket_key, ticket_title, profile_id, profile_name, " +
-      "session_id, brief, created_at, resumed_from, kind) VALUES ($id, $seq, $project_id, $ticket_id, $ticket_key, " +
-      "$ticket_title, $profile_id, $profile_name, $session_id, $brief, $created_at, $resumed_from, $kind)",
+      "session_id, brief, created_at, resumed_from, kind, agent_scope, project_key) VALUES ($id, $seq, $project_id, " +
+      "$ticket_id, $ticket_key, $ticket_title, $profile_id, $profile_name, $session_id, $brief, $created_at, " +
+      "$resumed_from, $kind, $agent_scope, $project_key)",
   );
   const runExists = db.query("SELECT 1 AS found FROM runs WHERE id = $id");
   const insertEvent = db.query(
@@ -169,11 +204,45 @@ export function openRunStore(home: string): RunStore {
       created_at: at,
       resumed_from: run.resumedFrom,
       kind: run.kind,
+      agent_scope: run.agentScope,
+      project_key: run.projectKey,
     });
     const enqueued: RunEvent = { type: "enqueued", rank };
     insertEvent.get({ run_id: run.id, at, data: JSON.stringify(enqueued) });
     return { ...run, seq, createdAt: at };
   });
+
+  const selectSetting = db.query("SELECT value FROM host_settings WHERE key = $key");
+  const updateRef = db.query(
+    "UPDATE runs SET profile_id = $profile_id, profile_name = $profile_name, agent_scope = $agent_scope, " +
+      "project_key = $project_key WHERE id = $id",
+  );
+
+  const rewriteAgentRefs = immediateTransaction(
+    db,
+    (map: Readonly<Record<string, AgentRef>>, projectKeys: Readonly<Record<string, string>>): number => {
+      db.exec("DROP TRIGGER IF EXISTS runs_no_update");
+      let rewritten = 0;
+      for (const row of db.query("SELECT * FROM runs ORDER BY seq").all() as RunRow[]) {
+        const mapped = map[row.profile_id];
+        const ref = mapped ?? row.profile_id;
+        if (mapped !== undefined && mapped !== row.profile_id) rewritten += 1;
+        const valid = AgentRef.safeParse(ref);
+        updateRef.run({
+          id: row.id,
+          profile_id: ref,
+          profile_name: valid.success ? agentNameOf(valid.data) : row.profile_name,
+          agent_scope: scopeOfRef(ref),
+          project_key:
+            row.project_key ??
+            (row.project_id === null ? undefined : projectKeys[row.project_id]) ??
+            keyOfTicket(row.ticket_key),
+        });
+      }
+      db.exec(RUNS_NO_UPDATE);
+      return rewritten;
+    },
+  );
 
   const requireRun = (runId: string) => {
     if (!runExists.get({ id: runId })) throw new KiboError("NOT_FOUND", `run ${runId} not found`);
@@ -213,6 +282,16 @@ export function openRunStore(home: string): RunStore {
         if (value !== undefined) upsertSetting.run({ key, value: JSON.stringify(value) });
       }
     },
+    marker(key) {
+      const row = selectSetting.get({ key }) as { value: string } | null;
+      if (!row) return null;
+      const value = parseJson(row.value, `host setting ${key}`);
+      return typeof value === "string" ? value : null;
+    },
+    setMarker(key, value) {
+      upsertSetting.run({ key, value: JSON.stringify(value) });
+    },
+    rewriteAgentRefs: (map, projectKeys = {}) => rewriteAgentRefs(map, projectKeys),
     vacuumInto: (path) => vacuumFileInto(file, path),
     close: () => db.close(),
   };
