@@ -99,7 +99,7 @@ export function createOverlapDetector(deps: DetectorDeps): OverlapDetector {
   }
 
   async function writerIndex(space: DetectorSpace, path: string, settings: DuplicationSettings) {
-    if (!deps.indexer.cached(space.ws.key)) await deps.indexer.index(space.ws, space.allRunIds, settings);
+    if (!deps.indexer.cached(space.ws)) await deps.indexer.index(space.ws, space.allRunIds, settings);
     return deps.indexer.indexFile(space.ws, path, settings);
   }
 
@@ -118,7 +118,7 @@ export function createOverlapDetector(deps: DetectorDeps): OverlapDetector {
     const findings: Finding[] = [];
     const clean = new Set<string>();
     for (const other of spaces) {
-      const theirs = other === space ? null : deps.indexer.cached(other.ws.key);
+      const theirs = other === space ? null : deps.indexer.cached(other.ws);
       if (!theirs) continue;
       const candidates = findOverlaps(index, theirs, settings, deps.hash).filter((c) => c.a.path === path);
       findings.push(...findingsOf(mine, { space: other, index: theirs }, candidates, runId));

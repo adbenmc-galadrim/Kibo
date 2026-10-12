@@ -106,7 +106,7 @@ describe("workspace indexer", () => {
       removed: 0,
       lines: [line(4, "suite ajoutée")],
     });
-    expect(indexer.cached(ws.key)).toEqual(index);
+    expect(indexer.cached(ws)).toEqual(index);
   });
 
   test("past 500 changed files the index is truncated to the first 500 paths without lines", async () => {
@@ -141,7 +141,7 @@ describe("workspace indexer", () => {
       before.files.find((f) => f.path === "src/b.ts"),
     );
     expect(after?.runIds).toEqual(["r1"]);
-    expect(indexer.cached(ws.key)).toEqual(after);
+    expect(indexer.cached(ws)).toEqual(after);
     put(ws, "src/c.ts", "export const third = 1;\n");
     expect((await indexer.indexFile(ws, "src/c.ts", SETTINGS))?.files.map((f) => f.path)).toEqual([
       "src/a.ts",
@@ -158,12 +158,32 @@ describe("workspace indexer", () => {
     expect(await indexer.indexFile(ws, ".env", SETTINGS)).toBeNull();
   });
 
+  test("a cached index is only reused for the same base head", async () => {
+    const { ws: origin } = await workspace();
+    put(origin, "src/a.ts", A_TS);
+    await git(["add", "."], origin.key);
+    await git([...commit, "-m", "first run"], origin.key);
+    put(origin, "src/a.ts", `${A_TS}export const extra = 1;\n`);
+    const resumed: WorkspaceRef = { ...origin, baseHead: await git(["rev-parse", "HEAD"], origin.key) };
+    const { indexer } = setup();
+    const shallow = await indexer.index(resumed, ["r2"], SETTINGS);
+    expect(shallow.files.map((f) => [f.path, f.exports])).toEqual([["src/a.ts", ["extra"]]]);
+    expect(indexer.cached(origin)).toBeNull();
+    expect(indexer.cached(resumed)).toEqual(shallow);
+    const full = await indexer.index(origin, ["r1", "r2"], SETTINGS);
+    expect(full.files.map((f) => [f.path, f.status, f.exports])).toEqual([
+      ["src/a.ts", "added", ["formatDate", "extra"]],
+    ]);
+    expect(indexer.cached(origin)).toEqual(full);
+    expect(indexer.cached(resumed)).toBeNull();
+  });
+
   test("drop forgets the workspace", async () => {
     const { ws } = await workspace();
     const { indexer } = setup();
     await indexer.index(ws, ["r1"], SETTINGS);
     indexer.drop(ws.key);
-    expect(indexer.cached(ws.key)).toBeNull();
+    expect(indexer.cached(ws)).toBeNull();
   });
 
   test("indexing never writes in the workspace", async () => {

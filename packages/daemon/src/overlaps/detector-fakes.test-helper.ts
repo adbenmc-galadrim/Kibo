@@ -69,7 +69,7 @@ export function fakeIndexer(): FakeIndexer {
       if (found === undefined) return memory.get(ws.key) ?? null;
       return found && remember(found);
     },
-    cached: (key) => memory.get(key) ?? null,
+    cached: (ws) => memory.get(ws.key) ?? null,
     drop(key) {
       fake.dropped.push(key);
       memory.delete(key);

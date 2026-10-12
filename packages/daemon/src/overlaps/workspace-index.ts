@@ -29,7 +29,7 @@ export type IndexFs = {
 export type WorkspaceIndexer = {
   index(ws: WorkspaceRef, runIds: string[], settings: DuplicationSettings): Promise<WorkspaceIndex>;
   indexFile(ws: WorkspaceRef, path: string, settings: DuplicationSettings): Promise<WorkspaceIndex | null>;
-  cached(key: string): WorkspaceIndex | null;
+  cached(ws: Pick<WorkspaceRef, "key" | "baseHead">): WorkspaceIndex | null;
   drop(key: string): void;
 };
 
@@ -207,11 +207,22 @@ export function createWorkspaceIndexer(deps: IndexerDeps): WorkspaceIndexer {
     return index;
   }
 
+  const cached = (ws: Pick<WorkspaceRef, "key" | "baseHead">): WorkspaceIndex | null => {
+    const known = indexes.get(ws.key);
+    return known?.baseHead === ws.baseHead ? known : null;
+  };
+
+  const drop = (key: string): void => {
+    indexes.delete(key);
+    cache.dropWorkspace(key);
+  };
+
   async function index(
     ws: WorkspaceRef,
     runIds: string[],
     settings: DuplicationSettings,
   ): Promise<WorkspaceIndex> {
+    if (indexes.has(ws.key) && !cached(ws)) drop(ws.key);
     const pass: Pass = { ws, settings, partial: false };
     const entries = await diffOf(pass);
     if (!entries) return remember(pass, runIds, indexes.get(ws.key)?.files ?? [], false);
@@ -225,7 +236,7 @@ export function createWorkspaceIndexer(deps: IndexerDeps): WorkspaceIndexer {
 
   async function indexFile(ws: WorkspaceRef, path: string, settings: DuplicationSettings) {
     if (!admitted(path, settings)) return null;
-    const current = indexes.get(ws.key);
+    const current = cached(ws);
     if (!current) return index(ws, [], settings);
     cache.forget(ws.key, path);
     const pass: Pass = { ws, settings, partial: current.partial };
@@ -242,10 +253,7 @@ export function createWorkspaceIndexer(deps: IndexerDeps): WorkspaceIndexer {
   return {
     index,
     indexFile,
-    cached: (key) => indexes.get(key) ?? null,
-    drop(key) {
-      indexes.delete(key);
-      cache.dropWorkspace(key);
-    },
+    cached,
+    drop,
   };
 }

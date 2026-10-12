@@ -42,7 +42,7 @@ export function createRunPorts(
   };
 
   async function indexOf(ws: WorkspaceRef, runIds: string[]): Promise<WorkspaceIndex | null> {
-    const cached = deps.indexer.cached(ws.key);
+    const cached = deps.indexer.cached(ws);
     if (cached) return cached;
     const projectId = runIds.map(run).find((r) => r?.projectId)?.projectId ?? null;
     if (projectId === null) return null;
