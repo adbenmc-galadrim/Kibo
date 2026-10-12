@@ -20,6 +20,7 @@ import { RunSkillReviews } from "../../moments/SkillReviewsBlock";
 import { OverlapCounts } from "../../overlaps/OverlapCounts";
 import { useOptionalHost } from "../../shell/Host";
 import { useAgentsState } from "../../state/agents-context";
+import { runLabelIn } from "../../state/run-label";
 import { useNow } from "../../state/use-agents";
 import { ChronologyStacked } from "./ChronologyStacked";
 import { ChronologyWide } from "./ChronologyWide";
@@ -99,7 +100,7 @@ export function ActivityTab({ project, ticket, onOpenFile }: Props) {
     questions,
     recipients: project.questionRecipients,
     ticketOf: () => ticket,
-    runLabel: (runId: string) => runs.find((r) => r.id === runId)?.label ?? runId,
+    runLabel: runLabelIn(runs),
     open: (questionId: string) => host?.openView("questions", undefined, questionId),
   };
   return (

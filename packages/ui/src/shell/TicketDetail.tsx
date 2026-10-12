@@ -13,6 +13,7 @@ import { frQuestions } from "../i18n/fr-questions";
 import { frTicketEdit } from "../i18n/fr-ticket-edit";
 import { canEdit } from "../state/access";
 import { useAgentsState } from "../state/agents-context";
+import { runLabelIn } from "../state/run-label";
 import { AssigneeSelect } from "../ticket/AssigneeSelect";
 import { DependenciesSection } from "../ticket/DependenciesSection";
 import { DescriptionEditor } from "../ticket/DescriptionEditor";
@@ -113,7 +114,7 @@ export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, 
             questions={project.questions}
             recipients={project.questionRecipients}
             ticket={t}
-            runLabel={(runId) => runId}
+            runLabel={runLabelIn(agents?.runs)}
             onOpen={(id) => host?.openView("questions", undefined, id ?? undefined)}
           />
         </div>

@@ -7,6 +7,7 @@ import { frProjectAgent } from "../i18n/fr-project-agent";
 import { projectQuestionLinks, QuestionLinksContext } from "../moments/QuestionText";
 import { useHost } from "../shell/Host";
 import type { ProjectAgentTab } from "../shell/use-project-agent-panel";
+import { useAgentsState } from "../state/agents-context";
 import { useRunLog } from "../state/use-run-log";
 import type { Decision } from "./BatchCard";
 import { projectLabels } from "./batch-groups";
@@ -51,9 +52,10 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
   );
   const agentList = useAgentList(projectId);
   const labels = useMemo(() => projectLabels(project, agentList.agents ?? []), [project, agentList.agents]);
+  const runs = useAgentsState()?.runs;
   const links = useMemo(
-    () => projectQuestionLinks(project, (id) => host.openView("questions", projectId, id)),
-    [project, host, projectId],
+    () => projectQuestionLinks(project, runs ?? [], (id) => host.openView("questions", projectId, id)),
+    [project, runs, host, projectId],
   );
 
   const send = async (text: string) => {
