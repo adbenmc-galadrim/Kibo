@@ -27,7 +27,7 @@ export function skillGroups(
   query: string,
   projects: readonly ProjectSummary[],
 ): Group[] {
-  const shown = skills.filter((s) => matchesSkill(s, query));
+  const shown = skills.filter((s) => s.shadowedBy === null && matchesSkill(s, query));
   const of = (source: Skill["source"]) => shown.filter((s) => s.source === source);
   const projectIds = [...new Set(of("project").map((s) => s.projectId))];
   return [

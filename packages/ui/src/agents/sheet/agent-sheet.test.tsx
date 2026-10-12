@@ -14,6 +14,7 @@ import userEvent from "@testing-library/user-event";
 import { apiMock } from "../../api-mock";
 import { agentFixture, catalogFixture, SPEC_BODY } from "../catalog/fixtures";
 import { projectsFixture } from "../fixtures";
+import { skillGroups } from "./SkillsField";
 
 const calls: RpcRequest[] = [];
 const topics = new Map<Topic, Set<() => void>>();
@@ -363,4 +364,14 @@ test("the history opens the versions of this agent", async () => {
   await waitFor(() =>
     expect(calls).toContainEqual({ method: "fileVersions.list", kind: "agents", ref: "global:livraison" }),
   );
+});
+
+test("a project skill masked by a personal one of the same name is offered once", () => {
+  const personal = skill("brainstorming", "user", "Explore une idée");
+  const masked = {
+    ...skill("brainstorming", "project", "Brainstorm du projet"),
+    shadowedBy: "brainstorming",
+  };
+  const groups = skillGroups([personal, masked], "", projectsFixture);
+  expect(groups.flatMap((g) => g.skills)).toEqual([personal]);
 });
