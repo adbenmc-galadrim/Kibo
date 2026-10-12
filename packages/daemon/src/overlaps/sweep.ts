@@ -1,10 +1,12 @@
 import { DUPLICATION_LIMITS, type RunView } from "@kibo/schema";
 import type { ScheduleTimers } from "../backups/schedule";
+import type { SweepResult } from "./detector";
 
 export type SweepSchedulerDeps = {
-  detector: { sweep(projectId: string): Promise<unknown> };
+  detector: { sweep(projectId: string): Promise<SweepResult> };
   projects(): string[];
   timers?: ScheduleTimers;
+  now?: () => number;
   log(line: string): void;
 };
 
@@ -25,14 +27,21 @@ const SYSTEM_TIMERS: ScheduleTimers = {
 
 export function createSweepScheduler(deps: SweepSchedulerDeps): SweepScheduler {
   const timers = deps.timers ?? SYSTEM_TIMERS;
+  const now = deps.now ?? Date.now;
   const running = new Map<string, Promise<void>>();
   let cancel: (() => void) | null = null;
   let stopped = false;
 
   const sweep = (projectId: string | null): void => {
     if (stopped || !projectId || running.has(projectId)) return;
-    const done = new Promise((resolve) => resolve(deps.detector.sweep(projectId)))
-      .then(() => undefined)
+    const started = now();
+    const done = new Promise<SweepResult>((resolve) => resolve(deps.detector.sweep(projectId)))
+      .then(({ compared, partial }) =>
+        deps.log(
+          `overlaps: sweep of ${projectId} done in ${now() - started} ms, ` +
+            `${compared} workspace pairs compared, ${partial ? "partial" : "complete"}`,
+        ),
+      )
       .catch((e: unknown) => deps.log(`overlaps: sweep of ${projectId} failed: ${String(e)}`))
       .finally(() => running.delete(projectId));
     running.set(projectId, done);

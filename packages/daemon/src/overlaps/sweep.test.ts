@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import type { RunView } from "@kibo/schema";
 import { runView } from "../questions/questions.test-helper";
+import type { SweepResult } from "./detector";
 import { createSweepScheduler } from "./sweep";
 
 function fakeTimers() {
@@ -29,15 +30,22 @@ function setup(projects = ["P", "Q"]) {
   const gates = new Map<string, () => void>();
   const logs: string[] = [];
   const { timers, port } = fakeTimers();
+  let clock = 1_000;
   const scheduler = createSweepScheduler({
     detector: {
       sweep: (projectId) => {
         swept.push(projectId);
-        return new Promise<void>((resolve) => gates.set(projectId, resolve));
+        return new Promise<SweepResult>((resolve) =>
+          gates.set(projectId, () => resolve({ compared: 3, partial: projectId === "Q" })),
+        );
       },
     },
     projects: () => projects,
     timers: port,
+    now: () => {
+      clock += 40;
+      return clock;
+    },
     log: (line) => logs.push(line),
   });
   const release = async () => {
@@ -88,6 +96,17 @@ test("the end of a turn sweeps the project of the run", async () => {
   scheduler.onTurnEnd(runView({ id: "r2", projectId: null }));
   expect(swept).toEqual(["Q"]);
   await release();
+});
+
+test("every finished sweep is logged with its project, compared pairs, duration and completeness", async () => {
+  const { scheduler, release, logs } = setup();
+  scheduler.onTurnEnd(ticketRun("P"));
+  scheduler.onTurnEnd(ticketRun("Q"));
+  await release();
+  expect(logs).toEqual([
+    "overlaps: sweep of P done in 80 ms, 3 workspace pairs compared, complete",
+    "overlaps: sweep of Q done in 80 ms, 3 workspace pairs compared, partial",
+  ]);
 });
 
 test("a failing sweep is logged and the project can be swept again", async () => {

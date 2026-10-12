@@ -123,6 +123,7 @@ export function startOverlaps(input: OverlapsInput): Overlaps {
     detector,
     projects: () => [...new Set([...spaces.projects(), ...openProjects()])],
     ...(input.timers && { timers: input.timers }),
+    now,
     log,
   });
   const screen = screenFor(settings);
