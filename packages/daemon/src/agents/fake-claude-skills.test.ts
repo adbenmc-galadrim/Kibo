@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { z } from "zod";
 import { cleanFakeDirs, finish, readHooks, start, tmp } from "./fake-claude.test-helper";
 import { fakeLaunch } from "./fake-claude-launch";
-import { FakeScenario } from "./fake-claude-scenario";
+import { FakeRoutes, FakeScenario, scenarioPath } from "./fake-claude-scenario";
 
 cleanFakeDirs();
 
@@ -244,4 +244,43 @@ test("a hook step carries a tool use id shared by its Pre and Post hooks", async
   const read = hooks().filter((h) => h.tool_name === "Read");
   expect(read[0]?.tool_use_id).toEqual(expect.stringMatching(/^toolu_/));
   expect(read[1]?.tool_use_id).toBe(read[0]?.tool_use_id);
+});
+
+test("every scenario parses, as turns or as routes to existing scenarios", () => {
+  const dir = join(import.meta.dir, "scenarios");
+  const files = readdirSync(dir).filter((f) => f.endsWith(".json"));
+  expect(files).toEqual(
+    expect.arrayContaining([
+      "skills-review.json",
+      "skills-no-review.json",
+      "skills-denied.json",
+      "skills-routes.json",
+    ]),
+  );
+  for (const file of files) {
+    const json: unknown = JSON.parse(readFileSync(join(dir, file), "utf8"));
+    const routes = FakeRoutes.safeParse(json);
+    if (!routes.success) {
+      expect(FakeScenario.safeParse(json).success).toBe(true);
+      continue;
+    }
+    for (const target of [...routes.data.routes.map((r) => r.scenario), routes.data.fallback])
+      expect(files).toContain(target);
+  }
+});
+
+test("the skills scenarios use skills, review them after the reminder and get refused", () => {
+  const read = (name: "skills-review" | "skills-no-review" | "skills-denied") =>
+    FakeScenario.parse(JSON.parse(readFileSync(scenarioPath(name), "utf8"))).turns[0];
+  const review = read("skills-review");
+  expect(review?.steps.flatMap((s) => ("skill" in s ? [s.skill] : []))).toEqual([
+    "brainstorming",
+    "superpowers:brainstorming",
+  ]);
+  expect(review?.onStopBlock?.[0]).toMatchObject({ mcp: "skill_review" });
+  expect(read("skills-no-review")?.onStopBlock?.some((s) => "mcp" in s)).toBe(false);
+  expect(read("skills-denied")?.steps.flatMap((s) => ("subagent" in s ? [s.subagent] : []))).toEqual([
+    "seo",
+    "review",
+  ]);
 });
