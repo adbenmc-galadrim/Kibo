@@ -187,7 +187,7 @@ test("the preview says where a new run would enter the queue", async () => {
   const guidelines: Guideline[] = [
     { id: "g1", owner: { scope: "workspace" }, path: "general.md", content: "# G" },
     { id: "g2", owner: { scope: "project", projectId: "p1" }, path: "kibo.md", content: "# K" },
-    { id: "g3", owner: { scope: "domain", domainId: "ui" }, path: "ui.md", content: "# U" },
+    { id: "g3", owner: { scope: "domain", domainId: "ui", projectId: null }, path: "ui.md", content: "# U" },
   ];
   const h = setup({ scenario: "hold", profiles: [testAgent({ maxParallel: 1 })], guidelines });
   const target = { projectId: "p1", ticketId: "t2", profileId: "global:opus" };

@@ -287,9 +287,9 @@ test("a shared project shows and injects the domains copied into projectDomains"
   if (!ticket) throw new Error("no ticket");
   expect(d(1).service.agentData.ticketContext(p, ticket.id).domain?.name).toBe("Intégrations");
   const local = (await rpc(0, { ...localProject, name: "Perso", key: "PER" })) as ProjectMeta;
-  expect(
-    ((await rpc(0, { method: "getProject", projectId: local.id })) as ProjectSnapshot).domains,
-  ).toBeUndefined();
+  expect(((await rpc(0, { method: "getProject", projectId: local.id })) as ProjectSnapshot).domains).toEqual(
+    [],
+  );
 });
 
 test("the viewer of a shared project is the account, of a local one the OS user", async () => {

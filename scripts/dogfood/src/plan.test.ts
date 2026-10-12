@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import type { Domain, Guideline, Instance, Page } from "@kibo/schema";
+import type { Domain, DomainOwner, Guideline, Instance, Page } from "@kibo/schema";
 import type { DesiredGuideline, DesiredPage, ResolvedIds } from "./desired";
 import {
   componentRefs,
+  knownDomains,
   missingDomains,
   missingInstances,
   missingPages,
@@ -10,7 +11,12 @@ import {
   planTickets,
 } from "./plan";
 
-const domain = (id: string, name: string): Domain => ({ id, name, color: "#14B8A6" });
+const domain = (id: string, name: string, owner: DomainOwner = { scope: "workspace" }): Domain => ({
+  id,
+  name,
+  color: "#14B8A6",
+  owner,
+});
 const page = (id: string, title: string, parentId: string | null = null): Page => ({
   id,
   title,
@@ -27,8 +33,33 @@ const instance = (pageId: string, component: string): Instance => ({
 });
 const ids: ResolvedIds = {
   projectId: "p1",
-  domains: new Map([["Sync", "d1"]]),
+  domains: new Map([
+    ["Sync", "d1"],
+    ["Sécurité", "d2"],
+  ]),
+  workspaceDomains: new Set(["d2"]),
 };
+
+describe("knownDomains", () => {
+  test("the project domains, then the workspace ones, never another project's", () => {
+    const inP1 = { scope: "project", projectId: "p1" } as const;
+    const sync = domain("d1", "Sync", inP1);
+    const securite = domain("d2", "Sécurité");
+    const other = domain("d3", "Sync", { scope: "project", projectId: "p2" });
+    const shadowed = domain("d4", "Sync");
+    expect(knownDomains([securite, other, shadowed, sync], "p1")).toEqual({
+      list: [sync, securite, shadowed],
+      ids: {
+        projectId: "p1",
+        domains: new Map([
+          ["Sync", "d1"],
+          ["Sécurité", "d2"],
+        ]),
+        workspaceDomains: new Set(["d2", "d4"]),
+      },
+    });
+  });
+});
 
 describe("missingDomains", () => {
   test("adds the absent domains with the palette color that follows the existing ones", () => {
@@ -53,12 +84,19 @@ describe("planGuidelines", () => {
     { owner: { scope: "domain", name: "Absent" }, path: "absent.md", content: "D" },
   ];
 
+  test("a guideline of a workspace domain keeps a workspace owner", () => {
+    const securite = { owner: { scope: "domain", name: "Sécurité" }, path: "s.md", content: "S" } as const;
+    expect(planGuidelines([], [securite], ids).add).toEqual([
+      { owner: { scope: "domain", domainId: "d2", projectId: null }, path: "s.md", content: "S" },
+    ]);
+  });
+
   test("adds every resolvable guideline on an empty workspace", () => {
     const plan = planGuidelines([], desired, ids);
     expect(plan.add.map((g) => [g.owner, g.path])).toEqual([
       [{ scope: "workspace" }, "conventions.md"],
       [{ scope: "project", projectId: "p1" }, "kibo.md"],
-      [{ scope: "domain", domainId: "d1" }, "sync.md"],
+      [{ scope: "domain", domainId: "d1", projectId: "p1" }, "sync.md"],
     ]);
     expect(plan.unresolved).toEqual(["domain Absent: absent.md"]);
   });
@@ -71,6 +109,22 @@ describe("planGuidelines", () => {
     const plan = planGuidelines(existing, desired.slice(0, 2), ids);
     expect(plan.add).toEqual([]);
     expect(plan.drift).toEqual(["project: kibo.md"]);
+  });
+
+  test("finds a guideline moved with its domain into the project", () => {
+    const existing: Guideline[] = [
+      {
+        id: "d1:sync.md",
+        owner: { scope: "domain", domainId: "d1", projectId: "p1" },
+        path: "sync.md",
+        content: "C",
+      },
+    ];
+    expect(planGuidelines(existing, desired.slice(2, 3), ids)).toEqual({
+      add: [],
+      drift: [],
+      unresolved: [],
+    });
   });
 
   test("does not match a guideline of another project", () => {

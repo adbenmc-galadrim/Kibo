@@ -102,6 +102,15 @@ test("the command RPC refuses to write a ticket's progress, which only the daemo
   expect(seen).toEqual([]);
 });
 
+test("getProject always carries the project's domains, empty for a local project without any", () => {
+  const { service } = setup();
+  const meta = ProjectMeta.parse(
+    service.handle({ method: "createProject", name: "Kibo", key: "KIB", folder: null, color: "#F97316" }),
+  );
+  const snapshot = service.handle({ method: "getProject", projectId: meta.id }) as ProjectSnapshot;
+  expect(snapshot.domains).toEqual([]);
+});
+
 test("listProjects flags the demo project from the project settings", () => {
   const { service, settings } = setup();
   const create = (key: string) =>

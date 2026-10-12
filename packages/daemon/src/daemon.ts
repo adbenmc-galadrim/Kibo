@@ -9,6 +9,7 @@ import { createCodeService } from "./code/code-service";
 import { startCollab } from "./collab/bootstrap";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { componentTrustGuard } from "./components/trust-guard";
+import { migrateDomainScopes } from "./config/domain-scope-migration";
 import { startAgents } from "./daemon-agents";
 import { startDaemonComponents, startDaemonIntegrations } from "./daemon-components";
 import { startDaemonFiles } from "./daemon-files";
@@ -66,6 +67,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   );
   const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
   closers.push(() => collab.stop());
+  await migrateDomainScopes({ docs: service.docs, log: console.error, now: Date.now });
   let agents: Orchestrator | null = null;
   const { visibility, extensions } = await startDaemonFiles(
     opts,

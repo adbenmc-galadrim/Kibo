@@ -2,6 +2,7 @@ import {
   DOMAIN_COLORS,
   type Domain,
   type DomainInput,
+  domainsOf,
   type Guideline,
   type GuidelineOwner,
   type Instance,
@@ -34,6 +35,14 @@ export type TicketPlan = {
 export type ExistingTicket = { id: string; title: string; domainId: string | null };
 export type VersionedComponent = { id: string; versions: { version: string }[] };
 
+export function knownDomains(all: Domain[], projectId: string): { list: Domain[]; ids: ResolvedIds } {
+  const own = all.filter((d) => d.owner.scope === "project" && d.owner.projectId === projectId);
+  const workspace = all.filter((d) => d.owner.scope === "workspace");
+  const list = domainsOf({ project: { domains: own, shared: false }, workspace });
+  const domains = new Map([...list].reverse().map((d) => [d.name, d.id]));
+  return { list, ids: { projectId, domains, workspaceDomains: new Set(workspace.map((d) => d.id)) } };
+}
+
 export function missingDomains(existing: Domain[], desired: { name: string }[]): DomainInput[] {
   const known = new Set(existing.map((d) => d.name));
   return desired
@@ -51,7 +60,7 @@ const sameOwner = (a: GuidelineOwner, b: GuidelineOwner): boolean => {
     case "project":
       return b.scope === "project" && b.projectId === a.projectId;
     case "domain":
-      return b.scope === "domain" && b.domainId === a.domainId;
+      return b.scope === "domain" && b.domainId === a.domainId && b.projectId === a.projectId;
   }
 };
 

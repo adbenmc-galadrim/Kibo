@@ -14,6 +14,8 @@ import {
   type Actor,
   type AskInput,
   countOpenByRun,
+  domainsOf as domainsOfProject,
+  type Guideline,
   isOpen,
   KiboError,
   OPEN_PER_RUN_MAX,
@@ -39,15 +41,17 @@ const isShared = (doc: LoroDoc) => getKeyAllocator(doc) === "server";
 
 function domainsOf(docs: Docs, projectId: string) {
   const doc = docs.project(projectId);
-  return isShared(doc) ? listProjectDomains(doc) : listDomains(docs.workspace);
+  const project = { domains: listProjectDomains(doc), shared: isShared(doc) };
+  return domainsOfProject({ project, workspace: listDomains(docs.workspace) });
 }
 
 function guidelinesOf(docs: Docs, projectId: string) {
   const doc = docs.project(projectId);
-  const workspace = listGuidelines(docs.workspace);
-  if (!isShared(doc)) return [...workspace, ...listGuidelines(doc)];
-  const outsideDomains = workspace.filter((g) => g.owner.scope !== "domain");
-  return [...outsideDomains, ...listProjectDomainGuidelines(doc), ...listGuidelines(doc)];
+  const own = new Set(listProjectDomains(doc).map((d) => d.id));
+  const visible = (g: Guideline) =>
+    g.owner.scope !== "domain" || (!isShared(doc) && !own.has(g.owner.domainId));
+  const workspace = listGuidelines(docs.workspace).filter(visible);
+  return [...workspace, ...listProjectDomainGuidelines(doc), ...listGuidelines(doc)];
 }
 
 const FROM_DAEMON: CommandMeta = { origin: "agent", instanceId: null };

@@ -2,9 +2,7 @@ import {
   assertShellCommand,
   countTicketsByStatus,
   createProjectDoc,
-  getKeyAllocator,
   listInstances,
-  listProjectDomains,
   listProjects,
   readProject,
   registerProject,
@@ -71,7 +69,6 @@ function getProject(deps: ProjectRpcDeps, projectId: string) {
     meta: deps.docs.projectMeta(projectId),
     viewer: deps.docs.identity(projectId),
     icon: deps.icons.version(projectIcon(projectId)),
-    ...(getKeyAllocator(doc) === "server" && { domains: listProjectDomains(doc) }),
   };
   const collab = deps.collab();
   return collab ? { ...snapshot, sync: collab.syncInfo(projectId, doc) } : snapshot;
