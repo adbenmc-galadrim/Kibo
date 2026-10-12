@@ -1,8 +1,15 @@
 import { expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { cleanFakeDirs, finish, readHooks, settings, start, tmp } from "./fake-claude.test-helper";
-import { FAKE_CLAUDE, fakeCalls, releaseFakeRun, scenarioPath } from "./fake-claude-scenario";
+import {
+  FAKE_CLAUDE,
+  FakeRoutes,
+  FakeScenario,
+  fakeCalls,
+  releaseFakeRun,
+  scenarioPath,
+} from "./fake-claude-scenario";
 
 cleanFakeDirs();
 
@@ -285,4 +292,43 @@ test("an mcp step without --mcp-config fails the turn loudly", async () => {
   const run = await finish(start(["--session-id", "m2"], env));
   expect(run.code).toBe(1);
   expect(run.lines.at(-1)).toMatchObject({ type: "result", is_error: true, result: "no --mcp-config" });
+});
+
+test("every scenario parses, as turns or as routes to existing scenarios", () => {
+  const dir = join(import.meta.dir, "scenarios");
+  const files = readdirSync(dir).filter((f) => f.endsWith(".json"));
+  expect(files).toEqual(
+    expect.arrayContaining([
+      "skills-review.json",
+      "skills-no-review.json",
+      "skills-denied.json",
+      "skills-routes.json",
+    ]),
+  );
+  for (const file of files) {
+    const json: unknown = JSON.parse(readFileSync(join(dir, file), "utf8"));
+    const routes = FakeRoutes.safeParse(json);
+    if (!routes.success) {
+      expect(FakeScenario.safeParse(json).success).toBe(true);
+      continue;
+    }
+    for (const target of [...routes.data.routes.map((r) => r.scenario), routes.data.fallback])
+      expect(files).toContain(target);
+  }
+});
+
+test("the skills scenarios use skills, review them after the reminder and get refused", () => {
+  const read = (name: "skills-review" | "skills-no-review" | "skills-denied") =>
+    FakeScenario.parse(JSON.parse(readFileSync(scenarioPath(name), "utf8"))).turns[0];
+  const review = read("skills-review");
+  expect(review?.steps.flatMap((s) => ("skill" in s ? [s.skill] : []))).toEqual([
+    "brainstorming",
+    "superpowers:brainstorming",
+  ]);
+  expect(review?.onStopBlock?.[0]).toMatchObject({ mcp: "skill_review" });
+  expect(read("skills-no-review")?.onStopBlock?.some((s) => "mcp" in s)).toBe(false);
+  expect(read("skills-denied")?.steps.flatMap((s) => ("subagent" in s ? [s.subagent] : []))).toEqual([
+    "seo",
+    "review",
+  ]);
 });

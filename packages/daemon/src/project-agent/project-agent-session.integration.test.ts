@@ -90,7 +90,7 @@ test("a rejection with a comment costs one turn; Nouvel agent abandons the pendi
 
 test("the MCP route answers only the live turn of a project run", async () => {
   const stack = await startStack();
-  const { project, docs, opus } = await seedKibo(stack.rpc);
+  const { project, docs, livraison } = await seedKibo(stack.rpc);
   const run = await send(stack.rpc, project.id, "Où en est-on ?");
   await turnDone(stack.rpc, run.id, 1);
   const token = runToken(stack.home, run.id);
@@ -100,7 +100,7 @@ test("the MCP route answers only the live turn of a project run", async () => {
     method: "assignAgent",
     projectId: project.id,
     ticketId: docs.id,
-    profileId: opus.ref,
+    profileId: livraison.ref,
     brief: "Écrire le guide",
   });
   expect((await postMcp(stack.url, ticketRun.id, token)).status).toBe(401);

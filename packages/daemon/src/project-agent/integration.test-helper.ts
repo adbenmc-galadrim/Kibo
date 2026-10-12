@@ -74,11 +74,11 @@ export type Stack = {
   restart(): Promise<void>;
 };
 
-export const OPUS_AGENT: Agent = testAgent({ id: "opus", name: "opus", maxParallel: 1 });
+export const LIVRAISON_AGENT: Agent = testAgent({ id: "livraison", name: "livraison", maxParallel: 1 });
 
 async function boot(home: string, notices: Notice[], scenario: FakeScenarioName): Promise<Daemon> {
   return startDaemon({
-    agentSource: testAgentSource([OPUS_AGENT]).source,
+    agentSource: testAgentSource([LIVRAISON_AGENT]).source,
     home,
     port: 0,
     sandboxPort: 0,
@@ -124,7 +124,7 @@ export async function startStack(scenario: FakeScenarioName = "project-agent-rou
   return stack;
 }
 
-export type Seeded = { project: ProjectMeta; receiver: Ticket; docs: Ticket; opus: Agent };
+export type Seeded = { project: ProjectMeta; receiver: Ticket; docs: Ticket; livraison: Agent };
 
 export async function seedKibo(rpc: Rpc): Promise<Seeded> {
   const project = await rpc<ProjectMeta>({
@@ -142,7 +142,7 @@ export async function seedKibo(rpc: Rpc): Promise<Seeded> {
     });
   const receiver = await ticket("Récepteur de hooks", "Recevoir les hooks de Claude Code.");
   const docs = await ticket("Documentation", "Écrire le guide.");
-  return { project, receiver, docs, opus: OPUS_AGENT };
+  return { project, receiver, docs, livraison: LIVRAISON_AGENT };
 }
 
 export const agentsOf = (rpc: Rpc) => rpc<AgentsState>({ method: "getAgents" });
