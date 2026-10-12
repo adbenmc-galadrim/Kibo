@@ -6,6 +6,7 @@ import {
   keyBesideLabel,
   permissionReply,
   type RunRecord,
+  runOverlapCounts,
   runSubjectBeside,
 } from "./run";
 
@@ -88,4 +89,9 @@ test("a run name that already names the ticket does not get its key a second tim
   const run = { label: "global · livraison · KIB-14", ticketKey: "KIB-14", ticketTitle: "Récepteur" };
   expect(runSubjectBeside(run)).toBe("Récepteur");
   expect(runSubjectBeside({ ...run, label: "opus-dev-2" })).toBe("KIB-14 · Récepteur");
+});
+
+test("an agents state without overlaps counts none", () => {
+  expect(runOverlapCounts({})).toEqual([]);
+  expect(runOverlapCounts({ overlaps: [{ runId: "r1", open: 2 }] })).toEqual([{ runId: "r1", open: 2 }]);
 });

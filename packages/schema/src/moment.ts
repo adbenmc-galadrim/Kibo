@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AutoLinkReason, OverlapKind, OverlapRole } from "./overlap";
 import type { Step } from "./progress";
 import type { RunState } from "./run";
 import { SIGNAL_TITLE_MAX, SignalKind, SignalRef } from "./signal";
@@ -48,7 +49,7 @@ export const RunAction = z.object({
 });
 export type RunAction = z.infer<typeof RunAction>;
 
-export const REMINDER_KINDS = ["plan", "report", "skills", "report_skills"] as const;
+export const REMINDER_KINDS = ["plan", "report", "skills", "report_skills", "overlap"] as const;
 export type ReminderKind = (typeof REMINDER_KINDS)[number];
 
 export const PartialReason = z.enum(["path-rejected", "unreadable", "unknown-format"]);
@@ -70,6 +71,25 @@ export const MomentData = z.discriminatedUnion("kind", [
     ref: SignalRef,
     signalKind: SignalKind,
     title: z.string().max(SIGNAL_TITLE_MAX),
+  }),
+  z.object({
+    kind: z.literal("overlap"),
+    overlapId: z.string().min(1),
+    overlapKind: OverlapKind,
+    role: OverlapRole,
+    withRunId: z.string().min(1),
+    withRunName: z.string().max(200),
+    summary: z.string().max(300),
+  }),
+  z.object({
+    kind: z.literal("auto_link"),
+    autoLinkId: z.string().min(1).nullable(),
+    fromTicketKey: z.string().min(1).max(40),
+    toTicketKey: z.string().min(1).max(40),
+    reason: AutoLinkReason,
+    path: z.string().max(4_096),
+    name: z.string().max(200).nullable(),
+    failure: z.literal("cycle").nullable(),
   }),
   z.object({
     kind: z.literal("raw"),

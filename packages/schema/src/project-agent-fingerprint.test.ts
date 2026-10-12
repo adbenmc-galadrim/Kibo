@@ -1,5 +1,9 @@
 import { expect, test } from "bun:test";
-import { type ProjectFingerprint, ProjectFingerprintSchema } from "./project-agent-fingerprint";
+import {
+  type ProjectFingerprint,
+  ProjectFingerprintSchema,
+  TicketPrintSchema,
+} from "./project-agent-fingerprint";
 
 test("the fingerprint schema reads its own JSON back and refuses garbage", () => {
   const fp: ProjectFingerprint = {
@@ -13,6 +17,7 @@ test("the fingerprint schema reads its own JSON back and refuses garbage", () =>
         assignee: "opus",
         branch: null,
         pr: "#12 (open)",
+        blockedBy: ["EMIS-3"],
       },
     },
     questions: { q1: "answered" },
@@ -22,4 +27,14 @@ test("the fingerprint schema reads its own JSON back and refuses garbage", () =>
   expect(ProjectFingerprintSchema.parse(JSON.parse(JSON.stringify(fp)))).toEqual(fp);
   expect(ProjectFingerprintSchema.safeParse({ tickets: 1 }).success).toBe(false);
   expect(ProjectFingerprintSchema.safeParse({ ...fp, runs: { r1: "nope" } }).success).toBe(false);
+});
+
+test("a ticket fingerprint without blockers reads as blocked by nobody", () => {
+  const print = { key: "BOU-15", title: "Suivi", statusId: "todo", labels: [], parentId: null };
+  const parsed = TicketPrintSchema.parse({ ...print, assignee: null, branch: null, pr: null });
+  expect(parsed.blockedBy).toEqual([]);
+  expect(
+    TicketPrintSchema.parse({ ...print, assignee: null, branch: null, pr: null, blockedBy: ["BOU-12"] })
+      .blockedBy,
+  ).toEqual(["BOU-12"]);
 });

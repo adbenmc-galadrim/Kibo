@@ -34,6 +34,7 @@ import { ComponentId } from "./manifest";
 import { MARKET_RPC_REQUESTS, type MarketRpcResult } from "./market-rpc";
 import type { RunMomentsEvent } from "./moment";
 import type { NotesInfo } from "./note";
+import { OVERLAP_RPC, type OverlapRpcResult } from "./overlap-rpc";
 import type { Page } from "./page";
 import { PHASE14_RPC, type Phase14RpcResult } from "./phase14-rpc";
 import { type ProjectMeta, ProjectPatch } from "./project";
@@ -227,6 +228,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   ...PROJECT_AGENT_RPC,
   ...VISIBILITY_RPC,
   ...SIGNAL_RPC,
+  ...OVERLAP_RPC,
   ...AGENT_RPC,
   ...SKILL_RPC,
 ]);
@@ -288,6 +290,7 @@ export type RpcResult = {
   ProjectAgentRpcResult &
   VisibilityRpcResult &
   SignalRpcResult &
+  OverlapRpcResult &
   AgentRpcResult &
   SkillRpcResult;
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { AgentScope } from "./agent";
+import type { RunOverlapCount } from "./overlap";
 import type { RunProgressSummary } from "./progress";
 import { AskInput, type RunQuestions } from "./question";
 import type { ProjectSignalCount } from "./signal";
@@ -245,7 +246,11 @@ export type AgentsState = {
   projectAgents: ProjectAgentSummary[];
   progress: RunProgressSummary[];
   signals: ProjectSignalCount[];
+  overlaps?: RunOverlapCount[];
 };
+
+export const runOverlapCounts = (state: Pick<AgentsState, "overlaps">): RunOverlapCount[] =>
+  state.overlaps ?? [];
 export type SessionPreview = {
   runId: string;
   label: string;

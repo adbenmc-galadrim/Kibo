@@ -70,13 +70,16 @@ export type ProgressInput = z.infer<typeof ProgressInput>;
 
 export const PROGRESS_TOOL_NAME = "ticket_progress";
 export const PROGRESS_TOOL = `mcp__kibo__${PROGRESS_TOOL_NAME}`;
+export const PEEK_WORK_TOOL_NAME = "peek_work";
+export const PEEK_WORK_TOOL = `mcp__kibo__${PEEK_WORK_TOOL_NAME}`;
 export const TICKET_MCP_TOOLS: readonly string[] = [
   ...ASK_TOOLS,
   PROGRESS_TOOL,
   SIGNAL_TOOL,
+  PEEK_WORK_TOOL,
   SKILL_REVIEW_TOOL,
 ];
-export const TICKET_TOOL_NAMES = [PROGRESS_TOOL_NAME, SIGNAL_TOOL_NAME] as const;
+export const TICKET_TOOL_NAMES = [PROGRESS_TOOL_NAME, SIGNAL_TOOL_NAME, PEEK_WORK_TOOL_NAME] as const;
 export const isTicketToolName = (name: string): boolean => TICKET_TOOL_NAMES.some((tool) => tool === name);
 
 const lines = (description: string, maxItems: number, maxLength: number) => ({
@@ -123,10 +126,35 @@ export const TICKET_PROGRESS_SPEC: McpToolSpec = {
   },
 };
 
+export type PeekWorkInput = { run: string; path?: string };
+export const PeekWorkInput: z.ZodType<PeekWorkInput> = z.object({
+  run: z.string().trim().min(1).max(100),
+  path: z.string().min(1).max(4_096).optional(),
+});
+
+export const PEEK_WORK_SPEC: McpToolSpec = {
+  name: PEEK_WORK_TOOL_NAME,
+  description:
+    "Read-only view of another run of this project: pass a ticket key or run id to list its plan, changed files and new exports; add path to read one file of its workspace with its diff.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      run: { type: "string", maxLength: 100, description: "Ticket key (BOU-12) or run id of the other run." },
+      path: {
+        type: "string",
+        maxLength: 4_096,
+        description: "Optional path of a file in its workspace, relative to the repository.",
+      },
+    },
+    required: ["run"],
+  },
+};
+
 export const SHARED_TOOL_SPECS: readonly McpToolSpec[] = [SKILL_REVIEW_SPEC];
 export const TICKET_TOOL_SPECS: readonly McpToolSpec[] = [
   TICKET_PROGRESS_SPEC,
   SIGNAL_PROJECT_SPEC,
+  PEEK_WORK_SPEC,
   ...SHARED_TOOL_SPECS,
 ];
 

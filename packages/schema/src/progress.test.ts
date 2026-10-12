@@ -4,6 +4,9 @@ import {
   EMPTY_PROGRESS,
   isTicketToolName,
   latestReport,
+  PEEK_WORK_SPEC,
+  PEEK_WORK_TOOL,
+  PEEK_WORK_TOOL_NAME,
   PLAN_MAX,
   Plan,
   PROGRESS_TOOL,
@@ -18,6 +21,7 @@ import {
   Step,
   TICKET_MCP_TOOLS,
   TICKET_PROGRESS_SPEC,
+  TICKET_TOOL_NAMES,
   TICKET_TOOL_SPECS,
   TicketProgress,
   todosToPlan,
@@ -123,6 +127,7 @@ test("the ticket tool is described for the agent", () => {
     ...ASK_TOOLS,
     PROGRESS_TOOL,
     "mcp__kibo__signal_project",
+    "mcp__kibo__peek_work",
     "mcp__kibo__skill_review",
   ]);
 });
@@ -132,6 +137,21 @@ test("ticket runs may signal the project agent", () => {
   expect(isTicketToolName("signal_project")).toBe(true);
   expect(isTicketToolName("ticket_progress")).toBe(true);
   expect(isTicketToolName("list_tickets")).toBe(false);
-  expect(TICKET_TOOL_SPECS.map((s) => s.name)).toEqual(["ticket_progress", "signal_project", "skill_review"]);
+  expect(TICKET_TOOL_SPECS.map((s) => s.name)).toEqual([
+    "ticket_progress",
+    "signal_project",
+    "peek_work",
+    "skill_review",
+  ]);
   expect(SHARED_TOOL_SPECS.map((s) => s.name)).toEqual(["skill_review"]);
+});
+
+test("ticket runs may peek at the work of another run", () => {
+  expect(PEEK_WORK_TOOL).toBe("mcp__kibo__peek_work");
+  expect(TICKET_TOOL_NAMES).toContain(PEEK_WORK_TOOL_NAME);
+  expect(isTicketToolName("peek_work")).toBe(true);
+  expect(TICKET_MCP_TOOLS).toContain(PEEK_WORK_TOOL);
+  expect(PEEK_WORK_SPEC.name).toBe("peek_work");
+  expect(PEEK_WORK_SPEC.inputSchema.required).toEqual(["run"]);
+  expect(Object.keys(PEEK_WORK_SPEC.inputSchema.properties)).toEqual(["run", "path"]);
 });

@@ -82,3 +82,39 @@ test("a skill is an action kind and an action keeps its call id", () => {
   expect(MomentData.safeParse({ kind: "reminder", reminder: "report_skills" }).success).toBe(true);
   expect(MomentData.safeParse({ kind: "reminder", reminder: "skills" }).success).toBe(true);
 });
+
+test("an overlap moment names the other run and its summary", () => {
+  const overlap = {
+    kind: "overlap",
+    overlapId: "o1",
+    overlapKind: "export",
+    role: "other",
+    withRunId: "r1",
+    withRunName: "x",
+    summary: "s",
+  } as const;
+  expect(MomentData.parse(overlap)).toEqual(overlap);
+  expect(MomentData.safeParse({ ...overlap, summary: "s".repeat(301) }).success).toBe(false);
+  expect(MomentData.safeParse({ ...overlap, role: "both" }).success).toBe(false);
+});
+
+test("an automatic link moment may record a failure", () => {
+  const link = {
+    kind: "auto_link",
+    autoLinkId: null,
+    fromTicketKey: "A-1",
+    toTicketKey: "A-2",
+    reason: "copy",
+    path: "p",
+    name: null,
+    failure: "cycle",
+  } as const;
+  expect(MomentData.parse(link)).toEqual(link);
+  expect(MomentData.parse({ ...link, autoLinkId: "l1", failure: null, name: "formatDate" }).kind).toBe(
+    "auto_link",
+  );
+  expect(MomentData.parse({ kind: "reminder", reminder: "overlap" })).toEqual({
+    kind: "reminder",
+    reminder: "overlap",
+  });
+});

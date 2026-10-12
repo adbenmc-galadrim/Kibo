@@ -1,5 +1,5 @@
 import { type ActionKind, MOMENT_DETAIL_MAX, type RunAction } from "./moment";
-import { PROGRESS_TOOL } from "./progress";
+import { PEEK_WORK_TOOL, PROGRESS_TOOL } from "./progress";
 import { ASK_TOOLS } from "./run";
 import { SIGNAL_TOOL } from "./signal";
 import { SKILL_REVIEW_TOOL } from "./skill";
@@ -163,6 +163,17 @@ function reviewPhrase(input: Record<string, unknown>): string {
     : "laissé une review des skills";
 }
 
+function peekPhrase(input: Record<string, unknown>): string {
+  const run = text(input, "run");
+  return run ? `regardé le travail de \`${run}\`` : "regardé le travail d'un autre run";
+}
+
+function mcpPhrase(a: Omit<RunAction, "label">, input: Record<string, unknown>): string {
+  if (a.tool === SKILL_REVIEW_TOOL) return reviewPhrase(input);
+  if (a.tool === PEEK_WORK_TOOL) return peekPhrase(input);
+  return a.target ? `appelé ${a.target}` : "appelé";
+}
+
 function phrase(a: Omit<RunAction, "label">, input: Record<string, unknown> = {}): string {
   const named = (prefix: string, name: string | null) => (name ? `${prefix} ${name}` : prefix);
   switch (a.kind) {
@@ -195,7 +206,7 @@ function phrase(a: Omit<RunAction, "label">, input: Record<string, unknown> = {}
     case "skill":
       return a.target ? `utilisé le skill \`${a.target}\`` : "utilisé un skill";
     case "mcp":
-      return a.tool === SKILL_REVIEW_TOOL ? reviewPhrase(input) : named("appelé", a.target);
+      return mcpPhrase(a, input);
     case "other":
       return named("utilisé un outil", a.tool || null);
   }
@@ -231,8 +242,10 @@ const GROUPS: readonly { kind: ActionKind; many(actions: readonly RunAction[]): 
     { kind: "other", many: (g) => `utilisé ${g.length} outils` },
   ];
 
+const LABELLED_TOOLS: ReadonlySet<string> = new Set([SKILL_REVIEW_TOOL, PEEK_WORK_TOOL]);
+
 const lonePhrase = (a: RunAction): string =>
-  a.tool === SKILL_REVIEW_TOOL && a.label.startsWith("A ") ? a.label.slice(2) : phrase(a);
+  LABELLED_TOOLS.has(a.tool) && a.label.startsWith("A ") ? a.label.slice(2) : phrase(a);
 
 export const standsAlone = (a: Pick<RunAction, "kind" | "outcome">): boolean =>
   a.kind === "skill" || (a.kind === "subagent" && a.outcome === "denied");

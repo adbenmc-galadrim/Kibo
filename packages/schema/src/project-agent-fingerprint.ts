@@ -10,6 +10,7 @@ export const TicketPrintSchema = z.object({
   assignee: z.string().nullable(),
   branch: z.string().nullable(),
   pr: z.string().nullable(),
+  blockedBy: z.array(z.string()).default([]),
 });
 export type TicketPrint = z.infer<typeof TicketPrintSchema>;
 
