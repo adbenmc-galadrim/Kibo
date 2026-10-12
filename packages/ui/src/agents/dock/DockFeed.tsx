@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { frMoments } from "../../i18n/fr-moments";
 import { Feed } from "../../moments/Feed";
 import { ReportCard } from "../../moments/ReportCard";
+import { useOpenSignal } from "../../moments/use-open-signal";
 import { useRunFileContext } from "../../moments/use-run-file-context";
 import { useRunLog } from "../../state/use-run-log";
 import type { JournalRun } from "../journal-runs";
@@ -43,6 +44,7 @@ export function DockFeed({
   onOpenFile,
 }: Props) {
   const files = useRunFileContext(run);
+  const openSignal = useOpenSignal(run.projectId);
   const { log } = useRunLog(run.id);
   const extras = exchangeOf(log, runs);
   const { ref, onScroll, release } = useFollowBottom<HTMLDivElement>(moments.length + extras.length);
@@ -68,6 +70,7 @@ export function DockFeed({
           highlightStep={highlightStep}
           files={files}
           onOpenFile={onOpenFile}
+          onOpenSignal={openSignal}
           label={run.label}
           texts={frMoments}
         />

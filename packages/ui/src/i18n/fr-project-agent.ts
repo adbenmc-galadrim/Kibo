@@ -15,6 +15,7 @@ const GROUPS: Record<ActionGroup, string> = {
   agents: "Agents",
   questions: "Questions",
   notes: "Notes",
+  signals: "Signaux",
 };
 
 const OUTCOMES: Record<ActionOutcome, string> = {
@@ -48,6 +49,11 @@ const TOOLS: Record<string, string> = {
 export const frProjectAgent = {
   title: (project: string) => `Agent de projet · ${project}`,
   close: "Fermer le panneau",
+  tabs: {
+    label: "Vues de l'agent de projet",
+    conversation: "Conversation",
+    signals: (n: number) => (n > 0 ? `Signaux · ${n}` : "Signaux"),
+  },
   status: {
     ready: "Prêt",
     queued: "En file",
@@ -116,6 +122,7 @@ export const frProjectAgent = {
     why: "Pourquoi",
     replaced: "contenu remplacé",
     count: (n: number) => plural(n, "action"),
+    afterWakeup: "après réveil",
   },
   action: {
     createTicket: (title: string) => `Créer le ticket « ${title} »`,
@@ -130,6 +137,7 @@ export const frProjectAgent = {
     createQuestion: (ticket: string, title: string) => `Question sur ${ticket} : « ${title} »`,
     createNote: (path: string) => `Créer la note ${path}`,
     updateNote: (path: string) => `Mettre à jour la note ${path}`,
+    dismissSignal: (ref: string) => `Signal ${ref} : sans suite`,
     confirm: "Confirmer",
     none: "aucun",
     unknownTicket: "ticket introuvable",

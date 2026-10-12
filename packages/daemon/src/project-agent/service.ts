@@ -4,7 +4,7 @@ import {
   isTerminal,
   KiboError,
   MEMORY_NOTE_PATH,
-  PROGRESS_TOOL_NAME,
+  PROJECT_AGENT_TOOLS,
   type ProjectAgentSummary,
   type ProjectAgentTool,
   type ProjectAgentView,
@@ -13,13 +13,14 @@ import {
 } from "@kibo/schema";
 import type { ProjectTurnPort } from "../agents/orchestrator-types";
 import type { RpcExtension } from "../rpc-extensions";
+import { formatClock } from "../signals/clock";
 import type { AgentContext, ProjectAgentDeps } from "./context";
 import { type DecideInput, decideBatch } from "./decide";
 import { proposeBatch } from "./propose";
 import { projectAgentRpc } from "./rpc";
 import { currentRun, pastSessions, projectOfRun, summaryOf } from "./sessions";
 import { createTurnPort } from "./turns";
-import type { AgentMcpSink } from "./types";
+import type { AgentMcpSink, ProjectAgentSignalsPort } from "./types";
 
 export type { ProjectAgentAgents, ProjectAgentDeps } from "./context";
 
@@ -33,6 +34,7 @@ export type ProjectAgentService = {
   propose(run: RunView, input: unknown): string;
   turns: ProjectTurnPort;
   mcp: AgentMcpSink;
+  signals: ProjectAgentSignalsPort;
   rpc: RpcExtension;
 };
 export type ProjectAgentCore = Omit<ProjectAgentService, "rpc">;
@@ -101,8 +103,9 @@ function projectRun(ctx: AgentContext, runId: string): RunView {
 }
 
 function projectTool(tool: AgentMcpRequest["tool"]): ProjectAgentTool {
-  if (tool === PROGRESS_TOOL_NAME) throw new KiboError("FORBIDDEN", `${tool} is a ticket run tool`);
-  return tool;
+  const named = PROJECT_AGENT_TOOLS.find((name) => name === tool);
+  if (named === undefined) throw new KiboError("FORBIDDEN", `${tool} is a ticket run tool`);
+  return named;
 }
 
 function mcpSink(ctx: AgentContext): AgentMcpSink {
@@ -125,6 +128,7 @@ export function createProjectAgentService(deps: ProjectAgentDeps): ProjectAgentS
   const ctx: AgentContext = {
     ...deps,
     now: deps.now ?? Date.now,
+    formatTime: deps.formatTime ?? formatClock,
     turnNotes: new Map(),
     baselines: new Map(),
   };
@@ -138,6 +142,7 @@ export function createProjectAgentService(deps: ProjectAgentDeps): ProjectAgentS
     propose: (run, input) => proposeBatch(ctx, run, input),
     turns: createTurnPort(ctx),
     mcp: mcpSink(ctx),
+    signals: deps.signals,
   };
   return { ...core, rpc: projectAgentRpc(core) };
 }

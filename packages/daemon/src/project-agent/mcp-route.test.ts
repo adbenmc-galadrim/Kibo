@@ -40,6 +40,8 @@ const post = (runId: string, headers: Record<string, string>, body: unknown, met
   });
 const LIST: AgentMcpRequest = { tool: "list_tickets", input: { status: "done" } };
 const PROGRESS: AgentMcpRequest = { tool: "ticket_progress", input: { plan: [] } };
+const SIGNAL: AgentMcpRequest = { tool: "signal_project", input: { kind: "ticket", title: "Tests" } };
+const LIST_SIGNALS: AgentMcpRequest = { tool: "list_signals", input: {} };
 
 test("the path takes a run id", () => {
   expect(AGENT_MCP_PATH.exec(`/agent-mcp/${PROJECT_RUN}`)?.[1]).toBe(PROJECT_RUN);
@@ -75,6 +77,27 @@ test("a project run cannot write a ticket's progress", async () => {
   expect(await res.json()).toEqual({
     ok: false,
     error: { code: "FORBIDDEN", message: "ticket_progress is not a project run tool" },
+  });
+  expect(calls).toEqual([]);
+});
+
+test("a ticket run signals the project agent but never lists the signals", async () => {
+  const { s, calls } = sink();
+  const res = await handleAgentMcp(post(TICKET_RUN, bearer(TICKET_TOKEN), SIGNAL), TICKET_RUN, s);
+  expect(await res.json()).toEqual({ ok: true, text: 'signal_project:{"kind":"ticket","title":"Tests"}' });
+  expect(calls).toEqual([TICKET]);
+  const list = await handleAgentMcp(post(TICKET_RUN, bearer(TICKET_TOKEN), LIST_SIGNALS), TICKET_RUN, s);
+  expect(list.status).toBe(403);
+  expect(calls).toHaveLength(1);
+});
+
+test("a project run cannot signal itself", async () => {
+  const { s, calls } = sink();
+  const res = await handleAgentMcp(post(PROJECT_RUN, bearer(GOOD), SIGNAL), PROJECT_RUN, s);
+  expect(res.status).toBe(403);
+  expect(await res.json()).toEqual({
+    ok: false,
+    error: { code: "FORBIDDEN", message: "signal_project is not a project run tool" },
   });
   expect(calls).toEqual([]);
 });

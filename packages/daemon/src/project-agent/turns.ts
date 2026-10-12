@@ -5,12 +5,16 @@ import { changeNames, diffFingerprints, renderDigest } from "@kibo/core/project-
 import { fingerprint, type NoteHash } from "@kibo/core/project-agent/fingerprint";
 import { projectOverview, renderOverview } from "@kibo/core/project-agent/overview";
 import { buildProjectAgentPrompt, firstTurnPrompt, nextTurnPrompt } from "@kibo/core/project-agent/prompt";
+import { renderSignalsSection } from "@kibo/core/signals/messages";
 import {
+  isOpenSignal,
   MEMORY_NOTE_PATH,
   PROJECT_AGENT_PROFILE_ID,
   type ProjectFingerprint,
   type ProjectSnapshot,
   type RunView,
+  type Signal,
+  signalLine,
 } from "@kibo/schema";
 import type { ProjectTurn, ProjectTurnPort } from "../agents/orchestrator-types";
 import type { AgentContext } from "./context";
@@ -21,6 +25,7 @@ type TurnState = {
   project: ProjectSnapshot;
   runs: RunView[];
   notes: { path: string; title: string; hash: string }[];
+  signals: Signal[];
 };
 
 async function ensureMemory(ctx: AgentContext, projectId: string): Promise<string> {
@@ -36,6 +41,9 @@ function workingDir(folder: string | null, runDir: string): string {
   return dir;
 }
 
+const signalsSection = (ctx: AgentContext, state: TurnState): string =>
+  renderSignalsSection(state.signals.map(signalLine), ctx.formatTime);
+
 function overviewPrompt(ctx: AgentContext, state: TurnState, memory: string, message: string): string {
   const overview = projectOverview({
     project: state.project,
@@ -45,8 +53,9 @@ function overviewPrompt(ctx: AgentContext, state: TurnState, memory: string, mes
     profiles: ctx.data.profiles(),
     demoProject: ctx.data.isDemoProject(state.projectId),
     memory,
+    openSignals: state.signals.length,
   });
-  return firstTurnPrompt(renderOverview(overview), message);
+  return firstTurnPrompt(renderOverview(overview), signalsSection(ctx, state), message);
 }
 
 function digestPrompt(
@@ -59,7 +68,8 @@ function digestPrompt(
 ): string {
   const since = ctx.store.sessions(state.projectId).find((s) => s.runId === run.id)?.lastTurnAt ?? 0;
   const changes = diffFingerprints(previous, current, changeNames(state.project, state.runs, previous));
-  return nextTurnPrompt(renderDigest(changes, ctx.store.lastDecided(state.projectId, since)), message);
+  const digest = renderDigest(changes, ctx.store.lastDecided(state.projectId, since));
+  return nextTurnPrompt(digest, signalsSection(ctx, state), message);
 }
 
 function systemPrompt(ctx: AgentContext, projectId: string, projectName: string): string {
@@ -85,6 +95,7 @@ async function prepareTurn(ctx: AgentContext, run: RunView, runDir: string): Pro
     project: ctx.data.project(projectId),
     runs: ctx.agents().state().runs,
     notes,
+    signals: ctx.signals.list(projectId).signals.filter(isOpenSignal),
   };
   const hashes: NoteHash[] = notes.map(({ path, hash }) => ({ path, hash }));
   const current = fingerprint({ project: state.project, runs: state.runs, notes: hashes });
@@ -97,6 +108,7 @@ async function prepareTurn(ctx: AgentContext, run: RunView, runDir: string): Pro
   ctx.turnNotes.set(run.id, hashes);
   ctx.baselines.set(run.id, previous ?? current);
   ctx.store.saveFingerprint(run.id, current, ctx.now());
+  ctx.signals.markRead(projectId, run.id);
   return {
     cwd: workingDir(ctx.data.projectFolder(projectId), runDir),
     systemPrompt: systemPrompt(ctx, projectId, state.project.meta.name),

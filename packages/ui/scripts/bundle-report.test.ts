@@ -364,4 +364,19 @@ describe("bundle report", () => {
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });
+  test("the signal box, the signal moment and their texts are forbidden in the entry, not the panel hook", () => {
+    const paths = [
+      "/x/packages/ui/src/project-agent/signals/SignalBox.tsx",
+      "/x/packages/ui/src/project-agent/signals/SignalRow.tsx",
+      "/x/packages/ui/src/project-agent/signals/use-signals.ts",
+      "/x/packages/ui/src/project-agent/PanelTabs.tsx",
+      "/x/packages/ui/src/moments/SignalMoment.tsx",
+      "/x/packages/ui/src/moments/use-open-signal.ts",
+      "/x/packages/ui/src/i18n/fr-signals.ts",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    expect(
+      FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/shell/use-project-agent-panel.ts")),
+    ).toBe(false);
+  });
 });

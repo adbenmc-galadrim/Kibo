@@ -27,6 +27,8 @@ const ctx = (p: Partial<BatchContext> = {}): BatchContext => ({
   profiles: PROFILES,
   demoProject: false,
   viewer: "adam",
+  signals: [],
+  closedSignals: [],
   ...p,
 });
 
@@ -270,5 +272,54 @@ describe("validateBatch refuses a batch that lies about its targets", () => {
     );
     const result = validateBatch(batch(...many), ctx());
     expect(result.ok && result.batch.actions.length).toBe(300);
+  });
+});
+
+describe("validateBatch checks the signals an action cites", () => {
+  const open = ctx({ signals: ["sig:1", "sig:2"], closedSignals: ["sig:4"] });
+  const create = (signals: string[]): ProposedAction => ({
+    id: 1,
+    why,
+    type: "createTicket",
+    ref: "new:1",
+    title: "Tests",
+    signals,
+  });
+
+  test("an unknown signal is refused", () => {
+    expect(problems(batch(create(["sig:9"])), open)).toEqual(["#1 signal inconnu « sig:9 »"]);
+    expect(problems(batch({ id: 1, why, type: "dismissSignal", signal: "sig:5" }), open)).toEqual([
+      "#1 signal inconnu « sig:5 »",
+    ]);
+  });
+
+  test("a closed signal is refused", () => {
+    expect(problems(batch(create(["sig:4"])), open)).toEqual(["#1 signal déjà clos « sig:4 »"]);
+    expect(problems(batch({ id: 1, why, type: "dismissSignal", signal: "sig:4" }), open)).toEqual([
+      "#1 signal déjà clos « sig:4 »",
+    ]);
+  });
+
+  test("open signals may be cited by several actions and dismissed", () => {
+    const status: ProposedAction = {
+      id: 2,
+      why,
+      type: "setStatus",
+      ticket: "EMIS-1",
+      statusId: "todo",
+      signals: ["sig:1", "sig:2"],
+    };
+    const dismiss: ProposedAction = { id: 3, why: "sans suite", type: "dismissSignal", signal: "sig:2" };
+    expect(problems(batch(create(["sig:1"]), status, dismiss), open)).toEqual([]);
+  });
+
+  test("a signal is dismissed once", () => {
+    const dismiss = (id: number): ProposedAction => ({ id, why, type: "dismissSignal", signal: "sig:1" });
+    expect(problems(batch(dismiss(1), dismiss(2)), open)).toEqual(["#2 deux actions sur sig:1"]);
+  });
+
+  test("a dismissal expects nothing of the project", () => {
+    const result = validateBatch(batch({ id: 1, why, type: "dismissSignal", signal: "sig:1" }), open);
+    expect(result.ok && result.batch.expected).toEqual([{ actionId: 1, fields: {} }]);
   });
 });

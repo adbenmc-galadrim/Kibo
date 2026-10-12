@@ -9,6 +9,7 @@ import type { FileContext } from "./file-context";
 import { MessageMoment } from "./MessageMoment";
 import { RawMoment } from "./RawMoment";
 import { ReminderMoment } from "./ReminderMoment";
+import { SignalMoment } from "./SignalMoment";
 
 export type FeedProps = {
   moments: RunMoment[];
@@ -20,6 +21,7 @@ export type FeedProps = {
   label?: string;
   extras?: readonly FeedExtra[];
   texts: typeof frMoments;
+  onOpenSignal?(signalId: string): void;
 };
 
 export type { FeedExtra };
@@ -38,6 +40,7 @@ function MomentBody({
   moment,
   files,
   onOpenFile,
+  onOpenSignal,
   texts,
 }: { moment: RunMoment } & Omit<FeedProps, "moments">) {
   const data = moment.data;
@@ -65,6 +68,8 @@ function MomentBody({
       return <ReminderMoment reminder={data.reminder} />;
     case "raw":
       return <RawMoment text={data.text} partial={data.partial} />;
+    case "signal":
+      return <SignalMoment data={data} at={moment.at} onOpen={onOpenSignal} />;
   }
 }
 

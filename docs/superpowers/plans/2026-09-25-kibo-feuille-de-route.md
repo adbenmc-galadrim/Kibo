@@ -146,6 +146,6 @@ Demande d'Adam du 2026-10-09 (« les agents sont tous cachés ») : fil narratif
 
 ## Phase 21 · Les agents parlent à l'agent de projet (v0.21.0-alpha.1)
 
-Spec : conception §27, détaillée avant le plan. **À planifier.**
+Plan : `2026-10-11-kibo-phase-21.md` (livrée) · Spec : conception §27.1 à §27.11 (amende §23.12.2, §24.3, §24.4, §24.5, §24.7, §26.2, §26.3 ; agents §3). **Livrée** le 2026-10-12 (`v0.21.0-alpha.1`, rapport `rapports/2026-10-12-jalon-v0.21.md`) ; planifiée le 2026-10-11 (cadre validé par Adam le 2026-10-10, détail tranché par le lead dev).
 
-Outil `signal_project` (ticket à créer, contexte, blocage, question), réveil automatique plafonné de l'agent de projet pour les tickets à créer et les blocages, boîte de signaux ; rien n'est créé sans lot validé.
+Outil `signal_project` (ticket à créer, contexte, blocage, question) pour les runs de ticket, signaux stockés par le démon et visibles dans le fil du run ; réveil automatique de l'agent de projet pour les tickets à créer et les blocages, au plus une fois par 10 minutes par projet, signaux regroupés ; boîte à signaux dans le panneau de l'agent de projet (onglet Signaux, pastille chiffrée) ; les lots citent les signaux (`signals`, `dismissSignal`) et les règlent à la validation ; rien n'est créé sans lot validé. Écrans 189 à 191 (page Penpot 30).

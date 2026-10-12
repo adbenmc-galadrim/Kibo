@@ -47,8 +47,9 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 27 · Jeux & Storybook | 178 à 182 (phase 19 : widget Jeu itch.io, story Storybook, comparaison, réglage Storybook) ; **dessinés** ; 178, 179 : composant retiré (§26.11) |
 | 28 à 28d · Pistes | pistes de brainstorming de la phase 20 (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF |
 | 29 · Visibilité des agents | 183 à 188k (phase 20 : barre et volet des agents, onglet Activité, mention d'agent, Questions et destinataires, graphe lisible, Kanban « Démarrable ») ; **dessinés** |
+| 30 · Signaux des agents | 189 à 191 (phase 21 : boîte à signaux, lot après réveil, fil du run émetteur, Activité, pastille et notification) ; **dessinés** |
 
-Pages 00 à 27 et 29 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 29.
+Pages 00 à 27, 29 et 30 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 30.
 Pages 28 à 28d : pistes de brainstorming (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF ; scripts `32b` à `32f`, pistes eux aussi.
 
 Règles :
@@ -188,9 +189,23 @@ Données : section « Visibilité des agents (phase 20) » de `donnees-fictives.
   des questions · 188 graphe en vagues · 188b focus · 188c regroupement par étiquette `chapitre:` · 188d zoom éloigné · 188k Kanban, pastille
   « Démarrable » et filtre.
 
+## Phase 21 (page 30)
+
+`34-signaux-agents.js`, chargé après `24-socle-suite`, les pistes `32b-pistes-agents` et `32d-pistes-questions` (`S.vis`, `S.visQ`) et
+`33-visibilite-agents` ; liste de job `S.SIGNAUX`, puis `S.dropBases()`. Panneau de l'agent de projet repris de la page 26 (440 px), avec les onglets
+« Conversation » et « Signaux · n » ; la pastille chiffrée remplace le point orange du bouton. Dans la barre des agents, opus-dev-2 a repris son run
+(run 4, plus de « Répondre »). Données : section « Signaux des agents (phase 21) » de `donnees-fictives.md` ; d'après les captures
+`screens/2026-10-12-t5` et la piste P5 (page 28).
+
+- 30 · Signaux des agents : 189 conversation, ligne « Réveil automatique · 2 signaux » et lot n° 2 « après réveil » avec la provenance sous chaque
+  action · 189a onglet « Signaux · 4 », boîte (Blocage, Ticket à créer, Question, Contexte ; « Ouvrir le ticket », « Ignorer »), « prochain réveil
+  à 14:41 » · 189b après « Valider (3) » : boîte à 2, « Traités » (« traité dans le lot n° 2 · KIB-31 »), pastille « 2 » · 189c lot appliqué
+  (« Appliquée » ×3, KIB-31) · 190 page dédiée du run opus-dev-2 (KIB-14), ligne de signal et action « Signalé » dépliée · 190b fiche KIB-14, onglet
+  Activité, ligne de signal dans la chronologie · 191 Kanban, pastille « 4 » et notification « Blocage signalé par opus-dev-3 · KIB-16 ».
+
 ## Exporter
 
-1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")` puis `("29")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
+1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, `("29")` puis `("30")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`.
 2. Source : menu du fichier → Exporter (.penpot), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
    que Penpot régénère : l'archive reste sous la limite de 100 Mo de GitHub).

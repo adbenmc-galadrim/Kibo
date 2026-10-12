@@ -15,7 +15,13 @@ import type {
   Ticket,
 } from "@kibo/schema";
 import { z } from "zod";
-import { FAKE_CLAUDE, type FakeCall, fakeCalls, scenarioPath } from "../agents/fake-claude-scenario";
+import {
+  FAKE_CLAUDE,
+  type FakeCall,
+  type FakeScenarioName,
+  fakeCalls,
+  scenarioPath,
+} from "../agents/fake-claude-scenario";
 import type { Notice } from "../agents/notifier";
 import { type Daemon, startDaemon } from "../daemon";
 
@@ -67,7 +73,7 @@ export type Stack = {
   restart(): Promise<void>;
 };
 
-async function boot(home: string, notices: Notice[]): Promise<Daemon> {
+async function boot(home: string, notices: Notice[], scenario: FakeScenarioName): Promise<Daemon> {
   return startDaemon({
     home,
     port: 0,
@@ -79,19 +85,20 @@ async function boot(home: string, notices: Notice[]): Promise<Daemon> {
     claudeBin: FAKE_CLAUDE,
     sampler: () => ({ cpu: 5, ram: 5 }),
     notify: (notice) => notices.push(notice),
+    transcriptRoot: join(home, "fake"),
     agentEnv: {
       ...process.env,
-      KIBO_FAKE_CLAUDE_SCENARIO: scenarioPath("project-agent-routes"),
+      KIBO_FAKE_CLAUDE_SCENARIO: scenarioPath(scenario),
       KIBO_FAKE_CLAUDE_STATE: join(home, "fake"),
     },
   });
 }
 
-export async function startStack(): Promise<Stack> {
+export async function startStack(scenario: FakeScenarioName = "project-agent-routes"): Promise<Stack> {
   const home = mkdtempSync(join(tmpdir(), "kibo-project-agent-it-"));
   mkdirSync(join(home, "fake"));
   const notices: Notice[] = [];
-  let daemon: Daemon | null = await boot(home, notices);
+  let daemon: Daemon | null = await boot(home, notices, scenario);
   const stack: Stack = {
     home,
     url: daemon.url,
@@ -100,7 +107,7 @@ export async function startStack(): Promise<Stack> {
     calls: (sessionId) => fakeCalls(join(home, "fake"), sessionId),
     async restart() {
       await daemon?.stop();
-      daemon = await boot(home, notices);
+      daemon = await boot(home, notices, scenario);
       stack.url = daemon.url;
       stack.rpc = await client(daemon);
     },
@@ -183,9 +190,14 @@ export function runToken(home: string, runId: string): string {
   return config.mcpServers.kibo.env.KIBO_RUN_TOKEN;
 }
 
-export const postMcp = (url: string, runId: string, token: string | null) =>
+export const postMcp = (
+  url: string,
+  runId: string,
+  token: string | null,
+  call: { tool: string; input: unknown } = { tool: "project_overview", input: {} },
+) =>
   fetch(`${url}/agent-mcp/${runId}`, {
     method: "POST",
     headers: { "content-type": "application/json", ...(token && { authorization: `Bearer ${token}` }) },
-    body: JSON.stringify({ tool: "project_overview", input: {} }),
+    body: JSON.stringify(call),
   });

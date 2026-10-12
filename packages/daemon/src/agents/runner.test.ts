@@ -12,6 +12,7 @@ import {
   PROJECT_AGENT_DENY,
   PROJECT_AGENT_MCP_TOOLS,
   PROJECT_AGENT_READ_TOOLS,
+  SIGNAL_TOOL,
   TICKET_MCP_TOOLS,
 } from "@kibo/schema";
 import { FAKE_CLAUDE, fakeCalls, releaseFakeRun, scenarioPath } from "./fake-claude-scenario";
@@ -131,6 +132,12 @@ test("a ticket run allows ticket_progress right after the ask tools; no profile 
   });
   const settings = JSON.parse(args[args.indexOf("--settings") + 1] ?? "");
   expect(settings.permissions.allow).toEqual([...TICKET_MCP_TOOLS, "Edit"]);
+  expect(settings.permissions.allow).toContain("mcp__kibo__signal_project");
+  expect(JSON.parse(claudeSettings(kiboHook, [SIGNAL_TOOL, "Edit"])).permissions.allow).toEqual([
+    ASK_TOOL,
+    ASK_QUESTION_TOOL,
+    "Edit",
+  ]);
   expect(JSON.parse(claudeSettings(kiboHook, [PROGRESS_TOOL, "Edit"])).permissions.allow).toEqual([
     ASK_TOOL,
     ASK_QUESTION_TOOL,

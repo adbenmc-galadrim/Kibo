@@ -1,6 +1,6 @@
 import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
-import { QUESTION_OPTIONS_MAX, RECIPIENT_ID_MAX, TICKET_PROGRESS_SPEC, TOOL_SPECS } from "@kibo/schema";
+import { QUESTION_OPTIONS_MAX, RECIPIENT_ID_MAX, TICKET_TOOL_SPECS, TOOL_SPECS } from "@kibo/schema";
 import { z } from "zod";
 import { callDaemonTool, type McpToolReply } from "./mcp-client";
 
@@ -67,7 +67,7 @@ const PROJECT_TOOL_SPECS = TOOL_SPECS.map(({ name, description, inputSchema }) =
   inputSchema,
 }));
 
-const DAEMON_TOOL_SPECS = { project: PROJECT_TOOL_SPECS, ticket: [TICKET_PROGRESS_SPEC] };
+const DAEMON_TOOL_SPECS = { project: PROJECT_TOOL_SPECS, ticket: TICKET_TOOL_SPECS };
 
 const daemonTools = (tools: McpTools) => (tools === null ? [] : DAEMON_TOOL_SPECS[tools]);
 

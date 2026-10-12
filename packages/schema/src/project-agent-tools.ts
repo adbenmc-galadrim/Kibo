@@ -3,9 +3,10 @@ import type { KiboErrorCode } from "./errors";
 import { TicketKey } from "./ids";
 import { LabelName } from "./label";
 import { NotePath } from "./note";
-import { PROGRESS_TOOL_NAME } from "./progress";
+import { TICKET_TOOL_NAMES } from "./progress";
 import { ProposeBatchInput } from "./project-agent";
 import { RunState } from "./run";
+import { PROJECT_SIGNAL_TOOLS } from "./signal";
 import { StatusId } from "./status";
 
 export const PROJECT_AGENT_TOOLS = [
@@ -19,6 +20,7 @@ export const PROJECT_AGENT_TOOLS = [
   "list_profiles",
   "project_changes",
   "propose_batch",
+  ...PROJECT_SIGNAL_TOOLS,
 ] as const;
 export type ProjectAgentTool = (typeof PROJECT_AGENT_TOOLS)[number];
 
@@ -50,6 +52,10 @@ export const ListQuestionsInput = z.object({
   ticketKey: TicketKey.optional(),
 });
 export type ListQuestionsInput = z.infer<typeof ListQuestionsInput>;
+export const ListSignalsInput = CursorInput.extend({
+  state: z.enum(["open", "closed", "all"]).default("open"),
+});
+export type ListSignalsInput = z.infer<typeof ListSignalsInput>;
 export const ListRunsInput = z.object({ state: RunState.optional() });
 export const ReadNoteInput = z.object({ path: NotePath });
 const NoInput = z.object({});
@@ -65,10 +71,11 @@ export const TOOL_INPUTS: Record<ProjectAgentTool, z.ZodTypeAny> = {
   list_profiles: NoInput,
   project_changes: NoInput,
   propose_batch: ProposeBatchInput,
+  list_signals: ListSignalsInput,
 };
 
 export const AgentMcpRequest = z.object({
-  tool: z.enum([...PROJECT_AGENT_TOOLS, PROGRESS_TOOL_NAME]),
+  tool: z.enum([...PROJECT_AGENT_TOOLS, ...TICKET_TOOL_NAMES]),
   input: z.record(z.string(), z.unknown()).default({}),
 });
 export type AgentMcpRequest = z.infer<typeof AgentMcpRequest>;
@@ -111,4 +118,5 @@ export type ProjectOverview = {
   notes: { path: string; title: string }[];
   profiles: { id: string; name: string; model: string }[];
   memory: string;
+  openSignals: number;
 };

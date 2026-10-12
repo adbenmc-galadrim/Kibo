@@ -22,8 +22,10 @@ import { ensureNotesTables } from "../notes/index";
 import { createNotesService, type NotesService } from "../notes/service";
 import { runView } from "../questions/questions.test-helper";
 import { call, createService, type Service } from "../service";
+import { type FakeSignals, fakeSignals } from "../signals/signals.test-helper";
 import { openStore } from "../store";
 import { createProjectAgentDataPort } from "./data-port";
+import { signalRefs } from "./signal-refs";
 import type { ProjectAgentAgentsPort, ProjectAgentDataPort } from "./types";
 
 export const HUMAN = { kind: "human", ref: "adam" } as const;
@@ -103,6 +105,7 @@ export function fakeAgents(): FakeAgents {
       questions: [],
       projectAgents: [],
       progress: [],
+      signals: [],
     }),
     assign(input) {
       if (fake.failAssign) throw fake.failAssign;
@@ -131,6 +134,7 @@ export type Harness = {
   notes: NotesService;
   data: ProjectAgentDataPort;
   agents: FakeAgents;
+  signals: FakeSignals;
   project: ProjectMeta;
   commands: ProjectCommand[];
   projectReads: () => number;
@@ -185,6 +189,7 @@ export function harness(): Harness {
     notes,
     data,
     agents: fakeAgents(),
+    signals: fakeSignals(),
     project,
     commands,
     projectReads: () => reads,
@@ -212,6 +217,7 @@ export async function contextOf(h: Harness): Promise<BatchContext> {
     profiles: PROFILES,
     demoProject: false,
     viewer: "adam",
+    ...signalRefs(h.signals, h.project.id),
   };
 }
 

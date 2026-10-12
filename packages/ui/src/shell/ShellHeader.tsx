@@ -27,7 +27,7 @@ type Props = {
   branch: string | null;
   gitError: string | null;
   agents: AgentsState | null;
-  agentPanel: { available: boolean; open: boolean; toggle(): void };
+  agentPanel: { available: boolean; open: boolean; toggle(): void; show(tab: "signals"): void };
   viewer: string;
   notifications: Session["notifications"];
   now: number;
@@ -82,6 +82,7 @@ export function ShellHeader({
           agents={agents}
           open={agentPanel.open}
           onToggle={agentPanel.toggle}
+          onOpenSignals={() => agentPanel.show("signals")}
         />
       )}
       {project && !isInbox(project.meta.id) && <ShareButton onShare={onShare} />}

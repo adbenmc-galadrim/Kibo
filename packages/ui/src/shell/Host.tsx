@@ -1,6 +1,7 @@
 import type { FileRef, TabTarget } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
 import { createContext, type ReactNode, useContext } from "react";
+import type { ProjectAgentTab } from "./use-project-agent-panel";
 
 export type Host = {
   openTicket(id: string): void;
@@ -11,6 +12,8 @@ export type Host = {
   openTarget(target: TabTarget, opts?: { newTab?: boolean; keep?: boolean }): void;
   openRun?(runId: string): void;
   answerRun?(runId: string): void;
+  openProjectAgent?(opts: { tab: ProjectAgentTab }): void;
+  projectId?: string | null;
 };
 const HostContext = createContext<Host | null>(null);
 

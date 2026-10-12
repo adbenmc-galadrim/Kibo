@@ -3,16 +3,19 @@ import { isProjectAgentRequest } from "./project-agent-rpc";
 import { TOOL_SPECS } from "./project-agent-tool-specs";
 import {
   AgentMcpRequest,
+  ListSignalsInput,
   PROJECT_AGENT_MCP_TOOLS,
   PROJECT_AGENT_TOOLS,
   TOOL_INPUTS,
 } from "./project-agent-tools";
 import { RpcRequest } from "./rpc";
 import { isProjectRun } from "./run";
+import { isSignalRequest } from "./signal-rpc";
 
 describe("project agent tools", () => {
-  test("ten MCP tools, prefixed for the kibo server", () => {
-    expect(PROJECT_AGENT_MCP_TOOLS).toHaveLength(10);
+  test("eleven MCP tools, prefixed for the kibo server", () => {
+    expect(PROJECT_AGENT_MCP_TOOLS).toHaveLength(11);
+    expect(PROJECT_AGENT_TOOLS).toContain("list_signals");
     expect(PROJECT_AGENT_MCP_TOOLS.every((name) => name.startsWith("mcp__kibo__"))).toBe(true);
   });
 
@@ -34,11 +37,35 @@ describe("project agent tools", () => {
   test("an MCP request names a project tool and defaults its input", () => {
     expect(AgentMcpRequest.parse({ tool: "project_overview" }).input).toEqual({});
     expect(AgentMcpRequest.safeParse({ tool: "ask_user" }).success).toBe(false);
+    expect(AgentMcpRequest.safeParse({ tool: "signal_project" }).success).toBe(true);
+  });
+
+  test("list_signals reads open signals by default, with a cursor", () => {
+    expect(ListSignalsInput.parse({})).toEqual({ state: "open" });
+    expect(TOOL_INPUTS.list_signals.safeParse({ state: "closed", cursor: "50" }).success).toBe(true);
+    expect(TOOL_INPUTS.list_signals.safeParse({ state: "later" }).success).toBe(false);
+    expect(TOOL_SPECS.find((s) => s.name === "list_signals")).toBeDefined();
+  });
+
+  test("an action may cite signals and dismiss one", () => {
+    const batch = TOOL_SPECS.find((s) => s.name === "propose_batch");
+    const actions = Object(Object(batch?.inputSchema.properties).actions);
+    const properties = Object(Object(actions.items).properties);
+    expect(properties.signals.maxItems).toBe(20);
+    expect(properties.signal.pattern).toBe("^sig:[1-9]\\d{0,5}$");
+    expect(properties.type.enum).toContain("dismissSignal");
   });
 
   test("a run of kind project is a project run", () => {
     expect(isProjectRun({ kind: "project" })).toBe(true);
     expect(isProjectRun({ kind: "ticket" })).toBe(false);
+  });
+
+  test("the signal RPC is part of the daemon RPC", () => {
+    const req = RpcRequest.parse({ method: "ignoreSignal", projectId: "p", signalId: "s" });
+    expect(isSignalRequest(req)).toBe(true);
+    expect(isSignalRequest(RpcRequest.parse({ method: "listSignals", projectId: "p" }))).toBe(true);
+    expect(isSignalRequest(RpcRequest.parse({ method: "getSession" }))).toBe(false);
   });
 
   test("the project agent RPC is part of the daemon RPC", () => {

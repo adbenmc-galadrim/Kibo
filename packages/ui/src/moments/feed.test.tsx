@@ -188,3 +188,33 @@ test("a labelled feed keeps its list even before the first moment", () => {
   expect(screen.getByRole("list", { name: "Fil de opus-dev-2" })).toBeTruthy();
   expect(screen.getByText("Rien dans le fil pour l'instant.")).toBeTruthy();
 });
+
+test("a signal moment names the kind and the title, and opens the signal box", async () => {
+  const opened: string[] = [];
+  const signal = raw({
+    kind: "signal",
+    signalId: "s1",
+    ref: "sig:1",
+    signalKind: "ticket",
+    title: "Tests du récepteur de hooks",
+  });
+  render(<Feed moments={[signal]} texts={frMoments} onOpenSignal={(id) => opened.push(id)} />);
+  const line = screen.getByRole("button", {
+    name: /Signal à l'agent de projet · Ticket à créer · « Tests du récepteur de hooks »/,
+  });
+  await userEvent.setup().click(line);
+  expect(opened).toEqual(["s1"]);
+});
+
+test("without a handler the signal moment is plain text", () => {
+  const signal = raw({
+    kind: "signal",
+    signalId: "s2",
+    ref: "sig:2",
+    signalKind: "blocker",
+    title: "Attend KIB-12",
+  });
+  render(<Feed moments={[signal]} texts={frMoments} />);
+  expect(screen.getByText("Signal à l'agent de projet · Blocage · « Attend KIB-12 »")).toBeTruthy();
+  expect(screen.queryByRole("button")).toBeNull();
+});

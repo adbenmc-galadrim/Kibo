@@ -11,6 +11,7 @@ import {
   QuestionTitle,
 } from "./question";
 import type { RunView } from "./run";
+import { ActionId, SIGNAL_REFS_MAX, SignalRef } from "./signal";
 import { StatusId } from "./status";
 
 export const PROJECT_AGENT_PROFILE_ID = "project-agent";
@@ -28,9 +29,13 @@ export const TicketRef = z.union([TicketKey, NewRef]);
 export type TicketRef = z.infer<typeof TicketRef>;
 export const LinkKind = z.enum(["blocks", "relates"]);
 export type LinkKind = z.infer<typeof LinkKind>;
-export const ActionId = z.number().int().positive();
+export { ActionId };
 
-const base = { id: ActionId, why: z.string().trim().max(WHY_MAX) };
+const base = {
+  id: ActionId,
+  why: z.string().trim().max(WHY_MAX),
+  signals: z.array(SignalRef).max(SIGNAL_REFS_MAX).optional(),
+};
 const ActionTitle = z.string().trim().min(1).max(ACTION_TITLE_MAX);
 const ActionDescription = z.string().max(ACTION_DESCRIPTION_MAX);
 const NoteBody = z.string().max(MAX_NOTE_CHARS);
@@ -88,10 +93,11 @@ export const ProposedAction = z.discriminatedUnion("type", [
   }),
   z.object({ ...base, type: z.literal("createNote"), path: NotePath, content: NoteBody }),
   z.object({ ...base, type: z.literal("updateNote"), path: NotePath, content: NoteBody }),
+  z.object({ ...base, type: z.literal("dismissSignal"), signal: SignalRef }),
 ]);
 export type ProposedAction = z.infer<typeof ProposedAction>;
 export type ActionType = ProposedAction["type"];
-export type ActionGroup = "tickets" | "agents" | "questions" | "notes";
+export type ActionGroup = "tickets" | "agents" | "questions" | "notes" | "signals";
 
 export const ACTION_GROUPS: Record<ActionType, ActionGroup> = {
   createTicket: "tickets",
@@ -106,6 +112,7 @@ export const ACTION_GROUPS: Record<ActionType, ActionGroup> = {
   createQuestion: "questions",
   createNote: "notes",
   updateNote: "notes",
+  dismissSignal: "signals",
 };
 
 export const ProposeBatchInput = z.object({

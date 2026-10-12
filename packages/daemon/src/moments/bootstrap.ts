@@ -18,6 +18,7 @@ import { agentMcpSink } from "../progress/agent-mcp";
 import { createProgressService, type ProgressDocs, type ProgressService } from "../progress/service";
 import type { AgentMcpSink } from "../project-agent/types";
 import type { RpcExtension } from "../rpc-extensions";
+import type { SignalService } from "../signals/service";
 import { withTrace } from "./hooks";
 import { handleVisibilityRequest } from "./rpc";
 import { openMomentStore } from "./store";
@@ -37,7 +38,7 @@ export type Visibility = {
   progress: ProgressService;
   rpc: RpcExtension;
   hooks(sink: HookSink): HookSink;
-  mcp(project: AgentMcpSink): AgentMcpSink;
+  mcp(project: AgentMcpSink, signals: Pick<SignalService, "record">): AgentMcpSink;
   agents(port: AgentsPort): AgentsPort;
   lifecycle: { onSpawned(run: RunView): Promise<void>; onTurnEnd(run: RunView): Promise<void> };
   peek(projectId: string, runId: string): RunPeek;
@@ -95,16 +96,17 @@ export function startVisibility(
         run,
         hasPlan: (r) => progress.hasPlan(r),
         hasReport: (r) => progress.hasReport(r),
-        moment: (runId, kind) => trace.reminder(runId, kind),
+        moment: (runId, kind) => trace.note(runId, { kind: "reminder", reminder: kind }),
       });
       forgets.push((runId) => reminded.forget(runId));
       return withTrace(reminded, { trace, run });
     },
-    mcp: (project) =>
+    mcp: (project, signals) =>
       agentMcpSink({
         project,
         run,
         progress,
+        signals,
         live: (runId, token) => agents()?.hooks.verify(runId, token) ?? false,
       }),
     agents: (port) => withRunProgress(port, progress),

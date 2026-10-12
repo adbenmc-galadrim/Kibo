@@ -1,12 +1,21 @@
-import { ASK_TOOL, type Batch, type HookPayload, type RunLogEntry, type RunView } from "@kibo/schema";
+import {
+  ASK_TOOL,
+  type Batch,
+  type HookPayload,
+  isWakeupMessage,
+  type RunLogEntry,
+  type RunView,
+  wakeupCount,
+} from "@kibo/schema";
 import { errorText } from "../agents/format";
 import { frProjectAgent } from "../i18n/fr-project-agent";
+import { frSignals } from "../i18n/fr-signals";
 
 export type ConversationItem =
   | { kind: "user"; id: string; at: number; text: string }
   | { kind: "agent"; id: string; at: number; text: string }
   | { kind: "reading"; id: string; at: number; tools: string[] }
-  | { kind: "batch"; id: string; at: number; batch: Batch }
+  | { kind: "batch"; id: string; at: number; batch: Batch; afterWakeup: boolean }
   | { kind: "event"; id: string; at: number; text: string; tone: "muted" | "red"; retry: boolean };
 
 type Reading = Extract<ConversationItem, { kind: "reading" }>;
@@ -15,6 +24,10 @@ export type PanelStatus = "ready" | "queued" | "thinking" | "batch";
 const KIBO_PREFIX = "mcp__kibo__";
 const NOT_READS: ReadonlySet<string> = new Set(["propose_batch", "ask_user", "ask_question"]);
 const t = frProjectAgent.conversation;
+export function wakeupText(text: string): string {
+  const count = wakeupCount(text);
+  return count === null ? frSignals.wakeup.label : frSignals.wakeup.event(count);
+}
 
 export function readingTool(payload: HookPayload): string | null {
   if (payload.event !== "PostToolUse" || !payload.tool?.startsWith(KIBO_PREFIX)) return null;
@@ -29,6 +42,7 @@ class Builder {
   private lastUser: string | null = null;
   private failedTurn = false;
   private lastRed = -1;
+  private wakeup = false;
   private batches: Batch[];
 
   constructor(batches: readonly Batch[]) {
@@ -43,7 +57,14 @@ class Builder {
   flushBatches(until: number): void {
     while (this.batches[0] && this.batches[0].createdAt <= until) {
       const batch = this.batches.shift();
-      if (batch) this.push({ kind: "batch", id: `batch-${batch.id}`, at: batch.createdAt, batch });
+      if (batch)
+        this.push({
+          kind: "batch",
+          id: `batch-${batch.id}`,
+          at: batch.createdAt,
+          batch,
+          afterWakeup: this.wakeup,
+        });
     }
   }
 
@@ -69,9 +90,11 @@ class Builder {
 
   answered(entry: RunLogEntry, text: string): void {
     this.flushBatches(entry.at - 1);
-    if (this.failedTurn && text === this.lastUser) this.event(entry, t.retried, "muted");
+    this.wakeup = isWakeupMessage(text);
+    if (this.wakeup) this.event(entry, wakeupText(text), "muted");
+    else if (this.failedTurn && text === this.lastUser) this.event(entry, t.retried, "muted");
     else this.push({ kind: "user", id: `log-${entry.id}`, at: entry.at, text });
-    this.lastUser = text;
+    if (!this.wakeup) this.lastUser = text;
     this.failedTurn = false;
     this.lastRed = -1;
   }
@@ -130,7 +153,7 @@ export function buildConversation(
 export function lastUserMessage(log: readonly RunLogEntry[]): string | null {
   for (let i = log.length - 1; i >= 0; i--) {
     const e = log[i]?.event;
-    if (e?.type === "answered") return e.text;
+    if (e?.type === "answered" && !isWakeupMessage(e.text)) return e.text;
   }
   return null;
 }

@@ -1,5 +1,6 @@
 import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 import {
+  type AgentsState,
   type CodeEvent,
   type CodeRequest,
   DEFAULT_WORKFLOW,
@@ -13,8 +14,10 @@ import {
 } from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { agentsFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
+import { signalsView } from "../project-agent/signals/fixtures";
 import { targetToHash } from "../tabs/target-hash";
 
 const project: ProjectSnapshot = {
@@ -186,8 +189,9 @@ mock.module("../state/use-projects", () => ({
   }),
   useProject: (id: string | null) => (id ? (snapshots.get(id) ?? null) : null),
 }));
+let agents: AgentsState | null = null;
 mock.module("../state/use-agents", () => ({
-  useAgents: () => null,
+  useAgents: () => agents,
   useConfig: () => null,
   useNow: () => 0,
   useRunLog: () => ({ log: null, missing: false }),
@@ -205,6 +209,7 @@ mock.module("../api", () =>
         if (req.method === "setPresence") return Promise.resolve(null);
         if (req.method === "getProjectAgent")
           return Promise.resolve({ session: null, run: null, batches: [], past: [], memoryPath: "m.md" });
+        if (req.method === "listSignals") return Promise.resolve(signalsView());
         saved.push(req);
         if (req.method === "command" && req.command.method === "addPage")
           return Promise.resolve({ id: "9@1", title: req.command.title, kind: "view", parentId: null });
@@ -258,6 +263,7 @@ const crumbs = () => within(screen.getByRole("navigation", { name: "Fil d'Ariane
 
 beforeEach(() => {
   syncStatus = unconfigured;
+  agents = null;
   localStorage.removeItem("kibo.projectAgent.open");
   saved.length = 0;
   code.length = 0;
@@ -692,4 +698,16 @@ test("the project agent opens below the header, whose button stays pressed and c
   await user.click(button);
   await waitFor(() => expect(screen.queryByRole("dialog", { name: /^Agent de projet/ })).toBeNull());
   expect(screen.getByRole("button", { name: "Agent de projet" }).getAttribute("aria-pressed")).toBe("false");
+});
+
+test("the signal badge of the header opens the project agent on its signal box", async () => {
+  agents = { ...agentsFixture(), signals: [{ projectId: "p1", open: 3, unread: 3 }] };
+  renderShell();
+  await go("#/p/p1/");
+  const user = userEvent.setup();
+  expect(await screen.findByRole("button", { name: "Agent de projet · 3 signaux en boîte" })).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Ouvrir la boîte à signaux" }));
+  const panel = await screen.findByRole("dialog", { name: "Agent de projet · Kibo" });
+  const tab = within(panel).getByRole("tab", { name: /^Signaux/ });
+  expect(tab.getAttribute("aria-selected")).toBe("true");
 });

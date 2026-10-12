@@ -1,10 +1,4 @@
-import {
-  type AgentMcpReply,
-  AgentMcpRequest,
-  KiboError,
-  PROGRESS_TOOL_NAME,
-  type RunView,
-} from "@kibo/schema";
+import { type AgentMcpReply, AgentMcpRequest, isTicketToolName, KiboError, type RunView } from "@kibo/schema";
 import { STATUS } from "../http-response";
 import { parseJson, readBounded } from "../read-bounded";
 import type { AgentMcpSink } from "./types";
@@ -30,7 +24,7 @@ function verified(req: Request, runId: string, sink: AgentMcpSink): Response | n
 }
 
 const toolFits = (run: RunView, tool: AgentMcpRequest["tool"]): boolean =>
-  run.kind === "ticket" ? tool === PROGRESS_TOOL_NAME : run.kind === "project" && tool !== PROGRESS_TOOL_NAME;
+  run.kind === "ticket" ? isTicketToolName(tool) : run.kind === "project" && !isTicketToolName(tool);
 
 async function answer(run: RunView, req: AgentMcpRequest, sink: AgentMcpSink): Promise<Response> {
   if (!toolFits(run, req.tool))

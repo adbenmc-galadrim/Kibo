@@ -12,6 +12,7 @@ import type { AgentDataPort, Orchestrator } from "./agents/orchestrator";
 import { answerFromDrawer, type DeliveryDeps, deliverAnswers } from "./agents/question-delivery";
 import { assertNotInboxForAgents } from "./inbox/inbox-rules";
 import { runTallies } from "./questions/run-tallies";
+import type { SignalService } from "./signals/service";
 
 export type AgentsPort = Pick<
   Orchestrator,
@@ -57,6 +58,13 @@ export function withRunProgress(
       const shown = state.runs.filter((r) => !isTerminal(r.state) || (r.endedAt ?? 0) >= since);
       return { ...state, progress: progress.summaries(shown) };
     },
+  };
+}
+
+export function withSignalCounts(port: AgentsPort, signals: Pick<SignalService, "counts">): AgentsPort {
+  return {
+    ...port,
+    state: () => ({ ...port.state(), signals: signals.counts() }),
   };
 }
 

@@ -22,6 +22,8 @@ const ctx: BatchContext = {
   profiles: PROFILES,
   demoProject: false,
   viewer: "adam",
+  signals: [],
+  closedSignals: [],
 };
 
 const ref = fc.constantFrom("EMIS-1", "EMIS-2", "EMIS-3", "EMIS-999", "new:1", "new:2", "new:3");

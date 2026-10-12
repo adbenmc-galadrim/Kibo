@@ -12,7 +12,7 @@ import {
 } from "@kibo/schema";
 import { type BatchContext, captureExpected, ticketByKey, ticketRuns } from "./expected";
 import { assignableProfiles } from "./overview";
-import { isNewRef, ticketRefsOf } from "./refs";
+import { isNewRef, signalRefsOf, ticketRefsOf } from "./refs";
 
 export type { BatchContext } from "./expected";
 export { captureExpected } from "./expected";
@@ -55,6 +55,11 @@ function refProblem(scan: Scan, ref: string, index: number): string | null {
   const at = scan.declared.get(ref);
   if (at === undefined) return `référence ${ref} inconnue`;
   return at >= index ? `référence ${ref} déclarée après usage` : null;
+}
+
+function signalProblem(scan: Scan, ref: string): string | null {
+  if (scan.ctx.signals.includes(ref)) return null;
+  return scan.ctx.closedSignals.includes(ref) ? `signal déjà clos « ${ref} »` : `signal inconnu « ${ref} »`;
 }
 
 function touch(scan: Scan, target: string): string[] {
@@ -206,6 +211,9 @@ const checks: { [T in ActionType]: Check<T> } = {
     if (!scan.ctx.notes.some((n) => n.path === a.path)) return [`note introuvable « ${a.path} »`];
     return touch(scan, `${a.path}.content`);
   },
+  dismissSignal(scan, a) {
+    return touch(scan, a.signal);
+  },
 };
 
 function runCheck<T extends ActionType>(
@@ -218,7 +226,10 @@ function runCheck<T extends ActionType>(
 }
 
 function actionProblems(scan: Scan, action: ProposedAction, index: number): string[] {
-  const refs = ticketRefsOf(action).flatMap((ref) => refProblem(scan, ref, index) ?? []);
+  const refs = [
+    ...ticketRefsOf(action).flatMap((ref) => refProblem(scan, ref, index) ?? []),
+    ...[...new Set(signalRefsOf(action))].flatMap((ref) => signalProblem(scan, ref) ?? []),
+  ];
   return refs.length > 0 ? refs : runCheck(scan, action, index);
 }
 

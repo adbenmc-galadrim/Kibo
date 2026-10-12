@@ -7,8 +7,10 @@ import {
   type ExpectedState,
   type ProjectSnapshot,
   type ProposedAction,
+  type Signal,
 } from "@kibo/schema";
 import { frProjectAgent } from "../i18n/fr-project-agent";
+import { frSignals } from "../i18n/fr-signals";
 
 export type BatchGroup = { group: ActionGroup; actions: ProposedAction[] };
 export type ActionDiff = { before: string; after: string };
@@ -18,7 +20,7 @@ export type DiffLabels = {
   profile(profileId: string): string;
 };
 
-const ORDER: readonly ActionGroup[] = ["tickets", "agents", "questions", "notes"];
+const ORDER: readonly ActionGroup[] = ["tickets", "agents", "questions", "notes", "signals"];
 const t = frProjectAgent.action;
 const NOTHING = "—";
 
@@ -76,6 +78,8 @@ export function actionTitle(action: ProposedAction, labels: DiffLabels = default
       return t.createNote(action.path);
     case "updateNote":
       return t.updateNote(action.path);
+    case "dismissSignal":
+      return t.dismissSignal(action.signal);
   }
 }
 
@@ -110,3 +114,11 @@ export function actionDiff(
 
 export const replacesContent = (action: ProposedAction): boolean =>
   action.type === "updateNote" || (action.type === "updateTicket" && action.description !== undefined);
+
+export function citedSignals(action: ProposedAction, signals: readonly Signal[]): Signal[] {
+  const refs = action.type === "dismissSignal" ? [action.signal] : (action.signals ?? []);
+  return refs.flatMap((ref) => signals.find((s) => s.ref === ref) ?? []);
+}
+
+export const signalProvenance = (action: ProposedAction, signals: readonly Signal[]): string[] =>
+  citedSignals(action, signals).map((s) => frSignals.provenance(frSignals.kinds[s.kind], s.runLabel));

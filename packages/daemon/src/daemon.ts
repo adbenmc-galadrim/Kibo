@@ -6,6 +6,7 @@ import { createLoadSampler, readHostInfo } from "./agents/host-load";
 import type { Notice } from "./agents/notifier";
 import { createOrchestrator, type Orchestrator } from "./agents/orchestrator";
 import { openRunStore } from "./agents/run-store";
+import { withSignalCounts } from "./agents-rpc";
 import { startAi } from "./ai/bootstrap";
 import type { DraftAssets } from "./ai/draft-preview";
 import { appVersion } from "./app-version";
@@ -46,6 +47,7 @@ import { call, createService } from "./service";
 import { ready } from "./service-ports";
 import { openSessionStore } from "./sessions/session-store";
 import { openLocalSettings } from "./settings";
+import { startSignals } from "./signals/bootstrap";
 import { DaemonRunning, findRunningDaemon, type Probe } from "./single-instance";
 import { openStore } from "./store";
 
@@ -155,6 +157,14 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   });
   closers.push(service.attachComponents(components), () => components.stop());
   await components.start();
+  const signals = startSignals({
+    home: opts.home,
+    docs: service.docs,
+    trace: visibility.trace,
+    notify: opts.notify ?? (() => {}),
+    agent: () => projectAgent.agent,
+  });
+  closers.push(signals.stop);
   const projectAgent = startProjectAgent({
     home: opts.home,
     service,
@@ -162,8 +172,10 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     settings: createProjectSettings(store.db),
     orchestrator: () => ready(agents, "INTERNAL", "agents are not ready"),
     notify: opts.notify ?? (() => {}),
+    signals: signals.service,
   });
   closers.push(() => projectAgent.stop());
+  signals.start();
   const market = await startMarket({
     home: opts.home,
     toolchain: opts.toolchain,
@@ -227,12 +239,13 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       tutorial.rpc,
       projectAgent.agent.rpc,
       visibility.rpc,
+      signals.rpc,
     ],
     port: opts.port,
     uiDir: opts.uiDir,
     extraOrigins: devOrigins,
     hooks: visibility.hooks(agentQuestionHooks(() => agents, service.agentData, opts.notify ?? (() => {}))),
-    agentMcp: visibility.mcp(projectAgent.agent.mcp),
+    agentMcp: visibility.mcp(projectAgent.agent.mcp, signals.service),
     assets: components.assets,
     icons: service.icons,
     sandboxOrigin: () => sandboxOrigin || null,
@@ -285,7 +298,10 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   });
   closers.push(() => orchestrator.stop());
   agents = orchestrator;
-  closers.push(collab.attachRuns(orchestrator), service.attachAgents(visibility.agents(orchestrator)));
+  closers.push(
+    collab.attachRuns(orchestrator),
+    service.attachAgents(withSignalCounts(visibility.agents(orchestrator), signals.service)),
+  );
   const ai = await startAi({
     home: opts.home,
     toolchain: opts.toolchain,

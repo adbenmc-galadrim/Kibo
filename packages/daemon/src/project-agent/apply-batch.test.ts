@@ -34,10 +34,26 @@ const setup = () => {
 const why = "";
 const all = (actions: readonly ProposedAction[]) => new Set(actions.map((a) => a.id));
 const apply = (h: Harness, batch: Awaited<ReturnType<typeof propose>>, chosen = all(batch.actions)) =>
-  applyBatch({ data: h.data, agents: () => h.agents }, batch, chosen, HUMAN);
+  applyBatch({ data: h.data, agents: () => h.agents, signals: h.signals }, batch, chosen, HUMAN);
 const outcomes = (results: { outcome: string }[]) => results.map((r) => r.outcome);
 
 describe("applyBatch", () => {
+  test("a dismissed signal is applied without any project command; cited signals change nothing", async () => {
+    const h = setup();
+    await seed(h);
+    h.signals.add(1, { projectId: h.project.id });
+    h.signals.add(2, { projectId: h.project.id, kind: "context" });
+    const batch = await propose(h, [
+      { id: 1, why, type: "createTicket", ref: "new:1", title: "Tests", signals: ["sig:1"] },
+      { id: 2, why, type: "dismissSignal", signal: "sig:2" },
+    ]);
+    const results = await apply(h, batch);
+    expect(outcomes(results)).toEqual(["applied", "applied"]);
+    expect(h.commands.map((c) => c.method)).toEqual(["createTicket"]);
+    expect(results[0]?.created?.key).toBe("EMIS-10");
+    expect(results[1]).toEqual({ actionId: 2, outcome: "applied", detail: null, created: null });
+  });
+
   test("applies a seven action batch in order, feeding new: references to the next actions", async () => {
     const h = setup();
     const s = await seed(h);
@@ -90,7 +106,12 @@ describe("applyBatch", () => {
         return out;
       },
     };
-    const results = await applyBatch({ data, agents: () => h.agents }, batch, all(batch.actions), HUMAN);
+    const results = await applyBatch(
+      { data, agents: () => h.agents, signals: h.signals },
+      batch,
+      all(batch.actions),
+      HUMAN,
+    );
     expect(outcomes(results)).toEqual(["applied", "failed", "skipped", "skipped", "applied"]);
     expect(results[1]?.detail).toContain("read-only");
     expect(results[2]?.detail).toBe("dépend de new:1 (échouée)");

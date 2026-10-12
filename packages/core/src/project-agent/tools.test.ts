@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
+import { foldSignal, type SignalEvent, type SignalRow } from "@kibo/schema";
 import { answered, project, question, run, ticket } from "./test-kit";
-import { compactJson, listQuestions, listRuns, listTickets, pageOf } from "./tools";
+import { compactJson, listQuestions, listRuns, listSignals, listTickets, pageOf } from "./tools";
 
 describe("pageOf", () => {
   const items = Array.from({ length: 120 }, (_, i) => i);
@@ -94,4 +95,62 @@ describe("listRuns", () => {
 
 test("compactJson has no whitespace", () => {
   expect(compactJson({ a: [1, { b: "c d" }] })).toBe('{"a":[1,{"b":"c d"}]}');
+});
+
+describe("listSignals", () => {
+  const row = (seq: number): SignalRow => ({
+    id: `s${seq}`,
+    seq,
+    projectId: "p1",
+    runId: "r1",
+    runLabel: "opus-dev",
+    profileName: "Opus",
+    originTicketId: "t1",
+    originTicketKey: "EMIS-1",
+    ticketId: "t1",
+    ticketKey: "EMIS-1",
+    kind: "ticket",
+    title: `Signal ${seq}`,
+    body: "",
+    createdAt: seq,
+  });
+  const closed: SignalEvent = { type: "handled", batchId: "b1", actionId: 1 };
+  const signals = Array.from({ length: 70 }, (_, i) =>
+    foldSignal(row(70 - i), (70 - i) % 7 === 0 ? [{ at: 100, event: closed }] : []),
+  );
+
+  test("lists open signals by default, oldest first, fifty per page", () => {
+    const page = listSignals(signals, { state: "open" });
+    expect(page.total).toBe(60);
+    expect(page.items).toHaveLength(50);
+    expect(page.nextCursor).toBe("50");
+    expect(page.items[0]).toEqual({
+      ref: "sig:1",
+      kind: "ticket",
+      runLabel: "opus-dev",
+      ticketKey: "EMIS-1",
+      createdAt: 1,
+      status: "new",
+      title: "Signal 1",
+      body: "",
+    });
+    expect(listSignals(signals, { state: "open", cursor: "50" }).items).toHaveLength(10);
+  });
+
+  test("filters closed or all signals", () => {
+    const closedPage = listSignals(signals, { state: "closed" });
+    expect(closedPage.items.map((s) => s.ref)).toEqual([
+      "sig:7",
+      "sig:14",
+      "sig:21",
+      "sig:28",
+      "sig:35",
+      "sig:42",
+      "sig:49",
+      "sig:56",
+      "sig:63",
+      "sig:70",
+    ]);
+    expect(listSignals(signals, { state: "all" }).total).toBe(70);
+  });
 });

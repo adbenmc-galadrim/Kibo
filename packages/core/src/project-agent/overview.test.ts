@@ -48,6 +48,7 @@ const input = (p: Partial<OverviewInput> = {}): OverviewInput => ({
   profiles: PROFILES,
   demoProject: false,
   memory: "- Adam préfère les petits lots.",
+  openSignals: 0,
   ...p,
 });
 
@@ -156,5 +157,15 @@ describe("ticket card and sheet", () => {
         { id: "r3", label: "opus-dev", state: "done", turns: 2 },
       ],
     });
+  });
+});
+
+describe("open signals in the overview", () => {
+  test("are counted and rendered", () => {
+    expect(projectOverview(input({ openSignals: 2 })).openSignals).toBe(2);
+    expect(renderOverview(projectOverview(input({ openSignals: 2 })))).toContain(
+      "## Signaux\n\nSignaux ouverts : 2",
+    );
+    expect(renderOverview(projectOverview(input()))).toContain("## Signaux\n\nAucun.");
   });
 });

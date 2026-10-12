@@ -17,6 +17,7 @@ const kinds: Record<ActionKind, string> = {
   todo: "Tâches",
   mcp: "Outil",
   subagent: "Sous-agent",
+  signal: "Signal",
   other: "Outil",
 };
 

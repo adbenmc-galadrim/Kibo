@@ -22,6 +22,8 @@ const ctx = (p: Partial<BatchContext> = {}): BatchContext => ({
   profiles: PROFILES,
   demoProject: false,
   viewer: "adam",
+  signals: [],
+  closedSignals: [],
   ...p,
 });
 
@@ -143,6 +145,10 @@ const ids = { "EMIS-1": "t1", "EMIS-2": "t2", "EMIS-3": "t3", "new:1": "t9" };
 const commands = (action: ProposedAction) => commandsFor(action, ids, HUMAN, snapshot);
 
 describe("commandsFor", () => {
+  test("dismissing a signal runs no project command", () => {
+    expect(commands({ id: 1, why, type: "dismissSignal", signal: "sig:3" })).toEqual([]);
+  });
+
   test("tickets", () => {
     expect(
       commands({

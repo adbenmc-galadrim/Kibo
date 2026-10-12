@@ -109,6 +109,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     openView: views.openView,
     openRun: runPanel.open,
     answerRun: setFocusRun,
+    showProjectAgent: agentPanel.show,
   });
 
   useWorkspaceKeys({ tabs, dialogs, palette, set, setPalette, toggleAgent: agentPanel.toggle });
@@ -258,6 +259,8 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                   key={project.meta.id}
                   open={agentPanel.open}
                   project={project}
+                  tab={agentPanel.tab}
+                  onTab={agentPanel.setTab}
                   onClose={agentPanel.close}
                 />
               )}

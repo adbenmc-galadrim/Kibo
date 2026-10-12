@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ASK_TOOLS } from "./run";
+import { SIGNAL_PROJECT_SPEC, SIGNAL_TOOL, SIGNAL_TOOL_NAME } from "./signal";
 import type { TodoItem } from "./todo-item";
 
 export { TodoItem } from "./todo-item";
@@ -67,7 +68,9 @@ export type ProgressInput = z.infer<typeof ProgressInput>;
 
 export const PROGRESS_TOOL_NAME = "ticket_progress";
 export const PROGRESS_TOOL = `mcp__kibo__${PROGRESS_TOOL_NAME}`;
-export const TICKET_MCP_TOOLS: readonly string[] = [...ASK_TOOLS, PROGRESS_TOOL];
+export const TICKET_MCP_TOOLS: readonly string[] = [...ASK_TOOLS, PROGRESS_TOOL, SIGNAL_TOOL];
+export const TICKET_TOOL_NAMES = [PROGRESS_TOOL_NAME, SIGNAL_TOOL_NAME] as const;
+export const isTicketToolName = (name: string): boolean => TICKET_TOOL_NAMES.some((tool) => tool === name);
 
 export type McpInputSchema = { type: "object"; properties: Record<string, unknown>; required: string[] };
 export type McpToolSpec = { name: string; description: string; inputSchema: McpInputSchema };
@@ -115,6 +118,8 @@ export const TICKET_PROGRESS_SPEC: McpToolSpec = {
     required: [],
   },
 };
+
+export const TICKET_TOOL_SPECS: readonly McpToolSpec[] = [TICKET_PROGRESS_SPEC, SIGNAL_PROJECT_SPEC];
 
 const TODO_STATUS: Record<TodoItem["status"], StepStatus> = {
   pending: "todo",

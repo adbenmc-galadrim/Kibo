@@ -131,3 +131,46 @@ test("panelStatus: ready without run, queued, thinking, and a pending batch firs
   expect(panelStatus(projectRun({ state: "done" }), null)).toBe("ready");
   expect(panelStatus(projectRun({ state: "running" }), pendingBatch())).toBe("batch");
 });
+
+const WAKEUP =
+  "Réveil automatique : 2 signaux à traiter (1 ticket à créer, 1 blocage). Lis « Signaux à traiter » et propose un lot.";
+
+const wakeLog: RunLogEntry[] = [
+  { id: 1, at: 10, event: { type: "answered", text: "Où en est-on ?", rank: 0 } },
+  exitedAt(2, 20),
+  { id: 3, at: 30, event: { type: "answered", text: WAKEUP, rank: 0 } },
+  exitedAt(4, 40),
+];
+
+function exitedAt(id: number, at: number): RunLogEntry {
+  return {
+    id,
+    at,
+    event: { type: "exited", code: 0, isError: false, result: "", tokens: 0, costUsd: 0, denied: [] },
+  };
+}
+
+test("a wakeup message is a muted event line, never a message from Adam", () => {
+  const items = buildConversation(wakeLog, [], projectRun());
+  expect(items.map((i) => (i.kind === "event" ? [i.kind, i.text, i.tone] : [i.kind]))).toEqual([
+    ["user"],
+    ["event", "Réveil automatique · 2 signaux", "muted"],
+  ]);
+});
+
+test("the batch proposed after a wakeup says so, not the one after a message from Adam", () => {
+  const batches = [
+    pendingBatch({ id: "b-adam", createdAt: 15 }),
+    pendingBatch({ id: "b-wake", createdAt: 35 }),
+  ];
+  const items = buildConversation(wakeLog, batches, projectRun());
+  expect(items.flatMap((i) => (i.kind === "batch" ? [[i.batch.id, i.afterWakeup]] : []))).toEqual([
+    ["b-adam", false],
+    ["b-wake", true],
+  ]);
+});
+
+test("lastUserMessage skips wakeups: Réessayer never replays one", () => {
+  expect(lastUserMessage(wakeLog)).toBe("Où en est-on ?");
+  expect(lastUserMessage(wakeLog.slice(2))).toBeNull();
+});

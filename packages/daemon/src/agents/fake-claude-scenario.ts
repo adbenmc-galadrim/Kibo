@@ -85,7 +85,11 @@ export type FakeScenarioName =
   | "progress"
   | "progress-hold"
   | "progress-no-plan"
-  | "progress-routes";
+  | "progress-routes"
+  | "signal"
+  | "signal-spam"
+  | "project-agent-wakeup"
+  | "signal-routes";
 
 export function scenarioPath(name: FakeScenarioName): string {
   return join(import.meta.dir, "scenarios", `${name}.json`);

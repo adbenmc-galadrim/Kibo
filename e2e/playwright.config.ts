@@ -229,6 +229,20 @@ const allDaemons = [
     spec: /visibility\.spec\.ts/,
     scenario: "progress-routes",
   },
+  {
+    name: "signals-dark",
+    scheme: "dark",
+    port: 4467,
+    spec: /signals\.spec\.ts/,
+    scenario: "signal-routes",
+  },
+  {
+    name: "signals-light",
+    scheme: "light",
+    port: 4468,
+    spec: /signals\.spec\.ts/,
+    scenario: "signal-routes",
+  },
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 

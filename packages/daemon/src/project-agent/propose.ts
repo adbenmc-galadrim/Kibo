@@ -9,6 +9,7 @@ import { batchNotice } from "../agents/notifier";
 import { guarded } from "../agents/orchestrator-support";
 import type { AgentContext } from "./context";
 import { projectOfRun } from "./sessions";
+import { signalRefs } from "./signal-refs";
 
 function batchContext(ctx: AgentContext, run: RunView, projectId: string): BatchContext {
   const notes = ctx.turnNotes.get(run.id);
@@ -20,6 +21,7 @@ function batchContext(ctx: AgentContext, run: RunView, projectId: string): Batch
     profiles: ctx.data.profiles(),
     demoProject: ctx.data.isDemoProject(projectId),
     viewer: ctx.data.viewer(projectId),
+    ...signalRefs(ctx.signals, projectId),
   };
 }
 

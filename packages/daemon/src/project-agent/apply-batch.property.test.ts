@@ -25,7 +25,7 @@ async function withHarness<T>(fn: (h: Harness, s: Seeded) => Promise<T>): Promis
 }
 
 const apply = (h: Harness, batch: Awaited<ReturnType<typeof propose>>, chosen: ReadonlySet<number>) =>
-  applyBatch({ data: h.data, agents: () => h.agents }, batch, chosen, HUMAN);
+  applyBatch({ data: h.data, agents: () => h.agents, signals: h.signals }, batch, chosen, HUMAN);
 
 const mutation = fc.record({
   renameFirst: fc.boolean(),

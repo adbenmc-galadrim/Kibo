@@ -11,6 +11,7 @@ const RUNS = new Map([TICKET, PROJECT].map((r) => [r.id, r]));
 function setup() {
   const recorded: { run: string; input: ProgressInput }[] = [];
   const projectCalls: string[] = [];
+  const signaled: string[] = [];
   const project: AgentMcpSink = {
     verify: (runId) => {
       if (runId !== "p1") throw new Error("not a project run");
@@ -32,8 +33,14 @@ function setup() {
         return "Plan enregistré.";
       },
     },
+    signals: {
+      record: async (run: RunView) => {
+        signaled.push(run.id);
+        return "Signal sig:1 enregistré.";
+      },
+    },
   });
-  return { sink, recorded, projectCalls };
+  return { sink, recorded, projectCalls, signaled };
 }
 
 test("a ticket run is verified by its live token, a project run by the project agent", () => {
@@ -51,6 +58,15 @@ test("ticket_progress of a ticket run reaches the progress service, project tool
   expect(recorded).toEqual([{ run: "t1", input: { plan: [] } }]);
   expect(await sink.call(PROJECT, "list_tickets", {})).toBe("projet");
   expect(projectCalls).toEqual(["p1:list_tickets"]);
+});
+
+test("signal_project of a ticket run reaches the signal service", async () => {
+  const { sink, signaled, projectCalls } = setup();
+  expect(await sink.call(TICKET, "signal_project", { kind: "ticket", title: "Tests" })).toBe(
+    "Signal sig:1 enregistré.",
+  );
+  expect(signaled).toEqual(["t1"]);
+  expect(projectCalls).toEqual([]);
 });
 
 test("an invalid progress input is an INVALID_INPUT error, nothing is recorded", async () => {

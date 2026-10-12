@@ -7,6 +7,7 @@ import {
   KiboError,
   type ProjectAgentRpcRequest,
 } from "@kibo/schema";
+import { guarded } from "../agents/orchestrator-support";
 import type { AgentContext } from "./context";
 import { rejectionMessage } from "./sessions";
 
@@ -78,6 +79,7 @@ export async function decideBatch(
   ctx.emit();
   const results = await applyResults(ctx, batch, chosen, by);
   const applied = ctx.store.appendBatchEvent(batch.id, { type: "results", results }, ctx.now());
+  guarded("signal settlement", () => ctx.signals.settle(applied, results, by));
   ctx.emit();
   return applied;
 }

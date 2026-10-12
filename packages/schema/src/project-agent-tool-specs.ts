@@ -11,6 +11,7 @@ import {
 import { LIST_QUERY_MAX, type ProjectAgentTool } from "./project-agent-tools";
 import { QUESTION_CONTEXT_MAX, QUESTION_OPTION_MAX, QUESTION_OPTIONS_MAX } from "./question";
 import { RunState } from "./run";
+import { SIGNAL_REF_PATTERN, SIGNAL_REFS_MAX } from "./signal";
 import { StatusId } from "./status";
 
 export type ToolSpec = { name: ProjectAgentTool; description: string; inputSchema: Record<string, unknown> };
@@ -31,6 +32,7 @@ const ticketRef = { type: "string", pattern: "^([A-Z]{2,6}-\\d+|new:[1-9]\\d{0,3
 const statusId = { type: "string", enum: StatusId.options };
 const labels = { type: "array", items: { type: "string" }, maxItems: LABEL_MAX };
 const option = { type: "string", maxLength: QUESTION_OPTION_MAX };
+const signalRef = { type: "string", pattern: SIGNAL_REF_PATTERN };
 
 const ACTION = object(
   {
@@ -67,6 +69,13 @@ const ACTION = object(
     blocking: { type: "boolean" },
     path: text("Chemin de la note, en .md."),
     content: text("Contenu complet de la note.", MAX_NOTE_CHARS),
+    signals: {
+      type: "array",
+      items: signalRef,
+      maxItems: SIGNAL_REFS_MAX,
+      description: "Signaux (sig:<n>) que cette action traite.",
+    },
+    signal: { ...signalRef, description: "dismissSignal : signal sans suite." },
   },
   ["id", "type", "why"],
 );
@@ -137,5 +146,11 @@ export const TOOL_SPECS: readonly ToolSpec[] = [
       },
       ["summary", "actions"],
     ),
+  },
+  {
+    name: "list_signals",
+    description:
+      "Signaux envoyés par les runs de ticket du projet (tickets à créer, blocages, contexte, questions), ouverts par défaut, 50 par page.",
+    inputSchema: object({ state: { type: "string", enum: ["open", "closed", "all"] }, cursor }),
   },
 ];

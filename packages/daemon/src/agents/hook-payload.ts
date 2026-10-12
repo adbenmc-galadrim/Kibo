@@ -40,6 +40,7 @@ const MCP_DETAILS: Record<ProjectAgentTool, (input: ToolInput) => string | null>
   read_note: (input) => text(input.path),
   list_profiles: () => null,
   project_changes: () => null,
+  list_signals: filters("state"),
   propose_batch: (input) => `${Array.isArray(input.actions) ? input.actions.length : 0} actions`,
 };
 

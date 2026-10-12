@@ -128,3 +128,20 @@ describe("project agent schema", () => {
     }
   });
 });
+
+describe("signals in a batch", () => {
+  test("an action may cite up to twenty signals", () => {
+    const create = { id: 1, why: "", type: "createTicket", ref: "new:1", title: "T", signals: ["sig:1"] };
+    expect(ProposedAction.parse(create)).toMatchObject({ signals: ["sig:1"] });
+    const many = Array.from({ length: 21 }, (_, i) => `sig:${i + 1}`);
+    expect(ProposedAction.safeParse({ ...create, signals: many }).success).toBe(false);
+    expect(ProposedAction.safeParse({ ...create, signals: ["sig:0"] }).success).toBe(false);
+  });
+
+  test("dismissSignal closes a signal in the signals group", () => {
+    const dismiss = { id: 2, why: "sans suite", type: "dismissSignal", signal: "sig:3" } as const;
+    expect(ProposedAction.parse(dismiss)).toEqual(dismiss);
+    expect(ProposedAction.safeParse({ ...dismiss, signal: "3" }).success).toBe(false);
+    expect(ACTION_GROUPS.dismissSignal).toBe("signals");
+  });
+});

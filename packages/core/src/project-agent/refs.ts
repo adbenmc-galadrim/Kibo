@@ -1,4 +1,4 @@
-import { NewRef, type ProposedAction } from "@kibo/schema";
+import { NewRef, type ProposedAction, type SignalRef } from "@kibo/schema";
 
 export const isNewRef = (ref: string): boolean => NewRef.safeParse(ref).success;
 
@@ -20,6 +20,12 @@ export function ticketRefsOf(action: ProposedAction): string[] {
     case "answerQuestion":
     case "createNote":
     case "updateNote":
+    case "dismissSignal":
       return [];
   }
 }
+
+export const signalRefsOf = (action: ProposedAction): SignalRef[] => [
+  ...(action.signals ?? []),
+  ...(action.type === "dismissSignal" ? [action.signal] : []),
+];

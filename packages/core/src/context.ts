@@ -12,6 +12,7 @@ import {
   type PrState,
   type Question,
   type QuestionRecipient,
+  SIGNAL_TOOL,
   type Step,
   type TicketView,
 } from "@kibo/schema";
@@ -24,7 +25,7 @@ export type BriefInput = {
   note: string;
   commits?: readonly string[];
 };
-export type RunProtocol = { progress: boolean; recipients: readonly QuestionRecipient[] };
+export type RunProtocol = { progress: boolean; recipients: readonly QuestionRecipient[]; signals: boolean };
 export type ContextFile = { path: string; content: string };
 export type RunContext = { files: ContextFile[]; systemPrompt: string; brief: string; tokens: number };
 
@@ -171,6 +172,14 @@ function progressRules(protocol: RunProtocol | undefined): string[] {
   ];
 }
 
+function signalRules(protocol: RunProtocol | undefined): string[] {
+  if (!protocol?.signals) return [];
+  return [
+    `- Tu ne crées jamais de ticket : un ticket à créer, un blocage, un contexte utile au projet ou une question pour le chef de projet passent par \`${SIGNAL_TOOL}\` (kind, titre court, corps facultatif, ticket visé). Un signal n'agit pas : l'agent de projet propose, l'utilisateur valide. Vingt signaux au plus par run ; regroupe.`,
+    `- Une question bloquante pour continuer reste \`${ASK_TOOL}\`.`,
+  ];
+}
+
 function recipientRules(protocol: RunProtocol | undefined): string[] {
   if (!protocol || protocol.recipients.length === 0) return [];
   return [
@@ -198,6 +207,7 @@ export function buildSystemPrompt(
     "- Jamais de décision à valider dans ton texte final : Kibo ne le lit pas.",
     ...recipientRules(protocol),
     ...progressRules(protocol),
+    ...signalRules(protocol),
     `- Sous-agents autorisés : ${allowed}.`,
     "",
   ].join("\n");
