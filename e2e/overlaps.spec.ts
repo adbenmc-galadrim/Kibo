@@ -5,6 +5,7 @@ import {
   type Boutique,
   finished,
   type HeldRun,
+  ignoredKeys,
   KEEPER,
   OTHER,
   OWNER,
@@ -13,6 +14,7 @@ import {
   overlapStates,
   release,
   SHELL,
+  sweepSettled,
   wrote,
 } from "./overlaps-kit";
 import { capture } from "./visibility-kit";
@@ -108,6 +110,9 @@ test("BOU-15 reprend le travail de BOU-12, Kibo lie les tickets puis le lien s'a
   await expect.poll(() => autoLinkStates(b), { timeout: 30_000 }).toEqual(["copy:added"]);
   const badge = page.getByRole("button", { name: "Lien ajouté par Kibo avec BOU-12" });
   await expect(badge).toBeVisible({ timeout: 15_000 });
+  await expect.poll(() => overlapStates(b, other.id)).toContain("export:DateStyle:resolved");
+  await page.reload();
+  await expect(badge).toBeVisible();
   await badge.click();
   await expect(page.getByText("Reprise de")).toBeVisible();
   await expect(page.getByRole("button", { name: "Annuler" })).toBeVisible();
@@ -129,6 +134,7 @@ test("BOU-15 reprend le travail de BOU-12, Kibo lie les tickets puis le lien s'a
       .filter({ hasText: `Recouvrement avec ${OWNER_NAME}` })
       .first(),
   ).toContainText(/Réglé \d{2}:\d{2}/);
+  await expect(feed().getByText("Kibo a rappelé de factoriser")).toBeVisible();
   const linked = autoLinkLine().filter({ hasText: "Kibo a lié" });
   await expect(linked).toContainText("(BOU-12 bloque BOU-15)");
   await linked.scrollIntoViewIfNeeded();
@@ -141,13 +147,17 @@ test("BOU-15 reprend le travail de BOU-12, Kibo lie les tickets puis le lien s'a
 
   await page.goto(`/#/p/${b.projectId}/t/${b.tickets.get(OTHER)}`);
   await expect(page.getByRole("heading", { name: "Page de suivi de commande" })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Page de suivi de commande" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Lien ajouté par Kibo avec BOU-12" })).toHaveCount(0);
 });
 
 test("BOU-17 réécrit la copie ignorée : aucune alerte ni ligne", async () => {
   const keeper = await assign(b, KEEPER);
+  await wrote(b, keeper, 1);
   await finished(b, keeper);
-  expect(await overlapStates(b, keeper.id)).toEqual([]);
+  await sweepSettled(b);
+  await expect.poll(() => overlapStates(b, keeper.id)).toEqual([]);
   await page.goto(`/#/runs/${keeper.id}`);
   await expect(feed().getByText("Date de suivi livrée.")).toBeVisible();
   await expect(overlapLine()).toHaveCount(0);
@@ -171,6 +181,7 @@ test("les réglages du projet réactivent le recouvrement ignoré", async () => 
   await capture(page, info, "201");
   await reactivate.click();
   await expect(group.getByText("Aucun", { exact: true })).toBeVisible();
+  await expect.poll(() => ignoredKeys(b)).toEqual([]);
   await page.keyboard.press("Escape");
 });
 

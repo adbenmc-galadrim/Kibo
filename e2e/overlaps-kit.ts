@@ -134,3 +134,27 @@ export async function autoLinkStates(b: Boutique): Promise<string[]> {
 export async function openTotal(b: Boutique): Promise<number> {
   return Number(field(await rpc(b.page, { method: "getAgents" }), "overlapTotal") ?? 0);
 }
+
+export async function ignoredKeys(b: Boutique): Promise<string[]> {
+  const rows = await rpc(b.page, { method: "overlaps.ignored", projectId: b.projectId });
+  return (Array.isArray(rows) ? rows : []).map((i) => String(field(i, "key")));
+}
+
+async function projectOverlaps(b: Boutique): Promise<string> {
+  return JSON.stringify(await rpc(b.page, { method: "overlaps.list", projectId: b.projectId }));
+}
+
+export async function sweepSettled(b: Boutique): Promise<void> {
+  let previous = "";
+  await expect
+    .poll(
+      async () => {
+        const current = await projectOverlaps(b);
+        const stable = current === previous;
+        previous = current;
+        return stable;
+      },
+      { intervals: [500, 1_000], timeout: 30_000 },
+    )
+    .toBe(true);
+}
