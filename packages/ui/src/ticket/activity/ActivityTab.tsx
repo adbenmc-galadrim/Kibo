@@ -2,6 +2,7 @@ import {
   type FileRef,
   latestReport,
   type ProjectSnapshot,
+  type RunMoment,
   type RunMomentsPage,
   type RunReport,
   type RunView,
@@ -15,6 +16,7 @@ import type { ShownPlan } from "../../agents/dock/DockPlan";
 import { frMoments } from "../../i18n/fr-moments";
 import { ReportCard } from "../../moments/ReportCard";
 import { RunSkillReviews } from "../../moments/SkillReviewsBlock";
+import { OverlapCounts } from "../../overlaps/OverlapCounts";
 import { useAgentsState } from "../../state/agents-context";
 import { useNow } from "../../state/use-agents";
 import { ChronologyStacked } from "./ChronologyStacked";
@@ -39,7 +41,9 @@ function activityPlan(
   return internal ? { plan: internal, internal: true } : { plan: [], internal: false };
 }
 
-function ReportHead({ report, runs }: { report: RunReport | null; runs: readonly RunView[] }) {
+type HeadProps = { report: RunReport | null; runs: readonly RunView[]; overlapRuns: readonly string[] };
+
+function ReportHead({ report, runs, overlapRuns }: HeadProps) {
   const t = frMoments.activity;
   const index = report ? runs.findIndex((r) => r.id === report.runId) : -1;
   const run = runs[index];
@@ -50,9 +54,13 @@ function ReportHead({ report, runs }: { report: RunReport | null; runs: readonly
         {run && <span className="text-xs text-muted-foreground">{`${t.run(index + 1)} · ${run.label}`}</span>}
       </h3>
       <ReportCard report={report} />
+      <OverlapCounts runIds={overlapRuns} />
     </div>
   );
 }
+
+const withOverlaps = (runs: readonly RunView[], moments: ReadonlyMap<string, RunMoment[]>): string[] =>
+  runs.flatMap((r) => ((moments.get(r.id) ?? []).some((m) => m.data.kind === "overlap") ? [r.id] : []));
 
 export function ActivityTab({ project, ticket, onOpenFile }: Props) {
   const agents = useAgentsState();
@@ -86,7 +94,11 @@ export function ActivityTab({ project, ticket, onOpenFile }: Props) {
   };
   return (
     <div ref={ref} className="grid grid-cols-[minmax(0,1fr)] gap-6 px-4 pb-6">
-      <ReportHead report={latestReport(ticket.agentProgress)} runs={runs} />
+      <ReportHead
+        report={latestReport(ticket.agentProgress)}
+        runs={runs}
+        overlapRuns={withOverlaps(shown, momentsByRun)}
+      />
       {last && <RunSkillReviews runId={last.id} moments={momentsByRun.get(last.id) ?? []} />}
       {error && (
         <p role="alert" className="text-sm text-destructive">

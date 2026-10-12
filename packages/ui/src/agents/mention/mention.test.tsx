@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { apiMock } from "../../api-mock";
 import { dockState, FEED_RUN, MOMENTS_PAGE, progressProject, REPORTED_RUN } from "../../moments/fixtures";
+import { parallelFixture } from "../../overlaps/fixtures";
 import { type Host, HostProvider } from "../../shell/Host";
 import { AgentsProvider } from "../../state/agents-context";
 
@@ -31,6 +32,8 @@ mock.module("../../api", () =>
       rpc: (req: RpcRequest) => {
         calls.push(req);
         if (req.method === "runPeek") return Promise.resolve({ ...PEEK, runId: req.runId });
+        if (req.method === "overlaps.parallel")
+          return Promise.resolve(parallelFixture({ runs: [], overlaps: [] }));
         if (req.method === "getProject") return Promise.resolve(progressProject());
         if (req.method === "runMoments")
           return Promise.resolve(req.runId === FEED_RUN ? MOMENTS_PAGE : { ...MOMENTS_PAGE, moments: [] });
@@ -189,4 +192,12 @@ test("an unknown run says so in the side panel", async () => {
   const { panel } = renderPanel("nope");
   expect(panel.getByText("Run introuvable")).toBeTruthy();
   await waitFor(() => expect(calls.some((c) => c.method === "runMoments")).toBe(false));
+});
+
+test("screen 200: the side panel shows the work in parallel after the report", async () => {
+  const { panel } = renderPanel();
+  const section = await panel.findByRole("region", { name: "Travail en parallèle" });
+  expect(await within(section).findByText("Aucun autre run sur ce projet")).toBeTruthy();
+  const report = panel.getByRole("region", { name: "Compte rendu" });
+  expect(report.compareDocumentPosition(section) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 });

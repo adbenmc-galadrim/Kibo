@@ -6,6 +6,7 @@ import { fr } from "../../i18n/fr";
 import { frMoments } from "../../i18n/fr-moments";
 import { usePref } from "../../lib/local-pref";
 import { RunSkillReviews } from "../../moments/SkillReviewsBlock";
+import { ParallelWorkSection } from "../../overlaps/ParallelWorkSection";
 import { useHost } from "../../shell/Host";
 import { DockPlan } from "../dock/DockPlan";
 import { ReviewButton } from "../ReviewButton";
@@ -89,6 +90,11 @@ export function RunPage({ runId }: { runId: string }) {
           </div>
         </section>
         <aside className="grid content-start gap-4">
+          {run.kind === "ticket" && (
+            <div className={CARD}>
+              <ParallelWorkSection runId={run.id} />
+            </div>
+          )}
           {shown && (
             <div className={CARD}>
               <DockPlan shown={shown} moments={moments} current={highlight} onStep={setHighlight} />

@@ -395,4 +395,21 @@ describe("bundle report", () => {
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
     expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/tabs/screens.ts"))).toBe(false);
   });
+  test("vague 23", () => {
+    const paths = [
+      "/x/packages/ui/src/overlaps/use-overlaps.ts",
+      "/x/packages/ui/src/overlaps/use-auto-links.ts",
+      "/x/packages/ui/src/overlaps/OverlapFilesDialog.tsx",
+      "/x/packages/ui/src/overlaps/ParallelWorkSection.tsx",
+      "/x/packages/ui/src/overlaps/overlap-labels.ts",
+      "/x/packages/ui/src/overlaps/OverlapCounts.tsx",
+      "/x/packages/ui/src/overlaps/use-open-overlap.ts",
+      "/x/packages/ui/src/moments/OverlapMoment.tsx",
+      "/x/packages/ui/src/moments/AutoLinkMoment.tsx",
+      "/x/packages/ui/src/i18n/fr-overlaps.ts",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    for (const p of ["agents/bar-summary.ts", "agents/AgentBar.tsx", "i18n/fr.ts"])
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`))).toBe(false);
+  });
 });

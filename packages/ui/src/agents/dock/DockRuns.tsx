@@ -7,9 +7,12 @@ import {
 } from "@kibo/schema";
 import { RunDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
+import { Copy } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "../../i18n/fr";
 import { frMoments } from "../../i18n/fr-moments";
+import { frOverlaps } from "../../i18n/fr-overlaps";
+import type { OverlapLine } from "../../overlaps/overlap-labels";
 import { stepChip } from "../bar-summary";
 import { elapsed, formatDuration, runStateText } from "../format";
 import type { DockGroups } from "./dock-runs";
@@ -21,16 +24,47 @@ type Props = {
   now: number;
   selected: string | null;
   onSelect(runId: string): void;
+  overlapLines?: ReadonlyMap<string, OverlapLine[]>;
+  onOverlap?(runId: string, overlapId: string): void;
 };
 
 type Row = { run: RunView; ticket: string | null; aside: string; line: ReactNode };
+
+function OverlapLinks({
+  runId,
+  lines,
+  onOverlap,
+}: {
+  runId: string;
+  lines: readonly OverlapLine[];
+  onOverlap(runId: string, overlapId: string): void;
+}) {
+  return (
+    <ul className="grid gap-0.5 pb-1 pl-6">
+      {lines.map((line) => (
+        <li key={line.overlapId}>
+          <button
+            type="button"
+            className="flex items-center gap-1.5 rounded-sm text-left text-xs text-muted-foreground hover:underline"
+            onClick={() => onOverlap(runId, line.overlapId)}
+          >
+            <Copy aria-hidden className="size-3" />
+            {frOverlaps.bar.with(line.withKey)}
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function Group({
   title,
   rows,
   selected,
   onSelect,
-}: { title: string; rows: Row[] } & Pick<Props, "selected" | "onSelect">) {
+  overlapLines,
+  onOverlap,
+}: { title: string; rows: Row[] } & Pick<Props, "selected" | "onSelect" | "overlapLines" | "onOverlap">) {
   if (rows.length === 0) return null;
   return (
     <div className="grid gap-1">
@@ -55,6 +89,9 @@ function Group({
               <span className="font-mono text-muted-foreground">{aside}</span>
               <span className="col-span-2 col-start-2 min-w-0 truncate text-muted-foreground">{line}</span>
             </button>
+            {onOverlap && (overlapLines?.get(run.id)?.length ?? 0) > 0 && (
+              <OverlapLinks runId={run.id} lines={overlapLines?.get(run.id) ?? []} onOverlap={onOverlap} />
+            )}
           </li>
         ))}
       </ul>
@@ -90,7 +127,16 @@ function RecentLine({
   );
 }
 
-export function DockRuns({ groups, progress, questions, now, selected, onSelect }: Props) {
+export function DockRuns({
+  groups,
+  progress,
+  questions,
+  now,
+  selected,
+  onSelect,
+  overlapLines,
+  onOverlap,
+}: Props) {
   const t = frMoments.dock;
   const byRun = new Map(progress.map((p) => [p.runId, p]));
   const age = (r: RunView) => formatDuration(elapsed(r, now));
@@ -124,7 +170,14 @@ export function DockRuns({ groups, progress, questions, now, selected, onSelect 
   return (
     <div className="grid content-start gap-3">
       {empty && <p className="p-2 text-xs text-muted-foreground">{t.empty}</p>}
-      <Group title={t.active(active.length)} rows={active} selected={selected} onSelect={onSelect} />
+      <Group
+        title={t.active(active.length)}
+        rows={active}
+        selected={selected}
+        onSelect={onSelect}
+        overlapLines={overlapLines}
+        onOverlap={onOverlap}
+      />
       <Group title={t.queued(queued.length)} rows={queued} selected={selected} onSelect={onSelect} />
       <Group title={t.recent(recent.length)} rows={recent} selected={selected} onSelect={onSelect} />
     </div>

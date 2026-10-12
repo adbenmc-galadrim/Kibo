@@ -4,6 +4,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../../api-mock";
 import { dockState, FEED_RUN, MOMENTS_PAGE, progressProject } from "../../moments/fixtures";
+import { OWNER_NAME, parallelFixture } from "../../overlaps/fixtures";
 import { type Host, HostProvider } from "../../shell/Host";
 import { reviewFixture } from "../../skills/fixtures";
 import { AgentsProvider } from "../../state/agents-context";
@@ -24,6 +25,7 @@ mock.module("../../api", () =>
         if (req.method === "runMoments")
           return Promise.resolve(req.runId === FEED_RUN ? MOMENTS_PAGE : { ...MOMENTS_PAGE, moments: [] });
         if (req.method === "getRunLog") return Promise.resolve([]);
+        if (req.method === "overlaps.parallel") return Promise.resolve(parallelFixture());
         if (req.method === "skillReviews.list")
           return Promise.resolve([reviewFixture({ runId: req.runId ?? "" })]);
         return Promise.resolve(null);
@@ -165,4 +167,12 @@ test("screen 196: the skill reviews of the run sit under its report and open the
   expect(calls).toContainEqual({ method: "skillReviews.list", runId: FEED_RUN });
   await userEvent.setup().click(within(block).getByRole("button", { name: "porte-qualite" }));
   expect(opened).toContainEqual({ kind: "skill", skillId: "porte-qualite" });
+});
+
+test("screen 200: the side column of a ticket run shows the work in parallel", async () => {
+  renderPage();
+  const section = await screen.findByRole("region", { name: "Travail en parallèle" });
+  expect(section.closest("aside")).toBeTruthy();
+  expect(calls).toContainEqual({ method: "overlaps.parallel", runId: FEED_RUN });
+  expect(await within(section).findByRole("button", { name: OWNER_NAME })).toBeTruthy();
 });

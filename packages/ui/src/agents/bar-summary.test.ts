@@ -30,3 +30,24 @@ test("a step chip shows the current step of the plan, or nothing", () => {
   expect(stepChip({ runId: "r1", step: null, report: null })).toBeNull();
   expect(stepChip(undefined)).toBeNull();
 });
+
+test("the summary adds the open overlaps of the runs, when there are some", () => {
+  const state = withCounts(2, 0, 0);
+  expect(
+    barSummary(
+      {
+        ...state,
+        overlaps: [
+          { runId: "r1", open: 1 },
+          { runId: "r2", open: 1 },
+        ],
+      },
+      fr.agents,
+    ),
+  ).toBe("2/3 places · 2 recouvrements");
+  expect(barSummary({ ...state, overlaps: [{ runId: "r1", open: 1 }] }, fr.agents)).toBe(
+    "2/3 places · 1 recouvrement",
+  );
+  expect(barSummary({ ...state, overlaps: [] }, fr.agents)).toBe("2/3 places");
+  expect(barSummary({ ...state, overlaps: [{ runId: "r1", open: 0 }] }, fr.agents)).toBe("2/3 places");
+});

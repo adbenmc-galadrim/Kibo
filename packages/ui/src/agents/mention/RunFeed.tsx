@@ -4,6 +4,8 @@ import { frMoments } from "../../i18n/fr-moments";
 import { Feed } from "../../moments/Feed";
 import { useOpenSignal } from "../../moments/use-open-signal";
 import { useRunFileContext } from "../../moments/use-run-file-context";
+import { OverlapFeedLayer } from "../../overlaps/OverlapFeedLayer";
+import { useOpenOverlap } from "../../overlaps/use-open-overlap";
 import { useHost } from "../../shell/Host";
 import { useRunLog } from "../../state/use-run-log";
 import { exchangeOf } from "../dock/exchange";
@@ -35,6 +37,7 @@ function LoadedFeed({ run, runs, moments, steps, showReasoning = false, highligh
   const files = useRunFileContext(run);
   const openSignal = useOpenSignal(run.projectId);
   const { log } = useRunLog(run.id);
+  const overlap = useOpenOverlap(run, moments);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!highlightStep) return;
@@ -52,9 +55,11 @@ function LoadedFeed({ run, runs, moments, steps, showReasoning = false, highligh
         highlightStep={highlightStep}
         onOpenFile={host.openFile}
         onOpenSignal={openSignal}
+        {...overlap.feed}
         label={run.label}
         texts={frMoments}
       />
+      <OverlapFeedLayer filesId={overlap.filesId} failed={overlap.failed} onClose={overlap.closeFiles} />
     </div>
   );
 }

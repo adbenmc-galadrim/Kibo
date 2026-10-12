@@ -226,6 +226,7 @@ export const fr = {
     daemon: "Kibo · connecté",
     daemonOffline: "Kibo · hors ligne",
     expand: "Déplier les agents",
+    overlapCount: (n: number) => `${n} recouvrement${n > 1 ? "s" : ""}`,
     moreRuns: (n: number) => `${n} autre${n > 1 ? "s" : ""} run${n > 1 ? "s" : ""} en cours`,
     collapse: "Replier les agents",
     launch: "Lancer un agent",

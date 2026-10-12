@@ -1,0 +1,77 @@
+import type { AutoLinkReason, OverlapRole } from "@kibo/schema";
+
+const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
+
+const role: Record<OverlapRole, string> = { other: "à factoriser", owner: "repris par" };
+
+const reasons: Record<AutoLinkReason, string> = { copy: "repris de", import: "importé de" };
+
+export const frOverlaps = {
+  moment: {
+    with: "Recouvrement avec",
+    role,
+    ownedBy: (name: string) => `${role.owner} ${name}`,
+    mine: "(toi)",
+    open: "Ouvert",
+    resolved: (clock: string) => `Réglé ${clock}`,
+    ignoredState: "Ignoré",
+    loading: "…",
+    seeFiles: "Voir les fichiers",
+    ignore: "Ignorer",
+    ignored: (by: string) => `Ignoré par ${by}`,
+    exported: "exporté deux fois",
+    bothSides: "modifié des deux côtés",
+    sameLines: (n: number) => `${n} lignes identiques`,
+    linked: "Kibo a lié",
+    blocks: (from: string, to: string) => `(${from} bloque ${to})`,
+    reason: (reason: AutoLinkReason, from: string) => `${reasons[reason]} ${from}`,
+    mergeFirst: (from: string) => `fusionner ${from} d'abord`,
+    cancel: "Annuler",
+    cancelled: (by: string, clock: string) => `Annulé par ${by} ${clock}`,
+    cancelledHint: "lien retiré, Kibo ne le reposera pas",
+    removed: "lien retiré",
+    failed: (from: string, to: string) => `Kibo n'a pas pu lier ${from} → ${to} : dépendance circulaire`,
+    actionFailed: "Action impossible pour l'instant.",
+  },
+  bar: {
+    chip: (n: number) => `${plural(n, "recouvrement ouvert", "recouvrements ouverts")}`,
+    with: (key: string) => `Recouvrement avec ${key}`,
+  },
+  files: {
+    title: "Fichiers du recouvrement",
+    description: "Les deux fichiers côte à côte, en lecture seule.",
+    heading: (runName: string, path: string) => `${runName} · ${path}`,
+    missing: "fichier absent",
+    loading: "Chargement des fichiers…",
+    failed: "Impossible de lire les fichiers.",
+    close: "Fermer",
+  },
+  parallel: {
+    title: "Travail en parallèle",
+    hint: "Ce que l'agent reçoit à chaque tour, sans token.",
+    active: (n: number) => plural(n, "run actif", "runs actifs"),
+    more: (n: number) => `… ${plural(n, "autre run", "autres runs")}`,
+    empty: "Aucun autre run sur ce projet",
+    partial: "Détection partielle",
+    started: (title: string, ago: string) => `${title} · démarré il y a ${ago}`,
+    minutes: (n: number) => `${n} min`,
+    hours: (n: number) => `${n} h`,
+    step: (title: string, index: number | null) =>
+      index === null ? `Étape en cours · ${title}` : `Étape ${index} · ${title}`,
+    files: (n: number) => plural(n, "fichier", "fichiers"),
+    exports: (n: number) => plural(n, "export nouveau", "exports nouveaux"),
+    truncated: "liste tronquée",
+    seeWork: "Voir son travail",
+    shared: "dossier du projet, partagé avec toi",
+    isolated: "dossier isolé, non comparé",
+    repo: "dossier du projet",
+    worktree: (name: string) => `worktree ${name}`,
+    overlaps: "Recouvrements",
+    failed: "Travail en parallèle indisponible pour l'instant.",
+  },
+  activity: {
+    failed: "Recouvrements indisponibles pour l'instant.",
+    counts: (resolved: number, open: number) =>
+      `Recouvrements : ${plural(resolved, "réglé", "réglés")} · ${plural(open, "ouvert", "ouverts")}`,
+  },
+};
