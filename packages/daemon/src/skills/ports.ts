@@ -1,10 +1,18 @@
-import type { AgentRef, FileVersion, FileVersionKind, SkillId, VersionOrigin } from "@kibo/schema";
+import type {
+  AgentRef,
+  FileVersion,
+  FileVersionKind,
+  SkillId,
+  SkillScope,
+  VersionOrigin,
+} from "@kibo/schema";
 import type { WatchHandle, WatchOptions, WatchTarget } from "../code/watcher";
 import type { SkillRoots } from "./discover";
 import type { InstalledPlugin } from "./plugins";
 import type { SkillReviews } from "./reviews";
 import type { SkillUses } from "./uses-store";
 
+export type SkillLocation = SkillScope & { id: SkillId };
 export type DiskFile = { content: string; hash: string; modifiedAt: number };
 export type GuardedWrite =
   | { kind: "written"; hash: string; modifiedAt: number }
@@ -36,6 +44,7 @@ export type SkillHistoryDeposit = {
 
 export type SkillHistory = {
   deposit(input: SkillHistoryDeposit): FileVersion;
+  read(id: string): { version: FileVersion; content: string | null } | null;
   hasHash(kind: FileVersionKind, ref: string, file: string, hash: string): boolean;
 };
 

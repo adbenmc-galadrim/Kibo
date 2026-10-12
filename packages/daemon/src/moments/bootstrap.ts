@@ -19,10 +19,12 @@ import { createProgressService, type ProgressDocs, type ProgressService } from "
 import type { AgentMcpSink } from "../project-agent/types";
 import type { RpcExtension } from "../rpc-extensions";
 import type { SignalService } from "../signals/service";
+import { skillTargetOf } from "../skills/bootstrap";
 import { withSkillUses } from "../skills/hook-uses";
 import { createSkillReviews, type SkillReviews } from "../skills/reviews";
 import { openSkillReviewStore } from "../skills/reviews-store";
 import { openRunsDatabase } from "../skills/runs-db";
+import type { SkillsService } from "../skills/service";
 import { createSkillUses, type SkillUses } from "../skills/uses-store";
 import { withTrace } from "./hooks";
 import { handleVisibilityRequest } from "./rpc";
@@ -38,6 +40,7 @@ export type VisibilityOptions = {
 };
 export type VisibilityDocs = Pick<Docs, "emit" | "run" | "project" | "projectIds">;
 export type VisibilityAgents = () => Pick<Orchestrator, "state" | "hooks"> | null;
+export type VisibilitySkills = () => Pick<SkillsService, "byId"> | null;
 export type Visibility = {
   trace: TraceService;
   progress: ProgressService;
@@ -65,6 +68,7 @@ export function startVisibility(
   opts: VisibilityOptions,
   docs: VisibilityDocs,
   agents: VisibilityAgents,
+  skills: VisibilitySkills = () => null,
 ): Visibility {
   const env = opts.agentEnv ?? process.env;
   const store = openMomentStore(opts.home);
@@ -72,7 +76,7 @@ export function startVisibility(
   const reviews = createSkillReviews({
     store: openSkillReviewStore(opts.home),
     uses,
-    skillPath: () => null,
+    skillPath: skillTargetOf(skills),
     emit: (topic) => docs.emit({ topic }),
   });
   const trace = createTraceService({

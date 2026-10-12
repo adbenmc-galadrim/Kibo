@@ -39,7 +39,7 @@ function rig(writable = true) {
       calls.push(`list:${projectId}`);
       return { skills, partialWatch: false };
     },
-    read: async (id, file) => {
+    read: async ({ id }, file) => {
       calls.push(`read:${id}:${file}`);
       return { content: "", hash: "h", modifiedAt: 1, file: file ?? "SKILL.md" };
     },
@@ -51,19 +51,27 @@ function rig(writable = true) {
       calls.push(`create:${input.name}:${input.projectId}:${by}`);
       return skills[0] ?? skill("x", null);
     },
-    copy: async (id, to, name, by) => {
-      calls.push(`copy:${id}:${to.source}:${name}:${by}`);
+    copy: async ({ id, scope }, to, name, by) => {
+      calls.push(`copy:${id}:${scope}:${to.source}:${name}:${by}`);
       return { skill: skill("x", null), citedBy: [] };
     },
-    delete: async (id, by) => {
+    delete: async ({ id }, by) => {
       calls.push(`delete:${id}:${by}`);
     },
-    assets: async (id) => {
+    assets: async ({ id }) => {
       calls.push(`assets:${id}`);
       return [];
     },
-    removeAsset: async (id, file, by) => {
+    removeAsset: async ({ id }, file, by) => {
       calls.push(`removeAsset:${id}:${file}:${by}`);
+    },
+    restore: async () => {
+      throw new KiboError("INTERNAL", "not used");
+    },
+    locate: ({ id }) => {
+      const found = skills.find((s) => s.id === id);
+      if (!found) throw new KiboError("NOT_FOUND", `skill ${id} not found`);
+      return found;
     },
     byId: (id) => skills.find((s) => s.id === id) ?? null,
     refresh: async () => {
@@ -115,6 +123,8 @@ test("writes carry the viewer and check the project only for project skills", as
     description: "d",
   });
   await call(rpc, { method: "skills.copy", id: "superpowers:x", to: { source: "user" }, name: "y" });
+  const from = { scope: "plugin" as const, plugin: "superpowers" };
+  await call(rpc, { method: "skills.copy", id: "superpowers:x", from, to: { source: "user" }, name: "z" });
   await call(rpc, { method: "skills.delete", id: "tests" });
   await call(rpc, { method: "skills.removeAsset", id: "deploy", file: "a.md" });
   expect(calls).toEqual([
@@ -123,7 +133,8 @@ test("writes carry the viewer and check the project only for project skills", as
     "save:tests:adam:undefined",
     `assert:${PROJECT_ID}`,
     `create:n:${PROJECT_ID}:adam`,
-    "copy:superpowers:x:user:y:adam",
+    "copy:superpowers:x:undefined:user:y:adam",
+    "copy:superpowers:x:plugin:user:z:adam",
     `assert:${PROJECT_ID}`,
     "delete:tests:adam",
     "removeAsset:deploy:a.md:adam",

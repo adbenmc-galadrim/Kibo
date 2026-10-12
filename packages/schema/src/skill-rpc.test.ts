@@ -26,3 +26,14 @@ test("every addressed skill method keeps an explicit scope", () => {
     expect(schemaOf(method).safeParse({ ...base, scope: "team" }).success).toBe(false);
   }
 });
+
+test("a copy names the scope of its source", () => {
+  const copy = { method: "skills.copy", id: "deploy", to: { source: "user" } };
+  expect(
+    schemaOf("skills.copy").parse({ ...copy, from: { scope: "project", projectId: "kibo" } }),
+  ).toMatchObject({
+    from: { scope: "project", projectId: "kibo" },
+  });
+  expect(schemaOf("skills.copy").safeParse(copy).success).toBe(true);
+  expect(schemaOf("skills.copy").safeParse({ ...copy, from: { scope: "team" } }).success).toBe(false);
+});

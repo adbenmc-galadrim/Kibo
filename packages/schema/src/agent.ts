@@ -62,6 +62,9 @@ export const systemIdOfName = (name: string): SystemAgentId | null =>
 
 export const PROJECT_AGENT_REF: AgentRef = systemAgentRef("project-agent");
 export const DEMO_AGENT_REF: AgentRef = systemAgentRef("demo");
+export const LEGACY_DEMO_ASSIGNEE = "demo";
+export const assigneeName = (assignee: { kind: "human" | "agent"; ref: string }): string =>
+  assignee.kind === "agent" && assignee.ref === LEGACY_DEMO_ASSIGNEE ? systemAgentName("demo") : assignee.ref;
 
 export const AGENT_BODY_MAX = 100_000;
 export const AGENT_DESCRIPTION_MAX = 1_024;

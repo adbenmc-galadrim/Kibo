@@ -2,4 +2,4 @@
 exact = true
 
 [test]
-preload = ["./test/happydom.ts"]
+preload = ["./test/claude-config.ts", "./test/happydom.ts"]

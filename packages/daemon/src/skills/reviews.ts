@@ -26,7 +26,7 @@ export type SkillReviews = {
 export type SkillReviewsDeps = {
   store: SkillReviewStore;
   uses: Pick<SkillUses, "byRun">;
-  skillPath(id: SkillId): { path: string; hash: string | null } | null;
+  skillPath(id: SkillId, projectId: string | null): { path: string; hash: string | null } | null;
   emit(topic: "skills"): void;
   now?: () => number;
 };
@@ -57,7 +57,7 @@ export function createSkillReviews(deps: SkillReviewsDeps): SkillReviews {
   }
 
   function storeOne(run: RunView, review: SkillReviewInput, at: number): void {
-    const target = deps.skillPath(review.skill);
+    const target = deps.skillPath(review.skill, run.projectId);
     store.replaceOpen(run.id, review.skill, at);
     store.create({
       runId: run.id,

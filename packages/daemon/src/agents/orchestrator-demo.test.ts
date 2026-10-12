@@ -29,6 +29,7 @@ test("in the demo project the demo agent runs with its own binary and env, other
   });
   const first = h.orch.assign({ projectId: "p1", ticketId: "t1", profileId: "system:demo", brief: "" });
   expect(first).toMatchObject({ profileId: "system:demo", label: "kib · kibo-demo · KIB-1" });
+  expect(h.assigned).toEqual(["t1:kibo-demo"]);
   expect(() =>
     h.orch.assign({ projectId: "p1", ticketId: "t2", profileId: "system:assistant", brief: "" }),
   ).toThrow(/reserved to Kibo/);

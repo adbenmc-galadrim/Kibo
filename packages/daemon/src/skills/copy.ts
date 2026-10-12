@@ -3,10 +3,11 @@ import { copyFile, mkdir, readdir, readFile, rename, rm, writeFile } from "node:
 import { join } from "node:path";
 import { parseSkillFile, renderSkillFile } from "@kibo/core/agents/frontmatter";
 import { parseSkillId } from "@kibo/core/agents/skill-id";
-import { type AgentRef, KiboError, SkillCreateInput, type SkillId, type SkillSource } from "@kibo/schema";
+import { type AgentRef, KiboError, SkillCreateInput, type SkillSource } from "@kibo/schema";
 import { lstatOrNull } from "../fs/resolve-inside";
 import { SKILL_FILE } from "./assets";
 import type { DiscoveredSkill } from "./discover";
+import type { SkillLocation } from "./ports";
 import { depositFolder, historyRef, type SkillContext, USER_FILE_MODE, writable } from "./skill-files";
 
 export type SkillTarget = { source: "user" | "project"; projectId?: string };
@@ -86,12 +87,13 @@ async function renameInside(dir: string, name: string): Promise<void> {
 
 export async function copySkill(
   ctx: SkillContext,
-  id: SkillId,
+  from: SkillLocation,
   to: SkillTarget,
   name: string | undefined,
   by: string,
 ): Promise<{ skill: DiscoveredSkill; citedBy: AgentRef[] }> {
-  const original = ctx.find(id);
+  const { id } = from;
+  const original = ctx.find(from);
   const newName = name ?? parseSkillId(id).name;
   const root = skillsRootOf(ctx, to);
   const dir = await freeFolder(root, newName);
@@ -119,8 +121,8 @@ export async function copySkill(
   return { skill, citedBy: ctx.deps.citing(id) };
 }
 
-export async function deleteSkill(ctx: SkillContext, id: SkillId, by: string): Promise<void> {
-  const skill = writable(ctx, id);
+export async function deleteSkill(ctx: SkillContext, location: SkillLocation, by: string): Promise<void> {
+  const skill = writable(ctx, location);
   await depositFolder(ctx, skill, by);
   await rm(skill.path, { recursive: true, force: true });
   await ctx.refresh();

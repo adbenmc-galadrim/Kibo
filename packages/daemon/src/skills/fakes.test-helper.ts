@@ -82,8 +82,10 @@ export type FakeHistory = SkillHistory & { deposits: SkillHistoryDeposit[] };
 
 export function fakeHistory(): FakeHistory {
   const deposits: SkillHistoryDeposit[] = [];
+  const versions = new Map<string, { version: FileVersion; content: string }>();
   return {
     deposits,
+    read: (id) => versions.get(id) ?? null,
     deposit(input) {
       deposits.push(input);
       const version: FileVersion = {
@@ -99,6 +101,7 @@ export function fakeHistory(): FakeHistory {
         note: input.note,
         missing: false,
       };
+      versions.set(version.id, { version, content: input.content });
       return version;
     },
     hasHash: (kind, ref, file, hash) =>

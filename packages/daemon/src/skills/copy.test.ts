@@ -86,7 +86,7 @@ test("a project skill needs a project with a local folder", async () => {
 test("copy duplicates a plugin skill folder under a new id and gives the agents citing it", async () => {
   const { service, f } = await rig();
   const { skill, citedBy } = await service.copy(
-    "superpowers:brainstorming",
+    { id: "superpowers:brainstorming", scope: "plugin", plugin: "superpowers" },
     { source: "user" },
     "brainstorming-perso",
     "adam",
@@ -103,7 +103,7 @@ test("copy duplicates a plugin skill folder under a new id and gives the agents 
   expect(copied).toContain("name: brainstorming-perso");
   expect(copied).toContain("description: Brainstorm plugin");
   const again = await refusal(
-    service.copy("superpowers:brainstorming", { source: "user" }, "brainstorming-perso", "adam"),
+    service.copy({ id: "superpowers:brainstorming" }, { source: "user" }, "brainstorming-perso", "adam"),
   );
   expect(again.code).toBe("CONFLICT");
 });
@@ -121,7 +121,7 @@ test("copying a folder skips symbolic links", async () => {
 
 test("delete deposits SKILL.md and the text assets, then removes the folder", async () => {
   const { service, history, f } = await rig();
-  await service.delete("deploy", "adam");
+  await service.delete({ id: "deploy", scope: "user" }, "adam");
   expect(existsSync(join(f.claudeHome, "skills", "deploy"))).toBe(false);
   expect(history.deposits.map((d) => [d.ref, d.file, d.origin])).toEqual([
     ["user:deploy", "SKILL.md", "delete"],

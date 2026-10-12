@@ -43,6 +43,7 @@ export const SKILL_RPC = [
   z.object({
     method: z.literal("skills.copy"),
     id: SkillId,
+    from: SkillScope.optional(),
     to: z.object({ source: z.enum(["user", "project"]), projectId: ProjectId.optional() }),
     name: SkillName.optional(),
   }),

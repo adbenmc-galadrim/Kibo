@@ -120,3 +120,38 @@ test("a skill version is restored by the skills service only when one is wired",
     rpc.handle({ method: "fileVersions.restore", id: version.id, baseHash: null }, LOCAL_CONTEXT),
   ).rejects.toMatchObject({ code: "INVALID_INPUT" });
 });
+
+test("a remote session is refused a restore before the version is even looked up", async () => {
+  const { rpc } = rig();
+  await expect(
+    rpc.handle({ method: "fileVersions.restore", id: "absent", baseHash: null }, REMOTE),
+  ).rejects.toMatchObject({ code: "FORBIDDEN" });
+});
+
+test("restoring a project skill version checks that its project is writable", async () => {
+  const restored: string[] = [];
+  const s = rig(false);
+  const rpc = agentFilesRpc(s.service, async () => PREVIEW, {
+    viewer: () => "adam",
+    assertWritable: (projectId) => {
+      throw new KiboError("PERMISSION_DENIED", `read only ${projectId}`);
+    },
+    restoreSkill: async (id) => {
+      restored.push(id);
+      return { ok: false, conflict: { content: "", hash: "h", modifiedAt: 0 } };
+    },
+  });
+  const version = s.history.deposit({
+    kind: "skills",
+    ref: `project:${PROJECT_ID}:my.skill`,
+    file: "SKILL.md",
+    content: "x",
+    origin: "kibo",
+    by: null,
+    note: null,
+  });
+  await expect(
+    rpc.handle({ method: "fileVersions.restore", id: version.id, baseHash: null }, LOCAL_CONTEXT),
+  ).rejects.toMatchObject({ code: "PERMISSION_DENIED" });
+  expect(restored).toEqual([]);
+});

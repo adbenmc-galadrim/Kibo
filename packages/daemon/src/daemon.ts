@@ -1,5 +1,6 @@
 import { homedir } from "node:os";
 import { isTerminal, ticketRuns } from "@kibo/schema";
+import { lateAgentSource } from "./agents/agent-source";
 import type { Orchestrator } from "./agents/orchestrator";
 import { withSignalCounts } from "./agents-rpc";
 import type { DraftAssets } from "./ai/draft-preview";
@@ -10,6 +11,7 @@ import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { componentTrustGuard } from "./components/trust-guard";
 import { startAgents } from "./daemon-agents";
 import { startDaemonComponents, startDaemonIntegrations } from "./daemon-components";
+import { startDaemonFiles } from "./daemon-files";
 import { startDaemonSandbox, startRemote } from "./daemon-network";
 import type { DaemonOptions } from "./daemon-options";
 import { type Closers, shutdown } from "./daemon-shutdown";
@@ -18,7 +20,6 @@ import { startTutorial } from "./demo/bootstrap";
 import { startAppDiagnostics } from "./diagnostics/bootstrap";
 import { createLogBuffer } from "./log-buffer";
 import { startMarket } from "./market/bootstrap";
-import { startVisibility } from "./moments/bootstrap";
 import { createProjectSettings } from "./notes/settings";
 import { startProjectAgent } from "./project-agent/bootstrap";
 import { createProjectAdmin } from "./projects/admin";
@@ -47,10 +48,11 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const devOrigins = opts.dev ? [VITE_ORIGIN] : [];
   const { store, runs, token, redactor } = openDaemonStores(opts, closers);
   const startedAt = Date.now();
+  const late = lateAgentSource();
   const service = createService(store, {
     user: opts.user,
     ...(opts.notifications && { notifications: opts.notifications }),
-    ...(opts.agentSource && { agents: opts.agentSource }),
+    agents: opts.agentSource ?? late.source,
   });
   const local = createLocalServices(opts, { store, runs }, (message) => service.docs.emit(message));
   let sandboxOrigin = "";
@@ -64,8 +66,11 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
   closers.push(() => collab.stop());
   let agents: Orchestrator | null = null;
-  const visibility = startVisibility(opts, service.docs, () => agents);
-  closers.push(visibility.close);
+  const { visibility, extensions } = await startDaemonFiles(
+    opts,
+    { db: store.db, runs, service, late, agents: () => agents },
+    closers,
+  );
   const components = await startDaemonComponents(
     opts,
     service,
@@ -164,6 +169,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       projectAgent.agent.rpc,
       visibility.rpc,
       signals.rpc,
+      ...extensions,
     ],
     port: opts.port,
     uiDir: opts.uiDir,

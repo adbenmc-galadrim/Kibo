@@ -2,6 +2,7 @@ import { statSync } from "node:fs";
 import { join } from "node:path";
 import {
   type AgentRef,
+  type FileVersion,
   KiboError,
   type SaveResult,
   type Skill,
@@ -14,7 +15,8 @@ import { listAssets, SKILL_FILE } from "./assets";
 import { copySkill, createSkill, deleteSkill, type SkillTarget } from "./copy";
 import { type DiscoveredSkill, discoverSkills } from "./discover";
 import { readInstalledPlugins } from "./plugins";
-import type { SkillsServiceDeps } from "./ports";
+import type { SkillLocation, SkillsServiceDeps } from "./ports";
+import { restoreSkillVersion } from "./restore";
 import {
   historyRef,
   readSkillText,
@@ -29,21 +31,23 @@ export type { FileWriter, GuardedWrite, SkillHistory, SkillHistoryDeposit, Skill
 export type SkillsService = {
   list(projectId: string | null): { skills: Skill[]; partialWatch: boolean };
   read(
-    id: SkillId,
+    location: SkillLocation,
     file?: string,
   ): Promise<{ content: string; hash: string; modifiedAt: number; file: string }>;
   save(input: SkillSave): Promise<SaveResult<{ hash: string; modifiedAt: number }>>;
   create(input: SkillCreateInput, by: string): Promise<Skill>;
   copy(
-    id: SkillId,
+    from: SkillLocation,
     to: SkillTarget,
     name: string | undefined,
     by: string,
   ): Promise<{ skill: Skill; citedBy: AgentRef[] }>;
-  delete(id: SkillId, by: string): Promise<void>;
-  assets(id: SkillId): Promise<SkillAsset[]>;
-  removeAsset(id: SkillId, file: string, by: string): Promise<void>;
-  byId(id: SkillId): Skill | null;
+  delete(location: SkillLocation, by: string): Promise<void>;
+  assets(location: SkillLocation): Promise<SkillAsset[]>;
+  removeAsset(location: SkillLocation, file: string, by: string): Promise<void>;
+  restore(versionId: string, baseHash: string | null, by: string): Promise<SaveResult<FileVersion>>;
+  locate(location: SkillLocation): Skill;
+  byId(id: SkillId, projectId?: string | null): Skill | null;
   refresh(): Promise<void>;
   close(): void;
 };
@@ -53,6 +57,15 @@ const USAGE_WINDOW_MS = 30 * DAY_MS;
 export const WATCH_TARGETS_MAX = 500;
 const WATCH_DEBOUNCE_MS = 300;
 const SOURCE_ORDER = ["user", "project", "plugin"] as const;
+
+function atLocation(skill: DiscoveredSkill, location: SkillLocation): boolean {
+  return (
+    skill.id === location.id &&
+    (location.scope === undefined || skill.source === location.scope) &&
+    (location.projectId === undefined || skill.projectId === location.projectId) &&
+    (location.plugin === undefined || skill.plugin?.name === location.plugin)
+  );
+}
 
 const signature = (list: readonly DiscoveredSkill[]): string =>
   JSON.stringify(list.map((s) => [s.id, s.path, s.hash, s.problem, s.files]));
@@ -76,17 +89,29 @@ export function createSkillsService(deps: SkillsServiceDeps): SkillsService {
     usage: deps.uses.usage(skill.id, now() - USAGE_WINDOW_MS),
     reviews: { open: deps.reviews.store.openCount(skill.id) },
   });
-  const discoveredById = (id: SkillId): DiscoveredSkill | null => {
+  const discoveredById = (id: SkillId, projectId: string | null = null): DiscoveredSkill | null => {
+    const visible = (s: DiscoveredSkill) =>
+      projectId === null || s.projectId === null || s.projectId === projectId;
     for (const source of SOURCE_ORDER) {
-      const found = skills.find((s) => s.id === id && s.source === source);
+      const found = skills.find((s) => s.id === id && s.source === source && visible(s));
       if (found) return found;
     }
     return null;
   };
-  const find = (id: SkillId): DiscoveredSkill => {
-    const found = discoveredById(id);
-    if (!found) throw new KiboError("NOT_FOUND", `skill ${id} not found`);
-    return found;
+  const find = (location: SkillLocation): DiscoveredSkill => {
+    if (location.scope === undefined) {
+      const preferred = discoveredById(location.id, location.projectId ?? null);
+      if (!preferred) throw new KiboError("NOT_FOUND", `skill ${location.id} not found`);
+      return preferred;
+    }
+    if (location.scope === "project" && location.projectId === undefined)
+      throw new KiboError("INVALID_INPUT", "a project skill needs its projectId");
+    const found = skills.filter((s) => atLocation(s, location));
+    const [only] = found;
+    if (only === undefined) throw new KiboError("NOT_FOUND", `skill ${location.id} not found`);
+    if (found.length > 1)
+      throw new KiboError("INVALID_INPUT", `skill ${location.id} exists in several places, give its scope`);
+    return only;
   };
 
   function depositExternal(previous: readonly DiscoveredSkill[]): void {
@@ -163,18 +188,20 @@ export function createSkillsService(deps: SkillsServiceDeps): SkillsService {
       );
       return { skills: visible.map(complete), partialWatch };
     },
-    read: (id, file) => readSkillText(ctx, id, file),
+    read: (location, file) => readSkillText(ctx, location, file),
     save: (input) => saveSkillText(ctx, input),
     create: async (input, by) => complete(await createSkill(ctx, input, by)),
-    async copy(id, to, name, by) {
-      const copied = await copySkill(ctx, id, to, name, by);
+    async copy(location, to, name, by) {
+      const copied = await copySkill(ctx, location, to, name, by);
       return { skill: complete(copied.skill), citedBy: copied.citedBy };
     },
-    delete: (id, by) => deleteSkill(ctx, id, by),
-    assets: async (id) => listAssets(find(id).path),
-    removeAsset: (id, file, by) => removeSkillAsset(ctx, id, file, by),
-    byId(id) {
-      const found = discoveredById(id);
+    delete: (location, by) => deleteSkill(ctx, location, by),
+    assets: async (location) => listAssets(find(location).path),
+    removeAsset: (location, file, by) => removeSkillAsset(ctx, location, file, by),
+    restore: (versionId, baseHash, by) => restoreSkillVersion(ctx, versionId, baseHash, by),
+    locate: (location) => complete(find(location)),
+    byId(id, projectId = null) {
+      const found = discoveredById(id, projectId);
       return found ? complete(found) : null;
     },
     refresh,

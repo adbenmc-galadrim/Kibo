@@ -13,11 +13,18 @@ import {
   skillsFixture,
   tempDir,
 } from "./fakes.test-helper";
+import type { SkillLocation } from "./ports";
 import { openSkillReviewStore } from "./reviews-store";
 import { createSkillsService } from "./service";
 
 cleanSkillDirs();
 
+const DEPLOY: SkillLocation = { id: "deploy", scope: "user" };
+const PLUGIN_BRAINSTORMING: SkillLocation = {
+  id: "superpowers:brainstorming",
+  scope: "plugin",
+  plugin: "superpowers",
+};
 const USED: SkillUsage = { last: { runId: "r1", ticketKey: "KIB-14", at: 5 }, runs30d: 3 };
 
 async function rig() {
@@ -98,22 +105,22 @@ test("list gives every source with usage, open reviews and shadowing", async () 
 
 test("read gives SKILL.md or a text asset, refuses a path outside, a binary or an unknown skill", async () => {
   const { service } = await rig();
-  const main = await service.read("deploy");
+  const main = await service.read(DEPLOY);
   expect(main).toMatchObject({ file: "SKILL.md", content: SKILL_MD("deploy", "Déploie l'application") });
   expect(main.hash).toBe(sha256(main.content));
-  expect((await service.read("deploy", "reference.md")).content).toBe("# Référence\n");
-  expect((await refusal(service.read("deploy", "../x"))).code).toBe("FORBIDDEN");
-  expect((await refusal(service.read("deploy", "link.md"))).code).toBe("FORBIDDEN");
-  const binary = await refusal(service.read("deploy", "image.png"));
+  expect((await service.read(DEPLOY, "reference.md")).content).toBe("# Référence\n");
+  expect((await refusal(service.read(DEPLOY, "../x"))).code).toBe("FORBIDDEN");
+  expect((await refusal(service.read(DEPLOY, "link.md"))).code).toBe("FORBIDDEN");
+  const binary = await refusal(service.read(DEPLOY, "image.png"));
   expect([binary.code, binary.detail]).toEqual(["INVALID_INPUT", "fichier binaire : image.png"]);
-  expect((await refusal(service.read("zzz"))).code).toBe("NOT_FOUND");
-  expect((await refusal(service.read("deploy", "absent.md"))).code).toBe("NOT_FOUND");
+  expect((await refusal(service.read({ id: "zzz" }))).code).toBe("NOT_FOUND");
+  expect((await refusal(service.read(DEPLOY, "absent.md"))).code).toBe("NOT_FOUND");
 });
 
 test("save writes with the base hash and deposits a kibo version; a stale base gives a conflict", async () => {
   const { service, history, emitted, f } = await rig();
-  const { hash } = await service.read("deploy");
-  const saved = await service.save({ id: "deploy", content: "# v2\n", baseHash: hash, by: "adam" });
+  const { hash } = await service.read(DEPLOY);
+  const saved = await service.save({ ...DEPLOY, content: "# v2\n", baseHash: hash, by: "adam" });
   expect(saved).toEqual({ ok: true, value: { hash: sha256("# v2\n"), modifiedAt: expect.any(Number) } });
   expect(readFileSync(join(f.claudeHome, "skills", "deploy", "SKILL.md"), "utf8")).toBe("# v2\n");
   expect(history.deposits.at(-1)).toMatchObject({
@@ -125,7 +132,7 @@ test("save writes with the base hash and deposits a kibo version; a stale base g
     by: "adam",
   });
   expect(emitted).toContain("skills");
-  const stale = await service.save({ id: "deploy", content: "# v3\n", baseHash: hash, by: "adam" });
+  const stale = await service.save({ ...DEPLOY, content: "# v3\n", baseHash: hash, by: "adam" });
   expect(stale).toEqual({
     ok: false,
     conflict: { content: "# v2\n", hash: sha256("# v2\n"), modifiedAt: expect.any(Number) },
@@ -137,7 +144,7 @@ test("overwriting an external change deposits the disk version first", async () 
   const { service, history, f } = await rig();
   writeFileSync(join(f.claudeHome, "skills", "deploy", "SKILL.md"), "# à la main\n");
   const saved = await service.save({
-    id: "deploy",
+    ...DEPLOY,
     content: "# mien\n",
     baseHash: sha256("# à la main\n"),
     by: "adam",
@@ -151,20 +158,20 @@ test("overwriting an external change deposits the disk version first", async () 
 
 test("a plugin skill is read only, a binary file cannot be saved", async () => {
   const { service } = await rig();
-  const save = (id: string, file?: string) =>
-    service.save({ id, content: "x", baseHash: null, by: "adam", ...(file ? { file } : {}) });
-  expect((await refusal(save("superpowers:brainstorming"))).code).toBe("READ_ONLY");
-  expect((await refusal(service.delete("superpowers:brainstorming", "adam"))).code).toBe("READ_ONLY");
-  expect((await refusal(service.removeAsset("superpowers:brainstorming", "notes.txt", "adam"))).code).toBe(
+  const save = (location: SkillLocation, file?: string) =>
+    service.save({ ...location, content: "x", baseHash: null, by: "adam", ...(file ? { file } : {}) });
+  expect((await refusal(save(PLUGIN_BRAINSTORMING))).code).toBe("READ_ONLY");
+  expect((await refusal(service.delete(PLUGIN_BRAINSTORMING, "adam"))).code).toBe("READ_ONLY");
+  expect((await refusal(service.removeAsset(PLUGIN_BRAINSTORMING, "notes.txt", "adam"))).code).toBe(
     "READ_ONLY",
   );
-  expect((await refusal(save("deploy", "logo.png"))).code).toBe("INVALID_INPUT");
+  expect((await refusal(save(DEPLOY, "logo.png"))).code).toBe("INVALID_INPUT");
 });
 
 test("an absent asset is created with a null base hash, a vanished file is not found", async () => {
   const { service, f } = await rig();
   const created = await service.save({
-    id: "deploy",
+    ...DEPLOY,
     file: "docs/new.md",
     content: "# Nouveau\n",
     baseHash: null,
@@ -172,9 +179,9 @@ test("an absent asset is created with a null base hash, a vanished file is not f
   });
   expect(created.ok).toBe(true);
   expect(readFileSync(join(f.claudeHome, "skills", "deploy", "docs", "new.md"), "utf8")).toBe("# Nouveau\n");
-  expect((await service.assets("deploy")).map((a) => a.path)).toContain("docs/new.md");
+  expect((await service.assets(DEPLOY)).map((a) => a.path)).toContain("docs/new.md");
   const gone = await refusal(
-    service.save({ id: "deploy", file: "absent.md", content: "x", baseHash: sha256("y"), by: "adam" }),
+    service.save({ ...DEPLOY, file: "absent.md", content: "x", baseHash: sha256("y"), by: "adam" }),
   );
   expect(gone.code).toBe("NOT_FOUND");
 });
@@ -182,9 +189,9 @@ test("an absent asset is created with a null base hash, a vanished file is not f
 test("saving with a review id integrates the review with the version", async () => {
   const { service, store, history, integrated, f } = await rig();
   const review = store.create(reviewRow("deploy"));
-  const { hash } = await service.read("deploy");
+  const { hash } = await service.read(DEPLOY);
   const saved = await service.save({
-    id: "deploy",
+    ...DEPLOY,
     content: "# v2\n",
     baseHash: hash,
     reviewId: review.id,
@@ -197,7 +204,7 @@ test("saving with a review id integrates the review with the version", async () 
   expect(store.get(review.id)?.status).toBe("integrated");
   const unknown = await refusal(
     service.save({
-      id: "deploy",
+      ...DEPLOY,
       content: "# v3\n",
       baseHash: sha256("# v2\n"),
       reviewId: "nope",
@@ -210,15 +217,15 @@ test("saving with a review id integrates the review with the version", async () 
 
 test("remove an asset deposits it and deletes it; SKILL.md cannot be removed", async () => {
   const { service, history, f } = await rig();
-  await service.removeAsset("deploy", "reference.md", "adam");
+  await service.removeAsset(DEPLOY, "reference.md", "adam");
   expect(existsSync(join(f.claudeHome, "skills", "deploy", "reference.md"))).toBe(false);
   expect(history.deposits.at(-1)).toMatchObject({
     origin: "delete",
     file: "reference.md",
     content: "# Référence\n",
   });
-  expect((await refusal(service.removeAsset("deploy", "SKILL.md", "adam"))).code).toBe("INVALID_INPUT");
-  expect((await refusal(service.removeAsset("deploy", "absent.md", "adam"))).code).toBe("NOT_FOUND");
+  expect((await refusal(service.removeAsset(DEPLOY, "SKILL.md", "adam"))).code).toBe("INVALID_INPUT");
+  expect((await refusal(service.removeAsset(DEPLOY, "absent.md", "adam"))).code).toBe("NOT_FOUND");
 });
 
 test("the watcher is armed on the existing skill folders and refreshes on change", async () => {

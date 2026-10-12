@@ -29,6 +29,11 @@ function projectOf(ref: string): string | null {
   return agent.scope === "project" ? agent.projectId : null;
 }
 
+function skillProjectOf(ref: string): string | null {
+  const [scope, projectId] = ref.split(":");
+  return scope === "project" && projectId ? projectId : null;
+}
+
 export function agentFilesRpc(
   service: AgentFilesService,
   preview: (req: AgentPreviewRequest) => Promise<AgentPreview>,
@@ -42,8 +47,13 @@ export function agentFilesRpc(
   };
 
   const restore = async (req: { id: string; baseHash: string | null }, ctx: RpcContext) => {
+    requireLocal(ctx);
     const { version } = service.versions.read(req.id);
-    const by = writer(ctx, null, projectOf(version.ref));
+    const by = writer(
+      ctx,
+      null,
+      version.kind === "agents" ? projectOf(version.ref) : skillProjectOf(version.ref),
+    );
     if (version.kind === "agents") return service.versions.restore(req.id, req.baseHash, by);
     if (!data.restoreSkill) throw new KiboError("INVALID_INPUT", "skill versions are not served here");
     return data.restoreSkill(req.id, req.baseHash, by);
