@@ -231,6 +231,9 @@ const GROUPS: readonly { kind: ActionKind; many(actions: readonly RunAction[]): 
     { kind: "other", many: (g) => `utilisé ${g.length} outils` },
   ];
 
+const lonePhrase = (a: RunAction): string =>
+  a.tool === SKILL_REVIEW_TOOL && a.label.startsWith("A ") ? a.label.slice(2) : phrase(a);
+
 export const standsAlone = (a: Pick<RunAction, "kind" | "outcome">): boolean =>
   a.kind === "skill" || (a.kind === "subagent" && a.outcome === "denied");
 
@@ -247,7 +250,7 @@ export function summarizeActions(actions: readonly RunAction[]): string {
     const members = actions.filter((a) => a.kind === group.kind);
     if (members.length === 0) return [];
     const [only] = members;
-    return [members.length === 1 && only && !group.always ? phrase(only) : group.many(members)];
+    return [members.length === 1 && only && !group.always ? lonePhrase(only) : group.many(members)];
   });
   if (parts.length === 0) return "";
   const last = parts.pop();

@@ -214,3 +214,13 @@ test("a skill use or a refusal by the guard stands alone and is named in full", 
   expect(summarizeActions([refused])).toBe("Kibo a refusé le skill `deploy`");
   expect(summarizeActions([subagent])).toBe("Kibo a refusé le sous-agent `seo`");
 });
+
+test("a lone skill review keeps the number of skills of its label", () => {
+  const review = action({
+    tool: "mcp__kibo__skill_review",
+    kind: "mcp",
+    target: "skill_review",
+    label: "A laissé une review de 2 skills",
+  });
+  expect(summarizeActions([review])).toBe("A laissé une review de 2 skills");
+});
