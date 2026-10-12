@@ -96,6 +96,7 @@ export function startVisibility(
     docs: progressDocs(docs),
     git: runGit,
     trace,
+    runs: () => agents()?.state().runs ?? [],
     now: Date.now,
     changed: () => docs.emit({ topic: "agents" }),
   });
