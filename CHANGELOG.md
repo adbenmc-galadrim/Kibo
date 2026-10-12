@@ -6,6 +6,12 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.21.0-alpha.1 — 2026-10-12
+
+- Les agents parlent à l'agent de projet : un agent qui travaille sur un ticket peut lui signaler un ticket à créer, un blocage, un contexte utile ou une question.
+- Rien n'est créé sans toi : l'agent de projet se réveille (au plus une fois par dix minutes par projet), lit les signaux et te propose un lot que tu valides.
+- Le panneau de l'agent de projet gagne un onglet Signaux (boîte, réveil, signaux traités), le bouton une pastille chiffrée, le fil de chaque run sa ligne de signal ; un blocage signalé déclenche une notification.
+
 ## 0.20.0-alpha.1 — 2026-10-11
 
 - Tu vois ce que font les agents : un fil lisible par run (phrases de l'agent, actions en français, détail technique au dépli), un plan et un compte rendu tenus par l'agent et gardés sur le ticket, des rappels sans blocage.
