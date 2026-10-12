@@ -14,7 +14,7 @@ export function OverlapCounts({ runIds }: { runIds: readonly string[] }) {
   if (overlaps.length === 0) return null;
   const { resolved, open } = overlapCounts(overlaps);
   return (
-    <p className="flex items-center gap-2 border-t pt-2 text-xs text-muted-foreground">
+    <p className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
       <Copy aria-hidden className="size-3.5" />
       {activityCounts(resolved, open)}
     </p>

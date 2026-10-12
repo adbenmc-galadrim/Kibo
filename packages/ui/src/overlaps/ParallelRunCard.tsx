@@ -88,9 +88,9 @@ function OverlapRow({
   const what = overlapWhat(overlap.detail);
   return (
     <li data-overlap-row={overlap.id} className="grid gap-1 border-t pt-2 text-xs">
-      <p className="flex min-w-0 items-center gap-1.5">
-        <Copy aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="min-w-0 flex-1 truncate">
+      <p className="flex min-w-0 items-start gap-1.5">
+        <Copy aria-hidden className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+        <span className="min-w-0 flex-1">
           {what.code && <code className="font-mono">{what.code}</code>}
           {what.code ? ` ${what.text}` : what.text}
         </span>
