@@ -1,0 +1,101 @@
+{
+  "turns": [
+    {
+      "steps": [
+        {
+          "mcp": "ticket_progress",
+          "input": {
+            "plan": [
+              {
+                "id": "date",
+                "title": "Formater la date de suivi",
+                "status": "doing"
+              }
+            ]
+          }
+        },
+        {
+          "write": "src/utils/date.ts",
+          "content": "export type DateStyle = \"short\" | \"long\";\n\nconst MONTHS = [\"janvier\", \"février\", \"mars\", \"avril\", \"mai\", \"juin\", \"juillet\", \"août\", \"septembre\", \"octobre\", \"novembre\", \"décembre\"];\n\nexport function formatDate(date: Date, style: DateStyle = \"short\"): string {\n  const day = String(date.getDate()).padStart(2, \"0\");\n  const month = String(date.getMonth() + 1).padStart(2, \"0\");\n  const year = date.getFullYear();\n  if (style === \"short\") return `${day}/${month}/${year}`;\n  const name = MONTHS[date.getMonth()] ?? month;\n  return `${date.getDate()} ${name} ${year}`;\n}\n"
+        },
+        {
+          "sleepMs": 300
+        },
+        {
+          "hook": "PreToolUse",
+          "tool": "Read",
+          "input": {
+            "file_path": "src/utils/date.ts"
+          }
+        },
+        {
+          "hook": "PostToolUse",
+          "tool": "Read",
+          "input": {
+            "file_path": "src/utils/date.ts"
+          },
+          "extra": {
+            "tool_response": "ok"
+          }
+        },
+        {
+          "sleepMs": 300
+        },
+        {
+          "hook": "PreToolUse",
+          "tool": "Read",
+          "input": {
+            "file_path": "src/utils/date.ts"
+          }
+        },
+        {
+          "hook": "PostToolUse",
+          "tool": "Read",
+          "input": {
+            "file_path": "src/utils/date.ts"
+          },
+          "extra": {
+            "tool_response": "ok"
+          }
+        },
+        {
+          "sleepMs": 300
+        },
+        {
+          "hook": "PreToolUse",
+          "tool": "Read",
+          "input": {
+            "file_path": "src/utils/date.ts"
+          }
+        },
+        {
+          "hook": "PostToolUse",
+          "tool": "Read",
+          "input": {
+            "file_path": "src/utils/date.ts"
+          },
+          "extra": {
+            "tool_response": "ok"
+          }
+        },
+        {
+          "mcp": "ticket_progress",
+          "input": {
+            "report": {
+              "done": "Date formatée dans src/utils/date.ts.",
+              "decisions": ["Copie gardée : le format de suivi doit diverger"],
+              "files": ["src/utils/date.ts"]
+            }
+          }
+        }
+      ],
+      "onStopBlock": [
+        {
+          "say": "Je garde ma copie."
+        }
+      ],
+      "result": "Date de suivi livrée.",
+      "tokens": 1400
+    }
+  ]
+}

@@ -14,6 +14,8 @@ const BASE_STEPS = [
   z.object({ hold: z.literal(true) }),
   z.object({ stderr: z.string() }),
   z.object({ write: z.string().min(1), fixture: z.string().min(1), bypassHooks: z.boolean().default(false) }),
+  z.object({ write: z.string().min(1), content: z.string(), bypassHooks: z.boolean().default(false) }),
+  z.object({ delete: z.string().min(1), bypassHooks: z.boolean().default(false) }),
   z.object({ mcp: z.string().min(1), input: z.record(z.string(), z.unknown()).default({}) }),
   z.object({ say: z.string() }),
   z.object({ think: z.string() }),
@@ -98,7 +100,13 @@ export type FakeScenarioName =
   | "skills-review"
   | "skills-no-review"
   | "skills-denied"
-  | "skills-routes";
+  | "skills-routes"
+  | "overlap-owner"
+  | "overlap-other"
+  | "overlap-bash"
+  | "overlap-keep"
+  | "overlap-import"
+  | "overlap-routes";
 
 export function scenarioPath(name: FakeScenarioName): string {
   return join(import.meta.dir, "scenarios", `${name}.json`);

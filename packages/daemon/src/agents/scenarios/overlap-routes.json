@@ -1,0 +1,26 @@
+{
+  "routes": [
+    {
+      "prompt": "# BOU-12",
+      "scenario": "overlap-owner.json"
+    },
+    {
+      "prompt": "# BOU-15",
+      "scenario": "overlap-other.json"
+    },
+    {
+      "prompt": "# BOU-16",
+      "scenario": "overlap-bash.json"
+    },
+    {
+      "prompt": "# BOU-17",
+      "scenario": "overlap-keep.json"
+    },
+    {
+      "prompt": "# BOU-18",
+      "scenario": "overlap-import.json"
+    }
+  ],
+  "fallback": "done.json",
+  "perTurn": true
+}
