@@ -1348,3 +1348,11 @@ Version **`0.20.0-alpha.1`**, rapport `docs/superpowers/rapports/<date>-jalon-v0
 ### 27.10 Jalon
 
 Version **`0.21.0-alpha.1`**, rapport `docs/superpowers/rapports/<date>-jalon-v0.21.md`, tag posé par le chef d'équipe après sa vérification de bout en bout sur un vrai run (un run de ticket qui signale, un réveil, un lot validé). Écrans Penpot, page **30 · Signaux des agents** (script `34-signaux-agents.js`, données « Signaux des agents (phase 21) » de `donnees-fictives.md`) : **189** panneau, onglet Signaux (boîte, réveil, lot après réveil, reprise de P5), **189b** après validation (traités, ticket créé, pastille retombée), **190** fil du run émetteur sur la page dédiée (ligne de signal), **190b** onglet Activité de la fiche avec la ligne de signal, **191** Kanban avec la pastille chiffrée et la notification « Blocage signalé ». Budget de l'entrée ≤ **223,8 kB** gzip (mesure 223,6 au jalon v0.20, plafond 230 jamais relevé) : tout le neuf est différé avec le panneau et le fil.
+
+### 27.11 Écarts constatés à l'exécution (jalon v0.21, 2026-10-12)
+
+- §27.4 : le premier signal `ticket` ou `blocker` d'une fenêtre déclenche un réveil **immédiat**, qui annonce « 1 signal » ; les déclencheurs suivants de la fenêtre programment l'échéance à +10 min (vérifié en réel).
+- §27.3 : dans le fil, le moment `signal` précède l'action « A envoyé 1 signal » (le hook `PostToolUse` arrive après la réponse de l'outil).
+- §27.3 et §27.5 : les consignes disent « l'utilisateur valide », comme le reste du protocole de l'agent de projet.
+- §27.7 : une ligne de signal dans le fil d'un run d'un autre projet n'est pas cliquable (y compris sur `#/runs/<id>`) ; la boîte peut afficher « prochain réveil » sans déclencheur ouvert, et rien n'est envoyé à l'échéance.
+- §27.8 : les RPC `listSignals` et `ignoreSignal` refusent les sessions distantes (`FORBIDDEN`), comme celles de l'agent de projet.
