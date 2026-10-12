@@ -97,6 +97,9 @@ test("list gives every source with usage, open reviews and shadowing", async () 
   const deploy = skills[1];
   expect(deploy?.usage).toEqual(USED);
   expect(deploy?.reviews).toEqual({ open: 1 });
+  const masked = skills[2];
+  expect(masked?.reviews).toEqual({ open: 0 });
+  expect(masked?.usage).toEqual({ last: null, runs30d: 0 });
   expect(service.list("other").skills.map((s) => s.source)).toEqual(["user", "user", "plugin", "plugin"]);
   expect(service.byId("tests")?.projectId).toBe(PROJECT_ID);
   expect(service.byId("deploy")?.source).toBe("user");

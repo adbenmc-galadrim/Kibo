@@ -67,6 +67,8 @@ function atLocation(skill: DiscoveredSkill, location: SkillLocation): boolean {
   );
 }
 
+const NEVER_USED = { last: null, runs30d: 0 };
+
 const signature = (list: readonly DiscoveredSkill[]): string =>
   JSON.stringify(list.map((s) => [s.id, s.path, s.hash, s.problem, s.files]));
 
@@ -83,12 +85,16 @@ export function createSkillsService(deps: SkillsServiceDeps): SkillsService {
     skill.source === "project" && skills.some((s) => s.source === "user" && s.id === skill.id)
       ? skill.id
       : null;
-  const complete = (skill: DiscoveredSkill): Skill => ({
-    ...skill,
-    shadowedBy: shadowOf(skill),
-    usage: deps.uses.usage(skill.id, now() - USAGE_WINDOW_MS),
-    reviews: { open: deps.reviews.store.openCount(skill.id) },
-  });
+  const complete = (skill: DiscoveredSkill): Skill => {
+    const shadowedBy = shadowOf(skill);
+    if (shadowedBy !== null) return { ...skill, shadowedBy, usage: NEVER_USED, reviews: { open: 0 } };
+    return {
+      ...skill,
+      shadowedBy,
+      usage: deps.uses.usage(skill.id, now() - USAGE_WINDOW_MS),
+      reviews: { open: deps.reviews.store.openCount(skill.id) },
+    };
+  };
   const discoveredById = (id: SkillId, projectId: string | null = null): DiscoveredSkill | null => {
     const visible = (s: DiscoveredSkill) =>
       projectId === null || s.projectId === null || s.projectId === projectId;
