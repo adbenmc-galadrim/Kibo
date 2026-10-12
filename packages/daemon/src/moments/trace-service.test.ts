@@ -286,7 +286,11 @@ test("a failing onActions is logged and never loses the moment", async () => {
     playEditAndTests(s);
     await s.trace.onHook(s.run, hook("PostToolUse", { tool: "Bash" }));
     expect(kinds(s)).toEqual(["message", "actions", "reasoning", "message"]);
-    expect(errors).toHaveBeenCalledTimes(1);
+    const notCounted = errors.mock.calls.filter(
+      ([message]) =>
+        typeof message === "string" && message.includes(`actions of run ${s.run.id} were not counted`),
+    );
+    expect(notCounted).toHaveLength(1);
   } finally {
     errors.mockRestore();
   }

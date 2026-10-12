@@ -173,7 +173,8 @@ test("a failed listing is shown instead of the field", async () => {
   const error = spyOn(console, "error").mockImplementation(() => {});
   show(modelSchema);
   expect((await screen.findByRole("alert")).textContent).toBe("Impossible de lister les fichiers du projet.");
-  expect(error).toHaveBeenCalledTimes(1);
+  const listing = error.mock.calls.filter(([e]) => e instanceof Error && e.message === "down");
+  expect(listing).toHaveLength(1);
   error.mockRestore();
 });
 

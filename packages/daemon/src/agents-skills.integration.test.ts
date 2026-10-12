@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { afterEach, expect, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -27,8 +27,12 @@ import {
   type Seeded,
   seedProject,
   startKit,
+  stopKits,
   waitFor,
 } from "./agents-skills.test-helper";
+
+afterEach(stopKits);
+
 import { FIXTURE_HOME_021 } from "./testing/make-home-0.21";
 
 async function reviewedRun(kit: Kit, s: Seeded): Promise<RunView> {

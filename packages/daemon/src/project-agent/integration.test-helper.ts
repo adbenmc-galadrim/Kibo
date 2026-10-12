@@ -1,4 +1,3 @@
-import { afterEach } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -29,9 +28,10 @@ import { type Daemon, startDaemon } from "../daemon";
 export type Rpc = <T>(body: Record<string, unknown>) => Promise<T>;
 
 const cleanups: (() => Promise<void>)[] = [];
-afterEach(async () => {
+
+export async function stopDaemons(): Promise<void> {
   for (const cleanup of cleanups.splice(0)) await cleanup();
-});
+}
 
 const RpcReply = z.object({ ok: z.boolean(), result: z.unknown() });
 

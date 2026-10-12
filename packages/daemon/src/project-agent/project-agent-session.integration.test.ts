@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { afterEach, expect, test } from "bun:test";
 import {
   agentsOf,
   decide,
@@ -9,10 +9,13 @@ import {
   send,
   snapshotOf,
   startStack,
+  stopDaemons,
   turnDone,
   viewOf,
   waitFor,
 } from "./integration.test-helper";
+
+afterEach(stopDaemons);
 
 const COMMENT = "Pas cette semaine";
 

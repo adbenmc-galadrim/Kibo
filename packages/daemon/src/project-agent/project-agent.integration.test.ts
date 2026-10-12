@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { afterEach, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { MEMORY_NOTE_PATH, type NotesInfo } from "@kibo/schema";
@@ -10,10 +10,13 @@ import {
   send,
   snapshotOf,
   startStack,
+  stopDaemons,
   turnDone,
   viewOf,
   waitFor,
 } from "./integration.test-helper";
+
+afterEach(stopDaemons);
 
 const memoryOf = async (rpc: Rpc, projectId: string): Promise<string> => {
   const info = await rpc<NotesInfo>({ method: "getNotesDir", projectId });

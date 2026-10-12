@@ -1,8 +1,10 @@
-import { expect, test } from "bun:test";
+import { afterEach, expect, test } from "bun:test";
 import { chmodSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import type { Skill } from "@kibo/schema";
-import { type AgentList, agentMd, put, skillMd, startKit } from "./agents-skills.test-helper";
+import { type AgentList, agentMd, put, skillMd, startKit, stopKits } from "./agents-skills.test-helper";
+
+afterEach(stopKits);
 
 const UNREADABLE = "fichier illisible";
 

@@ -1,5 +1,4 @@
 import { Database } from "bun:sqlite";
-import { afterEach } from "bun:test";
 import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -22,10 +21,11 @@ import { SESSION_COOKIE } from "./sessions/cookie";
 import { openSessionStore } from "./sessions/session-store";
 
 const cleanups: (() => Promise<void>)[] = [];
-afterEach(async () => {
+
+export async function stopKits(): Promise<void> {
   for (const cleanup of cleanups.splice(0)) await cleanup();
   cleanupTmp();
-});
+}
 
 const Reply = z.object({ ok: z.boolean(), result: z.unknown(), error: z.unknown().optional() });
 
