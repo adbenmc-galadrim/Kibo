@@ -88,7 +88,7 @@ test("a project folder opens on its own files and domains, never the workspace o
   await userEvent.setup().click(item("Kibo"));
   expect(item("Kibo").getAttribute("aria-expanded")).toBe("true");
   expect(screen.getByRole("heading", { name: "Projet · Kibo" })).toBeTruthy();
-  expect(screen.getByText("/Users/adam/goinfre/Kibo · 3 fichiers · 2 domaines")).toBeTruthy();
+  expect(screen.getByText("3 fichiers · 2 domaines")).toBeTruthy();
   const files = within(screen.getByRole("list", { name: "Projet · Kibo" }));
   expect(files.getAllByRole("button").map((b) => b.textContent)).toEqual([
     "guidelines/kibo.md",
@@ -151,6 +151,18 @@ test("a workspace domain applies to every local project and counts the projects 
   expect(screen.getByText("utilisé par 3 tickets dans 2 projets")).toBeTruthy();
   expect(injection()).toEqual(["Workspace", "Domaine Sécurité"]);
   expect(screen.getByText("Aucune guideline pour ce domaine.")).toBeTruthy();
+});
+
+test("a project domain only counts its own project, even if another one reuses its id", async () => {
+  const other = { ...kiboProject(), meta: { ...kiboProject().meta, id: "fac" } };
+  show({
+    snapshots: new Map([
+      ["kibo", kiboProject()],
+      ["fac", other],
+    ]),
+  });
+  await openCore();
+  expect(screen.getByText("utilisé par 9 tickets")).toBeTruthy();
 });
 
 test("an empty project says so, adds a file and creates a domain inside it", async () => {

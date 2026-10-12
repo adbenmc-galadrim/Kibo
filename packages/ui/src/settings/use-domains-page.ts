@@ -52,9 +52,11 @@ function readOnlyProjects(projects: ProjectSummary[], snapshots?: ReadonlyMap<st
   return new Set(projects.filter((p) => access(p.id) !== "write").map((p) => p.id));
 }
 
-function projectsUsing(domainId: string, snapshots?: ReadonlyMap<string, ProjectSnapshot>): number {
-  return [...(snapshots?.values() ?? [])].filter((s) => s.tickets.some((t) => t.domainId === domainId))
-    .length;
+function projectsUsing(domain: Domain, snapshots?: ReadonlyMap<string, ProjectSnapshot>): number {
+  const owner = domainOwnerProject(domain);
+  return [...(snapshots?.values() ?? [])]
+    .filter((s) => owner === null || s.meta.id === owner)
+    .filter((s) => s.tickets.some((t) => t.domainId === domain.id)).length;
 }
 
 export function useDomainsPage(args: DomainsPageArgs) {
@@ -207,7 +209,7 @@ export function useDomainsPage(args: DomainsPageArgs) {
     chainLabels,
     tokens,
     usage: domain ? (config.domainUsage[domain.id] ?? 0) : 0,
-    usageProjects: domain ? projectsUsing(domain.id, snapshots) : 0,
+    usageProjects: domain ? projectsUsing(domain, snapshots) : 0,
     treeSelected: fileId && selected ? fileKey(node, selected.id) : nodeKey(node),
     expanded,
     error,

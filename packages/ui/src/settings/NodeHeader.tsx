@@ -12,13 +12,25 @@ export function NodeHeader({ project, files, domains, readOnly }: Props) {
       ) : (
         <LayoutGrid aria-hidden className="size-4 shrink-0" />
       )}
-      <div className="grid min-w-0 gap-0.5">
+      <div className="grid min-w-0 flex-1 gap-0.5">
         <h2 className="truncate text-md font-semibold">
           {project ? frDomains.project(project.name) : frDomains.workspace}
         </h2>
-        <p className="flex items-center gap-2 truncate text-xs text-muted-foreground">
-          {frDomains.folderMeta(project?.folder ?? null, files, domains)}
-          {readOnly && <span className="rounded border px-1 text-3xs">{frDomains.readOnly}</span>}
+        <p className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+          {project?.folder && (
+            <>
+              <span className="min-w-0 truncate" title={project.folder}>
+                {project.folder}
+              </span>
+              <span aria-hidden className="shrink-0">
+                ·
+              </span>
+            </>
+          )}
+          <span className="shrink-0">{frDomains.folderCounts(files, domains)}</span>
+          {readOnly && (
+            <span className="ml-1 shrink-0 rounded border px-1 text-3xs">{frDomains.readOnly}</span>
+          )}
         </p>
       </div>
     </div>

@@ -20,8 +20,8 @@ export const frDomains = {
   count: (n: number) => `${n} .md`,
   noFileLeaf: "Aucun fichier",
   readOnly: "Lecture seule",
-  folderMeta: (folder: string | null, files: number, domains: number) =>
-    [folder, plural(files, "fichier"), plural(domains, "domaine")].filter(Boolean).join(" · "),
+  folderCounts: (files: number, domains: number) =>
+    `${plural(files, "fichier")} · ${plural(domains, "domaine")}`,
   domainTitle: (name: string) => `Domaine · ${name}`,
   scopeOf: (project: string) => `domaine de ${project}`,
   scopeWorkspace: "domaine du workspace",

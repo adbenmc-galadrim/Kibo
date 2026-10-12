@@ -14,6 +14,9 @@ test("the workspace header counts its files and domains", () => {
 test("a project header names the project, its folder and counts, and says when it is read-only", () => {
   render(<NodeHeader project={kibo} files={0} domains={4} readOnly />);
   expect(screen.getByRole("heading", { name: "Projet · Kibo" })).toBeTruthy();
-  expect(screen.getByText("/Users/adam/goinfre/Kibo · 0 fichier · 4 domaines")).toBeTruthy();
+  expect(screen.getByText("/Users/adam/goinfre/Kibo").className).toContain("truncate");
+  const counts = screen.getByText("0 fichier · 4 domaines");
+  expect(counts.className).toContain("shrink-0");
+  expect(counts.className).not.toContain("truncate");
   expect(screen.getByText("Lecture seule")).toBeTruthy();
 });
