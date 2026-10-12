@@ -2,7 +2,15 @@ import { z } from "zod";
 import type { AgentRef } from "./agent";
 import type { SaveResult } from "./file-version";
 import { Sha256 } from "./ids";
-import { type Skill, type SkillAsset, SkillCreateInput, SkillId, SkillName, type SkillReview } from "./skill";
+import {
+  type Skill,
+  type SkillAsset,
+  SkillCreateInput,
+  SkillId,
+  SkillName,
+  type SkillReview,
+  SkillSource,
+} from "./skill";
 
 const ProjectId = z.string().min(1);
 export const SkillFilePath = z
@@ -13,10 +21,17 @@ export const SkillFilePath = z
     message: "relative path without ..",
   });
 
+export const SkillScope = z.object({
+  scope: SkillSource.optional(),
+  projectId: ProjectId.optional(),
+  plugin: z.string().min(1).max(128).optional(),
+});
+export type SkillScope = z.infer<typeof SkillScope>;
+
 export const SKILL_RPC = [
   z.object({ method: z.literal("skills.list"), projectId: ProjectId.optional() }),
-  z.object({ method: z.literal("skills.read"), id: SkillId, file: SkillFilePath.optional() }),
-  z.object({
+  SkillScope.extend({ method: z.literal("skills.read"), id: SkillId, file: SkillFilePath.optional() }),
+  SkillScope.extend({
     method: z.literal("skills.save"),
     id: SkillId,
     file: SkillFilePath.optional(),
@@ -31,9 +46,9 @@ export const SKILL_RPC = [
     to: z.object({ source: z.enum(["user", "project"]), projectId: ProjectId.optional() }),
     name: SkillName.optional(),
   }),
-  z.object({ method: z.literal("skills.delete"), id: SkillId }),
-  z.object({ method: z.literal("skills.assets"), id: SkillId }),
-  z.object({ method: z.literal("skills.removeAsset"), id: SkillId, file: SkillFilePath }),
+  SkillScope.extend({ method: z.literal("skills.delete"), id: SkillId }),
+  SkillScope.extend({ method: z.literal("skills.assets"), id: SkillId }),
+  SkillScope.extend({ method: z.literal("skills.removeAsset"), id: SkillId, file: SkillFilePath }),
   z.object({
     method: z.literal("skillReviews.list"),
     skillId: SkillId.optional(),
