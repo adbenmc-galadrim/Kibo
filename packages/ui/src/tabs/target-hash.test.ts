@@ -28,5 +28,5 @@ test("a page address may name one question, read back the same way", () => {
   expect(hashToTarget("#/p/p1/pg?question=q%201")).toEqual(aimed);
   expect(hashToTarget("#/p/p1/pg")).toEqual({ kind: "page", projectId: "p1", pageId: "pg" });
   expect(targetToHash({ kind: "page", projectId: "p1", pageId: "pg", question: null })).toBe("#/p/p1/pg");
-  expect(hashToTarget("#/p/p1/pg?question=")).toBeNull();
+  expect(hashToTarget("#/p/p1/pg?question=")).toEqual({ kind: "page", projectId: "p1", pageId: "pg" });
 });

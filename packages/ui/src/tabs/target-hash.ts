@@ -1,4 +1,4 @@
-import { Screen, TabTarget } from "@kibo/schema";
+import { NodeId, Screen, TabTarget } from "@kibo/schema";
 
 const enc = encodeURIComponent;
 
@@ -65,7 +65,7 @@ function candidate(projectId: string, rest: string, q: URLSearchParams): unknown
     kind: "page",
     projectId,
     pageId: decodeURIComponent(rest),
-    ...(question !== null && { question }),
+    ...(NodeId.safeParse(question).success && { question }),
   };
 }
 
