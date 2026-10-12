@@ -16,7 +16,7 @@
         },
         {
           "write": "src/utils/date.ts",
-          "content": "export type DateStyle = \"short\" | \"long\";\n\nconst MONTHS = [\"janvier\", \"février\", \"mars\", \"avril\", \"mai\", \"juin\", \"juillet\", \"août\", \"septembre\", \"octobre\", \"novembre\", \"décembre\"];\n\nexport function formatDate(date: Date, style: DateStyle = \"short\"): string {\n  const day = String(date.getDate()).padStart(2, \"0\");\n  const month = String(date.getMonth() + 1).padStart(2, \"0\");\n  const year = date.getFullYear();\n  if (style === \"short\") return `${day}/${month}/${year}`;\n  const name = MONTHS[date.getMonth()] ?? month;\n  return `${date.getDate()} ${name} ${year}`;\n}\n",
+          "content": "export function formatDate(date: Date): string {\n  return date.toLocaleDateString(\"fr-FR\");\n}\n",
           "bypassHooks": true
         },
         {
