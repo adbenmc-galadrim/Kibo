@@ -82,7 +82,7 @@ async function world(over: Partial<FakeWorld> = {}) {
     },
     plans: { "t-BOU-12": [{ id: "a", title: "Dates", status: "doing", note: null }] },
     overlaps: [overlap("o1", "r12", "r15"), overlap("o2", "r13", "r16")],
-    screen: screenOf({ ".env": "secret" }),
+    screen: () => screenOf({ ".env": "secret" }),
     ...over,
   });
   return { dir, peek: createPeek(services) };
@@ -195,6 +195,20 @@ describe("peek_work with a path", () => {
     await expect(peek.call(caller, { run: "BOU-12", path: "src/missing.ts" })).rejects.toThrow(
       "fichier introuvable",
     );
+  });
+
+  test("the ignored files of the caller's project are refused", async () => {
+    const asked: string[] = [];
+    const { peek } = await world({
+      screen: (projectId) => {
+        asked.push(projectId);
+        return screenOf({ "private/key.ts": "ignored" });
+      },
+    });
+    await expect(peek.call(caller, { run: "BOU-12", path: "private/key.ts" })).rejects.toThrow(
+      "fichier ignoré",
+    );
+    expect(asked).toEqual([caller.projectId ?? ""]);
   });
 });
 

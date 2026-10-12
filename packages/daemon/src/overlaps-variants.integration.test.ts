@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { realpathSync } from "node:fs";
+import { DEFAULT_DUPLICATION_SETTINGS } from "@kibo/schema";
 import { cleanupTmp, repo } from "./agents/git-test-kit";
 import {
   assign,
@@ -96,7 +97,9 @@ test("peek_work never reaches another project and refuses paths outside or secre
     error: { code: "NOT_FOUND", message: `run ${ref} not found in this project` },
   });
   for (const ref of ["BOU-99", "QU-1", foreign.id]) expect(await peek({ run: ref })).toEqual(notFound(ref));
-  for (const path of ["../x", ".env"])
+  const duplication = { ...DEFAULT_DUPLICATION_SETTINGS, ignore: ["private/**"] };
+  await rpc({ method: "updateProject", projectId: b.project.id, patch: { duplication } });
+  for (const path of ["../x", ".env", "private/key.ts"])
     expect(await peek({ run: "BOU-12", path })).toMatchObject({
       ok: false,
       error: { code: "INVALID_INPUT" },

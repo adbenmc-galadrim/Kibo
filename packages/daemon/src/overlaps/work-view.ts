@@ -20,7 +20,7 @@ export type PeekServices = {
   planOf(projectId: string, ticketId: string): Step[] | null;
   overlapsBetween(runId: string, otherRunId: string): Overlap[];
   runName(run: RunView): string;
-  screen: PathScreen;
+  screen(projectId: string): PathScreen;
   git: GitRunner;
   fs: PeekFs;
   now: () => number;

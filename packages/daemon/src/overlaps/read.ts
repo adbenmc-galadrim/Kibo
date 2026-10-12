@@ -6,7 +6,7 @@ import type { OverlapStore } from "./store";
 export type OverlapReaderDeps = {
   store: Pick<OverlapStore, "get">;
   runName(runId: string): string;
-  screen: PathScreen;
+  screen(projectId: string): PathScreen;
   fs: PeekFs;
 };
 
@@ -29,11 +29,16 @@ const refusalOf = (e: unknown, path: string): string => {
 };
 
 export function createOverlapReader(deps: OverlapReaderDeps) {
-  async function side(runId: string, workspace: string, path: string): Promise<OverlapSide> {
+  async function side(
+    screen: PathScreen,
+    runId: string,
+    workspace: string,
+    path: string,
+  ): Promise<OverlapSide> {
     const base = { runId, runName: deps.runName(runId), path };
     if (!(await isFolder(workspace))) return { ...base, content: null, reason: "espace de travail disparu" };
     try {
-      const content = await readPeekFile(deps.fs, resolvePeekPath(workspace, path, deps.screen), path);
+      const content = await readPeekFile(deps.fs, resolvePeekPath(workspace, path, screen), path);
       return content === null
         ? { ...base, content: null, reason: "fichier absent" }
         : { ...base, content: maskSecrets(content), reason: null };
@@ -46,9 +51,10 @@ export function createOverlapReader(deps: OverlapReaderDeps) {
     const overlap: Overlap | null = deps.store.get(id);
     if (!overlap) throw new KiboError("NOT_FOUND", `overlap ${id} not found`);
     const paths = pathsOf(overlap.detail);
+    const screen = deps.screen(overlap.projectId);
     const [owner, other] = await Promise.all([
-      side(overlap.ownerRunId, overlap.ownerWorkspace, paths.owner),
-      side(overlap.otherRunId, overlap.otherWorkspace, paths.other),
+      side(screen, overlap.ownerRunId, overlap.ownerWorkspace, paths.owner),
+      side(screen, overlap.otherRunId, overlap.otherWorkspace, paths.other),
     ]);
     return { owner, other };
   };

@@ -18,7 +18,7 @@ const space = (files: Record<string, string>): string => {
   return key;
 };
 
-function scene(detail: OverlapDetail, owner: string, other: string) {
+function scene(detail: OverlapDetail, owner: string, other: string, screened: string[] = []) {
   const store = openOverlapStore(tmp());
   const overlap = store.create(
     {
@@ -36,7 +36,10 @@ function scene(detail: OverlapDetail, owner: string, other: string) {
   const read = createOverlapReader({
     store,
     runName: (runId) => (runId === "ra" ? "bou · livraison · BOU-12" : "bou · livraison · BOU-15"),
-    screen: screenOf({ ".env": "secret" }),
+    screen: (projectId) => {
+      screened.push(projectId);
+      return screenOf({ ".env": "secret", "private/key.ts": "ignored" });
+    },
     fs: localPeekFs,
   });
   return { id: overlap.id, read };
@@ -102,4 +105,18 @@ test("a file overlap reads the same path on both sides; an unknown overlap is NO
     "b",
   ]);
   await expect(read("nope")).rejects.toThrow(expect.objectContaining({ code: "NOT_FOUND" }));
+});
+
+test("a file ignored by the project settings is never read", async () => {
+  const path = "private/key.ts";
+  const owner = space({ [path]: "export const key = 1;\n" });
+  const other = space({ [path]: "export const key = 2;\n" });
+  const screened: string[] = [];
+  const { id, read } = scene({ kind: "file", path }, owner, other, screened);
+  const sides = await read(id);
+  expect([sides.owner, sides.other].map((s) => [s.content, s.reason])).toEqual([
+    [null, "fichier ignoré"],
+    [null, "fichier ignoré"],
+  ]);
+  expect(screened).toEqual(["P"]);
 });

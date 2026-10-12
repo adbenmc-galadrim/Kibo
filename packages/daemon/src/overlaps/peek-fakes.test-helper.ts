@@ -82,7 +82,7 @@ export type FakeWorld = {
   indexes?: Record<string, WorkspaceIndex | null>;
   plans?: Record<string, Step[]>;
   overlaps?: Overlap[];
-  screen?: PathScreen;
+  screen?: (projectId: string) => PathScreen;
 };
 
 export function fakeServices(world: FakeWorld): PeekServices & { indexed: string[][] } {
@@ -101,7 +101,7 @@ export function fakeServices(world: FakeWorld): PeekServices & { indexed: string
         (o) => (o.ownerRunId === a && o.otherRunId === b) || (o.ownerRunId === b && o.otherRunId === a),
       ),
     runName: (run) => `bou · livraison · ${run.ticketKey}`,
-    screen: world.screen ?? screenOf(),
+    screen: world.screen ?? (() => screenOf()),
     git: runGit,
     fs: localPeekFs,
     now: () => NOW,

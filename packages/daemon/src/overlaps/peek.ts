@@ -100,7 +100,7 @@ export function createPeek(services: PeekServices) {
 
   async function file(target: Target, path: string): Promise<PeekFileResult> {
     const { ws } = target;
-    const abs = resolvePeekPath(ws.key, path, services.screen);
+    const abs = resolvePeekPath(ws.key, path, services.screen(target.run.projectId ?? ""));
     const content = await readPeekFile(services.fs, abs, path);
     const index = await services.indexOf(ws, [target.run.id]);
     const indexed = index?.files.find((f) => f.path === path);

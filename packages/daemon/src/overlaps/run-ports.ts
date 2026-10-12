@@ -21,10 +21,13 @@ export type RunPortsDeps = {
   log(line: string): void;
 };
 
-export const screenPath: PathScreen = (path) => {
-  if (isSecretPath(path)) return "secret";
-  return isIgnoredPath(path, { ignore: [] }) ? "ignored" : null;
-};
+export const screenFor =
+  (settings: (projectId: string) => Pick<DuplicationSettings, "ignore">) =>
+  (projectId: string): PathScreen =>
+  (path) => {
+    if (isSecretPath(path)) return "secret";
+    return isIgnoredPath(path, settings(projectId)) ? "ignored" : null;
+  };
 
 export function createRunPorts(
   deps: RunPortsDeps,

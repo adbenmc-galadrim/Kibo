@@ -24,7 +24,7 @@ import { createPeek } from "./peek";
 import { createImportProbes } from "./probes";
 import { createOverlapReader } from "./read";
 import { overlapRpc } from "./rpc";
-import { createRunPorts, screenPath } from "./run-ports";
+import { createRunPorts, screenFor } from "./run-ports";
 import { duplicationSettings } from "./settings";
 import { createSpaces } from "./spaces";
 import { openOverlapStore } from "./store";
@@ -125,8 +125,9 @@ export function startOverlaps(input: OverlapsInput): Overlaps {
     ...(input.timers && { timers: input.timers }),
     log,
   });
+  const screen = screenFor(settings);
   const workView = createWorkView(ports);
-  const peek = createPeek({ ...ports, screen: screenPath, git, fs: nodeIndexFs });
+  const peek = createPeek({ ...ports, screen, git, fs: nodeIndexFs });
   const prefixer = createTurnPrefixer({ parallelWork: workView.parallelWork, hash: sha256Hex, now });
   async function parallelWork(runId: string): Promise<ParallelWork> {
     const run = ports.run(runId);
@@ -135,7 +136,7 @@ export function startOverlaps(input: OverlapsInput): Overlaps {
   }
   const rpc = overlapRpc({
     store,
-    read: createOverlapReader({ store, runName, screen: screenPath, fs: nodeIndexFs }),
+    read: createOverlapReader({ store, runName, screen, fs: nodeIndexFs }),
     parallelWork,
     linker: autoLinker,
     data: { viewer: () => input.viewer, assertWritable: (projectId) => docs.assertWritable(projectId) },
