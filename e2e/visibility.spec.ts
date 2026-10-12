@@ -23,6 +23,7 @@ let seeded: Seeded;
 let held = "";
 
 const bar = () => page.getByRole("button", { name: /^(Déplier|Replier) les agents$/ });
+const EDGE = { x: 4, y: 4 };
 const dock = () => page.getByRole("region", { name: "Agents" });
 
 test.beforeAll(async ({ browser }, info) => {
@@ -50,7 +51,7 @@ test("la barre et le volet suivent un run de ticket, son fil et son plan", async
   await expect(page.getByRole("button", { name: "Replier les agents" })).toBeVisible();
   await bar().press(" ");
   await expect(page.getByRole("button", { name: "Déplier les agents" })).toBeVisible();
-  await bar().click();
+  await bar().click({ position: EDGE });
   const runs = dock().getByRole("region", { name: "Runs" });
   await runs.getByRole("button", { name: /KIB-14/ }).click();
   const feed = dock().getByRole("region", { name: "Fil" });
@@ -83,7 +84,8 @@ test("la barre et le volet suivent un run de ticket, son fil et son plan", async
 test("une mention du Kanban ouvre la carte, le volet du run puis sa page", async () => {
   const info = test.info();
   await page.goto(`/#/p/${seeded.projectId}/${encodeURIComponent(seeded.board)}`);
-  if ((await page.getByRole("button", { name: "Replier les agents" }).count()) > 0) await bar().click();
+  if ((await page.getByRole("button", { name: "Replier les agents" }).count()) > 0)
+    await bar().click({ position: EDGE });
   const card = page.getByRole("article").filter({ hasText: "KIB-14" });
   const mention = card.getByRole("button", { name: "global · livraison-opus · KIB-14" });
   await mention.hover();
@@ -117,7 +119,7 @@ test("à la fin du run, le volet résume le compte rendu et la fiche le montre d
   await releaseHold(v, info, held);
   await expect.poll(() => runState(page, "KIB-14"), { timeout: 30_000 }).toBe("done");
   await page.goto(`/#/p/${seeded.projectId}/${encodeURIComponent(seeded.board)}`);
-  await bar().click();
+  await bar().click({ position: EDGE });
   const recent = dock().getByRole("list", { name: /^Terminés depuis 24 h · \d+$/ });
   await expect(recent).toContainText("KIB-14 · fait, 2 points à vérifier, 1 fichier non mentionné");
   await recent.getByRole("button", { name: /KIB-14/ }).click();
@@ -131,7 +133,7 @@ test("à la fin du run, le volet résume le compte rendu et la fiche le montre d
   await expect(feed).not.toContainText("ghp_");
   const report = feed.getByRole("region", { name: "Compte rendu" });
   await expect(report.getByRole("heading", { name: "À vérifier (2)" })).toBeVisible();
-  await bar().click();
+  await bar().click({ position: EDGE });
 
   await page.goto(`/#/p/${seeded.projectId}/t/${ticketOf(v, 14)}`);
   await page.getByRole("tab", { name: "Activité" }).click();
