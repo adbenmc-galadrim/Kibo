@@ -217,8 +217,20 @@ test("194 · la page Skills : trois sources, plugin en lecture seule, copie", as
   const project = page.getByRole("region", { name: "Projet · Kibo" });
   await expect(project.getByText("masqué", { exact: true })).toBeVisible();
   const plugin = page.getByRole("region", { name: /^superpowers/ });
-  await expect(plugin.getByText("lecture seule", { exact: true })).toBeVisible();
+  const pluginHeader = plugin.getByRole("button", { name: /^superpowers/ });
+  await expect(pluginHeader).toHaveAttribute("aria-expanded", "false");
+  await expect(plugin.getByRole("button", { name: /^Ouvrir le skill/ })).toHaveCount(0);
   await capture(info, "194");
+
+  await page.getByRole("radio", { name: /^Avec notes · / }).click();
+  const rows = page.getByRole("button", { name: /^Ouvrir le skill/ });
+  await expect(computer.getByRole("button", { name: "Ouvrir le skill brainstorming" })).toBeVisible();
+  await expect(rows.filter({ hasNotText: /\d+ notes?/ })).toHaveCount(0);
+  await capture(info, "194-notes");
+  await page.getByRole("radio", { name: /^Tous · / }).click();
+
+  await pluginHeader.click();
+  await expect(plugin.getByText("lecture seule", { exact: true })).toBeVisible();
 
   await plugin.getByRole("button", { name: "Ouvrir le skill superpowers:brainstorming" }).click();
   await page.getByRole("button", { name: "Copier pour modifier" }).first().click();
