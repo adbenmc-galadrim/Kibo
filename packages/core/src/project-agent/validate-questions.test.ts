@@ -118,6 +118,9 @@ describe("validateBatch on question actions", () => {
     expect(problems(batch(update("q3", { title: "B" }, 1), reopen("q3", 2)))).toEqual([
       "#1 réponse déjà transmise à un agent : rouvre-la d'abord (reopenQuestion)",
     ]);
+    expect(problems(batch(update("q2", { recipient: "client" }, 1), reopen("q2", 2)))).toEqual([
+      "#2 question modifiée plus haut dans le lot : place la réouverture avant la modification",
+    ]);
   });
 
   test("a recipient is added once and the project keeps twenty at most", () => {

@@ -83,8 +83,12 @@ const reopenQuestion: Check<"reopenQuestion"> = (scan, a) => {
   if (typeof q === "string") return [q];
   if (!isAnswered(q)) return ["question déjà ouverte"];
   const problems = touch(scan, `${q.id}.answer`);
-  if (problems.length === 0) scan.reopened.add(q.id);
-  return problems;
+  if (problems.length > 0) return problems;
+  if (scan.touched.has(`${q.id}.question`)) {
+    return ["question modifiée plus haut dans le lot : place la réouverture avant la modification"];
+  }
+  scan.reopened.add(q.id);
+  return [];
 };
 
 const deleteQuestion: Check<"deleteQuestion"> = (scan, a) => {
