@@ -8,6 +8,7 @@ import {
   removeLink,
   setStatus,
   waitingOn,
+  wouldCreateCycle,
 } from "./index";
 
 const setup = () => {
@@ -44,6 +45,15 @@ describe("links", () => {
     expect(() => addLink(d, { from: c.id, to: a.id, type: "blocks" })).toThrow("LINK_CYCLE");
     addLink(d, { from: c.id, to: a.id, type: "relates" });
     expect(() => addLink(d, { from: a.id, to: c.id, type: "relates" })).toThrow("INVALID_INPUT");
+  });
+
+  test("tells whether a blocking link would close a cycle, without touching the doc", () => {
+    const { d, a, b, c } = setup();
+    addLink(d, { from: a.id, to: b.id, type: "blocks" });
+    addLink(d, { from: b.id, to: c.id, type: "blocks" });
+    expect(wouldCreateCycle(listLinks(d), c.id, a.id)).toBe(true);
+    expect(wouldCreateCycle(listLinks(d), a.id, c.id)).toBe(false);
+    expect(listLinks(d)).toHaveLength(2);
   });
 
   test("removing a link and deleting a ticket clean up edges", () => {

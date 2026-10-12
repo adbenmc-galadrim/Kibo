@@ -37,6 +37,7 @@ export type OverlapStore = {
   ignored(projectId: string): OverlapIgnore[];
   ignoredKeys(projectId: string): Set<string>;
   openCountByRun(): RunOverlapCount[];
+  openTotal(): number;
   autoLink: AutoLinkStore;
   close(): void;
 };
@@ -230,6 +231,8 @@ export function openOverlapStore(home: string): OverlapStore {
             "UNION ALL SELECT other_run_id FROM run_overlaps WHERE open = 1) GROUP BY run_id ORDER BY run_id",
         )
         .all() as RunOverlapCount[],
+    openTotal: () =>
+      (db.query("SELECT COUNT(*) AS n FROM run_overlaps WHERE open = 1").get() as { n: number }).n,
     autoLink: autoLinkStore(db),
     close: () => db.close(),
   };

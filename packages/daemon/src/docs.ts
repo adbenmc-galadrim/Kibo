@@ -2,7 +2,7 @@ import type { RuleTrigger } from "@kibo/core/rules";
 import type { ChangeMessage, ProjectActivity, ProjectCommand, ProjectMeta, ProjectPatch } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 
-export type CommandOrigin = "user" | "sync" | "agent";
+export type CommandOrigin = "user" | "sync" | "agent" | "kibo";
 export type CommandMeta = { origin: CommandOrigin; instanceId: string | null };
 export type CommandEvent = { projectId: string; command: ProjectCommand; result: unknown; meta: CommandMeta };
 export type CommandInterceptor = (
@@ -11,6 +11,7 @@ export type CommandInterceptor = (
   meta: CommandMeta,
 ) => ProjectCommand;
 export const USER_COMMAND: CommandMeta = { origin: "user", instanceId: null };
+export const KIBO_COMMAND: CommandMeta = { origin: "kibo", instanceId: null };
 
 export type Docs = {
   workspace: LoroDoc;

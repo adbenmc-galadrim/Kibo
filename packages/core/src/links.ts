@@ -8,7 +8,7 @@ export function listLinks(doc: LoroDoc): Link[] {
   return Object.values(links(doc).toJSON() as Record<string, Link>);
 }
 
-function reaches(all: Link[], start: string, goal: string): boolean {
+function reaches(all: readonly Link[], start: string, goal: string): boolean {
   const queue = [start];
   const seen = new Set<string>();
   for (let id = queue.shift(); id !== undefined; id = queue.shift()) {
@@ -19,6 +19,9 @@ function reaches(all: Link[], start: string, goal: string): boolean {
   }
   return false;
 }
+
+export const wouldCreateCycle = (all: readonly Link[], from: string, to: string): boolean =>
+  reaches(all, to, from);
 
 export function addLink(doc: LoroDoc, input: Omit<Link, "id">): Link {
   const tickets = doc.getTree("tickets");
@@ -31,7 +34,7 @@ export function addLink(doc: LoroDoc, input: Omit<Link, "id">): Link {
     ((l.from === input.from && l.to === input.to) ||
       (input.type === "relates" && l.from === input.to && l.to === input.from));
   if (all.some(same)) throw new KiboError("INVALID_INPUT", "link already exists");
-  if (input.type === "blocks" && reaches(all, input.to, input.from)) {
+  if (input.type === "blocks" && wouldCreateCycle(all, input.from, input.to)) {
     throw new KiboError("LINK_CYCLE", "this dependency would create a cycle");
   }
   const link: Link = { id: crypto.randomUUID(), ...input };
