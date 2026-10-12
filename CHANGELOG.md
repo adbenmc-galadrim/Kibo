@@ -6,6 +6,11 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.22.0-alpha.2 — 2026-10-12
+
+- Kanban : un titre très long (chemin, identifiant) passe à la ligne dans la carte au lieu d'en sortir ; les étiquettes et le nom d'agent trop longs s'arrêtent sur une ellipse ; plus aucune colonne ne défile de côté et les barres de défilement sont masquées (le défilement reste possible à la molette, au trackpad et au clavier).
+- Page Skills : chaque groupe (cet ordinateur, projet, plugin) se replie, plugins repliés par défaut, « Tout replier / Tout déplier » ; filtres « Tous », « Utilisés » et « Avec notes » avec leurs compteurs ; tes choix sont gardés.
+
 ## 0.22.0-alpha.1 — 2026-10-12
 
 - Des agents, plus de profils : chaque agent est un fichier Claude Code (`~/.claude/agents` ou `.claude/agents` du projet) avec sa spec, ses sous-agents appelables et ses skills autorisés. Tes profils ont été migrés en fichiers ; les instances restées en 0.21 ne les verront plus.

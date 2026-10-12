@@ -24,8 +24,10 @@ const CI_DOT = {
 export const STARTABLE_BADGE =
   "border-zinc-400 bg-background text-2xs font-medium text-zinc-700 dark:border-zinc-500 dark:text-zinc-200";
 
+export const CARD_TITLE_CLASS = "w-fit max-w-full text-left wrap-anywhere";
+
 export const CARD_CLASS =
-  "relative grid gap-2 rounded-md border bg-card p-2.5 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "relative grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 rounded-md border bg-card p-2.5 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export type CiChip = { tone: CiTone; prNumber: number | null };
 
@@ -51,14 +53,16 @@ export function KanbanCardContent({ ticket: t, run, ci, members, remote, questio
   return (
     <>
       <div className="flex h-6 items-center gap-2">
-        <TicketKeyLabel ticket={t} className="font-mono text-2xs text-muted-foreground" />
+        <TicketKeyLabel ticket={t} className="min-w-0 truncate font-mono text-2xs text-muted-foreground" />
         <span className="flex-1" />
         {menu}
       </div>
       {title}
       <LabelChips labels={t.labels} />
       {t.blockedReason && (
-        <p className="text-2xs text-red-600 dark:text-red-400">{fr.blockedReason(t.blockedReason)}</p>
+        <p className="text-2xs text-red-600 wrap-anywhere dark:text-red-400">
+          {fr.blockedReason(t.blockedReason)}
+        </p>
       )}
       <div className="flex flex-wrap items-center gap-1.5">
         {t.startable && (
@@ -66,24 +70,28 @@ export function KanbanCardContent({ ticket: t, run, ci, members, remote, questio
             {fr.startable}
           </Badge>
         )}
-        <AgentChip agent={t.assignee?.kind === "agent" ? t.assignee.ref : null} run={run} />
+        <AgentChip
+          agent={t.assignee?.kind === "agent" ? t.assignee.ref : null}
+          run={run}
+          className="max-w-full"
+        />
         {remote.map((r) => (
           <span
             key={r.label}
-            className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-1.5 py-0.5 text-3xs text-brand-strong dark:text-brand"
+            className="inline-flex max-w-full items-center gap-1 rounded-full bg-brand/10 px-1.5 py-0.5 text-3xs text-brand-strong dark:text-brand"
           >
-            <Bot aria-hidden className="size-3" />
-            {r.label}
+            <Bot aria-hidden className="size-3 shrink-0" />
+            <span className="truncate">{r.label}</span>
           </span>
         ))}
         {t.assignee?.kind === "human" && members.length > 0 && (
-          <Badge variant="outline" className="text-3xs font-normal">
-            {assigneeLabel(t.assignee, members)}
+          <Badge variant="outline" className="max-w-full text-3xs font-normal">
+            <span className="truncate">{assigneeLabel(t.assignee, members)}</span>
           </Badge>
         )}
         {t.waitingOn.map((k) => (
-          <Badge key={k} variant="outline" className="text-3xs">
-            {fr.waitingOn(k)}
+          <Badge key={k} variant="outline" className="max-w-full text-3xs">
+            <span className="truncate">{fr.waitingOn(k)}</span>
           </Badge>
         ))}
         {t.openQuestions > 0 && (

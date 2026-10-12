@@ -191,3 +191,10 @@
     animation: kibo-spotlight-fade 1.5s ease-out forwards;
   }
 }
+
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}

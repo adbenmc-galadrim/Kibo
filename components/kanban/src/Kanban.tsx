@@ -190,7 +190,7 @@ export function Kanban() {
           announcements: announce(keyOf),
         }}
       >
-        <div className="flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">
+        <div className="scrollbar-none flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">
           {ordered.map((s) => (
             <KanbanColumn
               key={s.id}

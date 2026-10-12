@@ -190,3 +190,97 @@ test("glisser une carte au clavier : Espace, flèche droite, Espace", async ({ p
   await expect(doing.getByRole("article", { name: /Carte au clavier/ })).toBeVisible();
   await expect(todo.getByRole("article", { name: /Carte au clavier/ })).toHaveCount(0);
 });
+
+const LONG_WORD = "Ajouter_une_validation_tres_longue_sans_espace_pour_le_calcul_du_total_du_panier";
+const LONG_WORDS =
+  "Relire toutes les étiquettes du tableau de bord et harmoniser les intitulés des colonnes avant la démonstration";
+
+const LONG_PATH =
+  "Étape 3 · Première table synchronisée : mettre dans apps/web/src/lib/powersync/registry.ts la première table";
+
+const overflowOf = (el: Element) => ({
+  x: el.scrollWidth - el.clientWidth,
+  y: el.scrollHeight - el.clientHeight,
+});
+
+const cardOverflows = (root: Locator) =>
+  root.getByRole("article").evaluateAll((cards) =>
+    cards.flatMap((card) => {
+      const frame = card.getBoundingClientRect();
+      const outside = Array.from(card.querySelectorAll("*")).filter(
+        (el) => el.getBoundingClientRect().right > frame.right + 0.5,
+      );
+      return [...(card.scrollWidth > card.clientWidth ? [card] : []), ...outside].map(
+        (el) => `${card.getAttribute("data-key")}: ${el.tagName}.${el.getAttribute("class")}`,
+      );
+    }),
+  );
+
+const hiddenBars = (root: Locator) =>
+  root.evaluate((el) =>
+    [el, ...Array.from(el.querySelectorAll('[data-slot="kanban-cards"]'))].map(
+      (node) => getComputedStyle(node).scrollbarWidth,
+    ),
+  );
+
+test("textes longs : rien ne sort des cartes, aucune barre de défilement", async ({ page }, info) => {
+  test.setTimeout(60_000);
+  const run = String.fromCharCode(65 + ((info.repeatEachIndex + info.retry) % 26));
+  const key = projectKey(`DL${run}`, info);
+  await pairAndCreateProject(page, info, key);
+  const projectId = projectIdOf(page);
+  const create = (command: Record<string, unknown>) =>
+    rpc(page, { method: "command", projectId, command: { method: "createTicket", ...command } });
+  await create({
+    title: LONG_WORD,
+    statusId: "todo",
+    labels: ["frontend_validation_du_panier_tres_long", "backend"],
+    assignee: { kind: "agent", ref: "agent_de_validation_du_panier_tres_long_nom" },
+  });
+  await create({ title: LONG_WORDS, statusId: "todo", labels: ["ux"] });
+  await create({ title: LONG_PATH, statusId: "todo", labels: ["priority:unsorted"] });
+  await create({ title: "Carte bloquée", statusId: "blocked", blockedReason: LONG_WORD });
+
+  await createSidebarPage(page, `Kibo ${key}`, "Kanban", "Vue");
+  await addComponent(page, "Kanban");
+  const main = page.getByRole("main");
+  await showAllTickets(main);
+  const todo = main.getByRole("region", { name: "À faire" });
+  const board = todo.locator("xpath=..");
+  await expect(todo.getByRole("article")).toHaveCount(3);
+  await expect(todo.getByRole("article", { name: /registry\.ts/ }).getByText("Démarrable")).toBeVisible();
+  await shot(page, info, "kanban-textes-longs");
+
+  expect(await cardOverflows(main)).toEqual([]);
+  const [boardGap, ...columnGaps] = await scrollers(board);
+  expect(boardGap).toEqual(FLAT);
+  for (const gap of columnGaps) expect(gap?.x).toBe(0);
+  for (const name of ["Backlog", "En cours", "En review", "Bloqué", "Terminé"]) {
+    const cards = main.getByRole("region", { name }).locator('[data-slot="kanban-cards"]');
+    expect(await cards.evaluate(overflowOf)).toEqual(FLAT);
+  }
+  expect(await page.locator("[data-viewer]").evaluate(overflowOf)).toEqual(FLAT);
+
+  for (let i = 1; i <= 14; i++) await create({ title: `Carte ${i}`, statusId: "in_progress" });
+  const doing = main.getByRole("region", { name: "En cours" });
+  await expect(doing.getByRole("article")).toHaveCount(14);
+  const cards = doing.locator('[data-slot="kanban-cards"]');
+  expect((await cards.evaluate(overflowOf)).y).toBeGreaterThan(0);
+  expect(await page.locator("[data-viewer]").evaluate(overflowOf)).toEqual(FLAT);
+  expect(new Set(await hiddenBars(board))).toEqual(new Set(["none"]));
+  await cards.hover();
+  await page.mouse.wheel(0, 400);
+  await expect.poll(() => cards.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  await shot(page, info, "kanban-colonne-longue");
+
+  await createSidebarPage(page, `Kibo ${key}`, "Suivi", "Tableau de bord");
+  await addComponent(page, "Kanban");
+  const widget = page.locator("[data-instance]").first();
+  await showAllTickets(widget);
+  const widgetBoard = widget.getByRole("region", { name: "À faire" }).locator("xpath=..");
+  await expect(widget.getByRole("article")).toHaveCount(18);
+  expect(await cardOverflows(widget)).toEqual([]);
+  expect(await widgetBoard.locator("xpath=../..").evaluate(overflowOf)).toEqual(FLAT);
+  expect(new Set(await hiddenBars(widgetBoard))).toEqual(new Set(["none"]));
+  await shot(page, info, "kanban-textes-longs-tableau");
+});

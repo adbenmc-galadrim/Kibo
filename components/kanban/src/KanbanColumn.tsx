@@ -40,7 +40,10 @@ export function KanbanColumn({ status, ids, targeted, children, onAdd }: Props) 
           <span className="size-6" />
         )}
       </header>
-      <div data-slot="kanban-cards" className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pt-2">
+      <div
+        data-slot="kanban-cards"
+        className="scrollbar-none flex min-h-0 flex-1 flex-col gap-2 overflow-x-hidden overflow-y-auto pt-2"
+      >
         <SortableContext id={status.id} items={ids}>
           {children}
         </SortableContext>
