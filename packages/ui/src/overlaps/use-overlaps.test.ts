@@ -8,6 +8,7 @@ const calls: RpcRequest[] = [];
 const topics: { name: string; fire(): void }[] = [];
 let overlaps: Overlap[] = [OPEN_OVERLAP];
 let links: AutoLink[] = [autoLinkFixture()];
+let linksFail = false;
 
 mock.module("../api", () =>
   apiMock({
@@ -19,7 +20,10 @@ mock.module("../api", () =>
           overlaps = overlaps.map((o) => (o.id === req.id ? { ...o, status: "ignored" as const } : o));
           return Promise.resolve(overlaps[0]);
         }
-        if (req.method === "autoLinks.list") return Promise.resolve(links);
+        if (req.method === "autoLinks.list")
+          return linksFail
+            ? Promise.reject(Object.assign(new Error("FORBIDDEN"), { code: "FORBIDDEN" }))
+            : Promise.resolve(links);
         if (req.method === "autoLinks.cancel") {
           links = links.map((l) => (l.id === req.id ? { ...l, status: "cancelled" as const } : l));
           return Promise.resolve(links[0]);
@@ -45,6 +49,7 @@ beforeEach(() => {
   topics.length = 0;
   overlaps = [OPEN_OVERLAP];
   links = [autoLinkFixture()];
+  linksFail = false;
 });
 
 test("the overlaps of a run are listed on mount and replayed on the agents topic", async () => {
@@ -81,4 +86,17 @@ test("the auto links of a project are indexed by link and can be cancelled", asy
   await act(() => result.current.cancel("a1"));
   expect(calls.map((c) => c.method)).toEqual(["autoLinks.list", "autoLinks.cancel", "autoLinks.list"]);
   await waitFor(() => expect(result.current.byId.get("a1")?.status).toBe("cancelled"));
+});
+
+test("a failed reload of the auto links keeps the known ones and exposes the error", async () => {
+  const { result } = renderHook(() => useAutoLinks("bou"));
+  await waitFor(() => expect(result.current.links).toHaveLength(1));
+  expect(result.current.error).toBeNull();
+  linksFail = true;
+  act(() => topics.find((t) => t.name === "agents")?.fire());
+  await waitFor(() => expect(result.current.error).not.toBeNull());
+  expect(result.current.links).toHaveLength(1);
+  linksFail = false;
+  act(() => topics.find((t) => t.name === "agents")?.fire());
+  await waitFor(() => expect(result.current.error).toBeNull());
 });

@@ -4,7 +4,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@kibo/sdk/ui/popover";
 import { Link2, Undo2 } from "lucide-react";
 import { useState } from "react";
-import { frOverlapsSettings } from "../i18n/fr-overlaps-settings";
+import { frOverlaps } from "../i18n/fr-overlaps";
 
 type Props = {
   link: AutoLink;
@@ -13,7 +13,7 @@ type Props = {
   onCancel(id: string): Promise<void> | void;
 };
 
-const t = frOverlapsSettings.badge;
+const t = frOverlaps.badge;
 
 export function AutoLinkBadge({ link, otherKey, canEdit, onCancel }: Props) {
   const [failed, setFailed] = useState(false);

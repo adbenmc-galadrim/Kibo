@@ -6,7 +6,7 @@ import { Switch } from "@kibo/sdk/ui/switch";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { Copy } from "lucide-react";
 import { useId, useState } from "react";
-import { frOverlapsSettings } from "../i18n/fr-overlaps-settings";
+import { frOverlaps } from "../i18n/fr-overlaps";
 import { GenericExportsField } from "./GenericExportsField";
 import { IgnoredOverlaps } from "./IgnoredOverlaps";
 
@@ -17,7 +17,7 @@ type Props = {
   disabled: boolean;
 };
 
-const t = frOverlapsSettings.settings;
+const t = frOverlaps.settings;
 const MAX_GLOBS = 50;
 const MAX_GLOB_CHARS = 200;
 

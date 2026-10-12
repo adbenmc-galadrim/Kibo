@@ -2,7 +2,7 @@ import { Badge } from "@kibo/sdk/ui/badge";
 import { Input } from "@kibo/sdk/ui/input";
 import { X } from "lucide-react";
 import { type KeyboardEvent, useState } from "react";
-import { frOverlapsSettings } from "../i18n/fr-overlaps-settings";
+import { frOverlaps } from "../i18n/fr-overlaps";
 
 type Props = {
   names: readonly string[];
@@ -12,7 +12,7 @@ type Props = {
   describedBy: string;
 };
 
-const t = frOverlapsSettings.settings;
+const t = frOverlaps.settings;
 const MAX_NAMES = 100;
 const MAX_CHARS = 64;
 

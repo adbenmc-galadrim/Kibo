@@ -4,11 +4,11 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Braces, Copy, FileText, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { client } from "../api";
-import { frOverlapsSettings } from "../i18n/fr-overlaps-settings";
+import { frOverlaps } from "../i18n/fr-overlaps";
 
 type Props = { projectId: string; disabled: boolean; labelledBy: string; describedBy: string };
 
-const t = frOverlapsSettings.settings;
+const t = frOverlaps.settings;
 const ICONS: Record<OverlapKind, LucideIcon> = { file: FileText, export: Braces, block: Copy };
 const actorName = (by: Actor) => by.ref.charAt(0).toUpperCase() + by.ref.slice(1);
 

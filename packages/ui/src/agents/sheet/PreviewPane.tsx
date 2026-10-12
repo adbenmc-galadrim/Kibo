@@ -7,7 +7,7 @@ import { useEffect, useId, useState } from "react";
 import { client } from "../../api";
 import { frAgentsPage } from "../../i18n/fr-agents-page";
 import { frAgentsSkills } from "../../i18n/fr-agents-skills";
-import { frOverlapsSettings } from "../../i18n/fr-overlaps-settings";
+import { frOverlaps } from "../../i18n/fr-overlaps";
 
 type Props = {
   open: boolean;
@@ -58,7 +58,7 @@ function WorkSection({ brief }: { brief: string }) {
     <details open className="group/work rounded-md border">
       <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm [&::-webkit-details-marker]:hidden">
         <ChevronRight aria-hidden className="size-4 transition-transform group-open/work:rotate-90" />
-        {frOverlapsSettings.preview.work}
+        {frOverlaps.preview.work}
       </summary>
       <pre className="max-h-96 overflow-auto border-t bg-muted/40 p-3 font-mono text-xs whitespace-pre-wrap">
         {text}
