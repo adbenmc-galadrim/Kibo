@@ -11,6 +11,7 @@ import {
   maskSecrets,
   maskSecretsWithin,
   type RunAction,
+  standsAlone,
   summarizeActions,
 } from "@kibo/schema";
 import {
@@ -149,9 +150,10 @@ class Folder {
   }
 
   private push(action: RunAction, at: number | null): void {
-    if (this.actions.length >= MOMENT_ACTIONS_MAX) this.flush();
+    if (this.actions.length >= MOMENT_ACTIONS_MAX || standsAlone(action)) this.flush();
     if (this.actions.length === 0) this.actionsAt = at;
     this.actions.push(action);
+    if (standsAlone(action)) this.flush();
   }
 
   private flush(): void {

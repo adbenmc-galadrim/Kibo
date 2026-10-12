@@ -6,6 +6,7 @@ import {
   MOMENT_MESSAGE_MAX,
   maskSecretsWithin,
   type RunAction,
+  standsAlone,
   summarizeActions,
 } from "@kibo/schema";
 import { actionFromHook } from "./hook-actions";
@@ -17,10 +18,11 @@ export class HookGroup {
   private at: number | null = null;
 
   push(action: RunAction, ctx: FoldContext): FoldedMoment[] {
-    const flushed = this.actions.length >= MOMENT_ACTIONS_MAX ? this.flush(ctx) : [];
+    const alone = standsAlone(action);
+    const flushed = this.actions.length >= MOMENT_ACTIONS_MAX || alone ? this.flush(ctx) : [];
     if (this.actions.length === 0) this.at = ctx.now;
     this.actions.push(action);
-    return flushed;
+    return alone ? [...flushed, ...this.flush(ctx)] : flushed;
   }
 
   flush(ctx: FoldContext): FoldedMoment[] {

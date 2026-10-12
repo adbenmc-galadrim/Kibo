@@ -247,3 +247,18 @@ test("the skills reminders say what Kibo asked", () => {
   expect(screen.getByText("Kibo a rappelé la review des skills")).toBeTruthy();
   expect(screen.getByText("Kibo a rappelé le compte rendu et la review des skills")).toBeTruthy();
 });
+
+test("screen 196: a skill use and a refusal each stand on their own line, the refusal in red", () => {
+  const used = nth(SKILL_ACTIONS, 0);
+  const refused = nth(SKILL_ACTIONS, 1);
+  render(
+    <Feed
+      moments={[raw(actions([used])), { ...raw(actions([refused])), id: 100, seq: 100 }]}
+      texts={frMoments}
+    />,
+  );
+  const line = screen.getByRole("button", { name: "A utilisé le skill brainstorming" });
+  expect(within(line).getByText("brainstorming").tagName).toBe("CODE");
+  const refusal = screen.getByRole("button", { name: "Kibo a refusé le skill deploy" });
+  expect(refusal.className).toContain("text-destructive");
+});

@@ -1,8 +1,8 @@
-import type { FileRef, RunAction } from "@kibo/schema";
+import { type FileRef, type RunAction, standsAlone } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/ui/collapsible";
-import { ChevronRight } from "lucide-react";
-import { ActionRow } from "./ActionRow";
+import { Ban, BookOpen, ChevronRight } from "lucide-react";
+import { ActionRow, Phrase, phraseOf } from "./ActionRow";
 import type { FileContext } from "./file-context";
 
 type Props = {
@@ -12,6 +12,19 @@ type Props = {
   files?: FileContext | null;
   onOpenFile?(ref: FileRef): void;
 };
+
+function Summary({ actions, summary }: Pick<Props, "actions" | "summary">) {
+  const [only] = actions;
+  const phrase = only && actions.length === 1 && standsAlone(only) ? phraseOf(only) : null;
+  if (!only || phrase === null) return <>{summary}</>;
+  const Icon = only.outcome === "denied" ? Ban : BookOpen;
+  return (
+    <>
+      <Icon aria-hidden className="size-3.5 shrink-0" />
+      <Phrase action={only} phrase={phrase} />
+    </>
+  );
+}
 
 export function ActionsMoment({ actions, summary, failed, files, onOpenFile }: Props) {
   return (
@@ -26,7 +39,7 @@ export function ActionsMoment({ actions, summary, failed, files, onOpenFile }: P
           aria-hidden
           className="size-3.5 shrink-0 transition-transform group-data-[state=open]:rotate-90"
         />
-        {summary}
+        <Summary actions={actions} summary={summary} />
       </CollapsibleTrigger>
       <CollapsibleContent>
         <ul className="grid gap-1.5 px-3 pb-2">

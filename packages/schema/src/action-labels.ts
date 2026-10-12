@@ -231,7 +231,18 @@ const GROUPS: readonly { kind: ActionKind; many(actions: readonly RunAction[]): 
     { kind: "other", many: (g) => `utilisé ${g.length} outils` },
   ];
 
+export const standsAlone = (a: Pick<RunAction, "kind" | "outcome">): boolean =>
+  a.kind === "skill" || (a.kind === "subagent" && a.outcome === "denied");
+
+function aloneLabel(a: RunAction): string {
+  if (a.outcome !== "denied") return actionLabel(a);
+  const what = a.kind === "skill" ? "le skill" : "le sous-agent";
+  return a.target ? `Kibo a refusé ${what} \`${a.target}\`` : `Kibo a refusé ${what}`;
+}
+
 export function summarizeActions(actions: readonly RunAction[]): string {
+  const [alone] = actions;
+  if (actions.length === 1 && alone && standsAlone(alone)) return aloneLabel(alone).slice(0, 300);
   const parts = GROUPS.flatMap((group) => {
     const members = actions.filter((a) => a.kind === group.kind);
     if (members.length === 0) return [];

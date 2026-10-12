@@ -8,7 +8,7 @@ type Props = { action: RunAction; files?: FileContext | null; onOpenFile?(ref: F
 
 const OUTCOME_ICON = { ok: Check, error: X, denied: Ban } as const;
 
-function phraseOf(action: RunAction): string | null {
+export function phraseOf(action: RunAction): string | null {
   const t = frMoments.phrases;
   if (action.kind === "skill") return action.outcome === "denied" ? t.deniedSkill : t.skill;
   if (action.kind === "subagent" && action.outcome === "denied") return t.deniedSubagent;
@@ -16,7 +16,7 @@ function phraseOf(action: RunAction): string | null {
   return null;
 }
 
-function Phrase({ action, phrase }: { action: RunAction; phrase: string }) {
+export function Phrase({ action, phrase }: { action: RunAction; phrase: string }) {
   return (
     <span data-phrase className="min-w-0 truncate">
       {phrase}

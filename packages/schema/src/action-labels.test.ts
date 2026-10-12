@@ -7,6 +7,7 @@ import {
   classifyTool,
   denialOf,
   MODIFYING_TOOLS,
+  standsAlone,
   summarizeActions,
   type ToolCall,
   testCounts,
@@ -181,7 +182,7 @@ test("a skill call is its own action, read tolerantly", () => {
   const used = action({ tool: "Skill", kind: "skill", target: "brainstorming" });
   expect(actionLabel(used)).toBe("A utilisé le skill `brainstorming`");
   expect(actionLabel(action({ tool: "Skill", kind: "skill", target: null }))).toBe("A utilisé un skill");
-  expect(summarizeActions([used])).toBe("A utilisé 1 skill");
+  expect(summarizeActions([used])).toBe("A utilisé le skill `brainstorming`");
   expect(summarizeActions([used, used])).toBe("A utilisé 2 skills");
 });
 
@@ -201,4 +202,15 @@ test("a refusal of the Kibo guard is a denial, with or without its target", () =
   expect(denialOf("skill non autorisé par Kibo : deploy")).toBe(true);
   expect(denialOf("sous-agent non autorisé par Kibo")).toBe(true);
   expect(denialOf("Permission to use Skill has been denied. Kibo a refusé le skill `deploy`")).toBe(true);
+});
+
+test("a skill use or a refusal by the guard stands alone and is named in full", () => {
+  const used = action({ tool: "Skill", kind: "skill", target: "brainstorming" });
+  const refused = action({ tool: "Skill", kind: "skill", target: "deploy", outcome: "denied" });
+  const subagent = action({ tool: "Agent", kind: "subagent", target: "seo", outcome: "denied" });
+  expect([used, refused, subagent].map(standsAlone)).toEqual([true, true, true]);
+  expect(standsAlone(action({ tool: "Agent", kind: "subagent", target: "review" }))).toBe(false);
+  expect(summarizeActions([used])).toBe("A utilisé le skill `brainstorming`");
+  expect(summarizeActions([refused])).toBe("Kibo a refusé le skill `deploy`");
+  expect(summarizeActions([subagent])).toBe("Kibo a refusé le sous-agent `seo`");
 });

@@ -39,3 +39,10 @@ describe("a session that uses skills", () => {
     });
   });
 });
+
+test("each skill use and each refusal is its own actions moment", () => {
+  const groups = foldAll(fixtureLines("skill")).flatMap((m) =>
+    m.data.kind === "actions" ? [m.data.actions.map((a) => a.kind)] : [],
+  );
+  expect(groups.filter((g) => g.includes("skill"))).toEqual([["skill"], ["skill"]]);
+});
