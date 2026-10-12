@@ -50,6 +50,7 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 30 · Signaux des agents | 189 à 191 (phase 21 : boîte à signaux, lot après réveil, fil du run émetteur, Activité, pastille et notification) ; **dessinés** |
 | 31 · Agents et skills | 192 à 196 (phase 22 : page Agents et fiche, nouvel agent, « Ce que reçoit l'agent », conflit d'écriture, page Skills, éditeur, notes de review, intégration en diff, historique, fil du run) ; **dessinés** |
 | 32 · Doublons entre agents | 197 à 201b (phase 23 : fil `other` et `owner`, lien posé et annulé, fiche et Activité, barre et page du run, réglages, « Ce que reçoit l'agent ») ; **dessinés, à ajuster après implémentation** ; hors des PDF et de `kibo.penpot.xz` jusqu'au jalon de la phase 23 |
+| 34 · Domaines & guidelines | 207 à 209b (phase 23 : arbre de dossiers, état vide, domaine de projet et du workspace, encart, sélecteur groupé, lien du projet) ; **dessinés, à ajuster après implémentation** ; hors des PDF et de `kibo.penpot.xz` jusqu'au jalon de la phase 23 |
 
 Pages 00 à 27 et 29 à 31 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 31 (la page 32, phase 23, est dans le fichier mais hors des PDF).
 Pages 28 à 28d : pistes de brainstorming (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF ; scripts `32b` à `32f`, pistes eux aussi.
@@ -247,6 +248,23 @@ de haut (1 120 pour 199, 1 240 pour 201 et 201b) ; rangées espacées de 1,4 × 
   Activité avec les lignes de recouvrement et de lien, « Recouvrements : 1 réglé · 0 ouvert » sous le compte rendu · 200 barre du pied de page
   (puces avec ⧉ 1, « 2/3 places · 1 recouvrement », infobulle) et page du run avec « Travail en parallèle » · 201 « Modifier le projet », section
   « Doublons entre agents » · 201b « Ce que reçoit l'agent » sur BOU-15, `brief.md` déplié sur « ## Travail en cours sur le projet ».
+
+## Phase 23 (page 34)
+
+`38-domaines-guidelines.js`, chargé après `18-socle`, `17-finitions`, `24-socle-suite`, `32b-pistes-agents`, `32d-pistes-questions` et
+`35-agents-skills` (`S.one`) ; liste `S.GUIDELINES`. Un écran par appel (`S.both(n)` ou `S.one(n)`), puis `S.fixGuidelinesNav()` dans un appel direct
+(Boutique sous Facturation dans la barre latérale, croix des onglets en dernier) et `S.dropBases()`. Les textes en `auto-height` ne sont mesurés
+que si l'onglet est au premier plan et que l'écran est dans la vue : avant l'export, `penpot.viewport.zoomIntoView([sombre, clair])`, puis `S.retext`.
+Projets Kibo, Portail, Facturation et Boutique (`projectsShell` renomme Portfolio et API Facturation de la base, ajoute Boutique). Écrans de 1 100 px
+de haut (207 à 208), 1 040 sinon ; rangées espacées de 1,4 × 1 040 px. Données : section « Domaines & guidelines (phase 23) » de `donnees-fictives.md`.
+
+- 34 · Domaines & guidelines : 207 page entière, encart « Comment les agents sont configurés » déplié, arbre (Workspace et « Domaines du workspace »,
+  Kibo déplié avec ses fichiers et « Domaines », Portail, Facturation, Boutique repliés), nœud « Projet · Kibo » (Éditer, `kibo.md`, Injection
+  « Workspace → Projet Kibo ») · 207b dossier Facturation vide (« Aucune guideline pour ce projet. », « Ajouter un fichier », « Aucun domaine… »,
+  « Nouveau domaine ») · 208 domaine Sync de Kibo (« domaine de Kibo · utilisé par 8 tickets », corbeille, `sync.md`, Injection « Workspace → Projet
+  Kibo → Domaine Sync ») · 208b encart replié, domaine du workspace Sécurité (« utilisé par 6 tickets dans 2 projets », Injection « Workspace →
+  Domaine Sécurité ») · 209 fiche KIB-14, sélecteur de domaine groupé (« Aucun », « Domaines de Kibo », « Domaines du workspace ») · 209b « Modifier
+  le projet », section Guidelines (« 7 fichiers .md · 4 domaines », « Ouvrir le dossier de guidelines → »).
 
 ## Exporter
 

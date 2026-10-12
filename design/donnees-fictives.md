@@ -288,3 +288,26 @@ mcp__kibo__peek_work lit le travail d'un autre run.
 ```
 
 Le second run (BOU-9) est un exemple propre à « Ce que reçoit l'agent » ; la barre des agents des écrans 197 à 201 n'en montre que deux.
+
+## Domaines & guidelines (phase 23)
+
+Page 34, d'après la spec §31.8. Projets **Kibo**, **Portail**, **Facturation** et **Boutique** (Portail et Facturation sont, sur cette page, les noms
+de Portfolio et API Facturation ; la barre latérale est renommée en conséquence). Couleurs : Kibo orange, Portail violet, Facturation vert,
+Boutique sarcelle.
+
+| Dossier | Fichiers | Domaines (fichiers) | « n .md » |
+|---|---|---|---|
+| Workspace | `conventions.md`, `git.md` | du workspace : Sécurité (`securite.md`), utilisé par 6 tickets dans 2 projets (Kibo, Portail) | 2 |
+| Kibo (projet courant) | `kibo.md`, `tests.md`, `ui.md` | Sync (`sync.md`, 8 tickets), UI (`ui.md`, 5), CI (`ci.md`, 4), Démon (`demon.md`, 1) | 7 |
+| Portail | `portail.md` | aucun | 1 |
+| Facturation | aucun | aucun | 0 |
+| Boutique | `boutique.md` | Livraison (`livraison.md`) | 2 |
+
+Couleurs de domaine : Sync bleu ciel, UI rose, CI ardoise, Démon indigo, Sécurité ocre, Livraison citron.
+Injection : Workspace ⇒ « Workspace » ; projet ⇒ « Workspace → Projet Kibo » (≈ 610 tokens) ; domaine de projet ⇒ « Workspace → Projet Kibo →
+Domaine Sync » (≈ 790) ; domaine du workspace ⇒ « Workspace → Domaine Sécurité » (≈ 260, s'applique à tout projet local) ; Facturation ≈ 180.
+Encart « Comment les agents sont configurés » : Workspace → Projet du ticket → Domaine du ticket → Profil de l'agent (spec et skills), liens
+« Ouvrir la page Agents → » et « Skills → », « Le panneau Injection, en bas, montre la chaîne du dossier choisi. ».
+Fiche **KIB-14** « Récepteur de hooks Claude Code », domaine **Démon** ; sélecteur : « Aucun », « Domaines de Kibo » (Sync, UI, CI, Démon),
+« Domaines du workspace » (Sécurité). « Modifier le projet » de Kibo (`~/code/kibo`) : « 7 fichiers .md · 4 domaines ».
+
