@@ -85,8 +85,10 @@ export function createAgentCatalog(input: AgentCatalogInput): AgentCatalog {
   };
 
   const scan = async () => {
+    const stale = [...expected];
     const found = await discoverAgents(input.roots, input.projects());
     for (const d of found) recordExternal(d);
+    for (const hash of stale) expected.delete(hash);
     discovered = found;
     rewatch();
   };

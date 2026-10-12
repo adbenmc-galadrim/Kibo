@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { type WatchHandle, watchPaths } from "../code/watcher";
-import type { ProjectFolderRef } from "./discover";
+import { type ProjectFolderRef, safeProjectAgentsDir } from "./discover";
 import type { AgentRoots } from "./paths";
 
 export const WATCH_LIMIT = 500;
@@ -13,7 +13,10 @@ export type AgentWatch = { targets: string[]; partial: boolean; close(): void };
 export function agentWatchTargets(roots: AgentRoots, projects: readonly ProjectFolderRef[]): string[] {
   const dirs = [
     join(roots.claudeHome, "agents"),
-    ...projects.flatMap((p) => (p.folder === null ? [] : [join(p.folder, ".claude", "agents")])),
+    ...projects.flatMap((p) => {
+      const dir = safeProjectAgentsDir(p);
+      return dir === null ? [] : [dir];
+    }),
   ];
   return dirs.filter((d) => existsSync(d));
 }

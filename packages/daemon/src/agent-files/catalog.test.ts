@@ -124,3 +124,14 @@ test("an expected hash written by Kibo is not recorded as external", async () =>
   await catalog.refresh();
   expect(history.list("agents", "global:livraison")).toHaveLength(1);
 });
+
+test("an expected hash never seen is forgotten after the next scan", async () => {
+  const { h, catalog, history, global } = setup();
+  await catalog.refresh();
+  const content = agentText("livraison", "Livre un ticket de bout en bout", "Plus tard");
+  catalog.expect(contentHash(content));
+  await catalog.refresh();
+  h.write(join(global, "livraison.md"), content);
+  await catalog.refresh();
+  expect(history.list("agents", "global:livraison").map((v) => v.origin)).toEqual(["external", "external"]);
+});

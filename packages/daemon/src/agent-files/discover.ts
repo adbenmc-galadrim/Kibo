@@ -14,7 +14,7 @@ import {
   systemIdOfName,
 } from "@kibo/schema";
 import { readWithHash } from "./guarded-write";
-import { type AgentRoots, agentsDir, boundedPath } from "./paths";
+import { type AgentRoots, agentsDir, boundedPath, projectAgentsDir } from "./paths";
 
 export type DiscoveredAgent = Omit<Agent, "settings" | "activeRuns" | "shadowedBy"> & {
   content: string | null;
@@ -107,6 +107,16 @@ async function locateIn(dir: string | null, projectId: string | null): Promise<L
   return names.map((name) => locate(dir, name, projectId)).filter((l): l is Located => l !== null);
 }
 
+export function safeProjectAgentsDir(project: ProjectFolderRef): string | null {
+  if (project.folder === null) return null;
+  try {
+    return projectAgentsDir(project.folder);
+  } catch (e) {
+    console.error(`[kibo-daemon] agents of project ${project.id} ignored: ${String(e)}`);
+    return null;
+  }
+}
+
 const compare = (a: DiscoveredAgent, b: DiscoveredAgent): number =>
   SCOPE_ORDER[a.scope] - SCOPE_ORDER[b.scope] ||
   (a.projectId ?? "").localeCompare(b.projectId ?? "") ||
@@ -118,11 +128,7 @@ export async function discoverAgents(
 ): Promise<DiscoveredAgent[]> {
   const located = [
     ...(await locateIn(agentsDir(roots, "global", null), null)),
-    ...(
-      await Promise.all(
-        projects.map((p) => locateIn(p.folder === null ? null : join(p.folder, ".claude", "agents"), p.id)),
-      )
-    ).flat(),
+    ...(await Promise.all(projects.map((p) => locateIn(safeProjectAgentsDir(p), p.id)))).flat(),
   ];
   const agents = await Promise.all(located.map(readAgent));
   return agents.sort(compare);

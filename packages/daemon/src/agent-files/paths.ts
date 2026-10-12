@@ -44,10 +44,20 @@ export function agentsDir(roots: AgentRoots, scope: AgentScope, projectId: strin
   return folder === null ? null : join(folder, ".claude", "agents");
 }
 
-export function requireAgentsDir(roots: AgentRoots, scope: AgentScope, projectId: string | null): string {
-  const dir = agentsDir(roots, scope, projectId);
-  if (dir === null) throw new KiboError("PROJECT_FOLDER_MISSING", `project ${projectId} has no local folder`);
+export function projectAgentsDir(folder: string): string {
+  const dir = join(folder, ".claude", "agents");
+  if (!isInside(realAnchor(resolve(folder)), realAnchor(resolve(dir)))) {
+    throw forbidden(`${dir} resolves outside the project folder ${folder}`);
+  }
   return dir;
+}
+
+export function requireAgentsDir(roots: AgentRoots, scope: AgentScope, projectId: string | null): string {
+  if (scope !== "project") return join(roots.claudeHome, "agents");
+  const folder = projectId === null ? null : roots.projectFolder(projectId);
+  if (folder === null)
+    throw new KiboError("PROJECT_FOLDER_MISSING", `project ${projectId} has no local folder`);
+  return projectAgentsDir(folder);
 }
 
 export function agentFileName(ref: AgentRef): string {

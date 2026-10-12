@@ -61,3 +61,20 @@ test("a root reached through a symbolic link is accepted with its real path", as
     join(real, "a.md"),
   );
 });
+
+test("a project whose .claude/agents links outside its folder is refused for writing", () => {
+  const h = makeTestHome();
+  const outside = join(h.root, "ailleurs");
+  mkdirSync(outside, { recursive: true });
+  mkdirSync(join(h.projectFolder, ".claude"), { recursive: true });
+  symlinkSync(outside, join(h.projectFolder, ".claude", "agents"));
+  expect(codeOf(() => agentPath(h.roots, `project:${PROJECT_ID}:a`))).toBe("FORBIDDEN");
+});
+
+test("a project whose .claude links outside its folder is refused for writing", () => {
+  const h = makeTestHome();
+  const outside = join(h.root, "ailleurs");
+  mkdirSync(outside, { recursive: true });
+  symlinkSync(outside, join(h.projectFolder, ".claude"));
+  expect(codeOf(() => agentPath(h.roots, `project:${PROJECT_ID}:a`))).toBe("FORBIDDEN");
+});

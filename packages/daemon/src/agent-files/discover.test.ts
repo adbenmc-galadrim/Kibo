@@ -115,3 +115,15 @@ test("a file name that is not a valid agent name is skipped and reported", async
   expect(errors).toHaveBeenCalled();
   errors.mockRestore();
 });
+
+test("a project whose .claude/agents links outside its folder is ignored and reported", async () => {
+  const h = makeTestHome();
+  const outside = join(h.root, "ailleurs");
+  h.write(join(outside, "fuite.md"), agentText("fuite"));
+  mkdirSync(join(h.projectFolder, ".claude"), { recursive: true });
+  symlinkSync(outside, join(h.projectFolder, ".claude", "agents"));
+  const errors = spyOn(console, "error").mockImplementation(() => undefined);
+  expect(await discoverAgents(h.roots, [{ id: PROJECT_ID, folder: h.projectFolder }])).toEqual([]);
+  expect(String(errors.mock.calls[0]?.[0])).toContain("ignored");
+  errors.mockRestore();
+});
