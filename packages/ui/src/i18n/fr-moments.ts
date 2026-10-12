@@ -46,6 +46,7 @@ export const frMoments = {
     report: "Kibo a rappelé de remplir le compte rendu",
     skills: "Kibo a rappelé la review des skills",
     report_skills: "Kibo a rappelé le compte rendu et la review des skills",
+    overlap: "Kibo a rappelé de factoriser",
   },
   partial,
   reasoning: "Raisonnement",

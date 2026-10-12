@@ -28,7 +28,9 @@ export type ReminderDeps = {
   moment(runId: string, kind: ReminderKind): void;
 };
 
-const STOP_REASONS: Record<Exclude<ReminderKind, "plan">, string> = {
+type StopKind = Exclude<ReminderKind, "plan" | "overlap">;
+
+const STOP_REASONS: Record<StopKind, string> = {
   report: REPORT_REMINDER,
   skills: SKILLS_REMINDER,
   report_skills: REPORT_SKILLS_REMINDER,
@@ -63,7 +65,7 @@ function reminderOf(
   return kind ? { kind, reply: { kind: "stop", reason: STOP_REASONS[kind] } } : null;
 }
 
-function stopKind(report: boolean, skills: boolean): Exclude<ReminderKind, "plan"> | null {
+function stopKind(report: boolean, skills: boolean): StopKind | null {
   if (report && skills) return "report_skills";
   if (report) return "report";
   return skills ? "skills" : null;

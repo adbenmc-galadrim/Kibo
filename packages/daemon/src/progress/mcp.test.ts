@@ -80,3 +80,11 @@ test("any other tool is unknown", async () => {
   });
   expect(signaled).toEqual([]);
 });
+
+test("peek_work is listed for ticket runs but not served yet", async () => {
+  const { service, signaled } = fakeService();
+  await expect(handleTicketTool(service, RUN, "peek_work", { run: "BOU-12" })).rejects.toMatchObject({
+    code: "NOT_FOUND",
+  });
+  expect(signaled).toEqual([]);
+});

@@ -36,6 +36,7 @@ const FP: ProjectFingerprint = {
       assignee: null,
       branch: null,
       pr: null,
+      blockedBy: [],
     },
   },
   questions: {},
