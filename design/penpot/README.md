@@ -49,6 +49,7 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 29 · Visibilité des agents | 183 à 188k (phase 20 : barre et volet des agents, onglet Activité, mention d'agent, Questions et destinataires, graphe lisible, Kanban « Démarrable ») ; **dessinés** |
 | 30 · Signaux des agents | 189 à 191 (phase 21 : boîte à signaux, fil du run, pastille) ; à dessiner (tâche T5 de la phase 21) |
 | 31 · Agents et skills | 192 à 196 (phase 22 : page Agents et fiche, nouvel agent, « Ce que reçoit l'agent », conflit d'écriture, page Skills, éditeur, notes de review, intégration en diff, historique, fil du run) ; **à dessiner, à valider par Adam** |
+| 32 · Doublons entre agents | 197 à 201b (phase 23 : recouvrement dans le fil des deux runs, lien automatique et annulation, liens du ticket « par Kibo », barre et page du run, réglages « Doublons entre agents », « Ce que reçoit l'agent ») ; à dessiner |
 
 Pages 00 à 27 et 29 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 29.
 Pages 28 à 28d : pistes de brainstorming (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF ; scripts `32b` à `32f`, pistes eux aussi.
