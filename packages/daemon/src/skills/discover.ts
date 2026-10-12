@@ -24,6 +24,9 @@ type Origin = {
 };
 
 const isMissing = (e: unknown): boolean => e instanceof Error && "code" in e && e.code === "ENOENT";
+const UNREADABLE = "fichier illisible";
+const unreadable = (what: string) => (e: unknown) =>
+  console.error(`[kibo-daemon] skills: ${what} unreadable`, e);
 const hashOf = (text: string): string => createHash("sha256").update(text).digest("hex");
 
 async function folderNames(root: string): Promise<string[]> {
@@ -35,8 +38,8 @@ async function folderNames(root: string): Promise<string[]> {
       .filter((name) => SkillName.safeParse(name).success)
       .sort();
   } catch (e) {
-    if (isMissing(e)) return [];
-    throw e;
+    if (!isMissing(e)) unreadable(`folder ${root}`)(e);
+    return [];
   }
 }
 
@@ -44,21 +47,30 @@ async function insideRoot(root: string, dir: string): Promise<boolean> {
   try {
     return isInside(await realpath(root), await realpath(dir));
   } catch (e) {
-    if (isMissing(e)) return false;
-    throw e;
+    if (!isMissing(e)) unreadable(`folder ${dir}`)(e);
+    return false;
   }
 }
 
-async function readSkillFile(dir: string): Promise<{ content: string; modifiedAt: number } | null> {
+async function readSkillFile(
+  dir: string,
+): Promise<{ content: string; modifiedAt: number } | typeof UNREADABLE | null> {
   const path = join(dir, SKILL_FILE);
   try {
     const [content, info] = await Promise.all([readFile(path, "utf8"), stat(path)]);
     return { content, modifiedAt: info.mtimeMs };
   } catch (e) {
     if (isMissing(e)) return null;
-    throw e;
+    unreadable(path)(e);
+    return UNREADABLE;
   }
 }
+
+const assetsOf = (dir: string) =>
+  listAssets(dir).catch((e: unknown) => {
+    unreadable(`assets of ${dir}`)(e);
+    return [];
+  });
 
 async function skillAt(root: string, folder: string, origin: Origin): Promise<DiscoveredSkill | null> {
   const dir = join(root, folder);
@@ -68,10 +80,25 @@ async function skillAt(root: string, folder: string, origin: Origin): Promise<Di
   }
   const read = await readSkillFile(dir);
   if (read === null) return null;
+  const id = skillIdOf(origin.source, origin.plugin?.name ?? null, folder);
+  if (read === UNREADABLE)
+    return {
+      id,
+      ...origin,
+      name: folder,
+      description: "",
+      path: dir,
+      file: null,
+      problem: UNREADABLE,
+      hash: null,
+      readOnly: origin.source === "plugin",
+      files: [],
+      modifiedAt: null,
+    };
   const parsed = parseSkillFile(read.content, folder);
   const ok = "file" in parsed;
   return {
-    id: skillIdOf(origin.source, origin.plugin?.name ?? null, folder),
+    id,
     ...origin,
     name: ok ? parsed.name : folder,
     description: ok ? (parsed.file.frontmatter.description ?? "") : "",
@@ -80,7 +107,7 @@ async function skillAt(root: string, folder: string, origin: Origin): Promise<Di
     problem: ok ? null : parsed.problem,
     hash: hashOf(read.content),
     readOnly: origin.source === "plugin",
-    files: await listAssets(dir),
+    files: await assetsOf(dir),
     modifiedAt: read.modifiedAt,
   };
 }

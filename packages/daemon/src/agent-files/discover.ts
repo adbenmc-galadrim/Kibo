@@ -1,3 +1,4 @@
+import { lstatSync } from "node:fs";
 import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { parseAgentFile } from "@kibo/core/agents/frontmatter";
@@ -34,6 +35,9 @@ const SCOPE_ORDER: Record<AgentScope, number> = { global: 0, project: 1, system:
 const NAME_MISMATCH = "le nom du fichier et le champ name diffèrent";
 const RESERVED = "nom réservé, ignoré";
 const SYMLINK = "lien symbolique refusé";
+const UNREADABLE = "fichier illisible";
+
+const codeOf = (e: unknown): unknown => (typeof e === "object" && e !== null && "code" in e ? e.code : null);
 
 async function markdownNames(dir: string): Promise<string[]> {
   try {
@@ -43,10 +47,9 @@ async function markdownNames(dir: string): Promise<string[]> {
       .map((e) => e.name.slice(0, -3))
       .sort();
   } catch (e) {
-    if (typeof e === "object" && e !== null && "code" in e && (e.code === "ENOENT" || e.code === "ENOTDIR")) {
-      return [];
-    }
-    throw e;
+    if (codeOf(e) !== "ENOENT" && codeOf(e) !== "ENOTDIR")
+      console.error(`[kibo-daemon] agents folder ${dir} unreadable, ignored`, e);
+    return [];
   }
 }
 
@@ -82,10 +85,18 @@ async function readAgent(loc: Located): Promise<DiscoveredAgent> {
   };
   try {
     boundedPath(loc.dir, loc.path);
-  } catch {
-    return { ...base, hash: null, file: null, problem: SYMLINK, modifiedAt: null, content: null };
+  } catch (e) {
+    const link = lstatSync(loc.path, { throwIfNoEntry: false })?.isSymbolicLink() === true;
+    if (!link) console.error(`[kibo-daemon] agent file ${loc.path} unreadable`, e);
+    const problem = link ? SYMLINK : UNREADABLE;
+    return { ...base, hash: null, file: null, problem, modifiedAt: null, content: null };
   }
-  const read = await readWithHash(loc.path);
+  const read = await readWithHash(loc.path).catch((e: unknown): typeof UNREADABLE => {
+    console.error(`[kibo-daemon] agent file ${loc.path} unreadable`, e);
+    return UNREADABLE;
+  });
+  if (read === UNREADABLE)
+    return { ...base, hash: null, file: null, problem: UNREADABLE, modifiedAt: null, content: null };
   if (read === null)
     return {
       ...base,

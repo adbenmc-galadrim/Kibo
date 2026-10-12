@@ -54,6 +54,8 @@ export async function startSkills(input: SkillsInput): Promise<Skills> {
     emit: input.emit,
     ...(input.watch !== undefined && { watch: input.watch }),
   });
-  await service.refresh();
+  await service
+    .refresh()
+    .catch((e: unknown) => console.error("[kibo-daemon] skills discovery failed at startup", e));
   return { service, rpc: skillsRpc(service, input.reviews, input.data), stop: () => service.close() };
 }

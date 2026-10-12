@@ -117,15 +117,22 @@ const boot = (home: string, claude: string, scenario: string) =>
     },
   });
 
-export async function startKit(o: { fixture?: string; scenario?: string } = {}): Promise<Kit> {
+export type KitOptions = { fixture?: string; scenario?: string; prepare?(claude: string): () => void };
+
+export async function startKit(o: KitOptions = {}): Promise<Kit> {
   const root = mkdtempSync(join(tmpdir(), "kibo-agents-skills-"));
   const home = join(root, "kibo");
   if (o.fixture) cpSync(o.fixture, home, { recursive: true });
   mkdirSync(join(home, "fake", "projects"), { recursive: true });
   const claude = join(root, "claude");
   mkdirSync(claude, { recursive: true });
+  const restore = o.prepare?.(claude) ?? (() => {});
   const scenario = o.scenario ?? scenarioPath("skills-routes");
-  let daemon = await boot(home, claude, scenario);
+  let daemon = await boot(home, claude, scenario).catch((e: unknown) => {
+    restore();
+    rmSync(root, { recursive: true, force: true });
+    throw e;
+  });
   const events: unknown[] = [];
   const connect = async () => {
     const cookie = await pairCookie(daemon);
@@ -143,6 +150,7 @@ export async function startKit(o: { fixture?: string; scenario?: string } = {}):
   cleanups.push(async () => {
     closeEvents();
     await daemon.stop();
+    restore();
     rmSync(root, { recursive: true, force: true });
   });
   return kit;

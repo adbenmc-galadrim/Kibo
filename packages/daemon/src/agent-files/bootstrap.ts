@@ -75,7 +75,10 @@ export async function startAgentFiles(input: AgentFilesInput): Promise<AgentFile
     notices: createNoticeBox(migration.notices),
     emit,
   });
-  await service.ensureSystemAgents();
+  await service.ensureSystemAgents().catch(async (e: unknown) => {
+    console.error("[kibo-daemon] Kibo agents could not be written, discovery goes on", e);
+    await catalog.refresh();
+  });
   const unsubscribe = catalog.onChange(emit);
   return {
     service,
