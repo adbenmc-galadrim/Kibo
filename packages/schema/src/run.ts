@@ -247,10 +247,12 @@ export type AgentsState = {
   progress: RunProgressSummary[];
   signals: ProjectSignalCount[];
   overlaps?: RunOverlapCount[];
+  overlapTotal?: number;
 };
 
 export const runOverlapCounts = (state: Pick<AgentsState, "overlaps">): RunOverlapCount[] =>
   state.overlaps ?? [];
+export const openOverlapTotal = (state: Pick<AgentsState, "overlapTotal">): number => state.overlapTotal ?? 0;
 export type SessionPreview = {
   runId: string;
   label: string;

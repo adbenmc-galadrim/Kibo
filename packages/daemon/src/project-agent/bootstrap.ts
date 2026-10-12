@@ -1,5 +1,5 @@
 import { DEFAULT_PROJECT_AGENT_BODY } from "@kibo/core/agents/compose";
-import { PROJECT_AGENT_REF } from "@kibo/schema";
+import { PROJECT_AGENT_REF, type ProjectFingerprint } from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
 import type { AgentDataPort } from "../agents/orchestrator-types";
 import type { Docs } from "../docs";
@@ -47,7 +47,7 @@ function projectAgentOps({ data, agents, signals, store, agent }: OpsDeps): Proj
     agents,
     signals,
     store: {
-      fingerprint: (runId: string) => agent().baseline(runId),
+      fingerprint: (runId: string, current?: ProjectFingerprint) => agent().baseline(runId, current),
       lastDecided: (projectId: string, since: number) => store.lastDecided(projectId, since),
     },
     propose: (run: Parameters<ProjectAgentService["propose"]>[0], input: unknown) =>

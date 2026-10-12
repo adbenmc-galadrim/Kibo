@@ -3,9 +3,11 @@ import { expect, spyOn, test } from "bun:test";
 import { STORYBOOK_DEFAULTS } from "@kibo/schema";
 import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
 import {
+  LOCAL_DUPLICATION_KEY,
   LOCAL_FOLDER_KEY,
   LOCAL_STORYBOOK_KEY,
   LOCAL_WORKTREE_KEY,
+  localDuplication,
   localStorybook,
   storybookSettingsOf,
   withLocalSettings,
@@ -107,4 +109,26 @@ test("corrupt storybook settings are ignored with a warning and fall back to the
 
 test("a project without storybook settings uses the defaults", () => {
   expect(storybookSettingsOf(localSettings(), "p1")).toEqual(STORYBOOK_DEFAULTS);
+});
+
+test("duplication settings come from the local settings only, corrupt ones fall back to null", () => {
+  const settings = localSettings();
+  const duplication = {
+    enabled: false,
+    minLines: 10,
+    compareTests: false,
+    ignore: [],
+    genericExports: ["main"],
+  };
+  expect(withLocalSettings({ ...meta, duplication }, settings, false).duplication).toBeNull();
+  settings.set("p1", LOCAL_DUPLICATION_KEY, JSON.stringify(duplication));
+  expect(withLocalSettings(meta, settings, true).duplication).toEqual(duplication);
+  expect(localDuplication(settings, "p1")).toEqual(duplication);
+  const warn = spyOn(console, "error").mockImplementation(() => {});
+  try {
+    settings.set("p1", LOCAL_DUPLICATION_KEY, JSON.stringify({ ...duplication, minLines: 99 }));
+    expect(localDuplication(settings, "p1")).toBeNull();
+  } finally {
+    warn.mockRestore();
+  }
 });

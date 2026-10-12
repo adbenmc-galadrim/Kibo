@@ -38,7 +38,7 @@ export type ProjectToolDeps = {
   data: ProjectAgentDataPort;
   agents: () => ProjectAgentAgentsPort;
   store: {
-    fingerprint(runId: string): ProjectFingerprint | null;
+    fingerprint(runId: string, current?: ProjectFingerprint): ProjectFingerprint | null;
     lastDecided(projectId: string, since: number): Batch | null;
   };
   propose: (run: RunView, input: unknown) => string;
@@ -84,12 +84,12 @@ async function noteOf({ deps, projectId, input }: ToolCall) {
 }
 
 async function changes({ deps, run, projectId }: ToolCall): Promise<string> {
-  const before = deps.store.fingerprint(run.id);
-  if (!before) throw new KiboError("NOT_FOUND", "no previous turn to compare with");
   const { data } = deps;
   const project = data.project(projectId);
   const { runs } = deps.agents().state();
   const after = fingerprint({ project, runs, notes: await data.notes(projectId) });
+  const before = deps.store.fingerprint(run.id, after);
+  if (!before) throw new KiboError("NOT_FOUND", "no previous turn to compare with");
   const lines = diffFingerprints(before, after, changeNames(project, runs, before));
   return renderDigest(lines, deps.store.lastDecided(projectId, run.createdAt), Number.POSITIVE_INFINITY);
 }

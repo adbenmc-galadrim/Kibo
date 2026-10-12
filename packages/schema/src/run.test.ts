@@ -4,6 +4,7 @@ import {
   HookInput,
   HookPayload,
   keyBesideLabel,
+  openOverlapTotal,
   permissionReply,
   type RunRecord,
   runOverlapCounts,
@@ -94,4 +95,6 @@ test("a run name that already names the ticket does not get its key a second tim
 test("an agents state without overlaps counts none", () => {
   expect(runOverlapCounts({})).toEqual([]);
   expect(runOverlapCounts({ overlaps: [{ runId: "r1", open: 2 }] })).toEqual([{ runId: "r1", open: 2 }]);
+  expect(openOverlapTotal({})).toBe(0);
+  expect(openOverlapTotal({ overlapTotal: 1 })).toBe(1);
 });

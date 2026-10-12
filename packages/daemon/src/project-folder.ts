@@ -1,10 +1,17 @@
-import { type ProjectMeta, STORYBOOK_DEFAULTS, StorybookSettings, WorktreeSettings } from "@kibo/schema";
+import {
+  DuplicationSettings,
+  type ProjectMeta,
+  STORYBOOK_DEFAULTS,
+  StorybookSettings,
+  WorktreeSettings,
+} from "@kibo/schema";
 import type { z } from "zod";
 import type { ProjectSettings } from "./notes/settings";
 
 export const LOCAL_FOLDER_KEY = "folder";
 export const LOCAL_WORKTREE_KEY = "worktree";
 export const LOCAL_STORYBOOK_KEY = "storybook";
+export const LOCAL_DUPLICATION_KEY = "duplication";
 
 type Reader = Pick<ProjectSettings, "get">;
 
@@ -31,6 +38,9 @@ export const localWorktree = (settings: Reader, projectId: string): WorktreeSett
 export const localStorybook = (settings: Reader, projectId: string): StorybookSettings | null =>
   localJson(settings, projectId, LOCAL_STORYBOOK_KEY, StorybookSettings);
 
+export const localDuplication = (settings: Reader, projectId: string): DuplicationSettings | null =>
+  localJson(settings, projectId, LOCAL_DUPLICATION_KEY, DuplicationSettings);
+
 export const storybookSettingsOf = (settings: Reader, projectId: string): StorybookSettings =>
   localStorybook(settings, projectId) ?? STORYBOOK_DEFAULTS;
 
@@ -42,6 +52,7 @@ export function withLocalSettings(
   const folder = settings.get(meta.id, LOCAL_FOLDER_KEY);
   const worktree = localWorktree(settings, meta.id);
   const storybook = localStorybook(settings, meta.id);
-  if (shared) return { ...meta, folder, worktree, storybook };
-  return { ...meta, folder: folder ?? meta.folder, worktree, storybook };
+  const duplication = localDuplication(settings, meta.id);
+  if (shared) return { ...meta, folder, worktree, storybook, duplication };
+  return { ...meta, folder: folder ?? meta.folder, worktree, storybook, duplication };
 }

@@ -2,9 +2,9 @@ import { setProjectMeta, updateRegisteredProject } from "@kibo/core";
 import type { ProjectMeta, ProjectPatch } from "@kibo/schema";
 import type { Docs } from "../docs";
 import type { ProjectSettings } from "../notes/settings";
-import { LOCAL_STORYBOOK_KEY, LOCAL_WORKTREE_KEY } from "../project-folder";
+import { LOCAL_DUPLICATION_KEY, LOCAL_STORYBOOK_KEY, LOCAL_WORKTREE_KEY } from "../project-folder";
 
-type SharedPatch = Omit<ProjectPatch, "worktree" | "storybook">;
+type SharedPatch = Omit<ProjectPatch, "worktree" | "storybook" | "duplication">;
 
 const docFields = (patch: SharedPatch): SharedPatch => ({
   ...(patch.name !== undefined && { name: patch.name }),
@@ -28,6 +28,12 @@ function writeLocalStorybook(settings: ProjectSettings, projectId: string, patch
   else settings.set(projectId, LOCAL_STORYBOOK_KEY, JSON.stringify(patch.storybook));
 }
 
+function writeLocalDuplication(settings: ProjectSettings, projectId: string, patch: ProjectPatch): void {
+  if (patch.duplication === undefined) return;
+  if (patch.duplication === null) settings.unset(projectId, LOCAL_DUPLICATION_KEY);
+  else settings.set(projectId, LOCAL_DUPLICATION_KEY, JSON.stringify(patch.duplication));
+}
+
 function writeSharedFields(docs: Docs, projectId: string, patch: SharedPatch, folderInDoc: boolean): void {
   if (Object.keys(patch).length === 0) return;
   const docPatch = folderInDoc ? patch : docFields(patch);
@@ -46,6 +52,7 @@ export function writeProjectMeta(
 ): ProjectMeta {
   writeLocalWorktree(settings, projectId, patch);
   writeLocalStorybook(settings, projectId, patch);
+  writeLocalDuplication(settings, projectId, patch);
   writeSharedFields(docs, projectId, sharedFields(patch), folderInDoc);
   docs.emit({ projectId });
   docs.emit({ projectId: null });

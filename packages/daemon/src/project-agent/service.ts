@@ -30,7 +30,7 @@ export type ProjectAgentService = {
   decide(input: DecideInput): Promise<Batch>;
   reset(projectId: string): ProjectAgentView;
   summaries(): ProjectAgentSummary[];
-  baseline(runId: string): ProjectFingerprint | null;
+  baseline(runId: string, current?: ProjectFingerprint): ProjectFingerprint | null;
   propose(run: RunView, input: unknown): string;
   turns: ProjectTurnPort;
   mcp: AgentMcpSink;
@@ -139,7 +139,7 @@ export function createProjectAgentService(deps: ProjectAgentDeps): ProjectAgentS
     decide: (input) => decideBatch(ctx, input, (projectId, text) => send(ctx, projectId, text)),
     reset: (projectId) => reset(ctx, projectId),
     summaries: () => summaries(ctx),
-    baseline: (runId) => ctx.baselines.get(runId) ?? ctx.store.fingerprint(runId),
+    baseline: (runId, current) => ctx.baselines.get(runId) ?? ctx.store.fingerprint(runId, current),
     propose: (run, input) => proposeBatch(ctx, run, input),
     turns: createTurnPort(ctx),
     mcp: mcpSink(ctx),
