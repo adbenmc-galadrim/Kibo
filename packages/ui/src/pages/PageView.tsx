@@ -47,7 +47,7 @@ export function PageView({ project, page, viewer, question = null }: Props) {
   const state = usePageState(grid ? instances.map((i) => i.id) : [], question);
   return (
     <PageContext.Provider value={state}>
-      <div className="flex h-full flex-col">
+      <div className="flex h-full min-h-0 flex-col">
         {project.sync.shared && (
           <PageActions>
             <PresenceAvatars
@@ -75,7 +75,9 @@ export function PageView({ project, page, viewer, question = null }: Props) {
           <>
             <ViewActions projectId={projectId} instance={first} editable={editable} />
             {readSource(first.config) && <SourceHeader project={project} instance={first} />}
-            <ViewInstance projectId={projectId} instance={first} viewer={viewer} />
+            <div data-view-body className="flex min-h-0 flex-1 flex-col">
+              <ViewInstance projectId={projectId} instance={first} viewer={viewer} />
+            </div>
           </>
         ) : editing && layoutMode ? (
           <EditLayout
