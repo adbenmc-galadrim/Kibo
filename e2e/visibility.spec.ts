@@ -112,6 +112,19 @@ test("une mention du Kanban ouvre la carte, le volet du run puis sa page", async
   await page.getByText("Afficher le raisonnement").click();
   await expect(feed.getByText("Le message d'erreur doit rester en français")).toBeVisible();
   await capture(page, info, "186c");
+
+  await page.setViewportSize({ width: WIDE.width, height: 560 });
+  const thread = feed.locator('[data-slot="scroll-pane"]').first();
+  await expect.poll(() => thread.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+  expect(await thread.evaluate((el) => getComputedStyle(el).overflowY)).toBe("auto");
+  await expect
+    .poll(() => thread.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight))
+    .toBeLessThanOrEqual(8);
+  expect(await page.locator("[data-viewer]").evaluate((el) => el.scrollHeight - el.clientHeight)).toBe(0);
+  expect(await page.evaluate(() => (document.scrollingElement?.scrollHeight ?? 0) <= innerHeight)).toBe(true);
+  await expect(feed).toBeInViewport({ ratio: 1 });
+  await capture(page, info, "186d");
+  await page.setViewportSize(WIDE);
 });
 
 test("à la fin du run, le volet résume le compte rendu et la fiche le montre dans Activité", async () => {

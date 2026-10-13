@@ -176,3 +176,27 @@ test("screen 200: the side column of a ticket run shows the work in parallel", a
   expect(calls).toContainEqual({ method: "overlaps.parallel", runId: FEED_RUN });
   expect(await within(section).findByRole("button", { name: OWNER_NAME })).toBeTruthy();
 });
+
+test("the feed scrolls on its own, opens at its end, and the reply stays under it", async () => {
+  const height = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollHeight");
+  Object.defineProperty(HTMLElement.prototype, "scrollHeight", {
+    configurable: true,
+    get(this: HTMLElement) {
+      return this.dataset.slot === "scroll-pane" ? 900 : 0;
+    },
+  });
+  try {
+    renderPage();
+    const line = await screen.findByText("Je relis le récepteur et ses tests avant de toucher au port.");
+    const pane = line.closest<HTMLElement>('[data-slot="scroll-pane"]');
+    const feed = screen.getByRole("region", { name: "Fil narratif" });
+    expect(pane && feed.contains(pane)).toBe(true);
+    const reply = screen.getByLabelText("Réponse à opus-dev-2");
+    expect(pane?.contains(reply)).toBe(false);
+    expect(feed.contains(reply)).toBe(true);
+    expect(pane?.scrollTop).toBe(900);
+  } finally {
+    if (height) Object.defineProperty(HTMLElement.prototype, "scrollHeight", height);
+    else Reflect.deleteProperty(HTMLElement.prototype, "scrollHeight");
+  }
+});

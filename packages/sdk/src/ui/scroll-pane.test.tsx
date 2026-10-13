@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { render, screen } from "@testing-library/react";
+import { createRef } from "react";
 import { ScrollPane } from "./scroll-pane";
 
 test("ScrollPane scrolls on its own inside a bounded flex or grid parent", () => {
@@ -19,4 +20,10 @@ test("ScrollPane scrolls on its own inside a bounded flex or grid parent", () =>
 test("ScrollPane renders the element it is asked for", () => {
   render(<ScrollPane as="aside" aria-label="Liens" />);
   expect(screen.getByRole("complementary", { name: "Liens" }).getAttribute("data-slot")).toBe("scroll-pane");
+});
+
+test("ScrollPane hands its element to a ref, to follow the bottom of a feed", () => {
+  const ref = createRef<HTMLElement>();
+  render(<ScrollPane ref={ref} aria-label="Fil" />);
+  expect(ref.current).toBe(screen.getByLabelText("Fil"));
 });
