@@ -43,7 +43,7 @@ async function expectBelow(panel: Locator, header: Locator): Promise<void> {
 }
 
 async function say(panel: Locator, message: string): Promise<void> {
-  await panel.getByRole("textbox", { name: "Message à l'agent de projet" }).fill(message);
+  await panel.getByRole("combobox", { name: "Message à l'agent de projet" }).fill(message);
   await panel.getByRole("button", { name: "Envoyer" }).click();
 }
 

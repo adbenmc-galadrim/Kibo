@@ -6,6 +6,7 @@ import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
 import { frRunChat } from "../i18n/fr-run-chat";
+import { useSkillComplete } from "../skill-complete/use-skill-complete";
 
 type Props = { run: RunView; mode?: "answer" | "write"; title?: string; pending?: boolean };
 
@@ -25,6 +26,12 @@ export function ReplyBox({ run, mode = "answer", title, pending = false }: Props
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
+  const complete = useSkillComplete({
+    agentRef: run.profileId,
+    projectId: run.projectId,
+    value: text,
+    onValueChange: setText,
+  });
   const t = texts(mode, run.label);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -44,17 +51,17 @@ export function ReplyBox({ run, mode = "answer", title, pending = false }: Props
   return (
     <form onSubmit={submit} className="grid gap-1">
       {title && <p className="text-xs font-medium text-muted-foreground">{title}</p>}
-      <div className="flex items-center gap-3 rounded-md border border-brand/60 px-3 py-1.5">
+      <div className="relative flex items-center gap-3 rounded-md border border-brand/60 px-3 py-1.5">
         <label htmlFor={id} className="sr-only">
           {t.label}
         </label>
         <Input
           id={id}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+          {...complete.inputProps}
           placeholder={t.placeholder}
           className="h-8 border-0 px-0 shadow-none focus-visible:ring-0 dark:bg-transparent"
         />
+        {complete.list}
         {!pending && <span className="shrink-0 text-xs text-muted-foreground">{fr.agents.reply.hint}</span>}
         <Button
           type="submit"

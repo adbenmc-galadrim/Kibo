@@ -145,7 +145,7 @@ test("a run that cannot resume has no box; a ticket already in review has no rev
   render(drawer(ticketRun({ state: "failed", endedAt: NOW, error: "exit code 1" })));
   await waitFor(() => expect(calls.some((c) => c.method === "getProject")).toBe(true));
   await Promise.resolve();
-  expect(screen.queryByRole("textbox")).toBeNull();
+  expect(screen.queryByRole("combobox")).toBeNull();
   expect(screen.queryByRole("button", { name: "Passer en review" })).toBeNull();
 });
 

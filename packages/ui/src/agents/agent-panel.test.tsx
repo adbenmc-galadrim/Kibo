@@ -100,6 +100,7 @@ test("the reply box sends a trimmed answer, and keeps the text when it fails", a
   await user.type(field, "  Port dynamique, écrit dans ~/.kibo/daemon.json ");
   await user.click(screen.getByRole("button", { name: "Envoyer" }));
   expect(calls).toEqual([
+    { method: "skills.suggest", agentRef: "global:opus-dev", projectId: "kibo" },
     { method: "answerRun", runId: "r41", text: "Port dynamique, écrit dans ~/.kibo/daemon.json" },
   ]);
   await waitFor(() => expect(field.value).toBe(""));
