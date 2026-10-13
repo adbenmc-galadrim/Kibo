@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { AgentRef } from "./agent";
+import { AgentRef } from "./agent";
 import type { SaveResult } from "./file-version";
 import { Sha256 } from "./ids";
 import {
@@ -11,6 +11,7 @@ import {
   type SkillReview,
   SkillSource,
 } from "./skill";
+import type { SkillSuggestion } from "./skill-suggest";
 
 const ProjectId = z.string().min(1);
 export const SkillFilePath = z
@@ -30,6 +31,7 @@ export type SkillScope = z.infer<typeof SkillScope>;
 
 export const SKILL_RPC = [
   z.object({ method: z.literal("skills.list"), projectId: ProjectId.optional() }),
+  z.object({ method: z.literal("skills.suggest"), agentRef: AgentRef, projectId: ProjectId.optional() }),
   SkillScope.extend({ method: z.literal("skills.read"), id: SkillId, file: SkillFilePath.optional() }),
   SkillScope.extend({
     method: z.literal("skills.save"),
@@ -65,6 +67,7 @@ export const SKILL_RPC = [
 export type SkillRpcRequest = z.infer<(typeof SKILL_RPC)[number]>;
 export type SkillRpcResult = {
   "skills.list": { skills: Skill[]; partialWatch: boolean };
+  "skills.suggest": { skills: SkillSuggestion[] };
   "skills.read": { content: string; hash: string; modifiedAt: number; file: string };
   "skills.save": SaveResult<{ hash: string; modifiedAt: number }>;
   "skills.create": Skill;
