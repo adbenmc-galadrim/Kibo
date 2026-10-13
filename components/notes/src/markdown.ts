@@ -1,6 +1,7 @@
 import { AssetPath, type StatusId } from "@kibo/schema";
 import { statusDotClass } from "@kibo/sdk";
 import MarkdownIt from "markdown-it";
+import { blankFrontmatter } from "./frontmatter";
 
 export type TicketRef = { id: string; title: string; statusId: StatusId };
 
@@ -146,7 +147,7 @@ export function renderNote(
   options: RenderOptions = {},
 ): string {
   const env: RenderEnv = { readonlyTasks: options.tasks === "readonly" };
-  const tokens = md.parse(markdown, env);
+  const tokens = md.parse(blankFrontmatter(markdown), env);
   markTasks(tokens);
   for (const token of tokens) {
     if (token.type === "inline" && token.children) expandInline(token.children, tickets);

@@ -1,10 +1,12 @@
+import { blankFrontmatter } from "./frontmatter";
+
 export const EXCERPT_LINES = 4;
 const SKIPPED = /^(#|---|\*\*\*|!\[)/;
 
 export function excerpt(markdown: string, lines = EXCERPT_LINES): string {
   const kept: string[] = [];
   let inFence = false;
-  for (const raw of markdown.split("\n")) {
+  for (const raw of blankFrontmatter(markdown).split("\n")) {
     const line = raw.trim();
     if (line.startsWith("```")) {
       inFence = !inFence;
