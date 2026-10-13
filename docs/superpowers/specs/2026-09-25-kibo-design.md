@@ -1855,3 +1855,48 @@ Constatés à l'exécution (jalon v0.23, 2026-10-12) :
 - Modèle : `ProjectSnapshot.domains` est facultatif (lire avec `?? []`) ; `domainsOf` vit dans `@kibo/schema` (`domain-scope.ts`) ; `config.domains` réunit le workspace et tous les projets avec leur `owner`, un même identifiant pouvant apparaître deux fois (workspace et copie de partage), les listes dédoublonnent par identifiant. Une guideline de domaine de projet a l'owner `{ scope: "domain", domainId, projectId }` et l'identifiant `<domainId>:<chemin>` : changer le chemin change l'identifiant.
 - Migration : une ligne de journal en anglais par domaine, après `startCollab` ; second démarrage silencieux ; « lecture seule » couvre aussi `CONFLICT` ; une exception fait échouer le démarrage et la migration est rejouée au suivant ; quand la copie de partage est plus pauvre que le workspace, les guidelines du workspace en trop sont retirées sans trace. Le dogfood ne recrée pas un domaine Kibo resté au workspace. Vrai run : 9 domaines gardés au workspace sur la sauvegarde d'Adam.
 - Interface : chemins complets dans l'arbre (`guidelines/kibo.md`), chevron du dossier en bouton séparé, badge « Lecture seule », sous-titre « Projet · X » avec dossier tronqué, pastille « domaine de X » de la couleur du projet ; « Guidelines » entre Storybook et Doublons dans « Modifier le projet », lien serré à 448 px ; `DomainsPage.tsx` fait 308 lignes.
+
+## 32. Autocomplétion des skills dans le chat (demande d'Adam du 2026-10-13)
+
+**Demande** : « mettre une autocomplétion des skills dans le chat des agents. À partir du moment où j'écris / j'ai une proposition des skills que j'utilise le plus. » Amende §28.3 (commandes), §28.5 (composition du tour) et §28.8 (interface).
+
+### 32.1 Faits vérifiés sur Claude Code 2.1.296 (2026-10-13, hors ligne, sans token)
+
+Méthode de la spec agents §1 : `ANTHROPIC_BASE_URL` sur un serveur local qui répond 401 et enregistre les requêtes, `CLAUDE_CONFIG_DIR` temporaire avec un skill `demo-skill`, `claude -p --output-format stream-json --verbose`, prompt sur l'entrée standard.
+
+| Cas | Constat |
+|---|---|
+| Prompt `/demo-skill bonjour args` | **développé** par le CLI : le message utilisateur porte `<command-name>/demo-skill</command-name>`, `<command-args>bonjour args</command-args>` puis le corps de `SKILL.md` ; l'outil `Skill` n'est **pas** appelé. |
+| `/demo-skill` après un autre texte (`# Travail en cours … # Message\n\n/demo-skill`) | **non développé** : seul un prompt qui **commence** par `/` est lu comme une commande. |
+| `--settings` avec `deny: ["Skill(demo-skill)"]` | **développé quand même** : l'appel par l'utilisateur ignore les règles de permission `Skill(…)`. |
+
+Conséquences : le slash brut ne passerait ni par la garde (§28.5, `PreToolUse` sur `Skill`), ni par la détection des usages (§28.6, appel `Skill`), ni par les règles `allow`, et il serait perdu dès que Kibo préfixe le message (section « Travail en cours » §29.4, brief du premier tour, prompt de l'agent de projet). **Kibo réécrit donc le message** (§32.4).
+
+### 32.2 Déclenchement et liste
+
+- **Champs concernés** : la réponse ou la relance d'un run (`ReplyBox` : volet du run, page du run, fil du ticket qui y mène, étape de génération), le chat de l'agent de projet (`ComposeBox`), la consigne du dialogue « Assigner un agent ». L'assistant n'a pas de champ de conversation (l'étape « Rôle » de l'accueil n'en est pas un) : non concerné.
+- **Déclenchement** : un `/` en **début de message** ou **après un espace** (ou un saut de ligne) ouvre la liste ; le texte tapé ensuite jusqu'au curseur (`[a-z0-9:._-]*`) la filtre ; un espace, un caractère hors de cet ensemble ou le curseur sorti du mot la ferment. `https://…` ou `a/b` ne l'ouvrent pas.
+- **Liste** (`skills.suggest { agentRef, projectId? }`, lecture, aucune écriture) : les skills **visibles depuis le projet** (« Cet ordinateur », le projet du run, les plugins installés ; §28.3), un skill de projet masqué par un skill personnel du même nom exclu (Claude Code charge le personnel), **intersectés** avec les skills autorisés de l'agent (`settings.skills` : `all` ⇒ tous ; `list` ⇒ ses ids, plugins compris ; un id autorisé mais introuvable n'apparaît pas). Agent inconnu ⇒ `AGENT_NOT_FOUND`. Élément : `SkillSuggestion = { id, name, description, source, plugin: string | null, runs30d, lastAt: number | null }` (pas de corps de `SKILL.md`).
+- **Agents de Kibo** : leurs skills sont `{ mode: "list", ids: [] }` non modifiables (§28.2) ; la liste de l'agent de projet et du générateur est donc vide et affiche « Aucun skill autorisé pour cet agent. » (point soumis à Adam : autoriser des skills à l'agent de projet amenderait §28.2).
+
+### 32.3 Tri, filtre et interface
+
+- **Tri** (démon, `rankSkillSuggestions`) : par **usage décroissant** = nombre de runs des 30 derniers jours où le skill a servi (`run_skill_uses`, détection sans token de §28.6, même chiffre que la page Skills) ; départage par **dernier usage** le plus récent, puis par **id** (ordre alphabétique).
+- **Filtre** (interface, `filterSkillSuggestions`, casse ignorée, sur l'id) : les ids qui **commencent** par le texte tapé d'abord, puis ceux qui le **contiennent** (pour un plugin, le nom après `:` compte aussi comme début) ; chaque groupe garde l'ordre d'usage. **8 résultats visibles au plus.**
+- **Clavier** : ↑ et ↓ déplacent la sélection (en boucle) ; **Entrée** ou **Tab** insère `/id ` à la place du `/texte` tapé et ferme la liste (Entrée n'envoie pas le message tant que la liste a un résultat) ; **Échap** ferme la liste sans fermer le dialogue ou le volet qui la contient. **Souris** : survol = sélection, clic = insertion.
+- **Affichage** (popover sous le champ, `role="listbox"`, champ en `role="combobox"` avec `aria-expanded`, `aria-controls`, `aria-activedescendant`, `aria-autocomplete="list"`) : par ligne, `/id` en chasse fixe, description sur une ligne, origine (« Cet ordinateur », « Projet », « Plugin · <nom> ») et « n runs/30 j » (« jamais utilisé » à 0). Liste vide après filtre : « Aucun skill ne correspond. » ; agent sans skill : « Aucun skill autorisé pour cet agent. ». Tokens zinc (l'orange reste aux agents), sombre et clair ; textes dans `packages/ui/src/i18n/fr-skill-complete.ts`.
+- La liste est chargée à l'ouverture du champ (une RPC par champ et par agent), rechargée sur le sujet WebSocket `skills`.
+
+### 32.4 Envoi : réécriture du slash par le démon
+
+- Le texte **stocké** (fil, historique, compte rendu) reste celui qu'a tapé l'utilisateur. Au moment de composer le tour (`core/skill-mentions.ts`, pur), le démon réécrit le message de réponse (`pendingAnswer`), le message à l'agent de projet et la consigne d'assignation (`## Consignes` du brief) : un `/id` placé en début de texte ou après un blanc, suivi d'un blanc ou de la fin, dont l'`id` est un skill **visible depuis le projet du run** (autorisé ou non : la garde décide), devient
+  - en tête du message : « Utilise le skill `id` (outil Skill) avec : <reste> » (ou « Utilise le skill `id` (outil Skill). » sans reste) ;
+  - ailleurs : « le skill `id` (outil Skill) ».
+  Un `/mot` qui n'est pas un skill connu (chemin, commande intégrée) n'est pas touché.
+- L'appel passe ainsi par l'outil `Skill` : garde (un skill hors liste est refusé et le fil le dit, §28.5), règles `allow`, détection de l'usage (le compteur de §32.3 monte) et review (§28.6) s'appliquent comme pour un skill choisi par l'agent.
+
+### 32.5 Tests sans token
+
+- Unitaires : détection du déclencheur (début, après espace, URL, curseur), filtre préfixe puis sous-chaîne et limite 8, tri (usage, dernier usage, id), réécriture (tête, milieu, inconnu, chemin, plusieurs mentions), `skills.suggest` (visibilité par projet, masquage, `all`/`list`, agent inconnu), composant (clavier, souris, Échap, Entrée qui n'envoie pas, état vide, `aria-activedescendant`).
+- E2E (`e2e/agents-skills.spec.ts`, après le run 196 qui a utilisé deux skills) : `/` dans la réponse au run ⇒ liste triée par usage ; filtrage ; insertion au clavier.
+- Budget de l'entrée inchangé (≤ 223,4 kB gzip mesurés par `reportEntry`) : le composant est chargé à la demande s'il pèse sur l'entrée.
