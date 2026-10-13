@@ -1,3 +1,4 @@
+import { statSync } from "node:fs";
 import { foldLines } from "@kibo/core";
 import { MOMENT_RAW_MAX, maskSecretsWithin, type PartialReason, type RunView } from "@kibo/schema";
 import type { RunTrace } from "./store";
@@ -24,7 +25,8 @@ export function toHooks(core: TraceCore, trace: RunTrace, reason: PartialReason)
 function resumedOffset(core: TraceCore, run: RunView, path: string): number {
   const from = run.session?.mode === "resumed" && run.session.from !== run.id ? run.session.from : null;
   const origin = from === null ? null : core.store.trace(from);
-  return origin?.source === "transcript" && origin.path === path ? origin.offset : 0;
+  if (origin?.path !== path) return 0;
+  return origin.offset <= statSync(path).size ? origin.offset : 0;
 }
 
 export function resolve(core: TraceCore, trace: RunTrace, run: RunView, path: string | null): RunTrace {
