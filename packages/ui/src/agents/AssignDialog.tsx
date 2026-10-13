@@ -18,7 +18,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@kibo/sdk/ui/dialog";
-import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { Bot } from "lucide-react";
@@ -30,8 +29,10 @@ import { frAgentsSkills } from "../i18n/fr-agents-skills";
 import { frInbox } from "../i18n/fr-inbox";
 import { projectDomainsOf } from "../lib/project-domains";
 import { KeyRequired } from "../shell/KeyRequired";
+import { keepLayerOnSkillEscape } from "../skill-complete/use-skill-complete";
 import { canEdit } from "../state/access";
 import { NoFolderAlert, Notice, needsFolder, SpaceText, WaitingAlert } from "./AssignAlerts";
+import { AssignBriefField } from "./AssignBriefField";
 import { AssignSession } from "./AssignSession";
 import { assignableAgents, isDemoAgent } from "./assignable";
 import { modelText, scopeText } from "./catalog/agent-labels";
@@ -153,7 +154,7 @@ function AssignForm({ projects, project, ticketId, agents, domains, onClose, onE
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px]" onEscapeKeyDown={keepLayerOnSkillEscape}>
         <form onSubmit={submit} className="grid gap-4">
           <DialogHeader>
             <DialogTitle>{ticketId && ticket ? t.title(ticket.keyLabel) : t.launchTitle}</DialogTitle>
@@ -199,15 +200,13 @@ function AssignForm({ projects, project, ticketId, agents, domains, onClose, onE
               onEditProject={onEditProject && canEdit(project) ? () => onEditProject(projectId) : undefined}
             />
           )}
-          <div className="grid gap-2">
-            <Label htmlFor={`${id}-brief`}>{t.brief}</Label>
-            <Input
-              id={`${id}-brief`}
-              value={brief}
-              placeholder={t.briefPlaceholder}
-              onChange={(e) => setBrief(e.target.value)}
-            />
-          </div>
+          <AssignBriefField
+            id={`${id}-brief`}
+            agentRef={profile?.ref ?? null}
+            projectId={projectId}
+            value={brief}
+            onChange={setBrief}
+          />
           {ticket && profile && (
             <dl className="grid grid-cols-[9rem_1fr] gap-y-1.5 rounded-md border bg-muted/30 p-3 text-sm">
               <dt className="text-muted-foreground">{t.space}</dt>

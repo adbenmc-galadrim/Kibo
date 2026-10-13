@@ -73,6 +73,7 @@ describe("agent settings", () => {
       enabled: true,
       subagents: [],
       genericSubagents: true,
+      allSubagents: false,
       skills: { mode: "all" },
     });
     expect(DEFAULT_AGENT_SETTINGS).toEqual(AgentSettings.parse({}));
@@ -96,7 +97,14 @@ describe("agent settings", () => {
   });
   test("a patch is strict", () => {
     expect(AgentSettingsPatch.safeParse({ enabled: false }).success).toBe(true);
+    expect(AgentSettingsPatch.parse({ allSubagents: true })).toEqual({ allSubagents: true });
     expect(AgentSettingsPatch.safeParse({ model: "opus" }).success).toBe(false);
+  });
+  test("the project agent may use every skill, its subagents stay closed", () => {
+    const projectAgent = systemAgentSettings("project-agent", { skills: { mode: "list", ids: [] } });
+    expect(projectAgent.skills).toEqual({ mode: "all" });
+    expect(projectAgent.subagents).toEqual([]);
+    expect(projectAgent.genericSubagents).toBe(false);
   });
   test("the Kibo agents keep their fixed settings", () => {
     expect(systemAgentSettings("demo", { maxParallel: 3 }).maxParallel).toBe(1);
@@ -104,9 +112,12 @@ describe("agent settings", () => {
     expect(generator.maxParallel).toBe(4);
     expect(generator.skills).toEqual({ mode: "list", ids: [] });
     expect(generator.genericSubagents).toBe(false);
+    expect(systemAgentSettings("assistant", { allSubagents: true }).allSubagents).toBe(false);
     expect(generator.subagents).toEqual([]);
     expect(generator.workspace).toBe("isolated");
     expect(generator.permissionMode).toBe("acceptEdits");
+    expect(systemAgentSettings("assistant", {}).skills).toEqual({ mode: "list", ids: [] });
+    expect(systemAgentSettings("demo", {}).skills).toEqual({ mode: "list", ids: [] });
     expect(systemAgentSettings("assistant", { enabled: false, permissionMode: "auto" })).toMatchObject({
       enabled: false,
       permissionMode: "default",

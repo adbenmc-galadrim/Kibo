@@ -1,10 +1,23 @@
-import { type Actor, isSkillRequest, KiboError, SKILL_RPC, type SkillRpcRequest } from "@kibo/schema";
+import {
+  type Actor,
+  type AgentRef,
+  isSkillRequest,
+  KiboError,
+  SKILL_RPC,
+  type SkillRpcRequest,
+  type SkillsRule,
+} from "@kibo/schema";
 import { type RpcContext, type RpcExtension, requireLocal } from "../rpc-extensions";
 import type { SkillLocation } from "./ports";
 import type { SkillReviews } from "./reviews";
 import type { SkillsService } from "./service";
+import { suggestSkills } from "./suggest";
 
-export type SkillRpcData = { viewer(): string; assertWritable(projectId: string): void };
+export type SkillRpcData = {
+  viewer(): string;
+  assertWritable(projectId: string): void;
+  skillsRule(ref: AgentRef): SkillsRule | null;
+};
 
 const METHODS = SKILL_RPC.map((schema) => schema.shape.method.value);
 
@@ -35,6 +48,12 @@ async function handleSkill(
     case "skills.list":
       await service.refresh();
       return service.list(req.projectId ?? null);
+    case "skills.suggest": {
+      const rule = data.skillsRule(req.agentRef);
+      if (rule === null) throw new KiboError("AGENT_NOT_FOUND", `agent ${req.agentRef} not found`);
+      await service.refresh();
+      return { skills: suggestSkills(service.list(req.projectId ?? null).skills, rule) };
+    }
     case "skills.read":
       return service.read(locationOf(req), req.file);
     case "skills.assets":

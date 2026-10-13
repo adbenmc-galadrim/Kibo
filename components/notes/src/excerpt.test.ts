@@ -10,3 +10,9 @@ test("excerpt keeps the first content lines, one block each", () => {
   expect(excerpt("", 4)).toBe("");
   expect(excerpt("# seul\n")).toBe("");
 });
+
+test("excerpt skips the front-matter", () => {
+  expect(excerpt("---\ntickets: [KIB-1]\nsource: a.md\n---\n# Brief\n\nPremière ligne.\n")).toBe(
+    "Première ligne.",
+  );
+});

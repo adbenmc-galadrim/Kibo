@@ -80,6 +80,7 @@ export * from "./signal";
 export * from "./signal-rpc";
 export * from "./skill";
 export * from "./skill-rpc";
+export * from "./skill-suggest";
 export * from "./startable";
 export * from "./status";
 export * from "./status-projection";

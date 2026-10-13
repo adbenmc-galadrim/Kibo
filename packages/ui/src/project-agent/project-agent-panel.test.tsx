@@ -112,7 +112,7 @@ test("the agent's markdown never injects HTML", async () => {
 
 test("Enter adds a line, ⌘↵ sends the message", async () => {
   show();
-  const box = await panel().findByRole("textbox", { name: "Message à l'agent de projet" });
+  const box = await panel().findByRole("combobox", { name: "Message à l'agent de projet" });
   expect(box.getAttribute("placeholder")).toBe("Écris à l'agent de projet…");
   const user = userEvent.setup();
   await user.type(box, "Bonjour{Enter}la suite");
@@ -130,7 +130,7 @@ test("without a session the box invites to ask about the project and the state i
   current = emptyView();
   log = [];
   show();
-  const box = await panel().findByRole("textbox", { name: "Message à l'agent de projet" });
+  const box = await panel().findByRole("combobox", { name: "Message à l'agent de projet" });
   await waitFor(() => expect(box.getAttribute("placeholder")).toBe("Demande quelque chose sur Emis…"));
   expect(panel().getByText("Prêt")).toBeTruthy();
   expect(panel().getByText("Aucun message pour l'instant.")).toBeTruthy();
@@ -185,10 +185,10 @@ test("Anciens agents lists past sessions, opens one read-only, then goes back", 
     projectId: "emis",
     runId: "pa0",
   });
-  expect(panel().queryByRole("textbox", { name: "Message à l'agent de projet" })).toBeNull();
+  expect(panel().queryByRole("combobox", { name: "Message à l'agent de projet" })).toBeNull();
   expect(await panel().findByText("Abandonné")).toBeTruthy();
   await user.click(panel().getByRole("button", { name: "Retour" }));
-  expect(await panel().findByRole("textbox", { name: "Message à l'agent de projet" })).toBeTruthy();
+  expect(await panel().findByRole("combobox", { name: "Message à l'agent de projet" })).toBeTruthy();
 });
 
 test("Ouvrir la mémoire opens the Notes view", async () => {
@@ -223,7 +223,7 @@ test("two tabs: Conversation, and Signaux with the open count; the compose box s
   expect(panel().getByRole("tab", { name: "Conversation", selected: true })).toBeTruthy();
   await user.click(panel().getByRole("tab", { name: "Signaux · 3" }));
   expect(await panel().findByRole("region", { name: "En boîte · 3" })).toBeTruthy();
-  expect(panel().queryByRole("textbox", { name: "Message à l'agent de projet" })).toBeNull();
+  expect(panel().queryByRole("combobox", { name: "Message à l'agent de projet" })).toBeNull();
 });
 
 test("tab signals opens the box directly, and an empty box has no zero count", async () => {

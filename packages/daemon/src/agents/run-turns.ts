@@ -18,6 +18,7 @@ export type Prepared = {
   label: string;
   guidelines: number;
   answers: string[];
+  mentions: (text: string) => string;
 };
 
 type RunTurnsDeps = {
@@ -45,10 +46,11 @@ export function createRunTurns(deps: RunTurnsDeps) {
       projectId: run.projectId,
       domainId: ctx.ticket.domainId,
     });
+    const mentions = deps.preparer.skillMentions(run.projectId);
     const work = run.turns === 0 ? ((await deps.opts.turnPrefix?.briefSection(run)) ?? null) : null;
     const turn = deps.preparer.prepare(run, runDir, {
       kind: "ticket",
-      brief: { ...ctx, note: run.brief, commits: workspace.commits, work },
+      brief: { ...ctx, note: mentions(run.brief), commits: workspace.commits, work },
       chain,
       recipients: ctx.project.questionRecipients,
     });
@@ -58,22 +60,26 @@ export function createRunTurns(deps: RunTurnsDeps) {
       label: workspace.label,
       guidelines: chain.length,
       answers: undeliveredAnswers(ctx.project.questions, ctx.ticket.id).map((q) => q.id),
+      mentions,
     };
   }
 
   function task(run: RunView, task: TaskSpec, runDir: string): Prepared {
     const turn = deps.preparer.prepare(run, runDir, { kind: "task", brief: run.brief });
-    return { turn, cwd: task.cwd, label: task.cwd, guidelines: 0, answers: [] };
+    const mentions = deps.preparer.skillMentions(run.projectId);
+    return { turn, cwd: task.cwd, label: task.cwd, guidelines: 0, answers: [], mentions };
   }
 
   async function project(run: RunView, runDir: string): Promise<Prepared> {
-    const project = await deps.opts.projectTurns.prepare(run, runDir);
+    const mentions = deps.preparer.skillMentions(run.projectId);
+    const pendingAnswer = run.pendingAnswer === null ? null : mentions(run.pendingAnswer);
+    const project = await deps.opts.projectTurns.prepare({ ...run, pendingAnswer }, runDir);
     const turn = deps.preparer.prepare(run, runDir, {
       kind: "project",
       systemPrompt: project.systemPrompt,
       brief: project.prompt,
     });
-    return { turn, cwd: project.cwd, label: PROJECT_WORKSPACE_LABEL, guidelines: 0, answers: [] };
+    return { turn, cwd: project.cwd, label: PROJECT_WORKSPACE_LABEL, guidelines: 0, answers: [], mentions };
   }
 
   return { ticket, task, project };

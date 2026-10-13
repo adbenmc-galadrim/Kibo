@@ -90,6 +90,7 @@ test("assigning a waiting ticket warns, previews the queue and enqueues the run"
   await waitFor(() => expect(onClose).toHaveBeenCalled());
   expect(calls).toEqual([
     { method: "previewAssign", projectId: "kibo", ticketId: "t15", profileId: "global:opus-dev" },
+    { method: "skills.suggest", agentRef: "global:opus-dev", projectId: "kibo" },
     {
       method: "assignAgent",
       projectId: "kibo",

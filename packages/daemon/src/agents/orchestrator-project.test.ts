@@ -14,6 +14,7 @@ import {
   assign,
   cleanHarness,
   type Harness,
+  knownSkill,
   projectAgentAgent,
   run,
   setup,
@@ -65,6 +66,15 @@ test("each message is a turn: resume after done, pending during a turn, prompt c
   expect(run(h, r.id).session).toEqual({ mode: "resumed", from: r.id });
   expect(h.prepared).toEqual([r.id, r.id]);
   expect(readFileSync(join(h.home, "runs", r.id, "CLAUDE.md"), "utf8")).toBe("# rôle");
+}, 30_000);
+
+test("a skill typed with a slash in the project chat becomes an explicit Skill instruction", async () => {
+  const h = setup({ scenario: "done", profiles, skills: [knownSkill("review-pr")] });
+  const r = start(h, "/review-pr sur la PR 12");
+  await waitUntil(() => run(h, r.id).state === "done");
+  expect(fakeCalls(h.state, r.sessionId).map((c) => c.prompt)).toEqual([
+    "[tour 1] Utilise le skill `review-pr` (outil Skill) avec : sur la PR 12",
+  ]);
 }, 30_000);
 
 test("a project run launches with its kibo tools, its deny rules and a private MCP config", async () => {

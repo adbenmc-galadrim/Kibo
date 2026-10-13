@@ -1,5 +1,6 @@
 import type { NoteMeta, StatusId } from "@kibo/schema";
 import { StatusDot } from "@kibo/sdk";
+import { ScrollPane } from "@kibo/sdk/ui/scroll-pane";
 import { fr } from "./fr";
 
 export type LinkedTicket = { key: string; id: string; title: string; statusId: StatusId };
@@ -14,7 +15,7 @@ type Props = {
 
 export function NoteLinks({ linked, backlinks, onTicket, onNote }: Props) {
   return (
-    <aside className="grid w-64 min-w-0 shrink-0 content-start gap-6 border-l p-3 text-sm">
+    <ScrollPane as="aside" className="grid w-64 min-w-0 shrink-0 content-start gap-6 border-l p-3 text-sm">
       <section aria-label={fr.linkedTickets} className="grid min-w-0 gap-2">
         <h2 className="text-xs font-semibold">{fr.linkedTickets}</h2>
         {linked.map((t) => (
@@ -46,6 +47,6 @@ export function NoteLinks({ linked, backlinks, onTicket, onNote }: Props) {
           </button>
         ))}
       </section>
-    </aside>
+    </ScrollPane>
   );
 }

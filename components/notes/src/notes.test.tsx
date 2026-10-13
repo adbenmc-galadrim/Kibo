@@ -36,6 +36,11 @@ test("screen 11: list, document, linked tickets and backlinks", async () => {
   ]);
   const back = screen.getByRole("region", { name: "Rétroliens" });
   expect(within(back).getByText("mentionne cette note")).toBeTruthy();
+  const panes = [linked, back, screen.getByRole("list", { name: "Notes" }), screen.getByRole("main")].map(
+    (el) => el.closest('[data-slot="scroll-pane"]'),
+  );
+  expect(panes.every((pane) => pane !== null)).toBe(true);
+  expect(panes[0]).toBe(panes[1]);
   expect(within(back).getByText("2 mentions")).toBeTruthy();
   await userEvent.setup().click(screen.getByRole("button", { name: "notes/decisions-architecture.md" }));
   expect(m.openedFiles).toEqual([{ path: "notes/decisions-architecture.md" }]);

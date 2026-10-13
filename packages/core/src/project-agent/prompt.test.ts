@@ -23,6 +23,12 @@ describe("buildProjectAgentPrompt", () => {
     agentBody: "",
   });
 
+  test("allows every skill and asks for a review of the skills used", () => {
+    expect(prompt).toContain("## Skills");
+    expect(prompt).toContain("- Skills : tous ceux de la machine et du projet.");
+    expect(prompt).toContain("laisse une review avec `mcp__kibo__skill_review`");
+  });
+
   test("states the role, the protocol, the memory and the forbidden moves", () => {
     for (const fragment of [
       "chef de projet du projet Emis",

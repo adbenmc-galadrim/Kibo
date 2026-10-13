@@ -168,6 +168,10 @@ export const frAgentsSkills = {
     title: "Sous-agents appelables",
     count: (n: number, total: number) => `${n} sur ${total}`,
     none: "aucun",
+    all: "Tous les sous-agents",
+    allSummary: "tous les sous-agents",
+    allHelp:
+      "Autorise tout sous-agent de l'ordinateur, du projet ou des plugins (utile pour les skills qui en lancent, comme /full-delivery).",
     generic: "Sous-agents génériques de Claude Code",
     genericNames: "general-purpose, Explore, Plan",
     genericShort: "génériques",
@@ -216,6 +220,7 @@ export const frAgentsSkills = {
     allow: "Règles allow",
     subagents: "Sous-agents",
     noSubagents: "aucun",
+    allSubagents: "tous les sous-agents",
     skills: "Skills",
     allSkills: "tous",
     noSecret: "Aucun secret : ni le jeton du run ni les variables d'environnement.",

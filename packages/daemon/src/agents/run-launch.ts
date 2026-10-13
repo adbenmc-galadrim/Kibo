@@ -198,11 +198,12 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
           ? { allow: agent.settings.allow, deny: [], mcpUrl: null, mcpConfigFile: null, mcpTools: null }
           : ticketLaunch(route);
       deps.guards.set(runId, turn.guard);
+      const answer = current.pendingAnswer === null ? null : prepared.mentions(current.pendingAnswer);
       const prompt = project
         ? turn.brief
         : current.turns > 0
-          ? withSection(section, current.pendingAnswer ?? "")
-          : firstPrompt(turn.brief, current.pendingAnswer);
+          ? withSection(section, answer ?? "")
+          : firstPrompt(turn.brief, answer);
       const proc = launch({
         claudeBin,
         cwd,

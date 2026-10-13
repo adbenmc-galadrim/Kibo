@@ -2,6 +2,7 @@ import type { NotesInfo } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/ui/collapsible";
 import { Input } from "@kibo/sdk/ui/input";
+import { ScrollPane } from "@kibo/sdk/ui/scroll-pane";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { ChevronRight, Folder, Plus, Search } from "lucide-react";
 import { fr } from "./fr";
@@ -90,7 +91,7 @@ export function NoteList(p: Props) {
       {groups.length === 0 && (
         <p className="px-1 text-sm text-muted-foreground">{query ? fr.noResult : fr.emptyList}</p>
       )}
-      <ul aria-label="Notes" className="grid flex-1 content-start gap-1 overflow-auto">
+      <ScrollPane as="ul" aria-label="Notes" className="grid flex-1 content-start gap-1">
         {groups.map((g) =>
           g.dir === "" ? (
             g.notes.map(item)
@@ -112,7 +113,7 @@ export function NoteList(p: Props) {
             </li>
           ),
         )}
-      </ul>
+      </ScrollPane>
       {!readOnly && (
         <Button variant="outline" size="sm" className="w-fit" onClick={onCreate}>
           <Plus aria-hidden />

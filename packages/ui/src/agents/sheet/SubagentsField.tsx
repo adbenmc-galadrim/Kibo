@@ -1,6 +1,7 @@
 import type { Agent, AgentRef, AgentSettingsPatch, AgentSummary, ProjectSummary } from "@kibo/schema";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
+import { Switch } from "@kibo/sdk/ui/switch";
 import { useId } from "react";
 import { frAgentsSkills } from "../../i18n/fr-agents-skills";
 import { scopeText } from "../catalog/agent-labels";
@@ -34,8 +35,35 @@ function summaryOf(agent: Agent, names: readonly string[]): string {
   return generic ? `${names.join(", ")} · ${t.genericShort}` : names.join(", ");
 }
 
+function AllSubagentsSwitch({
+  checked,
+  disabled,
+  onPatch,
+}: Pick<Props, "disabled" | "onPatch"> & { checked: boolean }) {
+  const id = useId();
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-0.5 border-b pb-3">
+      <label htmlFor={id} className="text-sm font-medium">
+        {t.all}
+      </label>
+      <Switch
+        id={id}
+        aria-describedby={`${id}-help`}
+        checked={checked}
+        disabled={disabled}
+        onCheckedChange={(v) => onPatch({ allSubagents: v })}
+      />
+      <span id={`${id}-help`} className="text-xs text-muted-foreground">
+        {t.allHelp}
+      </span>
+    </div>
+  );
+}
+
 export function SubagentsField({ agent, agents, projects, disabled, onPatch }: Props) {
   const id = useId();
+  const all = agent.settings.allSubagents;
+  const listDisabled = disabled || all;
   const callable = callableAgents(agent, agents);
   const chosen = new Set(agent.settings.subagents);
   const names = callable.filter((a) => chosen.has(a.ref)).map((a) => a.name);
@@ -46,9 +74,10 @@ export function SubagentsField({ agent, agents, projects, disabled, onPatch }: P
   return (
     <FoldSection
       title={t.title}
-      summary={`${t.count(chosen.size, callable.length)} · ${summaryOf(agent, names)}`}
+      summary={all ? t.allSummary : `${t.count(chosen.size, callable.length)} · ${summaryOf(agent, names)}`}
     >
       <fieldset aria-label={t.title} className="grid gap-3">
+        <AllSubagentsSwitch checked={all} disabled={disabled} onPatch={onPatch} />
         {callable.length === 0 && <p className="text-xs text-muted-foreground">{t.empty}</p>}
         {callable.map((a) => {
           const unreadable = a.problem !== null;
@@ -59,7 +88,7 @@ export function SubagentsField({ agent, agents, projects, disabled, onPatch }: P
                 aria-label={a.name}
                 className="mt-0.5"
                 checked={chosen.has(a.ref)}
-                disabled={disabled || unreadable}
+                disabled={listDisabled || unreadable}
                 onCheckedChange={(v) => toggle(a.ref, v === true)}
               />
               <label htmlFor={`${id}-${a.ref}`} className="flex min-w-0 items-center gap-2">
@@ -80,16 +109,18 @@ export function SubagentsField({ agent, agents, projects, disabled, onPatch }: P
             aria-label={t.generic}
             className="mt-0.5"
             checked={agent.settings.genericSubagents}
-            disabled={disabled}
+            disabled={listDisabled}
             onCheckedChange={(v) => onPatch({ genericSubagents: v === true })}
           />
           <label htmlFor={`${id}-generic`} className="flex flex-wrap items-baseline gap-2 text-sm">
             {t.generic}
             <span className="font-mono text-xs text-muted-foreground">{t.genericNames}</span>
           </label>
-          <span className="col-start-2 text-xs text-muted-foreground">
-            {agent.scope === "project" ? t.helpProject : t.helpGlobal}
-          </span>
+          {!all && (
+            <span className="col-start-2 text-xs text-muted-foreground">
+              {agent.scope === "project" ? t.helpProject : t.helpGlobal}
+            </span>
+          )}
         </div>
       </fieldset>
     </FoldSection>

@@ -6,7 +6,12 @@ export const GENERIC_SUBAGENTS = ["general-purpose", "Explore", "Plan"] as const
 const SUBAGENT_TOOLS = ["Agent", "Task"];
 const SKILL_TOOL = "Skill";
 
-export type GuardRules = { subagents: readonly string[]; genericSubagents: boolean; skills: SkillsRule };
+export type GuardRules = {
+  subagents: readonly string[];
+  genericSubagents: boolean;
+  allSubagents: boolean;
+  skills: SkillsRule;
+};
 export type GuardCall = { tool: string; input: Record<string, unknown> };
 
 const deny = (reason: string, target: string | null): GuardDecision => ({
@@ -15,6 +20,7 @@ const deny = (reason: string, target: string | null): GuardDecision => ({
 });
 
 function subagentDecision(rules: GuardRules, input: Record<string, unknown>): GuardDecision | null {
+  if (rules.allSubagents) return null;
   const type = typeof input.subagent_type === "string" ? input.subagent_type : null;
   const generic = rules.genericSubagents && GENERIC_SUBAGENTS.some((g) => g === type);
   if (type !== null && (generic || rules.subagents.includes(type))) return null;

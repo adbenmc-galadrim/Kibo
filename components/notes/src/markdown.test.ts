@@ -71,3 +71,19 @@ test("readonly tasks are disabled", () => {
     '<input type="checkbox" data-task-line="0" disabled>',
   );
 });
+
+test("the front-matter is not shown and task lines keep their source line", () => {
+  const html = renderNote(
+    "---\ntickets: [KIB-1, KIB-2]\nsource: notes.md\n---\n# Brief\n\n- [ ] Relire\n",
+    tickets,
+  );
+  expect(html).not.toContain("tickets:");
+  expect(html).not.toContain("source:");
+  expect(html).not.toContain("<hr>");
+  expect(html).toContain("<h1>Brief</h1>");
+  expect(html).toContain('data-task-line="6"');
+});
+
+test("a thematic break that does not open the note is still rendered", () => {
+  expect(renderNote("# T\n\n---\n\nfin\n", tickets)).toContain("<hr>");
+});

@@ -3,7 +3,7 @@ import type { RunView } from "@kibo/schema";
 import { testRef } from "./agents-port.test-helper";
 import { fakeCalls } from "./fake-claude-scenario";
 import { createOrchestrator } from "./orchestrator";
-import { cleanHarness, setup, waitUntil } from "./orchestrator.test-helper";
+import { cleanHarness, knownSkill, setup, waitUntil } from "./orchestrator.test-helper";
 import type { TurnPrefixPort } from "./orchestrator-types";
 
 cleanHarness();
@@ -56,4 +56,26 @@ test("without a prefixer the later turn is the raw answer", async () => {
   h.orch.answer(first.id, "Port dynamique");
   await waitUntil(() => view()?.state === "done");
   expect(fakeCalls(h.state, first.sessionId)[1]?.prompt).toBe("Port dynamique");
+}, 30_000);
+
+test("a skill typed with a slash reaches claude as an explicit Skill instruction, the run keeps the text", async () => {
+  const h = setup({ scenario: "question", skills: [knownSkill("brainstorming")] });
+  const first = h.orch.assign({
+    projectId: "p1",
+    ticketId: "t1",
+    profileId: testRef("opus"),
+    brief: "/brainstorming d'abord",
+  });
+  const view = () => h.orch.state().runs.find((r) => r.id === first.id);
+  await waitUntil(() => view()?.state === "waiting_input");
+  h.orch.answer(first.id, "/brainstorming en deux phrases, pas /compact");
+  await waitUntil(() => view()?.state === "done");
+  const calls = fakeCalls(h.state, first.sessionId);
+  expect(calls[0]?.prompt).toContain(
+    "## Consignes\n\nUtilise le skill `brainstorming` (outil Skill) avec : d'abord",
+  );
+  expect(calls[1]?.prompt).toBe(
+    "Utilise le skill `brainstorming` (outil Skill) avec : en deux phrases, pas /compact",
+  );
+  expect(view()?.brief).toBe("/brainstorming d'abord");
 }, 30_000);

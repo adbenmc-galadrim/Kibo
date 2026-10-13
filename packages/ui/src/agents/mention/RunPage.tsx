@@ -1,6 +1,7 @@
 import { Button } from "@kibo/sdk/ui/button";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { Label } from "@kibo/sdk/ui/label";
+import { ScrollPane } from "@kibo/sdk/ui/scroll-pane";
 import { useId, useRef, useState } from "react";
 import { fr } from "../../i18n/fr";
 import { frMoments } from "../../i18n/fr-moments";
@@ -11,6 +12,7 @@ import { useHost } from "../../shell/Host";
 import { DockPlan } from "../dock/DockPlan";
 import { ReviewButton } from "../ReviewButton";
 import { RunReply, RunStop } from "../RunDetail";
+import { useFollowBottom } from "../use-follow-bottom";
 import { ProfileRuns } from "./ProfileRuns";
 import { RunFeed } from "./RunFeed";
 import { RunHeading } from "./RunHeading";
@@ -20,6 +22,7 @@ import { useRunView } from "./use-run-view";
 export const REASONING_PREF = "kibo.run.reasoning";
 
 const CARD = "grid content-start gap-3 rounded-lg border bg-card p-4";
+const FEED_CARD = "flex min-h-0 flex-col gap-3 rounded-lg border bg-card p-4";
 
 function ReasoningToggle() {
   const id = useId();
@@ -49,11 +52,12 @@ export function RunPage({ runId }: { runId: string }) {
   const [highlight, setHighlight] = useState<string | null>(null);
   const [reasoning] = usePref(REASONING_PREF, "0");
   const { agents, run, moments, shown, report, loading, failed } = useRunView(runId);
+  const follow = useFollowBottom<HTMLElement>(loading ? 0 : moments.length);
   if (!agents) return null;
   if (!run) return <p className="p-8 text-sm text-muted-foreground">{t.missing}</p>;
   const focusReply = () => reply.current?.querySelector("input")?.focus();
   return (
-    <div className="grid content-start gap-5 p-6">
+    <div className="grid content-start gap-5 p-6 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
       <RunHeading
         run={run}
         onOpenTicket={(projectId, ticketId) => host.openTarget({ kind: "ticket", projectId, ticketId })}
@@ -64,24 +68,32 @@ export function RunPage({ runId }: { runId: string }) {
           <RunStop run={run} />
         </div>
       </RunHeading>
-      <div className="grid items-start gap-4 lg:grid-cols-[15rem_minmax(0,1fr)_20rem]">
-        <ProfileRuns run={run} agents={agents} />
-        <section aria-label={t.feed} className={CARD}>
+      <div className="grid items-start gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[15rem_minmax(0,1fr)_20rem] lg:items-stretch">
+        <ScrollPane>
+          <ProfileRuns run={run} agents={agents} />
+        </ScrollPane>
+        <section aria-label={t.feed} className={FEED_CARD}>
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="flex-1 text-sm font-semibold">{t.feed}</h3>
             <ReasoningToggle />
           </div>
-          <RunFeed
-            run={run}
-            runs={agents.runs}
-            moments={moments}
-            steps={shown?.plan ?? []}
-            showReasoning={reasoning === "1"}
-            highlightStep={highlight}
-            loading={loading}
-            failed={failed}
-          />
-          <div ref={reply} className="grid gap-3">
+          <ScrollPane
+            ref={follow.ref}
+            onScroll={follow.onScroll}
+            className="-mx-1 max-h-[60dvh] px-1 lg:max-h-none lg:flex-1"
+          >
+            <RunFeed
+              run={run}
+              runs={agents.runs}
+              moments={moments}
+              steps={shown?.plan ?? []}
+              showReasoning={reasoning === "1"}
+              highlightStep={highlight}
+              loading={loading}
+              failed={failed}
+            />
+          </ScrollPane>
+          <div ref={reply} className="grid shrink-0 gap-3">
             <RunReply
               run={run}
               resumable={agents.resumable.includes(run.id)}
@@ -89,7 +101,7 @@ export function RunPage({ runId }: { runId: string }) {
             />
           </div>
         </section>
-        <aside className="grid content-start gap-4">
+        <ScrollPane as="aside" className="grid content-start gap-4">
           {run.kind === "ticket" && (
             <div className={CARD}>
               <ParallelWorkSection runId={run.id} />
@@ -104,7 +116,7 @@ export function RunPage({ runId }: { runId: string }) {
             <RunReportSection runId={run.id} report={report} />
             <RunSkillReviews runId={run.id} moments={moments} />
           </div>
-        </aside>
+        </ScrollPane>
       </div>
     </div>
   );

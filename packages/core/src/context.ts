@@ -203,11 +203,11 @@ function recipientRules(protocol: RunProtocol | undefined): string[] {
   ];
 }
 
+export const SKILL_REVIEW_RULE = `- Avant de terminer, si tu as utilisé un skill, laisse une review avec \`${SKILL_REVIEW_TOOL}\` : par skill, \`ok\` ou \`improve\`, une note de trois lignes au plus (ce qui a aidé, ce qui a manqué, ce que tu changerais), et, si tu proposes une modification, le contenu complet corrigé de \`SKILL.md\` dans \`suggestion\`. Rien n'est modifié sans validation de l'utilisateur.`;
+export const ALL_SKILLS_RULE = "- Skills : tous ceux de la machine et du projet.";
+
 function skillReviewRules(protocol: RunProtocol | undefined): string[] {
-  if (!protocol?.skillReview) return [];
-  return [
-    `- Avant de terminer, si tu as utilisé un skill, laisse une review avec \`${SKILL_REVIEW_TOOL}\` : par skill, \`ok\` ou \`improve\`, une note de trois lignes au plus (ce qui a aidé, ce qui a manqué, ce que tu changerais), et, si tu proposes une modification, le contenu complet corrigé de \`SKILL.md\` dans \`suggestion\`. Rien n'est modifié sans validation de l'utilisateur.`,
-  ];
+  return protocol?.skillReview ? [SKILL_REVIEW_RULE] : [];
 }
 
 const parallelRules = (protocol: RunProtocol | undefined): string[] =>
@@ -223,7 +223,7 @@ function agentRules(agent: AgentContext): string[] {
       ? `- Sous-agents appelables : ${subagents} (aucun autre).`
       : "- Sous-agents appelables : aucun.",
     agent.skills.mode === "all"
-      ? "- Skills : tous ceux de la machine et du projet."
+      ? ALL_SKILLS_RULE
       : `- Skills autorisés : ${agent.skills.entries.length > 0 ? described(agent.skills.entries) : "aucun"}.`,
   ];
 }

@@ -90,6 +90,16 @@ test("an editable single-widget page offers the widget menu in the page actions"
   expect(await screen.findByRole("button", { name: "Actions Kanban" })).toBeTruthy();
 });
 
+test("a single-widget page gives its component the height left under the page headers", async () => {
+  const { container } = show(withAccess("write", single), single);
+  await screen.findByRole("button", { name: "Actions Kanban" });
+  const body = container.querySelector("[data-view-body]");
+  expect(body?.className.split(" ")).toEqual(
+    expect.arrayContaining(["flex", "min-h-0", "flex-1", "flex-col"]),
+  );
+  expect(body?.parentElement?.className.split(" ")).toEqual(expect.arrayContaining(["h-full", "min-h-0"]));
+});
+
 test("a read-only or revoked single-widget page shows no widget menu", async () => {
   for (const access of ["read-only", "revoked"] as const) {
     const view = show(withAccess(access, single), single);

@@ -1,4 +1,5 @@
 import { ASK_QUESTION_TOOL, ASK_TOOL, type Guideline, mcpToolName, PROJECT_AGENT_TOOLS } from "@kibo/schema";
+import { ALL_SKILLS_RULE, SKILL_REVIEW_RULE } from "../context";
 
 export type ProjectAgentPromptInput = {
   projectName: string;
@@ -66,6 +67,8 @@ function signalLines(): string[] {
   ];
 }
 
+const skillLines = (): string[] => ["", "## Skills", "", ALL_SKILLS_RULE, SKILL_REVIEW_RULE];
+
 function questionLines(): string[] {
   return [
     "",
@@ -100,6 +103,7 @@ export function buildProjectAgentPrompt(input: ProjectAgentPromptInput): string 
     ...protocolLines(input.viewer),
     ...memoryLines(input.memoryPath),
     ...signalLines(),
+    ...skillLines(),
     ...questionLines(),
     ...forbiddenLines(),
     ...guidelineLines(input.chain),

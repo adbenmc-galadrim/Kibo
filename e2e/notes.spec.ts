@@ -1,8 +1,10 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
+import { rpc } from "./agents-seed";
 import { homeOf } from "./e2e-home";
 import { addComponent, createPage, pairAndCreateProject } from "./helpers";
+import { projectIdOf } from "./questions-kit";
 import { projectKey, shot } from "./repo-project";
 
 test.describe.configure({ mode: "serial" });
@@ -116,4 +118,43 @@ test("éditeur : barre d'outils, aperçu en direct, menu /, enregistré sur disq
   await expect(page.getByRole("img", { name: "Image introuvable" })).toBeVisible({ timeout: 5_000 });
   await expect(image).toHaveAttribute("src", /^data:image\/png;base64,/);
   await shot(page, info, "notes-image-introuvable");
+});
+
+const LINKED = 30;
+
+test("une note aux nombreux tickets liés : le volet défile seul, jamais la page", async ({ page }, info) => {
+  const key = projectKey("NSC", info);
+  await pairAndCreateProject(page, info, key);
+  const projectId = projectIdOf(page);
+  for (let i = 1; i <= LINKED; i++) {
+    await rpc(page, {
+      method: "command",
+      projectId,
+      command: { method: "createTicket", title: `Ticket lié numéro ${i}`, statusId: "todo" },
+    });
+  }
+  await createPage(page, "Notes", "Vue");
+  await addComponent(page, "Notes");
+  await openNewNote(page, "Revue");
+  await page.getByRole("button", { name: "Aperçu" }).click();
+  const keys = Array.from({ length: LINKED }, (_, i) => `${key}-${i + 1}`);
+  const file = join(homeOf(info), "notes", key, "revue.md");
+  await expect.poll(() => existsSync(file)).toBe(true);
+  writeFileSync(file, `# Revue\n\nTous les tickets du lot : ${keys.join(", ")}.\n`);
+  const linked = page.getByRole("region", { name: "Tickets liés" });
+  await expect(linked.getByRole("button")).toHaveCount(LINKED, { timeout: 10_000 });
+  await shot(page, info, "notes-volet-long");
+
+  const pane = linked.locator('xpath=ancestor::*[@data-slot="scroll-pane"][1]');
+  expect(await page.evaluate(() => (document.scrollingElement?.scrollHeight ?? 0) <= innerHeight)).toBe(true);
+  expect(await page.locator("[data-viewer]").evaluate((el) => el.scrollHeight - el.clientHeight)).toBe(0);
+  expect(await pane.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+  expect(await pane.evaluate((el) => getComputedStyle(el).overflowY)).toBe("auto");
+  const last = linked.getByRole("button", { name: new RegExp(`${key}-${LINKED}\\b`) });
+  await expect(last).not.toBeInViewport();
+  await pane.hover();
+  await page.mouse.wheel(0, 5_000);
+  await expect(last).toBeInViewport();
+  await expect(page.getByRole("region", { name: "Rétroliens" })).toBeInViewport();
+  await shot(page, info, "notes-volet-long-bas");
 });

@@ -1,6 +1,7 @@
 import { KiboError, type NoteContent, type NoteMeta, type NotesInfo } from "@kibo/schema";
 import { useEntities, useReadOnly, useSdk } from "@kibo/sdk";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
+import { ScrollPane } from "@kibo/sdk/ui/scroll-pane";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fr } from "./fr";
 import type { TicketRef } from "./markdown";
@@ -165,7 +166,7 @@ export function NotesView() {
         onRename={(path) => setRenaming(byPath(path))}
         onRemove={(path) => setRemoving(byPath(path))}
       />
-      <main className="min-w-0 flex-1 overflow-auto">
+      <ScrollPane as="main" className="min-w-0 flex-1 overflow-x-auto">
         {error && (
           <p role="alert" className="px-8 pt-4 text-sm text-destructive">
             {error}
@@ -192,7 +193,7 @@ export function NotesView() {
         ) : (
           <p className="grid h-full place-items-center text-sm text-muted-foreground">{fr.pick}</p>
         )}
-      </main>
+      </ScrollPane>
       <NoteLinks
         linked={note ? linkedOf(note, tickets) : []}
         backlinks={note ? backlinksOf(note, listed.data) : []}

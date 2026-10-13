@@ -18,7 +18,12 @@ describe("a session that uses skills", () => {
   });
 
   test("a Skill refused by the Kibo guard is denied", () => {
-    const reason = agentGuard({ subagents: [], genericSubagents: false, skills: { mode: "list", ids: [] } })({
+    const reason = agentGuard({
+      subagents: [],
+      genericSubagents: false,
+      allSubagents: false,
+      skills: { mode: "list", ids: [] },
+    })({
       tool: "Skill",
       input: { skill: "deploy" },
     })?.reason;

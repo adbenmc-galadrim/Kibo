@@ -12,6 +12,7 @@ import {
   type ProjectSnapshot,
   type Question,
   type RunView,
+  type Skill,
   type TicketView,
   undeliveredAnswers,
 } from "@kibo/schema";
@@ -112,6 +113,7 @@ type Setup = {
   markFails?: boolean;
   lifecycle?: Pick<OrchestratorOptions, "onSpawned" | "onTurnEnd" | "onEndedWithoutTurn">;
   cliFallbacks?: OrchestratorOptions["cliFallbacks"];
+  skills?: Skill[];
 };
 
 let current: Harness | null = null;
@@ -135,7 +137,7 @@ export function setup(o: Setup): Harness {
   const data: AgentDataPort = {
     ...agentsPort(profiles),
     projectKey: () => testProject.meta.key,
-    skills: () => [],
+    skills: () => o.skills ?? [],
     ticketContext: (projectId, ticketId) => {
       const t = testProject.tickets.find((x) => x.id === ticketId);
       if (projectId !== "p1" || !t) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
@@ -240,6 +242,25 @@ export function setup(o: Setup): Harness {
   };
   return current;
 }
+
+export const knownSkill = (id: string): Skill => ({
+  id,
+  source: "user",
+  projectId: null,
+  plugin: null,
+  name: id,
+  description: "",
+  path: `/skills/${id}`,
+  file: null,
+  problem: null,
+  hash: null,
+  readOnly: false,
+  shadowedBy: null,
+  files: [],
+  usage: { last: null, runs30d: 0 },
+  reviews: { open: 0 },
+  modifiedAt: null,
+});
 
 export const cleanHarness = () =>
   afterEach(async () => {

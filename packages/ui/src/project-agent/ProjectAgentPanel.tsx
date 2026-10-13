@@ -7,6 +7,7 @@ import { frProjectAgent } from "../i18n/fr-project-agent";
 import { projectQuestionLinks, QuestionLinksContext } from "../moments/QuestionText";
 import { useHost } from "../shell/Host";
 import type { ProjectAgentTab } from "../shell/use-project-agent-panel";
+import { keepLayerOnSkillEscape } from "../skill-complete/use-skill-complete";
 import { useAgentsState } from "../state/agents-context";
 import { useRunLog } from "../state/use-run-log";
 import type { Decision } from "./BatchCard";
@@ -102,6 +103,7 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
         style={{ width, top: "var(--shell-top)", height: "auto" }}
         onInteractOutside={(e) => e.preventDefault()}
         onOpenAutoFocus={(e) => e.preventDefault()}
+        onEscapeKeyDown={keepLayerOnSkillEscape}
       >
         <ResizeEdge width={width} onResize={setWidth} />
         <PanelHeader
@@ -143,6 +145,7 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
               <>
                 {conversation}
                 <ComposeBox
+                  projectId={projectId}
                   placeholder={
                     view?.session
                       ? frProjectAgent.compose.placeholder

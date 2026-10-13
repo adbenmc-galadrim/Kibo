@@ -101,6 +101,7 @@ const SETTINGS_SHAPE = {
   enabled: z.boolean(),
   subagents: z.array(AgentRef).max(SUBAGENTS_MAX),
   genericSubagents: z.boolean(),
+  allSubagents: z.boolean(),
   skills: SkillsRule,
 };
 
@@ -112,6 +113,7 @@ export const AgentSettings = z.object({
   enabled: SETTINGS_SHAPE.enabled.default(true),
   subagents: SETTINGS_SHAPE.subagents.default([]),
   genericSubagents: SETTINGS_SHAPE.genericSubagents.default(true),
+  allSubagents: SETTINGS_SHAPE.allSubagents.default(false),
   skills: SETTINGS_SHAPE.skills.default({ mode: "all" }),
 });
 export type AgentSettings = z.infer<typeof AgentSettings>;
@@ -146,7 +148,8 @@ export function systemAgentSettings(id: SystemAgentId, stored: Partial<AgentSett
     enabled: stored.enabled ?? true,
     subagents: [],
     genericSubagents: false,
-    skills: { mode: "list", ids: [] },
+    allSubagents: false,
+    skills: id === "project-agent" ? { mode: "all" } : { mode: "list", ids: [] },
   };
 }
 
@@ -199,6 +202,7 @@ export type AgentPreview = {
     disallowedTools: string[] | null;
     allow: string[];
     subagents: string[];
+    allSubagents: boolean;
     skills: SkillsRule;
   };
 };

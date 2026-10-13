@@ -47,7 +47,7 @@ export function systemSummaryFixture(id: SystemAgentId): AgentSummary {
     settings: systemAgentSettings(id, {}),
     description: `Agent ${id} de Kibo.`,
     model: "sonnet",
-    skillsCount: 0,
+    skillsCount: id === "project-agent" ? null : 0,
   });
 }
 
