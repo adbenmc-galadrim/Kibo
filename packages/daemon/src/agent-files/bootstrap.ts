@@ -42,7 +42,7 @@ export async function startAgentFiles(input: AgentFilesInput): Promise<AgentFile
   const metas = () => listProjects(docs.workspace);
   const projects = (): ProjectFolderRef[] => metas().map((m) => ({ id: m.id, folder: m.folder }));
   const roots: AgentRoots = {
-    claudeHome: claudeHomeOf(input.env, input.userHome),
+    claudeHome: claudeHomeOf(input.env, input.userHome, input.home),
     projectFolder: (id) => metas().find((m) => m.id === id)?.folder ?? null,
   };
   const settings = createAgentSettingsStore(input.db);
