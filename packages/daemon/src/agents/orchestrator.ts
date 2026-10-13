@@ -19,6 +19,7 @@ import { noticeFor } from "./notifier";
 import { guarded, knownAgent, startOfDay, ticketAgent } from "./orchestrator-support";
 import type { Orchestrator, OrchestratorOptions, TaskSpec, ToolGuard } from "./orchestrator-types";
 import { createProjectRun } from "./project-run";
+import { cancelRun } from "./run-cancel";
 import { createRunLauncher, type LiveRun } from "./run-launch";
 import { openRunRegistry } from "./run-registry";
 import type { NewRun } from "./run-store";
@@ -235,12 +236,8 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       tick();
       return registry.get(runId);
     },
-    cancel(runId) {
-      registry.apply(runId, { type: "cancelled" });
-      live.get(runId)?.proc.kill();
-      tick();
-      return registry.get(runId);
-    },
+    cancel: (runId) =>
+      cancelRun({ registry, live, tick, onEndedWithoutTurn: opts.onEndedWithoutTurn }, runId),
     move(runId, index) {
       registry.apply(runId, { type: "reranked", rank: rankForMove(registry.all(), runId, index) });
       tick();

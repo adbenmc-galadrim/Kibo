@@ -1,3 +1,4 @@
+import { statSync } from "node:fs";
 import { foldLines } from "@kibo/core";
 import { MOMENT_RAW_MAX, maskSecretsWithin, type PartialReason, type RunView } from "@kibo/schema";
 import type { RunTrace } from "./store";
@@ -21,6 +22,13 @@ export function toHooks(core: TraceCore, trace: RunTrace, reason: PartialReason)
   return next;
 }
 
+function resumedOffset(core: TraceCore, run: RunView, path: string): number {
+  const from = run.session?.mode === "resumed" && run.session.from !== run.id ? run.session.from : null;
+  const origin = from === null ? null : core.store.trace(from);
+  if (origin?.path !== path) return 0;
+  return origin.offset <= statSync(path).size ? origin.offset : 0;
+}
+
 export function resolve(core: TraceCore, trace: RunTrace, run: RunView, path: string | null): RunTrace {
   if (trace.source === "hooks" || path === null) return trace;
   if (trace.source === "transcript" && path === core.live(trace.runId).from) return trace;
@@ -32,7 +40,13 @@ export function resolve(core: TraceCore, trace: RunTrace, run: RunView, path: st
   }
   if (trace.source === "transcript") core.flushFold(trace, false);
   core.lives.set(trace.runId, freshLive(path));
-  const next: RunTrace = { ...trace, source: "transcript", path: accepted, offset: 0, partial: null };
+  const next: RunTrace = {
+    ...trace,
+    source: "transcript",
+    path: accepted,
+    offset: resumedOffset(core, run, accepted),
+    partial: null,
+  };
   core.store.saveTrace(next);
   return next;
 }

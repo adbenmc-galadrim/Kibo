@@ -13,13 +13,17 @@ import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let autoLinks: AutoLink[] = [];
+let listFails = false;
 mock.module("../api", () =>
   apiMock({
     client: {
       subscribeTopic: () => () => {},
       rpc: async (req: RpcRequest) => {
         calls.push(req);
-        if (req.method === "autoLinks.list") return autoLinks;
+        if (req.method === "autoLinks.list") {
+          if (listFails) throw new Error("daemon down");
+          return autoLinks;
+        }
         if (req.method === "autoLinks.cancel") {
           autoLinks = autoLinks.map((l) => (l.id === req.id ? { ...l, status: "cancelled" as const } : l));
           return autoLinks.find((l) => l.id === req.id);
@@ -110,6 +114,7 @@ const badgeOf = (key: string) => row(key).queryByRole("button", { name: `Lien aj
 beforeEach(() => {
   calls.length = 0;
   autoLinks = [AUTO];
+  listFails = false;
 });
 
 test("screen 199: a link added by Kibo carries the badge, the others do not", async () => {
@@ -153,4 +158,18 @@ test("a reader sees the badge without the cancel button", async () => {
   await userEvent.setup().click(badgeOf("BOU-12") as HTMLElement);
   await screen.findByRole("dialog");
   expect(screen.queryByRole("button", { name: "Annuler" })).toBeNull();
+});
+
+test("when the auto links cannot be read, a discreet line says so and the links stay", async () => {
+  listFails = true;
+  draw();
+  expect(await screen.findByText("Liens ajoutés par Kibo indisponibles pour l'instant.")).toBeTruthy();
+  expect(badgeOf("BOU-12")).toBeNull();
+  expect(row("BOU-12")).toBeTruthy();
+});
+
+test("no auto links error line while the list reads fine", async () => {
+  draw();
+  await waitFor(() => expect(badgeOf("BOU-12")).toBeTruthy());
+  expect(screen.queryByText("Liens ajoutés par Kibo indisponibles pour l'instant.")).toBeNull();
 });

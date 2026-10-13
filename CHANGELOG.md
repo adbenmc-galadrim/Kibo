@@ -6,6 +6,16 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.23.0-alpha.2 — 2026-10-13
+
+- Sécurité : le SDK MCP passe en 1.31.0 (faille OAuth corrigée en amont).
+- Quand deux agents touchent le même fichier, le second est invité à lire la version de l'autre et à la reprendre ou à factoriser, au lieu d'écrire la sienne.
+- Un run repris n'affiche plus dans son fil les moments du run d'origine.
+- L'ordre des domaines est stable partout (page Domaines, brief des agents, choix de l'agent), et l'usage d'un domaine est compté par projet : une copie inutilisée se supprime sans refus à tort.
+- Fiche ticket : si les liens ajoutés par Kibo ne peuvent pas être chargés, une ligne discrète le signale dans Dépendances.
+- Un run qui échoue au lancement ou est annulé avant son tour libère tout ce qu'il occupait en mémoire.
+- Pour les tests : `KIBO_CLAUDE_ISOLATED=1` lance claude sans ta configuration globale (plugins, hooks, serveurs MCP) et écrit agents et skills sous le dossier Kibo de l'instance.
+
 ## 0.23.0-alpha.1 — 2026-10-12
 
 - Fini le code en double entre agents : chaque run reçoit à chaque tour ce que font les autres runs du projet (plan, fichiers, exports nouveaux) et peut lire leur travail avec `peek_work`. Kibo vérifie chaque écriture et balaie les espaces de travail toutes les cinq minutes : même fichier, même export, bloc identique. L'agent alerté factorise seul, et quand il reprend du code d'un autre ticket, Kibo pose lui-même le lien « bloque », que tu peux annuler d'un clic. Réglages par projet et recouvrements à ignorer dans « Modifier le projet » ; puce « ⧉ n » dans la barre des agents, section « Travail en parallèle » sur la page du run, « Voir les fichiers » côte à côte.

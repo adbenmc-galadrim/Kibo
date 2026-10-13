@@ -23,6 +23,7 @@ export * from "./design";
 export * from "./design-problem";
 export * from "./design-url";
 export * from "./domain-scope";
+export * from "./domain-usage";
 export * from "./embed";
 export * from "./errors";
 export * from "./external-ref";

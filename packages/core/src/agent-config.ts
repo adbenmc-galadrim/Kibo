@@ -1,5 +1,6 @@
 import {
   type ConfigCommand,
+  compareDomains,
   Domain,
   type DomainOwner,
   Guideline,
@@ -10,7 +11,6 @@ import {
 import type { LoroDoc } from "loro-crdt";
 import {
   assertUniqueName,
-  byName,
   domainsMap,
   entries,
   guidelinesMap,
@@ -36,7 +36,7 @@ export function workspaceDescription(ws: LoroDoc): string | null {
 export function listDomains(ws: LoroDoc): Domain[] {
   return entries(domainsMap(ws))
     .map((v) => stored(Domain.safeParse(v), "domain"))
-    .sort(byName);
+    .sort(compareDomains);
 }
 
 function getDomain(ws: LoroDoc, id: string): Domain {
@@ -55,11 +55,14 @@ function isLegacyProfileGuideline(value: unknown): boolean {
   );
 }
 
+const byPathThenId = (a: Guideline, b: Guideline) =>
+  a.path.localeCompare(b.path) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+
 export function listGuidelines(doc: LoroDoc): Guideline[] {
   return entries(guidelinesMap(doc))
     .filter((v) => !isLegacyProfileGuideline(v))
     .map((v) => stored(Guideline.safeParse(v), "guideline"))
-    .sort((a, b) => a.path.localeCompare(b.path));
+    .sort(byPathThenId);
 }
 
 function ownerKey(o: GuidelineOwner): string {

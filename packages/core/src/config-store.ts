@@ -8,7 +8,6 @@ export const domainsMap = (doc: LoroDoc) => doc.getMap("domains");
 export const guidelinesMap = (doc: LoroDoc) => doc.getMap("guidelines");
 export const settingsMap = (doc: LoroDoc) => doc.getMap("settings");
 export const projectIdOf = (doc: LoroDoc) => doc.getMap("meta").get("id") as string | undefined;
-export const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, "fr");
 
 export function valid<T>(result: Parsed<T>): T {
   if (!result.success) throw new KiboError("INVALID_INPUT", result.error.message);

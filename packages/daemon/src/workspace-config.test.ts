@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { listProjectDomains } from "@kibo/core";
+import { listProjectDomains, upsertProjectDomain } from "@kibo/core";
 import { listDomains } from "@kibo/core/agent-config";
 import { createWorkspaceDoc } from "@kibo/core/workspace";
 import {
@@ -98,7 +98,8 @@ test("readConfig lists the workspace and project domains with their owner and gu
   const read = call(s, { method: "getConfig" });
   expect(read.domains).toEqual([securite, { ...sync, owner: inKibo }]);
   expect(read.guidelines).toEqual([{ id: `${sync.id}:sync.md`, owner, path: "sync.md", content: "# Sync" }]);
-  expect(read.domainUsage).toEqual({ [securite.id]: 1, [sync.id]: 1 });
+  expect(read.domainUsage).toEqual({ [securite.id]: 1 });
+  expect(read.projectDomainUsage).toEqual({ [kibo.id]: { [sync.id]: 1 } });
   expect(call(s, { method: "getProject", projectId: kibo.id }).domains).toEqual([sync]);
 });
 
@@ -144,4 +145,68 @@ test("a workspace domain cannot be deleted while any project uses it", () => {
   const securite = config<Domain>({ method: "createDomain", domain: { name: "Sécurité", color } });
   ticket(portail.id, securite.id);
   expect(() => config({ method: "deleteDomain", domainId: securite.id })).toThrow("INVALID_INPUT");
+});
+
+test("readConfig returns the same order on every read: workspace then projects, each by name", () => {
+  const { s, project, config } = service();
+  const kibo = project("Kibo", "KIB");
+  const portail = project("Portail", "POR");
+  const inProject = (projectId: string) => ({ scope: "project", projectId }) as const;
+  const create = (name: string, owner?: ReturnType<typeof inProject>) =>
+    config<Domain>({ method: "createDomain", domain: { name, color }, owner });
+  for (const name of ["Sync", "Auth", "Écrans"]) create(name);
+  for (const name of ["Zeta", "Alpha", "Mid"]) create(name, inProject(kibo.id));
+  for (const name of ["Ops", "Docs"]) create(name, inProject(portail.id));
+  const first = call(s, { method: "getConfig" });
+  const second = call(s, { method: "getConfig" });
+  expect(second.domains).toEqual(first.domains);
+  expect(second.guidelines).toEqual(first.guidelines);
+  const [a, b] = [kibo.id, portail.id].sort();
+  const names: Record<string, string[]> = {
+    [kibo.id]: ["Alpha", "Mid", "Zeta"],
+    [portail.id]: ["Docs", "Ops"],
+  };
+  expect(first.domains.map((d) => d.name)).toEqual([
+    "Auth",
+    "Écrans",
+    "Sync",
+    ...(names[a ?? ""] ?? []),
+    ...(names[b ?? ""] ?? []),
+  ]);
+});
+
+function withSharedCopy() {
+  const { s, project, config, ticket } = service();
+  const kibo = project("Kibo", "KIB");
+  const portail = project("Portail", "POR");
+  const securite = config<Domain>({ method: "createDomain", domain: { name: "Sécurité", color } });
+  upsertProjectDomain(s.docs.project(kibo.id), securite.id, { name: "Sécurité", color }, []);
+  s.docs.save(kibo.id);
+  ticket(kibo.id, securite.id);
+  ticket(kibo.id, securite.id);
+  const onPortail = ticket(portail.id, securite.id);
+  const copy = { scope: "project", projectId: kibo.id } as const;
+  return { s, kibo, portail, securite, copy, onPortail, config };
+}
+
+test("a workspace domain and its project copy count their own tickets", () => {
+  const { s, kibo, securite } = withSharedCopy();
+  const read = call(s, { method: "getConfig" });
+  expect(read.domainUsage).toEqual({ [securite.id]: 1 });
+  expect(read.projectDomainUsage).toEqual({ [kibo.id]: { [securite.id]: 2 } });
+});
+
+test("deleting the workspace domain ignores the tickets of a project holding its copy", () => {
+  const { s, portail, securite, copy, onPortail, config } = withSharedCopy();
+  expect(() => config({ method: "deleteDomain", domainId: securite.id })).toThrow("INVALID_INPUT");
+  expect(() => config({ method: "deleteDomain", domainId: securite.id, owner: copy })).toThrow(
+    "INVALID_INPUT",
+  );
+  s.handle({
+    method: "command",
+    projectId: portail.id,
+    command: { method: "updateTicket", ticketId: onPortail.id, domainId: null },
+  });
+  config({ method: "deleteDomain", domainId: securite.id });
+  expect(listDomains(s.docs.workspace)).toEqual([]);
 });

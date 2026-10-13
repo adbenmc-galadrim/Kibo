@@ -88,6 +88,7 @@ export type OrchestratorOptions = {
   cliFallbacks?: Partial<CliFallbacks>;
   onSpawned?: (run: RunView) => Promise<void>;
   onTurnEnd?: (run: RunView) => Promise<void>;
+  onEndedWithoutTurn?: (run: RunView) => Promise<void>;
   turnPrefix?: TurnPrefixPort;
 };
 

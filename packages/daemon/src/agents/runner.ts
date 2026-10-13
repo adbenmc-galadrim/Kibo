@@ -10,6 +10,7 @@ import {
   TICKET_MCP_TOOLS,
 } from "@kibo/schema";
 import { z } from "zod";
+import { isClaudeIsolated } from "../agent-files/claude-home";
 import { signalGroup, tryKill } from "../process-group";
 import type { McpTools } from "./ask-mcp";
 import { childEnv } from "./child-env";
@@ -120,10 +121,16 @@ type ArgsInput = Pick<
   | "deny"
   | "mcpConfigFile"
   | "mcpTools"
-> & { agentFlags?: AgentFlags };
+> & { agentFlags?: AgentFlags; isolated?: boolean };
+
+const ISOLATION_ARGS = ["--setting-sources", "project,local", "--strict-mcp-config"];
 
 export function claudeArgs(input: ArgsInput): string[] {
-  const reserved = new Set([...RESERVED_ARGS, ...reservedAgentArgs(input.agentFlags)]);
+  const reserved = new Set([
+    ...RESERVED_ARGS,
+    ...reservedAgentArgs(input.agentFlags),
+    ...(input.isolated ? ["--setting-sources"] : []),
+  ]);
   const refused = input.extraArgs.find(
     (a) => reserved.has(a.split("=")[0] ?? a) || a.includes("bypassPermissions"),
   );
@@ -142,6 +149,7 @@ export function claudeArgs(input: ArgsInput): string[] {
     claudeSettings(input.hook, input.allow, input.deny, input.mcpTools, input.agentFlags?.skillRules),
     "--mcp-config",
     input.mcpConfigFile ?? mcpServerConfig(input.hook),
+    ...(input.isolated ? ISOLATION_ARGS : []),
     "--append-system-prompt-file",
     input.systemPromptFile,
     ...agentArgs(input.agentFlags, input.resume),
@@ -240,8 +248,12 @@ async function tail(stream: ReadableStream<Uint8Array>, max = 4000): Promise<str
   return text;
 }
 
+export function launchArgs(input: LaunchInput): string[] {
+  return claudeArgs({ ...input, isolated: isClaudeIsolated(input.baseEnv) });
+}
+
 export function launch(input: LaunchInput): RunProcess {
-  const proc = Bun.spawn([input.claudeBin, ...claudeArgs(input)], {
+  const proc = Bun.spawn([input.claudeBin, ...launchArgs(input)], {
     cwd: input.cwd,
     env: childEnv(input.baseEnv, {
       hookUrl: input.hookUrl,

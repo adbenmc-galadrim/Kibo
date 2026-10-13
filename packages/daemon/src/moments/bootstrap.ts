@@ -54,7 +54,11 @@ export type Visibility = {
     peek: TicketToolServices["peek"],
   ): AgentMcpSink;
   agents(port: AgentsPort): AgentsPort;
-  lifecycle: { onSpawned(run: RunView): Promise<void>; onTurnEnd(run: RunView): Promise<void> };
+  lifecycle: {
+    onSpawned(run: RunView): Promise<void>;
+    onTurnEnd(run: RunView): Promise<void>;
+    onEndedWithoutTurn(run: RunView): Promise<void>;
+  };
   peek(projectId: string, runId: string): RunPeek;
   skills: { uses: SkillUses; reviews: SkillReviews };
   close(): void;
@@ -105,6 +109,9 @@ export function startVisibility(
       ?.state()
       .runs.find((r) => r.id === runId) ?? null;
   const forgets: ((runId: string) => void)[] = [];
+  const forget = (runId: string): void => {
+    for (const each of forgets) each(runId);
+  };
   const summary = (runId: string) => {
     const found = run(runId);
     return found && progress.summary(found);
@@ -147,7 +154,14 @@ export function startVisibility(
           await progress.onTurnEnd(r);
         } finally {
           await trace.onTurnEnd(r);
-          if (isTerminal(r.state)) for (const forget of forgets) forget(r.id);
+          if (isTerminal(r.state)) forget(r.id);
+        }
+      },
+      async onEndedWithoutTurn(r) {
+        try {
+          await trace.onTurnEnd(r);
+        } finally {
+          forget(r.id);
         }
       },
     },

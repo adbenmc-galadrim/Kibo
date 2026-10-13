@@ -110,7 +110,7 @@ type Setup = {
   meta?: Partial<ProjectSnapshot["meta"]>;
   questions?: Question[];
   markFails?: boolean;
-  lifecycle?: Pick<OrchestratorOptions, "onSpawned" | "onTurnEnd">;
+  lifecycle?: Pick<OrchestratorOptions, "onSpawned" | "onTurnEnd" | "onEndedWithoutTurn">;
   cliFallbacks?: OrchestratorOptions["cliFallbacks"];
 };
 
