@@ -352,15 +352,18 @@ Boutique sarcelle.
 
 | Dossier | Fichiers | Domaines (fichiers) | « n .md » |
 |---|---|---|---|
-| Workspace | `conventions.md`, `git.md` | du workspace : Sécurité (`securite.md`), utilisé par 6 tickets dans 2 projets (Kibo, Portail) | 2 |
-| Kibo (projet courant) | `kibo.md`, `tests.md`, `ui.md` | Sync (`sync.md`, 8 tickets), UI (`ui.md`, 5), CI (`ci.md`, 4), Démon (`demon.md`, 1) | 7 |
-| Portail | `portail.md` | aucun | 1 |
-| Facturation | aucun | aucun | 0 |
-| Boutique | `boutique.md` | Livraison (`livraison.md`) | 2 |
+| Workspace | `guidelines/conventions.md`, `guidelines/git.md` | du workspace : Sécurité (`guidelines/securite.md`), utilisé par 6 tickets dans 2 projets (Kibo, Portail) | 2 |
+| Kibo (projet courant, `~/code/galadrim/kibo-monorepo`) | `guidelines/kibo.md`, `guidelines/tests.md`, `guidelines/ui.md` | Sync (`guidelines/sync.md`, 8 tickets), UI (`ui.md`, 5), CI (`ci.md`, 4), Démon (`demon.md`, 1) | 7 |
+| Portail (partagé, Adam lecteur, `~/code/equipe/portail-client`) | `guidelines/portail.md` | aucun | 1 |
+| Facturation (`~/code/galadrim/api-facturation`) | aucun | aucun | 0 |
+| Boutique | `guidelines/boutique.md` | Livraison (`livraison.md`) | 2 |
 
 Couleurs de domaine : Sync bleu ciel, UI rose, CI ardoise, Démon indigo, Sécurité ocre, Livraison citron.
 Injection : Workspace ⇒ « Workspace » ; projet ⇒ « Workspace → Projet Kibo » (≈ 610 tokens) ; domaine de projet ⇒ « Workspace → Projet Kibo →
-Domaine Sync » (≈ 790) ; domaine du workspace ⇒ « Workspace → Domaine Sécurité » (≈ 260, s'applique à tout projet local) ; Facturation ≈ 180.
+Domaine Sync » (≈ 790) ; domaine du workspace ⇒ « Workspace → Domaine Sécurité » (≈ 260, s'applique à tout projet local) ; Facturation ≈ 180 ;
+Portail ≈ 240 (« Workspace → Projet Portail »). Sous-titre d'un projet : dossier tronqué, puis « n fichiers · m domaines » ; un projet partagé en
+lecture seule porte le badge « Lecture seule ». `guidelines/portail.md` : application Next.js du portail client, partagée par l'équipe Produit
+(composants dans `src/components`, textes en français et dates JJ/MM/AAAA, revue d'accessibilité des pages publiques).
 Encart « Comment les agents sont configurés » : Workspace → Projet du ticket → Domaine du ticket → Profil de l'agent (spec et skills), liens
 « Ouvrir la page Agents → » et « Skills → », « Le panneau Injection, en bas, montre la chaîne du dossier choisi. ».
 Fiche **KIB-14** « Récepteur de hooks Claude Code », domaine **Démon** ; sélecteur : « Aucun », « Domaines de Kibo » (Sync, UI, CI, Démon),

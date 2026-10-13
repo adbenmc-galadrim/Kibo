@@ -49,11 +49,11 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 29 · Visibilité des agents | 183 à 188k (phase 20 : barre et volet des agents, onglet Activité, mention d'agent, Questions et destinataires, graphe lisible, Kanban « Démarrable ») ; **dessinés** |
 | 30 · Signaux des agents | 189 à 191 (phase 21 : boîte à signaux, lot après réveil, fil du run émetteur, Activité, pastille et notification) ; **dessinés** |
 | 31 · Agents et skills | 192 à 196 (phase 22 : page Agents et fiche, nouvel agent, « Ce que reçoit l'agent », conflit d'écriture, page Skills, éditeur, notes de review, intégration en diff, historique, fil du run) ; **dessinés** |
-| 32 · Doublons entre agents | 197 à 201b (phase 23 : fil `other` et `owner`, fichiers du recouvrement, lien posé et annulé, fiche Détails et Activité, barre, page du run, réglages, « Ce que reçoit l'agent ») ; **dessinés, ajustés après implémentation** ; hors des PDF et de `kibo.penpot.xz` jusqu'au jalon de la phase 23 |
-| 33 · Questions : modifier, rouvrir, archiver | 202 à 206 (phase 23 : réponses modifiables, archives et historique, lot de questions, aperçu au survol, question mise en évidence) ; **dessinés** ; hors des PDF et de `kibo.penpot.xz` jusqu'au jalon de la phase 23 |
-| 34 · Domaines & guidelines | 207 à 209b (phase 23 : arbre de dossiers, état vide, domaine de projet et du workspace, encart, sélecteur groupé, lien du projet) ; **dessinés, à ajuster après implémentation** ; hors des PDF et de `kibo.penpot.xz` jusqu'au jalon de la phase 23 |
+| 32 · Doublons entre agents | 197 à 201b (phase 23 : fil `other` et `owner`, fichiers du recouvrement, lien posé et annulé, fiche Détails et Activité, barre, page du run, réglages, « Ce que reçoit l'agent ») ; **dessinés, ajustés après implémentation** |
+| 33 · Questions : modifier, rouvrir, archiver | 202 à 206 (phase 23 : réponses modifiables, archives et historique, lot de questions, aperçu au survol, question mise en évidence) ; **dessinés** |
+| 34 · Domaines & guidelines | 207 à 209b (phase 23 : arbre de dossiers, état vide, domaine de projet et du workspace, projet partagé en lecture seule, encart, sélecteur groupé, lien du projet) ; **dessinés, ajustés après implémentation** |
 
-Pages 00 à 27 et 29 à 31 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 31 (les pages 32 à 34, phase 23, sont dans le fichier mais hors des PDF jusqu'au jalon).
+Pages 00 à 27 et 29 à 34 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 34.
 Pages 28 à 28d : pistes de brainstorming (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF ; scripts `32b` à `32f`, pistes eux aussi.
 
 Règles :
@@ -276,19 +276,22 @@ retire l'ancien (sombre et clair) avant `S.both(n)`.
 (Boutique sous Facturation dans la barre latérale, croix des onglets en dernier) et `S.dropBases()`. Les textes en `auto-height` ne sont mesurés
 que si l'onglet est au premier plan et que l'écran est dans la vue : avant l'export, `penpot.viewport.zoomIntoView([sombre, clair])`, puis `S.retext`.
 Projets Kibo, Portail, Facturation et Boutique (`projectsShell` renomme Portfolio et API Facturation de la base, ajoute Boutique). Écrans de 1 100 px
-de haut (207 à 208), 1 040 sinon ; rangées espacées de 1,4 × 1 040 px. Données : section « Domaines & guidelines (phase 23) » de `donnees-fictives.md`.
+de haut (207 à 208, 208c), 1 040 sinon ; rangées espacées de 1,4 × 1 040 px. Données : section « Domaines & guidelines (phase 23) » de `donnees-fictives.md`.
 
 - 34 · Domaines & guidelines : 207 page entière, encart « Comment les agents sont configurés » déplié, arbre (Workspace et « Domaines du workspace »,
-  Kibo déplié avec ses fichiers et « Domaines », Portail, Facturation, Boutique repliés), nœud « Projet · Kibo » (Éditer, `kibo.md`, Injection
-  « Workspace → Projet Kibo ») · 207b dossier Facturation vide (« Aucune guideline pour ce projet. », « Ajouter un fichier », « Aucun domaine… »,
+  Kibo déplié avec ses fichiers et « Domaines », Portail, Facturation, Boutique repliés ; chemins complets `guidelines/…` ; chevron des dossiers
+  dans un bouton séparé), nœud « Projet · Kibo » (dossier tronqué « ~/code/galadrim/kibo-monorepo… · 3 fichiers · 4 domaines », Éditer,
+  `guidelines/kibo.md`, Injection « Workspace → Projet Kibo ») · 207b dossier Facturation vide (« Aucune guideline pour ce projet. », « Ajouter un fichier », « Aucun domaine… »,
   « Nouveau domaine ») · 208 domaine Sync de Kibo (« domaine de Kibo · utilisé par 8 tickets », corbeille, `sync.md`, Injection « Workspace → Projet
   Kibo → Domaine Sync ») · 208b encart replié, domaine du workspace Sécurité (« utilisé par 6 tickets dans 2 projets », Injection « Workspace →
-  Domaine Sécurité ») · 209 fiche KIB-14, sélecteur de domaine groupé (« Aucun », « Domaines de Kibo », « Domaines du workspace ») · 209b « Modifier
-  le projet », section Guidelines (« 7 fichiers .md · 4 domaines », « Ouvrir le dossier de guidelines → »).
+  Domaine Sécurité ») · 208c projet partagé Portail dont Adam est lecteur (badge « Lecture seule », ni « + », ni Enregistrer, ni « Supprimer le
+  fichier », pas de « Domaines » dans l'arbre) · 209 fiche KIB-14, sélecteur de domaine groupé (« Aucun », « Domaines de Kibo », « Domaines du workspace ») · 209b « Modifier
+  le projet », section Guidelines entre Storybook (Adresse, Variable du port) et « Doublons entre agents » (« 7 fichiers .md · 4 domaines » suivi
+  du lien « Ouvrir le dossier de guidelines → »). La portée « domaine de Kibo » est une pastille au point de la couleur du projet.
 
 ## Exporter
 
-1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("31")` aujourd'hui (la page 32 attend le jalon de la phase 23) (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
+1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("34")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`.
 2. Source : menu du fichier → Exporter (.penpot), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
    que Penpot régénère : l'archive reste sous la limite de 100 Mo de GitHub).
