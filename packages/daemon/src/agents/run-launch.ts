@@ -247,7 +247,12 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       live.delete(runId);
       deps.guards.delete(runId);
       if (isTerminal(registry.get(runId).state)) console.error(`[kibo-daemon] run ${runId}`, e);
-      else registry.apply(runId, { type: "failed", error: message(e) });
+      else
+        notifyLifecycle(
+          "failure hook",
+          opts.onFailed,
+          registry.apply(runId, { type: "failed", error: message(e) }),
+        );
     }
   }
 

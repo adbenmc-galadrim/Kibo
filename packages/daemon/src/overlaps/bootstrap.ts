@@ -49,7 +49,11 @@ export type OverlapsInput = {
   log?: (line: string) => void;
 };
 
-type Lifecycle = { onSpawned(run: RunView): Promise<void>; onTurnEnd(run: RunView): Promise<void> };
+type Lifecycle = {
+  onSpawned(run: RunView): Promise<void>;
+  onTurnEnd(run: RunView): Promise<void>;
+  onFailed(run: RunView): Promise<void>;
+};
 
 export type Overlaps = {
   rpc: RpcExtension;
@@ -145,6 +149,11 @@ export function startOverlaps(input: OverlapsInput): Overlaps {
     now,
   });
   scheduler.start();
+  const forget = (runId: string): void => {
+    detector.forget(runId);
+    prefixer.forget(runId);
+    peek.resetQuota(runId);
+  };
   return {
     rpc,
     hooks: (sink) =>
@@ -168,10 +177,14 @@ export function startOverlaps(input: OverlapsInput): Overlaps {
           await base.onTurnEnd(run);
         } finally {
           scheduler.onTurnEnd(run);
-          if (isTerminal(run.state)) {
-            detector.forget(run.id);
-            prefixer.forget(run.id);
-          }
+          if (isTerminal(run.state)) forget(run.id);
+        }
+      },
+      async onFailed(run) {
+        try {
+          await base.onFailed(run);
+        } finally {
+          forget(run.id);
         }
       },
     }),

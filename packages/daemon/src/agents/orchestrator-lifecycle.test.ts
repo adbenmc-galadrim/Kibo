@@ -46,3 +46,24 @@ test("a failing lifecycle is logged and never fails the run", async () => {
     errors.mockRestore();
   }
 });
+
+test("a run that fails before its process starts only tells the lifecycle it failed", async () => {
+  const errors = spyOn(console, "error").mockImplementation(() => {});
+  try {
+    const seen: string[] = [];
+    const record = (what: string) => async (r: { state: string }) => {
+      seen.push(`${what}:${r.state}`);
+    };
+    const h = setup({
+      scenario: "done",
+      claudeBin: "/nonexistent/claude",
+      lifecycle: { onSpawned: record("spawned"), onTurnEnd: record("end"), onFailed: record("failed") },
+    });
+    const first = assignT1(h);
+    await waitUntil(() => seen.length === 1);
+    expect(run(h, first.id).state).toBe("failed");
+    expect(seen).toEqual(["failed:failed"]);
+  } finally {
+    errors.mockRestore();
+  }
+});
