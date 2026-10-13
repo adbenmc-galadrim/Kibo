@@ -44,7 +44,7 @@ test("a run failed before its start is forgotten and its trace closed, without a
   const stop = () => sink.receive(run.id, hook("Stop"), null);
   expect(stop()).not.toBeNull();
   expect(stop()).toBeNull();
-  await visibility.lifecycle.onFailed({ ...run, state: "failed", endedAt: NOW });
+  await visibility.lifecycle.onEndedWithoutTurn({ ...run, state: "failed", endedAt: NOW });
   expect(visibility.trace.trace(run.id)?.closedAt).not.toBeNull();
   expect(stop()).not.toBeNull();
 });

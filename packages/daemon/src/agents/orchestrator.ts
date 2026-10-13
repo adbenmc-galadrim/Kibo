@@ -20,6 +20,7 @@ import { guarded, knownAgent, startOfDay, ticketAgent } from "./orchestrator-sup
 import type { Orchestrator, OrchestratorOptions, TaskSpec, ToolGuard } from "./orchestrator-types";
 import { createProjectRun } from "./project-run";
 import { createRunLauncher, type LiveRun } from "./run-launch";
+import { IDLE_STATES, notifyLifecycle } from "./run-lifecycle";
 import { openRunRegistry } from "./run-registry";
 import type { NewRun } from "./run-store";
 import { reapOrphan } from "./runner";
@@ -236,7 +237,9 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       return registry.get(runId);
     },
     cancel(runId) {
-      registry.apply(runId, { type: "cancelled" });
+      const idle = IDLE_STATES.has(registry.get(runId).state);
+      const cancelled = registry.apply(runId, { type: "cancelled" });
+      if (idle) notifyLifecycle("no turn end hook", opts.onEndedWithoutTurn, cancelled);
       live.get(runId)?.proc.kill();
       tick();
       return registry.get(runId);

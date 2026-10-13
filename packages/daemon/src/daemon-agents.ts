@@ -21,7 +21,7 @@ export type AgentsInput = {
   baseUrl(): string;
   port: number;
   projectTurns: OrchestratorOptions["projectTurns"];
-  lifecycle: Pick<OrchestratorOptions, "onSpawned" | "onTurnEnd" | "onFailed" | "turnPrefix">;
+  lifecycle: Pick<OrchestratorOptions, "onSpawned" | "onTurnEnd" | "onEndedWithoutTurn" | "turnPrefix">;
   ready(orchestrator: Orchestrator): void;
   attachRuns(source: RunSource): Closer;
   agentsPort(orchestrator: Orchestrator): AgentsPort;

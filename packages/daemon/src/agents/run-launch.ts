@@ -146,6 +146,10 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
     }
   }
 
+  function endedWithoutTurn(view: RunView): void {
+    if (isTerminal(view.state)) notifyLifecycle("no turn end hook", opts.onEndedWithoutTurn, view);
+  }
+
   async function run(runId: string): Promise<void> {
     const initial = registry.get(runId);
     const project = isProjectRun(initial);
@@ -171,7 +175,8 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       const flag = permissionFlag(agent.settings.permissionMode, await capsOf(claudeBin));
       const section = project ? null : await laterSection(initial, task !== undefined);
       const current = registry.get(runId);
-      if (deps.stopping() || current.state !== "starting") return;
+      if (deps.stopping()) return;
+      if (current.state !== "starting") return endedWithoutTurn(current);
       const cwd = realpathSync(prepared.cwd);
       const ticketId = task ? null : current.ticketId;
       const firstTicketTurn = ticketId !== null && current.turns === 0;
@@ -247,12 +252,8 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       live.delete(runId);
       deps.guards.delete(runId);
       if (isTerminal(registry.get(runId).state)) console.error(`[kibo-daemon] run ${runId}`, e);
-      else
-        notifyLifecycle(
-          "failure hook",
-          opts.onFailed,
-          registry.apply(runId, { type: "failed", error: message(e) }),
-        );
+      else registry.apply(runId, { type: "failed", error: message(e) });
+      if (!deps.stopping()) endedWithoutTurn(registry.get(runId));
     }
   }
 

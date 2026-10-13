@@ -120,7 +120,7 @@ test("the lifecycle runs the base hooks first and still sweeps when they fail", 
       order.push("turn end");
       throw new Error("progress failed");
     },
-    onFailed: async () => undefined,
+    onEndedWithoutTurn: async () => undefined,
   });
   await lifecycle.onSpawned(ticketRun("r2", "BOU-15"));
   await expect(
@@ -142,7 +142,7 @@ test("a run failed before its start forgets its section without any turn end", a
     onTurnEnd: async () => {
       order.push("turn end");
     },
-    onFailed: async (run) => {
+    onEndedWithoutTurn: async (run) => {
       order.push(`failed ${run.id}`);
     },
   });
@@ -150,7 +150,7 @@ test("a run failed before its start forgets its section without any turn end", a
   const first = await overlaps.prefixer.changedSection(run);
   expect(first).not.toBeNull();
   expect(await overlaps.prefixer.changedSection(run)).toBeNull();
-  await lifecycle.onFailed({ ...run, state: "failed", endedAt: NOW });
+  await lifecycle.onEndedWithoutTurn({ ...run, state: "failed", endedAt: NOW });
   expect(order).toEqual(["failed r2"]);
   expect(await overlaps.prefixer.changedSection(run)).toBe(first);
 });

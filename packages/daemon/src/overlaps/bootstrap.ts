@@ -52,7 +52,7 @@ export type OverlapsInput = {
 type Lifecycle = {
   onSpawned(run: RunView): Promise<void>;
   onTurnEnd(run: RunView): Promise<void>;
-  onFailed(run: RunView): Promise<void>;
+  onEndedWithoutTurn(run: RunView): Promise<void>;
 };
 
 export type Overlaps = {
@@ -180,9 +180,9 @@ export function startOverlaps(input: OverlapsInput): Overlaps {
           if (isTerminal(run.state)) forget(run.id);
         }
       },
-      async onFailed(run) {
+      async onEndedWithoutTurn(run) {
         try {
-          await base.onFailed(run);
+          await base.onEndedWithoutTurn(run);
         } finally {
           forget(run.id);
         }

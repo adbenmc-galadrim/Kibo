@@ -57,7 +57,7 @@ export type Visibility = {
   lifecycle: {
     onSpawned(run: RunView): Promise<void>;
     onTurnEnd(run: RunView): Promise<void>;
-    onFailed(run: RunView): Promise<void>;
+    onEndedWithoutTurn(run: RunView): Promise<void>;
   };
   peek(projectId: string, runId: string): RunPeek;
   skills: { uses: SkillUses; reviews: SkillReviews };
@@ -157,7 +157,7 @@ export function startVisibility(
           if (isTerminal(r.state)) forget(r.id);
         }
       },
-      async onFailed(r) {
+      async onEndedWithoutTurn(r) {
         try {
           await trace.onTurnEnd(r);
         } finally {
