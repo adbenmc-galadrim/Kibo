@@ -127,6 +127,19 @@ test("193 · la fiche de kibo-dev : spec, réglages, sous-agents, skills, aperç
   const subagents = page.getByRole("group", { name: "Sous-agents appelables" });
   await subagents.getByRole("checkbox", { name: "review", exact: true }).click();
   await expect(subagents.getByRole("checkbox", { name: "review", exact: true })).toBeChecked();
+  const allSubagents = subagents.getByRole("switch", { name: "Tous les sous-agents" });
+  const allowsAll = async () =>
+    field(
+      field(await rpc(page, { method: "agents.read", ref: ref("kibo-dev") }), "settings"),
+      "allSubagents",
+    );
+  await allSubagents.click();
+  await expect.poll(allowsAll).toBe(true);
+  await expect(subagents.getByRole("checkbox", { name: "review", exact: true })).toBeDisabled();
+  await capture(info, "193c-tous");
+  await allSubagents.click();
+  await expect.poll(allowsAll).toBe(false);
+  await expect(subagents.getByRole("checkbox", { name: "review", exact: true })).toBeEnabled();
   await page.getByRole("button", { name: /^Skills autorisés/ }).click();
   await page.getByRole("radio", { name: "Liste" }).click();
   const skills = page.getByRole("group", { name: "Skills autorisés" });

@@ -30,7 +30,6 @@ export function callableAgents(
 }
 
 function summaryOf(agent: Agent, names: readonly string[]): string {
-  if (agent.settings.allSubagents) return t.allSummary;
   const generic = agent.settings.genericSubagents;
   if (names.length === 0) return generic ? `${t.none} · ${t.genericAllowed}` : t.none;
   return generic ? `${names.join(", ")} · ${t.genericShort}` : names.join(", ");
@@ -75,7 +74,7 @@ export function SubagentsField({ agent, agents, projects, disabled, onPatch }: P
   return (
     <FoldSection
       title={t.title}
-      summary={`${t.count(chosen.size, callable.length)} · ${summaryOf(agent, names)}`}
+      summary={all ? t.allSummary : `${t.count(chosen.size, callable.length)} · ${summaryOf(agent, names)}`}
     >
       <fieldset aria-label={t.title} className="grid gap-3">
         <AllSubagentsSwitch checked={all} disabled={disabled} onPatch={onPatch} />

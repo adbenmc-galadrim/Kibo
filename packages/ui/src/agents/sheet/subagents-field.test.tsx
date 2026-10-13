@@ -40,7 +40,7 @@ test("the switch allows every subagent of the machine, the project or the plugin
 test("with every subagent allowed the list and the generic box are disabled", async () => {
   const { user } = renderField(true);
   const trigger = screen.getByRole("button", { name: /^Sous-agents appelables/ });
-  expect(trigger.textContent).toContain("tous les sous-agents");
+  expect(trigger.textContent).toBe("Sous-agents appelablestous les sous-agents");
   await user.click(trigger);
   const box = within(screen.getByRole("group", { name: "Sous-agents appelables" }));
   expect(box.getByRole("switch", { name: "Tous les sous-agents" }).getAttribute("aria-checked")).toBe("true");
