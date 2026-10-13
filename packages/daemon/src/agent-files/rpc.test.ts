@@ -20,6 +20,7 @@ const PREVIEW: AgentPreview = {
     disallowedTools: null,
     allow: [],
     subagents: [],
+    allSubagents: false,
     skills: { mode: "all" },
   },
 };

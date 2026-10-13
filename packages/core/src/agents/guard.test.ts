@@ -4,6 +4,7 @@ import { agentGuard, GENERIC_SUBAGENTS } from "./guard";
 const rules = {
   subagents: ["review"],
   genericSubagents: true,
+  allSubagents: false,
   skills: { mode: "list" as const, ids: ["brainstorming", "superpowers:brainstorming"] },
 };
 const guard = agentGuard(rules);
@@ -21,6 +22,14 @@ describe("agent guard", () => {
     expect(strict({ tool: "Agent", input: { subagent_type: "general-purpose" } })).toEqual(
       deny("sous-agent non autorisé par Kibo"),
     );
+  });
+
+  test("lets any subagent through when all subagents are allowed", () => {
+    const open = agentGuard({ ...rules, genericSubagents: false, allSubagents: true });
+    expect(open({ tool: "Agent", input: { subagent_type: "ecc:code-reviewer" } })).toBeNull();
+    expect(open({ tool: "Task", input: { subagent_type: "kibo-dev" } })).toBeNull();
+    expect(open({ tool: "Agent", input: { subagent_type: "Explore" } })).toBeNull();
+    expect(open({ tool: "Skill", input: { skill: "deploy" } })).toEqual(deny("skill non autorisé par Kibo"));
   });
 
   test("treats Task as Agent and refuses a call without subagent type", () => {

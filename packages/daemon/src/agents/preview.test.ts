@@ -20,7 +20,8 @@ const reviewPr = testAgent({
   allow: ["Bash(git *)"],
 });
 const livraison = testAgent({ id: "livraison", name: "livraison", body: "Tu livres." });
-const source = memoryAgentSource([reviewPr, livraison]);
+const delivery = testAgent({ id: "full-delivery", name: "full-delivery", allSubagents: true });
+const source = memoryAgentSource([reviewPr, livraison, delivery]);
 const token = "a".repeat(64);
 
 const preview = createAgentPreview({
@@ -56,6 +57,7 @@ test("the preview shows each level, the composed prompt, the ticket brief, agent
     disallowedTools: null,
     allow: ["Bash(git *)", "Skill(brainstorming)"],
     subagents: ["livraison"],
+    allSubagents: false,
     skills: { mode: "list", ids: ["brainstorming"] },
   });
   const text = JSON.stringify(result);
@@ -87,4 +89,10 @@ test("the preview shows the work in progress of two example runs and the paralle
   }
   const machine = await preview({ ref: "global:livraison" });
   expect(machine.systemPrompt).toContain("## Travail en parallèle");
+});
+
+test("the command says when every subagent is allowed", async () => {
+  const result = await preview({ ref: "global:full-delivery" });
+  expect(result.command.allSubagents).toBe(true);
+  expect(result.command.subagents).toEqual([]);
 });

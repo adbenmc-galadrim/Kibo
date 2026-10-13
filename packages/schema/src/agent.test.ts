@@ -73,6 +73,7 @@ describe("agent settings", () => {
       enabled: true,
       subagents: [],
       genericSubagents: true,
+      allSubagents: false,
       skills: { mode: "all" },
     });
     expect(DEFAULT_AGENT_SETTINGS).toEqual(AgentSettings.parse({}));
@@ -96,6 +97,7 @@ describe("agent settings", () => {
   });
   test("a patch is strict", () => {
     expect(AgentSettingsPatch.safeParse({ enabled: false }).success).toBe(true);
+    expect(AgentSettingsPatch.parse({ allSubagents: true })).toEqual({ allSubagents: true });
     expect(AgentSettingsPatch.safeParse({ model: "opus" }).success).toBe(false);
   });
   test("the Kibo agents keep their fixed settings", () => {
@@ -104,6 +106,7 @@ describe("agent settings", () => {
     expect(generator.maxParallel).toBe(4);
     expect(generator.skills).toEqual({ mode: "list", ids: [] });
     expect(generator.genericSubagents).toBe(false);
+    expect(systemAgentSettings("assistant", { allSubagents: true }).allSubagents).toBe(false);
     expect(generator.subagents).toEqual([]);
     expect(generator.workspace).toBe("isolated");
     expect(generator.permissionMode).toBe("acceptEdits");

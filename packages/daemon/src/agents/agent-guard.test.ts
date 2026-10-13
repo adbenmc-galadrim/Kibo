@@ -35,3 +35,9 @@ test("an agent with every skill and generic subagents only refuses unknown subag
   expect(guard({ tool: "Agent", input: { subagent_type: "general-purpose" } })).toBeNull();
   expect(guard({ tool: "Agent", input: { subagent_type: "seo" } })).toEqual(denied("sous-agent"));
 });
+
+test("an agent allowed every subagent lets plugin and machine agents through", () => {
+  const guard = agentGuardOf({ settings: { ...DEFAULT_AGENT_SETTINGS, allSubagents: true } });
+  expect(guard({ tool: "Agent", input: { subagent_type: "ecc:typescript-reviewer" } })).toBeNull();
+  expect(guard({ tool: "Task", input: { subagent_type: "kibo-dev" } })).toBeNull();
+});

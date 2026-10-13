@@ -21,6 +21,7 @@ const PREVIEW: AgentPreview = {
     disallowedTools: null,
     allow: ["mcp__kibo__*", "Skill(porte-qualite)"],
     subagents: ["livraison", "review"],
+    allSubagents: false,
     skills: { mode: "list", ids: ["porte-qualite"] },
   },
 };
@@ -77,6 +78,16 @@ test("screen 193d: levels with their tokens, brief, agents.json and the command"
   ]);
   expect(calls).toContainEqual({ method: "agents.preview", ref: "global:chef-orchestre", projectId: "kibo" });
   expect(pane.getByText("Aucun secret : ni le jeton du run ni les variables d'environnement.")).toBeTruthy();
+});
+
+test("the command says every subagent when the agent allows them all", async () => {
+  preview = { ...PREVIEW, command: { ...PREVIEW.command, allSubagents: true } };
+  render(
+    <PreviewPane open onClose={() => {}} agentRef="global:livraison" name="livraison" projectId="kibo" />,
+  );
+  const pane = within(await screen.findByRole("dialog"));
+  const command = within(await pane.findByRole("region", { name: "Commande" }));
+  expect(command.getAllByRole("definition")[4]?.textContent).toBe("tous les sous-agents");
 });
 
 test("choosing a ticket composes the preview on that ticket", async () => {

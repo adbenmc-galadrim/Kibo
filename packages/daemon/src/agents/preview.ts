@@ -118,6 +118,7 @@ export function createAgentPreview(deps: AgentPreviewDeps) {
         disallowedTools: flags.disallowedTools,
         allow: [...settings.allow, ...skillRules(settings.skills, false)],
         subagents: composed.subagents.map((s) => s.name),
+        allSubagents: settings.allSubagents,
         skills: settings.skills,
       },
     };

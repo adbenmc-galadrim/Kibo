@@ -67,13 +67,18 @@ function WorkSection({ brief }: { brief: string }) {
   );
 }
 
+function subagentsLabel(command: AgentPreview["command"]): string {
+  if (command.allSubagents) return t.allSubagents;
+  return command.subagents.length > 0 ? command.subagents.join(", ") : t.noSubagents;
+}
+
 function Command({ command }: { command: AgentPreview["command"] }) {
   const rows: [string, string][] = [
     [t.model, command.model],
     [t.permissions, frAgentsPage.permissionModes[command.permissionMode]],
     [t.tools, command.tools ? command.tools.join(", ") : t.allTools],
     [t.allow, command.allow.join(", ")],
-    [t.subagents, command.subagents.length > 0 ? command.subagents.join(", ") : t.noSubagents],
+    [t.subagents, subagentsLabel(command)],
     [t.skills, command.skills.mode === "all" ? t.allSkills : command.skills.ids.join(", ")],
   ];
   return (

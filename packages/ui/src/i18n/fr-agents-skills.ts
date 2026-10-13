@@ -216,6 +216,7 @@ export const frAgentsSkills = {
     allow: "Règles allow",
     subagents: "Sous-agents",
     noSubagents: "aucun",
+    allSubagents: "tous les sous-agents",
     skills: "Skills",
     allSkills: "tous",
     noSecret: "Aucun secret : ni le jeton du run ni les variables d'environnement.",
