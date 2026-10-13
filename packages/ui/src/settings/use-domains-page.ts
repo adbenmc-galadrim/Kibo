@@ -2,11 +2,13 @@ import {
   type ConfigCommand,
   DOMAIN_COLORS,
   Domain,
+  domainUsageOf,
   estimateTokens,
   GuidelinePath,
   KiboError,
   type ProjectSnapshot,
   type ProjectSummary,
+  usageOwner,
   type WorkspaceConfig,
 } from "@kibo/schema";
 import { useMemo, useState } from "react";
@@ -52,10 +54,21 @@ function readOnlyProjects(projects: ProjectSummary[], snapshots?: ReadonlyMap<st
   return new Set(projects.filter((p) => access(p.id) !== "write").map((p) => p.id));
 }
 
+function countsFor(domain: Domain, s: ProjectSnapshot): boolean {
+  const project = {
+    id: s.meta.id,
+    shared: s.sync.keyAllocator === "server",
+    domainIds: (s.domains ?? []).map((d) => d.id),
+  };
+  const owner = usageOwner(project, domain.id);
+  if (owner === null) return false;
+  if (owner.scope === "workspace") return domain.owner.scope === "workspace";
+  return owner.projectId === domainOwnerProject(domain);
+}
+
 function projectsUsing(domain: Domain, snapshots?: ReadonlyMap<string, ProjectSnapshot>): number {
-  const owner = domainOwnerProject(domain);
   return [...(snapshots?.values() ?? [])]
-    .filter((s) => owner === null || s.meta.id === owner)
+    .filter((s) => countsFor(domain, s))
     .filter((s) => s.tickets.some((t) => t.domainId === domain.id)).length;
 }
 
@@ -184,7 +197,7 @@ export function useDomainsPage(args: DomainsPageArgs) {
   };
   const deleteDomain = () => {
     if (!domain) return;
-    if ((config.domainUsage[domain.id] ?? 0) > 0) setError(frDomains.inUse);
+    if (domainUsageOf(config, domain) > 0) setError(frDomains.inUse);
     else setConfirming({ kind: "domain" });
   };
   const confirmDeleteDomain = async () => {
@@ -208,7 +221,7 @@ export function useDomainsPage(args: DomainsPageArgs) {
     locked,
     chainLabels,
     tokens,
-    usage: domain ? (config.domainUsage[domain.id] ?? 0) : 0,
+    usage: domain ? domainUsageOf(config, domain) : 0,
     usageProjects: domain ? projectsUsing(domain, snapshots) : 0,
     treeSelected: fileId && selected ? fileKey(node, selected.id) : nodeKey(node),
     expanded,

@@ -1,4 +1,4 @@
-import { Domain, type DomainInput, Guideline, KiboError } from "@kibo/schema";
+import { compareDomains, Domain, type DomainInput, Guideline, KiboError } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { projectIdOf } from "./config-store";
 
@@ -26,13 +26,15 @@ function storedDomains(doc: LoroDoc): { domain: Domain; guidelines: StoredGuidel
   const entries = Object.entries(projectDomainsMap(doc).toJSON());
   if (entries.length === 0) return [];
   const owner = { scope: "project", projectId: requireProjectId(doc) } as const;
-  return entries.flatMap(([id, value]) => {
-    if (!(value instanceof Object)) return [];
-    const parsed = Domain.safeParse({ ...value, id, owner });
-    if (!parsed.success) return [];
-    const { name, color } = parsed.data;
-    return [{ domain: { id, name, color, owner }, guidelines: storedGuidelines(value) }];
-  });
+  return entries
+    .flatMap(([id, value]) => {
+      if (!(value instanceof Object)) return [];
+      const parsed = Domain.safeParse({ ...value, id, owner });
+      if (!parsed.success) return [];
+      const { name, color } = parsed.data;
+      return [{ domain: { id, name, color, owner }, guidelines: storedGuidelines(value) }];
+    })
+    .sort((a, b) => compareDomains(a.domain, b.domain));
 }
 
 export function listProjectDomains(doc: LoroDoc): Domain[] {
@@ -43,12 +45,14 @@ export const projectGuidelineId = (domainId: string, path: string) => `${domainI
 
 export function listProjectDomainGuidelines(doc: LoroDoc): Guideline[] {
   return storedDomains(doc).flatMap(({ domain, guidelines }) =>
-    guidelines.flatMap((g) => {
-      const owner = { scope: "domain", domainId: domain.id, projectId: requireProjectId(doc) };
-      const id = projectGuidelineId(domain.id, g.path);
-      const parsed = Guideline.safeParse({ ...g, id, owner });
-      return parsed.success ? [parsed.data] : [];
-    }),
+    [...guidelines]
+      .sort((a, b) => a.path.localeCompare(b.path))
+      .flatMap((g) => {
+        const owner = { scope: "domain", domainId: domain.id, projectId: requireProjectId(doc) };
+        const id = projectGuidelineId(domain.id, g.path);
+        const parsed = Guideline.safeParse({ ...g, id, owner });
+        return parsed.success ? [parsed.data] : [];
+      }),
   );
 }
 

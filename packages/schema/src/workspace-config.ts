@@ -116,6 +116,7 @@ export type WorkspaceConfig = {
   domains: Domain[];
   guidelines: Guideline[];
   domainUsage: Record<string, number>;
+  projectDomainUsage: Record<string, Record<string, number>>;
   workspaceName: string | null;
   workspaceDescription: string | null;
   workspaceIcon: string | null;
