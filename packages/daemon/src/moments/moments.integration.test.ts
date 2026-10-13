@@ -1,7 +1,8 @@
-import { expect, test } from "bun:test";
+import { afterEach, expect, test } from "bun:test";
 import { join } from "node:path";
 import type { RunMoment, RunMomentsPage, RunPeek, RunView } from "@kibo/schema";
 import { scenarioPath } from "../agents/fake-claude-scenario";
+import { cleanupTmp, repo } from "../agents/git-test-kit";
 import {
   assign,
   type Client,
@@ -13,6 +14,7 @@ import {
 } from "./daemon-client.test-helper";
 
 cleanDaemons();
+afterEach(cleanupTmp);
 
 const start = (transcriptRoot: (home: string) => string) =>
   startTestDaemon({ scenario: scenarioPath("done"), transcriptRoot });
@@ -52,6 +54,28 @@ test("the daemon serves the narrative of a fake claude run and broadcasts it", a
     waiting: false,
   });
 }, 40_000);
+
+test("a resumed run shows only what follows its resumption", async () => {
+  const c = await start((home) => join(home, "fake"));
+  const seeded = await seed(c, { folder: await repo(), workspace: "repo" });
+  const first = await runIn(c, (await assign(c, seeded)).id, ["done"]);
+  const narrated = (runId: string) =>
+    waitFor(async () => {
+      const p = await momentsOf(c.rpc, runId);
+      return p.moments.some((m) => m.data.kind === "reminder") ? p : undefined;
+    });
+  const before = await narrated(first.id);
+  const resumed = await runIn(c, (await assign(c, seeded)).id, ["done"]);
+  expect(resumed.session).toEqual({ mode: "resumed", from: first.id });
+  expect(resumed.sessionId).toBe(first.sessionId);
+  const after = await narrated(resumed.id);
+  const gist = (page: RunMomentsPage) =>
+    page.moments.map(({ data }) =>
+      data.kind === "actions" ? data.summary : data.kind === "message" ? data.text : data.kind,
+    );
+  expect(gist(before)).toEqual(["A lu 1 fichier", "Travail terminé.", "reminder"]);
+  expect(gist(after)).toEqual(gist(before));
+}, 60_000);
 
 test("a transcript outside the accepted root falls back on the hooks", async () => {
   const c = await start((home) => join(home, "ailleurs"));

@@ -21,6 +21,12 @@ export function toHooks(core: TraceCore, trace: RunTrace, reason: PartialReason)
   return next;
 }
 
+function resumedOffset(core: TraceCore, run: RunView, path: string): number {
+  const from = run.session?.mode === "resumed" && run.session.from !== run.id ? run.session.from : null;
+  const origin = from === null ? null : core.store.trace(from);
+  return origin?.source === "transcript" && origin.path === path ? origin.offset : 0;
+}
+
 export function resolve(core: TraceCore, trace: RunTrace, run: RunView, path: string | null): RunTrace {
   if (trace.source === "hooks" || path === null) return trace;
   if (trace.source === "transcript" && path === core.live(trace.runId).from) return trace;
@@ -32,7 +38,13 @@ export function resolve(core: TraceCore, trace: RunTrace, run: RunView, path: st
   }
   if (trace.source === "transcript") core.flushFold(trace, false);
   core.lives.set(trace.runId, freshLive(path));
-  const next: RunTrace = { ...trace, source: "transcript", path: accepted, offset: 0, partial: null };
+  const next: RunTrace = {
+    ...trace,
+    source: "transcript",
+    path: accepted,
+    offset: resumedOffset(core, run, accepted),
+    partial: null,
+  };
   core.store.saveTrace(next);
   return next;
 }
