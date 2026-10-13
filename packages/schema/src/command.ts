@@ -19,146 +19,169 @@ import {
   QuestionOption,
   QuestionTitle,
 } from "./question";
-import { QuestionRecipient, RECIPIENT_ID_MAX } from "./question-recipient";
+import { QuestionContext, QuestionOptions } from "./question-fields";
+import { QuestionRecipient, RecipientId } from "./question-recipient";
 import { StatusId } from "./status";
 import { Assignee, type Ticket } from "./ticket";
 
 const index = z.number().int().nonnegative().optional();
 const JsonRecord = z.record(z.string(), z.unknown());
-const RecipientId = z.string().min(1).max(RECIPIENT_ID_MAX);
+const questionEdit = <M extends string>(method: M) =>
+  z.object({ method: z.literal(method), questionId: NodeId, by: Actor, at: z.number().int().optional() });
 
-export const ProjectCommand = z.discriminatedUnion("method", [
-  z.object({
-    method: z.literal("addPage"),
-    title: z.string(),
-    kind: PageKind,
-    parentId: NodeId.nullable().optional(),
-  }),
-  z.object({ method: z.literal("renamePage"), pageId: NodeId, title: z.string() }),
-  z.object({ method: z.literal("movePage"), pageId: NodeId, parentId: NodeId.nullable(), index }),
-  z.object({ method: z.literal("deletePage"), pageId: NodeId }),
-  z.object({
-    method: z.literal("createTicket"),
-    title: z.string(),
-    description: z.string().optional(),
-    statusId: StatusId.optional(),
-    blockedReason: z.string().optional(),
-    parentId: NodeId.nullable().optional(),
-    assignee: Assignee.nullable().optional(),
-    labels: Labels.optional(),
-  }),
-  z.object({
-    method: z.literal("updateTicket"),
-    ticketId: NodeId,
-    title: z.string().optional(),
-    description: z.string().optional(),
-    domainId: z.string().nullable().optional(),
-    assignee: Assignee.nullable().optional(),
-    labels: Labels.optional(),
-  }),
-  z.object({
-    method: z.literal("setStatus"),
-    ticketId: NodeId,
-    statusId: StatusId,
-    reason: z.string().optional(),
-  }),
-  z.object({ method: z.literal("moveTicket"), ticketId: NodeId, parentId: NodeId.nullable(), index }),
-  z.object({ method: z.literal("deleteTicket"), ticketId: NodeId }),
-  z.object({ method: z.literal("addLink"), from: NodeId, to: NodeId, type: z.enum(["blocks", "relates"]) }),
-  z.object({ method: z.literal("removeLink"), linkId: z.string() }),
-  z.object({
-    method: z.literal("addInstance"),
-    pageId: NodeId,
-    component: ComponentRef,
-    layout: Layout.optional(),
-    config: JsonRecord.optional(),
-    componentHash: Sha256.nullable().optional(),
-  }),
-  z.object({ method: z.literal("removeInstance"), instanceId: z.string() }),
-  z.object({ method: z.literal("upsertExternalRef"), ticketId: NodeId, ref: ExternalRef }),
-  z.object({
-    method: z.literal("removeExternalRef"),
-    ticketId: NodeId,
-    kind: ExternalRefKind,
-    key: z.string().min(1),
-  }),
-  z.object({ method: z.literal("addBinding"), binding: Binding }),
-  z.object({ method: z.literal("removeBinding"), bindingId: z.string().min(1) }),
-  z.object({
-    method: z.literal("importExternalTicket"),
-    title: z.string(),
-    description: z.string().optional(),
-    statusId: StatusId.optional(),
-    assignee: Assignee.nullable().optional(),
-    ref: ExternalRef,
-  }),
-  z.object({
-    method: z.literal("setInstanceComponent"),
-    instanceId: z.string(),
-    component: ComponentRef,
-    config: JsonRecord,
-    data: JsonRecord.nullable(),
-    componentHash: Sha256.nullable().optional(),
-  }),
-  z.object({ method: z.literal("setInstanceConfig"), instanceId: z.string(), config: JsonRecord }),
-  z.object({ method: z.literal("setInstanceLayout"), instanceId: z.string(), layout: Layout }),
-  z.object({
-    method: z.literal("setPageLayout"),
-    pageId: NodeId,
-    layouts: z.array(z.object({ instanceId: z.string(), layout: Layout })).max(200),
-  }),
-  z.object({
-    method: z.literal("setInstanceData"),
-    instanceId: z.string(),
-    key: DataKey,
-    value: z.unknown(),
-  }),
-  z.object({
-    method: z.literal("createQuestion"),
-    ticketId: NodeId,
-    title: QuestionTitle,
-    context: z.string().max(QUESTION_CONTEXT_MAX).optional(),
-    options: z.array(QuestionOption).max(QUESTION_OPTIONS_MAX).optional(),
-    provisional: QuestionOption.nullable().optional(),
-    blocking: z.boolean().optional(),
-    runId: z.string().min(1).nullable().optional(),
-    createdBy: Actor,
-    importRef: ImportRef.nullable().optional(),
-  }),
-  z.object({
-    method: z.literal("answerQuestion"),
-    questionId: NodeId,
-    answer: AnswerInput,
-    by: Actor,
-    at: z.number().int().optional(),
-  }),
-  z.object({ method: z.literal("removeQuestion"), questionId: NodeId }),
-  z.object({
-    method: z.literal("markAnswersDelivered"),
-    ticketId: NodeId,
-    questionIds: z.array(NodeId).min(1).max(QUESTIONS_PER_TICKET_MAX),
-    runId: z.string().min(1),
-    at: z.number().int(),
-  }),
-  z.object({
-    method: z.literal("setTicketProgress"),
-    ticketId: NodeId,
-    runId: z.string().min(1),
-    at: z.number().int(),
-    plan: Plan.optional(),
-    report: RunReportInput.optional(),
-    check: FileCheck.optional(),
-  }),
-  z.object({ method: z.literal("addQuestionRecipient"), name: QuestionRecipient.shape.name }),
-  z.object({
-    method: z.literal("renameQuestionRecipient"),
-    recipientId: RecipientId,
-    name: QuestionRecipient.shape.name,
-  }),
-  z.object({ method: z.literal("removeQuestionRecipient"), recipientId: RecipientId }),
-  z.object({ method: z.literal("setQuestionRecipient"), questionId: NodeId, recipient: RecipientId }),
-  z.object({ method: z.literal("markQuestionSent"), questionId: NodeId, at: z.number().int().optional() }),
-]);
+const QUESTION_EDIT_FIELDS = ["title", "context", "options", "provisional", "ticketId", "recipient"] as const;
+
+export const ProjectCommand = z
+  .discriminatedUnion("method", [
+    z.object({
+      method: z.literal("addPage"),
+      title: z.string(),
+      kind: PageKind,
+      parentId: NodeId.nullable().optional(),
+    }),
+    z.object({ method: z.literal("renamePage"), pageId: NodeId, title: z.string() }),
+    z.object({ method: z.literal("movePage"), pageId: NodeId, parentId: NodeId.nullable(), index }),
+    z.object({ method: z.literal("deletePage"), pageId: NodeId }),
+    z.object({
+      method: z.literal("createTicket"),
+      title: z.string(),
+      description: z.string().optional(),
+      statusId: StatusId.optional(),
+      blockedReason: z.string().optional(),
+      parentId: NodeId.nullable().optional(),
+      assignee: Assignee.nullable().optional(),
+      labels: Labels.optional(),
+    }),
+    z.object({
+      method: z.literal("updateTicket"),
+      ticketId: NodeId,
+      title: z.string().optional(),
+      description: z.string().optional(),
+      domainId: z.string().nullable().optional(),
+      assignee: Assignee.nullable().optional(),
+      labels: Labels.optional(),
+    }),
+    z.object({
+      method: z.literal("setStatus"),
+      ticketId: NodeId,
+      statusId: StatusId,
+      reason: z.string().optional(),
+    }),
+    z.object({ method: z.literal("moveTicket"), ticketId: NodeId, parentId: NodeId.nullable(), index }),
+    z.object({ method: z.literal("deleteTicket"), ticketId: NodeId }),
+    z.object({ method: z.literal("addLink"), from: NodeId, to: NodeId, type: z.enum(["blocks", "relates"]) }),
+    z.object({ method: z.literal("removeLink"), linkId: z.string() }),
+    z.object({
+      method: z.literal("addInstance"),
+      pageId: NodeId,
+      component: ComponentRef,
+      layout: Layout.optional(),
+      config: JsonRecord.optional(),
+      componentHash: Sha256.nullable().optional(),
+    }),
+    z.object({ method: z.literal("removeInstance"), instanceId: z.string() }),
+    z.object({ method: z.literal("upsertExternalRef"), ticketId: NodeId, ref: ExternalRef }),
+    z.object({
+      method: z.literal("removeExternalRef"),
+      ticketId: NodeId,
+      kind: ExternalRefKind,
+      key: z.string().min(1),
+    }),
+    z.object({ method: z.literal("addBinding"), binding: Binding }),
+    z.object({ method: z.literal("removeBinding"), bindingId: z.string().min(1) }),
+    z.object({
+      method: z.literal("importExternalTicket"),
+      title: z.string(),
+      description: z.string().optional(),
+      statusId: StatusId.optional(),
+      assignee: Assignee.nullable().optional(),
+      ref: ExternalRef,
+    }),
+    z.object({
+      method: z.literal("setInstanceComponent"),
+      instanceId: z.string(),
+      component: ComponentRef,
+      config: JsonRecord,
+      data: JsonRecord.nullable(),
+      componentHash: Sha256.nullable().optional(),
+    }),
+    z.object({ method: z.literal("setInstanceConfig"), instanceId: z.string(), config: JsonRecord }),
+    z.object({ method: z.literal("setInstanceLayout"), instanceId: z.string(), layout: Layout }),
+    z.object({
+      method: z.literal("setPageLayout"),
+      pageId: NodeId,
+      layouts: z.array(z.object({ instanceId: z.string(), layout: Layout })).max(200),
+    }),
+    z.object({
+      method: z.literal("setInstanceData"),
+      instanceId: z.string(),
+      key: DataKey,
+      value: z.unknown(),
+    }),
+    z.object({
+      method: z.literal("createQuestion"),
+      ticketId: NodeId,
+      title: QuestionTitle,
+      context: z.string().max(QUESTION_CONTEXT_MAX).optional(),
+      options: z.array(QuestionOption).max(QUESTION_OPTIONS_MAX).optional(),
+      provisional: QuestionOption.nullable().optional(),
+      blocking: z.boolean().optional(),
+      runId: z.string().min(1).nullable().optional(),
+      createdBy: Actor,
+      importRef: ImportRef.nullable().optional(),
+      recipient: RecipientId.optional(),
+    }),
+    z.object({
+      method: z.literal("answerQuestion"),
+      questionId: NodeId,
+      answer: AnswerInput,
+      by: Actor,
+      at: z.number().int().optional(),
+    }),
+    z.object({ method: z.literal("removeQuestion"), questionId: NodeId }),
+    z.object({
+      method: z.literal("markAnswersDelivered"),
+      ticketId: NodeId,
+      questionIds: z.array(NodeId).min(1).max(QUESTIONS_PER_TICKET_MAX),
+      runId: z.string().min(1),
+      at: z.number().int(),
+    }),
+    z.object({
+      method: z.literal("setTicketProgress"),
+      ticketId: NodeId,
+      runId: z.string().min(1),
+      at: z.number().int(),
+      plan: Plan.optional(),
+      report: RunReportInput.optional(),
+      check: FileCheck.optional(),
+    }),
+    z.object({ method: z.literal("addQuestionRecipient"), name: QuestionRecipient.shape.name }),
+    z.object({
+      method: z.literal("renameQuestionRecipient"),
+      recipientId: RecipientId,
+      name: QuestionRecipient.shape.name,
+    }),
+    z.object({ method: z.literal("removeQuestionRecipient"), recipientId: RecipientId }),
+    z.object({ method: z.literal("setQuestionRecipient"), questionId: NodeId, recipient: RecipientId }),
+    z.object({ method: z.literal("markQuestionSent"), questionId: NodeId, at: z.number().int().optional() }),
+    questionEdit("updateQuestion").extend({
+      title: QuestionTitle.optional(),
+      context: QuestionContext.optional(),
+      options: QuestionOptions.optional(),
+      provisional: QuestionOption.nullable().optional(),
+      ticketId: NodeId.optional(),
+      recipient: RecipientId.optional(),
+    }),
+    questionEdit("updateAnswer").extend({ answer: AnswerInput }),
+    questionEdit("reopenQuestion"),
+    questionEdit("archiveQuestion"),
+    questionEdit("restoreQuestion"),
+  ])
+  .superRefine((cmd, ctx) => {
+    if (cmd.method === "updateQuestion" && QUESTION_EDIT_FIELDS.every((field) => cmd[field] === undefined)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "updateQuestion changes nothing" });
+    }
+  });
 export type ProjectCommand = z.infer<typeof ProjectCommand>;
 
 export const COMMAND_WRITES: Record<ProjectCommand["method"], EntityType | null> = {
@@ -195,6 +218,11 @@ export const COMMAND_WRITES: Record<ProjectCommand["method"], EntityType | null>
   removeQuestionRecipient: "question",
   setQuestionRecipient: "question",
   markQuestionSent: "question",
+  updateQuestion: "question",
+  updateAnswer: "question",
+  reopenQuestion: "question",
+  archiveQuestion: "question",
+  restoreQuestion: "question",
 };
 
 export const isReservedCommand = (method: ProjectCommand["method"]): boolean =>
@@ -234,4 +262,9 @@ export type CommandResult = {
   removeQuestionRecipient: null;
   setQuestionRecipient: Question;
   markQuestionSent: Question;
+  updateQuestion: Question;
+  updateAnswer: Question;
+  reopenQuestion: Question;
+  archiveQuestion: Question;
+  restoreQuestion: Question;
 };

@@ -1,4 +1,4 @@
-import type { AgentPreview, AgentRef, TicketView } from "@kibo/schema";
+import { type AgentPreview, type AgentRef, type TicketView, WORK_SECTION_TITLE } from "@kibo/schema";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@kibo/sdk/ui/sheet";
@@ -7,6 +7,7 @@ import { useEffect, useId, useState } from "react";
 import { client } from "../../api";
 import { frAgentsPage } from "../../i18n/fr-agents-page";
 import { frAgentsSkills } from "../../i18n/fr-agents-skills";
+import { frOverlaps } from "../../i18n/fr-overlaps";
 
 type Props = {
   open: boolean;
@@ -36,6 +37,33 @@ function Block({ title, text }: { title: string; text: string }) {
         </pre>
       </CollapsibleContent>
     </Collapsible>
+  );
+}
+
+export function workSection(brief: string): string | null {
+  const lines = brief.split("\n");
+  const start = lines.indexOf(WORK_SECTION_TITLE);
+  if (start === -1) return null;
+  const end = lines.findIndex((line, i) => i > start && line.startsWith("## "));
+  return lines
+    .slice(start, end === -1 ? undefined : end)
+    .join("\n")
+    .trimEnd();
+}
+
+function WorkSection({ brief }: { brief: string }) {
+  const text = workSection(brief);
+  if (text === null) return null;
+  return (
+    <details open className="group/work rounded-md border">
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm [&::-webkit-details-marker]:hidden">
+        <ChevronRight aria-hidden className="size-4 transition-transform group-open/work:rotate-90" />
+        {frOverlaps.preview.work}
+      </summary>
+      <pre className="max-h-96 overflow-auto border-t bg-muted/40 p-3 font-mono text-xs whitespace-pre-wrap">
+        {text}
+      </pre>
+    </details>
   );
 }
 
@@ -160,6 +188,7 @@ export function PreviewPane({ open, onClose, agentRef, name, projectId }: Props)
               </ul>
               <Block title={t.systemPrompt} text={preview.systemPrompt} />
               <Block title={t.brief} text={preview.brief} />
+              <WorkSection brief={preview.brief} />
               <Block title={t.agentsJson} text={preview.agentsJson} />
               <Command command={preview.command} />
               <p className="text-xs text-muted-foreground">{t.noSecret}</p>

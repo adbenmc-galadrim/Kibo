@@ -79,9 +79,9 @@ function PeekCard({ peek, texts, onOpen, onReply }: CardProps) {
   );
 }
 
-type DelayedOpen = { open: boolean; schedule(): void; show(): void; cancel(): void; close(): void };
+export type DelayedOpen = { open: boolean; schedule(): void; show(): void; cancel(): void; close(): void };
 
-function useDelayedOpen(delay: number): DelayedOpen {
+export function useDelayedOpen(delay: number): DelayedOpen {
   const [open, setOpen] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cancel = () => {

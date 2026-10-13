@@ -9,7 +9,7 @@ import { MoreHorizontal } from "lucide-react";
 import type { PointerEvent } from "react";
 import { cardMenuEntries } from "./card-menu";
 import { fr } from "./fr";
-import { CARD_CLASS, type CardFacts, KanbanCardContent } from "./KanbanCardContent";
+import { CARD_CLASS, CARD_TITLE_CLASS, type CardFacts, KanbanCardContent } from "./KanbanCardContent";
 
 const stopDrag = (e: PointerEvent) => e.stopPropagation();
 
@@ -63,7 +63,7 @@ export function KanbanCard(props: Props) {
     </DropdownMenu>
   );
   const title = (
-    <button type="button" className="w-fit cursor-pointer text-left" onClick={onOpen}>
+    <button type="button" className={cn(CARD_TITLE_CLASS, "cursor-pointer")} onClick={onOpen}>
       {t.title}
     </button>
   );

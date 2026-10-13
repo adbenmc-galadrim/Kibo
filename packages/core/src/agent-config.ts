@@ -1,6 +1,7 @@
 import {
   type ConfigCommand,
   Domain,
+  type DomainOwner,
   Guideline,
   type GuidelineOwner,
   KiboError,
@@ -20,6 +21,7 @@ import {
   stored,
   valid,
 } from "./config-store";
+import { executeProjectDomainCommand, executeProjectDomainGuideline } from "./project-domain-commands";
 
 export function workspaceName(ws: LoroDoc): string | null {
   const name = settingsMap(ws).get("name");
@@ -112,21 +114,37 @@ export function dropProfiles(doc: LoroDoc): { profiles: number; guidelines: numb
   return { profiles: ids.length, guidelines: legacy.length };
 }
 
-export function configTarget(cmd: ConfigCommand): string | null {
-  switch (cmd.method) {
-    case "addGuideline":
-    case "updateGuideline":
-    case "removeGuideline":
-      return cmd.owner.scope === "project" ? cmd.owner.projectId : null;
-    default:
-      return null;
-  }
+function requireWorkspaceDomain(doc: LoroDoc, owner: DomainOwner | undefined): void {
+  requireWorkspace(doc);
+  if (owner?.scope === "project")
+    throw new KiboError("INVALID_INPUT", "a project domain lives in its project");
 }
+
+const isInProject = (doc: LoroDoc) => projectIdOf(doc) !== undefined;
 
 export function executeConfigCommand(doc: LoroDoc, cmd: ConfigCommand): unknown {
   switch (cmd.method) {
+    case "createDomain":
+    case "updateDomain":
+    case "deleteDomain":
+      if (isInProject(doc)) return executeProjectDomainCommand(doc, cmd);
+      requireWorkspaceDomain(doc, cmd.owner);
+      return executeWorkspaceCommand(doc, cmd);
+    case "addGuideline":
+    case "updateGuideline":
+    case "removeGuideline":
+      if (cmd.owner.scope === "domain" && cmd.owner.projectId !== null) {
+        return executeProjectDomainGuideline(doc, { ...cmd, owner: cmd.owner });
+      }
+      return executeWorkspaceCommand(doc, cmd);
+    default:
+      return executeWorkspaceCommand(doc, cmd);
+  }
+}
+
+function executeWorkspaceCommand(doc: LoroDoc, cmd: ConfigCommand): unknown {
+  switch (cmd.method) {
     case "createDomain": {
-      requireWorkspace(doc);
       const domain = valid(Domain.safeParse({ ...cmd.domain, id: crypto.randomUUID() }));
       assertUniqueName(listDomains(doc), domain);
       domainsMap(doc).set(domain.id, domain);
@@ -134,7 +152,6 @@ export function executeConfigCommand(doc: LoroDoc, cmd: ConfigCommand): unknown 
       return domain;
     }
     case "updateDomain": {
-      requireWorkspace(doc);
       const current = getDomain(doc, cmd.domainId);
       const domain = valid(Domain.safeParse({ ...current, ...cmd.patch, id: current.id }));
       assertUniqueName(listDomains(doc), domain);
@@ -143,10 +160,9 @@ export function executeConfigCommand(doc: LoroDoc, cmd: ConfigCommand): unknown 
       return domain;
     }
     case "deleteDomain": {
-      requireWorkspace(doc);
       getDomain(doc, cmd.domainId);
       domainsMap(doc).delete(cmd.domainId);
-      dropGuidelines(doc, { scope: "domain", domainId: cmd.domainId });
+      dropGuidelines(doc, { scope: "domain", domainId: cmd.domainId, projectId: null });
       doc.commit();
       return null;
     }

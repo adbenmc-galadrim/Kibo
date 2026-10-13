@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { askInputFromTool, Question } from "./question";
 import {
   DEFAULT_RECIPIENTS,
+  findRecipient,
   ME_RECIPIENT,
   openCountByRecipient,
   QuestionRecipient,
@@ -75,4 +76,14 @@ test("the agent's proposed recipient is kept raw and cut", () => {
   expect(askInputFromTool({ question: "Quelle base ?", recipient: "x".repeat(41) }, true)?.recipient).toBe(
     "x".repeat(40),
   );
+});
+
+test("findRecipient is strict: by id, then by name with case and spaces ignored", () => {
+  expect(findRecipient(DEFAULT_RECIPIENTS, "client")?.id).toBe("client");
+  expect(findRecipient(DEFAULT_RECIPIENTS, "Client")?.id).toBe("client");
+  expect(findRecipient(DEFAULT_RECIPIENTS, " client ")?.id).toBe("client");
+  expect(findRecipient(DEFAULT_RECIPIENTS, "Produit")?.id).toBe("product");
+  expect(findRecipient(DEFAULT_RECIPIENTS, "Galadrim")).toBeNull();
+  expect(findRecipient(DEFAULT_RECIPIENTS, null)).toBeNull();
+  expect(resolveRecipient(DEFAULT_RECIPIENTS, "Galadrim")).toBe(ME_RECIPIENT);
 });

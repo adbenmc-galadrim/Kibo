@@ -3,15 +3,19 @@ import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { mcpToolName } from "@kibo/schema";
 import {
+  appendContext,
   appendToolUse,
   appendWrite,
+  contextOf,
   decisionOf,
   denialReason,
   isDemoAgent,
   resolveStepInput,
+  runDeleteStep,
   runWriteStep,
+  type WriteLog,
 } from "./fake-claude-ai";
-import { bindProfiles, callMcpTool, type McpCallLog, mcpServerFrom } from "./fake-claude-mcp";
+import { bindPlaceholders, callMcpTool, type McpCallLog, mcpServerFrom } from "./fake-claude-mcp";
 import type { FakeStep } from "./fake-claude-scenario";
 import {
   asInput,
@@ -62,12 +66,20 @@ export function createPlayer(ctx: PlayContext): Player {
     const runs = await ctx.runHooks(event, id === null ? extra : { ...extra, tool_use_id: id });
     const refused = event === "PreToolUse" && deniedBy(runs);
     if (refused && tool) trail.denied(tool, denialReason(runs.map((r) => r.stdout)));
+    if (event === "PreToolUse") journalContexts(tool, runs);
     return { runs, refused };
   };
 
+  function journalContexts(tool: string, runs: HookRun[]): void {
+    for (const run of runs) {
+      const additionalContext = run.code === 0 ? contextOf(run.stdout) : null;
+      if (additionalContext) appendContext(stateDir, sessionId, { at: Date.now(), tool, additionalContext });
+    }
+  }
+
   async function mcp(step: { mcp: string; input: Record<string, unknown> }): Promise<void> {
     const server = mcpServerFrom(ctx.argv);
-    const call = { tool_name: mcpToolName(step.mcp), tool_input: bindProfiles(step.input, ctx.mcpCalls) };
+    const call = { tool_name: mcpToolName(step.mcp), tool_input: bindPlaceholders(step.input, ctx.mcpCalls) };
     const { refused } = await toolHooks("PreToolUse", call, () => mcpOutcome("", false));
     logUse(call.tool_name, call.tool_input, refused);
     if (refused) {
@@ -92,17 +104,27 @@ export function createPlayer(ctx: PlayContext): Player {
     if (step.hook === "PreToolUse" && step.tool) logUse(step.tool, resolved ?? {}, refused);
   }
 
+  const fileStep = (outcome: (extra: Record<string, unknown>) => ToolOutcome) => ({
+    cwd: process.cwd(),
+    allowBypass: !isDemoAgent(import.meta.dir, process.env),
+    hook: async (event: "PreToolUse" | "PostToolUse", extra: Record<string, unknown>) => {
+      const { runs, refused } = await toolHooks(event, extra, () => outcome(extra));
+      return refused ? (denialReason(runs.map((r) => r.stdout)) ?? "denied") : null;
+    },
+    log: (logged: WriteLog) => appendWrite(stateDir, sessionId, logged),
+  });
+
   async function write(step: Extract<FakeStep, { write: string }>): Promise<void> {
-    const entry = await runWriteStep(step, {
-      cwd: process.cwd(),
-      allowBypass: !isDemoAgent(import.meta.dir, process.env),
-      hook: async (event, extra) => {
-        const { runs, refused } = await toolHooks(event, extra, () => writeOutcome(extra));
-        return refused ? (denialReason(runs.map((r) => r.stdout)) ?? "denied") : null;
-      },
-      log: (logged) => appendWrite(stateDir, sessionId, logged),
-    });
+    const entry = await runWriteStep(step, fileStep(writeOutcome));
     if ("denied" in entry) ctx.denials.push("Write");
+  }
+
+  async function remove(step: Extract<FakeStep, { delete: string }>): Promise<void> {
+    const entry = await runDeleteStep(
+      step,
+      fileStep((extra) => hookOutcome(extra, asInput(extra.tool_input))),
+    );
+    if ("denied" in entry) ctx.denials.push("Bash");
   }
 
   async function skill(step: SkillStep): Promise<void> {
@@ -162,6 +184,7 @@ export function createPlayer(ctx: PlayContext): Player {
     if ("mcp" in step) return mcp(step);
     if ("hook" in step) return hook(step);
     if ("write" in step) return write(step);
+    if ("delete" in step) return remove(step);
     if ("skill" in step) return skill(step);
     if ("subagent" in step) return subagent(step);
     if ("sleepMs" in step) return Bun.sleep(step.sleepMs);

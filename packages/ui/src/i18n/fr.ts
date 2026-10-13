@@ -2,7 +2,7 @@ import type { KiboErrorCode } from "@kibo/schema";
 import { frAi } from "./fr-ai";
 import { frCode } from "./fr-code";
 import { frComponents } from "./fr-components";
-import { frIntegrations } from "./fr-integrations";
+import { frIntegrationRows } from "./fr-integration-rows";
 
 const questionCount = (n: number) => `${n} question${n > 1 ? "s" : ""}`;
 
@@ -226,6 +226,7 @@ export const fr = {
     daemon: "Kibo · connecté",
     daemonOffline: "Kibo · hors ligne",
     expand: "Déplier les agents",
+    overlapCount: (n: number) => `${n} recouvrement${n > 1 ? "s" : ""}`,
     moreRuns: (n: number) => `${n} autre${n > 1 ? "s" : ""} run${n > 1 ? "s" : ""} en cours`,
     collapse: "Replier les agents",
     launch: "Lancer un agent",
@@ -248,32 +249,11 @@ export const fr = {
       denied: (tools: string) => `actions refusées : ${tools}`,
       exitCode: (code: number) => `code de sortie ${code}`,
     },
-    states: {
-      queued: "En file",
-      starting: "Démarrage",
-      running: "En cours",
-      waiting_input: "Attend une réponse",
-      done: "Terminé",
-      failed: "Échec",
-      cancelled: "Annulé",
-      doneWithQuestions: (n: number) => `Terminé · ${questionCount(n)}`,
-    },
     questionCount,
     position: (n: number) => `En file #${n}`,
     resumeHint: "réponse reçue · reprise de la session",
     messageHint: "message reçu · reprise de la session",
     failedWith: (error: string) => `Échec : ${error}`,
-    reasons: {
-      paused: "admission en pause",
-      cpu: (value: number, threshold: number) => `CPU ${value} % (seuil ${threshold} %)`,
-      ram: (value: number, threshold: number) => `RAM ${value} % (seuil ${threshold} %)`,
-      host: (used: number, total: number) => `attend une place sur la machine (${used}/${total})`,
-      agent: (name: string, used: number, total: number) =>
-        `attend une place de l'agent ${name} (${used}/${total})`,
-      agentMissing: "agent supprimé",
-      ticketBusy: "un run de ce ticket est déjà en cours ou en file",
-      next: "admission au prochain passage",
-    },
     modelNames: { opus: "Claude Opus 5.5", sonnet: "Claude Sonnet 5", haiku: "Claude Haiku 4.5" },
     workspace: {
       worktree: (branch: string) => `worktree ${branch}`,
@@ -291,17 +271,10 @@ export const fr = {
       NOT_FOUND: "ticket ou agent introuvable",
     },
   },
-  models: { opus: "Claude Opus", sonnet: "Claude Sonnet", haiku: "Claude Haiku" },
-  modelsShort: { opus: "Opus", sonnet: "Sonnet", haiku: "Haiku" },
   strategies: {
     worktree: "Worktree par ticket",
     isolated: "Dossier isolé",
     repo: "Dossier du projet",
-  },
-  strategiesShort: {
-    worktree: "worktree par ticket",
-    isolated: "dossier isolé",
-    repo: "dossier du projet",
   },
   settings: {
     title: "Paramètres",
@@ -315,54 +288,6 @@ export const fr = {
     shortcuts: "Raccourcis",
     generalSubtitle: "Mises à jour et outils en ligne de commande.",
   },
-  domains: {
-    title: "Domaines & guidelines",
-    subtitle:
-      "Les guidelines sont des .md injectés aux agents, dans l'ordre workspace → projet → domaine du ticket → spec de l'agent.",
-    levels: "Niveaux",
-    workspace: "Workspace",
-    project: (name: string) => `Projet · ${name}`,
-    pickProject: "Projet",
-    domains: "Domaines",
-    newDomain: "Nouveau domaine",
-    domainName: "Nom du domaine",
-    create: "Créer",
-    count: (n: number) => `${n} .md`,
-    domainTitle: (name: string) => `Domaine · ${name}`,
-    usedBy: (n: number) => `utilisé par ${n} ticket${n > 1 ? "s" : ""}`,
-    edit: "Éditer",
-    preview: "Aperçu",
-    addFile: "Ajouter un fichier",
-    filePath: "Chemin du fichier",
-    filePlaceholder: "guidelines/core.md",
-    add: "Ajouter",
-    content: (path: string) => `Contenu de ${path}`,
-    save: "Enregistrer",
-    removeFile: "Supprimer le fichier",
-    deleteDomain: (name: string) => `Supprimer le domaine ${name}`,
-    noFile: "Aucun fichier à ce niveau.",
-    injection: "Injection :",
-    chainWorkspace: "Workspace",
-    chainProject: (name: string) => `Projet ${name}`,
-    chainDomain: (name: string) => `Domaine ${name}`,
-    tokens: (n: string) => `≈ ${n} tokens injectés`,
-    failed: "Impossible d'enregistrer.",
-    invalidPath: "Chemin invalide : minuscules, chiffres et tirets, terminé par .md.",
-    inUse: "Ce domaine est utilisé par des tickets.",
-    rename: (name: string) => `Renommer le domaine ${name}`,
-    renameField: "Nouveau nom",
-    renameHint: "Entrée pour enregistrer · Échap pour annuler",
-    duplicate: "Un domaine porte déjà ce nom.",
-    pickColor: (name: string) => `Couleur du domaine ${name}`,
-    colorOption: (color: string) => `Couleur ${color}`,
-    deleteTitle: (name: string) => `Supprimer le domaine ${name} ?`,
-    deleteHelp: (files: number) =>
-      files === 0
-        ? "Aucun fichier de guidelines n'est concerné. Cette action est irréversible."
-        : `Ses ${files} fichier${files > 1 ? "s" : ""} de guidelines seront supprimés. Cette action est irréversible.`,
-    removeFileTitle: (path: string) => `Supprimer ${path} ?`,
-    removeFileHelp: "Le fichier de guidelines disparaît du workspace. Cette action est irréversible.",
-  },
   notify: {
     enable: "Activer les notifications",
     waiting: (label: string) => `${label} attend une réponse`,
@@ -370,7 +295,7 @@ export const fr = {
     failed: (label: string) => `${label} a échoué`,
     batch: "Lot à valider",
   },
-  integrations: frIntegrations,
+  integrations: { rows: frIntegrationRows },
   security: {
     remoteFrame:
       "Composant sandboxé indisponible à distance : ouvre Kibo sur l'appareil qui l'héberge (127.0.0.1).",

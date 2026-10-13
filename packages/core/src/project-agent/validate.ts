@@ -13,6 +13,8 @@ import {
 import { type BatchContext, captureExpected, ticketByKey, ticketRuns } from "./expected";
 import { assignableAgents } from "./overview";
 import { isNewRef, signalRefsOf, ticketRefsOf } from "./refs";
+import { answerQuestionCheck, questionChecks } from "./validate-questions";
+import { type Check, type Edge, nodeOf, openScan, type Scan, touch } from "./validate-scan";
 
 export type { BatchContext } from "./expected";
 export { captureExpected } from "./expected";
@@ -21,34 +23,6 @@ export { assignableAgents, assignableEntry } from "./overview";
 export type ActionProblem = { actionId: number; type: ActionType; message: string };
 export type ValidBatch = { actions: ProposedAction[]; expected: ExpectedState[] };
 export type BatchValidation = { ok: true; batch: ValidBatch } | { ok: false; problems: ActionProblem[] };
-
-type Edge = { from: string; to: string };
-type Scan = {
-  ctx: BatchContext;
-  declared: Map<string, number>;
-  touched: Set<string>;
-  blocks: Edge[];
-  removed: Set<string>;
-  parents: Map<string, string | null>;
-};
-
-function openScan(input: ProposeBatchInput, ctx: BatchContext): Scan {
-  const declared = new Map<string, number>();
-  input.actions.forEach((a, i) => {
-    if (a.type === "createTicket" && !declared.has(a.ref)) declared.set(a.ref, i);
-  });
-  return {
-    ctx,
-    declared,
-    touched: new Set(),
-    blocks: ctx.project.links.filter((l) => l.type === "blocks").map((l) => ({ from: l.from, to: l.to })),
-    removed: new Set(),
-    parents: new Map(ctx.project.tickets.map((t) => [t.id, t.parentId])),
-  };
-}
-
-const nodeOf = (scan: Scan, ref: string): string =>
-  isNewRef(ref) ? ref : (ticketByKey(scan.ctx.project)(ref)?.id ?? ref);
 
 function refProblem(scan: Scan, ref: string, index: number): string | null {
   if (!isNewRef(ref)) return ticketByKey(scan.ctx.project)(ref) ? null : `ticket inconnu « ${ref} »`;
@@ -60,12 +34,6 @@ function refProblem(scan: Scan, ref: string, index: number): string | null {
 function signalProblem(scan: Scan, ref: string): string | null {
   if (scan.ctx.signals.includes(ref)) return null;
   return scan.ctx.closedSignals.includes(ref) ? `signal déjà clos « ${ref} »` : `signal inconnu « ${ref} »`;
-}
-
-function touch(scan: Scan, target: string): string[] {
-  if (scan.touched.has(target)) return [`deux actions sur ${target}`];
-  scan.touched.add(target);
-  return [];
 }
 
 function statusProblems(scan: Scan, statusId: string | undefined, reason: string | undefined): string[] {
@@ -119,12 +87,6 @@ function existingLink(scan: Scan, kind: "blocks" | "relates", from: string, to: 
       ((l.from === from && l.to === to) || (kind === "relates" && l.from === to && l.to === from)),
   );
 }
-
-type Check<T extends ActionType> = (
-  scan: Scan,
-  action: Extract<ProposedAction, { type: T }>,
-  index: number,
-) => string[];
 
 const checks: { [T in ActionType]: Check<T> } = {
   createTicket(scan, a, i) {
@@ -191,18 +153,12 @@ const checks: { [T in ActionType]: Check<T> } = {
     return isTerminal(target.state) ? [`run déjà terminé « ${a.runId} »`] : touch(scan, `${a.runId}.run`);
   },
   answerQuestion(scan, a) {
-    const q = scan.ctx.project.questions.find((x) => x.id === a.questionId);
-    if (!q) return [`question inconnue « ${a.questionId} »`];
-    if (q.answer !== null) return [`question déjà répondue « ${a.questionId} »`];
-    const problem = answerProblem(q, a.answer);
-    return problem ? [`réponse invalide : ${problem}`] : touch(scan, `${a.questionId}.answer`);
+    const problem = answerQuestionCheck(scan, a.questionId);
+    if (typeof problem === "string") return [problem];
+    const invalid = answerProblem(problem, a.answer);
+    return invalid ? [`réponse invalide : ${invalid}`] : touch(scan, `${a.questionId}.answer`);
   },
-  createQuestion(_scan, a) {
-    const options = a.options ?? [];
-    if (new Set(options).size !== options.length) return ["options en double"];
-    const outside = a.provisional !== undefined && options.length > 0 && !options.includes(a.provisional);
-    return outside ? ["choix provisoire hors des options"] : [];
-  },
+  ...questionChecks,
   createNote(scan, a) {
     if (scan.ctx.notes.some((n) => n.path === a.path)) return [`note déjà existante « ${a.path} »`];
     return touch(scan, `${a.path}.content`);

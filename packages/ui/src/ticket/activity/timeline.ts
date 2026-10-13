@@ -85,6 +85,7 @@ export function questionExtras(items: readonly TimelineItem[]): FeedExtra[] {
       at: q.createdAt,
       kind: q.createdBy.kind === "agent" ? "question" : "system",
       text: q.title,
+      questionId: q.id,
     };
     if (!q.answer) return [asked];
     return [asked, { key: `a-${q.id}`, at: q.answer.at, kind: "human", text: answerText(q.answer) }];

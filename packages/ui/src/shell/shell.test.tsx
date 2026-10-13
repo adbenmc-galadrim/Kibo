@@ -29,6 +29,7 @@ const project: ProjectSnapshot = {
     color: "#14B8A6",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [
@@ -85,6 +86,7 @@ const repo: ProjectSnapshot = {
     color: "#8B5CF6",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   pages: [],
   tickets: [],
@@ -114,6 +116,7 @@ const inbox: ProjectSnapshot = {
     color: "#64748B",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   pages: [],
   tickets: [
@@ -143,6 +146,7 @@ const unconfigured: SyncStatus = {
 let syncStatus: SyncStatus = unconfigured;
 const saved: RpcRequest[] = [];
 const code: CodeRequest[] = [];
+let statusPending = false;
 const codeListeners = new Set<(e: CodeEvent) => void>();
 const counts = { backlog: 0, todo: 1, in_progress: 0, in_review: 0, blocked: 0, done: 0 };
 const status = {
@@ -221,7 +225,7 @@ mock.module("../api", () =>
         code.push(req);
         if (req.method === "worktrees")
           return Promise.resolve([{ path: "/repo", branch: "kib-12", head: null, isMain: true }]);
-        if (req.method === "status") return Promise.resolve(status);
+        if (req.method === "status") return statusPending ? new Promise(() => {}) : Promise.resolve(status);
         if (req.method in changesResponses) return Promise.resolve(changesResponses[req.method]);
         if (req.method === "readFile")
           return Promise.resolve({
@@ -269,6 +273,7 @@ beforeEach(() => {
   localStorage.removeItem("kibo.projectAgent.open");
   saved.length = 0;
   code.length = 0;
+  statusPending = false;
   location.hash = "";
 });
 
@@ -428,6 +433,26 @@ test("a git project lists Changements with its count, its tab shows the branch a
   await waitFor(() => expect(crumbs().getByText("kib-12").getAttribute("aria-current")).toBe("page"));
   expect(crumbs().getByText("Changements")).toBeTruthy();
   expect(screen.getByRole("img", { name: "Changements non commités" })).toBeTruthy();
+});
+
+test("a git project lists Changements before its status answers", async () => {
+  statusPending = true;
+  renderShell();
+  await go("#/p/p2/");
+  expect(await screen.findByRole("button", { name: "Changements" })).toBeTruthy();
+});
+
+test("coming back from the agents screen keeps Changements without reloading git", async () => {
+  const gitReads = () => code.filter((r) => r.method === "worktrees" || r.method === "status").length;
+  renderShell();
+  await go("#/p/p2/");
+  await screen.findByRole("button", { name: "Changements · 2 fichiers modifiés" });
+  await go("#/agents");
+  await screen.findByRole("tab", { name: "Agents · aperçu" });
+  const before = gitReads();
+  await go("#/p/p2/");
+  expect(screen.getByRole("button", { name: "Changements · 2 fichiers modifiés" })).toBeTruthy();
+  expect(gitReads()).toBe(before);
 });
 
 test("an agent screen keeps its URL and opens in a tab like any target", async () => {
@@ -596,6 +621,44 @@ test("openView can target another project than the current one, by its snapshot"
   expect(opened).toEqual([{ kind: "page", projectId: "p2", pageId: "1@1" }]);
   await user.click(screen.getByRole("button", { name: "questions p2" }));
   expect(await screen.findByRole("dialog", { name: "Créer une page Questions ?" })).toBeTruthy();
+});
+
+test("openView aims the view page at one question, even through the page it creates", async () => {
+  const { useOpenView } = await import("./use-open-view");
+  const opened: TabTarget[] = [];
+  const questions = {
+    id: "k3",
+    pageId: "1@1",
+    component: "questions@1.0.0",
+    layout: { x: 0, y: 0, w: 12, h: 8 },
+    config: {},
+    componentHash: null,
+  };
+  let current: ProjectSnapshot = { ...project, instances: [questions] };
+  function Harness() {
+    const { openView, dialog } = useOpenView(
+      () => current,
+      (t) => opened.push(t),
+    );
+    return (
+      <>
+        <button type="button" onClick={() => openView("questions", undefined, "q1")}>
+          open
+        </button>
+        {dialog}
+      </>
+    );
+  }
+  render(<Harness />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "open" }));
+  expect(opened).toEqual([{ kind: "page", projectId: "p1", pageId: "1@1", question: "q1" }]);
+  current = project;
+  await user.click(screen.getByRole("button", { name: "open" }));
+  await user.click(await screen.findByRole("button", { name: "Créer la page" }));
+  await waitFor(() =>
+    expect(opened.at(-1)).toEqual({ kind: "page", projectId: "p1", pageId: "9@1", question: "q1" }),
+  );
 });
 
 test("a read-only project hides page and ticket creation and shows the banner", async () => {

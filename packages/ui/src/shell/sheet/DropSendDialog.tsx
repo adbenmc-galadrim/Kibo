@@ -12,8 +12,9 @@ import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { Label } from "@kibo/sdk/ui/label";
 import { useId, useState } from "react";
 import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 
-const t = fr.integrations.sheet;
+const t = frIntegrations.sheet;
 
 type Props = {
   open: boolean;

@@ -6,7 +6,7 @@ import { Label } from "@kibo/sdk/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { useEffect, useId, useState } from "react";
 import { client } from "../../api";
-import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import { failureOf, syncErrorText } from "../../lib/sync-error-text";
 import { type LinkedRepos, repoKey } from "./linked-repos";
 import { RepoList } from "./RepoList";
@@ -20,7 +20,7 @@ type Props = {
   onError(message: string): void;
 };
 type Option = { id: string; name: string };
-const t = fr.integrations.source;
+const t = frIntegrations.source;
 const NONE = "__none";
 
 function StatusRow({

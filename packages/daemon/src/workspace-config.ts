@@ -1,19 +1,24 @@
-import { listTickets } from "@kibo/core";
+import { listProjectDomainGuidelines, listProjectDomains, listTickets } from "@kibo/core";
 import {
-  configTarget,
   executeConfigCommand,
   listDomains,
   listGuidelines,
   workspaceDescription,
   workspaceName,
 } from "@kibo/core/agent-config";
-import { type ConfigCommand, iconOwnerKey, KiboError, type WorkspaceConfig } from "@kibo/schema";
+import {
+  type ConfigCommand,
+  configTarget,
+  iconOwnerKey,
+  KiboError,
+  type WorkspaceConfig,
+} from "@kibo/schema";
 import type { Docs } from "./docs";
 import type { IconStore } from "./icons/icon-store";
 
-export function domainUsage(docs: Docs): Record<string, number> {
+function countDomains(docs: Docs, projectIds: string[]): Record<string, number> {
   const usage: Record<string, number> = {};
-  for (const id of docs.projectIds()) {
+  for (const id of projectIds) {
     for (const t of listTickets(docs.project(id))) {
       if (t.domainId) usage[t.domainId] = (usage[t.domainId] ?? 0) + 1;
     }
@@ -21,12 +26,17 @@ export function domainUsage(docs: Docs): Record<string, number> {
   return usage;
 }
 
+export function domainUsage(docs: Docs): Record<string, number> {
+  return countDomains(docs, docs.projectIds());
+}
+
 export function readConfig(docs: Docs, icons: Pick<IconStore, "version">): WorkspaceConfig {
+  const projects = docs.projectIds().map((id) => docs.project(id));
   return {
-    domains: listDomains(docs.workspace),
+    domains: [...listDomains(docs.workspace), ...projects.flatMap((doc) => listProjectDomains(doc))],
     guidelines: [
       ...listGuidelines(docs.workspace),
-      ...docs.projectIds().flatMap((id) => listGuidelines(docs.project(id))),
+      ...projects.flatMap((doc) => [...listGuidelines(doc), ...listProjectDomainGuidelines(doc)]),
     ],
     domainUsage: domainUsage(docs),
     workspaceName: workspaceName(docs.workspace),
@@ -35,13 +45,16 @@ export function readConfig(docs: Docs, icons: Pick<IconStore, "version">): Works
   };
 }
 
+function assertUnused(docs: Docs, domainId: string, projectId: string | null): void {
+  const scope = projectId === null ? docs.projectIds() : [projectId];
+  const used = countDomains(docs, scope)[domainId] ?? 0;
+  if (used > 0) throw new KiboError("INVALID_INPUT", `domain ${domainId} is used by ${used} tickets`);
+}
+
 export function runConfigCommand(docs: Docs, cmd: ConfigCommand): unknown {
-  if (cmd.method === "deleteDomain") {
-    const used = domainUsage(docs)[cmd.domainId] ?? 0;
-    if (used > 0) throw new KiboError("INVALID_INPUT", `domain ${cmd.domainId} is used by ${used} tickets`);
-  }
   const target = configTarget(cmd);
   if (target !== null) docs.assertWritable(target);
+  if (cmd.method === "deleteDomain") assertUnused(docs, cmd.domainId, target);
   const result = executeConfigCommand(target ? docs.project(target) : docs.workspace, cmd);
   docs.save(target);
   docs.emit({ topic: "config" });

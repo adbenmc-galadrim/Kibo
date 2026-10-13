@@ -1,6 +1,7 @@
 import { type Actor, awaitsDelivery, type Question, type TicketRun } from "@kibo/schema";
 import { AgentBadge, AgentMention, type MentionTexts, useAgentMention } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
+import { Lock } from "lucide-react";
 import { fr } from "./fr";
 import { AGENT_ACCENT } from "./QuestionAnswerForm";
 import { relativeAge } from "./questions-logic";
@@ -65,7 +66,12 @@ export function QuestionAnswerLine({ question, now, runLabel }: AnswerProps) {
             {fr.toDeliver}
           </Badge>
         )}
-        {a.deliveredRunId !== null && <span>{fr.deliveredTo(runLabel(a.deliveredRunId))}</span>}
+        {a.deliveredRunId !== null && (
+          <span className="inline-flex items-center gap-1">
+            <Lock aria-hidden className="size-3" />
+            {fr.frozenFor(runLabel(a.deliveredRunId))}
+          </span>
+        )}
       </p>
     </div>
   );

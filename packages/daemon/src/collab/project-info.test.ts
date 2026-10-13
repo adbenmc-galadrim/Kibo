@@ -12,6 +12,7 @@ const doc = () =>
     color: "#14B8A6",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
 const row: SyncProjectRow = {
   projectId: "p1",

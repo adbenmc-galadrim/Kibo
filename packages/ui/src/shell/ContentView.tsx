@@ -66,7 +66,15 @@ export function ContentView(p: Props) {
     case "page": {
       const page = p.project.pages.find((x) => x.id === t.pageId);
       if (!page) return missing(fr.tabs.missingPage);
-      return <PageView key={page.id} project={p.project} page={page} viewer={p.project.viewer ?? p.viewer} />;
+      return (
+        <PageView
+          key={page.id}
+          project={p.project}
+          page={page}
+          viewer={p.project.viewer ?? p.viewer}
+          question={t.question ?? null}
+        />
+      );
     }
     case "changes":
       return (

@@ -154,13 +154,14 @@ export function createGitRepo(): string {
 
 const config = (page: Page, command: Body) => rpc(page, { method: "config", command });
 
-async function seedConfig(page: Page): Promise<Map<string, string>> {
+async function seedConfig(page: Page, projectId: string): Promise<Map<string, string>> {
   const domains = new Map<string, string>();
+  const owner = { scope: "project", projectId };
   for (const [name, color] of DOMAINS) {
-    const created = await config(page, { method: "createDomain", domain: { name, color } });
+    const created = await config(page, { method: "createDomain", domain: { name, color }, owner });
     domains.set(name, text(created, "id"));
   }
-  const core = { scope: "domain", domainId: domains.get("Core") };
+  const core = { scope: "domain", domainId: domains.get("Core"), projectId };
   for (const [path, content] of CORE_GUIDELINES) {
     await config(page, { method: "addGuideline", owner: core, path, content });
   }
@@ -239,7 +240,6 @@ export type Seeded = {
 
 export async function seedWorkspace(page: Page, folder: string): Promise<Seeded> {
   const user = text(await rpc(page, { method: "getSession" }), "user");
-  const domains = await seedConfig(page);
   await createAgents(page);
   const created = await rpc(page, {
     method: "createProject",
@@ -249,6 +249,7 @@ export async function seedWorkspace(page: Page, folder: string): Promise<Seeded>
     color: "#F97316",
   });
   const projectId = text(created, "id");
+  const domains = await seedConfig(page, projectId);
   for (const [name, key, color] of [
     ["Portfolio", "POR", "#A855F7"],
     ["API Facturation", "FAC", "#22C55E"],

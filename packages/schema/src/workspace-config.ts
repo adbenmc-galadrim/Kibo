@@ -16,7 +16,16 @@ export const DomainInput = z.object({
 });
 export type DomainInput = z.infer<typeof DomainInput>;
 
-export const Domain = DomainInput.extend({ id: z.string().min(1) });
+export const DomainOwner = z.discriminatedUnion("scope", [
+  z.object({ scope: z.literal("workspace") }),
+  z.object({ scope: z.literal("project"), projectId: z.string().min(1) }),
+]);
+export type DomainOwner = z.infer<typeof DomainOwner>;
+
+export const Domain = DomainInput.extend({
+  id: z.string().min(1),
+  owner: DomainOwner.default({ scope: "workspace" }),
+});
 export type Domain = z.infer<typeof Domain>;
 
 export const GuidelinePath = z
@@ -27,7 +36,11 @@ export const GuidelinePath = z
 export const GuidelineOwner = z.discriminatedUnion("scope", [
   z.object({ scope: z.literal("workspace") }),
   z.object({ scope: z.literal("project"), projectId: z.string().min(1) }),
-  z.object({ scope: z.literal("domain"), domainId: z.string().min(1) }),
+  z.object({
+    scope: z.literal("domain"),
+    domainId: z.string().min(1),
+    projectId: z.string().min(1).nullable().default(null),
+  }),
 ]);
 export type GuidelineOwner = z.infer<typeof GuidelineOwner>;
 export type GuidelineScope = GuidelineOwner["scope"];
@@ -53,9 +66,14 @@ export const WorkspacePatch = z
 export type WorkspacePatch = z.infer<typeof WorkspacePatch>;
 
 export const ConfigCommand = z.discriminatedUnion("method", [
-  z.object({ method: z.literal("createDomain"), domain: DomainInput }),
-  z.object({ method: z.literal("updateDomain"), domainId: Id, patch: DomainInput.partial() }),
-  z.object({ method: z.literal("deleteDomain"), domainId: Id }),
+  z.object({ method: z.literal("createDomain"), domain: DomainInput, owner: DomainOwner.optional() }),
+  z.object({
+    method: z.literal("updateDomain"),
+    domainId: Id,
+    patch: DomainInput.partial(),
+    owner: DomainOwner.optional(),
+  }),
+  z.object({ method: z.literal("deleteDomain"), domainId: Id, owner: DomainOwner.optional() }),
   z.object({
     method: z.literal("addGuideline"),
     owner: GuidelineOwner,
@@ -73,6 +91,16 @@ export const ConfigCommand = z.discriminatedUnion("method", [
   z.object({ method: z.literal("updateWorkspace"), patch: WorkspacePatch }),
 ]);
 export type ConfigCommand = z.infer<typeof ConfigCommand>;
+
+function ownerProject(owner: DomainOwner | GuidelineOwner | undefined): string | null {
+  if (owner?.scope === "project") return owner.projectId;
+  if (owner?.scope === "domain") return owner.projectId;
+  return null;
+}
+
+export function configTarget(cmd: ConfigCommand): string | null {
+  return cmd.method === "updateWorkspace" ? null : ownerProject(cmd.owner);
+}
 
 export type ConfigResult = {
   createDomain: Domain;

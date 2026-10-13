@@ -1,0 +1,47 @@
+{
+  "turns": [
+    {
+      "steps": [
+        { "mcp": "list_questions", "input": { "state": "all" } },
+        {
+          "mcp": "propose_batch",
+          "input": {
+            "summary": "Renommer la question transmise",
+            "actions": [
+              {
+                "id": 1,
+                "why": "Le préfixe est inutile.",
+                "type": "updateQuestion",
+                "questionId": "{{question:Client - Logo ?}}",
+                "title": "Logo ?"
+              }
+            ]
+          }
+        },
+        {
+          "mcp": "propose_batch",
+          "input": {
+            "summary": "Renommer la question transmise",
+            "actions": [
+              {
+                "id": 1,
+                "why": "La réponse transmise doit être retirée d'abord.",
+                "type": "reopenQuestion",
+                "questionId": "{{question:Client - Logo ?}}"
+              },
+              {
+                "id": 2,
+                "why": "Le préfixe est inutile.",
+                "type": "updateQuestion",
+                "questionId": "{{question:Client - Logo ?}}",
+                "title": "Logo ?"
+              }
+            ]
+          }
+        }
+      ],
+      "result": "Lot de questions corrigé.",
+      "tokens": 700
+    }
+  ]
+}

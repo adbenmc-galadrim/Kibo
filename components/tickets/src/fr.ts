@@ -31,6 +31,7 @@ export const fr = {
   newSubTicket: (key: string) => `Nouveau sous-ticket de ${key}`,
   waitingOn: (keys: string[]) => `attend ${keys.join(", ")}`,
   questions: (n: number) => `${n} question${n > 1 ? "s" : ""}`,
+  questionsOpen: (n: number) => `${n} question${n > 1 ? "s" : ""}, ouvrir`,
   actions: (key: string) => `Actions ${key}`,
   open: "Ouvrir",
   status: "Statut",

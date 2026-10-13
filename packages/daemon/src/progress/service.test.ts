@@ -13,7 +13,10 @@ const PLAN: Step[] = [
 ];
 const REPORT = { done: "Validation corrigée", toCheck: ["Le message d'erreur"], files: ["src/form.ts"] };
 
-function kit(gitReplies: Record<string, { code: number; stdout: string }> = {}) {
+function kit(
+  gitReplies: Record<string, { code: number; stdout: string }> = {},
+  earlier: (ticketId: string) => RunView[] = () => [],
+) {
   const doc = createProjectDoc({
     id: "p1",
     key: "KIB",
@@ -22,6 +25,7 @@ function kit(gitReplies: Record<string, { code: number; stdout: string }> = {}) 
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
   const ticket = Ticket.parse(executeProjectCommand(doc, { method: "createTicket", title: "Formulaire" }));
   const commands: { projectId: string; cmd: ProjectCommand; meta: CommandMeta }[] = [];
@@ -52,6 +56,7 @@ function kit(gitReplies: Record<string, { code: number; stdout: string }> = {}) 
     },
     git,
     trace,
+    runs: () => earlier(ticket.id),
     now: () => 1_000,
     changed: () => changes.push(commands.length),
   });
@@ -108,6 +113,40 @@ test("the base of the run is the HEAD of its workspace at the first spawn, null 
   expect(outside.traces.get("r1")?.baseHead).toBeNull();
   await outside.service.onSpawned({ ...outside.run, id: "r9", cwd: null });
   expect(outside.traces.get("r9")?.baseHead).toBeNull();
+});
+
+test("a resumed run keeps the base of the first traced run of its ticket in the same workspace", async () => {
+  const earlier = (ticketId: string) => [
+    runView({ id: "r0", ticketId, cwd: "/repo", createdAt: 10 }),
+    runView({ id: "r-other", ticketId: "elsewhere", cwd: "/repo", createdAt: 5 }),
+    runView({ id: "r-moved", ticketId, cwd: "/other", createdAt: 1 }),
+    runView({ id: "r-untraced", ticketId, cwd: "/repo", createdAt: 2 }),
+  ];
+  const k = kit({ "rev-parse": { code: 0, stdout: "712eb25\n" } }, earlier);
+  k.traces.set("r0", { doing: null, baseHead: "b96c219" });
+  k.traces.set("r-other", { doing: null, baseHead: "other" });
+  k.traces.set("r-moved", { doing: null, baseHead: "moved" });
+  await k.service.onSpawned({ ...k.run, workspace: "worktree:kib-1", createdAt: 20 });
+  expect(k.traces.get("r1")?.baseHead).toBe("b96c219");
+  expect(k.gitCalls).toEqual([]);
+});
+
+test("a run in the project folder takes HEAD even after a traced run of its ticket", async () => {
+  const earlier = (ticketId: string) => [runView({ id: "r0", ticketId, cwd: "/repo", createdAt: 10 })];
+  const k = kit({ "rev-parse": { code: 0, stdout: "head9\n" } }, earlier);
+  k.traces.set("r0", { doing: null, baseHead: "old" });
+  await k.service.onSpawned({ ...k.run, workspace: "repo", createdAt: 20 });
+  expect(k.traces.get("r1")?.baseHead).toBe("head9");
+});
+
+test("a worktree run without traced predecessor takes the merge-base with its base branch", async () => {
+  const k = kit({ "merge-base": { code: 0, stdout: "fork42\n" }, "rev-parse": { code: 0, stdout: "head9" } });
+  await k.service.onSpawned({ ...k.run, workspace: "worktree:kib-1" });
+  expect(k.traces.get("r1")?.baseHead).toBe("fork42");
+  expect(k.gitCalls).toEqual([["merge-base", "HEAD", "main"]]);
+  const lost = kit({ "rev-parse": { code: 0, stdout: "head9" } });
+  await lost.service.onSpawned({ ...lost.run, workspace: "worktree:kib-1" });
+  expect(lost.traces.get("r1")?.baseHead).toBe("head9");
 });
 
 test("the end of a turn checks the reported files against the workspace", async () => {

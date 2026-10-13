@@ -16,16 +16,17 @@ import { KeyRound, Loader2, Terminal } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import type { IntegrationDialogProps } from "../../settings/integration-dialogs";
 import { ChoicePanel } from "./ChoicePanel";
 import { FormError } from "./FormError";
 
-const t = fr.integrations.github;
+const t = frIntegrations.github;
 
 function connectError(e: unknown): string {
   if (!(e instanceof KiboError)) return String(e);
   if (e.code === "REMOTE_REJECTED") return t.refused;
-  if (e.code === "SECRET_STORE_UNAVAILABLE") return fr.integrations.keychainUnavailable;
+  if (e.code === "SECRET_STORE_UNAVAILABLE") return frIntegrations.keychainUnavailable;
   return e.detail;
 }
 

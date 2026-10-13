@@ -20,10 +20,13 @@ const input: ShareMigrationInput = {
   userId: "u-adam",
   domains: [
     {
-      domain: { id: "core", name: "Core", color: "#0EA5E9" },
+      domain: { id: "core", name: "Core", color: "#0EA5E9", owner: { scope: "workspace" } },
       guidelines: [{ path: "core.md", content: "# Core\nTests d'abord." }],
     },
-    { domain: { id: "design", name: "Design", color: "#A855F7" }, guidelines: [] },
+    {
+      domain: { id: "design", name: "Design", color: "#A855F7", owner: { scope: "workspace" } },
+      guidelines: [],
+    },
   ],
 };
 
@@ -44,6 +47,7 @@ function localProject() {
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
   const mine = createTicket(doc, {
     title: "Mien",
@@ -84,6 +88,15 @@ test("copies only the domains used by a ticket, with their guidelines", () => {
   });
 });
 
+test("a domain already in the project is not copied again", () => {
+  const { doc } = localProject();
+  const mine = { name: "Core du projet", color: "#14B8A6", guidelines: [{ path: "p.md", content: "P" }] };
+  doc.getMap("projectDomains").set("core", mine);
+  doc.commit();
+  migrateForSharing(doc, input);
+  expect(doc.getMap("projectDomains").toJSON()).toEqual({ core: mine });
+});
+
 test("moves the local user's bindings to the account id", () => {
   const { doc } = localProject();
   migrateForSharing(doc, input);
@@ -106,11 +119,13 @@ test("reads the domains copied into the project, with their guidelines", () => {
   migrateForSharing(doc, input);
   doc.getMap("projectDomains").set("broken", { name: 42 });
   doc.commit();
-  expect(listProjectDomains(doc)).toEqual([{ id: "core", name: "Core", color: "#0EA5E9" }]);
+  expect(listProjectDomains(doc)).toEqual([
+    { id: "core", name: "Core", color: "#0EA5E9", owner: { scope: "project", projectId: "p1" } },
+  ]);
   expect(listProjectDomainGuidelines(doc)).toEqual([
     {
       id: "core:core.md",
-      owner: { scope: "domain", domainId: "core" },
+      owner: { scope: "domain", domainId: "core", projectId: "p1" },
       path: "core.md",
       content: "# Core\nTests d'abord.",
     },

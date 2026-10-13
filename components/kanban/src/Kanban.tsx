@@ -16,6 +16,7 @@ import {
   SelectionChip,
   useEntities,
   usePresence,
+  useQuestionsChipData,
   useSdk,
   useSelection,
   useSharing,
@@ -46,6 +47,7 @@ export function Kanban() {
   const { data: statuses } = useEntities("status");
   const { data: runs } = useEntities("run");
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
+  const questions = useQuestionsChipData(runs);
   const source = readSource(sdk.config);
   const { data: ciRuns, error: ciError } = useEntities("ci_run");
   const peers = usePresence();
@@ -78,6 +80,7 @@ export function Kanban() {
     ci: ciOf(t),
     members: sharing.members,
     remote: remoteRuns(peers, t.key),
+    questions,
   });
   const draggedTicket = tickets.find((t) => t.id === dragged);
   const ciProblem = ciError && ciError.code !== "NOT_CONNECTED" ? ciError.detail : null;
@@ -187,7 +190,7 @@ export function Kanban() {
           announcements: announce(keyOf),
         }}
       >
-        <div className="flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">
+        <div className="scrollbar-none flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">
           {ordered.map((s) => (
             <KanbanColumn
               key={s.id}

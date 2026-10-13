@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ComponentCall } from "./call";
 import { Capability, Selection } from "./capability";
 import { ComponentFormat } from "./format";
+import { NodeId } from "./ids";
 import { ComponentManifest } from "./manifest";
 import { StatusId } from "./status";
 
@@ -39,6 +40,9 @@ const Reply = z.object({
   error: WireError.optional(),
 });
 
+export const Spotlight = z.object({ kind: z.literal("question"), id: NodeId });
+export type Spotlight = z.infer<typeof Spotlight>;
+
 export const HostToFrame = z.discriminatedUnion("type", [
   z.object({
     kibo: z.literal(1),
@@ -53,12 +57,14 @@ export const HostToFrame = z.discriminatedUnion("type", [
     focus: z.boolean().optional(),
     visible: z.boolean().optional(),
     selection: Selection.nullable().optional(),
+    spotlight: Spotlight.nullable().optional(),
   }),
   z.object({ kibo: z.literal(1), type: z.literal("theme"), theme: Theme }),
   z.object({ kibo: z.literal(1), type: z.literal("changed") }),
   z.object({ kibo: z.literal(1), type: z.literal("focus"), active: z.boolean() }),
   z.object({ kibo: z.literal(1), type: z.literal("visibility"), visible: z.boolean() }),
   z.object({ kibo: z.literal(1), type: z.literal("selection"), selection: Selection.nullable() }),
+  z.object({ kibo: z.literal(1), type: z.literal("spotlight"), spotlight: Spotlight.nullable() }),
   Reply,
 ]);
 export type HostToFrame = z.infer<typeof HostToFrame>;
@@ -84,7 +90,12 @@ export const FrameToHost = z.discriminatedUnion("type", [
     path: z.string().min(1).max(1024),
     line: z.number().int().positive().optional(),
   }),
-  z.object({ kibo: z.literal(1), type: z.literal("openView"), componentId: z.string().min(1).max(128) }),
+  z.object({
+    kibo: z.literal(1),
+    type: z.literal("openView"),
+    componentId: z.string().min(1).max(128),
+    question: NodeId.optional(),
+  }),
   z.object({ kibo: z.literal(1), type: z.literal("key"), combo: KeyCombo }),
   z.object({ kibo: z.literal(1), type: z.literal("resize"), height: z.number().int().min(0).max(10_000) }),
   z.object({ kibo: z.literal(1), type: z.literal("focus"), on: z.boolean() }),

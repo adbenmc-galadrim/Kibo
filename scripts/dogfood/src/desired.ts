@@ -12,6 +12,7 @@ export type DesiredGuideline = { owner: OwnerRef; path: string; content: string 
 export type ResolvedIds = {
   projectId: string;
   domains: ReadonlyMap<string, string>;
+  workspaceDomains: ReadonlySet<string>;
 };
 
 export function resolveOwner(owner: OwnerRef, ids: ResolvedIds): GuidelineOwner | null {
@@ -22,7 +23,12 @@ export function resolveOwner(owner: OwnerRef, ids: ResolvedIds): GuidelineOwner 
       return { scope: "project", projectId: ids.projectId };
     case "domain": {
       const domainId = ids.domains.get(owner.name);
-      return domainId ? { scope: "domain", domainId } : null;
+      if (!domainId) return null;
+      return {
+        scope: "domain",
+        domainId,
+        projectId: ids.workspaceDomains.has(domainId) ? null : ids.projectId,
+      };
     }
   }
 }

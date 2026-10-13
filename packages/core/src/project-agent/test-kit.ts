@@ -10,6 +10,7 @@ import {
   type RunView,
   type TicketView,
 } from "@kibo/schema";
+import type { BatchContext } from "./expected";
 
 export const PROJECT_ID = "p1";
 export const HUMAN = { kind: "human" as const, ref: "adam" };
@@ -52,6 +53,9 @@ export function question(p: Partial<Question> & Pick<Question, "id" | "ticketId"
     answer: null,
     recipient: "me",
     sentAt: null,
+    history: [],
+    archivedAt: null,
+    archivedBy: null,
     ...p,
   };
 }
@@ -88,6 +92,7 @@ export function project(p: Partial<ProjectSnapshot> = {}): ProjectSnapshot {
       color: "#14B8A6",
       worktree: null,
       storybook: null,
+      duplication: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],
@@ -184,3 +189,29 @@ export const AGENTS: AgentSummary[] = [
   system("demo"),
   system("project-agent"),
 ];
+
+export const ACTIVE_RUN = "r-active";
+
+export const questionSnapshot = (): ProjectSnapshot =>
+  project({
+    tickets: [ticket({ id: "t1", title: "Un" }), ticket({ id: "t2", title: "Deux" })],
+    questions: [
+      question({ id: "q1", ticketId: "t1", title: "A", options: ["A", "B"], provisional: "A" }),
+      answered(question({ id: "q2", ticketId: "t1", title: "Deux" })),
+      answered(question({ id: "q3", ticketId: "t1", title: "Trois", recipient: "client" }), "oui", 4),
+      question({ id: "q4", ticketId: "t1", title: "Quatre", archivedAt: 5, archivedBy: HUMAN }),
+      question({ id: "q5", ticketId: "t2", title: "Cinq", runId: ACTIVE_RUN }),
+    ],
+  });
+
+export const questionContext = (p: Partial<BatchContext> = {}): BatchContext => ({
+  project: questionSnapshot(),
+  runs: [run({ id: ACTIVE_RUN, ticketId: "t2", ticketKey: "EMIS-2", label: "opus-dev-1", state: "running" })],
+  notes: [],
+  agents: AGENTS,
+  demoProject: false,
+  viewer: "adam",
+  signals: [],
+  closedSignals: [],
+  ...p,
+});

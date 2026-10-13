@@ -63,6 +63,11 @@ export type ProjectTurn = { cwd: string; systemPrompt: string; prompt: string };
 export type ProjectTurnPort = { prepare(run: RunView, runDir: string): Promise<ProjectTurn> };
 export type ProjectRunInput = { projectId: string; projectName: string; text: string };
 
+export type TurnPrefixPort = {
+  briefSection(run: RunView): Promise<string | null>;
+  changedSection(run: RunView): Promise<string | null>;
+};
+
 export type OrchestratorOptions = {
   home: string;
   store: RunStore;
@@ -83,6 +88,7 @@ export type OrchestratorOptions = {
   cliFallbacks?: Partial<CliFallbacks>;
   onSpawned?: (run: RunView) => Promise<void>;
   onTurnEnd?: (run: RunView) => Promise<void>;
+  turnPrefix?: TurnPrefixPort;
 };
 
 export type AssignInput = {

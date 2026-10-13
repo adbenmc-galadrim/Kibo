@@ -16,6 +16,7 @@ import {
 } from "@kibo/schema";
 import { z } from "zod";
 import { immediateTransaction, SQLITE_BUSY_TIMEOUT_MS } from "../sqlite-busy";
+import { withKnownBlockers } from "./stored-blockers";
 
 export type NewBatch = Omit<BatchRow, "seq">;
 export type ProjectAgentStore = {
@@ -24,7 +25,7 @@ export type ProjectAgentStore = {
   sessions(projectId: string): ProjectAgentSession[];
   startSession(s: Omit<ProjectAgentSession, "closedAt" | "lastTurnAt">): ProjectAgentSession;
   closeSession(runId: string, at: number): void;
-  fingerprint(runId: string): ProjectFingerprint | null;
+  fingerprint(runId: string, current?: ProjectFingerprint): ProjectFingerprint | null;
   saveFingerprint(runId: string, fp: ProjectFingerprint, at: number): void;
   createBatch(row: NewBatch): Batch;
   appendBatchEvent(batchId: string, event: BatchEvent, at: number): Batch;
@@ -78,13 +79,16 @@ type EventRow = { id: number; at: number; data: string };
 const Actions = z.array(ProposedAction);
 const Expected = z.array(ExpectedState);
 
-function parseStored<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, text: string, what: string): T {
-  let json: unknown;
+function storedJson(text: string, what: string): unknown {
   try {
-    json = JSON.parse(text);
+    return JSON.parse(text);
   } catch (e) {
     throw new KiboError("STORE_CORRUPT", `${what}: ${String(e)}`);
   }
+}
+
+function parseStored<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, text: string, what: string): T {
+  const json = storedJson(text, what);
   const parsed = schema.safeParse(json);
   if (!parsed.success) throw new KiboError("STORE_CORRUPT", `${what}: ${parsed.error.message}`);
   return parsed.data;
@@ -219,12 +223,14 @@ export function openProjectAgentStore(home: string): ProjectAgentStore {
         at,
       });
     },
-    fingerprint(runId) {
+    fingerprint(runId, current) {
       const row = db.query("SELECT fingerprint FROM project_agent_sessions WHERE run_id = $run_id").get({
         run_id: runId,
       }) as { fingerprint: string | null } | null;
       if (!row?.fingerprint) return null;
-      return parseStored(ProjectFingerprintSchema, row.fingerprint, `fingerprint of run ${runId}`);
+      const what = `fingerprint of run ${runId}`;
+      const stored = parseStored(ProjectFingerprintSchema, row.fingerprint, what);
+      return withKnownBlockers(storedJson(row.fingerprint, what), stored, current);
     },
     saveFingerprint(runId, fp, at) {
       db.query(

@@ -2,9 +2,7 @@ import {
   assertShellCommand,
   countTicketsByStatus,
   createProjectDoc,
-  getKeyAllocator,
   listInstances,
-  listProjectDomains,
   listProjects,
   readProject,
   registerProject,
@@ -24,7 +22,7 @@ import type { IconStore } from "../icons/icon-store";
 import type { createFileTicket } from "../inbox/file-ticket";
 import { assertProjectKeyAllowed } from "../inbox/inbox-rules";
 import type { ProjectSettings } from "../notes/settings";
-import { localStorybook, localWorktree } from "../project-folder";
+import { localDuplication, localStorybook, localWorktree } from "../project-folder";
 
 export type CollabPort = { syncInfo(projectId: string, doc: LoroDoc): ProjectSyncInfo };
 export type ProjectRpcDeps = {
@@ -54,6 +52,7 @@ function createProject(
     color: req.color,
     worktree: null,
     storybook: null,
+    duplication: null,
   };
   registerProject(deps.workspace, meta);
   deps.adopt(meta.id, createProjectDoc(meta));
@@ -70,7 +69,6 @@ function getProject(deps: ProjectRpcDeps, projectId: string) {
     meta: deps.docs.projectMeta(projectId),
     viewer: deps.docs.identity(projectId),
     icon: deps.icons.version(projectIcon(projectId)),
-    ...(getKeyAllocator(doc) === "server" && { domains: listProjectDomains(doc) }),
   };
   const collab = deps.collab();
   return collab ? { ...snapshot, sync: collab.syncInfo(projectId, doc) } : snapshot;
@@ -96,6 +94,7 @@ export function handleProjectRequest(deps: ProjectRpcDeps, req: RpcRequest): unk
         ...meta,
         worktree: localWorktree(deps.settings, meta.id),
         storybook: localStorybook(deps.settings, meta.id),
+        duplication: localDuplication(deps.settings, meta.id),
         counts: countTicketsByStatus(deps.docs.project(meta.id)),
         icon: deps.icons.version(projectIcon(meta.id)),
         demo: isDemoProject(deps.settings, meta.id),

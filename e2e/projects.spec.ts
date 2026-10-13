@@ -105,7 +105,8 @@ test("modifier, workspace, en-tête, réglages et suppression d'un projet", asyn
   await expect(page.getByText("Accès web", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Générer un code" })).toBeVisible();
   await page.goto("/#/settings/general");
-  await expect(page.getByText("Application")).toHaveCount(0);
+  await expect(page.getByText("Ce réglage vit dans l'application de bureau.")).toBeVisible();
+  await expect(page.getByRole("switch", { name: "Ouvrir Kibo à l'ouverture de session" })).toHaveCount(0);
   await page.goto("/#/settings/shortcuts");
   await expect(page.getByRole("heading", { level: 1, name: "Raccourcis" })).toBeVisible();
   await expect(page.getByRole("region", { name: "Navigation" })).toBeVisible();

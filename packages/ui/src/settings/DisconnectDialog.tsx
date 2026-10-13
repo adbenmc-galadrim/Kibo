@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@kibo/sdk/ui/dialog";
 import { fr } from "../i18n/fr";
+import { frIntegrations } from "../i18n/fr-integrations";
 
 type DisconnectableId = "github" | "figma" | "penpot" | "mcp";
 export type DisconnectTarget = { id: DisconnectableId; title: string; mode: "gh" | "token" | null };
@@ -20,7 +21,7 @@ type Props = {
 };
 
 function bodyOf(target: DisconnectTarget): string {
-  const t = fr.integrations.disconnect;
+  const t = frIntegrations.disconnect;
   if (target.id === "figma") return t.figma;
   if (target.id === "penpot") return t.penpot;
   if (target.id === "mcp") return t.mcp;
@@ -28,7 +29,7 @@ function bodyOf(target: DisconnectTarget): string {
 }
 
 export function DisconnectDialog({ target, onCancel, onConfirm }: Props) {
-  const t = fr.integrations.disconnect;
+  const t = frIntegrations.disconnect;
   if (!target) return null;
   const body = bodyOf(target);
   return (

@@ -224,3 +224,16 @@ test("a lone skill review keeps the number of skills of its label", () => {
   });
   expect(summarizeActions([review])).toBe("A laissé une review de 2 skills");
 });
+
+test("peeking at another run is labelled with the run it looked at", () => {
+  expect(classifyTool("mcp__kibo__peek_work", { run: "BOU-12" })).toEqual({
+    kind: "mcp",
+    target: "peek_work",
+  });
+  const peek = actionOf(call({ tool: "mcp__kibo__peek_work", input: { run: "BOU-12", path: "src/a.ts" } }));
+  expect(peek.label).toBe("A regardé le travail de `BOU-12`");
+  expect(summarizeActions([peek])).toBe("A regardé le travail de `BOU-12`");
+  expect(actionOf(call({ tool: "mcp__kibo__peek_work", input: {} })).label).toBe(
+    "A regardé le travail d'un autre run",
+  );
+});

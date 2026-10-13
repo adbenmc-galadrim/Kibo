@@ -1,5 +1,6 @@
 import { expect, mock, test } from "bun:test";
 import type { ComponentSummary, Instance, RpcRequest } from "@kibo/schema";
+import { createSpotlightStore, type SpotlightApi } from "@kibo/sdk";
 import { render } from "@testing-library/react";
 import { apiMock } from "../api-mock";
 import type { InstanceApis } from "../lib/instance-capabilities";
@@ -21,7 +22,13 @@ const { createSelectionBus } = await import("./selection-bus");
 const { useInstanceApis } = await import("./use-instance-apis");
 
 const components: ComponentSummary[] = [];
-const state = { focusedId: null, dispatch: () => undefined, bus: createSelectionBus(), components };
+const state = {
+  focusedId: null,
+  dispatch: () => undefined,
+  bus: createSelectionBus(),
+  components,
+  spotlight: createSpotlightStore(),
+};
 const NO_REF = { current: null };
 const seen: unknown[] = [];
 
@@ -80,5 +87,27 @@ test("a built-in does not wait for the component list, a third party does", () =
   );
   expect(ready.get("kanban@1.0.0")?.capabilities).toEqual([]);
   expect(ready.get("pad@0.2.0")).toBeNull();
+  view.unmount();
+});
+
+test("the page aims its instances at the question of its address", () => {
+  const spotted: (SpotlightApi | undefined)[] = [];
+  function Spot({ question }: { question: string | null }) {
+    const page = usePageState([], question);
+    return (
+      <PageContext.Provider value={page}>
+        <SpotProbe />
+      </PageContext.Provider>
+    );
+  }
+  function SpotProbe() {
+    spotted.push(useInstanceApis("p1", widget("kanban@1.0.0"), NO_REF)?.spotlight);
+    return null;
+  }
+  const view = render(<Spot question="q1" />);
+  const api = spotted.at(-1);
+  expect(api?.get()).toEqual({ kind: "question", id: "q1" });
+  view.rerender(<Spot question={null} />);
+  expect(api?.get()).toBeNull();
   view.unmount();
 });

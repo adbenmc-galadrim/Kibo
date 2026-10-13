@@ -1,12 +1,14 @@
-import type { FileRef, RunMoment, Step } from "@kibo/schema";
+import type { AutoLink, FileRef, Overlap, RunMoment, Step } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { formatClock } from "../agents/format";
 import type { frMoments } from "../i18n/fr-moments";
 import { ActionsMoment } from "./ActionsMoment";
+import { AutoLinkMoment } from "./AutoLinkMoment";
 import { ExchangeLine, type FeedExtra } from "./ExchangeLine";
 import type { FileContext } from "./file-context";
 import { MessageMoment } from "./MessageMoment";
+import { OverlapMoment } from "./OverlapMoment";
 import { RawMoment } from "./RawMoment";
 import { ReminderMoment } from "./ReminderMoment";
 import { SignalMoment } from "./SignalMoment";
@@ -22,7 +24,17 @@ export type FeedProps = {
   extras?: readonly FeedExtra[];
   texts: typeof frMoments;
   onOpenSignal?(signalId: string): void;
+  overlaps?: ReadonlyMap<string, Overlap>;
+  autoLinks?: ReadonlyMap<string, AutoLink>;
+  canEdit?: boolean;
+  onSeeFiles?(overlapId: string): void;
+  onIgnoreOverlap?(overlapId: string): void;
+  onCancelAutoLink?(autoLinkId: string): void;
+  onOpenTicketKey?(key: string): void;
+  now?: number;
 };
+
+const ignore = () => {};
 
 export type { FeedExtra };
 
@@ -42,6 +54,7 @@ function MomentBody({
   onOpenFile,
   onOpenSignal,
   texts,
+  ...overlap
 }: { moment: RunMoment } & Omit<FeedProps, "moments">) {
   const data = moment.data;
   switch (data.kind) {
@@ -70,6 +83,30 @@ function MomentBody({
       return <RawMoment text={data.text} partial={data.partial} />;
     case "signal":
       return <SignalMoment data={data} at={moment.at} onOpen={onOpenSignal} />;
+    case "overlap":
+      return (
+        <OverlapMoment
+          data={data}
+          at={moment.at}
+          overlap={overlap.overlaps?.get(data.overlapId) ?? null}
+          canEdit={overlap.canEdit ?? false}
+          now={overlap.now}
+          onSeeFiles={overlap.onSeeFiles ?? ignore}
+          onIgnore={overlap.onIgnoreOverlap ?? ignore}
+        />
+      );
+    case "auto_link":
+      return (
+        <AutoLinkMoment
+          data={data}
+          at={moment.at}
+          link={data.autoLinkId === null ? null : (overlap.autoLinks?.get(data.autoLinkId) ?? null)}
+          canEdit={overlap.canEdit ?? false}
+          now={overlap.now}
+          onCancel={overlap.onCancelAutoLink ?? ignore}
+          onOpenTicket={overlap.onOpenTicketKey}
+        />
+      );
   }
 }
 

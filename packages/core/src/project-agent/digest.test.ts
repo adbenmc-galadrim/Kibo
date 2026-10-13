@@ -9,6 +9,7 @@ const names: ChangeNames = {
   ticket: (id) => `T(${id})`,
   question: (id) => `Q(${id})`,
   run: (id) => `R(${id})`,
+  recipient: (id) => `D(${id})`,
 };
 
 const print = (p: Partial<TicketPrint> = {}): TicketPrint => ({
@@ -20,6 +21,7 @@ const print = (p: Partial<TicketPrint> = {}): TicketPrint => ({
   assignee: null,
   branch: null,
   pr: null,
+  blockedBy: [],
   ...p,
 });
 
@@ -60,6 +62,18 @@ describe("diffFingerprints", () => {
       "T(t1) : assigné aucun → opus",
       "T(t1) : branche aucune → feat/x",
       "T(t1) : PR aucune → #3 (open)",
+    ]);
+  });
+
+  test("a blocking link added or removed gives one line per blocker", () => {
+    const blocked = { ...base, tickets: { t1: print({ blockedBy: ["BOU-12", "BOU-13"] }) } };
+    expect(diffFingerprints(base, blocked, names)).toEqual([
+      { category: "tickets", key: "t1", text: "T(t1) : bloqué par BOU-12" },
+      { category: "tickets", key: "t1", text: "T(t1) : bloqué par BOU-13" },
+    ]);
+    const after = { ...base, tickets: { t1: print({ blockedBy: ["BOU-13"] }) } };
+    expect(diffFingerprints(blocked, after, names)).toEqual([
+      { category: "tickets", key: "t1", text: "T(t1) : plus bloqué par BOU-12" },
     ]);
   });
 
@@ -213,6 +227,7 @@ const ticketPrint = fc.record({
   assignee: fc.option(fc.constantFrom("opus", "adam"), { nil: null }),
   branch: fc.option(fc.constantFrom("feat/a"), { nil: null }),
   pr: fc.option(fc.constantFrom("#1 (open)"), { nil: null }),
+  blockedBy: fc.subarray(["EMIS-1", "EMIS-2"]),
 });
 const fingerprints = fc.record({
   tickets: fc.dictionary(ID, ticketPrint),

@@ -14,6 +14,11 @@ export const frSkills = {
     retry: "Réessayer",
     openNotes: (n: number) => plural(n, "note à traiter", "notes à traiter"),
     partialWatch: "Trop de dossiers à surveiller : la liste se met à jour à chaque visite.",
+    filters: "Filtrer les skills",
+    filter: { all: "Tous", used: "Utilisés", notes: "Avec notes" },
+    filterCount: (label: string, n: number) => `${label} · ${n}`,
+    collapseAll: "Tout replier",
+    expandAll: "Tout déplier",
   },
   groups: {
     computer: "Cet ordinateur",

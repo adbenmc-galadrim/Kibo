@@ -33,6 +33,14 @@ export const frProject = {
       origin: "Adresse refusée (https, ou http en local)",
       portEnv: "Nom de variable invalide",
     },
+    guidelines: {
+      title: "Guidelines",
+      help: (name: string) =>
+        `Les .md que reçoivent les agents des tickets de ${name}, après ceux du workspace.`,
+      summary: (files: number, domains: number) =>
+        `${files} fichier${files > 1 ? "s" : ""} .md · ${domains} domaine${domains > 1 ? "s" : ""}`,
+      open: "Ouvrir le dossier de guidelines →",
+    },
     save: "Enregistrer",
     cancel: "Annuler",
     folderBusy: "Un agent travaille sur ce projet : attends la fin de ses runs pour changer le dossier.",

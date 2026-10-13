@@ -21,6 +21,7 @@ const meta = {
   color: "#F97316",
   worktree: null,
   storybook: null,
+  duplication: null,
 };
 const ADAM: UpdateAuthor = { userId: "u-adam", role: "owner" };
 const LEA: UpdateAuthor = { userId: "u-lea", role: "editor" };

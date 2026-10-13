@@ -12,11 +12,11 @@ const g = (id: string, owner: Guideline["owner"], path: string, content = `# ${p
   content,
 });
 const all: Guideline[] = [
-  g("1", { scope: "domain", domainId: "core" }, "guidelines/core.md"),
+  g("1", { scope: "domain", domainId: "core", projectId: null }, "guidelines/core.md"),
   g("2", { scope: "workspace" }, "guidelines/git.md"),
   g("3", { scope: "project", projectId: "p1" }, "guidelines/kibo.md"),
   g("5", { scope: "workspace" }, "guidelines/general.md"),
-  g("6", { scope: "domain", domainId: "ui" }, "guidelines/ui.md"),
+  g("6", { scope: "domain", domainId: "ui", projectId: null }, "guidelines/ui.md"),
   g("7", { scope: "project", projectId: "p2" }, "guidelines/other.md"),
 ];
 
@@ -35,6 +35,7 @@ function kibo() {
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
   const run = (cmd: Parameters<typeof executeProjectCommand>[1]) => executeProjectCommand(doc, cmd);
   const dep = run({ method: "createTicket", title: "Schéma Loro", statusId: "in_progress" }) as Ticket;
@@ -56,7 +57,7 @@ test("the brief lists the ticket, its sub-tickets, its dependencies and the note
   const brief = buildBrief({
     project,
     ticket,
-    domain: { id: "ui", name: "UI", color: "#EC4899" },
+    domain: { id: "ui", name: "UI", color: "#EC4899", owner: { scope: "workspace" } },
     note: "Utilise dnd-kit.",
   });
   expect(brief).toBe(
@@ -114,6 +115,7 @@ test("the agent spec comes after the guidelines, with its subagents and skills",
     recipients: [],
     signals: true,
     skillReview: true,
+    parallel: false,
   });
   for (const fragment of [
     "## agent · review-pr",
@@ -247,6 +249,9 @@ const question = (ticketId: string, over: Partial<Question>): Question => ({
   answer: null,
   recipient: "me",
   sentAt: null,
+  history: [],
+  archivedAt: null,
+  archivedBy: null,
   ...over,
 });
 
@@ -350,4 +355,50 @@ test("a text answer is quoted as is, and nothing is added without question, comm
   expect(bare).not.toContain("## Questions");
   expect(bare).not.toContain("## Commits de la branche");
   expect(bare).not.toContain("## PR");
+});
+
+test("the work in progress of the other runs comes right after the branch commits", () => {
+  const { project, ticket } = kibo();
+  const work = "## Travail en cours sur le projet\n\n### bou · livraison · BOU-12 · Dates";
+  const brief = buildBrief({
+    project,
+    ticket,
+    domain: null,
+    note: "Utilise dnd-kit.",
+    commits: ["abc1234 feat: drag"],
+    work,
+  });
+  expect(brief).toContain(
+    ["## Commits de la branche", "", "- abc1234 feat: drag", "", work, "", "## Consignes"].join("\n"),
+  );
+  const alone = buildBrief({ project, ticket, domain: null, note: "", work });
+  expect(alone.endsWith(`${work}\n`)).toBe(true);
+  expect(buildBrief({ project, ticket, domain: null, note: "", work: null })).not.toContain(
+    "Travail en cours",
+  );
+});
+
+test("the brief leaves the archived questions out", () => {
+  const { project, ticket } = kibo();
+  const archived = question(ticket.id, {
+    id: "q9",
+    title: "Question archivée ?",
+    archivedAt: 5,
+    archivedBy: { kind: "human", ref: "adam" },
+  });
+  const brief = buildBrief({
+    project: { ...project, questions: [question(ticket.id, {}), archived] },
+    ticket,
+    domain: null,
+    note: "",
+  });
+  expect(brief).toContain("- [ouverte] Bloquer le dépôt ?");
+  expect(brief).not.toContain("Question archivée");
+  const alone = buildBrief({
+    project: { ...project, questions: [archived] },
+    ticket,
+    domain: null,
+    note: "",
+  });
+  expect(alone).not.toContain("## Questions");
 });

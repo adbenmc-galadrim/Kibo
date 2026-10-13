@@ -1,6 +1,7 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { createAgent, rpc } from "./agents-seed";
-import { addComponent, createPage, pairAndCreateProject } from "./helpers";
+import { agentRefs, createAgent, list, pairBrowser, rpc, text } from "./agents-seed";
+import { addComponent, createPage, createSidebarPage, pairAndCreateProject } from "./helpers";
+import { capture, hoverBadge, questionArticle, seedAnswered, seedQuestion } from "./questions-kit";
 import { shot } from "./repo-project";
 
 test.describe.configure({ mode: "serial" });
@@ -132,4 +133,129 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
   await page.getByRole("button", { name: /^Réglages techniques/ }).click();
   await expect(page.getByText("Agent de Kibo : ces réglages sont fixés par Kibo.")).toBeVisible();
   await shot(page, info, "ecran-177");
+});
+
+const COLOR = "Client - Couleur ?";
+const FONT = "Client - Police ?";
+const LOGO = "Client - Logo ?";
+
+async function kibProject(page: Page): Promise<string> {
+  await pairBrowser(page);
+  const projects = list({ projects: await rpc(page, { method: "listProjects" }) }, "projects");
+  const found = projects.find((p) => text(p, "name") === PROJECT);
+  if (found !== undefined) return text(found, "id");
+  const created = await rpc(page, {
+    method: "createProject",
+    name: PROJECT,
+    key: "KIB",
+    folder: null,
+    color: "#F97316",
+  });
+  const projectId = text(created, "id");
+  await seed(page, projectId);
+  return projectId;
+}
+
+async function questionsOf(page: Page, projectId: string): Promise<unknown[]> {
+  return list(await rpc(page, { method: "getProject", projectId }), "questions");
+}
+
+async function ticketIdOf(page: Page, projectId: string, key: string): Promise<string> {
+  const tickets = list(await rpc(page, { method: "getProject", projectId }), "tickets");
+  const found = tickets.find((t) => text(t, "key") === key);
+  if (found === undefined) throw new Error(`no ticket ${key}`);
+  return text(found, "id");
+}
+
+async function deliver(page: Page, projectId: string, ticketId: string, title: string): Promise<void> {
+  const profileId = (await agentRefs(page)).get("livraison");
+  await rpc(page, { method: "assignAgent", projectId, ticketId, profileId, brief: "" });
+  const deliveredAt = async () => {
+    const q = (await questionsOf(page, projectId)).find((x) => text(x, "title") === title);
+    const answer: unknown = q === undefined ? null : Reflect.get(Object(q), "answer");
+    return answer === null ? null : Reflect.get(Object(answer), "deliveredAt");
+  };
+  await expect.poll(deliveredAt, { timeout: 20_000 }).not.toBeNull();
+}
+
+async function seedProjectQuestions(page: Page, projectId: string): Promise<string> {
+  const first = await ticketIdOf(page, projectId, "KIB-1");
+  const second = await ticketIdOf(page, projectId, "KIB-2");
+  await seedQuestion(page, projectId, first, COLOR, { recipient: "client" });
+  await seedAnswered(page, projectId, first, FONT, "Oui", { recipient: "client" });
+  const logo = await seedAnswered(page, projectId, second, LOGO, "Oui", { recipient: "client" });
+  await deliver(page, projectId, second, LOGO);
+  return logo;
+}
+
+const lastBatch = (panel: Locator): Locator => panel.getByRole("region", { name: /^Lot n° \d+$/ }).last();
+
+test("l'agent de projet renomme, réassigne, rouvre et archive des questions", async ({ page }, info) => {
+  test.setTimeout(180_000);
+  const projectId = await kibProject(page);
+  const logo = await seedProjectQuestions(page, projectId);
+  await page.goto(`/#/p/${encodeURIComponent(projectId)}/`);
+  await page.keyboard.press("ControlOrMeta+j");
+  const panel = panelOf(page);
+  await expect(panel).toBeVisible();
+
+  await say(panel, "Peux-tu ranger les questions ?");
+  await expect(panel.getByText("J'ai proposé un lot de 6 actions sur les questions.")).toBeVisible({
+    timeout: 30_000,
+  });
+  const card = lastBatch(panel);
+  const group = card.getByRole("group", { name: "Questions" });
+  await expect(group.getByText("Ajouter le destinataire « Galadrim »")).toBeVisible();
+  await expect(group.getByText(/^Question sur KIB-1 pour Galadrim : « Quel hébergeur \? »$/)).toBeVisible();
+  await expect(group.getByText("Question sur KIB-2 pour Client : « Quelle licence ? »")).toBeVisible();
+  const rename = group.getByRole("button", { name: `Modifier la question « ${COLOR} »` });
+  await expect(rename).toBeVisible();
+  await expect(group.getByText("Titre :")).toBeVisible();
+  await expect(group.getByText("Destinataire :")).toBeVisible();
+  const reopen = group.getByRole("button", { name: `Rouvrir « ${LOGO} » (réponse retirée)` });
+  await expect(reopen).toBeVisible();
+  await expect(group.getByRole("button", { name: `Archiver « ${FONT} »` })).toBeVisible();
+  await card.scrollIntoViewIfNeeded();
+  await shot(page, info, "204");
+  const preview = await hoverBadge(page, reopen);
+  await expect(preview.getByText(/Décision prise provisoirement/)).toBeVisible();
+  await expect(preview.getByText(/transmise à global · livraison · KIB-2$/)).toBeVisible();
+  await capture(page, info, "205b");
+  await page.mouse.move(0, 0);
+
+  await card.getByRole("button", { name: "Valider (6)" }).click();
+  await expect(card.getByText("Appliquée", { exact: true })).toHaveCount(6);
+  await panel.getByRole("button", { name: "Fermer le panneau" }).click();
+
+  await createSidebarPage(page, PROJECT, "Questions", "Vue");
+  await addComponent(page, "Questions");
+  const view = page.getByRole("main");
+  await expect(
+    questionArticle(view, "Couleur ?").getByRole("button", { name: "Destinataire : Galadrim" }),
+  ).toBeVisible();
+  await expect(questionArticle(view, LOGO).getByRole("form", { name: `Répondre à ${LOGO}` })).toBeVisible();
+  await expect(questionArticle(view, FONT)).toHaveCount(0);
+  await view.getByRole("radio", { name: "Archivées" }).click();
+  await expect(questionArticle(view, FONT).getByRole("button", { name: "Restaurer" })).toBeVisible();
+
+  await rpc(page, {
+    method: "command",
+    projectId,
+    command: {
+      method: "answerQuestion",
+      questionId: logo,
+      answer: { kind: "option", option: "Non" },
+      by: { kind: "human", ref: "e2e" },
+    },
+  });
+  await deliver(page, projectId, await ticketIdOf(page, projectId, "KIB-2"), LOGO);
+  await page.keyboard.press("ControlOrMeta+j");
+  await expect(panel).toBeVisible();
+  await say(panel, "Renomme la question transmise");
+  await expect(panel.getByText("Lot de questions corrigé.")).toBeVisible({ timeout: 30_000 });
+  const corrected = lastBatch(panel).getByRole("group", { name: "Questions" });
+  await expect(
+    corrected.getByRole("button", { name: `Rouvrir « ${LOGO} » (réponse retirée)` }),
+  ).toBeVisible();
+  await expect(corrected.getByRole("button", { name: `Modifier la question « ${LOGO} »` })).toBeVisible();
 });

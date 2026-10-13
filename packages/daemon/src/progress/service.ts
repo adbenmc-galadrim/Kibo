@@ -1,4 +1,5 @@
 import {
+  branchRefOf,
   doingStep,
   KiboError,
   type ProgressInput,
@@ -10,12 +11,14 @@ import {
   type RunView,
   reportOfRun,
   type TicketProgress,
+  WORKTREE_DEFAULTS,
+  worktreeBaseOf,
 } from "@kibo/schema";
 import type { GitRunner } from "../agents/workspace-prep";
 import type { CommandMeta } from "../docs";
 import { changedFiles, checkFiles } from "./file-check";
 
-type Snapshot = Pick<ProjectSnapshot, "tickets">;
+type Snapshot = Pick<ProjectSnapshot, "tickets"> & Partial<Pick<ProjectSnapshot, "meta">>;
 type ProgressUpdate = Omit<
   Extract<ProjectCommand, { method: "setTicketProgress" }>,
   "method" | "ticketId" | "runId" | "at"
@@ -34,6 +37,7 @@ export type ProgressDeps = {
   docs: ProgressDocs;
   git: GitRunner;
   trace: ProgressTrace;
+  runs: () => readonly RunView[];
   now: () => number;
   changed?: () => void;
 };
@@ -64,6 +68,14 @@ async function headOf(git: GitRunner, cwd: string | null): Promise<string | null
   return res.code === 0 ? res.stdout.trim() || null : null;
 }
 
+async function mergeBaseOf(git: GitRunner, cwd: string, ref: string): Promise<string | null> {
+  if (ref.startsWith("-")) return null;
+  const res = await git(["merge-base", "HEAD", ref], cwd);
+  return res.code === 0 ? res.stdout.trim() || null : null;
+}
+
+const isWorktree = (run: RunView): boolean => run.workspace?.startsWith("worktree:") ?? false;
+
 export function createProgressService(deps: ProgressDeps): ProgressService {
   const { docs, git, trace, now } = deps;
 
@@ -89,9 +101,30 @@ export function createProgressService(deps: ProgressDeps): ProgressService {
     return progressReply(input);
   }
 
+  const originBase = (run: RunView): string | null =>
+    [...deps.runs()]
+      .filter((r) => r.id !== run.id && r.ticketId === run.ticketId && r.cwd === run.cwd)
+      .sort((a, b) => a.createdAt - b.createdAt)
+      .map((r) => trace.trace(r.id)?.baseHead ?? null)
+      .find((head) => head !== null) ?? null;
+
+  const baseRefOf = (run: TicketRun): string => {
+    const snapshot = docs.snapshot(run.projectId);
+    const refs = snapshot.tickets.find((t) => t.id === run.ticketId)?.externalRefs ?? [];
+    return worktreeBaseOf(snapshot.meta?.worktree ?? WORKTREE_DEFAULTS, branchRefOf(refs));
+  };
+
+  async function baseOf(run: RunView): Promise<string | null> {
+    if (run.cwd === null) return null;
+    if (!hasTicket(run) || !isWorktree(run)) return headOf(git, run.cwd);
+    return (
+      originBase(run) ?? (await mergeBaseOf(git, run.cwd, baseRefOf(run))) ?? (await headOf(git, run.cwd))
+    );
+  }
+
   async function onSpawned(run: RunView): Promise<void> {
     if (trace.trace(run.id)?.baseHead) return;
-    trace.setBaseHead(run.id, await headOf(git, run.cwd));
+    trace.setBaseHead(run.id, await baseOf(run));
   }
 
   async function onTurnEnd(run: RunView): Promise<void> {

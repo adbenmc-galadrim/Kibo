@@ -110,6 +110,7 @@ function contextFiles(composed: ComposedAgent, content: TurnContent): ContextFil
           recipients: content.recipients,
           signals: true,
           skillReview: composed.skillReview,
+          parallel: true,
         },
       }).files;
     case "task":

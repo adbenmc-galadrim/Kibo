@@ -122,6 +122,7 @@ test("the tickets listed to a component are not startable while a run is active 
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
   const busy = createTicket(project, { title: "A", statusId: "todo" });
   createTicket(project, { title: "B", statusId: "todo" });

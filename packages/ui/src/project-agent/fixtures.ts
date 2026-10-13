@@ -1,5 +1,6 @@
 import {
   type Batch,
+  DEFAULT_RECIPIENTS,
   DEFAULT_WORKFLOW,
   EMPTY_PROGRESS,
   type HookPayload,
@@ -8,6 +9,7 @@ import {
   type ProjectAgentView,
   type ProjectSnapshot,
   type ProposedAction,
+  type Question,
   type RunLogEntry,
   type RunView,
   type TicketView,
@@ -47,6 +49,7 @@ export function emisProject(access: "write" | "read-only" = "write"): ProjectSna
       color: "#0EA5E9",
       worktree: null,
       storybook: null,
+      duplication: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],
@@ -249,3 +252,34 @@ export function viewFixture(p: Partial<ProjectAgentView> = {}): ProjectAgentView
 
 export const emptyView = (): ProjectAgentView =>
   viewFixture({ session: null, run: null, batches: [], past: [] });
+
+const asked = (id: string, ticketId: string, title: string, recipient: string): Question => ({
+  id,
+  ticketId,
+  runId: null,
+  title,
+  context: "Le logo actuel est **trop petit** sur mobile.",
+  options: ["Oui", "Non"],
+  provisional: null,
+  blocking: false,
+  createdBy: { kind: "agent", ref: "opus-dev-1" },
+  createdAt: 1,
+  importRef: null,
+  answer: null,
+  recipient,
+  sentAt: null,
+  history: [],
+  archivedAt: null,
+  archivedBy: null,
+});
+
+export function questionsProject(): ProjectSnapshot {
+  return {
+    ...emisProject(),
+    questions: [
+      asked("q-logo", "t11", "Client - Logo ?", "client"),
+      asked("q-port", "t12", "Quel port ?", "me"),
+    ],
+    questionRecipients: [...DEFAULT_RECIPIENTS, { id: "galadrim", name: "Galadrim" }],
+  };
+}

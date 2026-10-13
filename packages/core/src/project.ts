@@ -1,9 +1,21 @@
-import { DEFAULT_WORKFLOW, formatTicketKey, type ProjectMeta, ProjectPatch, type Status } from "@kibo/schema";
+import {
+  DEFAULT_DUPLICATION_SETTINGS,
+  DEFAULT_WORKFLOW,
+  type DuplicationSettings,
+  formatTicketKey,
+  type ProjectMeta,
+  ProjectPatch,
+  type Status,
+} from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import { valid } from "./config-store";
 import type { RegisteredProjectPatch } from "./workspace";
 
-export const LOCAL_ONLY_META: ReadonlySet<string> = new Set(["worktree", "storybook"]);
+export const LOCAL_ONLY_META: ReadonlySet<string> = new Set(["worktree", "storybook", "duplication"]);
+
+export const effectiveDuplication = (meta: {
+  duplication: DuplicationSettings | null;
+}): DuplicationSettings => meta.duplication ?? DEFAULT_DUPLICATION_SETTINGS;
 
 export const sharedMetaEntries = (meta: ProjectMeta): [string, ProjectMeta[keyof ProjectMeta]][] =>
   Object.entries(meta).filter(([key]) => !LOCAL_ONLY_META.has(key));
@@ -30,6 +42,7 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
     color: m.get("color") as string,
     worktree: null,
     storybook: null,
+    duplication: null,
   };
 }
 

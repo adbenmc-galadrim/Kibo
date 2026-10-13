@@ -95,11 +95,15 @@ export function removeQuestionRecipient(doc: LoroDoc, id: string): null {
   return null;
 }
 
-export function setQuestionRecipient(doc: LoroDoc, questionId: string, recipient: string): Question {
-  const question = getQuestion(doc, questionId);
+export function assertRecipient(doc: LoroDoc, recipient: string): void {
   if (!listQuestionRecipients(doc).some((r) => r.id === recipient)) {
     throw new KiboError("NOT_FOUND", `question recipient ${recipient} not found`);
   }
+}
+
+export function setQuestionRecipient(doc: LoroDoc, questionId: string, recipient: string): Question {
+  const question = getQuestion(doc, questionId);
+  assertRecipient(doc, recipient);
   return storeQuestion(doc, { ...question, recipient });
 }
 

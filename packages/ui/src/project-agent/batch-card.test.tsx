@@ -1,12 +1,13 @@
 import { expect, test } from "bun:test";
 import type { Batch } from "@kibo/schema";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { agentsFixture, runFixture } from "../agents/fixtures";
+import { projectQuestionLinks, QuestionLinksContext } from "../moments/QuestionText";
 import { AgentsProvider } from "../state/agents-context";
 import { BatchCard, type Decision } from "./BatchCard";
 import { defaultLabels, projectLabels } from "./batch-groups";
-import { emisProject, partialBatch, pendingBatch } from "./fixtures";
+import { emisProject, partialBatch, pendingBatch, questionsProject } from "./fixtures";
 
 function show(batch: Batch, readOnly = false) {
   const decisions: Decision[] = [];
@@ -170,4 +171,85 @@ test("an agent action names the existing run of its ticket, and a cancel names i
   expect(agentsGroup.getByText("Assigner EMIS-12 à opus")).toBeTruthy();
   expect(agentsGroup.getByRole("button", { name: "opus-dev-5" })).toBeTruthy();
   expect(agentsGroup.getByRole("button", { name: "opus-dev-4" })).toBeTruthy();
+});
+
+test("a question line names its question, previews it and opens it", async () => {
+  const project = questionsProject();
+  const opened: string[] = [];
+  const batch = pendingBatch({
+    actions: [
+      { id: 1, type: "addRecipient", name: "Galadrim", why: "" },
+      { id: 2, type: "createQuestion", ticket: "EMIS-11", title: "Police ?", recipient: "client", why: "" },
+      {
+        id: 3,
+        type: "updateQuestion",
+        questionId: "q-logo",
+        title: "Logo ?",
+        recipient: "Galadrim",
+        why: "",
+      },
+      { id: 4, type: "reopenQuestion", questionId: "q-port", why: "" },
+    ],
+    expected: [{ actionId: 3, fields: { title: "Client - Logo ?", recipient: "client", delivered: false } }],
+  });
+  render(
+    <QuestionLinksContext.Provider value={projectQuestionLinks(project, [], (id) => opened.push(id))}>
+      <BatchCard
+        batch={batch}
+        labels={projectLabels(project)}
+        signals={[]}
+        afterWakeup={false}
+        readOnly={false}
+        onDecide={async () => {}}
+      />
+    </QuestionLinksContext.Provider>,
+  );
+  const group = within(screen.getByRole("group", { name: "Questions" }));
+  expect(group.getByText("Ajouter le destinataire « Galadrim »")).toBeTruthy();
+  expect(group.getByText("Question sur EMIS-11 pour Client : « Police ? »")).toBeTruthy();
+  expect(group.getByText("Titre :")).toBeTruthy();
+  expect(group.getByText("Client - Logo ?")).toBeTruthy();
+  expect(group.getByText("Destinataire :")).toBeTruthy();
+  const rename = group.getByRole("button", { name: "Modifier la question « Client - Logo ? »" });
+  fireEvent.focus(rename);
+  expect(await screen.findByText("Le logo actuel est trop petit sur mobile.")).toBeTruthy();
+  await userEvent
+    .setup()
+    .click(group.getByRole("button", { name: "Rouvrir « Quel port ? » (réponse retirée)" }));
+  expect(opened).toEqual(["q-port"]);
+  const box = group.getByRole("checkbox", { name: "Rouvrir « Quel port ? » (réponse retirée)" });
+  expect(box.getAttribute("aria-checked")).toBe("true");
+});
+
+test("a question line names the run its answer was delivered to", async () => {
+  const base = questionsProject();
+  const delivered = {
+    by: { kind: "human" as const, ref: "adam" },
+    at: 2,
+    deliveredAt: 3,
+    deliveredRunId: "e1",
+  };
+  const project = {
+    ...base,
+    questions: base.questions.map((q) =>
+      q.id === "q-port"
+        ? { ...q, answer: { kind: "text" as const, option: null, text: "8080", ...delivered } }
+        : q,
+    ),
+  };
+  const runs = [runFixture({ id: "e1", ticketKey: "EMIS-12", label: "opus-dev-4", state: "done" })];
+  render(
+    <QuestionLinksContext.Provider value={projectQuestionLinks(project, runs, () => {})}>
+      <BatchCard
+        batch={pendingBatch({ actions: [{ id: 1, type: "reopenQuestion", questionId: "q-port", why: "" }] })}
+        labels={projectLabels(project)}
+        signals={[]}
+        afterWakeup={false}
+        readOnly={false}
+        onDecide={async () => {}}
+      />
+    </QuestionLinksContext.Provider>,
+  );
+  fireEvent.focus(screen.getByRole("button", { name: "Rouvrir « Quel port ? » (réponse retirée)" }));
+  expect(await screen.findByText(/transmise à opus-dev-4/)).toBeTruthy();
 });

@@ -29,6 +29,8 @@ import {
 
 type Props = {
   screen: Screen;
+  projectId?: string | null;
+  currentProjectId?: string | null;
   viewer: string;
   projects: ProjectSummary[];
   snapshots: ReadonlyMap<string, ProjectSnapshot>;
@@ -49,6 +51,8 @@ type Props = {
 export function ScreenView(props: Props) {
   const {
     screen,
+    projectId,
+    currentProjectId,
     projects,
     agents,
     config,
@@ -95,7 +99,16 @@ export function ScreenView(props: Props) {
   if (screen === "workspace") return <WorkspacePage config={config} />;
   if (screen === "skills") return <SkillsPage projects={projects} />;
   if (!config) return null;
-  if (screen === "domains") return <DomainsPage config={config} projects={projects} />;
+  if (screen === "domains")
+    return (
+      <DomainsPage
+        config={config}
+        projects={projects}
+        snapshots={p.snapshots}
+        projectId={projectId}
+        currentProjectId={currentProjectId}
+      />
+    );
   if (!agents) return null;
   if (screen === "agents")
     return <AgentsPage state={agents} projects={projects} now={now} onOpenRun={onOpenRun} />;

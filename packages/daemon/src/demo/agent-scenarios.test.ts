@@ -50,7 +50,7 @@ test("the demo scenarios are valid FakeScenario objects that cost zero tokens", 
 test("every fixture a demo scenario writes is shipped, and the chart is the devkit template", () => {
   for (const s of Object.values(DEMO_SCENARIOS))
     for (const turn of s.turns)
-      for (const step of turn.steps) if ("write" in step) expect(DEMO_FIXTURES[step.fixture]).toBeString();
+      for (const step of turn.steps) if ("fixture" in step) expect(DEMO_FIXTURES[step.fixture]).toBeString();
   expect(DEMO_FIXTURES["chart/ui.tsx.fixture"]).toContain("Graphique d'avancement");
   expect(DEMO_FIXTURES["chart/ui.tsx.fixture"]).toContain("useEntities");
 });

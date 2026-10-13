@@ -1,8 +1,13 @@
-import type { Domain } from "@kibo/schema";
+import { type Domain, domainsOf } from "@kibo/schema";
+
+type ProjectDomains = { domains?: Domain[]; sync?: { keyAllocator: string } };
 
 export function projectDomainsOf(
-  project: { domains?: Domain[] } | null | undefined,
+  project: ProjectDomains | null | undefined,
   config: { domains: Domain[] } | null | undefined,
 ): Domain[] | undefined {
-  return project?.domains ?? config?.domains;
+  if (!config) return undefined;
+  const workspace = config.domains.filter((d) => d.owner.scope === "workspace");
+  const shared = project?.sync?.keyAllocator === "server";
+  return domainsOf({ project: { domains: project?.domains ?? [], shared }, workspace });
 }

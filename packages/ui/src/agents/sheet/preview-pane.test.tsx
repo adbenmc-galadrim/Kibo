@@ -25,6 +25,7 @@ const PREVIEW: AgentPreview = {
   },
 };
 const calls: RpcRequest[] = [];
+let preview: AgentPreview = PREVIEW;
 
 mock.module("../../api", () =>
   apiMock({
@@ -32,7 +33,7 @@ mock.module("../../api", () =>
       rpc: (req: RpcRequest) => {
         calls.push(req);
         if (req.method === "getProject") return Promise.resolve(kiboProject());
-        if (req.method === "agents.preview") return Promise.resolve(PREVIEW);
+        if (req.method === "agents.preview") return Promise.resolve(preview);
         return Promise.resolve(null);
       },
     },
@@ -43,6 +44,7 @@ const { PreviewPane } = await import("./PreviewPane");
 
 beforeEach(() => {
   calls.length = 0;
+  preview = PREVIEW;
 });
 
 test("screen 193d: levels with their tokens, brief, agents.json and the command", async () => {
@@ -99,4 +101,37 @@ test("choosing a ticket composes the preview on that ticket", async () => {
       ticketId: expect.any(String),
     }),
   );
+});
+
+const WORK = [
+  "## Travail en cours sur le projet",
+  "### bou · livraison · BOU-12 — Format des dates de livraison",
+  "exports nouveaux : formatDate (src/lib/format-date.ts)",
+  "",
+  "mcp__kibo__peek_work lit le travail d'un autre run.",
+].join("\n");
+
+test("screen 201b: the work section of the brief is shown open as an example", async () => {
+  preview = {
+    ...PREVIEW,
+    brief: `# BOU-15\n\n## Commits de la branche\n(aucun)\n\n${WORK}\n\n## Suite\nrien\n`,
+  };
+  render(
+    <PreviewPane open onClose={() => {}} agentRef="global:livraison" name="livraison" projectId="bou" />,
+  );
+  const pane = within(await screen.findByRole("dialog", { name: "Ce que reçoit l'agent" }));
+  const summary = await pane.findByText("Travail en cours sur le projet (exemple)");
+  const details = summary.closest("details");
+  expect(details?.open).toBe(true);
+  const text = details?.querySelector("pre")?.textContent ?? "";
+  expect(text).toBe(WORK);
+});
+
+test("a brief without the work section shows nothing more", async () => {
+  render(
+    <PreviewPane open onClose={() => {}} agentRef="global:livraison" name="livraison" projectId="bou" />,
+  );
+  const pane = within(await screen.findByRole("dialog"));
+  await pane.findByRole("button", { name: "brief.md" });
+  expect(pane.queryByText("Travail en cours sur le projet (exemple)")).toBeNull();
 });

@@ -6,6 +6,21 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.23.0-alpha.1 — 2026-10-12
+
+- Fini le code en double entre agents : chaque run reçoit à chaque tour ce que font les autres runs du projet (plan, fichiers, exports nouveaux) et peut lire leur travail avec `peek_work`. Kibo vérifie chaque écriture et balaie les espaces de travail toutes les cinq minutes : même fichier, même export, bloc identique. L'agent alerté factorise seul, et quand il reprend du code d'un autre ticket, Kibo pose lui-même le lien « bloque », que tu peux annuler d'un clic. Réglages par projet et recouvrements à ignorer dans « Modifier le projet » ; puce « ⧉ n » dans la barre des agents, section « Travail en parallèle » sur la page du run, « Voir les fichiers » côte à côte.
+- L'agent de projet modifie, réassigne, rouvre et archive des questions dans ses lots, et lit leur destinataire ; une réponse déjà transmise à un agent se rouvre d'abord. Toi aussi : tes réponses se modifient ou se retirent tant qu'elles n'ont pas été transmises, et chaque question garde son historique (« Archivées », restaurer).
+- Survole une pastille « n questions » (Kanban, Tickets, fiche, lot) pour voir les questions ; clique pour arriver dessus : la question entre en vue, avec un fondu et un rebond (fondu seul si tu réduis les animations). Chaque question a maintenant une adresse propre.
+- Les boutons de réponse (Répondre, Modifier, Retirer, Archiver) sont remontés dans l'en-tête de la carte de question.
+- Réglages › Domaines & guidelines devient un explorateur : le workspace, puis un dossier par projet avec ses guidelines et ses domaines. Les domaines appartiennent maintenant au projet qui les utilise (migrés au premier démarrage, un domaine partagé ou inutilisé reste au workspace), et chaque projet ouvre son dossier depuis « Modifier le projet ».
+- La page « Changements » ne disparaît plus de la liste des écrans.
+- Inclut les correctifs de la 0.22.0-alpha.2 : Kanban sans débordement ni barre de défilement ; page Skills repliable par dossier, avec les filtres Tous / Utilisés / Avec notes.
+
+## 0.22.0-alpha.2 — 2026-10-12
+
+- Kanban : un titre très long (chemin, identifiant) passe à la ligne dans la carte au lieu d'en sortir ; les étiquettes et le nom d'agent trop longs s'arrêtent sur une ellipse ; plus aucune colonne ne défile de côté et les barres de défilement sont masquées (le défilement reste possible à la molette, au trackpad et au clavier).
+- Page Skills : chaque groupe (cet ordinateur, projet, plugin) se replie, plugins repliés par défaut, « Tout replier / Tout déplier » ; filtres « Tous », « Utilisés » et « Avec notes » avec leurs compteurs ; tes choix sont gardés.
+
 ## 0.22.0-alpha.1 — 2026-10-12
 
 - Des agents, plus de profils : chaque agent est un fichier Claude Code (`~/.claude/agents` ou `.claude/agents` du projet) avec sa spec, ses sous-agents appelables et ses skills autorisés. Tes profils ont été migrés en fichiers ; les instances restées en 0.21 ne les verront plus.

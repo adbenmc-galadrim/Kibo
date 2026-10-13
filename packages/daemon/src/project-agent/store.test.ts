@@ -3,7 +3,8 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { BatchEvent, ProjectFingerprint, ProposedAction } from "@kibo/schema";
+import { diffFingerprints, renderDigest } from "@kibo/core/project-agent/digest";
+import type { BatchEvent, ProjectFingerprint, ProposedAction, TicketPrint } from "@kibo/schema";
 import { openRunStore } from "../agents/run-store";
 import { type NewBatch, openProjectAgentStore } from "./store";
 
@@ -25,19 +26,19 @@ const ACTION: ProposedAction = {
   statusId: "done",
 };
 const ADAM = { kind: "human" as const, ref: "adam" };
+const PRINT: TicketPrint = {
+  key: "EMIS-1",
+  title: "A",
+  statusId: "todo",
+  labels: [],
+  parentId: null,
+  assignee: null,
+  branch: null,
+  pr: null,
+  blockedBy: [],
+};
 const FP: ProjectFingerprint = {
-  tickets: {
-    t1: {
-      key: "EMIS-1",
-      title: "A",
-      statusId: "todo",
-      labels: [],
-      parentId: null,
-      assignee: null,
-      branch: null,
-      pr: null,
-    },
-  },
+  tickets: { t1: PRINT },
   questions: {},
   runs: {},
   notes: {},
@@ -136,6 +137,56 @@ test("the fingerprint is read back through its schema; a corrupt one is STORE_CO
   db.exec(`UPDATE project_agent_sessions SET fingerprint = '{"tickets": 3}'`);
   db.close();
   expect(() => store.fingerprint("r1")).toThrow(expect.objectContaining({ code: "STORE_CORRUPT" }));
+  store.close();
+});
+
+const withBlockers = (blockedBy: string[]): ProjectFingerprint => ({
+  ...FP,
+  tickets: {
+    t1: { ...PRINT, key: "BOU-12", blockedBy: [] },
+    t2: { ...PRINT, key: "BOU-15", title: "B", blockedBy },
+  },
+});
+
+const digestOf = (before: ProjectFingerprint, after: ProjectFingerprint): string => {
+  const names = {
+    ticket: (id: string) => after.tickets[id]?.key ?? id,
+    question: (id: string) => id,
+    run: (id: string) => id,
+    recipient: (id: string) => id,
+  };
+  return renderDigest(diffFingerprints(before, after, names), null);
+};
+
+test("a fingerprint stored before blockedBy is read with the current blockers, so no link is relisted", () => {
+  const h = home();
+  const store = openProjectAgentStore(h);
+  store.startSession({ projectId: "p1", runId: "r1", sessionId: "s1", startedAt: 1 });
+  const legacy = withBlockers([]);
+  const raw = JSON.stringify({
+    ...legacy,
+    tickets: Object.fromEntries(
+      Object.entries(legacy.tickets).map(([id, { blockedBy: _omitted, ...print }]) => [id, print]),
+    ),
+  });
+  const db = new Database(join(h, "runs.db"));
+  db.query("UPDATE project_agent_sessions SET fingerprint = ?1").run(raw);
+  db.close();
+  const current = withBlockers(["BOU-12"]);
+  expect(store.fingerprint("r1")?.tickets.t2?.blockedBy).toEqual([]);
+  expect(store.fingerprint("r1", current)).toEqual(current);
+  expect(digestOf(store.fingerprint("r1", current) ?? FP, current)).not.toContain("bloqué par");
+  store.close();
+});
+
+test("a fingerprint with blockedBy is written and read back, and the digest names the new blocker", () => {
+  const store = openProjectAgentStore(home());
+  store.startSession({ projectId: "p1", runId: "r1", sessionId: "s1", startedAt: 1 });
+  store.saveFingerprint("r1", withBlockers([]), 2);
+  const current = withBlockers(["BOU-12"]);
+  const before = store.fingerprint("r1", current);
+  expect(before).toEqual(withBlockers([]));
+  expect(digestOf(before ?? FP, current)).toContain("BOU-15 : bloqué par BOU-12");
   store.close();
 });
 

@@ -56,6 +56,7 @@ const project: ProjectSnapshot = {
     color: "#14B8A6",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [{ id: "pg1", title: "Kanban", kind: "view", parentId: null }],

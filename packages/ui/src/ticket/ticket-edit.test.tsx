@@ -71,6 +71,7 @@ const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "
     color: "#14B8A6",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

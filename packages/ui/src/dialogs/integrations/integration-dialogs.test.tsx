@@ -387,8 +387,8 @@ test("mcp list: empty state and add flow", async () => {
 });
 
 test("mcp: the reduced environment names the secret variables", async () => {
-  const { fr } = await import("../../i18n/fr");
-  const env = fr.integrations.mcpServer.environment;
+  const { frIntegrations } = await import("../../i18n/fr-integrations");
+  const env = frIntegrations.mcpServer.environment;
   expect(env(["FS_TOKEN"])).toBe(
     "Environnement réduit : PATH, HOME, LANG et FS_TOKEN (lu dans le trousseau). Aucune autre variable n'est transmise.",
   );

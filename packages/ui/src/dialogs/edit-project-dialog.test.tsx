@@ -1,5 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import {
+  DEFAULT_DUPLICATION_SETTINGS,
   DEFAULT_RECIPIENTS,
   DEFAULT_WORKFLOW,
   KiboError,
@@ -7,9 +8,11 @@ import {
   type ProjectSnapshot,
   type ProjectSummary,
   type RpcRequest,
+  type TabTarget,
 } from "@kibo/schema";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { configFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
@@ -24,6 +27,7 @@ const snapshot = (): ProjectSnapshot => ({
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -43,6 +47,7 @@ mock.module("../api", () =>
       subscribe: () => () => {},
       rpc: async (req: RpcRequest) => {
         if (req.method === "getProject") return snapshot();
+        if (req.method === "overlaps.ignored") return [];
         calls.push(req);
         if (fail) throw fail;
         if (req.method === "updateProject")
@@ -54,6 +59,7 @@ mock.module("../api", () =>
             color: "#6366F1",
             worktree: null,
             storybook: null,
+            duplication: null,
           };
         if (req.method === "setIcon") return { icon: req.icon ? "abc" : null };
         throw new Error(`unexpected ${req.method}`);
@@ -71,6 +77,7 @@ const project: ProjectSummary = {
   color: "#F97316",
   worktree: null,
   storybook: null,
+  duplication: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
   icon: "v1",
 };
@@ -82,6 +89,23 @@ beforeEach(() => {
   calls.length = 0;
   fail = null;
   access = "write";
+});
+
+test("the guidelines section closes the dialog and opens the project's folder (screen 209b)", async () => {
+  const closed = mock(() => {});
+  const go = mock((_target: TabTarget) => {});
+  render(
+    <EditProjectDialog project={project} remote={false} onClose={closed} config={configFixture()} go={go} />,
+  );
+  expect(screen.getByText("6 fichiers .md · 2 domaines")).toBeTruthy();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Ouvrir le dossier de guidelines →" }));
+  expect(closed).toHaveBeenCalledTimes(1);
+  expect(go).toHaveBeenCalledWith({ kind: "screen", screen: "domains", projectId: "kibo" });
+});
+
+test("without the configuration the guidelines section is not shown", () => {
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  expect(screen.queryByRole("heading", { name: "Guidelines" })).toBeNull();
 });
 
 test("a writable project shows its question recipients (screen 187d)", async () => {
@@ -376,4 +400,52 @@ test("the defaults typed back over an empty setting send no patch", async () => 
   await user.clear(field(PORT_ENV));
   await user.type(field(PORT_ENV), "STORYBOOK_PORT");
   expect(saveButton().hasAttribute("disabled")).toBe(true);
+});
+
+const duplicationSection = () => screen.queryByRole("group", { name: "Doublons entre agents" });
+const detection = () => screen.getByRole("switch", { name: "Détecter les doublons entre agents" });
+
+test("the duplication section follows storybook in a local project (screen 201)", () => {
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  const section = duplicationSection();
+  const storybook = storybookSection();
+  expect(section && storybook && storybook.compareDocumentPosition(section)).toBe(
+    Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+  expect(detection().getAttribute("aria-checked")).toBe("true");
+  expect(saveButton().hasAttribute("disabled")).toBe(true);
+});
+
+test("turning detection off saves the duplication settings only", async () => {
+  const closed = mock(() => {});
+  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
+  const user = userEvent.setup();
+  await user.click(detection());
+  await user.click(saveButton());
+  await waitFor(() => expect(closed).toHaveBeenCalled());
+  expect(calls).toEqual([
+    {
+      method: "updateProject",
+      projectId: "kibo",
+      patch: { duplication: { ...DEFAULT_DUPLICATION_SETTINGS, enabled: false } },
+    },
+  ]);
+});
+
+test("settings brought back to the defaults are saved as null", async () => {
+  const closed = mock(() => {});
+  const duplication = { ...DEFAULT_DUPLICATION_SETTINGS, enabled: false };
+  render(<EditProjectDialog project={{ ...project, duplication }} remote={false} onClose={closed} />);
+  const user = userEvent.setup();
+  await user.click(detection());
+  await user.click(saveButton());
+  await waitFor(() => expect(closed).toHaveBeenCalled());
+  expect(calls).toEqual([{ method: "updateProject", projectId: "kibo", patch: { duplication: null } }]);
+});
+
+test("a remote session greys the duplication section and never sends it", () => {
+  render(<EditProjectDialog project={project} remote onClose={() => {}} />);
+  expect(duplicationSection()).toBeTruthy();
+  expect(detection().hasAttribute("disabled")).toBe(true);
+  expect(screen.getByText("Réglage local : il se modifie sur l'ordinateur où tourne Kibo.")).toBeTruthy();
 });

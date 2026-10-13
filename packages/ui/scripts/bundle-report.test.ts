@@ -308,7 +308,9 @@ describe("bundle report", () => {
       "/x/packages/ui/src/dialogs/integrations/design-problem.ts",
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
-    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/i18n/fr-integrations.ts"))).toBe(false);
+    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/i18n/fr-integration-rows.ts"))).toBe(
+      false,
+    );
   });
 
   test("the mockups section, its property and the frame field are forbidden in the entry", () => {
@@ -394,5 +396,61 @@ describe("bundle report", () => {
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
     expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/tabs/screens.ts"))).toBe(false);
+  });
+  test("vague 23", () => {
+    const paths = [
+      "/x/packages/ui/src/overlaps/use-overlaps.ts",
+      "/x/packages/ui/src/overlaps/use-auto-links.ts",
+      "/x/packages/ui/src/overlaps/OverlapFilesDialog.tsx",
+      "/x/packages/ui/src/overlaps/ParallelWorkSection.tsx",
+      "/x/packages/ui/src/overlaps/overlap-labels.ts",
+      "/x/packages/ui/src/overlaps/OverlapCounts.tsx",
+      "/x/packages/ui/src/overlaps/use-open-overlap.ts",
+      "/x/packages/ui/src/moments/OverlapMoment.tsx",
+      "/x/packages/ui/src/moments/AutoLinkMoment.tsx",
+      "/x/packages/ui/src/overlaps/DuplicationFields.tsx",
+      "/x/packages/ui/src/overlaps/IgnoredOverlaps.tsx",
+      "/x/packages/ui/src/overlaps/GenericExportsField.tsx",
+      "/x/packages/ui/src/overlaps/AutoLinkBadge.tsx",
+      "/x/packages/ui/src/i18n/fr-overlaps.ts",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    for (const p of ["agents/bar-summary.ts", "agents/AgentBar.tsx", "i18n/fr.ts"])
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`))).toBe(false);
+  });
+  test("vague 23, repli des questions", () => {
+    for (const p of ["agents/run-state-text.ts", "i18n/fr-agent-bar.ts"])
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`))).toBe(true);
+    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/agents/format.ts"))).toBe(false);
+  });
+  test("vague 23, repli des textes de fr.ts", () => {
+    for (const p of ["fr-domains.ts", "fr-integrations.ts"])
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/i18n/${p}`))).toBe(true);
+    for (const p of ["fr.ts", "fr-integration-rows.ts"])
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/i18n/${p}`))).toBe(false);
+  });
+  test("vague 23, dossiers de guidelines", () => {
+    const paths = [
+      "settings/FolderTree.tsx",
+      "settings/NodeHeader.tsx",
+      "settings/EmptyNode.tsx",
+      "settings/HowAgentsAreConfigured.tsx",
+      "settings/DomainHeader.tsx",
+      "settings/domains-tree.ts",
+      "settings/domains-entries.tsx",
+      "settings/folder-tree-keys.ts",
+      "settings/use-domains-page.ts",
+      "dialogs/GuidelinesField.tsx",
+      "ticket/DomainSelect.tsx",
+      "i18n/fr-domains.ts",
+    ];
+    for (const p of paths)
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`))).toBe(true);
+    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/tabs/target-hash.ts"))).toBe(false);
+  });
+  test("vague 23, contenu de l'aperçu de question", () => {
+    const sdk = (p: string) => FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/sdk/src/${p}`));
+    expect(sdk("question-preview-content.tsx")).toBe(true);
+    expect(sdk("question-preview.tsx")).toBe(false);
   });
 });

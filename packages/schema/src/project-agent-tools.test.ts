@@ -3,6 +3,7 @@ import { isProjectAgentRequest } from "./project-agent-rpc";
 import { TOOL_SPECS } from "./project-agent-tool-specs";
 import {
   AgentMcpRequest,
+  ListQuestionsInput,
   ListSignalsInput,
   PROJECT_AGENT_MCP_TOOLS,
   PROJECT_AGENT_TOOLS,
@@ -56,6 +57,25 @@ describe("project agent tools", () => {
     expect(properties.signals.maxItems).toBe(20);
     expect(properties.signal.pattern).toBe("^sig:[1-9]\\d{0,5}$");
     expect(properties.type.enum).toContain("dismissSignal");
+  });
+
+  test("list_questions reads archived questions and filters by recipient", () => {
+    expect(ListQuestionsInput.parse({ state: "archived" })).toEqual({ state: "archived" });
+    expect(ListQuestionsInput.parse({ recipient: "Client" })).toEqual({ state: "open", recipient: "Client" });
+    const spec = TOOL_SPECS.find((s) => s.name === "list_questions");
+    expect(Object(Object(spec?.inputSchema.properties).state).enum).toContain("archived");
+    expect(Object(spec?.inputSchema.properties).recipient).toBeDefined();
+  });
+
+  test("the batch spec describes the question actions, recipient and name", () => {
+    const batch = TOOL_SPECS.find((s) => s.name === "propose_batch");
+    const actions = Object(Object(batch?.inputSchema.properties).actions);
+    const properties = Object(Object(actions.items).properties);
+    for (const type of ["updateQuestion", "reopenQuestion", "deleteQuestion", "addRecipient"]) {
+      expect(properties.type.enum).toContain(type);
+    }
+    expect(properties.recipient.description).toBeDefined();
+    expect(properties.name.description).toBeDefined();
   });
 
   test("a run of kind project is a project run", () => {

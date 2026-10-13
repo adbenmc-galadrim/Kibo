@@ -1,6 +1,7 @@
 import {
   type Actor,
   type ExpectedState,
+  findRecipient,
   KiboError,
   type ProjectCommand,
   type ProjectSnapshot,
@@ -80,6 +81,71 @@ function unlinkCommand(
   return { method: "removeLink" as const, linkId: found.id };
 }
 
+function recipientId(project: ProjectSnapshot, raw: string | undefined): string | undefined {
+  if (raw === undefined) return undefined;
+  const found = findRecipient(project.questionRecipients, raw.trim());
+  if (!found) throw new KiboError("NOT_FOUND", `destinataire inconnu « ${raw} »`);
+  return found.id;
+}
+
+type QuestionAction = Extract<
+  ProposedAction,
+  { type: "createQuestion" | "updateQuestion" | "reopenQuestion" | "deleteQuestion" | "addRecipient" }
+>;
+
+export function questionCommands(
+  action: QuestionAction,
+  ids: TicketIds,
+  by: Actor,
+  project: ProjectSnapshot,
+): ProjectCommand[] {
+  switch (action.type) {
+    case "createQuestion": {
+      const { title, context, options, provisional, blocking } = action;
+      const ticketId = idOf(ids, action.ticket);
+      const recipient = recipientId(project, action.recipient);
+      return [
+        {
+          method: "createQuestion",
+          ticketId,
+          title,
+          context,
+          options,
+          provisional,
+          blocking,
+          createdBy: by,
+          runId: null,
+          ...(recipient === undefined ? {} : { recipient }),
+        },
+      ];
+    }
+    case "updateQuestion": {
+      const { questionId, title, context, options, provisional } = action;
+      const ticketId = action.ticket === undefined ? undefined : idOf(ids, action.ticket);
+      const recipient = recipientId(project, action.recipient);
+      return [
+        {
+          method: "updateQuestion",
+          questionId,
+          title,
+          context,
+          options,
+          provisional,
+          ticketId,
+          recipient,
+          by,
+        },
+      ];
+    }
+    case "reopenQuestion":
+      return [{ method: "reopenQuestion", questionId: action.questionId, by }];
+    case "deleteQuestion":
+      return [{ method: "archiveQuestion", questionId: action.questionId, by }];
+    case "addRecipient":
+      return [{ method: "addQuestionRecipient", name: action.name }];
+  }
+}
+
 export function commandsFor(
   action: ProposedAction,
   ids: TicketIds,
@@ -109,23 +175,12 @@ export function commandsFor(
       return [unlinkCommand(action, ids, project)];
     case "answerQuestion":
       return [{ method: "answerQuestion", questionId: action.questionId, answer: action.answer, by }];
-    case "createQuestion": {
-      const { title, context, options, provisional, blocking } = action;
-      const ticketId = idOf(ids, action.ticket);
-      return [
-        {
-          method: "createQuestion",
-          ticketId,
-          title,
-          context,
-          options,
-          provisional,
-          blocking,
-          createdBy: by,
-          runId: null,
-        },
-      ];
-    }
+    case "createQuestion":
+    case "updateQuestion":
+    case "reopenQuestion":
+    case "deleteQuestion":
+    case "addRecipient":
+      return questionCommands(action, ids, by, project);
     case "assignAgent":
     case "deliverAnswers":
     case "cancelRun":

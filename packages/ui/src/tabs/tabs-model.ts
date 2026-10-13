@@ -24,7 +24,14 @@ export type TabsAction =
   | { type: "retarget"; id: string; target: TabTarget }
   | { type: "replace"; state: TabsState };
 
-export const sameTarget = (a: TabTarget, b: TabTarget): boolean => targetToHash(a) === targetToHash(b);
+const placeOf = (t: TabTarget): TabTarget => {
+  if (t.kind === "page" && t.question) return { kind: "page", projectId: t.projectId, pageId: t.pageId };
+  if (t.kind === "screen" && t.projectId) return { kind: "screen", screen: t.screen };
+  return t;
+};
+
+export const sameTarget = (a: TabTarget, b: TabTarget): boolean =>
+  targetToHash(placeOf(a)) === targetToHash(placeOf(b));
 
 export const activeTarget = (s: TabsState): TabTarget | null =>
   s.tabs.find((t) => t.id === s.activeId)?.target ?? null;
@@ -35,7 +42,7 @@ const pinnedFirst = (tabs: Tab[]): Tab[] => [
 ];
 
 const remember = (recents: TabTarget[], target: TabTarget): TabTarget[] =>
-  [target, ...recents.filter((r) => !sameTarget(r, target))].slice(0, MAX_RECENTS);
+  [placeOf(target), ...recents.filter((r) => !sameTarget(r, target))].slice(0, MAX_RECENTS);
 
 function closeIds(state: TabsState, ids: Set<string>): TabsState {
   const tabs = state.tabs.filter((t) => !ids.has(t.id));
@@ -59,12 +66,8 @@ function openTarget(
   const recents = remember(state.recents, target);
   const existing = state.tabs.find((t) => sameTarget(t.target, target));
   if (existing) {
-    return {
-      ...state,
-      tabs: keep ? permanent(state.tabs, existing.id) : state.tabs,
-      activeId: existing.id,
-      recents,
-    };
+    const aimed = state.tabs.map((t) => (t.id === existing.id ? { ...t, target } : t));
+    return { ...state, tabs: keep ? permanent(aimed, existing.id) : aimed, activeId: existing.id, recents };
   }
   const preview = state.tabs.find((t) => t.preview);
   if (!newTab && preview) {

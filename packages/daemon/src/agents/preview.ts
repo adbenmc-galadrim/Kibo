@@ -7,6 +7,7 @@ import {
   guidelineChain,
   type RunProtocol,
 } from "@kibo/core/context";
+import { composeWorkSection } from "@kibo/core/overlaps/section";
 import {
   type AgentPreview,
   type AgentRef,
@@ -15,6 +16,7 @@ import {
   KiboError,
   type ProjectSnapshot,
 } from "@kibo/schema";
+import { EXAMPLE_NOW, exampleParallelWork } from "../overlaps/work-example";
 import type { AgentDataPort } from "./orchestrator-types";
 import { type ComposedAgent, composeAgent, skillRules } from "./run-prepare";
 
@@ -44,6 +46,7 @@ const protocolOf = (composed: ComposedAgent, project: ProjectSnapshot | null): R
   recipients: project?.questionRecipients ?? [],
   signals: true,
   skillReview: composed.skillReview,
+  parallel: true,
 });
 
 function ticketOf(deps: AgentPreviewDeps, projectId: string, ticketId: string | undefined) {
@@ -66,6 +69,7 @@ function projectComposition(
   return buildRunContext({
     ...ctx,
     note: "",
+    work: composeWorkSection(exampleParallelWork(ctx.project), EXAMPLE_NOW),
     chain,
     agent: composed.context,
     protocol: protocolOf(composed, ctx.project),

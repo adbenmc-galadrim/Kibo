@@ -49,9 +49,11 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 29 · Visibilité des agents | 183 à 188k (phase 20 : barre et volet des agents, onglet Activité, mention d'agent, Questions et destinataires, graphe lisible, Kanban « Démarrable ») ; **dessinés** |
 | 30 · Signaux des agents | 189 à 191 (phase 21 : boîte à signaux, lot après réveil, fil du run émetteur, Activité, pastille et notification) ; **dessinés** |
 | 31 · Agents et skills | 192 à 196 (phase 22 : page Agents et fiche, nouvel agent, « Ce que reçoit l'agent », conflit d'écriture, page Skills, éditeur, notes de review, intégration en diff, historique, fil du run) ; **dessinés** |
-| 32 · Doublons entre agents | 197 à 201b (phase 23 : recouvrement dans le fil des deux runs, lien automatique et annulation, liens du ticket « par Kibo », barre et page du run, réglages « Doublons entre agents », « Ce que reçoit l'agent ») ; à dessiner |
+| 32 · Doublons entre agents | 197 à 201b (phase 23 : fil `other` et `owner`, fichiers du recouvrement, lien posé et annulé, fiche Détails et Activité, barre, page du run, réglages, « Ce que reçoit l'agent ») ; **dessinés, ajustés après implémentation** |
+| 33 · Questions : modifier, rouvrir, archiver | 202 à 206 (phase 23 : réponses modifiables, archives et historique, lot de questions, aperçu au survol, question mise en évidence) ; **dessinés** |
+| 34 · Domaines & guidelines | 207 à 209b (phase 23 : arbre de dossiers, état vide, domaine de projet et du workspace, projet partagé en lecture seule, encart, sélecteur groupé, lien du projet) ; **dessinés, ajustés après implémentation** |
 
-Pages 00 à 27 et 29 à 31 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 31 (la page 32, phase 23, est dans le fichier mais hors des PDF).
+Pages 00 à 27 et 29 à 34 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 34.
 Pages 28 à 28d : pistes de brainstorming (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF ; scripts `32b` à `32f`, pistes eux aussi.
 
 Règles :
@@ -225,13 +227,71 @@ intégration en diff sans actions par bloc ; dans le fil, « A utilisé le skill
   « masqué », « Nom peu parlant », « fichier illisible », agents de Kibo repliés, historique des runs) · 192b « Nouvel agent » (nom, portée,
   description obligatoire, modèle, gabarits Vide, Livraison, Review, SEO, Chef d'orchestre, aperçu « Dans Claude Code », chemin du fichier) ·
   193 fiche agent, spec en premier · 193b réglages techniques dépliés · 193c sous-agents appelables et skills autorisés · 193d « Ce que reçoit
-  l'agent » · 193e conflit d'écriture · 194 page Skills (Cet ordinateur, Projet, Plugins) · 194b skill de plugin en lecture seule, « Copier pour
+  l'agent » · 193e conflit d'écriture · 194 page Skills (Cet ordinateur, Projet, Plugins ; groupes repliables, plugins repliés, « Tout déplier », filtres Tous · Utilisés · Avec notes avec compteurs, 0.22.0-alpha.2) · 194b skill de plugin en lecture seule, « Copier pour
   modifier » · 195 éditeur de skill, côte à côte et fichiers annexes · 195b notes de review · 195c intégration en diff · 195d historique des
   versions · 196 fil du run et bloc « Reviews de skills » de l'onglet Activité.
 
+## Phase 23 (page 32)
+
+`36-doublons-agents.js`, chargé après `24-socle-suite`, `32b-pistes-agents` et `32d-pistes-questions` (primitives `S.vis`, `S.visQ`) et
+`35-agents-skills` (`S.one`, `S.fixTabX`) ; liste `S.DOUBLONS`. Comme pour la page 31, **un écran par appel direct** avec `await S.one(n)` (sombre
+puis clair, export PNG des deux) ; un appel qui dépasse 120 s continue en tâche de fond : attendre ses PNG avant l'appel suivant, sinon deux écrans
+se dessinent en même temps. Après le dessin, `S.fixDoublonsNav()` (sous-entrées « Files d'attente » et « Skills » sous « Agents ») et `S.fixBarTip()` (bulle de 200 au-dessus de la puce ⧉ 1) dans un appel direct, puis `S.dropBases()`.
+Projet Boutique (BOU) : `toBoutique` renomme Kibo et KIB-… dans la barre latérale, les onglets et le fil d'Ariane de la base. Écrans de 1 040 px
+de haut (1 120 pour 199, 1 240 pour 201 et 201b) ; rangées espacées de 1,4 × 1 040 px. Données : section « Doublons entre agents (phase 23) » de
+`donnees-fictives.md`. Recouvrement en zinc avec l'icône `Copy`, lien automatique avec l'icône `Link` ; l'orange reste aux agents.
+
+Ajustés après implémentation sur les captures `screens/2026-10-12-p23-t11` (T11) : en-tête du run « Agent livraison · Projet · BOU · titre · démarré à »,
+« Arrêter » ; fil ouvert par « Session : nouvelle » et fermé par « Écrire à l'agent » ; colonne de droite « Travail en parallèle », plan et « Compte rendu » ;
+puces de la barre « BOU-15 · 3/4 · étape ⧉ 1 ». Écrans ajoutés : 197c, 199b, 200b (dans `S.DOUBLONS`). Pour redessiner un écran renommé, `S.dropScreen(n)`
+retire l'ancien (sombre et clair) avant `S.both(n)`.
+
+- 32 · Doublons entre agents : 197 page du run `bou · livraison · BOU-15` (`other`) : ligne « Recouvrement avec … · `formatDate` exporté deux
+  fois », « à factoriser », « Ouvert », « Voir les fichiers » et « Ignorer », puis « A regardé le travail de BOU-12 » (`peek_work`) et « Kibo a
+  rappelé de factoriser » · 197c dialogue « Fichiers du recouvrement » (deux fichiers côte à côte, lignes en rouge et en vert) · 197b run `bou · livraison · BOU-12` (`owner`) : « repris par bou · livraison · BOU-15 », « Réglé 14:52 », information
+  au propriétaire · 198 « Kibo a lié BOU-12 → BOU-15 (BOU-12 bloque BOU-15) », `src/lib/format-date.ts` repris de BOU-12, « Annuler » ·
+  198b « Annulé par Adam 15:03 », bouton disparu, run « Terminé » · 199 fiche BOU-15, Détails : « Bloqué par » BOU-12 avec le badge « par Kibo »
+  et sa bulle · 199b Activité avec les lignes de recouvrement et de lien, « Recouvrements : 1 réglé · 0 ouvert » sous le compte rendu · 200 barre du
+  pied de page (puces avec ⧉ 1, « 2/3 places · 1 recouvrement », bulle) sur la fiche BOU-12 · 200b page du run avec « Travail en parallèle » · 201 « Modifier le projet », section
+  « Doublons entre agents » · 201b « Ce que reçoit l'agent » sur BOU-15, niveau « Travail en cours sur le projet (exemple) » déplié.
+
+## Phase 23 (page 33)
+
+`37-questions-edition.js`, chargé après `24-socle-suite`, `32b-pistes-agents` et `32d-pistes-questions` (primitives `S.vis`, `S.visQ`) et `36-doublons-agents`
+(`S.dropScreen`) ; liste `S.QUESTIONS_EDITION`. Un écran par appel (`S.both(n)`), puis `S.fixQEditNav()` et `S.fixQPreview()` dans un appel direct (élément « Questions » sous
+« Notes », aperçu de 205b sous sa ligne de lot une fois la mise en page calculée) et `S.dropBases()`. Données : section « Questions : modification et archivage (phase 23) » de `donnees-fictives.md`. Actions de la carte
+(« Modifier la réponse », « Retirer la réponse », « Rouvrir », « Archiver », « Restaurer ») dans l'en-tête, à droite du titre (demande d'Adam, captures
+`screens/2026-10-12-p23-qactions`).
+
+- 33 · Questions : modifier, rouvrir, archiver : 202 filtre « Répondues », réponse non transmise (« à transmettre ») modifiable, réponse transmise
+  figée (`Lock`, « transmise à sonnet-review · figée », « Rouvrir ») · 202b formulaire de réponse rouvert, prérempli, « Annuler » / « Enregistrer » ·
+  203 filtre « Archivées », « Archivée par Adam », « Restaurer », « Historique (3) » déplié · 204 lot n° 3 de l'agent de projet (destinataire ajouté,
+  question créée, question modifiée avec titre et destinataire avant → après, rouverte, archivée) · 205 aperçu de la pastille « 2 questions » de KIB-14
+  sur le Kanban · 205b aperçu d'une question sur une ligne du lot · 206 question mise en évidence (fond orange en fondu) et adresse `?question=`.
+
+## Phase 23 (page 34)
+
+`38-domaines-guidelines.js`, chargé après `18-socle`, `17-finitions`, `24-socle-suite`, `32b-pistes-agents`, `32d-pistes-questions` et
+`35-agents-skills` (`S.one`) ; liste `S.GUIDELINES`. Un écran par appel (`S.both(n)` ou `S.one(n)`), puis `S.fixGuidelinesNav()` dans un appel direct
+(Boutique sous Facturation dans la barre latérale, croix des onglets en dernier) et `S.dropBases()`. Les textes en `auto-height` ne sont mesurés
+que si l'onglet est au premier plan et que l'écran est dans la vue : avant l'export, `penpot.viewport.zoomIntoView([sombre, clair])`, puis `S.retext`.
+Projets Kibo, Portail, Facturation et Boutique (`projectsShell` renomme Portfolio et API Facturation de la base, ajoute Boutique). Écrans de 1 100 px
+de haut (207 à 208, 208c), 1 040 sinon ; rangées espacées de 1,4 × 1 040 px. Données : section « Domaines & guidelines (phase 23) » de `donnees-fictives.md`.
+
+- 34 · Domaines & guidelines : 207 page entière, encart « Comment les agents sont configurés » déplié, arbre (Workspace et « Domaines du workspace »,
+  Kibo déplié avec ses fichiers et « Domaines », Portail, Facturation, Boutique repliés ; chemins complets `guidelines/…` ; chevron des dossiers
+  dans un bouton séparé), nœud « Projet · Kibo » (dossier tronqué « ~/code/galadrim/kibo-monorepo… · 3 fichiers · 4 domaines », Éditer,
+  `guidelines/kibo.md`, Injection « Workspace → Projet Kibo ») · 207b dossier Facturation vide (« Aucune guideline pour ce projet. », « Ajouter un fichier », « Aucun domaine… »,
+  « Nouveau domaine ») · 208 domaine Sync de Kibo (« domaine de Kibo · utilisé par 8 tickets », corbeille, `sync.md`, Injection « Workspace → Projet
+  Kibo → Domaine Sync ») · 208b encart replié, domaine du workspace Sécurité (« utilisé par 6 tickets dans 2 projets », Injection « Workspace →
+  Domaine Sécurité ») · 208c projet partagé Portail dont Adam est lecteur (badge « Lecture seule », ni « + », ni Enregistrer, ni « Supprimer le
+  fichier », pas de « Domaines » dans l'arbre) · 209 fiche KIB-14, sélecteur de domaine groupé (« Aucun », « Domaines de Kibo », « Domaines du workspace ») · 209b « Modifier
+  le projet », section Guidelines entre Storybook (Adresse, Variable du port) et « Doublons entre agents » (« 7 fichiers .md · 4 domaines » suivi
+  du lien « Ouvrir le dossier de guidelines → »). La portée « domaine de Kibo » est une pastille au point de la couleur du projet.
+
 ## Exporter
 
-1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("31")` aujourd'hui (la page 32 attend le jalon de la phase 23) (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
+1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("34")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`.
 2. Source : menu du fichier → Exporter (.penpot), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
    que Penpot régénère : l'archive reste sous la limite de 100 Mo de GitHub).

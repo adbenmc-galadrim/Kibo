@@ -10,6 +10,7 @@ import {
   QuestionOption,
   QuestionTitle,
 } from "./question";
+import { QuestionRecipient, RECIPIENT_ID_MAX } from "./question-recipient";
 import type { RunView } from "./run";
 import { ActionId, SIGNAL_REFS_MAX, SignalRef } from "./signal";
 import { StatusId } from "./status";
@@ -38,6 +39,7 @@ const base = {
 const ActionTitle = z.string().trim().min(1).max(ACTION_TITLE_MAX);
 const ActionDescription = z.string().max(ACTION_DESCRIPTION_MAX);
 const NoteBody = z.string().max(MAX_NOTE_CHARS);
+const RecipientName = z.string().trim().min(1).max(RECIPIENT_ID_MAX);
 
 export const ProposedAction = z.discriminatedUnion("type", [
   z.object({
@@ -89,7 +91,24 @@ export const ProposedAction = z.discriminatedUnion("type", [
     options: z.array(QuestionOption).max(QUESTION_OPTIONS_MAX).optional(),
     provisional: QuestionOption.optional(),
     blocking: z.boolean().optional(),
+    recipient: RecipientName.optional(),
   }),
+  z
+    .object({
+      ...base,
+      type: z.literal("updateQuestion"),
+      questionId: NodeId,
+      title: QuestionTitle.optional(),
+      context: z.string().max(QUESTION_CONTEXT_MAX).optional(),
+      options: z.array(QuestionOption).max(QUESTION_OPTIONS_MAX).optional(),
+      provisional: QuestionOption.optional(),
+      ticket: TicketRef.optional(),
+      recipient: RecipientName.optional(),
+    })
+    .strict(),
+  z.object({ ...base, type: z.literal("reopenQuestion"), questionId: NodeId }),
+  z.object({ ...base, type: z.literal("deleteQuestion"), questionId: NodeId }),
+  z.object({ ...base, type: z.literal("addRecipient"), name: QuestionRecipient.shape.name }),
   z.object({ ...base, type: z.literal("createNote"), path: NotePath, content: NoteBody }),
   z.object({ ...base, type: z.literal("updateNote"), path: NotePath, content: NoteBody }),
   z.object({ ...base, type: z.literal("dismissSignal"), signal: SignalRef }),
@@ -109,6 +128,10 @@ export const ACTION_GROUPS: Record<ActionType, ActionGroup> = {
   cancelRun: "agents",
   answerQuestion: "questions",
   createQuestion: "questions",
+  updateQuestion: "questions",
+  reopenQuestion: "questions",
+  deleteQuestion: "questions",
+  addRecipient: "questions",
   createNote: "notes",
   updateNote: "notes",
   dismissSignal: "signals",

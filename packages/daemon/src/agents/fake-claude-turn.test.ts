@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { cleanFakeDirs, tmp } from "./fake-claude.test-helper";
-import { bindProfiles } from "./fake-claude-mcp";
-import { scenarioPath, turnScenario } from "./fake-claude-scenario";
+import { bindPlaceholders } from "./fake-claude-mcp";
+import { FakeScenario, scenarioPath, turnScenario } from "./fake-claude-scenario";
 
 cleanFakeDirs();
 
@@ -30,6 +30,20 @@ test("per turn routes pick the scenario of the current prompt and keep the sessi
   );
 });
 
+test("question messages route to the question scenarios, which parse", () => {
+  const routes = scenarioPath("project-agent-routes");
+  const remembered = scenarios("project-agent-batch.json");
+  expect(turnScenario(routes, "# Message\nPeux-tu ranger les questions ?", remembered).turn).toBe(
+    scenarioPath("project-agent-questions"),
+  );
+  expect(turnScenario(routes, "# Message\nRenomme la question transmise", remembered).turn).toBe(
+    scenarioPath("project-agent-questions-invalid"),
+  );
+  for (const name of ["project-agent-questions", "project-agent-questions-invalid"] as const) {
+    expect(FakeScenario.safeParse(JSON.parse(readFileSync(scenarioPath(name), "utf8"))).success).toBe(true);
+  }
+});
+
 test("routes without perTurn stay sticky to the first chosen scenario", () => {
   const routes = scenarioPath("routes");
   const first = turnScenario(routes, "ask_question", null);
@@ -52,10 +66,50 @@ test("profile placeholders resolve by name from the turn's list_profiles reply",
     },
   ];
   const input = { actions: [{ id: 1, type: "assignAgent", profileId: "{{profile:opus}}" }], summary: "s" };
-  expect(bindProfiles(input, calls)).toEqual({
+  expect(bindPlaceholders(input, calls)).toEqual({
     actions: [{ id: 1, type: "assignAgent", profileId: "p-1" }],
     summary: "s",
   });
-  expect(() => bindProfiles(input, [])).toThrow("no list_profiles reply to resolve profile opus");
-  expect(() => bindProfiles({ p: "{{profile:sonnet}}" }, calls)).toThrow("no profile named sonnet");
+  expect(() => bindPlaceholders(input, [])).toThrow("no list_profiles reply to resolve profile opus");
+  expect(() => bindPlaceholders({ p: "{{profile:sonnet}}" }, calls)).toThrow("no profile named sonnet");
+});
+
+test("question placeholders resolve by title from the turn's list_questions reply", () => {
+  const calls = [
+    {
+      tool: "list_questions",
+      text: JSON.stringify([
+        { id: "q-1", title: "Client - Couleur ?", state: "open" },
+        { id: "q-2", title: "Client - Logo ?", state: "answered" },
+      ]),
+      isError: false,
+    },
+  ];
+  const input = { actions: [{ type: "reopenQuestion", questionId: "{{question:Client - Logo ?}}" }] };
+  expect(bindPlaceholders(input, calls)).toEqual({
+    actions: [{ type: "reopenQuestion", questionId: "q-2" }],
+  });
+  expect(() => bindPlaceholders(input, [])).toThrow(
+    "no list_questions reply to resolve question Client - Logo ?",
+  );
+  expect(() => bindPlaceholders({ q: "{{question:Autre}}" }, calls)).toThrow("no question titled Autre");
+});
+
+test("routes never match the work in progress of the other runs", () => {
+  const routes = scenarioPath("routes");
+  const section = [
+    "## Travail en cours sur le projet",
+    "",
+    "### global · livraison · KIB-14 · Récepteur de hooks",
+    "",
+    "- Plan : ask_question",
+  ].join("\n");
+  const brief = `# KIB-7 · Tokens shadcn\n\n## Description\n\nRien.\n\n${section}\n\n## Consignes\n\nAucune.`;
+  expect(turnScenario(routes, brief, null).turn).toBe(join(routes, "..", "hold.json"));
+  expect(turnScenario(routes, `${section}\n\n# Message\n\nRécepteur de hooks`, null).turn).toBe(
+    join(routes, "..", "question.json"),
+  );
+  expect(turnScenario(routes, `# KIB-14 · Récepteur de hooks\n\n${section}`, null).turn).toBe(
+    join(routes, "..", "question.json"),
+  );
 });

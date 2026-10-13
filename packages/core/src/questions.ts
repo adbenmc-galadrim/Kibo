@@ -2,6 +2,7 @@ import {
   type Actor,
   type AnswerInput,
   type ImportRef,
+  isArchived,
   isOpen,
   KiboError,
   QUESTIONS_PER_TICKET_MAX,
@@ -9,6 +10,7 @@ import {
   resolveAnswer,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
+import { assertRecipient } from "./question-recipients";
 import { getNode } from "./tree";
 
 export type NewQuestion = {
@@ -21,6 +23,7 @@ export type NewQuestion = {
   runId?: string | null;
   createdBy: Actor;
   importRef?: ImportRef | null;
+  recipient?: string;
   at?: number;
 };
 
@@ -67,6 +70,7 @@ function freeInstant(taken: readonly Question[], at: number): number {
 
 export function createQuestion(doc: LoroDoc, input: NewQuestion): Question {
   getNode(doc.getTree("tickets"), input.ticketId);
+  if (input.recipient !== undefined) assertRecipient(doc, input.recipient);
   const title = input.title.trim();
   const all = listQuestions(doc);
   const ofTicket = all.filter((q) => q.ticketId === input.ticketId);
@@ -91,6 +95,7 @@ export function createQuestion(doc: LoroDoc, input: NewQuestion): Question {
     createdAt: freeInstant(all, input.at ?? Date.now()),
     importRef: input.importRef ?? null,
     answer: null,
+    ...(input.recipient === undefined ? {} : { recipient: input.recipient }),
   });
 }
 
@@ -102,6 +107,7 @@ export function answerQuestion(
   at: number,
 ): Question {
   const question = getQuestion(doc, id);
+  if (isArchived(question)) throw new KiboError("INVALID_TRANSITION", `question ${id} is archived`);
   if (!isOpen(question)) throw new KiboError("INVALID_TRANSITION", `question ${id} is already answered`);
   return storeQuestion(doc, { ...question, answer: { ...resolveAnswer(question, input), by, at } });
 }

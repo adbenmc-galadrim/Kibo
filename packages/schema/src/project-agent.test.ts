@@ -145,3 +145,49 @@ describe("signals in a batch", () => {
     expect(ACTION_GROUPS.dismissSignal).toBe("signals");
   });
 });
+
+describe("question actions in a batch", () => {
+  const qid = "0f1e2d3c-4b5a-6978-8796-a5b4c3d2e1f0";
+  const update = { id: 1, why: "", type: "updateQuestion", questionId: qid, title: "B" } as const;
+
+  test("updateQuestion never changes blocking and leaves an empty update to the batch validation", () => {
+    expect(ProposedAction.parse(update)).toEqual(update);
+    const empty = { id: 1, why: "", type: "updateQuestion", questionId: qid } as const;
+    expect(ProposeBatchInput.parse({ summary: "s", actions: [empty] }).actions).toEqual([empty]);
+    expect(ProposedAction.safeParse({ ...update, blocking: true }).success).toBe(false);
+    expect(ProposedAction.parse({ ...update, recipient: "Client", ticket: "EMIS-2" })).toMatchObject({
+      recipient: "Client",
+      ticket: "EMIS-2",
+    });
+  });
+
+  test("reopenQuestion, deleteQuestion and addRecipient", () => {
+    expect(
+      ProposedAction.safeParse({ id: 2, why: "", type: "reopenQuestion", questionId: qid }).success,
+    ).toBe(true);
+    expect(
+      ProposedAction.safeParse({ id: 3, why: "", type: "deleteQuestion", questionId: qid }).success,
+    ).toBe(true);
+    const add = { id: 4, why: "", type: "addRecipient", name: "Galadrim" } as const;
+    expect(ProposedAction.parse(add)).toEqual(add);
+    expect(ProposedAction.safeParse({ ...add, name: "x".repeat(41) }).success).toBe(false);
+  });
+
+  test("createQuestion may name its recipient", () => {
+    const create = {
+      id: 5,
+      why: "",
+      type: "createQuestion",
+      ticket: "EMIS-1",
+      title: "Q",
+      recipient: "Client",
+    };
+    expect(ProposedAction.parse(create)).toMatchObject({ recipient: "Client" });
+  });
+
+  test("the four question actions belong to the questions group", () => {
+    for (const type of ["updateQuestion", "reopenQuestion", "deleteQuestion", "addRecipient"] as const) {
+      expect(ACTION_GROUPS[type]).toBe("questions");
+    }
+  });
+});

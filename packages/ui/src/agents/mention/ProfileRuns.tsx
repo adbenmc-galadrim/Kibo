@@ -2,7 +2,7 @@ import { type AgentsState, keyBesideLabel, type RunView } from "@kibo/schema";
 import { RUN_TEXT, RunDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { frMoments } from "../../i18n/fr-moments";
-import { runStateText } from "../format";
+import { runStateText } from "../run-state-text";
 import { Mention } from "./Mention";
 import { newestFirst } from "./use-run-view";
 

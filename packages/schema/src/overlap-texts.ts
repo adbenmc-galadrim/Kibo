@@ -1,0 +1,112 @@
+import type { AutoLinkReason, OverlapDetail, OverlapRole } from "./overlap";
+import { DUPLICATION_LIMITS } from "./overlap-settings";
+import { maskSecrets } from "./secret-mask";
+
+export const OVERLAP_SUMMARY_MAX = DUPLICATION_LIMITS.summaryChars;
+export const WORK_SECTION_TITLE = "## Travail en cours sur le projet";
+export const WORK_SECTION_OVERLAPS = "**Recouvrements ouverts avec toi**";
+export const WORK_SECTION_FOOTER =
+  "Avant de créer un utilitaire, un type ou un composant, vérifie qu'il n'existe pas déjà dans le code ni dans ce qui précède ; `mcp__kibo__peek_work` lit le travail d'un autre run.";
+export const PARALLEL_RULES_TITLE = "## Travail en parallèle";
+export const PARALLEL_RULES: readonly string[] = [
+  "D'autres agents travaillent sur ce projet : la section « Travail en cours sur le projet » dit ce qu'ils ont déclaré et écrit.",
+  'Avant de créer un utilitaire, cherche-le dans le code (`Grep`) et dans cette section ; `mcp__kibo__peek_work { run: "BOU-12" }` liste ce qu\'un autre run a écrit, `{ run, path }` montre un fichier de son espace.',
+  "Si Kibo te signale un recouvrement, tu factorises **toi-même, sans demander** : supprime ta copie et reprends la sienne à l'identique au même chemin, ou extrais une fonction commune dans un nouveau fichier identique des deux côtés.",
+  "Dis-le dans les `decisions` de ton compte rendu (« Repris `formatDate` de BOU-12 » ou « Copie gardée : … »).",
+];
+
+const ELLIPSIS = "…";
+
+const bounded = (text: string, max: number): string => {
+  const masked = maskSecrets(text);
+  return masked.length <= max ? masked : `${masked.slice(0, max - ELLIPSIS.length)}${ELLIPSIS}`;
+};
+
+const code = (text: string): string => `\`${text}\``;
+const at = (path: string, line: number): string => code(`${path}:${line}`);
+
+type Sides = { mine: string; theirs: string };
+
+function sidesOf(detail: Exclude<OverlapDetail, { kind: "file" }>, role: OverlapRole): Sides {
+  const owner = detail.kind === "block" ? at(detail.ownerPath, detail.ownerStart) : code(detail.ownerPath);
+  const other = detail.kind === "block" ? at(detail.otherPath, detail.otherStart) : code(detail.otherPath);
+  return role === "other" ? { mine: other, theirs: owner } : { mine: owner, theirs: other };
+}
+
+function summaryOf(detail: OverlapDetail, role: OverlapRole): string {
+  if (detail.kind === "file") return `${code(detail.path)} modifié des deux côtés`;
+  const { mine, theirs } = sidesOf(detail, role);
+  const what =
+    detail.kind === "export" ? `${code(detail.name)} exporté deux fois` : `${detail.lines} lignes identiques`;
+  return `${what} (${mine}, chez lui ${theirs})`;
+}
+
+export function overlapSummary(
+  detail: OverlapDetail,
+  withRunName: string,
+  role: OverlapRole = "other",
+): string {
+  return bounded(`Recouvrement avec ${withRunName} : ${summaryOf(detail, role)}`, OVERLAP_SUMMARY_MAX);
+}
+
+const factorise = (ticketKey: string, ownerPath: string): string =>
+  `**Factorise maintenant, sans demander** : supprime ta copie et reprends la sienne (\`mcp__kibo__peek_work { run: "${ticketKey}", path: "${ownerPath}" }\`, copie le fichier **à l'identique au même chemin**, sans le modifier, puis importe-le), ou extrais une fonction commune dans un **nouveau fichier identique des deux côtés**. Dis ce que tu as fait dans ton fil et ton compte rendu.`;
+
+function otherAlert(detail: OverlapDetail, head: string, ticketKey: string): string {
+  if (detail.kind === "file") {
+    return `${head} : ${code(detail.path)} est aussi modifié par ${ticketKey} : garde tes changements minimaux, ne reformate pas et ne déplace rien dans ce fichier ; une fusion est à prévoir, dis-le dans ton compte rendu.`;
+  }
+  const seen =
+    detail.kind === "export"
+      ? `${code(detail.name)} est aussi exporté par ${code(detail.ownerPath)} dans son espace de travail (toi : ${code(detail.otherPath)})`
+      : `${detail.lines} lignes de ${at(detail.otherPath, detail.otherStart)} sont identiques à ${at(detail.ownerPath, detail.ownerStart)} dans son espace de travail`;
+  return `${head} : ${seen}. ${factorise(ticketKey, detail.ownerPath)}`;
+}
+
+function ownerAlert(detail: OverlapDetail, withRunName: string): string {
+  if (detail.kind === "file") {
+    return `Kibo — ${withRunName} modifie aussi ${code(detail.path)} : garde tes changements minimaux dans ce fichier ; une fusion est à prévoir, dis-le dans ton compte rendu.`;
+  }
+  const what =
+    detail.kind === "export"
+      ? `ton ${code(detail.name)} (${code(detail.ownerPath)})`
+      : `ton code de ${at(detail.ownerPath, detail.ownerStart)} (${detail.lines} lignes)`;
+  return `Kibo — ${withRunName} reprend ${what} : ne le renomme pas et ne le déplace pas d'ici la fin de ton run ; si tu dois le changer, dis-le dans ton compte rendu.`;
+}
+
+export function overlapAlert(
+  role: OverlapRole,
+  detail: OverlapDetail,
+  withRunName: string,
+  withTicketKey: string,
+): string {
+  const text =
+    role === "other"
+      ? otherAlert(detail, `Kibo — recouvrement avec ${withRunName}`, withTicketKey)
+      : ownerAlert(detail, withRunName);
+  return bounded(text, DUPLICATION_LIMITS.alertChars);
+}
+
+export function overlapStopReminder(items: readonly { ticketKey: string; label: string }[]): string {
+  const cited = items.map((i) => `${i.ticketKey} (${i.label})`).join(", ");
+  const head = items.length > 1 ? "recouvrements ouverts" : "recouvrement ouvert";
+  return maskSecrets(
+    `Kibo : ${head} avec ${cited} : factorise, ou explique dans ton compte rendu pourquoi tu gardes ta copie, puis termine.`,
+  );
+}
+
+const REASON_TEXT: Record<AutoLinkReason, string> = { copy: "repris de", import: "importé de" };
+
+export const autoLinkSummary = (
+  fromKey: string,
+  toKey: string,
+  reason: AutoLinkReason,
+  path: string,
+): string =>
+  bounded(
+    `Kibo a lié ${fromKey} → ${toKey} (${fromKey} bloque ${toKey}) : ${code(path)} ${REASON_TEXT[reason]} ${fromKey}`,
+    OVERLAP_SUMMARY_MAX,
+  );
+
+export const autoLinkFailure = (fromKey: string, toKey: string): string =>
+  `Kibo n'a pas pu lier ${fromKey} → ${toKey} : dépendance circulaire`;

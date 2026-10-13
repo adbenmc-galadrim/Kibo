@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { PassThrough } from "node:stream";
 import {
+  PEEK_WORK_SPEC,
   PROJECT_AGENT_TOOLS,
   SIGNAL_PROJECT_SPEC,
   SKILL_REVIEW_SPEC,
@@ -113,16 +114,22 @@ test("without a tool set only the two question tools are listed and nothing reac
   expect(d.calls).toEqual([]);
 });
 
-test("a ticket run lists the question tools, ticket_progress, signal_project and skill_review, never the project tools", async () => {
+test("a ticket run lists the question tools, ticket_progress, signal_project, peek_work and skill_review, never the project tools", async () => {
   expect(await toolNames(TICKET_RUN)).toEqual([
     "ask_user",
     "ask_question",
     "ticket_progress",
     "signal_project",
+    "peek_work",
     "skill_review",
   ]);
   const list = (await call("tools/list", undefined, TICKET_RUN)) as { result: { tools: unknown[] } };
-  expect(list.result.tools.slice(2)).toEqual([TICKET_PROGRESS_SPEC, SIGNAL_PROJECT_SPEC, SKILL_REVIEW_SPEC]);
+  expect(list.result.tools.slice(2)).toEqual([
+    TICKET_PROGRESS_SPEC,
+    SIGNAL_PROJECT_SPEC,
+    PEEK_WORK_SPEC,
+    SKILL_REVIEW_SPEC,
+  ]);
   const d = daemon();
   for (const name of ["list_tickets", "list_signals"])
     expect(await call("tools/call", { name, arguments: {} }, TICKET_RUN, d.fn)).toMatchObject({
@@ -181,6 +188,7 @@ test("a project run lists the question tools, the eleven project tools and skill
   expect(names).toHaveLength(14);
   expect(names).toContain("list_signals");
   expect(names).not.toContain("signal_project");
+  expect(names).not.toContain("peek_work");
   expect(names).toEqual(["ask_user", "ask_question", ...PROJECT_AGENT_TOOLS, "skill_review"]);
   const list = (await call("tools/list", undefined, PROJECT_RUN)) as {
     result: { tools: Array<{ name: string; description: string; inputSchema: unknown }> };
@@ -260,7 +268,7 @@ test("the served tools depend on KIBO_MCP_TOOLS and a down daemon never kills th
   expect((await serve({}, [list]))[0]?.result.tools).toHaveLength(2);
   expect((await serve(url, [list]))[0]?.result.tools).toHaveLength(2);
   expect((await serve({ ...url, KIBO_MCP_TOOLS: "other" }, [list]))[0]?.result.tools).toHaveLength(2);
-  expect((await serve({ ...url, KIBO_MCP_TOOLS: "ticket" }, [list]))[0]?.result.tools).toHaveLength(5);
+  expect((await serve({ ...url, KIBO_MCP_TOOLS: "ticket" }, [list]))[0]?.result.tools).toHaveLength(6);
   const env = { ...url, KIBO_MCP_TOOLS: "project" };
   const replies = await serve(env, [
     list,

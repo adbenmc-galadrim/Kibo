@@ -57,6 +57,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
         color: "#64748B",
         worktree: null,
         storybook: null,
+        duplication: null,
       },
       tickets: [mineTicket("i2", "INB-2", "Appeler le comptable", "todo")],
       links: [],
@@ -77,6 +78,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
       color: "#22C55E",
       worktree: null,
       storybook: null,
+      duplication: null,
     },
     tickets: [mineTicket("f31", "FAC-31", "Export PDF des factures", "in_progress")],
   };
@@ -91,6 +93,7 @@ mock.module("../api", () =>
         calls.push(req);
         if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
         if (req.method === "getRunLog") return Promise.resolve([]);
+        if (req.method === "autoLinks.list") return Promise.resolve([]);
         if (req.method === "cliStatus")
           return Promise.resolve({ path: "/Users/adam/.local/bin/kibo", installed: false });
         if (req.method === "getProject") return Promise.resolve(snapshotOf(req.projectId));

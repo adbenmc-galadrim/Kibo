@@ -12,6 +12,8 @@ const ctx: BatchContext = {
     questions: [
       question({ id: "q1", ticketId: "t1", provisional: "A" }),
       answered(question({ id: "q2", ticketId: "t3" })),
+      answered(question({ id: "q3", ticketId: "t3" }), "oui", 4),
+      question({ id: "q4", ticketId: "t1", archivedAt: 5, archivedBy: { kind: "human", ref: "adam" } }),
     ],
   }),
   runs: [
@@ -28,6 +30,7 @@ const ctx: BatchContext = {
 
 const ref = fc.constantFrom("EMIS-1", "EMIS-2", "EMIS-3", "EMIS-999", "new:1", "new:2", "new:3");
 const why = fc.constant("");
+const questionId = fc.constantFrom("q1", "q2", "q3", "q4", "qx");
 type Draft = ProposedAction extends infer A ? (A extends ProposedAction ? Omit<A, "id"> : never) : never;
 
 const draft: fc.Arbitrary<Draft> = fc.oneof(
@@ -82,6 +85,16 @@ const draft: fc.Arbitrary<Draft> = fc.oneof(
   }),
   fc.record({
     why,
+    type: fc.constant("updateQuestion" as const),
+    questionId: questionId,
+    title: fc.option(fc.constant("Titre"), { nil: undefined }),
+    recipient: fc.option(fc.constantFrom("client", "Galadrim"), { nil: undefined }),
+  }),
+  fc.record({ why, type: fc.constant("reopenQuestion" as const), questionId: questionId }),
+  fc.record({ why, type: fc.constant("deleteQuestion" as const), questionId: questionId }),
+  fc.record({ why, type: fc.constant("addRecipient" as const), name: fc.constantFrom("Galadrim", "client") }),
+  fc.record({
+    why,
     type: fc.constant("createNote" as const),
     path: fc.constantFrom("a.md", "b.md"),
     content: fc.constant(""),
@@ -121,7 +134,33 @@ function refsDeclaredBeforeUse(actions: readonly ProposedAction[]): boolean {
   return true;
 }
 
+const QUESTION_ACTIONS = new Set(["answerQuestion", "updateQuestion", "reopenQuestion", "deleteQuestion"]);
+const ALLOWED_PAIRS = new Set([
+  "answerQuestion+updateQuestion",
+  "updateQuestion+answerQuestion",
+  "reopenQuestion+updateQuestion",
+]);
+
+function oneChangePerQuestion(actions: readonly ProposedAction[]): boolean {
+  const seen = new Map<string, string[]>();
+  for (const action of actions) {
+    if (!QUESTION_ACTIONS.has(action.type) || !("questionId" in action)) continue;
+    seen.set(action.questionId, [...(seen.get(action.questionId) ?? []), action.type]);
+  }
+  return [...seen.values()].every((types) => types.length === 1 || ALLOWED_PAIRS.has(types.join("+")));
+}
+
 describe("validateBatch properties", () => {
+  test("an accepted batch changes a question once, or answers or reopens it before an update", () => {
+    fc.assert(
+      fc.property(batches, (actions) => {
+        const result = validateBatch({ summary: "Lot", actions }, ctx);
+        return !result.ok || oneChangePerQuestion(result.batch.actions);
+      }),
+      { numRuns: 500 },
+    );
+  });
+
   test("an accepted batch declares its new: references once, before use, and cites only the project", () => {
     fc.assert(
       fc.property(batches, (actions) => {

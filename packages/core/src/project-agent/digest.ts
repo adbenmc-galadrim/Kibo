@@ -16,6 +16,7 @@ export type ChangeNames = {
   ticket(id: string): string;
   question(id: string): string;
   run(id: string): string;
+  recipient(id: string): string;
 };
 
 export const DIGEST_LIMIT = 50;
@@ -33,7 +34,7 @@ export const RUN_STATE_TEXT: Record<RunState, string> = {
   cancelled: "annulé",
 };
 
-type Field = { name: keyof TicketPrint; label: string; none: string };
+type Field = { name: Exclude<keyof TicketPrint, "blockedBy">; label: string; none: string };
 const TICKET_FIELDS: readonly Field[] = [
   { name: "title", label: "titre", none: "aucun" },
   { name: "statusId", label: "statut", none: "aucun" },
@@ -65,6 +66,13 @@ function fieldText(field: Field, value: TicketPrint[keyof TicketPrint], parentKe
   return field.name === "parentId" ? parentKey(value) : value;
 }
 
+function blockerLines(name: string, old: readonly string[], next: readonly string[]): string[] {
+  return [
+    ...next.filter((k) => !old.includes(k)).map((k) => `${name} : bloqué par ${k}`),
+    ...old.filter((k) => !next.includes(k)).map((k) => `${name} : plus bloqué par ${k}`),
+  ];
+}
+
 function ticketLines(
   name: string,
   old: TicketPrint | undefined,
@@ -73,19 +81,64 @@ function ticketLines(
 ): string[] {
   if (old === undefined) return next === undefined ? [] : [`Ticket créé : ${name}`];
   if (next === undefined) return [`Ticket supprimé : ${name}`];
-  return TICKET_FIELDS.filter((f) => JSON.stringify(old[f.name]) !== JSON.stringify(next[f.name])).map(
-    (f) =>
-      `${name} : ${f.label} ${fieldText(f, old[f.name], parentKey)} → ${fieldText(f, next[f.name], parentKey)}`,
-  );
+  return [
+    ...TICKET_FIELDS.filter((f) => JSON.stringify(old[f.name]) !== JSON.stringify(next[f.name])).map(
+      (f) =>
+        `${name} : ${f.label} ${fieldText(f, old[f.name], parentKey)} → ${fieldText(f, next[f.name], parentKey)}`,
+    ),
+    ...blockerLines(name, old.blockedBy, next.blockedBy),
+  ];
 }
 
-function questionLines(name: string, old: QuestionPrint | undefined, next: QuestionPrint | undefined) {
-  if (old === undefined) {
-    return next === "answered" ? [`Question posée et répondue : ${name}`] : [`Question posée : ${name}`];
-  }
-  if (next === undefined) return [`Question supprimée : ${name}`];
+type QuestionState = "open" | "answered" | "archived";
+type ReadPrint = { state: QuestionState; title: string | null; recipient: string | null };
+
+const readPrint = (print: QuestionPrint): ReadPrint =>
+  typeof print === "string" ? { state: print, title: null, recipient: null } : print;
+
+function stateLines(name: string, old: QuestionState, next: QuestionState): string[] {
   if (old === next) return [];
+  if (next === "archived") return [`Question archivée : ${name}`];
+  if (old === "archived") return [`Question restaurée : ${name}`];
   return [next === "answered" ? `Question répondue : ${name}` : `Question rouverte : ${name}`];
+}
+
+function titleLines(name: string, old: string | null, next: string | null): string[] {
+  if (old === null || next === null || old === next) return [];
+  return [`Question modifiée : ${name} (titre : « ${old} » → « ${next} »)`];
+}
+
+function recipientLines(
+  name: string,
+  old: string | null,
+  next: string | null,
+  recipientName: (id: string) => string,
+): string[] {
+  if (old === null || next === null || old === next) return [];
+  return [`Destinataire de « ${name} » : ${recipientName(old)} → ${recipientName(next)}`];
+}
+
+const POSED: Record<QuestionState, string> = {
+  open: "Question posée",
+  answered: "Question posée et répondue",
+  archived: "Question archivée",
+};
+
+function questionLines(
+  name: string,
+  oldPrint: QuestionPrint | undefined,
+  nextPrint: QuestionPrint | undefined,
+  recipientName: (id: string) => string,
+): string[] {
+  if (nextPrint === undefined) return oldPrint === undefined ? [] : [`Question supprimée : ${name}`];
+  const next = readPrint(nextPrint);
+  if (oldPrint === undefined) return [`${POSED[next.state]} : ${name}`];
+  const old = readPrint(oldPrint);
+  return [
+    ...titleLines(name, old.title, next.title),
+    ...recipientLines(name, old.recipient, next.recipient, recipientName),
+    ...stateLines(name, old.state, next.state),
+  ];
 }
 
 function runLines(name: string, old: RunState | undefined, next: RunState | undefined): string[] {
@@ -112,9 +165,9 @@ export function diffFingerprints(
     ...diffRecord(before.tickets, after.tickets, (k, o, n) =>
       ticketLines(names.ticket(k), o, n, parentKey),
     ).map(tag("tickets")),
-    ...diffRecord(before.questions, after.questions, (k, o, n) => questionLines(names.question(k), o, n)).map(
-      tag("questions"),
-    ),
+    ...diffRecord(before.questions, after.questions, (k, o, n) =>
+      questionLines(names.question(k), o, n, names.recipient),
+    ).map(tag("questions")),
     ...diffRecord(before.notes, after.notes, noteLines).map(tag("notes")),
   ];
 }
@@ -134,6 +187,7 @@ export function changeNames(
     },
     question: (id) => project.questions.find((q) => q.id === id)?.title ?? id,
     run: (id) => runs.find((r) => r.id === id)?.label ?? id,
+    recipient: (id) => project.questionRecipients.find((r) => r.id === id)?.name ?? id,
   };
 }
 

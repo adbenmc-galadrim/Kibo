@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runGit } from "./workspace-prep";
@@ -38,4 +38,15 @@ export async function repo(initialBranch = "main", at?: string): Promise<string>
   await git(["init", "-q", "-b", initialBranch], d);
   await git([...commit, "--allow-empty", "-m", "init"], d);
   return d;
+}
+
+export async function worktree(repoDir: string, branch: string): Promise<string> {
+  const path = join(tmp(), `wt-${branch}`);
+  await git(["worktree", "add", "-q", "-b", branch, path, "HEAD"], repoDir);
+  return realpathSync(path);
+}
+
+export async function merge(repoDir: string, branch: string): Promise<{ code: number; stdout: string }> {
+  const r = await runGit([...commit.slice(0, 6), "merge", "--no-edit", branch], repoDir);
+  return { code: r.code, stdout: `${r.stdout}${r.stderr}` };
 }

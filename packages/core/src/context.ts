@@ -6,6 +6,9 @@ import {
   estimateTokens,
   type Guideline,
   type GuidelineScope,
+  isArchived,
+  PARALLEL_RULES,
+  PARALLEL_RULES_TITLE,
   PROGRESS_TOOL,
   type ProjectSnapshot,
   type PrState,
@@ -25,12 +28,14 @@ export type BriefInput = {
   domain: Domain | null;
   note: string;
   commits?: readonly string[];
+  work?: string | null;
 };
 export type RunProtocol = {
   progress: boolean;
   recipients: readonly QuestionRecipient[];
   signals: boolean;
   skillReview: boolean;
+  parallel: boolean;
 };
 export type ContextFile = { path: string; content: string };
 export type RunContext = { files: ContextFile[]; systemPrompt: string; brief: string; tokens: number };
@@ -98,8 +103,15 @@ function section(title: string, items: readonly string[]): string[] {
   return items.length > 0 ? ["", `## ${title}`, "", ...items] : [];
 }
 
-function workSections(project: ProjectSnapshot, ticket: TicketView, commits: readonly string[]): string[] {
-  const questions = project.questions.filter((q) => q.ticketId === ticket.id).map(questionLine);
+function workSections(
+  project: ProjectSnapshot,
+  ticket: TicketView,
+  commits: readonly string[],
+  work: string | null,
+): string[] {
+  const questions = project.questions
+    .filter((q) => q.ticketId === ticket.id && !isArchived(q))
+    .map(questionLine);
   const prs = ticket.externalRefs.flatMap((r) =>
     r.kind === "github_pr"
       ? [`- ${r.url} (${[PR_STATE[r.state], ...(r.base ? [`base ${r.base}`] : [])].join(", ")})`]
@@ -111,6 +123,7 @@ function workSections(project: ProjectSnapshot, ticket: TicketView, commits: rea
       "Commits de la branche",
       commits.map((c) => `- ${c}`),
     ),
+    ...(work?.trim() ? ["", work.trim()] : []),
     ...section("PR", prs),
   ];
 }
@@ -120,7 +133,7 @@ function stepLine(step: Step): string {
   return `- [${step.status === "done" ? "x" : " "}] ${step.title}${state}`;
 }
 
-export function buildBrief({ project, ticket, domain, note, commits = [] }: BriefInput): string {
+export function buildBrief({ project, ticket, domain, note, commits = [], work = null }: BriefInput): string {
   const label = (id: string) => project.workflow.find((s) => s.id === id)?.label ?? id;
   const children = project.tickets.filter((t) => t.parentId === ticket.id);
   const blockers = project.links
@@ -160,7 +173,7 @@ export function buildBrief({ project, ticket, domain, note, commits = [] }: Brie
     lines.push("", "## Maquettes", "", ...mockups.map((m) => `- ${m.name} : ${m.url}`));
   }
   lines.push(...section("Plan en cours", ticket.agentProgress.plan.map(stepLine)));
-  lines.push(...workSections(project, ticket, commits));
+  lines.push(...workSections(project, ticket, commits, work));
   if (note.trim()) lines.push("", "## Consignes", "", note.trim());
   return `${lines.join("\n")}\n`;
 }
@@ -196,6 +209,9 @@ function skillReviewRules(protocol: RunProtocol | undefined): string[] {
     `- Avant de terminer, si tu as utilisé un skill, laisse une review avec \`${SKILL_REVIEW_TOOL}\` : par skill, \`ok\` ou \`improve\`, une note de trois lignes au plus (ce qui a aidé, ce qui a manqué, ce que tu changerais), et, si tu proposes une modification, le contenu complet corrigé de \`SKILL.md\` dans \`suggestion\`. Rien n'est modifié sans validation de l'utilisateur.`,
   ];
 }
+
+const parallelRules = (protocol: RunProtocol | undefined): string[] =>
+  protocol?.parallel ? ["", PARALLEL_RULES_TITLE, "", ...PARALLEL_RULES.map((r) => `- ${r}`)] : [];
 
 const described = (items: readonly { id: string; description: string }[]): string =>
   items.map((i) => (i.description ? `\`${i.id}\` — ${i.description}` : `\`${i.id}\``)).join(", ");
@@ -233,6 +249,7 @@ export function buildSystemPrompt(chain: Guideline[], agent: AgentContext, proto
     ...signalRules(protocol),
     ...skillReviewRules(protocol),
     ...agentRules(agent),
+    ...parallelRules(protocol),
     "",
   ].join("\n");
 }

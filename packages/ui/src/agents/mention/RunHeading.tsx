@@ -4,7 +4,7 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Bot } from "lucide-react";
 import type { ReactNode } from "react";
-import { fr } from "../../i18n/fr";
+import { frAgentBar } from "../../i18n/fr-agent-bar";
 import { frMoments } from "../../i18n/fr-moments";
 import { runScopeText } from "../catalog/agent-labels";
 import { formatClock } from "../format";
@@ -43,7 +43,7 @@ export function RunHeading({ run, onOpenTicket, children }: Props) {
             className={cn("shrink-0 gap-1 text-[11px] font-normal", RUN_TEXT[run.state])}
           >
             <RunDot state={run.state} className="size-1.5" />
-            {fr.agents.states[run.state]}
+            {frAgentBar.states[run.state]}
           </Badge>
         </div>
         <p className="flex min-w-0 flex-wrap items-center gap-x-1 text-xs text-muted-foreground">

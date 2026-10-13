@@ -1,5 +1,6 @@
 import type { ProjectSummary, Skill, SkillId, SkillScope } from "@kibo/schema";
 import { frSkills } from "../i18n/fr-skills";
+import { passesFilter, type SkillFilter } from "./skill-filters";
 
 export type SkillGroupView = {
   key: string;
@@ -25,8 +26,9 @@ export function groupSkills(
   skills: readonly Skill[],
   projects: readonly ProjectSummary[],
   query: string,
+  filter: SkillFilter = "all",
 ): SkillGroupView[] {
-  const shown = skills.filter((s) => matchesSkill(s, query)).sort(byName);
+  const shown = skills.filter((s) => matchesSkill(s, query) && passesFilter(s, filter)).sort(byName);
   const plugins = [...new Map(shown.flatMap((s) => (s.plugin ? [[s.plugin.name, s.plugin]] : []))).values()];
   const groups: SkillGroupView[] = [
     {
@@ -62,7 +64,26 @@ export function groupSkills(
         skills: shown.filter((s) => s.plugin?.name === plugin.name),
       })),
   ];
-  return query.trim() === "" ? groups : groups.filter((g) => g.skills.length > 0);
+  return query.trim() === "" && filter === "all" ? groups : groups.filter((g) => g.skills.length > 0);
+}
+
+export function filterCounts(
+  skills: readonly Skill[],
+  projects: readonly ProjectSummary[],
+  query: string,
+): Record<SkillFilter, number> {
+  const count = (filter: SkillFilter) =>
+    groupSkills(skills, projects, query, filter).reduce((n, g) => n + g.skills.length, 0);
+  return { all: count("all"), used: count("used"), notes: count("notes") };
+}
+
+export const groupNotes = (group: SkillGroupView): number =>
+  group.skills.reduce((n, s) => n + s.reviews.open, 0);
+
+export function groupKeyOf(skill: Pick<Skill, "source" | "projectId" | "plugin">): string {
+  if (skill.source === "project") return `project:${skill.projectId ?? ""}`;
+  if (skill.source === "plugin" && skill.plugin) return `plugin:${skill.plugin.name}`;
+  return "user";
 }
 
 export function skillAddress(

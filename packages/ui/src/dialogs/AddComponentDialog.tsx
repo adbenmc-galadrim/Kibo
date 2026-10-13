@@ -18,6 +18,7 @@ import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frIntegrations } from "../i18n/fr-integrations";
 import { nextLayout } from "../lib/format-grid";
 import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
 import { BUILTIN_COMPONENTS, findBuiltin } from "../registry";
@@ -58,7 +59,7 @@ const sizeOf = (ref: string, components: ComponentSummary[] | null): FormatSize 
 };
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const NO_LINK: LinkedRepos = new Map();
-const src = fr.integrations.source;
+const src = frIntegrations.source;
 
 export function AddComponentDialog({
   projectId,
@@ -138,7 +139,7 @@ export function AddComponentDialog({
       onOpenChange(false);
     } catch (e) {
       if (e instanceof KiboError && e.code === "CONFLICT")
-        return setSyncError(src.alreadyBound(holder ?? fr.integrations.rows["github-issues"].title));
+        return setSyncError(src.alreadyBound(holder ?? frIntegrations.rows["github-issues"].title));
       console.error(e);
       setFailed(true);
     }

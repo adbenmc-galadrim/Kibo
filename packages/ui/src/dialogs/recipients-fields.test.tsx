@@ -28,6 +28,9 @@ const question = (n: number, recipient: string): Question => ({
   answer: null,
   recipient,
   sentAt: null,
+  history: [],
+  archivedAt: null,
+  archivedBy: null,
 });
 
 const base: ProjectSnapshot = {
@@ -39,6 +42,7 @@ const base: ProjectSnapshot = {
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

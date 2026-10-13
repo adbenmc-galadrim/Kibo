@@ -6,7 +6,7 @@
   "size": { "min": { "w": 4, "h": 3 } },
   "title": "Tickets",
   "description": "Arbre des tickets, sous-tickets illimités",
-  "reads": ["ticket", "status", "run"],
+  "reads": ["ticket", "status", "run", "question"],
   "selection": true,
   "writes": ["ticket"],
   "configSchema": { "filter": { "enum": ["all", "mine"], "default": "all" } }

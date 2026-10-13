@@ -81,6 +81,7 @@ export function SandboxFrame({
         focus: latest.current.apis.focus.active(),
         visible: latest.current.apis.visibility.visible(),
         selection: latest.current.apis.selection.get(),
+        spotlight: latest.current.apis.spotlight?.get() ?? null,
       }),
       call: (call) => client.rpc({ method: "componentCall", projectId, instanceId, call }),
       onOpenTicket: (id) => latest.current.host.openTicket(id),
@@ -93,7 +94,7 @@ export function SandboxFrame({
           line: r.line ?? null,
           origin: r.origin ?? null,
         }),
-      onOpenView: (id) => latest.current.host.openView(id),
+      onOpenView: (id, question) => latest.current.host.openView(id, undefined, question),
       onKey: (combo) => dispatchCombo(combo),
       onResize: (h) => setHeight(h),
       onReady: () => guard.current?.ready(),
@@ -122,11 +123,12 @@ export function SandboxFrame({
   }, [theme]);
 
   useEffect(() => {
-    const { focus, visibility, selection } = apis;
+    const { focus, visibility, selection, spotlight } = apis;
     const offs = [
       focus.subscribe(() => bridge.current?.focus(focus.active())),
       visibility.subscribe(() => bridge.current?.visibility(visibility.visible())),
       selection.subscribe(() => bridge.current?.selection(selection.get())),
+      spotlight?.subscribe(() => bridge.current?.spotlight(spotlight.get())) ?? (() => undefined),
     ];
     return () => {
       for (const off of offs) off();

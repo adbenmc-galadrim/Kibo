@@ -1,11 +1,11 @@
 import { githubStatusOf, KiboError, type KiboErrorCode } from "@kibo/schema";
-import { fr } from "../i18n/fr";
+import { frIntegrations } from "../i18n/fr-integrations";
 import { errorMessage } from "./error-message";
 
 export type SyncFailure = { code: KiboErrorCode; message: string };
 export type SyncErrorContext = { repo: string; resumeAt: number | null };
 
-const t = fr.integrations.githubErrors;
+const t = frIntegrations.githubErrors;
 const UNAVAILABLE = new Set<KiboErrorCode>(["REMOTE_UNAVAILABLE", "TIMEOUT", "COMPONENT_CRASHED"]);
 
 export const hourMinute = (ms: number) =>
@@ -28,7 +28,7 @@ export function syncErrorText(failure: SyncFailure, ctx: SyncErrorContext): stri
   if (failure.code === "RATE_LIMITED")
     return ctx.resumeAt === null
       ? t.rateLimitedAuto
-      : fr.integrations.state.rateLimited(hourMinute(ctx.resumeAt));
+      : frIntegrations.state.rateLimited(hourMinute(ctx.resumeAt));
   if (UNAVAILABLE.has(failure.code)) return t.unavailable;
   if (failure.code === "NOT_CONNECTED") return t.notConnected;
   const status = githubStatusOf(failure.message);

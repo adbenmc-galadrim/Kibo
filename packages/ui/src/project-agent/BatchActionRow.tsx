@@ -7,8 +7,17 @@ import { Mention } from "../agents/mention/Mention";
 import { newestFirst } from "../agents/mention/use-run-view";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { frSignals } from "../i18n/fr-signals";
+import { QuestionText } from "../moments/QuestionText";
 import { useAgentsState } from "../state/agents-context";
-import { actionDiff, actionTitle, citedSignals, type DiffLabels, replacesContent } from "./batch-groups";
+import {
+  type ActionDiff,
+  actionDiffs,
+  actionTitle,
+  citedSignals,
+  type DiffLabels,
+  questionOf,
+  replacesContent,
+} from "./batch-groups";
 
 type Props = {
   action: ProposedAction;
@@ -65,11 +74,23 @@ function Provenance({ signal }: { signal: Signal }) {
   );
 }
 
+function DiffLine({ diff }: { diff: ActionDiff }) {
+  return (
+    <p className="flex flex-wrap items-center gap-1 text-xs">
+      {diff.field && <span className="text-muted-foreground">{`${diff.field} :`}</span>}
+      <span className="text-muted-foreground line-through">{diff.before}</span>
+      <ArrowRight className="size-3 text-muted-foreground" aria-hidden />
+      <span>{diff.after}</span>
+    </p>
+  );
+}
+
 export function BatchActionRow(props: Props) {
   const { action, expected, labels, signals, selectable, checked, result, onCheck } = props;
   const id = useId();
   const title = actionTitle(action, labels);
-  const diff = actionDiff(action, expected, labels);
+  const diffs = actionDiffs(action, expected, labels);
+  const questionId = questionOf(action);
   const run = runOf(action, useAgentsState());
   return (
     <li className="flex gap-2 py-1.5">
@@ -83,17 +104,21 @@ export function BatchActionRow(props: Props) {
         />
       )}
       <div className="grid min-w-0 flex-1 gap-0.5">
-        <label htmlFor={selectable ? id : undefined} className="text-sm leading-snug">
-          {title}
-        </label>
-        {diff && (
-          <p className="flex flex-wrap items-center gap-1 text-xs">
-            <span className="text-muted-foreground line-through">{diff.before}</span>
-            <ArrowRight className="size-3 text-muted-foreground" aria-hidden />
-            <span>{diff.after}</span>
+        {questionId === null ? (
+          <label htmlFor={selectable ? id : undefined} className="text-sm leading-snug">
+            {title}
+          </label>
+        ) : (
+          <p className="text-sm leading-snug">
+            <QuestionText questionId={questionId} text={title} />
           </p>
         )}
-        {!diff && replacesContent(action) && <p className="text-xs text-muted-foreground">{t.replaced}</p>}
+        {diffs.map((diff) => (
+          <DiffLine key={diff.field ?? "diff"} diff={diff} />
+        ))}
+        {(diffs.length === 0 || action.type === "updateQuestion") && replacesContent(action) && (
+          <p className="text-xs text-muted-foreground">{t.replaced}</p>
+        )}
         {citedSignals(action, signals).map((signal) => (
           <Provenance key={signal.id} signal={signal} />
         ))}

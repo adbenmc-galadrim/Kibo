@@ -120,6 +120,7 @@ describe("my tickets page", () => {
         color: "#64748B",
         worktree: null,
         storybook: null,
+        duplication: null,
       },
       tickets: [mineTicket("INB-2", "todo", { kind: "human", ref: "adam" })],
     };

@@ -68,6 +68,12 @@ function idOf(ids: TicketIds, ref: string): string {
   return id;
 }
 
+const namesRecipient = (action: ProposedAction): boolean =>
+  (action.type === "createQuestion" || action.type === "updateQuestion") && action.recipient !== undefined;
+
+const projectFor = (run: Run, action: ProposedAction) =>
+  namesRecipient(action) ? run.deps.data.project(run.batch.projectId) : run.ctx.project;
+
 async function execute(run: Run, action: ProposedAction, ids: TicketIds): Promise<Created | null> {
   const { data } = run.deps;
   const { projectId } = run.batch;
@@ -98,7 +104,7 @@ async function execute(run: Run, action: ProposedAction, ids: TicketIds): Promis
       return null;
     default: {
       let created: Created | null = null;
-      for (const command of commandsFor(action, ids, run.by, run.ctx.project)) {
+      for (const command of commandsFor(action, ids, run.by, projectFor(run, action))) {
         const out = data.runCommand(projectId, command);
         if (command.method === "createTicket") created = createdTicket(run, out);
       }

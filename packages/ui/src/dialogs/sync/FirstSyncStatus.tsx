@@ -1,8 +1,8 @@
 import { RefreshCw } from "lucide-react";
-import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import type { FirstSync } from "./use-first-sync";
 
-const t = fr.integrations.source;
+const t = frIntegrations.source;
 
 export function FirstSyncStatus({ sync }: { sync: FirstSync }) {
   if (sync.binding === null || sync.error !== null) return null;

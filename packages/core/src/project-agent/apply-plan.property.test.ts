@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { isTerminal, type ProposedAction, RunState, StatusId } from "@kibo/schema";
+import { isTerminal, type ProposedAction, type Question, RunState, StatusId } from "@kibo/schema";
 import fc from "fast-check";
 import { commandsFor, isSkipped, resolveRefs, staleReason } from "./apply-plan";
 import { AGENTS, answered, HUMAN, project, question, run, ticket } from "./test-kit";
@@ -12,7 +12,11 @@ const base: BatchContext = {
       ticket({ id: "t2", title: "Deux", description: "d2", parentId: "t1" }),
       ticket({ id: "t3", title: "Trois" }),
     ],
-    questions: [question({ id: "q1", ticketId: "t1" }), answered(question({ id: "q2", ticketId: "t3" }))],
+    questions: [
+      question({ id: "q1", ticketId: "t1" }),
+      answered(question({ id: "q2", ticketId: "t3" })),
+      question({ id: "q5", ticketId: "t3" }),
+    ],
   }),
   runs: [run({ id: "r1", ticketId: "t2", state: "running" })],
   notes: [{ path: "a.md", hash: "h1" }],
@@ -35,6 +39,10 @@ const ACTIONS: ProposedAction[] = [
   { id: 8, why, type: "deliverAnswers", ticket: "EMIS-3" },
   { id: 9, why, type: "assignAgent", ticket: "EMIS-3", profileId: "global:opus-dev" },
   { id: 10, why, type: "link", from: "EMIS-1", to: "EMIS-3", kind: "blocks" },
+  { id: 11, why, type: "updateQuestion", questionId: "q1", title: "Renommée" },
+  { id: 12, why, type: "reopenQuestion", questionId: "q2" },
+  { id: 13, why, type: "deleteQuestion", questionId: "q5" },
+  { id: 14, why, type: "addRecipient", name: "Galadrim" },
 ];
 
 const mutation = fc.record({
@@ -45,6 +53,9 @@ const mutation = fc.record({
   t2Description: fc.constantFrom("d2", "autre"),
   t2Parent: fc.constantFrom("t1", "t3", null),
   q1Answered: fc.boolean(),
+  q1Title: fc.constantFrom("Question q1", "Autre"),
+  q2Open: fc.boolean(),
+  q5Archived: fc.boolean(),
   noteA: fc.constantFrom("h1", "h2", null),
   noteB: fc.boolean(),
   r1State: fc.constantFrom(...RunState.options),
@@ -66,8 +77,14 @@ function mutate(m: Mutation): BatchContext {
     if (t.id === "t2") return { ...t, description: m.t2Description, parentId: m.t2Parent };
     return t;
   });
+  const edit = (q: Question): Question => {
+    if (q.id === "q1")
+      return m.q1Answered ? answered({ ...q, title: m.q1Title }) : { ...q, title: m.q1Title };
+    if (q.id === "q2") return m.q2Open ? { ...q, answer: null } : q;
+    return q.id === "q5" && m.q5Archived ? { ...q, archivedAt: 9, archivedBy: HUMAN } : q;
+  };
   const questions = [
-    ...base.project.questions.map((q) => (q.id === "q1" && m.q1Answered ? answered(q) : q)),
+    ...base.project.questions.map(edit),
     ...(m.extraAnswer ? [answered(question({ id: "q3", ticketId: "t3" }))] : []),
   ];
   return {
@@ -101,9 +118,15 @@ function changed(id: number, m: Mutation): boolean {
     case 7:
       return isTerminal(m.r1State);
     case 8:
-      return m.extraAnswer;
+      return m.extraAnswer || m.q2Open;
     case 9:
       return m.t3Run !== null && !isTerminal(m.t3Run);
+    case 11:
+      return m.q1Title !== "Question q1";
+    case 12:
+      return m.q2Open;
+    case 13:
+      return m.q5Archived;
     default:
       return false;
   }

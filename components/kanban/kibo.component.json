@@ -6,7 +6,7 @@
   "size": { "min": { "w": 6, "h": 4 } },
   "title": "Kanban",
   "description": "Tickets par statut, glisser-déposer",
-  "reads": ["ticket", "status", "run", "ci_run"],
+  "reads": ["ticket", "status", "run", "ci_run", "question"],
   "selection": true,
   "writes": ["ticket"],
   "data": true,

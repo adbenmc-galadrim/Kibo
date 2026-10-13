@@ -5,17 +5,16 @@ import {
   type ProjectSnapshot,
   type TicketView,
 } from "@kibo/schema";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
-import { useState } from "react";
-import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frQuestions } from "../i18n/fr-questions";
 import { frTicketEdit } from "../i18n/fr-ticket-edit";
 import { canEdit } from "../state/access";
 import { useAgentsState } from "../state/agents-context";
+import { runLabelIn } from "../state/run-label";
 import { AssigneeSelect } from "../ticket/AssigneeSelect";
 import { DependenciesSection } from "../ticket/DependenciesSection";
 import { DescriptionEditor } from "../ticket/DescriptionEditor";
+import { DomainSelect } from "../ticket/DomainSelect";
 import { QuestionsBadge } from "../ticket/QuestionsBadge";
 import { StatusSelect } from "../ticket/StatusSelect";
 import { useTicketCommand } from "../ticket/use-ticket-command";
@@ -33,59 +32,6 @@ type Props = {
 
 export const descendantCount = (tickets: readonly TicketView[], id: string): number =>
   tickets.filter((x) => x.parentId === id).reduce((n, c) => n + 1 + descendantCount(tickets, c.id), 0);
-
-const NO_DOMAIN = "none";
-
-function DomainSelect({
-  project,
-  ticket,
-  domains,
-}: {
-  project: ProjectSnapshot;
-  ticket: TicketView;
-  domains: Domain[];
-}) {
-  const [failed, setFailed] = useState(false);
-  const pick = async (value: string) => {
-    setFailed(false);
-    try {
-      await client.rpc({
-        method: "command",
-        projectId: project.meta.id,
-        command: {
-          method: "updateTicket",
-          ticketId: ticket.id,
-          domainId: value === NO_DOMAIN ? null : value,
-        },
-      });
-    } catch {
-      setFailed(true);
-    }
-  };
-  return (
-    <>
-      <Select value={ticket.domainId ?? NO_DOMAIN} onValueChange={(v) => void pick(v)}>
-        <SelectTrigger size="sm" aria-label={fr.ticket.domain} className="w-48">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value={NO_DOMAIN}>{fr.ticket.noDomain}</SelectItem>
-          {domains.map((d) => (
-            <SelectItem key={d.id} value={d.id}>
-              <span aria-hidden className="size-2 rounded-[2px]" style={{ background: d.color }} />
-              {d.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {failed && (
-        <p role="alert" className="mt-1 text-sm text-destructive">
-          {fr.ticket.domainFailed}
-        </p>
-      )}
-    </>
-  );
-}
 
 export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, onOpenTicket }: Props) {
   const editable = canEdit(project);
@@ -108,7 +54,14 @@ export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, 
     <div className="grid gap-4">
       {t.openQuestions > 0 && (
         <div className="px-4">
-          <QuestionsBadge count={t.openQuestions} onOpen={() => host?.openView("questions")} />
+          <QuestionsBadge
+            count={t.openQuestions}
+            questions={project.questions}
+            recipients={project.questionRecipients}
+            ticket={t}
+            runLabel={runLabelIn(agents?.runs)}
+            onOpen={(id) => host?.openView("questions", undefined, id ?? undefined)}
+          />
         </div>
       )}
       <SyncStatus projectId={project.meta.id} ticket={t} />

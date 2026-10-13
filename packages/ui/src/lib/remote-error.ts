@@ -1,9 +1,10 @@
 import { type IntegrationId, type IntegrationStatus, KiboError, type KiboErrorCode } from "@kibo/schema";
 import { fr } from "../i18n/fr";
+import { frIntegrations } from "../i18n/fr-integrations";
 
 type IntegrationError = NonNullable<IntegrationStatus["error"]>;
 
-const t = fr.integrations.errors;
+const t = frIntegrations.errors;
 const GITHUB_ANSWER = /^github (\d{3})(?:: ([\s\S]*))?$/;
 const CODES: Partial<Record<KiboErrorCode, string>> = t.codes;
 

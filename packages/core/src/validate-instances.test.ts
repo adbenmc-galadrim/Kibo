@@ -31,6 +31,7 @@ const META = {
   color: "#3B82F6",
   worktree: null,
   storybook: null,
+  duplication: null,
 };
 const EDITOR: UpdateAuthor = { userId: "u1", role: "editor" };
 

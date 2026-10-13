@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { COMMAND_WRITES, isReservedCommand, ProjectCommand } from "./command";
+import { COMMAND_WRITES, type CommandResult, isReservedCommand, ProjectCommand } from "./command";
+import type { Question } from "./question";
 
 test("the progress and recipient commands parse", () => {
   const commands = [
@@ -35,4 +36,46 @@ test("the ticket progress is reserved to the daemon, recipients write questions"
   expect(COMMAND_WRITES.removeQuestionRecipient).toBe("question");
   expect(COMMAND_WRITES.setQuestionRecipient).toBe("question");
   expect(COMMAND_WRITES.markQuestionSent).toBe("question");
+});
+
+const QID = "11111111-1111-4111-8111-111111111111";
+const ADAM = { kind: "human", ref: "adam" } as const;
+const EDITS = [
+  "updateQuestion",
+  "updateAnswer",
+  "reopenQuestion",
+  "archiveQuestion",
+  "restoreQuestion",
+] as const;
+
+test("the question edit commands parse, an update must change something", () => {
+  const commands = [
+    { method: "createQuestion", ticketId: "t1", title: "Q", createdBy: ADAM, recipient: "client" },
+    { method: "updateQuestion", questionId: QID, by: ADAM, title: "B" },
+    { method: "updateQuestion", questionId: QID, by: ADAM, provisional: null },
+    { method: "updateAnswer", questionId: QID, answer: { kind: "text", text: "x" }, by: ADAM },
+    { method: "reopenQuestion", questionId: QID, by: ADAM },
+    { method: "archiveQuestion", questionId: QID, by: ADAM, at: 3 },
+    { method: "restoreQuestion", questionId: QID, by: ADAM },
+  ];
+  for (const command of commands) expect(ProjectCommand.safeParse(command).success).toBe(true);
+  expect(ProjectCommand.safeParse({ method: "updateQuestion", questionId: QID, by: ADAM }).success).toBe(
+    false,
+  );
+  expect(
+    ProjectCommand.safeParse({ method: "updateQuestion", questionId: QID, by: ADAM, blocking: true }).success,
+  ).toBe(false);
+  expect(ProjectCommand.safeParse({ method: "reopenQuestion", questionId: QID }).success).toBe(false);
+});
+
+test("the question edit commands write questions and return the question", () => {
+  for (const method of EDITS) expect(COMMAND_WRITES[method]).toBe("question");
+  const results: { [M in (typeof EDITS)[number]]: CommandResult[M] extends Question ? true : false } = {
+    updateQuestion: true,
+    updateAnswer: true,
+    reopenQuestion: true,
+    archiveQuestion: true,
+    restoreQuestion: true,
+  };
+  expect(Object.keys(results)).toHaveLength(5);
 });

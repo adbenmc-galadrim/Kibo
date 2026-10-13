@@ -85,7 +85,7 @@ describe("projectOverview", () => {
       { id: "r2", label: "opus-dev", state: "queued", subject: "EMIS-2", position: 1 },
     ]);
     expect(overview.openQuestions).toEqual([
-      { id: "q1", ticket: "EMIS-2", title: "Couleur ?", blocking: true },
+      { id: "q1", ticket: "EMIS-2", title: "Couleur ?", blocking: true, recipient: "me" },
     ]);
     expect(overview.notes).toEqual([{ path: "agent-de-projet/memoire.md", title: "Mémoire" }]);
     expect(overview.profiles).toEqual([

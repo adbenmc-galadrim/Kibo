@@ -6,13 +6,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { useEffect, useId, useState } from "react";
 import { client } from "../../api";
-import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import { draftOf, type McpSourceDraft, newDraft, validStored } from "./mcp-source-draft";
 import { PointerFields } from "./PointerFields";
 import { TargetFields } from "./TargetFields";
 
 type Props = { value: McpSourceStoredConfig | null; onChange(config: McpSourceStoredConfig | null): void };
-const t = fr.integrations.mcpSource;
+const t = frIntegrations.mcpSource;
 const firstTool = (s: McpServerView | undefined) => s?.tools[0]?.name ?? null;
 
 function useEnabledServers(): { servers: McpServerView[] | null; error: string | null } {

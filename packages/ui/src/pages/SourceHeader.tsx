@@ -3,7 +3,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { ListTodo, RefreshCw, Unlink } from "lucide-react";
 import { useState } from "react";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frIntegrations } from "../i18n/fr-integrations";
 import { frShare } from "../i18n/fr-share";
 import { failureOf, hourMinute, type SyncFailure, syncErrorText } from "../lib/sync-error-text";
 import { navigateTo } from "../route";
@@ -11,7 +11,7 @@ import { canEdit } from "../state/access";
 import { useSyncServerStatus } from "../state/use-sync-server";
 import { useSyncState } from "../state/use-sync-state";
 
-const t = fr.integrations.instance;
+const t = frIntegrations.instance;
 
 function RemovedBinding() {
   return (
@@ -34,7 +34,7 @@ function Disconnected() {
         className="h-auto shrink-0 p-0 text-xs underline"
         onClick={() => navigateTo({ kind: "screen", screen: "integrations" })}
       >
-        {fr.integrations.source.openSettings}
+        {frIntegrations.source.openSettings}
       </Button>
     </>
   );

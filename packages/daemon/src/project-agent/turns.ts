@@ -98,7 +98,7 @@ async function prepareTurn(ctx: AgentContext, run: RunView, runDir: string): Pro
   };
   const hashes: NoteHash[] = notes.map(({ path, hash }) => ({ path, hash }));
   const current = fingerprint({ project: state.project, runs: state.runs, notes: hashes });
-  const previous = ctx.store.fingerprint(run.id);
+  const previous = ctx.store.fingerprint(run.id, current);
   const message = run.pendingAnswer ?? "";
   const prompt =
     previous === null

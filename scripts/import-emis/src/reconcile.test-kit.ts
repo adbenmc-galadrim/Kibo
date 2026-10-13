@@ -116,6 +116,9 @@ function createLocally(snapshot: ReconcileSnapshot, c: Cmd<"createQuestion">): R
     answer: null,
     recipient: "me",
     sentAt: null,
+    history: [],
+    archivedAt: null,
+    archivedBy: null,
   };
   return { ...snapshot, questions: [...snapshot.questions, question] };
 }

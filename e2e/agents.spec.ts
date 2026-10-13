@@ -1,5 +1,6 @@
 import { rmSync } from "node:fs";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
+import { guidelineFolders, guidelinesFromTicketAndProject, seedWorkspaceDomain } from "./agents-kit";
 import {
   assign,
   createAgent,
@@ -185,6 +186,7 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
   await expect(page.getByRole("heading", { name: "Historique des runs" })).toBeVisible();
   await shot(page, info, "ecran-13");
 
+  await seedWorkspaceDomain(page);
   await page.getByRole("button", { name: "Paramètres" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Général" })).toBeVisible();
   await page
@@ -192,10 +194,9 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
     .getByRole("link", { name: "Domaines & guidelines" })
     .click();
   await expect(page.getByRole("heading", { level: 1, name: "Domaines & guidelines" })).toBeVisible();
-  await page.getByRole("button", { name: "Core", exact: true }).click();
-  await expect(page.getByText("skills/loro-patterns.md")).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Éditer" })).toHaveAttribute("aria-selected", "true");
-  await shot(page, info, "ecran-14");
+  await guidelineFolders(page, info, shot);
+  const ticketId = seeded.tickets.get(14) ?? "";
+  await guidelinesFromTicketAndProject(page, info, shot, { projectId: seeded.projectId, ticketId });
 
   await page.goto(`/#/p/${seeded.projectId}/${encodeURIComponent(seeded.board)}`);
   await page.getByRole("button", { name: "Répondre à global · livraison · KIB-14" }).click();

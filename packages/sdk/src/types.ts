@@ -29,6 +29,7 @@ import type {
   QuestionRecipient,
   RunPeek,
   Selection,
+  Spotlight,
   Status,
   StatusId,
   StorybookOrigin,
@@ -104,6 +105,12 @@ export type SelectionApi = {
   subscribe(listener: () => void): () => void;
 };
 
+export type SpotlightApi = {
+  get(): Spotlight | null;
+  subscribe(listener: () => void): () => void;
+};
+export type OpenViewOptions = { question?: string };
+
 export type KiboSdk = {
   instanceId: string;
   config: Record<string, unknown>;
@@ -116,7 +123,7 @@ export type KiboSdk = {
   openTicket(ticketId: string): void;
   openNewTicket(defaults: NewTicketDefaults): void;
   openFile(request: FileOpenRequest): void;
-  openView(componentId: string): void;
+  openView(componentId: string, opts?: OpenViewOptions): void;
   data: InstanceData;
   fetch(url: string, init?: FetchInitInput): Promise<FetchResponse>;
   action<T = unknown>(name: string, input?: unknown): Promise<T>;
@@ -136,6 +143,7 @@ export type KiboSdk = {
   focus: FocusApi;
   visibility: VisibilityApi;
   selection: SelectionApi;
+  spotlight: SpotlightApi;
 };
 
 export type PresenceApi = {
@@ -165,7 +173,7 @@ export type SdkContext = Pick<
   | "openFile"
   | "openView"
 > &
-  Partial<Pick<KiboSdk, "focus" | "visibility" | "selection" | "openRun">>;
+  Partial<Pick<KiboSdk, "focus" | "visibility" | "selection" | "spotlight" | "openRun">>;
 export type SdkMode = "builtin" | "gated";
 
 export type ComponentModule = { manifest: ComponentManifest; Component: ComponentType };

@@ -1,8 +1,25 @@
 import { expect, mock, test } from "bun:test";
 import type { FileRef, MomentData, RunMoment } from "@kibo/schema";
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { NOW } from "../agents/fixtures";
+import { formatClock } from "../agents/format";
 import { frMoments } from "../i18n/fr-moments";
+import {
+  autoLinkFixture,
+  autoLinkMoment,
+  CANCELLED_AT,
+  FIRST_SEEN,
+  momentOf,
+  OPEN_OVERLAP,
+  OTHER_NAME,
+  OTHER_RUN,
+  OWNER_NAME,
+  OWNER_RUN,
+  overlapFixture,
+  overlapMoment,
+  RESOLVED_AT,
+} from "../overlaps/fixtures";
 import { Feed } from "./Feed";
 import { actions, FEED_RUN, MOMENTS, PLAN, REPORT, SKILL_ACTIONS, WORKTREE } from "./fixtures";
 import { PlanSteps } from "./PlanSteps";
@@ -261,4 +278,160 @@ test("screen 196: a skill use and a refusal each stand on their own line, the re
   expect(within(line).getByText("brainstorming").tagName).toBe("CODE");
   const refusal = screen.getByRole("button", { name: "Kibo a refusé le skill deploy" });
   expect(refusal.className).toContain("text-destructive");
+});
+
+const overlapFeed = (props: Partial<Parameters<typeof Feed>[0]> = {}) => {
+  const seen = {
+    files: [] as string[],
+    ignored: [] as string[],
+    cancelled: [] as string[],
+    tickets: [] as string[],
+  };
+  render(
+    <Feed
+      moments={[momentOf(1, FIRST_SEEN, overlapMoment())]}
+      texts={frMoments}
+      overlaps={new Map([["o1", OPEN_OVERLAP]])}
+      canEdit
+      onSeeFiles={(id) => seen.files.push(id)}
+      onIgnoreOverlap={(id) => seen.ignored.push(id)}
+      onCancelAutoLink={(id) => seen.cancelled.push(id)}
+      onOpenTicketKey={(key) => seen.tickets.push(key)}
+      now={NOW}
+      {...props}
+    />,
+  );
+  return seen;
+};
+
+test("screen 197: an overlap names the other run, what overlaps, the role and the state", async () => {
+  const seen = overlapFeed();
+  const line = document.querySelector("[data-overlap]");
+  if (!(line instanceof HTMLElement)) throw new Error("no overlap line");
+  expect(line.querySelector("svg.lucide-copy")).toBeTruthy();
+  expect(within(line).getByRole("button", { name: OWNER_NAME })).toBeTruthy();
+  expect(within(line).getByText("formatDate").tagName).toBe("CODE");
+  expect(line.textContent).toContain("formatDate exporté deux fois");
+  expect(line.textContent).toContain("src/utils/date.ts (toi) · src/lib/format.ts");
+  expect(within(line).getByText("à factoriser")).toBeTruthy();
+  expect(within(line).getByText("Ouvert")).toBeTruthy();
+  const user = userEvent.setup();
+  await user.click(within(line).getByRole("button", { name: "Voir les fichiers" }));
+  await user.click(within(line).getByRole("button", { name: "Ignorer" }));
+  expect(seen.files).toEqual(["o1"]);
+  expect(seen.ignored).toEqual(["o1"]);
+});
+
+test("screen 197b: the owner reads who reuses its code, and a resolved overlap cannot be ignored", () => {
+  overlapFeed({
+    moments: [
+      momentOf(
+        1,
+        FIRST_SEEN,
+        overlapMoment({ role: "owner", withRunId: OTHER_RUN, withRunName: OTHER_NAME }),
+        OWNER_RUN,
+      ),
+    ],
+    overlaps: new Map([["o1", overlapFixture({ status: "resolved", resolvedAt: RESOLVED_AT })]]),
+  });
+  expect(screen.getByText(`repris par ${OTHER_NAME}`)).toBeTruthy();
+  expect(screen.getByText(`Réglé ${formatClock(RESOLVED_AT)}`)).toBeTruthy();
+  expect(screen.getByText("src/lib/format.ts").closest("span")?.textContent).toContain(
+    "src/lib/format.ts (toi) · src/utils/date.ts",
+  );
+  expect(screen.queryByRole("button", { name: "Ignorer" })).toBeNull();
+});
+
+test("an ignored overlap says who ignored it, without any button to ignore", () => {
+  overlapFeed({
+    overlaps: new Map([
+      [
+        "o1",
+        overlapFixture({
+          status: "ignored",
+          ignoredBy: { kind: "human", ref: "Adam" },
+          ignoredAt: RESOLVED_AT,
+        }),
+      ],
+    ]),
+  });
+  expect(screen.getByText("Ignoré par Adam")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Ignorer" })).toBeNull();
+});
+
+test("a reader who cannot edit sees no ignore button, and an unknown overlap waits", () => {
+  overlapFeed({ canEdit: false });
+  expect(screen.queryByRole("button", { name: "Ignorer" })).toBeNull();
+  cleanup();
+  overlapFeed({ overlaps: new Map() });
+  expect(screen.getByText("…")).toBeTruthy();
+  expect(screen.getByText(/formatDate.*exporté deux fois/)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Ignorer" })).toBeNull();
+});
+
+test("screen 198: an automatic link names both tickets, the file reused, and can be cancelled", async () => {
+  const seen = overlapFeed({
+    moments: [momentOf(2, RESOLVED_AT, autoLinkMoment())],
+    autoLinks: new Map([["a1", autoLinkFixture()]]),
+  });
+  const line = document.querySelector("[data-auto-link]");
+  if (!(line instanceof HTMLElement)) throw new Error("no link line");
+  expect(line.querySelector("svg.lucide-link")).toBeTruthy();
+  expect(line.textContent).toContain("Kibo a lié BOU-12 → BOU-15 (BOU-12 bloque BOU-15)");
+  expect(line.textContent).toContain("src/lib/format-date.ts repris de BOU-12");
+  const user = userEvent.setup();
+  await user.click(within(line).getByRole("button", { name: "BOU-12" }));
+  await user.click(within(line).getByRole("button", { name: "Annuler" }));
+  expect(seen.tickets).toEqual(["BOU-12"]);
+  expect(seen.cancelled).toEqual(["a1"]);
+});
+
+test("screen 198b: a cancelled link says who cancelled it and when, without a button", () => {
+  overlapFeed({
+    moments: [momentOf(2, RESOLVED_AT, autoLinkMoment())],
+    autoLinks: new Map([
+      [
+        "a1",
+        autoLinkFixture({
+          status: "cancelled",
+          cancelledBy: { kind: "human", ref: "Adam" },
+          cancelledAt: CANCELLED_AT,
+        }),
+      ],
+    ]),
+  });
+  expect(screen.getByText(`Annulé par Adam ${formatClock(CANCELLED_AT)}`)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Annuler" })).toBeNull();
+});
+
+test("a link refused for a cycle says so, with no button", () => {
+  overlapFeed({
+    moments: [momentOf(2, RESOLVED_AT, autoLinkMoment({ autoLinkId: null, failure: "cycle" }))],
+  });
+  const line = screen.getByText("Kibo n'a pas pu lier BOU-12 → BOU-15 : dépendance circulaire");
+  expect(line.querySelector("svg.lucide-ban")).toBeTruthy();
+  expect(screen.queryByRole("button")).toBeNull();
+});
+
+test("the overlap reminder and the peek at another run read as sentences", () => {
+  const peek = actions([
+    {
+      tool: "mcp__kibo__peek_work",
+      kind: "mcp",
+      label: "A regardé le travail de `BOU-12`",
+      target: "peek_work",
+      outcome: "ok",
+      detail: null,
+      patch: null,
+      tests: null,
+    },
+  ]);
+  render(
+    <Feed
+      moments={[raw({ kind: "reminder", reminder: "overlap" }), { ...raw(peek), seq: 100 }]}
+      texts={frMoments}
+    />,
+  );
+  expect(screen.getByText("Kibo a rappelé de factoriser")).toBeTruthy();
+  expect(screen.getByText("A regardé le travail de `BOU-12`")).toBeTruthy();
 });

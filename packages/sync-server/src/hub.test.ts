@@ -34,6 +34,7 @@ const META = {
   color: "#F97316",
   worktree: null,
   storybook: null,
+  duplication: null,
 };
 
 function ownerDocOf(adam: TestDevice): LoroDoc {

@@ -210,7 +210,7 @@ test("every AI scenario parses and every fixture or route target exists", () => 
     }
     for (const turn of FakeScenario.parse(raw).turns)
       for (const step of turn.steps)
-        if ("write" in step) expect(existsSync(join(FIXTURES_DIR, step.fixture))).toBe(true);
+        if ("fixture" in step) expect(existsSync(join(FIXTURES_DIR, step.fixture))).toBe(true);
   }
 });
 

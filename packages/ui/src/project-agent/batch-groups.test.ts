@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import type { ProposedAction } from "@kibo/schema";
 import {
   actionDiff,
+  actionDiffs,
   actionTitle,
   defaultLabels,
   groupActions,
@@ -9,7 +10,7 @@ import {
   replacesContent,
   signalProvenance,
 } from "./batch-groups";
-import { emisProject, pendingBatch } from "./fixtures";
+import { emisProject, pendingBatch, questionsProject } from "./fixtures";
 import { OPEN_SIGNALS } from "./signals/fixtures";
 
 test("groupActions keeps Tickets, Agents, Questions, Notes and the id order inside each group", () => {
@@ -64,9 +65,19 @@ const titles: [ProposedAction, string][] = [
   ],
   [{ id: 1, type: "createNote", path: "a/b.md", content: "", why: "" }, "Créer la note a/b.md"],
   [{ id: 1, type: "updateNote", path: "a/b.md", content: "", why: "" }, "Mettre à jour la note a/b.md"],
+  [
+    { id: 1, type: "updateQuestion", questionId: "q", title: "B", why: "" },
+    "Modifier la question « question introuvable »",
+  ],
+  [
+    { id: 1, type: "reopenQuestion", questionId: "q", why: "" },
+    "Rouvrir « question introuvable » (réponse retirée)",
+  ],
+  [{ id: 1, type: "deleteQuestion", questionId: "q", why: "" }, "Archiver « question introuvable »"],
+  [{ id: 1, type: "addRecipient", name: "Galadrim", why: "" }, "Ajouter le destinataire « Galadrim »"],
 ];
 
-test("actionTitle names each of the twelve action types", () => {
+test("actionTitle names each action type", () => {
   for (const [action, title] of titles) expect(actionTitle(action)).toBe(title);
 });
 
@@ -175,4 +186,97 @@ test("signalProvenance names the kind and the run of each cited signal", () => {
     "signal Blocage de opus-dev-3",
   ]);
   expect(signalProvenance({ ...cited, signals: undefined }, OPEN_SIGNALS)).toEqual([]);
+});
+
+test("question actions read the title and the recipient from the project", () => {
+  const labels = projectLabels(questionsProject());
+  const title = (action: ProposedAction) => actionTitle(action, labels);
+  expect(title({ id: 1, type: "updateQuestion", questionId: "q-logo", title: "Logo ?", why: "" })).toBe(
+    "Modifier la question « Client - Logo ? »",
+  );
+  expect(title({ id: 1, type: "reopenQuestion", questionId: "q-logo", why: "" })).toBe(
+    "Rouvrir « Client - Logo ? » (réponse retirée)",
+  );
+  expect(title({ id: 1, type: "deleteQuestion", questionId: "q-port", why: "" })).toBe(
+    "Archiver « Quel port ? »",
+  );
+  expect(title({ id: 1, type: "deleteQuestion", questionId: "gone", why: "" })).toBe(
+    "Archiver « question introuvable »",
+  );
+  expect(
+    title({
+      id: 1,
+      type: "createQuestion",
+      ticket: "EMIS-11",
+      title: "Police ?",
+      recipient: "client",
+      why: "",
+    }),
+  ).toBe("Question sur EMIS-11 pour Client : « Police ? »");
+  expect(
+    title({
+      id: 1,
+      type: "createQuestion",
+      ticket: "EMIS-11",
+      title: "Police ?",
+      recipient: "Juridique",
+      why: "",
+    }),
+  ).toBe("Question sur EMIS-11 pour Juridique : « Police ? »");
+  expect(labels.recipient("galadrim")).toBe("Galadrim");
+  expect(labels.question("q-port")).toBe("Quel port ?");
+  expect(defaultLabels.question("q-port")).toBeNull();
+});
+
+test("an updated question shows one before → after line per field, the recipient in plain words", () => {
+  const labels = projectLabels(questionsProject());
+  const update: ProposedAction = {
+    id: 4,
+    type: "updateQuestion",
+    questionId: "q-logo",
+    title: "Logo ?",
+    recipient: "Galadrim",
+    ticket: "EMIS-12",
+    options: ["Grand", "Petit"],
+    provisional: "Grand",
+    context: "Nouveau contexte",
+    why: "",
+  };
+  const expected = {
+    actionId: 4,
+    fields: {
+      title: "Client - Logo ?",
+      recipient: "client",
+      ticketId: "t11",
+      options: ["Oui", "Non"],
+      provisional: null,
+      context: "Le logo",
+      delivered: false,
+    },
+  };
+  expect(actionDiffs(update, expected, labels)).toEqual([
+    { field: "Titre", before: "Client - Logo ?", after: "Logo ?" },
+    { field: "Destinataire", before: "Client", after: "Galadrim" },
+    { field: "Ticket", before: "EMIS-11", after: "EMIS-12" },
+    { field: "Options", before: "Oui, Non", after: "Grand, Petit" },
+    { field: "Choix provisoire", before: "aucun", after: "Grand" },
+  ]);
+  expect(replacesContent(update)).toBe(true);
+  expect(replacesContent({ ...update, context: undefined })).toBe(false);
+  expect(
+    actionDiffs(
+      {
+        ...update,
+        title: undefined,
+        recipient: undefined,
+        ticket: undefined,
+        options: undefined,
+        provisional: undefined,
+      },
+      undefined,
+      labels,
+    ),
+  ).toEqual([]);
+  const status: ProposedAction = { id: 2, type: "setStatus", ticket: "EMIS-11", statusId: "done", why: "" };
+  expect(actionDiffs(status, undefined, labels)).toEqual([{ before: "—", after: "Terminé" }]);
 });

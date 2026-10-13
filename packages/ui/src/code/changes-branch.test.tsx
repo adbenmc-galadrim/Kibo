@@ -131,6 +131,7 @@ const project = (tickets: TicketView[]): ProjectSnapshot => ({
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

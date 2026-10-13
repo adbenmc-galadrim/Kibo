@@ -78,11 +78,17 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/i18n\/fr-(market|security|collab)\.ts$/,
   /\/packages\/ui\/src\/(agents\/(dock|mention)\/|moments\/)[A-Za-z-]+\.tsx?$/,
   /\/packages\/ui\/src\/i18n\/fr-moments\.ts$/,
+  /\/packages\/ui\/src\/settings\/(FolderTree|NodeHeader|EmptyNode|HowAgentsAreConfigured|DomainHeader)\.tsx$/,
+  /\/packages\/ui\/src\/(settings\/(domains-tree|domains-entries|folder-tree-keys|use-domains-page)\.tsx?|dialogs\/GuidelinesField\.tsx)$/,
   /\/packages\/sdk\/src\/(ui\/hover-card|agent-mention)\.tsx$/,
   /\/packages\/ui\/src\/ticket\/activity\/[A-Za-z-]+\.tsx?$/,
   /\/packages\/ui\/src\/(project-agent\/signals\/[A-Za-z-]+\.tsx?|moments\/SignalMoment\.tsx|i18n\/fr-signals\.ts)$/,
   /\/packages\/ui\/src\/(agents\/(catalog|sheet)\/[A-Za-z-]+\.tsx?|file-editor\/[A-Za-z-]+\.tsx?|skills\/[A-Za-z-]+\.tsx?)$/,
   /\/packages\/ui\/src\/i18n\/fr-(agents-skills|skills)\.ts$/,
+  /\/packages\/ui\/src\/(overlaps\/[A-Za-z-]+\.tsx?|moments\/(OverlapMoment|AutoLinkMoment)\.tsx|i18n\/fr-overlaps\.ts)$/,
+  /\/packages\/ui\/src\/(agents\/run-state-text|i18n\/fr-agent-bar)\.ts$/,
+  /\/packages\/ui\/src\/i18n\/fr-(domains|integrations)\.ts$/,
+  /\/packages\/sdk\/src\/question-preview-content\.tsx$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

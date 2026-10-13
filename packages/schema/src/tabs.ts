@@ -28,7 +28,12 @@ export type Screen = z.infer<typeof Screen>;
 
 export const TabTarget = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("project"), projectId: ProjectId }),
-  z.object({ kind: z.literal("page"), projectId: ProjectId, pageId: NodeId }),
+  z.object({
+    kind: z.literal("page"),
+    projectId: ProjectId,
+    pageId: NodeId,
+    question: NodeId.nullable().optional(),
+  }),
   z.object({ kind: z.literal("changes"), projectId: ProjectId, worktree: WorktreePath }),
   z.object({
     kind: z.literal("file"),
@@ -38,14 +43,14 @@ export const TabTarget = z.discriminatedUnion("kind", [
     line: z.number().int().positive().nullable(),
   }),
   z.object({ kind: z.literal("ticket"), projectId: ProjectId, ticketId: NodeId }),
-  z.object({ kind: z.literal("screen"), screen: Screen }),
+  z.object({ kind: z.literal("screen"), screen: Screen, projectId: ProjectId.nullable().optional() }),
   z.object({ kind: z.literal("run"), runId: z.string().min(1) }),
   z.object({ kind: z.literal("skill"), skillId: SkillId }),
 ]);
 export type TabTarget = z.infer<typeof TabTarget>;
 
 export const targetProjectId = (target: TabTarget): string | null =>
-  "projectId" in target ? target.projectId : null;
+  target.kind !== "screen" && "projectId" in target ? target.projectId : null;
 
 export const Tab = z.object({
   id: z.string().min(1),

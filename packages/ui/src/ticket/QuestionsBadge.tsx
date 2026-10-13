@@ -1,21 +1,16 @@
-import { Badge } from "@kibo/sdk/ui/badge";
-import { MessageCircleQuestion } from "lucide-react";
+import { QuestionsChip, type QuestionsChipProps } from "@kibo/sdk";
 import { frQuestions } from "../i18n/fr-questions";
 
-type Props = { count: number; onOpen(): void };
+type Props = Omit<QuestionsChipProps, "text" | "label" | "title" | "className"> & { count: number };
 
-export function QuestionsBadge({ count, onOpen }: Props) {
+export function QuestionsBadge({ count, ...chip }: Props) {
   if (count <= 0) return null;
   return (
-    <Badge
-      asChild
-      variant="outline"
-      className="cursor-pointer gap-1 border-orange-500/40 text-orange-600 hover:bg-orange-500/10 dark:text-orange-400"
-    >
-      <button type="button" title={frQuestions.open} onClick={onOpen}>
-        <MessageCircleQuestion aria-hidden />
-        {frQuestions.badge(count)}
-      </button>
-    </Badge>
+    <QuestionsChip
+      {...chip}
+      text={frQuestions.badge(count)}
+      title={frQuestions.open}
+      className="rounded-md px-2 py-0.5 text-xs [&_svg]:size-3.5"
+    />
   );
 }

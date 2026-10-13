@@ -1,12 +1,22 @@
 import { cn } from "@kibo/sdk/lib/utils";
 import { formatClock } from "../agents/format";
 import { frMoments } from "../i18n/fr-moments";
+import { QuestionText } from "./QuestionText";
 
-export type FeedExtra = { key: string; at: number; kind: "question" | "human" | "system"; text: string };
+export type FeedExtra = {
+  key: string;
+  at: number;
+  kind: "question" | "human" | "system";
+  text: string;
+  questionId?: string;
+};
+
+const textOf = (extra: FeedExtra) =>
+  extra.questionId ? <QuestionText questionId={extra.questionId} text={extra.text} /> : extra.text;
 
 export function ExchangeLine({ extra }: { extra: FeedExtra }) {
   const t = frMoments.exchange;
-  if (extra.kind === "system") return <p className="text-xs text-muted-foreground italic">{extra.text}</p>;
+  if (extra.kind === "system") return <p className="text-xs text-muted-foreground italic">{textOf(extra)}</p>;
   return (
     <div
       className={cn(
@@ -18,7 +28,7 @@ export function ExchangeLine({ extra }: { extra: FeedExtra }) {
         <span className="font-mono">{formatClock(extra.at)}</span>
         {t[extra.kind]}
       </span>
-      <p className="break-words whitespace-pre-wrap">{extra.text}</p>
+      <p className="break-words whitespace-pre-wrap">{textOf(extra)}</p>
     </div>
   );
 }

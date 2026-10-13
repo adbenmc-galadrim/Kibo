@@ -64,10 +64,32 @@ describe("listTickets", () => {
 describe("listQuestions", () => {
   test("filters by state and ticket key", () => {
     expect(listQuestions(snapshot, { state: "open" })).toEqual([
-      { id: "q1", ticket: "EMIS-1", title: "Couleur ?", state: "open", blocking: true, answer: null },
+      {
+        id: "q1",
+        ticket: "EMIS-1",
+        title: "Couleur ?",
+        state: "open",
+        blocking: true,
+        answer: null,
+        recipient: "me",
+        recipientName: "Moi (technique)",
+        delivered: false,
+        sentAt: null,
+      },
     ]);
     expect(listQuestions(snapshot, { state: "answered" })).toEqual([
-      { id: "q2", ticket: "EMIS-2", title: "Format ?", state: "answered", blocking: false, answer: "JSON" },
+      {
+        id: "q2",
+        ticket: "EMIS-2",
+        title: "Format ?",
+        state: "answered",
+        blocking: false,
+        answer: "JSON",
+        recipient: "me",
+        recipientName: "Moi (technique)",
+        delivered: false,
+        sentAt: null,
+      },
     ]);
     expect(listQuestions(snapshot, { state: "all" }).map((q) => q.id)).toEqual(["q1", "q2"]);
     expect(listQuestions(snapshot, { state: "all", ticketKey: "EMIS-2" }).map((q) => q.id)).toEqual(["q2"]);

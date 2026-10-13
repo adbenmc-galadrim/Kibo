@@ -10,7 +10,7 @@ import {
   migrateForSharing,
   setStatus,
 } from "@kibo/core";
-import type { Domain, ProjectMeta, Skill, Ticket } from "@kibo/schema";
+import type { ConfigCommand, Domain, GuidelineOwner, ProjectMeta, Skill, Ticket } from "@kibo/schema";
 import { call, createService } from "../service";
 import { openStore } from "../store";
 import { applyRules } from "./data-port";
@@ -25,6 +25,7 @@ const doc = () =>
     color: "#F97316",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
 
 test("a finished run leaves its ticket in its status, and a started one moves it on", () => {
@@ -87,7 +88,7 @@ test("a shared project takes its domains and domain guidelines from the project,
     method: "config",
     command: { method: "createDomain", domain: { name: "Core", color: "#14B8A6" } },
   }) as Domain;
-  const owner = { scope: "domain", domainId: core.id } as const;
+  const owner = { scope: "domain", domainId: core.id, projectId: null } as const;
   s.handle({
     method: "config",
     command: { method: "addGuideline", owner, path: "core.md", content: "Poste" },
@@ -117,6 +118,121 @@ test("a shared project takes its domains and domain guidelines from the project,
   expect(s.agentData.ticketContext(meta.id, ticket.id).domain?.name).toBe("Core");
   const contents = s.agentData.guidelines(meta.id).map((g) => `${g.owner.scope}:${g.content}`);
   expect(contents.sort()).toEqual(["domain:Partagé", "workspace:Local"]);
+  store.close();
+  rmSync(home, { recursive: true, force: true });
+});
+
+function twoScopes(shared: boolean) {
+  const home = mkdtempSync(join(tmpdir(), "kibo-port-"));
+  const store = openStore(home);
+  const s = createService(store, { user: "adam" });
+  const meta: ProjectMeta = call(s, {
+    method: "createProject",
+    name: "Kibo",
+    key: "KIB",
+    folder: null,
+    color: "#F97316",
+  });
+  const config = <T>(command: ConfigCommand) => s.handle({ method: "config", command }) as T;
+  const color = "#14B8A6";
+  const securite = config<Domain>({ method: "createDomain", domain: { name: "Sécurité", color } });
+  const sync = config<Domain>({
+    method: "createDomain",
+    domain: { name: "Sync", color },
+    owner: { scope: "project", projectId: meta.id },
+  });
+  const file = (owner: GuidelineOwner, content: string) =>
+    config({ method: "addGuideline", owner, path: "a.md", content });
+  file({ scope: "workspace" }, "workspace");
+  file({ scope: "domain", domainId: securite.id, projectId: null }, "workspace domain");
+  file({ scope: "project", projectId: meta.id }, "project");
+  file({ scope: "domain", domainId: sync.id, projectId: meta.id }, "project domain");
+  const ticketIn = (domainId: string) => {
+    const t = s.handle({
+      method: "command",
+      projectId: meta.id,
+      command: { method: "createTicket", title: "T" },
+    }) as Ticket;
+    s.handle({
+      method: "command",
+      projectId: meta.id,
+      command: { method: "updateTicket", ticketId: t.id, domainId },
+    });
+    return t.id;
+  };
+  const onSync = ticketIn(sync.id);
+  const onSecurite = ticketIn(securite.id);
+  if (shared) enableServerAllocation(s.docs.project(meta.id));
+  const domainOf = (ticketId: string) => s.agentData.ticketContext(meta.id, ticketId).domain?.name ?? null;
+  const contents = s.agentData
+    .guidelines(meta.id)
+    .map((g) => g.content)
+    .sort();
+  const result = { onSync: domainOf(onSync), onSecurite: domainOf(onSecurite), contents };
+  store.close();
+  rmSync(home, { recursive: true, force: true });
+  return result;
+}
+
+test("a local project reads its domains then the workspace ones, and every guideline level", () => {
+  expect(twoScopes(false)).toEqual({
+    onSync: "Sync",
+    onSecurite: "Sécurité",
+    contents: ["project", "project domain", "workspace", "workspace domain"],
+  });
+});
+
+test("a shared project never reads a workspace domain", () => {
+  expect(twoScopes(true)).toEqual({
+    onSync: "Sync",
+    onSecurite: null,
+    contents: ["project", "project domain", "workspace"],
+  });
+});
+
+test("a local project copy of a workspace domain hides the workspace one", () => {
+  const home = mkdtempSync(join(tmpdir(), "kibo-port-"));
+  const store = openStore(home);
+  const s = createService(store, { user: "adam" });
+  const meta: ProjectMeta = call(s, {
+    method: "createProject",
+    name: "Kibo",
+    key: "KIB",
+    folder: null,
+    color: "#F97316",
+  });
+  const core = s.handle({
+    method: "config",
+    command: { method: "createDomain", domain: { name: "Core", color: "#14B8A6" } },
+  }) as Domain;
+  s.handle({
+    method: "config",
+    command: {
+      method: "addGuideline",
+      owner: { scope: "domain", domainId: core.id, projectId: null },
+      path: "core.md",
+      content: "Poste",
+    },
+  });
+  const ticket = s.handle({
+    method: "command",
+    projectId: meta.id,
+    command: { method: "createTicket", title: "A" },
+  }) as Ticket;
+  s.handle({
+    method: "command",
+    projectId: meta.id,
+    command: { method: "updateTicket", ticketId: ticket.id, domainId: core.id },
+  });
+  const doc = s.docs.project(meta.id);
+  doc.getMap("projectDomains").set(core.id, {
+    name: "Core du projet",
+    color: "#14B8A6",
+    guidelines: [{ path: "core.md", content: "Projet" }],
+  });
+  doc.commit();
+  expect(s.agentData.ticketContext(meta.id, ticket.id).domain?.name).toBe("Core du projet");
+  expect(s.agentData.guidelines(meta.id).map((g) => g.content)).toEqual(["Projet"]);
   store.close();
   rmSync(home, { recursive: true, force: true });
 });

@@ -1,4 +1,4 @@
-import { Screen, TabTarget } from "@kibo/schema";
+import { NodeId, Screen, TabTarget } from "@kibo/schema";
 
 const enc = encodeURIComponent;
 
@@ -23,7 +23,8 @@ const SCREEN_HASHES: Record<Screen, string> = {
 
 export function targetToHash(target: TabTarget | null): string {
   if (!target) return "#/";
-  if (target.kind === "screen") return SCREEN_HASHES[target.screen];
+  if (target.kind === "screen")
+    return `${SCREEN_HASHES[target.screen]}${target.projectId ? `?project=${enc(target.projectId)}` : ""}`;
   if (target.kind === "run") return `#/runs/${enc(target.runId)}`;
   if (target.kind === "skill") return `#/skills/${enc(target.skillId)}`;
   const base = `#/p/${enc(target.projectId)}`;
@@ -31,7 +32,7 @@ export function targetToHash(target: TabTarget | null): string {
     case "project":
       return `${base}/`;
     case "page":
-      return `${base}/${enc(target.pageId)}`;
+      return `${base}/${enc(target.pageId)}${target.question ? `?question=${enc(target.question)}` : ""}`;
     case "ticket":
       return `${base}/t/${enc(target.ticketId)}`;
     case "changes":
@@ -60,13 +61,22 @@ function candidate(projectId: string, rest: string, q: URLSearchParams): unknown
   }
   if (rest.startsWith("t/"))
     return { kind: "ticket", projectId, ticketId: decodeURIComponent(rest.slice(2)) };
-  return { kind: "page", projectId, pageId: decodeURIComponent(rest) };
+  const question = q.get("question");
+  return {
+    kind: "page",
+    projectId,
+    pageId: decodeURIComponent(rest),
+    ...(NodeId.safeParse(question).success && { question }),
+  };
 }
 
 function screenTarget(hash: string): TabTarget | null {
-  const bare = hash.replace(/\/$/, "");
+  const [path = "", query = ""] = hash.split("?");
+  const bare = path.replace(/\/$/, "");
   const screen = Screen.options.find((s) => SCREEN_HASHES[s] === bare);
-  return screen ? { kind: "screen", screen } : null;
+  if (!screen) return null;
+  const projectId = new URLSearchParams(query).get("project");
+  return projectId ? { kind: "screen", screen, projectId } : { kind: "screen", screen };
 }
 
 function pathCandidate(path: string, query: string): unknown {

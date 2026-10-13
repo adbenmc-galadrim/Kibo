@@ -1,5 +1,5 @@
 import { expect, spyOn, test } from "bun:test";
-import type { HookPayload, HookReply, RunView } from "@kibo/schema";
+import { type HookPayload, type HookReply, overlapStopReminder, type RunView } from "@kibo/schema";
 import { runView } from "../questions/questions.test-helper";
 import type { HookSink } from "./hook-route";
 import {
@@ -41,7 +41,10 @@ type Setup = {
   report?: boolean;
   skills?: number;
   reviewed?: boolean;
+  overlaps?: OpenOverlap[];
 };
+
+type OpenOverlap = { overlapId: string; ticketKey: string; label: string };
 
 function setup({
   under = null,
@@ -50,6 +53,7 @@ function setup({
   report = false,
   skills = 0,
   reviewed = false,
+  overlaps = [],
 }: Setup = {}) {
   const moments: string[] = [];
   const received: string[] = [];
@@ -67,8 +71,9 @@ function setup({
     usedSkills: () => skills,
     hasSkillReview: () => reviewed,
     moment: (runId, kind) => moments.push(`${runId}:${kind}`),
+    openDeliveredOverlaps: () => overlaps,
   };
-  return { sink: withReminders(inner, deps), moments, received };
+  return { sink: withReminders(inner, deps), moments, received, overlaps };
 }
 
 test("the first modification of a ticket run without a plan is allowed with the plan reminder, once", () => {
@@ -249,4 +254,50 @@ test("the plan reminder and the stop reminder are both given in the same run", (
   expect(sink.receive("r1", edit, null)).toEqual(planReminder);
   expect(sink.receive("r1", stop, null)).toEqual({ kind: "stop", reason: REPORT_SKILLS_REMINDER });
   expect(moments).toEqual(["r1:plan", "r1:report_skills"]);
+});
+
+test("a plan reminder joins the context already given by the guards", () => {
+  const under: HookReply = { kind: "permission", decision: "allow", reason: "", additionalContext: "x" };
+  const { sink } = setup({ under });
+  expect(sink.receive("r1", edit, null)).toEqual({
+    ...planReminder,
+    additionalContext: `x\n\n${PLAN_REMINDER}`,
+  });
+});
+
+const o1: OpenOverlap = { overlapId: "o1", ticketKey: "BOU-12", label: "`formatDate`" };
+const o2: OpenOverlap = { overlapId: "o2", ticketKey: "BOU-12", label: "`src/i18n/fr.ts`" };
+
+test("an open overlap delivered to the run blocks the Stop once, a new one blocks once more", () => {
+  const { sink, moments, overlaps } = setup({ report: true, overlaps: [o1] });
+  expect(sink.receive("r1", stop, null)).toEqual({ kind: "stop", reason: overlapStopReminder([o1]) });
+  expect(sink.receive("r1", stop, null)).toBeNull();
+  overlaps.push(o2);
+  expect(sink.receive("r1", stop, null)).toEqual({ kind: "stop", reason: overlapStopReminder([o2]) });
+  expect(sink.receive("r1", stop, null)).toBeNull();
+  expect(moments).toEqual(["r1:overlap", "r1:overlap"]);
+});
+
+test("a Stop already continued by a hook is never blocked for an overlap", () => {
+  const { sink, moments } = setup({ report: true, overlaps: [o1] });
+  expect(sink.receive("r1", hook("Stop", null, true), null)).toBeNull();
+  expect(moments).toEqual([]);
+});
+
+test("a missing report and an open overlap give one stop with both texts and two moments", () => {
+  const { sink, moments } = setup({ overlaps: [o1] });
+  expect(sink.receive("r1", stop, null)).toEqual({
+    kind: "stop",
+    reason: `${REPORT_REMINDER}\n\n${overlapStopReminder([o1])}`,
+  });
+  expect(sink.receive("r1", stop, null)).toBeNull();
+  expect(moments).toEqual(["r1:report", "r1:overlap"]);
+});
+
+test("forget clears the overlaps already reminded", () => {
+  const { sink, moments } = setup({ report: true, overlaps: [o1] });
+  expect(sink.receive("r1", stop, null)).not.toBeNull();
+  sink.forget("r1");
+  expect(sink.receive("r1", stop, null)).toEqual({ kind: "stop", reason: overlapStopReminder([o1]) });
+  expect(moments).toEqual(["r1:overlap", "r1:overlap"]);
 });

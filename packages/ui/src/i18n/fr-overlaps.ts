@@ -1,0 +1,121 @@
+import type { AutoLinkReason, OverlapKind, OverlapRole } from "@kibo/schema";
+
+const day = (at: number) => new Date(at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+const time = (at: number) => new Date(at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
+const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
+
+const role: Record<OverlapRole, string> = { other: "à factoriser", owner: "repris par" };
+
+const reasons: Record<AutoLinkReason, string> = { copy: "repris de", import: "importé de" };
+
+export const frOverlaps = {
+  moment: {
+    with: "Recouvrement avec",
+    role,
+    ownedBy: (name: string) => `${role.owner} ${name}`,
+    mine: "(toi)",
+    open: "Ouvert",
+    resolved: (clock: string) => `Réglé ${clock}`,
+    ignoredState: "Ignoré",
+    loading: "…",
+    seeFiles: "Voir les fichiers",
+    ignore: "Ignorer",
+    ignored: (by: string) => `Ignoré par ${by}`,
+    exported: "exporté deux fois",
+    bothSides: "modifié des deux côtés",
+    sameLines: (n: number) => `${n} lignes identiques`,
+    linked: "Kibo a lié",
+    blocks: (from: string, to: string) => `(${from} bloque ${to})`,
+    reason: (reason: AutoLinkReason, from: string) => `${reasons[reason]} ${from}`,
+    mergeFirst: (from: string) => `fusionner ${from} d'abord`,
+    cancel: "Annuler",
+    cancelled: (by: string, clock: string) => `Annulé par ${by} ${clock}`,
+    cancelledHint: "lien retiré, Kibo ne le reposera pas",
+    removed: "lien retiré",
+    failed: (from: string, to: string) => `Kibo n'a pas pu lier ${from} → ${to} : dépendance circulaire`,
+    actionFailed: "Action impossible pour l'instant.",
+  },
+  bar: {
+    chip: (n: number) => `${plural(n, "recouvrement ouvert", "recouvrements ouverts")}`,
+    with: (key: string) => `Recouvrement avec ${key}`,
+  },
+  files: {
+    title: "Fichiers du recouvrement",
+    description: "Les deux fichiers côte à côte, en lecture seule.",
+    heading: (runName: string, path: string) => `${runName} · ${path}`,
+    missing: "fichier absent",
+    loading: "Chargement des fichiers…",
+    failed: "Impossible de lire les fichiers.",
+    close: "Fermer",
+  },
+  parallel: {
+    title: "Travail en parallèle",
+    hint: "Ce que l'agent reçoit à chaque tour, sans token.",
+    active: (n: number) => plural(n, "run actif", "runs actifs"),
+    more: (n: number) => `… ${plural(n, "autre run", "autres runs")}`,
+    empty: "Aucun autre run sur ce projet",
+    partial: "Détection partielle",
+    started: (title: string, ago: string) => `${title} · démarré il y a ${ago}`,
+    minutes: (n: number) => `${n} min`,
+    hours: (n: number) => `${n} h`,
+    step: (title: string, index: number | null) =>
+      index === null ? `Étape en cours · ${title}` : `Étape ${index} · ${title}`,
+    files: (n: number) => plural(n, "fichier", "fichiers"),
+    exports: (n: number) => plural(n, "export nouveau", "exports nouveaux"),
+    truncated: "liste tronquée",
+    seeWork: "Voir son travail",
+    shared: "dossier du projet, partagé avec toi",
+    isolated: "dossier isolé, non comparé",
+    repo: "dossier du projet",
+    worktree: (name: string) => `worktree ${name}`,
+    overlaps: "Recouvrements",
+    failed: "Travail en parallèle indisponible pour l'instant.",
+  },
+  activity: {
+    failed: "Recouvrements indisponibles pour l'instant.",
+    counts: (resolved: number, open: number) =>
+      `Recouvrements : ${plural(resolved, "réglé", "réglés")} · ${plural(open, "ouvert", "ouverts")}`,
+  },
+  settings: {
+    legend: "Doublons entre agents",
+    help: "Kibo compare le travail des runs actifs du projet à chaque écriture et toutes les 5 minutes, sans token. Désactivé, la section « Travail en cours » reste.",
+    enabled: "Détecter les doublons entre agents",
+    minLines: "Lignes minimales d'un bloc",
+    minLinesHelp: "4 à 50 ; un bloc fait aussi 160 caractères au moins.",
+    minLinesError: "Choisis un nombre entre 4 et 50.",
+    compareTests: "Comparer aussi les tests",
+    compareTestsHelp: "Tests et fixtures sont exclus des blocs par défaut.",
+    ignore: "Fichiers ignorés",
+    ignoreHelp: "Un glob par ligne, en plus des verrous, fichiers générés, binaires et secrets.",
+    ignoreTooMany: "50 globs au plus.",
+    ignoreTooLong: "Un glob fait 200 caractères au plus.",
+    genericExports: "Exports génériques",
+    genericExportsHelp: "Un nom exporté deux fois parmi ceux-ci ne déclenche pas d'alerte.",
+    addExport: "Ajouter…",
+    addExportLabel: "Ajouter un export générique",
+    removeExport: (name: string) => `Retirer ${name}`,
+    exportsTooMany: "100 exports au plus.",
+    exportTooLong: "Un nom fait 64 caractères au plus.",
+    ignored: "Recouvrements ignorés",
+    ignoredHelp: "Un recouvrement ignoré ne réalerte plus, pour aucun run du projet.",
+    none: "Aucun",
+    kinds: { file: "fichier", export: "export", block: "bloc" } satisfies Record<OverlapKind, string>,
+    ignoredBy: (at: number, by: string) => `${day(at)} · ${by}`,
+    reactivate: "Réactiver",
+    reactivateLabel: (label: string) => `Réactiver ${label}`,
+    failed: "Impossible de lire les recouvrements ignorés.",
+    localOnly: "Réglage local : il se modifie sur l'ordinateur où tourne Kibo.",
+  },
+  badge: {
+    byKibo: "par Kibo",
+    label: (key: string) => `Lien ajouté par Kibo avec ${key}`,
+    reason: { copy: "Reprise de", import: "Import de" } satisfies Record<AutoLinkReason, string>,
+    at: (at: number) => `${day(at)} ${time(at)}`,
+    cancel: "Annuler",
+    failed: "Impossible d'annuler le lien.",
+  },
+  preview: {
+    work: "Travail en cours sur le projet (exemple)",
+  },
+};

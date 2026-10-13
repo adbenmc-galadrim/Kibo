@@ -13,6 +13,7 @@ Object.assign(S.ICONS, {
   eyeOff: '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
   history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
   chevUp: '<path d="m18 15-6-6-6 6"/>',
+  chevronsUpDown: '<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>',
   messageSquareText: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7"/><path d="M17 12H7"/>',
 });
 
@@ -243,19 +244,24 @@ const skillRow = (p, [name, desc, notes, usage, o = {}], sel) => { const r = S.b
   S.txt(c, o.masked ? "masqué par le skill personnel du même nom" : desc, { size: 12, color: C.mfg });
   if (notes) { const n = S.row(r, { gap: 5, hs: "auto" }); S.icon(n, "messagePlus", 13, C.brand); S.txt(n, notes, { size: 12, weight: 500, color: C.brand }); }
   const u = S.box(r, { name: "usage", w: 230, dir: "row", vs: "auto", justify: "end" }); S.txt(u, usage, { size: 12, color: C.dim }); S.icon(r, "chevRight", 14, C.dim); return r; };
+const noteCount = (p, n) => { const r = S.row(p, { name: "GroupNotes", gap: 4, hs: "auto" }); S.icon(r, "messagePlus", 12, C.brand); S.txt(r, n + (n > 1 ? " notes" : " note"), { size: 12, weight: 500, color: C.brand }); return r; };
 const skillGroup = (p, icon, title, path, rows, o = {}) => { const g = S.panel(p, { name: "SkillGroup-" + title, gap: 0, pad: 0 });
-  const h = S.row(g, { gap: 8, pad: [10, 14] }); if (o.dot) S.dot(h, o.dot, 8); else S.icon(h, icon, 15, C.mfg); S.txt(h, title, { size: 13, weight: 600 }); S.badge(h, String(rows.length), C.mfg, { round: true });
+  const h = S.row(g, { gap: 8, pad: [10, 14] }); S.icon(h, o.collapsed ? "chevRight" : "chevDown", 14, C.mfg); if (o.dot) S.dot(h, o.dot, 8); else S.icon(h, icon, 15, C.mfg); S.txt(h, title, { size: 13, weight: 600 }); S.badge(h, String(rows.length), C.mfg, { round: true });
+  const notes = rows.reduce((n, x) => n + (x[2] ? parseInt(x[2], 10) : 0), 0); if (notes) noteCount(h, notes);
   S.fillX(S.txt(h, path, { size: 12, mono: true, color: C.dim })); if (o.right) o.right(h);
-  rows.forEach(x => { hline(g); skillRow(g, o.ro ? [x[0], x[1], x[2], x[3], { ro: true }] : x, o.sel === x[0]); }); return g; };
+  if (!o.collapsed) rows.forEach(x => { hline(g); skillRow(g, o.ro ? [x[0], x[1], x[2], x[3], { ro: true }] : x, o.sel === x[0]); }); return g; };
+const ALL_SKILLS = [...SK.user, ...SK.kibo, ...SK.fact, ...SK.superpowers, ...SK.design];
+const FILTERS = [["Tous", ALL_SKILLS.length], ["Utilisés", ALL_SKILLS.filter(x => /^utilisé/.test(x[3])).length], ["Avec notes", ALL_SKILLS.filter(x => x[2]).length]];
 const skillsPage = (c, o = {}) => { c.flex.rowGap = 14;
-  const t = S.row(c, { gap: 8 }); input(t, "Rechercher un skill…", { icon: "search", placeholder: true, w: 420 }); S.spacer(t);
+  const t = S.row(c, { gap: 12 }); input(t, "Rechercher un skill…", { icon: "search", placeholder: true, w: 420 }); segmented(t, FILTERS.map(([n, k]) => n + " · " + k), "Tous · " + FILTERS[0][1]);
+  S.button(t, o.sel ? "Tout replier" : "Tout déplier", "ghost", { sm: true, icon: "chevronsUpDown" }); S.spacer(t);
   S.txt(t, "4 notes à traiter", { size: 12, weight: 500, color: C.brand });
   skillGroup(c, "laptop", "Cet ordinateur", "~/.claude/skills", SK.user);
   skillGroup(c, null, "Projet · Kibo", "~/code/kibo/.claude/skills", SK.kibo, { dot: C.brand });
   skillGroup(c, null, "Projet · API Facturation", "~/code/api-facturation/.claude/skills", SK.fact, { dot: C.green });
   const pl = S.col(c, { gap: 8 }); const ph = S.row(pl, { gap: 8 }); S.icon(ph, "package", 15, C.mfg); S.txt(ph, "Plugins", { size: 13, weight: 600 }); S.txt(ph, "lecture seule · ~/.claude/plugins/cache", { size: 12, mono: true, color: C.dim });
-  skillGroup(pl, "package", "superpowers 5.0.7", "", SK.superpowers, { ro: true, sel: o.sel }); skillGroup(pl, "package", "frontend-design 1.2.0", "", SK.design, { ro: true }); };
-S.draw[194] = async () => { const { frame: f, content: c } = await screen("194 · Skills : trois sources", 0, 2, ["Agents", "Skills"], { nav: "Skills", h: 1180, action: ["Nouveau skill", "plus"] }); skillsPage(c); return f.id; };
+  skillGroup(pl, "package", "superpowers 5.0.7", "", SK.superpowers, { ro: true, sel: o.sel, collapsed: !o.sel }); skillGroup(pl, "package", "frontend-design 1.2.0", "", SK.design, { ro: true, collapsed: true }); };
+S.draw[194] = async () => { const { frame: f, content: c } = await screen("194 · Skills : trois sources, groupes repliables et filtres", 0, 2, ["Agents", "Skills"], { nav: "Skills", h: 1180, action: ["Nouveau skill", "plus"] }); skillsPage(c); return f.id; };
 
 // ---------- 194b · Skill de plugin ----------
 const BRAIN = ["# Brainstorming", "Turn an idea into a design through dialogue.", "", "## Process", "- Ask one question at a time.", "- Propose two or three approaches."];

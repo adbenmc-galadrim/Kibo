@@ -58,6 +58,7 @@ beforeEach(() => {
     color: "#71717A",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
   store = createFakeStore();
   stopped = [];

@@ -148,28 +148,46 @@ export function recordMcpCalls(callsFile: string, calls: readonly McpCallLog[]):
 }
 
 const PROFILE_REF = /^\{\{profile:(.+)\}\}$/;
+const QUESTION_REF = /^\{\{question:(.+)\}\}$/;
 const ListedProfiles = z.array(z.object({ id: z.string(), name: z.string() }));
+const ListedQuestions = z.array(z.object({ id: z.string(), title: z.string() }));
+
+function lastReply(tool: string, calls: readonly McpCallLog[], wanted: string): string {
+  const listed = [...calls].reverse().find((c) => c.tool === tool && !c.isError);
+  if (!listed) throw new Error(`no ${tool} reply to resolve ${wanted}`);
+  return listed.text;
+}
 
 function profileId(name: string, calls: readonly McpCallLog[]): string {
-  const listed = [...calls].reverse().find((c) => c.tool === "list_profiles" && !c.isError);
-  if (!listed) throw new Error(`no list_profiles reply to resolve profile ${name}`);
-  const profile = ListedProfiles.parse(JSON.parse(listed.text)).find((p) => p.name === name);
+  const text = lastReply("list_profiles", calls, `profile ${name}`);
+  const profile = ListedProfiles.parse(JSON.parse(text)).find((p) => p.name === name);
   if (!profile) throw new Error(`no profile named ${name}`);
   return profile.id;
 }
 
+function questionId(title: string, calls: readonly McpCallLog[]): string {
+  const text = lastReply("list_questions", calls, `question ${title}`);
+  const question = ListedQuestions.parse(JSON.parse(text)).find((q) => q.title === title);
+  if (!question) throw new Error(`no question titled ${title}`);
+  return question.id;
+}
+
+function bindText(value: string, calls: readonly McpCallLog[]): string {
+  const profile = PROFILE_REF.exec(value)?.[1];
+  if (profile !== undefined) return profileId(profile, calls);
+  const question = QUESTION_REF.exec(value)?.[1];
+  return question === undefined ? value : questionId(question, calls);
+}
+
 function bindValue(value: unknown, calls: readonly McpCallLog[]): unknown {
-  if (typeof value === "string") {
-    const name = PROFILE_REF.exec(value)?.[1];
-    return name === undefined ? value : profileId(name, calls);
-  }
+  if (typeof value === "string") return bindText(value, calls);
   if (Array.isArray(value)) return value.map((v) => bindValue(v, calls));
   if (typeof value === "object" && value !== null)
     return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, bindValue(v, calls)]));
   return value;
 }
 
-export function bindProfiles(
+export function bindPlaceholders(
   input: Record<string, unknown>,
   calls: readonly McpCallLog[],
 ): Record<string, unknown> {

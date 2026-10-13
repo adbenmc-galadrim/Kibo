@@ -1,5 +1,5 @@
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve, sep } from "node:path";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { z } from "zod";
 import CURRENT_HELP from "./scenarios/help/claude-2.1.283.txt";
 import LEGACY_HELP from "./scenarios/help/legacy.txt";
@@ -7,8 +7,12 @@ import LEGACY_HELP from "./scenarios/help/legacy.txt";
 export const AI_SCENARIOS_DIR = join(import.meta.dir, "scenarios", "ai");
 export const FIXTURES_DIR = join(AI_SCENARIOS_DIR, "fixtures");
 
-export type WriteLog = { write: string; bypass?: true } | { denied: string; reason: string };
-type WriteStep = { write: string; fixture: string; bypassHooks: boolean };
+export type WriteLog =
+  | { write: string; bypass?: true }
+  | { deleted: string; bypass?: true }
+  | { denied: string; reason: string };
+type WriteStep = { write: string; bypassHooks: boolean } & ({ fixture: string } | { content: string });
+type DeleteStep = { delete: string; bypassHooks: boolean };
 export const fixturesDir = (env: Record<string, string | undefined> = process.env): string =>
   env.KIBO_FAKE_CLAUDE_FIXTURES ?? FIXTURES_DIR;
 
@@ -27,12 +31,14 @@ type HookFn = (event: "PreToolUse" | "PostToolUse", extra: Record<string, unknow
 const WriteLogEntry = z.union([
   z.object({ denied: z.string(), reason: z.string() }).strict(),
   z.object({ write: z.string(), bypass: z.literal(true).optional() }).strict(),
+  z.object({ deleted: z.string(), bypass: z.literal(true).optional() }).strict(),
 ]);
 
 const Decision = z.object({
   hookSpecificOutput: z.object({
     permissionDecision: z.string(),
     permissionDecisionReason: z.string().optional(),
+    additionalContext: z.string().optional(),
   }),
 });
 
@@ -53,6 +59,11 @@ function hookJson(text: string): unknown {
     process.stderr.write(`fake-claude: hook output is not JSON: ${String(error)}\n`);
     return null;
   }
+}
+
+export function contextOf(text: string): string | null {
+  const parsed = Decision.safeParse(hookJson(text));
+  return parsed.success ? (parsed.data.hookSpecificOutput.additionalContext ?? null) : null;
 }
 
 export function decisionOf(text: string): string | null {
@@ -89,7 +100,10 @@ export async function runWriteStep(
   if (step.bypassHooks && ctx.allowBypass === false)
     throw new Error("the demo agent never bypasses the hooks");
   const filePath = resolve(ctx.cwd, step.write);
-  const content = readFileSync(fixturePath(ctx.fixtures ?? fixturesDir(), step.fixture), "utf8");
+  const content =
+    "content" in step
+      ? step.content
+      : readFileSync(fixturePath(ctx.fixtures ?? fixturesDir(), step.fixture), "utf8");
   const write = () => {
     mkdirSync(dirname(filePath), { recursive: true });
     writeFileSync(filePath, content);
@@ -112,6 +126,54 @@ export async function runWriteStep(
     tool_response: { filePath, success: true },
   });
   return done({ write: filePath });
+}
+
+export async function runDeleteStep(
+  step: DeleteStep,
+  ctx: { cwd: string; hook: HookFn; log: (entry: WriteLog) => void; allowBypass?: boolean },
+): Promise<WriteLog> {
+  if (step.bypassHooks && ctx.allowBypass === false)
+    throw new Error("the demo agent never bypasses the hooks");
+  const root = resolve(ctx.cwd);
+  const filePath = resolve(root, step.delete);
+  if (!filePath.startsWith(root + sep)) throw new Error(`path outside cwd: ${step.delete}`);
+  const done = (entry: WriteLog) => {
+    ctx.log(entry);
+    return entry;
+  };
+  if (step.bypassHooks) {
+    rmSync(filePath, { force: true });
+    return done({ deleted: filePath, bypass: true });
+  }
+  const toolInput = { command: `rm ${relative(root, filePath)}` };
+  const reason = await ctx.hook("PreToolUse", { tool_name: "Bash", tool_input: toolInput });
+  if (reason !== null) return done({ denied: filePath, reason });
+  rmSync(filePath, { force: true });
+  await ctx.hook("PostToolUse", {
+    tool_name: "Bash",
+    tool_input: toolInput,
+    tool_response: { stdout: "", stderr: "", interrupted: false },
+  });
+  return done({ deleted: filePath });
+}
+
+const ContextLine = z.object({ at: z.number(), tool: z.string(), additionalContext: z.string() });
+export type ContextLine = z.infer<typeof ContextLine>;
+
+const contextsFile = (stateDir: string, sessionId: string): string =>
+  join(stateDir, `${sessionId}.context.jsonl`);
+
+export function appendContext(stateDir: string, sessionId: string, line: ContextLine): void {
+  appendFileSync(contextsFile(stateDir, sessionId), `${JSON.stringify(line)}\n`);
+}
+
+export function fakeContexts(stateDir: string, sessionId: string): ContextLine[] {
+  const file = contextsFile(stateDir, sessionId);
+  if (!existsSync(file)) return [];
+  return readFileSync(file, "utf8")
+    .split("\n")
+    .filter((l) => l.length > 0)
+    .map((l) => ContextLine.parse(JSON.parse(l)));
 }
 
 const writesFile = (stateDir: string, sessionId: string): string =>

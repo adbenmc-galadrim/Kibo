@@ -22,12 +22,13 @@ import { Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { client } from "../../api";
 import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import type { IntegrationDialogProps } from "../../settings/integration-dialogs";
 import { FormError } from "./FormError";
 import { McpServerDialog } from "./McpServerDialog";
 import { McpServerRow } from "./McpServerRow";
 
-const t = fr.integrations.mcpServers;
+const t = frIntegrations.mcpServers;
 
 const message = (e: unknown) => (e instanceof KiboError ? e.detail : String(e));
 

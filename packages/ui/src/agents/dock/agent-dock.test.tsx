@@ -1,5 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import type {
+  AgentsState,
   FileRef,
   RpcRequest,
   RunLogEntry,
@@ -22,6 +23,7 @@ import {
   UNREPORTED_RUN,
   WORKTREE,
 } from "../../moments/fixtures";
+import { momentOf, overlapFixture, overlapMoment } from "../../overlaps/fixtures";
 import { NOW } from "../fixtures";
 
 const RUN_EXCHANGE: RunLogEntry[] = [
@@ -39,6 +41,7 @@ const worktrees: Worktree[] = [
 let page: RunMomentsPage = MOMENTS_PAGE;
 let project = progressProject();
 const calls: RpcRequest[] = [];
+const openOverlaps = [overlapFixture({ ownerRunId: "r43", otherRunId: FEED_RUN })];
 const momentListeners = new Set<(e: RunMomentsEvent) => void>();
 
 mock.module("../../api", () =>
@@ -50,6 +53,7 @@ mock.module("../../api", () =>
         if (req.method === "getRunLog") return Promise.resolve(req.runId === FEED_RUN ? RUN_EXCHANGE : []);
         if (req.method === "runMoments")
           return Promise.resolve(req.runId === FEED_RUN ? page : { ...page, moments: [] });
+        if (req.method === "overlaps.list") return Promise.resolve(openOverlaps);
         return Promise.resolve(null);
       },
       code: () => Promise.resolve(worktrees),
@@ -91,13 +95,13 @@ const runOf = (id: string): RunView => {
   return found;
 };
 
-function renderDock(selected: string | null = FEED_RUN) {
+function renderDock(selected: string | null = FEED_RUN, state: AgentsState = dockState()) {
   const onSelect = mock((_: string) => {});
   const onOpenFile = mock((_: FileRef) => {});
   const onCollapse = mock(() => {});
   render(
     <AgentDock
-      state={dockState()}
+      state={state}
       now={NOW}
       online
       selected={selected ? runOf(selected) : null}
@@ -265,4 +269,36 @@ test("the human replies of the run are woven into its feed", async () => {
   const feed = within(screen.getByRole("region", { name: "Fil" }));
   expect(await feed.findByText("Port 4747, écrit dans daemon.json.")).toBeTruthy();
   expect(feed.getByText("Toi")).toBeTruthy();
+});
+
+test("screen 200: an open overlap under a run selects it and scrolls its feed to the overlap", async () => {
+  const scrolled: string[] = [];
+  const original = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = function (this: Element) {
+    scrolled.push(this.getAttribute("data-seq") ?? "");
+  };
+  const overlap = momentOf(30, NOW - 60_000, overlapMoment({ withRunId: "r43" }), FEED_RUN);
+  page = { ...MOMENTS_PAGE, moments: [...MOMENTS, overlap] };
+  try {
+    const counts = [
+      { runId: FEED_RUN, open: 1 },
+      { runId: "r43", open: 1 },
+    ];
+    const { onSelect } = renderDock(FEED_RUN, { ...dockState(), overlaps: counts });
+    await screen.findByText("Je relis le récepteur et ses tests avant de toucher au port.");
+    const runs = within(screen.getByRole("region", { name: "Runs" }));
+    const line = await runs.findByRole("button", { name: "Recouvrement avec KIB-16" });
+    await userEvent.setup().click(line);
+    expect(onSelect).toHaveBeenCalledWith(FEED_RUN);
+    await waitFor(() => expect(scrolled).toEqual(["30"]));
+    expect(calls).toContainEqual({ method: "overlaps.list", state: "open" });
+  } finally {
+    Element.prototype.scrollIntoView = original;
+  }
+});
+
+test("without an open overlap the dock asks nothing about overlaps", async () => {
+  renderDock();
+  await screen.findByText("Je relis le récepteur et ses tests avant de toucher au port.");
+  expect(calls.some((c) => c.method === "overlaps.list")).toBe(false);
 });

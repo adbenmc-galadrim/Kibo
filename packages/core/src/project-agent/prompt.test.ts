@@ -52,6 +52,20 @@ describe("buildProjectAgentPrompt", () => {
     expect(prompt).toContain("mcp__kibo__list_signals");
   });
 
+  test("the question rules follow the signals: recipients, reopening, archiving", () => {
+    const questions = prompt.indexOf("## Questions");
+    expect(prompt.indexOf("## Signaux")).toBeLessThan(questions);
+    expect(questions).toBeLessThan(prompt.indexOf("## Interdits"));
+    for (const fragment of [
+      "project_overview.recipients",
+      "addRecipient",
+      "reopenQuestion",
+      "deleteQuestion` archive",
+    ]) {
+      expect(prompt).toContain(fragment);
+    }
+  });
+
   test("adds the guidelines of the chain afterwards, in order", () => {
     const protocol = prompt.indexOf("propose_batch");
     const first = prompt.indexOf("Toujours en français.");

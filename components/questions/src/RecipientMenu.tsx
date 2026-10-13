@@ -30,7 +30,12 @@ export function RecipientMenu({ question, recipients, readOnly }: Props) {
     if (recipient === question.recipient) return;
     setFailed(false);
     try {
-      await sdk.run({ method: "setQuestionRecipient", questionId: question.id, recipient });
+      await sdk.run({
+        method: "updateQuestion",
+        questionId: question.id,
+        recipient,
+        by: { kind: "human", ref: sdk.viewer },
+      });
     } catch (e) {
       console.error(e);
       setFailed(true);

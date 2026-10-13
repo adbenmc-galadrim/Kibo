@@ -1,5 +1,12 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { type AgentsState, KiboError, type RpcRequest, type RunQuestions, type RunView } from "@kibo/schema";
+import {
+  type AgentsState,
+  KiboError,
+  type Question,
+  type RpcRequest,
+  type RunQuestions,
+  type RunView,
+} from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
@@ -8,9 +15,10 @@ import { agentsFixture, kiboProject, NOW, runFixture } from "./fixtures";
 const calls: RpcRequest[] = [];
 let deliver: () => Promise<unknown> = () => Promise.resolve({ sent: 1, runId: "r50" });
 let access: "write" | "read" = "write";
+let questions: Question[] = [];
 const project = () => {
   const snapshot = kiboProject();
-  return { ...snapshot, sync: { ...snapshot.sync, access } };
+  return { ...snapshot, questions, sync: { ...snapshot.sync, access } };
 };
 
 mock.module("../api", () =>
@@ -48,6 +56,7 @@ beforeEach(() => {
   calls.length = 0;
   deliver = () => Promise.resolve({ sent: 1, runId: "r50" });
   access = "write";
+  questions = [];
 });
 
 const run: RunView = runFixture({
@@ -78,7 +87,9 @@ function drawer(questions: RunQuestions[], opened: string[] | null = null) {
     />
   );
   if (opened === null) return view;
-  return <OpenQuestionsProvider value={(projectId) => opened.push(projectId)}>{view}</OpenQuestionsProvider>;
+  const record = (projectId: string, questionId?: string) =>
+    opened.push(questionId ? `${projectId}#${questionId}` : projectId);
+  return <OpenQuestionsProvider value={record}>{view}</OpenQuestionsProvider>;
 }
 
 const tally = (open: number, undelivered: number): RunQuestions => ({
@@ -170,4 +181,40 @@ test("a reader of the project sees no answer to deliver nor its button", async (
   await new Promise((resolve) => setTimeout(resolve, 20));
   expect(screen.queryByText("2 réponses à transmettre")).toBeNull();
   expect(screen.queryByRole("button", { name: "Transmettre à l'agent" })).toBeNull();
+});
+
+const openQuestion = (id: string, title: string, createdAt: number): Question => ({
+  id,
+  ticketId: "t14",
+  runId: "r50",
+  title,
+  context: "",
+  options: [],
+  provisional: null,
+  blocking: true,
+  createdBy: { kind: "agent", ref: "opus-dev-2" },
+  createdAt,
+  importRef: null,
+  answer: null,
+  recipient: "me",
+  sentAt: null,
+  history: [],
+  archivedAt: null,
+  archivedBy: null,
+});
+
+test("the open questions line previews them and both links open the first one", async () => {
+  questions = [
+    openQuestion("q2", "Garder le port ?", NOW - 1000),
+    openQuestion("q1", "Bloquer le dépôt ?", NOW - 2000),
+  ];
+  const opened: string[] = [];
+  render(drawer([tally(2, 0)], opened));
+  const line = await screen.findByRole("button", { name: "2 questions ouvertes" });
+  await waitFor(() => expect(line.getAttribute("data-state")).toBe("closed"));
+  line.focus();
+  expect(await screen.findByText("Garder le port ?")).toBeTruthy();
+  await userEvent.click(line);
+  await userEvent.click(screen.getByRole("button", { name: "Ouvrir les questions" }));
+  expect(opened).toEqual(["kibo#q1", "kibo#q1"]);
 });

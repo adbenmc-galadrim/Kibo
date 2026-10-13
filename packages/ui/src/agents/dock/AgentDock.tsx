@@ -1,7 +1,9 @@
-import { type AgentsState, type FileRef, type RunView, reportOfRun } from "@kibo/schema";
+import { type AgentsState, type FileRef, type RunView, reportOfRun, runOverlapCounts } from "@kibo/schema";
 import { useState } from "react";
 import { frMoments } from "../../i18n/fr-moments";
 import { useRunMoments } from "../../moments/use-run-moments";
+import { overlapLinesByRun } from "../../overlaps/overlap-labels";
+import { useOverlaps } from "../../overlaps/use-overlaps";
 import { useProject } from "../../state/use-projects";
 import { AgentBar } from "../AgentBar";
 import { DockFeed } from "./DockFeed";
@@ -22,6 +24,12 @@ export type AgentDockProps = {
   onOpenFile(ref: FileRef): void;
 };
 
+function useOpenOverlapLines(state: AgentsState) {
+  const open = runOverlapCounts(state).some((c) => c.open > 0);
+  const { overlaps } = useOverlaps(open ? { state: "open" } : null);
+  return overlapLinesByRun(overlaps, state.runs);
+}
+
 function useTicketProgress(run: RunView | null) {
   const project = useProject(run?.projectId ?? null);
   return project?.tickets.find((t) => t.id === run?.ticketId)?.agentProgress ?? null;
@@ -40,6 +48,8 @@ export function AgentDock({
   const t = frMoments.dock;
   const dock = useDockHeight();
   const [highlight, setHighlight] = useState<{ runId: string; stepId: string } | null>(null);
+  const [focus, setFocus] = useState<{ runId: string; overlapId: string } | null>(null);
+  const overlapLines = useOpenOverlapLines(state);
   const { page } = useRunMoments(selected?.id ?? null);
   const progress = useTicketProgress(selected);
   const moments = page?.moments ?? [];
@@ -67,6 +77,11 @@ export function AgentDock({
             now={now}
             selected={selected?.id ?? null}
             onSelect={onSelect}
+            overlapLines={overlapLines}
+            onOverlap={(runId, overlapId) => {
+              onSelect(runId);
+              setFocus({ runId, overlapId });
+            }}
           />
         </section>
         <section aria-label={t.feed} className="flex min-h-0 flex-col overflow-hidden p-3">
@@ -82,6 +97,7 @@ export function AgentDock({
               steps={shown?.plan ?? []}
               report={progress ? reportOfRun(progress, selected.id) : null}
               highlightStep={current}
+              focusOverlap={focus?.runId === selected.id ? focus.overlapId : null}
               onOpenFile={onOpenFile}
             />
           ) : (

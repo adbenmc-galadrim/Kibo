@@ -257,6 +257,20 @@ const allDaemons = [
     spec: /agents-skills\.spec\.ts/,
     scenario: "skills-routes",
   },
+  {
+    name: "overlaps-dark",
+    scheme: "dark",
+    port: 4471,
+    spec: /overlaps\.spec\.ts/,
+    scenario: "overlap-routes",
+  },
+  {
+    name: "overlaps-light",
+    scheme: "light",
+    port: 4472,
+    spec: /overlaps\.spec\.ts/,
+    scenario: "overlap-routes",
+  },
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 

@@ -131,3 +131,16 @@ test("the bar hides the runs that wrap behind a counter that opens the dock", as
 test("the counter speaks of a single run in the singular", () => {
   expect(fr.agents.moreRuns(1)).toBe("1 autre run en cours");
 });
+
+test("screen 200: the summary counts the open overlaps and each run shows its chip", async () => {
+  renderBar({
+    ...agentsFixture(),
+    overlaps: [
+      { runId: "r43", open: 1 },
+      { runId: "r42", open: 1 },
+    ],
+    overlapTotal: 1,
+  });
+  expect(screen.getByText(`${barText()} · 1 recouvrement`)).toBeTruthy();
+  expect(await screen.findAllByRole("img", { name: "1 recouvrement ouvert" })).not.toHaveLength(0);
+});

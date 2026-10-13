@@ -10,7 +10,12 @@ function rewrite(cmd: ProjectCommand, viewer: () => string): ProjectCommand {
       const createdBy = viewerActor(cmd.createdBy, viewer());
       return createdBy === cmd.createdBy ? cmd : { ...cmd, createdBy };
     }
-    case "answerQuestion": {
+    case "answerQuestion":
+    case "updateQuestion":
+    case "updateAnswer":
+    case "reopenQuestion":
+    case "archiveQuestion":
+    case "restoreQuestion": {
       const by = viewerActor(cmd.by, viewer());
       return by === cmd.by ? cmd : { ...cmd, by };
     }

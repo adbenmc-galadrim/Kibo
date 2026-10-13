@@ -1,7 +1,7 @@
 import { Button } from "@kibo/sdk/ui/button";
 import { RadioGroup } from "@kibo/sdk/ui/radio-group";
 import { HardDrive, ListTodo } from "lucide-react";
-import { fr } from "../../i18n/fr";
+import { frIntegrations } from "../../i18n/fr-integrations";
 import { ChoiceCard } from "../ChoiceCard";
 
 export type SourceKind = "local" | "synced";
@@ -11,7 +11,7 @@ type Props = {
   connected: boolean;
   onOpenSettings(): void;
 };
-const t = fr.integrations.source;
+const t = frIntegrations.source;
 
 export function SourcePicker({ value, onValueChange, connected, onOpenSettings }: Props) {
   return (

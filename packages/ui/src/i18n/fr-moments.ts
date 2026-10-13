@@ -1,5 +1,5 @@
 import type { ActionKind, PartialReason, RunActionOutcome, RunState, StepStatus } from "@kibo/schema";
-import { fr } from "./fr";
+import { frAgentBar } from "./fr-agent-bar";
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
@@ -46,6 +46,7 @@ export const frMoments = {
     report: "Kibo a rappelé de remplir le compte rendu",
     skills: "Kibo a rappelé la review des skills",
     report_skills: "Kibo a rappelé le compte rendu et la review des skills",
+    overlap: "Kibo a rappelé de factoriser",
   },
   partial,
   reasoning: "Raisonnement",
@@ -123,7 +124,7 @@ export const frMoments = {
     history: "Voir l'historique",
     reply: "Répondre",
     step: (index: number, total: number, title: string) => `${index}/${total} · ${title}`,
-    state: (state: RunState) => fr.agents.states[state],
+    state: (state: RunState) => frAgentBar.states[state],
     waiting: "Attend une réponse",
   },
   run: {

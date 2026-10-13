@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { HookEventName } from "@kibo/schema";
+import { HookEventName, WORK_SECTION_TITLE } from "@kibo/schema";
 import { z } from "zod";
 
 const BASE_STEPS = [
@@ -14,6 +14,8 @@ const BASE_STEPS = [
   z.object({ hold: z.literal(true) }),
   z.object({ stderr: z.string() }),
   z.object({ write: z.string().min(1), fixture: z.string().min(1), bypassHooks: z.boolean().default(false) }),
+  z.object({ write: z.string().min(1), content: z.string(), bypassHooks: z.boolean().default(false) }),
+  z.object({ delete: z.string().min(1), bypassHooks: z.boolean().default(false) }),
   z.object({ mcp: z.string().min(1), input: z.record(z.string(), z.unknown()).default({}) }),
   z.object({ say: z.string() }),
   z.object({ think: z.string() }),
@@ -43,12 +45,28 @@ export const FakeRoutes = z.object({
   fallback: z.string().min(1),
   perTurn: z.boolean().default(false),
 });
+type FakeRoutes = z.infer<typeof FakeRoutes>;
+
+const NEXT_HEADING = /\n#{1,2} /;
+
+export function withoutWorkSection(prompt: string): string {
+  const start = prompt.indexOf(WORK_SECTION_TITLE);
+  if (start < 0) return prompt;
+  const rest = prompt.slice(start + WORK_SECTION_TITLE.length);
+  const next = rest.search(NEXT_HEADING);
+  return prompt.slice(0, start) + (next < 0 ? "" : rest.slice(next + 1));
+}
+
+const routeOf = (routes: FakeRoutes["routes"], prompt: string) => {
+  const routable = withoutWorkSection(prompt);
+  return routes.find((r) => routable.includes(r.prompt));
+};
 
 export function scenarioFor(file: string, prompt: string, remembered: string | null): string {
   if (remembered) return remembered;
   const routes = FakeRoutes.safeParse(JSON.parse(readFileSync(file, "utf8")));
   if (!routes.success) return file;
-  const route = routes.data.routes.find((r) => prompt.includes(r.prompt));
+  const route = routeOf(routes.data.routes, prompt);
   return resolve(dirname(file), route?.scenario ?? routes.data.fallback);
 }
 
@@ -63,7 +81,7 @@ export function turnScenario(
     return { turn: chosen, session: chosen };
   }
   const session = remembered ?? resolve(dirname(file), routes.data.fallback);
-  const route = routes.data.routes.find((r) => prompt.includes(r.prompt));
+  const route = routeOf(routes.data.routes, prompt);
   return { turn: route ? resolve(dirname(file), route.scenario) : session, session };
 }
 
@@ -87,6 +105,8 @@ export type FakeScenarioName =
   | "guard"
   | "routes"
   | "project-agent-routes"
+  | "project-agent-questions"
+  | "project-agent-questions-invalid"
   | "progress"
   | "progress-hold"
   | "progress-no-plan"
@@ -98,7 +118,14 @@ export type FakeScenarioName =
   | "skills-review"
   | "skills-no-review"
   | "skills-denied"
-  | "skills-routes";
+  | "skills-routes"
+  | "overlap-owner"
+  | "overlap-other"
+  | "overlap-bash"
+  | "overlap-keep"
+  | "overlap-import"
+  | "overlap-twin"
+  | "overlap-routes";
 
 export function scenarioPath(name: FakeScenarioName): string {
   return join(import.meta.dir, "scenarios", `${name}.json`);

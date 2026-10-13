@@ -34,6 +34,7 @@ const project = (access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSn
     color: "#14B8A6",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [

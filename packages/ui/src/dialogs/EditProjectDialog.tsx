@@ -1,4 +1,5 @@
 import {
+  type DuplicationSettings,
   type IconInput,
   iconUrl,
   KiboError,
@@ -7,7 +8,9 @@ import {
   type ProjectSummary,
   STORYBOOK_DEFAULTS,
   type StorybookSettings,
+  type TabTarget,
   WORKTREE_DEFAULTS,
+  type WorkspaceConfig,
   type WorktreeSettings,
 } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
@@ -21,7 +24,9 @@ import { frProject } from "../i18n/fr-project";
 import { errorMessage } from "../lib/error-message";
 import { PROJECT_COLORS } from "../lib/project-colors";
 import { isRemoteView } from "../lib/remote-view";
+import { DuplicationFields, sameDuplication } from "../overlaps/DuplicationFields";
 import { FolderField, type FolderFieldProps } from "./FolderField";
+import { GuidelinesField } from "./GuidelinesField";
 import { IconField } from "./IconField";
 import { RecipientsFields } from "./RecipientsFields";
 import { StorybookFields, storybookProblem } from "./StorybookFields";
@@ -33,6 +38,8 @@ type Props = {
   remote?: boolean;
   canBrowse?: boolean;
   pick?: FolderFieldProps["pick"];
+  config?: WorkspaceConfig | null;
+  go?(target: TabTarget): void;
 };
 type Fields = {
   name: string;
@@ -40,6 +47,7 @@ type Fields = {
   folder: string;
   worktree?: WorktreeSettings | null;
   storybook?: StorybookSettings | null;
+  duplication?: DuplicationSettings | null;
 };
 
 const t = frProject.edit;
@@ -61,6 +69,9 @@ export function projectPatch(project: ProjectSummary, fields: Fields): ProjectPa
   if (worktree !== undefined && !sameWorktree(worktree, project.worktree)) patch.worktree = worktree;
   const storybook = fields.storybook;
   if (storybook !== undefined && !sameStorybook(storybook, project.storybook)) patch.storybook = storybook;
+  const duplication = fields.duplication;
+  if (duplication !== undefined && !sameDuplication(duplication, project.duplication))
+    patch.duplication = sameDuplication(duplication, null) ? null : duplication;
   return Object.keys(patch).length === 0 ? null : patch;
 }
 
@@ -71,7 +82,15 @@ export function editFailure(e: unknown): string {
   return `${t.failed} ${known ?? errorMessage(e)}`;
 }
 
-export function EditProjectDialog({ project, onClose, remote = isRemoteView(), canBrowse, pick }: Props) {
+export function EditProjectDialog({
+  project,
+  onClose,
+  remote = isRemoteView(),
+  canBrowse,
+  pick,
+  config,
+  go,
+}: Props) {
   const nameId = useId();
   const folderId = useId();
   const folderHelpId = useId();
@@ -82,6 +101,7 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
   const [storybook, setStorybook] = useState<StorybookSettings | null>(
     project.storybook ?? STORYBOOK_DEFAULTS,
   );
+  const [duplication, setDuplication] = useState<DuplicationSettings | null>(project.duplication);
   const [pending, setPending] = useState<IconInput | null>(null);
   const [removed, setRemoved] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -92,7 +112,7 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
     color,
     folder: remote ? (project.folder ?? "") : folder,
     ...(showWorktree && { worktree }),
-    ...(!remote && { storybook }),
+    ...(!remote && { storybook, duplication }),
   });
   const iconChanged = pending !== null || (removed && Boolean(project.icon));
   const worktreeInvalid = showWorktree && worktree !== null && worktreeProblem(worktree) !== null;
@@ -196,6 +216,22 @@ export function EditProjectDialog({ project, onClose, remote = isRemoteView(), c
               disabled={busy}
             />
           )}
+          {config && go && (
+            <GuidelinesField
+              project={project}
+              config={config}
+              go={(target) => {
+                onClose();
+                go(target);
+              }}
+            />
+          )}
+          <DuplicationFields
+            value={duplication}
+            onChange={setDuplication}
+            projectId={project.id}
+            disabled={remote}
+          />
           <RecipientsFields projectId={project.id} />
           {error && (
             <p role="alert" className="text-sm text-destructive">

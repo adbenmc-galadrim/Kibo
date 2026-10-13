@@ -264,3 +264,44 @@ export const titleOf = (h: Harness, key: string): string | undefined =>
   h.data.project(h.project.id).tickets.find((t) => t.key === key)?.title;
 export const statusOf = (h: Harness, key: string): string | undefined =>
   h.data.project(h.project.id).tickets.find((t) => t.key === key)?.statusId;
+
+export type SeededQuestions = {
+  ticket: Ticket;
+  open: Question;
+  answered: Question;
+  delivered: Question;
+  archived: Question;
+};
+
+export function seedQuestions(h: Harness): SeededQuestions {
+  const ticket = h.ticket("Écran de connexion");
+  const ask = (title: string) =>
+    Question.parse(
+      h.command({ method: "createQuestion", ticketId: ticket.id, title, createdBy: HUMAN, runId: null }),
+    );
+  const answer = (q: Question) =>
+    h.command({
+      method: "answerQuestion",
+      questionId: q.id,
+      answer: { kind: "text", text: "Oui" },
+      by: HUMAN,
+    });
+  const open = ask("Client - Couleur ?");
+  const answered = ask("Client - Police ?");
+  const delivered = ask("Client - Logo ?");
+  const archived = ask("Client - Doublon ?");
+  answer(answered);
+  answer(delivered);
+  h.data.runCommand(h.project.id, {
+    method: "markAnswersDelivered",
+    ticketId: ticket.id,
+    questionIds: [delivered.id],
+    runId: "r0",
+    at: 2,
+  });
+  h.command({ method: "archiveQuestion", questionId: archived.id, by: HUMAN });
+  return { ticket, open, answered, delivered, archived };
+}
+
+export const questionOf = (h: Harness, id: string): Question | undefined =>
+  h.data.project(h.project.id).questions.find((q) => q.id === id);

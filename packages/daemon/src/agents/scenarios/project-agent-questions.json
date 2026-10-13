@@ -1,0 +1,67 @@
+{
+  "turns": [
+    {
+      "steps": [
+        { "mcp": "list_questions", "input": { "state": "all" } },
+        { "mcp": "project_overview" },
+        {
+          "mcp": "propose_batch",
+          "input": {
+            "summary": "Ranger les questions du client",
+            "actions": [
+              {
+                "id": 1,
+                "why": "Galadrim répond à l'hébergement.",
+                "type": "addRecipient",
+                "name": "Galadrim"
+              },
+              {
+                "id": 2,
+                "why": "L'hébergement n'est pas tranché.",
+                "type": "createQuestion",
+                "ticket": "KIB-1",
+                "title": "Quel hébergeur ?",
+                "recipient": "Galadrim"
+              },
+              {
+                "id": 3,
+                "why": "La licence revient au client.",
+                "type": "createQuestion",
+                "ticket": "KIB-2",
+                "title": "Quelle licence ?",
+                "recipient": "Client"
+              },
+              {
+                "id": 4,
+                "why": "Le préfixe est inutile, Galadrim tranche.",
+                "type": "updateQuestion",
+                "questionId": "{{question:Client - Couleur ?}}",
+                "title": "Couleur ?",
+                "recipient": "Galadrim"
+              },
+              {
+                "id": 5,
+                "why": "La réponse transmise n'en était pas une.",
+                "type": "reopenQuestion",
+                "questionId": "{{question:Client - Logo ?}}"
+              },
+              {
+                "id": 6,
+                "why": "Doublon de Couleur.",
+                "type": "deleteQuestion",
+                "questionId": "{{question:Client - Police ?}}"
+              }
+            ]
+          }
+        }
+      ],
+      "result": "J'ai proposé un lot de 6 actions sur les questions.",
+      "tokens": 1500
+    },
+    {
+      "steps": [{ "mcp": "project_changes" }, { "mcp": "list_questions" }],
+      "result": "Les questions sont rangées.",
+      "tokens": 600
+    }
+  ]
+}

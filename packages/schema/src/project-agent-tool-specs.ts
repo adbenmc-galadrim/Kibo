@@ -10,6 +10,7 @@ import {
 } from "./project-agent";
 import { LIST_QUERY_MAX, type ProjectAgentTool } from "./project-agent-tools";
 import { QUESTION_CONTEXT_MAX, QUESTION_OPTION_MAX, QUESTION_OPTIONS_MAX } from "./question";
+import { RECIPIENT_ID_MAX } from "./question-recipient";
 import { RunState } from "./run";
 import { SIGNAL_REF_PATTERN, SIGNAL_REFS_MAX } from "./signal";
 import { StatusId } from "./status";
@@ -54,7 +55,7 @@ const ACTION = object(
     brief: text("Consigne pour l'agent.", ACTION_BRIEF_MAX),
     fresh: { type: "boolean" },
     runId: { type: "string" },
-    questionId: { type: "string" },
+    questionId: { type: "string", description: "Id de la question (list_questions)." },
     answer: object(
       {
         kind: { type: "string", enum: ["confirm", "option", "text"] },
@@ -66,7 +67,12 @@ const ACTION = object(
     context: text("Contexte de la question, en Markdown.", QUESTION_CONTEXT_MAX),
     options: { type: "array", items: option, maxItems: QUESTION_OPTIONS_MAX },
     provisional: option,
-    blocking: { type: "boolean" },
+    blocking: { type: "boolean", description: "createQuestion seulement." },
+    recipient: text(
+      "createQuestion, updateQuestion : destinataire, id ou nom (project_overview.recipients).",
+      RECIPIENT_ID_MAX,
+    ),
+    name: text("addRecipient : nom du destinataire à ajouter au projet.", RECIPIENT_ID_MAX),
     path: text("Chemin de la note, en .md."),
     content: text("Contenu complet de la note.", MAX_NOTE_CHARS),
     signals: {
@@ -84,7 +90,7 @@ export const TOOL_SPECS: readonly ToolSpec[] = [
   {
     name: "project_overview",
     description:
-      "Instantané du projet : statuts, tickets actifs, runs et file, questions ouvertes, notes, profils et note mémoire.",
+      "Instantané du projet : statuts, tickets actifs, runs et file, questions ouvertes, destinataires des questions, notes, profils et note mémoire.",
     inputSchema: object(),
   },
   {
@@ -104,10 +110,12 @@ export const TOOL_SPECS: readonly ToolSpec[] = [
   },
   {
     name: "list_questions",
-    description: "Questions du projet, ouvertes par défaut, éventuellement d'un seul ticket.",
+    description:
+      "Questions du projet, ouvertes par défaut ; all = ouvertes et répondues, archived = archivées. Filtre par ticket ou destinataire (id ou nom).",
     inputSchema: object({
-      state: { type: "string", enum: ["open", "answered", "all"] },
+      state: { type: "string", enum: ["open", "answered", "archived", "all"] },
       ticketKey: { type: "string", pattern: "^[A-Z]{2,6}-\\d+$" },
+      recipient: text("Destinataire, id ou nom.", RECIPIENT_ID_MAX),
     }),
   },
   {

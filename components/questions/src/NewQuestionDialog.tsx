@@ -1,4 +1,4 @@
-import { QUESTION_OPTIONS_MAX, type TicketView } from "@kibo/schema";
+import { ME_RECIPIENT, QUESTION_OPTIONS_MAX, type QuestionRecipient, type TicketView } from "@kibo/schema";
 import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import {
@@ -18,7 +18,11 @@ import { fr } from "./fr";
 
 const NONE = "__none__";
 
-type Props = { tickets: readonly TicketView[]; onOpenChange(open: boolean): void };
+type Props = {
+  tickets: readonly TicketView[];
+  recipients: readonly QuestionRecipient[];
+  onOpenChange(open: boolean): void;
+};
 
 export const optionLines = (text: string): string[] =>
   text
@@ -31,7 +35,7 @@ function optionsProblem(options: readonly string[]): string | null {
   return new Set(options).size === options.length ? null : fr.dialog.duplicate;
 }
 
-export function NewQuestionDialog({ tickets, onOpenChange }: Props) {
+export function NewQuestionDialog({ tickets, recipients, onOpenChange }: Props) {
   const sdk = useSdk();
   const id = useId();
   const [ticketId, setTicketId] = useState("");
@@ -39,6 +43,7 @@ export function NewQuestionDialog({ tickets, onOpenChange }: Props) {
   const [context, setContext] = useState("");
   const [optionsText, setOptionsText] = useState("");
   const [provisional, setProvisional] = useState(NONE);
+  const [recipient, setRecipient] = useState(ME_RECIPIENT);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const options = optionLines(optionsText);
@@ -59,6 +64,7 @@ export function NewQuestionDialog({ tickets, onOpenChange }: Props) {
         provisional: options.includes(provisional) ? provisional : null,
         blocking: false,
         runId: null,
+        recipient,
         createdBy: { kind: "human", ref: sdk.viewer },
       });
       onOpenChange(false);
@@ -134,6 +140,21 @@ export function NewQuestionDialog({ tickets, onOpenChange }: Props) {
                 {[...new Set(options)].slice(0, QUESTION_OPTIONS_MAX).map((o) => (
                   <SelectItem key={o} value={o}>
                     {o}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor={`${id}-recipient`}>{fr.dialog.recipient}</Label>
+            <Select value={recipient} onValueChange={setRecipient}>
+              <SelectTrigger id={`${id}-recipient`} aria-label={fr.dialog.recipient} className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {recipients.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.name}
                   </SelectItem>
                 ))}
               </SelectContent>

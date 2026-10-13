@@ -22,6 +22,7 @@ test("instances stored before v1.0 are listed with componentHash null", () => {
     color: "#3B82F6",
     worktree: null,
     storybook: null,
+    duplication: null,
   });
   doc.getMap("instances").set("i1", {
     id: "i1",
@@ -41,6 +42,7 @@ const META = {
   color: "#3B82F6",
   worktree: null,
   storybook: null,
+  duplication: null,
 };
 
 describe("setInstanceLayout", () => {

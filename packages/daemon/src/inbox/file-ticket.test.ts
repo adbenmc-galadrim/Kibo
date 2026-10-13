@@ -13,6 +13,7 @@ const kibo = {
   color: "#F97316",
   worktree: null,
   storybook: null,
+  duplication: null,
 };
 
 function fixture(

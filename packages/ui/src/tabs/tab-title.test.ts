@@ -15,6 +15,7 @@ const inbox: ProjectSnapshot = {
     color: "#64748B",
     worktree: null,
     storybook: null,
+    duplication: null,
   },
   tickets: (kibo.tickets[0] ? [kibo.tickets[0]] : []).map((t) => ({
     ...t,

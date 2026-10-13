@@ -10,11 +10,13 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/ui/collapsible";
 import { ChevronRight } from "lucide-react";
 import { formatClock } from "../../agents/format";
-import { fr } from "../../i18n/fr";
+import { frAgentBar } from "../../i18n/fr-agent-bar";
 import { frMoments } from "../../i18n/fr-moments";
 import { Feed } from "../../moments/Feed";
 import { useOpenSignal } from "../../moments/use-open-signal";
 import { useRunFileContext } from "../../moments/use-run-file-context";
+import { OverlapFeedLayer } from "../../overlaps/OverlapFeedLayer";
+import { useOpenOverlap } from "../../overlaps/use-open-overlap";
 import { questionExtras, type TimelineItem } from "./timeline";
 
 export type RunEntry = { run: RunView; index: number; report: RunReport | null; items: TimelineItem[] };
@@ -53,7 +55,7 @@ function spanText(run: RunView, now: number): string {
 const capitalized = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
 
 function outcomeText(run: RunView, report: RunReport | null): string {
-  const state = fr.agents.states[run.state];
+  const state = frAgentBar.states[run.state];
   if (!isTerminal(run.state)) return state;
   if (!report) return `${state} · ${frMoments.report.none}`;
   const undeclared = report.check?.undeclared.length ?? 0;
@@ -84,19 +86,24 @@ export function RunFeed({ entry, options }: { entry: RunEntry; options: FeedOpti
   const files = useRunFileContext(entry.run);
   const openSignal = useOpenSignal(entry.run.projectId);
   const moments = entry.items.flatMap((i) => (i.moment ? [i.moment] : []));
+  const overlap = useOpenOverlap(entry.run, moments);
   const extras = questionExtras(entry.items);
   if (moments.length === 0 && extras.length === 0 && isTerminal(entry.run.state)) return null;
   return (
-    <Feed
-      moments={moments}
-      extras={extras}
-      steps={options.steps}
-      highlightStep={options.highlightStep}
-      files={files}
-      onOpenFile={options.onOpenFile}
-      onOpenSignal={openSignal}
-      texts={frMoments}
-    />
+    <>
+      <Feed
+        moments={moments}
+        extras={extras}
+        steps={options.steps}
+        highlightStep={options.highlightStep}
+        files={files}
+        onOpenFile={options.onOpenFile}
+        onOpenSignal={openSignal}
+        {...overlap.feed}
+        texts={frMoments}
+      />
+      <OverlapFeedLayer filesId={overlap.filesId} failed={overlap.failed} onClose={overlap.closeFiles} />
+    </>
   );
 }
 

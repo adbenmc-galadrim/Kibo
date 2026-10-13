@@ -220,6 +220,8 @@ Skills (4 notes à traiter) :
 
 `porte-qualite` : `~/.claude/skills/porte-qualite/SKILL.md` (1,9 Ko), annexes `volets/correctness.md`, `volets/conventions.md`,
 `scripts/diff-stat.sh`, `exemple-verdict.png` (48 Ko, non texte) ; `allowed-tools: Read, Grep, Bash(git diff *)`, `context: fork`.
+Page Skills (0.22.0-alpha.2, §28.8) : groupes repliables (en-tête : nombre de skills et « n notes »), plugins repliés par défaut, « Tout déplier » ;
+filtres « Tous · 11 », « Utilisés · 8 », « Avec notes · 3 ».
 Copie du plugin : `brainstorming-kibo` sur Cet ordinateur, autorisée aussi pour `livraison` et `chef-orchestre`.
 
 Notes de review :
@@ -235,3 +237,135 @@ Historique de `porte-qualite/SKILL.md` : 12 oct. 14:32 Intégration (actuelle, 4
 9 oct. 16:20 Restauration ; 6 oct. 09:12 Kibo. Fil du run `global · livraison · KIB-14` (14:05 → 14:23) : a utilisé
 `superpowers:test-driven-development` puis `porte-qualite`, Kibo a refusé `clean-pr`, rappel de la review, review de 2 skills ; le run de la
 veille (17:52 → 18:40) : « Pas de review des skills ».
+
+## Doublons entre agents (phase 23)
+
+Projet **Boutique** (clé `BOU`, dossier `~/code/boutique`, Storybook `http://localhost:6006`), à côté de Kibo, Portfolio et API Facturation.
+Tickets : **BOU-12** « Format des dates de livraison », **BOU-15** « Page de suivi de commande », BOU-9 « Codes promo du panier ».
+Agent `livraison` de portée Projet · Boutique (`~/code/boutique/.claude/agents/livraison.md`). Runs, 2/3 places :
+
+| Run | Ticket | Espace | Démarré | Plan déclaré |
+|---|---|---|---|---|
+| `bou · livraison · BOU-12` (`owner`) | BOU-12 | worktree `bou-12` | 14:28 | 2/4 : Lire les formats de date existants (faite), Écrire formatDate et formatDeliveryWindow (faite), Brancher le format sur le récapitulatif (en cours), Tests des formats |
+| `bou · livraison · BOU-15` (`other`) | BOU-15 | worktree `bou-15` | 14:40, fini 14:57 | 2/4 : Relire la page de suivi et l'API commandes (faite), Afficher la date de livraison estimée (faite), Reprendre formatDate de BOU-12 (en cours), Tests de la page de suivi |
+| `bou · review-pr · BOU-9` | BOU-9 | | 11:02 | fait |
+
+Travail de BOU-12 : `src/lib/format-date.ts` ajouté (+24 −0 ; exporte `formatDate` et `formatDeliveryWindow`), `src/lib/format.ts` modifié
+(+3 −1, réexporte `formatDate`), `src/i18n/fr.ts` modifié (+6 −2). BOU-15 écrit son propre `formatDate` dans `src/utils/date.ts` à 14:46.
+
+Chronologie : 14:48 recouvrement `export` ouvert, « `formatDate` exporté deux fois » (`src/lib/format.ts` chez BOU-12, `src/utils/date.ts`
+chez BOU-15) ; 14:49 alerte livrée à BOU-15 (« à factoriser ») et information à BOU-12 (« ne le renomme pas et ne le déplace pas ») ;
+14:49 BOU-15 « A regardé le travail de BOU-12 » (`peek_work`) ; 14:50 « Kibo a rappelé de factoriser » ; 14:52 BOU-15 supprime sa copie et
+reprend `src/lib/format-date.ts` à l'identique (9 tests réussis), le recouvrement est **réglé 14:52** ; 14:52 lien automatique « Kibo a lié
+BOU-12 → BOU-15 (BOU-12 bloque BOU-15) : `src/lib/format-date.ts` repris de BOU-12 » (raison `copy`), badge « par Kibo » sur la fiche ;
+15:03 lien **annulé par Adam**. Compte rendu de BOU-15 : « La page de suivi affiche la date de livraison estimée », décision « Repris `formatDate`
+de BOU-12 (`src/lib/format-date.ts`) », suite « Fusionner BOU-12 avant BOU-15 » ; « Recouvrements : 1 réglé · 0 ouvert ».
+`src/i18n/fr.ts`, modifié des deux côtés : recouvrement `file` **ignoré** par Adam le 12 oct.
+
+Réglages « Doublons entre agents » de Boutique : détection activée, lignes minimales d'un bloc **8**, tests exclus, fichiers ignorés
+`src/generated/**`, exports génériques par défaut (`default`, `Props`, `meta`, `config`, `loader`, `action`, `handler`, `main`, `GET`, `POST`, `PUT`, `PATCH`,
+`DELETE`, `HEAD`, `OPTIONS`, `generateMetadata`, `getServerSideProps`, `getStaticProps`, `getStaticPaths`, `Route`, `Page`, `Layout`, `Component`,
+`schema`, `routes`, `index`, `up`, `down`, `migrate`, `seed`, `setup`, `teardown`), recouvrement ignoré `` `src/i18n/fr.ts` `` · fichier · 12 oct. · Adam · « Réactiver ».
+
+Section « Travail en cours sur le projet » telle que la reçoit BOU-15 (premier tour, dans `brief.md` après « ## Commits de la branche » ;
+« Ce que reçoit l'agent » la montre à part, « Travail en cours sur le projet (exemple) ») :
+
+```
+## Travail en cours sur le projet
+
+### bou · livraison · BOU-12 · Format des dates de livraison
+
+- démarré il y a 12 min · étape : Brancher le format sur le récapitulatif
+- Plan :
+  1. [done] Lire les formats de date existants
+  2. [done] Écrire formatDate et formatDeliveryWindow
+  3. [doing] Brancher le format sur le récapitulatif
+  4. [todo] Tests des formats
+- Fichiers créés ou modifiés :
+  - `src/i18n/fr.ts` (+6 −2)
+  - `src/lib/format-date.ts` (+24 −0)
+  - `src/lib/format.ts` (+3 −1)
+- Exports nouveaux :
+  - `formatDate` (`src/lib/format-date.ts`)
+  - `formatDeliveryWindow` (`src/lib/format-date.ts`)
+- Espace : worktree `bou-12`
+
+### bou · livraison · BOU-9 · Codes promo du panier
+
+- démarré il y a 31 min · étape : Valider le code côté serveur
+- aucun plan déclaré
+- Fichiers créés ou modifiés :
+  - `src/cart/cart.ts` (+12 −3)
+  - `src/cart/promo.ts` (+41 −0)
+- Exports nouveaux :
+  - `applyPromoCode` (`src/cart/promo.ts`)
+- Espace : worktree `bou-9`
+
+Avant de créer un utilitaire, un type ou un composant, vérifie qu'il n'existe pas déjà dans le code ni dans ce qui précède ;
+`mcp__kibo__peek_work` lit le travail d'un autre run.
+```
+
+Ajusté sur les captures `screens/2026-10-12-p23-t11` : en-tête du run « Agent livraison · Projet · BOU · <titre> · démarré à 14:40 », « Terminé »
+une fois fini, « Arrêter » ; fil ouvert par « Session : nouvelle (première session du ticket) » et fermé par « Écrire à l'agent » (« L'agent travaille :
+ton message lui sera remis au début de son prochain tour. », « Reprend la session » une fois fini) ; colonne de droite « Travail en parallèle » (carte
+du run : titre · démarré il y a 22 min, étape, worktree, « 3 fichiers » repliés, « 2 exports nouveaux », recouvrement ouvert, « Voir son travail »),
+puis le plan (« 3/4 » : rang de l'étape en cours) et « Compte rendu » (« Pas de compte rendu pour ce run » tant que le run tourne). Barre des agents :
+puces « BOU-15 · 3/4 · Reprendre formatDate ⧉ 1 » et « BOU-12 · 3/4 · Brancher le format ⧉ 1 », « 1/3 place » au singulier. 197c « Fichiers du
+recouvrement » : `src/lib/format.ts` de BOU-12 (ligne 1 en rouge) et `src/utils/date.ts` de BOU-15 (lignes 1 à 3 en vert), « Fermer ».
+199 fiche BOU-15 onglet Détails, « Bloqué par » BOU-12 avec « par Kibo » et sa bulle « Reprise de `src/lib/format-date.ts` · 12 oct. 14:52 ·
+Annuler » ; 199b onglet Activité (compte rendu « Run 1 · bou · livraison · BOU-15 », fichiers `src/lib/format-date.ts` et `src/pages/track.ts`,
+« Recouvrements : 1 réglé · 0 ouvert », chronologie) ; 200 fiche BOU-12 et barre « 2/3 places · 1 recouvrement », bulle « 1 recouvrement ouvert » ;
+200b page du run BOU-15 à 14:41 (BOU-12 à l'étape 2, « démarré il y a 13 min »).
+
+Le second run (BOU-9) est un exemple propre à « Ce que reçoit l'agent » ; la barre des agents des écrans 197 à 201 n'en montre que deux.
+
+## Questions : modification et archivage (phase 23)
+
+Page 33, d'après la spec §30.6 à §30.8 et les captures `screens/2026-10-12-p23-t16`, `p23-t17` et `p23-qactions` : les actions « Modifier la réponse »,
+« Retirer la réponse », « Rouvrir » et « Archiver » sont dans l'en-tête de la carte, à droite du titre (demande d'Adam).
+
+| Ticket | Question | Pour | Par | État | Actions |
+|---|---|---|---|---|---|
+| KIB-14 | Bloquer l'écriture sur un projet archivé ? (Oui / Non · provisoire Non) | Produit | opus-dev-2 | Répondue « Oui » par Adam il y a 5 min, à transmettre | Modifier la réponse, Retirer la réponse, Archiver |
+| KIB-11 | Renouveler le jeton local à chaque démarrage ? (Oui / Non · provisoire Non) | Moi (technique) | sonnet-review | Répondue « Non » par Adam hier, « transmise à sonnet-review · figée » | Rouvrir, Archiver |
+| KIB-14 | Quel port pour le récepteur ? (7420 / Port libre choisi au lancement) | Client | opus-dev-2 | Archivée par Adam il y a 2 j | Restaurer |
+
+Historique de la question archivée (3) : « il y a 2 j · Adam · Archivée » ; « … · Rouverte (réponse « Remplacée par la même question sans préfixe »
+retirée) » ; « … · Modifiée (titre : « Client - Quel port… » → « Quel port pour le récepteur ? » ; destinataire : Moi (technique) → Client) ».
+202b : formulaire de réponse rouvert, prérempli sur « Oui », « Annuler » et « Enregistrer ».
+
+Lot n° 3 « Nettoyer les questions préfixées » (5 actions, « Valider (5) »), après « Range les questions préfixées par le client » :
+« Ajouter le destinataire « Galadrim » » ; « Question sur KIB-14 pour Client : « Quel navigateur minimal ? » » ; « Modifier la question « Client - Quel
+port pour le récepteur ? » » (Titre : « Client - Quel port pour le récepteur ? » → « Quel port pour le récepteur ? » ; Destinataire : Moi (technique)
+→ Client) ; « Rouvrir « Renouveler le jeton local à chaque démarrage ? » (réponse retirée) » ; « Archiver « Client - Faut-il garder l'historique des
+tickets supprimés ? » ».
+Aperçu de la pastille « 2 questions » de KIB-14 : « Quel port pour le récepteur ? » (Moi (technique) · ouverte · il y a 3 min, bloquante) et « Un composant
+non autorisé lit-il les fichiers du projet ? » (Produit · ouverte · il y a 8 min). Aperçu d'une question du lot : « KIB-14 · Récepteur de hooks Claude
+Code », options, « Pour : Moi (technique) · ouverte », « posée par opus-dev-2 · il y a 3 j ». Question mise en évidence (206) : « Un composant non
+autorisé lit-il les fichiers du projet ? », adresse `#/p/kibo/questions?question=7f3a9c2e-…`.
+
+## Domaines & guidelines (phase 23)
+
+Page 34, d'après la spec §31.8. Projets **Kibo**, **Portail**, **Facturation** et **Boutique** (Portail et Facturation sont, sur cette page, les noms
+de Portfolio et API Facturation ; la barre latérale est renommée en conséquence). Couleurs : Kibo orange, Portail violet, Facturation vert,
+Boutique sarcelle.
+
+| Dossier | Fichiers | Domaines (fichiers) | « n .md » |
+|---|---|---|---|
+| Workspace | `guidelines/conventions.md`, `guidelines/git.md` | du workspace : Sécurité (`guidelines/securite.md`), utilisé par 6 tickets dans 2 projets (Kibo, Portail) | 2 |
+| Kibo (projet courant, `~/code/galadrim/kibo-monorepo`) | `guidelines/kibo.md`, `guidelines/tests.md`, `guidelines/ui.md` | Sync (`guidelines/sync.md`, 8 tickets), UI (`ui.md`, 5), CI (`ci.md`, 4), Démon (`demon.md`, 1) | 7 |
+| Portail (partagé, Adam lecteur, `~/code/equipe/portail-client`) | `guidelines/portail.md` | aucun | 1 |
+| Facturation (`~/code/galadrim/api-facturation`) | aucun | aucun | 0 |
+| Boutique | `guidelines/boutique.md` | Livraison (`livraison.md`) | 2 |
+
+Couleurs de domaine : Sync bleu ciel, UI rose, CI ardoise, Démon indigo, Sécurité ocre, Livraison citron.
+Injection : Workspace ⇒ « Workspace » ; projet ⇒ « Workspace → Projet Kibo » (≈ 610 tokens) ; domaine de projet ⇒ « Workspace → Projet Kibo →
+Domaine Sync » (≈ 790) ; domaine du workspace ⇒ « Workspace → Domaine Sécurité » (≈ 260, s'applique à tout projet local) ; Facturation ≈ 180 ;
+Portail ≈ 240 (« Workspace → Projet Portail »). Sous-titre d'un projet : dossier tronqué, puis « n fichiers · m domaines » ; un projet partagé en
+lecture seule porte le badge « Lecture seule ». `guidelines/portail.md` : application Next.js du portail client, partagée par l'équipe Produit
+(composants dans `src/components`, textes en français et dates JJ/MM/AAAA, revue d'accessibilité des pages publiques).
+Encart « Comment les agents sont configurés » : Workspace → Projet du ticket → Domaine du ticket → Profil de l'agent (spec et skills), liens
+« Ouvrir la page Agents → » et « Skills → », « Le panneau Injection, en bas, montre la chaîne du dossier choisi. ».
+Fiche **KIB-14** « Récepteur de hooks Claude Code », domaine **Démon** ; sélecteur : « Aucun », « Domaines de Kibo » (Sync, UI, CI, Démon),
+« Domaines du workspace » (Sécurité). « Modifier le projet » de Kibo (`~/code/kibo`) : « 7 fichiers .md · 4 domaines ».
+

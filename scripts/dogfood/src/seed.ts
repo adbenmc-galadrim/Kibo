@@ -5,6 +5,7 @@ import type { ResolvedIds } from "./desired";
 import type { Desired } from "./load";
 import {
   componentRefs,
+  knownDomains,
   missingDomains,
   missingInstances,
   missingPages,
@@ -60,17 +61,15 @@ async function ensureProject({ client, desired, report }: Step): Promise<Project
 
 async function ensureConfig({ client, desired, report }: Step, projectId: string): Promise<ResolvedIds> {
   const before = await client.rpc({ method: "getConfig" });
-  const domains = missingDomains(before.domains, desired.domains);
+  const domains = missingDomains(knownDomains(before.domains, projectId).list, desired.domains);
+  const owner = { scope: "project", projectId } as const;
   for (const domain of domains)
-    await client.rpc({ method: "config", command: { method: "createDomain", domain } });
+    await client.rpc({ method: "config", command: { method: "createDomain", domain, owner } });
   report.created.domain = domains.length;
   report.kept.domain = desired.domains.length - domains.length;
 
   const config = await client.rpc({ method: "getConfig" });
-  const ids: ResolvedIds = {
-    projectId,
-    domains: new Map(config.domains.map((d) => [d.name, d.id])),
-  };
+  const { ids } = knownDomains(config.domains, projectId);
   const plan = planGuidelines(config.guidelines, desired.guidelines, ids);
   for (const g of plan.add) await client.rpc({ method: "config", command: { method: "addGuideline", ...g } });
   report.created.guideline = plan.add.length;

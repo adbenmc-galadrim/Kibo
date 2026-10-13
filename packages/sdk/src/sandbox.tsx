@@ -18,6 +18,7 @@ import { guardDestructiveKeys } from "./key-guard";
 import { SdkProvider } from "./react";
 import { createSdk } from "./sdk";
 import { createSignal, focusApi, selectionApi, visibilityApi } from "./signal";
+import { createSpotlightStore } from "./spotlight";
 import type { KiboSdk } from "./types";
 
 export type FramePort = { post(msg: FrameToHost): void; listen(cb: (msg: HostToFrame) => void): () => void };
@@ -64,6 +65,7 @@ export function createFrameSdk(
   const focus = createSignal(init.focus ?? false);
   const visible = createSignal(init.visible ?? true);
   const selection = createSignal<Selection | null>(init.selection ?? null);
+  const spotlight = createSpotlightStore(init.spotlight ?? null);
   const off = port.listen((m) => {
     if (m.type === "changed") {
       for (const listener of listeners) listener();
@@ -72,6 +74,7 @@ export function createFrameSdk(
     if (m.type === "focus") focus.set(m.active);
     else if (m.type === "visibility") visible.set(m.visible);
     else if (m.type === "selection") selection.set(m.selection);
+    else if (m.type === "spotlight") spotlight.set(m.spotlight);
     if (m.type !== "reply") return;
     const waiting = pending.get(m.id);
     if (!waiting) {
@@ -118,12 +121,19 @@ export function createFrameSdk(
         port.post({ kibo: 1, type: "openNewTicket", defaults: { statusId, parentId } }),
       openFile: ({ path, line }) =>
         port.post({ kibo: 1, type: "openFile", path, ...(typeof line === "number" && { line }) }),
-      openView: (componentId) => port.post({ kibo: 1, type: "openView", componentId }),
+      openView: (componentId, opts) =>
+        port.post({
+          kibo: 1,
+          type: "openView",
+          componentId,
+          ...(opts?.question !== undefined && { question: opts.question }),
+        }),
       focus: focusApi(focus, (on) => port.post({ kibo: 1, type: "focus", on })),
       visibility: visibilityApi(visible),
       selection: selectionApi(selection, (next) =>
         port.post({ kibo: 1, type: "selection", selection: next }),
       ),
+      spotlight,
     },
     "gated",
   );

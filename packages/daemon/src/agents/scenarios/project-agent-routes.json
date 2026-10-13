@@ -2,7 +2,9 @@
   "routes": [
     { "prompt": "\n- Domaine : ", "scenario": "done.json" },
     { "prompt": "lot invalide", "scenario": "project-agent-invalid.json" },
-    { "prompt": " refusé : ", "scenario": "project-agent-reject.json" }
+    { "prompt": " refusé : ", "scenario": "project-agent-reject.json" },
+    { "prompt": "ranger les questions", "scenario": "project-agent-questions.json" },
+    { "prompt": "question transmise", "scenario": "project-agent-questions-invalid.json" }
   ],
   "fallback": "project-agent-batch.json",
   "perTurn": true

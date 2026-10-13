@@ -1,13 +1,16 @@
 import { describe, expect, test } from "bun:test";
+import { DEFAULT_DUPLICATION_SETTINGS } from "@kibo/schema";
 import { LoroDoc, LoroMap } from "loro-crdt";
 import {
   countTicketsByStatus,
   createProjectDoc,
   createTicket,
   createWorkspaceDoc,
+  effectiveDuplication,
   executeProjectCommand,
   getProjectMeta,
   getWorkflow,
+  LOCAL_ONLY_META,
   listProjects,
   nextTicketSeq,
   peekTicketKey,
@@ -27,6 +30,7 @@ const meta = {
   color: "#F97316",
   worktree: null,
   storybook: null,
+  duplication: null,
 };
 
 describe("workspace", () => {
@@ -156,4 +160,23 @@ test("local storybook settings never reach the project doc nor the workspace", (
   expect(JSON.stringify(ws.toJSON())).not.toContain("sb.example.com");
   expect(getProjectMeta(doc).storybook).toBeNull();
   expect(listProjects(ws)[0]?.storybook).toBeNull();
+});
+
+test("local duplication settings never reach the project doc nor the workspace", () => {
+  const duplication = { ...DEFAULT_DUPLICATION_SETTINGS, ignore: ["src/generated-zz/**"] };
+  const local = { ...meta, duplication };
+  const ws = createWorkspaceDoc();
+  registerProject(ws, local);
+  const doc = createProjectDoc(local);
+  expect(LOCAL_ONLY_META.has("duplication")).toBe(true);
+  expect(doc.getMap("meta").get("duplication")).toBeUndefined();
+  expect(JSON.stringify(ws.toJSON())).not.toContain("generated-zz");
+  expect(getProjectMeta(doc).duplication).toBeNull();
+  expect(listProjects(ws)[0]?.duplication).toBeNull();
+});
+
+test("the effective duplication settings fall back to the defaults", () => {
+  expect(effectiveDuplication({ duplication: null })).toEqual(DEFAULT_DUPLICATION_SETTINGS);
+  const own = { ...DEFAULT_DUPLICATION_SETTINGS, minLines: 12 };
+  expect(effectiveDuplication({ duplication: own })).toBe(own);
 });

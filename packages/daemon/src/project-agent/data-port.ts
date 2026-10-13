@@ -1,4 +1,4 @@
-import { agentSummary, getKeyAllocator, listProjectDomains, readProject } from "@kibo/core";
+import { agentSummary, readProject } from "@kibo/core";
 import {
   type Agent,
   type Guideline,
@@ -36,7 +36,6 @@ function snapshotOf(docs: Docs, projectId: string): ProjectSnapshot {
     ...readProject(doc, docs.activity(projectId)),
     meta: docs.projectMeta(projectId),
     viewer: docs.identity(projectId),
-    ...(getKeyAllocator(doc) === "server" && { domains: listProjectDomains(doc) }),
   };
 }
 

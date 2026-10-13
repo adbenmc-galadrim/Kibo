@@ -11,12 +11,18 @@ import {
   countOpenByRun,
   DeliveryResult,
   deliveryPrompt,
+  isAnswered,
+  isArchived,
+  isDelivered,
+  isEditableAnswer,
   isOpen,
+  openQuestions,
   Question,
   questionNotices,
   resolveAnswer,
   undeliveredAnswers,
 } from "./question";
+import { openCountByRecipient } from "./question-recipient";
 import { RpcRequest } from "./rpc";
 
 const HUMAN_TEXT = {
@@ -267,4 +273,77 @@ test("a question notice follows a rise of open questions, outside the waiting ru
   expect(questionNotices([tally("r3", 1)], [tally("r3", 2, "Base ?")], RUNS)).toEqual([
     { title: "sonnet a posé une question", body: "Base ?" },
   ]);
+});
+
+const archived = (q: Question, at = 5): Question =>
+  Question.parse({ ...q, archivedAt: at, archivedBy: HUMAN });
+
+test("a question stored before the history parses with an empty history and no archive", () => {
+  expect(Question.parse(base)).toMatchObject({ history: [], archivedAt: null, archivedBy: null });
+  expect(Question.safeParse({ ...base, archivedAt: 5 }).success).toBe(false);
+  expect(Question.safeParse({ ...base, archivedBy: HUMAN }).success).toBe(false);
+});
+
+test("open, answered and archived split the questions, delivered answers are frozen", () => {
+  const open = Question.parse(base);
+  const waiting = answeredAt("q2", 20);
+  const delivered = answeredAt("q3", 30, 31);
+  const imported = Question.parse({
+    ...waiting,
+    answer: { ...waiting.answer, by: { kind: "import", ref: "plan" } },
+  });
+  expect([isOpen(open), isAnswered(open), isArchived(open)]).toEqual([true, false, false]);
+  expect([isOpen(archived(open)), isAnswered(archived(open)), isArchived(archived(open))]).toEqual([
+    false,
+    false,
+    true,
+  ]);
+  expect(isAnswered(archived(waiting))).toBe(false);
+  expect([isDelivered(waiting), isDelivered(delivered), isDelivered(open)]).toEqual([false, true, false]);
+  expect(isEditableAnswer(waiting)).toBe(true);
+  expect(isEditableAnswer(delivered)).toBe(false);
+  expect(isEditableAnswer(imported)).toBe(true);
+  expect(isEditableAnswer(archived(waiting))).toBe(false);
+  expect(isEditableAnswer(open)).toBe(false);
+});
+
+test("archived questions leave every list and count", () => {
+  const all = [
+    archived(Question.parse(base)),
+    archived(answeredAt("q2", 20)),
+    archived(answeredAt("q3", 30)),
+  ];
+  expect(openQuestions(all, "t1")).toEqual([]);
+  expect(countOpenByRun(all)).toEqual([]);
+  expect(undeliveredAnswers(all, "t1")).toEqual([]);
+  expect(answersToDeliver(all, "t1")).toEqual([]);
+  expect(openCountByRecipient(all).size).toBe(0);
+});
+
+test("exactly one of open, answered and archived holds through any answer and archive toggles", () => {
+  const answer = {
+    kind: "text",
+    option: null,
+    text: "Oui",
+    by: HUMAN,
+    at: 2,
+    deliveredAt: null,
+    deliveredRunId: null,
+  };
+  const step = fc.constantFrom("archive", "restore", "answer", "reopen");
+  fc.assert(
+    fc.property(fc.array(step, { maxLength: 30 }), (steps) => {
+      let q = Question.parse(base);
+      for (const s of steps) {
+        q = Question.parse({
+          ...q,
+          ...(s === "archive" ? { archivedAt: 9, archivedBy: HUMAN } : {}),
+          ...(s === "restore" ? { archivedAt: null, archivedBy: null } : {}),
+          ...(s === "answer" ? { answer } : {}),
+          ...(s === "reopen" ? { answer: null } : {}),
+        });
+        expect([isOpen(q), isAnswered(q), isArchived(q)].filter(Boolean)).toHaveLength(1);
+      }
+    }),
+  );
 });

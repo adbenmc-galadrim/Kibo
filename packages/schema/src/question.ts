@@ -2,45 +2,45 @@ import { z } from "zod";
 import { KiboError } from "./errors";
 import { ImportRef } from "./git-branch";
 import { NodeId } from "./ids";
+import {
+  Actor,
+  ANSWER_TEXT_MAX,
+  AnswerKind,
+  QUESTION_CONTEXT_MAX,
+  QUESTION_OPTION_MAX,
+  QUESTION_OPTIONS_MAX,
+  QUESTION_TITLE_MAX,
+  QuestionAnswer,
+  QuestionOption,
+  QuestionOptions,
+  QuestionTitle,
+} from "./question-fields";
+import { QUESTION_HISTORY_MAX, QuestionEvent } from "./question-history";
 import { ME_RECIPIENT, RECIPIENT_ID_MAX } from "./question-recipient";
 import type { RunView } from "./run";
 
-export const QUESTION_TITLE_MAX = 200;
-export const QUESTION_CONTEXT_MAX = 8000;
-export const QUESTION_OPTIONS_MAX = 6;
-export const QUESTION_OPTION_MAX = 120;
-export const ANSWER_TEXT_MAX = 4000;
+export {
+  Actor,
+  ANSWER_TEXT_MAX,
+  AnswerKind,
+  QUESTION_CONTEXT_MAX,
+  QUESTION_OPTION_MAX,
+  QUESTION_OPTIONS_MAX,
+  QUESTION_TITLE_MAX,
+  QuestionAnswer,
+  QuestionOption,
+  QuestionTitle,
+} from "./question-fields";
+
 export const OPEN_PER_RUN_MAX = 50;
 export const QUESTIONS_PER_TICKET_MAX = 500;
-
-export const QuestionTitle = z.string().trim().min(1).max(QUESTION_TITLE_MAX);
-export const QuestionOption = z.string().trim().min(1).max(QUESTION_OPTION_MAX);
-const QuestionOptions = z
-  .array(QuestionOption)
-  .max(QUESTION_OPTIONS_MAX)
-  .refine((options) => new Set(options).size === options.length, "options must be unique");
-
-export const Actor = z.object({ kind: z.enum(["human", "agent", "import"]), ref: z.string().min(1).max(80) });
-export type Actor = z.infer<typeof Actor>;
-
-export const AnswerKind = z.enum(["option", "confirm", "text"]);
-export type AnswerKind = z.infer<typeof AnswerKind>;
-
-export const QuestionAnswer = z.object({
-  kind: AnswerKind,
-  option: QuestionOption.nullable(),
-  text: z.string().trim().max(ANSWER_TEXT_MAX),
-  by: Actor,
-  at: z.number().int(),
-  deliveredAt: z.number().int().nullable().default(null),
-  deliveredRunId: z.string().min(1).nullable().default(null),
-});
-export type QuestionAnswer = z.infer<typeof QuestionAnswer>;
 
 type QuestionShape = {
   options: string[];
   provisional: string | null;
   answer: QuestionAnswer | null;
+  archivedAt: number | null;
+  archivedBy: Actor | null;
 };
 
 function answerProblem(q: QuestionShape, answer: QuestionAnswer): string | null {
@@ -63,6 +63,8 @@ function questionProblem(q: QuestionShape): string | null {
   if (q.provisional !== null && q.options.length > 0 && !q.options.includes(q.provisional)) {
     return "provisional choice is not an option";
   }
+  if ((q.archivedAt === null) !== (q.archivedBy === null))
+    return "an archive needs both its date and its actor";
   return q.answer === null ? null : answerProblem(q, q.answer);
 }
 
@@ -82,6 +84,9 @@ export const Question = z
     answer: QuestionAnswer.nullable(),
     recipient: z.string().max(RECIPIENT_ID_MAX).default(ME_RECIPIENT),
     sentAt: z.number().int().nullable().default(null),
+    history: z.array(QuestionEvent).max(QUESTION_HISTORY_MAX).default([]),
+    archivedAt: z.number().int().nullable().default(null),
+    archivedBy: Actor.nullable().default(null),
   })
   .superRefine((q, ctx) => {
     const problem = questionProblem(q);
@@ -116,8 +121,12 @@ export type DeliveryResult = z.infer<typeof DeliveryResult>;
 
 export type AnswerChoice = Omit<QuestionAnswer, "by" | "at" | "deliveredAt" | "deliveredRunId">;
 
-export const isOpen = (q: Question): boolean => q.answer === null;
-const isUndelivered = (q: Question): boolean => q.answer !== null && q.answer.deliveredAt === null;
+export const isArchived = (q: Question): boolean => q.archivedAt !== null;
+export const isOpen = (q: Question): boolean => q.answer === null && !isArchived(q);
+export const isAnswered = (q: Question): boolean => q.answer !== null && !isArchived(q);
+export const isDelivered = (q: Question): boolean => q.answer !== null && q.answer.deliveredAt !== null;
+export const isEditableAnswer = (q: Question): boolean => isAnswered(q) && !isDelivered(q);
+const isUndelivered = isEditableAnswer;
 
 export function openQuestions(questions: readonly Question[], ticketId: string): Question[] {
   return questions.filter((q) => q.ticketId === ticketId && isOpen(q));

@@ -8,6 +8,7 @@ import {
   type QuestionRecipient,
   type RunPeek,
   type Selection,
+  type Spotlight,
 } from "@kibo/schema";
 import { createContext, type ReactNode, useContext, useEffect, useState, useSyncExternalStore } from "react";
 import type { EntityMap, KiboSdk } from "./types";
@@ -122,6 +123,11 @@ export function useFocusMode(): FocusMode {
     request: sdk.focus.request,
     exit: sdk.focus.exit,
   };
+}
+
+export function useSpotlight(): Spotlight | null {
+  const { spotlight } = useSdk();
+  return useSyncExternalStore(spotlight.subscribe, spotlight.get, spotlight.get);
 }
 
 export function useSelection(): [Selection | null, (selection: Selection | null) => void] {

@@ -13,6 +13,7 @@ import {
   SelectionChip,
   useEntities,
   useMembers,
+  useQuestionsChipData,
   useReadOnly,
   useSdk,
   useSelection,
@@ -46,6 +47,7 @@ export function TicketsTree() {
   const selected = new Set(selection?.ids ?? []);
   const sharp = selection ? withAncestors(all, selection.ids) : null;
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
+  const questions = useQuestionsChipData(runs);
   const [query, setQuery] = useState(EMPTY_QUERY);
   const filtering = isActive(query);
   const filtered = filtering ? filterTree(visible, query, sdk.viewer) : null;
@@ -115,6 +117,7 @@ export function TicketsTree() {
       canDrag={canDrag}
       run={runOf.get(n.ticket.id) ?? null}
       members={members}
+      questions={questions}
       statusLabel={label(n.ticket.statusId)}
       context={filtered?.context.has(n.ticket.id) ?? false}
       selected={sharp ? selected.has(n.ticket.id) : null}

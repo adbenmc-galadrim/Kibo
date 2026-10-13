@@ -12,7 +12,7 @@
     },
     "title": "Kanban",
     "description": "Tickets par statut, glisser-déposer",
-    "reads": ["ticket", "status", "run", "ci_run"],
+    "reads": ["ticket", "status", "run", "ci_run", "question"],
     "selection": true,
     "writes": ["ticket"],
     "data": true,
@@ -36,7 +36,7 @@
     },
     "title": "Tickets",
     "description": "Arbre des tickets, sous-tickets illimités",
-    "reads": ["ticket", "status", "run"],
+    "reads": ["ticket", "status", "run", "question"],
     "selection": true,
     "writes": ["ticket"],
     "configSchema": {
