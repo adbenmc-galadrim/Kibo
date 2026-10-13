@@ -203,6 +203,43 @@ test("196 · un run qui utilise des skills laisse une review, visible au fil et 
   await expect(page.getByRole("region", { name: "Reviews de skills" }).first()).toBeVisible();
 });
 
+test("/ dans la réponse à un run propose les skills les plus utilisés, filtrés et insérés au clavier", async () => {
+  const info = test.info();
+  const { page } = kit;
+  await page.goto(`/#/runs/${reviewedRun}`);
+  const box = page.getByRole("combobox", { name: /^Écrire à / });
+  await box.click();
+  await box.pressSequentially("/");
+  const list = page.getByRole("listbox", { name: "Skills" });
+  const options = list.getByRole("option");
+  await expect(options).toHaveCount(2);
+  await expect(options.filter({ hasText: /^\/brainstormingCet ordinateur.*1 run\/30 j$/ })).toHaveCount(1);
+  await expect(
+    options.filter({ hasText: /^\/superpowers:brainstormingPlugin · superpowers.*1 run\/30 j$/ }),
+  ).toHaveCount(1);
+  await expect(box).toHaveAttribute("aria-expanded", "true");
+  await expect(options.first()).toHaveAttribute("aria-selected", "true");
+  await box.press("ArrowDown");
+  await expect(options.nth(1)).toHaveAttribute("aria-selected", "true");
+  await capture(info, "skill-complete-run");
+  await box.pressSequentially("sup");
+  await expect(options).toHaveText([/^\/superpowers:brainstorming/]);
+  await box.press("Enter");
+  await expect(box).toHaveValue("/superpowers:brainstorming ");
+  await expect(list).toBeHidden();
+
+  await page.goto(`/#/p/${kit.projectId}`);
+  await page.getByRole("button", { name: "Agent de projet", exact: true }).click();
+  const chat = page.getByRole("combobox", { name: "Message à l'agent de projet" });
+  await chat.click();
+  await chat.pressSequentially("/");
+  await expect(page.getByText("Aucun skill autorisé pour cet agent.")).toBeVisible();
+  await capture(info, "skill-complete-project-agent");
+  await chat.press("Escape");
+  await expect(page.getByText("Aucun skill autorisé pour cet agent.")).toBeHidden();
+  await expect(chat).toBeVisible();
+});
+
 async function openNotes() {
   const button = kit.page.getByRole("button", { name: /^Notes de review/ });
   if ((await button.getAttribute("aria-pressed")) !== "true") await button.click();
