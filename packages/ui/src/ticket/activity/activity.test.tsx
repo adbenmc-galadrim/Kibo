@@ -166,6 +166,8 @@ test("a wide sheet shows one chronology with the plan in a column", async () => 
     await within(chronology).findByText("Je relis le récepteur et ses tests avant de toucher au port."),
   ).toBeTruthy();
   expect(within(plan).getByText("Corriger la validation du corps")).toBeTruthy();
+  expect(plan.closest('[data-slot="scroll-pane"]')).not.toBeNull();
+  expect(chronology.closest('[data-slot="scroll-pane"]')).toBeNull();
   expect(
     within(chronology).queryByText("Le corps vide passe parce que le test ne couvre que null."),
   ).toBeNull();

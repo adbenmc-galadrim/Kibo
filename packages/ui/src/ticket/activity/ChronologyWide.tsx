@@ -1,4 +1,5 @@
 import type { FileRef, RunMoment } from "@kibo/schema";
+import { ScrollPane } from "@kibo/sdk/ui/scroll-pane";
 import { useCallback, useRef, useState } from "react";
 import { DockPlan, type ShownPlan } from "../../agents/dock/DockPlan";
 import { frMoments } from "../../i18n/fr-moments";
@@ -78,13 +79,9 @@ export function ChronologyWide({ entries, leading, plan, moments, now, onOpenFil
         ))}
         <LeadingFeed items={leading} />
       </section>
-      <PlanBlock
-        plan={plan}
-        moments={moments}
-        step={step}
-        onStep={pick}
-        className="sticky top-0 rounded-lg border p-3"
-      />
+      <ScrollPane className="sticky top-0 max-h-[calc(100dvh-var(--shell-top)-3rem)] rounded-lg border p-3">
+        <PlanBlock plan={plan} moments={moments} step={step} onStep={pick} />
+      </ScrollPane>
     </div>
   );
 }
