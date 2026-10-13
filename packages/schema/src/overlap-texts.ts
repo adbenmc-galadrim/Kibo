@@ -52,9 +52,12 @@ export function overlapSummary(
 const factorise = (ticketKey: string, ownerPath: string): string =>
   `**Factorise maintenant, sans demander** : supprime ta copie et reprends la sienne (\`mcp__kibo__peek_work { run: "${ticketKey}", path: "${ownerPath}" }\`, copie le fichier **à l'identique au même chemin**, sans le modifier, puis importe-le), ou extrais une fonction commune dans un **nouveau fichier identique des deux côtés**. Dis ce que tu as fait dans ton fil et ton compte rendu.`;
 
+const reuseFile = (ticketKey: string, path: string): string =>
+  `**Avant d'écrire, lis sa version** (\`mcp__kibo__peek_work { run: "${ticketKey}", path: "${path}" }\`) et **reprends-la telle quelle**, ou factorise ; n'écris pas ta propre version. Ne reformate pas et ne déplace rien dans ce fichier. Dis ce que tu as fait dans ton compte rendu.`;
+
 function otherAlert(detail: OverlapDetail, head: string, ticketKey: string): string {
   if (detail.kind === "file") {
-    return `${head} : ${code(detail.path)} est aussi modifié par ${ticketKey} : garde tes changements minimaux, ne reformate pas et ne déplace rien dans ce fichier ; une fusion est à prévoir, dis-le dans ton compte rendu.`;
+    return `${head} : ${code(detail.path)} est aussi modifié par ${ticketKey}. ${reuseFile(ticketKey, detail.path)}`;
   }
   const seen =
     detail.kind === "export"
@@ -65,7 +68,7 @@ function otherAlert(detail: OverlapDetail, head: string, ticketKey: string): str
 
 function ownerAlert(detail: OverlapDetail, withRunName: string): string {
   if (detail.kind === "file") {
-    return `Kibo — ${withRunName} modifie aussi ${code(detail.path)} : garde tes changements minimaux dans ce fichier ; une fusion est à prévoir, dis-le dans ton compte rendu.`;
+    return `Kibo — ${withRunName} modifie aussi ${code(detail.path)} et doit reprendre ta version : ne reformate pas et ne déplace rien dans ce fichier d'ici la fin de ton run ; si tu dois le changer, dis-le dans ton compte rendu.`;
   }
   const what =
     detail.kind === "export"

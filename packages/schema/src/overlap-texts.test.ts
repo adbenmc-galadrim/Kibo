@@ -70,10 +70,16 @@ test("the other run is told to factorise now, without asking", () => {
   expect(block).toContain('mcp__kibo__peek_work { run: "BOU-12", path: "src/http.ts" }');
 });
 
-test("a shared file asks for minimal changes", () => {
-  const alert = overlapAlert("other", FILE, RUN, "BOU-12");
-  expect(alert).toContain("`src/i18n/fr.ts` est aussi modifié par BOU-12");
-  expect(alert).toContain("garde tes changements minimaux");
+test("a shared file asks to reuse the other run's version before writing", () => {
+  expect(overlapAlert("other", FILE, RUN, "BOU-12")).toBe(
+    'Kibo — recouvrement avec boutique · livraison · BOU-12 : `src/i18n/fr.ts` est aussi modifié par BOU-12. **Avant d\'écrire, lis sa version** (`mcp__kibo__peek_work { run: "BOU-12", path: "src/i18n/fr.ts" }`) et **reprends-la telle quelle**, ou factorise ; n\'écris pas ta propre version. Ne reformate pas et ne déplace rien dans ce fichier. Dis ce que tu as fait dans ton compte rendu.',
+  );
+});
+
+test("the owner of a shared file is asked to keep it stable", () => {
+  expect(overlapAlert("owner", FILE, "boutique · livraison · BOU-15", "BOU-15")).toBe(
+    "Kibo — boutique · livraison · BOU-15 modifie aussi `src/i18n/fr.ts` et doit reprendre ta version : ne reformate pas et ne déplace rien dans ce fichier d'ici la fin de ton run ; si tu dois le changer, dis-le dans ton compte rendu.",
+  );
 });
 
 test("the owner is only informed", () => {
@@ -82,7 +88,6 @@ test("the owner is only informed", () => {
     "Kibo — boutique · livraison · BOU-15 reprend ton `formatDate` (`src/lib/format.ts`) : ne le renomme pas et ne le déplace pas d'ici la fin de ton run ; si tu dois le changer, dis-le dans ton compte rendu.",
   );
   expect(overlapAlert("owner", BLOCK, "x", "BOU-15")).toContain("ne le renomme pas");
-  expect(overlapAlert("owner", FILE, "x", "BOU-15")).toContain("`src/i18n/fr.ts`");
 });
 
 test("the stop reminder cites every open overlap", () => {
