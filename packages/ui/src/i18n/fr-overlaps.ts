@@ -114,6 +114,7 @@ export const frOverlaps = {
     at: (at: number) => `${day(at)} ${time(at)}`,
     cancel: "Annuler",
     failed: "Impossible d'annuler le lien.",
+    unavailable: "Liens ajoutés par Kibo indisponibles pour l'instant.",
   },
   preview: {
     work: "Travail en cours sur le projet (exemple)",

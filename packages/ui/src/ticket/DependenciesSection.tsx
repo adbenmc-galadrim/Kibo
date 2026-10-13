@@ -4,6 +4,7 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { X } from "lucide-react";
 import type { ReactNode } from "react";
+import { frOverlaps } from "../i18n/fr-overlaps";
 import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
 import { AutoLinkBadge } from "../overlaps/AutoLinkBadge";
 import { useAutoLinks } from "../overlaps/use-auto-links";
@@ -97,6 +98,7 @@ export function DependenciesSection({ project, ticket, editable, onOpenTicket }:
       {group(t.deps.blockedBy, links.blockedBy)}
       {group(t.deps.blocks, links.blocks)}
       {group(t.deps.related, links.related)}
+      {auto.error && <p className="text-2xs text-muted-foreground">{frOverlaps.badge.unavailable}</p>}
       {command.error && (
         <p role="alert" className="text-destructive">
           {command.error}
