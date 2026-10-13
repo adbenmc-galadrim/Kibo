@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { DEFAULT_AGENT_SETTINGS } from "@kibo/schema";
+import { DEFAULT_AGENT_SETTINGS, systemAgentSettings } from "@kibo/schema";
 import { agentGuardOf } from "./agent-guard";
 
 const denied = (reason: string) => ({ decision: "deny" as const, reason: expect.stringContaining(reason) });
@@ -40,4 +40,12 @@ test("an agent allowed every subagent lets plugin and machine agents through", (
   const guard = agentGuardOf({ settings: { ...DEFAULT_AGENT_SETTINGS, allSubagents: true } });
   expect(guard({ tool: "Agent", input: { subagent_type: "ecc:typescript-reviewer" } })).toBeNull();
   expect(guard({ tool: "Task", input: { subagent_type: "kibo-dev" } })).toBeNull();
+});
+
+test("the project agent's guard lets every skill through and still refuses subagents", () => {
+  const guard = agentGuardOf({ settings: systemAgentSettings("project-agent", {}) });
+  expect(guard({ tool: "Skill", input: { skill: "superpowers:brainstorming" } })).toBeNull();
+  expect(guard({ tool: "Agent", input: { subagent_type: "general-purpose" } })).toEqual(denied("sous-agent"));
+  const assistant = agentGuardOf({ settings: systemAgentSettings("assistant", {}) });
+  expect(assistant({ tool: "Skill", input: { skill: "brainstorming" } })).toEqual(denied("skill"));
 });

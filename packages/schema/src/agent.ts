@@ -149,7 +149,7 @@ export function systemAgentSettings(id: SystemAgentId, stored: Partial<AgentSett
     subagents: [],
     genericSubagents: false,
     allSubagents: false,
-    skills: { mode: "list", ids: [] },
+    skills: id === "project-agent" ? { mode: "all" } : { mode: "list", ids: [] },
   };
 }
 

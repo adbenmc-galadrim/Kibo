@@ -233,10 +233,14 @@ test("/ dans la réponse à un run propose les skills les plus utilisés, filtr�
   const chat = page.getByRole("combobox", { name: "Message à l'agent de projet" });
   await chat.click();
   await chat.pressSequentially("/");
-  await expect(page.getByText("Aucun skill autorisé pour cet agent.")).toBeVisible();
+  const projectOptions = page.getByRole("listbox", { name: "Skills" }).getByRole("option");
+  await expect(projectOptions).toHaveCount(2);
+  await expect(
+    projectOptions.filter({ hasText: /^\/brainstormingCet ordinateur.*1 run\/30 j$/ }),
+  ).toHaveCount(1);
   await capture(info, "skill-complete-project-agent");
   await chat.press("Escape");
-  await expect(page.getByText("Aucun skill autorisé pour cet agent.")).toBeHidden();
+  await expect(page.getByRole("listbox", { name: "Skills" })).toBeHidden();
   await expect(chat).toBeVisible();
 });
 
