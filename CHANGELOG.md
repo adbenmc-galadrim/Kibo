@@ -6,6 +6,13 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.23.0-alpha.3 — 2026-10-13
+
+- Tape `/` dans une réponse à un run, dans le chat de l'agent de projet ou dans la consigne d'une assignation : Kibo propose les skills autorisés pour l'agent, ceux que tu utilises le plus en premier, et filtre au fil de la frappe (↑ ↓, Entrée ou Tab, Échap). Un `/skill` envoyé passe par les règles de l'agent comme un appel normal.
+- L'agent de projet peut utiliser tous les skills de la machine et du projet.
+- Fiche d'un agent : « Tous les sous-agents » autorise tout sous-agent de l'ordinateur, du projet ou des plugins. Les skills qui en lancent, comme /full-delivery et sa porte qualité, tournent ainsi dans Kibo sans refus.
+- Notes : le volet « Tickets liés » défile seul, la page ne bouge plus ; l'aperçu n'affiche plus le front-matter. Même correction pour les pages « Vue » avec une source, le plan d'un ticket et la page d'un run, dont la zone de réponse reste visible sous le fil.
+
 ## 0.23.0-alpha.2 — 2026-10-13
 
 - Sécurité : le SDK MCP passe en 1.31.0 (faille OAuth corrigée en amont).
