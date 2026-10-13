@@ -51,6 +51,7 @@ async function startDaemonSkills(
   const data = {
     viewer: () => opts.user,
     assertWritable: (projectId: string) => service.docs.assertWritable(projectId),
+    skillsRule: (ref: AgentRef) => files.catalog.byRef(ref)?.settings.skills ?? null,
   };
   const skills = await startSkills({
     roots: files.roots,

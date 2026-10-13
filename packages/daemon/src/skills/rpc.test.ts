@@ -87,6 +87,7 @@ function rig(writable = true) {
   });
   const data = {
     viewer: () => "adam",
+    skillsRule: (ref: string) => (ref === "global:dev" ? { mode: "all" as const } : null),
     assertWritable(projectId: string) {
       calls.push(`assert:${projectId}`);
       if (!writable) throw new KiboError("PERMISSION_DENIED", "read only");
@@ -170,5 +171,19 @@ test("reviews are listed and ignored by the viewer", async () => {
     call(rpc, { method: "skillReviews.decide", id: "nope", decision: "ignore" }),
   ).rejects.toMatchObject({
     code: "NOT_FOUND",
+  });
+});
+
+test("suggestions list the skills an agent may use from a project, an unknown agent is refused", async () => {
+  const { rpc, calls } = rig();
+  const suggested = await call(rpc, {
+    method: "skills.suggest",
+    agentRef: "global:dev",
+    projectId: PROJECT_ID,
+  });
+  expect(suggested).toMatchObject({ skills: [{ id: "deploy" }, { id: "tests" }] });
+  expect(calls).toEqual(["refresh", `list:${PROJECT_ID}`]);
+  await expect(call(rpc, { method: "skills.suggest", agentRef: "global:gone" })).rejects.toMatchObject({
+    code: "AGENT_NOT_FOUND",
   });
 });

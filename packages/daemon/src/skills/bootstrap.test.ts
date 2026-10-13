@@ -34,7 +34,7 @@ async function rig() {
     reviews,
     agents: () => [],
     emit: () => {},
-    data: { viewer: () => "adam", assertWritable: () => {} },
+    data: { viewer: () => "adam", assertWritable: () => {}, skillsRule: () => null },
     watch: null,
   });
   const use = (ids: SkillId[]) => {
