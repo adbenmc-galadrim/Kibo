@@ -1,10 +1,10 @@
 import type { Signal } from "@kibo/schema";
-import { renderMarkdownLite } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { BookSearch, RotateCcw } from "lucide-react";
 import { useFollowBottom } from "../agents/use-follow-bottom";
 import { frProjectAgent } from "../i18n/fr-project-agent";
+import { AgentText } from "../moments/AgentText";
 import { BatchCard, type Decision } from "./BatchCard";
 import type { DiffLabels } from "./batch-groups";
 import type { ConversationItem } from "./conversation";
@@ -51,8 +51,8 @@ function Item({
       );
     case "agent":
       return (
-        <li className="grid gap-2 text-sm leading-relaxed" aria-label={t.agent}>
-          {renderMarkdownLite(item.text, { onTicket })}
+        <li className="min-w-0 text-sm leading-relaxed" aria-label={t.agent}>
+          <AgentText text={item.text} onTicket={onTicket} />
         </li>
       );
     case "reading":

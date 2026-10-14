@@ -1,5 +1,5 @@
-import { renderMarkdownLite } from "@kibo/sdk";
+import { AgentText } from "./AgentText";
 
-export function MessageMoment({ text }: { text: string }) {
-  return <div className="text-sm leading-relaxed break-words">{renderMarkdownLite(text)}</div>;
+export function MessageMoment({ text, onTicket }: { text: string; onTicket?: (key: string) => void }) {
+  return <AgentText text={text} onTicket={onTicket} className="text-sm leading-relaxed" />;
 }
