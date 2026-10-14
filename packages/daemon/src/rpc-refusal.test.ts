@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { RpcRequest } from "@kibo/schema";
-import { rpcRefusal } from "./rpc-refusal";
+import { refusePending, rpcRefusal } from "./rpc-refusal";
 
 const refusalOf = (raw: unknown): string => {
   const parsed = RpcRequest.safeParse(raw);
@@ -24,4 +24,10 @@ test("at most five fields are named", () => {
   expect(message.startsWith("invalid request: ")).toBe(true);
   expect(message.split(", ").length).toBeLessThanOrEqual(5);
   expect(message).not.toContain("Required");
+});
+
+test("every delivery method is pending until a task serves it", () => {
+  expect(() => refusePending("deliver")).toThrow("NOT_FOUND: deliver is not served yet");
+  expect(() => refusePending("runs.allowAndResume")).toThrow("NOT_FOUND");
+  expect(() => refusePending("listProjects")).not.toThrow();
 });

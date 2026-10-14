@@ -23,7 +23,12 @@ function safeJson(raw: string): unknown {
   }
 }
 
-function localJson<T>(settings: Reader, projectId: string, key: string, schema: z.ZodType<T>): T | null {
+function localJson<T>(
+  settings: Reader,
+  projectId: string,
+  key: string,
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
+): T | null {
   const raw = settings.get(projectId, key);
   if (raw === null) return null;
   const parsed = schema.safeParse(safeJson(raw));

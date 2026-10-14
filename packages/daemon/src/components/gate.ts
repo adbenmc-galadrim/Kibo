@@ -135,6 +135,10 @@ function dispatch(
       return h.recipients(projectId);
     case "run.peek":
       return h.peek(projectId, call.runId);
+    case "run.deliver":
+    case "run.denials":
+    case "run.allowAndResume":
+      throw new KiboError("NOT_FOUND", `${call.kind} is not served yet`);
     default:
       return h.notes(projectId, call);
   }

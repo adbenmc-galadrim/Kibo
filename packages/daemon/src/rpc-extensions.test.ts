@@ -33,3 +33,10 @@ test("requireLocal refuses a remote session", () => {
   expect(() => requireLocal({ sessionHash: "h", remote: true })).toThrow("FORBIDDEN");
   expect(() => requireLocal(ctx)).not.toThrow();
 });
+
+test("a delivery method nobody serves yet is refused as not found", async () => {
+  const deliver = { method: "deliver", projectId: "p", ticketId: "t1" } as const;
+  await expect(dispatchRpc(service, [], deliver, ctx, [])).rejects.toThrow("NOT_FOUND");
+  const ext = { methods: ["deliver"] as const, handle: async () => "served" };
+  expect(await dispatchRpc(service, [ext], deliver, ctx, [])).toBe("served");
+});

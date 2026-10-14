@@ -239,3 +239,18 @@ describe("embedded frames", () => {
     ]);
   });
 });
+
+describe("delivery calls, pending", () => {
+  test("the delivery calls of the runs api are not served yet", async () => {
+    const calls: ComponentCall[] = [
+      { kind: "run.deliver", ticketId: "t1" },
+      { kind: "run.denials", runId: "r1" },
+      { kind: "run.allowAndResume", runId: "r1", questionId: "q1", rules: [], addDirs: [] },
+    ];
+    for (const call of calls) {
+      const { gate: g, handled } = testGate();
+      await refused(g.call("p1", "builtin", call), "NOT_FOUND");
+      expect(handled).toEqual([]);
+    }
+  });
+});
