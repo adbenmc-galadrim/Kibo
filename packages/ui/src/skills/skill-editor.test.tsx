@@ -151,7 +151,7 @@ test("the files column opens a text file, lists a binary one, adds and removes a
   show();
   await ready();
   const files = within(screen.getByRole("region", { name: "Fichiers" }));
-  expect(await files.findByText("46,9 Ko")).toBeTruthy();
+  expect(await files.findByText("exemple.png")).toBeTruthy();
   expect(files.queryByRole("button", { name: /^exemple\.png/ })).toBeNull();
   const user = userEvent.setup();
   await user.click(files.getByRole("button", { name: /^volets\/conventions\.md/ }));

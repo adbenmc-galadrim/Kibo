@@ -1,6 +1,6 @@
 import { expect, mock, test } from "bun:test";
 import type { AgentsState } from "@kibo/schema";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { fr } from "../i18n/fr";
 import { AgentBar } from "./AgentBar";
@@ -132,15 +132,20 @@ test("the counter speaks of a single run in the singular", () => {
   expect(fr.agents.moreRuns(1)).toBe("1 autre run en cours");
 });
 
-test("screen 200: the summary counts the open overlaps and each run shows its chip", async () => {
-  renderBar({
+test("2026-10-14: open overlaps add nothing to the bar, folded or expanded", () => {
+  const state = {
     ...agentsFixture(),
     overlaps: [
       { runId: "r43", open: 1 },
       { runId: "r42", open: 1 },
     ],
     overlapTotal: 1,
-  });
-  expect(screen.getByText(`${barText()} · 1 recouvrement`)).toBeTruthy();
-  expect(await screen.findAllByRole("img", { name: "1 recouvrement ouvert" })).not.toHaveLength(0);
+  };
+  for (const expanded of [false, true]) {
+    renderBar(state, expanded);
+    expect(screen.getByText(barText())).toBeTruthy();
+    expect(screen.queryByText(/recouvrement/)).toBeNull();
+    expect(screen.queryByRole("img", { name: /recouvrement/ })).toBeNull();
+    cleanup();
+  }
 });

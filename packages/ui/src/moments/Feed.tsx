@@ -59,7 +59,7 @@ function MomentBody({
   const data = moment.data;
   switch (data.kind) {
     case "message":
-      return <MessageMoment text={data.text} />;
+      return <MessageMoment text={data.text} onTicket={overlap.onOpenTicketKey} />;
     case "reasoning":
       return (
         <div className="grid gap-1 border-l-2 pl-3 text-sm text-muted-foreground italic">

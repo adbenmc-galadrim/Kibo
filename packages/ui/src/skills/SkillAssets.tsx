@@ -2,6 +2,7 @@ import { type Skill, type SkillAsset, SkillFilePath } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
+import { ScrollPane } from "@kibo/sdk/ui/scroll-pane";
 import { FileImage, FileText, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { client } from "../api";
@@ -61,12 +62,13 @@ function FileRow({
   const body = (
     <>
       <Icon aria-hidden className="size-3.5 shrink-0" />
-      <span className="min-w-0 flex-1 truncate font-mono">{asset.path}</span>
-      {asset.size >= 0 && <span className="shrink-0 text-muted-foreground">{t.size(asset.size)}</span>}
+      <span title={asset.path} className="min-w-0 flex-1 truncate font-mono">
+        {asset.path}
+      </span>
     </>
   );
   return (
-    <li className="group flex items-center gap-1">
+    <li className="group flex min-w-0 items-center gap-1">
       {asset.text ? (
         <button
           type="button"
@@ -88,7 +90,7 @@ function FileRow({
         <Button
           variant="ghost"
           size="icon"
-          className="size-6 shrink-0 opacity-60 group-hover:opacity-100"
+          className="size-6 shrink-0 opacity-60 group-hover:opacity-100 focus-visible:opacity-100"
           aria-label={t.remove(asset.path)}
           onClick={onRemove}
         >
@@ -110,11 +112,15 @@ export function SkillAssets({ skill, current, onPick }: Props) {
   const writable = !skill.readOnly;
   const main: SkillAsset = { path: SKILL_FILE, size: -1, text: true };
   return (
-    <section aria-label={t.title} className="grid content-start gap-2 rounded-lg border bg-card p-2">
+    <ScrollPane
+      as="section"
+      aria-label={t.title}
+      className="grid grid-cols-[minmax(0,1fr)] content-start gap-2 rounded-lg border bg-card p-2"
+    >
       <h3 className="px-2 pt-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
         {t.title}
       </h3>
-      <ul className="grid gap-0.5">
+      <ul className="grid grid-cols-[minmax(0,1fr)] gap-0.5">
         {[main, ...assets].map((asset) => (
           <FileRow
             key={asset.path}
@@ -172,6 +178,6 @@ export function SkillAssets({ skill, current, onPick }: Props) {
         }}
         describeError={errorMessage}
       />
-    </section>
+    </ScrollPane>
   );
 }

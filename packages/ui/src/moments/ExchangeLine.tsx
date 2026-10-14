@@ -1,6 +1,7 @@
 import { cn } from "@kibo/sdk/lib/utils";
 import { formatClock } from "../agents/format";
 import { frMoments } from "../i18n/fr-moments";
+import { AgentText } from "./AgentText";
 import { QuestionText } from "./QuestionText";
 
 export type FeedExtra = {
@@ -13,6 +14,11 @@ export type FeedExtra = {
 
 const textOf = (extra: FeedExtra) =>
   extra.questionId ? <QuestionText questionId={extra.questionId} text={extra.text} /> : extra.text;
+
+function Body({ extra }: { extra: FeedExtra }) {
+  if (extra.kind === "question" && !extra.questionId) return <AgentText text={extra.text} />;
+  return <p className="break-words whitespace-pre-wrap">{textOf(extra)}</p>;
+}
 
 export function ExchangeLine({ extra }: { extra: FeedExtra }) {
   const t = frMoments.exchange;
@@ -28,7 +34,7 @@ export function ExchangeLine({ extra }: { extra: FeedExtra }) {
         <span className="font-mono">{formatClock(extra.at)}</span>
         {t[extra.kind]}
       </span>
-      <p className="break-words whitespace-pre-wrap">{textOf(extra)}</p>
+      <Body extra={extra} />
     </div>
   );
 }

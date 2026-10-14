@@ -44,10 +44,10 @@ const raw = (data: MomentData): RunMoment => ({
   data,
 });
 
-test("a message is rendered as Markdown, never as raw HTML", () => {
+test("a message is rendered as Markdown, never as raw HTML", async () => {
   const message = raw({ kind: "message", text: "Je corrige **receiver.ts** <img src=x onerror=alert(1)>" });
   const { container } = render(<Feed moments={[message]} texts={frMoments} />);
-  expect(container.querySelector("strong")?.textContent).toBe("receiver.ts");
+  expect((await screen.findByText("receiver.ts")).tagName).toBe("STRONG");
   expect(container.querySelector("img")).toBeNull();
 });
 

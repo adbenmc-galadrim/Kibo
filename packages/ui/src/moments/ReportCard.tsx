@@ -1,5 +1,6 @@
 import type { RunReport } from "@kibo/schema";
 import { frMoments } from "../i18n/fr-moments";
+import { AgentText } from "./AgentText";
 
 function Section({ title, items }: { title: string; items: string[] }) {
   if (items.length === 0) return null;
@@ -38,7 +39,7 @@ export function ReportCard({ report }: { report: RunReport | null }) {
     <section aria-label={t.title} className="grid gap-3 rounded-md border p-3">
       <div className="grid gap-1">
         <h4 className="text-xs font-medium text-muted-foreground">{t.done}</h4>
-        <p className="text-sm break-words">{report.done}</p>
+        <AgentText text={report.done} className="text-sm" />
       </div>
       <Section title={t.decisions} items={report.decisions} />
       <Section title={t.toCheck(report.toCheck.length)} items={report.toCheck} />
@@ -49,7 +50,7 @@ export function ReportCard({ report }: { report: RunReport | null }) {
       {report.next && (
         <div className="grid gap-1">
           <h4 className="text-xs font-medium text-muted-foreground">{t.next}</h4>
-          <p className="text-sm break-words">{report.next}</p>
+          <AgentText text={report.next} className="text-sm" />
         </div>
       )}
     </section>

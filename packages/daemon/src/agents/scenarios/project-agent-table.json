@@ -1,0 +1,9 @@
+{
+  "turns": [
+    {
+      "steps": [],
+      "result": "Voici l'ordre que je propose :\n\n| Ordre | Ticket | Ce que ça donne | Attend |\n|---|---|---|---|\n| 1 | KIB-1, compte non provisionné et première connexion (écran 1.2) | Une personne connectée par Microsoft mais sans affectation ne voit rien | KIB-2 |\n| 2 | KIB-2, back-office utilisateurs (écran 10.0) | Liste, invitation, gestion des accès, badge admin | KIB-1 |\n\nDis-moi si l'ordre te va.",
+      "tokens": 600
+    }
+  ]
+}

@@ -6,6 +6,12 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.23.0-alpha.4 — 2026-10-14
+
+- Les réponses des agents sont mises en forme (listes, code, liens, tableaux) dans le fil d'un run, le compte rendu et le chat de l'agent de projet. Un tableau défile dans son cadre, et « Agrandir » l'ouvre dans un volet avec « Copier en Markdown ».
+- La barre des agents ne parle plus des recouvrements : ni liste sous un run, ni pastille, ni compteur. La détection continue en arrière-plan.
+- Page Skills : la colonne des fichiers d'un skill défile seule, sans taille ni débordement sur l'éditeur ; les noms longs se coupent avec le chemin complet au survol.
+
 ## 0.23.0-alpha.3 — 2026-10-13
 
 - Tape `/` dans une réponse à un run, dans le chat de l'agent de projet ou dans la consigne d'une assignation : Kibo propose les skills autorisés pour l'agent, ceux que tu utilises le plus en premier, et filtre au fil de la frappe (↑ ↓, Entrée ou Tab, Échap). Un `/skill` envoyé passe par les règles de l'agent comme un appel normal.

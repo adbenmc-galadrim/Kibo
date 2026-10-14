@@ -36,10 +36,6 @@ export const frOverlaps = {
     failed: (from: string, to: string) => `Kibo n'a pas pu lier ${from} → ${to} : dépendance circulaire`,
     actionFailed: "Action impossible pour l'instant.",
   },
-  bar: {
-    chip: (n: number) => `${plural(n, "recouvrement ouvert", "recouvrements ouverts")}`,
-    with: (key: string) => `Recouvrement avec ${key}`,
-  },
   files: {
     title: "Fichiers du recouvrement",
     description: "Les deux fichiers côte à côte, en lecture seule.",

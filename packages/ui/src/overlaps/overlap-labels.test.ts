@@ -3,9 +3,7 @@ import { formatClock } from "../agents/format";
 import { OPEN_OVERLAP, overlapFixture, RESOLVED_AT } from "./fixtures";
 import {
   activityCounts,
-  chipLabel,
   overlapCounts,
-  overlapLinesByRun,
   overlapRole,
   overlapSides,
   overlapState,
@@ -30,9 +28,7 @@ test("the role says who factorises and who is reused", () => {
   expect(overlapRole("owner", "bou · livraison · BOU-15")).toBe("repris par bou · livraison · BOU-15");
 });
 
-test("the chip and the activity counts speak French plurals", () => {
-  expect(chipLabel(1)).toBe("1 recouvrement ouvert");
-  expect(chipLabel(2)).toBe("2 recouvrements ouverts");
+test("the activity counts speak French plurals", () => {
   expect(activityCounts(1, 0)).toBe("Recouvrements : 1 réglé · 0 ouvert");
   expect(activityCounts(2, 3)).toBe("Recouvrements : 2 réglés · 3 ouverts");
 });
@@ -78,20 +74,4 @@ test("the counts split resolved and open overlaps, ignored ones aside", () => {
   ];
   expect(overlapCounts(list)).toEqual({ resolved: 1, open: 1 });
   expect(overlapCounts([])).toEqual({ resolved: 0, open: 0 });
-});
-
-test("each run of an open overlap gets a line naming the other ticket", () => {
-  const runs = [
-    { id: "r-bou-12", ticketKey: "BOU-12", label: "bou · livraison · BOU-12" },
-    { id: "r-bou-15", ticketKey: "BOU-15", label: "bou · livraison · BOU-15" },
-  ];
-  const lines = overlapLinesByRun(
-    [OPEN_OVERLAP, overlapFixture({ id: "o2", status: "resolved", resolvedAt: RESOLVED_AT })],
-    runs,
-  );
-  expect(lines.get("r-bou-15")).toEqual([{ overlapId: "o1", withKey: "BOU-12" }]);
-  expect(lines.get("r-bou-12")).toEqual([{ overlapId: "o1", withKey: "BOU-15" }]);
-  expect(overlapLinesByRun([overlapFixture({ ownerRunId: "gone" })], runs).get("r-bou-15")).toEqual([
-    { overlapId: "o1", withKey: "gone" },
-  ]);
 });

@@ -44,8 +44,7 @@ function parse(markdown: string): Block[] {
   return blocks;
 }
 
-function linkify(text: string, key: string, opts: MarkdownLiteOptions): ReactNode[] {
-  const onTicket = opts.onTicket;
+export function ticketKeyNodes(text: string, key: string, onTicket?: (key: string) => void): ReactNode[] {
   if (!onTicket) return [text];
   const nodes: ReactNode[] = [];
   let last = 0;
@@ -65,6 +64,9 @@ function linkify(text: string, key: string, opts: MarkdownLiteOptions): ReactNod
   if (last < text.length) nodes.push(text.slice(last));
   return nodes;
 }
+
+const linkify = (text: string, key: string, opts: MarkdownLiteOptions): ReactNode[] =>
+  ticketKeyNodes(text, key, opts.onTicket);
 
 function emphasis(text: string, key: string, opts: MarkdownLiteOptions): ReactNode[] {
   const parts = text.split("**");
