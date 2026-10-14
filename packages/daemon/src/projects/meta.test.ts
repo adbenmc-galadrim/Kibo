@@ -2,9 +2,9 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { ProjectMeta, ProjectSummary } from "@kibo/schema";
+import { EMPTY_DELIVERY, type ProjectMeta, type ProjectSummary } from "@kibo/schema";
 import { createProjectSettings } from "../notes/settings";
-import { LOCAL_WORKTREE_KEY } from "../project-folder";
+import { LOCAL_DELIVERY_KEY, LOCAL_WORKTREE_KEY } from "../project-folder";
 import { createService } from "../service";
 import { openStore } from "../store";
 import { writeProjectMeta } from "./meta";
@@ -62,4 +62,18 @@ test("a null worktree unsets the local settings", () => {
   const meta = writeProjectMeta(service.docs, settings, project.id, { worktree: null }, true);
   expect(meta.worktree).toBeNull();
   expect(settings.get(project.id, LOCAL_WORKTREE_KEY)).toBeNull();
+});
+
+test("delivery settings are local, listed, and a null delivery unsets them", () => {
+  const { service, settings, project } = setup();
+  const delivery = { ...EMPTY_DELIVERY, root: "/home/dev/Documents/emis", allow: ["Bash(pnpm *)"] };
+  const meta = writeProjectMeta(service.docs, settings, project.id, { delivery }, true);
+  expect(meta.delivery).toEqual(delivery);
+  expect(JSON.parse(settings.get(project.id, LOCAL_DELIVERY_KEY) ?? "null")).toEqual(delivery);
+  expect(JSON.stringify(service.docs.project(project.id).toJSON())).not.toContain("Documents/emis");
+  expect(JSON.stringify(service.docs.workspace.toJSON())).not.toContain("Documents/emis");
+  const listed = service.handle({ method: "listProjects" }) as ProjectSummary[];
+  expect(listed.find((p) => p.id === project.id)?.delivery).toEqual(delivery);
+  expect(writeProjectMeta(service.docs, settings, project.id, { delivery: null }, true).delivery).toBeNull();
+  expect(settings.get(project.id, LOCAL_DELIVERY_KEY)).toBeNull();
 });
