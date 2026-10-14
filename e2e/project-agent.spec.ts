@@ -178,14 +178,28 @@ async function deliver(page: Page, projectId: string, ticketId: string, title: s
   await expect.poll(deliveredAt, { timeout: 20_000 }).not.toBeNull();
 }
 
-async function seedProjectQuestions(page: Page, projectId: string): Promise<string> {
+type LeafTicket = { id: string; key: string };
+
+async function createLeafTicket(page: Page, projectId: string, title: string): Promise<LeafTicket> {
+  const command = { method: "createTicket", title, statusId: "todo" };
+  const id = text(await rpc(page, { method: "command", projectId, command }), "id");
+  const tickets = list(await rpc(page, { method: "getProject", projectId }), "tickets");
+  const found = tickets.find((t) => text(t, "id") === id);
+  if (found === undefined) throw new Error(`no ticket ${id}`);
+  return { id, key: text(found, "key") };
+}
+
+async function seedProjectQuestions(
+  page: Page,
+  projectId: string,
+): Promise<{ logo: string; leaf: LeafTicket }> {
   const first = await ticketIdOf(page, projectId, "KIB-1");
-  const second = await ticketIdOf(page, projectId, "KIB-2");
+  const leaf = await createLeafTicket(page, projectId, "Logo du client");
   await seedQuestion(page, projectId, first, COLOR, { recipient: "client" });
   await seedAnswered(page, projectId, first, FONT, "Oui", { recipient: "client" });
-  const logo = await seedAnswered(page, projectId, second, LOGO, "Oui", { recipient: "client" });
-  await deliver(page, projectId, second, LOGO);
-  return logo;
+  const logo = await seedAnswered(page, projectId, leaf.id, LOGO, "Oui", { recipient: "client" });
+  await deliver(page, projectId, leaf.id, LOGO);
+  return { logo, leaf };
 }
 
 const lastBatch = (panel: Locator): Locator => panel.getByRole("region", { name: /^Lot n° \d+$/ }).last();
@@ -193,7 +207,7 @@ const lastBatch = (panel: Locator): Locator => panel.getByRole("region", { name:
 test("l'agent de projet renomme, réassigne, rouvre et archive des questions", async ({ page }, info) => {
   test.setTimeout(180_000);
   const projectId = await kibProject(page);
-  const logo = await seedProjectQuestions(page, projectId);
+  const { logo, leaf } = await seedProjectQuestions(page, projectId);
   await page.goto(`/#/p/${encodeURIComponent(projectId)}/`);
   await page.keyboard.press("ControlOrMeta+j");
   const panel = panelOf(page);
@@ -219,7 +233,7 @@ test("l'agent de projet renomme, réassigne, rouvre et archive des questions", a
   await shot(page, info, "204");
   const preview = await hoverBadge(page, reopen);
   await expect(preview.getByText(/Décision prise provisoirement/)).toBeVisible();
-  await expect(preview.getByText(/transmise à global · livraison · KIB-2$/)).toBeVisible();
+  await expect(preview.getByText(new RegExp(`transmise à global · livraison · ${leaf.key}$`))).toBeVisible();
   await capture(page, info, "205b");
   await page.mouse.move(0, 0);
 
@@ -248,7 +262,7 @@ test("l'agent de projet renomme, réassigne, rouvre et archive des questions", a
       by: { kind: "human", ref: "e2e" },
     },
   });
-  await deliver(page, projectId, await ticketIdOf(page, projectId, "KIB-2"), LOGO);
+  await deliver(page, projectId, leaf.id, LOGO);
   await page.keyboard.press("ControlOrMeta+j");
   await expect(panel).toBeVisible();
   await say(panel, "Renomme la question transmise");
