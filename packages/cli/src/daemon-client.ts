@@ -5,6 +5,7 @@ import { z } from "zod";
 
 export type DaemonClient = {
   rpc<M extends RpcRequest["method"]>(req: Extract<RpcRequest, { method: M }>): Promise<RpcResult[M]>;
+  close(): Promise<void>;
 };
 
 const Port = z.number().int().min(0).max(65_535);
@@ -47,7 +48,10 @@ async function pair(base: string, token: string): Promise<string> {
       body: JSON.stringify({ token }),
     });
   } catch (e) {
-    throw new KiboError("NOT_FOUND", `daemon not reachable: ${e instanceof Error ? e.message : String(e)}`);
+    throw new KiboError(
+      "DAEMON_NOT_RUNNING",
+      `daemon not reachable: ${e instanceof Error ? e.message : String(e)}`,
+    );
   }
   if (res.status !== 204) throw new KiboError("UNAUTHORIZED", "pairing refused");
   return (res.headers.get("set-cookie") ?? "").split(";")[0] ?? "";
@@ -56,21 +60,26 @@ async function pair(base: string, token: string): Promise<string> {
 export async function connectDaemon(home: string): Promise<DaemonClient> {
   const port = readDaemonPort(home);
   const tokenFile = join(home, "token");
-  if (port === null || !existsSync(tokenFile)) throw new KiboError("NOT_FOUND", "daemon not running");
+  if (port === null || !existsSync(tokenFile))
+    throw new KiboError("DAEMON_NOT_RUNNING", "daemon not running");
   const base = `http://127.0.0.1:${port}`;
   const cookie = await pair(base, readFileSync(tokenFile, "utf8").trim());
+  const rpc: DaemonClient["rpc"] = async (req) => {
+    const res = await fetch(`${base}/api/rpc`, {
+      method: "POST",
+      headers: { origin: base, "content-type": "application/json", cookie },
+      body: JSON.stringify(req),
+    });
+    const body: unknown = await res.json();
+    if (typeof body !== "object" || body === null) throw new KiboError("INTERNAL", "invalid daemon response");
+    if (Reflect.get(body, "ok") !== true) throw errorOf(body);
+    return Reflect.get(body, "result") as never;
+  };
   return {
-    async rpc(req) {
-      const res = await fetch(`${base}/api/rpc`, {
-        method: "POST",
-        headers: { origin: base, "content-type": "application/json", cookie },
-        body: JSON.stringify(req),
-      });
-      const body: unknown = await res.json();
-      if (typeof body !== "object" || body === null)
-        throw new KiboError("INTERNAL", "invalid daemon response");
-      if (Reflect.get(body, "ok") !== true) throw errorOf(body);
-      return Reflect.get(body, "result") as never;
+    rpc,
+    async close() {
+      const own = (await rpc({ method: "listSessions" })).find((s) => s.current);
+      if (own) await rpc({ method: "revokeSession", id: own.id });
     },
   };
 }

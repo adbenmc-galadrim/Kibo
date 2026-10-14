@@ -10,7 +10,7 @@ export type PublishStrategy = "update-all" | "new-version";
 function connectionMessage(e: unknown, io: CliIo): string | null {
   if (!(e instanceof KiboError)) return null;
   if (e.code === "UNAUTHORIZED") return fr.pairingFailed;
-  if (e.code === "NOT_FOUND") return fr.noDaemon;
+  if (e.code === "DAEMON_NOT_RUNNING") return fr.noDaemon;
   if (e.code === "STORE_CORRUPT") return fr.daemonInfoCorrupt(daemonInfoFile(io.home));
   return null;
 }
