@@ -114,6 +114,12 @@ const DENIAL = /\bdenied\b|\bblocked by\b|doesn't want to proceed|\brefusé|non 
 export const denialOf = (output: string | null): boolean => output !== null && DENIAL.test(output);
 
 const FAILED_EXIT = /Exit code [1-9]/;
+const DENIED_COMMAND_MAX = 500;
+
+function deniedCommand(call: ToolCall): { command?: string } {
+  const command = call.denied && call.tool === "Bash" ? text(call.input, "command") : null;
+  return command === null ? {} : { command: command.slice(0, DENIED_COMMAND_MAX) };
+}
 
 export function actionOf(call: ToolCall): RunAction {
   const { kind, target } = classifyTool(call.tool, call.input);
@@ -127,6 +133,7 @@ export function actionOf(call: ToolCall): RunAction {
     detail: call.output?.slice(0, MOMENT_DETAIL_MAX) ?? null,
     patch: call.patch,
     tests,
+    ...deniedCommand(call),
   };
   return { ...base, label: actionLabel(base, call.input) };
 }

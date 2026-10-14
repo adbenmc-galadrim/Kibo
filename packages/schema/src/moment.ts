@@ -46,6 +46,7 @@ export const RunAction = z.object({
   patch: z.object({ added: Count, removed: Count }).nullable(),
   tests: z.object({ passed: Count, failed: Count }).nullable(),
   callId: z.string().max(64).optional(),
+  command: z.string().max(500).optional(),
 });
 export type RunAction = z.infer<typeof RunAction>;
 
