@@ -33,7 +33,7 @@ import type { Link } from "./link";
 import { ComponentId } from "./manifest";
 import { MARKET_RPC_REQUESTS, type MarketRpcResult } from "./market-rpc";
 import type { RunMomentsEvent } from "./moment";
-import type { NotesInfo } from "./note";
+import type { NoteMeta, NotesInfo } from "./note";
 import { OVERLAP_RPC, type OverlapRpcResult } from "./overlap-rpc";
 import type { Page } from "./page";
 import { PHASE14_RPC, type Phase14RpcResult } from "./phase14-rpc";
@@ -183,6 +183,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   z.object({ method: z.literal("uninstallComponent"), id: ComponentId, version: SemVer }),
   z.object({ method: z.literal("listDrafts") }),
   z.object({ method: z.literal("getNotesDir"), projectId: z.string().min(1) }),
+  z.object({ method: z.literal("listNotes"), projectId: z.string().min(1) }),
   z.object({
     method: z.literal("setNotesDir"),
     projectId: z.string().min(1),
@@ -269,6 +270,7 @@ export type RpcResult = {
   uninstallComponent: null;
   listDrafts: DraftSummary[];
   getNotesDir: NotesInfo;
+  listNotes: NoteMeta[];
   setNotesDir: NotesInfo;
   getRuntimeInfo: RuntimeInfo;
   installCli: { path: string };

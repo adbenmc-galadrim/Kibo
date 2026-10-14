@@ -73,6 +73,7 @@ export const stubDocs: Docs = {
 };
 export const stubNotes: NotesService = {
   info: unused,
+  list: unused,
   setDir: unused,
   handle: unused,
   refresh: unused,

@@ -34,6 +34,7 @@ export type NotesServiceDeps = {
 };
 export type NotesService = {
   info(projectId: string): NotesInfo;
+  list(projectId: string): Promise<NoteMeta[]>;
   setDir(projectId: string, dir: string): Promise<NotesInfo>;
   handle(projectId: string, call: ComponentCall): Promise<unknown>;
   refresh(projectId: string): Promise<void>;
@@ -159,6 +160,11 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
     info: (projectId) => {
       assertNotInbox(projectId, "notes");
       return info(projectId);
+    },
+    async list(projectId) {
+      assertNotInbox(projectId, "notes");
+      await ensure(projectId);
+      return index.list(projectId);
     },
     async setDir(projectId, dir) {
       assertNotInbox(projectId, "notes");

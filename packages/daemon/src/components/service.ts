@@ -262,6 +262,8 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
         return listDrafts(deps.home, docs.workspace);
       case "getNotesDir":
         return notes.info(req.projectId);
+      case "listNotes":
+        return notes.list(req.projectId);
       case "setNotesDir":
         return notes.setDir(req.projectId, req.dir);
       case "getRuntimeInfo":
