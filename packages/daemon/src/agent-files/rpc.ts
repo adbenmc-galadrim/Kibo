@@ -10,11 +10,13 @@ import {
   parseAgentRef,
   type SaveResult,
 } from "@kibo/schema";
+import { assertAddDirs } from "../agents/add-dirs";
 import { type RpcContext, type RpcExtension, requireLocal } from "../rpc-extensions";
 import type { AgentFilesService } from "./service";
 
 export type AgentPreviewRequest = Extract<AgentRpcRequest, { method: "agents.preview" }>;
 export type AgentFilesRpcData = {
+  home: string;
   viewer(): string;
   assertWritable(projectId: string): void;
   restoreSkill?(id: string, baseHash: string | null, by: string): Promise<SaveResult<FileVersion>>;
@@ -83,6 +85,7 @@ export function agentFilesRpc(
           return { ok: true };
         case "agents.settings":
           writer(ctx, req.ref);
+          if (req.patch.addDirs) assertAddDirs(req.patch.addDirs, data.home);
           service.settings(req.ref, req.patch);
           return service.read(req.ref);
         case "agents.rename":

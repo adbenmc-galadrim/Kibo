@@ -72,16 +72,14 @@ async function startDaemonSkills(
     project: (projectId) => call(service, { method: "getProject", projectId }),
     workspaceGuidelines: () => listGuidelines(service.docs.workspace),
   });
+  const home = opts.userHome ?? homedir();
   const restoreSkill = (id: string, baseHash: string | null, by: string) =>
     skills.service.restore(id, baseHash, by);
   return {
     skills,
     extensions: [
-      agentFilesRpc(files.service, preview, { ...data, restoreSkill }),
-      agentPresetRpc(files.service, {
-        home: opts.userHome ?? homedir(),
-        assertWritable: data.assertWritable,
-      }),
+      agentFilesRpc(files.service, preview, { ...data, home, restoreSkill }),
+      agentPresetRpc(files.service, { home, assertWritable: data.assertWritable }),
       skills.rpc,
     ],
   };
