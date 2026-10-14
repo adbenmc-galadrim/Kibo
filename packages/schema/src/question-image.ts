@@ -19,7 +19,8 @@ export const QuestionImage = z.object({
 });
 export type QuestionImage = z.infer<typeof QuestionImage>;
 
-export const AskImages = z.array(z.string().min(1).max(4096)).max(QUESTION_IMAGE_LIMITS.count);
+export const ASK_IMAGE_PATH_MAX = 4096;
+export const AskImages = z.array(z.string().min(1).max(ASK_IMAGE_PATH_MAX)).max(QUESTION_IMAGE_LIMITS.count);
 export const QuestionImages = z.array(QuestionImage).max(QUESTION_IMAGE_LIMITS.count);
 
 export const validationAsk = (input: AskInput): AskInput => ({

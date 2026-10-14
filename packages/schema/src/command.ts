@@ -21,6 +21,7 @@ import {
   QuestionTitle,
 } from "./question";
 import { QuestionContext, QuestionOptions } from "./question-fields";
+import { QuestionImages, QuestionKind } from "./question-image";
 import { QuestionRecipient, RecipientId } from "./question-recipient";
 import { StatusId } from "./status";
 import { Assignee, type Ticket } from "./ticket";
@@ -131,6 +132,8 @@ export const ProjectCommand = z
       createdBy: Actor,
       importRef: ImportRef.nullable().optional(),
       recipient: RecipientId.optional(),
+      kind: QuestionKind.optional(),
+      images: QuestionImages.optional(),
     }),
     z.object({
       method: z.literal("answerQuestion"),

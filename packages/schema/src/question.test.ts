@@ -7,7 +7,6 @@ import {
   answerPrompt,
   answersToDeliver,
   askedNotice,
-  askInputFromTool,
   countOpenByRun,
   DeliveryResult,
   deliveryPrompt,
@@ -22,6 +21,7 @@ import {
   resolveAnswer,
   undeliveredAnswers,
 } from "./question";
+import { askInputFromTool } from "./question-ask";
 import { openCountByRecipient } from "./question-recipient";
 import { RpcRequest } from "./rpc";
 

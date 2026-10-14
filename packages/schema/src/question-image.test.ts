@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test";
+import { ProjectCommand } from "./command";
 import { AskInput, Question } from "./question";
+import { askInputFromTool } from "./question-ask";
 import {
   correctionAnswer,
   QUESTION_IMAGE_LIMITS,
@@ -63,4 +65,28 @@ test("a stored question without kind or images reads as an ordinary question", (
 test("a correction request is a text answer with a fixed prefix", () => {
   expect(correctionAnswer("le titre")).toBe("Demander une correction : le titre");
   expect(correctionAnswer("  le titre  ")).toBe("Demander une correction : le titre");
+});
+
+test("the ask tools read the kind and the image paths, keeping the first six strings", () => {
+  const paths = Array.from({ length: 7 }, (_, i) => `/repo/shots/${i}.png`);
+  const ask = askInputFromTool({ question: "Valider ?", kind: "validation", images: paths }, true);
+  expect(ask?.kind).toBe("validation");
+  expect(ask?.images).toEqual(paths.slice(0, 6));
+  expect(askInputFromTool({ question: "x", images: [3, "/a.png", ""] }, true)?.images).toEqual(["/a.png"]);
+  expect(askInputFromTool({ question: "x", kind: "vote" }, true)?.kind).toBe("question");
+  expect(askInputFromTool({ question: "x", images: "/a.png" }, true)?.images).toEqual([]);
+});
+
+test("createQuestion carries a kind and image metadata, never a path", () => {
+  const image = { id: "i1", name: "1-no-access.png", bytes: 1200, width: 800, height: 600 };
+  const command = {
+    method: "createQuestion",
+    ticketId: "1@1",
+    title: "Valider ?",
+    createdBy: { kind: "agent", ref: "dev" },
+    kind: "validation",
+    images: [image],
+  };
+  expect(ProjectCommand.parse(command)).toMatchObject({ kind: "validation", images: [image] });
+  expect(ProjectCommand.safeParse({ ...command, images: ["/Users/a/x.png"] }).success).toBe(false);
 });
