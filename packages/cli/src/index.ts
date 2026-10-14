@@ -12,6 +12,7 @@ import {
   publishCommand,
 } from "./commands/publish";
 import { componentDir, testCommand } from "./commands/test";
+import { runTicketsCommand } from "./commands/tickets";
 import { fr } from "./fr";
 
 export type CliIo = { home: string; toolchain: Toolchain; out(line: string): void; err(line: string): void };
@@ -104,6 +105,8 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
   const [scope, command, target] = positional;
   if (scope === "market")
     return reportingErrors(io, () => runMarketCommand(positional.slice(1), flags, marketDeps(io)));
+  if (scope === "tickets")
+    return reportingErrors(io, () => runTicketsCommand(positional.slice(1), flags, io));
   if (scope !== "component" || !command || !target) {
     io.err(fr.usage);
     return 2;
