@@ -143,3 +143,11 @@ test("the planned worktree renders the short slug", () => {
   });
   expect(planned.path).toBe("/w/gereco-c2-1-export");
 });
+
+test("settings with a recipe that leaves the repository are refused", () => {
+  const base = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: null };
+  const recipe = { copyFrom: ["{repo}"], copy: [".env"], env: null, after: [] };
+  expect(WorktreeSettings.safeParse({ ...base, recipe }).success).toBe(true);
+  for (const copy of [["../x"], ["/abs/.env"]])
+    expect(WorktreeSettings.safeParse({ ...base, recipe: { ...recipe, copy } }).success).toBe(false);
+});

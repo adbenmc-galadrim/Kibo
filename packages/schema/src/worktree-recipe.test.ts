@@ -42,3 +42,18 @@ test("the recipe is bounded", () => {
   expect(WorktreeRecipe.safeParse(ports({ keys: { WEB_PORT: 70000 } })).success).toBe(false);
   expect(WorktreeRecipe.safeParse({ ...EMIS, extra: 1 }).success).toBe(false);
 });
+
+test("sources are absolute or start from the repo or a sibling", () => {
+  const from = (copyFrom: string[]) => WorktreeRecipe.safeParse({ ...EMIS, copyFrom }).success;
+  expect(from(["/Users/a/emis", "{repo}/config", "{sibling}"])).toBe(true);
+  expect(from(["../emis"])).toBe(false);
+  expect(from(["emis"])).toBe(false);
+  expect(from(["~/emis"])).toBe(false);
+});
+
+test("a replacement pattern must compile", () => {
+  const replace = (pattern: string) =>
+    WorktreeRecipe.safeParse({ ...EMIS, env: { ...ENV, replace: { DATABASE_URL: [pattern, "x"] } } }).success;
+  expect(replace("emis_(dev|test)")).toBe(true);
+  expect(replace("emis_(dev")).toBe(false);
+});
