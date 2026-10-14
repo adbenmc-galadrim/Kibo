@@ -20,7 +20,8 @@
     "./theme.css": "./src/theme.css",
     "./ui/*": "./src/ui/*.tsx",
     "./lib/*": "./src/lib/*.ts",
-    "./hooks/*": "./src/hooks/*.ts"
+    "./hooks/*": "./src/hooks/*.ts",
+    "./markdown": "./src/markdown/index.ts"
   },
   "dependencies": {
     "@kibo/core": "workspace:*",
@@ -29,6 +30,7 @@
     "cmdk": "1.1.1",
     "cn": "0.4.0",
     "lucide-react": "1.48.0",
+    "markdown-it": "14.3.1",
     "next-themes": "0.4.6",
     "radix-ui": "1.6.7",
     "sonner": "2.0.8",
@@ -42,6 +44,7 @@
   "devDependencies": {
     "@testing-library/dom": "10.4.2",
     "@testing-library/react": "16.3.0",
+    "@types/markdown-it": "14.1.2",
     "@types/react": "19.1.13",
     "@types/react-dom": "19.1.9",
     "@types/three": "0.186.0",
