@@ -90,6 +90,8 @@ const ENV_REFS: Required<WorktreeVars> = {
   slug: envRef("KIBO_SLUG"),
   key: envRef("KIBO_KEY"),
   path: envRef("KIBO_PATH"),
+  short: envRef("KIBO_SHORT"),
+  short_: envRef("KIBO_SHORT_"),
 };
 const looksLikeOption = (name: string) => name.split("/").some((part) => part.startsWith("-"));
 
@@ -154,13 +156,17 @@ function setupCommand(setup: string): string {
   }
 }
 
-async function runSetup(input: WorktreeInput, setup: string, vars: Required<WorktreeVars>): Promise<void> {
+type SetupVars = Required<WorktreeVars> & { short: string; short_: string };
+
+async function runSetup(input: WorktreeInput, setup: string, vars: SetupVars): Promise<void> {
   const command = setupCommand(setup);
   const env = {
     ...cleanEnv(process.env),
     KIBO_BRANCH: vars.branch,
     KIBO_SLUG: vars.slug,
     KIBO_KEY: vars.key,
+    KIBO_SHORT: vars.short,
+    KIBO_SHORT_: vars.short_,
     KIBO_PATH: vars.path,
     KIBO_WORKTREE: vars.path,
     KIBO_TICKET: input.ticketKey,
@@ -183,7 +189,7 @@ async function runSetup(input: WorktreeInput, setup: string, vars: Required<Work
     throw failed(`setup did not create a worktree at ${vars.path}:\n${tail(result.output)}`);
 }
 
-async function addWorktree(input: WorktreeInput, vars: Required<WorktreeVars>): Promise<void> {
+async function addWorktree(input: WorktreeInput, vars: SetupVars): Promise<void> {
   const setup = input.settings.setup;
   if (setup !== null) return runSetup(input, setup, vars);
   const added = await input.git(["worktree", "add", vars.path, vars.branch], input.root);

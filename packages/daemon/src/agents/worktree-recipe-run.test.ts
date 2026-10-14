@@ -77,3 +77,18 @@ test("saving settings checks the recipe templates", () => {
   expect(() => assertWorktreeSettings(settings)).toThrow("INVALID_INPUT");
   expect(() => assertWorktreeSettings({ ...WORKTREE_DEFAULTS, recipe: RECIPE })).not.toThrow();
 });
+
+test("imported templates with {short} and {short_} are accepted and expanded", async () => {
+  const imported = {
+    ...WORKTREE_DEFAULTS,
+    pathTemplate: "../gereco-{short}",
+    setup: 'echo "db={short_}" && git worktree add {path} {branch}',
+    recipe: { ...RECIPE, after: ["echo {short_} > short.txt"] },
+  };
+  expect(() => assertWorktreeSettings(imported)).not.toThrow();
+  const p = await prepared(null);
+  const placed = await prepareWorktree({ ...p.input, settings: imported });
+  expect(placed.cwd).toBe(join(p.parent, "gereco-compte-non-provisionne"));
+  expect(readFileSync(join(p.runDir, "setup.log"), "utf8")).toContain("db=compte_non_provisionne\n");
+  expect(readFileSync(join(placed.cwd, "short.txt"), "utf8")).toBe("compte_non_provisionne\n");
+});
