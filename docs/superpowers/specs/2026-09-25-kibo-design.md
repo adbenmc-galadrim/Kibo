@@ -1900,3 +1900,35 @@ Conséquences : le slash brut ne passerait ni par la garde (§28.5, `PreToolUse`
 - Unitaires : détection du déclencheur (début, après espace, URL, curseur), filtre préfixe puis sous-chaîne et limite 8, tri (usage, dernier usage, id), réécriture (tête, milieu, inconnu, chemin, plusieurs mentions), `skills.suggest` (visibilité par projet, masquage, `all`/`list`, agent inconnu), composant (clavier, souris, Échap, Entrée qui n'envoie pas, état vide, `aria-activedescendant`).
 - E2E (`e2e/agents-skills.spec.ts`, après le run 196 qui a utilisé deux skills) : `/` dans la réponse au run ⇒ liste triée par usage ; filtrage ; insertion au clavier.
 - Budget de l'entrée inchangé (≤ 223,4 kB gzip mesurés par `reportEntry`) : le composant est chargé à la demande s'il pèse sur l'entrée.
+
+## 33. Markdown dans la conversation des agents (demande d'Adam du 2026-10-14)
+
+**Demande** : « dans la conversation des agents, on doit voir les tableaux », et pouvoir les agrandir dans un volet. Amende §8 (interface), §23 (fil d'un run) et §24 (agent de projet).
+
+### 33.1 Constat
+
+- Un tableau Markdown écrit par un agent (`| Ordre | Ticket | … |`) s'affichait **brut et sur une seule ligne**. Le texte est intact au stockage et à l'extraction de la transcription (`transcript-parse.ts` joint les blocs par `\n`, `fold-moments.ts` et `maskSecretsWithin` gardent les sauts de ligne) : la perte vient du **rendu**. `renderMarkdownLite` (SDK) ne connaît ni tableau ni saut de ligne simple et **joint les lignes d'un paragraphe par une espace**.
+
+### 33.2 Où
+
+Tout texte **écrit par un agent** et affiché dans la conversation : moments « message » et « raisonnement » du fil d'un run (volet du run, page du run, dock, onglet Activité d'un ticket, réponses de l'assistant, qui passent toutes par ce fil), questions posées par l'agent dans le fil (sans question liée ; une question liée garde son aperçu au survol §30.7), compte rendu final (« Fait » et « Suite »), réponses du chat de l'agent de projet. Hors champ : le journal technique de la page Agents (texte brut, sauts de ligne gardés), les messages humains (texte brut), le contexte des questions du composant Questions (`renderMarkdownLite`, §23.12).
+
+### 33.3 Rendu
+
+- **Moteur** : `markdown-it` 14.3.1 (déjà au lock pour les notes), préréglage `default` = CommonMark plus tableaux et barré GFM, `linkify` (URL nues), **`breaks: true`** (un saut de ligne simple reste un saut de ligne, comme dans un chat), `typographer: false`. Paragraphes, titres (rendus en paragraphe gras, sans casser le plan de la page), listes à puces et numérotées, citations, blocs de code (défilement horizontal), code en ligne, gras, italique, barré, liens, filets, tableaux.
+- **Sécurité** : `html: false`, jamais `dangerouslySetInnerHTML` : les jetons de `markdown-it` sont traduits en éléments React (`packages/sdk/src/markdown/`), tout texte passe par l'échappement de React. Un `<script>` ou un `<img onerror>` reste du texte. Une image devient son texte alternatif (aucun chargement distant).
+- **Liens** : seuls `http:`, `https:` et `mailto:` deviennent des liens, ouverts **hors de l'app** (`target="_blank"`, `rel="noreferrer noopener"`, comme les autres liens externes de Kibo) ; `javascript:`, `data:`, `file:` sont refusés par `markdown-it`, tout autre schéma reste du texte.
+- **Clés de ticket** : même mécanisme que `renderMarkdownLite` (`ticketKeyNodes`, motif `[A-Z]{2,6}-\d+`) : quand l'écran fournit l'ouverture d'un ticket (chat de l'agent de projet, fil quand `onOpenTicketKey` est passé), une clé dans le texte ou dans une **cellule** devient un bouton souligné en pointillé qui ouvre le ticket s'il existe ; dans un lien ou du code, elle reste du texte.
+- **Chargement** : le moteur est chargé **à la demande** (`@kibo/sdk/markdown`, importé dynamiquement par `AgentText` dans l'interface, `lazyPanel` avec repli `children`) ; avant chargement, le texte s'affiche brut **avec ses sauts de ligne** (`whitespace-pre-wrap`). `markdown-it` reste interdit dans l'entrée ; budget de l'entrée inchangé (≤ 223,4 kB gzip, mesuré par `reportEntry` : 220 773 → 220 778 octets).
+
+### 33.4 Tableaux
+
+- Cadre arrondi à bordure, **défilement horizontal dans le cadre** (la conversation ne déborde jamais), région nommée « Tableau ».
+- En-tête lisible (`th` à fond `muted`, graisse moyenne, collant en haut dans le volet), **zébrage léger** (`even:bg-muted/40`), cellules alignées en haut, alignement de colonne GFM respecté (`:--`, `:-:`, `--:`), texte en `text-xs`. **Cellules longues** : retour à la ligne dans une largeur bornée (6 à 20 rem dans le fil, 7 à 36 rem dans le volet). Tokens zinc, sombre et clair.
+- Sous chaque tableau, bouton discret **« Agrandir »** (nom accessible « Agrandir le tableau », icône `Maximize2`) : ouvre un **volet** (`Sheet` shadcn, côté droit, large : `min(92vw, 1200px)`), titre « Tableau », description « n lignes · m colonnes », le tableau en grand, défilable dans les deux sens, et un bouton **« Copier en Markdown »** qui copie la source exacte du tableau (lignes d'origine) ; retour « Copié », ou « Copie impossible : le presse-papiers est refusé. » (erreur journalisée). Échap ou la croix ferment le volet ; le focus revient au bouton « Agrandir ». Textes dans `packages/ui/src/i18n/fr-markdown.ts`.
+
+### 33.5 Tests sans token
+
+- Unitaires (SDK) : analyse de l'exemple d'Adam (en-tête, lignes, source), alignements, sauts de ligne, listes, code, HTML brut, liens filtrés, images ; rendu (tableau réel, cadre défilant, cellules longues, clé de ticket cliquable dans une cellule, `<script>` et `javascript:` inertes), volet (ouverture, titre, Échap, focus rendu), copie (réussie, refusée).
+- Unitaires (interface) : moment « message », question de l'agent, compte rendu, chat de l'agent de projet.
+- E2E (`e2e/project-agent.spec.ts`, faux `claude`, scénario `project-agent-table.json`) : la réponse contient un tableau rendu, « Agrandir » ouvre le volet, Échap le ferme ; captures sombre et clair.
