@@ -145,7 +145,13 @@ export type ParallelRun = {
   truncated: boolean;
 };
 
-export type ParallelWork = { runs: ParallelRun[]; more: number; overlaps: Overlap[]; partial: boolean };
+export type ParallelWork = {
+  runs: ParallelRun[];
+  more: number;
+  overlaps: Overlap[];
+  partial: boolean;
+  sharedPaths?: string[];
+};
 
 export type PeekWorkResult = {
   run: {
