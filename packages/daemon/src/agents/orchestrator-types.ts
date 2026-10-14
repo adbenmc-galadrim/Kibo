@@ -27,7 +27,12 @@ import type { HookSink } from "./hook-route";
 import type { Notice } from "./notifier";
 import type { RunStore } from "./run-store";
 
-export type TicketContext = { project: ProjectSnapshot; ticket: TicketView; domain: Domain | null };
+export type TicketContext = {
+  project: ProjectSnapshot;
+  ticket: TicketView;
+  domain: Domain | null;
+  childCount: number;
+};
 
 export type AgentDataPort = {
   agents(projectId: string | null): Agent[];

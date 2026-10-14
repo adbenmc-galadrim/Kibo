@@ -34,7 +34,7 @@ const previewOf = (project: ProjectSnapshot) =>
       ticketContext: (projectId, ticketId) => {
         const ticket = project.tickets.find((t) => t.id === ticketId);
         if (projectId !== "p1" || !ticket) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
-        return { project, ticket, domain: null };
+        return { project, ticket, domain: null, childCount: 0 };
       },
     },
     project: () => project,

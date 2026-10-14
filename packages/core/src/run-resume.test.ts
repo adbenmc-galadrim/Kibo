@@ -35,6 +35,7 @@ const context = (runs: RunView[], p: Partial<ResumeContext> = {}): ResumeContext
   runs,
   alive: () => false,
   profileIds: new Set(["opus"]),
+  hasChildren: () => false,
   ...p,
 });
 
@@ -61,6 +62,13 @@ test("a finished ticket run resumes when it is the latest, its process gone and 
   const active = { ...run, state: "running" as const };
   expect(canResume(active, context([active]))).toBe(false);
   expect(resumableRuns(context([run, ended("b", 2), ended("c", 3, "t2"), task]))).toEqual(["b", "c"]);
+});
+
+test("a ticket run never resumes once its ticket has children", () => {
+  const run = ended("a", 1);
+  const parent = context([run], { hasChildren: (r) => r.ticketId === "t1" });
+  expect(canResume(run, parent)).toBe(false);
+  expect(resumableRuns(parent)).toEqual([]);
 });
 
 const projectRun = (id: string, seq: number, projectId = "p1"): RunView => ({

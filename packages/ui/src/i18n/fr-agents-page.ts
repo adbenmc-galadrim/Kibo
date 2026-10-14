@@ -74,6 +74,7 @@ export const frAgentsPage = {
   },
   assign: {
     ticketBusy: "Un run de ce ticket est déjà en cours ou en file.",
+    parentTicket: "C'est un ticket parent : lance plutôt ses sous-tickets.",
     invalidWorktreePath: "chemin invalide, voir Modifier le projet",
     session: {
       label: "Session",

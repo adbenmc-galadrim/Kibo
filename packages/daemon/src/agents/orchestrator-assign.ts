@@ -3,6 +3,7 @@ import { guidelineChain } from "@kibo/core/context";
 import type { Plan } from "@kibo/core/scheduler";
 import { type Agent, KiboError, mainSessionOf, type RunView } from "@kibo/schema";
 import { activeRunOf, plannedCwd, previewAssign } from "./assign-preview";
+import { assertLeaf } from "./children-probe";
 import type { Orchestrator, OrchestratorOptions, TaskSpec } from "./orchestrator-types";
 import type { RunRegistry } from "./run-registry";
 import type { NewRun } from "./run-store";
@@ -35,8 +36,9 @@ export function createAssigner({
   return {
     assign(input) {
       const agent = ticketAgentOf(input.profileId, input.projectId);
-      const { ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
+      const { ticket, childCount } = opts.data.ticketContext(input.projectId, input.ticketId);
       if (ticket.key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
+      assertLeaf(childCount);
       if (activeRunOf(registry.all(), ticket.id))
         throw new KiboError("CONFLICT", `ticket ${ticket.key} already has an active run`);
       opts.data.assertWritable(input.projectId);
@@ -91,7 +93,7 @@ export function createAssigner({
     },
     preview(input) {
       const agent = ticketAgentOf(input.profileId, input.projectId);
-      const { project, ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
+      const { project, ticket, childCount } = opts.data.ticketContext(input.projectId, input.ticketId);
       const key = ticket.key;
       if (key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
       const guidelines = guidelineChain(opts.data.guidelines(input.projectId), {
@@ -103,6 +105,7 @@ export function createAssigner({
         runs,
         projectId: input.projectId,
         ticket: { ...ticket, key },
+        children: childCount,
         agent,
         projectKey: opts.data.projectKey(input.projectId),
         guidelines,

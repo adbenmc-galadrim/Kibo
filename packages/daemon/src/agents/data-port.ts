@@ -166,7 +166,8 @@ export function createDataPort(
       const ticket = project.tickets.find((t) => t.id === ticketId);
       if (!ticket) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
       const domain = domainsOf(docs, projectId).find((d) => d.id === ticket.domainId) ?? null;
-      return { project, ticket, domain };
+      const childCount = project.tickets.filter((t) => t.parentId === ticketId).length;
+      return { project, ticket, domain, childCount };
     },
     guidelines: (projectId) => guidelinesOf(docs, projectId),
     assertWritable: (projectId) => docs.assertWritable(projectId),

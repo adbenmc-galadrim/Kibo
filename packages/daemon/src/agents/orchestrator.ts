@@ -4,6 +4,7 @@ import { type Agent, type HostLoad, HostSettings, isTerminal, KiboError, type Ru
 import { createLocksWatch } from "../locks/locks-watch";
 import { agentGuardOf } from "./agent-guard";
 import { activeRunOf } from "./assign-preview";
+import { assertLeaf, childrenProbe } from "./children-probe";
 import { createHookSink } from "./hook-sink";
 import { hostSettingsOf, hostViewOf } from "./host-view";
 import { noticeFor } from "./notifier";
@@ -123,11 +124,15 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   }, opts.tickMs ?? 2000);
   timer.unref();
 
-  const resumeContext = (runs: RunView[]) => ({
-    runs,
-    alive: (id: string) => live.has(id),
-    profileIds: new Set(opts.data.agents(null).map((a) => a.ref)),
-  });
+  const resumeContext = (runs: RunView[]) => {
+    const children = childrenProbe(opts.data);
+    return {
+      runs,
+      alive: (id: string) => live.has(id),
+      profileIds: new Set(opts.data.agents(null).map((a) => a.ref)),
+      hasChildren: (run: RunView) => children(run) > 0,
+    };
+  };
 
   const enqueue = (run: NewRun): RunView => registry.create(run, tailRank(registry.all()));
 
@@ -157,6 +162,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
     preview,
     answer(runId, text) {
       const target = registry.get(runId);
+      if (isTerminal(target.state)) assertLeaf(childrenProbe(opts.data)(target));
       if (isTerminal(target.state) && !canResume(target, resumeContext(registry.all()))) {
         throw new KiboError("INVALID_TRANSITION", `run ${runId} cannot be resumed`);
       }

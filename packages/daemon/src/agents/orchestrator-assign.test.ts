@@ -169,3 +169,41 @@ test("a ticket runs one agent at a time: a second assign is refused until the fi
   releaseFakeRun(h.state, second.sessionId);
   await waitUntil(() => run(h, second.id).state === "done");
 }, 30_000);
+
+test("a parent ticket is never launched, whatever the agent, and its preview says why", () => {
+  const h = setup({
+    scenario: "done",
+    profiles: [
+      testAgent({ id: "full-delivery", name: "full-delivery" }),
+      testAgent({ id: "review", name: "review-pr" }),
+      testAgent({ id: "demo", name: "kibo-demo", system: true, maxParallel: 1 }),
+    ],
+    demoProject: true,
+    children: { t1: 1, t2: 5 },
+  });
+  for (const profileId of ["global:full-delivery", "global:review", "system:demo"]) {
+    expect(() => h.orch.assign({ projectId: "p1", ticketId: "t1", profileId, brief: "" })).toThrow(
+      "TICKET_HAS_CHILDREN: ce ticket regroupe 1 sous-ticket",
+    );
+  }
+  expect(h.orch.preview({ projectId: "p1", ticketId: "t2", profileId: "global:review" })).toMatchObject({
+    position: null,
+    reason: { kind: "parent_ticket", children: 5 },
+    session: null,
+  });
+  expect(h.orch.state().runs).toEqual([]);
+  expect(h.assigned).toEqual([]);
+  expect(h.store.records()).toEqual([]);
+  expect(assign(h, "t3", "review")).toMatchObject({ ticketId: "t3", profileName: "review-pr" });
+});
+
+test("a finished run whose ticket gained a child is neither resumable nor written to", async () => {
+  const h = setup({ scenario: "done" });
+  const first = assign(h, "t1");
+  await waitUntil(() => run(h, first.id).state === "done");
+  h.children.set("t1", 1);
+  expect(h.orch.state().resumable).toEqual([]);
+  expect(() => h.orch.answer(first.id, "encore")).toThrow("TICKET_HAS_CHILDREN");
+  expect(run(h, first.id)).toMatchObject({ state: "done", pendingAnswer: null });
+  expect(h.store.records()).toHaveLength(1);
+}, 30_000);

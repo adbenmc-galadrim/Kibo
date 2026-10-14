@@ -52,6 +52,11 @@ const ticket = (id: string, key: string | null): TicketView => ({
   delivery: null,
 });
 
+const childTickets = (children: ReadonlyMap<string, number>): TicketView[] =>
+  [...children].flatMap(([parentId, count]) =>
+    Array.from({ length: count }, (_, n) => ({ ...ticket(`${parentId}-${n}`, null), parentId })),
+  );
+
 export const testProject: ProjectSnapshot = {
   meta: {
     id: "p1",
@@ -93,6 +98,7 @@ export type Harness = {
   tokens: Map<string, string>;
   delivered: Delivery[];
   prepared: string[];
+  children: Map<string, number>;
   route: (target: Orchestrator) => void;
   stopServer: () => void;
 };
@@ -117,6 +123,7 @@ type Setup = {
   cliFallbacks?: OrchestratorOptions["cliFallbacks"];
   skills?: Skill[];
   locks?: OrchestratorOptions["locks"];
+  children?: Record<string, number>;
 };
 
 let current: Harness | null = null;
@@ -136,6 +143,7 @@ export function setup(o: Setup): Harness {
   const projectDir = join(home, "project");
   mkdirSync(projectDir);
   const questions = o.questions ?? [];
+  const children = new Map(Object.entries(o.children ?? {}));
   const profiles = o.profiles ?? [testAgent()];
   const data: AgentDataPort = {
     ...agentsPort(profiles),
@@ -145,7 +153,9 @@ export function setup(o: Setup): Harness {
       const t = testProject.tickets.find((x) => x.id === ticketId);
       if (projectId !== "p1" || !t) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
       const meta = { ...testProject.meta, ...o.meta };
-      return { project: { ...testProject, meta, questions }, ticket: t, domain: null };
+      const tickets = [...testProject.tickets, ...childTickets(children)];
+      const project = { ...testProject, meta, questions, tickets };
+      return { project, ticket: t, domain: null, childCount: children.get(ticketId) ?? 0 };
     },
     guidelines: () => o.guidelines ?? [],
     assertWritable: (projectId) => {
@@ -239,6 +249,7 @@ export function setup(o: Setup): Harness {
     tokens,
     delivered,
     prepared,
+    children,
     route: (target) => {
       orch = target;
     },

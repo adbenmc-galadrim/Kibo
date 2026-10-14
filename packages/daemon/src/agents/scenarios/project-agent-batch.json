@@ -31,7 +31,7 @@
                 "type": "createTicket",
                 "ref": "new:1",
                 "title": "Tests du récepteur",
-                "parent": "KIB-1"
+                "parent": "KIB-2"
               },
               {
                 "id": 4,

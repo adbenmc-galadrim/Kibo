@@ -25,7 +25,7 @@ const memoryOf = async (rpc: Rpc, projectId: string): Promise<string> => {
 
 test("a project turn reads the project through the real MCP server, its batch is applied as the human, and the next turn reads the digest", async () => {
   const stack = await startStack();
-  const { project, receiver, livraison } = await seedKibo(stack.rpc);
+  const { project, receiver, docs, livraison } = await seedKibo(stack.rpc);
   const started = await send(stack.rpc, project.id, "Où en est-on ?");
   expect(started).toMatchObject({ kind: "project", ticketTitle: "Agent de projet · Kibo" });
   await turnDone(stack.rpc, started.id, 1);
@@ -76,7 +76,7 @@ test("a project turn reads the project through the real MCP server, its batch is
     [5, "applied"],
   ]);
   expect(decided.results[2]?.created).toEqual({ ticketId: created?.id ?? "", key: "KIB-3" });
-  expect(created).toMatchObject({ key: "KIB-3", parentId: receiver.id });
+  expect(created).toMatchObject({ key: "KIB-3", parentId: docs.id });
   expect(snapshot.questions).toEqual([]);
   expect(await memoryOf(stack.rpc, project.id)).toBe("# Mémoire\n- KIB-1 lancé");
 

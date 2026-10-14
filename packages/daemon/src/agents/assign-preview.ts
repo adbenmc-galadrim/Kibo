@@ -24,6 +24,7 @@ export type PreviewInput = {
   runs: RunView[];
   projectId: string;
   ticket: TicketView & { key: string };
+  children: number;
   agent: Pick<Agent, "ref" | "name" | "scope" | "file">;
   projectKey: string | null;
   guidelines: number;
@@ -72,6 +73,13 @@ export function previewAssign(input: PreviewInput): AssignPreview {
   const { runs, ticket, agent, guidelines, at } = input;
   const model = runModel(agent.file?.frontmatter ?? null);
   const base = { guidelines, model: model.model, inherited: model.inherited };
+  if (input.children > 0)
+    return {
+      position: null,
+      reason: { kind: "parent_ticket", children: input.children },
+      ...base,
+      session: null,
+    };
   if (activeRunOf(runs, ticket.id))
     return { position: null, reason: { kind: "ticket_busy" }, ...base, session: null };
   const session = sessionPreview(mainSessionOf(runs, ticket.id), {

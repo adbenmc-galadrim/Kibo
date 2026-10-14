@@ -65,16 +65,20 @@ const t = frAgentsSkills.assign;
 
 const assignable = (t: TicketView) => t.statusId !== "done" && t.key !== null;
 
+const refusalOf = (preview: AssignPreview | null): string | null => {
+  if (preview?.reason?.kind === "ticket_busy") return frAgentsPage.assign.ticketBusy;
+  return preview?.reason?.kind === "parent_ticket" ? frAgentsPage.assign.parentTicket : null;
+};
+
 function queueText(preview: AssignPreview | null): string {
   if (!preview) return "-";
-  if (preview.reason?.kind === "ticket_busy") return frAgentsPage.assign.ticketBusy;
-  if (preview.position === null) return t.startsNow;
+  if (preview.position === null) return refusalOf(preview) ?? t.startsNow;
   return t.entersQueue(reasonText(preview.reason), preview.position);
 }
 
 function queueTone(preview: AssignPreview | null): string | undefined {
   if (!preview) return undefined;
-  return preview.reason?.kind === "ticket_busy" ? "text-destructive" : "text-cyan-600 dark:text-cyan-400";
+  return refusalOf(preview) !== null ? "text-destructive" : "text-cyan-600 dark:text-cyan-400";
 }
 
 function AgentOption({ agent, projects }: { agent: AgentSummary; projects: readonly ProjectSummary[] }) {
@@ -103,7 +107,7 @@ function AssignForm({ projects, project, ticketId, agents, domains, onClose, onE
   const projectId = project.meta.id;
   const keyed = ticket?.key != null;
   const folderMissing = profile !== null && needsFolder(profile, project);
-  const busy = preview?.reason?.kind === "ticket_busy";
+  const busy = refusalOf(preview) !== null;
 
   useEffect(() => {
     setPreview(null);

@@ -218,7 +218,8 @@ export type WaitReason =
   | { kind: "host"; used: number; total: number }
   | { kind: "agent"; agentName: string; used: number; total: number }
   | { kind: "agent_missing" }
-  | { kind: "ticket_busy" };
+  | { kind: "ticket_busy" }
+  | { kind: "parent_ticket"; children: number };
 
 export type QueueEntry = { runId: string; position: number; reason: WaitReason | null };
 

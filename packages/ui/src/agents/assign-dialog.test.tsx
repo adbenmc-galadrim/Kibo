@@ -174,6 +174,22 @@ test("a ticket that already has a run cannot be sent again, and the dialog says 
   expect(screen.getByRole("button", { name: "Mettre en file" }).hasAttribute("disabled")).toBe(true);
 });
 
+test("a parent ticket cannot be sent, and the dialog says to launch its sub-tickets", async () => {
+  preview = () =>
+    Promise.resolve({ position: null, reason: { kind: "parent_ticket", children: 5 }, guidelines: 2 });
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={() => {}}
+    />,
+  );
+  expect(await screen.findByText("C'est un ticket parent : lance plutôt ses sous-tickets.")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Mettre en file" }).hasAttribute("disabled")).toBe(true);
+});
+
 test("a run queued meanwhile turns the refusal into the busy message", async () => {
   preview = () => Promise.resolve({ position: null, reason: null, guidelines: 2 });
   assign = () => Promise.reject(new KiboError("CONFLICT", "ticket KIB-14 already has an active run"));
