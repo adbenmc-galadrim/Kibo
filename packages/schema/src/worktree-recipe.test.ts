@@ -57,3 +57,21 @@ test("a replacement pattern must compile", () => {
   expect(replace("emis_(dev|test)")).toBe(true);
   expect(replace("emis_(dev")).toBe(false);
 });
+
+test("port keys never override a reserved environment variable", () => {
+  const keys = (name: string) =>
+    WorktreeRecipe.safeParse({ ...EMIS, env: { ...ENV, ports: { ...PORTS, keys: { [name]: 3000 } } } })
+      .success;
+  for (const name of [
+    "PATH",
+    "HOME",
+    "SHELL",
+    "USER",
+    "LD_PRELOAD",
+    "DYLD_INSERT_LIBRARIES",
+    "KIBO_PATH",
+    "NODE_OPTIONS",
+  ])
+    expect(keys(name)).toBe(false);
+  expect(keys("WEB_PORT")).toBe(true);
+});

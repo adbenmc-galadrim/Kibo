@@ -33,8 +33,30 @@ const atMost =
   (record: Record<string, unknown>): boolean =>
     Object.keys(record).length <= max;
 
+const RESERVED_ENV = new Set([
+  "PATH",
+  "HOME",
+  "SHELL",
+  "USER",
+  "LOGNAME",
+  "TMPDIR",
+  "PWD",
+  "IFS",
+  "ENV",
+  "BASH_ENV",
+  "NODE_OPTIONS",
+  "NODE_PATH",
+  "PYTHONPATH",
+  "PERL5LIB",
+  "RUBYOPT",
+]);
+const RESERVED_ENV_PREFIXES = ["LD_", "DYLD_", "KIBO_", "GIT_", "BUN_", "NPM_CONFIG_"];
+export const isReservedEnvKey = (key: string): boolean =>
+  RESERVED_ENV.has(key) || RESERVED_ENV_PREFIXES.some((prefix) => key.startsWith(prefix));
+const PortKey = EnvKey.refine((key) => !isReservedEnvKey(key), "reserved environment variable");
+
 const RecipePorts = z.object({
-  keys: z.record(EnvKey, Port).refine(atMost(8), "at most 8 ports"),
+  keys: z.record(PortKey, Port).refine(atMost(8), "at most 8 ports"),
   from: z.number().int().min(0),
   step: z.number().int().min(1),
   count: z.number().int().min(1).max(200),
