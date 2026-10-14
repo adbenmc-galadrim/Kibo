@@ -109,6 +109,7 @@ function fakeLaunch(scenario: "done" | "fail" | "hold", sessionId: string) {
     permissionFlag: "manual",
     extraArgs: [],
     systemPromptFile: "/r/CLAUDE.md",
+    addDirs: [],
     allow: [],
     deny: [],
     mcpConfigFile: null,

@@ -129,6 +129,7 @@ const LifecycleEvent = z.discriminatedUnion("type", [
     cwd: z.string().optional(),
     sessionId: z.string().min(1).max(100).optional(),
     guidelines: z.number().int().nonnegative(),
+    addDirs: z.array(z.string()).optional(),
   }),
   z.object({ type: z.literal("hook"), payload: HookPayload }),
   z.object({

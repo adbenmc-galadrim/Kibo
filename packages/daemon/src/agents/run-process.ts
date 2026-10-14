@@ -32,6 +32,7 @@ export type LaunchInput = {
   baseEnv: Record<string, string | undefined>;
   extraEnv: Record<string, string>;
   agentFlags: AgentFlags;
+  addDirs: readonly string[];
 };
 export type StreamResult = {
   isError: boolean;

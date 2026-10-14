@@ -66,6 +66,7 @@ const RESERVED_ARGS = new Set([
   "--mcp-config",
   "--session-id",
   "--resume",
+  "--add-dir",
 ]);
 
 type ArgsInput = Pick<
@@ -81,6 +82,7 @@ type ArgsInput = Pick<
   | "deny"
   | "mcpConfigFile"
   | "mcpTools"
+  | "addDirs"
 > & { agentFlags?: AgentFlags; isolated?: boolean };
 
 const ISOLATION_ARGS = ["--setting-sources", "project,local", "--strict-mcp-config"];
@@ -112,6 +114,7 @@ export function claudeArgs(input: ArgsInput): string[] {
     ...(input.isolated ? ISOLATION_ARGS : []),
     "--append-system-prompt-file",
     input.systemPromptFile,
+    ...(input.addDirs.length > 0 ? ["--add-dir", ...input.addDirs] : []),
     ...agentArgs(input.agentFlags, input.resume),
     ...input.extraArgs,
     ...(input.resume ? ["--resume", input.sessionId] : ["--session-id", input.sessionId]),

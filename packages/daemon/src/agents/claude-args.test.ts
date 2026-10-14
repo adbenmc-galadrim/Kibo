@@ -28,6 +28,7 @@ const base: Pick<
   | "deny"
   | "mcpConfigFile"
   | "mcpTools"
+  | "addDirs"
 > = {
   model: "opus",
   permissionFlag: "manual",
@@ -38,6 +39,7 @@ const base: Pick<
   deny: [],
   mcpConfigFile: null,
   mcpTools: null,
+  addDirs: [],
 };
 
 test("the command line never bypasses permissions and pins the session", () => {
@@ -203,4 +205,20 @@ test("unsafe rules are refused again before claude is launched", () => {
 test("auto is passed through when the CLI lists it, refused otherwise", () => {
   expect(permissionFlag("auto", { permissionModes: ["acceptEdits", "auto", "plan"] })).toBe("auto");
   expect(() => permissionFlag("auto", { permissionModes: ["acceptEdits", "plan"] })).toThrow(KiboError);
+});
+
+test("Kibo passes the added folders in one --add-dir right after the system prompt file", () => {
+  const dirs = ["/Users/a/.claude/skills", "/Users/a/Documents/emis"];
+  const args = claudeArgs({ ...base, addDirs: dirs, sessionId: "s1", resume: false });
+  const at = args.indexOf("--add-dir");
+  expect(args[at - 2]).toBe("--append-system-prompt-file");
+  expect(args.slice(at, at + 3)).toEqual(["--add-dir", ...dirs]);
+  expect(args.filter((a) => a === "--add-dir")).toHaveLength(1);
+  expect(claudeArgs({ ...base, sessionId: "s1", resume: false })).not.toContain("--add-dir");
+});
+
+test("a task cannot add a folder by itself", () => {
+  for (const extraArgs of [["--add-dir", "/x"], ["--add-dir=/x"]]) {
+    expect(() => claudeArgs({ ...base, extraArgs, sessionId: "s1", resume: false })).toThrow("INVALID_INPUT");
+  }
 });
