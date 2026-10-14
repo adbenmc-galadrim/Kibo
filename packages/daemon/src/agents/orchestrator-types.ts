@@ -12,6 +12,7 @@ import type {
   HostLoad,
   HostSettings,
   HostView,
+  MachineLock,
   ProjectSnapshot,
   Question,
   RunLogEntry,
@@ -90,6 +91,7 @@ export type OrchestratorOptions = {
   onTurnEnd?: (run: RunView) => Promise<void>;
   onEndedWithoutTurn?: (run: RunView) => Promise<void>;
   turnPrefix?: TurnPrefixPort;
+  locks?: () => MachineLock[];
 };
 
 export type AssignInput = {

@@ -116,6 +116,7 @@ type Setup = {
   lifecycle?: Pick<OrchestratorOptions, "onSpawned" | "onTurnEnd" | "onEndedWithoutTurn">;
   cliFallbacks?: OrchestratorOptions["cliFallbacks"];
   skills?: Skill[];
+  locks?: OrchestratorOptions["locks"];
 };
 
 let current: Harness | null = null;
@@ -221,6 +222,7 @@ export function setup(o: Setup): Harness {
     },
     ...o.lifecycle,
     cliFallbacks: o.cliFallbacks,
+    locks: o.locks,
   };
   orch = createOrchestrator(options);
   current = {

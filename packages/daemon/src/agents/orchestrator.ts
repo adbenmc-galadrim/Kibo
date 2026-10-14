@@ -1,6 +1,7 @@
 import { canResume, resumableRuns } from "@kibo/core/run-resume";
 import { headRank, orderQueue, planAdmissions, rankForMove, tailRank } from "@kibo/core/scheduler";
 import { type Agent, type HostLoad, HostSettings, isTerminal, KiboError, type RunView } from "@kibo/schema";
+import { createLocksWatch } from "../locks/locks-watch";
 import { agentGuardOf } from "./agent-guard";
 import { activeRunOf } from "./assign-preview";
 import { createHookSink } from "./hook-sink";
@@ -37,6 +38,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   const listeners = new Set<() => void>();
   const stateListeners = new Set<(run: RunView) => void>();
   let load: HostLoad = { cpu: 0, ram: 0 };
+  const locks = createLocksWatch(opts.locks);
   let stopping = false;
   let signature = "";
   let emitTimer: ReturnType<typeof setTimeout> | null = null;
@@ -91,7 +93,8 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         .finally(() => guarded("queue pass", tick));
     }
     const current = JSON.stringify([next.waiting, Math.round(load.cpu), Math.round(load.ram)]);
-    if (current !== signature) {
+    const locksChanged = locks.refresh();
+    if (current !== signature || locksChanged) {
       signature = current;
       emit();
     }
@@ -199,6 +202,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         projectAgents: [],
         progress: [],
         signals: [],
+        locks: locks.current(),
       };
     },
     log: (runId) => registry.log(runId),
