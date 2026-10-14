@@ -23,6 +23,7 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
   ...patch,
 });
 const actions = (): TicketMenuActions => ({

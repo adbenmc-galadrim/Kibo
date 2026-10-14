@@ -29,6 +29,7 @@ const project: ProjectSummary = {
   worktree: null,
   storybook: null,
   duplication: null,
+  delivery: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
 };
 const local = (): ProjectSnapshot => kiboProject();

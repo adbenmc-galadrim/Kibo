@@ -28,6 +28,7 @@ const t = (
   openQuestions: 0,
   startable,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
 });
 
 test("'mine and agents' keeps my tickets and every agent ticket", () => {

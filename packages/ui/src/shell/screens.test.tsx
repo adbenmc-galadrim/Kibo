@@ -58,6 +58,7 @@ const kibo: ProjectSummary = {
   worktree: null,
   storybook: null,
   duplication: null,
+  delivery: null,
   counts,
 };
 const portfolio: ProjectSummary = {
@@ -110,6 +111,7 @@ const empty: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

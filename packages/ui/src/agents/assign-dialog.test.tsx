@@ -123,6 +123,7 @@ test("a dependency still waiting for its key is shown by its label alone", () =>
     openQuestions: 0,
     startable: false,
     agentProgress: EMPTY_PROGRESS,
+    delivery: null,
   };
   const tickets = project.tickets.map((t) => (t.id === "t15" ? { ...t, waitingOn: ["KIB-12", "KIB-…"] } : t));
   render(
@@ -270,7 +271,12 @@ test("without an agent or a project the dialog explains what to do", () => {
 
 test("the worktree line recalls the project base and the computed path of the ticket branch", async () => {
   const project = kiboProject();
-  const worktree = { baseRef: "origin/dev", pathTemplate: "../kibo-{slug}", setup: "pnpm worktree {branch}" };
+  const worktree = {
+    baseRef: "origin/dev",
+    pathTemplate: "../kibo-{slug}",
+    setup: "pnpm worktree {branch}",
+    recipe: null,
+  };
   const branch = { kind: "git_branch" as const, branch: "feat/drag", base: null };
   const tickets = project.tickets.map((t) => (t.id === "t14" ? { ...t, externalRefs: [branch] } : t));
   render(
@@ -289,7 +295,7 @@ test("the worktree line recalls the project base and the computed path of the ti
 
 test("an invalid path template is pointed to the project settings", async () => {
   const project = kiboProject();
-  const worktree = { baseRef: "main", pathTemplate: "/tmp/{slug}", setup: null };
+  const worktree = { baseRef: "main", pathTemplate: "/tmp/{slug}", setup: null, recipe: null };
   render(
     <AssignDialogView
       project={{ ...project, meta: { ...project.meta, worktree } }}
@@ -409,6 +415,7 @@ const provisional = (): TicketView => ({
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
 });
 
 test("a ticket without its key cannot be sent to an agent", async () => {

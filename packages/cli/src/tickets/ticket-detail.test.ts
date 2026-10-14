@@ -4,6 +4,8 @@ import { briefFile, detailExtras, notesOrEmpty } from "./ticket-detail";
 
 function question(id: string, extra: Partial<Question> = {}): Question {
   return {
+    kind: "question",
+    images: [],
     id,
     ticketId: "3",
     runId: null,

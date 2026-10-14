@@ -37,6 +37,7 @@ export function linkWorld(opts: LinkWorldOptions = {}) {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
   const tickets = titles.map(
     (title) =>

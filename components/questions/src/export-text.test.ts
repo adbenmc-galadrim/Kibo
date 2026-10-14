@@ -5,6 +5,8 @@ import { exportAll, exportQuestionText } from "./export-text";
 const ticket = { keyLabel: "KIB-12", title: "Schéma Loro des tickets" };
 
 const question = (over: Partial<Question>): Question => ({
+  kind: "question",
+  images: [],
   id: "11111111-1111-4111-8111-111111111111",
   ticketId: "22222222-2222-4222-8222-222222222222",
   runId: null,

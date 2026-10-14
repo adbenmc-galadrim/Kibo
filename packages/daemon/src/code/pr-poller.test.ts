@@ -16,7 +16,12 @@ type FakePr = {
   isDraft?: boolean;
 };
 
-const DEV: WorktreeSettings = { baseRef: "origin/dev", pathTemplate: "../kibo-{slug}", setup: null };
+const DEV: WorktreeSettings = {
+  baseRef: "origin/dev",
+  pathTemplate: "../kibo-{slug}",
+  setup: null,
+  recipe: null,
+};
 
 let dir: string;
 let store: Store;

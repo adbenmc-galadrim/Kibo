@@ -30,6 +30,7 @@ const project: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [
@@ -65,6 +66,7 @@ const project: ProjectSnapshot = {
       openQuestions: 0,
       startable: false,
       agentProgress: EMPTY_PROGRESS,
+      delivery: null,
     },
   ],
   links: [],
@@ -87,6 +89,7 @@ const repo: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   pages: [],
   tickets: [],
@@ -117,6 +120,7 @@ const inbox: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   pages: [],
   tickets: [

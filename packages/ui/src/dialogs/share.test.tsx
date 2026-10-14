@@ -57,6 +57,7 @@ const project = (sync: ProjectSyncInfo): ProjectSnapshot => ({
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

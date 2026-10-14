@@ -22,7 +22,14 @@ afterEach(() => {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
 });
 
-const ask = { context: "", options: ["Oui", "Non"], provisional: "Non", recipient: null };
+const ask = {
+  context: "",
+  options: ["Oui", "Non"],
+  provisional: "Non",
+  recipient: null,
+  kind: "question" as const,
+  images: [],
+};
 
 function fakeAgents(runs: RunView[], answers: [string, string][]): AgentsPort {
   const unused = () => {

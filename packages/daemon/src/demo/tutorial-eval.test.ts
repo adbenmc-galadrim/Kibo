@@ -38,6 +38,7 @@ const ticket = (id: string, statusId: TicketView["statusId"]): TicketView => ({
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
   keyLabel: `DEMO-${id}`,
 });
 const link = (from: string, to: string): Link => ({ id: `${from}${to}`, from, to, type: "blocks" });

@@ -123,7 +123,12 @@ test("worktree settings are local, checked, and work on a read-only shared proje
   s.service.docs.setWriteGuard(() => {
     throw new KiboError("FORBIDDEN", "read-only project");
   });
-  const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: "pnpm worktree {branch}" };
+  const worktree = {
+    baseRef: "origin/dev",
+    pathTemplate: "../emis-{slug}",
+    setup: "pnpm worktree {branch}",
+    recipe: null,
+  };
   const update = (patch: object, ctx: RpcContext = LOCAL_CONTEXT) =>
     s.admin.updateProject({ method: "updateProject", projectId: s.project.id, patch }, ctx);
   expect(() => update({ worktree }, REMOTE)).toThrow("FORBIDDEN");

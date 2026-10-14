@@ -62,7 +62,9 @@ test("a kept copy asks once at the Stop, stays open, informs the owner, and an i
 
   release(b.stack, owner);
   await finished(rpc, owner.id);
-  expect(contextsOf(b.stack, owner).some((c) => c.includes("reprend ton `formatDate`"))).toBe(true);
+  expect(contextsOf(b.stack, owner).some((c) => c.includes("ajoute aussi un export `formatDate`"))).toBe(
+    true,
+  );
 
   await rpc({ method: "overlaps.ignore", id: kept?.id });
   const again = await assign(b, "BOU-16");

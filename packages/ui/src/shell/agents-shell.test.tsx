@@ -42,6 +42,7 @@ const mineTicket = (id: string, key: string, title: string, statusId: StatusId):
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
 });
 
 function snapshotOf(projectId: string): ProjectSnapshot {
@@ -58,6 +59,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
         worktree: null,
         storybook: null,
         duplication: null,
+        delivery: null,
       },
       tickets: [mineTicket("i2", "INB-2", "Appeler le comptable", "todo")],
       links: [],
@@ -79,6 +81,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
       worktree: null,
       storybook: null,
       duplication: null,
+      delivery: null,
     },
     tickets: [mineTicket("f31", "FAC-31", "Export PDF des factures", "in_progress")],
   };

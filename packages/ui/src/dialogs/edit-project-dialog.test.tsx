@@ -28,6 +28,7 @@ const snapshot = (): ProjectSnapshot => ({
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -60,6 +61,7 @@ mock.module("../api", () =>
             worktree: null,
             storybook: null,
             duplication: null,
+            delivery: null,
           };
         if (req.method === "setIcon") return { icon: req.icon ? "abc" : null };
         throw new Error(`unexpected ${req.method}`);
@@ -78,6 +80,7 @@ const project: ProjectSummary = {
   worktree: null,
   storybook: null,
   duplication: null,
+  delivery: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
   icon: "v1",
 };
@@ -277,7 +280,12 @@ test("saving the worktree section sends the local settings only", async () => {
       method: "updateProject",
       projectId: "kibo",
       patch: {
-        worktree: { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: "pnpm worktree {branch}" },
+        worktree: {
+          baseRef: "origin/dev",
+          pathTemplate: "../emis-{slug}",
+          setup: "pnpm worktree {branch}",
+          recipe: null,
+        },
       },
     },
   ]);
@@ -314,7 +322,7 @@ test("a variable between single quotes is explained and blocks the save", async 
 
 test("clearing the three fields forgets the settings", async () => {
   const closed = mock(() => {});
-  const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: "make wt" };
+  const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: "make wt", recipe: null };
   render(<EditProjectDialog project={{ ...project, worktree }} remote={false} onClose={closed} />);
   expect(field("Commande de préparation").value).toBe("make wt");
   const user = userEvent.setup();

@@ -118,6 +118,8 @@ test("an ask_question call carries a non-blocking ask and no waiting question", 
     provisional: "Non",
     blocking: false,
     recipient: null,
+    kind: "question",
+    images: [],
   });
 });
 
@@ -136,6 +138,8 @@ test("an ask_user call carries its question and a blocking ask", () => {
     provisional: null,
     blocking: true,
     recipient: null,
+    kind: "question",
+    images: [],
   });
 });
 

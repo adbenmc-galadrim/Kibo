@@ -100,6 +100,7 @@ test("screens and the inbox: settings crumbs stay text, the inbox crumb opens th
       worktree: null,
       storybook: null,
       duplication: null,
+      delivery: null,
     },
   };
   expect(

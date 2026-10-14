@@ -17,6 +17,8 @@ const moment = (runId: string, seq: number, at: number, data: MomentData): RunMo
 const say = (text: string): MomentData => ({ kind: "message", text });
 
 const question = (patch: Partial<Question> & Pick<Question, "id" | "createdAt">): Question => ({
+  kind: "question",
+  images: [],
   ticketId: "t14",
   runId: null,
   title: "Quel port ?",

@@ -86,7 +86,12 @@ const linkBranch = (base: string | null) => {
     },
   });
 };
-const DEV: WorktreeSettings = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: null };
+const DEV: WorktreeSettings = {
+  baseRef: "origin/dev",
+  pathTemplate: "../emis-{slug}",
+  setup: null,
+  recipe: null,
+};
 
 test("without ticket nor settings, the branch is compared with the default branch of the remote", async () => {
   const result = await changes(start());

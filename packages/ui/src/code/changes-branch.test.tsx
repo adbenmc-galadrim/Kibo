@@ -121,6 +121,7 @@ const ticket: TicketView = {
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
 };
 const project = (tickets: TicketView[]): ProjectSnapshot => ({
   meta: {
@@ -132,6 +133,7 @@ const project = (tickets: TicketView[]): ProjectSnapshot => ({
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

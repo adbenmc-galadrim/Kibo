@@ -86,6 +86,8 @@ test("a demo guard that cannot be built denies the call and is logged", () => {
 });
 
 const ASK: AskInput = {
+  kind: "question",
+  images: [],
   title: "Bloquer le dépôt ?",
   context: "",
   options: ["Oui", "Non"],

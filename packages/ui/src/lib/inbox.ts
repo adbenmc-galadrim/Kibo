@@ -23,6 +23,7 @@ export function inboxMeta(): ProjectMeta {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   };
 }
 

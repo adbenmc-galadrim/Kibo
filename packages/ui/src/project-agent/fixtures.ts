@@ -37,6 +37,7 @@ const ticket = (id: string, key: string, title: string, statusId: TicketView["st
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
 });
 
 export function emisProject(access: "write" | "read-only" = "write"): ProjectSnapshot {
@@ -50,6 +51,7 @@ export function emisProject(access: "write" | "read-only" = "write"): ProjectSna
       worktree: null,
       storybook: null,
       duplication: null,
+      delivery: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],
@@ -254,6 +256,8 @@ export const emptyView = (): ProjectAgentView =>
   viewFixture({ session: null, run: null, batches: [], past: [] });
 
 const asked = (id: string, ticketId: string, title: string, recipient: string): Question => ({
+  kind: "question",
+  images: [],
   id,
   ticketId,
   runId: null,

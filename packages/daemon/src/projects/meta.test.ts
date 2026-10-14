@@ -14,7 +14,12 @@ afterEach(() => {
   for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
 });
 
-const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: "pnpm worktree {branch}" };
+const worktree = {
+  baseRef: "origin/dev",
+  pathTemplate: "../emis-{slug}",
+  setup: "pnpm worktree {branch}",
+  recipe: null,
+};
 
 function setup() {
   const dir = mkdtempSync(join(tmpdir(), "kibo-meta-"));

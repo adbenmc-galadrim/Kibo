@@ -157,6 +157,7 @@ const ticket: TicketView = {
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
 };
 const project: ProjectSnapshot = {
   meta: {
@@ -168,6 +169,7 @@ const project: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

@@ -51,7 +51,7 @@ test("two runs: the copy is seen, alerted, factorised, then Kibo links the ticke
   for (const run of [owner, other])
     await until(async () => (kindsOf(await momentsOf(rpc, run.id)).includes("overlap") ? true : undefined));
   await until(async () =>
-    contextsOf(b.stack, other).some((c) => c.includes(`Kibo — recouvrement avec ${owner.label}`))
+    contextsOf(b.stack, other).some((c) => c.includes(`est aussi exporté par ${owner.label}`))
       ? true
       : undefined,
   );

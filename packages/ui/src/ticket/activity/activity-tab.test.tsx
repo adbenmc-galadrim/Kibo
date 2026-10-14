@@ -101,6 +101,8 @@ test("a question line of the chronology previews its question and opens it", asy
   const ticket = project.tickets.find((t) => t.id === "t14");
   if (!ticket) throw new Error("no ticket t14");
   const asked: Question = {
+    kind: "question",
+    images: [],
     id: "q-port",
     ticketId: "t14",
     runId: FEED_RUN,

@@ -30,6 +30,7 @@ export function inboxTicket(n: number, title: string, statusId: StatusId, adam: 
     openQuestions: 0,
     startable: false,
     agentProgress: EMPTY_PROGRESS,
+    delivery: null,
   };
 }
 
@@ -44,6 +45,7 @@ export const inboxSnapshot: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   tickets: [
     inboxTicket(1, "Idée : export CSV des tickets", "backlog", false),

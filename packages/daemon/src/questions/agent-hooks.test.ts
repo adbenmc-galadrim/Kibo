@@ -24,6 +24,8 @@ const asked: HookPayload = {
   agentId: null,
   toolUseId: null,
   ask: {
+    kind: "question",
+    images: [],
     title: "Question q1",
     context: "",
     options: [],
@@ -91,17 +93,28 @@ test("an asked question goes to the recipient the agent proposes, by name or id,
     () => {},
   );
   const askTo = (title: string, recipient: string | null) => {
-    const ask = { title, context: "", options: [], provisional: null, blocking: false, recipient };
+    const ask = {
+      title,
+      context: "",
+      options: [],
+      provisional: null,
+      blocking: false,
+      recipient,
+      kind: "question" as const,
+      images: [],
+    };
     hooks.receive("r1", { ...asked, ask }, null);
   };
   askTo("Quel tarif ?", "Client");
   askTo("Quel parcours ?", "product");
   askTo("Quelle licence ?", "juridique");
   askTo("Quel port ?", null);
-  const recipients = call(s, { method: "getProject", projectId: project.id }).questions.map((q) => [
-    q.title,
-    q.recipient,
-  ]);
+  const recipients = call(s, {
+    kind: "question",
+    images: [],
+    method: "getProject",
+    projectId: project.id,
+  }).questions.map((q) => [q.title, q.recipient]);
   expect(recipients).toEqual([
     ["Quel tarif ?", "client"],
     ["Quel parcours ?", "product"],

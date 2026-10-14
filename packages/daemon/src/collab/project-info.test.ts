@@ -13,6 +13,7 @@ const doc = () =>
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
 const row: SyncProjectRow = {
   projectId: "p1",

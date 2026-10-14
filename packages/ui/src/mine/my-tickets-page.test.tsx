@@ -121,6 +121,7 @@ describe("my tickets page", () => {
         worktree: null,
         storybook: null,
         duplication: null,
+        delivery: null,
       },
       tickets: [mineTicket("INB-2", "todo", { kind: "human", ref: "adam" })],
     };

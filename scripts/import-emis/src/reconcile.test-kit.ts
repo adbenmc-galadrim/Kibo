@@ -58,6 +58,7 @@ export function withTicket(snapshot: ReconcileSnapshot, patch: Partial<Ticket>):
     externalRefs: [],
     labels: [],
     agentProgress: EMPTY_PROGRESS,
+    delivery: null,
     ...patch,
   };
   return { ...snapshot, tickets: [...snapshot.tickets, ticket] };
@@ -102,6 +103,8 @@ type Cmd<M extends ProjectCommand["method"]> = Extract<ProjectCommand, { method:
 function createLocally(snapshot: ReconcileSnapshot, c: Cmd<"createQuestion">): ReconcileSnapshot {
   if (!snapshot.tickets.some((t) => t.id === c.ticketId)) throw new KiboError("NOT_FOUND", c.ticketId);
   const question: Question = {
+    kind: "question",
+    images: [],
     id: freshId("q", snapshot.questions),
     ticketId: c.ticketId,
     runId: null,

@@ -13,6 +13,7 @@ const project = {
   worktree: null,
   storybook: null,
   duplication: null,
+  delivery: null,
 };
 const actions = () => ({
   newPage: () => {},

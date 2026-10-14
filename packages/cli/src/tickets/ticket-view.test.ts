@@ -34,6 +34,7 @@ function ticket(
     externalRefs: extra.refs ?? [],
     labels: [],
     agentProgress: EMPTY_PROGRESS,
+    delivery: null,
     progress: { done: 0, total: 0 },
     waitingOn: [],
     keyLabel: `EMIS-${id}`,

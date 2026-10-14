@@ -19,6 +19,7 @@ const inbox: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   tickets: [{ ...model, id: "i3", key: "INB-3", keyLabel: "INB-3", title: "Appeler le comptable" }],
   links: [],

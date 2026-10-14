@@ -49,6 +49,7 @@ const ticket = (id: string, key: string | null): TicketView => ({
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
 });
 
 export const testProject: ProjectSnapshot = {
@@ -61,6 +62,7 @@ export const testProject: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

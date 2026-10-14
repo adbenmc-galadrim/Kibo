@@ -21,7 +21,7 @@ type Field = "baseRef" | "pathTemplate" | "setup";
 
 const t = frProject.edit;
 const SAMPLE: WorktreeVars = { branch: "feat/x", slug: "feat-x", key: "key-1", path: "/repo-feat-x" };
-const EMPTY: WorktreeSettings = { baseRef: "", pathTemplate: "", setup: null };
+const EMPTY: WorktreeSettings = { baseRef: "", pathTemplate: "", setup: null, recipe: null };
 const FIELD_ERRORS: Record<Field, string> = {
   baseRef: t.worktreeErrors.base,
   pathTemplate: t.worktreeErrors.path,

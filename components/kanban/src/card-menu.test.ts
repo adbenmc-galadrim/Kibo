@@ -23,6 +23,7 @@ const ticket = {
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
 } satisfies TicketView;
 const actions = (): CardMenuActions => ({
   open: mock(() => {}),
