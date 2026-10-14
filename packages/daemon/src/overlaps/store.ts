@@ -19,7 +19,7 @@ import { type AutoLinkStore, autoLinkStore } from "./auto-link-store";
 import { openOverlapDatabase } from "./store-schema";
 import { stored } from "./stored";
 
-export type OverlapQuery = { projectId?: string; runId?: string; state?: OverlapStatus };
+export type OverlapQuery = { projectId?: string; runId?: string; state?: OverlapStatus; kind?: OverlapKind };
 
 export type OverlapStore = {
   create(f: Finding, projectId: string, at: number): Overlap;
@@ -200,6 +200,10 @@ export function openOverlapStore(home: string): OverlapStore {
       if (q.runId !== undefined) {
         where.push("(owner_run_id = $r OR other_run_id = $r)");
         params.r = q.runId;
+      }
+      if (q.kind !== undefined) {
+        where.push("kind = $k");
+        params.k = q.kind;
       }
       const all = many(where.join(" AND "), params);
       return q.state === undefined ? all : all.filter((o) => o.status === q.state);

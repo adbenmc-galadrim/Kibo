@@ -214,7 +214,7 @@ describe("overlap scenarios", () => {
     expect(other.some((s) => "delete" in s && s.delete === "src/utils/date.ts")).toBe(true);
     expect(other.some((s) => "mcp" in s && s.mcp === "peek_work")).toBe(true);
     expect(writes("overlap-bash").every((s) => s.bypassHooks)).toBe(true);
-    expect(read("overlap-keep").turns[0]?.onStopBlock).toEqual([{ say: "Je garde ma copie." }]);
+    expect(read("overlap-keep").turns[0]?.onStopBlock).toBeUndefined();
     expect(writes("overlap-twin").map((s) => s.write)).toEqual(["src/utils/when.ts"]);
   });
 

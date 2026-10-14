@@ -45,17 +45,15 @@ test("two runs in the project folder are never compared, the folder and a worktr
   await finished(rpc, owner.id);
 }, 90_000);
 
-test("a kept copy asks once at the Stop, stays open, informs the owner, and an ignored key never alerts again", async () => {
+test("a kept copy never blocks the Stop, stays open, informs the owner, and an ignored key never alerts again", async () => {
   const b = await startBoutique();
   const { rpc } = b.stack;
   const owner = await assign(b, "BOU-12");
   await wrote(b.stack, owner, 2);
   const keeper = await assign(b, "BOU-17");
   await finished(rpc, keeper.id);
-  const reminders = (await momentsOf(rpc, keeper.id)).filter(
-    (m) => m.data.kind === "reminder" && m.data.reminder === "overlap",
-  );
-  expect(reminders.length).toBeGreaterThan(0);
+  const reminders = (await momentsOf(rpc, keeper.id)).filter((m) => m.data.kind === "reminder");
+  expect(reminders).toEqual([]);
   const kept = (await overlapsOf(rpc, b.project.id, "open")).find((o) => o.key === "export:formatDate");
   expect(kept).toMatchObject({ ownerRunId: owner.id, otherRunId: keeper.id });
   expect(kept?.deliveredAt).not.toBeNull();

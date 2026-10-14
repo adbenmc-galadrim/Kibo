@@ -40,7 +40,7 @@ test("a run failed before its start is forgotten and its trace closed, without a
   const run = ticketRun("r1", "BOU-12", { transcriptPath: null });
   const visibility = boot(run);
   const inner: HookSink = { verify: () => true, receive: () => null };
-  const sink = visibility.hooks(inner, { openDeliveredOverlaps: () => [] });
+  const sink = visibility.hooks(inner);
   const stop = () => sink.receive(run.id, hook("Stop"), null);
   expect(stop()).not.toBeNull();
   expect(stop()).toBeNull();

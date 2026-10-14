@@ -8,7 +8,6 @@ import {
   type RunView,
 } from "@kibo/schema";
 import type { HookSink } from "../agents/hook-route";
-import type { ReminderDeps } from "../agents/reminders";
 import { type GitRunner, runGit } from "../agents/workspace-prep";
 import type { ScheduleTimers } from "../backups/schedule";
 import type { Docs } from "../docs";
@@ -17,9 +16,10 @@ import type { ProjectSettings } from "../notes/settings";
 import type { RpcExtension } from "../rpc-extensions";
 import { createAutoLinker } from "./auto-link";
 import { overlapAggregates, withOverlapCounts } from "./counts";
-import { openDeliveredOverlaps, storeAlerts, withOverlapAlerts } from "./delivery";
+import { storeAlerts, withOverlapAlerts } from "./delivery";
 import { createOverlapDetector } from "./detector";
 import { sha256Hex } from "./hash";
+import { resolveFileOverlaps } from "./migrate-file-kind";
 import { createPeek } from "./peek";
 import { createImportProbes } from "./probes";
 import { createOverlapReader } from "./read";
@@ -58,7 +58,6 @@ type Lifecycle = {
 export type Overlaps = {
   rpc: RpcExtension;
   hooks(sink: HookSink): HookSink;
-  reminders: Required<Pick<ReminderDeps, "openDeliveredOverlaps">>;
   peek: { call(run: RunView, input: unknown): Promise<string> };
   prefixer: TurnPrefixer;
   lifecycle(base: Lifecycle): Lifecycle;
@@ -74,6 +73,8 @@ export function startOverlaps(input: OverlapsInput): Overlaps {
   const git = input.git ?? runGit;
   const { docs } = input;
   const store = openOverlapStore(input.home);
+  const migrated = resolveFileOverlaps(store, now());
+  if (migrated > 0) log(`overlaps: ${migrated} file overlaps resolved, the file criterion is gone`);
   const settings = duplicationSettings(input.settings);
   const emit = () => docs.emit({ topic: "agents" });
   const indexer = createWorkspaceIndexer({ git, fs: nodeIndexFs, now, hash: sha256Hex, log });
@@ -162,7 +163,6 @@ export function startOverlaps(input: OverlapsInput): Overlaps {
         now,
         log,
       }),
-    reminders: { openDeliveredOverlaps: openDeliveredOverlaps(store, ticketKey) },
     peek,
     prefixer,
     lifecycle: (base) => ({

@@ -10,7 +10,7 @@ import {
 } from "@kibo/schema";
 import type { HookSink } from "../agents/hook-route";
 import type { Orchestrator } from "../agents/orchestrator-types";
-import { type ReminderDeps, withReminders } from "../agents/reminders";
+import { withReminders } from "../agents/reminders";
 import { runGit } from "../agents/workspace-prep";
 import { type AgentsPort, withRunProgress } from "../agents-rpc";
 import type { Docs } from "../docs";
@@ -39,7 +39,6 @@ export type VisibilityOptions = {
   agentEnv?: Record<string, string | undefined>;
   userHome?: string;
 };
-export type OverlapReminders = Required<Pick<ReminderDeps, "openDeliveredOverlaps">>;
 export type VisibilityDocs = Pick<Docs, "emit" | "run" | "project" | "projectIds">;
 export type VisibilityAgents = () => Pick<Orchestrator, "state" | "hooks"> | null;
 export type VisibilitySkills = () => Pick<SkillsService, "byId"> | null;
@@ -47,7 +46,7 @@ export type Visibility = {
   trace: TraceService;
   progress: ProgressService;
   rpc: RpcExtension;
-  hooks(sink: HookSink, overlaps: OverlapReminders): HookSink;
+  hooks(sink: HookSink): HookSink;
   mcp(
     project: AgentMcpSink,
     signals: Pick<SignalService, "record">,
@@ -123,9 +122,8 @@ export function startVisibility(
       methods: METHODS,
       handle: async (req) => handleVisibilityRequest(trace, { run, progress: summary }, req),
     },
-    hooks(sink, overlaps) {
+    hooks(sink) {
       const reminded = withReminders(sink, {
-        ...overlaps,
         run,
         hasPlan: (r) => progress.hasPlan(r),
         hasReport: (r) => progress.hasReport(r),

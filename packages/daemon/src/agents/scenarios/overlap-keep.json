@@ -83,15 +83,10 @@
           "input": {
             "report": {
               "done": "Date formatée dans src/utils/date.ts.",
-              "decisions": ["Copie gardée : le format de suivi doit diverger"],
+              "decisions": ["Format de suivi propre au ticket : rien repris de BOU-12"],
               "files": ["src/utils/date.ts"]
             }
           }
-        }
-      ],
-      "onStopBlock": [
-        {
-          "say": "Je garde ma copie."
         }
       ],
       "result": "Date de suivi livrée.",

@@ -83,8 +83,39 @@ describe("parallelWork", () => {
       more: 0,
       overlaps: [overlap],
       partial: false,
+      sharedPaths: [],
     });
-    expect(services.indexed).toEqual([["r12"]]);
+    expect(services.indexed).toEqual([["r12"], ["r15"]]);
+  });
+
+  test("the paths changed by the caller and another run are given for the page of the run", async () => {
+    const services = fakeServices({
+      runs: [me, other],
+      spaces: { r15: worktree("/w/bou-15"), r12: worktree("/w/bou-12") },
+      indexes: {
+        "/w/bou-12": workspaceIndex("/w/bou-12", [
+          indexedFile("src/lib/format.ts"),
+          indexedFile("src/i18n/fr.ts"),
+        ]),
+        "/w/bou-15": workspaceIndex("/w/bou-15", [
+          indexedFile("src/i18n/fr.ts"),
+          indexedFile("src/utils/date.ts"),
+        ]),
+      },
+    });
+    expect((await createWorkView(services).parallelWork(me)).sharedPaths).toEqual(["src/i18n/fr.ts"]);
+  });
+
+  test("no path is in common without a workspace of the caller or without files elsewhere", async () => {
+    const indexes = {
+      "/w/bou-12": workspaceIndex("/w/bou-12", [indexedFile("src/i18n/fr.ts")]),
+      "/w/bou-15": workspaceIndex("/w/bou-15", [indexedFile("src/i18n/fr.ts")]),
+    };
+    const homeless = fakeServices({ runs: [me, other], spaces: { r12: worktree("/w/bou-12") }, indexes });
+    expect((await createWorkView(homeless).parallelWork(me)).sharedPaths).toEqual([]);
+    const alone = fakeServices({ runs: [me], spaces: { r15: worktree("/w/bou-15") }, indexes });
+    expect((await createWorkView(alone).parallelWork(me)).sharedPaths).toEqual([]);
+    expect(alone.indexed).toEqual([]);
   });
 
   test("a run in the same workspace is shared and never shows its files", async () => {
@@ -147,6 +178,7 @@ describe("parallelWork", () => {
       more: 0,
       overlaps: [],
       partial: false,
+      sharedPaths: [],
     });
   });
 });

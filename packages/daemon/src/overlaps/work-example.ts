@@ -49,13 +49,18 @@ export function exampleParallelWork(project: ProjectSnapshot): ParallelWork {
       {
         id: "example-overlap",
         projectId: project.meta.id,
-        kind: "file",
-        key: "src/i18n/fr.ts",
+        kind: "export",
+        key: "export:formatDate",
         ownerRunId: first.runId,
         otherRunId: "example",
         ownerWorkspace: `.kibo/worktrees/${first.worktreeName}`,
         otherWorkspace: ".kibo/worktrees/example",
-        detail: { kind: "file", path: "src/i18n/fr.ts" },
+        detail: {
+          kind: "export",
+          name: "formatDate",
+          ownerPath: "src/lib/format.ts",
+          otherPath: "src/utils/date.ts",
+        },
         firstSeenAt: EXAMPLE_NOW,
         lastSeenAt: EXAMPLE_NOW,
         status: "open",
@@ -67,5 +72,6 @@ export function exampleParallelWork(project: ProjectSnapshot): ParallelWork {
       },
     ],
     partial: false,
+    sharedPaths: ["src/i18n/fr.ts"],
   };
 }

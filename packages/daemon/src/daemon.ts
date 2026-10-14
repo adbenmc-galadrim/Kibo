@@ -189,7 +189,6 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     extraOrigins: devOrigins,
     hooks: visibility.hooks(
       overlaps.hooks(agentQuestionHooks(() => agents, service.agentData, opts.notify ?? (() => {}))),
-      overlaps.reminders,
     ),
     agentMcp: visibility.mcp(projectAgent.agent.mcp, signals.service, overlaps.peek),
     assets: components.assets,

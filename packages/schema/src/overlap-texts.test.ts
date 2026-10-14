@@ -5,7 +5,6 @@ import {
   autoLinkSummary,
   OVERLAP_SUMMARY_MAX,
   overlapAlert,
-  overlapStopReminder,
   overlapSummary,
   PARALLEL_RULES,
   PARALLEL_RULES_TITLE,
@@ -91,19 +90,6 @@ test("the owner is only informed, with nothing to do", () => {
   expect(overlapAlert("owner", BLOCK, "x", "BOU-15")).toBe(
     "Kibo — information : x a 14 lignes identiques à ton code de `src/http.ts:12` (`src/api/client.ts:40`). Rien à faire.",
   );
-});
-
-test("the stop reminder cites every open overlap", () => {
-  expect(overlapStopReminder([{ ticketKey: "BOU-12", label: "`formatDate`" }])).toBe(
-    "Kibo : recouvrement ouvert avec BOU-12 (`formatDate`) : factorise, ou explique dans ton compte rendu pourquoi tu gardes ta copie, puis termine.",
-  );
-  const two = overlapStopReminder([
-    { ticketKey: "BOU-12", label: "`formatDate`" },
-    { ticketKey: "BOU-13", label: "`src/i18n/fr.ts`" },
-  ]);
-  expect(two).toContain("BOU-12 (`formatDate`)");
-  expect(two).toContain("BOU-13 (`src/i18n/fr.ts`)");
-  expect(two.startsWith("Kibo : recouvrements ouverts avec")).toBe(true);
 });
 
 test("an automatic link says who blocks whom and why", () => {

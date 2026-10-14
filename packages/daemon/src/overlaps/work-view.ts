@@ -31,7 +31,7 @@ export type WorkViewServices = Omit<PeekServices, "git" | "fs" | "screen">;
 type Placed = { run: RunView; ws: WorkspaceRef | null };
 type Described = { run: ParallelRun; partial: boolean };
 
-const EMPTY: ParallelWork = { runs: [], more: 0, overlaps: [], partial: false };
+const EMPTY: ParallelWork = { runs: [], more: 0, overlaps: [], partial: false, sharedPaths: [] };
 
 export const startOf = (run: RunView): number => run.startedAt ?? run.createdAt;
 
@@ -109,6 +109,22 @@ export function createWorkView(services: WorkViewServices) {
     return [...seen.values()];
   }
 
+  async function pathsInCommon(
+    run: RunView,
+    mine: WorkspaceRef | null,
+    placed: readonly Placed[],
+    runs: readonly ParallelRun[],
+  ): Promise<string[]> {
+    const theirs = new Set(runs.flatMap((r) => r.files.map((f) => f.path)));
+    if (mine === null || theirs.size === 0) return [];
+    const twins = placed.filter((p) => p.ws?.key === mine.key).map((p) => p.run.id);
+    const index = await services.indexOf(mine, [run.id, ...twins]);
+    return (index?.files ?? [])
+      .map((f) => f.path)
+      .filter((path) => theirs.has(path))
+      .sort();
+  }
+
   async function parallelWork(run: RunView): Promise<ParallelWork> {
     if (run.projectId === null) return EMPTY;
     const peers = services
@@ -119,11 +135,13 @@ export function createWorkView(services: WorkViewServices) {
     const mine = await services.workspaceOf(run);
     const placed = await Promise.all(shown.map(async (r) => ({ run: r, ws: await services.workspaceOf(r) })));
     const described = await Promise.all(placed.map((p) => describe(p, mine, placed)));
+    const runs = described.map((d) => d.run);
     return {
-      runs: described.map((d) => d.run),
+      runs,
       more: peers.length - shown.length,
       overlaps: openOverlaps(run, peers),
       partial: described.some((d) => d.partial),
+      sharedPaths: await pathsInCommon(run, mine, placed, runs),
     };
   }
 

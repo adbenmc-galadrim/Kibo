@@ -87,14 +87,6 @@ export function overlapAlert(
   return bounded(text, DUPLICATION_LIMITS.alertChars);
 }
 
-export function overlapStopReminder(items: readonly { ticketKey: string; label: string }[]): string {
-  const cited = items.map((i) => `${i.ticketKey} (${i.label})`).join(", ");
-  const head = items.length > 1 ? "recouvrements ouverts" : "recouvrement ouvert";
-  return maskSecrets(
-    `Kibo : ${head} avec ${cited} : factorise, ou explique dans ton compte rendu pourquoi tu gardes ta copie, puis termine.`,
-  );
-}
-
 const REASON_TEXT: Record<AutoLinkReason, string> = { copy: "repris de", import: "importé de" };
 
 export const autoLinkSummary = (

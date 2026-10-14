@@ -2,7 +2,6 @@ import {
   type HookPayload,
   type HookReply,
   MODIFYING_TOOLS,
-  overlapStopReminder,
   type ReminderKind,
   type RunView,
 } from "@kibo/schema";
@@ -18,8 +17,6 @@ export const SKILLS_REMINDER =
 export const REPORT_SKILLS_REMINDER =
   "Kibo : remplis ton compte rendu avec mcp__kibo__ticket_progress et laisse ta review des skills utilisés avec mcp__kibo__skill_review, puis termine.";
 
-export type { ReminderKind } from "@kibo/schema";
-
 export type ReminderDeps = {
   run(runId: string): RunView | null;
   hasPlan(run: RunView): boolean;
@@ -27,10 +24,7 @@ export type ReminderDeps = {
   usedSkills(runId: string): number;
   hasSkillReview(runId: string): boolean;
   moment(runId: string, kind: ReminderKind): void;
-  openDeliveredOverlaps?(runId: string): OpenOverlapReminder[];
 };
-
-export type OpenOverlapReminder = { overlapId: string; ticketKey: string; label: string };
 
 type StopKind = Exclude<ReminderKind, "plan" | "overlap">;
 
@@ -43,50 +37,32 @@ const STOP_REASONS: Record<StopKind, string> = {
 const isModification = (payload: HookPayload): boolean =>
   payload.event === "PreToolUse" && MODIFYING_TOOLS.includes(payload.tool ?? "");
 
-const JOIN = "\n\n";
-
-function planReply(reply: HookReply | null): HookReply | null {
-  if (reply?.kind === "stop") return null;
-  if (reply?.decision === "deny") return null;
-  return {
-    kind: "permission",
-    decision: "allow",
-    reason: reply?.reason ?? "",
-    additionalContext: [reply?.additionalContext, PLAN_REMINDER].filter(Boolean).join(JOIN),
-  };
-}
-
-type SentKey = "plan" | "stop" | `overlap:${string}`;
-type Reminder = { kinds: ReminderKind[]; keys: SentKey[]; reply: HookReply };
+type SentKey = "plan" | "stop";
+type Reminder = { kind: ReminderKind; key: SentKey; reply: HookReply };
 
 function planReminder(deps: ReminderDeps, run: RunView, reply: HookReply | null, done: Set<SentKey>) {
   if (done.has("plan") || deps.hasPlan(run)) return null;
-  const reminded = planReply(reply);
-  return reminded ? ({ kinds: ["plan"], keys: ["plan"], reply: reminded } satisfies Reminder) : null;
+  if (reply?.kind === "stop" || reply?.decision === "deny") return null;
+  const additionalContext = [reply?.additionalContext, PLAN_REMINDER].filter(Boolean).join("\n\n");
+  const reminded: HookReply = {
+    kind: "permission",
+    decision: "allow",
+    reason: reply?.reason ?? "",
+    additionalContext,
+  };
+  return { kind: "plan", key: "plan", reply: reminded } satisfies Reminder;
 }
 
 function stopKind(report: boolean, skills: boolean): StopKind | null {
-  if (report && skills) return "report_skills";
-  if (report) return "report";
+  if (report) return skills ? "report_skills" : "report";
   return skills ? "skills" : null;
 }
 
 function stopReminder(deps: ReminderDeps, run: RunView, done: Set<SentKey>): Reminder | null {
+  if (done.has("stop")) return null;
   const usedSkills = deps.usedSkills(run.id) > 0 && !deps.hasSkillReview(run.id);
-  const kind = done.has("stop") ? null : stopKind(!deps.hasReport(run), usedSkills);
-  const overlaps = (deps.openDeliveredOverlaps?.(run.id) ?? []).filter(
-    (o) => !done.has(`overlap:${o.overlapId}`),
-  );
-  const reasons = [
-    ...(kind ? [STOP_REASONS[kind]] : []),
-    ...(overlaps.length > 0 ? [overlapStopReminder(overlaps)] : []),
-  ];
-  if (reasons.length === 0) return null;
-  return {
-    kinds: [...(kind ? [kind] : []), ...(overlaps.length > 0 ? ["overlap" as const] : [])],
-    keys: [...(kind ? ["stop" as const] : []), ...overlaps.map((o): SentKey => `overlap:${o.overlapId}`)],
-    reply: { kind: "stop", reason: reasons.join(JOIN) },
-  };
+  const kind = stopKind(!deps.hasReport(run), usedSkills);
+  return kind && { kind, key: "stop", reply: { kind: "stop", reason: STOP_REASONS[kind] } };
 }
 
 function reminderOf(
@@ -126,10 +102,8 @@ export function withReminders(sink: HookSink, deps: ReminderDeps): ReminderSink 
       logFailure("reminder", runId),
     );
     if (!reminder) return reply;
-    for (const key of reminder.keys) done.add(key);
-    sent.set(runId, done);
-    for (const kind of reminder.kinds)
-      attempt(() => deps.moment(runId, kind), logFailure("reminder moment", runId));
+    sent.set(runId, done.add(reminder.key));
+    attempt(() => deps.moment(runId, reminder.kind), logFailure("reminder moment", runId));
     return reminder.reply;
   };
   return {
