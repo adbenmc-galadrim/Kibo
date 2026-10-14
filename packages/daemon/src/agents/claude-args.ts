@@ -97,6 +97,9 @@ export function claudeArgs(input: ArgsInput): string[] {
     (a) => reserved.has(a.split("=")[0] ?? a) || a.includes("bypassPermissions"),
   );
   if (refused) throw new KiboError("INVALID_INPUT", `argument ${refused} is reserved to Kibo`);
+  const [first] = input.extraArgs;
+  if (first !== undefined && !first.startsWith("-"))
+    throw new KiboError("INVALID_INPUT", `extra arguments must start with a flag, not ${first}`);
   return [
     "-p",
     "--output-format",
@@ -114,9 +117,9 @@ export function claudeArgs(input: ArgsInput): string[] {
     ...(input.isolated ? ISOLATION_ARGS : []),
     "--append-system-prompt-file",
     input.systemPromptFile,
-    ...(input.addDirs.length > 0 ? ["--add-dir", ...input.addDirs] : []),
     ...agentArgs(input.agentFlags, input.resume),
     ...input.extraArgs,
+    ...(input.addDirs.length > 0 ? ["--add-dir", ...input.addDirs] : []),
     ...(input.resume ? ["--resume", input.sessionId] : ["--session-id", input.sessionId]),
   ];
 }

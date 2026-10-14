@@ -207,14 +207,24 @@ test("auto is passed through when the CLI lists it, refused otherwise", () => {
   expect(() => permissionFlag("auto", { permissionModes: ["acceptEdits", "plan"] })).toThrow(KiboError);
 });
 
-test("Kibo passes the added folders in one --add-dir right after the system prompt file", () => {
+test("Kibo passes the added folders in one --add-dir closed by the session flag", () => {
   const dirs = ["/Users/a/.claude/skills", "/Users/a/Documents/emis"];
-  const args = claudeArgs({ ...base, addDirs: dirs, sessionId: "s1", resume: false });
-  const at = args.indexOf("--add-dir");
-  expect(args[at - 2]).toBe("--append-system-prompt-file");
-  expect(args.slice(at, at + 3)).toEqual(["--add-dir", ...dirs]);
-  expect(args.filter((a) => a === "--add-dir")).toHaveLength(1);
+  for (const resume of [false, true]) {
+    const args = claudeArgs({ ...base, extraArgs: ["--tools", ""], addDirs: dirs, sessionId: "s1", resume });
+    const at = args.indexOf("--add-dir");
+    expect(args.slice(at)).toEqual(["--add-dir", ...dirs, resume ? "--resume" : "--session-id", "s1"]);
+    expect(args.filter((a) => a === "--add-dir")).toHaveLength(1);
+  }
   expect(claudeArgs({ ...base, sessionId: "s1", resume: false })).not.toContain("--add-dir");
+});
+
+test("task arguments must start with a flag, so no bare value can follow the agent flags", () => {
+  const addDirs = ["/Users/a/.claude/skills"];
+  for (const extraArgs of [["/Users/x/.ssh"], ["", "--tools"]]) {
+    expect(() =>
+      claudeArgs({ ...base, agentFlags: undefined, extraArgs, addDirs, sessionId: "s1", resume: false }),
+    ).toThrow("INVALID_INPUT");
+  }
 });
 
 test("a task cannot add a folder by itself", () => {
