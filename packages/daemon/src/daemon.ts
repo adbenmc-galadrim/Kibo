@@ -26,6 +26,7 @@ import { startOverlaps } from "./overlaps/bootstrap";
 import { startProjectAgent } from "./project-agent/bootstrap";
 import { createProjectAdmin } from "./projects/admin";
 import { agentQuestionHooks } from "./questions/agent-hooks";
+import { questionImageFiles } from "./questions/question-images-port";
 import { PairingCodes } from "./remote/pairing-codes";
 import type { RemoteAccess } from "./remote/remote-access";
 import { remoteRpc } from "./remote/rpc";
@@ -51,10 +52,12 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const { store, runs, token, redactor } = openDaemonStores(opts, closers);
   const startedAt = Date.now();
   const late = lateAgentSource();
+  const questionImages = questionImageFiles(opts.home, (projectId) => components.notesDir(projectId));
   const service = createService(store, {
     user: opts.user,
     ...(opts.notifications && { notifications: opts.notifications }),
     agents: opts.agentSource ?? late.source,
+    questionImages,
   });
   const local = createLocalServices(opts, { store, runs }, (message) => service.docs.emit(message));
   let sandboxOrigin = "";
@@ -193,6 +196,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     agentMcp: visibility.mcp(projectAgent.agent.mcp, signals.service, overlaps.peek),
     assets: components.assets,
     icons: service.icons,
+    questionImages,
     sandboxOrigin: () => sandboxOrigin || null,
     redact: redactor.redact,
     handlers: [tutorial.guard, componentTrustGuard, market.handler, collab.handler, admin.handler],

@@ -139,3 +139,48 @@ describe("agents routes", () => {
     expect(await ok.json()).toEqual({ ok: true, text: `list_tickets:${RUN}` });
   });
 });
+
+describe("question images", () => {
+  const Q = "6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b";
+  const IMG = "0b9a8c7d-6e5f-4a3b-9c2d-1e0f9a8b7c6d";
+  const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47]);
+
+  test("an image of a question needs a session, then is served on the main port", async () => {
+    const served = startServer({
+      service: createService(store, { user: "adam" }),
+      token: TOKEN,
+      port: 0,
+      uiDir: null,
+      questionImages: { read: (q, i) => (q === Q && i === IMG ? { bytes: PNG, mime: "image/png" } : null) },
+    });
+    const paired = await fetch(`${served.url}/api/pair`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: served.url },
+      body: JSON.stringify({ token: TOKEN }),
+    });
+    const cookie = paired.headers.get("set-cookie")?.split(";")[0] ?? "";
+    const image = (id: string, headers: Record<string, string> = {}) =>
+      fetch(`${served.url}/api/questions/${Q}/images/${id}`, { headers });
+    const anonymous = await image(IMG);
+    const ok = await image(IMG, { cookie });
+    const unknown = await image("00000000-0000-4000-8000-000000000000", { cookie });
+    served.stop();
+    expect(anonymous.status).toBe(401);
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get("content-type")).toBe("image/png");
+    expect(ok.headers.get("cache-control")).toBe("private, max-age=86400");
+    expect(new Uint8Array(await ok.arrayBuffer())).toEqual(PNG);
+    expect(unknown.status).toBe(404);
+  });
+
+  test("without an image store, a paired browser gets 404", async () => {
+    const paired = await fetch(`${server.url}/api/pair`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: server.url },
+      body: JSON.stringify({ token: TOKEN }),
+    });
+    const cookie = paired.headers.get("set-cookie")?.split(";")[0] ?? "";
+    const res = await fetch(`${server.url}/api/questions/${Q}/images/${IMG}`, { headers: { cookie } });
+    expect(res.status).toBe(404);
+  });
+});

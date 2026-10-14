@@ -11,6 +11,11 @@ import { serveIcon } from "./icons/icon-route";
 import type { IconStore } from "./icons/icon-store";
 import { AGENT_MCP_PATH, handleAgentMcp } from "./project-agent/mcp-route";
 import type { AgentMcpSink } from "./project-agent/types";
+import {
+  isQuestionImagePath,
+  type QuestionImageRouteDeps,
+  serveQuestionImage,
+} from "./questions/image-route";
 import { PairingCodes } from "./remote/pairing-codes";
 import type { RemoteListen } from "./remote/remote-access";
 import { dispatchRpc, type RpcContext, type RpcExtension, type RpcHandler } from "./rpc-extensions";
@@ -34,6 +39,7 @@ export type ServerOptions = {
   code?: CodeService;
   assets?: AssetLookup;
   icons?: Pick<IconStore, "get">;
+  questionImages?: Pick<QuestionImageRouteDeps, "read">;
   sandboxOrigin?: () => string | null;
   redact?: (text: string) => string;
   sessions?: SessionStore;
@@ -208,6 +214,10 @@ export function startServer(opts: ServerOptions): RunningServer {
           origins: () => allowedOrigins(l),
           hasSession,
         });
+      }
+      if (isQuestionImagePath(url.pathname)) {
+        const read = opts.questionImages?.read ?? (() => null);
+        return serveQuestionImage(req, url, { read, origins: () => allowedOrigins(l), hasSession });
       }
       if (!url.pathname.startsWith("/api/")) {
         return serveUi(opts.uiDir, url.pathname, opts.sandboxOrigin?.() ?? null);
