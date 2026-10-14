@@ -105,7 +105,11 @@ export function permissionOfCall(call: ComponentCall): string | null {
     case "questions.recipients":
       return "read:question";
     case "run.peek":
+    case "run.denials":
       return "read:run";
+    case "run.deliver":
+    case "run.allowAndResume":
+      return "write:run";
   }
 }
 

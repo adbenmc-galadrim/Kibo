@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DeliveryStep } from "./delivery";
 import { ExternalRef } from "./external-ref";
 import { NodeId, TicketKey } from "./ids";
 import { Labels } from "./label";
@@ -23,6 +24,7 @@ export const Ticket = z
     externalRefs: z.array(ExternalRef),
     labels: Labels.default([]),
     agentProgress: TicketProgress.default(EMPTY_PROGRESS),
+    delivery: DeliveryStep.nullable().default(null),
   })
   .superRefine((t, ctx) => {
     const hasReason = t.blockedReason !== null && t.blockedReason.trim().length > 0;

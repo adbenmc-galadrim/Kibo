@@ -23,6 +23,7 @@ import {
   type RegistryVersion,
   type RuntimeInfo,
 } from "./component";
+import { DELIVERY_RPC, type DeliveryRpcResult } from "./delivery-rpc";
 import type { KiboErrorCode } from "./errors";
 import { IconInput, IconOwner } from "./icon";
 import { Base64, NodeId, ProjectKey, Sha256 } from "./ids";
@@ -232,6 +233,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   ...OVERLAP_RPC,
   ...AGENT_RPC,
   ...SKILL_RPC,
+  ...DELIVERY_RPC,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -294,7 +296,8 @@ export type RpcResult = {
   SignalRpcResult &
   OverlapRpcResult &
   AgentRpcResult &
-  SkillRpcResult;
+  SkillRpcResult &
+  DeliveryRpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }

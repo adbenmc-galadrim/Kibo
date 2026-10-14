@@ -36,3 +36,23 @@ test("a ticket without agent progress parses to the empty progress", () => {
   });
   expect(ticket.agentProgress).toEqual(EMPTY_PROGRESS);
 });
+
+test("a ticket without delivery step has none, a stored step is validated", () => {
+  const base = {
+    id: "t1",
+    key: "KIB-1",
+    pendingSeq: null,
+    title: "x",
+    description: "",
+    statusId: "todo",
+    blockedReason: null,
+    domainId: null,
+    assignee: null,
+    parentId: null,
+    externalRefs: [],
+  };
+  expect(Ticket.parse(base).delivery).toBeNull();
+  const delivery = { step: 7, note: "porte qualité", at: 1, runId: "r1" };
+  expect(Ticket.parse({ ...base, delivery }).delivery).toEqual(delivery);
+  expect(Ticket.safeParse({ ...base, delivery: { ...delivery, step: 12 } }).success).toBe(false);
+});

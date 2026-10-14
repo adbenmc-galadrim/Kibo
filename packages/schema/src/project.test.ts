@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { EMPTY_DELIVERY } from "./delivery";
 import { ProjectMeta, ProjectPatch } from "./project";
 
 test("a project patch carries at least one field and validates each", () => {
@@ -47,4 +48,13 @@ test("project meta defaults duplication to null and the patch writes or clears i
   const settings = { enabled: false, minLines: 8, compareTests: false, ignore: [], genericExports: [] };
   expect(ProjectPatch.safeParse({ duplication: settings }).data).toEqual({ duplication: settings });
   expect(ProjectPatch.safeParse({ duplication: {} }).success).toBe(false);
+});
+
+test("project meta defaults delivery to null and the patch writes or clears it", () => {
+  expect(
+    ProjectMeta.parse({ id: "p", key: "AB", name: "n", folder: null, color: "#123456" }).delivery,
+  ).toBeNull();
+  expect(ProjectPatch.safeParse({ delivery: EMPTY_DELIVERY }).success).toBe(true);
+  expect(ProjectPatch.safeParse({ delivery: null }).success).toBe(true);
+  expect(ProjectPatch.safeParse({ delivery: {} }).success).toBe(false);
 });

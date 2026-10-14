@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { KiboError } from "./errors";
 import { branchSlug, type GitBranchRef, isGitBranchName } from "./git-branch";
+import { WorktreeRecipe } from "./worktree-recipe";
 
 export function splitRemote(ref: string): { remote: string | null; branch: string } {
   const at = ref.indexOf("/");
@@ -30,26 +31,35 @@ export const WorktreeSettings = z.object({
     .max(1000)
     .nullable()
     .transform((s) => (s === null || s.trim().length === 0 ? null : s.trim())),
+  recipe: WorktreeRecipe.nullable().default(null),
 });
 export type WorktreeSettings = z.infer<typeof WorktreeSettings>;
 export const WORKTREE_DEFAULTS: WorktreeSettings = {
   baseRef: "main",
   pathTemplate: ".kibo/worktrees/{slug}",
   setup: null,
+  recipe: null,
 };
 
-export type WorktreeVars = { branch: string; slug: string; key: string; path?: string };
+export type WorktreeVars = {
+  branch: string;
+  slug: string;
+  key: string;
+  path?: string;
+  [name: string]: string | number | undefined;
+};
 
-function templateValue(name: string, vars: WorktreeVars): string | undefined {
-  if (name === "branch" || name === "slug" || name === "key" || name === "path") return vars[name];
-  return undefined;
-}
+export const shortSlug = (branch: string): string => {
+  const parts = branch.split("/").filter((s) => s.length > 0);
+  return parts.length > 1 ? parts.slice(1).join("-") : branch;
+};
 
 export function renderTemplate(template: string, vars: WorktreeVars): string {
-  return template.replace(/\{([a-z]+)\}/g, (_, name: string) => {
-    const value = templateValue(name, vars);
-    if (value === undefined) throw new KiboError("INVALID_INPUT", `unknown template variable {${name}}`);
-    return value;
+  return template.replace(/\{([A-Za-z_][A-Za-z0-9_]*)\}/g, (match, name: string) => {
+    const value = Object.hasOwn(vars, name) ? vars[name] : undefined;
+    if (value !== undefined) return String(value);
+    if (/^[a-z]+$/.test(name)) throw new KiboError("INVALID_INPUT", `unknown template variable {${name}}`);
+    return match;
   });
 }
 
@@ -111,20 +121,29 @@ export function resolveWorktreePath(root: string, template: string, vars: Worktr
 export const worktreeBranchOf = (ticketKey: string, branchRef: GitBranchRef | null): string =>
   branchRef?.branch ?? ticketKey.toLowerCase();
 
-export const worktreeBaseOf = (settings: WorktreeSettings, branchRef: GitBranchRef | null): string =>
-  branchRef?.base ?? settings.baseRef;
+export const worktreeBaseOf = (
+  settings: Pick<WorktreeSettings, "baseRef">,
+  branchRef: GitBranchRef | null,
+): string => branchRef?.base ?? settings.baseRef;
 
 export type WorktreePlanInput = {
   root: string;
   ticketKey: string;
   branchRef: GitBranchRef | null;
-  settings: WorktreeSettings;
+  settings: Pick<WorktreeSettings, "baseRef" | "pathTemplate">;
 };
 export type PlannedWorktree = { branch: string; base: string; path: string };
 
 export function plannedWorktree(input: WorktreePlanInput): PlannedWorktree {
   const branch = worktreeBranchOf(input.ticketKey, input.branchRef);
-  const vars = { branch, slug: branchSlug(branch), key: input.ticketKey.toLowerCase() };
+  const short = shortSlug(branch);
+  const vars = {
+    branch,
+    slug: branchSlug(branch),
+    key: input.ticketKey.toLowerCase(),
+    short,
+    short_: short.replaceAll("-", "_"),
+  };
   return {
     branch,
     base: worktreeBaseOf(input.settings, input.branchRef),
@@ -132,6 +151,6 @@ export function plannedWorktree(input: WorktreePlanInput): PlannedWorktree {
   };
 }
 
-export function integrationBranch(settings: WorktreeSettings | null): string {
+export function integrationBranch(settings: Pick<WorktreeSettings, "baseRef"> | null): string {
   return settings === null ? "main" : splitRemote(settings.baseRef).branch;
 }

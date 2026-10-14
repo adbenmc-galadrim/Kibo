@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { AddDirs } from "./add-dir";
 import { AllowRules } from "./allow-rule";
 import { SkillId } from "./skill-id";
 
@@ -103,6 +104,7 @@ const SETTINGS_SHAPE = {
   genericSubagents: z.boolean(),
   allSubagents: z.boolean(),
   skills: SkillsRule,
+  addDirs: AddDirs,
 };
 
 export const AgentSettings = z.object({
@@ -115,6 +117,7 @@ export const AgentSettings = z.object({
   genericSubagents: SETTINGS_SHAPE.genericSubagents.default(true),
   allSubagents: SETTINGS_SHAPE.allSubagents.default(false),
   skills: SETTINGS_SHAPE.skills.default({ mode: "all" }),
+  addDirs: SETTINGS_SHAPE.addDirs.default([]),
 });
 export type AgentSettings = z.infer<typeof AgentSettings>;
 export const AgentSettingsPatch = z.object(SETTINGS_SHAPE).partial().strict();

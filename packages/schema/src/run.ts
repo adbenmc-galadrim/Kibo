@@ -1,5 +1,7 @@
 import { z } from "zod";
 import type { AgentScope } from "./agent";
+import type { RunDeliveryStep } from "./delivery";
+import type { MachineLock } from "./machine-lock";
 import type { RunOverlapCount } from "./overlap";
 import type { RunProgressSummary } from "./progress";
 import { AskInput, type RunQuestions } from "./question";
@@ -248,6 +250,8 @@ export type AgentsState = {
   signals: ProjectSignalCount[];
   overlaps?: RunOverlapCount[];
   overlapTotal?: number;
+  locks?: MachineLock[];
+  delivery?: RunDeliveryStep[];
 };
 
 export const runOverlapCounts = (state: Pick<AgentsState, "overlaps">): RunOverlapCount[] =>

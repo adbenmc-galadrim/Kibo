@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DeliveryStep } from "./delivery";
 import { ExternalRef, ExternalRefKind } from "./external-ref";
 import { ImportRef } from "./git-branch";
 import { NodeId, Sha256 } from "./ids";
@@ -155,6 +156,7 @@ export const ProjectCommand = z
       report: RunReportInput.optional(),
       check: FileCheck.optional(),
     }),
+    z.object({ method: z.literal("setTicketDelivery"), ticketId: NodeId, delivery: DeliveryStep.nullable() }),
     z.object({ method: z.literal("addQuestionRecipient"), name: QuestionRecipient.shape.name }),
     z.object({
       method: z.literal("renameQuestionRecipient"),
@@ -213,6 +215,7 @@ export const COMMAND_WRITES: Record<ProjectCommand["method"], EntityType | null>
   removeQuestion: "question",
   markAnswersDelivered: null,
   setTicketProgress: null,
+  setTicketDelivery: null,
   addQuestionRecipient: "question",
   renameQuestionRecipient: "question",
   removeQuestionRecipient: "question",
@@ -257,6 +260,7 @@ export type CommandResult = {
   removeQuestion: null;
   markAnswersDelivered: Question[];
   setTicketProgress: Ticket;
+  setTicketDelivery: Ticket;
   addQuestionRecipient: QuestionRecipient;
   renameQuestionRecipient: QuestionRecipient;
   removeQuestionRecipient: null;

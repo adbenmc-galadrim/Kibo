@@ -16,6 +16,7 @@ import {
   QuestionTitle,
 } from "./question-fields";
 import { QUESTION_HISTORY_MAX, QuestionEvent } from "./question-history";
+import { AskImages, QuestionImages, QuestionKind } from "./question-image";
 import { ME_RECIPIENT, RECIPIENT_ID_MAX } from "./question-recipient";
 import type { RunView } from "./run";
 
@@ -87,6 +88,8 @@ export const Question = z
     history: z.array(QuestionEvent).max(QUESTION_HISTORY_MAX).default([]),
     archivedAt: z.number().int().nullable().default(null),
     archivedBy: Actor.nullable().default(null),
+    kind: QuestionKind.default("question"),
+    images: QuestionImages.default([]),
   })
   .superRefine((q, ctx) => {
     const problem = questionProblem(q);
@@ -108,6 +111,8 @@ export const AskInput = z.object({
   provisional: QuestionOption.nullable(),
   blocking: z.boolean(),
   recipient: z.string().max(RECIPIENT_ID_MAX).nullable().default(null),
+  kind: QuestionKind.default("question"),
+  images: AskImages.default([]),
 });
 export type AskInput = z.infer<typeof AskInput>;
 

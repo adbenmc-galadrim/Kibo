@@ -6,6 +6,7 @@ import {
   plannedWorktree,
   renderTemplate,
   resolveWorktreePath,
+  shortSlug,
   singleQuotedVariable,
   splitRemote,
   WORKTREE_DEFAULTS,
@@ -100,4 +101,45 @@ test("the planned worktree follows the ticket branch, its base and the settings"
       settings: { ...settings, pathTemplate: "/tmp/{slug}" },
     }),
   ).toThrow(KiboError);
+});
+
+test("settings stored without a recipe get none", () => {
+  const settings = WorktreeSettings.parse({
+    baseRef: "origin/dev",
+    pathTemplate: "../emis-{slug}",
+    setup: null,
+  });
+  expect(settings.recipe).toBeNull();
+});
+
+test("the short slug drops the first segment of the branch", () => {
+  expect(shortSlug("feat/compte-non-provisionne")).toBe("compte-non-provisionne");
+  expect(shortSlug("feat/a/b")).toBe("a-b");
+  expect(shortSlug("main")).toBe("main");
+});
+
+test("templates render the short slugs, the repo and the ports", () => {
+  const vars = { branch: "feat/compte-non-provisionne", slug: "feat-compte-non-provisionne", key: "emis-15" };
+  expect(renderTemplate("../emis-{short_}", { ...vars, short_: "compte_non_provisionne" })).toBe(
+    "../emis-compte_non_provisionne",
+  );
+  expect(renderTemplate("{repo}/.env", { ...vars, repo: "/r" })).toBe("/r/.env");
+  expect(renderTemplate("{WEB_PORT}", { ...vars, WEB_PORT: 3010 })).toBe("3010");
+  expect(renderTemplate("echo {Home} {UNKNOWN_PORT}", vars)).toBe("echo {Home} {UNKNOWN_PORT}");
+  expect(() => renderTemplate("{short}", vars)).toThrow(KiboError);
+});
+
+test("the planned worktree renders the short slug", () => {
+  const settings = WorktreeSettings.parse({
+    baseRef: "origin/dev",
+    pathTemplate: "../gereco-{short}",
+    setup: null,
+  });
+  const planned = plannedWorktree({
+    root: "/w/gereco",
+    ticketKey: "GER-3",
+    branchRef: { kind: "git_branch" as const, branch: "feat/c2-1-export", base: null },
+    settings,
+  });
+  expect(planned.path).toBe("/w/gereco-c2-1-export");
 });

@@ -79,3 +79,22 @@ test("the question edit commands write questions and return the question", () =>
   };
   expect(Object.keys(results)).toHaveLength(5);
 });
+
+test("the delivery step is a command reserved to the daemon", () => {
+  expect(COMMAND_WRITES.setTicketDelivery).toBeNull();
+  expect(isReservedCommand("setTicketDelivery")).toBe(true);
+  const delivery = { step: 7, note: "", at: 1, runId: null };
+  expect(ProjectCommand.safeParse({ method: "setTicketDelivery", ticketId: "t1", delivery }).success).toBe(
+    true,
+  );
+  expect(
+    ProjectCommand.safeParse({ method: "setTicketDelivery", ticketId: "t1", delivery: null }).success,
+  ).toBe(true);
+  expect(
+    ProjectCommand.safeParse({
+      method: "setTicketDelivery",
+      ticketId: "t1",
+      delivery: { ...delivery, step: 12 },
+    }).success,
+  ).toBe(false);
+});
