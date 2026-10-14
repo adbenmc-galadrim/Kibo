@@ -145,6 +145,42 @@ test("a secret cut by a field limit is still masked", () => {
   expect(JSON.stringify(moments)).not.toContain("FAKEsecret");
 });
 
+test("the raw command of a refused action is masked", () => {
+  const github = `ghp_${"FAKEgh".repeat(6)}`;
+  const bearer = `FAKEbearer${"x".repeat(30)}`;
+  const openai = `sk-${"FAKEsk".repeat(8)}`;
+  const command =
+    `GH_TOKEN=${github} gh pr list && curl -H "Authorization: Bearer ${bearer}" https://api.example.com ` +
+    `&& OPENAI_API_KEY=${openai} pnpm test ${"x".repeat(400)}`;
+  const lines = [
+    JSON.stringify({
+      type: "assistant",
+      message: { content: [{ type: "tool_use", id: "t", name: "Bash", input: { command } }] },
+    }),
+    JSON.stringify({
+      type: "user",
+      message: {
+        content: [
+          {
+            type: "tool_result",
+            tool_use_id: "t",
+            content: "Permission for this tool use was denied.",
+            is_error: true,
+          },
+        ],
+      },
+    }),
+  ];
+  const [action] = actionsOf(foldAll(lines));
+  expect(action?.outcome).toBe("denied");
+  const masked = action?.command ?? "";
+  expect(masked).toContain("gh pr list");
+  for (const secret of [github, bearer, openai, "FAKEgh", "FAKEbearer", "FAKEsk"]) {
+    expect(masked).not.toContain(secret);
+  }
+  expect(hasSecret(masked)).toBe(false);
+});
+
 test("sidechain tools count, sidechain texts do not", () => {
   const moments = foldAll(fixtureLines("sidechain"));
   expect(moments.map((m) => m.data.kind)).toEqual(["actions", "message"]);
