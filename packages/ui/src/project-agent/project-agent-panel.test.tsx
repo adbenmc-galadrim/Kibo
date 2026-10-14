@@ -84,7 +84,7 @@ test("the header names the project and the state, the conversation is rendered",
   expect(await panel().findByText("Où en est-on ?")).toBeTruthy();
   expect(panel().getByText("lit les tickets, lit EMIS-11")).toBeTruthy();
   expect(panel().getByRole("region", { name: /Lot n° 1/ })).toBeTruthy();
-  await userEvent.setup().click(panel().getByRole("button", { name: "EMIS-11" }));
+  await userEvent.setup().click(await panel().findByRole("button", { name: "EMIS-11" }));
   expect(opened).toEqual(["t11"]);
 });
 
