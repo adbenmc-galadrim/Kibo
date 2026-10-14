@@ -36,6 +36,7 @@ function kibo() {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
   const run = (cmd: Parameters<typeof executeProjectCommand>[1]) => executeProjectCommand(doc, cmd);
   const dep = run({ method: "createTicket", title: "Schéma Loro", statusId: "in_progress" }) as Ticket;
@@ -235,6 +236,8 @@ test("the brief names the branch and the labels only when the ticket has them", 
 });
 
 const question = (ticketId: string, over: Partial<Question>): Question => ({
+  kind: "question",
+  images: [],
   id: "q1",
   ticketId,
   runId: "r1",

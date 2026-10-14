@@ -10,6 +10,7 @@ const meta = {
   worktree: null,
   storybook: null,
   duplication: null,
+  delivery: null,
 };
 const HASH = "a".repeat(64);
 

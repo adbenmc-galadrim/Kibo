@@ -81,6 +81,7 @@ describe("planDomainScopes", () => {
               worktree: null,
               storybook: null,
               duplication: null,
+              delivery: null,
             }),
           ]),
         );

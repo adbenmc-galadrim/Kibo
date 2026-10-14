@@ -92,6 +92,7 @@ export function exampleTicket(project: ProjectSnapshot): TicketView {
     externalRefs: [],
     labels: [],
     agentProgress: EMPTY_PROGRESS,
+    delivery: null,
     progress: { done: 0, total: 0 },
     waitingOn: [],
     keyLabel: key,

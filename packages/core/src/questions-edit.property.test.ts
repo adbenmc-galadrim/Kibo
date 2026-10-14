@@ -72,6 +72,7 @@ test("any accepted edit sequence keeps a valid question, a bounded history and o
         worktree: null,
         storybook: null,
         duplication: null,
+        delivery: null,
       });
       const ticket = createTicket(doc, { title: "Stockage" });
       const { id } = createQuestion(doc, {

@@ -14,6 +14,7 @@ const newDoc = () =>
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
 
 const step = (id: string, status: Step["status"]): Step => ({ id, title: `Étape ${id}`, status, note: null });

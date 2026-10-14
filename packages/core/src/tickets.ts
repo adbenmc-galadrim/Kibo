@@ -1,5 +1,6 @@
 import {
   type Assignee,
+  DeliveryStep,
   EMPTY_PROGRESS,
   ExternalRef,
   type FileCheck,
@@ -68,6 +69,14 @@ function readProgress(node: LoroTreeNode): TicketProgress {
   return parsed.data;
 }
 
+function readDelivery(node: LoroTreeNode): DeliveryStep | null {
+  const raw = node.data.get("delivery");
+  if (raw === undefined || raw === null) return null;
+  const parsed = DeliveryStep.safeParse(raw);
+  if (!parsed.success) throw new KiboError("STORE_CORRUPT", `invalid delivery step on ${node.id}`);
+  return parsed.data;
+}
+
 const cleanTitle = (title: string): string => {
   const t = title.trim();
   if (!t) throw new KiboError("INVALID_INPUT", "ticket title is empty");
@@ -91,6 +100,7 @@ function readTicket(n: LoroTreeNode): Ticket {
     externalRefs: readExternalRefs(n),
     labels: (d.get("labels") as string[] | undefined) ?? [],
     agentProgress: readProgress(n),
+    delivery: readDelivery(n),
   };
 }
 
@@ -198,6 +208,16 @@ export function setTicketProgress(doc: LoroDoc, update: TicketProgressUpdate): T
   if (!parsed.success)
     throw new KiboError("INVALID_INPUT", parsed.error.issues[0]?.message ?? "invalid progress");
   node.data.set("agentProgress", parsed.data);
+  doc.commit();
+  return readTicket(node);
+}
+
+export function setTicketDelivery(doc: LoroDoc, ticketId: string, delivery: DeliveryStep | null): Ticket {
+  const node = getNode(ticketTree(doc), ticketId);
+  const parsed = DeliveryStep.nullable().safeParse(delivery);
+  if (!parsed.success)
+    throw new KiboError("INVALID_INPUT", parsed.error.issues[0]?.message ?? "invalid delivery step");
+  node.data.set("delivery", parsed.data);
   doc.commit();
   return readTicket(node);
 }
