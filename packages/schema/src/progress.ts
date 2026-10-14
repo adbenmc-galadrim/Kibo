@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpToolSpec } from "./mcp-spec";
-import { ASK_TOOLS } from "./run";
+import { ASK_TOOLS } from "./run-hook";
 import { SIGNAL_PROJECT_SPEC, SIGNAL_TOOL, SIGNAL_TOOL_NAME } from "./signal";
 import { SKILL_REVIEW_SPEC, SKILL_REVIEW_TOOL } from "./skill";
 import type { TodoItem } from "./todo-item";

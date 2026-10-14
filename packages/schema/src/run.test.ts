@@ -2,16 +2,8 @@ import { expect, test } from "bun:test";
 import { runDeliverySteps } from "./delivery";
 import { machineLocks } from "./machine-lock";
 import { PROJECT_AGENT_MCP_TOOLS } from "./project-agent-tools";
-import {
-  HookInput,
-  HookPayload,
-  keyBesideLabel,
-  openOverlapTotal,
-  permissionReply,
-  type RunRecord,
-  runOverlapCounts,
-  runSubjectBeside,
-} from "./run";
+import { keyBesideLabel, openOverlapTotal, type RunRecord, runOverlapCounts, runSubjectBeside } from "./run";
+import { HookInput, HookPayload, permissionReply } from "./run-hook";
 
 const PAYLOAD = {
   event: "Stop",

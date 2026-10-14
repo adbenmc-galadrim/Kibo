@@ -81,6 +81,7 @@ export * from "./question-recipient";
 export * from "./rpc";
 export * from "./rule";
 export * from "./run";
+export * from "./run-hook";
 export * from "./secret-mask";
 export * from "./security";
 export * from "./semver";

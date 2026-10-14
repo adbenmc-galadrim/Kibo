@@ -26,7 +26,7 @@ import {
   TicketProgress,
   todosToPlan,
 } from "./progress";
-import { ASK_TOOLS } from "./run";
+import { ASK_TOOLS } from "./run-hook";
 
 const step = (id: string, status: Step["status"] = "todo"): Step => ({
   id,

@@ -1,6 +1,6 @@
 import { type ActionKind, MOMENT_DETAIL_MAX, type RunAction } from "./moment";
 import { PEEK_WORK_TOOL, PROGRESS_TOOL } from "./progress";
-import { ASK_TOOLS } from "./run";
+import { ASK_TOOLS } from "./run-hook";
 import { SIGNAL_TOOL } from "./signal";
 import { SKILL_REVIEW_TOOL } from "./skill";
 
