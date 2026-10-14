@@ -1,8 +1,9 @@
+import { existsSync } from "node:fs";
 import { KiboError, type ProjectSnapshot, type ProjectSummary } from "@kibo/schema";
 import type { Parsed } from "../args";
 import { connectDaemon, type DaemonClient, daemonInfoFile } from "../daemon-client";
 import { fr, frTickets } from "../fr";
-import { detailExtras } from "../tickets/ticket-detail";
+import { briefFile, detailExtras, notesOrEmpty } from "../tickets/ticket-detail";
 import { type Assignments, parseAssignments, prCommand, statusCommand } from "../tickets/ticket-set";
 import { detailLines, listLine, type TicketDetail } from "../tickets/ticket-text";
 import {
@@ -60,15 +61,17 @@ async function getCommand(ident: string, { client, snapshot, flags, io }: Contex
   const ticket = lookupTicket(snapshot.tickets, ident);
   if (!ticket) return notFound(ident, io);
   const projectId = snapshot.meta.id;
-  const [info, notes] = await Promise.all([
-    client.rpc({ method: "getNotesDir", projectId }),
-    client.rpc({ method: "listNotes", projectId }),
-  ]);
+  const info = await client.rpc({ method: "getNotesDir", projectId });
+  const notes = await notesOrEmpty(
+    () => client.rpc({ method: "listNotes", projectId }),
+    () => io.err(frTickets.notesUnavailable),
+  );
   const summary = summaryOf(snapshot, ticket.id);
+  const brief = briefFile(info.dir, summary.planId);
   const detail: TicketDetail = {
     ...summary,
     description: ticket.description,
-    ...detailExtras(summary, snapshot, { dir: info.dir, notes }),
+    ...detailExtras(summary, snapshot, notes, brief !== null && existsSync(brief) ? brief : null),
   };
   if (flags.json === true) printJson(io, detail);
   else for (const line of detailLines(detail)) io.out(line);

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_RECIPIENTS, type NoteMeta, type Question } from "@kibo/schema";
-import { detailExtras } from "./ticket-detail";
+import { DEFAULT_RECIPIENTS, KiboError, type NoteMeta, type Question } from "@kibo/schema";
+import { briefFile, detailExtras, notesOrEmpty } from "./ticket-detail";
 
 function question(id: string, extra: Partial<Question> = {}): Question {
   return {
@@ -45,7 +45,7 @@ const note = (path: string, tickets: string[]): NoteMeta => ({
 });
 
 describe("ticket detail", () => {
-  test("keeps open and undelivered questions, notes citing the key, and the plan brief", () => {
+  test("keeps open and undelivered questions and the notes citing the key", () => {
     const extras = detailExtras(
       { id: "3", key: "EMIS-3", planId: "C1-2" },
       {
@@ -59,10 +59,8 @@ describe("ticket detail", () => {
         ],
         questionRecipients: [...DEFAULT_RECIPIENTS],
       },
-      {
-        dir: "/notes",
-        notes: [note("a.md", ["EMIS-3"]), note("briefs/C1-2.md", []), note("b.md", ["EMIS-4"])],
-      },
+      [note("a.md", ["EMIS-3"]), note("briefs/C1-2.md", []), note("b.md", ["EMIS-4"])],
+      "/notes/briefs/C1-2.md",
     );
     expect(extras.questions).toEqual([
       {
@@ -91,13 +89,19 @@ describe("ticket detail", () => {
     expect(extras.brief).toBe("/notes/briefs/C1-2.md");
   });
 
-  test("no brief without a plan id or without the note", () => {
-    const none = { questions: [], questionRecipients: [] };
-    expect(detailExtras({ id: "3", key: "EMIS-3", planId: null }, none, { dir: "/n", notes: [] }).brief).toBe(
-      null,
-    );
-    expect(
-      detailExtras({ id: "3", key: "EMIS-3", planId: "C1-2" }, none, { dir: "/n", notes: [] }).brief,
-    ).toBe(null);
+  test("the brief lives in briefs/<plan id>.md of the notes folder", () => {
+    expect(briefFile("/notes", "C1-2")).toBe("/notes/briefs/C1-2.md");
+    expect(briefFile("/notes", null)).toBeNull();
+  });
+
+  test("an older daemon without listNotes gives no notes and a warning, other errors propagate", async () => {
+    const warnings: string[] = [];
+    const warn = () => warnings.push("warned");
+    const unknown = () => Promise.reject(new KiboError("INVALID_INPUT", "invalid request: method"));
+    expect(await notesOrEmpty(unknown, warn)).toEqual([]);
+    expect(warnings).toEqual(["warned"]);
+    const broken = () => Promise.reject(new KiboError("NOT_FOUND", "project gone"));
+    await expect(notesOrEmpty(broken, warn)).rejects.toThrow("project gone");
+    expect(await notesOrEmpty(() => Promise.resolve([note("a.md", [])]), warn)).toHaveLength(1);
   });
 });

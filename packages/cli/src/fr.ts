@@ -21,6 +21,7 @@ export const frTickets = {
   notRunning: "Kibo n'est pas lancé : ouvre l'application Kibo, puis réessaie.",
   projectNotFound: (p: string) => `Projet introuvable : ${p}`,
   ticketNotFound: (id: string) => `Ticket introuvable : ${id}`,
+  notesUnavailable: "Notes liées indisponibles : ce démon Kibo est plus ancien que la commande kibo.",
   defaultBlockedReason: "Bloqué par la livraison (kibo tickets)",
   updated: (key: string, changes: string[]) =>
     `✓ ${key} : ${changes.length === 0 ? "déjà à jour" : changes.join(" ")}`,
