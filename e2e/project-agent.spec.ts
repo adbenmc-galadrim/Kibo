@@ -259,3 +259,33 @@ test("l'agent de projet renomme, réassigne, rouvre et archive des questions", a
   ).toBeVisible();
   await expect(corrected.getByRole("button", { name: `Modifier la question « ${LOGO} »` })).toBeVisible();
 });
+
+test("la réponse de l'agent de projet montre un tableau, qu'Agrandir ouvre dans un volet", async ({
+  page,
+}, info) => {
+  test.setTimeout(120_000);
+  const projectId = await kibProject(page);
+  await page.goto(`/#/p/${encodeURIComponent(projectId)}/`);
+  await page.keyboard.press("ControlOrMeta+j");
+  const panel = panelOf(page);
+  await expect(panel).toBeVisible();
+  await say(panel, "Donne-moi l'ordre en tableau");
+  const table = panel.getByRole("region", { name: "Tableau" }).last().getByRole("table");
+  await expect(table).toBeVisible({ timeout: 30_000 });
+  await expect(table.getByRole("columnheader")).toHaveText(["Ordre", "Ticket", "Ce que ça donne", "Attend"]);
+  await expect(table.locator("tbody tr")).toHaveCount(2);
+  await shot(page, info, "a4-tableau-fil");
+
+  const expand = panel.getByRole("button", { name: "Agrandir le tableau" }).last();
+  await expand.click();
+  const sheet = page.getByRole("dialog", { name: "Tableau" });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByText("2 lignes · 4 colonnes")).toBeVisible();
+  await expect(sheet.getByRole("table").locator("tbody tr")).toHaveCount(2);
+  await expect(sheet.getByRole("button", { name: "Copier en Markdown" })).toBeVisible();
+  await shot(page, info, "a4-tableau-volet");
+  await page.keyboard.press("Escape");
+  await expect(sheet).toBeHidden();
+  await expect(expand).toBeFocused();
+  await expect(panel).toBeVisible();
+});
