@@ -15,18 +15,12 @@ const row = (runId: string): HTMLElement => {
   return li;
 };
 
-test("screen 200: a run with an open overlap carries a chip after its label", () => {
-  renderBar(1);
+test("2026-10-14: a run with open overlaps carries no chip in the bar", () => {
+  renderBar(2);
   for (const runId of [OWNER_RUN, OTHER_RUN]) {
-    const chip = within(row(runId)).getByRole("img", { name: "1 recouvrement ouvert" });
-    expect(chip.textContent).toBe("1");
-    expect(chip.querySelector("svg.lucide-copy")).toBeTruthy();
+    expect(within(row(runId)).queryByRole("img", { name: /recouvrement/ })).toBeNull();
+    expect(row(runId).querySelector("svg.lucide-copy")).toBeNull();
   }
-});
-
-test("without an open overlap there is no chip", () => {
-  renderBar(0);
-  expect(screen.queryByRole("img", { name: /recouvrement/ })).toBeNull();
 });
 
 const groups = () => {

@@ -31,18 +31,11 @@ test("a step chip shows the current step of the plan, or nothing", () => {
   expect(stepChip(undefined)).toBeNull();
 });
 
-test("the summary counts the distinct open overlaps, not the sum over runs", () => {
+test("2026-10-14: the summary never speaks of overlaps", () => {
   const state = withCounts(2, 0, 0);
   const both = [
     { runId: "r1", open: 1 },
     { runId: "r2", open: 1 },
   ];
-  expect(barSummary({ ...state, overlaps: both, overlapTotal: 1 }, fr.agents)).toBe(
-    "2/3 places · 1 recouvrement",
-  );
-  expect(barSummary({ ...state, overlaps: both, overlapTotal: 2 }, fr.agents)).toBe(
-    "2/3 places · 2 recouvrements",
-  );
-  expect(barSummary({ ...state, overlaps: [] }, fr.agents)).toBe("2/3 places");
-  expect(barSummary({ ...state, overlaps: both, overlapTotal: 0 }, fr.agents)).toBe("2/3 places");
+  expect(barSummary({ ...state, overlaps: both, overlapTotal: 2 }, fr.agents)).toBe("2/3 places");
 });

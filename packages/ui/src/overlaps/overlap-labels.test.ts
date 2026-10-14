@@ -3,7 +3,6 @@ import { formatClock } from "../agents/format";
 import { OPEN_OVERLAP, overlapFixture, RESOLVED_AT } from "./fixtures";
 import {
   activityCounts,
-  chipLabel,
   overlapCounts,
   overlapRole,
   overlapSides,
@@ -29,9 +28,7 @@ test("the role says who factorises and who is reused", () => {
   expect(overlapRole("owner", "bou · livraison · BOU-15")).toBe("repris par bou · livraison · BOU-15");
 });
 
-test("the chip and the activity counts speak French plurals", () => {
-  expect(chipLabel(1)).toBe("1 recouvrement ouvert");
-  expect(chipLabel(2)).toBe("2 recouvrements ouverts");
+test("the activity counts speak French plurals", () => {
   expect(activityCounts(1, 0)).toBe("Recouvrements : 1 réglé · 0 ouvert");
   expect(activityCounts(2, 3)).toBe("Recouvrements : 2 réglés · 3 ouverts");
 });

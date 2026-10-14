@@ -22,8 +22,6 @@ export function overlapState(overlap: Overlap, now: number): string {
 export const overlapRole = (role: OverlapRole, withRunName = ""): string =>
   role === "owner" ? t.ownedBy(withRunName) : t.role.other;
 
-export const chipLabel = (open: number): string => frOverlaps.bar.chip(open);
-
 export const activityCounts = (resolved: number, open: number): string =>
   frOverlaps.activity.counts(resolved, open);
 

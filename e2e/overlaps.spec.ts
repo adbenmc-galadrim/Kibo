@@ -69,10 +69,10 @@ test("BOU-16 écrit par le shell : le balayage trouve le recouvrement, la barre 
   await page.goto(`/#/p/${b.projectId}/t/${b.tickets.get(OWNER)}`);
   await expect(page.getByRole("heading", { name: "Format des dates de livraison" })).toBeVisible();
   const bar = page.getByRole("button", { name: /^(Déplier|Replier) les agents$/ });
-  await expect(
-    page.getByRole("region", { name: "Agents" }).getByText("1/3 place · 1 recouvrement"),
-  ).toBeVisible();
-  await expect(page.getByRole("img", { name: "1 recouvrement ouvert" })).toBeVisible();
+  const agents = page.getByRole("region", { name: "Agents" });
+  await expect(agents.getByText("1/3 place", { exact: true })).toBeVisible();
+  await expect(agents.getByText(/recouvrement/)).toHaveCount(0);
+  await expect(page.getByRole("img", { name: /recouvrement/ })).toHaveCount(0);
   await capture(page, info, "200");
   await bar.click({ position: EDGE });
   const dockRuns = page.getByRole("region", { name: "Runs" });
