@@ -29,6 +29,17 @@ const BASE_STEPS = [
   z.object({
     deny: z.object({ tool: z.string().min(1), input: z.record(z.string(), z.unknown()).default({}) }),
   }),
+  z.object({
+    subagent: z.object({
+      type: z.string().min(1),
+      description: z.string().default(""),
+      prompt: z.string().default(""),
+      model: z.string().optional(),
+      actions: z.array(z.object({ bash: z.string().min(1) })).default([]),
+      result: z.string().default("ok"),
+      hold: z.boolean().default(false),
+    }),
+  }),
 ] as const;
 const BaseStep = z.union(BASE_STEPS);
 export type FakeStep = z.infer<typeof BaseStep> | { subagent: string; steps: FakeStep[] };
@@ -135,7 +146,8 @@ export type FakeScenarioName =
   | "overlap-twin"
   | "overlap-routes"
   | "delivery-denied"
-  | "delivery-validation";
+  | "delivery-validation"
+  | "delivery-subagents";
 
 export function scenarioPath(name: FakeScenarioName): string {
   return join(import.meta.dir, "scenarios", `${name}.json`);

@@ -44,6 +44,7 @@ export type Player = { playAll(steps: readonly FakeStep[]): Promise<string | nul
 
 type SkillStep = { skill: string; args?: string; denied: boolean };
 type SubagentStep = { subagent: string; steps: FakeStep[] };
+type TracedSubagent = Extract<FakeStep, { subagent: { type: string } }>["subagent"];
 type DenyStep = { deny: { tool: string; input: Record<string, unknown> } };
 
 const deniedBy = (runs: HookRun[]) =>
@@ -68,7 +69,7 @@ export function createPlayer(ctx: PlayContext): Player {
     const refused = event === "PreToolUse" && deniedBy(runs);
     if (refused && tool) trail.denied(tool, denialReason(runs.map((r) => r.stdout)));
     if (event === "PreToolUse") journalContexts(tool, runs);
-    return { runs, refused };
+    return { runs, refused, id };
   };
 
   function journalContexts(tool: string, runs: HookRun[]): void {
@@ -177,6 +178,44 @@ export function createPlayer(ctx: PlayContext): Player {
     await toolHooks("PostToolUse", { ...call, tool_response: done }, () => text(done));
   }
 
+  async function tracedSubagent(step: TracedSubagent): Promise<void> {
+    const input = {
+      subagent_type: step.type,
+      description: step.description,
+      prompt: step.prompt,
+      ...(step.model === undefined ? {} : { model: step.model }),
+    };
+    const call = { tool_name: "Agent", tool_input: input };
+    const { refused, id } = await toolHooks("PreToolUse", call, () => text(""));
+    logUse("Agent", input, refused);
+    if (refused) {
+      ctx.denials.push("Agent");
+      return;
+    }
+    const agent = { agent_id: `a${randomUUID().replaceAll("-", "").slice(0, 16)}`, agent_type: step.type };
+    const own = transcript.subagent(agent.agent_id, {
+      agentType: step.type,
+      description: step.description,
+      toolUseId: id,
+      spawnDepth: 1,
+      requestShape: "agent",
+      requestNonInteractive: true,
+      model: step.model ?? null,
+    });
+    own.user(step.prompt);
+    await ctx.runHooks("SubagentStart", agent);
+    for (const action of step.actions)
+      own.toolResult(own.toolUse("Bash", { command: action.bash }), text("ok"));
+    if (step.hold) await hold();
+    own.say(step.result);
+    await ctx.runHooks("SubagentStop", {
+      ...agent,
+      stop_hook_active: false,
+      last_assistant_message: step.result,
+    });
+    await toolHooks("PostToolUse", { ...call, tool_response: step.result }, () => text(step.result));
+  }
+
   async function hold(): Promise<void> {
     const release = join(stateDir, `${sessionId}.release`);
     while (!existsSync(release)) {
@@ -195,7 +234,8 @@ export function createPlayer(ctx: PlayContext): Player {
     if ("write" in step) return write(step);
     if ("delete" in step) return remove(step);
     if ("skill" in step) return skill(step);
-    if ("subagent" in step) return subagent(step);
+    if ("subagent" in step && "steps" in step) return subagent(step);
+    if ("subagent" in step) return tracedSubagent(step.subagent);
     if ("deny" in step) return deny(step);
     if ("sleepMs" in step) return Bun.sleep(step.sleepMs);
     if ("hold" in step) return hold();
