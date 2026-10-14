@@ -14,7 +14,12 @@ const BASE_STEPS = [
   z.object({ hold: z.literal(true) }),
   z.object({ stderr: z.string() }),
   z.object({ write: z.string().min(1), fixture: z.string().min(1), bypassHooks: z.boolean().default(false) }),
-  z.object({ write: z.string().min(1), content: z.string(), bypassHooks: z.boolean().default(false) }),
+  z.object({
+    write: z.string().min(1),
+    content: z.string(),
+    binary: z.literal(true).optional(),
+    bypassHooks: z.boolean().default(false),
+  }),
   z.object({ delete: z.string().min(1), bypassHooks: z.boolean().default(false) }),
   z.object({ mcp: z.string().min(1), input: z.record(z.string(), z.unknown()).default({}) }),
   z.object({ say: z.string() }),
@@ -129,7 +134,8 @@ export type FakeScenarioName =
   | "overlap-import"
   | "overlap-twin"
   | "overlap-routes"
-  | "delivery-denied";
+  | "delivery-denied"
+  | "delivery-validation";
 
 export function scenarioPath(name: FakeScenarioName): string {
   return join(import.meta.dir, "scenarios", `${name}.json`);

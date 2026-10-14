@@ -11,7 +11,10 @@ export type WriteLog =
   | { write: string; bypass?: true }
   | { deleted: string; bypass?: true }
   | { denied: string; reason: string };
-type WriteStep = { write: string; bypassHooks: boolean } & ({ fixture: string } | { content: string });
+type WriteStep = { write: string; bypassHooks: boolean } & (
+  | { fixture: string }
+  | { content: string; binary?: true }
+);
 type DeleteStep = { delete: string; bypassHooks: boolean };
 export const fixturesDir = (env: Record<string, string | undefined> = process.env): string =>
   env.KIBO_FAKE_CLAUDE_FIXTURES ?? FIXTURES_DIR;
@@ -104,9 +107,10 @@ export async function runWriteStep(
     "content" in step
       ? step.content
       : readFileSync(fixturePath(ctx.fixtures ?? fixturesDir(), step.fixture), "utf8");
+  const binary = "content" in step && step.binary === true;
   const write = () => {
     mkdirSync(dirname(filePath), { recursive: true });
-    writeFileSync(filePath, content);
+    writeFileSync(filePath, binary ? Buffer.from(content, "base64") : content);
   };
   const done = (entry: WriteLog) => {
     ctx.log(entry);
@@ -194,10 +198,19 @@ export function fakeWrites(stateDir: string, sessionId: string): WriteLog[] {
 
 const ATTACHMENTS_VAR = "$KIBO_DRAFT_ATTACHMENTS";
 
+const CWD_VAR = "$CWD/";
+
+const fromCwd = (images: unknown[], cwd: string): unknown[] =>
+  images.map((p) =>
+    typeof p === "string" && p.startsWith(CWD_VAR) ? join(cwd, p.slice(CWD_VAR.length)) : p,
+  );
+
 export function resolveStepInput(
-  input: Record<string, unknown> | undefined,
+  raw: Record<string, unknown> | undefined,
   env: Record<string, string | undefined>,
+  cwd: string = process.cwd(),
 ): Record<string, unknown> | undefined {
+  const input = raw && Array.isArray(raw.images) ? { ...raw, images: fromCwd(raw.images, cwd) } : raw;
   const path = input?.file_path;
   if (typeof path !== "string" || !(path === ATTACHMENTS_VAR || path.startsWith(`${ATTACHMENTS_VAR}/`)))
     return input;
