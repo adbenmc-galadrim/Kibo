@@ -1932,3 +1932,56 @@ Tout texte **écrit par un agent** et affiché dans la conversation : moments «
 - Unitaires (SDK) : analyse de l'exemple d'Adam (en-tête, lignes, source), alignements, sauts de ligne, listes, code, HTML brut, liens filtrés, images ; rendu (tableau réel, cadre défilant, cellules longues, clé de ticket cliquable dans une cellule, `<script>` et `javascript:` inertes), volet (ouverture, titre, Échap, focus rendu), copie (réussie, refusée).
 - Unitaires (interface) : moment « message », question de l'agent, compte rendu, chat de l'agent de projet.
 - E2E (`e2e/project-agent.spec.ts`, faux `claude`, scénario `project-agent-table.json`) : la réponse contient un tableau rendu, « Agrandir » ouvre le volet, Échap le ferme ; captures sombre et clair.
+
+## 33. CLI `kibo tickets` (demande d'Adam du 2026-10-14)
+
+**Demande** : le skill `/full-delivery`, utilisé hors de Kibo, lit et met à jour le plan par des scripts shell (`delivery-plan <projet> get <ID>`, `list --ready`, `set <ID> status=… pr=…`). Ces scripts doivent lire les tickets du démon local au lieu d'un fichier Markdown figé. Kibo leur donne une interface stable : la commande `kibo tickets` de `packages/cli` (brique C1 de la phase 24). Amende §6 (CLI) et §4 (API du démon).
+
+### 33.1 Accès au démon
+
+- La CLI lit `~/.kibo/daemon.json` (port) et `~/.kibo/token` (`KIBO_HOME` sinon), s'appaire par `POST /api/pair` (cookie de session), appelle `POST /api/rpc`, puis **ferme sa session** (`listSessions` → `revokeSession` de la session courante), même en cas d'erreur. Le jeton n'apparaît jamais dans une sortie, une erreur ou un test.
+- Démon absent (fichier manquant, port injoignable) : `KiboError` de code stable **`DAEMON_NOT_RUNNING`** ; la CLI affiche « Kibo n'est pas lancé : ouvre l'application Kibo, puis réessaie. » et sort en `1`. Jeton refusé : `UNAUTHORIZED`, « Appairage refusé ». `kibo component publish` et `kibo market` utilisent le même code.
+- Projet (`--project`, obligatoire) : id, clé (`EMIS`, casse ignorée) ou nom exact (casse ignorée), dans `listProjects`. Inconnu : `NOT_FOUND`, « Projet introuvable : <p> ».
+- Nouvelle RPC en lecture **`listNotes { projectId }` → `NoteMeta[]`** (même index que la liste du composant Notes, §6), pour les notes liées et le brief, sans instance de composant.
+
+### 33.2 Commandes
+
+```
+kibo tickets list --project <p> [--ready] [--status <s>[,<s>…]] [--json]
+kibo tickets get <clé | id du plan | id> --project <p> [--json]
+kibo tickets set <clé | id du plan | id> [status=<s>] [pr=<n | url>] [reason=<texte>] --project <p> [--json]
+```
+
+- **Identifiant d'un ticket** : sa clé (`EMIS-15`, casse ignorée), son **id du plan** (`C1-3`, tiré de la référence importée `plan:<ID>` (`import_ref`, source `plan`, §23.3), casse ignorée) ou son id de nœud. Introuvable : `NOT_FOUND`, « Ticket introuvable ».
+- **`list`** : par ticket, `key`, `id`, `planId` (`null` sans référence `plan:`), `title`, `status` (normalisé, §33.3), `kiboStatus` (id Kibo), `column` (libellé de la colonne dans le workflow du projet), `blockedReason`, `parent`, `children`, `deps` (tickets qui le **bloquent** : liens `blocks` dont il est la cible), chacun en `{ key, planId, status }`, `pr` (`{ number, url, state } | null` : la PR ouverte ou en brouillon de plus grand numéro, sinon la dernière fusionnée, sinon la dernière fermée), `assignee` (`{ kind: "human" | "agent", ref } | null`), `labels`. Ordre : celui de `getProject`.
+- **`--ready`** : statut normalisé **`todo`**, **aucun enfant** (un ticket parent regroupe, il ne se livre pas) et **toutes ses dépendances `done`**. C'est la règle de `delivery-plan list --ready` (« todo dont toutes les deps sont done ») : un ticket `wip` ou `blocked` n'est pas prêt.
+- **`--status`** : un ou plusieurs statuts, normalisés (`todo|wip|done|blocked`) ou Kibo (`backlog|todo|in_progress|in_review|blocked|done`), séparés par des virgules.
+- **`get`** : les champs de `list`, plus `description` (complète), `questions` (questions **non archivées et pas encore remises** : `{ id, title, recipient: { id, name }, state: "open" | "answered", blocking }`), `notes` (`{ path, title }` des notes qui citent la clé du ticket, §6) et `brief` (chemin absolu de `<dossier des notes>/briefs/<planId>.md` si la note existe, sinon `null` ; convention de l'import Emis, §23.8).
+- **Sorties** : `--json` écrit un JSON indenté sur la sortie standard (`list` : un tableau ; `get` et `set` : un objet) ; sans `--json`, `list` écrit une ligne par ticket `clé  id du plan  statut  titre` (séparées par des tabulations), `get` un bloc lisible. Codes de sortie : `0` succès, `1` erreur (message sur la sortie d'erreur, `Erreur <CODE> : …` pour une `KiboError`), `2` usage.
+
+### 33.3 Statuts normalisés et colonnes
+
+| Statut Kibo (colonne) | → normalisé | normalisé → statut Kibo écrit par `set` |
+|---|---|---|
+| `backlog` (Backlog) | `todo` | — |
+| `todo` (À faire) | `todo` | `todo` → `todo` |
+| `in_progress` (En cours) | `wip` | `wip` → `in_progress` |
+| `in_review` (En review) | `wip` | — |
+| `blocked` (Bloqué) | `blocked` | `blocked` → `blocked` |
+| `done` (Terminé) | `done` | `done` → `done` |
+
+- `set status=<s>` accepte aussi un statut Kibo (`in_review`, `backlog`…), écrit tel quel.
+- Un statut normalisé **déjà vrai** ne change rien (idempotent) : `wip` sur un ticket `in_review` le laisse en review, `todo` sur un ticket `backlog` le laisse au backlog.
+- `blocked` exige une raison (`BLOCKED_REASON_REQUIRED`, §5) : `reason=<texte>`, sinon « Bloqué par la livraison (kibo tickets) ».
+- **`done` s'écrit à la fusion de la PR** : c'est le skill qui en décide (`status=done` seulement quand la PR est fusionnée, `wip` + `pr` à son ouverture) ; la CLI n'ajoute aucun garde-fou.
+
+### 33.4 Écritures
+
+- `set` passe par la RPC `command`, comme l'interface : `setStatus { ticketId, statusId, reason? }` pour le statut, `upsertExternalRef { ticketId, ref: github_pr }` pour la PR. Aucune écriture directe du document.
+- **`pr=<url>`** (`https://github.com/<o>/<r>/pull/<n>`) ou **`pr=<n>`** : avec un numéro, le dépôt est celui des PR déjà rattachées aux tickets du projet (un seul dépôt) ; aucun ou plusieurs ⇒ `INVALID_INPUT`, « passe pr=<url> ». La référence est créée à l'état `open` (`base` et `head` inconnus) ; une PR déjà rattachée au ticket avec la même URL est laissée telle quelle. La découverte des PR (§23.6) met ensuite l'état à jour pour un ticket qui a une branche.
+- Clés acceptées : `status`, `pr`, `reason` ; toute autre clé, ou aucune, ⇒ usage (code `2`). Le statut est écrit avant la PR. `--json` rend le ticket relu après écriture (forme de `list`) ; sinon une ligne « ✓ <clé> : status=… pr=… ».
+
+### 33.5 Dépendances et tests
+
+- `packages/cli` ne dépend que de `schema`, `devkit` et `trust` (le démon reste une `devDependency` pour les tests) ; la vue des tickets (`packages/cli/src/tickets/`) est pure et testée sur des instantanés.
+- Tests sans token : formats JSON et lisible, `--ready` (dépendances, parent, statut), `--status`, correspondance `plan:`, résolution du projet, `set` (statut, idempotence, raison par défaut, PR par numéro et par URL, dépôt ambigu), démon absent (`DAEMON_NOT_RUNNING`), jeton jamais affiché, session fermée ; intégration contre un vrai démon temporaire (`KIBO_HOME` temporaire), comme `kibo component publish`.
