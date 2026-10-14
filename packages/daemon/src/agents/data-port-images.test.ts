@@ -1,8 +1,9 @@
 import { expect, test } from "bun:test";
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { AskInput, type ProjectMeta, type Ticket, VALIDATION_OPTIONS } from "@kibo/schema";
+import { AskInput, EMPTY_DELIVERY, type ProjectMeta, type Ticket, VALIDATION_OPTIONS } from "@kibo/schema";
 import { createProjectSettings } from "../notes/settings";
+import { LOCAL_DELIVERY_KEY } from "../project-folder";
 import { nodeImageFs, questionImagesDir } from "../questions/question-images";
 import { imagesTmp, writeImage } from "../questions/question-images.test-helper";
 import { call, createService } from "../service";
@@ -27,7 +28,8 @@ function setup() {
   }) as Ticket;
   const lines: string[] = [];
   const home = join(root, "kibo");
-  const port = createDataPort(s.docs, createProjectSettings(store.db), Date.now, undefined, {
+  const settings = createProjectSettings(store.db);
+  const port = createDataPort(s.docs, settings, Date.now, undefined, {
     home,
     notesDir: () => join(root, "notes"),
     fs: nodeImageFs,
@@ -48,7 +50,9 @@ function setup() {
         ...input,
       }),
     );
-  return { root, home, lines, ask };
+  const setDeliveryRoot = (path: string) =>
+    settings.set(meta.id, LOCAL_DELIVERY_KEY, JSON.stringify({ ...EMPTY_DELIVERY, root: path }));
+  return { root, home, lines, ask, setDeliveryRoot };
 }
 
 test("a validation question gets its two options and the metadata of its allowed images only", () => {
@@ -95,4 +99,15 @@ test("asking again an open question stores no second copy of its images", () => 
   expect(again?.images).toEqual(first?.images ?? []);
   const dir = questionImagesDir(home, first?.id ?? "");
   expect(readdirSync(dir)).toHaveLength(1);
+});
+
+test("the delivery root is read from the local setting of the project, never from the shared document", () => {
+  const { root, lines, ask, setDeliveryRoot } = setup();
+  const shot = writeImage(join(root, "emis/docs/1.png"));
+  expect(ask({ title: "Avant", kind: "validation", images: [shot] })?.images).toEqual([]);
+  setDeliveryRoot(join(root, "emis"));
+  expect(ask({ title: "Après", kind: "validation", images: [shot] })?.images.map((i) => i.name)).toEqual([
+    "1.png",
+  ]);
+  expect(lines).toEqual(["image omise 1.png : hors des dossiers permis"]);
 });

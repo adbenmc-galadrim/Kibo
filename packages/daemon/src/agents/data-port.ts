@@ -29,6 +29,7 @@ import type { LoroDoc } from "loro-crdt";
 import { isDemoProject } from "../demo/demo-project";
 import type { CommandMeta, Docs } from "../docs";
 import type { ProjectSettings } from "../notes/settings";
+import { localDelivery } from "../project-folder";
 import {
   type QuestionImageDeps,
   type QuestionImagesPort,
@@ -119,11 +120,13 @@ function answerRunQuestion(docs: Docs, projectId: string, runId: string, text: s
   return Question.parse(answered);
 }
 
-function questionsPort(docs: Docs, now: () => number, imageDeps: QuestionImageDeps | null): QuestionsPort {
-  const images = questionImagesOf(
-    imageDeps,
-    (projectId) => docs.projectMeta(projectId).delivery?.root ?? null,
-  );
+function questionsPort(
+  docs: Docs,
+  settings: Pick<ProjectSettings, "get">,
+  now: () => number,
+  imageDeps: QuestionImageDeps | null,
+): QuestionsPort {
+  const images = questionImagesOf(imageDeps, (projectId) => localDelivery(settings, projectId)?.root ?? null);
   return {
     createQuestion: (projectId, ticketId, run, ask) =>
       createRunQuestion(docs, images, projectId, ticketId, run, ask),
@@ -150,7 +153,7 @@ export function createDataPort(
   images: QuestionImageDeps | null = null,
 ): AgentDataPort {
   return {
-    ...questionsPort(docs, now, images),
+    ...questionsPort(docs, settings, now, images),
     agents: (projectId) => agentSource.agents(projectId),
     agentOf: (ref) => agentSource.agentOf(ref),
     projectKey: (projectId) => docs.projectMeta(projectId).key,
