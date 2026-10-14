@@ -1,6 +1,6 @@
 import type { Overlap } from "@kibo/schema";
 import { Users } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { frOverlaps } from "../i18n/fr-overlaps";
 import { useOptionalHost } from "../shell/Host";
 import { useNow } from "../state/use-agents";
@@ -19,6 +19,7 @@ export function ParallelWorkSection({ runId }: { runId: string }) {
   const now = useNow(60_000);
   const { work, error } = useParallelWork(runId);
   const [filesId, setFilesId] = useState<string | null>(null);
+  const sharedPaths = useMemo(() => new Set(work?.sharedPaths ?? []), [work]);
   return (
     <section aria-labelledby={heading} className="grid content-start gap-3">
       <div className="grid gap-0.5">
@@ -47,6 +48,7 @@ export function ParallelWorkSection({ runId }: { runId: string }) {
               key={run.runId}
               run={run}
               overlaps={withRun(work.overlaps, run.runId)}
+              sharedPaths={sharedPaths}
               now={now}
               onSeeWork={(id) => host?.openRun?.(id)}
               onSeeFiles={setFilesId}

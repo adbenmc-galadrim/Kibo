@@ -86,6 +86,22 @@ test("screen 200: each other run shows its mention, step, files, new exports and
   expect(overlap?.textContent).toContain("Ouvert");
 });
 
+test("a file this run changed too is marked, and only that one", async () => {
+  work = parallelFixture({ sharedPaths: ["src/i18n/fr.ts", "src/elsewhere.ts"] });
+  renderSection();
+  await userEvent.setup().click(await screen.findByRole("button", { name: /3 fichiers/ }));
+  const shared = screen.getByText("src/i18n/fr.ts").closest("li");
+  expect(shared?.textContent).toContain("aussi modifié par toi");
+  expect(screen.getAllByText("aussi modifié par toi")).toHaveLength(1);
+  expect(screen.getByText("src/lib/format.ts").closest("li")?.textContent).not.toContain("aussi modifié");
+});
+
+test("without paths in common no file is marked", async () => {
+  renderSection();
+  await userEvent.setup().click(await screen.findByRole("button", { name: /3 fichiers/ }));
+  expect(screen.queryByText("aussi modifié par toi")).toBeNull();
+});
+
 test("« Voir son travail » opens the other run, « Voir les fichiers » the two files", async () => {
   renderSection();
   const user = userEvent.setup();

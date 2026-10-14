@@ -1,4 +1,5 @@
 import type { Overlap, ParallelRun } from "@kibo/schema";
+import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/ui/collapsible";
 import { ChevronRight, Copy, Eye, FileCode, GitBranch, LoaderCircle } from "lucide-react";
@@ -9,6 +10,7 @@ import { overlapState, overlapWhat } from "./overlap-labels";
 type Props = {
   run: ParallelRun;
   overlaps: readonly Overlap[];
+  sharedPaths: ReadonlySet<string>;
   now: number;
   onSeeWork(runId: string): void;
   onSeeFiles(overlapId: string): void;
@@ -34,7 +36,7 @@ function workspaceText(run: ParallelRun): string {
   return t.worktree(run.worktreeName ?? "");
 }
 
-function Files({ run }: { run: ParallelRun }) {
+function Files({ run, sharedPaths }: { run: ParallelRun; sharedPaths: ReadonlySet<string> }) {
   if (run.files.length === 0) return null;
   return (
     <Collapsible>
@@ -49,6 +51,14 @@ function Files({ run }: { run: ParallelRun }) {
             <li key={f.path} className="flex min-w-0 items-center gap-2 text-xs">
               <FileCode aria-hidden className="size-3.5 shrink-0 text-muted-foreground" />
               <code className="min-w-0 flex-1 truncate font-mono">{f.path}</code>
+              {sharedPaths.has(f.path) && (
+                <Badge
+                  variant="outline"
+                  className="shrink-0 px-1.5 py-0 text-[10px] font-normal text-muted-foreground"
+                >
+                  {t.alsoMine}
+                </Badge>
+              )}
               <span className="font-mono text-green-700 dark:text-green-400">{`+${f.added}`}</span>
               <span className="font-mono text-red-700 dark:text-red-400">{`−${f.removed}`}</span>
             </li>
@@ -104,7 +114,7 @@ function OverlapRow({
   );
 }
 
-export function ParallelRunCard({ run, overlaps, now, onSeeWork, onSeeFiles }: Props) {
+export function ParallelRunCard({ run, overlaps, sharedPaths, now, onSeeWork, onSeeFiles }: Props) {
   return (
     <li data-run={run.runId} className="grid gap-2 rounded-md border p-3">
       <Mention runId={run.runId} label={run.name} className="w-fit text-sm underline underline-offset-2" />
@@ -119,7 +129,7 @@ export function ParallelRunCard({ run, overlaps, now, onSeeWork, onSeeFiles }: P
         <GitBranch aria-hidden className="size-3.5" />
         {workspaceText(run)}
       </p>
-      <Files run={run} />
+      <Files run={run} sharedPaths={sharedPaths} />
       <Exports run={run} />
       {overlaps.length > 0 && (
         <ul className="grid gap-2">

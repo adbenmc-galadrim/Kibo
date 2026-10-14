@@ -84,7 +84,7 @@ test("BOU-16 écrit par le shell : le balayage trouve le recouvrement, la barre 
   await page.goto(`/#/runs/${shell.id}`);
   const open = overlapLine().filter({ hasText: `Recouvrement avec ${OWNER_NAME}` });
   await expect(open).toContainText("formatDate exporté deux fois");
-  await expect(open).toContainText("à factoriser");
+  await expect(open).toContainText("information");
   await expect(open).toContainText("Ouvert");
   await open.scrollIntoViewIfNeeded();
   await capture(page, info, "197");

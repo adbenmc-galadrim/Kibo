@@ -5,7 +5,7 @@ const time = (at: number) => new Date(at).toLocaleTimeString("fr-FR", { hour: "2
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
-const role: Record<OverlapRole, string> = { other: "à factoriser", owner: "repris par" };
+const role: Record<OverlapRole, string> = { other: "information", owner: "repris par" };
 
 const reasons: Record<AutoLinkReason, string> = { copy: "repris de", import: "importé de" };
 
@@ -60,6 +60,7 @@ export const frOverlaps = {
     files: (n: number) => plural(n, "fichier", "fichiers"),
     exports: (n: number) => plural(n, "export nouveau", "exports nouveaux"),
     truncated: "liste tronquée",
+    alsoMine: "aussi modifié par toi",
     seeWork: "Voir son travail",
     shared: "dossier du projet, partagé avec toi",
     isolated: "dossier isolé, non comparé",

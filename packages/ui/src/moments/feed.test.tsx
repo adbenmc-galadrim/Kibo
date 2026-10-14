@@ -313,7 +313,8 @@ test("screen 197: an overlap names the other run, what overlaps, the role and th
   expect(within(line).getByText("formatDate").tagName).toBe("CODE");
   expect(line.textContent).toContain("formatDate exporté deux fois");
   expect(line.textContent).toContain("src/utils/date.ts (toi) · src/lib/format.ts");
-  expect(within(line).getByText("à factoriser")).toBeTruthy();
+  expect(within(line).getByText("information")).toBeTruthy();
+  expect(within(line).queryByText("à factoriser")).toBeNull();
   expect(within(line).getByText("Ouvert")).toBeTruthy();
   const user = userEvent.setup();
   await user.click(within(line).getByRole("button", { name: "Voir les fichiers" }));

@@ -23,8 +23,8 @@ test("a resolution from another day carries its date", () => {
   expect(overlapState(resolved, RESOLVED_AT + 3 * 86_400_000)).toMatch(/^Réglé \d+ \S+ \d{2}:\d{2}$/);
 });
 
-test("the role says who factorises and who is reused", () => {
-  expect(overlapRole("other")).toBe("à factoriser");
+test("the role is an information for the other run, and says who is reused", () => {
+  expect(overlapRole("other")).toBe("information");
   expect(overlapRole("owner", "bou · livraison · BOU-15")).toBe("repris par bou · livraison · BOU-15");
 });
 
