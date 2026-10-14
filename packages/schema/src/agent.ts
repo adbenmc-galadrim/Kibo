@@ -193,6 +193,8 @@ export const AgentCreateInput = z.object({
 });
 export type AgentCreateInput = z.infer<typeof AgentCreateInput>;
 
+export type SettingOrigin = "agent" | "project";
+
 export type AgentPreview = {
   levels: { label: string; path: string; tokens: number }[];
   systemPrompt: string;
@@ -204,6 +206,8 @@ export type AgentPreview = {
     tools: string[] | null;
     disallowedTools: string[] | null;
     allow: string[];
+    allowOrigins: { rule: string; origin: SettingOrigin }[];
+    addDirs: { dir: string; origin: SettingOrigin }[];
     subagents: string[];
     allSubagents: boolean;
     skills: SkillsRule;

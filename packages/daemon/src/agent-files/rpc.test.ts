@@ -19,6 +19,8 @@ const PREVIEW: AgentPreview = {
     tools: null,
     disallowedTools: null,
     allow: [],
+    allowOrigins: [],
+    addDirs: [],
     subagents: [],
     allSubagents: false,
     skills: { mode: "all" },

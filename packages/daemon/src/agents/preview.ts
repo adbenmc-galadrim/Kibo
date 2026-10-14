@@ -14,7 +14,9 @@ import {
   estimateTokens,
   type Guideline,
   KiboError,
+  type ProjectDelivery,
   type ProjectSnapshot,
+  type SettingOrigin,
 } from "@kibo/schema";
 import { EXAMPLE_NOW, exampleParallelWork } from "../overlaps/work-example";
 import type { AgentDataPort } from "./orchestrator-types";
@@ -27,7 +29,12 @@ export type AgentPreviewDeps = {
   workspaceGuidelines(): Guideline[];
 };
 
-type Composition = { files: ContextFile[]; systemPrompt: string; brief: string };
+type Composition = {
+  files: ContextFile[];
+  systemPrompt: string;
+  brief: string;
+  delivery: ProjectDelivery | null;
+};
 
 const LEVEL_LABELS: [string, string][] = [
   [FOLDER.workspace, "Workspace"],
@@ -66,7 +73,7 @@ function projectComposition(
     projectId,
     domainId: ctx.ticket.domainId,
   });
-  return buildRunContext({
+  const context = buildRunContext({
     ...ctx,
     note: "",
     work: composeWorkSection(exampleParallelWork(ctx.project), EXAMPLE_NOW),
@@ -74,6 +81,7 @@ function projectComposition(
     agent: composed.context,
     protocol: protocolOf(composed, ctx.project),
   });
+  return { ...context, delivery: ctx.project.meta.delivery };
 }
 
 function machineComposition(deps: AgentPreviewDeps, composed: ComposedAgent): Composition {
@@ -85,7 +93,19 @@ function machineComposition(deps: AgentPreviewDeps, composed: ComposedAgent): Co
       ? [{ path: `context/${FOLDER.agent}/${context.name}.md`, content: context.body }]
       : []),
   ];
-  return { files, systemPrompt: buildSystemPrompt(chain, context, protocolOf(composed, null)), brief: "" };
+  const systemPrompt = buildSystemPrompt(chain, context, protocolOf(composed, null));
+  return { files, systemPrompt, brief: "", delivery: null };
+}
+
+type Origined = { value: string; origin: SettingOrigin };
+const from =
+  (origin: SettingOrigin) =>
+  (value: string): Origined => ({ value, origin });
+
+function withOrigins(agent: readonly string[], project: readonly string[]): Origined[] {
+  const seen = new Set(agent);
+  const fromProject = [...new Set(project)].filter((value) => !seen.has(value));
+  return [...agent.map(from("agent")), ...fromProject.map(from("project"))];
 }
 
 export function createAgentPreview(deps: AgentPreviewDeps) {
@@ -100,6 +120,11 @@ export function createAgentPreview(deps: AgentPreviewDeps) {
         : projectComposition(deps, composed, projectId, req.ticketId);
     const { flags } = composed;
     const { settings } = agent;
+    const { delivery } = composition;
+    const allow = [
+      ...withOrigins(settings.allow, delivery?.allow ?? []),
+      ...skillRules(settings.skills, false).map(from("agent")),
+    ];
     return {
       levels: composition.files
         .filter((f) => f.path.startsWith("context/"))
@@ -116,7 +141,12 @@ export function createAgentPreview(deps: AgentPreviewDeps) {
         permissionMode: settings.permissionMode,
         tools: flags.tools,
         disallowedTools: flags.disallowedTools,
-        allow: [...settings.allow, ...skillRules(settings.skills, false)],
+        allow: allow.map((o) => o.value),
+        allowOrigins: allow.map(({ value, origin }) => ({ rule: value, origin })),
+        addDirs: withOrigins(settings.addDirs, delivery?.addDirs ?? []).map(({ value, origin }) => ({
+          dir: value,
+          origin,
+        })),
         subagents: composed.subagents.map((s) => s.name),
         allSubagents: settings.allSubagents,
         skills: settings.skills,

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { type Guideline, KiboError } from "@kibo/schema";
+import { EMPTY_DELIVERY, type Guideline, KiboError, type ProjectSnapshot } from "@kibo/schema";
 import { testAgent } from "./agents-port.test-helper";
 import { memoryAgentSource } from "./neutral-agents";
 import { testProject } from "./orchestrator.test-helper";
@@ -18,26 +18,29 @@ const reviewPr = testAgent({
   subagents: ["global:livraison"],
   skills: { mode: "list", ids: ["brainstorming"] },
   allow: ["Bash(git *)"],
+  addDirs: ["/Users/a/.claude/skills"],
 });
 const livraison = testAgent({ id: "livraison", name: "livraison", body: "Tu livres." });
 const delivery = testAgent({ id: "full-delivery", name: "full-delivery", allSubagents: true });
 const source = memoryAgentSource([reviewPr, livraison, delivery]);
 const token = "a".repeat(64);
 
-const preview = createAgentPreview({
-  data: {
-    agentOf: source.agentOf,
-    skills: () => [],
-    guidelines: () => guidelines,
-    ticketContext: (projectId, ticketId) => {
-      const ticket = testProject.tickets.find((t) => t.id === ticketId);
-      if (projectId !== "p1" || !ticket) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
-      return { project: testProject, ticket, domain: null };
+const previewOf = (project: ProjectSnapshot) =>
+  createAgentPreview({
+    data: {
+      agentOf: source.agentOf,
+      skills: () => [],
+      guidelines: () => guidelines,
+      ticketContext: (projectId, ticketId) => {
+        const ticket = project.tickets.find((t) => t.id === ticketId);
+        if (projectId !== "p1" || !ticket) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
+        return { project, ticket, domain: null };
+      },
     },
-  },
-  project: () => testProject,
-  workspaceGuidelines: () => guidelines.filter((g) => g.owner.scope === "workspace"),
-});
+    project: () => project,
+    workspaceGuidelines: () => guidelines.filter((g) => g.owner.scope === "workspace"),
+  });
+const preview = previewOf(testProject);
 
 test("the preview shows each level, the composed prompt, the ticket brief, agents.json and the command", async () => {
   const result = await preview({ ref: "global:review-pr", projectId: "p1", ticketId: "t3" });
@@ -56,6 +59,11 @@ test("the preview shows each level, the composed prompt, the ticket brief, agent
     tools: ["Read"],
     disallowedTools: null,
     allow: ["Bash(git *)", "Skill(brainstorming)"],
+    allowOrigins: [
+      { rule: "Bash(git *)", origin: "agent" },
+      { rule: "Skill(brainstorming)", origin: "agent" },
+    ],
+    addDirs: [{ dir: "/Users/a/.claude/skills", origin: "agent" }],
     subagents: ["livraison"],
     allSubagents: false,
     skills: { mode: "list", ids: ["brainstorming"] },
@@ -95,4 +103,28 @@ test("the command says when every subagent is allowed", async () => {
   const result = await preview({ ref: "global:full-delivery" });
   expect(result.command.allSubagents).toBe(true);
   expect(result.command.subagents).toEqual([]);
+});
+
+test("the command shows the merged rules and folders, each with its origin", async () => {
+  const delivery = {
+    ...EMPTY_DELIVERY,
+    allow: ["Bash(pnpm *)", "Bash(git *)"],
+    addDirs: ["/Users/a/Documents/emis"],
+  };
+  const withDelivery = previewOf({ ...testProject, meta: { ...testProject.meta, delivery } });
+  for (const req of [{ projectId: "p1" }, { projectId: "p1", ticketId: "t3" }]) {
+    const { command } = await withDelivery({ ref: "global:review-pr", ...req });
+    expect(command.allow).toEqual(["Bash(git *)", "Bash(pnpm *)", "Skill(brainstorming)"]);
+    expect(command.allowOrigins).toEqual([
+      { rule: "Bash(git *)", origin: "agent" },
+      { rule: "Bash(pnpm *)", origin: "project" },
+      { rule: "Skill(brainstorming)", origin: "agent" },
+    ]);
+    expect(command.addDirs).toEqual([
+      { dir: "/Users/a/.claude/skills", origin: "agent" },
+      { dir: "/Users/a/Documents/emis", origin: "project" },
+    ]);
+  }
+  const machine = await withDelivery({ ref: "global:review-pr" });
+  expect(machine.command.allowOrigins.map((o) => o.origin)).toEqual(["agent", "agent"]);
 });

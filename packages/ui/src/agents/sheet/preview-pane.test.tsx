@@ -20,6 +20,8 @@ const PREVIEW: AgentPreview = {
     tools: null,
     disallowedTools: null,
     allow: ["mcp__kibo__*", "Skill(porte-qualite)"],
+    allowOrigins: [],
+    addDirs: [],
     subagents: ["livraison", "review"],
     allSubagents: false,
     skills: { mode: "list", ids: ["porte-qualite"] },

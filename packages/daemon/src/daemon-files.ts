@@ -6,6 +6,7 @@ import { type AgentFiles, startAgentFiles } from "./agent-files/bootstrap";
 import { agentFilesRpc } from "./agent-files/rpc";
 import { catalogAgentSource, type LateAgentSource } from "./agents/agent-source";
 import type { Orchestrator } from "./agents/orchestrator-types";
+import { agentPresetRpc } from "./agents/presets";
 import { createAgentPreview } from "./agents/preview";
 import type { RunStore } from "./agents/run-store";
 import type { DaemonOptions } from "./daemon-options";
@@ -75,7 +76,14 @@ async function startDaemonSkills(
     skills.service.restore(id, baseHash, by);
   return {
     skills,
-    extensions: [agentFilesRpc(files.service, preview, { ...data, restoreSkill }), skills.rpc],
+    extensions: [
+      agentFilesRpc(files.service, preview, { ...data, restoreSkill }),
+      agentPresetRpc(files.service, {
+        home: opts.userHome ?? homedir(),
+        assertWritable: data.assertWritable,
+      }),
+      skills.rpc,
+    ],
   };
 }
 
