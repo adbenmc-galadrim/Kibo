@@ -8,6 +8,7 @@ import {
   renderTemplate,
   resolveWorktreePath,
   type SetupStep,
+  shortSlug,
   singleQuotedVariable,
   splitRemote,
   TicketKey,
@@ -20,6 +21,8 @@ import {
 import { runBounded } from "./bounded-process";
 import { cleanEnv } from "./runner";
 import type { GitRunner, PlacedWorkspace } from "./workspace-prep";
+import { assertRecipe } from "./worktree-recipe";
+import { runRecipe } from "./worktree-recipe-run";
 
 export type ShellRunner = (
   command: string,
@@ -41,7 +44,14 @@ export type WorktreeInput = {
 export const SETUP_TIMEOUT_MS = 600_000;
 export const FETCH_TIMEOUT_MS = 60_000;
 const TAIL_LINES = 20;
-const SAMPLE_VARS: WorktreeVars = { branch: "feat/x", slug: "feat-x", key: "key-1", path: "/repo-feat-x" };
+const SAMPLE_VARS: WorktreeVars = {
+  branch: "feat/x",
+  slug: "feat-x",
+  key: "key-1",
+  path: "/repo-feat-x",
+  short: "x",
+  short_: "x",
+};
 
 const failed = (detail: string) => new KiboError("WORKSPACE_FAILED", detail);
 const gitFailed = (detail: string) => new KiboError("GIT_FAILED", detail);
@@ -57,6 +67,7 @@ export const worktreeBase = worktreeBaseOf;
 
 export function assertWorktreeSettings(settings: WorktreeSettings): void {
   resolveWorktreePath("/repo", settings.pathTemplate, SAMPLE_VARS);
+  if (settings.recipe !== null) assertRecipe(settings.recipe);
   if (settings.setup === null) return;
   renderTemplate(settings.setup, SAMPLE_VARS);
   const quoted = singleQuotedVariable(settings.setup);
@@ -222,7 +233,14 @@ export async function prepareWorktree(input: WorktreeInput): Promise<PlacedWorks
     throw failed(`invalid branch name ${JSON.stringify(branch)}`);
   if (!WorktreeSettings.shape.baseRef.safeParse(base).success || looksLikeOption(base))
     throw failed(`invalid base ${JSON.stringify(base)}`);
-  const named = { branch, slug: branchSlug(branch), key: input.ticketKey.toLowerCase() };
+  const short = shortSlug(branch);
+  const named = {
+    branch,
+    slug: branchSlug(branch),
+    key: input.ticketKey.toLowerCase(),
+    short,
+    short_: short.replaceAll("-", "_"),
+  };
   const vars = { ...named, path: worktreePath(input, named) };
   const label = `worktree:${branch}`;
   if (input.settings.pathTemplate.startsWith(".kibo/")) await excludeKiboFolder(input.root, input.git);
@@ -240,5 +258,7 @@ export async function prepareWorktree(input: WorktreeInput): Promise<PlacedWorks
   }
   const actual = await branchAt(vars.path, input.git);
   if (actual !== branch) throw failed(`worktree is on ${actual}, expected ${branch}`);
+  const recipe = input.settings.recipe;
+  if (recipe !== null) await runRecipe({ ...input, recipe, dir: vars.path, branch, key: vars.key });
   return { cwd: vars.path, label };
 }

@@ -135,6 +135,12 @@ test("worktree settings are local, checked, and work on a read-only shared proje
   for (const pathTemplate of ["/tmp/{slug}", "../../x/{slug}", "{slug}/../../x", "{nope}"])
     expect(() => update({ worktree: { ...worktree, pathTemplate } })).toThrow("INVALID_INPUT");
   expect(() => update({ worktree: { ...worktree, setup: "make {nope}" } })).toThrow("INVALID_INPUT");
+  const recipe = { copyFrom: ["{repo}"], copy: [".env"], env: null, after: ["pnpm install"] };
+  for (const copy of [["../x"], ["/abs/.env"]])
+    expect(() => update({ worktree: { ...worktree, recipe: { ...recipe, copy } } })).toThrow("INVALID_INPUT");
+  expect(() => update({ worktree: { ...worktree, recipe: { ...recipe, after: ["echo {nope}"] } } })).toThrow(
+    "INVALID_INPUT",
+  );
   expect(s.settings.get(s.project.id, LOCAL_WORKTREE_KEY)).toBeNull();
   expect(update({ worktree }).worktree).toEqual(worktree);
   expect(s.snapshot().meta.worktree).toEqual(worktree);
