@@ -18,6 +18,7 @@ import { fr } from "./fr";
 import { PasteAnswerForm } from "./PasteAnswerForm";
 import { QuestionAnswerForm } from "./QuestionAnswerForm";
 import { QuestionHistory } from "./QuestionHistory";
+import { QuestionImages } from "./QuestionImages";
 import { QuestionAnswerLine, QuestionAuthor } from "./QuestionMeta";
 import { canArchive, recipientName, relativeAge } from "./questions-logic";
 import { RecipientMenu } from "./RecipientMenu";
@@ -127,6 +128,7 @@ export function QuestionCard(props: Props) {
       </div>
       <ArchivedLine question={q} now={now} />
       {context !== null && <div className="grid gap-1.5 text-xs text-muted-foreground">{context}</div>}
+      <QuestionImages question={q} />
       {(q.options.length > 0 || q.provisional !== null) && (
         <p className="flex flex-wrap gap-x-3 text-2xs text-muted-foreground">
           {q.options.length > 0 && <span>{`${fr.options} : ${q.options.join(" · ")}`}</span>}

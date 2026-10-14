@@ -5,6 +5,7 @@ export const fr = {
   widgetTitle: (n: number) => `Questions ouvertes · ${n}`,
   provisional: (value: string) => `provisoire : ${value}`,
   options: "Options",
+  images: (n: number) => `Captures · ${n}`,
   confirm: "Valider le choix provisoire",
   other: "Autre réponse…",
   reply: "Répondre",
