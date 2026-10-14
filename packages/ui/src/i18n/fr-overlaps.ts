@@ -38,7 +38,6 @@ export const frOverlaps = {
   },
   bar: {
     chip: (n: number) => `${plural(n, "recouvrement ouvert", "recouvrements ouverts")}`,
-    with: (key: string) => `Recouvrement avec ${key}`,
   },
   files: {
     title: "Fichiers du recouvrement",

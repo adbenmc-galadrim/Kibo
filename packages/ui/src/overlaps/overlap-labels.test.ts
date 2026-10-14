@@ -5,7 +5,6 @@ import {
   activityCounts,
   chipLabel,
   overlapCounts,
-  overlapLinesByRun,
   overlapRole,
   overlapSides,
   overlapState,
@@ -78,20 +77,4 @@ test("the counts split resolved and open overlaps, ignored ones aside", () => {
   ];
   expect(overlapCounts(list)).toEqual({ resolved: 1, open: 1 });
   expect(overlapCounts([])).toEqual({ resolved: 0, open: 0 });
-});
-
-test("each run of an open overlap gets a line naming the other ticket", () => {
-  const runs = [
-    { id: "r-bou-12", ticketKey: "BOU-12", label: "bou · livraison · BOU-12" },
-    { id: "r-bou-15", ticketKey: "BOU-15", label: "bou · livraison · BOU-15" },
-  ];
-  const lines = overlapLinesByRun(
-    [OPEN_OVERLAP, overlapFixture({ id: "o2", status: "resolved", resolvedAt: RESOLVED_AT })],
-    runs,
-  );
-  expect(lines.get("r-bou-15")).toEqual([{ overlapId: "o1", withKey: "BOU-12" }]);
-  expect(lines.get("r-bou-12")).toEqual([{ overlapId: "o1", withKey: "BOU-15" }]);
-  expect(overlapLinesByRun([overlapFixture({ ownerRunId: "gone" })], runs).get("r-bou-15")).toEqual([
-    { overlapId: "o1", withKey: "gone" },
-  ]);
 });

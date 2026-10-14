@@ -48,23 +48,3 @@ export function overlapSides(detail: OverlapDetail, role: OverlapRole): { mine: 
 }
 
 export const actorName = (by: { ref: string } | null): string => by?.ref ?? "Kibo";
-
-export type OverlapLine = { overlapId: string; withKey: string };
-
-export function overlapLinesByRun(
-  overlaps: readonly Overlap[],
-  runs: readonly { id: string; ticketKey: string | null; label: string }[],
-): Map<string, OverlapLine[]> {
-  const keyOf = (runId: string) => {
-    const run = runs.find((r) => r.id === runId);
-    return run?.ticketKey ?? run?.label ?? runId;
-  };
-  const lines = new Map<string, OverlapLine[]>();
-  const add = (runId: string, line: OverlapLine) => lines.set(runId, [...(lines.get(runId) ?? []), line]);
-  for (const o of overlaps) {
-    if (o.status !== "open") continue;
-    add(o.ownerRunId, { overlapId: o.id, withKey: keyOf(o.otherRunId) });
-    add(o.otherRunId, { overlapId: o.id, withKey: keyOf(o.ownerRunId) });
-  }
-  return lines;
-}

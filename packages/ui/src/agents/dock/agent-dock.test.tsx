@@ -271,30 +271,18 @@ test("the human replies of the run are woven into its feed", async () => {
   expect(feed.getByText("Toi")).toBeTruthy();
 });
 
-test("screen 200: an open overlap under a run selects it and scrolls its feed to the overlap", async () => {
-  const scrolled: string[] = [];
-  const original = Element.prototype.scrollIntoView;
-  Element.prototype.scrollIntoView = function (this: Element) {
-    scrolled.push(this.getAttribute("data-seq") ?? "");
-  };
+test("2026-10-14: open overlaps add no line under a run and the dock lists none of them", async () => {
   const overlap = momentOf(30, NOW - 60_000, overlapMoment({ withRunId: "r43" }), FEED_RUN);
   page = { ...MOMENTS_PAGE, moments: [...MOMENTS, overlap] };
-  try {
-    const counts = [
-      { runId: FEED_RUN, open: 1 },
-      { runId: "r43", open: 1 },
-    ];
-    const { onSelect } = renderDock(FEED_RUN, { ...dockState(), overlaps: counts });
-    await screen.findByText("Je relis le récepteur et ses tests avant de toucher au port.");
-    const runs = within(screen.getByRole("region", { name: "Runs" }));
-    const line = await runs.findByRole("button", { name: "Recouvrement avec KIB-16" });
-    await userEvent.setup().click(line);
-    expect(onSelect).toHaveBeenCalledWith(FEED_RUN);
-    await waitFor(() => expect(scrolled).toEqual(["30"]));
-    expect(calls).toContainEqual({ method: "overlaps.list", state: "open" });
-  } finally {
-    Element.prototype.scrollIntoView = original;
-  }
+  const counts = [
+    { runId: FEED_RUN, open: 1 },
+    { runId: "r43", open: 1 },
+  ];
+  renderDock(FEED_RUN, { ...dockState(), overlaps: counts });
+  await screen.findByText("Je relis le récepteur et ses tests avant de toucher au port.");
+  const runs = within(screen.getByRole("region", { name: "Runs" }));
+  expect(runs.queryByText(/^Recouvrement avec/)).toBeNull();
+  expect(calls).not.toContainEqual({ method: "overlaps.list", state: "open" });
 });
 
 test("without an open overlap the dock asks nothing about overlaps", async () => {

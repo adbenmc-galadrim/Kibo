@@ -1,8 +1,6 @@
 import { expect, test } from "bun:test";
 import { render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { OPEN_OVERLAP, OTHER_RUN, OWNER_RUN, overlapAgents } from "../../overlaps/fixtures";
-import { overlapLinesByRun } from "../../overlaps/overlap-labels";
+import { OTHER_RUN, OWNER_RUN, overlapAgents } from "../../overlaps/fixtures";
 import { NOW } from "../fixtures";
 import { BarRuns } from "./BarRuns";
 import { DockRuns } from "./DockRuns";
@@ -36,30 +34,10 @@ const groups = () => {
   return dockGroups(state, NOW);
 };
 
-test("screen 200: under the current step, an open overlap names the other ticket and goes to it", async () => {
-  const selected: string[] = [];
-  const focused: [string, string][] = [];
-  render(
-    <DockRuns
-      groups={groups()}
-      progress={[]}
-      questions={[]}
-      now={NOW}
-      selected={null}
-      onSelect={(id) => selected.push(id)}
-      overlapLines={overlapLinesByRun([OPEN_OVERLAP], overlapAgents(1).runs)}
-      onOverlap={(runId, overlapId) => focused.push([runId, overlapId])}
-    />,
-  );
-  await userEvent.setup().click(screen.getByRole("button", { name: "Recouvrement avec BOU-12" }));
-  expect(focused).toEqual([[OTHER_RUN, "o1"]]);
-  expect(selected).toEqual([]);
-  expect(screen.getByRole("button", { name: "Recouvrement avec BOU-15" })).toBeTruthy();
-});
-
-test("without open overlaps the dock rows stay as they were", () => {
+test("2026-10-14: even with open overlaps, the dock rows carry no overlap sub-list", () => {
   render(
     <DockRuns groups={groups()} progress={[]} questions={[]} now={NOW} selected={null} onSelect={() => {}} />,
   );
-  expect(screen.queryByRole("button", { name: /^Recouvrement avec/ })).toBeNull();
+  expect(screen.queryByText(/^Recouvrement avec/)).toBeNull();
+  expect(document.querySelector("svg.lucide-copy")).toBeNull();
 });
