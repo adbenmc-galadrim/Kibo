@@ -2,7 +2,14 @@ import { expect, test } from "bun:test";
 import { runDeliverySteps } from "./delivery";
 import { machineLocks } from "./machine-lock";
 import { PROJECT_AGENT_MCP_TOOLS } from "./project-agent-tools";
-import { keyBesideLabel, openOverlapTotal, type RunRecord, runOverlapCounts, runSubjectBeside } from "./run";
+import {
+  keyBesideLabel,
+  openOverlapTotal,
+  type RunRecord,
+  runOverlapCounts,
+  runSubagents,
+  runSubjectBeside,
+} from "./run";
 import { HookInput, HookPayload, permissionReply } from "./run-hook";
 
 const PAYLOAD = {
@@ -96,4 +103,8 @@ test("an agents state without overlaps counts none", () => {
 test("an agents state without locks nor delivery steps has none", () => {
   expect(machineLocks({})).toEqual([]);
   expect(runDeliverySteps({})).toEqual([]);
+});
+
+test("AgentsState without subagents lists none", () => {
+  expect(runSubagents({})).toEqual([]);
 });

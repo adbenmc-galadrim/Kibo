@@ -25,6 +25,7 @@ import type { ProjectSyncInfo } from "./sharing";
 import { SIGNAL_RPC, type SignalRpcResult } from "./signal-rpc";
 import { SKILL_RPC, type SkillRpcResult } from "./skill-rpc";
 import type { Status, StatusId } from "./status";
+import { SUBAGENT_RPC, type SubagentRpcResult } from "./subagent";
 import type { Phase7Event } from "./sync";
 import { SYNC_RPC_REQUESTS, type SyncRpcResult } from "./sync-rpc";
 import type { Ticket } from "./ticket";
@@ -86,6 +87,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   ...AGENT_RPC,
   ...SKILL_RPC,
   ...DELIVERY_RPC,
+  ...SUBAGENT_RPC,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -101,7 +103,8 @@ export type RpcResult = CoreRpcResult &
   OverlapRpcResult &
   AgentRpcResult &
   SkillRpcResult &
-  DeliveryRpcResult;
+  DeliveryRpcResult &
+  SubagentRpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }

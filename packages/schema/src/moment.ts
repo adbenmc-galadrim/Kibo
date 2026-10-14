@@ -93,6 +93,12 @@ export const MomentData = z.discriminatedUnion("kind", [
     failure: z.literal("cycle").nullable(),
   }),
   z.object({
+    kind: z.literal("subagent"),
+    subagentId: z.string().min(1).max(200),
+    type: z.string().max(100),
+    description: z.string().max(200),
+  }),
+  z.object({
     kind: z.literal("raw"),
     text: z.string().max(MOMENT_RAW_MAX),
     partial: PartialReason.nullable(),
@@ -107,6 +113,7 @@ export const RunMoment = z.object({
   seq: z.number().int().nonnegative(),
   at: z.number().int(),
   stepId: z.string().max(40).nullable(),
+  subagentId: z.string().min(1).max(200).optional(),
   data: MomentData,
 });
 export type RunMoment = z.infer<typeof RunMoment>;

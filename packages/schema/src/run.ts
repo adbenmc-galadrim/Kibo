@@ -7,6 +7,7 @@ import type { RunProgressSummary } from "./progress";
 import type { RunQuestions } from "./question";
 import { type HookEventName, HookPayload } from "./run-hook";
 import type { ProjectSignalCount } from "./signal";
+import type { RunSubagentSummary } from "./subagent";
 import type { HostSettings } from "./workspace-config";
 
 export const RunState = z.enum([
@@ -188,10 +189,13 @@ export type AgentsState = {
   overlapTotal?: number;
   locks?: MachineLock[];
   delivery?: RunDeliveryStep[];
+  subagents?: RunSubagentSummary[];
 };
 
 export const runOverlapCounts = (state: Pick<AgentsState, "overlaps">): RunOverlapCount[] =>
   state.overlaps ?? [];
+export const runSubagents = (state: Pick<AgentsState, "subagents">): RunSubagentSummary[] =>
+  state.subagents ?? [];
 export const openOverlapTotal = (state: Pick<AgentsState, "overlapTotal">): number => state.overlapTotal ?? 0;
 export type SessionPreview = {
   runId: string;

@@ -13,6 +13,7 @@ export * from "./instances";
 export * from "./keys";
 export * from "./links";
 export * from "./moments/fold-moments";
+export * from "./moments/subagent-launch";
 export * from "./moments/transcript-parse";
 export * from "./overlaps/alerts";
 export * from "./overlaps/auto-link-rule";

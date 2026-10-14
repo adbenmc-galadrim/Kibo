@@ -95,6 +95,7 @@ export * from "./startable";
 export * from "./status";
 export * from "./status-projection";
 export * from "./storybook";
+export * from "./subagent";
 export * from "./surface";
 export * from "./sync";
 export * from "./sync-rpc";
