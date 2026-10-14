@@ -136,7 +136,8 @@ test("BOU-15 reprend le travail de BOU-12, Kibo lie les tickets puis le lien s'a
       .filter({ hasText: `Recouvrement avec ${OWNER_NAME}` })
       .first(),
   ).toContainText(/Réglé \d{2}:\d{2}/);
-  await expect(feed().getByText("Kibo a rappelé de factoriser")).toBeVisible();
+  await expect(feed().getByText("Page de suivi livrée.")).toBeVisible();
+  await expect(feed().getByText("Kibo a rappelé de factoriser")).toHaveCount(0);
   const linked = autoLinkLine().filter({ hasText: "Kibo a lié" });
   await expect(linked).toContainText("(BOU-12 bloque BOU-15)");
   await linked.scrollIntoViewIfNeeded();
