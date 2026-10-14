@@ -11,7 +11,10 @@ const TICKETS_USAGE = [
   "  kibo tickets list --project <clé|nom|id> [--ready] [--status <s>[,<s>…]] [--json]",
   "  kibo tickets get <clé|id du plan> --project <p> [--json]",
   "  kibo tickets set <clé|id du plan> [status=<todo|wip|done|blocked>] [pr=<n|url>] [reason=<texte>] --project <p> [--json]",
+  "  kibo tickets step <clé> <0-11> [note] [--json]",
 ];
+
+const PROJECTS_USAGE = ["  kibo projects list [--json]", "  kibo projects get <clé|nom|id> [--json]"];
 
 const ref = (r: TicketRef) => `${r.key}${r.planId ? ` (${r.planId}, ${r.status})` : ` (${r.status})`}`;
 const refs = (list: TicketRef[]) => (list.length === 0 ? "aucun" : list.map(ref).join(", "));
@@ -40,6 +43,25 @@ export const frTickets = {
   question: (state: string, title: string, recipient: string, blocking: boolean) =>
     `  - [${state}] ${title} → ${recipient}${blocking ? " (bloquante)" : ""}`,
   description: "Description :",
+  stepOutOfRange: (step: string) => `Étape invalide : ${step} (étape entre 0 et 11)`,
+  stepDone: (key: string, label: string) => `✓ ${key} : ${label}`,
+};
+
+const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
+const agreed = (n: number, word: string) => `${word}${n > 1 ? "s" : ""}`;
+const recipeSummary = ({ copy, after }: { copy: readonly string[]; after: readonly string[] }) =>
+  `${plural(copy.length, "fichier")} ${agreed(copy.length, "copié")}, ${plural(after.length, "commande")} après`;
+
+export const frProjects = {
+  usage: ["Usage :", ...PROJECTS_USAGE].join("\n"),
+  title: (key: string, name: string) => `${key} · ${name}`,
+  folder: (folder: string | null) => `Dossier : ${folder ?? "aucun"}`,
+  worktree: (w: { baseRef: string; pathTemplate: string } | null) =>
+    `Worktree : ${w ? `${w.baseRef} · ${w.pathTemplate}` : "réglages par défaut"}`,
+  recipe: (r: { copy: readonly string[]; after: readonly string[] } | null) =>
+    `Recette : ${r ? recipeSummary(r) : "aucune"}`,
+  delivery: (d: { agent: string | null; root: string | null } | null) =>
+    `Livraison : ${d ? `agent ${d.agent ?? "aucun"} · dossier ${d.root ?? "aucun"}` : "non configurée"}`,
 };
 
 export const fr = {
@@ -52,6 +74,7 @@ export const fr = {
     "  kibo component publish <id> --to <source> [--publisher <nom>]",
     ...MARKET_USAGE,
     ...TICKETS_USAGE,
+    ...PROJECTS_USAGE,
   ].join("\n"),
   marketUsage: ["Usage :", ...MARKET_USAGE].join("\n"),
   keyWritten: (file: string, fingerprint: string) =>
