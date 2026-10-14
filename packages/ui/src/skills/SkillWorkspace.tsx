@@ -3,6 +3,7 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { Alert, AlertDescription, AlertTitle } from "@kibo/sdk/ui/alert";
 import { Button } from "@kibo/sdk/ui/button";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
+import { ScrollPane } from "@kibo/sdk/ui/scroll-pane";
 import { Lock } from "lucide-react";
 import { useState } from "react";
 import { client } from "../api";
@@ -69,7 +70,7 @@ export function SkillWorkspace(p: Props) {
   };
   const side = p.notesOpen || integrating !== null;
   return (
-    <div className="grid content-start gap-5 p-6">
+    <div className="grid content-start gap-5 p-6 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
       <SkillHeader
         skill={skill}
         projects={p.projects}
@@ -95,12 +96,12 @@ export function SkillWorkspace(p: Props) {
       />
       <div
         className={cn(
-          "grid items-start gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]",
+          "grid items-start gap-4 lg:min-h-0 lg:flex-1 lg:grid-cols-[15rem_minmax(0,1fr)] lg:items-stretch",
           side && "xl:grid-cols-[15rem_minmax(0,1fr)_20rem]",
         )}
       >
         <SkillAssets skill={skill} current={file} onPick={p.onFile} />
-        <div className="grid min-w-0 content-start gap-4">
+        <ScrollPane className="grid min-w-0 content-start gap-4">
           {integrating ? (
             <IntegrateDiff
               review={integrating}
@@ -157,17 +158,19 @@ export function SkillWorkspace(p: Props) {
               />
             </>
           )}
-        </div>
+        </ScrollPane>
         {side && (
-          <ReviewNotes
-            skill={skill}
-            reviews={integrating ? [integrating] : p.reviews}
-            onIntegrate={p.onIntegrate}
-            onOpen={p.onOpenReview}
-            onIgnore={p.onIgnore}
-            onCopy={p.onCopy}
-            onClose={integrating ? undefined : p.onNotes}
-          />
+          <ScrollPane>
+            <ReviewNotes
+              skill={skill}
+              reviews={integrating ? [integrating] : p.reviews}
+              onIntegrate={p.onIntegrate}
+              onOpen={p.onOpenReview}
+              onIgnore={p.onIgnore}
+              onCopy={p.onCopy}
+              onClose={integrating ? undefined : p.onNotes}
+            />
+          </ScrollPane>
         )}
       </div>
       {editor.conflict && (

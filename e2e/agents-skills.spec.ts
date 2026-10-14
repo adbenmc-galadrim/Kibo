@@ -1,6 +1,6 @@
-import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { type AgentFiles, seedAgentFiles } from "./agents-kit";
+import { type AgentFiles, seedAgentFiles, skillMd } from "./agents-kit";
 import { createGitRepo, list, pairBrowser, rpc, runState, text } from "./agents-seed";
 import { WIDE } from "./visibility-kit";
 
@@ -355,4 +355,56 @@ test("le garde refuse un skill et un sous-agent hors liste, le fil le montre", a
   await expect(refusedSkill).toHaveClass(/text-destructive/);
   await expect(feed.getByRole("button", { name: "Kibo a refusé le sous-agent seo" })).toBeVisible();
   await expect(feed.getByText("Kibo a rappelé la review des skills")).toHaveCount(0);
+});
+
+const MANY_FILES = [
+  ...Array.from({ length: 24 }, (_, i) => `reference/fichier-${String(i).padStart(2, "0")}.md`),
+  "scripts/lib/plan/plan-data-js-avec-un-nom-vraiment-tres-long.mjs",
+];
+
+const inside = (inner: Box, outer: Box) =>
+  inner.x >= outer.x && inner.x + inner.width <= outer.x + outer.width;
+type Box = { x: number; y: number; width: number; height: number };
+
+test("2026-10-14 · un skill à beaucoup de fichiers : la colonne défile seule, sans taille ni débordement", async () => {
+  const info = test.info();
+  const { page } = kit;
+  const dir = `${kit.files.claude}/skills/full-delivery`;
+  mkdirSync(`${dir}/reference`, { recursive: true });
+  mkdirSync(`${dir}/scripts/lib/plan`, { recursive: true });
+  writeFileSync(`${dir}/SKILL.md`, skillMd("full-delivery", "Livre une PR de bout en bout", "# Livraison"));
+  for (const file of MANY_FILES) writeFileSync(`${dir}/${file}`, `# ${file}\n\n${"Ligne.\n".repeat(300)}`);
+  writeFileSync(`${dir}/scripts/install`, Buffer.from([0, 1, 2, 3, 255]));
+  try {
+    await skillsPage();
+    await page
+      .getByRole("region", { name: "Cet ordinateur" })
+      .getByRole("button", { name: "Ouvrir le skill full-delivery" })
+      .click();
+    const column = page.getByRole("region", { name: "Fichiers" });
+    await expect(column.getByText(MANY_FILES.at(-1) ?? "")).toBeVisible();
+    await expect(column.getByText(/\d\s?(Ko|o)$/)).toHaveCount(0);
+    const sizes = await column.evaluate((el) => ({
+      overflowX: el.scrollWidth - el.clientWidth,
+      scrolls: el.scrollHeight > el.clientHeight,
+    }));
+    expect(sizes).toEqual({ overflowX: 0, scrolls: true });
+    const box = await column.boundingBox();
+    if (!box) throw new Error("no files column");
+    for (const trash of await column.getByRole("button", { name: /^Supprimer / }).all()) {
+      await trash.scrollIntoViewIfNeeded();
+      const own = await trash.boundingBox();
+      expect(own && inside(own, box)).toBe(true);
+    }
+    const documentScroll = await page.evaluate(() =>
+      [document.scrollingElement, document.querySelector("[data-viewer]")].map((el) =>
+        el ? el.scrollHeight - el.clientHeight : 0,
+      ),
+    );
+    expect(documentScroll).toEqual([0, 0]);
+    await column.evaluate((el) => el.scrollTo({ top: 0 }));
+    await capture(info, "skills-fichiers");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

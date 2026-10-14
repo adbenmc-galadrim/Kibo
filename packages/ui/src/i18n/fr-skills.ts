@@ -102,10 +102,6 @@ export const frSkills = {
     remove: (path: string) => `Supprimer ${path}`,
     removeTitle: (path: string) => `Supprimer ${path} ?`,
     removeHelp: "Un fichier texte reste dans l'historique ; un fichier binaire n'est pas restaurable.",
-    size: (bytes: number) =>
-      bytes < 1024
-        ? `${bytes} o`
-        : `${(bytes / 1024).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} Ko`,
     failed: "Impossible de modifier les fichiers du skill.",
   },
   reviews: {
