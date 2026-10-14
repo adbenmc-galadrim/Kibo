@@ -15,8 +15,9 @@ import {
 import { hookMoments } from "./hook-group";
 import type { RunTrace } from "./store";
 import { createTraceCore, type TraceCore, type TraceDeps } from "./trace-live";
-import { pageOf, peekOf } from "./trace-read";
+import { pageOf, peekOf, subagentPageOf } from "./trace-read";
 import { drain, pass, resolve, toHooks } from "./trace-source";
+import { flushSubagents } from "./trace-subagents";
 
 export type { TraceDeps } from "./trace-live";
 export type TraceService = {
@@ -27,6 +28,8 @@ export type TraceService = {
   setBaseHead(runId: string, head: string | null): void;
   trace(runId: string): RunTrace | null;
   page(runId: string, after?: number): RunMomentsPage;
+  subagentPage(runId: string, subagentId: string, after?: number): RunMomentsPage;
+  mark(runId: string, data: MomentData): void;
   peek(run: RunView, progress: RunProgressSummary | null): RunPeek;
 };
 
@@ -80,6 +83,7 @@ async function turnEnd(core: TraceCore, run: RunView): Promise<void> {
   if (current.source === "transcript") core.flushFold(current, false);
   if (current.source === "hooks") core.write(run.id, core.live(run.id).group.flush(core.ctx(current)));
   if (!isTerminal(run.state)) return;
+  flushSubagents(core, run.id);
   if (current.source === "pending") writeHeld(core, current);
   core.store.saveTrace({ ...core.traceOf(run.id), closedAt: core.deps.now() });
   core.lives.delete(run.id);
@@ -118,6 +122,10 @@ export function createTraceService(deps: TraceDeps): TraceService {
     },
     trace: (runId) => store.trace(runId),
     page: (runId, after) => pageOf(store, runId, after),
+    subagentPage: (runId, subagentId, after) => subagentPageOf(store, runId, subagentId, after),
+    mark(runId, data) {
+      core.write(runId, [core.moment(core.traceOf(runId), data)]);
+    },
     peek: (run, progress) => peekOf(store, run, progress),
   };
 }

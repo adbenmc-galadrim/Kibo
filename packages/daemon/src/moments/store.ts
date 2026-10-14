@@ -1,7 +1,15 @@
 import { Database } from "bun:sqlite";
 import { chmodSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { KiboError, MomentData, type MomentKind, PartialReason, type RunMoment, Step } from "@kibo/schema";
+import {
+  KiboError,
+  MomentData,
+  type MomentKind,
+  PartialReason,
+  type RunMoment,
+  Step,
+  type SubagentTraceFacts,
+} from "@kibo/schema";
 import { z } from "zod";
 import { immediateTransaction, SQLITE_BUSY_TIMEOUT_MS } from "../sqlite-busy";
 
@@ -17,8 +25,16 @@ export type RunTrace = {
   closedAt: number | null;
 };
 export type MomentStore = {
-  append(runId: string, data: MomentData, stepId: string | null, at: number): RunMoment;
+  append(
+    runId: string,
+    data: MomentData,
+    stepId: string | null,
+    at: number,
+    subagentId?: string | null,
+  ): RunMoment;
   list(runId: string, after?: number): RunMoment[];
+  listSubagent(runId: string, subagentId: string, after?: number): RunMoment[];
+  subagentFacts(runId: string, subagentId: string): SubagentTraceFacts;
   lastOfKind(runId: string, kind: MomentKind): RunMoment | null;
   trace(runId: string): RunTrace | null;
   saveTrace(trace: RunTrace): void;
@@ -40,6 +56,9 @@ const SCHEMA = [
     "source TEXT NOT NULL, partial TEXT, doing_step TEXT, base_head TEXT, closed_at INTEGER)",
   "CREATE TABLE IF NOT EXISTS run_internal_plans (run_id TEXT PRIMARY KEY, plan TEXT NOT NULL, at INTEGER NOT NULL)",
 ];
+const SUBAGENT_INDEX =
+  "CREATE INDEX IF NOT EXISTS run_moments_by_subagent ON run_moments (run_id, subagent_id, seq) " +
+  "WHERE subagent_id IS NOT NULL";
 
 type MomentRow = {
   id: number;
@@ -47,6 +66,7 @@ type MomentRow = {
   seq: number;
   at: number;
   step_id: string | null;
+  subagent_id: string | null;
   data: string;
 };
 type TraceRow = {
@@ -87,8 +107,16 @@ const toMoment = (r: MomentRow): RunMoment => ({
   seq: r.seq,
   at: r.at,
   stepId: r.step_id,
+  ...(r.subagent_id === null ? {} : { subagentId: r.subagent_id }),
   data: parseStored(MomentData, r.data, `moment ${r.id}`),
 });
+
+function addSubagentColumn(db: Database): void {
+  const columns = db.query("PRAGMA table_info(run_moments)").all() as { name: string }[];
+  if (!columns.some((c) => c.name === "subagent_id"))
+    db.exec("ALTER TABLE run_moments ADD COLUMN subagent_id TEXT");
+  db.exec(SUBAGENT_INDEX);
+}
 
 const toTrace = (r: TraceRow): RunTrace => ({
   runId: r.run_id,
@@ -111,6 +139,7 @@ function openDatabase(home: string): Database {
     db.exec("PRAGMA synchronous = FULL");
     db.exec("PRAGMA foreign_keys = ON");
     for (const sql of SCHEMA) db.exec(sql);
+    addSubagentColumn(db);
     for (const f of [file, `${file}-wal`, `${file}-shm`]) if (existsSync(f)) chmodSync(f, 0o600);
     return db;
   } catch (e) {
@@ -128,12 +157,26 @@ export function openMomentStore(home: string): MomentStore {
   const db = openDatabase(home);
   const nextSeq = db.query("SELECT COALESCE(MAX(seq) + 1, 0) AS seq FROM run_moments WHERE run_id = $run_id");
   const insert = db.query(
-    "INSERT INTO run_moments (run_id, seq, at, step_id, kind, data) " +
-      "VALUES ($run_id, $seq, $at, $step_id, $kind, $data) RETURNING *",
+    "INSERT INTO run_moments (run_id, seq, at, step_id, kind, data, subagent_id) " +
+      "VALUES ($run_id, $seq, $at, $step_id, $kind, $data, $subagent_id) RETURNING *",
   );
-  const after = db.query("SELECT * FROM run_moments WHERE run_id = $run_id AND seq > $after ORDER BY seq");
+  const after = db.query(
+    "SELECT * FROM run_moments WHERE run_id = $run_id AND subagent_id IS NULL AND seq > $after ORDER BY seq",
+  );
+  const subagentAfter = db.query(
+    "SELECT * FROM run_moments WHERE run_id = $run_id AND subagent_id = $subagent_id AND seq > $after ORDER BY seq",
+  );
+  const subagentActions = db.query(
+    "SELECT COALESCE(SUM(json_array_length(data, '$.actions')), 0) AS n FROM run_moments " +
+      "WHERE run_id = $run_id AND subagent_id = $subagent_id AND kind = 'actions'",
+  );
+  const subagentLastText = db.query(
+    "SELECT json_extract(data, '$.text') AS text FROM run_moments " +
+      "WHERE run_id = $run_id AND subagent_id = $subagent_id AND kind = 'message' ORDER BY seq DESC LIMIT 1",
+  );
   const lastOf = db.query(
-    "SELECT * FROM run_moments WHERE run_id = $run_id AND kind = $kind ORDER BY seq DESC LIMIT 1",
+    "SELECT * FROM run_moments WHERE run_id = $run_id AND subagent_id IS NULL AND kind = $kind " +
+      "ORDER BY seq DESC LIMIT 1",
   );
   const traceOf = db.query("SELECT * FROM run_traces WHERE run_id = $run_id");
   const upsertTrace = db.query(
@@ -151,7 +194,13 @@ export function openMomentStore(home: string): MomentStore {
 
   const append = immediateTransaction(
     db,
-    (runId: string, data: MomentData, stepId: string | null, at: number): RunMoment => {
+    (
+      runId: string,
+      data: MomentData,
+      stepId: string | null,
+      at: number,
+      subagentId: string | null,
+    ): RunMoment => {
       const { seq } = nextSeq.get({ run_id: runId }) as { seq: number };
       const row = insert.get({
         run_id: runId,
@@ -160,15 +209,27 @@ export function openMomentStore(home: string): MomentStore {
         step_id: stepId,
         kind: data.kind,
         data: JSON.stringify(data),
+        subagent_id: subagentId,
       }) as MomentRow;
       return toMoment(row);
     },
   );
 
   return {
-    append: (runId, data, stepId, at) => append(runId, validMoment(data), stepId, at),
+    append: (runId, data, stepId, at, subagentId = null) =>
+      append(runId, validMoment(data), stepId, at, subagentId),
     list: (runId, afterSeq = -1) =>
       (after.all({ run_id: runId, after: afterSeq }) as MomentRow[]).map(toMoment),
+    listSubagent: (runId, subagentId, afterSeq = -1) =>
+      (subagentAfter.all({ run_id: runId, subagent_id: subagentId, after: afterSeq }) as MomentRow[]).map(
+        toMoment,
+      ),
+    subagentFacts(runId, subagentId) {
+      const ids = { run_id: runId, subagent_id: subagentId };
+      const { n } = subagentActions.get(ids) as { n: number };
+      const last = subagentLastText.get(ids) as { text: unknown } | null;
+      return { actions: n, lastText: typeof last?.text === "string" ? last.text : null };
+    },
     lastOfKind(runId, kind) {
       const row = lastOf.get({ run_id: runId, kind }) as MomentRow | null;
       return row ? toMoment(row) : null;
