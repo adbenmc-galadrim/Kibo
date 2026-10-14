@@ -21,6 +21,9 @@ const BASE_STEPS = [
   z.object({ think: z.string() }),
   z.object({ raw: z.string() }),
   z.object({ skill: z.string().min(1), args: z.string().optional(), denied: z.boolean().default(false) }),
+  z.object({
+    deny: z.object({ tool: z.string().min(1), input: z.record(z.string(), z.unknown()).default({}) }),
+  }),
 ] as const;
 const BaseStep = z.union(BASE_STEPS);
 export type FakeStep = z.infer<typeof BaseStep> | { subagent: string; steps: FakeStep[] };
@@ -125,7 +128,8 @@ export type FakeScenarioName =
   | "overlap-keep"
   | "overlap-import"
   | "overlap-twin"
-  | "overlap-routes";
+  | "overlap-routes"
+  | "delivery-denied";
 
 export function scenarioPath(name: FakeScenarioName): string {
   return join(import.meta.dir, "scenarios", `${name}.json`);

@@ -44,6 +44,7 @@ export type Player = { playAll(steps: readonly FakeStep[]): Promise<string | nul
 
 type SkillStep = { skill: string; args?: string; denied: boolean };
 type SubagentStep = { subagent: string; steps: FakeStep[] };
+type DenyStep = { deny: { tool: string; input: Record<string, unknown> } };
 
 const deniedBy = (runs: HookRun[]) =>
   runs.some((r) => r.code === 2 || (r.code === 0 && decisionOf(r.stdout) === "deny"));
@@ -143,6 +144,14 @@ export function createPlayer(ctx: PlayContext): Player {
     await toolHooks("PostToolUse", { ...call, tool_response: launched }, () => text(launched));
   }
 
+  async function deny(step: DenyStep): Promise<void> {
+    const call = { tool_name: step.deny.tool, tool_input: step.deny.input };
+    const { refused } = await toolHooks("PreToolUse", call, () => text(""));
+    if (!refused) trail.claudeDenied(step.deny.tool);
+    logUse(step.deny.tool, step.deny.input, true);
+    ctx.denials.push(step.deny.tool);
+  }
+
   async function subagent(step: SubagentStep): Promise<void> {
     const call = {
       tool_name: "Agent",
@@ -187,6 +196,7 @@ export function createPlayer(ctx: PlayContext): Player {
     if ("delete" in step) return remove(step);
     if ("skill" in step) return skill(step);
     if ("subagent" in step) return subagent(step);
+    if ("deny" in step) return deny(step);
     if ("sleepMs" in step) return Bun.sleep(step.sleepMs);
     if ("hold" in step) return hold();
     process.stderr.write(`${step.stderr}\n`);

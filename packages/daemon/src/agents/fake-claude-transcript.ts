@@ -120,6 +120,10 @@ export const denialOutcome = (tool: string, reason: string | null = null): ToolO
   isError: true,
 });
 
+export const CLAUDE_DENIAL_TEXT =
+  "Permission for this tool use was denied. It requires approval, and this session has no approval surface — " +
+  "nobody can answer a permission prompt here — so it was denied automatically. The action was NOT performed.";
+
 export const mcpOutcome = (text: string, isError: boolean): ToolOutcome => {
   const content: TextContent[] = [{ type: "text", text }];
   return { content, isError, toolUseResult: content };
@@ -189,6 +193,7 @@ export function openTranscript(path: string, sessionId: string, cwd: string): Tr
 export type ToolTrail = {
   before(tool: string, input: Record<string, unknown>): string;
   denied(tool: string, reason?: string | null): void;
+  claudeDenied(tool: string): void;
   after(tool: string, input: Record<string, unknown>, outcome: ToolOutcome): string;
 };
 
@@ -208,6 +213,10 @@ export function toolTrail(transcript: Transcript): ToolTrail {
     denied(tool, reason = null) {
       const id = take(tool);
       if (id) transcript.toolResult(id, denialOutcome(tool, reason));
+    },
+    claudeDenied(tool) {
+      const id = take(tool);
+      if (id) transcript.toolResult(id, { content: CLAUDE_DENIAL_TEXT, isError: true });
     },
     after(tool, input, outcome) {
       const id = take(tool) ?? transcript.toolUse(tool, input);
