@@ -113,6 +113,18 @@ const mtime = (path: string): number => statSync(path).mtimeMs;
 
 type Source = { from: string; path: string };
 
+function refused(input: RecipeInput, file: string, source: Source): false {
+  input.log(`source refusée : ${file} (${source.path})`);
+  return false;
+}
+
+const literally = (value: string) => () => value;
+
+function confinedSource(source: Source): boolean {
+  if (lstatSync(source.path).isSymbolicLink()) return false;
+  return realpathSync(source.path).startsWith(realpathSync(source.from) + sep);
+}
+
 function sourceOf(input: RecipeInput, file: string): Source | null {
   for (const template of input.recipe.copyFrom) {
     const roots = template.startsWith("{sibling}")
@@ -121,6 +133,7 @@ function sourceOf(input: RecipeInput, file: string): Source | null {
     const found = roots
       .map((from) => ({ from, path: join(from, file) }))
       .filter((source) => isAbsolute(source.from) && existsSync(source.path))
+      .filter((source) => confinedSource(source) || refused(input, file, source))
       .sort((a, b) => mtime(b.path) - mtime(a.path));
     if (found[0] !== undefined) return found[0];
   }
@@ -223,7 +236,11 @@ async function writeEnv(input: RecipeInput, env: RecipeEnv): Promise<Ports> {
   for (const [key, [pattern, replacement]] of Object.entries(env.replace)) {
     const current = envValue(content, key);
     if (current === null) continue;
-    content = withValue(content, key, current.replace(new RegExp(pattern), render(replacement, vars)));
+    content = withValue(
+      content,
+      key,
+      current.replace(new RegExp(pattern), literally(render(replacement, vars))),
+    );
     input.log(`replace ${key}`);
   }
   for (const [key, value] of Object.entries(env.set)) {

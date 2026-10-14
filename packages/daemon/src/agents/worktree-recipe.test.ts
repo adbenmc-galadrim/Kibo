@@ -181,6 +181,45 @@ test("a copy never follows a symlinked target file", async () => {
   expect(existsSync(outside)).toBe(false);
 });
 
+test("a source that is a symlink or sits behind a symlinked folder is never copied", async () => {
+  const outside = tmp();
+  writeFileSync(join(outside, ".env"), "SECRET=1\n");
+  const f = await fixture({ env: null, copyFrom: ["{repo}"], copy: [".env", "a/.env"] });
+  symlinkSync(join(outside, ".env"), join(f.root, ".env"));
+  symlinkSync(outside, join(f.root, "a"));
+  const result = await applyRecipe(f.input);
+  expect(result.copied).toEqual([]);
+  expect(result.missing).toEqual([".env", "a/.env"]);
+  expect(existsSync(join(f.dir, ".env"))).toBe(false);
+  expect(existsSync(join(f.dir, "a", ".env"))).toBe(false);
+  expect(f.lines.join("\n")).toContain("source refusée : .env");
+});
+
+test("a refused source falls back to the next one", async () => {
+  const outside = tmp();
+  writeFileSync(join(outside, ".env"), "SECRET=1\n");
+  const f = await fixture({ env: null });
+  symlinkSync(join(outside, ".env"), join(f.root, ".env"));
+  await applyRecipe(f.input);
+  expect(readFileSync(join(f.dir, ".env"), "utf8")).toBe(SIBLING_ENV);
+});
+
+test("a replacement value is inserted literally", async () => {
+  const f = await fixture({
+    env: { ...ENV, ports: null, replace: { DATABASE_URL: ["emis_dev", "x$&y$1"] }, set: {} },
+  });
+  await applyRecipe(f.input);
+  expect(readFileSync(join(f.dir, ".env"), "utf8")).toContain("DATABASE_URL=postgres://db/x$&y$1\n");
+});
+
+test("after commands that exceed the delay time out", async () => {
+  const f = await fixture({ env: null, after: ["sleep 1000"] });
+  const shell: RecipeInput["shell"] = async () => ({ code: 137, output: "", timedOut: true });
+  const error = await failure(applyRecipe({ ...f.input, shell }));
+  expect(error.code).toBe("TIMEOUT");
+  expect(f.steps.map((s) => s.status)).toEqual(["running", "failed"]);
+});
+
 test("the recipe is checked when the settings are saved", () => {
   const check = (patch: Partial<WorktreeRecipe>) => () => assertRecipe({ ...RECIPE, ...patch });
   expect(check({ after: ["pnpm dev --port {WEB_PORT} --name {short}"] })).not.toThrow();
