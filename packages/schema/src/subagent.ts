@@ -73,18 +73,17 @@ function withFacts(row: SubagentRow, facts: SubagentFacts): SubagentRow {
   return next;
 }
 
+export const linkedRow = (row: SubagentRow, events: readonly SubagentEvent[]): SubagentRow =>
+  events.reduce((facts, e) => (e.type === "linked" ? withFacts(facts, e.facts) : facts), row);
+
 export function foldSubagent(
   row: SubagentRow,
   events: readonly SubagentEvent[],
   trace: SubagentTraceFacts = { actions: 0, lastText: null },
 ): RunSubagent {
-  let facts = row;
-  let startedAt: number | null = null;
+  const facts = linkedRow(row, events);
   const ended = events.filter((e) => e.type === "ended");
-  for (const event of events) {
-    if (event.type === "linked") facts = withFacts(facts, event.facts);
-    if (event.type === "started" && startedAt === null) startedAt = event.at;
-  }
+  const startedAt = events.find((e) => e.type === "started")?.at ?? null;
   const failed = ended.some((e) => e.isError);
   const endedResult = ended.find((e) => e.result !== null)?.result ?? null;
   const result = trace.lastText ?? endedResult;

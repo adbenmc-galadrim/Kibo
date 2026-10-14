@@ -59,7 +59,7 @@ test("transcript lines give launches and tool results", () => {
   ]);
   expect(signals.launches.map((l) => l.toolUseId)).toEqual(["toolu_1"]);
   expect(signals.results).toEqual([
-    { toolUseId: "toolu_1", isError: false, text: "RAS", async: false },
-    { toolUseId: "toolu_2", isError: false, text: "Async agent launched successfully.", async: true },
+    { toolUseId: "toolu_1", isError: false, text: "RAS" },
+    { toolUseId: "toolu_2", isError: false, text: "Async agent launched successfully." },
   ]);
 });

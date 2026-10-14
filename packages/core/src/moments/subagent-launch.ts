@@ -8,11 +8,10 @@ export type SubagentLaunch = {
   prompt: string;
   model: string | null;
 };
-export type SubagentToolResult = { toolUseId: string; isError: boolean; text: string | null; async: boolean };
+export type SubagentToolResult = { toolUseId: string; isError: boolean; text: string | null };
 export type SubagentSignals = { launches: SubagentLaunch[]; results: SubagentToolResult[] };
 
 const LAUNCH_TOOLS: ReadonlySet<string> = new Set(["Agent", "Task"]);
-const ASYNC_LAUNCHED = /^Async agent launched/;
 const RESULT_TEXT_MAX = 4_000;
 
 const textOf = (value: unknown): string => (typeof value === "string" ? value : "");
@@ -48,7 +47,6 @@ export function subagentSignals(lines: readonly string[]): SubagentSignals {
           toolUseId: result.tool_use_id,
           isError: result.is_error,
           text: result.content === null ? null : result.content.slice(0, RESULT_TEXT_MAX),
-          async: ASYNC_LAUNCHED.test(result.content ?? ""),
         });
   }
   return signals;
