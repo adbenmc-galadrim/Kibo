@@ -1,0 +1,101 @@
+{
+  "state": "~/.delivery",
+  "projects": {
+    "gereco": {
+      "root": "~/Documents/gereco",
+      "repo": "~/Documents/gereco/gereco",
+      "remote": "acme/gereco",
+      "base": "staging",
+      "profile": "~/Documents/gereco/delivery-profile.md",
+      "memory": "~/.claude/projects/-home-dev-Documents-gereco/memory/MEMORY.md",
+      "plan": {
+        "format": "plan-data-js",
+        "path": "~/Documents/gereco/tmp/plan-data.js",
+        "prose": "~/Documents/gereco/tmp/plan-prs-*.md",
+        "idPattern": "^C[0-9A-Z]*-[0-9]+$"
+      },
+      "briefs": "~/Documents/gereco/tmp/briefs",
+      "reports": "~/Documents/gereco/tmp/reports",
+      "progress": "~/Documents/gereco/.progress",
+      "todo": "~/Documents/gereco/TODO.md",
+      "board": { "port": 4848 },
+      "worktree": {
+        "dir": "~/Documents/gereco/gereco-{slug}",
+        "copyFrom": ["~/Documents/gereco/gereco-staging", "{repo}"],
+        "copy": [".galacryptkey", "apps/backend/.env", "apps/backend/.env.test", "apps/frontend/.env"],
+        "after": ["~/Documents/gereco/bin/gereco-sweep --reap --keep {slug} --yes", "make pr-up"]
+      }
+    },
+    "rapid": {
+      "root": "~/Documents/rapid",
+      "repo": "~/Documents/rapid/rapid",
+      "remote": "acme/rapid",
+      "base": "main",
+      "profile": "~/Documents/rapid/delivery-profile.md",
+      "memory": "~/.claude/projects/-home-dev-Documents-rapid/memory/MEMORY.md",
+      "plan": {
+        "format": "plan-data-js",
+        "path": "~/Documents/rapid/tmp/plan-data.js",
+        "idPattern": "^(W[0-9A-Z]+|R[0-9]+|N[0-9]+|E|F)$"
+      },
+      "briefs": "~/Documents/rapid/tmp/briefs",
+      "reports": "~/Documents/rapid/tmp/reports",
+      "progress": "~/Documents/rapid/.progress",
+      "todo": "~/Documents/rapid/TODO.md",
+      "worktree": {
+        "dir": "~/Documents/rapid/rapid-{slug}",
+        "copyFrom": ["{repo}"],
+        "copy": [".env", ".galacryptkey"],
+        "env": {
+          "file": ".env",
+          "ports": {
+            "keys": { "BACKEND_PORT": 3300, "METRO_PORT": 8000 },
+            "from": 40,
+            "step": 1,
+            "count": 59
+          },
+          "replace": { "DATABASE_URL": ["/[^/?]+(\\?|$)", "/rapid_{slug_}$1"] },
+          "set": {
+            "DATABASE_NAME": "rapid_{slug_}",
+            "BETTER_AUTH_URL": "http://localhost:{BACKEND_PORT}",
+            "EXPO_PUBLIC_BACKEND_URL": "http://localhost:{BACKEND_PORT}"
+          }
+        },
+        "after": [
+          "docker exec rapid-postgres createdb -U postgres rapid_{slug_} 2>/dev/null || true",
+          "pnpm install",
+          "pnpm db:migrate"
+        ]
+      }
+    },
+    "emis": {
+      "root": "~/Documents/emis",
+      "repo": "~/Documents/emis/emis",
+      "remote": "galadrimteam/emis-suivi-chantier",
+      "base": "dev",
+      "profile": "~/Documents/emis/delivery-profile.md",
+      "memory": "~/.claude/projects/-Users-galadrim-Documents-emis/memory/MEMORY.md",
+      "plan": {
+        "format": "kibo",
+        "project": "EMIS",
+        "detail": "~/Documents/emis/archive-2026-10-08/plan-data.js",
+        "idPattern": "^C[0-9A-Z]*-[0-9]+$"
+      },
+      "briefs": "~/Documents/emis/kibo-notes/briefs",
+      "reports": "~/Documents/emis/kibo-notes/revues",
+      "progress": "~/Documents/emis/.progress",
+      "todo": "~/Documents/emis/TODO.md",
+      "board": { "port": 4858 },
+      "worktree": {
+        "dir": "~/Documents/emis/emis-{dashed}",
+        "copyFrom": ["{repo}", "{sibling}"],
+        "copy": [".env"],
+        "env": {
+          "file": ".env",
+          "ports": { "keys": { "WEB_PORT": 3000, "SERVER_PORT": 3001 }, "from": 1, "step": 10, "count": 32 }
+        },
+        "after": ["pnpm install"]
+      }
+    }
+  }
+}
