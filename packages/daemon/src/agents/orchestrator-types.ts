@@ -44,7 +44,7 @@ export type AgentDataPort = {
   createQuestion(
     projectId: string,
     ticketId: string,
-    run: { id: string; profileName: string },
+    run: { id: string; profileName: string; cwd?: string | null },
     ask: AskInput,
   ): Question | null;
   answerRunQuestion(projectId: string, runId: string, text: string, by: Actor): Question | null;

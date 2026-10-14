@@ -52,12 +52,14 @@ test("both ask tools declare the question, its context, up to six options, a pro
     result: { tools: Array<{ inputSchema: { properties: Record<string, Record<string, unknown>> } }> };
   };
   for (const tool of list.result.tools) {
-    const { question, context, options, provisional, recipient } = tool.inputSchema.properties;
+    const { question, context, options, provisional, recipient, kind, images } = tool.inputSchema.properties;
     expect(question).toMatchObject({ type: "string" });
     expect(context).toMatchObject({ type: "string" });
     expect(options).toMatchObject({ type: "array", items: { type: "string" }, maxItems: 6 });
     expect(provisional).toMatchObject({ type: "string" });
     expect(recipient).toMatchObject({ type: "string", maxLength: 40 });
+    expect(kind).toMatchObject({ type: "string", enum: ["question", "validation"] });
+    expect(images).toMatchObject({ type: "array", items: { type: "string" }, maxItems: 6 });
   }
 });
 

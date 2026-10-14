@@ -8,7 +8,9 @@ function rewrite(cmd: ProjectCommand, viewer: () => string): ProjectCommand {
   switch (cmd.method) {
     case "createQuestion": {
       const createdBy = viewerActor(cmd.createdBy, viewer());
-      return createdBy === cmd.createdBy ? cmd : { ...cmd, createdBy };
+      const hasImages = (cmd.images?.length ?? 0) > 0;
+      if (createdBy === cmd.createdBy && !hasImages) return cmd;
+      return { ...cmd, createdBy, ...(hasImages ? { images: [] } : {}) };
     }
     case "answerQuestion":
     case "updateQuestion":

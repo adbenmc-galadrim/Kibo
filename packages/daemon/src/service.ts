@@ -43,6 +43,7 @@ import { type CollabPort, handleProjectRequest, NOT_HANDLED } from "./projects/p
 import { createProjectRemoval } from "./projects/remove";
 import { questionActorInterceptor } from "./questions/question-actor";
 import { afterQuestionCommands } from "./questions/question-events";
+import type { QuestionImageDeps } from "./questions/question-images-port";
 import { portSlot, ready } from "./service-ports";
 import { loadDoc, type Store } from "./store";
 import { readTabs, saveTabs } from "./tabs-store";
@@ -75,7 +76,12 @@ export type Service = {
 };
 
 type ProjectAgentSummaries = { summaries(): ProjectAgentSummary[] };
-type ServiceOptions = { user: string; notifications?: Session["notifications"]; agents?: AgentSource };
+type ServiceOptions = {
+  user: string;
+  notifications?: Session["notifications"];
+  agents?: AgentSource;
+  questionImages?: QuestionImageDeps;
+};
 
 const changesDomainUsage = (cmd: ProjectCommand) =>
   (cmd.method === "updateTicket" && cmd.domainId !== undefined) || cmd.method === "deleteTicket";
@@ -211,7 +217,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     },
     activity: (projectId) => tracker?.activity(projectId) ?? NO_ACTIVITY,
   };
-  const agentData = createDataPort(docs, settings, Date.now, opts.agents);
+  const agentData = createDataPort(docs, settings, Date.now, opts.agents, opts.questionImages ?? null);
   const questions: AgentQuestions = {
     data: agentData,
     projectIds: () => docs.projectIds(),
