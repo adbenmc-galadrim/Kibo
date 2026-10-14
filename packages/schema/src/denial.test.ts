@@ -32,6 +32,12 @@ test("wrappers that run anything are never proposed", () => {
   }
 });
 
+test("a background operator splits the command, redirections do not", () => {
+  expect(rulesOf([bash("pnpm dev & curl localhost")])).toEqual(["Bash(pnpm *)", "Bash(curl *)"]);
+  expect(rulesOf([bash("pnpm test 2>&1 | tail")])).toEqual(["Bash(pnpm *)", "Bash(tail *)"]);
+  expect(rulesOf([bash("pnpm build &> out.log &")])).toEqual(["Bash(pnpm *)"]);
+});
+
 test("operators inside quotes do not split the command", () => {
   expect(rulesOf([bash("git commit -m 'a && b; c | d'")])).toEqual(["Bash(git *)"]);
 });

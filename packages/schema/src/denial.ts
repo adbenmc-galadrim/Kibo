@@ -30,7 +30,7 @@ export const isClaudeDenial = (detail: string | null): boolean =>
 const PATH_TOOLS = ["Read", "Glob", "Grep", "LS"];
 const EDIT_TOOLS = ["Edit", "Write", "MultiEdit", "NotebookEdit"];
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
-const OPERATORS = ["&&", "||", ";", "|", "\n"];
+const OPERATORS = ["&&", "||", ";", "|", "&", "\n"];
 
 type Quote = "none" | "single" | "double";
 
@@ -39,6 +39,13 @@ function nextQuote(quote: Quote, char: string): Quote {
   if (quote === "double") return char === '"' ? "none" : "double";
   if (char === "'") return "single";
   return char === '"' ? "double" : "none";
+}
+
+function operatorAt(command: string, i: number): string | undefined {
+  const operator = OPERATORS.find((op) => command.startsWith(op, i));
+  if (operator !== "&") return operator;
+  const redirection = /[<>]/.test(command.charAt(i - 1)) || command.charAt(i + 1) === ">";
+  return redirection ? undefined : operator;
 }
 
 export function splitCommand(command: string): string[] {
@@ -52,7 +59,7 @@ export function splitCommand(command: string): string[] {
       i++;
       continue;
     }
-    const operator = quote === "none" ? OPERATORS.find((op) => command.startsWith(op, i)) : undefined;
+    const operator = quote === "none" ? operatorAt(command, i) : undefined;
     if (operator !== undefined) {
       parts.push(current);
       current = "";
