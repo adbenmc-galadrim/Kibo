@@ -42,3 +42,10 @@ test("a list holds at most twenty folders", () => {
   expect(AddDirs.safeParse([...dirs, "/Users/a/more"]).success).toBe(false);
   expect(AddDirs.safeParse([""]).success).toBe(false);
 });
+
+test("secret folders and the .claude root are refused whatever their case", () => {
+  for (const dir of [".SSH", ".Kibo", ".KIBO/x", ".AWS", ".GnuPG", ".Config/gh", ".CLAUDE", ".Claude/"]) {
+    expect(isSafeAddDir(`/Users/a/${dir}`, HOME)).toBe(false);
+  }
+  expect(isSafeAddDir("/Users/a/.Claude/skills", HOME)).toBe(true);
+});

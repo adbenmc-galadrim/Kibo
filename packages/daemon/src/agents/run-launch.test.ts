@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import { type Agent, EMPTY_DELIVERY, type ProjectSnapshot, type RunView } from "@kibo/schema";
 import { testRef } from "./agents-port.test-helper";
@@ -103,11 +103,11 @@ test("a ticket run receives the folders of its agent and of its project, missing
   const meta: Partial<ProjectSnapshot["meta"]> = {};
   const h = setup({ scenario: "done", meta });
   await h.orch.stop();
-  const skills = join(h.home, ".claude", "skills");
-  const emis = join(h.home, "Documents", "emis");
-  for (const dir of [skills, emis]) mkdirSync(dir, { recursive: true });
-  meta.delivery = { ...EMPTY_DELIVERY, addDirs: [emis, join(h.home, "gone")] };
-  const orch = withAgent(h, testAgent({ addDirs: [skills] }));
+  for (const dir of [".claude/skills", "Documents/emis"]) mkdirSync(join(h.home, dir), { recursive: true });
+  const skills = realpathSync(join(h.home, ".claude", "skills"));
+  const emis = realpathSync(join(h.home, "Documents", "emis"));
+  meta.delivery = { ...EMPTY_DELIVERY, addDirs: [join(h.home, "Documents", "emis"), join(h.home, "gone")] };
+  const orch = withAgent(h, testAgent({ addDirs: [join(h.home, ".claude", "skills")] }));
   try {
     const run = orch.assign({ projectId: "p1", ticketId: "t1", profileId: testRef("opus"), brief: "" });
     await waitUntil(() => orch.state().runs.find((r) => r.id === run.id)?.state === "done");

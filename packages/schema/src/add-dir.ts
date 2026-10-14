@@ -13,7 +13,8 @@ export function isSafeAddDir(path: string, home: string): boolean {
   const parts = partsOf(path);
   if (parts.some((s) => s === ".." || s === ".")) return false;
   if (parts.length <= root.length || !root.every((s, i) => parts[i] === s)) return false;
-  const [first = "", ...rest] = parts.slice(root.length);
+  const [top = "", ...rest] = parts.slice(root.length);
+  const first = top.toLowerCase();
   if (FORBIDDEN_HOME_DIRS.includes(first)) return false;
   return !(first === CLAUDE_ROOT && rest.length === 0);
 }

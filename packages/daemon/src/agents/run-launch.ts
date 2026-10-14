@@ -13,7 +13,7 @@ import {
   type SetupStep,
 } from "@kibo/schema";
 import { withSection } from "../overlaps/turn-prefix";
-import { addDirsOf } from "./add-dirs";
+import { addDirsOf, realpathOrNull } from "./add-dirs";
 import { NO_CLI_FALLBACKS } from "./cli-flags";
 import { ticketLaunch } from "./mcp-launch";
 import type { OrchestratorOptions, TaskSpec, ToolGuard } from "./orchestrator-types";
@@ -174,7 +174,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       const claudeBin = demo ? opts.demoAgent.bin : resolveClaudeBin(opts.claudeBin, env, userHome);
       const addDirs = addDirsOf(agent.settings, prepared.delivery, {
         home: userHome,
-        exists: existsSync,
+        realpath: realpathOrNull,
         log: (line) => console.error(`[kibo-daemon] run ${runId}: ${line}`),
       });
       const flag = permissionFlag(agent.settings.permissionMode, await capsOf(claudeBin));
