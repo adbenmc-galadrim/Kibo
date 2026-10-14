@@ -7,6 +7,8 @@ import { QuestionsChip } from "./questions-chip";
 const TICKET = { id: "t1", keyLabel: "KIB-14", title: "Corriger le formulaire" };
 
 const question = (id: string, createdAt: number, answered = false): Question => ({
+  kind: "question",
+  images: [],
   id,
   ticketId: TICKET.id,
   runId: null,

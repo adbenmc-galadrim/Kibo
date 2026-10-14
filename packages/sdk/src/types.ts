@@ -7,6 +7,7 @@ import type {
   ComponentCall,
   ComponentFormat,
   ComponentManifest,
+  DeliverResult,
   DeliveryResult,
   DesignFrame,
   EmbedView,
@@ -27,6 +28,7 @@ import type {
   ProjectSyncInfo,
   Question,
   QuestionRecipient,
+  RunDenials,
   RunPeek,
   Selection,
   Spotlight,
@@ -84,8 +86,15 @@ export type McpApi = {
 export type QuestionsApi = {
   deliver(ticketId: string): Promise<DeliveryResult>;
   recipients(): Promise<QuestionRecipient[]>;
+  imageUrl(questionId: string, imageId: string): string;
 };
-export type RunsApi = { peek(runId: string): Promise<RunPeek> };
+export type AllowAndResumeInput = { runId: string; questionId: string; rules: string[]; addDirs: string[] };
+export type RunsApi = {
+  peek(runId: string): Promise<RunPeek>;
+  deliver(ticketId: string): Promise<DeliverResult>;
+  denials(runId: string): Promise<RunDenials | null>;
+  allowAndResume(input: AllowAndResumeInput): Promise<void>;
+};
 export type DesignApi = {
   frame(url: string, opts?: { refresh?: boolean }): Promise<DesignFrame>;
   storybooks(): Promise<StorybookOrigin[]>;

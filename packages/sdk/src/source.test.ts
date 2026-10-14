@@ -22,6 +22,7 @@ const ticket = (refs: TicketView["externalRefs"]): TicketView => ({
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
 });
 
 test("a synced instance only shows tickets of its binding", () => {

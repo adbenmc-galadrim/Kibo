@@ -13,6 +13,7 @@ import {
 } from "@kibo/schema";
 import { actAs } from "./mock-actor";
 import { createMockCalls } from "./mock-calls";
+import { createMockRunDelivery } from "./mock-delivery";
 import { createMockEmbeds, recordedFrameApis } from "./mock-embed";
 import { createMockNotes } from "./mock-notes";
 import { createNotifier } from "./mock-notifier";
@@ -47,6 +48,7 @@ export function createMockSdk(
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
   const changes = createNotifier();
   const runChanges = createNotifier();
@@ -82,6 +84,7 @@ export function createMockSdk(
   const selection = createSignal<Selection | null>(opts.selection ?? null);
   const spotlight = createSpotlightStore(opts.spotlight ?? null);
   const mockRuns = createMockRuns(opts.peeks ?? {});
+  const runDelivery = createMockRunDelivery({ doc, runs: () => runs, denials: opts.denials ?? {} });
 
   const serverContext = (): ServerContext => ({
     instanceId: sdk.instanceId,
@@ -109,6 +112,7 @@ export function createMockSdk(
       serverContext,
       embeds,
       peek: mockRuns.peek,
+      delivery: runDelivery,
       deliver: createMockDelivery({
         doc,
         refused: opts.deliveryRefused ?? false,
@@ -220,8 +224,14 @@ export function createMockSdk(
       deliver: (ticketId) =>
         record("write:question", "write question", () => inner.questions.deliver(ticketId)),
       recipients: () => record("read:question", "read question", () => inner.questions.recipients()),
+      imageUrl: inner.questions.imageUrl,
     },
-    runs: { peek: (runId) => record("read:run", "read run", () => inner.runs.peek(runId)) },
+    runs: {
+      peek: (runId) => record("read:run", "read run", () => inner.runs.peek(runId)),
+      deliver: (ticketId) => record("write:run", "write run", () => inner.runs.deliver(ticketId)),
+      denials: (runId) => record("read:run", "read run", () => inner.runs.denials(runId)),
+      allowAndResume: (input) => record("write:run", "write run", () => inner.runs.allowAndResume(input)),
+    },
   };
 
   return {
@@ -236,6 +246,8 @@ export function createMockSdk(
     viewRequests,
     openedRuns: mockRuns.opened,
     deliveries,
+    runDeliveries: runDelivery.delivered,
+    allowed: runDelivery.allowed,
     embedCalls: embeds.calls,
     data,
     configPatches,

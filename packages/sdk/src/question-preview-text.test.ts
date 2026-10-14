@@ -11,6 +11,8 @@ import {
 const T1 = "t1";
 
 const question = (over: Partial<Question>): Question => ({
+  kind: "question",
+  images: [],
   id: "q",
   ticketId: T1,
   runId: null,

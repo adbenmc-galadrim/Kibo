@@ -1,13 +1,26 @@
-import type { ComponentCall, EntityType, RunPeek } from "@kibo/schema";
+import type { ComponentCall, DeliverResult, EntityType, RunDenials, RunPeek } from "@kibo/schema";
 import type { RunsApi, SdkContext } from "./types";
 
 type Call = <T>(c: ComponentCall) => Promise<T>;
+type Needs = { read(entity: EntityType): void; write(entity: EntityType): void };
 
-export function runsApi(needRead: (entity: EntityType) => void, call: Call): RunsApi {
+export function runsApi(needs: Needs, call: Call): RunsApi {
   return {
     async peek(runId) {
-      needRead("run");
+      needs.read("run");
       return call<RunPeek>({ kind: "run.peek", runId });
+    },
+    async deliver(ticketId) {
+      needs.write("run");
+      return call<DeliverResult>({ kind: "run.deliver", ticketId });
+    },
+    async denials(runId) {
+      needs.read("run");
+      return call<RunDenials | null>({ kind: "run.denials", runId });
+    },
+    async allowAndResume(input) {
+      needs.write("run");
+      await call<unknown>({ kind: "run.allowAndResume", ...input });
     },
   };
 }

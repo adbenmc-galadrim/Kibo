@@ -7,6 +7,8 @@ import { QuestionPreview, type QuestionPreviewProps } from "./question-preview";
 const TICKET = { id: "t1", keyLabel: "KIB-14", title: "Corriger le formulaire" };
 
 const question = (n: number, over: Partial<Question> = {}): Question => ({
+  kind: "question",
+  images: [],
   id: `q${n}`,
   ticketId: TICKET.id,
   runId: null,
