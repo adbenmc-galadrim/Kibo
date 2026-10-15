@@ -2,7 +2,8 @@ import { expect, test } from "bun:test";
 import { Question } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { manifest } from "./index";
 import { QuestionImages } from "./QuestionImages";
 
@@ -40,7 +41,7 @@ const mount = (q: Question) => {
 
 test("each image of a question is a thumbnail served by the daemon, named by its file", () => {
   const { sdk } = mount(question(IMAGES));
-  const shown = screen.getAllByRole("img");
+  const shown = within(screen.getByRole("list", { name: "Captures · 2" })).getAllByRole("img");
   expect(shown.map((img) => img.getAttribute("alt"))).toEqual(["1-no-access.png", "2-list.png"]);
   expect(shown.map((img) => img.getAttribute("src"))).toEqual([
     sdk.questions.imageUrl("q1", "i1"),
@@ -55,4 +56,26 @@ test("each image of a question is a thumbnail served by the daemon, named by its
 test("a question without image renders nothing", () => {
   const { view } = mount(question([]));
   expect(view.container.innerHTML).toBe("");
+});
+
+test("a thumbnail opens the full-frame viewer, arrows move between images, Escape closes it", async () => {
+  const { sdk } = mount(question(IMAGES));
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Agrandir 1-no-access.png" }));
+  const viewer = await screen.findByRole("dialog", { name: "1-no-access.png" });
+  expect(within(viewer).getByText("1 / 2")).toBeTruthy();
+  expect(within(viewer).getByRole("img", { name: "1-no-access.png" }).getAttribute("src")).toBe(
+    sdk.questions.imageUrl("q1", "i1"),
+  );
+  expect(within(viewer).getByRole("button", { name: "Image précédente" }).hasAttribute("disabled")).toBe(
+    true,
+  );
+  await user.keyboard("{ArrowRight}");
+  const next = await screen.findByRole("dialog", { name: "2-list.png" });
+  expect(within(next).getByText("2 / 2")).toBeTruthy();
+  expect(within(next).getByRole("button", { name: "Image suivante" }).hasAttribute("disabled")).toBe(true);
+  await user.click(within(next).getByRole("button", { name: "Image précédente" }));
+  expect(await screen.findByRole("dialog", { name: "1-no-access.png" })).toBeTruthy();
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 });

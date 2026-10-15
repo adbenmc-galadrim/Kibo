@@ -272,7 +272,7 @@
     "title": "Questions",
     "description": "Questions des agents, à valider ou à répondre",
     "reads": ["question", "ticket", "status", "run"],
-    "writes": ["question"],
+    "writes": ["question", "run"],
     "selection": false,
     "configSchema": { "scope": { "enum": ["open", "all"], "default": "open", "label": "Afficher" } }
   }

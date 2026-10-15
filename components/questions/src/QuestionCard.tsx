@@ -13,6 +13,8 @@ import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { Archive, ArchiveRestore, Send } from "lucide-react";
 import { useState } from "react";
 import { AnswerActionButtons, AnswerEditForm } from "./AnswerActions";
+import { DenialProposals } from "./DenialProposals";
+import { isDenialQuestion } from "./denial-logic";
 import { ExportButton } from "./ExportButton";
 import { fr } from "./fr";
 import { PasteAnswerForm } from "./PasteAnswerForm";
@@ -24,6 +26,7 @@ import { canArchive, recipientName, relativeAge } from "./questions-logic";
 import { RecipientMenu } from "./RecipientMenu";
 import { renderContext } from "./render-context";
 import { useSpotlightCard } from "./use-spotlight-card";
+import { isScreenValidation, ValidationActions } from "./ValidationActions";
 
 type Props = {
   question: Question;
@@ -56,6 +59,25 @@ function ArchivedLine({ question: q, now }: { question: Question; now: number })
       {fr.archived(q.archivedBy.ref, relativeAge(q.archivedAt, now))}
     </p>
   );
+}
+
+function AnswerArea({
+  question: q,
+  readOnly,
+  run,
+}: {
+  question: Question;
+  readOnly: boolean;
+  run: TicketRun | null;
+}) {
+  if (!isOpen(q)) return null;
+  const form = readOnly ? null : isScreenValidation(q) ? (
+    <ValidationActions question={q} />
+  ) : (
+    <QuestionAnswerForm question={q} />
+  );
+  if (!isDenialQuestion(q)) return form;
+  return <DenialProposals question={q} run={run} readOnly={readOnly} fallback={form} />;
 }
 
 function RestoreButton({ questionId }: { questionId: string }) {
@@ -129,7 +151,7 @@ export function QuestionCard(props: Props) {
       <ArchivedLine question={q} now={now} />
       {context !== null && <div className="grid gap-1.5 text-xs text-muted-foreground">{context}</div>}
       <QuestionImages question={q} />
-      {(q.options.length > 0 || q.provisional !== null) && (
+      {!isScreenValidation(q) && (q.options.length > 0 || q.provisional !== null) && (
         <p className="flex flex-wrap gap-x-3 text-2xs text-muted-foreground">
           {q.options.length > 0 && <span>{`${fr.options} : ${q.options.join(" · ")}`}</span>}
           {q.provisional !== null && <span>{fr.provisional(q.provisional)}</span>}
@@ -139,7 +161,7 @@ export function QuestionCard(props: Props) {
       {editedAnswer !== null && (
         <AnswerEditForm question={q} answer={editedAnswer} onClose={() => setEditing(false)} />
       )}
-      {open && <QuestionAnswerForm question={q} />}
+      <AnswerArea question={q} readOnly={readOnly} run={runOf(q.runId)} />
       {open && (
         <div className="flex flex-wrap justify-end gap-2">
           <ExportButton
