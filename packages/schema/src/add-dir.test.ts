@@ -49,3 +49,10 @@ test("secret folders and the .claude root are refused whatever their case", () =
   }
   expect(isSafeAddDir("/Users/a/.Claude/skills", HOME)).toBe(true);
 });
+
+test("doubled slashes collapse like the system does, a blank folder stays under the home", () => {
+  expect(isSafeAddDir("//Users/a/ ", HOME)).toBe(true);
+  expect(isSafeAddDir("/Users//a/ ", HOME)).toBe(true);
+  expect(isSafeAddDir("//Users/a/.kibo", HOME)).toBe(false);
+  expect(isSafeAddDir("/Users//a//.ssh/", HOME)).toBe(false);
+});
