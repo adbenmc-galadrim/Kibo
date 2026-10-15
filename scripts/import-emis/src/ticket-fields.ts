@@ -51,6 +51,7 @@ export function fieldCommands(
   memory: TicketMemory | undefined,
   ids: ReadonlyMap<string, string>,
   phases: FieldPhases,
+  group = false,
 ): FieldOutcome {
   const wanted = desiredMemory(d);
   const known = memory !== undefined;
@@ -96,9 +97,11 @@ export function fieldCommands(
   )
     phases.edit.push({ method: "moveTicket", ticketId: t.id, parentId: parent });
   const current = { statusId: t.statusId, blockedReason: t.blockedReason };
-  const status = verdict(sameStatus(current, wanted.status), known, () =>
-    memory ? sameStatus(current, memory.status) : false,
-  );
+  const status = group
+    ? "same"
+    : verdict(sameStatus(current, wanted.status), known, () =>
+        memory ? sameStatus(current, memory.status) : false,
+      );
   if (decide("status", status))
     phases.status.push({
       method: "setStatus",
