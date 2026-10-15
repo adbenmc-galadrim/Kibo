@@ -182,6 +182,7 @@ export function reduceRun(view: RunView, event: RunEvent, at: number): RunView {
       requireState(view, event, ["queued"]);
       return { ...view, priority: event.priority };
     case "setup":
+    case "base_fallback":
       requireState(view, event, ["starting"]);
       return view;
     case "session":

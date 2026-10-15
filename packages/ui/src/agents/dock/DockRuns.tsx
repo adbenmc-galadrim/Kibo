@@ -15,7 +15,7 @@ import { fr } from "../../i18n/fr";
 import { frMoments } from "../../i18n/fr-moments";
 import { stepChip } from "../bar-summary";
 import { elapsed, formatDuration } from "../format";
-import { runStateText } from "../run-state-text";
+import { runResultText, runStateText } from "../run-state-text";
 import type { DockGroups } from "./dock-runs";
 import { activeByRun, SubagentLines } from "./SubagentLines";
 
@@ -91,9 +91,10 @@ function RecentLine({
   questions: readonly RunQuestions[];
 }) {
   const { open } = runStateText(run, questions, null);
+  const text = run.state === "failed" ? runResultText(run, null) : reportText(summary);
   return (
     <>
-      {runSubject(run, reportText(summary))}
+      {runSubject(run, text)}
       {open > 0 && (
         <>
           {" · "}

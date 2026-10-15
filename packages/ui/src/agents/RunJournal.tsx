@@ -111,6 +111,8 @@ function eventLine(event: RunEvent, runs: readonly JournalRun[]): Line | null {
       return event.priority ? { name: event.type, text: "", tone: "muted" } : null;
     case "setup":
       return setupLine(event);
+    case "base_fallback":
+      return { name: "setup", text: frAgentsPage.setup.baseFallback(event.base, event.from), tone: "amber" };
     case "session":
       return sessionLine(event, runs);
     case "enqueued":

@@ -210,7 +210,7 @@ test("each failure of the workspace has its own code", async () => {
 test("a refusal of git is a GIT_FAILED with git's message", async () => {
   const folder = await repo();
   const git: GitRunner = async (args, cwd) =>
-    args[0] === "worktree"
+    args[0] === "worktree" && args[1] === "add"
       ? { code: 128, stdout: "", stderr: "fatal: 'x' is a missing but locked\n" }
       : runGit(args, cwd);
   await expect(

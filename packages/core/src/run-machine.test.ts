@@ -332,11 +332,16 @@ test("the question stays on the run until the next turn starts, so the queue can
   expect(requeued).toMatchObject({ state: "queued", question: "Je continue ?", pendingAnswer: "Vas-y" });
 });
 
-test("a setup step is journaled while starting and changes nothing else", () => {
+test("a setup step or a base fallback is journaled while starting and changes nothing else", () => {
   const starting = reduceRun(initRun(record, 5, 100), { type: "admitted", lane: 2 }, 110);
-  const step: RunEvent = { type: "setup", command: "pnpm worktree kib-14", status: "running" };
-  expect(reduceRun(starting, step, 130)).toEqual(starting);
-  expect(() => reduceRun(running(), step, 130)).toThrow("INVALID_TRANSITION");
+  const steps: RunEvent[] = [
+    { type: "setup", command: "pnpm worktree kib-14", status: "running" },
+    { type: "base_fallback", base: "feat/matrice-droits", from: "origin/dev" },
+  ];
+  for (const step of steps) {
+    expect(reduceRun(starting, step, 130)).toEqual(starting);
+    expect(() => reduceRun(running(), step, 130)).toThrow("INVALID_TRANSITION");
+  }
 });
 
 test("the session decision is journaled while starting and sets the run session only", () => {

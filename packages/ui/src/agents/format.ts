@@ -39,8 +39,12 @@ export function workspaceText(label: string | null): string {
   return label;
 }
 
+const DETAILED = new Set(["GIT_FAILED", "WORKSPACE_FAILED"]);
+
 export function errorText(error: string | null): string {
   if (!error) return "";
-  const code = /^([A-Z_]+):/.exec(error)?.[1];
-  return (code && ERRORS[code]) || error;
+  const [, code, detail] = /^([A-Z_]+):\s*([\s\S]*)$/.exec(error) ?? [];
+  const label = code ? ERRORS[code] : undefined;
+  if (!code || !label) return error;
+  return DETAILED.has(code) && detail ? `${label} (${detail.trim()})` : label;
 }

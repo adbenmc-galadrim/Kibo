@@ -71,6 +71,8 @@ export const frAgentsPage = {
     running: (command: string) => `Préparation : ${command} · en cours`,
     done: (command: string, duration: string) => `Préparation : ${command} · terminée en ${duration}`,
     failed: (command: string, duration: string) => `Préparation : ${command} · échec après ${duration}`,
+    baseFallback: (base: string, from: string) =>
+      `Base ${base} fusionnée et supprimée : départ depuis ${from}.`,
   },
   assign: {
     ticketBusy: "Un run de ce ticket est déjà en cours ou en file.",
