@@ -1,9 +1,12 @@
-import { type Domain, type FileRef, isInbox, type ProjectSnapshot } from "@kibo/schema";
+import { type Domain, type FileRef, isGroup, isInbox, type ProjectSnapshot } from "@kibo/schema";
 import { TicketKeyLabel } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Bot } from "lucide-react";
+import { DeliverButton } from "../delivery/lazy";
 import { fr } from "../i18n/fr";
+import { frGroup } from "../i18n/fr-group";
+import { GroupDetail } from "../shell/GroupDetail";
 import { KeyRequired } from "../shell/KeyRequired";
 import { ActivityTab } from "../shell/lazy-screens";
 import { importTitle } from "../shell/sheet/import-title";
@@ -33,11 +36,16 @@ export function TicketTab({ project, ticketId, domains, viewer, onAssign, onOpen
   const t = project.tickets.find((x) => x.id === ticketId);
   if (!t) return <p className="p-8 text-sm text-muted-foreground">{fr.tabs.missingTicket}</p>;
   const editable = canEdit(project);
+  const group = isGroup(t);
   return (
     <article className={cn("mx-auto grid w-full gap-4 py-8", tab === "activity" ? "max-w-7xl" : "max-w-3xl")}>
       <header className="grid gap-1 px-4">
         <div className="flex items-center gap-2">
-          <TicketKeyLabel ticket={t} className="font-mono text-xs text-muted-foreground" />
+          {group ? (
+            <span className="font-mono text-xs text-muted-foreground">{frGroup.kicker(t.keyLabel)}</span>
+          ) : (
+            <TicketKeyLabel ticket={t} className="font-mono text-xs text-muted-foreground" />
+          )}
           <GithubRefs ticket={t} />
           <span className="ml-auto flex items-center gap-2">
             <TicketActionsMenu
@@ -61,7 +69,12 @@ export function TicketTab({ project, ticketId, domains, viewer, onAssign, onOpen
         </h1>
         <LabelsField ticket={t} editable={editable} command={labelsCommand} />
         <GithubLinkNote ticket={t} />
-        {onAssign && !isInbox(project.meta.id) && (
+        {group && editable && (
+          <span className="mt-2 flex flex-wrap gap-2">
+            <DeliverButton key={project.meta.delivery?.agent ?? ""} project={project} ticket={t} />
+          </span>
+        )}
+        {onAssign && !group && !isInbox(project.meta.id) && (
           <KeyRequired ticket={t}>
             <Button
               variant="outline"
@@ -75,21 +88,25 @@ export function TicketTab({ project, ticketId, domains, viewer, onAssign, onOpen
           </KeyRequired>
         )}
       </header>
-      <TicketTabs
-        tab={tab}
-        onTab={setTab}
-        details={
-          <TicketDetail
-            project={project}
-            ticket={t}
-            domains={domains}
-            viewer={viewer}
-            onOpenFile={onOpenFile}
-            onOpenTicket={onOpenTicket}
-          />
-        }
-        activity={<ActivityTab project={project} ticket={t} onOpenFile={onOpenFile} />}
-      />
+      {group ? (
+        <GroupDetail project={project} ticket={t} onOpenFile={onOpenFile} onOpenTicket={onOpenTicket} />
+      ) : (
+        <TicketTabs
+          tab={tab}
+          onTab={setTab}
+          details={
+            <TicketDetail
+              project={project}
+              ticket={t}
+              domains={domains}
+              viewer={viewer}
+              onOpenFile={onOpenFile}
+              onOpenTicket={onOpenTicket}
+            />
+          }
+          activity={<ActivityTab project={project} ticket={t} onOpenFile={onOpenFile} />}
+        />
+      )}
     </article>
   );
 }

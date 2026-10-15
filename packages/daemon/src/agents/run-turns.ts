@@ -4,8 +4,8 @@ import {
   branchRefOf,
   KiboError,
   type ProjectDelivery,
+  type RunEvent,
   type RunView,
-  type SetupStep,
   undeliveredAnswers,
 } from "@kibo/schema";
 import type { OrchestratorOptions, TaskSpec } from "./orchestrator-types";
@@ -23,10 +23,11 @@ export type Prepared = {
   delivery: ProjectDelivery | null;
 };
 
+export type PreparationEvent = Extract<RunEvent, { type: "setup" | "base_fallback" }>;
 type RunTurnsDeps = {
   opts: OrchestratorOptions;
   preparer: ReturnType<typeof createTurnPreparer>;
-  journalSetup: (runId: string, step: SetupStep) => void;
+  journalPreparation: (runId: string, event: PreparationEvent) => void;
 };
 
 export function createRunTurns(deps: RunTurnsDeps) {
@@ -42,7 +43,8 @@ export function createRunTurns(deps: RunTurnsDeps) {
       runDir,
       worktree: ctx.project.meta.worktree,
       branchRef: branchRefOf(ctx.ticket.externalRefs),
-      onSetup: (step) => deps.journalSetup(run.id, step),
+      onSetup: (step) => deps.journalPreparation(run.id, { type: "setup", ...step }),
+      onBaseFallback: (fallback) => deps.journalPreparation(run.id, { type: "base_fallback", ...fallback }),
     });
     const chain = guidelineChain(deps.opts.data.guidelines(run.projectId), {
       projectId: run.projectId,

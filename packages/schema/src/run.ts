@@ -33,6 +33,8 @@ export const SetupStep = z.object({
   durationMs: z.number().int().nonnegative().optional(),
 });
 export type SetupStep = z.infer<typeof SetupStep>;
+export const BaseFallback = z.object({ base: z.string().min(1), from: z.string().min(1) });
+export type BaseFallback = z.infer<typeof BaseFallback>;
 
 export const SessionFreshReason = z.enum([
   "no_previous",
@@ -84,6 +86,7 @@ const LifecycleEvent = z.discriminatedUnion("type", [
   z.object({ type: z.literal("reranked"), rank: z.number() }),
   z.object({ type: z.literal("prioritized"), priority: z.boolean() }),
   SetupStep.extend({ type: z.literal("setup") }),
+  BaseFallback.extend({ type: z.literal("base_fallback") }),
 ]);
 export const RunEvent = z.union([LifecycleEvent, SessionEvent]);
 export type RunEvent = z.infer<typeof RunEvent>;

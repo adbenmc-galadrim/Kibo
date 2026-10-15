@@ -174,3 +174,13 @@ test("whatever Kibo and the plan change, a second pass changes nothing and Kibo 
     }),
   );
 });
+
+test("the status of an ensemble follows its sub-tickets: the plan never compares nor writes it", () => {
+  const kibo = editKibo("C1", { statusId: "in_progress" });
+  const plan = editPlan("C1", { statusId: "done" });
+  const r = reconcile(kibo, plan, first.memory);
+  expect(r.commands).toEqual([]);
+  expect(r.changes).not.toContainEqual(
+    expect.objectContaining({ what: "ticket C1", detail: "status (Kibo)" }),
+  );
+});

@@ -108,7 +108,7 @@ test("a missing remote or a failed fetch is a GIT_FAILED, not a silent fallback"
   const s = settings({ baseRef: "origin/dev" });
   await expect(prepareWorktree(input(root, { settings: s }))).rejects.toMatchObject({
     code: "GIT_FAILED",
-    detail: "remote origin not found",
+    detail: "base branch origin/dev not found locally",
   });
   await git(["remote", "add", "origin", join(tmp(), "nowhere")], root);
   await expect(prepareWorktree(input(root, { settings: s }))).rejects.toMatchObject({

@@ -1,4 +1,4 @@
-import type { Link, TicketView } from "@kibo/schema";
+import { isGroup, type Link, type TicketView } from "@kibo/schema";
 import type { GraphEdge } from "./critical-path";
 
 export type GraphFilter = {
@@ -17,13 +17,16 @@ export function initialFilter(config: Record<string, unknown>): GraphFilter {
   };
 }
 
-const visible = (t: TicketView, f: GraphFilter, viewer: string): boolean =>
+const kept = (t: TicketView, f: GraphFilter, viewer: string): boolean =>
   (f.assignee === "all" ||
     t.assignee?.kind === "agent" ||
     (t.assignee?.kind === "human" && t.assignee.ref === viewer)) &&
   (f.showDone || t.statusId !== "done") &&
   (!f.startable || t.startable) &&
   (f.domain === null || t.domainId === f.domain);
+
+const visible = (t: TicketView, f: GraphFilter, viewer: string): boolean =>
+  isGroup(t) ? f.showDone || t.statusId !== "done" : kept(t, f, viewer);
 
 export function graphInput(
   tickets: TicketView[],

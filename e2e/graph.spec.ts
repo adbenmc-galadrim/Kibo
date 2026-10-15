@@ -162,7 +162,7 @@ test("widget : un contenu par format", async ({ page }, info) => {
   const region = widget.getByRole("region", { name: "Graphe des dépendances" });
   await expect(region).toBeVisible();
   await expect(region).toHaveAttribute("data-zoom", /^(0\.[5-9]\d*|1)$/);
-  await expect(region.getByText("Vague 1 · démarrables et en cours")).toBeVisible();
+  await expect(region.locator('[data-frame="KIB-6"]')).toBeVisible();
   await expect(widget.getByRole("button", { name: "Tout voir" })).toBeVisible();
   await expect(widget.getByRole("img", { name: "Vue d'ensemble du graphe" })).toHaveCount(0);
   await shot(page, info, "graphe-widget-large");

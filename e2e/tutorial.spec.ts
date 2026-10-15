@@ -27,8 +27,8 @@ const widget = (page: Page, title: string) =>
 
 async function expectDemoWidgets(page: Page) {
   const tickets = widget(page, "Tickets");
-  await expect(tickets.getByText("DEMO-1", { exact: true })).toBeVisible();
-  const title = tickets.getByRole("button", { name: "Noyau de données", exact: true });
+  await expect(tickets.getByText("DEMO-2", { exact: true })).toBeVisible();
+  const title = tickets.getByRole("button", { name: "Schéma des tickets", exact: true });
   await expect(title).toBeVisible();
   const [titleBox, widgetBox] = await Promise.all([title.boundingBox(), tickets.boundingBox()]);
   if (!titleBox || !widgetBox) throw new Error("tickets widget not laid out");

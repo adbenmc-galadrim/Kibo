@@ -10,7 +10,6 @@ import {
   mainSessionOf,
   RunEvent,
   type RunView,
-  type SetupStep,
 } from "@kibo/schema";
 import { withSection } from "../overlaps/turn-prefix";
 import { addDirsOf, realpathOrNull } from "./add-dirs";
@@ -22,7 +21,7 @@ import { notifyLifecycle } from "./run-lifecycle";
 import { createTurnPreparer } from "./run-prepare";
 import type { RunRegistry } from "./run-registry";
 import { newRunToken } from "./run-token";
-import { createRunTurns } from "./run-turns";
+import { createRunTurns, type PreparationEvent } from "./run-turns";
 import {
   type CliCaps,
   cleanEnv,
@@ -77,8 +76,8 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
       data: opts.data,
       fallbacks: { ...NO_CLI_FALLBACKS, ...opts.cliFallbacks },
     }),
-    journalSetup(runId: string, step: SetupStep): void {
-      if (registry.get(runId).state === "starting") registry.apply(runId, { type: "setup", ...step });
+    journalPreparation(runId: string, event: PreparationEvent): void {
+      if (registry.get(runId).state === "starting") registry.apply(runId, event);
     },
   });
 

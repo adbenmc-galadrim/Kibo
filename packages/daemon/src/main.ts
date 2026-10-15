@@ -12,6 +12,7 @@ import { startDaemon } from "./daemon";
 import { parseIntegrationFlags } from "./integrations/bootstrap";
 import { createRedactor, installConsoleRedaction } from "./integrations/redact";
 import { createLogBuffer } from "./log-buffer";
+import { loginShellPath, runLoginShell } from "./login-path";
 import { kiboHome } from "./paths";
 import { DaemonRunning } from "./single-instance";
 import { fatalLine, REUSED_EXIT_CODE, reuseLines } from "./startup-lines";
@@ -62,6 +63,13 @@ const logBuffer = createLogBuffer();
 logBuffer.install(console);
 const redactor = createRedactor();
 installConsoleRedaction(redactor);
+const loginPath = await loginShellPath({
+  platform: process.platform,
+  env: process.env,
+  run: runLoginShell,
+  log: (line) => console.error(line),
+});
+if (loginPath !== null) process.env.PATH = loginPath;
 const daemon = await Promise.resolve()
   .then(() =>
     startDaemon({

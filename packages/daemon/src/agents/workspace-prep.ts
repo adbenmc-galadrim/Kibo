@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve, sep } from "node:path";
 import {
+  type BaseFallback,
   type GitBranchRef,
   KiboError,
   type SetupStep,
@@ -28,6 +29,7 @@ export type PrepareInput = {
   git?: GitRunner;
   shell?: ShellRunner;
   onSetup?: (step: SetupStep) => void;
+  onBaseFallback?: (fallback: BaseFallback) => void;
 };
 
 const gitEnv = (): Record<string, string | undefined> => ({
@@ -76,6 +78,7 @@ export async function prepareWorkspace(input: PrepareInput): Promise<PreparedWor
         git,
         shell: input.shell ?? runShell,
         onSetup: input.onSetup,
+        onBaseFallback: input.onBaseFallback,
       });
       const commits = await recentCommits(git, placed.cwd, worktreeBase(settings, input.branchRef));
       return { ...placed, commits };

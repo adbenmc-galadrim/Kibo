@@ -45,7 +45,7 @@ function kibo() {
     title: "Kanban : drag & drop",
     description: "Garder l'ordre.",
   }) as Ticket;
-  run({ method: "createTicket", title: "Poignée", parentId: t.id, statusId: "done" });
+  run({ method: "createTicket", title: "Poignée", parentId: t.id, statusId: "backlog" });
   run({ method: "addLink", from: dep.id, to: t.id, type: "blocks" });
   const project = readProject(doc);
   const ticket = project.tickets.find((x) => x.id === t.id);
@@ -75,7 +75,7 @@ test("the brief lists the ticket, its sub-tickets, its dependencies and the note
       "",
       "## Sous-tickets",
       "",
-      "- KIB-3 · Poignée (Terminé)",
+      "- KIB-3 · Poignée (Backlog)",
       "",
       "## Dépendances",
       "",

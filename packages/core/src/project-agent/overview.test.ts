@@ -77,6 +77,7 @@ describe("projectOverview", () => {
       parent: "EMIS-1",
       openQuestions: 1,
       startable: false,
+      group: false,
       branch: "feat/ecran",
       pr: "#7 (open)",
     });

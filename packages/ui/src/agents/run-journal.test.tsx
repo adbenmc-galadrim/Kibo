@@ -120,6 +120,14 @@ test("the setup command shows as a preparation line, with its status and duratio
     ["setup", "Préparation : pnpm worktree feat/drag · échec après 3s", "red"],
   ]);
 });
+test("a merged and deleted base says where the branch starts from instead", () => {
+  const log: RunLogEntry[] = [
+    { id: 1, at: NOW, event: { type: "base_fallback", base: "feat/matrice-droits", from: "origin/dev" } },
+  ];
+  expect(journalLines(log).map((l) => [l.name, l.text, l.tone])).toEqual([
+    ["setup", "Base feat/matrice-droits fusionnée et supprimée : départ depuis origin/dev.", "amber"],
+  ]);
+});
 test("the agent's last message and the user's messages are shown whole, on several lines", () => {
   const message = "Fait.\nDeux fichiers modifiés.\nVeux-tu des tests ?\nJe peux aussi documenter.";
   const log: RunLogEntry[] = [

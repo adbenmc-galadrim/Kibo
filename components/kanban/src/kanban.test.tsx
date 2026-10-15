@@ -249,10 +249,11 @@ const renderSynced = (
 
 test("a synced Kanban shows only the binding's tickets, on the 'all' filter", async () => {
   renderSynced();
-  expect(await screen.findByText("Issue synchronisée")).toBeTruthy();
-  expect(screen.getByText("Sous-tâche locale")).toBeTruthy();
+  expect(await screen.findByText("Sous-tâche locale")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Ouvrir l'ensemble KIB-1 · Issue synchronisée" })).toBeTruthy();
+  expect(screen.queryByText("Issue synchronisée")).toBeNull();
   expect(screen.queryByText("Ticket local")).toBeNull();
-  expect(screen.getByText("3 / 3 · Tous")).toBeTruthy();
+  expect(screen.getByText("2 / 2 · Tous")).toBeTruthy();
   const chip = await screen.findByLabelText("CI cassée");
   expect(chip.parentElement?.textContent).toBe("#12");
   expect(screen.queryByLabelText("CI réussie")).toBeNull();
@@ -261,10 +262,10 @@ test("a synced Kanban shows only the binding's tickets, on the 'all' filter", as
 test("the CI chip follows the tones of the ticket sheet", async () => {
   const m = createMockSdk(manifest, {
     seed: syncedSeed,
-    config: { source: { bindingId: "b1" } },
+    config: { filter: "all" },
     ciRuns: [
-      ciRun({ ticketKey: "KIB-1", prNumber: 3, status: "in_progress", conclusion: null }),
-      ciRun({ ticketKey: "KIB-2", prNumber: 4, conclusion: "success" }),
+      ciRun({ ticketKey: "KIB-2", prNumber: 3, status: "in_progress", conclusion: null }),
+      ciRun({ ticketKey: "KIB-3", prNumber: 4, conclusion: "success" }),
       ciRun({ ticketKey: "KIB-4", prNumber: null, conclusion: "cancelled" }),
     ],
   });
@@ -316,7 +317,7 @@ test("an unavailable CI is stated, a missing GitHub account is not", async () =>
     list: (type) =>
       type === "ci_run" ? Promise.reject(new KiboError("NOT_CONNECTED", "github")) : m.sdk.list(type),
   }));
-  expect(await screen.findByText("Issue synchronisée")).toBeTruthy();
+  expect(await screen.findByText("Sous-tâche locale")).toBeTruthy();
   expect(screen.queryByRole("alert")).toBeNull();
 });
 
@@ -544,18 +545,6 @@ test("Livrer asks the SDK to deliver the ticket", async () => {
   const id = m.snapshot().tickets.find((t) => t.key === "KIB-1")?.id;
   await waitFor(() => expect(m.runDeliveries).toEqual([id ?? ""]));
   expect(m.violations).toEqual([]);
-});
-
-test("Livrer on a parent opens the dialog of its sub-tickets", async () => {
-  const m = setup();
-  const parent = m.snapshot().tickets.find((t) => t.key === "KIB-1")?.id ?? "";
-  act(() => {
-    m.run({ method: "createTicket", title: "Sous-ticket prêt", parentId: parent });
-  });
-  const user = await openMenu("KIB-1");
-  await user.click(await screen.findByRole("menuitem", { name: "Livrer" }));
-  const dialog = await screen.findByRole("dialog", { name: "Livrer les sous-tickets de KIB-1" });
-  expect(within(dialog).getByText("Sous-ticket prêt")).toBeTruthy();
 });
 
 test("Livrer is disabled while a run is active on the ticket", async () => {

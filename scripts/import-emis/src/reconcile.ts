@@ -114,6 +114,9 @@ function ticketChanges(
   const defines = new Map<number, string>();
   const changes: Change[] = [];
   const next: ImportMemory = { ...memory };
+  const groups = new Set(
+    matches.flatMap((m) => (m.desired.parent === null ? [] : [refKey(m.desired.parent)])),
+  );
   for (const m of matches) {
     const key = refKey(m.desired.ref);
     const what = `ticket ${m.desired.ref.id}`;
@@ -128,7 +131,7 @@ function ticketChanges(
       changes.push({ kind: "created", what, detail: title });
       continue;
     }
-    const outcome = fieldCommands(m.existing, m.desired, parent, memory[key], ids, phases);
+    const outcome = fieldCommands(m.existing, m.desired, parent, memory[key], ids, phases, groups.has(key));
     next[key] = outcome.memory;
     const change = describeFields(
       outcome,

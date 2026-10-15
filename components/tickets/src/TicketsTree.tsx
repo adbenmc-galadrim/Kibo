@@ -6,10 +6,18 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { KiboError, type ProjectCommand, type Status, type StatusId, type TicketView } from "@kibo/schema";
+import {
+  isGroup,
+  KiboError,
+  type ProjectCommand,
+  type Status,
+  type StatusId,
+  type TicketView,
+} from "@kibo/schema";
 import {
   deliverEntry,
   filterBySource,
+  groupOfTicket,
   readSource,
   SelectionChip,
   useDeliverFlow,
@@ -27,7 +35,7 @@ import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { ReasonDialog } from "@kibo/sdk/ui/reason-dialog";
 import { Plus } from "lucide-react";
 import { useState } from "react";
-import { buildTree, mineOnly, type TicketNode, withAncestors } from "./build-tree";
+import { buildTree, flattenGroups, mineOnly, type TicketNode, withAncestors } from "./build-tree";
 import { EMPTY_QUERY, filterTree, isActive } from "./filter-tickets";
 import { fr } from "./fr";
 import { ASSIGNEE_CELL, COLUMNS, TicketRow, WIDE_CELL } from "./TicketRow";
@@ -35,6 +43,8 @@ import { TicketsEmpty, TicketsNoMatch, TicketsSkeleton } from "./TicketsEmpty";
 import { TicketsToolbar } from "./TicketsToolbar";
 import { descendantCount, ticketMenuEntries } from "./ticket-menu";
 import { dropPlan, parseZoneId } from "./tree-drop";
+
+const leaves = (tickets: readonly TicketView[]) => tickets.filter((t) => !isGroup(t)).length;
 
 export function TicketsTree() {
   const sdk = useSdk();
@@ -50,6 +60,8 @@ export function TicketsTree() {
   const selected = new Set(selection?.ids ?? []);
   const sharp = selection ? withAncestors(all, selection.ids) : null;
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
+  const groupOf = groupOfTicket(all);
+  const original = new Map(all.map((t) => [t.id, t]));
   const questions = useQuestionsChipData(runs);
   const delivery = useDeliverFlow();
   const agentKnown = useDeliveryAgentKnown();
@@ -124,6 +136,7 @@ export function TicketsTree() {
     <TicketRow
       key={n.ticket.id}
       node={n}
+      group={groupOf(original.get(n.ticket.id) ?? n.ticket)}
       open={!collapsed.has(n.ticket.id)}
       entries={entriesFor(n.ticket)}
       readOnly={readOnly}
@@ -145,7 +158,7 @@ export function TicketsTree() {
     <section aria-label={fr.title} className="@container flex h-full flex-col">
       <header className="flex h-10 items-center justify-between border-b px-3">
         <span className="flex items-center gap-2 text-sm font-medium">
-          {mine ? fr.mineCount(visible.length, tickets.length) : fr.title}
+          {mine ? fr.mineCount(leaves(visible), leaves(tickets)) : fr.title}
           <SelectionChip selection={selection} onClear={() => setSelection(null)} />
         </span>
         {!readOnly && (loading || visible.length > 0) && (
@@ -174,11 +187,15 @@ export function TicketsTree() {
                 <span className="pl-6">{fr.columns.ticket}</span>
                 <span className={WIDE_CELL}>{fr.columns.status}</span>
                 <span className={ASSIGNEE_CELL}>{fr.columns.assignee}</span>
-                <span className={WIDE_CELL}>{fr.columns.progress}</span>
+                <span className={WIDE_CELL}>{fr.columns.group}</span>
                 <span />
               </div>
               <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
-                <ul>{buildTree(shown ? visible.filter((t) => shown.has(t.id)) : visible).map(row)}</ul>
+                <ul>
+                  {flattenGroups(buildTree(shown ? visible.filter((t) => shown.has(t.id)) : visible)).map(
+                    row,
+                  )}
+                </ul>
               </DndContext>
             </div>
           )}

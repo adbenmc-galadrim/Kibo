@@ -51,6 +51,7 @@ describe("listTickets", () => {
           parent: null,
           openQuestions: 0,
           startable: false,
+          group: false,
           branch: null,
           pr: null,
         },
@@ -58,6 +59,19 @@ describe("listTickets", () => {
       nextCursor: null,
       total: 1,
     });
+  });
+
+  test("marks the groups of tickets", () => {
+    const grouped = project({
+      tickets: [
+        ticket({ id: "t4", title: "C4", progress: { done: 1, total: 2 } }),
+        ticket({ id: "t5", parentId: "t4" }),
+      ],
+    });
+    expect(listTickets(grouped, {}).items.map((c) => [c.key, c.group])).toEqual([
+      ["EMIS-4", true],
+      ["EMIS-5", false],
+    ]);
   });
 });
 

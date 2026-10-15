@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { basename, dirname, isAbsolute, join, sep } from "node:path";
 import {
+  type BaseFallback,
   branchSlug,
   type GitBranchRef,
   isGitBranchName,
@@ -10,9 +11,7 @@ import {
   type SetupStep,
   shortSlug,
   singleQuotedVariable,
-  splitRemote,
   TicketKey,
-  WORKTREE_DEFAULTS,
   WorktreeSettings,
   type WorktreeVars,
   worktreeBaseOf,
@@ -21,6 +20,7 @@ import {
 import { runBounded } from "./bounded-process";
 import { cleanEnv } from "./runner";
 import type { GitRunner, PlacedWorkspace } from "./workspace-prep";
+import { FETCH_TIMEOUT_MS, hasLocalBranch, resolveBase } from "./worktree-base";
 import { assertRecipe } from "./worktree-recipe";
 import { runRecipe } from "./worktree-recipe-run";
 
@@ -39,10 +39,11 @@ export type WorktreeInput = {
   git: GitRunner;
   shell: ShellRunner;
   onSetup?: (step: SetupStep) => void;
+  onBaseFallback?: (fallback: BaseFallback) => void;
 };
 
 export const SETUP_TIMEOUT_MS = 600_000;
-export const FETCH_TIMEOUT_MS = 60_000;
+export { FETCH_TIMEOUT_MS };
 const TAIL_LINES = 20;
 const SAMPLE_VARS: WorktreeVars = {
   branch: "feat/x",
@@ -109,32 +110,16 @@ async function assertWorktreeOf(path: string, root: string, git: GitRunner): Pro
 }
 
 async function branchAt(path: string, git: GitRunner): Promise<string> {
-  const res = await git(["rev-parse", "--abbrev-ref", "HEAD"], path);
-  return res.code === 0 ? res.stdout.trim() : "";
+  const res = await git(["symbolic-ref", "--quiet", "HEAD"], path);
+  return res.code === 0 ? res.stdout.trim().replace(/^refs\/heads\//, "") : "";
 }
 
-const hasLocalBranch = async (root: string, branch: string, git: GitRunner) =>
-  (await git(["rev-parse", "--verify", "--quiet", `refs/heads/${branch}`], root)).code === 0;
-
-async function startPoint(root: string, base: string, git: GitRunner): Promise<string> {
-  const { remote, branch } = splitRemote(base);
-  const remotes = remote === null ? [] : (await git(["remote"], root)).stdout.split("\n");
-  if (remote !== null && remotes.includes(remote)) {
-    const fetched = await git(["fetch", "--quiet", "--", remote, branch], root, FETCH_TIMEOUT_MS);
-    if (fetched.code !== 0) throw gitFailed(`git fetch ${remote} ${branch} failed: ${fetched.stderr.trim()}`);
-    return base;
-  }
-  if (await hasLocalBranch(root, base, git)) return base;
-  if (remote !== null) throw gitFailed(`remote ${remote} not found`);
-  if (base === WORKTREE_DEFAULTS.baseRef) return "HEAD";
-  throw gitFailed(`base branch ${base} not found`);
-}
-
-async function ensureBranch(root: string, branch: string, base: string, git: GitRunner): Promise<void> {
-  if (await hasLocalBranch(root, branch, git)) return;
-  const start = await startPoint(root, base, git);
-  const created = await git(["branch", "--no-track", branch, start], root);
+async function ensureBranch(input: WorktreeInput, branch: string, base: string): Promise<void> {
+  if (await hasLocalBranch(input.root, branch, input.git)) return;
+  const { start, fallback } = await resolveBase(input.root, base, input.settings.baseRef, input.git);
+  const created = await input.git(["branch", "--no-track", branch, start], input.root);
   if (created.code !== 0) throw gitFailed(`git branch ${branch} failed: ${created.stderr.trim()}`);
+  if (fallback !== null) input.onBaseFallback?.(fallback);
 }
 
 async function excludeKiboFolder(root: string, git: GitRunner): Promise<void> {
@@ -206,6 +191,20 @@ function realLocation(path: string): string {
   return join(realpathSync(at), ...rest);
 }
 
+async function forgetMissingWorktree(root: string, path: string, git: GitRunner): Promise<void> {
+  const res = await git(["worktree", "list", "--porcelain"], root);
+  if (res.code !== 0) throw gitFailed(`git worktree list failed: ${res.stderr.trim()}`);
+  const target = realLocation(path);
+  const listed = res.stdout
+    .split("\n")
+    .filter((line) => line.startsWith("worktree "))
+    .map((line) => line.slice("worktree ".length))
+    .find((entry) => !existsSync(entry) && realLocation(entry) === target);
+  if (listed === undefined) return;
+  const removed = await git(["worktree", "remove", "--force", "--", listed], root);
+  if (removed.code !== 0) throw gitFailed(`git worktree remove ${listed} failed: ${removed.stderr.trim()}`);
+}
+
 function assertInsideRepo(root: string, path: string): void {
   const realRoot = realpathSync(root);
   const real = realLocation(path);
@@ -255,7 +254,8 @@ export async function prepareWorktree(input: WorktreeInput): Promise<PlacedWorks
     await assertWorktreeOf(vars.path, input.root, input.git);
     return { cwd: vars.path, label };
   }
-  await ensureBranch(input.root, branch, base, input.git);
+  await ensureBranch(input, branch, base);
+  await forgetMissingWorktree(input.root, vars.path, input.git);
   await addWorktree(input, vars);
   try {
     await assertWorktreeOf(vars.path, input.root, input.git);

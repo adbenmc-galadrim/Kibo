@@ -6,6 +6,13 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.24.0-alpha.4 — 2026-10-15
+
+- Ensembles de tickets : un ticket qui regroupe des sous-tickets (comme C4) n'est plus traité comme un ticket. Il n'apparaît plus dans la page Tickets ni dans le Kanban, où ses sous-tickets portent une puce « C4 » ; dans le graphe, il devient un cadre autour de ses sous-tickets (« C4 · titre · 3/7 »), repliable. Sa fiche montre l'avancement, les sous-tickets et « Livrer les sous-tickets », sans agent ni statut à choisir : son état suit celui de ses sous-tickets.
+- Un run dont la base est une branche fusionnée puis supprimée (comme `feat/matrice-droits`) ne reste plus bloqué : Kibo part de la base du projet et l'écrit dans le run. Une base qui n'existe que sur GitHub est récupérée.
+- Lancée depuis le Finder ou le Dock, l'application retrouve les outils de ton terminal (`pnpm`, `node`…) pour préparer les worktrees et pour les agents.
+- Un échec au lancement affiche sa raison (« Échec au lancement : … ») au lieu de « 0s ».
+
 ## 0.24.0-alpha.3 — 2026-10-15
 
 - Les runs ne sont plus refusés au hasard avec « Kibo n'a pas pu vérifier cette action » : la recherche de code en double entre agents, toutes les cinq minutes, ne bloque plus Kibo pendant qu'elle compare les espaces de travail (jusqu'à 26 s sur Emis). Le résultat de la détection est inchangé.

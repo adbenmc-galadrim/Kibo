@@ -1,7 +1,8 @@
-import type { TicketRun, TicketView } from "@kibo/schema";
+import { isGroup, type TicketRun, type TicketView } from "@kibo/schema";
 import { liveRun, useEntities, useSdk } from "@kibo/sdk";
 import { useMemo } from "react";
 import { criticalPath } from "./critical-path";
+import { ENSEMBLE_PREFIX, ensembleIndex } from "./ensembles";
 import { type GraphFilter, graphInput } from "./filter";
 import { buildGraphModel, type GraphMode } from "./graph-model";
 import { groupTickets, labelPrefixes } from "./groups";
@@ -20,7 +21,8 @@ const toWave = (t: TicketView, runs: ReadonlyMap<string, TicketRun>): WaveTicket
   labels: t.labels,
 });
 
-function countsOf(tickets: readonly TicketView[]) {
+function countsOf(all: readonly TicketView[]) {
+  const tickets = all.filter((t) => !isGroup(t));
   const done = tickets.filter((t) => t.statusId === "done").length;
   return {
     total: tickets.length,
@@ -43,24 +45,30 @@ export function useGraphData(filter: GraphFilter, display: GraphDisplay = DEFAUL
     () => graphInput(tickets.data, [], { ...filter, showDone: true, startable: false }, sdk.viewer).tickets,
     [tickets.data, filter, sdk.viewer],
   );
+  const ensembles = useMemo(() => ensembleIndex(tickets.data), [tickets.data]);
   const model = useMemo(
     () =>
       buildGraphModel(
         input.tickets.map((t) => toWave(t, runs)),
         input.edges,
-        { ...display, showDone: filter.showDone },
+        { ...display, showDone: filter.showDone, ensembles },
       ),
-    [input, runs, display, filter.showDone],
+    [input, runs, display, filter.showDone, ensembles],
   );
   const path = useMemo(() => criticalPath(input.tickets, input.edges), [input]);
   const groupValues = useMemo(
-    () =>
-      display.groupBy === null
-        ? []
-        : [...groupTickets(input.tickets, { prefix: display.groupBy, collapsed: new Set() }).groups.keys()],
-    [input, display.groupBy],
+    () => [
+      ...groupTickets(input.tickets, {
+        prefix: display.groupBy ?? ENSEMBLE_PREFIX,
+        collapsed: new Set(),
+        ensembles: display.groupBy === null ? ensembles : undefined,
+      }).groups.keys(),
+    ],
+    [input, display.groupBy, ensembles],
   );
-  const doneHidden = scope.filter((t) => t.statusId === "done" && (!filter.startable || t.startable)).length;
+  const doneHidden = scope.filter(
+    (t) => !isGroup(t) && t.statusId === "done" && (!filter.startable || t.startable),
+  ).length;
   return {
     allTickets: tickets.data,
     input,

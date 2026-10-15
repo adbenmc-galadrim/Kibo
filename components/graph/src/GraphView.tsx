@@ -42,6 +42,7 @@ export function GraphView() {
           <ViewMenu
             prefixes={data.prefixes}
             groupBy={display.groupBy}
+            framed={data.groupValues.length > 0}
             disabled={display.mode !== "waves"}
             onGroupBy={(groupBy) => setDisplay((d) => ({ ...d, groupBy, collapsed: new Set() }))}
             onExpandAll={() => setDisplay((d) => ({ ...d, collapsed: new Set() }))}
