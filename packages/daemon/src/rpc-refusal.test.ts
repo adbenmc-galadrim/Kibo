@@ -29,5 +29,6 @@ test("at most five fields are named", () => {
 test("every delivery method is pending until a task serves it", () => {
   expect(() => refusePending("deliver")).toThrow("NOT_FOUND: deliver is not served yet");
   expect(() => refusePending("runs.allowAndResume")).toThrow("NOT_FOUND");
+  expect(() => refusePending("deliveryAgent")).toThrow("NOT_FOUND: deliveryAgent is not served yet");
   expect(() => refusePending("listProjects")).not.toThrow();
 });

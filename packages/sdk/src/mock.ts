@@ -13,7 +13,7 @@ import {
 } from "@kibo/schema";
 import { actAs } from "./mock-actor";
 import { createMockCalls } from "./mock-calls";
-import { createMockRunDelivery } from "./mock-delivery";
+import { createMockRunDelivery, MOCK_DELIVERY_AGENT_INFO } from "./mock-delivery";
 import { createMockEmbeds, recordedFrameApis } from "./mock-embed";
 import { createMockNotes } from "./mock-notes";
 import { createNotifier } from "./mock-notifier";
@@ -84,7 +84,12 @@ export function createMockSdk(
   const selection = createSignal<Selection | null>(opts.selection ?? null);
   const spotlight = createSpotlightStore(opts.spotlight ?? null);
   const mockRuns = createMockRuns(opts.peeks ?? {});
-  const runDelivery = createMockRunDelivery({ doc, runs: () => runs, denials: opts.denials ?? {} });
+  const runDelivery = createMockRunDelivery({
+    doc,
+    runs: () => runs,
+    denials: opts.denials ?? {},
+    agent: opts.deliveryAgent === undefined ? MOCK_DELIVERY_AGENT_INFO : opts.deliveryAgent,
+  });
 
   const serverContext = (): ServerContext => ({
     instanceId: sdk.instanceId,
@@ -230,6 +235,7 @@ export function createMockSdk(
       peek: (runId) => record("read:run", "read run", () => inner.runs.peek(runId)),
       deliver: (ticketId) => record("write:run", "write run", () => inner.runs.deliver(ticketId)),
       denials: (runId) => record("read:run", "read run", () => inner.runs.denials(runId)),
+      deliveryAgent: () => record("read:run", "read run", () => inner.runs.deliveryAgent()),
       allowAndResume: (input) => record("write:run", "write run", () => inner.runs.allowAndResume(input)),
     },
   };

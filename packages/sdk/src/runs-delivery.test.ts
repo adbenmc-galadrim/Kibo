@@ -50,6 +50,7 @@ const backendOf = (calls: ComponentCall[]): ProjectBackend => ({
   run: async () => null,
   call: async (c) => {
     calls.push(c);
+    if (c.kind === "run.deliveryAgent") return { ref: "global:full-delivery", name: "full-delivery" };
     return c.kind === "run.denials" ? DENIALS : null;
   },
   subscribe: () => () => undefined,
@@ -86,6 +87,27 @@ describe("delivery through the sdk", () => {
     const sdk = createSdk(backendOf([]), manifest, ctx);
     expect(sdk.questions.imageUrl("q", "i")).toBe("/api/questions/q/images/i");
     expect(sdk.questions.imageUrl("q 1", "a/b")).toBe("/api/questions/q%201/images/a%2Fb");
+  });
+});
+
+describe("the delivery agent through the sdk", () => {
+  test("it is read with read:run, for the component's project", async () => {
+    const calls: ComponentCall[] = [];
+    await expect(createSdk(backendOf([]), manifest, ctx).runs.deliveryAgent()).rejects.toThrow(
+      "PERMISSION_DENIED",
+    );
+    const sdk = createSdk(backendOf(calls), withRuns, ctx);
+    expect(await sdk.runs.deliveryAgent()).toEqual({ ref: "global:full-delivery", name: "full-delivery" });
+    expect(calls).toEqual([{ kind: "run.deliveryAgent" }]);
+    expect(permissionOfCall({ kind: "run.deliveryAgent" })).toBe("read:run");
+  });
+
+  test("the mock answers full-delivery by default, or what the test sets", async () => {
+    expect(await createMockSdk(withRuns).sdk.runs.deliveryAgent()).toEqual({
+      ref: "global:full-delivery",
+      name: "full-delivery",
+    });
+    expect(await createMockSdk(withRuns, { deliveryAgent: null }).sdk.runs.deliveryAgent()).toBeNull();
   });
 });
 

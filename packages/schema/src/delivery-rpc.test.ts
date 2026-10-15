@@ -13,8 +13,11 @@ test("the delivery requests parse", () => {
     "runs.allowAndResume",
     "projects.importDelivery",
     "projects.applyDeliveryImport",
+    "deliveryAgent",
   ]);
-  expect(DELIVERY_RPC).toHaveLength(7);
+  expect(DELIVERY_RPC).toHaveLength(8);
+  expect(ok({ method: "deliveryAgent", projectId: "p" })).toBe(true);
+  expect(ok({ method: "deliveryAgent" })).toBe(false);
   expect(ok({ method: "agents.applyPreset", ref: "global:full-delivery", preset: "delivery" })).toBe(true);
   expect(ok({ method: "agents.applyPreset", ref: "global:full-delivery", preset: "review" })).toBe(false);
   expect(ok({ method: "deliver", projectId: "p", ticketId: "t1" })).toBe(true);

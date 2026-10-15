@@ -1,4 +1,11 @@
-import type { ComponentCall, DeliverResult, EntityType, RunDenials, RunPeek } from "@kibo/schema";
+import type {
+  ComponentCall,
+  DeliverResult,
+  DeliveryAgent,
+  EntityType,
+  RunDenials,
+  RunPeek,
+} from "@kibo/schema";
 import type { RunsApi, SdkContext } from "./types";
 
 type Call = <T>(c: ComponentCall) => Promise<T>;
@@ -17,6 +24,10 @@ export function runsApi(needs: Needs, call: Call): RunsApi {
     async denials(runId) {
       needs.read("run");
       return call<RunDenials | null>({ kind: "run.denials", runId });
+    },
+    async deliveryAgent() {
+      needs.read("run");
+      return call<DeliveryAgent | null>({ kind: "run.deliveryAgent" });
     },
     async allowAndResume(input) {
       needs.write("run");

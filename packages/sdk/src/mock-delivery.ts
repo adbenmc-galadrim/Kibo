@@ -2,6 +2,7 @@ import { readProject } from "@kibo/core";
 import { initRun } from "@kibo/core/run-machine";
 import {
   type DeliverResult,
+  type DeliveryAgent,
   deliveryBrief,
   deliveryOrder,
   deliveryTicketsOf,
@@ -13,10 +14,12 @@ import { activityOf } from "./mock-runs";
 import type { AllowAndResumeInput } from "./types";
 
 export const MOCK_DELIVERY_AGENT = "global:full-delivery";
+export const MOCK_DELIVERY_AGENT_INFO: DeliveryAgent = { ref: MOCK_DELIVERY_AGENT, name: "full-delivery" };
 
 export type MockRunDelivery = {
   deliver(ticketId: string): DeliverResult;
   denials(runId: string): RunDenials | null;
+  agent(): DeliveryAgent | null;
   allowAndResume(input: AllowAndResumeInput): null;
   delivered: string[];
   allowed: AllowAndResumeInput[];
@@ -26,6 +29,7 @@ export function createMockRunDelivery(deps: {
   doc: Parameters<typeof readProject>[0];
   runs(): TicketRun[];
   denials: Record<string, RunDenials>;
+  agent: DeliveryAgent | null;
 }): MockRunDelivery {
   const delivered: string[] = [];
   const allowed: AllowAndResumeInput[] = [];
@@ -74,6 +78,7 @@ export function createMockRunDelivery(deps: {
   return {
     deliver,
     denials: (runId) => structuredClone(deps.denials[runId] ?? null),
+    agent: () => structuredClone(deps.agent),
     allowAndResume: (input) => {
       allowed.push(structuredClone(input));
       return null;

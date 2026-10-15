@@ -74,6 +74,7 @@ export const ComponentCall = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("run.peek"), runId: z.string().min(1) }),
   z.object({ kind: z.literal("run.deliver"), ticketId: NodeId }),
   z.object({ kind: z.literal("run.denials"), runId: z.string().min(1) }),
+  z.object({ kind: z.literal("run.deliveryAgent") }),
   z.object({
     kind: z.literal("run.allowAndResume"),
     runId: z.string().min(1),

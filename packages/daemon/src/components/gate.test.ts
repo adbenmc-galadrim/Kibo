@@ -246,6 +246,7 @@ describe("delivery calls, pending", () => {
       { kind: "run.deliver", ticketId: "t1" },
       { kind: "run.denials", runId: "r1" },
       { kind: "run.allowAndResume", runId: "r1", questionId: "q1", rules: [], addDirs: [] },
+      { kind: "run.deliveryAgent" },
     ];
     for (const call of calls) {
       const { gate: g, handled } = testGate();

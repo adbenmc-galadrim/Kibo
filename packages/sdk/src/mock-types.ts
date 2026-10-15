@@ -1,6 +1,7 @@
 import type {
   CiRun,
   ComponentFormat,
+  DeliveryAgent,
   McpCallResult,
   MemberInfo,
   PresencePeer,
@@ -81,4 +82,5 @@ export type MockSdkOptions = {
   deliveryRefused?: boolean;
   peeks?: Record<string, RunPeek>;
   denials?: Record<string, RunDenials>;
+  deliveryAgent?: DeliveryAgent | null;
 };

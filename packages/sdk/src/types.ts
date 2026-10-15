@@ -8,6 +8,7 @@ import type {
   ComponentFormat,
   ComponentManifest,
   DeliverResult,
+  DeliveryAgent,
   DeliveryResult,
   DesignFrame,
   EmbedView,
@@ -93,6 +94,7 @@ export type RunsApi = {
   peek(runId: string): Promise<RunPeek>;
   deliver(ticketId: string): Promise<DeliverResult>;
   denials(runId: string): Promise<RunDenials | null>;
+  deliveryAgent(): Promise<DeliveryAgent | null>;
   allowAndResume(input: AllowAndResumeInput): Promise<void>;
 };
 export type DesignApi = {

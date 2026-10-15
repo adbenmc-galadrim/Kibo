@@ -2,7 +2,9 @@ import { expect, test } from "bun:test";
 import {
   DELIVERY_STEP_LABELS,
   DELIVERY_STEP_MAX,
+  DeliveryAgent,
   DeliveryStep,
+  deliveryAgentInfo,
   deliveryAgentOf,
   deliveryBrief,
   deliveryStepLabel,
@@ -77,4 +79,16 @@ test("delivery steps of active runs default to an empty list", () => {
   expect(runDeliverySteps({ delivery: [{ runId: "r1", step: 7, note: "" }] })).toEqual([
     { runId: "r1", step: 7, note: "" },
   ]);
+});
+
+test("the delivery agent info gives its ref and name, or null", () => {
+  const chosen = { ...EMPTY_DELIVERY, agent: "global:emis-livraison" };
+  const agents = [agent("global:full-delivery"), agent("global:emis-livraison")];
+  expect(deliveryAgentInfo(agents, chosen)).toEqual({ ref: "global:emis-livraison", name: "emis-livraison" });
+  expect(deliveryAgentInfo(agents, null)).toEqual({ ref: "global:full-delivery", name: "full-delivery" });
+  expect(deliveryAgentInfo([], null)).toBeNull();
+  expect(DeliveryAgent.nullable().safeParse(null).success).toBe(true);
+  expect(DeliveryAgent.safeParse({ ref: "global:full-delivery", name: "full-delivery" }).success).toBe(true);
+  expect(DeliveryAgent.safeParse({ ref: "nope", name: "x" }).success).toBe(false);
+  expect(DeliveryAgent.safeParse(undefined).success).toBe(false);
 });

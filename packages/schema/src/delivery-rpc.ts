@@ -3,7 +3,7 @@ import { AddDirs } from "./add-dir";
 import { type Agent, AgentRef } from "./agent";
 import { AgentPresetId } from "./agent-preset";
 import { AllowRules } from "./allow-rule";
-import { AbsPath, DeliveryStepNumber, type ProjectDelivery } from "./delivery";
+import { AbsPath, type DeliveryAgent, DeliveryStepNumber, type ProjectDelivery } from "./delivery";
 import type { DeliveryItem } from "./delivery-order";
 import type { RunDenials } from "./denial";
 import { NodeId, TicketKey } from "./ids";
@@ -40,6 +40,7 @@ export const DELIVERY_RPC = [
     name: z.string().min(1).max(200),
     registryPath: AbsPath.optional(),
   }),
+  z.object({ method: z.literal("deliveryAgent"), projectId: ProjectId }),
 ] as const;
 
 export type DeliveryRpcRequest = z.infer<(typeof DELIVERY_RPC)[number]>;
@@ -68,4 +69,5 @@ export type DeliveryRpcResult = {
   "runs.allowAndResume": { agent: Agent; run: RunView };
   "projects.importDelivery": { registryPath: string; candidates: DeliveryImportCandidate[] };
   "projects.applyDeliveryImport": ProjectMeta;
+  deliveryAgent: DeliveryAgent | null;
 };

@@ -170,6 +170,8 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
         return deps.delivery.deliver(c.ticketId);
       case "run.denials":
         return deps.delivery.denials(c.runId);
+      case "run.deliveryAgent":
+        return deps.delivery.agent();
       case "run.allowAndResume": {
         const { kind: _kind, ...input } = c;
         return deps.delivery.allowAndResume(input);

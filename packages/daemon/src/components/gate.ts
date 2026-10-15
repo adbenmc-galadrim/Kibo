@@ -138,6 +138,7 @@ function dispatch(
     case "run.deliver":
     case "run.denials":
     case "run.allowAndResume":
+    case "run.deliveryAgent":
       throw new KiboError("NOT_FOUND", `${call.kind} is not served yet`);
     default:
       return h.notes(projectId, call);

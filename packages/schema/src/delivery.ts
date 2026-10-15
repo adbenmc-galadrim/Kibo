@@ -98,6 +98,18 @@ export function deliveryAgentOf(
   return global?.ref ?? null;
 }
 
+export const DeliveryAgent = z.object({ ref: AgentRef, name: z.string().min(1) });
+export type DeliveryAgent = z.infer<typeof DeliveryAgent>;
+
+export function deliveryAgentInfo(
+  agents: readonly DeliveryCandidate[],
+  delivery: ProjectDelivery | null,
+): DeliveryAgent | null {
+  const ref = deliveryAgentOf(agents, delivery);
+  const agent = agents.find((a) => a.ref === ref);
+  return agent ? { ref: agent.ref, name: agent.name } : null;
+}
+
 export const deliveryBrief = (ticketKey: string): string => `/full-delivery ${ticketKey}`;
 
 export type RunDeliveryStep = { runId: string; step: number; note: string };
