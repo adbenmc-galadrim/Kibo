@@ -3,6 +3,8 @@ import type { Assignee, MemberInfo, TicketRun } from "@kibo/schema";
 import {
   assigneeLabel,
   DeliveryStepChip,
+  GroupChip,
+  type GroupRef,
   QuestionsChip,
   type QuestionsChipData,
   StatusDot,
@@ -61,6 +63,7 @@ function AssigneeCell({ assignee, run, members }: AssigneeProps) {
 
 type Props = {
   node: TicketNode;
+  group: GroupRef | null;
   open: boolean;
   entries: MenuEntry[];
   readOnly: boolean;
@@ -78,6 +81,7 @@ type Props = {
 
 export function TicketRow({
   node,
+  group,
   open,
   entries,
   readOnly,
@@ -202,8 +206,8 @@ export function TicketRow({
             <span className={cn(WIDE_TEXT, "truncate")}>{statusLabel}</span>
           </span>
           <AssigneeCell assignee={t.assignee} run={run} members={members} />
-          <span data-cell="progress" className={cn(WIDE_CELL, "font-mono text-2xs text-muted-foreground")}>
-            {t.progress.total > 0 ? `${t.progress.done}/${t.progress.total}` : null}
+          <span data-cell="group" className={cn(WIDE_CELL, "min-w-0")}>
+            {group && <GroupChip group={group} onOpen={(id) => sdk.openTicket(id)} />}
           </span>
           <span className="flex items-center justify-end gap-0.5">
             {!readOnly && (

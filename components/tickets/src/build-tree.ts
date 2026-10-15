@@ -1,4 +1,4 @@
-import type { TicketView } from "@kibo/schema";
+import { isGroup, type TicketView } from "@kibo/schema";
 
 export type TicketNode = { ticket: TicketView; depth: number; children: TicketNode[] };
 
@@ -13,6 +13,11 @@ export function buildTree(tickets: TicketView[]): TicketNode[] {
     }));
   return build(null, 0);
 }
+
+export const flattenGroups = (nodes: readonly TicketNode[]): TicketNode[] =>
+  nodes.flatMap((n) =>
+    isGroup(n.ticket) ? flattenGroups(n.children) : [{ ticket: n.ticket, depth: 0, children: [] }],
+  );
 
 export function mineOnly(tickets: TicketView[], viewer: string): TicketView[] {
   const mine = tickets.filter((t) => t.assignee?.kind === "human" && t.assignee.ref === viewer);

@@ -1,9 +1,14 @@
 import { expect, test } from "bun:test";
 import type { TicketView } from "@kibo/schema";
 import { EMPTY_PROGRESS } from "@kibo/schema";
-import { buildTree, mineOnly, withAncestors } from "./build-tree";
+import { buildTree, flattenGroups, mineOnly, withAncestors } from "./build-tree";
 
-const t = (id: string, parentId: string | null, assignee: TicketView["assignee"] = null): TicketView => ({
+const t = (
+  id: string,
+  parentId: string | null,
+  assignee: TicketView["assignee"] = null,
+  children = 0,
+): TicketView => ({
   id,
   key: `KIB-${id}`,
   pendingSeq: null,
@@ -17,7 +22,7 @@ const t = (id: string, parentId: string | null, assignee: TicketView["assignee"]
   parentId,
   labels: [],
   externalRefs: [],
-  progress: { done: 0, total: 0 },
+  progress: { done: 0, total: children },
   waitingOn: [],
   openQuestions: 0,
   startable: false,
@@ -51,4 +56,30 @@ test("withAncestors keeps the selected tickets and every ancestor, nothing else"
   const tickets = [t("a", null), t("b", "a"), t("c", "b"), t("d", null), t("e", "a")];
   expect([...withAncestors(tickets, ["c"])].sort()).toEqual(["a", "b", "c"]);
   expect([...withAncestors(tickets, ["d", "missing"])].sort()).toEqual(["d", "missing"]);
+});
+
+test("a group is not a row: its sub-tickets take its place, nested groups included", () => {
+  const tickets = [
+    t("c4", null, null, 3),
+    t("a", "c4"),
+    t("n", "c4", null, 2),
+    t("n1", "n"),
+    t("n2", "n"),
+    t("b", "c4"),
+    t("solo", null),
+  ];
+  const rows = flattenGroups(buildTree(tickets));
+  expect(rows.map((n) => [n.ticket.id, n.depth, n.children.length])).toEqual([
+    ["a", 0, 0],
+    ["n1", 0, 0],
+    ["n2", 0, 0],
+    ["b", 0, 0],
+    ["solo", 0, 0],
+  ]);
+});
+
+test("a group whose sub-tickets are all filtered out leaves no row", () => {
+  expect(flattenGroups(buildTree([t("c4", null, null, 2), t("solo", null)])).map((n) => n.ticket.id)).toEqual(
+    ["solo"],
+  );
 });
