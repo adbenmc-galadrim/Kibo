@@ -15,9 +15,11 @@ function foldSource(
 ) {
   const trace = core.traceOf(runId);
   const live = core.live(runId);
-  const folded = foldLines(live.subFolds.get(id) ?? emptyFold(), lines, contextOf(core, trace, id));
-  live.subFolds.set(id, folded.state);
-  core.write(runId, folded.moments);
+  const ctx = contextOf(core, trace, id);
+  const folded = foldLines(live.subFolds.get(id) ?? emptyFold(), lines, ctx);
+  const read = flushActions({ ...folded.state, pending: new Map() }, ctx);
+  live.subFolds.set(id, { ...read.state, pending: folded.state.pending });
+  core.write(runId, [...folded.moments, ...read.moments]);
   port.onLines(runId, id, lines);
 }
 

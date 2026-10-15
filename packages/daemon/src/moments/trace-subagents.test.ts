@@ -116,3 +116,24 @@ test("an ended subagent is read to its end then closed", async () => {
   expect(t.store.trace("a1")?.closedAt).not.toBeNull();
   expect(t.store.list(t.s.run.id)[0]).toMatchObject({ state: "done", result: "Rien à signaler." });
 });
+
+test("the actions of a running subagent are shown as soon as they are read", async () => {
+  const t = tracedRun();
+  const main = t.s.transcript;
+  const toolUseId = main.toolUse("Agent", REVIEW);
+  mkdirSync(join(t.s.root, "proj", SESSION, "subagents"), { recursive: true });
+  const meta = JSON.parse(readFileSync(META, "utf8"));
+  writeFileSync(subagentMetaPath(t.file), JSON.stringify({ ...meta, toolUseId }));
+  const sub = openTranscript(subagentTracePath(t.file), SESSION, t.s.home);
+  sub.sidechain(true);
+  sub.toolResult(sub.toolUse("Bash", { command: "git diff" }), { content: "diff", isError: false });
+  const pending = sub.toolUse("Read", { file_path: "a.ts" });
+  await t.s.trace.onHook(t.s.run, hook("PostToolUse", { tool: "Bash" }));
+  const own = t.s.store.listSubagent(t.s.run.id, "a1").map((m) => m.data);
+  expect(kindsOf(own)).toEqual(["actions"]);
+  expect(own[0]).toMatchObject({ actions: [expect.objectContaining({ tool: "Bash" })] });
+  sub.toolResult(pending, { content: "x", isError: false });
+  await t.s.trace.onHook(t.s.run, hook("PostToolUse", { tool: "Read" }));
+  const after = t.s.store.listSubagent(t.s.run.id, "a1").map((m) => m.data);
+  expect(after[1]).toMatchObject({ actions: [expect.objectContaining({ tool: "Read" })] });
+});
