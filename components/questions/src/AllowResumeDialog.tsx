@@ -1,4 +1,4 @@
-import { RESUME_AFTER_ALLOW } from "@kibo/schema";
+import { KiboError, RESUME_AFTER_ALLOW } from "@kibo/schema";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -24,6 +24,11 @@ type Props = {
 export const AGENT_ACCENT_SOLID = "bg-brand-strong text-white hover:bg-brand-strong/90";
 
 const t = fr.denials;
+
+function failureOf(e: unknown): string {
+  if (e instanceof KiboError && e.code === "TICKET_HAS_CHILDREN") return t.parentTicket;
+  return e instanceof Error ? e.message : String(e);
+}
 
 function Values({ label, values }: { label: string; values: readonly string[] }) {
   if (values.length === 0) return null;
@@ -51,7 +56,7 @@ export function AllowResumeDialog({ allowance, runLabel, onOpenChange, onConfirm
       await onConfirm(allowance);
       onOpenChange(false);
     } catch (e) {
-      setFailed(e instanceof Error ? e.message : String(e));
+      setFailed(failureOf(e));
     } finally {
       setBusy(false);
     }

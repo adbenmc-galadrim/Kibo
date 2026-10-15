@@ -72,7 +72,7 @@ export const isKiboErrorCode = (v: unknown): v is KiboErrorCode =>
   typeof v === "string" && (KIBO_ERROR_CODES as readonly string[]).includes(v);
 
 export const parentTicketDetail = (children: number): string =>
-  `ce ticket regroupe ${children} sous-ticket${children > 1 ? "s" : ""}`;
+  `ticket has ${children} child ticket${children > 1 ? "s" : ""}`;
 
 export class KiboError extends Error {
   constructor(

@@ -69,7 +69,7 @@ function setup(run: RunView, resumable: string[] = []) {
   };
   let resumeFails = false;
   const answerRun = mock((runId: string, _text: string): RunView => {
-    if (resumeFails) throw new KiboError("TICKET_HAS_CHILDREN", "ce ticket regroupe 1 sous-ticket");
+    if (resumeFails) throw new KiboError("TICKET_HAS_CHILDREN", "ticket has 1 child ticket");
     calls.push("run");
     return { ...run, id: runId, state: "queued" };
   });
