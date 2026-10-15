@@ -6,6 +6,21 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.24.0-alpha.1 — 2026-10-15
+
+- La livraison devient un parcours de Kibo. Bouton « Livrer » sur la carte, la fiche et la liste des tickets : Kibo écrit la consigne `/full-delivery <CLÉ>` et lance l'agent de livraison du projet. Un ticket qui regroupe des sous-tickets propose ses sous-tickets prêts, dans l'ordre de leurs dépendances.
+- Un ticket parent ne se lance plus directement, quel que soit l'agent.
+- Préréglage « Livraison » sur la fiche d'un agent : mode automatique, tous les sous-agents, règles pnpm, git, gh, docker, playwright et kibo, dossiers du skill passés à `--add-dir`. « Ce que reçoit l'agent » montre l'origine de chaque règle et de chaque dossier (agent ou projet).
+- Un outil refusé par Claude Code devient une question de Kibo, avec les règles et les dossiers proposés : coche-les, puis « Autoriser et relancer ».
+- Les étapes de la livraison (lecture → livré) s'affichent sur la carte, la fiche et la barre des agents. L'agent les pose avec `kibo tickets step`.
+- Kibo prépare le worktree avec la recette du projet : fichiers copiés, ports libres, variables d'environnement et commandes à lancer ensuite.
+- Les captures d'écran d'un agent s'affichent dans sa question : agrandis-les, puis « Valider » ou « Demander une correction ».
+- Section « Livraison » dans « Modifier le projet » : agent de livraison, règles, dossiers, recette, fichiers partagés. Les projets du registre full-delivery s'importent d'un clic.
+- Files d'attente montre les verrous de la machine (e2e, heavy, review), avec qui les tient et qui attend.
+- En ligne de commande : `kibo tickets list|get|set|step` et `kibo projects list|get`.
+- Les sous-agents d'un run (repérage, porte qualité, review…) sont suivis : type, description, prompt, état, durée, résultat et actions dans le fil. La barre a une ligne par sous-agent actif, et la page du run un compteur.
+- Les recouvrements entre agents ne bloquent plus jamais la fin d'un tour. Le critère « même fichier » disparaît, et les fichiers partagés par nature (docs, configs, i18n) ne comptent plus.
+
 ## 0.23.0-alpha.4 — 2026-10-14
 
 - Les réponses des agents sont mises en forme (listes, code, liens, tableaux) dans le fil d'un run, le compte rendu et le chat de l'agent de projet. Un tableau défile dans son cadre, et « Agrandir » l'ouvre dans un volet avec « Copier en Markdown ».
