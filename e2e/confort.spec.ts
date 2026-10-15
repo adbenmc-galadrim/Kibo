@@ -180,18 +180,18 @@ test("arbre Tickets filtré et Kanban réordonné", async ({ page }, info) => {
   const sidebar = page.locator('[data-sidebar="sidebar"]');
   await sidebar.getByRole("button", { name: "Tickets", exact: true }).click();
   const tree = page.getByRole("region", { name: "Tickets" });
-  await tree.getByRole("searchbox", { name: "Rechercher (clé ou titre)" }).fill("schéma");
-  await expect(tree.getByText("Schéma Loro des tickets (LoroTree)")).toBeVisible();
-  await expect(tree.getByText("Noyau de données")).toBeVisible();
+  await tree.getByRole("searchbox", { name: "Rechercher (clé ou titre)" }).fill("types zod");
+  await expect(tree.getByText("Types Zod Ticket / Link / Status")).toBeVisible();
+  await expect(tree.getByRole("button", { name: /^Ouvrir l'ensemble KIB-12 · Schéma Loro/ })).toBeVisible();
   await expect(tree.getByText("Orchestration des agents")).toHaveCount(0);
   await shot(page, info, "ecran-125");
 
   await sidebar.getByRole("button", { name: "Kanban", exact: true }).click();
   const filter = page.getByRole("radiogroup", { name: "Tickets affichés" });
-  await expect(page.getByText(/^\d+ \/ 22 · Moi \+ agents$/)).toBeVisible();
+  await expect(page.getByText(/^\d+ \/ 17 · Moi \+ agents$/)).toBeVisible();
   await page.getByRole("button", { name: /masqués · Tout afficher$/ }).click();
   await expect(filter.getByRole("radio", { name: "Tous" })).toBeChecked();
-  await expect(page.getByText("22 / 22 · Tous")).toBeVisible();
+  await expect(page.getByText("17 / 17 · Tous")).toBeVisible();
 
   await page.getByRole("button", { name: "Nouveau ticket dans Bloqué" }).click();
   const create = page.getByRole("dialog", { name: "Nouveau ticket" });
