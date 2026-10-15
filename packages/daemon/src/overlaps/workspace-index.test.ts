@@ -109,6 +109,20 @@ describe("workspace indexer", () => {
     expect(indexer.cached(ws)).toEqual(index);
   });
 
+  test("a secret file is reported once per workspace, not on every sweep", async () => {
+    const { ws } = await workspace();
+    put(ws, ".env.example", "TOKEN=1\n");
+    const { indexer, logs } = setup();
+    const secretLogs = () => logs.filter((l) => l.includes("secret file .env.example")).length;
+    await indexer.index(ws, ["r1"], SETTINGS);
+    await indexer.index(ws, ["r1"], SETTINGS);
+    await indexer.indexFile(ws, ".env.example", SETTINGS);
+    expect(secretLogs()).toBe(1);
+    indexer.drop(ws.key);
+    await indexer.index(ws, ["r2"], SETTINGS);
+    expect(secretLogs()).toBe(2);
+  });
+
   test("past 500 changed files the index is truncated to the first 500 paths without lines", async () => {
     const { ws } = await workspace();
     for (let i = 0; i < 501; i++)
