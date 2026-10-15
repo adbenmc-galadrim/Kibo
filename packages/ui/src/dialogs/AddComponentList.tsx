@@ -2,7 +2,7 @@ import type { DraftSummary, MarketInstallResult } from "@kibo/schema";
 import { RadioGroup } from "@kibo/sdk/ui/radio-group";
 import { Blocks, Sparkles } from "lucide-react";
 import { useState } from "react";
-import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { componentIcon } from "../registry";
 import { CatalogRow, CatalogSection, VersionPill } from "./CatalogRow";
 import type { Choice } from "./catalog-choices";
@@ -23,7 +23,7 @@ type Props = {
 };
 
 export function AddComponentList(p: Props) {
-  const a = fr.addComponent;
+  const a = frComponentsManage.addComponent;
   const [marketCount, setMarketCount] = useState(0);
   const empty = p.builtins.length + p.mine.length + p.drafts.length + marketCount === 0;
   return (

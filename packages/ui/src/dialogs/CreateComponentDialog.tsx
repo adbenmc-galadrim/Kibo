@@ -10,6 +10,7 @@ import { DescribeCard } from "../ai/DescribeCard";
 import { DraftStepper } from "../ai/DraftStepper";
 import { keepEscapeInReviseForm } from "../ai/revise-escape";
 import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { useFlash } from "../lib/use-flash";
 import { ApprovalScope, useApprovalScope } from "./approval-scope";
 
@@ -21,7 +22,7 @@ const COMMANDS = [
 ];
 
 function CodeColumn() {
-  const t = fr.createComponent;
+  const t = frComponentsManage.createComponent;
   const copied = useFlash(COPIED_MS);
   const [failed, setFailed] = useState(false);
   const copy = async () => {
@@ -83,7 +84,7 @@ export function CreateComponentDialog({
   draftId,
   onOpenCreations,
 }: Props) {
-  const t = fr.createComponent;
+  const t = frComponentsManage.createComponent;
   const [current, setCurrent] = useState<string | null>(draftId ?? null);
   const [reported, setReported] = useState<{ draftId: string; status: DraftStatus } | null>(null);
   const scope = useApprovalScope();

@@ -7,8 +7,8 @@ import { useState } from "react";
 import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { CreateComponentDialog } from "../dialogs/CreateComponentDialog";
 import { TrustDialog, trustTargetOfInstall } from "../dialogs/TrustDialog";
-import { fr } from "../i18n/fr";
 import { frComponentsList } from "../i18n/fr-components-list";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { frMarket } from "../i18n/fr-market";
 import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
 import { type FlashTone, useFlash } from "../lib/use-flash";
@@ -76,7 +76,7 @@ function PageHeader({ creations, onCreate, onCreations }: HeaderProps) {
 export type ComponentsPageProps = { onOpen(target: TabTarget): void };
 
 export function ComponentsPage({ onOpen }: ComponentsPageProps) {
-  const c = fr.components;
+  const c = frComponentsManage.components;
   const { components, drafts, error, reload } = useComponents();
   const { message, tone, flash } = useFlash();
   const [publishing, setPublishing] = useState<string | null>(null);

@@ -5,13 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@kibo
 import { CircleX, Terminal } from "lucide-react";
 import { useEffect, useState } from "react";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { abbreviateHome } from "../lib/home-path";
 
 type Status = { path: string; installed: boolean };
 
 function causeOf(e: unknown): string {
-  const causes = fr.cli.cause;
+  const causes = frComponentsManage.cli.cause;
   if (!(e instanceof KiboError)) {
     console.error(e);
     return causes.other;
@@ -23,17 +23,18 @@ function causeOf(e: unknown): string {
 
 function StatusLine({ status }: { status: Status | null }) {
   if (!status) return null;
-  if (!status.installed) return <span className="text-sm text-muted-foreground">{fr.cli.notInstalled}</span>;
+  if (!status.installed)
+    return <span className="text-sm text-muted-foreground">{frComponentsManage.cli.notInstalled}</span>;
   return (
     <span className="flex items-center gap-2 text-sm text-muted-foreground">
       <span aria-hidden className="size-1.5 rounded-full bg-emerald-500" />
-      {fr.cli.installed(abbreviateHome(status.path))}
+      {frComponentsManage.cli.installed(abbreviateHome(status.path))}
     </span>
   );
 }
 
 export function CliInstallCard() {
-  const c = fr.cli;
+  const c = frComponentsManage.cli;
   const [status, setStatus] = useState<Status | null>(null);
   const [cause, setCause] = useState<string | null>(null);
   useEffect(() => {

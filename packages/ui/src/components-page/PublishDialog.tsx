@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { client } from "../api";
 import { TrustDialog } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { isRemoteView } from "../lib/remote-view";
 import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
 import { useProjects } from "../state/use-projects";
@@ -39,7 +40,7 @@ type Props = {
 };
 
 function explain(e: unknown, id: string): string {
-  const p = fr.publish;
+  const p = frComponentsManage.publish;
   if (!(e instanceof KiboError)) {
     console.error(e);
     return p.failed;
@@ -95,7 +96,7 @@ export function PublishDialog({
   onOpenPage,
   remote = isRemoteView(),
 }: Props) {
-  const p = fr.publish;
+  const p = frComponentsManage.publish;
   const projects = useProjects().projects ?? [];
   const { preview, error, setError } = usePreview(id, open);
   const [strategy, setStrategy] = useState<Strategy>("update-all");

@@ -93,6 +93,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/i18n\/fr-subagents\.ts$/,
   /\/packages\/ui\/src\/(delivery\/.+\.tsx?|i18n\/fr-delivery(-settings)?\.ts|lib\/(expand-home|use-home)\.ts|dialogs\/(delivery-draft|delivery-import-rows|recipe-draft)\.ts)$/,
   /\/packages\/ui\/src\/(dialogs\/(DeliverySection|DeliveryFields|DeliveryImportDialog|WorktreeRecipeFields)|agents\/(sheet\/(PresetButton|AddDirsField)|MachineLocks))\.tsx$/,
+  /\/packages\/ui\/src\/i18n\/fr-components-manage\.ts$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

@@ -11,6 +11,7 @@ import {
 import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 
 type Props = {
   projectId: string;
@@ -22,7 +23,7 @@ type Props = {
 };
 
 export function OpenViewDialog({ projectId, componentRef, title, open, onOpenChange, onCreated }: Props) {
-  const o = fr.openView;
+  const o = frComponentsManage.openView;
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
   const create = async () => {

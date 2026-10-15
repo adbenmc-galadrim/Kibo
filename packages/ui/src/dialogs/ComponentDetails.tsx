@@ -1,14 +1,14 @@
 import type { Page } from "@kibo/schema";
 import { Check } from "lucide-react";
 import type { ReactNode } from "react";
-import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { componentIcon } from "../registry";
 import { ComponentPreview } from "./ComponentPreview";
 import type { Choice } from "./catalog-choices";
 import { Segment } from "./Segment";
 
 export function Details({ choice, page, source }: { choice: Choice; page: Page; source: ReactNode }) {
-  const a = fr.addComponent;
+  const a = frComponentsManage.addComponent;
   return (
     <>
       <ComponentPreview id={choice.id} icon={componentIcon(choice.ref)} />

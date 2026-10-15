@@ -3,8 +3,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
-import { fr } from "../i18n/fr";
 import { frComponentsList } from "../i18n/fr-components-list";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { frMarket } from "../i18n/fr-market";
 import type { FlashTone } from "../lib/use-flash";
 import { ComponentRowMenu } from "./ComponentRowMenu";
@@ -19,7 +19,7 @@ const SORT_BUTTON =
 const CELL = "px-4 py-3";
 
 function TrustCell({ row, onReview }: { row: ComponentRow; onReview(): void }) {
-  const c = fr.components;
+  const c = frComponentsManage.components;
   if (row.trust === "pending")
     return (
       <span className="flex items-center gap-2">
@@ -48,7 +48,9 @@ function TrustCell({ row, onReview }: { row: ComponentRow; onReview(): void }) {
 }
 
 const originText = (row: ComponentRow) =>
-  row.market ? frMarket.market.originMarket(row.market.sourceName) : fr.components.origin[row.origin];
+  row.market
+    ? frMarket.market.originMarket(row.market.sourceName)
+    : frComponentsManage.components.origin[row.origin];
 
 type SortHeadProps = { column: SortKey; label: string; query: ComponentsQuery; onSort(key: SortKey): void };
 
@@ -72,7 +74,7 @@ function SortHead({ column, label, query, onSort }: SortHeadProps) {
 }
 
 function UsageCell({ row, onUsages }: { row: ComponentRow; onUsages(): void }) {
-  const text = fr.components.usage(row.pages, row.projects);
+  const text = frComponentsManage.components.usage(row.pages, row.projects);
   if (row.pages === 0) return <>{text}</>;
   return (
     <Button variant="link" className="h-auto p-0 font-normal text-muted-foreground" onClick={onUsages}>
@@ -81,7 +83,7 @@ function UsageCell({ row, onUsages }: { row: ComponentRow; onUsages(): void }) {
   );
 }
 
-const COLUMNS: { key: SortKey; label: keyof typeof fr.components.column }[] = [
+const COLUMNS: { key: SortKey; label: keyof typeof frComponentsManage.components.column }[] = [
   { key: "title", label: "name" },
   { key: "version", label: "version" },
   { key: "trust", label: "trust" },
@@ -110,7 +112,7 @@ export function ComponentsTable({
   onUpdate,
   ...menu
 }: ComponentsTableProps) {
-  const c = fr.components;
+  const c = frComponentsManage.components;
   return (
     <Table>
       <TableHeader>

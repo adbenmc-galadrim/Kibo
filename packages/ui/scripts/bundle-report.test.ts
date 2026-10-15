@@ -465,4 +465,9 @@ describe("bundle report", () => {
       expect(ui(p)).toBe(true);
     expect(ui("agents/bar-summary.ts")).toBe(false);
   });
+  test("phase 24, component management texts stay out of the entry, not the instance texts", () => {
+    const i18n = (p: string) => FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/i18n/${p}`));
+    expect(i18n("fr-components-manage.ts")).toBe(true);
+    expect(i18n("fr-components.ts")).toBe(false);
+  });
 });
