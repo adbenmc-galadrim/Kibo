@@ -224,3 +224,15 @@ test("an unexpected sink failure is not swallowed", async () => {
   });
   await expect(handleHook(post("r1", auth, body(payload)), "r1", s)).rejects.toThrow("boom");
 });
+
+test("a hook answered after more than a second is logged with its duration", async () => {
+  const lines: string[] = [];
+  const clock = (elapsed: number) => {
+    let calls = 0;
+    return { now: () => (calls++ === 0 ? 0 : elapsed), log: (line: string) => lines.push(line) };
+  };
+  const { s } = sink();
+  await handleHook(post("r1", auth, body(payload)), "r1", s, clock(1_500));
+  await handleHook(post("r1", auth, body(payload)), "r1", s, clock(200));
+  expect(lines).toEqual(["hook of run r1 answered in 1500 ms"]);
+});
