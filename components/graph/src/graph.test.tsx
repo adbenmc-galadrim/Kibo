@@ -30,7 +30,7 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
 const runs = (s: ProjectSnapshot): TicketRun[] => {
   const id = (key: string) => s.tickets.find((t) => t.key === key)?.id ?? key;
   return [
-    { ticketId: id("KIB-12"), runId: "r1", label: "opus-dev-1", state: "running", position: null },
+    { ticketId: id("KIB-29"), runId: "r1", label: "opus-dev-1", state: "running", position: null },
     { ticketId: id("KIB-14"), runId: "r2", label: "opus-dev-2", state: "waiting_input", position: null },
     { ticketId: id("KIB-18"), runId: "r3", label: "opus-dev", state: "queued", position: 1 },
     { ticketId: id("KIB-16"), runId: "r4", label: "opus-dev-3", state: "done", position: null },
@@ -62,7 +62,7 @@ test("screen 10: nodes, critical path summary, legend and zoom", async () => {
   expect(node.getAttribute("data-critical")).toBe("true");
   expect(
     within(canvas)
-      .getByRole("button", { name: /KIB-12/ })
+      .getByRole("button", { name: /KIB-14 / })
       .getAttribute("data-critical"),
   ).toBe("false");
   expect(within(canvas).queryByRole("button", { name: /KIB-5 / })).toBeNull();
@@ -240,7 +240,7 @@ test("screen 10: an agent's node shows its live run state dot", async () => {
   await screen.findByText("Chemin critique : 3 tickets · 1 bloqué");
   await waitFor(() => expect(dot("KIB-14")).toBe("waiting_input"));
   expect(dot("KIB-18")).toBe("queued");
-  expect(dot("KIB-12")).toBe("running");
+  expect(dot("KIB-29")).toBe("running");
   expect(dot("KIB-16")).toBeUndefined();
   expect(dot("KIB-21")).toBeUndefined();
 });
@@ -254,9 +254,9 @@ test("shared selection: a click emits it, an outside selection is followed, Esca
   const user = userEvent.setup();
   await user.click(node("KIB-21"));
   expect(m.selections.at(-1)).toEqual({ kind: "ticket", ids: [idOf("KIB-21")] });
-  act(() => m.setSelection({ kind: "ticket", ids: [idOf("KIB-12")] }));
-  expect(node("KIB-12").getAttribute("data-selected")).toBe("true");
-  expect(node("KIB-12").getAttribute("aria-pressed")).toBe("true");
+  act(() => m.setSelection({ kind: "ticket", ids: [idOf("KIB-29")] }));
+  expect(node("KIB-29").getAttribute("data-selected")).toBe("true");
+  expect(node("KIB-29").getAttribute("aria-pressed")).toBe("true");
   expect(node("KIB-21").getAttribute("data-selected")).toBe("false");
   canvas.focus();
   await user.keyboard("{Escape}");

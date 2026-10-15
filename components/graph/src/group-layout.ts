@@ -1,7 +1,6 @@
 import { compareKeys } from "./blocks-dag";
 import type { GraphEdge } from "./critical-path";
-import { fr } from "./fr";
-import { collapseGroups, type GroupSpec, groupNodeId, groupTickets } from "./groups";
+import { collapseGroups, frameLabel, frameName, type GroupSpec, groupNodeId, groupTickets } from "./groups";
 import { GAP_X, GAP_Y, type GraphLayout, NODE_H, NODE_W, type NodePosition } from "./layout";
 import { layoutWaves, type WaveTicket } from "./waves";
 
@@ -15,6 +14,8 @@ const FRAME_W = NODE_W + 2 * FRAME_PAD;
 export type FrameBox = {
   id: string;
   value: string;
+  name: string;
+  ticketId: string | null;
   label: string;
   count: number;
   x: number;
@@ -22,12 +23,14 @@ export type FrameBox = {
   width: number;
   height: number;
 };
-export type GroupNodeInfo = { value: string; label: string };
+export type GroupNodeInfo = { value: string; name: string; label: string };
+export type Anchor = NodePosition & { height: number };
 export type FramedLayout = {
   layout: GraphLayout;
   frames: FrameBox[];
   rows: Set<string>;
   frameOf: Map<string, string>;
+  anchors: Anchor[];
   edges: GraphEdge[];
   groupNodes: Map<string, GroupNodeInfo>;
 };
@@ -71,7 +74,7 @@ function collapsedNodes(tickets: readonly WaveTicket[], spec: GroupSpec): Map<st
   for (const value of groupTickets(tickets, spec).groups.keys()) {
     const id = groupNodeId(spec.prefix, value);
     const label = nodeLabels.get(id);
-    if (label !== undefined) nodes.set(id, { value, label });
+    if (label !== undefined) nodes.set(id, { value, name: frameName(spec, value), label });
   }
   return nodes;
 }
@@ -80,14 +83,17 @@ export function layoutFramed(
   tickets: readonly WaveTicket[],
   edges: readonly GraphEdge[],
   spec: GroupSpec,
+  layering: readonly GraphEdge[] = edges,
 ): FramedLayout {
   const collapsed = collapseGroups(tickets, edges, spec);
-  const base = layoutWaves(collapsed.tickets, collapsed.edges, { showDone: true });
+  const ranked = layering === edges ? collapsed.edges : collapseGroups(tickets, layering, spec).edges;
+  const base = layoutWaves(collapsed.tickets, ranked, { showDone: true });
   const items = columnItems(collapsed.tickets, base, spec);
   const nodes: NodePosition[] = [];
   const frames: FrameBox[] = [];
   const rows = new Set<string>();
   const frameOf = new Map<string, string>();
+  const anchors: Anchor[] = [];
   for (const [layer, column] of [...items.keys()].sort((a, b) => a - b).entries()) {
     const x = FRAME_PAD + layer * COLUMN_W;
     let y = 0;
@@ -100,17 +106,19 @@ export function layoutFramed(
       }
       const height = frameHeight(item.members.length);
       const count = item.members.length;
-      const label = fr.groupLabel(item.value, count);
       frames.push({
         id: item.id,
         value: item.value,
-        label,
+        name: frameName(spec, item.value),
+        ticketId: spec.ensembles ? item.value : null,
+        label: frameLabel(spec, item.value, count),
         count,
         x: x - FRAME_PAD,
         y,
         width: FRAME_W,
         height,
       });
+      anchors.push({ id: item.id, layer, order: -1, x, y, isolated: false, height });
       for (const [i, id] of item.members.entries()) {
         nodes.push({
           id,
@@ -138,6 +146,7 @@ export function layoutFramed(
     frames,
     rows,
     frameOf,
+    anchors,
     edges: collapsed.edges,
     groupNodes: collapsedNodes(tickets, spec),
   };
