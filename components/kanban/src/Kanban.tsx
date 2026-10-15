@@ -8,10 +8,11 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import type { StatusId, TicketView } from "@kibo/schema";
+import { isGroup, type StatusId, type TicketView } from "@kibo/schema";
 import {
   deliverEntry,
   filterBySource,
+  groupOfTicket,
   readSource,
   remoteRuns,
   SelectionChip,
@@ -79,8 +80,10 @@ export function Kanban() {
   const shown = filterTickets(scoped, filter, sdk.viewer, labelFilter.label, startable);
   const ciOf = (t: TicketView): CiChip | undefined =>
     ciChipOf(ciRuns.filter((r) => t.key !== null && r.ticketKey === t.key));
+  const groupOf = groupOfTicket(tickets);
   const factsOf = (t: TicketView): CardFacts => ({
     ticket: t,
+    group: groupOf(t),
     run: runOf.get(t.id) ?? null,
     ci: ciOf(t),
     members: sharing.members,
@@ -168,7 +171,7 @@ export function Kanban() {
           if (labelFilter.label !== null) labelFilter.choose(null);
         }}
         shown={shown.length}
-        total={scoped.length}
+        total={scoped.filter((t) => !isGroup(t)).length}
       >
         <SelectionChip selection={selection} onClear={() => setSelection(null)} />
         {error && !blocking && (
