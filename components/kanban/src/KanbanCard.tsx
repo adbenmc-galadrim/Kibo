@@ -1,5 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import type { Status, StatusId } from "@kibo/schema";
+import type { DeliverEntry } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
@@ -17,13 +18,15 @@ type Props = CardFacts & {
   selected: boolean | null;
   statuses: Status[];
   readOnly: boolean;
+  deliver: DeliverEntry | null;
   onOpen: () => void;
   onMove: (statusId: StatusId) => void;
   onRemove: () => void;
+  onDeliver: () => void;
 };
 
 export function KanbanCard(props: Props) {
-  const { ticket: t, selected, statuses, readOnly, onOpen, onMove, onRemove } = props;
+  const { ticket: t, selected, statuses, readOnly, deliver, onOpen, onMove, onRemove, onDeliver } = props;
   const sortable = useSortable({ id: t.id, disabled: readOnly, attributes: { role: "article" } });
   const { attributes, listeners, transform, transition, isDragging } = sortable;
   const ref = (node: HTMLElement | null) => {
@@ -40,8 +43,9 @@ export function KanbanCard(props: Props) {
     ticket: t,
     statuses,
     readOnly,
+    deliver,
     texts: fr,
-    actions: { open: onOpen, move: onMove, remove: onRemove },
+    actions: { open: onOpen, move: onMove, remove: onRemove, deliver: onDeliver },
   });
   const menu = !readOnly && (
     <DropdownMenu>

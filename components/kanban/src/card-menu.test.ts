@@ -29,6 +29,7 @@ const actions = (): CardMenuActions => ({
   open: mock(() => {}),
   move: mock((_s: string) => {}),
   remove: mock(() => {}),
+  deliver: mock(() => {}),
 });
 const labels = (entries: ReturnType<typeof cardMenuEntries>) =>
   entries.map((e) => (isSeparator(e) ? "—" : isSubmenu(e) ? `${e.label} ▸` : e.label));
@@ -39,6 +40,7 @@ test("an editable card offers open, move to the other statuses, delete", () => {
     ticket,
     statuses: DEFAULT_WORKFLOW,
     readOnly: false,
+    deliver: null,
     texts: fr,
     actions: a,
   });
@@ -52,7 +54,39 @@ test("an editable card offers open, move to the other statuses, delete", () => {
 test("read-only keeps only Ouvrir", () => {
   expect(
     labels(
-      cardMenuEntries({ ticket, statuses: DEFAULT_WORKFLOW, readOnly: true, texts: fr, actions: actions() }),
+      cardMenuEntries({
+        ticket,
+        statuses: DEFAULT_WORKFLOW,
+        readOnly: true,
+        deliver: { disabledReason: null },
+        texts: fr,
+        actions: actions(),
+      }),
     ),
   ).toEqual(["Ouvrir"]);
+});
+
+const entriesWith = (deliver: { disabledReason: string | null } | null, a = actions()) =>
+  cardMenuEntries({ ticket, statuses: DEFAULT_WORKFLOW, readOnly: false, deliver, texts: fr, actions: a });
+
+test("Livrer comes right after Ouvrir when the ticket can be delivered", () => {
+  const a = actions();
+  const entries = entriesWith({ disabledReason: null }, a);
+  expect(labels(entries)).toEqual(["Ouvrir", "Livrer", "Déplacer vers ▸", "—", "Supprimer…"]);
+  const deliver = entries[1];
+  if (!deliver || isSeparator(deliver) || isSubmenu(deliver)) throw new Error("no Livrer");
+  expect(deliver.disabled).toBe(false);
+  deliver.onSelect();
+  expect(a.deliver).toHaveBeenCalled();
+});
+
+test("Livrer is disabled and says which run is already there", () => {
+  const deliver = entriesWith({ disabledReason: "déjà un run : emis · full-delivery · EMIS-15" })[1];
+  if (!deliver || isSeparator(deliver) || isSubmenu(deliver)) throw new Error("no Livrer");
+  expect(deliver.disabled).toBe(true);
+  expect(deliver.hint).toBe("déjà un run : emis · full-delivery · EMIS-15");
+});
+
+test("no Livrer without a deliverable ticket", () => {
+  expect(labels(entriesWith(null))).toEqual(["Ouvrir", "Déplacer vers ▸", "—", "Supprimer…"]);
 });

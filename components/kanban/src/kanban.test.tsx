@@ -103,6 +103,7 @@ test("right click opens the same menu as ⋯; delete asks then removes the card"
   });
   expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
     "Ouvrir",
+    "Livrer",
     "Déplacer vers",
     "Supprimer…",
   ]);
@@ -528,4 +529,64 @@ test("the questions chip previews them on hover and opens the first one", async 
   const first = m.snapshot().questions.find((q) => q.title.startsWith("Un admin"))?.id;
   expect(m.viewRequests).toEqual([{ componentId: "questions", question: first ?? "" }]);
   expect(m.opened).toEqual([]);
+});
+
+const openMenu = async (key: string) => {
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: `Actions ${key}` }));
+  return user;
+};
+
+test("Livrer asks the SDK to deliver the ticket", async () => {
+  const m = setup();
+  const user = await openMenu("KIB-1");
+  await user.click(await screen.findByRole("menuitem", { name: "Livrer" }));
+  const id = m.snapshot().tickets.find((t) => t.key === "KIB-1")?.id;
+  await waitFor(() => expect(m.runDeliveries).toEqual([id ?? ""]));
+  expect(m.violations).toEqual([]);
+});
+
+test("Livrer on a parent opens the dialog of its sub-tickets", async () => {
+  const m = setup();
+  const parent = m.snapshot().tickets.find((t) => t.key === "KIB-1")?.id ?? "";
+  act(() => {
+    m.run({ method: "createTicket", title: "Sous-ticket prêt", parentId: parent });
+  });
+  const user = await openMenu("KIB-1");
+  await user.click(await screen.findByRole("menuitem", { name: "Livrer" }));
+  const dialog = await screen.findByRole("dialog", { name: "Livrer les sous-tickets de KIB-1" });
+  expect(within(dialog).getByText("Sous-ticket prêt")).toBeTruthy();
+});
+
+test("Livrer is disabled while a run is active on the ticket", async () => {
+  const m = createMockSdk(manifest, { seed, viewer: "adam" });
+  const id = m.snapshot().tickets.find((t) => t.key === "KIB-1")?.id ?? "";
+  m.setRuns([
+    { ticketId: id, runId: "r1", label: "kib · full-delivery · KIB-1", state: "running", position: null },
+  ]);
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  await openMenu("KIB-1");
+  const item = await screen.findByRole("menuitem", { name: /^Livrer/ });
+  expect(item.getAttribute("aria-disabled")).toBe("true");
+  expect(item.textContent).toContain("déjà un run : kib · full-delivery · KIB-1");
+});
+
+test("a card shows its delivery step next to the agent, never once done", async () => {
+  const m = setup();
+  const id = (key: string) => m.snapshot().tickets.find((t) => t.key === key)?.id ?? "";
+  const delivery = { step: 7, note: "gates verts", at: 1, runId: null };
+  act(() => {
+    m.run({ method: "setTicketDelivery", ticketId: id("KIB-4"), delivery });
+    m.run({ method: "setTicketDelivery", ticketId: id("KIB-1"), delivery });
+    m.run({ method: "setStatus", ticketId: id("KIB-1"), statusId: "done" });
+  });
+  const progress = await screen.findByRole("region", { name: "En cours" });
+  const card = within(progress).getByRole("article", { name: /Récepteur/ });
+  expect(within(card).getByText("7 · Porte qualité")).toBeTruthy();
+  const done = screen.getByRole("region", { name: "Terminé" });
+  expect(within(done).queryByText("7 · Porte qualité")).toBeNull();
 });

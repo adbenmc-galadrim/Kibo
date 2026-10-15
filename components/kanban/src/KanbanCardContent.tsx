@@ -2,6 +2,7 @@ import type { CiRun, MemberInfo, TicketRun, TicketView } from "@kibo/schema";
 import {
   assigneeLabel,
   type CiTone,
+  DeliveryStepChip,
   QuestionsChip,
   type QuestionsChipData,
   TicketKeyLabel,
@@ -75,6 +76,7 @@ export function KanbanCardContent({ ticket: t, run, ci, members, remote, questio
           run={run}
           className="max-w-full"
         />
+        <DeliveryStepChip ticket={t} />
         {remote.map((r) => (
           <span
             key={r.label}

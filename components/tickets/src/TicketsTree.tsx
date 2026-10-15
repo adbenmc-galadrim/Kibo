@@ -8,9 +8,11 @@ import {
 } from "@dnd-kit/core";
 import { KiboError, type ProjectCommand, type Status, type StatusId, type TicketView } from "@kibo/schema";
 import {
+  deliverEntry,
   filterBySource,
   readSource,
   SelectionChip,
+  useDeliverFlow,
   useEntities,
   useMembers,
   useQuestionsChipData,
@@ -48,6 +50,7 @@ export function TicketsTree() {
   const sharp = selection ? withAncestors(all, selection.ids) : null;
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
   const questions = useQuestionsChipData(runs);
+  const delivery = useDeliverFlow();
   const [query, setQuery] = useState(EMPTY_QUERY);
   const filtering = isActive(query);
   const filtered = filtering ? filterTree(visible, query, sdk.viewer) : null;
@@ -88,8 +91,16 @@ export function TicketsTree() {
       ticket: t,
       statuses,
       readOnly,
+      deliver: deliverEntry({
+        ticket: t,
+        editable: !readOnly,
+        agentKnown: true,
+        parent: all.some((x) => x.parentId === t.id),
+        run: runOf.get(t.id) ?? null,
+      }),
       texts: fr,
       actions: {
+        deliver: () => delivery.deliver(t),
         open: () => sdk.openTicket(t.id),
         setStatus: (statusId) => setStatus(t, statusId),
         newSubTicket: () => sdk.openNewTicket({ parentId: t.id }),
@@ -141,9 +152,9 @@ export function TicketsTree() {
           </Button>
         )}
       </header>
-      {error && !blocking && (
+      {(delivery.error ?? (error && !blocking ? error : null)) && (
         <p role="alert" className="px-3 py-1 text-xs text-destructive">
-          {error}
+          {delivery.error ?? error}
         </p>
       )}
       {loading ? (
@@ -190,6 +201,7 @@ export function TicketsTree() {
           onCancel={() => setBlocking(null)}
         />
       )}
+      {delivery.dialog}
       {removing && (
         <ConfirmDialog
           open

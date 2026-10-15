@@ -57,3 +57,20 @@ test("a context menu opens on right click and marks the destructive entry", asyn
   await user.click(remove);
   expect(log).toEqual(["remove"]);
 });
+
+test("a disabled action can explain itself under its label", async () => {
+  render(
+    <DropdownMenu>
+      <DropdownMenuTrigger>Actions</DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuEntries
+          entries={[{ label: "Livrer", hint: "déjà un run : opus-dev", disabled: true, onSelect: () => {} }]}
+        />
+      </DropdownMenuContent>
+    </DropdownMenu>,
+  );
+  await userEvent.setup().click(screen.getByRole("button", { name: "Actions" }));
+  const item = screen.getByRole("menuitem", { name: /^Livrer/ });
+  expect(item.getAttribute("aria-disabled")).toBe("true");
+  expect(item.textContent).toBe("Livrerdéjà un run : opus-dev");
+});

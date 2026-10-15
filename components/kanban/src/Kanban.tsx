@@ -10,10 +10,12 @@ import {
 } from "@dnd-kit/core";
 import type { StatusId, TicketView } from "@kibo/schema";
 import {
+  deliverEntry,
   filterBySource,
   readSource,
   remoteRuns,
   SelectionChip,
+  useDeliverFlow,
   useEntities,
   usePresence,
   useQuestionsChipData,
@@ -53,6 +55,7 @@ export function Kanban() {
   const peers = usePresence();
   const sharing = useSharing();
   const readOnly = sharing.access !== "write";
+  const delivery = useDeliverFlow();
   const columnOrder = useColumnOrder(sdk);
   const labelFilter = useLabelFilter(sdk, !readOnly);
   const [selection, setSelection] = useSelection();
@@ -82,6 +85,14 @@ export function Kanban() {
     remote: remoteRuns(peers, t.key),
     questions,
   });
+  const deliverOf = (t: TicketView) =>
+    deliverEntry({
+      ticket: t,
+      editable: !readOnly,
+      agentKnown: true,
+      parent: tickets.some((x) => x.parentId === t.id),
+      run: runOf.get(t.id) ?? null,
+    });
   const draggedTicket = tickets.find((t) => t.id === dragged);
   const ciProblem = ciError && ciError.code !== "NOT_CONNECTED" ? ciError.detail : null;
   const ordered = [...statuses].sort((a, b) => a.order - b.order);
@@ -163,6 +174,11 @@ export function Kanban() {
             {error}
           </p>
         )}
+        {delivery.error && (
+          <p role="alert" className="truncate text-destructive">
+            {delivery.error}
+          </p>
+        )}
         {columnOrder.failed && (
           <p role="alert" className="truncate text-destructive">
             {fr.orderUnavailable}
@@ -206,6 +222,8 @@ export function Kanban() {
                   selected={selected ? selected.has(t.id) : null}
                   statuses={ordered}
                   readOnly={readOnly}
+                  deliver={deliverOf(t)}
+                  onDeliver={() => delivery.deliver(t)}
                   onOpen={() => sdk.openTicket(t.id)}
                   onMove={(id) => move(t, id)}
                   onRemove={() => setRemoving(t)}
@@ -232,6 +250,7 @@ export function Kanban() {
           }}
         />
       )}
+      {delivery.dialog}
       {removing && (
         <ConfirmDialog
           open

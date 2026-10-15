@@ -156,6 +156,7 @@ test("the row menu changes the status; Bloqué asks for a reason", async () => {
   });
   expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
     "Ouvrir",
+    "Livrer",
     "Statut",
     "Nouveau sous-ticket",
     "Déplacer à la racine",
@@ -432,4 +433,36 @@ test("a row shows its open questions after the waiting badge, never a zero", asy
   const first = m.snapshot().questions.find((q) => q.title === "Port du démon ?")?.id ?? "";
   expect(m.viewRequests).toEqual([{ componentId: "questions", question: first }]);
   expect(m.opened).toEqual([]);
+});
+
+test("Livrer on a leaf asks the SDK for a run", async () => {
+  const m = createMockSdk(manifest, { seed });
+  mount(m);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-3" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Livrer" }));
+  await waitFor(() => expect(m.runDeliveries).toEqual([byKey(m, "KIB-3")?.id ?? ""]));
+  expect(m.violations).toEqual([]);
+});
+
+test("Livrer on a parent opens the dialog of its sub-tickets", async () => {
+  const m = createMockSdk(manifest, { seed });
+  mount(m);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-1" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Livrer" }));
+  const dialog = await screen.findByRole("dialog", { name: "Livrer les sous-tickets de KIB-1" });
+  expect(within(dialog).getByText("livré")).toBeTruthy();
+  expect(within(dialog).getByText("Rien à livrer : KIB-2 livré.")).toBeTruthy();
+});
+
+test("a row shows the delivery step of its ticket", async () => {
+  const m = createMockSdk(manifest, { seed });
+  mount(m);
+  const delivery = { step: 4, note: "", at: 1, runId: null };
+  await screen.findByRole("button", { name: /Sync/ });
+  act(() => {
+    m.run({ method: "setTicketDelivery", ticketId: byKey(m, "KIB-3")?.id ?? "", delivery });
+  });
+  expect(await screen.findByText("4 · Worktree")).toBeTruthy();
 });
