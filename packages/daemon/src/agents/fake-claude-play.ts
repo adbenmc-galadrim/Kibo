@@ -205,8 +205,14 @@ export function createPlayer(ctx: PlayContext): Player {
     });
     own.user(step.prompt);
     await ctx.runHooks("SubagentStart", agent);
-    for (const action of step.actions)
-      own.toolResult(own.toolUse("Bash", { command: action.bash }), text("ok"));
+    const posts = step.actions.map((action) => {
+      const input = { command: action.bash };
+      const ownId = own.toolUse("Bash", input);
+      own.toolResult(ownId, text("ok"));
+      return { ...agent, tool_name: "Bash", tool_input: input, tool_response: "ok", tool_use_id: ownId };
+    });
+    if (step.progress !== undefined) own.say(step.progress);
+    for (const post of posts) await ctx.runHooks("PostToolUse", post);
     if (step.hold) await hold();
     own.say(step.result);
     await ctx.runHooks("SubagentStop", {
@@ -214,7 +220,8 @@ export function createPlayer(ctx: PlayContext): Player {
       stop_hook_active: false,
       last_assistant_message: step.result,
     });
-    await toolHooks("PostToolUse", { ...call, tool_response: step.result }, () => text(step.result));
+    const outcome = { ...text(step.result), isError: step.failed };
+    await toolHooks("PostToolUse", { ...call, tool_response: step.result }, () => outcome);
   }
 
   async function bash(command: string): Promise<void> {

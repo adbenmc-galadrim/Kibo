@@ -38,7 +38,9 @@ const BASE_STEPS = [
       model: z.string().optional(),
       actions: z.array(z.object({ bash: z.string().min(1) })).default([]),
       result: z.string().default("ok"),
+      progress: z.string().optional(),
       hold: z.boolean().default(false),
+      failed: z.boolean().default(false),
     }),
   }),
 ] as const;
@@ -149,6 +151,7 @@ export type FakeScenarioName =
   | "delivery-denied"
   | "delivery-validation"
   | "delivery-subagents"
+  | "delivery-review"
   | "delivery-steps"
   | "delivery-routes";
 
