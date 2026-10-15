@@ -46,6 +46,7 @@ export async function startAgents(input: AgentsInput, closers: Closer[]): Promis
     notify: opts.notify ?? (() => {}),
     projectTurns: input.projectTurns,
     ...(opts.agentEnv && { env: opts.agentEnv }),
+    ...(opts.userHome && { userHome: opts.userHome }),
     ...input.lifecycle,
     locks: input.locks,
   });
