@@ -6,17 +6,18 @@ import { frDelivery } from "../i18n/fr-delivery";
 import { canEdit } from "../state/access";
 import { useAgentsState } from "../state/agents-context";
 import { DeliverChildrenDialog } from "./DeliverChildrenDialog";
-import { activeRunOf, hasChildren, useDeliver } from "./use-deliver";
+import { activeRunOf, hasChildren, useDeliver, useDeliveryAgentKnown } from "./use-deliver";
 
 type Props = { project: ProjectSnapshot; ticket: TicketView };
 
 export function DeliverButton({ project, ticket }: Props) {
   const agents = useAgentsState();
   const flow = useDeliver(project.meta.id, ticket);
+  const agentKnown = useDeliveryAgentKnown(project.meta.id);
   const entry = deliverEntry({
     ticket,
     editable: canEdit(project),
-    agentKnown: true,
+    agentKnown,
     parent: hasChildren(project, ticket.id),
     run: activeRunOf(agents?.runs, ticket.id),
   });

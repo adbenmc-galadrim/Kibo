@@ -1,4 +1,5 @@
 import {
+  DeliveryAgent,
   type DeliveryItem,
   deliveryOrder,
   deliveryTicketsOf,
@@ -8,7 +9,7 @@ import {
   type TicketView,
 } from "@kibo/schema";
 import { deliverError, deliveryTexts } from "@kibo/sdk";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { client } from "../api";
 
 export type DeliverChildrenState = { parent: { keyLabel: string; title: string }; items: DeliveryItem[] };
@@ -56,4 +57,29 @@ export function childrenItems(
   const busy = new Set<string>();
   for (const r of runs ?? []) if (r.ticketId !== null && !isTerminal(r.state)) busy.add(r.ticketId);
   return deliveryOrder({ tickets: deliveryTicketsOf(project), links: project.links, busy, parentId });
+}
+
+async function askDeliveryAgent(projectId: string): Promise<boolean> {
+  try {
+    const answer = DeliveryAgent.nullable().safeParse(
+      await client.rpc({ method: "deliveryAgent", projectId }),
+    );
+    return answer.success && answer.data !== null;
+  } catch (e) {
+    console.warn(`[kibo] delivery agent of ${projectId} unknown`, e);
+    return false;
+  }
+}
+
+export function useDeliveryAgentKnown(projectId: string): boolean {
+  const [known, setKnown] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    setKnown(false);
+    void askDeliveryAgent(projectId).then((k) => alive && setKnown(k));
+    return () => {
+      alive = false;
+    };
+  }, [projectId]);
+  return known;
 }

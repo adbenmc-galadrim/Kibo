@@ -16,6 +16,7 @@ import {
   remoteRuns,
   SelectionChip,
   useDeliverFlow,
+  useDeliveryAgentKnown,
   useEntities,
   usePresence,
   useQuestionsChipData,
@@ -56,6 +57,7 @@ export function Kanban() {
   const sharing = useSharing();
   const readOnly = sharing.access !== "write";
   const delivery = useDeliverFlow();
+  const agentKnown = useDeliveryAgentKnown();
   const columnOrder = useColumnOrder(sdk);
   const labelFilter = useLabelFilter(sdk, !readOnly);
   const [selection, setSelection] = useSelection();
@@ -89,7 +91,7 @@ export function Kanban() {
     deliverEntry({
       ticket: t,
       editable: !readOnly,
-      agentKnown: true,
+      agentKnown,
       parent: tickets.some((x) => x.parentId === t.id),
       run: runOf.get(t.id) ?? null,
     });

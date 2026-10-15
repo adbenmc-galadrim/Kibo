@@ -106,7 +106,9 @@ export function TicketSheet({
                   {fr.ticket.assignAgent}
                 </Button>
               </KeyRequired>
-              {editable && <DeliverButton project={project} ticket={t} />}
+              {editable && (
+                <DeliverButton key={project.meta.delivery?.agent ?? ""} project={project} ticket={t} />
+              )}
             </div>
           )}
         </SheetHeader>

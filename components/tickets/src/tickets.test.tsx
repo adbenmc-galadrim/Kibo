@@ -466,3 +466,12 @@ test("a row shows the delivery step of its ticket", async () => {
   });
   expect(await screen.findByText("4 · Worktree")).toBeTruthy();
 });
+
+test("without a delivery agent the row menu has no Livrer", async () => {
+  const m = createMockSdk(manifest, { seed, deliveryAgent: null });
+  mount(m);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-3" }));
+  await screen.findByRole("menuitem", { name: "Ouvrir" });
+  expect(screen.queryByRole("menuitem", { name: /^Livrer/ })).toBeNull();
+});

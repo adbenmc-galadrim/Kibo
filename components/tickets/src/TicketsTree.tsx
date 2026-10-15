@@ -13,6 +13,7 @@ import {
   readSource,
   SelectionChip,
   useDeliverFlow,
+  useDeliveryAgentKnown,
   useEntities,
   useMembers,
   useQuestionsChipData,
@@ -51,6 +52,7 @@ export function TicketsTree() {
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
   const questions = useQuestionsChipData(runs);
   const delivery = useDeliverFlow();
+  const agentKnown = useDeliveryAgentKnown();
   const [query, setQuery] = useState(EMPTY_QUERY);
   const filtering = isActive(query);
   const filtered = filtering ? filterTree(visible, query, sdk.viewer) : null;
@@ -94,7 +96,7 @@ export function TicketsTree() {
       deliver: deliverEntry({
         ticket: t,
         editable: !readOnly,
-        agentKnown: true,
+        agentKnown,
         parent: all.some((x) => x.parentId === t.id),
         run: runOf.get(t.id) ?? null,
       }),

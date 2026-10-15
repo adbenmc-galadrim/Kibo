@@ -590,3 +590,15 @@ test("a card shows its delivery step next to the agent, never once done", async 
   const done = screen.getByRole("region", { name: "Terminé" });
   expect(within(done).queryByText("7 · Porte qualité")).toBeNull();
 });
+
+test("without a delivery agent the menu has no Livrer", async () => {
+  const m = createMockSdk(manifest, { seed, viewer: "adam", deliveryAgent: null });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  await openMenu("KIB-1");
+  await screen.findByRole("menuitem", { name: "Ouvrir" });
+  expect(screen.queryByRole("menuitem", { name: /^Livrer/ })).toBeNull();
+});

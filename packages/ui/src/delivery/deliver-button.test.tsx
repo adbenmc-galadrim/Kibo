@@ -14,13 +14,15 @@ import { AgentsProvider } from "../state/agents-context";
 
 const calls: RpcRequest[] = [];
 let deliver: () => Promise<unknown> = () => Promise.resolve(runFixture({ id: "r9" }));
+const FULL_DELIVERY = { ref: "global:full-delivery", name: "full-delivery" };
+let agent: () => Promise<unknown> = () => Promise.resolve(FULL_DELIVERY);
 
 mock.module("../api", () =>
   apiMock({
     client: {
       rpc: (req: RpcRequest) => {
         calls.push(req);
-        return deliver();
+        return req.method === "deliveryAgent" ? agent() : deliver();
       },
       subscribeTopic: () => () => {},
     },
@@ -32,6 +34,7 @@ const { DeliverButton } = await import("./DeliverButton");
 beforeEach(() => {
   calls.length = 0;
   deliver = () => Promise.resolve(runFixture({ id: "r9" }));
+  agent = () => Promise.resolve(FULL_DELIVERY);
 });
 afterEach(cleanup);
 
@@ -72,6 +75,30 @@ test("an active run disables Livrer and names it", async () => {
   const button = await screen.findByRole("button", { name: "Livrer" });
   expect(button.hasAttribute("disabled")).toBe(true);
   expect(screen.getByText("déjà un run : emis · full-delivery · EMIS-15")).toBeTruthy();
+});
+
+test("the delivery agent of the project is asked once", async () => {
+  show();
+  await screen.findByRole("button", { name: "Livrer" });
+  expect(calls.filter((c) => c.method === "deliveryAgent")).toEqual([
+    { method: "deliveryAgent", projectId: "kibo" },
+  ]);
+});
+
+test("no delivery agent, a failure or an odd answer keeps Livrer away", async () => {
+  for (const answer of [
+    () => Promise.resolve(null),
+    () => Promise.reject(new Error("down")),
+    () => Promise.resolve(undefined),
+  ]) {
+    agent = answer;
+    calls.length = 0;
+    show();
+    await waitFor(() => expect(calls.some((c) => c.method === "deliveryAgent")).toBe(true));
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByRole("button", { name: "Livrer" })).toBeNull();
+    cleanup();
+  }
 });
 
 test("Livrer is absent for a reader or on a done ticket", () => {
