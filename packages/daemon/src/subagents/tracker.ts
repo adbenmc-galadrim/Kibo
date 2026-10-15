@@ -33,6 +33,7 @@ export type SubagentTracker = {
   onLaunch(runId: string, launch: SubagentLaunch, parentId?: string | null): void;
   onMeta(runId: string, meta: SubagentMeta): void;
   onSlice(runId: string, subagentId: string, lines: readonly string[]): void;
+  onModel(subagentId: string, model: string): void;
   onResult(runId: string, toolUseId: string, isError: boolean, text: string | null): void;
   closeRun(runId: string): void;
   active(runId: string): RunSubagent[];
@@ -254,6 +255,9 @@ export function createSubagentTracker(deps: TrackerDeps): SubagentTracker {
       if (lines.every((l) => l.trim() === "")) return;
       ensure(runId, subagentId, {});
       started(runId, subagentId);
+    },
+    onModel(subagentId, model) {
+      link(subagentId, { model: clipType(model) });
     },
     onResult(runId, toolUseId, isError, text) {
       if (!isError && ASYNC_LAUNCHED.test(text ?? "")) return;

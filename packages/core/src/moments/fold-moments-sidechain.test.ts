@@ -24,3 +24,33 @@ test("a subagent thread reads its sidechain lines as its own and marks its momen
   expect(actionsOf(moments).map((a) => a.command ?? a.target)).toEqual(["git diff"]);
   expect(moments.every((m) => m.subagentId === "a1")).toBe(true);
 });
+
+const handback = (message: unknown) =>
+  JSON.stringify({
+    type: "assistant",
+    isSidechain: true,
+    timestamp: "2026-10-15T06:01:09.880Z",
+    message: {
+      model: "claude-haiku-5-5",
+      content: [{ type: "tool_use", id: "toolu_h", name: "SubagentHandback", input: { message } }],
+    },
+  });
+
+test("a background subagent's report through SubagentHandback is its last message", () => {
+  const moments = foldAll([handback("Rien à signaler.")], {
+    ...CTX,
+    subagentId: "a1",
+    sidechainAsMain: true,
+  });
+  expect(moments.map((m) => m.data)).toEqual([
+    { kind: "message", text: "Rien à signaler." },
+    expect.objectContaining({ kind: "actions" }),
+  ]);
+  expect(moments[0]?.at).toBe(Date.parse("2026-10-15T06:01:09.880Z"));
+});
+
+test("a handback outside a subagent thread or without text is no message", () => {
+  expect(foldAll([handback("Rien à signaler.")]).map((m) => m.data.kind)).toEqual(["actions"]);
+  const sub = { ...CTX, subagentId: "a1", sidechainAsMain: true };
+  expect(foldAll([handback(42)], sub).map((m) => m.data.kind)).toEqual(["actions"]);
+});

@@ -35,6 +35,7 @@ describe("parseTranscriptLine on a real edit and test session", () => {
       blocks: [{ type: "text", text: "Je commence par lire le formulaire." }],
       sidechain: false,
       at: at(2),
+      model: "claude-opus",
     });
     expect(parsed[2]).toMatchObject({
       kind: "assistant",
@@ -143,6 +144,7 @@ test("an unreadable timestamp gives a null date", () => {
     blocks: [{ type: "text", text: "Bonjour" }],
     sidechain: false,
     at: null,
+    model: null,
   });
 });
 

@@ -20,7 +20,13 @@ export type ContentBlock =
   | ToolResult;
 
 export type ParsedLine =
-  | { kind: "assistant"; blocks: ContentBlock[]; sidechain: boolean; at: number | null }
+  | {
+      kind: "assistant";
+      blocks: ContentBlock[];
+      sidechain: boolean;
+      at: number | null;
+      model: string | null;
+    }
   | {
       kind: "user";
       text: string | null;
@@ -127,6 +133,7 @@ export function parseTranscriptLine(line: string): ParsedLine {
     blocks: blocksOf(content).flatMap(assistantBlock),
     sidechain: entry.isSidechain,
     at: dateOf(entry.timestamp),
+    model: entry.message?.model ?? null,
   };
 }
 

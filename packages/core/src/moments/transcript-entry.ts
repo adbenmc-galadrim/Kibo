@@ -7,7 +7,10 @@ export const TranscriptEntry = z
     type: z.string(),
     isSidechain: z.boolean().catch(false).default(false),
     timestamp: z.unknown(),
-    message: z.object({ content: Content }).passthrough().optional(),
+    message: z
+      .object({ content: Content, model: z.string().optional().catch(undefined) })
+      .passthrough()
+      .optional(),
     toolUseResult: z.unknown(),
   })
   .passthrough();

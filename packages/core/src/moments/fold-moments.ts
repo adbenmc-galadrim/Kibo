@@ -38,9 +38,12 @@ export type FoldContext = {
 export type FoldedMoment = { data: MomentData; at: number; stepId: string | null; subagentId?: string };
 export type Folded = { state: FoldState; moments: FoldedMoment[] };
 
+const HANDBACK_TOOL = "SubagentHandback";
 const TARGET_MAX = 500;
 const LABEL_MAX = 200;
 const SUMMARY_MAX = 300;
+
+const textOf = (value: unknown): string => (typeof value === "string" ? value : "");
 
 export const emptyFold = (): FoldState => ({
   pending: new Map(),
@@ -130,12 +133,18 @@ class Folder {
 
   private block(block: ContentBlock, line: Extract<ParsedLine, { kind: "assistant" }>): void {
     if (block.type === "tool_use") {
+      if (block.name === HANDBACK_TOOL && this.ownText(line))
+        this.say("message", textOf(block.input.message), line.at);
       this.pending.set(block.id, { tool: block.name, input: block.input, sidechain: line.sidechain });
       return;
     }
-    if (line.sidechain && this.ctx.sidechainAsMain !== true) return;
+    if (!this.ownText(line)) return;
     if (block.type === "text") this.say("message", block.text, line.at);
     if (block.type === "thinking") this.say("reasoning", block.thinking, line.at);
+  }
+
+  private ownText(line: Extract<ParsedLine, { kind: "assistant" }>): boolean {
+    return !line.sidechain || this.ctx.sidechainAsMain === true;
   }
 
   private say(kind: "message" | "reasoning", text: string, at: number | null): void {
