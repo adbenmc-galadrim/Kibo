@@ -109,6 +109,7 @@ export type TicketCard = {
   parent: string | null;
   openQuestions: number;
   startable: boolean;
+  group: boolean;
   branch: string | null;
   pr: string | null;
 };
