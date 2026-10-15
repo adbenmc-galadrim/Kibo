@@ -67,7 +67,7 @@ export function AllowResumeDialog({ allowance, runLabel, onOpenChange, onConfirm
         <Values label={t.dirsAdded(dirs.length)} values={dirs} />
         <div className="grid gap-1 rounded-md bg-muted px-3 py-2 text-xs">
           <p className="text-muted-foreground">{t.message(runLabel)}</p>
-          <p>{`« ${RESUME_AFTER_ALLOW(allowance.rules, allowance.addDirs)} »`}</p>
+          <p>{`« ${RESUME_AFTER_ALLOW(allowance.rules, dirs)} »`}</p>
         </div>
         {allowance.left.length > 0 && (
           <p className="text-xs text-muted-foreground">

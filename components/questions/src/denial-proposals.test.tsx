@@ -91,7 +91,9 @@ test("« Autoriser et relancer » confirms the checked items, then calls the SDK
   expect(dialog.getByRole("list", { name: "Dossier ajouté à l'agent (1)" }).textContent).toBe(
     "~/.claude/skills",
   );
-  expect(dialog.getByText(/sont maintenant autorisés/)).toBeTruthy();
+  const message = dialog.getByText(/sont maintenant autorisés/).textContent ?? "";
+  expect(message).toContain("`~/.claude/skills`");
+  expect(message).not.toContain(SKILLS);
   expect(dialog.getByText(/^Non repris :/).textContent).toContain("sh -c 'pnpm --filter web build'");
   expect(m.allowed).toEqual([]);
   await user.click(dialog.getByRole("button", { name: "Autoriser et relancer" }));
