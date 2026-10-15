@@ -38,6 +38,7 @@ export const fr = {
     message: (run: string) => `Message au run ${run}`,
     notTaken: (items: string) => `Non repris : ${items}`,
     failed: (reason: string) => `Impossible d'autoriser et de relancer : ${reason}`,
+    parentTicket: "ce ticket regroupe des sous-tickets",
   },
   validation: {
     group: "Validation de l'écran",

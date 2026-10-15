@@ -9,7 +9,11 @@ export type SubagentLaunch = {
   model: string | null;
 };
 export type SubagentToolResult = { toolUseId: string; isError: boolean; text: string | null };
-export type SubagentSignals = { launches: SubagentLaunch[]; results: SubagentToolResult[] };
+export type SubagentSignals = {
+  launches: SubagentLaunch[];
+  results: SubagentToolResult[];
+  model: string | null;
+};
 
 const LAUNCH_TOOLS: ReadonlySet<string> = new Set(["Agent", "Task"]);
 const RESULT_TEXT_MAX = 4_000;
@@ -33,9 +37,10 @@ export function foldSubagentLaunch(
 }
 
 export function subagentSignals(lines: readonly string[]): SubagentSignals {
-  const signals: SubagentSignals = { launches: [], results: [] };
+  const signals: SubagentSignals = { launches: [], results: [], model: null };
   for (const line of lines) {
     const parsed = parseTranscriptLine(line);
+    if (parsed.kind === "assistant") signals.model ??= parsed.model;
     if (parsed.kind === "assistant")
       for (const block of parsed.blocks) {
         const launch = block.type === "tool_use" ? foldSubagentLaunch(block) : null;

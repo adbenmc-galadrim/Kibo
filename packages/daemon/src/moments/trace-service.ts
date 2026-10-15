@@ -130,7 +130,9 @@ export function createTraceService(deps: TraceDeps): TraceService {
     page: (runId, after) => pageOf(store, runId, after),
     subagentPage: (runId, subagentId, after) => subagentPageOf(store, runId, subagentId, after),
     mark(runId, data) {
-      core.write(runId, [core.moment(core.traceOf(runId), data)]);
+      const trace = core.traceOf(runId);
+      if (trace.source === "transcript" && trace.closedAt === null) core.flushFold(trace, true);
+      core.write(runId, [core.moment(trace, data)]);
     },
     peek: (run, progress) => peekOf(store, run, progress),
   };

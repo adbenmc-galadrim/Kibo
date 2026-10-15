@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { MomentData } from "@kibo/schema";
 import { openTranscript } from "../agents/fake-claude-transcript";
@@ -17,7 +17,8 @@ const REVIEW = {
   description: "Porte qualité — correctness",
   prompt: "Relis le diff",
 };
-const META = join(import.meta.dir, "..", "subagents", "fixtures", "agent-meta.json");
+const FIXTURES = join(import.meta.dir, "..", "subagents", "fixtures");
+const META = join(FIXTURES, "agent-meta.json");
 
 function tracedRun(maxBytes?: number) {
   const order: string[] = [];
@@ -152,4 +153,67 @@ test("a subagent that waits without any tool call is described from its start", 
     description: "Porte qualité — correctness",
     state: "running",
   });
+});
+
+test("a subagent started before its meta file shows its type, then its description with the meta", async () => {
+  const t = tracedRun();
+  const toolUseId = t.s.transcript.toolUse("Agent", REVIEW);
+  const start = hook("SubagentStart", { agentId: "a1", tool: "ecc:code-reviewer" });
+  t.tracker.onHook(t.s.run.id, start);
+  await t.s.trace.onHook(t.s.run, start);
+  expect(t.store.list(t.s.run.id)[0]).toMatchObject({ type: "ecc:code-reviewer", description: "" });
+  mkdirSync(join(t.s.root, "proj", SESSION, "subagents"), { recursive: true });
+  const meta = JSON.parse(readFileSync(META, "utf8"));
+  writeFileSync(subagentMetaPath(t.file), JSON.stringify({ ...meta, toolUseId }));
+  await t.s.trace.onHook(t.s.run, hook("PostToolUse", { tool: "Bash" }));
+  expect(t.store.list(t.s.run.id)[0]).toMatchObject({
+    toolUseId,
+    description: "Porte qualité — correctness",
+    prompt: "Relis le diff",
+  });
+});
+
+test("a background subagent takes its result from its handback and its model from its transcript", async () => {
+  const t = tracedRun();
+  const toolUseId = t.s.transcript.toolUse("Agent", {
+    subagent_type: "Explore",
+    description: "Repérage des fichiers",
+    prompt: "Lis src/math.ts",
+    run_in_background: true,
+  });
+  t.s.transcript.toolResult(toolUseId, { content: "Async agent launched successfully.", isError: false });
+  mkdirSync(join(t.s.root, "proj", SESSION, "subagents"), { recursive: true });
+  const meta = JSON.parse(readFileSync(join(FIXTURES, "background-agent.meta.json"), "utf8"));
+  writeFileSync(subagentMetaPath(t.file), JSON.stringify({ ...meta, toolUseId }));
+  copyFileSync(join(FIXTURES, "background-agent.jsonl"), subagentTracePath(t.file));
+  const stop = hook("SubagentStop", { agentId: "a1", tool: "Explore", detail: null });
+  t.tracker.onHook(t.s.run.id, stop);
+  await t.s.trace.onHook(t.s.run, stop);
+  expect(t.store.list(t.s.run.id)).toEqual([
+    expect.objectContaining({
+      id: "a1",
+      state: "done",
+      model: "claude-haiku-5-5",
+      result: "src/math.ts exporte add(a, b), qui retourne la somme de deux nombres.",
+    }),
+  ]);
+});
+
+test("the subagent moment follows the actions read before its launch", async () => {
+  const t = tracedRun();
+  const main = t.s.transcript;
+  main.toolResult(main.toolUse("Bash", { command: "kibo tickets step ESS-1 0 lecture" }), {
+    content: "ok",
+    isError: false,
+  });
+  const toolUseId = main.toolUse("Agent", REVIEW);
+  mkdirSync(join(t.s.root, "proj", SESSION, "subagents"), { recursive: true });
+  const meta = JSON.parse(readFileSync(META, "utf8"));
+  writeFileSync(subagentMetaPath(t.file), JSON.stringify({ ...meta, toolUseId }));
+  const start = hook("SubagentStart", { agentId: "a1", tool: "ecc:code-reviewer" });
+  t.tracker.onHook(t.s.run.id, start);
+  await t.s.trace.onHook(t.s.run, start);
+  await t.s.trace.onTurnEnd(t.s.run);
+  const kinds = t.s.store.list(t.s.run.id).flatMap((m) => (m.subagentId ? [] : [m.data.kind]));
+  expect(kinds.slice(0, 2)).toEqual(["actions", "subagent"]);
 });

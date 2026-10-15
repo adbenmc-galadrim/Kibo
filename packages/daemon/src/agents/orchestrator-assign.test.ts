@@ -183,7 +183,7 @@ test("a parent ticket is never launched, whatever the agent, and its preview say
   });
   for (const profileId of ["global:full-delivery", "global:review", "system:demo"]) {
     expect(() => h.orch.assign({ projectId: "p1", ticketId: "t1", profileId, brief: "" })).toThrow(
-      "TICKET_HAS_CHILDREN: ce ticket regroupe 1 sous-ticket",
+      "TICKET_HAS_CHILDREN: ticket has 1 child ticket",
     );
   }
   expect(h.orch.preview({ projectId: "p1", ticketId: "t2", profileId: "global:review" })).toMatchObject({

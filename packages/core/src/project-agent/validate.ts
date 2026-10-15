@@ -8,7 +8,6 @@ import {
   isTerminal,
   type ProposeBatchInput,
   type ProposedAction,
-  parentTicketDetail,
   type Question,
 } from "@kibo/schema";
 import { type BatchContext, captureExpected, ticketByKey, ticketRuns } from "./expected";
@@ -192,7 +191,9 @@ function parentProblem(scan: Scan, ticket: string, later: readonly ProposedActio
   const children =
     [...scan.parents.values()].filter((p) => p === node).length +
     later.filter((a) => adoptedBy(scan, a) === node).length;
-  return children > 0 ? `${parentTicketDetail(children)} : lance les sous-tickets` : null;
+  return children > 0
+    ? `ce ticket regroupe ${children} sous-ticket${children > 1 ? "s" : ""} : lance les sous-tickets`
+    : null;
 }
 
 function actionProblems(

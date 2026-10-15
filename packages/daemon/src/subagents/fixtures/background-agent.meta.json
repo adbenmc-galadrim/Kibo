@@ -1,0 +1,9 @@
+{
+  "agentType": "Explore",
+  "launchedWithDefaults": true,
+  "description": "Repérage des fichiers",
+  "toolUseId": "toolu_01RKAdDyKSCgbYGdNP2x94qu",
+  "spawnDepth": 1,
+  "requestShape": "background",
+  "requestNonInteractive": true
+}

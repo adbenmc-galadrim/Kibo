@@ -43,16 +43,23 @@ export const hook = (event: "SubagentStart" | "SubagentStop", agentId = AGENT): 
   stopHookActive: false,
 });
 
-export type Tracked = { tracker: SubagentTracker; store: SubagentStore; announced: SubagentAnnounce[] };
+export type Tracked = {
+  tracker: SubagentTracker;
+  store: SubagentStore;
+  announced: SubagentAnnounce[];
+  changes: string[];
+};
 
 export function tracked(now: () => number = () => 1_000): Tracked {
   const store = createSubagentStore(new Database(":memory:", { strict: true }));
   const announced: SubagentAnnounce[] = [];
+  const changes: string[] = [];
   const tracker = createSubagentTracker({
     store,
     now,
     transcriptOf: (_runId, agentId) => `/p/s1/subagents/agent-${agentId}.jsonl`,
     announce: (_runId, moment) => announced.push(moment),
+    changed: (runId) => changes.push(runId),
   });
-  return { tracker, store, announced };
+  return { tracker, store, announced, changes };
 }

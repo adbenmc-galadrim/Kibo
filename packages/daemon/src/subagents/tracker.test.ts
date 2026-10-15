@@ -125,3 +125,42 @@ test("a launch that failed for another reason still gets its line, failed", () =
   tracker.closeRun(RUN);
   expect(store.list(RUN)).toEqual([expect.objectContaining({ id: TOOL_USE, state: "failed" })]);
 });
+
+test("parallel launches of the same type are linked by the meta file only", () => {
+  const { tracker, store, announced } = tracked();
+  const first = { ...LAUNCH, toolUseId: "toolu_1", description: "Porte qualité — correctness" };
+  const second = { ...LAUNCH, toolUseId: "toolu_2", description: "Porte qualité — conventions" };
+  tracker.onLaunch(RUN, first);
+  tracker.onHook(RUN, hook("SubagentStart", "b"));
+  expect(store.list(RUN)[0]).toMatchObject({ id: "b", toolUseId: null, description: "" });
+  tracker.onLaunch(RUN, second);
+  tracker.onMeta(RUN, { ...META, agentId: "b", toolUseId: "toolu_2", description: second.description });
+  tracker.onResult(RUN, "toolu_2", false, "Conventions respectées");
+  expect(store.find("b")).toMatchObject({
+    toolUseId: "toolu_2",
+    description: "Porte qualité — conventions",
+    state: "done",
+    result: "Conventions respectées",
+  });
+  tracker.onHook(RUN, hook("SubagentStart", "a"));
+  tracker.onMeta(RUN, { ...META, agentId: "a", toolUseId: "toolu_1" });
+  tracker.onResult(RUN, "toolu_1", false, "RAS");
+  expect(store.find("a")).toMatchObject({
+    toolUseId: "toolu_1",
+    description: "Porte qualité — correctness",
+    state: "done",
+    result: "RAS",
+  });
+  expect(announced.map((a) => [a.subagentId, a.description])).toEqual([
+    ["b", "Porte qualité — conventions"],
+    ["a", "Porte qualité — correctness"],
+  ]);
+});
+
+test("a fact linked after the start tells the agents bar", () => {
+  const { tracker, changes } = tracked();
+  tracker.onHook(RUN, hook("SubagentStart"));
+  const before = changes.length;
+  tracker.onMeta(RUN, META);
+  expect(changes.length).toBeGreaterThan(before);
+});

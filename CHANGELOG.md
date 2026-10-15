@@ -6,6 +6,12 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.24.0-alpha.2 — 2026-10-15
+
+- Sous-agents : un sous-agent lancé en arrière-plan montre son résultat et son modèle. La description d'un sous-agent arrive dès que Claude Code l'écrit, et la barre se met à jour aussitôt. Deux sous-agents du même type lancés ensemble ne sont plus jamais confondus.
+- Le fil d'un run suit l'ordre des faits : un sous-agent ou un rappel ne passe plus avant les actions qui l'ont précédé.
+- « Autoriser et relancer » sur un ticket qui regroupe des sous-tickets affiche un message clair.
+
 ## 0.24.0-alpha.1 — 2026-10-15
 
 - La livraison devient un parcours de Kibo. Bouton « Livrer » sur la carte, la fiche et la liste des tickets : Kibo écrit la consigne `/full-delivery <CLÉ>` et lance l'agent de livraison du projet. Un ticket qui regroupe des sous-tickets propose ses sous-tickets prêts, dans l'ordre de leurs dépendances.

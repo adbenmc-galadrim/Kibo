@@ -70,6 +70,7 @@ export function createSubagentSources(deps: SubagentSourcesDeps): SubagentSource
     onLines(runId, subagentId, lines) {
       if (subagentId !== null) tracker.onSlice(runId, subagentId, lines);
       const signals = subagentSignals(lines);
+      if (subagentId !== null && signals.model !== null) tracker.onModel(subagentId, signals.model);
       for (const launch of signals.launches) tracker.onLaunch(runId, launch, subagentId);
       for (const result of signals.results)
         tracker.onResult(runId, result.toolUseId, result.isError, result.text);

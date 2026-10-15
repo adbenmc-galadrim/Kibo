@@ -63,3 +63,12 @@ test("transcript lines give launches and tool results", () => {
     { toolUseId: "toolu_2", isError: false, text: "Async agent launched successfully." },
   ]);
 });
+
+test("the model of a subagent is read from its assistant lines", () => {
+  const assistant = (model: unknown) =>
+    JSON.stringify({ type: "assistant", message: { model, content: [{ type: "text", text: "ok" }] } });
+  expect(subagentSignals([line("user", [{ type: "text", text: "go" }])]).model).toBeNull();
+  expect(subagentSignals([assistant(42), assistant("claude-haiku-5-5"), assistant("x")]).model).toBe(
+    "claude-haiku-5-5",
+  );
+});
