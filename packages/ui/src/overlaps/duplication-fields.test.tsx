@@ -1,6 +1,7 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import {
   DEFAULT_DUPLICATION_SETTINGS,
+  DUPLICATION_SHARED_GLOBS,
   type DuplicationSettings,
   type OverlapIgnore,
   type RpcRequest,
@@ -110,6 +111,24 @@ test("ignored files are one glob per line, 50 at most", () => {
   fireEvent.change(area, { target: { value: many } });
   expect(section().getByText("50 globs au plus.")).toBeTruthy();
   expect(changes).toHaveLength(1);
+});
+
+test("screen 215: shared files are prefilled, one glob per line, and saved as typed", () => {
+  draw();
+  const area = section().getByRole("textbox", { name: "Fichiers partagés" }) as HTMLTextAreaElement;
+  expect(area.value).toBe(DUPLICATION_SHARED_GLOBS.join("\n"));
+  fireEvent.change(area, { target: { value: "*.md\n\n  **/i18n/**  \n" } });
+  expect(changes.at(-1)).toEqual({ ...DEFAULT_DUPLICATION_SETTINGS, shared: ["*.md", "**/i18n/**"] });
+  fireEvent.change(area, { target: { value: "x".repeat(201) } });
+  expect(section().getByText("Un glob fait 200 caractères au plus.")).toBeTruthy();
+  expect(changes).toHaveLength(1);
+});
+
+test("a stored setting from before shared files shows the defaults", () => {
+  const { shared: _shared, ...older } = DEFAULT_DUPLICATION_SETTINGS;
+  draw({ ...older, compareTests: true });
+  const area = section().getByRole("textbox", { name: "Fichiers partagés" }) as HTMLTextAreaElement;
+  expect(area.value).toBe(DUPLICATION_SHARED_GLOBS.join("\n"));
 });
 
 test("generic exports are removable chips with an input to add, 100 at most", async () => {

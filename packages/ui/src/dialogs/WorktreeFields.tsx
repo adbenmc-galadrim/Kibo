@@ -3,6 +3,7 @@ import {
   renderTemplate,
   resolveWorktreePath,
   singleQuotedVariable,
+  type WorktreeRecipe,
   WorktreeSettings as WorktreeSchema,
   type WorktreeSettings,
   type WorktreeVars,
@@ -11,10 +12,12 @@ import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { useId } from "react";
 import { frProject } from "../i18n/fr-project";
+import { WorktreeRecipeFields } from "./WorktreeRecipeFields";
 
 type Props = {
   value: WorktreeSettings | null;
   onChange(next: WorktreeSettings | null): void;
+  onRecipeProblem(problem: string | null): void;
   disabled: boolean;
 };
 type Field = "baseRef" | "pathTemplate" | "setup";
@@ -56,10 +59,21 @@ export function worktreeProblem(value: WorktreeSettings): string | null {
 
 function nextValue(current: WorktreeSettings | null, field: Field, raw: string): WorktreeSettings | null {
   const next = { ...(current ?? EMPTY), [field]: field === "setup" && raw === "" ? null : raw };
-  return next.baseRef === "" && next.pathTemplate === "" && next.setup === null ? null : next;
+  return isEmpty(next) ? null : next;
 }
 
-export function WorktreeFields({ value, onChange, disabled }: Props) {
+const isEmpty = (value: WorktreeSettings): boolean =>
+  value.baseRef === "" && value.pathTemplate === "" && value.setup === null && value.recipe === null;
+
+function withRecipe(
+  current: WorktreeSettings | null,
+  recipe: WorktreeRecipe | null,
+): WorktreeSettings | null {
+  const next = { ...(current ?? EMPTY), recipe };
+  return isEmpty(next) ? null : next;
+}
+
+export function WorktreeFields({ value, onChange, onRecipeProblem, disabled }: Props) {
   const ids = { base: useId(), path: useId(), setup: useId(), help: useId(), title: useId() };
   const problem = value === null ? null : worktreeProblem(value);
   const set = (field: Field) => (e: { target: { value: string } }) =>
@@ -96,6 +110,12 @@ export function WorktreeFields({ value, onChange, disabled }: Props) {
         <p className="font-mono">{t.worktreeExample}</p>
       </div>
       {problem !== null && <p className="text-xs text-destructive">{problem}</p>}
+      <WorktreeRecipeFields
+        value={value?.recipe ?? null}
+        onChange={(recipe) => onChange(withRecipe(value, recipe))}
+        onProblem={onRecipeProblem}
+        disabled={disabled}
+      />
     </fieldset>
   );
 }

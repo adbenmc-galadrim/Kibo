@@ -91,8 +91,8 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/sdk\/src\/question-preview-content\.tsx$/,
   /\/packages\/ui\/src\/(moments\/(SubagentMoment|SubagentFeed)|agents\/(dock\/SubagentLines|mention\/SubagentsSection))\.tsx$/,
   /\/packages\/ui\/src\/i18n\/fr-subagents\.ts$/,
-  /\/packages\/ui\/src\/(delivery\/.+\.tsx?|i18n\/fr-delivery(-settings)?\.ts|lib\/(expand-home|use-home)\.ts)$/,
-  /\/packages\/ui\/src\/(dialogs\/(DeliverySection|DeliveryImportDialog|WorktreeRecipeFields)|agents\/(sheet\/(PresetButton|AddDirsField)|MachineLocks))\.tsx$/,
+  /\/packages\/ui\/src\/(delivery\/.+\.tsx?|i18n\/fr-delivery(-settings)?\.ts|lib\/(expand-home|use-home)\.ts|dialogs\/(delivery-draft|delivery-import-rows|recipe-draft)\.ts)$/,
+  /\/packages\/ui\/src\/(dialogs\/(DeliverySection|DeliveryFields|DeliveryImportDialog|WorktreeRecipeFields)|agents\/(sheet\/(PresetButton|AddDirsField)|MachineLocks))\.tsx$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

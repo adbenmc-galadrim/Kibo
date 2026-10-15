@@ -87,6 +87,9 @@ export const frOverlaps = {
     ignoreHelp: "Un glob par ligne, en plus des verrous, fichiers générés, binaires et secrets.",
     ignoreTooMany: "50 globs au plus.",
     ignoreTooLong: "Un glob fait 200 caractères au plus.",
+    shared: "Fichiers partagés",
+    sharedHelp:
+      "Un glob par ligne. Fichiers partagés par nature (docs, configs, i18n) : un bloc identique n'y est pas un doublon, un export dupliqué si.",
     genericExports: "Exports génériques",
     genericExportsHelp: "Un nom exporté deux fois parmi ceux-ci ne déclenche pas d'alerte.",
     addExport: "Ajouter…",

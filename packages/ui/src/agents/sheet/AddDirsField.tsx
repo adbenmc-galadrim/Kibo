@@ -3,7 +3,7 @@ import { Label } from "@kibo/sdk/ui/label";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { useId, useState } from "react";
 import { frDeliverySettings } from "../../i18n/fr-delivery-settings";
-import { expandHome } from "../../lib/expand-home";
+import { expandHome, tildify } from "../../lib/expand-home";
 
 type Props = {
   value: readonly string[];
@@ -14,9 +14,6 @@ type Props = {
 };
 
 const t = frDeliverySettings.addDirs;
-
-const tildify = (path: string, home: string | null): string =>
-  home !== null && (path === home || path.startsWith(`${home}/`)) ? `~${path.slice(home.length)}` : path;
 
 export const dirsOf = (lines: readonly string[], home: string): string[] => [
   ...new Set(lines.map((line) => expandHome(line, home)).filter((path) => path.length > 0)),

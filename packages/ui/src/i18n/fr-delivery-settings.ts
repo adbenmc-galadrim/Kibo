@@ -49,6 +49,8 @@ export const frDeliverySettings = {
     pathError: (label: string) => `${label} : un chemin absolu, ~ accepté.`,
     patternError:
       "Le format des identifiants n'est pas une expression régulière valide (200 caractères au plus).",
+    invalid: "Réglages de livraison refusés.",
+    loading: "Lecture des réglages de la machine…",
     summary: (agent: string, root: string | null) => (root ? `${agent} · ${root}` : agent),
   },
   import: {
@@ -111,9 +113,5 @@ export const frDeliverySettings = {
       numbers: "Premier jeu ≥ 0, pas ≥ 1, de 1 à 200 jeux.",
       after: "8 commandes au plus, 1000 caractères chacune.",
     },
-  },
-  shared: {
-    label: "Fichiers partagés",
-    help: "Un glob par ligne. Fichiers partagés par nature (docs, configs, i18n) : un bloc identique n'y est pas un doublon.",
   },
 } as const;

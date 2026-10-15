@@ -9,6 +9,8 @@ type Props = {
   onChange(next: string[]): void;
   onProblem(problem: string | null): void;
   disabled: boolean;
+  label?: string;
+  help?: string;
 };
 
 const t = frAgentsPage.profile;
@@ -23,7 +25,14 @@ export const allowRulesProblem = (lines: readonly string[]): string | null => {
   return rules.length > ALLOW_MAX ? t.allowTooMany : null;
 };
 
-export function AllowRulesField({ value, onChange, onProblem, disabled }: Props) {
+export function AllowRulesField({
+  value,
+  onChange,
+  onProblem,
+  disabled,
+  label = t.allow,
+  help = t.allowHelp,
+}: Props) {
   const id = useId();
   const [text, setText] = useState(value.join("\n"));
   const [problem, setProblem] = useState<string | null>(null);
@@ -39,7 +48,7 @@ export function AllowRulesField({ value, onChange, onProblem, disabled }: Props)
 
   return (
     <div className="grid gap-2">
-      <Label htmlFor={`${id}-allow`}>{t.allow}</Label>
+      <Label htmlFor={`${id}-allow`}>{label}</Label>
       <Textarea
         id={`${id}-allow`}
         value={text}
@@ -56,7 +65,7 @@ export function AllowRulesField({ value, onChange, onProblem, disabled }: Props)
         id={`${id}-allow-help`}
         className={problem ? "text-xs text-destructive" : "text-xs text-muted-foreground"}
       >
-        {problem ?? t.allowHelp}
+        {problem ?? help}
       </p>
     </div>
   );
