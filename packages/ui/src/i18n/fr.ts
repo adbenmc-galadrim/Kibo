@@ -254,6 +254,7 @@ export const fr = {
     resumeHint: "réponse reçue · reprise de la session",
     messageHint: "message reçu · reprise de la session",
     failedWith: (error: string) => `Échec : ${error}`,
+    failedAtLaunch: (error: string) => `Échec au lancement : ${error}`,
     modelNames: { opus: "Claude Opus 5.5", sonnet: "Claude Sonnet 5", haiku: "Claude Haiku 4.5" },
     workspace: {
       worktree: (branch: string) => `worktree ${branch}`,

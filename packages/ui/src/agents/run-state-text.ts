@@ -33,6 +33,7 @@ export function queueHint(run: RunView, reason: WaitReason | null): string {
 
 export function runResultText(run: RunView, position: number | null): string {
   if (run.state === "queued" && position !== null) return fr.agents.position(position);
+  if (run.state === "failed" && run.startedAt === null) return fr.agents.failedAtLaunch(errorText(run.error));
   if (run.state === "failed") return fr.agents.failedWith(errorText(run.error));
   return frAgentBar.states[run.state];
 }

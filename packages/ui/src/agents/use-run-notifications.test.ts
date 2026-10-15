@@ -41,7 +41,7 @@ test("only entries into waiting, done or failed are announced", () => {
   expect(runNotices(previous, runs)).toEqual([
     { title: "opus-dev-2 attend une réponse", body: "KIB-14 · Quel port ?", runId: "a" },
     { title: "opus-dev-1 a terminé", body: "KIB-12 · Schéma Loro", runId: "b" },
-    { title: "opus-dev-3 a échoué", body: "KIB-16 · espace de travail indisponible", runId: "c" },
+    { title: "opus-dev-3 a échoué", body: "KIB-16 · espace de travail indisponible (x)", runId: "c" },
   ]);
 });
 

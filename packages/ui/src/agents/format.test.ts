@@ -30,8 +30,8 @@ test("wait reasons, workspaces and errors are said in French", () => {
   );
   expect(workspaceText("worktree:kib-14")).toBe("worktree kib-14");
   expect(workspaceText("isolated")).toBe("dossier isolé");
-  expect(errorText("WORKSPACE_FAILED: the project has no local folder")).toBe(
-    "espace de travail indisponible",
+  expect(errorText("WORKSPACE_FAILED: setup command exited with 127:\nsh: pnpm: command not found")).toBe(
+    "espace de travail indisponible (setup command exited with 127:\nsh: pnpm: command not found)",
   );
   expect(errorText("PROJECT_FOLDER_MISSING: the project has no local folder")).toBe(
     "projet sans dossier local",
@@ -42,17 +42,27 @@ test("wait reasons, workspaces and errors are said in French", () => {
   expect(errorText("NOT_A_REPO: /x is not a git repository")).toBe(
     "le dossier du projet n'est pas un dépôt git",
   );
-  expect(errorText("GIT_FAILED: git worktree add failed: fatal")).toBe(
-    "git n'a pas pu préparer l'espace de travail",
+  expect(errorText("GIT_FAILED: base branch feat/x not found locally or on origin")).toBe(
+    "git n'a pas pu préparer l'espace de travail (base branch feat/x not found locally or on origin)",
   );
   expect(errorText("exit code 1")).toBe("exit code 1");
 });
 
+test("a run that failed before its first turn says it failed at launch, with the reason", () => {
+  const error = "GIT_FAILED: remote feat not found";
+  expect(runResultText(runFixture({ id: "a", state: "failed", error }), null)).toBe(
+    "Échec au lancement : git n'a pas pu préparer l'espace de travail (remote feat not found)",
+  );
+  expect(
+    runResultText(runFixture({ id: "b", state: "failed", startedAt: NOW, error: "exit code 1" }), null),
+  ).toBe("Échec : exit code 1");
+});
+
 test("a run result says where the run is", () => {
   expect(runResultText(runFixture({ id: "a", state: "queued" }), 2)).toBe("En file #2");
-  expect(runResultText(runFixture({ id: "b", state: "failed", error: "exit code 1" }), null)).toBe(
-    "Échec : exit code 1",
-  );
+  expect(
+    runResultText(runFixture({ id: "b", state: "failed", startedAt: NOW, error: "exit code 1" }), null),
+  ).toBe("Échec : exit code 1");
   expect(runResultText(runFixture({ id: "c", state: "waiting_input" }), null)).toBe("Attend une réponse");
 });
 
