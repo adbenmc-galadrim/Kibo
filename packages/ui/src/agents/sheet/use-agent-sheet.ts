@@ -15,6 +15,7 @@ export type AgentSheetState = {
   draftFile(): AgentFile | null;
   settingsFailed: boolean;
   patch(patch: AgentSettingsPatch): Promise<void>;
+  replace(next: Agent): void;
 };
 
 const NO_DRAFT: SpecDraft = { description: "", model: null };
@@ -109,5 +110,6 @@ export function useAgentSheet(ref: AgentRef): AgentSheetState {
     draftFile: () => (agent?.file ? withDraft(agent.file, draft, editor.content) : null),
     settingsFailed,
     patch,
+    replace: (next) => setAgent((prev) => (prev ? { ...next, file: prev.file } : next)),
   };
 }

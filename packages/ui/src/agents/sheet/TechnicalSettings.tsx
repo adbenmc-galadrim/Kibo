@@ -1,15 +1,18 @@
 import type { AgentSettings, AgentSettingsPatch, PermissionMode, WorkspaceStrategy } from "@kibo/schema";
+import { Alert, AlertDescription } from "@kibo/sdk/ui/alert";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { Switch } from "@kibo/sdk/ui/switch";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
-import { Lock } from "lucide-react";
-import { useEffect, useId, useRef } from "react";
+import { Check, Lock } from "lucide-react";
+import { type ReactNode, useEffect, useId, useRef } from "react";
 import { fr } from "../../i18n/fr";
 import { frAgentsPage } from "../../i18n/fr-agents-page";
 import { frAgentsSkills } from "../../i18n/fr-agents-skills";
+import { frDeliverySettings } from "../../i18n/fr-delivery-settings";
 import { AllowRulesField } from "../AllowRulesField";
+import { AddDirsField } from "./AddDirsField";
 import { FoldSection } from "./FoldSection";
 
 type Props = {
@@ -19,6 +22,10 @@ type Props = {
   parallelMax: number;
   hostSlots: number;
   failed: boolean;
+  home: string | null;
+  preset?: ReactNode;
+  presetAt: string | null;
+  revision: number;
   onPatch(patch: AgentSettingsPatch): void;
 };
 
@@ -45,23 +52,37 @@ export function TechnicalSettings({
   parallelMax,
   hostSlots,
   failed,
+  home,
+  preset,
+  presetAt,
+  revision,
   onPatch,
 }: Props) {
   const id = useId();
-  const allowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(
-    () => () => {
-      if (allowTimer.current) clearTimeout(allowTimer.current);
-    },
-    [],
-  );
-  const patchAllow = (allow: string[]) => {
-    if (allowTimer.current) clearTimeout(allowTimer.current);
-    allowTimer.current = setTimeout(() => onPatch({ allow }), ALLOW_DELAY_MS);
+  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
+  useEffect(() => {
+    const pending = timers.current;
+    return () => {
+      for (const timer of pending.values()) clearTimeout(timer);
+    };
+  }, []);
+  const later = (key: string, patch: AgentSettingsPatch) => {
+    const previous = timers.current.get(key);
+    if (previous) clearTimeout(previous);
+    timers.current.set(
+      key,
+      setTimeout(() => onPatch(patch), ALLOW_DELAY_MS),
+    );
   };
   return (
-    <FoldSection title={t.title} summary={settingsSummary(settings)}>
+    <FoldSection title={t.title} summary={settingsSummary(settings)} action={preset}>
       <p className="text-xs text-muted-foreground">{system ? frAgentsSkills.sheet.systemReason : t.help}</p>
+      {presetAt !== null && (
+        <Alert>
+          <Check aria-hidden />
+          <AlertDescription>{frDeliverySettings.preset.applied(presetAt)}</AlertDescription>
+        </Alert>
+      )}
       {failed && (
         <p role="alert" className="text-xs text-destructive">
           {t.failed}
@@ -106,7 +127,20 @@ export function TechnicalSettings({
         </ToggleGroup>
         <p className="text-xs text-muted-foreground">{t.neverBypass}</p>
       </div>
-      <AllowRulesField value={settings.allow} disabled={system} onProblem={() => {}} onChange={patchAllow} />
+      <AllowRulesField
+        key={`allow-${revision}`}
+        value={settings.allow}
+        disabled={system}
+        onProblem={() => {}}
+        onChange={(allow) => later("allow", { allow })}
+      />
+      <AddDirsField
+        key={`dirs-${revision}-${home ?? ""}`}
+        value={settings.addDirs}
+        home={home}
+        disabled={system}
+        onChange={(addDirs) => later("addDirs", { addDirs })}
+      />
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid content-start gap-2">
           <Label htmlFor={`${id}-parallel`}>{t.parallel}</Label>

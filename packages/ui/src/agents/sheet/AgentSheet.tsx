@@ -18,9 +18,11 @@ import { VersionHistory } from "../../file-editor/VersionHistory";
 import { fr } from "../../i18n/fr";
 import { frAgentsSkills } from "../../i18n/fr-agents-skills";
 import { errorMessage } from "../../lib/error-message";
+import { useHome } from "../../lib/use-home";
 import { useAgentList } from "../catalog/use-agent-list";
 import { AgentHeader, type SheetDialog } from "./AgentHeader";
 import { agentFileText } from "./agent-file-text";
+import { PresetButton } from "./PresetButton";
 import { PreviewPane } from "./PreviewPane";
 import { RenameAgentDialog } from "./RenameAgentDialog";
 import { SkillsField } from "./SkillsField";
@@ -67,6 +69,8 @@ function FileDialog({ path, text, onClose }: { path: string; text: string; onClo
   );
 }
 
+const clock = () => new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+
 const describeDelete = (e: unknown) =>
   e instanceof KiboError && e.code === "AGENT_IN_USE" ? t.inUse : errorMessage(e);
 
@@ -76,6 +80,8 @@ export function AgentSheet({ agentRef, projects, hostSlots, startRename, onClose
   const [dialog, setDialog] = useState<SheetDialog | null>(startRename ? "rename" : null);
   const [notice, setNotice] = useState<string | null>(null);
   const others = useAgentList(agent?.scope === "project" ? agent.projectId : null);
+  const home = useHome();
+  const [preset, setPreset] = useState<{ at: string; revision: number }>({ at: "", revision: 0 });
   if (sheet.failed) return <p className="p-6 text-sm text-destructive">{t.failed}</p>;
   if (!agent) return <p className="p-6 text-sm text-muted-foreground">{t.loading}</p>;
   const system = agent.scope === "system";
@@ -159,6 +165,19 @@ export function AgentSheet({ agentRef, projects, hostSlots, startRename, onClose
         parallelMax={parallelMax(agent.ref)}
         hostSlots={hostSlots}
         failed={sheet.settingsFailed}
+        home={home}
+        preset={
+          <PresetButton
+            agent={agent}
+            home={home}
+            onApplied={(next) => {
+              sheet.replace(next);
+              setPreset((p) => ({ at: clock(), revision: p.revision + 1 }));
+            }}
+          />
+        }
+        presetAt={preset.at === "" ? null : preset.at}
+        revision={preset.revision}
         onPatch={(p) => void sheet.patch(p)}
       />
       <div className="grid items-start gap-4 lg:grid-cols-2">
