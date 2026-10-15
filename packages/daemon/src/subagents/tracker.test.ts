@@ -125,3 +125,49 @@ test("a launch that failed for another reason still gets its line, failed", () =
   tracker.closeRun(RUN);
   expect(store.list(RUN)).toEqual([expect.objectContaining({ id: TOOL_USE, state: "failed" })]);
 });
+
+test("a started subagent takes the only pending launch of its type before its meta file", () => {
+  for (const hookFirst of [true, false]) {
+    const { tracker, store, announced, changes } = tracked();
+    if (hookFirst) tracker.onHook(RUN, hook("SubagentStart"));
+    const before = changes.length;
+    tracker.onLaunch(RUN, LAUNCH);
+    if (hookFirst) expect(changes.length).toBeGreaterThan(before);
+    if (!hookFirst) tracker.onHook(RUN, hook("SubagentStart"));
+    expect(store.list(RUN)).toEqual([
+      expect.objectContaining({
+        id: AGENT,
+        toolUseId: TOOL_USE,
+        description: "Porte qualité — correctness",
+        prompt: "Relis le diff",
+      }),
+    ]);
+    expect(announced.map((a) => a.description)).toEqual(["Porte qualité — correctness"]);
+    tracker.onMeta(RUN, META);
+    expect(store.list(RUN)).toHaveLength(1);
+    expect(announced).toHaveLength(1);
+  }
+});
+
+test("two pending launches of the same type wait for the meta file", () => {
+  const { tracker, store, announced } = tracked();
+  tracker.onLaunch(RUN, LAUNCH);
+  tracker.onLaunch(RUN, { ...LAUNCH, toolUseId: "toolu_2", description: "Porte qualité — conventions" });
+  tracker.onHook(RUN, hook("SubagentStart"));
+  expect(store.list(RUN)[0]).toMatchObject({ toolUseId: null, description: "" });
+  expect(announced).toEqual([]);
+  tracker.onMeta(RUN, { ...META, toolUseId: "toolu_2", description: "Porte qualité — conventions" });
+  expect(store.list(RUN)[0]).toMatchObject({
+    toolUseId: "toolu_2",
+    description: "Porte qualité — conventions",
+  });
+});
+
+test("a launch of another type or already answered is never taken", () => {
+  const { tracker, store } = tracked();
+  tracker.onLaunch(RUN, { ...LAUNCH, type: "Explore" });
+  tracker.onLaunch(RUN, { ...LAUNCH, toolUseId: "toolu_2" });
+  tracker.onResult(RUN, "toolu_2", true, "Agent crashed");
+  tracker.onHook(RUN, hook("SubagentStart"));
+  expect(store.list(RUN)[0]).toMatchObject({ toolUseId: null, description: "" });
+});

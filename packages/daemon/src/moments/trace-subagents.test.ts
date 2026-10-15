@@ -153,3 +153,18 @@ test("a subagent that waits without any tool call is described from its start", 
     state: "running",
   });
 });
+
+test("a subagent started before its meta file is described at the end of its SubagentStart", async () => {
+  const t = tracedRun();
+  const toolUseId = t.s.transcript.toolUse("Agent", REVIEW);
+  const start = hook("SubagentStart", { agentId: "a1", tool: "ecc:code-reviewer" });
+  t.tracker.onHook(t.s.run.id, start);
+  await t.s.trace.onHook(t.s.run, start);
+  expect(t.store.list(t.s.run.id)[0]).toMatchObject({
+    toolUseId,
+    description: "Porte qualité — correctness",
+    prompt: "Relis le diff",
+  });
+  const announced = t.s.store.list(t.s.run.id).map((m) => m.data);
+  expect(announced).toContainEqual(expect.objectContaining({ kind: "subagent", subagentId: "a1" }));
+});
