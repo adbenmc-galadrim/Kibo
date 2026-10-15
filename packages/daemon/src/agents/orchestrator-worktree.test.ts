@@ -39,3 +39,27 @@ test("a run whose parent branch was merged and deleted starts from the project b
     cleanupTmp();
   }
 });
+
+test("a ticket whose run failed at launch can be launched again once the cause is fixed", async () => {
+  try {
+    const folder = await repo("main");
+    const h = setup({
+      scenario: "done",
+      profiles: [testAgent({ workspace: "worktree" })],
+      meta: { folder, worktree: WORKTREE_DEFAULTS },
+      externalRefs: { t1: [{ kind: "git_branch", branch: "feat/perimetre", base: "feat/absente" }] },
+    });
+    const first = assign(h, "t1");
+    await waitUntil(() => run(h, first.id).state === "failed");
+    expect(run(h, first.id)).toMatchObject({
+      startedAt: null,
+      error: "GIT_FAILED: base branch feat/absente not found locally",
+    });
+    await git(["branch", "feat/absente"], folder);
+    const second = assign(h, "t1");
+    await waitUntil(() => run(h, second.id).state === "done");
+    expect(second.resumedFrom).toBeNull();
+  } finally {
+    cleanupTmp();
+  }
+});
