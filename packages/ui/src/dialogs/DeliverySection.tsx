@@ -46,7 +46,7 @@ export function DeliverySection({
           size="sm"
           variant="outline"
           className="ml-auto"
-          disabled={disabled || home === null}
+          disabled={disabled || typeof home !== "string"}
           onClick={() => setImporting(true)}
         >
           <Download aria-hidden />
@@ -54,9 +54,9 @@ export function DeliverySection({
         </Button>
       </legend>
       <p className="clear-left text-xs text-muted-foreground">{t.help}</p>
-      {home === null || agents === null ? (
-        <p className="text-xs text-muted-foreground">{t.loading}</p>
-      ) : (
+      {home === null ? (
+        <p className="text-xs text-destructive">{frDeliverySettings.addDirs.noHome}</p>
+      ) : typeof home === "string" && agents !== null ? (
         <DeliveryFields
           value={value}
           home={home}
@@ -65,8 +65,10 @@ export function DeliverySection({
           onChange={onChange}
           onProblem={onProblem}
         />
+      ) : (
+        <p className="text-xs text-muted-foreground">{t.loading}</p>
       )}
-      {importing && home !== null && (
+      {importing && typeof home === "string" && (
         <DeliveryImportDialog
           projectId={projectId}
           home={home}

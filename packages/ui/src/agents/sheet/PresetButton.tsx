@@ -16,8 +16,9 @@ import { frAgentsPage } from "../../i18n/fr-agents-page";
 import { frAgentsSkills } from "../../i18n/fr-agents-skills";
 import { frDeliverySettings } from "../../i18n/fr-delivery-settings";
 import { abbreviateHome } from "../../lib/home-path";
+import type { UserHome } from "../../lib/use-home";
 
-type Props = { agent: Agent; home: string | null; onApplied(agent: Agent): void };
+type Props = { agent: Agent; home: UserHome; onApplied(agent: Agent): void };
 
 const t = frDeliverySettings.preset;
 

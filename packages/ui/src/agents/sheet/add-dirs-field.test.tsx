@@ -34,9 +34,19 @@ test("saved folders are shown under the home folder with a tilde", () => {
   expect((field() as HTMLTextAreaElement).value).toBe("~/.claude/skills");
 });
 
-test("without the home folder the field waits", () => {
-  render(<AddDirsField value={[]} home={null} onChange={() => {}} disabled={false} />);
+test("while the home folder loads the field waits", () => {
+  render(<AddDirsField value={[]} home={undefined} onChange={() => {}} disabled={false} />);
   expect((field() as HTMLTextAreaElement).disabled).toBe(true);
+});
+
+test("without a user home the field refuses with its reason", () => {
+  render(<AddDirsField value={["/Users/adam/x"]} home={null} onChange={() => {}} disabled={false} />);
+  expect((field() as HTMLTextAreaElement).disabled).toBe(true);
+  expect(
+    screen.getByText(
+      "Dossier personnel inconnu de cette session : les dossiers ne se règlent que sur la machine de Kibo.",
+    ),
+  ).toBeTruthy();
 });
 
 test("the root of ~/.claude, a folder outside home and more than 20 folders are refused", () => {

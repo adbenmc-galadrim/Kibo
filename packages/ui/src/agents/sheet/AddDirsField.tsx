@@ -4,10 +4,11 @@ import { Textarea } from "@kibo/sdk/ui/textarea";
 import { useId, useState } from "react";
 import { frDeliverySettings } from "../../i18n/fr-delivery-settings";
 import { expandHome, tildify } from "../../lib/expand-home";
+import type { UserHome } from "../../lib/use-home";
 
 type Props = {
   value: readonly string[];
-  home: string | null;
+  home: UserHome;
   onChange(dirs: string[]): void;
   onProblem?(problem: string | null): void;
   disabled: boolean;
@@ -27,11 +28,11 @@ export function addDirsProblem(lines: readonly string[], home: string): string |
 
 export function AddDirsField({ value, home, onChange, onProblem, disabled }: Props) {
   const id = useId();
-  const [text, setText] = useState(() => value.map((dir) => tildify(dir, home)).join("\n"));
+  const [text, setText] = useState(() => value.map((dir) => tildify(dir, home ?? null)).join("\n"));
   const [problem, setProblem] = useState<string | null>(null);
   const edit = (next: string) => {
     setText(next);
-    if (home === null) return;
+    if (typeof home !== "string") return;
     const lines = next.split("\n");
     const found = addDirsProblem(lines, home);
     setProblem(found);
@@ -44,7 +45,7 @@ export function AddDirsField({ value, home, onChange, onProblem, disabled }: Pro
       <Textarea
         id={id}
         value={text}
-        disabled={disabled || home === null}
+        disabled={disabled || typeof home !== "string"}
         spellCheck={false}
         rows={2}
         placeholder="~/.claude/skills"
@@ -54,7 +55,7 @@ export function AddDirsField({ value, home, onChange, onProblem, disabled }: Pro
         onChange={(e) => edit(e.target.value)}
       />
       <p id={`${id}-help`} className={problem ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
-        {problem ?? t.help}
+        {problem ?? (home === null ? t.noHome : t.help)}
       </p>
     </div>
   );

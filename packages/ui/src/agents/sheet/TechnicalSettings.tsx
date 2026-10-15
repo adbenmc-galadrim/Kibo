@@ -11,6 +11,7 @@ import { fr } from "../../i18n/fr";
 import { frAgentsPage } from "../../i18n/fr-agents-page";
 import { frAgentsSkills } from "../../i18n/fr-agents-skills";
 import { frDeliverySettings } from "../../i18n/fr-delivery-settings";
+import type { UserHome } from "../../lib/use-home";
 import { AllowRulesField } from "../AllowRulesField";
 import { AddDirsField } from "./AddDirsField";
 import { FoldSection } from "./FoldSection";
@@ -22,7 +23,7 @@ type Props = {
   parallelMax: number;
   hostSlots: number;
   failed: boolean;
-  home: string | null;
+  home: UserHome;
   preset?: ReactNode;
   presetAt: string | null;
   revision: number;

@@ -17,6 +17,7 @@ import userEvent from "@testing-library/user-event";
 import { summaryFixture } from "../agents/catalog/fixtures";
 import { configFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { appInfoFixture } from "../lib/app-info-fixture";
 
 const calls: RpcRequest[] = [];
 const IMPORTED: DeliveryImportCandidate = {
@@ -64,7 +65,7 @@ mock.module("../api", () =>
       rpc: async (req: RpcRequest) => {
         if (req.method === "getProject") return snapshot();
         if (req.method === "overlaps.ignored") return [];
-        if (req.method === "getAppInfo") return { home: "/Users/adam" };
+        if (req.method === "getAppInfo") return appInfoFixture("/Users/adam");
         if (req.method === "agents.list")
           return { agents: [summaryFixture({ name: "full-delivery" })], notices: [], partialWatch: false };
         calls.push(req);

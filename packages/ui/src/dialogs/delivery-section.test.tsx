@@ -4,8 +4,10 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { summaryFixture, systemSummaryFixture } from "../agents/catalog/fixtures";
 import { apiMock } from "../api-mock";
+import { appInfoFixture } from "../lib/app-info-fixture";
 
 let agents: AgentSummary[] = [];
+let userHome: string | null = "/Users/adam";
 const AGENTS = [
   summaryFixture({ name: "full-delivery" }),
   summaryFixture({ name: "emis-livraison" }),
@@ -17,7 +19,7 @@ mock.module("../api", () =>
   apiMock({
     client: {
       rpc: async (req: RpcRequest) => {
-        if (req.method === "getAppInfo") return { home: "/Users/adam" };
+        if (req.method === "getAppInfo") return appInfoFixture(userHome);
         if (req.method === "agents.list") return { agents, notices: [], partialWatch: false };
         throw new Error(`unexpected ${req.method}`);
       },
@@ -59,6 +61,22 @@ const field = async (name: string) => (await section()).getByRole("textbox", { n
 
 beforeEach(() => {
   agents = AGENTS;
+  userHome = "/Users/adam";
+});
+
+test("a session without a user home refuses the folders with its reason, never ~/.kibo", async () => {
+  userHome = null;
+  draw();
+  const s = await section();
+  expect(
+    await s.findByText(
+      "Dossier personnel inconnu de cette session : les dossiers ne se règlent que sur la machine de Kibo.",
+    ),
+  ).toBeTruthy();
+  expect(s.queryByRole("textbox", { name: "Dossier de travail du skill" })).toBeNull();
+  expect(s.getByRole("button", { name: "Importer depuis full-delivery" }).hasAttribute("disabled")).toBe(
+    true,
+  );
 });
 
 test("screen 215: the delivery section shows every field of the project's settings", async () => {

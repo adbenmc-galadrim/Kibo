@@ -12,6 +12,7 @@ import {
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../../api-mock";
+import { appInfoFixture } from "../../lib/app-info-fixture";
 import { agentFixture, catalogFixture, SPEC_BODY } from "../catalog/fixtures";
 import { projectsFixture } from "../fixtures";
 import { skillGroups } from "./SkillsField";
@@ -66,7 +67,7 @@ const base = (req: RpcRequest): Promise<unknown> => {
     case "fileVersions.list":
       return Promise.resolve([]);
     case "getAppInfo":
-      return Promise.resolve({ home: "/Users/adam" });
+      return Promise.resolve(appInfoFixture("/Users/adam"));
     case "agents.applyPreset":
       return Promise.resolve({
         ...agent,

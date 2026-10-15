@@ -27,6 +27,8 @@ export const frDeliverySettings = {
     help: "Un chemin par ligne, ~ accepté. Passés à Claude Code par --add-dir ; jamais ~/.kibo, ~/.ssh ni la racine de ~/.claude.",
     unsafe: "Ce dossier contient des secrets ou sort de ton dossier personnel.",
     tooMany: "20 dossiers au plus.",
+    noHome:
+      "Dossier personnel inconnu de cette session : les dossiers ne se règlent que sur la machine de Kibo.",
   },
   section: {
     title: "Livraison",
