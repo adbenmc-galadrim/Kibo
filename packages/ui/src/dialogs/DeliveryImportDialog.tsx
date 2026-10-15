@@ -106,7 +106,7 @@ export function DeliveryImportDialog({ projectId, home, current, onClose, onImpo
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-[640px]">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] grid-cols-[minmax(0,1fr)] overflow-y-auto sm:max-w-[640px]">
         <DialogHeader>
           <DialogTitle>{t.title}</DialogTitle>
           <DialogDescription>{t.description}</DialogDescription>
@@ -133,7 +133,11 @@ export function DeliveryImportDialog({ projectId, home, current, onClose, onImpo
           <p className="text-sm text-muted-foreground">{t.noMatch}</p>
         )}
         {matching.length > 0 && (
-          <RadioGroup value={chosen ?? ""} onValueChange={setChosen} className="grid gap-2">
+          <RadioGroup
+            value={chosen ?? ""}
+            onValueChange={setChosen}
+            className="grid grid-cols-[minmax(0,1fr)] gap-2"
+          >
             {matching.map((c) => (
               <div key={c.name} className="flex items-center gap-2 rounded-md border px-3 py-2">
                 <RadioGroupItem id={`${id}-${c.name}`} value={c.name} />
