@@ -1,5 +1,6 @@
 import { type LineHash, overlapKey } from "@kibo/schema";
 import type { Hasher } from "./normalize";
+import { finish, type Steps, stepCounter } from "./steps";
 import { type LineWindow, windowSizeFor, windowsOf } from "./windows";
 
 export type Block = {
@@ -33,17 +34,20 @@ const runLength = (a: readonly LineHash[], i: number, b: readonly LineHash[], j:
 const charsOf = (lines: readonly LineHash[], start: number, length: number): number =>
   lines.slice(start, start + length).reduce((sum, l) => sum + l.chars, 0);
 
-export function blocksBetween(
+export function* blockSteps(
   a: readonly LineHash[],
   aWindows: readonly LineWindow[],
   b: readonly LineHash[],
   inB: ReadonlyMap<string, readonly number[]>,
   minLines: number,
-): Block[] {
+): Steps<Block[]> {
   const coveredUntil = new Map<number, number>();
   const blocks: Block[] = [];
+  const pause = stepCounter();
   for (const w of aWindows) {
+    if (pause()) yield;
     for (const bStart of inB.get(w.hash) ?? []) {
+      if (pause()) yield;
       const diagonal = w.at - bStart;
       if (w.at < (coveredUntil.get(diagonal) ?? 0)) continue;
       const lines = runLength(a, w.at, b, bStart);
@@ -60,6 +64,16 @@ export function blocksBetween(
     }
   }
   return blocks;
+}
+
+export function blocksBetween(
+  a: readonly LineHash[],
+  aWindows: readonly LineWindow[],
+  b: readonly LineHash[],
+  inB: ReadonlyMap<string, readonly number[]>,
+  minLines: number,
+): Block[] {
+  return finish(blockSteps(a, aWindows, b, inB, minLines));
 }
 
 export function commonBlocks(

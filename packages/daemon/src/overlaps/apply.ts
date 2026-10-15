@@ -1,5 +1,6 @@
 import type { Finding, Reconciliation } from "@kibo/core";
 import { KiboError, type MomentData, type Overlap, type OverlapRole, overlapSummary } from "@kibo/schema";
+import { pacer } from "./cooperate";
 import type { OverlapStore } from "./store";
 
 export type ApplyDeps = {
@@ -45,16 +46,25 @@ function announce(deps: ApplyDeps, o: Overlap, runsOf: RunsOf): void {
   for (const [runId, role] of feeds) deps.moment(runId, momentOf(o, role, deps.runName));
 }
 
-export function applyReconciliation(
+export async function applyReconciliation(
   deps: ApplyDeps,
   projectId: string,
   plan: Reconciliation,
   runsOf: RunsOf,
-): void {
+): Promise<void> {
   const at = deps.now();
-  const made = plan.create.flatMap((f) => created(deps, f, projectId, at) ?? []);
+  const pace = pacer();
+  const made: Overlap[] = [];
+  for (const f of plan.create) {
+    const o = created(deps, f, projectId, at);
+    if (o) made.push(o);
+    await pace();
+  }
   for (const o of made) announce(deps, o, runsOf);
   if (plan.touch.length > 0) deps.store.touch(plan.touch, at);
-  for (const id of plan.resolve) deps.store.event(id, { type: "resolved", role: null, by: null, at });
+  for (const id of plan.resolve) {
+    deps.store.event(id, { type: "resolved", role: null, by: null, at });
+    await pace();
+  }
   if (made.length > 0 || plan.resolve.length > 0) deps.emit();
 }
