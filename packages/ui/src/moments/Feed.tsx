@@ -1,4 +1,4 @@
-import type { AutoLink, FileRef, Overlap, RunMoment, Step } from "@kibo/schema";
+import type { AutoLink, FileRef, Overlap, RunMoment, RunSubagent, Step } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { formatClock } from "../agents/format";
@@ -6,12 +6,14 @@ import type { frMoments } from "../i18n/fr-moments";
 import { ActionsMoment } from "./ActionsMoment";
 import { AutoLinkMoment } from "./AutoLinkMoment";
 import { ExchangeLine, type FeedExtra } from "./ExchangeLine";
+import { feedMoments } from "./feed-moments";
 import type { FileContext } from "./file-context";
 import { MessageMoment } from "./MessageMoment";
 import { OverlapMoment } from "./OverlapMoment";
 import { RawMoment } from "./RawMoment";
 import { ReminderMoment } from "./ReminderMoment";
 import { SignalMoment } from "./SignalMoment";
+import { SubagentMoment } from "./SubagentMoment";
 
 export type FeedProps = {
   moments: RunMoment[];
@@ -32,7 +34,11 @@ export type FeedProps = {
   onCancelAutoLink?(autoLinkId: string): void;
   onOpenTicketKey?(key: string): void;
   now?: number;
+  subagents?: ReadonlyMap<string, RunSubagent>;
+  subagentId?: string;
 };
+
+const NO_SUBAGENTS: ReadonlyMap<string, RunSubagent> = new Map();
 
 const ignore = () => {};
 
@@ -79,6 +85,18 @@ function MomentBody({
       );
     case "reminder":
       return <ReminderMoment reminder={data.reminder} />;
+    case "subagent": {
+      const subagent = overlap.subagents?.get(data.subagentId);
+      return subagent ? (
+        <SubagentMoment
+          subagent={subagent}
+          subagents={overlap.subagents ?? NO_SUBAGENTS}
+          now={overlap.now ?? Date.now()}
+          files={files}
+          onOpenFile={onOpenFile}
+        />
+      ) : null;
+    }
     case "raw":
       return <RawMoment text={data.text} partial={data.partial} />;
     case "signal":
@@ -134,7 +152,11 @@ function MomentMeta({
 
 export function Feed(props: FeedProps) {
   const { moments, showReasoning = false, highlightStep = null, label, extras = [], texts } = props;
-  const shown = moments.filter((m) => showReasoning || m.data.kind !== "reasoning");
+  const shown = feedMoments(moments, {
+    showReasoning,
+    subagentId: props.subagentId ?? null,
+    subagents: props.subagents ?? NO_SUBAGENTS,
+  });
   const entries = entriesOf(shown, extras);
   const list = (
     <ol
@@ -180,6 +202,7 @@ function MomentItem({
     <li
       data-seq={moment.seq}
       data-step={moment.stepId ?? undefined}
+      data-subagent={moment.data.kind === "subagent" ? moment.data.subagentId : undefined}
       data-step-current={current || undefined}
       className={cn("grid gap-1.5 rounded-md scroll-mt-2", current && "bg-accent/40 -mx-2 px-2 py-1")}
     >
