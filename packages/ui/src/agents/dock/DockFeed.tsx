@@ -10,8 +10,10 @@ import { useEffect } from "react";
 import { frMoments } from "../../i18n/fr-moments";
 import { Feed } from "../../moments/Feed";
 import { ReportCard } from "../../moments/ReportCard";
+import { subagentItem } from "../../moments/subagent-item";
 import { useOpenSignal } from "../../moments/use-open-signal";
 import { useRunFileContext } from "../../moments/use-run-file-context";
+import { useRunSubagents } from "../../moments/use-run-subagents";
 import { OverlapFeedLayer } from "../../overlaps/OverlapFeedLayer";
 import { useOpenOverlap } from "../../overlaps/use-open-overlap";
 import { useRunLog } from "../../state/use-run-log";
@@ -30,6 +32,7 @@ type Props = {
   steps: Step[];
   report: RunReport | null;
   highlightStep: string | null;
+  focusSubagent?: string | null;
   onOpenFile(ref: FileRef): void;
 };
 
@@ -43,12 +46,14 @@ export function DockFeed({
   steps,
   report,
   highlightStep,
+  focusSubagent = null,
   onOpenFile,
 }: Props) {
   const files = useRunFileContext(run);
   const openSignal = useOpenSignal(run.projectId);
   const { log } = useRunLog(run.id);
   const overlap = useOpenOverlap(run, moments);
+  const subagents = useRunSubagents(run.id, moments);
   const extras = exchangeOf(log, runs);
   const { ref, onScroll, release } = useFollowBottom<HTMLDivElement>(moments.length + extras.length);
   useEffect(() => {
@@ -59,6 +64,14 @@ export function DockFeed({
     release();
     first.scrollIntoView({ block: "start" });
   }, [highlightStep, ref, release]);
+  const focused = focusSubagent !== null && subagents.byId.has(focusSubagent);
+  useEffect(() => {
+    if (!focused || focusSubagent === null) return;
+    const item = subagentItem(ref.current, focusSubagent);
+    if (!item) return;
+    release();
+    item.scrollIntoView({ block: "start" });
+  }, [focused, focusSubagent, ref, release]);
   return (
     <RunDetail run={run} resumable={resumable} questions={questions} now={now}>
       <div
@@ -75,6 +88,7 @@ export function DockFeed({
           onOpenFile={onOpenFile}
           onOpenSignal={openSignal}
           {...overlap.feed}
+          subagents={subagents.byId}
           label={run.label}
           texts={frMoments}
         />

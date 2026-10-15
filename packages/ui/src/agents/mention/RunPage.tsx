@@ -7,6 +7,7 @@ import { fr } from "../../i18n/fr";
 import { frMoments } from "../../i18n/fr-moments";
 import { usePref } from "../../lib/local-pref";
 import { RunSkillReviews } from "../../moments/SkillReviewsBlock";
+import { subagentItem } from "../../moments/subagent-item";
 import { ParallelWorkSection } from "../../overlaps/ParallelWorkSection";
 import { useHost } from "../../shell/Host";
 import { DockPlan } from "../dock/DockPlan";
@@ -17,6 +18,7 @@ import { ProfileRuns } from "./ProfileRuns";
 import { RunFeed } from "./RunFeed";
 import { RunHeading } from "./RunHeading";
 import { RunReportSection } from "./RunReportSection";
+import { SubagentsSection } from "./SubagentsSection";
 import { useRunView } from "./use-run-view";
 
 export const REASONING_PREF = "kibo.run.reasoning";
@@ -51,15 +53,18 @@ export function RunPage({ runId }: { runId: string }) {
   const reply = useRef<HTMLDivElement>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
   const [reasoning] = usePref(REASONING_PREF, "0");
-  const { agents, run, moments, shown, report, loading, failed } = useRunView(runId);
+  const { agents, run, moments, shown, report, loading, failed, subagents } = useRunView(runId);
   const follow = useFollowBottom<HTMLElement>(loading ? 0 : moments.length);
   if (!agents) return null;
   if (!run) return <p className="p-8 text-sm text-muted-foreground">{t.missing}</p>;
   const focusReply = () => reply.current?.querySelector("input")?.focus();
+  const seeSubagent = (id: string) =>
+    subagentItem(follow.ref.current, id)?.scrollIntoView({ block: "start" });
   return (
     <div className="grid content-start gap-5 p-6 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
       <RunHeading
         run={run}
+        subagents={subagents.list}
         onOpenTicket={(projectId, ticketId) => host.openTarget({ kind: "ticket", projectId, ticketId })}
       >
         <div className="flex shrink-0 items-center gap-2">
@@ -91,6 +96,7 @@ export function RunPage({ runId }: { runId: string }) {
               highlightStep={highlight}
               loading={loading}
               failed={failed}
+              subagents={subagents.byId}
             />
           </ScrollPane>
           <div ref={reply} className="grid shrink-0 gap-3">
@@ -105,6 +111,11 @@ export function RunPage({ runId }: { runId: string }) {
           {run.kind === "ticket" && (
             <div className={CARD}>
               <ParallelWorkSection runId={run.id} />
+            </div>
+          )}
+          {(subagents.list.length > 0 || subagents.failed) && (
+            <div className={CARD}>
+              <SubagentsSection subagents={subagents.list} failed={subagents.failed} onSee={seeSubagent} />
             </div>
           )}
           {shown && (

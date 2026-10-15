@@ -40,6 +40,7 @@ export function AgentPanel({ onLaunch, focusRunId, onFocused, onOpenFile }: Prop
   const online = useDaemonOnline();
   const [expanded, setExpanded] = useDockOpen();
   const [picked, setPicked] = useState<string | null>(null);
+  const [focused, setFocused] = useState<string | null>(null);
   useEffect(() => {
     if (!focusRunId) return;
     setPicked(focusRunId);
@@ -47,8 +48,9 @@ export function AgentPanel({ onLaunch, focusRunId, onFocused, onOpenFile }: Prop
     onFocused();
   }, [focusRunId, onFocused, setExpanded]);
   if (!state) return null;
-  const open = (runId: string) => {
+  const open = (runId: string, subagentId: string | null = null) => {
     setPicked(runId);
+    setFocused(subagentId);
     setExpanded(true);
   };
   return (
@@ -60,6 +62,8 @@ export function AgentPanel({ onLaunch, focusRunId, onFocused, onOpenFile }: Prop
           online={online}
           selected={pickRun(state, picked)}
           onSelect={setPicked}
+          focusSubagent={focused}
+          onSubagent={open}
           onCollapse={() => setExpanded(false)}
           onLaunch={onLaunch}
           onOpenFile={onOpenFile}
@@ -73,6 +77,7 @@ export function AgentPanel({ onLaunch, focusRunId, onFocused, onOpenFile }: Prop
           expanded={false}
           onToggle={() => setExpanded(true)}
           onSelect={open}
+          onSubagent={open}
         />
       )}
     </section>

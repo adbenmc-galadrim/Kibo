@@ -1,4 +1,11 @@
-import { type AgentsState, type FileRef, type RunView, reportOfRun, runDeliverySteps } from "@kibo/schema";
+import {
+  type AgentsState,
+  type FileRef,
+  type RunView,
+  reportOfRun,
+  runDeliverySteps,
+  runSubagents,
+} from "@kibo/schema";
 import { useState } from "react";
 import { frMoments } from "../../i18n/fr-moments";
 import { useRunMoments } from "../../moments/use-run-moments";
@@ -17,6 +24,8 @@ export type AgentDockProps = {
   online: boolean;
   selected: RunView | null;
   onSelect(runId: string): void;
+  focusSubagent?: string | null;
+  onSubagent?(runId: string, subagentId: string): void;
   onCollapse(): void;
   onLaunch(): void;
   onOpenFile(ref: FileRef): void;
@@ -33,6 +42,8 @@ export function AgentDock({
   online,
   selected,
   onSelect,
+  focusSubagent = null,
+  onSubagent,
   onCollapse,
   onLaunch,
   onOpenFile,
@@ -65,9 +76,11 @@ export function AgentDock({
             progress={state.progress}
             delivery={runDeliverySteps(state)}
             questions={state.questions}
+            subagents={runSubagents(state)}
             now={now}
             selected={selected?.id ?? null}
             onSelect={onSelect}
+            onSubagent={onSubagent}
           />
         </section>
         <section aria-label={t.feed} className="flex min-h-0 flex-col overflow-hidden p-3">
@@ -83,6 +96,7 @@ export function AgentDock({
               steps={shown?.plan ?? []}
               report={progress ? reportOfRun(progress, selected.id) : null}
               highlightStep={current}
+              focusSubagent={focusSubagent}
               onOpenFile={onOpenFile}
             />
           ) : (

@@ -170,6 +170,37 @@ test("sub-agents run in their parent's slot and the waiting column offers an ans
   expect(onAnswer).toHaveBeenCalledWith("r41");
 });
 
+test("screen 218: the sub-agent lines read the tracked sub-agents, with their description", () => {
+  const state = {
+    ...agentsFixture(),
+    subagents: [
+      {
+        runId: "r42",
+        id: "a-review",
+        type: "ecc:code-reviewer",
+        description: "Porte qualité — correctness",
+        state: "running" as const,
+        startedAt: NOW - 2 * 60_000,
+      },
+    ],
+  };
+  render(
+    <QueueBoard
+      state={state}
+      agents={agentsSummaryFixture}
+      projects={projectsFixture}
+      now={NOW}
+      onAnswer={() => {}}
+    />,
+  );
+  const reviewer = within(screen.getByRole("region", { name: "ecc:code-reviewer" }));
+  expect(reviewer.getByText("Dans la place de opus-dev-1")).toBeTruthy();
+  expect(reviewer.getByText("Porte qualité — correctness")).toBeTruthy();
+  expect(reviewer.getByText("2m")).toBeTruthy();
+  const haiku = within(screen.getByRole("region", { name: "haiku-tests · Global" }));
+  expect(haiku.queryByText("Dans la place de opus-dev-1")).toBeNull();
+});
+
 test("the item menu moves, prioritizes and removes queued runs after a confirmation", async () => {
   show();
   const user = userEvent.setup();

@@ -1,6 +1,5 @@
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import {
-  type ActiveSubagent,
   type AgentSummary,
   type AgentsState,
   keyBesideLabel,
@@ -30,7 +29,14 @@ import { effectiveProject, projectRuns } from "./project-filter";
 import { useAgentsProject } from "./project-pref";
 import { QueueCapacity } from "./QueueCapacity";
 import { QueueItem } from "./QueueItem";
-import { byStart, holdsSlot, orderAgents, queueNeighbours } from "./queue-runs";
+import {
+  byStart,
+  holdsSlot,
+  orderAgents,
+  queueNeighbours,
+  type SubagentSlot,
+  subagentsByType,
+} from "./queue-runs";
 import { SlotMeter } from "./SlotMeter";
 
 type Props = {
@@ -120,11 +126,7 @@ export function QueueBoard({ state, agents, projects, now, onAnswer }: BoardProp
     const run = byId.get(entry.runId);
     return run ? [{ run, entry }] : [];
   });
-  const subagents = new Map<string, { parent: RunView; sub: ActiveSubagent }[]>();
-  for (const parent of runs.filter(holdsSlot).sort(byStart)) {
-    for (const sub of parent.subagents)
-      subagents.set(sub.type, [...(subagents.get(sub.type) ?? []), { parent, sub }]);
-  }
+  const subagents = subagentsByType(state, runs);
   const agentNames = new Set(agents.map((p) => p.name));
   const waiting = runs.filter((r) => r.state === "waiting_input");
   const onDragEnd = (e: DragEndEvent) => {
@@ -269,14 +271,14 @@ export function QueueBoard({ state, agents, projects, now, onAnswer }: BoardProp
   );
 }
 
-function SubagentSlots({ items, now }: { items: { parent: RunView; sub: ActiveSubagent }[]; now: number }) {
+function SubagentSlots({ items, now }: { items: SubagentSlot[]; now: number }) {
   return (
     <>
       {items.map(({ parent, sub }) => (
         <div key={sub.id} className="grid gap-1.5">
           <Label>{q.inSlotOf(parent.label)}</Label>
           <ul>
-            <RunLine run={parent} now={now} since={sub.since} />
+            <RunLine run={parent} text={sub.description || undefined} now={now} since={sub.startedAt} />
           </ul>
         </div>
       ))}

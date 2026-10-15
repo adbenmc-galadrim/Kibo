@@ -4,6 +4,7 @@ import {
   type RunDeliveryStep,
   type RunProgressSummary,
   type RunQuestions,
+  type RunSubagentSummary,
   type RunView,
   runSubject,
 } from "@kibo/schema";
@@ -16,25 +17,28 @@ import { stepChip } from "../bar-summary";
 import { elapsed, formatDuration } from "../format";
 import { runStateText } from "../run-state-text";
 import type { DockGroups } from "./dock-runs";
+import { activeByRun, SubagentLines } from "./SubagentLines";
 
 type Props = {
   groups: DockGroups;
   progress: readonly RunProgressSummary[];
   delivery: readonly RunDeliveryStep[];
   questions: readonly RunQuestions[];
+  subagents?: readonly RunSubagentSummary[];
   now: number;
   selected: string | null;
   onSelect(runId: string): void;
+  onSubagent?(runId: string, subagentId: string): void;
 };
 
 type Row = { run: RunView; ticket: string | null; aside: string; line: ReactNode };
 
-function Group({
-  title,
-  rows,
-  selected,
-  onSelect,
-}: { title: string; rows: Row[] } & Pick<Props, "selected" | "onSelect">) {
+type GroupProps = { title: string; rows: Row[]; lines?: ReadonlyMap<string, RunSubagentSummary[]> } & Pick<
+  Props,
+  "now" | "selected" | "onSelect" | "onSubagent"
+>;
+
+function Group({ title, rows, lines, now, selected, onSelect, onSubagent }: GroupProps) {
   if (rows.length === 0) return null;
   return (
     <div className="grid gap-1">
@@ -59,6 +63,12 @@ function Group({
               <span className="font-mono text-muted-foreground">{aside}</span>
               <span className="col-span-2 col-start-2 min-w-0 truncate text-muted-foreground">{line}</span>
             </button>
+            <SubagentLines
+              subagents={lines?.get(run.id) ?? []}
+              now={now}
+              className="pb-1 pl-6 text-[11px]"
+              onOpen={(id) => (onSubagent ? onSubagent(run.id, id) : onSelect(run.id))}
+            />
           </li>
         ))}
       </ul>
@@ -101,7 +111,18 @@ function stepLine(summary: RunProgressSummary | undefined, delivery: RunDelivery
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
-export function DockRuns({ groups, progress, delivery, questions, now, selected, onSelect }: Props) {
+export function DockRuns(props: Props) {
+  const {
+    groups,
+    progress,
+    delivery,
+    questions,
+    subagents = [],
+    now,
+    selected,
+    onSelect,
+    onSubagent,
+  } = props;
   const t = frMoments.dock;
   const byRun = new Map(progress.map((p) => [p.runId, p]));
   const stepOf = new Map(delivery.map((d) => [d.runId, d]));
@@ -136,9 +157,29 @@ export function DockRuns({ groups, progress, delivery, questions, now, selected,
   return (
     <div className="grid content-start gap-3">
       {empty && <p className="p-2 text-xs text-muted-foreground">{t.empty}</p>}
-      <Group title={t.active(active.length)} rows={active} selected={selected} onSelect={onSelect} />
-      <Group title={t.queued(queued.length)} rows={queued} selected={selected} onSelect={onSelect} />
-      <Group title={t.recent(recent.length)} rows={recent} selected={selected} onSelect={onSelect} />
+      <Group
+        title={t.active(active.length)}
+        rows={active}
+        lines={activeByRun(subagents)}
+        now={now}
+        selected={selected}
+        onSelect={onSelect}
+        onSubagent={onSubagent}
+      />
+      <Group
+        title={t.queued(queued.length)}
+        rows={queued}
+        now={now}
+        selected={selected}
+        onSelect={onSelect}
+      />
+      <Group
+        title={t.recent(recent.length)}
+        rows={recent}
+        now={now}
+        selected={selected}
+        onSelect={onSelect}
+      />
     </div>
   );
 }

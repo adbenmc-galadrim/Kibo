@@ -1,4 +1,4 @@
-import type { RunMoment, RunView, Step } from "@kibo/schema";
+import type { RunMoment, RunSubagent, RunView, Step } from "@kibo/schema";
 import { useEffect, useRef } from "react";
 import { frMoments } from "../../i18n/fr-moments";
 import { Feed } from "../../moments/Feed";
@@ -19,6 +19,7 @@ type Props = {
   highlightStep?: string | null;
   loading?: boolean;
   failed?: boolean;
+  subagents?: ReadonlyMap<string, RunSubagent>;
 };
 
 export function RunFeed(props: Props) {
@@ -32,7 +33,8 @@ export function RunFeed(props: Props) {
   return <LoadedFeed {...props} />;
 }
 
-function LoadedFeed({ run, runs, moments, steps, showReasoning = false, highlightStep = null }: Props) {
+function LoadedFeed(props: Props) {
+  const { run, runs, moments, steps, showReasoning = false, highlightStep = null, subagents } = props;
   const host = useHost();
   const files = useRunFileContext(run);
   const openSignal = useOpenSignal(run.projectId);
@@ -56,6 +58,7 @@ function LoadedFeed({ run, runs, moments, steps, showReasoning = false, highligh
         onOpenFile={host.openFile}
         onOpenSignal={openSignal}
         {...overlap.feed}
+        subagents={subagents}
         label={run.label}
         texts={frMoments}
       />

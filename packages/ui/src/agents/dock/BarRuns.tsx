@@ -1,4 +1,4 @@
-import { type AgentsState, runDeliverySteps, runSubject } from "@kibo/schema";
+import { type AgentsState, runDeliverySteps, runSubagents, runSubject } from "@kibo/schema";
 import { RunDot } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { useRef } from "react";
@@ -6,15 +6,17 @@ import { fr } from "../../i18n/fr";
 import { stepChip } from "../bar-summary";
 import { elapsed, formatDuration } from "../format";
 import { useWrappedCount } from "../use-wrapped-count";
+import { activeByRun, SubagentLines } from "./SubagentLines";
 
 export type BarRunsProps = {
   state: AgentsState;
   now: number;
   onSelect(runId: string): void;
+  onSubagent?(runId: string, subagentId: string): void;
   onMore(): void;
 };
 
-export function BarRuns({ state, now, onSelect, onMore }: BarRunsProps) {
+export function BarRuns({ state, now, onSelect, onSubagent, onMore }: BarRunsProps) {
   const running = state.runs
     .filter((r) => r.state === "running" || r.state === "starting")
     .sort((a, b) => (a.startedAt ?? 0) - (b.startedAt ?? 0));
@@ -24,21 +26,27 @@ export function BarRuns({ state, now, onSelect, onMore }: BarRunsProps) {
   const listRef = useRef<HTMLUListElement>(null);
   const hidden = useWrappedCount(listRef, running.map((r) => r.id).join(" "));
   const visible = running.length - hidden;
+  const subagents = activeByRun(runSubagents(state));
+  const lines = Math.max(0, ...running.map((r) => subagents.get(r.id)?.length ?? 0));
   return (
     <>
-      <ul ref={listRef} className="flex h-4 min-w-0 flex-wrap items-center gap-x-4 overflow-hidden">
+      <ul
+        ref={listRef}
+        style={{ height: `${1 + lines}rem` }}
+        className="flex min-w-0 flex-wrap items-start gap-x-4 gap-y-[100vh] overflow-hidden"
+      >
         {running.map((r, index) => (
           <li
             key={r.id}
             data-run={r.id}
             aria-hidden={index >= visible || undefined}
-            className="flex h-4 shrink-0 items-center"
+            className="grid shrink-0"
           >
             <button
               type="button"
               tabIndex={index >= visible ? -1 : undefined}
               onClick={() => onSelect(r.id)}
-              className="flex items-center gap-1.5 whitespace-nowrap"
+              className="flex h-4 items-center gap-1.5 whitespace-nowrap"
             >
               <RunDot state={r.state} />
               <span className="font-mono underline underline-offset-2">{r.label}</span>
@@ -49,6 +57,13 @@ export function BarRuns({ state, now, onSelect, onMore }: BarRunsProps) {
                 )}
               </span>
             </button>
+            <SubagentLines
+              subagents={subagents.get(r.id) ?? []}
+              now={now}
+              tabIndex={index >= visible ? -1 : undefined}
+              className="pl-3"
+              onOpen={(id) => (onSubagent ? onSubagent(r.id, id) : onSelect(r.id))}
+            />
           </li>
         ))}
       </ul>
