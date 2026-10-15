@@ -110,8 +110,8 @@ async function assertWorktreeOf(path: string, root: string, git: GitRunner): Pro
 }
 
 async function branchAt(path: string, git: GitRunner): Promise<string> {
-  const res = await git(["rev-parse", "--abbrev-ref", "HEAD"], path);
-  return res.code === 0 ? res.stdout.trim() : "";
+  const res = await git(["symbolic-ref", "--quiet", "HEAD"], path);
+  return res.code === 0 ? res.stdout.trim().replace(/^refs\/heads\//, "") : "";
 }
 
 async function ensureBranch(input: WorktreeInput, branch: string, base: string): Promise<void> {
@@ -191,6 +191,20 @@ function realLocation(path: string): string {
   return join(realpathSync(at), ...rest);
 }
 
+async function forgetMissingWorktree(root: string, path: string, git: GitRunner): Promise<void> {
+  const res = await git(["worktree", "list", "--porcelain"], root);
+  if (res.code !== 0) throw gitFailed(`git worktree list failed: ${res.stderr.trim()}`);
+  const target = realLocation(path);
+  const listed = res.stdout
+    .split("\n")
+    .filter((line) => line.startsWith("worktree "))
+    .map((line) => line.slice("worktree ".length))
+    .find((entry) => !existsSync(entry) && realLocation(entry) === target);
+  if (listed === undefined) return;
+  const removed = await git(["worktree", "remove", "--force", "--", listed], root);
+  if (removed.code !== 0) throw gitFailed(`git worktree remove ${listed} failed: ${removed.stderr.trim()}`);
+}
+
 function assertInsideRepo(root: string, path: string): void {
   const realRoot = realpathSync(root);
   const real = realLocation(path);
@@ -241,6 +255,7 @@ export async function prepareWorktree(input: WorktreeInput): Promise<PlacedWorks
     return { cwd: vars.path, label };
   }
   await ensureBranch(input, branch, base);
+  await forgetMissingWorktree(input.root, vars.path, input.git);
   await addWorktree(input, vars);
   try {
     await assertWorktreeOf(vars.path, input.root, input.git);
