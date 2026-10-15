@@ -18,6 +18,7 @@ import { fr } from "./fr";
 type Props = {
   prefixes: readonly string[];
   groupBy: string | null;
+  framed: boolean;
   disabled: boolean;
   onGroupBy(prefix: string | null): void;
   onExpandAll(): void;
@@ -26,8 +27,10 @@ type Props = {
 
 const NONE = "";
 
-export function ViewMenu({ prefixes, groupBy, disabled, onGroupBy, onExpandAll, onCollapseAll }: Props) {
+export function ViewMenu(props: Props) {
+  const { prefixes, groupBy, framed, disabled, onGroupBy, onExpandAll, onCollapseAll } = props;
   const grouped = groupBy !== null && !disabled;
+  const foldable = framed && !disabled;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -49,7 +52,7 @@ export function ViewMenu({ prefixes, groupBy, disabled, onGroupBy, onExpandAll, 
               value={groupBy ?? NONE}
               onValueChange={(v) => onGroupBy(v === NONE ? null : v)}
             >
-              <DropdownMenuRadioItem value={NONE}>{fr.groupNone}</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value={NONE}>{fr.groupEnsembles}</DropdownMenuRadioItem>
               {prefixes.map((p) => (
                 <DropdownMenuRadioItem key={p} value={p}>
                   {fr.groupPrefix(p)}
@@ -59,10 +62,10 @@ export function ViewMenu({ prefixes, groupBy, disabled, onGroupBy, onExpandAll, 
           </DropdownMenuSubContent>
         </DropdownMenuSub>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled={!grouped} onSelect={onExpandAll}>
+        <DropdownMenuItem disabled={!foldable} onSelect={onExpandAll}>
           {fr.expandAll}
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={!grouped} onSelect={onCollapseAll}>
+        <DropdownMenuItem disabled={!foldable} onSelect={onCollapseAll}>
           {fr.collapseAll}
         </DropdownMenuItem>
       </DropdownMenuContent>

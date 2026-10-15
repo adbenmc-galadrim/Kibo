@@ -1,9 +1,11 @@
 import type { GraphEdge } from "./critical-path";
+import type { EnsembleIndex } from "./ensembles";
 import { fr } from "./fr";
 import type { WaveTicket } from "./waves";
 
-export type GroupSpec = { prefix: string; collapsed: ReadonlySet<string> };
+export type GroupSpec = { prefix: string; collapsed: ReadonlySet<string>; ensembles?: EnsembleIndex };
 type Labelled = { labels: readonly string[] };
+type Member = Labelled & { id: string };
 
 const SEPARATOR = ":";
 const GROUP_ID_PREFIX = "group";
@@ -15,13 +17,25 @@ const splitLabel = (label: string): [string, string] | null => {
   return [label.slice(0, at), label.slice(at + 1)];
 };
 
-const groupValue = (t: Labelled, prefix: string): string | null => {
+const labelValue = (t: Labelled, prefix: string): string | null => {
   for (const label of t.labels) {
     const parts = splitLabel(label);
     if (parts && parts[0] === prefix) return parts[1];
   }
   return null;
 };
+
+const groupValue = (t: Member, spec: GroupSpec): string | null =>
+  spec.ensembles ? (spec.ensembles.groupOf.get(t.id) ?? null) : labelValue(t, spec.prefix);
+
+export const frameName = (spec: GroupSpec, value: string): string =>
+  spec.ensembles?.info.get(value)?.name ?? value;
+
+export const frameLabel = (spec: GroupSpec, value: string, count: number): string =>
+  spec.ensembles?.info.get(value)?.label ?? fr.groupLabel(value, count);
+
+const nodeLabel = (spec: GroupSpec, value: string, count: number): string =>
+  spec.ensembles?.info.get(value)?.compact ?? fr.groupLabel(value, count);
 
 export const isGroupNode = (id: string): boolean => id.startsWith(`${GROUP_ID_PREFIX}${SEPARATOR}`);
 
@@ -33,13 +47,13 @@ export function labelPrefixes(tickets: readonly Labelled[]): string[] {
 }
 
 export function groupTickets(
-  tickets: readonly (Labelled & { id: string })[],
+  tickets: readonly Member[],
   spec: GroupSpec,
 ): { groups: Map<string, string[]>; ungrouped: string[] } {
   const found = new Map<string, string[]>();
   const ungrouped: string[] = [];
   for (const t of tickets) {
-    const value = groupValue(t, spec.prefix);
+    const value = groupValue(t, spec);
     if (value === null) ungrouped.push(t.id);
     else found.set(value, [...(found.get(value) ?? []), t.id]);
   }
@@ -88,7 +102,7 @@ export function collapseGroups(
     const members = ids.flatMap((m) => byId.get(m) ?? []);
     for (const m of ids) nodeOf.set(m, id);
     nodes.set(id, groupNode(id, members));
-    nodeLabels.set(id, fr.groupLabel(value, members.length));
+    nodeLabels.set(id, nodeLabel(spec, value, members.length));
   }
   if (nodeOf.size === 0) return { tickets: [...tickets], edges: [...edges], nodeLabels };
   const placed = new Set<string>();

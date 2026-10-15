@@ -143,7 +143,7 @@ describe("kibo tickets against a real daemon", () => {
       kiboStatus: "todo",
       column: "À faire",
       blockedReason: null,
-      parent: { key: "EMIS-1", planId: "C1", status: "todo" },
+      parent: { key: "EMIS-1", planId: "C1", status: "wip" },
       children: [],
       deps: [{ key: "EMIS-2", planId: "C1-1", status: "done" }],
       pr: null,
@@ -152,6 +152,7 @@ describe("kibo tickets against a real daemon", () => {
     });
     expect(await t.json("list", "--project", "Emis", "--ready")).toMatchObject([{ planId: "C1-2" }]);
     expect(await t.json("list", "--project", projectId, "--status", "wip,done")).toMatchObject([
+      { planId: "C1" },
       { planId: "C1-1" },
       { planId: "C1-3" },
     ]);

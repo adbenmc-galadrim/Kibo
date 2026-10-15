@@ -43,7 +43,11 @@ test("a collapsed group becomes one node that carries its members' links", () =>
   const framed = layoutFramed(tickets, edges, spec(["c2"]));
   const ids = framed.layout.nodes.map((n) => n.id).sort();
   expect(ids).toEqual(["K-1", "K-4", "group:chapitre:c2"]);
-  expect(framed.groupNodes.get("group:chapitre:c2")).toEqual({ value: "c2", label: "c2 · 2 tickets" });
+  expect(framed.groupNodes.get("group:chapitre:c2")).toEqual({
+    value: "c2",
+    name: "c2",
+    label: "c2 · 2 tickets",
+  });
   expect(framed.edges).toEqual([blocks("K-1", "group:chapitre:c2"), blocks("group:chapitre:c2", "K-4")]);
   expect(framed.frames.map((f) => f.value)).toEqual(["c1"]);
   expect(framed.rows.has("group:chapitre:c2")).toBe(false);

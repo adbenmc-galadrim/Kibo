@@ -287,6 +287,8 @@ const allDaemons = [
     scenario: "delivery-routes",
     delivery: true,
   },
+  { name: "ensembles-dark", scheme: "dark", port: 4475, spec: /ensembles\.spec\.ts/, scenario: "question" },
+  { name: "ensembles-light", scheme: "light", port: 4476, spec: /ensembles\.spec\.ts/, scenario: "question" },
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 

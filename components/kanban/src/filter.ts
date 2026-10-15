@@ -1,4 +1,4 @@
-import { LabelName, type TicketView } from "@kibo/schema";
+import { isGroup, LabelName, type TicketView } from "@kibo/schema";
 
 export type KanbanFilter = "mine-and-agents" | "all";
 
@@ -19,7 +19,7 @@ export function filterTickets(
   startable = false,
 ): TicketView[] {
   const byLabel = tickets.filter(
-    (t) => (label === null || t.labels.includes(label)) && (!startable || t.startable),
+    (t) => !isGroup(t) && (label === null || t.labels.includes(label)) && (!startable || t.startable),
   );
   if (filter === "all") return byLabel;
   return byLabel.filter(

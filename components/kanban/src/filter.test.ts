@@ -9,6 +9,7 @@ const t = (
   assignee: TicketView["assignee"],
   labels: string[] = [],
   startable = false,
+  children = 0,
 ): TicketView => ({
   id: key,
   key,
@@ -23,7 +24,7 @@ const t = (
   parentId: null,
   labels,
   externalRefs: [],
-  progress: { done: 0, total: 0 },
+  progress: { done: 0, total: children },
   waitingOn: [],
   openQuestions: 0,
   startable,
@@ -97,4 +98,14 @@ test("a label filter only ever narrows the board", () => {
       return kept.every((x) => x.labels.includes(chosen)) && kept.length <= all.length;
     }),
   );
+});
+
+test("a group of tickets never gets a card, whatever the filter", () => {
+  const all = [
+    t("KIB-1", null, [], false, 2),
+    t("KIB-2", null),
+    t("KIB-3", { kind: "agent", ref: "opus" }, [], false, 1),
+  ];
+  expect(filterTickets(all, "all", "adam").map((x) => x.key)).toEqual(["KIB-2"]);
+  expect(filterTickets(all, "mine-and-agents", "adam")).toEqual([]);
 });

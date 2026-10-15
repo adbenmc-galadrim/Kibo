@@ -14,11 +14,12 @@ export function DeliverButton({ project, ticket }: Props) {
   const agents = useAgentsState();
   const flow = useDeliver(project.meta.id, ticket);
   const agentKnown = useDeliveryAgentKnown(project.meta.id);
+  const parent = hasChildren(project, ticket.id);
   const entry = deliverEntry({
     ticket,
     editable: canEdit(project),
     agentKnown,
-    parent: hasChildren(project, ticket.id),
+    parent,
     run: activeRunOf(agents?.runs, ticket.id),
   });
   if (!entry) return null;
@@ -32,7 +33,7 @@ export function DeliverButton({ project, ticket }: Props) {
         onClick={() => void flow.deliver()}
       >
         <Truck />
-        {frDelivery.deliver}
+        {parent ? frDelivery.deliverChildren : frDelivery.deliver}
       </Button>
       {entry.disabledReason && (
         <span className="self-center text-xs text-muted-foreground">{entry.disabledReason}</span>

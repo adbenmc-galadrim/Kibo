@@ -6,7 +6,7 @@ import { fr } from "./fr";
 import { FocusBar, Legend, ZoomControls } from "./GraphControls";
 import { GraphEdges } from "./GraphEdges";
 import { GraphNode, NodeMention, type NodeVariant, OpenButton } from "./GraphNode";
-import { GroupFrame, GroupNode } from "./GroupFrame";
+import { EnsembleBlock, GroupFrame, GroupNode } from "./GroupFrame";
 import { type GraphModel, SEMANTIC_ZOOM, WAVE_HEADER_H } from "./graph-model";
 import { ROW_H } from "./group-layout";
 import { GAP_X, NODE_H, NODE_W } from "./layout";
@@ -87,6 +87,20 @@ function Nodes({ tickets, model, critical, runs, onOpen, sel, zoom, onToggleFram
         />
       );
     }
+    const block = model.blocks.get(n.id);
+    if (block !== undefined) {
+      return (
+        <EnsembleBlock
+          key={n.id}
+          id={n.id}
+          label={block}
+          at={n}
+          focus={sel.focusOf(n.id)}
+          onOpen={onOpen}
+          onHover={sel.hover}
+        />
+      );
+    }
     const t = byId.get(n.id);
     if (!t) return null;
     const run = liveRun(runs.get(t.id) ?? null);
@@ -154,6 +168,9 @@ export function GraphCanvas(props: Props) {
   const vp = useGraphViewport(section, layout);
   const { view } = vp;
   const sel = useGraphSelection({ layout, edges: model.edges, view, onOpen });
+  const anchorHeight = new Map(model.anchors.map((a) => [a.id, a.height]));
+  const linked = { ...layout, nodes: [...layout.nodes, ...model.anchors] };
+  const heightOf = (id: string) => anchorHeight.get(id) ?? (model.rows.has(id) ? ROW_H : NODE_H);
 
   return (
     <section
@@ -198,16 +215,16 @@ export function GraphCanvas(props: Props) {
         )}
         <Headers model={model} zoom={view.zoom} />
         {model.frames.map((f) => (
-          <GroupFrame key={f.id} frame={f} onToggle={onToggleFrame} />
+          <GroupFrame key={f.id} frame={f} onToggle={onToggleFrame} onOpen={onOpen} />
         ))}
         <GraphEdges
           edges={model.edges}
           implied={model.implied}
           hovered={sel.hovered}
-          layout={layout}
+          layout={linked}
           critical={critical}
           focus={sel.focus}
-          heightOf={(id) => (model.rows.has(id) ? ROW_H : NODE_H)}
+          heightOf={heightOf}
         />
         <Nodes
           tickets={tickets}

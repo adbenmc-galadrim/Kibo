@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import type { ProjectCommand, ProjectSnapshot, Ticket, TicketRun } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
-import { seedDemo } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -11,12 +10,13 @@ import { Component, manifest } from "./index";
 import { COLUMNS, WIDE_CELL, WIDE_TEXT } from "./TicketRow";
 
 const seed = (run: (cmd: ProjectCommand) => unknown) => {
-  const parent = run({
+  const parent = run({ method: "createTicket", title: "Arbre des pages" }) as Ticket;
+  const child = run({
     method: "createTicket",
-    title: "Arbre des pages",
+    title: "Déplacement",
+    parentId: parent.id,
     assignee: { kind: "human", ref: "adam" },
   }) as Ticket;
-  const child = run({ method: "createTicket", title: "Déplacement", parentId: parent.id }) as Ticket;
   run({ method: "setStatus", ticketId: child.id, statusId: "done" });
   const other = run({
     method: "createTicket",
@@ -38,28 +38,28 @@ const runs = (s: ProjectSnapshot): TicketRun[] => [
 
 runConformance({ manifest, Component }, seed, { runs });
 
-test("shows keys, progress, blocked reason and opens a ticket", async () => {
+test("shows keys, group chip, blocked reason and opens a ticket", async () => {
   const m = createMockSdk(manifest, { seed });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />
     </SdkProvider>,
   );
-  expect(await screen.findByText("KIB-1")).toBeTruthy();
-  expect(screen.getByText("1/1")).toBeTruthy();
+  expect(await screen.findByText("KIB-2")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Arbre des pages" })).toBeNull();
   expect(screen.getByText("Attente client")).toBeTruthy();
-  const headers = screen.getByText("Sous-tickets").parentElement ?? document.body;
-  for (const header of ["Ticket", "Statut", "Assigné", "Sous-tickets"])
+  const headers = screen.getByText("Ensemble").parentElement ?? document.body;
+  for (const header of ["Ticket", "Statut", "Assigné", "Ensemble"])
     expect(within(headers).getByText(header)).toBeTruthy();
   expect(screen.getByText("Terminé")).toBeTruthy();
   expect(screen.getByText("Bloqué")).toBeTruthy();
-  expect(screen.getAllByText("À faire")).toHaveLength(1);
+  expect(screen.queryByText("À faire")).toBeNull();
   expect(screen.getByText("adam")).toBeTruthy();
   expect(screen.getByText("opus-dev")).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: /Sync/ }));
   expect(m.opened).toHaveLength(1);
-  fireEvent.click(screen.getByRole("button", { name: fr.newSubTicket("KIB-1") }));
-  expect(m.newTicketRequests[0]?.parentId).toBe(m.snapshot().tickets[0]?.id);
+  fireEvent.click(screen.getByRole("button", { name: fr.newSubTicket("KIB-2") }));
+  expect(m.newTicketRequests[0]?.parentId).toBe(m.snapshot().tickets[1]?.id);
 });
 
 test("an agent assignee shows the state of its run", async () => {
@@ -97,8 +97,9 @@ test("a synced tree shows only the binding's tickets and their sub-tickets", asy
       <Component />
     </SdkProvider>,
   );
-  expect(await screen.findByText("Issue synchronisée")).toBeTruthy();
-  expect(screen.getByText("Sous-tâche locale")).toBeTruthy();
+  expect(await screen.findByText("Sous-tâche locale")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Issue synchronisée" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Ouvrir l'ensemble KIB-1 · Issue synchronisée" })).toBeTruthy();
   expect(screen.queryByText("Ticket local")).toBeNull();
 });
 
@@ -109,8 +110,8 @@ test("filter mine shows only my tickets with a count", async () => {
       <Component />
     </SdkProvider>,
   );
-  expect(await screen.findByText("Mes tickets · 1 sur 3")).toBeTruthy();
-  expect(screen.getByText("KIB-1")).toBeTruthy();
+  expect(await screen.findByText("Mes tickets · 1 sur 2")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Déplacement" })).toBeTruthy();
   expect(screen.queryByText("KIB-3")).toBeNull();
 });
 
@@ -152,25 +153,24 @@ test("the row menu changes the status; Bloqué asks for a reason", async () => {
   const user = userEvent.setup();
   await user.pointer({
     keys: "[MouseRight]",
-    target: await screen.findByRole("button", { name: /Arbre des pages/ }),
+    target: await screen.findByRole("button", { name: "Déplacement" }),
   });
   expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual([
     "Ouvrir",
-    "Livrer",
     "Statut",
     "Nouveau sous-ticket",
     "Déplacer à la racine",
     "Supprimer…",
   ]);
-  await pickStatus(user, "Terminé");
-  await waitFor(() => expect(byKey(m, "KIB-1")?.statusId).toBe("done"));
-  await user.click(screen.getByRole("button", { name: "Actions KIB-1" }));
+  await pickStatus(user, "À faire");
+  await waitFor(() => expect(byKey(m, "KIB-2")?.statusId).toBe("todo"));
+  await user.click(screen.getByRole("button", { name: "Actions KIB-2" }));
   await pickStatus(user, "Bloqué…");
-  const dialog = await screen.findByRole("dialog", { name: "Bloquer KIB-1" });
+  const dialog = await screen.findByRole("dialog", { name: "Bloquer KIB-2" });
   await user.type(within(dialog).getByLabelText("Motif"), "Attente client");
   await user.click(within(dialog).getByRole("button", { name: "Bloquer" }));
   await waitFor(() =>
-    expect(byKey(m, "KIB-1")).toMatchObject({ statusId: "blocked", blockedReason: "Attente client" }),
+    expect(byKey(m, "KIB-2")).toMatchObject({ statusId: "blocked", blockedReason: "Attente client" }),
   );
 });
 
@@ -211,11 +211,11 @@ test("a read-only project shows no ⋯ button and a one-entry menu", async () =>
   m.setAccess("read-only");
   mount(m);
   const user = userEvent.setup();
-  await screen.findByText("Arbre des pages");
+  await screen.findByText("Déplacement");
   await waitFor(() => expect(screen.queryByRole("button", { name: /^Actions / })).toBeNull());
   await user.pointer({
     keys: "[MouseRight]",
-    target: screen.getByRole("button", { name: /Arbre des pages/ }),
+    target: screen.getByRole("button", { name: "Déplacement" }),
   });
   expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Ouvrir"]);
 });
@@ -224,22 +224,18 @@ test("screen 125: search and filters narrow the tree, drag is disabled meanwhile
   const m = createMockSdk(manifest, { seed, viewer: "adam" });
   mount(m);
   const user = userEvent.setup();
-  await screen.findByText("Arbre des pages");
-  expect(document.querySelectorAll("[aria-roledescription=draggable]")).toHaveLength(3);
+  await screen.findByText("Déplacement");
+  expect(document.querySelectorAll("[aria-roledescription=draggable]")).toHaveLength(2);
   await user.type(screen.getByRole("searchbox", { name: "Rechercher (clé ou titre)" }), "deplacement");
   expect(screen.getByText("Déplacement")).toBeTruthy();
-  expect(screen.getByText("Arbre des pages")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Arbre des pages" })).toBeNull();
   expect(screen.queryByText("Sync")).toBeNull();
-  const context = screen.getByText("Arbre des pages").closest("[data-context]");
-  expect(context?.getAttribute("data-context")).toBe("true");
-  expect(context?.classList.contains("text-muted-foreground")).toBe(true);
-  expect(screen.getByText("Déplacement").closest("[data-context]")).toBeNull();
   expect(document.querySelectorAll("[aria-roledescription=draggable]")).toHaveLength(0);
   await user.click(screen.getByRole("button", { name: "Effacer" }));
   expect(await screen.findByText("Sync")).toBeTruthy();
   await user.click(screen.getByRole("radio", { name: "Agents" }));
   expect(screen.getByText("Sync")).toBeTruthy();
-  expect(screen.queryByText("Arbre des pages")).toBeNull();
+  expect(screen.queryByText("Déplacement")).toBeNull();
   await user.click(screen.getByRole("radio", { name: "Tous" }));
   await user.click(screen.getByRole("button", { name: "Statut" }));
   await user.click(await screen.findByRole("menuitemcheckbox", { name: "Terminé" }));
@@ -250,8 +246,8 @@ test("screen 125: search and filters narrow the tree, drag is disabled meanwhile
   const none = screen.getByText("Aucun ticket ne correspond.").closest("div");
   await user.click(within(none ?? document.body).getByRole("button", { name: "Effacer" }));
   expect(await screen.findByText("Sync")).toBeTruthy();
-  expect(screen.getByText("Arbre des pages")).toBeTruthy();
-  expect(document.querySelectorAll("[aria-roledescription=draggable]")).toHaveLength(3);
+  expect(screen.getByText("Déplacement")).toBeTruthy();
+  expect(document.querySelectorAll("[aria-roledescription=draggable]")).toHaveLength(2);
 });
 
 test("the empty state explains the tree and offers a new ticket; a loading snapshot shows a skeleton", async () => {
@@ -275,7 +271,7 @@ test("the empty state explains the tree and offers a new ticket; a loading snaps
   expect(screen.queryByText("Aucun ticket pour l'instant.")).toBeNull();
 });
 
-test("shared selection: the selected sub-ticket and its ancestors stay sharp, the chip clears it", async () => {
+test("shared selection: the selected sub-ticket stays sharp, the chip clears it", async () => {
   const m = createMockSdk(manifest, { seed });
   m.setSelection({
     kind: "ticket",
@@ -289,11 +285,9 @@ test("shared selection: the selected sub-ticket and its ancestors stay sharp, th
   const row = async (title: string) =>
     (await screen.findByRole("button", { name: title })).closest<HTMLElement>("[data-selected]");
   const child = await row("Déplacement");
-  const parent = await row("Arbre des pages");
   const other = await row("Sync");
   expect(child?.getAttribute("data-selected")).toBe("true");
-  expect(parent?.getAttribute("data-selected")).toBe("false");
-  expect(parent?.className).not.toContain("opacity-50");
+  expect(child?.className).not.toContain("opacity-50");
   expect(other?.getAttribute("data-selected")).toBe("false");
   expect(other?.className).toContain("opacity-50");
   expect(screen.getByText("1 sélectionné")).toBeTruthy();
@@ -309,7 +303,7 @@ test("without a selection: no chip and no fading in the tree", async () => {
       <Component />
     </SdkProvider>,
   );
-  expect(await screen.findByText("KIB-1")).toBeTruthy();
+  expect(await screen.findByText("KIB-2")).toBeTruthy();
   expect(document.querySelector(".opacity-50")).toBeNull();
   expect(document.querySelectorAll("[data-selected='true']")).toHaveLength(0);
   expect(screen.queryByRole("button", { name: "Effacer la sélection" })).toBeNull();
@@ -322,31 +316,43 @@ test("a narrow widget keeps key and title, hides the wide cells below @md", asyn
       <Component />
     </SdkProvider>,
   );
-  await findByText("KIB-1");
+  await findByText("KIB-2");
   const root = container.querySelector("section");
   expect(root?.className).toContain("@container");
   expect(COLUMNS).toBe(
     "grid grid-cols-[minmax(0,1fr)_1.5rem_2rem] items-center gap-3 px-2 @md:grid-cols-[minmax(0,1fr)_7rem_5rem_4rem] @3xl:grid-cols-[minmax(0,1fr)_7.5rem_10rem_5rem_4rem]",
   );
-  const header = getByText("Sous-tickets").parentElement ?? document.body;
+  const header = getByText("Ensemble").parentElement ?? document.body;
   expect(within(header).getByText("Ticket").className).not.toContain("hidden");
   expect(within(header).getByText("Statut").className).toContain(WIDE_CELL);
-  expect(within(header).getByText("Sous-tickets").className).toContain(WIDE_CELL);
-  const title = getByRole("button", { name: /^Arbre des pages/ });
+  expect(within(header).getByText("Ensemble").className).toContain(WIDE_CELL);
+  const title = getByRole("button", { name: "Déplacement" });
   expect(title.className).toContain("min-w-0");
   expect(title.className).not.toContain("min-w-16");
-  for (const progress of Array.from(container.querySelectorAll("[data-cell='progress']")))
-    expect(progress.className).toContain(WIDE_CELL);
+  for (const group of Array.from(container.querySelectorAll("[data-cell='group']")))
+    expect(group.className).toContain(WIDE_CELL);
   expect(container.querySelector("[data-cell='status'] span.truncate")?.className).toContain(WIDE_TEXT);
   expect(getAllByText("Bloqué").length).toBeGreaterThan(0);
-  expect(getAllByText("À faire")[0]?.className).toContain(WIDE_TEXT);
+  expect(getAllByText("Terminé")[0]?.className).toContain(WIDE_TEXT);
   expect(getByText("Attente client").className).toContain(WIDE_TEXT);
   for (const plus of getAllByRole("button", { name: /^Nouveau sous-ticket/ }))
     expect(plus.className).toContain("hidden @md:inline-flex");
 });
 
 test("labels: the menu groups the project's labels, checking one narrows the tree, rows show two chips then +n", async () => {
-  const m = createMockSdk(manifest, { seed: (run) => seedDemo(run) });
+  const m = createMockSdk(manifest, {
+    seed: (run) => {
+      const core = run({ method: "createTicket", title: "Noyau de données" }) as Ticket;
+      run({
+        method: "createTicket",
+        title: "Schéma Loro des tickets (LoroTree)",
+        parentId: core.id,
+        labels: ["area:api", "phase:p1", "urgent"],
+      });
+      run({ method: "createTicket", title: "Kanban : drag & drop entre colonnes", labels: ["phase:p1"] });
+      run({ method: "createTicket", title: "UI de base" });
+    },
+  });
   mount(m);
   const user = userEvent.setup();
   await screen.findByText("Schéma Loro des tickets (LoroTree)");
@@ -370,7 +376,7 @@ test("labels: the menu groups the project's labels, checking one narrows the tre
   await user.keyboard("{Escape}");
   expect(screen.getByRole("button", { name: /^Étiquettes/ }).textContent).toContain("1");
   expect(screen.getByText("Schéma Loro des tickets (LoroTree)")).toBeTruthy();
-  expect(screen.getByText("Noyau de données")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Noyau de données" })).toBeNull();
   expect(screen.queryByText("Kanban : drag & drop entre colonnes")).toBeNull();
   expect(screen.queryByText("UI de base")).toBeNull();
   await user.click(screen.getByRole("button", { name: "Effacer" }));
@@ -380,7 +386,7 @@ test("labels: the menu groups the project's labels, checking one narrows the tre
 test("labels: the menu is disabled when the project has no label", async () => {
   const m = createMockSdk(manifest, { seed });
   mount(m);
-  await screen.findByText("Arbre des pages");
+  await screen.findByText("Déplacement");
   expect(screen.getByRole("button", { name: "Étiquettes" }).hasAttribute("disabled")).toBe(true);
 });
 
@@ -410,7 +416,7 @@ test("a row shows its open questions after the waiting badge, never a zero", asy
       <Component />
     </SdkProvider>,
   );
-  await screen.findByText("KIB-1");
+  await screen.findByText("KIB-2");
   expect(screen.queryByText(/questions?$/)).toBeNull();
   const sync = m.snapshot().tickets.find((t) => t.title === "Sync")?.id ?? "";
   act(() => {
@@ -443,17 +449,6 @@ test("Livrer on a leaf asks the SDK for a run", async () => {
   await user.click(await screen.findByRole("menuitem", { name: "Livrer" }));
   await waitFor(() => expect(m.runDeliveries).toEqual([byKey(m, "KIB-3")?.id ?? ""]));
   expect(m.violations).toEqual([]);
-});
-
-test("Livrer on a parent opens the dialog of its sub-tickets", async () => {
-  const m = createMockSdk(manifest, { seed });
-  mount(m);
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Actions KIB-1" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Livrer" }));
-  const dialog = await screen.findByRole("dialog", { name: "Livrer les sous-tickets de KIB-1" });
-  expect(within(dialog).getByText("livré")).toBeTruthy();
-  expect(within(dialog).getByText("Rien à livrer : KIB-2 livré.")).toBeTruthy();
 });
 
 test("a row shows the delivery step of its ticket", async () => {

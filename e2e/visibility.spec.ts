@@ -222,7 +222,7 @@ test("la page Questions filtre par destinataire, exporte et enregistre une répo
   await page.keyboard.press("Escape");
 });
 
-test("le graphe se lit par vagues, focus, zoom éloigné et cadres par étiquette", async () => {
+test("le graphe cadre les ensembles, focus, zoom éloigné et cadres par étiquette", async () => {
   const info = test.info();
   await labelChapters(v, [
     [7, "c1"],
@@ -236,7 +236,7 @@ test("le graphe se lit par vagues, focus, zoom éloigné et cadres par étiquett
   const graphPage = await addViewPage(v, "Graphe", "graph@1.0.0");
   await page.goto(`/#/p/${seeded.projectId}/${encodeURIComponent(graphPage)}`);
   const canvas = page.getByRole("region", { name: "Graphe des dépendances" });
-  await expect(canvas.getByText("Vague 1 · démarrables et en cours")).toBeVisible();
+  await expect(canvas.locator("[data-frame]").first()).toBeVisible();
   await expect(page.getByRole("button", { name: /^Afficher les terminés \(\d+\)$/ })).toBeVisible();
   await expect(canvas.getByRole("button", { name: /^KIB-13 / })).toHaveCount(0);
   await capture(page, info, "188");

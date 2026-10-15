@@ -9,6 +9,7 @@ export * from "./delivery-step-chip";
 export * from "./embed-frame";
 export * from "./file-link";
 export * from "./fr-delivery";
+export * from "./group-chip";
 export * from "./lazy";
 export * from "./markdown-lite";
 export * from "./members";

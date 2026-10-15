@@ -3,9 +3,12 @@ import {
   assigneeLabel,
   type CiTone,
   DeliveryStepChip,
+  GroupChip,
+  type GroupRef,
   QuestionsChip,
   type QuestionsChipData,
   TicketKeyLabel,
+  useSdk,
   worstCiTone,
 } from "@kibo/sdk";
 import { Badge } from "@kibo/sdk/ui/badge";
@@ -41,6 +44,7 @@ export function ciChipOf(runs: CiRun[]): CiChip | undefined {
 
 export type CardFacts = {
   ticket: TicketView;
+  group: GroupRef | null;
   run: TicketRun | null;
   ci?: CiChip;
   members: MemberInfo[];
@@ -50,11 +54,14 @@ export type CardFacts = {
 
 type Props = CardFacts & { menu: ReactNode; title: ReactNode };
 
-export function KanbanCardContent({ ticket: t, run, ci, members, remote, questions, menu, title }: Props) {
+export function KanbanCardContent(props: Props) {
+  const { ticket: t, group, run, ci, members, remote, questions, menu, title } = props;
+  const sdk = useSdk();
   return (
     <>
       <div className="flex h-6 items-center gap-2">
         <TicketKeyLabel ticket={t} className="min-w-0 truncate font-mono text-2xs text-muted-foreground" />
+        {group && <GroupChip group={group} onOpen={(id) => sdk.openTicket(id)} />}
         <span className="flex-1" />
         {menu}
       </div>
@@ -116,9 +123,6 @@ export function KanbanCardContent({ ticket: t, run, ci, members, remote, questio
             />
             {ci.prNumber !== null && `#${ci.prNumber}`}
           </span>
-        )}
-        {t.progress.total > 0 && (
-          <span className="ml-auto font-mono text-3xs text-muted-foreground">{`${t.progress.done}/${t.progress.total}`}</span>
         )}
       </div>
     </>

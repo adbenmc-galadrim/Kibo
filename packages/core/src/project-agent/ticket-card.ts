@@ -1,6 +1,7 @@
 import {
   isArchived,
   isDelivered,
+  isGroup,
   type Link,
   type ProjectSnapshot,
   type RunView,
@@ -20,6 +21,7 @@ export function ticketCard(project: ProjectSnapshot, ticket: TicketView): Ticket
     parent: ticket.parentId === null ? null : ticketKeyOf(project, ticket.parentId),
     openQuestions: ticket.openQuestions,
     startable: ticket.startable,
+    group: isGroup(ticket),
     branch: branchOf(ticket.externalRefs),
     pr: prOf(ticket.externalRefs),
   };

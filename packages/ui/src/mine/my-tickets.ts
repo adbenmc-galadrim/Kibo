@@ -1,4 +1,10 @@
-import type { ProjectMeta, ProjectSnapshot, StatusId, TicketView } from "@kibo/schema";
+import {
+  isGroup,
+  type ProjectMeta,
+  type ProjectSnapshot,
+  type StatusId,
+  type TicketView,
+} from "@kibo/schema";
 
 export type MineTab = "assigned" | "agents";
 export type MineGroup = { project: ProjectMeta; tickets: TicketView[] };
@@ -17,7 +23,7 @@ const keyNumber = (key: string | null) =>
 const waits = (t: TicketView) => (t.waitingOn.length > 0 ? 0 : 1);
 
 export function isMine(t: TicketView, viewer: string, tab: MineTab): boolean {
-  if (t.statusId === "done") return false;
+  if (t.statusId === "done" || isGroup(t)) return false;
   if (tab === "assigned") return t.assignee?.kind === "human" && t.assignee.ref === viewer;
   return t.assignee?.kind === "agent";
 }

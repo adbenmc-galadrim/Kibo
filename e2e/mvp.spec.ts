@@ -79,14 +79,15 @@ test("tableau de bord Tickets + Kanban, sous-ticket et fiche", async ({ page }, 
   await expect(page.getByRole("dialog")).toBeHidden();
 
   await expect(tickets.getByText(`${key}-2`)).toBeVisible();
-  await expect(tickets.getByText("0/1")).toBeVisible();
-  const parentCard = todo.getByRole("article").filter({ hasText: `${key}-1` });
-  await expect(parentCard.getByText("0/1")).toBeVisible();
-  await expect(page.getByText("2 / 2 · Moi + agents")).toBeVisible();
+  const chip = `Ouvrir l'ensemble ${key}-1 · Préparer la démo`;
+  await expect(tickets.getByRole("button", { name: chip })).toBeVisible();
+  await expect(todo.getByRole("article").filter({ hasText: "Préparer la démo" })).toHaveCount(0);
+  await expect(page.getByText("1 / 1 · Moi + agents")).toBeVisible();
 
-  await parentCard.getByRole("button", { name: "Préparer la démo" }).click();
+  await todo.getByRole("article").getByRole("button", { name: chip }).click();
   const sheet = page.getByRole("dialog");
   await expect(sheet.getByRole("heading", { name: "Préparer la démo" })).toBeVisible();
-  await expect(sheet.getByText("Sous-tickets 0/1")).toBeVisible();
+  await expect(sheet.getByText(`Ensemble · ${key}-1`)).toBeVisible();
+  await expect(sheet.getByText("0/1 livrés")).toBeVisible();
   await expect(sheet.getByText("Enregistrer la vidéo")).toBeVisible();
 });

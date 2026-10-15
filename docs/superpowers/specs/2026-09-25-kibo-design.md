@@ -2172,3 +2172,26 @@ Trois volets, dans cet ordre : **A. Débloquer** (A1 préréglage « Livraison �
   - **D** : le message de `TICKET_HAS_CHILDREN` est en anglais dans le démon ; l'interface affiche son texte d'i18n (corrigé) ;
   - Kibo ne met pas `kibo` dans le `PATH` du run : le skill compte sur la CLI installée par l'application (0.24 ou plus).
 - **Maquettes** : T12 et T18 (page Penpot 35) reportées faute de session Penpot ; les captures `ecran-210` à `ecran-219` de l'E2E font foi en attendant. Les maquettes et `design/donnees-fictives.md` montrent encore un agent sur KIB-12, ticket parent désormais non lançable.
+
+## 36. Ensembles de tickets (demande d'Adam du 2026-10-15)
+
+**Demande** : « je ne veux pas avoir de ticket pour les ensembles de tickets ». Dans le graphe d'Emis, C4 apparaît comme un ticket alors que ce n'est qu'un ensemble ; il ne doit pas se lancer par un agent, il doit s'afficher et se gérer autrement que les tickets lançables, et il ne doit pas apparaître dans la page Tickets.
+
+### 36.1 Définition
+
+- Un **ensemble** est un ticket qui a au moins un sous-ticket (`childCount > 0`, la définition de §35.8). Rien de nouveau à stocker : c'est un fait dérivé, calculé à la lecture (`TicketView.isGroup`, pur, dans `schema`). Un ticket qui perd son dernier sous-ticket redevient un ticket ordinaire ; un ticket qui reçoit un sous-ticket devient un ensemble.
+- Un ensemble **ne se lance jamais** (garde `TICKET_HAS_CHILDREN` de §35.8, inchangée). Aucune entrée de l'interface ne propose de lancer un agent sur lui : ni « Assigner un agent », ni menu de run, ni glisser vers « En cours ». « Livrer » sur un ensemble reste le dialogue « Livrer les sous-tickets » (§35.8), libellé « Livrer les sous-tickets ».
+- **Avancement** : `n/m` sous-tickets livrés (statut `done`), dérivé à la lecture ; l'état de l'ensemble est dérivé de ses sous-tickets (« terminé » quand tous le sont, sinon « en cours » si l'un l'est, sinon « à faire ») et n'est plus modifiable à la main.
+
+### 36.2 Affichage
+
+- **Graphe** : un ensemble n'est plus un nœud. Il devient un **cadre** autour de ses sous-tickets (réutilise `GroupFrame` et `group-layout`, comme le regroupement par étiquette), titré « C4 · <titre> · 3/7 », bord en tirets zinc, repliable ; replié, il s'affiche comme un bloc compact « C4 · 3/7 » (jamais avec les puces d'agent). Les dépendances posées sur l'ensemble s'attachent au cadre. Le regroupement par ensemble est le regroupement par défaut ; un regroupement par étiquette choisi par l'utilisateur garde la priorité, l'ensemble restant alors un bloc compact dans le cadre de l'étiquette.
+- **Page Tickets** : les ensembles **n'apparaissent pas comme des lignes**. Leurs sous-tickets sont listés à leur place, chacun avec une puce discrète « C4 » (clé de l'ensemble, titre complet au survol, clic ⇒ fiche de l'ensemble). Un ensemble imbriqué se résout de même : seuls les tickets lançables sont des lignes.
+- **Kanban** : même règle, aucune carte pour un ensemble ; la puce « C4 » sur les cartes de ses sous-tickets.
+- **Fiche d'un ensemble** (ouverte par la puce, le cadre du graphe ou une recherche) : en-tête « Ensemble · C4 », avancement `n/m`, liste des sous-tickets avec leur état, description éditable, bouton « Livrer les sous-tickets » ; ni zone d'agent, ni étapes de livraison, ni sélecteur de statut.
+- **Agent de projet** : `list_tickets` marque les ensembles (`group: true`) ; son lot ne peut pas assigner un ensemble (déjà refusé par §35.8).
+
+### 36.3 Tests et maquettes
+
+- Tests : `isGroup` et l'avancement (unitaires), arbre de la page Tickets aplati (sous-tickets à la place de l'ensemble, puce), aucune carte Kanban pour un ensemble, cadre du graphe par défaut, aucune entrée de lancement sur un ensemble ; E2E sur un projet avec un ensemble de trois sous-tickets dont un imbriqué ; captures sombre et clair.
+- Maquettes Penpot : à dessiner dès qu'une session Penpot existe (page 36) ; en attendant, les captures de l'E2E font foi.

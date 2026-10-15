@@ -161,7 +161,9 @@ test("213 · 212 · « Livrer » EMIS-15 : étapes, captures à valider, livré"
 
 test("214 · 216 à 219 · les sous-tickets de EMIS-17 et leurs sous-agents", async () => {
   await openBoard(e);
-  await deliverFromBoard(e, "EMIS-17");
+  await expect(page.getByRole("article", { name: /Comptes clients \(C2\)/ })).toHaveCount(0);
+  await page.goto(ticketPath(e, "EMIS-17"));
+  await page.getByRole("button", { name: "Livrer les sous-tickets" }).click();
   const dialog = page.getByRole("dialog", { name: "Livrer les sous-tickets de EMIS-17" });
   await expect(dialog.getByRole("checkbox", { name: "EMIS-18 C2-1 · Liste des comptes" })).toBeChecked();
   await expect(dialog.getByRole("checkbox", { name: "EMIS-19 C2-2 · Fiche d'un compte" })).toBeChecked();
@@ -228,10 +230,12 @@ test("214 · 216 à 219 · les sous-tickets de EMIS-17 et leurs sous-agents", as
   await shoot("217b");
 });
 
-test("un ticket parent n'est jamais lancé : « Assigner » propose ses sous-tickets, l'API refuse", async () => {
+test("un ensemble n'est jamais lancé : sa fiche ne propose que ses sous-tickets, l'API refuse", async () => {
   const before = await runCount(e);
   await page.goto(ticketPath(e, "EMIS-17"));
-  await page.getByRole("button", { name: "Assigner à un agent" }).click();
+  await expect(page.getByText("Ensemble · EMIS-17")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Assigner à un agent" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Livrer les sous-tickets" }).click();
   const dialog = page.getByRole("dialog", { name: "Livrer les sous-tickets de EMIS-17" });
   await expect(dialog).toBeVisible();
   await dialog.getByRole("button", { name: "Annuler" }).click();
