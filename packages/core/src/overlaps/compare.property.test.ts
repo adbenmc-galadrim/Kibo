@@ -9,6 +9,7 @@ import fc from "fast-check";
 import { arbIndex, arbLine, arbLines, arbSettings, fileOf, settingsWith } from "./arbitraries.test-helper";
 import { commonBlocks } from "./blocks";
 import { findOverlaps } from "./compare";
+import { referenceFindOverlaps } from "./compare-reference.test-helper";
 import { isSharedPath, isTestPath } from "./ignore";
 import { lineHashes } from "./normalize";
 import { sha256 } from "./test-hash.test-helper";
@@ -158,3 +159,65 @@ describe("findOverlaps properties", () => {
 function emptyIndex(key: string): WorkspaceIndex {
   return { key, runIds: [], baseHead: "base", files: [], truncated: false, partial: false, at: 0 };
 }
+
+const REPEATED = Array.from({ length: 3 }, (_, i) => `const repeated${i} = computeSomething(input, ${i});`);
+
+const arbRepetitiveFile = (path: string) =>
+  fc
+    .record({
+      motif: fc.array(fc.integer({ min: 0, max: REPEATED.length - 1 }), { minLength: 1, maxLength: 3 }),
+      times: fc.integer({ min: 0, max: 30 }),
+      head: fc.array(fc.integer({ min: 0, max: REPEATED.length - 1 }), { maxLength: 4 }),
+    })
+    .map(({ motif, times, head }) => {
+      const picks = [...head, ...Array.from({ length: times }, () => motif).flat()];
+      return fileOf({ path, texts: picks.map((i) => REPEATED[i] ?? "") });
+    });
+
+const arbRepetitiveIndex = (key: string) =>
+  fc
+    .uniqueArray(fc.constantFrom("src/a.ts", "src/b.ts", "src/c.ts", "src/d.test.ts"), { maxLength: 4 })
+    .chain((paths) => fc.tuple(...paths.map(arbRepetitiveFile)))
+    .map(
+      (files): WorkspaceIndex => ({
+        key,
+        runIds: [`run-${key}`],
+        baseHead: "base",
+        files,
+        truncated: false,
+        partial: false,
+        at: 0,
+      }),
+    );
+
+describe("findOverlaps matches the computation before it was split into steps", () => {
+  test("on any pair of workspaces", () => {
+    fc.assert(
+      fc.property(arbPair, arbSettings, ([a, b], s) => {
+        const settings = settingsWith(s);
+        expect(findOverlaps(a, b, settings, sha256)).toEqual(referenceFindOverlaps(a, b, settings, sha256));
+      }),
+      { numRuns: 300 },
+    );
+  });
+
+  test("on repetitive files with ties and duplicated keys", () => {
+    fc.assert(
+      fc.property(arbRepetitiveIndex("A"), arbRepetitiveIndex("B"), arbSettings, (a, b, s) => {
+        const settings = settingsWith(s);
+        expect(findOverlaps(a, b, settings, sha256)).toEqual(referenceFindOverlaps(a, b, settings, sha256));
+      }),
+      { numRuns: 300 },
+    );
+  });
+
+  test("the repetitive generator yields blocks to compare", () => {
+    const pairs = fc.sample(fc.tuple(arbRepetitiveIndex("A"), arbRepetitiveIndex("B")), {
+      numRuns: 200,
+      seed: 1,
+    });
+    const settings = settingsWith({ minLines: 4 });
+    const withBlocks = pairs.filter(([a, b]) => findOverlaps(a, b, settings, sha256).length > 0);
+    expect(withBlocks.length).toBeGreaterThan(20);
+  });
+});

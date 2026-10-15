@@ -100,5 +100,11 @@ test("a hook request is answered quickly while a large sweep runs", async () => 
   const result = await sweep;
   expect(result.compared).toBe(3);
   expect(seen.length).toBeGreaterThan(3);
-  expect(Math.max(...seen)).toBeLessThan(MAX_LATENCY_MS);
+  const highest = [...seen]
+    .sort((x, y) => y - x)
+    .slice(0, 5)
+    .map((ms) => Math.round(ms));
+  expect({ highestLatenciesMs: highest }).toEqual({
+    highestLatenciesMs: highest.filter((ms) => ms < MAX_LATENCY_MS),
+  });
 }, 120_000);
