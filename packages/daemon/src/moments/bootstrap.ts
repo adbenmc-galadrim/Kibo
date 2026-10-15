@@ -27,6 +27,7 @@ import { openSkillReviewStore } from "../skills/reviews-store";
 import { openRunsDatabase } from "../skills/runs-db";
 import type { SkillsService } from "../skills/service";
 import { createSkillUses, type SkillUses } from "../skills/uses-store";
+import { startSubagents } from "../subagents/bootstrap";
 import { withTrace } from "./hooks";
 import { handleVisibilityRequest } from "./rpc";
 import { openMomentStore } from "./store";
@@ -46,6 +47,7 @@ export type Visibility = {
   trace: TraceService;
   progress: ProgressService;
   rpc: RpcExtension;
+  subagentRpc: RpcExtension;
   hooks(sink: HookSink): HookSink;
   mcp(
     project: AgentMcpSink,
@@ -88,13 +90,29 @@ export function startVisibility(
     skillPath: skillTargetOf(skills),
     emit: (topic) => docs.emit({ topic }),
   });
+  const run = (runId: string): RunView | null =>
+    agents()
+      ?.state()
+      .runs.find((r) => r.id === runId) ?? null;
+  const root = opts.transcriptRoot ?? transcriptRootOf(env, opts.userHome ?? homedir());
+  let traces: TraceService | null = null;
+  const subagents = startSubagents({
+    home: opts.home,
+    root,
+    moments: store,
+    traces: () => traces,
+    runs: run,
+    changed: () => docs.emit({ topic: "agents" }),
+  });
   const trace = createTraceService({
     store,
-    root: opts.transcriptRoot ?? transcriptRootOf(env, opts.userHome ?? homedir()),
+    root,
     now: Date.now,
     emit: (event: RunMomentsEvent) => docs.emit(event),
     onActions: (runId, actions, at) => uses.record(runId, actions, at),
+    subagents: subagents.port,
   });
+  traces = trace;
   const progress = createProgressService({
     docs: progressDocs(docs),
     git: runGit,
@@ -103,11 +121,7 @@ export function startVisibility(
     now: Date.now,
     changed: () => docs.emit({ topic: "agents" }),
   });
-  const run = (runId: string): RunView | null =>
-    agents()
-      ?.state()
-      .runs.find((r) => r.id === runId) ?? null;
-  const forgets: ((runId: string) => void)[] = [];
+  const forgets: ((runId: string) => void)[] = [(runId) => subagents.onRunEnded(runId)];
   const forget = (runId: string): void => {
     for (const each of forgets) each(runId);
   };
@@ -122,6 +136,7 @@ export function startVisibility(
       methods: METHODS,
       handle: async (req) => handleVisibilityRequest(trace, { run, progress: summary }, req),
     },
+    subagentRpc: subagents.rpc,
     hooks(sink) {
       const reminded = withReminders(sink, {
         run,
@@ -132,7 +147,7 @@ export function startVisibility(
         moment: (runId, kind) => trace.note(runId, { kind: "reminder", reminder: kind }),
       });
       forgets.push((runId) => reminded.forget(runId));
-      return withTrace(withSkillUses(reminded, uses), { trace, run });
+      return withTrace(withSkillUses(reminded, uses), { trace, run, subagents: subagents.hooks });
     },
     mcp: (project, signals, peek) =>
       agentMcpSink({
@@ -144,7 +159,7 @@ export function startVisibility(
         reviews,
         live: (runId, token) => agents()?.hooks.verify(runId, token) ?? false,
       }),
-    agents: (port) => withRunProgress(port, progress),
+    agents: (port) => withRunProgress(subagents.agents(port), progress),
     lifecycle: {
       onSpawned: (r) => progress.onSpawned(r),
       async onTurnEnd(r) {
@@ -170,6 +185,7 @@ export function startVisibility(
     },
     skills: { uses, reviews },
     close() {
+      subagents.close();
       store.close();
       uses.close();
       reviews.store.close();

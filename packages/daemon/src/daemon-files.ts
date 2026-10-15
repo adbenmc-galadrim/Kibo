@@ -97,7 +97,7 @@ export async function startDaemonFiles(
   opts: DaemonOptions,
   input: DaemonFilesInput,
   closers: Closer[],
-): Promise<{ visibility: Visibility; extensions: RpcExtension[] }> {
+): Promise<{ visibility: Visibility; extensions: RpcExtension[]; agentFiles: AgentFiles["service"] }> {
   const { service } = input;
   const activeRuns = (ref: AgentRef) => input.agents()?.activeRuns(ref) ?? 0;
   const files = await startDaemonAgentFiles(opts, { ...input, activeRuns }, closers);
@@ -107,5 +107,9 @@ export async function startDaemonFiles(
   const started = await startDaemonSkills(opts, { files, service, visibility, late: input.late }, closers);
   skills = started.skills;
   closers.push(refreshOnProjects(service, [files.catalog, started.skills.service]));
-  return { visibility, extensions: started.extensions };
+  return {
+    visibility,
+    extensions: [...started.extensions, visibility.subagentRpc],
+    agentFiles: files.service,
+  };
 }
