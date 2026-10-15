@@ -89,6 +89,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(agents\/run-state-text|i18n\/fr-agent-bar)\.ts$/,
   /\/packages\/ui\/src\/i18n\/fr-(domains|integrations)\.ts$/,
   /\/packages\/sdk\/src\/question-preview-content\.tsx$/,
+  /\/packages\/ui\/src\/agents\/MachineLocks\.tsx$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

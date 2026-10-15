@@ -4,6 +4,7 @@ import {
   type AgentSummary,
   type AgentsState,
   keyBesideLabel,
+  machineLocks,
   type ProjectSummary,
   type QueueEntry,
   type RpcRequest,
@@ -22,6 +23,7 @@ import { frAgentsSkills } from "../i18n/fr-agents-skills";
 import { projectName, scopeText } from "./catalog/agent-labels";
 import { useAgentList } from "./catalog/use-agent-list";
 import { elapsed, formatDuration } from "./format";
+import { MachineLocks } from "./MachineLocks";
 import { Mention } from "./mention/Mention";
 import { ProjectFilter } from "./ProjectFilter";
 import { effectiveProject, projectRuns } from "./project-filter";
@@ -250,6 +252,7 @@ export function QueueBoard({ state, agents, projects, now, onAnswer }: BoardProp
           </section>
         </div>
       </DndContext>
+      <MachineLocks locks={machineLocks(state)} now={now} />
       <ConfirmDialog
         open={cancelling !== null}
         onOpenChange={(open) => !open && setCancelling(null)}

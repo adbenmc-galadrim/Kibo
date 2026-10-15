@@ -298,6 +298,19 @@ export const frAgentsSkills = {
     unprioritize: "Retirer la priorité",
     cancel: "Retirer de la file",
     failed: "Action impossible.",
+    locks: {
+      title: "Verrous de la machine",
+      source: (dir: string) => `lus dans ${dir} toutes les 2 s · lecture seule`,
+      dir: "~/.delivery/slots",
+      empty: "Aucun verrou de livraison sur cette machine.",
+      occupancy: (held: number, max: number, waiting: number) =>
+        `${held}/${max} occupés${waiting > 0 ? ` · ${waiting} en attente` : ""}`,
+      card: (name: string, occupancy: string) => `${name} · ${occupancy}`,
+      free: "Libre",
+      held: "tenu",
+      waiting: "en attente",
+      dead: "mort",
+    },
   },
   assign: {
     title: (key: string) => `Assigner ${key} à un agent`,

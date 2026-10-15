@@ -344,3 +344,29 @@ test("a waiting run whose name holds its ticket does not repeat the key", () => 
   const waiting = within(screen.getByRole("region", { name: "En attente de réponse" }));
   expect(waiting.queryByText(/^· KIB-/)).toBeNull();
 });
+
+test("the machine locks come after the columns, read from the agents state", () => {
+  const state = {
+    ...agentsFixture(),
+    locks: [{ name: "heavy", max: 2, held: [], waiting: [] }],
+  };
+  render(
+    <QueueBoard
+      state={state}
+      agents={agentsSummaryFixture}
+      projects={projectsFixture}
+      now={NOW}
+      onAnswer={() => {}}
+    />,
+  );
+  const locks = screen.getByRole("region", { name: "Verrous de la machine" });
+  const waiting = screen.getByRole("region", { name: "En attente de réponse" });
+  expect(waiting.compareDocumentPosition(locks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(within(locks).getByRole("article", { name: "heavy · 0/2 occupés" })).toBeTruthy();
+});
+
+test("without locks the section says the machine has none", () => {
+  show();
+  const locks = screen.getByRole("region", { name: "Verrous de la machine" });
+  expect(within(locks).getByText("Aucun verrou de livraison sur cette machine.")).toBeTruthy();
+});
