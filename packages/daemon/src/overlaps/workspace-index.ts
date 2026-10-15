@@ -94,15 +94,22 @@ export function createWorkspaceIndexer(deps: IndexerDeps): WorkspaceIndexer {
   const { git, fs, log } = deps;
   const cache = deps.cache ?? createIndexCache(DUPLICATION_LIMITS.cacheFiles);
   const indexes = new Map<string, WorkspaceIndex>();
+  const reportedSecrets = new Map<string, Set<string>>();
 
   const partial = (pass: Pass, what: string, e: unknown): void => {
     pass.partial = true;
     log(`overlaps: détection partielle in ${pass.ws.key}, ${what}: ${String(e)}`);
   };
 
-  const admitted = (path: string, settings: DuplicationSettings): boolean => {
+  const reportSecret = (key: string, path: string): void => {
+    const reported = reportedSecrets.get(key) ?? new Set<string>();
+    if (!reported.has(path)) log(`overlaps: secret file ${path} never indexed`);
+    reportedSecrets.set(key, reported.add(path));
+  };
+
+  const admitted = (key: string, path: string, settings: DuplicationSettings): boolean => {
     if (isSecretPath(path)) {
-      log(`overlaps: secret file ${path} never indexed`);
+      reportSecret(key, path);
       return false;
     }
     return !isIgnoredPath(path, settings) && !DUPLICATION_BINARY_EXTENSIONS.includes(extension(path));
@@ -214,6 +221,7 @@ export function createWorkspaceIndexer(deps: IndexerDeps): WorkspaceIndexer {
 
   const drop = (key: string): void => {
     indexes.delete(key);
+    reportedSecrets.delete(key);
     cache.dropWorkspace(key);
   };
 
@@ -226,7 +234,7 @@ export function createWorkspaceIndexer(deps: IndexerDeps): WorkspaceIndexer {
     const pass: Pass = { ws, settings, partial: false };
     const entries = await diffOf(pass);
     if (!entries) return remember(pass, runIds, indexes.get(ws.key)?.files ?? [], false);
-    const kept = entries.filter((e) => admitted(e.path, settings));
+    const kept = entries.filter((e) => admitted(ws.key, e.path, settings));
     const truncated = kept.length > DUPLICATION_LIMITS.filesPerWorkspace;
     if (truncated)
       log(`overlaps: ${ws.key} has ${kept.length} changed files, only the first 500 are indexed`);
@@ -235,7 +243,7 @@ export function createWorkspaceIndexer(deps: IndexerDeps): WorkspaceIndexer {
   }
 
   async function indexFile(ws: WorkspaceRef, path: string, settings: DuplicationSettings) {
-    if (!admitted(path, settings)) return null;
+    if (!admitted(ws.key, path, settings)) return null;
     const current = cached(ws);
     if (!current) return index(ws, [], settings);
     cache.forget(ws.key, path);

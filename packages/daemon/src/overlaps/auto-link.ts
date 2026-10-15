@@ -13,6 +13,7 @@ import {
   type WorkspaceRun,
 } from "@kibo/schema";
 import { type CommandMeta, KIBO_COMMAND, USER_COMMAND } from "../docs";
+import { pacer } from "./cooperate";
 import type { OverlapStore } from "./store";
 
 export type AutoLinkerDeps = {
@@ -158,8 +159,10 @@ export function createAutoLinker(deps: AutoLinkerDeps): AutoLinker {
       const resolved = deps.store.list({ projectId, state: "resolved" });
       const probes = new Map(indexes.map((index) => [index.key, deps.probes(index)]));
       const probeOf = (index: WorkspaceIndex): ImportProbe => probes.get(index.key) ?? (() => null);
+      const pace = pacer();
       for (const a of indexes) {
         for (const b of indexes) {
+          await pace();
           const runA = runs.find((r) => r.key === a.key);
           const runB = runs.find((r) => r.key === b.key);
           if (a.key === b.key || !runA || !runB) continue;

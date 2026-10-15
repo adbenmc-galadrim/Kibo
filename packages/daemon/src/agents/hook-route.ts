@@ -6,12 +6,33 @@ export type HookSink = {
   receive(runId: string, payload: HookPayload, toolInput: Record<string, unknown> | null): HookReply | null;
 };
 
+export type HookClock = { now(): number; log(line: string): void };
+
 export const MAX_HOOK_BYTES = 262_144;
+export const SLOW_HOOK_MS = 1_000;
+
+const SYSTEM_CLOCK: HookClock = {
+  now: () => performance.now(),
+  log: (line) => console.error(`[kibo-daemon] ${line}`),
+};
 
 const BEARER = /^Bearer ([0-9a-f]{64})$/;
 const TOO_LARGE = () => new Response("payload too large", { status: 413 });
 
-export async function handleHook(req: Request, runId: string, sink: HookSink): Promise<Response> {
+export async function handleHook(
+  req: Request,
+  runId: string,
+  sink: HookSink,
+  clock: HookClock = SYSTEM_CLOCK,
+): Promise<Response> {
+  const started = clock.now();
+  const res = await answerHook(req, runId, sink);
+  const ms = Math.round(clock.now() - started);
+  if (ms > SLOW_HOOK_MS) clock.log(`hook of run ${runId} answered in ${ms} ms`);
+  return res;
+}
+
+async function answerHook(req: Request, runId: string, sink: HookSink): Promise<Response> {
   if (req.method !== "POST") return new Response("method not allowed", { status: 405 });
   const token = BEARER.exec(req.headers.get("authorization") ?? "")?.[1];
   if (!token || !sink.verify(runId, token)) return new Response("unauthorized", { status: 401 });

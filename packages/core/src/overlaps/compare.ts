@@ -7,10 +7,11 @@ import {
   type WorkspaceIndex,
 } from "@kibo/schema";
 import { effectiveDuplication } from "../project";
-import { type Block, blockKey, blocksBetween, positionsOf } from "./blocks";
+import { type Block, blockKey, blockSteps, positionsOf } from "./blocks";
 import { isCandidateExport } from "./exports";
 import { isCodePath, isIgnoredPath, isSharedPath, isTestPath } from "./ignore";
 import type { Hasher } from "./normalize";
+import { finish, type Steps } from "./steps";
 import { type LineWindow, windowSizeFor, windowsOf } from "./windows";
 
 export type CandidateSide = { path: string; start: number | null };
@@ -77,11 +78,20 @@ const exportCandidates = (
 
 type Windowed = { file: IndexedFile; windows: LineWindow[] };
 
-const windowed = (files: readonly IndexedFile[], settings: DuplicationSettings, hash: Hasher): Windowed[] =>
-  files
-    .filter((f) => !f.clipped && f.lines.length >= settings.minLines)
-    .filter((f) => settings.compareTests || !isTestPath(f.path))
-    .map((file) => ({ file, windows: windowsOf(file.lines, hash, windowSizeFor(settings.minLines)) }));
+function* windowed(
+  files: readonly IndexedFile[],
+  settings: DuplicationSettings,
+  hash: Hasher,
+): Steps<Windowed[]> {
+  const out: Windowed[] = [];
+  for (const file of files) {
+    if (file.clipped || file.lines.length < settings.minLines) continue;
+    if (!settings.compareTests && isTestPath(file.path)) continue;
+    out.push({ file, windows: windowsOf(file.lines, hash, windowSizeFor(settings.minLines)) });
+    yield;
+  }
+  return out;
+}
 
 const filesByWindow = (files: readonly Windowed[]): Map<string, Set<number>> => {
   const out = new Map<string, Set<number>>();
@@ -103,31 +113,6 @@ const blockCandidate =
     chars: block.chars,
   });
 
-const blockCandidates = (
-  a: readonly IndexedFile[],
-  b: readonly IndexedFile[],
-  settings: DuplicationSettings,
-  hash: Hasher,
-): Candidate[] => {
-  const ours = windowed(a, settings, hash);
-  const theirs = windowed(b, settings, hash);
-  const index = filesByWindow(theirs);
-  const positions = new Map<number, Map<string, number[]>>();
-  return ours.flatMap(({ file: fa, windows }) => {
-    const partners = new Set(windows.flatMap((w) => [...(index.get(w.hash) ?? [])]));
-    return [...partners].flatMap((i) => {
-      const partner = theirs[i];
-      if (!partner || partner.file.path === fa.path) return [];
-      const fb = partner.file;
-      const inB = positions.get(i) ?? positionsOf(partner.windows);
-      positions.set(i, inB);
-      return blocksBetween(fa.lines, windows, fb.lines, inB, settings.minLines)
-        .filter((block) => block.chars >= DUPLICATION_LIMITS.blockMinChars)
-        .map(blockCandidate(fa, fb, hash));
-    });
-  });
-};
-
 const sortFields = (c: Candidate): (string | number)[] => [
   c.key,
   c.a.path,
@@ -145,18 +130,49 @@ const order = (x: Candidate, y: Candidate): number => {
   return 0;
 };
 
-const firstPerKey = (candidates: readonly Candidate[]): Candidate[] => {
-  const kept = new Map<string, Candidate>();
-  for (const c of [...candidates].sort(order)) if (!kept.has(c.key)) kept.set(c.key, c);
-  return [...kept.values()];
+type Kept = Map<string, Candidate>;
+
+const keep = (kept: Kept, candidates: readonly Candidate[]): void => {
+  for (const c of candidates) {
+    const known = kept.get(c.key);
+    if (!known || order(c, known) < 0) kept.set(c.key, c);
+  }
 };
 
-export function findOverlaps(
+function* blockCandidates(
+  a: readonly IndexedFile[],
+  b: readonly IndexedFile[],
+  settings: DuplicationSettings,
+  hash: Hasher,
+  kept: Kept,
+): Steps<void> {
+  const ours = yield* windowed(a, settings, hash);
+  const theirs = yield* windowed(b, settings, hash);
+  const index = filesByWindow(theirs);
+  const positions = new Map<number, Map<string, number[]>>();
+  for (const { file: fa, windows } of ours) {
+    const partners = new Set(windows.flatMap((w) => [...(index.get(w.hash) ?? [])]));
+    for (const i of partners) {
+      const partner = theirs[i];
+      if (!partner || partner.file.path === fa.path) continue;
+      const fb = partner.file;
+      const inB = positions.get(i) ?? positionsOf(partner.windows);
+      positions.set(i, inB);
+      const blocks = yield* blockSteps(fa.lines, windows, fb.lines, inB, settings.minLines);
+      const large = blocks.filter((block) => block.chars >= DUPLICATION_LIMITS.blockMinChars);
+      keep(kept, large.map(blockCandidate(fa, fb, hash)));
+      yield;
+    }
+    yield;
+  }
+}
+
+export function* findOverlapsSteps(
   a: WorkspaceIndex,
   b: WorkspaceIndex,
   settings: DuplicationSettings,
   hash: Hasher,
-): Candidate[] {
+): Steps<Candidate[]> {
   const kept = (index: WorkspaceIndex) => index.files.filter((f) => !isIgnoredPath(f.path, settings));
   const [allA, allB] = [kept(a), kept(b)];
   const copies = copiedPaths(allA, allB);
@@ -164,7 +180,19 @@ export function findOverlaps(
   const theirs = allB.filter((f) => !copies.has(f.path));
   const shared = effectiveDuplication({ duplication: settings });
   const unshared = (files: readonly IndexedFile[]) => files.filter((f) => !isSharedPath(f.path, shared));
-  const blocks =
-    a.truncated || b.truncated ? [] : blockCandidates(unshared(ours), unshared(theirs), settings, hash);
-  return firstPerKey([...exportCandidates(ours, theirs, settings), ...blocks]);
+  const found: Kept = new Map();
+  keep(found, exportCandidates(ours, theirs, settings));
+  yield;
+  if (!a.truncated && !b.truncated)
+    yield* blockCandidates(unshared(ours), unshared(theirs), settings, hash, found);
+  return [...found.values()].sort(order);
+}
+
+export function findOverlaps(
+  a: WorkspaceIndex,
+  b: WorkspaceIndex,
+  settings: DuplicationSettings,
+  hash: Hasher,
+): Candidate[] {
+  return finish(findOverlapsSteps(a, b, settings, hash));
 }

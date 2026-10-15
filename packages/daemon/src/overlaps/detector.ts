@@ -3,7 +3,7 @@ import {
   assignRoles,
   type Candidate,
   type Finding,
-  findOverlaps,
+  findOverlapsSteps,
   type Hasher,
   type ReconcileScope,
   reconcile,
@@ -18,6 +18,7 @@ import {
 } from "@kibo/schema";
 import { isInside } from "../code/safe-path";
 import { type ApplyDeps, applyReconciliation } from "./apply";
+import { cooperate } from "./cooperate";
 import { createRunQueue, type RunQueue } from "./queue";
 import type { WorkspaceRef } from "./workspace";
 import type { WorkspaceIndexer } from "./workspace-index";
@@ -81,13 +82,13 @@ export function createOverlapDetector(deps: DetectorDeps): OverlapDetector {
   const runsOf = (spaces: readonly DetectorSpace[]) => (key: string) =>
     spaces.find((s) => s.ws.key === key)?.runs.map((r) => r.runId) ?? [];
 
-  function settle(
+  async function settle(
     projectId: string,
     findings: Finding[],
     scope: ReconcileScope,
     resolvable: (o: Overlap) => boolean,
     spaces: readonly DetectorSpace[],
-  ): void {
+  ): Promise<void> {
     const open = deps.store.open(projectId);
     const plan = reconcile(open, findings, deps.store.ignoredKeys(projectId), scope);
     const byId = new Map(open.map((o) => [o.id, o]));
@@ -95,7 +96,7 @@ export function createOverlapDetector(deps: DetectorDeps): OverlapDetector {
       const o = byId.get(id);
       return o !== undefined && resolvable(o);
     });
-    applyReconciliation(deps, projectId, { ...plan, resolve }, runsOf(spaces));
+    await applyReconciliation(deps, projectId, { ...plan, resolve }, runsOf(spaces));
   }
 
   async function writerIndex(space: DetectorSpace, path: string, settings: DuplicationSettings) {
@@ -120,12 +121,13 @@ export function createOverlapDetector(deps: DetectorDeps): OverlapDetector {
     for (const other of spaces) {
       const theirs = other === space ? null : deps.indexer.cached(other.ws);
       if (!theirs) continue;
-      const candidates = findOverlaps(index, theirs, settings, deps.hash).filter((c) => c.a.path === path);
+      const found = await cooperate(findOverlapsSteps(index, theirs, settings, deps.hash));
+      const candidates = found.filter((c) => c.a.path === path);
       findings.push(...findingsOf(mine, { space: other, index: theirs }, candidates, runId));
       if (!index.partial && !theirs.partial) clean.add(pairOf(space.ws.key, other.ws.key));
     }
     const resolvable = (o: Overlap) => clean.has(pairOf(o.ownerWorkspace, o.otherWorkspace));
-    settle(projectId, findings, { kind: "file", workspace: space.ws.key, path }, resolvable, spaces);
+    await settle(projectId, findings, { kind: "file", workspace: space.ws.key, path }, resolvable, spaces);
   }
 
   async function indexAll(spaces: DetectorSpace[], settings: DuplicationSettings, deadline: number) {
@@ -148,7 +150,7 @@ export function createOverlapDetector(deps: DetectorDeps): OverlapDetector {
     return { indexed, partial, stopped: false };
   }
 
-  function compareAll(
+  async function compareAll(
     projectId: string,
     indexed: Indexed[],
     settings: DuplicationSettings,
@@ -159,7 +161,8 @@ export function createOverlapDetector(deps: DetectorDeps): OverlapDetector {
     let compared = 0;
     for (const [i, a] of indexed.entries()) {
       for (const b of indexed.slice(i + 1)) {
-        findings.push(...findingsOf(a, b, findOverlaps(a.index, b.index, settings, deps.hash), null));
+        const candidates = await cooperate(findOverlapsSteps(a.index, b.index, settings, deps.hash));
+        findings.push(...findingsOf(a, b, candidates, null));
         compared += 1;
         if (!a.index.partial && !b.index.partial) clean.add(pairOf(a.space.ws.key, b.space.ws.key));
         if (deps.now() > deadline) {
@@ -171,7 +174,7 @@ export function createOverlapDetector(deps: DetectorDeps): OverlapDetector {
     return { findings, clean, compared, interrupted: false };
   }
 
-  function settleGone(projectId: string, spaces: readonly DetectorSpace[]): void {
+  async function settleGone(projectId: string, spaces: readonly DetectorSpace[]): Promise<void> {
     const listedKeys = new Set(spaces.map((s) => s.ws.key));
     const vanished = (key: string) => !listedKeys.has(key) && deps.gone(key);
     const resolve = deps.store
@@ -179,7 +182,7 @@ export function createOverlapDetector(deps: DetectorDeps): OverlapDetector {
       .filter((o) => vanished(o.ownerWorkspace) || vanished(o.otherWorkspace))
       .map((o) => o.id);
     if (resolve.length > 0)
-      applyReconciliation(deps, projectId, { create: [], touch: [], resolve }, runsOf(spaces));
+      await applyReconciliation(deps, projectId, { create: [], touch: [], resolve }, runsOf(spaces));
   }
 
   async function evaluateLinks(projectId: string, indexed: Indexed[]): Promise<void> {
@@ -200,7 +203,7 @@ export function createOverlapDetector(deps: DetectorDeps): OverlapDetector {
     const settings = deps.settings(projectId);
     if (!settings.enabled) return NOTHING;
     const all = await listed(projectId);
-    settleGone(projectId, all);
+    await settleGone(projectId, all);
     const ordered = all
       .flatMap((space) => {
         const first = oldest(space);
@@ -217,10 +220,10 @@ export function createOverlapDetector(deps: DetectorDeps): OverlapDetector {
     partial ||= indexPartial;
     const { findings, clean, compared, interrupted } = stopped
       ? { findings: [], clean: new Set<string>(), compared: 0, interrupted: true }
-      : compareAll(projectId, indexed, settings, deadline);
+      : await compareAll(projectId, indexed, settings, deadline);
     partial ||= interrupted;
     const resolvable = (o: Overlap) => !partial || clean.has(pairOf(o.ownerWorkspace, o.otherWorkspace));
-    settle(projectId, findings, { kind: "sweep" }, resolvable, all);
+    await settle(projectId, findings, { kind: "sweep" }, resolvable, all);
     if (!interrupted) await evaluateLinks(projectId, indexed);
     return { compared, partial };
   }

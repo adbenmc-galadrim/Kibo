@@ -26,6 +26,7 @@ export * from "./overlaps/lifecycle";
 export * from "./overlaps/normalize";
 export * from "./overlaps/roles";
 export * from "./overlaps/section";
+export * from "./overlaps/steps";
 export * from "./overlaps/windows";
 export * from "./pages";
 export * from "./project";
