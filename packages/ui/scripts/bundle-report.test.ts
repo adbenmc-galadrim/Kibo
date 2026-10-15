@@ -453,4 +453,21 @@ describe("bundle report", () => {
     expect(sdk("question-preview-content.tsx")).toBe(true);
     expect(sdk("question-preview.tsx")).toBe(false);
   });
+  test("phase 24, the sub-agent screens and texts stay out of the entry, not the bar summary", () => {
+    const ui = (p: string) => FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`));
+    for (const p of [
+      "moments/SubagentMoment.tsx",
+      "moments/SubagentFeed.tsx",
+      "agents/dock/SubagentLines.tsx",
+      "agents/mention/SubagentsSection.tsx",
+      "i18n/fr-subagents.ts",
+    ])
+      expect(ui(p)).toBe(true);
+    expect(ui("agents/bar-summary.ts")).toBe(false);
+  });
+  test("phase 24, component management texts stay out of the entry, not the instance texts", () => {
+    const i18n = (p: string) => FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/i18n/${p}`));
+    expect(i18n("fr-components-manage.ts")).toBe(true);
+    expect(i18n("fr-components.ts")).toBe(false);
+  });
 });

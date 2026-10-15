@@ -13,6 +13,7 @@ import {
   type SetupStep,
 } from "@kibo/schema";
 import { withSection } from "../overlaps/turn-prefix";
+import { addDirsOf, realpathOrNull } from "./add-dirs";
 import { NO_CLI_FALLBACKS } from "./cli-flags";
 import { ticketLaunch } from "./mcp-launch";
 import type { OrchestratorOptions, TaskSpec, ToolGuard } from "./orchestrator-types";
@@ -169,9 +170,13 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
           : await turns.ticket(initial, agent, runDir);
       const { turn } = prepared;
       const demo = agent.ref === DEMO_AGENT_REF;
-      const claudeBin = demo
-        ? opts.demoAgent.bin
-        : resolveClaudeBin(opts.claudeBin, env, opts.userHome ?? homedir());
+      const userHome = opts.userHome ?? homedir();
+      const claudeBin = demo ? opts.demoAgent.bin : resolveClaudeBin(opts.claudeBin, env, userHome);
+      const addDirs = addDirsOf(agent.settings, prepared.delivery, {
+        home: userHome,
+        realpath: realpathOrNull,
+        log: (line) => console.error(`[kibo-daemon] run ${runId}: ${line}`),
+      });
       const flag = permissionFlag(agent.settings.permissionMode, await capsOf(claudeBin));
       const section = project ? null : await laterSection(initial, task !== undefined);
       const current = registry.get(runId);
@@ -196,7 +201,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         ? projectLaunch(route)
         : task
           ? { allow: agent.settings.allow, deny: [], mcpUrl: null, mcpConfigFile: null, mcpTools: null }
-          : ticketLaunch(route);
+          : ticketLaunch({ ...route, projectAllow: prepared.delivery?.allow ?? [] });
       deps.guards.set(runId, turn.guard);
       const answer = current.pendingAnswer === null ? null : prepared.mentions(current.pendingAnswer);
       const prompt = project
@@ -215,6 +220,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         prompt: session.resume ? prompt : titled(turn.promptTitle, prompt),
         systemPromptFile: turn.systemPromptFile,
         agentFlags: turn.agentFlags,
+        addDirs,
         hook: opts.hook,
         ...tools,
         hookUrl: `${baseUrl}/hooks/${runId}`,
@@ -230,6 +236,7 @@ export function createRunLauncher(deps: LaunchDeps): (runId: string) => Promise<
         workspace: prepared.label,
         cwd,
         guidelines: prepared.guidelines,
+        ...(addDirs.length > 0 ? { addDirs } : {}),
         ...(session.sessionId === current.sessionId ? {} : { sessionId: session.sessionId }),
       });
       notifyLifecycle("spawn hook", opts.onSpawned, registry.get(runId));

@@ -101,7 +101,7 @@ function createMockupRepo(): MockupRepo {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), "kibo-e2e-screens-")));
   const repo = join(dir, "repo");
   const remote = join(dir, "remote.git");
-  const worktree = join(repo, ".kibo", "worktrees", "kib-12");
+  const worktree = join(repo, ".kibo", "worktrees", "kib-28");
   mkdirSync(repo);
   const env = { ...process.env, ...GIT_IDENTITY };
   const gitIn =
@@ -129,7 +129,7 @@ function createMockupRepo(): MockupRepo {
   git("add", "-A");
   git("commit", "-q", "-m", "chore: monorepo Bun workspaces");
   git("push", "-q", "-u", "origin", "main");
-  git("worktree", "add", "-q", "-b", "kib-12", worktree, "main");
+  git("worktree", "add", "-q", "-b", "kib-28", worktree, "main");
   const wt = gitIn(worktree);
   const wWrite = writeIn(worktree);
   wWrite("packages/core/move.ts", "export const reparent = (id: string, parent: string) => [id, parent];\n");
@@ -186,7 +186,7 @@ test.beforeAll(async ({ browser }, info) => {
       description: "Arbre des tickets sur LoroTree : voir packages/core/ticket.ts:43 pour le schéma.",
     },
   });
-  await assign(page, seeded, 12, "livraison-opus", "running");
+  await assign(page, seeded, 28, "livraison-opus", "running");
   await assign(page, seeded, 14, "livraison-opus", "waiting_input");
 });
 
@@ -252,7 +252,7 @@ test("21 · Changements, fichier indexé sélectionné", async () => {
   await expect(page.getByText("↑2").first()).toBeVisible();
   await expect(page.getByLabel("Message")).not.toHaveValue("");
   await expect(
-    page.getByText("global · livraison-opus · KIB-12 travaille dans ce worktree.", { exact: false }),
+    page.getByText("global · livraison-opus · KIB-28 travaille dans ce worktree.", { exact: false }),
   ).toBeVisible();
   await capture(info, "21");
 });
@@ -263,7 +263,7 @@ test("22 · dialogue PR avec fichiers indexés non commités", async () => {
   const dialog = page.getByRole("dialog", { name: "Pousser et créer la PR" });
   await expect(dialog.getByRole("button", { name: "Commiter d'abord" })).toBeVisible();
   await expect(dialog.getByLabel("Titre")).not.toHaveValue("");
-  await expect(dialog.getByText("kib-12 → main · 2 commits non poussés · 2 fichiers")).toBeVisible();
+  await expect(dialog.getByText("kib-28 → main · 2 commits non poussés · 2 fichiers")).toBeVisible();
   await capture(info, "22");
   await dialog.getByRole("button", { name: "Annuler" }).click();
   await expect(dialog).toBeHidden();
@@ -324,7 +324,7 @@ test("densité 13 px des maquettes", async () => {
   expect(await size(page.locator("body"))).toBe("13px");
   expect(await size(sideButton("Vue d'ensemble"))).toBe("13px");
   expect(await size(page.getByText("Projets", { exact: true }).first())).toBe("10px");
-  expect(await size(doing.getByText("KIB-12", { exact: true }))).toBe("11px");
+  expect(await size(doing.getByText("KIB-28", { exact: true }))).toBe("11px");
   expect(await size(bar().getByRole("tab", { name: "Kibo · Kanban" }))).toBe("12px");
   const header = page.getByRole("button", { name: /Perso/ }).first();
   await expect(header).toContainText("Workspace local");

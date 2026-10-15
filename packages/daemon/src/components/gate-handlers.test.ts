@@ -123,6 +123,7 @@ test("the tickets listed to a component are not startable while a run is active 
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
   const busy = createTicket(project, { title: "A", statusId: "todo" });
   createTicket(project, { title: "B", statusId: "todo" });

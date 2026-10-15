@@ -16,6 +16,7 @@ export function listProjects(ws: LoroDoc): ProjectMeta[] {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   }));
 }
 

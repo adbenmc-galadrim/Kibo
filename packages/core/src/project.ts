@@ -1,7 +1,9 @@
 import {
   DEFAULT_DUPLICATION_SETTINGS,
   DEFAULT_WORKFLOW,
+  DUPLICATION_SHARED_GLOBS,
   type DuplicationSettings,
+  type EffectiveDuplication,
   formatTicketKey,
   type ProjectMeta,
   ProjectPatch,
@@ -11,11 +13,22 @@ import { LoroDoc } from "loro-crdt";
 import { valid } from "./config-store";
 import type { RegisteredProjectPatch } from "./workspace";
 
-export const LOCAL_ONLY_META: ReadonlySet<string> = new Set(["worktree", "storybook", "duplication"]);
+export const LOCAL_ONLY_META: ReadonlySet<string> = new Set([
+  "worktree",
+  "storybook",
+  "duplication",
+  "delivery",
+]);
 
-export const effectiveDuplication = (meta: {
+const hasShared = (settings: DuplicationSettings): settings is EffectiveDuplication =>
+  settings.shared !== undefined;
+
+export function effectiveDuplication(meta: {
   duplication: DuplicationSettings | null;
-}): DuplicationSettings => meta.duplication ?? DEFAULT_DUPLICATION_SETTINGS;
+}): EffectiveDuplication {
+  const settings = meta.duplication ?? DEFAULT_DUPLICATION_SETTINGS;
+  return hasShared(settings) ? settings : { ...settings, shared: [...DUPLICATION_SHARED_GLOBS] };
+}
 
 export const sharedMetaEntries = (meta: ProjectMeta): [string, ProjectMeta[keyof ProjectMeta]][] =>
   Object.entries(meta).filter(([key]) => !LOCAL_ONLY_META.has(key));
@@ -43,6 +56,7 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   };
 }
 

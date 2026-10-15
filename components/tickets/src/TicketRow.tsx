@@ -2,6 +2,7 @@ import { useDraggable, useDroppable } from "@dnd-kit/core";
 import type { Assignee, MemberInfo, TicketRun } from "@kibo/schema";
 import {
   assigneeLabel,
+  DeliveryStepChip,
   QuestionsChip,
   type QuestionsChipData,
   StatusDot,
@@ -185,6 +186,7 @@ export function TicketRow({
                 {fr.startable}
               </Badge>
             )}
+            <DeliveryStepChip ticket={t} className="hidden shrink-0 @md:inline-flex" />
             {t.openQuestions > 0 && (
               <QuestionsChip
                 {...questions}

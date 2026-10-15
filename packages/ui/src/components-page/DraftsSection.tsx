@@ -1,12 +1,12 @@
 import type { DraftSummary } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
-import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { DetailsBlock } from "./DetailsBlock";
 
 type Props = { drafts: DraftSummary[]; onPublish(id: string): void };
 
 function DraftState({ draft, onPublish }: { draft: DraftSummary; onPublish(id: string): void }) {
-  const c = fr.components;
+  const c = frComponentsManage.components;
   if (!draft.validated)
     return (
       <span className="grid justify-items-end gap-1">
@@ -34,7 +34,7 @@ export function DraftsSection({ drafts, onPublish }: Props) {
   if (drafts.length === 0) return null;
   return (
     <section className="grid gap-2">
-      <h2 className="text-sm font-medium">{fr.components.drafts}</h2>
+      <h2 className="text-sm font-medium">{frComponentsManage.components.drafts}</h2>
       <ul className="divide-y rounded-lg border">
         {drafts.map((d) => (
           <li key={d.id} className="flex items-center gap-3 px-3 py-2.5 text-sm">

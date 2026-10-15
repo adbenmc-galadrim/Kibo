@@ -142,6 +142,18 @@ describe("composeWorkSection", () => {
     expect(text.match(/… 1 autre$/gm)?.length).toBe(3);
   });
 
+  test("a file changed by the caller too is marked, and only that one", () => {
+    const text = composeWorkSection(work({ sharedPaths: ["src/i18n/fr.ts", "src/elsewhere.ts"] }), NOW) ?? "";
+    expect(text).toContain("  - `src/i18n/fr.ts` (+3 −1) (aussi modifié par toi)\n");
+    expect(text).toContain("  - `src/lib/format.ts` (+42 −0)\n");
+    expect(text.match(/aussi modifié par toi/g)?.length).toBe(1);
+  });
+
+  test("no file is marked without paths in common", () => {
+    expect(composeWorkSection(work({ sharedPaths: [] }), NOW)).not.toContain("aussi modifié par toi");
+    expect(composeWorkSection(work(), NOW)).not.toContain("aussi modifié par toi");
+  });
+
   test("a truncated index is called partial", () => {
     expect(composeWorkSection(work({ runs: [run({ truncated: true })] }), NOW)).toContain(
       "- Fichiers créés ou modifiés (liste partielle) :",
@@ -162,9 +174,7 @@ describe("composeWorkSection", () => {
   });
 
   test("ten overlaps at most", () => {
-    const overlaps = many(12, (i) =>
-      overlap({ id: `o${i}`, key: `k${i}`, detail: { kind: "file", path: `src/x${i}.ts` } }),
-    );
+    const overlaps = many(12, (i) => overlap({ id: `o${i}`, key: `k${i}` }));
     const text = composeWorkSection(work({ overlaps }), NOW) ?? "";
     expect(text.match(/^- Recouvrement avec/gm)?.length).toBe(10);
     expect(text).toContain("… 2 autres");

@@ -57,7 +57,9 @@ function planLines(plan: readonly Step[] | null): string[] {
   return ["- Plan :", ...steps];
 }
 
-function fileLines(run: ParallelRun): string[] {
+const ALSO_MINE = " (aussi modifié par toi)";
+
+function fileLines(run: ParallelRun, mine: ReadonlySet<string>): string[] {
   if (run.files.length === 0) return [];
   const head = run.truncated
     ? "- Fichiers créés ou modifiés (liste partielle) :"
@@ -68,7 +70,7 @@ function fileLines(run: ParallelRun): string[] {
     ...bounded(
       files,
       DUPLICATION_LIMITS.sectionFiles,
-      (f) => `  - \`${f.path}\` (+${f.added} −${f.removed})`,
+      (f) => `  - \`${f.path}\` (+${f.added} −${f.removed})${mine.has(f.path) ? ALSO_MINE : ""}`,
       "  - ",
     ),
   ];
@@ -90,7 +92,7 @@ function exportLines(run: ParallelRun): string[] {
   ];
 }
 
-function runLines(run: ParallelRun, now: number): string[] {
+function runLines(run: ParallelRun, now: number, mine: ReadonlySet<string>): string[] {
   const step = run.step ? ` · étape : ${run.step}` : "";
   return [
     "",
@@ -98,7 +100,7 @@ function runLines(run: ParallelRun, now: number): string[] {
     "",
     `- démarré il y a ${elapsed(now - run.startedAt)}${step}`,
     ...planLines(run.plan),
-    ...fileLines(run),
+    ...fileLines(run, mine),
     ...exportLines(run),
     `- Espace : ${SPACE[run.workspace](run)}`,
   ];
@@ -127,9 +129,10 @@ function bodyLines(work: ParallelWork, now: number): string[] {
   const runs = [...work.runs].sort((a, b) => a.startedAt - b.startedAt || a.runId.localeCompare(b.runId));
   const shown = runs.slice(0, DUPLICATION_LIMITS.sectionRuns);
   const hidden = runs.length - shown.length + work.more;
+  const mine = new Set(work.sharedPaths ?? []);
   return [
     WORK_SECTION_TITLE,
-    ...shown.flatMap((r) => runLines(r, now)),
+    ...shown.flatMap((r) => runLines(r, now, mine)),
     ...(hidden > 0 ? ["", othersLine(hidden, ` : \`${PEEK_WORK_TOOL}\``)] : []),
     ...overlapLines(work.overlaps, work.runs),
     ...(work.partial

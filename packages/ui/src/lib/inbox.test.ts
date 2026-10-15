@@ -27,6 +27,7 @@ function inboxSnapshot(statuses: StatusId[]): ProjectSnapshot {
       worktree: null,
       storybook: null,
       duplication: null,
+      delivery: null,
     },
     tickets: statuses.map((statusId, i) => ({
       ...model,
@@ -65,6 +66,7 @@ test("the inbox summary counts its tickets by status and carries the inbox ident
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
 });
 

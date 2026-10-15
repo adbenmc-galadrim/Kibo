@@ -30,6 +30,7 @@ export function ticket(p: Partial<TicketView> & Pick<TicketView, "id">): TicketV
     externalRefs: [],
     labels: [],
     agentProgress: EMPTY_PROGRESS,
+    delivery: null,
     progress: { done: 0, total: 0 },
     waitingOn: [],
     keyLabel: key ?? "EMIS-…",
@@ -41,6 +42,8 @@ export function ticket(p: Partial<TicketView> & Pick<TicketView, "id">): TicketV
 
 export function question(p: Partial<Question> & Pick<Question, "id" | "ticketId">): Question {
   return {
+    kind: "question",
+    images: [],
     runId: null,
     title: `Question ${p.id}`,
     context: "",
@@ -93,6 +96,7 @@ export function project(p: Partial<ProjectSnapshot> = {}): ProjectSnapshot {
       worktree: null,
       storybook: null,
       duplication: null,
+      delivery: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],

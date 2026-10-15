@@ -19,6 +19,8 @@ const answer = (option: string, delivered = false): QuestionAnswer => ({
 });
 
 const question = (history: QuestionEvent[], over: Partial<Question> = {}): Question => ({
+  kind: "question",
+  images: [],
   id: "q",
   ticketId: T2,
   runId: null,

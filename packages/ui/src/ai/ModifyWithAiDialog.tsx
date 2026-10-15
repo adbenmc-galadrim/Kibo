@@ -15,6 +15,7 @@ import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 
 import { client } from "../api";
 import { ApprovalScope, useApprovalScope } from "../dialogs/approval-scope";
 import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { frCreations } from "../i18n/fr-creations";
 import { AiDraftPanel } from "./AiDraftPanel";
 import { AttachmentsField } from "./AttachmentsField";
@@ -188,7 +189,10 @@ export function ModifyWithAiDialog({
           </DialogTitle>
           <DialogDescription className={component ? undefined : "sr-only"}>
             {component
-              ? fr.ai.modifySubtitle(component.version, fr.components.origin[component.origin])
+              ? fr.ai.modifySubtitle(
+                  component.version,
+                  frComponentsManage.components.origin[component.origin],
+                )
               : frCreations.modify.title}
           </DialogDescription>
         </DialogHeader>

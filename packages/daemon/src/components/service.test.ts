@@ -227,6 +227,17 @@ describe("notes", () => {
     await expect(h.rpc({ method: "getNotesDir", projectId: "ghost" })).rejects.toThrow("NOT_FOUND");
   });
 
+  test("listNotes reads the notes index without a component instance", async () => {
+    const { projectId, pageId } = await createProject(h);
+    const call = callOf(projectId, await addInstance(h, projectId, pageId, "notes@1.0.0"));
+    await call({ kind: "notes.write", path: "briefs/C1-3.md", markdown: "# Brief", expectedMtime: null });
+    const notes = await h.rpc({ method: "listNotes", projectId });
+    expect(notes.map((n) => [n.path, n.title])).toEqual([["briefs/C1-3.md", "Brief"]]);
+    await expect(h.rpc({ method: "listNotes", projectId: INBOX_ID })).rejects.toThrow(
+      "notes is not available for the inbox",
+    );
+  });
+
   test("the inbox has no notes folder to read or set", async () => {
     const dir = join(home, "vault-inbox");
     mkdirSync(dir);

@@ -75,7 +75,7 @@ function recordQuestion(deps: QuestionHookDeps, runId: string, payload: HookPayl
     ignored(runId, "run sans ticket");
     return null;
   }
-  const author = { id: run.id, profileName: run.profileName };
+  const author = { id: run.id, profileName: run.profileName, cwd: run.cwd };
   const question = deps.data.createQuestion(run.projectId, run.ticketId, author, payload.ask);
   if (question) return { run, question };
   ignored(runId, "trop de questions ouvertes");

@@ -21,6 +21,7 @@ function project(plan: boolean) {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
   const created = executeProjectCommand(doc, { method: "createTicket", title: "Formulaire" });
   const id = typeof created === "object" && created !== null && "id" in created ? String(created.id) : "";
@@ -139,4 +140,14 @@ test("ticket runs get the parallel work rules after the Kibo protocol", () => {
   expect(rulesAt).toBeGreaterThan(protocolAt);
   expect(prompt.endsWith("\n")).toBe(true);
   expect(buildSystemPrompt([], NO_AGENT, { ...base, parallel: false })).not.toContain(PARALLEL_RULES_TITLE);
+});
+
+test("the parallel work rules present an overlap as information", () => {
+  const base = { progress: true, recipients: [], signals: true, skillReview: false };
+  const prompt = buildSystemPrompt([], NO_AGENT, { ...base, parallel: true });
+  expect(prompt).toContain(
+    "un recouvrement est une information : reprends ou factorise si c'est le même code, sinon continue",
+  );
+  expect(prompt).not.toContain("sans demander");
+  expect(prompt).not.toContain("Copie gardée");
 });

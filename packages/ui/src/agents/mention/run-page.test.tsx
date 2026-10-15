@@ -4,6 +4,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../../api-mock";
 import { dockState, FEED_RUN, MOMENTS_PAGE, progressProject } from "../../moments/fixtures";
+import { SUBAGENTS, subagentMoment } from "../../moments/subagent-fixtures";
 import { OWNER_NAME, parallelFixture } from "../../overlaps/fixtures";
 import { type Host, HostProvider } from "../../shell/Host";
 import { reviewFixture } from "../../skills/fixtures";
@@ -11,6 +12,11 @@ import { AgentsProvider } from "../../state/agents-context";
 
 const calls: RpcRequest[] = [];
 let momentsFail = false;
+let withSubagents = false;
+const SUBAGENT_PAGE = {
+  ...MOMENTS_PAGE,
+  moments: [...MOMENTS_PAGE.moments, ...SUBAGENTS.map((s, i) => subagentMoment(s, 60 + i))],
+};
 const worktrees: Worktree[] = [
   { path: "/Users/adam/goinfre/Kibo", branch: "main", head: "a1", isMain: true },
 ];
@@ -22,8 +28,10 @@ mock.module("../../api", () =>
         calls.push(req);
         if (req.method === "getProject") return Promise.resolve(progressProject());
         if (req.method === "runMoments" && momentsFail) return Promise.reject(new Error("down"));
-        if (req.method === "runMoments")
-          return Promise.resolve(req.runId === FEED_RUN ? MOMENTS_PAGE : { ...MOMENTS_PAGE, moments: [] });
+        if (req.method === "runMoments" && req.runId === FEED_RUN)
+          return Promise.resolve(withSubagents ? SUBAGENT_PAGE : MOMENTS_PAGE);
+        if (req.method === "runMoments") return Promise.resolve({ ...MOMENTS_PAGE, moments: [] });
+        if (req.method === "runs.subagents") return Promise.resolve(SUBAGENTS);
         if (req.method === "getRunLog") return Promise.resolve([]);
         if (req.method === "overlaps.parallel") return Promise.resolve(parallelFixture());
         if (req.method === "skillReviews.list")
@@ -77,6 +85,7 @@ const REASONING = "Le corps vide passe parce que le test ne couvre que null.";
 
 beforeEach(() => {
   momentsFail = false;
+  withSubagents = false;
   calls.length = 0;
   window.localStorage.clear();
 });
@@ -199,4 +208,44 @@ test("the feed scrolls on its own, opens at its end, and the reply stays under i
     if (height) Object.defineProperty(HTMLElement.prototype, "scrollHeight", height);
     else Reflect.deleteProperty(HTMLElement.prototype, "scrollHeight");
   }
+});
+
+test("screen 219: the header counts the sub-agents and a side section lists them", async () => {
+  withSubagents = true;
+  const scrolled: string[] = [];
+  const original = Element.prototype.scrollIntoView;
+  Element.prototype.scrollIntoView = function (this: Element) {
+    scrolled.push(this.getAttribute("data-subagent") ?? "");
+  };
+  try {
+    await showSubagents(scrolled);
+  } finally {
+    Element.prototype.scrollIntoView = original;
+  }
+});
+
+async function showSubagents(scrolled: string[]) {
+  renderPage();
+  const header = screen.getByRole("banner");
+  expect(await within(header).findByText("3 sous-agents · 1 en cours")).toBeTruthy();
+  expect(calls).toContainEqual({ method: "runs.subagents", runId: FEED_RUN });
+  const section = screen.getByRole("region", { name: "Sous-agents" });
+  expect(section.closest("aside")).toBeTruthy();
+  const rows = within(section).getAllByRole("listitem");
+  expect(rows).toHaveLength(3);
+  const running = within(section).getByText("Porte qualité — correctness").closest("li");
+  if (!(running instanceof HTMLElement)) throw new Error("no running row");
+  expect(within(running).getByText("ecc:code-reviewer")).toBeTruthy();
+  expect(within(running).getByText(/^en cours · /)).toBeTruthy();
+  expect(within(section).getByText("terminé · 4 min")).toBeTruthy();
+  await userEvent.setup().click(within(running).getByRole("button", { name: "Voir dans le fil" }));
+  expect(scrolled).toEqual(["a-correctness"]);
+}
+
+test("a run without sub-agents shows neither counter nor section, and asks nothing", async () => {
+  renderPage();
+  await screen.findByText("Je relis le récepteur et ses tests avant de toucher au port.");
+  expect(screen.queryByText(/sous-agents? ·/)).toBeNull();
+  expect(screen.queryByRole("region", { name: "Sous-agents" })).toBeNull();
+  expect(calls.some((c) => c.method === "runs.subagents")).toBe(false);
 });

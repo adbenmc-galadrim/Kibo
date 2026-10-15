@@ -5,7 +5,7 @@ const time = (at: number) => new Date(at).toLocaleTimeString("fr-FR", { hour: "2
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
-const role: Record<OverlapRole, string> = { other: "à factoriser", owner: "repris par" };
+const role: Record<OverlapRole, string> = { other: "information", owner: "repris par" };
 
 const reasons: Record<AutoLinkReason, string> = { copy: "repris de", import: "importé de" };
 
@@ -60,6 +60,7 @@ export const frOverlaps = {
     files: (n: number) => plural(n, "fichier", "fichiers"),
     exports: (n: number) => plural(n, "export nouveau", "exports nouveaux"),
     truncated: "liste tronquée",
+    alsoMine: "aussi modifié par toi",
     seeWork: "Voir son travail",
     shared: "dossier du projet, partagé avec toi",
     isolated: "dossier isolé, non comparé",
@@ -86,6 +87,9 @@ export const frOverlaps = {
     ignoreHelp: "Un glob par ligne, en plus des verrous, fichiers générés, binaires et secrets.",
     ignoreTooMany: "50 globs au plus.",
     ignoreTooLong: "Un glob fait 200 caractères au plus.",
+    shared: "Fichiers partagés",
+    sharedHelp:
+      "Un glob par ligne. Fichiers partagés par nature (docs, configs, i18n) : un bloc identique n'y est pas un doublon, un export dupliqué si.",
     genericExports: "Exports génériques",
     genericExportsHelp: "Un nom exporté deux fois parmi ceux-ci ne déclenche pas d'alerte.",
     addExport: "Ajouter…",

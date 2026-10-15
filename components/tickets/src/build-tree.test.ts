@@ -22,6 +22,7 @@ const t = (id: string, parentId: string | null, assignee: TicketView["assignee"]
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
 });
 
 test("nests children under their parent, keeping order and depth", () => {

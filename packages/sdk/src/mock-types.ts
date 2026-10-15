@@ -1,6 +1,7 @@
 import type {
   CiRun,
   ComponentFormat,
+  DeliveryAgent,
   McpCallResult,
   MemberInfo,
   PresencePeer,
@@ -8,6 +9,7 @@ import type {
   ProjectAsset,
   ProjectCommand,
   ProjectSnapshot,
+  RunDenials,
   RunPeek,
   Selection,
   Spotlight,
@@ -20,7 +22,7 @@ import type { MockFrame } from "./mock-design";
 import type { MockEmbedOptions } from "./mock-embed";
 import type { MockNote } from "./mock-notes";
 import type { ServerDefinition } from "./server";
-import type { FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
+import type { AllowAndResumeInput, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
 
 export type MockSdk = {
   sdk: KiboSdk;
@@ -34,6 +36,8 @@ export type MockSdk = {
   viewRequests: { componentId: string; question: string | null }[];
   openedRuns: string[];
   deliveries: string[];
+  runDeliveries: string[];
+  allowed: AllowAndResumeInput[];
   embedCalls: string[];
   data: Map<string, unknown>;
   configPatches: Record<string, unknown>[];
@@ -77,4 +81,6 @@ export type MockSdkOptions = {
   spotlight?: Spotlight | null;
   deliveryRefused?: boolean;
   peeks?: Record<string, RunPeek>;
+  denials?: Record<string, RunDenials>;
+  deliveryAgent?: DeliveryAgent | null;
 };

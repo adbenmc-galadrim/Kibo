@@ -10,6 +10,16 @@ import { HookGroup } from "./hook-group";
 import type { MomentStore, RunTrace } from "./store";
 import { readTranscriptSlice, type TranscriptSlice } from "./transcript-reader";
 
+export type SubagentSource = { subagentId: string; path: string; offset: number; ended: boolean };
+export type SubagentPort = {
+  discover(runId: string, transcriptPath: string): void;
+  sources(runId: string): SubagentSource[];
+  read(path: string, offset: number, maxBytes: number): TranscriptSlice;
+  skip(path: string, offset: number): number | null;
+  advanced(runId: string, source: SubagentSource, offset: number, closed: boolean): void;
+  onLines(runId: string, subagentId: string | null, lines: readonly string[]): void;
+};
+
 export type TraceDeps = {
   store: MomentStore;
   root: string;
@@ -18,6 +28,7 @@ export type TraceDeps = {
   onActions?(runId: string, actions: readonly RunAction[], at: number): void;
   read?: (path: string, offset: number) => TranscriptSlice;
   passBytes?: number;
+  subagents?: SubagentPort;
 };
 
 export type Live = {
@@ -27,6 +38,7 @@ export type Live = {
   from: string | null;
   scanFrom: number | null;
   held: FoldedMoment[];
+  subFolds: Map<string, FoldState>;
 };
 
 export type TraceCore = {
@@ -62,6 +74,7 @@ export const freshLive = (from: string | null = null): Live => ({
   from,
   scanFrom: null,
   held: [],
+  subFolds: new Map(),
 });
 
 export function createTraceCore(deps: TraceDeps): TraceCore {
@@ -92,7 +105,7 @@ export function createTraceCore(deps: TraceDeps): TraceCore {
   }
 
   function write(runId: string, items: readonly FoldedMoment[]): RunMoment[] {
-    const moments = items.map((m) => store.append(runId, m.data, m.stepId, m.at));
+    const moments = items.map((m) => store.append(runId, m.data, m.stepId, m.at, m.subagentId ?? null));
     if (moments.length > 0) deps.emit({ type: "run.moments", runId, moments });
     notifyActions(runId, moments);
     return moments;

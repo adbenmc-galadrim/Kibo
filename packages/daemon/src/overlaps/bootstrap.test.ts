@@ -16,6 +16,7 @@ import { LOCAL_DUPLICATION_KEY } from "../project-folder";
 import { LOCAL_CONTEXT } from "../rpc-extensions";
 import { type Overlaps, startOverlaps } from "./bootstrap";
 import { NOW, ticketRun } from "./peek-fakes.test-helper";
+import { openOverlapStore } from "./store";
 
 const homes: string[] = [];
 const started: Overlaps[] = [];
@@ -26,9 +27,14 @@ afterEach(async () => {
   cleanupTmp();
 });
 
-function boot(over: { enabled?: boolean; runs?: RunView[] } = {}) {
+const newHome = () => {
   const home = mkdtempSync(join(tmpdir(), "kibo-overlaps-boot-"));
   homes.push(home);
+  return home;
+};
+
+function boot(over: { enabled?: boolean; runs?: RunView[]; home?: string } = {}) {
+  const home = over.home ?? newHome();
   const ticks: (() => void)[] = [];
   const cancelled: number[] = [];
   const gitCalls: string[][] = [];
@@ -160,5 +166,31 @@ test("the hooks pass a PreToolUse through untouched when nothing waits", () => {
   const inner: HookSink = { verify: () => true, receive: () => null };
   const payload = { event: "PreToolUse", tool: "Read", detail: "/x" } as HookPayload;
   expect(overlaps.hooks(inner).receive("r1", payload, {})).toBeNull();
-  expect(overlaps.reminders.openDeliveredOverlaps("r1")).toEqual([]);
+});
+
+test("the open file overlaps of an older version are resolved at start, once", () => {
+  const home = newHome();
+  const before = openOverlapStore(home);
+  const file = before.create(
+    {
+      kind: "file",
+      key: "file:src/a.ts",
+      ownerRunId: "r1",
+      otherRunId: "r2",
+      ownerWorkspace: "/wt/a",
+      otherWorkspace: "/wt/b",
+      detail: { kind: "file", path: "src/a.ts" },
+    },
+    "p1",
+    1,
+  );
+  before.close();
+  boot({ home });
+  const after = openOverlapStore(home);
+  try {
+    expect(after.get(file.id)).toMatchObject({ status: "resolved", resolvedAt: NOW });
+    expect(after.list({ kind: "file", state: "open" })).toEqual([]);
+  } finally {
+    after.close();
+  }
 });

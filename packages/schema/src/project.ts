@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ProjectDelivery } from "./delivery";
 import { ProjectKey } from "./ids";
 import { DuplicationSettings } from "./overlap-settings";
 import { StorybookSettings } from "./storybook";
@@ -13,6 +14,7 @@ export const ProjectMeta = z.object({
   worktree: WorktreeSettings.nullable().default(null),
   storybook: StorybookSettings.nullable().default(null),
   duplication: DuplicationSettings.nullable().default(null),
+  delivery: ProjectDelivery.nullable().default(null),
 });
 export type ProjectMeta = z.infer<typeof ProjectMeta>;
 
@@ -24,6 +26,7 @@ export const ProjectPatch = z
     worktree: WorktreeSettings.nullable().optional(),
     storybook: StorybookSettings.nullable().optional(),
     duplication: DuplicationSettings.nullable().optional(),
+    delivery: ProjectDelivery.nullable().optional(),
   })
   .strict()
   .refine((p) => Object.values(p).some((v) => v !== undefined), { message: "empty patch" });

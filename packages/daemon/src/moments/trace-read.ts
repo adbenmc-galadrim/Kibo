@@ -19,6 +19,21 @@ export function pageOf(store: MomentStore, runId: string, after?: number): RunMo
   };
 }
 
+export function subagentPageOf(
+  store: MomentStore,
+  runId: string,
+  subagentId: string,
+  after?: number,
+): RunMomentsPage {
+  const trace = store.trace(runId);
+  return {
+    moments: store.listSubagent(runId, subagentId, after),
+    internalPlan: null,
+    partial: trace?.partial ?? null,
+    source: trace?.source ?? "pending",
+  };
+}
+
 export function peekOf(store: MomentStore, run: RunView, progress: RunProgressSummary | null): RunPeek {
   const last = store.lastOfKind(run.id, "message")?.data;
   return {

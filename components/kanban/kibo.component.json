@@ -8,7 +8,7 @@
   "description": "Tickets par statut, glisser-déposer",
   "reads": ["ticket", "status", "run", "ci_run", "question"],
   "selection": true,
-  "writes": ["ticket"],
+  "writes": ["ticket", "run"],
   "data": true,
   "configSchema": { "filter": { "enum": ["mine-and-agents", "all"], "default": "mine-and-agents" } }
 }

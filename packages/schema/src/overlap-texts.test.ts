@@ -5,7 +5,6 @@ import {
   autoLinkSummary,
   OVERLAP_SUMMARY_MAX,
   overlapAlert,
-  overlapStopReminder,
   overlapSummary,
   PARALLEL_RULES,
   PARALLEL_RULES_TITLE,
@@ -58,49 +57,39 @@ test("a summary is bounded and masks secrets", () => {
   expect(secret).not.toContain("ghp_abcdefghijklmnopqrstuvwxyz");
 });
 
-test("the other run is told to factorise now, without asking", () => {
+const REUSE =
+  'Si c\'est le même code, reprends le sien (`mcp__kibo__peek_work { run: "BOU-12", path: "src/lib/format.ts" }`, copie à l\'identique au même chemin) ou factorise ; sinon continue. Rien à justifier.';
+
+test("the other run is informed, never told to stop or justify", () => {
   const alert = overlapAlert("other", EXPORT, RUN, "BOU-12");
-  expect(alert.startsWith("Kibo — recouvrement avec boutique · livraison · BOU-12")).toBe(true);
-  expect(alert).toContain("Factorise maintenant, sans demander");
-  expect(alert).toContain('mcp__kibo__peek_work { run: "BOU-12", path: "src/lib/format.ts" }');
-  expect(alert).toContain("à l'identique au même chemin");
-  expect(alert).toContain("(toi : `src/utils/date.ts`)");
-  const block = overlapAlert("other", BLOCK, RUN, "BOU-12");
-  expect(block).toContain("14 lignes");
-  expect(block).toContain('mcp__kibo__peek_work { run: "BOU-12", path: "src/http.ts" }');
-});
-
-test("a shared file asks to reuse the other run's version before writing", () => {
-  expect(overlapAlert("other", FILE, RUN, "BOU-12")).toBe(
-    'Kibo — recouvrement avec boutique · livraison · BOU-12 : `src/i18n/fr.ts` est aussi modifié par BOU-12. **Avant d\'écrire, lis sa version** (`mcp__kibo__peek_work { run: "BOU-12", path: "src/i18n/fr.ts" }`) et **reprends-la telle quelle**, ou factorise ; n\'écris pas ta propre version. Ne reformate pas et ne déplace rien dans ce fichier. Dis ce que tu as fait dans ton compte rendu.',
-  );
-});
-
-test("the owner of a shared file is asked to keep it stable", () => {
-  expect(overlapAlert("owner", FILE, "boutique · livraison · BOU-15", "BOU-15")).toBe(
-    "Kibo — boutique · livraison · BOU-15 modifie aussi `src/i18n/fr.ts` et doit reprendre ta version : ne reformate pas et ne déplace rien dans ce fichier d'ici la fin de ton run ; si tu dois le changer, dis-le dans ton compte rendu.",
-  );
-});
-
-test("the owner is only informed", () => {
-  const alert = overlapAlert("owner", EXPORT, "boutique · livraison · BOU-15", "BOU-15");
   expect(alert).toBe(
-    "Kibo — boutique · livraison · BOU-15 reprend ton `formatDate` (`src/lib/format.ts`) : ne le renomme pas et ne le déplace pas d'ici la fin de ton run ; si tu dois le changer, dis-le dans ton compte rendu.",
+    `Kibo — information : \`formatDate\` est aussi exporté par boutique · livraison · BOU-12 (\`src/lib/format.ts\`, toi \`src/utils/date.ts\`). ${REUSE}`,
   );
-  expect(overlapAlert("owner", BLOCK, "x", "BOU-15")).toContain("ne le renomme pas");
+  expect(alert.startsWith("Kibo — information : ")).toBe(true);
+  expect(alert).toContain("Rien à justifier");
+  expect(alert).not.toContain("sans demander");
+  const block = overlapAlert("other", BLOCK, RUN, "BOU-12");
+  expect(block).toContain("14 lignes de `src/api/client.ts:40` sont identiques à `src/http.ts:12`");
+  expect(block).toContain('mcp__kibo__peek_work { run: "BOU-12", path: "src/http.ts" }');
+  expect(block).not.toContain("sans demander");
 });
 
-test("the stop reminder cites every open overlap", () => {
-  expect(overlapStopReminder([{ ticketKey: "BOU-12", label: "`formatDate`" }])).toBe(
-    "Kibo : recouvrement ouvert avec BOU-12 (`formatDate`) : factorise, ou explique dans ton compte rendu pourquoi tu gardes ta copie, puis termine.",
+test("a legacy shared file overlap is only information", () => {
+  const alert = overlapAlert("other", FILE, RUN, "BOU-12");
+  expect(alert.startsWith("Kibo — information : `src/i18n/fr.ts` est aussi modifié par boutique")).toBe(true);
+  expect(alert).toContain("Rien à justifier");
+  expect(overlapAlert("owner", FILE, "boutique · livraison · BOU-15", "BOU-15")).toBe(
+    "Kibo — information : boutique · livraison · BOU-15 modifie aussi `src/i18n/fr.ts`. Rien à faire.",
   );
-  const two = overlapStopReminder([
-    { ticketKey: "BOU-12", label: "`formatDate`" },
-    { ticketKey: "BOU-13", label: "`src/i18n/fr.ts`" },
-  ]);
-  expect(two).toContain("BOU-12 (`formatDate`)");
-  expect(two).toContain("BOU-13 (`src/i18n/fr.ts`)");
-  expect(two.startsWith("Kibo : recouvrements ouverts avec")).toBe(true);
+});
+
+test("the owner is only informed, with nothing to do", () => {
+  expect(overlapAlert("owner", EXPORT, "boutique · livraison · BOU-15", "BOU-15")).toBe(
+    "Kibo — information : boutique · livraison · BOU-15 ajoute aussi un export `formatDate` (`src/utils/date.ts`). Rien à faire.",
+  );
+  expect(overlapAlert("owner", BLOCK, "x", "BOU-15")).toBe(
+    "Kibo — information : x a 14 lignes identiques à ton code de `src/http.ts:12` (`src/api/client.ts:40`). Rien à faire.",
+  );
 });
 
 test("an automatic link says who blocks whom and why", () => {
@@ -122,5 +111,8 @@ test("the work section and the parallel rules have fixed titles", () => {
   expect(WORK_SECTION_FOOTER).toContain("`mcp__kibo__peek_work`");
   const rules = PARALLEL_RULES.join("\n");
   expect(rules).toContain('`mcp__kibo__peek_work { run: "BOU-12" }`');
-  expect(rules).toContain("tu factorises **toi-même, sans demander**");
+  expect(rules).toContain("un recouvrement est une information");
+  expect(rules).toContain("reprends ou factorise si c'est le même code, sinon continue");
+  expect(rules).not.toContain("sans demander");
+  expect(rules).not.toContain("Copie gardée");
 });

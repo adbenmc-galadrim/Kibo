@@ -1,21 +1,14 @@
-import { existsSync } from "node:fs";
-import { guidelineChain } from "@kibo/core/context";
 import { canResume, resumableRuns } from "@kibo/core/run-resume";
 import { headRank, orderQueue, planAdmissions, rankForMove, tailRank } from "@kibo/core/scheduler";
-import {
-  type Agent,
-  type HostLoad,
-  HostSettings,
-  isTerminal,
-  KiboError,
-  mainSessionOf,
-  type RunView,
-} from "@kibo/schema";
+import { type Agent, type HostLoad, HostSettings, isTerminal, KiboError, type RunView } from "@kibo/schema";
+import { createLocksWatch } from "../locks/locks-watch";
 import { agentGuardOf } from "./agent-guard";
-import { activeRunOf, plannedCwd, previewAssign } from "./assign-preview";
+import { activeRunOf } from "./assign-preview";
+import { assertLeaf, childrenProbe } from "./children-probe";
 import { createHookSink } from "./hook-sink";
 import { hostSettingsOf, hostViewOf } from "./host-view";
 import { noticeFor } from "./notifier";
+import { createAssigner } from "./orchestrator-assign";
 import { guarded, knownAgent, startOfDay, ticketAgent } from "./orchestrator-support";
 import type { Orchestrator, OrchestratorOptions, TaskSpec, ToolGuard } from "./orchestrator-types";
 import { createProjectRun } from "./project-run";
@@ -46,6 +39,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   const listeners = new Set<() => void>();
   const stateListeners = new Set<(run: RunView) => void>();
   let load: HostLoad = { cpu: 0, ram: 0 };
+  const locks = createLocksWatch(opts.locks);
   let stopping = false;
   let signature = "";
   let emitTimer: ReturnType<typeof setTimeout> | null = null;
@@ -100,7 +94,8 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         .finally(() => guarded("queue pass", tick));
     }
     const current = JSON.stringify([next.waiting, Math.round(load.cpu), Math.round(load.ram)]);
-    if (current !== signature) {
+    const locksChanged = locks.refresh();
+    if (current !== signature || locksChanged) {
       signature = current;
       emit();
     }
@@ -129,71 +124,33 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
   }, opts.tickMs ?? 2000);
   timer.unref();
 
-  const resumeContext = (runs: RunView[]) => ({
-    runs,
-    alive: (id: string) => live.has(id),
-    profileIds: new Set(opts.data.agents(null).map((a) => a.ref)),
-  });
+  const resumeContext = (runs: RunView[]) => {
+    const children = childrenProbe(opts.data);
+    return {
+      runs,
+      alive: (id: string) => live.has(id),
+      profileIds: new Set(opts.data.agents(null).map((a) => a.ref)),
+      hasChildren: (run: RunView) => children(run) > 0,
+    };
+  };
 
   const enqueue = (run: NewRun): RunView => registry.create(run, tailRank(registry.all()));
 
+  const { assign, submit, preview } = createAssigner({
+    opts,
+    registry,
+    tasks,
+    tick,
+    agentOf,
+    ticketAgentOf,
+    plan,
+    now,
+    enqueue,
+  });
+
   return {
-    assign(input) {
-      const agent = ticketAgentOf(input.profileId, input.projectId);
-      const { ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
-      if (ticket.key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
-      if (activeRunOf(registry.all(), ticket.id))
-        throw new KiboError("CONFLICT", `ticket ${ticket.key} already has an active run`);
-      opts.data.assertWritable(input.projectId);
-      opts.data.assignTicket(input.projectId, ticket.id, agent.name);
-      const main = mainSessionOf(registry.all(), ticket.id);
-      const inherited = !input.fresh && main !== null && main.profileId === agent.ref ? main : null;
-      const view = enqueue({
-        id: crypto.randomUUID(),
-        projectId: input.projectId,
-        ticketId: ticket.id,
-        ticketKey: ticket.key,
-        ticketTitle: ticket.title,
-        profileId: agent.ref,
-        profileName: agent.name,
-        agentScope: agent.scope,
-        projectKey: opts.data.projectKey(input.projectId),
-        sessionId: inherited?.sessionId ?? crypto.randomUUID(),
-        brief: input.brief,
-        kind: "ticket",
-        resumedFrom: inherited?.id ?? null,
-      });
-      tick();
-      return registry.get(view.id);
-    },
-    submit(task) {
-      const agent = agentOf(task.profileId);
-      const id = crypto.randomUUID();
-      tasks.set(id, {
-        cwd: task.cwd,
-        extraArgs: task.extraArgs ?? [],
-        env: task.env ?? {},
-        resume: task.resumeSessionId !== undefined,
-        guard: task.guard,
-      });
-      enqueue({
-        id,
-        projectId: task.projectId,
-        ticketId: null,
-        ticketKey: null,
-        ticketTitle: task.title,
-        profileId: agent.ref,
-        profileName: agent.name,
-        agentScope: agent.scope,
-        projectKey: task.projectId === null ? null : opts.data.projectKey(task.projectId),
-        sessionId: task.resumeSessionId ?? crypto.randomUUID(),
-        brief: task.prompt,
-        kind: "ticket",
-        resumedFrom: null,
-      });
-      tick();
-      return registry.get(id);
-    },
+    assign,
+    submit,
     startProjectRun(input) {
       const id = createProjectRun(
         { registry, agentOf, assertWritable: opts.data.assertWritable, projectKey: opts.data.projectKey },
@@ -202,31 +159,10 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
       tick();
       return registry.get(id);
     },
-    preview(input) {
-      const agent = ticketAgentOf(input.profileId, input.projectId);
-      const { project, ticket } = opts.data.ticketContext(input.projectId, input.ticketId);
-      const key = ticket.key;
-      if (key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
-      const guidelines = guidelineChain(opts.data.guidelines(input.projectId), {
-        projectId: input.projectId,
-        domainId: ticket.domainId,
-      }).length;
-      const runs = registry.all();
-      return previewAssign({
-        runs,
-        projectId: input.projectId,
-        ticket: { ...ticket, key },
-        agent,
-        projectKey: opts.data.projectKey(input.projectId),
-        guidelines,
-        at: now(),
-        plan,
-        plannedCwd: plannedCwd(agent.settings.workspace, project.meta, { ...ticket, key }),
-        transcriptExists: (path) => path !== null && existsSync(path),
-      });
-    },
+    preview,
     answer(runId, text) {
       const target = registry.get(runId);
+      if (isTerminal(target.state)) assertLeaf(childrenProbe(opts.data)(target));
       if (isTerminal(target.state) && !canResume(target, resumeContext(registry.all()))) {
         throw new KiboError("INVALID_TRANSITION", `run ${runId} cannot be resumed`);
       }
@@ -272,6 +208,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
         projectAgents: [],
         progress: [],
         signals: [],
+        locks: locks.current(),
       };
     },
     log: (runId) => registry.log(runId),

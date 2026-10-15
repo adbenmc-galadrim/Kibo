@@ -8,6 +8,6 @@
   "description": "Arbre des tickets, sous-tickets illimités",
   "reads": ["ticket", "status", "run", "question"],
   "selection": true,
-  "writes": ["ticket"],
+  "writes": ["ticket", "run"],
   "configSchema": { "filter": { "enum": ["all", "mine"], "default": "all" } }
 }

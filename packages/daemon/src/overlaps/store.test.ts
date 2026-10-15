@@ -153,6 +153,19 @@ describe("overlap store", () => {
     expect(store.open("p1").map((o) => o.id)).toEqual([a.id]);
   });
 
+  test("list filters by kind", () => {
+    const { store } = open();
+    const a = store.create(finding(), "p1", 10);
+    const b = store.create(
+      finding({ kind: "file", key: "file:src/a.ts", detail: { kind: "file", path: "src/a.ts" } }),
+      "p1",
+      11,
+    );
+    expect(store.list({ kind: "file" }).map((o) => o.id)).toEqual([b.id]);
+    expect(store.list({ kind: "export", projectId: "p1" }).map((o) => o.id)).toEqual([a.id]);
+    expect(store.list({ kind: "block" })).toEqual([]);
+  });
+
   test("pending gives the undelivered open overlaps with the run's role", () => {
     const { store } = open();
     const o = store.create(finding(), "p1", 10);

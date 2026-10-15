@@ -60,6 +60,7 @@ const ticket: TicketView & { key: string } = {
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
 };
 
 const admitAll = (runs: RunView[]): Plan => ({
@@ -67,11 +68,12 @@ const admitAll = (runs: RunView[]): Plan => ({
   waiting: [],
 });
 
-const preview = (runs: RunView[], cwd: string | null = "/repo") =>
+const preview = (runs: RunView[], cwd: string | null = "/repo", children = 0) =>
   previewAssign({
     runs,
     projectId: "p1",
     ticket,
+    children,
     agent: testAgent(),
     projectKey: "KIB",
     guidelines: 2,
@@ -106,6 +108,17 @@ test("the preview says the ticket is busy before any other reason", () => {
   expect(preview([runOf("r1", "t1", "done")])).toEqual({
     position: null,
     reason: null,
+    guidelines: 2,
+    session: null,
+    model: "opus",
+    inherited: false,
+  });
+});
+
+test("the preview refuses a parent ticket before any other reason", () => {
+  expect(preview([runOf("r1", "t1", "running")], "/repo", 5)).toEqual({
+    position: null,
+    reason: { kind: "parent_ticket", children: 5 },
     guidelines: 2,
     session: null,
     model: "opus",
@@ -160,7 +173,16 @@ test("the planned folder follows the profile space: project folder, ticket workt
 
 test("the preview names the model the agent will run with", () => {
   const inherit = testAgent({ model: "inherit" });
-  const base = { runs: [], projectId: "p1", ticket, projectKey: "KIB", guidelines: 0, at: 0, plan: admitAll };
+  const base = {
+    runs: [],
+    projectId: "p1",
+    ticket,
+    children: 0,
+    projectKey: "KIB",
+    guidelines: 0,
+    at: 0,
+    plan: admitAll,
+  };
   const common = { ...base, plannedCwd: null, transcriptExists: () => false };
   expect(previewAssign({ ...common, agent: inherit })).toMatchObject({ model: "sonnet", inherited: true });
   expect(previewAssign({ ...common, agent: testAgent({ model: "fable" }) })).toMatchObject({

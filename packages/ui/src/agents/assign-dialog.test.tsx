@@ -123,6 +123,7 @@ test("a dependency still waiting for its key is shown by its label alone", () =>
     openQuestions: 0,
     startable: false,
     agentProgress: EMPTY_PROGRESS,
+    delivery: null,
   };
   const tickets = project.tickets.map((t) => (t.id === "t15" ? { ...t, waitingOn: ["KIB-12", "KIB-…"] } : t));
   render(
@@ -171,6 +172,77 @@ test("a ticket that already has a run cannot be sent again, and the dialog says 
   expect(await screen.findByText("Un run de ce ticket est déjà en cours ou en file.")).toBeTruthy();
   expect(screen.queryByText("place libre · démarre tout de suite")).toBeNull();
   expect(screen.getByRole("button", { name: "Mettre en file" }).hasAttribute("disabled")).toBe(true);
+});
+
+const withChildren = () => {
+  const project = kiboProject();
+  const leaf = (id: string, key: string, title: string): TicketView => ({
+    ...(project.tickets.find((t) => t.id === "t15") as TicketView),
+    id,
+    key,
+    keyLabel: key,
+    title,
+    statusId: "todo",
+    parentId: "t14",
+    waitingOn: [],
+    startable: true,
+  });
+  return {
+    ...project,
+    tickets: [...project.tickets, leaf("c1", "KIB-31", "Premier"), leaf("c2", "KIB-32", "Second")],
+  };
+};
+
+test("a parent ticket opens the sub-tickets dialog instead of the form", async () => {
+  preview = () =>
+    Promise.resolve({ position: null, reason: { kind: "parent_ticket", children: 2 }, guidelines: 2 });
+  render(
+    <AssignDialogView
+      project={withChildren()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={() => {}}
+    />,
+  );
+  const dialog = await screen.findByRole("dialog", { name: "Livrer les sous-tickets de KIB-14" });
+  expect(within(dialog).getByRole("checkbox", { name: "KIB-31 Premier" }).getAttribute("aria-checked")).toBe(
+    "true",
+  );
+  expect(screen.queryByRole("button", { name: "Mettre en file" })).toBeNull();
+  expect(calls.some((c) => c.method === "assignAgent")).toBe(false);
+});
+
+test("choosing the delivery agent fills an empty brief with /full-delivery KEY", async () => {
+  const delivery = agentSummaryFixture("full-delivery", "opus", {});
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={[delivery, ...AGENTS]}
+      onClose={() => {}}
+    />,
+  );
+  const brief = screen.getByLabelText("Brief (optionnel)");
+  expect((brief as HTMLInputElement).value).toBe("/full-delivery KIB-14");
+  const user = userEvent.setup();
+  await user.clear(brief);
+  await user.type(brief, "Reprendre la PR");
+  expect((brief as HTMLInputElement).value).toBe("Reprendre la PR");
+});
+
+test("another agent leaves the brief empty", () => {
+  render(
+    <AssignDialogView
+      project={kiboProject()}
+      ticketId="t14"
+      config={configFixture()}
+      agents={AGENTS}
+      onClose={() => {}}
+    />,
+  );
+  expect((screen.getByLabelText("Brief (optionnel)") as HTMLInputElement).value).toBe("");
 });
 
 test("a run queued meanwhile turns the refusal into the busy message", async () => {
@@ -270,7 +342,12 @@ test("without an agent or a project the dialog explains what to do", () => {
 
 test("the worktree line recalls the project base and the computed path of the ticket branch", async () => {
   const project = kiboProject();
-  const worktree = { baseRef: "origin/dev", pathTemplate: "../kibo-{slug}", setup: "pnpm worktree {branch}" };
+  const worktree = {
+    baseRef: "origin/dev",
+    pathTemplate: "../kibo-{slug}",
+    setup: "pnpm worktree {branch}",
+    recipe: null,
+  };
   const branch = { kind: "git_branch" as const, branch: "feat/drag", base: null };
   const tickets = project.tickets.map((t) => (t.id === "t14" ? { ...t, externalRefs: [branch] } : t));
   render(
@@ -289,7 +366,7 @@ test("the worktree line recalls the project base and the computed path of the ti
 
 test("an invalid path template is pointed to the project settings", async () => {
   const project = kiboProject();
-  const worktree = { baseRef: "main", pathTemplate: "/tmp/{slug}", setup: null };
+  const worktree = { baseRef: "main", pathTemplate: "/tmp/{slug}", setup: null, recipe: null };
   render(
     <AssignDialogView
       project={{ ...project, meta: { ...project.meta, worktree } }}
@@ -409,6 +486,7 @@ const provisional = (): TicketView => ({
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
 });
 
 test("a ticket without its key cannot be sent to an agent", async () => {

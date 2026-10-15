@@ -20,6 +20,7 @@ import { TriangleAlert } from "lucide-react";
 import { useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { frMarket } from "../i18n/fr-market";
 import { permissionLines } from "../lib/permission-lines";
 import { isRemoteView } from "../lib/remote-view";
@@ -100,10 +101,10 @@ export function PermissionList({
 }
 
 function failureOf(e: unknown): string {
-  if (!(e instanceof KiboError)) return fr.trust.failed;
-  if (e.code === "HASH_MISMATCH") return fr.trust.hashMismatch;
+  if (!(e instanceof KiboError)) return frComponentsManage.trust.failed;
+  if (e.code === "HASH_MISMATCH") return frComponentsManage.trust.hashMismatch;
   if (e.code === "FORBIDDEN") return fr.componentErrors.FORBIDDEN;
-  return fr.trust.failed;
+  return frComponentsManage.trust.failed;
 }
 
 export function TrustDialog({
@@ -116,7 +117,7 @@ export function TrustDialog({
   onCloseAutoFocus,
   remote = isRemoteView(),
 }: Props) {
-  const t = fr.trust;
+  const t = frComponentsManage.trust;
   const [level, setLevel] = useState<ApprovableTrust>("sandboxed");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);

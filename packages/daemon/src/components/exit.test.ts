@@ -188,6 +188,7 @@ describe("a sandboxed third-party component stays inside its perimeter", () => {
       secret: join(home, "token"),
       plant: join(home, "planted"),
       port: daemon.port,
+      userHome: null,
       daemonPid: process.pid,
     };
     expect(await client.ok(action("escape", input))).toEqual({

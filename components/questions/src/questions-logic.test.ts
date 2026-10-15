@@ -25,6 +25,8 @@ const T2 = "22222222-2222-4222-8222-222222222222";
 const T3 = "33333333-3333-4333-8333-333333333333";
 
 const question = (over: Partial<Question>): Question => ({
+  kind: "question",
+  images: [],
   id: "q",
   ticketId: T1,
   runId: null,
@@ -78,6 +80,7 @@ const ticket = (id: string, keyLabel: string): TicketView => ({
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
 });
 
 test("filterQuestions keeps open, answered or all questions, optionally of one ticket", () => {

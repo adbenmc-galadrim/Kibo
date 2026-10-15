@@ -61,6 +61,7 @@ import {
   listTickets,
   moveTicket,
   setStatus,
+  setTicketDelivery,
   setTicketProgress,
   updateTicket,
 } from "./tickets";
@@ -147,6 +148,8 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
       const { method: _method, ...update } = cmd;
       return setTicketProgress(doc, update);
     }
+    case "setTicketDelivery":
+      return setTicketDelivery(doc, cmd.ticketId, cmd.delivery);
     case "addQuestionRecipient":
       return addQuestionRecipient(doc, cmd.name, crypto.randomUUID());
     case "renameQuestionRecipient":
@@ -175,6 +178,7 @@ const DAEMON_ONLY_COMMANDS: ReadonlySet<ProjectCommand["method"]> = new Set([
   "setInstanceData",
   "markAnswersDelivered",
   "setTicketProgress",
+  "setTicketDelivery",
 ]);
 
 export function assertShellCommand(cmd: ProjectCommand): void {

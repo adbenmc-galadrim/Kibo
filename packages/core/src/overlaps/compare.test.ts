@@ -10,23 +10,14 @@ const keys = (a: ReturnType<typeof indexOf>, b: ReturnType<typeof indexOf>, s = 
   find(a, b, s).map((c) => c.key);
 const shared = codeLines("shared", 8);
 
-describe("file criterion", () => {
-  test("the same path with different contents", () => {
-    const found = find(
-      indexOf("A", [{ path: "src/a.ts", texts: ["const one = 1;"] }]),
-      indexOf("B", [{ path: "src/a.ts", texts: ["const two = 2;"] }]),
-    );
-    expect(found).toEqual([
-      {
-        kind: "file",
-        key: "file:src/a.ts",
-        a: { path: "src/a.ts", start: null },
-        b: { path: "src/a.ts", start: null },
-        name: null,
-        lines: null,
-        chars: null,
-      },
-    ]);
+describe("no file criterion", () => {
+  test("the same path with different contents is not an overlap", () => {
+    expect(
+      find(
+        indexOf("A", [{ path: "src/a.ts", texts: ["const one = 1;"] }]),
+        indexOf("B", [{ path: "src/a.ts", texts: ["const two = 2;"] }]),
+      ),
+    ).toEqual([]);
   });
 
   test("the same path with the same contents is a copy", () => {
@@ -40,28 +31,43 @@ describe("file criterion", () => {
         indexOf("A", [{ path: "src/a.ts", status: "deleted" }]),
         indexOf("B", [{ path: "src/a.ts", texts: ["x"] }]),
       ),
-    ).toEqual(["file:src/a.ts"]);
+    ).toEqual([]);
   });
 
-  test("the same export name at the same path is only a file overlap with the name", () => {
-    const found = find(
-      indexOf("A", [{ path: "src/a.ts", texts: ["export const formatDate = 1;"] }]),
-      indexOf("B", [{ path: "src/a.ts", texts: ["export const formatDate = 2;"] }]),
-    );
-    expect(found.map((c) => [c.key, c.name])).toEqual([["file:src/a.ts", "formatDate"]]);
+  test("the same export name at the same path is not an overlap", () => {
+    expect(
+      find(
+        indexOf("A", [{ path: "src/a.ts", texts: ["export const formatDate = 1;"] }]),
+        indexOf("B", [{ path: "src/a.ts", texts: ["export const formatDate = 2;"] }]),
+      ),
+    ).toEqual([]);
   });
 });
 
-describe("tests in file and export criteria", () => {
-  test("a test file changed on both sides is a file overlap", () => {
-    expect(
-      keys(
-        indexOf("A", [{ path: "src/a.test.ts", texts: ["one"] }]),
-        indexOf("B", [{ path: "src/a.test.ts", texts: ["two"] }]),
-      ),
-    ).toEqual(["file:src/a.test.ts"]);
+describe("files shared by nature", () => {
+  const fr = "packages/i18n/src/locales/fr.ts";
+
+  test("the same block in a shared file is not an overlap", () => {
+    const a = indexOf("A", [{ path: fr, texts: shared }]);
+    const b = indexOf("B", [{ path: "src/b.ts", texts: shared }]);
+    expect(keys(a, b)).toEqual([]);
+    expect(keys(b, a)).toEqual([]);
   });
 
+  test("the same export in a shared file is still an overlap", () => {
+    const a = indexOf("A", [{ path: fr, texts: [...shared, "export const formatDate = 1;"] }]);
+    const b = indexOf("B", [{ path: "src/b.ts", texts: [...shared, "export const formatDate = 2;"] }]);
+    expect(keys(a, b)).toEqual(["export:formatDate"]);
+  });
+
+  test("the project list decides what is shared", () => {
+    const a = indexOf("A", [{ path: fr, texts: shared }]);
+    const b = indexOf("B", [{ path: "src/b.ts", texts: shared }]);
+    expect(find(a, b, settingsWith({ shared: [] })).map((c) => c.kind)).toEqual(["block"]);
+  });
+});
+
+describe("tests in the export criterion", () => {
   test("an export added in two test helpers is an export overlap", () => {
     expect(
       keys(
@@ -124,7 +130,7 @@ describe("export criterion", () => {
       { path: "a.py", texts: ["w"], exports: ["formatDate"] },
       { path: "b.py", texts: shared, exports: ["formatDate"] },
     ]);
-    expect(find(a, b).map((c) => c.kind)).toEqual(["block", "file"]);
+    expect(find(a, b).map((c) => c.kind)).toEqual(["block"]);
   });
 });
 
@@ -171,10 +177,10 @@ describe("block criterion", () => {
     expect(find(a, b, settingsWith({ minLines: 4 })).map((c) => [c.kind, c.lines])).toEqual([["block", 4]]);
   });
 
-  test("a block at the same path is left to the file criterion", () => {
+  test("a block at the same path is not an overlap", () => {
     const a = indexOf("A", [{ path: "src/a.ts", texts: [...shared, "const one = 1;"] }]);
     const b = indexOf("B", [{ path: "src/a.ts", texts: [...shared, "const two = 2;"] }]);
-    expect(find(a, b).map((c) => c.kind)).toEqual(["file"]);
+    expect(find(a, b)).toEqual([]);
   });
 
   test("clipped files have no block", () => {
@@ -183,7 +189,7 @@ describe("block criterion", () => {
     expect(keys(a, b)).toEqual([]);
   });
 
-  test("a truncated index keeps file and export but drops blocks", () => {
+  test("a truncated index keeps exports but drops blocks", () => {
     const a = indexOf("A", [
       { path: "src/a.ts", texts: [...shared, "export const formatDate = 1;"] },
       { path: "src/c.ts", texts: ["one"] },
@@ -196,7 +202,7 @@ describe("block criterion", () => {
       ],
       { truncated: true },
     );
-    expect(find(a, b).map((c) => c.kind)).toEqual(["export", "file"]);
+    expect(find(a, b).map((c) => c.kind)).toEqual(["export"]);
   });
 
   test("the same block twice gives one candidate per key", () => {
@@ -222,7 +228,7 @@ describe("findOverlaps", () => {
   ]);
 
   test("sorts by kind then key", () => {
-    expect(find(a, b).map((c) => c.kind)).toEqual(["block", "export", "file"]);
+    expect(find(a, b).map((c) => c.kind)).toEqual(["block", "export"]);
   });
 
   test("gives the same keys with the sides swapped", () => {

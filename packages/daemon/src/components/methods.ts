@@ -12,6 +12,7 @@ export const COMPONENT_METHODS = [
   "uninstallComponent",
   "listDrafts",
   "getNotesDir",
+  "listNotes",
   "setNotesDir",
   "getRuntimeInfo",
   "installCli",

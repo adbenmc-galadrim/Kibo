@@ -12,6 +12,7 @@ import type {
   HostLoad,
   HostSettings,
   HostView,
+  MachineLock,
   ProjectSnapshot,
   Question,
   RunLogEntry,
@@ -26,7 +27,12 @@ import type { HookSink } from "./hook-route";
 import type { Notice } from "./notifier";
 import type { RunStore } from "./run-store";
 
-export type TicketContext = { project: ProjectSnapshot; ticket: TicketView; domain: Domain | null };
+export type TicketContext = {
+  project: ProjectSnapshot;
+  ticket: TicketView;
+  domain: Domain | null;
+  childCount: number;
+};
 
 export type AgentDataPort = {
   agents(projectId: string | null): Agent[];
@@ -43,7 +49,7 @@ export type AgentDataPort = {
   createQuestion(
     projectId: string,
     ticketId: string,
-    run: { id: string; profileName: string },
+    run: { id: string; profileName: string; cwd?: string | null },
     ask: AskInput,
   ): Question | null;
   answerRunQuestion(projectId: string, runId: string, text: string, by: Actor): Question | null;
@@ -90,6 +96,7 @@ export type OrchestratorOptions = {
   onTurnEnd?: (run: RunView) => Promise<void>;
   onEndedWithoutTurn?: (run: RunView) => Promise<void>;
   turnPrefix?: TurnPrefixPort;
+  locks?: () => MachineLock[];
 };
 
 export type AssignInput = {

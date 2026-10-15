@@ -6,9 +6,10 @@ import {
   overlapKey,
   type WorkspaceIndex,
 } from "@kibo/schema";
+import { effectiveDuplication } from "../project";
 import { type Block, blockKey, blocksBetween, positionsOf } from "./blocks";
 import { isCandidateExport } from "./exports";
-import { isCodePath, isIgnoredPath, isTestPath } from "./ignore";
+import { isCodePath, isIgnoredPath, isSharedPath, isTestPath } from "./ignore";
 import type { Hasher } from "./normalize";
 import { type LineWindow, windowSizeFor, windowsOf } from "./windows";
 
@@ -42,29 +43,13 @@ const candidate = (
   chars: null,
 });
 
-const byPath = (files: readonly IndexedFile[]): Map<string, IndexedFile> =>
-  new Map(files.map((f) => [f.path, f]));
-
-const copiedPaths = (a: readonly IndexedFile[], b: ReadonlyMap<string, IndexedFile>): Set<string> =>
-  new Set(a.filter((f) => b.get(f.path)?.hash === f.hash).map((f) => f.path));
+const copiedPaths = (a: readonly IndexedFile[], b: readonly IndexedFile[]): Set<string> => {
+  const theirs = new Map(b.map((f) => [f.path, f.hash]));
+  return new Set(a.filter((f) => theirs.get(f.path) === f.hash).map((f) => f.path));
+};
 
 const candidateNames = (file: IndexedFile, settings: DuplicationSettings): string[] =>
   isCodePath(file.path) ? file.exports.filter((n) => isCandidateExport(n, settings.genericExports)) : [];
-
-const fileCandidates = (
-  a: readonly IndexedFile[],
-  b: ReadonlyMap<string, IndexedFile>,
-  settings: DuplicationSettings,
-): Candidate[] =>
-  a.flatMap((fa) => {
-    const fb = b.get(fa.path);
-    if (!fb) return [];
-    const theirs = new Set(candidateNames(fb, settings));
-    const name = candidateNames(fa, settings)
-      .filter((n) => theirs.has(n))
-      .sort()[0];
-    return [candidate("file", overlapKey("file", fa.path), side(fa.path), side(fb.path), name ?? null)];
-  });
 
 const pathsByName = (files: readonly IndexedFile[], settings: DuplicationSettings): Map<string, string[]> => {
   const out = new Map<string, string[]>();
@@ -174,14 +159,12 @@ export function findOverlaps(
 ): Candidate[] {
   const kept = (index: WorkspaceIndex) => index.files.filter((f) => !isIgnoredPath(f.path, settings));
   const [allA, allB] = [kept(a), kept(b)];
-  const mapB = byPath(allB);
-  const copies = copiedPaths(allA, mapB);
+  const copies = copiedPaths(allA, allB);
   const ours = allA.filter((f) => !copies.has(f.path));
   const theirs = allB.filter((f) => !copies.has(f.path));
-  const blocks = a.truncated || b.truncated ? [] : blockCandidates(ours, theirs, settings, hash);
-  return firstPerKey([
-    ...fileCandidates(ours, byPath(theirs), settings),
-    ...exportCandidates(ours, theirs, settings),
-    ...blocks,
-  ]);
+  const shared = effectiveDuplication({ duplication: settings });
+  const unshared = (files: readonly IndexedFile[]) => files.filter((f) => !isSharedPath(f.path, shared));
+  const blocks =
+    a.truncated || b.truncated ? [] : blockCandidates(unshared(ours), unshared(theirs), settings, hash);
+  return firstPerKey([...exportCandidates(ours, theirs, settings), ...blocks]);
 }

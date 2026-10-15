@@ -286,7 +286,7 @@ export function createSdk(
     design: designApi(manifest, guard, call),
     embed: embedApi(manifest, guard, call),
     questions: questionsApi({ read: guard.needRead, write: guard.needWrite }, call, backend, mode),
-    runs: runsApi(guard.needRead, call),
+    runs: runsApi({ read: guard.needRead, write: guard.needWrite }, call),
     openRun: openRunOf(ctx),
     focus: ctx.focus ?? NO_FOCUS,
     visibility: ctx.visibility ?? ALWAYS_VISIBLE,

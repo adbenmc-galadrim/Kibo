@@ -5,13 +5,13 @@ import { type PendingAlert, pickAlerts } from "./alerts";
 const overlap = (id: string, firstSeenAt: number, path = `src/${id}.ts`): Overlap => ({
   id,
   projectId: "p",
-  kind: "file",
-  key: path,
+  kind: "export",
+  key: `export:${id}`,
   ownerRunId: "r12",
   otherRunId: "r15",
   ownerWorkspace: "/w/a",
   otherWorkspace: "/w/b",
-  detail: { kind: "file", path },
+  detail: { kind: "export", name: `format${id}`, ownerPath: path, otherPath: "src/utils/date.ts" },
   firstSeenAt,
   lastSeenAt: firstSeenAt,
   status: "open",
@@ -46,6 +46,14 @@ describe("pickAlerts", () => {
     expect(pickAlerts([a])).toEqual({ text: textOf(a), delivered: [{ overlapId: "o1", role: "other" }] });
   });
 
+  test("an alert is an information, never a request", () => {
+    const text = pickAlerts([alert("o1", 1), alert("o2", 2, "owner")]).text ?? "";
+    expect(text).toContain("Kibo — information :");
+    expect(text).toContain("Rien à justifier.");
+    expect(text).toContain("Rien à faire.");
+    expect(text).not.toContain("sans demander");
+  });
+
   test("five alerts at most, the rest points to peek_work", () => {
     const pending = Array.from({ length: 7 }, (_, i) => alert(`o${i}`, i));
     const picked = pickAlerts(pending);
@@ -64,7 +72,7 @@ describe("pickAlerts", () => {
     expect(picked.text?.length).toBeLessThanOrEqual(2_000 + 40);
   });
 
-  test("alerts to factorise come before information, then the oldest first", () => {
+  test("alerts to the other side come before the owner's, then the oldest first", () => {
     const picked = pickAlerts([alert("a", 1, "owner"), alert("b", 5), alert("c", 2)]);
     expect(picked.delivered).toEqual([
       { overlapId: "c", role: "other" },

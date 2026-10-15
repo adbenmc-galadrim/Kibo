@@ -17,6 +17,7 @@ const newProjectDoc = (key: string) =>
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
 
 test("questions created in the same millisecond come back in creation order, every time", () => {

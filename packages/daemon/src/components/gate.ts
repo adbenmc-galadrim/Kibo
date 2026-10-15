@@ -20,6 +20,7 @@ import {
   type RunPeek,
   splitRef,
 } from "@kibo/schema";
+import type { DeliveryCall } from "../delivery/component-calls";
 import type { EventLog } from "./events";
 import type { Quotas } from "./quotas";
 
@@ -60,6 +61,7 @@ export type GateHandlers = {
   questions(projectId: string, ticketId: string): Promise<DeliveryResult>;
   recipients(projectId: string): Promise<QuestionRecipient[]>;
   peek(projectId: string, runId: string): Promise<RunPeek>;
+  delivery(projectId: string, call: DeliveryCall): Promise<unknown>;
 };
 export type GateDeps = {
   instance(projectId: string, instanceId: string): Instance;
@@ -135,6 +137,11 @@ function dispatch(
       return h.recipients(projectId);
     case "run.peek":
       return h.peek(projectId, call.runId);
+    case "run.deliver":
+    case "run.denials":
+    case "run.allowAndResume":
+    case "run.deliveryAgent":
+      return h.delivery(projectId, call);
     default:
       return h.notes(projectId, call);
   }

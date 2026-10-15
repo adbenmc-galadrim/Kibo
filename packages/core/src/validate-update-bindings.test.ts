@@ -22,6 +22,7 @@ const meta = {
   worktree: null,
   storybook: null,
   duplication: null,
+  delivery: null,
 };
 const ADAM: UpdateAuthor = { userId: "u-adam", role: "owner" };
 const LEA: UpdateAuthor = { userId: "u-lea", role: "editor" };

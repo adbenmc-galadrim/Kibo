@@ -109,24 +109,24 @@ test("synchronisation : état vide et connexion d'un autre appareil", async ({ p
 test("agents : historique cliquable et confirmation d'arrêt", async ({ page }, info) => {
   await pair(page);
   const seededWorkspace = await seed(page);
-  await assign(page, seededWorkspace, 12, "livraison-opus", "waiting_input");
+  await assign(page, seededWorkspace, 28, "livraison-opus", "waiting_input");
   await page.goto("/#/agents");
   await expect(page.getByRole("heading", { level: 1, name: "Agents" })).toBeVisible();
   await page
     .getByRole("radiogroup", { name: "Filtrer par état" })
     .getByRole("radio", { name: "Tous" })
     .click();
-  await page.getByRole("button", { name: /^livraison-opus · KIB-12/ }).click();
-  const panel = page.getByRole("dialog", { name: "Run global · livraison-opus · KIB-12" });
-  await expect(panel.getByRole("list", { name: "Fil de global · livraison-opus · KIB-12" })).toBeVisible();
+  await page.getByRole("button", { name: /^livraison-opus · KIB-28/ }).click();
+  const panel = page.getByRole("dialog", { name: "Run global · livraison-opus · KIB-28" });
+  await expect(panel.getByRole("list", { name: "Fil de global · livraison-opus · KIB-28" })).toBeVisible();
   await panel.getByRole("button", { name: "Ouvrir en grand" }).click();
   await expect(page).toHaveURL(/#\/runs\//);
   const header = page.locator("header", {
-    has: page.getByRole("heading", { name: "global · livraison-opus · KIB-12" }),
+    has: page.getByRole("heading", { name: "global · livraison-opus · KIB-28" }),
   });
   await header.getByRole("button", { name: "Arrêter", exact: true }).click();
   const confirm = page.getByRole("alertdialog", {
-    name: "Arrêter le run global · livraison-opus · KIB-12 ?",
+    name: "Arrêter le run global · livraison-opus · KIB-28 ?",
   });
   await expect(confirm.getByText("L'agent est interrompu ; le ticket reste assigné.")).toBeVisible();
   await shot(page, info, "ecran-121");

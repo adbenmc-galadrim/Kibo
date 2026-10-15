@@ -77,6 +77,7 @@ test("an example ticket stands in when none is chosen", () => {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
   const ticket = exampleTicket(readProject(doc));
   expect(ticket.key).toBe("BOU-0");

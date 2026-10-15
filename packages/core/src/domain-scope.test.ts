@@ -62,6 +62,7 @@ const projectDoc = (id: string) =>
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
 
 function workspaceWithSync() {

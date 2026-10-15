@@ -96,3 +96,63 @@ test("two connections share runs.db with the run store without SQLITE_BUSY", () 
   second.close();
   runs.close();
 });
+
+test("subagent moments stay out of the main thread and form their own page", () => {
+  const store = openMomentStore(home());
+  const main = store.append("r1", say("principal"), null, 10);
+  const sub = store.append("r1", say("sous-agent"), null, 11, "a1");
+  const action: MomentData = {
+    kind: "actions",
+    actions: [
+      {
+        tool: "Bash",
+        kind: "command",
+        label: "git diff",
+        target: "git diff",
+        outcome: "ok",
+        detail: null,
+        patch: null,
+        tests: null,
+      },
+      {
+        tool: "Read",
+        kind: "read",
+        label: "a.ts",
+        target: "a.ts",
+        outcome: "ok",
+        detail: null,
+        patch: null,
+        tests: null,
+      },
+    ],
+    summary: "2 actions",
+    failed: false,
+  };
+  store.append("r1", action, null, 12, "a1");
+  store.append("r1", say("fin du sous-agent"), null, 13, "a1");
+  expect(sub.subagentId).toBe("a1");
+  expect(store.list("r1")).toEqual([main]);
+  expect(store.lastOfKind("r1", "message")).toEqual(main);
+  expect(store.listSubagent("r1", "a1").map((m) => m.seq)).toEqual([1, 2, 3]);
+  expect(store.listSubagent("r1", "a1", 2).map((m) => m.seq)).toEqual([3]);
+  expect(store.subagentFacts("r1", "a1")).toEqual({ actions: 2, lastText: "fin du sous-agent" });
+  expect(store.subagentFacts("r1", "a2")).toEqual({ actions: 0, lastText: null });
+  store.close();
+});
+
+test("the subagent column migration can run twice on an older database", () => {
+  const dir = home();
+  const db = new Database(join(dir, "runs.db"), { create: true });
+  db.exec(
+    "CREATE TABLE run_moments (id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL, seq INTEGER NOT NULL, " +
+      "at INTEGER NOT NULL, step_id TEXT, kind TEXT NOT NULL, data TEXT NOT NULL, UNIQUE (run_id, seq))",
+  );
+  db.exec(
+    `INSERT INTO run_moments (run_id, seq, at, step_id, kind, data) VALUES ('r1', 0, 1, NULL, 'message', '{"kind":"message","text":"ancien"}')`,
+  );
+  db.close();
+  openMomentStore(dir).close();
+  const store = openMomentStore(dir);
+  expect(store.list("r1").map((m) => m.data)).toEqual([say("ancien")]);
+  store.close();
+});

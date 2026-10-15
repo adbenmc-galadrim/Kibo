@@ -64,11 +64,12 @@ async function launch() {
   return { home, rpc };
 }
 
-test("getAppInfo reports the daemon pid and an abbreviated home", async () => {
+test("getAppInfo reports the daemon pid, an abbreviated home and the absolute user home", async () => {
   const { home, rpc } = await launch();
   const info = AppInfo.parse(await rpc({ method: "getAppInfo" }));
   expect(info.daemonPid).toBe(process.pid);
   expect(info.home).toBe(`~/${basename(home)}`);
+  expect(info.userHome).toBe(dirname(home));
   expect(isAppVersion(info.version)).toBe(true);
   expect(info.version).not.toBe("0.0.0");
 }, 30_000);
@@ -84,7 +85,7 @@ test("getDiagnostics never contains the pairing token", async () => {
   expect(json).not.toContain(home);
   expect(json).toContain(`pair failed *** at ~/${basename(home)}/x`);
   expect(report).toMatchObject({
-    app: { daemonPid: process.pid },
+    app: { daemonPid: process.pid, userHome: null },
     environment: { daemon: { home: `~/${basename(home)}` } },
     counts: { projects: expect.any(Number), profiles: 0 },
   });

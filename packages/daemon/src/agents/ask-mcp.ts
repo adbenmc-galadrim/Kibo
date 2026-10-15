@@ -1,6 +1,7 @@
 import { createInterface } from "node:readline";
 import type { Readable, Writable } from "node:stream";
 import {
+  QUESTION_IMAGE_LIMITS,
   QUESTION_OPTIONS_MAX,
   RECIPIENT_ID_MAX,
   SHARED_TOOL_SPECS,
@@ -44,6 +45,19 @@ const ASK_PROPERTIES = {
     type: "string",
     maxLength: RECIPIENT_ID_MAX,
     description: "Le destinataire de la question (id ou nom, voir tes consignes), sinon me.",
+  },
+  kind: {
+    type: "string",
+    enum: ["question", "validation"],
+    description:
+      "validation pour faire valider un écran : Kibo impose les réponses Valider ou Demander une correction.",
+  },
+  images: {
+    type: "array",
+    items: { type: "string" },
+    maxItems: QUESTION_IMAGE_LIMITS.count,
+    description:
+      "Chemins absolus de captures png, jpg ou webp (5 Mio au plus), sous ton dossier de travail, la racine de livraison ou les notes du projet.",
   },
 };
 

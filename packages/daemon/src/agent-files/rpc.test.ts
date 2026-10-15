@@ -19,6 +19,8 @@ const PREVIEW: AgentPreview = {
     tools: null,
     disallowedTools: null,
     allow: [],
+    allowOrigins: [],
+    addDirs: [],
     subagents: [],
     allSubagents: false,
     skills: { mode: "all" },
@@ -36,6 +38,7 @@ function rig(writable = true) {
       return PREVIEW;
     },
     {
+      home: "/Users/a",
       viewer: () => "adam",
       assertWritable(projectId) {
         asserted.push(projectId);
@@ -133,6 +136,7 @@ test("restoring a project skill version checks that its project is writable", as
   const restored: string[] = [];
   const s = rig(false);
   const rpc = agentFilesRpc(s.service, async () => PREVIEW, {
+    home: "/Users/a",
     viewer: () => "adam",
     assertWritable: (projectId) => {
       throw new KiboError("PERMISSION_DENIED", `read only ${projectId}`);
@@ -155,4 +159,24 @@ test("restoring a project skill version checks that its project is writable", as
     rpc.handle({ method: "fileVersions.restore", id: version.id, baseHash: null }, LOCAL_CONTEXT),
   ).rejects.toMatchObject({ code: "PERMISSION_DENIED" });
   expect(restored).toEqual([]);
+});
+
+test("a forbidden added folder is refused before the settings are written", async () => {
+  const { rpc, service } = rig();
+  await rpc.handle(create, LOCAL_CONTEXT);
+  const before = service.read("global:review-pr").settings;
+  for (const addDirs of [["/Users/a/.kibo"], ["/Users/a/.claude"], ["/etc"]]) {
+    await expect(
+      rpc.handle(
+        { method: "agents.settings", ref: "global:review-pr", patch: { addDirs, maxParallel: 2 } },
+        LOCAL_CONTEXT,
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_INPUT" });
+  }
+  expect(service.read("global:review-pr").settings).toEqual(before);
+  const saved = await rpc.handle(
+    { method: "agents.settings", ref: "global:review-pr", patch: { addDirs: ["/Users/a/.claude/skills"] } },
+    LOCAL_CONTEXT,
+  );
+  expect(saved).toMatchObject({ settings: { addDirs: ["/Users/a/.claude/skills"] } });
 });

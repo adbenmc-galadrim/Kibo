@@ -271,6 +271,22 @@ const allDaemons = [
     spec: /overlaps\.spec\.ts/,
     scenario: "overlap-routes",
   },
+  {
+    name: "delivery-dark",
+    scheme: "dark",
+    port: 4473,
+    spec: /delivery\.spec\.ts/,
+    scenario: "delivery-routes",
+    delivery: true,
+  },
+  {
+    name: "delivery-light",
+    scheme: "light",
+    port: 4474,
+    spec: /delivery\.spec\.ts/,
+    scenario: "delivery-routes",
+    delivery: true,
+  },
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 
@@ -328,6 +344,7 @@ export default defineConfig({
           "noGh" in d ? "--no-gh" : "",
           "design" in d ? "--design" : "",
           "embeds" in d ? "--embeds" : "",
+          "delivery" in d ? "--delivery" : "",
           "drafts" in d ? d.drafts : "",
         ]
           .filter((part) => part !== "")

@@ -96,7 +96,7 @@ export function remoteClient(kit: Kit): { rpc: Rpc; raw: Raw } {
   return client(kit.daemon, `${SESSION_COOKIE}=${id}`);
 }
 
-const boot = (home: string, claude: string, scenario: string) =>
+const boot = (home: string, claude: string, scenario: string, env: Record<string, string> = {}) =>
   startDaemon({
     home,
     port: 0,
@@ -114,10 +114,16 @@ const boot = (home: string, claude: string, scenario: string) =>
       CLAUDE_CONFIG_DIR: claude,
       KIBO_FAKE_CLAUDE_SCENARIO: scenario,
       KIBO_FAKE_CLAUDE_STATE: join(home, "fake", "projects"),
+      ...env,
     },
   });
 
-export type KitOptions = { fixture?: string; scenario?: string; prepare?(claude: string): () => void };
+export type KitOptions = {
+  fixture?: string;
+  scenario?: string;
+  prepare?(claude: string): () => void;
+  env?(home: string): Record<string, string>;
+};
 
 export async function startKit(o: KitOptions = {}): Promise<Kit> {
   const root = mkdtempSync(join(tmpdir(), "kibo-agents-skills-"));
@@ -128,7 +134,8 @@ export async function startKit(o: KitOptions = {}): Promise<Kit> {
   mkdirSync(claude, { recursive: true });
   const restore = o.prepare?.(claude) ?? (() => {});
   const scenario = o.scenario ?? scenarioPath("skills-routes");
-  let daemon = await boot(home, claude, scenario).catch((e: unknown) => {
+  const env = o.env?.(home) ?? {};
+  let daemon = await boot(home, claude, scenario, env).catch((e: unknown) => {
     restore();
     rmSync(root, { recursive: true, force: true });
     throw e;
@@ -144,7 +151,7 @@ export async function startKit(o: KitOptions = {}): Promise<Kit> {
   kit.restart = async () => {
     closeEvents();
     await daemon.stop();
-    daemon = await boot(home, claude, scenario);
+    daemon = await boot(home, claude, scenario, env);
     Object.assign(kit, { daemon, ...(await connect()) });
   };
   cleanups.push(async () => {

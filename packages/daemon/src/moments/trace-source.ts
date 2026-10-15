@@ -3,6 +3,7 @@ import { foldLines } from "@kibo/core";
 import { MOMENT_RAW_MAX, maskSecretsWithin, type PartialReason, type RunView } from "@kibo/schema";
 import type { RunTrace } from "./store";
 import { freshLive, type TraceCore } from "./trace-live";
+import { subagentPass } from "./trace-subagents";
 import { acceptedTranscriptPath } from "./transcript-path";
 import { readLongLine, type TranscriptSlice } from "./transcript-reader";
 
@@ -77,6 +78,7 @@ function foldSlice(core: TraceCore, trace: RunTrace, slice: TranscriptSlice): bo
   const folded = foldLines(state.fold, slice.lines, core.ctx(trace));
   state.fold = folded.state;
   core.write(trace.runId, folded.moments);
+  core.deps.subagents?.onLines(trace.runId, null, slice.lines);
   const next = { ...trace, offset: slice.offset };
   core.store.saveTrace(next);
   if (folded.state.known) return slice.more;
@@ -101,6 +103,14 @@ export function pass(core: TraceCore, runId: string): boolean {
   }
 }
 
+function passAll(core: TraceCore, runId: string): boolean {
+  const before = core.traceOf(runId).offset;
+  const more = pass(core, runId);
+  const used = Math.max(0, core.traceOf(runId).offset - before);
+  const subagentsMore = subagentPass(core, runId, core.passBytes - used);
+  return more || subagentsMore;
+}
+
 export async function drain(core: TraceCore, runId: string): Promise<void> {
-  while (pass(core, runId)) await nextTick();
+  while (passAll(core, runId)) await nextTick();
 }

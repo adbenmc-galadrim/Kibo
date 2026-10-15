@@ -13,6 +13,7 @@ export const INBOX_META: ProjectMeta = {
   worktree: null,
   storybook: null,
   duplication: null,
+  delivery: null,
 };
 
 export function loadInbox(store: Store): LoroDoc {

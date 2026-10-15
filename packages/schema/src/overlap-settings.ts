@@ -122,6 +122,37 @@ export const DUPLICATION_TEST_GLOBS: readonly string[] = [
   "*.fixture.*",
 ];
 
+export const DUPLICATION_SHARED_GLOBS: readonly string[] = [
+  "*.md",
+  "*.mdx",
+  "*.txt",
+  "LICENSE*",
+  "CHANGELOG*",
+  "package.json",
+  "pnpm-workspace.yaml",
+  "turbo.json",
+  "tsconfig*.json",
+  "biome.json*",
+  "*.config.js",
+  "*.config.cjs",
+  "*.config.mjs",
+  "*.config.ts",
+  "*.config.mts",
+  ".editorconfig",
+  ".gitignore",
+  ".gitattributes",
+  ".github/**",
+  "Dockerfile*",
+  "docker-compose*.yml",
+  "compose*.yml",
+  ".env.example",
+  "**/i18n/**",
+  "**/locales/**",
+  "**/lang/**",
+  "*.gen.*",
+  "routeTree.gen.ts",
+];
+
 export const DUPLICATION_CODE_EXTENSIONS: readonly string[] = [
   "ts",
   "tsx",
@@ -169,9 +200,12 @@ export const DuplicationSettings = z
     compareTests: z.boolean(),
     ignore: z.array(z.string().min(1).max(200)).max(50),
     genericExports: z.array(z.string().min(1).max(64)).max(100),
+    shared: z.array(z.string().min(1).max(200)).max(50).optional(),
   })
   .strict();
 export type DuplicationSettings = z.infer<typeof DuplicationSettings>;
+
+export type EffectiveDuplication = DuplicationSettings & { shared: string[] };
 
 export const DEFAULT_DUPLICATION_SETTINGS: DuplicationSettings = {
   enabled: true,
@@ -179,4 +213,5 @@ export const DEFAULT_DUPLICATION_SETTINGS: DuplicationSettings = {
   compareTests: false,
   ignore: [],
   genericExports: [...DUPLICATION_GENERIC_EXPORTS],
+  shared: [...DUPLICATION_SHARED_GLOBS],
 };

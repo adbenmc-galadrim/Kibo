@@ -25,6 +25,7 @@ test("createAppInfo maps the platform and counts uptime from the injected clock"
     platform: "darwin",
     arch: "arm64",
     home: "~/.kibo",
+    userHome: null,
     daemonPid: 7,
     uptimeMs: 6_000,
   });

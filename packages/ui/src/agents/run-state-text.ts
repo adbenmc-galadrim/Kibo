@@ -21,6 +21,8 @@ export function reasonText(reason: WaitReason | null): string {
       return r.agentMissing;
     case "ticket_busy":
       return r.ticketBusy;
+    case "parent_ticket":
+      return r.parentTicket(reason.children);
   }
 }
 

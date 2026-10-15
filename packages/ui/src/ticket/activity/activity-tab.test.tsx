@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { NOW } from "../../agents/fixtures";
 import { apiMock } from "../../api-mock";
 import { dockState, FEED_RUN, MOMENTS_PAGE, progressProject } from "../../moments/fixtures";
+import { CONVENTIONS, launchMoment, subagentMoment } from "../../moments/subagent-fixtures";
 import {
   autoLinkFixture,
   autoLinkMoment,
@@ -30,6 +31,7 @@ mock.module("../../api", () =>
         if (req.method === "autoLinks.list") return [autoLinkFixture()];
         if (req.method === "getProject") return progressProject();
         if (req.method === "skillReviews.list") return [];
+        if (req.method === "runs.subagents") return [CONVENTIONS];
         return null;
       },
       code: () => Promise.resolve([]),
@@ -101,6 +103,8 @@ test("a question line of the chronology previews its question and opens it", asy
   const ticket = project.tickets.find((t) => t.id === "t14");
   if (!ticket) throw new Error("no ticket t14");
   const asked: Question = {
+    kind: "question",
+    images: [],
     id: "q-port",
     ticketId: "t14",
     runId: FEED_RUN,
@@ -140,4 +144,19 @@ test("a question line of the chronology previews its question and opens it", asy
   expect(await screen.findByText("Le port 4317 est pris par OpenTelemetry.")).toBeTruthy();
   fireEvent.click(line);
   expect(opened).toEqual(["q-port"]);
+});
+
+test("screen 217b: the activity shows a sub-agent as the same folded line, with its summary", async () => {
+  page = {
+    ...MOMENTS_PAGE,
+    moments: [...MOMENTS_PAGE.moments, launchMoment(CONVENTIONS), subagentMoment(CONVENTIONS)],
+  };
+  renderTab();
+  const line = await screen.findByRole("button", {
+    name: "Sous-agent ecc:code-reviewer · Porte qualité — conventions · terminé en 4 min",
+  });
+  expect(line.getAttribute("aria-expanded")).toBe("false");
+  expect(screen.getByText(`Résumé : ${CONVENTIONS.result}`)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /^A lancé un sous-agent/ })).toBeNull();
+  expect(calls).toContainEqual({ method: "runs.subagents", runId: FEED_RUN });
 });

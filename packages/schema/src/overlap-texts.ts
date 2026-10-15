@@ -11,8 +11,8 @@ export const PARALLEL_RULES_TITLE = "## Travail en parallèle";
 export const PARALLEL_RULES: readonly string[] = [
   "D'autres agents travaillent sur ce projet : la section « Travail en cours sur le projet » dit ce qu'ils ont déclaré et écrit.",
   'Avant de créer un utilitaire, cherche-le dans le code (`Grep`) et dans cette section ; `mcp__kibo__peek_work { run: "BOU-12" }` liste ce qu\'un autre run a écrit, `{ run, path }` montre un fichier de son espace.',
-  "Si Kibo te signale un recouvrement, tu factorises **toi-même, sans demander** : supprime ta copie et reprends la sienne à l'identique au même chemin, ou extrais une fonction commune dans un nouveau fichier identique des deux côtés.",
-  "Dis-le dans les `decisions` de ton compte rendu (« Repris `formatDate` de BOU-12 » ou « Copie gardée : … »).",
+  "Si Kibo te signale un recouvrement, un recouvrement est une information : reprends ou factorise si c'est le même code, sinon continue. Reprendre, c'est copier sa version à l'identique au même chemin ; factoriser, c'est extraire une fonction commune dans un nouveau fichier identique des deux côtés.",
+  "Si tu reprends ou factorises, dis-le dans les `decisions` de ton compte rendu (« Repris `formatDate` de BOU-12 »).",
 ];
 
 const ELLIPSIS = "…";
@@ -49,32 +49,31 @@ export function overlapSummary(
   return bounded(`Recouvrement avec ${withRunName} : ${summaryOf(detail, role)}`, OVERLAP_SUMMARY_MAX);
 }
 
-const factorise = (ticketKey: string, ownerPath: string): string =>
-  `**Factorise maintenant, sans demander** : supprime ta copie et reprends la sienne (\`mcp__kibo__peek_work { run: "${ticketKey}", path: "${ownerPath}" }\`, copie le fichier **à l'identique au même chemin**, sans le modifier, puis importe-le), ou extrais une fonction commune dans un **nouveau fichier identique des deux côtés**. Dis ce que tu as fait dans ton fil et ton compte rendu.`;
+const INFO = "Kibo — information :";
 
-const reuseFile = (ticketKey: string, path: string): string =>
-  `**Avant d'écrire, lis sa version** (\`mcp__kibo__peek_work { run: "${ticketKey}", path: "${path}" }\`) et **reprends-la telle quelle**, ou factorise ; n'écris pas ta propre version. Ne reformate pas et ne déplace rien dans ce fichier. Dis ce que tu as fait dans ton compte rendu.`;
+const reuse = (ticketKey: string, path: string): string =>
+  `Si c'est le même code, reprends le sien (\`mcp__kibo__peek_work { run: "${ticketKey}", path: "${path}" }\`, copie à l'identique au même chemin) ou factorise ; sinon continue. Rien à justifier.`;
 
-function otherAlert(detail: OverlapDetail, head: string, ticketKey: string): string {
-  if (detail.kind === "file") {
-    return `${head} : ${code(detail.path)} est aussi modifié par ${ticketKey}. ${reuseFile(ticketKey, detail.path)}`;
+function otherAlert(detail: OverlapDetail, withRunName: string, ticketKey: string): string {
+  switch (detail.kind) {
+    case "file":
+      return `${INFO} ${code(detail.path)} est aussi modifié par ${withRunName}. ${reuse(ticketKey, detail.path)}`;
+    case "export":
+      return `${INFO} ${code(detail.name)} est aussi exporté par ${withRunName} (${code(detail.ownerPath)}, toi ${code(detail.otherPath)}). ${reuse(ticketKey, detail.ownerPath)}`;
+    case "block":
+      return `${INFO} ${detail.lines} lignes de ${at(detail.otherPath, detail.otherStart)} sont identiques à ${at(detail.ownerPath, detail.ownerStart)} chez ${withRunName}. ${reuse(ticketKey, detail.ownerPath)}`;
   }
-  const seen =
-    detail.kind === "export"
-      ? `${code(detail.name)} est aussi exporté par ${code(detail.ownerPath)} dans son espace de travail (toi : ${code(detail.otherPath)})`
-      : `${detail.lines} lignes de ${at(detail.otherPath, detail.otherStart)} sont identiques à ${at(detail.ownerPath, detail.ownerStart)} dans son espace de travail`;
-  return `${head} : ${seen}. ${factorise(ticketKey, detail.ownerPath)}`;
 }
 
 function ownerAlert(detail: OverlapDetail, withRunName: string): string {
-  if (detail.kind === "file") {
-    return `Kibo — ${withRunName} modifie aussi ${code(detail.path)} et doit reprendre ta version : ne reformate pas et ne déplace rien dans ce fichier d'ici la fin de ton run ; si tu dois le changer, dis-le dans ton compte rendu.`;
+  switch (detail.kind) {
+    case "file":
+      return `${INFO} ${withRunName} modifie aussi ${code(detail.path)}. Rien à faire.`;
+    case "export":
+      return `${INFO} ${withRunName} ajoute aussi un export ${code(detail.name)} (${code(detail.otherPath)}). Rien à faire.`;
+    case "block":
+      return `${INFO} ${withRunName} a ${detail.lines} lignes identiques à ton code de ${at(detail.ownerPath, detail.ownerStart)} (${at(detail.otherPath, detail.otherStart)}). Rien à faire.`;
   }
-  const what =
-    detail.kind === "export"
-      ? `ton ${code(detail.name)} (${code(detail.ownerPath)})`
-      : `ton code de ${at(detail.ownerPath, detail.ownerStart)} (${detail.lines} lignes)`;
-  return `Kibo — ${withRunName} reprend ${what} : ne le renomme pas et ne le déplace pas d'ici la fin de ton run ; si tu dois le changer, dis-le dans ton compte rendu.`;
 }
 
 export function overlapAlert(
@@ -84,18 +83,8 @@ export function overlapAlert(
   withTicketKey: string,
 ): string {
   const text =
-    role === "other"
-      ? otherAlert(detail, `Kibo — recouvrement avec ${withRunName}`, withTicketKey)
-      : ownerAlert(detail, withRunName);
+    role === "other" ? otherAlert(detail, withRunName, withTicketKey) : ownerAlert(detail, withRunName);
   return bounded(text, DUPLICATION_LIMITS.alertChars);
-}
-
-export function overlapStopReminder(items: readonly { ticketKey: string; label: string }[]): string {
-  const cited = items.map((i) => `${i.ticketKey} (${i.label})`).join(", ");
-  const head = items.length > 1 ? "recouvrements ouverts" : "recouvrement ouvert";
-  return maskSecrets(
-    `Kibo : ${head} avec ${cited} : factorise, ou explique dans ton compte rendu pourquoi tu gardes ta copie, puis termine.`,
-  );
 }
 
 const REASON_TEXT: Record<AutoLinkReason, string> = { copy: "repris de", import: "importé de" };

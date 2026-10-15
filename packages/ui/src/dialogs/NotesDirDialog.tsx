@@ -12,12 +12,13 @@ import { Label } from "@kibo/sdk/ui/label";
 import { useEffect, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { FolderField } from "./FolderField";
 
 type Props = { projectId: string; open: boolean; onOpenChange(open: boolean): void };
 
 export function NotesDirDialog({ projectId, open, onOpenChange }: Props) {
-  const n = fr.notesDir;
+  const n = frComponentsManage.notesDir;
   const id = useId();
   const [dir, setDir] = useState("");
   const [error, setError] = useState<string | null>(null);

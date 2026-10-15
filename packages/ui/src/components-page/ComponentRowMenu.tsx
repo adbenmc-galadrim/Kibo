@@ -13,6 +13,7 @@ import { useState } from "react";
 import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { frMarket } from "../i18n/fr-market";
 import { marketErrorText } from "../lib/market-errors";
 import type { FlashTone } from "../lib/use-flash";
@@ -29,13 +30,15 @@ type Props = {
 type Confirming = "revoke" | "uninstall";
 
 const rehashChanged = (e: unknown): string | null =>
-  e instanceof KiboError && e.code === "TRUST_REQUIRED" ? fr.components.rehashChanged : null;
+  e instanceof KiboError && e.code === "TRUST_REQUIRED" ? frComponentsManage.components.rehashChanged : null;
 
 const uninstallError = (e: unknown): string =>
-  e instanceof KiboError && e.code === "INVALID_INPUT" ? fr.components.uninstallBlocked : marketErrorText(e);
+  e instanceof KiboError && e.code === "INVALID_INPUT"
+    ? frComponentsManage.components.uninstallBlocked
+    : marketErrorText(e);
 
 function BlockedUninstall() {
-  const c = fr.components;
+  const c = frComponentsManage.components;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -63,7 +66,7 @@ function ConfirmAction({
   kind: Confirming;
   onClose(): void;
 }) {
-  const c = fr.components;
+  const c = frComponentsManage.components;
   const ref = { id: row.id, version: row.version };
   const revoke = kind === "revoke";
   const confirm = async () => {
@@ -87,7 +90,7 @@ function ConfirmAction({
 }
 
 export function ComponentRowMenu({ row, onDone, onModifyWithAi, onPublishToMarket }: Props) {
-  const c = fr.components;
+  const c = frComponentsManage.components;
   const [confirming, setConfirming] = useState<Confirming | null>(null);
   const ref = { id: row.id, version: row.version };
   const origin = row.origin;

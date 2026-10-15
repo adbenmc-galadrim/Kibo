@@ -12,6 +12,7 @@ import {
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../../api-mock";
+import { appInfoFixture } from "../../lib/app-info-fixture";
 import { agentFixture, catalogFixture, SPEC_BODY } from "../catalog/fixtures";
 import { projectsFixture } from "../fixtures";
 import { skillGroups } from "./SkillsField";
@@ -65,6 +66,19 @@ const base = (req: RpcRequest): Promise<unknown> => {
       return Promise.resolve({ ok: true });
     case "fileVersions.list":
       return Promise.resolve([]);
+    case "getAppInfo":
+      return Promise.resolve(appInfoFixture("/Users/adam"));
+    case "agents.applyPreset":
+      return Promise.resolve({
+        ...agent,
+        settings: {
+          ...agent.settings,
+          permissionMode: "auto",
+          allSubagents: true,
+          allow: [...agent.settings.allow, "Bash(pnpm *)"],
+          addDirs: ["/Users/adam/.claude/skills"],
+        },
+      });
     default:
       return Promise.resolve(null);
   }
@@ -261,6 +275,32 @@ test("screen 193b: technical settings save on each change and roll back on error
   expect(patches().at(-1)).toEqual({ enabled: false });
 });
 
+test("screen 210: the Delivery preset updates the settings in place, each field stays editable", async () => {
+  show();
+  await ready();
+  const user = await section(/^Réglages techniques/);
+  await user.click(screen.getByRole("button", { name: "Préréglage : Livraison" }));
+  await user.click(await screen.findByRole("button", { name: "Appliquer le préréglage" }));
+  expect(calls).toContainEqual({ method: "agents.applyPreset", ref: "global:livraison", preset: "delivery" });
+  expect(await screen.findByText(/^Préréglage Livraison appliqué à \d\d:\d\d/)).toBeTruthy();
+  expect(
+    screen
+      .getByRole("radio", { name: "Automatique (l'agent décide, sans contournement)" })
+      .getAttribute("aria-checked"),
+  ).toBe("true");
+  expect((screen.getByRole("textbox", { name: "Autorisations" }) as HTMLTextAreaElement).value).toBe(
+    "Bash(bun test *)\nBash(pnpm *)",
+  );
+  const dirs = screen.getByRole("textbox", { name: "Dossiers supplémentaires" }) as HTMLTextAreaElement;
+  expect(dirs.value).toBe("~/.claude/skills");
+  await user.type(dirs, "\n~/Documents/emis");
+  await waitFor(() =>
+    expect(patches().at(-1)).toEqual({
+      addDirs: ["/Users/adam/.claude/skills", "/Users/adam/Documents/emis"],
+    }),
+  );
+});
+
 test("screen 193c: callable subagents are the global agents, with the generic ones", async () => {
   show();
   await ready();
@@ -325,6 +365,7 @@ test("a Kibo agent shows its fixed settings greyed with the reason and cannot be
   expect(screen.getByText("Agent de Kibo : ces réglages sont fixés par Kibo.")).toBeTruthy();
   expect(screen.getByRole("radio", { name: "Dossier isolé" }).hasAttribute("disabled")).toBe(true);
   expect(screen.getByRole("switch", { name: "Activé" }).hasAttribute("disabled")).toBe(false);
+  expect(screen.queryByRole("button", { name: "Préréglage : Livraison" })).toBeNull();
 });
 
 test("renaming refuses a vague name and follows the new reference", async () => {

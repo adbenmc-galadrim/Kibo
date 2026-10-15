@@ -73,6 +73,7 @@ export const stubDocs: Docs = {
 };
 export const stubNotes: NotesService = {
   info: unused,
+  list: unused,
   setDir: unused,
   handle: unused,
   refresh: unused,
@@ -131,6 +132,9 @@ export const idleHandlers: GateHandlers = {
   recipients: async () => [],
   peek: async (_projectId, runId) => {
     throw new KiboError("NOT_FOUND", `run ${runId}`);
+  },
+  delivery: async () => {
+    throw new KiboError("NOT_CONNECTED", "delivery is not started");
   },
 };
 
@@ -205,6 +209,10 @@ export function testGate(quotas: Quotas = createQuotas(), grantedToEvil: Granted
       peek: async (projectId, runId) => {
         handled.push(`peek:${projectId}:${runId}`);
         return PEEK;
+      },
+      delivery: async (projectId, call) => {
+        handled.push(`delivery:${projectId}:${call.kind}`);
+        return null;
       },
     },
     quotas,

@@ -3,6 +3,7 @@ import { TicketKeyLabel } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@kibo/sdk/ui/sheet";
 import { Bot } from "lucide-react";
+import { DeliverButton } from "../delivery/lazy";
 import { fr } from "../i18n/fr";
 import { frPresence } from "../i18n/fr-presence";
 import { canEdit } from "../state/access";
@@ -105,6 +106,9 @@ export function TicketSheet({
                   {fr.ticket.assignAgent}
                 </Button>
               </KeyRequired>
+              {editable && (
+                <DeliverButton key={project.meta.delivery?.agent ?? ""} project={project} ticket={t} />
+              )}
             </div>
           )}
         </SheetHeader>

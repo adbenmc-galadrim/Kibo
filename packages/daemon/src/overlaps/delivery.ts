@@ -1,8 +1,6 @@
 import { type PendingAlert, pickAlerts } from "@kibo/core";
 import type { HookReply, Overlap, OverlapRole } from "@kibo/schema";
 import type { HookSink } from "../agents/hook-route";
-import type { OpenOverlapReminder } from "../agents/reminders";
-import { overlapLabel } from "./label";
 import type { OverlapStore } from "./store";
 
 export type DeliveredAlert = { overlapId: string; role: OverlapRole };
@@ -55,9 +53,6 @@ export function withOverlapAlerts(sink: HookSink, deps: AlertDeps): HookSink {
 }
 
 const withRunOf = (o: Overlap, role: OverlapRole): string => (role === "owner" ? o.otherRunId : o.ownerRunId);
-const roleOf = (o: Overlap, runId: string): OverlapRole => (o.ownerRunId === runId ? "owner" : "other");
-const deliveredTo = (o: Overlap, role: OverlapRole): boolean =>
-  (role === "owner" ? o.ownerDeliveredAt : o.deliveredAt) !== null;
 
 export function storeAlerts(store: OverlapStore, names: RunNames): Pick<AlertDeps, "pending" | "delivered"> {
   return {
@@ -73,19 +68,4 @@ export function storeAlerts(store: OverlapStore, names: RunNames): Pick<AlertDep
         store.event(overlapId, { type: "delivered", role, by: null, at });
     },
   };
-}
-
-export function openDeliveredOverlaps(
-  store: OverlapStore,
-  ticketKey: (runId: string) => string,
-): (runId: string) => OpenOverlapReminder[] {
-  return (runId) =>
-    store
-      .list({ runId, state: "open" })
-      .filter((o) => deliveredTo(o, roleOf(o, runId)))
-      .map((o) => ({
-        overlapId: o.id,
-        ticketKey: ticketKey(withRunOf(o, roleOf(o, runId))),
-        label: overlapLabel(o.detail),
-      }));
 }

@@ -53,3 +53,17 @@ test("the five question edits are written as the viewer, an import keeps its lab
   for (const imported of editsBy({ kind: "import", ref: "plan" }))
     expect(intercept("p1", imported, USER)).toBe(imported);
 });
+
+test("only the daemon attaches images: a user or a component never does", () => {
+  const image = { id: "i1", name: "x.png", bytes: 10, width: null, height: null };
+  const withImages: ProjectCommand = { ...create, kind: "validation", images: [image] };
+  expect(intercept("p1", withImages, USER)).toEqual({
+    ...create,
+    kind: "validation",
+    images: [],
+    createdBy: { kind: "human", ref: "adam" },
+  });
+  const imported: ProjectCommand = { ...withImages, createdBy: { kind: "import", ref: "plan" } };
+  expect(intercept("p1", imported, USER)).toEqual({ ...imported, images: [] });
+  expect(intercept("p1", withImages, { origin: "agent", instanceId: null })).toBe(withImages);
+});

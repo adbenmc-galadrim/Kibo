@@ -26,7 +26,7 @@ import {
   Volume2,
   X,
 } from "lucide-react";
-import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { frIntegrations } from "../i18n/fr-integrations";
 import { frTrustCapabilities as caps } from "../i18n/fr-trust-capabilities";
 
@@ -41,7 +41,7 @@ const usableByThirdParty = (rule: string): boolean =>
   rule !== CONFIG_SERVER_RULE && !RESERVED_MCP_IDS.includes(rule.split("/")[0] ?? rule);
 
 const entityList = (entities: string[]): string =>
-  fr.trust.entities(entities.map(fr.trust.entityName).join(", "));
+  frComponentsManage.trust.entities(entities.map(frComponentsManage.trust.entityName).join(", "));
 
 const SECRET_ENTRY = /^secret:(.+)@([^@]+)$/;
 
@@ -78,11 +78,11 @@ export function permissionLabel(entry: string): string {
   if (capability) return caps[capability];
   const secret = SECRET_ENTRY.exec(entry);
   if (secret?.[1] && secret[2]) return frIntegrations.permissions.secret(secret[1], [secret[2]]);
-  return fr.publish.permission(entry);
+  return frComponentsManage.publish.permission(entry);
 }
 
 function closingLine(g: GrantedPermissions): PermissionLine | null {
-  const t = fr.trust;
+  const t = frComponentsManage.trust;
   if (g.mcp.length > 0) return null;
   const files = g.reads.includes("note") || g.writes.includes("note") || g.capabilities.includes("assets");
   const offline = g.net.length === 0;
@@ -93,7 +93,7 @@ function closingLine(g: GrantedPermissions): PermissionLine | null {
 }
 
 export function permissionLines(g: GrantedPermissions, extra: PermissionExtras = {}): PermissionLine[] {
-  const t = fr.trust;
+  const t = frComponentsManage.trust;
   const lines: PermissionLine[] = [];
   const reads = g.reads.filter((e) => e !== "note");
   if (reads.length > 0) {

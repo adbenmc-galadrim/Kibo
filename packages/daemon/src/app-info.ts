@@ -27,6 +27,7 @@ export function createAppInfo(deps: AppInfoDeps): () => AppInfo {
     platform: platform.data,
     arch: arch.data,
     home,
+    userHome: null,
     daemonPid: deps.pid,
     uptimeMs: Math.max(0, deps.now() - deps.startedAt),
   });

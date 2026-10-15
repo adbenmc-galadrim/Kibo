@@ -51,7 +51,7 @@ test("two runs: the copy is seen, alerted, factorised, then Kibo links the ticke
   for (const run of [owner, other])
     await until(async () => (kindsOf(await momentsOf(rpc, run.id)).includes("overlap") ? true : undefined));
   await until(async () =>
-    contextsOf(b.stack, other).some((c) => c.includes(`Kibo — recouvrement avec ${owner.label}`))
+    contextsOf(b.stack, other).some((c) => c.includes(`est aussi exporté par ${owner.label}`))
       ? true
       : undefined,
   );
@@ -65,7 +65,8 @@ test("two runs: the copy is seen, alerted, factorised, then Kibo links the ticke
 
   const link = await until(async () => (await autoLinksOf(rpc, projectId)).find((l) => l.status === "added"));
   expect(link).toMatchObject({ reason: "copy", fromTicketKey: "BOU-12", toTicketKey: "BOU-15" });
-  expect((await overlapsOf(rpc, projectId, "open")).filter((o) => o.kind !== "file")).toEqual([]);
+  expect(await overlapsOf(rpc, projectId, "open")).toEqual([]);
+  expect((await overlapsOf(rpc, projectId)).filter((o) => o.kind === "file")).toEqual([]);
   expect((await overlapsOf(rpc, projectId)).find((o) => o.id === opened.id)?.status).toBe("resolved");
   const [from, to] = [b.tickets.get("BOU-12")?.id, b.tickets.get("BOU-15")?.id];
   expect(blocks(await snapshotOf(rpc, projectId), from, to)?.id).toBe(link.linkId);

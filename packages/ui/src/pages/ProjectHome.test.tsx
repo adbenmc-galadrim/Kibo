@@ -13,6 +13,7 @@ const project = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot => 
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

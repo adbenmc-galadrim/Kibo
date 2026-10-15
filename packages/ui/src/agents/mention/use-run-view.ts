@@ -7,6 +7,7 @@ import {
   type TicketProgress,
 } from "@kibo/schema";
 import { useRunMoments } from "../../moments/use-run-moments";
+import { type RunSubagents, useRunSubagents } from "../../moments/use-run-subagents";
 import { useAgentsState } from "../../state/agents-context";
 import { useProject } from "../../state/use-projects";
 import { type ShownPlan, shownPlan } from "../dock/DockPlan";
@@ -19,6 +20,7 @@ export type RunViewData = {
   report: RunReport | null;
   loading: boolean;
   failed: boolean;
+  subagents: RunSubagents;
 };
 
 export const newestFirst = (runs: readonly RunView[]): RunView[] =>
@@ -32,11 +34,14 @@ export function useRunView(runId: string): RunViewData {
   const run = agents?.runs.find((r) => r.id === runId) ?? null;
   const { page, loading, error } = useRunMoments(run ? run.id : null);
   const project = useProject(run?.projectId ?? null);
+  const moments = page?.moments ?? [];
+  const subagents = useRunSubagents(run ? run.id : null, moments);
   const progress = project?.tickets.find((t) => t.id === run?.ticketId)?.agentProgress ?? null;
   return {
     agents,
     run,
-    moments: page?.moments ?? [],
+    moments,
+    subagents,
     loading,
     failed: error !== null,
     shown: run ? shownPlan(progress, run.id, page?.internalPlan ?? null) : null,

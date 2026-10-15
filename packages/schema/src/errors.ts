@@ -59,15 +59,20 @@ export const KIBO_ERROR_CODES = [
   "REVOKED",
   "INDEX_ROLLBACK",
   "DAEMON_RUNNING",
+  "DAEMON_NOT_RUNNING",
   "PROJECT_FOLDER_MISSING",
   "PROJECT_FOLDER_NOT_FOUND",
   "EMBED_REFUSED",
+  "TICKET_HAS_CHILDREN",
 ] as const;
 
 export type KiboErrorCode = (typeof KIBO_ERROR_CODES)[number];
 
 export const isKiboErrorCode = (v: unknown): v is KiboErrorCode =>
   typeof v === "string" && (KIBO_ERROR_CODES as readonly string[]).includes(v);
+
+export const parentTicketDetail = (children: number): string =>
+  `ce ticket regroupe ${children} sous-ticket${children > 1 ? "s" : ""}`;
 
 export class KiboError extends Error {
   constructor(

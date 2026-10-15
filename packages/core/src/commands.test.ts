@@ -12,6 +12,7 @@ const doc = () =>
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
 
 describe("project commands", () => {
@@ -137,6 +138,25 @@ describe("visibility commands", () => {
       executeProjectCommand(d, { method: "removeQuestionRecipient", recipientId: "product" }),
     ).toBeNull();
     expect(readProject(d).questionRecipients.map((r) => r.id)).toEqual(["me", "client", expect.any(String)]);
+  });
+
+  test("the delivery step is written on the ticket and read in the snapshot", () => {
+    const d = doc();
+    const ticket = ticketIn(d, "Formulaire");
+    expect(readProject(d).tickets.find((t) => t.id === ticket.id)?.delivery).toBeNull();
+    const delivery = { step: 7, note: "porte qualité", at: 5, runId: "r1" };
+    const written = executeProjectCommand(d, { method: "setTicketDelivery", ticketId: ticket.id, delivery });
+    expect(written).toMatchObject({ id: ticket.id, delivery });
+    expect(readProject(d).tickets.find((t) => t.id === ticket.id)?.delivery).toEqual(delivery);
+    executeProjectCommand(d, { method: "setTicketDelivery", ticketId: ticket.id, delivery: null });
+    expect(readProject(d).tickets.find((t) => t.id === ticket.id)?.delivery).toBeNull();
+  });
+
+  test("the delivery step is refused to the shell and to components", () => {
+    const delivery = { step: 7, note: "", at: 1, runId: null };
+    expect(() => assertShellCommand({ method: "setTicketDelivery", ticketId: "t1", delivery })).toThrow(
+      "PERMISSION_DENIED",
+    );
   });
 
   test("the ticket progress is refused to the shell", () => {

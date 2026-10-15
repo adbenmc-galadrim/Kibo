@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_DUPLICATION_SETTINGS } from "@kibo/schema";
-import { globToRegExp, isCodePath, isIgnoredPath, isSecretPath, isTestPath } from "./ignore";
+import { DEFAULT_DUPLICATION_SETTINGS, DUPLICATION_SHARED_GLOBS } from "@kibo/schema";
+import { globToRegExp, isCodePath, isIgnoredPath, isSecretPath, isSharedPath, isTestPath } from "./ignore";
 
 const settings = DEFAULT_DUPLICATION_SETTINGS;
 
@@ -96,5 +96,24 @@ describe("path kinds", () => {
     expect(isCodePath("lib/a.MJS")).toBe(true);
     expect(isCodePath("a.py")).toBe(false);
     expect(isCodePath("Makefile")).toBe(false);
+  });
+});
+
+describe("isSharedPath", () => {
+  const shared = { shared: DUPLICATION_SHARED_GLOBS };
+
+  test("i18n, configs and generated files are shared by nature", () => {
+    expect(isSharedPath("packages/i18n/src/locales/fr.ts", shared)).toBe(true);
+    expect(isSharedPath("turbo.json", shared)).toBe(true);
+    expect(isSharedPath("apps/web/src/app/routeTree.gen.ts", shared)).toBe(true);
+  });
+
+  test("ordinary code is not shared", () => {
+    expect(isSharedPath("src/lib/format.ts", shared)).toBe(false);
+  });
+
+  test("the project list replaces the default one", () => {
+    expect(isSharedPath("turbo.json", { shared: ["docs/**"] })).toBe(false);
+    expect(isSharedPath("docs/a.ts", { shared: ["docs/**"] })).toBe(true);
   });
 });

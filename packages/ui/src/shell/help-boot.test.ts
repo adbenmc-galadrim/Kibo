@@ -9,6 +9,7 @@ const info: AppInfo = {
   platform: "linux",
   arch: "x64",
   home: "~/.kibo",
+  userHome: null,
   daemonPid: 1,
   uptimeMs: 0,
 };

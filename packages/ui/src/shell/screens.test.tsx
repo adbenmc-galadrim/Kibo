@@ -16,7 +16,15 @@ const environment: Environment = {
   gh: "2.80",
   capacity: { cores: 8, ramGb: 16, hostSlots: 3 },
   github: { connected: false },
-  app: { version: "1.5.0", platform: "darwin", arch: "arm64", home: "~/.kibo", daemonPid: 42, uptimeMs: 0 },
+  app: {
+    version: "1.5.0",
+    platform: "darwin",
+    arch: "arm64",
+    home: "~/.kibo",
+    userHome: null,
+    daemonPid: 42,
+    uptimeMs: 0,
+  },
 };
 
 const isolated = { kind: "sandbox-exec", available: true, reason: null, fix: null, allowUnsandboxed: false };
@@ -58,6 +66,7 @@ const kibo: ProjectSummary = {
   worktree: null,
   storybook: null,
   duplication: null,
+  delivery: null,
   counts,
 };
 const portfolio: ProjectSummary = {
@@ -110,6 +119,7 @@ const empty: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

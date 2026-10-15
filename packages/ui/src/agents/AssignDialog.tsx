@@ -2,6 +2,8 @@ import {
   type AgentSummary,
   type AssignPreview,
   type Domain,
+  deliveryAgentOf,
+  deliveryBrief,
   isInbox,
   KiboError,
   type ProjectSnapshot,
@@ -23,6 +25,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Bot } from "lucide-react";
 import { type FormEvent, useEffect, useId, useState } from "react";
 import { client } from "../api";
+import { DeliverChildrenDialog } from "../delivery/DeliverChildrenDialog";
+import { childrenItems } from "../delivery/use-deliver";
 import { fr } from "../i18n/fr";
 import { frAgentsPage } from "../i18n/fr-agents-page";
 import { frAgentsSkills } from "../i18n/fr-agents-skills";
@@ -31,13 +35,15 @@ import { projectDomainsOf } from "../lib/project-domains";
 import { KeyRequired } from "../shell/KeyRequired";
 import { keepLayerOnSkillEscape } from "../skill-complete/use-skill-complete";
 import { canEdit } from "../state/access";
+import { useAgentsState } from "../state/agents-context";
 import { NoFolderAlert, Notice, needsFolder, SpaceText, WaitingAlert } from "./AssignAlerts";
 import { AssignBriefField } from "./AssignBriefField";
 import { AssignSession } from "./AssignSession";
+import { queueText, queueTone, refusalOf } from "./assign-queue";
 import { assignableAgents, isDemoAgent } from "./assignable";
 import { modelText, scopeText } from "./catalog/agent-labels";
 import { useAgentList } from "./catalog/use-agent-list";
-import { reasonText } from "./run-state-text";
+import { usePrefilledBrief } from "./use-prefilled-brief";
 
 type Props = {
   project: ProjectSnapshot | null;
@@ -65,18 +71,6 @@ const t = frAgentsSkills.assign;
 
 const assignable = (t: TicketView) => t.statusId !== "done" && t.key !== null;
 
-function queueText(preview: AssignPreview | null): string {
-  if (!preview) return "-";
-  if (preview.reason?.kind === "ticket_busy") return frAgentsPage.assign.ticketBusy;
-  if (preview.position === null) return t.startsNow;
-  return t.entersQueue(reasonText(preview.reason), preview.position);
-}
-
-function queueTone(preview: AssignPreview | null): string | undefined {
-  if (!preview) return undefined;
-  return preview.reason?.kind === "ticket_busy" ? "text-destructive" : "text-cyan-600 dark:text-cyan-400";
-}
-
 function AgentOption({ agent, projects }: { agent: AgentSummary; projects: readonly ProjectSummary[] }) {
   if (isDemoAgent(agent)) return <>{frAgentsPage.demo.option}</>;
   return (
@@ -92,18 +86,20 @@ function AssignForm({ projects, project, ticketId, agents, domains, onClose, onE
   const open = project.tickets.filter(assignable);
   const [chosenTicket, setChosenTicket] = useState(ticketId ?? open[0]?.id ?? "");
   const [profileId, setProfileId] = useState(agents[0]?.ref ?? "");
-  const [brief, setBrief] = useState("");
   const [preview, setPreview] = useState<AssignPreview | null>(null);
   const [previewFailed, setPreviewFailed] = useState(false);
   const [fresh, setFresh] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
   const ticket = project.tickets.find((t) => t.id === chosenTicket) ?? null;
   const profile = agents.find((p) => p.ref === profileId) ?? null;
+  const delivering = profile !== null && profile.ref === deliveryAgentOf(agents, project.meta.delivery);
+  const [brief, setBrief] = usePrefilledBrief(delivering && ticket?.key ? deliveryBrief(ticket.key) : "");
+  const runs = useAgentsState()?.runs;
   const domain = domains.find((d) => d.id === ticket?.domainId)?.name ?? null;
   const projectId = project.meta.id;
   const keyed = ticket?.key != null;
   const folderMissing = profile !== null && needsFolder(profile, project);
-  const busy = preview?.reason?.kind === "ticket_busy";
+  const busy = refusalOf(preview) !== null;
 
   useEffect(() => {
     setPreview(null);
@@ -141,6 +137,16 @@ function AssignForm({ projects, project, ticketId, agents, domains, onClose, onE
     }
     onClose();
   };
+
+  if (ticket && preview?.reason?.kind === "parent_ticket")
+    return (
+      <DeliverChildrenDialog
+        projectId={projectId}
+        parent={ticket}
+        items={childrenItems(project, runs, ticket.id)}
+        onClose={onClose}
+      />
+    );
 
   const submitButton = (
     <Button

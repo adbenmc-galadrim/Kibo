@@ -7,6 +7,8 @@ import {
   KiboError,
   QUESTIONS_PER_TICKET_MAX,
   Question,
+  type QuestionImage,
+  type QuestionKind,
   resolveAnswer,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
@@ -24,6 +26,8 @@ export type NewQuestion = {
   createdBy: Actor;
   importRef?: ImportRef | null;
   recipient?: string;
+  kind?: QuestionKind;
+  images?: readonly QuestionImage[];
   at?: number;
 };
 
@@ -95,6 +99,8 @@ export function createQuestion(doc: LoroDoc, input: NewQuestion): Question {
     createdAt: freeInstant(all, input.at ?? Date.now()),
     importRef: input.importRef ?? null,
     answer: null,
+    kind: input.kind ?? "question",
+    images: [...(input.images ?? [])],
     ...(input.recipient === undefined ? {} : { recipient: input.recipient }),
   });
 }

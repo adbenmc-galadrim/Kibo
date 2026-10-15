@@ -3,6 +3,8 @@ import {
   DEFAULT_DUPLICATION_SETTINGS,
   DEFAULT_RECIPIENTS,
   DEFAULT_WORKFLOW,
+  type DeliveryImportCandidate,
+  EMPTY_DELIVERY,
   KiboError,
   type ProjectAccess,
   type ProjectSnapshot,
@@ -10,12 +12,25 @@ import {
   type RpcRequest,
   type TabTarget,
 } from "@kibo/schema";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { summaryFixture } from "../agents/catalog/fixtures";
 import { configFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { appInfoFixture } from "../lib/app-info-fixture";
 
 const calls: RpcRequest[] = [];
+const IMPORTED: DeliveryImportCandidate = {
+  name: "kibo",
+  repo: "/Users/adam/code/kibo",
+  remote: null,
+  matched: "kibo",
+  preview: {
+    worktree: { baseRef: "origin/dev", pathTemplate: "../kibo-{slug}", setup: null, recipe: null },
+    delivery: { ...EMPTY_DELIVERY, root: "/Users/adam/Documents/kibo" },
+  },
+  notices: [],
+};
 let fail: KiboError | null = null;
 let access: ProjectAccess = "write";
 const snapshot = (): ProjectSnapshot => ({
@@ -28,6 +43,7 @@ const snapshot = (): ProjectSnapshot => ({
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -45,11 +61,23 @@ mock.module("../api", () =>
   apiMock({
     client: {
       subscribe: () => () => {},
+      subscribeTopic: () => () => {},
       rpc: async (req: RpcRequest) => {
         if (req.method === "getProject") return snapshot();
         if (req.method === "overlaps.ignored") return [];
+        if (req.method === "getAppInfo") return appInfoFixture("/Users/adam");
+        if (req.method === "agents.list")
+          return { agents: [summaryFixture({ name: "full-delivery" })], notices: [], partialWatch: false };
         calls.push(req);
         if (fail) throw fail;
+        if (req.method === "projects.importDelivery")
+          return { registryPath: "/r.json", candidates: [IMPORTED] };
+        if (req.method === "projects.applyDeliveryImport")
+          return {
+            ...snapshot().meta,
+            worktree: IMPORTED.preview.worktree,
+            delivery: IMPORTED.preview.delivery,
+          };
         if (req.method === "updateProject")
           return {
             id: "kibo",
@@ -60,6 +88,7 @@ mock.module("../api", () =>
             worktree: null,
             storybook: null,
             duplication: null,
+            delivery: null,
           };
         if (req.method === "setIcon") return { icon: req.icon ? "abc" : null };
         throw new Error(`unexpected ${req.method}`);
@@ -78,6 +107,7 @@ const project: ProjectSummary = {
   worktree: null,
   storybook: null,
   duplication: null,
+  delivery: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
   icon: "v1",
 };
@@ -277,7 +307,12 @@ test("saving the worktree section sends the local settings only", async () => {
       method: "updateProject",
       projectId: "kibo",
       patch: {
-        worktree: { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: "pnpm worktree {branch}" },
+        worktree: {
+          baseRef: "origin/dev",
+          pathTemplate: "../emis-{slug}",
+          setup: "pnpm worktree {branch}",
+          recipe: null,
+        },
       },
     },
   ]);
@@ -314,7 +349,7 @@ test("a variable between single quotes is explained and blocks the save", async 
 
 test("clearing the three fields forgets the settings", async () => {
   const closed = mock(() => {});
-  const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: "make wt" };
+  const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: "make wt", recipe: null };
   render(<EditProjectDialog project={{ ...project, worktree }} remote={false} onClose={closed} />);
   expect(field("Commande de préparation").value).toBe("make wt");
   const user = userEvent.setup();
@@ -322,6 +357,68 @@ test("clearing the three fields forgets the settings", async () => {
   await user.click(saveButton());
   await waitFor(() => expect(closed).toHaveBeenCalled());
   expect(calls).toEqual([{ method: "updateProject", projectId: "kibo", patch: { worktree: null } }]);
+});
+
+const deliverySection = () => screen.queryByRole("group", { name: "Livraison" });
+
+test("screen 215: the delivery section needs a local folder and a local session", async () => {
+  const { unmount } = render(
+    <EditProjectDialog project={{ ...project, folder: null }} remote={false} onClose={() => {}} />,
+  );
+  expect(deliverySection()).toBeNull();
+  unmount();
+  const remote = render(<EditProjectDialog project={project} remote onClose={() => {}} />);
+  expect(deliverySection()).toBeNull();
+  remote.unmount();
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  expect(deliverySection()).toBeTruthy();
+  expect(await screen.findByRole("combobox", { name: "Agent de livraison" })).toBeTruthy();
+});
+
+test("saving the delivery section sends absolute paths, the tilde expanded", async () => {
+  const closed = mock(() => {});
+  render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
+  const root = await screen.findByLabelText("Dossier de travail du skill");
+  fireEvent.change(root, { target: { value: "~/Documents/emis" } });
+  await userEvent.setup().click(saveButton());
+  await waitFor(() => expect(closed).toHaveBeenCalled());
+  expect(calls).toEqual([
+    {
+      method: "updateProject",
+      projectId: "kibo",
+      patch: { delivery: { ...EMPTY_DELIVERY, root: "/Users/adam/Documents/emis" } },
+    },
+  ]);
+});
+
+test("screen 215b: importing from full-delivery fills the worktree and delivery fields", async () => {
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Importer depuis full-delivery" }));
+  const dialog = await screen.findByRole("dialog", { name: "Importer depuis full-delivery" });
+  await screen.findByText("correspond à ce projet");
+  await user.click(within(dialog).getByRole("button", { name: "Importer" }));
+  await waitFor(() => expect(field("Base").value).toBe("origin/dev"));
+  expect(((await screen.findByLabelText("Dossier de travail du skill")) as HTMLInputElement).value).toBe(
+    "~/Documents/kibo",
+  );
+  expect(calls).toContainEqual({
+    method: "projects.applyDeliveryImport",
+    projectId: "kibo",
+    name: "kibo",
+    registryPath: "/r.json",
+  });
+  expect(saveButton().hasAttribute("disabled")).toBe(true);
+});
+
+test("a refused recipe or delivery field blocks the save", async () => {
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  fireEvent.change(field("Fichiers à copier"), { target: { value: "../.env" } });
+  expect(saveButton().hasAttribute("disabled")).toBe(true);
+  fireEvent.change(field("Fichiers à copier"), { target: { value: ".env" } });
+  expect(saveButton().hasAttribute("disabled")).toBe(false);
+  fireEvent.change(await screen.findByLabelText("TODO"), { target: { value: "TODO.md" } });
+  expect(saveButton().hasAttribute("disabled")).toBe(true);
 });
 
 const storybookSection = () => screen.queryByRole("group", { name: "Storybook" });

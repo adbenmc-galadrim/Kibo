@@ -1,4 +1,10 @@
-import { type AgentPreview, type AgentRef, type TicketView, WORK_SECTION_TITLE } from "@kibo/schema";
+import {
+  type AgentPreview,
+  type AgentRef,
+  type SettingOrigin,
+  type TicketView,
+  WORK_SECTION_TITLE,
+} from "@kibo/schema";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/ui/collapsible";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@kibo/sdk/ui/sheet";
@@ -8,6 +14,7 @@ import { client } from "../../api";
 import { frAgentsPage } from "../../i18n/fr-agents-page";
 import { frAgentsSkills } from "../../i18n/fr-agents-skills";
 import { frOverlaps } from "../../i18n/fr-overlaps";
+import { abbreviateHome } from "../../lib/home-path";
 
 type Props = {
   open: boolean;
@@ -72,12 +79,33 @@ function subagentsLabel(command: AgentPreview["command"]): string {
   return command.subagents.length > 0 ? command.subagents.join(", ") : t.noSubagents;
 }
 
+type CommandView = AgentPreview["command"];
+
+const listOf = (items: { value: string; origin: SettingOrigin }[], empty: string): string =>
+  items.length === 0
+    ? empty
+    : items.map(({ value, origin }) => t.withOrigin(value, t.origins[origin])).join(", ");
+
+export const rulesLine = (command: CommandView): string =>
+  listOf(
+    command.allowOrigins.map(({ rule, origin }) => ({ value: rule, origin })),
+    t.noRules,
+  );
+
+export const dirsLine = (command: CommandView): string =>
+  listOf(
+    command.addDirs.map(({ dir, origin }) => ({ value: abbreviateHome(dir), origin })),
+    t.noDirs,
+  );
+
 function Command({ command }: { command: AgentPreview["command"] }) {
   const rows: [string, string][] = [
     [t.model, command.model],
     [t.permissions, frAgentsPage.permissionModes[command.permissionMode]],
     [t.tools, command.tools ? command.tools.join(", ") : t.allTools],
     [t.allow, command.allow.join(", ")],
+    [t.rules, rulesLine(command)],
+    [t.dirs, dirsLine(command)],
     [t.subagents, subagentsLabel(command)],
     [t.skills, command.skills.mode === "all" ? t.allSkills : command.skills.ids.join(", ")],
   ];

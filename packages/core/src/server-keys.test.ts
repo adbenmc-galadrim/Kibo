@@ -24,6 +24,7 @@ const meta = {
   worktree: null,
   storybook: null,
   duplication: null,
+  delivery: null,
 };
 
 function sharedServer(): LoroDoc {

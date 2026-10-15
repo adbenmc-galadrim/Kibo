@@ -25,6 +25,7 @@ function setup() {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
   const ticket = createTicket(doc, { title: "Stockage" });
   const other = createTicket(doc, { title: "Exports" });

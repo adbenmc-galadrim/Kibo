@@ -12,6 +12,7 @@ import {
   type ValidationReport,
 } from "@kibo/schema";
 import type { CommandHub } from "../command-path";
+import type { ComponentDelivery } from "../delivery/component-calls";
 import type { Docs } from "../docs";
 import { createFilesService, type FilesService } from "../files/service";
 import type { ComponentIntegrationHooks } from "../integrations/types";
@@ -55,6 +56,7 @@ export type ComponentsDeps = {
   sharing?: (projectId: string) => ProjectSyncInfo;
   deliverAnswers?: (projectId: string, ticketId: string) => DeliveryResult;
   peekRun?: (projectId: string, runId: string) => RunPeek;
+  delivery?: ComponentDelivery;
   installCli?: () => Promise<{ path: string }>;
   cliStatus?: () => Promise<{ path: string; installed: boolean }>;
   jobTimers?: Pick<JobSchedulerDeps, "setInterval" | "clearInterval">;
@@ -141,18 +143,11 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     quotas: createQuotas(),
     events,
     handlers: createGateHandlers({
-      docs,
+      ...deps,
       notes,
       files,
       backends: () => backends,
-      runs: deps.runs,
       manifestOf: (ref) => registry.manifestOf(ref),
-      ...(deps.net && { net: deps.net }),
-      ...(deps.integrations && { integrations: deps.integrations }),
-      ...(deps.presence && { presence: deps.presence }),
-      ...(deps.sharing && { sharing: deps.sharing }),
-      ...(deps.deliverAnswers && { deliverAnswers: deps.deliverAnswers }),
-      ...(deps.peekRun && { peekRun: deps.peekRun }),
     }),
   });
 
@@ -262,6 +257,8 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
         return listDrafts(deps.home, docs.workspace);
       case "getNotesDir":
         return notes.info(req.projectId);
+      case "listNotes":
+        return notes.list(req.projectId);
       case "setNotesDir":
         return notes.setDir(req.projectId, req.dir);
       case "getRuntimeInfo":

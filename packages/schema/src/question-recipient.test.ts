@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { askInputFromTool, Question } from "./question";
+import { Question } from "./question";
+import { askInputFromTool } from "./question-ask";
 import {
   DEFAULT_RECIPIENTS,
   findRecipient,

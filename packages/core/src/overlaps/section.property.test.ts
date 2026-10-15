@@ -87,3 +87,31 @@ test("the order of files does not change the fingerprint", () => {
     { numRuns: 100 },
   );
 });
+
+const MARK = " (aussi modifié par toi)";
+const plainPath = fc.stringMatching(/^src\/[a-e]{1,2}\.ts$/);
+
+test("the mark is on exactly the files the caller changed too", () => {
+  fc.assert(
+    fc.property(
+      fc.uniqueArray(plainPath, { maxLength: 20 }),
+      fc.array(plainPath, { maxLength: 20 }),
+      parallelRun,
+      (paths, mine, base) => {
+        const files = paths.map((path) => ({ path, status: "added" as const, added: 1, removed: 0 }));
+        const run = { ...base, name: "run", ticketTitle: "t", plan: null, exports: [], files };
+        const section =
+          composeWorkSection(
+            { runs: [run], more: 0, overlaps: [], partial: false, sharedPaths: mine },
+            NOW,
+          ) ?? "";
+        const marked = section
+          .split("\n")
+          .filter((line) => line.endsWith(MARK))
+          .map((line) => line.slice(line.indexOf("`") + 1, line.lastIndexOf("`")));
+        expect(marked.sort()).toEqual(paths.filter((p) => mine.includes(p)).sort());
+      },
+    ),
+    { numRuns: 150 },
+  );
+});

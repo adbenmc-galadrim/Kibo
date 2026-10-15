@@ -86,6 +86,8 @@ test("a demo guard that cannot be built denies the call and is logged", () => {
 });
 
 const ASK: AskInput = {
+  kind: "question",
+  images: [],
   title: "Bloquer le dépôt ?",
   context: "",
   options: ["Oui", "Non"],
@@ -128,11 +130,19 @@ test("an ask after the tool call creates one question on the ticket of the run, 
   expect(sink.verify("r1", "ok")).toBe(true);
   expect(sink.receive("r1", asked, null)).toBeNull();
   expect(received).toEqual(["r1:PostToolUse"]);
-  expect(created).toEqual([["p1", "t1", { id: "r1", profileName: "opus-dev" }, ASK]]);
+  expect(created).toEqual([["p1", "t1", { id: "r1", profileName: "opus-dev", cwd: null }, ASK]]);
   expect(notified).toEqual([["r1", "q1"]]);
   sink.receive("r1", asked, null);
   expect(created).toHaveLength(2);
   expect(notified).toEqual([["r1", "q1"]]);
+});
+
+test("a validation ask reaches the port with its kind, its image paths and the folder of the run", () => {
+  const validation = { ...ASK, kind: "validation" as const, images: ["/w/shots/1.png"] };
+  const run = runView({ id: "r1", state: "running", cwd: "/w" });
+  const { sink, created } = questionSink([run], () => answered("q2"));
+  sink.receive("r1", { ...asked, ask: validation }, null);
+  expect(created).toEqual([["p1", "t1", { id: "r1", profileName: "opus-dev", cwd: "/w" }, validation]]);
 });
 
 test("the call before the tool, a run without ticket, a full run and a failing port create nothing more", () => {

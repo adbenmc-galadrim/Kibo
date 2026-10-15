@@ -29,8 +29,13 @@ export type FoldState = {
   actionsAt: number | null;
   known: boolean;
 };
-export type FoldContext = { stepId: string | null; now: number };
-export type FoldedMoment = { data: MomentData; at: number; stepId: string | null };
+export type FoldContext = {
+  stepId: string | null;
+  now: number;
+  subagentId?: string;
+  sidechainAsMain?: boolean;
+};
+export type FoldedMoment = { data: MomentData; at: number; stepId: string | null; subagentId?: string };
 export type Folded = { state: FoldState; moments: FoldedMoment[] };
 
 const TARGET_MAX = 500;
@@ -128,7 +133,7 @@ class Folder {
       this.pending.set(block.id, { tool: block.name, input: block.input, sidechain: line.sidechain });
       return;
     }
-    if (line.sidechain) return;
+    if (line.sidechain && this.ctx.sidechainAsMain !== true) return;
     if (block.type === "text") this.say("message", block.text, line.at);
     if (block.type === "thinking") this.say("reasoning", block.thinking, line.at);
   }
@@ -167,7 +172,9 @@ class Folder {
   }
 
   private emit(data: MomentData, at: number | null): void {
-    this.moments.push({ data, at: at ?? this.ctx.now, stepId: this.ctx.stepId });
+    const { subagentId } = this.ctx;
+    const moment = { data, at: at ?? this.ctx.now, stepId: this.ctx.stepId };
+    this.moments.push(subagentId === undefined ? moment : { ...moment, subagentId });
   }
 }
 

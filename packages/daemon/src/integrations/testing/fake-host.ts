@@ -40,6 +40,7 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   };
   const doc = createProjectDoc(meta);
   const listeners = new Set<(e: CommandEvent) => void>();

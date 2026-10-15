@@ -22,6 +22,7 @@ export type MenuAction = {
   shortcut?: string;
   disabled?: boolean;
   destructive?: boolean;
+  hint?: string;
   onSelect(): void;
 };
 export type MenuSubmenu = { label: string; icon?: LucideIcon; items: MenuAction[] };
@@ -66,7 +67,14 @@ function Action({ action, parts }: { action: MenuAction; parts: Parts }) {
       onSelect={action.onSelect}
     >
       {Icon && <Icon aria-hidden />}
-      {action.label}
+      {action.hint ? (
+        <span className="grid min-w-0">
+          <span>{action.label}</span>
+          <span className="truncate text-xs text-muted-foreground">{action.hint}</span>
+        </span>
+      ) : (
+        action.label
+      )}
       {action.shortcut && <parts.Shortcut>{action.shortcut}</parts.Shortcut>}
     </parts.Item>
   );

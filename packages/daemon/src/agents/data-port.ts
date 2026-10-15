@@ -23,11 +23,18 @@ import {
   Question,
   resolveRecipient,
   undeliveredAnswers,
+  validationAsk,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { isDemoProject } from "../demo/demo-project";
 import type { CommandMeta, Docs } from "../docs";
 import type { ProjectSettings } from "../notes/settings";
+import { localDelivery } from "../project-folder";
+import {
+  type QuestionImageDeps,
+  type QuestionImagesPort,
+  questionImagesOf,
+} from "../questions/question-images-port";
 import { type AgentSource, NEUTRAL_AGENT_SOURCE } from "./neutral-agents";
 import type { AgentDataPort } from "./orchestrator";
 
@@ -65,14 +72,19 @@ function openOfRun(docs: Docs, projectId: string, runId: string): Question[] {
   return listQuestions(docs.project(projectId)).filter((q) => q.runId === runId && isOpen(q));
 }
 
+type RunAuthor = { id: string; profileName: string; cwd?: string | null };
+
 function createRunQuestion(
   docs: Docs,
+  images: QuestionImagesPort,
   projectId: string,
   ticketId: string,
-  run: { id: string; profileName: string },
-  ask: AskInput,
+  run: RunAuthor,
+  input: AskInput,
 ): Question | null {
   if (openOfRun(docs, projectId, run.id).length >= OPEN_PER_RUN_MAX) return null;
+  const ask = input.kind === "validation" ? validationAsk(input) : input;
+  const prepared = images.prepare(projectId, run.cwd ?? null, ask.images);
   const created = docs.run(
     projectId,
     {
@@ -86,10 +98,14 @@ function createRunQuestion(
       runId: run.id,
       createdBy: { kind: "agent", ref: run.profileName },
       recipient: resolveRecipient(listQuestionRecipients(docs.project(projectId)), ask.recipient),
+      kind: ask.kind,
+      images: prepared.map((p) => p.image),
     },
     FROM_DAEMON,
   );
-  return Question.parse(created);
+  const question = Question.parse(created);
+  images.store(question, prepared);
+  return question;
 }
 
 function answerRunQuestion(docs: Docs, projectId: string, runId: string, text: string, by: Actor) {
@@ -104,9 +120,16 @@ function answerRunQuestion(docs: Docs, projectId: string, runId: string, text: s
   return Question.parse(answered);
 }
 
-function questionsPort(docs: Docs, now: () => number): QuestionsPort {
+function questionsPort(
+  docs: Docs,
+  settings: Pick<ProjectSettings, "get">,
+  now: () => number,
+  imageDeps: QuestionImageDeps | null,
+): QuestionsPort {
+  const images = questionImagesOf(imageDeps, (projectId) => localDelivery(settings, projectId)?.root ?? null);
   return {
-    createQuestion: (projectId, ticketId, run, ask) => createRunQuestion(docs, projectId, ticketId, run, ask),
+    createQuestion: (projectId, ticketId, run, ask) =>
+      createRunQuestion(docs, images, projectId, ticketId, run, ask),
     answerRunQuestion: (projectId, runId, text, by) => answerRunQuestion(docs, projectId, runId, text, by),
     runQuestions: () => countOpenByRun(docs.projectIds().flatMap((id) => listQuestions(docs.project(id)))),
     undeliveredAnswers: (projectId, ticketId) =>
@@ -127,9 +150,10 @@ export function createDataPort(
   settings: Pick<ProjectSettings, "get">,
   now: () => number = Date.now,
   agentSource: AgentSource = NEUTRAL_AGENT_SOURCE,
+  images: QuestionImageDeps | null = null,
 ): AgentDataPort {
   return {
-    ...questionsPort(docs, now),
+    ...questionsPort(docs, settings, now, images),
     agents: (projectId) => agentSource.agents(projectId),
     agentOf: (ref) => agentSource.agentOf(ref),
     projectKey: (projectId) => docs.projectMeta(projectId).key,
@@ -142,7 +166,8 @@ export function createDataPort(
       const ticket = project.tickets.find((t) => t.id === ticketId);
       if (!ticket) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
       const domain = domainsOf(docs, projectId).find((d) => d.id === ticket.domainId) ?? null;
-      return { project, ticket, domain };
+      const childCount = project.tickets.filter((t) => t.parentId === ticketId).length;
+      return { project, ticket, domain, childCount };
     },
     guidelines: (projectId) => guidelinesOf(docs, projectId),
     assertWritable: (projectId) => docs.assertWritable(projectId),

@@ -7,6 +7,7 @@ test("AppInfo requires a semver version and a known platform", () => {
     platform: "darwin",
     arch: "arm64",
     home: "~/.kibo",
+    userHome: "/Users/adam",
     daemonPid: 42,
     uptimeMs: 0,
   };
@@ -16,4 +17,8 @@ test("AppInfo requires a semver version and a known platform", () => {
   expect(AppInfo.safeParse({ ...ok, version: "0.16.0-beta.1" }).success).toBe(false);
   expect(AppInfo.safeParse({ ...ok, platform: "win32" }).success).toBe(false);
   expect(AppInfo.safeParse({ ...ok, daemonPid: 0 }).success).toBe(false);
+  expect(AppInfo.safeParse({ ...ok, userHome: null }).success).toBe(true);
+  expect(AppInfo.safeParse({ ...ok, userHome: "~" }).success).toBe(false);
+  const { userHome: _userHome, ...older } = ok;
+  expect(AppInfo.safeParse(older).success).toBe(false);
 });

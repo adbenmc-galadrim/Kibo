@@ -12,6 +12,10 @@ export const AppInfo = z.object({
   platform: AppPlatform,
   arch: AppArch,
   home: z.string().min(1),
+  userHome: z
+    .string()
+    .refine((p) => p.startsWith("/"), "user home must be absolute")
+    .nullable(),
   daemonPid: z.number().int().positive(),
   uptimeMs: z.number().int().nonnegative(),
 });

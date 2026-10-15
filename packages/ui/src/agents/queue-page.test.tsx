@@ -170,6 +170,37 @@ test("sub-agents run in their parent's slot and the waiting column offers an ans
   expect(onAnswer).toHaveBeenCalledWith("r41");
 });
 
+test("screen 218: the sub-agent lines read the tracked sub-agents, with their description", () => {
+  const state = {
+    ...agentsFixture(),
+    subagents: [
+      {
+        runId: "r42",
+        id: "a-review",
+        type: "ecc:code-reviewer",
+        description: "Porte qualité — correctness",
+        state: "running" as const,
+        startedAt: NOW - 2 * 60_000,
+      },
+    ],
+  };
+  render(
+    <QueueBoard
+      state={state}
+      agents={agentsSummaryFixture}
+      projects={projectsFixture}
+      now={NOW}
+      onAnswer={() => {}}
+    />,
+  );
+  const reviewer = within(screen.getByRole("region", { name: "ecc:code-reviewer" }));
+  expect(reviewer.getByText("Dans la place de opus-dev-1")).toBeTruthy();
+  expect(reviewer.getByText("Porte qualité — correctness")).toBeTruthy();
+  expect(reviewer.getByText("2m")).toBeTruthy();
+  const haiku = within(screen.getByRole("region", { name: "haiku-tests · Global" }));
+  expect(haiku.queryByText("Dans la place de opus-dev-1")).toBeNull();
+});
+
 test("the item menu moves, prioritizes and removes queued runs after a confirmation", async () => {
   show();
   const user = userEvent.setup();
@@ -343,4 +374,53 @@ test("a waiting run whose name holds its ticket does not repeat the key", () => 
   );
   const waiting = within(screen.getByRole("region", { name: "En attente de réponse" }));
   expect(waiting.queryByText(/^· KIB-/)).toBeNull();
+});
+
+test("the machine locks come after the columns, read from the agents state", () => {
+  const state = {
+    ...agentsFixture(),
+    locks: [{ name: "heavy", max: 2, held: [], waiting: [] }],
+  };
+  render(
+    <QueueBoard
+      state={state}
+      agents={agentsSummaryFixture}
+      projects={projectsFixture}
+      now={NOW}
+      onAnswer={() => {}}
+    />,
+  );
+  const locks = screen.getByRole("region", { name: "Verrous de la machine" });
+  const waiting = screen.getByRole("region", { name: "En attente de réponse" });
+  expect(waiting.compareDocumentPosition(locks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(within(locks).getByRole("article", { name: "heavy · 0/2 occupés" })).toBeTruthy();
+});
+
+test("without locks the section says the machine has none", () => {
+  show();
+  const locks = screen.getByRole("region", { name: "Verrous de la machine" });
+  expect(within(locks).getByText("Aucun verrou de livraison sur cette machine.")).toBeTruthy();
+});
+
+test("long run labels end with an ellipsis instead of being cut at the edge", () => {
+  const long = `global · opus-dev · ${"très-long-libellé-".repeat(6)}`;
+  const state = agentsFixture();
+  const runs = state.runs.map((r) => ({ ...r, label: long }));
+  render(
+    <QueueBoard
+      state={{ ...state, runs }}
+      agents={agentsSummaryFixture}
+      projects={projectsFixture}
+      now={NOW}
+      onAnswer={() => {}}
+    />,
+  );
+  const labels = screen.getAllByText(long);
+  expect(labels.length).toBeGreaterThan(2);
+  for (const label of labels) {
+    expect(label.className).toContain("truncate");
+    expect(label.closest("button")?.className ?? "").not.toContain("shrink-0");
+  }
+  for (const slot of screen.getAllByText(`Dans la place de ${long}`))
+    expect(slot.className).toContain("truncate");
 });

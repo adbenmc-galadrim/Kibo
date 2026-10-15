@@ -7,6 +7,8 @@ import { QuestionsBadge } from "./QuestionsBadge";
 const TICKET = { id: "t1", keyLabel: "KIB-14", title: "Récepteur de hooks" };
 
 const question = (id: string, createdAt: number): Question => ({
+  kind: "question",
+  images: [],
   id,
   ticketId: TICKET.id,
   runId: null,

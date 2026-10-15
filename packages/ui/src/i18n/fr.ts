@@ -210,9 +210,10 @@ export const fr = {
   },
   agents: {
     bar: "Agents",
-    summary: (used: number, total: number, queued: number, waiting: number) =>
+    summary: (used: number, total: number, queued: number, waiting: number, subagents = 0) =>
       [
         `${used}/${total} place${used > 1 ? "s" : ""}`,
+        subagents > 0 && `${subagents} sous-agent${subagents > 1 ? "s" : ""}`,
         queued > 0 && `${queued} en file`,
         waiting > 0 && `${waiting} attend${waiting > 1 ? "ent" : ""} une réponse`,
       ]

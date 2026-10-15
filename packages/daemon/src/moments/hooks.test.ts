@@ -71,3 +71,18 @@ test("a pass that throws synchronously is logged and the sink reply is kept", as
   expect(error).toHaveBeenCalledTimes(1);
   error.mockRestore();
 });
+
+test("subagent hooks reach the subagent tracker, other hooks do not", () => {
+  const { sink, trace } = fakes(() => Promise.resolve());
+  const tracked: Array<[string, HookPayload["event"]]> = [];
+  const subagents = { onHook: (runId: string, payload: HookPayload) => tracked.push([runId, payload.event]) };
+  const traced = withTrace(sink, { trace, run: (id) => (id === RUN.id ? RUN : null), subagents });
+  traced.receive("run-1", { ...PAYLOAD, event: "SubagentStart", agentId: "a1" }, null);
+  traced.receive("run-1", { ...PAYLOAD, event: "SubagentStop", agentId: "a1" }, null);
+  traced.receive("run-1", PAYLOAD, null);
+  traced.receive("run-2", { ...PAYLOAD, event: "SubagentStart", agentId: "a2" }, null);
+  expect(tracked).toEqual([
+    ["run-1", "SubagentStart"],
+    ["run-1", "SubagentStop"],
+  ]);
+});

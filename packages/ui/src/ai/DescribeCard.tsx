@@ -6,6 +6,7 @@ import { Bot, Sparkles } from "lucide-react";
 import { type FormEvent, useId, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { AttachmentsField } from "./AttachmentsField";
 import { aiErrorMessage } from "./ai-error";
 import { DemoAgentNote } from "./DemoAgentNote";
@@ -82,7 +83,7 @@ export function DescribeCard({ projectId = null, onStarted }: Props) {
           ref={descriptionRef}
           rows={3}
           maxLength={MAX}
-          placeholder={fr.createComponent.aiPlaceholder}
+          placeholder={frComponentsManage.createComponent.aiPlaceholder}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />

@@ -15,6 +15,8 @@ afterEach(() => {
 const HUMAN = { kind: "human", ref: "adam" } as const;
 const RUN = { id: "r1", profileName: "emis-livraison" };
 const ask = (title: string, blocking = false): AskInput => ({
+  kind: "question",
+  images: [],
   title,
   context: "",
   options: ["Oui", "Non"],

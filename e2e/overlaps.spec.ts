@@ -84,7 +84,7 @@ test("BOU-16 écrit par le shell : le balayage trouve le recouvrement, la barre 
   await page.goto(`/#/runs/${shell.id}`);
   const open = overlapLine().filter({ hasText: `Recouvrement avec ${OWNER_NAME}` });
   await expect(open).toContainText("formatDate exporté deux fois");
-  await expect(open).toContainText("à factoriser");
+  await expect(open).toContainText("information");
   await expect(open).toContainText("Ouvert");
   await open.scrollIntoViewIfNeeded();
   await capture(page, info, "197");
@@ -136,7 +136,8 @@ test("BOU-15 reprend le travail de BOU-12, Kibo lie les tickets puis le lien s'a
       .filter({ hasText: `Recouvrement avec ${OWNER_NAME}` })
       .first(),
   ).toContainText(/Réglé \d{2}:\d{2}/);
-  await expect(feed().getByText("Kibo a rappelé de factoriser")).toBeVisible();
+  await expect(feed().getByText("Page de suivi livrée.")).toBeVisible();
+  await expect(feed().getByText("Kibo a rappelé de factoriser")).toHaveCount(0);
   const linked = autoLinkLine().filter({ hasText: "Kibo a lié" });
   await expect(linked).toContainText("(BOU-12 bloque BOU-15)");
   await linked.scrollIntoViewIfNeeded();

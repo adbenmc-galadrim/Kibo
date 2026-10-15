@@ -27,6 +27,7 @@ const newProjectDoc = (key: string) =>
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
 
 const stored = (ticketId: string) => ({

@@ -18,6 +18,7 @@ import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { frIntegrations } from "../i18n/fr-integrations";
 import { nextLayout } from "../lib/format-grid";
 import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
@@ -71,7 +72,7 @@ export function AddComponentDialog({
   workflow = DEFAULT_WORKFLOW,
   linked = NO_LINK,
 }: Props) {
-  const a = fr.addComponent;
+  const a = frComponentsManage.addComponent;
   const { components, drafts, error } = useComponents();
   const [query, setQuery] = useState("");
   const [ref, setRef] = useState<string | null>(null);

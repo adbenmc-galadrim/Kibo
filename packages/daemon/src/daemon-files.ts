@@ -6,6 +6,7 @@ import { type AgentFiles, startAgentFiles } from "./agent-files/bootstrap";
 import { agentFilesRpc } from "./agent-files/rpc";
 import { catalogAgentSource, type LateAgentSource } from "./agents/agent-source";
 import type { Orchestrator } from "./agents/orchestrator-types";
+import { agentPresetRpc } from "./agents/presets";
 import { createAgentPreview } from "./agents/preview";
 import type { RunStore } from "./agents/run-store";
 import type { DaemonOptions } from "./daemon-options";
@@ -71,11 +72,16 @@ async function startDaemonSkills(
     project: (projectId) => call(service, { method: "getProject", projectId }),
     workspaceGuidelines: () => listGuidelines(service.docs.workspace),
   });
+  const home = opts.userHome ?? homedir();
   const restoreSkill = (id: string, baseHash: string | null, by: string) =>
     skills.service.restore(id, baseHash, by);
   return {
     skills,
-    extensions: [agentFilesRpc(files.service, preview, { ...data, restoreSkill }), skills.rpc],
+    extensions: [
+      agentFilesRpc(files.service, preview, { ...data, home, restoreSkill }),
+      agentPresetRpc(files.service, { home, assertWritable: data.assertWritable }),
+      skills.rpc,
+    ],
   };
 }
 
@@ -91,7 +97,7 @@ export async function startDaemonFiles(
   opts: DaemonOptions,
   input: DaemonFilesInput,
   closers: Closer[],
-): Promise<{ visibility: Visibility; extensions: RpcExtension[] }> {
+): Promise<{ visibility: Visibility; extensions: RpcExtension[]; agentFiles: AgentFiles["service"] }> {
   const { service } = input;
   const activeRuns = (ref: AgentRef) => input.agents()?.activeRuns(ref) ?? 0;
   const files = await startDaemonAgentFiles(opts, { ...input, activeRuns }, closers);
@@ -101,5 +107,9 @@ export async function startDaemonFiles(
   const started = await startDaemonSkills(opts, { files, service, visibility, late: input.late }, closers);
   skills = started.skills;
   closers.push(refreshOnProjects(service, [files.catalog, started.skills.service]));
-  return { visibility, extensions: started.extensions };
+  return {
+    visibility,
+    extensions: [...started.extensions, visibility.subagentRpc],
+    agentFiles: files.service,
+  };
 }

@@ -22,6 +22,7 @@ export type AgentsInput = {
   port: number;
   projectTurns: OrchestratorOptions["projectTurns"];
   lifecycle: Pick<OrchestratorOptions, "onSpawned" | "onTurnEnd" | "onEndedWithoutTurn" | "turnPrefix">;
+  locks: NonNullable<OrchestratorOptions["locks"]>;
   ready(orchestrator: Orchestrator): void;
   attachRuns(source: RunSource): Closer;
   agentsPort(orchestrator: Orchestrator): AgentsPort;
@@ -45,7 +46,9 @@ export async function startAgents(input: AgentsInput, closers: Closer[]): Promis
     notify: opts.notify ?? (() => {}),
     projectTurns: input.projectTurns,
     ...(opts.agentEnv && { env: opts.agentEnv }),
+    ...(opts.userHome && { userHome: opts.userHome }),
     ...input.lifecycle,
+    locks: input.locks,
   });
   closers.push(() => orchestrator.stop());
   input.ready(orchestrator);

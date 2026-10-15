@@ -16,6 +16,7 @@ const inbox: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   tickets: (kibo.tickets[0] ? [kibo.tickets[0]] : []).map((t) => ({
     ...t,

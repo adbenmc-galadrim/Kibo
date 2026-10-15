@@ -26,6 +26,7 @@ const doc = () =>
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
 
 test("a finished run leaves its ticket in its status, and a started one moves it on", () => {
@@ -248,7 +249,7 @@ test("a run reads the local worktree settings of its project", () => {
       folder: null,
       color: "#F97316",
     }) as ProjectMeta;
-    const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: null };
+    const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: null, recipe: null };
     s.docs.updateProjectMeta(meta.id, { worktree }, true);
     const ticket = call(s, {
       method: "command",

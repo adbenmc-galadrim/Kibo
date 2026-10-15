@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { AddDirs } from "./add-dir";
+import { AllowRules } from "./allow-rule";
 import { ProjectAssetName } from "./asset";
 import { ProjectCommand } from "./command";
 import { DESIGN_URL_MAX } from "./design";
@@ -70,5 +72,15 @@ export const ComponentCall = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("questions.deliver"), ticketId: NodeId }),
   z.object({ kind: z.literal("questions.recipients") }),
   z.object({ kind: z.literal("run.peek"), runId: z.string().min(1) }),
+  z.object({ kind: z.literal("run.deliver"), ticketId: NodeId }),
+  z.object({ kind: z.literal("run.denials"), runId: z.string().min(1) }),
+  z.object({ kind: z.literal("run.deliveryAgent") }),
+  z.object({
+    kind: z.literal("run.allowAndResume"),
+    runId: z.string().min(1),
+    questionId: NodeId,
+    rules: AllowRules,
+    addDirs: AddDirs,
+  }),
 ]);
 export type ComponentCall = z.infer<typeof ComponentCall>;

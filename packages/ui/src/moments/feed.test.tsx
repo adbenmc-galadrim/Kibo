@@ -24,6 +24,7 @@ import { Feed } from "./Feed";
 import { actions, FEED_RUN, MOMENTS, PLAN, REPORT, SKILL_ACTIONS, WORKTREE } from "./fixtures";
 import { PlanSteps } from "./PlanSteps";
 import { ReportCard } from "./ReportCard";
+import { CORRECTNESS, LAUNCH_MOMENTS } from "./subagent-fixtures";
 
 const files = { projectId: "kibo", worktree: WORKTREE, origin: "KIB-14 · opus-dev-2" };
 
@@ -313,7 +314,8 @@ test("screen 197: an overlap names the other run, what overlaps, the role and th
   expect(within(line).getByText("formatDate").tagName).toBe("CODE");
   expect(line.textContent).toContain("formatDate exporté deux fois");
   expect(line.textContent).toContain("src/utils/date.ts (toi) · src/lib/format.ts");
-  expect(within(line).getByText("à factoriser")).toBeTruthy();
+  expect(within(line).getByText("information")).toBeTruthy();
+  expect(within(line).queryByText("à factoriser")).toBeNull();
   expect(within(line).getByText("Ouvert")).toBeTruthy();
   const user = userEvent.setup();
   await user.click(within(line).getByRole("button", { name: "Voir les fichiers" }));
@@ -434,4 +436,14 @@ test("the overlap reminder and the peek at another run read as sentences", () =>
   );
   expect(screen.getByText("Kibo a rappelé de factoriser")).toBeTruthy();
   expect(screen.getByText("A regardé le travail de `BOU-12`")).toBeTruthy();
+});
+
+test("no moment of a sub-agent ever shows in the main feed", () => {
+  render(
+    <Feed moments={LAUNCH_MOMENTS} subagents={new Map([[CORRECTNESS.id, CORRECTNESS]])} texts={frMoments} />,
+  );
+  expect(screen.queryByText(/sign-in\.tsx/)).toBeNull();
+  expect(screen.getAllByRole("listitem")).toHaveLength(2);
+  expect(screen.getByRole("button", { name: /^Sous-agent ecc:code-reviewer/ })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "A lu 1 fichier" })).toBeTruthy();
 });

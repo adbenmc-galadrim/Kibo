@@ -125,3 +125,23 @@ test("listProjects flags the demo project from the project settings", () => {
     ["DEMO", true],
   ]);
 });
+
+test("listProjects gives the folder of this machine, never the one of another machine for a shared project", () => {
+  const { service, settings } = setup();
+  const create = (key: string) =>
+    ProjectMeta.parse(
+      service.handle({ method: "createProject", name: key, key, folder: "/elsewhere", color: "#F97316" }),
+    );
+  const local = create("EMIS");
+  const shared = create("GER");
+  const unset = create("RAP");
+  settings.set(local.id, "folder", "/Users/dev/Documents/emis");
+  settings.set(shared.id, "folder", "/Users/dev/Documents/gereco");
+  for (const { id } of [shared, unset]) service.docs.project(id).getMap("meta").set("keyAllocator", "server");
+  const listed = service.handle({ method: "listProjects" }) as ProjectSummary[];
+  expect(listed.map((p) => [p.key, p.folder])).toEqual([
+    ["EMIS", "/Users/dev/Documents/emis"],
+    ["GER", "/Users/dev/Documents/gereco"],
+    ["RAP", null],
+  ]);
+});

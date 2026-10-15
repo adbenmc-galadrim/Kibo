@@ -75,6 +75,7 @@ describe("agent settings", () => {
       genericSubagents: true,
       allSubagents: false,
       skills: { mode: "all" },
+      addDirs: [],
     });
     expect(DEFAULT_AGENT_SETTINGS).toEqual(AgentSettings.parse({}));
   });
@@ -273,4 +274,17 @@ test("the profile commands are gone and the profile guidelines with them", () =>
   const g = { id: "g", owner: { scope: "profile", profileId: "p" }, path: "a.md", content: "" };
   expect(Guideline.safeParse(g).success).toBe(false);
   expect(PermissionMode.safeParse("bypassPermissions").success).toBe(false);
+});
+
+describe("agent extra folders", () => {
+  test("settings stored without folders get an empty list", () => {
+    expect(AgentSettings.parse({}).addDirs).toEqual([]);
+    expect(AgentSettings.parse({ maxParallel: 3 }).addDirs).toEqual([]);
+  });
+
+  test("at most twenty folders, and the patch carries them", () => {
+    const dirs = Array.from({ length: 21 }, (_, i) => `/Users/a/d${i}`);
+    expect(AgentSettings.safeParse({ addDirs: dirs }).success).toBe(false);
+    expect(AgentSettingsPatch.parse({ addDirs: ["/x"] })).toEqual({ addDirs: ["/x"] });
+  });
 });

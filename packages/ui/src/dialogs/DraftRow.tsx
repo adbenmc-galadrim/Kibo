@@ -2,7 +2,7 @@ import type { DraftSummary } from "@kibo/schema";
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import { Blocks } from "lucide-react";
-import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { VersionPill } from "./CatalogRow";
 
 export function DraftRow({
@@ -19,11 +19,11 @@ export function DraftRow({
       </span>
       <span className="flex min-w-0 flex-1 items-center gap-2 text-sm font-medium">
         <span className="truncate">{draft.title}</span>
-        <Badge variant="secondary">{fr.addComponent.draft}</Badge>
+        <Badge variant="secondary">{frComponentsManage.addComponent.draft}</Badge>
       </span>
       {onPublish ? (
         <Button size="sm" variant="outline" onClick={() => onPublish(draft.id)}>
-          {fr.addComponent.publish}
+          {frComponentsManage.addComponent.publish}
         </Button>
       ) : (
         <VersionPill version={draft.version} />

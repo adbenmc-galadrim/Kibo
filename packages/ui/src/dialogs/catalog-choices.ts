@@ -1,6 +1,6 @@
 import type { ComponentSummary, ComponentVersionSummary } from "@kibo/schema";
 import type { ComponentModule } from "@kibo/sdk";
-import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import { componentRef } from "../registry";
 
 export type Choice = {
@@ -33,7 +33,10 @@ export function builtinChoices(modules: ComponentModule[]): Choice[] {
     description: m.description,
     version: m.version,
     reads: m.reads,
-    line: fr.addComponent.builtinTrust(m.reads.map(fr.trust.entityName), m.writes.map(fr.trust.entityName)),
+    line: frComponentsManage.addComponent.builtinTrust(
+      m.reads.map(frComponentsManage.trust.entityName),
+      m.writes.map(frComponentsManage.trust.entityName),
+    ),
     pending: null,
   }));
 }
@@ -48,7 +51,10 @@ export function mineChoices(components: ComponentSummary[]): Choice[] {
     .flatMap((c) => {
       const v = latestUsable(c);
       if (!v?.manifest || v.manifest.kind === "adapter") return [];
-      const trust = v.active && v.trust ? fr.components.trust[v.trust] : fr.addComponent.pendingTrust;
+      const trust =
+        v.active && v.trust
+          ? frComponentsManage.components.trust[v.trust]
+          : frComponentsManage.addComponent.pendingTrust;
       const hosts = v.manifest.net.map(hostLabel);
       return [
         {
@@ -58,7 +64,11 @@ export function mineChoices(components: ComponentSummary[]): Choice[] {
           description: v.manifest.description,
           version: v.version,
           reads: v.manifest.reads,
-          line: fr.addComponent.mineLine(fr.components.origin[v.origin], trust.toLowerCase(), hosts),
+          line: frComponentsManage.addComponent.mineLine(
+            frComponentsManage.components.origin[v.origin],
+            trust.toLowerCase(),
+            hosts,
+          ),
           pending: v.active ? null : v,
         },
       ];

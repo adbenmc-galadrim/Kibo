@@ -90,6 +90,15 @@ test("denials are recognised in the tool output", () => {
   expect(denialOf(null)).toBe(false);
 });
 
+test("a denied command keeps its raw text for the denial proposals", () => {
+  const raw = `git commit -m "fix" && ls ${"x".repeat(600)}`;
+  const denied = actionOf(call({ tool: "Bash", input: { command: raw }, isError: true, denied: true }));
+  expect(denied.target).toBe("commit · fix");
+  expect(denied.command).toBe(raw.slice(0, 500));
+  expect(actionOf(call({ tool: "Bash", input: { command: raw }, isError: true })).command).toBeUndefined();
+  expect(actionOf(call({ tool: "Read", input: { file_path: "/a" }, denied: true })).command).toBeUndefined();
+});
+
 test("the outcome of an action follows denial, then error", () => {
   expect(actionOf(call({ isError: true })).outcome).toBe("error");
   expect(actionOf(call({ isError: true, denied: true })).outcome).toBe("denied");

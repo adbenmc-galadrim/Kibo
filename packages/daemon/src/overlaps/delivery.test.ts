@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { type PendingAlert, pickAlerts } from "@kibo/core";
 import type { HookPayload, HookReply, Overlap } from "@kibo/schema";
 import type { HookSink } from "../agents/hook-route";
-import { openDeliveredOverlaps, storeAlerts, withOverlapAlerts } from "./delivery";
+import { storeAlerts, withOverlapAlerts } from "./delivery";
 import { type OverlapStore, openOverlapStore } from "./store";
 
 const hook = (event: HookPayload["event"], tool: string | null = "Edit"): HookPayload => ({
@@ -153,17 +153,4 @@ test("the store alerts name the other run and are never delivered twice per role
   alerts.delivered([{ overlapId: created.id, role: "other" }], 20);
   expect(alerts.pending("r15")).toEqual([]);
   expect(alerts.pending("r12")).toHaveLength(1);
-});
-
-test("open overlaps delivered to a run are listed for the stop reminder", () => {
-  const store = openStore();
-  const { id: _id, firstSeenAt: _f, ...finding } = overlap;
-  const created = store.create(finding, "P", 10);
-  const openOf = openDeliveredOverlaps(store, names.ticketKey);
-  expect(openOf("r15")).toEqual([]);
-  storeAlerts(store, names).delivered([{ overlapId: created.id, role: "other" }], 20);
-  expect(openOf("r15")).toEqual([{ overlapId: created.id, ticketKey: "KEY-r12", label: "`formatDate`" }]);
-  expect(openOf("r12")).toEqual([]);
-  store.event(created.id, { type: "resolved", role: null, by: null, at: 30 });
-  expect(openOf("r15")).toEqual([]);
 });

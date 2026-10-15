@@ -46,6 +46,7 @@ function setup(
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
   const page = executeProjectCommand(doc, { method: "addPage", title: "Board", kind: "dashboard" }) as Page;
   const inst = executeProjectCommand(doc, {

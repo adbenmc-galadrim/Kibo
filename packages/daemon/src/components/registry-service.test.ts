@@ -59,6 +59,7 @@ beforeEach(() => {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
   store = createFakeStore();
   stopped = [];

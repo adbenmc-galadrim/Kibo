@@ -82,6 +82,7 @@ beforeEach(() => {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
   updates = [];
   failFor = null;

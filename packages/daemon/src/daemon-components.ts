@@ -8,7 +8,15 @@ import type { Service } from "./service";
 
 export type DaemonComponentsInput = Pick<
   ComponentsDeps,
-  "db" | "sandboxOrigin" | "runs" | "allowUnsandboxed" | "integrations" | "presence" | "sharing" | "peekRun"
+  | "db"
+  | "sandboxOrigin"
+  | "runs"
+  | "allowUnsandboxed"
+  | "integrations"
+  | "presence"
+  | "sharing"
+  | "peekRun"
+  | "delivery"
 >;
 
 export async function startDaemonComponents(

@@ -5,6 +5,7 @@ export type ResumeContext = {
   runs: readonly RunView[];
   alive: (runId: string) => boolean;
   profileIds: ReadonlySet<string>;
+  hasChildren: (run: RunView) => boolean;
 };
 
 export function isLatestOfTicket(run: RunView, runs: readonly RunView[]): boolean {
@@ -16,7 +17,8 @@ export function canResume(run: RunView, ctx: ResumeContext): boolean {
     canWriteAfterEnd(run) &&
     !ctx.alive(run.id) &&
     ctx.profileIds.has(run.profileId) &&
-    isLatestOfTicket(run, ctx.runs)
+    isLatestOfTicket(run, ctx.runs) &&
+    !ctx.hasChildren(run)
   );
 }
 

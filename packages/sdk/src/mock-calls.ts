@@ -21,6 +21,7 @@ import {
 } from "@kibo/schema";
 import { base64ToBytes, bytesToBase64 } from "./lib/base64";
 import { mockAssetUrl } from "./mock-assets";
+import type { MockRunDelivery } from "./mock-delivery";
 import { type MockFrame, mockDesignFrame } from "./mock-design";
 import type { MockEmbeds } from "./mock-embed";
 import type { MockNotesFolder } from "./mock-notes";
@@ -42,6 +43,7 @@ export type MockCallDeps = {
   serverContext(): ServerContext;
   deliver(ticketId: string): DeliveryResult;
   peek(runId: string): RunPeek;
+  delivery: MockRunDelivery;
   fetch?: MockFetch;
   server?: ServerDefinition;
   mcp?: Record<string, McpCallResult>;
@@ -164,6 +166,16 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
         return deps.deliver(c.ticketId);
       case "run.peek":
         return deps.peek(c.runId);
+      case "run.deliver":
+        return deps.delivery.deliver(c.ticketId);
+      case "run.denials":
+        return deps.delivery.denials(c.runId);
+      case "run.deliveryAgent":
+        return deps.delivery.agent();
+      case "run.allowAndResume": {
+        const { kind: _kind, ...input } = c;
+        return deps.delivery.allowAndResume(input);
+      }
       case "questions.recipients":
         return listQuestionRecipients(deps.doc);
       case "config.set": {

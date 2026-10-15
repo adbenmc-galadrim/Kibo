@@ -73,3 +73,6 @@ export function isIgnoredPath(path: string, settings: Pick<DuplicationSettings, 
     matchesAny(path, settings.ignore)
   );
 }
+
+export const isSharedPath = (path: string, settings: { shared: readonly string[] }): boolean =>
+  matchesAny(path, settings.shared);

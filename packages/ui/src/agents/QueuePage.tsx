@@ -1,9 +1,10 @@
 import { DndContext, type DragEndEvent } from "@dnd-kit/core";
 import {
-  type ActiveSubagent,
   type AgentSummary,
   type AgentsState,
   keyBesideLabel,
+  machineLocks,
+  machineLocksDir,
   type ProjectSummary,
   type QueueEntry,
   type RpcRequest,
@@ -22,13 +23,21 @@ import { frAgentsSkills } from "../i18n/fr-agents-skills";
 import { projectName, scopeText } from "./catalog/agent-labels";
 import { useAgentList } from "./catalog/use-agent-list";
 import { elapsed, formatDuration } from "./format";
+import { MachineLocks } from "./MachineLocks";
 import { Mention } from "./mention/Mention";
 import { ProjectFilter } from "./ProjectFilter";
 import { effectiveProject, projectRuns } from "./project-filter";
 import { useAgentsProject } from "./project-pref";
 import { QueueCapacity } from "./QueueCapacity";
 import { QueueItem } from "./QueueItem";
-import { byStart, holdsSlot, orderAgents, queueNeighbours } from "./queue-runs";
+import {
+  byStart,
+  holdsSlot,
+  orderAgents,
+  queueNeighbours,
+  type SubagentSlot,
+  subagentsByType,
+} from "./queue-runs";
 import { SlotMeter } from "./SlotMeter";
 
 type Props = {
@@ -54,7 +63,9 @@ export function moveTarget(queue: QueueEntry[], activeId: string, overId: string
 }
 
 function Label({ children }: { children: ReactNode }) {
-  return <p className="text-3xs font-medium uppercase tracking-wide text-muted-foreground">{children}</p>;
+  return (
+    <p className="truncate text-3xs font-medium uppercase tracking-wide text-muted-foreground">{children}</p>
+  );
 }
 
 function Column({ label, aside, children }: { label: string; aside: ReactNode; children: ReactNode }) {
@@ -78,7 +89,7 @@ function RunLine({ run, text, now, since }: { run: RunView; text?: string; now: 
   return (
     <li className="flex min-w-0 items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs">
       <RunDot state={run.state} />
-      <Mention runId={run.id} label={run.label} className="shrink-0" />
+      <Mention runId={run.id} label={run.label} className="max-w-[60%]" />
       <span className="min-w-0 flex-1 truncate">{text ?? runSubject(run)}</span>
       <span className="font-mono text-3xs text-muted-foreground">
         {formatDuration(since === undefined ? elapsed(run, now) : now - since)}
@@ -118,11 +129,7 @@ export function QueueBoard({ state, agents, projects, now, onAnswer }: BoardProp
     const run = byId.get(entry.runId);
     return run ? [{ run, entry }] : [];
   });
-  const subagents = new Map<string, { parent: RunView; sub: ActiveSubagent }[]>();
-  for (const parent of runs.filter(holdsSlot).sort(byStart)) {
-    for (const sub of parent.subagents)
-      subagents.set(sub.type, [...(subagents.get(sub.type) ?? []), { parent, sub }]);
-  }
+  const subagents = subagentsByType(state, runs);
   const agentNames = new Set(agents.map((p) => p.name));
   const waiting = runs.filter((r) => r.state === "waiting_input");
   const onDragEnd = (e: DragEndEvent) => {
@@ -228,7 +235,7 @@ export function QueueBoard({ state, agents, projects, now, onAnswer }: BoardProp
             {waiting.map((r) => (
               <div
                 key={r.id}
-                className="grid gap-2 rounded-md border border-amber-400 bg-amber-50 p-3 dark:border-amber-600/70 dark:bg-amber-500/10"
+                className="grid min-w-0 grid-cols-1 gap-2 rounded-md border border-amber-400 bg-amber-50 p-3 dark:border-amber-600/70 dark:bg-amber-500/10"
               >
                 <span className="flex min-w-0 items-center gap-1 text-xs">
                   <Mention runId={r.id} label={r.label} />
@@ -250,6 +257,7 @@ export function QueueBoard({ state, agents, projects, now, onAnswer }: BoardProp
           </section>
         </div>
       </DndContext>
+      <MachineLocks locks={machineLocks(state)} now={now} dir={machineLocksDir(state)} />
       <ConfirmDialog
         open={cancelling !== null}
         onOpenChange={(open) => !open && setCancelling(null)}
@@ -266,14 +274,14 @@ export function QueueBoard({ state, agents, projects, now, onAnswer }: BoardProp
   );
 }
 
-function SubagentSlots({ items, now }: { items: { parent: RunView; sub: ActiveSubagent }[]; now: number }) {
+function SubagentSlots({ items, now }: { items: SubagentSlot[]; now: number }) {
   return (
     <>
       {items.map(({ parent, sub }) => (
-        <div key={sub.id} className="grid gap-1.5">
+        <div key={sub.id} className="grid min-w-0 grid-cols-1 gap-1.5">
           <Label>{q.inSlotOf(parent.label)}</Label>
           <ul>
-            <RunLine run={parent} now={now} since={sub.since} />
+            <RunLine run={parent} text={sub.description || undefined} now={now} since={sub.startedAt} />
           </ul>
         </div>
       ))}

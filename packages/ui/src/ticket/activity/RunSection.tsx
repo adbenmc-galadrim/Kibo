@@ -15,6 +15,7 @@ import { frMoments } from "../../i18n/fr-moments";
 import { Feed } from "../../moments/Feed";
 import { useOpenSignal } from "../../moments/use-open-signal";
 import { useRunFileContext } from "../../moments/use-run-file-context";
+import { useRunSubagents } from "../../moments/use-run-subagents";
 import { OverlapFeedLayer } from "../../overlaps/OverlapFeedLayer";
 import { useOpenOverlap } from "../../overlaps/use-open-overlap";
 import { questionExtras, type TimelineItem } from "./timeline";
@@ -87,6 +88,7 @@ export function RunFeed({ entry, options }: { entry: RunEntry; options: FeedOpti
   const openSignal = useOpenSignal(entry.run.projectId);
   const moments = entry.items.flatMap((i) => (i.moment ? [i.moment] : []));
   const overlap = useOpenOverlap(entry.run, moments);
+  const subagents = useRunSubagents(entry.run.id, moments);
   const extras = questionExtras(entry.items);
   if (moments.length === 0 && extras.length === 0 && isTerminal(entry.run.state)) return null;
   return (
@@ -100,6 +102,7 @@ export function RunFeed({ entry, options }: { entry: RunEntry; options: FeedOpti
         onOpenFile={options.onOpenFile}
         onOpenSignal={openSignal}
         {...overlap.feed}
+        subagents={subagents.byId}
         texts={frMoments}
       />
       <OverlapFeedLayer filesId={overlap.filesId} failed={overlap.failed} onClose={overlap.closeFiles} />

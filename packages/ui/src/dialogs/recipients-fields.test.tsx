@@ -14,6 +14,8 @@ import { apiMock } from "../api-mock";
 const TICKET = "11111111-1111-4111-8111-111111111111";
 
 const question = (n: number, recipient: string): Question => ({
+  kind: "question",
+  images: [],
   id: `2222222${n}-2222-4222-8222-222222222222`,
   ticketId: TICKET,
   runId: null,
@@ -43,6 +45,7 @@ const base: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

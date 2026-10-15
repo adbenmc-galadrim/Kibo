@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_DUPLICATION_SETTINGS } from "@kibo/schema";
+import { DEFAULT_DUPLICATION_SETTINGS, DUPLICATION_SHARED_GLOBS, EMPTY_DELIVERY } from "@kibo/schema";
 import { LoroDoc, LoroMap } from "loro-crdt";
 import {
   countTicketsByStatus,
@@ -31,6 +31,7 @@ const meta = {
   worktree: null,
   storybook: null,
   duplication: null,
+  delivery: null,
 };
 
 describe("workspace", () => {
@@ -124,7 +125,7 @@ describe("project", () => {
 test("local worktree settings never reach the project doc nor the workspace", () => {
   const local = {
     ...meta,
-    worktree: { baseRef: "origin/dev", pathTemplate: "../kibo-{slug}", setup: "make wt" },
+    worktree: { baseRef: "origin/dev", pathTemplate: "../kibo-{slug}", setup: "make wt", recipe: null },
   };
   const ws = createWorkspaceDoc();
   registerProject(ws, local);
@@ -136,7 +137,7 @@ test("local worktree settings never reach the project doc nor the workspace", ()
 });
 
 test("a worktree patch is never written to the workspace nor the project doc", () => {
-  const worktree = { baseRef: "origin/dev", pathTemplate: "../kibo-{slug}", setup: "make wt" };
+  const worktree = { baseRef: "origin/dev", pathTemplate: "../kibo-{slug}", setup: "make wt", recipe: null };
   const ws = createWorkspaceDoc();
   registerProject(ws, meta);
   const doc = createProjectDoc(meta);
@@ -176,7 +177,33 @@ test("local duplication settings never reach the project doc nor the workspace",
 });
 
 test("the effective duplication settings fall back to the defaults", () => {
-  expect(effectiveDuplication({ duplication: null })).toEqual(DEFAULT_DUPLICATION_SETTINGS);
-  const own = { ...DEFAULT_DUPLICATION_SETTINGS, minLines: 12 };
+  expect(effectiveDuplication({ duplication: null })).toEqual({
+    ...DEFAULT_DUPLICATION_SETTINGS,
+    shared: [...DUPLICATION_SHARED_GLOBS],
+  });
+  const own = { ...DEFAULT_DUPLICATION_SETTINGS, minLines: 12, shared: [] };
   expect(effectiveDuplication({ duplication: own })).toBe(own);
+});
+
+test("a duplication row stored before shared files gets the default shared files", () => {
+  const { shared: _shared, ...old } = DEFAULT_DUPLICATION_SETTINGS;
+  expect(effectiveDuplication({ duplication: { ...old, minLines: 12 } })).toEqual({
+    ...old,
+    minLines: 12,
+    shared: [...DUPLICATION_SHARED_GLOBS],
+  });
+  expect(effectiveDuplication({ duplication: { ...old, shared: [] } }).shared).toEqual([]);
+});
+
+test("local delivery settings never reach the project doc nor the workspace", () => {
+  const delivery = { ...EMPTY_DELIVERY, root: "/Users/a/Documents/emis-zz" };
+  const local = { ...meta, delivery };
+  const ws = createWorkspaceDoc();
+  registerProject(ws, local);
+  const doc = createProjectDoc(local);
+  expect(LOCAL_ONLY_META.has("delivery")).toBe(true);
+  expect(doc.getMap("meta").get("delivery")).toBeUndefined();
+  expect(JSON.stringify(ws.toJSON())).not.toContain("emis-zz");
+  expect(getProjectMeta(doc).delivery).toBeNull();
+  expect(listProjects(ws)[0]?.delivery).toBeNull();
 });

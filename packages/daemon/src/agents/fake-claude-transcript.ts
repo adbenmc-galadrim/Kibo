@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { appendFileSync, existsSync, readFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import type { Usage } from "./transcript";
 
 export const FAKE_CLAUDE_VERSION = "2.1.283";
@@ -10,6 +11,7 @@ export type LineContext = {
   parentUuid: string | null;
   at?: Date;
   sidechain?: boolean;
+  agentId?: string;
 };
 
 export type TranscriptLine = {
@@ -24,6 +26,7 @@ export type TranscriptLine = {
   timestamp: string;
   message: Record<string, unknown>;
   toolUseResult?: unknown;
+  agentId?: string;
 };
 
 export type TextContent = { type: "text"; text: string };
@@ -40,6 +43,7 @@ const base = (ctx: LineContext, type: TranscriptLine["type"]): Omit<TranscriptLi
   type,
   uuid: randomUUID(),
   timestamp: (ctx.at ?? new Date()).toISOString(),
+  ...(ctx.agentId === undefined ? {} : { agentId: ctx.agentId }),
 });
 
 function assistantLine(ctx: LineContext, content: unknown[], usage?: Usage): TranscriptLine {
@@ -120,6 +124,10 @@ export const denialOutcome = (tool: string, reason: string | null = null): ToolO
   isError: true,
 });
 
+export const CLAUDE_DENIAL_TEXT =
+  "Permission for this tool use was denied. It requires approval, and this session has no approval surface — " +
+  "nobody can answer a permission prompt here — so it was denied automatically. The action was NOT performed.";
+
 export const mcpOutcome = (text: string, isError: boolean): ToolOutcome => {
   const content: TextContent[] = [{ type: "text", text }];
   return { content, isError, toolUseResult: content };
@@ -159,13 +167,20 @@ export type Transcript = {
   toolUse(tool: string, input: Record<string, unknown>): string;
   toolResult(id: string, outcome: ToolOutcome): void;
   sidechain(on: boolean): void;
+  subagent(agentId: string, meta: Record<string, unknown>): Transcript;
 };
 
-export function openTranscript(path: string, sessionId: string, cwd: string): Transcript {
+export function openTranscript(path: string, sessionId: string, cwd: string, agentId?: string): Transcript {
   let parentUuid = lastUuid(path);
-  let sidechain = false;
+  let sidechain = agentId !== undefined;
   const add = (make: (ctx: LineContext) => TranscriptLine) => {
-    const line = make({ sessionId, cwd, parentUuid, sidechain });
+    const line = make({
+      sessionId,
+      cwd,
+      parentUuid,
+      sidechain,
+      ...(agentId === undefined ? {} : { agentId }),
+    });
     appendTranscript(path, line);
     parentUuid = line.uuid;
   };
@@ -183,12 +198,19 @@ export function openTranscript(path: string, sessionId: string, cwd: string): Tr
     sidechain(on) {
       sidechain = on;
     },
+    subagent(id, meta) {
+      const dir = join(dirname(path), sessionId, "subagents");
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, `agent-${id}.meta.json`), JSON.stringify(meta));
+      return openTranscript(join(dir, `agent-${id}.jsonl`), sessionId, cwd, id);
+    },
   };
 }
 
 export type ToolTrail = {
   before(tool: string, input: Record<string, unknown>): string;
   denied(tool: string, reason?: string | null): void;
+  claudeDenied(tool: string): void;
   after(tool: string, input: Record<string, unknown>, outcome: ToolOutcome): string;
 };
 
@@ -208,6 +230,10 @@ export function toolTrail(transcript: Transcript): ToolTrail {
     denied(tool, reason = null) {
       const id = take(tool);
       if (id) transcript.toolResult(id, denialOutcome(tool, reason));
+    },
+    claudeDenied(tool) {
+      const id = take(tool);
+      if (id) transcript.toolResult(id, { content: CLAUDE_DENIAL_TEXT, isError: true });
     },
     after(tool, input, outcome) {
       const id = take(tool) ?? transcript.toolUse(tool, input);

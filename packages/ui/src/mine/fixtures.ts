@@ -30,6 +30,7 @@ export function mineTicket(
     openQuestions: 0,
     startable: false,
     agentProgress: EMPTY_PROGRESS,
+    delivery: null,
   };
 }
 

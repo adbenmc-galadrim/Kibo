@@ -15,6 +15,7 @@ import {
   runWriteStep,
   type WriteLog,
 } from "./fake-claude-ai";
+import { bashResponse, runBash } from "./fake-claude-bash";
 import { bindPlaceholders, callMcpTool, type McpCallLog, mcpServerFrom } from "./fake-claude-mcp";
 import type { FakeStep } from "./fake-claude-scenario";
 import {
@@ -44,6 +45,8 @@ export type Player = { playAll(steps: readonly FakeStep[]): Promise<string | nul
 
 type SkillStep = { skill: string; args?: string; denied: boolean };
 type SubagentStep = { subagent: string; steps: FakeStep[] };
+type TracedSubagent = Extract<FakeStep, { subagent: { type: string } }>["subagent"];
+type DenyStep = { deny: { tool: string; input: Record<string, unknown> } };
 
 const deniedBy = (runs: HookRun[]) =>
   runs.some((r) => r.code === 2 || (r.code === 0 && decisionOf(r.stdout) === "deny"));
@@ -67,7 +70,7 @@ export function createPlayer(ctx: PlayContext): Player {
     const refused = event === "PreToolUse" && deniedBy(runs);
     if (refused && tool) trail.denied(tool, denialReason(runs.map((r) => r.stdout)));
     if (event === "PreToolUse") journalContexts(tool, runs);
-    return { runs, refused };
+    return { runs, refused, id };
   };
 
   function journalContexts(tool: string, runs: HookRun[]): void {
@@ -143,6 +146,14 @@ export function createPlayer(ctx: PlayContext): Player {
     await toolHooks("PostToolUse", { ...call, tool_response: launched }, () => text(launched));
   }
 
+  async function deny(step: DenyStep): Promise<void> {
+    const call = { tool_name: step.deny.tool, tool_input: step.deny.input };
+    const { refused } = await toolHooks("PreToolUse", call, () => text(""));
+    if (!refused) trail.claudeDenied(step.deny.tool);
+    logUse(step.deny.tool, step.deny.input, true);
+    ctx.denials.push(step.deny.tool);
+  }
+
   async function subagent(step: SubagentStep): Promise<void> {
     const call = {
       tool_name: "Agent",
@@ -168,6 +179,65 @@ export function createPlayer(ctx: PlayContext): Player {
     await toolHooks("PostToolUse", { ...call, tool_response: done }, () => text(done));
   }
 
+  async function tracedSubagent(step: TracedSubagent): Promise<void> {
+    const input = {
+      subagent_type: step.type,
+      description: step.description,
+      prompt: step.prompt,
+      ...(step.model === undefined ? {} : { model: step.model }),
+    };
+    const call = { tool_name: "Agent", tool_input: input };
+    const { refused, id } = await toolHooks("PreToolUse", call, () => text(""));
+    logUse("Agent", input, refused);
+    if (refused) {
+      ctx.denials.push("Agent");
+      return;
+    }
+    const agent = { agent_id: `a${randomUUID().replaceAll("-", "").slice(0, 16)}`, agent_type: step.type };
+    const own = transcript.subagent(agent.agent_id, {
+      agentType: step.type,
+      description: step.description,
+      toolUseId: id,
+      spawnDepth: 1,
+      requestShape: "agent",
+      requestNonInteractive: true,
+      model: step.model ?? null,
+    });
+    own.user(step.prompt);
+    await ctx.runHooks("SubagentStart", agent);
+    const posts = step.actions.map((action) => {
+      const input = { command: action.bash };
+      const ownId = own.toolUse("Bash", input);
+      own.toolResult(ownId, text("ok"));
+      return { ...agent, tool_name: "Bash", tool_input: input, tool_response: "ok", tool_use_id: ownId };
+    });
+    if (step.progress !== undefined) own.say(step.progress);
+    for (const post of posts) await ctx.runHooks("PostToolUse", post);
+    if (step.hold) await hold();
+    own.say(step.result);
+    await ctx.runHooks("SubagentStop", {
+      ...agent,
+      stop_hook_active: false,
+      last_assistant_message: step.result,
+    });
+    const outcome = { ...text(step.result), isError: step.failed };
+    await toolHooks("PostToolUse", { ...call, tool_response: step.result }, () => outcome);
+  }
+
+  async function bash(command: string): Promise<void> {
+    const call = { tool_name: "Bash", tool_input: { command } };
+    const { refused } = await toolHooks("PreToolUse", call, () => text(""));
+    logUse("Bash", call.tool_input, refused);
+    if (refused) {
+      ctx.denials.push("Bash");
+      return;
+    }
+    const run = await runBash(command, stateDir, process.env);
+    const response = bashResponse(run);
+    const outcome = { content: run.stdout + run.stderr, isError: run.code !== 0, toolUseResult: response };
+    await toolHooks("PostToolUse", { ...call, tool_response: response }, () => outcome);
+  }
+
   async function hold(): Promise<void> {
     const release = join(stateDir, `${sessionId}.release`);
     while (!existsSync(release)) {
@@ -186,7 +256,10 @@ export function createPlayer(ctx: PlayContext): Player {
     if ("write" in step) return write(step);
     if ("delete" in step) return remove(step);
     if ("skill" in step) return skill(step);
-    if ("subagent" in step) return subagent(step);
+    if ("subagent" in step && "steps" in step) return subagent(step);
+    if ("subagent" in step) return tracedSubagent(step.subagent);
+    if ("deny" in step) return deny(step);
+    if ("bash" in step) return bash(step.bash);
     if ("sleepMs" in step) return Bun.sleep(step.sleepMs);
     if ("hold" in step) return hold();
     process.stderr.write(`${step.stderr}\n`);

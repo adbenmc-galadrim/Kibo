@@ -30,7 +30,7 @@ const base: BatchContext = {
 const why = "";
 const ACTIONS: ProposedAction[] = [
   { id: 1, why, type: "updateTicket", ticket: "EMIS-1", title: "Nouveau", labels: [] },
-  { id: 2, why, type: "updateTicket", ticket: "EMIS-2", description: "d", parent: "EMIS-3" },
+  { id: 2, why, type: "updateTicket", ticket: "EMIS-2", description: "d", parent: null },
   { id: 3, why, type: "setStatus", ticket: "EMIS-1", statusId: "done" },
   { id: 4, why, type: "answerQuestion", questionId: "q1", answer: { kind: "text", text: "oui" } },
   { id: 5, why, type: "updateNote", path: "a.md", content: "x" },

@@ -1,4 +1,4 @@
-import type { AgentSummary, QueueEntry, RunView } from "@kibo/schema";
+import type { AgentSummary, AgentsState, QueueEntry, RunSubagentSummary, RunView } from "@kibo/schema";
 
 export const holdsSlot = (r: RunView) => r.state === "running" || r.state === "starting";
 export const byStart = (a: RunView, b: RunView) => (a.startedAt ?? 0) - (b.startedAt ?? 0);
@@ -18,4 +18,24 @@ export function queueNeighbours(
   const i = sorted.findIndex((q) => q.runId === runId);
   if (i < 0) return { prev: null, next: null };
   return { prev: sorted[i - 1] ?? null, next: sorted[i + 1] ?? null };
+}
+
+export type SubagentSlot = {
+  parent: RunView;
+  sub: Pick<RunSubagentSummary, "id" | "type" | "description" | "startedAt">;
+};
+
+export function subagentsByType(state: AgentsState, runs: readonly RunView[]): Map<string, SubagentSlot[]> {
+  const parents = runs.filter(holdsSlot).sort(byStart);
+  const slots: SubagentSlot[] =
+    state.subagents === undefined
+      ? parents.flatMap((parent) =>
+          parent.subagents.map((s) => ({ parent, sub: { ...s, description: "", startedAt: s.since } })),
+        )
+      : parents.flatMap((parent) =>
+          (state.subagents ?? []).filter((s) => s.runId === parent.id).map((sub) => ({ parent, sub })),
+        );
+  const byType = new Map<string, SubagentSlot[]>();
+  for (const slot of slots) byType.set(slot.sub.type, [...(byType.get(slot.sub.type) ?? []), slot]);
+  return byType;
 }

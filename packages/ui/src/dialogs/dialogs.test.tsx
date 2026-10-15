@@ -42,6 +42,7 @@ const project: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -67,6 +68,7 @@ const inbox: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   nextTicketKey: "INB-4",
 };
@@ -81,6 +83,7 @@ const shared: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   nextTicketKey: null,
   viewer: "u-adam",
@@ -118,6 +121,7 @@ const kibo: ProjectSnapshot = {
       openQuestions: 0,
       startable: false,
       agentProgress: EMPTY_PROGRESS,
+      delivery: null,
     },
   ],
 };

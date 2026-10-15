@@ -20,6 +20,8 @@ const PREVIEW: AgentPreview = {
     tools: null,
     disallowedTools: null,
     allow: ["mcp__kibo__*", "Skill(porte-qualite)"],
+    allowOrigins: [],
+    addDirs: [],
     subagents: ["livraison", "review"],
     allSubagents: false,
     skills: { mode: "list", ids: ["porte-qualite"] },
@@ -73,6 +75,8 @@ test("screen 193d: levels with their tokens, brief, agents.json and the command"
     "Demande à chaque action",
     "tous (pas de champ tools)",
     "mcp__kibo__*, Skill(porte-qualite)",
+    "aucune",
+    "aucun",
     "livraison, review",
     "porte-qualite",
   ]);
@@ -87,7 +91,39 @@ test("the command says every subagent when the agent allows them all", async () 
   );
   const pane = within(await screen.findByRole("dialog"));
   const command = within(await pane.findByRole("region", { name: "Commande" }));
-  expect(command.getAllByRole("definition")[4]?.textContent).toBe("tous les sous-agents");
+  expect(command.getAllByRole("definition")[6]?.textContent).toBe("tous les sous-agents");
+});
+
+test("screen 210: rules and folders come with their origin, agent or project", async () => {
+  preview = {
+    ...PREVIEW,
+    command: {
+      ...PREVIEW.command,
+      allowOrigins: [
+        { rule: "Bash(pnpm *)", origin: "project" },
+        { rule: "Bash(git *)", origin: "agent" },
+      ],
+      addDirs: [
+        { dir: "/Users/adam/.claude/skills", origin: "agent" },
+        { dir: "/Users/adam/Documents/emis", origin: "project" },
+      ],
+    },
+  };
+  render(
+    <PreviewPane
+      open
+      onClose={() => {}}
+      agentRef="global:full-delivery"
+      name="full-delivery"
+      projectId="kibo"
+    />,
+  );
+  const command = within(await screen.findByRole("region", { name: "Commande" }));
+  const rows = Object.fromEntries(
+    command.getAllByRole("term").map((term) => [term.textContent, term.nextElementSibling?.textContent]),
+  );
+  expect(rows.Règles).toBe("Bash(pnpm *) (projet), Bash(git *) (agent)");
+  expect(rows.Dossiers).toBe("~/.claude/skills (agent), ~/Documents/emis (projet)");
 });
 
 test("choosing a ticket composes the preview on that ticket", async () => {

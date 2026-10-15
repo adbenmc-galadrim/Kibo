@@ -22,6 +22,7 @@ const ticket = (id: string, patch: Partial<TicketView> = {}): TicketView => ({
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
   ...patch,
 });
 const link = (from: string, to: string, type: Link["type"] = "blocks"): Link => ({

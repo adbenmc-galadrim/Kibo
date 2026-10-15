@@ -184,6 +184,8 @@ test("a reader of the project sees no answer to deliver nor its button", async (
 });
 
 const openQuestion = (id: string, title: string, createdAt: number): Question => ({
+  kind: "question",
+  images: [],
   id,
   ticketId: "t14",
   runId: "r50",

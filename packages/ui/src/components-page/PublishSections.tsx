@@ -3,7 +3,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { RadioGroup, RadioGroupItem } from "@kibo/sdk/ui/radio-group";
 import { ChevronRight } from "lucide-react";
 import { useId } from "react";
-import { fr } from "../i18n/fr";
+import { frComponentsManage } from "../i18n/fr-components-manage";
 import type { UpdateSummary } from "../lib/market-update";
 import { permissionLabel } from "../lib/permission-lines";
 
@@ -11,7 +11,7 @@ export type Strategy = "update-all" | "new-version";
 
 export const NEUTRAL_DOT = "#71717A";
 
-const p = fr.publish;
+const p = frComponentsManage.publish;
 
 export function validationErrors(preview: PublishPreview): string[] {
   const v = preview.validation;

@@ -1,4 +1,8 @@
-import { DEFAULT_DUPLICATION_SETTINGS, type DuplicationSettings } from "@kibo/schema";
+import {
+  DEFAULT_DUPLICATION_SETTINGS,
+  DUPLICATION_SHARED_GLOBS,
+  type DuplicationSettings,
+} from "@kibo/schema";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
@@ -8,7 +12,9 @@ import { Copy } from "lucide-react";
 import { useId, useState } from "react";
 import { frOverlaps } from "../i18n/fr-overlaps";
 import { GenericExportsField } from "./GenericExportsField";
+import { parseGlobs } from "./glob-lines";
 import { IgnoredOverlaps } from "./IgnoredOverlaps";
+import { SharedFilesField } from "./SharedFilesField";
 
 type Props = {
   value: DuplicationSettings | null;
@@ -18,8 +24,6 @@ type Props = {
 };
 
 const t = frOverlaps.settings;
-const MAX_GLOBS = 50;
-const MAX_GLOB_CHARS = 200;
 
 export const sameDuplication = (a: DuplicationSettings | null, b: DuplicationSettings | null): boolean =>
   JSON.stringify(a ?? DEFAULT_DUPLICATION_SETTINGS) === JSON.stringify(b ?? DEFAULT_DUPLICATION_SETTINGS);
@@ -30,16 +34,6 @@ const stored = (next: DuplicationSettings): DuplicationSettings | null =>
 function parseMinLines(text: string): number | null {
   const n = Number(text);
   return Number.isInteger(n) && n >= 4 && n <= 50 ? n : null;
-}
-
-function parseGlobs(text: string): { globs: string[]; problem: string | null } {
-  const globs = text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
-  if (globs.length > MAX_GLOBS) return { globs, problem: t.ignoreTooMany };
-  if (globs.some((g) => g.length > MAX_GLOB_CHARS)) return { globs, problem: t.ignoreTooLong };
-  return { globs, problem: null };
 }
 
 export function DuplicationFields({ value, onChange, projectId, disabled }: Props) {
@@ -150,6 +144,11 @@ export function DuplicationFields({ value, onChange, projectId, disabled }: Prop
         </p>
         {globsProblem !== null && <p className="text-xs text-destructive">{globsProblem}</p>}
       </div>
+      <SharedFilesField
+        value={current.shared ?? DUPLICATION_SHARED_GLOBS}
+        disabled={disabled}
+        onChange={(shared) => emit({ shared })}
+      />
       <div className="grid gap-1.5">
         <span id={ids.exports} className="text-sm font-medium">
           {t.genericExports}

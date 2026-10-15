@@ -20,6 +20,8 @@ export const frAgentBar = {
       `attend une place de l'agent ${name} (${used}/${total})`,
     agentMissing: "agent supprimé",
     ticketBusy: "un run de ce ticket est déjà en cours ou en file",
+    parentTicket: (children: number) =>
+      `ticket parent (${children} sous-tickets) : lance plutôt ses sous-tickets`,
     next: "admission au prochain passage",
   },
 } as const;

@@ -13,6 +13,7 @@ const base: Parameters<typeof claudeArgs>[0] = {
   deny: [],
   mcpConfigFile: "/r/mcp.json",
   mcpTools: "ticket",
+  addDirs: [],
   sessionId: "s1",
   resume: false,
 };

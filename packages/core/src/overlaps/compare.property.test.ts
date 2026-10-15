@@ -1,10 +1,15 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_DUPLICATION_SETTINGS, DUPLICATION_LIMITS, type WorkspaceIndex } from "@kibo/schema";
+import {
+  DEFAULT_DUPLICATION_SETTINGS,
+  DUPLICATION_LIMITS,
+  DUPLICATION_SHARED_GLOBS,
+  type WorkspaceIndex,
+} from "@kibo/schema";
 import fc from "fast-check";
 import { arbIndex, arbLine, arbLines, arbSettings, fileOf, settingsWith } from "./arbitraries.test-helper";
 import { commonBlocks } from "./blocks";
 import { findOverlaps } from "./compare";
-import { isTestPath } from "./ignore";
+import { isSharedPath, isTestPath } from "./ignore";
 import { lineHashes } from "./normalize";
 import { sha256 } from "./test-hash.test-helper";
 
@@ -23,7 +28,42 @@ const keysOf = (a: WorkspaceIndex, b: WorkspaceIndex, settings = DEFAULT_DUPLICA
     .map((c) => c.key)
     .sort();
 
+const arbPair = arbShared.chain((shared) =>
+  fc.tuple(arbIndex("A", shared), arbIndex("B", shared), fc.constant(shared)),
+);
+
 describe("findOverlaps properties", () => {
+  test("no candidate is ever a file overlap", () => {
+    fc.assert(
+      fc.property(arbPair, arbSettings, ([a, b], s) => {
+        for (const c of findOverlaps(a, b, settingsWith(s), sha256)) expect(c.kind).not.toBe("file");
+      }),
+    );
+  });
+
+  test("a block in a shared file is never a candidate, its exports still are", () => {
+    fc.assert(
+      fc.property(
+        arbPair,
+        fc.constantFrom("src/i18n/fr.ts", "turbo.json", "src/routeTree.gen.ts"),
+        ([a, b, shared], path) => {
+          const texts = [...shared, "export const formatShared = 1;"];
+          const found = findOverlaps(
+            { ...a, files: [...a.files, fileOf({ path, texts })] },
+            { ...b, files: [...b.files, fileOf({ path: "src/lib/twin.ts", texts })] },
+            DEFAULT_DUPLICATION_SETTINGS,
+            sha256,
+          );
+          for (const c of found.filter((x) => x.kind === "block")) {
+            expect([c.a.path, c.b.path]).not.toContain(path);
+            expect(isSharedPath(c.a.path, { shared: DUPLICATION_SHARED_GLOBS })).toBe(false);
+          }
+          if (path.endsWith(".ts")) expect(found.map((c) => c.key)).toContain("export:formatShared");
+        },
+      ),
+    );
+  });
+
   test("(a) lines without anything in common give no block", () => {
     fc.assert(
       fc.property(arbLines("A"), arbLines("B"), fc.integer({ min: 4, max: 50 }), (a, b, minLines) => {

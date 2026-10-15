@@ -27,6 +27,7 @@ const t = (n: number, title: string, statusId: TicketView["statusId"] = "todo"):
   openQuestions: 0,
   startable: false,
   agentProgress: EMPTY_PROGRESS,
+  delivery: null,
 });
 const link = (id: string, from: number, to: number, type: Link["type"]): Link => ({
   id,
@@ -44,6 +45,7 @@ const project: ProjectSnapshot = {
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

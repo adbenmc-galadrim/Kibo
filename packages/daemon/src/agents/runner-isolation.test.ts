@@ -12,6 +12,7 @@ const launchInput = (baseEnv: Record<string, string | undefined>): LaunchInput =
   deny: [],
   mcpConfigFile: null,
   mcpTools: null,
+  addDirs: [],
   sessionId: "s1",
   resume: false,
   claudeBin: "claude",

@@ -129,7 +129,7 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
 
   repo = createGitRepo();
   seeded = await seedWorkspace(page, repo);
-  await assign(page, seeded, 12, "livraison", "running");
+  await assign(page, seeded, 28, "livraison", "running");
   await assign(page, seeded, 14, "livraison", "waiting_input");
   const rules = await assign(page, seeded, 16, "livraison", "running");
   await assign(page, seeded, 7, "review-plan", "running");
@@ -229,7 +229,7 @@ test("l'historique ouvre le run cliqué, pour trois agents différents", async (
   for (const [agent, key, title] of [
     ["review-plan", "KIB-7", "Tokens shadcn + thème sombre"],
     ["tests-rapides", "KIB-9", "Setup Tauri + sidecar Bun"],
-    ["livraison", "KIB-12", "Schéma Loro des tickets (LoroTree)"],
+    ["livraison", "KIB-28", "Générateur d'opérations concurrentes"],
   ] as const) {
     const label = `global · ${agent} · ${key}`;
     await page

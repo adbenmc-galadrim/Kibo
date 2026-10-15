@@ -115,6 +115,8 @@ test("another folder for the ticket starts a fresh session", async () => {
 }, 30_000);
 
 const answered = (id: string, title: string, text: string, at: number): Question => ({
+  kind: "question",
+  images: [],
   id,
   ticketId: "t1",
   runId: null,

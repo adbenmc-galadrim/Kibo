@@ -6,6 +6,7 @@ import { initRun } from "@kibo/core/run-machine";
 import type { HookPayload, RunAction, RunMomentsEvent, RunView } from "@kibo/schema";
 import { openTranscript, structuredPatch } from "../agents/fake-claude-transcript";
 import { type MomentStore, openMomentStore } from "./store";
+import type { SubagentPort } from "./trace-live";
 import { createTraceService } from "./trace-service";
 import { readTranscriptSlice } from "./transcript-reader";
 
@@ -47,6 +48,8 @@ export type SetupOptions = {
   transcriptPath?: string;
   wrapStore?: (store: MomentStore) => MomentStore;
   onActions?: (runId: string, actions: readonly RunAction[], at: number) => void;
+  subagents?: SubagentPort;
+  onRead?: (path: string) => void;
 };
 
 export function setup(options: SetupOptions = {}) {
@@ -65,8 +68,10 @@ export function setup(options: SetupOptions = {}) {
     now: () => clock.now,
     emit: (e) => events.push(e),
     ...(options.onActions !== undefined && { onActions: options.onActions }),
+    ...(options.subagents !== undefined && { subagents: options.subagents }),
     read: (p, offset) => {
       reads.count += 1;
+      options.onRead?.(p);
       return readTranscriptSlice(p, offset, options.maxBytes);
     },
   });

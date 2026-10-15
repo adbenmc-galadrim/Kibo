@@ -25,7 +25,7 @@ const SECTION_TITLE = "text-[11px] font-medium uppercase tracking-wide text-mute
 
 function PanelBody({ runId, onClose, onOpenTicket }: Props) {
   const t = frMoments.run;
-  const { agents, run, moments, shown, report, loading, failed } = useRunView(runId);
+  const { agents, run, moments, shown, report, loading, failed, subagents } = useRunView(runId);
   const [highlight, setHighlight] = useState<string | null>(null);
   const close = (
     <Button size="icon" variant="ghost" className="size-8 shrink-0" aria-label={t.close} onClick={onClose}>
@@ -52,7 +52,7 @@ function PanelBody({ runId, onClose, onOpenTicket }: Props) {
     <>
       {title}
       <div className="border-b p-3">
-        <RunHeading run={run} onOpenTicket={onOpenTicket}>
+        <RunHeading run={run} onOpenTicket={onOpenTicket} subagents={subagents.list}>
           <Button size="sm" variant="outline" className="shrink-0" onClick={expand}>
             <Maximize2 />
             {t.expand}
@@ -72,6 +72,7 @@ function PanelBody({ runId, onClose, onOpenTicket }: Props) {
             highlightStep={highlight}
             loading={loading}
             failed={failed}
+            subagents={subagents.byId}
           />
         </section>
         <RunReportSection runId={run.id} report={report} />

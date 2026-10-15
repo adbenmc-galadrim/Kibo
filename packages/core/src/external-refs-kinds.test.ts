@@ -16,6 +16,7 @@ const doc = () =>
     worktree: null,
     storybook: null,
     duplication: null,
+    delivery: null,
   });
 const issue = (patch: Partial<Extract<ExternalRef, { kind: "github_issue" }>> = {}): ExternalRef => ({
   kind: "github_issue",

@@ -4,7 +4,8 @@ import {
   iconUrl,
   KiboError,
   type KiboErrorCode,
-  type ProjectPatch,
+  type ProjectDelivery,
+  type ProjectMeta,
   type ProjectSummary,
   STORYBOOK_DEFAULTS,
   type StorybookSettings,
@@ -24,10 +25,12 @@ import { frProject } from "../i18n/fr-project";
 import { errorMessage } from "../lib/error-message";
 import { PROJECT_COLORS } from "../lib/project-colors";
 import { isRemoteView } from "../lib/remote-view";
-import { DuplicationFields, sameDuplication } from "../overlaps/DuplicationFields";
+import { DuplicationFields } from "../overlaps/DuplicationFields";
+import { DeliverySection } from "./DeliverySection";
 import { FolderField, type FolderFieldProps } from "./FolderField";
 import { GuidelinesField } from "./GuidelinesField";
 import { IconField } from "./IconField";
+import { projectPatch } from "./project-patch";
 import { RecipientsFields } from "./RecipientsFields";
 import { StorybookFields, storybookProblem } from "./StorybookFields";
 import { WorktreeFields, worktreeProblem } from "./WorktreeFields";
@@ -41,39 +44,8 @@ type Props = {
   config?: WorkspaceConfig | null;
   go?(target: TabTarget): void;
 };
-type Fields = {
-  name: string;
-  color: string;
-  folder: string;
-  worktree?: WorktreeSettings | null;
-  storybook?: StorybookSettings | null;
-  duplication?: DuplicationSettings | null;
-};
-
 const t = frProject.edit;
 const KNOWN: Partial<Record<KiboErrorCode, string>> = t.errors;
-
-const sameWorktree = (a: WorktreeSettings | null, b: WorktreeSettings | null) =>
-  JSON.stringify(a ?? WORKTREE_DEFAULTS) === JSON.stringify(b ?? WORKTREE_DEFAULTS);
-const sameStorybook = (a: StorybookSettings | null, b: StorybookSettings | null) =>
-  JSON.stringify(a ?? STORYBOOK_DEFAULTS) === JSON.stringify(b ?? STORYBOOK_DEFAULTS);
-
-export function projectPatch(project: ProjectSummary, fields: Fields): ProjectPatch | null {
-  const patch: ProjectPatch = {};
-  const name = fields.name.trim();
-  if (name !== project.name) patch.name = name;
-  if (fields.color !== project.color) patch.color = fields.color;
-  const folder = fields.folder.trim() || null;
-  if (folder !== project.folder) patch.folder = folder;
-  const worktree = fields.worktree;
-  if (worktree !== undefined && !sameWorktree(worktree, project.worktree)) patch.worktree = worktree;
-  const storybook = fields.storybook;
-  if (storybook !== undefined && !sameStorybook(storybook, project.storybook)) patch.storybook = storybook;
-  const duplication = fields.duplication;
-  if (duplication !== undefined && !sameDuplication(duplication, project.duplication))
-    patch.duplication = sameDuplication(duplication, null) ? null : duplication;
-  return Object.keys(patch).length === 0 ? null : patch;
-}
 
 export function editFailure(e: unknown): string {
   if (e instanceof KiboError && e.code === "CONFLICT") return t.folderBusy;
@@ -102,24 +74,42 @@ export function EditProjectDialog({
     project.storybook ?? STORYBOOK_DEFAULTS,
   );
   const [duplication, setDuplication] = useState<DuplicationSettings | null>(project.duplication);
+  const [delivery, setDelivery] = useState<ProjectDelivery | null>(project.delivery);
+  const [problems, setProblems] = useState<{ recipe: string | null; delivery: string | null }>({
+    recipe: null,
+    delivery: null,
+  });
+  const [saved, setSaved] = useState<ProjectSummary>(project);
+  const [revision, setRevision] = useState(0);
   const [pending, setPending] = useState<IconInput | null>(null);
   const [removed, setRemoved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const showWorktree = !remote && folder.trim().length > 0;
-  const patch = projectPatch(project, {
+  const patch = projectPatch(saved, {
     name,
     color,
     folder: remote ? (project.folder ?? "") : folder,
-    ...(showWorktree && { worktree }),
+    ...(showWorktree && { worktree, delivery }),
     ...(!remote && { storybook, duplication }),
   });
   const iconChanged = pending !== null || (removed && Boolean(project.icon));
-  const worktreeInvalid = showWorktree && worktree !== null && worktreeProblem(worktree) !== null;
+  const worktreeInvalid =
+    showWorktree &&
+    ((worktree !== null && worktreeProblem(worktree) !== null) ||
+      problems.recipe !== null ||
+      problems.delivery !== null);
   const storybookInvalid = storybook !== null && storybookProblem(storybook) !== null;
   const dirty =
     name.trim().length > 0 && !worktreeInvalid && !storybookInvalid && (patch !== null || iconChanged);
   const currentUrl = project.icon ? iconUrl({ kind: "project", projectId: project.id }, project.icon) : null;
+
+  const imported = (meta: ProjectMeta) => {
+    setWorktree(meta.worktree ?? WORKTREE_DEFAULTS);
+    setDelivery(meta.delivery);
+    setProblems({ recipe: null, delivery: null });
+    setRevision((r) => r + 1);
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -144,7 +134,7 @@ export function EditProjectDialog({
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent
-        className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md"
+        className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl"
         aria-describedby={undefined}
       >
         <form onSubmit={submit} className="grid gap-4">
@@ -207,7 +197,30 @@ export function EditProjectDialog({
               </p>
             </div>
           )}
-          {showWorktree && <WorktreeFields value={worktree} onChange={setWorktree} disabled={busy} />}
+          {showWorktree && (
+            <>
+              <WorktreeFields
+                key={`worktree-${revision}`}
+                value={worktree}
+                onChange={setWorktree}
+                onRecipeProblem={(recipe) => setProblems((p) => ({ ...p, recipe }))}
+                disabled={busy}
+              />
+              <DeliverySection
+                key={`delivery-${revision}`}
+                value={delivery}
+                worktree={worktree}
+                projectId={project.id}
+                disabled={busy}
+                onChange={setDelivery}
+                onProblem={(problem) => setProblems((p) => ({ ...p, delivery: problem }))}
+                onImported={(meta) => {
+                  setSaved((s) => ({ ...s, worktree: meta.worktree, delivery: meta.delivery }));
+                  imported(meta);
+                }}
+              />
+            </>
+          )}
           {!remote && (
             <StorybookFields
               value={storybook}

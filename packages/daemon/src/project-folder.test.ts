@@ -22,6 +22,7 @@ const meta = {
   worktree: null,
   storybook: null,
   duplication: null,
+  delivery: null,
 };
 
 test("a shared project gets its folder back from the local settings", () => {
@@ -46,7 +47,12 @@ test("a shared project never takes its folder from the doc", () => {
   );
 });
 
-const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: "pnpm worktree {branch}" };
+const worktree = {
+  baseRef: "origin/dev",
+  pathTemplate: "../emis-{slug}",
+  setup: "pnpm worktree {branch}",
+  recipe: null,
+};
 
 function localSettings() {
   const db = new Database(":memory:", { strict: true });

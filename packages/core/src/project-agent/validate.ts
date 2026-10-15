@@ -8,6 +8,7 @@ import {
   isTerminal,
   type ProposeBatchInput,
   type ProposedAction,
+  parentTicketDetail,
   type Question,
 } from "@kibo/schema";
 import { type BatchContext, captureExpected, ticketByKey, ticketRuns } from "./expected";
@@ -181,12 +182,33 @@ function runCheck<T extends ActionType>(
   return check(scan, action, index);
 }
 
-function actionProblems(scan: Scan, action: ProposedAction, index: number): string[] {
+const adoptedBy = (scan: Scan, action: ProposedAction): string | null =>
+  (action.type === "createTicket" || action.type === "updateTicket") && typeof action.parent === "string"
+    ? nodeOf(scan, action.parent)
+    : null;
+
+function parentProblem(scan: Scan, ticket: string, later: readonly ProposedAction[]): string | null {
+  const node = nodeOf(scan, ticket);
+  const children =
+    [...scan.parents.values()].filter((p) => p === node).length +
+    later.filter((a) => adoptedBy(scan, a) === node).length;
+  return children > 0 ? `${parentTicketDetail(children)} : lance les sous-tickets` : null;
+}
+
+function actionProblems(
+  scan: Scan,
+  actions: readonly ProposedAction[],
+  action: ProposedAction,
+  index: number,
+) {
   const refs = [
     ...ticketRefsOf(action).flatMap((ref) => refProblem(scan, ref, index) ?? []),
     ...[...new Set(signalRefsOf(action))].flatMap((ref) => signalProblem(scan, ref) ?? []),
   ];
-  return refs.length > 0 ? refs : runCheck(scan, action, index);
+  if (refs.length > 0) return refs;
+  const parent =
+    action.type === "assignAgent" ? parentProblem(scan, action.ticket, actions.slice(index + 1)) : null;
+  return parent === null ? runCheck(scan, action, index) : [parent];
 }
 
 export function validateBatch(input: ProposeBatchInput, ctx: BatchContext): BatchValidation {
@@ -195,7 +217,7 @@ export function validateBatch(input: ProposeBatchInput, ctx: BatchContext): Batc
   const problems = input.actions.flatMap((action, index): ActionProblem[] => {
     const messages = ids.has(action.id)
       ? ["identifiant d'action en double"]
-      : actionProblems(scan, action, index);
+      : actionProblems(scan, input.actions, action, index);
     ids.add(action.id);
     return messages.map((message) => ({ actionId: action.id, type: action.type, message }));
   });
