@@ -46,7 +46,7 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   parentId: null,
   labels: [],
   externalRefs: [],
-  progress: { done: 3, total: 5 },
+  progress: { done: 0, total: 0 },
   waitingOn: [],
   openQuestions: 0,
   startable: false,

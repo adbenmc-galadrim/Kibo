@@ -1,10 +1,11 @@
-import { type Domain, type FileRef, isInbox, type ProjectSnapshot } from "@kibo/schema";
+import { type Domain, type FileRef, isGroup, isInbox, type ProjectSnapshot } from "@kibo/schema";
 import { TicketKeyLabel } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@kibo/sdk/ui/sheet";
 import { Bot } from "lucide-react";
 import { DeliverButton } from "../delivery/lazy";
 import { fr } from "../i18n/fr";
+import { frGroup } from "../i18n/fr-group";
 import { frPresence } from "../i18n/fr-presence";
 import { canEdit } from "../state/access";
 import { usePresencePeers } from "../state/use-presence";
@@ -13,6 +14,7 @@ import { LabelsField } from "../ticket/LabelsField";
 import { TicketActionsMenu } from "../ticket/TicketActionsMenu";
 import { TicketTitle } from "../ticket/TicketTitle";
 import { useTicketCommand } from "../ticket/use-ticket-command";
+import { GroupDetail } from "./GroupDetail";
 import { KeyRequired } from "./KeyRequired";
 import { ActivityTab } from "./lazy-screens";
 import { importTitle } from "./sheet/import-title";
@@ -56,6 +58,7 @@ export function TicketSheet({
   if (!t) return null;
   const editable = canEdit(project);
   const inbox = isInbox(project.meta.id);
+  const group = isGroup(t);
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-full sm:max-w-[min(90vw,560px)] overflow-y-auto">
@@ -67,7 +70,7 @@ export function TicketSheet({
           ))}
           <div className="flex items-center gap-2">
             <SheetDescription className="font-mono text-xs">
-              <TicketKeyLabel ticket={t} />
+              {group ? frGroup.kicker(t.keyLabel) : <TicketKeyLabel ticket={t} />}
             </SheetDescription>
             <GithubRefs ticket={t} />
             <span className="mr-8 ml-auto flex items-center gap-2">
@@ -95,38 +98,44 @@ export function TicketSheet({
           <GithubLinkNote ticket={t} />
           {!inbox && (
             <div className="mt-2 flex flex-wrap gap-2">
-              <KeyRequired ticket={t}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-brand/50 text-brand-strong dark:text-brand"
-                  onClick={onAssign}
-                >
-                  <Bot />
-                  {fr.ticket.assignAgent}
-                </Button>
-              </KeyRequired>
+              {!group && (
+                <KeyRequired ticket={t}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-brand/50 text-brand-strong dark:text-brand"
+                    onClick={onAssign}
+                  >
+                    <Bot />
+                    {fr.ticket.assignAgent}
+                  </Button>
+                </KeyRequired>
+              )}
               {editable && (
                 <DeliverButton key={project.meta.delivery?.agent ?? ""} project={project} ticket={t} />
               )}
             </div>
           )}
         </SheetHeader>
-        <TicketTabs
-          tab={tab}
-          onTab={setTab}
-          details={
-            <TicketDetail
-              project={project}
-              ticket={t}
-              domains={domains}
-              viewer={viewer}
-              onOpenFile={onOpenFile}
-              onOpenTicket={onOpenTicket}
-            />
-          }
-          activity={<ActivityTab project={project} ticket={t} onOpenFile={onOpenFile} />}
-        />
+        {group ? (
+          <GroupDetail project={project} ticket={t} onOpenFile={onOpenFile} onOpenTicket={onOpenTicket} />
+        ) : (
+          <TicketTabs
+            tab={tab}
+            onTab={setTab}
+            details={
+              <TicketDetail
+                project={project}
+                ticket={t}
+                domains={domains}
+                viewer={viewer}
+                onOpenFile={onOpenFile}
+                onOpenTicket={onOpenTicket}
+              />
+            }
+            activity={<ActivityTab project={project} ticket={t} onOpenFile={onOpenFile} />}
+          />
+        )}
       </SheetContent>
     </Sheet>
   );

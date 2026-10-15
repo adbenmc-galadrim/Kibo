@@ -27,6 +27,14 @@ describe("my tickets", () => {
     const keyed = mineTicket("KIB-40", "todo", adam);
     expect([pending, keyed].sort(compareMine).map((t) => t.keyLabel)).toEqual(["KIB-40", "KIB-…"]);
   });
+  test("a group of tickets is never one of mine, even assigned to me", () => {
+    const adam: Assignee = { kind: "human", ref: "adam" };
+    const group = { ...mineTicket("KIB-40", "todo", adam), progress: { done: 0, total: 2 } };
+    const base = mineSnapshots.get(kib.id);
+    if (!base) throw new Error("fixture kib missing");
+    const snapshots = new Map([[kib.id, { ...base, tickets: [group] }]]);
+    expect(myTickets([kib], snapshots, "adam", "assigned")).toEqual([]);
+  });
   test("a project without snapshot yet is skipped", () => {
     expect(myTickets([mineMeta("x", "X", "X")], mineSnapshots, "adam", "assigned")).toEqual([]);
   });

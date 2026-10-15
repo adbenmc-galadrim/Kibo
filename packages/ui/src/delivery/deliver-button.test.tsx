@@ -123,7 +123,7 @@ test("a parent answer opens the sub-tickets dialog instead of a run", async () =
     });
   show(withChild);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Livrer" }));
+  await user.click(await screen.findByRole("button", { name: "Livrer les sous-tickets" }));
   expect(await screen.findByRole("dialog", { name: "Livrer les sous-tickets de KIB-14" })).toBeTruthy();
   expect(screen.getByRole("checkbox", { name: `KIB-31 ${child.title}` }).getAttribute("aria-checked")).toBe(
     "true",
