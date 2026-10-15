@@ -15,6 +15,7 @@ import {
   runWriteStep,
   type WriteLog,
 } from "./fake-claude-ai";
+import { bashResponse, runBash } from "./fake-claude-bash";
 import { bindPlaceholders, callMcpTool, type McpCallLog, mcpServerFrom } from "./fake-claude-mcp";
 import type { FakeStep } from "./fake-claude-scenario";
 import {
@@ -216,6 +217,20 @@ export function createPlayer(ctx: PlayContext): Player {
     await toolHooks("PostToolUse", { ...call, tool_response: step.result }, () => text(step.result));
   }
 
+  async function bash(command: string): Promise<void> {
+    const call = { tool_name: "Bash", tool_input: { command } };
+    const { refused } = await toolHooks("PreToolUse", call, () => text(""));
+    logUse("Bash", call.tool_input, refused);
+    if (refused) {
+      ctx.denials.push("Bash");
+      return;
+    }
+    const run = await runBash(command, stateDir, process.env);
+    const response = bashResponse(run);
+    const outcome = { content: run.stdout + run.stderr, isError: run.code !== 0, toolUseResult: response };
+    await toolHooks("PostToolUse", { ...call, tool_response: response }, () => outcome);
+  }
+
   async function hold(): Promise<void> {
     const release = join(stateDir, `${sessionId}.release`);
     while (!existsSync(release)) {
@@ -237,6 +252,7 @@ export function createPlayer(ctx: PlayContext): Player {
     if ("subagent" in step && "steps" in step) return subagent(step);
     if ("subagent" in step) return tracedSubagent(step.subagent);
     if ("deny" in step) return deny(step);
+    if ("bash" in step) return bash(step.bash);
     if ("sleepMs" in step) return Bun.sleep(step.sleepMs);
     if ("hold" in step) return hold();
     process.stderr.write(`${step.stderr}\n`);

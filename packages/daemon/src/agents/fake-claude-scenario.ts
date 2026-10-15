@@ -23,6 +23,7 @@ const BASE_STEPS = [
   z.object({ delete: z.string().min(1), bypassHooks: z.boolean().default(false) }),
   z.object({ mcp: z.string().min(1), input: z.record(z.string(), z.unknown()).default({}) }),
   z.object({ say: z.string() }),
+  z.object({ bash: z.string().min(1) }),
   z.object({ think: z.string() }),
   z.object({ raw: z.string() }),
   z.object({ skill: z.string().min(1), args: z.string().optional(), denied: z.boolean().default(false) }),
@@ -147,7 +148,9 @@ export type FakeScenarioName =
   | "overlap-routes"
   | "delivery-denied"
   | "delivery-validation"
-  | "delivery-subagents";
+  | "delivery-subagents"
+  | "delivery-steps"
+  | "delivery-routes";
 
 export function scenarioPath(name: FakeScenarioName): string {
   return join(import.meta.dir, "scenarios", `${name}.json`);

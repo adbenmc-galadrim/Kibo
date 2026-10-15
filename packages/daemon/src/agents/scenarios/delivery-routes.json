@@ -1,0 +1,8 @@
+{
+  "routes": [
+    { "prompt": "# EMIS-15", "scenario": "delivery-steps.json" },
+    { "prompt": "# EMIS-16", "scenario": "delivery-denied.json" },
+    { "prompt": "# EMIS-18", "scenario": "delivery-subagents.json" }
+  ],
+  "fallback": "done.json"
+}

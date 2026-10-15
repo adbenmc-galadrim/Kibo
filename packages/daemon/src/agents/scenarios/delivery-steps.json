@@ -1,0 +1,65 @@
+{
+  "turns": [
+    {
+      "steps": [
+        {
+          "mcp": "ticket_progress",
+          "input": {
+            "plan": [
+              { "id": "worktree", "title": "Préparer le worktree", "status": "doing" },
+              { "id": "qualite", "title": "Porte qualité", "status": "todo" }
+            ]
+          }
+        },
+        { "bash": "kibo tickets step EMIS-15 4 \"worktree\"" },
+        {
+          "write": "shots/1-no-access.png",
+          "content": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4WSwGAAPrAYPijIcLAAAAAElFTkSuQmCC",
+          "binary": true
+        },
+        { "bash": "kibo tickets step EMIS-15 7 \"porte qualité\"" },
+        {
+          "hook": "PreToolUse",
+          "tool": "mcp__kibo__ask_user",
+          "input": {
+            "question": "Valider l'écran 1.2 ?",
+            "context": "Écran « Accès refusé », capture jointe.",
+            "kind": "validation",
+            "images": ["$CWD/shots/1-no-access.png"]
+          }
+        },
+        {
+          "hook": "PostToolUse",
+          "tool": "mcp__kibo__ask_user",
+          "input": {
+            "question": "Valider l'écran 1.2 ?",
+            "context": "Écran « Accès refusé », capture jointe.",
+            "kind": "validation",
+            "images": ["$CWD/shots/1-no-access.png"]
+          }
+        }
+      ],
+      "result": "J'attends ta validation de l'écran 1.2.",
+      "tokens": 900
+    },
+    {
+      "steps": [
+        { "bash": "kibo tickets step EMIS-15 11 \"PR #12\"" },
+        {
+          "mcp": "ticket_progress",
+          "input": {
+            "report": {
+              "done": "Écran validé, PR #12 ouverte.",
+              "decisions": [],
+              "toCheck": [],
+              "files": ["shots/1-no-access.png"],
+              "next": "Relire la PR"
+            }
+          }
+        }
+      ],
+      "result": "Livraison terminée : PR #12.",
+      "tokens": 400
+    }
+  ]
+}
