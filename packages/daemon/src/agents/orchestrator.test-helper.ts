@@ -124,6 +124,7 @@ type Setup = {
   skills?: Skill[];
   locks?: OrchestratorOptions["locks"];
   children?: Record<string, number>;
+  externalRefs?: Record<string, TicketView["externalRefs"]>;
 };
 
 let current: Harness | null = null;
@@ -150,7 +151,8 @@ export function setup(o: Setup): Harness {
     projectKey: () => testProject.meta.key,
     skills: () => o.skills ?? [],
     ticketContext: (projectId, ticketId) => {
-      const t = testProject.tickets.find((x) => x.id === ticketId);
+      const found = testProject.tickets.find((x) => x.id === ticketId);
+      const t = found && { ...found, externalRefs: o.externalRefs?.[ticketId] ?? found.externalRefs };
       if (projectId !== "p1" || !t) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
       const meta = { ...testProject.meta, ...o.meta };
       const tickets = [...testProject.tickets, ...childTickets(children)];
