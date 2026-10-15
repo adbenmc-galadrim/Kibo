@@ -6,6 +6,7 @@ import type {
   AgentsState,
   DeliverResult,
   DeliveryAgent,
+  DeliveryRpcRequest,
   ProjectMeta,
   ProjectSnapshot,
   Question,
@@ -16,6 +17,7 @@ import type {
   Ticket,
   TicketView,
 } from "@kibo/schema";
+import { DELIVERY_RPC_METHODS } from "@kibo/schema";
 import { fakeCalls, releaseFakeRun, scenarioPath } from "./agents/fake-claude-scenario";
 import { repo } from "./agents/git-test-kit";
 import { actions, type Kit, startKit, stopKits, waitFor } from "./agents-skills.test-helper";
@@ -308,4 +310,36 @@ test("verrous de la machine et import du registre full-delivery", async () => {
   const meta = (await snapshot(s)).meta;
   expect(meta.worktree?.baseRef).toBe("origin/dev");
   expect(meta.delivery).not.toBeNull();
+}, 60_000);
+
+test("chaque méthode de DELIVERY_RPC est servie par une extension du démon", async () => {
+  const s = await emis();
+  const registryPath = join(s.kit.home, "absent.json");
+  const requests: { [M in DeliveryRpcRequest["method"]]: Extract<DeliveryRpcRequest, { method: M }> } = {
+    "agents.applyPreset": { method: "agents.applyPreset", ref: s.agent.ref, preset: "delivery" },
+    deliver: { method: "deliver", projectId: s.project.id, ticketId: idOf(s, "EMIS-17") },
+    setDeliveryStep: { method: "setDeliveryStep", projectId: s.project.id, ticketKey: "EMIS-1", step: 1 },
+    "runs.denials": { method: "runs.denials", runId: "absent" },
+    "runs.allowAndResume": {
+      method: "runs.allowAndResume",
+      runId: "absent",
+      questionId: "q",
+      rules: [],
+      addDirs: [],
+    },
+    "projects.importDelivery": { method: "projects.importDelivery", registryPath },
+    "projects.applyDeliveryImport": {
+      method: "projects.applyDeliveryImport",
+      projectId: s.project.id,
+      name: "emis",
+      registryPath,
+    },
+    deliveryAgent: { method: "deliveryAgent", projectId: s.project.id },
+  };
+  expect(Object.keys(requests).sort()).toEqual([...DELIVERY_RPC_METHODS].sort());
+  for (const req of Object.values(requests)) {
+    const reply = await s.kit.raw(req);
+    const error = reply.ok ? null : JSON.stringify(reply.error);
+    expect({ method: req.method, error }).not.toMatchObject({ error: expect.stringContaining("INTERNAL") });
+  }
 }, 60_000);
