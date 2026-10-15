@@ -3,6 +3,7 @@ import {
   clipDescription,
   clipResult,
   clipType,
+  denialOf,
   type HookPayload,
   linkedRow,
   type RunSubagent,
@@ -219,7 +220,8 @@ export function createSubagentTracker(deps: TrackerDeps): SubagentTracker {
     onResult(runId, toolUseId, isError, text) {
       if (!isError && ASYNC_LAUNCHED.test(text ?? "")) return;
       const owner = ownerOf(runId, toolUseId);
-      if (owner !== null) end(runId, owner, isError, text);
+      if (owner === null && isError && denialOf(text)) memoryOf(runId).launches.delete(toolUseId);
+      else if (owner !== null) end(runId, owner, isError, text);
       else if (memoryOf(runId).launches.has(toolUseId))
         memoryOf(runId).results.set(toolUseId, { isError, text });
     },

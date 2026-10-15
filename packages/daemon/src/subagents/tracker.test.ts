@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { CLAUDE_DENIAL_TEXT } from "../agents/fake-claude-transcript";
 import { AGENT, hook, LAUNCH, META, RUN, TOOL_USE, tracked } from "./tracker.test-helper";
 
 const LINE = '{"type":"assistant"}';
@@ -100,4 +101,27 @@ test("closing a run forgets the subagents it announced", () => {
   tracker.closeRun(RUN);
   tracker.onLaunch(RUN, LAUNCH);
   expect(announced.map((a) => a.subagentId)).toEqual([AGENT, AGENT]);
+});
+
+test("a launch refused by Kibo or by Claude Code never becomes a subagent line", () => {
+  const refusals = [
+    "Permission to use Agent has been denied. sous-agent non autorisé par Kibo : seo",
+    CLAUDE_DENIAL_TEXT,
+  ];
+  for (const text of refusals) {
+    const { tracker, store, announced } = tracked();
+    tracker.onLaunch(RUN, LAUNCH);
+    tracker.onResult(RUN, TOOL_USE, true, text);
+    tracker.closeRun(RUN);
+    expect(store.list(RUN)).toEqual([]);
+    expect(announced).toEqual([]);
+  }
+});
+
+test("a launch that failed for another reason still gets its line, failed", () => {
+  const { tracker, store } = tracked();
+  tracker.onLaunch(RUN, LAUNCH);
+  tracker.onResult(RUN, TOOL_USE, true, "Agent crashed");
+  tracker.closeRun(RUN);
+  expect(store.list(RUN)).toEqual([expect.objectContaining({ id: TOOL_USE, state: "failed" })]);
 });

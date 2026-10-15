@@ -16,7 +16,7 @@ const launchedCalls = (subagents: ReadonlyMap<string, RunSubagent>): Set<string>
   new Set([...subagents.values()].flatMap((s) => (s.toolUseId === null ? [] : [s.toolUseId])));
 
 const isLaunchOf = (calls: ReadonlySet<string>) => (a: RunAction) =>
-  a.kind === "subagent" && a.callId !== undefined && calls.has(a.callId);
+  a.kind === "subagent" && a.outcome !== "denied" && a.callId !== undefined && calls.has(a.callId);
 
 function withoutLaunches(moment: RunMoment, calls: ReadonlySet<string>): RunMoment | null {
   const data = moment.data;
