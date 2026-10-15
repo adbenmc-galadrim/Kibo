@@ -34,6 +34,15 @@ const livraison = {
 
 const panelOf = (page: Page): Locator => page.getByRole("dialog", { name: `Agent de projet · ${PROJECT}` });
 
+async function openProjectPanel(page: Page, projectId: string): Promise<Locator> {
+  await page.goto(`/#/p/${encodeURIComponent(projectId)}/`);
+  await expect(page.getByRole("button", { name: /^Agent de projet/ })).toBeVisible();
+  await page.keyboard.press("ControlOrMeta+j");
+  const panel = panelOf(page);
+  await expect(panel).toBeVisible();
+  return panel;
+}
+
 async function expectBelow(panel: Locator, header: Locator): Promise<void> {
   const panelBox = await panel.boundingBox();
   const headerBox = await header.boundingBox();
@@ -208,10 +217,7 @@ test("l'agent de projet renomme, réassigne, rouvre et archive des questions", a
   test.setTimeout(180_000);
   const projectId = await kibProject(page);
   const { logo, leaf } = await seedProjectQuestions(page, projectId);
-  await page.goto(`/#/p/${encodeURIComponent(projectId)}/`);
-  await page.keyboard.press("ControlOrMeta+j");
-  const panel = panelOf(page);
-  await expect(panel).toBeVisible();
+  const panel = await openProjectPanel(page, projectId);
 
   await say(panel, "Peux-tu ranger les questions ?");
   await expect(panel.getByText("J'ai proposé un lot de 6 actions sur les questions.")).toBeVisible({
@@ -279,10 +285,7 @@ test("la réponse de l'agent de projet montre un tableau, qu'Agrandir ouvre dans
 }, info) => {
   test.setTimeout(120_000);
   const projectId = await kibProject(page);
-  await page.goto(`/#/p/${encodeURIComponent(projectId)}/`);
-  await page.keyboard.press("ControlOrMeta+j");
-  const panel = panelOf(page);
-  await expect(panel).toBeVisible();
+  const panel = await openProjectPanel(page, projectId);
   await say(panel, "Donne-moi l'ordre en tableau");
   const table = panel.getByRole("region", { name: "Tableau" }).last().getByRole("table");
   await expect(table).toBeVisible({ timeout: 30_000 });
