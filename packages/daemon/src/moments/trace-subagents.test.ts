@@ -195,3 +195,19 @@ test("a background subagent takes its result from its handback and its model fro
     }),
   ]);
 });
+
+test("the subagent moment follows the actions read before its launch", async () => {
+  const t = tracedRun();
+  const main = t.s.transcript;
+  main.toolResult(main.toolUse("Bash", { command: "kibo tickets step ESS-1 0 lecture" }), {
+    content: "ok",
+    isError: false,
+  });
+  main.toolUse("Agent", REVIEW);
+  const start = hook("SubagentStart", { agentId: "a1", tool: "ecc:code-reviewer" });
+  t.tracker.onHook(t.s.run.id, start);
+  await t.s.trace.onHook(t.s.run, start);
+  await t.s.trace.onTurnEnd(t.s.run);
+  const kinds = t.s.store.list(t.s.run.id).flatMap((m) => (m.subagentId ? [] : [m.data.kind]));
+  expect(kinds.slice(0, 2)).toEqual(["actions", "subagent"]);
+});

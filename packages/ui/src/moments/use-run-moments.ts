@@ -12,7 +12,7 @@ const asKiboError = (e: unknown): KiboError =>
 export function mergeMoments(current: readonly RunMoment[], incoming: readonly RunMoment[]): RunMoment[] {
   const bySeq = new Map(current.map((m) => [m.seq, m]));
   for (const m of incoming) if (!bySeq.has(m.seq)) bySeq.set(m.seq, m);
-  return [...bySeq.values()].sort((a, b) => a.seq - b.seq);
+  return [...bySeq.values()].sort((a, b) => a.at - b.at || a.seq - b.seq);
 }
 
 export function useRunMoments(runId: string | null): RunMomentsState {
