@@ -107,7 +107,7 @@ test("Livrer EMIS-15 : la CLI du run pose les étapes, la capture est servie, «
   const run = runFrom(await deliver(s, "EMIS-15"));
   expect(run.brief).toBe("/full-delivery EMIS-15");
   expect(run.profileId).toBe(s.agent.ref);
-  await runIn(s, run.id, ["done", "waiting_input"]);
+  await runIn(s, run.id, ["waiting_input"]);
   expect((await ticketView(s, "EMIS-15"))?.delivery).toMatchObject({
     step: 7,
     note: "porte qualité",
@@ -133,8 +133,6 @@ test("Livrer EMIS-15 : la CLI du run pose les étapes, la capture est servie, «
       by: { kind: "human", ref: "adam" },
     },
   });
-  if ((await runOf(s, run.id))?.state === "done")
-    await s.kit.rpc({ method: "deliverAnswers", projectId: s.project.id, ticketId: idOf(s, "EMIS-15") });
   await runIn(s, run.id, ["done"], 2);
   expect((await ticketView(s, "EMIS-15"))?.delivery).toMatchObject({ step: 11, note: "PR #12" });
 }, 90_000);
