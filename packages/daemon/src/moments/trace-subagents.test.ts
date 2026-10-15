@@ -137,3 +137,19 @@ test("the actions of a running subagent are shown as soon as they are read", asy
   const after = t.s.store.listSubagent(t.s.run.id, "a1").map((m) => m.data);
   expect(after[1]).toMatchObject({ actions: [expect.objectContaining({ tool: "Read" })] });
 });
+
+test("a subagent that waits without any tool call is described from its start", async () => {
+  const t = tracedRun();
+  const toolUseId = t.s.transcript.toolUse("Agent", REVIEW);
+  mkdirSync(join(t.s.root, "proj", SESSION, "subagents"), { recursive: true });
+  const meta = JSON.parse(readFileSync(META, "utf8"));
+  writeFileSync(subagentMetaPath(t.file), JSON.stringify({ ...meta, toolUseId }));
+  const start = hook("SubagentStart", { agentId: "a1", tool: "ecc:code-reviewer" });
+  t.tracker.onHook(t.s.run.id, start);
+  await t.s.trace.onHook(t.s.run, start);
+  expect(t.store.list(t.s.run.id)[0]).toMatchObject({
+    type: "ecc:code-reviewer",
+    description: "Porte qualité — correctness",
+    state: "running",
+  });
+});

@@ -33,7 +33,13 @@ export type TraceService = {
   peek(run: RunView, progress: RunProgressSummary | null): RunPeek;
 };
 
-const PASS_EVENTS: ReadonlySet<string> = new Set(["PostToolUse", "Stop", "SubagentStop", "Notification"]);
+const PASS_EVENTS: ReadonlySet<string> = new Set([
+  "PostToolUse",
+  "Stop",
+  "SubagentStart",
+  "SubagentStop",
+  "Notification",
+]);
 const STEP_TITLE_MAX = 160;
 export const HELD_MOMENTS_MAX = 20;
 
