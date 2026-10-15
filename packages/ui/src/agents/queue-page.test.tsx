@@ -401,3 +401,26 @@ test("without locks the section says the machine has none", () => {
   const locks = screen.getByRole("region", { name: "Verrous de la machine" });
   expect(within(locks).getByText("Aucun verrou de livraison sur cette machine.")).toBeTruthy();
 });
+
+test("long run labels end with an ellipsis instead of being cut at the edge", () => {
+  const long = `global · opus-dev · ${"très-long-libellé-".repeat(6)}`;
+  const state = agentsFixture();
+  const runs = state.runs.map((r) => ({ ...r, label: long }));
+  render(
+    <QueueBoard
+      state={{ ...state, runs }}
+      agents={agentsSummaryFixture}
+      projects={projectsFixture}
+      now={NOW}
+      onAnswer={() => {}}
+    />,
+  );
+  const labels = screen.getAllByText(long);
+  expect(labels.length).toBeGreaterThan(2);
+  for (const label of labels) {
+    expect(label.className).toContain("truncate");
+    expect(label.closest("button")?.className ?? "").not.toContain("shrink-0");
+  }
+  for (const slot of screen.getAllByText(`Dans la place de ${long}`))
+    expect(slot.className).toContain("truncate");
+});

@@ -121,7 +121,7 @@ export function QueueCapacity({
               <li
                 key={slot}
                 className={cn(
-                  "relative grid gap-0.5 rounded-md border p-2.5",
+                  "relative grid min-w-0 grid-cols-1 gap-0.5 rounded-md border p-2.5",
                   run ? "border-blue-500/70" : "border-dashed",
                 )}
               >
@@ -129,7 +129,9 @@ export function QueueCapacity({
                 {run ? (
                   <>
                     <RunDot state={run.state} className="absolute top-2.5 right-2.5" />
-                    <span className="font-mono text-xs">{run.label}</span>
+                    <span className="truncate pr-3 font-mono text-xs" title={run.label}>
+                      {run.label}
+                    </span>
                     <span className="text-2xs text-muted-foreground">
                       {runSubject(run, formatDuration(elapsed(run, now)))}
                     </span>
