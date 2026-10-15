@@ -5,11 +5,14 @@ import {
   createTicket,
   deleteTicket,
   listLinks,
+  readProject,
   removeLink,
   setStatus,
-  waitingOn,
   wouldCreateCycle,
 } from "./index";
+
+const waitingOn = (d: Parameters<typeof readProject>[0], id: string) =>
+  readProject(d).tickets.find((t) => t.id === id)?.waitingOn;
 
 const setup = () => {
   const d = createProjectDoc({

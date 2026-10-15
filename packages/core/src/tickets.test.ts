@@ -3,13 +3,13 @@ import { KiboError } from "@kibo/schema";
 import fc from "fast-check";
 import { LoroDoc, type TreeID } from "loro-crdt";
 import {
-  childProgress,
   createProjectDoc,
   createTicket,
   deleteTicket,
   getTicket,
   listTickets,
   moveTicket,
+  readProject,
   setStatus,
   ticketTree,
   updateTicket,
@@ -94,7 +94,7 @@ describe("tree", () => {
     const g = createTicket(d, { title: "G", parentId: c1.id });
     setStatus(d, c1.id, "done");
     setStatus(d, g.id, "done");
-    expect(childProgress(d, p.id)).toEqual({ done: 1, total: 2 });
+    expect(readProject(d).tickets.find((t) => t.id === p.id)?.progress).toEqual({ done: 1, total: 2 });
   });
 
   test("refuses to move a ticket under its descendant", () => {

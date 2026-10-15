@@ -101,6 +101,7 @@ export * from "./sync";
 export * from "./sync-rpc";
 export * from "./tabs";
 export * from "./ticket";
+export * from "./ticket-group";
 export * from "./ticket-runs";
 export * from "./tutorial";
 export * from "./visibility-rpc";

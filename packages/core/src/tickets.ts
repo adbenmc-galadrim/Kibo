@@ -180,11 +180,6 @@ export function deleteTicket(doc: LoroDoc, id: string): string[] {
   return ids;
 }
 
-export function childProgress(doc: LoroDoc, id: string): { done: number; total: number } {
-  const children = getNode(ticketTree(doc), id).children() ?? [];
-  return { done: children.filter((c) => c.data.get("statusId") === "done").length, total: children.length };
-}
-
 function withReport(reports: readonly RunReport[], report: RunReport): RunReport[] {
   const others = reports.filter((r) => r.runId !== report.runId);
   return [...others, report].sort((a, b) => a.at - b.at).slice(-REPORTS_MAX);

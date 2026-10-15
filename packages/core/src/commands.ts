@@ -1,16 +1,10 @@
 import {
-  isOpen,
-  isStartable,
   KiboError,
-  type Link,
   NO_ACTIVITY,
   type ProjectActivity,
   type ProjectCommand,
   type ProjectSnapshot,
-  type Question,
   type StatusId,
-  type Ticket,
-  ticketKeyLabel,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { addBinding, listBindings, removeBinding } from "./bindings";
@@ -26,7 +20,7 @@ import {
   setPageLayout,
 } from "./instances";
 import { localSyncInfo } from "./keys";
-import { addLink, listLinks, removeLink, waitingOn } from "./links";
+import { addLink, listLinks, removeLink } from "./links";
 import { addPage, deletePage, listPages, movePage, renamePage } from "./pages";
 import { getProjectMeta, getWorkflow, peekTicketKey } from "./project";
 import { listProjectDomains } from "./project-domains";
@@ -43,7 +37,6 @@ import {
   createQuestion,
   listQuestions,
   markAnswersDelivered,
-  openCountByTicket,
   removeQuestion,
 } from "./questions";
 import {
@@ -54,8 +47,8 @@ import {
   updateQuestion,
 } from "./questions-edit";
 import { readRules } from "./rules";
+import { ticketViews } from "./ticket-views";
 import {
-  childProgress,
   createTicket,
   deleteTicket,
   listTickets,
@@ -187,47 +180,15 @@ export function assertShellCommand(cmd: ProjectCommand): void {
   }
 }
 
-type StartableFacts = { tickets: readonly Ticket[]; links: readonly Link[]; questions: readonly Question[] };
-
-function startableOf(facts: StartableFacts, activity: ProjectActivity): (t: Ticket) => boolean {
-  const status = new Map(facts.tickets.map((t) => [t.id, t.statusId]));
-  const blockers = new Map<string, StatusId[]>();
-  for (const l of facts.links) {
-    const from = status.get(l.from);
-    if (l.type === "blocks" && from !== undefined) blockers.set(l.to, [...(blockers.get(l.to) ?? []), from]);
-  }
-  const blocking = new Map<string, number>();
-  for (const q of facts.questions) {
-    if (q.blocking && isOpen(q)) blocking.set(q.ticketId, (blocking.get(q.ticketId) ?? 0) + 1);
-  }
-  return (t) =>
-    isStartable({
-      statusId: t.statusId,
-      blockerStatuses: blockers.get(t.id) ?? [],
-      openBlockingQuestions: blocking.get(t.id) ?? 0,
-      busy: activity.busyTickets.has(t.id),
-    });
-}
-
 export function readProject(doc: LoroDoc, activity: ProjectActivity = NO_ACTIVITY): ProjectSnapshot {
   const meta = getProjectMeta(doc);
   const questions = listQuestions(doc);
-  const open = openCountByTicket(questions);
-  const tickets = listTickets(doc);
   const links = listLinks(doc);
-  const startable = startableOf({ tickets, links, questions }, activity);
   return {
     meta,
     workflow: getWorkflow(doc),
     pages: listPages(doc),
-    tickets: tickets.map((t) => ({
-      ...t,
-      progress: childProgress(doc, t.id),
-      waitingOn: waitingOn(doc, t.id),
-      keyLabel: ticketKeyLabel(t, meta.key),
-      openQuestions: open.get(t.id) ?? 0,
-      startable: startable(t),
-    })),
+    tickets: ticketViews({ projectKey: meta.key, tickets: listTickets(doc), links, questions }, activity),
     links,
     questions,
     questionRecipients: listQuestionRecipients(doc),
