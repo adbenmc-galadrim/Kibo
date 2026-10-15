@@ -43,6 +43,7 @@ type RunMemory = {
   launches: Map<string, PendingLaunch>;
   results: Map<string, PendingResult>;
   links: Map<string, string>;
+  announced: Set<string>;
 };
 
 const ASYNC_LAUNCHED = /^Async agent launched/;
@@ -82,14 +83,19 @@ export function createSubagentTracker(deps: TrackerDeps): SubagentTracker {
   const memoryOf = (runId: string): RunMemory => {
     const found = memory.get(runId);
     if (found) return found;
-    const created: RunMemory = { launches: new Map(), results: new Map(), links: new Map() };
+    const created: RunMemory = {
+      launches: new Map(),
+      results: new Map(),
+      links: new Map(),
+      announced: new Set(),
+    };
     memory.set(runId, created);
     return created;
   };
 
-  const announced = new Set<string>();
   function announce(runId: string, id: string): void {
     const s = store.find(id);
+    const { announced } = memoryOf(runId);
     if (s === null || announced.has(id)) return;
     announced.add(id);
     deps.announce(runId, { kind: "subagent", subagentId: id, type: s.type, description: s.description });
@@ -219,13 +225,13 @@ export function createSubagentTracker(deps: TrackerDeps): SubagentTracker {
     },
     closeRun(runId) {
       const mem = memory.get(runId);
-      memory.delete(runId);
       if (!mem) return;
       for (const [toolUseId, pending] of mem.launches) {
         fallbackRow(runId, toolUseId, pending);
         const result = mem.results.get(toolUseId);
         if (result) end(runId, toolUseId, result.isError, result.text);
       }
+      memory.delete(runId);
     },
     active: (runId) => store.list(runId).filter((s) => s.state === "running"),
   };

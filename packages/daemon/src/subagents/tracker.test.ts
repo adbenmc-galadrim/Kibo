@@ -92,3 +92,12 @@ test("a launch never linked to an agent becomes a line keyed by its tool use whe
   ]);
   expect(announced.map((a) => a.subagentId)).toEqual([TOOL_USE]);
 });
+
+test("closing a run forgets the subagents it announced", () => {
+  const { tracker, announced } = tracked();
+  tracker.onLaunch(RUN, LAUNCH);
+  tracker.onMeta(RUN, META);
+  tracker.closeRun(RUN);
+  tracker.onLaunch(RUN, LAUNCH);
+  expect(announced.map((a) => a.subagentId)).toEqual([AGENT, AGENT]);
+});
