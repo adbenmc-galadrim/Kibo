@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { actionOf, DELIVERY_RPC_METHODS, type RunMoment, type RunView, Ticket } from "@kibo/schema";
 import { testAgent, testAgentSource } from "../agents/agents-port.test-helper";
+import { denialStore } from "../agents/denial-store";
 import { CLAUDE_DENIAL_TEXT } from "../agents/fake-claude-transcript";
 import type { Notice } from "../agents/notifier";
 import type { AssignInput } from "../agents/orchestrator-types";
@@ -79,7 +80,13 @@ async function rig() {
     turns: 1,
     state: "waiting_input",
   });
-  const port = fakeAgentsPort([run]);
+  const foreign = runView({ id: "r9", projectId: "gone", ticketId: "t9", state: "done" });
+  const port = fakeAgentsPort([run, foreign]);
+  const db = new Database(":memory:", { strict: true });
+  const items = [
+    { tool: "Bash", target: "pnpm test", rule: "Bash(pnpm *)", addDir: null, reason: "ok" as const },
+  ];
+  denialStore(db).save({ runId: "r9", turn: 1, items, questionId: "q9", seq: 1, at: 1 });
   const slots = join(home, "slots");
   const delivery = startDelivery({
     home,
@@ -103,7 +110,7 @@ async function rig() {
         return runView({ id: "r2", ticketId: input.ticketId, brief: input.brief });
       },
     }),
-    db: new Database(":memory:", { strict: true }),
+    db,
     alive: () => true,
   });
   opened.push({ home, store, close: delivery.close });
@@ -171,6 +178,14 @@ test("a component call on a run of another project is refused", async () => {
   await expect(
     Promise.resolve().then(() => delivery.components.call("other", { kind: "run.denials", runId: "r1" })),
   ).rejects.toThrow("NOT_FOUND");
+});
+
+test("the denials of a run are read only when its project is served by this daemon", async () => {
+  const { delivery } = await rig();
+  const extension = delivery.rpc.find((e) => e.methods.includes("runs.denials"));
+  const read = (runId: string) => extension?.handle({ method: "runs.denials", runId }, LOCAL_CONTEXT);
+  await expect(read("r9")).rejects.toThrow("NOT_FOUND: run r9 not found");
+  expect(await read("r1")).toBeNull();
 });
 
 test("Autoriser et relancer from a component of a remote session is refused", async () => {

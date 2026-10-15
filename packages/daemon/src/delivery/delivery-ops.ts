@@ -19,7 +19,7 @@ import { type DeliverDeps, type DeliveryProject, deliver } from "./deliver";
 
 export type DeliveryDocs = Pick<
   Docs,
-  "project" | "activity" | "projectMeta" | "assertWritable" | "identity" | "run"
+  "project" | "projectIds" | "activity" | "projectMeta" | "assertWritable" | "identity" | "run"
 >;
 export type DeliveryOpsDeps = {
   home: string;
@@ -95,8 +95,10 @@ export function createDeliveryOps(deps: DeliveryOpsDeps): DeliveryOps {
       .orchestrator()
       .state()
       .runs.find((r) => r.id === runId);
-    if (!found || found.projectId === null) throw new KiboError("NOT_FOUND", `run ${runId} not found`);
-    return { ...found, projectId: found.projectId };
+    const projectId = found?.projectId ?? null;
+    if (!found || projectId === null || !deps.docs().projectIds().includes(projectId))
+      throw new KiboError("NOT_FOUND", `run ${runId} not found`);
+    return { ...found, projectId };
   };
   return {
     deliverDeps,
