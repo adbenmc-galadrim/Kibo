@@ -2195,3 +2195,13 @@ Trois volets, dans cet ordre : **A. Débloquer** (A1 préréglage « Livraison �
 
 - Tests : `isGroup` et l'avancement (unitaires), arbre de la page Tickets aplati (sous-tickets à la place de l'ensemble, puce), aucune carte Kanban pour un ensemble, cadre du graphe par défaut, aucune entrée de lancement sur un ensemble ; E2E sur un projet avec un ensemble de trois sous-tickets dont un imbriqué ; captures sombre et clair.
 - Maquettes Penpot : à dessiner dès qu'une session Penpot existe (page 36) ; en attendant, les captures de l'E2E font foi.
+
+### 36.4 Écarts constatés à l'exécution (2026-10-15)
+
+- `isGroup(view)` est une fonction pure (`schema/src/ticket-group.ts`, `progress.total > 0`, `progress` comptant les sous-tickets par `parentId`), pas un champ de `TicketView`.
+- Le statut d'un ensemble est dérivé à la lecture (`core/src/ticket-views.ts`) ; « en cours » signifie qu'un sous-ticket a démarré (en cours, en review, bloqué ou terminé). Un `setStatus` sur un ensemble n'est pas refusé (la règle `children_done` et la sync GitHub l'utilisent) mais n'a pas d'effet visible, et aucune interface ne le propose. `children_done` compare encore le statut stocké des frères : un ensemble imbriqué ne fait pas passer son grand-parent à « terminé » (à reprendre).
+- Graphe : chaque ticket est cadré par son parent direct, donc un ensemble imbriqué est un cadre voisin, pas un cadre dans le cadre ; l'option « Aucun regroupement » devient « Ensembles (par défaut) » ; les vagues n'ont plus d'en-têtes quand des ensembles existent.
+- Page Tickets : la colonne « Sous-tickets » devient « Ensemble » (masquée sous la largeur `@md`) ; la puce désigne le parent direct.
+- Fiche d'un ensemble : garde le titre, les étiquettes et le menu ⋯, sans onglet Activité.
+- Les compteurs « n tickets » du graphe, du Kanban et de « Mes tickets » excluent les ensembles ; le résumé des projets (`countTicketsByStatus`) les compte encore avec leur statut stocké.
+- Lancement des runs (même version) : une base `a/b` dont `a` n'est pas un remote est un nom de branche, résolu en local puis sur le remote par défaut ; une base fusionnée puis supprimée se rabat sur le `baseRef` du projet si la référence de suivi périmée en est un ancêtre (événement `base_fallback` dans le journal du run), sinon `GIT_FAILED` explicite. Sur macOS, l'application lancée par launchd lit au démarrage le `PATH` du shell de connexion.
