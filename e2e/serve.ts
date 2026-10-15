@@ -25,11 +25,13 @@ const INTEGRATIONS_FLAG = "--integrations";
 const NO_GH_FLAG = "--no-gh";
 const DESIGN_FLAG = "--design";
 const EMBEDS_FLAG = "--embeds";
-const FLAGS = [INTEGRATIONS_FLAG, NO_GH_FLAG, DESIGN_FLAG, EMBEDS_FLAG];
+const DELIVERY_FLAG = "--delivery";
+const FLAGS = [INTEGRATIONS_FLAG, NO_GH_FLAG, DESIGN_FLAG, EMBEDS_FLAG, DELIVERY_FLAG];
 const argv = process.argv.slice(2);
 const integrations = argv.includes(INTEGRATIONS_FLAG);
 const design = argv.includes(DESIGN_FLAG);
 const embeds = argv.includes(EMBEDS_FLAG);
+const delivery = argv.includes(DELIVERY_FLAG);
 const withGh = !argv.includes(NO_GH_FLAG);
 const [port = "4390", scenario = "question", ...drafts] = argv.filter((a) => !FLAGS.includes(a));
 const home = e2eHome(port);
@@ -112,6 +114,12 @@ function startEmbedFakes() {
     },
   };
 }
+const deliveryEnv = () => ({
+  HOME: home,
+  KIBO_CLI: join(root, "packages/cli/src/bin.ts"),
+  DELIVERY_SLOTS: join(home, "slots"),
+  DELIVERY_REGISTRY: join(home, "registry.json"),
+});
 function startFakesFor() {
   if (integrations) return startFakes();
   if (design) return startDesignFakes();
@@ -146,6 +154,7 @@ const proc = Bun.spawn(
       KIBO_GH: gh,
       FAKE_GH_STATE: join(ghDir, "state.json"),
       FAKE_GH_LOG: join(ghDir, "log.jsonl"),
+      ...(delivery ? deliveryEnv() : {}),
     },
     stdout: "inherit",
     stderr: "inherit",
