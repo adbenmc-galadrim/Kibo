@@ -46,7 +46,6 @@ type RunMemory = {
   results: Map<string, PendingResult>;
   links: Map<string, string>;
   announced: Set<string>;
-  waiting: Set<string>;
 };
 
 const ASYNC_LAUNCHED = /^Async agent launched/;
@@ -91,7 +90,6 @@ export function createSubagentTracker(deps: TrackerDeps): SubagentTracker {
       results: new Map(),
       links: new Map(),
       announced: new Set(),
-      waiting: new Set(),
     };
     memory.set(runId, created);
     return created;
@@ -173,37 +171,6 @@ export function createSubagentTracker(deps: TrackerDeps): SubagentTracker {
     deps.changed?.(runId);
   }
 
-  function unlinked(runId: string): { id: string; type: string }[] {
-    const mem = memoryOf(runId);
-    const owners = new Set(mem.links.values());
-    return [...mem.waiting].flatMap((id) => {
-      const row = store.get(id);
-      const current = row === null ? null : linkedRow(row, store.events(id));
-      if (current === null || current.toolUseId !== null || owners.has(id)) {
-        mem.waiting.delete(id);
-        return [];
-      }
-      return current.type === "" ? [] : [{ id, type: current.type }];
-    });
-  }
-
-  function pairByType(runId: string): void {
-    const mem = memoryOf(runId);
-    const agents = unlinked(runId);
-    const open = [...mem.launches].filter(([toolUseId]) => !mem.results.has(toolUseId));
-    for (const agent of agents) {
-      const launches = open.filter(([, p]) => p.launch.type === agent.type);
-      const [only] = launches;
-      if (only === undefined || launches.length > 1) continue;
-      if (agents.filter((a) => a.type === agent.type).length > 1) continue;
-      const [toolUseId, pending] = only;
-      mem.launches.delete(toolUseId);
-      mem.links.set(toolUseId, agent.id);
-      mem.waiting.delete(agent.id);
-      attach(runId, agent.id, pending);
-    }
-  }
-
   const ownerOf = (runId: string, toolUseId: string): string | null =>
     memoryOf(runId).links.get(toolUseId) ?? store.byToolUse(runId, toolUseId);
 
@@ -231,8 +198,6 @@ export function createSubagentTracker(deps: TrackerDeps): SubagentTracker {
       if (payload.event === "SubagentStart") {
         ensure(runId, payload.agentId, type);
         started(runId, payload.agentId);
-        memoryOf(runId).waiting.add(payload.agentId);
-        pairByType(runId);
       }
       if (payload.event === "SubagentStop") {
         ensure(runId, payload.agentId, type);
@@ -242,10 +207,8 @@ export function createSubagentTracker(deps: TrackerDeps): SubagentTracker {
     onLaunch(runId, launch, parentId = null) {
       const pending = { launch, parentId };
       const owner = ownerOf(runId, launch.toolUseId);
-      if (owner === null) {
-        memoryOf(runId).launches.set(launch.toolUseId, pending);
-        pairByType(runId);
-      } else attach(runId, owner, pending);
+      if (owner === null) memoryOf(runId).launches.set(launch.toolUseId, pending);
+      else attach(runId, owner, pending);
     },
     onMeta(runId, meta) {
       if (meta.toolUseId !== null) memoryOf(runId).links.set(meta.toolUseId, meta.agentId);

@@ -155,19 +155,22 @@ test("a subagent that waits without any tool call is described from its start", 
   });
 });
 
-test("a subagent started before its meta file is described at the end of its SubagentStart", async () => {
+test("a subagent started before its meta file shows its type, then its description with the meta", async () => {
   const t = tracedRun();
   const toolUseId = t.s.transcript.toolUse("Agent", REVIEW);
   const start = hook("SubagentStart", { agentId: "a1", tool: "ecc:code-reviewer" });
   t.tracker.onHook(t.s.run.id, start);
   await t.s.trace.onHook(t.s.run, start);
+  expect(t.store.list(t.s.run.id)[0]).toMatchObject({ type: "ecc:code-reviewer", description: "" });
+  mkdirSync(join(t.s.root, "proj", SESSION, "subagents"), { recursive: true });
+  const meta = JSON.parse(readFileSync(META, "utf8"));
+  writeFileSync(subagentMetaPath(t.file), JSON.stringify({ ...meta, toolUseId }));
+  await t.s.trace.onHook(t.s.run, hook("PostToolUse", { tool: "Bash" }));
   expect(t.store.list(t.s.run.id)[0]).toMatchObject({
     toolUseId,
     description: "Porte qualité — correctness",
     prompt: "Relis le diff",
   });
-  const announced = t.s.store.list(t.s.run.id).map((m) => m.data);
-  expect(announced).toContainEqual(expect.objectContaining({ kind: "subagent", subagentId: "a1" }));
 });
 
 test("a background subagent takes its result from its handback and its model from its transcript", async () => {
@@ -203,7 +206,10 @@ test("the subagent moment follows the actions read before its launch", async () 
     content: "ok",
     isError: false,
   });
-  main.toolUse("Agent", REVIEW);
+  const toolUseId = main.toolUse("Agent", REVIEW);
+  mkdirSync(join(t.s.root, "proj", SESSION, "subagents"), { recursive: true });
+  const meta = JSON.parse(readFileSync(META, "utf8"));
+  writeFileSync(subagentMetaPath(t.file), JSON.stringify({ ...meta, toolUseId }));
   const start = hook("SubagentStart", { agentId: "a1", tool: "ecc:code-reviewer" });
   t.tracker.onHook(t.s.run.id, start);
   await t.s.trace.onHook(t.s.run, start);
