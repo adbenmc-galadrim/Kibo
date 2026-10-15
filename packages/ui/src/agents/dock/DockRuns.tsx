@@ -1,5 +1,7 @@
 import {
+  deliveryStepLabel,
   keyBesideLabel,
+  type RunDeliveryStep,
   type RunProgressSummary,
   type RunQuestions,
   type RunView,
@@ -18,6 +20,7 @@ import type { DockGroups } from "./dock-runs";
 type Props = {
   groups: DockGroups;
   progress: readonly RunProgressSummary[];
+  delivery: readonly RunDeliveryStep[];
   questions: readonly RunQuestions[];
   now: number;
   selected: string | null;
@@ -91,16 +94,24 @@ function RecentLine({
   );
 }
 
-export function DockRuns({ groups, progress, questions, now, selected, onSelect }: Props) {
+function stepLine(summary: RunProgressSummary | undefined, delivery: RunDeliveryStep | undefined) {
+  const parts = [delivery ? deliveryStepLabel(delivery.step) : null, stepChip(summary)].filter(
+    (p) => p !== null,
+  );
+  return parts.length > 0 ? parts.join(" · ") : null;
+}
+
+export function DockRuns({ groups, progress, delivery, questions, now, selected, onSelect }: Props) {
   const t = frMoments.dock;
   const byRun = new Map(progress.map((p) => [p.runId, p]));
+  const stepOf = new Map(delivery.map((d) => [d.runId, d]));
   const age = (r: RunView) => formatDuration(elapsed(r, now));
   const active: Row[] = [
     ...groups.active.map((run) => ({
       run,
       ticket: keyBesideLabel(run.label, run.ticketKey),
       aside: age(run),
-      line: stepChip(byRun.get(run.id)) ?? run.ticketTitle,
+      line: stepLine(byRun.get(run.id), stepOf.get(run.id)) ?? run.ticketTitle,
     })),
     ...groups.waiting.map((run) => ({
       run,

@@ -1,4 +1,4 @@
-import { type AgentsState, type FileRef, type RunView, reportOfRun } from "@kibo/schema";
+import { type AgentsState, type FileRef, type RunView, reportOfRun, runDeliverySteps } from "@kibo/schema";
 import { useState } from "react";
 import { frMoments } from "../../i18n/fr-moments";
 import { useRunMoments } from "../../moments/use-run-moments";
@@ -63,6 +63,7 @@ export function AgentDock({
           <DockRuns
             groups={dockGroups(state, now)}
             progress={state.progress}
+            delivery={runDeliverySteps(state)}
             questions={state.questions}
             now={now}
             selected={selected?.id ?? null}

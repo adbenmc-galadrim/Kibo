@@ -1,4 +1,4 @@
-import { type AgentsState, runSubject } from "@kibo/schema";
+import { type AgentsState, runDeliverySteps, runSubject } from "@kibo/schema";
 import { RunDot } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { useRef } from "react";
@@ -20,6 +20,7 @@ export function BarRuns({ state, now, onSelect, onMore }: BarRunsProps) {
     .sort((a, b) => (a.startedAt ?? 0) - (b.startedAt ?? 0));
   const waiting = state.runs.filter((r) => r.state === "waiting_input");
   const progress = new Map(state.progress.map((p) => [p.runId, p]));
+  const delivery = new Map(runDeliverySteps(state).map((d) => [d.runId, d]));
   const listRef = useRef<HTMLUListElement>(null);
   const hidden = useWrappedCount(listRef, running.map((r) => r.id).join(" "));
   const visible = running.length - hidden;
@@ -42,7 +43,10 @@ export function BarRuns({ state, now, onSelect, onMore }: BarRunsProps) {
               <RunDot state={r.state} />
               <span className="font-mono underline underline-offset-2">{r.label}</span>
               <span className="text-muted-foreground">
-                {runSubject(r, stepChip(progress.get(r.id)) ?? formatDuration(elapsed(r, now)))}
+                {runSubject(
+                  r,
+                  stepChip(progress.get(r.id), delivery.get(r.id)) ?? formatDuration(elapsed(r, now)),
+                )}
               </span>
             </button>
           </li>

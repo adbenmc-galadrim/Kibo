@@ -39,3 +39,11 @@ test("2026-10-14: the summary never speaks of overlaps", () => {
   ];
   expect(barSummary({ ...state, overlaps: both, overlapTotal: 2 }, fr.agents)).toBe("2/3 places");
 });
+
+test("a delivery step wins over the step of the plan", () => {
+  const step = { index: 2, total: 5, title: "Corriger la validation" };
+  const delivery = { runId: "r1", step: 7, note: "gates verts" };
+  expect(stepChip({ runId: "r1", step, report: null }, delivery)).toBe("7 · Porte qualité");
+  expect(stepChip(undefined, delivery)).toBe("7 · Porte qualité");
+  expect(stepChip({ runId: "r1", step, report: null }, undefined)).toBe("2/5 · Corriger la validation");
+});

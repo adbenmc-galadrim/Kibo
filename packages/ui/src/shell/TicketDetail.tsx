@@ -5,7 +5,9 @@ import {
   type ProjectSnapshot,
   type TicketView,
 } from "@kibo/schema";
+import { DeliveryLine } from "../delivery/lazy";
 import { fr } from "../i18n/fr";
+import { frDelivery } from "../i18n/fr-delivery";
 import { frQuestions } from "../i18n/fr-questions";
 import { frTicketEdit } from "../i18n/fr-ticket-edit";
 import { canEdit } from "../state/access";
@@ -92,6 +94,14 @@ export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, 
           <>
             <dt className="text-muted-foreground">{frQuestions.session}</dt>
             <dd className="font-mono">{frQuestions.mainSession(session.label, session.turns)}</dd>
+          </>
+        )}
+        {t.delivery && (
+          <>
+            <dt className="self-start text-muted-foreground">{frDelivery.label}</dt>
+            <dd>
+              <DeliveryLine delivery={t.delivery} />
+            </dd>
           </>
         )}
         {t.blockedReason && (
