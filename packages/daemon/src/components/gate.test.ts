@@ -257,4 +257,17 @@ describe("delivery calls", () => {
       "delivery:p1:run.deliveryAgent",
     ]);
   });
+  test("a third-party component without read:run or write:run is refused each delivery call", async () => {
+    const calls: ComponentCall[] = [
+      { kind: "run.deliver", ticketId: "t1" },
+      { kind: "run.denials", runId: "r1" },
+      { kind: "run.allowAndResume", runId: "r1", questionId: "q1", rules: [], addDirs: [] },
+      { kind: "run.deliveryAgent" },
+    ];
+    for (const call of calls) {
+      const { gate: g, handled } = testGate();
+      await refused(g.call("p1", "thirdparty", call), "PERMISSION_DENIED");
+      expect(handled).toEqual([]);
+    }
+  });
 });
