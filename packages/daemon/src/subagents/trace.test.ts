@@ -15,6 +15,7 @@ import {
   readSubagentMeta,
   readSubagentSlice,
   skipLongSubagentLine,
+  subagentDir,
   subagentMetaPath,
   subagentTracePath,
 } from "./trace";
@@ -102,4 +103,10 @@ test("the meta file of a subagent is read and listed", () => {
   expect(readSubagentMeta(root, join(dir, "agent-bad.meta.json"), "bad")).toBeNull();
   expect(readSubagentMeta(root, join(dir, "agent-none.meta.json"), "none")).toBeNull();
   expect(listSubagentMetas(root, join(dir, "absent"))).toEqual([]);
+});
+
+test("a session id that would leave the folder is refused", () => {
+  expect(() => subagentDir("/p/s1.jsonl", "../s1")).toThrow(
+    expect.objectContaining({ code: "PATH_OUTSIDE_PROJECT" }),
+  );
 });
