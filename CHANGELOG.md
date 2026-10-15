@@ -6,6 +6,11 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.24.0-alpha.3 — 2026-10-15
+
+- Les runs ne sont plus refusés au hasard avec « Kibo n'a pas pu vérifier cette action » : la recherche de code en double entre agents, toutes les cinq minutes, ne bloque plus Kibo pendant qu'elle compare les espaces de travail (jusqu'à 26 s sur Emis). Le résultat de la détection est inchangé.
+- Le journal de Kibo ne répète plus « secret file … never indexed » à chaque passage, et signale les vérifications d'action qui prennent plus d'une seconde.
+
 ## 0.24.0-alpha.2 — 2026-10-15
 
 - Sous-agents : un sous-agent lancé en arrière-plan montre son résultat et son modèle. La description d'un sous-agent arrive dès que Claude Code l'écrit, et la barre se met à jour aussitôt. Deux sous-agents du même type lancés ensemble ne sont plus jamais confondus.
