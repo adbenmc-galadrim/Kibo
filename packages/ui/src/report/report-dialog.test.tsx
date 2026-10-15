@@ -10,6 +10,7 @@ const app: Diagnostics["app"] = {
   platform: "linux",
   arch: "x64",
   home: "~/.kibo",
+  userHome: null,
   daemonPid: 7,
   uptimeMs: 0,
 };

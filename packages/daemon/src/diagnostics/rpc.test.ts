@@ -8,6 +8,7 @@ const app: AppInfo = {
   platform: "linux",
   arch: "x64",
   home: "~/.kibo",
+  userHome: null,
   daemonPid: 3,
   uptimeMs: 0,
 };
@@ -36,6 +37,7 @@ const remote = { sessionHash: "abc", remote: true };
 let diagnosticsCalls = 0;
 const rpc = appRpc({
   appInfo: () => app,
+  userHome: "/home/adam",
   diagnostics: async () => {
     diagnosticsCalls++;
     return report;
@@ -46,9 +48,12 @@ test("appRpc declares its two methods", () => {
   expect(rpc.methods).toEqual(["getAppInfo", "getDiagnostics"]);
 });
 
-test("getAppInfo is open, even to a remote session", async () => {
+test("getAppInfo is open, even to a remote session, which never learns the user home", async () => {
   expect(await rpc.handle({ method: "getAppInfo" }, remote)).toEqual(app);
-  expect(await rpc.handle({ method: "getAppInfo" }, LOCAL_CONTEXT)).toEqual(app);
+  expect(await rpc.handle({ method: "getAppInfo" }, LOCAL_CONTEXT)).toEqual({
+    ...app,
+    userHome: "/home/adam",
+  });
 });
 
 test("getDiagnostics is refused from a remote session", async () => {

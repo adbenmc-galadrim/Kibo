@@ -45,5 +45,5 @@ export function startAppDiagnostics(deps: AppDiagnosticsDeps): { appInfo: () => 
     log: deps.log,
     userHome,
   });
-  return { appInfo, rpc: appRpc({ appInfo, diagnostics }) };
+  return { appInfo, rpc: appRpc({ appInfo, userHome, diagnostics }) };
 }
