@@ -10,6 +10,7 @@ import {
   type DenialItem,
   KiboError,
   AgentSettingsPatch as PatchSchema,
+  type Question,
   RESUME_AFTER_ALLOW,
   type RunView,
 } from "@kibo/schema";
@@ -58,13 +59,23 @@ function setup(run: RunView, resumable: string[] = []) {
   const answerQuestion = mock((_p: string, _q: string, _text: string, _by: Actor) => {
     calls.push("question");
   });
+  const delivered = mock((_p: string, _t: string, _ids: readonly string[], _runId: string) => {
+    calls.push("delivered");
+  });
+  let question: Pick<Question, "ticketId" | "answer" | "archivedAt"> | null = {
+    ticketId: "t1",
+    answer: null,
+    archivedAt: null,
+  };
+  let resumeFails = false;
   const answerRun = mock((runId: string, _text: string): RunView => {
+    if (resumeFails) throw new KiboError("TICKET_HAS_CHILDREN", "ce ticket regroupe 1 sous-ticket");
     calls.push("run");
     return { ...run, id: runId, state: "queued" };
   });
   const deps: AllowResumeDeps = {
     agents: { agentOf: () => agentWith(settings), settings: patch },
-    questions: { answer: answerQuestion },
+    questions: { get: () => question, answer: answerQuestion, markDelivered: delivered },
     orchestrator: {
       state: (): Pick<AgentsState, "runs" | "resumable"> => ({ runs: [run], resumable }),
       answer: answerRun,
@@ -73,16 +84,34 @@ function setup(run: RunView, resumable: string[] = []) {
     viewer: () => "adam",
     home: HOME,
   };
-  return { deps, calls, patch, answerQuestion, answerRun, settings: () => settings };
+  return {
+    deps,
+    calls,
+    patch,
+    answerQuestion,
+    answerRun,
+    delivered,
+    settings: () => settings,
+    archived: () => {
+      question = question && { ...question, archivedAt: 2 };
+    },
+    gone: () => {
+      question = null;
+    },
+    failResume: () => {
+      resumeFails = true;
+    },
+  };
 }
 
 const waiting = runView({ id: "r1", state: "waiting_input", profileId: "global:livraison" });
 const input = { runId: "r1", questionId: "q1", rules: ["Bash(pnpm *)", "Bash(tail *)"], addDirs: [SKILLS] };
 
-test("allowing patches the agent, answers the question as the human, then resumes the run", () => {
-  const { deps, calls, answerQuestion, answerRun, settings } = setup(waiting);
+test("allowing patches the agent, resumes the run, then answers the question as the human, delivered", () => {
+  const { deps, calls, answerQuestion, answerRun, delivered, settings } = setup(waiting);
   const result = allowAndResume(deps, input);
-  expect(calls).toEqual(["settings", "question", "run"]);
+  expect(calls).toEqual(["settings", "run", "question", "delivered"]);
+  expect(delivered.mock.calls[0]).toEqual(["p1", "t1", ["q1"], "r1"]);
   expect(settings().allow).toEqual(["Bash(git *)", "Bash(pnpm *)", "Bash(tail *)"]);
   expect(settings().addDirs).toEqual([SKILLS]);
   expect(answerQuestion.mock.calls[0]).toEqual([
@@ -103,7 +132,30 @@ test("a finished run that can be resumed is resumed too", () => {
   const done = { ...waiting, state: "done" as const };
   const { deps, calls } = setup(done, ["r1"]);
   allowAndResume(deps, input);
-  expect(calls).toEqual(["settings", "question", "run"]);
+  expect(calls).toEqual(["settings", "run", "question", "delivered"]);
+});
+
+test("a question already answered, archived or removed is refused before any write", () => {
+  for (const close of ["archived", "gone"] as const) {
+    const kit = setup(waiting);
+    kit[close]();
+    expect(() => allowAndResume(kit.deps, input)).toThrow(
+      expect.objectContaining({ code: "INVALID_TRANSITION" }),
+    );
+    expect(kit.calls).toEqual([]);
+  }
+});
+
+test("a resume refused after the patch restores the agent settings and leaves the question open", () => {
+  const kit = setup(waiting);
+  const before = kit.settings();
+  kit.failResume();
+  expect(() => allowAndResume(kit.deps, input)).toThrow(
+    expect.objectContaining({ code: "TICKET_HAS_CHILDREN" }),
+  );
+  expect(kit.settings().allow).toEqual(before.allow);
+  expect(kit.settings().addDirs).toEqual(before.addDirs);
+  expect(kit.answerQuestion).not.toHaveBeenCalled();
 });
 
 test("a run that cannot be resumed is refused before any write", () => {

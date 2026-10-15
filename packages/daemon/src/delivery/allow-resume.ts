@@ -7,6 +7,7 @@ import {
   isSafeAddDir,
   isSafeAllowRule,
   KiboError,
+  type Question,
   RESUME_AFTER_ALLOW,
   type RunDenials,
   type RunView,
@@ -26,7 +27,11 @@ export type AllowResumeDeps = {
     agentOf(ref: string): Agent | null;
     settings(ref: string, patch: AgentSettingsPatch): AgentSettings;
   };
-  questions: { answer(projectId: string, questionId: string, text: string, by: Actor): void };
+  questions: {
+    get(projectId: string, questionId: string): Pick<Question, "ticketId" | "answer" | "archivedAt"> | null;
+    answer(projectId: string, questionId: string, text: string, by: Actor): void;
+    markDelivered(projectId: string, ticketId: string, questionIds: readonly string[], runId: string): void;
+  };
   orchestrator: {
     state(): Pick<AgentsState, "runs" | "resumable">;
     answer(runId: string, text: string): RunView;
@@ -72,6 +77,23 @@ function resumableRun(deps: AllowResumeDeps, runId: string): RunView & { project
   return { ...run, projectId };
 }
 
+function openQuestion(deps: AllowResumeDeps, projectId: string, questionId: string) {
+  const question = deps.questions.get(projectId, questionId);
+  if (question === null || question.answer !== null || question.archivedAt !== null) {
+    throw new KiboError("INVALID_TRANSITION", `question ${questionId} is no longer open`);
+  }
+  return question;
+}
+
+function resumeOrRestore(deps: AllowResumeDeps, agent: Agent, runId: string, text: string): RunView {
+  try {
+    return deps.orchestrator.answer(runId, text);
+  } catch (e) {
+    deps.agents.settings(agent.ref, { allow: agent.settings.allow, addDirs: agent.settings.addDirs });
+    throw e;
+  }
+}
+
 export function allowAndResume(
   deps: AllowResumeDeps,
   input: AllowResumeInput,
@@ -80,14 +102,16 @@ export function allowAndResume(
   const dirs = unique(input.addDirs);
   const run = resumableRun(deps, input.runId);
   assertAllowed(proposalsOf(deps, input), rules, dirs, deps.home);
+  const question = openQuestion(deps, run.projectId, input.questionId);
   const agent = deps.agents.agentOf(run.profileId);
   if (!agent) throw new KiboError("AGENT_NOT_FOUND", `agent ${run.profileId} not found`);
   const settings = deps.agents.settings(agent.ref, {
     allow: unique([...agent.settings.allow, ...rules]),
     addDirs: unique([...agent.settings.addDirs, ...dirs]),
   });
+  const resumed = resumeOrRestore(deps, agent, run.id, RESUME_AFTER_ALLOW(rules, dirs));
   const by: Actor = { kind: "human", ref: deps.viewer(run.projectId) };
   deps.questions.answer(run.projectId, input.questionId, denialTexts.answer(rules, dirs), by);
-  const resumed = deps.orchestrator.answer(run.id, RESUME_AFTER_ALLOW(rules, dirs));
+  deps.questions.markDelivered(run.projectId, question.ticketId, [input.questionId], resumed.id);
   return { agent: { ...agent, settings }, run: resumed };
 }
