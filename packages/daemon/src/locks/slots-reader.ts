@@ -91,6 +91,9 @@ export function readMachineLocks(io: SlotsIo): MachineLock[] {
 export const slotsDirOf = (env: Record<string, string | undefined>, home: string): string =>
   env.DELIVERY_SLOTS ?? join(home, ".delivery", "slots");
 
+export const slotsLabelOf = (dir: string, home: string): string =>
+  dir === home || dir.startsWith(`${home}/`) ? `~${dir.slice(home.length)}` : "$DELIVERY_SLOTS";
+
 export function processAlive(pid: number): boolean {
   try {
     process.kill(pid, 0);

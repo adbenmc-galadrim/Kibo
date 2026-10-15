@@ -5,7 +5,7 @@ import { createDenialQuestion, type DenialQuestionDeps } from "../agents/denial-
 import { denialStore } from "../agents/denial-store";
 import type { Notice } from "../agents/notifier";
 import type { Orchestrator } from "../agents/orchestrator-types";
-import { processAlive, readSlotsDir, slotsDirOf } from "../locks/slots-reader";
+import { processAlive, readSlotsDir, slotsDirOf, slotsLabelOf } from "../locks/slots-reader";
 import type { TraceService } from "../moments/trace-service";
 import { questionImageFiles } from "../questions/question-images-port";
 import type { RpcExtension, RpcHandler } from "../rpc-extensions";
@@ -17,7 +17,7 @@ import { deliverRpc } from "./deliver-rpc";
 import { createDeliveryOps } from "./delivery-ops";
 import { deliveryImportRpc, deliveryRunsRpc, localAllowFromComponents } from "./delivery-rpc";
 import { denialNotice, type TurnEnd, withDenialQuestions } from "./denial-turn";
-import { withDeliverySteps } from "./run-steps";
+import { withDeliverySteps, withLocksDir } from "./run-steps";
 import { deliveryStepRpc } from "./step-rpc";
 
 export type DeliveryInput = {
@@ -97,9 +97,12 @@ export function startDelivery(input: DeliveryInput): Delivery {
     components: componentDelivery(ops),
     lifecycle: (base) => withDenialQuestions(base, (run) => createDenialQuestion(denialDeps(), run), log),
     agents: (port) =>
-      withDeliverySteps(
-        port,
-        (projectId, ticketId) => getTicket(docs().project(projectId), ticketId).delivery,
+      withLocksDir(
+        withDeliverySteps(
+          port,
+          (projectId, ticketId) => getTicket(docs().project(projectId), ticketId).delivery,
+        ),
+        slotsLabelOf(slots, input.userHome),
       ),
     locks: () => readSlotsDir(slots, { alive: input.alive ?? processAlive }),
     close: () => {

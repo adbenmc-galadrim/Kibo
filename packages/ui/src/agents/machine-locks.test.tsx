@@ -62,3 +62,9 @@ test("no lock on the machine says so with the folder read", () => {
   expect(section.getByText(/~\/\.delivery\/slots/)).toBeTruthy();
   expect(section.queryAllByRole("article")).toEqual([]);
 });
+
+test("the header names the folder the daemon actually reads", () => {
+  render(<MachineLocks locks={[]} now={NOW} dir="~/locks" />);
+  const section = within(screen.getByRole("region", { name: "Verrous de la machine" }));
+  expect(section.getByText("lus dans ~/locks toutes les 2 s · lecture seule")).toBeTruthy();
+});

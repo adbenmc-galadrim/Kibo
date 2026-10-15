@@ -188,6 +188,7 @@ export type AgentsState = {
   overlaps?: RunOverlapCount[];
   overlapTotal?: number;
   locks?: MachineLock[];
+  locksDir?: string;
   delivery?: RunDeliveryStep[];
   subagents?: RunSubagentSummary[];
 };

@@ -2,7 +2,7 @@ import { afterEach, expect, spyOn, test } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { processAlive, readMachineLocks, readSlotsDir, slotsDirOf } from "./slots-reader";
+import { processAlive, readMachineLocks, readSlotsDir, slotsDirOf, slotsLabelOf } from "./slots-reader";
 
 const fixture = (name: string) => readFileSync(join(import.meta.dir, "fixtures", name), "utf8");
 const DIR = "/slots";
@@ -139,6 +139,14 @@ test("labels and folders are masked and bounded before they are shown", () => {
 test("the slots folder comes from DELIVERY_SLOTS or the home folder", () => {
   expect(slotsDirOf({ DELIVERY_SLOTS: "/tmp/s" }, "/home/dev")).toBe("/tmp/s");
   expect(slotsDirOf({}, "/home/dev")).toBe("/home/dev/.delivery/slots");
+});
+
+test("the slots folder is shown from the home, never as an absolute path", () => {
+  expect(slotsLabelOf("/home/dev/.delivery/slots", "/home/dev")).toBe("~/.delivery/slots");
+  expect(slotsLabelOf("/home/dev/locks", "/home/dev")).toBe("~/locks");
+  expect(slotsLabelOf("/home/developer/locks", "/home/dev")).toBe("$DELIVERY_SLOTS");
+  expect(slotsLabelOf("/tmp/s", "/home/dev")).toBe("$DELIVERY_SLOTS");
+  expect(slotsLabelOf("relative/s", "/home/dev")).toBe("$DELIVERY_SLOTS");
 });
 
 let made: string | null = null;

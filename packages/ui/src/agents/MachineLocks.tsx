@@ -77,13 +77,15 @@ function LockCard({ lock, now }: { lock: MachineLock; now: number }) {
   );
 }
 
-export function MachineLocks({ locks, now }: { locks: readonly MachineLock[]; now: number }) {
+type Props = { locks: readonly MachineLock[]; now: number; dir?: string | null };
+
+export function MachineLocks({ locks, now, dir = null }: Props) {
   return (
     <section aria-label={t.title} className="grid gap-3">
       <header className="flex flex-wrap items-center gap-2">
         <LockKeyhole aria-hidden className="size-4 text-muted-foreground" />
         <h2 className="text-md font-semibold">{t.title}</h2>
-        <span className="text-xs text-muted-foreground">{t.source(t.dir)}</span>
+        <span className="text-xs text-muted-foreground">{t.source(dir ?? t.dir)}</span>
       </header>
       {locks.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t.empty}</p>

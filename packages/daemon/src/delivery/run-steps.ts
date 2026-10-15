@@ -34,3 +34,7 @@ export function withDeliverySteps<P extends { state(): AgentsState }>(port: P, t
     },
   };
 }
+
+export function withLocksDir<P extends { state(): AgentsState }>(port: P, locksDir: string): P {
+  return { ...port, state: () => ({ ...port.state(), locksDir }) };
+}

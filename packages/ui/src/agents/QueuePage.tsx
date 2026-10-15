@@ -4,6 +4,7 @@ import {
   type AgentsState,
   keyBesideLabel,
   machineLocks,
+  machineLocksDir,
   type ProjectSummary,
   type QueueEntry,
   type RpcRequest,
@@ -254,7 +255,7 @@ export function QueueBoard({ state, agents, projects, now, onAnswer }: BoardProp
           </section>
         </div>
       </DndContext>
-      <MachineLocks locks={machineLocks(state)} now={now} />
+      <MachineLocks locks={machineLocks(state)} now={now} dir={machineLocksDir(state)} />
       <ConfirmDialog
         open={cancelling !== null}
         onOpenChange={(open) => !open && setCancelling(null)}

@@ -173,6 +173,11 @@ test("the machine locks are read from the slots folder given by the environment"
   expect(delivery.locks()).toEqual([expect.objectContaining({ name: "heavy", max: 2 })]);
 });
 
+test("the agents state names the slots folder read, from the home", async () => {
+  const { delivery, port } = await rig();
+  expect(delivery.agents(port).state().locksDir).toBe("~/slots");
+});
+
 test("a component call on a run of another project is refused", async () => {
   const { delivery } = await rig();
   await expect(
