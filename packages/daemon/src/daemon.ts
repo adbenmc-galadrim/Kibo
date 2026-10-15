@@ -17,6 +17,7 @@ import { startDaemonSandbox, startRemote } from "./daemon-network";
 import type { DaemonOptions } from "./daemon-options";
 import { type Closers, shutdown } from "./daemon-shutdown";
 import { createLocalServices, openDaemonStores } from "./daemon-stores";
+import { startDelivery } from "./delivery/bootstrap";
 import { startTutorial } from "./demo/bootstrap";
 import { startAppDiagnostics } from "./diagnostics/bootstrap";
 import { createLogBuffer } from "./log-buffer";
@@ -26,7 +27,6 @@ import { startOverlaps } from "./overlaps/bootstrap";
 import { startProjectAgent } from "./project-agent/bootstrap";
 import { createProjectAdmin } from "./projects/admin";
 import { agentQuestionHooks } from "./questions/agent-hooks";
-import { questionImageFiles } from "./questions/question-images-port";
 import { PairingCodes } from "./remote/pairing-codes";
 import type { RemoteAccess } from "./remote/remote-access";
 import { remoteRpc } from "./remote/rpc";
@@ -52,12 +52,24 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const { store, runs, token, redactor } = openDaemonStores(opts, closers);
   const startedAt = Date.now();
   const late = lateAgentSource();
-  const questionImages = questionImageFiles(opts.home, (projectId) => components.notesDir(projectId));
+  let agents: Orchestrator | null = null;
+  const delivery = startDelivery({
+    home: opts.home,
+    userHome: opts.userHome ?? homedir(),
+    env: opts.agentEnv ?? process.env,
+    notify: opts.notify ?? (() => {}),
+    service: () => service,
+    notesDir: (projectId) => components.notesDir(projectId),
+    moments: () => visibility.trace,
+    agentSettings: () => agentFiles,
+    orchestrator: () => agents,
+  });
+  closers.push(delivery.close);
   const service = createService(store, {
     user: opts.user,
     ...(opts.notifications && { notifications: opts.notifications }),
     agents: opts.agentSource ?? late.source,
-    questionImages,
+    questionImages: delivery.questionImages,
   });
   const local = createLocalServices(opts, { store, runs }, (message) => service.docs.emit(message));
   let sandboxOrigin = "";
@@ -71,8 +83,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
   closers.push(() => collab.stop());
   await migrateDomainScopes({ docs: service.docs, log: console.error, now: Date.now });
-  let agents: Orchestrator | null = null;
-  const { visibility, extensions } = await startDaemonFiles(
+  const { visibility, extensions, agentFiles } = await startDaemonFiles(
     opts,
     { db: store.db, runs, service, late, agents: () => agents },
     closers,
@@ -89,6 +100,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       presence: (projectId) => collab.presence.peers(projectId),
       sharing: (projectId) => collab.syncInfo(projectId),
       peekRun: visibility.peek,
+      delivery: delivery.components,
     },
     closers,
   );
@@ -186,6 +198,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       signals.rpc,
       overlaps.rpc,
       ...extensions,
+      ...delivery.rpc,
     ],
     port: opts.port,
     uiDir: opts.uiDir,
@@ -196,10 +209,17 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     agentMcp: visibility.mcp(projectAgent.agent.mcp, signals.service, overlaps.peek),
     assets: components.assets,
     icons: service.icons,
-    questionImages,
+    questionImages: delivery.questionImages,
     sandboxOrigin: () => sandboxOrigin || null,
     redact: redactor.redact,
-    handlers: [tutorial.guard, componentTrustGuard, market.handler, collab.handler, admin.handler],
+    handlers: [
+      tutorial.guard,
+      componentTrustGuard,
+      market.handler,
+      collab.handler,
+      admin.handler,
+      ...delivery.handlers,
+    ],
   });
   front.push(() => server.stop());
   uiPort = server.port;
@@ -231,13 +251,17 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       baseUrl: () => server.url,
       port: server.port,
       projectTurns: projectAgent.agent.turns,
-      lifecycle: { ...overlaps.lifecycle(visibility.lifecycle), turnPrefix: overlaps.prefixer },
+      lifecycle: delivery.lifecycle({
+        ...overlaps.lifecycle(visibility.lifecycle),
+        turnPrefix: overlaps.prefixer,
+      }),
+      locks: delivery.locks,
       ready: (orchestrator) => {
         agents = orchestrator;
       },
       attachRuns: (source) => collab.attachRuns(source),
       agentsPort: (orchestrator) =>
-        overlaps.agents(withSignalCounts(visibility.agents(orchestrator), signals.service)),
+        delivery.agents(overlaps.agents(withSignalCounts(visibility.agents(orchestrator), signals.service))),
       ai: { db: store.db, components, appInfo: app.appInfo },
     },
     closers,

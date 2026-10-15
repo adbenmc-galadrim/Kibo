@@ -15,6 +15,7 @@ import {
   type TicketRun,
   validateConfig,
 } from "@kibo/schema";
+import type { ComponentDelivery } from "../delivery/component-calls";
 import type { Docs } from "../docs";
 import type { FilesService } from "../files/service";
 import type { ComponentIntegrationHooks } from "../integrations/types";
@@ -36,6 +37,7 @@ export type GateHandlersDeps = {
   sharing?: (projectId: string) => ProjectSyncInfo;
   deliverAnswers?: (projectId: string, ticketId: string) => DeliveryResult;
   peekRun?: (projectId: string, runId: string) => RunPeek;
+  delivery?: ComponentDelivery;
 };
 
 function readData(docs: Docs, projectId: string, instanceId: string, call: DataCall): unknown {
@@ -138,6 +140,10 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
     async peek(projectId, runId) {
       if (!deps.peekRun) throw new KiboError("NOT_CONNECTED", "agents not started");
       return deps.peekRun(projectId, runId);
+    },
+    async delivery(projectId, call) {
+      if (!deps.delivery) throw new KiboError("NOT_CONNECTED", "delivery is not started");
+      return deps.delivery.call(projectId, call);
     },
   };
 }

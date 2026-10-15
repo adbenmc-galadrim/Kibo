@@ -1,5 +1,4 @@
 import { KiboError, type RpcRequest } from "@kibo/schema";
-import { refusePending } from "./rpc-refusal";
 import type { Service } from "./service";
 
 export type RpcContext = { sessionHash: string; remote: boolean };
@@ -25,7 +24,6 @@ export async function dispatchRpc(
     const outcome = await handler(req, ctx);
     if (outcome.handled) return outcome.result;
   }
-  refusePending(req.method);
   return service.handle(req);
 }
 

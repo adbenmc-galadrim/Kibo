@@ -133,6 +133,9 @@ export const idleHandlers: GateHandlers = {
   peek: async (_projectId, runId) => {
     throw new KiboError("NOT_FOUND", `run ${runId}`);
   },
+  delivery: async () => {
+    throw new KiboError("NOT_CONNECTED", "delivery is not started");
+  },
 };
 
 export const findInstance = (_p: string, id: string): Instance => {
@@ -206,6 +209,10 @@ export function testGate(quotas: Quotas = createQuotas(), grantedToEvil: Granted
       peek: async (projectId, runId) => {
         handled.push(`peek:${projectId}:${runId}`);
         return PEEK;
+      },
+      delivery: async (projectId, call) => {
+        handled.push(`delivery:${projectId}:${call.kind}`);
+        return null;
       },
     },
     quotas,
