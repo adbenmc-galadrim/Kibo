@@ -51,7 +51,7 @@ S.P = {
     { t: "13:47", icon: "pr", color: "amber", text: "Changements demandés sur PR #20", tk: "EMIS-45", f: "F4" },
     { t: "11:58", icon: "circleX", color: "red", text: "CI rouge sur PR #20", tk: "EMIS-45", f: "F4" } ],
   lot: [
-    { icon: "sprint", text: "Reporter F5 en S43", meta: "3 étapes restantes, S42 finit aujourd'hui" },
+    { icon: "sprint", text: "Reporter F5 en S43", meta: "4 étapes restantes, S42 finit aujourd'hui" },
     { icon: "sprint", text: "Planifier F9 en S44", meta: "seule fonctionnalité à planifier" },
     { icon: "question", text: "Relancer le client sur Q14", meta: "bloque F6, prévue en S43" } ],
 };
@@ -168,7 +168,7 @@ S.agentPanelP = (root) => { const C = S.C;
   S.hline(ap, C.soft);
   const b = S.col(ap, { fx: true, fy: true, pad: 16, gap: 14 });
   S.txt(b, "Aujourd'hui", { size: 11, weight: 500, color: C.dim, upper: true, ls: 0.4 });
-  S.txt(b, "F3 est livrée : 3 fonctionnalités sur 9. S42 finit ce soir et F5 n'y tiendra pas : il lui reste 3 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo.", { size: 13, lh: 1.5, fill: true });
+  S.txt(b, "F3 est livrée : 3 fonctionnalités sur 9. S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo.", { size: 13, lh: 1.5, fill: true });
   const lot = S.col(b, { fx: true, stroke: C.brandLine, radius: 8, clip: true, fill: C.card });
   const lh = S.row(lot, { fx: true, pad: [9, 12], gap: 8, fill: C.brandSoft }); S.txt(lh, "Lot n° 7 · à valider", { size: 12.5, weight: 600, color: C.brandText }); S.spacer(lh); S.txt(lh, "3 actions", { size: 11.5, color: C.dim });
   for (const it of S.P.lot) { S.hline(lot, C.soft); const r = S.row(lot, { fx: true, pad: [9, 12], gap: 10, align: "start" });
@@ -220,7 +220,7 @@ S.draw["p-planning"] = (x, y) => { const C = S.C, P = S.P;
     return c; };
   for (const sp of P.sprints) { const c = column(sp);
     for (const ft of P.features.filter(x => x.sprint === sp.key)) S.featCard(c, ft, { w: CW - 20, compact: sp.state === "Terminé" });
-    if (sp.key === "S42") { const w = S.row(c, { fx: true, gap: 6, pad: [6, 8], radius: 6, fill: C.redSoft }); S.icon(w, "clockAlert", 13, C.red); S.txt(w, "F5 ne tiendra pas : 3 étapes restantes", { size: 11.5, color: C.red, fill: true }); }
+    if (sp.key === "S42") { const w = S.row(c, { fx: true, gap: 6, pad: [6, 8], radius: 6, fill: C.redSoft }); S.icon(w, "clockAlert", 13, C.red); S.txt(w, "F5 ne tiendra pas : 4 étapes restantes", { size: 11.5, color: C.red, fill: true }); }
     if (sp.key === "S44") { const dz = S.col(c, { name: "dropzone", fx: true, h: 120, radius: 8, stroke: C.fg, dashed: true, fill: C.muted, align: "center", justify: "center", gap: 6 });
       S.icon(dz, "sprint", 16, C.fg); S.txt(dz, "Déposer pour planifier en S44", { size: 12, weight: 500 }); S.txt(dz, "26–30 oct.", { size: 11, color: C.dim }); } }
   const rc = column(null);
@@ -272,7 +272,7 @@ S.draw["p-fonctionnalite"] = (x, y) => { const C = S.C, ft = S.feat("F5");
   const R = S.col(body, { w: 320, gap: 14 });
   const sp = S.card(R, "Sprint", "sprint", { w: 320 });
   { const r = S.cardRow(sp, { gap: 8 }); S.sprintChip(r, "S42"); S.txt(r, "Terrain hors ligne · 12–16 oct.", { size: 12.5 }); S.spacer(r); S.icon(r, "chevDown", 13, C.dim); }
-  { const r = S.cardRow(sp, { gap: 8, align: "start" }); S.icon(r, "clockAlert", 14, C.red); const tc = S.col(r, { fx: true, gap: 6 }); S.txt(tc, "3 étapes restantes : ne tiendra pas dans S42.", { size: 12.5, fill: true });
+  { const r = S.cardRow(sp, { gap: 8, align: "start" }); S.icon(r, "clockAlert", 14, C.red); const tc = S.col(r, { fx: true, gap: 6 }); S.txt(tc, "4 étapes restantes : ne tiendra pas dans S42.", { size: 12.5, fill: true });
     const b = S.row(tc, { gap: 8 }); S.btn(b, "Déplacer en S43", "outline", { sm: true, icon: "sprint" }); S.txt(b, "proposé par l'agent", { size: 11.5, color: C.brandText }); }
   const dp = S.card(R, "Dépendances", "link", { w: 320 });
   { const r = S.cardRow(dp, { gap: 8 }); S.txt(r, "Attend", { size: 12, color: C.dim, w: 56 }); S.txt(r, "F3", { size: 11, mono: true, color: C.mfg }); S.txt(r, "Réaffecter un ISO", { size: 12.5 }); S.spacer(r); S.icon(r, "circleCheck", 13, C.green); }
