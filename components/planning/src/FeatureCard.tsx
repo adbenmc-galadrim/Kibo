@@ -94,7 +94,14 @@ export function FeatureCard({ card, readOnly, onOpen }: Props) {
 
 export function FeatureCardPreview({ card }: { card: Card }) {
   return (
-    <div data-slot="planning-drag-preview" aria-hidden className={cn(CARD_CLASS, "border-(--tracking-fg)")}>
+    <div
+      data-slot="planning-drag-preview"
+      aria-hidden
+      className={cn(
+        CARD_CLASS,
+        "border-(--tracking-fg) shadow-[0_10px_40px_rgb(0_0_0/0.17)] dark:shadow-[0_10px_40px_rgb(0_0_0/0.9)]",
+      )}
+    >
       <FeatureCardBody card={{ ...card, compact: false }} preview />
     </div>
   );
