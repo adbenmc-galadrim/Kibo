@@ -4,8 +4,8 @@ type Run = (cmd: ProjectCommand) => unknown;
 type StepSeed = { status: StatusId; optional?: boolean; delivery?: { step: number; at: number } };
 type Seeded = { root: Ticket; steps: Ticket[] };
 
-const sprint = (run: Run, name: string, start: string, end: string): Sprint =>
-  run({ method: "createSprint", name, start, end }) as Sprint;
+const sprint = (run: Run, code: string, name: string, start: string, end: string): Sprint =>
+  run({ method: "createSprint", code, name, start, end }) as Sprint;
 
 const ticket = (run: Run, title: string, parentId: string | null, statusId: StatusId = "todo"): Ticket =>
   run({ method: "createTicket", title, parentId, statusId }) as Ticket;
@@ -31,24 +31,11 @@ const repeat = (status: StatusId, n: number): StepSeed[] => Array.from({ length:
 
 export const TODAY = "2026-10-16";
 
-const SPRINT_CODES: Readonly<Record<string, string>> = {
-  Accès: "S41",
-  "Terrain hors ligne": "S42",
-  "Import et soudures": "S43",
-  Rapports: "S44",
-  Exports: "S45",
-};
-
-export const withSprintCode = <S extends { name: string }>(sprint: S): S & { code: string } => ({
-  ...sprint,
-  code: SPRINT_CODES[sprint.name] ?? "S99",
-});
-
 export function seedPlanning(run: Run) {
-  const s41 = sprint(run, "Accès", "2026-10-05", "2026-10-09");
-  const s42 = sprint(run, "Terrain hors ligne", "2026-10-12", "2026-10-16");
-  const s43 = sprint(run, "Import et soudures", "2026-10-19", "2026-10-23");
-  const s44 = sprint(run, "Rapports", "2026-10-26", "2026-10-30");
+  const s41 = sprint(run, "S41", "Accès", "2026-10-05", "2026-10-09");
+  const s42 = sprint(run, "S42", "Terrain hors ligne", "2026-10-12", "2026-10-16");
+  const s43 = sprint(run, "S43", "Import et soudures", "2026-10-19", "2026-10-23");
+  const s44 = sprint(run, "S44", "Rapports", "2026-10-26", "2026-10-30");
   const f1 = feature(run, "Se connecter avec Microsoft", s41.id, repeat("done", 2));
   const f2 = feature(run, "Voir ses ISO affectés", s41.id, repeat("done", 2));
   const f3 = feature(run, "Réaffecter un ISO", s42.id, repeat("done", 4));

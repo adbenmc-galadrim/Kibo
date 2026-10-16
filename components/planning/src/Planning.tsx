@@ -8,8 +8,8 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import type { SprintView } from "@kibo/schema";
-import { useEntities, useReadOnly, useSdk } from "@kibo/sdk";
+import { openLimitOf, type SprintView } from "@kibo/schema";
+import { useComponentSettings, useEntities, useReadOnly, useSdk } from "@kibo/sdk";
 import { useState } from "react";
 import { DragPreview } from "./DragPreview";
 import { BACKLOG_ID, planDrop } from "./drag";
@@ -45,7 +45,8 @@ export function Planning() {
   const { data: sprints } = useEntities("sprint");
   const { data: questions } = useEntities("question");
   const today = localToday();
-  const model = planningModel({ tickets, links, sprints, questions });
+  const { tracking } = useComponentSettings();
+  const model = planningModel({ tickets, links, sprints, questions, openLimit: openLimitOf(tracking) });
   const cards = [...model.sprints.flatMap((c) => c.cards), ...model.backlog];
   const [dragged, setDragged] = useState<FeatureCard | null>(null);
   const [target, setTarget] = useState<string | null>(null);

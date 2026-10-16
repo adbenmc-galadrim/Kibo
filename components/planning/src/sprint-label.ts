@@ -1,10 +1,7 @@
 import type { Sprint } from "@kibo/schema";
 import { fr } from "./fr";
 
-export const sprintCodeOf = (sprint: Sprint): string =>
-  "code" in sprint && typeof sprint.code === "string" ? sprint.code : "";
-
-export const sprintLabel = (sprint: Sprint): string => `${sprintCodeOf(sprint)} ${sprint.name}`.trim();
+export const sprintLabel = (sprint: Pick<Sprint, "code" | "name">): string => `${sprint.code} ${sprint.name}`;
 
 const parse = (date: string): Date => new Date(`${date}T00:00:00Z`);
 

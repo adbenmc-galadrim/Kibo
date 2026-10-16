@@ -13,9 +13,9 @@ import {
   sortSprints,
   type TicketView,
 } from "@kibo/schema";
-import { sprintCodeOf, sprintDates } from "./sprint-label";
+import { sprintDates } from "./sprint-label";
 
-export { sprintCodeOf, sprintDates } from "./sprint-label";
+export { sprintDates } from "./sprint-label";
 
 export type StepTone = "done" | "review" | "progress" | "blocked" | "todo";
 export type CardBadge =
@@ -137,7 +137,7 @@ function sprintColumn(sprint: SprintView, cards: ReadonlyMap<string, FeatureCard
   const own = sprint.features.flatMap((id) => cards.get(id) ?? []);
   return {
     sprint,
-    code: sprintCodeOf(sprint),
+    code: sprint.code,
     dates: sprintDates(sprint.start, sprint.end),
     cards: own,
     warnings: own.filter((c) => c.late).map((c) => ({ shortKey: c.shortKey, remaining: c.remaining })),

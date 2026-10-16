@@ -58,7 +58,8 @@ export const fr = {
   sprintDialog: {
     createTitle: "Nouveau sprint",
     editTitle: (code: string) => `Modifier le sprint ${code}`,
-    description: "Un sprint a un nom et des dates ; son code vient de la semaine de début.",
+    description: "Un sprint a un code court (S42), un nom et des dates.",
+    code: "Code",
     name: "Nom",
     start: "Début",
     end: "Fin",
@@ -73,6 +74,7 @@ export const fr = {
         ? "Aucune fonctionnalité n'est planifiée dans ce sprint."
         : `${n} ${plural(n, "fonctionnalité repasse", "fonctionnalités repassent")} À planifier.`,
     failed: "Impossible d'enregistrer le sprint.",
+    codeTaken: "Ce code est déjà pris par un autre sprint.",
   },
   featureDialog: {
     title: "Nouvelle fonctionnalité",

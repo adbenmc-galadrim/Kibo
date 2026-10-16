@@ -3,11 +3,12 @@ import type { SprintView } from "@kibo/schema";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { manifest } from "./index";
 import { type FeatureCard, planningModel, sprintDates } from "./planning-model";
-import { seedPlanning, TODAY, withSprintCode } from "./test-seed";
+import { seedPlanning, TODAY } from "./test-seed";
 
 const SPRINT: SprintView = {
   id: "s",
-  name: "S42 Terrain",
+  code: "S42",
+  name: "X9 Terrain",
   start: TODAY,
   end: TODAY,
   state: "current",
@@ -17,8 +18,6 @@ const SPRINT: SprintView = {
 };
 const columnCode = (sprint: SprintView) =>
   planningModel({ tickets: [], links: [], sprints: [sprint], questions: [] }).sprints[0]?.code;
-
-const LATE_DAY = "2026-10-17";
 
 const build = (today = TODAY, openLimit?: number) => {
   let seeded: ReturnType<typeof seedPlanning> | undefined;
@@ -33,7 +32,7 @@ const build = (today = TODAY, openLimit?: number) => {
   const model = planningModel({
     tickets: s.tickets,
     links: s.links,
-    sprints: s.sprints.map(withSprintCode),
+    sprints: s.sprints,
     questions: s.questions,
     openLimit,
   });
@@ -111,7 +110,7 @@ test("badges: delivered, open, late, blocked with the question, nothing when not
   expect(card(s43?.cards ?? [], "F6").badge).toEqual({ kind: "blocked", question: "Q14" });
   expect(card(s43?.cards ?? [], "F8").badge).toBeNull();
   expect(card(s42?.cards ?? [], "F4").badge).toEqual({ kind: "open" });
-  expect(card(build(LATE_DAY).model.sprints[1]?.cards ?? [], "F5").badge).toEqual({ kind: "late" });
+  expect(card(s42?.cards ?? [], "F5").badge).toEqual({ kind: "late" });
 });
 
 test("the card reads the feature state as is, the interface computes no state", () => {
@@ -141,9 +140,9 @@ test("the footer shows the step in session, else the next step", () => {
 });
 
 test("a late feature gets a warning under its sprint", () => {
-  const late = build(LATE_DAY).model;
-  expect(card(late.sprints[1]?.cards ?? [], "F5")).toMatchObject({ badge: { kind: "late" }, late: true });
-  expect(late.sprints[1]?.warnings).toContainEqual({ shortKey: "F5", remaining: 4 });
+  const { model } = build();
+  expect(card(model.sprints[1]?.cards ?? [], "F5")).toMatchObject({ badge: { kind: "late" }, late: true });
+  expect(model.sprints[1]?.warnings).toEqual([{ shortKey: "F5", remaining: 4 }]);
   expect(build("2026-10-14").model.sprints[1]?.warnings).toEqual([]);
 });
 
@@ -157,9 +156,7 @@ test("open features count only planned ones, the limit is a warning", () => {
 test("the column shows the sprint code, never derived from its name", () => {
   const { model } = build();
   expect(model.sprints[1]?.sprint.name).toBe("Terrain hors ligne");
-  const coded = { ...SPRINT, code: "X1" };
-  expect(columnCode(coded)).toBe("X1");
-  expect(columnCode(SPRINT)).toBe("");
+  expect(columnCode(SPRINT)).toBe("S42");
 });
 
 test("sprint dates are short and French", () => {

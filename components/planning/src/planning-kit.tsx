@@ -1,24 +1,15 @@
-import type { EntityType } from "@kibo/schema";
-import { type EntityMap, type KiboSdk, SdkProvider } from "@kibo/sdk";
-import { createMockSdk, type MockSdk } from "@kibo/sdk/mock";
+import { SdkProvider } from "@kibo/sdk";
+import { createMockSdk, type MockSdk, type MockSdkOptions } from "@kibo/sdk/mock";
 import { render, screen, within } from "@testing-library/react";
 import { Component, manifest } from "./index";
-import { seedPlanning, TODAY, withSprintCode } from "./test-seed";
-
-const isSprint = <E,>(e: E): e is E & { name: string; start: string } =>
-  typeof e === "object" && e !== null && "start" in e && "name" in e;
-
-export function withSprintCodes(sdk: KiboSdk): KiboSdk {
-  const list = async <T extends EntityType>(type: T): Promise<EntityMap[T][]> =>
-    (await sdk.list(type)).map((e) => (isSprint(e) ? withSprintCode(e) : e));
-  return { ...sdk, list };
-}
+import { seedPlanning, TODAY } from "./test-seed";
 
 export type PlanningSetup = { m: MockSdk; seeded: ReturnType<typeof seedPlanning> };
 
-export function setupPlanning(today = TODAY): PlanningSetup {
+export function setupPlanning(today = TODAY, opts: MockSdkOptions = {}): PlanningSetup {
   let seeded: ReturnType<typeof seedPlanning> | undefined;
   const m = createMockSdk(manifest, {
+    ...opts,
     today,
     seed: (run) => {
       seeded = seedPlanning(run);
@@ -26,7 +17,7 @@ export function setupPlanning(today = TODAY): PlanningSetup {
   });
   if (!seeded) throw new Error("seed missing");
   render(
-    <SdkProvider sdk={withSprintCodes(m.sdk)}>
+    <SdkProvider sdk={m.sdk}>
       <Component />
     </SdkProvider>,
   );

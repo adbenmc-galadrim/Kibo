@@ -1,4 +1,4 @@
-import type { SprintView } from "@kibo/schema";
+import { KiboError, type SprintView } from "@kibo/schema";
 import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
@@ -14,7 +14,6 @@ import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { type FormEvent, useId, useState } from "react";
 import { fr } from "./fr";
-import { sprintCodeOf } from "./sprint-label";
 
 type Props = { sprint: SprintView | null; today: string; onClose(): void };
 
@@ -23,22 +22,24 @@ const t = fr.sprintDialog;
 export function SprintDialog({ sprint, today, onClose }: Props) {
   const sdk = useSdk();
   const id = useId();
+  const [code, setCode] = useState(sprint?.code ?? "");
   const [name, setName] = useState(sprint?.name ?? "");
   const [start, setStart] = useState(sprint?.start ?? today);
   const [end, setEnd] = useState(sprint?.end ?? today);
   const [error, setError] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
   const reversed = start !== "" && end !== "" && end < start;
-  const valid = name.trim() !== "" && start !== "" && end !== "" && !reversed;
+  const valid = code.trim() !== "" && name.trim() !== "" && start !== "" && end !== "" && !reversed;
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!valid) return;
     try {
-      if (sprint === null) await sdk.sprints.create({ name: name.trim(), start, end });
-      else await sdk.sprints.update(sprint.id, { name: name.trim(), start, end });
+      const fields = { code: code.trim(), name: name.trim(), start, end };
+      if (sprint === null) await sdk.sprints.create(fields);
+      else await sdk.sprints.update(sprint.id, fields);
       onClose();
-    } catch {
-      setError(t.failed);
+    } catch (e) {
+      setError(e instanceof KiboError && e.code === "CONFLICT" ? t.codeTaken : t.failed);
     }
   };
   if (removing && sprint !== null)
@@ -46,7 +47,7 @@ export function SprintDialog({ sprint, today, onClose }: Props) {
       <ConfirmDialog
         open
         onOpenChange={(open) => !open && onClose()}
-        title={t.removeTitle(sprintCodeOf(sprint))}
+        title={t.removeTitle(sprint.code)}
         description={t.removeHelp(sprint.features.length)}
         confirmLabel={t.remove}
         cancelLabel={t.cancel}
@@ -58,12 +59,30 @@ export function SprintDialog({ sprint, today, onClose }: Props) {
       <DialogContent>
         <form className="grid gap-4" onSubmit={(e) => void submit(e)}>
           <DialogHeader>
-            <DialogTitle>{sprint === null ? t.createTitle : t.editTitle(sprintCodeOf(sprint))}</DialogTitle>
+            <DialogTitle>{sprint === null ? t.createTitle : t.editTitle(sprint.code)}</DialogTitle>
             <DialogDescription>{t.description}</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-2">
-            <Label htmlFor={`${id}-name`}>{t.name}</Label>
-            <Input id={`${id}-name`} value={name} maxLength={60} onChange={(e) => setName(e.target.value)} />
+          <div className="grid grid-cols-[6rem_1fr] gap-3">
+            <div className="grid gap-2">
+              <Label htmlFor={`${id}-code`}>{t.code}</Label>
+              <Input
+                id={`${id}-code`}
+                value={code}
+                maxLength={8}
+                placeholder="S42"
+                className="font-mono"
+                onChange={(e) => setCode(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={`${id}-name`}>{t.name}</Label>
+              <Input
+                id={`${id}-name`}
+                value={name}
+                maxLength={60}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="grid gap-2">

@@ -5,7 +5,7 @@ import { createMockSdk } from "@kibo/sdk/mock";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest, planningPanel } from "./index";
-import { cardIn, column, setupPlanning, withSprintCodes } from "./planning-kit";
+import { cardIn, column, setupPlanning } from "./planning-kit";
 import { seed, TODAY } from "./test-seed";
 
 beforeEach(() => setSystemTime(new Date(`${TODAY}T14:52:00`)));
@@ -22,7 +22,7 @@ test("the planning is loaded on demand behind a neutral loading line", async () 
   const m = createMockSdk(manifest, { seed, today: TODAY });
   const Panel = planningPanel();
   const { container } = render(
-    <SdkProvider sdk={withSprintCodes(m.sdk)}>
+    <SdkProvider sdk={m.sdk}>
       <Panel />
     </SdkProvider>,
   );
@@ -70,8 +70,7 @@ test("cards show their badge, step count, next step or the step in session", asy
 });
 
 test("a late feature is outlined in red with a warning under its sprint", async () => {
-  setSystemTime(new Date("2026-10-17T09:00:00"));
-  setupPlanning("2026-10-17");
+  setupPlanning();
   const f5 = await cardIn(/^S42 /, "F5");
   expect(within(f5).getByText("en retard")).toBeTruthy();
   expect(f5.className).toContain("border-(--tracking-red)");
@@ -83,6 +82,14 @@ test("open features against the limit: a warning, nothing disabled", async () =>
   const badge = await screen.findByRole("button", { name: /Ouvertes : 2 \/ 2/ });
   expect(badge.getAttribute("data-over")).toBe("false");
   expect(screen.getByRole("button", { name: "Ajouter" }).hasAttribute("disabled")).toBe(false);
+});
+
+test("the open limit is the project's tracking setting, updated live", async () => {
+  const { m } = setupPlanning(TODAY, { tracking: { openLimit: 3 } });
+  expect(await screen.findByRole("button", { name: /Ouvertes : 2 \/ 3/ })).toBeTruthy();
+  m.setTracking({ openLimit: 1 });
+  const badge = await screen.findByRole("button", { name: /Ouvertes : 2 \/ 1/ });
+  expect(badge.getAttribute("data-over")).toBe("true");
 });
 
 test("the open badge turns amber with a note above the limit, and lists the open features", async () => {

@@ -10,16 +10,26 @@ afterEach(() => setSystemTime());
 const setDate = (dialog: HTMLElement, label: string, value: string) =>
   fireEvent.change(within(dialog).getByLabelText(label), { target: { value } });
 
-test("a new sprint gets a name and dates, reversed dates are refused", async () => {
+test("a new sprint gets a unique code, a name and dates, reversed dates are refused", async () => {
   const { m } = setupPlanning();
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Ajouter" }));
   await user.click(await screen.findByRole("menuitem", { name: "Nouveau sprint" }));
   const dialog = await screen.findByRole("dialog", { name: "Nouveau sprint" });
+  const create = within(dialog).getByRole("button", { name: "Créer le sprint" });
   await user.type(within(dialog).getByLabelText("Nom"), "Exports");
+  setDate(dialog, "Début", "2026-11-02");
+  setDate(dialog, "Fin", "2026-11-06");
+  expect(create.hasAttribute("disabled")).toBe(true);
+  await user.type(within(dialog).getByLabelText("Code"), "S42");
+  await user.click(create);
+  expect((await within(dialog).findByRole("alert")).textContent).toBe(
+    "Ce code est déjà pris par un autre sprint.",
+  );
+  await user.clear(within(dialog).getByLabelText("Code"));
+  await user.type(within(dialog).getByLabelText("Code"), "S45");
   setDate(dialog, "Début", "2026-11-06");
   setDate(dialog, "Fin", "2026-11-02");
-  const create = within(dialog).getByRole("button", { name: "Créer le sprint" });
   expect(create.hasAttribute("disabled")).toBe(true);
   expect(within(dialog).getByRole("alert").textContent).toBe("La fin doit suivre le début.");
   setDate(dialog, "Début", "2026-11-02");
