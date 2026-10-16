@@ -1,62 +1,49 @@
-import type { StatusId, Ticket, TicketView } from "@kibo/schema";
+import type { SprintView, TicketView } from "@kibo/schema";
+import { sortSprints } from "@kibo/schema";
 
-export type AssigneeFilter = "all" | "me" | "agents" | "nobody";
-export type TicketsQuery = {
-  text: string;
-  statuses: ReadonlySet<StatusId>;
-  assignee: AssigneeFilter;
-  labels: ReadonlySet<string>;
-  startable: boolean;
-};
+export const ALL_SPRINTS = "all";
+export const NO_SPRINT = "none";
 
-export const EMPTY_QUERY: TicketsQuery = {
-  text: "",
-  statuses: new Set(),
-  assignee: "all",
-  labels: new Set(),
-  startable: false,
-};
+export type TicketsSort = "recent" | "key";
+export type TicketsQuery = { openOnly: boolean; featureId: string | null; sort: TicketsSort };
 
-export const isActive = (q: TicketsQuery): boolean =>
-  q.text.trim() !== "" || q.statuses.size > 0 || q.assignee !== "all" || q.labels.size > 0 || q.startable;
+export const EMPTY_QUERY: TicketsQuery = { openOnly: false, featureId: null, sort: "recent" };
 
-export const projectLabels = (tickets: readonly Ticket[]): string[] =>
-  [...new Set(tickets.flatMap((t) => t.labels))].sort();
+export const isActive = (q: TicketsQuery): boolean => q.openOnly || q.featureId !== null;
 
-const labelsMatch = (t: Ticket, chosen: ReadonlySet<string>): boolean =>
-  [...chosen].every((l) => t.labels.includes(l));
-
-const normalize = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
-
-const assigneeMatches = (t: Ticket, filter: AssigneeFilter, viewer: string): boolean => {
-  if (filter === "me") return t.assignee?.kind === "human" && t.assignee.ref === viewer;
-  if (filter === "agents") return t.assignee?.kind === "agent";
-  if (filter === "nobody") return t.assignee === null;
-  return true;
-};
-
-export type FilteredTree = { visible: Set<string>; context: Set<string> };
-
-export function filterTree(tickets: readonly TicketView[], q: TicketsQuery, viewer: string): FilteredTree {
-  const needle = normalize(q.text.trim());
-  const matches = (t: TicketView) =>
-    (!needle || normalize(t.title).includes(needle) || normalize(t.key ?? "").includes(needle)) &&
-    (q.statuses.size === 0 || q.statuses.has(t.statusId)) &&
-    assigneeMatches(t, q.assignee, viewer) &&
-    labelsMatch(t, q.labels) &&
-    (!q.startable || t.startable);
-  const parentOf = new Map(tickets.map((t) => [t.id, t.parentId]));
-  const matched = new Set(tickets.filter(matches).map((t) => t.id));
-  const visible = new Set<string>();
-  for (const matchId of matched) {
-    let id: string | null = matchId;
-    while (id !== null && !visible.has(id)) {
-      visible.add(id);
-      id = parentOf.get(id) ?? null;
-    }
-  }
-  return { visible, context: new Set([...visible].filter((id) => !matched.has(id))) };
+export function currentSprintOf(sprints: readonly SprintView[]): SprintView | null {
+  return sortSprints(sprints.filter((s) => s.state === "current")).at(-1) ?? null;
 }
 
-export const filterTickets = (tickets: readonly TicketView[], q: TicketsQuery, viewer: string): Set<string> =>
-  filterTree(tickets, q, viewer).visible;
+export function chosenSprint(saved: unknown, sprints: readonly SprintView[]): string {
+  if (saved === ALL_SPRINTS || saved === NO_SPRINT) return saved;
+  if (typeof saved === "string" && sprints.some((s) => s.id === saved)) return saved;
+  return currentSprintOf(sprints)?.id ?? ALL_SPRINTS;
+}
+
+export type SprintRef = SprintView & { code?: string };
+
+export const sprintCode = (s: SprintRef): string => s.code ?? s.name;
+
+export const inSprint = (t: Pick<TicketView, "effectiveSprintId">, sprint: string): boolean => {
+  if (sprint === ALL_SPRINTS) return true;
+  if (sprint === NO_SPRINT) return t.effectiveSprintId === null;
+  return t.effectiveSprintId === sprint;
+};
+
+export const updatedAt = (t: Pick<TicketView, "delivery">): number | null => t.delivery?.at ?? null;
+
+const byKey = (a: TicketView, b: TicketView): number =>
+  a.keyLabel.localeCompare(b.keyLabel, "fr", { numeric: true });
+
+const byRecent = (a: TicketView, b: TicketView): number => {
+  const at = updatedAt(a);
+  const bt = updatedAt(b);
+  if (at === bt) return byKey(a, b);
+  if (at === null) return 1;
+  if (bt === null) return -1;
+  return bt - at;
+};
+
+export const sortTickets = (tickets: readonly TicketView[], sort: TicketsSort): TicketView[] =>
+  [...tickets].sort(sort === "recent" ? byRecent : byKey);

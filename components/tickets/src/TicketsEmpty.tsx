@@ -1,6 +1,6 @@
 import { Button } from "@kibo/sdk/ui/button";
 import { Skeleton } from "@kibo/sdk/ui/skeleton";
-import { ListTree, Plus } from "lucide-react";
+import { Package, Plus } from "lucide-react";
 import { fr } from "./fr";
 
 type Props = { readOnly: boolean; onNewTicket(): void };
@@ -8,7 +8,7 @@ type Props = { readOnly: boolean; onNewTicket(): void };
 export function TicketsEmpty({ readOnly, onNewTicket }: Props) {
   return (
     <div className="flex flex-col items-center gap-2 p-8 text-center">
-      <ListTree aria-hidden className="size-8 text-muted-foreground" />
+      <Package aria-hidden className="size-8 text-muted-foreground" />
       <p className="text-sm font-medium">{fr.empty}</p>
       <p className="max-w-sm text-xs text-muted-foreground">{fr.emptyHelp}</p>
       {!readOnly && (
@@ -20,13 +20,15 @@ export function TicketsEmpty({ readOnly, onNewTicket }: Props) {
   );
 }
 
-export function TicketsNoMatch({ onClear }: { onClear(): void }) {
+export function TicketsNoMatch({ onClear }: { onClear: (() => void) | null }) {
   return (
     <div className="flex flex-col items-center gap-2 p-8 text-center">
       <p className="text-sm text-muted-foreground">{fr.noMatch}</p>
-      <Button size="sm" variant="ghost" onClick={onClear}>
-        {fr.clear}
-      </Button>
+      {onClear && (
+        <Button size="sm" variant="ghost" onClick={onClear}>
+          {fr.clear}
+        </Button>
+      )}
     </div>
   );
 }

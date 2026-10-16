@@ -6,8 +6,11 @@
   "size": { "min": { "w": 4, "h": 3 } },
   "title": "Tickets",
   "description": "Arbre des tickets, sous-tickets illimités",
-  "reads": ["ticket", "status", "run", "question"],
+  "reads": ["ticket", "status", "run", "question", "sprint", "ci_run"],
   "selection": true,
   "writes": ["ticket", "run"],
-  "configSchema": { "filter": { "enum": ["all", "mine"], "default": "all" } }
+  "configSchema": {
+    "filter": { "enum": ["all", "mine"], "default": "all" },
+    "sprint": { "type": "string", "nullable": true, "default": null, "label": "Sprint affiché" }
+  }
 }

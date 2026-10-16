@@ -1,90 +1,65 @@
 import { expect, test } from "bun:test";
-import type { TicketView } from "@kibo/schema";
-import { EMPTY_PROGRESS } from "@kibo/schema";
-import { buildTree, flattenGroups, mineOnly, withAncestors } from "./build-tree";
+import type { ProjectCommand, Ticket } from "@kibo/schema";
+import { createMockSdk } from "@kibo/sdk/mock";
+import { buildSections, featureOf, withAncestors } from "./build-tree";
+import { ALL_SPRINTS, EMPTY_QUERY, NO_SPRINT } from "./filter-tickets";
+import { manifest } from "./index";
+import { TODAY, trackingSeed } from "./test-seed";
 
-const t = (
-  id: string,
-  parentId: string | null,
-  assignee: TicketView["assignee"] = null,
-  children = 0,
-): TicketView => ({
-  id,
-  key: `KIB-${id}`,
-  pendingSeq: null,
-  keyLabel: `KIB-${id}`,
-  title: id,
-  description: "",
-  statusId: "todo",
-  blockedReason: null,
-  domainId: null,
-  assignee,
-  parentId,
-  labels: [],
-  externalRefs: [],
-  progress: { done: 0, total: children },
-  waitingOn: [],
-  openQuestions: 0,
-  startable: false,
-  agentProgress: EMPTY_PROGRESS,
-  delivery: null,
-  sprintId: null,
-  optional: false,
-  shortKey: null,
-  effectiveSprintId: null,
-  feature: null,
+const NOW = Date.parse(`${TODAY}T14:52:00`);
+const snapshot = createMockSdk(manifest, { seed: trackingSeed(NOW), today: TODAY }).snapshot();
+const { tickets } = snapshot;
+const s42 = snapshot.sprints.find((s) => s.name === "S42")?.id ?? "";
+const keys = (ts: { keyLabel: string }[]) => ts.map((t) => t.keyLabel);
+const sections = (sprint: string, query = EMPTY_QUERY, mine: string | null = null) =>
+  buildSections({ tickets, sprint, query, mine });
+
+test("rows are the steps of the sprint: open by recent activity, done apart, roots without step apart", () => {
+  const s = sections(s42);
+  expect(keys(s.open)).toEqual(["KIB-14", "KIB-9", "KIB-13", "KIB-10", "KIB-15"]);
+  expect(keys(s.done)).toEqual(["KIB-5", "KIB-12", "KIB-8", "KIB-7", "KIB-2", "KIB-3", "KIB-4"]);
+  expect(keys(s.loose)).toEqual(["KIB-16"]);
+  expect(keys(s.features)).toEqual(["KIB-1", "KIB-6", "KIB-11"]);
+  expect(s.tickets).toBe(12);
 });
 
-test("nests children under their parent, keeping order and depth", () => {
-  const tree = buildTree([t("1", null), t("2", "1"), t("3", "2"), t("4", null)]);
-  expect(tree.map((n) => n.ticket.id)).toEqual(["1", "4"]);
-  expect(tree[0]?.children[0]?.children[0]).toMatchObject({ depth: 2, ticket: { id: "3" } });
+test("features are never rows, nested groups give their own steps, the feature is the root", () => {
+  const seed = (run: (cmd: ProjectCommand) => unknown) => {
+    const root = run({ method: "createTicket", title: "Fonctionnalité" }) as Ticket;
+    const nested = run({ method: "createTicket", title: "Étape à sous-étapes", parentId: root.id }) as Ticket;
+    run({ method: "createTicket", title: "Sous-étape", parentId: nested.id });
+  };
+  const all = createMockSdk(manifest, { seed }).snapshot().tickets;
+  const s = buildSections({ tickets: all, sprint: ALL_SPRINTS, query: EMPTY_QUERY, mine: null });
+  expect(keys(s.open)).toEqual(["KIB-3"]);
+  const leaf = all.find((t) => t.keyLabel === "KIB-3");
+  if (!leaf) throw new Error("seed");
+  expect(featureOf(all)(leaf)?.keyLabel).toBe("KIB-1");
+  expect(keys(s.features)).toEqual(["KIB-1"]);
 });
 
-test("mineOnly keeps the viewer's tickets and lifts those whose parent is hidden", () => {
-  const human = (ref: string) => ({ kind: "human" as const, ref });
-  const tickets = [
-    t("a", null, human("bob")),
-    t("b", "a", human("adam")),
-    t("c", "b", human("adam")),
-    t("d", null, human("adam")),
-    t("e", null, { kind: "agent", ref: "adam" }),
-  ];
-  expect(mineOnly(tickets, "adam").map((x) => [x.id, x.parentId])).toEqual([
-    ["b", null],
-    ["c", "b"],
-    ["d", null],
-  ]);
+test("Ouverts hides the done tickets; a feature keeps its steps and drops the roots without step", () => {
+  expect(sections(s42, { ...EMPTY_QUERY, openOnly: true }).done).toEqual([]);
+  const f5 = tickets.find((t) => t.keyLabel === "KIB-11")?.id ?? "";
+  const one = sections(s42, { ...EMPTY_QUERY, featureId: f5 });
+  expect(keys(one.open)).toEqual(["KIB-14", "KIB-13", "KIB-15"]);
+  expect(keys(one.done)).toEqual(["KIB-12"]);
+  expect(one.loose).toEqual([]);
+  expect(one.tickets).toBe(12);
+});
+
+test("À planifier and Tous les sprints scope the same way", () => {
+  expect(keys(sections(NO_SPRINT).open)).toEqual(["KIB-20"]);
+  expect(sections(ALL_SPRINTS).tickets).toBe(14);
+  expect(keys(sections(ALL_SPRINTS).features)).toEqual(["KIB-1", "KIB-6", "KIB-11", "KIB-17", "KIB-19"]);
+});
+
+test("mine keeps the steps assigned to the viewer", () => {
+  expect(sections(s42, EMPTY_QUERY, "adam").tickets).toBe(0);
 });
 
 test("withAncestors keeps the selected tickets and every ancestor, nothing else", () => {
-  const tickets = [t("a", null), t("b", "a"), t("c", "b"), t("d", null), t("e", "a")];
-  expect([...withAncestors(tickets, ["c"])].sort()).toEqual(["a", "b", "c"]);
-  expect([...withAncestors(tickets, ["d", "missing"])].sort()).toEqual(["d", "missing"]);
-});
-
-test("a group is not a row: its sub-tickets take its place, nested groups included", () => {
-  const tickets = [
-    t("c4", null, null, 3),
-    t("a", "c4"),
-    t("n", "c4", null, 2),
-    t("n1", "n"),
-    t("n2", "n"),
-    t("b", "c4"),
-    t("solo", null),
-  ];
-  const rows = flattenGroups(buildTree(tickets));
-  expect(rows.map((n) => [n.ticket.id, n.depth, n.children.length])).toEqual([
-    ["a", 0, 0],
-    ["n1", 0, 0],
-    ["n2", 0, 0],
-    ["b", 0, 0],
-    ["solo", 0, 0],
-  ]);
-});
-
-test("a group whose sub-tickets are all filtered out leaves no row", () => {
-  expect(flattenGroups(buildTree([t("c4", null, null, 2), t("solo", null)])).map((n) => n.ticket.id)).toEqual(
-    ["solo"],
-  );
+  const leaf = tickets.find((t) => t.keyLabel === "KIB-14")?.id ?? "";
+  const kept = withAncestors(tickets, [leaf]);
+  expect(keys(tickets.filter((t) => kept.has(t.id)))).toEqual(["KIB-11", "KIB-14"]);
 });
