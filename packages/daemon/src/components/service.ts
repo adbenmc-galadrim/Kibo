@@ -19,7 +19,7 @@ import type { ComponentIntegrationHooks } from "../integrations/types";
 import { ensureNotesTables } from "../notes/index";
 import { createNotesService, type NotesService } from "../notes/service";
 import { ensureSettingsTable } from "../notes/settings";
-import { createAppSettingsStore } from "../settings/app-settings-store";
+import type { AppSettingsStore } from "../settings/app-settings-store";
 import { createBackends } from "./backends";
 import { approvedHashOf, stampComponentHash } from "./component-hash";
 import { listDrafts } from "./drafts";
@@ -58,6 +58,7 @@ export type ComponentsDeps = {
   deliverAnswers?: (projectId: string, ticketId: string) => DeliveryResult;
   peekRun?: (projectId: string, runId: string) => RunPeek;
   delivery?: ComponentDelivery;
+  appSettings: Pick<AppSettingsStore, "get">;
   installCli?: () => Promise<{ path: string }>;
   cliStatus?: () => Promise<{ path: string; installed: boolean }>;
   jobTimers?: Pick<JobSchedulerDeps, "setInterval" | "clearInterval">;
@@ -140,7 +141,6 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     },
   });
 
-  const appSettings = createAppSettingsStore(deps.db, Date.now);
   const gate = createGate({
     instance: instanceOf,
     active: (ref) => registry.active(ref),
@@ -152,7 +152,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       files,
       backends: () => backends,
       manifestOf: (ref) => registry.manifestOf(ref),
-      appSettings: () => appSettings.get(),
+      appSettings: () => deps.appSettings.get(),
     }),
   });
 

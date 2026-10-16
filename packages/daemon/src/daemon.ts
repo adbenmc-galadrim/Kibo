@@ -5,7 +5,6 @@ import type { Orchestrator } from "./agents/orchestrator";
 import { withSignalCounts } from "./agents-rpc";
 import type { DraftAssets } from "./ai/draft-preview";
 import { backupsRpc } from "./backups/rpc";
-import { createCodeService } from "./code/code-service";
 import { startCollab } from "./collab/bootstrap";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { componentTrustGuard } from "./components/trust-guard";
@@ -39,6 +38,7 @@ import { openSessionStore } from "./sessions/session-store";
 import { openLocalSettings } from "./settings";
 import { startSignals } from "./signals/bootstrap";
 import { DaemonRunning, findRunningDaemon } from "./single-instance";
+import { startCodeTracking } from "./tracking/bootstrap";
 
 export type { DaemonOptions } from "./daemon-options";
 
@@ -86,7 +86,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
   closers.push(() => collab.stop());
   await migrateDomainScopes({ docs: service.docs, log: console.error, now: Date.now });
-  const tracking = startDaemonTracking(store, service);
+  const tracking = startDaemonTracking(store, service, clock);
   const { visibility, extensions, agentFiles } = await startDaemonFiles(
     opts,
     { db: store.db, runs, service, late, agents: () => agents },
@@ -105,6 +105,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       sharing: (projectId) => collab.syncInfo(projectId),
       peekRun: visibility.peek,
       delivery: delivery.components,
+      appSettings: tracking.appSettings,
     },
     closers,
   );
@@ -172,8 +173,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     isLocked: (projectId) => collab.hosts.isLocked(projectId),
     prepareDelete: (projectId) => tutorial.prepareDelete(projectId),
   });
-  const code = createCodeService(service);
-  closers.push(() => code.stop());
+  const code = startCodeTracking(service, closers, opts.code);
   const pairingCodes = new PairingCodes(Date.now);
   let remote: RemoteAccess | null = null;
   const remoteAccess = () => ready(remote, "INTERNAL", "remote access is not initialised");

@@ -33,6 +33,7 @@ import { createWorktreeWatch } from "./worktree-watch";
 export type CodeService = {
   handle(req: CodeRequest, ctx: RpcContext): Promise<unknown>;
   onChange(listener: (e: CodeEvent) => void): () => void;
+  poller: PrPoller | null;
   stop(): void;
 };
 export type CodeServiceOptions = {
@@ -200,6 +201,7 @@ export function createCodeService(service: Service, opts: CodeServiceOptions = {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
+    poller,
     stop() {
       poller?.stop();
       watch.stop();

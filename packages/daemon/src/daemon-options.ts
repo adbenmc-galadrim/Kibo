@@ -8,6 +8,7 @@ import type { IntegrationFlags } from "./integrations/bootstrap";
 import type { Redactor } from "./integrations/redact";
 import type { LogBuffer } from "./log-buffer";
 import type { Probe } from "./single-instance";
+import type { CodeTrackingOptions } from "./tracking/bootstrap";
 
 export type DaemonOptions = {
   home: string;
@@ -32,6 +33,7 @@ export type DaemonOptions = {
   probe?: Probe;
   agentSource?: AgentSource;
   clock?: Clock;
+  code?: CodeTrackingOptions;
 } & Partial<
   Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli" | "cliStatus">
 >;
