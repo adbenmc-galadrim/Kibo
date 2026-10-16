@@ -2,6 +2,7 @@ import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@kibo/sdk/lib/utils";
 import { CalendarRange, CircleCheck, ClockAlert } from "lucide-react";
 import type { ReactNode } from "react";
+import { dashedBorder } from "./dashes";
 import { fr } from "./fr";
 import type { SprintColumn as Column } from "./planning-model";
 
@@ -9,6 +10,11 @@ export const COLUMN_CLASS =
   "flex w-[214px] shrink-0 flex-col gap-2.5 overflow-y-auto rounded-[10px] border p-[9px] scrollbar-none";
 
 const BAR_WIDTH = 104;
+
+const DROP_SIDES = dashedBorder({ width: 194, height: 120, radius: 8, color: "var(--tracking-fg)" });
+
+const CURRENT_RING =
+  "border-[color-mix(in_srgb,var(--tracking-mfg)_50%,transparent)] bg-(--tracking-card) shadow-[0_0_0_1px_color-mix(in_srgb,var(--tracking-mfg)_50%,transparent)]";
 
 function SprintProgress({ delivered, total }: { delivered: number; total: number }) {
   const fill = total === 0 ? 0 : Math.round((BAR_WIDTH * delivered) / total);
@@ -83,7 +89,8 @@ export function DropZone({ label, dates }: { label: string; dates: string | null
   return (
     <div
       data-slot="planning-dropzone"
-      className="flex h-[120px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-[8px] border border-(--tracking-fg) border-dashed bg-(--tracking-muted)"
+      className="flex h-[120px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-[8px] bg-(--tracking-muted)"
+      style={DROP_SIDES}
     >
       <CalendarRange absoluteStrokeWidth size={16} aria-hidden className="text-(--tracking-fg)" />
       <span className="font-medium text-(--tracking-fg) text-[12px] leading-[15px]">{label}</span>
@@ -127,9 +134,7 @@ export function SprintColumn({ column, dropping, onEdit, children, footer }: Pro
       data-state={column.sprint.state}
       className={cn(
         COLUMN_CLASS,
-        current
-          ? "border-(--tracking-mfg) bg-(--tracking-card)"
-          : "border-(--tracking-border) bg-(--tracking-panel)",
+        current ? CURRENT_RING : "border-(--tracking-border) bg-(--tracking-panel)",
       )}
     >
       <SprintHeader column={column} onEdit={onEdit} />

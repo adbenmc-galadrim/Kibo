@@ -99,7 +99,7 @@ export function FeatureCardPreview({ card }: { card: Card }) {
       aria-hidden
       className={cn(
         CARD_CLASS,
-        "border-(--tracking-fg) shadow-[0_10px_40px_rgb(0_0_0/0.17)] dark:shadow-[0_10px_40px_rgb(0_0_0/0.9)]",
+        "border-[color-mix(in_srgb,var(--tracking-fg)_50%,transparent)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--tracking-fg)_50%,transparent),0_10px_40px_rgb(0_0_0/0.17)] dark:shadow-[0_0_0_1px_color-mix(in_srgb,var(--tracking-fg)_50%,transparent),0_10px_40px_rgb(0_0_0/0.9)]",
       )}
     >
       <FeatureCardBody card={{ ...card, compact: false }} preview />
