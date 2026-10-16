@@ -32,6 +32,8 @@ import { HostProvider } from "./Host";
 import { helpPatch } from "./help-dialogs";
 import { CommandPalette, TutorialSlot } from "./lazy-dialogs";
 import { ProjectAgentPanel, ProjectPresence, ProjectStatusBanner, RunSidePanel } from "./lazy-screens";
+import { ExecutionGate } from "./nav/ExecutionGate";
+import { HiddenScreenNotice } from "./nav/HiddenScreenNotice";
 import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
 import type { ShellProps } from "./Shell";
@@ -209,6 +211,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                 {project?.sync.shared && (
                   <ProjectStatusBanner projectId={project.meta.id} access={project.sync.access} />
                 )}
+                <HiddenScreenNotice screen={screen} onOpen={(t) => go(t)} />
                 <div className="min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
                   {screen ? (
                     <ScreenView
@@ -253,12 +256,14 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                     />
                   )}
                 </div>
-                <AgentPanel
-                  onLaunch={launch}
-                  focusRunId={focusRun}
-                  onFocused={clearFocus}
-                  onOpenFile={(ref) => set({ preview: ref })}
-                />
+                <ExecutionGate>
+                  <AgentPanel
+                    onLaunch={launch}
+                    focusRunId={focusRun}
+                    onFocused={clearFocus}
+                    onOpenFile={(ref) => set({ preview: ref })}
+                  />
+                </ExecutionGate>
               </SidebarInset>
               {agentPanel.opened && project && (
                 <ProjectAgentPanel

@@ -15,6 +15,7 @@ import { canEdit } from "../state/access";
 import { Breadcrumb, crumbsFor } from "./Breadcrumb";
 import type { HelpDialog } from "./help-dialogs";
 import { CreationsIndicator, ProjectAgentButton, ScreenActions, ShareButton } from "./lazy-screens";
+import { ExecutionGate } from "./nav/ExecutionGate";
 import { PageActionsSlot } from "./page-actions";
 import { RunHistoryButton } from "./RunHistoryButton";
 import { UserMenu } from "./UserMenu";
@@ -99,8 +100,10 @@ export function ShellHeader({
         <Plus />
         {fr.header.newTicket}
       </Button>
-      <CreationsIndicator agents={agents} onOpen={() => onOpen({ kind: "screen", screen: "creations" })} />
-      <RunHistoryButton agents={agents} notifications={notifications} now={now} onOpenRun={onOpenRun} />
+      <ExecutionGate>
+        <CreationsIndicator agents={agents} onOpen={() => onOpen({ kind: "screen", screen: "creations" })} />
+        <RunHistoryButton agents={agents} notifications={notifications} now={now} onOpenRun={onOpenRun} />
+      </ExecutionGate>
       <UserMenu viewer={viewer} onOpen={onOpen} onHelp={onHelp} />
     </header>
   );

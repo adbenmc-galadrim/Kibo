@@ -36,6 +36,8 @@ export const fr = {
     agents: "Agents",
     queue: "Files d'attente",
     skills: "Skills",
+    executionHidden: "L'exécution des agents est masquée.",
+    showExecution: "Afficher dans Paramètres › Général",
     newAgent: "Nouvel agent",
     newSkill: "Nouveau skill",
     settings: "Paramètres",

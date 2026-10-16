@@ -29,14 +29,20 @@ mock.module("../api", () =>
 );
 const { GeneralPage } = await import("./GeneralPage");
 
-test("the general settings hold the application card, the updates, the backups and the kibo command", async () => {
+test("the general settings hold the application card, agent execution, the updates, the backups and the kibo command", async () => {
   render(<GeneralPage />);
   expect(screen.getByRole("heading", { level: 1, name: "Général" })).toBeTruthy();
   expect(screen.getByText("Mises à jour et outils en ligne de commande.")).toBeTruthy();
   const titles = screen
-    .getAllByText(/^(Application|Mises à jour|Sauvegardes|Commande kibo)$/)
+    .getAllByText(/^(Application|Exécution des agents dans Kibo|Mises à jour|Sauvegardes|Commande kibo)$/)
     .map((e) => e.textContent);
-  expect(titles).toEqual(["Application", "Mises à jour", "Sauvegardes", "Commande kibo"]);
+  expect(titles).toEqual([
+    "Application",
+    "Exécution des agents dans Kibo",
+    "Mises à jour",
+    "Sauvegardes",
+    "Commande kibo",
+  ]);
   expect(screen.getByText("Ce réglage vit dans l'application de bureau.")).toBeTruthy();
   expect(screen.queryByRole("combobox", { name: "Langue" })).toBeNull();
   expect(screen.queryByRole("switch", { name: "Ouvrir Kibo à l'ouverture de session" })).toBeNull();

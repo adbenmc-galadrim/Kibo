@@ -103,6 +103,7 @@ mock.module("../api", () =>
       rpc: (req: RpcRequest) => {
         calls.push(req);
         if (req.method === "getTabs") return Promise.resolve(EMPTY_TABS);
+        if (req.method === "getAppSettings") return Promise.resolve({ agentExecution: "shown" });
         if (req.method === "getRunLog") return Promise.resolve([]);
         if (req.method === "autoLinks.list") return Promise.resolve([]);
         if (req.method === "cliStatus")
