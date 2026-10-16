@@ -2329,6 +2329,16 @@ Référence : `design/redesign/exports/`, sombre et clair, barre latérale dépl
 1. **Code de sprint** : les maquettes affichent « S42 » et « Terrain hors ligne » séparément ; `Sprint` gagne `code` (voir §37.2). Les colonnes, onglets et puces affichent le code ; la fiche et les en-têtes « Sprint S42 · Terrain hors ligne ». `kibo tickets list --sprint` accepte l'id, le code ou le nom (casse ignorée). La migration ne crée aucun sprint.
 2. **En retard le dernier jour** : voir §37.3 ; le dernier jour, seule une étape obligatoire pas commencée rend la fonctionnalité `late` (F5 en retard, F4 ouverte sur P2). Dans la fixture, la démo client de F4 (EMIS-46) est **facultative**, celle de F5 (EMIS-35) obligatoire (« 4 étapes restantes »).
 9. **Limite d'ouvertes lisible par les composants** : le SDK expose `tracking` du projet en lecture (pour le Planning) ; à ajouter avec T8 au rebase sur T2b.
+10. **Réglage d'exécution lisible par les composants** : le SDK expose aussi, en lecture seule, `agentExecution` (mis à jour par l'hôte sur le topic `config`), pour que Kibo et Tickets remplacent « Livrer » par « Copier `/full-delivery <CLÉ>` » ; ajouté par T8 avec `tracking`, utilisé par T11.
+11. **Coque conforme aux maquettes, sans rien supprimer** (on déplace ou on cache) :
+    - barre d'onglets : **cachée tant qu'un seul onglet est ouvert**, réapparaît dès le deuxième ;
+    - bascule de la barre latérale : dans l'en-tête de la barre latérale ;
+    - « Partager » : dans le menu `⋯` du projet ; « + Ticket » : bouton « Nouveau ticket » de l'en-tête de page (déjà sur P4) et palette ; cloche : la Boîte de réception de la barre latérale (compteur) ; avatar et compte : ligne utilisateur en pied de barre latérale ;
+    - « Synchronisé · il y a n min » : état de synchronisation du projet (`ProjectSnapshot.sync`), icône du fournisseur ; l'âge relatif est masqué dans la comparaison pixel ;
+    - « Composants », « Changements » : dans le menu de l'espace (« Galadrim ▾ ») ; « Rejoindre un projet » : dans le « + » de PROJETS ;
+    - « Vue d'ensemble » (tous projets) s'appelle **« Accueil »** ;
+    - pastilles : Planning = code du sprint courant (« S42 ») ; Tickets = tickets ouverts hors fonctionnalités (non `done`) ; Questions = questions ouvertes ;
+    - fil d'Ariane : séparateur `/` et pastille du projet.
 3. **Horodatages semés** : la fixture des maquettes pose ses dates par le champ `at` des commandes quand il existe ; à défaut, la zone est masquée (point 4).
 4. **Zones masquées de la comparaison pixel** : ce que la phase 25 ne sait pas produire (sessions T3 Code, CI et « changements demandés » des PR, journal d'activité, lot de l'agent de projet, heures et âges relatifs non semables, nom de l'utilisateur du système) est **masqué** dans la capture et la référence (`mask` de Playwright, liste `PIXEL_MASKS` par écran dans `e2e/`, chaque zone justifiée par une ligne) ; le seuil de 2 % s'applique au reste. La phase 26 retire les masques qu'elle rend inutiles. Aucun masque ne couvre une donnée que la phase 25 produit.
 5. **Tickets, « Terminés dans S42 »** : la section est **dépliée** par défaut et montre les **4 plus récents** ; son compteur (« 8 ») est un bouton qui affiche tous les terminés du sprint. Un clic sur l'en-tête replie la section (mémorisé par instance).
