@@ -22,11 +22,11 @@ import { TODAY, trackingSeed } from "./test-seed";
 
 const NOW = Date.parse(`${TODAY}T14:52:00`);
 const snapshot = createMockSdk(manifest, { seed: trackingSeed(NOW), today: TODAY }).snapshot();
-const sprint = (name: string) => snapshot.sprints.find((s) => s.name === name)?.id ?? "";
+const sprint = (code: string) => snapshot.sprints.find((s) => s.code === code)?.id ?? "";
 const keys = (ts: { keyLabel: string }[]) => ts.map((t) => t.keyLabel);
 
 test("the sprint shown defaults to the current one and keeps a saved choice that still exists", () => {
-  expect(currentSprintOf(snapshot.sprints)?.name).toBe("S42");
+  expect(currentSprintOf(snapshot.sprints)?.code).toBe("S42");
   expect(chosenSprint(undefined, snapshot.sprints)).toBe(sprint("S42"));
   expect(chosenSprint(null, snapshot.sprints)).toBe(sprint("S42"));
   expect(chosenSprint(sprint("S43"), snapshot.sprints)).toBe(sprint("S43"));

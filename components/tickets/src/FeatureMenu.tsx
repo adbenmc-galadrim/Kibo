@@ -35,7 +35,7 @@ export function FeatureMenu({ query, features, tickets, onChange }: Props) {
           className={OUTLINE}
           aria-pressed={chosen !== null || query.labels.size > 0}
         >
-          <Package aria-hidden className="size-[13px]" />
+          <Package absoluteStrokeWidth size={13} aria-hidden className="size-[13px]" />
           {chosen ? (chosen.shortKey ?? chosen.keyLabel) : fr.filters.feature}
           {query.labels.size > 0 && (
             <span className="font-mono text-[11px] text-(--tracking-dim)">{query.labels.size}</span>

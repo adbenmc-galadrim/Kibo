@@ -31,9 +31,7 @@ import {
   EMPTY_QUERY,
   isActive,
   NO_SPRINT,
-  type SprintRef,
   sortTickets,
-  sprintCode,
 } from "./filter-tickets";
 import { fr } from "./fr";
 import { TicketRow } from "./TicketRow";
@@ -50,8 +48,6 @@ const PRIMARY =
   "h-[25px] gap-[6px] rounded-[6px] bg-zinc-900 px-[10px] text-[12px] leading-[1.2] font-medium text-zinc-50 hover:bg-zinc-900/90 has-[>svg]:px-[10px] dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-50/90";
 
 const RECENT_DONE = 4;
-
-const codeOf = (s: SprintRef | undefined): string | null => (s ? sprintCode(s) : null);
 
 export function TicketsTree() {
   const sdk = useSdk();
@@ -97,7 +93,7 @@ export function TicketsTree() {
   const canDrag = !readOnly && !isActive(query);
   const now = Date.now();
   const label = (id: string) => statuses.find((s: Status) => s.id === id)?.label ?? id;
-  const sprintLabel = codeOf(sprints.find((s) => s.id === sprint));
+  const sprintLabel = sprints.find((s) => s.id === sprint)?.code ?? null;
   const scope =
     sprint === ALL_SPRINTS
       ? fr.scope.all
@@ -160,7 +156,7 @@ export function TicketsTree() {
         <span className="flex-1" />
         {!readOnly && (
           <Button size="sm" className={PRIMARY} onClick={() => sdk.openNewTicket({})}>
-            <Plus aria-hidden className="size-[13px]" />
+            <Plus absoluteStrokeWidth size={13} aria-hidden className="size-[13px]" />
             {fr.newTicket}
           </Button>
         )}
@@ -240,7 +236,7 @@ export function TicketsTree() {
             </div>
           )}
           <p className="flex items-center gap-2 text-[11.5px] leading-[1.2] text-(--tracking-dim)">
-            <RefreshCw aria-hidden className="size-[13px] shrink-0" />
+            <RefreshCw absoluteStrokeWidth size={13} aria-hidden className="size-[13px] shrink-0" />
             {fr.footer}
           </p>
         </>

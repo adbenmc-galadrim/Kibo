@@ -1,4 +1,4 @@
-import type { Status, Ticket } from "@kibo/schema";
+import type { SprintView, Status, Ticket } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import {
   DropdownMenu,
@@ -10,7 +10,7 @@ import {
 import { ArrowUpDown } from "lucide-react";
 import type { FeatureRef } from "./FeatureChip";
 import { FeatureMenu } from "./FeatureMenu";
-import type { SprintRef, TicketsQuery, TicketsSort } from "./filter-tickets";
+import type { TicketsQuery, TicketsSort } from "./filter-tickets";
 import { fr } from "./fr";
 import { OpenMenu } from "./OpenMenu";
 import { SearchField } from "./SearchField";
@@ -18,7 +18,7 @@ import { SprintTabs } from "./SprintTabs";
 import { OUTLINE } from "./toolbar-styles";
 
 type Props = {
-  sprints: readonly SprintRef[];
+  sprints: readonly SprintView[];
   sprint: string;
   onSprint(value: string): void;
   query: TicketsQuery;
@@ -51,7 +51,7 @@ export function TicketsToolbar(props: Props) {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className={OUTLINE}>
-            <ArrowUpDown aria-hidden className="size-[13px]" />
+            <ArrowUpDown absoluteStrokeWidth size={13} aria-hidden className="size-[13px]" />
             {fr.filters.sort[query.sort]}
           </Button>
         </DropdownMenuTrigger>

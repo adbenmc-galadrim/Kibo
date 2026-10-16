@@ -1,6 +1,6 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import type { CiTone, MemberInfo, StatusId, TicketRun, TicketView } from "@kibo/schema";
-import { liveRun, QuestionsChip, type QuestionsChipData, TicketKeyLabel, useSdk } from "@kibo/sdk";
+import { liveRun, type QuestionsChipData, TicketKeyLabel, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
@@ -102,8 +102,8 @@ export function TicketRow(props: RowFacts) {
               className={cn("font-mono", TEXT_12, done ? "text-(--tracking-dim)" : "text-(--tracking-mfg)")}
             />
           </span>
-          <span className={CELL.title}>
-            <RowDetails ticket={t} run={run} members={props.members}>
+          <span className={cn(CELL.title, "relative")}>
+            <RowDetails ticket={t} run={run} members={props.members} questions={questions}>
               <button
                 type="button"
                 data-row-title
@@ -123,16 +123,7 @@ export function TicketRow(props: RowFacts) {
                 className="size-[7px] shrink-0 rounded-full bg-(--tracking-brand)"
               />
             )}
-            {t.openQuestions > 0 && (
-              <QuestionsChip
-                {...questions}
-                ticket={t}
-                text={fr.questions(t.openQuestions)}
-                label={fr.questionsOpen(t.openQuestions)}
-                className="shrink-0"
-              />
-            )}
-            <span className="ml-auto flex shrink-0 items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+            <span className="absolute top-1/2 right-0 flex -translate-y-1/2 items-center rounded-[6px] bg-(--tracking-hover) opacity-0 group-hover:opacity-100 focus-within:opacity-100">
               {!readOnly && (
                 <Button
                   size="icon"

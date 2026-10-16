@@ -42,7 +42,7 @@ test("choosing a tab narrows the rows and is remembered by the instance", async 
   await userEvent.setup().click((await tabs()).getByRole("tab", { name: "S43" }));
   expect(await screen.findByText("Lecture du fichier")).toBeTruthy();
   expect(screen.queryByText("Écran d'envoi hors ligne")).toBeNull();
-  const s43 = m.snapshot().sprints.find((s) => s.name === "S43")?.id;
+  const s43 = m.snapshot().sprints.find((s) => s.code === "S43")?.id;
   expect(m.configPatches).toEqual([{ sprint: s43 }]);
 });
 

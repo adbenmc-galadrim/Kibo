@@ -39,7 +39,12 @@ export function TicketSection({
               aria-label={open ? fr.collapse(label) : fr.expand(label)}
               className="flex items-center gap-2 text-left"
             >
-              <Chevron aria-hidden className="size-[13px] shrink-0 text-(--tracking-dim)" />
+              <Chevron
+                absoluteStrokeWidth
+                size={13}
+                aria-hidden
+                className="size-[13px] shrink-0 text-(--tracking-dim)"
+              />
               {done && <span aria-hidden className="size-2 shrink-0 rounded-full bg-(--tracking-green)" />}
               <span className="text-[12px] leading-[1.2] font-medium text-(--tracking-mfg)">{label}</span>
             </button>

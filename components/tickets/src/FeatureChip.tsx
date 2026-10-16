@@ -24,7 +24,12 @@ export function FeatureChip({ feature, onOpen }: Props) {
               onOpen(feature.id);
             }}
           >
-            <Package aria-hidden className="size-[11px] shrink-0 text-(--tracking-dim)" />
+            <Package
+              absoluteStrokeWidth
+              size={11}
+              aria-hidden
+              className="size-[11px] shrink-0 text-(--tracking-dim)"
+            />
             <span data-slot="feature-name" className="truncate text-[10.5px] leading-[1.2] font-medium">
               {name}
             </span>

@@ -181,7 +181,7 @@ test("shared selection: the selected step stays sharp, the chip clears it", asyn
   await waitFor(() => expect(other?.className).not.toContain("opacity-50"));
 });
 
-test("a row shows its open questions, never a zero", async () => {
+test("the open questions of a row sit in its hover card, never a zero", async () => {
   const m = createMockSdk(manifest, { seed });
   mount(m);
   await screen.findByText("Déplacement");
@@ -194,6 +194,9 @@ test("a row shows its open questions, never a zero", async () => {
       createdBy: { kind: "agent", ref: "opus-dev" },
     });
   });
+  await waitFor(() => expect(byKey(m, "KIB-2")?.openQuestions).toBe(1));
+  expect(screen.queryByRole("button", { name: "1 question, ouvrir" })).toBeNull();
+  fireEvent.focus(screen.getByRole("button", { name: "Déplacement" }));
   fireEvent.click(await screen.findByRole("button", { name: "1 question, ouvrir" }));
   const first = m.snapshot().questions[0]?.id ?? "";
   expect(m.viewRequests).toEqual([{ componentId: "questions", question: first }]);

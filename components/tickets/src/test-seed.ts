@@ -23,11 +23,11 @@ const branch = (name: string): ExternalRef => ({ kind: "git_branch", branch: nam
 
 export function trackingSeed(now: number) {
   return (run: (cmd: ProjectCommand) => unknown) => {
-    const sprint = (name: string, start: string, end: string) =>
-      run({ method: "createSprint", name, start, end }) as Sprint;
-    sprint("S41", "2026-10-05", "2026-10-09");
-    const s42 = sprint("S42", "2026-10-12", TODAY);
-    const s43 = sprint("S43", "2026-10-19", "2026-10-23");
+    const sprint = (code: string, name: string, start: string, end: string) =>
+      run({ method: "createSprint", code, name, start, end }) as Sprint;
+    sprint("S41", "Accès", "2026-10-05", "2026-10-09");
+    const s42 = sprint("S42", "Terrain hors ligne", "2026-10-12", TODAY);
+    const s43 = sprint("S43", "Import et soudures", "2026-10-19", "2026-10-23");
     const ticket = (title: string, parentId: string | null, s: Step = { title }) => {
       const t = run({ method: "createTicket", title, parentId, statusId: s.status ?? "todo" }) as Ticket;
       for (const ref of s.refs ?? []) run({ method: "upsertExternalRef", ticketId: t.id, ref });

@@ -34,7 +34,7 @@ export function OpenMenu({ query, statuses, onChange }: Props) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className={OUTLINE} aria-pressed={narrowsOpen(query)}>
-          <CircleCheck aria-hidden className="size-[13px]" />
+          <CircleCheck absoluteStrokeWidth size={13} aria-hidden className="size-[13px]" />
           {fr.filters.open}
         </Button>
       </DropdownMenuTrigger>

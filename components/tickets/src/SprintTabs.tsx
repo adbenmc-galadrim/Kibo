@@ -1,10 +1,11 @@
+import type { SprintView } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@kibo/sdk/ui/tabs";
 import { CalendarRange } from "lucide-react";
-import { ALL_SPRINTS, NO_SPRINT, type SprintRef, sprintCode } from "./filter-tickets";
+import { ALL_SPRINTS, NO_SPRINT } from "./filter-tickets";
 import { fr } from "./fr";
 
-type Props = { sprints: readonly SprintRef[]; value: string; onChange(value: string): void };
+type Props = { sprints: readonly SprintView[]; value: string; onChange(value: string): void };
 
 const TAB = cn(
   "h-[23px] flex-none gap-[5px] rounded-[5px] border-transparent px-[9px] py-[3px] text-[12.5px] leading-[1.2] font-medium",
@@ -27,9 +28,15 @@ export function SprintTabs({ sprints, value, onChange }: Props) {
         {sprints.map((s) => (
           <TabsTrigger key={s.id} value={s.id} className={cn(TAB, "font-mono")}>
             {s.state === "current" && (
-              <CalendarRange role="img" aria-label={fr.sprints.current} className="size-3" />
+              <CalendarRange
+                absoluteStrokeWidth
+                size={12}
+                role="img"
+                aria-label={fr.sprints.current}
+                className="size-3"
+              />
             )}
-            {sprintCode(s)}
+            {s.code}
           </TabsTrigger>
         ))}
         <TabsTrigger value={NO_SPRINT} className={TAB}>

@@ -72,10 +72,6 @@ export function chosenSprint(saved: unknown, sprints: readonly SprintView[]): st
   return currentSprintOf(sprints)?.id ?? ALL_SPRINTS;
 }
 
-export type SprintRef = SprintView & { code?: string };
-
-export const sprintCode = (s: SprintRef): string => s.code ?? s.name;
-
 export const inSprint = (t: Pick<TicketView, "effectiveSprintId">, sprint: string): boolean => {
   if (sprint === ALL_SPRINTS) return true;
   if (sprint === NO_SPRINT) return t.effectiveSprintId === null;

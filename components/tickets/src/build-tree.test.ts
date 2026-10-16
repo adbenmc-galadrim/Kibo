@@ -9,7 +9,7 @@ import { TODAY, trackingSeed } from "./test-seed";
 const NOW = Date.parse(`${TODAY}T14:52:00`);
 const snapshot = createMockSdk(manifest, { seed: trackingSeed(NOW), today: TODAY }).snapshot();
 const { tickets } = snapshot;
-const s42 = snapshot.sprints.find((s) => s.name === "S42")?.id ?? "";
+const s42 = snapshot.sprints.find((s) => s.code === "S42")?.id ?? "";
 const keys = (ts: { keyLabel: string }[]) => ts.map((t) => t.keyLabel);
 const sections = (sprint: string, query = EMPTY_QUERY, mine: string | null = null) =>
   buildSections({ tickets, sprint, query, mine, viewer: "adam" });
