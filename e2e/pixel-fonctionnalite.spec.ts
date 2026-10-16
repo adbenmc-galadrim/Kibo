@@ -6,6 +6,7 @@ import { captureContent } from "./pixel-content";
 import { capturePixel, type Scheme } from "./pixel-kit";
 import { PIXEL_MASKS } from "./pixel-masks";
 import { type Box, decodePng } from "./pixel-report";
+import { captureProjectPages } from "./pixel-sidebar";
 
 const HEIGHT = 1000;
 const SCREEN = "fonctionnalite";
@@ -69,6 +70,8 @@ test("the feature sheet of F5 opened in a tab matches the mockup on the whole sc
   if (screenError !== null && diff === null) throw screenError;
   const whole = diff ? regionRatio(diff, { x: 0, y: 0, w: 1440, h: HEIGHT }) : 0;
   const shell = diff ? regionRatio(diff, CONTENT) : 0;
+  const pages = (await captureProjectPages(page, { screen: SCREEN, scheme, height: HEIGHT, outDir: OUT_DIR }))
+    .ratio;
   const contentShot = await captureContent(page, {
     screen: SCREEN,
     scheme,
@@ -86,12 +89,13 @@ test("the feature sheet of F5 opened in a tab matches the mockup on the whole sc
   console.log(`[pixel] zones du contenu : ${zones.join(" ; ")}`);
   info.annotations.push({
     type: "pixel",
-    description: `${scheme} : écran ${percent(whole)} (zone de contenu en place ${percent(shell)}), contenu recalé ${percent(content)}`,
+    description: `${scheme} : écran ${percent(whole)} (zone de contenu en place ${percent(shell)}), pages décalées ${percent(pages)}, contenu recalé ${percent(content)}`,
   });
   console.log(
-    `[pixel] ${SCREEN}-${scheme} : écran ${percent(whole)} (zone de contenu en place ${percent(shell)}), contenu recalé ${percent(content)}`,
+    `[pixel] ${SCREEN}-${scheme} : écran ${percent(whole)} (zone de contenu en place ${percent(shell)}), pages décalées ${percent(pages)}, contenu recalé ${percent(content)}`,
   );
   expect(content).toBeLessThanOrEqual(MAX_RATIO);
   expect(whole).toBeLessThanOrEqual(MAX_RATIO);
+  expect(pages).toBeLessThanOrEqual(MAX_RATIO);
   if (screenError !== null) throw screenError;
 });

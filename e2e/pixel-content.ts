@@ -15,6 +15,7 @@ export type ContentInput = {
   root: Locator;
   masks: readonly PixelMask[];
   outDir: string;
+  label?: string;
 };
 export type ContentResult = { ratio: number; diffPixels: number; boxes: Box[] };
 
@@ -56,7 +57,8 @@ export async function captureContent(page: Page, input: ContentInput): Promise<C
   const dy = Math.round(placed.y) - input.region.y;
   await page.setViewportSize({ width: PIXEL_WIDTH + dx, height: input.height + dy });
   await page.evaluate(() => document.fonts.ready.then(() => undefined));
-  const name = `proposition-${input.screen}-contenu-${input.scheme}.png`;
+  const label = input.label ?? "contenu";
+  const name = `proposition-${input.screen}-${label}-${input.scheme}.png`;
   const source = decodePng(
     readFileSync(join(DESIGN_REFERENCES, `proposition-${input.screen}-${input.scheme}.png`)),
   );
@@ -76,7 +78,7 @@ export async function captureContent(page: Page, input: ContentInput): Promise<C
   };
   const mask = await placeMasks(page, shifted(input.masks, dx, dy));
   const since = test.info().attachments.length;
-  const base = join(input.outDir, `${input.screen}-contenu-${input.scheme}`);
+  const base = join(input.outDir, `${input.screen}-${label}-${input.scheme}`);
   mkdirSync(input.outDir, { recursive: true });
   const comparison = await expect(page)
     .toHaveScreenshot(name, {

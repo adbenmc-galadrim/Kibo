@@ -6,6 +6,7 @@ import { captureContent } from "./pixel-content";
 import { capturePixel, type Scheme } from "./pixel-kit";
 import { PIXEL_MASKS } from "./pixel-masks";
 import { type Box, decodePng } from "./pixel-report";
+import { captureProjectPages } from "./pixel-sidebar";
 
 const HEIGHT = 1000;
 const SCREEN = "tickets";
@@ -81,6 +82,8 @@ test("the Tickets page of Emis on sprint S42 matches the mockup on the whole scr
   if (screenError !== null && diff === null) throw screenError;
   const whole = diff ? regionRatio(diff, { x: 0, y: 0, w: 1440, h: HEIGHT }) : 0;
   const shell = diff ? regionRatio(diff, CONTENT) : 0;
+  const pages = (await captureProjectPages(page, { screen: SCREEN, scheme, height: HEIGHT, outDir: OUT_DIR }))
+    .ratio;
   const contentShot = await captureContent(page, {
     screen: SCREEN,
     scheme,
@@ -96,10 +99,11 @@ test("the Tickets page of Emis on sprint S42 matches the mockup on the whole scr
     .slice(0, 15)
     .map((b) => `x=${b.x + CONTENT.x} y=${b.y + CONTENT.y} ${b.w}×${b.h}`);
   console.log(`[pixel] zones du contenu : ${zones.join(" ; ")}`);
-  const line = `${scheme} : écran ${percent(whole)} (zone de contenu en place ${percent(shell)}), contenu recalé ${percent(content)}`;
+  const line = `${scheme} : écran ${percent(whole)} (zone de contenu en place ${percent(shell)}), pages décalées ${percent(pages)}, contenu recalé ${percent(content)}`;
   info.annotations.push({ type: "pixel", description: line });
   console.log(`[pixel] ${SCREEN}-${line}`);
   expect(content).toBeLessThanOrEqual(MAX_RATIO);
   expect(whole).toBeLessThanOrEqual(MAX_RATIO);
+  expect(pages).toBeLessThanOrEqual(MAX_RATIO);
   if (screenError !== null) throw screenError;
 });

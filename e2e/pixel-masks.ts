@@ -14,6 +14,14 @@ const USER: PixelMask = {
   h: 24,
   why: "avatar et nom de l'utilisateur : la phase 25 affiche le compte du système",
 };
+export const PROJECT_PAGES_SHIFT = 32;
+export const PROJECT_PAGES: PixelMask = {
+  x: 8,
+  y: 256,
+  w: 224,
+  h: 320,
+  why: "page Vue d'ensemble du projet, phase 26 : les pages et projets suivants, remontés de 32 px, sont comparés décalés",
+};
 const AGENT_BATCH: PixelMask = {
   x: 1396,
   y: 17,
@@ -44,10 +52,18 @@ const updatedAt = (y: number, w: number): PixelMask => ({
 });
 
 export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
-  planning: [USER, AGENT_BATCH, syncAge(987), sessionSlot(369, "EMIS-45"), sessionSlot(494, "EMIS-33")],
+  planning: [
+    USER,
+    AGENT_BATCH,
+    PROJECT_PAGES,
+    syncAge(987),
+    sessionSlot(369, "EMIS-45"),
+    sessionSlot(494, "EMIS-33"),
+  ],
   fonctionnalite: [
     USER,
     AGENT_BATCH,
+    PROJECT_PAGES,
     syncAge(1124),
     {
       x: 543,
@@ -78,6 +94,7 @@ export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
   tickets: [
     USER,
     AGENT_BATCH,
+    PROJECT_PAGES,
     syncAge(1124),
     {
       x: 980,
