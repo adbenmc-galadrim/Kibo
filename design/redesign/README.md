@@ -82,3 +82,35 @@ le changement de page : sans cela, un écran atterrit sur la page précédente).
 ## Exports
 
 `exports/piste-{a,b,c}-{vue-ensemble,tickets,graphe}-{dark,light}.png` (18 fichiers), copiés dans `screens/redesign/`.
+
+## Proposition consolidée (2026-10-16)
+
+### Décisions d'Adam
+1. **Livrer par fonctionnalité, de A à Z.** Un ensemble n'est plus un sprint ni un domaine technique : c'est une
+   **fonctionnalité** complète, démontrable une fois fermée. Ses **étapes sont libres** : ses sous-tickets dans l'ordre des
+   dépendances (« Stockage des photos → Route d'envoi → Écran d'envoi hors ligne → Tests E2E → Démo client »). L'avancement
+   se lit en fonctionnalités livrées (« 3 livrées sur 9 »), puis la prochaine à finir. Limite de **2 fonctionnalités ouvertes**
+   en même temps : finir avant de commencer.
+2. **Les sprints sont le plan de livraison.** On assigne une fonctionnalité à un sprint (nom et dates) ; un sprint montre ce
+   qui est livré, en cours ou en retard. Une fonctionnalité sans sprint attend dans « À planifier ».
+3. Kibo reste un outil de **suivi** : dev dans T3 Code via `full-delivery`, avancement remonté de git, des PR et de
+   `kibo tickets step`, exécution des agents masquée.
+
+### Écrans (page Penpot « Proposition », `scripts/50-proposition.js`)
+Base : piste A (densité, barre latérale, panneau de l'agent de projet, colonne « Git et PR »), plus la bande des échéances
+et « En ce moment » de la piste C, et « une case par étape » de la piste B. Entrée « Planning » ajoutée à la navigation du projet.
+
+| Board | Contenu |
+|---|---|
+| P1 · Vue d'ensemble | fonctionnalités livrées 3/9 (une case par fonctionnalité), sprint en cours, ouvertes 2/2, PR en review, questions ; « En ce moment » (sessions T3 Code) ; échéances par sprint avec glissement de F5 ; carte du sprint S42 ; « Prochaine à finir » avec `/full-delivery EMIS-45` ; activité ; agent de projet (lot n° 7 : reporter F5, planifier F9, relancer Q14) |
+| P2 · Planning | sprints S41 à S44 en colonnes et réserve « À planifier » ; cartes de fonctionnalité avec leurs étapes en cases ; F5 en retard ; F9 glissée vers la zone de dépôt de S44 ; limite d'ouvertes dans l'en-tête |
+| P3 · Fonctionnalité | F5 « Envoyer les photos d'un tronçon » : résultat attendu, parcours A→Z en frise verticale (ticket, état git et PR, étape full-delivery, session), « Livrer la prochaine étape » (`/full-delivery EMIS-34`), sprint et proposition de report, dépendances, questions, activité |
+| P4 · Tickets | liste à plat filtrée par sprint (S42), puce de fonctionnalité, terminés du sprint repliables, « Hors fonctionnalité » |
+| P5 · Graphe | fonctionnalités en cadres placés dans la colonne de leur sprint, étapes listées, dépendances entre fonctionnalités, retard et blocage |
+
+Données : 9 fonctionnalités F1 à F9 (EMIS-1 à EMIS-93), sprints S41 « Accès », S42 « Terrain hors ligne » (en cours, finit
+le 16 oct.), S43 « Import et soudures », S44 « Rapports » ; F9 « Exporter le dossier client » à planifier.
+
+Dessin : clés `p-vue`, `p-planning`, `p-fonctionnalite`, `p-tickets`, `p-graphe` sur la page « Proposition » (rangées de
+1 300 px), puis `storage.edgesP()` par mode dans un second appel et `await storage.exportProposition()`
+→ `exports/proposition-<écran>-<dark|light>.png`.
