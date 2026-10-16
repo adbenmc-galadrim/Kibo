@@ -65,13 +65,7 @@ const updatedAt = (y: number, w: number): PixelMask => ({
 });
 
 export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
-  planning: [
-    USER,
-    ...projectRows(1),
-    syncAge(987),
-    sessionSlot(369, "EMIS-45"),
-    sessionSlot(494, "EMIS-33"),
-  ],
+  planning: [USER, ...projectRows(1), syncAge(987), sessionSlot(369, "EMIS-45"), sessionSlot(494, "EMIS-33")],
   fonctionnalite: [
     USER,
     ...projectRows(1),
