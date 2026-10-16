@@ -42,3 +42,13 @@ export const pixelKitProject = (): Project => ({
   use: { browserName: "chromium", colorScheme: "dark", baseURL: `http://127.0.0.1:${PIXEL_DARK_PORT}` },
   ...screenshotOptions(PIXEL_KIT_REFERENCES),
 });
+
+const TRACKING_SPEC = /\/planning\.spec\.ts$/;
+
+export const trackingProjects = (daemons: readonly string[]): Project[] =>
+  PIXEL_DAEMONS.filter((d) => daemons.includes(d.name)).map((d) => ({
+    name: `planning-${d.scheme}`,
+    testMatch: TRACKING_SPEC,
+    dependencies: [d.name],
+    use: { browserName: "chromium", colorScheme: d.scheme, baseURL: `http://127.0.0.1:${d.port}` },
+  }));

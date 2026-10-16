@@ -1,6 +1,6 @@
 import { defineConfig, type PlaywrightTestConfig, type Project } from "@playwright/test";
 import { MARKET_PORTS } from "./market-fixture";
-import { PIXEL_DAEMONS, pixelKitProject, pixelProjectOptions } from "./pixel-projects";
+import { PIXEL_DAEMONS, pixelKitProject, pixelProjectOptions, trackingProjects } from "./pixel-projects";
 import { SYNC_PORTS } from "./sync-fixture";
 
 const THEMES = ["dark", "light"] as const;
@@ -320,6 +320,7 @@ export default defineConfig({
       }),
     ),
     ...(inTheme("dark") ? [pixelKitProject()] : []),
+    ...trackingProjects(daemons.map((d) => d.name)),
     ...marketThemes.map(
       (theme): Project => ({
         name: `market-${theme}`,
