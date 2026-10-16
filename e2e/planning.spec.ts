@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
+import { EMIS_FEATURES, EMIS_LOOSE_TICKETS } from "./fixtures/emis-maquettes";
 import { PIXEL_WIDTH } from "./pixel-settings";
 import {
   attachRepo,
@@ -18,6 +19,11 @@ const BRANCH = "feat/emis-51-lecture-excel";
 test.describe.configure({ mode: "serial" });
 
 let emis: Emis;
+
+const S43_TITLES = [
+  ...EMIS_FEATURES.filter((f) => f.sprint === "S43").flatMap((f) => f.steps.map((step) => step.title)),
+  ...EMIS_LOOSE_TICKETS.filter((t) => t.sprint === "S43").map((t) => t.title),
+].sort();
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: PIXEL_WIDTH, height: 1000 });
@@ -116,6 +122,9 @@ test("the S43 tab of Tickets has nothing delivered, and a new branch puts EMIS-5
   await s43.click();
   await expect(s43).toHaveAttribute("aria-selected", "true");
   await expect(page.getByText("Lecture du fichier Excel")).toBeVisible();
+  const titles = page.locator("[data-row-title]");
+  await expect(titles).toHaveCount(S43_TITLES.length);
+  expect((await titles.allTextContents()).sort()).toEqual(S43_TITLES);
   await expect(page.getByText("Écran d'envoi hors ligne")).toBeHidden();
   await expect(page.getByText(/^Terminés/)).toHaveCount(0);
   const repo = await attachRepo(page, emis);
