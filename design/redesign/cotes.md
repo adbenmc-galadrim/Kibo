@@ -4,7 +4,7 @@ Relevé automatique des boards validés (P1 bis, P2 à P5) par l'API du plugin P
 
 Horloge figée : vendredi 16 octobre (S42, 12–16 oct.), dernière activité à 15:04, « Synchronisé · il y a 1 min », « Suivi à jour · il y a 4 min ». Les données affichées sont listées exactement par écran (section « Données affichées ») ; une fixture e2e doit les reproduire.
 
-Règles générales : écrans de 1 440 px de large ; barre latérale 240 px ; panneau de l'agent 340 px (P1 bis) ; barre du haut 48 px ; polices Geist et Geist Mono ; icônes Lucide, trait 2 px. Les blocs sans fond, bordure ni enfant (espaceurs) sont omis : les positions des voisins en tiennent compte.
+Règles générales : écrans de 1 440 px de large ; barre latérale 240 px ; panneau de l'agent 340 px (P1 bis) ; barre du haut 48 px ; polices Geist et Geist Mono ; icônes Lucide, trait **2 px à la taille affichée** : le SVG 24 × 24 (trait 2) est importé dans Penpot puis redimensionné sans mise à l'échelle du trait, donc une icône de 11 à 14 px garde un trait de 2 px réels (rendu plus gras qu'un Lucide par défaut) ; côté interface, `absoluteStrokeWidth` de `lucide-react` (ou `strokeWidth = 48 / taille`). Les blocs sans fond, bordure ni enfant (espaceurs) sont omis : les positions des voisins en tiennent compte.
 
 ## Tokens de couleur
 
