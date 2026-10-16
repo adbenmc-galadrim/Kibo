@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
 import { fr } from "../i18n/fr";
 import { ProjectHeaderMenu } from "./lazy-screens";
+import { planningMissing } from "./nav/planning-missing";
 import { ProjectPages } from "./ProjectPages";
 
 export type Link = (target: TabTarget | null) => {
@@ -36,6 +37,10 @@ export function ProjectEntry({ project, active, current, editable, link, ...p }:
     if (!current) p.onOpen({ kind: "project", projectId: project.id }, false);
     p.onNewPage(null);
   };
+  const onPlanningAdded =
+    active && editable && planningMissing(active)
+      ? (pageId: string) => p.onOpen({ kind: "page", projectId: project.id, pageId }, false)
+      : null;
   const header = (
     <>
       <ProjectHeaderMenu
@@ -43,6 +48,7 @@ export function ProjectEntry({ project, active, current, editable, link, ...p }:
         current={current}
         shifted={editable}
         editable={p.menuEditable}
+        onPlanningAdded={onPlanningAdded}
         actions={{ newPage, share: p.onShare, edit: p.onEdit, remove: p.onDelete }}
       >
         <SidebarMenuButton isActive={p.projectActive} {...link({ kind: "project", projectId: project.id })}>

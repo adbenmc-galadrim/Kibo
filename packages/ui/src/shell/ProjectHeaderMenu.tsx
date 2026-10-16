@@ -5,10 +5,13 @@ import { ContextMenuEntries, DropdownMenuEntries } from "@kibo/sdk/ui/menu-entri
 import { SidebarMenuAction } from "@kibo/sdk/ui/sidebar";
 import { Ellipsis } from "lucide-react";
 import { type ReactNode, useState } from "react";
+import { client } from "../api";
 import { ProjectFilesDialog } from "../files/lazy-files";
 import { fr } from "../i18n/fr";
 import { frProject } from "../i18n/fr-project";
 import { frShare } from "../i18n/fr-share";
+import { frTracking } from "../i18n/fr-tracking";
+import { addPlanningPage } from "./nav/planning-page";
 import { type ProjectMenuActions, projectMenuEntries } from "./project-menu";
 
 export type ProjectHeaderMenuProps = {
@@ -16,7 +19,8 @@ export type ProjectHeaderMenuProps = {
   current: boolean;
   shifted: boolean;
   editable: boolean;
-  actions: Omit<ProjectMenuActions, "files">;
+  actions: Omit<ProjectMenuActions, "files" | "planning">;
+  onPlanningAdded: ((pageId: string) => void) | null;
   children: ReactNode;
 };
 
@@ -26,19 +30,27 @@ export function ProjectHeaderMenu({
   shifted,
   editable,
   actions,
+  onPlanningAdded,
   children,
 }: ProjectHeaderMenuProps) {
+  const planning = onPlanningAdded
+    ? () =>
+        void addPlanningPage((command) =>
+          client.rpc({ method: "command", projectId: project.id, command }),
+        ).then(onPlanningAdded, (e: unknown) => console.error("[kibo-ui] planning page not added", e))
+    : null;
   const [filesOpen, setFilesOpen] = useState(false);
   const entries = projectMenuEntries({
     editable,
     texts: {
       newPage: fr.nav.newPage,
+      planning: frTracking.addPlanning,
       share: frShare.action,
       edit: fr.nav.editProject,
       files: frProject.files,
       remove: fr.nav.deleteProject,
     },
-    actions: { ...actions, files: isInbox(project.id) ? null : () => setFilesOpen(true) },
+    actions: { ...actions, planning, files: isInbox(project.id) ? null : () => setFilesOpen(true) },
   });
   return (
     <>

@@ -10,6 +10,7 @@ import {
   STORYBOOK_DEFAULTS,
   type StorybookSettings,
   type TabTarget,
+  type TrackingSettings,
   WORKTREE_DEFAULTS,
   type WorkspaceConfig,
   type WorktreeSettings,
@@ -33,6 +34,7 @@ import { IconField } from "./IconField";
 import { projectPatch } from "./project-patch";
 import { RecipientsFields } from "./RecipientsFields";
 import { StorybookFields, storybookProblem } from "./StorybookFields";
+import { TrackingSection } from "./TrackingSection";
 import { WorktreeFields, worktreeProblem } from "./WorktreeFields";
 
 type Props = {
@@ -75,6 +77,7 @@ export function EditProjectDialog({
   );
   const [duplication, setDuplication] = useState<DuplicationSettings | null>(project.duplication);
   const [delivery, setDelivery] = useState<ProjectDelivery | null>(project.delivery);
+  const [tracking, setTracking] = useState<TrackingSettings | null>(project.tracking);
   const [problems, setProblems] = useState<{ recipe: string | null; delivery: string | null }>({
     recipe: null,
     delivery: null,
@@ -89,6 +92,7 @@ export function EditProjectDialog({
   const patch = projectPatch(saved, {
     name,
     color,
+    tracking,
     folder: remote ? (project.folder ?? "") : folder,
     ...(showWorktree && { worktree, delivery }),
     ...(!remote && { storybook, duplication }),
@@ -239,6 +243,7 @@ export function EditProjectDialog({
               }}
             />
           )}
+          <TrackingSection value={tracking} onChange={setTracking} disabled={busy} />
           <DuplicationFields
             value={duplication}
             onChange={setDuplication}

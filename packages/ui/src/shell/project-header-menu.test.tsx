@@ -34,6 +34,7 @@ function mount(editable: boolean, shifted: boolean) {
             editable={editable}
             shifted={shifted}
             actions={actions()}
+            onPlanningAdded={null}
           >
             <SidebarMenuButton>Kibo</SidebarMenuButton>
           </ProjectHeaderMenu>

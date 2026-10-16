@@ -396,10 +396,24 @@ test("right click and the ellipsis open the same project menu; edit and delete o
   const entry = await screen.findByRole("button", { name: "Kibo" });
   await user.pointer({ keys: "[MouseRight]", target: entry });
   const names = () => screen.getAllByRole("menuitem").map((i) => i.textContent);
-  expect(names()).toEqual(["Nouvelle page", "Partager", "Modifier…", "Fichiers du projet…", "Supprimer…"]);
+  expect(names()).toEqual([
+    "Nouvelle page",
+    "Ajouter la page Planning",
+    "Partager",
+    "Modifier…",
+    "Fichiers du projet…",
+    "Supprimer…",
+  ]);
   await user.keyboard("{Escape}");
   await user.click(screen.getByRole("button", { name: "Actions de Kibo" }));
-  expect(names()).toEqual(["Nouvelle page", "Partager", "Modifier…", "Fichiers du projet…", "Supprimer…"]);
+  expect(names()).toEqual([
+    "Nouvelle page",
+    "Ajouter la page Planning",
+    "Partager",
+    "Modifier…",
+    "Fichiers du projet…",
+    "Supprimer…",
+  ]);
   await user.click(screen.getByRole("menuitem", { name: "Modifier…" }));
   expect(await screen.findByRole("dialog", { name: "Modifier le projet" })).toBeTruthy();
   await user.keyboard("{Escape}");

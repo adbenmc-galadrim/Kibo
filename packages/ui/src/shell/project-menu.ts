@@ -1,8 +1,9 @@
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
-import { FolderOpen, Pencil, Plus, Share2, Trash2 } from "lucide-react";
+import { CalendarRange, FolderOpen, Pencil, Plus, Share2, Trash2 } from "lucide-react";
 
 export type ProjectMenuActions = {
   newPage(): void;
+  planning: (() => void) | null;
   share(): void;
   edit(): void;
   files: (() => void) | null;
@@ -10,6 +11,7 @@ export type ProjectMenuActions = {
 };
 export type ProjectMenuTexts = {
   newPage: string;
+  planning: string;
   share: string;
   edit: string;
   files: string;
@@ -33,8 +35,12 @@ export function projectMenuEntries(input: {
     onSelect: actions.remove,
   };
   if (!editable) return [share, ...files, { separator: true }, remove];
+  const planning: MenuEntry[] = actions.planning
+    ? [{ label: texts.planning, icon: CalendarRange, onSelect: actions.planning }]
+    : [];
   return [
     { label: texts.newPage, icon: Plus, onSelect: actions.newPage },
+    ...planning,
     share,
     { label: texts.edit, icon: Pencil, onSelect: actions.edit },
     ...files,
