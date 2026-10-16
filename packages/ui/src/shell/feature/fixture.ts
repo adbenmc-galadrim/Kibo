@@ -11,7 +11,6 @@ import {
   type SprintView,
   type TicketView,
 } from "@kibo/schema";
-import type { CodedSprint } from "./sprint-label";
 
 export const NOW = new Date(2026, 9, 16, 14, 52).getTime();
 const at = (day: number, h: number, m: number) => new Date(2026, 9, day, h, m).getTime();
@@ -67,7 +66,7 @@ const sprint = (
   start: string,
   end: string,
   state: SprintView["state"],
-): CodedSprint => ({
+): SprintView => ({
   id,
   code,
   name,
@@ -79,7 +78,7 @@ const sprint = (
   total: 0,
 });
 
-export const SPRINTS: CodedSprint[] = [
+export const SPRINTS: SprintView[] = [
   sprint("s41", "S41", "Accès", "2026-10-05", "2026-10-09", "done"),
   sprint("s42", "S42", "Terrain hors ligne", "2026-10-12", "2026-10-16", "current"),
   sprint("s43", "S43", "Import et soudures", "2026-10-19", "2026-10-23", "planned"),

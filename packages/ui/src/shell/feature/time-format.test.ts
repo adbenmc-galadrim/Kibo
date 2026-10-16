@@ -1,13 +1,8 @@
 import { expect, test } from "bun:test";
-import { ageLabel, dateRange, localDay, shortTime, stepTime } from "./time-format";
+import { ageLabel, dateRange, shortTime, stepTime } from "./time-format";
 
 const now = new Date(2026, 9, 16, 14, 52).getTime();
 const at = (day: number, h: number, m: number) => new Date(2026, 9, day, h, m).getTime();
-
-test("the local day of an instant is written YYYY-MM-DD", () => {
-  expect(localDay(now)).toBe("2026-10-16");
-  expect(localDay(new Date(2026, 0, 3, 0, 1).getTime())).toBe("2026-01-03");
-});
 
 test("a step time shows the hour today, « hier » the day before, the date otherwise", () => {
   expect(stepTime(at(16, 15, 4), now)).toBe("15:04");

@@ -1,12 +1,11 @@
-import { sortSprints, type TicketView } from "@kibo/schema";
+import { type SprintView, sortSprints, type TicketView } from "@kibo/schema";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { frFeature as t } from "../i18n/fr-group";
-import { type CodedSprint, sprintCode } from "../shell/feature/sprint-label";
 import type { TicketCommand } from "./use-ticket-command";
 
 type Props = {
   ticket: Pick<TicketView, "id" | "parentId" | "sprintId" | "progress">;
-  sprints: readonly CodedSprint[];
+  sprints: readonly SprintView[];
   editable: boolean;
   command: TicketCommand;
 };
@@ -33,7 +32,7 @@ export function SprintField({ ticket, sprints, editable, command }: Props) {
         <SelectItem value={UNPLANNED}>{t.unplanned}</SelectItem>
         {sortSprints(sprints).map((s) => (
           <SelectItem key={s.id} value={s.id}>
-            {s.code ? `${sprintCode(s)} · ${s.name}` : s.name}
+            {`${s.code} · ${s.name}`}
           </SelectItem>
         ))}
       </SelectContent>

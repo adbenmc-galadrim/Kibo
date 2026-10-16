@@ -1,5 +1,4 @@
 import type { ProjectSnapshot, TicketView } from "@kibo/schema";
-import { sprintCode } from "./sprint-label";
 
 export type FeatureDependency = {
   id: string;
@@ -29,7 +28,7 @@ const dependency = (project: Project, root: TicketView): FeatureDependency => {
     label: root.shortKey ?? root.keyLabel,
     title: root.title,
     delivered: root.feature ? root.feature.status === "delivered" : root.statusId === "done",
-    sprint: sprint ? sprintCode(sprint) : null,
+    sprint: sprint?.code ?? null,
   };
 };
 

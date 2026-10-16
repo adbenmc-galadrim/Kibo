@@ -1,8 +1,9 @@
 import type { StatusId } from "@kibo/schema";
 
-export const STROKE = "shadow-[inset_0_0_0_1px_var(--tracking-border)]";
-export const STROKE_MFG = "shadow-[inset_0_0_0_1px_var(--tracking-mfg)]";
-export const STROKE_BRAND = "shadow-[inset_0_0_0_1px_var(--tracking-brand-line)]";
+export const STROKE = "shadow-[0_0_0_0.5px_var(--tracking-border),inset_0_0_0_0.5px_var(--tracking-border)]";
+export const STROKE_MFG = "shadow-[0_0_0_0.5px_var(--tracking-mfg),inset_0_0_0_0.5px_var(--tracking-mfg)]";
+export const STROKE_BRAND =
+  "shadow-[0_0_0_0.5px_var(--tracking-brand-line),inset_0_0_0_0.5px_var(--tracking-brand-line)]";
 export const CARD = `rounded-[8px] bg-(--tracking-card) ${STROKE}`;
 export const SEPARATOR = "h-px w-full shrink-0 bg-(--tracking-soft)";
 

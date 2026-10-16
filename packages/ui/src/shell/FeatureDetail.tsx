@@ -17,8 +17,6 @@ import { featureBadge, nextToDeliver, sprintFacts, stepModels } from "./feature/
 import { NextStepAction } from "./feature/NextStepAction";
 import { SprintCard } from "./feature/SprintCard";
 import { StepsTimeline } from "./feature/StepsTimeline";
-import { sprintCode } from "./feature/sprint-label";
-import { localDay } from "./feature/time-format";
 import { useOptionalHost } from "./Host";
 
 type Props = {
@@ -53,7 +51,7 @@ export function FeatureDetail({
   const editable = canEdit(project);
   const steps = stepModels(project, f.id, agents?.runs ?? [], now);
   const next = nextToDeliver(steps);
-  const facts = sprintFacts(project, f, localDay(now));
+  const facts = sprintFacts(project, f);
   const setSprint = (sprintId: string | null) =>
     void sprintCommand.run({ method: "setTicketSprint", ticketId: f.id, sprintId });
   const openFile = (r: { path: string; line: number | null }) =>
@@ -65,13 +63,13 @@ export function FeatureDetail({
       origin: f.keyLabel,
     });
   return (
-    <div className="@container w-full text-(--tracking-fg)">
+    <div data-screen="feature" className="@container w-full text-(--tracking-fg)">
       <div className="flex flex-col gap-[28px] px-[28px] py-[22px] @min-[900px]:flex-row @min-[900px]:items-start">
         <div className="flex min-w-0 flex-1 flex-col gap-[18px]">
           <FeatureHeader
             feature={f}
-            sprintCode={facts.sprint ? sprintCode(facts.sprint) : null}
-            badge={featureBadge(f.feature, facts.warning)}
+            sprintCode={facts.sprint?.code ?? null}
+            badge={featureBadge(f.feature)}
             steps={steps}
             editable={editable}
             command={titleCommand}

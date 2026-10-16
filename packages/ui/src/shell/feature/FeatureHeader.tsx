@@ -68,7 +68,10 @@ export function FeatureHeader({ feature, sprintCode, badge, steps, editable, com
         <Badge badge={badge} />
         {actions && <span className="ml-auto flex items-center">{actions}</span>}
       </div>
-      <h1 className="text-[26px] leading-[32px] font-semibold tracking-[-0.4px] text-(--tracking-fg)">
+      <h1
+        aria-label={feature.title}
+        className="text-[26px] leading-[32px] font-semibold tracking-[-0.4px] text-(--tracking-fg)"
+      >
         <TicketTitle
           title={feature.title}
           editable={editable}

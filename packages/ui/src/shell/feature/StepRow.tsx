@@ -36,7 +36,7 @@ function StatusLabel({ step, workflow }: { step: StepModel; workflow: readonly S
     <span className="ml-auto flex shrink-0 items-center gap-[6px]">
       <span
         aria-hidden
-        className={`size-[8px] rounded-full ${fill ?? "shadow-[inset_0_0_0_1.5px_var(--tracking-dim)]"}`}
+        className={`size-[8px] rounded-full ${fill ?? "shadow-[0_0_0_0.75px_var(--tracking-dim),inset_0_0_0_0.75px_var(--tracking-dim)]"}`}
       />
       <span className="text-[12.5px] leading-[15px] text-(--tracking-fg)">
         {workflow.find((s) => s.id === step.statusId)?.label ?? step.statusId}

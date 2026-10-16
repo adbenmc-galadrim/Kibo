@@ -3,11 +3,6 @@ import { frFeature as t } from "../../i18n/fr-group";
 const DAY_MS = 86_400_000;
 const pad = (n: number): string => String(n).padStart(2, "0");
 
-export const localDay = (at: number): string => {
-  const d = new Date(at);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-};
-
 const midnight = (at: number): number => {
   const d = new Date(at);
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();

@@ -45,17 +45,14 @@ export type SprintFacts = {
   warning: SprintWarning | null;
 };
 
-function warningOf(sprint: SprintView, state: FeatureState | null, today: string): SprintWarning | null {
-  if (!state || state.remaining === 0) return null;
-  if (sprint.state === "done") return { kind: "over", remaining: state.remaining };
-  if (state.status === "late" || sprint.end <= today) return { kind: "wontFit", remaining: state.remaining };
-  return null;
+function warningOf(sprint: SprintView, state: FeatureState | null): SprintWarning | null {
+  if (state?.status !== "late") return null;
+  return { kind: sprint.state === "done" ? "over" : "wontFit", remaining: state.remaining };
 }
 
 export function sprintFacts(
   project: Pick<ProjectSnapshot, "sprints">,
   feature: Pick<TicketView, "sprintId" | "feature">,
-  today: string,
 ): SprintFacts {
   const sorted = sortSprints(project.sprints);
   const index = sorted.findIndex((s) => s.id === feature.sprintId);
@@ -64,16 +61,13 @@ export function sprintFacts(
   return {
     sprint,
     following: sorted.slice(index + 1).find((s) => s.state !== "done") ?? null,
-    warning: warningOf(sprint, feature.feature, today),
+    warning: warningOf(sprint, feature.feature),
   };
 }
 
 export type FeatureBadge = "late" | "open" | "blocked" | "delivered" | null;
 
-export function featureBadge(state: FeatureState | null, warning: SprintWarning | null): FeatureBadge {
-  if (!state) return null;
-  if (state.status === "delivered") return "delivered";
-  if (state.status === "blocked") return "blocked";
-  if (state.status === "late" || warning !== null) return "late";
-  return state.status === "open" ? "open" : null;
+export function featureBadge(state: FeatureState | null): FeatureBadge {
+  if (!state || state.status === "todo") return null;
+  return state.status;
 }

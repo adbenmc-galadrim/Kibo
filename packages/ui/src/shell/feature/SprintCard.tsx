@@ -11,7 +11,6 @@ import { frFeature as t } from "../../i18n/fr-group";
 import { ASIDE_ROW, AsideCard, AsideRow } from "./AsideCard";
 import type { SprintFacts } from "./feature-model";
 import { SprintChip } from "./SprintChip";
-import { type CodedSprint, sprintCode } from "./sprint-label";
 import { STROKE } from "./styles";
 import { dateRange } from "./time-format";
 
@@ -22,17 +21,14 @@ type Props = {
   onSetSprint(sprintId: string | null): void;
 };
 
-const describe = (s: CodedSprint): string => {
-  const range = dateRange(s.start, s.end);
-  return s.code ? `${s.name} · ${range}` : range;
-};
+const describe = (s: SprintView): string => `${s.name} · ${dateRange(s.start, s.end)}`;
 
 function SprintSummary({ sprint }: { sprint: SprintView | null }) {
   if (!sprint)
     return <span className="text-[12.5px] leading-[15px] text-(--tracking-dim)">{t.unplanned}</span>;
   return (
     <>
-      <SprintChip code={sprintCode(sprint)} />
+      <SprintChip code={sprint.code} />
       <span className="min-w-0 truncate text-[12.5px] leading-[15px] text-(--tracking-fg)">
         {describe(sprint)}
       </span>
@@ -59,7 +55,7 @@ function SprintPicker({ facts, sprints, editable, onSetSprint }: Props) {
       <DropdownMenuContent align="end">
         {sprints.map((s) => (
           <DropdownMenuItem key={s.id} onSelect={() => onSetSprint(s.id)}>
-            <span className="font-mono text-xs">{sprintCode(s)}</span>
+            <span className="font-mono text-xs">{s.code}</span>
             <span className="text-muted-foreground">{describe(s)}</span>
           </DropdownMenuItem>
         ))}
@@ -72,7 +68,7 @@ function SprintPicker({ facts, sprints, editable, onSetSprint }: Props) {
 function Warning({ facts, editable, onSetSprint }: Omit<Props, "sprints">) {
   const { sprint, following, warning } = facts;
   if (!sprint || !warning) return null;
-  const code = sprintCode(sprint);
+  const code = sprint.code;
   const text =
     warning.kind === "wontFit" ? t.wontFit(warning.remaining, code) : t.sprintOver(warning.remaining, code);
   return (
@@ -89,7 +85,7 @@ function Warning({ facts, editable, onSetSprint }: Omit<Props, "sprints">) {
                 onClick={() => onSetSprint(following.id)}
               >
                 <CalendarRange />
-                {t.moveTo(sprintCode(following))}
+                {t.moveTo(following.code)}
               </Button>
             </div>
           )}

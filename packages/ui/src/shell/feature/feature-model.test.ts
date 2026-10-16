@@ -2,8 +2,7 @@ import { expect, test } from "bun:test";
 import { featureActivity, featureQuestions } from "./feature-feed";
 import { featureDependencies } from "./feature-links";
 import { featureBadge, nextToDeliver, sprintFacts, stepModels } from "./feature-model";
-import { emisFeatureProject, NOW, SESSION_RUN, SPRINTS } from "./fixture";
-import { sprintCode } from "./sprint-label";
+import { emisFeatureProject, NOW, SESSION_RUN } from "./fixture";
 
 const project = emisFeatureProject();
 const f5 = () => {
@@ -37,12 +36,9 @@ test("the next step to deliver is the first one not started", () => {
   expect(nextToDeliver(steps.map((s) => ({ ...s, statusId: "done" as const })))).toBeNull();
 });
 
-test("a sprint ending today with steps left warns that the feature will not fit", () => {
-  const facts = sprintFacts(project, f5(), "2026-10-16");
-  expect(facts.sprint?.id).toBe("s42");
-  expect(facts.following?.id).toBe("s43");
-  expect(facts.warning).toEqual({ kind: "wontFit", remaining: 4 });
-  expect(featureBadge(f5().feature, facts.warning)).toBe("late");
+test("the fixture F5 is late on the last day of S42 (end ≤ today, §37.3)", () => {
+  expect(f5().feature?.status).toBe("late");
+  expect(f5().feature?.remaining).toBe(4);
 });
 
 const withStatus = (status: "open" | "late") => {
@@ -51,30 +47,30 @@ const withStatus = (status: "open" | "late") => {
   return { ...f5(), feature: { ...state, status } };
 };
 
-test("before the last day of the sprint nothing warns and the feature stays open", () => {
-  const open = withStatus("open");
-  const facts = sprintFacts(project, open, "2026-10-14");
-  expect(facts.warning).toBeNull();
-  expect(featureBadge(open.feature, facts.warning)).toBe("open");
-});
-
-test("late on the last day of its sprint (end ≤ today), the feature still fits nowhere else", () => {
-  const late = withStatus("late");
-  const facts = sprintFacts(project, late, "2026-10-16");
+test("a late feature in a running sprint will not fit and can move to the next sprint", () => {
+  const facts = sprintFacts(project, withStatus("late"));
+  expect(facts.sprint?.id).toBe("s42");
+  expect(facts.following?.id).toBe("s43");
   expect(facts.warning).toEqual({ kind: "wontFit", remaining: 4 });
-  expect(featureBadge(late.feature, facts.warning)).toBe("late");
+  expect(featureBadge(withStatus("late").feature)).toBe("late");
 });
 
-test("a late feature says its sprint is over", () => {
-  const late = withStatus("late");
+test("an open feature gets no warning, whatever the dates", () => {
+  const open = withStatus("open");
+  expect(sprintFacts(project, open).warning).toBeNull();
+  expect(featureBadge(open.feature)).toBe("open");
+});
+
+test("a late feature whose sprint is done says the sprint is over", () => {
   const sprints = project.sprints.map((s) => (s.id === "s42" ? { ...s, state: "done" as const } : s));
-  const facts = sprintFacts({ ...project, sprints }, late, "2026-10-19");
-  expect(facts.warning).toEqual({ kind: "over", remaining: 4 });
-  expect(featureBadge(late.feature, facts.warning)).toBe("late");
+  expect(sprintFacts({ ...project, sprints }, withStatus("late")).warning).toEqual({
+    kind: "over",
+    remaining: 4,
+  });
 });
 
 test("an unplanned feature has no sprint and nothing to move", () => {
-  const facts = sprintFacts(project, { ...f5(), sprintId: null }, "2026-10-16");
+  const facts = sprintFacts(project, { ...f5(), sprintId: null });
   expect(facts).toEqual({ sprint: null, following: null, warning: null });
 });
 
@@ -115,10 +111,4 @@ test("the open questions of the feature and its steps are listed with their orig
   expect(featureQuestions({ ...project, questions: [q16, answered] }, "f5", NOW)).toEqual([
     { id: "q16", title: "Quota par affaire : 2 Go ou 5 Go ?", meta: "Q16 · Produit · hier · EMIS-34" },
   ]);
-});
-
-test("a sprint shows its code, never a piece of its name", () => {
-  const [s41] = SPRINTS;
-  if (!s41) throw new Error("fixture without S41");
-  expect(sprintCode(s41)).toBe("S41");
 });
