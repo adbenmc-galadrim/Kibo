@@ -19,11 +19,19 @@ const ticket = (id: string, statusId: StatusId, externalRefs: ExternalRef[] = []
 
 describe("set assignments", () => {
   test("parses status, pr and reason, refuses anything else", () => {
-    expect(parseAssignments(["status=wip", "pr=12"])).toEqual({ status: "wip", pr: "12", reason: null });
+    expect(parseAssignments(["status=wip", "pr=12"])).toEqual({
+      status: "wip",
+      pr: "12",
+      reason: null,
+      branch: null,
+      base: null,
+    });
     expect(parseAssignments(["status=blocked", "reason=attente client = oui"])).toEqual({
       status: "blocked",
       pr: null,
       reason: "attente client = oui",
+      branch: null,
+      base: null,
     });
     expect(() => parseAssignments([])).toThrow("INVALID_INPUT");
     expect(() => parseAssignments(["owner=adam"])).toThrow("INVALID_INPUT");

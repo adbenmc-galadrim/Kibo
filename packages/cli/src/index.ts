@@ -12,6 +12,7 @@ import {
   type PublishStrategy,
   publishCommand,
 } from "./commands/publish";
+import { sprintsCommand } from "./commands/sprints";
 import { componentDir, testCommand } from "./commands/test";
 import { runTicketsCommand } from "./commands/tickets";
 import { fr } from "./fr";
@@ -108,6 +109,7 @@ export async function runCli(argv: string[], io: CliIo): Promise<number> {
     return reportingErrors(io, () => runMarketCommand(positional.slice(1), flags, marketDeps(io)));
   if (scope === "tickets")
     return reportingErrors(io, () => runTicketsCommand(positional.slice(1), flags, io));
+  if (scope === "sprints") return reportingErrors(io, () => sprintsCommand(positional.slice(1), flags, io));
   if (scope === "projects") return reportingErrors(io, () => projectsCommand(positional.slice(1), flags, io));
   if (scope !== "component" || !command || !target) {
     io.err(fr.usage);
