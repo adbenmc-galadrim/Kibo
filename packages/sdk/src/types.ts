@@ -7,6 +7,7 @@ import type {
   ComponentCall,
   ComponentFormat,
   ComponentManifest,
+  ComponentSettings,
   DeliverResult,
   DeliveryAgent,
   DeliveryResult,
@@ -132,6 +133,10 @@ export type SprintsApi = {
   remove(sprintId: string): Promise<void>;
   assign(ticketId: string, sprintId: string | null): Promise<void>;
 };
+export type SettingsApi = {
+  get(): Promise<ComponentSettings>;
+  subscribe(listener: () => void): () => void;
+};
 export type OpenViewOptions = { question?: string };
 
 export type KiboSdk = {
@@ -163,6 +168,7 @@ export type KiboSdk = {
   questions: QuestionsApi;
   runs: RunsApi;
   sprints: SprintsApi;
+  settings: SettingsApi;
   openRun(runId: string): void;
   focus: FocusApi;
   visibility: VisibilityApi;
@@ -183,6 +189,7 @@ export type ProjectBackend = {
   runs(): Promise<TicketRun[]>;
   subscribeRuns(listener: () => void): () => void;
   subscribePresence?(listener: () => void): () => void;
+  subscribeConfig?(listener: () => void): () => void;
 };
 
 export type SdkContext = Pick<

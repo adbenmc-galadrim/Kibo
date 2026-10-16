@@ -109,10 +109,12 @@ export function SandboxFrame({
     const offPresence = client.subscribeEvents((m) => {
       if (m.type === "presence.changed" && m.projectId === projectId) b.changed();
     });
+    const offConfig = client.subscribeTopic("config", () => b.changed());
     return () => {
       window.removeEventListener("message", b.handle);
       off();
       offPresence();
+      offConfig();
       b.dispose();
       bridge.current = null;
     };

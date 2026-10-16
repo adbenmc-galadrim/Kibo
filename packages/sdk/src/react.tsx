@@ -1,4 +1,6 @@
 import {
+  type ComponentSettings,
+  DEFAULT_COMPONENT_SETTINGS,
   DEFAULT_RECIPIENTS,
   type EntityType,
   KiboError,
@@ -97,6 +99,13 @@ export function usePresence(): PresencePeer[] {
 
 export function useSharing(): ProjectSyncInfo {
   return useSdkValue(readSharing, watchProject, EMPTY_SHARING);
+}
+
+const readSettings: Read<ComponentSettings> = (sdk) => sdk.settings.get();
+const watchSettings: Watch = (sdk, l) => sdk.settings.subscribe(l);
+
+export function useComponentSettings(): ComponentSettings {
+  return useSdkValue(readSettings, watchSettings, DEFAULT_COMPONENT_SETTINGS);
 }
 
 export function useMembers(): MemberInfo[] {

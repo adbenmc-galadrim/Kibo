@@ -19,6 +19,7 @@ import type { ComponentIntegrationHooks } from "../integrations/types";
 import { ensureNotesTables } from "../notes/index";
 import { createNotesService, type NotesService } from "../notes/service";
 import { ensureSettingsTable } from "../notes/settings";
+import { createAppSettingsStore } from "../settings/app-settings-store";
 import { createBackends } from "./backends";
 import { approvedHashOf, stampComponentHash } from "./component-hash";
 import { listDrafts } from "./drafts";
@@ -139,6 +140,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
     },
   });
 
+  const appSettings = createAppSettingsStore(deps.db, Date.now);
   const gate = createGate({
     instance: instanceOf,
     active: (ref) => registry.active(ref),
@@ -150,6 +152,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       files,
       backends: () => backends,
       manifestOf: (ref) => registry.manifestOf(ref),
+      appSettings: () => appSettings.get(),
     }),
   });
 

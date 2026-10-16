@@ -91,6 +91,7 @@ export function permissionOfCall(call: ComponentCall): string | null {
       return `mcp:${call.server}`;
     case "presence.list":
     case "sharing.get":
+    case "settings.get":
       return "read:ticket";
     case "assets.list":
     case "assets.url":

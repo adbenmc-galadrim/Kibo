@@ -3,6 +3,7 @@ import {
   type CiRun,
   type ComponentCall,
   type ComponentManifest,
+  type ComponentSettings,
   type DeliveryResult,
   type EntityType,
   type FetchInit,
@@ -43,6 +44,7 @@ export type MockCallDeps = {
   serverContext(): ServerContext;
   deliver(ticketId: string): DeliveryResult;
   peek(runId: string): RunPeek;
+  settings(): ComponentSettings;
   delivery: MockRunDelivery;
   fetch?: MockFetch;
   server?: ServerDefinition;
@@ -154,6 +156,8 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
               members: deps.members ?? [],
             }
           : { ...localSyncInfo(deps.doc), access: deps.access() };
+      case "settings.get":
+        return deps.settings();
       case "assets.list":
         return deps.assets ?? [];
       case "assets.url":

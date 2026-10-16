@@ -7,6 +7,7 @@ import {
   type EmbedView,
   type Instance,
   KiboError,
+  type ProjectMeta,
 } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import { z } from "zod";
@@ -287,4 +288,31 @@ test("peeking a run goes to the agents, and says so when they are not started", 
     peekRun: (projectId, runId) => ({ ...PEEK, runId: `${projectId}/${runId}` }),
   });
   expect(await handlers.peek("p1", "r1")).toEqual({ ...PEEK, runId: "p1/r1" });
+});
+
+const metaWith = (tracking: ProjectMeta["tracking"]): ProjectMeta => ({
+  id: "p1",
+  key: "EMIS",
+  name: "Emis",
+  folder: null,
+  color: "#14B8A6",
+  worktree: null,
+  storybook: null,
+  duplication: null,
+  delivery: null,
+  tracking,
+});
+
+test("settings.get reads the project tracking and the machine agent execution", async () => {
+  const handlers = createGateHandlers({
+    ...stubHandlerDeps,
+    docs: { ...stubDocs, projectMeta: () => metaWith({ openLimit: 3 }) },
+    appSettings: () => ({ agentExecution: "shown" }),
+  });
+  expect(await handlers.settings("p1")).toEqual({ tracking: { openLimit: 3 }, agentExecution: "shown" });
+  const defaults = createGateHandlers({
+    ...stubHandlerDeps,
+    docs: { ...stubDocs, projectMeta: () => metaWith(null) },
+  });
+  expect(await defaults.settings("p1")).toEqual({ tracking: null, agentExecution: "hidden" });
 });

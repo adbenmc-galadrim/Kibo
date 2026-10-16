@@ -89,6 +89,7 @@ test("presence and sharing need read:ticket", () => {
   const statusOnly = { ...granted, reads: ["status" as const] };
   expect(missingPermission(statusOnly, { kind: "presence.list" })).toBe("read:ticket");
   expect(missingPermission(statusOnly, { kind: "sharing.get" })).toBe("read:ticket");
+  expect(missingPermission(statusOnly, { kind: "settings.get" })).toBe("read:ticket");
   expect(missingPermission(granted, { kind: "presence.list" })).toBeNull();
 });
 
@@ -112,11 +113,19 @@ test("presence.list and sharing.get reach their handlers for the caller's projec
         asked.push(projectId);
         return { shared: true, keyAllocator: "server", role: "editor", access: "write", members: [] };
       },
+      settings: async (projectId) => {
+        asked.push(projectId);
+        return { tracking: { openLimit: 3 }, agentExecution: "shown" };
+      },
     },
   });
   expect(await gate.call("p1", "thirdparty", { kind: "presence.list" })).toEqual(peers);
   expect(await gate.call("p2", "thirdparty", { kind: "sharing.get" })).toMatchObject({ shared: true });
-  expect(asked).toEqual(["p1", "p2"]);
+  expect(await gate.call("p3", "thirdparty", { kind: "settings.get" })).toEqual({
+    tracking: { openLimit: 3 },
+    agentExecution: "shown",
+  });
+  expect(asked).toEqual(["p1", "p2", "p3"]);
 });
 
 test("questions.deliver needs write:question and reaches the questions handler", async () => {

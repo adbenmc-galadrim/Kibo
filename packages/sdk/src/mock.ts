@@ -24,7 +24,9 @@ import { createMockEmbeds, recordedFrameApis } from "./mock-embed";
 import { createMockNotes } from "./mock-notes";
 import { createNotifier } from "./mock-notifier";
 import { createMockDelivery } from "./mock-questions";
+import { recordedAgentApis } from "./mock-recorded";
 import { activityOf, createMockRuns } from "./mock-runs";
+import { createMockSettings } from "./mock-settings";
 import type { MockSdk, MockSdkOptions } from "./mock-types";
 import { createSdk } from "./sdk";
 import type { ServerContext } from "./server";
@@ -56,7 +58,7 @@ export function createMockSdk(
     storybook: null,
     duplication: null,
     delivery: null,
-    tracking: null,
+    tracking: opts.tracking ?? null,
   });
   const changes = createNotifier();
   const runChanges = createNotifier();
@@ -91,6 +93,7 @@ export function createMockSdk(
   const visible = createSignal(opts.visible ?? true);
   const selection = createSignal<Selection | null>(opts.selection ?? null);
   const spotlight = createSpotlightStore(opts.spotlight ?? null);
+  const settings = createMockSettings(doc, opts.agentExecution ?? "hidden", changes.emit);
   const mockRuns = createMockRuns(opts.peeks ?? {});
   const today = opts.today ?? UNDATED;
   const runDelivery = createMockRunDelivery({
@@ -128,6 +131,7 @@ export function createMockSdk(
       serverContext,
       embeds,
       peek: mockRuns.peek,
+      settings: () => settings.read(),
       delivery: runDelivery,
       deliver: createMockDelivery({
         doc,
@@ -140,6 +144,7 @@ export function createMockSdk(
     runs: async () => runs,
     subscribeRuns: runChanges.subscribe,
     subscribePresence: presenceChanges.subscribe,
+    subscribeConfig: (listener) => settings.subscribe(listener),
   };
 
   const inner = createSdk(backend, manifest, {
@@ -236,19 +241,7 @@ export function createMockSdk(
       url: (name) => useAssets(() => inner.assets.url(name)),
     },
     ...recordedFrameApis(inner, record),
-    questions: {
-      deliver: (ticketId) =>
-        record("write:question", "write question", () => inner.questions.deliver(ticketId)),
-      recipients: () => record("read:question", "read question", () => inner.questions.recipients()),
-      imageUrl: inner.questions.imageUrl,
-    },
-    runs: {
-      peek: (runId) => record("read:run", "read run", () => inner.runs.peek(runId)),
-      deliver: (ticketId) => record("write:run", "write run", () => inner.runs.deliver(ticketId)),
-      denials: (runId) => record("read:run", "read run", () => inner.runs.denials(runId)),
-      deliveryAgent: () => record("read:run", "read run", () => inner.runs.deliveryAgent()),
-      allowAndResume: (input) => record("write:run", "write run", () => inner.runs.allowAndResume(input)),
-    },
+    ...recordedAgentApis(inner, record),
     sprints: sprintsApi({ list: (type) => sdk.list(type), run: (cmd) => sdk.run(cmd) }),
   };
 
@@ -282,6 +275,8 @@ export function createMockSdk(
       access = next;
       changes.emit();
     },
+    setTracking: settings.setTracking,
+    setAgentExecution: settings.setAgentExecution,
     setPresence: (next) => {
       peers = next;
       presenceChanges.emit();

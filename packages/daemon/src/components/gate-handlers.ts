@@ -6,6 +6,7 @@ import {
   writeInstanceData,
 } from "@kibo/core";
 import {
+  type AppSettings,
   type ComponentManifest,
   type DeliveryResult,
   KiboError,
@@ -35,6 +36,7 @@ export type GateHandlersDeps = {
   integrations?: () => ComponentIntegrationHooks | null;
   presence?: (projectId: string) => PresencePeer[];
   sharing?: (projectId: string) => ProjectSyncInfo;
+  appSettings?: () => AppSettings;
   deliverAnswers?: (projectId: string, ticketId: string) => DeliveryResult;
   peekRun?: (projectId: string, runId: string) => RunPeek;
   delivery?: ComponentDelivery;
@@ -133,6 +135,10 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
     },
     presence: async (projectId) => deps.presence?.(projectId) ?? [],
     sharing: async (projectId) => deps.sharing?.(projectId) ?? localSyncInfo(docs.project(projectId)),
+    settings: async (projectId) => ({
+      tracking: docs.projectMeta(projectId).tracking,
+      agentExecution: deps.appSettings?.().agentExecution ?? "hidden",
+    }),
     async questions(projectId, ticketId) {
       if (!deps.deliverAnswers) throw new KiboError("NOT_CONNECTED", "agents not started");
       return deps.deliverAnswers(projectId, ticketId);

@@ -1,6 +1,12 @@
 import { Database } from "bun:sqlite";
 import { expect } from "bun:test";
-import { type GrantedPermissions, type Instance, KiboError, type RunPeek } from "@kibo/schema";
+import {
+  DEFAULT_COMPONENT_SETTINGS,
+  type GrantedPermissions,
+  type Instance,
+  KiboError,
+  type RunPeek,
+} from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import type { Docs } from "../docs";
 import type { FilesService } from "../files/service";
@@ -129,6 +135,7 @@ export const idleHandlers: GateHandlers = {
   sharing: async () => {
     throw new KiboError("INTERNAL", "unexpected");
   },
+  settings: async () => DEFAULT_COMPONENT_SETTINGS,
   questions: async () => ({ sent: 0, runId: null }),
   recipients: async () => [],
   peek: async (_projectId, runId) => {
@@ -199,6 +206,7 @@ export function testGate(quotas: Quotas = createQuotas(), grantedToEvil: Granted
       sharing: async () => {
         throw new KiboError("INTERNAL", "unexpected");
       },
+      settings: async () => DEFAULT_COMPONENT_SETTINGS,
       questions: async (projectId, ticketId) => {
         handled.push(`questions:${projectId}:${ticketId}`);
         return { sent: 1, runId: "r1" };

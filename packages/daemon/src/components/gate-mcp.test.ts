@@ -2,6 +2,7 @@ import { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
   type ComponentCall,
+  DEFAULT_COMPONENT_SETTINGS,
   type GrantedPermissions,
   type Instance,
   KiboError,
@@ -62,6 +63,7 @@ function harness(granted: Partial<GrantedPermissions>, quotas: Quotas = createQu
     sharing: async () => {
       throw new KiboError("INTERNAL", "unexpected");
     },
+    settings: async () => DEFAULT_COMPONENT_SETTINGS,
     questions: async () => ({ sent: 0, runId: null }),
     recipients: async () => [],
     peek: async (_p, runId) => {

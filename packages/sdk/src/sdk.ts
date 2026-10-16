@@ -5,6 +5,7 @@ import {
   type CommandResult,
   type ComponentCall,
   type ComponentManifest,
+  type ComponentSettings,
   capPermission,
   type EntityType,
   type FetchInitInput,
@@ -231,6 +232,20 @@ export function createSdk(
     async sharing() {
       guard.needRead("ticket");
       return call<ProjectSyncInfo>({ kind: "sharing.get" });
+    },
+    settings: {
+      async get() {
+        guard.needRead("ticket");
+        return call<ComponentSettings>({ kind: "settings.get" });
+      },
+      subscribe(listener) {
+        const offProject = backend.subscribe(listener);
+        const offConfig = backend.subscribeConfig?.(listener);
+        return () => {
+          offProject();
+          offConfig?.();
+        };
+      },
     },
     capabilities: [...manifest.capabilities],
     capability(name) {
