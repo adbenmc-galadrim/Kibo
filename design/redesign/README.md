@@ -146,3 +146,21 @@ Exports : `exports/style-<1|2|3>-<vue-ensemble|planning>-{dark,light}.png` et
 `exports/vue-ensemble-<4..7>-<nom>-{dark,light}.png`, copiés dans `screens/redesign/`.
 Dessin : clés `s1-vue` … `s3-planning`, `v4` … `v7` (`storage.useStyle(n, mode)` avant le dessin), puis
 `await storage.exportStyles()`.
+
+## P1 bis · Vue d'ensemble retravaillée (2026-10-16)
+
+Retour d'Adam : la vue d'ensemble de la proposition est la bonne, seul l'affichage est à optimiser. Les styles hors shadcn
+sont écartés. P1 bis (`scripts/55-proposition-v2.js`, clé `p-vue2`, rang 5 de la page « Proposition ») garde tout le
+contenu de P1 et ne change que la hiérarchie, l'espacement et la lisibilité :
+
+- indicateurs en cinq cellules égales : libellé, chiffre dominant, sous-ligne de hauteur fixe ;
+- « En ce moment » : une seule étiquette pour les deux sessions, étapes et durées en colonnes alignées ;
+- échéances : grille stricte, colonne S42 teintée, « aujourd'hui » étiqueté, étapes restantes de F5 tracées en S43,
+  blocage « bloquée · Q14 », légende en pied ;
+- titres de carte homogènes (14 px, compteur en pastille), espacement régulier de 14 px ;
+- Sprint S42 : statut, cases et x/5 en colonnes ; note de limite en pied ;
+- Activité sous « Prochaine à finir », une ligne par événement ; En review sur trois lignes (titre, ticket, CI) ;
+- texte secondaire en `mfg`, aucune taille sous 12 px ;
+- panneau de l'agent : résumé, lot et champ de saisie séparés par des filets.
+
+Exports : `exports/proposition-vue-ensemble-v2-{dark,light}.png` (`await storage.exportP1bis()`).
