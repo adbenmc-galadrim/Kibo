@@ -8,7 +8,7 @@ import {
   FileText,
   Frame,
   LayoutDashboard,
-  ListTree,
+  List,
   MessageCircleQuestion,
   Network,
   Plug,
@@ -54,7 +54,7 @@ test("a page shows the icon of its kind, or of the component a view holds", () =
   expect(pageIcon(dashboard, [])).toBe(LayoutDashboard);
   expect(pageIcon(view, [])).toBe(AppWindow);
   expect(pageIcon(view, [kanban])).toBe(SquareKanban);
-  expect(pageIcon(view, [{ ...kanban, component: "tickets@1.0.0" }])).toBe(ListTree);
+  expect(pageIcon(view, [{ ...kanban, component: "tickets@1.0.0" }])).toBe(List);
   expect(pageIcon(view, [{ ...kanban, component: "questions@1.0.0" }])).toBe(MessageCircleQuestion);
   expect(pageIcon(view, [{ ...kanban, component: "nope@1.0.0" }])).toBe(Blocks);
 });

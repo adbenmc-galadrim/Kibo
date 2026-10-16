@@ -17,7 +17,7 @@ import {
   FileText,
   Frame,
   LayoutDashboard,
-  ListTree,
+  List,
   type LucideIcon,
   MessageCircleQuestion,
   Network,
@@ -39,7 +39,7 @@ export const BUILTIN_COMPONENTS: ComponentModule[] = [
 
 const BUILTIN_ICONS: Record<string, LucideIcon> = {
   kanban: SquareKanban,
-  tickets: ListTree,
+  tickets: List,
   graph: Network,
   notes: FileText,
   "mcp-source": Plug,
