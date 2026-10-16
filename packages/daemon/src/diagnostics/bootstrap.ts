@@ -16,6 +16,7 @@ type AppDiagnosticsDeps = {
   service: Service;
   components: Pick<ComponentsService, "registry">;
   log: LogBuffer;
+  fixedNow?: string | null;
 };
 
 export function startAppDiagnostics(deps: AppDiagnosticsDeps): { appInfo: () => AppInfo; rpc: RpcExtension } {
@@ -29,6 +30,7 @@ export function startAppDiagnostics(deps: AppDiagnosticsDeps): { appInfo: () => 
     now: Date.now,
     platform: process.platform,
     arch: process.arch,
+    fixedNow: deps.fixedNow ?? null,
   });
   const diagnostics = createDiagnostics({
     appInfo,

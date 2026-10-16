@@ -15,8 +15,7 @@ export const PIXEL_SCREENSHOT = {
 
 export function assertFixedNow(info: unknown): void {
   if (typeof info !== "object" || info === null) throw new Error("getAppInfo returned no object");
-  if (!("fixedNow" in info)) return;
-  const { fixedNow } = info;
+  const fixedNow = "fixedNow" in info ? info.fixedNow : undefined;
   if (typeof fixedNow === "string" && Date.parse(fixedNow) === Date.parse(FIXED_NOW)) return;
   throw new Error(`daemon clock must be frozen with KIBO_FIXED_NOW=${FIXED_NOW}, got ${String(fixedNow)}`);
 }

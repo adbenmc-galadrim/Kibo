@@ -7,8 +7,8 @@ test("the frozen instant is the mockups' one", () => {
   expect(new Date(FIXED_NOW).toISOString()).toBe("2026-10-16T12:52:00.000Z");
 });
 
-test("a daemon that does not report its clock yet is accepted", () => {
-  expect(() => assertFixedNow(info)).not.toThrow();
+test("a daemon that does not report its clock is refused", () => {
+  expect(() => assertFixedNow(info)).toThrow("KIBO_FIXED_NOW");
 });
 
 test("a daemon with a free clock is refused", () => {

@@ -34,6 +34,21 @@ test("createAppInfo maps the platform and counts uptime from the injected clock"
   expect(info().uptimeMs).toBe(16_000);
 });
 
+test("createAppInfo reports the frozen instant of the daemon clock", () => {
+  const info = createAppInfo({
+    version: "1.5.0",
+    home: "/h",
+    userHome: "/u",
+    pid: 7,
+    startedAt: 0,
+    now: () => 0,
+    platform: "darwin",
+    arch: "arm64",
+    fixedNow: "2026-10-16T14:52:00+02:00",
+  });
+  expect(info().fixedNow).toBe("2026-10-16T14:52:00+02:00");
+});
+
 test("createAppInfo refuses a platform or an architecture Kibo does not ship", () => {
   const base = { version: "1.5.0", home: "/h", userHome: "/h", pid: 7, startedAt: 0, now: () => 0 };
   expect(() => createAppInfo({ ...base, platform: "win32", arch: "x64" })).toThrow(/unsupported platform/);
