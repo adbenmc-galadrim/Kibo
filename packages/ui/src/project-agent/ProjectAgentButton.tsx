@@ -1,6 +1,5 @@
 import type { AgentsState } from "@kibo/schema";
-import { Button } from "@kibo/sdk/ui/button";
-import { Sparkles } from "lucide-react";
+import { Bot } from "lucide-react";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { frSignals } from "../i18n/fr-signals";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
@@ -28,23 +27,22 @@ export function ProjectAgentButton({ projectId, agents, open, onToggle, onOpenSi
   const pending = hasPendingBatch(agents, projectId);
   const signals = signalCount(agents, projectId);
   return (
-    <span className="relative inline-flex">
-      <Button
-        variant={open ? "secondary" : "ghost"}
-        size="sm"
-        className="h-7"
+    <span data-open={open || undefined} className="k-agent">
+      <button
+        type="button"
         aria-label={buttonLabel(signals, pending)}
         aria-pressed={open}
         title={frProjectAgent.buttonTitle(shortcutLabel(["J"], isMac()))}
+        className="k-focus"
         onClick={onToggle}
       >
-        <Sparkles className="text-brand-strong dark:text-brand" />
+        <Bot aria-hidden size={15} absoluteStrokeWidth />
         {frProjectAgent.button}
-      </Button>
+      </button>
       {signals > 0 ? (
         <button
           type="button"
-          className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-semibold text-white tabular-nums ring-2 ring-background"
+          className="k-focus"
           aria-label={frSignals.button.open}
           title={frSignals.button.signals(signals)}
           onClick={onOpenSignals}
@@ -52,12 +50,7 @@ export function ProjectAgentButton({ projectId, agents, open, onToggle, onOpenSi
           {signals}
         </button>
       ) : (
-        pending && (
-          <span
-            className="pointer-events-none absolute -top-0.5 -right-0.5 size-2 rounded-full bg-brand ring-2 ring-background"
-            aria-hidden
-          />
-        )
+        pending && <span aria-hidden className="size-2 rounded-full bg-(--tracking-brand)" />
       )}
     </span>
   );

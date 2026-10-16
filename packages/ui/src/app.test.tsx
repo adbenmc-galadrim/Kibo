@@ -51,7 +51,7 @@ test("a network failure shows « Kibo ne répond pas » with retry, then the she
   expect(screen.getByText(/Vérifie que Kibo tourne/)).toBeTruthy();
   session = () => Promise.resolve(adam);
   fireEvent.click(screen.getByRole("button", { name: "Réessayer" }));
-  expect(await screen.findByRole("tablist", { name: "Onglets" })).toBeTruthy();
+  expect(await screen.findByRole("navigation", { name: "Fil d'Ariane" })).toBeTruthy();
   expect(screen.queryByRole("heading", { name: "Kibo ne répond pas" })).toBeNull();
 });
 
@@ -83,7 +83,7 @@ test("the automatic retry fires every retryMs while unreachable", async () => {
   render(<App retryMs={20} />);
   await waitFor(() => expect(sessionCalls).toBeGreaterThanOrEqual(4));
   session = () => Promise.resolve(adam);
-  expect(await screen.findByRole("tablist", { name: "Onglets" })).toBeTruthy();
+  expect(await screen.findByRole("navigation", { name: "Fil d'Ariane" })).toBeTruthy();
   const settled = sessionCalls;
   await new Promise((r) => setTimeout(r, 80));
   expect(sessionCalls).toBe(settled);

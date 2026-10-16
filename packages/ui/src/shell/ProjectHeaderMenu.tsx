@@ -16,7 +16,6 @@ import { type ProjectMenuActions, projectMenuEntries } from "./project-menu";
 
 export type ProjectHeaderMenuProps = {
   project: ProjectMeta;
-  current: boolean;
   shifted: boolean;
   editable: boolean;
   actions: Omit<ProjectMenuActions, "files" | "planning">;
@@ -26,7 +25,6 @@ export type ProjectHeaderMenuProps = {
 
 export function ProjectHeaderMenu({
   project,
-  current,
   shifted,
   editable,
   actions,
@@ -63,7 +61,7 @@ export function ProjectHeaderMenu({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <SidebarMenuAction
-            showOnHover={!current}
+            showOnHover
             className={shifted ? "right-7" : undefined}
             aria-label={frShare.menu(project.name)}
           >

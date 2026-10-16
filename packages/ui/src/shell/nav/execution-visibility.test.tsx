@@ -22,7 +22,7 @@ const { AppSidebar } = await import("../AppSidebar");
 const { ShellHeader } = await import("../ShellHeader");
 const { AppSettingsProvider, fixedStore } = await import("../../state/use-app-settings");
 const { ExecutionGate } = await import("./ExecutionGate");
-const { HiddenScreenNotice } = await import("./HiddenScreenNotice");
+const { HiddenScreenSlot } = await import("./HiddenScreenSlot");
 
 const noop = () => {};
 
@@ -42,6 +42,8 @@ function shell(execution: AgentExecution, current: Screen | null = null) {
           inboxCount={3}
           workspaceName="Galadrim"
           workspaceIcon={null}
+          viewer="adam"
+          onHelp={noop}
           onOpen={noop}
           onSearch={noop}
           onNewProject={noop}
@@ -57,21 +59,16 @@ function shell(execution: AgentExecution, current: Screen | null = null) {
           active={{ kind: "project", projectId: project.meta.id }}
           screen={current}
           project={project}
-          ticketProject={project}
           branch={null}
           gitError={null}
           agents={agentsFixture()}
           agentPanel={{ available: true, open: false, toggle: noop, show: noop }}
-          viewer="adam"
           notifications="browser"
           now={NOW}
           onNewAgent={noop}
           onNewSkill={noop}
-          onNewTicket={noop}
-          onShare={noop}
           onOpenRun={noop}
           onOpen={noop}
-          onHelp={noop}
         />
         <ExecutionGate>
           <section aria-label="Runs" />
@@ -113,7 +110,7 @@ test("the inbox and the project agent stay whatever the setting", async () => {
 function notice(execution: AgentExecution, current: Screen | null, onOpen: (t: TabTarget) => void = noop) {
   return render(
     <AppSettingsProvider store={fixedStore({ agentExecution: execution })}>
-      <HiddenScreenNotice screen={current} onOpen={onOpen} />
+      <HiddenScreenSlot screen={current} onOpen={onOpen} />
     </AppSettingsProvider>,
   );
 }
@@ -121,7 +118,7 @@ function notice(execution: AgentExecution, current: Screen | null, onOpen: (t: T
 test("an execution screen opened while hidden explains why and links to the general settings", async () => {
   const opened: TabTarget[] = [];
   notice("hidden", "agents", (t) => opened.push(t));
-  expect(screen.getByRole("status").textContent).toContain("L'exécution des agents est masquée.");
+  expect((await screen.findByRole("status")).textContent).toContain("L'exécution des agents est masquée.");
   await userEvent.setup().click(screen.getByRole("button", { name: "Afficher dans Paramètres › Général" }));
   expect(opened).toEqual([{ kind: "screen", screen: "general" }]);
 });

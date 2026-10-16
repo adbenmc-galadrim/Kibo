@@ -35,7 +35,6 @@ const show = (project: ProjectSummary) =>
             editable={false}
             menuEditable
             current={false}
-            trailing={null}
             link={() => ({ onClick: () => {}, onAuxClick: () => {}, onDoubleClick: () => {} })}
             onOpen={() => {}}
             onNewPage={() => {}}

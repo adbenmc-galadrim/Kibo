@@ -68,7 +68,6 @@ const show = (access: ProjectSnapshot["sync"]["access"] = "write") => {
             project={project(access)}
             activeTarget={null}
             header={<span>Kibo</span>}
-            trailing={null}
             onOpen={onOpen}
             onNewPage={onNewPage}
             onRenamePage={onRenamePage}

@@ -219,14 +219,11 @@ test("the sidebar leads to the agents, the queue and the settings", async () => 
   await user.click(screen.getByRole("button", { name: /^Agents/ }));
   expect(location.hash).toBe("#/agents");
   expect(await screen.findByRole("heading", { level: 1, name: "Agents" })).toBeTruthy();
-  const bar = within(screen.getByRole("tablist", { name: "Onglets" }));
-  expect(bar.getByRole("tab", { name: "Agents · aperçu" }).getAttribute("aria-selected")).toBe("true");
+  await waitFor(() => expect(document.title).toBe("Agents — Kibo"));
   await user.click(screen.getByRole("button", { name: "Files d'attente" }));
   expect(await screen.findByRole("heading", { level: 1, name: "Files d'attente" })).toBeTruthy();
-  expect(bar.getByRole("tab", { name: "Files d'attente · aperçu" }).getAttribute("aria-selected")).toBe(
-    "true",
-  );
-  expect(bar.queryByRole("tab", { name: /^Agents/ })).toBeNull();
+  await waitFor(() => expect(document.title).toBe("Files d'attente — Kibo"));
+  expect(screen.queryByRole("tablist", { name: "Onglets" })).toBeNull();
   const crumbs = within(screen.getByRole("navigation", { name: "Fil d'Ariane" }));
   expect(crumbs.getByText("Agents")).toBeTruthy();
   expect(crumbs.getByText("Files d'attente").getAttribute("aria-current")).toBe("page");
@@ -437,8 +434,7 @@ test("deleting a project closes its tabs and returns to the overview", async () 
   };
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/p/fac/");
-  const bar = within(screen.getByRole("tablist", { name: "Onglets" }));
-  expect(await bar.findByRole("tab", { name: /API Facturation/ })).toBeTruthy();
+  await waitFor(() => expect(document.title).toMatch(/^API Facturation/));
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Actions de API Facturation" }));
   await user.click(screen.getByRole("menuitem", { name: "Supprimer…" }));
@@ -449,6 +445,6 @@ test("deleting a project closes its tabs and returns to the overview", async () 
   expect(calls.filter((c) => c.method === "deleteProject")).toEqual([
     { method: "deleteProject", projectId: "fac" },
   ]);
-  expect(bar.queryByRole("tab", { name: /API Facturation/ })).toBeNull();
+  await waitFor(() => expect(document.title).toBe("Kibo"));
   expect(screen.queryByRole("dialog")).toBeNull();
 });

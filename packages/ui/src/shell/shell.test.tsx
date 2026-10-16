@@ -280,6 +280,11 @@ const go = async (hash: string) =>
   });
 const renderShell = () => render(<Shell viewer="adam" notifications="native" />);
 const crumbs = () => within(screen.getByRole("navigation", { name: "Fil d'Ariane" }));
+const expectTitle = (title: string) => waitFor(() => expect(document.title).toBe(`${title} — Kibo`));
+const workspaceMenu = async () => {
+  await userEvent.click(await screen.findByRole("button", { name: "Perso" }));
+  return within(await screen.findByRole("menu"));
+};
 
 beforeEach(() => {
   syncStatus = unconfigured;
@@ -300,10 +305,8 @@ test("a page missing from the snapshot does not redirect to the first page", asy
 test("navigation opens a « Projet · Page » tab and the breadcrumb follows", async () => {
   renderShell();
   await go("#/p/p1/1%401");
-  const bar = await screen.findByRole("tablist", { name: "Onglets" });
-  expect(within(bar).getByRole("tab", { name: "Kibo · Board · aperçu" }).getAttribute("aria-selected")).toBe(
-    "true",
-  );
+  await expectTitle("Kibo · Board");
+  expect(screen.queryByRole("tablist", { name: "Onglets" })).toBeNull();
   expect(crumbs().getByText("Kibo")).toBeTruthy();
   expect(crumbs().getByText("Board").getAttribute("aria-current")).toBe("page");
   await waitFor(() => expect(saved.some((r) => r.method === "saveTabs")).toBe(true), { timeout: 1000 });
@@ -315,7 +318,7 @@ test("navigation opens a « Projet · Page » tab and the breadcrumb follows", a
 const dashboard: TabTarget = { kind: "page", projectId: "p1", pageId: "5@1" };
 const sidebarProject = async (name: string) => {
   const entry = (await screen.findAllByRole("button", { name })).find(
-    (b) => b.dataset.sidebar === "menu-button",
+    (b) => b.closest('[data-sidebar="menu-item"]') !== null,
   );
   if (!entry) throw new Error(`no sidebar entry ${name}`);
   return entry;
@@ -326,7 +329,7 @@ test("clicking a project in the sidebar opens its « Tableau de bord » page", a
   await go("#/");
   fireEvent.click(await sidebarProject("Kibo"));
   await waitFor(() => expect(location.hash).toBe(targetToHash(dashboard)));
-  expect(await screen.findByRole("tab", { name: "Kibo · Tableau de bord · aperçu" })).toBeTruthy();
+  await expectTitle("Kibo · Tableau de bord");
 });
 
 test("landing on the dashboard replaces the project history entry", async () => {
@@ -360,7 +363,7 @@ test("a project without pages shows its empty state, never a blank page", async 
 test("⌘K opens the palette, ⌘W closes the tab and returns home", async () => {
   renderShell();
   await go("#/p/p1/1%401");
-  await screen.findByRole("tab", { name: "Kibo · Board · aperçu" });
+  await expectTitle("Kibo · Board");
   fireEvent.keyDown(window, { key: "k", metaKey: true, ctrlKey: false });
   fireEvent.keyDown(window, { key: "k", ctrlKey: true, metaKey: false });
   expect(await screen.findByRole("dialog", { name: "Palette de commandes" })).toBeTruthy();
@@ -368,14 +371,13 @@ test("⌘K opens the palette, ⌘W closes the tab and returns home", async () =>
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   fireEvent.keyDown(window, { key: "w", metaKey: true });
   fireEvent.keyDown(window, { key: "w", ctrlKey: true });
-  await waitFor(() => expect(screen.queryByRole("tab", { name: "Kibo · Board · aperçu" })).toBeNull());
-  expect(location.hash).toBe("#/");
+  await waitFor(() => expect(location.hash).toBe("#/"));
 });
 
 test("the sidebar search button opens the palette", async () => {
   renderShell();
   await go("#/");
-  await userEvent.click(await screen.findByRole("button", { name: /Rechercher…/ }));
+  await userEvent.click(await screen.findByRole("button", { name: /Rechercher/ }));
   expect(await screen.findByRole("dialog", { name: "Palette de commandes" })).toBeTruthy();
 });
 
@@ -383,17 +385,16 @@ test("the document title follows the active tab and the search shows the platfor
   renderShell();
   await go("#/");
   await waitFor(() => expect(document.title).toBe("Kibo"));
-  const search = await screen.findByRole("button", { name: /Rechercher…/ });
+  const search = await screen.findByRole("button", { name: /Rechercher/ });
   expect(search.textContent).toContain(shortcutLabel(["K"], isMac()));
   await go("#/p/p1/1%401");
-  await screen.findByRole("tab", { name: "Kibo · Board · aperçu" });
-  await waitFor(() => expect(document.title).toBe("Kibo · Board — Kibo"));
+  await expectTitle("Kibo · Board");
 });
 
 test("⌘-click in the sidebar opens a new tab instead of replacing the current one", async () => {
   renderShell();
   await go("#/p/p1/1%401");
-  await screen.findByRole("tab", { name: "Kibo · Board · aperçu" });
+  await expectTitle("Kibo · Board");
   const inSidebar = screen
     .getAllByRole("button", { name: "Kibo" })
     .find((b) => !b.closest('nav[aria-label="Fil d\'Ariane"]'));
@@ -405,14 +406,16 @@ test("⌘-click in the sidebar opens a new tab instead of replacing the current 
 test("navigation opens one preview tab, a double click in the sidebar opens a kept tab", async () => {
   renderShell();
   await go("#/p/p1/1%401");
-  const bar = await screen.findByRole("tablist", { name: "Onglets" });
-  await within(bar).findByRole("tab", { name: "Kibo · Board · aperçu" });
+  await expectTitle("Kibo · Board");
   await go("#/agents");
-  await within(bar).findByRole("tab", { name: "Agents · aperçu" });
-  expect(bar.querySelectorAll('[data-preview="true"]')).toHaveLength(1);
+  await expectTitle("Agents");
+  expect(screen.queryByRole("tablist", { name: "Onglets" })).toBeNull();
   const inbox = screen.getByRole("button", { name: "Boîte de réception" });
   fireEvent.click(inbox);
   fireEvent.doubleClick(inbox);
+  await expectTitle("Boîte de réception");
+  fireEvent.click(screen.getByRole("button", { name: "Mes tickets" }), { metaKey: true, ctrlKey: true });
+  const bar = await screen.findByRole("tablist", { name: "Onglets" });
   const kept = await within(bar).findByRole("tab", { name: "Boîte de réception" });
   expect(kept.getAttribute("data-preview")).toBe("false");
   expect(bar.querySelectorAll('[data-preview="true"]')).toHaveLength(0);
@@ -421,7 +424,7 @@ test("navigation opens one preview tab, a double click in the sidebar opens a ke
 test("a ticket tab shows the detail, its PR and opens file links in the preview", async () => {
   renderShell();
   await go("#/p/p1/t/7%401");
-  expect(await screen.findByRole("tab", { name: "Kibo · KIB-7 · aperçu" })).toBeTruthy();
+  await expectTitle("Kibo · KIB-7");
   expect(await screen.findByRole("link", { name: "#4" })).toBeTruthy();
   expect(crumbs().getByText("KIB-7").getAttribute("aria-current")).toBe("page");
   await userEvent.click(screen.getByRole("button", { name: "src/a.ts:3" }));
@@ -432,57 +435,55 @@ test("a ticket tab shows the detail, its PR and opens file links in the preview"
 test("a project without folder has no Changements entry", async () => {
   renderShell();
   await go("#/p/p1/1%401");
-  await screen.findByRole("tab", { name: "Kibo · Board · aperçu" });
-  expect(screen.queryByRole("button", { name: /Changements/ })).toBeNull();
+  await expectTitle("Kibo · Board");
+  const menu = await workspaceMenu();
+  expect(menu.queryByRole("menuitem", { name: /Changements/ })).toBeNull();
 });
 
-test("a git project lists Changements with its count, its tab shows the branch and a dot", async () => {
+test("a git project opens its Changements from the workspace menu, and the breadcrumb shows the branch", async () => {
   renderShell();
   await go("#/p/p2/");
-  const entry = await screen.findByRole("button", { name: "Changements · 2 fichiers modifiés" });
-  expect(within(entry).getByText("2")).toBeTruthy();
-  await userEvent.click(entry);
-  expect(await screen.findByRole("tab", { name: /Portfolio · Changements/ })).toBeTruthy();
-  expect(location.hash).toBe("#/p/p2/changes");
+  await expectTitle("Portfolio");
+  await userEvent.click((await workspaceMenu()).getByRole("menuitem", { name: "Changements" }));
+  await waitFor(() => expect(location.hash).toBe("#/p/p2/changes"));
   await waitFor(() => expect(crumbs().getByText("kib-12").getAttribute("aria-current")).toBe("page"));
   expect(crumbs().getByText("Changements")).toBeTruthy();
-  expect(screen.getByRole("img", { name: "Changements non commités" })).toBeTruthy();
 });
 
 test("a git project lists Changements before its status answers", async () => {
   statusPending = true;
   renderShell();
   await go("#/p/p2/");
-  expect(await screen.findByRole("button", { name: "Changements" })).toBeTruthy();
+  await expectTitle("Portfolio");
+  expect((await workspaceMenu()).getByRole("menuitem", { name: "Changements" })).toBeTruthy();
 });
 
 test("coming back from the agents screen keeps Changements without reloading git", async () => {
   const gitReads = () => code.filter((r) => r.method === "worktrees" || r.method === "status").length;
   renderShell();
   await go("#/p/p2/");
-  await screen.findByRole("button", { name: "Changements · 2 fichiers modifiés" });
+  await waitFor(() => expect(gitReads()).toBeGreaterThan(0));
   await go("#/agents");
-  await screen.findByRole("tab", { name: "Agents · aperçu" });
+  await expectTitle("Agents");
   const before = gitReads();
   await go("#/p/p2/");
-  expect(screen.getByRole("button", { name: "Changements · 2 fichiers modifiés" })).toBeTruthy();
+  await expectTitle("Portfolio");
   expect(gitReads()).toBe(before);
 });
 
 test("an agent screen keeps its URL and opens in a tab like any target", async () => {
   renderShell();
   await go("#/p/p1/1%401");
-  await screen.findByRole("tab", { name: "Kibo · Board · aperçu" });
+  await expectTitle("Kibo · Board");
   await go("#/agents");
   expect(location.hash).toBe("#/agents");
   expect(crumbs().getByText("Agents")).toBeTruthy();
-  const agents = await screen.findByRole("tab", { name: "Agents · aperçu" });
-  expect(agents.getAttribute("aria-selected")).toBe("true");
-  expect(screen.queryByRole("tab", { name: "Kibo · Board · aperçu" })).toBeNull();
-  await userEvent.click(screen.getByRole("tab", { name: "Accueil" }));
+  await expectTitle("Agents");
+  expect(screen.queryByRole("tablist", { name: "Onglets" })).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: "Accueil" }));
   await waitFor(() => expect(location.hash).toBe("#/"));
-  await userEvent.click(screen.getByRole("tab", { name: "Agents · aperçu" }));
-  await waitFor(() => expect(location.hash).toBe("#/agents"));
+  await go("#/agents");
+  await expectTitle("Agents");
 });
 
 test("the sidebar lists the inbox after my tickets with its open count, and opens it (screen 113)", async () => {
@@ -492,54 +493,37 @@ test("the sidebar lists the inbox after my tickets with its open count, and open
   await waitFor(() => expect(entry.closest("li")?.textContent).toBe("Boîte de réception3"));
   const labels = within(entry.closest("ul") ?? document.body)
     .getAllByRole("button")
-    .map((b) => b.textContent);
+    .map((b) => b.textContent?.replace(/\d+$/, ""));
   expect(labels.indexOf("Boîte de réception")).toBe(labels.indexOf("Mes tickets") + 1);
   await userEvent.click(entry);
   expect(location.hash).toBe("#/inbox");
-  expect(await screen.findByRole("tab", { name: "Boîte de réception · aperçu" })).toBeTruthy();
+  await expectTitle("Boîte de réception");
   expect(await screen.findByRole("row", { name: /INB-2/ })).toBeTruthy();
   expect(screen.getAllByRole("heading", { level: 1, name: "Boîte de réception" })).toHaveLength(1);
   expect(entry.getAttribute("data-active")).toBe("true");
 });
 
-test("the sidebar opens the Components screen in its own tab", async () => {
+test("the workspace menu opens the Components screen in its own tab", async () => {
   renderShell();
   await go("#/");
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Composants" }));
-  expect(location.hash).toBe("#/components");
+  await userEvent.click((await workspaceMenu()).getByRole("menuitem", { name: "Composants" }));
+  await waitFor(() => expect(location.hash).toBe("#/components"));
   expect(await screen.findByRole("columnheader", { name: "Confiance" })).toBeTruthy();
-  expect(
-    (await screen.findByRole("tab", { name: "Composants · aperçu" })).getAttribute("aria-selected"),
-  ).toBe("true");
+  await expectTitle("Composants");
   expect(crumbs().queryByRole("heading", { level: 1 })).toBeNull();
   expect(crumbs().getByText("Composants").getAttribute("aria-current")).toBe("page");
   expect(screen.getAllByRole("heading", { level: 1, name: "Composants" })).toHaveLength(1);
 });
 
-test("the header always offers a ticket: in the inbox, then in the last project, and shows the initials", async () => {
-  await go("#/");
+test("the header offers no ticket button; the account sits at the foot of the sidebar with its initials", async () => {
   renderShell();
   await go("#/");
-  const header = () =>
-    within(screen.getByRole("navigation", { name: "Fil d'Ariane" }).closest("header") ?? document.body);
-  const button = () => header().getByRole("button", { name: "Ticket" });
-  expect(button().getAttribute("title")).toBe("Nouveau ticket dans Boîte de réception");
-  const avatar = header().getByRole("img", { name: "adam" });
-  expect(avatar.textContent).toBe("AD");
-  await act(async () => button().click());
-  const inboxDialog = await screen.findByRole("dialog", { name: "Nouveau ticket" });
-  expect(within(inboxDialog).getByRole("combobox", { name: "Projet" }).textContent).toBe(
-    "Boîte de réception",
+  const header = within(
+    screen.getByRole("navigation", { name: "Fil d'Ariane" }).closest("header") ?? document.body,
   );
-  await userEvent.keyboard("{Escape}");
-  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-  await go("#/p/p1/1%401");
-  await go("#/agents");
-  expect(button().getAttribute("title")).toBe("Nouveau ticket dans Kibo");
-  await act(async () => button().click());
-  const dialog = await screen.findByRole("dialog", { name: "Nouveau ticket" });
-  expect(within(dialog).getByRole("combobox", { name: "Projet" }).textContent).toBe("Kibo");
+  expect(header.queryByRole("button", { name: /^Ticket/ })).toBeNull();
+  expect(header.queryByRole("button", { name: "Menu de adam" })).toBeNull();
+  expect((await screen.findByRole("button", { name: "Menu de adam" })).textContent).toContain("AD");
 });
 
 test("initials come from the first two words, or the first two letters", async () => {
@@ -681,9 +665,6 @@ test("a read-only project hides page and ticket creation and shows the banner", 
   const banner = await screen.findByText("Lecture seule — tu es lecteur de ce projet.");
   expect(screen.getAllByRole("status")).toContain(banner);
   expect(screen.queryByRole("button", { name: "Nouvelle page" })).toBeNull();
-  expect(screen.getByRole("button", { name: /^Ticket/ }).getAttribute("title")).toBe(
-    "Nouveau ticket dans Boîte de réception",
-  );
   expect(await screen.findByText("Cette page est vide : ajoute un composant pour commencer.")).toBeTruthy();
   expect(screen.queryByRole("button", { name: /Ajouter un composant/ })).toBeNull();
 });
@@ -691,11 +672,14 @@ test("a read-only project hides page and ticket creation and shows the banner", 
 test("Rejoindre un projet appears only once a server is configured", async () => {
   const { unmount } = renderShell();
   await go("#/p/p1/");
-  expect(screen.queryByRole("button", { name: "Rejoindre un projet" })).toBeNull();
+  await userEvent.click(await screen.findByRole("button", { name: "Ajouter un projet" }));
+  expect(await screen.findByRole("menuitem", { name: "Nouveau projet" })).toBeTruthy();
+  expect(screen.queryByRole("menuitem", { name: "Rejoindre un projet" })).toBeNull();
   unmount();
   syncStatus = { ...syncStatus, state: "online", serverUrl: "wss://sync.kibo.test" };
   renderShell();
-  expect(await screen.findByRole("button", { name: "Rejoindre un projet" })).toBeTruthy();
+  await userEvent.click(await screen.findByRole("button", { name: "Ajouter un projet" }));
+  expect(await screen.findByRole("menuitem", { name: "Rejoindre un projet" })).toBeTruthy();
 });
 
 test("a suspended project stays editable and explains why it no longer syncs", async () => {
@@ -720,13 +704,15 @@ test("a suspended project stays editable and explains why it no longer syncs", a
     "Sync suspendue : données trop volumineuses — Modifiable sur cette machine, mais plus synchronisé.",
   );
   expect(screen.getAllByRole("status")).toContain(banner);
-  expect(screen.getByRole("button", { name: /^Ticket/ })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Nouvelle page" })).toBeTruthy();
 });
 
-test("the header and the project menu open the share dialog", async () => {
+test("the project menu opens the share dialog", async () => {
   renderShell();
   await go("#/p/p1/");
-  await userEvent.click(await screen.findByRole("button", { name: "Partager" }));
+  expect(screen.queryByRole("button", { name: "Partager" })).toBeNull();
+  await userEvent.click(await screen.findByRole("button", { name: "Actions de Kibo" }));
+  await userEvent.click(await screen.findByRole("menuitem", { name: "Partager" }));
   expect(await screen.findByRole("dialog", { name: "Partager « Kibo »" })).toBeTruthy();
   await userEvent.keyboard("{Escape}");
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());

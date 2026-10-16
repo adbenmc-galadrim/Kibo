@@ -85,7 +85,7 @@ test("an update sends the patch and keeps the daemon's answer", async () => {
 test("a failed read keeps the current settings", async () => {
   const source = fakeSource({ agentExecution: "shown" });
   source.getAppSettings = () => Promise.reject(new Error("offline"));
-  const store = createAppSettingsStore(source, { onError: () => undefined });
+  const store = createAppSettingsStore(source, () => undefined);
   const off = store.subscribe(() => undefined);
   await flush();
   expect(store.get()).toEqual(DEFAULT_APP_SETTINGS);

@@ -55,18 +55,20 @@ test("the last crumb stays text even when it carries a target", () => {
 test("crumbsFor gives a project target to the project crumb and a page target to the page crumb", () => {
   const project = { kind: "project", projectId: "kibo" } as const;
   expect(crumbsFor({ kind: "page", projectId: "kibo", pageId: "1@1" }, ctx)).toEqual([
-    { label: "Kibo", target: project },
+    { label: "Kibo", target: project, color: "#F97316" },
     { label: "Board", target: null },
   ]);
   expect(crumbsFor({ kind: "ticket", projectId: "kibo", ticketId: "t12" }, ctx)).toEqual([
-    { label: "Kibo", target: project },
+    { label: "Kibo", target: project, color: "#F97316" },
     { label: "KIB-12", target: null },
   ]);
-  expect(crumbsFor({ kind: "project", projectId: "kibo" }, ctx)).toEqual([{ label: "Kibo", target: null }]);
+  expect(crumbsFor({ kind: "project", projectId: "kibo" }, ctx)).toEqual([
+    { label: "Kibo", target: null, color: "#F97316" },
+  ]);
   expect(
     crumbsFor({ kind: "file", projectId: "kibo", worktree: null, path: "src/a.ts", line: null }, ctx),
   ).toEqual([
-    { label: "Kibo", target: project },
+    { label: "Kibo", target: project, color: "#F97316" },
     { label: "src/a.ts", target: null },
   ]);
 });
@@ -74,12 +76,12 @@ test("crumbsFor gives a project target to the project crumb and a page target to
 test("the Changements crumb opens the changes of the same worktree", () => {
   const changes: TabTarget = { kind: "changes", projectId: "kibo", worktree: "/w/kib-12" };
   expect(crumbsFor(changes, { project: kibo, branch: "kib-12" })).toEqual([
-    { label: "Kibo", target: { kind: "project", projectId: "kibo" } },
+    { label: "Kibo", target: { kind: "project", projectId: "kibo" }, color: "#F97316" },
     { label: "Changements", target: changes },
     { label: "kib-12", target: null },
   ]);
   expect(crumbsFor(changes, ctx)).toEqual([
-    { label: "Kibo", target: { kind: "project", projectId: "kibo" } },
+    { label: "Kibo", target: { kind: "project", projectId: "kibo" }, color: "#F97316" },
     { label: "Changements", target: null },
   ]);
 });
@@ -107,7 +109,7 @@ test("screens and the inbox: settings crumbs stay text, the inbox crumb opens th
   expect(
     crumbsFor({ kind: "ticket", projectId: INBOX_ID, ticketId: "t12" }, { project: inbox, branch: null }),
   ).toEqual([
-    { label: "Boîte de réception", target: { kind: "screen", screen: "inbox" } },
+    { label: "Boîte de réception", target: { kind: "screen", screen: "inbox" }, color: "#64748B" },
     { label: "KIB-12", target: null },
   ]);
 });

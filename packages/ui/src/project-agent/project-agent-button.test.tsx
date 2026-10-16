@@ -54,7 +54,7 @@ test("a pending batch without open signal keeps the plain dot", () => {
   );
   expect(screen.getByRole("button", { name: "Agent de projet · Un lot attend ta validation" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Ouvrir la boîte à signaux" })).toBeNull();
-  expect(container.querySelector("span.size-2.bg-brand")).toBeTruthy();
+  expect(container.querySelector("span.size-2.rounded-full")).toBeTruthy();
 });
 
 test("a click on the badge opens the signals, elsewhere it toggles the panel", async () => {

@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "../../sdk/src/theme.css";
+@import "./shell/nav/shell.css";
 @source "../../sdk/src";
 @source "../../../components";
 
@@ -23,7 +24,7 @@
 
 :root {
   --tabbar-h: 2.5rem;
-  --header-h: 3rem;
+  --header-h: 49px;
   --shell-top: calc(var(--tabbar-h) + var(--header-h));
   --code-comment: #6e7781;
   --code-keyword: #cf222e;

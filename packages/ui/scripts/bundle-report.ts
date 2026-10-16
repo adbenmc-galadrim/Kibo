@@ -61,7 +61,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(pages\/(InstanceMenuContent|LayoutEditor|LayoutToolbar|FormatMenu|EditorWidget|GridGuides|EditLayout)\.tsx|pages\/layout-draft\.ts|i18n\/fr-layout\.ts)$/,
   /\/packages\/ui\/src\/(creations\/[A-Za-z-]+\.tsx?|i18n\/fr-creations\.ts)$/,
   /\/packages\/sdk\/src\/(mock|mock-calls|mock-notes|fixtures|fixtures-glb)\.tsx?$/,
-  /\/packages\/ui\/src\/(settings\/ExecutionCard\.tsx|dialogs\/TrackingSection\.tsx|shell\/nav\/planning-page\.ts|i18n\/fr-tracking\.ts)$/,
+  /\/packages\/ui\/src\/(settings\/ExecutionCard\.tsx|dialogs\/TrackingSection\.tsx|shell\/nav\/(planning-page\.ts|(AgentsEntry|HiddenScreenNotice|WorkspaceMenuItems)\.tsx)|i18n\/fr-tracking\.ts)$/,
   /\/node_modules\/three\//,
   /\/packages\/sdk\/src\/(three|game)\//,
   /\/packages\/ui\/src\/ai\/(worker-backend|preview-protocol|preview-backend|draft-preview-worker|revise-escape)\.ts$/,

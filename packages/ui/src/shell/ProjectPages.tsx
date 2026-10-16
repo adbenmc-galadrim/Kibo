@@ -13,18 +13,15 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
 import { ContextMenuEntries, DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
-import {
-  SidebarMenuAction,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-} from "@kibo/sdk/ui/sidebar";
+import { SidebarMenuAction } from "@kibo/sdk/ui/sidebar";
 import { Ellipsis } from "lucide-react";
 import { type MouseEvent, type ReactNode, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { pageIcon } from "../registry";
 import { canEdit } from "../state/access";
+import { NavCount } from "./nav/NavRow";
+import { pageBadge } from "./nav/page-badges";
 import { pageDropPlan, parseZoneId, zoneId } from "./page-drop";
 import { pageMenuEntries, siblingIndex } from "./page-menu";
 
@@ -32,7 +29,6 @@ type Props = {
   project: ProjectSnapshot;
   activeTarget: TabTarget | null;
   header: ReactNode;
-  trailing: ReactNode;
   onOpen(target: TabTarget, newTab: boolean, keep?: boolean): void;
   onNewPage(parentId: string | null): void;
   onRenamePage(page: Page): void;
@@ -60,6 +56,8 @@ type RowProps = {
   onDoubleClick(e: MouseEvent): void;
   children: ReactNode;
   icon: ReactNode;
+  depth: number;
+  badge: string | null;
 };
 
 const ZONE_PLACES = {
@@ -90,13 +88,16 @@ function DropLine({ className }: { className: string }) {
   );
 }
 
-function PageRow({ page, entries, editable, active, children, icon, ...handlers }: RowProps) {
+const PAGE_INDENT = 26;
+const DEPTH_INDENT = 18;
+
+function PageRow({ page, entries, editable, active, children, icon, depth, badge, ...handlers }: RowProps) {
   const before = useDroppable({ id: zoneId({ kind: "before", pageId: page.id }), disabled: !editable });
   const inside = useDroppable({ id: zoneId({ kind: "inside", pageId: page.id }), disabled: !editable });
   const after = useDroppable({ id: zoneId({ kind: "after", pageId: page.id }), disabled: !editable });
   const drag = useDraggable({ id: page.id, disabled: !editable });
   return (
-    <SidebarMenuSubItem className="group/page">
+    <li className="group/menu-item relative">
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div className={cn("relative rounded-md", inside.isOver && "ring-2 ring-ring")}>
@@ -109,28 +110,31 @@ function PageRow({ page, entries, editable, active, children, icon, ...handlers 
             )}
             {before.isOver && <DropLine className="-top-px" />}
             {after.isOver && <DropLine className="-bottom-px" />}
-            <SidebarMenuSubButton asChild isActive={active}>
-              <button
-                type="button"
-                ref={drag.setNodeRef}
-                {...drag.attributes}
-                {...drag.listeners}
-                onClick={handlers.onClick}
-                onAuxClick={handlers.onAuxClick}
-                onDoubleClick={handlers.onDoubleClick}
-                aria-describedby={undefined}
-              >
-                {icon}
-                <span>{page.title}</span>
-              </button>
-            </SidebarMenuSubButton>
+            <button
+              type="button"
+              ref={drag.setNodeRef}
+              {...drag.attributes}
+              {...drag.listeners}
+              data-active={active || undefined}
+              aria-current={active ? "page" : undefined}
+              className="k-row"
+              style={{ paddingLeft: PAGE_INDENT + depth * DEPTH_INDENT }}
+              onClick={handlers.onClick}
+              onAuxClick={handlers.onAuxClick}
+              onDoubleClick={handlers.onDoubleClick}
+              aria-describedby={undefined}
+            >
+              {icon}
+              <span>{page.title}</span>
+              {badge && <NavCount>{badge}</NavCount>}
+            </button>
             {editable && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuAction
                     showOnHover
                     aria-label={fr.nav.pageActions(page.title)}
-                    className="top-1 right-1 size-5"
+                    className="top-[5px] right-1 size-5"
                   >
                     <Ellipsis />
                   </SidebarMenuAction>
@@ -147,7 +151,7 @@ function PageRow({ page, entries, editable, active, children, icon, ...handlers 
         </ContextMenuContent>
       </ContextMenu>
       {children}
-    </SidebarMenuSubItem>
+    </li>
   );
 }
 
@@ -193,21 +197,21 @@ export function ProjectPages(p: Props) {
     if (plan) void move(plan.pageId, plan.parentId, plan.index);
   };
   const children = (parentId: string | null) => project.pages.filter((x) => x.parentId === parentId);
-  const renderPages = (parentId: string | null): ReactNode =>
+  const renderPages = (parentId: string | null, depth: number): ReactNode =>
     children(parentId).map((page) => {
       const Icon = pageIcon(page, project.instances);
       const target: TabTarget = { kind: "page", projectId, pageId: page.id };
+      const active =
+        activeTarget?.kind === "page" &&
+        activeTarget.projectId === projectId &&
+        activeTarget.pageId === page.id;
       return (
         <PageRow
           key={page.id}
           page={page}
           entries={entriesFor(page)}
           editable={editable}
-          active={
-            activeTarget?.kind === "page" &&
-            activeTarget.projectId === projectId &&
-            activeTarget.pageId === page.id
-          }
+          active={active}
           onClick={(e) => onOpen(target, wantsNewTab(e))}
           onAuxClick={(e) => {
             if (e.button !== 1) return;
@@ -218,22 +222,19 @@ export function ProjectPages(p: Props) {
             e.preventDefault();
             onOpen(target, false, true);
           }}
-          icon={<Icon />}
+          icon={<Icon aria-hidden size={15} absoluteStrokeWidth />}
+          depth={depth}
+          badge={pageBadge(page.id, project)}
         >
-          {children(page.id).length > 0 && <SidebarMenuSub>{renderPages(page.id)}</SidebarMenuSub>}
+          {children(page.id).length > 0 && <ul className="k-list">{renderPages(page.id, depth + 1)}</ul>}
         </PageRow>
       );
     });
-  const hasSub = children(null).length > 0 || p.trailing !== null;
+  const hasSub = children(null).length > 0;
   return (
     <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
       <RootDrop editable={editable}>{p.header}</RootDrop>
-      {hasSub && (
-        <SidebarMenuSub>
-          {renderPages(null)}
-          {p.trailing}
-        </SidebarMenuSub>
-      )}
+      {hasSub && <ul className="k-list mt-[2px]">{renderPages(null, 0)}</ul>}
       {error && (
         <p role="alert" className="px-2 py-1 text-xs text-destructive">
           {error}

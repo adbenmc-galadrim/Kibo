@@ -30,7 +30,6 @@ function mount(editable: boolean, shifted: boolean) {
         <SidebarMenuItem>
           <ProjectHeaderMenu
             project={project}
-            current
             editable={editable}
             shifted={shifted}
             actions={actions()}
