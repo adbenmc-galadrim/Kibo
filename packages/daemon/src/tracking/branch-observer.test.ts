@@ -61,7 +61,7 @@ test("a branch naming two tickets links none and is logged", async () => {
   await observe();
   expect(fx.branchOf("EMIS-3")).toBeNull();
   expect(fx.branchOf("EMIS-30")).toBeNull();
-  expect(logged).toEqual(["branch feat/emis-3-et-emis-30 names several tickets, not linked"]);
+  expect(logged).toEqual(["ambiguous branch"]);
 });
 
 test("a ticket in review, blocked or done keeps its status", async () => {
@@ -111,4 +111,35 @@ test("each project keeps its own signature", async () => {
   branches = ["feat/emis-9-a"];
   await observe();
   expect([...state.keys()]).toEqual([fx.projectId]);
+});
+
+test("a done ticket is never linked by name and does not restart when reopened", async () => {
+  fx.setStatus("EMIS-8", "done");
+  branches = ["feat/emis-8-ancienne"];
+  await observe();
+  expect(fx.branchOf("EMIS-8")).toBeNull();
+  fx.setStatus("EMIS-8", "todo");
+  await observe();
+  expect(fx.ticket("EMIS-8").statusId).toBe("todo");
+  expect(fx.events.filter((e) => e.meta.origin === "kibo")).toHaveLength(0);
+});
+
+test("a done ticket does not make a branch ambiguous", async () => {
+  fx.setStatus("EMIS-3", "done");
+  branches = ["feat/emis-3-et-emis-30"];
+  await observe();
+  expect(fx.branchOf("EMIS-3")).toBeNull();
+  expect(fx.branchOf("EMIS-30")).toBe("feat/emis-3-et-emis-30");
+});
+
+test("an ambiguous branch is logged with an error naming it", async () => {
+  const errors: unknown[] = [];
+  branches = ["feat/emis-3-et-emis-30"];
+  await observeBranches(
+    { service: fx.service, refs: async () => branches, log: () => (e) => void errors.push(e) },
+    state,
+  );
+  expect(errors).toHaveLength(1);
+  expect(errors[0]).toBeInstanceOf(Error);
+  expect(String(errors[0])).toContain("feat/emis-3-et-emis-30");
 });

@@ -21,17 +21,19 @@ const signatureOf = (branches: readonly string[], all: readonly TicketView[]): s
   return [...branches, "", ...declared.sort()].join("\n");
 };
 
-const namedBy = (branch: string, all: readonly TicketView[]): TicketView[] =>
-  all.filter((t) => matchBranchToTicket(branch, [t]) !== null);
+const namedBy = (branch: string, open: readonly TicketView[]): TicketView[] =>
+  open.filter((t) => matchBranchToTicket(branch, [t]) !== null);
 
 function ownerOf(branch: string, all: readonly TicketView[], log: Log): TicketView | null {
   if (all.some((t) => branchOf(t) === branch)) return null;
-  const id = matchBranchToTicket(branch, all);
+  const open = all.filter((t) => t.statusId !== "done");
+  const id = matchBranchToTicket(branch, open);
   if (id === null) {
-    if (namedBy(branch, all).length > 1) log(`branch ${branch} names several tickets, not linked`)(branch);
+    if (namedBy(branch, open).length > 1)
+      log("ambiguous branch")(new Error(`branch ${branch} names several tickets, not linked`));
     return null;
   }
-  const owner = all.find((t) => t.id === id) ?? null;
+  const owner = open.find((t) => t.id === id) ?? null;
   return owner && branchOf(owner) === null ? owner : null;
 }
 
