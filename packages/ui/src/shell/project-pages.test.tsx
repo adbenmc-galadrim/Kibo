@@ -14,6 +14,9 @@ mock.module("../api", () =>
         calls.push(req);
         return answer(req);
       },
+      subscribe: () => () => {},
+      subscribeTopic: () => () => {},
+      subscribeEvents: () => () => {},
     },
   }),
 );
@@ -221,4 +224,45 @@ test("an open feature lights the Planning page of its project", async () => {
   first.unmount();
   pages("e33");
   expect(screen.getByRole("button", { name: "Planning" }).getAttribute("aria-current")).toBeNull();
+});
+
+test("the ⋯ of a view page also carries its component menu", async () => {
+  const withView: ProjectSnapshot = {
+    ...project(),
+    instances: [
+      {
+        id: "i-kanban",
+        pageId: "kanban",
+        component: "kanban@1.0.0",
+        layout: { x: 0, y: 0, w: 12, h: 8 },
+        config: {},
+        componentHash: null,
+      },
+    ],
+  };
+  const user = userEvent.setup();
+  render(
+    <SidebarProvider>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <ProjectPages
+            project={withView}
+            activeTarget={null}
+            header={<span>Kibo</span>}
+            onOpen={() => {}}
+            onNewPage={() => {}}
+            onRenamePage={() => {}}
+            onDeletePage={() => {}}
+          />
+        </SidebarMenuItem>
+      </SidebarMenu>
+    </SidebarProvider>,
+  );
+  await user.click(screen.getByRole("button", { name: "Actions de la page Kanban" }));
+  expect(await screen.findByRole("menuitem", { name: "Retirer de la page…" })).toBeTruthy();
+  expect(screen.getByRole("menuitem", { name: "Renommer…" })).toBeTruthy();
+  await user.keyboard("{Escape}");
+  await user.click(screen.getByRole("button", { name: "Actions de la page Tableau de bord" }));
+  await screen.findByRole("menuitem", { name: "Renommer…" });
+  expect(screen.queryByRole("menuitem", { name: "Retirer de la page…" })).toBeNull();
 });

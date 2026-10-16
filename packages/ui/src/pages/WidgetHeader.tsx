@@ -13,9 +13,8 @@ import { instanceFormat } from "../lib/format-grid";
 import type { InstanceApis } from "../lib/instance-capabilities";
 import { componentIcon } from "../registry";
 import { SourceHeader } from "../shell/lazy-screens";
-import { PageActions } from "../shell/page-actions";
 import { InstanceFrame } from "./InstanceFrame";
-import { InstanceMenu, useInstanceTitle } from "./InstanceMenu";
+import { InstanceMenu } from "./InstanceMenu";
 
 type HeaderProps = { projectId: string; instance: Instance; editable: boolean };
 
@@ -41,16 +40,6 @@ export function WidgetHeader({
       {fullscreen && <FullscreenButton instanceId={instance.id} />}
       {editable && <InstanceMenu projectId={projectId} instance={instance} title={title} />}
     </div>
-  );
-}
-
-export function ViewActions({ projectId, instance, editable }: HeaderProps) {
-  const title = useInstanceTitle(instance.component);
-  if (!editable) return null;
-  return (
-    <PageActions>
-      <InstanceMenu projectId={projectId} instance={instance} title={title} />
-    </PageActions>
   );
 }
 

@@ -85,14 +85,15 @@ test("a read-only or revoked project shows no widget menu", async () => {
   }
 });
 
-test("an editable single-widget page offers the widget menu in the page actions", async () => {
+test("a single-widget page leaves its widget menu to the page row of the sidebar", async () => {
   show(withAccess("write", single), single);
-  expect(await screen.findByRole("button", { name: "Actions Kanban" })).toBeTruthy();
+  await waitFor(() => expect(screen.queryByText("Chargement…")).toBeNull());
+  expect(screen.queryByRole("button", { name: "Actions Kanban" })).toBeNull();
 });
 
 test("a single-widget page gives its component the height left under the page headers", async () => {
   const { container } = show(withAccess("write", single), single);
-  await screen.findByRole("button", { name: "Actions Kanban" });
+  await waitFor(() => expect(screen.queryByText("Chargement…")).toBeNull());
   const body = container.querySelector("[data-view-body]");
   expect(body?.className.split(" ")).toEqual(
     expect.arrayContaining(["flex", "min-h-0", "flex-1", "flex-col"]),

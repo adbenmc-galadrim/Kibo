@@ -172,3 +172,9 @@ export const AgentPanel = lazyPanel(
   fr.lazy,
   hidden,
 );
+
+export const PageInstanceMenu = lazyPanel(
+  () => import("../pages/PageInstanceMenu").then((m) => m.PageInstanceMenu),
+  fr.lazy,
+  { fallback: "children" },
+);
