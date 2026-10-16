@@ -7,6 +7,7 @@ import { PENPOT_IDS, startFakePenpot } from "../packages/daemon/src/testing/fake
 import { startFakeStorybook } from "../packages/daemon/src/testing/fake-storybook";
 import { e2eHome } from "./e2e-home";
 import { fakeGhDir, GIT_IDENTITY } from "./git-repo";
+import { EMIS_MAQUETTES, FIXED_NOW } from "./pixel-settings";
 import {
   E2E_FIGMA_TOKEN,
   E2E_GH_TOKEN,
@@ -155,6 +156,7 @@ const proc = Bun.spawn(
       FAKE_GH_STATE: join(ghDir, "state.json"),
       FAKE_GH_LOG: join(ghDir, "log.jsonl"),
       ...(delivery ? deliveryEnv() : {}),
+      ...(scenario === EMIS_MAQUETTES ? { KIBO_FIXED_NOW: FIXED_NOW } : {}),
     },
     stdout: "inherit",
     stderr: "inherit",
