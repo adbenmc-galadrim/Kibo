@@ -66,6 +66,7 @@ test("the feature sheet of F5 opened in a tab matches the mockup in its content 
     screenError = error;
   }
   const diff = existsSync(diffPath) ? readFileSync(diffPath) : null;
+  if (screenError !== null && diff === null) throw screenError;
   const whole = diff ? regionRatio(diff, { x: 0, y: 0, w: 1440, h: HEIGHT }) : 0;
   const shell = diff ? regionRatio(diff, CONTENT) : 0;
   const contentShot = await captureContent(page, {

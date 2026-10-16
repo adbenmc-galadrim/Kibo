@@ -2,6 +2,7 @@ import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { MASK_COLOR, MASK_RGB, type PixelMask } from "./pixel-masks";
+import { type Comparison, comparisonOutcome } from "./pixel-outcome";
 import { encodePng, paintBoxes } from "./pixel-paint";
 import { type Box, decodePng, diffReport, type Rgba } from "./pixel-report";
 import { DESIGN_REFERENCES, PIXEL_SCREENSHOT, PIXEL_WIDTH } from "./pixel-settings";
@@ -77,8 +78,8 @@ export async function captureContent(page: Page, input: ContentInput): Promise<C
   const since = test.info().attachments.length;
   const base = join(input.outDir, `${input.screen}-contenu-${input.scheme}`);
   mkdirSync(input.outDir, { recursive: true });
-  try {
-    await expect(page).toHaveScreenshot(name, {
+  const comparison = await expect(page)
+    .toHaveScreenshot(name, {
       ...PIXEL_SCREENSHOT,
       clip,
       mask,
@@ -86,11 +87,11 @@ export async function captureContent(page: Page, input: ContentInput): Promise<C
       maxDiffPixelRatio: 0,
       maxDiffPixels: 0,
       timeout: STRICT_TIMEOUT_MS,
-    });
-  } catch {
-    const diff = lastDiff(since);
-    if (diff !== null) copyFileSync(diff, `${base}-diff.png`);
-  }
+    })
+    .then((): Comparison => ({ kind: "passed" }))
+    .catch((error: unknown): Comparison => ({ kind: "failed", error }));
+  const outcome = comparisonOutcome(comparison, lastDiff(since));
+  if (outcome.kind === "diff") copyFileSync(outcome.path, `${base}-diff.png`);
   writeFileSync(
     `${base}.png`,
     await page.screenshot({ animations: "disabled", caret: "hide", clip, mask, maskColor: MASK_COLOR }),
@@ -101,8 +102,7 @@ export async function captureContent(page: Page, input: ContentInput): Promise<C
       el.remove();
     });
   });
-  const diff = lastDiff(since);
-  if (diff === null) return { ratio: 0, diffPixels: 0, boxes: [] };
-  const report = diffReport(readFileSync(diff));
+  if (outcome.kind === "exact") return { ratio: 0, diffPixels: 0, boxes: [] };
+  const report = diffReport(readFileSync(outcome.path));
   return { ratio: report.ratio, diffPixels: report.diffPixels, boxes: report.boxes };
 }
