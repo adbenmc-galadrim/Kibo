@@ -94,6 +94,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(delivery\/.+\.tsx?|i18n\/fr-delivery(-settings)?\.ts|lib\/(expand-home|use-home)\.ts|dialogs\/(delivery-draft|delivery-import-rows|recipe-draft)\.ts)$/,
   /\/packages\/ui\/src\/(dialogs\/(DeliverySection|DeliveryFields|DeliveryImportDialog|WorktreeRecipeFields)|agents\/(sheet\/(PresetButton|AddDirsField)|MachineLocks))\.tsx$/,
   /\/packages\/ui\/src\/i18n\/fr-components-manage\.ts$/,
+  /\/packages\/ui\/src\/(shell\/(FeatureDetail|feature\/[A-Za-z-]+)\.tsx?|i18n\/fr-group\.ts)$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>
