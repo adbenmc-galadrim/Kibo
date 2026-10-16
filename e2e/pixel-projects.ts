@@ -1,5 +1,6 @@
 import type { Project } from "@playwright/test";
 import {
+  DESIGN_REFERENCES,
   EMIS_MAQUETTES,
   PIXEL_KIT_REFERENCES,
   PIXEL_SCREENSHOT,
@@ -26,17 +27,18 @@ export const PIXEL_DAEMONS = [
   },
 ] as const;
 
-const screenshotOptions = (template: string): Partial<Project> => ({
-  snapshotPathTemplate: template,
+const screenshotOptions = (sources: string): Partial<Project> => ({
+  snapshotPathTemplate: REFERENCES_TEMPLATE,
+  metadata: { pixelSources: sources },
   expect: { toHaveScreenshot: PIXEL_SCREENSHOT },
 });
 
 export const pixelProjectOptions = (name: string): Partial<Project> =>
-  PIXEL_DAEMONS.some((d) => d.name === name) ? screenshotOptions(REFERENCES_TEMPLATE) : {};
+  PIXEL_DAEMONS.some((d) => d.name === name) ? screenshotOptions(DESIGN_REFERENCES) : {};
 
 export const pixelKitProject = (): Project => ({
   name: "pixel-kit",
   testMatch: /pixel-kit\.spec\.ts/,
   use: { browserName: "chromium", colorScheme: "dark", baseURL: `http://127.0.0.1:${PIXEL_DARK_PORT}` },
-  ...screenshotOptions(`${PIXEL_KIT_REFERENCES}/{arg}{ext}`),
+  ...screenshotOptions(PIXEL_KIT_REFERENCES),
 });

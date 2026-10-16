@@ -1,8 +1,10 @@
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
 import { capturePixel, preparePixelPage } from "./pixel-kit";
+import { MASK_RGB, type PixelMask } from "./pixel-masks";
+import { decodePng } from "./pixel-report";
 import { PIXEL_KIT_REFERENCES } from "./pixel-settings";
 
 const HEIGHT = 300;
@@ -35,8 +37,14 @@ async function writeReference(page: Page, extra: Square | null) {
   writeFileSync(REFERENCE, await page.screenshot({ animations: "disabled", caret: "hide" }));
 }
 
-const capture = (page: Page, height = HEIGHT) =>
-  capturePixel(page, { screen: SCREEN, scheme: "dark", height, outDir: test.info().outputPath("screens") });
+const capture = (page: Page, height = HEIGHT, masks: readonly PixelMask[] = []) =>
+  capturePixel(page, {
+    screen: SCREEN,
+    scheme: "dark",
+    height,
+    outDir: test.info().outputPath("screens"),
+    masks,
+  });
 
 const kept = (suffix: string) => existsSync(test.info().outputPath("screens", `${SCREEN}-dark${suffix}.png`));
 
@@ -79,4 +87,25 @@ test("a capture whose size differs from the reference is refused", async ({ page
   await writeReference(page, null);
   await openTestPage(page, null, 400);
   await expect(capture(page, 400)).rejects.toThrow("is 1440×300, capture is 1440×400");
+});
+
+test("a masked zone is painted on both sides and leaves the reference file untouched", async ({ page }) => {
+  await writeReference(page, { x: 400, y: 80, size: 120 });
+  const source = readFileSync(REFERENCE);
+  await openTestPage(page, null);
+  const mask = { x: 390, y: 70, w: 140, h: 140, why: "zone que la page ne sait pas produire" };
+  const result = await capture(page, HEIGHT, [mask]);
+  expect(result.report.diffPixels).toBe(0);
+  expect(readFileSync(REFERENCE)).toEqual(source);
+  const kept = decodePng(readFileSync(test.info().outputPath("screens", `${SCREEN}-dark-reference.png`)));
+  const at = (400 + 100 * kept.width) * 4;
+  expect([...kept.data.subarray(at, at + 3)]).toEqual([...MASK_RGB]);
+  expect(await page.locator("[data-pixel-mask]").count()).toBe(0);
+});
+
+test("a mask does not hide a difference outside its zone", async ({ page }) => {
+  await writeReference(page, { x: 400, y: 80, size: 120 });
+  await openTestPage(page, null);
+  const mask = { x: 0, y: 0, w: 100, h: 100, why: "zone que la page ne sait pas produire" };
+  await expect(capture(page, HEIGHT, [mask])).rejects.toThrow(/x=400 y=80 120×120/);
 });
