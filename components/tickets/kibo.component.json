@@ -11,6 +11,7 @@
   "writes": ["ticket", "run"],
   "configSchema": {
     "filter": { "enum": ["all", "mine"], "default": "all" },
-    "sprint": { "type": "string", "nullable": true, "default": null, "label": "Sprint affiché" }
+    "sprint": { "type": "string", "nullable": true, "default": null, "label": "Sprint affiché" },
+    "doneOpen": { "type": "boolean", "default": true, "label": "Terminés dépliés" }
   }
 }

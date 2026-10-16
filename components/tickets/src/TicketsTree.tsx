@@ -9,10 +9,10 @@ import {
 import { type ProjectCommand, type Status, type TicketView, worstCiTone } from "@kibo/schema";
 import {
   filterBySource,
-  liveRun,
   readSource,
   SelectionChip,
   useEntities,
+  useMembers,
   useQuestionsChipData,
   useReadOnly,
   useSdk,
@@ -21,16 +21,18 @@ import {
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { buildSections, featureOf, withAncestors } from "./build-tree";
 import { CELL, ROW } from "./columns";
 import {
   ALL_SPRINTS,
   chosenSprint,
+  cleared,
   EMPTY_QUERY,
   isActive,
   NO_SPRINT,
   type SprintRef,
+  sortTickets,
   sprintCode,
 } from "./filter-tickets";
 import { fr } from "./fr";
@@ -39,12 +41,15 @@ import { TicketSection } from "./TicketSection";
 import { TicketsEmpty, TicketsNoMatch, TicketsSkeleton } from "./TicketsEmpty";
 import { TicketsToolbar } from "./TicketsToolbar";
 import { dropPlan, parseZoneId } from "./tree-drop";
+import { useSearchKeys } from "./use-search-keys";
 import { useTicketActions } from "./use-ticket-actions";
 
 const TABLE =
   "relative overflow-hidden rounded-[8px] bg-(--tracking-card) after:pointer-events-none after:absolute after:inset-0 after:rounded-[8px] after:border after:border-(--tracking-border)";
 const PRIMARY =
   "h-[25px] gap-[6px] rounded-[6px] bg-zinc-900 px-[10px] text-[12px] leading-[1.2] font-medium text-zinc-50 hover:bg-zinc-900/90 has-[>svg]:px-[10px] dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-50/90";
+
+const RECENT_DONE = 4;
 
 const codeOf = (s: SprintRef | undefined): string | null => (s ? sprintCode(s) : null);
 
@@ -61,13 +66,30 @@ export function TicketsTree() {
   const [saved, setSaved] = useState<unknown>(sdk.config.sprint);
   const sprint = chosenSprint(saved, sprints);
   const [query, setQuery] = useState(EMPTY_QUERY);
-  const [doneOpen, setDoneOpen] = useState(false);
+  const [doneOpen, setDoneOpen] = useState(sdk.config.doneOpen !== false);
+  const [allDone, setAllDone] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const openSearch = useCallback(() => setSearching(true), []);
+  const onKeyDown = useSearchKeys(sdk.surface === "view", openSearch);
   const [looseOpen, setLooseOpen] = useState(false);
   const [selection, setSelection] = useSelection();
   const actions = useTicketActions(all, runs, statuses);
   const questions = useQuestionsChipData(runs);
+  const members = useMembers();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
-  const sections = buildSections({ tickets, sprint, query, mine: mine ? sdk.viewer : null });
+  const sections = buildSections({
+    tickets,
+    sprint,
+    query,
+    mine: mine ? sdk.viewer : null,
+    viewer: sdk.viewer,
+  });
+  const recent = new Set(
+    sortTickets(sections.done, "recent")
+      .slice(0, RECENT_DONE)
+      .map((t) => t.id),
+  );
+  const doneShown = allDone ? sections.done : sections.done.filter((t) => recent.has(t.id));
   const rootOf = featureOf(all);
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
   const selected = new Set(selection?.ids ?? []);
@@ -83,6 +105,10 @@ export function TicketsTree() {
         ? fr.scope.none
         : fr.scope.sprint(sprintLabel ?? "");
 
+  const toggleDone = (open: boolean) => {
+    setDoneOpen(open);
+    void sdk.setConfig({ doneOpen: open });
+  };
   const chooseSprint = (value: string) => {
     setSaved(value);
     void sdk.setConfig({ sprint: value });
@@ -101,7 +127,8 @@ export function TicketsTree() {
       ticket={t}
       feature={rootOf(t)}
       ci={t.key === null ? null : worstCiTone(ciRuns.filter((r) => r.ticketKey === t.key))}
-      running={liveRun(runOf.get(t.id) ?? null) !== null}
+      run={runOf.get(t.id) ?? null}
+      members={members}
       statusLabel={label(t.statusId)}
       entries={actions.entriesFor(t)}
       readOnly={readOnly}
@@ -117,6 +144,7 @@ export function TicketsTree() {
   return (
     <section
       aria-label={fr.title}
+      onKeyDown={onKeyDown}
       className="@container flex h-full flex-col gap-3 overflow-auto px-6 py-[18px]"
     >
       <header className="flex items-end gap-[10px]">
@@ -154,10 +182,14 @@ export function TicketsTree() {
             onSprint={chooseSprint}
             query={query}
             features={sections.features}
+            statuses={statuses}
+            tickets={tickets}
+            searching={searching}
+            onSearchClose={() => setSearching(false)}
             onChange={setQuery}
           />
           {empty ? (
-            <TicketsNoMatch onClear={isActive(query) ? () => setQuery(EMPTY_QUERY) : null} />
+            <TicketsNoMatch onClear={isActive(query) ? () => setQuery(cleared(query)) : null} />
           ) : (
             <div className={TABLE}>
               <div
@@ -182,10 +214,15 @@ export function TicketsTree() {
                       label={fr.done(sprintLabel)}
                       count={sections.done.length}
                       open={doneOpen}
-                      onOpenChange={setDoneOpen}
+                      onOpenChange={toggleDone}
+                      more={
+                        sections.done.length > RECENT_DONE
+                          ? { all: allDone, recent: RECENT_DONE, onToggle: () => setAllDone((a) => !a) }
+                          : null
+                      }
                       done
                     >
-                      {sections.done.map(row)}
+                      {doneShown.map(row)}
                     </TicketSection>
                   )}
                   {sections.loose.length > 0 && (

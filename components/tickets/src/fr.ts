@@ -1,4 +1,14 @@
-import type { PrState } from "@kibo/schema";
+import type { PrState, RunState } from "@kibo/schema";
+
+const RUN_STATES: Record<RunState, string> = {
+  queued: "En file",
+  starting: "Démarrage",
+  running: "En cours",
+  waiting_input: "Attend une réponse",
+  done: "Terminé",
+  failed: "Échec",
+  cancelled: "Annulé",
+};
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
 
@@ -30,8 +40,15 @@ export const fr = {
     none: "À planifier",
     current: "sprint en cours",
   },
+  search: "Rechercher (clé ou titre)",
   filters: {
     open: "Ouverts",
+    openOnly: "Ouverts seulement",
+    status: "Statut",
+    startable: "Démarrables",
+    assignee: "Assigné",
+    assignees: { all: "Tous", me: "Moi", agents: "Agents", nobody: "Personne" },
+    clear: "Effacer les filtres",
     feature: "Fonctionnalité",
     allFeatures: "Toutes les fonctionnalités",
     sort: { recent: "Activité récente", key: "Clé" },
@@ -60,6 +77,26 @@ export const fr = {
     prState: (state: PrState) => PR_STATES[state],
     pr: (n: number) => `#${n}`,
     ci: { ok: "CI réussie", error: "CI cassée", running: "CI en cours", neutral: "CI sans conclusion" },
+  },
+  labels: { title: "Étiquettes", free: "Libres", none: "Aucune étiquette dans ce projet" },
+  details: {
+    assignee: (name: string) => `Assigné : ${name}`,
+    blocked: (reason: string) => `Bloqué : ${reason}`,
+    startable: "Démarrable",
+  },
+  showAll: (n: number) => `Afficher les ${n} terminés`,
+  showRecent: (n: number) => `Afficher les ${n} plus récents`,
+  mention: {
+    history: "Voir l'historique",
+    reply: "Répondre",
+    step: (index: number, total: number, title: string) => `${index}/${total} · ${title}`,
+    state: (state: RunState) => RUN_STATES[state],
+    waiting: "Attend une réponse",
+  },
+  run: {
+    queued: (position: number | null) => (position === null ? "En file" : `En file #${position}`),
+    waiting: "Attend",
+    failed: "Échec",
   },
   none: "—",
   running: "Agent en cours",

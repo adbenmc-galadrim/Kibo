@@ -1,6 +1,6 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
-import type { CiTone, StatusId, TicketView } from "@kibo/schema";
-import { QuestionsChip, type QuestionsChipData, TicketKeyLabel, useSdk } from "@kibo/sdk";
+import type { CiTone, MemberInfo, StatusId, TicketRun, TicketView } from "@kibo/schema";
+import { liveRun, QuestionsChip, type QuestionsChipData, TicketKeyLabel, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
@@ -11,6 +11,7 @@ import { FeatureChip, type FeatureRef } from "./FeatureChip";
 import { updatedAt } from "./filter-tickets";
 import { fr } from "./fr";
 import { GitPrCell } from "./GitPrCell";
+import { RowDetails } from "./RowDetails";
 import { TicketRowActions, TicketRowMenu } from "./TicketRowMenu";
 import { zoneId } from "./tree-drop";
 import { updatedLabel } from "./updated-label";
@@ -28,7 +29,8 @@ export type RowFacts = {
   ticket: TicketView;
   feature: FeatureRef | null;
   ci: CiTone | null;
-  running: boolean;
+  run: TicketRun | null;
+  members: MemberInfo[];
   statusLabel: string;
   entries: MenuEntry[];
   readOnly: boolean;
@@ -74,11 +76,12 @@ function DropZones({ id, enabled }: { id: string; enabled: boolean }) {
 }
 
 export function TicketRow(props: RowFacts) {
-  const { ticket: t, feature, ci, running, statusLabel, entries, readOnly, canDrag, questions } = props;
+  const { ticket: t, feature, ci, run, statusLabel, entries, readOnly, canDrag, questions } = props;
   const sdk = useSdk();
   const drag = useDraggable({ id: t.id, disabled: !canDrag });
   const handle = canDrag ? { ...drag.listeners, ...drag.attributes } : {};
   const done = t.statusId === "done";
+  const running = liveRun(run) !== null;
   const at = updatedAt(t);
   return (
     <li>
@@ -100,16 +103,19 @@ export function TicketRow(props: RowFacts) {
             />
           </span>
           <span className={CELL.title}>
-            <button
-              type="button"
-              className={cn(
-                "min-w-0 truncate text-left text-[13px] leading-[1.2]",
-                done ? "text-(--tracking-mfg)" : "text-(--tracking-fg)",
-              )}
-              onClick={() => sdk.openTicket(t.id)}
-            >
-              {t.title}
-            </button>
+            <RowDetails ticket={t} run={run} members={props.members}>
+              <button
+                type="button"
+                data-row-title
+                className={cn(
+                  "min-w-0 truncate text-left text-[13px] leading-[1.2]",
+                  done ? "text-(--tracking-mfg)" : "text-(--tracking-fg)",
+                )}
+                onClick={() => sdk.openTicket(t.id)}
+              >
+                {t.title}
+              </button>
+            </RowDetails>
             {running && (
               <span
                 role="img"

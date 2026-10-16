@@ -45,8 +45,11 @@ const rowOf = async (key: string) => {
   return found;
 };
 const cell = (row: HTMLElement, name: string) => row.querySelector(`[data-cell=${name}]`)?.textContent;
-const keysShown = () =>
-  Array.from(document.querySelectorAll("li [data-selected] > span:nth-of-type(1)"), (e) => e.textContent);
+const rowKeys = (inSection: boolean) =>
+  Array.from(document.querySelectorAll("[data-selected]"))
+    .filter((r) => (r.closest("li")?.parentElement?.closest("li") !== null) === inSection)
+    .map((r) => r.querySelector("span")?.textContent);
+const keysShown = () => rowKeys(false);
 
 test("P4: title, sprint summary, columns, and the footer that says states come from git", async () => {
   setup();
@@ -90,21 +93,41 @@ test("open steps come first by recent activity, with their feature, state, git, 
   expect(cell(waiting, "updated")).toBe("—");
 });
 
-test("Terminés dans S42 and Hors fonctionnalité are folded, each opens on click", async () => {
-  setup();
+test("Terminés dans S42 shows its 4 most recent, the count shows them all, the header folds it", async () => {
+  const m = setup();
   await rowOf("KIB-14");
-  expect(screen.queryByText("Liste des ISO")).toBeNull();
-  const user = userEvent.setup();
-  const done = screen.getByRole("button", { name: "Déplier Terminés dans S42" });
-  expect(done.textContent).toBe("Terminés dans S427");
-  await user.click(done);
-  expect(screen.getByText("Liste des ISO")).toBeTruthy();
+  expect(rowKeys(true)).toEqual(["KIB-5", "KIB-12", "KIB-8", "KIB-7"]);
   const merged = await rowOf("KIB-5");
   expect(cell(merged, "git")).toBe("#18fusionnée");
   expect(cell(merged, "delivery")).toBe("11 · Livré");
-  expect(screen.getByRole("button", { name: "Replier Terminés dans S42" })).toBeTruthy();
-  expect(screen.queryByText("Mettre à jour la doc")).toBeNull();
-  await user.click(screen.getByRole("button", { name: "Déplier Hors fonctionnalité" }));
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Afficher les 7 terminés" }));
+  expect(rowKeys(true)).toEqual(["KIB-5", "KIB-12", "KIB-8", "KIB-7", "KIB-2", "KIB-3", "KIB-4"]);
+  await user.click(screen.getByRole("button", { name: "Afficher les 4 plus récents" }));
+  expect(rowKeys(true)).toHaveLength(4);
+  await user.click(screen.getByRole("button", { name: "Replier Terminés dans S42" }));
+  expect(rowKeys(true)).toEqual([]);
+  expect(screen.getByRole("button", { name: "Déplier Terminés dans S42" }).textContent).toBe(
+    "Terminés dans S42",
+  );
+  expect(m.configPatches).toEqual([{ doneOpen: false }]);
+});
+
+test("a folded choice is remembered by the instance; Hors fonctionnalité opens on click", async () => {
+  const m = createMockSdk(manifest, {
+    seed: trackingSeed(Date.now()),
+    today: TODAY,
+    config: { doneOpen: false },
+  });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  await rowOf("KIB-14");
+  expect(rowKeys(true)).toEqual([]);
+  expect(screen.getByRole("button", { name: "Déplier Terminés dans S42" })).toBeTruthy();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Déplier Hors fonctionnalité" }));
   const loose = await rowOf("KIB-16");
   expect(within(loose).queryByRole("button", { name: /^Ouvrir la fonctionnalité/ })).toBeNull();
 });
@@ -116,13 +139,17 @@ test("the feature chip opens the feature", async () => {
   expect(m.opened).toEqual([m.snapshot().tickets.find((t) => t.keyLabel === "KIB-11")?.id ?? ""]);
 });
 
-test("Ouverts drops the done section, Fonctionnalité keeps one feature, the sort can follow the keys", async () => {
+test("Ouverts hides the done tickets, Fonctionnalité keeps one feature, the sort can follow the keys", async () => {
   const m = setup();
   await rowOf("KIB-14");
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Ouverts" }));
+  await user.click(await screen.findByRole("menuitemcheckbox", { name: "Ouverts seulement" }));
+  await user.keyboard("{Escape}");
   expect(screen.queryByRole("button", { name: /Terminés dans S42$/ })).toBeNull();
+  expect(screen.getByRole("button", { name: "Ouverts" }).getAttribute("aria-pressed")).toBe("true");
   await user.click(screen.getByRole("button", { name: "Ouverts" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Effacer les filtres" }));
   await user.click(screen.getByRole("button", { name: "Fonctionnalité" }));
   expect((await screen.findAllByRole("menuitemradio")).map((i) => i.textContent)).toEqual([
     "Toutes les fonctionnalités",

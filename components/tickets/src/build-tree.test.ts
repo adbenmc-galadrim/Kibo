@@ -12,7 +12,7 @@ const { tickets } = snapshot;
 const s42 = snapshot.sprints.find((s) => s.name === "S42")?.id ?? "";
 const keys = (ts: { keyLabel: string }[]) => ts.map((t) => t.keyLabel);
 const sections = (sprint: string, query = EMPTY_QUERY, mine: string | null = null) =>
-  buildSections({ tickets, sprint, query, mine });
+  buildSections({ tickets, sprint, query, mine, viewer: "adam" });
 
 test("rows are the steps of the sprint: open by recent activity, done apart, roots without step apart", () => {
   const s = sections(s42);
@@ -30,7 +30,13 @@ test("features are never rows, nested groups give their own steps, the feature i
     run({ method: "createTicket", title: "Sous-étape", parentId: nested.id });
   };
   const all = createMockSdk(manifest, { seed }).snapshot().tickets;
-  const s = buildSections({ tickets: all, sprint: ALL_SPRINTS, query: EMPTY_QUERY, mine: null });
+  const s = buildSections({
+    tickets: all,
+    sprint: ALL_SPRINTS,
+    query: EMPTY_QUERY,
+    mine: null,
+    viewer: "adam",
+  });
   expect(keys(s.open)).toEqual(["KIB-3"]);
   const leaf = all.find((t) => t.keyLabel === "KIB-3");
   if (!leaf) throw new Error("seed");

@@ -1,5 +1,5 @@
 import { isGroup, type TicketView } from "@kibo/schema";
-import { inSprint, sortTickets, type TicketsQuery } from "./filter-tickets";
+import { inSprint, matchesQuery, sortTickets, type TicketsQuery } from "./filter-tickets";
 
 export type TicketSections = {
   open: TicketView[];
@@ -14,6 +14,7 @@ type SectionsInput = {
   sprint: string;
   query: TicketsQuery;
   mine: string | null;
+  viewer: string;
 };
 
 export function featureOf(tickets: readonly TicketView[]): (ticket: TicketView) => TicketView | null {
@@ -36,13 +37,16 @@ const isLoose = (t: TicketView) => t.parentId === null && !isGroup(t);
 const assignedTo = (t: TicketView, viewer: string) =>
   t.assignee?.kind === "human" && t.assignee.ref === viewer;
 
-export function buildSections({ tickets, sprint, query, mine }: SectionsInput): TicketSections {
+export function buildSections({ tickets, sprint, query, mine, viewer }: SectionsInput): TicketSections {
   const rootOf = featureOf(tickets);
   const scoped = tickets.filter((t) => inSprint(t, sprint) && (mine === null || assignedTo(t, mine)));
   const steps = scoped.filter(isStep);
   const features = [...new Set(steps.map((t) => rootOf(t)).filter((f) => f !== null))];
-  const shown = steps.filter((t) => query.featureId === null || rootOf(t)?.id === query.featureId);
-  const loose = query.featureId === null ? scoped.filter(isLoose) : [];
+  const matches = (t: TicketView) => matchesQuery(t, query, viewer);
+  const shown = steps.filter(
+    (t) => (query.featureId === null || rootOf(t)?.id === query.featureId) && matches(t),
+  );
+  const loose = query.featureId === null ? scoped.filter((t) => isLoose(t) && matches(t)) : [];
   return {
     open: sortTickets(
       shown.filter((t) => t.statusId !== "done"),
