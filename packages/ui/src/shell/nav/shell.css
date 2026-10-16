@@ -253,6 +253,7 @@
 }
 
 .k-sep {
+  width: 7px;
   color: var(--tracking-faint);
 }
 
