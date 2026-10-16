@@ -51,7 +51,10 @@ export function seedPlanning(run: Run) {
     { status: "todo" },
     { status: "todo" },
   ]);
-  const f6 = feature(run, "Importer les ISO depuis Excel", s43.id, repeat("todo", 4));
+  const f6 = feature(run, "Importer les ISO depuis Excel", s43.id, [
+    { status: "todo", delivery: { step: 3, at: 4000 } },
+    ...repeat("todo", 3),
+  ]);
   const f7 = feature(run, "Rapport de chantier journalier", s44.id, repeat("todo", 5));
   const f8 = feature(run, "Valider les soudures par lot", s43.id, repeat("todo", 4));
   const f9 = feature(run, "Exporter le dossier client", null, repeat("todo", 3));

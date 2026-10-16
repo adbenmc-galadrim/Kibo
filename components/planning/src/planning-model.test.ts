@@ -127,7 +127,7 @@ test("a delivered feature in a finished sprint is folded, its title muted", () =
   expect(card(s42?.cards ?? [], "F4")).toMatchObject({ compact: false, muted: false });
 });
 
-test("the footer shows the step in session, else the next step", () => {
+test("the footer shows the step in session, else the next step, never a step waiting on a blocking question", () => {
   const { model } = build();
   const [, s42, s43] = model.sprints;
   const f4 = card(s42?.cards ?? [], "F4");

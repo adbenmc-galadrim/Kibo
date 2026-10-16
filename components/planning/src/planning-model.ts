@@ -90,9 +90,16 @@ function toneOf(step: FeatureStep, blocking: ReadonlyMap<string, string | null>)
   return step.statusId === "in_progress" ? "progress" : "todo";
 }
 
-function sessionOf(steps: readonly FeatureStep[]): string | null {
+function sessionOf(
+  steps: readonly FeatureStep[],
+  blocking: ReadonlyMap<string, string | null>,
+): string | null {
   const live = steps.filter(
-    (s) => s.statusId !== "done" && s.delivery !== null && s.delivery.step < DELIVERY_STEP_MAX,
+    (s) =>
+      s.statusId !== "done" &&
+      !blocking.has(s.ticketId) &&
+      s.delivery !== null &&
+      s.delivery.step < DELIVERY_STEP_MAX,
   );
   live.sort((a, b) => (b.delivery?.at ?? 0) - (a.delivery?.at ?? 0));
   return live[0]?.key ?? null;
@@ -124,7 +131,7 @@ function cardOf(f: Feature, facts: Facts): FeatureCard {
     total: state.steps.total,
     remaining: state.remaining,
     next: delivered ? null : (nextStep?.key ?? null),
-    session: delivered ? null : sessionOf(steps),
+    session: delivered ? null : sessionOf(steps, blocking),
     compact: delivered && sprint?.state === "done",
     muted: delivered,
   };
