@@ -18,6 +18,7 @@ mock.module("../api", () =>
         return () => aiListeners.delete(l);
       },
       subscribeTopic: () => () => {},
+      subscribeEvents: () => () => {},
     },
   }),
 );
