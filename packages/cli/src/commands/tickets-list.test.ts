@@ -1,15 +1,16 @@
 import { describe, expect, test } from "bun:test";
 import { parseArgs } from "../args";
 import { runTicketsCommand } from "./tickets";
-import { fakeDaemon } from "./tickets-test-kit";
+import { fakeDaemon, fakeTicket, SPRINTS } from "./tickets-test-kit";
 
-async function list(...args: string[]) {
-  const d = fakeDaemon();
+async function listIn(d: ReturnType<typeof fakeDaemon>, args: string[]) {
   const { flags } = parseArgs(["--project", "EMIS", ...args]);
   const code = await runTicketsCommand(["list"], flags, d.io, d.connect);
   const keys = d.out.map((l) => l.split("\t")[0]);
   return { ...d, code, keys };
 }
+
+const list = (...args: string[]) => listIn(fakeDaemon(), args);
 
 describe("kibo tickets list --sprint", () => {
   test("keeps the tickets of a sprint by id, code or name, case ignored, steps included", async () => {
@@ -17,6 +18,24 @@ describe("kibo tickets list --sprint", () => {
     expect((await list("--sprint", "s42")).keys).toEqual(["EMIS-30", "EMIS-33", "EMIS-34"]);
     expect((await list("--sprint", "terrain HORS ligne")).keys).toEqual(["EMIS-30", "EMIS-33", "EMIS-34"]);
     expect((await list("--sprint", "S41")).keys).toEqual([]);
+  });
+
+  test("an id wins over a code, a code over a name", async () => {
+    const [base] = SPRINTS;
+    if (base === undefined) throw new Error("no sprint in the kit");
+    const sprints = [
+      { ...base, id: "alpha", code: "BETA", name: "Gamma" },
+      { ...base, id: "s2", code: "ALPHA", name: "Beta" },
+      { ...base, id: "s3", code: "Z1", name: "alpha" },
+    ];
+    const tickets = sprints.map((s, i) => fakeTicket({ id: `t${i}`, key: `EMIS-${i + 1}`, sprintId: s.id }));
+    const pick = async (wanted: string) =>
+      (await listIn(fakeDaemon(tickets, sprints), ["--sprint", wanted])).keys;
+    expect(await pick("alpha")).toEqual(["EMIS-1"]);
+    expect(await pick("beta")).toEqual(["EMIS-1"]);
+    expect(await pick("Gamma")).toEqual(["EMIS-1"]);
+    expect(await pick("s2")).toEqual(["EMIS-2"]);
+    expect(await pick("z1")).toEqual(["EMIS-3"]);
   });
 
   test("current is the sprint the daemon marks current", async () => {

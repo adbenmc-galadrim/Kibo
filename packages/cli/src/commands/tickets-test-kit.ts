@@ -102,7 +102,10 @@ export const TICKETS: TicketView[] = [
   fakeTicket({ id: "solo", key: "EMIS-50" }),
 ];
 
-export function fakeSnapshot(tickets: TicketView[] = TICKETS): ProjectSnapshot {
+export function fakeSnapshot(
+  tickets: TicketView[] = TICKETS,
+  sprints: SprintView[] = SPRINTS,
+): ProjectSnapshot {
   const partial = {
     meta: EMIS_META,
     workflow: DEFAULT_WORKFLOW,
@@ -110,19 +113,19 @@ export function fakeSnapshot(tickets: TicketView[] = TICKETS): ProjectSnapshot {
     links: [],
     questions: [],
     questionRecipients: [],
-    sprints: SPRINTS,
+    sprints,
   };
   return partial as never;
 }
 
-export function fakeDaemon(tickets: TicketView[] = TICKETS) {
+export function fakeDaemon(tickets: TicketView[] = TICKETS, sprints: SprintView[] = SPRINTS) {
   const calls: RpcRequest[] = [];
   const client: DaemonClient = {
     async rpc(req) {
       const sent: RpcRequest = req;
       calls.push(sent);
       if (sent.method === "listProjects") return [EMIS_META] as never;
-      if (sent.method === "getProject") return fakeSnapshot(tickets) as never;
+      if (sent.method === "getProject") return fakeSnapshot(tickets, sprints) as never;
       if (sent.method === "command") return {} as never;
       throw new Error(`unexpected ${sent.method}`);
     },
