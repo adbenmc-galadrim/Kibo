@@ -15,6 +15,14 @@ S.exportPng = async (board, file, scale = 1) => {
 S.count = (b) => penpotUtils.findShapes(() => true, b).length + 1;
 S.NAMES = { "a-vue": "A1 · ", "a-tickets": "A2 · ", "a-graphe": "A3 · ", "b-vue": "B1 · ", "b-tickets": "B2 · ", "b-graphe": "B3 · ", "c-vue": "C1 · ", "c-tickets": "C2 · ", "c-graphe": "C3 · " };
 S.ROWH = 1500;
+Object.assign(S.NAMES, { "p-vue": "P1 · ", "p-planning": "P2 · ", "p-fonctionnalite": "P3 · ", "p-tickets": "P4 · ", "p-graphe": "P5 · " });
+S.PFILES = { 1: "vue-ensemble", 2: "planning", 3: "fonctionnalite", 4: "tickets", 5: "graphe" };
+// Exporte les dix boards de la proposition : proposition-<écran>-<dark|light>.png
+S.exportProposition = async () => { await S.page("Proposition"); await S.wait(1500); const out = [];
+  for (const b of penpot.currentPage.root.children.filter(c => c.type === "board" && /^P[1-5] · /.test(c.name))) {
+    const mode = /\(clair\)$/.test(b.name) ? "light" : "dark";
+    out.push(await S.exportPng(b, `proposition-${S.PFILES[b.name[1]]}-${mode}.png`)); }
+  return out; };
 S.PAGES = { a: "A · Tableau de bord sobre", b: "B · Éditorial", c: "C · Chronologie" };
 S.FILES = { 1: "vue-ensemble", 2: "tickets", 3: "graphe" };
 // Exporte les six boards d'une piste : piste-<x>-<écran>-<dark|light>.png
