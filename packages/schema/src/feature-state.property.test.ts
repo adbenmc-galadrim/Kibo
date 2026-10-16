@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import fc from "fast-check";
-import { featureState } from "./feature-state";
+import { featureState, isOpenFeature } from "./feature-state";
+import { NOT_STARTED_STATUSES } from "./startable";
 import { StatusId } from "./status";
 
 const dateArb = fc
@@ -41,6 +42,17 @@ test("a feature is delivered exactly when all its mandatory steps are done", () 
       const state = featureState({ steps, blockingQuestions: new Set(blocking), sprint, today });
       const mandatoryDone = steps.filter((s) => !s.optional).every((s) => s.statusId === "done");
       expect(state.status === "delivered").toBe(mandatoryDone);
+    }),
+  );
+});
+
+test("an open feature has a started step and is not delivered, whatever the day and the sprint", () => {
+  fc.assert(
+    fc.property(inputArb, ({ steps, blocking, sprint, today }) => {
+      const state = featureState({ steps, blockingQuestions: new Set(blocking), sprint, today });
+      if (!isOpenFeature(state)) return;
+      expect(steps.some((s) => !NOT_STARTED_STATUSES.includes(s.statusId))).toBe(true);
+      expect(state.status).not.toBe("delivered");
     }),
   );
 });

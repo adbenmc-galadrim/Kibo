@@ -14,6 +14,7 @@ test("F3 with all its steps done is delivered", () => {
     steps: { done: 4, total: 4, mandatoryDone: 4, mandatoryTotal: 4 },
     nextStepId: null,
     remaining: 0,
+    started: true,
   });
 });
 
@@ -62,11 +63,13 @@ const stateOf = (
   done: number,
   total: number,
   remaining: number,
+  started = status !== "todo",
 ): FeatureState => ({
   status,
   steps: { done, total, mandatoryDone: done, mandatoryTotal: total },
   nextStepId: null,
   remaining,
+  started,
 });
 
 test("open, blocked and late features are open; to do and delivered are not", () => {
@@ -75,6 +78,21 @@ test("open, blocked and late features are open; to do and delivered are not", ()
   expect(isOpenFeature(stateOf("late", 1, 3, 2))).toBe(true);
   expect(isOpenFeature(stateOf("todo", 0, 3, 3))).toBe(false);
   expect(isOpenFeature(stateOf("delivered", 3, 3, 0))).toBe(false);
+  expect(isOpenFeature(stateOf("late", 0, 3, 3, false))).toBe(false);
+});
+
+test("a feature is open only once one of its steps has started", () => {
+  const after = { ...base, today: "2026-10-17" };
+  expect(isOpenFeature(featureState({ ...after, steps: steps("todo", "todo", "todo") }))).toBe(false);
+  const questioned = { ...base, blockingQuestions: new Set(["e0"]), steps: steps("todo", "todo") };
+  expect(featureState(questioned).status).toBe("blocked");
+  expect(isOpenFeature(featureState(questioned))).toBe(false);
+  const late = featureState({ ...after, steps: steps("in_progress", "todo") });
+  expect(late.status).toBe("late");
+  expect(isOpenFeature(late)).toBe(true);
+  const blocked = featureState({ ...base, steps: steps("blocked", "todo") });
+  expect(blocked.status).toBe("blocked");
+  expect(isOpenFeature(blocked)).toBe(true);
 });
 
 test("the next feature to finish is the most advanced open one, then the fewest remaining, then the rank", () => {

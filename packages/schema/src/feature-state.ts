@@ -8,6 +8,7 @@ export type FeatureState = {
   steps: { done: number; total: number; mandatoryDone: number; mandatoryTotal: number };
   nextStepId: string | null;
   remaining: number;
+  started: boolean;
 };
 export type FeatureStateInput = {
   steps: readonly Pick<FeatureStep, "ticketId" | "statusId" | "optional">[];
@@ -17,8 +18,10 @@ export type FeatureStateInput = {
 };
 
 export const DEFAULT_OPEN_LIMIT = 2;
-const OPEN_STATUSES: readonly FeatureStatus[] = ["open", "blocked", "late"];
+const CLOSED_STATUSES: readonly FeatureStatus[] = ["todo", "delivered"];
 
+const isStarted = (s: { statusId: FeatureStep["statusId"] }): boolean =>
+  !NOT_STARTED_STATUSES.includes(s.statusId);
 const isDone = (s: { statusId: FeatureStep["statusId"] }): boolean => FINAL_STATUSES.includes(s.statusId);
 
 function statusOf(input: FeatureStateInput, remaining: number): FeatureStatus {
@@ -27,7 +30,7 @@ function statusOf(input: FeatureStateInput, remaining: number): FeatureStatus {
   if (next !== undefined && (next.statusId === "blocked" || input.blockingQuestions.has(next.ticketId)))
     return "blocked";
   if (input.sprint !== null && input.sprint.end < input.today) return "late";
-  return input.steps.some((s) => !NOT_STARTED_STATUSES.includes(s.statusId)) ? "open" : "todo";
+  return input.steps.some(isStarted) ? "open" : "todo";
 }
 
 export function featureState(input: FeatureStateInput): FeatureState {
@@ -44,10 +47,11 @@ export function featureState(input: FeatureStateInput): FeatureState {
     },
     nextStepId: input.steps.find((s) => !isDone(s))?.ticketId ?? null,
     remaining,
+    started: input.steps.some(isStarted),
   };
 }
 
-export const isOpenFeature = (s: FeatureState): boolean => OPEN_STATUSES.includes(s.status);
+export const isOpenFeature = (s: FeatureState): boolean => s.started && !CLOSED_STATUSES.includes(s.status);
 
 const ratioOf = (s: FeatureState): number => (s.steps.total === 0 ? 0 : s.steps.done / s.steps.total);
 
