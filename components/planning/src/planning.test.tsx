@@ -73,7 +73,9 @@ test("a late feature is outlined in red with a warning under its sprint", async 
   setupPlanning();
   const f5 = await cardIn(/^S42 /, "F5");
   expect(within(f5).getByText("en retard")).toBeTruthy();
-  expect(f5.className).toContain("border-(--tracking-red)");
+  const stroke = f5.querySelector("[data-slot=penpot-stroke] rect");
+  expect(stroke?.getAttribute("stroke")).toBe("var(--tracking-red)");
+  expect((await cardIn(/^S42 /, "F4")).querySelector("[data-slot=penpot-stroke]")).toBeNull();
   expect(within(await column(/^S42 /)).getByText("F5 ne tiendra pas : 4 étapes restantes")).toBeTruthy();
 });
 

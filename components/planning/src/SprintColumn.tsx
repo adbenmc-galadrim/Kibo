@@ -4,6 +4,7 @@ import { CalendarRange, CircleCheck, ClockAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { dashedBorder } from "./dashes";
 import { fr } from "./fr";
+import { PenpotStroke } from "./PenpotStroke";
 import type { SprintColumn as Column } from "./planning-model";
 
 export const COLUMN_CLASS =
@@ -13,8 +14,7 @@ const BAR_WIDTH = 104;
 
 const DROP_SIDES = dashedBorder({ width: 194, height: 120, radius: 8, color: "var(--tracking-fg)" });
 
-const CURRENT_RING =
-  "border-[color-mix(in_srgb,var(--tracking-mfg)_50%,transparent)] bg-(--tracking-card) shadow-[0_0_0_1px_color-mix(in_srgb,var(--tracking-mfg)_50%,transparent)]";
+const CURRENT_STROKE = "var(--tracking-mfg)";
 
 function SprintProgress({ delivered, total }: { delivered: number; total: number }) {
   const fill = total === 0 ? 0 : Math.round((BAR_WIDTH * delivered) / total);
@@ -132,18 +132,26 @@ export function SprintColumn({ column, dropping, onEdit, children, footer }: Pro
       ref={setNodeRef}
       aria-label={`${column.code} ${column.sprint.name}`}
       data-state={column.sprint.state}
-      className={cn(
-        COLUMN_CLASS,
-        current ? CURRENT_RING : "border-(--tracking-border) bg-(--tracking-panel)",
-      )}
+      className="relative flex shrink-0 flex-col"
     >
-      <SprintHeader column={column} onEdit={onEdit} />
-      {children}
-      {dropping && <DropZone label={fr.dropIn(column.code)} dates={column.dates} />}
-      {column.warnings.map((w) => (
-        <Warning key={w.shortKey}>{fr.wontHold(w.shortKey, w.remaining)}</Warning>
-      ))}
-      {footer}
+      <div
+        className={cn(
+          COLUMN_CLASS,
+          "min-h-0 flex-1",
+          current
+            ? "border-transparent bg-(--tracking-card)"
+            : "border-(--tracking-border) bg-(--tracking-panel)",
+        )}
+      >
+        <SprintHeader column={column} onEdit={onEdit} />
+        {children}
+        {dropping && <DropZone label={fr.dropIn(column.code)} dates={column.dates} />}
+        {column.warnings.map((w) => (
+          <Warning key={w.shortKey}>{fr.wontHold(w.shortKey, w.remaining)}</Warning>
+        ))}
+        {footer}
+      </div>
+      {current && <PenpotStroke color={CURRENT_STROKE} radius={10} border={0} />}
     </section>
   );
 }

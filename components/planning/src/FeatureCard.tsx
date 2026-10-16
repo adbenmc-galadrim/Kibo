@@ -3,6 +3,7 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { GripVertical } from "lucide-react";
 import { FeatureBadge } from "./FeatureBadge";
 import { fr } from "./fr";
+import { PenpotStroke } from "./PenpotStroke";
 import type { FeatureCard as Card } from "./planning-model";
 import { StepCases } from "./StepCases";
 
@@ -82,12 +83,14 @@ export function FeatureCard({ card, readOnly, onOpen }: Props) {
       data-key={card.shortKey}
       className={cn(
         CARD_CLASS,
-        card.late ? "border-(--tracking-red)" : "border-(--tracking-border)",
+        "relative",
+        card.late ? "border-transparent" : "border-(--tracking-border)",
         !readOnly && "cursor-grab touch-none",
         isDragging && "opacity-40",
       )}
     >
       <FeatureCardBody card={card} onOpen={onOpen} />
+      {card.late && <PenpotStroke color="var(--tracking-red)" radius={8} border={1} />}
     </article>
   );
 }
@@ -99,10 +102,11 @@ export function FeatureCardPreview({ card }: { card: Card }) {
       aria-hidden
       className={cn(
         CARD_CLASS,
-        "border-[color-mix(in_srgb,var(--tracking-fg)_50%,transparent)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--tracking-fg)_50%,transparent),0_10px_40px_rgb(0_0_0/0.17)] dark:shadow-[0_0_0_1px_color-mix(in_srgb,var(--tracking-fg)_50%,transparent),0_10px_40px_rgb(0_0_0/0.9)]",
+        "relative border-transparent shadow-[0_10px_40px_rgb(0_0_0/0.17)] dark:shadow-[0_10px_40px_rgb(0_0_0/0.9)]",
       )}
     >
       <FeatureCardBody card={{ ...card, compact: false }} preview />
+      <PenpotStroke color="var(--tracking-fg)" radius={8} border={1} />
     </div>
   );
 }

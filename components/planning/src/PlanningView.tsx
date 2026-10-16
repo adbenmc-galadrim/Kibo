@@ -62,7 +62,7 @@ export function PlanningView(props: PlanningViewProps) {
         onNewFeature={props.onNewFeature}
         onNewSprint={props.onNewSprint}
       />
-      <div className="scrollbar-none flex min-h-0 flex-1 items-stretch gap-3 overflow-x-auto">
+      <div className="scrollbar-none -my-px flex min-h-0 flex-1 items-stretch gap-3 overflow-x-auto py-px">
         {model.sprints.map((column) => (
           <SprintColumn
             key={column.sprint.id}
