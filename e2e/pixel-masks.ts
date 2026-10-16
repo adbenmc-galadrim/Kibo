@@ -87,6 +87,8 @@ export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
       why: "« changements demandés » et CI rouge de la PR #20 : review et CI en phase 26",
     },
     { x: 980, y: 273, w: 14, h: 14, why: "coche de CI de la PR #22 : CI non semable" },
+    { x: 509, y: 191, w: 14, h: 14, why: "point de session d'EMIS-33 : sessions T3 Code, phase 26" },
+    { x: 471, y: 232, w: 14, h: 14, why: "point de session d'EMIS-45 : sessions T3 Code, phase 26" },
     { x: 1040, y: 511, w: 14, h: 14, why: "coche de CI de la PR #19 : CI non semable" },
     updatedAt(190, 61),
     updatedAt(231, 66),

@@ -2103,7 +2103,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « EMIS-33 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 279, y 190,5, 51 × 15
             - **box** (bloc) · x 365, y 190, 205 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
               - « Écran d'envoi hors ligne » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 365, y 190, 140 × 16
-              - **dot** (pastille) · x 513, y 194,5, 7 × 7 · fond `brand` · dimension fixe/fixe
+              - **dot** (pastille) · x 513, y 194,5, 7 × 7 · fond `brand` · dimension fixe/fixe · masqué en comparaison pixel (`PIXEL_MASKS.tickets`, x 509, y 191, 14 × 14 : sessions T3 Code, phase 26)
             - **box** (bloc) · x 582, y 190,5, 226 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
               - **fchip** (bloc) · x 582, y 190,5, 205 × 15 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
                 - icône `package` 11 px, `dim` — x 588, y 192,5, 11 × 11
@@ -2138,7 +2138,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « EMIS-45 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 279, y 231,5, 51 × 15
             - **box** (bloc) · x 365, y 231, 205 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
               - « Conflits de saisie » — Geist 13 / 400, interligne 1,2, couleur `fg` — x 365, y 231, 102 × 16
-              - **dot** (pastille) · x 475, y 235,5, 7 × 7 · fond `brand` · dimension fixe/fixe
+              - **dot** (pastille) · x 475, y 235,5, 7 × 7 · fond `brand` · dimension fixe/fixe · masqué en comparaison pixel (`PIXEL_MASKS.tickets`, x 471, y 232, 14 × 14 : sessions T3 Code, phase 26)
             - **box** (bloc) · x 582, y 231,5, 226 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
               - **fchip** (bloc) · x 582, y 231,5, 182 × 15 · flex ligne, espacement 4, marges internes 1 6 1 6, alignement center/start · bordure 1 `border` · rayon 4
                 - icône `package` 11 px, `dim` — x 588, y 233,5, 11 × 11

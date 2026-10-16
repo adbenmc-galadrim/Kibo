@@ -20,7 +20,7 @@ test("each screen masks less than 8 % of its pixels", () => {
   expect(ratios).toEqual({
     planning: expect.closeTo(0.0061, 4),
     fonctionnalite: expect.closeTo(0.0285, 4),
-    tickets: expect.closeTo(0.0103, 4),
+    tickets: expect.closeTo(0.0105, 4),
   });
 });
 
