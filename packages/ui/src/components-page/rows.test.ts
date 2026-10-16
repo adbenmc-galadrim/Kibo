@@ -70,6 +70,7 @@ test("built-ins come from the UI registry, installed versions one row each, sort
     ["Kanban", "1.0.0", "builtin", 3, 2, true],
     ["Maquette", "1.0.0", "builtin", 0, 0, false],
     ["Notes", "1.0.0", "builtin", 0, 0, false],
+    ["Planning", "1.0.0", "builtin", 0, 0, false],
     ["PR en attente", "0.4.0", "pending", 0, 0, false],
     ["PR en attente", "0.3.0", "sandboxed", 1, 1, true],
     ["Questions", "1.0.0", "builtin", 0, 0, false],

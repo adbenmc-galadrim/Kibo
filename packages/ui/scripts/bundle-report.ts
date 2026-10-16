@@ -29,6 +29,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(pages\/TicketTab|shell\/(TicketDetail|PresenceAvatars|ProjectPresence|KeyRequired))\.tsx$/,
   /\/packages\/ui\/src\/i18n\/fr-presence\.ts$/,
   /\/components\/questions\/src\/(QuestionsPanel|QuestionsView|QuestionsWidget)\.tsx$/,
+  /\/components\/planning\/src\/(?!index\.ts$|fr-lazy\.ts$)[A-Za-z-]+\.tsx?$/,
   /\/packages\/ui\/src\/i18n\/fr-questions\.ts$/,
   /\/node_modules\/@tauri-apps\//,
   /\/packages\/ui\/src\/(updates\/[a-zA-Z-]+\.tsx?|i18n\/fr-updates\.ts)$/,
