@@ -33,6 +33,8 @@ import type {
   RunPeek,
   Selection,
   Spotlight,
+  Sprint,
+  SprintPatch,
   SprintView,
   Status,
   StatusId,
@@ -122,6 +124,14 @@ export type SpotlightApi = {
   get(): Spotlight | null;
   subscribe(listener: () => void): () => void;
 };
+export type SprintInput = Pick<Sprint, "name" | "start" | "end">;
+export type SprintsApi = {
+  list(): Promise<SprintView[]>;
+  create(input: SprintInput): Promise<Sprint>;
+  update(sprintId: string, patch: SprintPatch): Promise<void>;
+  remove(sprintId: string): Promise<void>;
+  assign(ticketId: string, sprintId: string | null): Promise<void>;
+};
 export type OpenViewOptions = { question?: string };
 
 export type KiboSdk = {
@@ -152,6 +162,7 @@ export type KiboSdk = {
   embed: EmbedApi;
   questions: QuestionsApi;
   runs: RunsApi;
+  sprints: SprintsApi;
   openRun(runId: string): void;
   focus: FocusApi;
   visibility: VisibilityApi;

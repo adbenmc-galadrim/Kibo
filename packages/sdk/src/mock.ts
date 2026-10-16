@@ -24,6 +24,7 @@ import { createSdk } from "./sdk";
 import type { ServerContext } from "./server";
 import { createSignal, focusApi, selectionApi, visibilityApi } from "./signal";
 import { createSpotlightStore } from "./spotlight";
+import { sprintsApi } from "./sprints-api";
 import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
 
 export type { MockFetch } from "./mock-calls";
@@ -239,6 +240,7 @@ export function createMockSdk(
       deliveryAgent: () => record("read:run", "read run", () => inner.runs.deliveryAgent()),
       allowAndResume: (input) => record("write:run", "write run", () => inner.runs.allowAndResume(input)),
     },
+    sprints: sprintsApi({ list: (type) => sdk.list(type), run: (cmd) => sdk.run(cmd) }),
   };
 
   return {
