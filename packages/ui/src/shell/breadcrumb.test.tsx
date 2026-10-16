@@ -120,3 +120,36 @@ test("the Créations screen sits under Composants, whose crumb opens the compone
     { label: "Créations", target: null },
   ]);
 });
+
+test("a feature sits under the Planning page: « Emis / Planning / F5 · title »", async () => {
+  const { emisFeatureProject } = await import("./feature/fixture");
+  const base = emisFeatureProject();
+  const emis: ProjectSnapshot = {
+    ...base,
+    pages: [{ id: "p-plan", title: "Planning", kind: "view", parentId: null }],
+    instances: [
+      {
+        id: "i-plan",
+        pageId: "p-plan",
+        component: "planning@1.0.0",
+        layout: { x: 0, y: 0, w: 12, h: 8 },
+        config: {},
+        componentHash: null,
+      },
+    ],
+  };
+  const project = { kind: "project", projectId: "emis" } as const;
+  expect(
+    crumbsFor({ kind: "ticket", projectId: "emis", ticketId: "f5" }, { project: emis, branch: null }),
+  ).toEqual([
+    { label: "Emis", target: project, color: "#14B8A6" },
+    { label: "Planning", target: { kind: "page", projectId: "emis", pageId: "p-plan" } },
+    { label: "F5 · Envoyer les photos d'un tronçon", target: null },
+  ]);
+  expect(
+    crumbsFor({ kind: "ticket", projectId: "emis", ticketId: "f5" }, { project: base, branch: null }),
+  ).toEqual([
+    { label: "Emis", target: project, color: "#14B8A6" },
+    { label: "F5 · Envoyer les photos d'un tronçon", target: null },
+  ]);
+});

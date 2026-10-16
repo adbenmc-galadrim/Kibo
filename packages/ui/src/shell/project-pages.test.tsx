@@ -180,3 +180,45 @@ test("a read-only project renders no drop zone", () => {
   show("read-only");
   expect(document.querySelectorAll("[data-drop-zone]")).toHaveLength(0);
 });
+
+test("an open feature lights the Planning page of its project", async () => {
+  const { emisFeatureProject } = await import("./feature/fixture");
+  const emis = emisFeatureProject();
+  const planned: ProjectSnapshot = {
+    ...emis,
+    pages: [page("p-plan", "Planning", null), page("p-tickets", "Tickets", null)],
+    instances: [
+      {
+        id: "i-plan",
+        pageId: "p-plan",
+        component: "planning@1.0.0",
+        layout: { x: 0, y: 0, w: 12, h: 8 },
+        config: {},
+        componentHash: null,
+      },
+    ],
+  };
+  const pages = (ticketId: string) =>
+    render(
+      <SidebarProvider>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <ProjectPages
+              project={planned}
+              activeTarget={{ kind: "ticket", projectId: "emis", ticketId }}
+              header={<span>Emis</span>}
+              onOpen={() => {}}
+              onNewPage={() => {}}
+              onRenamePage={() => {}}
+              onDeletePage={() => {}}
+            />
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarProvider>,
+    );
+  const first = pages("f5");
+  expect(screen.getByRole("button", { name: "Planning" }).getAttribute("aria-current")).toBe("page");
+  first.unmount();
+  pages("e33");
+  expect(screen.getByRole("button", { name: "Planning" }).getAttribute("aria-current")).toBeNull();
+});

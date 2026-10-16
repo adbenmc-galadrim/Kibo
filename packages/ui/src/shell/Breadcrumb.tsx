@@ -2,6 +2,7 @@ import { isInbox, type ProjectSnapshot, type RunView, type Screen, type TabTarge
 import { fr } from "../i18n/fr";
 import { displayName } from "../lib/inbox";
 import { SCREENS } from "../tabs/screens";
+import { featureOf, planningPageOf } from "./nav/planning-missing";
 
 export type Crumb = { label: string; target: TabTarget | null; color?: string };
 
@@ -26,6 +27,17 @@ function runCrumbs(runId: string, runs: readonly RunView[] | undefined): Crumb[]
   return [{ label: fr.nav.agents, target: { kind: "screen", screen: "agents" } }, text(label)];
 }
 
+function ticketCrumbs(p: ProjectSnapshot, ticketId: string, project: Crumb): Crumb[] {
+  const feature = featureOf(p, ticketId);
+  if (!feature)
+    return [project, text(p.tickets.find((t) => t.id === ticketId)?.keyLabel ?? fr.tabs.missingTicket)];
+  const title = text(feature.shortKey ? `${feature.shortKey} · ${feature.title}` : feature.title);
+  const planning = p.pages.find((x) => x.id === planningPageOf(p));
+  if (!planning) return [project, title];
+  const target: TabTarget = { kind: "page", projectId: p.meta.id, pageId: planning.id };
+  return [project, { label: planning.title, target }, title];
+}
+
 export function crumbsFor(
   target: TabTarget | null,
   ctx: { project: ProjectSnapshot | null; branch: string | null; runs?: readonly RunView[] },
@@ -48,10 +60,7 @@ export function crumbsFor(
     case "file":
       return [project, text(target.path)];
     case "ticket":
-      return [
-        project,
-        text(p.tickets.find((t) => t.id === target.ticketId)?.keyLabel ?? fr.tabs.missingTicket),
-      ];
+      return ticketCrumbs(p, target.ticketId, project);
   }
 }
 

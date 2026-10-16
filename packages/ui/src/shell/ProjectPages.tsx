@@ -22,6 +22,7 @@ import { pageIcon } from "../registry";
 import { canEdit } from "../state/access";
 import { NavCount } from "./nav/NavRow";
 import { pageBadge } from "./nav/page-badges";
+import { activePageOf } from "./nav/planning-missing";
 import { pageDropPlan, parseZoneId, zoneId } from "./page-drop";
 import { pageMenuEntries, siblingIndex } from "./page-menu";
 
@@ -196,15 +197,13 @@ export function ProjectPages(p: Props) {
     const plan = zone ? pageDropPlan(project.pages, String(e.active.id), zone) : null;
     if (plan) void move(plan.pageId, plan.parentId, plan.index);
   };
+  const activePageId = activePageOf(project, activeTarget);
   const children = (parentId: string | null) => project.pages.filter((x) => x.parentId === parentId);
   const renderPages = (parentId: string | null, depth: number): ReactNode =>
     children(parentId).map((page) => {
       const Icon = pageIcon(page, project.instances);
       const target: TabTarget = { kind: "page", projectId, pageId: page.id };
-      const active =
-        activeTarget?.kind === "page" &&
-        activeTarget.projectId === projectId &&
-        activeTarget.pageId === page.id;
+      const active = activePageId === page.id;
       return (
         <PageRow
           key={page.id}
