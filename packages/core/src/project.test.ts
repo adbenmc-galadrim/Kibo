@@ -83,6 +83,16 @@ describe("project meta", () => {
     expect(() => setProjectMeta(doc, { name: " " })).toThrow("INVALID_INPUT");
     expect(getProjectMeta(doc).key).toBe("KIB");
   });
+
+  test("setProjectMeta writes the open limit, which survives a snapshot and can be cleared", () => {
+    const doc = createProjectDoc(meta);
+    expect(setProjectMeta(doc, { tracking: { openLimit: 3 } }).tracking).toEqual({ openLimit: 3 });
+    const copy = new LoroDoc();
+    copy.import(doc.export({ mode: "snapshot" }));
+    expect(getProjectMeta(copy).tracking).toEqual({ openLimit: 3 });
+    expect(() => setProjectMeta(doc, { tracking: { openLimit: 11 } })).toThrow("INVALID_INPUT");
+    expect(setProjectMeta(doc, { tracking: null }).tracking).toBeNull();
+  });
 });
 
 describe("project", () => {

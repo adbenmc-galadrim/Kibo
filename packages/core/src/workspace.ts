@@ -1,4 +1,4 @@
-import { KiboError, ProjectMeta, ProjectPatch } from "@kibo/schema";
+import { KiboError, ProjectMeta, ProjectPatch, type TrackingSettings } from "@kibo/schema";
 import { LoroDoc, type LoroList, LoroMap } from "loro-crdt";
 import { stored, valid } from "./config-store";
 import { LOCAL_ONLY_META, sharedMetaEntries } from "./project";
@@ -32,7 +32,12 @@ export function registerProject(ws: LoroDoc, meta: ProjectMeta): void {
   ws.commit();
 }
 
-export type RegisteredProjectPatch = { name?: string; color?: string; folder?: string | null };
+export type RegisteredProjectPatch = {
+  name?: string;
+  color?: string;
+  folder?: string | null;
+  tracking?: TrackingSettings | null;
+};
 
 function entryOf(ws: LoroDoc, projectId: string): { list: LoroList; index: number } {
   const list: LoroList = ws.getList("projects");

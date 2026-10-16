@@ -5,13 +5,13 @@ import {
   type DuplicationSettings,
   type EffectiveDuplication,
   formatTicketKey,
-  type ProjectMeta,
+  ProjectMeta,
   ProjectPatch,
   type Status,
 } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import { z } from "zod";
-import { valid } from "./config-store";
+import { stored, valid } from "./config-store";
 import type { RegisteredProjectPatch } from "./workspace";
 
 export const LOCAL_ONLY_META: ReadonlySet<string> = new Set([
@@ -58,7 +58,7 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
     storybook: null,
     duplication: null,
     delivery: null,
-    tracking: null,
+    tracking: stored(ProjectMeta.shape.tracking.safeParse(m.get("tracking") ?? null), "project tracking"),
   };
 }
 
@@ -68,6 +68,7 @@ export function setProjectMeta(doc: LoroDoc, patch: RegisteredProjectPatch): Pro
   if (fields.name !== undefined) m.set("name", fields.name);
   if (fields.color !== undefined) m.set("color", fields.color);
   if (fields.folder !== undefined) m.set("folder", fields.folder);
+  if (fields.tracking !== undefined) m.set("tracking", fields.tracking);
   doc.commit();
   return getProjectMeta(doc);
 }
