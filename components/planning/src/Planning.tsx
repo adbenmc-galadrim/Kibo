@@ -9,7 +9,8 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { openLimitOf, type SprintView } from "@kibo/schema";
-import { useComponentSettings, useEntities, useReadOnly, useSdk } from "@kibo/sdk";
+import { useEntities, useReadOnly, useSdk } from "@kibo/sdk";
+import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { useState } from "react";
 import { DragPreview } from "./DragPreview";
 import { BACKLOG_ID, planDrop } from "./drag";

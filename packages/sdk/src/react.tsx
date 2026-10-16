@@ -1,6 +1,4 @@
 import {
-  type ComponentSettings,
-  DEFAULT_COMPONENT_SETTINGS,
   DEFAULT_RECIPIENTS,
   type EntityType,
   KiboError,
@@ -13,6 +11,7 @@ import {
   type Spotlight,
 } from "@kibo/schema";
 import { createContext, type ReactNode, useContext, useEffect, useState, useSyncExternalStore } from "react";
+import { type Read, useSdkValue, type Watch } from "./sdk-value";
 import type { EntityMap, KiboSdk } from "./types";
 
 const SdkContext = createContext<KiboSdk | null>(null);
@@ -64,29 +63,6 @@ const EMPTY_SHARING: ProjectSyncInfo = {
   members: [],
 };
 
-type Read<T> = (sdk: KiboSdk) => Promise<T>;
-type Watch = (sdk: KiboSdk, listener: () => void) => () => void;
-
-function useSdkValue<T>(read: Read<T>, watch: Watch, initial: T): T {
-  const sdk = useSdk();
-  const [value, setValue] = useState<T>(initial);
-  useEffect(() => {
-    let alive = true;
-    const load = () =>
-      read(sdk).then(
-        (v) => alive && setValue(v),
-        (e: unknown) => console.error(`[kibo-sdk] ${sdk.instanceId}: cannot read a project value`, e),
-      );
-    void load();
-    const off = watch(sdk, () => void load());
-    return () => {
-      alive = false;
-      off();
-    };
-  }, [sdk, read, watch]);
-  return value;
-}
-
 const readPresence: Read<PresencePeer[]> = (sdk) => sdk.presence.list();
 const watchPresence: Watch = (sdk, l) => sdk.presence.subscribe(l);
 const readSharing: Read<ProjectSyncInfo> = (sdk) => sdk.sharing();
@@ -94,18 +70,11 @@ const watchProject: Watch = (sdk, l) => sdk.subscribe(l);
 const NO_PEERS: PresencePeer[] = [];
 
 export function usePresence(): PresencePeer[] {
-  return useSdkValue(readPresence, watchPresence, NO_PEERS);
+  return useSdkValue(useSdk(), readPresence, watchPresence, NO_PEERS);
 }
 
 export function useSharing(): ProjectSyncInfo {
-  return useSdkValue(readSharing, watchProject, EMPTY_SHARING);
-}
-
-const readSettings: Read<ComponentSettings> = (sdk) => sdk.settings.get();
-const watchSettings: Watch = (sdk, l) => sdk.settings.subscribe(l);
-
-export function useComponentSettings(): ComponentSettings {
-  return useSdkValue(readSettings, watchSettings, DEFAULT_COMPONENT_SETTINGS);
+  return useSdkValue(useSdk(), readSharing, watchProject, EMPTY_SHARING);
 }
 
 export function useMembers(): MemberInfo[] {
@@ -155,5 +124,5 @@ const readRecipients: Read<QuestionRecipient[]> = (sdk) => sdk.questions.recipie
 const FIRST_RECIPIENTS: QuestionRecipient[] = [...DEFAULT_RECIPIENTS];
 
 export function useQuestionRecipients(): QuestionRecipient[] {
-  return useSdkValue(readRecipients, watchProject, FIRST_RECIPIENTS);
+  return useSdkValue(useSdk(), readRecipients, watchProject, FIRST_RECIPIENTS);
 }
