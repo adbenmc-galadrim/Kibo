@@ -114,3 +114,35 @@ le 16 oct.), S43 « Import et soudures », S44 « Rapports » ; F9 « Exporter l
 Dessin : clés `p-vue`, `p-planning`, `p-fonctionnalite`, `p-tickets`, `p-graphe` sur la page « Proposition » (rangées de
 1 300 px), puis `storage.edgesP()` par mode dans un second appel et `await storage.exportProposition()`
 → `exports/proposition-<écran>-<dark|light>.png`.
+
+## Styles hors shadcn et vues d'ensemble (2026-10-16)
+
+Retour d'Adam : la vue d'ensemble de la proposition est trop chargée. Elle doit répondre en 5 secondes à trois questions,
+et à rien d'autre : **où en est-on** (fonctionnalités livrées sur le total, sprint en cours, tenue de la mise en production),
+**qu'est-ce qui bloque** (questions bloquantes, retards, PR à relire), **quelle est la suite** (prochaine fonctionnalité à
+finir, étape suivante). L'agent de projet reste discret : une phrase de synthèse et un lot à valider, sans panneau permanent.
+shadcn n'est plus un cadre obligatoire : chaque direction a sa typographie, sa grille, ses couleurs et ses visualisations.
+
+Données : redécoupage réel d'Emis (`~/Documents/emis/redecoupage-fonctionnalites-2026-10-16.md`) : 22 fonctionnalités
+F00 à F21 (F00 livrée), F01 et F02 ouvertes, sprints S1 (en cours, dernier jour) à S10, mise en production le 18/12,
+pistes P1 staging (bloquée : DSI et compte AWS) et P2 production, F16 à F21 à arbitrer après le 18/12.
+
+Page Penpot « Styles » (`scripts/60-styles.js`, `scripts/70-vues.js`), sombre à x = 0 et clair à x = 1 540, rangées de 1 150 px.
+
+| Board | Idée | Typographie et couleur |
+|---|---|---|
+| Style 1 · Vue d'ensemble et Planning | **Carnet de chantier** : journal éditorial en trois rubriques numérotées, gros chiffre en sérif ; planning en registre (un sprint par ligne, trait double de la mise en production) | Newsreader et Geist, papier chaud en clair, encre et brique |
+| Style 2 · Vue d'ensemble et Planning | **Instrument** : panneaux numérotés, jauge des 22 fonctionnalités coupée par le trait de la mise en production, règle des sprints ; planning en matrice avec histogramme des ouvertes | IBM Plex Sans et Mono, quasi monochrome, un vert signal et un rouge d'alerte |
+| Style 3 · Vue d'ensemble et Planning | **Atelier** : trois grandes cartes douces, une couleur en aplat par fonctionnalité, étapes en pastilles ; planning en colonnes de sprint avec carte glissée | Bricolage Grotesque et DM Sans, crème en clair, orange pour l'action principale et l'agent |
+| Vue 4 · Une phrase | une synthèse rédigée en grand, trois liens dessous | Newsreader |
+| Vue 5 · Frise | toute la page est la frise jusqu'au 18/12 : deux voies (la limite de deux ouvertes), pistes, « aujourd'hui », blocages piqués | Space Grotesk et JetBrains Mono, bleu de plan |
+| Vue 6 · Trois colonnes | trois colonnes égales, un seul chiffre fort par colonne (1/22, 3, 5) | Inter très gras, noir, rouge et bleu |
+| Vue 7 · Tableau de bord minimal | quatre grands chiffres et une seule liste « À faire maintenant », ordonnée | Manrope et Geist, zinc et orange |
+
+Rôle de l'orange : il n'est plus réservé aux agents. Dans Atelier et dans la vue 7, il porte l'action principale (et la
+marque) ; dans Carnet, une brique sert d'accent éditorial et d'alerte ; Instrument et Frise ne l'utilisent pas.
+
+Exports : `exports/style-<1|2|3>-<vue-ensemble|planning>-{dark,light}.png` et
+`exports/vue-ensemble-<4..7>-<nom>-{dark,light}.png`, copiés dans `screens/redesign/`.
+Dessin : clés `s1-vue` … `s3-planning`, `v4` … `v7` (`storage.useStyle(n, mode)` avant le dessin), puis
+`await storage.exportStyles()`.
