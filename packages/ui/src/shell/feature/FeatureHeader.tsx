@@ -30,7 +30,7 @@ function Badge({ badge }: { badge: FeatureBadge }) {
   const { icon: Icon, tone } = BADGES[badge];
   return (
     <span className={`flex h-[17px] shrink-0 items-center gap-[4px] rounded-[4px] px-[6px] py-[2px] ${tone}`}>
-      {Icon && <Icon aria-hidden className="size-[12px]" />}
+      {Icon && <Icon absoluteStrokeWidth size={12} aria-hidden className="size-[12px]" />}
       <span className="text-[10.5px] leading-[13px] font-medium">{t.badges[badge]}</span>
     </span>
   );
@@ -60,7 +60,12 @@ export function FeatureHeader({ feature, sprintCode, badge, steps, editable, com
   return (
     <>
       <div className="flex h-[17px] w-full items-center gap-[8px]">
-        <Package aria-hidden className="size-[14px] shrink-0 text-(--tracking-mfg)" />
+        <Package
+          absoluteStrokeWidth
+          size={14}
+          aria-hidden
+          className="size-[14px] shrink-0 text-(--tracking-mfg)"
+        />
         <p className="shrink-0 text-[12px] leading-[15px] text-(--tracking-mfg)">
           {t.kicker(feature.shortKey, feature.keyLabel)}
         </p>

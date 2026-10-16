@@ -36,7 +36,7 @@ export function ExpectedResult({ ticketId, description, editable, command, onOpe
       <span aria-hidden className="w-[3px] shrink-0 bg-(--tracking-fg)" />
       <div className="flex min-w-0 flex-1 flex-col gap-[6px] px-[16px] py-[12px]">
         <h3 className="flex items-center gap-[6px] text-[12px] leading-[15px] font-semibold text-(--tracking-mfg)">
-          <Target aria-hidden className="size-[14px]" />
+          <Target absoluteStrokeWidth size={14} aria-hidden className="size-[14px]" />
           {t.expected}
         </h3>
         {draft === null ? (

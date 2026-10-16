@@ -50,7 +50,12 @@ function SprintPicker({ facts, sprints, editable, onSetSprint }: Props) {
         className={`${ASIDE_ROW} outline-none hover:bg-(--tracking-hover)`}
       >
         <SprintSummary sprint={facts.sprint} />
-        <ChevronDown aria-hidden className="ml-auto size-[13px] shrink-0 text-(--tracking-dim)" />
+        <ChevronDown
+          absoluteStrokeWidth
+          size={13}
+          aria-hidden
+          className="ml-auto size-[13px] shrink-0 text-(--tracking-dim)"
+        />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {sprints.map((s) => (
@@ -74,7 +79,12 @@ function Warning({ facts, editable, onSetSprint }: Omit<Props, "sprints">) {
   return (
     <AsideRow>
       <div className="flex w-full items-start gap-[8px] px-[14px] py-[9px]">
-        <ClockAlert aria-hidden className="size-[14px] shrink-0 text-(--tracking-red)" />
+        <ClockAlert
+          absoluteStrokeWidth
+          size={14}
+          aria-hidden
+          className="size-[14px] shrink-0 text-(--tracking-red)"
+        />
         <div className="flex min-w-0 flex-1 flex-col gap-[6px]">
           <p className="text-[12.5px] leading-[15px] text-(--tracking-fg)">{text}</p>
           {editable && following && (
@@ -84,7 +94,7 @@ function Warning({ facts, editable, onSetSprint }: Omit<Props, "sprints">) {
                 className={`h-[25px] gap-[6px] rounded-[6px] border-0 bg-transparent px-[10px] py-[5px] has-[>svg]:px-[10px] text-[12px] leading-[15px] font-medium text-(--tracking-fg) shadow-none dark:bg-transparent ${STROKE} [&_svg:not([class*='size-'])]:size-[13px]`}
                 onClick={() => onSetSprint(following.id)}
               >
-                <CalendarRange />
+                <CalendarRange absoluteStrokeWidth size={13} />
                 {t.moveTo(following.code)}
               </Button>
             </div>

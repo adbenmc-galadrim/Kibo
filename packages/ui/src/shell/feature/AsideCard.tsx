@@ -8,7 +8,7 @@ export function AsideCard({ icon: Icon, title, count, children }: Props) {
   return (
     <section aria-label={title} className={`flex w-full flex-col ${CARD}`}>
       <header className="flex h-[40px] items-center gap-[8px] px-[14px]">
-        <Icon aria-hidden className="size-[15px] text-(--tracking-mfg)" />
+        <Icon absoluteStrokeWidth size={15} aria-hidden className="size-[15px] text-(--tracking-mfg)" />
         <h3 className="text-[13px] leading-[16px] font-semibold text-(--tracking-fg)">{title}</h3>
         {count !== undefined && (
           <span className="font-mono text-[12px] leading-[15px] text-(--tracking-dim)">{count}</span>

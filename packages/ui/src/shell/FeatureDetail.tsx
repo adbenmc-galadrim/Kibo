@@ -91,7 +91,7 @@ export function FeatureDetail({
                 className={GHOST}
                 onClick={() => host.openNewTicket({ parentId: f.id })}
               >
-                <Plus />
+                <Plus absoluteStrokeWidth size={13} />
                 {t.addStep}
               </Button>
             )}
@@ -121,7 +121,7 @@ export function FeatureDetail({
           />
           <ActivityCard items={featureActivity(steps, now)} />
           <p className="flex items-start gap-[8px] text-[11.5px] leading-[17px] text-(--tracking-dim)">
-            <Lock aria-hidden className="size-[13px] shrink-0" />
+            <Lock absoluteStrokeWidth size={13} aria-hidden className="size-[13px] shrink-0" />
             {t.footer}
           </p>
         </aside>

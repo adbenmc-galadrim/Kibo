@@ -32,7 +32,11 @@ export function NextStepAction({ projectId, step, execution }: Props) {
     <div className="flex min-h-[29px] flex-wrap items-center gap-[8px] pt-[4px]">
       <p className="text-[12px] leading-[15px] text-(--tracking-mfg)">{t.nextStep(step.blockedBy)}</p>
       <Button className={`ml-auto ${BUTTON}`} disabled={flow.busy} onClick={() => void run()}>
-        {execution === "shown" ? <Truck /> : <Copy />}
+        {execution === "shown" ? (
+          <Truck absoluteStrokeWidth size={13} />
+        ) : (
+          <Copy absoluteStrokeWidth size={13} />
+        )}
         {t.deliverNext}
       </Button>
       <code

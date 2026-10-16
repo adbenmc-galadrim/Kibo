@@ -25,7 +25,7 @@ function Marker({ step }: { step: StepModel }) {
       data-testid="step-marker"
       className={`flex size-[28px] shrink-0 items-center justify-center rounded-full font-mono text-[12px] leading-[15px] font-semibold ${fill}`}
     >
-      {done ? <Check aria-hidden className="size-[14px]" /> : step.index}
+      {done ? <Check absoluteStrokeWidth size={14} aria-hidden className="size-[14px]" /> : step.index}
     </span>
   );
 }

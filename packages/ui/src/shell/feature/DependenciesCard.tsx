@@ -18,6 +18,8 @@ function DependencyRow({ kind, dep, onOpen }: { kind: string; dep: FeatureDepend
         </span>
         {dep.delivered ? (
           <CircleCheck
+            absoluteStrokeWidth
+            size={13}
             aria-label={t.badges.delivered}
             className="size-[13px] shrink-0 text-(--tracking-green)"
           />

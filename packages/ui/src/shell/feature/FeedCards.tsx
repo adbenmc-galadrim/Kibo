@@ -52,7 +52,7 @@ export function ActivityCard({ items }: { items: readonly ActivityItem[] }) {
         return (
           <AsideRow key={`${item.kind}-${item.text}`}>
             <p className="flex w-full items-center gap-[9px] px-[14px] py-[7px]">
-              <Icon aria-hidden className={`size-[13px] shrink-0 ${tone}`} />
+              <Icon absoluteStrokeWidth size={13} aria-hidden className={`size-[13px] shrink-0 ${tone}`} />
               <span className="min-w-0 flex-1 truncate text-[12px] leading-[15px] text-(--tracking-fg)">
                 {item.text}
               </span>

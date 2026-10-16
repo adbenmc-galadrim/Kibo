@@ -14,6 +14,8 @@ function Origin({ step }: { step: StepModel }) {
     return (
       <span className="flex items-center gap-[5px]">
         <Icon
+          absoluteStrokeWidth
+          size={13}
           aria-hidden
           className={`size-[13px] ${merged ? "text-(--tracking-green)" : "text-(--tracking-purple)"}`}
         />
@@ -25,7 +27,12 @@ function Origin({ step }: { step: StepModel }) {
   if (step.branch)
     return (
       <span className="flex min-w-0 items-center gap-[5px]">
-        <GitBranch aria-hidden className="size-[13px] shrink-0 text-(--tracking-blue)" />
+        <GitBranch
+          absoluteStrokeWidth
+          size={13}
+          aria-hidden
+          className="size-[13px] shrink-0 text-(--tracking-blue)"
+        />
         <span className={`truncate ${MONO}`}>{step.branch}</span>
       </span>
     );
@@ -33,7 +40,7 @@ function Origin({ step }: { step: StepModel }) {
   if (!blocker) return null;
   return (
     <span className="flex items-center gap-[5px]">
-      <Link aria-hidden className="size-[12px] text-(--tracking-dim)" />
+      <Link absoluteStrokeWidth size={12} aria-hidden className="size-[12px] text-(--tracking-dim)" />
       <span className={DIM}>{t.waiting(step.blockedBy.join(", "))}</span>
     </span>
   );
