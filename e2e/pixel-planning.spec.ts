@@ -42,6 +42,12 @@ async function dragF9OverS44(page: Page): Promise<void> {
   await expect(page.getByText("Déposer pour planifier en S44")).toBeVisible();
 }
 
+async function cancelDrag(page: Page): Promise<void> {
+  await page.keyboard.press("Escape");
+  await page.mouse.up();
+  await expect(page.getByText("Déposer pour planifier en S44")).toBeHidden();
+}
+
 async function contentViewport(page: Page): Promise<void> {
   const placed = await page.locator("[data-view-body]").boundingBox();
   if (!placed) throw new Error("the content root is not on screen");
@@ -69,6 +75,7 @@ test("the Planning of Emis, F9 dragged over S44, matches the mockup on the whole
   page,
 }, info) => {
   const scheme: Scheme = info.project.name === "pixel-light" ? "light" : "dark";
+  await page.setViewportSize({ width: PIXEL_WIDTH, height: HEIGHT });
   await pairBrowser(page);
   await page.goto(await planningUrl(page));
   await expect(page.getByRole("region", { name: "S42 Terrain hors ligne" })).toBeVisible();
@@ -87,7 +94,7 @@ test("the Planning of Emis, F9 dragged over S44, matches the mockup on the whole
   } catch (error) {
     screenError = error;
   }
-  await page.mouse.up();
+  await cancelDrag(page);
   const diff = existsSync(diffPath) ? readFileSync(diffPath) : null;
   if (screenError !== null && diff === null) throw screenError;
   const whole = diff ? regionRatio(diff, { x: 0, y: 0, w: 1440, h: HEIGHT }) : 0;
@@ -105,7 +112,7 @@ test("the Planning of Emis, F9 dragged over S44, matches the mockup on the whole
     masks: PIXEL_MASKS.planning,
     outDir: OUT_DIR,
   });
-  await page.mouse.up();
+  await cancelDrag(page);
   const content = contentShot.ratio;
   const zones = [...contentShot.boxes]
     .sort((a, b) => b.w * b.h - a.w * a.h)
