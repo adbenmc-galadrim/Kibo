@@ -10,7 +10,7 @@ import { type Box, decodePng } from "./pixel-report";
 const HEIGHT = 1000;
 const SCREEN = "tickets";
 const CONTENT: Box = { x: 241, y: 49, w: 1440 - 241, h: HEIGHT - 49 };
-const MAX_CONTENT_RATIO = 0.02;
+const MAX_RATIO = 0.02;
 const OUT_DIR =
   process.env.KIBO_SCREENS_DIR ??
   join(import.meta.dirname, "..", "..", "..", "..", "screens", "2026-10-16-t10");
@@ -48,7 +48,7 @@ function regionRatio(png: Uint8Array, box: Box): number {
 
 const percent = (ratio: number): string => `${(ratio * 100).toFixed(3)} %`;
 
-test("the Tickets page of Emis on sprint S42 matches the mockup in its content area", async ({
+test("the Tickets page of Emis on sprint S42 matches the mockup on the whole screen", async ({
   page,
 }, info) => {
   const scheme: Scheme = info.project.name === "pixel-light" ? "light" : "dark";
@@ -99,9 +99,7 @@ test("the Tickets page of Emis on sprint S42 matches the mockup in its content a
   const line = `${scheme} : écran ${percent(whole)} (zone de contenu en place ${percent(shell)}), contenu recalé ${percent(content)}`;
   info.annotations.push({ type: "pixel", description: line });
   console.log(`[pixel] ${SCREEN}-${line}`);
-  if (screenError !== null)
-    console.log(
-      `[pixel] écran entier au-dessus du seuil (coque de T11) : ${String(screenError).split("\n")[1]}`,
-    );
-  expect(content).toBeLessThanOrEqual(MAX_CONTENT_RATIO);
+  expect(content).toBeLessThanOrEqual(MAX_RATIO);
+  expect(whole).toBeLessThanOrEqual(MAX_RATIO);
+  if (screenError !== null) throw screenError;
 });
