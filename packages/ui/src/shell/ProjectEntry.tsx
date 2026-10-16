@@ -36,7 +36,7 @@ function ProjectLead({ color, open }: { color: string; open: boolean }) {
   const Chevron = open ? ChevronDown : ChevronRight;
   return (
     <>
-      <Chevron aria-hidden size={13} absoluteStrokeWidth className="k-chev" />
+      <Chevron size={13} absoluteStrokeWidth className="k-chev" />
       <b aria-hidden className="k-dot" style={{ background: color }} />
     </>
   );

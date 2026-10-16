@@ -166,3 +166,9 @@ export const ProjectAgentPanel = lazyPanel(
   fr.lazy,
   hidden,
 );
+
+export const AgentPanel = lazyPanel(
+  () => import("../agents/AgentPanel").then((m) => m.AgentPanel),
+  fr.lazy,
+  hidden,
+);

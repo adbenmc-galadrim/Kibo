@@ -39,7 +39,7 @@ export function NavRow({
       {...rest}
     >
       {lead}
-      {Icon && <Icon aria-hidden size={15} absoluteStrokeWidth />}
+      {Icon && <Icon size={15} absoluteStrokeWidth />}
       <span>{label}</span>
       {count && <NavCount>{count}</NavCount>}
       {trail}

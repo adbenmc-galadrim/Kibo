@@ -36,7 +36,7 @@ export function ProjectAgentButton({ projectId, agents, open, onToggle, onOpenSi
         className="k-focus"
         onClick={onToggle}
       >
-        <Bot aria-hidden size={15} absoluteStrokeWidth />
+        <Bot size={15} absoluteStrokeWidth />
         {frProjectAgent.button}
       </button>
       {signals > 0 ? (

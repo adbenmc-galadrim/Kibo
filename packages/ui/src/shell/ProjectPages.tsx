@@ -222,7 +222,7 @@ export function ProjectPages(p: Props) {
             e.preventDefault();
             onOpen(target, false, true);
           }}
-          icon={<Icon aria-hidden size={15} absoluteStrokeWidth />}
+          icon={<Icon size={15} absoluteStrokeWidth />}
           depth={depth}
           badge={pageBadge(page.id, project)}
         >

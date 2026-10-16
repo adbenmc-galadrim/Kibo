@@ -7,7 +7,7 @@ export function SidebarToggle({ whenClosed = false }: { whenClosed?: boolean }) 
   if (whenClosed && open && !isMobile) return null;
   return (
     <button type="button" aria-label={fr.nav.toggleSidebar} className="k-dim k-focus" onClick={toggleSidebar}>
-      <PanelRight aria-hidden size={15} absoluteStrokeWidth className="k-15" />
+      <PanelRight size={15} absoluteStrokeWidth className="k-15" />
     </button>
   );
 }

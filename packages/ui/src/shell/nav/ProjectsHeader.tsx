@@ -13,7 +13,7 @@ export function ProjectsHeader({ onNewProject, onJoin }: Props) {
       <h2>{fr.nav.projects}</h2>
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger aria-label={fr.nav.addProject} className="k-focus">
-          <Plus aria-hidden size={13} absoluteStrokeWidth className="k-13" />
+          <Plus size={13} absoluteStrokeWidth className="k-13" />
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="start">
           {open && <ProjectAddItems onNewProject={onNewProject} onJoin={onJoin} />}

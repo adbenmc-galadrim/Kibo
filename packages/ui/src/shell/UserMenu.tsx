@@ -16,7 +16,7 @@ export function UserMenu({ viewer, onOpen, onHelp }: Props) {
       <DropdownMenuTrigger className="k-user k-focus" aria-label={fr.header.userMenu(viewer)}>
         <b aria-hidden>{initials(viewer)}</b>
         <span className="truncate">{viewer}</span>
-        <Ellipsis aria-hidden size={14} absoluteStrokeWidth className="k-dim k-14" />
+        <Ellipsis size={14} absoluteStrokeWidth className="k-dim k-14" />
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" className="w-64" aria-label={fr.header.userMenu(viewer)}>
         {open && <UserMenuContent viewer={viewer} onOpen={onOpen} onHelp={onHelp} />}

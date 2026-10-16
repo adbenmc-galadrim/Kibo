@@ -7,7 +7,6 @@ import {
 } from "@kibo/schema";
 import { SidebarInset } from "@kibo/sdk/ui/sidebar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AgentPanel } from "../agents/AgentPanel";
 import { useRunNotifications } from "../agents/use-run-notifications";
 import { useProjectGit } from "../code/use-project-git";
 import { resolveWorktree } from "../code/use-worktrees";
@@ -30,7 +29,13 @@ import { ContentView } from "./ContentView";
 import { HostProvider } from "./Host";
 import { helpPatch } from "./help-dialogs";
 import { CommandPalette, TutorialSlot } from "./lazy-dialogs";
-import { ProjectAgentPanel, ProjectPresence, ProjectStatusBanner, RunSidePanel } from "./lazy-screens";
+import {
+  AgentPanel,
+  ProjectAgentPanel,
+  ProjectPresence,
+  ProjectStatusBanner,
+  RunSidePanel,
+} from "./lazy-screens";
 import { ExecutionGate } from "./nav/ExecutionGate";
 import { HiddenScreenSlot } from "./nav/HiddenScreenSlot";
 import { WorkspaceFrame } from "./nav/WorkspaceFrame";

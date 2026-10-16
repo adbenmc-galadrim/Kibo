@@ -69,7 +69,7 @@ const SETTINGS_SCREENS: ReadonlySet<Screen> = new Set([
 function SearchButton({ onSearch }: { onSearch(): void }) {
   return (
     <button type="button" onClick={onSearch} className="k-search k-focus">
-      <Search aria-hidden size={14} absoluteStrokeWidth className="k-14" />
+      <Search size={14} absoluteStrokeWidth className="k-14" />
       <span>{fr.nav.search}</span>
       <kbd>{shortcutLabel(["K"], isMac())}</kbd>
     </button>

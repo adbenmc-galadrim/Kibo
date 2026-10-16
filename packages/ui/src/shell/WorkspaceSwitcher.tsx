@@ -20,7 +20,7 @@ export function WorkspaceSwitcher({ name, icon, onSettings, onComponents, onChan
       <DropdownMenuTrigger className="k-workspace k-focus">
         {icon ? <img src={icon} alt={fr.workspace.iconAlt(name)} /> : <KiboLogo decorative />}
         <span className="truncate">{name}</span>
-        <ChevronDown aria-hidden size={13} absoluteStrokeWidth className="k-dim k-13" />
+        <ChevronDown size={13} absoluteStrokeWidth className="k-dim k-13" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
         {open && (
