@@ -1,5 +1,6 @@
 import { chmodSync, copyFileSync, cpSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { startTestSyncServer, type TestSyncServer } from "@kibo/sync-server/testing";
 import { FAKE_FIGMA_IMAGE_HOST, startFakeFigma } from "../packages/daemon/src/testing/fake-figma";
 import { LOGS_HOST, startFakeGithub } from "../packages/daemon/src/testing/fake-github";
 import { startFakeMcpHttp } from "../packages/daemon/src/testing/fake-mcp";
@@ -10,6 +11,7 @@ import { fakeGhDir, GIT_IDENTITY } from "./git-repo";
 import { EMIS_MAQUETTES, FIXED_NOW } from "./pixel-settings";
 import { connectSeedRpc, waitForDaemon } from "./seed-client";
 import { seedEmisMaquettes } from "./seed-emis-maquettes";
+import { type SyncSeed, shareEmis } from "./seed-emis-sync";
 import {
   E2E_FIGMA_TOKEN,
   E2E_GH_TOKEN,
@@ -130,6 +132,13 @@ function startFakesFor() {
   return null;
 }
 const fakes = await startFakesFor();
+const syncServer: TestSyncServer | null =
+  scenario === EMIS_MAQUETTES ? await startTestSyncServer({ dataDir: join(home, "sync-server") }) : null;
+async function syncSeed(server: TestSyncServer): Promise<SyncSeed> {
+  const caFile = join(home, "sync-ca.pem");
+  writeFileSync(caFile, server.caPem, { mode: 0o600 });
+  return { serverUrl: server.url, code: await server.inviteAccount("Adam"), caFile };
+}
 const proc = Bun.spawn(
   [
     "bun",
@@ -171,7 +180,9 @@ async function seedScenario(): Promise<void> {
   if (scenario !== EMIS_MAQUETTES) return;
   const base = `http://127.0.0.1:${port}`;
   await waitForDaemon(base, 30_000);
-  await seedEmisMaquettes(await connectSeedRpc(base, E2E_TOKEN));
+  const rpc = await connectSeedRpc(base, E2E_TOKEN);
+  await seedEmisMaquettes(rpc);
+  if (syncServer) await shareEmis(rpc, await syncSeed(syncServer));
 }
 const seeded = await seedScenario().then(
   () => true,
@@ -184,6 +195,7 @@ const seeded = await seedScenario().then(
 const exited = await proc.exited;
 const code = seeded ? exited : 1;
 await fakes?.stop();
+await syncServer?.stop();
 rmSync(home, { recursive: true, force: true });
 rmSync(ghDir, { recursive: true, force: true });
 process.exit(code);
