@@ -20,7 +20,7 @@ import { getKeyAllocator, nextPendingSeq } from "./keys";
 import { pruneLinks } from "./links";
 import { getProjectMeta, nextTicketSeq } from "./project";
 import { pruneQuestions } from "./questions";
-import { allocateShortKey, checkShortKey } from "./short-key";
+import { assignShortKey, checkShortKey, nextShortKey } from "./short-key";
 import { getNode, moveNode, subtreeIds, walkDepthFirst } from "./tree";
 
 export type NewTicket = {
@@ -126,6 +126,7 @@ export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
   const title = cleanTitle(input.title);
   const labels = normalizeLabels(input.labels ?? []);
   const parent = input.parentId ? getNode(ticketTree(doc), input.parentId) : undefined;
+  const shortKey = parent ? nextShortKey(doc, parent.id) : null;
   const serverKeys = getKeyAllocator(doc) === "server";
   const pendingSeq = serverKeys ? nextPendingSeq(doc) : null;
   const key = serverKeys ? null : formatTicketKey(getProjectMeta(doc).key, nextTicketSeq(doc));
@@ -140,7 +141,7 @@ export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
   node.data.set("externalRefs", []);
   node.data.set("labels", labels);
   writeDescription(node, input.description ?? "");
-  if (parent) allocateShortKey(doc, parent.id);
+  assignShortKey(doc, shortKey);
   doc.commit();
   return readTicket(node);
 }
@@ -177,8 +178,9 @@ export function setStatus(doc: LoroDoc, id: string, statusId: StatusId, reason?:
 }
 
 export function moveTicket(doc: LoroDoc, id: string, parentId: string | null, index?: number): void {
+  const shortKey = parentId === null ? null : nextShortKey(doc, parentId);
   moveNode(ticketTree(doc), id, parentId, index);
-  if (parentId !== null) allocateShortKey(doc, parentId);
+  assignShortKey(doc, shortKey);
   doc.commit();
 }
 

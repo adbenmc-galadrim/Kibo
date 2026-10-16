@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { Ticket } from "@kibo/schema";
 import { executeProjectCommand } from "./commands";
-import { createProjectDoc } from "./project";
+import { createProjectDoc, setFeatureSeq } from "./project";
 import { allocateShortKey } from "./short-key";
 import { getTicket, listTickets } from "./tickets";
 
@@ -122,5 +122,15 @@ describe("short key", () => {
     const again = ticket(d, "Relance", root.id);
     expect(shortKey(d, root.id)).toBe("F1");
     expect(shortKey(d, again.id)).toBeNull();
+  });
+
+  test("past F999 the allocation is refused and the child is not created", () => {
+    const d = newDoc();
+    setFeatureSeq(d, 999);
+    const root = ticket(d, "Photos");
+    expect(() => ticket(d, "Envoi", root.id)).toThrow("INVALID_INPUT");
+    d.commit();
+    expect(listTickets(d).map((t) => t.title)).toEqual(["Photos"]);
+    expect(shortKey(d, root.id)).toBeNull();
   });
 });

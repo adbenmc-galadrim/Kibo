@@ -27,12 +27,24 @@ const keyCommand = (ticketId: string, shortKey: string): ProjectCommand => ({
   shortKey,
 });
 
+function duplicatedKeys(tickets: readonly TicketView[]): { used: Set<string>; duplicated: Set<string> } {
+  const used = new Set<string>();
+  const duplicated = new Set<string>();
+  for (const t of tickets) {
+    if (t.shortKey === null) continue;
+    if (used.has(t.shortKey)) duplicated.add(t.id);
+    else used.add(t.shortKey);
+  }
+  return { used, duplicated };
+}
+
 function shortKeyCommands(tickets: readonly TicketView[]): ProjectCommand[] {
-  const used = new Set(tickets.flatMap((t) => (t.shortKey === null ? [] : [t.shortKey])));
-  const unkeyed = tickets.filter((t) => isFeature(t) && t.shortKey === null);
+  const { used, duplicated } = duplicatedKeys(tickets);
   const planned: ProjectCommand[] = [];
   const rest: TicketView[] = [];
-  for (const t of unkeyed) {
+  for (const t of tickets) {
+    if (duplicated.has(t.id)) rest.push(t);
+    if (!isFeature(t) || t.shortKey !== null) continue;
     const key = planKeyOf(t);
     if (key === null || used.has(key)) rest.push(t);
     else {
@@ -60,6 +72,12 @@ function planningPageCommands(snapshot: ProjectSnapshot): ProjectCommand[] {
   return [{ method: "addPage", title: PLANNING_PAGE_TITLE, kind: "view" }];
 }
 
-export function trackingMigrationCommands(snapshot: ProjectSnapshot): ProjectCommand[] {
-  return [...shortKeyCommands(snapshot.tickets), ...planningPageCommands(snapshot)];
+export type TrackingMigrationOptions = { planningPage: boolean };
+
+export function trackingMigrationCommands(
+  snapshot: ProjectSnapshot,
+  options: TrackingMigrationOptions = { planningPage: true },
+): ProjectCommand[] {
+  const keys = shortKeyCommands(snapshot.tickets);
+  return options.planningPage ? [...keys, ...planningPageCommands(snapshot)] : keys;
 }

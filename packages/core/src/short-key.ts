@@ -18,17 +18,29 @@ function usedShortKeys(doc: LoroDoc, exceptId: string | null): Set<string> {
   return used;
 }
 
-export function allocateShortKey(doc: LoroDoc, ticketId: string): string | null {
+export type ShortKeyAllocation = { ticketId: string; key: string; seq: number };
+
+export function nextShortKey(doc: LoroDoc, ticketId: string): ShortKeyAllocation | null {
   const node = getNode(tickets(doc), ticketId);
   if (node.parent() !== undefined || typeof node.data.get("shortKey") === "string") return null;
   const used = usedShortKeys(doc, ticketId);
   let seq = featureSeqOf(doc) + 1;
   while (used.has(`${FEATURE_PREFIX}${seq}`)) seq += 1;
-  if (seq > MAX_FEATURE_SEQ) return null;
-  const key = `${FEATURE_PREFIX}${seq}`;
-  setFeatureSeq(doc, seq);
-  node.data.set("shortKey", key);
-  return key;
+  if (seq > MAX_FEATURE_SEQ)
+    throw new KiboError("INVALID_INPUT", `no short key left after ${FEATURE_PREFIX}${MAX_FEATURE_SEQ}`);
+  return { ticketId, key: `${FEATURE_PREFIX}${seq}`, seq };
+}
+
+export function assignShortKey(doc: LoroDoc, allocation: ShortKeyAllocation | null): void {
+  if (allocation === null) return;
+  setFeatureSeq(doc, allocation.seq);
+  getNode(tickets(doc), allocation.ticketId).data.set("shortKey", allocation.key);
+}
+
+export function allocateShortKey(doc: LoroDoc, ticketId: string): string | null {
+  const allocation = nextShortKey(doc, ticketId);
+  assignShortKey(doc, allocation);
+  return allocation?.key ?? null;
 }
 
 export function checkShortKey(doc: LoroDoc, ticketId: string, shortKey: string | null): string | null {
