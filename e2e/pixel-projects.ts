@@ -15,14 +15,14 @@ export const PIXEL_DAEMONS = [
     name: "pixel-dark",
     scheme: "dark",
     port: PIXEL_DARK_PORT,
-    spec: /pixel\.spec\.ts/,
+    spec: /pixel-(planning|fonctionnalite|tickets|coque)\.spec\.ts/,
     scenario: EMIS_MAQUETTES,
   },
   {
     name: "pixel-light",
     scheme: "light",
     port: PIXEL_LIGHT_PORT,
-    spec: /pixel\.spec\.ts/,
+    spec: /pixel-(planning|fonctionnalite|tickets|coque)\.spec\.ts/,
     scenario: EMIS_MAQUETTES,
   },
 ] as const;
