@@ -8,6 +8,7 @@ import {
 import { DeliveryLine } from "../delivery/lazy";
 import { fr } from "../i18n/fr";
 import { frDelivery } from "../i18n/fr-delivery";
+import { frFeature } from "../i18n/fr-group";
 import { frQuestions } from "../i18n/fr-questions";
 import { frTicketEdit } from "../i18n/fr-ticket-edit";
 import { canEdit } from "../state/access";
@@ -17,7 +18,9 @@ import { AssigneeSelect } from "../ticket/AssigneeSelect";
 import { DependenciesSection } from "../ticket/DependenciesSection";
 import { DescriptionEditor } from "../ticket/DescriptionEditor";
 import { DomainSelect } from "../ticket/DomainSelect";
+import { OptionalToggle } from "../ticket/OptionalToggle";
 import { QuestionsBadge } from "../ticket/QuestionsBadge";
+import { hasSprintField, SprintField } from "../ticket/SprintField";
 import { StatusSelect } from "../ticket/StatusSelect";
 import { useTicketCommand } from "../ticket/use-ticket-command";
 import { useOptionalHost } from "./Host";
@@ -90,6 +93,22 @@ export function TicketDetail({ project, ticket: t, domains, viewer, onOpenFile, 
             command={command}
           />
         </dd>
+        {t.parentId !== null && (
+          <>
+            <dt className="text-muted-foreground">{frFeature.optional}</dt>
+            <dd>
+              <OptionalToggle ticket={t} editable={editable} command={command} />
+            </dd>
+          </>
+        )}
+        {hasSprintField(t) && (
+          <>
+            <dt className="text-muted-foreground">{frFeature.ticketSprint}</dt>
+            <dd>
+              <SprintField ticket={t} sprints={project.sprints} editable={editable} command={command} />
+            </dd>
+          </>
+        )}
         {session && (
           <>
             <dt className="text-muted-foreground">{frQuestions.session}</dt>

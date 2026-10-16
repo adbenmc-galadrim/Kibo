@@ -148,3 +148,13 @@ test("no started run, no agents state or no shell host: no session line and no f
   show(ticket({ openQuestions: 1 }), null, false);
   expect(screen.getByRole("button", { name: "1 question" })).toBeTruthy();
 });
+
+test("a step offers « Étape facultative » and a lone root ticket offers its sprint", () => {
+  const view = show(ticket({ parentId: "f5" }), null);
+  expect(screen.getByRole("switch", { name: "Étape facultative" })).toBeTruthy();
+  expect(screen.queryByRole("combobox", { name: "Sprint" })).toBeNull();
+  view.unmount();
+  show(ticket(), null);
+  expect(screen.queryByRole("switch", { name: "Étape facultative" })).toBeNull();
+  expect(screen.getByRole("combobox", { name: "Sprint" })).toBeTruthy();
+});
