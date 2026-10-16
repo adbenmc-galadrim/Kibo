@@ -66,7 +66,7 @@ function Action({ action, parts }: { action: MenuAction; parts: Parts }) {
       variant={action.destructive ? "destructive" : "default"}
       onSelect={action.onSelect}
     >
-      {Icon && <Icon aria-hidden />}
+      {Icon && <Icon aria-hidden size={16} absoluteStrokeWidth />}
       {action.hint ? (
         <span className="grid min-w-0">
           <span>{action.label}</span>
@@ -90,7 +90,7 @@ function Entries({ entries, parts }: { entries: readonly MenuEntry[]; parts: Par
           return (
             <parts.Sub key={i}>
               <parts.SubTrigger>
-                {Icon && <Icon aria-hidden />}
+                {Icon && <Icon aria-hidden size={16} absoluteStrokeWidth />}
                 {entry.label}
               </parts.SubTrigger>
               <parts.SubContent>

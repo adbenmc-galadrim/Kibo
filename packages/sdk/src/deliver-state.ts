@@ -1,11 +1,13 @@
 import {
+  type AgentExecution,
+  deliveryBrief,
   FINAL_STATUSES,
   isTerminal,
   NOT_STARTED_STATUSES,
   type TicketRun,
   type TicketView,
 } from "@kibo/schema";
-import { Truck } from "lucide-react";
+import { Copy, Truck } from "lucide-react";
 import { deliveryTexts } from "./fr-delivery";
 import type { MenuAction } from "./ui/menu-entries";
 
@@ -45,3 +47,24 @@ export const deliverMenuActions = (entry: DeliverEntry | null, onSelect: () => v
           onSelect,
         },
       ];
+
+export type DeliveryMenu = {
+  execution: AgentExecution;
+  entry: DeliverEntry | null;
+  ticket: Pick<TicketView, "key" | "statusId">;
+  deliver(): void;
+  copy(command: string): void;
+};
+
+export function deliveryMenuActions(menu: DeliveryMenu): MenuAction[] {
+  if (menu.execution === "shown") return deliverMenuActions(menu.entry, menu.deliver);
+  const { key, statusId } = menu.ticket;
+  if (key === null || FINAL_STATUSES.includes(statusId)) return [];
+  const command = deliveryBrief(key);
+  return [{ label: deliveryTexts.copy(command), icon: Copy, onSelect: () => menu.copy(command) }];
+}
+
+export const copyDeliveryCommand = (command: string): Promise<void> =>
+  navigator.clipboard
+    .writeText(command)
+    .catch((e: unknown) => console.warn("[kibo-sdk] clipboard write refused", e));

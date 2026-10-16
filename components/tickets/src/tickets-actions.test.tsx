@@ -67,7 +67,7 @@ test("steps are rows, their feature is a chip; a root without step waits in Hors
 });
 
 test("the row menu changes the status; Bloqué asks for a reason", async () => {
-  const m = createMockSdk(manifest, { seed });
+  const m = createMockSdk(manifest, { seed, agentExecution: "shown" });
   mount(m);
   const user = userEvent.setup();
   await user.pointer({
@@ -203,15 +203,26 @@ test("the open questions of a row sit in its hover card, never a zero", async ()
 });
 
 test("Livrer on a step asks the SDK for a run; without a delivery agent there is no Livrer", async () => {
-  const m = createMockSdk(manifest, { seed });
+  const m = createMockSdk(manifest, { seed, agentExecution: "shown" });
   const { unmount } = mount(m);
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Actions KIB-3" }));
   await user.click(await screen.findByRole("menuitem", { name: "Livrer" }));
   await waitFor(() => expect(m.runDeliveries).toEqual([byKey(m, "KIB-3")?.id ?? ""]));
   unmount();
-  mount(createMockSdk(manifest, { seed, deliveryAgent: null }));
+  mount(createMockSdk(manifest, { seed, deliveryAgent: null, agentExecution: "shown" }));
   await user.click(await screen.findByRole("button", { name: "Actions KIB-3" }));
   await screen.findByRole("menuitem", { name: "Ouvrir" });
   expect(screen.queryByRole("menuitem", { name: /^Livrer/ })).toBeNull();
+});
+
+test("with agent execution hidden, the row menu copies the full-delivery command instead of Livrer", async () => {
+  const m = createMockSdk(manifest, { seed });
+  mount(m);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Actions KIB-3" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Copier /full-delivery KIB-3" }));
+  expect(screen.queryByRole("menuitem", { name: "Livrer" })).toBeNull();
+  await waitFor(async () => expect(await navigator.clipboard.readText()).toBe("/full-delivery KIB-3"));
+  expect(m.runDeliveries).toEqual([]);
 });

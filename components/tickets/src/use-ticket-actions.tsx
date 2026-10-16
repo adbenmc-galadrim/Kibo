@@ -6,7 +6,15 @@ import {
   type TicketRun,
   type TicketView,
 } from "@kibo/schema";
-import { deliverEntry, useDeliverFlow, useDeliveryAgentKnown, useReadOnly, useSdk } from "@kibo/sdk";
+import {
+  copyDeliveryCommand,
+  deliverEntry,
+  useDeliverFlow,
+  useDeliveryAgentKnown,
+  useReadOnly,
+  useSdk,
+} from "@kibo/sdk";
+import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { ReasonDialog } from "@kibo/sdk/ui/reason-dialog";
@@ -30,6 +38,7 @@ export function useTicketActions(
   const readOnly = useReadOnly();
   const delivery = useDeliverFlow();
   const agentKnown = useDeliveryAgentKnown();
+  const { agentExecution } = useComponentSettings();
   const [blocking, setBlocking] = useState<TicketView | null>(null);
   const [removing, setRemoving] = useState<TicketView | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -62,9 +71,11 @@ export function useTicketActions(
         parent: all.some((x) => x.parentId === t.id),
         run: runs.find((r) => r.ticketId === t.id) ?? null,
       }),
+      execution: agentExecution,
       texts: fr,
       actions: {
         deliver: () => delivery.deliver(t),
+        copyDelivery: (command) => void copyDeliveryCommand(command),
         open: () => sdk.openTicket(t.id),
         setStatus: (statusId) => setStatus(t, statusId),
         newSubTicket: () => sdk.openNewTicket({ parentId: t.id }),

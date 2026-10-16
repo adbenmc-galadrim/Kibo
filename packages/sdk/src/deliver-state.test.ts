@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { type DeliverInput, deliverEntry } from "./deliver-state";
+import { copyDeliveryCommand, type DeliverInput, deliverEntry, deliveryMenuActions } from "./deliver-state";
 
 const input = (patch: Partial<DeliverInput> = {}): DeliverInput => ({
   ticket: { key: "EMIS-15", statusId: "todo", startable: true, waitingOn: [] },
@@ -53,4 +53,53 @@ test("a parent or a ticket already in progress stays deliverable", () => {
   expect(deliverEntry(input({ ticket, parent: true }))).toEqual({ disabledReason: null });
   const started: DeliverInput["ticket"] = { ...ticket, statusId: "in_progress" };
   expect(deliverEntry(input({ ticket: started }))).toEqual({ disabledReason: null });
+});
+
+const menuOf = (
+  execution: "hidden" | "shown",
+  statusId: "todo" | "done" = "todo",
+  key: string | null = "EMIS-33",
+) => {
+  const calls: string[] = [];
+  const entries = deliveryMenuActions({
+    execution,
+    entry: { disabledReason: null },
+    ticket: { key, statusId },
+    deliver: () => calls.push("deliver"),
+    copy: (command) => calls.push(command),
+  });
+  return { entries, calls };
+};
+
+test("hidden execution swaps Livrer for copying the full-delivery command", () => {
+  const { entries, calls } = menuOf("hidden");
+  expect(entries.map((e) => e.label)).toEqual(["Copier /full-delivery EMIS-33"]);
+  entries[0]?.onSelect();
+  expect(calls).toEqual(["/full-delivery EMIS-33"]);
+});
+
+test("hidden execution offers no copy for a done ticket or a ticket without key", () => {
+  expect(menuOf("hidden", "done").entries).toEqual([]);
+  expect(menuOf("hidden", "todo", null).entries).toEqual([]);
+});
+
+test("shown execution keeps Livrer", () => {
+  const { entries, calls } = menuOf("shown");
+  expect(entries.map((e) => e.label)).toEqual(["Livrer"]);
+  entries[0]?.onSelect();
+  expect(calls).toEqual(["deliver"]);
+});
+
+test("copying the command writes it to the clipboard", async () => {
+  const written: string[] = [];
+  const clipboard = { writeText: (text: string) => Promise.resolve(void written.push(text)) };
+  const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", { value: clipboard, configurable: true });
+  try {
+    await copyDeliveryCommand("/full-delivery EMIS-33");
+  } finally {
+    if (original) Object.defineProperty(navigator, "clipboard", original);
+    else Reflect.deleteProperty(navigator, "clipboard");
+  }
+  expect(written).toEqual(["/full-delivery EMIS-33"]);
 });

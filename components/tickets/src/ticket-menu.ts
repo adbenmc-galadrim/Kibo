@@ -1,5 +1,5 @@
-import type { Status, StatusId, TicketView } from "@kibo/schema";
-import { type DeliverEntry, deliverMenuActions } from "@kibo/sdk";
+import type { AgentExecution, Status, StatusId, TicketView } from "@kibo/schema";
+import { type DeliverEntry, deliveryMenuActions } from "@kibo/sdk";
 import type { MenuAction, MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { CornerLeftUp, ExternalLink, Plus, Trash2 } from "lucide-react";
 import type { fr } from "./fr";
@@ -11,6 +11,7 @@ export type TicketMenuActions = {
   moveToRoot(): void;
   remove(): void;
   deliver(): void;
+  copyDelivery(command: string): void;
 };
 
 export function ticketMenuEntries(input: {
@@ -18,10 +19,11 @@ export function ticketMenuEntries(input: {
   statuses: Status[];
   readOnly: boolean;
   deliver: DeliverEntry | null;
+  execution: AgentExecution;
   texts: typeof fr;
   actions: TicketMenuActions;
 }): MenuEntry[] {
-  const { ticket, statuses, readOnly, deliver, texts, actions } = input;
+  const { ticket, statuses, readOnly, deliver, execution, texts, actions } = input;
   const open: MenuAction = { label: texts.open, icon: ExternalLink, onSelect: actions.open };
   if (readOnly) return [open];
   const items: MenuAction[] = [...statuses]
@@ -33,7 +35,13 @@ export function ticketMenuEntries(input: {
     }));
   return [
     open,
-    ...deliverMenuActions(deliver, actions.deliver),
+    ...deliveryMenuActions({
+      execution,
+      entry: deliver,
+      ticket,
+      deliver: actions.deliver,
+      copy: actions.copyDelivery,
+    }),
     { label: texts.status, items },
     { label: texts.newSub, icon: Plus, onSelect: actions.newSubTicket },
     {

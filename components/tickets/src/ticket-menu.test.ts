@@ -38,6 +38,7 @@ const actions = (): TicketMenuActions => ({
   moveToRoot: mock(() => {}),
   remove: mock(() => {}),
   deliver: mock(() => {}),
+  copyDelivery: mock((_command: string) => {}),
 });
 const labels = (entries: ReturnType<typeof ticketMenuEntries>) =>
   entries.map((e) => (isSeparator(e) ? "—" : isSubmenu(e) ? `${e.label} ▸` : e.label));
@@ -49,6 +50,7 @@ test("an editable ticket gets open, status submenu, new sub-ticket, move to root
     statuses: DEFAULT_WORKFLOW,
     readOnly: false,
     deliver: null,
+    execution: "shown",
     texts: fr,
     actions: a,
   });
@@ -81,6 +83,7 @@ test("a root ticket cannot be moved to the root", () => {
     statuses: DEFAULT_WORKFLOW,
     readOnly: false,
     deliver: null,
+    execution: "shown",
     texts: fr,
     actions: actions(),
   });
@@ -94,6 +97,7 @@ test("read-only keeps only Ouvrir", () => {
     statuses: DEFAULT_WORKFLOW,
     readOnly: true,
     deliver: { disabledReason: null },
+    execution: "shown",
     texts: fr,
     actions: actions(),
   });
@@ -106,6 +110,7 @@ const withDeliver = (deliver: { disabledReason: string | null } | null, a = acti
     statuses: DEFAULT_WORKFLOW,
     readOnly: false,
     deliver,
+    execution: "shown",
     texts: fr,
     actions: a,
   });
@@ -125,4 +130,24 @@ test("Livrer is disabled and says which run is already there", () => {
   if (!deliver || isSeparator(deliver) || isSubmenu(deliver)) throw new Error("no Livrer");
   expect(deliver.disabled).toBe(true);
   expect(deliver.hint).toBe("déjà un run : emis · full-delivery · EMIS-15");
+});
+
+test("hidden agent execution replaces Livrer with copying the full-delivery command", () => {
+  const a = actions();
+  const entries = ticketMenuEntries({
+    ticket: ticket(),
+    statuses: DEFAULT_WORKFLOW,
+    readOnly: false,
+    deliver: { disabledReason: null },
+    execution: "hidden",
+    texts: fr,
+    actions: a,
+  });
+  expect(labels(entries).slice(0, 3)).toEqual(["Ouvrir", "Copier /full-delivery KIB-27", "Statut ▸"]);
+  expect(labels(entries)).not.toContain("Livrer");
+  const copy = entries[1];
+  if (!copy || isSeparator(copy) || isSubmenu(copy)) throw new Error("no copy entry");
+  copy.onSelect();
+  expect(a.copyDelivery).toHaveBeenCalledWith("/full-delivery KIB-27");
+  expect(a.deliver).not.toHaveBeenCalled();
 });

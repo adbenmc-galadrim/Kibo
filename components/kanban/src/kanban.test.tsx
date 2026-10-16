@@ -42,7 +42,7 @@ test("the board is loaded on demand behind a neutral loading line", async () => 
 runConformance({ manifest, Component }, seed, { runs });
 
 const setup = () => {
-  const m = createMockSdk(manifest, { seed, viewer: "adam" });
+  const m = createMockSdk(manifest, { seed, viewer: "adam", agentExecution: "shown" });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />
@@ -548,7 +548,7 @@ test("Livrer asks the SDK to deliver the ticket", async () => {
 });
 
 test("Livrer is disabled while a run is active on the ticket", async () => {
-  const m = createMockSdk(manifest, { seed, viewer: "adam" });
+  const m = createMockSdk(manifest, { seed, viewer: "adam", agentExecution: "shown" });
   const id = m.snapshot().tickets.find((t) => t.key === "KIB-1")?.id ?? "";
   m.setRuns([
     { ticketId: id, runId: "r1", label: "kib · full-delivery · KIB-1", state: "running", position: null },
@@ -590,4 +590,18 @@ test("without a delivery agent the menu has no Livrer", async () => {
   await openMenu("KIB-1");
   await screen.findByRole("menuitem", { name: "Ouvrir" });
   expect(screen.queryByRole("menuitem", { name: /^Livrer/ })).toBeNull();
+});
+
+test("with agent execution hidden, the card menu copies the full-delivery command instead of Livrer", async () => {
+  const m = createMockSdk(manifest, { seed, viewer: "adam" });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  const user = await openMenu("KIB-1");
+  await user.click(await screen.findByRole("menuitem", { name: "Copier /full-delivery KIB-1" }));
+  expect(screen.queryByRole("menuitem", { name: "Livrer" })).toBeNull();
+  await waitFor(async () => expect(await navigator.clipboard.readText()).toBe("/full-delivery KIB-1"));
+  expect(m.runDeliveries).toEqual([]);
 });
