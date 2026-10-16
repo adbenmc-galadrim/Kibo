@@ -178,7 +178,7 @@ test("the header keeps the breadcrumb, the sync state and the actions; share, ti
       />
     </SidebarProvider>,
   );
-  expect(await screen.findByText("Synchronisé")).toBeTruthy();
+  expect(await screen.findByText(/^Synchronisé/)).toBeTruthy();
   for (const name of ["Partager", /^Ticket/, /^Menu de/, "Afficher ou masquer la barre latérale"])
     expect(screen.queryByRole("button", { name })).toBeNull();
 });

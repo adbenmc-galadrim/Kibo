@@ -178,3 +178,5 @@ export const PageInstanceMenu = lazyPanel(
   fr.lazy,
   { fallback: "children" },
 );
+
+export const SyncAge = lazyPanel(() => import("./nav/SyncAge").then((m) => m.SyncAge), fr.lazy, hidden);
