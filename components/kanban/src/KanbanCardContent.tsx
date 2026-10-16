@@ -96,7 +96,7 @@ export function KanbanCardContent(props: Props) {
             key={r.label}
             className="inline-flex max-w-full items-center gap-1 rounded-full bg-brand/10 px-1.5 py-0.5 text-3xs text-brand-strong dark:text-brand"
           >
-            <Bot aria-hidden className="size-3 shrink-0" />
+            <Bot absoluteStrokeWidth size={12} aria-hidden className="size-3 shrink-0" />
             <span className="truncate">{r.label}</span>
           </span>
         ))}

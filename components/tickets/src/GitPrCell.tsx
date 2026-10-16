@@ -4,12 +4,12 @@ import {
   CircleCheck,
   CircleDashed,
   CircleX,
-  GitBranch,
   GitMerge,
   GitPullRequest,
   GitPullRequestClosed,
   Link,
 } from "lucide-react";
+import { BranchIcon } from "./BranchIcon";
 import { TEXT_12 } from "./columns";
 import { fr } from "./fr";
 
@@ -74,7 +74,7 @@ export function GitPrCell({ ticket, ci }: Props) {
   if (branch)
     return (
       <span className={ROW}>
-        <GitBranch
+        <BranchIcon
           absoluteStrokeWidth
           size={13}
           aria-hidden

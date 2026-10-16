@@ -8,7 +8,7 @@ export function KanbanCardPreview(props: Props) {
   const { ticket: t, readOnly } = props;
   const menu = !readOnly && (
     <span className="inline-flex size-6 items-center justify-center">
-      <MoreHorizontal className="size-3.5" />
+      <MoreHorizontal absoluteStrokeWidth size={14} className="size-3.5" />
     </span>
   );
   return (

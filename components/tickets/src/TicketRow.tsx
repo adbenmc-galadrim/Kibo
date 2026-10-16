@@ -132,7 +132,7 @@ export function TicketRow(props: RowFacts) {
                   aria-label={fr.newSubTicket(t.keyLabel)}
                   onClick={() => sdk.openNewTicket({ parentId: t.id })}
                 >
-                  <Plus className="size-3.5" />
+                  <Plus absoluteStrokeWidth size={14} className="size-3.5" />
                 </Button>
               )}
               <TicketRowActions entries={entries} label={fr.actions(t.keyLabel)} readOnly={readOnly} />

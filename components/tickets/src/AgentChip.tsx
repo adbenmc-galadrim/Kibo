@@ -22,7 +22,7 @@ export function AgentChip({ agent, run, className }: Props) {
   return (
     <Badge variant="outline" className={cn("gap-1 text-3xs font-normal text-muted-foreground", className)}>
       <RunDot state={live.state} className="size-1.5" />
-      <Bot aria-hidden className="size-3" />
+      <Bot absoluteStrokeWidth size={12} aria-hidden className="size-3" />
       <AgentMention
         runId={live.runId}
         label={live.label}

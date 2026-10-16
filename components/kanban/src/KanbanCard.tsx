@@ -58,7 +58,7 @@ export function KanbanCard(props: Props) {
           data-dnd-ignore="true"
           onPointerDown={stopDrag}
         >
-          <MoreHorizontal className="size-3.5" />
+          <MoreHorizontal absoluteStrokeWidth size={14} className="size-3.5" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

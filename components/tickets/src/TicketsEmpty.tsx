@@ -8,12 +8,12 @@ type Props = { readOnly: boolean; onNewTicket(): void };
 export function TicketsEmpty({ readOnly, onNewTicket }: Props) {
   return (
     <div className="flex flex-col items-center gap-2 p-8 text-center">
-      <Package aria-hidden className="size-8 text-muted-foreground" />
+      <Package absoluteStrokeWidth size={32} aria-hidden className="size-8 text-muted-foreground" />
       <p className="text-sm font-medium">{fr.empty}</p>
       <p className="max-w-sm text-xs text-muted-foreground">{fr.emptyHelp}</p>
       {!readOnly && (
         <Button size="sm" variant="outline" className="mt-2" onClick={onNewTicket}>
-          <Plus className="size-3.5" /> {fr.newTicket}
+          <Plus absoluteStrokeWidth size={14} className="size-3.5" /> {fr.newTicket}
         </Button>
       )}
     </div>

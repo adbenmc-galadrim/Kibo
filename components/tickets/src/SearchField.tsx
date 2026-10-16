@@ -8,6 +8,8 @@ export function SearchField({ value, onChange, onClose }: Props) {
   return (
     <div className="relative w-[394px] max-w-full">
       <Search
+        absoluteStrokeWidth
+        size={13}
         aria-hidden
         className="absolute top-1/2 left-2.5 size-[13px] -translate-y-1/2 text-(--tracking-dim)"
       />
