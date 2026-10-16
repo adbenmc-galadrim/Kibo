@@ -18,6 +18,7 @@ S.PAL = {
 S.C = S.C || {};
 S.setMode = (m) => { Object.assign(S.C, S.PAL[m]); S.mode = m; };
 S.setMode("dark");
+S.bodyFont = null; S.monoFont = null;
 // Hors flex, un enfant se place relativement au board parent (o.x, o.y) ; sinon le flex le place.
 S.free = (parent) => parent && parent.type === "board" && !parent.flex && !parent.grid && parent !== penpot.currentPage.root;
 S.placed = [];
@@ -27,8 +28,11 @@ S.replace = () => { let n = 0; for (const [s, p, x, y] of S.placed) { if (Math.a
 S.font = penpot.fonts.findByName("Geist"); S.mono = penpot.fonts.findByName("Geist Mono");
 
 S.txt = (parent, chars, o = {}) => {
-  const C = S.C, t = penpot.createText(chars), f = o.mono ? S.mono : S.font;
-  const v = f.variants.find(v => v.fontWeight === String(o.weight || 400) && v.fontStyle === "normal") || f.variants[0];
+  const C = S.C, t = penpot.createText(chars);
+  S.fontCache = S.fontCache || {};
+  const f = o.font ? (S.fontCache[o.font] = S.fontCache[o.font] || penpot.fonts.findByName(o.font)) : o.mono ? (S.monoFont ? (S.fontCache[S.monoFont] = S.fontCache[S.monoFont] || penpot.fonts.findByName(S.monoFont)) : S.mono) : (S.bodyFont ? (S.fontCache[S.bodyFont] = S.fontCache[S.bodyFont] || penpot.fonts.findByName(S.bodyFont)) : S.font);
+  const style = o.italic ? "italic" : "normal";
+  const v = f.variants.find(v => v.fontWeight === String(o.weight || 400) && v.fontStyle === style) || f.variants.find(v => v.fontStyle === style) || f.variants[0];
   f.applyToText(t, v);
   t.fontSize = String(o.size || 13); t.fills = [{ fillColor: o.color || C.fg, fillOpacity: 1 }];
   if (o.lh) t.lineHeight = String(o.lh); if (o.ls) t.letterSpacing = String(o.ls); if (o.upper) t.textTransform = "uppercase";

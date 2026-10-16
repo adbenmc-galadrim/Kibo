@@ -3,7 +3,7 @@ storage.sleep = (fn, ms = 0) => { if (ms < 30) Promise.resolve().then(fn); else 
 storage.load = async (n) => new Compartment({ storage, penpot, penpotUtils, setTimeout: storage.sleep, fetch, console, Promise })
   .evaluate("(async()=>{" + await (await fetch("http://127.0.0.1:8787/" + n + "?t=" + Date.now())).text() + "\n})()");
 const out = [];
-for (const n of ["01-base", "02-data", "10-shell", "20-piste-a", "30-piste-b", "40-piste-c", "50-proposition", "90-export"]) {
+for (const n of ["01-base", "02-data", "10-shell", "20-piste-a", "30-piste-b", "40-piste-c", "50-proposition", "60-styles", "70-vues", "90-export"]) {
   try { out.push(await storage.load(n + ".js")); } catch (e) { out.push(n + " : " + String(e).slice(0, 200)); }
 }
 return out;
