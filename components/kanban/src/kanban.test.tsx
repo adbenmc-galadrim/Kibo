@@ -250,7 +250,7 @@ const renderSynced = (
 test("a synced Kanban shows only the binding's tickets, on the 'all' filter", async () => {
   renderSynced();
   expect(await screen.findByText("Sous-tâche locale")).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Ouvrir l'ensemble KIB-1 · Issue synchronisée" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Ouvrir l'ensemble F1 · Issue synchronisée" })).toBeTruthy();
   expect(screen.queryByText("Issue synchronisée")).toBeNull();
   expect(screen.queryByText("Ticket local")).toBeNull();
   expect(screen.getByText("2 / 2 · Tous")).toBeTruthy();

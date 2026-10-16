@@ -42,9 +42,16 @@ export function ciChipOf(runs: CiRun[]): CiChip | undefined {
   return { tone, prNumber: latest?.prNumber ?? null };
 }
 
+export type CardGroup = GroupRef & Pick<TicketView, "shortKey">;
+
+const featureChipRef = (group: CardGroup): GroupRef => ({
+  ...group,
+  keyLabel: group.shortKey ?? group.keyLabel,
+});
+
 export type CardFacts = {
   ticket: TicketView;
-  group: GroupRef | null;
+  group: CardGroup | null;
   run: TicketRun | null;
   ci?: CiChip;
   members: MemberInfo[];
@@ -61,7 +68,7 @@ export function KanbanCardContent(props: Props) {
     <>
       <div className="flex h-6 items-center gap-2">
         <TicketKeyLabel ticket={t} className="min-w-0 truncate font-mono text-2xs text-muted-foreground" />
-        {group && <GroupChip group={group} onOpen={(id) => sdk.openTicket(id)} />}
+        {group && <GroupChip group={featureChipRef(group)} onOpen={(id) => sdk.openTicket(id)} />}
         <span className="flex-1" />
         {menu}
       </div>
