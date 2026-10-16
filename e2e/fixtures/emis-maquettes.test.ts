@@ -158,6 +158,22 @@ test("the Tickets list of S42: 14 tickets in 3 features, 8 done, one outside fea
   expect(loose.filter((t) => sprintCodeOf(today, t) === "S42")).toHaveLength(1);
 });
 
+test("delivery steps are stamped from oldest to newest of P4: 33, 45, 32 on top, then 21, 31, 43, 42 done", () => {
+  const steps = today.tickets.filter((t) => t.parentId !== null && sprintCodeOf(today, t) === "S42");
+  const recent = (ts: TicketView[]) =>
+    [...ts]
+      .sort((a, b) => (b.delivery?.at ?? -1) - (a.delivery?.at ?? -1))
+      .filter((t) => t.delivery !== null)
+      .map((t) => t.key);
+  expect(recent(steps.filter((t) => t.statusId !== "done"))).toEqual(["EMIS-33", "EMIS-45", "EMIS-32"]);
+  expect(recent(steps.filter((t) => t.statusId === "done")).slice(0, 4)).toEqual([
+    "EMIS-21",
+    "EMIS-31",
+    "EMIS-43",
+    "EMIS-42",
+  ]);
+});
+
 test("sidebar counters: 6 mine, 2 in the inbox, 3 questions, 24 open tickets", () => {
   const mine = today.tickets.filter((t) => t.assignee?.ref === VIEWER && t.statusId !== "done");
   expect(mine).toHaveLength(6);

@@ -263,6 +263,21 @@ export const emisKey = (n: number): string => `${EMIS_PROJECT.key}-${n}`;
 export const prUrl = (number: number): string => `${EMIS_REPO_URL}/pull/${number}`;
 
 export const emisSteps = (): StepSpec[] => EMIS_FEATURES.flatMap((f) => f.steps);
+
+export const EMIS_RECENT_DELIVERIES: readonly number[] = [42, 43, 31, 21, 32, 45, 33];
+
+export type DeliveredStep = StepSpec & { delivery: number };
+
+const isDelivered = (s: StepSpec): s is DeliveredStep => s.delivery !== undefined;
+
+export function deliveryOrder(steps: readonly StepSpec[]): DeliveredStep[] {
+  const delivered = steps.filter(isDelivered);
+  const rank = (s: StepSpec) => EMIS_RECENT_DELIVERIES.indexOf(s.n);
+  return [
+    ...delivered.filter((s) => rank(s) < 0),
+    ...delivered.filter((s) => rank(s) >= 0).sort((a, b) => rank(a) - rank(b)),
+  ];
+}
 export const emisUsedTickets = (): Set<number> =>
   new Set([
     ...EMIS_FEATURES.flatMap((f) => [f.n, ...f.steps.map((s) => s.n)]),

@@ -5,6 +5,7 @@ import {
   type RpcRequest,
 } from "../packages/schema/src/index";
 import {
+  deliveryOrder,
   EMIS_BASE_BRANCH,
   EMIS_FEATURE_LINKS,
   EMIS_FEATURES,
@@ -27,6 +28,10 @@ import {
   type SprintCode,
   type StepSpec,
 } from "./fixtures/emis-maquettes";
+
+const DELIVERY_GAP_MS = 2;
+
+const distinctInstant = () => new Promise((resolve) => setTimeout(resolve, DELIVERY_GAP_MS));
 
 export type SeedRpc = (req: RpcRequest) => Promise<unknown>;
 export type SeedOptions = { folder: string | null };
@@ -181,9 +186,9 @@ async function seedEmis(rpc: SeedRpc, projectId: string, user: string): Promise<
     projectId,
   };
   await buildTickets(emis, ids);
-  for (const step of stepSpecs().values()) {
-    if (step.delivery !== undefined)
-      await rpc({ method: "setDeliveryStep", projectId, ticketKey: emisKey(step.n), step: step.delivery });
+  for (const step of deliveryOrder([...stepSpecs().values()])) {
+    await rpc({ method: "setDeliveryStep", projectId, ticketKey: emisKey(step.n), step: step.delivery });
+    await distinctInstant();
   }
   await addPages(emis);
 }

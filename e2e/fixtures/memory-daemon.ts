@@ -42,6 +42,7 @@ export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
     return found;
   };
   const listed = () => [...docs.values()].map((p) => p.meta).filter((m) => m.id !== INBOX_ID);
+  let deliveries = 0;
   const handle = (req: RpcRequest): unknown => {
     switch (req.method) {
       case "getSession":
@@ -66,7 +67,8 @@ export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
         const { doc } = project(req.projectId);
         const ticket = readProject(doc, today).tickets.find((t) => t.key === req.ticketKey);
         if (ticket === undefined) throw new KiboError("NOT_FOUND", `ticket ${req.ticketKey} not found`);
-        const delivery = { step: req.step, note: req.note ?? "", at: 0, runId: null };
+        deliveries += 1;
+        const delivery = { step: req.step, note: req.note ?? "", at: deliveries, runId: null };
         return executeProjectCommand(doc, { method: "setTicketDelivery", ticketId: ticket.id, delivery });
       }
       case "config":
