@@ -25,6 +25,7 @@ import type { AgentSource } from "./agents/neutral-agents";
 import type { AgentDataPort } from "./agents/orchestrator";
 import { type AgentQuestions, type AgentsPort, deliverTicketAnswers, handleAgentRequest } from "./agents-rpc";
 import { type AiPort, isAiRequest } from "./ai/methods";
+import { type Clock, createClock } from "./clock";
 import { type CommandHub, createCommandPath } from "./command-path";
 import { type ComponentRequest, isComponentRequest, type ShellRequest } from "./components/methods";
 import type { Docs } from "./docs";
@@ -81,6 +82,7 @@ type ServiceOptions = {
   notifications?: Session["notifications"];
   agents?: AgentSource;
   questionImages?: QuestionImageDeps;
+  clock?: Clock;
 };
 
 const changesDomainUsage = (cmd: ProjectCommand) =>
@@ -216,6 +218,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       };
     },
     activity: (projectId) => tracker?.activity(projectId) ?? NO_ACTIVITY,
+    today: (opts.clock ?? createClock(null)).today,
   };
   const agentData = createDataPort(docs, settings, Date.now, opts.agents, opts.questionImages ?? null);
   const questions: AgentQuestions = {

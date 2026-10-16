@@ -70,6 +70,7 @@ export const stubDocs: Docs = {
   identity: unused,
   setIdentity: unused,
   activity: unused,
+  today: unused,
 };
 export const stubNotes: NotesService = {
   info: unused,

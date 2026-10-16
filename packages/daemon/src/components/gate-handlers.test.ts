@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createProjectDoc, createTicket } from "@kibo/core";
+import { createProjectDoc, createSprint, createTicket } from "@kibo/core";
 import {
   type CiRun,
   ComponentManifest,
@@ -113,7 +113,7 @@ test("ci runs are listed per project", async () => {
   expect(seen).toEqual([["ci", "p"]]);
 });
 
-test("the tickets listed to a component are not startable while a run is active on them", async () => {
+test("a component lists busy tickets as not startable and sprints dated by the daemon", async () => {
   const project = createProjectDoc({
     id: "p",
     key: "KIB",
@@ -128,9 +128,15 @@ test("the tickets listed to a component are not startable while a run is active 
   });
   const busy = createTicket(project, { title: "A", statusId: "todo" });
   createTicket(project, { title: "B", statusId: "todo" });
+  createSprint(project, { name: "S42", start: "2026-10-12", end: "2026-10-16" });
   const handlers = createGateHandlers({
     ...stubHandlerDeps,
-    docs: { ...stubDocs, project: () => project, activity: () => ({ busyTickets: new Set([busy.id]) }) },
+    docs: {
+      ...stubDocs,
+      project: () => project,
+      activity: () => ({ busyTickets: new Set([busy.id]) }),
+      today: () => "2026-10-16",
+    },
   });
   const Listed = z.array(z.object({ title: z.string(), startable: z.boolean() }));
   const tickets = Listed.parse(await handlers.list("p", "ticket"));
@@ -138,6 +144,8 @@ test("the tickets listed to a component are not startable while a run is active 
     ["A", false],
     ["B", true],
   ]);
+  const Sprints = z.array(z.object({ name: z.string(), state: z.string() }));
+  expect(Sprints.parse(await handlers.list("p", "sprint"))).toEqual([{ name: "S42", state: "current" }]);
 });
 
 test("the question recipients are read from the project, defaults included, without writing", async () => {
