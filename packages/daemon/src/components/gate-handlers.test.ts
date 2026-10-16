@@ -128,7 +128,7 @@ test("a component lists busy tickets as not startable and sprints dated by the d
   });
   const busy = createTicket(project, { title: "A", statusId: "todo" });
   createTicket(project, { title: "B", statusId: "todo" });
-  createSprint(project, { name: "S42", start: "2026-10-12", end: "2026-10-16" });
+  createSprint(project, { code: "S42", name: "S42", start: "2026-10-12", end: "2026-10-16" });
   const handlers = createGateHandlers({
     ...stubHandlerDeps,
     docs: {

@@ -4,6 +4,7 @@ import {
   Sprint,
   type SprintPatch,
   type SprintView,
+  sameSprintCode,
   sortSprints,
   sprintState,
   type TicketView,
@@ -33,8 +34,14 @@ function readSprint(doc: LoroDoc, sprintId: string): Sprint {
   return parseSprint(sprintId, value);
 }
 
+function assertFreeCode(doc: LoroDoc, sprint: Sprint): void {
+  const taken = listSprints(doc).find((s) => s.id !== sprint.id && sameSprintCode(s.code, sprint.code));
+  if (taken !== undefined) throw new KiboError("CONFLICT", `sprint code ${sprint.code} is already taken`);
+}
+
 export function createSprint(doc: LoroDoc, input: NewSprint, id: string = crypto.randomUUID()): Sprint {
   const sprint = valid(Sprint.safeParse({ ...input, id }));
+  assertFreeCode(doc, sprint);
   sprintsMap(doc).set(id, sprint);
   doc.commit();
   return sprint;
@@ -42,6 +49,7 @@ export function createSprint(doc: LoroDoc, input: NewSprint, id: string = crypto
 
 export function updateSprint(doc: LoroDoc, sprintId: string, patch: SprintPatch): Sprint {
   const sprint = valid(Sprint.safeParse({ ...readSprint(doc, sprintId), ...patch, id: sprintId }));
+  assertFreeCode(doc, sprint);
   sprintsMap(doc).set(sprintId, sprint);
   doc.commit();
   return sprint;

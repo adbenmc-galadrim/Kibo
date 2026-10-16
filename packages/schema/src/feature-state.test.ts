@@ -5,7 +5,7 @@ import type { StatusId } from "./status";
 const steps = (...statuses: StatusId[]) =>
   statuses.map((statusId, i) => ({ ticketId: `e${i}`, statusId, optional: false }));
 const S42 = { end: "2026-10-16" };
-const base = { blockingQuestions: new Set<string>(), sprint: S42, today: "2026-10-16" };
+const base = { blockingQuestions: new Set<string>(), sprint: S42, today: "2026-10-15" };
 
 test("F3 with all its steps done is delivered", () => {
   const state = featureState({ ...base, steps: steps("done", "done", "done", "done") });
@@ -26,11 +26,29 @@ test("F4 with a step in review and one to do is open", () => {
   expect(state.steps).toEqual({ done: 3, total: 5, mandatoryDone: 3, mandatoryTotal: 5 });
 });
 
-test("F5 is late the day after its sprint ends, open on its last day", () => {
+test("F5 is late on the last day of its sprint while a mandatory step is still to do", () => {
   const input = { ...base, steps: steps("done", "in_progress", "todo", "todo") };
+  expect(featureState({ ...input, today: "2026-10-15" }).status).toBe("open");
+  expect(featureState({ ...input, today: "2026-10-16" }).status).toBe("late");
   expect(featureState({ ...input, today: "2026-10-17" }).status).toBe("late");
-  expect(featureState({ ...input, today: "2026-10-16" }).status).toBe("open");
   expect(featureState({ ...input, sprint: null, today: "2027-01-01" }).status).toBe("open");
+});
+
+test("on the last day, steps in review or in progress can still finish: open; the day after: late", () => {
+  const input = { ...base, steps: steps("done", "in_review", "in_progress") };
+  expect(featureState({ ...input, today: "2026-10-16" }).status).toBe("open");
+  expect(featureState({ ...input, today: "2026-10-17" }).status).toBe("late");
+  const backlog = { ...base, steps: steps("in_review", "backlog") };
+  expect(featureState({ ...backlog, today: "2026-10-16" }).status).toBe("late");
+});
+
+test("on the last day, an optional step to do does not make a feature late", () => {
+  const input = [
+    ...steps("done", "done", "done", "in_review"),
+    { ticketId: "demo", statusId: "todo" as const, optional: true },
+  ];
+  const state = featureState({ ...base, steps: input, today: "2026-10-16" });
+  expect(state).toMatchObject({ status: "open", remaining: 1, steps: { done: 3, total: 5 } });
 });
 
 test("F6 whose next step carries a blocking question is blocked", () => {

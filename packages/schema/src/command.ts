@@ -24,7 +24,7 @@ import {
 import { QuestionContext, QuestionOptions } from "./question-fields";
 import { QuestionImages, QuestionKind } from "./question-image";
 import { QuestionRecipient, RecipientId } from "./question-recipient";
-import { type Sprint, SprintDate, SprintName, SprintPatch } from "./sprint";
+import { type Sprint, SprintCode, SprintDate, SprintName, SprintPatch } from "./sprint";
 import { StatusId } from "./status";
 import { Assignee, type Ticket } from "./ticket";
 
@@ -184,7 +184,13 @@ export const ProjectCommand = z
     questionEdit("reopenQuestion"),
     questionEdit("archiveQuestion"),
     questionEdit("restoreQuestion"),
-    z.object({ method: z.literal("createSprint"), name: SprintName, start: SprintDate, end: SprintDate }),
+    z.object({
+      method: z.literal("createSprint"),
+      code: SprintCode,
+      name: SprintName,
+      start: SprintDate,
+      end: SprintDate,
+    }),
     z.object({ method: z.literal("updateSprint"), sprintId: NodeId, patch: SprintPatch }),
     z.object({ method: z.literal("deleteSprint"), sprintId: NodeId }),
     z.object({ method: z.literal("setTicketSprint"), ticketId: NodeId, sprintId: NodeId.nullable() }),

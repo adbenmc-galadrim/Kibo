@@ -217,18 +217,26 @@ describe("kibo tickets against a real daemon", () => {
       base: "dev",
     });
     const sprint = Sprint.parse(
-      await command({ method: "createSprint", name: "S42", start: "2026-10-12", end: "2026-10-23" }),
+      await command({
+        method: "createSprint",
+        code: "S42",
+        name: "Terrain hors ligne",
+        start: "2026-10-12",
+        end: "2026-10-23",
+      }),
     );
     await command({ method: "setTicketSprint", ticketId: ids.get("C1") ?? "", sprintId: sprint.id });
     expect(await t.json("list", "--project", "EMIS", "--sprint", "s42")).toMatchObject([
-      { planId: "C1", sprint: { id: sprint.id, name: "S42" } },
+      { planId: "C1", sprint: { id: sprint.id, code: "S42", name: "Terrain hors ligne" } },
       { planId: "C1-1" },
       { planId: "C1-2" },
       { planId: "C1-3" },
     ]);
     const sprints = cli(home);
     expect(await runCli(["sprints", "list", "--project", "EMIS", "--json"], sprints.io)).toBe(0);
-    expect(JSON.parse(sprints.out.join("\n"))).toMatchObject([{ name: "S42", features: ["EMIS-1"] }]);
+    expect(JSON.parse(sprints.out.join("\n"))).toMatchObject([
+      { code: "S42", name: "Terrain hors ligne", features: ["EMIS-1"] },
+    ]);
   });
 
   test("refuses unknown assignments, projects and tickets", async () => {

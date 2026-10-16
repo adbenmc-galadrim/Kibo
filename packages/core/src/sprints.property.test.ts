@@ -51,8 +51,8 @@ describe("sprints merge", () => {
         const origin = base();
         const a = fork(origin, 1n);
         const b = fork(origin, 2n);
-        const s1 = createSprint(a, { name: n1, ...r1 });
-        const s2 = createSprint(b, { name: n2, ...r2 });
+        const s1 = createSprint(a, { code: "A", name: n1, ...r1 });
+        const s2 = createSprint(b, { code: "B", name: n2, ...r2 });
         merge(a, b);
         expect(listSprints(a)).toEqual(listSprints(b));
         expect(new Set(listSprints(a).map((s) => s.id))).toEqual(new Set([s1.id, s2.id]));
@@ -64,7 +64,7 @@ describe("sprints merge", () => {
     fc.assert(
       fc.property(range, patch, patch, (r, p1, p2) => {
         const origin = base();
-        const created = createSprint(origin, { name: "S42", ...r });
+        const created = createSprint(origin, { code: "S42", name: "S42", ...r });
         const a = fork(origin, 1n);
         const b = fork(origin, 2n);
         tryUpdate(a, created.id, p1);

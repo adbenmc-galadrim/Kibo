@@ -20,8 +20,8 @@ const newDoc = () =>
   });
 type Doc = ReturnType<typeof newDoc>;
 
-const sprint = (d: Doc, name: string, start: string, end: string) =>
-  executeProjectCommand(d, { method: "createSprint", name, start, end }) as Sprint;
+const sprint = (d: Doc, name: string, start: string, end: string, code = name) =>
+  executeProjectCommand(d, { method: "createSprint", code, name, start, end }) as Sprint;
 const ticket = (d: Doc, title: string, parentId?: string) =>
   executeProjectCommand(d, { method: "createTicket", title, parentId }) as Ticket;
 const assign = (d: Doc, ticketId: string, sprintId: string | null) =>
@@ -38,6 +38,18 @@ describe("sprint commands", () => {
     expect(d.getMap("sprints").get(s43.id)).toEqual(s43);
     expect(listSprints(d).map((s) => s.name)).toEqual(["S42", "S42 bis", "S43"]);
     expect(s42b.id).not.toBe(s42.id);
+  });
+
+  test("a sprint code is unique in the project, case ignored", () => {
+    const d = newDoc();
+    const s42 = sprint(d, "Terrain hors ligne", "2026-10-12", "2026-10-16", "S42");
+    const s43 = sprint(d, "Import et soudures", "2026-10-19", "2026-10-23", "S43");
+    expect(() => sprint(d, "Autre", "2026-10-19", "2026-10-23", "s42")).toThrow("CONFLICT");
+    const rename = (sprintId: string, code: string) =>
+      executeProjectCommand(d, { method: "updateSprint", sprintId, patch: { code } });
+    expect(() => rename(s43.id, " S42 ")).toThrow("CONFLICT");
+    expect(rename(s42.id, "s42")).toMatchObject({ code: "s42" });
+    expect(listSprints(d).map((s) => s.code)).toEqual(["s42", "S43"]);
   });
 
   test("a sprint whose end is before its start is refused", () => {

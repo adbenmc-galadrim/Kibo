@@ -124,7 +124,7 @@ export type SpotlightApi = {
   get(): Spotlight | null;
   subscribe(listener: () => void): () => void;
 };
-export type SprintInput = Pick<Sprint, "name" | "start" | "end">;
+export type SprintInput = Pick<Sprint, "code" | "name" | "start" | "end">;
 export type SprintsApi = {
   list(): Promise<SprintView[]>;
   create(input: SprintInput): Promise<Sprint>;

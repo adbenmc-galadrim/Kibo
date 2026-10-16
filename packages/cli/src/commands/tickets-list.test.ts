@@ -12,9 +12,10 @@ async function list(...args: string[]) {
 }
 
 describe("kibo tickets list --sprint", () => {
-  test("keeps the tickets of a sprint by name or id, steps included", async () => {
+  test("keeps the tickets of a sprint by id, code or name, case ignored, steps included", async () => {
     expect((await list("--sprint", "S42")).keys).toEqual(["EMIS-30", "EMIS-33", "EMIS-34"]);
     expect((await list("--sprint", "s42")).keys).toEqual(["EMIS-30", "EMIS-33", "EMIS-34"]);
+    expect((await list("--sprint", "terrain HORS ligne")).keys).toEqual(["EMIS-30", "EMIS-33", "EMIS-34"]);
     expect((await list("--sprint", "S41")).keys).toEqual([]);
   });
 
@@ -40,12 +41,12 @@ describe("kibo tickets list --sprint", () => {
       (JSON.parse(d.out.join("\n")) as { key: string }[]).map((t) => [t.key, t] as const),
     );
     expect(byKey.get("EMIS-34")).toMatchObject({
-      sprint: { id: "s42", name: "S42" },
+      sprint: { id: "s42", code: "S42", name: "Terrain hors ligne" },
       feature: { key: "EMIS-30", shortKey: "F5", title: "Titre EMIS-30" },
       optional: true,
     });
     expect(byKey.get("EMIS-30")).toMatchObject({
-      sprint: { id: "s42", name: "S42" },
+      sprint: { id: "s42", code: "S42", name: "Terrain hors ligne" },
       feature: { key: "EMIS-30", shortKey: "F5" },
       optional: false,
     });

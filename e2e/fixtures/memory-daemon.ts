@@ -30,7 +30,7 @@ const meta = (id: string, key: string, name: string, folder: string | null, colo
   tracking: null,
 });
 
-export function createMemoryDaemon(user: string): MemoryDaemon {
+export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
   const docs = new Map<string, { meta: ProjectMeta; doc: ReturnType<typeof createProjectDoc> }>();
   const inbox = meta(INBOX_ID, INBOX_KEY, "Boîte de réception", null, "#71717A");
   docs.set(INBOX_ID, { meta: inbox, doc: createProjectDoc(inbox) });
@@ -51,7 +51,7 @@ export function createMemoryDaemon(user: string): MemoryDaemon {
       case "getConfig":
         return { workspaceName };
       case "getProject":
-        return readProject(project(req.projectId).doc);
+        return readProject(project(req.projectId).doc, today);
       case "createProject": {
         writes += 1;
         const created = meta(crypto.randomUUID(), req.key, req.name, req.folder, req.color);
@@ -64,7 +64,7 @@ export function createMemoryDaemon(user: string): MemoryDaemon {
       case "setDeliveryStep": {
         writes += 1;
         const { doc } = project(req.projectId);
-        const ticket = readProject(doc).tickets.find((t) => t.key === req.ticketKey);
+        const ticket = readProject(doc, today).tickets.find((t) => t.key === req.ticketKey);
         if (ticket === undefined) throw new KiboError("NOT_FOUND", `ticket ${req.ticketKey} not found`);
         const delivery = { step: req.step, note: req.note ?? "", at: 0, runId: null };
         return executeProjectCommand(doc, { method: "setTicketDelivery", ticketId: ticket.id, delivery });
@@ -82,10 +82,10 @@ export function createMemoryDaemon(user: string): MemoryDaemon {
   return {
     rpc: async (req) => handle(RpcRequest.parse(req)),
     writes: () => writes,
-    snapshot(key, today) {
+    snapshot(key, day) {
       const found = [...docs.values()].find((p) => p.meta.key === key);
       if (found === undefined) throw new KiboError("NOT_FOUND", `project ${key} not found`);
-      return readProject(found.doc, undefined, today);
+      return readProject(found.doc, day);
     },
     workspaceName: () => workspaceName,
     projects: listed,

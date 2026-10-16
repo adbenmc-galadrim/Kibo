@@ -9,7 +9,7 @@ import {
   EMIS_FEATURE_LINKS,
   EMIS_FEATURES,
   EMIS_LAST_TICKET,
-  EMIS_LOOSE_TICKET,
+  EMIS_LOOSE_TICKETS,
   EMIS_PAGES,
   EMIS_PROJECT,
   EMIS_QUESTIONS,
@@ -26,7 +26,6 @@ import {
   prUrl,
   type SprintCode,
   type StepSpec,
-  sprintName,
 } from "./fixtures/emis-maquettes";
 
 export type SeedRpc = (req: RpcRequest) => Promise<unknown>;
@@ -67,7 +66,7 @@ type Emis = {
 };
 
 const stepSpecs = (): Map<number, StepSpec> =>
-  new Map([...emisSteps(), EMIS_LOOSE_TICKET].map((s) => [s.n, s]));
+  new Map([...emisSteps(), ...EMIS_LOOSE_TICKETS].map((s) => [s.n, s]));
 
 async function createTickets(emis: Emis, ids: Map<number, string>): Promise<void> {
   const steps = stepSpecs();
@@ -97,6 +96,8 @@ async function shapeFeatures(emis: Emis): Promise<void> {
   }
   for (const [index, n] of EMIS_ROOT_ORDER.entries())
     await emis.command({ method: "moveTicket", ticketId: emis.id(n), parentId: null, index });
+  for (const step of emisSteps().filter((s) => s.optional === true))
+    await emis.command({ method: "setTicketOptional", ticketId: emis.id(step.n), optional: true });
   for (const f of EMIS_FEATURES.filter((x) => x.steps.every((s) => s.status === "done")))
     await emis.command({ method: "setStatus", ticketId: emis.id(f.n), statusId: "done" });
 }
@@ -104,15 +105,10 @@ async function shapeFeatures(emis: Emis): Promise<void> {
 async function planSprints(emis: Emis): Promise<void> {
   const sprints = new Map<SprintCode, string>();
   for (const s of EMIS_SPRINTS) {
-    const created = await emis.command({
-      method: "createSprint",
-      name: sprintName(s),
-      start: s.start,
-      end: s.end,
-    });
+    const created = await emis.command({ method: "createSprint", ...s });
     sprints.set(s.code, textOf(created, "id"));
   }
-  const planned = [...EMIS_FEATURES, EMIS_LOOSE_TICKET].flatMap((t) => {
+  const planned = [...EMIS_FEATURES, ...EMIS_LOOSE_TICKETS].flatMap((t) => {
     const sprintId = t.sprint === null ? undefined : sprints.get(t.sprint);
     return sprintId === undefined ? [] : [{ n: t.n, sprintId }];
   });

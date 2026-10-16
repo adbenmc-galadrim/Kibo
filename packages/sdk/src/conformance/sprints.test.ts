@@ -20,7 +20,7 @@ test("the mock lists the sprints of its project and records the read", async () 
 test("a component that does not write sprints is refused on create, and the violation is recorded", async () => {
   const mock = createMockSdk(manifest(["ticket"]));
   await expect(
-    mock.sdk.sprints.create({ name: "Rapports", start: "2026-10-26", end: "2026-10-30" }),
+    mock.sdk.sprints.create({ code: "S44", name: "Rapports", start: "2026-10-26", end: "2026-10-30" }),
   ).rejects.toThrow("PERMISSION_DENIED");
   expect(mock.used).toContain("write:sprint");
   expect(mock.violations).toEqual(["write createSprint"]);
@@ -35,7 +35,12 @@ test("assigning a sprint is a ticket write in the mock", async () => {
 
 test("the mock plans a feature on assign, and its sprint view counts it", async () => {
   const mock = createMockSdk(manifest(["ticket", "sprint"]), { today: "2026-10-14" });
-  const s42 = await mock.sdk.sprints.create({ name: "S42", start: "2026-10-12", end: "2026-10-16" });
+  const s42 = await mock.sdk.sprints.create({
+    code: "S42",
+    name: "Terrain hors ligne",
+    start: "2026-10-12",
+    end: "2026-10-16",
+  });
   const f5 = await mock.sdk.run({ method: "createTicket", title: "Photos" });
   const step = await mock.sdk.run({ method: "createTicket", title: "Envoi", parentId: f5.id });
   await mock.sdk.sprints.assign(f5.id, s42.id);
@@ -46,5 +51,19 @@ test("the mock plans a feature on assign, and its sprint view counts it", async 
   expect(tickets.find((t) => t.id === step.id)?.effectiveSprintId).toBe(s42.id);
   await mock.sdk.sprints.assign(f5.id, null);
   expect((await mock.sdk.sprints.list())[0]?.features).toEqual([]);
+  expect(mock.violations).toEqual([]);
+});
+
+test("the mock refuses a sprint code already taken in the project, case ignored", async () => {
+  const mock = createMockSdk(manifest(["sprint"]));
+  await mock.sdk.sprints.create({
+    code: "S42",
+    name: "Terrain hors ligne",
+    start: "2026-10-12",
+    end: "2026-10-16",
+  });
+  await expect(
+    mock.sdk.sprints.create({ code: "s42", name: "Autre", start: "2026-10-19", end: "2026-10-23" }),
+  ).rejects.toThrow("CONFLICT");
   expect(mock.violations).toEqual([]);
 });

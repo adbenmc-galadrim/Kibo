@@ -9,7 +9,7 @@ const MARKET_USAGE = [
 ];
 
 const TICKETS_USAGE = [
-  "  kibo tickets list --project <clé|nom|id> [--ready] [--status <s>[,<s>…]] [--sprint <nom|current|none>] [--json]",
+  "  kibo tickets list --project <clé|nom|id> [--ready] [--status <s>[,<s>…]] [--sprint <id|code|nom|current|none>] [--json]",
   "  kibo tickets get <clé|id du plan> --project <p> [--json]",
   "  kibo tickets set <clé|id du plan> [status=<todo|wip|done|blocked>] [pr=<n|url>] [branch=<nom> [base=<nom>]] [reason=<texte>] --project <p> [--json]",
   "  kibo tickets step <clé> <0-11> [note] [--json]",
@@ -35,7 +35,7 @@ export const frTickets = {
   status: (status: string, column: string) => `Statut : ${status} (${column})`,
   blocked: (reason: string) => `Raison du blocage : ${reason}`,
   parent: (r: TicketRef | null) => `Parent : ${r ? ref(r) : "aucun"}`,
-  sprint: (s: SprintRef | null) => `Sprint : ${s ? s.name : "aucun"}`,
+  sprint: (s: SprintRef | null) => `Sprint : ${s ? `${s.code} · ${s.name}` : "aucun"}`,
   feature: (f: FeatureRef | null) =>
     `Fonctionnalité : ${f ? [f.shortKey, f.key, f.title].filter((part) => part !== null).join(" · ") : "aucune"}`,
   optional: "Étape facultative",

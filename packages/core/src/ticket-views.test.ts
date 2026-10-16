@@ -20,7 +20,7 @@ const create = (d: ReturnType<typeof newDoc>, title: string, parentId?: string) 
   executeProjectCommand(d, { method: "createTicket", title, parentId }) as Ticket;
 
 const view = (d: ReturnType<typeof newDoc>, id: string) => {
-  const t = readProject(d, "2026-10-16").tickets.find((x) => x.id === id);
+  const t = readProject(d, "2026-10-14").tickets.find((x) => x.id === id);
   if (!t) throw new Error(`missing ${id}`);
   return t;
 };
@@ -89,6 +89,7 @@ test("every ticket carries the sprint of its root, and only a root with steps is
   const d = newDoc();
   const s42 = executeProjectCommand(d, {
     method: "createSprint",
+    code: "S42",
     name: "S42",
     start: "2026-10-12",
     end: "2026-10-16",
@@ -118,10 +119,11 @@ test("a group is done once its mandatory steps are, an optional demo left to do"
   expect(() => optional(d, f3.id)).toThrow("INVALID_INPUT");
 });
 
-test("a feature is late once its sprint is over with steps left, dated by the given day", () => {
+test("a feature is late on its sprint's last day with a step to do, dated by the given day", () => {
   const d = newDoc();
   const s42 = executeProjectCommand(d, {
     method: "createSprint",
+    code: "S42",
     name: "S42",
     start: "2026-10-12",
     end: "2026-10-16",
@@ -131,8 +133,10 @@ test("a feature is late once its sprint is over with steps left, dated by the gi
   create(d, "Relance", f5.id);
   status(d, a.id, "in_progress");
   executeProjectCommand(d, { method: "setTicketSprint", ticketId: f5.id, sprintId: s42.id });
-  expect(viewOn(d, "2026-10-16", f5.id).feature?.status).toBe("open");
-  expect(viewOn(d, "2026-10-17", f5.id).feature).toMatchObject({ status: "late", remaining: 2 });
+  expect(viewOn(d, "2026-10-15", f5.id).feature?.status).toBe("open");
+  expect(viewOn(d, "2026-10-16", f5.id).feature).toMatchObject({ status: "late", remaining: 2 });
+  status(d, a.id, "in_review");
+  expect(viewOn(d, "2026-10-16", f5.id).feature?.status).toBe("late");
   expect(view(d, f5.id).feature?.status).toBe("open");
 });
 

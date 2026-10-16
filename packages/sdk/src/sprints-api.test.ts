@@ -30,6 +30,7 @@ const ctx: SdkContext = {
 };
 const S44: SprintView = {
   id: "s44",
+  code: "S44",
   name: "Rapports",
   start: "2026-10-26",
   end: "2026-10-30",
@@ -44,7 +45,7 @@ const backendOf = (runs: ProjectCommand[], calls: ComponentCall[] = []): Project
   run: async (cmd) => {
     runs.push(cmd);
     return cmd.method === "createSprint"
-      ? { id: "s45", name: cmd.name, start: cmd.start, end: cmd.end }
+      ? { id: "s45", code: cmd.code, name: cmd.name, start: cmd.start, end: cmd.end }
       : null;
   },
   call: async (c) => {
@@ -70,8 +71,11 @@ test("a gated component lists the sprints through the daemon", async () => {
 test("create, update, remove and assign run the sprint commands", async () => {
   const runs: ProjectCommand[] = [];
   const sprints = createSdk(backendOf(runs), planner, ctx).sprints;
-  expect(await sprints.create({ name: "Bilan", start: "2026-11-02", end: "2026-11-06" })).toEqual({
+  expect(
+    await sprints.create({ code: "S45", name: "Bilan", start: "2026-11-02", end: "2026-11-06" }),
+  ).toEqual({
     id: "s45",
+    code: "S45",
     name: "Bilan",
     start: "2026-11-02",
     end: "2026-11-06",
@@ -81,7 +85,7 @@ test("create, update, remove and assign run the sprint commands", async () => {
   await sprints.assign("f9", "s44");
   await sprints.assign("f9", null);
   expect(runs).toEqual([
-    { method: "createSprint", name: "Bilan", start: "2026-11-02", end: "2026-11-06" },
+    { method: "createSprint", code: "S45", name: "Bilan", start: "2026-11-02", end: "2026-11-06" },
     { method: "updateSprint", sprintId: "s44", patch: { end: "2026-10-31" } },
     { method: "deleteSprint", sprintId: "s44" },
     { method: "setTicketSprint", ticketId: "f9", sprintId: "s44" },
@@ -94,9 +98,9 @@ test("each sprint call needs its permission: read and write sprint, assign write
   const reader = { ...planner, reads: ["ticket" as const], writes: ["ticket" as const] };
   const sprints = createSdk(backendOf(runs), reader, ctx).sprints;
   await expect(sprints.list()).rejects.toThrow("PERMISSION_DENIED");
-  await expect(sprints.create({ name: "Bilan", start: "2026-11-02", end: "2026-11-06" })).rejects.toThrow(
-    "PERMISSION_DENIED",
-  );
+  await expect(
+    sprints.create({ code: "S45", name: "Bilan", start: "2026-11-02", end: "2026-11-06" }),
+  ).rejects.toThrow("PERMISSION_DENIED");
   await expect(sprints.update("s44", { name: "x" })).rejects.toThrow("PERMISSION_DENIED");
   await expect(sprints.remove("s44")).rejects.toThrow("PERMISSION_DENIED");
   await sprints.assign("f9", "s44");

@@ -4,12 +4,15 @@ import type { DaemonClient } from "../daemon-client";
 import { frSprints, frTickets } from "../fr";
 import { type Connect, findProject, printJson, type SessionIo, withClient } from "./daemon-session";
 
-type SprintSummary = Pick<SprintView, "id" | "name" | "start" | "end" | "state"> & { features: string[] };
+type SprintSummary = Pick<SprintView, "id" | "code" | "name" | "start" | "end" | "state"> & {
+  features: string[];
+};
 
 function summarizeSprints(sprints: readonly SprintView[], tickets: readonly TicketView[]): SprintSummary[] {
   const keys = new Map(tickets.map((t) => [t.id, t.keyLabel]));
   return sortSprints(sprints).map((s) => ({
     id: s.id,
+    code: s.code,
     name: s.name,
     start: s.start,
     end: s.end,
@@ -19,7 +22,7 @@ function summarizeSprints(sprints: readonly SprintView[], tickets: readonly Tick
 }
 
 const sprintLine = (s: SprintSummary): string =>
-  [s.name, s.start, s.end, s.state, s.features.length === 0 ? "-" : s.features.join(",")].join("\t");
+  [s.code, s.name, s.start, s.end, s.state, s.features.length === 0 ? "-" : s.features.join(",")].join("\t");
 
 async function listCommand(client: DaemonClient, wanted: string, flags: Parsed["flags"], io: SessionIo) {
   const project = findProject(await client.rpc({ method: "listProjects" }), wanted);

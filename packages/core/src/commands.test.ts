@@ -236,7 +236,7 @@ describe("visibility commands", () => {
 
 describe("tracking commands", () => {
   const SPRINT_COMMANDS: ProjectCommand[] = [
-    { method: "createSprint", name: "S42", start: "2026-10-12", end: "2026-10-16" },
+    { method: "createSprint", code: "S42", name: "S42", start: "2026-10-12", end: "2026-10-16" },
     { method: "updateSprint", sprintId: "s42", patch: { name: "S42 bis" } },
     { method: "deleteSprint", sprintId: "s42" },
     { method: "setTicketSprint", ticketId: "f5", sprintId: "s42" },

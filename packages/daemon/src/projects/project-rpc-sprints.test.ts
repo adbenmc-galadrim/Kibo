@@ -26,9 +26,27 @@ function seeded(fixedNow: string) {
   }) as ProjectMeta;
   const run = (command: ProjectCommand) =>
     service.handle({ method: "command", projectId: project.id, command });
-  const s43 = run({ method: "createSprint", name: "S43", start: "2026-10-19", end: "2026-10-23" }) as Sprint;
-  const s42 = run({ method: "createSprint", name: "S42", start: "2026-10-12", end: "2026-10-16" }) as Sprint;
-  const s41 = run({ method: "createSprint", name: "S41", start: "2026-10-05", end: "2026-10-09" }) as Sprint;
+  const s43 = run({
+    method: "createSprint",
+    code: "S43",
+    name: "S43",
+    start: "2026-10-19",
+    end: "2026-10-23",
+  }) as Sprint;
+  const s42 = run({
+    method: "createSprint",
+    code: "S42",
+    name: "S42",
+    start: "2026-10-12",
+    end: "2026-10-16",
+  }) as Sprint;
+  const s41 = run({
+    method: "createSprint",
+    code: "S41",
+    name: "S41",
+    start: "2026-10-05",
+    end: "2026-10-09",
+  }) as Sprint;
   const feature = run({ method: "createTicket", title: "Envoi hors ligne" }) as Ticket;
   const step = run({ method: "createTicket", title: "File d'envoi", parentId: feature.id }) as Ticket;
   run({ method: "setTicketSprint", ticketId: feature.id, sprintId: s42.id });
@@ -46,11 +64,11 @@ test("getProject gives the sprints in order, dated by the daemon clock, and the 
   ]);
   expect(snap.sprints[1]?.features).toEqual([ids.feature]);
   const feature = snap.tickets.find((t) => t.id === ids.feature);
-  expect(feature?.feature?.status).toBe("todo");
+  expect(feature?.feature?.status).toBe("late");
   expect(snap.tickets.find((t) => t.id === ids.step)?.effectiveSprintId).toBe(ids.s42);
 });
 
-test("the day after the end of its sprint an unfinished feature is late", () => {
+test("the day after the end of its sprint an unfinished feature is still late", () => {
   const { snapshot, ids } = seeded("2026-10-17T09:00:00+02:00");
   const snap = snapshot();
   expect(snap.sprints.find((s) => s.id === ids.s42)?.state).toBe("done");

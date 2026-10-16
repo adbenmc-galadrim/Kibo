@@ -100,7 +100,7 @@ test("the delivery step is a command reserved to the daemon", () => {
 });
 
 const SPRINT_COMMANDS = [
-  { method: "createSprint", name: "Rapports", start: "2026-10-26", end: "2026-10-30" },
+  { method: "createSprint", code: "S44", name: "Rapports", start: "2026-10-26", end: "2026-10-30" },
   { method: "updateSprint", sprintId: "s44", patch: { end: "2026-10-31" } },
   { method: "deleteSprint", sprintId: "s44" },
   { method: "setTicketSprint", ticketId: "f9", sprintId: "s44" },
@@ -111,10 +111,11 @@ const SPRINT_COMMANDS = [
 test("the sprint and optional step commands parse and validate their input", () => {
   for (const command of SPRINT_COMMANDS) expect(ProjectCommand.safeParse(command).success).toBe(true);
   const invalid = [
-    { method: "createSprint", name: "Rapports", start: "2026-10-30", end: "2026-10-26" },
-    { method: "createSprint", name: "", start: "2026-10-26", end: "2026-10-30" },
+    { method: "createSprint", code: "S44", name: "Rapports", start: "2026-10-30", end: "2026-10-26" },
+    { method: "createSprint", code: "S44", name: "", start: "2026-10-26", end: "2026-10-30" },
     { method: "updateSprint", sprintId: "s44", patch: { id: "x" } },
     { method: "setTicketSprint", ticketId: "f9" },
+    { method: "createSprint", name: "Rapports", start: "2026-10-26", end: "2026-10-30" },
     { method: "setTicketOptional", ticketId: "e93" },
   ];
   for (const command of invalid) expect(ProjectCommand.safeParse(command).success).toBe(false);

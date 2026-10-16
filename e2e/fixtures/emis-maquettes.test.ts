@@ -13,13 +13,13 @@ import { createMemoryDaemon, type MemoryDaemon } from "./memory-daemon";
 
 const VIEWER = "adam";
 const TODAY = "2026-10-16";
-const TOMORROW = "2026-10-17";
+const EVE = "2026-10-15";
 
 let daemon: MemoryDaemon;
 let today: ProjectSnapshot;
 
 beforeAll(async () => {
-  daemon = createMemoryDaemon(VIEWER);
+  daemon = createMemoryDaemon(VIEWER, TODAY);
   await seedEmisMaquettes(daemon.rpc);
   today = daemon.snapshot(EMIS_PROJECT.key, TODAY);
 });
@@ -34,8 +34,8 @@ const feature = (s: ProjectSnapshot, shortKey: string): TicketView => {
   if (found === undefined) throw new Error(`${shortKey} is missing`);
   return found;
 };
-const sprintNameOf = (s: ProjectSnapshot, t: TicketView): string | null =>
-  s.sprints.find((sp) => sp.id === t.effectiveSprintId)?.name ?? null;
+const sprintCodeOf = (s: ProjectSnapshot, t: TicketView): string | null =>
+  s.sprints.find((sp) => sp.id === t.effectiveSprintId)?.code ?? null;
 const prOf = (t: TicketView): Pick<GithubPrRef, "number" | "state"> | null => {
   const pr = t.externalRefs.find((r): r is GithubPrRef => r.kind === "github_pr");
   return pr === undefined ? null : { number: pr.number, state: pr.state };
@@ -58,33 +58,38 @@ test("nine features F1 to F9 on their root tickets, in sprint order", () => {
   expect(feature(today, "F5").description).toStartWith("Sur le terrain, sans réseau");
 });
 
-test("feature states on the 16th, and F5 late on the 17th", () => {
+test("feature states on the 16th, the last day of S42, and on the 15th", () => {
   const status = (s: ProjectSnapshot, k: string) => feature(s, k).feature?.status;
   expect(["F1", "F2", "F3"].map((k) => status(today, k))).toEqual(["delivered", "delivered", "delivered"]);
   expect(status(today, "F4")).toBe("open");
+  expect(feature(today, "F4").feature?.remaining).toBe(1);
+  expect(ticket(today, 46).optional).toBe(true);
+  expect(ticket(today, 35).optional).toBe(false);
   expect(feature(today, "F4").progress).toEqual({ done: 3, total: 5 });
-  expect(status(today, "F5")).toBe("open");
+  expect(status(today, "F5")).toBe("late");
   expect(feature(today, "F5").progress).toEqual({ done: 1, total: 5 });
   expect(feature(today, "F5").feature?.remaining).toBe(4);
   expect(status(today, "F6")).toBe("blocked");
   expect(["F7", "F8", "F9"].map((k) => status(today, k))).toEqual(["todo", "todo", "todo"]);
   expect(openFeatures(today.tickets)).toBe(2);
-  expect(status(daemon.snapshot(EMIS_PROJECT.key, TOMORROW), "F5")).toBe("late");
+  const eve = daemon.snapshot(EMIS_PROJECT.key, EVE);
+  expect([status(eve, "F4"), status(eve, "F5")]).toEqual(["open", "open"]);
 });
 
 test("sprints S41 to S44 with their dates, states and features", () => {
-  expect(today.sprints.map((s) => [s.name, s.start, s.end, s.state, s.delivered, s.total])).toEqual([
-    ["S41 Accès", "2026-10-05", "2026-10-09", "done", 2, 2],
-    ["S42 Terrain hors ligne", "2026-10-12", "2026-10-16", "current", 1, 3],
-    ["S43 Import et soudures", "2026-10-19", "2026-10-23", "planned", 0, 2],
-    ["S44 Rapports", "2026-10-26", "2026-10-30", "planned", 0, 1],
+  const rows = today.sprints.map((s) => [s.code, s.name, s.start, s.end, s.state, s.delivered, s.total]);
+  expect(rows).toEqual([
+    ["S41", "Accès", "2026-10-05", "2026-10-09", "done", 2, 2],
+    ["S42", "Terrain hors ligne", "2026-10-12", "2026-10-16", "current", 1, 3],
+    ["S43", "Import et soudures", "2026-10-19", "2026-10-23", "planned", 0, 2],
+    ["S44", "Rapports", "2026-10-26", "2026-10-30", "planned", 0, 1],
   ]);
   const shortKeys = (name: string) =>
     today.sprints
-      .find((s) => s.name === name)
+      .find((s) => s.code === name)
       ?.features.map((id) => today.tickets.find((t) => t.id === id)?.shortKey);
-  expect(shortKeys("S42 Terrain hors ligne")).toEqual(["F3", "F4", "F5"]);
-  expect(shortKeys("S43 Import et soudures")).toEqual(["F6", "F8"]);
+  expect(shortKeys("S42")).toEqual(["F3", "F4", "F5"]);
+  expect(shortKeys("S43")).toEqual(["F6", "F8"]);
   expect(feature(today, "F9").sprintId).toBeNull();
 });
 
@@ -133,10 +138,8 @@ test("questions Q14, Q16 and Q17 on their tickets", () => {
   ]);
 });
 
-test("the Tickets list of S42: 14 tickets in 3 features, 8 done, one outside features", () => {
-  const steps = today.tickets.filter(
-    (t) => t.parentId !== null && sprintNameOf(today, t) === "S42 Terrain hors ligne",
-  );
+test("the Tickets list of S42: 14 tickets in 3 features, 8 done, one outside features in S42", () => {
+  const steps = today.tickets.filter((t) => t.parentId !== null && sprintCodeOf(today, t) === "S42");
   expect(steps).toHaveLength(14);
   expect(steps.filter((t) => t.statusId === "done")).toHaveLength(8);
   expect(steps.filter((t) => t.statusId !== "done").map((t) => t.key)).toEqual([
@@ -148,18 +151,20 @@ test("the Tickets list of S42: 14 tickets in 3 features, 8 done, one outside fea
     "EMIS-35",
   ]);
   const loose = today.tickets.filter((t) => t.parentId === null && t.progress.total === 0);
-  expect(loose.map((t) => [t.key, t.statusId, sprintNameOf(today, t)])).toEqual([
-    ["EMIS-61", "in_review", "S42 Terrain hors ligne"],
+  expect(loose.map((t) => [t.key, t.statusId, sprintCodeOf(today, t)])).toEqual([
+    ["EMIS-61", "in_review", "S42"],
+    ["EMIS-62", "todo", null],
   ]);
+  expect(loose.filter((t) => sprintCodeOf(today, t) === "S42")).toHaveLength(1);
 });
 
-test("sidebar counters: 6 mine, 2 in the inbox, 3 questions, 23 open tickets", () => {
+test("sidebar counters: 6 mine, 2 in the inbox, 3 questions, 24 open tickets", () => {
   const mine = today.tickets.filter((t) => t.assignee?.ref === VIEWER && t.statusId !== "done");
   expect(mine).toHaveLength(6);
   const inbox = daemon.snapshot(INBOX_KEY, TODAY).tickets.filter((t) => t.statusId !== "done");
   expect(inbox).toHaveLength(2);
   expect(today.questions.filter((q) => q.answer === null)).toHaveLength(3);
-  expect(today.tickets.filter((t) => t.statusId !== "done" && t.progress.total === 0)).toHaveLength(23);
+  expect(today.tickets.filter((t) => t.statusId !== "done" && t.progress.total === 0)).toHaveLength(24);
 });
 
 test("workspace, projects and pages of the mockups", () => {

@@ -54,8 +54,15 @@ export function fakeTicket(input: TicketInput): TicketView {
   };
 }
 
-const sprint = (id: string, name: string, start: string, end: string, state: SprintView["state"]) => ({
+const sprint = (
+  id: string,
+  [code, name]: [string, string],
+  start: string,
+  end: string,
+  state: SprintView["state"],
+) => ({
   id,
+  code,
   name,
   start,
   end,
@@ -78,9 +85,12 @@ export const EMIS_META: ProjectMeta = {
 };
 
 export const SPRINTS: SprintView[] = [
-  { ...sprint("s43", "S43", "2026-10-26", "2026-11-06", "planned"), features: [] },
-  { ...sprint("s41", "S41", "2026-09-28", "2026-10-09", "done"), features: [] },
-  { ...sprint("s42", "S42", "2026-10-12", "2026-10-23", "current"), features: ["f5"] },
+  { ...sprint("s43", ["S43", "Import et soudures"], "2026-10-26", "2026-11-06", "planned"), features: [] },
+  { ...sprint("s41", ["S41", "Accès"], "2026-09-28", "2026-10-09", "done"), features: [] },
+  {
+    ...sprint("s42", ["S42", "Terrain hors ligne"], "2026-10-12", "2026-10-23", "current"),
+    features: ["f5"],
+  },
 ];
 
 export const TICKETS: TicketView[] = [

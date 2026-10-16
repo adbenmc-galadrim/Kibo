@@ -3,8 +3,15 @@ import { NodeId } from "./ids";
 
 export const SprintDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 export const SprintName = z.string().trim().min(1).max(60);
+export const SprintCode = z.string().trim().min(1).max(8);
 
-export const SprintFields = z.object({ id: NodeId, name: SprintName, start: SprintDate, end: SprintDate });
+export const SprintFields = z.object({
+  id: NodeId,
+  code: SprintCode,
+  name: SprintName,
+  start: SprintDate,
+  end: SprintDate,
+});
 export const Sprint = SprintFields.refine((s) => s.start <= s.end, {
   message: "end before start",
   path: ["end"],
@@ -12,7 +19,12 @@ export const Sprint = SprintFields.refine((s) => s.start <= s.end, {
 export type Sprint = z.infer<typeof Sprint>;
 
 export const SprintPatch = z
-  .object({ name: SprintName.optional(), start: SprintDate.optional(), end: SprintDate.optional() })
+  .object({
+    code: SprintCode.optional(),
+    name: SprintName.optional(),
+    start: SprintDate.optional(),
+    end: SprintDate.optional(),
+  })
   .strict();
 export type SprintPatch = z.infer<typeof SprintPatch>;
 
@@ -36,6 +48,9 @@ export const currentSprint = <S extends Sprint>(sprints: readonly S[], today: st
   sortSprints(sprints)
     .filter((s) => sprintState(s, today) === "current")
     .at(-1) ?? null;
+
+export const sameSprintCode = (a: string, b: string): boolean =>
+  a.trim().toLocaleLowerCase("fr") === b.trim().toLocaleLowerCase("fr");
 
 export const nextSprint = <S extends Sprint>(sprints: readonly S[], today: string): S | null =>
   sortSprints(sprints).find((s) => sprintState(s, today) === "planned") ?? null;

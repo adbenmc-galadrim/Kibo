@@ -189,7 +189,13 @@ describe("reserved fields forged in another shape", () => {
 describe("tracking data forged by a client", () => {
   test("a sprint whose end is before its start", () => {
     const verdict = verdictFor(sharedServer(), (c) => {
-      c.getMap("sprints").set("s1", { id: "s1", name: "S42", start: "2026-10-16", end: "2026-10-12" });
+      c.getMap("sprints").set("s1", {
+        id: "s1",
+        code: "S42",
+        name: "S42",
+        start: "2026-10-16",
+        end: "2026-10-12",
+      });
       c.commit();
     });
     expect(verdict).toEqual({ ok: false, reason: "sprint s1 is not a valid sprint" });
@@ -197,7 +203,13 @@ describe("tracking data forged by a client", () => {
 
   test("a sprint stored under another id", () => {
     const verdict = verdictFor(sharedServer(), (c) => {
-      c.getMap("sprints").set("s1", { id: "s2", name: "S42", start: "2026-10-12", end: "2026-10-16" });
+      c.getMap("sprints").set("s1", {
+        id: "s2",
+        code: "S42",
+        name: "S42",
+        start: "2026-10-12",
+        end: "2026-10-16",
+      });
       c.commit();
     });
     expect(verdict.ok).toBe(false);
@@ -267,7 +279,7 @@ describe("accepted updates", () => {
       const [a, b] = listTickets(c);
       if (!a || !b) throw new Error("fixture has two tickets");
       moveTicket(c, b.id, a.id);
-      const sprint = createSprint(c, { name: "S42", start: "2026-10-12", end: "2026-10-16" });
+      const sprint = createSprint(c, { code: "S42", name: "S42", start: "2026-10-12", end: "2026-10-16" });
       setTicketSprint(c, a.id, sprint.id);
     });
     expect(verdict).toEqual({ ok: true });

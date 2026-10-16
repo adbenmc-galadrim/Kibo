@@ -176,7 +176,7 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
     case "restoreQuestion":
       return restoreQuestion(doc, cmd);
     case "createSprint":
-      return createSprint(doc, { name: cmd.name, start: cmd.start, end: cmd.end });
+      return createSprint(doc, { code: cmd.code, name: cmd.name, start: cmd.start, end: cmd.end });
     case "updateSprint":
       return updateSprint(doc, cmd.sprintId, cmd.patch);
     case "deleteSprint":

@@ -1,9 +1,9 @@
-import { isFeature, type SprintView, sortSprints, type TicketView } from "@kibo/schema";
+import { isFeature, type SprintView, sameSprintCode, sortSprints, type TicketView } from "@kibo/schema";
 
-export type SprintRef = { id: string; name: string };
+export type SprintRef = { id: string; code: string; name: string };
 export type FeatureRef = { key: string; shortKey: string | null; title: string };
 export type TrackingFields = { sprint: SprintRef | null; feature: FeatureRef | null; optional: boolean };
-export type SprintSource = Pick<SprintView, "id" | "name" | "state" | "start" | "end">;
+export type SprintSource = Pick<SprintView, "id" | "code" | "name" | "state" | "start" | "end">;
 export type SprintSelector = (t: Pick<TrackingFields, "sprint">) => boolean;
 
 function rootOf(ticket: TicketView, byId: ReadonlyMap<string, TicketView>): TicketView {
@@ -27,7 +27,7 @@ export function trackingOf(
   const root = rootOf(ticket, byId);
   const sprint = sprints.find((s) => s.id === ticket.effectiveSprintId);
   return {
-    sprint: sprint ? { id: sprint.id, name: sprint.name } : null,
+    sprint: sprint ? { id: sprint.id, code: sprint.code, name: sprint.name } : null,
     feature: isFeature(root) ? { key: root.keyLabel, shortKey: root.shortKey, title: root.title } : null,
     optional: ticket.optional,
   };
@@ -40,7 +40,12 @@ const currentOf = (sprints: readonly SprintSource[]): SprintSource | null =>
 
 function named(sprints: readonly SprintSource[], wanted: string): SprintSource | null {
   const folded = wanted.toLowerCase();
-  return sprints.find((s) => s.id === wanted) ?? sprints.find((s) => s.name.toLowerCase() === folded) ?? null;
+  return (
+    sprints.find((s) => s.id === wanted) ??
+    sprints.find((s) => sameSprintCode(s.code, wanted)) ??
+    sprints.find((s) => s.name.toLowerCase() === folded) ??
+    null
+  );
 }
 
 export function sprintSelector(raw: string, sprints: readonly SprintSource[]): SprintSelector | null {

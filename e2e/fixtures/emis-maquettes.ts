@@ -9,6 +9,7 @@ export type StepSpec = {
   pr?: PrSpec;
   branch?: string;
   mine?: boolean;
+  optional?: boolean;
 };
 export type FeatureSpec = {
   shortKey: string;
@@ -18,8 +19,8 @@ export type FeatureSpec = {
   result?: string;
   steps: StepSpec[];
 };
-export type SprintSpec = { code: SprintCode; title: string; start: string; end: string };
-export type LooseTicketSpec = StepSpec & { sprint: SprintCode };
+export type SprintSpec = { code: SprintCode; name: string; start: string; end: string };
+export type LooseTicketSpec = StepSpec & { sprint: SprintCode | null };
 export type QuestionSpec = {
   id: string;
   ticket: number;
@@ -46,10 +47,10 @@ export const EMIS_LAST_TICKET = 93;
 export const DELIVERED_STEP = 11;
 
 export const EMIS_SPRINTS: readonly SprintSpec[] = [
-  { code: "S41", title: "Accès", start: "2026-10-05", end: "2026-10-09" },
-  { code: "S42", title: "Terrain hors ligne", start: "2026-10-12", end: "2026-10-16" },
-  { code: "S43", title: "Import et soudures", start: "2026-10-19", end: "2026-10-23" },
-  { code: "S44", title: "Rapports", start: "2026-10-26", end: "2026-10-30" },
+  { code: "S41", name: "Accès", start: "2026-10-05", end: "2026-10-09" },
+  { code: "S42", name: "Terrain hors ligne", start: "2026-10-12", end: "2026-10-16" },
+  { code: "S43", name: "Import et soudures", start: "2026-10-19", end: "2026-10-23" },
+  { code: "S44", name: "Rapports", start: "2026-10-26", end: "2026-10-30" },
 ];
 
 const done = (n: number, title: string, pr?: PrSpec): StepSpec => ({
@@ -118,7 +119,7 @@ export const EMIS_FEATURES: readonly FeatureSpec[] = [
       done(42, "Formulaire de saisie", merged(14)),
       done(43, "Synchro au retour du réseau", merged(16)),
       { n: 45, title: "Conflits de saisie", status: "in_review", delivery: 9, pr: open(20), mine: true },
-      todo(46, "Démo client", { mine: true }),
+      todo(46, "Démo client", { mine: true, optional: true }),
     ],
   },
   {
@@ -196,15 +197,18 @@ export const EMIS_FEATURES: readonly FeatureSpec[] = [
   },
 ];
 
-export const EMIS_ROOT_ORDER: readonly number[] = [1, 9, 17, 40, 30, 50, 61, 70, 80, 90];
+export const EMIS_ROOT_ORDER: readonly number[] = [1, 9, 17, 40, 30, 50, 61, 62, 70, 80, 90];
 
-export const EMIS_LOOSE_TICKET: LooseTicketSpec = {
-  n: 61,
-  title: "Passage à Expo SDK 54",
-  status: "in_review",
-  pr: open(23),
-  sprint: "S42",
-};
+export const EMIS_LOOSE_TICKETS: readonly LooseTicketSpec[] = [
+  {
+    n: 61,
+    title: "Passage à Expo SDK 54",
+    status: "in_review",
+    pr: open(23),
+    sprint: "S42",
+  },
+  { n: 62, title: "Journal des erreurs avec Sentry", status: "todo", sprint: null },
+];
 
 export const EMIS_STEP_LINKS: readonly (readonly [number, number])[] = [
   [33, 34],
@@ -256,9 +260,11 @@ export const EMIS_PAGES: readonly (readonly [string, string])[] = [
 ];
 
 export const emisKey = (n: number): string => `${EMIS_PROJECT.key}-${n}`;
-export const sprintName = (s: Pick<SprintSpec, "code" | "title">): string => `${s.code} ${s.title}`;
 export const prUrl = (number: number): string => `${EMIS_REPO_URL}/pull/${number}`;
 
 export const emisSteps = (): StepSpec[] => EMIS_FEATURES.flatMap((f) => f.steps);
 export const emisUsedTickets = (): Set<number> =>
-  new Set([...EMIS_FEATURES.flatMap((f) => [f.n, ...f.steps.map((s) => s.n)]), EMIS_LOOSE_TICKET.n]);
+  new Set([
+    ...EMIS_FEATURES.flatMap((f) => [f.n, ...f.steps.map((s) => s.n)]),
+    ...EMIS_LOOSE_TICKETS.map((t) => t.n),
+  ]);

@@ -24,12 +24,18 @@ const isStarted = (s: { statusId: FeatureStep["statusId"] }): boolean =>
   !NOT_STARTED_STATUSES.includes(s.statusId);
 const isDone = (s: { statusId: FeatureStep["statusId"] }): boolean => FINAL_STATUSES.includes(s.statusId);
 
+function isLate(input: FeatureStateInput): boolean {
+  if (input.sprint === null || input.sprint.end > input.today) return false;
+  if (input.sprint.end < input.today) return true;
+  return input.steps.some((s) => !s.optional && !isStarted(s));
+}
+
 function statusOf(input: FeatureStateInput, remaining: number): FeatureStatus {
   if (remaining === 0) return "delivered";
   const next = input.steps.find((s) => !isDone(s));
   if (next !== undefined && (next.statusId === "blocked" || input.blockingQuestions.has(next.ticketId)))
     return "blocked";
-  if (input.sprint !== null && input.sprint.end < input.today) return "late";
+  if (isLate(input)) return "late";
   return input.steps.some(isStarted) ? "open" : "todo";
 }
 
