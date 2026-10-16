@@ -1,14 +1,14 @@
 import type { Page } from "@playwright/test";
 import { type ContentResult, captureContent } from "./pixel-content";
 import type { Scheme } from "./pixel-kit";
-import { PROJECT_PAGES, PROJECT_PAGES_SHIFT } from "./pixel-masks";
+import { PROJECT_PAGES_SHIFT, PROJECT_PAGES_ZONE } from "./pixel-masks";
 
 type PagesInput = { screen: string; scheme: Scheme; height: number; outDir: string };
 
 const MARKER = "data-pixel-pages";
 
 export async function captureProjectPages(page: Page, input: PagesInput): Promise<ContentResult> {
-  const { x, y, w, h } = PROJECT_PAGES;
+  const { x, y, w, h } = PROJECT_PAGES_ZONE;
   await page.evaluate(
     ({ left, top, attribute }) => {
       const marker = document.createElement("div");

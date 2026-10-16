@@ -5,8 +5,9 @@ import {
   masksOf,
   outside,
   PIXEL_MASKS,
-  PROJECT_PAGES,
   PROJECT_PAGES_SHIFT,
+  PROJECT_PAGES_ZONE,
+  projectRows,
 } from "./pixel-masks";
 
 const WIDTH = 1440;
@@ -26,9 +27,9 @@ test("each screen masks less than 8 % of its pixels", () => {
   );
   for (const ratio of Object.values(ratios)) expect(ratio).toBeLessThan(MASK_AREA_LIMIT);
   expect(ratios).toEqual({
-    planning: expect.closeTo(0.0559, 4),
-    fonctionnalite: expect.closeTo(0.0783, 4),
-    tickets: expect.closeTo(0.0603, 4),
+    planning: expect.closeTo(0.0348, 3),
+    fonctionnalite: expect.closeTo(0.0572, 3),
+    tickets: expect.closeTo(0.0392, 3),
   });
 });
 
@@ -43,8 +44,19 @@ test("a screen without masks gets none", () => {
   expect(masksOf("planning")).toBe(PIXEL_MASKS.planning);
 });
 
-test("the project pages of the sidebar are masked on every screen, to be compared shifted by 32 px", () => {
-  for (const masks of Object.values(PIXEL_MASKS)) expect(masks).toContain(PROJECT_PAGES);
-  expect(PROJECT_PAGES).toMatchObject({ x: 8, y: 256, w: 224, h: 320 });
+test("only the text lines of the shifted sidebar rows are masked, plus the active row band", () => {
+  const rows = projectRows(2);
+  expect(rows).toHaveLength(10);
+  expect(rows.slice(0, 9).map((r) => r.y)).toEqual([264, 296, 328, 360, 392, 424, 456, 488, 520]);
+  expect(rows.every((r) => r.x === 10 && r.w === 220)).toBe(true);
+  expect(rows[9]).toMatchObject({ y: 290, h: 62 });
+  expect(maskedRatio(rows, WIDTH, HEIGHT)).toBeCloseTo(0.0287, 3);
+  for (const [screen, active] of [
+    ["planning", 1],
+    ["fonctionnalite", 1],
+    ["tickets", 2],
+  ] as const)
+    for (const row of projectRows(active)) expect(PIXEL_MASKS[screen]).toContainEqual(row);
+  expect(PROJECT_PAGES_ZONE).toEqual({ x: 10, y: 256, w: 220, h: 320 });
   expect(PROJECT_PAGES_SHIFT).toBe(32);
 });

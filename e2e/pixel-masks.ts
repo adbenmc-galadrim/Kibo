@@ -15,20 +15,33 @@ const USER: PixelMask = {
   why: "avatar et nom de l'utilisateur : la phase 25 affiche le compte du système",
 };
 export const PROJECT_PAGES_SHIFT = 32;
-export const PROJECT_PAGES: PixelMask = {
-  x: 8,
-  y: 256,
-  w: 224,
-  h: 320,
-  why: "page Vue d'ensemble du projet, phase 26 : les pages et projets suivants, remontés de 32 px, sont comparés décalés",
-};
-const AGENT_BATCH: PixelMask = {
-  x: 1396,
-  y: 17,
-  w: 19,
-  h: 14,
-  why: "pastille du lot n° 7 de l'agent de projet : les actions de report sont de la phase 26",
-};
+export const PROJECT_PAGES_ZONE: Box = { x: 10, y: 256, w: 220, h: 320 };
+
+const ROW_STEP = 32;
+const FIRST_ROW_BOX = 258;
+const ROW_BOX = 30;
+const SHIFTED_ROWS = 9;
+const SHIFT_WHY =
+  "page Vue d'ensemble du projet, phase 26 : les lignes suivantes remontent de 32 px et sont comparées décalées";
+
+export function projectRows(activeRow: number): PixelMask[] {
+  const text = Array.from({ length: SHIFTED_ROWS }, (_, k) => ({
+    x: PROJECT_PAGES_ZONE.x,
+    y: FIRST_ROW_BOX + 6 + k * ROW_STEP,
+    w: PROJECT_PAGES_ZONE.w,
+    h: 18,
+    why: SHIFT_WHY,
+  }));
+  const active = {
+    x: PROJECT_PAGES_ZONE.x,
+    y: FIRST_ROW_BOX + (activeRow - 1) * ROW_STEP,
+    w: PROJECT_PAGES_ZONE.w,
+    h: ROW_BOX + ROW_STEP,
+    why: `${SHIFT_WHY} (fond de la page active, à sa place et décalé)`,
+  };
+  return [...text, active];
+}
+
 const syncAge = (x: number): PixelMask => ({
   x,
   y: 16,
@@ -54,16 +67,14 @@ const updatedAt = (y: number, w: number): PixelMask => ({
 export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
   planning: [
     USER,
-    AGENT_BATCH,
-    PROJECT_PAGES,
+    ...projectRows(1),
     syncAge(987),
     sessionSlot(369, "EMIS-45"),
     sessionSlot(494, "EMIS-33"),
   ],
   fonctionnalite: [
     USER,
-    AGENT_BATCH,
-    PROJECT_PAGES,
+    ...projectRows(1),
     syncAge(1124),
     {
       x: 543,
@@ -93,8 +104,7 @@ export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
   ],
   tickets: [
     USER,
-    AGENT_BATCH,
-    PROJECT_PAGES,
+    ...projectRows(2),
     syncAge(1124),
     {
       x: 980,
