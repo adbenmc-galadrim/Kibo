@@ -164,3 +164,23 @@ contenu de P1 et ne change que la hiérarchie, l'espacement et la lisibilité :
 - panneau de l'agent : résumé, lot et champ de saisie séparés par des filets.
 
 Exports : `exports/proposition-vue-ensemble-v2-{dark,light}.png` (`await storage.exportP1bis()`).
+
+## Choix illustrés (2026-10-16)
+
+Page Penpot « Choix » (`scripts/80-choix.js`) : un tableau par choix ouvert, sombre à x = 0 et clair à x = 1 300,
+rangées de 640 px. Chaque tableau pose la question, puis montre « Recommandé » et « Autre option » côte à côte avec les
+données Emis et une légende d'une ligne.
+
+| n° | Question | Recommandé | Autre option |
+|---|---|---|---|
+| 1 | Planning | sprints en colonnes | bandes type Gantt |
+| 2 | Retard | F5 en retard quand S42 finit avec des étapes restantes | une date d'échéance par fonctionnalité |
+| 3 | Report | l'agent propose « Reporter F5 en S43 ? » | report automatique |
+| 4 | Limite d'ouvertes | avertissement « 3/2 ouvertes », action possible | bouton bloqué |
+| 5 | Démo client | facultative | obligatoire avant « livrée » |
+| 6 | Nom dans les listes | une ligne et infobulle | nom complet sur deux lignes |
+| 7 | Sprint | fiche avec nom, dates et report en fin | simple étiquette |
+| 8 | Graphe | une colonne par sprint | une couleur par sprint |
+| 9 | Vue d'ensemble | sprint en cours et suivant | toutes les échéances et Planning tous projets |
+
+Exports : `exports/choix-<n>-<slug>-{dark,light}.png` (`await storage.exportChoix()`), copiés dans `screens/redesign/`.
