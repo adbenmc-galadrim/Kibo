@@ -32,7 +32,8 @@ const merge = (a: LoroDoc, b: LoroDoc): void => {
   b.import(a.export({ mode: "update", from: b.version() }));
 };
 
-const keysOnly = (doc: LoroDoc) => trackingMigrationCommands(readProject(doc), { planningPage: false });
+const keysOnly = (doc: LoroDoc) =>
+  trackingMigrationCommands(readProject(doc, "2026-10-16"), { planningPage: false });
 
 function addFeatures(doc: LoroDoc, count: number, prefix: string): void {
   for (let i = 0; i < count; i += 1) {
@@ -51,7 +52,9 @@ function migrate(doc: LoroDoc): void {
 }
 
 const shortKeys = (doc: LoroDoc) =>
-  readProject(doc).tickets.flatMap((t) => (t.shortKey === null ? [] : [[t.id, t.shortKey] as const]));
+  readProject(doc, "2026-10-16").tickets.flatMap((t) =>
+    t.shortKey === null ? [] : [[t.id, t.shortKey] as const],
+  );
 
 describe("tracking migration after a merge", () => {
   test("keys allocated on two peers end up unique, the same on both sides, and stable", () => {

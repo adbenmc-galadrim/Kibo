@@ -13,7 +13,7 @@ import type { CommandMeta, Docs } from "../docs";
 import { createProjectSettings } from "../notes/settings";
 import { createService } from "../service";
 import { openStore } from "../store";
-import { migrateTracking } from "./tracking";
+import { migrateTracking, TRACKING_MIGRATED_KEY } from "./tracking";
 
 const homes: string[] = [];
 afterEach(() => {
@@ -115,4 +115,24 @@ test("a read-only project is left alone and logged, then migrated once it can be
   expect(first.migrate()).toEqual({ migrated: 1, skipped: 0 });
   expect(planningPages(first.snapshot(client.id))).toHaveLength(1);
   first.store.close();
+});
+
+test("a migration that does not converge stops after five passes and leaves no marker", () => {
+  const { home, emis } = seed();
+  const store = openStore(home);
+  const service = createService(store, { user: "adam" });
+  const settings = createProjectSettings(store.db);
+  let passes = 0;
+  const docs: Docs = {
+    ...service.docs,
+    projectIds: () => [emis.id],
+    run: () => {
+      passes += 1;
+      return null;
+    },
+  };
+  expect(() => migrateTracking({ docs, settings, log: () => {}, now: () => NOW })).toThrow("INTERNAL");
+  expect(passes).toBe(5 * 2);
+  expect(settings.get(emis.id, TRACKING_MIGRATED_KEY)).toBeNull();
+  store.close();
 });

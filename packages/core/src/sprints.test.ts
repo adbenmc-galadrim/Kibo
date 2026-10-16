@@ -105,7 +105,7 @@ describe("sprint views", () => {
     ticket(d, "b", f2.id);
     const solo = ticket(d, "Seul");
     for (const f of [f2, f1, solo]) assign(d, f.id, s42.id);
-    const views = sprintViews(listSprints(d), readProject(d).tickets, "2026-10-14");
+    const views = sprintViews(listSprints(d), readProject(d, "2026-10-16").tickets, "2026-10-14");
     expect(views.map((s) => [s.name, s.state])).toEqual([
       ["S41", "done"],
       ["S42", "current"],
@@ -119,7 +119,7 @@ describe("sprint views", () => {
   test("the snapshot carries the sprint views dated by the given day", () => {
     const d = newDoc();
     const s42 = sprint(d, "S42", "2026-10-12", "2026-10-16");
-    expect(readProject(d, undefined, "2026-10-17").sprints).toEqual([
+    expect(readProject(d, "2026-10-17").sprints).toEqual([
       { ...s42, state: "done", features: [], delivered: 0, total: 0 },
     ]);
   });

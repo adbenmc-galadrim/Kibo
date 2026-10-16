@@ -28,7 +28,7 @@ test("bindings are stored in the project doc and listed in the snapshot", () => 
   addBinding(d, binding);
   expect(() => addBinding(d, binding)).toThrow("INVALID_INPUT");
   expect(getBinding(d, "b1").config.repo).toBe("adam/kibo");
-  expect(readProject(d).bindings).toEqual([binding]);
+  expect(readProject(d, "2026-10-16").bindings).toEqual([binding]);
   executeProjectCommand(d, { method: "addBinding", binding: { ...binding, id: "b2" } });
   expect(listBindings(d).map((b) => b.id)).toEqual(["b1", "b2"]);
   removeBinding(d, "b1");

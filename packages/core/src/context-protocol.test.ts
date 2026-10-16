@@ -39,7 +39,7 @@ function project(plan: boolean) {
       ],
     });
   }
-  const snapshot = readProject(doc);
+  const snapshot = readProject(doc, "2026-10-16");
   const ticket = snapshot.tickets.find((t: Ticket) => t.id === id);
   if (!ticket) throw new Error("fixture ticket missing");
   return { project: snapshot, ticket };

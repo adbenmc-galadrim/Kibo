@@ -101,7 +101,9 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
   const projects = () =>
     listProjects(docs.workspace).map((m) => ({ id: m.id, name: m.name, doc: docs.project(m.id) }));
   const instanceOf = (projectId: string, instanceId: string): Instance => {
-    const inst = readProject(docs.project(projectId)).instances.find((i) => i.id === instanceId);
+    const inst = readProject(docs.project(projectId), docs.today()).instances.find(
+      (i) => i.id === instanceId,
+    );
     if (!inst) throw new KiboError("NOT_FOUND", `instance ${instanceId} not found`);
     return inst;
   };

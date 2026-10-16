@@ -40,7 +40,7 @@ export type VisibilityOptions = {
   agentEnv?: Record<string, string | undefined>;
   userHome?: string;
 };
-export type VisibilityDocs = Pick<Docs, "emit" | "run" | "project" | "projectIds">;
+export type VisibilityDocs = Pick<Docs, "emit" | "run" | "project" | "projectIds" | "today">;
 export type VisibilityAgents = () => Pick<Orchestrator, "state" | "hooks"> | null;
 export type VisibilitySkills = () => Pick<SkillsService, "byId"> | null;
 export type Visibility = {
@@ -70,7 +70,9 @@ const METHODS = VISIBILITY_RPC.map((schema) => schema.shape.method.value);
 function progressDocs(docs: VisibilityDocs): ProgressDocs {
   return {
     snapshot: (projectId) =>
-      docs.projectIds().includes(projectId) ? readProject(docs.project(projectId)) : { tickets: [] },
+      docs.projectIds().includes(projectId)
+        ? readProject(docs.project(projectId), docs.today())
+        : { tickets: [] },
     run: (projectId, cmd, meta) => docs.run(projectId, cmd, meta),
   };
 }

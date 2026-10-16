@@ -175,7 +175,7 @@ describe("storage", () => {
     });
   test("projects without rules use the defaults, and the snapshot carries them", () => {
     expect(readRules(doc())).toEqual(DEFAULT_RULES);
-    expect(readProject(doc()).rules).toEqual(DEFAULT_RULES);
+    expect(readProject(doc(), "2026-10-16").rules).toEqual(DEFAULT_RULES);
   });
   test("stored rules are completed on read, nothing is written", () => {
     const d = doc();

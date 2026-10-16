@@ -81,7 +81,7 @@ describe("external refs of every kind", () => {
     expect(b.id).toBe(a.id);
     expect(a.statusId).toBe("done");
     expect(findTicketByRef(d, issue())?.key).toBe("KIB-1");
-    expect(readProject(d).tickets).toHaveLength(1);
+    expect(readProject(d, "2026-10-16").tickets).toHaveLength(1);
     const blocked = importExternalTicket(d, {
       title: "B",
       statusId: "blocked",
@@ -115,7 +115,7 @@ describe("external refs of every kind", () => {
       kind: "figma_node",
       key: "AbCdEf123456:1:2",
     });
-    expect(readProject(d).tickets[0]?.externalRefs).toEqual([]);
+    expect(readProject(d, "2026-10-16").tickets[0]?.externalRefs).toEqual([]);
   });
 
   test("stored refs are validated when read", () => {

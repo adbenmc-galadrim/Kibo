@@ -26,6 +26,7 @@ export type MockRunDelivery = {
 };
 
 export function createMockRunDelivery(deps: {
+  today: string;
   doc: Parameters<typeof readProject>[0];
   runs(): TicketRun[];
   denials: Record<string, RunDenials>;
@@ -36,7 +37,7 @@ export function createMockRunDelivery(deps: {
   const deliver = (ticketId: string): DeliverResult => {
     delivered.push(ticketId);
     const activity = activityOf(deps.runs());
-    const snapshot = readProject(deps.doc, activity);
+    const snapshot = readProject(deps.doc, deps.today, activity);
     const ticket = snapshot.tickets.find((t) => t.id === ticketId);
     if (!ticket) throw new KiboError("NOT_FOUND", `ticket ${ticketId} not found`);
     if (snapshot.tickets.some((t) => t.parentId === ticketId)) {

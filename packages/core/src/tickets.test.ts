@@ -95,7 +95,10 @@ describe("tree", () => {
     const g = createTicket(d, { title: "G", parentId: c1.id });
     setStatus(d, c1.id, "done");
     setStatus(d, g.id, "done");
-    expect(readProject(d).tickets.find((t) => t.id === p.id)?.progress).toEqual({ done: 1, total: 2 });
+    expect(readProject(d, "2026-10-16").tickets.find((t) => t.id === p.id)?.progress).toEqual({
+      done: 1,
+      total: 2,
+    });
   });
 
   test("refuses to move a ticket under its descendant", () => {

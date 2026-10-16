@@ -28,6 +28,7 @@ function boot(run: RunView) {
     {
       emit: () => undefined,
       run: () => null,
+      today: () => "2026-10-16",
       project: () => {
         throw new Error("no project in this test");
       },

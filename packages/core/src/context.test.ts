@@ -48,7 +48,7 @@ function kibo() {
   }) as Ticket;
   run({ method: "createTicket", title: "Poignée", parentId: t.id, statusId: "backlog" });
   run({ method: "addLink", from: dep.id, to: t.id, type: "blocks" });
-  const project = readProject(doc);
+  const project = readProject(doc, "2026-10-16");
   const ticket = project.tickets.find((x) => x.id === t.id);
   if (!ticket) throw new Error("fixture ticket missing");
   return { project, ticket };

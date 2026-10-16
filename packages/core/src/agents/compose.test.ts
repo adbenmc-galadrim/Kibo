@@ -80,7 +80,7 @@ test("an example ticket stands in when none is chosen", () => {
     delivery: null,
     tracking: null,
   });
-  const ticket = exampleTicket(readProject(doc));
+  const ticket = exampleTicket(readProject(doc, "2026-10-16"));
   expect(ticket.key).toBe("BOU-0");
   expect(ticket.keyLabel).toBe("BOU-0");
   expect(ticket.title).toBe("Ticket d'exemple");

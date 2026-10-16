@@ -54,7 +54,7 @@ describe("local allocator", () => {
   });
 
   test("readProject exposes an unshared, writable project", () => {
-    const snapshot = readProject(createProjectDoc(meta));
+    const snapshot = readProject(createProjectDoc(meta), "2026-10-16");
     expect(snapshot.sync).toEqual({
       shared: false,
       keyAllocator: "local",
@@ -98,7 +98,7 @@ describe("server allocator", () => {
   test("the snapshot shows labels and no upcoming key", () => {
     const doc = peerCopy(serverAllocated(), 31);
     createTicket(doc, { title: "A" });
-    const snapshot = readProject(doc);
+    const snapshot = readProject(doc, "2026-10-16");
     expect(snapshot.nextTicketKey).toBeNull();
     expect(snapshot.sync.keyAllocator).toBe("server");
     expect(snapshot.sync.shared).toBe(true);
@@ -111,7 +111,7 @@ describe("server allocator", () => {
     if (!existing) throw new Error("fixture has no ticket");
     const pending = createTicket(doc, { title: "Nouveau" });
     addLink(doc, { from: pending.id, to: existing.id, type: "blocks" });
-    const view = readProject(doc).tickets.find((t) => t.id === existing.id);
+    const view = readProject(doc, "2026-10-16").tickets.find((t) => t.id === existing.id);
     expect(view?.waitingOn).toEqual(["KIB-…"]);
   });
 

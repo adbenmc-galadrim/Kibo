@@ -20,7 +20,7 @@ const create = (d: ReturnType<typeof newDoc>, title: string, parentId?: string) 
   executeProjectCommand(d, { method: "createTicket", title, parentId }) as Ticket;
 
 const view = (d: ReturnType<typeof newDoc>, id: string) => {
-  const t = readProject(d).tickets.find((x) => x.id === id);
+  const t = readProject(d, "2026-10-16").tickets.find((x) => x.id === id);
   if (!t) throw new Error(`missing ${id}`);
   return t;
 };
@@ -80,7 +80,7 @@ const status = (d: ReturnType<typeof newDoc>, ticketId: string, statusId: Ticket
 const optional = (d: ReturnType<typeof newDoc>, ticketId: string) =>
   executeProjectCommand(d, { method: "setTicketOptional", ticketId, optional: true });
 const viewOn = (d: ReturnType<typeof newDoc>, today: string, id: string) => {
-  const t = readProject(d, undefined, today).tickets.find((x) => x.id === id);
+  const t = readProject(d, today).tickets.find((x) => x.id === id);
   if (!t) throw new Error(`missing ${id}`);
   return t;
 };

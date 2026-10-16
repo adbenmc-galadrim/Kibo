@@ -62,7 +62,7 @@ test("questions live in the project doc, dedupe on open title, answer once, and 
   const q = createQuestion(doc, sameInput);
   expect(createQuestion(doc, { ...sameInput, title: "  Bloquer le dépôt ?  ", at: 2 }).id).toBe(q.id);
   expect(listQuestions(doc)).toHaveLength(1);
-  expect(readProject(doc).tickets[0]?.openQuestions).toBe(1);
+  expect(readProject(doc, "2026-10-16").tickets[0]?.openQuestions).toBe(1);
   const answered = answerQuestion(doc, q.id, { kind: "confirm" }, HUMAN, 3);
   expect(answered.answer).toEqual({
     kind: "confirm",
@@ -76,8 +76,8 @@ test("questions live in the project doc, dedupe on open title, answer once, and 
   expect(() => answerQuestion(doc, q.id, { kind: "text", text: "x" }, HUMAN, 4)).toThrow(
     new KiboError("INVALID_TRANSITION", `question ${q.id} is already answered`),
   );
-  expect(readProject(doc).tickets[0]?.openQuestions).toBe(0);
-  expect(readProject(doc).questions).toEqual([answered]);
+  expect(readProject(doc, "2026-10-16").tickets[0]?.openQuestions).toBe(0);
+  expect(readProject(doc, "2026-10-16").questions).toEqual([answered]);
   expect(createQuestion(doc, { ...sameInput, at: 5 }).id).not.toBe(q.id);
   expect(() => createQuestion(doc, { ...sameInput, ticketId: "nope" })).toThrow(KiboError);
   deleteTicket(doc, t.id);
@@ -199,7 +199,7 @@ test("the open count of each ticket always matches the unanswered questions", ()
       const ticketIds = ["A", "B", "C"].map((title) => createTicket(doc, { title }).id);
       for (const s of steps) play(doc, ticketIds, s);
       const questions = listQuestions(doc);
-      return readProject(doc).tickets.every((t) => {
+      return readProject(doc, "2026-10-16").tickets.every((t) => {
         const open = questions.filter((q) => q.ticketId === t.id && q.answer === null).length;
         return t.openQuestions === open && openQuestionCount(doc, t.id) === open;
       });
@@ -235,7 +235,7 @@ test("delivered answers keep their first delivery, and open questions are skippe
     at: 30,
   });
   expect(second.map((q) => q.id)).toEqual([b.id]);
-  const byId = new Map(readProject(doc).questions.map((q) => [q.id, q]));
+  const byId = new Map(readProject(doc, "2026-10-16").questions.map((q) => [q.id, q]));
   expect(byId.get(a.id)?.answer).toMatchObject({ deliveredAt: 20, deliveredRunId: "r1" });
   expect(byId.get(b.id)?.answer).toMatchObject({ deliveredAt: 30, deliveredRunId: "r2" });
   expect(byId.get(open.id)?.answer).toBeNull();

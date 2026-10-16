@@ -10,12 +10,12 @@ import { activeRunOf } from "../agents/assign-preview";
 import { type Docs, KIBO_COMMAND } from "../docs";
 import type { RpcExtension } from "../rpc-extensions";
 
-export type StepDocs = Pick<Docs, "project" | "activity" | "run" | "assertWritable">;
+export type StepDocs = Pick<Docs, "project" | "activity" | "run" | "assertWritable" | "today">;
 export type StepRpcDeps = { docs: StepDocs; runs(): readonly RunView[]; now(): number };
 export type SetDeliveryStepInput = Extract<DeliveryRpcRequest, { method: "setDeliveryStep" }>;
 
 function ticketByKey(docs: StepDocs, projectId: string, key: string): TicketView | null {
-  const { tickets } = readProject(docs.project(projectId), docs.activity(projectId));
+  const { tickets } = readProject(docs.project(projectId), docs.today(), docs.activity(projectId));
   return tickets.find((t) => t.key === key) ?? null;
 }
 

@@ -48,11 +48,11 @@ function idOf(roots: Map<string, Ticket>, name: string): string {
 
 function migrate(d: Doc): number {
   let passes = 0;
-  for (let cmds = trackingMigrationCommands(readProject(d)); cmds.length > 0; ) {
+  for (let cmds = trackingMigrationCommands(readProject(d, "2026-10-16")); cmds.length > 0; ) {
     for (const cmd of cmds) run(d, cmd);
     passes += 1;
     if (passes > 3) throw new Error("the migration does not converge");
-    cmds = trackingMigrationCommands(readProject(d));
+    cmds = trackingMigrationCommands(readProject(d, "2026-10-16"));
   }
   return passes;
 }
@@ -61,7 +61,7 @@ describe("tracking migration", () => {
   test("features get the key of their plan, or F<n> by rank, solo tickets none", () => {
     const d = newDoc();
     const roots = emisLike(d);
-    const cmds: ProjectCommand[] = trackingMigrationCommands(readProject(d)).filter(
+    const cmds: ProjectCommand[] = trackingMigrationCommands(readProject(d, "2026-10-16")).filter(
       (c) => c.method === "updateTicket",
     );
     expect(cmds).toEqual([
@@ -83,7 +83,7 @@ describe("tracking migration", () => {
     const roots = emisLike(d);
     run(d, { method: "updateTicket", ticketId: idOf(roots, "solo"), shortKey: "C1" });
     run(d, { method: "updateTicket", ticketId: idOf(roots, "free"), shortKey: "F1" });
-    const keys = trackingMigrationCommands(readProject(d)).flatMap((c) =>
+    const keys = trackingMigrationCommands(readProject(d, "2026-10-16")).flatMap((c) =>
       c.method === "updateTicket" ? [c.shortKey] : [],
     );
     expect(keys).toEqual(["C0", "C2", "C3", "C4", "C5", "F2", "F3"]);
@@ -91,11 +91,11 @@ describe("tracking migration", () => {
 
   test("a project without a planning component gets a Planning view page, once", () => {
     const d = newDoc();
-    expect(trackingMigrationCommands(readProject(d))).toEqual([
+    expect(trackingMigrationCommands(readProject(d, "2026-10-16"))).toEqual([
       { method: "addPage", title: "Planning", kind: "view" },
     ]);
     expect(migrate(d)).toBe(2);
-    const snap = readProject(d);
+    const snap = readProject(d, "2026-10-16");
     const page = snap.pages.find((p) => p.title === "Planning");
     expect(snap.instances).toMatchObject([{ pageId: page?.id, component: PLANNING_COMPONENT_REF }]);
     expect(trackingMigrationCommands(snap)).toEqual([]);
@@ -105,13 +105,13 @@ describe("tracking migration", () => {
     const d = newDoc();
     const page = run(d, { method: "addPage", title: "Suivi", kind: "view" }) as Page;
     run(d, { method: "addInstance", pageId: page.id, component: "planning@2.1.0" });
-    expect(trackingMigrationCommands(readProject(d))).toEqual([]);
+    expect(trackingMigrationCommands(readProject(d, "2026-10-16"))).toEqual([]);
   });
 
   test("an Emis-like project is fully migrated in two passes, then nothing is left to do", () => {
     const d = newDoc();
     emisLike(d);
     expect(migrate(d)).toBe(2);
-    expect(trackingMigrationCommands(readProject(d))).toEqual([]);
+    expect(trackingMigrationCommands(readProject(d, "2026-10-16"))).toEqual([]);
   });
 });

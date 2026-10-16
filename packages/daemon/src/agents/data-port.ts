@@ -160,7 +160,7 @@ export function createDataPort(
     skills: (projectId) => agentSource.skills?.(projectId) ?? [],
     ticketContext(projectId, ticketId) {
       const project = {
-        ...readProject(docs.project(projectId), docs.activity(projectId), docs.today()),
+        ...readProject(docs.project(projectId), docs.today(), docs.activity(projectId)),
         meta: docs.projectMeta(projectId),
       };
       const ticket = project.tickets.find((t) => t.id === ticketId);

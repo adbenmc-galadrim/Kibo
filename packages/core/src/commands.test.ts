@@ -27,10 +27,10 @@ const doc = () =>
 describe("project commands", () => {
   test("the snapshot carries the project's own domains, none by default", () => {
     const d = doc();
-    expect(readProject(d).domains).toEqual([]);
+    expect(readProject(d, "2026-10-16").domains).toEqual([]);
     d.getMap("projectDomains").set("sync", { name: "Sync", color: "#14B8A6", guidelines: [] });
     d.commit();
-    expect(readProject(d).domains).toEqual([
+    expect(readProject(d, "2026-10-16").domains).toEqual([
       { id: "sync", name: "Sync", color: "#14B8A6", owner: { scope: "project", projectId: "p1" } },
     ]);
   });
@@ -42,7 +42,7 @@ describe("project commands", () => {
     const a = executeProjectCommand(d, { method: "createTicket", title: "A" }) as Ticket;
     const b = executeProjectCommand(d, { method: "createTicket", title: "B", parentId: a.id }) as Ticket;
     executeProjectCommand(d, { method: "addLink", from: b.id, to: a.id, type: "relates" });
-    const snap = readProject(d);
+    const snap = readProject(d, "2026-10-16");
     expect(snap.meta.key).toBe("KIB");
     expect(snap.workflow).toHaveLength(6);
     expect(snap.instances).toMatchObject([
@@ -76,7 +76,7 @@ describe("project commands", () => {
     executeProjectCommand(d, { method: "addInstance", pageId: board.id, component: "tickets@1.0.0" });
     executeProjectCommand(d, { method: "addInstance", pageId: sub.id, component: "kanban@1.0.0" });
     executeProjectCommand(d, { method: "deletePage", pageId: board.id });
-    expect(readProject(d).instances).toEqual([]);
+    expect(readProject(d, "2026-10-16").instances).toEqual([]);
   });
 
   test("an instance needs an existing page", () => {
@@ -112,7 +112,7 @@ function askOn(d: ReturnType<typeof doc>, ticketId: string, blocking: boolean): 
 }
 
 const startable = (d: ReturnType<typeof doc>, id: string, busy: string[] = []) =>
-  readProject(d, { busyTickets: new Set(busy) }).tickets.find((t) => t.id === id)?.startable;
+  readProject(d, "2026-10-16", { busyTickets: new Set(busy) }).tickets.find((t) => t.id === id)?.startable;
 
 describe("visibility commands", () => {
   test("the progress and recipient commands are routed", () => {
@@ -146,19 +146,23 @@ describe("visibility commands", () => {
     expect(
       executeProjectCommand(d, { method: "removeQuestionRecipient", recipientId: "product" }),
     ).toBeNull();
-    expect(readProject(d).questionRecipients.map((r) => r.id)).toEqual(["me", "client", expect.any(String)]);
+    expect(readProject(d, "2026-10-16").questionRecipients.map((r) => r.id)).toEqual([
+      "me",
+      "client",
+      expect.any(String),
+    ]);
   });
 
   test("the delivery step is written on the ticket and read in the snapshot", () => {
     const d = doc();
     const ticket = ticketIn(d, "Formulaire");
-    expect(readProject(d).tickets.find((t) => t.id === ticket.id)?.delivery).toBeNull();
+    expect(readProject(d, "2026-10-16").tickets.find((t) => t.id === ticket.id)?.delivery).toBeNull();
     const delivery = { step: 7, note: "porte qualité", at: 5, runId: "r1" };
     const written = executeProjectCommand(d, { method: "setTicketDelivery", ticketId: ticket.id, delivery });
     expect(written).toMatchObject({ id: ticket.id, delivery });
-    expect(readProject(d).tickets.find((t) => t.id === ticket.id)?.delivery).toEqual(delivery);
+    expect(readProject(d, "2026-10-16").tickets.find((t) => t.id === ticket.id)?.delivery).toEqual(delivery);
     executeProjectCommand(d, { method: "setTicketDelivery", ticketId: ticket.id, delivery: null });
-    expect(readProject(d).tickets.find((t) => t.id === ticket.id)?.delivery).toBeNull();
+    expect(readProject(d, "2026-10-16").tickets.find((t) => t.id === ticket.id)?.delivery).toBeNull();
   });
 
   test("the delivery step is refused to the shell and to components", () => {
@@ -176,7 +180,7 @@ describe("visibility commands", () => {
   });
 
   test("a snapshot carries the default recipients", () => {
-    expect(readProject(doc()).questionRecipients).toEqual([...DEFAULT_RECIPIENTS]);
+    expect(readProject(doc(), "2026-10-16").questionRecipients).toEqual([...DEFAULT_RECIPIENTS]);
   });
 
   test("a ticket is startable when nothing holds it", () => {
@@ -188,7 +192,7 @@ describe("visibility commands", () => {
     expect(startable(d, backlog.id)).toBe(true);
     expect(startable(d, doing.id)).toBe(false);
     expect(startable(d, todo.id, [todo.id])).toBe(false);
-    expect(readProject(d).tickets.find((t) => t.id === todo.id)?.startable).toBe(true);
+    expect(readProject(d, "2026-10-16").tickets.find((t) => t.id === todo.id)?.startable).toBe(true);
   });
 
   test("blockers and blocking questions hold a ticket", () => {

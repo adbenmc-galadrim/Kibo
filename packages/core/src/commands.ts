@@ -205,8 +205,8 @@ export function assertShellCommand(cmd: ProjectCommand): void {
 
 export function readProject(
   doc: LoroDoc,
+  today: string,
   activity: ProjectActivity = NO_ACTIVITY,
-  today: string = UNDATED,
 ): ProjectSnapshot {
   const meta = getProjectMeta(doc);
   const questions = listQuestions(doc);

@@ -65,7 +65,7 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
     projects: () => [meta],
     snapshot(projectId) {
       ensureProject(projectId);
-      return readProject(doc);
+      return readProject(doc, "2026-10-16");
     },
     command<C extends ProjectCommand>(projectId: string, cmd: C, m: CommandMeta): CommandResult[C["method"]] {
       ensureProject(projectId);

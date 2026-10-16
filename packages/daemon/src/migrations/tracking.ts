@@ -17,7 +17,8 @@ export type TrackingMigrationDeps = {
 function migrateProject(deps: TrackingMigrationDeps, projectId: string): number {
   const { docs, settings } = deps;
   const planningPage = settings.get(projectId, TRACKING_MIGRATED_KEY) === null;
-  const pending = () => trackingMigrationCommands(readProject(docs.project(projectId)), { planningPage });
+  const pending = () =>
+    trackingMigrationCommands(readProject(docs.project(projectId), docs.today()), { planningPage });
   let applied = 0;
   for (let pass = 0, cmds = pending(); cmds.length > 0; pass += 1, cmds = pending()) {
     if (pass === MAX_PASSES)

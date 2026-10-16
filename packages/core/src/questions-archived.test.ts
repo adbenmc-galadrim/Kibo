@@ -73,7 +73,7 @@ test("archived questions leave the dedupe and the open counts, and die with thei
   archive(again.id);
   expect(openQuestionCount(doc, ticket.id)).toBe(0);
   expect(openCountByTicket(listQuestions(doc)).size).toBe(0);
-  expect(readProject(doc).tickets[0]?.openQuestions).toBe(0);
+  expect(readProject(doc, "2026-10-16").tickets[0]?.openQuestions).toBe(0);
   pruneQuestions(doc, [ticket.id]);
   expect(listQuestions(doc)).toEqual([]);
 });

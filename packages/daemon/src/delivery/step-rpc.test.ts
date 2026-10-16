@@ -33,6 +33,7 @@ function setup(runs: (projectId: string, ticketId: string) => RunView[] = () => 
   const docs: StepDocs = {
     project: (id) => service.docs.project(id),
     activity: (id) => service.docs.activity(id),
+    today: () => "2026-10-16",
     assertWritable: (id) => service.docs.assertWritable(id),
     run(id, command, meta) {
       events.push({ command, meta });

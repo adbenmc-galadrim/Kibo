@@ -52,7 +52,7 @@ export function linkWorld(opts: LinkWorldOptions = {}) {
   const docs = {
     run(projectId: string, command: ProjectCommand, meta: CommandMeta): unknown {
       const from = command.method === "addLink" ? command.from : null;
-      const fromStatus = readProject(doc).tickets.find((t) => t.id === from)?.statusId ?? null;
+      const fromStatus = readProject(doc, "2026-10-16").tickets.find((t) => t.id === from)?.statusId ?? null;
       log.push({ projectId, command, meta, fromStatus });
       opts.refuse?.(command);
       return executeProjectCommand(doc, command);
@@ -65,7 +65,7 @@ export function linkWorld(opts: LinkWorldOptions = {}) {
   const linker = createAutoLinker({
     store,
     docs,
-    snapshot: () => readProject(doc),
+    snapshot: () => readProject(doc, "2026-10-16"),
     run: (id) => runs.find((r) => r.id === id) ?? null,
     probes: probe,
     moment: (runId, data) => moments.push({ runId, data }),

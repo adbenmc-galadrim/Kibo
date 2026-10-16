@@ -1,4 +1,10 @@
-import { createProjectDoc, enableServerAllocation, executeProjectCommand, readProject } from "@kibo/core";
+import {
+  createProjectDoc,
+  enableServerAllocation,
+  executeProjectCommand,
+  readProject,
+  UNDATED,
+} from "@kibo/core";
 import {
   ComponentManifest,
   type ComponentManifestInput,
@@ -86,8 +92,10 @@ export function createMockSdk(
   const selection = createSignal<Selection | null>(opts.selection ?? null);
   const spotlight = createSpotlightStore(opts.spotlight ?? null);
   const mockRuns = createMockRuns(opts.peeks ?? {});
+  const today = opts.today ?? UNDATED;
   const runDelivery = createMockRunDelivery({
     doc,
+    today,
     runs: () => runs,
     denials: opts.denials ?? {},
     agent: opts.deliveryAgent === undefined ? MOCK_DELIVERY_AGENT_INFO : opts.deliveryAgent,
@@ -103,10 +111,11 @@ export function createMockSdk(
   });
 
   const backend: ProjectBackend = {
-    snapshot: async () => readProject(doc, activityOf(runs), opts.today),
+    snapshot: async () => readProject(doc, today, activityOf(runs)),
     run: async (cmd) => componentRun(cmd),
     call: createMockCalls({
       ...opts,
+      today,
       doc,
       run: componentRun,
       data,
@@ -262,7 +271,7 @@ export function createMockSdk(
     configPatches,
     notes: folder.notes,
     run,
-    snapshot: () => readProject(doc, activityOf(runs), opts.today),
+    snapshot: () => readProject(doc, today, activityOf(runs)),
     setRuns: (next) => {
       runs = next;
       runChanges.emit();

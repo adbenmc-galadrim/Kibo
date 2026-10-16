@@ -112,9 +112,9 @@ describe("project", () => {
     const doc = createProjectDoc(meta);
     expect(peekTicketKey(doc)).toBe("KIB-1");
     expect(peekTicketKey(doc)).toBe("KIB-1");
-    expect(readProject(doc).nextTicketKey).toBe("KIB-1");
+    expect(readProject(doc, "2026-10-16").nextTicketKey).toBe("KIB-1");
     executeProjectCommand(doc, { method: "createTicket", title: "A" });
-    expect(readProject(doc).nextTicketKey).toBe("KIB-2");
+    expect(readProject(doc, "2026-10-16").nextTicketKey).toBe("KIB-2");
   });
   test("counts tickets by status, sub-tickets included", () => {
     const doc = createProjectDoc(meta);
