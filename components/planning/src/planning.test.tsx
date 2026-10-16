@@ -64,10 +64,17 @@ test("cards show their badge, step count, next step or the step in session", asy
   expect(within(f6).getByText("0/4 étapes")).toBeTruthy();
   expect(within(f6).getByText("suivante : KIB-25")).toBeTruthy();
   const f5 = await cardIn(/^S42 /, "F5");
-  expect(within(f5).getByText("en retard")).toBeTruthy();
   expect(within(f5).getByText("KIB-21")).toBeTruthy();
-  expect(f5.className).toContain("border-(--tracking-red)");
+  expect(within(await cardIn(/^S42 /, "F4")).getByText("ouverte")).toBeTruthy();
   expect(within(await cardIn(/^S42 /, "F3")).getByText("livrée")).toBeTruthy();
+});
+
+test("a late feature is outlined in red with a warning under its sprint", async () => {
+  setSystemTime(new Date("2026-10-17T09:00:00"));
+  setupPlanning("2026-10-17");
+  const f5 = await cardIn(/^S42 /, "F5");
+  expect(within(f5).getByText("en retard")).toBeTruthy();
+  expect(f5.className).toContain("border-(--tracking-red)");
   expect(within(await column(/^S42 /)).getByText("F5 ne tiendra pas : 4 étapes restantes")).toBeTruthy();
 });
 

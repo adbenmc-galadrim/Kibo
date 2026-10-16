@@ -30,7 +30,7 @@ export type FeatureCard = {
   title: string;
   sprintId: string | null;
   badge: CardBadge | null;
-  atRisk: boolean;
+  late: boolean;
   steps: StepCase[];
   done: number;
   total: number;
@@ -64,7 +64,6 @@ export type PlanningInput = {
   links: readonly Link[];
   sprints: readonly SprintView[];
   questions: readonly Question[];
-  today: string;
   openLimit?: number | undefined;
 };
 
@@ -99,15 +98,10 @@ function sessionOf(steps: readonly FeatureStep[]): string | null {
   return live[0]?.key ?? null;
 }
 
-export function atRisk(state: FeatureState, sprint: SprintView | null, today: string): boolean {
-  if (state.status === "late") return true;
-  return sprint?.state === "current" && sprint.end === today && state.remaining > 0;
-}
-
-function badgeOf(state: FeatureState, risky: boolean, question: string | null): CardBadge | null {
+function badgeOf(state: FeatureState, question: string | null): CardBadge | null {
   if (state.status === "delivered") return { kind: "delivered", demo: state.steps.done < state.steps.total };
   if (state.status === "blocked") return { kind: "blocked", question };
-  if (risky) return { kind: "late" };
+  if (state.status === "late") return { kind: "late" };
   return state.status === "open" ? { kind: "open" } : null;
 }
 
@@ -116,7 +110,6 @@ function cardOf(f: Feature, facts: Facts): FeatureCard {
   const state = f.feature;
   const steps = featureSteps({ feature: f.id, tickets: input.tickets, links: input.links });
   const sprint = f.sprintId === null ? null : (sprintOf.get(f.sprintId) ?? null);
-  const risky = atRisk(state, sprint, input.today);
   const delivered = state.status === "delivered";
   const nextStep = steps.find((s) => s.ticketId === state.nextStepId) ?? null;
   return {
@@ -124,8 +117,8 @@ function cardOf(f: Feature, facts: Facts): FeatureCard {
     shortKey: f.shortKey ?? f.keyLabel,
     title: f.title,
     sprintId: sprint?.id ?? null,
-    badge: badgeOf(state, risky, nextStep === null ? null : (blocking.get(nextStep.ticketId) ?? null)),
-    atRisk: risky,
+    badge: badgeOf(state, nextStep === null ? null : (blocking.get(nextStep.ticketId) ?? null)),
+    late: state.status === "late",
     steps: steps.map((s) => ({ ticketId: s.ticketId, key: s.key, tone: toneOf(s, blocking) })),
     done: state.steps.done,
     total: state.steps.total,
@@ -147,7 +140,7 @@ function sprintColumn(sprint: SprintView, cards: ReadonlyMap<string, FeatureCard
     code: sprintCodeOf(sprint),
     dates: sprintDates(sprint.start, sprint.end),
     cards: own,
-    warnings: own.filter((c) => c.atRisk).map((c) => ({ shortKey: c.shortKey, remaining: c.remaining })),
+    warnings: own.filter((c) => c.late).map((c) => ({ shortKey: c.shortKey, remaining: c.remaining })),
   };
 }
 

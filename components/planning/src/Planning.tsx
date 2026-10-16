@@ -45,7 +45,7 @@ export function Planning() {
   const { data: sprints } = useEntities("sprint");
   const { data: questions } = useEntities("question");
   const today = localToday();
-  const model = planningModel({ tickets, links, sprints, questions, today });
+  const model = planningModel({ tickets, links, sprints, questions });
   const cards = [...model.sprints.flatMap((c) => c.cards), ...model.backlog];
   const [dragged, setDragged] = useState<FeatureCard | null>(null);
   const [target, setTarget] = useState<string | null>(null);

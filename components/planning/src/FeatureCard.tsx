@@ -82,7 +82,7 @@ export function FeatureCard({ card, readOnly, onOpen }: Props) {
       data-key={card.shortKey}
       className={cn(
         CARD_CLASS,
-        card.atRisk ? "border-(--tracking-red)" : "border-(--tracking-border)",
+        card.late ? "border-(--tracking-red)" : "border-(--tracking-border)",
         !readOnly && "cursor-grab touch-none",
         isDragging && "opacity-40",
       )}
