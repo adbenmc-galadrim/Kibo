@@ -1,11 +1,11 @@
-import { type Domain, type FileRef, isGroup, isInbox, type ProjectSnapshot } from "@kibo/schema";
+import { type Domain, type FileRef, isFeature, isGroup, isInbox, type ProjectSnapshot } from "@kibo/schema";
 import { TicketKeyLabel } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@kibo/sdk/ui/sheet";
 import { Bot } from "lucide-react";
 import { DeliverButton } from "../delivery/lazy";
 import { fr } from "../i18n/fr";
-import { frGroup } from "../i18n/fr-group";
+import { frFeature, frGroup } from "../i18n/fr-group";
 import { frPresence } from "../i18n/fr-presence";
 import { canEdit } from "../state/access";
 import { usePresencePeers } from "../state/use-presence";
@@ -14,6 +14,7 @@ import { LabelsField } from "../ticket/LabelsField";
 import { TicketActionsMenu } from "../ticket/TicketActionsMenu";
 import { TicketTitle } from "../ticket/TicketTitle";
 import { useTicketCommand } from "../ticket/use-ticket-command";
+import { FeatureDetail } from "./FeatureDetail";
 import { GroupDetail } from "./GroupDetail";
 import { KeyRequired } from "./KeyRequired";
 import { ActivityTab } from "./lazy-screens";
@@ -59,6 +60,35 @@ export function TicketSheet({
   const editable = canEdit(project);
   const inbox = isInbox(project.meta.id);
   const group = isGroup(t);
+  const actions = (
+    <TicketActionsMenu
+      projectId={project.meta.id}
+      ticket={t}
+      childCount={descendantCount(project.tickets, t.id)}
+      editable={editable}
+      onOpenInTab={onOpenInTab}
+      onFile={inbox ? onFile : undefined}
+      onDeleted={onDeleted}
+    />
+  );
+  if (isFeature(t))
+    return (
+      <Sheet open onOpenChange={(o) => !o && onClose()}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-[min(90vw,560px)]">
+          <SheetHeader className="sr-only">
+            <SheetTitle>{t.title}</SheetTitle>
+            <SheetDescription>{frFeature.kicker(t.shortKey, t.keyLabel)}</SheetDescription>
+          </SheetHeader>
+          <FeatureDetail
+            project={project}
+            ticket={t}
+            actions={<span className="mr-8">{actions}</span>}
+            onOpenFile={onOpenFile}
+            onOpenTicket={onOpenTicket}
+          />
+        </SheetContent>
+      </Sheet>
+    );
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
       <SheetContent className="w-full sm:max-w-[min(90vw,560px)] overflow-y-auto">
@@ -73,17 +103,7 @@ export function TicketSheet({
               {group ? frGroup.kicker(t.keyLabel) : <TicketKeyLabel ticket={t} />}
             </SheetDescription>
             <GithubRefs ticket={t} />
-            <span className="mr-8 ml-auto flex items-center gap-2">
-              <TicketActionsMenu
-                projectId={project.meta.id}
-                ticket={t}
-                childCount={descendantCount(project.tickets, t.id)}
-                editable={editable}
-                onOpenInTab={onOpenInTab}
-                onFile={inbox ? onFile : undefined}
-                onDeleted={onDeleted}
-              />
-            </span>
+            <span className="mr-8 ml-auto flex items-center gap-2">{actions}</span>
           </div>
           <SheetTitle className="text-lg" aria-label={t.title} title={importTitle(t.externalRefs)}>
             <TicketTitle

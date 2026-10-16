@@ -1,4 +1,4 @@
-import { type Domain, type FileRef, isGroup, isInbox, type ProjectSnapshot } from "@kibo/schema";
+import { type Domain, type FileRef, isFeature, isGroup, isInbox, type ProjectSnapshot } from "@kibo/schema";
 import { TicketKeyLabel } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
@@ -6,6 +6,7 @@ import { Bot } from "lucide-react";
 import { DeliverButton } from "../delivery/lazy";
 import { fr } from "../i18n/fr";
 import { frGroup } from "../i18n/fr-group";
+import { FeatureDetail } from "../shell/FeatureDetail";
 import { GroupDetail } from "../shell/GroupDetail";
 import { KeyRequired } from "../shell/KeyRequired";
 import { ActivityTab } from "../shell/lazy-screens";
@@ -35,6 +36,8 @@ export function TicketTab({ project, ticketId, domains, viewer, onAssign, onOpen
   const [tab, setTab] = useTicketTab();
   const t = project.tickets.find((x) => x.id === ticketId);
   if (!t) return <p className="p-8 text-sm text-muted-foreground">{fr.tabs.missingTicket}</p>;
+  if (isFeature(t))
+    return <FeatureDetail project={project} ticket={t} onOpenFile={onOpenFile} onOpenTicket={onOpenTicket} />;
   const editable = canEdit(project);
   const group = isGroup(t);
   return (
