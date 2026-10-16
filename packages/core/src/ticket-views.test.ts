@@ -13,6 +13,7 @@ const newDoc = () =>
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
 
 const create = (d: ReturnType<typeof newDoc>, title: string, parentId?: string) =>

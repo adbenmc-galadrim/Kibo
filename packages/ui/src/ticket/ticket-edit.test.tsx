@@ -52,6 +52,9 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   startable: false,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
   ...patch,
 });
 const child = (n: number, parentId: string): TicketView =>
@@ -74,6 +77,7 @@ const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

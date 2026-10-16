@@ -63,17 +63,16 @@ function leavesOf(tickets: readonly DeliveryOrderTicket[], parentId: string): De
   return leaves;
 }
 
-const byRank = (a: DeliveryOrderTicket, b: DeliveryOrderTicket): number =>
+type Ranked = { id: string; key: string | null; rank: number };
+
+const byRank = (a: Ranked, b: Ranked): number =>
   a.rank - b.rank || (a.key ?? a.id).localeCompare(b.key ?? b.id);
 
-function topological(
-  leaves: DeliveryOrderTicket[],
-  edges: readonly [string, string][],
-): DeliveryOrderTicket[] {
-  const remaining = [...leaves].sort(byRank);
+export function topoByBlocks<T extends Ranked>(items: readonly T[], edges: readonly [string, string][]): T[] {
+  const remaining = [...items].sort(byRank);
   const waiting = new Map<string, Set<string>>(remaining.map((t) => [t.id, new Set<string>()]));
   for (const [from, to] of edges) if (from !== to) waiting.get(to)?.add(from);
-  const order: DeliveryOrderTicket[] = [];
+  const order: T[] = [];
   while (remaining.length > 0) {
     const free = remaining.findIndex((t) => (waiting.get(t.id)?.size ?? 0) === 0);
     const [next] = remaining.splice(free === -1 ? 0 : free, 1);
@@ -105,7 +104,7 @@ export function deliveryOrder(input: DeliveryOrderInput): DeliveryItem[] {
   const edges = blocks
     .filter((l) => leafIds.has(l.from) && leafIds.has(l.to))
     .map((l): [string, string] => [l.from, l.to]);
-  return topological(leaves, edges).map((t) => {
+  return topoByBlocks(leaves, edges).map((t) => {
     const blockedBy = blocks
       .filter((l) => l.to === t.id && l.from !== t.id)
       .map((l) => byId.get(l.from))

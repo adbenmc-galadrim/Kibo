@@ -15,6 +15,7 @@ const kibo = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
 };
 
 function fixture(

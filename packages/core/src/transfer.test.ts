@@ -23,6 +23,7 @@ const inboxMeta = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
 };
 const kibo = {
   id: "p1",
@@ -34,6 +35,7 @@ const kibo = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
 };
 
 function seeded() {

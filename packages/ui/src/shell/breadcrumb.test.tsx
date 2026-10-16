@@ -101,6 +101,7 @@ test("screens and the inbox: settings crumbs stay text, the inbox crumb opens th
       storybook: null,
       duplication: null,
       delivery: null,
+      tracking: null,
     },
   };
   expect(

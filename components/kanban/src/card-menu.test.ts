@@ -24,6 +24,9 @@ const ticket = {
   startable: false,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
 } satisfies TicketView;
 const actions = (): CardMenuActions => ({
   open: mock(() => {}),

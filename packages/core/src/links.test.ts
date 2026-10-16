@@ -25,6 +25,7 @@ const setup = () => {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   const [a, b, c] = ["A", "B", "C"].map((title) => createTicket(d, { title }));
   if (!a || !b || !c) throw new Error("setup");

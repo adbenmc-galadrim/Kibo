@@ -121,6 +121,7 @@ describe("storage", () => {
       storybook: null,
       duplication: null,
       delivery: null,
+      tracking: null,
     });
   test("projects without rules use the defaults, and the snapshot carries them", () => {
     expect(readRules(doc())).toEqual(DEFAULT_RULES);

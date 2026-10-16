@@ -27,6 +27,7 @@ test("the counts add tickets and instances across projects", () => {
       storybook: null,
       duplication: null,
       delivery: null,
+      tracking: null,
     };
     registerProject(workspace, meta);
     docs.set(id, createProjectDoc(meta));

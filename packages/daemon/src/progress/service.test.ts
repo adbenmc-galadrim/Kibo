@@ -27,6 +27,7 @@ function kit(
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   const ticket = Ticket.parse(executeProjectCommand(doc, { method: "createTicket", title: "Formulaire" }));
   const commands: { projectId: string; cmd: ProjectCommand; meta: CommandMeta }[] = [];

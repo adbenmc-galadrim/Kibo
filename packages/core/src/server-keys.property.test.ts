@@ -37,6 +37,7 @@ const meta = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
 };
 
 const replicaIndex = fc.nat({ max: 4 });

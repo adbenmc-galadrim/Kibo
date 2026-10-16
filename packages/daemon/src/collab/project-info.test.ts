@@ -14,6 +14,7 @@ const doc = () =>
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
 const row: SyncProjectRow = {
   projectId: "p1",

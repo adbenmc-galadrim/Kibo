@@ -20,6 +20,7 @@ const snapshotOf = (id: string): ProjectSnapshot => ({
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

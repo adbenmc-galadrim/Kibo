@@ -24,6 +24,7 @@ export function inboxMeta(): ProjectMeta {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   };
 }
 

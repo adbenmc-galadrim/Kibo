@@ -23,6 +23,7 @@ const meta = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
 };
 
 test("a shared project gets its folder back from the local settings", () => {

@@ -101,6 +101,9 @@ function readTicket(n: LoroTreeNode): Ticket {
     labels: (d.get("labels") as string[] | undefined) ?? [],
     agentProgress: readProgress(n),
     delivery: readDelivery(n),
+    sprintId: (d.get("sprintId") as string | null | undefined) ?? null,
+    optional: d.get("optional") === true,
+    shortKey: (d.get("shortKey") as string | null | undefined) ?? null,
   };
 }
 

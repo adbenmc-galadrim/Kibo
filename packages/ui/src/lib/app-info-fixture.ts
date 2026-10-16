@@ -8,4 +8,5 @@ export const appInfoFixture = (userHome: string | null): AppInfo => ({
   userHome,
   daemonPid: 42,
   uptimeMs: 0,
+  fixedNow: null,
 });

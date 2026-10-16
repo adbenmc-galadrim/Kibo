@@ -88,6 +88,7 @@ const project = (rules = DEFAULT_RULES): ProjectSnapshot => ({
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

@@ -24,6 +24,7 @@ const environment: Environment = {
     userHome: null,
     daemonPid: 42,
     uptimeMs: 0,
+    fixedNow: null,
   },
 };
 
@@ -67,6 +68,7 @@ const kibo: ProjectSummary = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
   counts,
 };
 const portfolio: ProjectSummary = {
@@ -120,6 +122,7 @@ const empty: ProjectSnapshot = {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

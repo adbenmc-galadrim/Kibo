@@ -12,6 +12,7 @@ const info: AppInfo = {
   userHome: null,
   daemonPid: 1,
   uptimeMs: 0,
+  fixedNow: null,
 };
 const flush = () => new Promise((r) => setTimeout(r, 0));
 

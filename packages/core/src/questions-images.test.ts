@@ -19,6 +19,7 @@ const projectDoc = () =>
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
 
 test("a validation question keeps its kind and image metadata in the document", () => {

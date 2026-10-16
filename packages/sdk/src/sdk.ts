@@ -225,6 +225,7 @@ export function createSdk(
       note: () => call<NoteMeta[]>({ kind: "list", entity: "note" }),
       ci_run: () => call<CiRun[]>({ kind: "list", entity: "ci_run" }),
       question: async () => (await backend.snapshot()).questions,
+      sprint: async () => (await backend.snapshot()).sprints ?? [],
     };
     return loaders[type]();
   };

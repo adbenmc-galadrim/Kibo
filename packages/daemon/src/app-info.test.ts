@@ -28,6 +28,7 @@ test("createAppInfo maps the platform and counts uptime from the injected clock"
     userHome: null,
     daemonPid: 7,
     uptimeMs: 6_000,
+    fixedNow: null,
   });
   now = 20_000;
   expect(info().uptimeMs).toBe(16_000);

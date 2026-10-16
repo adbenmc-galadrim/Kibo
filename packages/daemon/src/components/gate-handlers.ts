@@ -66,6 +66,7 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
         link: snap.links,
         page: snap.pages,
         question: snap.questions,
+        sprint: snap.sprints ?? [],
       };
       return lists[entity];
     },

@@ -14,6 +14,7 @@ const project = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
 };
 const actions = () => ({
   newPage: () => {},

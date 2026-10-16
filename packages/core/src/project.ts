@@ -57,6 +57,7 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   };
 }
 

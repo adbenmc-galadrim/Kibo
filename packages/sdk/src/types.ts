@@ -33,6 +33,7 @@ import type {
   RunPeek,
   Selection,
   Spotlight,
+  SprintView,
   Status,
   StatusId,
   StorybookOrigin,
@@ -52,6 +53,7 @@ export type EntityMap = {
   note: NoteMeta;
   ci_run: CiRun;
   question: Question;
+  sprint: SprintView;
 };
 export type NewTicketDefaults = { statusId?: StatusId; parentId?: string | null; instanceId?: string };
 export type FileOpenRequest = { path: string; line?: number | null; origin?: string | null };

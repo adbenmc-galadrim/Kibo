@@ -67,6 +67,7 @@ function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
     note: () => deps.folder.list(),
     ci_run: () => deps.ciRuns ?? [],
     question: () => snapshot.questions,
+    sprint: () => snapshot.sprints ?? [],
   };
   return lists[entity]();
 }

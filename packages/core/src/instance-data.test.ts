@@ -17,6 +17,7 @@ function setup() {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   const page = executeProjectCommand(doc, { method: "addPage", title: "Board", kind: "dashboard" }) as Page;
   const inst = executeProjectCommand(doc, {
@@ -80,6 +81,7 @@ describe("instance data", () => {
           storybook: null,
           duplication: null,
           delivery: null,
+          tracking: null,
         });
         copy.import(doc.export({ mode: "snapshot" }));
         expect(readInstanceData(copy, inst.id)).toEqual(model);

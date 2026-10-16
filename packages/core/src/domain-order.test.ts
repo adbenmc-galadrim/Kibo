@@ -17,6 +17,7 @@ const project = () =>
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
 
 const ids = (list: { id: string }[]) => list.map((d) => d.id);

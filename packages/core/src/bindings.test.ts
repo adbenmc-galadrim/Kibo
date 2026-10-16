@@ -23,6 +23,7 @@ test("bindings are stored in the project doc and listed in the snapshot", () => 
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   addBinding(d, binding);
   expect(() => addBinding(d, binding)).toThrow("INVALID_INPUT");
@@ -46,6 +47,7 @@ test("an invalid binding never reaches the doc", () => {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   expect(() => addBinding(d, { ...binding, config: { ...binding.config, repo: "nope" } })).toThrow();
   expect(listBindings(d)).toEqual([]);

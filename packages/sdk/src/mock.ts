@@ -49,6 +49,7 @@ export function createMockSdk(
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   const changes = createNotifier();
   const runChanges = createNotifier();

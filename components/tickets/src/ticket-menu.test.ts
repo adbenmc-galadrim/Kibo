@@ -24,6 +24,9 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   startable: false,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
   ...patch,
 });
 const actions = (): TicketMenuActions => ({

@@ -134,3 +134,14 @@ test("embeds are exact lowercase hosts, empty by default", () => {
     expect(ComponentManifest.safeParse({ ...m, embeds: [host] }).success).toBe(false);
   }
 });
+
+test("a component may read and write sprints", () => {
+  const manifest = ComponentManifest.parse({
+    ...base,
+    kind: "view",
+    reads: ["sprint"],
+    writes: ["ticket", "sprint"],
+  });
+  expect(manifest.reads).toEqual(["sprint"]);
+  expect(manifest.writes).toEqual(["ticket", "sprint"]);
+});

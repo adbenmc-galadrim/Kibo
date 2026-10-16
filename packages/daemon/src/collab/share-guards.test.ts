@@ -123,6 +123,7 @@ function localShapedDoc(id: string): LoroDoc {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   doc.getMap("meta").delete("folder");
   doc.commit();

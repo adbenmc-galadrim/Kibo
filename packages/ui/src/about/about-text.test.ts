@@ -9,6 +9,7 @@ const info = {
   userHome: null,
   daemonPid: 42,
   uptimeMs: 65_000,
+  fixedNow: null,
 } as const;
 
 test("aboutText lists version, platform, daemon and shell on separate lines", () => {

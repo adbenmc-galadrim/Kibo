@@ -22,3 +22,19 @@ test("AppInfo requires a semver version and a known platform", () => {
   const { userHome: _userHome, ...older } = ok;
   expect(AppInfo.safeParse(older).success).toBe(false);
 });
+
+test("AppInfo has no fixed clock by default", () => {
+  const info = {
+    version: "0.25.0-alpha.1",
+    platform: "darwin",
+    arch: "arm64",
+    home: "~/.kibo",
+    userHome: "/Users/adam",
+    daemonPid: 42,
+    uptimeMs: 0,
+  };
+  expect(AppInfo.parse(info).fixedNow).toBeNull();
+  expect(AppInfo.parse({ ...info, fixedNow: "2026-10-16T14:52:00+02:00" }).fixedNow).toBe(
+    "2026-10-16T14:52:00+02:00",
+  );
+});

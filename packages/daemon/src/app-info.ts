@@ -30,5 +30,6 @@ export function createAppInfo(deps: AppInfoDeps): () => AppInfo {
     userHome: null,
     daemonPid: deps.pid,
     uptimeMs: Math.max(0, deps.now() - deps.startedAt),
+    fixedNow: null,
   });
 }

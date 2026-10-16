@@ -27,6 +27,7 @@ const newDoc = () =>
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
 
 const code = (work: () => unknown): string | null => {

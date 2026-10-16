@@ -7,7 +7,11 @@ import { instancesUpdateViolation } from "./validate-instances";
 export type UpdateVerdict = { ok: true } | { ok: false; reason: string };
 
 const FROZEN_META_FIELDS = ["ticketSeq", "keyAllocator", "id", "key", "folder"];
-const EDITABLE_META_FIELDS = { name: ProjectMeta.shape.name, color: ProjectMeta.shape.color };
+const EDITABLE_META_FIELDS = {
+  name: ProjectMeta.shape.name,
+  color: ProjectMeta.shape.color,
+  tracking: ProjectMeta.shape.tracking,
+};
 const KNOWN_META_FIELDS = new Set([...FROZEN_META_FIELDS, "members", ...Object.keys(EDITABLE_META_FIELDS)]);
 
 const isPrimitive = (value: unknown): boolean =>

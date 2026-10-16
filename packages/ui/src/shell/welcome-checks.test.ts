@@ -23,6 +23,7 @@ const base: Environment = {
     userHome: null,
     daemonPid: 42,
     uptimeMs: 0,
+    fixedNow: null,
   },
 };
 

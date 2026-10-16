@@ -28,6 +28,9 @@ const t = (
   startable: false,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
 });
 
 test("nests children under their parent, keeping order and depth", () => {

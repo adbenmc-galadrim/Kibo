@@ -22,6 +22,7 @@ export const BuiltinEntityType = z.enum([
   "note",
   "ci_run",
   "question",
+  "sprint",
 ]);
 export type BuiltinEntityType = z.infer<typeof BuiltinEntityType>;
 export const EntityType = BuiltinEntityType;

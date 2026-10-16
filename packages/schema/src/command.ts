@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { DeliveryStep } from "./delivery";
 import { ExternalRef, ExternalRefKind } from "./external-ref";
+import { ShortKey } from "./feature";
 import { ImportRef } from "./git-branch";
 import { NodeId, Sha256 } from "./ids";
 import { ComponentRef, DataKey, type Instance, Layout } from "./instance";
@@ -23,6 +24,7 @@ import {
 import { QuestionContext, QuestionOptions } from "./question-fields";
 import { QuestionImages, QuestionKind } from "./question-image";
 import { QuestionRecipient, RecipientId } from "./question-recipient";
+import { type Sprint, SprintDate, SprintName, SprintPatch } from "./sprint";
 import { StatusId } from "./status";
 import { Assignee, type Ticket } from "./ticket";
 
@@ -62,6 +64,7 @@ export const ProjectCommand = z
       domainId: z.string().nullable().optional(),
       assignee: Assignee.nullable().optional(),
       labels: Labels.optional(),
+      shortKey: ShortKey.nullable().optional(),
     }),
     z.object({
       method: z.literal("setStatus"),
@@ -181,10 +184,18 @@ export const ProjectCommand = z
     questionEdit("reopenQuestion"),
     questionEdit("archiveQuestion"),
     questionEdit("restoreQuestion"),
+    z.object({ method: z.literal("createSprint"), name: SprintName, start: SprintDate, end: SprintDate }),
+    z.object({ method: z.literal("updateSprint"), sprintId: NodeId, patch: SprintPatch }),
+    z.object({ method: z.literal("deleteSprint"), sprintId: NodeId }),
+    z.object({ method: z.literal("setTicketSprint"), ticketId: NodeId, sprintId: NodeId.nullable() }),
+    z.object({ method: z.literal("setTicketOptional"), ticketId: NodeId, optional: z.boolean() }),
   ])
   .superRefine((cmd, ctx) => {
     if (cmd.method === "updateQuestion" && QUESTION_EDIT_FIELDS.every((field) => cmd[field] === undefined)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "updateQuestion changes nothing" });
+    }
+    if (cmd.method === "createSprint" && cmd.end < cmd.start) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["end"], message: "end before start" });
     }
   });
 export type ProjectCommand = z.infer<typeof ProjectCommand>;
@@ -229,6 +240,11 @@ export const COMMAND_WRITES: Record<ProjectCommand["method"], EntityType | null>
   reopenQuestion: "question",
   archiveQuestion: "question",
   restoreQuestion: "question",
+  createSprint: "sprint",
+  updateSprint: "sprint",
+  deleteSprint: "sprint",
+  setTicketSprint: "ticket",
+  setTicketOptional: "ticket",
 };
 
 export const isReservedCommand = (method: ProjectCommand["method"]): boolean =>
@@ -274,4 +290,9 @@ export type CommandResult = {
   reopenQuestion: Question;
   archiveQuestion: Question;
   restoreQuestion: Question;
+  createSprint: Sprint;
+  updateSprint: Sprint;
+  deleteSprint: null;
+  setTicketSprint: Ticket;
+  setTicketOptional: Ticket;
 };

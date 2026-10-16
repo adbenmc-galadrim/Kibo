@@ -26,6 +26,7 @@ const meta = (over: Partial<ProjectMeta>): ProjectMeta => ({
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
   ...over,
 });
 const KIBO = meta({});

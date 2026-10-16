@@ -11,6 +11,7 @@ const app: AppInfo = {
   userHome: null,
   daemonPid: 1,
   uptimeMs: 5,
+  fixedNow: null,
 };
 const env: Environment = {
   app,
