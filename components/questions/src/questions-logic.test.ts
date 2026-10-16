@@ -84,6 +84,8 @@ const ticket = (id: string, keyLabel: string): TicketView => ({
   sprintId: null,
   optional: false,
   shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 });
 
 test("filterQuestions keeps open, answered or all questions, optionally of one ticket", () => {

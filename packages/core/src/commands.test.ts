@@ -1,5 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_RECIPIENTS, KiboError, type Page, type Question, type Ticket } from "@kibo/schema";
+import {
+  DEFAULT_RECIPIENTS,
+  KiboError,
+  type Page,
+  type ProjectCommand,
+  permissionOfCall,
+  type Question,
+  type Ticket,
+} from "@kibo/schema";
 import { assertShellCommand, createProjectDoc, executeProjectCommand, readProject } from "./index";
 
 const doc = () =>
@@ -219,5 +227,47 @@ describe("visibility commands", () => {
     expect(run({ method: "reopenQuestion", questionId, by })).toMatchObject({ answer: null });
     expect(run({ method: "archiveQuestion", questionId, by, at: 7 })).toMatchObject({ archivedAt: 7 });
     expect(run({ method: "restoreQuestion", questionId, by })).toMatchObject({ archivedAt: null });
+  });
+});
+
+describe("tracking commands", () => {
+  const SPRINT_COMMANDS: ProjectCommand[] = [
+    { method: "createSprint", name: "S42", start: "2026-10-12", end: "2026-10-16" },
+    { method: "updateSprint", sprintId: "s42", patch: { name: "S42 bis" } },
+    { method: "deleteSprint", sprintId: "s42" },
+    { method: "setTicketSprint", ticketId: "f5", sprintId: "s42" },
+    { method: "setTicketOptional", ticketId: "demo", optional: true },
+  ];
+
+  test("an optional step needs a parent", () => {
+    const d = doc();
+    const root = executeProjectCommand(d, { method: "createTicket", title: "F5" }) as Ticket;
+    const demo = executeProjectCommand(d, {
+      method: "createTicket",
+      title: "Démo",
+      parentId: root.id,
+    }) as Ticket;
+    expect(() =>
+      executeProjectCommand(d, { method: "setTicketOptional", ticketId: root.id, optional: true }),
+    ).toThrow("INVALID_INPUT");
+    expect(
+      executeProjectCommand(d, { method: "setTicketOptional", ticketId: demo.id, optional: true }),
+    ).toMatchObject({ id: demo.id, optional: true });
+  });
+
+  test("a short key already taken elsewhere is a conflict", () => {
+    const d = doc();
+    const a = executeProjectCommand(d, { method: "createTicket", title: "A" }) as Ticket;
+    executeProjectCommand(d, { method: "createTicket", title: "a1", parentId: a.id });
+    const b = executeProjectCommand(d, { method: "createTicket", title: "B" }) as Ticket;
+    expect(() =>
+      executeProjectCommand(d, { method: "updateTicket", ticketId: b.id, shortKey: "F1" }),
+    ).toThrow("CONFLICT");
+  });
+
+  test("the tracking commands are open to the shell, sprint writes need the sprint permission", () => {
+    for (const cmd of SPRINT_COMMANDS) expect(() => assertShellCommand(cmd)).not.toThrow();
+    const writes = SPRINT_COMMANDS.map((command) => permissionOfCall({ kind: "run", command }));
+    expect(writes).toEqual(["write:sprint", "write:sprint", "write:sprint", "write:ticket", "write:ticket"]);
   });
 });

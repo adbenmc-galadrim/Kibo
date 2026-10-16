@@ -56,6 +56,7 @@ export type MockSdk = {
   setSpotlight(spotlight: Spotlight | null): void;
 };
 export type MockSdkOptions = {
+  today?: string;
   seed?: (run: (cmd: ProjectCommand) => unknown) => void;
   viewer?: string;
   config?: Record<string, unknown>;

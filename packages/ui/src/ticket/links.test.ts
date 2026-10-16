@@ -31,6 +31,8 @@ const t = (n: number, title: string, statusId: TicketView["statusId"] = "todo"):
   sprintId: null,
   optional: false,
   shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 });
 const link = (id: string, from: number, to: number, type: Link["type"]): Link => ({
   id,
@@ -75,6 +77,7 @@ const project: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-22",
+  sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 

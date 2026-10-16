@@ -34,6 +34,8 @@ export function ticket(p: Partial<TicketView> & Pick<TicketView, "id">): TicketV
     sprintId: null,
     optional: false,
     shortKey: null,
+    effectiveSprintId: null,
+    feature: null,
     progress: { done: 0, total: 0 },
     waitingOn: [],
     keyLabel: key ?? "EMIS-…",
@@ -112,6 +114,7 @@ export function project(p: Partial<ProjectSnapshot> = {}): ProjectSnapshot {
     rules: [],
     bindings: [],
     nextTicketKey: null,
+    sprints: [],
     sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
     ...p,
   };

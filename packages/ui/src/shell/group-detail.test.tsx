@@ -31,6 +31,8 @@ const ticket = (id: string, patch: Partial<TicketView> = {}): TicketView => ({
   sprintId: null,
   optional: false,
   shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
   ...patch,
 });
 
@@ -70,6 +72,7 @@ const project: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-8",
+  sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
   tickets,
 };

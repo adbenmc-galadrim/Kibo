@@ -53,6 +53,9 @@ export function featureState(input: FeatureStateInput): FeatureState {
 
 export const isOpenFeature = (s: FeatureState): boolean => s.started && !CLOSED_STATUSES.includes(s.status);
 
+export const openFeatures = (views: readonly { feature: FeatureState | null }[]): number =>
+  views.filter((v) => v.feature !== null && isOpenFeature(v.feature)).length;
+
 const ratioOf = (s: FeatureState): number => (s.steps.total === 0 ? 0 : s.steps.done / s.steps.total);
 
 export function nextFeature(

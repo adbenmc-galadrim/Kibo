@@ -1,5 +1,7 @@
 import { ProjectMeta } from "@kibo/schema";
 import { isContainer, type LoroDoc, LoroMap, type LoroTree } from "loro-crdt";
+import { FeatureSeq } from "./project";
+import { sprintsViolation } from "./sprints";
 import { depthViolation } from "./update-depth";
 import { bindingsUpdateViolation, type UpdateAuthor } from "./validate-bindings";
 import { instancesUpdateViolation } from "./validate-instances";
@@ -11,6 +13,7 @@ const EDITABLE_META_FIELDS = {
   name: ProjectMeta.shape.name,
   color: ProjectMeta.shape.color,
   tracking: ProjectMeta.shape.tracking,
+  featureSeq: FeatureSeq,
 };
 const KNOWN_META_FIELDS = new Set([...FROZEN_META_FIELDS, "members", ...Object.keys(EDITABLE_META_FIELDS)]);
 
@@ -98,6 +101,7 @@ export function validateProjectUpdate(before: LoroDoc, after: LoroDoc, author: U
     editableViolation(metaBefore, metaAfter) ??
     depthViolation(before, after) ??
     keyViolation(before, after) ??
+    sprintsViolation(after) ??
     instancesUpdateViolation(before, after) ??
     bindingsUpdateViolation(before, after, author);
   return reason === null ? { ok: true } : { ok: false, reason };

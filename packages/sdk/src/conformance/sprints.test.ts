@@ -12,7 +12,7 @@ const manifest = (writes: ("ticket" | "sprint")[]) => ({
 
 test("the mock lists the sprints of its project and records the read", async () => {
   const mock = createMockSdk(manifest(["ticket", "sprint"]));
-  expect(await mock.sdk.sprints.list()).toEqual(mock.snapshot().sprints ?? []);
+  expect(await mock.sdk.sprints.list()).toEqual(mock.snapshot().sprints);
   expect(mock.used).toContain("read:sprint");
   expect(mock.violations).toEqual([]);
 });
@@ -31,4 +31,20 @@ test("assigning a sprint is a ticket write in the mock", async () => {
   await expect(mock.sdk.sprints.assign("f9", "s44")).rejects.toThrow("PERMISSION_DENIED");
   expect(mock.used).toContain("write:ticket");
   expect(mock.violations).toEqual(["write setTicketSprint"]);
+});
+
+test("the mock plans a feature on assign, and its sprint view counts it", async () => {
+  const mock = createMockSdk(manifest(["ticket", "sprint"]), { today: "2026-10-14" });
+  const s42 = await mock.sdk.sprints.create({ name: "S42", start: "2026-10-12", end: "2026-10-16" });
+  const f5 = await mock.sdk.run({ method: "createTicket", title: "Photos" });
+  const step = await mock.sdk.run({ method: "createTicket", title: "Envoi", parentId: f5.id });
+  await mock.sdk.sprints.assign(f5.id, s42.id);
+  expect(await mock.sdk.sprints.list()).toEqual([
+    { ...s42, state: "current", features: [f5.id], delivered: 0, total: 1 },
+  ]);
+  const tickets = await mock.sdk.list("ticket");
+  expect(tickets.find((t) => t.id === step.id)?.effectiveSprintId).toBe(s42.id);
+  await mock.sdk.sprints.assign(f5.id, null);
+  expect((await mock.sdk.sprints.list())[0]?.features).toEqual([]);
+  expect(mock.violations).toEqual([]);
 });

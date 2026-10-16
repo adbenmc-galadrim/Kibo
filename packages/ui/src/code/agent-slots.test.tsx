@@ -100,6 +100,7 @@ const project = (rules = DEFAULT_RULES): ProjectSnapshot => ({
   rules,
   bindings: [],
   nextTicketKey: "KIB-13",
+  sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 });
 const working = (state: RunView["state"], cwd = "/repo/.kibo/worktrees/kib-12") =>

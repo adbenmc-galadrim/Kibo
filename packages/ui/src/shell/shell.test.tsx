@@ -71,6 +71,8 @@ const project: ProjectSnapshot = {
       sprintId: null,
       optional: false,
       shortKey: null,
+      effectiveSprintId: null,
+      feature: null,
     },
   ],
   links: [],
@@ -80,6 +82,7 @@ const project: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-8",
+  sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 const repo: ProjectSnapshot = {
@@ -136,6 +139,7 @@ const inbox: ProjectSnapshot = {
     inboxTicket("i4", "INB-4", "done"),
   ],
   nextTicketKey: "INB-5",
+  sprints: [],
 };
 const snapshots = new Map([
   [INBOX_ID, inbox],

@@ -27,6 +27,8 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   sprintId: null,
   optional: false,
   shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
   ...patch,
 });
 const actions = (): TicketMenuActions => ({

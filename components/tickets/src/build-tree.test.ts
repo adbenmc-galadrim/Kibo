@@ -31,6 +31,8 @@ const t = (
   sprintId: null,
   optional: false,
   shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 });
 
 test("nests children under their parent, keeping order and depth", () => {

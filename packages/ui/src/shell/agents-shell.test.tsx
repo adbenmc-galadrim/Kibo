@@ -46,6 +46,8 @@ const mineTicket = (id: string, key: string, title: string, statusId: StatusId):
   sprintId: null,
   optional: false,
   shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 });
 
 function snapshotOf(projectId: string): ProjectSnapshot {
@@ -68,6 +70,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
       tickets: [mineTicket("i2", "INB-2", "Appeler le comptable", "todo")],
       links: [],
       nextTicketKey: "INB-3",
+      sprints: [],
     };
   if (projectId !== "fac")
     return {

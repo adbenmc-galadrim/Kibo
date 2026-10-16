@@ -59,6 +59,8 @@ const ticket = (n: number, title: string): TicketView => ({
   sprintId: null,
   optional: false,
   shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 });
 const BOU15 = ticket(15, "Page de suivi de commande");
 const project: ProjectSnapshot = {
@@ -87,6 +89,7 @@ const project: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "BOU-16",
+  sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 const AUTO: AutoLink = {

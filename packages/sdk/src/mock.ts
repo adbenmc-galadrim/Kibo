@@ -103,7 +103,7 @@ export function createMockSdk(
   });
 
   const backend: ProjectBackend = {
-    snapshot: async () => readProject(doc, activityOf(runs)),
+    snapshot: async () => readProject(doc, activityOf(runs), opts.today),
     run: async (cmd) => componentRun(cmd),
     call: createMockCalls({
       ...opts,
@@ -262,7 +262,7 @@ export function createMockSdk(
     configPatches,
     notes: folder.notes,
     run,
-    snapshot: () => readProject(doc, activityOf(runs)),
+    snapshot: () => readProject(doc, activityOf(runs), opts.today),
     setRuns: (next) => {
       runs = next;
       runChanges.emit();

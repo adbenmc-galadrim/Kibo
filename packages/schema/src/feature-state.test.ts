@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { type FeatureState, featureState, isOpenFeature, nextFeature } from "./feature-state";
+import { type FeatureState, featureState, isOpenFeature, nextFeature, openFeatures } from "./feature-state";
 import type { StatusId } from "./status";
 
 const steps = (...statuses: StatusId[]) =>
@@ -118,4 +118,18 @@ test("the next feature to finish is the most advanced open one, then the fewest 
   ).toBe("b");
   expect(nextFeature([{ id: "f7", rank: 0, state: stateOf("todo", 0, 2, 2) }])).toBeNull();
   expect(nextFeature([])).toBeNull();
+});
+
+test("the open features count goes through the open predicate, ignoring tickets that are not features", () => {
+  const views = [
+    { feature: stateOf("open", 1, 3, 2) },
+    { feature: stateOf("late", 1, 3, 2) },
+    { feature: stateOf("blocked", 1, 3, 2) },
+    { feature: stateOf("blocked", 0, 3, 3, false) },
+    { feature: stateOf("todo", 0, 3, 3) },
+    { feature: stateOf("delivered", 3, 3, 0) },
+    { feature: null },
+  ];
+  expect(openFeatures(views)).toBe(3);
+  expect(openFeatures([])).toBe(0);
 });

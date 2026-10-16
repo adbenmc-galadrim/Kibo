@@ -70,6 +70,7 @@ const project = (sync: ProjectSyncInfo): ProjectSnapshot => ({
   rules: [],
   bindings: [],
   nextTicketKey: null,
+  sprints: [],
   sync,
 });
 const online: SyncStatus = {

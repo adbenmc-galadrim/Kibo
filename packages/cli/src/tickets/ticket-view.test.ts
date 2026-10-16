@@ -38,6 +38,8 @@ function ticket(
     sprintId: null,
     optional: false,
     shortKey: null,
+    effectiveSprintId: null,
+    feature: null,
     progress: { done: 0, total: 0 },
     waitingOn: [],
     keyLabel: `EMIS-${id}`,

@@ -20,6 +20,7 @@ import { getKeyAllocator, nextPendingSeq } from "./keys";
 import { pruneLinks } from "./links";
 import { getProjectMeta, nextTicketSeq } from "./project";
 import { pruneQuestions } from "./questions";
+import { allocateShortKey, checkShortKey } from "./short-key";
 import { getNode, moveNode, subtreeIds, walkDepthFirst } from "./tree";
 
 export type NewTicket = {
@@ -38,6 +39,7 @@ export type TicketPatch = {
   domainId?: string | null;
   assignee?: Assignee | null;
   labels?: readonly string[];
+  shortKey?: string | null;
 };
 
 export type TicketProgressUpdate = {
@@ -138,6 +140,7 @@ export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
   node.data.set("externalRefs", []);
   node.data.set("labels", labels);
   writeDescription(node, input.description ?? "");
+  if (parent) allocateShortKey(doc, parent.id);
   doc.commit();
   return readTicket(node);
 }
@@ -153,11 +156,14 @@ export function listTickets(doc: LoroDoc): Ticket[] {
 export function updateTicket(doc: LoroDoc, id: string, patch: TicketPatch): Ticket {
   const node = getNode(ticketTree(doc), id);
   const labels = patch.labels === undefined ? undefined : normalizeLabels(patch.labels);
-  if (patch.title !== undefined) node.data.set("title", cleanTitle(patch.title));
+  const title = patch.title === undefined ? undefined : cleanTitle(patch.title);
+  const shortKey = patch.shortKey === undefined ? undefined : checkShortKey(doc, id, patch.shortKey);
+  if (title !== undefined) node.data.set("title", title);
   if (patch.description !== undefined) writeDescription(node, patch.description);
   if (patch.domainId !== undefined) node.data.set("domainId", patch.domainId);
   if (patch.assignee !== undefined) node.data.set("assignee", patch.assignee);
   if (labels !== undefined) node.data.set("labels", labels);
+  if (shortKey !== undefined) node.data.set("shortKey", shortKey);
   doc.commit();
   return readTicket(node);
 }
@@ -172,7 +178,17 @@ export function setStatus(doc: LoroDoc, id: string, statusId: StatusId, reason?:
 
 export function moveTicket(doc: LoroDoc, id: string, parentId: string | null, index?: number): void {
   moveNode(ticketTree(doc), id, parentId, index);
+  if (parentId !== null) allocateShortKey(doc, parentId);
   doc.commit();
+}
+
+export function setTicketOptional(doc: LoroDoc, id: string, optional: boolean): Ticket {
+  const node = getNode(ticketTree(doc), id);
+  if (node.parent() === undefined)
+    throw new KiboError("INVALID_INPUT", "an optional step needs a parent ticket");
+  node.data.set("optional", optional);
+  doc.commit();
+  return readTicket(node);
 }
 
 export function deleteTicket(doc: LoroDoc, id: string): string[] {

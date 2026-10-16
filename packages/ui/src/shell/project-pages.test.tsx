@@ -52,6 +52,7 @@ const project = (access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSn
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-1",
+  sprints: [],
   sync: { shared: access !== "write", keyAllocator: "local", role: null, access, members: [] },
 });
 const show = (access: ProjectSnapshot["sync"]["access"] = "write") => {

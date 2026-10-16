@@ -26,6 +26,8 @@ const ticket = (id: string, patch: Partial<TicketView> = {}): TicketView => ({
   sprintId: null,
   optional: false,
   shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
   ...patch,
 });
 const link = (from: string, to: string, type: Link["type"] = "blocks"): Link => ({

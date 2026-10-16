@@ -32,6 +32,7 @@ const snapshotOf = (id: string): ProjectSnapshot => ({
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-1",
+  sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 });
 

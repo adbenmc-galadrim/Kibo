@@ -9,17 +9,25 @@ import {
 import type { LoroDoc } from "loro-crdt";
 
 export type RuleTrigger = {
-  kind: "run_started" | "run_done" | "pr_opened" | "pr_merged" | "status_changed";
+  kind: "run_started" | "run_done" | "pr_opened" | "pr_merged" | "branch_created" | "status_changed";
   ticketId: string;
 };
-export type RuleTicket = Pick<Ticket, "id" | "statusId" | "parentId">;
+export type RuleTicket = Pick<Ticket, "id" | "statusId" | "parentId" | "optional">;
+
+const LATER_DEFAULT_RULES: ReadonlySet<string> = new Set(["branch-created-in-progress"]);
+
+export function withDefaultRules(stored: readonly Rule[]): Rule[] {
+  const known = new Set(stored.map((r) => r.id));
+  const missing = DEFAULT_RULES.filter((r) => LATER_DEFAULT_RULES.has(r.id) && !known.has(r.id));
+  return [...stored, ...missing];
+}
 
 export function readRules(doc: LoroDoc): Rule[] {
   const stored = doc.getMap("rules").get("list");
   if (stored === undefined) return DEFAULT_RULES;
   const parsed = Rule.array().safeParse(stored);
   if (!parsed.success) throw new KiboError("STORE_CORRUPT", `rules: ${parsed.error.message}`);
-  return parsed.data;
+  return withDefaultRules(parsed.data);
 }
 
 export function evaluateRules(rules: Rule[], trigger: RuleTrigger, tickets: RuleTicket[]): ProjectCommand[] {
@@ -47,7 +55,7 @@ export function evaluateRules(rules: Rule[], trigger: RuleTrigger, tickets: Rule
     seen.add(child);
     const parentId = parentOf.get(child) ?? null;
     if (parentId === null) break;
-    const siblings = tickets.filter((t) => t.parentId === parentId);
+    const siblings = tickets.filter((t) => t.parentId === parentId && !t.optional);
     if (!siblings.every((s) => status.get(s.id) === "done")) break;
     const rule = applicable("children_done", status.get(parentId));
     if (!rule) break;

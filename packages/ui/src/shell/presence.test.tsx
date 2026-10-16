@@ -86,6 +86,8 @@ const project: ProjectSnapshot = {
       sprintId: null,
       optional: false,
       shortKey: null,
+      effectiveSprintId: null,
+      feature: null,
     },
   ],
   links: [],
@@ -95,6 +97,7 @@ const project: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: null,
+  sprints: [],
   sync: { shared: true, keyAllocator: "server", role: "editor", access: "write", members: [] },
 };
 const noop = () => {};

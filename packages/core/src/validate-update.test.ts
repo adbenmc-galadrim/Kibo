@@ -5,12 +5,14 @@ import {
   addPage,
   allocateTicketKeys,
   createProjectDoc,
+  createSprint,
   createTicket,
   deleteTicket,
   enableServerAllocation,
   listTickets,
   moveTicket,
   setStatus,
+  setTicketSprint,
   type UpdateAuthor,
   type UpdateVerdict,
   updateTicket,
@@ -184,6 +186,32 @@ describe("reserved fields forged in another shape", () => {
   });
 });
 
+describe("tracking data forged by a client", () => {
+  test("a sprint whose end is before its start", () => {
+    const verdict = verdictFor(sharedServer(), (c) => {
+      c.getMap("sprints").set("s1", { id: "s1", name: "S42", start: "2026-10-16", end: "2026-10-12" });
+      c.commit();
+    });
+    expect(verdict).toEqual({ ok: false, reason: "sprint s1 is not a valid sprint" });
+  });
+
+  test("a sprint stored under another id", () => {
+    const verdict = verdictFor(sharedServer(), (c) => {
+      c.getMap("sprints").set("s1", { id: "s2", name: "S42", start: "2026-10-12", end: "2026-10-16" });
+      c.commit();
+    });
+    expect(verdict.ok).toBe(false);
+  });
+
+  test("a feature counter that is not a sequence number", () => {
+    const verdict = verdictFor(sharedServer(), (c) => {
+      c.getMap("meta").set("featureSeq", -1);
+      c.commit();
+    });
+    expect(verdict).toEqual({ ok: false, reason: "meta.featureSeq has an invalid value" });
+  });
+});
+
 describe("refusal keeps both documents intact", () => {
   test("neither the server state nor the client edits are touched", () => {
     const server = sharedServer();
@@ -232,6 +260,17 @@ describe("accepted updates", () => {
     const after = server.fork();
     after.import(stale.export({ mode: "update", from: server.oplogVersion() }));
     expect(validateProjectUpdate(server, after, OWNER)).toEqual({ ok: true });
+  });
+
+  test("a feature key allocated by a client, and a sprint planned with it", () => {
+    const verdict = verdictFor(sharedServer(), (c) => {
+      const [a, b] = listTickets(c);
+      if (!a || !b) throw new Error("fixture has two tickets");
+      moveTicket(c, b.id, a.id);
+      const sprint = createSprint(c, { name: "S42", start: "2026-10-12", end: "2026-10-16" });
+      setTicketSprint(c, a.id, sprint.id);
+    });
+    expect(verdict).toEqual({ ok: true });
   });
 
   test("a new ticket without key", () => {

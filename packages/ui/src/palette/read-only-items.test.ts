@@ -27,6 +27,7 @@ const snapshot = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot =>
   rules: [],
   bindings: [],
   nextTicketKey: null,
+  sprints: [],
   sync: { shared: true, keyAllocator: "server", role: "viewer", access, members: [] },
 });
 const context = (access: ProjectSnapshot["sync"]["access"]): PaletteContext => ({

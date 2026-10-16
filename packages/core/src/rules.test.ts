@@ -2,12 +2,13 @@ import { describe, expect, test } from "bun:test";
 import { DEFAULT_RULES, type Rule } from "@kibo/schema";
 import { readProject } from "./commands";
 import { createProjectDoc } from "./project";
-import { evaluateRules, type RuleTicket, readRules } from "./rules";
+import { evaluateRules, type RuleTicket, readRules, withDefaultRules } from "./rules";
 
 const t = (id: string, statusId: RuleTicket["statusId"], parentId: string | null = null): RuleTicket => ({
   id,
   statusId,
   parentId,
+  optional: false,
 });
 
 const runDoneReview: Rule = {
@@ -109,6 +110,55 @@ describe("children done", () => {
   });
 });
 
+describe("branch created", () => {
+  test("a new branch starts a waiting ticket and leaves a ticket further on alone", () => {
+    for (const s of ["backlog", "todo"] as const)
+      expect(evaluateRules(DEFAULT_RULES, { kind: "branch_created", ticketId: "a" }, [t("a", s)])).toEqual([
+        { method: "setStatus", ticketId: "a", statusId: "in_progress" },
+      ]);
+    for (const s of ["in_progress", "in_review", "blocked", "done"] as const)
+      expect(evaluateRules(DEFAULT_RULES, { kind: "branch_created", ticketId: "a" }, [t("a", s)])).toEqual(
+        [],
+      );
+  });
+});
+
+describe("optional steps", () => {
+  test("children done closes the parent while an optional sibling is still to do", () => {
+    const tickets = [
+      t("p", "in_progress"),
+      t("c1", "done", "p"),
+      { ...t("demo", "todo", "p"), optional: true },
+    ];
+    expect(evaluateRules(DEFAULT_RULES, { kind: "status_changed", ticketId: "c1" }, tickets)).toEqual([
+      { method: "setStatus", ticketId: "p", statusId: "done" },
+    ]);
+  });
+});
+
+describe("default rules completion", () => {
+  const BRANCH_RULE = "branch-created-in-progress";
+  const older = DEFAULT_RULES.filter((r) => r.id !== BRANCH_RULE);
+
+  test("a stored list without the branch rule gets it once", () => {
+    expect(older).toHaveLength(4);
+    const completed = withDefaultRules(older);
+    expect(completed.filter((r) => r.id === BRANCH_RULE)).toHaveLength(1);
+    expect(completed).toHaveLength(5);
+    expect(withDefaultRules(completed)).toEqual(completed);
+  });
+
+  test("a stored list that has it is unchanged, even disabled", () => {
+    const disabled = DEFAULT_RULES.map((r) => (r.id === BRANCH_RULE ? { ...r, enabled: false } : r));
+    expect(withDefaultRules(disabled)).toEqual(disabled);
+  });
+
+  test("a rule removed from the stored list other than the branch rule is not brought back", () => {
+    const custom = older.filter((r) => r.id !== "pr-opened-review");
+    expect(withDefaultRules(custom).map((r) => r.id)).toEqual([...custom.map((r) => r.id), BRANCH_RULE]);
+  });
+});
+
 describe("storage", () => {
   const doc = () =>
     createProjectDoc({
@@ -126,6 +176,14 @@ describe("storage", () => {
   test("projects without rules use the defaults, and the snapshot carries them", () => {
     expect(readRules(doc())).toEqual(DEFAULT_RULES);
     expect(readProject(doc()).rules).toEqual(DEFAULT_RULES);
+  });
+  test("stored rules are completed on read, nothing is written", () => {
+    const d = doc();
+    const older = DEFAULT_RULES.filter((r) => r.id !== "branch-created-in-progress");
+    d.getMap("rules").set("list", older);
+    d.commit();
+    expect(readRules(d).map((r) => r.id)).toContain("branch-created-in-progress");
+    expect(d.getMap("rules").get("list")).toEqual(older);
   });
   test("stored rules are validated", () => {
     const d = doc();

@@ -58,6 +58,7 @@ const snapshot: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-1",
+  sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 const ctx = { projects: [summary], snapshots: new Map([["p1", snapshot]]) };

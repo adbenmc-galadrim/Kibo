@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { Ticket } from "@kibo/schema";
+import type { Sprint, Ticket } from "@kibo/schema";
 import { createProjectDoc, executeProjectCommand, readProject } from "./index";
 
 const newDoc = () =>
@@ -73,4 +73,79 @@ test("a ticket blocked by a group waits until the group is done", () => {
   expect(view(d, next.id)).toMatchObject({ waitingOn: ["EMIS-1"], startable: false });
   executeProjectCommand(d, { method: "setStatus", ticketId: a.id, statusId: "done" });
   expect(view(d, next.id)).toMatchObject({ waitingOn: [], startable: true });
+});
+
+const status = (d: ReturnType<typeof newDoc>, ticketId: string, statusId: Ticket["statusId"]) =>
+  executeProjectCommand(d, { method: "setStatus", ticketId, statusId });
+const optional = (d: ReturnType<typeof newDoc>, ticketId: string) =>
+  executeProjectCommand(d, { method: "setTicketOptional", ticketId, optional: true });
+const viewOn = (d: ReturnType<typeof newDoc>, today: string, id: string) => {
+  const t = readProject(d, undefined, today).tickets.find((x) => x.id === id);
+  if (!t) throw new Error(`missing ${id}`);
+  return t;
+};
+
+test("every ticket carries the sprint of its root, and only a root with steps is a feature", () => {
+  const d = newDoc();
+  const s42 = executeProjectCommand(d, {
+    method: "createSprint",
+    name: "S42",
+    start: "2026-10-12",
+    end: "2026-10-16",
+  }) as Sprint;
+  const f5 = create(d, "Photos");
+  const step = create(d, "Envoi", f5.id);
+  const sub = create(d, "Compression", step.id);
+  const solo = create(d, "Seul");
+  executeProjectCommand(d, { method: "setTicketSprint", ticketId: f5.id, sprintId: s42.id });
+  for (const id of [f5.id, step.id, sub.id]) expect(view(d, id).effectiveSprintId).toBe(s42.id);
+  expect(view(d, solo.id).effectiveSprintId).toBeNull();
+  expect(view(d, f5.id).feature).toMatchObject({ status: "todo", steps: { done: 0, total: 1 } });
+  expect(view(d, step.id).feature).toBeNull();
+  expect(view(d, solo.id).feature).toBeNull();
+});
+
+test("a group is done once its mandatory steps are, an optional demo left to do", () => {
+  const d = newDoc();
+  const f3 = create(d, "Rapports");
+  const a = create(d, "PDF", f3.id);
+  const demo = create(d, "Démo client", f3.id);
+  optional(d, demo.id);
+  status(d, a.id, "done");
+  expect(view(d, f3.id)).toMatchObject({ statusId: "done", progress: { done: 1, total: 2 } });
+  expect(view(d, f3.id).feature).toMatchObject({ status: "delivered", remaining: 0 });
+  expect(view(d, demo.id).optional).toBe(true);
+  expect(() => optional(d, f3.id)).toThrow("INVALID_INPUT");
+});
+
+test("a feature is late once its sprint is over with steps left, dated by the given day", () => {
+  const d = newDoc();
+  const s42 = executeProjectCommand(d, {
+    method: "createSprint",
+    name: "S42",
+    start: "2026-10-12",
+    end: "2026-10-16",
+  }) as Sprint;
+  const f5 = create(d, "Photos");
+  const a = create(d, "Envoi", f5.id);
+  create(d, "Relance", f5.id);
+  status(d, a.id, "in_progress");
+  executeProjectCommand(d, { method: "setTicketSprint", ticketId: f5.id, sprintId: s42.id });
+  expect(viewOn(d, "2026-10-16", f5.id).feature?.status).toBe("open");
+  expect(viewOn(d, "2026-10-17", f5.id).feature).toMatchObject({ status: "late", remaining: 2 });
+  expect(view(d, f5.id).feature?.status).toBe("open");
+});
+
+test("a feature whose next step has an open blocking question is blocked", () => {
+  const d = newDoc();
+  const f6 = create(d, "Signature");
+  const a = create(d, "Écran", f6.id);
+  executeProjectCommand(d, {
+    method: "createQuestion",
+    ticketId: a.id,
+    title: "Q14",
+    blocking: true,
+    createdBy: { kind: "human", ref: "adam" },
+  });
+  expect(view(d, f6.id).feature).toMatchObject({ status: "blocked", nextStepId: a.id });
 });

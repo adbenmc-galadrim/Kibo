@@ -35,6 +35,8 @@ const ticket = (n: number, title: string, statusId: TicketView["statusId"] = "in
   sprintId: null,
   optional: false,
   shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 });
 const summary: ProjectSummary = {
   id: "p1",
@@ -69,6 +71,7 @@ const snapshot: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-19",
+  sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 const context: PaletteContext = {

@@ -27,6 +27,8 @@ const ticket = {
   sprintId: null,
   optional: false,
   shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 } satisfies TicketView;
 const actions = (): CardMenuActions => ({
   open: mock(() => {}),

@@ -41,8 +41,8 @@ export type TicketView = Ticket & {
   keyLabel: string;
   openQuestions: number;
   startable: boolean;
-  effectiveSprintId?: string | null;
-  feature?: FeatureState | null;
+  effectiveSprintId: string | null;
+  feature: FeatureState | null;
 };
 export type ProjectSnapshot = {
   meta: ProjectMeta;
@@ -60,7 +60,7 @@ export type ProjectSnapshot = {
   domains?: Domain[];
   viewer?: string;
   icon?: string | null;
-  sprints?: SprintView[];
+  sprints: SprintView[];
 };
 export type ProjectSummary = ProjectMeta & {
   counts: Record<StatusId, number>;

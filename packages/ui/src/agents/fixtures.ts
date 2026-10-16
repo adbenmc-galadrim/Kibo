@@ -343,6 +343,8 @@ const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title"
   sprintId: null,
   optional: false,
   shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
   pendingSeq: null,
   keyLabel: p.key ?? "KIB-…",
   ...p,
@@ -402,6 +404,7 @@ export function kiboProject(): ProjectSnapshot {
     rules: [],
     bindings: [],
     nextTicketKey: "KIB-30",
+    sprints: [],
     sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
   };
 }

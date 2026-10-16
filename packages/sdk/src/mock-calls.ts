@@ -49,6 +49,7 @@ export type MockCallDeps = {
   mcp?: Record<string, McpCallResult>;
   ciRuns?: CiRun[];
   shared?: boolean;
+  today?: string;
   members?: MemberInfo[];
   assets?: ProjectAsset[];
   frames?: MockFrame[];
@@ -57,7 +58,7 @@ export type MockCallDeps = {
 };
 
 function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
-  const snapshot = readProject(deps.doc, activityOf(deps.runs()));
+  const snapshot = readProject(deps.doc, activityOf(deps.runs()), deps.today);
   const lists: { [K in EntityType]: () => EntityMap[K][] } = {
     ticket: () => snapshot.tickets,
     status: () => snapshot.workflow,
@@ -67,7 +68,7 @@ function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
     note: () => deps.folder.list(),
     ci_run: () => deps.ciRuns ?? [],
     question: () => snapshot.questions,
-    sprint: () => snapshot.sprints ?? [],
+    sprint: () => snapshot.sprints,
   };
   return lists[entity]();
 }

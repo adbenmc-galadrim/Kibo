@@ -125,6 +125,8 @@ const ticket: TicketView = {
   sprintId: null,
   optional: false,
   shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 };
 const project = (tickets: TicketView[]): ProjectSnapshot => ({
   meta: {
@@ -149,6 +151,7 @@ const project = (tickets: TicketView[]): ProjectSnapshot => ({
   rules: [],
   bindings: [],
   nextTicketKey: "EMIS-10",
+  sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 });
 

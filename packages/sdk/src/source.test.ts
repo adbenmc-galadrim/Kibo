@@ -26,6 +26,8 @@ const ticket = (refs: TicketView["externalRefs"]): TicketView => ({
   sprintId: null,
   optional: false,
   shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 });
 
 test("a synced instance only shows tickets of its binding", () => {

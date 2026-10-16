@@ -53,6 +53,8 @@ const ticket = (id: string, key: string | null): TicketView => ({
   sprintId: null,
   optional: false,
   shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 });
 
 const childTickets = (children: ReadonlyMap<string, number>): TicketView[] =>
@@ -83,6 +85,7 @@ export const testProject: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-5",
+  sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 

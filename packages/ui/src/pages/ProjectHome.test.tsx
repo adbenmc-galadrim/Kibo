@@ -26,6 +26,7 @@ const project = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot => 
   rules: [],
   bindings: [],
   nextTicketKey: null,
+  sprints: [],
   sync: { shared: true, keyAllocator: "server", role: "viewer", access, members: [] },
 });
 
