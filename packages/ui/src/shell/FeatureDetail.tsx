@@ -6,6 +6,7 @@ import { frFeature as t } from "../i18n/fr-group";
 import { canEdit } from "../state/access";
 import { useAgentsState } from "../state/agents-context";
 import { useNow } from "../state/use-agents";
+import { useAppSettings } from "../state/use-app-settings";
 import { useTicketCommand } from "../ticket/use-ticket-command";
 import { DependenciesCard } from "./feature/DependenciesCard";
 import { ExpectedResult } from "./feature/ExpectedResult";
@@ -36,12 +37,14 @@ export function FeatureDetail({
   project,
   ticket: f,
   now: fixedNow,
-  execution = "hidden",
+  execution: forced,
   actions,
   onOpenFile,
   onOpenTicket,
 }: Props) {
   const liveNow = useNow(60_000);
+  const setting = useAppSettings().agentExecution;
+  const execution = forced ?? setting;
   const now = fixedNow ?? liveNow;
   const host = useOptionalHost();
   const agents = useAgentsState();

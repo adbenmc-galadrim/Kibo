@@ -166,3 +166,37 @@ test("a read-only project hides the editing actions", () => {
   expect(screen.queryByRole("button", { name: "Modifier le résultat attendu" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Choisir le sprint" })).toBeNull();
 });
+
+const { AppSettingsProvider, fixedStore } = await import("../state/use-app-settings");
+
+const renderWithSetting = (agentExecution: "hidden" | "shown") => {
+  const project = emisFeatureProject();
+  const feature = project.tickets.find((t) => t.id === "f5");
+  if (!feature) throw new Error("fixture without F5");
+  render(
+    <AppSettingsProvider store={fixedStore({ agentExecution })}>
+      <HostProvider host={host}>
+        <FeatureDetail
+          project={project}
+          ticket={feature}
+          now={NOW}
+          onOpenFile={() => undefined}
+          onOpenTicket={() => undefined}
+        />
+      </HostProvider>
+    </AppSettingsProvider>,
+  );
+};
+
+test("without an explicit mode, the next step follows the agent execution setting", async () => {
+  const user = userEvent.setup();
+  renderWithSetting("shown");
+  await user.click(screen.getByRole("button", { name: "Livrer la prochaine étape" }));
+  expect(calls.some((c) => c.method === "deliver")).toBe(true);
+  cleanup();
+  calls.length = 0;
+  renderWithSetting("hidden");
+  await user.click(screen.getByRole("button", { name: "Livrer la prochaine étape" }));
+  expect(await navigator.clipboard.readText()).toMatch(/^\/full-delivery EMIS-/);
+  expect(calls.some((c) => c.method === "deliver")).toBe(false);
+});
