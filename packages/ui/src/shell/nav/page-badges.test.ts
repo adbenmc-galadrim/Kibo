@@ -12,9 +12,10 @@ const instance = (pageId: string, component: string): Instance => ({
   componentHash: null,
 });
 
-const sprint = (id: string, name: string, state: SprintView["state"], start: string): SprintView => ({
+const sprint = (id: string, code: string, state: SprintView["state"], start: string): SprintView => ({
   id,
-  name,
+  code,
+  name: `Sprint ${code}`,
   start,
   end: start,
   state,

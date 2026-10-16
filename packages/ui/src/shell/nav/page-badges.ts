@@ -6,7 +6,7 @@ const count = (n: number): string | null => (n > 0 ? String(n) : null);
 
 const BADGES: Record<string, (p: Badged) => string | null> = {
   planning: (p) =>
-    p.sprints.filter((s) => s.state === "current").sort((a, b) => b.start.localeCompare(a.start))[0]?.name ??
+    p.sprints.filter((s) => s.state === "current").sort((a, b) => b.start.localeCompare(a.start))[0]?.code ??
     null,
   tickets: (p) => count(p.tickets.filter((t) => !isFeature(t) && t.statusId !== "done").length),
   questions: (p) => count(p.questions.filter(isOpen).length),
