@@ -1,4 +1,4 @@
-import type { SprintView, Ticket } from "@kibo/schema";
+import type { SprintView } from "@kibo/schema";
 import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
@@ -13,7 +13,8 @@ import {
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { Textarea } from "@kibo/sdk/ui/textarea";
-import { type FormEvent, useId, useState } from "react";
+import { type FormEvent, useId, useRef, useState } from "react";
+import { createFeature, freshProgress } from "./create-feature";
 import { fr } from "./fr";
 import { sprintLabel } from "./sprint-label";
 
@@ -41,16 +42,13 @@ export function NewFeatureDialog({ sprints, sprintId, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const titles = stepTitles(steps);
   const valid = name.trim() !== "" && titles.length > 0;
-  const create = async () => {
-    const root: Ticket = await sdk.run({ method: "createTicket", title: name.trim(), description: expected });
-    const created: Ticket[] = [];
-    for (const title of titles)
-      created.push(await sdk.run({ method: "createTicket", title, parentId: root.id }));
-    const last = created.at(-1);
-    if (lastOptional && last)
-      await sdk.run({ method: "setTicketOptional", ticketId: last.id, optional: true });
-    if (sprint !== "") await sdk.sprints.assign(root.id, sprint);
-  };
+  const progress = useRef(freshProgress());
+  const create = () =>
+    createFeature(
+      sdk,
+      { name: name.trim(), expected, sprintId: sprint === "" ? null : sprint, steps: titles, lastOptional },
+      progress.current,
+    );
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!valid) return;

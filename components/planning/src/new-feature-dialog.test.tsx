@@ -62,3 +62,36 @@ test("the last step stays mandatory when unchecked, and a feature needs a step",
   const [only] = m.snapshot().tickets.filter((t) => t.parentId === root?.id);
   expect(only?.optional).toBe(false);
 });
+
+test("a retry after a partial failure finishes the same feature, without duplicates", async () => {
+  const { m, seeded } = setupPlanning();
+  const run = m.sdk.run.bind(m.sdk);
+  let failures = 1;
+  m.sdk.run = async (cmd) => {
+    if (cmd.method === "createTicket" && cmd.title === "Export PDF" && failures-- > 0)
+      throw new Error("REMOTE_UNAVAILABLE");
+    return run(cmd);
+  };
+  const { user, dialog } = await openDialog();
+  await user.type(within(dialog).getByLabelText("Nom"), "Signer un PV");
+  await user.selectOptions(within(dialog).getByLabelText("Sprint"), seeded.sprints.s44.id);
+  const steps = within(dialog).getByLabelText("Étapes, une par ligne");
+  await user.clear(steps);
+  await user.type(steps, "Écran de signature{Enter}Export PDF{Enter}Démo client");
+  const create = within(dialog).getByRole("button", { name: "Créer la fonctionnalité" });
+  await user.click(create);
+  expect((await within(dialog).findByRole("alert")).textContent).toBe(
+    "Impossible de créer la fonctionnalité.",
+  );
+  await user.click(create);
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  const tickets = m.snapshot().tickets;
+  const roots = tickets.filter((t) => t.title === "Signer un PV");
+  expect(roots).toHaveLength(1);
+  expect(roots[0]?.sprintId).toBe(seeded.sprints.s44.id);
+  expect(tickets.filter((t) => t.parentId === roots[0]?.id).map((t) => [t.title, t.optional])).toEqual([
+    ["Écran de signature", false],
+    ["Export PDF", false],
+    ["Démo client", true],
+  ]);
+});
