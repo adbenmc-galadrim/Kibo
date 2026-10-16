@@ -8,6 +8,8 @@ import { startFakeStorybook } from "../packages/daemon/src/testing/fake-storyboo
 import { e2eHome } from "./e2e-home";
 import { fakeGhDir, GIT_IDENTITY } from "./git-repo";
 import { EMIS_MAQUETTES, FIXED_NOW } from "./pixel-settings";
+import { connectSeedRpc, waitForDaemon } from "./seed-client";
+import { seedEmisMaquettes } from "./seed-emis-maquettes";
 import {
   E2E_FIGMA_TOKEN,
   E2E_GH_TOKEN,
@@ -165,7 +167,22 @@ const proc = Bun.spawn(
 const forward = (signal: NodeJS.Signals) => () => proc.kill(signal);
 process.on("SIGTERM", forward("SIGTERM"));
 process.on("SIGINT", forward("SIGINT"));
-const code = await proc.exited;
+async function seedScenario(): Promise<void> {
+  if (scenario !== EMIS_MAQUETTES) return;
+  const base = `http://127.0.0.1:${port}`;
+  await waitForDaemon(base, 30_000);
+  await seedEmisMaquettes(await connectSeedRpc(base, E2E_TOKEN));
+}
+const seeded = await seedScenario().then(
+  () => true,
+  (error: unknown) => {
+    console.error(`seed ${scenario} failed:`, error);
+    proc.kill("SIGTERM");
+    return false;
+  },
+);
+const exited = await proc.exited;
+const code = seeded ? exited : 1;
 await fakes?.stop();
 rmSync(home, { recursive: true, force: true });
 rmSync(ghDir, { recursive: true, force: true });
