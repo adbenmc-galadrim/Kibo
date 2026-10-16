@@ -184,3 +184,22 @@ données Emis et une légende d'une ligne.
 | 9 | Vue d'ensemble | sprint en cours et suivant | toutes les échéances et Planning tous projets |
 
 Exports : `exports/choix-<n>-<slug>-{dark,light}.png` (`await storage.exportChoix()`), copiés dans `screens/redesign/`.
+
+## Références au pixel près (2026-10-16)
+
+Écrans validés, exportés à l'échelle 1 (1 px Penpot = 1 px), sombre et clair :
+
+| Écran | Fichiers | Dimensions |
+|---|---|---|
+| P1 bis · Vue d'ensemble | `exports/proposition-vue-ensemble-v2-{dark,light}.png` | 1 440 × 1 260 px |
+| P2 · Planning | `exports/proposition-planning-{dark,light}.png` | 1 440 × 1 000 px |
+| P3 · Fonctionnalité | `exports/proposition-fonctionnalite-{dark,light}.png` | 1 440 × 1 000 px |
+| P4 · Tickets | `exports/proposition-tickets-{dark,light}.png` | 1 440 × 1 000 px |
+| P5 · Graphe | `exports/proposition-graphe-{dark,light}.png` | 1 440 × 1 000 px |
+
+P1 (`proposition-vue-ensemble-*`, 1 440 × 1 100 px) est remplacé par P1 bis. Les tableaux de choix font 1 200 × 560 px.
+
+`cotes.md` donne, pour chaque écran et chaque bloc, la position, la taille, le flex (direction, espacement, marges internes), les polices,
+les couleurs en tokens (sombre et clair), les rayons et bordures, ainsi que la liste exacte des textes affichés. Il est relevé depuis Penpot
+par `scripts/95-cotes.js`, puis mis en forme par `scripts/cotes.py`. Les écrans sont aussi dans le fichier Penpot « Kibo », page
+« 35 · Redesign Emis » (210 à 218).

@@ -52,8 +52,9 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 32 · Doublons entre agents | 197 à 201b (phase 23 : fil `other` et `owner`, fichiers du recouvrement, lien posé et annulé, fiche Détails et Activité, barre, page du run, réglages, « Ce que reçoit l'agent ») ; **dessinés, ajustés après implémentation** |
 | 33 · Questions : modifier, rouvrir, archiver | 202 à 206 (phase 23 : réponses modifiables, archives et historique, lot de questions, aperçu au survol, question mise en évidence) ; **dessinés** |
 | 34 · Domaines & guidelines | 207 à 209b (phase 23 : arbre de dossiers, état vide, domaine de projet et du workspace, projet partagé en lecture seule, encart, sélecteur groupé, lien du projet) ; **dessinés, ajustés après implémentation** |
+| 35 · Redesign Emis | 210 à 218 (redesign validé le 2026-10-16 : vue d'ensemble, Planning, fiche fonctionnalité, Tickets, Graphe ; états fiche de sprint et report, 3/2 ouvertes, démo facultative, infobulle du nom) ; **dessinés** |
 
-Pages 00 à 27 et 29 à 34 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 34.
+Pages 00 à 27 et 29 à 35 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 35.
 Pages 28 à 28d : pistes de brainstorming (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF ; scripts `32b` à `32f`, pistes eux aussi.
 
 Règles :
@@ -289,9 +290,22 @@ de haut (207 à 208, 208c), 1 040 sinon ; rangées espacées de 1,4 × 1 040 px.
   le projet », section Guidelines entre Storybook (Adresse, Variable du port) et « Doublons entre agents » (« 7 fichiers .md · 4 domaines » suivi
   du lien « Ouvrir le dossier de guidelines → »). La portée « domaine de Kibo » est une pastille au point de la couleur du projet.
 
+## Redesign (page 35)
+
+Scripts de `design/redesign/scripts/` (et non ceux de ce dossier), servis par `design/redesign/scripts/receiver.py` ; chargement comme dans
+`design/redesign/scripts/00-charger.js`, plus `85-etats.js`. Écrans du redesign validé le 2026-10-16 (voir `design/redesign/README.md`),
+projet Emis, horloge au 16 oct. : `S.draw["p-vue2"]` (210), `p-planning` (211), `p-fonctionnalite` (212), `p-tickets` (213), `p-graphe` (214, puis
+`S.edgesP()` dans un second appel), `etat-215` à `etat-218` (panneau « Recommandé » des choix 7, 4, 5 et 6). Écrans de 1 440 px de large ; rangées
+de 1 500 px, clair à x = 1 540 ; états de 604 × 452 à partir de y = 7 500, rangées de 600 px. Le dessin renomme ensuite chaque board en `n · titre`.
+
+- 35 · Redesign Emis : 210 vue d'ensemble (indicateurs, « En ce moment », échéances, sprint S42, prochaine à finir, activité, En review,
+  questions, panneau de l'agent de projet et lot n° 7) · 211 Planning, sprints en colonnes · 212 fiche fonctionnalité F5, parcours de A à Z ·
+  213 Tickets · 214 Graphe, une colonne par sprint · 215 fiche de sprint S42 et « Fin de sprint : reporter F5 en S43 ? » · 216 « 3/2 ouvertes »,
+  « Ouvrir F6 » reste possible · 217 démo client facultative en pointillé, F4 livrée · 218 nom tronqué et infobulle du nom complet.
+
 ## Exporter
 
-1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("34")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
+1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("35")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`.
 2. Source : menu du fichier → Exporter (.penpot), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
    que Penpot régénère : l'archive reste sous la limite de 100 Mo de GitHub).

@@ -130,7 +130,7 @@ S.agentPanelP2 = (root) => { const C = S.C, sec = C.mfg;
   const sm = S.col(ap, { fx: true, pad: [18, 18], gap: 8 });
   S.txt(sm, "Résumé du jour", { size: 12, weight: 600, color: sec, upper: true, ls: 0.5 });
   S.txt(sm, "F3 est livrée : 3 fonctionnalités sur 9.", { size: 14, weight: 500, lh: 1.45, fill: true });
-  S.txt(sm, "S42 finit ce soir et F5 n'y tiendra pas : il lui reste 3 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo.", { size: 13, lh: 1.55, color: sec, fill: true });
+  S.txt(sm, "S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo.", { size: 13, lh: 1.55, color: sec, fill: true });
   S.hline(ap, C.soft);
   const lb = S.col(ap, { fx: true, pad: [18, 18], gap: 10 });
   const lh0 = S.row(lb, { fx: true, gap: 8 }); S.txt(lh0, "À valider", { size: 12, weight: 600, color: sec, upper: true, ls: 0.5 });
