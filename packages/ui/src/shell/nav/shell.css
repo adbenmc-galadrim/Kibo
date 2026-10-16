@@ -144,7 +144,7 @@
   gap: 8px;
   border: 1px solid var(--tracking-border);
   border-radius: 6px;
-  padding: 0 8px;
+  padding: 0 7px;
   background: var(--tracking-bg);
   font-size: 12.5px;
   line-height: 1.2;
@@ -160,7 +160,7 @@
 .k-search > kbd {
   border: 1px solid var(--tracking-border);
   border-radius: 4px;
-  padding: 1px 4px;
+  padding: 0 3px;
   font-family: var(--font-mono);
   font-size: 10px;
   line-height: 1.2;
@@ -285,7 +285,7 @@
   gap: 6px;
   border: 1px solid var(--tracking-border);
   border-radius: 6px;
-  padding-right: 10px;
+  padding-right: 9px;
 }
 
 .k-agent[data-open] {
@@ -299,7 +299,7 @@
   align-items: center;
   gap: 6px;
   border-radius: 6px;
-  padding-left: 10px;
+  padding-left: 9px;
   font-size: 12.5px;
   line-height: 1.2;
   font-weight: 500;
