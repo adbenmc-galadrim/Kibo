@@ -48,6 +48,8 @@ export const fr = {
     toggleSidebar: "Afficher ou masquer la barre latérale",
     addProject: "Ajouter un projet",
     synced: "Synchronisé",
+    syncOffline: "hors ligne",
+    syncError: "erreur de sync",
     openNewTab: "Ouvrir dans un nouvel onglet",
     rename: "Renommer…",
     moveUp: "Monter",
