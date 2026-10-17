@@ -70,7 +70,7 @@
     },
     "title": "Graphe de dépendances",
     "description": "Généré depuis les liens bloque / bloqué par",
-    "reads": ["ticket", "status", "link", "run"],
+    "reads": ["ticket", "status", "link", "run", "sprint", "question"],
     "selection": true,
     "writes": [],
     "configSchema": {
@@ -82,6 +82,16 @@
         "type": "boolean",
         "default": false,
         "label": "Afficher les terminés"
+      },
+      "columns": {
+        "enum": ["sprints", "waves"],
+        "default": "sprints",
+        "label": "Colonnes"
+      },
+      "collapseDelivered": {
+        "type": "boolean",
+        "default": true,
+        "label": "Livrées repliées"
       }
     }
   },
