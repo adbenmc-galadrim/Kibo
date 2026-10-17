@@ -1,14 +1,14 @@
 import type { ComponentDraftDetails } from "@kibo/schema";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { problemCount } from "./draft-flow";
 
 function failureText(details: ComponentDraftDetails, exhausted: boolean): string | null {
   const failure = details.failure;
   if (!failure) return null;
-  if (failure.kind !== "validation" || !details.report) return fr.ai.failure[failure.kind];
+  if (failure.kind !== "validation" || !details.report) return frAi.ai.failure[failure.kind];
   return exhausted
-    ? fr.ai.gaveUp(details.title)
-    : fr.ai.problems(details.title, problemCount(details.report));
+    ? frAi.ai.gaveUp(details.title)
+    : frAi.ai.problems(details.title, problemCount(details.report));
 }
 
 type Props = { details: ComponentDraftDetails; reviewed: boolean; exhausted: boolean };
@@ -16,13 +16,13 @@ type Props = { details: ComponentDraftDetails; reviewed: boolean; exhausted: boo
 export function DraftHeadline({ details, reviewed, exhausted }: Props) {
   const text =
     details.status === "generating"
-      ? fr.ai.generating(details.title)
+      ? frAi.ai.generating(details.title)
       : details.status === "validating"
-        ? fr.ai.validating
+        ? frAi.ai.validating
         : details.status === "failed"
           ? failureText(details, exhausted)
           : details.status === "review" && !reviewed
-            ? fr.ai.reviewHelp
+            ? frAi.ai.reviewHelp
             : null;
   if (!text) return null;
   return <p className="text-sm text-muted-foreground">{text}</p>;

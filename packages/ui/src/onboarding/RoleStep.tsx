@@ -9,7 +9,7 @@ import { ClipboardList, Code, Info, Palette, Sparkles } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useAiAvailability } from "../ai/use-ai-availability";
 import { ChoiceCard } from "../dialogs/ChoiceCard";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { presetFor, ROLE_ORDER, type SelectedPage, toSelection } from "./presets";
 import { StarterPagesList } from "./StarterPagesList";
 import { type SuggestionState, useStarterSuggestion } from "./use-starter-suggestion";
@@ -54,15 +54,15 @@ export function RoleStep({ available, titles, selection, onSelection, ...control
   return (
     <div className="grid gap-4">
       <fieldset className="grid gap-2">
-        <legend className="mb-2 text-sm font-medium">{fr.onboarding.role}</legend>
+        <legend className="mb-2 text-sm font-medium">{frAi.onboarding.role}</legend>
         <RadioGroup value={role} onValueChange={chooseRole} className="grid gap-2 sm:grid-cols-2">
           {ROLE_ORDER.map((r) => (
             <ChoiceCard
               key={r}
               value={r}
               icon={ICONS[r]}
-              title={fr.onboarding.roles[r]}
-              description={fr.onboarding.roleHelp[r]}
+              title={frAi.onboarding.roles[r]}
+              description={frAi.onboarding.roleHelp[r]}
             />
           ))}
         </RadioGroup>
@@ -70,14 +70,14 @@ export function RoleStep({ available, titles, selection, onSelection, ...control
       {role === "other" && (
         <div className="grid gap-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor={`${id}-usage`}>{fr.onboarding.usage}</Label>
-            <span className="text-xs text-muted-foreground">{fr.onboarding.optional}</span>
+            <Label htmlFor={`${id}-usage`}>{frAi.onboarding.usage}</Label>
+            <span className="text-xs text-muted-foreground">{frAi.onboarding.optional}</span>
           </div>
           <Textarea
             id={`${id}-usage`}
             rows={2}
             maxLength={500}
-            placeholder={fr.onboarding.usagePlaceholder}
+            placeholder={frAi.onboarding.usagePlaceholder}
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
@@ -90,19 +90,19 @@ export function RoleStep({ available, titles, selection, onSelection, ...control
                 disabled={waiting || block !== null}
                 onClick={() => suggest(role, text.trim())}
               >
-                <Sparkles aria-hidden /> {waiting ? fr.onboarding.suggesting : fr.onboarding.suggest}
+                <Sparkles aria-hidden /> {waiting ? frAi.onboarding.suggesting : frAi.onboarding.suggest}
               </Button>
               {!waiting && (
                 <span className="text-xs text-muted-foreground">
-                  {block ? fr.ai.blocked[block] : fr.onboarding.viaSubscription}
+                  {block ? frAi.ai.blocked[block] : frAi.onboarding.viaSubscription}
                 </span>
               )}
               {waiting && state.queued && (
-                <span className="text-xs text-muted-foreground">{fr.onboarding.queued}</span>
+                <span className="text-xs text-muted-foreground">{frAi.onboarding.queued}</span>
               )}
               {waiting && (
                 <Button type="button" variant="ghost" size="sm" onClick={cancel}>
-                  {fr.onboarding.cancelSuggestion}
+                  {frAi.onboarding.cancelSuggestion}
                 </Button>
               )}
             </div>
@@ -112,20 +112,20 @@ export function RoleStep({ available, titles, selection, onSelection, ...control
       {state.status === "unavailable" && (
         <Alert className="bg-muted/40">
           <Info aria-hidden />
-          <AlertTitle>{fr.onboarding.unavailable}</AlertTitle>
+          <AlertTitle>{frAi.onboarding.unavailable}</AlertTitle>
         </Alert>
       )}
       <div className="grid gap-2">
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium">{fr.onboarding.pages}</h3>
+          <h3 className="text-sm font-medium">{frAi.onboarding.pages}</h3>
           {state.status === "ready" && (
             <Badge variant="outline" className="border-brand/40 text-brand">
-              <Sparkles aria-hidden /> {fr.onboarding.suggested}
+              <Sparkles aria-hidden /> {frAi.onboarding.suggested}
             </Badge>
           )}
         </div>
         <StarterPagesList selection={selection} titles={titles} onChange={onSelection} />
-        <p className="text-xs text-muted-foreground">{fr.onboarding.pagesHelp}</p>
+        <p className="text-xs text-muted-foreground">{frAi.onboarding.pagesHelp}</p>
       </div>
     </div>
   );

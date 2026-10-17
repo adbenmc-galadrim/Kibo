@@ -4,6 +4,7 @@ import { Check, Folder, GraduationCap, Plus, RotateCw, TriangleAlert } from "luc
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { frSecurity } from "../i18n/fr-security";
 import { sandboxStopped } from "../lib/sandbox-problem";
 import { useRpcQuery } from "../state/use-rpc-query";
@@ -21,7 +22,7 @@ const DOT: Record<CheckState, { Icon: typeof Check; tone: string }> = {
 function CheckHelpBlock({ help }: { help: NonNullable<CheckView["help"]> }) {
   return (
     <details className="group border-t px-4 py-3 pl-13 text-xs text-muted-foreground">
-      <summary className="cursor-pointer select-none text-foreground">{fr.welcome.showHelp}</summary>
+      <summary className="cursor-pointer select-none text-foreground">{frAi.welcome.showHelp}</summary>
       <div className="mt-2 grid gap-2">
         <p>{help.text}</p>
         <pre className="overflow-x-auto rounded-md border bg-background px-3 py-2 font-mono text-foreground">
@@ -51,7 +52,7 @@ function CheckRow({ check, action, onRetry }: RowProps) {
         </div>
         {check.retry && (
           <Button size="sm" variant="outline" onClick={onRetry}>
-            <RotateCw className="size-3.5" /> {fr.welcome.retry}
+            <RotateCw className="size-3.5" /> {frAi.welcome.retry}
           </Button>
         )}
         {action}
@@ -74,7 +75,7 @@ function EnvironmentChecks({ checks, onRetry, onConnectGithub }: ChecksProps) {
           action={
             check.id === "github" && check.state !== "ok" ? (
               <Button size="sm" variant="outline" onClick={onConnectGithub}>
-                {fr.welcome.githubConnect}
+                {frAi.welcome.githubConnect}
               </Button>
             ) : null
           }
@@ -110,9 +111,9 @@ function useEnvironment(): EnvironmentQuery {
 }
 
 function subtitleOf(checks: CheckView[], sandbox: SandboxStatus | null): string {
-  if (agentsBlocked(checks)) return fr.welcome.failed;
+  if (agentsBlocked(checks)) return frAi.welcome.failed;
   if (sandbox && sandboxStopped(sandbox)) return frSecurity.welcome.subtitle;
-  return fr.welcome.subtitle;
+  return frAi.welcome.subtitle;
 }
 
 type Props = {
@@ -138,20 +139,20 @@ export function Welcome({ onCreate, onImport, onConnectGithub, onTutorial }: Pro
           <WorkspaceMark className="size-7" />
         </span>
         <div className="grid gap-2">
-          <h1 className="text-2xl font-semibold">{fr.welcome.title}</h1>
+          <h1 className="text-2xl font-semibold">{frAi.welcome.title}</h1>
           <p className="text-sm text-muted-foreground">{subtitleOf(checks, sandbox)}</p>
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
         {env && <EnvironmentChecks checks={checks} onRetry={retry} onConnectGithub={onConnectGithub} />}
         <div className="flex flex-wrap justify-center gap-3">
           <Button variant="secondary" onClick={onTutorial}>
-            <GraduationCap className="size-4" /> {fr.welcome.tutorial}
+            <GraduationCap className="size-4" /> {frAi.welcome.tutorial}
           </Button>
           <Button variant="outline" onClick={onImport}>
-            <Folder className="size-4" /> {fr.welcome.importFolder}
+            <Folder className="size-4" /> {frAi.welcome.importFolder}
           </Button>
           <Button onClick={onCreate}>
-            <Plus className="size-4" /> {fr.welcome.createFirst}
+            <Plus className="size-4" /> {frAi.welcome.createFirst}
           </Button>
         </div>
       </div>

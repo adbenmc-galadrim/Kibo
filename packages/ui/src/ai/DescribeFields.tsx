@@ -3,7 +3,7 @@ import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { FormatsField } from "./FormatsField";
 
 export type DescribeEdits = {
@@ -42,7 +42,7 @@ const templateOf = (v: string): Template => {
 };
 
 export function DescribeFields({ id, described, edits, title, componentId, idValid, onChange }: Props) {
-  const t = fr.ai.create;
+  const t = frAi.ai.create;
   return (
     <div className="grid grid-cols-2 items-end gap-2">
       {described && (

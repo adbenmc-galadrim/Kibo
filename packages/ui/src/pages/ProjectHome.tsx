@@ -26,9 +26,9 @@ export function ProjectHome({ project, onNewPage, onSuggest }: Props) {
               </Button>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border px-4 py-3">
-              <p className="text-sm text-muted-foreground">{fr.onboarding.suggestPagesHelp}</p>
+              <p className="text-sm text-muted-foreground">{fr.projectHome.suggestPagesHelp}</p>
               <Button variant="outline" size="sm" onClick={onSuggest}>
-                <Sparkles className="size-4" /> {fr.onboarding.propose}
+                <Sparkles className="size-4" /> {fr.projectHome.propose}
               </Button>
             </div>
           </>

@@ -5,7 +5,7 @@ import { Textarea } from "@kibo/sdk/ui/textarea";
 import { Bot, Sparkles } from "lucide-react";
 import { type FormEvent, useId, useRef, useState } from "react";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { frComponentsManage } from "../i18n/fr-components-manage";
 import { AttachmentsField } from "./AttachmentsField";
 import { aiErrorMessage } from "./ai-error";
@@ -64,7 +64,7 @@ export function DescribeCard({ projectId = null, onStarted }: Props) {
       );
     } catch (err) {
       setError(
-        err instanceof KiboError && err.code === "CONFLICT" ? fr.ai.create.idTaken : aiErrorMessage(err),
+        err instanceof KiboError && err.code === "CONFLICT" ? frAi.ai.create.idTaken : aiErrorMessage(err),
       );
     } finally {
       setBusy(false);
@@ -74,10 +74,10 @@ export function DescribeCard({ projectId = null, onStarted }: Props) {
   return (
     <form onSubmit={submit} className="grid content-start gap-3 rounded-lg border border-foreground/70 p-4">
       <h3 className="flex items-center gap-2 text-sm font-semibold">
-        <Sparkles aria-hidden className="size-4" /> {fr.ai.create.column}
+        <Sparkles aria-hidden className="size-4" /> {frAi.ai.create.column}
       </h3>
       <div className="grid gap-1.5">
-        <Label htmlFor={`${id}-desc`}>{fr.ai.create.describe}</Label>
+        <Label htmlFor={`${id}-desc`}>{frAi.ai.create.describe}</Label>
         <Textarea
           id={`${id}-desc`}
           ref={descriptionRef}
@@ -87,7 +87,9 @@ export function DescribeCard({ projectId = null, onStarted }: Props) {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
-        <p className="text-right font-mono text-[11px] text-muted-foreground">{fr.ai.create.count(length)}</p>
+        <p className="text-right font-mono text-[11px] text-muted-foreground">
+          {frAi.ai.create.count(length)}
+        </p>
       </div>
       <DescribeFields
         id={id}
@@ -104,10 +106,12 @@ export function DescribeCard({ projectId = null, onStarted }: Props) {
         disabled={busy}
         pasteFrom={descriptionRef}
       />
-      <p className="text-xs text-muted-foreground">{fr.ai.create.describeHelp}</p>
-      {length > 0 && length < MIN && <p className="text-xs text-muted-foreground">{fr.ai.create.tooShort}</p>}
+      <p className="text-xs text-muted-foreground">{frAi.ai.create.describeHelp}</p>
+      {length > 0 && length < MIN && (
+        <p className="text-xs text-muted-foreground">{frAi.ai.create.tooShort}</p>
+      )}
       {demo && <DemoAgentNote />}
-      {block && <p className="text-xs text-amber-600 dark:text-amber-400">{fr.ai.blocked[block]}</p>}
+      {block && <p className="text-xs text-amber-600 dark:text-amber-400">{frAi.ai.blocked[block]}</p>}
       {error && (
         <p role="alert" className="text-xs text-destructive">
           {error}
@@ -119,7 +123,7 @@ export function DescribeCard({ projectId = null, onStarted }: Props) {
         className="justify-self-start"
         disabled={!ready || block !== null || !valid || busy}
       >
-        <Bot className="size-4" /> {fr.ai.create.generate}
+        <Bot className="size-4" /> {frAi.ai.create.generate}
       </Button>
     </form>
   );

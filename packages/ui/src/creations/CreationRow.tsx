@@ -5,7 +5,7 @@ import { TableCell, TableRow } from "@kibo/sdk/ui/table";
 import { useId, useState } from "react";
 import { journalUnavailable, RunJournal } from "../agents/RunJournal";
 import { draftStep } from "../ai/draft-flow";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { frCreations } from "../i18n/fr-creations";
 import { relativeTime } from "../lib/relative-time";
 import { isActiveDraft } from "../state/draft-activity";
@@ -27,7 +27,7 @@ const runText = (s: RunStatus): string =>
 
 function stepText(draft: ComponentDraft): string {
   const step = draftStep(draft);
-  return fr.ai.stepLabel(step, fr.ai.steps[step - 1] ?? "");
+  return frAi.ai.stepLabel(step, frAi.ai.steps[step - 1] ?? "");
 }
 
 function Progress({ draft, agents }: { draft: ComponentDraft; agents: AgentsState | null }) {

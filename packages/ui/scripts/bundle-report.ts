@@ -107,6 +107,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(shell\/(FeatureDetail|feature\/[A-Za-z-]+)\.tsx?|i18n\/fr-group\.ts)$/,
   /\/packages\/ui\/src\/(shell\/sprint\/[A-Za-z-]+\.tsx?|i18n\/fr-sprint\.ts)$/,
   /\/packages\/ui\/src\/shell\/nav\/(overview-page\.ts|new-ticket-pages\.ts|NewTicketAction\.tsx)$/,
+  /\/packages\/ui\/src\/i18n\/fr-ai\.ts$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

@@ -1,11 +1,11 @@
 import { Badge } from "@kibo/sdk/ui/badge";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { Input } from "@kibo/sdk/ui/input";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import type { SelectedPage } from "./presets";
 
 const label = (c: { id: string; config: Record<string, unknown> }, titles: Map<string, string>) =>
-  c.id === "tickets" && c.config.filter === "mine" ? fr.onboarding.mineTickets : (titles.get(c.id) ?? c.id);
+  c.id === "tickets" && c.config.filter === "mine" ? frAi.onboarding.mineTickets : (titles.get(c.id) ?? c.id);
 
 type Props = {
   selection: SelectedPage[];
@@ -16,7 +16,8 @@ type Props = {
 export function StarterPagesList({ selection, titles, onChange }: Props) {
   const update = (key: string, patch: Partial<SelectedPage>) =>
     onChange(selection.map((p) => (p.key === key ? { ...p, ...patch } : p)));
-  if (selection.length === 0) return <p className="text-sm text-muted-foreground">{fr.onboarding.noPage}</p>;
+  if (selection.length === 0)
+    return <p className="text-sm text-muted-foreground">{frAi.onboarding.noPage}</p>;
   return (
     <ul className="divide-y rounded-lg border">
       {selection.map((p, i) => (
@@ -27,19 +28,19 @@ export function StarterPagesList({ selection, titles, onChange }: Props) {
           }`}
         >
           <Checkbox
-            aria-label={fr.onboarding.include(p.title)}
+            aria-label={frAi.onboarding.include(p.title)}
             checked={p.checked}
             onCheckedChange={(v) => update(p.key, { checked: v === true })}
           />
           <Input
-            aria-label={fr.onboarding.pageTitle(i + 1)}
+            aria-label={frAi.onboarding.pageTitle(i + 1)}
             maxLength={40}
             value={p.title}
             disabled={!p.checked}
             onChange={(e) => update(p.key, { title: e.target.value })}
             className="h-8"
           />
-          <Badge variant="secondary">{fr.onboarding.kind[p.kind]}</Badge>
+          <Badge variant="secondary">{frAi.onboarding.kind[p.kind]}</Badge>
           <span className="truncate text-xs text-muted-foreground">
             {p.components.map((c) => label(c, titles)).join(" · ")}
           </span>

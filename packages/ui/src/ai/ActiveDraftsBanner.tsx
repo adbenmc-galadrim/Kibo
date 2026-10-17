@@ -2,7 +2,7 @@ import type { ComponentDraft } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { useEffect, useId, useState } from "react";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { frCreations } from "../i18n/fr-creations";
 import { aiErrorMessage } from "./ai-error";
 import { draftStep } from "./draft-flow";
@@ -14,7 +14,7 @@ const isActive = (d: ComponentDraft) => d.status !== "done" && d.status !== "aba
 
 const stepOf = (d: ComponentDraft): string => {
   const step = draftStep(d);
-  return fr.ai.stepLabel(step, fr.ai.steps[step - 1] ?? "");
+  return frAi.ai.stepLabel(step, frAi.ai.steps[step - 1] ?? "");
 };
 
 type Props = { onResume(draftId: string): void; onOpenCreations?(): void };

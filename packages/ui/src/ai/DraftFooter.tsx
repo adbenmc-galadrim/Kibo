@@ -2,7 +2,7 @@ import type { ComponentDraft } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Bot, ExternalLink, RefreshCw } from "lucide-react";
 import type { Ref } from "react";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import type { draftActions } from "./draft-flow";
 import { useAiAvailability } from "./use-ai-availability";
 
@@ -39,26 +39,26 @@ export function DraftFooter({
           disabled={busy}
           onClick={onAbandon}
         >
-          {fr.ai.abandon}
+          {frAi.ai.abandon}
         </Button>
       )}
       {failed && actions.codeFallback && (
         <>
           <Button variant="outline" disabled={busy} onClick={() => onAct("openComponentDraftFolder")}>
             <ExternalLink aria-hidden className="size-4" />
-            {fr.ai.openFolder}
+            {frAi.ai.openFolder}
           </Button>
           <Button disabled={busy} onClick={() => onAct("revalidateComponentDraft")}>
             <RefreshCw aria-hidden className="size-4" />
-            {fr.ai.revalidate}
+            {frAi.ai.revalidate}
           </Button>
         </>
       )}
       {failed && !actions.codeFallback && (
-        <span className="text-xs text-muted-foreground">{fr.ai.attempt(details.attempts + 1)}</span>
+        <span className="text-xs text-muted-foreground">{frAi.ai.attempt(details.attempts + 1)}</span>
       )}
       {failed && !actions.codeFallback && block && (
-        <span className="text-xs text-amber-600 dark:text-amber-400">{fr.ai.blocked[block]}</span>
+        <span className="text-xs text-amber-600 dark:text-amber-400">{frAi.ai.blocked[block]}</span>
       )}
       {failed && !actions.codeFallback && (
         <Button
@@ -67,12 +67,12 @@ export function DraftFooter({
           onClick={() => onAct("retryComponentDraft")}
         >
           <Bot aria-hidden className="size-4" />
-          {fr.ai.retry}
+          {frAi.ai.retry}
         </Button>
       )}
       {reviewing && (
         <Button ref={reviewedRef} disabled={busy} onClick={onReviewed}>
-          {fr.ai.reviewed}
+          {frAi.ai.reviewed}
         </Button>
       )}
     </div>

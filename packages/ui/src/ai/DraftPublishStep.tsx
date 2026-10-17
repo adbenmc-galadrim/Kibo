@@ -11,7 +11,7 @@ import {
   StrategyChoice,
   UsagesBox,
 } from "../components-page/PublishSections";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { useProjects } from "../state/use-projects";
 
 type Props = {
@@ -39,7 +39,7 @@ export function DraftPublishStep({ details, busy, onSubmit }: Props) {
     <div className="grid gap-4">
       <div className="grid grid-cols-[8rem_1fr] items-start gap-3">
         <div className="grid content-start gap-1">
-          <Label htmlFor={`${id}-version`}>{fr.ai.version}</Label>
+          <Label htmlFor={`${id}-version`}>{frAi.ai.version}</Label>
           <Input
             id={`${id}-version`}
             className="font-mono"
@@ -48,14 +48,14 @@ export function DraftPublishStep({ details, busy, onSubmit }: Props) {
           />
         </div>
         <div className="grid content-start gap-1">
-          <Label htmlFor={`${id}-changes`}>{fr.ai.changes}</Label>
+          <Label htmlFor={`${id}-changes`}>{frAi.ai.changes}</Label>
           <Textarea
             id={`${id}-changes`}
             rows={2}
             value={changes}
             onChange={(e) => setChanges(e.target.value)}
           />
-          <p className="text-xs text-muted-foreground">{fr.ai.changesHelp}</p>
+          <p className="text-xs text-muted-foreground">{frAi.ai.changesHelp}</p>
         </div>
       </div>
       {used && <UsagesBox preview={shown} strategy={strategy} colorOf={colorOf} />}
@@ -66,7 +66,7 @@ export function DraftPublishStep({ details, busy, onSubmit }: Props) {
         disabled={busy || !/^\d+\.\d+\.\d+$/.test(version)}
         onClick={() => onSubmit({ version, changes: lines, strategy })}
       >
-        {fr.ai.publish}
+        {frAi.ai.publish}
       </Button>
     </div>
   );

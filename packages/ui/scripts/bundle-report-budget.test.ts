@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { type BuiltChunk, ENTRY_GZIP_BUDGET, formatGzip, PHASE_BUDGET, reportEntry } from "./bundle-report";
+import {
+  type BuiltChunk,
+  ENTRY_GZIP_BUDGET,
+  FORBIDDEN_IN_ENTRY,
+  formatGzip,
+  PHASE_BUDGET,
+  reportEntry,
+} from "./bundle-report";
 
 const entry = (code: string): BuiltChunk[] => [
   { fileName: "index.js", isEntry: true, imports: [], code, moduleIds: [] },
@@ -26,5 +33,11 @@ describe("phase budget", () => {
 
   test("the size is shown with its exact byte count", () => {
     expect(formatGzip(223_812)).toBe("223.8 kB (223812 octets)");
+  });
+
+  test("phase 26, the AI and onboarding texts stay out of the entry, not the main texts", () => {
+    const i18n = (p: string) => FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/i18n/${p}`));
+    expect(i18n("fr-ai.ts")).toBe(true);
+    expect(i18n("fr.ts")).toBe(false);
   });
 });
