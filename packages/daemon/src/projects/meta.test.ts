@@ -77,3 +77,17 @@ test("delivery settings are local, listed, and a null delivery unsets them", () 
   expect(writeProjectMeta(service.docs, settings, project.id, { delivery: null }, true).delivery).toBeNull();
   expect(settings.get(project.id, LOCAL_DELIVERY_KEY)).toBeNull();
 });
+
+test("the description is synced in the project doc, never in the workspace registry", () => {
+  const { service, settings, project } = setup();
+  for (const folderInDoc of [false, true]) {
+    const description = `Terrain hors ligne ${folderInDoc}`;
+    const meta = writeProjectMeta(service.docs, settings, project.id, { description }, folderInDoc);
+    expect(meta.description).toBe(description);
+    expect(service.docs.project(project.id).getMap("meta").get("description")).toBe(description);
+    expect(JSON.stringify(service.docs.workspace.toJSON())).not.toContain("Terrain hors ligne");
+  }
+  expect(
+    writeProjectMeta(service.docs, settings, project.id, { description: null }, false).description,
+  ).toBeNull();
+});
