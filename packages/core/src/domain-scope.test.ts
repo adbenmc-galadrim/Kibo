@@ -64,6 +64,7 @@ const projectDoc = (id: string) =>
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
 
 function workspaceWithSync() {

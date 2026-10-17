@@ -92,3 +92,9 @@ test("the delivery agent info gives its ref and name, or null", () => {
   expect(DeliveryAgent.safeParse({ ref: "nope", name: "x" }).success).toBe(false);
   expect(DeliveryAgent.safeParse(undefined).success).toBe(false);
 });
+
+test("a delivery step is a delivery unless marked as an update", () => {
+  expect(DeliveryStep.parse({ step: 7, note: "", at: 1, runId: null }).kind).toBe("delivery");
+  expect(DeliveryStep.parse({ step: 7, note: "", at: 1, runId: null, kind: "update" }).kind).toBe("update");
+  expect(DeliveryStep.safeParse({ step: 7, note: "", at: 1, runId: null, kind: "fix" }).success).toBe(false);
+});

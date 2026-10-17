@@ -24,6 +24,7 @@ const meta = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
 };
 const ADAM: UpdateAuthor = { userId: "u-adam", role: "owner" };
 const LEA: UpdateAuthor = { userId: "u-lea", role: "editor" };

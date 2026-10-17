@@ -28,6 +28,8 @@ const ticket = {
   optional: false,
   shortKey: null,
   effectiveSprintId: null,
+  session: null,
+  updatedAt: null,
   feature: null,
 } satisfies TicketView;
 const actions = (): CardMenuActions => ({

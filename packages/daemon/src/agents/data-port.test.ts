@@ -28,6 +28,7 @@ const doc = () =>
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
 
 test("a finished run leaves its ticket in its status, and a started one moves it on", () => {

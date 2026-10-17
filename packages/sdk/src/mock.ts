@@ -59,6 +59,7 @@ export function createMockSdk(
     duplication: null,
     delivery: null,
     tracking: opts.tracking ?? null,
+    description: null,
   });
   const changes = createNotifier();
   const runChanges = createNotifier();

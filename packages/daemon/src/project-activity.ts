@@ -24,7 +24,7 @@ export function createActivityTracker(runs: readonly RunView[]): ActivityTracker
     track,
     activity(projectId) {
       const tickets = [...busy.values()].filter((b) => b.projectId === projectId).map((b) => b.ticketId);
-      return tickets.length === 0 ? NO_ACTIVITY : { busyTickets: new Set(tickets) };
+      return tickets.length === 0 ? NO_ACTIVITY : { ...NO_ACTIVITY, busyTickets: new Set(tickets) };
     },
   };
 }

@@ -28,6 +28,7 @@ const meta = (id: string, key: string, name: string, folder: string | null, colo
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
 });
 
 export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
@@ -68,7 +69,13 @@ export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
         const ticket = readProject(doc, today).tickets.find((t) => t.key === req.ticketKey);
         if (ticket === undefined) throw new KiboError("NOT_FOUND", `ticket ${req.ticketKey} not found`);
         deliveries += 1;
-        const delivery = { step: req.step, note: req.note ?? "", at: deliveries, runId: null };
+        const delivery = {
+          step: req.step,
+          note: req.note ?? "",
+          at: deliveries,
+          runId: null,
+          kind: req.kind ?? "delivery",
+        };
         return executeProjectCommand(doc, { method: "setTicketDelivery", ticketId: ticket.id, delivery });
       }
       case "config":

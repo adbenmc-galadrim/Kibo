@@ -12,6 +12,7 @@ const meta = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
 };
 const HASH = "a".repeat(64);
 

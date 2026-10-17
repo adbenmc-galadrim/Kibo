@@ -14,6 +14,7 @@ const newDoc = () =>
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
 
 const create = (d: ReturnType<typeof newDoc>, title: string, parentId?: string) =>

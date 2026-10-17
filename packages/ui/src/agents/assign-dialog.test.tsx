@@ -128,6 +128,8 @@ test("a dependency still waiting for its key is shown by its label alone", () =>
     optional: false,
     shortKey: null,
     effectiveSprintId: null,
+    session: null,
+    updatedAt: null,
     feature: null,
   };
   const tickets = project.tickets.map((t) => (t.id === "t15" ? { ...t, waitingOn: ["KIB-12", "KIB-…"] } : t));
@@ -496,6 +498,8 @@ const provisional = (): TicketView => ({
   optional: false,
   shortKey: null,
   effectiveSprintId: null,
+  session: null,
+  updatedAt: null,
   feature: null,
 });
 

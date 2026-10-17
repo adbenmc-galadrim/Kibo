@@ -15,6 +15,7 @@ function sharable(): LoroDoc {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
   createTicket(doc, { title: "Noyau de données" });
   createTicket(doc, { title: "Schéma Loro des tickets" });

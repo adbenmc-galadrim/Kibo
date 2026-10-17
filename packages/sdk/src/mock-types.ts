@@ -9,6 +9,7 @@ import type {
   ProjectAccess,
   ProjectAsset,
   ProjectCommand,
+  ProjectEvent,
   ProjectSnapshot,
   RunDenials,
   RunPeek,
@@ -75,6 +76,7 @@ export type MockSdkOptions = {
   noteAges?: Record<string, number>;
   mcp?: Record<string, McpCallResult>;
   ciRuns?: CiRun[];
+  events?: ProjectEvent[];
   presence?: PresencePeer[];
   shared?: boolean;
   members?: MemberInfo[];

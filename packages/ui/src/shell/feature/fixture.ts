@@ -39,6 +39,8 @@ const ticket = (id: string, key: string, title: string, patch: Partial<TicketVie
   optional: false,
   shortKey: null,
   effectiveSprintId: "s42",
+  session: null,
+  updatedAt: null,
   feature: null,
   ...patch,
 });
@@ -59,6 +61,7 @@ const step = (n: number, day: number, h: number, m: number) => ({
   note: "",
   at: at(day, h, m),
   runId: null,
+  kind: "delivery" as const,
 });
 
 const sprint = (
@@ -189,6 +192,7 @@ export function emisFeatureProject(): ProjectSnapshot {
       duplication: null,
       delivery: null,
       tracking: null,
+      description: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],

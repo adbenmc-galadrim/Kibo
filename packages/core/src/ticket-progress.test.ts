@@ -16,6 +16,7 @@ const newDoc = () =>
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
 
 const step = (id: string, status: Step["status"]): Step => ({ id, title: `Étape ${id}`, status, note: null });

@@ -12,6 +12,7 @@ const SHAPED_META_FIELDS = {
   color: ProjectMeta.shape.color,
   key: ProjectMeta.shape.key,
   tracking: ProjectMeta.shape.tracking,
+  description: ProjectMeta.shape.description,
   featureSeq: FeatureSeq,
 };
 const ALLOWED_META_FIELDS = new Set(["id", "ticketSeq", "keyAllocator", ...Object.keys(SHAPED_META_FIELDS)]);

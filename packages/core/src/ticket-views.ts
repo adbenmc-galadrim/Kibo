@@ -97,6 +97,8 @@ export function ticketViews(facts: ViewFacts, activity: ProjectActivity): Ticket
       openQuestions: open.get(t.id) ?? 0,
       effectiveSprintId: effectiveSprintId(t.id, byId),
       feature: feature(t, progress),
+      session: null,
+      updatedAt: null,
       startable:
         progress.total === 0 &&
         isStartable({

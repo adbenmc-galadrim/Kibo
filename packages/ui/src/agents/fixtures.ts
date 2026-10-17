@@ -344,6 +344,8 @@ const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title"
   optional: false,
   shortKey: null,
   effectiveSprintId: null,
+  session: null,
+  updatedAt: null,
   feature: null,
   pendingSeq: null,
   keyLabel: p.key ?? "KIB-…",
@@ -363,6 +365,7 @@ export function kiboProject(): ProjectSnapshot {
       duplication: null,
       delivery: null,
       tracking: null,
+      description: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],
@@ -421,6 +424,7 @@ export const projectsFixture: ProjectSummary[] = [
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
     counts: { backlog: 1, todo: 3, in_progress: 4, in_review: 2, blocked: 1, done: 2 },
   },
   {
@@ -434,6 +438,7 @@ export const projectsFixture: ProjectSummary[] = [
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
     counts: { backlog: 0, todo: 1, in_progress: 1, in_review: 0, blocked: 0, done: 0 },
   },
 ];

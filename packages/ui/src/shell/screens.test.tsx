@@ -69,6 +69,7 @@ const kibo: ProjectSummary = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
   counts,
 };
 const portfolio: ProjectSummary = {
@@ -123,6 +124,7 @@ const empty: ProjectSnapshot = {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

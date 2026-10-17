@@ -26,6 +26,7 @@ import type {
   PresencePeer,
   ProjectAsset,
   ProjectCommand,
+  ProjectEvent,
   ProjectSnapshot,
   ProjectSyncInfo,
   Question,
@@ -57,6 +58,7 @@ export type EntityMap = {
   ci_run: CiRun;
   question: Question;
   sprint: SprintView;
+  project_event: ProjectEvent;
 };
 export type NewTicketDefaults = { statusId?: StatusId; parentId?: string | null; instanceId?: string };
 export type FileOpenRequest = { path: string; line?: number | null; origin?: string | null };

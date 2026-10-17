@@ -1,6 +1,14 @@
-import { isTerminal, KiboError, type ProjectActivity, type RunPeek, type TicketRun } from "@kibo/schema";
+import {
+  isTerminal,
+  KiboError,
+  NO_ACTIVITY,
+  type ProjectActivity,
+  type RunPeek,
+  type TicketRun,
+} from "@kibo/schema";
 
 export const activityOf = (runs: readonly TicketRun[]): ProjectActivity => ({
+  ...NO_ACTIVITY,
   busyTickets: new Set(runs.filter((r) => !isTerminal(r.state)).map((r) => r.ticketId)),
 });
 

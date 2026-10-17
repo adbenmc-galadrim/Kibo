@@ -39,6 +39,8 @@ function ticket(
     optional: false,
     shortKey: null,
     effectiveSprintId: null,
+    session: null,
+    updatedAt: null,
     feature: null,
     progress: { done: 0, total: 0 },
     waitingOn: [],

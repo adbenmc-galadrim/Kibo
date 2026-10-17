@@ -29,6 +29,7 @@ const newProjectDoc = (key: string) =>
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
 
 const stored = (ticketId: string) => ({

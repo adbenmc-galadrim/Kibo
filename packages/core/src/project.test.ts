@@ -33,6 +33,7 @@ const meta = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
 };
 
 describe("workspace", () => {

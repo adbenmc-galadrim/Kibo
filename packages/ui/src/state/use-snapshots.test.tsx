@@ -15,6 +15,7 @@ const snapshot = (id: string): ProjectSnapshot => ({
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

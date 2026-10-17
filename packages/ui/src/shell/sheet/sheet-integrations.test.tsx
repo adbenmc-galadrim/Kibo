@@ -164,6 +164,8 @@ const ticket: TicketView = {
   optional: false,
   shortKey: null,
   effectiveSprintId: null,
+  session: null,
+  updatedAt: null,
   feature: null,
 };
 const project: ProjectSnapshot = {
@@ -178,6 +180,7 @@ const project: ProjectSnapshot = {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

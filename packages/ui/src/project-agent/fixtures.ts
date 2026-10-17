@@ -42,6 +42,8 @@ const ticket = (id: string, key: string, title: string, statusId: TicketView["st
   optional: false,
   shortKey: null,
   effectiveSprintId: null,
+  session: null,
+  updatedAt: null,
   feature: null,
 });
 
@@ -58,6 +60,7 @@ export function emisProject(access: "write" | "read-only" = "write"): ProjectSna
       duplication: null,
       delivery: null,
       tracking: null,
+      description: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],

@@ -5,7 +5,13 @@ import { DeliveryLine } from "./DeliveryLine";
 afterEach(cleanup);
 
 const now = 1_000_000_000;
-const delivery = { step: 7, note: "gates verts", at: now - 3 * 60_000, runId: "r1" };
+const delivery = {
+  step: 7,
+  note: "gates verts",
+  at: now - 3 * 60_000,
+  runId: "r1",
+  kind: "delivery" as const,
+};
 
 test("the line says the step, its age and its note", () => {
   const { container } = render(<DeliveryLine delivery={delivery} now={now} />);

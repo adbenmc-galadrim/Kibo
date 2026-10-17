@@ -18,6 +18,7 @@ import {
   type NotesInfo,
   type PresencePeer,
   type ProjectCommand,
+  type ProjectEvent,
   type ProjectSyncInfo,
   ruleCovers,
   type Ticket,
@@ -180,6 +181,7 @@ export function createSdk(
       ci_run: () => call<CiRun[]>({ kind: "list", entity: "ci_run" }),
       question: async () => (await backend.snapshot()).questions,
       sprint: async () => (await backend.snapshot()).sprints,
+      project_event: () => call<ProjectEvent[]>({ kind: "list", entity: "project_event" }),
     };
     return loaders[type]();
   };

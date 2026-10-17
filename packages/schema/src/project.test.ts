@@ -68,3 +68,17 @@ test("project meta has no tracking settings by default and the patch writes or c
   expect(ProjectPatch.safeParse({ tracking: {} }).success).toBe(false);
   expect(ProjectPatch.safeParse({ tracking: { openLimit: 11 } }).success).toBe(false);
 });
+
+test("a project describes itself in 200 characters at most", () => {
+  const meta = { id: "p", key: "AB", name: "n", folder: null, color: "#123456" };
+  expect(ProjectMeta.parse(meta).description).toBeNull();
+  expect(ProjectMeta.parse({ ...meta, description: " Suivi de chantier " }).description).toBe(
+    "Suivi de chantier",
+  );
+  expect(ProjectMeta.safeParse({ ...meta, description: "x".repeat(201) }).success).toBe(false);
+  expect(ProjectPatch.parse({ description: "Suivi de chantier" })).toEqual({
+    description: "Suivi de chantier",
+  });
+  expect(ProjectPatch.parse({ description: null })).toEqual({ description: null });
+  expect(ProjectPatch.safeParse({ description: "x".repeat(201) }).success).toBe(false);
+});

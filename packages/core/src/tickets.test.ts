@@ -28,6 +28,7 @@ const doc = () =>
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
 
 describe("keys", () => {

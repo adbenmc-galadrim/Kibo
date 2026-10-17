@@ -59,6 +59,7 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
     duplication: null,
     delivery: null,
     tracking: stored(ProjectMeta.shape.tracking.safeParse(m.get("tracking") ?? null), "project tracking"),
+    description: null,
   };
 }
 

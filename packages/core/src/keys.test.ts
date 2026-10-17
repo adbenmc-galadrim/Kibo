@@ -26,6 +26,7 @@ const meta = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
 };
 
 function serverAllocated(): LoroDoc {
@@ -145,6 +146,7 @@ test("restoreLocalAllocation keys pending tickets and gives allocation back to t
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
   enableServerAllocation(doc);
   createTicket(doc, { title: "En attente" });

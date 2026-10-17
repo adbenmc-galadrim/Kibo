@@ -15,6 +15,7 @@ import {
   type ProjectAccess,
   type ProjectAsset,
   type ProjectCommand,
+  type ProjectEvent,
   type RunPeek,
   type StorybookOrigin,
   type TicketRun,
@@ -50,6 +51,7 @@ export type MockCallDeps = {
   server?: ServerDefinition;
   mcp?: Record<string, McpCallResult>;
   ciRuns?: CiRun[];
+  events?: ProjectEvent[];
   shared?: boolean;
   today: string;
   members?: MemberInfo[];
@@ -71,6 +73,7 @@ function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
     ci_run: () => deps.ciRuns ?? [],
     question: () => snapshot.questions,
     sprint: () => snapshot.sprints,
+    project_event: () => deps.events ?? [],
   };
   return lists[entity]();
 }

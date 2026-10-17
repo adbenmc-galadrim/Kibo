@@ -54,12 +54,15 @@ export const EMPTY_DELIVERY: ProjectDelivery = {
 };
 
 export const DELIVERY_STEP_MAX = 11;
+export const DeliveryKind = z.enum(["delivery", "update"]);
+export type DeliveryKind = z.infer<typeof DeliveryKind>;
 export const DeliveryStepNumber = z.number().int().min(0).max(DELIVERY_STEP_MAX);
 export const DeliveryStep = z.object({
   step: DeliveryStepNumber,
   note: z.string().max(300),
   at: z.number().int(),
   runId: z.string().nullable(),
+  kind: DeliveryKind.default("delivery"),
 });
 export type DeliveryStep = z.infer<typeof DeliveryStep>;
 

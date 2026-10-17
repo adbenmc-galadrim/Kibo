@@ -38,6 +38,7 @@ const meta = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
 };
 
 const replicaIndex = fc.nat({ max: 4 });

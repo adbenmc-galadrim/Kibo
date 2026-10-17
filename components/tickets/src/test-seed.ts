@@ -37,7 +37,13 @@ export function trackingSeed(now: number) {
         run({
           method: "setTicketDelivery",
           ticketId: t.id,
-          delivery: { step: s.delivery.step, note: "", at: now - s.delivery.ago, runId: null },
+          delivery: {
+            step: s.delivery.step,
+            note: "",
+            at: now - s.delivery.ago,
+            runId: null,
+            kind: "delivery",
+          },
         });
       return t;
     };

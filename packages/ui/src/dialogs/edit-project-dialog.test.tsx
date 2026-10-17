@@ -45,6 +45,7 @@ const snapshot = (): ProjectSnapshot => ({
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -92,6 +93,7 @@ mock.module("../api", () =>
             duplication: null,
             delivery: null,
             tracking: null,
+            description: null,
           };
         if (req.method === "setIcon") return { icon: req.icon ? "abc" : null };
         throw new Error(`unexpected ${req.method}`);
@@ -112,6 +114,7 @@ const project: ProjectSummary = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
   icon: "v1",
 };

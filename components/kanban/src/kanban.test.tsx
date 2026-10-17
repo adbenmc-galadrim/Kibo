@@ -569,7 +569,7 @@ test("Livrer is disabled while a run is active on the ticket", async () => {
 test("a card shows its delivery step next to the agent, never once done", async () => {
   const m = setup();
   const id = (key: string) => m.snapshot().tickets.find((t) => t.key === key)?.id ?? "";
-  const delivery = { step: 7, note: "gates verts", at: 1, runId: null };
+  const delivery = { step: 7, note: "gates verts", at: 1, runId: null, kind: "delivery" as const };
   act(() => {
     m.run({ method: "setTicketDelivery", ticketId: id("KIB-4"), delivery });
     m.run({ method: "setTicketDelivery", ticketId: id("KIB-1"), delivery });

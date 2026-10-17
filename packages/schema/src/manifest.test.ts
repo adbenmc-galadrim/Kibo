@@ -145,3 +145,12 @@ test("a component may read and write sprints", () => {
   expect(manifest.reads).toEqual(["sprint"]);
   expect(manifest.writes).toEqual(["ticket", "sprint"]);
 });
+
+test("the project journal is readable, never writable", () => {
+  expect(ComponentManifest.parse({ ...base, kind: "view", reads: ["project_event"] }).reads).toEqual([
+    "project_event",
+  ]);
+  expect(ComponentManifest.safeParse({ ...base, kind: "view", writes: ["project_event"] }).success).toBe(
+    false,
+  );
+});

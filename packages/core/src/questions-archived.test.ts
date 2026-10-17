@@ -28,6 +28,7 @@ function setup() {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
   const ticket = createTicket(doc, { title: "Stockage" });
   const ask = (title: string) => createQuestion(doc, { ticketId: ticket.id, title, createdBy: ADAM, at: 1 });

@@ -7,6 +7,7 @@ import {
   type EmbedView,
   type Instance,
   KiboError,
+  NO_ACTIVITY,
   type ProjectMeta,
 } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
@@ -126,6 +127,7 @@ test("a component lists busy tickets as not startable and sprints dated by the d
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
   const busy = createTicket(project, { title: "A", statusId: "todo" });
   createTicket(project, { title: "B", statusId: "todo" });
@@ -135,7 +137,7 @@ test("a component lists busy tickets as not startable and sprints dated by the d
     docs: {
       ...stubDocs,
       project: () => project,
-      activity: () => ({ busyTickets: new Set([busy.id]) }),
+      activity: () => ({ ...NO_ACTIVITY, busyTickets: new Set([busy.id]) }),
       today: () => "2026-10-16",
     },
   });
@@ -301,6 +303,7 @@ const metaWith = (tracking: ProjectMeta["tracking"]): ProjectMeta => ({
   duplication: null,
   delivery: null,
   tracking,
+  description: null,
 });
 
 test("settings.get reads the project tracking and the machine agent execution", async () => {

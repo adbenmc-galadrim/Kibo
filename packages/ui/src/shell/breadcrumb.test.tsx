@@ -104,6 +104,7 @@ test("screens and the inbox: settings crumbs stay text, the inbox crumb opens th
       duplication: null,
       delivery: null,
       tracking: null,
+      description: null,
     },
   };
   expect(

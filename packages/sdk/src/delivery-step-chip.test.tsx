@@ -4,7 +4,7 @@ import { DeliveryStepChip } from "./delivery-step-chip";
 
 afterEach(cleanup);
 
-const delivery = { step: 7, note: "gates verts", at: 1, runId: null };
+const delivery = { step: 7, note: "gates verts", at: 1, runId: null, kind: "delivery" as const };
 
 test("the chip shows the delivery step in zinc", () => {
   const { container } = render(<DeliveryStepChip ticket={{ statusId: "in_progress", delivery }} />);

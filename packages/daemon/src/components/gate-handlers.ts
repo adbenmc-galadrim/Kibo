@@ -56,6 +56,7 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
   return {
     async list(projectId, entity) {
       if (entity === "run") return deps.runs(projectId);
+      if (entity === "project_event") throw new KiboError("NOT_CONNECTED", "project events not started");
       if (entity === "ci_run") {
         const ciRuns = deps.integrations?.()?.ciRuns ?? null;
         if (!ciRuns) throw new KiboError("NOT_CONNECTED", "ci not started");

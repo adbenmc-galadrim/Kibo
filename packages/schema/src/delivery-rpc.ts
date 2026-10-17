@@ -3,7 +3,13 @@ import { AddDirs } from "./add-dir";
 import { type Agent, AgentRef } from "./agent";
 import { AgentPresetId } from "./agent-preset";
 import { AllowRules } from "./allow-rule";
-import { AbsPath, type DeliveryAgent, DeliveryStepNumber, type ProjectDelivery } from "./delivery";
+import {
+  AbsPath,
+  type DeliveryAgent,
+  DeliveryKind,
+  DeliveryStepNumber,
+  type ProjectDelivery,
+} from "./delivery";
 import type { DeliveryItem } from "./delivery-order";
 import type { RunDenials } from "./denial";
 import { NodeId, TicketKey } from "./ids";
@@ -24,6 +30,7 @@ export const DELIVERY_RPC = [
     ticketKey: TicketKey,
     step: DeliveryStepNumber,
     note: z.string().max(300).optional(),
+    kind: DeliveryKind.optional(),
   }),
   z.object({ method: z.literal("runs.denials"), runId: RunId }),
   z.object({

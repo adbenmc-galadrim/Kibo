@@ -80,7 +80,7 @@ test("the steps are the direct children, blockers first, then rank", () => {
 });
 
 test("a step carries its status, delivery, branch and pull request", () => {
-  const delivery = { step: 7, note: "porte qualité", at: 1, runId: null };
+  const delivery = { step: 7, note: "porte qualité", at: 1, runId: null, kind: "delivery" as const };
   const tickets = [
     step("f5", { parentId: null }),
     step("33", {

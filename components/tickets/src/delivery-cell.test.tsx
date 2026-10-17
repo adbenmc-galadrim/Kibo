@@ -9,7 +9,9 @@ test("twelve segments: the steps passed, the current one in orange, the rest emp
 });
 
 test("the cell draws the bar and names the step; without delivery it shows a dash", () => {
-  const c = render(<DeliveryCell delivery={{ step: 7, note: "", at: 0, runId: null }} />).container;
+  const c = render(
+    <DeliveryCell delivery={{ step: 7, note: "", at: 0, runId: null, kind: "delivery" }} />,
+  ).container;
   expect(c.querySelectorAll("[data-segment]")).toHaveLength(12);
   expect(c.textContent).toBe("7 · Porte qualité");
   expect(render(<DeliveryCell delivery={null} />).container.textContent).toBe("—");

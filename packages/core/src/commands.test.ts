@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   DEFAULT_RECIPIENTS,
   KiboError,
+  NO_ACTIVITY,
   type Page,
   type ProjectCommand,
   permissionOfCall,
@@ -22,6 +23,7 @@ const doc = () =>
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
 
 describe("project commands", () => {
@@ -112,7 +114,9 @@ function askOn(d: ReturnType<typeof doc>, ticketId: string, blocking: boolean): 
 }
 
 const startable = (d: ReturnType<typeof doc>, id: string, busy: string[] = []) =>
-  readProject(d, "2026-10-16", { busyTickets: new Set(busy) }).tickets.find((t) => t.id === id)?.startable;
+  readProject(d, "2026-10-16", { ...NO_ACTIVITY, busyTickets: new Set(busy) }).tickets.find(
+    (t) => t.id === id,
+  )?.startable;
 
 describe("visibility commands", () => {
   test("the progress and recipient commands are routed", () => {
@@ -157,7 +161,7 @@ describe("visibility commands", () => {
     const d = doc();
     const ticket = ticketIn(d, "Formulaire");
     expect(readProject(d, "2026-10-16").tickets.find((t) => t.id === ticket.id)?.delivery).toBeNull();
-    const delivery = { step: 7, note: "porte qualité", at: 5, runId: "r1" };
+    const delivery = { step: 7, note: "porte qualité", at: 5, runId: "r1", kind: "delivery" as const };
     const written = executeProjectCommand(d, { method: "setTicketDelivery", ticketId: ticket.id, delivery });
     expect(written).toMatchObject({ id: ticket.id, delivery });
     expect(readProject(d, "2026-10-16").tickets.find((t) => t.id === ticket.id)?.delivery).toEqual(delivery);
@@ -166,7 +170,7 @@ describe("visibility commands", () => {
   });
 
   test("the delivery step is refused to the shell and to components", () => {
-    const delivery = { step: 7, note: "", at: 1, runId: null };
+    const delivery = { step: 7, note: "", at: 1, runId: null, kind: "delivery" as const };
     expect(() => assertShellCommand({ method: "setTicketDelivery", ticketId: "t1", delivery })).toThrow(
       "PERMISSION_DENIED",
     );

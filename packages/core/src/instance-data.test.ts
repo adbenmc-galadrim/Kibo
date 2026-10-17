@@ -18,6 +18,7 @@ function setup() {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
   const page = executeProjectCommand(doc, { method: "addPage", title: "Board", kind: "dashboard" }) as Page;
   const inst = executeProjectCommand(doc, {
@@ -82,6 +83,7 @@ describe("instance data", () => {
           duplication: null,
           delivery: null,
           tracking: null,
+          description: null,
         });
         copy.import(doc.export({ mode: "snapshot" }));
         expect(readInstanceData(copy, inst.id)).toEqual(model);

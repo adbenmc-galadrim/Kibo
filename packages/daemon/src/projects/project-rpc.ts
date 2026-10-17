@@ -67,6 +67,7 @@ function createProject(
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   };
   registerProject(deps.workspace, meta);
   deps.adopt(meta.id, createProjectDoc(meta));

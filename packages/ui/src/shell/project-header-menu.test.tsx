@@ -15,6 +15,7 @@ const project = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
 };
 const actions = () => ({
   newPage: () => {},

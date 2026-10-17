@@ -32,6 +32,7 @@ const project: ProjectSnapshot = {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [
@@ -74,6 +75,8 @@ const project: ProjectSnapshot = {
       optional: false,
       shortKey: null,
       effectiveSprintId: null,
+      session: null,
+      updatedAt: null,
       feature: null,
     },
   ],
@@ -100,6 +103,7 @@ const repo: ProjectSnapshot = {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   },
   pages: [],
   tickets: [],
@@ -132,6 +136,7 @@ const inbox: ProjectSnapshot = {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   },
   pages: [],
   tickets: [

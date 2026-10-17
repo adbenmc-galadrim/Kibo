@@ -53,7 +53,7 @@ test("a ticket without delivery step has none, a stored step is validated", () =
   };
   expect(Ticket.parse(base).delivery).toBeNull();
   const delivery = { step: 7, note: "porte qualité", at: 1, runId: "r1" };
-  expect(Ticket.parse({ ...base, delivery }).delivery).toEqual(delivery);
+  expect(Ticket.parse({ ...base, delivery }).delivery).toEqual({ ...delivery, kind: "delivery" });
   expect(Ticket.safeParse({ ...base, delivery: { ...delivery, step: 12 } }).success).toBe(false);
 });
 

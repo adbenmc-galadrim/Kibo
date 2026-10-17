@@ -27,6 +27,7 @@ function setup() {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
   const ticket = createTicket(doc, { title: "Stockage" });
   const other = createTicket(doc, { title: "Exports" });

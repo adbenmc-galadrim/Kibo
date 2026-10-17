@@ -61,6 +61,7 @@ beforeEach(() => {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
   store = createFakeStore();
   stopped = [];
