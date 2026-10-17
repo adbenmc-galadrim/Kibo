@@ -41,6 +41,8 @@ export const EMIS_BATCH: BatchSpec = {
 
 export const EMIS_CLOSING = { merged: 18, delivery: 33, opened: 22 } as const;
 
+export const EMIS_LATE_PR = 20;
+
 export type FactSpec = { kind: string; key: string | null; data: Record<string, string | number> };
 
 export const EMIS_LAST_FACTS: readonly FactSpec[] = [

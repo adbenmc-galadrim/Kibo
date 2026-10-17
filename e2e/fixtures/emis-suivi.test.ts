@@ -133,9 +133,13 @@ test("the next step to deliver is EMIS-45 for F4 and EMIS-34 for F5", () => {
   expect(keyOf(nextDeliverableStep(stepsOf("F5")))).toBe("EMIS-34");
 });
 
-test("pull requests in review follow the order of the commands: #22, #20, #23", () => {
+test("pull requests in review follow their last pull request fact: #22, #20, #23", () => {
   const lastEventAt = new Map(
-    daemon.events().flatMap((e, at) => (e.ticketId === null ? [] : [[e.ticketId, at] as const])),
+    daemon
+      .events()
+      .flatMap((e, at) =>
+        e.ticketId === null || !e.kind.startsWith("pr_") ? [] : [[e.ticketId, at] as const],
+      ),
   );
   expect(reviewCards(today.tickets, lastEventAt).map((c) => c.pr.number)).toEqual([22, 20, 23]);
 });

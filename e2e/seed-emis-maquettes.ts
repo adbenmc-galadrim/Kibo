@@ -28,7 +28,7 @@ import {
   type SprintCode,
   type StepSpec,
 } from "./fixtures/emis-maquettes";
-import { EMIS_CLOSING, EMIS_DESCRIPTION, EMIS_SESSIONS } from "./fixtures/emis-suivi";
+import { EMIS_CLOSING, EMIS_DESCRIPTION, EMIS_LATE_PR, EMIS_SESSIONS } from "./fixtures/emis-suivi";
 import { seedEmisAgent } from "./seed-emis-agent";
 import { type JournalWait, verifyEmisJournal, waitForMerge } from "./seed-emis-journal";
 
@@ -172,12 +172,14 @@ async function attachPr(emis: Emis, number: number): Promise<void> {
 async function attachGit(emis: Emis): Promise<void> {
   for (const step of stepSpecs().values()) {
     const ticketId = emis.id(step.n);
-    if (step.pr !== undefined && step.pr.number !== EMIS_CLOSING.opened) await attachPr(emis, step.pr.number);
+    const pr = step.pr?.number;
+    if (pr !== undefined && pr !== EMIS_CLOSING.opened && pr !== EMIS_LATE_PR) await attachPr(emis, pr);
     if (step.branch !== undefined) {
       const ref: ExternalRef = { kind: "git_branch", branch: step.branch, base: EMIS_BASE_BRANCH };
       await emis.command({ method: "upsertExternalRef", ticketId, ref });
     }
   }
+  await attachPr(emis, EMIS_LATE_PR);
 }
 
 async function askQuestions(emis: Emis): Promise<void> {
