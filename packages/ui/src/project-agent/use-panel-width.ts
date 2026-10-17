@@ -2,9 +2,9 @@ import { useCallback } from "react";
 import { usePref } from "../lib/local-pref";
 
 export const PANEL_WIDTH_KEY = "kibo.projectAgent.width";
-export const PANEL_MIN = 360;
+export const PANEL_MIN = 340;
 export const PANEL_MAX = 720;
-export const PANEL_DEFAULT = 440;
+export const PANEL_DEFAULT = 340;
 export const PANEL_STEP = 16;
 
 export const clampWidth = (width: number): number =>

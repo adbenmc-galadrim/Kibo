@@ -77,10 +77,20 @@ const show = (initial: ProjectAgentTab = "conversation") =>
 const panel = () => within(screen.getByRole("dialog"));
 const rpcs = (method: string) => calls.filter((c) => c.method === method);
 
-test("the header names the project and the state, the conversation is rendered", async () => {
+async function choose(item: string) {
+  const user = userEvent.setup();
+  await user.click(await panel().findByRole("button", { name: "Actions de l'agent de projet" }));
+  await user.click(await screen.findByRole("menuitem", { name: item }));
+}
+
+const toConversation = async () => {
+  await choose("Conversation");
+  await panel().findByRole("tablist");
+};
+
+test("the conversation is rendered with its batch card", async () => {
   show();
-  expect(await panel().findByText("Agent de projet · Emis")).toBeTruthy();
-  expect(await panel().findByText("Lot à valider")).toBeTruthy();
+  await toConversation();
   expect(await panel().findByText("Où en est-on ?")).toBeTruthy();
   expect(panel().getByText("lit les tickets, lit EMIS-11")).toBeTruthy();
   expect(panel().getByRole("region", { name: /Lot n° 1/ })).toBeTruthy();
@@ -112,6 +122,7 @@ test("the agent's markdown never injects HTML", async () => {
 
 test("Enter adds a line, ⌘↵ sends the message", async () => {
   show();
+  await toConversation();
   const box = await panel().findByRole("combobox", { name: "Message à l'agent de projet" });
   expect(box.getAttribute("placeholder")).toBe("Écris à l'agent de projet…");
   const user = userEvent.setup();
@@ -130,6 +141,7 @@ test("without a session the box invites to ask about the project and the state i
   current = emptyView();
   log = [];
   show();
+  await toConversation();
   const box = await panel().findByRole("combobox", { name: "Message à l'agent de projet" });
   await waitFor(() => expect(box.getAttribute("placeholder")).toBe("Demande quelque chose sur Emis…"));
   expect(panel().getByText("Prêt")).toBeTruthy();
@@ -139,6 +151,7 @@ test("without a session the box invites to ask about the project and the state i
 test("Réessayer sends the last message again", async () => {
   current = viewFixture({ batches: [] });
   show();
+  await toConversation();
   await userEvent.setup().click(await panel().findByRole("button", { name: "Réessayer" }));
   await waitFor(() =>
     expect(rpcs("sendProjectAgentMessage")).toEqual([
@@ -149,6 +162,7 @@ test("Réessayer sends the last message again", async () => {
 
 test("deciding a batch calls decideBatch for this project", async () => {
   show();
+  await toConversation();
   const user = userEvent.setup();
   const card = within(await panel().findByRole("region", { name: /Lot n° 1/ }));
   await user.click(card.getByRole("button", { name: "Refuser" }));
@@ -163,8 +177,7 @@ test("deciding a batch calls decideBatch for this project", async () => {
 test("Nouvel agent de projet asks for confirmation, then resets", async () => {
   show();
   const user = userEvent.setup();
-  await user.click(await panel().findByRole("button", { name: "Actions de l'agent de projet" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Nouvel agent de projet" }));
+  await choose("Nouvel agent de projet");
   const confirm = await screen.findByRole("alertdialog");
   expect(rpcs("resetProjectAgent")).toHaveLength(0);
   await user.click(within(confirm).getByRole("button", { name: "Nouvel agent" }));
@@ -199,6 +212,11 @@ test("Ouvrir la mémoire opens the Notes view", async () => {
   expect(views).toEqual(["notes"]);
 });
 
+test("the panel is 340 px wide by default", async () => {
+  show();
+  await waitFor(() => expect(screen.getByRole("dialog").style.width).toBe("340px"));
+});
+
 test("the width is bounded, remembered, and the edge resizes with Shift+arrows", async () => {
   localStorage.setItem("kibo.projectAgent.width", "9999");
   show();
@@ -213,11 +231,12 @@ test("the width is bounded, remembered, and the edge resizes with Shift+arrows",
   expect(screen.getByRole("dialog").style.width).toBe("720px");
   localStorage.setItem("kibo.projectAgent.width", "10");
   window.dispatchEvent(new StorageEvent("storage", { key: "kibo.projectAgent.width" }));
-  await waitFor(() => expect(screen.getByRole("dialog").style.width).toBe("360px"));
+  await waitFor(() => expect(screen.getByRole("dialog").style.width).toBe("340px"));
 });
 
 test("two tabs: Conversation, and Signaux with the open count; the compose box stays under Conversation", async () => {
   show();
+  await toConversation();
   const user = userEvent.setup();
   expect(await panel().findByRole("tab", { name: "Signaux · 3" })).toBeTruthy();
   expect(panel().getByRole("tab", { name: "Conversation", selected: true })).toBeTruthy();
@@ -247,6 +266,7 @@ test("a batch after a wakeup says so, names the source of each action and groups
   ];
   current = viewFixture({ batches: [pendingBatch({ createdAt: 2, actions, expected: [] })] });
   show();
+  await toConversation();
   expect(await panel().findByText("Réveil automatique · 3 signaux")).toBeTruthy();
   const card = within(await panel().findByRole("region", { name: /Lot n° 1/ }));
   expect(card.getByText("2 actions · après réveil")).toBeTruthy();

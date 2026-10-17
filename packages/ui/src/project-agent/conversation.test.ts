@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { RunLogEntry } from "@kibo/schema";
 import { NOW } from "../agents/fixtures";
-import { buildConversation, lastUserMessage, panelStatus } from "./conversation";
+import { buildConversation, headerLine, lastAgentText, lastUserMessage, panelStatus } from "./conversation";
 import { CONVERSATION_LOG, partialBatch, pendingBatch, projectRun } from "./fixtures";
 
 const shape = (items: ReturnType<typeof buildConversation>) =>
@@ -174,4 +174,19 @@ test("the batch proposed after a wakeup says so, not the one after a message fro
 test("lastUserMessage skips wakeups: Réessayer never replays one", () => {
   expect(lastUserMessage(wakeLog)).toBe("Où en est-on ?");
   expect(lastUserMessage(wakeLog.slice(2))).toBeNull();
+});
+
+test("lastAgentText is the agent's latest answer, or null", () => {
+  const items = buildConversation(CONVERSATION_LOG, [], projectRun({ state: "failed" }));
+  expect(lastAgentText(items)).toBe("**EMIS-11** avance ; je propose de le passer en review.");
+  expect(lastAgentText([])).toBeNull();
+});
+
+test("headerLine says the last turn while idle, the state while busy", () => {
+  const now = 1_000_000_000_000;
+  expect(headerLine("ready", now - 4 * 60_000, now)).toBe("Suivi à jour · il y a 4 min");
+  expect(headerLine("batch", now - 4 * 60_000, now)).toBe("Suivi à jour · il y a 4 min");
+  expect(headerLine("thinking", now - 4 * 60_000, now)).toBe("Réfléchit…");
+  expect(headerLine("queued", null, now)).toBe("En file");
+  expect(headerLine("ready", null, now)).toBe("Prêt");
 });
