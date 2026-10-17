@@ -2487,3 +2487,11 @@ Détail tâche par tâche dans la section « Écarts » du plan `2026-10-17-kibo
 6. **Poller des PR** : intervalle réglable pour les tests par `KIBO_PR_POLL_MS` (chiffres seuls, minimum 20 ms, `0` coupe) ; le réveil de fin de sprint part du premier tick (T15).
 7. **Mesure pixel** : la comparaison se fait par une capture stable et un seul `toMatchSnapshot` contre la référence tirée de la maquette ; la mesure de T13 en clair comparait deux captures entre elles et a été réécrite (T16). Masques restants : compte du système, âge de synchronisation, âges relatifs d'un fait semé à l'heure réelle, « S45 2 nov. » (Planning), compteur des dépendances (Graphe).
 8. **Fichiers au-dessus de 300 lignes** hérités : `ui/src/shell/Workspace.tsx` (321) et `daemon/src/service.ts` (306), Workspace inchangé en taille, service.ts grandi d’une ligne pour le câblage de l’activité.
+
+### 38.15 Retours d'Adam sur 0.26.0-alpha.1 (2026-10-17, chef d'équipe)
+
+1. **Questions de la Vue d'ensemble** : au plus **5** questions affichées (bloquantes d'abord, puis par rang) ; pied « Afficher plus » (+5 à chaque clic, compte restant entre parenthèses) et « Toutes les questions (n) » qui ouvre la page Questions du projet. Le widget ne fait plus une page à rallonge.
+2. **Indicateur Fonctionnalités** : les cases se partagent la largeur de leur case d'indicateur (flex, largeur minimale 4 px, écart 2 px au-delà de 12 fonctionnalités) ; elles ne débordent jamais sur la case voisine.
+3. **Barre latérale** : le compteur d'une page (« 73 », « 28 ») est masqué quand le bouton « ⋯ » de la ligne apparaît (survol, focus, menu ouvert) ; jamais de superposition.
+4. **Planning** : l'en-tête de page et ses actions tiennent dans la largeur dès 900 px (sous-titre tronqué avec ellipse, actions qui passent à la ligne) ; les pastilles « bloquée · Q10 » restent sur une ligne.
+5. **Exécution masquée = aucune trace d'agent** (§37, réglage « Exécution des agents dans Kibo » désactivé) : ni « Assigner à un agent », ni « Livrer » (remplacé par « Copier /full-delivery <CLÉ> »), ni champ « Assigné » à un profil d'agent ni son aide, ni onglet, page, barre ou pastille d'agents, ni raccourci, entrée de palette ou notification qui lance un agent. L'agent de projet reste. Revue complète des écrans, menus et raccourcis ; chaque trace retirée est couverte par un test qui la cherche réglage désactivé.
