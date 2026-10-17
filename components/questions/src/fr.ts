@@ -171,6 +171,7 @@ export const fr = {
     provisional: "Choix provisoire",
     recipient: "Destinataire",
   },
+  reminded: (age: string) => `relancée · ${age}`,
   age: {
     now: "à l'instant",
     minutes: (n: number) => `il y a ${n} min`,
