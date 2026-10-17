@@ -71,6 +71,21 @@ test("the poll passes run before each PR poll and stop with the daemon", async (
 test("the PR poll interval can be set by the environment for the tests", () => {
   expect(prPollMsFromEnv({})).toBeUndefined();
   expect(prPollMsFromEnv({ [PR_POLL_ENV]: "250" })).toBe(250);
+  expect(prPollMsFromEnv({ [PR_POLL_ENV]: "20" })).toBe(20);
   expect(prPollMsFromEnv({ [PR_POLL_ENV]: "0" })).toBe(0);
-  expect(() => prPollMsFromEnv({ [PR_POLL_ENV]: "vite" })).toThrow(PR_POLL_ENV);
+  for (const raw of ["vite", " 250", "250 ", "0x10", "1e3", "-5", "2.5", "19", "1"])
+    expect(() => prPollMsFromEnv({ [PR_POLL_ENV]: raw })).toThrow(PR_POLL_ENV);
+});
+
+test("the daemon reads the PR poll interval from its environment", () => {
+  const previous = process.env[PR_POLL_ENV];
+  try {
+    process.env[PR_POLL_ENV] = "0";
+    expect(startCodeTracking(fx.service, closers, { env: git.env }).poller).toBeNull();
+    process.env[PR_POLL_ENV] = "20";
+    expect(startCodeTracking(fx.service, closers, { env: git.env }).poller).not.toBeNull();
+  } finally {
+    if (previous === undefined) delete process.env[PR_POLL_ENV];
+    else process.env[PR_POLL_ENV] = previous;
+  }
 });

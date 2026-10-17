@@ -8,6 +8,7 @@ import { startTracking } from "./tracking-service";
 export type CodeTrackingOptions = Pick<CodeServiceOptions, "env" | "prPollMs">;
 
 export const PR_POLL_ENV = "KIBO_PR_POLL_MS";
+export const MIN_PR_POLL_MS = 20;
 
 const WITHOUT_POLL: Pick<PrPoller, "beforePoll"> = { beforePoll: () => () => {} };
 const log = (what: string) => (e: unknown) => console.error(`[kibo-daemon] ${what}`, e);
@@ -15,9 +16,12 @@ const log = (what: string) => (e: unknown) => console.error(`[kibo-daemon] ${wha
 export function prPollMsFromEnv(env: Record<string, string | undefined>): number | undefined {
   const raw = env[PR_POLL_ENV];
   if (raw === undefined || raw === "") return undefined;
-  const ms = Number(raw);
-  if (!Number.isInteger(ms) || ms < 0)
-    throw new KiboError("INVALID_INPUT", `${PR_POLL_ENV} must be a whole number of milliseconds, got ${raw}`);
+  const ms = /^\d+$/.test(raw) ? Number(raw) : Number.NaN;
+  if (ms !== 0 && !(ms >= MIN_PR_POLL_MS))
+    throw new KiboError(
+      "INVALID_INPUT",
+      `${PR_POLL_ENV} must be 0 or a whole number of milliseconds of at least ${MIN_PR_POLL_MS}, got ${raw}`,
+    );
   return ms;
 }
 
