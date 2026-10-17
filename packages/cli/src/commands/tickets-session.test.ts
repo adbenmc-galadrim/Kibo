@@ -17,13 +17,18 @@ const EMIS_IN_FOLDER: ProjectMeta = { ...EMIS_META, folder: "/src/emis" };
 
 type Answer = (req: Extract<RpcRequest, { method: "setTicketSession" }>) => unknown;
 
-function fakeClient(answer: Answer = () => ({ tool: "T3 Code", startedAt: STARTED_AT })) {
+const ALIVE: Answer = () => ({ tool: "T3 Code", startedAt: STARTED_AT });
+const branchUnknown: Answer = () => {
+  throw new KiboError("NOT_FOUND", "no ticket declares this branch");
+};
+
+function fakeClient(answer: Answer = ALIVE, projects: readonly ProjectMeta[] = [KIBO_META, EMIS_IN_FOLDER]) {
   const calls: RpcRequest[] = [];
   const client: DaemonClient = {
     async rpc(req) {
       const sent: RpcRequest = req;
       calls.push(sent);
-      if (sent.method === "listProjects") return [KIBO_META, EMIS_IN_FOLDER] as never;
+      if (sent.method === "listProjects") return projects as never;
       if (sent.method !== "setTicketSession") throw new Error(`unexpected ${sent.method}`);
       return answer(sent) as never;
     },
@@ -201,4 +206,35 @@ test("kibo tickets session without a daemon: code 1 and the stable message", asy
   } finally {
     rmSync(home, { recursive: true, force: true });
   }
+});
+
+const project = (id: string, folder: string | null): ProjectMeta => ({
+  ...EMIS_META,
+  id,
+  key: id.toUpperCase(),
+  name: id,
+  folder,
+});
+
+test("without a key, the deepest folder holding the cwd is asked first, then the listing order", async () => {
+  const projects = [project("src", "/src"), project("other", null), project("emis", "/src/emis")];
+  const s = session(["ping"], fakeClient(branchUnknown, projects), "/src/emis/app");
+  expect(await s.run()).toBe(1);
+  expect(s.fake.sessions().map((c) => c.projectId)).toEqual(["emis", "src", "other"]);
+});
+
+test("without a key, folders of equal depth keep the listing order", async () => {
+  const projects = [project("b", "/src/app"), project("a", "/src/app")];
+  const s = session(["ping"], fakeClient(branchUnknown, projects), "/src/app/lib");
+  expect(await s.run()).toBe(1);
+  expect(s.fake.sessions().map((c) => c.projectId)).toEqual(["b", "a"]);
+});
+
+test("without a key, FORBIDDEN stops the search at the first project", async () => {
+  const fake = fakeClient(() => {
+    throw new KiboError("FORBIDDEN", "local session required");
+  });
+  const s = session(["ping"], fake);
+  await expect(s.run()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  expect(fake.sessions()).toHaveLength(1);
 });
