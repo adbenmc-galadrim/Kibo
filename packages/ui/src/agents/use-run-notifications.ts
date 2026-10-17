@@ -8,6 +8,7 @@ import {
 } from "@kibo/schema";
 import { useEffect, useRef } from "react";
 import { fr } from "../i18n/fr";
+import { useExecutionShown } from "../state/use-app-settings";
 import { errorText } from "./format";
 
 export type RunNotice = { title: string; body: string; runId: string | null };
@@ -48,6 +49,7 @@ export function useRunNotifications(
   onOpen?: (runId: string) => void,
 ): void {
   const previous = useRef<Seen | null>(null);
+  const executionShown = useExecutionShown();
   useEffect(() => {
     if (!state) return;
     const before = previous.current;
@@ -59,8 +61,9 @@ export function useRunNotifications(
     if (!before || !enabled || typeof Notification === "undefined" || Notification.permission !== "granted")
       return;
     const notices = [
-      ...runNotices(before.states, state.runs),
-      ...askedNotices(before.questions, state),
+      ...(executionShown
+        ? [...runNotices(before.states, state.runs), ...askedNotices(before.questions, state)]
+        : []),
       ...batchNotices(before.batches, state),
     ];
     for (const notice of notices) {
@@ -70,5 +73,5 @@ export function useRunNotifications(
         if (notice.runId) onOpen?.(notice.runId);
       };
     }
-  }, [state, enabled, onOpen]);
+  }, [state, enabled, onOpen, executionShown]);
 }

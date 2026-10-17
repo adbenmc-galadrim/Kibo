@@ -1,6 +1,8 @@
 import { expect, mock, test } from "bun:test";
-import type { AgentsState, RunState } from "@kibo/schema";
+import type { AgentExecution, AgentsState, RunState } from "@kibo/schema";
 import { renderHook } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
 import { agentsFixture, runFixture } from "./fixtures";
 import { batchNotices, runNotices, useRunNotifications } from "./use-run-notifications";
 
@@ -186,4 +188,29 @@ test("a click on a run's notification opens the run's side panel", () => {
   } finally {
     Object.assign(globalThis, { Notification: saved });
   }
+});
+
+const notified = (execution: AgentExecution) => {
+  let seen: string[] = [];
+  withNotification("granted", (shown) => {
+    const first = withBatch(agentsFixture(), null);
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <AppSettingsProvider store={fixedStore({ agentExecution: execution })}>{children}</AppSettingsProvider>
+    );
+    const view = renderHook(({ state }) => useRunNotifications(state, true), {
+      initialProps: { state: first },
+      wrapper,
+    });
+    view.rerender({ state: withBatch(finish(first, "r42"), "b1") });
+    seen = shown;
+  });
+  return seen;
+};
+
+test("hidden execution: no run is announced, the batch of the project agent still is", () => {
+  expect(notified("hidden")).toEqual(["Lot à valider"]);
+});
+
+test("shown execution: the finished run is announced again", () => {
+  expect(notified("shown")).toEqual(["opus-dev-1 a terminé", "Lot à valider"]);
 });
