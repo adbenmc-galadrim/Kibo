@@ -1,4 +1,11 @@
-import type { ProjectEvent, ProjectEventKind, ProjectEventSource, Status, TicketView } from "@kibo/schema";
+import type {
+  ProjectEvent,
+  ProjectEventKind,
+  ProjectEventSource,
+  Question,
+  Status,
+  TicketView,
+} from "@kibo/schema";
 import { activityLabel } from "./activity-labels";
 import { clockTime } from "./overview-facts";
 
@@ -19,6 +26,7 @@ export type ActivityRow = {
 };
 export type ActivityInput = {
   tickets: readonly TicketView[];
+  questions: readonly Pick<Question, "id" | "importRef">[];
   events: readonly ProjectEvent[];
   workflow: readonly Pick<Status, "id" | "label">[];
 };
@@ -27,6 +35,7 @@ export type ActivityQuery = { sources: readonly ProjectEventSource[]; limit: num
 export function activityRows(input: ActivityInput, query: ActivityQuery): ActivityRow[] {
   const byId = new Map(input.tickets.map((t) => [t.id, t]));
   const statusName = (id: string) => input.workflow.find((s) => s.id === id)?.label ?? id;
+  const questionRef = (id: string) => input.questions.find((q) => q.id === id)?.importRef?.id ?? null;
   return input.events
     .filter((e) => query.sources.length === 0 || query.sources.includes(e.source))
     .sort((a, b) => b.at - a.at || b.id - a.id)
@@ -40,7 +49,7 @@ export function activityRows(input: ActivityInput, query: ActivityQuery): Activi
         id: e.id,
         time: clockTime(e.at),
         kind: e.kind,
-        label: activityLabel(e, { subject, statusName }),
+        label: activityLabel(e, { subject, statusName, questionRef }),
         ticketId: ticket?.id ?? null,
         key: agent ? null : (ticket?.keyLabel ?? null),
         feature: agent ? null : (feature?.shortKey ?? null),

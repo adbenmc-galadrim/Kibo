@@ -8,7 +8,11 @@ const event = (
   source: ProjectEventSource = "git",
 ): ProjectEvent => ({ id: 1, projectId: "p", at: 0, kind, ticketId: null, featureId: null, source, data });
 const label = (e: ProjectEvent, subject = "F5") =>
-  activityLabel(e, { subject, statusName: (id) => `«${id}»` });
+  activityLabel(e, {
+    subject,
+    statusName: (id) => `«${id}»`,
+    questionRef: (id) => (id === "q14" ? "Q14" : null),
+  });
 
 test("pull requests read as opened, merged, reviewed or checked", () => {
   expect(label(event("pr_opened", { number: 22 }))).toBe("PR #22 ouverte");
@@ -31,7 +35,9 @@ test("steps, sessions and statuses read with their label", () => {
   expect(label(event("step_set", { step: 7 }, "full-delivery"))).toBe("Étape 7 · Porte qualité");
   expect(label(event("step_set", { step: 2 }, "update-delivery"))).toBe("Retouche · 2 · Repérage");
   expect(label(event("session_started", {}, "full-delivery"))).toBe("Session démarrée");
-  expect(label(event("session_stopped", { minutes: 42 }, "full-delivery"))).toBe("Session terminée · 42 min");
+  expect(
+    label(event("session_stopped", { tool: "T3 Code", durationMs: 42 * 60_000 + 20_000 }, "full-delivery")),
+  ).toBe("Session terminée · 42 min");
   expect(label(event("session_stopped", {}, "full-delivery"))).toBe("Session terminée");
   expect(label(event("status_changed", { to: "in_review" }, "user"))).toBe("Statut : «in_review»");
   expect(label(event("status_changed", { to: "done", delivered: "F3" }, "user"))).toBe(
@@ -43,16 +49,50 @@ test("batches, sprints and questions read as the agent and the plan say", () => 
   expect(label(event("batch_proposed", { seq: 7 }, "project-agent"))).toBe(
     "Suivi mis à jour · lot n° 7 proposé",
   );
-  expect(label(event("batch_decided", { seq: 7, status: "applied" }, "user"))).toBe("Lot n° 7 validé");
-  expect(label(event("batch_decided", { seq: 7, status: "partial" }, "user"))).toBe(
-    "Lot n° 7 validé en partie",
+  expect(label(event("batch_decided", { seq: 7, decision: "apply", actions: 3 }, "user"))).toBe(
+    "Lot n° 7 validé",
   );
-  expect(label(event("batch_decided", { seq: 7, status: "rejected" }, "user"))).toBe("Lot n° 7 refusé");
+  expect(label(event("batch_decided", { seq: 7, decision: "reject", actions: 3 }, "user"))).toBe(
+    "Lot n° 7 refusé",
+  );
+  expect(label(event("batch_decided", { seq: 7 }, "user"))).toBe("Lot n° 7 décidé");
   expect(label(event("sprint_set", { from: "S42", to: "S43" }, "user"))).toBe("F5 reportée en S43");
   expect(label(event("sprint_set", { from: null, to: "S44" }, "user"), "F9")).toBe("F9 planifiée en S44");
   expect(label(event("sprint_set", { from: "S42", to: null }, "user"))).toBe("F5 retirée du planning");
   expect(label(event("sprint_created", { code: "S45" }, "user"))).toBe("Sprint S45 créé");
   expect(label(event("question_created", { ref: "Q14" }, "user"))).toBe("Question Q14 posée");
   expect(label(event("question_answered", { ref: "Q14" }, "user"))).toBe("Q14 répondue");
-  expect(label(event("question_reminded", { ref: "Q14" }, "project-agent"))).toBe("Q14 relancée");
+  expect(label(event("question_reminded", { questionId: "q14", title: "Un ISO ?" }, "project-agent"))).toBe(
+    "Q14 relancée",
+  );
+  expect(label(event("question_reminded", { questionId: "q9", title: "Un ISO ?" }, "project-agent"))).toBe(
+    "Un ISO ? relancée",
+  );
+});
+
+test("a missing key gives a plain label, never an error", () => {
+  const kinds: readonly ProjectEventKind[] = [
+    "branch_created",
+    "pr_opened",
+    "pr_review",
+    "pr_checks",
+    "pr_merged",
+    "status_changed",
+    "step_set",
+    "session_started",
+    "session_stopped",
+    "sprint_created",
+    "sprint_set",
+    "batch_proposed",
+    "batch_decided",
+    "question_created",
+    "question_answered",
+    "question_reminded",
+  ];
+  for (const kind of kinds) expect(typeof label(event(kind, {}))).toBe("string");
+  expect(label(event("pr_opened", {}))).toBe("PR ouverte");
+  expect(label(event("branch_created", {}))).toBe("Branche créée");
+  expect(label(event("sprint_created", {}))).toBe("Sprint créé");
+  expect(label(event("batch_proposed", {}))).toBe("Suivi mis à jour · lot proposé");
+  expect(label(event("question_created", {}))).toBe("Question posée");
 });
