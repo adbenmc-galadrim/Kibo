@@ -3,19 +3,19 @@ import {
   type FileRef,
   INBOX_ID,
   isTerminal,
-  type Page,
   type ProjectSnapshot,
   type ProjectSummary,
   type TabTarget,
   type WorkspaceConfig,
 } from "@kibo/schema";
-import type { NewTicketDefaults } from "@kibo/sdk";
+import { lazyPanel } from "@kibo/sdk";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { errorMessage } from "../lib/error-message";
 import { fileScope, newTicketProjects } from "../lib/inbox";
 import { projectDomainsOf } from "../lib/project-domains";
 import { canEdit } from "../state/access";
+import type { DialogsState } from "./dialogs-state";
 import {
   AssignDialog,
   ConfirmDialog,
@@ -36,58 +36,11 @@ import { FilePreviewSheet, JoinProjectDialog, ShareProjectDialog } from "./lazy-
 import { descendantIds } from "./page-menu";
 import { useOpened } from "./use-opened";
 
-export type SheetTicket = { projectId: string; ticketId: string };
-export type NewTicketRequest = NewTicketDefaults & { projectId?: string };
+export { type DialogsState, type NewTicketRequest, NO_DIALOG, type SheetTicket } from "./dialogs-state";
 
-export type DialogsState = {
-  newProject: boolean;
-  newProjectFocus: "name" | "folder";
-  newPageParent: string | null | undefined;
-  suggestFor: string | null;
-  sheet: SheetTicket | null;
-  newTicket: NewTicketRequest | null;
-  fileTicket: { ticketId: string } | null;
-  assign: { projectId: string | null; ticketId: string | null } | null;
-  newAgent: boolean;
-  newSkill: boolean;
-  preview: FileRef | null;
-  share: string | null;
-  join: boolean;
-  renamePage: Page | null;
-  deletePage: Page | null;
-  editProject: string | null;
-  deleteProject: string | null;
-  tutorial: boolean;
-  about: boolean;
-  whatsNew: boolean;
-  shortcutsHelp: boolean;
-  report: boolean;
-};
-
-export const NO_DIALOG: DialogsState = {
-  newProject: false,
-  newProjectFocus: "name",
-  newPageParent: undefined,
-  suggestFor: null,
-  sheet: null,
-  newTicket: null,
-  fileTicket: null,
-  assign: null,
-  newAgent: false,
-  newSkill: false,
-  preview: null,
-  share: null,
-  join: false,
-  renamePage: null,
-  deletePage: null,
-  editProject: null,
-  deleteProject: null,
-  tutorial: false,
-  about: false,
-  whatsNew: false,
-  shortcutsHelp: false,
-  report: false,
-};
+const SprintSheet = lazyPanel(() => import("./sprint/SprintSheet").then((m) => m.SprintSheet), fr.lazy, {
+  fallback: "sr-only",
+});
 
 type Props = {
   state: DialogsState;
@@ -208,6 +161,21 @@ export function ShellDialogs({
           onOpenFile={openFile}
           onOpenTicket={(ticketId) => set({ sheet: { projectId: sheet.projectId, ticketId } })}
           onDeleted={() => set({ sheet: null })}
+        />
+      )}
+      {state.sprintSheet && (
+        <SprintSheet
+          route={state.sprintSheet}
+          project={snapshots.get(state.sprintSheet.projectId) ?? project}
+          onClose={() => set({ sprintSheet: null })}
+          onOpenTicket={(ticketId) =>
+            state.sprintSheet &&
+            set({ sprintSheet: null, sheet: { projectId: state.sprintSheet.projectId, ticketId } })
+          }
+          onOpenInTab={(target) => {
+            set({ sprintSheet: null });
+            p.onOpenTarget(target, true);
+          }}
         />
       )}
       {state.newTicket && (

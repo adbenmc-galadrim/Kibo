@@ -60,3 +60,36 @@ test("the breadcrumb of a run page leads back to the agents", () => {
   expect(crumbs[0]?.target).toEqual({ kind: "screen", screen: "agents" });
   expect(crumbsFor(runTab, { project: null, branch: null }).map((c) => c.label)).toEqual(["Agents", "Run"]);
 });
+
+test("a sprint tab is titled after its code and its crumbs lead back to the Planning", async () => {
+  const { emisFeatureProject } = await import("../shell/feature/fixture");
+  const emis = emisFeatureProject();
+  const projects = [{ ...emis.meta, counts: projectsFixture[0]?.counts ?? {} }] as typeof projectsFixture;
+  const sprintCtx = { projects, snapshots: new Map([["emis", emis]]) };
+  const sprint: TabTarget = { kind: "sprint", projectId: "emis", sprintId: "s42" };
+  expect(describeTarget(sprint, sprintCtx)).toMatchObject({ title: "Emis · S42", missing: false });
+  expect(describeTarget({ ...sprint, sprintId: "gone" }, sprintCtx).missing).toBe(true);
+  const planned: ProjectSnapshot = {
+    ...emis,
+    pages: [{ id: "p-plan", title: "Planning", kind: "view", parentId: null }],
+    instances: [
+      {
+        id: "i-plan",
+        pageId: "p-plan",
+        component: "planning@1.0.0",
+        layout: { x: 0, y: 0, w: 12, h: 8 },
+        config: {},
+        componentHash: null,
+      },
+    ],
+  };
+  expect(crumbsFor(sprint, { project: planned, branch: null }).map((c) => c.label)).toEqual([
+    "Emis",
+    "Planning",
+    "S42 · Terrain hors ligne",
+  ]);
+  expect(crumbsFor(sprint, { project: emis, branch: null }).map((c) => c.label)).toEqual([
+    "Emis",
+    "S42 · Terrain hors ligne",
+  ]);
+});

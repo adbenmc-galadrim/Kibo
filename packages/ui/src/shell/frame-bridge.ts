@@ -20,6 +20,7 @@ export type BridgeDeps = {
   init(): Omit<InitMessage, "kibo" | "type"> & { format: ComponentFormat };
   call(call: ComponentCall): Promise<unknown>;
   onOpenTicket(ticketId: string): void;
+  onOpenSprint?(sprintId: string): void;
   onOpenNewTicket(defaults: NewTicketDefaults): void;
   onOpenFile(request: FileOpenRequest): void;
   onOpenView(componentId: string, question?: string): void;
@@ -91,6 +92,9 @@ export function createFrameBridge(deps: BridgeDeps): FrameBridge {
         return;
       case "openTicket":
         deps.onOpenTicket(m.ticketId);
+        return;
+      case "openSprint":
+        deps.onOpenSprint?.(m.sprintId);
         return;
       case "openNewTicket":
         deps.onOpenNewTicket(m.defaults);

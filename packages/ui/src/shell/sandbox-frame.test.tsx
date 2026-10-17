@@ -85,8 +85,10 @@ function testApis(capabilities: readonly Capability[] = []) {
 function mount(src = "about:blank", apis: InstanceApis = testApis().apis) {
   const opened: FileRef[] = [];
   const newTickets: NewTicketDefaults[] = [];
+  const sprints: string[] = [];
   const host: Host = {
     openTicket: () => {},
+    openSprint: (id) => sprints.push(id),
     openNewTicket: (d) => newTickets.push(d),
     openAssign: () => {},
     openFile: (ref) => opened.push(ref),
@@ -154,13 +156,32 @@ function mount(src = "about:blank", apis: InstanceApis = testApis().apis) {
       await load;
     });
   };
-  return { view, iframe, posted, opened, newTickets, fromFrame, loaded, navigate, changeSrc, rerender };
+  return {
+    view,
+    iframe,
+    posted,
+    opened,
+    newTickets,
+    sprints,
+    fromFrame,
+    loaded,
+    navigate,
+    changeSrc,
+    rerender,
+  };
 }
 
 test("a new ticket asked by the frame carries the instance fixed by the host", () => {
   const { newTickets, fromFrame, view } = mount();
   fromFrame({ kibo: 1, type: "openNewTicket", defaults: { statusId: "todo" } });
   expect(newTickets).toEqual([{ statusId: "todo", instanceId: "inst-1" }]);
+  view.unmount();
+});
+
+test("a sprint opened by the frame goes to the host sheet", () => {
+  const { sprints, fromFrame, view } = mount();
+  fromFrame({ kibo: 1, type: "openSprint", sprintId: "s42" });
+  expect(sprints).toEqual(["s42"]);
   view.unmount();
 });
 
