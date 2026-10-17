@@ -11,7 +11,8 @@ export const fr = {
   openHelp: "La limite est un avertissement : rien n'est bloqué.",
   overLimit: (open: number, limit: number) =>
     `${open} fonctionnalités ouvertes pour une limite de ${limit} : finis-en une avant d'en ouvrir une autre.`,
-  layout: { label: "Disposition", columns: "Colonnes", bands: "Bandes", soon: "Phase 26" },
+  layout: { label: "Disposition", columns: "Colonnes", bands: "Bandes" },
+  bands: { hint: "Glisse en Colonnes pour planifier", delivered: (n: number) => `Livrées · ${n}` },
   sprintState: { done: "terminé", current: "en cours" },
   deliveredOf: (delivered: number, total: number) => `${delivered}/${total} livrées`,
   planned: (n: number) => `${n} ${plural(n, "prévue", "prévues")}`,

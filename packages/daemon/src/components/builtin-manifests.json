@@ -306,7 +306,10 @@
     "title": "Planning",
     "description": "Fonctionnalités par sprint, glisser pour planifier",
     "reads": ["ticket", "link", "status", "sprint", "question"],
-    "writes": ["ticket", "sprint"]
+    "writes": ["ticket", "sprint"],
+    "configSchema": {
+      "layout": { "enum": ["columns", "bands"], "default": "columns", "label": "Disposition" }
+    }
   },
   {
     "id": "overview",

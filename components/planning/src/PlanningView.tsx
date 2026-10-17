@@ -1,10 +1,12 @@
 import type { SprintView } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { BacklogColumn } from "./BacklogColumn";
+import type { BandsTimeline } from "./bands-model";
 import { BACKLOG_ID } from "./drag";
 import { FeatureCard } from "./FeatureCard";
 import { fr } from "./fr";
-import { PlanningHeader } from "./PlanningHeader";
+import { PlanningBands } from "./PlanningBands";
+import { PlanningHeader, type PlanningLayout } from "./PlanningHeader";
 import type { FeatureCard as Card, PlanningModel } from "./planning-model";
 import { SprintColumn, Warning } from "./SprintColumn";
 import { TONE_BG, TONES } from "./tones";
@@ -34,6 +36,9 @@ export type PlanningViewProps = {
   target: string | null;
   dragged: Card | null;
   error: string | null;
+  layout: PlanningLayout;
+  bands: BandsTimeline | null;
+  onLayout(layout: PlanningLayout): void;
   onOpen(id: string): void;
   onEditSprint(sprint: SprintView): void;
   onNewFeature(): void;
@@ -58,30 +63,38 @@ export function PlanningView(props: PlanningViewProps) {
       <PlanningHeader
         model={model}
         readOnly={readOnly}
+        layout={props.layout}
+        onLayout={props.onLayout}
         onOpen={onOpen}
         onNewFeature={props.onNewFeature}
         onNewSprint={props.onNewSprint}
       />
-      <div className="scrollbar-none -my-px flex min-h-0 flex-1 items-stretch gap-3 overflow-x-auto py-px">
-        {model.sprints.map((column) => (
-          <SprintColumn
-            key={column.sprint.id}
-            column={column}
-            dropping={dropsIn(column.sprint.id, dragged?.sprintId ?? null)}
-            onEdit={readOnly ? undefined : () => onEditSprint(column.sprint)}
-            footer={column.sprint.id === holder && limitNote}
-          >
-            {cards(column.cards)}
-          </SprintColumn>
-        ))}
-        <BacklogColumn
-          dropping={dropsIn(BACKLOG_ID, dragged?.sprintId ?? null)}
-          footer={holder === null && limitNote}
-        >
-          {cards(model.backlog)}
-        </BacklogColumn>
-      </div>
-      <Legend error={props.error} />
+      {props.bands ? (
+        <PlanningBands timeline={props.bands} onOpen={onOpen} />
+      ) : (
+        <>
+          <div className="scrollbar-none -my-px flex min-h-0 flex-1 items-stretch gap-3 overflow-x-auto py-px">
+            {model.sprints.map((column) => (
+              <SprintColumn
+                key={column.sprint.id}
+                column={column}
+                dropping={dropsIn(column.sprint.id, dragged?.sprintId ?? null)}
+                onEdit={readOnly ? undefined : () => onEditSprint(column.sprint)}
+                footer={column.sprint.id === holder && limitNote}
+              >
+                {cards(column.cards)}
+              </SprintColumn>
+            ))}
+            <BacklogColumn
+              dropping={dropsIn(BACKLOG_ID, dragged?.sprintId ?? null)}
+              footer={holder === null && limitNote}
+            >
+              {cards(model.backlog)}
+            </BacklogColumn>
+          </div>
+          <Legend error={props.error} />
+        </>
+      )}
     </div>
   );
 }

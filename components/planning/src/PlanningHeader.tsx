@@ -4,7 +4,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
 import { Plus } from "lucide-react";
 import { fr } from "./fr";
 import { OpenLimitBadge } from "./OpenLimitBadge";
@@ -12,37 +11,30 @@ import type { PlanningModel } from "./planning-model";
 
 const SEGMENT = "flex h-[23px] items-center rounded-[5px] font-medium text-[12.5px] leading-[15px]";
 
-function LayoutToggle() {
+export type PlanningLayout = "columns" | "bands";
+
+const LAYOUTS: readonly PlanningLayout[] = ["columns", "bands"];
+const ACTIVE = "border border-(--tracking-border) bg-(--tracking-bg) px-[9px] text-(--tracking-fg)";
+const IDLE = "px-2.5 text-(--tracking-mfg)";
+
+function LayoutToggle({ layout, onLayout }: { layout: PlanningLayout; onLayout(l: PlanningLayout): void }) {
   return (
-    <TooltipProvider>
-      <fieldset
-        aria-label={fr.layout.label}
-        className="flex h-[27px] items-center gap-0.5 rounded-[7px] bg-(--tracking-muted) p-0.5"
-      >
+    <fieldset
+      aria-label={fr.layout.label}
+      className="flex h-[27px] items-center gap-0.5 rounded-[7px] bg-(--tracking-muted) p-0.5"
+    >
+      {LAYOUTS.map((l) => (
         <button
+          key={l}
           type="button"
-          aria-pressed="true"
-          className={`${SEGMENT} border border-(--tracking-border) bg-(--tracking-bg) px-[9px] text-(--tracking-fg)`}
+          aria-pressed={l === layout}
+          className={`${SEGMENT} ${l === layout ? ACTIVE : IDLE}`}
+          onClick={() => onLayout(l)}
         >
-          {fr.layout.columns}
+          {fr.layout[l]}
         </button>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span data-slot="bands" title={fr.layout.soon}>
-              <button
-                type="button"
-                disabled
-                aria-pressed="false"
-                className={`${SEGMENT} px-2.5 text-(--tracking-mfg)`}
-              >
-                {fr.layout.bands}
-              </button>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>{fr.layout.soon}</TooltipContent>
-        </Tooltip>
-      </fieldset>
-    </TooltipProvider>
+      ))}
+    </fieldset>
   );
 }
 
@@ -69,18 +61,24 @@ function AddMenu({ onNewFeature, onNewSprint }: { onNewFeature(): void; onNewSpr
 type Props = {
   model: PlanningModel;
   readOnly: boolean;
+  layout: PlanningLayout;
+  onLayout(layout: PlanningLayout): void;
   onOpen(id: string): void;
   onNewFeature(): void;
   onNewSprint(): void;
 };
 
-export function PlanningHeader({ model, readOnly, onOpen, onNewFeature, onNewSprint }: Props) {
+export function PlanningHeader(props: Props) {
+  const { model, readOnly, layout, onOpen, onNewFeature, onNewSprint } = props;
   return (
     <header className="flex shrink-0 items-end gap-2.5">
       <h1 className="font-semibold text-(--tracking-fg) text-[22px] leading-[27px]">{fr.title}</h1>
       <span className="text-(--tracking-dim) text-[12.5px] leading-[15px]">
         {fr.summary(model.delivered, model.total, model.unplanned)}
       </span>
+      {layout === "bands" && (
+        <span className="text-(--tracking-dim) text-[12.5px] leading-[15px]">{fr.bands.hint}</span>
+      )}
       {readOnly ? (
         <span className="ml-auto" />
       ) : (
@@ -93,7 +91,7 @@ export function PlanningHeader({ model, readOnly, onOpen, onNewFeature, onNewSpr
         cards={model.openCards}
         onOpen={onOpen}
       />
-      <LayoutToggle />
+      <LayoutToggle layout={layout} onLayout={props.onLayout} />
     </header>
   );
 }
