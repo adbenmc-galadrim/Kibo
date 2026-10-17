@@ -13,7 +13,7 @@ import type { CommandMeta, Docs } from "../docs";
 import { createProjectSettings } from "../notes/settings";
 import { createService } from "../service";
 import { openStore } from "../store";
-import { migrateTracking, TRACKING_MIGRATED_KEY } from "./tracking";
+import { migrateTracking, OVERVIEW_MIGRATED_KEY, TRACKING_MIGRATED_KEY } from "./tracking";
 
 const homes: string[] = [];
 afterEach(() => {
@@ -74,7 +74,8 @@ test("each project is migrated with the kibo origin until nothing is left, then 
   const snap = first.snapshot(emis.id);
   expect(snap.tickets.find((t) => t.id === root.id)?.shortKey).toBe("C4");
   expect(planningPages(snap)).toHaveLength(1);
-  expect(snap.instances.map((i) => i.component)).toEqual(["planning@1.0.0"]);
+  expect(snap.instances.map((i) => i.component).sort()).toEqual(["overview@1.0.0", "planning@1.0.0"]);
+  expect(snap.pages[0]?.title).toBe("Vue d'ensemble");
   expect(planningPages(first.snapshot(client.id))).toHaveLength(1);
   first.store.close();
   const second = open(home);
@@ -83,22 +84,21 @@ test("each project is migrated with the kibo origin until nothing is left, then 
   second.store.close();
 });
 
-test("a Planning page deleted by the user is not added back on the next start", () => {
+test("the Planning and overview pages deleted by the user are not added back on the next start", () => {
   const { home, emis } = seed();
   const first = open(home);
   first.migrate();
-  const page = planningPages(first.snapshot(emis.id))[0];
-  if (page === undefined) throw new Error("no Planning page");
-  first.service.handle({
-    method: "command",
-    projectId: emis.id,
-    command: { method: "deletePage", pageId: page.id },
-  });
+  for (const page of first.snapshot(emis.id).pages)
+    first.service.handle({
+      method: "command",
+      projectId: emis.id,
+      command: { method: "deletePage", pageId: page.id },
+    });
   first.store.close();
   const second = open(home);
   second.migrate();
   expect(second.runs).toEqual([]);
-  expect(planningPages(second.snapshot(emis.id))).toEqual([]);
+  expect(second.snapshot(emis.id).pages).toEqual([]);
   second.store.close();
 });
 
@@ -132,7 +132,8 @@ test("a migration that does not converge stops after five passes and leaves no m
     },
   };
   expect(() => migrateTracking({ docs, settings, log: () => {}, now: () => NOW })).toThrow("INTERNAL");
-  expect(passes).toBe(5 * 2);
+  expect(passes).toBe(5 * 3);
   expect(settings.get(emis.id, TRACKING_MIGRATED_KEY)).toBeNull();
+  expect(settings.get(emis.id, OVERVIEW_MIGRATED_KEY)).toBeNull();
   store.close();
 });
