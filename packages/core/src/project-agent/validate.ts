@@ -15,6 +15,7 @@ import { assignableAgents } from "./overview";
 import { isNewRef, signalRefsOf, ticketRefsOf } from "./refs";
 import { answerQuestionCheck, questionChecks } from "./validate-questions";
 import { type Check, type Edge, nodeOf, openScan, type Scan, touch } from "./validate-scan";
+import { sprintChecks } from "./validate-sprints";
 
 export type { BatchContext } from "./expected";
 export { captureExpected } from "./expected";
@@ -87,8 +88,6 @@ function existingLink(scan: Scan, kind: "blocks" | "relates", from: string, to: 
       ((l.from === from && l.to === to) || (kind === "relates" && l.from === to && l.to === from)),
   );
 }
-
-const notYetApplied = (): string[] => ["action pas encore prise en charge par Kibo"];
 
 const checks: { [T in ActionType]: Check<T> } = {
   createTicket(scan, a, i) {
@@ -172,9 +171,7 @@ const checks: { [T in ActionType]: Check<T> } = {
   dismissSignal(scan, a) {
     return touch(scan, a.signal);
   },
-  setSprint: notYetApplied,
-  createSprint: notYetApplied,
-  remindQuestion: notYetApplied,
+  ...sprintChecks,
 };
 
 function runCheck<T extends ActionType>(

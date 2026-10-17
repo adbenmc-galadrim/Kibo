@@ -6,6 +6,7 @@ import {
   type ProjectCommand,
   type ProjectSnapshot,
   type ProposedAction,
+  sameSprintCode,
 } from "@kibo/schema";
 import { sameJson } from "../canonical-json";
 import { type BatchContext, capture } from "./expected";
@@ -79,6 +80,13 @@ function unlinkCommand(
   if (!found)
     throw new KiboError("NOT_FOUND", `no ${action.kind} link between ${action.from} and ${action.to}`);
   return { method: "removeLink" as const, linkId: found.id };
+}
+
+function sprintIdOf(project: ProjectSnapshot, code: string | null): string | null {
+  if (code === null) return null;
+  const found = project.sprints.find((s) => sameSprintCode(s.code, code));
+  if (!found) throw new KiboError("NOT_FOUND", `sprint ${code} not found`);
+  return found.id;
 }
 
 function recipientId(project: ProjectSnapshot, raw: string | undefined): string | undefined {
@@ -175,6 +183,20 @@ export function commandsFor(
       return [unlinkCommand(action, ids, project)];
     case "answerQuestion":
       return [{ method: "answerQuestion", questionId: action.questionId, answer: action.answer, by }];
+    case "setSprint":
+      return [
+        {
+          method: "setTicketSprint",
+          ticketId: idOf(ids, action.ticket),
+          sprintId: sprintIdOf(project, action.sprint),
+        },
+      ];
+    case "createSprint": {
+      const { code, name, start, end } = action;
+      return [{ method: "createSprint", code, name, start, end }];
+    }
+    case "remindQuestion":
+      return [{ method: "remindQuestion", questionId: action.questionId, by }];
     case "createQuestion":
     case "updateQuestion":
     case "reopenQuestion":
@@ -187,9 +209,6 @@ export function commandsFor(
     case "createNote":
     case "updateNote":
     case "dismissSignal":
-    case "setSprint":
-    case "createSprint":
-    case "remindQuestion":
       return [];
   }
 }

@@ -72,6 +72,21 @@ describe("buildProjectAgentPrompt", () => {
     }
   });
 
+  test("the sprint rules follow the questions: tools, actions and the end of sprint protocol", () => {
+    const sprints = prompt.indexOf("## Sprints");
+    expect(prompt.indexOf("## Questions")).toBeLessThan(sprints);
+    expect(sprints).toBeLessThan(prompt.indexOf("## Interdits"));
+    for (const fragment of [
+      "mcp__kibo__list_sprints",
+      "`setSprint`",
+      "`createSprint`",
+      "`remindQuestion`",
+      "une action par fonctionnalité restante",
+    ]) {
+      expect(prompt).toContain(fragment);
+    }
+  });
+
   test("adds the guidelines of the chain afterwards, in order", () => {
     const protocol = prompt.indexOf("propose_batch");
     const first = prompt.indexOf("Toujours en français.");

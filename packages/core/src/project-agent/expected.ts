@@ -10,6 +10,7 @@ import {
   type Question,
   type RunView,
   type SignalRef,
+  sameSprintCode,
   type TicketView,
   undeliveredAnswers,
 } from "@kibo/schema";
@@ -117,14 +118,17 @@ export function capture(
       return { exists: ctx.notes.some((n) => n.path === action.path) };
     case "updateNote":
       return { hash: ctx.notes.find((n) => n.path === action.path)?.hash ?? null };
+    case "setSprint":
+      return onTicket(action.ticket, ticketOf, (t) => ({ sprintId: t.sprintId }));
+    case "createSprint":
+      return { exists: ctx.project.sprints.some((s) => sameSprintCode(s.code, action.code)) };
+    case "remindQuestion":
+      return onQuestion(ctx, action.questionId, (q) => ({ answered: !isOpen(q) }));
     case "createTicket":
     case "link":
     case "unlink":
     case "createQuestion":
     case "dismissSignal":
-    case "setSprint":
-    case "createSprint":
-    case "remindQuestion":
       return {};
   }
 }

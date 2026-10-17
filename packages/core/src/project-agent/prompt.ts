@@ -81,6 +81,18 @@ function questionLines(): string[] {
   ];
 }
 
+function sprintLines(): string[] {
+  return [
+    "",
+    "## Sprints",
+    "",
+    `- \`${mcpToolName("list_sprints")}\` rend les sprints triés, avec leurs fonctionnalités et ce qui leur reste ; \`project_overview.sprints\` en donne le même état.`,
+    "- `setSprint` place une fonctionnalité (ticket racine) dans un sprint par son code, ou la retire du planning (`sprint: null`) ; `createSprint` crée un sprint (code libre, début avant la fin), à citer ensuite par son code dans le même lot.",
+    "- `remindQuestion` relance une question ouverte : Kibo en garde la trace, sans texte à rédiger.",
+    "- À la fin d'un sprint, propose un report ou un retrait du planning, une action par fonctionnalité restante ; rien ne bouge avant la validation.",
+  ];
+}
+
 function forbiddenLines(): string[] {
   return [
     "",
@@ -105,6 +117,7 @@ export function buildProjectAgentPrompt(input: ProjectAgentPromptInput): string 
     ...signalLines(),
     ...skillLines(),
     ...questionLines(),
+    ...sprintLines(),
     ...forbiddenLines(),
     ...guidelineLines(input.chain),
   ]
