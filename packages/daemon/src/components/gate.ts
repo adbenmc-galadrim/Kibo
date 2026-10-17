@@ -14,6 +14,7 @@ import {
   type KiboErrorCode,
   type PresencePeer,
   type ProjectCommand,
+  type ProjectInfo,
   type ProjectSyncInfo,
   permissionList,
   permissionOfCall,
@@ -60,6 +61,7 @@ export type GateHandlers = {
   presence(projectId: string): Promise<PresencePeer[]>;
   sharing(projectId: string): Promise<ProjectSyncInfo>;
   settings(projectId: string): Promise<ComponentSettings>;
+  project(projectId: string): Promise<ProjectInfo>;
   questions(projectId: string, ticketId: string): Promise<DeliveryResult>;
   recipients(projectId: string): Promise<QuestionRecipient[]>;
   peek(projectId: string, runId: string): Promise<RunPeek>;
@@ -125,6 +127,8 @@ function dispatch(
       return h.sharing(projectId);
     case "settings.get":
       return h.settings(projectId);
+    case "project.get":
+      return h.project(projectId);
     case "assets.list":
     case "assets.url":
       return h.assets(projectId, inst.id, call);

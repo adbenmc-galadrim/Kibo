@@ -79,6 +79,7 @@ export const FrameToHost = z.discriminatedUnion("type", [
     call: ComponentCall,
   }),
   z.object({ kibo: z.literal(1), type: z.literal("openTicket"), ticketId: z.string().min(1) }),
+  z.object({ kibo: z.literal(1), type: z.literal("openSprint"), sprintId: z.string().min(1) }),
   z.object({
     kibo: z.literal(1),
     type: z.literal("openNewTicket"),

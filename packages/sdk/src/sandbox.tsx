@@ -118,6 +118,7 @@ export function createFrameSdk(
       surface: init.surface,
       format: init.format ?? defaultFormatOf(manifest),
       openTicket: (ticketId) => port.post({ kibo: 1, type: "openTicket", ticketId }),
+      openSprint: (sprintId) => port.post({ kibo: 1, type: "openSprint", sprintId }),
       openNewTicket: ({ statusId, parentId }) =>
         port.post({ kibo: 1, type: "openNewTicket", defaults: { statusId, parentId } }),
       openFile: ({ path, line }) =>

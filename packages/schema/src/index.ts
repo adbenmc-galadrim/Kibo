@@ -82,6 +82,7 @@ export * from "./project-agent-rpc";
 export * from "./project-agent-tool-specs";
 export * from "./project-agent-tools";
 export * from "./project-event";
+export * from "./project-info";
 export * from "./protocol";
 export * from "./question";
 export * from "./question-ask";

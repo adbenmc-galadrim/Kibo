@@ -16,6 +16,7 @@ import {
   type ProjectAsset,
   type ProjectCommand,
   type ProjectEvent,
+  projectInfo,
   type RunPeek,
   type StorybookOrigin,
   type TicketRun,
@@ -161,6 +162,8 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
           : { ...localSyncInfo(deps.doc), access: deps.access() };
       case "settings.get":
         return deps.settings();
+      case "project.get":
+        return projectInfo(readProject(deps.doc, deps.today, activityOf(deps.runs())));
       case "assets.list":
         return deps.assets ?? [];
       case "assets.url":

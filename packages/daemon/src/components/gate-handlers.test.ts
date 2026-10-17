@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createProjectDoc, createSprint, createTicket } from "@kibo/core";
+import { createProjectDoc, createSprint, createTicket, upsertExternalRef } from "@kibo/core";
 import {
   type CiRun,
   ComponentManifest,
@@ -318,4 +318,31 @@ test("settings.get reads the project tracking and the machine agent execution", 
     docs: { ...stubDocs, projectMeta: () => metaWith(null) },
   });
   expect(await defaults.settings("p1")).toEqual({ tracking: null, agentExecution: "hidden" });
+});
+
+test("project.get names the project and the repository of its first pull request", async () => {
+  const project = createProjectDoc({ ...metaWith(null), description: null });
+  const ticket = createTicket(project, { title: "Envoi", statusId: "in_review" });
+  upsertExternalRef(project, ticket.id, {
+    kind: "github_pr",
+    url: "https://github.com/galadrimteam/emis/pull/22",
+    number: 22,
+    state: "open",
+    base: "dev",
+    head: null,
+    review: "none",
+    checks: null,
+  });
+  const h = createGateHandlers({
+    ...stubHandlerDeps,
+    docs: { ...stubDocs, project: () => project, activity: () => NO_ACTIVITY, today: () => "2026-10-16" },
+  });
+  expect(await h.project("p1")).toEqual({
+    id: "p1",
+    key: "EMIS",
+    name: "Emis",
+    color: "#14B8A6",
+    description: null,
+    repo: "galadrimteam/emis",
+  });
 });

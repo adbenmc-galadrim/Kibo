@@ -315,3 +315,14 @@ test("mod+J is relayed so the project agent opens from inside a frame", () => {
   expect(comboOf(new KeyboardEvent("keydown", { key: "j", metaKey: true }))).toBe("mod+j");
   expect(comboOf(new KeyboardEvent("keydown", { key: "J", ctrlKey: true }))).toBe("mod+j");
 });
+
+test("the sandboxed sdk opens a sprint through the host and reads the project by a call", async () => {
+  const { port, sent } = fakePort();
+  const frame = createFrameSdk(ComponentManifest.parse(manifest), init, port);
+  frame.sdk.sprints.open("s42");
+  expect(sent).toEqual([{ kibo: 1, type: "openSprint", sprintId: "s42" }]);
+  const pending = frame.sdk.project.get();
+  expect(sent.at(-1)).toMatchObject({ type: "call", call: { kind: "project.get" } });
+  frame.dispose();
+  await expect(pending).rejects.toThrow();
+});

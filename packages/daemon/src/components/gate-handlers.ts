@@ -12,6 +12,7 @@ import {
   KiboError,
   type PresencePeer,
   type ProjectSyncInfo,
+  projectInfo,
   type RunPeek,
   type TicketRun,
   validateConfig,
@@ -136,6 +137,8 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
     },
     presence: async (projectId) => deps.presence?.(projectId) ?? [],
     sharing: async (projectId) => deps.sharing?.(projectId) ?? localSyncInfo(docs.project(projectId)),
+    project: async (projectId) =>
+      projectInfo(readProject(docs.project(projectId), docs.today(), docs.activity(projectId))),
     settings: async (projectId) => ({
       tracking: docs.projectMeta(projectId).tracking,
       agentExecution: deps.appSettings?.().agentExecution ?? "hidden",

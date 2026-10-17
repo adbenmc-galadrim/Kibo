@@ -60,6 +60,7 @@ export const ComponentCall = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("presence.list") }),
   z.object({ kind: z.literal("sharing.get") }),
   z.object({ kind: z.literal("settings.get") }),
+  z.object({ kind: z.literal("project.get") }),
   z.object({ kind: z.literal("assets.list") }),
   z.object({ kind: z.literal("assets.url"), name: ProjectAssetName }),
   z.object({

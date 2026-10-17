@@ -102,6 +102,11 @@ describe("project", () => {
     expect(getProjectMeta(doc)).toEqual(meta);
     expect(getWorkflow(doc).map((s) => s.id)).toContain("blocked");
   });
+
+  test("reads the description the project was created with", () => {
+    const doc = createProjectDoc({ ...meta, description: "Suivi de chantier" });
+    expect(getProjectMeta(doc).description).toBe("Suivi de chantier");
+  });
   test("ticket sequence survives a snapshot round-trip", () => {
     const doc = createProjectDoc(meta);
     expect(nextTicketSeq(doc)).toBe(1);

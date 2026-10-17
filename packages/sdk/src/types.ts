@@ -27,6 +27,7 @@ import type {
   ProjectAsset,
   ProjectCommand,
   ProjectEvent,
+  ProjectInfo,
   ProjectSnapshot,
   ProjectSyncInfo,
   Question,
@@ -134,6 +135,12 @@ export type SprintsApi = {
   update(sprintId: string, patch: SprintPatch): Promise<void>;
   remove(sprintId: string): Promise<void>;
   assign(ticketId: string, sprintId: string | null): Promise<void>;
+  open(sprintId: string): void;
+};
+export type { ProjectInfo };
+export type ProjectApi = {
+  get(): Promise<ProjectInfo>;
+  subscribe(listener: () => void): () => void;
 };
 export type SettingsApi = {
   get(): Promise<ComponentSettings>;
@@ -171,6 +178,7 @@ export type KiboSdk = {
   runs: RunsApi;
   sprints: SprintsApi;
   settings: SettingsApi;
+  project: ProjectApi;
   openRun(runId: string): void;
   focus: FocusApi;
   visibility: VisibilityApi;
@@ -206,7 +214,9 @@ export type SdkContext = Pick<
   | "openFile"
   | "openView"
 > &
-  Partial<Pick<KiboSdk, "focus" | "visibility" | "selection" | "spotlight" | "openRun">>;
+  Partial<Pick<KiboSdk, "focus" | "visibility" | "selection" | "spotlight" | "openRun">> & {
+    openSprint?(sprintId: string): void;
+  };
 export type SdkMode = "builtin" | "gated";
 
 export type ComponentModule = { manifest: ComponentManifest; Component: ComponentType };
