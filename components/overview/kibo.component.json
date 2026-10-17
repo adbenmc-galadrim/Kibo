@@ -1,0 +1,16 @@
+{
+  "id": "overview",
+  "version": "1.0.0",
+  "kind": "view",
+  "formats": ["full"],
+  "size": {
+    "min": {
+      "w": 6,
+      "h": 6
+    }
+  },
+  "title": "Vue d'ensemble",
+  "description": "Indicateurs, échéances, sprint en cours, PR en review, questions et activité du projet",
+  "reads": ["ticket", "link", "status", "sprint", "question", "project_event", "ci_run"],
+  "writes": ["run"]
+}
