@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { rpc, text } from "./agents-seed";
+import { rpc, showAgentExecution, text } from "./agents-seed";
 import { createE2eRepo, type E2eRepo } from "./git-repo";
 import { createRepoProject, projectKey, shot } from "./repo-project";
 import { E2E_TOKEN } from "./token";
@@ -31,6 +31,7 @@ test("modifier, workspace, en-tête, réglages et suppression d'un projet", asyn
   const name = `Projets ${key}`;
   await page.addInitScript(notificationPermissionDefault);
   await page.goto(`/#pair=${E2E_TOKEN}`);
+  await showAgentExecution(page);
   await createRepoProject(page, name, key, created.repo);
   const sidebar = page.locator('[data-sidebar="sidebar"]');
   const entry = sidebar.getByRole("button", { name, exact: true });
@@ -119,7 +120,7 @@ test("modifier, workspace, en-tête, réglages et suppression d'un projet", asyn
   await expect(bell.getByRole("button", { name: "Activer les notifications" })).toBeVisible();
   await shot(page, info, "ecran-111");
   await page.keyboard.press("Escape");
-  await header.getByRole("button", { name: /^Menu de / }).click();
+  await sidebar.getByRole("button", { name: /^Menu de / }).click();
   const menu = page.getByRole("menu", { name: /^Menu de / });
   await menu.getByRole("menuitem", { name: "Thème" }).hover();
   await expect(page.getByRole("menuitemradio", { name: "Système" })).toHaveAttribute("aria-checked", "true");

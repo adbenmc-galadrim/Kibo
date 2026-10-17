@@ -142,6 +142,10 @@ export async function rpc(page: Page, body: Body): Promise<unknown> {
   return field(payload, "result");
 }
 
+export async function showAgentExecution(page: Page): Promise<void> {
+  await rpc(page, { method: "setAppSettings", patch: { agentExecution: "shown" } });
+}
+
 export function createGitRepo(): string {
   const dir = mkdtempSync(join(tmpdir(), "kibo-e2e-repo-"));
   const git = (...args: string[]) => execFileSync("git", args, { cwd: dir, stdio: "ignore" });

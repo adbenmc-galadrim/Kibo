@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { rpc, text } from "./agents-seed";
+import { rpc, showAgentExecution, text } from "./agents-seed";
 import { pairAndCreateProject } from "./helpers";
 import { projectKey } from "./repo-project";
 import { capture, WIDE } from "./visibility-kit";
@@ -61,6 +61,7 @@ test.beforeAll(async ({ browser }, info) => {
   const page = await context.newPage();
   const key = projectKey("ENS", info);
   await pairAndCreateProject(page, info, key);
+  await showAgentExecution(page);
   const projectId = projectIdOf(page);
   e = { page, key, projectId, pages: await seed(page, projectId) };
 });
@@ -73,15 +74,16 @@ test("220 · la page Tickets liste les sous-tickets à la place de l'ensemble, a
   await open("tickets");
   const tree = main().getByRole("region", { name: "Tickets" });
   await expect(tree.getByRole("button", { name: "Un seul worktree" })).toBeVisible();
+  await tree.getByRole("button", { name: "Déplier Hors fonctionnalité" }).click();
   for (const title of ["Bouton Livrer", "Puce d'étape", "Ligne de la fiche", "Après le parcours"])
     await expect(tree.getByRole("button", { name: title, exact: true })).toBeVisible();
   await expect(tree.getByRole("button", { name: "Parcours de livraison", exact: true })).toHaveCount(0);
   await expect(tree.getByRole("button", { name: "Étapes visibles", exact: true })).toHaveCount(0);
-  const c4 = `Ouvrir l'ensemble ${e.key}-1 · Parcours de livraison`;
-  await expect(tree.getByRole("button", { name: c4 })).toHaveCount(2);
+  const c4 = "Ouvrir la fonctionnalité F1 · Parcours de livraison";
+  await expect(tree.getByRole("button", { name: c4 })).toHaveCount(4);
   await expect(
-    tree.getByRole("button", { name: `Ouvrir l'ensemble ${e.key}-3 · Étapes visibles` }),
-  ).toHaveCount(2);
+    tree.getByRole("button", { name: /^Ouvrir la fonctionnalité .* · Étapes visibles$/ }),
+  ).toHaveCount(0);
   await shoot("220");
 });
 
@@ -119,18 +121,18 @@ test("220d · la fiche d'un ensemble : avancement, sous-tickets, description, au
   await open("tickets");
   const tree = main().getByRole("region", { name: "Tickets" });
   await tree
-    .getByRole("button", { name: `Ouvrir l'ensemble ${e.key}-1 · Parcours de livraison` })
+    .getByRole("button", { name: "Ouvrir la fonctionnalité F1 · Parcours de livraison" })
     .first()
     .click();
-  const sheet = e.page.getByRole("dialog").filter({ hasText: `Ensemble · ${e.key}-1` });
+  const sheet = e.page.getByRole("dialog").filter({ hasText: `Fonctionnalité · F1 · ${e.key}-1` });
   await expect(sheet).toBeVisible();
-  await expect(sheet.getByText("1/3 livrés")).toBeVisible();
-  await expect(sheet.getByText("dérivé des sous-tickets")).toBeVisible();
+  await expect(sheet.getByText("1 étape livrée sur 3")).toBeVisible();
+  await expect(sheet.getByText("ouverte", { exact: true })).toBeVisible();
   const children = sheet.getByRole("listitem");
   await expect(children).toHaveText([
-    `${e.key}-2Bouton LivrerTerminé`,
-    `${e.key}-3Étapes visiblesEn cours`,
-    `${e.key}-6Un seul worktreeÀ faire`,
+    new RegExp(`^Bouton Livrer${e.key}-2Terminé`),
+    new RegExp(`^2Étapes visibles${e.key}-3En cours`),
+    new RegExp(`^3Un seul worktree${e.key}-6À faire`),
   ]);
   await expect(sheet.getByText("Tout le parcours de livraison.")).toBeVisible();
   await expect(sheet.getByRole("button", { name: "Assigner à un agent" })).toHaveCount(0);

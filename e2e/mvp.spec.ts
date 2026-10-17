@@ -1,9 +1,9 @@
-import { expect, type Page, test } from "@playwright/test";
-import { addComponent, createPage, pairAndCreateProject, skipRoleStep } from "./helpers";
+import { expect, type Locator, type Page, test } from "@playwright/test";
+import { addComponent, createPage, openNewProject, pairAndCreateProject, skipRoleStep } from "./helpers";
 import { projectKey } from "./repo-project";
 
-async function createTicket(page: Page, opener: string, title: string) {
-  await page.getByRole("button", { name: opener, exact: true }).click();
+async function createTicket(page: Page, opener: Locator, title: string) {
+  await opener.click();
   await page.getByLabel("Titre", { exact: true }).fill(title);
   await page.getByRole("button", { name: "Créer le ticket" }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
@@ -15,7 +15,11 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   await createPage(page, "Kanban", "Vue");
   await addComponent(page, "Kanban");
 
-  await createTicket(page, "Nouveau ticket dans À faire", "Écrire le plan");
+  await createTicket(
+    page,
+    page.getByRole("button", { name: "Nouveau ticket dans À faire", exact: true }),
+    "Écrire le plan",
+  );
   const todo = page.getByRole("region", { name: "À faire" });
   await expect(todo.getByText(`${key}-1`)).toBeVisible();
   await expect(page.getByText("1 / 1 · Moi + agents")).toBeVisible();
@@ -36,8 +40,8 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   await expect(reloaded.getByText("Attente du client")).toBeVisible();
 
   const other = `Autre ${key}`;
-  await page.getByRole("button", { name: "Vue d'ensemble" }).click();
-  await page.getByRole("button", { name: "Nouveau projet" }).first().click();
+  await page.getByRole("button", { name: "Accueil" }).click();
+  await openNewProject(page);
   await skipRoleStep(page);
   await page.getByLabel("Nom", { exact: true }).fill(other);
   await page.getByLabel("Clé").fill(`${key}B`);
@@ -45,10 +49,10 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   await expect(page.getByText("Projet créé")).toBeVisible();
 
   const main = page.getByRole("main");
-  await page.getByRole("button", { name: "Vue d'ensemble" }).click();
+  await page.getByRole("button", { name: "Accueil" }).click();
   await main.getByText(`Kibo ${key}`).click();
   await expect(page.getByRole("region", { name: "À faire" })).toBeVisible();
-  await page.getByRole("button", { name: "Vue d'ensemble" }).click();
+  await page.getByRole("button", { name: "Accueil" }).click();
   await main.getByText(other).click();
   await expect(page.getByText("Projet créé")).toBeVisible();
   await expect(page.getByRole("region", { name: "À faire" })).toHaveCount(0);
@@ -69,7 +73,12 @@ test("tableau de bord Tickets + Kanban, sous-ticket et fiche", async ({ page }, 
   const right = await page.getByText("0 / 0 · Moi + agents").boundingBox();
   expect(left && right && left.x + left.width <= right.x).toBe(true);
 
-  await createTicket(page, "Nouveau ticket", "Préparer la démo");
+  await createTicket(
+    page,
+    tickets.getByRole("button", { name: "Nouveau ticket", exact: true }).first(),
+    "Préparer la démo",
+  );
+  await tickets.getByRole("button", { name: "Déplier Hors fonctionnalité" }).click();
   await expect(tickets.getByText(`${key}-1`)).toBeVisible();
 
   await tickets.getByRole("button", { name: `Nouveau sous-ticket de ${key}-1` }).click();
@@ -80,7 +89,8 @@ test("tableau de bord Tickets + Kanban, sous-ticket et fiche", async ({ page }, 
 
   await expect(tickets.getByText(`${key}-2`)).toBeVisible();
   const chip = `Ouvrir l'ensemble ${key}-1 · Préparer la démo`;
-  await expect(tickets.getByRole("button", { name: chip })).toBeVisible();
+  const featureChip = "Ouvrir la fonctionnalité F1 · Préparer la démo";
+  await expect(tickets.getByRole("button", { name: featureChip })).toBeVisible();
   await expect(todo.getByRole("article").filter({ hasText: "Préparer la démo" })).toHaveCount(0);
   await expect(page.getByText("1 / 1 · Moi + agents")).toBeVisible();
 

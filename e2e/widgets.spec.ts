@@ -74,8 +74,9 @@ test("les étiquettes filtrent les Tickets et le Kanban, la fiche les modifie", 
   await createPage(page, "Étiquettes", "Tableau de bord");
   await addComponent(page, "Tickets");
   const tickets = page.locator("[data-instance]").first();
+  await tickets.getByRole("button", { name: "Déplier Hors fonctionnalité" }).click();
   await expect(tickets.getByText("Contrat de l'API")).toBeVisible();
-  await tickets.getByRole("button", { name: "Étiquettes" }).click();
+  await tickets.getByRole("button", { name: "Fonctionnalité", exact: true }).click();
   await page.getByRole("menuitemcheckbox", { name: "area:api" }).click();
   await page.keyboard.press("Escape");
   await expect(tickets.getByText("Écran de connexion")).toHaveCount(0);

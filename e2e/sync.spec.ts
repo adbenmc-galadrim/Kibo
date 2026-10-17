@@ -1,4 +1,5 @@
 import { type Browser, expect, type Page, type TestInfo, test } from "@playwright/test";
+import { showAgentExecution } from "./agents-seed";
 import { addComponent, createPage, pairAndCreateProject } from "./helpers";
 import { readSyncState, SYNC_PORTS } from "./sync-fixture";
 import { E2E_TOKEN } from "./token";
@@ -21,7 +22,8 @@ async function openAs(browser: Browser, port: number, colorScheme: "dark" | "lig
 
 async function pair(page: Page) {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Nouveau projet" }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ajouter un projet" })).toBeVisible();
+  await showAgentExecution(page);
 }
 
 async function connect(page: Page, code: string, device: string) {
@@ -55,6 +57,7 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   const lea = await openAs(browser, ports.b, theme);
 
   await pairAndCreateProject(adam, info, key);
+  await showAgentExecution(adam);
   await pair(lea);
   await connect(adam, theme === "light" ? codes.lightA : codes.darkA, "MacBook d'Adam");
   await connect(lea, theme === "light" ? codes.lightB : codes.darkB, "MacBook de Léa");
@@ -64,7 +67,8 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   await addComponent(adam, "Kanban");
   await adam.getByRole("radio", { name: "Tous", exact: true }).click();
 
-  await adam.getByRole("main").getByRole("button", { name: "Partager", exact: true }).click();
+  await adam.getByRole("button", { name: `Actions de Kibo ${key}` }).click();
+  await adam.getByRole("menuitem", { name: "Partager", exact: true }).click();
   const share = adam.getByRole("dialog");
   await expect(share.getByRole("list", { name: "Reste sur ta machine" })).toContainText("Dossier local");
   await share.getByRole("button", { name: "Partager" }).click();
@@ -75,7 +79,8 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   await adam.keyboard.press("Escape");
   await expect(adam.getByText("Kibo · synchronisé")).toBeVisible();
 
-  await lea.getByRole("button", { name: "Rejoindre un projet" }).click();
+  await lea.getByRole("button", { name: "Ajouter un projet" }).click();
+  await lea.getByRole("menuitem", { name: "Rejoindre un projet" }).click();
   await lea.getByLabel("Code d'invitation").fill(code);
   await lea.getByRole("button", { name: "Rejoindre" }).click();
   await lea.getByRole("button", { name: "Kanban", exact: true }).click();

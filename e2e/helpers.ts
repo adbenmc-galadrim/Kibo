@@ -5,13 +5,51 @@ export async function skipRoleStep(page: Page) {
   await page.getByRole("button", { name: "Passer" }).click();
 }
 
+export async function openNewProject(page: Page) {
+  await page.getByRole("button", { name: "Ajouter un projet" }).click();
+  await page.getByRole("menuitem", { name: "Nouveau projet" }).click();
+}
+
+export async function openWorkspaceMenuItem(page: Page, item: "Composants" | "Changements") {
+  await page.locator('[data-sidebar="sidebar"]').getByRole("button").first().click();
+  await page.getByRole("menuitem", { name: item, exact: true }).click();
+}
+
+export async function openChangesInNewTab(page: Page, project: string) {
+  await page.getByRole("button", { name: "Nouvel onglet" }).click();
+  const palette = page.getByRole("dialog", { name: "Palette de commandes" });
+  await palette.getByRole("combobox").fill("changements");
+  await palette.getByRole("option", { name: `Voir les changements de ${project}` }).click();
+}
+
+export async function openNewTicketFromPalette(page: Page) {
+  await page.keyboard.press("ControlOrMeta+k");
+  const palette = page.getByRole("dialog", { name: "Palette de commandes" });
+  await palette.getByRole("combobox").fill("nouveau ticket");
+  await palette.getByRole("option", { name: "Nouveau ticket", exact: true }).click();
+}
+
+export async function showTabBar(page: Page, back?: string) {
+  const bar = page.getByRole("tablist", { name: "Onglets" });
+  await expect(bar).toBeHidden();
+  await page
+    .locator('[data-sidebar="sidebar"]')
+    .getByRole("button", { name: "Mes tickets", exact: true })
+    .click({ modifiers: ["ControlOrMeta"] });
+  await expect(bar.getByRole("tab", { name: "Mes tickets" })).toBeVisible();
+  const tabs = bar.getByRole("tab");
+  const original =
+    back === undefined ? tabs.nth((await tabs.count()) - 2) : bar.getByRole("tab", { name: back });
+  await original.click();
+}
+
 export async function pairAndCreateProject(page: Page, info: TestInfo, key: string) {
   await page.goto(`/#pair=${E2E_TOKEN}`);
   const html = page.locator("html");
   if (info.project.name.endsWith("dark")) await expect(html).toHaveClass(/dark/);
   else await expect(html).not.toHaveClass(/dark/);
 
-  await page.getByRole("button", { name: "Nouveau projet" }).first().click();
+  await openNewProject(page);
   await skipRoleStep(page);
   await page.getByLabel("Nom", { exact: true }).fill(`Kibo ${key}`);
   await page.getByLabel("Clé").fill(key);

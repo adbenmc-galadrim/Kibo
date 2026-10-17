@@ -14,7 +14,7 @@ test("mod+/ opens the shortcuts help, which links to the settings page, and Esca
   page,
 }, info) => {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("tablist", { name: "Onglets" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
   await page.keyboard.press("ControlOrMeta+/");
   const help = page.getByRole("dialog", { name: "Raccourcis" });
   await expect(help).toBeVisible();

@@ -1,7 +1,13 @@
 import { expect, test } from "@playwright/test";
-import { rpc } from "./agents-seed";
+import { rpc, showAgentExecution } from "./agents-seed";
 import { createE2eRepo, type E2eRepo } from "./git-repo";
-import { addComponent, createSidebarPage, pairAndCreateProject } from "./helpers";
+import {
+  addComponent,
+  createSidebarPage,
+  openChangesInNewTab,
+  pairAndCreateProject,
+  showTabBar,
+} from "./helpers";
 import { createRepoProject, projectKey, shot } from "./repo-project";
 import { E2E_TOKEN } from "./token";
 
@@ -28,13 +34,14 @@ test("onglets épinglés persistés, raccourcis, palette et aperçu de fichier",
 
   const bar = page.getByRole("tablist", { name: "Onglets" });
   const kanban = bar.getByRole("tab", { name: `Onglets ${key} · Kanban` });
+  await showTabBar(page, `Onglets ${key} · Kanban`);
   await expect(kanban).toHaveAttribute("aria-selected", "true");
   await kanban.click({ button: "right" });
   await page.getByRole("menuitem", { name: /Épingler l'onglet/ }).click();
   await expect(bar.getByRole("tab", { name: `Onglets ${key} · Kanban` })).toHaveText("");
 
   created.write("README.md", "# test\nligne ajoutée\n");
-  await page.getByRole("button", { name: /^Changements/ }).click({ modifiers: ["ControlOrMeta"] });
+  await openChangesInNewTab(page, `Onglets ${key}`);
   const changesTab = bar.getByRole("tab", { name: `Onglets ${key} · Changements` });
   await expect(changesTab).toBeVisible();
   await changesTab.click();
@@ -79,6 +86,7 @@ test("onglets épinglés persistés, raccourcis, palette et aperçu de fichier",
 test("onglet fermé : aucun toast, ⌘⇧T, et Backspace ne ferme rien", async ({ page }, info) => {
   const key = projectKey("TBC", info);
   await pairAndCreateProject(page, info, key);
+  await showAgentExecution(page);
   const bar = page.getByRole("tablist", { name: "Onglets" });
 
   await page.goto("/#/agents");

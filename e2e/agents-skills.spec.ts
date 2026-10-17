@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
 import { type AgentFiles, seedAgentFiles, skillMd } from "./agents-kit";
-import { createGitRepo, list, pairBrowser, rpc, runState, text } from "./agents-seed";
+import { createGitRepo, list, pairBrowser, rpc, runState, showAgentExecution, text } from "./agents-seed";
 import { WIDE } from "./visibility-kit";
 
 test.describe.configure({ mode: "serial" });
@@ -25,6 +25,7 @@ async function seed(page: Page, info: TestInfo): Promise<Kit> {
   const repo = createGitRepo();
   const files = seedAgentFiles(info, repo);
   await pairBrowser(page);
+  await showAgentExecution(page);
   const project = await rpc(page, {
     method: "createProject",
     name: "Kibo",

@@ -28,7 +28,7 @@ async function seedGraph(page: Page): Promise<{ seeded: Seeded; pageId: string }
 
 async function openGraph(page: Page) {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
   graph ??= await seedGraph(page);
   await page.goto(`/#/p/${graph.seeded.projectId}/${encodeURIComponent(graph.pageId)}`);
   const canvas = page.getByRole("region", { name: "Graphe des dépendances" });

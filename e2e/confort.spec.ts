@@ -8,9 +8,10 @@ import {
   rpc,
   type Seeded,
   seedWorkspace,
+  showAgentExecution,
 } from "./agents-seed";
 import { createE2eRepo, type E2eRepo } from "./git-repo";
-import { addComponent, createSidebarPage } from "./helpers";
+import { addComponent, createSidebarPage, openWorkspaceMenuItem } from "./helpers";
 import { createRepoProject, projectKey, shot } from "./repo-project";
 import { E2E_TOKEN } from "./token";
 
@@ -27,7 +28,8 @@ let seeded: Seeded | null = null;
 
 async function pair(page: Page) {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
+  await showAgentExecution(page);
   await page.goto("/#/");
 }
 
@@ -141,7 +143,7 @@ test("changements en toutes lettres, retour à la ligne mémorisé et recherche"
   await pair(page);
   await createRepoProject(page, `Code ${key}`, key, repo.repo);
   repo.write("README.md", "# kibo\n\nkibo garde kibo en local.\n");
-  await page.getByRole("button", { name: /^Changements/ }).click();
+  await openWorkspaceMenuItem(page, "Changements");
   const unstaged = page.getByRole("group", { name: "Modifications (1)" });
   await expect(unstaged.getByText("Modifié")).toBeVisible();
   await unstaged.getByRole("button", { name: "Actions README.md" }).click();
@@ -180,9 +182,13 @@ test("arbre Tickets filtré et Kanban réordonné", async ({ page }, info) => {
   const sidebar = page.locator('[data-sidebar="sidebar"]');
   await sidebar.getByRole("button", { name: "Tickets", exact: true }).click();
   const tree = page.getByRole("region", { name: "Tickets" });
+  await expect(tree).toBeVisible();
+  await page.keyboard.press("/");
   await tree.getByRole("searchbox", { name: "Rechercher (clé ou titre)" }).fill("types zod");
   await expect(tree.getByText("Types Zod Ticket / Link / Status")).toBeVisible();
-  await expect(tree.getByRole("button", { name: /^Ouvrir l'ensemble KIB-12 · Schéma Loro/ })).toBeVisible();
+  await expect(
+    tree.getByRole("button", { name: /^Ouvrir la fonctionnalité F\d+ · Noyau de données$/ }),
+  ).toBeVisible();
   await expect(tree.getByText("Orchestration des agents")).toHaveCount(0);
   await shot(page, info, "ecran-125");
 

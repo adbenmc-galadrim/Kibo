@@ -11,6 +11,7 @@ import {
   runState,
   type Seeded,
   seedWorkspace,
+  showAgentExecution,
   text,
 } from "./agents-seed";
 
@@ -124,6 +125,7 @@ async function filterByProject(page: Page, info: TestInfo) {
 
 test("agents au travail : cartes, file, journal, réponse, review", async ({ page }, info) => {
   await pairBrowser(page);
+  await showAgentExecution(page);
   await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
   await createDeliveryAgent(page, info);
 
@@ -218,6 +220,7 @@ test("agents au travail : cartes, file, journal, réponse, review", async ({ pag
 test("l'historique ouvre le run cliqué, pour trois agents différents", async ({ page }, info) => {
   if (!seeded) throw new Error("seed missing");
   await pairBrowser(page);
+  await showAgentExecution(page);
   await assign(page, seeded, 9, "tests-rapides", "queued");
   await page.goto("/#/agents");
   await expect(page.getByRole("heading", { level: 1, name: "Agents" })).toBeVisible();
@@ -272,6 +275,7 @@ test("un run pose une question à valider, la réponse attend « Transmettre à 
   const { projectId } = seeded;
   const ticketId = seeded.tickets.get(22) ?? "";
   await pairBrowser(page);
+  await showAgentExecution(page);
   await rpc(page, { method: "setHost", patch: { hostSlots: 12 } });
   const agent = await createAgent(page, {
     name: "emis-livraison",

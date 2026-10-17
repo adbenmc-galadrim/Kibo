@@ -1,5 +1,5 @@
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { createPage, skipRoleStep } from "./helpers";
+import { createPage, openNewProject as openNewProjectMenu, skipRoleStep } from "./helpers";
 import { E2E_TOKEN } from "./token";
 
 const suffix = (info: TestInfo) => (info.project.name.endsWith("light") ? "L" : "D");
@@ -12,7 +12,7 @@ async function pair(page: Page, info: TestInfo) {
 }
 
 async function openNewProject(page: Page) {
-  await page.getByRole("button", { name: "Nouveau projet" }).first().click();
+  await openNewProjectMenu(page);
   await expect(page.getByRole("dialog")).toBeVisible();
 }
 
@@ -50,9 +50,11 @@ test("Ton rôle : preset Designer, une page décochée", async ({ page }, info) 
   await expect(pages.getByRole("button", { name: "Tableau de bord", exact: true })).toBeVisible();
   await expect(pages.getByRole("button", { name: "Notes", exact: true })).toBeVisible();
   await expect(pages.getByRole("button", { name: "Kanban", exact: true })).toHaveCount(0);
-  await expect(
-    page.getByRole("region", { name: "Tickets" }).getByText("Mes tickets · 0 sur 0"),
-  ).toBeVisible();
+  const tickets = page.getByRole("region", { name: "Tickets" });
+  await expect(tickets.getByText("tous les sprints · 0 ticket dans 0 fonctionnalité")).toBeVisible();
+  await page.getByRole("button", { name: "Actions Tickets" }).click();
+  await page.getByRole("menuitem", { name: "Réglages…" }).click();
+  await expect(page.getByRole("dialog").getByRole("combobox", { name: "Filtre" })).toHaveText("Mes tickets");
 });
 
 test("Ton rôle : suggestion de Claude (faux claude)", async ({ page }, info) => {

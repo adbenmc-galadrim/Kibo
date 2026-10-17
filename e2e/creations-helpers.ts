@@ -1,4 +1,5 @@
 import { expect as baseExpect, type Locator, type Page, type TestInfo } from "@playwright/test";
+import { showAgentExecution } from "./agents-seed";
 import { E2E_TOKEN } from "./token";
 
 export const expect = baseExpect.configure({ timeout: 60_000 });
@@ -15,6 +16,7 @@ export const pngFile = (name: string) => ({
 
 export async function pairOnComponents(page: Page, info: TestInfo) {
   await page.goto(`/#pair=${E2E_TOKEN}`);
+  await showAgentExecution(page);
   const html = page.locator("html");
   if (info.project.name.endsWith("dark")) await expect(html).toHaveClass(/dark/);
   else await expect(html).not.toHaveClass(/dark/);

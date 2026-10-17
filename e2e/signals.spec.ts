@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { createAgent, list, rpc, runState, text } from "./agents-seed";
+import { createAgent, list, rpc, runState, showAgentExecution, text } from "./agents-seed";
 import { addComponent, createPage, pairAndCreateProject } from "./helpers";
 import { capture } from "./visibility-kit";
 
@@ -87,6 +87,7 @@ test("un run signale à l'agent de projet, qui se réveille et propose un lot qu
 }, info) => {
   test.setTimeout(240_000);
   await pairAndCreateProject(page, info, "KIB");
+  await showAgentExecution(page);
   const kibo = await seed(page, projectIdOf(page));
   await createPage(page, "Kanban", "Vue");
   await addComponent(page, "Kanban");

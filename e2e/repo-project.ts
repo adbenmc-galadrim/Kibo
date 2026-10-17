@@ -1,7 +1,7 @@
 import { rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, type Page, type TestInfo } from "@playwright/test";
-import { skipRoleStep } from "./helpers";
+import { openNewProject, skipRoleStep } from "./helpers";
 
 export const projectKey = (base: string, info: TestInfo) =>
   `${base}${info.project.name.endsWith("light") ? "L" : "D"}`;
@@ -11,7 +11,7 @@ export async function shot(page: Page, info: TestInfo, name: string) {
 }
 
 export async function createRepoProject(page: Page, name: string, key: string, folder: string) {
-  await page.getByRole("button", { name: "Nouveau projet" }).first().click();
+  await openNewProject(page);
   await skipRoleStep(page);
   await page.getByLabel("Nom", { exact: true }).fill(name);
   await page.getByLabel("Clé").fill(key);
