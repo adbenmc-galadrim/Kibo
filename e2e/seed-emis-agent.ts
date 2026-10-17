@@ -18,8 +18,10 @@ const hasBatch = (view: unknown): boolean =>
 const agentView = (rpc: SeedRpc, projectId: string): Promise<unknown> =>
   rpc({ method: "getProjectAgent", projectId });
 
-function turnOver(view: unknown): boolean {
-  const state = field(field(view, "run"), "state");
+function turnOver(view: unknown, runId: unknown): boolean {
+  const run = field(view, "run");
+  if (field(run, "id") !== runId) return false;
+  const state = field(run, "state");
   if (typeof state === "string" && ENDED.includes(state))
     throw new Error(`the project agent turn ended ${state}`);
   if (state !== "done") return false;
@@ -33,10 +35,10 @@ export async function seedEmisAgent(
   wait: AgentWait = DEFAULT_WAIT,
 ): Promise<boolean> {
   if (hasBatch(await agentView(rpc, projectId))) return false;
-  await rpc({ method: "sendProjectAgentMessage", projectId, text: EMIS_AGENT_PROMPT });
+  const started = await rpc({ method: "sendProjectAgentMessage", projectId, text: EMIS_AGENT_PROMPT });
   const deadline = Date.now() + wait.timeoutMs;
   while (Date.now() < deadline) {
-    if (turnOver(await agentView(rpc, projectId))) return true;
+    if (turnOver(await agentView(rpc, projectId), field(started, "id"))) return true;
     await Bun.sleep(wait.pollMs);
   }
   throw new Error(`batch ${EMIS_BATCH.seq} was not proposed within ${wait.timeoutMs} ms`);
