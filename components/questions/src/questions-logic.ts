@@ -115,3 +115,9 @@ export function relativeAge(at: number, now: number): string {
   if (elapsed < DAY) return fr.age.hours(Math.floor(elapsed / HOUR));
   return fr.age.days(Math.floor(elapsed / DAY));
 }
+
+export function lastReminder(q: Question): number | null {
+  if (q.answer !== null) return null;
+  const reminders = q.history.filter((e) => e.kind === "reminded").map((e) => e.at);
+  return reminders.length > 0 ? Math.max(...reminders) : null;
+}

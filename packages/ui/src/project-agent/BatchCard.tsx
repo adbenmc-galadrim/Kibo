@@ -1,4 +1,4 @@
-import { type Batch, isDecidable, type Signal } from "@kibo/schema";
+import { type Batch, isDecidable, type Signal, undecidedActionIds } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { useId, useState } from "react";
@@ -30,20 +30,20 @@ type GroupProps = {
   batch: Batch;
   labels: DiffLabels;
   signals: readonly Signal[];
-  selectable: boolean;
+  selectable: ReadonlySet<number>;
   checked: ReadonlySet<number>;
   onChange(ids: number[], on: boolean): void;
 };
 
 function Group({ group, batch, labels, signals, selectable, checked, onChange }: GroupProps) {
-  const ids = group.actions.map((a) => a.id);
+  const ids = group.actions.map((a) => a.id).filter((id) => selectable.has(id));
   const all = ids.every((id) => checked.has(id));
   const name = t.group(group.group);
   return (
     <fieldset aria-label={name} className="grid gap-0.5">
       <div className="flex items-center justify-between gap-2">
         <legend className="text-xs font-medium text-muted-foreground uppercase">{name}</legend>
-        {selectable && (
+        {ids.length > 0 && (
           <Button variant="link" size="sm" className="h-6 px-0 text-xs" onClick={() => onChange(ids, !all)}>
             {all ? t.uncheckAll : t.checkAll}
           </Button>
@@ -57,7 +57,7 @@ function Group({ group, batch, labels, signals, selectable, checked, onChange }:
             expected={batch.expected.find((e) => e.actionId === action.id)}
             labels={labels}
             signals={signals}
-            selectable={selectable}
+            selectable={selectable.has(action.id)}
             checked={checked.has(action.id)}
             result={batch.results.find((r) => r.actionId === action.id)}
             onCheck={(on) => onChange([action.id], on)}
@@ -102,9 +102,10 @@ export function BatchCard({ batch, labels, signals, afterWakeup, readOnly, onDec
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const selectable = isDecidable(batch) && !readOnly;
+  const open = new Set(selectable ? undecidedActionIds(batch) : []);
   const status = statusText(batch);
   const groups = groupActions(batch.actions);
-  const chosen = batch.actions.map((a) => a.id).filter((id) => checked.has(id));
+  const chosen = batch.actions.map((a) => a.id).filter((id) => open.has(id) && checked.has(id));
 
   const change = (ids: number[], on: boolean) =>
     setChecked((prev) => {
@@ -153,7 +154,7 @@ export function BatchCard({ batch, labels, signals, afterWakeup, readOnly, onDec
             batch={batch}
             labels={labels}
             signals={signals}
-            selectable={selectable}
+            selectable={open}
             checked={checked}
             onChange={change}
           />

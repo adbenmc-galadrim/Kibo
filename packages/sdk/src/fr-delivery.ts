@@ -2,6 +2,7 @@ const tickets = (n: number) => `${n} ticket${n > 1 ? "s" : ""}`;
 
 export const deliveryTexts = {
   deliver: "Livrer",
+  retouch: "Livrer la retouche",
   copy: (command: string) => `Copier ${command}`,
   busy: (label: string) => `déjà un run : ${label}`,
   blockedBy: (keys: readonly string[]) => `bloqué par ${keys.join(", ")}`,

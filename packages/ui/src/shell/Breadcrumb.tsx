@@ -1,5 +1,6 @@
 import { isInbox, type ProjectSnapshot, type RunView, type Screen, type TabTarget } from "@kibo/schema";
 import { fr } from "../i18n/fr";
+import { frNavTracking } from "../i18n/fr-nav-tracking";
 import { displayName } from "../lib/inbox";
 import { SCREENS } from "../tabs/screens";
 import { featureOf, planningPageOf } from "./nav/planning-missing";
@@ -27,15 +28,28 @@ function runCrumbs(runId: string, runs: readonly RunView[] | undefined): Crumb[]
   return [{ label: fr.nav.agents, target: { kind: "screen", screen: "agents" } }, text(label)];
 }
 
-function ticketCrumbs(p: ProjectSnapshot, ticketId: string, project: Crumb): Crumb[] {
-  const feature = featureOf(p, ticketId);
-  if (!feature)
-    return [project, text(p.tickets.find((t) => t.id === ticketId)?.keyLabel ?? fr.tabs.missingTicket)];
-  const title = text(feature.shortKey ? `${feature.shortKey} · ${feature.title}` : feature.title);
+function underPlanning(p: ProjectSnapshot, project: Crumb, title: Crumb): Crumb[] {
   const planning = p.pages.find((x) => x.id === planningPageOf(p));
   if (!planning) return [project, title];
   const target: TabTarget = { kind: "page", projectId: p.meta.id, pageId: planning.id };
   return [project, { label: planning.title, target }, title];
+}
+
+function ticketCrumbs(p: ProjectSnapshot, ticketId: string, project: Crumb): Crumb[] {
+  const feature = featureOf(p, ticketId);
+  if (!feature)
+    return [project, text(p.tickets.find((t) => t.id === ticketId)?.keyLabel ?? fr.tabs.missingTicket)];
+  return underPlanning(
+    p,
+    project,
+    text(feature.shortKey ? `${feature.shortKey} · ${feature.title}` : feature.title),
+  );
+}
+
+function sprintCrumbs(p: ProjectSnapshot, sprintId: string, project: Crumb): Crumb[] {
+  const sprint = p.sprints.find((s) => s.id === sprintId);
+  if (!sprint) return [project, text(frNavTracking.missingSprint)];
+  return underPlanning(p, project, text(`${sprint.code} · ${sprint.name}`));
 }
 
 export function crumbsFor(
@@ -61,6 +75,8 @@ export function crumbsFor(
       return [project, text(target.path)];
     case "ticket":
       return ticketCrumbs(p, target.ticketId, project);
+    case "sprint":
+      return sprintCrumbs(p, target.sprintId, project);
   }
 }
 

@@ -37,3 +37,7 @@ test("peeking at a run is a read of runs", () => {
   expect(permissionOfCall(ComponentCall.parse({ kind: "run.deliveryAgent" }))).toBe("read:run");
   expect(ComponentCall.safeParse({ kind: "run.peek", runId: "" }).success).toBe(false);
 });
+
+test("reading the project needs read:ticket", () => {
+  expect(permissionOfCall(ComponentCall.parse({ kind: "project.get" }))).toBe("read:ticket");
+});

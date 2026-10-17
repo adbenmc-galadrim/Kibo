@@ -1,18 +1,44 @@
 import { expect, test } from "bun:test";
+import type { CiRun, ProjectSnapshot } from "@kibo/schema";
 import { featureActivity, featureQuestions } from "./feature-feed";
 import { featureDependencies } from "./feature-links";
-import { featureBadge, nextToDeliver, sprintFacts, stepModels } from "./feature-model";
+import { featureBadge, nextStep, type StepFacts, sprintFacts, stepModels } from "./feature-model";
 import { emisFeatureProject, NOW, SESSION_RUN } from "./fixture";
 
 const project = emisFeatureProject();
+const facts = (patch: Partial<StepFacts> = {}): StepFacts => ({
+  runs: [],
+  ciRuns: [],
+  now: NOW,
+  execution: "hidden",
+  ...patch,
+});
+const withoutSessions = (p: ProjectSnapshot): ProjectSnapshot => ({
+  ...p,
+  tickets: p.tickets.map((t) => ({ ...t, session: null })),
+});
+const ciRun = (prNumber: number, conclusion: string): CiRun => ({
+  repo: "galadrim/emis",
+  runId: prNumber,
+  prNumber,
+  ticketKey: null,
+  headSha: "abc",
+  workflow: "ci",
+  status: "completed",
+  conclusion,
+  url: "https://github.com/galadrim/emis/actions/runs/1",
+  startedAt: null,
+  updatedAt: "2026-10-16T12:00:00Z",
+  jobs: [],
+});
 const f5 = () => {
   const t = project.tickets.find((x) => x.id === "f5");
   if (!t) throw new Error("fixture without F5");
   return t;
 };
 
-test("the steps follow the dependency order and carry their session", () => {
-  const steps = stepModels(project, "f5", [SESSION_RUN], NOW);
+test("the steps follow the dependency order and carry their T3 Code session", () => {
+  const steps = stepModels(project, "f5", facts());
   expect(steps.map((s) => [s.index, s.key, s.statusId])).toEqual([
     [1, "EMIS-31", "done"],
     [2, "EMIS-32", "in_review"],
@@ -25,15 +51,31 @@ test("the steps follow the dependency order and carry their session", () => {
   expect(steps[3]?.blockedBy).toEqual(["EMIS-33"]);
 });
 
-test("a finished run is not a session", () => {
-  const steps = stepModels(project, "f5", [{ ...SESSION_RUN, state: "done" }], NOW);
-  expect(steps.every((s) => s.session === null)).toBe(true);
+test("a live run is a session only when the execution is shown", () => {
+  const bare = withoutSessions(project);
+  expect(stepModels(bare, "f5", facts({ runs: [SESSION_RUN], execution: "shown" }))[2]?.session).toEqual({
+    agent: "T3 Code",
+    minutes: 42,
+  });
+  expect(stepModels(bare, "f5", facts({ runs: [SESSION_RUN] })).every((s) => s.session === null)).toBe(true);
+  const finished = facts({ runs: [{ ...SESSION_RUN, state: "done" }], execution: "shown" });
+  expect(stepModels(bare, "f5", finished).every((s) => s.session === null)).toBe(true);
 });
 
-test("the next step to deliver is the first one not started", () => {
-  const steps = stepModels(project, "f5", [], NOW);
-  expect(nextToDeliver(steps)?.key).toBe("EMIS-34");
-  expect(nextToDeliver(steps.map((s) => ({ ...s, statusId: "done" as const })))).toBeNull();
+test("the CI mark of a step comes from the runs of its PR, else from the PR checks", () => {
+  expect(stepModels(project, "f5", facts()).map((s) => s.ci)).toEqual(["ok", "ok", null, null, null]);
+  const failing = stepModels(project, "f5", facts({ ciRuns: [ciRun(22, "failure")] }));
+  expect(failing[1]?.ci).toBe("error");
+});
+
+test("the next step to deliver is the first one not started, or back in review with changes requested", () => {
+  const steps = stepModels(project, "f5", facts());
+  expect(nextStep(steps)?.key).toBe("EMIS-34");
+  const asked = steps.map((s) =>
+    s.pr && s.key === "EMIS-32" ? { ...s, pr: { ...s.pr, review: "changes_requested" as const } } : s,
+  );
+  expect(nextStep(asked)?.key).toBe("EMIS-32");
+  expect(nextStep(steps.map((s) => ({ ...s, statusId: "done" as const })))).toBeNull();
 });
 
 test("the fixture F5 is late on the last day of S42 (end ≤ today, §37.3)", () => {
@@ -87,11 +129,11 @@ test("dependencies between features are read on the roots and on their steps", (
 });
 
 test("the activity lists PRs and delivery steps, newest first", () => {
-  const steps = stepModels(project, "f5", [], NOW);
-  expect(featureActivity(steps, NOW)).toEqual([
-    { kind: "pr_opened", text: "PR #22 ouverte · EMIS-32", time: "15:04" },
-    { kind: "step", text: "Étape 7 · Porte qualité · EMIS-33", time: "14:51" },
-    { kind: "pr_merged", text: "PR #19 fusionnée · EMIS-31", time: "hier" },
+  const steps = stepModels(project, "f5", facts());
+  expect(featureActivity(steps, NOW).map((i) => [i.kind, i.text, i.time])).toEqual([
+    ["pr_opened", "PR #22 ouverte · EMIS-32", "15:04"],
+    ["step", "Étape 7 · Porte qualité · EMIS-33", "14:51"],
+    ["pr_merged", "PR #19 fusionnée · EMIS-31", "hier"],
   ]);
 });
 

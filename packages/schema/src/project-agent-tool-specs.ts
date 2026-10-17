@@ -13,6 +13,7 @@ import { QUESTION_CONTEXT_MAX, QUESTION_OPTION_MAX, QUESTION_OPTIONS_MAX } from 
 import { RECIPIENT_ID_MAX } from "./question-recipient";
 import { RunState } from "./run";
 import { SIGNAL_REF_PATTERN, SIGNAL_REFS_MAX } from "./signal";
+import { SprintCode, SprintName } from "./sprint";
 import { StatusId } from "./status";
 
 export type ToolSpec = { name: ProjectAgentTool; description: string; inputSchema: Record<string, unknown> };
@@ -72,7 +73,19 @@ const ACTION = object(
       "createQuestion, updateQuestion : destinataire, id ou nom (project_overview.recipients).",
       RECIPIENT_ID_MAX,
     ),
-    name: text("addRecipient : nom du destinataire à ajouter au projet.", RECIPIENT_ID_MAX),
+    name: text(
+      "addRecipient : nom du destinataire ; createSprint : nom du sprint.",
+      Math.max(RECIPIENT_ID_MAX, SprintName.maxLength ?? RECIPIENT_ID_MAX),
+    ),
+    sprint: {
+      type: ["string", "null"],
+      maxLength: SprintCode.maxLength,
+      description:
+        "setSprint : code du sprint (list_sprints ou createSprint antérieur), null pour retirer du planning.",
+    },
+    code: text("createSprint : code du sprint, ex. S45.", SprintCode.maxLength ?? undefined),
+    start: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$", description: "createSprint : premier jour." },
+    end: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$", description: "createSprint : dernier jour." },
     path: text("Chemin de la note, en .md."),
     content: text("Contenu complet de la note.", MAX_NOTE_CHARS),
     signals: {
@@ -117,6 +130,12 @@ export const TOOL_SPECS: readonly ToolSpec[] = [
       ticketKey: { type: "string", pattern: "^[A-Z]{2,6}-\\d+$" },
       recipient: text("Destinataire, id ou nom.", RECIPIENT_ID_MAX),
     }),
+  },
+  {
+    name: "list_sprints",
+    description:
+      "Sprints du projet, du plus ancien au plus récent : code, nom, dates, état, et pour chacun ses fonctionnalités avec leur état et le nombre d'étapes restantes.",
+    inputSchema: object(),
   },
   {
     name: "list_runs",

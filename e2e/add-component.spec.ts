@@ -65,14 +65,15 @@ async function expectInViewport(locator: Locator, width: number, height: number)
   expect(box.y + box.height).toBeLessThanOrEqual(height);
 }
 
-test("ajouter un composant : deux volets, pied visible avec seize composants", async ({ page }, info) => {
+test("ajouter un composant : deux volets, pied visible avec dix-sept composants", async ({ page }, info) => {
   await withPersonalComponents(page);
   await pairAndCreateProject(page, info, projectKey("ADD", info));
   await createPage(page, "Tableau", "Tableau de bord");
   await page.getByRole("button", { name: "Ajouter un composant" }).click();
   const dialog = page.getByRole("dialog", { name: "Ajouter un composant" });
   const list = dialog.getByRole("region", { name: "Composants disponibles" });
-  await expect(list.getByRole("radio")).toHaveCount(16);
+  await expect(list.getByRole("radio")).toHaveCount(17);
+  await expect(list.getByRole("radio", { name: "Vue d'ensemble" })).toBeVisible();
   const submit = dialog.getByRole("button", { name: "Ajouter à la page" });
   const create = list.getByRole("button", { name: "Créer un composant (code ou IA)" });
   for (const fixed of [submit, dialog.getByRole("button", { name: "Annuler" }), create])

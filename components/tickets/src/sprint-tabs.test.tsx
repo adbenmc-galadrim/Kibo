@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 import { SprintTabs } from "./SprintTabs";
@@ -80,4 +80,13 @@ test("a tab shows the sprint code, never its name", async () => {
     "À planifier",
   ]);
   expect(screen.queryByText("Terrain hors ligne")).toBeNull();
+});
+
+test("the menu of a sprint tab opens the sprint sheet", async () => {
+  const m = setup();
+  const tab = (await tabs()).getByRole("tab", { name: "S43" });
+  fireEvent.contextMenu(tab);
+  await userEvent.setup().click(await screen.findByRole("menuitem", { name: "Fiche du sprint" }));
+  const s43 = m.snapshot().sprints.find((s) => s.code === "S43")?.id;
+  expect(m.openedSprints).toEqual([s43 ?? ""]);
 });

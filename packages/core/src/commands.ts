@@ -41,6 +41,7 @@ import {
 } from "./questions";
 import {
   archiveQuestion,
+  remindQuestion,
   reopenQuestion,
   restoreQuestion,
   updateAnswer,
@@ -171,6 +172,8 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
       return updateAnswer(doc, cmd);
     case "reopenQuestion":
       return reopenQuestion(doc, cmd);
+    case "remindQuestion":
+      return remindQuestion(doc, cmd);
     case "archiveQuestion":
       return archiveQuestion(doc, cmd);
     case "restoreQuestion":
@@ -212,10 +215,15 @@ export function readProject(
   const questions = listQuestions(doc);
   const links = listLinks(doc);
   const sprints = listSprints(doc);
-  const tickets = ticketViews(
-    { projectKey: meta.key, tickets: listTickets(doc), links, questions, sprints, today },
+  const tickets = ticketViews({
+    projectKey: meta.key,
+    tickets: listTickets(doc),
+    links,
+    questions,
+    sprints,
+    today,
     activity,
-  );
+  });
   return {
     meta,
     workflow: getWorkflow(doc),

@@ -16,6 +16,7 @@ import {
 } from "@kibo/schema";
 import { z } from "zod";
 import { immediateTransaction, SQLITE_BUSY_TIMEOUT_MS } from "../sqlite-busy";
+import type { BatchJournalPort } from "./batch-journal";
 import { withKnownBlockers } from "./stored-blockers";
 
 export type NewBatch = Omit<BatchRow, "seq">;
@@ -137,7 +138,7 @@ function openDatabase(home: string): Database {
   }
 }
 
-export function openProjectAgentStore(home: string): ProjectAgentStore {
+export function openProjectAgentStore(home: string, journal?: BatchJournalPort): ProjectAgentStore {
   const db = openDatabase(home);
   const sessionsOf = db.query(
     "SELECT * FROM project_agent_sessions WHERE project_id = $project_id ORDER BY started_at DESC, rowid DESC",
@@ -159,6 +160,12 @@ export function openProjectAgentStore(home: string): ProjectAgentStore {
   const insertBatch = db.query(
     "INSERT INTO project_agent_batches (id, project_id, run_id, session_id, seq, summary, actions, expected, " +
       "created_at) VALUES ($id, $project_id, $run_id, $session_id, $seq, $summary, $actions, $expected, $created_at)",
+  );
+  const openBatches = db.query(
+    "SELECT b.* FROM project_agent_batches b WHERE b.project_id = $project_id AND NOT EXISTS " +
+      "(SELECT 1 FROM project_agent_batch_events e WHERE e.batch_id = b.id AND " +
+      "json_extract(e.data, '$.type') <> 'results' AND COALESCE(json_extract(e.data, '$.keepRest'), 0) = 0) " +
+      "ORDER BY b.seq DESC",
   );
   const insertEvent = db.query(
     "INSERT INTO project_agent_batch_events (batch_id, at, data) VALUES ($batch_id, $at, $data)",
@@ -237,12 +244,18 @@ export function openProjectAgentStore(home: string): ProjectAgentStore {
         "UPDATE project_agent_sessions SET fingerprint = $fingerprint, last_turn_at = $at WHERE run_id = $run_id",
       ).run({ run_id: runId, fingerprint: JSON.stringify(fp), at });
     },
-    createBatch: (row) => createBatch(row),
+    createBatch(row) {
+      const created = createBatch(row);
+      journal?.proposed(created);
+      return created;
+    },
     appendBatchEvent(batchId, event, at) {
       const row = batchById.get({ id: batchId }) as BatchDbRow | null;
       if (!row) throw new KiboError("NOT_FOUND", `batch ${batchId} not found`);
       insertEvent.run({ batch_id: batchId, at, data: JSON.stringify(event) });
-      return folded(row);
+      const batch = folded(row);
+      journal?.appended(batch, event);
+      return batch;
     },
     batch,
     batches: (runId) =>
@@ -252,11 +265,9 @@ export function openProjectAgentStore(home: string): ProjectAgentStore {
         }) as BatchDbRow[]
       ).map(folded),
     pendingBatch: (projectId) =>
-      first(
-        "SELECT b.* FROM project_agent_batches b WHERE b.project_id = $project_id AND NOT EXISTS " +
-          "(SELECT 1 FROM project_agent_batch_events e WHERE e.batch_id = b.id) ORDER BY b.seq DESC LIMIT 1",
-        { project_id: projectId },
-      ),
+      (openBatches.all({ project_id: projectId }) as BatchDbRow[])
+        .map(folded)
+        .find((b) => b.status === "pending") ?? null,
     lastDecided: (projectId, since) =>
       first(
         "SELECT b.* FROM project_agent_batches b JOIN project_agent_batch_events e ON e.batch_id = b.id " +

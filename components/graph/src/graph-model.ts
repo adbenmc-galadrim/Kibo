@@ -11,6 +11,13 @@ export const WAVE_HEADER_H = 28;
 export const SEMANTIC_ZOOM = 0.6;
 
 export type GraphMode = "waves" | "hierarchical";
+export type GraphColumns = "sprints" | "waves";
+
+export const initialColumns = (config: Record<string, unknown>): GraphColumns =>
+  config.columns === "waves" ? "waves" : "sprints";
+
+export const effectiveColumns = (chosen: GraphColumns, hasSprints: boolean): GraphColumns =>
+  hasSprints ? chosen : "waves";
 export type GraphOptions = {
   mode: GraphMode;
   showDone: boolean;

@@ -18,6 +18,7 @@ const doc = () =>
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
 const issue = (patch: Partial<Extract<ExternalRef, { kind: "github_issue" }>> = {}): ExternalRef => ({
   kind: "github_issue",
@@ -135,6 +136,8 @@ describe("external refs of every kind", () => {
       state: "open",
       base: null,
       head: null,
+      review: "none",
+      checks: null,
     };
     expect(() => upsertExternalRef(d, t.id, pr)).toThrow("INVALID_INPUT");
     expect(() => upsertExternalRef(d, t.id, { ...figma, url: "javascript:alert(1)" })).toThrow(

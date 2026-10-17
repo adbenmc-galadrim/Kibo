@@ -6,6 +6,7 @@ import { RadioGroup } from "@kibo/sdk/ui/radio-group";
 import { LayoutDashboard, Plus } from "lucide-react";
 import { type FormEvent, useId } from "react";
 import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { ChoiceCard } from "./ChoiceCard";
 import { FolderField } from "./FolderField";
 
@@ -94,8 +95,8 @@ export function NewProjectForm(p: Props) {
             stacked
             value="suggested"
             icon={LayoutDashboard}
-            title={fr.onboarding.startSuggested}
-            description={p.pageTitles.length > 0 ? p.pageTitles.join(", ") : fr.onboarding.noPage}
+            title={frAi.onboarding.startSuggested}
+            description={p.pageTitles.length > 0 ? p.pageTitles.join(", ") : frAi.onboarding.noPage}
             disabled={p.pageTitles.length === 0}
           />
         </RadioGroup>
@@ -103,7 +104,7 @@ export function NewProjectForm(p: Props) {
       {p.error && <p className="text-sm text-destructive">{p.error}</p>}
       <DialogFooter className="sm:justify-between">
         <Button type="button" variant="ghost" onClick={p.onBack}>
-          {fr.onboarding.back}
+          {frAi.onboarding.back}
         </Button>
         <div className="flex flex-col-reverse gap-2 sm:flex-row">
           <Button type="button" variant="ghost" onClick={p.onCancel}>

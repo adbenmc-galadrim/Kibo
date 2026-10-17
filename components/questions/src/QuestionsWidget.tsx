@@ -5,13 +5,14 @@ import { DeliverButton, DeliveryMessage, type DeliveryNotice } from "./DeliverBu
 import { fr } from "./fr";
 import { QuestionAnswerForm } from "./QuestionAnswerForm";
 import { QuestionAnswerLine, QuestionAuthor } from "./QuestionMeta";
-import { byNewest, filterQuestions, relativeAge } from "./questions-logic";
+import { byNewest, filterQuestions, lastReminder, relativeAge } from "./questions-logic";
 import { type QuestionsData, useQuestions } from "./use-questions";
 
 type RowProps = { question: Question; ticket: TicketView | null; data: QuestionsData; now: number };
 
 function QuestionRow({ question: q, ticket, data, now }: RowProps) {
   const [open, setOpen] = useState(false);
+  const reminded = lastReminder(q);
   return (
     <li className="grid gap-2 border-b py-2 last:border-b-0">
       <button
@@ -26,6 +27,7 @@ function QuestionRow({ question: q, ticket, data, now }: RowProps) {
           <QuestionAuthor actor={q.createdBy} />
           {q.provisional !== null && <span>{fr.provisional(q.provisional)}</span>}
           <span>{relativeAge(q.createdAt, now)}</span>
+          {reminded !== null && <span>{fr.reminded(relativeAge(reminded, now))}</span>}
         </span>
       </button>
       {open &&

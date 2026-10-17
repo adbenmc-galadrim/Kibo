@@ -77,6 +77,7 @@ test("built-ins come from the UI registry, installed versions one row each, sort
     ["Source MCP", "1.0.0", "builtin", 0, 0, false],
     ["Tickets", "1.0.0", "builtin", 0, 0, false],
     ["Visionneuse 3D", "1.0.0", "builtin", 0, 0, false],
+    ["Vue d'ensemble", "1.0.0", "builtin", 0, 0, false],
   ]);
 });
 

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { effectiveSprintId, type FeatureStepSource, featureSteps, isFeature, ShortKey } from "./feature";
+import { effectiveSprintId, isFeature, ShortKey } from "./feature";
+import { type FeatureStepSource, featureSteps } from "./feature-steps";
 import type { Link } from "./link";
 
 const step = (id: string, over: Partial<FeatureStepSource> = {}): FeatureStepSource => ({
@@ -21,6 +22,8 @@ const PR = {
   state: "open" as const,
   base: "main",
   head: "feat/emis-33",
+  review: "none" as const,
+  checks: null,
 };
 
 test("a feature is a root ticket with children", () => {
@@ -78,7 +81,7 @@ test("the steps are the direct children, blockers first, then rank", () => {
 });
 
 test("a step carries its status, delivery, branch and pull request", () => {
-  const delivery = { step: 7, note: "porte qualité", at: 1, runId: null };
+  const delivery = { step: 7, note: "porte qualité", at: 1, runId: null, kind: "delivery" as const };
   const tickets = [
     step("f5", { parentId: null }),
     step("33", {

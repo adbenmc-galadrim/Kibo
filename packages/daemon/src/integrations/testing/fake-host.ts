@@ -42,6 +42,7 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   };
   const doc = createProjectDoc(meta);
   const listeners = new Set<(e: CommandEvent) => void>();

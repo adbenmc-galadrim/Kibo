@@ -26,7 +26,13 @@ export function setDeliveryStep(deps: StepRpcDeps, req: SetDeliveryStepInput): T
   docs.assertWritable(req.projectId);
   const ownRuns = deps.runs().filter((r) => r.projectId === req.projectId);
   const runId = activeRunOf(ownRuns, ticket.id)?.id ?? null;
-  const delivery = { step: req.step, note: req.note ?? "", at: deps.now(), runId };
+  const delivery = {
+    step: req.step,
+    note: req.note ?? "",
+    at: deps.now(),
+    runId,
+    kind: req.kind ?? "delivery",
+  };
   docs.run(req.projectId, { method: "setTicketDelivery", ticketId: ticket.id, delivery }, KIBO_COMMAND);
   const updated = ticketByKey(docs, req.projectId, req.ticketKey);
   if (!updated) throw new KiboError("NOT_FOUND", `ticket ${req.ticketKey} not found`);

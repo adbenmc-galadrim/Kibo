@@ -114,6 +114,8 @@ const ticket: TicketView = {
       state: "draft",
       base: "dev",
       head: null,
+      review: "none",
+      checks: null,
     },
   ],
   progress: { done: 0, total: 0 },
@@ -126,6 +128,8 @@ const ticket: TicketView = {
   optional: false,
   shortKey: null,
   effectiveSprintId: null,
+  session: null,
+  updatedAt: null,
   feature: null,
 };
 const project = (tickets: TicketView[]): ProjectSnapshot => ({
@@ -140,6 +144,7 @@ const project = (tickets: TicketView[]): ProjectSnapshot => ({
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

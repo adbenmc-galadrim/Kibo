@@ -109,11 +109,10 @@ test("the open badge turns amber with a note above the limit, and lists the open
   expect(within(menu).getByText("Rapport de chantier journalier")).toBeTruthy();
 });
 
-test("the bands layout is announced for phase 26 and disabled", async () => {
+test("columns is the default layout", async () => {
   setupPlanning();
   const bands = await screen.findByRole("button", { name: "Bandes" });
-  expect(bands.hasAttribute("disabled")).toBe(true);
-  expect(bands.parentElement?.getAttribute("title")).toBe("Phase 26");
+  expect(bands.getAttribute("aria-pressed")).toBe("false");
   expect(screen.getByRole("button", { name: "Colonnes" }).getAttribute("aria-pressed")).toBe("true");
 });
 

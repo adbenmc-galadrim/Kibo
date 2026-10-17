@@ -24,6 +24,7 @@ export type ViewFacts = {
   questions: readonly Question[];
   sprints: readonly Sprint[];
   today: string;
+  activity: ProjectActivity;
 };
 
 const NO_CHILDREN = { done: 0, total: 0 };
@@ -74,7 +75,8 @@ function featureOf(
   };
 }
 
-export function ticketViews(facts: ViewFacts, activity: ProjectActivity): TicketView[] {
+export function ticketViews(facts: ViewFacts): TicketView[] {
+  const { activity } = facts;
   const effective = effectiveTickets(facts.tickets);
   const byId = new Map(effective.map((e) => [e.ticket.id, e.ticket]));
   const blockers = blockersOf(facts.links);
@@ -97,13 +99,15 @@ export function ticketViews(facts: ViewFacts, activity: ProjectActivity): Ticket
       openQuestions: open.get(t.id) ?? 0,
       effectiveSprintId: effectiveSprintId(t.id, byId),
       feature: feature(t, progress),
+      session: activity.sessions.get(t.id) ?? null,
+      updatedAt: activity.lastEventAt.get(t.id) ?? t.delivery?.at ?? null,
       startable:
         progress.total === 0 &&
         isStartable({
           statusId: t.statusId,
           blockerStatuses: statuses(before),
           openBlockingQuestions: blocking.get(t.id) ?? 0,
-          busy: activity.busyTickets.has(t.id),
+          busy: activity.busyTickets.has(t.id) || activity.sessions.has(t.id),
         }),
     };
   });

@@ -12,7 +12,14 @@ import { RecipientId } from "./question-recipient";
 
 export const QUESTION_HISTORY_MAX = 20;
 
-export const QuestionEventKind = z.enum(["updated", "answer_edited", "reopened", "archived", "restored"]);
+export const QuestionEventKind = z.enum([
+  "updated",
+  "answer_edited",
+  "reopened",
+  "archived",
+  "restored",
+  "reminded",
+]);
 export type QuestionEventKind = z.infer<typeof QuestionEventKind>;
 
 export const QuestionPrevious = z

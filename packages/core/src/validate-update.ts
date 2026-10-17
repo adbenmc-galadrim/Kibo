@@ -13,6 +13,7 @@ const EDITABLE_META_FIELDS = {
   name: ProjectMeta.shape.name,
   color: ProjectMeta.shape.color,
   tracking: ProjectMeta.shape.tracking,
+  description: ProjectMeta.shape.description,
   featureSeq: FeatureSeq,
 };
 const KNOWN_META_FIELDS = new Set([...FROZEN_META_FIELDS, "members", ...Object.keys(EDITABLE_META_FIELDS)]);

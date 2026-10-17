@@ -134,6 +134,8 @@ const ticket: TicketView = {
       state: "open",
       base: null,
       head: null,
+      review: "none",
+      checks: null,
     },
     {
       kind: "figma_node",
@@ -162,6 +164,8 @@ const ticket: TicketView = {
   optional: false,
   shortKey: null,
   effectiveSprintId: null,
+  session: null,
+  updatedAt: null,
   feature: null,
 };
 const project: ProjectSnapshot = {
@@ -176,6 +180,7 @@ const project: ProjectSnapshot = {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -266,6 +271,8 @@ test("the branch chip sits beside the PR, a stacked merge names its parent, impo
         state: "merged",
         base: "feat/a",
         head: "feat/x",
+        review: "none",
+        checks: null,
       },
       { kind: "git_branch", branch: "feat/x", base: "feat/parent" },
       { kind: "import_ref", source: "plan", id: "C0-9" },

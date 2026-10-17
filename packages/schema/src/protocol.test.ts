@@ -94,3 +94,12 @@ test("openView may name a question, the host sends the spotlight", () => {
   ).toBe(false);
   expect(Spotlight.safeParse({ kind: "question", id: "" }).success).toBe(false);
 });
+
+test("a frame may ask the host to open a sprint", () => {
+  expect(FrameToHost.parse({ kibo: 1, type: "openSprint", sprintId: "s42" })).toEqual({
+    kibo: 1,
+    type: "openSprint",
+    sprintId: "s42",
+  });
+  expect(FrameToHost.safeParse({ kibo: 1, type: "openSprint", sprintId: "" }).success).toBe(false);
+});

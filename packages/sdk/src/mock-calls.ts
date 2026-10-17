@@ -15,6 +15,8 @@ import {
   type ProjectAccess,
   type ProjectAsset,
   type ProjectCommand,
+  type ProjectEvent,
+  projectInfo,
   type RunPeek,
   type StorybookOrigin,
   type TicketRun,
@@ -50,6 +52,7 @@ export type MockCallDeps = {
   server?: ServerDefinition;
   mcp?: Record<string, McpCallResult>;
   ciRuns?: CiRun[];
+  events?: ProjectEvent[];
   shared?: boolean;
   today: string;
   members?: MemberInfo[];
@@ -71,6 +74,7 @@ function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
     ci_run: () => deps.ciRuns ?? [],
     question: () => snapshot.questions,
     sprint: () => snapshot.sprints,
+    project_event: () => deps.events ?? [],
   };
   return lists[entity]();
 }
@@ -158,6 +162,8 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
           : { ...localSyncInfo(deps.doc), access: deps.access() };
       case "settings.get":
         return deps.settings();
+      case "project.get":
+        return projectInfo(readProject(deps.doc, deps.today, activityOf(deps.runs())));
       case "assets.list":
         return deps.assets ?? [];
       case "assets.url":
@@ -173,7 +179,7 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
       case "run.peek":
         return deps.peek(c.runId);
       case "run.deliver":
-        return deps.delivery.deliver(c.ticketId);
+        return deps.delivery.deliver(c.ticketId, c.mode);
       case "run.denials":
         return deps.delivery.denials(c.runId);
       case "run.deliveryAgent":

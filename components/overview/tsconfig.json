@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "lib": ["ES2022", "DOM"],
+    "baseUrl": ".",
+    "paths": {
+      "@kibo/sdk/ui/*": ["../../packages/sdk/src/ui/*"],
+      "@kibo/sdk/lib/*": ["../../packages/sdk/src/lib/*"]
+    }
+  },
+  "include": ["src", "kibo.component.json"],
+  "references": [{ "path": "../../packages/schema" }, { "path": "../../packages/sdk" }]
+}

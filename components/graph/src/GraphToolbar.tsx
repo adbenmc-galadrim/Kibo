@@ -11,21 +11,49 @@ import {
 } from "@kibo/sdk/ui/dropdown-menu";
 import { Toggle } from "@kibo/sdk/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
-import { Filter, ListFilter, Sparkle } from "lucide-react";
+import { CalendarRange, Filter, ListFilter, Sparkle } from "lucide-react";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { domainsOf, type GraphFilter } from "./filter";
 import { fr } from "./fr";
-import type { GraphMode } from "./graph-model";
+import type { GraphColumns, GraphMode } from "./graph-model";
 
 const TOGGLE = "h-7 text-xs aria-pressed:bg-accent dark:aria-pressed:bg-accent";
 
-type FilterProps = {
+export type FilterProps = {
   tickets: TicketView[];
   filter: GraphFilter;
   setFilter: Dispatch<SetStateAction<GraphFilter>>;
 };
 
-function FilterMenu({ tickets, filter, setFilter }: FilterProps) {
+export function FilterItems({ tickets, filter, setFilter }: FilterProps) {
+  return (
+    <>
+      <DropdownMenuLabel>{fr.assignee}</DropdownMenuLabel>
+      <DropdownMenuRadioGroup
+        value={filter.assignee}
+        onValueChange={(v) => setFilter((f) => ({ ...f, assignee: v === "all" ? "all" : "mine-and-agents" }))}
+      >
+        <DropdownMenuRadioItem value="mine-and-agents">{fr.mineAndAgents}</DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value="all">{fr.all}</DropdownMenuRadioItem>
+      </DropdownMenuRadioGroup>
+      <DropdownMenuSeparator />
+      <DropdownMenuLabel>{fr.domain}</DropdownMenuLabel>
+      <DropdownMenuRadioGroup
+        value={filter.domain ?? ""}
+        onValueChange={(v) => setFilter((f) => ({ ...f, domain: v === "" ? null : v }))}
+      >
+        <DropdownMenuRadioItem value="">{fr.allDomains}</DropdownMenuRadioItem>
+        {domainsOf(tickets).map((d) => (
+          <DropdownMenuRadioItem key={d} value={d}>
+            {d}
+          </DropdownMenuRadioItem>
+        ))}
+      </DropdownMenuRadioGroup>
+    </>
+  );
+}
+
+function FilterMenu(props: FilterProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -35,28 +63,37 @@ function FilterMenu({ tickets, filter, setFilter }: FilterProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        <DropdownMenuLabel>{fr.assignee}</DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          value={filter.assignee}
-          onValueChange={(v) =>
-            setFilter((f) => ({ ...f, assignee: v === "all" ? "all" : "mine-and-agents" }))
-          }
-        >
-          <DropdownMenuRadioItem value="mine-and-agents">{fr.mineAndAgents}</DropdownMenuRadioItem>
-          <DropdownMenuRadioItem value="all">{fr.all}</DropdownMenuRadioItem>
-        </DropdownMenuRadioGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>{fr.domain}</DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          value={filter.domain ?? ""}
-          onValueChange={(v) => setFilter((f) => ({ ...f, domain: v === "" ? null : v }))}
-        >
-          <DropdownMenuRadioItem value="">{fr.allDomains}</DropdownMenuRadioItem>
-          {domainsOf(tickets).map((d) => (
-            <DropdownMenuRadioItem key={d} value={d}>
-              {d}
-            </DropdownMenuRadioItem>
-          ))}
+        <FilterItems {...props} />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+const isColumns = (v: string): v is GraphColumns => v === "sprints" || v === "waves";
+
+type ColumnsProps = {
+  value: GraphColumns;
+  disabled: boolean;
+  className: string;
+  onChange(value: GraphColumns): void;
+};
+
+export function ColumnsMenu({ value, disabled, className, onChange }: ColumnsProps) {
+  const label = fr.sprints.columns(value === "sprints" ? fr.sprints.columnSprints : fr.sprints.columnWaves);
+  const trigger = (
+    <Button size="sm" variant="outline" className={className} disabled={disabled}>
+      <CalendarRange aria-hidden="true" />
+      {label}
+    </Button>
+  );
+  if (disabled) return <span title={fr.sprints.noSprint}>{trigger}</span>;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuRadioGroup value={value} onValueChange={(v) => isColumns(v) && onChange(v)}>
+          <DropdownMenuRadioItem value="sprints">{fr.sprints.columnSprints}</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="waves">{fr.sprints.columnWaves}</DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>

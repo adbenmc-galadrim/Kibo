@@ -3,12 +3,17 @@ import { DEFAULT_WORKFLOW } from "@kibo/schema";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { stepModels } from "./feature-model";
-import { emisFeatureProject, NOW, SESSION_RUN } from "./fixture";
+import { emisFeatureProject, NOW } from "./fixture";
 import { StepsTimeline } from "./StepsTimeline";
 
 afterEach(cleanup);
 
-const steps = stepModels(emisFeatureProject(), "f5", [SESSION_RUN], NOW);
+const steps = stepModels(emisFeatureProject(), "f5", {
+  runs: [],
+  ciRuns: [],
+  now: NOW,
+  execution: "hidden",
+});
 
 const renderTimeline = (opened: string[] = []) =>
   render(
@@ -51,6 +56,8 @@ test("a step shows its PR or its branch, the time of its delivery step and the d
   const [merged, review, coding] = rows().map((r) => within(r));
   expect(merged?.getByText("#19")).toBeTruthy();
   expect(merged?.getByText("fusionnée")).toBeTruthy();
+  expect(merged?.getByRole("img", { name: "CI réussie" })).toBeTruthy();
+  expect(review?.getByRole("img", { name: "CI réussie" })).toBeTruthy();
   expect(merged?.getByText("hier 18:22")).toBeTruthy();
   expect(merged?.getByText("11 · Livré")).toBeTruthy();
   expect(review?.getByText("#22")).toBeTruthy();
@@ -90,4 +97,25 @@ test("clicking a step title opens its ticket", async () => {
   renderTimeline(opened);
   await userEvent.setup().click(screen.getByRole("button", { name: "Route d'envoi des photos" }));
   expect(opened).toEqual(["e32"]);
+});
+
+test("a PR with changes requested says so after its number, with a red mark for a failing CI", () => {
+  const asked = steps.map((s) =>
+    s.pr && s.key === "EMIS-32"
+      ? { ...s, ci: "error" as const, pr: { ...s.pr, review: "changes_requested" as const } }
+      : s,
+  );
+  render(
+    <StepsTimeline
+      steps={asked}
+      workflow={DEFAULT_WORKFLOW}
+      now={NOW}
+      nextId={null}
+      nextAction={null}
+      onOpenTicket={() => undefined}
+    />,
+  );
+  const review = within(rows()[1] as HTMLElement);
+  expect(review.getByText("changements demandés")).toBeTruthy();
+  expect(review.getByRole("img", { name: "CI cassée" })).toBeTruthy();
 });

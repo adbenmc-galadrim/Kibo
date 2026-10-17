@@ -144,6 +144,8 @@ test("frameKeyOfRef reads figma and penpot refs only", () => {
       state: "open",
       base: null,
       head: null,
+      review: "none",
+      checks: null,
     }),
   ).toBeNull();
 });

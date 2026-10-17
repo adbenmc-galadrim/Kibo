@@ -1,6 +1,6 @@
 import type { ProjectSnapshot } from "@kibo/schema";
 import { Sheet, SheetContent } from "@kibo/sdk/ui/sheet";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAgentList } from "../agents/catalog/use-agent-list";
 import { client } from "../api";
 import { frProjectAgent } from "../i18n/fr-project-agent";
@@ -14,17 +14,21 @@ import type { Decision } from "./BatchCard";
 import { projectLabels } from "./batch-groups";
 import { ComposeBox } from "./ComposeBox";
 import { ConversationView } from "./ConversationView";
-import { buildConversation, lastUserMessage, panelStatus } from "./conversation";
+import { buildConversation, lastAgentText, lastUserMessage, panelStatus } from "./conversation";
 import { PanelHeader } from "./PanelHeader";
+import { PanelMenu } from "./PanelMenu";
 import { PanelTabs } from "./PanelTabs";
 import { PastBanner, PastSessions } from "./PastSessions";
 import { ResizeEdge } from "./ResizeEdge";
-import { SessionsMenu } from "./SessionsMenu";
 import { SignalBox } from "./signals/SignalBox";
 import { boxSections } from "./signals/signal-sections";
 import { useSignals } from "./signals/use-signals";
+import { TrackingView } from "./TrackingView";
 import { usePanelWidth } from "./use-panel-width";
 import { useProjectAgent } from "./use-project-agent";
+
+const DOCK_VAR = "--project-agent-w";
+const DOCK_RULE = 1;
 
 type Props = {
   open: boolean;
@@ -33,13 +37,33 @@ type Props = {
   onTab(tab: ProjectAgentTab): void;
   onClose(): void;
 };
-type Mode = { kind: "current" } | { kind: "list" } | { kind: "past"; runId: string };
+type Mode = { kind: "tracking" } | { kind: "current" } | { kind: "list" } | { kind: "past"; runId: string };
+
+const TRACKING: Mode = { kind: "tracking" };
+const CURRENT: Mode = { kind: "current" };
 
 export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props) {
   const host = useHost();
   const projectId = project.meta.id;
   const [width, setWidth] = usePanelWidth();
-  const [mode, setMode] = useState<Mode>({ kind: "current" });
+  const docked = width + DOCK_RULE;
+  useEffect(() => {
+    if (!open) return;
+    const root = document.documentElement.style;
+    root.setProperty(DOCK_VAR, `${docked}px`);
+    return () => {
+      root.removeProperty(DOCK_VAR);
+    };
+  }, [open, docked]);
+  const [mode, setMode] = useState<Mode>(tab === "signals" ? CURRENT : TRACKING);
+  const tabNow = useRef(tab);
+  tabNow.current = tab;
+  useEffect(() => {
+    if (open && tab === "signals") setMode(CURRENT);
+  }, [open, tab]);
+  useEffect(() => {
+    if (open && tabNow.current !== "signals") setMode(TRACKING);
+  }, [open]);
   const pastRunId = mode.kind === "past" ? mode.runId : undefined;
   const { view, error, reload } = useProjectAgent(projectId, pastRunId);
   const { log } = useRunLog(view?.run?.id ?? view?.session?.runId ?? null);
@@ -79,7 +103,15 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
     const text = lastUserMessage(log ?? []);
     if (text) void send(text).catch((e: unknown) => console.error(e));
   };
-  const back = () => setMode({ kind: "current" });
+  const back = () => setMode(TRACKING);
+  const show = (next: ProjectAgentTab) => {
+    setMode(CURRENT);
+    onTab(next);
+  };
+  const tracking = () => {
+    setMode(TRACKING);
+    onTab("conversation");
+  };
   const conversation = (
     <QuestionLinksContext.Provider value={links}>
       <ConversationView
@@ -99,8 +131,8 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
       <SheetContent
         side="right"
         showCloseButton={false}
-        className="gap-0 p-0 sm:max-w-none"
-        style={{ width, top: "var(--shell-top)", height: "auto" }}
+        className="box-content gap-0 bg-(--tracking-panel) p-0 sm:max-w-none"
+        style={{ width, top: "var(--tabbar-h)", height: "auto" }}
         onInteractOutside={(e) => e.preventDefault()}
         onOpenAutoFocus={(e) => e.preventDefault()}
         onEscapeKeyDown={keepLayerOnSkillEscape}
@@ -109,8 +141,13 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
         <PanelHeader
           project={project.meta.name}
           status={panelStatus(readOnly ? null : (view?.run ?? null), readOnly ? null : pending)}
+          lastTurnAt={readOnly ? null : (view?.session?.lastTurnAt ?? null)}
           menu={
-            <SessionsMenu
+            <PanelMenu
+              signals={openSignals}
+              {...(mode.kind === "tracking" ? {} : { onTracking: tracking })}
+              onConversation={() => show("conversation")}
+              onSignals={() => show("signals")}
               onReset={reset}
               onPast={() => setMode({ kind: "list" })}
               onMemory={() => host.openView("notes")}
@@ -122,6 +159,18 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
           <p role="alert" className="border-b px-3 py-2 text-xs text-destructive">
             {frProjectAgent.loadFailed}
           </p>
+        )}
+        {mode.kind === "tracking" && (
+          <TrackingView
+            projectId={projectId}
+            projectName={project.meta.name}
+            summary={lastAgentText(items)}
+            batch={pending}
+            labels={labels}
+            onTicket={openTicket}
+            onDecide={decide}
+            onSend={send}
+          />
         )}
         {mode.kind === "list" && (
           <PastSessions

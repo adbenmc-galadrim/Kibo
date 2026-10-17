@@ -40,6 +40,7 @@ const project = (access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSn
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { Page, ProjectCommand, Ticket } from "@kibo/schema";
 import { executeProjectCommand, readProject } from "./commands";
+import { OVERVIEW_COMPONENT_REF } from "./overview-migration";
 import { createProjectDoc } from "./project";
 import { getTicket } from "./tickets";
 import { PLANNING_COMPONENT_REF, trackingMigrationCommands } from "./tracking-migration";
@@ -17,6 +18,7 @@ const newDoc = () =>
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
 type Doc = ReturnType<typeof newDoc>;
 
@@ -113,5 +115,25 @@ describe("tracking migration", () => {
     emisLike(d);
     expect(migrate(d)).toBe(2);
     expect(trackingMigrationCommands(readProject(d, "2026-10-16"))).toEqual([]);
+  });
+
+  test("with the overview page asked, both pages are chained and the overview ends up first", () => {
+    const d = newDoc();
+    const both = { planningPage: true, overviewPage: true };
+    const pending = () => trackingMigrationCommands(readProject(d, "2026-10-16"), both);
+    expect(pending()).toEqual([
+      { method: "addPage", title: "Planning", kind: "view" },
+      { method: "addPage", title: "Vue d'ensemble", kind: "view" },
+    ]);
+    for (let pass = 0, cmds = pending(); cmds.length > 0; pass += 1, cmds = pending()) {
+      if (pass === 3) throw new Error("the migration does not converge");
+      for (const cmd of cmds) run(d, cmd);
+    }
+    const snap = readProject(d, "2026-10-16");
+    expect(snap.pages.map((p) => p.title)).toEqual(["Vue d'ensemble", "Planning"]);
+    const instances = new Map(snap.instances.map((i) => [i.component, i.pageId]));
+    expect(instances.get(OVERVIEW_COMPONENT_REF)).toBe(snap.pages[0]?.id);
+    expect(instances.get(PLANNING_COMPONENT_REF)).toBe(snap.pages[1]?.id);
+    expect(trackingMigrationCommands(snap, { planningPage: false, overviewPage: true })).toEqual([]);
   });
 });

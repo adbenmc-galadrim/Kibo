@@ -54,7 +54,7 @@ test("writes the step as a Kibo command and returns the ticket view", () => {
     note: "porte qualité",
   });
   expect(view.id).toBe(ticket.id);
-  expect(view.delivery).toEqual({ step: 7, note: "porte qualité", at: 1_700, runId: null });
+  expect(view.delivery).toEqual({ step: 7, note: "porte qualité", at: 1_700, runId: null, kind: "delivery" });
   expect(events.map((e) => [e.command.method, e.meta?.origin])).toEqual([["setTicketDelivery", "kibo"]]);
 });
 
@@ -70,7 +70,14 @@ test("ties the step to the ticket's active run of the same project", () => {
     ticketKey: "EMIS-1",
     step: 0,
   });
-  expect(view.delivery).toEqual({ step: 0, note: "", at: 1_700, runId: "r-live" });
+  expect(view.delivery).toEqual({ step: 0, note: "", at: 1_700, runId: "r-live", kind: "delivery" });
+});
+
+test("an update step is written as an update, the next plain step as a delivery", () => {
+  const { project, deps } = setup();
+  const req = { method: "setDeliveryStep", projectId: project.id, ticketKey: "EMIS-1", step: 7 } as const;
+  expect(setDeliveryStep(deps, { ...req, kind: "update" }).delivery?.kind).toBe("update");
+  expect(setDeliveryStep(deps, req).delivery?.kind).toBe("delivery");
 });
 
 test("refuses an unknown key and a read-only project without writing", () => {

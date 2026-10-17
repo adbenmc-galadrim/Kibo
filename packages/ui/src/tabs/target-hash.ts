@@ -35,6 +35,8 @@ export function targetToHash(target: TabTarget | null): string {
       return `${base}/${enc(target.pageId)}${target.question ? `?question=${enc(target.question)}` : ""}`;
     case "ticket":
       return `${base}/t/${enc(target.ticketId)}`;
+    case "sprint":
+      return `${base}/s/${enc(target.sprintId)}`;
     case "changes":
       return target.worktree ? `${base}/changes?wt=${enc(target.worktree)}` : `${base}/changes`;
     case "file": {
@@ -61,6 +63,8 @@ function candidate(projectId: string, rest: string, q: URLSearchParams): unknown
   }
   if (rest.startsWith("t/"))
     return { kind: "ticket", projectId, ticketId: decodeURIComponent(rest.slice(2)) };
+  if (rest.startsWith("s/"))
+    return { kind: "sprint", projectId, sprintId: decodeURIComponent(rest.slice(2)) };
   const question = q.get("question");
   return {
     kind: "page",

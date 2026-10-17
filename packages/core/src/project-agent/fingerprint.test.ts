@@ -21,6 +21,8 @@ const snapshot = project({
           state: "open",
           base: null,
           head: null,
+          review: "none",
+          checks: null,
         },
       ],
     }),

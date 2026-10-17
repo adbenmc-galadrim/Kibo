@@ -13,6 +13,7 @@ import type { Strategy } from "../components-page/PublishSections";
 import { useReportApproval } from "../dialogs/approval-scope";
 import { TrustDialog } from "../dialogs/TrustDialog";
 import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { frCreations } from "../i18n/fr-creations";
 import { aiErrorMessage } from "./ai-error";
 import { DraftFailedStep } from "./DraftFailedStep";
@@ -111,7 +112,7 @@ export function AiDraftPanel({ draftId, target, onDone, onStatus }: Props) {
         </p>
       )}
       {details.status === "validating" && (
-        <output aria-label={fr.ai.validating} className="grid gap-2">
+        <output aria-label={frAi.ai.validating} className="grid gap-2">
           <Skeleton className="h-10" />
           <Skeleton className="h-10" />
           <Skeleton className="h-10" />
@@ -142,7 +143,7 @@ export function AiDraftPanel({ draftId, target, onDone, onStatus }: Props) {
       {details.status === "permissions" && !(hash && details.manifest) && (
         <Alert className="bg-muted/40">
           <Info aria-hidden />
-          <AlertTitle>{fr.ai.permissionsUnavailable}</AlertTitle>
+          <AlertTitle>{frAi.ai.permissionsUnavailable}</AlertTitle>
         </Alert>
       )}
       {approval && (

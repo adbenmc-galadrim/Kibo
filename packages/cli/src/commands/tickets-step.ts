@@ -4,7 +4,7 @@ import type { DaemonClient } from "../daemon-client";
 import { frTickets } from "../fr";
 import { type Connect, findProject, printJson, type SessionIo, withClient } from "./daemon-session";
 
-type StepRequest = { ticketKey: string; step: number; note: string | null };
+type StepRequest = { ticketKey: string; step: number; note: string | null; update: boolean };
 
 function parseStep(raw: string): number | null {
   if (!/^\d+$/.test(raw)) return null;
@@ -25,9 +25,11 @@ async function sendStep(client: DaemonClient, req: StepRequest, flags: Parsed["f
     ticketKey: req.ticketKey,
     step: req.step,
     ...(req.note === null ? {} : { note: req.note }),
+    ...(req.update ? { kind: "update" as const } : {}),
   });
+  const done = req.update ? frTickets.touchUpDone : frTickets.stepDone;
   if (flags.json === true) printJson(io, view);
-  else io.out(frTickets.stepDone(req.ticketKey, deliveryStepLabel(req.step)));
+  else io.out(done(req.ticketKey, deliveryStepLabel(req.step)));
   return 0;
 }
 
@@ -49,6 +51,6 @@ export async function ticketsStep(
     return 1;
   }
   const note = words.join(" ").trim();
-  const req = { ticketKey: key.data, step, note: note === "" ? null : note };
+  const req = { ticketKey: key.data, step, note: note === "" ? null : note, update: flags.update === true };
   return withClient(io, (client) => sendStep(client, req, flags, io), connect);
 }

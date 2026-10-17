@@ -10,6 +10,8 @@ const pr = (url: string, number: number): ExternalRef => ({
   state: "merged",
   base: "dev",
   head: "feat/x",
+  review: "none",
+  checks: null,
 });
 const ticket = (id: string, statusId: StatusId, externalRefs: ExternalRef[] = []) => ({
   id,
@@ -79,6 +81,8 @@ describe("set assignments", () => {
         state: "open",
         base: null,
         head: null,
+        review: "none",
+        checks: null,
       },
     });
     expect(prCommand(ticket("t", "todo"), "https://github.com/x/y/pull/9", [])).toMatchObject({

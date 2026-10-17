@@ -95,6 +95,7 @@ export const fr = {
     answerEdited: (before: string, after: string) => `Réponse modifiée (« ${before} » → « ${after} »)`,
     archived: "Archivée",
     restored: "Restaurée",
+    reminded: "Relancée",
     title: (before: string, after: string) => `titre : « ${before} » → « ${after} »`,
     context: "contenu remplacé",
     change: (field: string, before: string, after: string) => `${field} : ${before} → ${after}`,
@@ -170,6 +171,7 @@ export const fr = {
     provisional: "Choix provisoire",
     recipient: "Destinataire",
   },
+  reminded: (age: string) => `relancée · ${age}`,
   age: {
     now: "à l'instant",
     minutes: (n: number) => `il y a ${n} min`,

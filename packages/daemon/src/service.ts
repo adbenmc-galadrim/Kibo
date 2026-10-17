@@ -36,7 +36,7 @@ import { assertInboxCommand, assertNotInbox } from "./inbox/inbox-rules";
 import { isIntegrationRequest } from "./integrations/methods";
 import type { IntegrationRpc } from "./integrations/registry";
 import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
-import { type ActivityTracker, createActivityTracker } from "./project-activity";
+import { type ActivitySources, type ActivityTracker, createActivityTracker } from "./project-activity";
 import { withLocalSettings } from "./project-folder";
 import { projectDocId, WORKSPACE_DOC_ID } from "./projects/doc-ids";
 import { writeProjectMeta } from "./projects/meta";
@@ -83,6 +83,7 @@ type ServiceOptions = {
   agents?: AgentSource;
   questionImages?: QuestionImageDeps;
   clock?: Clock;
+  activity?: ActivitySources;
 };
 
 const changesDomainUsage = (cmd: ProjectCommand) =>
@@ -251,7 +252,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       deliverTicketAnswers(agentsReady(), questions, projectId, ticketId),
     attachAgents(port) {
       agents = port;
-      const activity = createActivityTracker(port.state().runs);
+      const activity = createActivityTracker(port.state().runs, opts.activity);
       tracker = activity;
       const offTopic = port.onChange(() => docs.emit({ topic: "agents" }));
       const offRuns = port.onRunState((run) => {

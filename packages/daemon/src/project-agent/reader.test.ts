@@ -41,7 +41,11 @@ function readerAgent(agents: FakeAgents): ProjectAgentBoot {
       info: () => ({ dir: "", displayDir: "", obsidian: false, folderRelative: null }),
     },
     settings: { get: () => null },
-    orchestrator: () => ({ ...agents, hooks: { verify: () => true, receive: () => null } }),
+    orchestrator: () => ({
+      ...agents,
+      hooks: { verify: () => true, receive: () => null },
+      onRunState: () => () => undefined,
+    }),
     notify: () => {},
     signals: fakeSignals(),
   });

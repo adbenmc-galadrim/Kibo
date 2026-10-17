@@ -1,3 +1,4 @@
+import type { TicketView } from "@kibo/schema";
 import { fr } from "./fr";
 
 const MINUTE = 60_000;
@@ -22,3 +23,6 @@ export function updatedLabel(at: number, now: number): string {
   if (days < 7) return WEEKDAY.format(at);
   return DATE.format(at);
 }
+
+export const updatedAt = (t: Pick<TicketView, "updatedAt" | "delivery">): number | null =>
+  t.updatedAt ?? t.delivery?.at ?? null;

@@ -60,6 +60,8 @@ const ticket = (n: number, title: string): TicketView => ({
   optional: false,
   shortKey: null,
   effectiveSprintId: null,
+  session: null,
+  updatedAt: null,
   feature: null,
 });
 const BOU15 = ticket(15, "Page de suivi de commande");
@@ -75,6 +77,7 @@ const project: ProjectSnapshot = {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

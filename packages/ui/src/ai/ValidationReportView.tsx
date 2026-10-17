@@ -2,7 +2,7 @@ import type { ValidationReport } from "@kibo/schema";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/ui/collapsible";
 import { CircleCheck, CircleX } from "lucide-react";
 import { useState } from "react";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { permissionsOk } from "./draft-flow";
 
 function Section({ name, ok, output }: { name: string; ok: boolean; output: string }) {
@@ -22,11 +22,13 @@ function Section({ name, ok, output }: { name: string; ok: boolean; output: stri
           />
           <span className="grid flex-1 gap-0.5">
             <span className="font-medium">{name}</span>
-            <span className="text-xs text-muted-foreground">{ok ? fr.ai.passed : fr.ai.failedSection}</span>
+            <span className="text-xs text-muted-foreground">
+              {ok ? frAi.ai.passed : frAi.ai.failedSection}
+            </span>
           </span>
           {output.length > 0 && (
             <CollapsibleTrigger className="text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
-              {open ? fr.ai.hideOutput : fr.ai.showOutput}
+              {open ? frAi.ai.hideOutput : frAi.ai.showOutput}
             </CollapsibleTrigger>
           )}
         </div>
@@ -42,8 +44,8 @@ function Section({ name, ok, output }: { name: string; ok: boolean; output: stri
 
 function permissionsOutput(p: ValidationReport["permissions"]): string {
   return [
-    p.missing.length > 0 ? fr.ai.missingPermissions(p.missing.join(", ")) : "",
-    p.unused.length > 0 ? fr.ai.unusedPermissions(p.unused.join(", ")) : "",
+    p.missing.length > 0 ? frAi.ai.missingPermissions(p.missing.join(", ")) : "",
+    p.unused.length > 0 ? frAi.ai.unusedPermissions(p.unused.join(", ")) : "",
     ...p.errors,
   ]
     .filter(Boolean)
@@ -55,23 +57,23 @@ export function ValidationReportView({ report }: { report: ValidationReport }) {
   return (
     <ul className="divide-y rounded-lg border">
       {!report.manifest.ok && (
-        <Section name={fr.ai.sections.manifest} ok={false} output={report.manifest.errors.join("\n")} />
+        <Section name={frAi.ai.sections.manifest} ok={false} output={report.manifest.errors.join("\n")} />
       )}
       {!report.imports.ok && (
-        <Section name={fr.ai.sections.imports} ok={false} output={report.imports.errors.join("\n")} />
+        <Section name={frAi.ai.sections.imports} ok={false} output={report.imports.errors.join("\n")} />
       )}
       <Section
-        name={fr.ai.sections.typecheck}
+        name={frAi.ai.sections.typecheck}
         ok={report.typecheck.ok}
         output={report.typecheck.errors.join("\n")}
       />
-      <Section name={fr.ai.sections.tests} ok={report.tests.ok} output={report.tests.output} />
+      <Section name={frAi.ai.sections.tests} ok={report.tests.ok} output={report.tests.output} />
       <Section
-        name={fr.ai.sections.conformance}
+        name={frAi.ai.sections.conformance}
         ok={report.conformance.ok}
         output={report.conformance.errors.join("\n")}
       />
-      <Section name={fr.ai.sections.permissions} ok={permissionsOk(p)} output={permissionsOutput(p)} />
+      <Section name={frAi.ai.sections.permissions} ok={permissionsOk(p)} output={permissionsOutput(p)} />
     </ul>
   );
 }

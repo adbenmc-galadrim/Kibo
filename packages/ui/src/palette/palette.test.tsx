@@ -36,6 +36,8 @@ const ticket = (n: number, title: string, statusId: TicketView["statusId"] = "in
   optional: false,
   shortKey: null,
   effectiveSprintId: null,
+  session: null,
+  updatedAt: null,
   feature: null,
 });
 const summary: ProjectSummary = {
@@ -49,6 +51,7 @@ const summary: ProjectSummary = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
 };
 const snapshot: ProjectSnapshot = {

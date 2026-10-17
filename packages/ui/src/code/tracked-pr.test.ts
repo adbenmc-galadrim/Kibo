@@ -9,13 +9,23 @@ const pr = (number: number, extra: Partial<Extract<ExternalRef, { kind: "github_
   state: "draft" as const,
   base: "dev",
   head: null,
+  review: "none" as const,
+  checks: null,
   ...extra,
 });
 const branch = (name: string): ExternalRef => ({ kind: "git_branch", branch: name, base: null });
 const ticket = (externalRefs: ExternalRef[]) => ({ externalRefs });
 
 test("the PR found by gh wins", () => {
-  const found: PrInfo = { number: 3, url: pr(3).url, state: "open", base: "dev", head: "feat/x" };
+  const found: PrInfo = {
+    number: 3,
+    url: pr(3).url,
+    state: "open",
+    base: "dev",
+    head: "feat/x",
+    review: "none",
+    checks: null,
+  };
   expect(trackedPr(found, [ticket([pr(9, { head: "feat/x" })])], "feat/x")).toBe(found);
 });
 

@@ -15,6 +15,7 @@ function setup({ call = async () => ["ok"], surface = "widget" }: Options = {}) 
   const calls: ComponentCall[] = [];
   const handlers = {
     onOpenTicket: mock((_: string) => {}),
+    onOpenSprint: mock((_: string) => {}),
     onOpenNewTicket: mock(() => {}),
     onOpenFile: mock((_: FileOpenRequest) => {}),
     onOpenView: mock((_: string, _question?: string) => {}),
@@ -284,4 +285,12 @@ test("openView may aim at a question, and the spotlight reaches the frame", () =
     { kibo: 1, type: "spotlight", spotlight: { kind: "question", id: "q1" } },
     { kibo: 1, type: "spotlight", spotlight: null },
   ]);
+});
+
+test("openSprint from the frame opens the sprint sheet, nothing from another window", () => {
+  const { frame, other, from, handlers } = setup();
+  from(other, { kibo: 1, type: "openSprint", sprintId: "s42" });
+  expect(handlers.onOpenSprint).not.toHaveBeenCalled();
+  from(frame, { kibo: 1, type: "openSprint", sprintId: "s42" });
+  expect(handlers.onOpenSprint).toHaveBeenCalledWith("s42");
 });

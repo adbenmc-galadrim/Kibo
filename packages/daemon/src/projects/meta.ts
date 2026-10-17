@@ -15,9 +15,14 @@ const docFields = (patch: SharedPatch): SharedPatch => ({
   ...(patch.name !== undefined && { name: patch.name }),
   ...(patch.color !== undefined && { color: patch.color }),
   ...(patch.tracking !== undefined && { tracking: patch.tracking }),
+  ...(patch.description !== undefined && { description: patch.description }),
 });
 
-const registryFields = ({ tracking: _tracking, ...fields }: SharedPatch): SharedPatch => fields;
+const registryFields = ({
+  tracking: _tracking,
+  description: _description,
+  ...fields
+}: SharedPatch): SharedPatch => fields;
 
 const sharedFields = (patch: ProjectPatch): SharedPatch => ({
   ...docFields(patch),

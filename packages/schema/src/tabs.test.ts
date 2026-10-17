@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { Screen, TabTarget, targetProjectId } from "./tabs";
+import { Screen, salvageTabsState, TabTarget, targetProjectId } from "./tabs";
 
 test("creations is a screen a tab can open", () => {
   expect(Screen.parse("creations")).toBe("creations");
@@ -41,4 +41,27 @@ test("the domains screen may aim at one project, which never makes it a project 
     screen: "domains",
   });
   expect(TabTarget.safeParse({ kind: "screen", screen: "domains", projectId: "" }).success).toBe(false);
+});
+
+test("a sprint is a project target a tab can open", () => {
+  const sprint = TabTarget.parse({ kind: "sprint", projectId: "p1", sprintId: "s1" });
+  expect(sprint).toEqual({ kind: "sprint", projectId: "p1", sprintId: "s1" });
+  expect(targetProjectId(sprint)).toBe("p1");
+  expect(TabTarget.safeParse({ kind: "sprint", projectId: "p1", sprintId: "" }).success).toBe(false);
+});
+
+test("tabs stored before sprints still read back, a sprint tab beside them", () => {
+  const stored = {
+    tabs: [
+      { id: "a", target: { kind: "ticket", projectId: "p1", ticketId: "t1" }, pinned: false },
+      { id: "b", target: { kind: "page", projectId: "p1", pageId: "pg" }, pinned: true, preview: false },
+      { id: "c", target: { kind: "sprint", projectId: "p1", sprintId: "s1" }, pinned: false },
+    ],
+    activeId: "b",
+    recents: [{ kind: "project", projectId: "p1" }],
+  };
+  const state = salvageTabsState(stored);
+  expect(state?.tabs.map((t) => t.target.kind)).toEqual(["ticket", "page", "sprint"]);
+  expect(state?.activeId).toBe("b");
+  expect(state?.recents).toEqual([{ kind: "project", projectId: "p1" }]);
 });

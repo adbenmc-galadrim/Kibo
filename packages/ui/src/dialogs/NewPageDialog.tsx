@@ -15,6 +15,7 @@ import { AppWindow, LayoutDashboard, Sparkles } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { navigate } from "../route";
 import { ChoiceCard } from "./ChoiceCard";
 
@@ -96,7 +97,7 @@ export function NewPageDialog({ projectId, projectName, parentId, open, onOpenCh
                 onSuggest();
               }}
             >
-              <Sparkles aria-hidden /> {fr.onboarding.suggestPages}
+              <Sparkles aria-hidden /> {frAi.onboarding.suggestPages}
             </Button>
           )}
           {failed && (

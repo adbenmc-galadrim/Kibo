@@ -33,6 +33,7 @@ const meta = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
 };
 
 describe("workspace", () => {
@@ -93,6 +94,17 @@ describe("project meta", () => {
     expect(() => setProjectMeta(doc, { tracking: { openLimit: 11 } })).toThrow("INVALID_INPUT");
     expect(setProjectMeta(doc, { tracking: null }).tracking).toBeNull();
   });
+
+  test("setProjectMeta writes the description, which survives a snapshot and can be cleared", () => {
+    const doc = createProjectDoc(meta);
+    const description = "Application terrain des contrôleurs";
+    expect(setProjectMeta(doc, { description }).description).toBe(description);
+    const copy = new LoroDoc();
+    copy.import(doc.export({ mode: "snapshot" }));
+    expect(getProjectMeta(copy).description).toBe(description);
+    expect(() => setProjectMeta(doc, { description: "x".repeat(201) })).toThrow("INVALID_INPUT");
+    expect(setProjectMeta(doc, { description: null }).description).toBeNull();
+  });
 });
 
 describe("project", () => {
@@ -100,6 +112,11 @@ describe("project", () => {
     const doc = createProjectDoc(meta);
     expect(getProjectMeta(doc)).toEqual(meta);
     expect(getWorkflow(doc).map((s) => s.id)).toContain("blocked");
+  });
+
+  test("reads the description the project was created with", () => {
+    const doc = createProjectDoc({ ...meta, description: "Suivi de chantier" });
+    expect(getProjectMeta(doc).description).toBe("Suivi de chantier");
   });
   test("ticket sequence survives a snapshot round-trip", () => {
     const doc = createProjectDoc(meta);

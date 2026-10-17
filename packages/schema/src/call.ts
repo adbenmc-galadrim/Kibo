@@ -3,6 +3,7 @@ import { AddDirs } from "./add-dir";
 import { AllowRules } from "./allow-rule";
 import { ProjectAssetName } from "./asset";
 import { ProjectCommand } from "./command";
+import { DeliveryKind } from "./delivery";
 import { DESIGN_URL_MAX } from "./design";
 import { EMBED_URL_MAX } from "./embed";
 import { Base64, NodeId } from "./ids";
@@ -60,6 +61,7 @@ export const ComponentCall = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("presence.list") }),
   z.object({ kind: z.literal("sharing.get") }),
   z.object({ kind: z.literal("settings.get") }),
+  z.object({ kind: z.literal("project.get") }),
   z.object({ kind: z.literal("assets.list") }),
   z.object({ kind: z.literal("assets.url"), name: ProjectAssetName }),
   z.object({
@@ -73,7 +75,7 @@ export const ComponentCall = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("questions.deliver"), ticketId: NodeId }),
   z.object({ kind: z.literal("questions.recipients") }),
   z.object({ kind: z.literal("run.peek"), runId: z.string().min(1) }),
-  z.object({ kind: z.literal("run.deliver"), ticketId: NodeId }),
+  z.object({ kind: z.literal("run.deliver"), ticketId: NodeId, mode: DeliveryKind.optional() }),
   z.object({ kind: z.literal("run.denials"), runId: z.string().min(1) }),
   z.object({ kind: z.literal("run.deliveryAgent") }),
   z.object({

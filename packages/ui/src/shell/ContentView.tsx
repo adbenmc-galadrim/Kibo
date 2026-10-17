@@ -1,4 +1,5 @@
 import type { Domain, FileRef, ProjectSnapshot, ProjectSummary, TabTarget } from "@kibo/schema";
+import { lazyPanel } from "@kibo/sdk";
 import { useChangesSlots } from "../code/agent-slots";
 import { fr } from "../i18n/fr";
 import { PageView } from "../pages/PageView";
@@ -25,6 +26,8 @@ type Props = {
   onAssign(ticketId: string): void;
   onOpenTicket(projectId: string, ticketId: string): void;
 };
+
+const SprintTab = lazyPanel(() => import("./sprint/SprintTab").then((m) => m.SprintTab), fr.lazy);
 
 const missing = (label: string) => <p className="p-8 text-sm text-muted-foreground">{label}</p>;
 
@@ -121,6 +124,15 @@ export function ContentView(p: Props) {
           viewer={p.project.viewer ?? p.viewer}
           onAssign={p.onAssign}
           onOpenFile={p.onOpenFile}
+          onOpenTicket={(ticketId) => p.onOpenTicket(t.projectId, ticketId)}
+        />
+      );
+    case "sprint":
+      return (
+        <SprintTab
+          key={t.sprintId}
+          project={p.project}
+          sprintId={t.sprintId}
           onOpenTicket={(ticketId) => p.onOpenTicket(t.projectId, ticketId)}
         />
       );

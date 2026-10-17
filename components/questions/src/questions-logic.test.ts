@@ -85,6 +85,8 @@ const ticket = (id: string, keyLabel: string): TicketView => ({
   optional: false,
   shortKey: null,
   effectiveSprintId: null,
+  session: null,
+  updatedAt: null,
   feature: null,
 });
 

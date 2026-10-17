@@ -2,15 +2,15 @@ import type { FileDiff } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { useState } from "react";
 import { DiffView } from "../code/DiffView";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 
 export function DraftDiffReview({ diff }: { diff: FileDiff[] }) {
   const [active, setActive] = useState(0);
   const current = diff[active];
-  if (!current) return <p className="text-sm text-muted-foreground">{fr.ai.noChange}</p>;
+  if (!current) return <p className="text-sm text-muted-foreground">{frAi.ai.noChange}</p>;
   return (
     <div className="grid min-h-64 grid-cols-[11rem_1fr] gap-3">
-      <ul aria-label={fr.ai.reviewTitle} className="grid content-start gap-1">
+      <ul aria-label={frAi.ai.reviewTitle} className="grid content-start gap-1">
         {diff.map((d, i) => (
           <li key={d.path}>
             <button

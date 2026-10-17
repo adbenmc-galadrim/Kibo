@@ -8,6 +8,7 @@ import {
   splitRef,
   type TicketView,
 } from "@kibo/schema";
+import { overviewMigrationCommands } from "./overview-migration";
 
 export const PLANNING_COMPONENT = "planning";
 export const PLANNING_COMPONENT_REF = formatRef(PLANNING_COMPONENT, "1.0.0");
@@ -72,12 +73,15 @@ function planningPageCommands(snapshot: ProjectSnapshot): ProjectCommand[] {
   return [{ method: "addPage", title: PLANNING_PAGE_TITLE, kind: "view" }];
 }
 
-export type TrackingMigrationOptions = { planningPage: boolean };
+export type TrackingMigrationOptions = { planningPage: boolean; overviewPage?: boolean };
 
 export function trackingMigrationCommands(
   snapshot: ProjectSnapshot,
   options: TrackingMigrationOptions = { planningPage: true },
 ): ProjectCommand[] {
-  const keys = shortKeyCommands(snapshot.tickets);
-  return options.planningPage ? [...keys, ...planningPageCommands(snapshot)] : keys;
+  return [
+    ...shortKeyCommands(snapshot.tickets),
+    ...(options.planningPage ? planningPageCommands(snapshot) : []),
+    ...(options.overviewPage === true ? overviewMigrationCommands(snapshot) : []),
+  ];
 }

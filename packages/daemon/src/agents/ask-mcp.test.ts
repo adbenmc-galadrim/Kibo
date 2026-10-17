@@ -185,9 +185,9 @@ test("calling signal_project asks the daemon and relays its text or its error", 
   expect(project.calls).toEqual([]);
 });
 
-test("a project run lists the question tools, the eleven project tools and skill_review with their schemas", async () => {
+test("a project run lists the question tools, the twelve project tools and skill_review with their schemas", async () => {
   const names = await toolNames(PROJECT_RUN);
-  expect(names).toHaveLength(14);
+  expect(names).toHaveLength(15);
   expect(names).toContain("list_signals");
   expect(names).not.toContain("signal_project");
   expect(names).not.toContain("peek_work");
@@ -278,7 +278,7 @@ test("the served tools depend on KIBO_MCP_TOOLS and a down daemon never kills th
     { jsonrpc: "2.0", id: 3, method: "ping" },
   ]);
   const byId = new Map(replies.map((r) => [r.id, r]));
-  expect(byId.get(1)?.result.tools).toHaveLength(14);
+  expect(byId.get(1)?.result.tools).toHaveLength(15);
   expect(byId.get(2)?.result.isError).toBe(true);
   expect(byId.get(3)?.result).toEqual({});
 });

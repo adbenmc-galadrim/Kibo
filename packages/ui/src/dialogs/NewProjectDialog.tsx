@@ -12,6 +12,7 @@ import {
 import { useMemo, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { PROJECT_COLORS } from "../lib/project-colors";
 import { suggestProjectKey } from "../lib/project-key";
 import { applyStarterPlan } from "../onboarding/apply-plan";
@@ -87,16 +88,16 @@ function NewProjectSteps({ onOpenChange, count, focusFolder }: Omit<Required<Pro
       <DialogHeader>
         <DialogTitle>{fr.newProject.title}</DialogTitle>
         <DialogDescription>
-          {step === 1 ? fr.onboarding.roleSubtitle : fr.newProject.subtitle}
+          {step === 1 ? frAi.onboarding.roleSubtitle : fr.newProject.subtitle}
         </DialogDescription>
       </DialogHeader>
       {created !== null ? (
         <>
           <Alert>
-            <AlertDescription>{fr.onboarding.partial}</AlertDescription>
+            <AlertDescription>{frAi.onboarding.partial}</AlertDescription>
           </Alert>
           <DialogFooter>
-            <Button onClick={() => openProject(created)}>{fr.onboarding.openProject}</Button>
+            <Button onClick={() => openProject(created)}>{frAi.onboarding.openProject}</Button>
           </DialogFooter>
         </>
       ) : (
@@ -112,13 +113,13 @@ function NewProjectSteps({ onOpenChange, count, focusFolder }: Omit<Required<Pro
                 onRole={setRole}
               />
               <DialogFooter className="items-center sm:justify-between">
-                <span className="text-xs text-muted-foreground">{fr.onboarding.step(1)}</span>
+                <span className="text-xs text-muted-foreground">{frAi.onboarding.step(1)}</span>
                 <div className="flex flex-col-reverse gap-2 sm:flex-row">
                   <Button type="button" variant="ghost" onClick={() => toForm(true)}>
-                    {fr.onboarding.skip}
+                    {frAi.onboarding.skip}
                   </Button>
                   <Button type="button" onClick={() => toForm(false)}>
-                    {fr.onboarding.continue}
+                    {frAi.onboarding.continue}
                   </Button>
                 </div>
               </DialogFooter>

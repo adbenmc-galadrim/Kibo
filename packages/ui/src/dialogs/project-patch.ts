@@ -17,6 +17,7 @@ export type Fields = {
   name: string;
   color: string;
   folder: string;
+  description?: string;
   worktree?: WorktreeSettings | null;
   storybook?: StorybookSettings | null;
   duplication?: DuplicationSettings | null;
@@ -34,6 +35,8 @@ export function projectPatch(project: ProjectSummary, fields: Fields): ProjectPa
   const name = fields.name.trim();
   if (name !== project.name) patch.name = name;
   if (fields.color !== project.color) patch.color = fields.color;
+  const description = fields.description === undefined ? undefined : fields.description.trim() || null;
+  if (description !== undefined && description !== project.description) patch.description = description;
   const folder = fields.folder.trim() || null;
   if (folder !== project.folder) patch.folder = folder;
   const worktree = fields.worktree;

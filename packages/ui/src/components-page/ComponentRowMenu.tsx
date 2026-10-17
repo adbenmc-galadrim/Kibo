@@ -12,7 +12,7 @@ import { Ellipsis, ScanSearch, ShieldOff, Sparkles, Trash2, Upload } from "lucid
 import { useState } from "react";
 import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { frComponentsManage } from "../i18n/fr-components-manage";
 import { frMarket } from "../i18n/fr-market";
 import { marketErrorText } from "../lib/market-errors";
@@ -131,7 +131,7 @@ export function ComponentRowMenu({ row, onDone, onModifyWithAi, onPublishToMarke
           {modifiable(origin) && (
             <DropdownMenuItem onSelect={() => onModifyWithAi({ ...ref, title: row.title, origin })}>
               <Sparkles aria-hidden />
-              {fr.ai.modify}
+              {frAi.ai.modify}
             </DropdownMenuItem>
           )}
           {publishable(row) && (

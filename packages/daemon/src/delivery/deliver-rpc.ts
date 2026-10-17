@@ -13,7 +13,7 @@ export function deliverRpc(deps: DeliverDeps, data: DeliverRpcData): RpcExtensio
         throw new KiboError("INTERNAL", `${req.method} is not a delivery method`);
       assertNotInboxForAgents(req.projectId);
       data.assertWritable(req.projectId);
-      return deliver(deps, { projectId: req.projectId, ticketId: req.ticketId });
+      return deliver(deps, { projectId: req.projectId, ticketId: req.ticketId, mode: req.mode });
     },
   };
 }

@@ -210,3 +210,37 @@ test(
     expect(screen.queryByRole("button", { name: "Modifier la disposition" })).toBeNull();
   }),
 );
+
+test("the Vue d'ensemble page puts « Nouveau ticket » in the shell header, Tickets keeps its own", async () => {
+  const opened: unknown[] = [];
+  const overviewPage: Page = { id: "pg", title: "Vue d'ensemble", kind: "view", parentId: null };
+  const withComponent = (component: string, access: "write" | "read-only" = "write"): ProjectSnapshot => {
+    const base = withAccess(access, overviewPage);
+    return {
+      ...base,
+      sync: { ...base.sync, shared: false },
+      instances: base.instances.map((i) => ({ ...i, component })),
+    };
+  };
+  const mountWith = (project: ProjectSnapshot) =>
+    render(
+      <HostProvider host={{ ...host, openNewTicket: (d) => opened.push(d) }}>
+        <PageActionsProvider>
+          <PageActionsSlot />
+          <PageView project={project} page={overviewPage} viewer="adam" />
+        </PageActionsProvider>
+      </HostProvider>,
+    );
+  const view = mountWith(withComponent("overview@1.0.0"));
+  await userEvent.setup().click(await screen.findByRole("button", { name: "Nouveau ticket" }));
+  expect(opened).toEqual([{}]);
+  view.unmount();
+  const slotButtons = (v: ReturnType<typeof mountWith>) =>
+    v.container.firstElementChild?.querySelectorAll("button").length ?? 0;
+  const tickets = mountWith(withComponent("tickets@1.0.0"));
+  expect(slotButtons(tickets)).toBe(0);
+  tickets.unmount();
+  const readOnly = mountWith(withComponent("overview@1.0.0", "read-only"));
+  expect(slotButtons(readOnly)).toBe(0);
+  cleanup();
+});

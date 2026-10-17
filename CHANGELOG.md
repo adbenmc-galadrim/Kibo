@@ -6,6 +6,18 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.26.0-alpha.1 — 2026-10-17
+
+- Vue d'ensemble du projet, en première page : indicateurs, sessions T3 Code en cours, échéances sur quatre semaines, sprint en cours et suivant, prochaine fonctionnalité à finir avec « Copier /full-delivery <CLÉ> », PR en review avec leur CI, questions, activité filtrable.
+- L'agent de projet s'ouvre en panneau « Suivi » : résumé du jour et lot à valider ; une pastille compte les actions en attente.
+- Graphe en colonnes par sprint : fonctionnalités en cadres avec leurs étapes, livrées repliées, retard en rouge ; « Colonnes : Vagues » rétablit l'ancienne disposition.
+- Fiche sprint (depuis le Planning, la Vue d'ensemble ou l'onglet du sprint) : avancement par fonctionnalité ; à la fin d'un sprint, l'agent de projet propose de reporter les fonctionnalités restantes, à valider d'un clic. Valider une partie d'un lot laisse le reste à valider dans le panneau.
+- L'agent de projet peut planifier une fonctionnalité dans un sprint, créer un sprint et relancer une question ; la question affiche « relancée · <âge> ».
+- Les PR affichent les changements demandés et l'état de la CI.
+- `kibo tickets session <CLÉ> start|stop` signale une session T3 Code (point orange) ; `kibo tickets step <CLÉ> <n> --update` pose une retouche sur un ticket livré, avec « Copier /update-delivery <CLÉ> ».
+- Planning : disposition en bandes.
+- Journal de suivi local du projet (git, PR, sessions, lots).
+
 ## 0.25.0-alpha.1 — 2026-10-17
 
 - Kibo devient un outil de suivi : le développement se fait dans T3 Code avec `/full-delivery`, Kibo suit l'avancement depuis git et les PR, sans jeton, avec une limite de fonctionnalités ouvertes réglable. L'exécution des agents dans Kibo est masquée par défaut ; « Paramètres › Général › Exécution des agents dans Kibo » la rétablit. Masquée, les menus proposent « Copier /full-delivery <CLÉ> ».

@@ -31,6 +31,7 @@ const meta = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
 };
 const OWNER: UpdateAuthor = { userId: "u-adam", role: "owner" };
 
@@ -221,6 +222,19 @@ describe("tracking data forged by a client", () => {
       c.commit();
     });
     expect(verdict).toEqual({ ok: false, reason: "meta.featureSeq has an invalid value" });
+  });
+
+  test("a project description is shared, a too long one is refused", () => {
+    const describeAs = (text: string) =>
+      verdictFor(sharedServer(), (c) => {
+        c.getMap("meta").set("description", text);
+        c.commit();
+      });
+    expect(describeAs("Suivi de chantier")).toEqual({ ok: true });
+    expect(describeAs("x".repeat(201))).toEqual({
+      ok: false,
+      reason: "meta.description has an invalid value",
+    });
   });
 });
 

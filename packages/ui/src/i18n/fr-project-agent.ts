@@ -12,6 +12,7 @@ const FRESH_REASONS: Record<SessionFreshReason, string> = {
 
 const GROUPS: Record<ActionGroup, string> = {
   tickets: "Tickets",
+  sprints: "Sprints",
   agents: "Agents",
   questions: "Questions",
   notes: "Notes",
@@ -47,7 +48,7 @@ const TOOLS: Record<string, string> = {
 };
 
 export const frProjectAgent = {
-  title: (project: string) => `Agent de projet · ${project}`,
+  titleSuffix: (project: string) => ` · ${project}`,
   close: "Fermer le panneau",
   tabs: {
     label: "Vues de l'agent de projet",
@@ -60,8 +61,20 @@ export const frProjectAgent = {
     thinking: "Réfléchit…",
     batch: "Lot à valider",
   },
+  tracking: {
+    title: "Agent de projet",
+    upToDate: (age: string) => `Suivi à jour · ${age}`,
+    summary: "Résumé du jour",
+    noSummary: (project: string) => `Pose une question sur ${project} ou attends la fin du sprint.`,
+    toValidate: "À valider",
+    footer: "Les états avancent seuls (git, PR, étapes full-delivery). L'agent propose, tu valides.",
+    ask: "Demander à l'agent de projet…",
+  },
   menu: {
     label: "Actions de l'agent de projet",
+    tracking: "Suivi",
+    conversation: "Conversation",
+    signals: (n: number) => (n > 0 ? `Signaux · ${n}` : "Signaux"),
     reset: "Nouvel agent de projet",
     past: "Anciens agents",
     memory: "Ouvrir la mémoire",
@@ -144,6 +157,14 @@ export const frProjectAgent = {
     createNote: (path: string) => `Créer la note ${path}`,
     updateNote: (path: string) => `Mettre à jour la note ${path}`,
     dismissSignal: (ref: string) => `Signal ${ref} : sans suite`,
+    postpone: (feature: string, sprint: string) => `Reporter ${feature} en ${sprint}`,
+    plan: (feature: string, sprint: string) => `Planifier ${feature} en ${sprint}`,
+    unplan: (feature: string) => `Retirer ${feature} du planning`,
+    createSprint: (code: string, name: string) => `Créer le sprint ${code} · ${name}`,
+    remindQuestion: (recipient: string, ref: string) => `Relancer ${recipient} sur ${ref}`,
+    theClient: "le client",
+    remindUnknown: "Relancer « question introuvable »",
+    quoted: (title: string) => `« ${title} »`,
     confirm: "Confirmer",
     none: "aucun",
     unknownTicket: "ticket introuvable",
@@ -162,7 +183,7 @@ export const frProjectAgent = {
   },
   button: "Agent de projet",
   buttonTitle: (shortcut: string) => `Agent de projet (${shortcut})`,
-  pending: "Un lot attend ta validation",
+  pending: (n: number) => (n > 0 ? `${plural(n, "action")} à valider` : "Un lot attend ta validation"),
   resize: "Redimensionner le panneau",
   loadFailed: "Impossible de charger l'agent de projet.",
   sendFailed: "Message non envoyé.",

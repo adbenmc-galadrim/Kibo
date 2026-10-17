@@ -50,6 +50,7 @@ function localProject() {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
   const mine = createTicket(doc, {
     title: "Mien",

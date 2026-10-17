@@ -19,6 +19,11 @@ const AddComponentDialog = lazyPanel(
   fr.lazy,
   { fallback: "sr-only" },
 );
+const NewTicketAction = lazyPanel(
+  () => import("../shell/nav/NewTicketAction").then((m) => m.NewTicketAction),
+  fr.lazy,
+  { fallback: "sr-only" },
+);
 const EditLayout = lazyPanel(() => import("./EditLayout").then((m) => m.EditLayout), fr.lazy);
 const PublishDialog = lazyPanel(
   () => import("../components-page/PublishDialog").then((m) => m.PublishDialog),
@@ -56,6 +61,7 @@ export function PageView({ project, page, viewer, question = null }: Props) {
             />
           </PageActions>
         )}
+        {editable && <NewTicketAction pageId={page.id} instances={instances} />}
         {layoutMode && !editing && (
           <PageActions>
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>

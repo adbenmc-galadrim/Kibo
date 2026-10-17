@@ -154,7 +154,7 @@ test("a turn ended with refusals asks the denial question and notifies the human
 
 test("the agents state carries the delivery step of the ticket of an active run", async () => {
   const { delivery, port, service, project, ticket, run } = await rig();
-  const step = { step: 7, note: "porte qualité", at: 1, runId: run.id };
+  const step = { step: 7, note: "porte qualité", at: 1, runId: run.id, kind: "delivery" as const };
   service.docs.run(
     project.id,
     { method: "setTicketDelivery", ticketId: ticket.id, delivery: step },

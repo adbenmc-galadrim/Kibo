@@ -53,3 +53,28 @@ test("branch and import refs have stable keys and a PR ref defaults base and hea
   expect(branchRefOf([pr, branch])).toEqual(branch);
   expect(branchRefOf([pr])).toBeNull();
 });
+
+test("a pull request ref defaults to no review and no checks", () => {
+  const ref = ExternalRef.parse({
+    kind: "github_pr",
+    url: "https://github.com/acme/emis/pull/18",
+    number: 18,
+    state: "merged",
+    base: "main",
+    head: "feat/emis-31",
+  });
+  expect(ref).toMatchObject({ review: "none", checks: null });
+});
+
+test("a pull request ref keeps its review and checks", () => {
+  const ref = ExternalRef.parse({
+    kind: "github_pr",
+    url: "https://github.com/acme/emis/pull/20",
+    number: 20,
+    state: "open",
+    review: "changes_requested",
+    checks: "error",
+  });
+  expect(ref).toMatchObject({ review: "changes_requested", checks: "error" });
+  expect(() => ExternalRef.parse({ ...ref, review: "dismissed" })).toThrow();
+});

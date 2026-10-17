@@ -1,4 +1,12 @@
-import { branchRefOf, type CiTone, type ExternalRef, type GithubPrRef, type TicketView } from "@kibo/schema";
+import {
+  branchRefOf,
+  type CiRun,
+  type ExternalRef,
+  type GithubPrRef,
+  type PrReview,
+  prCiTone,
+  type TicketView,
+} from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import {
   CircleCheck,
@@ -13,7 +21,7 @@ import { BranchIcon } from "./BranchIcon";
 import { TEXT_12 } from "./columns";
 import { fr } from "./fr";
 
-type Props = { ticket: Pick<TicketView, "externalRefs" | "waitingOn">; ci: CiTone | null };
+type Props = { ticket: Pick<TicketView, "externalRefs" | "waitingOn">; runs: readonly CiRun[] };
 
 const latestPr = (refs: readonly ExternalRef[]): GithubPrRef | null =>
   refs.filter((r): r is GithubPrRef => r.kind === "github_pr").at(-1) ?? null;
@@ -38,11 +46,18 @@ const CI_COLOR = {
   neutral: "text-(--tracking-dim)",
 };
 
+const REVIEW_COLOR: Partial<Record<PrReview, string>> = {
+  changes_requested: "text-(--tracking-brand-text)",
+  approved: "text-(--tracking-green)",
+};
+
 const ROW = "flex min-w-0 items-center gap-[5px]";
 
-function PrLine({ pr, ci }: { pr: GithubPrRef; ci: CiTone | null }) {
+function PrLine({ pr, runs }: { pr: GithubPrRef; runs: readonly CiRun[] }) {
   const Icon = PR_ICON[pr.state];
   const state = fr.git.prState(pr.state);
+  const review = fr.git.review(pr.review);
+  const ci = prCiTone(pr, runs);
   const Mark = ci === null ? null : CI_ICON[ci];
   return (
     <span className={ROW}>
@@ -54,6 +69,7 @@ function PrLine({ pr, ci }: { pr: GithubPrRef; ci: CiTone | null }) {
       />
       <span className={cn("font-mono text-(--tracking-fg)", TEXT_12)}>{fr.git.pr(pr.number)}</span>
       {state && <span className={cn("truncate text-(--tracking-dim)", TEXT_12)}>{state}</span>}
+      {review && <span className={cn("truncate", REVIEW_COLOR[pr.review], TEXT_12)}>{review}</span>}
       {Mark && ci && (
         <Mark
           absoluteStrokeWidth
@@ -67,9 +83,9 @@ function PrLine({ pr, ci }: { pr: GithubPrRef; ci: CiTone | null }) {
   );
 }
 
-export function GitPrCell({ ticket, ci }: Props) {
+export function GitPrCell({ ticket, runs }: Props) {
   const pr = latestPr(ticket.externalRefs);
-  if (pr) return <PrLine pr={pr} ci={ci} />;
+  if (pr) return <PrLine pr={pr} runs={runs} />;
   const branch = branchRefOf(ticket.externalRefs);
   if (branch)
     return (

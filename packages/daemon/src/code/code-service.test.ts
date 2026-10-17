@@ -283,6 +283,8 @@ test("createPr links the PR to the ticket, the poller follows its state", async 
     state: "open",
     base: "main",
     head: "kib-1",
+    review: "none",
+    checks: null,
   });
   expect(refs()).toEqual([
     {
@@ -292,6 +294,8 @@ test("createPr links the PR to the ticket, the poller follows its state", async 
       state: "open",
       base: "main",
       head: "kib-1",
+      review: "none",
+      checks: null,
     },
   ]);
   expect(events).toContainEqual(event());
@@ -334,6 +338,8 @@ test("a PR without a ticket, or closed without merging, moves no ticket", async 
         state: "open",
         base: null,
         head: null,
+        review: "none",
+        checks: null,
       },
     },
   });
@@ -415,7 +421,16 @@ test("a failing PR lookup is logged and does not stop the others", async () => {
         command: {
           method: "upsertExternalRef",
           ticketId: ticket.id,
-          ref: { kind: "github_pr", url, number, state: "open", base: null, head: null },
+          ref: {
+            kind: "github_pr",
+            url,
+            number,
+            state: "open",
+            base: null,
+            head: null,
+            review: "none",
+            checks: null,
+          },
         },
       });
     upsert("https://example.test/not-a-pr", 7);

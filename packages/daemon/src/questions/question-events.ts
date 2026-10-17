@@ -12,6 +12,7 @@ const TOUCHING: ReadonlySet<ProjectCommand["method"]> = new Set([
   "reopenQuestion",
   "archiveQuestion",
   "restoreQuestion",
+  "remindQuestion",
   "markAnswersDelivered",
   "deleteTicket",
 ]);

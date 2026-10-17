@@ -210,6 +210,26 @@ describe("bundle report", () => {
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });
 
+  test("the sprint sheet, its texts and the lazy page actions stay out of the entry, not the route parsing", () => {
+    const paths = [
+      "/x/packages/ui/src/shell/sprint/SprintSheet.tsx",
+      "/x/packages/ui/src/shell/sprint/SprintTab.tsx",
+      "/x/packages/ui/src/shell/sprint/sprint-route.ts",
+      "/x/packages/ui/src/shell/sprint/use-sprint-view.ts",
+      "/x/packages/ui/src/i18n/fr-sprint.ts",
+      "/x/packages/ui/src/shell/nav/overview-page.ts",
+      "/x/packages/ui/src/shell/nav/new-ticket-pages.ts",
+      "/x/packages/ui/src/shell/nav/NewTicketAction.tsx",
+    ];
+    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
+    for (const p of [
+      "/x/packages/ui/src/tabs/target-hash.ts",
+      "/x/packages/ui/src/shell/nav/overview-missing.ts",
+      "/x/packages/ui/src/i18n/fr-nav-tracking.ts",
+    ])
+      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(false);
+  });
+
   test("three and the sdk 3d and game kits never reach the entry", () => {
     const three = pkg("three", "build/three.module.js");
     const chunks = [

@@ -23,6 +23,7 @@ import { createMockRunDelivery, MOCK_DELIVERY_AGENT_INFO } from "./mock-delivery
 import { createMockEmbeds, recordedFrameApis } from "./mock-embed";
 import { createMockNotes } from "./mock-notes";
 import { createNotifier } from "./mock-notifier";
+import { recordedTrackingApis } from "./mock-project";
 import { createMockDelivery } from "./mock-questions";
 import { recordedAgentApis } from "./mock-recorded";
 import { activityOf, createMockRuns } from "./mock-runs";
@@ -32,7 +33,6 @@ import { createSdk } from "./sdk";
 import type { ServerContext } from "./server";
 import { createSignal, focusApi, selectionApi, visibilityApi } from "./signal";
 import { createSpotlightStore } from "./spotlight";
-import { sprintsApi } from "./sprints-api";
 import type { EntityMap, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
 
 export type { MockFetch } from "./mock-calls";
@@ -59,6 +59,7 @@ export function createMockSdk(
     duplication: null,
     delivery: null,
     tracking: opts.tracking ?? null,
+    description: opts.description ?? null,
   });
   const changes = createNotifier();
   const runChanges = createNotifier();
@@ -86,6 +87,7 @@ export function createMockSdk(
   const openedViews: string[] = [];
   const viewRequests: MockSdk["viewRequests"] = [];
   const deliveries: string[] = [];
+  const openedSprints: string[] = [];
   const embeds = createMockEmbeds(manifest.embeds, opts.embed);
   const focusRequests: boolean[] = [];
   const selections: (Selection | null)[] = [];
@@ -161,6 +163,7 @@ export function createMockSdk(
       viewRequests.push({ componentId, question: viewOpts?.question ?? null });
     },
     openRun: mockRuns.open,
+    openSprint: (sprintId) => openedSprints.push(sprintId),
     focus: focusApi(focus, (on) => focusRequests.push(on)),
     visibility: visibilityApi(visible),
     selection: selectionApi(selection, (next) => selections.push(next)),
@@ -242,7 +245,7 @@ export function createMockSdk(
     },
     ...recordedFrameApis(inner, record),
     ...recordedAgentApis(inner, record),
-    sprints: sprintsApi({ list: (type) => sdk.list(type), run: (cmd) => sdk.run(cmd) }),
+    ...recordedTrackingApis(inner, record, () => sdk),
   };
 
   return {
@@ -256,6 +259,7 @@ export function createMockSdk(
     openedViews,
     viewRequests,
     openedRuns: mockRuns.opened,
+    openedSprints,
     deliveries,
     runDeliveries: runDelivery.delivered,
     allowed: runDelivery.allowed,

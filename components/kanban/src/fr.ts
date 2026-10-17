@@ -11,6 +11,8 @@ const RUN_STATES: Record<RunState, string> = {
 };
 
 export const fr = {
+  session: (tool: string) => `Session ${tool} en cours`,
+  retouch: (step: string) => `retouche · ${step}`,
   filter: { label: "Tickets affichés", mineAndAgents: "Moi + agents", all: "Tous" },
   counter: (shown: number, total: number, filter: string) => `${shown} / ${total} · ${filter}`,
   labelFilter: {

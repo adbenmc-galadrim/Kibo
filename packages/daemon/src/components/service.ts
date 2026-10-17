@@ -25,7 +25,7 @@ import { approvedHashOf, stampComponentHash } from "./component-hash";
 import { listDrafts } from "./drafts";
 import { createEventLog, type EventLog, ensureEventsTable } from "./events";
 import { createGate } from "./gate";
-import { createGateHandlers } from "./gate-handlers";
+import { createGateHandlers, type GateHandlersDeps } from "./gate-handlers";
 import { createInflight } from "./inflight";
 import { createJobScheduler, type JobSchedulerDeps } from "./jobs";
 import type { ComponentRequest } from "./methods";
@@ -59,6 +59,7 @@ export type ComponentsDeps = {
   peekRun?: (projectId: string, runId: string) => RunPeek;
   delivery?: ComponentDelivery;
   appSettings: Pick<AppSettingsStore, "get">;
+  projectEvents?: GateHandlersDeps["projectEvents"];
   installCli?: () => Promise<{ path: string }>;
   cliStatus?: () => Promise<{ path: string; installed: boolean }>;
   jobTimers?: Pick<JobSchedulerDeps, "setInterval" | "clearInterval">;

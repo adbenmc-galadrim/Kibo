@@ -12,6 +12,8 @@ const pr = (id: string, head: string | null, base: string | null, state: PrState
       state,
       base,
       head,
+      review: "none",
+      checks: null,
     },
   ],
 });

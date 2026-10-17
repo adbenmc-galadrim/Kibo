@@ -24,6 +24,7 @@ const inboxMeta = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
 };
 const kibo = {
   id: "p1",
@@ -36,6 +37,7 @@ const kibo = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
 };
 
 function seeded() {
@@ -111,6 +113,8 @@ describe("transferTicket", () => {
       state: "open",
       base: null,
       head: null,
+      review: "none",
+      checks: null,
     } as const;
     upsertExternalRef(from, t.id, ref);
     const result = transferTicket(from, to, t.id, null);

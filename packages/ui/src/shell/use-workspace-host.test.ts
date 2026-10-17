@@ -1,0 +1,30 @@
+import { expect, test } from "bun:test";
+import { renderHook } from "@testing-library/react";
+import type { DialogsState } from "./dialogs-state";
+import { useWorkspaceHost } from "./use-workspace-host";
+
+function host(activeProjectId: string | null) {
+  const patches: Partial<DialogsState>[] = [];
+  const { result } = renderHook(() =>
+    useWorkspaceHost({
+      activeProjectId,
+      projectRef: { current: null },
+      set: (patch) => patches.push(patch),
+      go: () => {},
+      openView: () => {},
+      openRun: () => {},
+      answerRun: () => {},
+      showProjectAgent: () => {},
+    }),
+  );
+  return { host: result.current, patches };
+}
+
+test("a sprint opened by a component opens the sprint sheet of the active project", () => {
+  const active = host("emis");
+  active.host.openSprint?.("s42");
+  expect(active.patches).toEqual([{ sprintSheet: { projectId: "emis", sprintId: "s42" } }]);
+  const none = host(null);
+  none.host.openSprint?.("s42");
+  expect(none.patches).toEqual([]);
+});

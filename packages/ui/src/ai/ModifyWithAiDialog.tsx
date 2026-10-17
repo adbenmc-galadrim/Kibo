@@ -15,6 +15,7 @@ import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 
 import { client } from "../api";
 import { ApprovalScope, useApprovalScope } from "../dialogs/approval-scope";
 import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { frComponentsManage } from "../i18n/fr-components-manage";
 import { frCreations } from "../i18n/fr-creations";
 import { AiDraftPanel } from "./AiDraftPanel";
@@ -61,9 +62,9 @@ function useActiveDraft(componentId: string | null) {
 function ResumeBox({ draft, onResume }: { draft: ComponentDraft; onResume: () => void }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-md border bg-muted/40 px-3 py-2 text-sm">
-      <span>{fr.ai.create.resume(draft.title)}</span>
+      <span>{frAi.ai.create.resume(draft.title)}</span>
       <Button size="sm" variant="outline" onClick={onResume}>
-        {fr.ai.create.resumeAction}
+        {frAi.ai.create.resumeAction}
       </Button>
     </div>
   );
@@ -107,7 +108,7 @@ function ModifyForm({ componentId, projectId, onStarted, onConflict, onCancel }:
     } catch (err) {
       const conflict = err instanceof KiboError && err.code === "CONFLICT";
       if (!conflict) setError(aiErrorMessage(err));
-      else if (!(await onConflict())) setError(fr.ai.modifyBusy);
+      else if (!(await onConflict())) setError(frAi.ai.modifyBusy);
     } finally {
       setBusy(false);
     }
@@ -115,7 +116,7 @@ function ModifyForm({ componentId, projectId, onStarted, onConflict, onCancel }:
 
   return (
     <form onSubmit={submit} className="grid gap-3">
-      <Label htmlFor={`${id}-request`}>{fr.ai.modifyField}</Label>
+      <Label htmlFor={`${id}-request`}>{frAi.ai.modifyField}</Label>
       <Textarea
         id={`${id}-request`}
         ref={requestRef}
@@ -124,7 +125,7 @@ function ModifyForm({ componentId, projectId, onStarted, onConflict, onCancel }:
         value={request}
         onChange={(e) => setRequest(e.target.value)}
       />
-      <p className="text-xs text-muted-foreground">{fr.ai.modifyHelp}</p>
+      <p className="text-xs text-muted-foreground">{frAi.ai.modifyHelp}</p>
       <AttachmentsField
         value={attachments}
         onChange={setAttachments}
@@ -132,7 +133,7 @@ function ModifyForm({ componentId, projectId, onStarted, onConflict, onCancel }:
         pasteFrom={requestRef}
       />
       {demo && <DemoAgentNote />}
-      {block && <p className="text-xs text-amber-600 dark:text-amber-400">{fr.ai.blocked[block]}</p>}
+      {block && <p className="text-xs text-amber-600 dark:text-amber-400">{frAi.ai.blocked[block]}</p>}
       {error && (
         <p role="alert" className="text-xs text-destructive">
           {error}
@@ -143,7 +144,7 @@ function ModifyForm({ componentId, projectId, onStarted, onConflict, onCancel }:
           {fr.common.cancel}
         </Button>
         <Button type="submit" variant="agent" disabled={!ready || block !== null || !valid || busy}>
-          <Bot className="size-4" /> {fr.ai.launch}
+          <Bot className="size-4" /> {frAi.ai.launch}
         </Button>
       </DialogFooter>
     </form>
@@ -185,11 +186,11 @@ export function ModifyWithAiDialog({
       >
         <DialogHeader>
           <DialogTitle>
-            {component ? fr.ai.modifyTitle(component.title) : frCreations.modify.title}
+            {component ? frAi.ai.modifyTitle(component.title) : frCreations.modify.title}
           </DialogTitle>
           <DialogDescription className={component ? undefined : "sr-only"}>
             {component
-              ? fr.ai.modifySubtitle(
+              ? frAi.ai.modifySubtitle(
                   component.version,
                   frComponentsManage.components.origin[component.origin],
                 )

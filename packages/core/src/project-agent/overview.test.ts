@@ -9,6 +9,8 @@ const pr = {
   state: "open" as const,
   base: null,
   head: null,
+  review: "none" as const,
+  checks: null,
 };
 
 const snapshot = project({
@@ -104,6 +106,25 @@ describe("projectOverview", () => {
     expect(projectOverview(input({ demoProject: true })).profiles.map((p) => p.id)).toEqual([
       "global:opus-dev",
       "system:demo",
+    ]);
+  });
+
+  test("lists the sprints of the project", () => {
+    const sprints = [{ id: "s1", code: "S42", name: "Terrain", start: "2026-10-12", end: "2026-10-16" }].map(
+      (s) => ({ ...s, state: "current" as const, features: [], delivered: 0, total: 0 }),
+    );
+    const base = input();
+    const overview = projectOverview({ ...base, project: { ...base.project, sprints } });
+    expect(overview.sprints).toEqual([
+      {
+        id: "s1",
+        code: "S42",
+        name: "Terrain",
+        start: "2026-10-12",
+        end: "2026-10-16",
+        state: "current",
+        features: [],
+      },
     ]);
   });
 });

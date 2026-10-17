@@ -11,6 +11,8 @@ const toPrInfo = ({ number, url, state, base, head }: GithubPrRef): PrInfo => ({
   state,
   base,
   head,
+  review: "none",
+  checks: null,
 });
 
 export function trackedPr(found: PrInfo | null, tickets: readonly WithRefs[], branch: string | null) {

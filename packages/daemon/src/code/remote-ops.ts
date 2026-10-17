@@ -1,4 +1,14 @@
-import { GhLogin, type GhStatus, isGitBranchName, KiboError, PrInfo } from "@kibo/schema";
+import {
+  type CheckRollupItem,
+  GhLogin,
+  type GhStatus,
+  isGitBranchName,
+  KiboError,
+  PrInfo,
+  type PrReview,
+  parseReviewDecision,
+  prChecksTone,
+} from "@kibo/schema";
 import { currentBranch, pushRemote, remoteBranches } from "./read";
 import type { WorktreeHandle } from "./repo";
 import { type Env, firstLine, NETWORK_TIMEOUT_MS, type RunResult, runGh } from "./run";
@@ -11,7 +21,10 @@ export type CreatePrInput = {
   reviewers: string[];
 };
 
-const PR_FIELDS = ["--json", "number,url,state,isDraft,baseRefName,headRefName"];
+const PR_FIELDS = [
+  "--json",
+  "number,url,state,isDraft,baseRefName,headRefName,reviewDecision,statusCheckRollup",
+];
 const PR_URL = /^https:\/\/[^\s/]+\/[^\s/]+\/[^\s/]+\/pull\/\d+$/;
 const NO_PR = /no (open )?pull requests? found/i;
 
@@ -37,6 +50,29 @@ function toState(data: unknown): string {
   return field(data, "isDraft") === true ? "draft" : "open";
 }
 
+function toReview(data: unknown): PrReview {
+  const raw = field(data, "reviewDecision");
+  const review = parseReviewDecision(raw);
+  if (review === "none" && typeof raw === "string" && raw !== "")
+    console.warn(`[kibo-daemon] unknown review decision ${raw.slice(0, 40)} read as none`);
+  return review;
+}
+
+const text = (data: unknown, key: string): string | undefined => {
+  const value = field(data, key);
+  return typeof value === "string" ? value : undefined;
+};
+
+function toRollup(data: unknown): CheckRollupItem[] {
+  const raw = field(data, "statusCheckRollup");
+  if (!Array.isArray(raw)) return [];
+  return raw.map((item) => ({
+    status: text(item, "status"),
+    conclusion: text(item, "conclusion") ?? null,
+    state: text(item, "state"),
+  }));
+}
+
 function parsePrInfo(data: unknown): PrInfo {
   const parsed = PrInfo.safeParse({
     number: field(data, "number"),
@@ -44,6 +80,8 @@ function parsePrInfo(data: unknown): PrInfo {
     state: toState(data),
     base: field(data, "baseRefName") ?? null,
     head: field(data, "headRefName") ?? null,
+    review: toReview(data),
+    checks: prChecksTone(toRollup(data)),
   });
   if (!parsed.success) throw new KiboError("GH_FAILED", "unexpected gh output");
   return parsed.data;

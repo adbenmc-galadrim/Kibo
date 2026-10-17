@@ -4,7 +4,7 @@ import { fakeAgentsPort } from "../agents-port.test-helper";
 import { ticketRun } from "../overlaps/peek-fakes.test-helper";
 import { withDeliverySteps } from "./run-steps";
 
-const STEP: DeliveryStep = { step: 7, note: "porte qualité", at: 1, runId: "r1" };
+const STEP: DeliveryStep = { step: 7, note: "porte qualité", at: 1, runId: "r1", kind: "delivery" };
 
 test("an active run shows the delivery step of its ticket, an ended run or a ticket without step shows none", () => {
   const active = ticketRun("r1", "EMIS-15");

@@ -28,3 +28,19 @@ test("the busy tickets follow the run states and stay within their project", () 
   expect(busy(tracker, "other")).toEqual(["t9"]);
   expect(busy(tracker, "none")).toEqual([]);
 });
+
+test("a ticket in session is busy and its session and last event are exposed", () => {
+  const session = { tool: "T3 Code", startedAt: 1_000 };
+  const tracker = createActivityTracker(
+    [runView({ id: "r1", projectId: "p", ticketId: "t1", state: "running" })],
+    {
+      sessions: (projectId) => (projectId === "p" ? new Map([["t2", session]]) : new Map()),
+      lastEventAt: (projectId) => (projectId === "p" ? new Map([["t3", 2_000]]) : new Map()),
+    },
+  );
+  const activity = tracker.activity("p");
+  expect([...activity.busyTickets].sort()).toEqual(["t1", "t2"]);
+  expect(activity.sessions).toEqual(new Map([["t2", session]]));
+  expect(activity.lastEventAt).toEqual(new Map([["t3", 2_000]]));
+  expect(busy(tracker, "other")).toEqual([]);
+});

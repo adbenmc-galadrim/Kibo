@@ -43,6 +43,8 @@ beforeEach(() => {
         state: "open",
         base: null,
         head: null,
+        review: "none",
+        checks: null,
       },
     },
     USER,

@@ -83,6 +83,7 @@ describe("planDomainScopes", () => {
               duplication: null,
               delivery: null,
               tracking: null,
+              description: null,
             }),
           ]),
         );

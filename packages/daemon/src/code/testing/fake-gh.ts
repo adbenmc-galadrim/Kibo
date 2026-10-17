@@ -8,6 +8,8 @@ type FakePr = {
   isDraft: boolean;
   head: string;
   base?: string;
+  reviewDecision?: string;
+  statusCheckRollup?: unknown[];
 };
 
 const statePath = process.env.FAKE_GH_STATE;
@@ -68,6 +70,8 @@ if (args[0] === "pr" && args[1] === "view") {
       isDraft: pr.isDraft,
       baseRefName: pr.base,
       headRefName: pr.head,
+      reviewDecision: pr.reviewDecision ?? "",
+      statusCheckRollup: pr.statusCheckRollup ?? [],
     }),
   );
   process.exit(0);
@@ -81,6 +85,8 @@ if (args[0] === "pr" && args[1] === "list") {
     isDraft: pr.isDraft,
     baseRefName: pr.base,
     headRefName: pr.head,
+    reviewDecision: pr.reviewDecision ?? "",
+    statusCheckRollup: pr.statusCheckRollup ?? [],
   });
   process.stdout.write(JSON.stringify(prs.filter((p) => p.head === head).map(view)));
   process.exit(0);

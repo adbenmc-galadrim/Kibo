@@ -3,6 +3,7 @@ import * as kanban from "@kibo/component-kanban";
 import * as mcpSource from "@kibo/component-mcp-source";
 import * as mockup from "@kibo/component-mockup";
 import * as notes from "@kibo/component-notes";
+import * as overview from "@kibo/component-overview";
 import * as planning from "@kibo/component-planning";
 import * as questions from "@kibo/component-questions";
 import * as tickets from "@kibo/component-tickets";
@@ -35,6 +36,7 @@ export const BUILTIN_COMPONENTS: ComponentModule[] = [
   mockup,
   questions,
   planning,
+  overview,
 ];
 
 const BUILTIN_ICONS: Record<string, LucideIcon> = {
@@ -47,6 +49,7 @@ const BUILTIN_ICONS: Record<string, LucideIcon> = {
   mockup: Frame,
   questions: MessageCircleQuestion,
   planning: CalendarRange,
+  overview: LayoutDashboard,
 };
 
 export const componentRef = (m: ComponentManifest): string => `${m.id}@${m.version}`;

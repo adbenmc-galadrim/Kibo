@@ -68,8 +68,6 @@ export const frAi = {
     partialPages: (failed: string[]) => `Pages créées en partie, échec pour : ${failed.join(", ")}.`,
     openProject: "Ouvrir le projet",
     suggestPages: "Suggérer des pages",
-    suggestPagesHelp: "Pages de départ selon ton rôle",
-    propose: "Proposer",
     addPages: (n: number) => `Ajouter ${n} page${n > 1 ? "s" : ""}`,
   },
   ai: {

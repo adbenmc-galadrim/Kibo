@@ -105,6 +105,8 @@ describe("kibo tickets against a real daemon", () => {
         state: "merged",
         base: "dev",
         head: "feat/socle",
+        review: "none",
+        checks: null,
       },
     });
     const next = await ticket("C1-2", "Stockage", { parentId: parent.id, description: "Tout le détail." });
@@ -133,8 +135,11 @@ describe("kibo tickets against a real daemon", () => {
   test("list gives every ticket in JSON with plan ids, deps and the PR", async () => {
     const t = cli(home);
     const list = await t.json("list", "--project", "emis");
-    expect(Array.isArray(list)).toBe(true);
-    expect(list).toContainEqual({
+    if (!Array.isArray(list)) throw new Error("list is not an array");
+    const stockage: Record<string, unknown> = list.find((x: { key: string }) => x.key === "EMIS-3");
+    expect(stockage).toHaveProperty("updatedAt");
+    const settled: Record<string, unknown> = { ...stockage, updatedAt: null };
+    expect(settled).toEqual({
       id: ids.get("C1-2"),
       key: "EMIS-3",
       planId: "C1-2",
@@ -152,6 +157,10 @@ describe("kibo tickets against a real daemon", () => {
       sprint: null,
       feature: { key: "EMIS-1", shortKey: "F1", title: "Chantier 1" },
       optional: false,
+      delivery: null,
+      session: null,
+      updatedAt: null,
+      refs: [{ kind: "import_ref", source: "plan", id: "C1-2" }],
     });
     expect(await t.json("list", "--project", "Emis", "--ready")).toMatchObject([{ planId: "C1-2" }]);
     expect(await t.json("list", "--project", projectId, "--status", "wip,done")).toMatchObject([
@@ -196,7 +205,13 @@ describe("kibo tickets against a real daemon", () => {
     expect(await t.json("get", "C1-2", "--project", "EMIS")).toMatchObject({
       status: "wip",
       kiboStatus: "in_progress",
-      pr: { number: 12, url: "https://github.com/galadrim/emis/pull/12", state: "open" },
+      pr: {
+        number: 12,
+        url: "https://github.com/galadrim/emis/pull/12",
+        state: "open",
+        review: "none",
+        checks: null,
+      },
     });
     expect(await t.run("set", "C1-2", "status=wip", "pr=12", "--project", "EMIS")).toBe(0);
     expect(t.out.at(-1)).toBe("✓ EMIS-3 : déjà à jour");

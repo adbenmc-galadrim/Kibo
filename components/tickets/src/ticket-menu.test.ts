@@ -28,6 +28,8 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   optional: false,
   shortKey: null,
   effectiveSprintId: null,
+  session: null,
+  updatedAt: null,
   feature: null,
   ...patch,
 });
@@ -150,4 +152,18 @@ test("hidden agent execution replaces Livrer with copying the full-delivery comm
   copy.onSelect();
   expect(a.copyDelivery).toHaveBeenCalledWith("/full-delivery KIB-27");
   expect(a.deliver).not.toHaveBeenCalled();
+});
+
+test("a done ticket offers its touch-up: copying /update-delivery when the execution is hidden", () => {
+  const a = actions();
+  const entries = ticketMenuEntries({
+    ticket: ticket({ statusId: "done" }),
+    statuses: DEFAULT_WORKFLOW,
+    readOnly: false,
+    deliver: { disabledReason: null },
+    execution: "hidden",
+    texts: fr,
+    actions: a,
+  });
+  expect(labels(entries).slice(0, 2)).toEqual(["Ouvrir", "Copier /update-delivery KIB-27"]);
 });

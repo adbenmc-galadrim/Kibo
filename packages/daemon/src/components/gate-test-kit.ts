@@ -136,6 +136,9 @@ export const idleHandlers: GateHandlers = {
     throw new KiboError("INTERNAL", "unexpected");
   },
   settings: async () => DEFAULT_COMPONENT_SETTINGS,
+  project: async () => {
+    throw new KiboError("INTERNAL", "unexpected");
+  },
   questions: async () => ({ sent: 0, runId: null }),
   recipients: async () => [],
   peek: async (_projectId, runId) => {
@@ -207,6 +210,9 @@ export function testGate(quotas: Quotas = createQuotas(), grantedToEvil: Granted
         throw new KiboError("INTERNAL", "unexpected");
       },
       settings: async () => DEFAULT_COMPONENT_SETTINGS,
+      project: async () => {
+        throw new KiboError("INTERNAL", "unexpected");
+      },
       questions: async (projectId, ticketId) => {
         handled.push(`questions:${projectId}:${ticketId}`);
         return { sent: 1, runId: "r1" };

@@ -13,7 +13,9 @@ import {
   type Actor,
   type Batch,
   KiboError,
+  type ProjectEventSink,
   type ProposedAction,
+  Question,
   Ticket,
 } from "@kibo/schema";
 import { type SignalRefsPort, signalRefs } from "./signal-refs";
@@ -23,6 +25,7 @@ export type ApplyBatchDeps = {
   data: ProjectAgentDataPort;
   agents: () => ProjectAgentAgentsPort;
   signals: SignalRefsPort;
+  events?: ProjectEventSink;
   now?: () => number;
 };
 
@@ -68,11 +71,30 @@ function idOf(ids: TicketIds, ref: string): string {
   return id;
 }
 
-const namesRecipient = (action: ProposedAction): boolean =>
-  (action.type === "createQuestion" || action.type === "updateQuestion") && action.recipient !== undefined;
+const readsFreshProject = (action: ProposedAction): boolean =>
+  action.type === "setSprint" ||
+  ((action.type === "createQuestion" || action.type === "updateQuestion") && action.recipient !== undefined);
 
 const projectFor = (run: Run, action: ProposedAction) =>
-  namesRecipient(action) ? run.deps.data.project(run.batch.projectId) : run.ctx.project;
+  readsFreshProject(action) ? run.deps.data.project(run.batch.projectId) : run.ctx.project;
+
+function rootOf(run: Run, ticketId: string): string {
+  const byId = new Map(run.deps.data.project(run.batch.projectId).tickets.map((t) => [t.id, t]));
+  let current = byId.get(ticketId);
+  while (current?.parentId) current = byId.get(current.parentId);
+  return current?.id ?? ticketId;
+}
+
+function recordReminder(run: Run, out: unknown): void {
+  const question = Question.parse(out);
+  run.deps.events?.record(run.batch.projectId, {
+    kind: "question_reminded",
+    ticketId: question.ticketId,
+    featureId: rootOf(run, question.ticketId),
+    source: "project-agent",
+    data: { questionId: question.id, title: question.title },
+  });
+}
 
 async function execute(run: Run, action: ProposedAction, ids: TicketIds): Promise<Created | null> {
   const { data } = run.deps;
@@ -107,6 +129,7 @@ async function execute(run: Run, action: ProposedAction, ids: TicketIds): Promis
       for (const command of commandsFor(action, ids, run.by, projectFor(run, action))) {
         const out = data.runCommand(projectId, command);
         if (command.method === "createTicket") created = createdTicket(run, out);
+        if (command.method === "remindQuestion") recordReminder(run, out);
       }
       return created;
     }
@@ -140,13 +163,23 @@ async function applyOne(
   }
 }
 
+function earlierRefs(batch: Batch): Map<string, Created> {
+  const refs = new Map<string, Created>();
+  for (const r of batch.results) {
+    const action = batch.actions.find((a) => a.id === r.actionId);
+    if (r.outcome === "applied" && r.created && action?.type === "createTicket")
+      refs.set(action.ref, r.created);
+  }
+  return refs;
+}
+
 export async function applyBatch(
   deps: ApplyBatchDeps,
   batch: Batch,
   chosen: ReadonlySet<number>,
   by: Actor,
 ): Promise<ActionResult[]> {
-  const run: Run = { deps, batch, ctx: await contextOf(deps, batch), by, refs: new Map() };
+  const run: Run = { deps, batch, ctx: await contextOf(deps, batch), by, refs: earlierRefs(batch) };
   const results: ActionResult[] = [];
   for (const action of [...batch.actions].sort((a, b) => a.id - b.id)) {
     results.push(await applyOne(run, action, chosen));

@@ -7,6 +7,7 @@ import {
   type TabTarget,
 } from "@kibo/schema";
 import {
+  CalendarRange,
   FileCode,
   FolderKanban,
   GitCommitHorizontal,
@@ -15,6 +16,7 @@ import {
   Ticket,
 } from "lucide-react";
 import { fr } from "../i18n/fr";
+import { frNavTracking } from "../i18n/fr-nav-tracking";
 import { displayName, inboxMeta } from "../lib/inbox";
 import { pageIcon } from "../registry";
 import { SCREENS } from "./screens";
@@ -80,6 +82,17 @@ export function describeTarget(target: TabTarget, ctx: DescribeContext): TabDesc
           missing: !!snapshot,
         };
       return { title: titled(ticket.keyLabel), icon: Ticket, color, missing: false };
+    }
+    case "sprint": {
+      const sprint = snapshot?.sprints.find((s) => s.id === target.sprintId);
+      if (!sprint)
+        return {
+          title: snapshot ? frNavTracking.missingSprint : displayName(project),
+          icon: CalendarRange,
+          color,
+          missing: !!snapshot,
+        };
+      return { title: titled(sprint.code), icon: CalendarRange, color, missing: false };
     }
   }
 }

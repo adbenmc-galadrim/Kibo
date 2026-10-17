@@ -6,6 +6,7 @@ import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { client } from "../api";
 import { modifiable } from "../components-page/rows";
 import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { configSchemaOf } from "../lib/config-form";
 import { errorMessage } from "../lib/error-message";
 import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
@@ -108,7 +109,7 @@ export function InstanceMenuContent({
         {target && (
           <DropdownMenuItem onSelect={() => setModifying(target)}>
             <Sparkles aria-hidden />
-            {fr.ai.modify}
+            {frAi.ai.modify}
           </DropdownMenuItem>
         )}
         {(higher.length > 0 || isNotes || target || schema) && <DropdownMenuSeparator />}

@@ -4,8 +4,10 @@ import {
   type Actor,
   type Batch,
   isDecidable,
+  isPartlyDecided,
   KiboError,
   type ProjectAgentRpcRequest,
+  undecidedActionIds,
 } from "@kibo/schema";
 import { guarded } from "../agents/orchestrator-support";
 import type { AgentContext } from "./context";
@@ -25,12 +27,22 @@ function decidableBatch(ctx: AgentContext, input: DecideInput): Batch {
   return batch;
 }
 
-function chosenIds(batch: Batch, actionIds: readonly number[] | undefined): number[] {
+function chosenIds(batch: Batch, input: DecideInput): number[] {
   const known = new Set(batch.actions.map((a) => a.id));
-  const unknown = (actionIds ?? []).filter((id) => !known.has(id));
+  const unknown = (input.actionIds ?? []).filter((id) => !known.has(id));
   if (unknown.length > 0) throw new KiboError("INVALID_INPUT", `unknown actions: ${unknown.join(", ")}`);
-  return actionIds ? batch.actions.map((a) => a.id).filter((id) => actionIds.includes(id)) : [...known];
+  if (input.keepRest && !input.actionIds)
+    throw new KiboError("INVALID_INPUT", "keepRest needs the decided action ids");
+  const undecided = undecidedActionIds(batch);
+  const ids = input.actionIds;
+  if (!ids) return undecided;
+  const decided = ids.filter((id) => !undecided.includes(id));
+  if (decided.length > 0) throw new KiboError("CONFLICT", `actions already decided: ${decided.join(", ")}`);
+  return undecided.filter((id) => ids.includes(id));
 }
+
+const skipped = (ids: readonly number[], detail: string): ActionResult[] =>
+  ids.map((actionId) => ({ actionId, outcome: "skipped", detail, created: null }));
 
 async function applyResults(
   ctx: AgentContext,
@@ -52,6 +64,26 @@ async function applyResults(
   }
 }
 
+function reject(ctx: AgentContext, batch: Batch, input: DecideInput, by: Actor): Batch {
+  const keepRest = input.keepRest === true;
+  const comment = !keepRest && input.comment ? input.comment : null;
+  const ids = keepRest ? chosenIds(batch, input) : undecidedActionIds(batch);
+  const event = { type: "decided", decision: "reject", by, comment } as const;
+  const rejected = ctx.store.appendBatchEvent(
+    batch.id,
+    keepRest
+      ? { ...event, actionIds: ids, keepRest }
+      : { ...event, actionIds: isPartlyDecided(batch) ? ids : null },
+    ctx.now(),
+  );
+  const closed =
+    keepRest || isPartlyDecided(batch)
+      ? ctx.store.appendBatchEvent(batch.id, { type: "results", results: skipped(ids, "refusée") }, ctx.now())
+      : rejected;
+  ctx.emit();
+  return closed;
+}
+
 export async function decideBatch(
   ctx: AgentContext,
   input: DecideInput,
@@ -60,24 +92,27 @@ export async function decideBatch(
   const batch = decidableBatch(ctx, input);
   const by: Actor = { kind: "human", ref: ctx.data.viewer(input.projectId) };
   if (input.decision === "reject") {
-    const comment = input.comment ? input.comment : null;
-    const rejected = ctx.store.appendBatchEvent(
-      batch.id,
-      { type: "decided", decision: "reject", by, actionIds: null, comment },
-      ctx.now(),
-    );
-    ctx.emit();
-    if (comment !== null) send(input.projectId, rejectionMessage(batch.seq, comment));
+    const rejected = reject(ctx, batch, input, by);
+    if (!input.keepRest && input.comment) send(input.projectId, rejectionMessage(batch.seq, input.comment));
     return rejected;
   }
-  const chosen = chosenIds(batch, input.actionIds);
+  const chosen = chosenIds(batch, input);
+  const scope = new Set(input.keepRest ? chosen : undecidedActionIds(batch));
   ctx.store.appendBatchEvent(
     batch.id,
-    { type: "decided", decision: "apply", by, actionIds: chosen, comment: null },
+    {
+      type: "decided",
+      decision: "apply",
+      by,
+      actionIds: chosen,
+      comment: null,
+      ...(input.keepRest && { keepRest: true }),
+    },
     ctx.now(),
   );
   ctx.emit();
-  const results = await applyResults(ctx, batch, chosen, by);
+  const all = await applyResults(ctx, batch, chosen, by);
+  const results = all.filter((r) => scope.has(r.actionId));
   const applied = ctx.store.appendBatchEvent(batch.id, { type: "results", results }, ctx.now());
   guarded("signal settlement", () => ctx.signals.settle(applied, results, by));
   ctx.emit();

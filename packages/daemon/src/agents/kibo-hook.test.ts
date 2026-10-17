@@ -231,7 +231,7 @@ test("the MCP executable reads its environment and asks the daemon for project t
         .map((l) => JSON.parse(l) as { id: number; result: { tools?: unknown[]; content?: unknown } })
         .map((r) => [r.id, r.result]),
     );
-    expect(replies.get(1)?.tools).toHaveLength(14);
+    expect(replies.get(1)?.tools).toHaveLength(15);
     expect(replies.get(2)?.content).toEqual([
       { type: "text", text: '{"items":[],"nextCursor":null,"total":0}' },
     ]);

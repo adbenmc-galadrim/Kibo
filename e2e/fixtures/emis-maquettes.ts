@@ -1,6 +1,8 @@
 export type SprintCode = "S41" | "S42" | "S43" | "S44";
 export type StepStatus = "todo" | "in_progress" | "in_review" | "done";
-export type PrSpec = { number: number; state: "open" | "merged" };
+export type PrReviewSpec = "none" | "approved" | "changes_requested";
+export type PrChecksSpec = "ok" | "error" | "running";
+export type PrSpec = { number: number; state: "open" | "merged"; review: PrReviewSpec; checks: PrChecksSpec };
 export type StepSpec = {
   n: number;
   title: string;
@@ -66,8 +68,13 @@ const todo = (n: number, title: string, extra: Partial<StepSpec> = {}): StepSpec
   status: "todo",
   ...extra,
 });
-const merged = (number: number): PrSpec => ({ number, state: "merged" });
-const open = (number: number): PrSpec => ({ number, state: "open" });
+const merged = (number: number): PrSpec => ({ number, state: "merged", review: "approved", checks: "ok" });
+const open = (number: number, review: PrReviewSpec, checks: PrChecksSpec): PrSpec => ({
+  number,
+  state: "open",
+  review,
+  checks,
+});
 
 export const EMIS_FEATURES: readonly FeatureSpec[] = [
   {
@@ -118,7 +125,14 @@ export const EMIS_FEATURES: readonly FeatureSpec[] = [
       done(41, "Schéma local des tronçons", merged(12)),
       done(42, "Formulaire de saisie", merged(14)),
       done(43, "Synchro au retour du réseau", merged(16)),
-      { n: 45, title: "Conflits de saisie", status: "in_review", delivery: 9, pr: open(20), mine: true },
+      {
+        n: 45,
+        title: "Conflits de saisie",
+        status: "in_review",
+        delivery: 9,
+        pr: open(20, "changes_requested", "error"),
+        mine: true,
+      },
       todo(46, "Démo client", { mine: true, optional: true }),
     ],
   },
@@ -136,7 +150,7 @@ export const EMIS_FEATURES: readonly FeatureSpec[] = [
         title: "Route d'envoi des photos",
         status: "in_review",
         delivery: 10,
-        pr: open(22),
+        pr: open(22, "none", "ok"),
         mine: true,
       },
       {
@@ -204,7 +218,7 @@ export const EMIS_LOOSE_TICKETS: readonly LooseTicketSpec[] = [
     n: 61,
     title: "Passage à Expo SDK 54",
     status: "in_review",
-    pr: open(23),
+    pr: open(23, "none", "running"),
     sprint: "S42",
   },
   { n: 62, title: "Journal des erreurs avec Sentry", status: "todo", sprint: null },
@@ -251,6 +265,7 @@ export const EMIS_QUESTIONS: readonly QuestionSpec[] = [
 ];
 
 export const EMIS_PAGES: readonly (readonly [string, string])[] = [
+  ["Vue d'ensemble", "overview@1.0.0"],
   ["Planning", "planning@1.0.0"],
   ["Tickets", "tickets@1.0.0"],
   ["Kanban", "kanban@1.0.0"],
@@ -266,18 +281,6 @@ export const emisSteps = (): StepSpec[] => EMIS_FEATURES.flatMap((f) => f.steps)
 
 export const EMIS_RECENT_DELIVERIES: readonly number[] = [42, 43, 31, 21, 32, 45, 33];
 
-export type DeliveredStep = StepSpec & { delivery: number };
-
-const isDelivered = (s: StepSpec): s is DeliveredStep => s.delivery !== undefined;
-
-export function deliveryOrder(steps: readonly StepSpec[]): DeliveredStep[] {
-  const delivered = steps.filter(isDelivered);
-  const rank = (s: StepSpec) => EMIS_RECENT_DELIVERIES.indexOf(s.n);
-  return [
-    ...delivered.filter((s) => rank(s) < 0),
-    ...delivered.filter((s) => rank(s) >= 0).sort((a, b) => rank(a) - rank(b)),
-  ];
-}
 export const emisUsedTickets = (): Set<number> =>
   new Set([
     ...EMIS_FEATURES.flatMap((f) => [f.n, ...f.steps.map((s) => s.n)]),

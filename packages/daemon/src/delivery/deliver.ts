@@ -1,6 +1,7 @@
 import {
   type Agent,
   type DeliverResult,
+  type DeliveryKind,
   deliveryAgentOf,
   deliveryBrief,
   deliveryOrder,
@@ -13,6 +14,7 @@ import {
   type Question,
   type RunView,
   type TicketView,
+  updateDeliveryBrief,
 } from "@kibo/schema";
 import type { Orchestrator } from "../agents/orchestrator-types";
 
@@ -34,7 +36,7 @@ export type DeliverDeps = {
   };
 };
 
-export type DeliverInput = { projectId: string; ticketId: string };
+export type DeliverInput = { projectId: string; ticketId: string; mode?: DeliveryKind };
 
 function busyTickets(runs: readonly Pick<RunView, "ticketId" | "state">[]): Set<string> {
   const busy = new Set<string>();
@@ -47,11 +49,15 @@ export function deliver(deps: DeliverDeps, input: DeliverInput): DeliverResult {
   const ticket = project.tickets.find((t) => t.id === input.ticketId);
   if (!ticket) throw new KiboError("NOT_FOUND", `ticket ${input.ticketId} not found`);
   if (ticket.key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");
-  if (FINAL_STATUSES.includes(ticket.statusId))
+  const update = input.mode === "update";
+  if (!update && FINAL_STATUSES.includes(ticket.statusId))
     throw new KiboError("INVALID_TRANSITION", `ticket ${ticket.key} is already done`);
   const agent = deliveryAgentOf(deps.agents(input.projectId), project.delivery);
   if (agent === null) throw new KiboError("AGENT_NOT_FOUND", NO_DELIVERY_AGENT);
-  if (project.tickets.some((t) => t.parentId === ticket.id)) {
+  const parent = project.tickets.some((t) => t.parentId === ticket.id);
+  if (update && parent)
+    throw new KiboError("TICKET_HAS_CHILDREN", `ticket ${ticket.key} has sub-tickets: touch up one of them`);
+  if (parent) {
     const items = deliveryOrder({
       tickets: deliveryTicketsOf(project),
       links: project.links,
@@ -64,7 +70,7 @@ export function deliver(deps: DeliverDeps, input: DeliverInput): DeliverResult {
     projectId: input.projectId,
     ticketId: ticket.id,
     profileId: agent,
-    brief: deliveryBrief(ticket.key),
+    brief: update ? updateDeliveryBrief(ticket.key) : deliveryBrief(ticket.key),
     fresh: false,
   });
 }

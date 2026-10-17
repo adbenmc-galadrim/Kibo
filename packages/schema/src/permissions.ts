@@ -92,6 +92,7 @@ export function permissionOfCall(call: ComponentCall): string | null {
     case "presence.list":
     case "sharing.get":
     case "settings.get":
+    case "project.get":
       return "read:ticket";
     case "assets.list":
     case "assets.url":

@@ -1,7 +1,7 @@
 import type { ComponentDraftDetails } from "@kibo/schema";
 import { Alert, AlertTitle } from "@kibo/sdk/ui/alert";
 import { Info, TriangleAlert } from "lucide-react";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { useAgents } from "../state/use-agents";
 import { AttemptLine } from "./AttemptLine";
 import { ValidationReportView } from "./ValidationReportView";
@@ -28,13 +28,13 @@ export function DraftFailedStep({
           className="border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400"
         >
           <TriangleAlert aria-hidden />
-          <AlertTitle>{fr.ai.incident[i.kind](i.path)}</AlertTitle>
+          <AlertTitle>{frAi.ai.incident[i.kind](i.path)}</AlertTitle>
         </Alert>
       ))}
       {exhausted && (
         <Alert className="bg-muted/40">
           <Info aria-hidden />
-          <AlertTitle>{fr.ai.exhausted}</AlertTitle>
+          <AlertTitle>{frAi.ai.exhausted}</AlertTitle>
         </Alert>
       )}
     </div>

@@ -18,6 +18,7 @@ export type DaemonComponentsInput = Pick<
   | "peekRun"
   | "delivery"
   | "appSettings"
+  | "projectEvents"
 >;
 
 export async function startDaemonComponents(

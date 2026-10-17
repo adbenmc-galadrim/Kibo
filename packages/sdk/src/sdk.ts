@@ -18,6 +18,8 @@ import {
   type NotesInfo,
   type PresencePeer,
   type ProjectCommand,
+  type ProjectEvent,
+  type ProjectInfo,
   type ProjectSyncInfo,
   ruleCovers,
   type Ticket,
@@ -28,7 +30,7 @@ import { questionsApi } from "./questions-api";
 import { openRunOf, runsApi } from "./runs-api";
 import { ALWAYS_VISIBLE, NO_FOCUS, NO_SELECTION } from "./signal";
 import { NO_SPOTLIGHT } from "./spotlight";
-import { sprintsApi } from "./sprints-api";
+import { openSprintOf, sprintsApi } from "./sprints-api";
 import type {
   EntityMap,
   InstanceData,
@@ -180,6 +182,7 @@ export function createSdk(
       ci_run: () => call<CiRun[]>({ kind: "list", entity: "ci_run" }),
       question: async () => (await backend.snapshot()).questions,
       sprint: async () => (await backend.snapshot()).sprints,
+      project_event: () => call<ProjectEvent[]>({ kind: "list", entity: "project_event" }),
     };
     return loaders[type]();
   };
@@ -256,7 +259,18 @@ export function createSdk(
     embed: embedApi(manifest, guard, call),
     questions: questionsApi({ read: guard.needRead, write: guard.needWrite }, call, backend, mode),
     runs: runsApi({ read: guard.needRead, write: guard.needWrite }, call),
-    sprints: sprintsApi({ list: (type) => sdk.list(type), run: (cmd) => sdk.run(cmd) }),
+    sprints: sprintsApi({
+      list: (type) => sdk.list(type),
+      run: (cmd) => sdk.run(cmd),
+      open: openSprintOf(ctx),
+    }),
+    project: {
+      async get() {
+        guard.needRead("ticket");
+        return call<ProjectInfo>({ kind: "project.get" });
+      },
+      subscribe: (listener) => backend.subscribe(listener),
+    },
     openRun: openRunOf(ctx),
     focus: ctx.focus ?? NO_FOCUS,
     visibility: ctx.visibility ?? ALWAYS_VISIBLE,

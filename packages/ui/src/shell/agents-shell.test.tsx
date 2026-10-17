@@ -47,6 +47,8 @@ const mineTicket = (id: string, key: string, title: string, statusId: StatusId):
   optional: false,
   shortKey: null,
   effectiveSprintId: null,
+  session: null,
+  updatedAt: null,
   feature: null,
 });
 
@@ -66,6 +68,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
         duplication: null,
         delivery: null,
         tracking: null,
+        description: null,
       },
       tickets: [mineTicket("i2", "INB-2", "Appeler le comptable", "todo")],
       links: [],
@@ -90,6 +93,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
       duplication: null,
       delivery: null,
       tracking: null,
+      description: null,
     },
     tickets: [mineTicket("f31", "FAC-31", "Export PDF des factures", "in_progress")],
   };
@@ -395,6 +399,7 @@ test("right click and the ellipsis open the same project menu; edit and delete o
   const names = () => screen.getAllByRole("menuitem").map((i) => i.textContent);
   expect(names()).toEqual([
     "Nouvelle page",
+    "Ajouter la page Vue d'ensemble",
     "Ajouter la page Planning",
     "Partager",
     "Modifier…",
@@ -405,6 +410,7 @@ test("right click and the ellipsis open the same project menu; edit and delete o
   await user.click(screen.getByRole("button", { name: "Actions de Kibo" }));
   expect(names()).toEqual([
     "Nouvelle page",
+    "Ajouter la page Vue d'ensemble",
     "Ajouter la page Planning",
     "Partager",
     "Modifier…",

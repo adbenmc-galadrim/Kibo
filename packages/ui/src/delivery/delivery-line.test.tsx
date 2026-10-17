@@ -5,7 +5,13 @@ import { DeliveryLine } from "./DeliveryLine";
 afterEach(cleanup);
 
 const now = 1_000_000_000;
-const delivery = { step: 7, note: "gates verts", at: now - 3 * 60_000, runId: "r1" };
+const delivery = {
+  step: 7,
+  note: "gates verts",
+  at: now - 3 * 60_000,
+  runId: "r1",
+  kind: "delivery" as const,
+};
 
 test("the line says the step, its age and its note", () => {
   const { container } = render(<DeliveryLine delivery={delivery} now={now} />);
@@ -31,4 +37,9 @@ test("no note, no trailing separator", () => {
 test("nothing without a delivery step", () => {
   const { container } = render(<DeliveryLine delivery={null} now={now} />);
   expect(container.innerHTML).toBe("");
+});
+
+test("a touch-up on a done ticket reads Retouche", () => {
+  const { container } = render(<DeliveryLine delivery={{ ...delivery, kind: "update" }} now={now} />);
+  expect(container.textContent).toContain("Retouche : 7/11 · Porte qualité · il y a 3 min");
 });

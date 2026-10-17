@@ -57,6 +57,8 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   optional: false,
   shortKey: null,
   effectiveSprintId: null,
+  session: null,
+  updatedAt: null,
   feature: null,
   ...patch,
 });
@@ -72,6 +74,7 @@ const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

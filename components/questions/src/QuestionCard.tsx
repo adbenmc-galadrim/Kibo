@@ -22,7 +22,7 @@ import { QuestionAnswerForm } from "./QuestionAnswerForm";
 import { QuestionHistory } from "./QuestionHistory";
 import { QuestionImages } from "./QuestionImages";
 import { QuestionAnswerLine, QuestionAuthor } from "./QuestionMeta";
-import { canArchive, recipientName, relativeAge } from "./questions-logic";
+import { canArchive, lastReminder, recipientName, relativeAge } from "./questions-logic";
 import { RecipientMenu } from "./RecipientMenu";
 import { renderContext } from "./render-context";
 import { useSpotlightCard } from "./use-spotlight-card";
@@ -107,6 +107,12 @@ function RestoreButton({ questionId }: { questionId: string }) {
   );
 }
 
+function RemindedLine({ question, now }: { question: Question; now: number }) {
+  const at = lastReminder(question);
+  if (at === null) return null;
+  return <span className="text-2xs text-muted-foreground">{fr.reminded(relativeAge(at, now))}</span>;
+}
+
 export function QuestionCard(props: Props) {
   const { question: q, ticket, recipients, now, readOnly, viewer, runLabel, runOf } = props;
   const sdk = useSdk();
@@ -147,6 +153,7 @@ export function QuestionCard(props: Props) {
         <QuestionAuthor actor={q.createdBy} run={runOf(q.runId)} />
         <span className="text-2xs text-muted-foreground">{relativeAge(q.createdAt, now)}</span>
         {q.sentAt !== null && <SentLine at={q.sentAt} now={now} />}
+        <RemindedLine question={q} now={now} />
       </div>
       <ArchivedLine question={q} now={now} />
       {context !== null && <div className="grid gap-1.5 text-xs text-muted-foreground">{context}</div>}

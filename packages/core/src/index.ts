@@ -28,6 +28,7 @@ export * from "./overlaps/roles";
 export * from "./overlaps/section";
 export * from "./overlaps/steps";
 export * from "./overlaps/windows";
+export * from "./overview-migration";
 export * from "./pages";
 export * from "./project";
 export * from "./project-domains";

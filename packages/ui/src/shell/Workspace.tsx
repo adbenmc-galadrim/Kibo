@@ -189,7 +189,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
               onDeleteProject={(projectId) => set({ deleteProject: projectId })}
               onJoin={() => set({ join: true })}
             />
-            <SidebarInset className="min-h-0 min-w-0">
+            <SidebarInset className="min-h-0 min-w-0 mr-(--project-agent-w)">
               <ShellHeader
                 active={active}
                 screen={screen}

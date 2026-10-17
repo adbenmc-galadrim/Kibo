@@ -28,6 +28,7 @@ const newDoc = () =>
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
 
 const code = (work: () => unknown): string | null => {

@@ -1,5 +1,5 @@
 import type { Environment, SandboxStatus } from "@kibo/schema";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { frSecurity } from "../i18n/fr-security";
 import { abbreviateHome } from "../lib/home-path";
 import { sandboxActive, sandboxProblem, sandboxStopped } from "../lib/sandbox-problem";
@@ -16,7 +16,7 @@ export type CheckView = {
   retry: boolean;
 };
 
-const t = fr.welcome;
+const t = frAi.welcome;
 const CLAUDE_INSTALL = ["npm install -g @anthropic-ai/claude-code", "claude"];
 
 const ok = (id: CheckId, title: string, detail: string): CheckView => ({

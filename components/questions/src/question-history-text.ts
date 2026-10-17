@@ -88,6 +88,8 @@ function what(entry: HistoryEntry, ctx: HistoryContext): string {
       return t.archived;
     case "restored":
       return t.restored;
+    case "reminded":
+      return t.reminded;
   }
 }
 

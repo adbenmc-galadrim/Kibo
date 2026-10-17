@@ -5,6 +5,7 @@ import type { MouseEvent } from "react";
 import { fr } from "../i18n/fr";
 import { ProjectHeaderMenu } from "./lazy-screens";
 import { NavRow } from "./nav/NavRow";
+import { overviewMissing } from "./nav/overview-missing";
 import { planningMissing } from "./nav/planning-missing";
 import { ProjectPages } from "./ProjectPages";
 
@@ -51,6 +52,10 @@ export function ProjectEntry({ project, active, current, editable, link, ...p }:
     active && editable && planningMissing(active)
       ? (pageId: string) => p.onOpen({ kind: "page", projectId: project.id, pageId }, false)
       : null;
+  const onOverviewAdded =
+    active && editable && overviewMissing(active)
+      ? (pageId: string) => p.onOpen({ kind: "page", projectId: project.id, pageId }, false)
+      : null;
   const header = (
     <>
       <ProjectHeaderMenu
@@ -58,6 +63,7 @@ export function ProjectEntry({ project, active, current, editable, link, ...p }:
         shifted={editable}
         editable={p.menuEditable}
         onPlanningAdded={onPlanningAdded}
+        onOverviewAdded={onOverviewAdded}
         actions={{ newPage, share: p.onShare, edit: p.onEdit, remove: p.onDelete }}
       >
         <NavRow

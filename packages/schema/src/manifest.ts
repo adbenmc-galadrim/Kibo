@@ -23,9 +23,14 @@ export const BuiltinEntityType = z.enum([
   "ci_run",
   "question",
   "sprint",
+  "project_event",
 ]);
 export type BuiltinEntityType = z.infer<typeof BuiltinEntityType>;
 export const EntityType = BuiltinEntityType;
+export const READ_ONLY_ENTITIES: readonly BuiltinEntityType[] = ["project_event"];
+const WritableEntity = BuiltinEntityType.refine((e) => !READ_ONLY_ENTITIES.includes(e), {
+  message: "INVALID_MANIFEST: this entity is read only",
+});
 export type EntityType = BuiltinEntityType;
 
 export const EmbedHost = z.string().regex(/^[a-z0-9.-]+\.[a-z]{2,}$/);
@@ -48,7 +53,7 @@ export const ComponentManifest = z.object({
   title: z.string().min(1),
   description: z.string().min(1).optional(),
   reads: z.array(BuiltinEntityType),
-  writes: z.array(BuiltinEntityType),
+  writes: z.array(WritableEntity),
   data: z.boolean().default(false),
   net: z.array(NetRule).default([]),
   secrets: z

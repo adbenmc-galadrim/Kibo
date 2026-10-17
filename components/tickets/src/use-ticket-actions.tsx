@@ -8,7 +8,7 @@ import {
 } from "@kibo/schema";
 import {
   copyDeliveryCommand,
-  deliverEntry,
+  menuDeliverEntry,
   useDeliverFlow,
   useDeliveryAgentKnown,
   useReadOnly,
@@ -64,7 +64,7 @@ export function useTicketActions(
       ticket: t,
       statuses,
       readOnly,
-      deliver: deliverEntry({
+      deliver: menuDeliverEntry({
         ticket: t,
         editable: !readOnly,
         agentKnown,
@@ -74,7 +74,7 @@ export function useTicketActions(
       execution: agentExecution,
       texts: fr,
       actions: {
-        deliver: () => delivery.deliver(t),
+        deliver: (mode) => delivery.deliver(t, mode),
         copyDelivery: (command) => void copyDeliveryCommand(command),
         open: () => sdk.openTicket(t.id),
         setStatus: (statusId) => setStatus(t, statusId),

@@ -13,6 +13,7 @@ import {
 import { QuestionRecipient, RECIPIENT_ID_MAX } from "./question-recipient";
 import type { RunView } from "./run";
 import { ActionId, SIGNAL_REFS_MAX, SignalRef } from "./signal";
+import { SprintCode, SprintDate, SprintName } from "./sprint";
 import { StatusId } from "./status";
 
 export const MEMORY_NOTE_PATH = "agent-de-projet/memoire.md";
@@ -112,10 +113,20 @@ export const ProposedAction = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("createNote"), path: NotePath, content: NoteBody }),
   z.object({ ...base, type: z.literal("updateNote"), path: NotePath, content: NoteBody }),
   z.object({ ...base, type: z.literal("dismissSignal"), signal: SignalRef }),
+  z.object({ ...base, type: z.literal("setSprint"), ticket: TicketRef, sprint: SprintCode.nullable() }),
+  z.object({
+    ...base,
+    type: z.literal("createSprint"),
+    code: SprintCode,
+    name: SprintName,
+    start: SprintDate,
+    end: SprintDate,
+  }),
+  z.object({ ...base, type: z.literal("remindQuestion"), questionId: NodeId }),
 ]);
 export type ProposedAction = z.infer<typeof ProposedAction>;
 export type ActionType = ProposedAction["type"];
-export type ActionGroup = "tickets" | "agents" | "questions" | "notes" | "signals";
+export type ActionGroup = "tickets" | "sprints" | "agents" | "questions" | "notes" | "signals";
 
 export const ACTION_GROUPS: Record<ActionType, ActionGroup> = {
   createTicket: "tickets",
@@ -135,6 +146,9 @@ export const ACTION_GROUPS: Record<ActionType, ActionGroup> = {
   createNote: "notes",
   updateNote: "notes",
   dismissSignal: "signals",
+  setSprint: "sprints",
+  createSprint: "sprints",
+  remindQuestion: "questions",
 };
 
 export const ProposeBatchInput = z.object({
@@ -169,6 +183,7 @@ export const BatchEvent = z.discriminatedUnion("type", [
     by: Actor,
     actionIds: z.array(ActionId).nullable(),
     comment: z.string().max(BATCH_COMMENT_MAX).nullable(),
+    keepRest: z.boolean().optional(),
   }),
   z.object({ type: z.literal("results"), results: z.array(ActionResult) }),
   z.object({ type: z.literal("superseded") }),
@@ -198,45 +213,6 @@ export type Batch = BatchRow & {
 };
 
 export type TimedBatchEvent = { at: number; event: BatchEvent };
-
-export function batchStatusOfResults(results: readonly ActionResult[]): "applied" | "partial" {
-  return results.every((r) => r.outcome === "applied") ? "applied" : "partial";
-}
-
-function foldEvent(batch: Batch, { at, event }: TimedBatchEvent): Batch {
-  switch (event.type) {
-    case "decided":
-      return {
-        ...batch,
-        status: event.decision === "reject" ? "rejected" : "partial",
-        decidedBy: event.by,
-        decidedAt: at,
-        chosen: event.decision === "apply" ? event.actionIds : null,
-        comment: event.comment,
-      };
-    case "results":
-      return { ...batch, status: batchStatusOfResults(event.results), results: event.results };
-    case "superseded":
-      return { ...batch, status: "superseded" };
-    case "abandoned":
-      return { ...batch, status: "abandoned" };
-  }
-}
-
-export function foldBatch(row: BatchRow, events: readonly TimedBatchEvent[]): Batch {
-  const initial: Batch = {
-    ...row,
-    status: "pending",
-    decidedBy: null,
-    decidedAt: null,
-    chosen: null,
-    comment: null,
-    results: [],
-  };
-  return events.reduce(foldEvent, initial);
-}
-
-export const isDecidable = (b: Pick<Batch, "status">): boolean => b.status === "pending";
 
 export type ProjectAgentSession = {
   projectId: string;

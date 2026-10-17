@@ -59,16 +59,23 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
     duplication: null,
     delivery: null,
     tracking: stored(ProjectMeta.shape.tracking.safeParse(m.get("tracking") ?? null), "project tracking"),
+    description: stored(
+      ProjectMeta.shape.description.safeParse(m.get("description") ?? null),
+      "project description",
+    ),
   };
 }
 
-export function setProjectMeta(doc: LoroDoc, patch: RegisteredProjectPatch): ProjectMeta {
+export type DocProjectPatch = RegisteredProjectPatch & { description?: string | null };
+
+export function setProjectMeta(doc: LoroDoc, patch: DocProjectPatch): ProjectMeta {
   const fields = valid(ProjectPatch.safeParse(patch));
   const m = doc.getMap("meta");
   if (fields.name !== undefined) m.set("name", fields.name);
   if (fields.color !== undefined) m.set("color", fields.color);
   if (fields.folder !== undefined) m.set("folder", fields.folder);
   if (fields.tracking !== undefined) m.set("tracking", fields.tracking);
+  if (fields.description !== undefined) m.set("description", fields.description);
   doc.commit();
   return getProjectMeta(doc);
 }

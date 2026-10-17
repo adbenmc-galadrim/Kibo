@@ -1,4 +1,5 @@
 import type { SprintView, Status, Ticket } from "@kibo/schema";
+import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import {
   DropdownMenu,
@@ -34,6 +35,7 @@ const SORTS: readonly TicketsSort[] = ["recent", "key"];
 
 export function TicketsToolbar(props: Props) {
   const { query, onChange } = props;
+  const sdk = useSdk();
   return (
     <div className="flex flex-wrap items-center gap-2">
       {props.searching ? (
@@ -43,7 +45,12 @@ export function TicketsToolbar(props: Props) {
           onClose={props.onSearchClose}
         />
       ) : (
-        <SprintTabs sprints={props.sprints} value={props.sprint} onChange={props.onSprint} />
+        <SprintTabs
+          sprints={props.sprints}
+          value={props.sprint}
+          onChange={props.onSprint}
+          onOpenSprint={(id) => sdk.sprints.open(id)}
+        />
       )}
       <span className="flex-1" />
       <OpenMenu query={query} statuses={props.statuses} onChange={onChange} />

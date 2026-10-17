@@ -11,6 +11,7 @@ import {
 import { useMemo, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { applyStarterPlan } from "./apply-plan";
 import { useStarterCatalog } from "./catalog-refs";
 import { chosenPages, presetFor, toSelection } from "./presets";
@@ -38,12 +39,12 @@ export function StarterDialog({ projectId, open, onOpenChange }: Props) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{fr.onboarding.suggestPages}</DialogTitle>
-          <DialogDescription>{fr.onboarding.roleSubtitle}</DialogDescription>
+          <DialogTitle>{frAi.onboarding.suggestPages}</DialogTitle>
+          <DialogDescription>{frAi.onboarding.roleSubtitle}</DialogDescription>
         </DialogHeader>
         {partial ? (
           <Alert>
-            <AlertDescription>{fr.onboarding.partialPages(failed)}</AlertDescription>
+            <AlertDescription>{frAi.onboarding.partialPages(failed)}</AlertDescription>
           </Alert>
         ) : (
           <RoleStep available={available} titles={titles} selection={selection} onSelection={setSelection} />
@@ -54,7 +55,7 @@ export function StarterDialog({ projectId, open, onOpenChange }: Props) {
           </Button>
           {!partial && (
             <Button disabled={busy || pages.length === 0} onClick={submit}>
-              {fr.onboarding.addPages(pages.length)}
+              {frAi.onboarding.addPages(pages.length)}
             </Button>
           )}
         </DialogFooter>

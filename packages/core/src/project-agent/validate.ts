@@ -15,6 +15,7 @@ import { assignableAgents } from "./overview";
 import { isNewRef, signalRefsOf, ticketRefsOf } from "./refs";
 import { answerQuestionCheck, questionChecks } from "./validate-questions";
 import { type Check, type Edge, nodeOf, openScan, type Scan, touch } from "./validate-scan";
+import { sprintChecks } from "./validate-sprints";
 
 export type { BatchContext } from "./expected";
 export { captureExpected } from "./expected";
@@ -170,6 +171,7 @@ const checks: { [T in ActionType]: Check<T> } = {
   dismissSignal(scan, a) {
     return touch(scan, a.signal);
   },
+  ...sprintChecks,
 };
 
 function runCheck<T extends ActionType>(

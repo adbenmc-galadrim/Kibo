@@ -131,3 +131,34 @@ test("an active run on the leaf is refused by assign itself", () => {
     expect.objectContaining({ code: "CONFLICT" }),
   );
 });
+
+test("a touch-up delivers a done ticket with the update-delivery brief", () => {
+  const { deps, assigned } = rig();
+  deliver(deps, { projectId: "p1", ticketId: "16", mode: "update" });
+  expect(assigned).toEqual([
+    {
+      projectId: "p1",
+      ticketId: "16",
+      profileId: "global:full-delivery",
+      brief: "/update-delivery EMIS-16",
+      fresh: false,
+    },
+  ]);
+  expect(TICKETS.find((t) => t.id === "16")?.statusId).toBe("done");
+});
+
+test("without the update mode, a done ticket stays refused", () => {
+  const { deps, assigned } = rig();
+  expect(() => deliver(deps, { projectId: "p1", ticketId: "16", mode: "delivery" })).toThrow(
+    expect.objectContaining({ code: "INVALID_TRANSITION" }),
+  );
+  expect(assigned).toEqual([]);
+});
+
+test("a touch-up refuses a ticket with sub-tickets", () => {
+  const { deps, assigned } = rig();
+  expect(() => deliver(deps, { projectId: "p1", ticketId: "17", mode: "update" })).toThrow(
+    expect.objectContaining({ code: "TICKET_HAS_CHILDREN" }),
+  );
+  expect(assigned).toEqual([]);
+});

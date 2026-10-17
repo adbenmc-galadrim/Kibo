@@ -12,6 +12,7 @@ export type Scan = {
   parents: Map<string, string | null>;
   recipients: string[];
   reopened: Set<string>;
+  sprintCodes: string[];
 };
 
 export function openScan(input: ProposeBatchInput, ctx: BatchContext): Scan {
@@ -28,6 +29,7 @@ export function openScan(input: ProposeBatchInput, ctx: BatchContext): Scan {
     parents: new Map(ctx.project.tickets.map((t) => [t.id, t.parentId])),
     recipients: [],
     reopened: new Set(),
+    sprintCodes: ctx.project.sprints.map((s) => s.code),
   };
 }
 

@@ -61,6 +61,7 @@ beforeEach(() => {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
   store = createFakeStore();
   stopped = [];
@@ -204,6 +205,7 @@ describe("listing and uninstall", () => {
       ["mockup", true],
       ["questions", true],
       ["planning", true],
+      ["overview", true],
       ["pr-queue", false],
     ]);
     expect(list[0]?.versions).toEqual([
@@ -237,6 +239,7 @@ describe("listing and uninstall", () => {
       "mockup",
       "questions",
       "planning",
+      "overview",
     ]);
   });
 });

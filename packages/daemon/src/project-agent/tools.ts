@@ -28,6 +28,7 @@ import {
   type ProjectFingerprint,
   ReadNoteInput,
   type RunView,
+  sprintSummaries,
 } from "@kibo/schema";
 import type { z } from "zod";
 import type { ProjectAgentAgentsPort, ProjectAgentDataPort, ProjectAgentSignalsPort } from "./types";
@@ -130,6 +131,8 @@ async function reply(tool: ProjectAgentTool, call: ToolCall): Promise<unknown> {
       return deps.propose(call.run, input);
     case "list_signals":
       return listSignals(deps.signals.list(projectId).signals, parse(ListSignalsInput, input));
+    case "list_sprints":
+      return sprintSummaries(deps.data.project(projectId));
   }
 }
 

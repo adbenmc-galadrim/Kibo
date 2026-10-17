@@ -19,7 +19,7 @@ function feature(run: Run, title: string, sprintId: string | null, seeds: StepSe
       run({
         method: "setTicketDelivery",
         ticketId: step.id,
-        delivery: { ...s.delivery, note: "", runId: null },
+        delivery: { ...s.delivery, note: "", runId: null, kind: "delivery" },
       });
     return step;
   });

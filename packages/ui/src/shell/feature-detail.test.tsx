@@ -5,19 +5,29 @@ import { isSeparator, isSubmenu, type MenuEntry } from "@kibo/sdk/ui/menu-entrie
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
+import { viewFixture } from "../project-agent/fixtures";
 import { emisFeatureProject, NOW } from "./feature/fixture";
 import { type Host, HostProvider } from "./Host";
 
 const calls: RpcRequest[] = [];
+
+const answer = (req: RpcRequest): unknown => {
+  if (req.method === "deliver") return { kind: "parent", items: [] };
+  if (req.method === "listProjectEvents") return { items: [], nextBefore: null };
+  if (req.method === "listCiRuns") return [];
+  if (req.method === "getProjectAgent") return viewFixture({ batches: [] });
+  return null;
+};
 
 mock.module("../api", () =>
   apiMock({
     client: {
       rpc: async (req: RpcRequest) => {
         calls.push(req);
-        return req.method === "deliver" ? { kind: "parent", items: [] } : null;
+        return answer(req);
       },
       subscribeTopic: () => () => {},
+      subscribeIntegrations: () => () => {},
     },
   }),
 );

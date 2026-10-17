@@ -18,6 +18,7 @@ const project = () =>
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
 
 const ids = (list: { id: string }[]) => list.map((d) => d.id);

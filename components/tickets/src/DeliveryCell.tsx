@@ -36,7 +36,9 @@ export function DeliveryCell({ delivery }: { delivery: DeliveryStep | null }) {
         })}
       </span>
       <span className={cn("truncate text-(--tracking-mfg)", TEXT_12)}>
-        {deliveryStepLabel(delivery.step)}
+        {delivery.kind === "update"
+          ? fr.retouch(deliveryStepLabel(delivery.step))
+          : deliveryStepLabel(delivery.step)}
       </span>
     </>
   );

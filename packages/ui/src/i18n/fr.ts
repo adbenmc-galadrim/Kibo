@@ -1,5 +1,4 @@
 import type { KiboErrorCode } from "@kibo/schema";
-import { frAi } from "./fr-ai";
 import { frCode } from "./fr-code";
 import { frComponents } from "./fr-components";
 import { frIntegrationRows } from "./fr-integration-rows";
@@ -156,6 +155,8 @@ export const fr = {
   projectHome: {
     created: (name: string) => `Projet créé : ${name}`,
     help: "Ajoute une première page pour y poser un Kanban ou une liste de tickets.",
+    suggestPagesHelp: "Pages de départ selon ton rôle",
+    propose: "Proposer",
   },
   mine: {
     tabs: "Filtre des tickets",
@@ -320,7 +321,6 @@ export const fr = {
   },
   ...frCode,
   ...frComponents,
-  ...frAi,
   common: {
     cancel: "Annuler",
     close: "Fermer",

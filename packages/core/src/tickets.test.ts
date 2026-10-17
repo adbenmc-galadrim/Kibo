@@ -28,6 +28,7 @@ const doc = () =>
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
 
 describe("keys", () => {
@@ -178,7 +179,16 @@ test("upsertExternalRef adds a PR once per URL and keeps the latest state", () =
   const t = createTicket(d, { title: "Schéma" });
   expect(t.externalRefs).toEqual([]);
   const url = "https://github.com/kibo/test/pull/3";
-  upsertExternalRef(d, t.id, { kind: "github_pr", url, number: 3, state: "draft", base: null, head: null });
+  upsertExternalRef(d, t.id, {
+    kind: "github_pr",
+    url,
+    number: 3,
+    state: "draft",
+    base: null,
+    head: null,
+    review: "none",
+    checks: null,
+  });
   const after = upsertExternalRef(d, t.id, {
     kind: "github_pr",
     url,
@@ -186,9 +196,20 @@ test("upsertExternalRef adds a PR once per URL and keeps the latest state", () =
     state: "merged",
     base: null,
     head: null,
+    review: "none",
+    checks: null,
   });
   expect(after.externalRefs).toEqual([
-    { kind: "github_pr", url, number: 3, state: "merged", base: null, head: null },
+    {
+      kind: "github_pr",
+      url,
+      number: 3,
+      state: "merged",
+      base: null,
+      head: null,
+      review: "none",
+      checks: null,
+    },
   ]);
 });
 

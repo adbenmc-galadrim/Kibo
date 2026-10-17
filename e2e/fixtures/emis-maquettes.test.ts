@@ -9,7 +9,8 @@ import {
 } from "../../packages/schema/src/index";
 import { seedEmisMaquettes } from "../seed-emis-maquettes";
 import { EMIS_PROJECT, EMIS_WORKSPACE_NAME, emisKey, OTHER_PROJECTS } from "./emis-maquettes";
-import { createMemoryDaemon, type MemoryDaemon } from "./memory-daemon";
+import { EMIS_DESCRIPTION } from "./emis-suivi";
+import { createMemoryDaemon, type MemoryDaemon, memorySeed } from "./memory-daemon";
 
 const VIEWER = "adam";
 const TODAY = "2026-10-16";
@@ -20,7 +21,7 @@ let today: ProjectSnapshot;
 
 beforeAll(async () => {
   daemon = createMemoryDaemon(VIEWER, TODAY);
-  await seedEmisMaquettes(daemon.rpc);
+  await seedEmisMaquettes(daemon.rpc, memorySeed(daemon));
   today = daemon.snapshot(EMIS_PROJECT.key, TODAY);
 });
 
@@ -36,9 +37,12 @@ const feature = (s: ProjectSnapshot, shortKey: string): TicketView => {
 };
 const sprintCodeOf = (s: ProjectSnapshot, t: TicketView): string | null =>
   s.sprints.find((sp) => sp.id === t.effectiveSprintId)?.code ?? null;
-const prOf = (t: TicketView): Pick<GithubPrRef, "number" | "state"> | null => {
+type PrFacts = Pick<GithubPrRef, "number" | "state" | "review" | "checks">;
+const prOf = (t: TicketView): PrFacts | null => {
   const pr = t.externalRefs.find((r): r is GithubPrRef => r.kind === "github_pr");
-  return pr === undefined ? null : { number: pr.number, state: pr.state };
+  return pr === undefined
+    ? null
+    : { number: pr.number, state: pr.state, review: pr.review, checks: pr.checks };
 };
 
 test("nine features F1 to F9 on their root tickets, in sprint order", () => {
@@ -93,17 +97,29 @@ test("sprints S41 to S44 with their dates, states and features", () => {
   expect(feature(today, "F9").sprintId).toBeNull();
 });
 
-test("pull requests, branch and delivery steps", () => {
+test("pull requests with their review and CI, branch and delivery steps", () => {
   const prs = [21, 31, 41, 42, 43, 45, 32, 61].map((n) => [emisKey(n), prOf(ticket(today, n))]);
+  const pr = (
+    number: number,
+    state: PrFacts["state"],
+    review: PrFacts["review"],
+    checks: PrFacts["checks"],
+  ) => ({
+    number,
+    state,
+    review,
+    checks,
+  });
+  const merged = (number: number) => pr(number, "merged", "approved", "ok");
   expect(prs).toEqual([
-    ["EMIS-21", { number: 18, state: "merged" }],
-    ["EMIS-31", { number: 19, state: "merged" }],
-    ["EMIS-41", { number: 12, state: "merged" }],
-    ["EMIS-42", { number: 14, state: "merged" }],
-    ["EMIS-43", { number: 16, state: "merged" }],
-    ["EMIS-45", { number: 20, state: "open" }],
-    ["EMIS-32", { number: 22, state: "open" }],
-    ["EMIS-61", { number: 23, state: "open" }],
+    ["EMIS-21", merged(18)],
+    ["EMIS-31", merged(19)],
+    ["EMIS-41", merged(12)],
+    ["EMIS-42", merged(14)],
+    ["EMIS-43", merged(16)],
+    ["EMIS-45", pr(20, "open", "changes_requested", "error")],
+    ["EMIS-32", pr(22, "open", "none", "ok")],
+    ["EMIS-61", pr(23, "open", "none", "running")],
   ]);
   expect(ticket(today, 33).externalRefs).toContainEqual({
     kind: "git_branch",
@@ -183,10 +199,12 @@ test("sidebar counters: 6 mine, 2 in the inbox, 3 questions, 24 open tickets", (
   expect(today.tickets.filter((t) => t.statusId !== "done" && t.progress.total === 0)).toHaveLength(24);
 });
 
-test("workspace, projects and pages of the mockups", () => {
+test("workspace, projects, description and pages of the mockups", () => {
+  expect(today.meta.description).toBe(EMIS_DESCRIPTION);
   expect(daemon.workspaceName()).toBe(EMIS_WORKSPACE_NAME);
   expect(daemon.projects().map((p) => p.name)).toEqual(["Emis", ...OTHER_PROJECTS.map((p) => p.name)]);
   expect(today.pages.map((p) => p.title)).toEqual([
+    "Vue d'ensemble",
     "Planning",
     "Tickets",
     "Kanban",
@@ -196,6 +214,7 @@ test("workspace, projects and pages of the mockups", () => {
   ]);
   const componentOf = (pageId: string) => today.instances.find((i) => i.pageId === pageId)?.component;
   expect(today.pages.map((p) => componentOf(p.id))).toEqual([
+    "overview@1.0.0",
     "planning@1.0.0",
     "tickets@1.0.0",
     "kanban@1.0.0",
@@ -207,6 +226,6 @@ test("workspace, projects and pages of the mockups", () => {
 
 test("seeding twice writes nothing the second time", async () => {
   const before = daemon.writes();
-  await seedEmisMaquettes(daemon.rpc);
+  await seedEmisMaquettes(daemon.rpc, memorySeed(daemon));
   expect(daemon.writes()).toBe(before);
 });

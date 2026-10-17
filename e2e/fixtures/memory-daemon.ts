@@ -1,5 +1,11 @@
-import { createProjectDoc, executeProjectCommand, readProject } from "../../packages/core/src/index";
 import {
+  createProjectDoc,
+  executeProjectCommand,
+  readProject,
+  setProjectMeta,
+} from "../../packages/core/src/index";
+import {
+  DEFAULT_SESSION_TOOL,
   INBOX_ID,
   INBOX_KEY,
   KiboError,
@@ -7,7 +13,11 @@ import {
   type ProjectSnapshot,
   RpcRequest,
 } from "../../packages/schema/src/index";
-import type { SeedRpc } from "../seed-emis-maquettes";
+import type { SeedOptions, SeedRpc } from "../seed-emis-maquettes";
+import { createMemoryAgent, type MemoryAgent } from "./memory-agent";
+import { eventOf, eventPage, type MemoryEvent, pollerMerge } from "./memory-journal";
+
+export type { MemoryEvent };
 
 export type MemoryDaemon = {
   rpc: SeedRpc;
@@ -15,6 +25,9 @@ export type MemoryDaemon = {
   snapshot(key: string, today: string): ProjectSnapshot;
   workspaceName(): string | null;
   projects(): ProjectMeta[];
+  events(): MemoryEvent[];
+  agentView: MemoryAgent["view"];
+  mergePr(number: number): void;
 };
 
 const meta = (id: string, key: string, name: string, folder: string | null, color: string): ProjectMeta => ({
@@ -28,6 +41,7 @@ const meta = (id: string, key: string, name: string, folder: string | null, colo
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
 });
 
 export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
@@ -36,6 +50,11 @@ export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
   docs.set(INBOX_ID, { meta: inbox, doc: createProjectDoc(inbox) });
   let writes = 0;
   let workspaceName: string | null = null;
+  const events: MemoryEvent[] = [];
+  const agent = createMemoryAgent();
+  agent.onProposed((batch) =>
+    events.push({ kind: "batch_proposed", ticketId: null, data: { seq: batch.seq } }),
+  );
   const project = (id: string) => {
     const found = docs.get(id);
     if (found === undefined) throw new KiboError("NOT_FOUND", `project ${id} not found`);
@@ -59,16 +78,50 @@ export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
         docs.set(created.id, { meta: created, doc: createProjectDoc(created) });
         return created;
       }
-      case "command":
+      case "command": {
         writes += 1;
-        return executeProjectCommand(project(req.projectId).doc, req.command);
+        const result = executeProjectCommand(project(req.projectId).doc, req.command);
+        const event = eventOf(req.command);
+        if (event !== null) events.push(event);
+        return result;
+      }
+      case "updateProject": {
+        writes += 1;
+        const found = project(req.projectId);
+        found.meta = setProjectMeta(found.doc, req.patch);
+        return found.meta;
+      }
+      case "sendProjectAgentMessage":
+        writes += 1;
+        return agent.send(req.projectId, readProject(project(req.projectId).doc, today));
+      case "getProjectAgent":
+        return agent.view(req.projectId);
+      case "listProjectEvents":
+        return eventPage(events, req.limit);
+      case "setTicketSession": {
+        writes += 1;
+        const ticket = readProject(project(req.projectId).doc, today).tickets.find(
+          (t) => t.key === req.ticketKey,
+        );
+        if (ticket === undefined) throw new KiboError("NOT_FOUND", `ticket ${req.ticketKey} not found`);
+        const tool = req.tool ?? DEFAULT_SESSION_TOOL;
+        events.push({ kind: "session_started", ticketId: ticket.id, data: { tool } });
+        return { tool, startedAt: writes };
+      }
       case "setDeliveryStep": {
         writes += 1;
         const { doc } = project(req.projectId);
         const ticket = readProject(doc, today).tickets.find((t) => t.key === req.ticketKey);
         if (ticket === undefined) throw new KiboError("NOT_FOUND", `ticket ${req.ticketKey} not found`);
         deliveries += 1;
-        const delivery = { step: req.step, note: req.note ?? "", at: deliveries, runId: null };
+        events.push({ kind: "step_set", ticketId: ticket.id, data: { step: req.step } });
+        const delivery = {
+          step: req.step,
+          note: req.note ?? "",
+          at: deliveries,
+          runId: null,
+          kind: req.kind ?? "delivery",
+        };
         return executeProjectCommand(doc, { method: "setTicketDelivery", ticketId: ticket.id, delivery });
       }
       case "config":
@@ -91,5 +144,22 @@ export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
     },
     workspaceName: () => workspaceName,
     projects: listed,
+    events: () => [...events],
+    agentView: agent.view,
+    mergePr(number) {
+      const owner = [...docs.values()].find((p) =>
+        readProject(p.doc, today).tickets.some((t) =>
+          t.externalRefs.some((r) => r.kind === "github_pr" && r.number === number),
+        ),
+      );
+      if (owner === undefined) throw new KiboError("NOT_FOUND", `pull request #${number} not found`);
+      events.push(pollerMerge(owner.doc, today, number));
+    },
   };
 }
+
+export const memorySeed = (daemon: MemoryDaemon): SeedOptions => ({
+  folder: null,
+  mergePr: (number) => daemon.mergePr(number),
+  wait: { timeoutMs: 1_000, pollMs: 1 },
+});

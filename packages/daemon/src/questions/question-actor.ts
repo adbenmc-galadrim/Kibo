@@ -17,7 +17,8 @@ function rewrite(cmd: ProjectCommand, viewer: () => string): ProjectCommand {
     case "updateAnswer":
     case "reopenQuestion":
     case "archiveQuestion":
-    case "restoreQuestion": {
+    case "restoreQuestion":
+    case "remindQuestion": {
       const by = viewerActor(cmd.by, viewer());
       return by === cmd.by ? cmd : { ...cmd, by };
     }

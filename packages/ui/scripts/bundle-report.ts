@@ -9,16 +9,21 @@ export type EntryReport = {
   files: string[];
   gzipBytes: number;
   budget: number;
+  phaseBudget: number;
   forbidden: { file: string; module: string }[];
   ok: boolean;
 };
 export type ReportOptions = {
   budget: number;
+  phaseBudget?: number;
   forbidden: readonly RegExp[];
   gzip(bytes: Uint8Array<ArrayBuffer>): number;
 };
 
 export const ENTRY_GZIP_BUDGET = 230_000;
+export const PHASE_BUDGET = 224_000;
+
+export const formatGzip = (bytes: number): string => `${(bytes / 1000).toFixed(1)} kB (${bytes} octets)`;
 
 export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/node_modules\/(@codemirror|@lezer|@shikijs)\//,
@@ -30,6 +35,9 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/i18n\/fr-presence\.ts$/,
   /\/components\/questions\/src\/(QuestionsPanel|QuestionsView|QuestionsWidget)\.tsx$/,
   /\/components\/planning\/src\/(?!index\.ts$|fr-lazy\.ts$)[A-Za-z-]+\.tsx?$/,
+  /\/components\/overview\/src\/(?!index\.ts$|fr-lazy\.ts$)[A-Za-z-]+\.tsx?$/,
+  /\/packages\/sdk\/src\/tracking\//,
+  /\/packages\/schema\/src\/(project-event|overview[a-z-]*)\.ts$/,
   /\/packages\/ui\/src\/i18n\/fr-questions\.ts$/,
   /\/node_modules\/@tauri-apps\//,
   /\/packages\/ui\/src\/(updates\/[a-zA-Z-]+\.tsx?|i18n\/fr-updates\.ts)$/,
@@ -97,6 +105,9 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(dialogs\/(DeliverySection|DeliveryFields|DeliveryImportDialog|WorktreeRecipeFields)|agents\/(sheet\/(PresetButton|AddDirsField)|MachineLocks))\.tsx$/,
   /\/packages\/ui\/src\/i18n\/fr-components-manage\.ts$/,
   /\/packages\/ui\/src\/(shell\/(FeatureDetail|feature\/[A-Za-z-]+)\.tsx?|i18n\/fr-group\.ts)$/,
+  /\/packages\/ui\/src\/(shell\/sprint\/[A-Za-z-]+\.tsx?|i18n\/fr-sprint\.ts)$/,
+  /\/packages\/ui\/src\/shell\/nav\/(overview-page\.ts|new-ticket-pages\.ts|NewTicketAction\.tsx)$/,
+  /\/packages\/ui\/src\/i18n\/fr-ai\.ts$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>
@@ -120,6 +131,7 @@ export function initialChunks(chunks: readonly BuiltChunk[]): BuiltChunk[] {
 
 const DEFAULTS: ReportOptions = {
   budget: ENTRY_GZIP_BUDGET,
+  phaseBudget: PHASE_BUDGET,
   forbidden: FORBIDDEN_IN_ENTRY,
   gzip: gzipLevel9,
 };
@@ -133,12 +145,14 @@ export function reportEntry(chunks: readonly BuiltChunk[], opts: ReportOptions =
       .filter((id) => opts.forbidden.some((r) => r.test(id)))
       .map((module) => ({ file: c.fileName, module })),
   );
+  const phaseBudget = opts.phaseBudget ?? opts.budget;
   return {
     files: initial.map((c) => c.fileName),
     gzipBytes,
     budget: opts.budget,
+    phaseBudget,
     forbidden,
-    ok: gzipBytes <= opts.budget && forbidden.length === 0,
+    ok: gzipBytes <= opts.budget && gzipBytes <= phaseBudget && forbidden.length === 0,
   };
 }
 

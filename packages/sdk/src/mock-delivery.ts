@@ -3,12 +3,14 @@ import { initRun } from "@kibo/core/run-machine";
 import {
   type DeliverResult,
   type DeliveryAgent,
+  type DeliveryKind,
   deliveryBrief,
   deliveryOrder,
   deliveryTicketsOf,
   KiboError,
   type RunDenials,
   type TicketRun,
+  updateDeliveryBrief,
 } from "@kibo/schema";
 import { activityOf } from "./mock-runs";
 import type { AllowAndResumeInput } from "./types";
@@ -17,7 +19,7 @@ export const MOCK_DELIVERY_AGENT = "global:full-delivery";
 export const MOCK_DELIVERY_AGENT_INFO: DeliveryAgent = { ref: MOCK_DELIVERY_AGENT, name: "full-delivery" };
 
 export type MockRunDelivery = {
-  deliver(ticketId: string): DeliverResult;
+  deliver(ticketId: string, mode?: DeliveryKind): DeliverResult;
   denials(runId: string): RunDenials | null;
   agent(): DeliveryAgent | null;
   allowAndResume(input: AllowAndResumeInput): null;
@@ -34,7 +36,7 @@ export function createMockRunDelivery(deps: {
 }): MockRunDelivery {
   const delivered: string[] = [];
   const allowed: AllowAndResumeInput[] = [];
-  const deliver = (ticketId: string): DeliverResult => {
+  const deliver = (ticketId: string, mode?: DeliveryKind): DeliverResult => {
     delivered.push(ticketId);
     const activity = activityOf(deps.runs());
     const snapshot = readProject(deps.doc, deps.today, activity);
@@ -68,7 +70,7 @@ export function createMockRunDelivery(deps: {
         agentScope: "global",
         projectKey: snapshot.meta.key,
         sessionId: `mock-session-${seq}`,
-        brief: deliveryBrief(ticket.keyLabel),
+        brief: (mode === "update" ? updateDeliveryBrief : deliveryBrief)(ticket.keyLabel),
         createdAt: at,
         resumedFrom: null,
       },

@@ -184,6 +184,7 @@ export const ProjectCommand = z
     questionEdit("reopenQuestion"),
     questionEdit("archiveQuestion"),
     questionEdit("restoreQuestion"),
+    questionEdit("remindQuestion"),
     z.object({
       method: z.literal("createSprint"),
       code: SprintCode,
@@ -246,6 +247,7 @@ export const COMMAND_WRITES: Record<ProjectCommand["method"], EntityType | null>
   reopenQuestion: "question",
   archiveQuestion: "question",
   restoreQuestion: "question",
+  remindQuestion: "question",
   createSprint: "sprint",
   updateSprint: "sprint",
   deleteSprint: "sprint",
@@ -296,6 +298,7 @@ export type CommandResult = {
   reopenQuestion: Question;
   archiveQuestion: Question;
   restoreQuestion: Question;
+  remindQuestion: Question;
   createSprint: Sprint;
   updateSprint: Sprint;
   deleteSprint: null;

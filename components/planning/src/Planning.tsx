@@ -12,11 +12,13 @@ import { openLimitOf, type SprintView } from "@kibo/schema";
 import { useEntities, useReadOnly, useSdk } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { useState } from "react";
+import { bandsTimeline } from "./bands-model";
 import { DragPreview } from "./DragPreview";
 import { BACKLOG_ID, planDrop } from "./drag";
 import { FeatureCardPreview } from "./FeatureCard";
 import { fr } from "./fr";
 import { NewFeatureDialog } from "./NewFeatureDialog";
+import type { PlanningLayout } from "./PlanningHeader";
 import { PlanningView } from "./PlanningView";
 import { type FeatureCard, planningModel } from "./planning-model";
 import { SprintDialog } from "./SprintDialog";
@@ -36,6 +38,9 @@ const pad = (n: number) => String(n).padStart(2, "0");
 export const localToday = (now = new Date()): string =>
   `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 
+const initialLayout = (config: Record<string, unknown>): PlanningLayout =>
+  config.layout === "bands" ? "bands" : "columns";
+
 type Dialog = { kind: "sprint"; sprint: SprintView | null } | { kind: "feature" } | null;
 
 export function Planning() {
@@ -53,6 +58,15 @@ export function Planning() {
   const [target, setTarget] = useState<string | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [error, setError] = useState<string | null>(null);
+  const [layout, setLayout] = useState<PlanningLayout>(() => initialLayout(sdk.config));
+  const chooseLayout = (next: PlanningLayout) => {
+    setLayout(next);
+    void sdk.setConfig({ layout: next });
+  };
+  const bands =
+    layout === "bands"
+      ? bandsTimeline({ tickets, links, sprints, questions, today, backlog: fr.backlog })
+      : null;
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: columnSteps }),
@@ -104,7 +118,11 @@ export function Planning() {
         target={target}
         dragged={dragged}
         error={error}
+        layout={layout}
+        bands={bands}
+        onLayout={chooseLayout}
         onOpen={(id) => sdk.openTicket(id)}
+        onOpenSprint={(sprint) => sdk.sprints.open(sprint.id)}
         onEditSprint={(sprint) => setDialog({ kind: "sprint", sprint })}
         onNewFeature={() => setDialog({ kind: "feature" })}
         onNewSprint={() => setDialog({ kind: "sprint", sprint: null })}

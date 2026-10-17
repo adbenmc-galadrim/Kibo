@@ -4,6 +4,8 @@ export const frProject = {
     title: "Modifier le projet",
     name: "Nom",
     color: "Couleur",
+    description: "Description",
+    descriptionHelp: "Une ligne, affichée sous le nom du projet dans la Vue d'ensemble.",
     colorOption: (hex: string) => `Couleur ${hex}`,
     image: "Image",
     folder: "Dossier",

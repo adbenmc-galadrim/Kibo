@@ -62,6 +62,22 @@ test("accepts a lowercase key and no note", async () => {
   expect(t.out).toEqual(["✓ EMIS-15 : 0 · Lecture"]);
 });
 
+test("--update marks a touch-up, without it no kind is sent", async () => {
+  const { client, calls } = fakeClient();
+  const t = io();
+  expect(await ticketsStep(["EMIS-15", "7"], { update: true }, t.io, async () => client)).toBe(0);
+  expect(calls.at(-1)).toEqual({
+    method: "setDeliveryStep",
+    projectId: "p-emis",
+    ticketKey: "EMIS-15",
+    step: 7,
+    kind: "update",
+  });
+  expect(t.out).toEqual(["✓ EMIS-15 : retouche · 7 · Porte qualité"]);
+  expect(await ticketsStep(["EMIS-15", "7"], {}, t.io, async () => client)).toBe(0);
+  expect(calls.at(-1)).not.toHaveProperty("kind");
+});
+
 test("refuses a step outside 0 to 11 before reaching the daemon", async () => {
   for (const step of ["12", "-1", "7.5", "sept"]) {
     let connected = false;

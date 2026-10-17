@@ -31,6 +31,7 @@ import { SUBAGENT_RPC, type SubagentRpcResult } from "./subagent";
 import type { Phase7Event } from "./sync";
 import { SYNC_RPC_REQUESTS, type SyncRpcResult } from "./sync-rpc";
 import type { Ticket } from "./ticket";
+import type { TicketSession } from "./ticket-session";
 import { TRACKING_RPC, type TrackingRpcResult } from "./tracking-rpc";
 import { VISIBILITY_RPC, type VisibilityRpcResult } from "./visibility-rpc";
 import type { Domain } from "./workspace-config";
@@ -43,6 +44,8 @@ export type TicketView = Ticket & {
   startable: boolean;
   effectiveSprintId: string | null;
   feature: FeatureState | null;
+  session: TicketSession | null;
+  updatedAt: number | null;
 };
 export type ProjectSnapshot = {
   meta: ProjectMeta;

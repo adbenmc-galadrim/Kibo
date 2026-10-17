@@ -4,7 +4,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@kibo/sdk/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@kibo/sdk/ui/tabs";
 import { MessageSquarePlus } from "lucide-react";
 import { useRef, useState } from "react";
-import { fr } from "../i18n/fr";
+import { frAi } from "../i18n/fr-ai";
 import { frCreations } from "../i18n/fr-creations";
 import { isRemoteView } from "../lib/remote-view";
 import { aiErrorMessage } from "./ai-error";
@@ -86,7 +86,7 @@ export function DraftReviewStep({ details, canRevise, busy, onRevise }: Props) {
                 trigger.current?.focus();
               }}
             />
-            {block && <p className="text-xs text-amber-600 dark:text-amber-400">{fr.ai.blocked[block]}</p>}
+            {block && <p className="text-xs text-amber-600 dark:text-amber-400">{frAi.ai.blocked[block]}</p>}
           </CollapsibleContent>
         </Collapsible>
       )}

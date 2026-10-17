@@ -253,3 +253,12 @@ test("a question line names the run its answer was delivered to", async () => {
   fireEvent.focus(screen.getByRole("button", { name: "Rouvrir « Quel port ? » (réponse retirée)" }));
   expect(await screen.findByText(/transmise à opus-dev-4/)).toBeTruthy();
 });
+
+test("a partly decided batch shows the result of its decided actions and decides only the others", async () => {
+  const applied = { actionId: 1, outcome: "applied" as const, detail: null, created: null };
+  const { card, decisions } = show(pendingBatch({ chosen: [1], results: [applied] }));
+  expect(card.getAllByRole("checkbox")).toHaveLength(6);
+  expect(card.getAllByText("Appliquée")).toHaveLength(1);
+  await userEvent.setup().click(card.getByRole("button", { name: "Valider (6)" }));
+  expect(decisions).toEqual([{ decision: "apply", actionIds: [2, 3, 4, 5, 6, 7] }]);
+});

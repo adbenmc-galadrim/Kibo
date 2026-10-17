@@ -11,6 +11,8 @@ export const frTracking = {
       "Au-delà, le Planning affiche un avertissement ; rien n'est bloqué. Une fonctionnalité est ouverte dès qu'une étape est commencée.",
   },
   addPlanning: "Ajouter la page Planning",
+  addOverview: "Ajouter la page Vue d'ensemble",
+  newTicket: "Nouveau ticket",
   hidden: {
     notice: "L'exécution des agents est masquée.",
     show: "Afficher dans Paramètres › Général",

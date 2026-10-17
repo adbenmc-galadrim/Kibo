@@ -38,6 +38,7 @@ function kibo() {
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
   const run = (cmd: Parameters<typeof executeProjectCommand>[1]) => executeProjectCommand(doc, cmd);
   const dep = run({ method: "createTicket", title: "Schéma Loro", statusId: "in_progress" }) as Ticket;
@@ -295,6 +296,8 @@ test("the brief lists the questions of the ticket, the branch commits and the PR
           state: "open",
           base: "dev",
           head: "feat/x",
+          review: "none",
+          checks: null,
         },
         {
           kind: "github_pr",
@@ -303,6 +306,8 @@ test("the brief lists the questions of the ticket, the branch commits and the PR
           state: "merged",
           base: null,
           head: null,
+          review: "none",
+          checks: null,
         },
       ],
     },

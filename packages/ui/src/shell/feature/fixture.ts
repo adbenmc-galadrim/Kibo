@@ -39,6 +39,8 @@ const ticket = (id: string, key: string, title: string, patch: Partial<TicketVie
   optional: false,
   shortKey: null,
   effectiveSprintId: "s42",
+  session: null,
+  updatedAt: null,
   feature: null,
   ...patch,
 });
@@ -50,6 +52,8 @@ const pr = (number: number, state: "open" | "merged"): ExternalRef => ({
   state,
   base: "main",
   head: null,
+  review: "none",
+  checks: "ok",
 });
 
 const step = (n: number, day: number, h: number, m: number) => ({
@@ -57,6 +61,7 @@ const step = (n: number, day: number, h: number, m: number) => ({
   note: "",
   at: at(day, h, m),
   runId: null,
+  kind: "delivery" as const,
 });
 
 const sprint = (
@@ -100,6 +105,7 @@ const STEPS: TicketView[] = [
     statusId: "in_progress",
     externalRefs: [{ kind: "git_branch", branch: "feat/envoi-hors-ligne", base: null }],
     delivery: step(7, 16, 14, 51),
+    session: { tool: "T3 Code", startedAt: NOW - 42 * 60_000 },
   }),
   ticket("e34", "EMIS-34", "Tests E2E de l'envoi", { openQuestions: 1 }),
   ticket("e35", "EMIS-35", "Démo client"),
@@ -187,6 +193,7 @@ export function emisFeatureProject(): ProjectSnapshot {
       duplication: null,
       delivery: null,
       tracking: null,
+      description: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],

@@ -1,12 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import fc from "fast-check";
+import { batchStatusOfResults, foldBatch, isDecidable } from "./batch-fold";
 import {
   ACTION_GROUPS,
   type ActionResult,
   type BatchRow,
-  batchStatusOfResults,
-  foldBatch,
-  isDecidable,
   ProposeBatchInput,
   ProposedAction,
   TicketRef,
@@ -183,6 +181,37 @@ describe("question actions in a batch", () => {
       recipient: "Client",
     };
     expect(ProposedAction.parse(create)).toMatchObject({ recipient: "Client" });
+  });
+
+  test("setSprint moves a feature to a sprint code or out of the planning", () => {
+    const set = { id: 1, why: "fin de S42", type: "setSprint", ticket: "EMIS-30", sprint: "S43" } as const;
+    expect(ProposedAction.parse(set)).toEqual(set);
+    expect(ProposedAction.parse({ ...set, sprint: null })).toMatchObject({ sprint: null });
+    expect(ProposedAction.safeParse({ ...set, sprint: "S123456789" }).success).toBe(false);
+    expect(ProposedAction.safeParse({ ...set, ticket: "f5" }).success).toBe(false);
+  });
+
+  test("createSprint carries a code, a name and two dates", () => {
+    const create = {
+      id: 2,
+      why: "",
+      type: "createSprint",
+      code: "S45",
+      name: "Clôture",
+      start: "2026-11-02",
+      end: "2026-11-06",
+    } as const;
+    expect(ProposedAction.parse(create)).toEqual(create);
+    expect(ProposedAction.safeParse({ ...create, start: "2 nov." }).success).toBe(false);
+  });
+
+  test("remindQuestion names an open question, in the questions group", () => {
+    expect(
+      ProposedAction.safeParse({ id: 3, why: "", type: "remindQuestion", questionId: qid }).success,
+    ).toBe(true);
+    expect(ACTION_GROUPS.remindQuestion).toBe("questions");
+    expect(ACTION_GROUPS.setSprint).toBe("sprints");
+    expect(ACTION_GROUPS.createSprint).toBe("sprints");
   });
 
   test("the four question actions belong to the questions group", () => {

@@ -7,7 +7,9 @@ import { startFakeMcpHttp } from "../packages/daemon/src/testing/fake-mcp";
 import { PENPOT_IDS, startFakePenpot } from "../packages/daemon/src/testing/fake-penpot";
 import { startFakeStorybook } from "../packages/daemon/src/testing/fake-storybook";
 import { e2eHome } from "./e2e-home";
-import { fakeGhDir, GIT_IDENTITY } from "./git-repo";
+import { emisGhState } from "./fixtures/emis-gh";
+import { EMIS_SCENARIO } from "./fixtures/emis-suivi";
+import { createE2eRepo, fakeGhDir, GIT_IDENTITY } from "./git-repo";
 import { EMIS_MAQUETTES, FIXED_NOW } from "./pixel-settings";
 import { connectSeedRpc, waitForDaemon } from "./seed-client";
 import { seedEmisMaquettes } from "./seed-emis-maquettes";
@@ -31,6 +33,7 @@ const NO_GH_FLAG = "--no-gh";
 const DESIGN_FLAG = "--design";
 const EMBEDS_FLAG = "--embeds";
 const DELIVERY_FLAG = "--delivery";
+const EMIS_PR_POLL_MS = "200";
 const FLAGS = [INTEGRATIONS_FLAG, NO_GH_FLAG, DESIGN_FLAG, EMBEDS_FLAG, DELIVERY_FLAG];
 const argv = process.argv.slice(2);
 const integrations = argv.includes(INTEGRATIONS_FLAG);
@@ -56,6 +59,11 @@ const ghDir = fakeGhDir(port);
 rmSync(ghDir, { recursive: true, force: true });
 mkdirSync(ghDir, { recursive: true });
 const gh = join(ghDir, "gh");
+const ghState = join(ghDir, "state.json");
+const emisMaquettes = scenario === EMIS_MAQUETTES;
+const writeEmisGh = (merged: boolean) => writeFileSync(ghState, JSON.stringify(emisGhState({ merged })));
+if (emisMaquettes) writeEmisGh(false);
+const emisRepo = emisMaquettes ? createE2eRepo("emis") : null;
 if (withGh) {
   copyFileSync(join(root, "packages/daemon/src/code/testing/fake-gh.ts"), gh);
   chmodSync(gh, 0o755);
@@ -160,14 +168,15 @@ const proc = Bun.spawn(
       ...process.env,
       ...GIT_IDENTITY,
       KIBO_HOME: home,
-      KIBO_FAKE_CLAUDE_SCENARIO: join(agents, "scenarios", `${scenario}.json`),
+      KIBO_FAKE_CLAUDE_SCENARIO:
+        scenario === EMIS_MAQUETTES ? EMIS_SCENARIO : join(agents, "scenarios", `${scenario}.json`),
       KIBO_FAKE_CLAUDE_STATE: fakeState,
       CLAUDE_CONFIG_DIR: claudeConfig,
       KIBO_GH: gh,
-      FAKE_GH_STATE: join(ghDir, "state.json"),
+      FAKE_GH_STATE: ghState,
       FAKE_GH_LOG: join(ghDir, "log.jsonl"),
       ...(delivery ? deliveryEnv() : {}),
-      ...(scenario === EMIS_MAQUETTES ? { KIBO_FIXED_NOW: FIXED_NOW } : {}),
+      ...(emisMaquettes ? { KIBO_FIXED_NOW: FIXED_NOW, KIBO_PR_POLL_MS: EMIS_PR_POLL_MS } : {}),
     },
     stdout: "inherit",
     stderr: "inherit",
@@ -181,7 +190,7 @@ async function seedScenario(): Promise<void> {
   const base = `http://127.0.0.1:${port}`;
   await waitForDaemon(base, 30_000);
   const rpc = await connectSeedRpc(base, E2E_TOKEN);
-  await seedEmisMaquettes(rpc);
+  await seedEmisMaquettes(rpc, { folder: emisRepo?.repo ?? null, mergePr: () => writeEmisGh(true) });
   if (syncServer) await shareEmis(rpc, await syncSeed(syncServer));
 }
 const seeded = await seedScenario().then(
@@ -198,4 +207,5 @@ await fakes?.stop();
 await syncServer?.stop();
 rmSync(home, { recursive: true, force: true });
 rmSync(ghDir, { recursive: true, force: true });
+emisRepo?.remove();
 process.exit(code);

@@ -85,6 +85,7 @@ export function SandboxFrame({
       }),
       call: (call) => client.rpc({ method: "componentCall", projectId, instanceId, call }),
       onOpenTicket: (id) => latest.current.host.openTicket(id),
+      onOpenSprint: (id) => latest.current.host.openSprint?.(id),
       onOpenNewTicket: (d) => latest.current.host.openNewTicket({ ...d, instanceId }),
       onOpenFile: (r) =>
         latest.current.host.openFile({

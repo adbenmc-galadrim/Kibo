@@ -45,6 +45,8 @@ export function fakeTicket(input: TicketInput): TicketView {
     optional: input.optional ?? false,
     shortKey: input.shortKey ?? null,
     effectiveSprintId: input.effectiveSprintId ?? input.sprintId ?? null,
+    session: null,
+    updatedAt: null,
     feature: null,
     progress: { done: 0, total: input.children ?? 0 },
     waitingOn: [],
@@ -82,6 +84,7 @@ export const EMIS_META: ProjectMeta = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
 };
 
 export const SPRINTS: SprintView[] = [

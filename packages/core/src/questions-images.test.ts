@@ -20,6 +20,7 @@ const projectDoc = () =>
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   });
 
 test("a validation question keeps its kind and image metadata in the document", () => {

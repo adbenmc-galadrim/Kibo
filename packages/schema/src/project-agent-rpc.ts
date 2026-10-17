@@ -29,6 +29,7 @@ export const PROJECT_AGENT_RPC = [
     decision: BatchDecisionKind,
     actionIds: z.array(ActionId).optional(),
     comment: z.string().trim().max(BATCH_COMMENT_MAX).optional(),
+    keepRest: z.boolean().optional(),
   }),
   z.object({ method: z.literal("resetProjectAgent"), projectId: z.string().min(1) }),
 ] as const;

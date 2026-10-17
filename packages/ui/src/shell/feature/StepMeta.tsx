@@ -1,4 +1,5 @@
-import { GitBranch, GitMerge, GitPullRequest, Link } from "lucide-react";
+import type { CiTone } from "@kibo/schema";
+import { CircleCheck, CircleDashed, CircleX, GitBranch, GitMerge, GitPullRequest, Link } from "lucide-react";
 import { frFeature as t } from "../../i18n/fr-group";
 import { DeliverySegments } from "./DeliverySegments";
 import type { StepModel } from "./feature-model";
@@ -6,6 +7,27 @@ import { stepTime } from "./time-format";
 
 const MONO = "font-mono text-[12px] leading-[15px] text-(--tracking-fg)";
 const DIM = "text-[12px] leading-[15px] text-(--tracking-dim)";
+
+const CI_ICON = { ok: CircleCheck, error: CircleX, running: CircleDashed, neutral: CircleDashed };
+const CI_COLOR: Record<CiTone, string> = {
+  ok: "text-(--tracking-green)",
+  error: "text-(--tracking-red)",
+  running: "text-(--tracking-amber)",
+  neutral: "text-(--tracking-dim)",
+};
+
+function CiMark({ ci }: { ci: CiTone }) {
+  const Mark = CI_ICON[ci];
+  return (
+    <Mark
+      absoluteStrokeWidth
+      size={12}
+      role="img"
+      aria-label={t.ci[ci]}
+      className={`size-[12px] shrink-0 ${CI_COLOR[ci]}`}
+    />
+  );
+}
 
 function Origin({ step }: { step: StepModel }) {
   if (step.pr) {
@@ -21,6 +43,12 @@ function Origin({ step }: { step: StepModel }) {
         />
         <span className={MONO}>{`#${step.pr.number}`}</span>
         {merged && <span className={DIM}>{t.merged}</span>}
+        {step.pr.review === "changes_requested" && (
+          <span className="text-[12px] leading-[15px] text-(--tracking-brand-text)">
+            {t.changesRequested}
+          </span>
+        )}
+        {step.ci && <CiMark ci={step.ci} />}
       </span>
     );
   }

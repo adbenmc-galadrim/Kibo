@@ -16,7 +16,7 @@ export function componentDelivery(ops: DeliveryOps): ComponentDelivery {
     call(projectId, call) {
       switch (call.kind) {
         case "run.deliver":
-          return ops.deliver(projectId, call.ticketId);
+          return ops.deliver(projectId, call.ticketId, call.mode);
         case "run.deliveryAgent":
           return ops.deliveryAgent(projectId);
         case "run.denials":

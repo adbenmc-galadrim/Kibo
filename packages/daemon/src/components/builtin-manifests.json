@@ -70,7 +70,7 @@
     },
     "title": "Graphe de dépendances",
     "description": "Généré depuis les liens bloque / bloqué par",
-    "reads": ["ticket", "status", "link", "run"],
+    "reads": ["ticket", "status", "link", "run", "sprint", "question"],
     "selection": true,
     "writes": [],
     "configSchema": {
@@ -82,6 +82,16 @@
         "type": "boolean",
         "default": false,
         "label": "Afficher les terminés"
+      },
+      "columns": {
+        "enum": ["sprints", "waves"],
+        "default": "sprints",
+        "label": "Colonnes"
+      },
+      "collapseDelivered": {
+        "type": "boolean",
+        "default": true,
+        "label": "Livrées repliées"
       }
     }
   },
@@ -296,6 +306,20 @@
     "title": "Planning",
     "description": "Fonctionnalités par sprint, glisser pour planifier",
     "reads": ["ticket", "link", "status", "sprint", "question"],
-    "writes": ["ticket", "sprint"]
+    "writes": ["ticket", "sprint"],
+    "configSchema": {
+      "layout": { "enum": ["columns", "bands"], "default": "columns", "label": "Disposition" }
+    }
+  },
+  {
+    "id": "overview",
+    "version": "1.0.0",
+    "kind": "view",
+    "formats": ["full"],
+    "size": { "min": { "w": 6, "h": 6 } },
+    "title": "Vue d'ensemble",
+    "description": "Indicateurs, échéances, sprint en cours, PR en review, questions et activité du projet",
+    "reads": ["ticket", "link", "status", "sprint", "question", "project_event", "ci_run"],
+    "writes": ["run"]
   }
 ]

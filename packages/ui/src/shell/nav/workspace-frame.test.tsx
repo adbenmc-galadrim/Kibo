@@ -77,3 +77,13 @@ test("with two tabs, the presence sits in the tab bar and not in the page header
   expect(header().queryByText("présence")).toBeNull();
   expect(screen.getAllByTestId("reporter").map((r) => r.textContent)).toEqual(["inline"]);
 });
+
+test("a hidden tab bar collapses its height for the panels portalled out of the frame too", () => {
+  const tabBarHeight = () => document.documentElement.style.getPropertyValue("--tabbar-h");
+  const { unmount } = renderFrame([tab("a")]);
+  expect(tabBarHeight()).toBe("0px");
+  unmount();
+  expect(tabBarHeight()).toBe("");
+  renderFrame([tab("a"), tab("b")]);
+  expect(tabBarHeight()).toBe("");
+});

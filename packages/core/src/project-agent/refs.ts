@@ -9,6 +9,7 @@ export function ticketRefsOf(action: ProposedAction): string[] {
     case "updateTicket":
       return typeof action.parent === "string" ? [action.ticket, action.parent] : [action.ticket];
     case "setStatus":
+    case "setSprint":
     case "assignAgent":
     case "deliverAnswers":
     case "createQuestion":
@@ -26,6 +27,8 @@ export function ticketRefsOf(action: ProposedAction): string[] {
     case "createNote":
     case "updateNote":
     case "dismissSignal":
+    case "createSprint":
+    case "remindQuestion":
       return [];
   }
 }

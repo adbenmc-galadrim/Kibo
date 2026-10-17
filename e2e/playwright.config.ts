@@ -1,6 +1,7 @@
 import { defineConfig, type PlaywrightTestConfig, type Project } from "@playwright/test";
 import { MARKET_PORTS } from "./market-fixture";
 import { PIXEL_DAEMONS, pixelKitProject, pixelProjectOptions, trackingProjects } from "./pixel-projects";
+import { EMIS_MAQUETTES } from "./pixel-settings";
 import { SYNC_PORTS } from "./sync-fixture";
 
 const THEMES = ["dark", "light"] as const;
@@ -290,6 +291,22 @@ const allDaemons = [
   },
   { name: "ensembles-dark", scheme: "dark", port: 4475, spec: /ensembles\.spec\.ts/, scenario: "question" },
   { name: "ensembles-light", scheme: "light", port: 4476, spec: /ensembles\.spec\.ts/, scenario: "question" },
+  {
+    name: "suivi-dark",
+    scheme: "dark",
+    port: 4479,
+    spec: /suivi\.spec\.ts/,
+    scenario: EMIS_MAQUETTES,
+    integrations: true,
+  },
+  {
+    name: "suivi-light",
+    scheme: "light",
+    port: 4480,
+    spec: /suivi\.spec\.ts/,
+    scenario: EMIS_MAQUETTES,
+    integrations: true,
+  },
   ...PIXEL_DAEMONS,
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));

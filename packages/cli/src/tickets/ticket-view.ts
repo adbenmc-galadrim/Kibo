@@ -1,13 +1,17 @@
 import {
   type Assignee,
+  type DeliveryStep,
   type ExternalRef,
   type GithubPrRef,
   type ImportRef,
   KiboError,
   type Link,
+  type PrChecks,
+  type PrReview,
   type PrState,
   type Status,
   StatusId,
+  type TicketSession,
   type TicketView,
 } from "@kibo/schema";
 import { z } from "zod";
@@ -28,7 +32,13 @@ const NORMALIZED: Record<StatusId, NormalizedStatus> = {
 export const normalizedStatus = (status: StatusId): NormalizedStatus => NORMALIZED[status];
 
 export type TicketRef = { key: string; planId: string | null; status: NormalizedStatus };
-export type PrSummary = { number: number; url: string; state: PrState };
+export type PrSummary = {
+  number: number;
+  url: string;
+  state: PrState;
+  review: PrReview;
+  checks: PrChecks | null;
+};
 export type TicketSummary = {
   id: string;
   key: string;
@@ -44,6 +54,10 @@ export type TicketSummary = {
   pr: PrSummary | null;
   assignee: Assignee | null;
   labels: string[];
+  delivery: DeliveryStep | null;
+  session: TicketSession | null;
+  updatedAt: number | null;
+  refs: ExternalRef[];
 } & TrackingFields;
 export type TicketsSource = {
   workflow: Status[];
@@ -62,7 +76,9 @@ const PR_RANK: Record<PrState, number> = { open: 0, draft: 0, merged: 1, closed:
 export function relevantPr(t: TicketView): PrSummary | null {
   const prs = t.externalRefs.filter((r): r is GithubPrRef => r.kind === "github_pr");
   const best = [...prs].sort((a, b) => PR_RANK[a.state] - PR_RANK[b.state] || b.number - a.number)[0];
-  return best ? { number: best.number, url: best.url, state: best.state } : null;
+  return best
+    ? { number: best.number, url: best.url, state: best.state, review: best.review, checks: best.checks }
+    : null;
 }
 
 const refOf = (t: TicketView): TicketRef => ({
@@ -98,6 +114,10 @@ export function summarize(source: TicketsSource): TicketSummary[] {
       assignee: t.assignee,
       labels: t.labels,
       ...trackingOf(t, byId, source.sprints),
+      delivery: t.delivery,
+      session: t.session,
+      updatedAt: t.updatedAt,
+      refs: t.externalRefs,
     };
   });
 }

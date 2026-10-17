@@ -5,6 +5,7 @@ import type { ProjectAgentTab } from "./use-project-agent-panel";
 
 export type Host = {
   openTicket(id: string): void;
+  openSprint?(sprintId: string): void;
   openNewTicket(d: NewTicketDefaults): void;
   openAssign(ticketId: string): void;
   openFile(ref: FileRef): void;

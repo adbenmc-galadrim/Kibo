@@ -9,6 +9,7 @@ import type {
   ProjectAccess,
   ProjectAsset,
   ProjectCommand,
+  ProjectEvent,
   ProjectSnapshot,
   RunDenials,
   RunPeek,
@@ -37,6 +38,7 @@ export type MockSdk = {
   openedViews: string[];
   viewRequests: { componentId: string; question: string | null }[];
   openedRuns: string[];
+  openedSprints: string[];
   deliveries: string[];
   runDeliveries: string[];
   allowed: AllowAndResumeInput[];
@@ -75,6 +77,8 @@ export type MockSdkOptions = {
   noteAges?: Record<string, number>;
   mcp?: Record<string, McpCallResult>;
   ciRuns?: CiRun[];
+  events?: ProjectEvent[];
+  description?: string | null;
   presence?: PresencePeer[];
   shared?: boolean;
   members?: MemberInfo[];

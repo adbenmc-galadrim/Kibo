@@ -21,12 +21,17 @@ export type DiffLabels = {
   profile(profileId: string): string;
   question(questionId: string): string | null;
   recipient(recipient: string): string;
+  feature?(ticket: string): FeatureLabel;
+  reminder?(questionId: string): Reminder | null;
 };
+export type FeatureLabel = { label: string; sprint: string | null };
+export type Reminder = { recipient: string; ref: string };
 
-const ORDER: readonly ActionGroup[] = ["tickets", "agents", "questions", "notes", "signals"];
+const ORDER: readonly ActionGroup[] = ["tickets", "sprints", "agents", "questions", "notes", "signals"];
 const t = frProjectAgent.action;
 const field = frProjectAgent.field;
 const NOTHING = "—";
+const CLIENT_RECIPIENT = "client";
 
 export const defaultLabels: DiffLabels = {
   status: (id) => DEFAULT_WORKFLOW.find((s) => s.id === id)?.label ?? id,
@@ -46,7 +51,26 @@ export function projectLabels(
     profile: (id) => agents.find((a) => a.ref === id)?.name ?? id.slice(id.lastIndexOf(":") + 1),
     question: (id) => project.questions.find((q) => q.id === id)?.title ?? null,
     recipient: (raw) => findRecipient(project.questionRecipients, raw)?.name ?? raw,
+    feature: (key) => featureLabel(project, key),
+    reminder: (id) => reminderOf(project, id),
   };
+}
+
+function featureLabel(project: ProjectSnapshot, key: string): FeatureLabel {
+  const ticket = project.tickets.find((t) => t.key === key);
+  if (!ticket) return { label: key, sprint: null };
+  const sprint = project.sprints.find((s) => s.id === ticket.sprintId);
+  return { label: ticket.shortKey ?? ticket.keyLabel, sprint: sprint?.code ?? null };
+}
+
+function reminderOf(project: ProjectSnapshot, id: string): Reminder | null {
+  const question = project.questions.find((q) => q.id === id);
+  if (!question) return null;
+  const recipient =
+    question.recipient === CLIENT_RECIPIENT
+      ? t.theClient
+      : (findRecipient(project.questionRecipients, question.recipient)?.name ?? question.recipient);
+  return { recipient, ref: question.importRef?.id ?? t.quoted(question.title) };
 }
 
 export function groupActions(actions: readonly ProposedAction[]): BatchGroup[] {
@@ -100,7 +124,26 @@ export function actionTitle(action: ProposedAction, labels: DiffLabels = default
       return t.updateNote(action.path);
     case "dismissSignal":
       return t.dismissSignal(action.signal);
+    case "setSprint":
+      return sprintTitle(action, labels);
+    case "createSprint":
+      return t.createSprint(action.code, action.name);
+    case "remindQuestion":
+      return reminderTitle(action.questionId, labels);
   }
+}
+
+function sprintTitle(action: Extract<ProposedAction, { type: "setSprint" }>, labels: DiffLabels): string {
+  const feature = labels.feature?.(action.ticket) ?? { label: action.ticket, sprint: null };
+  if (action.sprint === null) return t.unplan(feature.label);
+  return feature.sprint === null
+    ? t.plan(feature.label, action.sprint)
+    : t.postpone(feature.label, action.sprint);
+}
+
+function reminderTitle(questionId: string, labels: DiffLabels): string {
+  const reminder = labels.reminder?.(questionId);
+  return reminder ? t.remindQuestion(reminder.recipient, reminder.ref) : t.remindUnknown;
 }
 
 const textOf = (value: unknown): string => (typeof value === "string" && value !== "" ? value : NOTHING);

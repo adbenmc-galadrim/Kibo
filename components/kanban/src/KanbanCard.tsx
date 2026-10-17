@@ -1,5 +1,5 @@
 import { useSortable } from "@dnd-kit/sortable";
-import type { AgentExecution, Status, StatusId } from "@kibo/schema";
+import type { AgentExecution, DeliveryKind, Status, StatusId } from "@kibo/schema";
 import { copyDeliveryCommand, type DeliverEntry } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
@@ -23,7 +23,7 @@ type Props = CardFacts & {
   onOpen: () => void;
   onMove: (statusId: StatusId) => void;
   onRemove: () => void;
-  onDeliver: () => void;
+  onDeliver: (mode: DeliveryKind) => void;
 };
 
 export function KanbanCard(props: Props) {

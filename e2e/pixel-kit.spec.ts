@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
 import { capturePixel, preparePixelPage } from "./pixel-kit";
@@ -108,4 +108,31 @@ test("a mask does not hide a difference outside its zone", async ({ page }) => {
   await openTestPage(page, null);
   const mask = { x: 0, y: 0, w: 100, h: 100, why: "zone que la page ne sait pas produire" };
   await expect(capture(page, HEIGHT, [mask])).rejects.toThrow(/x=400 y=80 120×120/);
+});
+
+test("a stale compared reference left in the snapshot folder is never what the capture is compared to", async ({
+  page,
+}) => {
+  await writeReference(page, null);
+  await openTestPage(page, { x: 400, y: 80, size: 120 });
+  const stale = test.info().snapshotPath(`proposition-${SCREEN}-dark.png`);
+  mkdirSync(dirname(stale), { recursive: true });
+  writeFileSync(stale, await page.screenshot({ animations: "disabled", caret: "hide" }));
+  await expect(capture(page)).rejects.toThrow(/x=400 y=80 120×120/);
+});
+
+test("a page that never settles fails instead of yielding a diff between two captures", async ({ page }) => {
+  await writeReference(page, null);
+  await openTestPage(page, null);
+  await page.evaluate(() => {
+    const tick = document.createElement("div");
+    tick.style.cssText = "position:absolute;left:600px;top:100px;font:40px monospace;color:#f97316";
+    document.body.append(tick);
+    let n = 0;
+    setInterval(() => {
+      n += 1;
+      tick.textContent = String(n);
+    }, 40);
+  });
+  await expect(capture(page)).rejects.toThrow("the page did not settle");
 });

@@ -12,7 +12,7 @@ import {
   type RpcRequest,
   type TabTarget,
 } from "@kibo/schema";
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { summaryFixture } from "../agents/catalog/fixtures";
 import { configFixture } from "../agents/fixtures";
@@ -45,6 +45,7 @@ const snapshot = (): ProjectSnapshot => ({
     duplication: null,
     delivery: null,
     tracking: null,
+    description: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -92,6 +93,7 @@ mock.module("../api", () =>
             duplication: null,
             delivery: null,
             tracking: null,
+            description: null,
           };
         if (req.method === "setIcon") return { icon: req.icon ? "abc" : null };
         throw new Error(`unexpected ${req.method}`);
@@ -112,6 +114,7 @@ const project: ProjectSummary = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
   icon: "v1",
 };
@@ -549,4 +552,29 @@ test("a remote session greys the duplication section and never sends it", () => 
   expect(duplicationSection()).toBeTruthy();
   expect(detection().hasAttribute("disabled")).toBe(true);
   expect(screen.getByText("Réglage local : il se modifie sur l'ordinateur où tourne Kibo.")).toBeTruthy();
+});
+
+test("the description is saved trimmed, and emptied it is saved as null (remote too)", async () => {
+  const closed = mock(() => {});
+  const described = { ...project, description: "App terrain des chefs de chantier" };
+  render(<EditProjectDialog project={described} remote onClose={closed} />);
+  const field = screen.getByLabelText("Description") as HTMLInputElement;
+  expect(field.value).toBe("App terrain des chefs de chantier");
+  expect(field.maxLength).toBe(200);
+  const user = userEvent.setup();
+  await user.clear(field);
+  await user.type(field, "   ");
+  await user.click(saveButton());
+  await waitFor(() => expect(closed).toHaveBeenCalled());
+  expect(calls).toEqual([{ method: "updateProject", projectId: "kibo", patch: { description: null } }]);
+  cleanup();
+  calls.length = 0;
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  await user.type(screen.getByLabelText("Description"), "  Suivi des soudures ");
+  await user.click(saveButton());
+  await waitFor(() =>
+    expect(calls).toEqual([
+      { method: "updateProject", projectId: "kibo", patch: { description: "Suivi des soudures" } },
+    ]),
+  );
 });

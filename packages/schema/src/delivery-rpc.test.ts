@@ -46,3 +46,10 @@ test("delivery requests are recognised by their method", () => {
   expect(isDeliveryRequest({ method: "deliver" })).toBe(true);
   expect(isDeliveryRequest({ method: "assignAgent" })).toBe(false);
 });
+
+test("a delivery step may be declared as an update", () => {
+  const step = { method: "setDeliveryStep", projectId: "p", ticketKey: "EMIS-15", step: 7 };
+  expect(ok({ ...step, kind: "update" })).toBe(true);
+  expect(ok({ ...step, kind: "delivery" })).toBe(true);
+  expect(ok({ ...step, kind: "fix" })).toBe(false);
+});

@@ -14,9 +14,11 @@ import { isProjectRun } from "./run";
 import { isSignalRequest } from "./signal-rpc";
 
 describe("project agent tools", () => {
-  test("eleven project tools and the shared review tool, prefixed for the kibo server", () => {
-    expect(PROJECT_AGENT_MCP_TOOLS).toHaveLength(12);
+  test("twelve project tools and the shared review tool, prefixed for the kibo server", () => {
+    expect(PROJECT_AGENT_MCP_TOOLS).toHaveLength(13);
     expect(PROJECT_AGENT_TOOLS).toContain("list_signals");
+    expect(PROJECT_AGENT_TOOLS).toContain("list_sprints");
+    expect(TOOL_INPUTS.list_sprints.safeParse({}).success).toBe(true);
     expect(PROJECT_AGENT_MCP_TOOLS.every((name) => name.startsWith("mcp__kibo__"))).toBe(true);
   });
 

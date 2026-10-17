@@ -37,6 +37,7 @@ const META = {
   duplication: null,
   delivery: null,
   tracking: null,
+  description: null,
 };
 
 function ownerDocOf(adam: TestDevice): LoroDoc {
