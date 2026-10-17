@@ -13,6 +13,42 @@ test.beforeEach(async ({ page }) => {
 
 const section = (page: Page, name: string) => page.getByRole("region", { name, exact: true });
 
+const CROWDED = { name: "Chantier chargé", key: "CHG", features: 16, questions: 12 };
+
+async function seedCrowdedProject(page: Page): Promise<string> {
+  const project = await rpc(page, {
+    method: "createProject",
+    name: CROWDED.name,
+    key: CROWDED.key,
+    folder: null,
+    color: "#22C55E",
+  });
+  const projectId = text(project, "id");
+  const command = (cmd: Record<string, unknown>) => rpc(page, { method: "command", projectId, command: cmd });
+  for (const [title, component] of [
+    ["Vue d'ensemble", "overview@1.0.0"],
+    ["Questions", "questions@1.0.0"],
+  ] as const) {
+    const added = await command({ method: "addPage", title, kind: "view" });
+    await command({ method: "addInstance", pageId: text(added, "id"), component });
+  }
+  const steps: string[] = [];
+  for (let n = 1; n <= CROWDED.features; n += 1) {
+    const root = await command({ method: "createTicket", title: `Fonctionnalité ${n}` });
+    const step = await command({ method: "createTicket", title: `Étape ${n}`, parentId: text(root, "id") });
+    steps.push(text(step, "id"));
+  }
+  for (let n = 1; n <= CROWDED.questions; n += 1)
+    await command({
+      method: "createQuestion",
+      ticketId: steps[n % steps.length],
+      title: `Question chargée ${n}`,
+      blocking: n === CROWDED.questions,
+      createdBy: { kind: "human", ref: "e2e" },
+    });
+  return projectId;
+}
+
 async function pageTitles(page: Page): Promise<string[]> {
   const snapshot = await rpc(page, { method: "getProject", projectId: emis.projectId });
   return list(snapshot, "pages")
@@ -191,4 +227,37 @@ test("the Suivi panel applies the checked actions only, and Q14 is reminded", as
   await openEmisPage(page, "Questions");
   await page.getByText("Un ISO réaffecté garde-t-il ses photos ?").first().click();
   await expect(page.getByText(/relancée ·/)).toBeVisible();
+});
+
+test("a crowded Vue d'ensemble pages its questions and keeps the feature cells in their box", async ({
+  page,
+}, info) => {
+  const projectId = await seedCrowdedProject(page);
+  const snapshot = await rpc(page, { method: "getProject", projectId });
+  const overview = list(snapshot, "pages").find((p) => field(p, "title") === "Vue d'ensemble");
+  await page.goto(`/#/p/${encodeURIComponent(projectId)}/${encodeURIComponent(text(overview, "id"))}`);
+
+  const indicators = section(page, "Indicateurs du projet");
+  await expect(indicators.locator("[data-cell]")).toHaveCount(CROWDED.features);
+  const questions = section(page, "Questions");
+  await expect(questions.getByRole("listitem").first()).toBeVisible();
+  await page.screenshot({ path: info.outputPath("vue-ensemble-chargee.png"), animations: "disabled" });
+
+  const featureBox = indicators.locator("div").filter({ hasText: "Fonctionnalités" }).first();
+  const frame = await featureBox.boundingBox();
+  if (frame === null) throw new Error("the Fonctionnalités box is not on screen");
+  const right = frame.x + frame.width;
+  for (const cell of await indicators.locator("[data-cell]").all()) {
+    const box = await cell.boundingBox();
+    expect(box?.width ?? 0).toBeGreaterThanOrEqual(4);
+    expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(right);
+  }
+
+  await expect(questions.getByRole("listitem")).toHaveCount(5);
+  await expect(questions.getByRole("listitem").first()).toContainText("bloquante");
+  await questions.getByRole("button", { name: "Afficher plus (7)" }).click();
+  await expect(questions.getByRole("listitem")).toHaveCount(10);
+  await page.screenshot({ path: info.outputPath("vue-ensemble-plus.png"), animations: "disabled" });
+  await questions.getByRole("button", { name: "Toutes les questions (12)" }).click();
+  await expect(page.getByRole("article", { name: "Question chargée 1", exact: true })).toBeVisible();
 });
