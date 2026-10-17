@@ -10,6 +10,7 @@ import {
   type Emis,
   kiboCli,
   loadEmis,
+  moveToSprint,
   setStatus,
 } from "./planning-kit";
 
@@ -45,6 +46,84 @@ async function addFromMenu(page: Page, item: string) {
   await page.getByRole("menuitem", { name: item }).click();
   return page.getByRole("dialog", { name: item });
 }
+
+type Fit = {
+  page: number;
+  content: number;
+  topBar: number;
+  header: number;
+  overlap: number;
+  chipLines: number[];
+};
+
+const LINE_HEIGHT = 15;
+
+function measureFit(): Fit {
+  const overflow = (el: Element | null) => (el instanceof HTMLElement ? el.scrollWidth - el.clientWidth : 0);
+  const body = document.querySelector("[data-view-body]");
+  const heading = body?.querySelector("header");
+  const header = heading?.getBoundingClientRect();
+  const title = heading?.querySelector("h1")?.getBoundingClientRect();
+  const actions = heading?.lastElementChild?.getBoundingClientRect();
+  const sameLine = title && actions && title.bottom > actions.top && actions.bottom > title.top;
+  const lines = (chip: Element) => {
+    const range = document.createRange();
+    range.selectNodeContents(chip);
+    return range.getBoundingClientRect().height;
+  };
+  return {
+    page: document.documentElement.scrollWidth - innerWidth,
+    content: overflow(body?.parentElement ?? null),
+    topBar: overflow(document.querySelector("header.k-top")),
+    header: (header?.right ?? 0) - (body?.getBoundingClientRect().right ?? 0),
+    overlap: sameLine ? title.right - actions.left : 0,
+    chipLines: Array.from(body?.querySelectorAll("[data-feature] span") ?? [])
+      .filter((s) => s.textContent?.startsWith("bloquée ·"))
+      .map(lines),
+  };
+}
+
+async function expectFits(page: Page, layout: "Colonnes" | "Bandes"): Promise<void> {
+  await page.getByRole("button", { name: layout, exact: true }).click();
+  await expect(page.getByRole("button", { name: layout, exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  const fit = await page.evaluate(measureFit);
+  expect({ page: fit.page, content: fit.content, topBar: fit.topBar }).toEqual({
+    page: 0,
+    content: 0,
+    topBar: 0,
+  });
+  expect(fit.header).toBeLessThanOrEqual(0);
+  expect(fit.overlap).toBeLessThanOrEqual(0);
+  if (layout === "Bandes") expect(fit.chipLines.length).toBeGreaterThan(0);
+  for (const height of fit.chipLines) expect(height).toBeLessThan(LINE_HEIGHT * 1.5);
+}
+
+test("the Planning holds in the window in Columns and Bands, its blocked chips on one line", async ({
+  page,
+}) => {
+  const f6Sprint = await moveToSprint(page, emis, "F6", null);
+  try {
+    for (const size of [
+      { width: 1000, height: 800 },
+      { width: 1440, height: 900 },
+    ]) {
+      await page.setViewportSize(size);
+      await openPlanning(page);
+      for (const panel of [false, true]) {
+        if (panel) await page.getByRole("button", { name: /^Agent de projet/ }).click();
+        await expectFits(page, "Bandes");
+        await expectFits(page, "Colonnes");
+      }
+      await page.getByRole("button", { name: /^Agent de projet/ }).click();
+    }
+  } finally {
+    await page.getByRole("button", { name: "Colonnes", exact: true }).click();
+    await moveToSprint(page, emis, "F6", f6Sprint);
+  }
+});
 
 test("dragging F9 onto S44 plans it, and the CLI lists it in S44", async ({ page }, info) => {
   await openPlanning(page);

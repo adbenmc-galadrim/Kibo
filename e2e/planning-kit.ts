@@ -106,3 +106,20 @@ export function createBranch(repo: E2eRepo, branch: string): void {
 export async function clipboardText(page: Page): Promise<string> {
   return page.evaluate(() => navigator.clipboard.readText());
 }
+
+export async function moveToSprint(
+  page: Page,
+  emis: Emis,
+  shortKey: string,
+  sprintId: string | null,
+): Promise<string | null> {
+  const snapshot = await rpc(page, { method: "getProject", projectId: emis.projectId });
+  const ticket = list(snapshot, "tickets").find((t) => field(t, "shortKey") === shortKey);
+  const previous = field(ticket, "sprintId");
+  await rpc(page, {
+    method: "command",
+    projectId: emis.projectId,
+    command: { method: "setTicketSprint", ticketId: text(ticket, "id"), sprintId },
+  });
+  return typeof previous === "string" ? previous : null;
+}
