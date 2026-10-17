@@ -7,7 +7,7 @@ import {
   type ProjectSnapshot,
   type RpcRequest,
 } from "@kibo/schema";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
@@ -238,6 +238,7 @@ test("the tab bar presence reports where I am in this project only", async () =>
       project={project}
       active={{ kind: "page", projectId: "p1", pageId: "pg1" }}
       sheet={{ projectId: "p2", ticketId: "x9" }}
+      avatars="inline"
     />,
   );
   await waitFor(() =>
@@ -248,10 +249,45 @@ test("the tab bar presence reports where I am in this project only", async () =>
       project={project}
       active={{ kind: "page", projectId: "p1", pageId: "pg1" }}
       sheet={{ projectId: "p1", ticketId: "t1" }}
+      avatars="inline"
     />,
   );
   await waitFor(() =>
     expect(calls).toContainEqual({ method: "setPresence", projectId: "p1", pageId: "pg1", ticketId: "t1" }),
   );
   expect(calls.some((c) => c.method === "setPresence" && c.ticketId === "x9")).toBe(false);
+});
+
+test("on a page that shows its own presence, the project presence still reports but draws no second list", async () => {
+  peers = [peer("Léa", 1, { pageId: "pg1" })];
+  const { ProjectPresence } = await import("./ProjectPresence");
+  render(
+    <ProjectPresence
+      project={project}
+      active={{ kind: "page", projectId: "p1", pageId: "pg1" }}
+      sheet={null}
+      avatars="none"
+    />,
+  );
+  await waitFor(() =>
+    expect(calls).toContainEqual({ method: "setPresence", projectId: "p1", pageId: "pg1", ticketId: null }),
+  );
+  await Bun.sleep(20);
+  expect(screen.queryByRole("list", { name: "Personnes présentes" })).toBeNull();
+});
+
+test("without the tab bar, the project presence draws its list in the page header", async () => {
+  peers = [peer("Léa", 1)];
+  const { ProjectPresence } = await import("./ProjectPresence");
+  const { PageActionsProvider, PagePresenceSlot } = await import("./page-actions");
+  render(
+    <PageActionsProvider>
+      <section aria-label="En-tête de la page">
+        <PagePresenceSlot />
+      </section>
+      <ProjectPresence project={project} active={null} sheet={null} avatars="page" />
+    </PageActionsProvider>,
+  );
+  const header = within(screen.getByRole("region", { name: "En-tête de la page" }));
+  expect(await header.findByRole("img", { name: "Léa" })).toBeTruthy();
 });

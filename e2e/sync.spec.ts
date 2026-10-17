@@ -43,7 +43,6 @@ function presentIn(page: Page, name: string) {
   return page
     .getByRole("main")
     .getByRole("list", { name: "Personnes présentes" })
-    .last()
     .getByRole("img", { name, exact: true });
 }
 

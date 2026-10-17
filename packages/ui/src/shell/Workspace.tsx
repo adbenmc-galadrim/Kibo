@@ -155,11 +155,12 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
             describe={describe}
             isDirty={isDirty}
             onNewTab={() => setPalette({ newTab: true })}
-            presence={
+            presence={(place) =>
               project?.sync.shared && (
-                <ProjectPresence project={project} active={active} sheet={dialogs.sheet} />
+                <ProjectPresence project={project} active={active} sheet={dialogs.sheet} avatars={place} />
               )
             }
+            pageShowsPresence={active?.kind === "page"}
           >
             <AppSidebar
               className="top-(--tabbar-h) h-[calc(100svh-var(--tabbar-h))]!"

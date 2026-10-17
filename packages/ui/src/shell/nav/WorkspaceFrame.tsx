@@ -5,7 +5,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { TabBar } from "../../tabs/TabBar";
 import type { TabDescription } from "../../tabs/tab-title";
 import type { TabsApi } from "../../tabs/use-tabs";
-import { PagePresence } from "../page-actions";
+import type { PresencePlace } from "../ProjectPresence";
 import { inTauri, openWindow } from "../workspace-actions";
 import { showTabBar } from "./tab-bar";
 
@@ -18,11 +18,20 @@ type Props = {
   describe(target: TabTarget): TabDescription;
   isDirty(target: TabTarget): boolean;
   onNewTab(): void;
-  presence: ReactNode;
+  presence(place: PresencePlace): ReactNode;
+  pageShowsPresence: boolean;
   children: ReactNode;
 };
 
-export function WorkspaceFrame({ tabs, describe, isDirty, onNewTab, presence, children }: Props) {
+export function WorkspaceFrame({
+  tabs,
+  describe,
+  isDirty,
+  onNewTab,
+  presence,
+  pageShowsPresence,
+  children,
+}: Props) {
   const visible = showTabBar(tabs.state, tabs.error);
   return (
     <div className={cn("flex h-svh flex-col", !visible && "[--tabbar-h:0px]")}>
@@ -35,10 +44,10 @@ export function WorkspaceFrame({ tabs, describe, isDirty, onNewTab, presence, ch
           onNewTab={onNewTab}
           onOpenWindow={inTauri() ? null : openWindow}
           error={tabs.error}
-          trailing={presence}
+          trailing={presence("inline")}
         />
       )}
-      {!visible && <PagePresence>{presence}</PagePresence>}
+      {!visible && presence(pageShowsPresence ? "none" : "page")}
       <SidebarProvider className="min-h-0 flex-1" style={SIDEBAR_STYLE}>
         {children}
       </SidebarProvider>
