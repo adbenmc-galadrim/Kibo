@@ -34,12 +34,19 @@ const livraison = {
 
 const panelOf = (page: Page): Locator => page.getByRole("dialog", { name: `Agent de projet · ${PROJECT}` });
 
+async function toConversation(page: Page, panel: Locator): Promise<void> {
+  await panel.getByRole("button", { name: "Actions de l'agent de projet" }).click();
+  await page.getByRole("menuitem", { name: "Conversation" }).click();
+  await expect(panel.getByRole("tab", { name: "Conversation" })).toHaveAttribute("aria-selected", "true");
+}
+
 async function openProjectPanel(page: Page, projectId: string): Promise<Locator> {
   await page.goto(`/#/p/${encodeURIComponent(projectId)}/`);
   await expect(page.getByRole("button", { name: /^Agent de projet/ })).toBeVisible();
   await page.keyboard.press("ControlOrMeta+j");
   const panel = panelOf(page);
   await expect(panel).toBeVisible();
+  await toConversation(page, panel);
   return panel;
 }
 
@@ -48,7 +55,7 @@ async function expectBelow(panel: Locator, header: Locator): Promise<void> {
   const headerBox = await header.boundingBox();
   if (!panelBox || !headerBox) throw new Error("panel or header not laid out");
   expect(panelBox.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height);
-  expect(panelBox.width).toBe(440);
+  expect(panelBox.width).toBe(340);
 }
 
 async function say(panel: Locator, message: string): Promise<void> {
@@ -89,14 +96,13 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
   await expect(panel).toBeHidden();
   await page.keyboard.press("ControlOrMeta+j");
   await expect(panel).toBeVisible();
+  await toConversation(page, panel);
 
   await say(panel, "Où en est-on ?");
   await expect(panel.getByText("J'ai proposé un lot de 5 actions.")).toBeVisible({ timeout: 30_000 });
   const card = panel.getByRole("region", { name: "Lot n° 1" });
   await expect(card).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: /Agent de projet · Un lot attend ta validation/ }),
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: /Agent de projet · 5 actions à valider/ })).toBeVisible();
   await shot(page, info, "ecran-174");
   await card.scrollIntoViewIfNeeded();
   await card.getByRole("checkbox", { name: /Faut-il la doc/ }).click();
@@ -273,6 +279,7 @@ test("l'agent de projet renomme, réassigne, rouvre et archive des questions", a
   await deliver(page, projectId, leaf.id, LOGO);
   await page.keyboard.press("ControlOrMeta+j");
   await expect(panel).toBeVisible();
+  await toConversation(page, panel);
   await say(panel, "Renomme la question transmise");
   await expect(panel.getByText("Lot de questions corrigé.")).toBeVisible({ timeout: 30_000 });
   const corrected = lastBatch(panel).getByRole("group", { name: "Questions" });
