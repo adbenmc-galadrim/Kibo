@@ -63,15 +63,14 @@ test("one agent turn proposes seven batches: six superseded, the seventh pending
   expect(scenarioTurns()[0]?.result).toBe(EMIS_DAY_SUMMARY);
 });
 
-test("the seed ends with the merge of #18, the agent turn, step 7 of EMIS-33 and the opening of #22", () => {
-  const batches = Array.from({ length: EMIS_BATCH.seq }, (_, i) => ["batch_proposed", null, i + 1]);
+test("the last facts are the merge of #18, batch 7, step 7 of EMIS-33 and the opening of #22", () => {
   const last = daemon
     .events()
-    .slice(-(EMIS_BATCH.seq + 3))
+    .slice(-4)
     .map((e) => [e.kind, keyOf(e.ticketId), e.detail]);
   expect(last).toEqual([
     ["pr_merged", "EMIS-21", EMIS_CLOSING.merged],
-    ...batches,
+    ["batch_proposed", null, EMIS_BATCH.seq],
     ["step_set", "EMIS-33", 7],
     ["pr_opened", "EMIS-32", EMIS_CLOSING.opened],
   ]);

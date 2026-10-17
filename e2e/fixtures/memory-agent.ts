@@ -62,13 +62,17 @@ export function createMemoryAgent(): MemoryAgent {
     const previous = list.map((b) => (b.status === "pending" ? { ...b, status: "superseded" as const } : b));
     const batch: MemoryBatch = { id: crypto.randomUUID(), seq: list.length + 1, status: "pending", ...input };
     batches.set(projectId, [...previous, batch]);
-    for (const listener of listeners) listener(batch);
+  };
+  const journalTurnEnd = (projectId: string) => {
+    const kept = batches.get(projectId)?.find((b) => b.status === "pending");
+    if (kept !== undefined) for (const listener of listeners) listener(kept);
   };
   return {
     send(projectId, snapshot) {
       const turn = scenarioTurns()[0];
       if (turn === undefined) throw new KiboError("INTERNAL", "the scenario has no turn");
       for (const input of turn.proposals) propose(projectId, ProposeBatchInput.parse(bind(input, snapshot)));
+      journalTurnEnd(projectId);
       const run = { id: crypto.randomUUID(), state: "done" as const, result: turn.result };
       runs.set(projectId, run);
       return run;
