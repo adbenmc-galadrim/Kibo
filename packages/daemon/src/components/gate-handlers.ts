@@ -10,7 +10,10 @@ import {
   type ComponentManifest,
   type DeliveryResult,
   KiboError,
+  type ListProjectEventsInput,
+  PROJECT_EVENTS_PAGE_MAX,
   type PresencePeer,
+  type ProjectEventPage,
   type ProjectSyncInfo,
   projectInfo,
   type RunPeek,
@@ -41,11 +44,18 @@ export type GateHandlersDeps = {
   deliverAnswers?: (projectId: string, ticketId: string) => DeliveryResult;
   peekRun?: (projectId: string, runId: string) => RunPeek;
   delivery?: ComponentDelivery;
+  projectEvents?: (input: ListProjectEventsInput) => ProjectEventPage;
 };
 
 function readData(docs: Docs, projectId: string, instanceId: string, call: DataCall): unknown {
   const data = readInstanceData(docs.project(projectId), instanceId);
   return call.kind === "data.get" ? (data[call.key] ?? null) : Object.keys(data);
+}
+
+function listEvents(deps: GateHandlersDeps, projectId: string, config: Record<string, unknown> | undefined) {
+  if (!deps.projectEvents) throw new KiboError("NOT_CONNECTED", "project events not started");
+  const featureId = typeof config?.featureId === "string" ? config.featureId : undefined;
+  return deps.projectEvents({ projectId, limit: PROJECT_EVENTS_PAGE_MAX, featureId }).items;
 }
 
 export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
@@ -55,9 +65,9 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
     docs.emit({ projectId });
   };
   return {
-    async list(projectId, entity) {
+    async list(projectId, entity, config) {
       if (entity === "run") return deps.runs(projectId);
-      if (entity === "project_event") throw new KiboError("NOT_CONNECTED", "project events not started");
+      if (entity === "project_event") return listEvents(deps, projectId, config);
       if (entity === "ci_run") {
         const ciRuns = deps.integrations?.()?.ciRuns ?? null;
         if (!ciRuns) throw new KiboError("NOT_CONNECTED", "ci not started");
