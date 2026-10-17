@@ -4,11 +4,12 @@ import { featureSteps } from "../../packages/schema/src/feature-steps";
 import { DEFAULT_SESSION_TOOL, type ProjectSnapshot, type TicketView } from "../../packages/schema/src/index";
 import { nextDeliverableStep } from "../../packages/schema/src/next-step";
 import { overviewIndicators, reviewCards } from "../../packages/schema/src/overview";
+import { verifyEmisJournal } from "../seed-emis-journal";
 import { seedEmisMaquettes } from "../seed-emis-maquettes";
 import { EMIS_PROJECT, emisKey } from "./emis-maquettes";
-import { EMIS_BATCH, EMIS_CLOSING, EMIS_DAY_SUMMARY, EMIS_SESSIONS } from "./emis-suivi";
+import { EMIS_BATCH, EMIS_CLOSING, EMIS_DAY_SUMMARY, EMIS_LAST_FACTS, EMIS_SESSIONS } from "./emis-suivi";
 import { scenarioTurns } from "./memory-agent";
-import { createMemoryDaemon, type MemoryDaemon } from "./memory-daemon";
+import { createMemoryDaemon, type MemoryDaemon, memorySeed } from "./memory-daemon";
 
 const TODAY = "2026-10-16";
 
@@ -18,7 +19,7 @@ let projectId: string;
 
 beforeAll(async () => {
   daemon = createMemoryDaemon("adam", TODAY);
-  projectId = (await seedEmisMaquettes(daemon.rpc)).projectId;
+  projectId = (await seedEmisMaquettes(daemon.rpc, memorySeed(daemon))).projectId;
   today = daemon.snapshot(EMIS_PROJECT.key, TODAY);
 });
 
@@ -63,17 +64,27 @@ test("one agent turn proposes seven batches: six superseded, the seventh pending
   expect(scenarioTurns()[0]?.result).toBe(EMIS_DAY_SUMMARY);
 });
 
-test("the last facts are the merge of #18, batch 7, step 7 of EMIS-33 and the opening of #22", () => {
+test("the last facts are #18 merged with F3 delivered, batch 7, step 7 of EMIS-33 and the opening of #22", async () => {
   const last = daemon
     .events()
     .slice(-4)
-    .map((e) => [e.kind, keyOf(e.ticketId), e.detail]);
-  expect(last).toEqual([
-    ["pr_merged", "EMIS-21", EMIS_CLOSING.merged],
-    ["batch_proposed", null, EMIS_BATCH.seq],
-    ["step_set", "EMIS-33", 7],
-    ["pr_opened", "EMIS-32", EMIS_CLOSING.opened],
-  ]);
+    .map((e) => [e.kind, keyOf(e.ticketId), e.data]);
+  expect(last).toEqual(EMIS_LAST_FACTS.map((f) => [f.kind, f.key, f.data]));
+  await verifyEmisJournal(daemon.rpc, projectId);
+});
+
+test("the poller merge closes EMIS-21 and delivers F3", () => {
+  expect(byKey("EMIS-21").statusId).toBe("done");
+  expect(byKey("F3").statusId).toBe("done");
+  expect(byKey("F3").feature?.status).toBe("delivered");
+});
+
+test("the T3 Code sessions start before the closing facts", () => {
+  const events = daemon.events();
+  const sessions = events.flatMap((e, at) => (e.kind === "session_started" ? [[keyOf(e.ticketId), at]] : []));
+  expect(sessions.map(([key]) => key)).toEqual(EMIS_SESSIONS.map((s) => emisKey(s.n)));
+  const merge = events.findIndex((e) => e.kind === "pr_merged" && e.data.number === EMIS_CLOSING.merged);
+  expect(sessions.every(([, at]) => typeof at === "number" && at < merge)).toBe(true);
 });
 
 test("the indicators of P1 bis", () => {

@@ -40,3 +40,12 @@ export const EMIS_BATCH: BatchSpec = {
 };
 
 export const EMIS_CLOSING = { merged: 18, delivery: 33, opened: 22 } as const;
+
+export type FactSpec = { kind: string; key: string | null; data: Record<string, string | number> };
+
+export const EMIS_LAST_FACTS: readonly FactSpec[] = [
+  { kind: "pr_merged", key: emisKey(21), data: { number: EMIS_CLOSING.merged, delivered: "F3" } },
+  { kind: "batch_proposed", key: null, data: { seq: EMIS_BATCH.seq } },
+  { kind: "step_set", key: emisKey(EMIS_CLOSING.delivery), data: { step: 7 } },
+  { kind: "pr_opened", key: emisKey(32), data: { number: EMIS_CLOSING.opened } },
+];

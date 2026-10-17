@@ -10,7 +10,7 @@ import {
 import { seedEmisMaquettes } from "../seed-emis-maquettes";
 import { EMIS_PROJECT, EMIS_WORKSPACE_NAME, emisKey, OTHER_PROJECTS } from "./emis-maquettes";
 import { EMIS_DESCRIPTION } from "./emis-suivi";
-import { createMemoryDaemon, type MemoryDaemon } from "./memory-daemon";
+import { createMemoryDaemon, type MemoryDaemon, memorySeed } from "./memory-daemon";
 
 const VIEWER = "adam";
 const TODAY = "2026-10-16";
@@ -21,7 +21,7 @@ let today: ProjectSnapshot;
 
 beforeAll(async () => {
   daemon = createMemoryDaemon(VIEWER, TODAY);
-  await seedEmisMaquettes(daemon.rpc);
+  await seedEmisMaquettes(daemon.rpc, memorySeed(daemon));
   today = daemon.snapshot(EMIS_PROJECT.key, TODAY);
 });
 
@@ -226,6 +226,6 @@ test("workspace, projects, description and pages of the mockups", () => {
 
 test("seeding twice writes nothing the second time", async () => {
   const before = daemon.writes();
-  await seedEmisMaquettes(daemon.rpc);
+  await seedEmisMaquettes(daemon.rpc, memorySeed(daemon));
   expect(daemon.writes()).toBe(before);
 });

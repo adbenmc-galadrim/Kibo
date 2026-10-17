@@ -5,18 +5,19 @@ import {
   setProjectMeta,
 } from "../../packages/core/src/index";
 import {
+  DEFAULT_SESSION_TOOL,
   INBOX_ID,
   INBOX_KEY,
   KiboError,
-  type ProjectCommand,
   type ProjectMeta,
   type ProjectSnapshot,
   RpcRequest,
 } from "../../packages/schema/src/index";
-import type { SeedRpc } from "../seed-emis-maquettes";
+import type { SeedOptions, SeedRpc } from "../seed-emis-maquettes";
 import { createMemoryAgent, type MemoryAgent } from "./memory-agent";
+import { eventOf, eventPage, type MemoryEvent, pollerMerge } from "./memory-journal";
 
-export type MemoryEvent = { kind: string; ticketId: string | null; detail: string | number | null };
+export type { MemoryEvent };
 
 export type MemoryDaemon = {
   rpc: SeedRpc;
@@ -26,27 +27,8 @@ export type MemoryDaemon = {
   projects(): ProjectMeta[];
   events(): MemoryEvent[];
   agentView: MemoryAgent["view"];
+  mergePr(number: number): void;
 };
-
-function eventOf(cmd: ProjectCommand): MemoryEvent | null {
-  switch (cmd.method) {
-    case "setStatus":
-      return { kind: "status_changed", ticketId: cmd.ticketId, detail: cmd.statusId };
-    case "setTicketSprint":
-      return { kind: "sprint_set", ticketId: cmd.ticketId, detail: cmd.sprintId };
-    case "upsertExternalRef":
-      if (cmd.ref.kind === "git_branch")
-        return { kind: "branch_created", ticketId: cmd.ticketId, detail: cmd.ref.branch };
-      if (cmd.ref.kind !== "github_pr") return null;
-      return {
-        kind: cmd.ref.state === "merged" ? "pr_merged" : "pr_opened",
-        ticketId: cmd.ticketId,
-        detail: cmd.ref.number,
-      };
-    default:
-      return null;
-  }
-}
 
 const meta = (id: string, key: string, name: string, folder: string | null, color: string): ProjectMeta => ({
   id,
@@ -70,7 +52,9 @@ export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
   let workspaceName: string | null = null;
   const events: MemoryEvent[] = [];
   const agent = createMemoryAgent();
-  agent.onProposed((batch) => events.push({ kind: "batch_proposed", ticketId: null, detail: batch.seq }));
+  agent.onProposed((batch) =>
+    events.push({ kind: "batch_proposed", ticketId: null, data: { seq: batch.seq } }),
+  );
   const project = (id: string) => {
     const found = docs.get(id);
     if (found === undefined) throw new KiboError("NOT_FOUND", `project ${id} not found`);
@@ -112,13 +96,25 @@ export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
         return agent.send(req.projectId, readProject(project(req.projectId).doc, today));
       case "getProjectAgent":
         return agent.view(req.projectId);
+      case "listProjectEvents":
+        return eventPage(events, req.limit);
+      case "setTicketSession": {
+        writes += 1;
+        const ticket = readProject(project(req.projectId).doc, today).tickets.find(
+          (t) => t.key === req.ticketKey,
+        );
+        if (ticket === undefined) throw new KiboError("NOT_FOUND", `ticket ${req.ticketKey} not found`);
+        const tool = req.tool ?? DEFAULT_SESSION_TOOL;
+        events.push({ kind: "session_started", ticketId: ticket.id, data: { tool } });
+        return { tool, startedAt: writes };
+      }
       case "setDeliveryStep": {
         writes += 1;
         const { doc } = project(req.projectId);
         const ticket = readProject(doc, today).tickets.find((t) => t.key === req.ticketKey);
         if (ticket === undefined) throw new KiboError("NOT_FOUND", `ticket ${req.ticketKey} not found`);
         deliveries += 1;
-        events.push({ kind: "step_set", ticketId: ticket.id, detail: req.step });
+        events.push({ kind: "step_set", ticketId: ticket.id, data: { step: req.step } });
         const delivery = {
           step: req.step,
           note: req.note ?? "",
@@ -150,5 +146,20 @@ export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
     projects: listed,
     events: () => [...events],
     agentView: agent.view,
+    mergePr(number) {
+      const owner = [...docs.values()].find((p) =>
+        readProject(p.doc, today).tickets.some((t) =>
+          t.externalRefs.some((r) => r.kind === "github_pr" && r.number === number),
+        ),
+      );
+      if (owner === undefined) throw new KiboError("NOT_FOUND", `pull request #${number} not found`);
+      events.push(pollerMerge(owner.doc, today, number));
+    },
   };
 }
+
+export const memorySeed = (daemon: MemoryDaemon): SeedOptions => ({
+  folder: null,
+  mergePr: (number) => daemon.mergePr(number),
+  wait: { timeoutMs: 1_000, pollMs: 1 },
+});
