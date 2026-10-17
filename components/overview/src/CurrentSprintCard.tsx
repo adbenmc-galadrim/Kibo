@@ -25,7 +25,7 @@ export function StatePill({ state }: { state: FeatureStatus }) {
 function FeatureRow({ row, onOpen }: { row: FeatureLine; onOpen(id: string): void }) {
   const muted = row.state === "delivered";
   return (
-    <li className={cn("flex h-[38px] items-center gap-[10px] px-[16px]", ROW_LINE)}>
+    <li className={cn("flex h-[39px] items-center gap-[10px] px-[16px]", ROW_LINE)}>
       <span className={cn("w-[26px] shrink-0", MONO_KEY)}>{row.shortKey}</span>
       <button
         type="button"

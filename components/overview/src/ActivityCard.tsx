@@ -48,7 +48,7 @@ function Row({ row, onOpenTicket }: { row: ActivityRow; onOpenTicket(id: string)
   const [Icon, color] = ICONS[row.kind];
   const tone = row.agent ? "text-(--tracking-brand-text)" : "text-(--tracking-fg)";
   return (
-    <li className={cn("flex h-[38px] items-center gap-[10px] px-[16px]", ROW_LINE)}>
+    <li className={cn("flex h-[39px] items-center gap-[10px] px-[16px]", ROW_LINE)}>
       <span className={cn("w-[40px] shrink-0", MONO_KEY)}>{row.time}</span>
       <Icon absoluteStrokeWidth size={14} aria-hidden className={cn("shrink-0", color)} />
       <span className={cn("min-w-0 flex-1 truncate text-[13px] leading-[16px]", tone)}>{row.label}</span>

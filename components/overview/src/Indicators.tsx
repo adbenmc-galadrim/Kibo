@@ -37,7 +37,9 @@ function Box({ icon: Icon, label, text, children }: BoxProps) {
         <span className="font-semibold text-(--tracking-fg) text-[28px] leading-[28px] tracking-[-0.5px]">
           {text.value}
         </span>
-        <span className="text-(--tracking-mfg) text-[13px] leading-[16px]">{text.unit}</span>
+        <span className="whitespace-nowrap text-(--tracking-mfg) text-[13px] leading-[16px]">
+          {text.unit}
+        </span>
       </span>
       <span className="flex h-[16px] min-w-0 items-center gap-[6px] text-(--tracking-mfg) text-[12px] leading-[15px]">
         {children}

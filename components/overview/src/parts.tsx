@@ -20,7 +20,7 @@ type HeaderProps = {
 export function CardHeader({ icon: Icon, title, aside, count, onTitle }: HeaderProps) {
   const heading = "font-semibold text-(--tracking-fg) text-[14px] leading-[17px]";
   return (
-    <div className="flex h-[44px] shrink-0 items-center gap-[8px] px-[16px]">
+    <div className="flex h-[43px] shrink-0 items-center gap-[8px] px-[16px]">
       <Icon absoluteStrokeWidth size={15} aria-hidden className="text-(--tracking-mfg)" />
       {onTitle ? (
         <button type="button" className={cn(heading, "cursor-pointer hover:underline")} onClick={onTitle}>
