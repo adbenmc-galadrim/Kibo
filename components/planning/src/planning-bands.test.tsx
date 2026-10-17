@@ -35,6 +35,9 @@ test("bands: one column per sprint then the backlog, one row per open feature", 
   const frise = await timeline();
   for (const code of ["S41", "S42", "S43", "S44", "À planifier"])
     expect(within(frise).getByText(code)).toBeTruthy();
+  const unplanned = within(frise).getByText("À planifier");
+  expect(unplanned.className).not.toContain("font-mono");
+  expect(unplanned.parentElement?.textContent).toBe("À planifier");
   expect(rowKeys(frise)).toEqual(["F4", "F5", "F6", "F8", "F7", "F9"]);
   expect(frise.querySelector("[data-current]")?.textContent).toContain("S42");
   expect(tones(frise, "F4")).toEqual(["done", "done", "done", "review", "todo"]);
@@ -72,13 +75,15 @@ test("bands: nothing can be dragged, a row opens its feature", async () => {
   await waitFor(() => expect(m.opened).toEqual([seeded.features.f9.root.id]));
 });
 
-test("today sits inside the current sprint column, nowhere outside the sprints", () => {
+test("today sits in its sprint, on the edge of the next one between two sprints, nowhere after", () => {
   const sprints = [
     { start: "2026-10-05", end: "2026-10-09" },
     { start: "2026-10-12", end: "2026-10-16" },
   ];
   expect(bandsToday(sprints, "2026-10-16")).toBeCloseTo((1 + 4 / 5) / 3);
   expect(bandsToday(sprints, "2026-10-05")).toBe(0);
-  expect(bandsToday(sprints, "2026-10-10")).toBeNull();
+  expect(bandsToday(sprints, "2026-10-10")).toBeCloseTo(1 / 3);
+  expect(bandsToday(sprints, "2026-10-01")).toBe(0);
+  expect(bandsToday(sprints, "2026-10-17")).toBeNull();
   expect(bandsToday([], "2026-10-10")).toBeNull();
 });

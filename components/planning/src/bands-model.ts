@@ -1,6 +1,5 @@
 import {
   type DeadlineCell,
-  type DeadlineColumn,
   type DeadlineRow,
   type FeatureState,
   type FeatureStep,
@@ -15,6 +14,7 @@ import {
   sortSprints,
   type TicketView,
 } from "@kibo/schema";
+import type { TimelineColumnInput } from "@kibo/sdk/tracking";
 
 export type BandsInput = {
   tickets: readonly TicketView[];
@@ -25,7 +25,7 @@ export type BandsInput = {
   backlog: string;
 };
 export type BandsTimeline = {
-  columns: DeadlineColumn[];
+  columns: TimelineColumnInput[];
   rows: DeadlineRow[];
   today: number | null;
   delivered: DeadlineRow[];
@@ -37,23 +37,21 @@ type SprintRef = Pick<Sprint, "id" | "code">;
 const BACKLOG_COLUMN = "backlog";
 const DAY_MS = 86_400_000;
 const dayNumber = (date: string): number => Date.parse(`${date}T00:00:00Z`) / DAY_MS;
-const dateOf = (day: number): string => new Date(day * DAY_MS).toISOString().slice(0, 10);
 
 export function bandsToday(sprints: readonly Pick<Sprint, "start" | "end">[], today: string): number | null {
-  const index = sprints.findIndex((s) => s.start <= today && today <= s.end);
+  const index = sprints.findIndex((s) => today <= s.end);
   const sprint = sprints[index];
   if (sprint === undefined) return null;
+  if (today < sprint.start) return index / (sprints.length + 1);
   const length = dayNumber(sprint.end) - dayNumber(sprint.start) + 1;
   const fraction = (dayNumber(today) - dayNumber(sprint.start)) / length;
   return (index + fraction) / (sprints.length + 1);
 }
 
-function bandColumns(sorted: readonly Sprint[], today: string, backlog: string): DeadlineColumn[] {
-  const last = sorted.at(-1);
-  const after = last === undefined ? today : dateOf(dayNumber(last.end) + 1);
+function bandColumns(sorted: readonly Sprint[], backlog: string): TimelineColumnInput[] {
   return [
     ...sorted.map((s) => ({ start: s.start, sprint: { id: s.id, code: s.code } })),
-    { start: after, sprint: { id: BACKLOG_COLUMN, code: backlog } },
+    { kind: "unplanned", label: backlog },
   ];
 }
 
@@ -119,7 +117,7 @@ export function bandsTimeline(input: BandsInput): BandsTimeline {
       row: bandRow(f, column, facts),
     }));
   return {
-    columns: bandColumns(sorted, input.today, input.backlog),
+    columns: bandColumns(sorted, input.backlog),
     rows: rows.filter((r) => !r.delivered).map((r) => r.row),
     today: bandsToday(sorted, input.today),
     delivered: rows.filter((r) => r.delivered).map((r) => r.row),
