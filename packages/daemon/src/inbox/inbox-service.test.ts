@@ -133,6 +133,8 @@ describe("inbox", () => {
             state: "open",
             base: null,
             head: null,
+            review: "none",
+            checks: null,
           },
         }),
       () =>
@@ -146,6 +148,8 @@ describe("inbox", () => {
             state: "open",
             base: null,
             head: null,
+            review: "none",
+            checks: null,
           },
         }),
       () => s.handle({ ...newProject, key: "INB" }),

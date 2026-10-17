@@ -135,6 +135,8 @@ describe("external refs of every kind", () => {
       state: "open",
       base: null,
       head: null,
+      review: "none",
+      checks: null,
     };
     expect(() => upsertExternalRef(d, t.id, pr)).toThrow("INVALID_INPUT");
     expect(() => upsertExternalRef(d, t.id, { ...figma, url: "javascript:alert(1)" })).toThrow(

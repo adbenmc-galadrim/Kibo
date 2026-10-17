@@ -105,6 +105,8 @@ describe("kibo tickets against a real daemon", () => {
         state: "merged",
         base: "dev",
         head: "feat/socle",
+        review: "none",
+        checks: null,
       },
     });
     const next = await ticket("C1-2", "Stockage", { parentId: parent.id, description: "Tout le détail." });

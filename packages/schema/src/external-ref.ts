@@ -5,6 +5,10 @@ import { FigmaNodeRef, GithubIssueRef, McpItemRef, WebUrl } from "./integrations
 
 export const PrState = z.enum(["open", "draft", "merged", "closed"]);
 export type PrState = z.infer<typeof PrState>;
+export const PrReview = z.enum(["none", "approved", "changes_requested", "review_required"]);
+export type PrReview = z.infer<typeof PrReview>;
+export const PrChecks = z.enum(["ok", "error", "running"]);
+export type PrChecks = z.infer<typeof PrChecks>;
 
 export const GithubPrRef = z.object({
   kind: z.literal("github_pr"),
@@ -13,6 +17,8 @@ export const GithubPrRef = z.object({
   state: PrState,
   base: z.string().nullable().default(null),
   head: z.string().nullable().default(null),
+  review: PrReview.default("none"),
+  checks: PrChecks.nullable().default(null),
 });
 export type GithubPrRef = z.infer<typeof GithubPrRef>;
 

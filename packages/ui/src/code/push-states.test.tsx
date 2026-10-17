@@ -20,6 +20,8 @@ const pr: PrInfo = {
   state: "open",
   base: null,
   head: null,
+  review: "none",
+  checks: null,
 };
 
 function renderActions(overrides: Partial<Parameters<typeof PushActions>[0]> = {}) {

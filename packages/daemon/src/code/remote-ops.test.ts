@@ -53,6 +53,8 @@ test("createPr pushes then calls gh with safe arguments and the body on stdin", 
     state: "draft",
     base: "main",
     head: "kib-12",
+    review: "none",
+    checks: null,
   });
   expect(fx.git("ls-remote", "origin", "kib-12").trim()).not.toBe("");
   expect(readFakeGhLog(gh)).toContainEqual({
@@ -75,6 +77,8 @@ test("createPr pushes then calls gh with safe arguments and the body on stdin", 
     state: "draft",
     base: "main",
     head: "kib-12",
+    review: "none",
+    checks: null,
   });
 });
 
@@ -118,7 +122,15 @@ test("PR states map from gh JSON", async () => {
     toPrInfo(
       '{"number":4,"url":"https://github.com/a/b/pull/4","state":"OPEN","isDraft":true,"baseRefName":"dev","headRefName":"feat/x"}',
     ),
-  ).toEqual({ number: 4, url: "https://github.com/a/b/pull/4", state: "draft", base: "dev", head: "feat/x" });
+  ).toEqual({
+    number: 4,
+    url: "https://github.com/a/b/pull/4",
+    state: "draft",
+    base: "dev",
+    head: "feat/x",
+    review: "none",
+    checks: null,
+  });
   expect(toPrInfo('{"number":4,"url":"https://github.com/a/b/pull/4","state":"MERGED"}')).toMatchObject({
     base: null,
     head: null,
@@ -145,7 +157,15 @@ test("prsForBranch lists every PR of a branch, read only", async () => {
   await createPr(h, { title: "x", body: "", base: "main", draft: true, reviewers: [] });
   const env = { ...fx.env, ...gh };
   expect(await prsForBranch("kib-12", fx.repo, env)).toEqual([
-    { number: 1, url: "https://github.com/kibo/test/pull/1", state: "draft", base: "main", head: "kib-12" },
+    {
+      number: 1,
+      url: "https://github.com/kibo/test/pull/1",
+      state: "draft",
+      base: "main",
+      head: "kib-12",
+      review: "none",
+      checks: null,
+    },
   ]);
   expect(await prsForBranch("feat/autre", fx.repo, env)).toEqual([]);
   expect(readFakeGhLog(gh).at(-1)?.args).toEqual([

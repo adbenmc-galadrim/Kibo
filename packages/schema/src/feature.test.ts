@@ -21,6 +21,8 @@ const PR = {
   state: "open" as const,
   base: "main",
   head: "feat/emis-33",
+  review: "none" as const,
+  checks: null,
 };
 
 test("a feature is a root ticket with children", () => {

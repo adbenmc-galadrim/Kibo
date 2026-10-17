@@ -142,6 +142,8 @@ async function attachGit(emis: Emis): Promise<void> {
         ...step.pr,
         base: null,
         head: null,
+        review: "none",
+        checks: null,
       };
       await emis.command({ method: "upsertExternalRef", ticketId, ref });
     }

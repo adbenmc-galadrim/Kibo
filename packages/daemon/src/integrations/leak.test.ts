@@ -203,6 +203,8 @@ async function githubScenario(): Promise<{ projectId: string; ticketId: string }
       state: "open",
       base: null,
       head: null,
+      review: "none",
+      checks: null,
     },
   });
   ciPoller.fire();

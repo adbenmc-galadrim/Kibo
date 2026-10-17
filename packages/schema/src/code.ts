@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { PrState } from "./external-ref";
+import { GithubPrRef } from "./external-ref";
 import { NodeId } from "./ids";
 
 export const RelPath = z
@@ -138,13 +138,7 @@ export const BranchChanges = z.object({
 });
 export type BranchChanges = z.infer<typeof BranchChanges>;
 
-export const PrInfo = z.object({
-  number: z.number().int().positive(),
-  url: z.string().url(),
-  state: PrState,
-  base: z.string().nullable().default(null),
-  head: z.string().nullable().default(null),
-});
+export const PrInfo = GithubPrRef.omit({ kind: true });
 export type PrInfo = z.infer<typeof PrInfo>;
 
 export const GhStatus = z.object({ available: z.boolean(), detail: z.string().nullable() });

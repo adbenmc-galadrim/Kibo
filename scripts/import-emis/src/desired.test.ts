@@ -16,6 +16,8 @@ const pr4 = {
   state: "draft" as const,
   base: "dev",
   head: "feat/coquille",
+  review: "none" as const,
+  checks: null,
 };
 const desired = desiredState({
   plan,
@@ -48,6 +50,8 @@ test("chapters, prs, questions and todo items become tickets with stable import 
         state: "draft",
         base: "dev",
         head: "feat/coquille",
+        review: "none",
+        checks: null,
       },
       { kind: "git_branch", branch: "feat/coquille", base: null },
     ]),

@@ -50,6 +50,8 @@ const pr = (number: number, state: "open" | "merged"): ExternalRef => ({
   state,
   base: "main",
   head: null,
+  review: "none",
+  checks: null,
 });
 
 const step = (n: number, day: number, h: number, m: number) => ({

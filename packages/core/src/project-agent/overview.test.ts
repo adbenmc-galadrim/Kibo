@@ -9,6 +9,8 @@ const pr = {
   state: "open" as const,
   base: null,
   head: null,
+  review: "none" as const,
+  checks: null,
 };
 
 const snapshot = project({

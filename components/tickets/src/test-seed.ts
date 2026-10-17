@@ -17,6 +17,8 @@ const pr = (number: number, state: "open" | "draft" | "merged" | "closed"): Exte
   state,
   base: "main",
   head: `feat/pr-${number}`,
+  review: "none",
+  checks: null,
 });
 
 const branch = (name: string): ExternalRef => ({ kind: "git_branch", branch: name, base: null });

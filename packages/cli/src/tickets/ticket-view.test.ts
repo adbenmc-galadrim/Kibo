@@ -56,6 +56,8 @@ const pr = (number: number, state: "open" | "draft" | "merged" | "closed"): Exte
   state,
   base: null,
   head: null,
+  review: "none",
+  checks: null,
 });
 
 const snapshot = {

@@ -77,6 +77,8 @@ function prRefs(pr: FlatPr, byId: Map<string, FlatPr>, input: TicketInput): Exte
             state: info.state,
             base: info.base,
             head: info.head,
+            review: "none",
+            checks: null,
           }
         : {
             kind: "github_pr",
@@ -85,6 +87,8 @@ function prRefs(pr: FlatPr, byId: Map<string, FlatPr>, input: TicketInput): Exte
             state: "open",
             base: null,
             head: null,
+            review: "none",
+            checks: null,
           },
     );
   }

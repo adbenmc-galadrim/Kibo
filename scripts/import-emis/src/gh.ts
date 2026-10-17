@@ -40,6 +40,8 @@ async function readPr(url: string): Promise<PrInfo> {
     state: prState(pr),
     base: pr.baseRefName ?? null,
     head: pr.headRefName ?? null,
+    review: "none",
+    checks: null,
   };
 }
 

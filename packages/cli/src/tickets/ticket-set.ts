@@ -90,7 +90,16 @@ export function prCommand(ticket: SetTarget, value: string, tickets: readonly Se
   return {
     method: "upsertExternalRef",
     ticketId: ticket.id,
-    ref: { kind: "github_pr", url, number, state: "open", base: null, head: null },
+    ref: {
+      kind: "github_pr",
+      url,
+      number,
+      state: "open",
+      base: null,
+      head: null,
+      review: "none",
+      checks: null,
+    },
   };
 }
 

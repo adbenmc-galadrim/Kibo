@@ -60,6 +60,8 @@ const project: ProjectSnapshot = {
           state: "draft",
           base: null,
           head: null,
+          review: "none",
+          checks: null,
         },
       ],
       progress: { done: 0, total: 0 },

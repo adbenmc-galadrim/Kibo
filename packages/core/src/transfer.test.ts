@@ -111,6 +111,8 @@ describe("transferTicket", () => {
       state: "open",
       base: null,
       head: null,
+      review: "none",
+      checks: null,
     } as const;
     upsertExternalRef(from, t.id, ref);
     const result = transferTicket(from, to, t.id, null);

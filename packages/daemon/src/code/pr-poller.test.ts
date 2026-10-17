@@ -73,7 +73,14 @@ const command = (cmd: Extract<RpcRequest, { method: "command" }>["command"]) =>
 const reviewedTicket = (title: string, pr: { number: number; base: string | null; head: string | null }) => {
   const ticket = command({ method: "createTicket", title }) as Ticket;
   command({ method: "setStatus", ticketId: ticket.id, statusId: "in_review" });
-  const ref: GithubPrRef = { kind: "github_pr", url: urlOf(pr.number), state: "open", ...pr };
+  const ref: GithubPrRef = {
+    kind: "github_pr",
+    url: urlOf(pr.number),
+    state: "open",
+    review: "none",
+    checks: null,
+    ...pr,
+  };
   command({ method: "upsertExternalRef", ticketId: ticket.id, ref });
   return ticket.id;
 };
@@ -165,6 +172,8 @@ test("a draft PR opened outside Kibo moves the ticket to review, ready does not 
     state: "draft",
     base: "dev",
     head: "feat/stockage-fichiers",
+    review: "none",
+    checks: null,
   });
   expect(listCalls("feat/stockage-fichiers")).toBe(1);
   setFakePrs([{ number: 9, state: "OPEN", base: "dev", head: "feat/stockage-fichiers" }]);

@@ -62,6 +62,8 @@ beforeEach(async () => {
         state: "open",
         base: null,
         head: null,
+        review: "none",
+        checks: null,
       },
     },
     user,

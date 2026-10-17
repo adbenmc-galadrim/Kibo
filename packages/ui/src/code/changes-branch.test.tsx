@@ -114,6 +114,8 @@ const ticket: TicketView = {
       state: "draft",
       base: "dev",
       head: null,
+      review: "none",
+      checks: null,
     },
   ],
   progress: { done: 0, total: 0 },

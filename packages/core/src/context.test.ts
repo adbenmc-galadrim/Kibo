@@ -295,6 +295,8 @@ test("the brief lists the questions of the ticket, the branch commits and the PR
           state: "open",
           base: "dev",
           head: "feat/x",
+          review: "none",
+          checks: null,
         },
         {
           kind: "github_pr",
@@ -303,6 +305,8 @@ test("the brief lists the questions of the ticket, the branch commits and the PR
           state: "merged",
           base: null,
           head: null,
+          review: "none",
+          checks: null,
         },
       ],
     },

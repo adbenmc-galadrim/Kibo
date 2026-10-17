@@ -211,6 +211,8 @@ const syncedSeed = (run: (cmd: ProjectCommand) => unknown) => {
       state: "open",
       base: null,
       head: null,
+      review: "none",
+      checks: null,
     },
   });
 };

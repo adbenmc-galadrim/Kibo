@@ -10,6 +10,8 @@ const pr = (number: number, state: "open" | "draft" | "merged" | "closed"): Exte
   state,
   base: "main",
   head: null,
+  review: "none",
+  checks: null,
 });
 const branch: ExternalRef = { kind: "git_branch", branch: "feat/envoi-hors-ligne", base: null };
 const cell = (refs: ExternalRef[], waitingOn: string[] = [], ci: "ok" | "error" | null = null) =>
