@@ -45,7 +45,7 @@ function AddMenu({ onNewFeature, onNewSprint }: { onNewFeature(): void; onNewSpr
         <button
           type="button"
           aria-label={fr.add}
-          className="ml-auto grid size-[25px] place-items-center rounded-[6px] border border-(--tracking-border) text-(--tracking-fg)"
+          className="grid size-[25px] place-items-center rounded-[6px] border border-(--tracking-border) text-(--tracking-fg)"
         >
           <Plus absoluteStrokeWidth size={13} aria-hidden />
         </button>
@@ -68,30 +68,28 @@ type Props = {
   onNewSprint(): void;
 };
 
+const SUBTITLE = "min-w-0 truncate text-(--tracking-dim) text-[12.5px] leading-[15px]";
+
 export function PlanningHeader(props: Props) {
   const { model, readOnly, layout, onOpen, onNewFeature, onNewSprint } = props;
   return (
-    <header className="flex shrink-0 items-end gap-2.5">
-      <h1 className="font-semibold text-(--tracking-fg) text-[22px] leading-[27px]">{fr.title}</h1>
-      <span className="text-(--tracking-dim) text-[12.5px] leading-[15px]">
-        {fr.summary(model.delivered, model.total, model.unplanned)}
-      </span>
-      {layout === "bands" && (
-        <span className="text-(--tracking-dim) text-[12.5px] leading-[15px]">{fr.bands.hint}</span>
-      )}
-      {readOnly ? (
-        <span className="ml-auto" />
-      ) : (
-        <AddMenu onNewFeature={onNewFeature} onNewSprint={onNewSprint} />
-      )}
-      <OpenLimitBadge
-        open={model.open}
-        limit={model.limit}
-        over={model.overLimit}
-        cards={model.openCards}
-        onOpen={onOpen}
-      />
-      <LayoutToggle layout={layout} onLayout={props.onLayout} />
+    <header className="flex shrink-0 flex-wrap items-end gap-2.5">
+      <div className="flex min-w-0 grow basis-64 items-end gap-2.5">
+        <h1 className="shrink-0 font-semibold text-(--tracking-fg) text-[22px] leading-[27px]">{fr.title}</h1>
+        <span className={SUBTITLE}>{fr.summary(model.delivered, model.total, model.unplanned)}</span>
+        {layout === "bands" && <span className={`${SUBTITLE} shrink-[8]`}>{fr.bands.hint}</span>}
+      </div>
+      <div className="ml-auto flex min-w-0 flex-wrap items-end justify-end gap-2.5">
+        {!readOnly && <AddMenu onNewFeature={onNewFeature} onNewSprint={onNewSprint} />}
+        <OpenLimitBadge
+          open={model.open}
+          limit={model.limit}
+          over={model.overLimit}
+          cards={model.openCards}
+          onOpen={onOpen}
+        />
+        <LayoutToggle layout={layout} onLayout={props.onLayout} />
+      </div>
     </header>
   );
 }
