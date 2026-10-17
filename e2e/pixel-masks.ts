@@ -1,46 +1,28 @@
 import type { Box } from "./pixel-report";
 
 export type PixelMask = Box & { why: string };
-export type MaskedScreen = "planning" | "fonctionnalite" | "tickets";
+export type MaskedScreen = "planning" | "fonctionnalite" | "tickets" | "vue-ensemble" | "graphe";
 
 export const MASK_COLOR = "#FF00FF";
 export const MASK_RGB: readonly [number, number, number] = [255, 0, 255];
-export const MASK_AREA_LIMIT = 0.08;
+export const MASK_AREA_LIMIT = 0.04;
 
-const USER: PixelMask = {
+export const PIXEL_HEIGHTS: Record<MaskedScreen, number> = {
+  planning: 1000,
+  fonctionnalite: 1000,
+  tickets: 1000,
+  "vue-ensemble": 1260,
+  graphe: 1000,
+};
+
+const user = (y: number): PixelMask => ({
   x: 16,
-  y: 956,
+  y,
   w: 140,
   h: 24,
-  why: "avatar et nom de l'utilisateur : la phase 25 affiche le compte du système",
-};
-export const PROJECT_PAGES_SHIFT = 32;
-export const PROJECT_PAGES_ZONE: Box = { x: 10, y: 256, w: 220, h: 320 };
-
-const ROW_STEP = 32;
-const FIRST_ROW_BOX = 258;
-const ROW_BOX = 30;
-const SHIFTED_ROWS = 9;
-const SHIFT_WHY =
-  "page Vue d'ensemble du projet, phase 26 : les lignes suivantes remontent de 32 px et sont comparées décalées";
-
-export function projectRows(activeRow: number): PixelMask[] {
-  const text = Array.from({ length: SHIFTED_ROWS }, (_, k) => ({
-    x: PROJECT_PAGES_ZONE.x,
-    y: FIRST_ROW_BOX + 6 + k * ROW_STEP,
-    w: PROJECT_PAGES_ZONE.w,
-    h: 18,
-    why: SHIFT_WHY,
-  }));
-  const active = {
-    x: PROJECT_PAGES_ZONE.x,
-    y: FIRST_ROW_BOX + (activeRow - 1) * ROW_STEP,
-    w: PROJECT_PAGES_ZONE.w,
-    h: ROW_BOX + ROW_STEP,
-    why: `${SHIFT_WHY} (fond de la page active, à sa place et décalé)`,
-  };
-  return [...text, active];
-}
+  why: "avatar et nom de l'utilisateur : le démon affiche le compte du système",
+});
+const USER = user(956);
 
 const syncAge = (x: number): PixelMask => ({
   x,
@@ -49,68 +31,38 @@ const syncAge = (x: number): PixelMask => ({
   h: 16,
   why: "« Synchronisé · il y a 1 min » : âge relatif de la synchronisation, aucun serveur de sync semé",
 });
-const sessionSlot = (y: number, key: string): PixelMask => ({
-  x: 589,
-  y,
-  w: 95,
-  h: 16,
-  why: `session T3 Code sur ${key} (point orange) : la phase 25 écrit « suivante : … » à cet emplacement`,
-});
 const updatedAt = (y: number, w: number): PixelMask => ({
   x: 1323,
   y,
   w,
   h: 17,
-  why: "« Mis à jour » : âge relatif, aucun horodatage de ticket en phase 25",
+  why: "« Mis à jour » : âge relatif d'un fait semé à l'heure réelle (§37.15 point 13)",
+});
+const clockTime = (x: number, y: number, w: number, h: number, what: string): PixelMask => ({
+  x,
+  y,
+  w,
+  h,
+  why: `${what} : heure réelle d'un fait semé sous l'horloge figée (§37.15 point 13)`,
 });
 
 export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
-  planning: [USER, ...projectRows(1), syncAge(987), sessionSlot(369, "EMIS-45"), sessionSlot(494, "EMIS-33")],
+  planning: [USER, syncAge(987)],
   fonctionnalite: [
     USER,
-    ...projectRows(1),
     syncAge(1124),
-    {
-      x: 543,
-      y: 560,
-      w: 169,
-      h: 22,
-      why: "pastille « session · T3 Code · 42 min » : hook d'activité de la phase 26",
-    },
-    { x: 453, y: 385, w: 54, h: 15, why: "« hier 18:22 » de la PR #19 : aucune commande ne date une PR" },
-    { x: 393, y: 485, w: 32, h: 15, why: "« 15:04 » de la PR #22 : aucune commande ne date une PR" },
-    {
-      x: 506,
-      y: 588,
-      w: 29,
-      h: 15,
-      why: "« 14:51 » de la branche : l'étape de livraison est datée par le démon",
-    },
-    {
-      x: 1268,
-      y: 181,
-      w: 104,
-      h: 15,
-      why: "« proposé par l'agent » : report proposé par l'agent en phase 26",
-    },
-    { x: 1178, y: 413, w: 26, h: 14, why: "« hier » de Q16 : la date d'une question est posée par le démon" },
-    { x: 1093, y: 491, w: 318, h: 88, why: "lignes du journal d'activité : journal de suivi de la phase 26" },
+    clockTime(665, 563, 40, 16, "« 42 min », durée en cours d'EMIS-33 sur la fiche"),
+    clockTime(453, 385, 54, 15, "« hier 18:22 » de la PR #19"),
+    clockTime(393, 485, 32, 15, "« 15:04 » de la PR #22"),
+    clockTime(506, 588, 29, 15, "« 14:51 » de la branche"),
+    clockTime(1178, 413, 26, 14, "« hier » de Q16"),
+    clockTime(1364, 498, 36, 15, "« 15:04 » de l'activité"),
+    clockTime(1364, 528, 36, 15, "« 14:51 » de l'activité"),
+    clockTime(1376, 558, 24, 15, "« hier » de l'activité"),
   ],
   tickets: [
     USER,
-    ...projectRows(2),
     syncAge(1124),
-    {
-      x: 980,
-      y: 231,
-      w: 154,
-      h: 16,
-      why: "« changements demandés » et CI rouge de la PR #20 : review et CI en phase 26",
-    },
-    { x: 980, y: 273, w: 14, h: 14, why: "coche de CI de la PR #22 : CI non semable" },
-    { x: 509, y: 191, w: 14, h: 14, why: "point de session d'EMIS-33 : sessions T3 Code, phase 26" },
-    { x: 471, y: 232, w: 14, h: 14, why: "point de session d'EMIS-45 : sessions T3 Code, phase 26" },
-    { x: 1040, y: 511, w: 14, h: 14, why: "coche de CI de la PR #19 : CI non semable" },
     updatedAt(190, 61),
     updatedAt(231, 66),
     updatedAt(272, 45),
@@ -122,9 +74,45 @@ export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
     updatedAt(551, 26),
     updatedAt(592, 26),
   ],
+  "vue-ensemble": [
+    user(1216),
+    syncAge(671),
+    clockTime(1225, 30, 62, 17, "« il y a 4 min », âge du dernier tour de suivi"),
+    clockTime(1018, 251, 42, 16, "« 42 min », durée en cours d'EMIS-33"),
+    clockTime(1021, 288, 38, 16, "« 18 min », durée en cours d'EMIS-45"),
+    clockTime(279, 1074, 40, 16, "« 15:04 » de l'activité"),
+    clockTime(279, 1113, 40, 16, "« 14:51 » de l'activité"),
+    clockTime(279, 1152, 40, 16, "« 14:40 » de l'activité"),
+    clockTime(279, 1191, 40, 16, "« 14:36 » de l'activité"),
+    clockTime(906, 983, 137, 21, "« il y a 3 j » de Q14 et la puce « bloquante » que sa largeur déplace"),
+    clockTime(912, 1045, 62, 17, "« hier » de Q16"),
+    clockTime(903, 1124, 63, 17, "« il y a 2 h » de Q17"),
+    {
+      x: 938,
+      y: 389,
+      w: 66,
+      h: 16,
+      why: "« S45 2 nov. » : la maquette nomme la quatrième semaine d'un sprint que la fixture ne sème pas",
+    },
+  ],
+  graphe: [
+    USER,
+    syncAge(1124),
+    {
+      x: 1134,
+      y: 64,
+      w: 291,
+      h: 16,
+      why: "compteur des dépendances : la maquette compte 13 liens d'étapes que la fixture ne sème pas",
+    },
+  ],
 };
 
 const isMaskedScreen = (screen: string): screen is MaskedScreen => Object.hasOwn(PIXEL_MASKS, screen);
+
+const REFERENCE_FILES: Partial<Record<string, string>> = { "vue-ensemble": "vue-ensemble-v2" };
+
+export const referenceOf = (screen: string): string => REFERENCE_FILES[screen] ?? screen;
 
 export const masksOf = (screen: string): readonly PixelMask[] =>
   isMaskedScreen(screen) ? PIXEL_MASKS[screen] : [];

@@ -183,6 +183,15 @@ export function diffReport(png: Uint8Array, cell = 16): DiffReport {
   };
 }
 
+export function regionRatio(png: Uint8Array | null, box: Box): number {
+  if (png === null) return 0;
+  const { width, data } = decodePng(png);
+  let differ = 0;
+  for (let y = box.y; y < box.y + box.h; y++)
+    for (let x = box.x; x < box.x + box.w; x++) if (isDiffPixel(data, y * width + x)) differ++;
+  return differ / (box.w * box.h);
+}
+
 export function formatReport(report: DiffReport, limit = 20): string {
   const largest = [...report.boxes].sort((a, b) => b.w * b.h - a.w * a.h);
   const lines = largest.slice(0, limit).map((b) => `  x=${b.x} y=${b.y} ${b.w}×${b.h}`);
