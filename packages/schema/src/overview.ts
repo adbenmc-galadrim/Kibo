@@ -1,5 +1,6 @@
 import type { GithubPrRef } from "./external-ref";
 import { type FeatureState, isOpenFeature } from "./feature-state";
+import { dayNumber } from "./iso-date";
 import { isOpen } from "./question";
 import type { ProjectSnapshot, TicketView } from "./rpc";
 import { currentSprint, nextSprint, type Sprint, sortSprints } from "./sprint";
@@ -20,11 +21,9 @@ type OverviewSnapshot = Pick<ProjectSnapshot, "tickets" | "sprints" | "questions
 type Feature = { ticket: TicketView; state: FeatureState; rank: number };
 export type ReviewCard = { pr: GithubPrRef; ticket: TicketView; feature: { shortKey: string } | null };
 
-const DAY_MS = 86_400_000;
 const REVIEWED: readonly GithubPrRef["state"][] = ["open", "draft"];
 
-const daysBetween = (from: string, to: string): number =>
-  Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
+const daysBetween = (from: string, to: string): number => dayNumber(to) - dayNumber(from);
 
 export function plannedFeatures(snapshot: Pick<ProjectSnapshot, "tickets" | "sprints">): Feature[] {
   const order = new Map(sortSprints(snapshot.sprints).map((s, i) => [s.id, i]));

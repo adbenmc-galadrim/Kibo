@@ -1,11 +1,11 @@
 import type { FeatureState } from "./feature-state";
 import type { FeatureStep } from "./feature-steps";
+import { dateOf, dayNumber } from "./iso-date";
 import { currentSprint, nextSprint, type Sprint, type SprintView, sortSprints } from "./sprint";
 import { FINAL_STATUSES } from "./startable";
 import type { StatusId } from "./status";
 
 export const DEADLINE_WEEKS = 4;
-const DAY_MS = 86_400_000;
 const WEEK_DAYS = 7;
 
 export type DeadlineColumn = { start: string; sprint: Pick<Sprint, "id" | "code"> | null };
@@ -36,8 +36,6 @@ export type DeadlineInput = {
   today: string;
 };
 
-const dayNumber = (date: string): number => Date.parse(`${date}T00:00:00Z`) / DAY_MS;
-const dateOf = (day: number): string => new Date(day * DAY_MS).toISOString().slice(0, 10);
 const sprintRef = (s: Pick<Sprint, "id" | "code">): Pick<Sprint, "id" | "code"> => ({
   id: s.id,
   code: s.code,

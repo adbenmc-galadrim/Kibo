@@ -51,6 +51,7 @@ export * from "./inbox";
 export * from "./instance";
 export * from "./integrations";
 export * from "./integrations-rpc";
+export * from "./iso-date";
 export * from "./label";
 export * from "./layout-compaction";
 export * from "./link";
