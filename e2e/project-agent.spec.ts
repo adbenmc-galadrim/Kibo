@@ -103,7 +103,9 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
   await expect(panel.getByText("J'ai proposé un lot de 5 actions.")).toBeVisible({ timeout: 30_000 });
   const card = panel.getByRole("region", { name: "Lot n° 1" });
   await expect(card).toBeVisible();
-  await expect(page.getByRole("button", { name: /Agent de projet · 5 actions à valider/ })).toBeVisible();
+  const agentButton = page.getByRole("button", { name: /Agent de projet · 5 actions à valider/ });
+  await expect(agentButton).toBeVisible();
+  await expect(agentButton.locator("[data-pending]")).toHaveCount(0);
   await shot(page, info, "ecran-174");
   await card.scrollIntoViewIfNeeded();
   await card.getByRole("checkbox", { name: /Faut-il la doc/ }).click();

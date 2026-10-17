@@ -135,6 +135,15 @@ test("sélection : clic, Ouvrir, flèches, Entrée, boîte avec Shift", async ({
   await shot(page, info, "graphe-selection-multiple");
 });
 
+test("sans sprint : la bascule Colonnes est désactivée et la vue reste en vagues", async ({ page }) => {
+  const canvas = await openGraph(page);
+  const columns = page.getByRole("button", { name: "Colonnes : Vagues" });
+  await expect(columns).toBeDisabled();
+  await expect(page.getByTitle("Aucun sprint")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Fonctionnalités par sprint" })).toHaveCount(0);
+  await expect(canvas.getByRole("button", { name: /KIB-21 / })).toBeVisible();
+});
+
 async function setFormat(page: Page, format: RegExp) {
   await page.getByRole("button", { name: "Modifier la disposition" }).click();
   await page.getByRole("button", { name: "Format de Graphe de dépendances" }).click();

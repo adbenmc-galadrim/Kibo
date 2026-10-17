@@ -35,9 +35,9 @@ const column = (page: Page, name: string) => page.getByRole("region", { name });
 const card = (page: Page, shortKey: string) =>
   page.getByRole("button", { name: new RegExp(`^${shortKey} `) });
 
-async function openPlanning(page: Page): Promise<void> {
+async function openPlanning(page: Page, s42 = "S42 Terrain hors ligne"): Promise<void> {
   await page.goto(emis.pageUrl("planning@1.0.0"));
-  await expect(column(page, "S42 Terrain hors ligne")).toBeVisible();
+  await expect(column(page, s42)).toBeVisible();
 }
 
 async function addFromMenu(page: Page, item: string) {
@@ -91,6 +91,29 @@ test("the sheet of F5 copies the command of its next step", async ({ page, conte
   await page.getByRole("button", { name: "Livrer la prochaine étape" }).click();
   await expect(page.getByText("Commande copiée")).toBeAttached();
   expect(await clipboardText(page)).toBe("/full-delivery EMIS-34");
+});
+
+test("the sheet of S42, opened from its Tickets tab, edits the sprint", async ({ page }) => {
+  await page.goto(emis.pageUrl("tickets@1.0.0"));
+  const s42 = page.getByRole("tablist", { name: "Sprint affiché" }).getByRole("tab", { name: /S42$/ });
+  await s42.click({ button: "right" });
+  await page.getByRole("menuitem", { name: "Fiche du sprint" }).click();
+  const sheet = page.getByRole("dialog", { name: /S42 · Terrain hors ligne/ });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.getByRole("list", { name: "Fonctionnalités du sprint" })).toContainText("F4");
+  await sheet.getByRole("button", { name: "Modifier" }).click();
+  const dialog = page.getByRole("dialog", { name: "Modifier le sprint S42" });
+  await expect(dialog.getByLabel("Nom")).toHaveValue("Terrain hors ligne");
+  await dialog.getByLabel("Nom").fill("Terrain sans réseau");
+  await dialog.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page.getByRole("dialog", { name: /S42 · Terrain sans réseau/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await openPlanning(page, "S42 Terrain sans réseau");
+  await page.getByRole("button", { name: "Modifier le sprint S42 Terrain sans réseau" }).click();
+  const back = page.getByRole("dialog", { name: "Modifier le sprint S42" });
+  await back.getByLabel("Nom").fill("Terrain hors ligne");
+  await back.getByRole("button", { name: "Enregistrer" }).click();
+  await expect(column(page, "S42 Terrain hors ligne")).toBeVisible();
 });
 
 test("the agent execution setting shows, then hides, Agents and the agent bar", async ({ page }) => {
