@@ -55,6 +55,15 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 35 · Redesign Emis | 210 à 218 (redesign validé le 2026-10-16 : vue d'ensemble, Planning, fiche fonctionnalité, Tickets, Graphe ; états fiche de sprint et report, 3/2 ouvertes, démo facultative, infobulle du nom) ; **dessinés** |
 
 Pages 00 à 27 et 29 à 35 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 35.
+
+## Redesign : les anciennes pages sont une archive
+
+Depuis la phase 25 (redesign validé le 2026-10-16, spec §37), la **référence des écrans** est `design/redesign/` : les PNG de
+`design/redesign/exports/` (sombre et clair) et les cotes de `design/redesign/cotes.md`, comparés au pixel près par les E2E
+(`e2e/pixel-*.spec.ts`). Les pages 00 à 34 de `kibo.penpot.xz` décrivent l'ancienne coque (barre d'onglets permanente, entrées Agents
+et Files d'attente, « Vue d'ensemble » tous projets) et restent en **archive** : elles ne sont ni redessinées ni réexportées, et un écran du
+redesign prime sur l'ancien écran qu'il remplace. Le fichier « Kibo · Redesign » et la page 35 sont les seules
+sources à jour ; un nouvel écran se dessine dans `design/redesign/` (voir son README).
 Pages 28 à 28d : pistes de brainstorming (visibilité des agents, pistes épurées, graphe, couleurs du graphe), hors des PDF ; scripts `32b` à `32f`, pistes eux aussi.
 
 Règles :
