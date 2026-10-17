@@ -40,6 +40,7 @@ export type PlanningViewProps = {
   bands: BandsTimeline | null;
   onLayout(layout: PlanningLayout): void;
   onOpen(id: string): void;
+  onOpenSprint(sprint: SprintView): void;
   onEditSprint(sprint: SprintView): void;
   onNewFeature(): void;
   onNewSprint(): void;
@@ -49,7 +50,7 @@ const limitHolder = (model: PlanningModel): string | null =>
   (model.sprints.find((c) => c.sprint.state === "current") ?? model.sprints[0])?.sprint.id ?? null;
 
 export function PlanningView(props: PlanningViewProps) {
-  const { model, readOnly, target, dragged, onOpen, onEditSprint } = props;
+  const { model, readOnly, target, dragged, onOpen, onOpenSprint, onEditSprint } = props;
   const dropsIn = (columnId: string, own: string | null) =>
     dragged !== null && target === columnId && (own ?? BACKLOG_ID) !== columnId;
   const cards = (list: readonly Card[]) =>
@@ -79,6 +80,7 @@ export function PlanningView(props: PlanningViewProps) {
                 key={column.sprint.id}
                 column={column}
                 dropping={dropsIn(column.sprint.id, dragged?.sprintId ?? null)}
+                onOpen={() => onOpenSprint(column.sprint)}
                 onEdit={readOnly ? undefined : () => onEditSprint(column.sprint)}
                 footer={column.sprint.id === holder && limitNote}
               >

@@ -122,6 +122,7 @@ export function Planning() {
         bands={bands}
         onLayout={chooseLayout}
         onOpen={(id) => sdk.openTicket(id)}
+        onOpenSprint={(sprint) => sdk.sprints.open(sprint.id)}
         onEditSprint={(sprint) => setDialog({ kind: "sprint", sprint })}
         onNewFeature={() => setDialog({ kind: "feature" })}
         onNewSprint={() => setDialog({ kind: "sprint", sprint: null })}

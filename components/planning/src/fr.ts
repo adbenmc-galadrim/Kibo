@@ -46,7 +46,8 @@ export const fr = {
   add: "Ajouter",
   newSprint: "Nouveau sprint",
   newFeature: "Nouvelle fonctionnalité",
-  editSprint: (code: string, name: string) => `Modifier le sprint ${code} ${name}`,
+  editSprint: "Modifier le sprint",
+  openSprint: (code: string, name: string) => `Fiche du sprint ${code} ${name}`,
   moveFailed: (key: string) => `Impossible de planifier ${key}.`,
   drag: {
     help: "Pour planifier une fonctionnalité, appuie sur Espace ou Entrée, choisis la colonne avec les flèches, puis appuie de nouveau sur Espace ou Entrée. Échap annule.",

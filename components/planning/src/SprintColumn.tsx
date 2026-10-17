@@ -1,6 +1,6 @@
 import { useDroppable } from "@dnd-kit/core";
 import { cn } from "@kibo/sdk/lib/utils";
-import { CalendarRange, CircleCheck, ClockAlert } from "lucide-react";
+import { CalendarRange, CircleCheck, ClockAlert, Pencil } from "lucide-react";
 import type { ReactNode } from "react";
 import { dashedBorder } from "./dashes";
 import { fr } from "./fr";
@@ -47,29 +47,35 @@ function StateChip({ state }: { state: Column["sprint"]["state"] }) {
   return null;
 }
 
-function SprintHeader({ column, onEdit }: { column: Column; onEdit?: (() => void) | undefined }) {
+type HeaderProps = { column: Column; onOpen(): void; onEdit?: (() => void) | undefined };
+
+function SprintHeader({ column, onOpen, onEdit }: HeaderProps) {
   const { sprint } = column;
   const started = sprint.state !== "planned";
-  const title = (
-    <>
-      <span className="font-mono font-semibold text-[13px] leading-[16px]">{column.code}</span>
-      <span className="truncate font-semibold text-[13px] leading-[16px]">{sprint.name}</span>
-    </>
-  );
   return (
     <header className="flex flex-col gap-1 px-0.5 pt-0.5 pb-1">
-      {onEdit ? (
+      <div className="flex h-4 min-w-0 items-center gap-1.5 text-(--tracking-fg)">
         <button
           type="button"
-          aria-label={fr.editSprint(column.code, sprint.name)}
-          className="flex h-4 min-w-0 cursor-pointer items-center gap-1.5 text-left text-(--tracking-fg)"
-          onClick={onEdit}
+          aria-label={fr.openSprint(column.code, sprint.name)}
+          className="flex h-4 min-w-0 cursor-pointer items-center gap-1.5 text-left"
+          onClick={onOpen}
         >
-          {title}
+          <span className="font-mono font-semibold text-[13px] leading-[16px]">{column.code}</span>
+          <span className="truncate font-semibold text-[13px] leading-[16px]">{sprint.name}</span>
         </button>
-      ) : (
-        <div className="flex h-4 min-w-0 items-center gap-1.5 text-(--tracking-fg)">{title}</div>
-      )}
+        {onEdit && (
+          <button
+            type="button"
+            aria-label={fr.editSprint}
+            title={fr.editSprint}
+            className="grid size-4 shrink-0 cursor-pointer place-items-center rounded-[4px] text-(--tracking-dim) hover:text-(--tracking-fg)"
+            onClick={onEdit}
+          >
+            <Pencil absoluteStrokeWidth size={14} aria-hidden className="size-[14px]" />
+          </button>
+        )}
+      </div>
       <div className="flex min-h-[14px] items-center gap-1.5">
         <span className="text-(--tracking-dim) text-[11.5px] leading-[14px]">{column.dates}</span>
         {started ? (
@@ -119,12 +125,13 @@ export function Warning({ children, tone = "red" }: { children: ReactNode; tone?
 type Props = {
   column: Column;
   dropping: boolean;
+  onOpen(): void;
   onEdit?: (() => void) | undefined;
   children: ReactNode;
   footer?: ReactNode;
 };
 
-export function SprintColumn({ column, dropping, onEdit, children, footer }: Props) {
+export function SprintColumn({ column, dropping, onOpen, onEdit, children, footer }: Props) {
   const { setNodeRef } = useDroppable({ id: column.sprint.id });
   const current = column.sprint.state === "current";
   return (
@@ -143,7 +150,7 @@ export function SprintColumn({ column, dropping, onEdit, children, footer }: Pro
             : "border-(--tracking-border) bg-(--tracking-panel)",
         )}
       >
-        <SprintHeader column={column} onEdit={onEdit} />
+        <SprintHeader column={column} onOpen={onOpen} onEdit={onEdit} />
         {children}
         {dropping && <DropZone label={fr.dropIn(column.code)} dates={column.dates} />}
         {column.warnings.map((w) => (

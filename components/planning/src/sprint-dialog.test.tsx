@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, setSystemTime, test } from "bun:test";
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { column, setupPlanning } from "./planning-kit";
 import { TODAY } from "./test-seed";
@@ -40,10 +40,35 @@ test("a new sprint gets a unique code, a name and dates, reversed dates are refu
   expect(await column("S45 Exports")).toBeTruthy();
 });
 
+const pencil = async (name: string) =>
+  within(await column(name)).getByRole("button", { name: "Modifier le sprint" });
+
+test("the sprint name opens its sheet, the pencil next to it opens the dialog", async () => {
+  const { m, seeded } = setupPlanning();
+  const user = userEvent.setup();
+  await user.click(
+    within(await column("S44 Rapports")).getByRole("button", { name: "Fiche du sprint S44 Rapports" }),
+  );
+  expect(m.openedSprints).toEqual([seeded.sprints.s44.id]);
+  expect(screen.queryByRole("dialog")).toBeNull();
+  await user.click(await pencil("S44 Rapports"));
+  expect(await screen.findByRole("dialog", { name: "Modifier le sprint S44" })).toBeTruthy();
+  expect(m.openedSprints).toHaveLength(1);
+});
+
+test("a reader opens the sheet from the name but has no pencil", async () => {
+  const { m, seeded } = setupPlanning(TODAY, { shared: true });
+  act(() => m.setAccess("read-only"));
+  const s43 = within(await column("S43 Import et soudures"));
+  await waitFor(() => expect(s43.queryByRole("button", { name: "Modifier le sprint" })).toBeNull());
+  await userEvent.setup().click(s43.getByRole("button", { name: "Fiche du sprint S43 Import et soudures" }));
+  expect(m.openedSprints).toEqual([seeded.sprints.s43.id]);
+});
+
 test("a sprint is edited from its column header", async () => {
   const { m, seeded } = setupPlanning();
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Modifier le sprint S44 Rapports" }));
+  await user.click(await pencil("S44 Rapports"));
   const dialog = await screen.findByRole("dialog", { name: "Modifier le sprint S44" });
   const name = within(dialog).getByLabelText("Nom");
   await user.clear(name);
@@ -59,7 +84,7 @@ test("a sprint is edited from its column header", async () => {
 test("deleting a sprint asks first and sends its features back to the backlog", async () => {
   const { m, seeded } = setupPlanning();
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Modifier le sprint S43 Import et soudures" }));
+  await user.click(await pencil("S43 Import et soudures"));
   const dialog = await screen.findByRole("dialog", { name: "Modifier le sprint S43" });
   await user.click(within(dialog).getByRole("button", { name: "Supprimer" }));
   const confirm = await screen.findByRole("alertdialog", { name: "Supprimer le sprint S43 ?" });
