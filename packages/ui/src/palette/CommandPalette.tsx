@@ -29,17 +29,14 @@ import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { fr } from "../i18n/fr";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { SCREENS } from "../tabs/screens";
-import { agentItems } from "./agent-items";
 import {
-  activeTicket,
-  buildItems,
-  FILTERS,
   type PaletteAction,
   type PaletteContext,
   type PaletteFilter,
   type PaletteItem,
   searchItems,
 } from "./palette-items";
+import { paletteFilters, paletteItems } from "./visible-items";
 
 type Props = {
   open: boolean;
@@ -131,10 +128,8 @@ export function CommandPalette({
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PaletteFilter>("all");
   const [value, setValue] = useState("");
-  const items = useMemo(
-    () => [...buildItems(context), ...agentItems(context.agents?.runs ?? [], activeTicket(context))],
-    [context],
-  );
+  const items = useMemo(() => paletteItems(context), [context]);
+  const filters = paletteFilters(context.executionShown);
   const sections = useMemo(() => searchItems(items, query, filter), [items, query, filter]);
   const byId = useMemo(() => new Map(sections.flatMap((s) => s.items).map((i) => [i.id, i])), [sections]);
 
@@ -154,8 +149,8 @@ export function CommandPalette({
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Tab") {
       e.preventDefault();
-      const step = e.shiftKey ? FILTERS.length - 1 : 1;
-      setFilter((f) => FILTERS[(FILTERS.indexOf(f) + step) % FILTERS.length] ?? "all");
+      const step = e.shiftKey ? filters.length - 1 : 1;
+      setFilter((f) => filters[(filters.indexOf(f) + step) % filters.length] ?? "all");
       return;
     }
     if (e.key !== "Enter" || !(e.metaKey || e.ctrlKey)) return;

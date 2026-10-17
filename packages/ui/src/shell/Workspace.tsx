@@ -16,6 +16,7 @@ import { projectDomainsOf } from "../lib/project-domains";
 import type { PaletteContext } from "../palette/palette-items";
 import { useRoute } from "../route";
 import { useConfig, useNow } from "../state/use-agents";
+import { useExecutionShown } from "../state/use-app-settings";
 import { useProject } from "../state/use-projects";
 import { describeTarget } from "../tabs/tab-title";
 import { activeTarget } from "../tabs/tabs-model";
@@ -71,6 +72,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   useProjectLanding(tabs, project);
   const { snapshots, mineCount, inboxCount } = useWorkspaceSnapshots(projects, viewer);
   const config = useConfig();
+  const executionShown = useExecutionShown();
   const now = useNow();
   const git = useProjectGit(ticketProject?.meta.id ?? null, ticketProject?.meta.folder ?? null);
   const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = useShellDialogs();
@@ -142,8 +144,8 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   const recents = tabs.state.recents;
   const activeTicketId = active?.kind === "ticket" ? active.ticketId : (dialogs.sheet?.ticketId ?? null);
   const paletteContext = useMemo<PaletteContext>(
-    () => ({ projects, snapshots, recents, activeProjectId, activeTicketId, agents }),
-    [projects, snapshots, recents, activeProjectId, activeTicketId, agents],
+    () => ({ projects, snapshots, recents, activeProjectId, activeTicketId, agents, executionShown }),
+    [projects, snapshots, recents, activeProjectId, activeTicketId, agents, executionShown],
   );
 
   return (

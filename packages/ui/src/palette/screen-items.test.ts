@@ -8,6 +8,7 @@ const context: PaletteContext = {
   activeProjectId: null,
   activeTicketId: null,
   agents: null,
+  executionShown: true,
 };
 
 test("the screens are pages of the palette and open as targets", () => {
