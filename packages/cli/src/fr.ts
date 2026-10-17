@@ -1,4 +1,4 @@
-import type { Assignee } from "@kibo/schema";
+import type { Assignee, PrChecks, PrReview } from "@kibo/schema";
 import type { FeatureRef, SprintRef } from "./tickets/ticket-tracking";
 import type { PrSummary, TicketRef } from "./tickets/ticket-view";
 
@@ -12,12 +12,28 @@ const TICKETS_USAGE = [
   "  kibo tickets list --project <clé|nom|id> [--ready] [--status <s>[,<s>…]] [--sprint <id|code|nom|current|none>] [--json]",
   "  kibo tickets get <clé|id du plan> --project <p> [--json]",
   "  kibo tickets set <clé|id du plan> [status=<todo|wip|done|blocked>] [pr=<n|url>] [branch=<nom> [base=<nom>]] [reason=<texte>] --project <p> [--json]",
-  "  kibo tickets step <clé> <0-11> [note] [--json]",
+  "  kibo tickets step <clé> <0-11> [note] [--update] [--json]",
+  "  kibo tickets session [<clé>] <start|ping|stop> [--tool <nom>] [--project <p>] [--json]",
 ];
 
 const SPRINTS_USAGE = ["  kibo sprints list --project <clé|nom|id> [--json]"];
 
 const PROJECTS_USAGE = ["  kibo projects list [--json]", "  kibo projects get <clé|nom|id> [--json]"];
+
+const REVIEW_LABELS: Record<PrReview, string | null> = {
+  none: null,
+  review_required: null,
+  approved: "approuvée",
+  changes_requested: "changements demandés",
+};
+const CHECKS_LABELS: Record<PrChecks, string> = { ok: "CI verte", error: "CI rouge", running: "CI en cours" };
+const prParts = (pr: PrSummary): string[] =>
+  [
+    `#${pr.number} (${pr.state})`,
+    REVIEW_LABELS[pr.review],
+    pr.checks === null ? null : CHECKS_LABELS[pr.checks],
+    pr.url,
+  ].filter((part) => part !== null);
 
 const ref = (r: TicketRef) => `${r.key}${r.planId ? ` (${r.planId}, ${r.status})` : ` (${r.status})`}`;
 const refs = (list: TicketRef[]) => (list.length === 0 ? "aucun" : list.map(ref).join(", "));
@@ -41,7 +57,9 @@ export const frTickets = {
   optional: "Étape facultative",
   children: (list: TicketRef[]) => `Enfants : ${refs(list)}`,
   deps: (list: TicketRef[]) => `Dépendances : ${refs(list)}`,
-  pr: (pr: PrSummary | null) => `PR : ${pr ? `#${pr.number} (${pr.state}) ${pr.url}` : "aucune"}`,
+  pr: (pr: PrSummary | null) => `PR : ${pr ? prParts(pr).join(" · ") : "aucune"}`,
+  session: (tool: string, since: string) => `Session : ${tool} · depuis ${since}`,
+  touchUp: (step: number, max: number, label: string) => `Retouche : ${step}/${max} · ${label}`,
   assignee: (a: Assignee | null) =>
     `Assigné : ${a ? `${a.kind === "agent" ? "agent" : "humain"} ${a.ref}` : "personne"}`,
   labels: (labels: string[]) => `Étiquettes : ${labels.length === 0 ? "aucune" : labels.join(", ")}`,
@@ -53,6 +71,12 @@ export const frTickets = {
   description: "Description :",
   stepOutOfRange: (step: string) => `Étape invalide : ${step} (étape entre 0 et 11)`,
   stepDone: (key: string, label: string) => `✓ ${key} : ${label}`,
+  touchUpDone: (key: string, label: string) => `✓ ${key} : retouche · ${label}`,
+  sessionOn: (key: string | null, tool: string, since: string) =>
+    key === null ? `✓ Session ${tool} depuis ${since}` : `✓ ${key} : session ${tool} depuis ${since}`,
+  sessionOver: (key: string | null) => (key === null ? "✓ Session terminée" : `✓ ${key} : session terminée`),
+  noSession: "Aucune session en cours.",
+  noBranchTicket: "Aucun ticket ne déclare cette branche.",
 };
 
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;

@@ -7,6 +7,7 @@ import { sprintSelector } from "../tickets/ticket-tracking";
 import { isReady, lookupTicket, matchesStatus, statusFilter, summarize } from "../tickets/ticket-view";
 import { type Connect, findProject, printJson, type SessionIo, withClient } from "./daemon-session";
 import { notFound, summaryOf, type TicketsContext } from "./tickets-context";
+import { ticketsSession } from "./tickets-session";
 import { applySet, type SetRequest, setRequestOrExit } from "./tickets-set";
 import { ticketsStep } from "./tickets-step";
 
@@ -70,6 +71,7 @@ export async function runTicketsCommand(
 ): Promise<number> {
   const [sub, ident, ...rest] = positional;
   if (sub === "step") return ticketsStep(positional.slice(1), flags, io, connect);
+  if (sub === "session") return ticketsSession(positional.slice(1), flags, io, connect);
   const project = flags.project;
   if (isUsage(sub, ident, flags) || typeof project !== "string") {
     io.err(frTickets.usage);

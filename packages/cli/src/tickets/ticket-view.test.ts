@@ -116,14 +116,37 @@ describe("ticket view", () => {
       parent: { key: "EMIS-1", planId: "C1", status: "todo" },
       children: [],
       deps: [{ key: "EMIS-2", planId: "C1-1", status: "done" }],
-      pr: { number: 7, url: "https://github.com/o/r/pull/7", state: "open" },
+      pr: { number: 7, url: "https://github.com/o/r/pull/7", state: "open", review: "none", checks: null },
       assignee: null,
       labels: [],
       sprint: null,
       feature: null,
       optional: false,
+      delivery: null,
+      session: null,
+      updatedAt: null,
+      refs: [plan("C1-2"), pr(5, "closed"), pr(7, "open")],
     });
     expect(review).toMatchObject({ status: "wip", kiboStatus: "in_review", column: "En review", pr: null });
+  });
+
+  test("gives the session, the last update, the delivery step and the PR review as they are", () => {
+    const delivery = { step: 7, note: "", at: 5, runId: null, kind: "update" as const };
+    const reviewed = { ...pr(20, "open"), review: "changes_requested" as const, checks: "error" as const };
+    const busy = {
+      ...ticket("9", "done", { refs: [reviewed] }),
+      delivery,
+      session: { tool: "T3 Code", startedAt: 3 },
+      updatedAt: 8,
+    };
+    const [summary] = summarize({ ...snapshot, tickets: [busy] });
+    expect(summary).toMatchObject({
+      delivery,
+      session: { tool: "T3 Code", startedAt: 3 },
+      updatedAt: 8,
+      pr: { number: 20, review: "changes_requested", checks: "error" },
+      refs: [reviewed],
+    });
   });
 
   test("ready means todo, no children and every blocking dependency done", () => {

@@ -39,6 +39,13 @@ describe("kibo component", () => {
     expect(t.err.join("\n")).toContain("kibo market pack <id>@<version>");
   });
 
+  test("the tickets help lists session and step --update", async () => {
+    const t = io();
+    expect(await runCli(["tickets"], t.io)).toBe(2);
+    expect(t.err.at(-1)).toContain("kibo tickets session [<clé>] <start|ping|stop> [--tool <nom>]");
+    expect(t.err.at(-1)).toContain("kibo tickets step <clé> <0-11> [note] [--update] [--json]");
+  });
+
   test("market prints its usage and explains a missing daemon", async () => {
     const t = io();
     expect(await runCli(["market"], t.io)).toBe(2);
