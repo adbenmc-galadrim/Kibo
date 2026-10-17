@@ -73,3 +73,45 @@ test("hidden execution: the assignee filter has no Agents choice", async () => {
 test("shown execution: the assignee filter offers Agents again", async () => {
   expect(await assignees("shown")).toEqual(["Tous", "Moi", "Agents", "Personne"]);
 });
+
+const seedWithLoose = (run: (cmd: ProjectCommand) => unknown) => {
+  const root = run({ method: "createTicket", title: "Arbre des pages" }) as Ticket;
+  run({
+    method: "createTicket",
+    title: "Récepteur",
+    parentId: root.id,
+    statusId: "in_progress",
+    assignee: { kind: "agent", ref: "full-delivery" },
+  });
+  run({ method: "createTicket", title: "Ticket libre", parentId: root.id, statusId: "in_progress" });
+};
+
+async function agentsFilterThen(agentExecution: AgentExecution) {
+  const m = createMockSdk(manifest, { seed: seedWithLoose, viewer: "adam", agentExecution: "shown" });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  await screen.findByText("Ticket libre");
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Ouverts" }));
+  await user.click(await screen.findByRole("menuitemradio", { name: "Agents" }));
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByText("Ticket libre")).toBeNull());
+  act(() => m.setAgentExecution(agentExecution));
+  return user;
+}
+
+test("hidden execution: an active Agents filter falls back to Tous", async () => {
+  const user = await agentsFilterThen("hidden");
+  expect(await screen.findByText("Ticket libre")).toBeTruthy();
+  await user.click(screen.getByRole("button", { name: "Ouverts" }));
+  const checked = await screen.findByRole("menuitemradio", { checked: true });
+  expect(checked.textContent).toBe("Tous");
+});
+
+test("shown execution: the Agents filter stays active", async () => {
+  await agentsFilterThen("shown");
+  expect(screen.queryByText("Ticket libre")).toBeNull();
+});

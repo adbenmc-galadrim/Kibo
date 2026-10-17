@@ -8,6 +8,7 @@ import {
 } from "@dnd-kit/core";
 import type { ProjectCommand, Status, TicketView } from "@kibo/schema";
 import {
+  agentTracesShown,
   filterBySource,
   readSource,
   SelectionChip,
@@ -33,6 +34,7 @@ import {
   isActive,
   NO_SPRINT,
   sortTickets,
+  visibleQuery,
 } from "./filter-tickets";
 import { fr } from "./fr";
 import { TicketRow } from "./TicketRow";
@@ -63,7 +65,8 @@ export function TicketsTree() {
   const mine = sdk.config.filter === "mine";
   const [saved, setSaved] = useState<unknown>(sdk.config.sprint);
   const sprint = chosenSprint(saved, sprints);
-  const [query, setQuery] = useState(EMPTY_QUERY);
+  const [chosenQuery, setQuery] = useState(EMPTY_QUERY);
+  const query = visibleQuery(chosenQuery, agentTracesShown(agentExecution));
   const [doneOpen, setDoneOpen] = useState(sdk.config.doneOpen !== false);
   const [allDone, setAllDone] = useState(false);
   const [searching, setSearching] = useState(false);
