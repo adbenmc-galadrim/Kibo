@@ -13,6 +13,7 @@ type Props = {
   domain: Domain | null;
   agent: string | null;
   workflow: readonly Status[];
+  canAssign: boolean;
   canRun: boolean;
   inbox: boolean;
   onOpen(): void;
@@ -66,6 +67,7 @@ export function MyTicketRow({
   domain,
   agent,
   workflow,
+  canAssign,
   canRun,
   inbox,
   onOpen,
@@ -97,7 +99,7 @@ export function MyTicketRow({
       ) : inbox ? (
         <FileAction onFile={onFile} />
       ) : (
-        <AssignAction canRun={canRun} onAssign={onAssign} />
+        canAssign && <AssignAction canRun={canRun} onAssign={onAssign} />
       )}
     </li>
   );
