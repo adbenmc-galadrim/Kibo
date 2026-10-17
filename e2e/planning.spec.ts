@@ -93,7 +93,9 @@ test("the sheet of F5 copies the command of its next step", async ({ page, conte
   expect(await clipboardText(page)).toBe("/full-delivery EMIS-34");
 });
 
-test("the sheet of S42, opened from its Tickets tab, edits the sprint", async ({ page }) => {
+test("the sheet of S42 opens from its Tickets tab and its Planning name; the pencil edits it", async ({
+  page,
+}) => {
   await page.goto(emis.pageUrl("tickets@1.0.0"));
   const s42 = page.getByRole("tablist", { name: "Sprint affiché" }).getByRole("tab", { name: /S42$/ });
   await s42.click({ button: "right" });
@@ -109,7 +111,14 @@ test("the sheet of S42, opened from its Tickets tab, edits the sprint", async ({
   await expect(page.getByRole("dialog", { name: /S42 · Terrain sans réseau/ })).toBeVisible();
   await page.keyboard.press("Escape");
   await openPlanning(page, "S42 Terrain sans réseau");
-  await page.getByRole("button", { name: "Modifier le sprint S42 Terrain sans réseau" }).click();
+  const header = column(page, "S42 Terrain sans réseau");
+  await header.getByRole("button", { name: "Fiche du sprint S42 Terrain sans réseau" }).click();
+  const fromPlanning = page.getByRole("dialog", { name: /S42 · Terrain sans réseau/ });
+  await expect(fromPlanning.getByRole("list", { name: "Fonctionnalités du sprint" })).toContainText("F4");
+  await expect(page.getByRole("dialog", { name: "Modifier le sprint S42" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(fromPlanning).toBeHidden();
+  await header.getByRole("button", { name: "Modifier le sprint", exact: true }).click();
   const back = page.getByRole("dialog", { name: "Modifier le sprint S42" });
   await back.getByLabel("Nom").fill("Terrain hors ligne");
   await back.getByRole("button", { name: "Enregistrer" }).click();

@@ -163,10 +163,32 @@ test("the sprint sheet carries the report of F5 to S43, and the batch turns part
     page.getByRole("region", { name: "S43 Import et soudures" }).getByRole("button", { name: /^F5 / }),
   ).toBeVisible();
 
+  await expect(page.locator("[data-pending]")).toHaveText("2");
+});
+
+test("after the sprint sheet, the Suivi panel still offers the rest of the batch", async ({ page }) => {
+  await openEmisPage(page, "Vue d'ensemble");
+  await expect(page.locator("[data-pending]")).toHaveText("2");
   const panel = await openProjectAgent(page);
-  await panel.getByRole("button", { name: "Actions de l'agent de projet" }).click();
-  await page.getByRole("menuitem", { name: "Conversation" }).click();
   const batch = panel.getByRole("region", { name: "Lot n° 7" });
   await expect(batch).toBeVisible();
-  await expect(batch.getByText("Appliqué en partie")).toBeVisible();
+  await expect(batch.getByText("2 actions")).toBeVisible();
+  await expect(batch.getByRole("checkbox")).toHaveCount(2);
+  await expect(batch.getByRole("checkbox", { name: /Planifier F9/ })).toBeVisible();
+  await expect(batch.getByRole("checkbox", { name: /Relancer le client sur Q14/ })).toBeVisible();
+  await expect(batch.getByRole("checkbox", { name: /Reporter F5/ })).toHaveCount(0);
+  await expect(batch.getByRole("button", { name: "Valider (2)" })).toBeEnabled();
+});
+
+test("the Suivi panel applies the checked actions only, and Q14 is reminded", async ({ page }) => {
+  await openEmisPage(page, "Vue d'ensemble");
+  const panel = await openProjectAgent(page);
+  const batch = panel.getByRole("region", { name: "Lot n° 7" });
+  await expect(batch).toBeVisible();
+  await batch.getByRole("checkbox", { name: /Planifier F9 en S44/ }).click();
+  await batch.getByRole("button", { name: "Valider (1)" }).click();
+  await expect(section(page, "Activité").getByText("Q14 relancée")).toBeVisible();
+  await openEmisPage(page, "Questions");
+  await page.getByText("Un ISO réaffecté garde-t-il ses photos ?").first().click();
+  await expect(page.getByText(/relancée ·/)).toBeVisible();
 });
