@@ -170,7 +170,11 @@ test("questions created and answered are recorded on their ticket", () => {
     by: { kind: "human", ref: "adam" },
   });
   expect(kinds().slice(-2)).toEqual(["question_created", "question_answered"]);
-  expect(last()).toMatchObject({ ticketId: step, featureId: root, data: { questionId: question.id } });
+  expect(last()).toMatchObject({
+    ticketId: step,
+    featureId: root,
+    data: { questionId: question.id, ref: "Quel format d'export ?" },
+  });
 });
 
 test("a refused command records nothing and the next one compares with the right state", () => {

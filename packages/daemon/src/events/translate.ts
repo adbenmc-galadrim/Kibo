@@ -109,7 +109,11 @@ function questionDraft(facts: Facts, e: CommandEvent, questionId: string): Draft
     {
       kind,
       ticketId: question.ticketId,
-      data: { questionId: question.id, title: question.title.slice(0, TEXT_MAX) },
+      data: {
+        questionId: question.id,
+        title: question.title.slice(0, TEXT_MAX),
+        ref: (question.importRef?.id ?? question.title).slice(0, TEXT_MAX),
+      },
     },
   ];
 }
