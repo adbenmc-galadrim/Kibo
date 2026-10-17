@@ -1,7 +1,9 @@
 import type { DeadlineCell, DeadlineColumn, DeadlineRow } from "@kibo/schema";
 
-export type TimelineInput = {
-  columns: DeadlineColumn[];
+export type UnplannedColumn = { kind: "unplanned"; label: string };
+export type TimelineColumnInput = DeadlineColumn | UnplannedColumn;
+export type TimelineInput<C extends TimelineColumnInput = DeadlineColumn> = {
+  columns: C[];
   rows: DeadlineRow[];
   today: number | null;
   collapsed?: { label: string; rows: DeadlineRow[] };
@@ -17,7 +19,13 @@ export type TimelineGeometry = {
   bottom: number;
 };
 export type TimelineCase = { x: number; width: number; tone: CaseTone; slipped: boolean };
-export type TimelineColumn = { x: number; start: string; code: string | null; current: boolean };
+export type TimelineColumn = {
+  x: number;
+  start: string | null;
+  code: string | null;
+  label: string | null;
+  current: boolean;
+};
 export type TimelineRow = {
   row: DeadlineRow;
   y: number;
@@ -60,10 +68,12 @@ export function caseTone(cell: DeadlineCell): CaseTone {
 
 const columnX = (index: number, g: TimelineGeometry): number => g.label + index * g.column;
 
-function slipColumn(row: DeadlineRow, columns: readonly DeadlineColumn[]): number | null {
+const sprintOf = (c: TimelineColumnInput) => ("sprint" in c ? c.sprint : null);
+
+function slipColumn(row: DeadlineRow, columns: readonly TimelineColumnInput[]): number | null {
   if (row.slipTo === null) return null;
   const target = row.slipTo.id;
-  const index = columns.findIndex((c) => c.sprint?.id === target);
+  const index = columns.findIndex((c) => sprintOf(c)?.id === target);
   return index >= 0 ? index : null;
 }
 
@@ -79,7 +89,7 @@ function placeCases(cells: readonly DeadlineCell[], left: number, width: number,
 function rowLayout(
   row: DeadlineRow,
   index: number,
-  columns: readonly DeadlineColumn[],
+  columns: readonly TimelineColumnInput[],
   g: TimelineGeometry,
 ): TimelineRow {
   const planned = row.cells.filter((c) => !c.slipped);
@@ -109,7 +119,7 @@ function rowLayout(
 }
 
 export function timelineLayout(
-  input: Pick<TimelineInput, "columns" | "rows" | "today">,
+  input: Pick<TimelineInput<TimelineColumnInput>, "columns" | "rows" | "today">,
   g: TimelineGeometry = TIMELINE_GEOMETRY,
 ): TimelineLayout {
   const span = input.columns.length * g.column;
@@ -121,9 +131,10 @@ export function timelineLayout(
     height: g.header + input.rows.length * g.row + g.bottom,
     columns: input.columns.map((c, i) => ({
       x: columnX(i, g),
-      start: c.start,
-      code: c.sprint?.code ?? null,
-      current: i === currentIndex,
+      start: "start" in c ? c.start : null,
+      code: sprintOf(c)?.code ?? null,
+      label: "label" in c ? c.label : null,
+      current: i === currentIndex && "start" in c,
     })),
     rows: input.rows.map((row, i) => rowLayout(row, i, input.columns, g)),
     todayX: today === null || days === 0 ? null : g.label + (today + 1 / (2 * days)) * span,

@@ -131,3 +131,16 @@ test("the geometry of the deadlines card is the default", () => {
     bottom: 6,
   });
 });
+
+test("an unplanned column has a label, no date, and never holds today", () => {
+  const unplanned = { kind: "unplanned", label: "À planifier" } as const;
+  const built = timelineLayout({ columns: [...COLUMNS, unplanned], rows: [], today: 0.99 });
+  expect(built.columns.at(-1)).toEqual({
+    x: TIMELINE_GEOMETRY.label + COLUMNS.length * TIMELINE_GEOMETRY.column,
+    start: null,
+    code: null,
+    label: "À planifier",
+    current: false,
+  });
+  expect(built.columns[0]?.label).toBeNull();
+});

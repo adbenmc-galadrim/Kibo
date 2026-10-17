@@ -6,6 +6,7 @@ import { TimelineHeader } from "./TimelineHeader";
 import {
   type CaseTone,
   TIMELINE_GEOMETRY,
+  type TimelineColumnInput,
   type TimelineGeometry,
   type TimelineInput,
   type TimelineLayout,
@@ -13,7 +14,7 @@ import {
   timelineLayout,
 } from "./timeline-model";
 
-type Props = TimelineInput & { onOpen?(featureId: string): void; legend?: boolean };
+type Props = TimelineInput<TimelineColumnInput> & { onOpen?(featureId: string): void; legend?: boolean };
 type RowProps = { row: TimelineRow; last: boolean; width: number; onOpen?(featureId: string): void };
 
 const LABEL_X = 16;

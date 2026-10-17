@@ -68,3 +68,17 @@ test("collapsed rows unfold under their label", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Livrées · 1" }));
   expect(screen.getByText("Titre f1")).toBeTruthy();
 });
+
+test("an unplanned column shows its label in the text font, without a date", () => {
+  const { container } = render(
+    <SprintTimeline
+      columns={[...COLUMNS, { kind: "unplanned", label: "À planifier" }]}
+      rows={[row("f9", { column: 3 })]}
+      today={null}
+    />,
+  );
+  const label = screen.getByText("À planifier");
+  expect(label.className).not.toContain("font-mono");
+  expect(label.parentElement?.textContent).toBe("À planifier");
+  expect(container.querySelectorAll('[data-feature="F9"] [data-tone]').length).toBe(2);
+});

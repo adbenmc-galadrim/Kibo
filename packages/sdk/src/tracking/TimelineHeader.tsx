@@ -8,7 +8,7 @@ export function TimelineHeader({ columns, height, g }: Props) {
   return (
     <>
       {columns.map((c) => (
-        <div key={c.start} data-current={c.current || undefined}>
+        <div key={c.x} data-current={c.current || undefined}>
           {c.current && (
             <span
               aria-hidden
@@ -26,6 +26,7 @@ export function TimelineHeader({ columns, height, g }: Props) {
               className="absolute flex items-center gap-[6px] text-[12px] leading-[15px]"
               style={{ left: c.x + g.pad, top: 9 }}
             >
+              {c.label !== null && <span className="text-(--tracking-mfg)">{c.label}</span>}
               {c.code !== null && (
                 <span
                   className={cn(
@@ -36,7 +37,7 @@ export function TimelineHeader({ columns, height, g }: Props) {
                   {c.code}
                 </span>
               )}
-              <span className="text-(--tracking-mfg)">{shortDate(c.start)}</span>
+              {c.start !== null && <span className="text-(--tracking-mfg)">{shortDate(c.start)}</span>}
             </span>
           )}
         </div>
