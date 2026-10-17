@@ -3,7 +3,8 @@ import { INBOX_ID, type RpcRequest } from "@kibo/schema";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
-import { fileTargets, inboxSnapshot } from "./fixtures";
+import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
+import { fileTargets, inboxSnapshot, inboxTicket } from "./fixtures";
 
 const calls: RpcRequest[] = [];
 
@@ -90,4 +91,33 @@ test("removing asks for confirmation then sends deleteTicket on the inbox", asyn
       { method: "command", projectId: INBOX_ID, command: { method: "deleteTicket", ticketId: "inb2" } },
     ]),
   );
+});
+
+function agentRow(agentExecution: "hidden" | "shown") {
+  const ticket = inboxTicket(9, "Ticket confié", "todo", false);
+  const snapshot = {
+    ...inboxSnapshot,
+    tickets: [{ ...ticket, assignee: { kind: "agent" as const, ref: "full-delivery" } }],
+  };
+  render(
+    <AppSettingsProvider store={fixedStore({ agentExecution })}>
+      <InboxPage
+        snapshot={snapshot}
+        projects={fileTargets}
+        viewer="adam"
+        onOpenTicket={() => {}}
+        onNewTicket={() => {}}
+        onFile={() => {}}
+      />
+    </AppSettingsProvider>,
+  );
+  return screen.getByRole("row", { name: /INB-9/ }).textContent ?? "";
+}
+
+test("hidden execution: an agent assignee is not shown in the inbox", () => {
+  expect(agentRow("hidden")).not.toContain("full-delivery");
+});
+
+test("shown execution: the inbox shows the agent assignee", () => {
+  expect(agentRow("shown")).toContain("full-delivery");
 });

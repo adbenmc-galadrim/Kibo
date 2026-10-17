@@ -1,5 +1,5 @@
 import type { Status, TicketView } from "@kibo/schema";
-import { StatusDot } from "@kibo/sdk";
+import { StatusDot, withoutAgentAssignee } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
@@ -7,6 +7,7 @@ import { ContextMenuEntries, DropdownMenuEntries } from "@kibo/sdk/ui/menu-entri
 import { TableCell, TableRow } from "@kibo/sdk/ui/table";
 import { Ellipsis, FolderInput } from "lucide-react";
 import { frInbox as t } from "../i18n/fr-inbox";
+import { useExecutionShown } from "../state/use-app-settings";
 import { inboxMenuEntries } from "./inbox-menu";
 
 export type InboxRowProps = {
@@ -21,6 +22,7 @@ const INBOX_CELL = "px-3 py-2";
 
 export function InboxRow({ ticket, workflow, onOpen, onFile, onRemove }: InboxRowProps) {
   const entries = inboxMenuEntries({ texts: t, actions: { open: onOpen, file: onFile, remove: onRemove } });
+  const { assignee } = useExecutionShown() ? ticket : withoutAgentAssignee(ticket);
   const status = workflow.find((s) => s.id === ticket.statusId)?.label ?? ticket.statusId;
   return (
     <ContextMenu>
@@ -45,7 +47,7 @@ export function InboxRow({ ticket, workflow, onOpen, onFile, onRemove }: InboxRo
             </span>
           </TableCell>
           <TableCell className={`${INBOX_CELL} text-sm text-muted-foreground`}>
-            {ticket.assignee?.ref ?? t.nobody}
+            {assignee?.ref ?? t.nobody}
           </TableCell>
           <TableCell className={`${INBOX_CELL} text-right`}>
             <span className="flex items-center justify-end gap-1">
