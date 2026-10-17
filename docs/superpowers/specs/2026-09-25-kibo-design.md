@@ -2495,3 +2495,47 @@ Détail tâche par tâche dans la section « Écarts » du plan `2026-10-17-kibo
 3. **Barre latérale** : le compteur d'une page (« 73 », « 28 ») est masqué quand le bouton « ⋯ » de la ligne apparaît (survol, focus, menu ouvert) ; jamais de superposition. Le « ⋯ » d'une page n'apparaît que pour sa propre ligne (avant : toutes les pages du projet au survol de l'une d'elles) ; sous 48rem il reste visible et le compteur d'une ligne modifiable est masqué.
 4. **Planning** : l'en-tête de page et ses actions tiennent dans la largeur dès 900 px (sous-titre tronqué avec ellipse, actions qui passent à la ligne) ; les pastilles « bloquée · Q10 » restent sur une ligne.
 5. **Exécution masquée = aucune trace d'agent** (§37, réglage « Exécution des agents dans Kibo » désactivé) : ni « Assigner à un agent », ni « Livrer » (remplacé par « Copier /full-delivery <CLÉ> »), ni champ « Assigné » à un profil d'agent ni son aide, ni onglet, page, barre ou pastille d'agents, ni raccourci, entrée de palette ou notification qui lance un agent. L'agent de projet reste, mais exécution masquée il ne propose plus d'action qui lance un agent de ticket (`assignAgent`, `deliverAnswers` absents de ses consignes ; un lot qui en contient est refusé à la proposition avec un message clair) ; la carte « Comment les agents sont configurés » de Domaines & guidelines est masquée ; les runs passés restent lisibles dans l'Activité. Revue complète des écrans, menus et raccourcis ; chaque trace retirée est couverte par un test qui la cherche réglage désactivé.
+
+## 39. Phase 27 : Kibo ne fait que du suivi, création de projet minimale, Emis sur une base neuve (demande d'Adam du 2026-10-18)
+
+Demande : « faire les choses minimales d'abord ». Kibo **suit** le développement (branches, PR et leur review et CI, étapes de `full-delivery`, sessions T3 Code) ; il ne lance plus d'agent de ticket. Le seul agent lancé par Kibo est **l'agent de projet**, qui suit un projet et reste à jour. Décisions du chef d'équipe (délégation d'Adam du 2026-10-17), le détail technique est tranché par le lead dans le plan de la phase 27.
+
+### 39.1 Suivi seulement (amende §37 et §38.15.5)
+
+- Le réglage « Exécution des agents dans Kibo » **disparaît** : l'exécution est toujours masquée (un réglage « montré » enregistré est ignoré). Tout ce que §38.15.5 masque l'est définitivement.
+- **Le démon refuse** toute RPC qui lancerait un agent de ticket (assignation à un profil d'agent, `deliver`, relance d'un run, transmission de réponses à un run, création de run de ticket) avec un `KiboError` stable `AGENT_EXECUTION_REMOVED` : l'interface ne le propose plus, l'API non plus.
+- L'agent de projet reste (panneau « Suivi », lots, réveils, sa file et ses créneaux) ; ses actions qui lanceraient un agent de ticket (`assignAgent`, `deliverAnswers`) sont refusées à la proposition.
+- Les runs passés restent lisibles (Activité). Le code des agents de ticket reste dans le dépôt pour cette phase ; son retrait est une phase ultérieure.
+
+### 39.2 Créer un projet
+
+- Dialogue « Nouveau projet » : **Nom** (requis), **Clé** (dérivée du nom, 2 à 6 lettres majuscules, modifiable, unique), **Début** du premier sprint (date, par défaut le lundi qui suit), **Nombre de sprints** (1 à 52, par défaut 6), **Durée d'un sprint** (1 ou 2 semaines, par défaut 1), **Dossier du dépôt** (facultatif ; sans lui, pas de suivi git).
+- À la création, le projet a **exactement** ces pages, dans cet ordre : Vue d'ensemble, Planning, Kanban, Graphe, Questions.
+- Les sprints sont créés aussitôt : `S1` à `Sn`, nommés « Sprint 1 » à « Sprint n » ; le sprint i commence à `début + (i − 1) × durée` et finit `durée × 7 − 3` jours après son début (du lundi au vendredi quand le début est un lundi). Le Planning les montre dès l'ouverture ; on les modifie ensuite comme avant.
+- Puis on crée les tickets et les fonctionnalités. Les projets existants ne changent pas.
+
+### 39.3 Emis sur une base neuve
+
+- **Sauvegarde d'abord** : export complet (tickets, descriptions, liens, questions, PR, branches, étapes) dans `~/Documents/emis/kibo-export-2026-10-18/` et sauvegarde du démon, avant toute écriture.
+- **Format** :
+  - fonctionnalités `F1` à `F15` dans l'ordre du plan (C0 ⇒ F1 … C9 ⇒ F10, CR ⇒ F11, CN ⇒ F12, CP ⇒ F13, CE ⇒ F14, CL ⇒ F15), titres sans préfixe de chapitre (« Socle, environnements et hébergement ») ;
+  - étapes : clés `EMIS-1` à `EMIS-n` renumérotées dans l'ordre fonctionnalité puis étape, titres sans « C2-5 · » ; la clé Kibo devient l'identifiant de livraison (`/full-delivery EMIS-12`) ; l'ancien identifiant du plan reste en référence d'import (`import_ref plan C2-5`) pour retrouver le détail archivé ;
+  - étiquettes `sprint:*` et `phase:*` retirées (remplacées par les vrais sprints), `area:*` gardées.
+- « TODO » et « Arbitrages » ne sont pas des fonctionnalités : leurs tickets rejoignent la fonctionnalité qu'ils concernent ; ceux qui attendent une information du client (DATA-1, DATA-2) deviennent des questions au client.
+- **Conservé** : statut, PR, branche et base, étape de livraison, description, dépendances et questions (remappées vers les nouvelles clés), étape facultative.
+- **Nouvelle base** : un projet neuf « Emis » créé par le flux §39.2 (pages minimales) reçoit les tickets reformatés ; l'ancien projet est supprimé après vérification (comptes, statuts, PR, questions). Le skill `full-delivery` est mis à jour (registre : `idPattern` `^EMIS-[0-9]+$`).
+- **Planification réaliste** : sprints d'une semaine à partir du lundi 2026-10-19 ; ordre des dépendances puis du plan ; capacité d'un sprint = vitesse observée sur Emis (étapes livrées par semaine), sinon 5 étapes ; une fonctionnalité est placée dans le sprint où sa dernière étape obligatoire est livrée ; les fonctionnalités bloquées par une question client restent planifiées et gardent leur pastille. Le plan calculé est écrit dans le rapport avant d'être appliqué.
+
+### 39.4 Critiques UX
+
+- Des agents critiques utilisent Kibo comme des utilisateurs (chef de projet qui crée un projet et planifie ; développeur qui livre avec T3 Code et `full-delivery` ; nouveau venu) sur un démon de test, en sombre et en clair, et rendent des constats classés **bloquant / gênant / finition**, chacun avec sa capture et une proposition.
+- Le chef d'équipe trie : un constat pertinent devient une décision en §39.6, puis un correctif. Les maquettes Penpot suivent tout écran modifié.
+- shadcn/ui reste le choix par défaut mais n'est plus obligatoire : une amélioration UX qui demande un autre composant l'emporte (décision d'Adam du 2026-10-18).
+
+### 39.5 Version
+
+`0.27.0-alpha.1`.
+
+### 39.6 Constats des critiques retenus
+
+(Rempli au fil de la phase.)

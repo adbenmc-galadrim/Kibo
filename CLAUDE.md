@@ -45,7 +45,7 @@ Dépendances autorisées entre paquets : `schema ← core ← daemon`, `schema �
 - Erreurs du domaine : `KiboError` avec un `code` stable (`packages/schema/src/errors.ts`) ; jamais d'erreur avalée.
 - Formatage et lint : **Biome** (`bun run check`). Aucun commit si `bun run check` ou `bun test` échoue.
 - Dépendance nouvelle : justifiée dans le commit ou le plan, version figée par `bun.lock`, aucun script `postinstall`.
-- UI : composants shadcn/ui d'abord (`packages/sdk/src/ui`, réexportés par le SDK), tokens zinc, orange réservé aux agents, chaque écran en sombre et en clair.
+- UI : composants shadcn/ui par défaut (`packages/sdk/src/ui`, réexportés par le SDK), mais plus obligatoires : une amélioration UX qui demande un autre composant l'emporte (décision d'Adam du 2026-10-18). Tokens zinc, orange réservé aux agents, chaque écran en sombre et en clair.
 
 ## Tests
 
