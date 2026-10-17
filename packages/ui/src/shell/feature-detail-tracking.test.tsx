@@ -80,7 +80,7 @@ test("the activity card reads the journal of the feature when it has facts", asy
   expect(calls).toContainEqual({ method: "listProjectEvents", projectId: "emis", featureId: "f5", limit: 5 });
 });
 
-test("a move proposed by the agent is applied alone from the sprint card", async () => {
+test("a move proposed by the agent is applied alone from the sprint card, keeping the rest", async () => {
   batches.push(
     pendingBatch({
       id: "b7",
@@ -96,7 +96,14 @@ test("a move proposed by the agent is applied alone from the sprint card", async
   expect(await sprint.findByText("proposé par l'agent")).toBeTruthy();
   await userEvent.setup().click(sprint.getByRole("button", { name: "Déplacer en S43" }));
   expect(decisions()).toEqual([
-    { method: "decideBatch", projectId: "emis", batchId: "b7", decision: "apply", actionIds: [1] },
+    {
+      method: "decideBatch",
+      projectId: "emis",
+      batchId: "b7",
+      decision: "apply",
+      actionIds: [1],
+      keepRest: true,
+    },
   ]);
   expect(commands()).toEqual([]);
 });

@@ -1,4 +1,4 @@
-import { type Batch, undecidedActionIds } from "@kibo/schema";
+import { type Batch, type ProjectAgentRpcRequest, undecidedActionIds } from "@kibo/schema";
 
 export type SprintProposal = { batchId: string; actionId: number; sprint: string };
 
@@ -18,3 +18,12 @@ export function sprintProposal(batches: readonly Batch[], featureKey: string | n
   }
   return null;
 }
+
+export const sprintApplyRequest = (projectId: string, proposal: SprintProposal): ProjectAgentRpcRequest => ({
+  method: "decideBatch",
+  projectId,
+  batchId: proposal.batchId,
+  decision: "apply",
+  actionIds: [proposal.actionId],
+  keepRest: true,
+});
