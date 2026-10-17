@@ -1,13 +1,22 @@
-import { createProjectDoc, executeProjectCommand, readProject } from "../../packages/core/src/index";
+import {
+  createProjectDoc,
+  executeProjectCommand,
+  readProject,
+  setProjectMeta,
+} from "../../packages/core/src/index";
 import {
   INBOX_ID,
   INBOX_KEY,
   KiboError,
+  type ProjectCommand,
   type ProjectMeta,
   type ProjectSnapshot,
   RpcRequest,
 } from "../../packages/schema/src/index";
 import type { SeedRpc } from "../seed-emis-maquettes";
+import { createMemoryAgent, type MemoryAgent } from "./memory-agent";
+
+export type MemoryEvent = { kind: string; ticketId: string | null; detail: string | number | null };
 
 export type MemoryDaemon = {
   rpc: SeedRpc;
@@ -15,7 +24,29 @@ export type MemoryDaemon = {
   snapshot(key: string, today: string): ProjectSnapshot;
   workspaceName(): string | null;
   projects(): ProjectMeta[];
+  events(): MemoryEvent[];
+  agentView: MemoryAgent["view"];
 };
+
+function eventOf(cmd: ProjectCommand): MemoryEvent | null {
+  switch (cmd.method) {
+    case "setStatus":
+      return { kind: "status_changed", ticketId: cmd.ticketId, detail: cmd.statusId };
+    case "setTicketSprint":
+      return { kind: "sprint_set", ticketId: cmd.ticketId, detail: cmd.sprintId };
+    case "upsertExternalRef":
+      if (cmd.ref.kind === "git_branch")
+        return { kind: "branch_created", ticketId: cmd.ticketId, detail: cmd.ref.branch };
+      if (cmd.ref.kind !== "github_pr") return null;
+      return {
+        kind: cmd.ref.state === "merged" ? "pr_merged" : "pr_opened",
+        ticketId: cmd.ticketId,
+        detail: cmd.ref.number,
+      };
+    default:
+      return null;
+  }
+}
 
 const meta = (id: string, key: string, name: string, folder: string | null, color: string): ProjectMeta => ({
   id,
@@ -37,6 +68,9 @@ export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
   docs.set(INBOX_ID, { meta: inbox, doc: createProjectDoc(inbox) });
   let writes = 0;
   let workspaceName: string | null = null;
+  const events: MemoryEvent[] = [];
+  const agent = createMemoryAgent();
+  agent.onProposed((batch) => events.push({ kind: "batch_proposed", ticketId: null, detail: batch.seq }));
   const project = (id: string) => {
     const found = docs.get(id);
     if (found === undefined) throw new KiboError("NOT_FOUND", `project ${id} not found`);
@@ -60,15 +94,31 @@ export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
         docs.set(created.id, { meta: created, doc: createProjectDoc(created) });
         return created;
       }
-      case "command":
+      case "command": {
         writes += 1;
-        return executeProjectCommand(project(req.projectId).doc, req.command);
+        const result = executeProjectCommand(project(req.projectId).doc, req.command);
+        const event = eventOf(req.command);
+        if (event !== null) events.push(event);
+        return result;
+      }
+      case "updateProject": {
+        writes += 1;
+        const found = project(req.projectId);
+        found.meta = setProjectMeta(found.doc, req.patch);
+        return found.meta;
+      }
+      case "sendProjectAgentMessage":
+        writes += 1;
+        return agent.send(req.projectId, readProject(project(req.projectId).doc, today));
+      case "getProjectAgent":
+        return agent.view(req.projectId);
       case "setDeliveryStep": {
         writes += 1;
         const { doc } = project(req.projectId);
         const ticket = readProject(doc, today).tickets.find((t) => t.key === req.ticketKey);
         if (ticket === undefined) throw new KiboError("NOT_FOUND", `ticket ${req.ticketKey} not found`);
         deliveries += 1;
+        events.push({ kind: "step_set", ticketId: ticket.id, detail: req.step });
         const delivery = {
           step: req.step,
           note: req.note ?? "",
@@ -98,5 +148,7 @@ export function createMemoryDaemon(user: string, today: string): MemoryDaemon {
     },
     workspaceName: () => workspaceName,
     projects: listed,
+    events: () => [...events],
+    agentView: agent.view,
   };
 }

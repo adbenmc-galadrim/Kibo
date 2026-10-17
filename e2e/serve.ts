@@ -7,6 +7,7 @@ import { startFakeMcpHttp } from "../packages/daemon/src/testing/fake-mcp";
 import { PENPOT_IDS, startFakePenpot } from "../packages/daemon/src/testing/fake-penpot";
 import { startFakeStorybook } from "../packages/daemon/src/testing/fake-storybook";
 import { e2eHome } from "./e2e-home";
+import { EMIS_SCENARIO } from "./fixtures/emis-suivi";
 import { fakeGhDir, GIT_IDENTITY } from "./git-repo";
 import { EMIS_MAQUETTES, FIXED_NOW } from "./pixel-settings";
 import { connectSeedRpc, waitForDaemon } from "./seed-client";
@@ -160,7 +161,8 @@ const proc = Bun.spawn(
       ...process.env,
       ...GIT_IDENTITY,
       KIBO_HOME: home,
-      KIBO_FAKE_CLAUDE_SCENARIO: join(agents, "scenarios", `${scenario}.json`),
+      KIBO_FAKE_CLAUDE_SCENARIO:
+        scenario === EMIS_MAQUETTES ? EMIS_SCENARIO : join(agents, "scenarios", `${scenario}.json`),
       KIBO_FAKE_CLAUDE_STATE: fakeState,
       CLAUDE_CONFIG_DIR: claudeConfig,
       KIBO_GH: gh,

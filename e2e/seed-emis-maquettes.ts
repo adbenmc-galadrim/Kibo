@@ -5,7 +5,6 @@ import {
   type RpcRequest,
 } from "../packages/schema/src/index";
 import {
-  deliveryOrder,
   EMIS_BASE_BRANCH,
   EMIS_FEATURE_LINKS,
   EMIS_FEATURES,
@@ -14,6 +13,7 @@ import {
   EMIS_PAGES,
   EMIS_PROJECT,
   EMIS_QUESTIONS,
+  EMIS_RECENT_DELIVERIES,
   EMIS_ROOT_ORDER,
   EMIS_SPRINTS,
   EMIS_STEP_LINKS,
@@ -28,6 +28,8 @@ import {
   type SprintCode,
   type StepSpec,
 } from "./fixtures/emis-maquettes";
+import { EMIS_CLOSING, EMIS_DESCRIPTION } from "./fixtures/emis-suivi";
+import { seedEmisAgent } from "./seed-emis-agent";
 
 const DELIVERY_GAP_MS = 2;
 
@@ -69,6 +71,19 @@ type Emis = {
   user: string;
   projectId: string;
 };
+
+type DeliveredStep = StepSpec & { delivery: number };
+
+const isDelivered = (s: StepSpec): s is DeliveredStep => s.delivery !== undefined;
+
+function deliveryOrder(steps: readonly StepSpec[]): DeliveredStep[] {
+  const delivered = steps.filter(isDelivered);
+  const rank = (s: StepSpec) => EMIS_RECENT_DELIVERIES.indexOf(s.n);
+  return [
+    ...delivered.filter((s) => rank(s) < 0),
+    ...delivered.filter((s) => rank(s) >= 0).sort((a, b) => rank(a) - rank(b)),
+  ];
+}
 
 const stepSpecs = (): Map<number, StepSpec> =>
   new Map([...emisSteps(), ...EMIS_LOOSE_TICKETS].map((s) => [s.n, s]));
@@ -132,21 +147,19 @@ async function linkTickets(emis: Emis): Promise<void> {
     await emis.command({ method: "addLink", from: emis.id(from), to: emis.id(to), type: "blocks" });
 }
 
+const CLOSING_PRS: readonly number[] = [EMIS_CLOSING.merged, EMIS_CLOSING.opened];
+
+async function attachPr(emis: Emis, number: number): Promise<void> {
+  const step = [...stepSpecs().values()].find((s) => s.pr?.number === number);
+  if (step?.pr === undefined) throw new Error(`no step carries the pull request #${number}`);
+  const ref: ExternalRef = { kind: "github_pr", url: prUrl(number), ...step.pr, base: null, head: null };
+  await emis.command({ method: "upsertExternalRef", ticketId: emis.id(step.n), ref });
+}
+
 async function attachGit(emis: Emis): Promise<void> {
   for (const step of stepSpecs().values()) {
     const ticketId = emis.id(step.n);
-    if (step.pr !== undefined) {
-      const ref: ExternalRef = {
-        kind: "github_pr",
-        url: prUrl(step.pr.number),
-        ...step.pr,
-        base: null,
-        head: null,
-        review: "none",
-        checks: null,
-      };
-      await emis.command({ method: "upsertExternalRef", ticketId, ref });
-    }
+    if (step.pr !== undefined && !CLOSING_PRS.includes(step.pr.number)) await attachPr(emis, step.pr.number);
     if (step.branch !== undefined) {
       const ref: ExternalRef = { kind: "git_branch", branch: step.branch, base: EMIS_BASE_BRANCH };
       await emis.command({ method: "upsertExternalRef", ticketId, ref });
@@ -188,11 +201,20 @@ async function seedEmis(rpc: SeedRpc, projectId: string, user: string): Promise<
     projectId,
   };
   await buildTickets(emis, ids);
-  for (const step of deliveryOrder([...stepSpecs().values()])) {
+  await rpc({ method: "updateProject", projectId, patch: { description: EMIS_DESCRIPTION } });
+  await addPages(emis);
+  const deliveries = deliveryOrder([...stepSpecs().values()]);
+  const closing = deliveries.find((s) => s.n === EMIS_CLOSING.delivery);
+  if (closing === undefined) throw new Error(`${emisKey(EMIS_CLOSING.delivery)} has no delivery step`);
+  const deliver = async (step: typeof closing) => {
     await rpc({ method: "setDeliveryStep", projectId, ticketKey: emisKey(step.n), step: step.delivery });
     await distinctInstant();
-  }
-  await addPages(emis);
+  };
+  for (const step of deliveries.filter((s) => s !== closing)) await deliver(step);
+  await attachPr(emis, EMIS_CLOSING.merged);
+  await seedEmisAgent(rpc, projectId);
+  await deliver(closing);
+  await attachPr(emis, EMIS_CLOSING.opened);
 }
 
 async function buildTickets(emis: Emis, ids: Map<number, string>): Promise<void> {
@@ -200,8 +222,8 @@ async function buildTickets(emis: Emis, ids: Map<number, string>): Promise<void>
   await shapeFeatures(emis);
   await planSprints(emis);
   await linkTickets(emis);
-  await attachGit(emis);
   await askQuestions(emis);
+  await attachGit(emis);
 }
 
 async function seedInbox(rpc: SeedRpc): Promise<void> {
