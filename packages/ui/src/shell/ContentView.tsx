@@ -61,11 +61,14 @@ export function ContentView(p: Props) {
         onOpenInbox={() => p.onOpen({ kind: "screen", screen: "inbox" })}
       />
     );
-  if (t.kind === "run") return <RunPage key={t.runId} runId={t.runId} />;
-  if (t.kind === "skill")
+  if (t.kind === "run" || t.kind === "skill")
     return (
       <ExecutionGate fallback={<HiddenScreenNotice onOpen={(target) => p.onOpen(target)} />}>
-        <SkillsPage key={t.skillId} projects={p.projects} initialSkill={t.skillId} />
+        {t.kind === "run" ? (
+          <RunPage key={t.runId} runId={t.runId} />
+        ) : (
+          <SkillsPage key={t.skillId} projects={p.projects} initialSkill={t.skillId} />
+        )}
       </ExecutionGate>
     );
   if (!p.project) return null;

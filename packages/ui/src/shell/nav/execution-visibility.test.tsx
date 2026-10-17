@@ -162,3 +162,12 @@ test("shown execution: a skill tab shows the skill again", () => {
   expect(screen.getByText("Skill brainstorming")).toBeTruthy();
   expect(screen.queryByRole("status")).toBeNull();
 });
+
+test("run and skill tabs, and the agent screens, are execution targets; the rest is not", async () => {
+  const { isExecutionTarget } = await import("./execution-visibility");
+  expect(isExecutionTarget({ kind: "run", runId: "r1" })).toBe(true);
+  expect(isExecutionTarget({ kind: "skill", skillId: "superpowers:brainstorming" })).toBe(true);
+  expect(isExecutionTarget({ kind: "screen", screen: "queue" })).toBe(true);
+  expect(isExecutionTarget({ kind: "screen", screen: "inbox" })).toBe(false);
+  expect(isExecutionTarget({ kind: "ticket", projectId: "p1", ticketId: "t1" })).toBe(false);
+});
