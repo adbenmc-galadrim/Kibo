@@ -1,7 +1,9 @@
 import type { CiRun, MemberInfo, TicketRun, TicketView } from "@kibo/schema";
+import { deliveryStepLabel } from "@kibo/schema";
 import {
   assigneeLabel,
   type CiTone,
+  DELIVERY_STEP_CHIP,
   DeliveryStepChip,
   GroupChip,
   type GroupRef,
@@ -61,6 +63,15 @@ export type CardFacts = {
 
 type Props = CardFacts & { menu: ReactNode; title: ReactNode };
 
+function StepChip({ ticket }: { ticket: TicketView }) {
+  if (ticket.delivery?.kind !== "update") return <DeliveryStepChip ticket={ticket} />;
+  return (
+    <span data-delivery-step="" className={DELIVERY_STEP_CHIP}>
+      <span className="truncate">{fr.retouch(deliveryStepLabel(ticket.delivery.step))}</span>
+    </span>
+  );
+}
+
 export function KanbanCardContent(props: Props) {
   const { ticket: t, group, run, ci, members, remote, questions, menu, title } = props;
   const sdk = useSdk();
@@ -69,6 +80,13 @@ export function KanbanCardContent(props: Props) {
       <div className="flex h-6 items-center gap-2">
         <TicketKeyLabel ticket={t} className="min-w-0 truncate font-mono text-2xs text-muted-foreground" />
         {group && <GroupChip group={featureChipRef(group)} onOpen={(id) => sdk.openTicket(id)} />}
+        {t.session && (
+          <span
+            role="img"
+            aria-label={fr.session(t.session.tool)}
+            className="size-[7px] shrink-0 rounded-full bg-brand"
+          />
+        )}
         <span className="flex-1" />
         {menu}
       </div>
@@ -90,7 +108,7 @@ export function KanbanCardContent(props: Props) {
           run={run}
           className="max-w-full"
         />
-        <DeliveryStepChip ticket={t} />
+        <StepChip ticket={t} />
         {remote.map((r) => (
           <span
             key={r.label}

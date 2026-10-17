@@ -1,6 +1,6 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
-import type { CiTone, MemberInfo, StatusId, TicketRun, TicketView } from "@kibo/schema";
-import { liveRun, type QuestionsChipData, TicketKeyLabel, useSdk } from "@kibo/sdk";
+import type { AgentExecution, CiRun, MemberInfo, StatusId, TicketRun, TicketView } from "@kibo/schema";
+import { type QuestionsChipData, TicketKeyLabel, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
@@ -8,13 +8,13 @@ import { Plus } from "lucide-react";
 import { CELL, ROW, TEXT_12 } from "./columns";
 import { DeliveryCell } from "./DeliveryCell";
 import { FeatureChip, type FeatureRef } from "./FeatureChip";
-import { updatedAt } from "./filter-tickets";
 import { fr } from "./fr";
 import { GitPrCell } from "./GitPrCell";
+import { liveDot } from "./live-dot";
 import { RowDetails } from "./RowDetails";
 import { TicketRowActions, TicketRowMenu } from "./TicketRowMenu";
 import { zoneId } from "./tree-drop";
-import { updatedLabel } from "./updated-label";
+import { updatedAt, updatedLabel } from "./updated-label";
 
 const STATE_DOT: Record<StatusId, string> = {
   backlog: "border-[1.5px] border-(--tracking-faint)",
@@ -28,8 +28,9 @@ const STATE_DOT: Record<StatusId, string> = {
 export type RowFacts = {
   ticket: TicketView;
   feature: FeatureRef | null;
-  ci: CiTone | null;
+  ciRuns: readonly CiRun[];
   run: TicketRun | null;
+  execution: AgentExecution;
   members: MemberInfo[];
   statusLabel: string;
   entries: MenuEntry[];
@@ -76,12 +77,12 @@ function DropZones({ id, enabled }: { id: string; enabled: boolean }) {
 }
 
 export function TicketRow(props: RowFacts) {
-  const { ticket: t, feature, ci, run, statusLabel, entries, readOnly, canDrag, questions } = props;
+  const { ticket: t, feature, ciRuns, run, statusLabel, entries, readOnly, canDrag, questions } = props;
   const sdk = useSdk();
   const drag = useDraggable({ id: t.id, disabled: !canDrag });
   const handle = canDrag ? { ...drag.listeners, ...drag.attributes } : {};
   const done = t.statusId === "done";
-  const running = liveRun(run) !== null;
+  const dot = liveDot(t, run, props.execution);
   const at = updatedAt(t);
   return (
     <li>
@@ -121,10 +122,10 @@ export function TicketRow(props: RowFacts) {
                 <FeatureChip feature={feature} onOpen={(id) => sdk.openTicket(id)} />
               </span>
             )}
-            {running && (
+            {dot && (
               <span
                 role="img"
-                aria-label={fr.running}
+                aria-label={dot.kind === "session" ? fr.session(dot.tool) : fr.running}
                 className="size-[7px] shrink-0 rounded-full bg-(--tracking-brand)"
               />
             )}
@@ -158,7 +159,7 @@ export function TicketRow(props: RowFacts) {
             </span>
           </span>
           <span data-cell="git" className={CELL.git}>
-            <GitPrCell ticket={t} ci={ci} />
+            <GitPrCell ticket={t} runs={ciRuns} />
           </span>
           <span data-cell="delivery" className={CELL.delivery}>
             <DeliveryCell delivery={t.delivery} />

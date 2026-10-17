@@ -10,9 +10,9 @@ import {
 } from "@dnd-kit/core";
 import { isGroup, type StatusId, type TicketView } from "@kibo/schema";
 import {
-  deliverEntry,
   filterBySource,
   groupOfTicket,
+  menuDeliverEntry,
   readSource,
   remoteRuns,
   SelectionChip,
@@ -93,7 +93,7 @@ export function Kanban() {
     questions,
   });
   const deliverOf = (t: TicketView) =>
-    deliverEntry({
+    menuDeliverEntry({
       ticket: t,
       editable: !readOnly,
       agentKnown,

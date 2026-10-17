@@ -6,7 +6,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { type ProjectCommand, type Status, type TicketView, worstCiTone } from "@kibo/schema";
+import type { ProjectCommand, Status, TicketView } from "@kibo/schema";
 import {
   filterBySource,
   readSource,
@@ -18,6 +18,7 @@ import {
   useSdk,
   useSelection,
 } from "@kibo/sdk";
+import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus, RefreshCw } from "lucide-react";
@@ -57,6 +58,7 @@ export function TicketsTree() {
   const { data: statuses } = useEntities("status");
   const { data: runs } = useEntities("run");
   const { data: ciRuns } = useEntities("ci_run");
+  const { agentExecution } = useComponentSettings();
   const tickets = filterBySource(all, readSource(sdk.config));
   const mine = sdk.config.filter === "mine";
   const [saved, setSaved] = useState<unknown>(sdk.config.sprint);
@@ -122,8 +124,9 @@ export function TicketsTree() {
       key={t.id}
       ticket={t}
       feature={rootOf(t)}
-      ci={t.key === null ? null : worstCiTone(ciRuns.filter((r) => r.ticketKey === t.key))}
+      ciRuns={t.key === null ? [] : ciRuns.filter((r) => r.ticketKey === t.key)}
       run={runOf.get(t.id) ?? null}
+      execution={agentExecution}
       members={members}
       statusLabel={label(t.statusId)}
       entries={actions.entriesFor(t)}

@@ -35,12 +35,28 @@ export function deliverEntry(input: DeliverInput): DeliverEntry | null {
   return { disabledReason: disabledReason(input) };
 }
 
-export const deliverMenuActions = (entry: DeliverEntry | null, onSelect: () => void): MenuAction[] =>
+export function retouchEntry(input: DeliverInput): DeliverEntry | null {
+  const { ticket, editable, agentKnown, run } = input;
+  if (!editable || !agentKnown || ticket.key === null || !FINAL_STATUSES.includes(ticket.statusId))
+    return null;
+  return { disabledReason: run && !isTerminal(run.state) ? deliveryTexts.busy(run.label) : null };
+}
+
+export const menuDeliverEntry = (input: DeliverInput): DeliverEntry | null =>
+  FINAL_STATUSES.includes(input.ticket.statusId) ? retouchEntry(input) : deliverEntry(input);
+
+export const updateBrief = (ticketKey: string): string => `/update-delivery ${ticketKey}`;
+
+export const deliverMenuActions = (
+  entry: DeliverEntry | null,
+  onSelect: () => void,
+  label: string = deliveryTexts.deliver,
+): MenuAction[] =>
   entry === null
     ? []
     : [
         {
-          label: deliveryTexts.deliver,
+          label,
           icon: Truck,
           disabled: entry.disabledReason !== null,
           hint: entry.disabledReason ?? undefined,
@@ -57,10 +73,12 @@ export type DeliveryMenu = {
 };
 
 export function deliveryMenuActions(menu: DeliveryMenu): MenuAction[] {
-  if (menu.execution === "shown") return deliverMenuActions(menu.entry, menu.deliver);
   const { key, statusId } = menu.ticket;
-  if (key === null || FINAL_STATUSES.includes(statusId)) return [];
-  const command = deliveryBrief(key);
+  const retouch = FINAL_STATUSES.includes(statusId);
+  if (menu.execution === "shown")
+    return deliverMenuActions(menu.entry, menu.deliver, retouch ? deliveryTexts.retouch : undefined);
+  if (key === null) return [];
+  const command = retouch ? updateBrief(key) : deliveryBrief(key);
   return [{ label: deliveryTexts.copy(command), icon: Copy, onSelect: () => menu.copy(command) }];
 }
 

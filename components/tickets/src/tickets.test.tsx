@@ -175,14 +175,17 @@ test("Ouverts hides the done tickets, Fonctionnalité keeps one feature, the sor
   expect(m.violations).toEqual([]);
 });
 
-test("a live run puts an orange dot after the title", async () => {
+test("a live run puts an orange dot after the title only when the execution is shown", async () => {
   const m = setup();
   const row = await rowOf("KIB-14");
   expect(within(row).queryByRole("img", { name: "Agent en cours" })).toBeNull();
   const id = m.snapshot().tickets.find((t) => t.keyLabel === "KIB-14")?.id ?? "";
-  act(() =>
-    m.setRuns([{ ticketId: id, runId: "r1", label: "opus-dev-2", state: "running", position: null }]),
-  );
+  act(() => {
+    m.setAgentExecution("hidden");
+    m.setRuns([{ ticketId: id, runId: "r1", label: "opus-dev-2", state: "running", position: null }]);
+  });
+  expect(within(row).queryByRole("img", { name: "Agent en cours" })).toBeNull();
+  act(() => m.setAgentExecution("shown"));
   expect(await within(row).findByRole("img", { name: "Agent en cours" })).toBeTruthy();
 });
 

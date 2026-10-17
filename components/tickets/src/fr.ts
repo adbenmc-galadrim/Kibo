@@ -1,4 +1,4 @@
-import type { PrState, RunState } from "@kibo/schema";
+import type { PrReview, PrState, RunState } from "@kibo/schema";
 
 const RUN_STATES: Record<RunState, string> = {
   queued: "En file",
@@ -11,6 +11,13 @@ const RUN_STATES: Record<RunState, string> = {
 };
 
 const plural = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
+
+const PR_REVIEWS: Record<PrReview, string | null> = {
+  none: null,
+  review_required: null,
+  approved: "approuvée",
+  changes_requested: "changements demandés",
+};
 
 const PR_STATES: Record<PrState, string | null> = {
   open: null,
@@ -39,6 +46,7 @@ export const fr = {
     all: "Tous les sprints",
     none: "À planifier",
     current: "sprint en cours",
+    sheet: "Fiche du sprint",
   },
   search: "Rechercher (clé ou titre)",
   filters: {
@@ -75,6 +83,7 @@ export const fr = {
   git: {
     waiting: (keys: readonly string[]) => `attend ${keys.join(", ")}`,
     prState: (state: PrState) => PR_STATES[state],
+    review: (review: PrReview) => PR_REVIEWS[review],
     pr: (n: number) => `#${n}`,
     ci: { ok: "CI réussie", error: "CI cassée", running: "CI en cours", neutral: "CI sans conclusion" },
   },
@@ -100,6 +109,8 @@ export const fr = {
   },
   none: "—",
   running: "Agent en cours",
+  session: (tool: string) => `Session ${tool} en cours`,
+  retouch: (step: string) => `retouche · ${step}`,
   updated: {
     now: "à l'instant",
     minutes: (n: number) => `il y a ${n} min`,

@@ -1,5 +1,6 @@
 import type { SprintView, StatusId, Ticket, TicketView } from "@kibo/schema";
 import { sortSprints } from "@kibo/schema";
+import { updatedAt } from "./updated-label";
 
 export const ALL_SPRINTS = "all";
 export const NO_SPRINT = "none";
@@ -77,8 +78,6 @@ export const inSprint = (t: Pick<TicketView, "effectiveSprintId">, sprint: strin
   if (sprint === NO_SPRINT) return t.effectiveSprintId === null;
   return t.effectiveSprintId === sprint;
 };
-
-export const updatedAt = (t: Pick<TicketView, "delivery">): number | null => t.delivery?.at ?? null;
 
 const byKey = (a: TicketView, b: TicketView): number =>
   a.keyLabel.localeCompare(b.keyLabel, "fr", { numeric: true });

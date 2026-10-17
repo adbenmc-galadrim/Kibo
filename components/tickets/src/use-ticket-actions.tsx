@@ -8,7 +8,7 @@ import {
 } from "@kibo/schema";
 import {
   copyDeliveryCommand,
-  deliverEntry,
+  menuDeliverEntry,
   useDeliverFlow,
   useDeliveryAgentKnown,
   useReadOnly,
@@ -64,7 +64,7 @@ export function useTicketActions(
       ticket: t,
       statuses,
       readOnly,
-      deliver: deliverEntry({
+      deliver: menuDeliverEntry({
         ticket: t,
         editable: !readOnly,
         agentKnown,

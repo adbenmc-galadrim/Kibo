@@ -134,3 +134,17 @@ test("hidden agent execution replaces Livrer with copying the full-delivery comm
   expect(a.copyDelivery).toHaveBeenCalledWith("/full-delivery KIB-1");
   expect(a.deliver).not.toHaveBeenCalled();
 });
+
+test("a done card offers Livrer la retouche when the execution is shown", () => {
+  const a = actions();
+  const entries = cardMenuEntries({
+    ticket: { ...ticket, statusId: "done" },
+    statuses: DEFAULT_WORKFLOW,
+    readOnly: false,
+    deliver: { disabledReason: null },
+    execution: "shown",
+    texts: fr,
+    actions: a,
+  });
+  expect(labels(entries).slice(0, 2)).toEqual(["Ouvrir", "Livrer la retouche"]);
+});

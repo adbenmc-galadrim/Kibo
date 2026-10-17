@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { updatedLabel } from "./updated-label";
+import { updatedAt, updatedLabel } from "./updated-label";
 
 const NOW = new Date(2026, 9, 16, 14, 52).getTime();
 const at = (day: number, hour: number, minute = 0) => new Date(2026, 9, day, hour, minute).getTime();
@@ -17,4 +17,11 @@ test("minutes then hours the same day, then hier, the weekday within a week, the
 
 test("a date in the future reads as now", () => {
   expect(updatedLabel(NOW + 60_000, NOW)).toBe("à l'instant");
+});
+
+test("Mis à jour reads the last event of the ticket, then its delivery step, else nothing", () => {
+  const delivery = { step: 7, note: "", at: at(16, 9), runId: null, kind: "delivery" as const };
+  expect(updatedAt({ updatedAt: at(16, 14), delivery })).toBe(at(16, 14));
+  expect(updatedAt({ updatedAt: null, delivery })).toBe(at(16, 9));
+  expect(updatedAt({ updatedAt: null, delivery: null })).toBeNull();
 });

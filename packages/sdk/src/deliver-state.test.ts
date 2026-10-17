@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { copyDeliveryCommand, type DeliverInput, deliverEntry, deliveryMenuActions } from "./deliver-state";
+import {
+  copyDeliveryCommand,
+  type DeliverInput,
+  deliverEntry,
+  deliveryMenuActions,
+  menuDeliverEntry,
+} from "./deliver-state";
 
 const input = (patch: Partial<DeliverInput> = {}): DeliverInput => ({
   ticket: { key: "EMIS-15", statusId: "todo", startable: true, waitingOn: [] },
@@ -78,12 +84,36 @@ test("hidden execution swaps Livrer for copying the full-delivery command", () =
   expect(calls).toEqual(["/full-delivery EMIS-33"]);
 });
 
-test("hidden execution offers no copy for a done ticket or a ticket without key", () => {
-  expect(menuOf("hidden", "done").entries).toEqual([]);
+test("hidden execution offers no copy for a ticket without key", () => {
   expect(menuOf("hidden", "todo", null).entries).toEqual([]);
+  expect(menuOf("hidden", "done", null).entries).toEqual([]);
 });
 
-test("shown execution keeps Livrer", () => {
+test("a done ticket offers a touch-up: copy /update-delivery when hidden, Livrer la retouche when shown", () => {
+  const hidden = menuOf("hidden", "done", "EMIS-21");
+  expect(hidden.entries.map((e) => e.label)).toEqual(["Copier /update-delivery EMIS-21"]);
+  hidden.entries[0]?.onSelect();
+  expect(hidden.calls).toEqual(["/update-delivery EMIS-21"]);
+  const shown = menuOf("shown", "done", "EMIS-21");
+  expect(shown.entries.map((e) => e.label)).toEqual(["Livrer la retouche"]);
+  shown.entries[0]?.onSelect();
+  expect(shown.calls).toEqual(["deliver"]);
+});
+
+test("the menu entry of a done ticket is the touch-up: an editor with an agent, busy while a run is live", () => {
+  const done: DeliverInput["ticket"] = { ...input().ticket, key: "EMIS-21", statusId: "done" };
+  expect(menuDeliverEntry(input({ ticket: done }))).toEqual({ disabledReason: null });
+  expect(menuDeliverEntry(input({ ticket: done, editable: false }))).toBeNull();
+  expect(menuDeliverEntry(input({ ticket: done, agentKnown: false }))).toBeNull();
+  expect(menuDeliverEntry(input({ ticket: { ...done, key: null } }))).toBeNull();
+  const run = { label: "emis · update-delivery · EMIS-21", state: "running" } as const;
+  expect(menuDeliverEntry(input({ ticket: done, run }))).toEqual({
+    disabledReason: "déjà un run : emis · update-delivery · EMIS-21",
+  });
+  expect(menuDeliverEntry(input())).toEqual(deliverEntry(input()));
+});
+
+test("shown execution keeps Livrer on an open ticket", () => {
   const { entries, calls } = menuOf("shown");
   expect(entries.map((e) => e.label)).toEqual(["Livrer"]);
   entries[0]?.onSelect();
