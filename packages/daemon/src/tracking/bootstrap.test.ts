@@ -3,7 +3,7 @@ import type { StatusId } from "@kibo/schema";
 import { createGitFixture, type GitFixture, installFakeGh } from "../code/testing/git-fixture";
 import { type Closer, shutdown } from "../daemon-shutdown";
 import type { RpcContext } from "../rpc-extensions";
-import { startCodeTracking } from "./bootstrap";
+import { PR_POLL_ENV, prPollMsFromEnv, startCodeTracking } from "./bootstrap";
 import { createObserverFixture, type ObserverFixture } from "./observer-fixture.test-helper";
 
 const REMOTE: RpcContext = { sessionHash: "remote", remote: true };
@@ -51,4 +51,26 @@ test("the PR poll observes the branches first, and nothing is observed once the 
   await code.poller?.tick();
   await Bun.sleep(100);
   expect(fx.ticket("EMIS-2").statusId).toBe("todo");
+});
+
+test("the poll passes run before each PR poll and stop with the daemon", async () => {
+  let ticks = 0;
+  const pass = async () => {
+    ticks += 1;
+  };
+  const code = startCodeTracking(fx.service, closers, { env: git.env, prPollMs: 20 }, [pass]);
+  const end = Date.now() + 5_000;
+  while (ticks < 2 && Date.now() < end) await Bun.sleep(10);
+  expect(ticks).toBeGreaterThanOrEqual(2);
+  await shutdown({ front: [], back: closers });
+  const stopped = ticks;
+  await code.poller?.tick();
+  expect(ticks).toBe(stopped);
+});
+
+test("the PR poll interval can be set by the environment for the tests", () => {
+  expect(prPollMsFromEnv({})).toBeUndefined();
+  expect(prPollMsFromEnv({ [PR_POLL_ENV]: "250" })).toBe(250);
+  expect(prPollMsFromEnv({ [PR_POLL_ENV]: "0" })).toBe(0);
+  expect(() => prPollMsFromEnv({ [PR_POLL_ENV]: "vite" })).toThrow(PR_POLL_ENV);
 });

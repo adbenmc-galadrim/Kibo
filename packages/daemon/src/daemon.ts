@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { isTerminal, ticketRuns } from "@kibo/schema";
+import { ticketRuns } from "@kibo/schema";
 import { lateAgentSource } from "./agents/agent-source";
 import type { Orchestrator } from "./agents/orchestrator";
 import { withSignalCounts } from "./agents-rpc";
@@ -9,6 +9,7 @@ import { startCollab } from "./collab/bootstrap";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { componentTrustGuard } from "./components/trust-guard";
 import { migrateDomainScopes } from "./config/domain-scope-migration";
+import { startProjectAdmin } from "./daemon-admin";
 import { startAgents } from "./daemon-agents";
 import { startDaemonComponents, startDaemonIntegrations } from "./daemon-components";
 import { startDaemonFiles } from "./daemon-files";
@@ -16,7 +17,7 @@ import { startDaemonSandbox, startRemote } from "./daemon-network";
 import { clockFromEnv, type DaemonOptions } from "./daemon-options";
 import { type Closers, shutdown } from "./daemon-shutdown";
 import { createLocalServices, openDaemonStores } from "./daemon-stores";
-import { startDaemonTracking } from "./daemon-tracking";
+import { lateActivity, startDaemonTracking } from "./daemon-tracking";
 import { startDelivery } from "./delivery/bootstrap";
 import { startTutorial } from "./demo/bootstrap";
 import { startAppDiagnostics } from "./diagnostics/bootstrap";
@@ -25,7 +26,6 @@ import { startMarket } from "./market/bootstrap";
 import { createProjectSettings } from "./notes/settings";
 import { startOverlaps } from "./overlaps/bootstrap";
 import { startProjectAgent } from "./project-agent/bootstrap";
-import { createProjectAdmin } from "./projects/admin";
 import { agentQuestionHooks } from "./questions/agent-hooks";
 import { PairingCodes } from "./remote/pairing-codes";
 import type { RemoteAccess } from "./remote/remote-access";
@@ -55,6 +55,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const clock = opts.clock ?? clockFromEnv(process.env, console.error);
   const late = lateAgentSource();
   let agents: Orchestrator | null = null;
+  const activity = lateActivity();
   const delivery = startDelivery({
     home: opts.home,
     userHome: opts.userHome ?? homedir(),
@@ -73,6 +74,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     agents: opts.agentSource ?? late.source,
     questionImages: delivery.questionImages,
     clock,
+    activity,
   });
   const local = createLocalServices(opts, { store, runs }, (message) => service.docs.emit(message));
   let sandboxOrigin = "";
@@ -86,7 +88,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
   closers.push(() => collab.stop());
   await migrateDomainScopes({ docs: service.docs, log: console.error, now: Date.now });
-  const tracking = startDaemonTracking(store, service, clock);
+  const tracking = startDaemonTracking({ store, service, clock, activity }, closers);
   const { visibility, extensions, agentFiles } = await startDaemonFiles(
     opts,
     { db: store.db, runs, service, late, agents: () => agents },
@@ -106,6 +108,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       peekRun: visibility.peek,
       delivery: delivery.components,
       appSettings: tracking.appSettings,
+      projectEvents: tracking.projectEvents,
     },
     closers,
   );
@@ -125,6 +128,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     orchestrator: () => ready(agents, "INTERNAL", "agents are not ready"),
     notify: opts.notify ?? (() => {}),
     signals: signals.service,
+    events: tracking.sink,
   });
   closers.push(() => projectAgent.stop());
   signals.start();
@@ -159,21 +163,13 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     log: (message, ...error) => console.error(`[kibo-daemon] ${message}`, ...error),
   });
   closers.push(() => tutorial.stop());
-  const admin = createProjectAdmin({
-    docs: service.docs,
-    settings: createProjectSettings(store.db),
-    icons: service.icons,
-    store,
-    sharing: (projectId) => collab.syncInfo(projectId),
-    activeRuns: (projectId) =>
-      agents
-        ? agents.state().runs.filter((r) => r.projectId === projectId && !isTerminal(r.state)).length
-        : 0,
-    detach: (projectId) => collab.client.detachProject(projectId),
-    isLocked: (projectId) => collab.hosts.isLocked(projectId),
-    prepareDelete: (projectId) => tutorial.prepareDelete(projectId),
-  });
-  const code = startCodeTracking(service, closers, opts.code);
+  const admin = startProjectAdmin(store, service, { collab, tutorial, agents: () => agents });
+  const code = startCodeTracking(
+    service,
+    closers,
+    opts.code,
+    tracking.passes(() => projectAgent.agent),
+  );
   const pairingCodes = new PairingCodes(Date.now);
   let remote: RemoteAccess | null = null;
   const remoteAccess = () => ready(remote, "INTERNAL", "remote access is not initialised");
@@ -197,7 +193,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       sandboxRpc(local.sandbox),
       backupsRpc(local.backups),
       app.rpc,
-      tracking.rpc,
+      ...tracking.rpc,
       tutorial.rpc,
       projectAgent.agent.rpc,
       visibility.rpc,
