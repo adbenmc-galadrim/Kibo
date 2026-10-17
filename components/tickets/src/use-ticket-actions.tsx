@@ -74,7 +74,7 @@ export function useTicketActions(
       execution: agentExecution,
       texts: fr,
       actions: {
-        deliver: () => delivery.deliver(t),
+        deliver: (mode) => delivery.deliver(t, mode),
         copyDelivery: (command) => void copyDeliveryCommand(command),
         open: () => sdk.openTicket(t.id),
         setStatus: (statusId) => setStatus(t, statusId),

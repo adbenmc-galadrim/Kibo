@@ -10,6 +10,7 @@ import type {
   ComponentSettings,
   DeliverResult,
   DeliveryAgent,
+  DeliveryKind,
   DeliveryResult,
   DesignFrame,
   EmbedView,
@@ -100,7 +101,7 @@ export type QuestionsApi = {
 export type AllowAndResumeInput = { runId: string; questionId: string; rules: string[]; addDirs: string[] };
 export type RunsApi = {
   peek(runId: string): Promise<RunPeek>;
-  deliver(ticketId: string): Promise<DeliverResult>;
+  deliver(ticketId: string, mode?: DeliveryKind): Promise<DeliverResult>;
   denials(runId: string): Promise<RunDenials | null>;
   deliveryAgent(): Promise<DeliveryAgent | null>;
   allowAndResume(input: AllowAndResumeInput): Promise<void>;

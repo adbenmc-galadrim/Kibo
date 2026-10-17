@@ -1,4 +1,4 @@
-import type { AgentExecution, Status, StatusId, TicketView } from "@kibo/schema";
+import type { AgentExecution, DeliveryKind, Status, StatusId, TicketView } from "@kibo/schema";
 import { type DeliverEntry, deliveryMenuActions } from "@kibo/sdk";
 import type { MenuAction, MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { ExternalLink, Trash2 } from "lucide-react";
@@ -8,7 +8,7 @@ export type CardMenuActions = {
   open(): void;
   move(statusId: StatusId): void;
   remove(): void;
-  deliver(): void;
+  deliver(mode: DeliveryKind): void;
   copyDelivery(command: string): void;
 };
 

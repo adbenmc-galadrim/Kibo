@@ -1,4 +1,4 @@
-import { KiboError, type TicketView } from "@kibo/schema";
+import { type DeliveryKind, KiboError, type TicketView } from "@kibo/schema";
 import { type ComponentType, type ReactNode, useState } from "react";
 import type { DeliverChildrenProps } from "./deliver-children";
 import { deliveryTexts } from "./fr-delivery";
@@ -20,7 +20,11 @@ const deliverChildren = (): ComponentType<DeliverChildrenProps> => {
 type Target = Pick<TicketView, "id" | "keyLabel" | "title">;
 type Children = { parent: Target; items: DeliverChildrenProps["items"] };
 
-export type DeliverFlow = { deliver(ticket: Target): void; error: string | null; dialog: ReactNode };
+export type DeliverFlow = {
+  deliver(ticket: Target, mode?: DeliveryKind): void;
+  error: string | null;
+  dialog: ReactNode;
+};
 
 export function deliverError(error: unknown): string {
   if (!(error instanceof KiboError)) return deliveryTexts.notStarted;
@@ -33,9 +37,9 @@ export function useDeliverFlow(): DeliverFlow {
   const sdk = useSdk();
   const [children, setChildren] = useState<Children | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const deliver = (ticket: Target) => {
+  const deliver = (ticket: Target, mode?: DeliveryKind) => {
     setError(null);
-    sdk.runs.deliver(ticket.id).then(
+    sdk.runs.deliver(ticket.id, mode).then(
       (result) => {
         if (result.kind === "parent") setChildren({ parent: ticket, items: result.items });
       },

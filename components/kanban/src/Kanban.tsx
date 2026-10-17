@@ -231,7 +231,7 @@ export function Kanban() {
                   readOnly={readOnly}
                   deliver={deliverOf(t)}
                   execution={agentExecution}
-                  onDeliver={() => delivery.deliver(t)}
+                  onDeliver={(mode) => delivery.deliver(t, mode)}
                   onOpen={() => sdk.openTicket(t.id)}
                   onMove={(id) => move(t, id)}
                   onRemove={() => setRemoving(t)}

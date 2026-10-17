@@ -17,9 +17,9 @@ export function runsApi(needs: Needs, call: Call): RunsApi {
       needs.read("run");
       return call<RunPeek>({ kind: "run.peek", runId });
     },
-    async deliver(ticketId) {
+    async deliver(ticketId, mode) {
       needs.write("run");
-      return call<DeliverResult>({ kind: "run.deliver", ticketId });
+      return call<DeliverResult>({ kind: "run.deliver", ticketId, ...(mode ? { mode } : {}) });
     },
     async denials(runId) {
       needs.read("run");

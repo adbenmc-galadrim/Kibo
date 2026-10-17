@@ -8,11 +8,15 @@ import { deliverRpc } from "./deliver-rpc";
 
 function rig(writable: (projectId: string) => boolean) {
   const assigned: string[] = [];
+  const briefs: string[] = [];
   const asserted: string[] = [];
   const deps: DeliverDeps = {
     project: () => ({
       delivery: EMPTY_DELIVERY,
-      tickets: [{ id: "15", key: "EMIS-15", title: "T", parentId: null, statusId: "todo", startable: true }],
+      tickets: [
+        { id: "15", key: "EMIS-15", title: "T", parentId: null, statusId: "todo", startable: true },
+        { id: "16", key: "EMIS-16", title: "D", parentId: null, statusId: "done", startable: false },
+      ],
       links: [],
       questions: [],
     }),
@@ -21,6 +25,7 @@ function rig(writable: (projectId: string) => boolean) {
       state: () => ({ runs: [] }),
       assign(input) {
         assigned.push(input.ticketId);
+        briefs.push(input.brief);
         return runView({ id: "r1", ticketId: input.ticketId });
       },
     },
@@ -31,7 +36,7 @@ function rig(writable: (projectId: string) => boolean) {
       if (!writable(projectId)) throw new KiboError("FORBIDDEN", "read only");
     },
   });
-  return { rpc, assigned, asserted };
+  return { rpc, assigned, briefs, asserted };
 }
 
 const req = { method: "deliver", projectId: "p1", ticketId: "15" } as const;
@@ -56,4 +61,10 @@ test("the inbox is never delivered", async () => {
     code: "INVALID_INPUT",
   });
   expect(assigned).toEqual([]);
+});
+
+test("the update mode reaches the delivery: a done ticket gets its touch-up brief", async () => {
+  const { rpc, briefs } = rig(() => true);
+  await rpc.handle({ ...req, ticketId: "16", mode: "update" }, LOCAL_CONTEXT);
+  expect(briefs).toEqual(["/update-delivery EMIS-16"]);
 });

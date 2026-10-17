@@ -5,6 +5,7 @@ import {
   type AgentSettingsPatch,
   type DeliverResult,
   type DeliveryAgent,
+  type DeliveryKind,
   deliveryAgentInfo,
   KiboError,
   type RunDenials,
@@ -31,7 +32,7 @@ export type DeliveryOpsDeps = {
 };
 export type DeliveryOps = {
   deliverDeps(): DeliverDeps;
-  deliver(projectId: string, ticketId: string): DeliverResult;
+  deliver(projectId: string, ticketId: string, mode?: DeliveryKind): DeliverResult;
   deliveryAgent(projectId: string): DeliveryAgent | null;
   run(runId: string): RunView & { projectId: string };
   denials(runId: string): RunDenials | null;
@@ -102,10 +103,10 @@ export function createDeliveryOps(deps: DeliveryOpsDeps): DeliveryOps {
   };
   return {
     deliverDeps,
-    deliver(projectId, ticketId) {
+    deliver(projectId, ticketId, mode) {
       assertNotInboxForAgents(projectId);
       deps.docs().assertWritable(projectId);
-      return deliver(deliverDeps(), { projectId, ticketId });
+      return deliver(deliverDeps(), { projectId, ticketId, mode });
     },
     deliveryAgent: (projectId) =>
       deliveryAgentInfo(deps.agentData().agents(projectId), deps.docs().projectMeta(projectId).delivery),

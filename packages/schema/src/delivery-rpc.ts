@@ -23,7 +23,12 @@ const RunId = z.string().min(1);
 
 export const DELIVERY_RPC = [
   z.object({ method: z.literal("agents.applyPreset"), ref: AgentRef, preset: AgentPresetId }),
-  z.object({ method: z.literal("deliver"), projectId: ProjectId, ticketId: NodeId }),
+  z.object({
+    method: z.literal("deliver"),
+    projectId: ProjectId,
+    ticketId: NodeId,
+    mode: DeliveryKind.optional(),
+  }),
   z.object({
     method: z.literal("setDeliveryStep"),
     projectId: ProjectId,

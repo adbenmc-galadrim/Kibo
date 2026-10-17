@@ -179,7 +179,7 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
       case "run.peek":
         return deps.peek(c.runId);
       case "run.deliver":
-        return deps.delivery.deliver(c.ticketId);
+        return deps.delivery.deliver(c.ticketId, c.mode);
       case "run.denials":
         return deps.delivery.denials(c.runId);
       case "run.deliveryAgent":

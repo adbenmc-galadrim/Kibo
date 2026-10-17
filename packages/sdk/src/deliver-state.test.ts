@@ -71,7 +71,7 @@ const menuOf = (
     execution,
     entry: { disabledReason: null },
     ticket: { key, statusId },
-    deliver: () => calls.push("deliver"),
+    deliver: (mode) => calls.push(`deliver:${mode}`),
     copy: (command) => calls.push(command),
   });
   return { entries, calls };
@@ -97,7 +97,7 @@ test("a done ticket offers a touch-up: copy /update-delivery when hidden, Livrer
   const shown = menuOf("shown", "done", "EMIS-21");
   expect(shown.entries.map((e) => e.label)).toEqual(["Livrer la retouche"]);
   shown.entries[0]?.onSelect();
-  expect(shown.calls).toEqual(["deliver"]);
+  expect(shown.calls).toEqual(["deliver:update"]);
 });
 
 test("the menu entry of a done ticket is the touch-up: an editor with an agent, busy while a run is live", () => {
@@ -117,7 +117,7 @@ test("shown execution keeps Livrer on an open ticket", () => {
   const { entries, calls } = menuOf("shown");
   expect(entries.map((e) => e.label)).toEqual(["Livrer"]);
   entries[0]?.onSelect();
-  expect(calls).toEqual(["deliver"]);
+  expect(calls).toEqual(["deliver:delivery"]);
 });
 
 test("copying the command writes it to the clipboard", async () => {

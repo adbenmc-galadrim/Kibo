@@ -114,6 +114,7 @@ export function deliveryAgentInfo(
 }
 
 export const deliveryBrief = (ticketKey: string): string => `/full-delivery ${ticketKey}`;
+export const updateDeliveryBrief = (ticketKey: string): string => `/update-delivery ${ticketKey}`;
 
 export type RunDeliveryStep = { runId: string; step: number; note: string };
 export const runDeliverySteps = (state: Pick<AgentsState, "delivery">): RunDeliveryStep[] =>

@@ -88,3 +88,10 @@ test("a refusal is reported with the ticket key", async () => {
     "Échec de la livraison de KIB-99 : la livraison n'a pas démarré",
   );
 });
+
+test("the update mode reaches the delivery with the touch-up brief", async () => {
+  const m = createMockSdk(manifest, { seed });
+  const seul = m.snapshot().tickets.find((t) => t.title === "Seul");
+  const result = await m.sdk.runs.deliver(seul?.id ?? "", "update");
+  expect("brief" in result ? result.brief : null).toBe(`/update-delivery ${seul?.keyLabel}`);
+});
