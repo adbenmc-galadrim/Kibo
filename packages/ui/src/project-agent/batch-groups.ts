@@ -31,6 +31,7 @@ const ORDER: readonly ActionGroup[] = ["tickets", "sprints", "agents", "question
 const t = frProjectAgent.action;
 const field = frProjectAgent.field;
 const NOTHING = "—";
+const CLIENT_RECIPIENT = "client";
 
 export const defaultLabels: DiffLabels = {
   status: (id) => DEFAULT_WORKFLOW.find((s) => s.id === id)?.label ?? id,
@@ -65,7 +66,10 @@ function featureLabel(project: ProjectSnapshot, key: string): FeatureLabel {
 function reminderOf(project: ProjectSnapshot, id: string): Reminder | null {
   const question = project.questions.find((q) => q.id === id);
   if (!question) return null;
-  const recipient = findRecipient(project.questionRecipients, question.recipient)?.name ?? question.recipient;
+  const recipient =
+    question.recipient === CLIENT_RECIPIENT
+      ? t.theClient
+      : (findRecipient(project.questionRecipients, question.recipient)?.name ?? question.recipient);
   return { recipient, ref: question.importRef?.id ?? t.quoted(question.title) };
 }
 

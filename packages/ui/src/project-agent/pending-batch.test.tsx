@@ -27,7 +27,7 @@ test("the compact card lists each action with its title, its reason and a checke
   expect(boxes.map((b) => b.getAttribute("aria-label"))).toEqual([
     "Reporter F5 en S43",
     "Planifier F9 en S44",
-    "Relancer Client sur Q14",
+    "Relancer le client sur Q14",
   ]);
   expect(boxes.every((b) => b.getAttribute("aria-checked") === "true")).toBe(true);
   expect(card.getByText("4 étapes restantes, S42 finit aujourd'hui")).toBeTruthy();

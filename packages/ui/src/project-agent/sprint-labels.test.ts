@@ -49,7 +49,7 @@ test("sprint and reminder actions are named with the short key, the sprint codes
     }),
   ).toBe("Créer le sprint S45 · Clôture");
   expect(title({ id: 1, type: "remindQuestion", questionId: "q-logo", why: "" })).toBe(
-    "Relancer Client sur Q14",
+    "Relancer le client sur Q14",
   );
   expect(title({ id: 1, type: "remindQuestion", questionId: "q-port", why: "" })).toBe(
     "Relancer Moi (technique) sur « Quel port ? »",
@@ -60,4 +60,15 @@ test("sprint and reminder actions are named with the short key, the sprint codes
   expect(actionTitle({ id: 1, type: "setSprint", ticket: "EMIS-30", sprint: "S43", why: "" })).toBe(
     "Planifier EMIS-30 en S43",
   );
+});
+
+test("the generic Client recipient is written « le client », a named recipient keeps its name", () => {
+  const project = trackingProject();
+  const named = {
+    ...project,
+    questions: project.questions.map((q) => (q.id === "q-logo" ? { ...q, recipient: "galadrim" } : q)),
+  };
+  const remind: ProposedAction = { id: 1, type: "remindQuestion", questionId: "q-logo", why: "" };
+  expect(actionTitle(remind, projectLabels(project))).toBe("Relancer le client sur Q14");
+  expect(actionTitle(remind, projectLabels(named))).toBe("Relancer Galadrim sur Q14");
 });

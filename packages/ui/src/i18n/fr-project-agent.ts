@@ -162,6 +162,7 @@ export const frProjectAgent = {
     unplan: (feature: string) => `Retirer ${feature} du planning`,
     createSprint: (code: string, name: string) => `Créer le sprint ${code} · ${name}`,
     remindQuestion: (recipient: string, ref: string) => `Relancer ${recipient} sur ${ref}`,
+    theClient: "le client",
     remindUnknown: "Relancer « question introuvable »",
     quoted: (title: string) => `« ${title} »`,
     confirm: "Confirmer",
