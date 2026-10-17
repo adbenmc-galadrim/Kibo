@@ -1,4 +1,4 @@
-import { type TabTarget, TUTORIAL_STEPS, type TutorialState } from "@kibo/schema";
+import type { TabTarget, TutorialState } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import {
   Dialog,
@@ -12,6 +12,8 @@ import { GraduationCap } from "lucide-react";
 import { useState } from "react";
 import { client } from "../api";
 import { frTutorial as t } from "../i18n/fr-tutorial";
+import { useExecutionShown } from "../state/use-app-settings";
+import { shownStepIds } from "./tutorial-steps";
 import { useTutorial } from "./use-tutorial";
 
 type Props = { open: boolean; onClose(): void; onOpen(target: TabTarget): void };
@@ -30,6 +32,7 @@ async function run(action: Action): Promise<TutorialState> {
 
 export function TutorialOffer({ open, onClose, onOpen }: Props) {
   const { state } = useTutorial();
+  const executionShown = useExecutionShown();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
   const action = offerAction(state);
@@ -60,7 +63,7 @@ export function TutorialOffer({ open, onClose, onOpen }: Props) {
           <DialogDescription>{t.offer.text}</DialogDescription>
         </DialogHeader>
         <ol className="grid list-decimal gap-1 pl-5 text-sm">
-          {TUTORIAL_STEPS.map((step) => (
+          {shownStepIds(executionShown).map((step) => (
             <li key={step}>{t.steps[step].title}</li>
           ))}
         </ol>

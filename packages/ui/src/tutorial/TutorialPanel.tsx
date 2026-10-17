@@ -5,7 +5,8 @@ import { Check, ChevronDown, ChevronUp, GraduationCap } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { client } from "../api";
 import { frTutorial as t } from "../i18n/fr-tutorial";
-import { type StepView, stepViews } from "./tutorial-steps";
+import { useExecutionShown } from "../state/use-app-settings";
+import { type StepView, shownSteps, stepViews } from "./tutorial-steps";
 
 type Props = {
   state: TutorialState;
@@ -130,7 +131,7 @@ export function TutorialPanel({ state, pages, activeTarget, onOpen, onDeleteDemo
   const [failed, setFailed] = useState(false);
   useGraphSeen(state, activeTarget);
   const projectId = state.projectId ?? "";
-  const views = stepViews(state, projectId, pages);
+  const views = shownSteps(stepViews(state, projectId, pages), useExecutionShown());
   const current = views.find((v) => v.current) ?? null;
   const send = (req: RpcRequest) => {
     setFailed(false);
@@ -148,7 +149,7 @@ export function TutorialPanel({ state, pages, activeTarget, onOpen, onDeleteDemo
         <GraduationCap aria-hidden className="size-4" />
         <span className="flex-1 text-sm font-semibold">{t.panel}</span>
         <span className="text-xs text-muted-foreground">
-          {t.progress(state.completed.length, views.length)}
+          {t.progress(views.filter((v) => v.done).length, views.length)}
         </span>
         <Button
           size="icon"
