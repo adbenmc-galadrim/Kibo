@@ -1,6 +1,12 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import type { AgentExecution, CiRun, MemberInfo, StatusId, TicketRun, TicketView } from "@kibo/schema";
-import { type QuestionsChipData, TicketKeyLabel, useSdk } from "@kibo/sdk";
+import {
+  agentTracesShown,
+  type QuestionsChipData,
+  TicketKeyLabel,
+  useSdk,
+  withoutAgentAssignee,
+} from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
@@ -83,6 +89,7 @@ export function TicketRow(props: RowFacts) {
   const handle = canDrag ? { ...drag.listeners, ...drag.attributes } : {};
   const done = t.statusId === "done";
   const dot = liveDot(t, run, props.execution);
+  const traces = agentTracesShown(props.execution);
   const at = updatedAt(t);
   return (
     <li>
@@ -104,7 +111,12 @@ export function TicketRow(props: RowFacts) {
             />
           </span>
           <span data-cell="title" className={cn(CELL.title, "relative")}>
-            <RowDetails ticket={t} run={run} members={props.members} questions={questions}>
+            <RowDetails
+              ticket={traces ? t : withoutAgentAssignee(t)}
+              run={traces ? run : null}
+              members={props.members}
+              questions={questions}
+            >
               <button
                 type="button"
                 data-row-title

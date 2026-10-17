@@ -20,7 +20,7 @@ const PEEK: RunPeek = {
 };
 
 const setup = () => {
-  const m = createMockSdk(manifest, { seed, viewer: "adam", peeks: { r1: PEEK } });
+  const m = createMockSdk(manifest, { seed, viewer: "adam", peeks: { r1: PEEK }, agentExecution: "shown" });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />

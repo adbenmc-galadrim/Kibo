@@ -8,7 +8,7 @@ import { Component, manifest } from "./index";
 import { seed } from "./test-seed";
 
 const setup = (config: Record<string, unknown> = {}, seeded = seed) => {
-  const m = createMockSdk(manifest, { seed: seeded, viewer: "adam", config });
+  const m = createMockSdk(manifest, { seed: seeded, viewer: "adam", config, agentExecution: "shown" });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />

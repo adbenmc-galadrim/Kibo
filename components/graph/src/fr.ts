@@ -49,6 +49,7 @@ export const fr = {
   filter: "Filtrer",
   assignee: "Assigné",
   mineAndAgents: "Moi + agents",
+  mine: "Moi",
   all: "Tous",
   domain: "Domaine",
   allDomains: "Tous les domaines",

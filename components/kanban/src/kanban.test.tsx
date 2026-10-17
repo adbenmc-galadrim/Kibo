@@ -344,6 +344,7 @@ test("shows member names and provisional keys", async () => {
 test("shows a colleague's run on the card", async () => {
   const m = createMockSdk(manifest, {
     viewer: "adam",
+    agentExecution: "shown",
     presence: [
       {
         deviceId: "d2",

@@ -45,6 +45,7 @@ const setup = () => {
     shared: true,
     members: [{ userId: "u-lea", name: "Léa", role: "editor" }],
     peeks: { r1: PEEK },
+    agentExecution: "shown",
   });
   render(
     <SdkProvider sdk={m.sdk}>

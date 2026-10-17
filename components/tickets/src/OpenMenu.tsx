@@ -1,5 +1,6 @@
 import type { Status, StatusId } from "@kibo/schema";
-import { StatusDot } from "@kibo/sdk";
+import { agentTracesShown, StatusDot } from "@kibo/sdk";
+import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { Button } from "@kibo/sdk/ui/button";
 import {
   DropdownMenu,
@@ -29,6 +30,8 @@ const toggled = (set: ReadonlySet<StatusId>, id: StatusId): Set<StatusId> => {
 };
 
 export function OpenMenu({ query, statuses, onChange }: Props) {
+  const traces = agentTracesShown(useComponentSettings().agentExecution);
+  const assignees = traces ? ASSIGNEES : ASSIGNEES.filter((a) => a !== "agents");
   const keep = (e: Event) => e.preventDefault();
   return (
     <DropdownMenu>
@@ -73,11 +76,11 @@ export function OpenMenu({ query, statuses, onChange }: Props) {
         <DropdownMenuRadioGroup
           value={query.assignee}
           onValueChange={(v) => {
-            const assignee = ASSIGNEES.find((a) => a === v);
+            const assignee = assignees.find((a) => a === v);
             if (assignee) onChange({ ...query, assignee });
           }}
         >
-          {ASSIGNEES.map((a) => (
+          {assignees.map((a) => (
             <DropdownMenuRadioItem key={a} value={a} onSelect={keep}>
               {fr.filters.assignees[a]}
             </DropdownMenuRadioItem>

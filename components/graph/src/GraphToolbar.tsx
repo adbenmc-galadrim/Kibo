@@ -1,4 +1,6 @@
 import type { TicketView } from "@kibo/schema";
+import { agentTracesShown } from "@kibo/sdk";
+import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { Button } from "@kibo/sdk/ui/button";
 import {
   DropdownMenu,
@@ -26,6 +28,7 @@ export type FilterProps = {
 };
 
 export function FilterItems({ tickets, filter, setFilter }: FilterProps) {
+  const traces = agentTracesShown(useComponentSettings().agentExecution);
   return (
     <>
       <DropdownMenuLabel>{fr.assignee}</DropdownMenuLabel>
@@ -33,7 +36,9 @@ export function FilterItems({ tickets, filter, setFilter }: FilterProps) {
         value={filter.assignee}
         onValueChange={(v) => setFilter((f) => ({ ...f, assignee: v === "all" ? "all" : "mine-and-agents" }))}
       >
-        <DropdownMenuRadioItem value="mine-and-agents">{fr.mineAndAgents}</DropdownMenuRadioItem>
+        <DropdownMenuRadioItem value="mine-and-agents">
+          {traces ? fr.mineAndAgents : fr.mine}
+        </DropdownMenuRadioItem>
         <DropdownMenuRadioItem value="all">{fr.all}</DropdownMenuRadioItem>
       </DropdownMenuRadioGroup>
       <DropdownMenuSeparator />

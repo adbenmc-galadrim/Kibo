@@ -88,7 +88,7 @@ test("the former controls live in « Options »", async () => {
   for (const name of ["Chemin critique", "Démarrables"])
     expect(within(menu).getByRole("menuitemcheckbox", { name })).toBeTruthy();
   expect(within(menu).getByRole("menuitemcheckbox", { name: /^Afficher les terminés/ })).toBeTruthy();
-  expect(within(menu).getByRole("menuitemradio", { name: "Moi + agents" })).toBeTruthy();
+  expect(within(menu).getByRole("menuitemradio", { name: "Moi" })).toBeTruthy();
   expect(within(menu).getByRole("menuitemradio", { name: "Tous les domaines" })).toBeTruthy();
 });
 

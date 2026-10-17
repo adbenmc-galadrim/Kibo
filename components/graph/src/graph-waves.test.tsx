@@ -41,7 +41,12 @@ const seedWaves = (run: (cmd: ProjectCommand) => unknown) => {
 };
 
 const setup = () => {
-  const m = createMockSdk(manifest, { seed: seedWaves, surface: "view", viewer: "adam" });
+  const m = createMockSdk(manifest, {
+    seed: seedWaves,
+    surface: "view",
+    viewer: "adam",
+    agentExecution: "shown",
+  });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />
