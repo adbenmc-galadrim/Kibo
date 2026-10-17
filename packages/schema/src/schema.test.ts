@@ -241,6 +241,11 @@ test("the agent error codes replace the profile one", () => {
   expect(isKiboErrorCode("PROFILE_IN_USE")).toBe(false);
 });
 
+test("the ticket agents are refused with a stable code", () => {
+  expect(isKiboErrorCode("AGENT_EXECUTION_REMOVED")).toBe(true);
+  expect(new KiboError("AGENT_EXECUTION_REMOVED", "assign").code).toBe("AGENT_EXECUTION_REMOVED");
+});
+
 describe("phase 7 error codes", () => {
   test("new codes are accepted by KiboError", () => {
     const codes = [
