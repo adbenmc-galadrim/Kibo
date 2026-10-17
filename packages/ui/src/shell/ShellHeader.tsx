@@ -4,7 +4,7 @@ import { CreationsIndicator, ProjectAgentButton, ScreenActions } from "./lazy-sc
 import { ExecutionGate } from "./nav/ExecutionGate";
 import { SidebarToggle } from "./nav/SidebarToggle";
 import { SyncChip } from "./nav/SyncChip";
-import { PageActionsSlot } from "./page-actions";
+import { PageActionsSlot, PagePresenceSlot } from "./page-actions";
 import { RunHistoryButton } from "./RunHistoryButton";
 
 type Props = {
@@ -55,6 +55,7 @@ export function ShellHeader({
         </p>
       )}
       <SyncChip project={project} />
+      <PagePresenceSlot />
       <PageActionsSlot />
       <ScreenActions screen={screen} agents={agents} onNewAgent={onNewAgent} onNewSkill={onNewSkill} />
       {project && agentPanel.available && (

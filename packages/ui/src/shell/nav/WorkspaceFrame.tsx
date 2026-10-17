@@ -5,6 +5,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { TabBar } from "../../tabs/TabBar";
 import type { TabDescription } from "../../tabs/tab-title";
 import type { TabsApi } from "../../tabs/use-tabs";
+import { PagePresence } from "../page-actions";
 import { inTauri, openWindow } from "../workspace-actions";
 import { showTabBar } from "./tab-bar";
 
@@ -37,6 +38,7 @@ export function WorkspaceFrame({ tabs, describe, isDirty, onNewTab, presence, ch
           trailing={presence}
         />
       )}
+      {!visible && <PagePresence>{presence}</PagePresence>}
       <SidebarProvider className="min-h-0 flex-1" style={SIDEBAR_STYLE}>
         {children}
       </SidebarProvider>
