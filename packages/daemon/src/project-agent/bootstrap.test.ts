@@ -1,5 +1,10 @@
 import { afterEach, expect, test } from "bun:test";
-import { PROJECT_AGENT_REF, type ProjectAgentSummary } from "@kibo/schema";
+import {
+  PROJECT_AGENT_REF,
+  type ProjectAgentSummary,
+  type ProjectEventInput,
+  type RunView,
+} from "@kibo/schema";
 import { runView } from "../questions/questions.test-helper";
 import { startProjectAgent } from "./bootstrap";
 import { type Harness, harness } from "./fakes.test-helper";
@@ -9,12 +14,15 @@ afterEach(() => {
   for (const h of open.splice(0)) h.close();
 });
 
-function boot() {
+function boot(events?: ProjectEventInput[]) {
   const h = harness();
   open.push(h);
   const attached: string[] = [];
   const project = runView({ id: "p-run", projectId: h.project.id, ticketId: null, state: "running" });
-  h.agents.runs.push({ ...project, kind: "project", profileId: PROJECT_AGENT_REF });
+  const run: RunView = { ...project, kind: "project", profileId: PROJECT_AGENT_REF };
+  h.agents.runs.push(run);
+  h.agents.startProjectRun = () => run;
+  const listeners = new Set<(run: RunView) => void>();
   const started = startProjectAgent({
     home: h.dir,
     service: {
@@ -28,11 +36,24 @@ function boot() {
     },
     notes: h.notes,
     settings: { get: () => null },
-    orchestrator: () => ({ ...h.agents, hooks: { verify: () => true, receive: () => null } }),
+    orchestrator: () => ({
+      ...h.agents,
+      hooks: { verify: () => true, receive: () => null },
+      onRunState(listener) {
+        listeners.add(listener);
+        return () => listeners.delete(listener);
+      },
+    }),
     notify: () => {},
     signals: h.signals,
+    ...(events && {
+      events: { record: (_projectId: string, event: ProjectEventInput) => events.push(event) },
+    }),
   });
-  return { h, started, attached };
+  const turnEnds = () => {
+    for (const listener of listeners) listener({ ...run, state: "done" });
+  };
+  return { h, started, attached, run, turnEnds, listeners };
 }
 
 test("the project agent is wired to the real project data and tools, and detaches on stop", async () => {
@@ -50,4 +71,24 @@ test("the project agent is wired to the real project data and tools, and detache
   expect(started.agent.signals).toBe(h.signals);
   started.stop();
   expect(attached).toEqual(["attach:0", "detach"]);
+});
+
+test("with a journal, only the batch left at the end of the turn is journaled, and stop unsubscribes", async () => {
+  const events: ProjectEventInput[] = [];
+  const { h, started, run, turnEnds, listeners } = boot(events);
+  h.ticket("Récepteur de hooks");
+  started.agent.send(h.project.id, "Range le projet");
+  await started.agent.turns.prepare(run, h.dir);
+  const propose = (title: string) =>
+    started.agent.mcp.call(run, "propose_batch", {
+      summary: title,
+      actions: [{ id: 1, why: "", type: "updateTicket", ticket: "EMIS-1", title }],
+    });
+  await propose("Brouillon");
+  await propose("Récepteur");
+  expect(events).toEqual([]);
+  turnEnds();
+  expect(events.map((e) => [e.kind, e.data])).toEqual([["batch_proposed", { seq: 2, actions: 1 }]]);
+  started.stop();
+  expect(listeners.size).toBe(0);
 });

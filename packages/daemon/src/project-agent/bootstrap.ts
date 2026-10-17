@@ -1,11 +1,12 @@
 import { DEFAULT_PROJECT_AGENT_BODY } from "@kibo/core/agents/compose";
 import { PROJECT_AGENT_REF, type ProjectEventSink, type ProjectFingerprint } from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
-import type { AgentDataPort } from "../agents/orchestrator-types";
+import type { AgentDataPort, Orchestrator } from "../agents/orchestrator-types";
 import type { Docs } from "../docs";
 import type { Service } from "../service";
 import { ready } from "../service-ports";
 import { applyBatch } from "./apply-batch";
+import { type BatchJournal, createBatchJournal } from "./batch-journal";
 import { createProjectAgentDataPort, type ProjectAgentDataDeps } from "./data-port";
 import { createProjectAgentService, type ProjectAgentAgents, type ProjectAgentService } from "./service";
 import { openProjectAgentStore, type ProjectAgentStore } from "./store";
@@ -24,7 +25,7 @@ export type ProjectAgentBootInput = {
   service: Pick<Service, "deliverAnswers" | "attachProjectAgent" | "agentData"> & { docs: Docs };
   notes: ProjectAgentDataDeps["notes"];
   settings: ProjectAgentDataDeps["settings"];
-  orchestrator: () => Omit<ProjectAgentAgents, "deliverAnswers">;
+  orchestrator: () => Omit<ProjectAgentAgents, "deliverAnswers"> & Pick<Orchestrator, "onRunState">;
   notify: (notice: Notice) => void;
   signals: ProjectAgentSignalsPort;
   agentBody?: () => string;
@@ -61,9 +62,23 @@ function projectAgentOps({ data, agents, signals, store, agent, events }: OpsDep
   };
 }
 
+function batchJournal(input: ProjectAgentBootInput): BatchJournal | undefined {
+  const { events, orchestrator } = input;
+  if (!events) return undefined;
+  return createBatchJournal({
+    events,
+    turnOf: (runId) =>
+      orchestrator()
+        .state()
+        .runs.find((r) => r.id === runId)?.turns ?? null,
+    onRunState: (listener) => orchestrator().onRunState(listener),
+  });
+}
+
 export function startProjectAgent(input: ProjectAgentBootInput): ProjectAgentBoot {
   const { service } = input;
-  const store = openProjectAgentStore(input.home, input.events);
+  const journal = batchJournal(input);
+  const store = openProjectAgentStore(input.home, journal);
   const data = createProjectAgentDataPort({
     docs: service.docs,
     notes: input.notes,
@@ -96,6 +111,7 @@ export function startProjectAgent(input: ProjectAgentBootInput): ProjectAgentBoo
     agent,
     stop() {
       detach();
+      journal?.close();
       store.close();
     },
   };
