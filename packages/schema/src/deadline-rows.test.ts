@@ -1,0 +1,93 @@
+import { expect, test } from "bun:test";
+import { DEADLINE_WEEKS, deadlineColumns, deadlineRows, todayOffset } from "./deadline-rows";
+import { featureSteps } from "./feature-steps";
+import { BLOCKING, emisTickets, SPRINT_VIEWS, TODAY } from "./overview-test-kit";
+
+const features = () => {
+  const tickets = emisTickets();
+  return tickets.flatMap((t, rank) =>
+    t.feature === null || t.sprintId === null || t.shortKey === null
+      ? []
+      : [
+          {
+            id: t.id,
+            shortKey: t.shortKey,
+            title: t.title,
+            sprintId: t.sprintId,
+            rank,
+            state: t.feature,
+            steps: featureSteps({ feature: t.id, tickets, links: [] }),
+          },
+        ],
+  );
+};
+const rowsAt = (today: string) =>
+  deadlineRows({ sprints: SPRINT_VIEWS, features: features(), blockingQuestions: BLOCKING, today });
+
+test("the window covers four weeks from the start of the current sprint", () => {
+  expect(DEADLINE_WEEKS).toBe(4);
+  expect(deadlineColumns(SPRINT_VIEWS, TODAY)).toEqual([
+    { start: "2026-10-12", sprint: { id: "s42", code: "S42" } },
+    { start: "2026-10-19", sprint: { id: "s43", code: "S43" } },
+    { start: "2026-10-26", sprint: { id: "s44", code: "S44" } },
+    { start: "2026-11-02", sprint: null },
+  ]);
+  expect(deadlineColumns(SPRINT_VIEWS, "2026-10-20").map((c) => c.start)).toEqual([
+    "2026-10-19",
+    "2026-10-26",
+    "2026-11-02",
+    "2026-11-09",
+  ]);
+});
+
+test("without a current sprint, the window starts with the next one", () => {
+  expect(deadlineColumns(SPRINT_VIEWS, "2026-10-17")[0]).toEqual({
+    start: "2026-10-19",
+    sprint: { id: "s43", code: "S43" },
+  });
+  expect(deadlineColumns(SPRINT_VIEWS, "2026-11-20")).toEqual([]);
+  expect(deadlineColumns([], TODAY)).toEqual([]);
+});
+
+test("today sits four days into the 28 of the window", () => {
+  const columns = deadlineColumns(SPRINT_VIEWS, TODAY);
+  expect(todayOffset(columns, TODAY)).toBe(4 / 28);
+  expect(todayOffset(columns, "2026-12-01")).toBeNull();
+  expect(todayOffset([], TODAY)).toBeNull();
+});
+
+test("one row per undelivered feature of the window, by sprint then rank", () => {
+  const rows = rowsAt(TODAY);
+  expect(rows.map((r) => r.shortKey)).toEqual(["F4", "F5", "F6", "F8", "F7"]);
+  expect(rows.map((r) => r.column)).toEqual([0, 0, 1, 1, 2]);
+});
+
+test("a late feature slips its remaining steps into the next sprint", () => {
+  const f5 = rowsAt(TODAY).find((r) => r.shortKey === "F5");
+  expect(f5?.slipTo).toEqual({ id: "s43", code: "S43" });
+  expect(f5?.cells.filter((c) => !c.slipped).map((c) => c.statusId)).toEqual([
+    "done",
+    "in_review",
+    "in_progress",
+    "todo",
+    "todo",
+  ]);
+  expect(f5?.cells.filter((c) => c.slipped).map((c) => c.statusId)).toEqual([
+    "in_review",
+    "in_progress",
+    "todo",
+    "todo",
+  ]);
+  expect(rowsAt(TODAY).find((r) => r.shortKey === "F4")?.slipTo).toBeNull();
+});
+
+test("a feature blocked by a question names it", () => {
+  const f6 = rowsAt(TODAY).find((r) => r.shortKey === "F6");
+  expect(f6?.blockedBy).toBe("Q14");
+  expect(f6?.cells.map((c) => c.blocked)).toEqual([true, false, false, false]);
+  expect(rowsAt(TODAY).find((r) => r.shortKey === "F8")?.blockedBy).toBeNull();
+});
+
+test("the window moves with today", () => {
+  expect(rowsAt("2026-10-20").map((r) => r.shortKey)).toEqual(["F6", "F8", "F7"]);
+});

@@ -1,4 +1,4 @@
-import type { FeatureStep } from "./feature";
+import type { FeatureStep } from "./feature-steps";
 import type { Sprint } from "./sprint";
 import { FINAL_STATUSES, NOT_STARTED_STATUSES } from "./startable";
 

@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { effectiveSprintId, type FeatureStepSource, featureSteps, isFeature, ShortKey } from "./feature";
+import { effectiveSprintId, isFeature, ShortKey } from "./feature";
+import { type FeatureStepSource, featureSteps } from "./feature-steps";
 import type { Link } from "./link";
 
 const step = (id: string, over: Partial<FeatureStepSource> = {}): FeatureStepSource => ({
