@@ -129,6 +129,7 @@ export async function startStack(
     daemon = null;
     rmSync(home, { recursive: true, force: true });
   });
+  await stack.rpc({ method: "setAppSettings", patch: { agentExecution: "shown" } });
   return stack;
 }
 

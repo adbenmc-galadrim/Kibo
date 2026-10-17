@@ -323,3 +323,19 @@ describe("validateBatch checks the signals an action cites", () => {
     expect(result.ok && result.batch.expected).toEqual([{ actionId: 1, fields: {} }]);
   });
 });
+
+describe("validateBatch with the agent execution hidden", () => {
+  const hidden = ctx({ agentExecution: "hidden" });
+  const assign = batch({ id: 1, why, type: "assignAgent", ticket: "EMIS-3", profileId: "global:opus-dev" });
+  const deliver = batch({ id: 2, why, type: "deliverAnswers", ticket: "EMIS-3" });
+
+  test("refuses assignAgent and deliverAnswers with a clear message", () => {
+    const message = "exécution des agents masquée dans Kibo : action indisponible";
+    expect(problems(assign, hidden)).toEqual([`#1 ${message}`]);
+    expect(problems(deliver, hidden)).toEqual([`#2 ${message}`]);
+  });
+
+  test("accepts them again once the execution is shown", () => {
+    expect(problems(assign, ctx({ agentExecution: "shown" }))).toEqual([]);
+  });
+});

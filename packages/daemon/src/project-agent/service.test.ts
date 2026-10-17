@@ -271,3 +271,23 @@ test("the body of kibo-project-agent.md feeds the project agent, Kibo's default 
   expect(projectAgentBody({ agentOf: () => ({ ...withFile, file: null }) })).toBe(DEFAULT_PROJECT_AGENT_BODY);
   expect(projectAgentBody({ agentOf: () => null })).toBe(DEFAULT_PROJECT_AGENT_BODY);
 });
+
+test("execution hidden: the prompt leaves out the ticket agents and a batch that launches one is refused", async () => {
+  kit.setAgentExecution("hidden");
+  const run = await openTurn();
+  const turn = await kit.svc.turns.prepare({ ...run, turns: 1, pendingAnswer: "Et ensuite ?" }, kit.dir);
+  expect(turn.systemPrompt).toContain("ni `assignAgent` ni `deliverAnswers`");
+  const launch: ProposeBatchInput = {
+    summary: "Confier",
+    actions: [{ id: 1, why: "prêt", type: "assignAgent", ticket: "EMIS-1", profileId: "global:opus-dev" }],
+  };
+  expect(() => kit.svc.propose(run, launch)).toThrow(
+    expect.objectContaining({
+      code: "INVALID_INPUT",
+      detail: "#1 assignAgent : exécution des agents masquée dans Kibo : action indisponible",
+    }),
+  );
+  expect(kit.store.batches(run.id)).toHaveLength(0);
+  kit.setAgentExecution("shown");
+  expect(kit.svc.propose(run, launch)).toBe("Lot 1 enregistré, en attente de validation d'adam.");
+});

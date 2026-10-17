@@ -159,3 +159,28 @@ describe("turn prompts", () => {
     );
   });
 });
+
+describe("buildProjectAgentPrompt and the agent execution", () => {
+  const promptWith = (agentExecution: "hidden" | "shown") =>
+    buildProjectAgentPrompt({
+      projectName: "Emis",
+      chain: [],
+      memoryPath: MEMORY_NOTE_PATH,
+      viewer: "adam",
+      agentBody: "",
+      agentExecution,
+    });
+
+  test("hidden: no ticket agent action, and the reason is stated", () => {
+    const prompt = promptWith("hidden");
+    expect(prompt).toContain("Exécution des agents masquée");
+    expect(prompt).toContain("ni `assignAgent` ni `deliverAnswers`");
+    expect(prompt).not.toContain("liens, agents, réponses");
+  });
+
+  test("shown: the protocol lists agents and answers again", () => {
+    const prompt = promptWith("shown");
+    expect(prompt).toContain("liens, agents, réponses");
+    expect(prompt).not.toContain("Exécution des agents masquée");
+  });
+});

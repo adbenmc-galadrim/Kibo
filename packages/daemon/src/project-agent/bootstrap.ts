@@ -1,5 +1,10 @@
 import { DEFAULT_PROJECT_AGENT_BODY } from "@kibo/core/agents/compose";
-import { PROJECT_AGENT_REF, type ProjectEventSink, type ProjectFingerprint } from "@kibo/schema";
+import {
+  type AgentExecution,
+  PROJECT_AGENT_REF,
+  type ProjectEventSink,
+  type ProjectFingerprint,
+} from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
 import type { AgentDataPort, Orchestrator } from "../agents/orchestrator-types";
 import type { Docs } from "../docs";
@@ -29,6 +34,7 @@ export type ProjectAgentBootInput = {
   notify: (notice: Notice) => void;
   signals: ProjectAgentSignalsPort;
   agentBody?: () => string;
+  agentExecution?: () => AgentExecution;
   events?: ProjectEventSink;
 };
 
@@ -103,6 +109,7 @@ export function startProjectAgent(input: ProjectAgentBootInput): ProjectAgentBoo
     agents,
     notify: input.notify,
     agentBody: input.agentBody ?? (() => projectAgentBody(service.agentData)),
+    agentExecution: input.agentExecution,
     emit: () => service.docs.emit({ topic: "agents" }),
   });
   self = agent;

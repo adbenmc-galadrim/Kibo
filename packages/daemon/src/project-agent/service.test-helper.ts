@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { AGENTS, PROJECT_ID, project, run, ticket } from "@kibo/core/project-agent/test-kit";
 import {
   type ActionResult,
+  type AgentExecution,
   type AgentsState,
   KiboError,
   type ProjectSnapshot,
@@ -48,6 +49,7 @@ export type Kit = {
   setFolder(folder: string | null): void;
   setApply(apply: ProjectAgentOps["apply"]): void;
   setAgentBody(body: string): void;
+  setAgentExecution(execution: AgentExecution): void;
   cleanup(): void;
 };
 
@@ -125,6 +127,7 @@ export function serviceKit(): Kit {
   let apply = applyAll;
   let clock = 100;
   let agentBody = "";
+  let agentExecution: AgentExecution = "shown";
   let emitted = 0;
   const calls: string[] = [];
   const notices: Notice[] = [];
@@ -171,6 +174,7 @@ export function serviceKit(): Kit {
     notify: (notice) => notices.push(notice),
     formatTime: (at) => `t${at}`,
     agentBody: () => agentBody,
+    agentExecution: () => agentExecution,
     emit: () => {
       emitted += 1;
     },
@@ -201,6 +205,9 @@ export function serviceKit(): Kit {
     },
     setApply: (next) => {
       apply = next;
+    },
+    setAgentExecution: (next) => {
+      agentExecution = next;
     },
     setAgentBody: (next) => {
       agentBody = next;
