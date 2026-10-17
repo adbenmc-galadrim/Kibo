@@ -41,6 +41,7 @@ import {
 } from "./questions";
 import {
   archiveQuestion,
+  remindQuestion,
   reopenQuestion,
   restoreQuestion,
   updateAnswer,
@@ -171,6 +172,8 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
       return updateAnswer(doc, cmd);
     case "reopenQuestion":
       return reopenQuestion(doc, cmd);
+    case "remindQuestion":
+      return remindQuestion(doc, cmd);
     case "archiveQuestion":
       return archiveQuestion(doc, cmd);
     case "restoreQuestion":

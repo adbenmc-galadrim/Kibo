@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { type Actor, KiboError, type ProjectCommand, type Question } from "@kibo/schema";
+import { executeProjectCommand } from "./commands";
 import { createProjectDoc } from "./project";
 import { addQuestionRecipient } from "./question-recipients";
 import { answerQuestion, createQuestion, getQuestion, markAnswersDelivered } from "./questions";
@@ -198,4 +199,20 @@ test("the history keeps the last twenty changes", () => {
   const { history } = getQuestion(doc, q.id);
   expect(history).toHaveLength(20);
   expect(history[0]?.previous).toEqual({ title: "T1" });
+});
+
+test("a reminder records a reminded event on an open question only, without changing it", () => {
+  const { doc, ask, answer } = setup();
+  const q = ask("A");
+  const remind = (questionId: string) =>
+    executeProjectCommand(doc, { method: "remindQuestion", questionId, by: THEO, at: 30 });
+  const reminded = getQuestion(doc, q.id);
+  expect(remind(q.id)).toEqual({
+    ...reminded,
+    history: [{ kind: "reminded", at: 30, by: THEO, previous: {} }],
+  });
+  expect(getQuestion(doc, q.id)).toMatchObject({ title: "A", answer: null, history: [{ kind: "reminded" }] });
+  expect(code(() => remind(answer(ask("B")).id))).toBe("INVALID_TRANSITION");
+  const archived = archiveQuestion(doc, edit("archiveQuestion", ask("C").id));
+  expect(code(() => remind(archived.id))).toBe("INVALID_TRANSITION");
 });

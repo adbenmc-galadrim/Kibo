@@ -122,3 +122,10 @@ export function restoreQuestion(doc: LoroDoc, cmd: Command<"restoreQuestion">): 
   if (!isArchived(q)) refuse(q.id, "is not archived");
   return record(doc, q, cmd, "restored", { archivedAt: null, archivedBy: null }, {});
 }
+
+export function remindQuestion(doc: LoroDoc, cmd: Command<"remindQuestion">): Question {
+  const q = getQuestion(doc, cmd.questionId);
+  assertNotArchived(q);
+  if (isAnswered(q)) refuse(q.id, "is answered: nothing to remind");
+  return record(doc, q, cmd, "reminded", {}, {});
+}
