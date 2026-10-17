@@ -126,7 +126,11 @@ test("labels come from the manifest first, bounds reach the input, asset fields 
 });
 
 test("the viewer lighting presets have French value labels", () => {
-  expect(["soft", "studio", "contrast"].map(frWidgets.valueLabel)).toEqual(["Doux", "Studio", "Contraste"]);
+  expect(["soft", "studio", "contrast"].map((v) => frWidgets.valueLabel(v))).toEqual([
+    "Doux",
+    "Studio",
+    "Contraste",
+  ]);
 });
 
 test("a frame list field reads a list, a legacy string or nothing as a list", () => {
