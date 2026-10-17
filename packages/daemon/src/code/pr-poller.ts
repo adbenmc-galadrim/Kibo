@@ -1,7 +1,7 @@
-import type { GithubPrRef, PrInfo, TicketView } from "@kibo/schema";
+import type { GithubPrRef, TicketView } from "@kibo/schema";
 import { call, type Service } from "../service";
 import { attachPr, type Candidate, discoveryCandidates, findPr } from "./pr-discovery";
-import { completeMerge, isFollowed, recordPr } from "./pr-rules";
+import { completeMerge, isFollowed, recordPr, samePr } from "./pr-rules";
 import { prState } from "./remote-ops";
 import type { Env } from "./run";
 
@@ -22,9 +22,6 @@ function trackedRefs(service: Service): Tracked[] {
   return tracked;
 }
 
-const changed = (ref: GithubPrRef, info: PrInfo): boolean =>
-  ref.state !== info.state || ref.base !== info.base || ref.head !== info.head;
-
 export function startPrPoller(service: Service, env: Env, intervalMs: number, log: Log): PrPoller {
   let stopped = false;
   let current: Promise<void> | null = null;
@@ -32,8 +29,8 @@ export function startPrPoller(service: Service, env: Env, intervalMs: number, lo
 
   const update = async ({ projectId, folder, ticket, ref }: Tracked) => {
     const info = await prState(ref.url, folder, env);
-    if (stopped || !changed(ref, info)) return;
-    const next: GithubPrRef = { ...ref, state: info.state, base: info.base, head: info.head };
+    if (stopped || samePr(ref, info)) return;
+    const next: GithubPrRef = { ...ref, ...info };
     recordPr(service, projectId, ticket.id, next);
     if (info.state === "merged") completeMerge(service, projectId, ticket.id, next);
   };

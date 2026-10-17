@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { readStatus } from "./read";
@@ -138,6 +138,42 @@ test("PR states map from gh JSON", async () => {
   expect(() => toPrInfo("not json")).toThrow(expect.objectContaining({ code: "GH_FAILED" }));
 });
 
+const withReview = (extra: string) =>
+  toPrInfo(`{"number":20,"url":"https://github.com/a/b/pull/20","state":"OPEN",${extra}}`);
+
+test("the review decision and the check rollup of a PR are read from gh", () => {
+  expect(
+    withReview(
+      '"reviewDecision":"CHANGES_REQUESTED","statusCheckRollup":[{"__typename":"CheckRun","status":"COMPLETED","conclusion":"FAILURE"},{"__typename":"CheckRun","status":"IN_PROGRESS","conclusion":""}]',
+    ),
+  ).toMatchObject({ review: "changes_requested", checks: "error" });
+  expect(
+    withReview(
+      '"reviewDecision":"APPROVED","statusCheckRollup":[{"status":"COMPLETED","conclusion":"SUCCESS"},{"__typename":"StatusContext","state":"SUCCESS"}]',
+    ),
+  ).toMatchObject({ review: "approved", checks: "ok" });
+  expect(
+    withReview('"reviewDecision":"","statusCheckRollup":[{"status":"QUEUED","conclusion":null}]'),
+  ).toMatchObject({ review: "none", checks: "running" });
+  expect(withReview('"reviewDecision":null,"statusCheckRollup":[]')).toMatchObject({
+    review: "none",
+    checks: null,
+  });
+});
+
+test("an unknown review decision is read as none and logged", () => {
+  const warn = spyOn(console, "warn").mockImplementation(() => {});
+  try {
+    expect(withReview('"reviewDecision":"DISMISSED","statusCheckRollup":"x"')).toMatchObject({
+      review: "none",
+      checks: null,
+    });
+    expect(warn).toHaveBeenCalledTimes(1);
+  } finally {
+    warn.mockRestore();
+  }
+});
+
 test("reviewers that are not GitHub logins are refused before any push or gh call", async () => {
   await expect(
     createPr(h, { title: "x", body: "", base: "main", draft: false, reviewers: ["--admin"] }),
@@ -174,7 +210,7 @@ test("prsForBranch lists every PR of a branch, read only", async () => {
     "--head=feat/autre",
     "--state=all",
     "--json",
-    "number,url,state,isDraft,baseRefName,headRefName",
+    "number,url,state,isDraft,baseRefName,headRefName,reviewDecision,statusCheckRollup",
   ]);
 });
 

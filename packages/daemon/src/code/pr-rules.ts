@@ -1,10 +1,17 @@
 import type { RuleTrigger } from "@kibo/core/rules";
-import { type ExternalRef, type GithubPrRef, integrationBranch } from "@kibo/schema";
+import { type ExternalRef, type GithubPrRef, integrationBranch, type PrInfo } from "@kibo/schema";
 import { call, type Service } from "../service";
 import { mergeCascade } from "./merge-cascade";
 
 export const isFollowed = (ref: ExternalRef): ref is GithubPrRef =>
   ref.kind === "github_pr" && (ref.state === "open" || ref.state === "draft");
+
+export const samePr = (ref: GithubPrRef, info: PrInfo): boolean =>
+  ref.state === info.state &&
+  ref.base === info.base &&
+  ref.head === info.head &&
+  ref.review === info.review &&
+  ref.checks === info.checks;
 
 export function triggerRules(service: Service, projectId: string, trigger: RuleTrigger): void {
   try {
