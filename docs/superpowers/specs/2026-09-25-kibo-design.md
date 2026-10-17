@@ -2536,6 +2536,28 @@ Demande : « faire les choses minimales d'abord ». Kibo **suit** le développem
 
 `0.27.0-alpha.1`.
 
-### 39.6 Constats des critiques retenus
+### 39.6 Constats des critiques retenus (tri du chef d'équipe, 2026-10-18)
 
-(Rempli au fil de la phase.)
+Trois critiques (chef de projet, développeur, nouveau venu et design) ont utilisé Kibo sur les données des maquettes ; rapports et captures dans `screens/2026-10-18-critique-*`. Retenu pour la phase 27 :
+
+1. **Un seul sprint courant** (les trois critiques, bloquant) : une fonction pure du noyau donne le sprint courant pour une date ; le sprint qui contient la date, sinon, entre deux sprints, **le dernier sprint terminé reste courant** (« terminé le 16 oct. · reste n ») jusqu'au début du suivant. Vue d'ensemble, Planning, barre latérale et filtres l'utilisent tous ; un test compare les écrans.
+2. **En retard toujours visible** : la Vue d'ensemble liste en permanence les fonctionnalités en retard (sprint passé, étapes obligatoires restantes), quel que soit le sprint courant ; l'indicateur du haut compte « n en retard ».
+3. **La CLI fait avancer le statut** comme git : `kibo tickets set branch=` ⇒ *En cours* (depuis *À faire* ou *Backlog*), `pr=` ⇒ *En review* ; mêmes règles et même journal que la découverte par l'observateur (§37.4).
+4. **Un seul « bloqué »** : un ticket est bloqué s'il a le statut *Bloqué* ou une question bloquante ouverte ; la carte Kanban montre « bloqué · Q14 », les compteurs (Accueil, Vue d'ensemble) comptent les deux.
+5. **Compteurs cohérents** : « ouvert » = non terminé, une seule fonction partout ; les cartes de l'Accueil se mettent à jour en direct et montrent la clé du projet (jamais un chemin).
+6. **Review et CI partout** : bandeau en tête de la fiche ticket (« PR #20 · changements demandés · CI cassée », liens vers la PR et le job) ; la section CI de la fiche lit l'état de la PR ; pastilles review et CI sur la carte Kanban ; filtre « À reprendre » (changements demandés ou CI cassée) au Kanban.
+7. **Fiche ticket de suivi** : en-tête « F5 · S42 · PR #n » ; bloc Suivi (branche, PR, review, CI, session, étapes `full-delivery` nommées) ; l'onglet Activité montre la chronologie du journal du ticket (branche, PR, étapes, sessions, statut), plus les anciens runs ; Domaine et Maquettes repliés ; chaque ticket a une URL par sa clé (`#/p/<projet>/t/EMIS-33`) ; « Close » ⇒ « Fermer ».
+8. **Purge de l'ère agents** (complète §39.1) : retirés de la navigation, de la palette et des Paramètres : Agents, Files d'attente, Skills, Créations, Composants et Sources de composants, Domaines & guidelines, Changements (client git) ; une ancienne URL ramène à l'Accueil ; la palette indexe « Agent de projet ». Le code reste (retrait dans une phase ultérieure).
+9. **Création de projet** (complète §39.2) : champ **Client** facultatif (nom, affiché sur la carte de l'Accueil et destinataire par défaut des questions client) ; aperçu des sprints générés dans le dialogue ; Vue d'ensemble d'un projet neuf avec une liste « Pour commencer » (relier le dépôt, créer une fonctionnalité, copier `/full-delivery <CLÉ>`). « Nouveau sprint » propose le code suivant et des dates qui suivent le dernier sprint, avec sa durée.
+10. **Fonctionnalités et clés** : une fonctionnalité n'est désignée que par `F<n>` (sa clé de ticket n'est plus montrée) et les étapes sont numérotées sans trou ; le lead tranche l'allocation des clés. Nouveau ticket : champ Fonctionnalité ; toast « EMIS-12 créé · Ouvrir » ; action « Rattacher à une fonctionnalité » ; le groupe « Hors fonctionnalité » est déplié.
+11. **Copier et clavier** : toute copie affiche « Copié » ; sur un ticket non démarrable, la copie avertit « attend EMIS-33 » ; ⌘K propose « Copier /full-delivery <CLÉ> » sur le ticket courant.
+12. **Questions** : numéro `Qn` et badge « bloquante », bloquantes en tête, plus de groupe vide ; « Exporter » dit ce qu'il fait (toast « 2 questions marquées envoyées · Annuler ») et le texte exporté porte la fonctionnalité et l'impact (« bloque F6, prévue en S43 ») ; une réponse qui débloque affiche « F6 débloquée ».
+13. **Pannes** : hors ligne ou démon arrêté ⇒ « Hors connexion · reconnexion… » à la place de « Synchronisé » ; chaque page en erreur montre un encart avec « Réessayer » (modèle du Kanban) ; projet ou ticket introuvable ⇒ page « Introuvable » avec retour à l'Accueil.
+14. **Kanban** : « Tous » par défaut, filtre « Sprint courant » ; carte d'une étape « Démo client » nommée « Démo · F6 ».
+15. **Panneau de l'agent de projet** : la question posée s'affiche, le résumé du jour reste épinglé, la réponse s'affiche dessous ; les lots remplacés sont masqués ; valider un lot affiche un récapitulatif ; une fonctionnalité reportée porte « glissée de S42 ».
+16. **1024 px** : barre latérale repliable en icônes sous 1180 px ; clés jamais coupées ; ombre de défilement sur les zones qui débordent ; légende du Graphe repliable.
+17. **CLI** : l'aide dit comment viser un démon ; `set` déduit le projet de la clé ; « Dépendances : aucune ».
+
+Pages minimales : la liste Tickets n'est pas une page par défaut (choix d'Adam) ; ses informations de suivi passent par le Kanban et la fiche ticket (points 6 et 7).
+
+Proposé à Adam, pas retenu sans son avis (le design validé et les maquettes au pixel près en dépendent) : couleurs sémantiques (orange réservé à l'agent de projet, ambre pour limites et changements demandés, vert pour « étape livrée »), glossaire unifié (« En revue », « À trier »…), liste Questions compacte. Reporté à une phase ultérieure : point client exportable et partage en lecture seule, navigation par liens et j/k, couloirs et priorités du Kanban, accueil « santé des projets » complet.
