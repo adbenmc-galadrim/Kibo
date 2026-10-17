@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, mock, test } from "bun:test";
-import type { ProjectSnapshot, RpcRequest } from "@kibo/schema";
+import type { AgentExecution, ProjectSnapshot, RpcRequest } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
+import { isSeparator, isSubmenu, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
@@ -14,7 +15,7 @@ mock.module("../api", () =>
     client: {
       rpc: async (req: RpcRequest) => {
         calls.push(req);
-        return null;
+        return req.method === "deliver" ? { kind: "parent", items: [] } : null;
       },
       subscribeTopic: () => () => {},
     },
@@ -199,4 +200,53 @@ test("without an explicit mode, the next step follows the agent execution settin
   await user.click(screen.getByRole("button", { name: "Livrer la prochaine étape" }));
   expect(await navigator.clipboard.readText()).toMatch(/^\/full-delivery EMIS-/);
   expect(calls.some((c) => c.method === "deliver")).toBe(false);
+});
+
+const menuOf = (extra: MenuEntry[]) => (
+  <ul aria-label="Menu de la fiche">
+    {extra.flatMap((e) =>
+      isSeparator(e) || isSubmenu(e)
+        ? []
+        : [
+            <li key={e.label}>
+              <button type="button" onClick={() => e.onSelect()}>
+                {e.label}
+              </button>
+            </li>,
+          ],
+    )}
+  </ul>
+);
+
+const renderWithMenu = (execution: AgentExecution) => {
+  const project = emisFeatureProject();
+  const feature = project.tickets.find((t) => t.id === "f5");
+  if (!feature) throw new Error("fixture without F5");
+  return render(
+    <HostProvider host={host}>
+      <FeatureDetail
+        project={project}
+        ticket={feature}
+        now={NOW}
+        execution={execution}
+        actions={menuOf}
+        onOpenFile={() => undefined}
+        onOpenTicket={() => undefined}
+      />
+    </HostProvider>,
+  );
+};
+
+test("execution shown, the header menu delivers the sub-tickets through the grouped dialog", async () => {
+  renderWithMenu("shown");
+  const menu = within(screen.getByRole("list", { name: "Menu de la fiche" }));
+  await userEvent.click(menu.getByRole("button", { name: "Livrer les sous-tickets" }));
+  expect(calls).toContainEqual({ method: "deliver", projectId: "emis", ticketId: "f5" });
+  expect(await screen.findByRole("dialog", { name: "Livrer les sous-tickets de EMIS-30" })).toBeTruthy();
+});
+
+test("execution hidden, the header menu offers no delivery", () => {
+  renderWithMenu("hidden");
+  const menu = within(screen.getByRole("list", { name: "Menu de la fiche" }));
+  expect(menu.queryByRole("button", { name: "Livrer les sous-tickets" })).toBeNull();
 });

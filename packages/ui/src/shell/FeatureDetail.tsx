@@ -1,7 +1,11 @@
 import type { AgentExecution, FileRef, ProjectSnapshot, TicketView } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
-import { Lock, Plus } from "lucide-react";
+import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
+import { Lock, Plus, Truck } from "lucide-react";
 import type { ReactNode } from "react";
+import { DeliverChildrenDialog } from "../delivery/lazy";
+import { useDeliver } from "../delivery/use-deliver";
+import { frDelivery } from "../i18n/fr-delivery";
 import { frFeature as t } from "../i18n/fr-group";
 import { canEdit } from "../state/access";
 import { useAgentsState } from "../state/agents-context";
@@ -25,7 +29,7 @@ type Props = {
   ticket: TicketView;
   now?: number;
   execution?: AgentExecution;
-  actions?: ReactNode;
+  actions?: (extra: MenuEntry[]) => ReactNode;
   onOpenFile(ref: FileRef): void;
   onOpenTicket(ticketId: string): void;
 };
@@ -52,6 +56,11 @@ export function FeatureDetail({
   const descriptionCommand = useTicketCommand(project.meta.id);
   const sprintCommand = useTicketCommand(project.meta.id);
   const editable = canEdit(project);
+  const group = useDeliver(project.meta.id, f);
+  const deliveryEntries: MenuEntry[] =
+    execution === "shown" && editable
+      ? [{ label: frDelivery.deliverChildren, icon: Truck, onSelect: () => void group.deliver() }]
+      : [];
   const steps = stepModels(project, f.id, agents?.runs ?? [], now);
   const next = nextToDeliver(steps);
   const facts = sprintFacts(project, f);
@@ -76,8 +85,21 @@ export function FeatureDetail({
             steps={steps}
             editable={editable}
             command={titleCommand}
-            actions={actions}
+            actions={actions?.(deliveryEntries)}
           />
+          {group.error && (
+            <p role="alert" className="text-[12px] text-(--tracking-red)">
+              {group.error}
+            </p>
+          )}
+          {group.children && (
+            <DeliverChildrenDialog
+              projectId={project.meta.id}
+              parent={group.children.parent}
+              items={group.children.items}
+              onClose={group.closeChildren}
+            />
+          )}
           <ExpectedResult
             ticketId={f.id}
             description={f.description}

@@ -1,6 +1,7 @@
 import { type Domain, type FileRef, isFeature, isGroup, isInbox, type ProjectSnapshot } from "@kibo/schema";
 import { TicketKeyLabel } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
+import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@kibo/sdk/ui/sheet";
 import { Bot } from "lucide-react";
 import { DeliverButton } from "../delivery/lazy";
@@ -60,8 +61,9 @@ export function TicketSheet({
   const editable = canEdit(project);
   const inbox = isInbox(project.meta.id);
   const group = isGroup(t);
-  const actions = (
+  const actionsMenu = (extra?: MenuEntry[]) => (
     <TicketActionsMenu
+      extra={extra}
       projectId={project.meta.id}
       ticket={t}
       childCount={descendantCount(project.tickets, t.id)}
@@ -82,7 +84,7 @@ export function TicketSheet({
           <FeatureDetail
             project={project}
             ticket={t}
-            actions={<span className="mr-8">{actions}</span>}
+            actions={(extra) => <span className="mr-8">{actionsMenu(extra)}</span>}
             onOpenFile={onOpenFile}
             onOpenTicket={onOpenTicket}
           />
@@ -103,7 +105,7 @@ export function TicketSheet({
               {group ? frGroup.kicker(t.keyLabel) : <TicketKeyLabel ticket={t} />}
             </SheetDescription>
             <GithubRefs ticket={t} />
-            <span className="mr-8 ml-auto flex items-center gap-2">{actions}</span>
+            <span className="mr-8 ml-auto flex items-center gap-2">{actionsMenu()}</span>
           </div>
           <SheetTitle className="text-lg" aria-label={t.title} title={importTitle(t.externalRefs)}>
             <TicketTitle
