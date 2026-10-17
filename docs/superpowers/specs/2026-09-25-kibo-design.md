@@ -2529,7 +2529,8 @@ Demande : « faire les choses minimales d'abord ». Kibo **suit** le développem
 ### 39.4 Critiques UX
 
 - Des agents critiques utilisent Kibo comme des utilisateurs (chef de projet qui crée un projet et planifie ; développeur qui livre avec T3 Code et `full-delivery` ; nouveau venu) sur un démon de test, en sombre et en clair, et rendent des constats classés **bloquant / gênant / finition**, chacun avec sa capture et une proposition.
-- Le chef d'équipe trie : un constat pertinent devient une décision en §39.6, puis un correctif. Les maquettes Penpot suivent tout écran modifié.
+- Le chef d'équipe trie : un constat pertinent devient une décision en §39.6, puis un correctif.
+- **Boucle de critique** (demande d'Adam du 2026-10-18) : critique UI/UX puis correctifs des devs, **jusqu'à 3 tours**. Le tour 1 porte sur la build de départ (§39.6) ; les tours 2 et 3 relancent les critiques sur la build intégrée de la phase, avec les mêmes personas, et ne retiennent que des constats nouveaux ou non résolus. La boucle s'arrête plus tôt si un tour ne relève plus aucun constat bloquant ni gênant. Les maquettes Penpot suivent tout écran modifié.
 - shadcn/ui reste le choix par défaut mais n'est plus obligatoire : une amélioration UX qui demande un autre composant l'emporte (décision d'Adam du 2026-10-18).
 
 ### 39.5 Version
