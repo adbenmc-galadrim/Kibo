@@ -143,7 +143,9 @@ export async function rpc(page: Page, body: Body): Promise<unknown> {
 }
 
 export async function showAgentExecution(page: Page): Promise<void> {
-  await rpc(page, { method: "setAppSettings", patch: { agentExecution: "shown" } });
+  await expect(async () => {
+    await rpc(page, { method: "setAppSettings", patch: { agentExecution: "shown" } });
+  }).toPass({ timeout: 15_000 });
 }
 
 export function createGitRepo(): string {
