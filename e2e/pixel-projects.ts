@@ -46,11 +46,18 @@ export const pixelKitProject = (): Project => ({
 });
 
 const TRACKING_SPEC = /\/planning\.spec\.ts$/;
+const TRACES_SPEC = /\/traces\.spec\.ts$/;
 
 export const trackingProjects = (daemons: readonly string[]): Project[] =>
-  PIXEL_DAEMONS.filter((d) => daemons.includes(d.name)).map((d) => ({
-    name: `planning-${d.scheme}`,
-    testMatch: TRACKING_SPEC,
-    dependencies: [d.name],
-    use: { browserName: "chromium", colorScheme: d.scheme, baseURL: `http://127.0.0.1:${d.port}` },
-  }));
+  PIXEL_DAEMONS.filter((d) => daemons.includes(d.name)).flatMap((d) => {
+    const use: Project["use"] = {
+      browserName: "chromium",
+      colorScheme: d.scheme,
+      baseURL: `http://127.0.0.1:${d.port}`,
+    };
+    const planning = `planning-${d.scheme}`;
+    return [
+      { name: planning, testMatch: TRACKING_SPEC, dependencies: [d.name], use },
+      { name: `traces-${d.scheme}`, testMatch: TRACES_SPEC, dependencies: [planning], use },
+    ];
+  });
