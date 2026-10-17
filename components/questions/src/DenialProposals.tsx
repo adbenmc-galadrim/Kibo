@@ -1,5 +1,6 @@
 import type { DenialItem, Question, RunDenials, TicketRun } from "@kibo/schema";
-import { useSdk } from "@kibo/sdk";
+import { agentTracesShown, useSdk } from "@kibo/sdk";
+import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { Button } from "@kibo/sdk/ui/button";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { CornerDownRight, Minus, Play, Sparkles } from "lucide-react";
@@ -82,6 +83,7 @@ function ProposalLine({ item, checked, disabled, onToggle }: ProposalLineProps) 
 
 export function DenialProposals({ question, run, readOnly, fallback }: Props) {
   const sdk = useSdk();
+  const traces = agentTracesShown(useComponentSettings().agentExecution);
   const answer = useAnswer();
   const loaded = useDenials(question);
   const [unchecked, setUnchecked] = useState<ReadonlySet<string>>(new Set());
@@ -136,11 +138,13 @@ export function DenialProposals({ question, run, readOnly, fallback }: Props) {
               {fr.answerFailed}
             </span>
           )}
-          {!relaunch && <span className="flex-1 text-2xs text-muted-foreground">{t.notResumable}</span>}
+          {traces && !relaunch && (
+            <span className="flex-1 text-2xs text-muted-foreground">{t.notResumable}</span>
+          )}
           <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => void ignore()}>
             {t.ignore}
           </Button>
-          {relaunch && (
+          {traces && relaunch && (
             <Button
               size="sm"
               className={`h-7 text-xs ${AGENT_ACCENT_SOLID}`}

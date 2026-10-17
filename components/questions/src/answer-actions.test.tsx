@@ -16,7 +16,13 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
 };
 
 const mount = (opts: MockSdkOptions = {}) => {
-  const m = createMockSdk(manifest, { seed, surface: "view", config: { scope: "all" }, ...opts });
+  const m = createMockSdk(manifest, {
+    seed,
+    surface: "view",
+    config: { scope: "all" },
+    agentExecution: "shown",
+    ...opts,
+  });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />

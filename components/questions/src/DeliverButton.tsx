@@ -1,5 +1,6 @@
 import { KiboError } from "@kibo/schema";
-import { useSdk } from "@kibo/sdk";
+import { agentTracesShown, useSdk } from "@kibo/sdk";
+import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { Button } from "@kibo/sdk/ui/button";
 import { Send } from "lucide-react";
 import { useState } from "react";
@@ -23,6 +24,7 @@ function failure(e: unknown): DeliveryNotice {
 
 export function DeliverButton({ ticketId, label, runLabel, onNotice }: Props) {
   const sdk = useSdk();
+  const traces = agentTracesShown(useComponentSettings().agentExecution);
   const [busy, setBusy] = useState(false);
   const deliver = async () => {
     setBusy(true);
@@ -38,6 +40,7 @@ export function DeliverButton({ ticketId, label, runLabel, onNotice }: Props) {
       setBusy(false);
     }
   };
+  if (!traces) return null;
   return (
     <Button
       variant="outline"
