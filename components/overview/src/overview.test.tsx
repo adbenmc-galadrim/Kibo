@@ -6,7 +6,7 @@ import { createMockSdk, type MockSdkOptions } from "@kibo/sdk/mock";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest, overviewPanel } from "./index";
-import { NOW, seed, TODAY } from "./test-seed";
+import { NOW, seed, seedCrowded, TODAY } from "./test-seed";
 
 beforeEach(() => setSystemTime(new Date(NOW)));
 afterEach(() => {
@@ -149,4 +149,48 @@ test("the activity shows four events, filters by source and unfolds on fifty", a
   await userEvent.click(within(activity).getByRole("button", { name: "git" }));
   await userEvent.click(within(activity).getByRole("button", { name: "Activité" }));
   expect(items().length).toBe(50);
+});
+
+test("the questions show five, then five more per click, and all of them in the Questions page", async () => {
+  const m = setup({ seed: seedCrowded });
+  const questions = await card("Questions");
+  const items = () => within(questions).getAllByRole("listitem");
+  await waitFor(() => expect(items().length).toBe(5));
+  expect(items()[0]?.textContent).toContain("bloquante");
+  await userEvent.click(within(questions).getByRole("button", { name: "Afficher plus (7)" }));
+  expect(items().length).toBe(10);
+  await userEvent.click(within(questions).getByRole("button", { name: "Afficher plus (2)" }));
+  expect(items().length).toBe(12);
+  expect(within(questions).queryByRole("button", { name: /^Afficher plus/ })).toBeNull();
+  await userEvent.click(within(questions).getByRole("button", { name: "Toutes les questions (12)" }));
+  expect(m.viewRequests).toEqual([{ componentId: "questions", question: null }]);
+});
+
+test("five questions or fewer leave the card without a footer", async () => {
+  setup();
+  const questions = await card("Questions");
+  await waitFor(() => expect(within(questions).getAllByRole("listitem").length).toBe(3));
+  expect(
+    within(questions).queryByRole("button", { name: /^Afficher plus|^Toutes les questions/ }),
+  ).toBeNull();
+});
+
+const featureCells = (indicators: HTMLElement) =>
+  Array.from(indicators.querySelectorAll<HTMLElement>("[data-cell]"));
+
+test("the feature cells share their box and tighten beyond twelve features", async () => {
+  setup({ seed: seedCrowded });
+  const indicators = await card("Indicateurs du projet");
+  await waitFor(() => expect(featureCells(indicators).length).toBe(16));
+  const row = featureCells(indicators)[0]?.parentElement;
+  expect(row?.style.columnGap).toBe("2px");
+  expect(row?.className).toContain("overflow-hidden");
+  for (const cell of featureCells(indicators)) expect(cell.className).toContain("min-w-[4px]");
+});
+
+test("nine feature cells keep their width and gap", async () => {
+  setup();
+  const indicators = await card("Indicateurs du projet");
+  await waitFor(() => expect(featureCells(indicators).length).toBe(9));
+  expect(featureCells(indicators)[0]?.parentElement?.style.columnGap).toBe("3px");
 });

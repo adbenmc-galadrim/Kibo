@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "./fr";
-import { type IndicatorText, indicatorTexts } from "./indicator-texts";
+import { featureCellGap, type IndicatorText, indicatorTexts } from "./indicator-texts";
 
 const CELL_BG = {
   delivered: "bg-(--tracking-green)",
@@ -65,12 +65,15 @@ export function Indicators({ indicators }: { indicators: OverviewIndicators }) {
       className="flex h-[92px] w-full shrink-0 rounded-[10px] border border-(--tracking-border) bg-(--tracking-card)"
     >
       <Box icon={Package} label={fr.indicators.features} text={t.features}>
-        <span className="flex items-center gap-[3px]">
+        <span
+          className="flex min-w-0 flex-1 items-center overflow-hidden"
+          style={{ columnGap: `${featureCellGap(t.features.cells.length)}px` }}
+        >
           {t.features.cells.map((cell, i) => (
             <span
               key={`${i}${cell}`}
               data-cell={cell}
-              className={cn("h-[6px] w-[14px] rounded-[1.5px]", CELL_BG[cell])}
+              className={cn("h-[6px] w-[14px] min-w-[4px] shrink rounded-[1.5px]", CELL_BG[cell])}
             />
           ))}
         </span>

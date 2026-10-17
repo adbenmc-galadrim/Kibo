@@ -51,6 +51,7 @@ function handlersOf(sdk: KiboSdk, execution: OverviewHandlers["execution"]): Ove
     onOpenTicket: (id) => sdk.openTicket(id),
     onOpenSprint: (id) => sdk.sprints.open(id),
     onOpenQuestion: (id) => sdk.openView("questions", { question: id }),
+    onOpenQuestions: () => sdk.openView("questions"),
   };
 }
 

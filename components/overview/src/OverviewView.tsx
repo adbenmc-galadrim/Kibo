@@ -14,6 +14,7 @@ import { QuestionsCard } from "./QuestionsCard";
 export type OverviewHandlers = NextActions & {
   onOpenSprint(id: string): void;
   onOpenQuestion(id: string): void;
+  onOpenQuestions(): void;
 };
 type Props = {
   project: ProjectInfo | null;
@@ -42,7 +43,11 @@ export function OverviewView({ project, model, activity, handlers }: Props) {
           </div>
           <div className="flex w-[300px] shrink-0 flex-col gap-[14px]">
             <InReviewCard rows={model.review} onOpenTicket={handlers.onOpenTicket} />
-            <QuestionsCard rows={model.questions} onOpenQuestion={handlers.onOpenQuestion} />
+            <QuestionsCard
+              rows={model.questions}
+              onOpenQuestion={handlers.onOpenQuestion}
+              onOpenQuestions={handlers.onOpenQuestions}
+            />
           </div>
         </div>
       </div>
