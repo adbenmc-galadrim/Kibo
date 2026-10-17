@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
-import { list, rpc, text } from "./agents-seed";
+import { list, rpc, showAgentExecution, text } from "./agents-seed";
+import { openNewTicketFromPalette } from "./helpers";
 import { shot } from "./repo-project";
 import { E2E_TOKEN } from "./token";
 
@@ -49,6 +50,7 @@ test("the tutorial walks the six steps in the demo project, then deletes it in o
 }, info) => {
   test.setTimeout(240_000);
   await page.goto(`/#pair=${E2E_TOKEN}`);
+  await showAgentExecution(page);
   await page.getByRole("main").getByRole("button", { name: "Suivre le didacticiel (10 min)" }).click();
   const offer = page.getByRole("dialog", { name: "Faire le tour de Kibo ?" });
   await expect(offer.getByRole("listitem")).toHaveCount(6);
@@ -63,7 +65,7 @@ test("the tutorial walks the six steps in the demo project, then deletes it in o
   await shot(page, info, "tableau-de-bord-demo-widgets");
 
   await goToStep(page);
-  await page.getByRole("button", { name: "Ticket", exact: true }).click();
+  await openNewTicketFromPalette(page);
   const create = page.getByRole("dialog");
   await create.getByLabel("Titre", { exact: true }).fill("Mon premier ticket");
   await create.getByLabel("Statut").click();

@@ -59,6 +59,9 @@ export function withTicket(snapshot: ReconcileSnapshot, patch: Partial<Ticket>):
     labels: [],
     agentProgress: EMPTY_PROGRESS,
     delivery: null,
+    sprintId: null,
+    optional: false,
+    shortKey: null,
     ...patch,
   };
   return { ...snapshot, tickets: [...snapshot.tickets, ticket] };

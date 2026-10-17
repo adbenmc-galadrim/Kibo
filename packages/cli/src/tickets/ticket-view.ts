@@ -11,6 +11,7 @@ import {
   type TicketView,
 } from "@kibo/schema";
 import { z } from "zod";
+import { type SprintSource, type TrackingFields, trackingOf } from "./ticket-tracking";
 
 export const NormalizedStatus = z.enum(["todo", "wip", "done", "blocked"]);
 export type NormalizedStatus = z.infer<typeof NormalizedStatus>;
@@ -43,8 +44,13 @@ export type TicketSummary = {
   pr: PrSummary | null;
   assignee: Assignee | null;
   labels: string[];
+} & TrackingFields;
+export type TicketsSource = {
+  workflow: Status[];
+  tickets: TicketView[];
+  links: Link[];
+  sprints: readonly SprintSource[];
 };
-export type TicketsSource = { workflow: Status[]; tickets: TicketView[]; links: Link[] };
 
 const isPlanRef = (r: ExternalRef): r is ImportRef => r.kind === "import_ref" && r.source === "plan";
 
@@ -91,6 +97,7 @@ export function summarize(source: TicketsSource): TicketSummary[] {
       pr: relevantPr(t),
       assignee: t.assignee,
       labels: t.labels,
+      ...trackingOf(t, byId, source.sprints),
     };
   });
 }

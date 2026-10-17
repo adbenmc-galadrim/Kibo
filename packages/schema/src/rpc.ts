@@ -5,6 +5,7 @@ import { AI_RPC, type AiRpcResult } from "./ai-rpc";
 import type { CodeEvent } from "./code";
 import { DELIVERY_RPC, type DeliveryRpcResult } from "./delivery-rpc";
 import type { KiboErrorCode } from "./errors";
+import type { FeatureState } from "./feature-state";
 import type { Instance } from "./instance";
 import type { Binding, IntegrationEvent } from "./integrations";
 import { INTEGRATION_RPC, type IntegrationRpcResult } from "./integrations-rpc";
@@ -24,11 +25,13 @@ import type { RunChanged } from "./run";
 import type { ProjectSyncInfo } from "./sharing";
 import { SIGNAL_RPC, type SignalRpcResult } from "./signal-rpc";
 import { SKILL_RPC, type SkillRpcResult } from "./skill-rpc";
+import type { SprintView } from "./sprint";
 import type { Status, StatusId } from "./status";
 import { SUBAGENT_RPC, type SubagentRpcResult } from "./subagent";
 import type { Phase7Event } from "./sync";
 import { SYNC_RPC_REQUESTS, type SyncRpcResult } from "./sync-rpc";
 import type { Ticket } from "./ticket";
+import { TRACKING_RPC, type TrackingRpcResult } from "./tracking-rpc";
 import { VISIBILITY_RPC, type VisibilityRpcResult } from "./visibility-rpc";
 import type { Domain } from "./workspace-config";
 
@@ -38,6 +41,8 @@ export type TicketView = Ticket & {
   keyLabel: string;
   openQuestions: number;
   startable: boolean;
+  effectiveSprintId: string | null;
+  feature: FeatureState | null;
 };
 export type ProjectSnapshot = {
   meta: ProjectMeta;
@@ -55,6 +60,7 @@ export type ProjectSnapshot = {
   domains?: Domain[];
   viewer?: string;
   icon?: string | null;
+  sprints: SprintView[];
 };
 export type ProjectSummary = ProjectMeta & {
   counts: Record<StatusId, number>;
@@ -88,6 +94,7 @@ export const RpcRequest = z.discriminatedUnion("method", [
   ...SKILL_RPC,
   ...DELIVERY_RPC,
   ...SUBAGENT_RPC,
+  ...TRACKING_RPC,
 ]);
 export type RpcRequest = z.infer<typeof RpcRequest>;
 
@@ -104,7 +111,8 @@ export type RpcResult = CoreRpcResult &
   AgentRpcResult &
   SkillRpcResult &
   DeliveryRpcResult &
-  SubagentRpcResult;
+  SubagentRpcResult &
+  TrackingRpcResult;
 
 export type RpcResponse =
   | { ok: true; result: unknown }

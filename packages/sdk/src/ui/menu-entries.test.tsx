@@ -74,3 +74,18 @@ test("a disabled action can explain itself under its label", async () => {
   expect(item.getAttribute("aria-disabled")).toBe("true");
   expect(item.textContent).toBe("Livrerdéjà un run : opus-dev");
 });
+
+test("menu icons keep a 2 px stroke at 16 px, like the mockups", async () => {
+  render(
+    <DropdownMenu>
+      <DropdownMenuTrigger>Actions</DropdownMenuTrigger>
+      <DropdownMenuContent>
+        <DropdownMenuEntries entries={entries([])} />
+      </DropdownMenuContent>
+    </DropdownMenu>,
+  );
+  await userEvent.setup().click(screen.getByRole("button", { name: "Actions" }));
+  const icon = screen.getByRole("menuitem", { name: "Supprimer…" }).querySelector("svg");
+  expect(icon?.getAttribute("width")).toBe("16");
+  expect(icon?.getAttribute("stroke-width")).toBe("3");
+});

@@ -23,6 +23,7 @@ const inboxMeta = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
 };
 const kibo = {
   id: "p1",
@@ -34,6 +35,7 @@ const kibo = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
 };
 
 function seeded() {
@@ -139,7 +141,7 @@ describe("transferTicket", () => {
     expect(result.key).toBeNull();
     expect(result.created.every((c) => c.key === null)).toBe(true);
     expect(getTicket(to, result.ticketId).pendingSeq).not.toBeNull();
-    expect(readProject(to).nextTicketKey).toBeNull();
+    expect(readProject(to, "2026-10-16").nextTicketKey).toBeNull();
   });
 
   test("keys stay unique and ticketSeq consistent after any sequence of transfers", () => {
@@ -158,7 +160,7 @@ describe("transferTicket", () => {
         const keys = listTickets(to).map((t) => t.key);
         expect(new Set(keys).size).toBe(keys.length);
         expect(keys.every((k) => k !== null && /^KIB-\d+$/.test(k))).toBe(true);
-        expect(readProject(to).nextTicketKey).toBe(`KIB-${keys.length + 1}`);
+        expect(readProject(to, "2026-10-16").nextTicketKey).toBe(`KIB-${keys.length + 1}`);
       }),
     );
   });

@@ -5,12 +5,13 @@ import {
   type DuplicationSettings,
   type EffectiveDuplication,
   formatTicketKey,
-  type ProjectMeta,
+  ProjectMeta,
   ProjectPatch,
   type Status,
 } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
-import { valid } from "./config-store";
+import { z } from "zod";
+import { stored, valid } from "./config-store";
 import type { RegisteredProjectPatch } from "./workspace";
 
 export const LOCAL_ONLY_META: ReadonlySet<string> = new Set([
@@ -57,6 +58,7 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: stored(ProjectMeta.shape.tracking.safeParse(m.get("tracking") ?? null), "project tracking"),
   };
 }
 
@@ -66,6 +68,7 @@ export function setProjectMeta(doc: LoroDoc, patch: RegisteredProjectPatch): Pro
   if (fields.name !== undefined) m.set("name", fields.name);
   if (fields.color !== undefined) m.set("color", fields.color);
   if (fields.folder !== undefined) m.set("folder", fields.folder);
+  if (fields.tracking !== undefined) m.set("tracking", fields.tracking);
   doc.commit();
   return getProjectMeta(doc);
 }
@@ -81,6 +84,15 @@ export function peekTicketKey(doc: LoroDoc): string | null {
   if (doc.getMap("meta").get("keyAllocator") === "server") return null;
   return formatTicketKey(getProjectMeta(doc).key, upcomingSeq(doc));
 }
+
+export const FeatureSeq = z.number().int().nonnegative().optional();
+
+export const featureSeqOf = (doc: LoroDoc): number =>
+  (doc.getMap("meta").get("featureSeq") as number | undefined) ?? 0;
+
+export const setFeatureSeq = (doc: LoroDoc, seq: number): void => {
+  doc.getMap("meta").set("featureSeq", seq);
+};
 
 export function nextTicketSeq(doc: LoroDoc): number {
   const next = upcomingSeq(doc);

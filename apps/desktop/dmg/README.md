@@ -9,7 +9,7 @@ cat > e2e/render-dmg-background.ts <<'TS'
 import { readFileSync } from "node:fs";
 import { chromium } from "@playwright/test";
 const svg = readFileSync("../apps/desktop/dmg/background.svg", "utf8");
-const font = readFileSync("../packages/ui/node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2").toString("base64");
+const font = readFileSync("../packages/ui/public/fonts/Geist[wght].woff2").toString("base64");
 const html = `<!doctype html><style>@font-face{font-family:Geist;src:url(data:font/woff2;base64,${font}) format("woff2");font-weight:100 900}html,body{margin:0}svg{display:block}</style>${svg}`;
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 660, height: 400 }, deviceScaleFactor: 2 });

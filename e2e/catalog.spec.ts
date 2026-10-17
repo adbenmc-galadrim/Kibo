@@ -3,7 +3,13 @@ import { join } from "node:path";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
 import { rpc } from "./agents-seed";
 import { homeOf } from "./e2e-home";
-import { addComponent, createPage, createSidebarPage, pairAndCreateProject } from "./helpers";
+import {
+  addComponent,
+  createPage,
+  createSidebarPage,
+  openWorkspaceMenuItem,
+  pairAndCreateProject,
+} from "./helpers";
 import { projectKey } from "./repo-project";
 
 test.setTimeout(240_000);
@@ -12,7 +18,7 @@ const DRAFT = "hello";
 const TITLE = "Hello";
 
 async function openComponents(page: Page) {
-  await page.getByRole("button", { name: "Composants", exact: true }).click();
+  await openWorkspaceMenuItem(page, "Composants");
   await expect(page.getByRole("heading", { level: 1, name: "Composants" })).toBeVisible();
 }
 

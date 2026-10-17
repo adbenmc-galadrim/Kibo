@@ -1,10 +1,15 @@
 import {
   deriveGroups,
+  effectiveSprintId,
+  type FeatureState,
+  featureState,
+  featureSteps,
   isOpen,
   isStartable,
   type Link,
   type ProjectActivity,
   type Question,
+  type Sprint,
   type StatusId,
   type Ticket,
   type TicketView,
@@ -17,6 +22,8 @@ export type ViewFacts = {
   tickets: readonly Ticket[];
   links: readonly Link[];
   questions: readonly Question[];
+  sprints: readonly Sprint[];
+  today: string;
 };
 
 const NO_CHILDREN = { done: 0, total: 0 };
@@ -49,11 +56,34 @@ function blockingCount(questions: readonly Question[]): Map<string, number> {
   return blocking;
 }
 
+function featureOf(
+  facts: ViewFacts,
+  effective: readonly Ticket[],
+  blocking: ReadonlyMap<string, number>,
+): (ticket: Ticket, progress: TicketView["progress"]) => FeatureState | null {
+  const sprints = new Map(facts.sprints.map((s) => [s.id, s]));
+  const blockingQuestions = new Set(blocking.keys());
+  return (ticket, progress) => {
+    if (ticket.parentId !== null || progress.total === 0) return null;
+    return featureState({
+      steps: featureSteps({ feature: ticket.id, tickets: effective, links: facts.links }),
+      blockingQuestions,
+      sprint: ticket.sprintId === null ? null : (sprints.get(ticket.sprintId) ?? null),
+      today: facts.today,
+    });
+  };
+}
+
 export function ticketViews(facts: ViewFacts, activity: ProjectActivity): TicketView[] {
   const effective = effectiveTickets(facts.tickets);
   const byId = new Map(effective.map((e) => [e.ticket.id, e.ticket]));
   const blockers = blockersOf(facts.links);
   const blocking = blockingCount(facts.questions);
+  const feature = featureOf(
+    facts,
+    effective.map((e) => e.ticket),
+    blocking,
+  );
   const open = openCountByTicket(facts.questions);
   const blockerTickets = (id: string): Ticket[] => (blockers.get(id) ?? []).flatMap((b) => byId.get(b) ?? []);
   const statuses = (list: readonly Ticket[]): StatusId[] => list.map((t) => t.statusId);
@@ -65,6 +95,8 @@ export function ticketViews(facts: ViewFacts, activity: ProjectActivity): Ticket
       waitingOn: before.filter((b) => b.statusId !== "done").map((b) => ticketKeyLabel(b, facts.projectKey)),
       keyLabel: ticketKeyLabel(t, facts.projectKey),
       openQuestions: open.get(t.id) ?? 0,
+      effectiveSprintId: effectiveSprintId(t.id, byId),
+      feature: feature(t, progress),
       startable:
         progress.total === 0 &&
         isStartable({

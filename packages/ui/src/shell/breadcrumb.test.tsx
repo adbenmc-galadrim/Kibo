@@ -55,18 +55,20 @@ test("the last crumb stays text even when it carries a target", () => {
 test("crumbsFor gives a project target to the project crumb and a page target to the page crumb", () => {
   const project = { kind: "project", projectId: "kibo" } as const;
   expect(crumbsFor({ kind: "page", projectId: "kibo", pageId: "1@1" }, ctx)).toEqual([
-    { label: "Kibo", target: project },
+    { label: "Kibo", target: project, color: "#F97316" },
     { label: "Board", target: null },
   ]);
   expect(crumbsFor({ kind: "ticket", projectId: "kibo", ticketId: "t12" }, ctx)).toEqual([
-    { label: "Kibo", target: project },
+    { label: "Kibo", target: project, color: "#F97316" },
     { label: "KIB-12", target: null },
   ]);
-  expect(crumbsFor({ kind: "project", projectId: "kibo" }, ctx)).toEqual([{ label: "Kibo", target: null }]);
+  expect(crumbsFor({ kind: "project", projectId: "kibo" }, ctx)).toEqual([
+    { label: "Kibo", target: null, color: "#F97316" },
+  ]);
   expect(
     crumbsFor({ kind: "file", projectId: "kibo", worktree: null, path: "src/a.ts", line: null }, ctx),
   ).toEqual([
-    { label: "Kibo", target: project },
+    { label: "Kibo", target: project, color: "#F97316" },
     { label: "src/a.ts", target: null },
   ]);
 });
@@ -74,12 +76,12 @@ test("crumbsFor gives a project target to the project crumb and a page target to
 test("the Changements crumb opens the changes of the same worktree", () => {
   const changes: TabTarget = { kind: "changes", projectId: "kibo", worktree: "/w/kib-12" };
   expect(crumbsFor(changes, { project: kibo, branch: "kib-12" })).toEqual([
-    { label: "Kibo", target: { kind: "project", projectId: "kibo" } },
+    { label: "Kibo", target: { kind: "project", projectId: "kibo" }, color: "#F97316" },
     { label: "Changements", target: changes },
     { label: "kib-12", target: null },
   ]);
   expect(crumbsFor(changes, ctx)).toEqual([
-    { label: "Kibo", target: { kind: "project", projectId: "kibo" } },
+    { label: "Kibo", target: { kind: "project", projectId: "kibo" }, color: "#F97316" },
     { label: "Changements", target: null },
   ]);
 });
@@ -101,12 +103,13 @@ test("screens and the inbox: settings crumbs stay text, the inbox crumb opens th
       storybook: null,
       duplication: null,
       delivery: null,
+      tracking: null,
     },
   };
   expect(
     crumbsFor({ kind: "ticket", projectId: INBOX_ID, ticketId: "t12" }, { project: inbox, branch: null }),
   ).toEqual([
-    { label: "Boîte de réception", target: { kind: "screen", screen: "inbox" } },
+    { label: "Boîte de réception", target: { kind: "screen", screen: "inbox" }, color: "#64748B" },
     { label: "KIB-12", target: null },
   ]);
 });
@@ -115,5 +118,38 @@ test("the Créations screen sits under Composants, whose crumb opens the compone
   expect(crumbsFor({ kind: "screen", screen: "creations" }, ctx)).toEqual([
     { label: "Composants", target: { kind: "screen", screen: "components" } },
     { label: "Créations", target: null },
+  ]);
+});
+
+test("a feature sits under the Planning page: « Emis / Planning / F5 · title »", async () => {
+  const { emisFeatureProject } = await import("./feature/fixture");
+  const base = emisFeatureProject();
+  const emis: ProjectSnapshot = {
+    ...base,
+    pages: [{ id: "p-plan", title: "Planning", kind: "view", parentId: null }],
+    instances: [
+      {
+        id: "i-plan",
+        pageId: "p-plan",
+        component: "planning@1.0.0",
+        layout: { x: 0, y: 0, w: 12, h: 8 },
+        config: {},
+        componentHash: null,
+      },
+    ],
+  };
+  const project = { kind: "project", projectId: "emis" } as const;
+  expect(
+    crumbsFor({ kind: "ticket", projectId: "emis", ticketId: "f5" }, { project: emis, branch: null }),
+  ).toEqual([
+    { label: "Emis", target: project, color: "#14B8A6" },
+    { label: "Planning", target: { kind: "page", projectId: "emis", pageId: "p-plan" } },
+    { label: "F5 · Envoyer les photos d'un tronçon", target: null },
+  ]);
+  expect(
+    crumbsFor({ kind: "ticket", projectId: "emis", ticketId: "f5" }, { project: base, branch: null }),
+  ).toEqual([
+    { label: "Emis", target: project, color: "#14B8A6" },
+    { label: "F5 · Envoyer les photos d'un tronçon", target: null },
   ]);
 });

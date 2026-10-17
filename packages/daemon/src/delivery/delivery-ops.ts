@@ -19,7 +19,7 @@ import { type DeliverDeps, type DeliveryProject, deliver } from "./deliver";
 
 export type DeliveryDocs = Pick<
   Docs,
-  "project" | "projectIds" | "activity" | "projectMeta" | "assertWritable" | "identity" | "run"
+  "project" | "projectIds" | "activity" | "projectMeta" | "assertWritable" | "identity" | "run" | "today"
 >;
 export type DeliveryOpsDeps = {
   home: string;
@@ -39,7 +39,7 @@ export type DeliveryOps = {
 };
 
 function deliveryProject(docs: DeliveryDocs, projectId: string): DeliveryProject {
-  const snapshot = readProject(docs.project(projectId), docs.activity(projectId));
+  const snapshot = readProject(docs.project(projectId), docs.today(), docs.activity(projectId));
   return {
     delivery: docs.projectMeta(projectId).delivery,
     tickets: snapshot.tickets,

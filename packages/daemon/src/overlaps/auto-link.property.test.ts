@@ -77,7 +77,7 @@ test("property (g): only kibo addLink blocks between distinct tickets, never twi
           const after = w.linker.cancel(row.id, { kind: "human", ref: "Adam" });
           if (before === "added" && after.status === "cancelled") cancels++;
         }
-        const link = readProject(w.doc).links.find((l) => l.id === row?.linkId);
+        const link = readProject(w.doc, "2026-10-16").links.find((l) => l.id === row?.linkId);
         if (step.op === "remove" && link)
           executeProjectCommand(w.doc, { method: "removeLink", linkId: link.id });
         const ticket = w.tickets[step.op === "status" ? step.n : 0];

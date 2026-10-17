@@ -43,6 +43,7 @@ const summary: ProjectSummary = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
 };
 const snapshot: ProjectSnapshot = {
@@ -57,6 +58,7 @@ const snapshot: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-1",
+  sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 const ctx = { projects: [summary], snapshots: new Map([["p1", snapshot]]) };

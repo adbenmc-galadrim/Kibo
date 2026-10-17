@@ -119,7 +119,7 @@ async function openSecondEditor(browser: Browser, first: Page, colorScheme: "dar
   });
   const second = await context.newPage();
   await second.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(second.getByRole("button", { name: "Nouveau projet" }).first()).toBeVisible();
+  await expect(second.getByRole("button", { name: "Ajouter un projet" })).toBeVisible();
   await second.goto(new URL(first.url()).hash);
   await expect(second.getByRole("button", { name: "Modifier la disposition" })).toBeVisible();
   return second;

@@ -14,6 +14,7 @@ const project = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
 };
 const actions = () => ({
   newPage: () => {},
@@ -29,10 +30,10 @@ function mount(editable: boolean, shifted: boolean) {
         <SidebarMenuItem>
           <ProjectHeaderMenu
             project={project}
-            current
             editable={editable}
             shifted={shifted}
             actions={actions()}
+            onPlanningAdded={null}
           >
             <SidebarMenuButton>Kibo</SidebarMenuButton>
           </ProjectHeaderMenu>

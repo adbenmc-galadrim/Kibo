@@ -49,7 +49,7 @@ function LabelMenu({ label, labels, onLabel }: LabelMenuProps) {
           className="h-7 shrink-0 gap-1 px-2.5 text-xs font-normal"
         >
           {label === null ? fr.labelFilter.all : fr.labelFilter.one(label)}
-          <ChevronDown aria-hidden className="size-3.5 text-muted-foreground" />
+          <ChevronDown absoluteStrokeWidth size={14} aria-hidden className="size-3.5 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="max-h-80 overflow-y-auto">
@@ -100,7 +100,7 @@ export function KanbanToolbar(props: Props) {
         onPressedChange={props.onStartable}
         className="h-7 shrink-0 gap-1 px-2.5 text-xs font-normal"
       >
-        <ListFilter aria-hidden className="size-3.5" />
+        <ListFilter absoluteStrokeWidth size={14} aria-hidden className="size-3.5" />
         {fr.startableFilter}
       </Toggle>
       {children}

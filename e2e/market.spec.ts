@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { type APIRequestContext, expect, type Page, type TestInfo, test } from "@playwright/test";
-import { addComponent, createPage, pairAndCreateProject } from "./helpers";
+import { addComponent, createPage, openWorkspaceMenuItem, pairAndCreateProject } from "./helpers";
 import { MARKET_PORTS, MARKET_REVOKE_REASON, MARKET_STATE_FILE, type MarketE2eState } from "./market-fixture";
 
 type Theme = keyof MarketE2eState;
@@ -46,7 +46,7 @@ async function refreshSource(page: Page, serial: number) {
 }
 
 async function openInstalled(page: Page) {
-  await page.getByRole("button", { name: "Composants", exact: true }).click();
+  await openWorkspaceMenuItem(page, "Composants");
   await page.getByRole("tab", { name: "Installés" }).click();
 }
 
@@ -86,7 +86,7 @@ test("marketplace : source, installation vérifiée, mises à jour, clé changé
   });
 
   await test.step("recherche, détail, code vérifié et installation", async () => {
-    await page.getByRole("button", { name: "Composants", exact: true }).click();
+    await openWorkspaceMenuItem(page, "Composants");
     await page.getByRole("tab", { name: "Marketplace" }).click();
     await page.getByLabel("Rechercher un composant").fill("burn");
     await page.getByRole("button", { name: "Voir Burndown" }).click();

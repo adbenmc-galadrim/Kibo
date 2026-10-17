@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { rpc, text } from "./agents-seed";
 import { createE2eRepo, type E2eRepo } from "./git-repo";
-import { addComponent, createPage } from "./helpers";
+import { addComponent, createPage, openWorkspaceMenuItem, showTabBar } from "./helpers";
 import { createRepoProject, projectKey, shot } from "./repo-project";
 import { E2E_TOKEN } from "./token";
 
@@ -25,6 +25,7 @@ test("menus des pages, fiche ticket éditable, annulation d'un fichier", async (
   await createPage(page, "Kanban", "Vue");
   await addComponent(page, "Kanban");
   const bar = page.getByRole("tablist", { name: "Onglets" });
+  await showTabBar(page, `${name} · Kanban`);
   await expect(bar.getByRole("tab", { name: `${name} · Kanban` })).toHaveAttribute("aria-selected", "true");
 
   const projects = await rpc(page, { method: "listProjects" });
@@ -72,7 +73,7 @@ test("menus des pages, fiche ticket éditable, annulation d'un fichier", async (
 
   created.write("README.md", "# test\nligne ajoutée\n");
   created.write("docs/notes.md", "# notes\n");
-  await page.getByRole("button", { name: /^Changements/ }).click();
+  await openWorkspaceMenuItem(page, "Changements");
   const unstaged = page.getByRole("group", { name: /^Modifications \(/ });
   await expect(unstaged.getByText("README.md")).toBeVisible();
   await expect(unstaged.getByText("notes.md")).toBeVisible();

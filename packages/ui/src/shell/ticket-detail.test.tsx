@@ -50,6 +50,11 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   startable: false,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
   ...patch,
 });
 
@@ -64,6 +69,7 @@ const project = (t: TicketView): ProjectSnapshot => ({
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -74,6 +80,7 @@ const project = (t: TicketView): ProjectSnapshot => ({
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-13",
+  sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
   tickets: [t],
 });
@@ -140,4 +147,14 @@ test("no started run, no agents state or no shell host: no session line and no f
   expect(screen.queryByText("Session principale")).toBeNull();
   show(ticket({ openQuestions: 1 }), null, false);
   expect(screen.getByRole("button", { name: "1 question" })).toBeTruthy();
+});
+
+test("a step offers « Étape facultative » and a lone root ticket offers its sprint", () => {
+  const view = show(ticket({ parentId: "f5" }), null);
+  expect(screen.getByRole("switch", { name: "Étape facultative" })).toBeTruthy();
+  expect(screen.queryByRole("combobox", { name: "Sprint" })).toBeNull();
+  view.unmount();
+  show(ticket(), null);
+  expect(screen.queryByRole("switch", { name: "Étape facultative" })).toBeNull();
+  expect(screen.getByRole("combobox", { name: "Sprint" })).toBeTruthy();
 });

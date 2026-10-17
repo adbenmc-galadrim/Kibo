@@ -82,10 +82,11 @@ test("commitDefaults reads the ticket named by the branch", () => {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   const parent = createTicket(doc, { title: "Schéma Loro des tickets (LoroTree)" });
   createTicket(doc, { title: "Index SQLite dérivé", parentId: parent.id, statusId: "done" });
-  const d = commitDefaults(readProject(doc), "kib-1", ["feat: premier jet"]);
+  const d = commitDefaults(readProject(doc, "2026-10-16"), "kib-1", ["feat: premier jet"]);
   expect(d).toEqual({
     ticketId: parent.id,
     ticketKey: "KIB-1",
@@ -94,12 +95,12 @@ test("commitDefaults reads the ticket named by the branch", () => {
     prBody:
       "## Ticket\nKIB-1 · Schéma Loro des tickets (LoroTree)\n\n## Changements\n- feat: premier jet\n\n## Sous-tickets\n- [x] KIB-2",
   });
-  expect(commitDefaults(readProject(doc), "main", ["chore: x"])).toEqual({
+  expect(commitDefaults(readProject(doc, "2026-10-16"), "main", ["chore: x"])).toEqual({
     ticketId: null,
     ticketKey: null,
     message: "",
     prTitle: "chore: x",
     prBody: "## Changements\n- chore: x",
   });
-  expect(commitDefaults(readProject(doc), "kib-99", []).prTitle).toBe("");
+  expect(commitDefaults(readProject(doc, "2026-10-16"), "kib-99", []).prTitle).toBe("");
 });

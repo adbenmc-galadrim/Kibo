@@ -124,6 +124,11 @@ test("a dependency still waiting for its key is shown by its label alone", () =>
     startable: false,
     agentProgress: EMPTY_PROGRESS,
     delivery: null,
+    sprintId: null,
+    optional: false,
+    shortKey: null,
+    effectiveSprintId: null,
+    feature: null,
   };
   const tickets = project.tickets.map((t) => (t.id === "t15" ? { ...t, waitingOn: ["KIB-12", "KIB-…"] } : t));
   render(
@@ -487,6 +492,11 @@ const provisional = (): TicketView => ({
   startable: false,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 });
 
 test("a ticket without its key cannot be sent to an agent", async () => {

@@ -3,12 +3,15 @@ import type { StatusId } from "./status";
 
 export type GroupProgress = { done: number; total: number };
 export type GroupState = { statusId: StatusId; progress: GroupProgress };
-type GroupFacts = { id: string; parentId: string | null; statusId: StatusId };
+type GroupFacts = { id: string; parentId: string | null; statusId: StatusId; optional?: boolean };
 
 export const isGroup = (t: { progress: GroupProgress }): boolean => t.progress.total > 0;
 
-export function groupStatus(children: readonly StatusId[]): StatusId {
-  if (children.length > 0 && children.every((s) => s === "done")) return "done";
+export function groupStatus(
+  children: readonly StatusId[],
+  mandatory: readonly StatusId[] = children,
+): StatusId {
+  if (children.length > 0 && mandatory.every((s) => s === "done")) return "done";
   return children.some((s) => !NOT_STARTED_STATUSES.includes(s)) ? "in_progress" : "todo";
 }
 
@@ -24,8 +27,9 @@ export function deriveGroups(tickets: readonly GroupFacts[]): Map<string, GroupS
     const known = groups.get(t.id);
     if (known) return known.statusId;
     const statuses = kids.map(statusOf);
+    const mandatory = kids.filter((k) => k.optional !== true).map(statusOf);
     const state = {
-      statusId: groupStatus(statuses),
+      statusId: groupStatus(statuses, mandatory),
       progress: { done: statuses.filter((s) => s === "done").length, total: statuses.length },
     };
     groups.set(t.id, state);

@@ -169,6 +169,7 @@ describe("inbox", () => {
       storybook: null,
       duplication: null,
       delivery: null,
+      tracking: null,
     };
     expect(() => s.docs.addProject(meta, inbox)).toThrow("INVALID_INPUT");
     expect(() => s.docs.replaceProject(INBOX_ID, inbox)).toThrow("INVALID_INPUT");

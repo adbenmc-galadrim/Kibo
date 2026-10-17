@@ -25,6 +25,7 @@ import {
   useSelection,
   useSharing,
 } from "@kibo/sdk";
+import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { useState } from "react";
 import { announce } from "./announcements";
@@ -59,6 +60,7 @@ export function Kanban() {
   const readOnly = sharing.access !== "write";
   const delivery = useDeliverFlow();
   const agentKnown = useDeliveryAgentKnown();
+  const { agentExecution } = useComponentSettings();
   const columnOrder = useColumnOrder(sdk);
   const labelFilter = useLabelFilter(sdk, !readOnly);
   const [selection, setSelection] = useSelection();
@@ -228,6 +230,7 @@ export function Kanban() {
                   statuses={ordered}
                   readOnly={readOnly}
                   deliver={deliverOf(t)}
+                  execution={agentExecution}
                   onDeliver={() => delivery.deliver(t)}
                   onOpen={() => sdk.openTicket(t.id)}
                   onMove={(id) => move(t, id)}

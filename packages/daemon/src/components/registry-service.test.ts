@@ -60,6 +60,7 @@ beforeEach(() => {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   store = createFakeStore();
   stopped = [];
@@ -202,6 +203,7 @@ describe("listing and uninstall", () => {
       ["viewer-3d", true],
       ["mockup", true],
       ["questions", true],
+      ["planning", true],
       ["pr-queue", false],
     ]);
     expect(list[0]?.versions).toEqual([
@@ -234,6 +236,7 @@ describe("listing and uninstall", () => {
       "viewer-3d",
       "mockup",
       "questions",
+      "planning",
     ]);
   });
 });

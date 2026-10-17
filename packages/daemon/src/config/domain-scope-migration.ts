@@ -28,7 +28,7 @@ function usageByProject(docs: Docs): DomainUsageByProject {
   return usage;
 }
 
-function writable(docs: Docs, projectId: string): boolean {
+export function writable(docs: Docs, projectId: string): boolean {
   try {
     docs.assertWritable(projectId);
     return true;

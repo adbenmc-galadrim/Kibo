@@ -98,3 +98,46 @@ test("the delivery step is a command reserved to the daemon", () => {
     }).success,
   ).toBe(false);
 });
+
+const SPRINT_COMMANDS = [
+  { method: "createSprint", code: "S44", name: "Rapports", start: "2026-10-26", end: "2026-10-30" },
+  { method: "updateSprint", sprintId: "s44", patch: { end: "2026-10-31" } },
+  { method: "deleteSprint", sprintId: "s44" },
+  { method: "setTicketSprint", ticketId: "f9", sprintId: "s44" },
+  { method: "setTicketSprint", ticketId: "f9", sprintId: null },
+  { method: "setTicketOptional", ticketId: "e93", optional: true },
+] as const;
+
+test("the sprint and optional step commands parse and validate their input", () => {
+  for (const command of SPRINT_COMMANDS) expect(ProjectCommand.safeParse(command).success).toBe(true);
+  const invalid = [
+    { method: "createSprint", code: "S44", name: "Rapports", start: "2026-10-30", end: "2026-10-26" },
+    { method: "createSprint", code: "S44", name: "", start: "2026-10-26", end: "2026-10-30" },
+    { method: "updateSprint", sprintId: "s44", patch: { id: "x" } },
+    { method: "setTicketSprint", ticketId: "f9" },
+    { method: "createSprint", name: "Rapports", start: "2026-10-26", end: "2026-10-30" },
+    { method: "setTicketOptional", ticketId: "e93" },
+  ];
+  for (const command of invalid) expect(ProjectCommand.safeParse(command).success).toBe(false);
+});
+
+test("sprint commands write sprints, assignment and optional steps write tickets", () => {
+  expect(COMMAND_WRITES.createSprint).toBe("sprint");
+  expect(COMMAND_WRITES.updateSprint).toBe("sprint");
+  expect(COMMAND_WRITES.deleteSprint).toBe("sprint");
+  expect(COMMAND_WRITES.setTicketSprint).toBe("ticket");
+  expect(COMMAND_WRITES.setTicketOptional).toBe("ticket");
+  for (const { method } of SPRINT_COMMANDS) expect(isReservedCommand(method)).toBe(false);
+});
+
+test("a ticket update may set or clear its short key, in the short key format", () => {
+  expect(ProjectCommand.safeParse({ method: "updateTicket", ticketId: "f5", shortKey: "F5" }).success).toBe(
+    true,
+  );
+  expect(ProjectCommand.safeParse({ method: "updateTicket", ticketId: "f5", shortKey: null }).success).toBe(
+    true,
+  );
+  expect(ProjectCommand.safeParse({ method: "updateTicket", ticketId: "f5", shortKey: "f5" }).success).toBe(
+    false,
+  );
+});

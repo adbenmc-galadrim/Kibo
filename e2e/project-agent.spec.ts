@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { agentRefs, createAgent, list, pairBrowser, rpc, text } from "./agents-seed";
+import { agentRefs, createAgent, list, pairBrowser, rpc, showAgentExecution, text } from "./agents-seed";
 import { addComponent, createPage, createSidebarPage, pairAndCreateProject } from "./helpers";
 import { capture, hoverBadge, questionArticle, seedAnswered, seedQuestion } from "./questions-kit";
 import { shot } from "./repo-project";
@@ -61,6 +61,7 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
 }, info) => {
   test.setTimeout(180_000);
   await pairAndCreateProject(page, info, "KIB");
+  await showAgentExecution(page);
   const projectId = projectIdOf(page);
   await seed(page, projectId);
   await createPage(page, "Tableau de bord", "Tableau de bord");
@@ -78,7 +79,7 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
   await expect(panel).toBeVisible();
   await expect(button).toBeVisible();
   await expect(button).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("button", { name: "Partager", exact: true })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "Fil d'Ariane" })).toBeVisible();
   await expectBelow(panel, button);
   await button.click();
   await expect(panel).toBeHidden();
@@ -150,6 +151,7 @@ const LOGO = "Client - Logo ?";
 
 async function kibProject(page: Page): Promise<string> {
   await pairBrowser(page);
+  await showAgentExecution(page);
   const projects = list({ projects: await rpc(page, { method: "listProjects" }) }, "projects");
   const found = projects.find((p) => text(p, "name") === PROJECT);
   if (found !== undefined) return text(found, "id");

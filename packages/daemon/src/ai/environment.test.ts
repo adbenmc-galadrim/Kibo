@@ -18,6 +18,7 @@ const app: AppInfo = {
   userHome: null,
   daemonPid: 42,
   uptimeMs: 1000,
+  fixedNow: null,
 };
 
 test("parseToolVersion keeps major.minor", () => {

@@ -37,11 +37,12 @@ function setup(extra: Record<string, unknown>, mode: SdkMode = "builtin") {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   const calls: ComponentCall[] = [];
   const runs: unknown[] = [];
   const backend: ProjectBackend = {
-    snapshot: async () => readProject(doc),
+    snapshot: async () => readProject(doc, "2026-10-16"),
     run: async (cmd) => {
       runs.push(cmd);
       return null;

@@ -41,7 +41,7 @@ export function createIntegrationHost(parts: HostParts): IntegrationHost {
     db: parts.store.db,
     transaction: (fn) => parts.service.transaction(fn),
     projects: () => listProjects(docs.workspace),
-    snapshot: (projectId) => readProject(docs.project(projectId), docs.activity(projectId)),
+    snapshot: (projectId) => readProject(docs.project(projectId), docs.today(), docs.activity(projectId)),
     command<C extends ProjectCommand>(
       projectId: string,
       cmd: C,

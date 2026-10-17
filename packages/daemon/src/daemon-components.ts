@@ -17,6 +17,7 @@ export type DaemonComponentsInput = Pick<
   | "sharing"
   | "peekRun"
   | "delivery"
+  | "appSettings"
 >;
 
 export async function startDaemonComponents(

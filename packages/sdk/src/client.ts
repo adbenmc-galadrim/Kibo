@@ -270,5 +270,6 @@ export function projectBackend(client: KiboClient, projectId: string, instanceId
       client.subscribeEvents((m) => {
         if (m.type === "presence.changed" && m.projectId === projectId) listener();
       }),
+    subscribeConfig: (listener) => client.subscribeTopic("config", listener),
   };
 }

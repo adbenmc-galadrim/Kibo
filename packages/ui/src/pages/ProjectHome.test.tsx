@@ -14,6 +14,7 @@ const project = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot => 
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -25,6 +26,7 @@ const project = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot => 
   rules: [],
   bindings: [],
   nextTicketKey: null,
+  sprints: [],
   sync: { shared: true, keyAllocator: "server", role: "viewer", access, members: [] },
 });
 

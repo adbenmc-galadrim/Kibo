@@ -5,7 +5,6 @@ import type { Orchestrator } from "./agents/orchestrator";
 import { withSignalCounts } from "./agents-rpc";
 import type { DraftAssets } from "./ai/draft-preview";
 import { backupsRpc } from "./backups/rpc";
-import { createCodeService } from "./code/code-service";
 import { startCollab } from "./collab/bootstrap";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { componentTrustGuard } from "./components/trust-guard";
@@ -14,9 +13,10 @@ import { startAgents } from "./daemon-agents";
 import { startDaemonComponents, startDaemonIntegrations } from "./daemon-components";
 import { startDaemonFiles } from "./daemon-files";
 import { startDaemonSandbox, startRemote } from "./daemon-network";
-import type { DaemonOptions } from "./daemon-options";
+import { clockFromEnv, type DaemonOptions } from "./daemon-options";
 import { type Closers, shutdown } from "./daemon-shutdown";
 import { createLocalServices, openDaemonStores } from "./daemon-stores";
+import { startDaemonTracking } from "./daemon-tracking";
 import { startDelivery } from "./delivery/bootstrap";
 import { startTutorial } from "./demo/bootstrap";
 import { startAppDiagnostics } from "./diagnostics/bootstrap";
@@ -38,6 +38,7 @@ import { openSessionStore } from "./sessions/session-store";
 import { openLocalSettings } from "./settings";
 import { startSignals } from "./signals/bootstrap";
 import { DaemonRunning, findRunningDaemon } from "./single-instance";
+import { startCodeTracking } from "./tracking/bootstrap";
 
 export type { DaemonOptions } from "./daemon-options";
 
@@ -51,6 +52,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const devOrigins = opts.dev ? [VITE_ORIGIN] : [];
   const { store, runs, token, redactor } = openDaemonStores(opts, closers);
   const startedAt = Date.now();
+  const clock = opts.clock ?? clockFromEnv(process.env, console.error);
   const late = lateAgentSource();
   let agents: Orchestrator | null = null;
   const delivery = startDelivery({
@@ -70,6 +72,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     ...(opts.notifications && { notifications: opts.notifications }),
     agents: opts.agentSource ?? late.source,
     questionImages: delivery.questionImages,
+    clock,
   });
   const local = createLocalServices(opts, { store, runs }, (message) => service.docs.emit(message));
   let sandboxOrigin = "";
@@ -83,6 +86,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
   const collab = await startCollab({ store, service, user: opts.user, secrets: integrations.secrets });
   closers.push(() => collab.stop());
   await migrateDomainScopes({ docs: service.docs, log: console.error, now: Date.now });
+  const tracking = startDaemonTracking(store, service, clock);
   const { visibility, extensions, agentFiles } = await startDaemonFiles(
     opts,
     { db: store.db, runs, service, late, agents: () => agents },
@@ -101,6 +105,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       sharing: (projectId) => collab.syncInfo(projectId),
       peekRun: visibility.peek,
       delivery: delivery.components,
+      appSettings: tracking.appSettings,
     },
     closers,
   );
@@ -168,8 +173,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     isLocked: (projectId) => collab.hosts.isLocked(projectId),
     prepareDelete: (projectId) => tutorial.prepareDelete(projectId),
   });
-  const code = createCodeService(service);
-  closers.push(() => code.stop());
+  const code = startCodeTracking(service, closers, opts.code);
   const pairingCodes = new PairingCodes(Date.now);
   let remote: RemoteAccess | null = null;
   const remoteAccess = () => ready(remote, "INTERNAL", "remote access is not initialised");
@@ -180,6 +184,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     service,
     components,
     log: opts.logBuffer ?? createLogBuffer(),
+    fixedNow: clock.fixedNow,
   });
   const server = startServer({
     service,
@@ -192,6 +197,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       sandboxRpc(local.sandbox),
       backupsRpc(local.backups),
       app.rpc,
+      tracking.rpc,
       tutorial.rpc,
       projectAgent.agent.rpc,
       visibility.rpc,

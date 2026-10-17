@@ -3,6 +3,7 @@ import {
   type CiRun,
   type ComponentCall,
   type ComponentManifest,
+  type ComponentSettings,
   type DeliveryResult,
   type EntityType,
   type FetchInit,
@@ -43,12 +44,14 @@ export type MockCallDeps = {
   serverContext(): ServerContext;
   deliver(ticketId: string): DeliveryResult;
   peek(runId: string): RunPeek;
+  settings(): ComponentSettings;
   delivery: MockRunDelivery;
   fetch?: MockFetch;
   server?: ServerDefinition;
   mcp?: Record<string, McpCallResult>;
   ciRuns?: CiRun[];
   shared?: boolean;
+  today: string;
   members?: MemberInfo[];
   assets?: ProjectAsset[];
   frames?: MockFrame[];
@@ -57,7 +60,7 @@ export type MockCallDeps = {
 };
 
 function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
-  const snapshot = readProject(deps.doc, activityOf(deps.runs()));
+  const snapshot = readProject(deps.doc, deps.today, activityOf(deps.runs()));
   const lists: { [K in EntityType]: () => EntityMap[K][] } = {
     ticket: () => snapshot.tickets,
     status: () => snapshot.workflow,
@@ -67,6 +70,7 @@ function listEntity(deps: MockCallDeps, entity: EntityType): unknown[] {
     note: () => deps.folder.list(),
     ci_run: () => deps.ciRuns ?? [],
     question: () => snapshot.questions,
+    sprint: () => snapshot.sprints,
   };
   return lists[entity]();
 }
@@ -152,6 +156,8 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
               members: deps.members ?? [],
             }
           : { ...localSyncInfo(deps.doc), access: deps.access() };
+      case "settings.get":
+        return deps.settings();
       case "assets.list":
         return deps.assets ?? [];
       case "assets.url":

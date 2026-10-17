@@ -13,7 +13,6 @@ import { DashboardGrid } from "./DashboardGrid";
 import { PageContext, usePageState } from "./PageContext";
 import { useWideGrid } from "./use-wide-grid";
 import { ViewInstance, WidgetCard } from "./WidgetCard";
-import { ViewActions } from "./WidgetHeader";
 
 const AddComponentDialog = lazyPanel(
   () => import("../dialogs/AddComponentDialog").then((m) => m.AddComponentDialog),
@@ -73,7 +72,6 @@ export function PageView({ project, page, viewer, question = null }: Props) {
           </div>
         ) : page.kind === "view" ? (
           <>
-            <ViewActions projectId={projectId} instance={first} editable={editable} />
             {readSource(first.config) && <SourceHeader project={project} instance={first} />}
             <div data-view-body className="flex min-h-0 flex-1 flex-col">
               <ViewInstance projectId={projectId} instance={first} viewer={viewer} />

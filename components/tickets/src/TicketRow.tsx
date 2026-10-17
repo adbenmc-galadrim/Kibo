@@ -1,231 +1,173 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
-import type { Assignee, MemberInfo, TicketRun } from "@kibo/schema";
-import {
-  assigneeLabel,
-  DeliveryStepChip,
-  GroupChip,
-  type GroupRef,
-  QuestionsChip,
-  type QuestionsChipData,
-  StatusDot,
-  TicketKeyLabel,
-  useSdk,
-} from "@kibo/sdk";
+import type { CiTone, MemberInfo, StatusId, TicketRun, TicketView } from "@kibo/schema";
+import { liveRun, type QuestionsChipData, TicketKeyLabel, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
-import { Badge } from "@kibo/sdk/ui/badge";
 import { Button } from "@kibo/sdk/ui/button";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
-import { ChevronDown, ChevronRight, Plus } from "lucide-react";
-import type { ReactNode } from "react";
-import { AgentChip } from "./AgentChip";
-import type { TicketNode } from "./build-tree";
+import { Plus } from "lucide-react";
+import { CELL, ROW, TEXT_12 } from "./columns";
+import { DeliveryCell } from "./DeliveryCell";
+import { FeatureChip, type FeatureRef } from "./FeatureChip";
+import { updatedAt } from "./filter-tickets";
 import { fr } from "./fr";
-import { LabelChips } from "./LabelChips";
+import { GitPrCell } from "./GitPrCell";
+import { RowDetails } from "./RowDetails";
 import { TicketRowActions, TicketRowMenu } from "./TicketRowMenu";
 import { zoneId } from "./tree-drop";
+import { updatedLabel } from "./updated-label";
 
-export const COLUMNS =
-  "grid grid-cols-[minmax(0,1fr)_1.5rem_2rem] items-center gap-3 px-2 @md:grid-cols-[minmax(0,1fr)_7rem_5rem_4rem] @3xl:grid-cols-[minmax(0,1fr)_7.5rem_10rem_5rem_4rem]";
-export const WIDE_CELL = "hidden @md:inline";
-export const WIDE_TEXT = "sr-only @md:not-sr-only";
-export const ASSIGNEE_CELL = "hidden min-w-0 @3xl:flex";
-export const STARTABLE_BADGE =
-  "hidden shrink-0 border-zinc-400 bg-background text-2xs font-medium text-zinc-700 @md:inline-flex dark:border-zinc-500 dark:text-zinc-200";
+const STATE_DOT: Record<StatusId, string> = {
+  backlog: "border-[1.5px] border-(--tracking-faint)",
+  todo: "border-[1.5px] border-(--tracking-dim)",
+  in_progress: "bg-(--tracking-blue)",
+  in_review: "bg-(--tracking-purple)",
+  blocked: "bg-(--tracking-red)",
+  done: "bg-(--tracking-green)",
+};
 
-type AssigneeProps = { assignee: Assignee | null; run: TicketRun | null; members: MemberInfo[] };
-
-function AssigneeCell({ assignee, run, members }: AssigneeProps) {
-  if (assignee?.kind === "agent" || (run && !assignee))
-    return (
-      <span className={cn(ASSIGNEE_CELL, "items-center")}>
-        <AgentChip
-          agent={assignee?.ref ?? null}
-          run={run}
-          className="min-w-0 shrink justify-start truncate text-xs"
-        />
-      </span>
-    );
-  if (!assignee)
-    return <span className={cn(ASSIGNEE_CELL, "text-xs text-muted-foreground")}>{fr.unassigned}</span>;
-  const name = assigneeLabel(assignee, members);
-  return (
-    <span className={cn(ASSIGNEE_CELL, "items-center gap-1.5 text-xs")}>
-      <span
-        aria-hidden="true"
-        className="grid size-5 shrink-0 place-items-center rounded-full bg-muted text-3xs font-semibold"
-      >
-        {name.slice(0, 2).toUpperCase()}
-      </span>
-      <span className="truncate">{name}</span>
-    </span>
-  );
-}
-
-type Props = {
-  node: TicketNode;
-  group: GroupRef | null;
-  open: boolean;
+export type RowFacts = {
+  ticket: TicketView;
+  feature: FeatureRef | null;
+  ci: CiTone | null;
+  run: TicketRun | null;
+  members: MemberInfo[];
+  statusLabel: string;
   entries: MenuEntry[];
   readOnly: boolean;
   canDrag: boolean;
-  run: TicketRun | null;
-  members: MemberInfo[];
   questions: QuestionsChipData;
-  statusLabel: string;
-  context: boolean;
   selected: boolean | null;
   dimmed: boolean;
-  onToggle(): void;
-  children: ReactNode;
+  now: number;
 };
 
-export function TicketRow({
-  node,
-  group,
-  open,
-  entries,
-  readOnly,
-  canDrag,
-  run,
-  members,
-  questions,
-  statusLabel,
-  context,
-  selected,
-  dimmed,
-  onToggle,
-  children,
-}: Props) {
+function DropZones({ id, enabled }: { id: string; enabled: boolean }) {
+  const before = useDroppable({ id: zoneId({ kind: "before", ticketId: id }), disabled: !enabled });
+  const inside = useDroppable({ id: zoneId({ kind: "inside", ticketId: id }), disabled: !enabled });
+  const after = useDroppable({ id: zoneId({ kind: "after", ticketId: id }), disabled: !enabled });
+  return (
+    <>
+      <div
+        ref={before.setNodeRef}
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-1/4"
+      />
+      <div
+        ref={inside.setNodeRef}
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-1/4 h-1/2"
+      />
+      <div
+        ref={after.setNodeRef}
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4"
+      />
+      {inside.isOver && (
+        <span aria-hidden className="pointer-events-none absolute inset-0 ring-2 ring-ring ring-inset" />
+      )}
+      {before.isOver && (
+        <span aria-hidden className="pointer-events-none absolute inset-x-2 top-0 h-0.5 rounded bg-ring" />
+      )}
+      {after.isOver && (
+        <span aria-hidden className="pointer-events-none absolute inset-x-2 bottom-0 h-0.5 rounded bg-ring" />
+      )}
+    </>
+  );
+}
+
+export function TicketRow(props: RowFacts) {
+  const { ticket: t, feature, ci, run, statusLabel, entries, readOnly, canDrag, questions } = props;
   const sdk = useSdk();
-  const t = node.ticket;
-  const before = useDroppable({ id: zoneId({ kind: "before", ticketId: t.id }), disabled: !canDrag });
-  const inside = useDroppable({ id: zoneId({ kind: "inside", ticketId: t.id }), disabled: !canDrag });
-  const after = useDroppable({ id: zoneId({ kind: "after", ticketId: t.id }), disabled: !canDrag });
   const drag = useDraggable({ id: t.id, disabled: !canDrag });
   const handle = canDrag ? { ...drag.listeners, ...drag.attributes } : {};
+  const done = t.statusId === "done";
+  const running = liveRun(run) !== null;
+  const at = updatedAt(t);
   return (
     <li>
       <TicketRowMenu entries={entries}>
         <div
-          data-context={context || undefined}
-          data-selected={selected === true}
+          data-selected={props.selected === true}
           className={cn(
-            COLUMNS,
-            "group relative h-8 rounded-md text-sm hover:bg-muted/50",
-            context && "text-muted-foreground",
-            selected === true && "bg-muted ring-1 ring-ring ring-inset",
-            dimmed && "opacity-50",
-            inside.isOver && "ring-2 ring-ring",
+            ROW,
+            "group relative h-[41px] border-t border-(--tracking-soft) hover:bg-(--tracking-hover)",
+            props.selected === true && "bg-(--tracking-muted)",
+            props.dimmed && "opacity-50",
           )}
         >
-          <div
-            ref={before.setNodeRef}
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 h-1/4"
-          />
-          <div
-            ref={inside.setNodeRef}
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-1/4 h-1/2"
-          />
-          <div
-            ref={after.setNodeRef}
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4"
-          />
-          {before.isOver && (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-x-2 -top-px z-10 h-0.5 rounded bg-ring"
+          <DropZones id={t.id} enabled={canDrag} />
+          <span className={CELL.key} ref={drag.setNodeRef} {...handle} aria-describedby={undefined}>
+            <TicketKeyLabel
+              ticket={t}
+              className={cn("font-mono", TEXT_12, done ? "text-(--tracking-dim)" : "text-(--tracking-mfg)")}
             />
-          )}
-          {after.isOver && (
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-x-2 -bottom-px z-10 h-0.5 rounded bg-ring"
-            />
-          )}
-          <div
-            className="flex min-w-0 items-center gap-2 overflow-hidden"
-            style={{ paddingLeft: node.depth * 20 }}
-          >
-            {node.children.length > 0 ? (
+          </span>
+          <span data-cell="title" className={cn(CELL.title, "relative")}>
+            <RowDetails ticket={t} run={run} members={props.members} questions={questions}>
               <button
                 type="button"
-                className="text-muted-foreground"
-                aria-label={open ? fr.collapse(t.keyLabel) : fr.expand(t.keyLabel)}
-                onClick={onToggle}
+                data-row-title
+                className={cn(
+                  "min-w-0 truncate text-left text-[13px] leading-[1.2]",
+                  done ? "text-(--tracking-mfg)" : "text-(--tracking-fg)",
+                )}
+                onClick={() => sdk.openTicket(t.id)}
               >
-                {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+                {t.title}
               </button>
-            ) : (
-              <span className="size-4 shrink-0" />
-            )}
-            <span ref={drag.setNodeRef} {...handle} aria-describedby={undefined}>
-              <TicketKeyLabel
-                ticket={t}
-                className="shrink-0 whitespace-nowrap font-mono text-2xs text-muted-foreground"
-              />
-            </span>
-            <button
-              type="button"
-              className={cn("min-w-0 truncate text-left", t.statusId === "done" && "text-muted-foreground")}
-              onClick={() => sdk.openTicket(t.id)}
-            >
-              {t.title}
-            </button>
-            <LabelChips labels={t.labels} />
-            {t.blockedReason && (
-              <span className={cn(WIDE_TEXT, "min-w-0 truncate text-2xs text-red-600 dark:text-red-400")}>
-                {t.blockedReason}
+            </RowDetails>
+            {feature && (
+              <span data-slot="feature-inline" className="flex min-w-0 shrink @xl:hidden">
+                <FeatureChip feature={feature} onOpen={(id) => sdk.openTicket(id)} />
               </span>
             )}
-            {t.waitingOn.length > 0 && (
-              <Badge variant="outline" className={cn(WIDE_TEXT, "min-w-0 shrink justify-start text-3xs")}>
-                <span className="truncate">{fr.waitingOn(t.waitingOn)}</span>
-              </Badge>
-            )}
-            {t.startable && (
-              <Badge variant="outline" className={STARTABLE_BADGE}>
-                {fr.startable}
-              </Badge>
-            )}
-            <DeliveryStepChip ticket={t} className="hidden shrink-0 @md:inline-flex" />
-            {t.openQuestions > 0 && (
-              <QuestionsChip
-                {...questions}
-                ticket={t}
-                text={fr.questions(t.openQuestions)}
-                label={fr.questionsOpen(t.openQuestions)}
-                className="hidden @md:inline-flex"
+            {running && (
+              <span
+                role="img"
+                aria-label={fr.running}
+                className="size-[7px] shrink-0 rounded-full bg-(--tracking-brand)"
               />
             )}
-          </div>
-          <span data-cell="status" className="flex items-center gap-2 text-xs">
-            <StatusDot statusId={t.statusId} />
-            <span className={cn(WIDE_TEXT, "truncate")}>{statusLabel}</span>
+            <span className="absolute top-1/2 right-0 flex -translate-y-1/2 items-center rounded-[6px] bg-(--tracking-hover) opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+              {!readOnly && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-6"
+                  aria-label={fr.newSubTicket(t.keyLabel)}
+                  onClick={() => sdk.openNewTicket({ parentId: t.id })}
+                >
+                  <Plus absoluteStrokeWidth size={14} className="size-3.5" />
+                </Button>
+              )}
+              <TicketRowActions entries={entries} label={fr.actions(t.keyLabel)} readOnly={readOnly} />
+            </span>
           </span>
-          <AssigneeCell assignee={t.assignee} run={run} members={members} />
-          <span data-cell="group" className={cn(WIDE_CELL, "min-w-0")}>
-            {group && <GroupChip group={group} onOpen={(id) => sdk.openTicket(id)} />}
+          <span data-cell="feature" className={CELL.feature}>
+            {feature && <FeatureChip feature={feature} onOpen={(id) => sdk.openTicket(id)} />}
           </span>
-          <span className="flex items-center justify-end gap-0.5">
-            {!readOnly && (
-              <Button
-                size="icon"
-                variant="ghost"
-                className="hidden @md:inline-flex size-6 opacity-0 group-hover:opacity-100 focus:opacity-100"
-                aria-label={fr.newSubTicket(t.keyLabel)}
-                onClick={() => sdk.openNewTicket({ parentId: t.id })}
-              >
-                <Plus className="size-3.5" />
-              </Button>
-            )}
-            <TicketRowActions entries={entries} label={fr.actions(t.keyLabel)} readOnly={readOnly} />
+          <span data-cell="status" className={CELL.status}>
+            <span aria-hidden className={cn("size-2 shrink-0 rounded-full", STATE_DOT[t.statusId])} />
+            <span
+              className={cn(
+                "truncate text-[12.5px] leading-[1.2]",
+                done ? "text-(--tracking-mfg)" : "text-(--tracking-fg)",
+              )}
+            >
+              {statusLabel}
+            </span>
+          </span>
+          <span data-cell="git" className={CELL.git}>
+            <GitPrCell ticket={t} ci={ci} />
+          </span>
+          <span data-cell="delivery" className={CELL.delivery}>
+            <DeliveryCell delivery={t.delivery} />
+          </span>
+          <span data-cell="updated" className={cn(CELL.updated, TEXT_12, "text-(--tracking-dim)")}>
+            {at === null ? fr.none : updatedLabel(at, props.now)}
           </span>
         </div>
       </TicketRowMenu>
-      {open && node.children.length > 0 && <ul>{children}</ul>}
     </li>
   );
 }

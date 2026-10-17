@@ -8,23 +8,20 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import type { Page, ProjectSnapshot, TabTarget } from "@kibo/schema";
+import type { Instance, Page, ProjectSnapshot, TabTarget } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
-import { ContextMenuEntries, DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
-import {
-  SidebarMenuAction,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-} from "@kibo/sdk/ui/sidebar";
-import { Ellipsis } from "lucide-react";
+import { ContextMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { type MouseEvent, type ReactNode, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { type Flash, useFlash } from "../lib/use-flash";
 import { pageIcon } from "../registry";
 import { canEdit } from "../state/access";
+import { NavCount } from "./nav/NavRow";
+import { PageRowMenu } from "./nav/PageRowMenu";
+import { pageBadge } from "./nav/page-badges";
+import { activePageOf } from "./nav/planning-missing";
 import { pageDropPlan, parseZoneId, zoneId } from "./page-drop";
 import { pageMenuEntries, siblingIndex } from "./page-menu";
 
@@ -32,7 +29,6 @@ type Props = {
   project: ProjectSnapshot;
   activeTarget: TabTarget | null;
   header: ReactNode;
-  trailing: ReactNode;
   onOpen(target: TabTarget, newTab: boolean, keep?: boolean): void;
   onNewPage(parentId: string | null): void;
   onRenamePage(page: Page): void;
@@ -52,6 +48,9 @@ function RootDrop({ children, editable }: { children: ReactNode; editable: boole
 
 type RowProps = {
   page: Page;
+  projectId: string;
+  instance: Instance | null;
+  flash: Flash["flash"];
   entries: MenuEntry[];
   editable: boolean;
   active: boolean;
@@ -60,6 +59,8 @@ type RowProps = {
   onDoubleClick(e: MouseEvent): void;
   children: ReactNode;
   icon: ReactNode;
+  depth: number;
+  badge: string | null;
 };
 
 const ZONE_PLACES = {
@@ -90,13 +91,29 @@ function DropLine({ className }: { className: string }) {
   );
 }
 
-function PageRow({ page, entries, editable, active, children, icon, ...handlers }: RowProps) {
+const PAGE_INDENT = 26;
+const DEPTH_INDENT = 18;
+
+function PageRow({
+  page,
+  projectId,
+  instance,
+  flash,
+  entries,
+  editable,
+  active,
+  children,
+  icon,
+  depth,
+  badge,
+  ...handlers
+}: RowProps) {
   const before = useDroppable({ id: zoneId({ kind: "before", pageId: page.id }), disabled: !editable });
   const inside = useDroppable({ id: zoneId({ kind: "inside", pageId: page.id }), disabled: !editable });
   const after = useDroppable({ id: zoneId({ kind: "after", pageId: page.id }), disabled: !editable });
   const drag = useDraggable({ id: page.id, disabled: !editable });
   return (
-    <SidebarMenuSubItem className="group/page">
+    <li className="group/menu-item relative">
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div className={cn("relative rounded-md", inside.isOver && "ring-2 ring-ring")}>
@@ -109,36 +126,32 @@ function PageRow({ page, entries, editable, active, children, icon, ...handlers 
             )}
             {before.isOver && <DropLine className="-top-px" />}
             {after.isOver && <DropLine className="-bottom-px" />}
-            <SidebarMenuSubButton asChild isActive={active}>
-              <button
-                type="button"
-                ref={drag.setNodeRef}
-                {...drag.attributes}
-                {...drag.listeners}
-                onClick={handlers.onClick}
-                onAuxClick={handlers.onAuxClick}
-                onDoubleClick={handlers.onDoubleClick}
-                aria-describedby={undefined}
-              >
-                {icon}
-                <span>{page.title}</span>
-              </button>
-            </SidebarMenuSubButton>
+            <button
+              type="button"
+              ref={drag.setNodeRef}
+              {...drag.attributes}
+              {...drag.listeners}
+              data-active={active || undefined}
+              aria-current={active ? "page" : undefined}
+              className="k-row"
+              style={{ paddingLeft: PAGE_INDENT + depth * DEPTH_INDENT }}
+              onClick={handlers.onClick}
+              onAuxClick={handlers.onAuxClick}
+              onDoubleClick={handlers.onDoubleClick}
+              aria-describedby={undefined}
+            >
+              {icon}
+              <span>{page.title}</span>
+              {badge && <NavCount>{badge}</NavCount>}
+            </button>
             {editable && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuAction
-                    showOnHover
-                    aria-label={fr.nav.pageActions(page.title)}
-                    className="top-1 right-1 size-5"
-                  >
-                    <Ellipsis />
-                  </SidebarMenuAction>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" side="right">
-                  <DropdownMenuEntries entries={entries} />
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <PageRowMenu
+                title={page.title}
+                projectId={projectId}
+                instance={instance}
+                entries={entries}
+                flash={flash}
+              />
             )}
           </div>
         </ContextMenuTrigger>
@@ -147,7 +160,7 @@ function PageRow({ page, entries, editable, active, children, icon, ...handlers 
         </ContextMenuContent>
       </ContextMenu>
       {children}
-    </SidebarMenuSubItem>
+    </li>
   );
 }
 
@@ -156,6 +169,7 @@ export function ProjectPages(p: Props) {
   const projectId = project.meta.id;
   const editable = canEdit(project);
   const [error, setError] = useState<string | null>(null);
+  const notice = useFlash();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const move = async (pageId: string, parentId: string | null, index?: number) => {
     setError(null);
@@ -192,22 +206,25 @@ export function ProjectPages(p: Props) {
     const plan = zone ? pageDropPlan(project.pages, String(e.active.id), zone) : null;
     if (plan) void move(plan.pageId, plan.parentId, plan.index);
   };
+  const activePageId = activePageOf(project, activeTarget);
   const children = (parentId: string | null) => project.pages.filter((x) => x.parentId === parentId);
-  const renderPages = (parentId: string | null): ReactNode =>
+  const renderPages = (parentId: string | null, depth: number): ReactNode =>
     children(parentId).map((page) => {
       const Icon = pageIcon(page, project.instances);
       const target: TabTarget = { kind: "page", projectId, pageId: page.id };
+      const active = activePageId === page.id;
       return (
         <PageRow
           key={page.id}
           page={page}
+          projectId={projectId}
+          instance={
+            page.kind === "view" ? (project.instances.find((i) => i.pageId === page.id) ?? null) : null
+          }
+          flash={notice.flash}
           entries={entriesFor(page)}
           editable={editable}
-          active={
-            activeTarget?.kind === "page" &&
-            activeTarget.projectId === projectId &&
-            activeTarget.pageId === page.id
-          }
+          active={active}
           onClick={(e) => onOpen(target, wantsNewTab(e))}
           onAuxClick={(e) => {
             if (e.button !== 1) return;
@@ -218,25 +235,33 @@ export function ProjectPages(p: Props) {
             e.preventDefault();
             onOpen(target, false, true);
           }}
-          icon={<Icon />}
+          icon={<Icon size={15} absoluteStrokeWidth />}
+          depth={depth}
+          badge={pageBadge(page.id, project)}
         >
-          {children(page.id).length > 0 && <SidebarMenuSub>{renderPages(page.id)}</SidebarMenuSub>}
+          {children(page.id).length > 0 && <ul className="k-list">{renderPages(page.id, depth + 1)}</ul>}
         </PageRow>
       );
     });
-  const hasSub = children(null).length > 0 || p.trailing !== null;
+  const hasSub = children(null).length > 0;
   return (
     <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
       <RootDrop editable={editable}>{p.header}</RootDrop>
-      {hasSub && (
-        <SidebarMenuSub>
-          {renderPages(null)}
-          {p.trailing}
-        </SidebarMenuSub>
-      )}
+      {hasSub && <ul className="k-list mt-[2px]">{renderPages(null, 0)}</ul>}
       {error && (
         <p role="alert" className="px-2 py-1 text-xs text-destructive">
           {error}
+        </p>
+      )}
+      {notice.message && (
+        <p
+          role={notice.tone === "error" ? "alert" : "status"}
+          className={cn(
+            "px-2 py-1 text-xs",
+            notice.tone === "error" ? "text-destructive" : "text-muted-foreground",
+          )}
+        >
+          {notice.message}
         </p>
       )}
     </DndContext>

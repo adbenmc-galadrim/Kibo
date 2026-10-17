@@ -61,6 +61,11 @@ const ticket: TicketView & { key: string } = {
   startable: false,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 };
 
 const admitAll = (runs: RunView[]): Plan => ({

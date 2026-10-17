@@ -34,7 +34,7 @@ import { createWorkView } from "./work-view";
 import { createWorkspaceIndexer, nodeIndexFs } from "./workspace-index";
 import { withOverlapWrites } from "./writes";
 
-export type OverlapsDocs = Pick<Docs, "run" | "project" | "projectIds" | "emit" | "assertWritable">;
+export type OverlapsDocs = Pick<Docs, "run" | "project" | "projectIds" | "emit" | "assertWritable" | "today">;
 
 export type OverlapsInput = {
   home: string;
@@ -102,7 +102,7 @@ export function startOverlaps(input: OverlapsInput): Overlaps {
   const autoLinker = createAutoLinker({
     store,
     docs,
-    snapshot: (projectId) => readProject(docs.project(projectId)),
+    snapshot: (projectId) => readProject(docs.project(projectId), docs.today()),
     run: ports.run,
     probes: createImportProbes().probe,
     moment,

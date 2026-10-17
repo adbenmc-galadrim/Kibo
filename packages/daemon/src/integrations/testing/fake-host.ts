@@ -41,6 +41,7 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   };
   const doc = createProjectDoc(meta);
   const listeners = new Set<(e: CommandEvent) => void>();
@@ -64,7 +65,7 @@ export function createFakeHost(opts: { user?: string } = {}): FakeHost {
     projects: () => [meta],
     snapshot(projectId) {
       ensureProject(projectId);
-      return readProject(doc);
+      return readProject(doc, "2026-10-16");
     },
     command<C extends ProjectCommand>(projectId: string, cmd: C, m: CommandMeta): CommandResult[C["method"]] {
       ensureProject(projectId);

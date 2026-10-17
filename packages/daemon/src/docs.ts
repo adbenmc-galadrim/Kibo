@@ -34,4 +34,5 @@ export type Docs = {
   identity(projectId: string): string;
   setIdentity(fn: (projectId: string) => string): () => void;
   activity(projectId: string): ProjectActivity;
+  today(): string;
 };

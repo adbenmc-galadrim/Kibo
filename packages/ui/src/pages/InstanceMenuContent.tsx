@@ -1,7 +1,7 @@
 import { type ComponentSummary, compareSemver, type Instance, isBuiltinId, splitRef } from "@kibo/schema";
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@kibo/sdk/ui/dropdown-menu";
 import { ArrowUpCircle, FolderOpen, Settings2, Sparkles, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { client } from "../api";
 import { modifiable } from "../components-page/rows";
@@ -24,6 +24,8 @@ export type InstanceMenuContentProps = {
   instance: Instance;
   title: string;
   flash: Flash["flash"];
+  lead?: ReactNode;
+  side?: "bottom" | "right";
 };
 type PendingUpdate = { target: TrustTarget; to: string };
 
@@ -34,7 +36,14 @@ function higherVersions(summary: ComponentSummary | undefined, id: string, versi
     .sort((a, b) => compareSemver(b.version, a.version));
 }
 
-export function InstanceMenuContent({ projectId, instance, title, flash }: InstanceMenuContentProps) {
+export function InstanceMenuContent({
+  projectId,
+  instance,
+  title,
+  flash,
+  lead,
+  side = "bottom",
+}: InstanceMenuContentProps) {
   const i = fr.instance;
   const { id, version } = splitRef(instance.component);
   const { components } = useComponents();
@@ -75,7 +84,9 @@ export function InstanceMenuContent({ projectId, instance, title, flash }: Insta
 
   return (
     <>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align={side === "right" ? "start" : "end"} side={side}>
+        {lead}
+        {lead && <DropdownMenuSeparator />}
         {higher.map((v) => (
           <DropdownMenuItem key={v.version} onSelect={() => pick(v)}>
             <ArrowUpCircle aria-hidden />

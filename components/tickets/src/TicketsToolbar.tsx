@@ -1,113 +1,76 @@
-import type { Status, StatusId, Ticket } from "@kibo/schema";
-import { StatusDot } from "@kibo/sdk";
+import type { SprintView, Status, Ticket } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
-import { Input } from "@kibo/sdk/ui/input";
-import { Toggle } from "@kibo/sdk/ui/toggle";
-import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
-import { ChevronDown, ListFilter, Search } from "lucide-react";
-import { type AssigneeFilter, EMPTY_QUERY, isActive, type TicketsQuery } from "./filter-tickets";
+import { ArrowUpDown } from "lucide-react";
+import type { FeatureRef } from "./FeatureChip";
+import { FeatureMenu } from "./FeatureMenu";
+import type { TicketsQuery, TicketsSort } from "./filter-tickets";
 import { fr } from "./fr";
-import { LabelsMenu } from "./LabelsMenu";
-
-const ASSIGNEES: readonly AssigneeFilter[] = ["all", "me", "agents", "nobody"];
+import { OpenMenu } from "./OpenMenu";
+import { SearchField } from "./SearchField";
+import { SprintTabs } from "./SprintTabs";
+import { OUTLINE } from "./toolbar-styles";
 
 type Props = {
+  sprints: readonly SprintView[];
+  sprint: string;
+  onSprint(value: string): void;
   query: TicketsQuery;
-  statuses: Status[];
+  features: readonly FeatureRef[];
+  statuses: readonly Status[];
   tickets: readonly Ticket[];
+  searching: boolean;
+  onSearchClose(): void;
   onChange(query: TicketsQuery): void;
 };
 
-const toggled = (set: ReadonlySet<StatusId>, id: StatusId): Set<StatusId> => {
-  const next = new Set(set);
-  if (next.has(id)) next.delete(id);
-  else next.add(id);
-  return next;
-};
+const SORTS: readonly TicketsSort[] = ["recent", "key"];
 
-export function TicketsToolbar({ query, statuses, tickets, onChange }: Props) {
+export function TicketsToolbar(props: Props) {
+  const { query, onChange } = props;
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b px-3 py-2">
-      <div className="relative w-full sm:w-56">
-        <Search
-          aria-hidden
-          className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-        />
-        <Input
-          type="search"
-          aria-label={fr.search}
-          placeholder={fr.search}
-          className="h-7 pl-8 text-xs [&::-webkit-search-cancel-button]:hidden"
+    <div className="flex flex-wrap items-center gap-2">
+      {props.searching ? (
+        <SearchField
           value={query.text}
-          onChange={(e) => onChange({ ...query, text: e.target.value })}
+          onChange={(text) => onChange({ ...query, text })}
+          onClose={props.onSearchClose}
         />
-      </div>
+      ) : (
+        <SprintTabs sprints={props.sprints} value={props.sprint} onChange={props.onSprint} />
+      )}
+      <span className="flex-1" />
+      <OpenMenu query={query} statuses={props.statuses} onChange={onChange} />
+      <FeatureMenu query={query} features={props.features} tickets={props.tickets} onChange={onChange} />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-7 gap-1 px-2.5 text-xs font-normal">
-            {fr.statusFilter}
-            {query.statuses.size > 0 && (
-              <span className="rounded bg-muted px-1 font-mono text-3xs">{query.statuses.size}</span>
-            )}
-            <ChevronDown aria-hidden className="size-3.5 text-muted-foreground" />
+          <Button variant="outline" size="sm" className={OUTLINE}>
+            <ArrowUpDown absoluteStrokeWidth size={13} aria-hidden className="size-[13px]" />
+            {fr.filters.sort[query.sort]}
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          {statuses.map((s) => (
-            <DropdownMenuCheckboxItem
-              key={s.id}
-              checked={query.statuses.has(s.id)}
-              onSelect={(e) => e.preventDefault()}
-              onCheckedChange={() => onChange({ ...query, statuses: toggled(query.statuses, s.id) })}
-            >
-              <StatusDot statusId={s.id} />
-              {s.label}
-            </DropdownMenuCheckboxItem>
-          ))}
+        <DropdownMenuContent align="end">
+          <DropdownMenuRadioGroup
+            value={query.sort}
+            onValueChange={(v) => {
+              const sort = SORTS.find((s) => s === v);
+              if (sort) onChange({ ...query, sort });
+            }}
+          >
+            {SORTS.map((s) => (
+              <DropdownMenuRadioItem key={s} value={s}>
+                {fr.filters.sort[s]}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-      <LabelsMenu tickets={tickets} query={query} onChange={onChange} />
-      <Toggle
-        variant="outline"
-        size="sm"
-        pressed={query.startable}
-        onPressedChange={(startable) => onChange({ ...query, startable })}
-        className="h-7 gap-1 px-2.5 text-xs font-normal"
-      >
-        <ListFilter aria-hidden className="size-3.5" />
-        {fr.startableFilter}
-      </Toggle>
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground">{fr.assigneeFilter}</span>
-        <ToggleGroup
-          type="single"
-          variant="outline"
-          size="sm"
-          aria-label={fr.assigneeFilter}
-          value={query.assignee}
-          onValueChange={(v) => {
-            const next = ASSIGNEES.find((a) => a === v);
-            if (next) onChange({ ...query, assignee: next });
-          }}
-        >
-          {ASSIGNEES.map((a) => (
-            <ToggleGroupItem key={a} value={a} className="h-7 px-2.5 text-xs font-normal">
-              {fr.assignees[a]}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
-      </div>
-      {isActive(query) && (
-        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onChange(EMPTY_QUERY)}>
-          {fr.clear}
-        </Button>
-      )}
     </div>
   );
 }

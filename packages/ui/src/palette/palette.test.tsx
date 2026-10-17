@@ -32,6 +32,11 @@ const ticket = (n: number, title: string, statusId: TicketView["statusId"] = "in
   startable: false,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 });
 const summary: ProjectSummary = {
   id: "p1",
@@ -43,6 +48,7 @@ const summary: ProjectSummary = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
 };
 const snapshot: ProjectSnapshot = {
@@ -65,6 +71,7 @@ const snapshot: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-19",
+  sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 const context: PaletteContext = {

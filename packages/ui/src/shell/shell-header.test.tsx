@@ -18,6 +18,7 @@ mock.module("../api", () =>
         return () => aiListeners.delete(l);
       },
       subscribeTopic: () => () => {},
+      subscribeEvents: () => () => {},
     },
   }),
 );
@@ -44,21 +45,16 @@ function header(onOpen: (t: TabTarget) => void = () => {}, over: HeaderOver = {}
         active={null}
         screen={over.screen ?? null}
         project={null}
-        ticketProject={null}
         branch={null}
         gitError={null}
         agents={agents()}
         agentPanel={{ available: false, open: false, toggle: () => {}, show: () => {} }}
-        viewer="adam"
         notifications="browser"
         now={NOW}
         onNewAgent={over.onNewAgent ?? (() => {})}
         onNewSkill={over.onNewSkill ?? (() => {})}
-        onNewTicket={() => {}}
-        onShare={() => {}}
         onOpenRun={() => {}}
         onOpen={onOpen}
-        onHelp={() => {}}
       />
     </SidebarProvider>,
   );
@@ -99,7 +95,7 @@ test("the indicator follows draft.changed and disappears once every creation is 
   await waitFor(() => expect(screen.queryByRole("button", { name: /^Créations/ })).toBeNull());
 });
 
-test("the project agent button sits before Partager and carries a dot while a batch waits", async () => {
+test("the project agent button toggles the panel and carries a dot while a batch waits", async () => {
   const toggled: string[] = [];
   const waiting = (pendingBatchId: string | null): AgentsState => ({
     ...agents(),
@@ -111,7 +107,6 @@ test("the project agent button sits before Partager and carries a dot while a ba
         active={{ kind: "project", projectId: "kibo" }}
         screen={null}
         project={kiboProject()}
-        ticketProject={kiboProject()}
         branch={null}
         gitError={null}
         agents={state}
@@ -121,24 +116,19 @@ test("the project agent button sits before Partager and carries a dot while a ba
           toggle: () => toggled.push("toggle"),
           show: () => toggled.push("signals"),
         }}
-        viewer="adam"
         notifications="browser"
         now={NOW}
         onNewAgent={() => {}}
         onNewSkill={() => {}}
-        onNewTicket={() => {}}
-        onShare={() => {}}
         onOpenRun={() => {}}
         onOpen={() => {}}
-        onHelp={() => {}}
       />
     </SidebarProvider>
   );
   const view = render(props(waiting(null)));
   const button = await screen.findByRole("button", { name: "Agent de projet" });
   expect(button.getAttribute("aria-pressed")).toBe("false");
-  const share = await screen.findByRole("button", { name: "Partager" });
-  expect(button.compareDocumentPosition(share) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Partager" })).toBeNull();
   await userEvent.setup().click(button);
   expect(toggled).toEqual(["toggle"]);
   view.rerender(props(waiting("b1")));
@@ -166,4 +156,53 @@ test("the header offers Nouvel agent on Agents and Nouveau skill on Skills", asy
   header(() => {}, { screen: "agents", onNewAgent: () => calls.push("agent") });
   await user.click(await screen.findByRole("button", { name: "Nouvel agent" }));
   expect(calls).toEqual(["skill", "agent"]);
+});
+
+test("the header keeps the breadcrumb, the sync state and the actions; share, ticket and account live elsewhere", async () => {
+  const project = { ...kiboProject(), sync: { ...kiboProject().sync, shared: true } };
+  render(
+    <SidebarProvider>
+      <ShellHeader
+        active={{ kind: "project", projectId: "kibo" }}
+        screen={null}
+        project={project}
+        branch={null}
+        gitError={null}
+        agents={agents()}
+        agentPanel={{ available: true, open: false, toggle: () => {}, show: () => {} }}
+        notifications="browser"
+        now={NOW}
+        onNewAgent={() => {}}
+        onNewSkill={() => {}}
+        onOpenRun={() => {}}
+        onOpen={() => {}}
+      />
+    </SidebarProvider>,
+  );
+  expect(await screen.findByText(/^Synchronisé/)).toBeTruthy();
+  for (const name of ["Partager", /^Ticket/, /^Menu de/, "Afficher ou masquer la barre latérale"])
+    expect(screen.queryByRole("button", { name })).toBeNull();
+});
+
+test("the sidebar toggle shows in the header once the sidebar is closed", () => {
+  render(
+    <SidebarProvider defaultOpen={false}>
+      <ShellHeader
+        active={null}
+        screen={null}
+        project={null}
+        branch={null}
+        gitError={null}
+        agents={null}
+        agentPanel={{ available: false, open: false, toggle: () => {}, show: () => {} }}
+        notifications="browser"
+        now={NOW}
+        onNewAgent={() => {}}
+        onNewSkill={() => {}}
+        onOpenRun={() => {}}
+        onOpen={() => {}}
+      />
+    </SidebarProvider>,
+  );
+  expect(screen.getByRole("button", { name: "Afficher ou masquer la barre latérale" })).toBeTruthy();
 });

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { startDaemon } from "@kibo/daemon/daemon";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
-import { type ProjectCommand, Ticket } from "@kibo/schema";
+import { type ProjectCommand, Sprint, Ticket } from "@kibo/schema";
 import { connectDaemon, type DaemonClient } from "../daemon-client";
 import { runCli } from "../index";
 
@@ -25,7 +25,7 @@ function cli(home: string) {
     expect(await run(...argv, "--json")).toBe(0);
     return JSON.parse(out.join("\n"));
   };
-  return { out, err, run, json };
+  return { out, err, run, json, io };
 }
 
 describe("kibo tickets without a daemon", () => {
@@ -149,6 +149,9 @@ describe("kibo tickets against a real daemon", () => {
       pr: null,
       assignee: null,
       labels: [],
+      sprint: null,
+      feature: { key: "EMIS-1", shortKey: "F1", title: "Chantier 1" },
+      optional: false,
     });
     expect(await t.json("list", "--project", "Emis", "--ready")).toMatchObject([{ planId: "C1-2" }]);
     expect(await t.json("list", "--project", projectId, "--status", "wip,done")).toMatchObject([
@@ -201,6 +204,39 @@ describe("kibo tickets against a real daemon", () => {
       status: "blocked",
       blockedReason: "Bloqué par la livraison (kibo tickets)",
     });
+  });
+
+  test("declares a branch and follows the sprint of the feature", async () => {
+    const t = cli(home);
+    expect(await t.run("set", "C1-2", "branch=feat/c1-2-stockage", "base=dev", "--project", "EMIS")).toBe(0);
+    const snapshot = await seed.rpc({ method: "getProject", projectId });
+    const stored = snapshot.tickets.find((x) => x.id === ids.get("C1-2"));
+    expect(stored?.externalRefs).toContainEqual({
+      kind: "git_branch",
+      branch: "feat/c1-2-stockage",
+      base: "dev",
+    });
+    const sprint = Sprint.parse(
+      await command({
+        method: "createSprint",
+        code: "S42",
+        name: "Terrain hors ligne",
+        start: "2026-10-12",
+        end: "2026-10-23",
+      }),
+    );
+    await command({ method: "setTicketSprint", ticketId: ids.get("C1") ?? "", sprintId: sprint.id });
+    expect(await t.json("list", "--project", "EMIS", "--sprint", "s42")).toMatchObject([
+      { planId: "C1", sprint: { id: sprint.id, code: "S42", name: "Terrain hors ligne" } },
+      { planId: "C1-1" },
+      { planId: "C1-2" },
+      { planId: "C1-3" },
+    ]);
+    const sprints = cli(home);
+    expect(await runCli(["sprints", "list", "--project", "EMIS", "--json"], sprints.io)).toBe(0);
+    expect(JSON.parse(sprints.out.join("\n"))).toMatchObject([
+      { code: "S42", name: "Terrain hors ligne", features: ["EMIS-1"] },
+    ]);
   });
 
   test("refuses unknown assignments, projects and tickets", async () => {

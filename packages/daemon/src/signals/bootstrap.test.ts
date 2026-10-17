@@ -20,6 +20,7 @@ const home = () => {
 function docs(readOnly: readonly string[] = []): SignalsDocs {
   return {
     projectIds: () => ["p1", "p2"],
+    today: () => "2026-10-16",
     project: () => {
       throw new Error("the snapshot is not read here");
     },

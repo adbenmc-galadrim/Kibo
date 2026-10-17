@@ -43,6 +43,7 @@ const project: ProjectSnapshot = {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -54,6 +55,7 @@ const project: ProjectSnapshot = {
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-1",
+  sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
 
@@ -69,8 +71,10 @@ const inbox: ProjectSnapshot = {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   },
   nextTicketKey: "INB-4",
+  sprints: [],
 };
 const shared: ProjectSnapshot = {
   ...project,
@@ -84,8 +88,10 @@ const shared: ProjectSnapshot = {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   },
   nextTicketKey: null,
+  sprints: [],
   viewer: "u-adam",
   sync: {
     shared: true,
@@ -101,6 +107,7 @@ const shared: ProjectSnapshot = {
 const kibo: ProjectSnapshot = {
   ...project,
   nextTicketKey: "KIB-25",
+  sprints: [],
   tickets: [
     {
       id: "12@1",
@@ -122,6 +129,11 @@ const kibo: ProjectSnapshot = {
       startable: false,
       agentProgress: EMPTY_PROGRESS,
       delivery: null,
+      sprintId: null,
+      optional: false,
+      shortKey: null,
+      effectiveSprintId: null,
+      feature: null,
     },
   ],
 };

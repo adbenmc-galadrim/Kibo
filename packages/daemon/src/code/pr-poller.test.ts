@@ -5,6 +5,7 @@ import { join } from "node:path";
 import type { GithubPrRef, ProjectMeta, RpcRequest, StatusId, Ticket, WorktreeSettings } from "@kibo/schema";
 import { call, createService, type Service } from "../service";
 import { openStore, type Store } from "../store";
+import { observeBranches } from "../tracking/branch-observer";
 import { type PrPoller, startPrPoller } from "./pr-poller";
 import { installFakeGh, readFakeGhLog } from "./testing/git-fixture";
 
@@ -226,4 +227,42 @@ test("discovery skips done tickets and tickets with a followed PR, and finds not
   expect(prOf(done)).toBeUndefined();
   expect(prOf(alone)).toBeUndefined();
   expect(ticketOf(alone)?.statusId).toBe("in_progress");
+});
+
+test("in one tick, branches are observed before PRs: a new branch with an open PR ends in review", async () => {
+  const id = (command({ method: "createTicket", title: "Envoi" }) as Ticket).id;
+  command({ method: "setStatus", ticketId: id, statusId: "todo" });
+  const key = ticketOf(id)?.key ?? "";
+  const branch = `feat/${key.toLowerCase()}-envoi`;
+  setFakePrs([{ number: 4, state: "OPEN", base: "dev", head: branch }]);
+  const rules = spyOn(service, "triggerRules");
+  const target = withWorktree(service, DEV);
+  poller = startPrPoller(target, gh, 3_600_000, () => () => undefined);
+  const state = new Map<string, string>();
+  poller.beforePoll(() =>
+    observeBranches({ service: target, refs: async () => [branch], log: () => () => undefined }, state),
+  );
+  await poller.tick();
+  expect(ticketOf(id)?.statusId).toBe("in_review");
+  expect(rules.mock.calls.map(([, t]) => t.kind)).toEqual(["branch_created", "pr_opened"]);
+});
+
+test("a removed pass no longer runs and a failing pass does not stop the tick", async () => {
+  const id = branchTicket("Stockage", "feat/stockage-fichiers");
+  setFakePrs([{ number: 9, state: "OPEN", base: "dev", head: "feat/stockage-fichiers" }]);
+  const logged: string[] = [];
+  poller = startPrPoller(withWorktree(service, DEV), gh, 3_600_000, (what) => () => void logged.push(what));
+  let runs = 0;
+  const remove = poller.beforePoll(async () => {
+    runs++;
+  });
+  poller.beforePoll(async () => {
+    throw new Error("boom");
+  });
+  await poller.tick();
+  remove();
+  await poller.tick();
+  expect(runs).toBe(1);
+  expect(logged).toEqual(["branch pass failed", "branch pass failed"]);
+  expect(ticketOf(id)?.statusId).toBe("in_review");
 });

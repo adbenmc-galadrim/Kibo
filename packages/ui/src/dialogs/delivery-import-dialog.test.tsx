@@ -78,6 +78,7 @@ beforeEach(() => {
     storybook: null,
     duplication: null,
     delivery: EMIS.preview.delivery,
+    tracking: null,
   };
 });
 

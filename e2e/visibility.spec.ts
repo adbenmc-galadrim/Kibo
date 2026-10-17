@@ -113,7 +113,7 @@ test("une mention du Kanban ouvre la carte, le volet du run puis sa page", async
   await expect(feed.getByText("Le message d'erreur doit rester en français")).toBeVisible();
   await capture(page, info, "186c");
 
-  await page.setViewportSize({ width: WIDE.width, height: 560 });
+  await page.setViewportSize({ width: WIDE.width, height: 520 });
   const thread = feed.locator('[data-slot="scroll-pane"]').first();
   await expect.poll(() => thread.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
   expect(await thread.evaluate((el) => getComputedStyle(el).overflowY)).toBe("auto");

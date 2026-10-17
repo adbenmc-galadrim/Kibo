@@ -14,6 +14,7 @@ function sharable(): LoroDoc {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   createTicket(doc, { title: "Noyau de données" });
   createTicket(doc, { title: "Schéma Loro des tickets" });
@@ -151,4 +152,23 @@ test("bindings of the first snapshot are valid and run by the owner", () => {
   expect(reasonOf(edited((d) => d.getMap("bindings").set("b1", { id: "b1" })))).toContain("b1");
   expect(reasonOf(edited((d) => d.getMap("bindings").setContainer("b1", new LoroMap())))).toContain("b1");
   expect(reasonOf(edited((d) => d.getMap("bindings").set("b2", binding)))).toContain("b2");
+});
+
+test("accepts features and sprints, refuses a forged sprint", () => {
+  const planned = edited((d) => {
+    d.getMap("meta").set("featureSeq", 1);
+    d.getMap("sprints").set("s42", {
+      id: "s42",
+      code: "S42",
+      name: "S42",
+      start: "2026-10-12",
+      end: "2026-10-16",
+    });
+  });
+  expect(reasonOf(planned)).toBeNull();
+  const forged = edited((d) =>
+    d.getMap("sprints").set("s1", { id: "s1", code: "S1", name: "", start: "x", end: "y" }),
+  );
+  expect(reasonOf(forged)).toBe("sprint s1 is not a valid sprint");
+  expect(reasonOf(edited((d) => d.getMap("meta").set("featureSeq", "F1")))).toContain("meta.featureSeq");
 });

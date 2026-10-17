@@ -29,7 +29,7 @@
     },
     "apps/desktop": {
       "name": "@kibo/desktop",
-      "version": "0.23.0-alpha.3",
+      "version": "0.24.0-alpha.4",
       "devDependencies": {
         "@kibo/devkit": "workspace:*",
         "@kibo/schema": "workspace:*",
@@ -157,6 +157,28 @@
         "react": "19.1.1",
       },
     },
+    "components/planning": {
+      "name": "@kibo/component-planning",
+      "version": "1.0.0",
+      "dependencies": {
+        "@dnd-kit/core": "6.3.1",
+        "@kibo/schema": "workspace:*",
+        "@kibo/sdk": "workspace:*",
+        "lucide-react": "1.48.0",
+      },
+      "devDependencies": {
+        "@testing-library/dom": "10.4.2",
+        "@testing-library/react": "16.3.0",
+        "@types/react": "19.1.13",
+        "@types/react-dom": "19.1.9",
+        "react": "19.1.1",
+        "react-dom": "19.1.1",
+      },
+      "peerDependencies": {
+        "react": "19.1.1",
+        "react-dom": "19.1.1",
+      },
+    },
     "components/questions": {
       "name": "@kibo/component-questions",
       "version": "1.0.0",
@@ -224,6 +246,7 @@
         "@kibo/sync-server": "workspace:*",
         "@kibo/trust": "workspace:*",
         "@playwright/test": "1.55.0",
+        "fast-check": "4.3.0",
       },
     },
     "packages/cli": {
@@ -367,13 +390,12 @@
         "@dnd-kit/core": "6.3.1",
         "@dnd-kit/sortable": "10.0.0",
         "@dnd-kit/utilities": "3.2.2",
-        "@fontsource-variable/geist": "5.3.0",
-        "@fontsource-variable/geist-mono": "5.3.0",
         "@kibo/component-graph": "workspace:*",
         "@kibo/component-kanban": "workspace:*",
         "@kibo/component-mcp-source": "workspace:*",
         "@kibo/component-mockup": "workspace:*",
         "@kibo/component-notes": "workspace:*",
+        "@kibo/component-planning": "workspace:*",
         "@kibo/component-questions": "workspace:*",
         "@kibo/component-tickets": "workspace:*",
         "@kibo/component-viewer-3d": "workspace:*",
@@ -659,10 +681,6 @@
 
     "@floating-ui/utils": ["@floating-ui/utils@0.2.12", "", {}, "sha512-HpCo8tmWzLVad5s2d19EhAz5zqrrQ6s69qd6moPMQvkOuSwDT1YgRfWSVuc4ennqrgv3OHppiOGMQ7oC13yIww=="],
 
-    "@fontsource-variable/geist": ["@fontsource-variable/geist@5.3.0", "", {}, "sha512-j0m+vLQuG5XAYoHtGCVu0spvlGreR3EzpECUVzkFmI1mTVnAO38l/NEPDCFgZ177JxzYJCLSmTQibIiYPilGrA=="],
-
-    "@fontsource-variable/geist-mono": ["@fontsource-variable/geist-mono@5.3.0", "", {}, "sha512-vBbuwDEo9AkrqADMXOrlAR3DFcJi4/JxeuU43FoiQERnNwsfXNnvxvReZG02cQKmyk4DZkZdBZX3oTDvy2zBAw=="],
-
     "@happy-dom/global-registrator": ["@happy-dom/global-registrator@18.0.1", "", { "dependencies": { "@types/node": "^20.0.0", "happy-dom": "^18.0.1" } }, "sha512-xCy/cpEP8xyJ6u0eokYgaQxeUmcKqHx/+aC3R0DLa7/S38efhZAVDQqLJ5zzTguLFS0gvAzZHP40NGaLwRyapQ=="],
 
     "@hono/node-server": ["@hono/node-server@2.1.1", "", { "peerDependencies": { "hono": "^4" } }, "sha512-ELuehkj5VCBdgEw9zs+ivkKwyzzUCSQuE96YmiPvn1ECBoZCczbFXJLeEGMTYjphP6gydh4pHMqEYPVMYUVgQg=="],
@@ -692,6 +710,8 @@
     "@kibo/component-mockup": ["@kibo/component-mockup@workspace:components/mockup"],
 
     "@kibo/component-notes": ["@kibo/component-notes@workspace:components/notes"],
+
+    "@kibo/component-planning": ["@kibo/component-planning@workspace:components/planning"],
 
     "@kibo/component-questions": ["@kibo/component-questions@workspace:components/questions"],
 

@@ -44,7 +44,7 @@ test("an import missing in B and added by A links A blocks B once, with the kibo
     meta: { origin: "kibo", instanceId: null },
   });
   const [link] = s.store.autoLink.list(P);
-  const added = readProject(s.doc).links.find((l) => l.from === s.a.id && l.to === s.b.id);
+  const added = readProject(s.doc, "2026-10-16").links.find((l) => l.from === s.a.id && l.to === s.b.id);
   expect(link).toMatchObject({
     linkId: added?.id,
     fromTicketId: s.a.id,
@@ -189,7 +189,7 @@ test("cancel removes the link as the user and records who; a second cancel chang
   const [link] = s.store.autoLink.list(P);
   const cancelled = s.linker.cancel(link?.id ?? "", ADAM);
   expect(cancelled).toMatchObject({ status: "cancelled", cancelledBy: ADAM, cancelledAt: NOW });
-  expect(readProject(s.doc).links).toEqual([]);
+  expect(readProject(s.doc, "2026-10-16").links).toEqual([]);
   expect(s.linker.cancel(link?.id ?? "", ADAM).status).toBe("cancelled");
   expect(s.log.filter((l) => l.command.method === "removeLink")).toHaveLength(1);
   expect(s.moments).toHaveLength(2);

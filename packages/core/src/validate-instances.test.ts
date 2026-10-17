@@ -33,6 +33,7 @@ const META = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
 };
 const EDITOR: UpdateAuthor = { userId: "u1", role: "editor" };
 

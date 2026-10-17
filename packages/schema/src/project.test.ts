@@ -58,3 +58,13 @@ test("project meta defaults delivery to null and the patch writes or clears it",
   expect(ProjectPatch.safeParse({ delivery: null }).success).toBe(true);
   expect(ProjectPatch.safeParse({ delivery: {} }).success).toBe(false);
 });
+
+test("project meta has no tracking settings by default and the patch writes or clears them", () => {
+  expect(
+    ProjectMeta.parse({ id: "p", key: "AB", name: "n", folder: null, color: "#123456" }).tracking,
+  ).toBeNull();
+  expect(ProjectPatch.parse({ tracking: { openLimit: 3 } })).toEqual({ tracking: { openLimit: 3 } });
+  expect(ProjectPatch.parse({ tracking: null })).toEqual({ tracking: null });
+  expect(ProjectPatch.safeParse({ tracking: {} }).success).toBe(false);
+  expect(ProjectPatch.safeParse({ tracking: { openLimit: 11 } }).success).toBe(false);
+});

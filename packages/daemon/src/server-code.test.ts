@@ -196,6 +196,7 @@ describe("/api/code errors", () => {
     const failing: CodeService = {
       handle: () => Promise.reject(error),
       onChange: () => () => {},
+      poller: null,
       stop() {},
     };
     const broken = startServer({ service, code: failing, token: TOKEN, port: 0, uiDir: null });

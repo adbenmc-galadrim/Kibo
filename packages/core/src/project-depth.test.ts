@@ -12,6 +12,7 @@ const meta = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
 };
 
 function sharedCopy(build: (doc: LoroDoc) => void): LoroDoc {

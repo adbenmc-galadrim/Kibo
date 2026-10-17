@@ -9,6 +9,7 @@ import {
   rpc,
   type Seeded,
   seedWorkspace,
+  showAgentExecution,
   text,
 } from "./agents-seed";
 import { homeOf } from "./e2e-home";
@@ -30,6 +31,7 @@ export async function openVisibility(browser: Browser, info: TestInfo): Promise<
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   const page = await context.newPage();
   await pairBrowser(page);
+  await showAgentExecution(page);
   await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
   await createAgent(page, livraisonOpus("repo"));
   const repo = createGitRepo();

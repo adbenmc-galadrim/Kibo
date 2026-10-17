@@ -30,6 +30,11 @@ const t = (
   startable,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 });
 
 test("'mine and agents' keeps my tickets and every agent ticket", () => {

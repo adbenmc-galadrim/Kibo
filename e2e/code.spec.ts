@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 import { createE2eRepo, type E2eRepo, fakeGhDir } from "./git-repo";
+import { openNewTicketFromPalette, openWorkspaceMenuItem, showTabBar } from "./helpers";
 import { createRepoProject, gatePushes, projectKey, shot } from "./repo-project";
 import { E2E_TOKEN } from "./token";
 
@@ -56,9 +57,8 @@ test("modifier → indexer un bloc → commit → amend → PR", async ({ page }
   await expect(page.getByRole("dialog")).toBeHidden();
 
   editTicketFile(repo);
-  const changes = page.getByRole("button", { name: /^Changements/ });
-  await expect(changes).toBeVisible();
-  await changes.click();
+  await showTabBar(page);
+  await openWorkspaceMenuItem(page, "Changements");
   await expect(page.getByRole("tab", { name: `Code ${key} · Changements` })).toHaveAttribute(
     "aria-selected",
     "true",
@@ -132,13 +132,13 @@ test("push en cours, en échec puis réessayé", async ({ page }, info) => {
   const gate = gatePushes(repo.remote);
   await page.goto(`/#pair=${E2E_TOKEN}`);
   await createRepoProject(page, `Push ${key}`, key, repo.repo);
-  await page.getByRole("button", { name: "Ticket", exact: true }).click();
+  await openNewTicketFromPalette(page);
   await page.getByLabel("Titre", { exact: true }).fill("Push de test");
   await page.getByRole("button", { name: "Créer le ticket" }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
 
   editTicketFile(repo);
-  await page.getByRole("button", { name: /^Changements/ }).click();
+  await openWorkspaceMenuItem(page, "Changements");
   await page.getByRole("checkbox", { name: /Ajouter src\/ticket\.ts au commit/ }).click();
   await expect(
     page.getByRole("group", { name: /^Dans le prochain commit \(/ }).getByText("ticket.ts"),

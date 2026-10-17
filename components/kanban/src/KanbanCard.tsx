@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
-import type { Status, StatusId } from "@kibo/schema";
-import type { DeliverEntry } from "@kibo/sdk";
+import type { AgentExecution, Status, StatusId } from "@kibo/schema";
+import { copyDeliveryCommand, type DeliverEntry } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
@@ -19,6 +19,7 @@ type Props = CardFacts & {
   statuses: Status[];
   readOnly: boolean;
   deliver: DeliverEntry | null;
+  execution: AgentExecution;
   onOpen: () => void;
   onMove: (statusId: StatusId) => void;
   onRemove: () => void;
@@ -26,7 +27,18 @@ type Props = CardFacts & {
 };
 
 export function KanbanCard(props: Props) {
-  const { ticket: t, selected, statuses, readOnly, deliver, onOpen, onMove, onRemove, onDeliver } = props;
+  const {
+    ticket: t,
+    selected,
+    statuses,
+    readOnly,
+    deliver,
+    execution,
+    onOpen,
+    onMove,
+    onRemove,
+    onDeliver,
+  } = props;
   const sortable = useSortable({ id: t.id, disabled: readOnly, attributes: { role: "article" } });
   const { attributes, listeners, transform, transition, isDragging } = sortable;
   const ref = (node: HTMLElement | null) => {
@@ -44,8 +56,15 @@ export function KanbanCard(props: Props) {
     statuses,
     readOnly,
     deliver,
+    execution,
     texts: fr,
-    actions: { open: onOpen, move: onMove, remove: onRemove, deliver: onDeliver },
+    actions: {
+      open: onOpen,
+      move: onMove,
+      remove: onRemove,
+      deliver: onDeliver,
+      copyDelivery: (command) => void copyDeliveryCommand(command),
+    },
   });
   const menu = !readOnly && (
     <DropdownMenu>
@@ -58,7 +77,7 @@ export function KanbanCard(props: Props) {
           data-dnd-ignore="true"
           onPointerDown={stopDrag}
         >
-          <MoreHorizontal className="size-3.5" />
+          <MoreHorizontal absoluteStrokeWidth size={14} className="size-3.5" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

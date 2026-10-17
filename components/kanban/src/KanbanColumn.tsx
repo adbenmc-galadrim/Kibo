@@ -34,7 +34,7 @@ export function KanbanColumn({ status, ids, targeted, children, onAdd }: Props) 
             aria-label={fr.newTicketIn(status.label)}
             onClick={onAdd}
           >
-            <Plus className="size-3.5" />
+            <Plus absoluteStrokeWidth size={14} className="size-3.5" />
           </Button>
         ) : (
           <span className="size-6" />

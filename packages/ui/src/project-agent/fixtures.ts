@@ -38,6 +38,11 @@ const ticket = (id: string, key: string, title: string, statusId: TicketView["st
   startable: false,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 });
 
 export function emisProject(access: "write" | "read-only" = "write"): ProjectSnapshot {
@@ -52,6 +57,7 @@ export function emisProject(access: "write" | "read-only" = "write"): ProjectSna
       storybook: null,
       duplication: null,
       delivery: null,
+      tracking: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],
@@ -66,6 +72,7 @@ export function emisProject(access: "write" | "read-only" = "write"): ProjectSna
     rules: [],
     bindings: [],
     nextTicketKey: "EMIS-13",
+    sprints: [],
     sync: {
       shared: access !== "write",
       keyAllocator: access === "write" ? "local" : "server",

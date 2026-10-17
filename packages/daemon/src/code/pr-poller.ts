@@ -5,7 +5,8 @@ import { completeMerge, isFollowed, recordPr } from "./pr-rules";
 import { prState } from "./remote-ops";
 import type { Env } from "./run";
 
-export type PrPoller = { stop(): void };
+export type PollPass = () => Promise<void>;
+export type PrPoller = { stop(): void; tick(): Promise<void>; beforePoll(pass: PollPass): () => void };
 type Log = (what: string) => (e: unknown) => void;
 type Tracked = { projectId: string; folder: string; ticket: TicketView; ref: GithubPrRef };
 
@@ -26,7 +27,8 @@ const changed = (ref: GithubPrRef, info: PrInfo): boolean =>
 
 export function startPrPoller(service: Service, env: Env, intervalMs: number, log: Log): PrPoller {
   let stopped = false;
-  let running = false;
+  let current: Promise<void> | null = null;
+  const passes = new Set<PollPass>();
 
   const update = async ({ projectId, folder, ticket, ref }: Tracked) => {
     const info = await prState(ref.url, folder, env);
@@ -41,25 +43,39 @@ export function startPrPoller(service: Service, env: Env, intervalMs: number, lo
     if (!stopped && info) attachPr(service, candidate, info);
   };
 
-  const poll = async () => {
-    if (running) return;
-    running = true;
-    try {
-      for (const tracked of trackedRefs(service)) {
-        if (stopped) return;
-        await update(tracked).catch(log(`PR status failed for ${tracked.ref.url}`));
-      }
-      for (const candidate of discoveryCandidates(service)) {
-        if (stopped) return;
-        await discover(candidate).catch(log(`PR discovery failed for ${candidate.branch}`));
-      }
-    } finally {
-      running = false;
+  const runPasses = async () => {
+    for (const pass of [...passes]) {
+      if (stopped) return;
+      await pass().catch(log("branch pass failed"));
     }
+  };
+
+  const run = async () => {
+    await runPasses();
+    for (const tracked of trackedRefs(service)) {
+      if (stopped) return;
+      await update(tracked).catch(log(`PR status failed for ${tracked.ref.url}`));
+    }
+    for (const candidate of discoveryCandidates(service)) {
+      if (stopped) return;
+      await discover(candidate).catch(log(`PR discovery failed for ${candidate.branch}`));
+    }
+  };
+
+  const poll = (): Promise<void> => {
+    current ??= run().finally(() => {
+      current = null;
+    });
+    return current;
   };
 
   const timer = setInterval(() => void poll().catch(log("PR poll failed")), intervalMs);
   return {
+    tick: poll,
+    beforePoll(pass) {
+      passes.add(pass);
+      return () => passes.delete(pass);
+    },
     stop() {
       stopped = true;
       clearInterval(timer);

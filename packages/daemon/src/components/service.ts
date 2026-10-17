@@ -19,6 +19,7 @@ import type { ComponentIntegrationHooks } from "../integrations/types";
 import { ensureNotesTables } from "../notes/index";
 import { createNotesService, type NotesService } from "../notes/service";
 import { ensureSettingsTable } from "../notes/settings";
+import type { AppSettingsStore } from "../settings/app-settings-store";
 import { createBackends } from "./backends";
 import { approvedHashOf, stampComponentHash } from "./component-hash";
 import { listDrafts } from "./drafts";
@@ -57,6 +58,7 @@ export type ComponentsDeps = {
   deliverAnswers?: (projectId: string, ticketId: string) => DeliveryResult;
   peekRun?: (projectId: string, runId: string) => RunPeek;
   delivery?: ComponentDelivery;
+  appSettings: Pick<AppSettingsStore, "get">;
   installCli?: () => Promise<{ path: string }>;
   cliStatus?: () => Promise<{ path: string; installed: boolean }>;
   jobTimers?: Pick<JobSchedulerDeps, "setInterval" | "clearInterval">;
@@ -101,7 +103,9 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
   const projects = () =>
     listProjects(docs.workspace).map((m) => ({ id: m.id, name: m.name, doc: docs.project(m.id) }));
   const instanceOf = (projectId: string, instanceId: string): Instance => {
-    const inst = readProject(docs.project(projectId)).instances.find((i) => i.id === instanceId);
+    const inst = readProject(docs.project(projectId), docs.today()).instances.find(
+      (i) => i.id === instanceId,
+    );
     if (!inst) throw new KiboError("NOT_FOUND", `instance ${instanceId} not found`);
     return inst;
   };
@@ -148,6 +152,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       files,
       backends: () => backends,
       manifestOf: (ref) => registry.manifestOf(ref),
+      appSettings: () => deps.appSettings.get(),
     }),
   });
 

@@ -29,7 +29,7 @@ export function TicketRowActions({ entries, label, readOnly }: ActionsProps) {
           className="size-6 opacity-0 group-hover:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
           aria-label={label}
         >
-          <Ellipsis className="size-3.5" />
+          <Ellipsis absoluteStrokeWidth size={14} className="size-3.5" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

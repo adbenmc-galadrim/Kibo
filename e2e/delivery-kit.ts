@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type Browser, expect, type Page, type TestInfo } from "@playwright/test";
-import { list, pairBrowser, rpc, text } from "./agents-seed";
+import { list, pairBrowser, rpc, showAgentExecution, text } from "./agents-seed";
 import { homeOf } from "./e2e-home";
 import { createE2eRepo, type E2eRepo } from "./git-repo";
 import { WIDE } from "./visibility-kit";
@@ -123,6 +123,7 @@ export async function openEmis(browser: Browser, info: TestInfo): Promise<Emis> 
   const context = await browser.newContext({ colorScheme, baseURL, viewport: WIDE });
   const page = await context.newPage();
   await pairBrowser(page);
+  await showAgentExecution(page);
   await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
   mkdirSync(join(skillsDir(info), "full-delivery", "reference"), { recursive: true });
   const repo = createE2eRepo("EMIS");

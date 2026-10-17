@@ -1,5 +1,6 @@
 import { defineConfig, type PlaywrightTestConfig, type Project } from "@playwright/test";
 import { MARKET_PORTS } from "./market-fixture";
+import { PIXEL_DAEMONS, pixelKitProject, pixelProjectOptions, trackingProjects } from "./pixel-projects";
 import { SYNC_PORTS } from "./sync-fixture";
 
 const THEMES = ["dark", "light"] as const;
@@ -289,6 +290,7 @@ const allDaemons = [
   },
   { name: "ensembles-dark", scheme: "dark", port: 4475, spec: /ensembles\.spec\.ts/, scenario: "question" },
   { name: "ensembles-light", scheme: "light", port: 4476, spec: /ensembles\.spec\.ts/, scenario: "question" },
+  ...PIXEL_DAEMONS,
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
 
@@ -306,6 +308,7 @@ type WebServer = Exclude<NonNullable<PlaywrightTestConfig["webServer"]>, unknown
 export default defineConfig({
   testDir: ".",
   timeout: 30_000,
+  updateSnapshots: "none",
   use: { trace: "retain-on-failure" },
   projects: [
     ...daemons.map(
@@ -313,8 +316,11 @@ export default defineConfig({
         name: d.name,
         testMatch: d.spec,
         use: { browserName: "chromium", colorScheme: d.scheme, baseURL: `http://127.0.0.1:${d.port}` },
+        ...pixelProjectOptions(d.name),
       }),
     ),
+    ...(inTheme("dark") ? [pixelKitProject()] : []),
+    ...trackingProjects(daemons.map((d) => d.name)),
     ...marketThemes.map(
       (theme): Project => ({
         name: `market-${theme}`,

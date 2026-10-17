@@ -28,6 +28,7 @@ mock.module("../api", () =>
         eventListeners.add(listener);
         return () => eventListeners.delete(listener);
       },
+      subscribeTopic: () => () => undefined,
     },
   }),
 );

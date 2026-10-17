@@ -58,6 +58,7 @@ const project = (sync: ProjectSyncInfo): ProjectSnapshot => ({
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -69,6 +70,7 @@ const project = (sync: ProjectSyncInfo): ProjectSnapshot => ({
   rules: [],
   bindings: [],
   nextTicketKey: null,
+  sprints: [],
   sync,
 });
 const online: SyncStatus = {

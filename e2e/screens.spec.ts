@@ -3,8 +3,17 @@ import { appendFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFile
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { type Browser, expect, type Locator, type Page, type TestInfo, test } from "@playwright/test";
-import { assign, createAgent, livraisonOpus, rpc, type Seeded, seedWorkspace } from "./agents-seed";
+import {
+  assign,
+  createAgent,
+  livraisonOpus,
+  rpc,
+  type Seeded,
+  seedWorkspace,
+  showAgentExecution,
+} from "./agents-seed";
 import { GIT_IDENTITY } from "./git-repo";
+import { openChangesInNewTab, showTabBar } from "./helpers";
 import { E2E_TOKEN } from "./token";
 
 test.describe.configure({ mode: "serial" });
@@ -173,7 +182,8 @@ test.beforeAll(async ({ browser }, info) => {
   page = await openPage(browser, info);
   mockup = createMockupRepo();
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
+  await showAgentExecution(page);
   await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
   await createAgent(page, livraisonOpus("worktree"));
   seeded = await seedWorkspace(page, mockup.repo);
@@ -215,6 +225,7 @@ test("18 · palette ouverte sur kib-1", async () => {
 test("20 · menu contextuel d'un onglet", async () => {
   const info = test.info();
   const kanban = bar().getByRole("tab", { name: "Kibo · Kanban" });
+  await showTabBar(page, "Kibo · Kanban");
   await expect(kanban).toHaveAttribute("aria-selected", "true");
   await kanban.click({ button: "right" });
   await page.getByRole("menuitem", { name: /Épingler l'onglet/ }).click();
@@ -227,7 +238,7 @@ test("20 · menu contextuel d'un onglet", async () => {
   const palette = page.getByRole("dialog", { name: "Palette de commandes" });
   await palette.getByRole("combobox").fill("KIB-12");
   await palette.getByRole("option", { name: /KIB-12 · Schéma Loro/ }).click();
-  await sideButton(/^Changements/).click({ modifiers: ["ControlOrMeta"] });
+  await openChangesInNewTab(page, "Kibo");
   await bar().getByRole("tab", { name: "Kibo · KIB-12" }).click();
   await page.getByRole("button", { name: "packages/core/ticket.ts:43" }).click();
   await page.getByRole("button", { name: "Ouvrir dans un onglet" }).click();
@@ -322,11 +333,13 @@ test("densité 13 px des maquettes", async () => {
   await expect(doing).toBeVisible();
   const size = (l: Locator) => l.evaluate((el) => getComputedStyle(el).fontSize);
   expect(await size(page.locator("body"))).toBe("13px");
-  expect(await size(sideButton("Vue d'ensemble"))).toBe("13px");
-  expect(await size(page.getByText("Projets", { exact: true }).first())).toBe("10px");
+  expect(await size(sideButton("Accueil"))).toBe("13px");
+  expect(await size(page.getByText("Projets", { exact: true }).first())).toBe("11px");
   expect(await size(doing.getByText("KIB-28", { exact: true }))).toBe("11px");
   expect(await size(bar().getByRole("tab", { name: "Kibo · Kanban" }))).toBe("12px");
   const header = page.getByRole("button", { name: /Perso/ }).first();
-  await expect(header).toContainText("Workspace local");
+  await header.click();
+  await expect(page.getByRole("menu")).toContainText("Workspace local");
+  await page.keyboard.press("Escape");
   await capture(info, "densite-kanban");
 });

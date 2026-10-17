@@ -24,12 +24,18 @@ const ticket = {
   startable: false,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 } satisfies TicketView;
 const actions = (): CardMenuActions => ({
   open: mock(() => {}),
   move: mock((_s: string) => {}),
   remove: mock(() => {}),
   deliver: mock(() => {}),
+  copyDelivery: mock((_command: string) => {}),
 });
 const labels = (entries: ReturnType<typeof cardMenuEntries>) =>
   entries.map((e) => (isSeparator(e) ? "—" : isSubmenu(e) ? `${e.label} ▸` : e.label));
@@ -41,6 +47,7 @@ test("an editable card offers open, move to the other statuses, delete", () => {
     statuses: DEFAULT_WORKFLOW,
     readOnly: false,
     deliver: null,
+    execution: "shown",
     texts: fr,
     actions: a,
   });
@@ -59,6 +66,7 @@ test("read-only keeps only Ouvrir", () => {
         statuses: DEFAULT_WORKFLOW,
         readOnly: true,
         deliver: { disabledReason: null },
+        execution: "shown",
         texts: fr,
         actions: actions(),
       }),
@@ -67,7 +75,15 @@ test("read-only keeps only Ouvrir", () => {
 });
 
 const entriesWith = (deliver: { disabledReason: string | null } | null, a = actions()) =>
-  cardMenuEntries({ ticket, statuses: DEFAULT_WORKFLOW, readOnly: false, deliver, texts: fr, actions: a });
+  cardMenuEntries({
+    ticket,
+    statuses: DEFAULT_WORKFLOW,
+    readOnly: false,
+    deliver,
+    execution: "shown",
+    texts: fr,
+    actions: a,
+  });
 
 test("Livrer comes right after Ouvrir when the ticket can be delivered", () => {
   const a = actions();
@@ -89,4 +105,30 @@ test("Livrer is disabled and says which run is already there", () => {
 
 test("no Livrer without a deliverable ticket", () => {
   expect(labels(entriesWith(null))).toEqual(["Ouvrir", "Déplacer vers ▸", "—", "Supprimer…"]);
+});
+
+test("hidden agent execution replaces Livrer with copying the full-delivery command", () => {
+  const a = actions();
+  const entries = cardMenuEntries({
+    ticket,
+    statuses: DEFAULT_WORKFLOW,
+    readOnly: false,
+    deliver: { disabledReason: null },
+    execution: "hidden",
+    texts: fr,
+    actions: a,
+  });
+  expect(labels(entries)).toEqual([
+    "Ouvrir",
+    "Copier /full-delivery KIB-1",
+    "Déplacer vers ▸",
+    "—",
+    "Supprimer…",
+  ]);
+  expect(labels(entries)).not.toContain("Livrer");
+  const copy = entries[1];
+  if (!copy || isSeparator(copy) || isSubmenu(copy)) throw new Error("no copy entry");
+  copy.onSelect();
+  expect(a.copyDelivery).toHaveBeenCalledWith("/full-delivery KIB-1");
+  expect(a.deliver).not.toHaveBeenCalled();
 });

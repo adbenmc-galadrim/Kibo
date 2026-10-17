@@ -6,22 +6,11 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
+import { type ProjectCommand, type Status, type TicketView, worstCiTone } from "@kibo/schema";
 import {
-  isGroup,
-  KiboError,
-  type ProjectCommand,
-  type Status,
-  type StatusId,
-  type TicketView,
-} from "@kibo/schema";
-import {
-  deliverEntry,
   filterBySource,
-  groupOfTicket,
   readSource,
   SelectionChip,
-  useDeliverFlow,
-  useDeliveryAgentKnown,
   useEntities,
   useMembers,
   useQuestionsChipData,
@@ -31,209 +20,228 @@ import {
 } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
-import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
-import { ReasonDialog } from "@kibo/sdk/ui/reason-dialog";
-import { Plus } from "lucide-react";
-import { useState } from "react";
-import { buildTree, flattenGroups, mineOnly, type TicketNode, withAncestors } from "./build-tree";
-import { EMPTY_QUERY, filterTree, isActive } from "./filter-tickets";
+import { Plus, RefreshCw } from "lucide-react";
+import { useCallback, useState } from "react";
+import { buildSections, featureOf, withAncestors } from "./build-tree";
+import { CELL, ROW } from "./columns";
+import {
+  ALL_SPRINTS,
+  chosenSprint,
+  cleared,
+  EMPTY_QUERY,
+  isActive,
+  NO_SPRINT,
+  sortTickets,
+} from "./filter-tickets";
 import { fr } from "./fr";
-import { ASSIGNEE_CELL, COLUMNS, TicketRow, WIDE_CELL } from "./TicketRow";
+import { TicketRow } from "./TicketRow";
+import { TicketSection } from "./TicketSection";
 import { TicketsEmpty, TicketsNoMatch, TicketsSkeleton } from "./TicketsEmpty";
 import { TicketsToolbar } from "./TicketsToolbar";
-import { descendantCount, ticketMenuEntries } from "./ticket-menu";
 import { dropPlan, parseZoneId } from "./tree-drop";
+import { useSearchKeys } from "./use-search-keys";
+import { useTicketActions } from "./use-ticket-actions";
 
-const leaves = (tickets: readonly TicketView[]) => tickets.filter((t) => !isGroup(t)).length;
+const TABLE =
+  "relative overflow-hidden rounded-[8px] bg-(--tracking-card) after:pointer-events-none after:absolute after:inset-0 after:rounded-[8px] after:border after:border-(--tracking-border)";
+const PRIMARY =
+  "h-[25px] gap-[6px] rounded-[6px] bg-zinc-900 px-[10px] text-[12px] leading-[1.2] font-medium text-zinc-50 hover:bg-zinc-900/90 has-[>svg]:px-[10px] dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-50/90";
+
+const RECENT_DONE = 4;
 
 export function TicketsTree() {
   const sdk = useSdk();
   const readOnly = useReadOnly();
   const { data: all, loading } = useEntities("ticket");
-  const tickets = filterBySource(all, readSource(sdk.config));
-  const mine = sdk.config.filter === "mine";
-  const visible = mine ? mineOnly(tickets, sdk.viewer) : tickets;
+  const { data: sprints } = useEntities("sprint");
   const { data: statuses } = useEntities("status");
   const { data: runs } = useEntities("run");
-  const members = useMembers();
+  const { data: ciRuns } = useEntities("ci_run");
+  const tickets = filterBySource(all, readSource(sdk.config));
+  const mine = sdk.config.filter === "mine";
+  const [saved, setSaved] = useState<unknown>(sdk.config.sprint);
+  const sprint = chosenSprint(saved, sprints);
+  const [query, setQuery] = useState(EMPTY_QUERY);
+  const [doneOpen, setDoneOpen] = useState(sdk.config.doneOpen !== false);
+  const [allDone, setAllDone] = useState(false);
+  const [searching, setSearching] = useState(false);
+  const openSearch = useCallback(() => setSearching(true), []);
+  const onKeyDown = useSearchKeys(sdk.surface === "view", openSearch);
+  const [looseOpen, setLooseOpen] = useState(false);
   const [selection, setSelection] = useSelection();
+  const actions = useTicketActions(all, runs, statuses);
+  const questions = useQuestionsChipData(runs);
+  const members = useMembers();
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const sections = buildSections({
+    tickets,
+    sprint,
+    query,
+    mine: mine ? sdk.viewer : null,
+    viewer: sdk.viewer,
+  });
+  const recent = new Set(
+    sortTickets(sections.done, "recent")
+      .slice(0, RECENT_DONE)
+      .map((t) => t.id),
+  );
+  const doneShown = allDone ? sections.done : sections.done.filter((t) => recent.has(t.id));
+  const rootOf = featureOf(all);
+  const runOf = new Map(runs.map((r) => [r.ticketId, r]));
   const selected = new Set(selection?.ids ?? []);
   const sharp = selection ? withAncestors(all, selection.ids) : null;
-  const runOf = new Map(runs.map((r) => [r.ticketId, r]));
-  const groupOf = groupOfTicket(all);
-  const original = new Map(all.map((t) => [t.id, t]));
-  const questions = useQuestionsChipData(runs);
-  const delivery = useDeliverFlow();
-  const agentKnown = useDeliveryAgentKnown();
-  const [query, setQuery] = useState(EMPTY_QUERY);
-  const filtering = isActive(query);
-  const filtered = filtering ? filterTree(visible, query, sdk.viewer) : null;
-  const shown = filtered?.visible ?? null;
-  const canDrag = !readOnly && !filtering;
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-  const [blocking, setBlocking] = useState<TicketView | null>(null);
-  const [removing, setRemoving] = useState<TicketView | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const canDrag = !readOnly && !isActive(query);
+  const now = Date.now();
   const label = (id: string) => statuses.find((s: Status) => s.id === id)?.label ?? id;
-  const toggle = (id: string) =>
-    setCollapsed((c) => {
-      const next = new Set(c);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  const sprintLabel = sprints.find((s) => s.id === sprint)?.code ?? null;
+  const scope =
+    sprint === ALL_SPRINTS
+      ? fr.scope.all
+      : sprint === NO_SPRINT
+        ? fr.scope.none
+        : fr.scope.sprint(sprintLabel ?? "");
 
-  const attempt = async (cmd: ProjectCommand, failure: string): Promise<boolean> => {
-    try {
-      await sdk.run(cmd);
-      setError(null);
-      return true;
-    } catch (e) {
-      setError(e instanceof KiboError && e.code === "TREE_CYCLE" ? fr.cycle : failure);
-      return false;
-    }
+  const toggleDone = (open: boolean) => {
+    setDoneOpen(open);
+    void sdk.setConfig({ doneOpen: open });
   };
-  const setStatus = (t: TicketView, statusId: StatusId) => {
-    if (statusId === "blocked") {
-      setError(null);
-      setBlocking(t);
-    } else void attempt({ method: "setStatus", ticketId: t.id, statusId }, fr.statusFailed(t.keyLabel));
+  const chooseSprint = (value: string) => {
+    setSaved(value);
+    void sdk.setConfig({ sprint: value });
   };
-  const entriesFor = (t: TicketView) =>
-    ticketMenuEntries({
-      ticket: t,
-      statuses,
-      readOnly,
-      deliver: deliverEntry({
-        ticket: t,
-        editable: !readOnly,
-        agentKnown,
-        parent: all.some((x) => x.parentId === t.id),
-        run: runOf.get(t.id) ?? null,
-      }),
-      texts: fr,
-      actions: {
-        deliver: () => delivery.deliver(t),
-        open: () => sdk.openTicket(t.id),
-        setStatus: (statusId) => setStatus(t, statusId),
-        newSubTicket: () => sdk.openNewTicket({ parentId: t.id }),
-        moveToRoot: () =>
-          void attempt({ method: "moveTicket", ticketId: t.id, parentId: null }, fr.moveFailed(t.keyLabel)),
-        remove: () => setRemoving(t),
-      },
-    });
   const onDragEnd = (e: DragEndEvent) => {
     if (!canDrag || e.over === null) return;
     const zone = parseZoneId(String(e.over.id));
     const plan = zone ? dropPlan(all, String(e.active.id), zone) : null;
     if (!plan) return;
-    const key = all.find((t) => t.id === plan.ticketId)?.keyLabel ?? "";
-    void attempt({ method: "moveTicket", ...plan }, fr.moveFailed(key));
+    const cmd: ProjectCommand = { method: "moveTicket", ...plan };
+    void actions.attempt(cmd, fr.moveFailed(all.find((t) => t.id === plan.ticketId)?.keyLabel ?? ""));
   };
-
-  const row = (n: TicketNode) => (
+  const row = (t: TicketView) => (
     <TicketRow
-      key={n.ticket.id}
-      node={n}
-      group={groupOf(original.get(n.ticket.id) ?? n.ticket)}
-      open={!collapsed.has(n.ticket.id)}
-      entries={entriesFor(n.ticket)}
+      key={t.id}
+      ticket={t}
+      feature={rootOf(t)}
+      ci={t.key === null ? null : worstCiTone(ciRuns.filter((r) => r.ticketKey === t.key))}
+      run={runOf.get(t.id) ?? null}
+      members={members}
+      statusLabel={label(t.statusId)}
+      entries={actions.entriesFor(t)}
       readOnly={readOnly}
       canDrag={canDrag}
-      run={runOf.get(n.ticket.id) ?? null}
-      members={members}
       questions={questions}
-      statusLabel={label(n.ticket.statusId)}
-      context={filtered?.context.has(n.ticket.id) ?? false}
-      selected={sharp ? selected.has(n.ticket.id) : null}
-      dimmed={sharp !== null && !sharp.has(n.ticket.id)}
-      onToggle={() => toggle(n.ticket.id)}
-    >
-      {n.children.map(row)}
-    </TicketRow>
+      selected={sharp ? selected.has(t.id) : null}
+      dimmed={sharp !== null && !sharp.has(t.id)}
+      now={now}
+    />
   );
+  const empty = sections.open.length + sections.done.length + sections.loose.length === 0;
 
   return (
-    <section aria-label={fr.title} className="@container flex h-full flex-col">
-      <header className="flex h-10 items-center justify-between border-b px-3">
-        <span className="flex items-center gap-2 text-sm font-medium">
-          {mine ? fr.mineCount(leaves(visible), leaves(tickets)) : fr.title}
-          <SelectionChip selection={selection} onClear={() => setSelection(null)} />
+    <section
+      aria-label={fr.title}
+      onKeyDown={onKeyDown}
+      className="@container flex h-full flex-col gap-3 overflow-auto px-6 py-[18px]"
+    >
+      <header className="flex items-end gap-[10px]">
+        {sdk.surface === "view" && (
+          <h1 className="text-[22px] leading-[27px] font-semibold text-(--tracking-fg)">
+            {mine ? fr.mine : fr.title}
+          </h1>
+        )}
+        <span className="min-w-0 truncate text-[12.5px] leading-[1.2] text-(--tracking-dim)">
+          {fr.summary(scope, sections.tickets, sections.features.length)}
         </span>
-        {!readOnly && (loading || visible.length > 0) && (
-          <Button size="sm" variant="outline" onClick={() => sdk.openNewTicket({})}>
-            <Plus className="size-3.5" /> {fr.newTicket}
+        <SelectionChip selection={selection} onClear={() => setSelection(null)} />
+        <span className="flex-1" />
+        {!readOnly && (
+          <Button size="sm" className={PRIMARY} onClick={() => sdk.openNewTicket({})}>
+            <Plus absoluteStrokeWidth size={13} aria-hidden className="size-[13px]" />
+            {fr.newTicket}
           </Button>
         )}
       </header>
-      {(delivery.error ?? (error && !blocking ? error : null)) && (
-        <p role="alert" className="px-3 py-1 text-xs text-destructive">
-          {delivery.error ?? error}
+      {actions.error && (
+        <p role="alert" className="text-xs text-destructive">
+          {actions.error}
         </p>
       )}
       {loading ? (
         <TicketsSkeleton />
-      ) : visible.length === 0 ? (
+      ) : tickets.length === 0 ? (
         <TicketsEmpty readOnly={readOnly} onNewTicket={() => sdk.openNewTicket({})} />
       ) : (
         <>
-          <TicketsToolbar query={query} statuses={statuses} tickets={visible} onChange={setQuery} />
-          {shown?.size === 0 ? (
-            <TicketsNoMatch onClear={() => setQuery(EMPTY_QUERY)} />
+          <TicketsToolbar
+            sprints={sprints}
+            sprint={sprint}
+            onSprint={chooseSprint}
+            query={query}
+            features={sections.features}
+            statuses={statuses}
+            tickets={tickets}
+            searching={searching}
+            onSearchClose={() => setSearching(false)}
+            onChange={setQuery}
+          />
+          {empty ? (
+            <TicketsNoMatch onClear={isActive(query) ? () => setQuery(cleared(query)) : null} />
           ) : (
-            <div className="min-h-0 flex-1 overflow-auto px-1 py-2">
-              <div className={cn(COLUMNS, "h-8 text-2xs whitespace-nowrap text-muted-foreground")}>
-                <span className="pl-6">{fr.columns.ticket}</span>
-                <span className={WIDE_CELL}>{fr.columns.status}</span>
-                <span className={ASSIGNEE_CELL}>{fr.columns.assignee}</span>
-                <span className={WIDE_CELL}>{fr.columns.group}</span>
-                <span />
+            <div className={TABLE}>
+              <div
+                className={cn(
+                  ROW,
+                  "h-8 bg-(--tracking-panel) text-[11.5px] leading-[1.2] font-medium whitespace-nowrap text-(--tracking-dim)",
+                )}
+              >
+                <span className={CELL.key}>{fr.columns.key}</span>
+                <span className={CELL.title}>{fr.columns.title}</span>
+                <span className={CELL.feature}>{fr.columns.feature}</span>
+                <span className={CELL.status}>{fr.columns.status}</span>
+                <span className={CELL.git}>{fr.columns.git}</span>
+                <span className={CELL.delivery}>{fr.columns.delivery}</span>
+                <span className={CELL.updated}>{fr.columns.updated}</span>
               </div>
               <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={onDragEnd}>
                 <ul>
-                  {flattenGroups(buildTree(shown ? visible.filter((t) => shown.has(t.id)) : visible)).map(
-                    row,
+                  {sections.open.map(row)}
+                  {sections.done.length > 0 && (
+                    <TicketSection
+                      label={fr.done(sprintLabel)}
+                      count={sections.done.length}
+                      open={doneOpen}
+                      onOpenChange={toggleDone}
+                      more={
+                        sections.done.length > RECENT_DONE
+                          ? { all: allDone, recent: RECENT_DONE, onToggle: () => setAllDone((a) => !a) }
+                          : null
+                      }
+                      done
+                    >
+                      {doneShown.map(row)}
+                    </TicketSection>
+                  )}
+                  {sections.loose.length > 0 && (
+                    <TicketSection
+                      label={fr.loose}
+                      count={sections.loose.length}
+                      open={looseOpen}
+                      onOpenChange={setLooseOpen}
+                    >
+                      {sections.loose.map(row)}
+                    </TicketSection>
                   )}
                 </ul>
               </DndContext>
             </div>
           )}
+          <p className="flex items-center gap-2 text-[11.5px] leading-[1.2] text-(--tracking-dim)">
+            <RefreshCw absoluteStrokeWidth size={13} aria-hidden className="size-[13px] shrink-0" />
+            {fr.footer}
+          </p>
         </>
       )}
-      {blocking && (
-        <ReasonDialog
-          open
-          title={fr.block.title(blocking.keyLabel)}
-          description={fr.block.description}
-          label={fr.block.reason}
-          placeholder={fr.block.placeholder}
-          confirmLabel={fr.block.confirm}
-          cancelLabel={fr.block.cancel}
-          error={error}
-          onConfirm={(reason) =>
-            void attempt(
-              { method: "setStatus", ticketId: blocking.id, statusId: "blocked", reason },
-              fr.statusFailed(blocking.keyLabel),
-            ).then((ok) => ok && setBlocking(null))
-          }
-          onCancel={() => setBlocking(null)}
-        />
-      )}
-      {delivery.dialog}
-      {removing && (
-        <ConfirmDialog
-          open
-          onOpenChange={(o) => !o && setRemoving(null)}
-          title={fr.removeTitle(removing.keyLabel)}
-          description={fr.removeHelp(descendantCount(all, removing.id))}
-          confirmLabel={fr.removeConfirm}
-          cancelLabel={fr.cancel}
-          onConfirm={async () => {
-            await sdk.run({ method: "deleteTicket", ticketId: removing.id });
-          }}
-        />
-      )}
+      {actions.dialogs}
     </section>
   );
 }

@@ -39,6 +39,11 @@ const ticket = (id: string, statusId: TicketView["statusId"]): TicketView => ({
   startable: false,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
   keyLabel: `DEMO-${id}`,
 });
 const link = (from: string, to: string): Link => ({ id: `${from}${to}`, from, to, type: "blocks" });

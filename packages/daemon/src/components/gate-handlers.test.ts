@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { createProjectDoc, createTicket } from "@kibo/core";
+import { createProjectDoc, createSprint, createTicket } from "@kibo/core";
 import {
   type CiRun,
   ComponentManifest,
@@ -7,6 +7,7 @@ import {
   type EmbedView,
   type Instance,
   KiboError,
+  type ProjectMeta,
 } from "@kibo/schema";
 import { LoroDoc } from "loro-crdt";
 import { z } from "zod";
@@ -113,7 +114,7 @@ test("ci runs are listed per project", async () => {
   expect(seen).toEqual([["ci", "p"]]);
 });
 
-test("the tickets listed to a component are not startable while a run is active on them", async () => {
+test("a component lists busy tickets as not startable and sprints dated by the daemon", async () => {
   const project = createProjectDoc({
     id: "p",
     key: "KIB",
@@ -124,12 +125,19 @@ test("the tickets listed to a component are not startable while a run is active 
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   const busy = createTicket(project, { title: "A", statusId: "todo" });
   createTicket(project, { title: "B", statusId: "todo" });
+  createSprint(project, { code: "S42", name: "S42", start: "2026-10-12", end: "2026-10-16" });
   const handlers = createGateHandlers({
     ...stubHandlerDeps,
-    docs: { ...stubDocs, project: () => project, activity: () => ({ busyTickets: new Set([busy.id]) }) },
+    docs: {
+      ...stubDocs,
+      project: () => project,
+      activity: () => ({ busyTickets: new Set([busy.id]) }),
+      today: () => "2026-10-16",
+    },
   });
   const Listed = z.array(z.object({ title: z.string(), startable: z.boolean() }));
   const tickets = Listed.parse(await handlers.list("p", "ticket"));
@@ -137,6 +145,8 @@ test("the tickets listed to a component are not startable while a run is active 
     ["A", false],
     ["B", true],
   ]);
+  const Sprints = z.array(z.object({ name: z.string(), state: z.string() }));
+  expect(Sprints.parse(await handlers.list("p", "sprint"))).toEqual([{ name: "S42", state: "current" }]);
 });
 
 test("the question recipients are read from the project, defaults included, without writing", async () => {
@@ -278,4 +288,31 @@ test("peeking a run goes to the agents, and says so when they are not started", 
     peekRun: (projectId, runId) => ({ ...PEEK, runId: `${projectId}/${runId}` }),
   });
   expect(await handlers.peek("p1", "r1")).toEqual({ ...PEEK, runId: "p1/r1" });
+});
+
+const metaWith = (tracking: ProjectMeta["tracking"]): ProjectMeta => ({
+  id: "p1",
+  key: "EMIS",
+  name: "Emis",
+  folder: null,
+  color: "#14B8A6",
+  worktree: null,
+  storybook: null,
+  duplication: null,
+  delivery: null,
+  tracking,
+});
+
+test("settings.get reads the project tracking and the machine agent execution", async () => {
+  const handlers = createGateHandlers({
+    ...stubHandlerDeps,
+    docs: { ...stubDocs, projectMeta: () => metaWith({ openLimit: 3 }) },
+    appSettings: () => ({ agentExecution: "shown" }),
+  });
+  expect(await handlers.settings("p1")).toEqual({ tracking: { openLimit: 3 }, agentExecution: "shown" });
+  const defaults = createGateHandlers({
+    ...stubHandlerDeps,
+    docs: { ...stubDocs, projectMeta: () => metaWith(null) },
+  });
+  expect(await defaults.settings("p1")).toEqual({ tracking: null, agentExecution: "hidden" });
 });

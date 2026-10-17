@@ -1,4 +1,5 @@
 import type {
+  AgentExecution,
   CiRun,
   ComponentFormat,
   DeliveryAgent,
@@ -16,6 +17,7 @@ import type {
   StorybookOrigin,
   Surface,
   TicketRun,
+  TrackingSettings,
 } from "@kibo/schema";
 import type { MockFetch } from "./mock-calls";
 import type { MockFrame } from "./mock-design";
@@ -54,8 +56,13 @@ export type MockSdk = {
   setFocus(active: boolean): void;
   setSelection(selection: Selection | null): void;
   setSpotlight(spotlight: Spotlight | null): void;
+  setTracking(tracking: TrackingSettings | null): void;
+  setAgentExecution(execution: AgentExecution): void;
 };
 export type MockSdkOptions = {
+  today?: string;
+  tracking?: TrackingSettings | null;
+  agentExecution?: AgentExecution;
   seed?: (run: (cmd: ProjectCommand) => unknown) => void;
   viewer?: string;
   config?: Record<string, unknown>;

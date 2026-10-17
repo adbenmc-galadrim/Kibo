@@ -124,7 +124,7 @@ export function list(value: unknown, key: string): unknown[] {
 
 export async function pairBrowser(page: Page): Promise<void> {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
 }
 
 export async function rpc(page: Page, body: Body): Promise<unknown> {
@@ -140,6 +140,12 @@ export async function rpc(page: Page, body: Body): Promise<unknown> {
   if (field(payload, "ok") !== true)
     throw new Error(`rpc ${String(body.method)}: ${JSON.stringify(payload)}`);
   return field(payload, "result");
+}
+
+export async function showAgentExecution(page: Page): Promise<void> {
+  await expect(async () => {
+    await rpc(page, { method: "setAppSettings", patch: { agentExecution: "shown" } });
+  }).toPass({ timeout: 15_000 });
 }
 
 export function createGitRepo(): string {

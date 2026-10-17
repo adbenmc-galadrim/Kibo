@@ -27,6 +27,7 @@ function kit(
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   const ticket = Ticket.parse(executeProjectCommand(doc, { method: "createTicket", title: "Formulaire" }));
   const commands: { projectId: string; cmd: ProjectCommand; meta: CommandMeta }[] = [];
@@ -49,7 +50,7 @@ function kit(
   };
   const service = createProgressService({
     docs: {
-      snapshot: () => readProject(doc),
+      snapshot: () => readProject(doc, "2026-10-16"),
       run(projectId, cmd, meta) {
         commands.push({ projectId, cmd, meta });
         return executeProjectCommand(doc, cmd);
@@ -62,7 +63,8 @@ function kit(
     changed: () => changes.push(commands.length),
   });
   const run = runView({ id: "r1", projectId: "p1", ticketId: ticket.id, cwd: "/repo", state: "running" });
-  const progressOf = () => readProject(doc).tickets.find((t) => t.id === ticket.id)?.agentProgress;
+  const progressOf = () =>
+    readProject(doc, "2026-10-16").tickets.find((t) => t.id === ticket.id)?.agentProgress;
   return { service, run, ticket, commands, traces, gitCalls, progressOf, changes };
 }
 

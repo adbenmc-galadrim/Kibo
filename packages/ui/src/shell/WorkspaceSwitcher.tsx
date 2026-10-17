@@ -1,46 +1,37 @@
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@kibo/sdk/ui/dropdown-menu";
-import { Check, ChevronDown, Settings } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
+import { ChevronDown } from "lucide-react";
+import { useState } from "react";
 import { fr } from "../i18n/fr";
-import { WorkspaceTile } from "./WorkspaceMark";
+import { KiboLogo } from "./KiboLogo";
+import { WorkspaceMenuItems } from "./lazy-screens";
 
-type Props = { name: string; icon: string | null; onSettings(): void };
+export type WorkspaceMenuProps = {
+  name: string;
+  icon: string | null;
+  onSettings(): void;
+  onComponents(): void;
+  onChanges: (() => void) | null;
+};
 
-function WorkspaceLabel({ name }: { name: string }) {
+export function WorkspaceSwitcher({ name, icon, onSettings, onComponents, onChanges }: WorkspaceMenuProps) {
+  const [open, setOpen] = useState(false);
   return (
-    <span className="grid min-w-0 flex-1 text-left leading-tight">
-      <span className="truncate text-sm font-semibold">{name}</span>
-      <span className="truncate text-2xs text-muted-foreground">{fr.workspace.local}</span>
-    </span>
-  );
-}
-
-export function WorkspaceSwitcher({ name, icon, onSettings }: Props) {
-  return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-ring data-[state=open]:bg-sidebar-accent">
-        <WorkspaceTile size="md" src={icon} alt={fr.workspace.iconAlt(name)} />
-        <WorkspaceLabel name={name} />
-        <ChevronDown aria-hidden className="size-4 shrink-0 text-muted-foreground" />
+    <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
+      <DropdownMenuTrigger className="k-workspace k-focus">
+        {icon ? <img src={icon} alt={fr.workspace.iconAlt(name)} /> : <KiboLogo decorative />}
+        <span className="truncate">{name}</span>
+        <ChevronDown size={13} absoluteStrokeWidth className="k-dim k-13" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-(--radix-dropdown-menu-trigger-width)">
-        <DropdownMenuLabel className="text-xs text-muted-foreground">{fr.workspace.menu}</DropdownMenuLabel>
-        <DropdownMenuItem>
-          <WorkspaceTile size="md" src={icon} alt={fr.workspace.iconAlt(name)} />
-          <WorkspaceLabel name={name} />
-          <Check aria-hidden className="ml-auto" />
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={onSettings}>
-          <Settings aria-hidden />
-          {fr.workspace.settings}
-        </DropdownMenuItem>
+      <DropdownMenuContent align="start" className="w-56">
+        {open && (
+          <WorkspaceMenuItems
+            name={name}
+            icon={icon}
+            onSettings={onSettings}
+            onComponents={onComponents}
+            onChanges={onChanges}
+          />
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

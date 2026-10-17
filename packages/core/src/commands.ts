@@ -47,17 +47,29 @@ import {
   updateQuestion,
 } from "./questions-edit";
 import { readRules } from "./rules";
+import {
+  createSprint,
+  deleteSprint,
+  listSprints,
+  setTicketSprint,
+  sprintViews,
+  updateSprint,
+} from "./sprints";
 import { ticketViews } from "./ticket-views";
 import {
   createTicket,
   deleteTicket,
+  getTicket,
   listTickets,
   moveTicket,
   setStatus,
   setTicketDelivery,
+  setTicketOptional,
   setTicketProgress,
   updateTicket,
 } from "./tickets";
+
+export const UNDATED = "0000-01-01";
 
 export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknown {
   switch (cmd.method) {
@@ -163,6 +175,17 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
       return archiveQuestion(doc, cmd);
     case "restoreQuestion":
       return restoreQuestion(doc, cmd);
+    case "createSprint":
+      return createSprint(doc, { code: cmd.code, name: cmd.name, start: cmd.start, end: cmd.end });
+    case "updateSprint":
+      return updateSprint(doc, cmd.sprintId, cmd.patch);
+    case "deleteSprint":
+      return deleteSprint(doc, cmd.sprintId);
+    case "setTicketSprint":
+      setTicketSprint(doc, cmd.ticketId, cmd.sprintId);
+      return getTicket(doc, cmd.ticketId);
+    case "setTicketOptional":
+      return setTicketOptional(doc, cmd.ticketId, cmd.optional);
   }
 }
 
@@ -180,15 +203,24 @@ export function assertShellCommand(cmd: ProjectCommand): void {
   }
 }
 
-export function readProject(doc: LoroDoc, activity: ProjectActivity = NO_ACTIVITY): ProjectSnapshot {
+export function readProject(
+  doc: LoroDoc,
+  today: string,
+  activity: ProjectActivity = NO_ACTIVITY,
+): ProjectSnapshot {
   const meta = getProjectMeta(doc);
   const questions = listQuestions(doc);
   const links = listLinks(doc);
+  const sprints = listSprints(doc);
+  const tickets = ticketViews(
+    { projectKey: meta.key, tickets: listTickets(doc), links, questions, sprints, today },
+    activity,
+  );
   return {
     meta,
     workflow: getWorkflow(doc),
     pages: listPages(doc),
-    tickets: ticketViews({ projectKey: meta.key, tickets: listTickets(doc), links, questions }, activity),
+    tickets,
     links,
     questions,
     questionRecipients: listQuestionRecipients(doc),
@@ -198,6 +230,7 @@ export function readProject(doc: LoroDoc, activity: ProjectActivity = NO_ACTIVIT
     nextTicketKey: peekTicketKey(doc),
     sync: localSyncInfo(doc),
     domains: listProjectDomains(doc),
+    sprints: sprintViews(sprints, tickets, today),
   };
 }
 

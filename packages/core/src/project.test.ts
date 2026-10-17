@@ -32,6 +32,7 @@ const meta = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
 };
 
 describe("workspace", () => {
@@ -82,6 +83,16 @@ describe("project meta", () => {
     expect(() => setProjectMeta(doc, { name: " " })).toThrow("INVALID_INPUT");
     expect(getProjectMeta(doc).key).toBe("KIB");
   });
+
+  test("setProjectMeta writes the open limit, which survives a snapshot and can be cleared", () => {
+    const doc = createProjectDoc(meta);
+    expect(setProjectMeta(doc, { tracking: { openLimit: 3 } }).tracking).toEqual({ openLimit: 3 });
+    const copy = new LoroDoc();
+    copy.import(doc.export({ mode: "snapshot" }));
+    expect(getProjectMeta(copy).tracking).toEqual({ openLimit: 3 });
+    expect(() => setProjectMeta(doc, { tracking: { openLimit: 11 } })).toThrow("INVALID_INPUT");
+    expect(setProjectMeta(doc, { tracking: null }).tracking).toBeNull();
+  });
 });
 
 describe("project", () => {
@@ -101,9 +112,9 @@ describe("project", () => {
     const doc = createProjectDoc(meta);
     expect(peekTicketKey(doc)).toBe("KIB-1");
     expect(peekTicketKey(doc)).toBe("KIB-1");
-    expect(readProject(doc).nextTicketKey).toBe("KIB-1");
+    expect(readProject(doc, "2026-10-16").nextTicketKey).toBe("KIB-1");
     executeProjectCommand(doc, { method: "createTicket", title: "A" });
-    expect(readProject(doc).nextTicketKey).toBe("KIB-2");
+    expect(readProject(doc, "2026-10-16").nextTicketKey).toBe("KIB-2");
   });
   test("counts tickets by status, sub-tickets included", () => {
     const doc = createProjectDoc(meta);

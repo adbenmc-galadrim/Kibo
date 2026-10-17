@@ -1,4 +1,5 @@
 import type { Assignee } from "@kibo/schema";
+import type { FeatureRef, SprintRef } from "./tickets/ticket-tracking";
 import type { PrSummary, TicketRef } from "./tickets/ticket-view";
 
 const MARKET_USAGE = [
@@ -8,11 +9,13 @@ const MARKET_USAGE = [
 ];
 
 const TICKETS_USAGE = [
-  "  kibo tickets list --project <clé|nom|id> [--ready] [--status <s>[,<s>…]] [--json]",
+  "  kibo tickets list --project <clé|nom|id> [--ready] [--status <s>[,<s>…]] [--sprint <id|code|nom|current|none>] [--json]",
   "  kibo tickets get <clé|id du plan> --project <p> [--json]",
-  "  kibo tickets set <clé|id du plan> [status=<todo|wip|done|blocked>] [pr=<n|url>] [reason=<texte>] --project <p> [--json]",
+  "  kibo tickets set <clé|id du plan> [status=<todo|wip|done|blocked>] [pr=<n|url>] [branch=<nom> [base=<nom>]] [reason=<texte>] --project <p> [--json]",
   "  kibo tickets step <clé> <0-11> [note] [--json]",
 ];
+
+const SPRINTS_USAGE = ["  kibo sprints list --project <clé|nom|id> [--json]"];
 
 const PROJECTS_USAGE = ["  kibo projects list [--json]", "  kibo projects get <clé|nom|id> [--json]"];
 
@@ -24,6 +27,7 @@ export const frTickets = {
   notRunning: "Kibo n'est pas lancé : ouvre l'application Kibo, puis réessaie.",
   projectNotFound: (p: string) => `Projet introuvable : ${p}`,
   ticketNotFound: (id: string) => `Ticket introuvable : ${id}`,
+  sprintNotFound: (name: string) => `Sprint introuvable : ${name}`,
   notesUnavailable: "Notes liées indisponibles : ce démon Kibo est plus ancien que la commande kibo.",
   defaultBlockedReason: "Bloqué par la livraison (kibo tickets)",
   updated: (key: string, changes: string[]) =>
@@ -31,6 +35,10 @@ export const frTickets = {
   status: (status: string, column: string) => `Statut : ${status} (${column})`,
   blocked: (reason: string) => `Raison du blocage : ${reason}`,
   parent: (r: TicketRef | null) => `Parent : ${r ? ref(r) : "aucun"}`,
+  sprint: (s: SprintRef | null) => `Sprint : ${s ? `${s.code} · ${s.name}` : "aucun"}`,
+  feature: (f: FeatureRef | null) =>
+    `Fonctionnalité : ${f ? [f.shortKey, f.key, f.title].filter((part) => part !== null).join(" · ") : "aucune"}`,
+  optional: "Étape facultative",
   children: (list: TicketRef[]) => `Enfants : ${refs(list)}`,
   deps: (list: TicketRef[]) => `Dépendances : ${refs(list)}`,
   pr: (pr: PrSummary | null) => `PR : ${pr ? `#${pr.number} (${pr.state}) ${pr.url}` : "aucune"}`,
@@ -51,6 +59,10 @@ const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
 const agreed = (n: number, word: string) => `${word}${n > 1 ? "s" : ""}`;
 const recipeSummary = ({ copy, after }: { copy: readonly string[]; after: readonly string[] }) =>
   `${plural(copy.length, "fichier")} ${agreed(copy.length, "copié")}, ${plural(after.length, "commande")} après`;
+
+export const frSprints = {
+  usage: ["Usage :", ...SPRINTS_USAGE].join("\n"),
+};
 
 export const frProjects = {
   usage: ["Usage :", ...PROJECTS_USAGE].join("\n"),
@@ -74,6 +86,7 @@ export const fr = {
     "  kibo component publish <id> --to <source> [--publisher <nom>]",
     ...MARKET_USAGE,
     ...TICKETS_USAGE,
+    ...SPRINTS_USAGE,
     ...PROJECTS_USAGE,
   ].join("\n"),
   marketUsage: ["Usage :", ...MARKET_USAGE].join("\n"),

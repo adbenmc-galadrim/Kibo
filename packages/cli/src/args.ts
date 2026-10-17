@@ -14,6 +14,7 @@ const VALUED = new Set([
   "template",
   "project",
   "status",
+  "sprint",
 ]);
 
 export function parseArgs(argv: string[]): Parsed {

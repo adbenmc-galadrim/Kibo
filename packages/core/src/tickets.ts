@@ -20,6 +20,7 @@ import { getKeyAllocator, nextPendingSeq } from "./keys";
 import { pruneLinks } from "./links";
 import { getProjectMeta, nextTicketSeq } from "./project";
 import { pruneQuestions } from "./questions";
+import { assignShortKey, checkShortKey, nextShortKey } from "./short-key";
 import { getNode, moveNode, subtreeIds, walkDepthFirst } from "./tree";
 
 export type NewTicket = {
@@ -38,6 +39,7 @@ export type TicketPatch = {
   domainId?: string | null;
   assignee?: Assignee | null;
   labels?: readonly string[];
+  shortKey?: string | null;
 };
 
 export type TicketProgressUpdate = {
@@ -101,6 +103,9 @@ function readTicket(n: LoroTreeNode): Ticket {
     labels: (d.get("labels") as string[] | undefined) ?? [],
     agentProgress: readProgress(n),
     delivery: readDelivery(n),
+    sprintId: (d.get("sprintId") as string | null | undefined) ?? null,
+    optional: d.get("optional") === true,
+    shortKey: (d.get("shortKey") as string | null | undefined) ?? null,
   };
 }
 
@@ -121,6 +126,7 @@ export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
   const title = cleanTitle(input.title);
   const labels = normalizeLabels(input.labels ?? []);
   const parent = input.parentId ? getNode(ticketTree(doc), input.parentId) : undefined;
+  const shortKey = parent ? nextShortKey(doc, parent.id) : null;
   const serverKeys = getKeyAllocator(doc) === "server";
   const pendingSeq = serverKeys ? nextPendingSeq(doc) : null;
   const key = serverKeys ? null : formatTicketKey(getProjectMeta(doc).key, nextTicketSeq(doc));
@@ -135,6 +141,7 @@ export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
   node.data.set("externalRefs", []);
   node.data.set("labels", labels);
   writeDescription(node, input.description ?? "");
+  assignShortKey(doc, shortKey);
   doc.commit();
   return readTicket(node);
 }
@@ -150,11 +157,14 @@ export function listTickets(doc: LoroDoc): Ticket[] {
 export function updateTicket(doc: LoroDoc, id: string, patch: TicketPatch): Ticket {
   const node = getNode(ticketTree(doc), id);
   const labels = patch.labels === undefined ? undefined : normalizeLabels(patch.labels);
-  if (patch.title !== undefined) node.data.set("title", cleanTitle(patch.title));
+  const title = patch.title === undefined ? undefined : cleanTitle(patch.title);
+  const shortKey = patch.shortKey === undefined ? undefined : checkShortKey(doc, id, patch.shortKey);
+  if (title !== undefined) node.data.set("title", title);
   if (patch.description !== undefined) writeDescription(node, patch.description);
   if (patch.domainId !== undefined) node.data.set("domainId", patch.domainId);
   if (patch.assignee !== undefined) node.data.set("assignee", patch.assignee);
   if (labels !== undefined) node.data.set("labels", labels);
+  if (shortKey !== undefined) node.data.set("shortKey", shortKey);
   doc.commit();
   return readTicket(node);
 }
@@ -168,8 +178,19 @@ export function setStatus(doc: LoroDoc, id: string, statusId: StatusId, reason?:
 }
 
 export function moveTicket(doc: LoroDoc, id: string, parentId: string | null, index?: number): void {
+  const shortKey = parentId === null ? null : nextShortKey(doc, parentId);
   moveNode(ticketTree(doc), id, parentId, index);
+  assignShortKey(doc, shortKey);
   doc.commit();
+}
+
+export function setTicketOptional(doc: LoroDoc, id: string, optional: boolean): Ticket {
+  const node = getNode(ticketTree(doc), id);
+  if (node.parent() === undefined)
+    throw new KiboError("INVALID_INPUT", "an optional step needs a parent ticket");
+  node.data.set("optional", optional);
+  doc.commit();
+  return readTicket(node);
 }
 
 export function deleteTicket(doc: LoroDoc, id: string): string[] {

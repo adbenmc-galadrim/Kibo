@@ -2,7 +2,7 @@ import { mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { createAgent, list, rpc, runState, text } from "./agents-seed";
+import { createAgent, list, rpc, runState, showAgentExecution, text } from "./agents-seed";
 import { E2E_TOKEN } from "./token";
 
 test.setTimeout(120_000);
@@ -45,7 +45,8 @@ async function seed(page: Page) {
 
 test("conversation avec un run terminé, puis passage en review à la demande", async ({ page }, info) => {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
+  await showAgentExecution(page);
   const { projectId, board } = await seed(page);
   await expect.poll(() => runState(page, "KIB-1"), { timeout: 20_000 }).toBe("done");
 
@@ -90,7 +91,8 @@ test("conversation avec un run terminé, puis passage en review à la demande", 
 
 test("réassigner un ticket reprend sa session principale", async ({ page }, info) => {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
+  await showAgentExecution(page);
   const folder = realpathSync(mkdtempSync(join(tmpdir(), "kibo-e2e-session-")));
   try {
     const projectId = text(

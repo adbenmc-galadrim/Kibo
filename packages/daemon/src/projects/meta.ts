@@ -14,7 +14,10 @@ type SharedPatch = Omit<ProjectPatch, "worktree" | "storybook" | "duplication" |
 const docFields = (patch: SharedPatch): SharedPatch => ({
   ...(patch.name !== undefined && { name: patch.name }),
   ...(patch.color !== undefined && { color: patch.color }),
+  ...(patch.tracking !== undefined && { tracking: patch.tracking }),
 });
+
+const registryFields = ({ tracking: _tracking, ...fields }: SharedPatch): SharedPatch => fields;
 
 const sharedFields = (patch: ProjectPatch): SharedPatch => ({
   ...docFields(patch),
@@ -49,7 +52,8 @@ function writeSharedFields(docs: Docs, projectId: string, patch: SharedPatch, fo
   if (Object.keys(patch).length === 0) return;
   const docPatch = folderInDoc ? patch : docFields(patch);
   if (Object.keys(docPatch).length > 0) setProjectMeta(docs.project(projectId), docPatch);
-  updateRegisteredProject(docs.workspace, projectId, patch);
+  const registered = registryFields(patch);
+  if (Object.keys(registered).length > 0) updateRegisteredProject(docs.workspace, projectId, registered);
   docs.save(projectId);
   docs.save(null);
 }

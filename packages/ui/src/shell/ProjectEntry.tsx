@@ -1,9 +1,11 @@
 import type { Page, ProjectMeta, ProjectSnapshot, TabTarget } from "@kibo/schema";
-import { SidebarMenuAction, SidebarMenuButton } from "@kibo/sdk/ui/sidebar";
-import { Plus } from "lucide-react";
-import type { MouseEvent, ReactNode } from "react";
+import { SidebarMenuAction } from "@kibo/sdk/ui/sidebar";
+import { ChevronDown, ChevronRight, Plus } from "lucide-react";
+import type { MouseEvent } from "react";
 import { fr } from "../i18n/fr";
 import { ProjectHeaderMenu } from "./lazy-screens";
+import { NavRow } from "./nav/NavRow";
+import { planningMissing } from "./nav/planning-missing";
 import { ProjectPages } from "./ProjectPages";
 
 export type Link = (target: TabTarget | null) => {
@@ -20,7 +22,6 @@ export type ProjectEntryProps = {
   editable: boolean;
   menuEditable: boolean;
   current: boolean;
-  trailing: ReactNode;
   link: Link;
   onOpen(target: TabTarget, newTab: boolean, keep?: boolean): void;
   onNewPage(parentId: string | null): void;
@@ -31,32 +32,44 @@ export type ProjectEntryProps = {
   onDelete(): void;
 };
 
+function ProjectLead({ color, open }: { color: string; open: boolean }) {
+  const Chevron = open ? ChevronDown : ChevronRight;
+  return (
+    <>
+      <Chevron size={13} absoluteStrokeWidth className="k-chev" />
+      <b aria-hidden className="k-dot" style={{ background: color }} />
+    </>
+  );
+}
+
 export function ProjectEntry({ project, active, current, editable, link, ...p }: ProjectEntryProps) {
   const newPage = () => {
     if (!current) p.onOpen({ kind: "project", projectId: project.id }, false);
     p.onNewPage(null);
   };
+  const onPlanningAdded =
+    active && editable && planningMissing(active)
+      ? (pageId: string) => p.onOpen({ kind: "page", projectId: project.id, pageId }, false)
+      : null;
   const header = (
     <>
       <ProjectHeaderMenu
         project={project}
-        current={current}
         shifted={editable}
         editable={p.menuEditable}
+        onPlanningAdded={onPlanningAdded}
         actions={{ newPage, share: p.onShare, edit: p.onEdit, remove: p.onDelete }}
       >
-        <SidebarMenuButton isActive={p.projectActive} {...link({ kind: "project", projectId: project.id })}>
-          <span className="size-2 rounded-[2px]" style={{ background: project.color }} />
-          <span>{project.name}</span>
-          {project.demo && (
-            <span className="rounded-sm bg-secondary px-1 text-3xs font-medium text-secondary-foreground">
-              {fr.nav.demo}
-            </span>
-          )}
-        </SidebarMenuButton>
+        <NavRow
+          label={project.name}
+          active={p.projectActive}
+          count={project.demo ? fr.nav.demo : null}
+          lead={<ProjectLead color={project.color} open={active !== null} />}
+          {...link({ kind: "project", projectId: project.id })}
+        />
       </ProjectHeaderMenu>
       {editable && (
-        <SidebarMenuAction aria-label={fr.nav.newPage} onClick={() => p.onNewPage(null)}>
+        <SidebarMenuAction showOnHover aria-label={fr.nav.newPage} onClick={() => p.onNewPage(null)}>
           <Plus />
         </SidebarMenuAction>
       )}
@@ -68,7 +81,6 @@ export function ProjectEntry({ project, active, current, editable, link, ...p }:
       project={active}
       activeTarget={p.activeTarget}
       header={header}
-      trailing={p.trailing}
       onOpen={p.onOpen}
       onNewPage={p.onNewPage}
       onRenamePage={p.onRenamePage}

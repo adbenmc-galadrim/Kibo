@@ -14,7 +14,7 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
   run({ method: "createTicket", title: "Un seul worktree", parentId: c4.id });
 };
 
-test("groups have no row: only launchable tickets are listed, each with the chip of its group", async () => {
+test("groups have no row: the launchable tickets are listed, each with the chip of its feature", async () => {
   const m = createMockSdk(manifest, { seed });
   render(
     <SdkProvider sdk={m.sdk}>
@@ -22,18 +22,35 @@ test("groups have no row: only launchable tickets are listed, each with the chip
     </SdkProvider>,
   );
   await screen.findByText("Bouton Livrer");
-  const titles = Array.from(document.querySelectorAll("li [data-selected]")).map(
-    (row) => row.querySelector("button:not([data-group-chip]):not([aria-label])")?.textContent,
+  const titles = Array.from(document.querySelectorAll("li [data-selected] [data-row-title]")).map(
+    (b) => b.textContent,
   );
   expect(titles).toEqual(["Bouton Livrer", "Puce d'étape", "Ligne de la fiche", "Un seul worktree"]);
   expect(screen.queryByRole("button", { name: "Parcours de livraison" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Étapes visibles" })).toBeNull();
-  const chips = Array.from(document.querySelectorAll("[data-group-chip]")).map((c) => c.textContent);
-  expect(chips).toEqual(["KIB-1", "KIB-3", "KIB-3", "KIB-1"]);
-  expect(screen.queryByRole("button", { name: /^Déplier|^Replier/ })).toBeNull();
-  fireEvent.click(
-    screen.getAllByRole("button", { name: "Ouvrir l'ensemble KIB-1 · Parcours de livraison" })[0] ??
-      document.body,
-  );
+  const chips = screen
+    .getAllByRole("button", { name: "Ouvrir la fonctionnalité F1 · Parcours de livraison" })
+    .filter((chip) => chip.closest("[data-cell=feature]"));
+  expect(chips).toHaveLength(4);
+  fireEvent.click(chips[0] ?? document.body);
   expect(m.opened).toEqual([m.snapshot().tickets.find((t) => t.key === "KIB-1")?.id ?? ""]);
+});
+
+test("below the wide breakpoint, the feature chip moves into the title cell", async () => {
+  const m = createMockSdk(manifest, { seed });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  await screen.findByText("Bouton Livrer");
+  const rows = Array.from(document.querySelectorAll("li [data-selected]"));
+  expect(rows).toHaveLength(4);
+  for (const row of rows) {
+    const inline = row.querySelector("[data-cell=title] [data-slot=feature-inline]");
+    expect(inline?.className.split(" ")).toContain("@xl:hidden");
+    expect(inline?.textContent).toBe("F1 · Parcours de livraison");
+    const column = row.querySelector("[data-cell=feature]");
+    expect(column?.className.split(" ")).toEqual(expect.arrayContaining(["hidden", "@xl:flex"]));
+  }
 });

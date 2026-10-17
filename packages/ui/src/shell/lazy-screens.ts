@@ -72,6 +72,19 @@ export const IntegrationNotices = lazyPanel(
   fr.lazy,
   { fallback: "sr-only" },
 );
+export const AgentsEntry = lazyPanel(() => import("./nav/AgentsEntry").then((m) => m.AgentsEntry), fr.lazy, {
+  fallback: "children",
+});
+export const HiddenScreenNotice = lazyPanel(
+  () => import("./nav/HiddenScreenNotice").then((m) => m.HiddenScreenNotice),
+  fr.lazy,
+  { fallback: "children" },
+);
+export const WorkspaceMenuItems = lazyPanel(
+  () => import("./nav/WorkspaceMenuItems").then((m) => m.WorkspaceMenuItems),
+  fr.lazy,
+  { fallback: "sr-only" },
+);
 const shareEntry = () => import("./share-entry");
 const hidden = { fallback: "sr-only" } as const;
 
@@ -80,15 +93,10 @@ export const ProjectStatusBanner = lazyPanel(
   fr.lazy,
   hidden,
 );
-export const ShareButton = lazyPanel(() => shareEntry().then((m) => m.ShareButton), fr.lazy, hidden);
 export const ProjectHeaderMenu = lazyPanel(() => shareEntry().then((m) => m.ProjectHeaderMenu), fr.lazy, {
   fallback: "children",
 });
-export const JoinProjectEntry = lazyPanel(
-  () => shareEntry().then((m) => m.JoinProjectEntry),
-  fr.lazy,
-  hidden,
-);
+export const ProjectAddItems = lazyPanel(() => shareEntry().then((m) => m.ProjectAddItems), fr.lazy, hidden);
 export const ShareProjectDialog = lazyPanel(
   () => shareEntry().then((m) => m.ShareProjectDialog),
   fr.lazy,
@@ -158,3 +166,19 @@ export const ProjectAgentPanel = lazyPanel(
   fr.lazy,
   hidden,
 );
+
+export const AgentPanel = lazyPanel(
+  () => import("../agents/AgentPanel").then((m) => m.AgentPanel),
+  fr.lazy,
+  hidden,
+);
+
+export const PageInstanceMenu = lazyPanel(
+  () => import("../pages/PageInstanceMenu").then((m) => m.PageInstanceMenu),
+  fr.lazy,
+  { fallback: "children" },
+);
+
+export const SyncLabel = lazyPanel(() => import("./nav/SyncLabel").then((m) => m.SyncLabel), fr.lazy, {
+  fallback: "children",
+});

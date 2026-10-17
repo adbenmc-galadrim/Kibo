@@ -12,6 +12,7 @@ const meta = {
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
 };
 const counts = { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 };
 const snapshot = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot => ({
@@ -26,6 +27,7 @@ const snapshot = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot =>
   rules: [],
   bindings: [],
   nextTicketKey: null,
+  sprints: [],
   sync: { shared: true, keyAllocator: "server", role: "viewer", access, members: [] },
 });
 const context = (access: ProjectSnapshot["sync"]["access"]): PaletteContext => ({

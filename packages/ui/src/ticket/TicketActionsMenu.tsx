@@ -19,10 +19,12 @@ type Props = {
   onOpenInTab: (() => void) | null;
   onFile?: () => void;
   onDeleted(): void;
+  extra?: MenuEntry[];
 };
 
 export function ticketMenuEntries(p: Props, copy: () => void, remove: () => void): MenuEntry[] {
-  const entries: MenuEntry[] = [];
+  const extra = p.extra ?? [];
+  const entries: MenuEntry[] = extra.length > 0 ? [...extra, { separator: true }] : [];
   if (p.onOpenInTab) entries.push({ label: t.openInTab, icon: Maximize2, onSelect: p.onOpenInTab });
   entries.push({ label: t.copyKey, icon: Copy, onSelect: copy });
   if (p.onFile) entries.push({ label: frInbox.fileTo, icon: FolderInput, onSelect: p.onFile });

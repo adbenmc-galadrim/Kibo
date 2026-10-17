@@ -3,6 +3,7 @@ import * as kanban from "@kibo/component-kanban";
 import * as mcpSource from "@kibo/component-mcp-source";
 import * as mockup from "@kibo/component-mockup";
 import * as notes from "@kibo/component-notes";
+import * as planning from "@kibo/component-planning";
 import * as questions from "@kibo/component-questions";
 import * as tickets from "@kibo/component-tickets";
 import * as viewer3d from "@kibo/component-viewer-3d";
@@ -12,10 +13,11 @@ import {
   AppWindow,
   Blocks,
   Box,
+  CalendarRange,
   FileText,
   Frame,
   LayoutDashboard,
-  ListTree,
+  List,
   type LucideIcon,
   MessageCircleQuestion,
   Network,
@@ -32,17 +34,19 @@ export const BUILTIN_COMPONENTS: ComponentModule[] = [
   viewer3d,
   mockup,
   questions,
+  planning,
 ];
 
 const BUILTIN_ICONS: Record<string, LucideIcon> = {
   kanban: SquareKanban,
-  tickets: ListTree,
+  tickets: List,
   graph: Network,
   notes: FileText,
   "mcp-source": Plug,
   "viewer-3d": Box,
   mockup: Frame,
   questions: MessageCircleQuestion,
+  planning: CalendarRange,
 };
 
 export const componentRef = (m: ComponentManifest): string => `${m.id}@${m.version}`;

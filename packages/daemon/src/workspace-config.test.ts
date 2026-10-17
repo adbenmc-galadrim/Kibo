@@ -43,6 +43,7 @@ function docsWith(): Docs {
     identity: unused,
     setIdentity: unused,
     activity: unused,
+    today: unused,
   };
 }
 

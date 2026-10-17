@@ -12,6 +12,7 @@ const app: AppInfo = {
   userHome: null,
   daemonPid: 42,
   uptimeMs: 65_000,
+  fixedNow: null,
 };
 
 const DIAG: Diagnostics = {

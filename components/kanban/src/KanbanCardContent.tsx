@@ -42,9 +42,16 @@ export function ciChipOf(runs: CiRun[]): CiChip | undefined {
   return { tone, prNumber: latest?.prNumber ?? null };
 }
 
+export type CardGroup = GroupRef & Pick<TicketView, "shortKey">;
+
+const featureChipRef = (group: CardGroup): GroupRef => ({
+  ...group,
+  keyLabel: group.shortKey ?? group.keyLabel,
+});
+
 export type CardFacts = {
   ticket: TicketView;
-  group: GroupRef | null;
+  group: CardGroup | null;
   run: TicketRun | null;
   ci?: CiChip;
   members: MemberInfo[];
@@ -61,7 +68,7 @@ export function KanbanCardContent(props: Props) {
     <>
       <div className="flex h-6 items-center gap-2">
         <TicketKeyLabel ticket={t} className="min-w-0 truncate font-mono text-2xs text-muted-foreground" />
-        {group && <GroupChip group={group} onOpen={(id) => sdk.openTicket(id)} />}
+        {group && <GroupChip group={featureChipRef(group)} onOpen={(id) => sdk.openTicket(id)} />}
         <span className="flex-1" />
         {menu}
       </div>
@@ -89,7 +96,7 @@ export function KanbanCardContent(props: Props) {
             key={r.label}
             className="inline-flex max-w-full items-center gap-1 rounded-full bg-brand/10 px-1.5 py-0.5 text-3xs text-brand-strong dark:text-brand"
           >
-            <Bot aria-hidden className="size-3 shrink-0" />
+            <Bot absoluteStrokeWidth size={12} aria-hidden className="size-3 shrink-0" />
             <span className="truncate">{r.label}</span>
           </span>
         ))}

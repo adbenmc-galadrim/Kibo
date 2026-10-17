@@ -18,6 +18,7 @@ export const AppInfo = z.object({
     .nullable(),
   daemonPid: z.number().int().positive(),
   uptimeMs: z.number().int().nonnegative(),
+  fixedNow: z.string().nullable().default(null),
 });
 export type AppInfo = z.infer<typeof AppInfo>;
 

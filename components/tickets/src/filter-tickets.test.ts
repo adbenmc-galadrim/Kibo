@@ -3,96 +3,119 @@ import type { TicketView } from "@kibo/schema";
 import { seedDemo } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
 import fc from "fast-check";
-import { EMPTY_QUERY, filterTickets, filterTree, isActive, projectLabels } from "./filter-tickets";
+import {
+  ALL_SPRINTS,
+  chosenSprint,
+  cleared,
+  currentSprintOf,
+  EMPTY_QUERY,
+  filterTickets,
+  inSprint,
+  isActive,
+  NO_SPRINT,
+  narrowsOpen,
+  projectLabels,
+  sortTickets,
+} from "./filter-tickets";
 import { manifest } from "./index";
+import { TODAY, trackingSeed } from "./test-seed";
 
-const tickets: TicketView[] = createMockSdk(manifest, { seed: (run) => seedDemo(run) }).snapshot().tickets;
+const NOW = Date.parse(`${TODAY}T14:52:00`);
+const snapshot = createMockSdk(manifest, { seed: trackingSeed(NOW), today: TODAY }).snapshot();
+const sprint = (code: string) => snapshot.sprints.find((s) => s.code === code)?.id ?? "";
+const keys = (ts: { keyLabel: string }[]) => ts.map((t) => t.keyLabel);
+
+test("the sprint shown defaults to the current one and keeps a saved choice that still exists", () => {
+  expect(currentSprintOf(snapshot.sprints)?.code).toBe("S42");
+  expect(chosenSprint(undefined, snapshot.sprints)).toBe(sprint("S42"));
+  expect(chosenSprint(null, snapshot.sprints)).toBe(sprint("S42"));
+  expect(chosenSprint(sprint("S43"), snapshot.sprints)).toBe(sprint("S43"));
+  expect(chosenSprint("deleted", snapshot.sprints)).toBe(sprint("S42"));
+  expect(chosenSprint(ALL_SPRINTS, snapshot.sprints)).toBe(ALL_SPRINTS);
+  expect(chosenSprint(NO_SPRINT, snapshot.sprints)).toBe(NO_SPRINT);
+  expect(chosenSprint(undefined, [])).toBe(ALL_SPRINTS);
+});
+
+test("a ticket belongs to the sprint of its feature; À planifier keeps those without one", () => {
+  const byTitle = (title: string) => snapshot.tickets.find((t) => t.title === title);
+  const step = byTitle("Écran d'envoi hors ligne");
+  const later = byTitle("Gabarit PDF");
+  if (!step || !later) throw new Error("seed");
+  expect(inSprint(step, sprint("S42"))).toBe(true);
+  expect(inSprint(step, sprint("S43"))).toBe(false);
+  expect(inSprint(step, ALL_SPRINTS)).toBe(true);
+  expect(inSprint(step, NO_SPRINT)).toBe(false);
+  expect(inSprint(later, NO_SPRINT)).toBe(true);
+});
+
+test("recent activity first, tickets without activity last in key order; key order is numeric", () => {
+  const leaves = snapshot.tickets.filter((t) =>
+    ["KIB-9", "KIB-10", "KIB-14", "KIB-15", "KIB-2"].includes(t.keyLabel),
+  );
+  expect(keys(sortTickets(leaves, "recent"))).toEqual(["KIB-14", "KIB-9", "KIB-2", "KIB-10", "KIB-15"]);
+  expect(keys(sortTickets(leaves, "key"))).toEqual(["KIB-2", "KIB-9", "KIB-10", "KIB-14", "KIB-15"]);
+});
+
+test("a query is active as soon as something narrows it; the sort never does", () => {
+  expect(isActive(EMPTY_QUERY)).toBe(false);
+  expect(isActive({ ...EMPTY_QUERY, sort: "key" })).toBe(false);
+  expect(isActive({ ...EMPTY_QUERY, text: "  " })).toBe(false);
+  for (const q of [
+    { openOnly: true },
+    { featureId: "f" },
+    { text: "sync" },
+    { statuses: new Set(["todo" as const]) },
+    { assignee: "nobody" as const },
+    { labels: new Set(["area:api"]) },
+    { startable: true },
+  ])
+    expect(isActive({ ...EMPTY_QUERY, ...q })).toBe(true);
+  expect(narrowsOpen({ ...EMPTY_QUERY, featureId: "f" })).toBe(false);
+  expect(narrowsOpen({ ...EMPTY_QUERY, startable: true })).toBe(true);
+  expect(cleared({ ...EMPTY_QUERY, sort: "key", text: "x", startable: true })).toEqual({
+    ...EMPTY_QUERY,
+    sort: "key",
+  });
+});
+
+const demo: TicketView[] = createMockSdk(manifest, { seed: (run) => seedDemo(run) }).snapshot().tickets;
 const keysOf = (ids: Set<string>) =>
-  tickets
+  demo
     .filter((t) => ids.has(t.id))
     .map((t) => t.key)
     .sort();
 
-test("a matching child keeps its ancestors visible; statuses and assignee combine; accents are ignored", () => {
-  expect(keysOf(filterTickets(tickets, { ...EMPTY_QUERY, text: "schema" }, "adam"))).toEqual([
-    "KIB-12",
-    "KIB-3",
-  ]);
-  expect(keysOf(filterTickets(tickets, { ...EMPTY_QUERY, text: "kib-28" }, "adam"))).toEqual([
-    "KIB-12",
-    "KIB-27",
-    "KIB-28",
-    "KIB-3",
-  ]);
-  const mine = filterTickets(tickets, { ...EMPTY_QUERY, assignee: "me" }, "adam");
-  expect(keysOf(mine)).toEqual(
-    ["KIB-11", "KIB-13", "KIB-15", "KIB-21", "KIB-22", "KIB-3", "KIB-5", "KIB-6", "KIB-7", "KIB-9"].sort(),
-  );
-  expect(
-    filterTickets(tickets, { ...EMPTY_QUERY, statuses: new Set(["blocked"]), assignee: "agents" }, "adam")
-      .size,
-  ).toBe(0);
-  expect(
-    keysOf(
-      filterTickets(tickets, { ...EMPTY_QUERY, statuses: new Set(["done"]), assignee: "agents" }, "adam"),
-    ),
-  ).toEqual(["KIB-12", "KIB-24", "KIB-25", "KIB-26", "KIB-3"]);
-  expect(keysOf(filterTickets(tickets, { ...EMPTY_QUERY, assignee: "nobody" }, "adam"))).toEqual([
+test("text, statuses and assignee combine; accents and case are ignored", () => {
+  expect(keysOf(filterTickets(demo, { ...EMPTY_QUERY, text: "schema" }, "adam"))).toEqual(["KIB-12"]);
+  expect(keysOf(filterTickets(demo, { ...EMPTY_QUERY, text: "kib-28" }, "adam"))).toEqual(["KIB-28"]);
+  expect(keysOf(filterTickets(demo, { ...EMPTY_QUERY, assignee: "nobody" }, "adam"))).toEqual([
     "KIB-3",
     "KIB-4",
     "KIB-6",
   ]);
-});
-
-test("a query is active as soon as a text, a status or an assignee narrows it", () => {
-  expect(isActive(EMPTY_QUERY)).toBe(false);
-  expect(isActive({ ...EMPTY_QUERY, text: "  " })).toBe(false);
-  expect(isActive({ ...EMPTY_QUERY, text: "sync" })).toBe(true);
-  expect(isActive({ ...EMPTY_QUERY, statuses: new Set(["todo"]) })).toBe(true);
-  expect(isActive({ ...EMPTY_QUERY, assignee: "nobody" })).toBe(true);
-});
-
-test("ancestors kept only for context are told apart from the matches", () => {
-  const { visible, context } = filterTree(tickets, { ...EMPTY_QUERY, text: "schema" }, "adam");
-  expect(keysOf(visible)).toEqual(["KIB-12", "KIB-3"]);
-  expect(keysOf(context)).toEqual(["KIB-3"]);
+  expect(
+    filterTickets(demo, { ...EMPTY_QUERY, statuses: new Set(["blocked"]), assignee: "agents" }, "adam").size,
+  ).toBe(0);
 });
 
 const bare = (id: string, labels: string[]): TicketView => {
-  const base = tickets[0];
+  const base = demo[0];
   if (!base) throw new Error("demo seed is empty");
-  return { ...base, id, key: id, parentId: null, labels };
+  return { ...base, id, key: id, keyLabel: id, parentId: null, labels };
 };
 
-test("label filter keeps tickets carrying every chosen label", () => {
-  const a = bare("a", ["area:api", "phase:p1"]);
-  const b = bare("b", ["area:web"]);
-  const c = bare("c", []);
+test("label filter keeps tickets carrying every chosen label; the startable filter combines", () => {
+  const a = { ...bare("a", ["area:api", "phase:p1"]), startable: true };
+  const b = { ...bare("b", ["area:web"]), startable: true };
+  const c = { ...bare("c", []), startable: false };
   const q = { ...EMPTY_QUERY, labels: new Set(["area:api"]) };
   expect([...filterTickets([a, b, c], q, "me")]).toEqual(["a"]);
   expect([...filterTickets([a, b, c], { ...q, labels: new Set(["area:api", "phase:p1"]) }, "me")]).toEqual([
     "a",
   ]);
   expect(filterTickets([a, b, c], { ...q, labels: new Set(["gone"]) }, "me").size).toBe(0);
-  expect(isActive(q)).toBe(true);
-  expect(isActive(EMPTY_QUERY)).toBe(false);
+  expect([...filterTickets([a, b, c], { ...EMPTY_QUERY, startable: true }, "me")]).toEqual(["a", "b"]);
   expect(projectLabels([a, b, c])).toEqual(["area:api", "area:web", "phase:p1"]);
-});
-
-test("the startable filter keeps startable tickets, their ancestors as context, and combines", () => {
-  const parent = { ...bare("p", ["area:api"]), startable: false };
-  const child = { ...bare("c", ["area:api"]), parentId: "p", startable: true };
-  const other = { ...bare("o", []), startable: true };
-  const idle = { ...bare("i", ["area:api"]), startable: false };
-  const all = [parent, child, other, idle];
-  const q = { ...EMPTY_QUERY, startable: true };
-  expect(isActive(q)).toBe(true);
-  const { visible, context } = filterTree(all, q, "me");
-  expect([...visible].sort()).toEqual(["c", "o", "p"]);
-  expect([...context]).toEqual(["p"]);
-  expect([...filterTickets(all, { ...q, labels: new Set(["area:api"]) }, "me")].sort()).toEqual(["c", "p"]);
-  expect(visible.size - context.size).toBe(2);
-  expect(filterTickets(all, EMPTY_QUERY, "me").size).toBe(4);
 });
 
 const label = fc.stringMatching(/^[a-z]{1,3}(:[a-z]{1,3})?$/);

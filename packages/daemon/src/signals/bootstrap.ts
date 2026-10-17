@@ -8,7 +8,10 @@ import { createSignalService, type SignalService } from "./service";
 import { openSignalStore } from "./store";
 import { createWakeupScheduler } from "./wakeup";
 
-export type SignalsDocs = Pick<Docs, "projectIds" | "project" | "assertWritable" | "identity" | "emit">;
+export type SignalsDocs = Pick<
+  Docs,
+  "projectIds" | "project" | "assertWritable" | "identity" | "emit" | "today"
+>;
 
 export type SignalsBootInput = {
   home: string;
@@ -44,7 +47,7 @@ export function startSignals(input: SignalsBootInput): SignalsBoot {
   const service = createSignalService({
     store,
     project: (projectId) =>
-      docs.projectIds().includes(projectId) ? readProject(docs.project(projectId)) : null,
+      docs.projectIds().includes(projectId) ? readProject(docs.project(projectId), docs.today()) : null,
     trace: input.trace,
     wake: (projectId, kind) => scheduler.request(projectId, kind),
     notify: input.notify,

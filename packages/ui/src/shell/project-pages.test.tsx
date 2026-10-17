@@ -14,6 +14,9 @@ mock.module("../api", () =>
         calls.push(req);
         return answer(req);
       },
+      subscribe: () => () => {},
+      subscribeTopic: () => () => {},
+      subscribeEvents: () => () => {},
     },
   }),
 );
@@ -36,6 +39,7 @@ const project = (access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSn
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [
@@ -51,6 +55,7 @@ const project = (access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSn
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-1",
+  sprints: [],
   sync: { shared: access !== "write", keyAllocator: "local", role: null, access, members: [] },
 });
 const show = (access: ProjectSnapshot["sync"]["access"] = "write") => {
@@ -66,7 +71,6 @@ const show = (access: ProjectSnapshot["sync"]["access"] = "write") => {
             project={project(access)}
             activeTarget={null}
             header={<span>Kibo</span>}
-            trailing={null}
             onOpen={onOpen}
             onNewPage={onNewPage}
             onRenamePage={onRenamePage}
@@ -178,4 +182,87 @@ test("each editable row carries three hidden drop zones and keeps its button and
 test("a read-only project renders no drop zone", () => {
   show("read-only");
   expect(document.querySelectorAll("[data-drop-zone]")).toHaveLength(0);
+});
+
+test("an open feature lights the Planning page of its project", async () => {
+  const { emisFeatureProject } = await import("./feature/fixture");
+  const emis = emisFeatureProject();
+  const planned: ProjectSnapshot = {
+    ...emis,
+    pages: [page("p-plan", "Planning", null), page("p-tickets", "Tickets", null)],
+    instances: [
+      {
+        id: "i-plan",
+        pageId: "p-plan",
+        component: "planning@1.0.0",
+        layout: { x: 0, y: 0, w: 12, h: 8 },
+        config: {},
+        componentHash: null,
+      },
+    ],
+  };
+  const pages = (ticketId: string) =>
+    render(
+      <SidebarProvider>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <ProjectPages
+              project={planned}
+              activeTarget={{ kind: "ticket", projectId: "emis", ticketId }}
+              header={<span>Emis</span>}
+              onOpen={() => {}}
+              onNewPage={() => {}}
+              onRenamePage={() => {}}
+              onDeletePage={() => {}}
+            />
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarProvider>,
+    );
+  const first = pages("f5");
+  expect(screen.getByRole("button", { name: "Planning" }).getAttribute("aria-current")).toBe("page");
+  first.unmount();
+  pages("e33");
+  expect(screen.getByRole("button", { name: "Planning" }).getAttribute("aria-current")).toBeNull();
+});
+
+test("the ⋯ of a view page also carries its component menu", async () => {
+  const withView: ProjectSnapshot = {
+    ...project(),
+    instances: [
+      {
+        id: "i-kanban",
+        pageId: "kanban",
+        component: "kanban@1.0.0",
+        layout: { x: 0, y: 0, w: 12, h: 8 },
+        config: {},
+        componentHash: null,
+      },
+    ],
+  };
+  const user = userEvent.setup();
+  render(
+    <SidebarProvider>
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <ProjectPages
+            project={withView}
+            activeTarget={null}
+            header={<span>Kibo</span>}
+            onOpen={() => {}}
+            onNewPage={() => {}}
+            onRenamePage={() => {}}
+            onDeletePage={() => {}}
+          />
+        </SidebarMenuItem>
+      </SidebarMenu>
+    </SidebarProvider>,
+  );
+  await user.click(screen.getByRole("button", { name: "Actions de la page Kanban" }));
+  expect(await screen.findByRole("menuitem", { name: "Retirer de la page…" })).toBeTruthy();
+  expect(screen.getByRole("menuitem", { name: "Renommer…" })).toBeTruthy();
+  await user.keyboard("{Escape}");
+  await user.click(screen.getByRole("button", { name: "Actions de la page Tableau de bord" }));
+  await screen.findByRole("menuitem", { name: "Renommer…" });
+  expect(screen.queryByRole("menuitem", { name: "Retirer de la page…" })).toBeNull();
 });

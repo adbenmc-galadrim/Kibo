@@ -25,6 +25,7 @@ const project = (id = "p1") =>
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
 
 describe("domains", () => {

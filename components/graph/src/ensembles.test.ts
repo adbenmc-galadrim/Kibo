@@ -23,6 +23,11 @@ const t = (id: string, parentId: string | null, total = 0, done = 0): TicketView
   startable: false,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
 });
 const blocks = (from: string, to: string): GraphEdge => ({ from, to, type: "blocks" });
 

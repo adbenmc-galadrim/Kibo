@@ -31,6 +31,11 @@ export function inboxTicket(n: number, title: string, statusId: StatusId, adam: 
     startable: false,
     agentProgress: EMPTY_PROGRESS,
     delivery: null,
+    sprintId: null,
+    optional: false,
+    shortKey: null,
+    effectiveSprintId: null,
+    feature: null,
   };
 }
 
@@ -46,6 +51,7 @@ export const inboxSnapshot: ProjectSnapshot = {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   },
   tickets: [
     inboxTicket(1, "Idée : export CSV des tickets", "backlog", false),
@@ -54,6 +60,7 @@ export const inboxSnapshot: ProjectSnapshot = {
   ],
   links: [],
   nextTicketKey: "INB-4",
+  sprints: [],
 };
 
 const counts = { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 };
@@ -75,6 +82,7 @@ export const fileSnapshots: ReadonlyMap<string, ProjectSnapshot> = new Map([
       ...base,
       meta: fileTargets[1] ?? base.meta,
       nextTicketKey: "POR-…",
+      sprints: [],
       sync: { ...sync, shared: true, keyAllocator: "server", role: "owner", access: "write" },
     },
   ],
@@ -84,6 +92,7 @@ export const fileSnapshots: ReadonlyMap<string, ProjectSnapshot> = new Map([
       ...base,
       meta: fileTargets[2] ?? base.meta,
       nextTicketKey: "FAC-3",
+      sprints: [],
       sync: { ...sync, shared: true, keyAllocator: "server", role: "viewer", access: "read-only" },
     },
   ],

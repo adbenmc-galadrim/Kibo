@@ -22,6 +22,7 @@ function project(plan: boolean) {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   const created = executeProjectCommand(doc, { method: "createTicket", title: "Formulaire" });
   const id = typeof created === "object" && created !== null && "id" in created ? String(created.id) : "";
@@ -38,7 +39,7 @@ function project(plan: boolean) {
       ],
     });
   }
-  const snapshot = readProject(doc);
+  const snapshot = readProject(doc, "2026-10-16");
   const ticket = snapshot.tickets.find((t: Ticket) => t.id === id);
   if (!ticket) throw new Error("fixture ticket missing");
   return { project: snapshot, ticket };

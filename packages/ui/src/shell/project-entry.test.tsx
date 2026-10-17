@@ -17,6 +17,7 @@ const summary = (demo: boolean): ProjectSummary => ({
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
   demo,
 });
@@ -34,7 +35,6 @@ const show = (project: ProjectSummary) =>
             editable={false}
             menuEditable
             current={false}
-            trailing={null}
             link={() => ({ onClick: () => {}, onAuxClick: () => {}, onDoubleClick: () => {} })}
             onOpen={() => {}}
             onNewPage={() => {}}

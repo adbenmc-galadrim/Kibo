@@ -12,6 +12,7 @@ const info: AppInfo = {
   userHome: null,
   daemonPid: 42,
   uptimeMs: 65_000,
+  fixedNow: null,
 };
 
 test("the about dialog shows the brand, version, system, daemon and the outside links", async () => {

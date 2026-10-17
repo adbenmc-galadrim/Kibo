@@ -53,6 +53,11 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   startable: false,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
+  effectiveSprintId: null,
+  feature: null,
   ...patch,
 });
 const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "write"): ProjectSnapshot => ({
@@ -66,6 +71,7 @@ const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -77,6 +83,7 @@ const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "
   rules: [],
   bindings: [],
   nextTicketKey: "KIB-22",
+  sprints: [],
   sync: { shared: access !== "write", keyAllocator: "local", role: null, access, members: [] },
 });
 const withLinks = (

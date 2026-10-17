@@ -1,15 +1,29 @@
-import { type ExternalRef, KiboError, type ProjectCommand, type StatusId } from "@kibo/schema";
+import {
+  branchRefOf,
+  type ExternalRef,
+  GitBranchRef,
+  KiboError,
+  type ProjectCommand,
+  type StatusId,
+} from "@kibo/schema";
 import { type NormalizedStatus, normalizedStatus, type StatusName, statusName } from "./ticket-view";
 
-export type Assignments = { status: StatusName | null; pr: string | null; reason: string | null };
+export type Assignments = {
+  status: StatusName | null;
+  pr: string | null;
+  reason: string | null;
+  branch: string | null;
+  base: string | null;
+};
 type SetTarget = { id: string; statusId: StatusId; externalRefs: ExternalRef[] };
 type SetStatus = Extract<ProjectCommand, { method: "setStatus" }>;
 type UpsertRef = Extract<ProjectCommand, { method: "upsertExternalRef" }>;
 
-const KEYS = new Set(["status", "pr", "reason"]);
+const KEYS = new Set(["status", "pr", "reason", "branch", "base"]);
 
 export function parseAssignments(args: readonly string[]): Assignments {
-  if (args.length === 0) throw new KiboError("INVALID_INPUT", "nothing to set: use status=… or pr=…");
+  if (args.length === 0)
+    throw new KiboError("INVALID_INPUT", "nothing to set: use status=…, pr=… or branch=…");
   const values = new Map<string, string>();
   for (const arg of args) {
     const at = arg.indexOf("=");
@@ -17,11 +31,15 @@ export function parseAssignments(args: readonly string[]): Assignments {
     if (at < 0 || !KEYS.has(key)) throw new KiboError("INVALID_INPUT", `unknown assignment: ${arg}`);
     values.set(key, arg.slice(at + 1));
   }
+  if (values.has("base") && !values.has("branch"))
+    throw new KiboError("INVALID_INPUT", "base= needs branch=");
   const status = values.get("status");
   return {
     status: status === undefined ? null : statusName(status),
     pr: values.get("pr") ?? null,
     reason: values.get("reason") ?? null,
+    branch: values.get("branch") ?? null,
+    base: values.get("base") ?? null,
   };
 }
 
@@ -74,4 +92,21 @@ export function prCommand(ticket: SetTarget, value: string, tickets: readonly Se
     ticketId: ticket.id,
     ref: { kind: "github_pr", url, number, state: "open", base: null, head: null },
   };
+}
+
+export function branchRef(set: Assignments): GitBranchRef | null {
+  if (set.branch === null) return null;
+  const parsed = GitBranchRef.safeParse({ kind: "git_branch", branch: set.branch, base: set.base });
+  if (!parsed.success)
+    throw new KiboError(
+      "INVALID_INPUT",
+      `invalid branch: ${set.branch}${set.base === null ? "" : ` base=${set.base}`}`,
+    );
+  return parsed.data;
+}
+
+export function branchCommand(ticket: SetTarget, ref: GitBranchRef): UpsertRef | null {
+  const current = branchRefOf(ticket.externalRefs);
+  if (current?.branch === ref.branch && current.base === ref.base) return null;
+  return { method: "upsertExternalRef", ticketId: ticket.id, ref };
 }

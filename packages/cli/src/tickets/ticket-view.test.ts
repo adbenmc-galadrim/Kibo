@@ -35,6 +35,11 @@ function ticket(
     labels: [],
     agentProgress: EMPTY_PROGRESS,
     delivery: null,
+    sprintId: null,
+    optional: false,
+    shortKey: null,
+    effectiveSprintId: null,
+    feature: null,
     progress: { done: 0, total: 0 },
     waitingOn: [],
     keyLabel: `EMIS-${id}`,
@@ -68,6 +73,7 @@ const snapshot = {
     { id: "l2", from: "4", to: "5", type: "blocks" as const },
     { id: "l3", from: "6", to: "3", type: "relates" as const },
   ],
+  sprints: [],
 };
 
 describe("ticket view", () => {
@@ -109,6 +115,9 @@ describe("ticket view", () => {
       pr: { number: 7, url: "https://github.com/o/r/pull/7", state: "open" },
       assignee: null,
       labels: [],
+      sprint: null,
+      feature: null,
+      optional: false,
     });
     expect(review).toMatchObject({ status: "wip", kiboStatus: "in_review", column: "En review", pr: null });
   });

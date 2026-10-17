@@ -12,6 +12,7 @@ const project = (id: string, name: string): ProjectSummary => ({
   storybook: null,
   duplication: null,
   delivery: null,
+  tracking: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
 });
 

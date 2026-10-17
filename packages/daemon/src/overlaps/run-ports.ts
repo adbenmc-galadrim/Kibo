@@ -10,7 +10,7 @@ import { type WorkspaceRef, workspaceOf } from "./workspace";
 import type { WorkspaceIndexer } from "./workspace-index";
 
 export type RunPortsDeps = {
-  docs: Pick<Docs, "project" | "projectIds">;
+  docs: Pick<Docs, "project" | "projectIds" | "today">;
   trace: Pick<TraceService, "trace">;
   store: Pick<OverlapStore, "list">;
   indexer: WorkspaceIndexer;
@@ -36,7 +36,9 @@ export function createRunPorts(
 
   const planOf = (projectId: string, ticketId: string): Step[] | null => {
     if (!deps.docs.projectIds().includes(projectId)) return null;
-    const ticket = readProject(deps.docs.project(projectId)).tickets.find((t) => t.id === ticketId);
+    const ticket = readProject(deps.docs.project(projectId), deps.docs.today()).tickets.find(
+      (t) => t.id === ticketId,
+    );
     const plan = ticket?.agentProgress?.plan ?? [];
     return plan.length > 0 ? plan : null;
   };

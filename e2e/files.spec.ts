@@ -1,7 +1,7 @@
 import { sampleGlb } from "@kibo/sdk/fixtures";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { rpc } from "./agents-seed";
-import { addComponent, createPage, pairAndCreateProject } from "./helpers";
+import { addComponent, createPage, openWorkspaceMenuItem, pairAndCreateProject } from "./helpers";
 import { projectKey, shot } from "./repo-project";
 
 test.setTimeout(240_000);
@@ -28,7 +28,7 @@ async function importCube(dialog: Locator) {
 
 async function publishViewer(page: Page) {
   await rpc(page, { method: "previewPublish", id: DRAFT });
-  await page.getByRole("button", { name: "Composants", exact: true }).click();
+  await openWorkspaceMenuItem(page, "Composants");
   await expect(page.getByRole("heading", { level: 1, name: "Composants" })).toBeVisible();
   const draft = page.getByRole("listitem").filter({ hasText: TITLE });
   await expect(draft.getByText("Tests verts")).toBeVisible({ timeout: 120_000 });

@@ -49,6 +49,7 @@ function localProject() {
     storybook: null,
     duplication: null,
     delivery: null,
+    tracking: null,
   });
   const mine = createTicket(doc, {
     title: "Mien",

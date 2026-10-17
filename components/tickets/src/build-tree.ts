@@ -1,28 +1,70 @@
 import { isGroup, type TicketView } from "@kibo/schema";
+import { inSprint, matchesQuery, sortTickets, type TicketsQuery } from "./filter-tickets";
 
-export type TicketNode = { ticket: TicketView; depth: number; children: TicketNode[] };
+export type TicketSections = {
+  open: TicketView[];
+  done: TicketView[];
+  loose: TicketView[];
+  features: TicketView[];
+  tickets: number;
+};
 
-export function buildTree(tickets: TicketView[]): TicketNode[] {
-  const byParent = new Map<string | null, TicketView[]>();
-  for (const t of tickets) byParent.set(t.parentId, [...(byParent.get(t.parentId) ?? []), t]);
-  const build = (parentId: string | null, depth: number): TicketNode[] =>
-    (byParent.get(parentId) ?? []).map((ticket) => ({
-      ticket,
-      depth,
-      children: build(ticket.id, depth + 1),
-    }));
-  return build(null, 0);
+type SectionsInput = {
+  tickets: readonly TicketView[];
+  sprint: string;
+  query: TicketsQuery;
+  mine: string | null;
+  viewer: string;
+};
+
+export function featureOf(tickets: readonly TicketView[]): (ticket: TicketView) => TicketView | null {
+  const byId = new Map(tickets.map((t) => [t.id, t]));
+  return (ticket) => {
+    const seen = new Set<string>();
+    let at = ticket;
+    while (at.parentId !== null && !seen.has(at.parentId)) {
+      seen.add(at.parentId);
+      const parent = byId.get(at.parentId);
+      if (!parent) return null;
+      at = parent;
+    }
+    return at.id === ticket.id ? null : at;
+  };
 }
 
-export const flattenGroups = (nodes: readonly TicketNode[]): TicketNode[] =>
-  nodes.flatMap((n) =>
-    isGroup(n.ticket) ? flattenGroups(n.children) : [{ ticket: n.ticket, depth: 0, children: [] }],
-  );
+const isStep = (t: TicketView) => t.parentId !== null && !isGroup(t);
+const isLoose = (t: TicketView) => t.parentId === null && !isGroup(t);
+const assignedTo = (t: TicketView, viewer: string) =>
+  t.assignee?.kind === "human" && t.assignee.ref === viewer;
 
-export function mineOnly(tickets: TicketView[], viewer: string): TicketView[] {
-  const mine = tickets.filter((t) => t.assignee?.kind === "human" && t.assignee.ref === viewer);
-  const ids = new Set(mine.map((t) => t.id));
-  return mine.map((t) => (t.parentId !== null && !ids.has(t.parentId) ? { ...t, parentId: null } : t));
+export function buildSections({ tickets, sprint, query, mine, viewer }: SectionsInput): TicketSections {
+  const rootOf = featureOf(tickets);
+  const scoped = tickets.filter((t) => inSprint(t, sprint) && (mine === null || assignedTo(t, mine)));
+  const steps = scoped.filter(isStep);
+  const features = [...new Set(steps.map((t) => rootOf(t)).filter((f) => f !== null))];
+  const matches = (t: TicketView) => matchesQuery(t, query, viewer);
+  const shown = steps.filter(
+    (t) => (query.featureId === null || rootOf(t)?.id === query.featureId) && matches(t),
+  );
+  const loose = query.featureId === null ? scoped.filter((t) => isLoose(t) && matches(t)) : [];
+  return {
+    open: sortTickets(
+      shown.filter((t) => t.statusId !== "done"),
+      query.sort,
+    ),
+    done: query.openOnly
+      ? []
+      : sortTickets(
+          shown.filter((t) => t.statusId === "done"),
+          query.sort,
+        ),
+    loose: sortTickets(
+      loose.filter((t) => !query.openOnly || t.statusId !== "done"),
+      query.sort,
+    ),
+    features: sortTickets(features, "key"),
+    tickets: steps.length,
+  };
 }
 
 export function withAncestors(tickets: TicketView[], ids: readonly string[]): ReadonlySet<string> {

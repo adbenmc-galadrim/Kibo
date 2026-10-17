@@ -40,7 +40,7 @@ async function seedDashboard(page: Page): Promise<{ projectId: string; pageId: s
 
 test("sélection partagée : le graphe sélectionne, le Kanban suit", async ({ page }, info) => {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await expect(page.getByRole("button", { name: "Vue d'ensemble" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
   const { projectId, pageId } = await seedDashboard(page);
   await page.goto(`/#/p/${projectId}/${encodeURIComponent(pageId)}`);
 

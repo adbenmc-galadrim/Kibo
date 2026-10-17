@@ -29,6 +29,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(pages\/TicketTab|shell\/(TicketDetail|PresenceAvatars|ProjectPresence|KeyRequired))\.tsx$/,
   /\/packages\/ui\/src\/i18n\/fr-presence\.ts$/,
   /\/components\/questions\/src\/(QuestionsPanel|QuestionsView|QuestionsWidget)\.tsx$/,
+  /\/components\/planning\/src\/(?!index\.ts$|fr-lazy\.ts$)[A-Za-z-]+\.tsx?$/,
   /\/packages\/ui\/src\/i18n\/fr-questions\.ts$/,
   /\/node_modules\/@tauri-apps\//,
   /\/packages\/ui\/src\/(updates\/[a-zA-Z-]+\.tsx?|i18n\/fr-updates\.ts)$/,
@@ -60,6 +61,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(pages\/(InstanceMenuContent|LayoutEditor|LayoutToolbar|FormatMenu|EditorWidget|GridGuides|EditLayout)\.tsx|pages\/layout-draft\.ts|i18n\/fr-layout\.ts)$/,
   /\/packages\/ui\/src\/(creations\/[A-Za-z-]+\.tsx?|i18n\/fr-creations\.ts)$/,
   /\/packages\/sdk\/src\/(mock|mock-calls|mock-notes|fixtures|fixtures-glb)\.tsx?$/,
+  /\/packages\/ui\/src\/(settings\/ExecutionCard\.tsx|dialogs\/TrackingSection\.tsx|shell\/nav\/(planning-page\.ts|(AgentsEntry|HiddenScreenNotice|WorkspaceMenuItems)\.tsx)|i18n\/fr-tracking\.ts)$/,
   /\/node_modules\/three\//,
   /\/packages\/sdk\/src\/(three|game)\//,
   /\/packages\/ui\/src\/ai\/(worker-backend|preview-protocol|preview-backend|draft-preview-worker|revise-escape)\.ts$/,
@@ -94,6 +96,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(delivery\/.+\.tsx?|i18n\/fr-delivery(-settings)?\.ts|lib\/(expand-home|use-home)\.ts|dialogs\/(delivery-draft|delivery-import-rows|recipe-draft)\.ts)$/,
   /\/packages\/ui\/src\/(dialogs\/(DeliverySection|DeliveryFields|DeliveryImportDialog|WorktreeRecipeFields)|agents\/(sheet\/(PresetButton|AddDirsField)|MachineLocks))\.tsx$/,
   /\/packages\/ui\/src\/i18n\/fr-components-manage\.ts$/,
+  /\/packages\/ui\/src\/(shell\/(FeatureDetail|feature\/[A-Za-z-]+)\.tsx?|i18n\/fr-group\.ts)$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

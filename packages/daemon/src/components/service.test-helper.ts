@@ -14,6 +14,7 @@ import {
   type ValidationReport,
 } from "@kibo/schema";
 import { createService, type Service } from "../service";
+import { createAppSettingsStore } from "../settings/app-settings-store";
 import { openStore, type Store } from "../store";
 import { draftsDir } from "./drafts";
 import type { JobSchedulerDeps } from "./jobs";
@@ -124,6 +125,7 @@ export async function boot(home: string, opts: HarnessOptions = {}): Promise<Har
     commands: service.commands,
     sandboxOrigin: () => SANDBOX_ORIGIN,
     runs: opts.runs ?? (() => []),
+    appSettings: createAppSettingsStore(store.db, Date.now),
     build: fakeBuild,
     validate: opts.validate ?? okReport,
     ...(opts.timers && { jobTimers: opts.timers }),

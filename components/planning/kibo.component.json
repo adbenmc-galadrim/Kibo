@@ -1,0 +1,16 @@
+{
+  "id": "planning",
+  "version": "1.0.0",
+  "kind": "view",
+  "formats": ["full"],
+  "size": {
+    "min": {
+      "w": 6,
+      "h": 4
+    }
+  },
+  "title": "Planning",
+  "description": "Fonctionnalités par sprint, glisser pour planifier",
+  "reads": ["ticket", "link", "status", "sprint", "question"],
+  "writes": ["ticket", "sprint"]
+}

@@ -41,3 +41,14 @@ test("a group whose sub-tickets are all waiting stays to do, whatever was stored
   const groups = deriveGroups([t("g", null, "done"), t("a", "g", "todo")]);
   expect(groups.get("g")).toEqual({ statusId: "todo", progress: { done: 0, total: 1 } });
 });
+
+test("an optional step left to do does not keep its group open, but still counts in the progress", () => {
+  expect(groupStatus(["done", "todo"], ["done"])).toBe("done");
+  expect(groupStatus(["todo", "in_progress"], ["todo"])).toBe("in_progress");
+  const groups = deriveGroups([
+    t("f3", null, "todo"),
+    t("a", "f3", "done"),
+    { ...t("demo", "f3", "todo"), optional: true },
+  ]);
+  expect(groups.get("f3")).toEqual({ statusId: "done", progress: { done: 1, total: 2 } });
+});

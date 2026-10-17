@@ -2,12 +2,29 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "../../sdk/src/theme.css";
+@import "./shell/nav/shell.css";
 @source "../../sdk/src";
 @source "../../../components";
 
+@font-face {
+  font-family: "Geist";
+  src: url("/fonts/Geist[wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/fonts/GeistMono[wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --tabbar-h: 2.5rem;
-  --header-h: 3rem;
+  --header-h: 49px;
   --shell-top: calc(var(--tabbar-h) + var(--header-h));
   --code-comment: #6e7781;
   --code-keyword: #cf222e;
@@ -18,6 +35,68 @@
   --code-variable: #953800;
   --code-type: #953800;
   --code-invalid: #82071e;
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --tracking-sidebar-w: 240px;
+  --tracking-topbar-h: 48px;
+  --tracking-agent-panel-w: 340px;
+  --tracking-aside-w: 320px;
+  --tracking-content-pad-y: 18px;
+  --tracking-content-pad-x: 24px;
+  --tracking-gap: 14px;
+  --tracking-sprint-col-w: 214px;
+  --tracking-sprint-col-gap: 12px;
+  --tracking-sprint-col-pad: 10px;
+  --tracking-sprint-col-radius: 10px;
+  --tracking-card-radius: 8px;
+  --tracking-card-pad-y: 10px;
+  --tracking-card-pad-x: 12px;
+  --tracking-control-radius: 6px;
+  --tracking-chip-radius: 4px;
+  --tracking-row-h: 40px;
+  --tracking-row-pad-x: 14px;
+  --tracking-row-gap: 12px;
+  --tracking-step-h: 8px;
+  --tracking-step-gap: 3px;
+  --tracking-step-radius: 2px;
+  --tracking-delivery-seg-w: 4px;
+  --tracking-delivery-seg-h: 10px;
+  --tracking-delivery-seg-gap: 1.5px;
+  --tracking-text-xs: 11px;
+  --tracking-text-sm: 12px;
+  --tracking-text-base: 13px;
+  --tracking-text-lg: 14px;
+  --tracking-text-title: 22px;
+  --tracking-sprint-bg: var(--tracking-panel);
+  --tracking-sprint-border: var(--tracking-border);
+  --tracking-sprint-current-bg: var(--tracking-card);
+  --tracking-sprint-current-border: var(--tracking-mfg);
+  --tracking-bg: #ffffff;
+  --tracking-panel: #fafafa;
+  --tracking-card: #ffffff;
+  --tracking-muted: #f4f4f5;
+  --tracking-hover: #f4f4f5;
+  --tracking-border: #e4e4e7;
+  --tracking-soft: #eeeef0;
+  --tracking-fg: #09090b;
+  --tracking-mfg: #52525b;
+  --tracking-dim: #71717a;
+  --tracking-faint: #a1a1aa;
+  --tracking-brand: #ea580c;
+  --tracking-brand-btn: #c2410c;
+  --tracking-brand-soft: #fff7ed;
+  --tracking-brand-line: #fdba74;
+  --tracking-brand-text: #c2410c;
+  --tracking-blue: #2563eb;
+  --tracking-purple: #9333ea;
+  --tracking-green: #16a34a;
+  --tracking-red: #dc2626;
+  --tracking-amber: #d97706;
+  --tracking-blue-soft: #eff6ff;
+  --tracking-purple-soft: #faf5ff;
+  --tracking-green-soft: #f0fdf4;
+  --tracking-red-soft: #fef2f2;
+  --tracking-amber-soft: #fffbeb;
 }
 
 .dark {
@@ -30,6 +109,32 @@
   --code-variable: #ffa657;
   --code-type: #ffa657;
   --code-invalid: #ffa198;
+  --tracking-bg: #09090b;
+  --tracking-panel: #0c0c0e;
+  --tracking-card: #111113;
+  --tracking-muted: #18181b;
+  --tracking-hover: #1c1c1f;
+  --tracking-border: #27272a;
+  --tracking-soft: #1f1f23;
+  --tracking-fg: #fafafa;
+  --tracking-mfg: #a1a1aa;
+  --tracking-dim: #71717a;
+  --tracking-faint: #52525b;
+  --tracking-brand: #f97316;
+  --tracking-brand-btn: #c2410c;
+  --tracking-brand-soft: #2a1406;
+  --tracking-brand-line: #7c2d12;
+  --tracking-brand-text: #fb923c;
+  --tracking-blue: #3b82f6;
+  --tracking-purple: #a855f7;
+  --tracking-green: #22c55e;
+  --tracking-red: #ef4444;
+  --tracking-amber: #f59e0b;
+  --tracking-blue-soft: #0b1426;
+  --tracking-purple-soft: #1a1024;
+  --tracking-green-soft: #0d1f12;
+  --tracking-red-soft: #2a0f0f;
+  --tracking-amber-soft: #1f1608;
 }
 
 .shiki-token {

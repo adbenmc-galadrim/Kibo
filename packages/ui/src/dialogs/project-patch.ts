@@ -1,10 +1,12 @@
 import {
   type DuplicationSettings,
+  openLimitOf,
   type ProjectDelivery,
   type ProjectPatch,
   type ProjectSummary,
   STORYBOOK_DEFAULTS,
   type StorybookSettings,
+  type TrackingSettings,
   WORKTREE_DEFAULTS,
   type WorktreeSettings,
 } from "@kibo/schema";
@@ -19,6 +21,7 @@ export type Fields = {
   storybook?: StorybookSettings | null;
   duplication?: DuplicationSettings | null;
   delivery?: ProjectDelivery | null;
+  tracking?: TrackingSettings | null;
 };
 
 const sameWorktree = (a: WorktreeSettings | null, b: WorktreeSettings | null) =>
@@ -42,5 +45,8 @@ export function projectPatch(project: ProjectSummary, fields: Fields): ProjectPa
     patch.duplication = sameDuplication(duplication, null) ? null : duplication;
   const delivery = fields.delivery;
   if (delivery !== undefined && !sameDelivery(delivery, project.delivery)) patch.delivery = delivery;
+  const tracking = fields.tracking;
+  if (tracking !== undefined && openLimitOf(tracking) !== openLimitOf(project.tracking))
+    patch.tracking = tracking;
   return Object.keys(patch).length === 0 ? null : patch;
 }

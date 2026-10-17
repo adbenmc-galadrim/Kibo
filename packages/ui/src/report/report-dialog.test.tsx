@@ -13,6 +13,7 @@ const app: Diagnostics["app"] = {
   userHome: null,
   daemonPid: 7,
   uptimeMs: 0,
+  fixedNow: null,
 };
 const DIAG: Diagnostics = {
   app,
