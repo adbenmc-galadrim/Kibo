@@ -118,6 +118,9 @@ function rowLayout(
   };
 }
 
+const chipRoom = (rows: readonly TimelineRow[], end: number, g: TimelineGeometry): number =>
+  rows.some((r) => r.blocked !== null && r.blocked.x >= end) ? g.column : 0;
+
 export function timelineLayout(
   input: Pick<TimelineInput<TimelineColumnInput>, "columns" | "rows" | "today">,
   g: TimelineGeometry = TIMELINE_GEOMETRY,
@@ -126,8 +129,9 @@ export function timelineLayout(
   const days = input.columns.length * WEEK_DAYS;
   const today = input.today;
   const currentIndex = today === null || today >= 1 ? null : Math.floor(today * input.columns.length);
+  const rows = input.rows.map((row, i) => rowLayout(row, i, input.columns, g));
   return {
-    width: g.label + span,
+    width: g.label + span + chipRoom(rows, g.label + span, g),
     height: g.header + input.rows.length * g.row + g.bottom,
     columns: input.columns.map((c, i) => ({
       x: columnX(i, g),
@@ -136,7 +140,7 @@ export function timelineLayout(
       label: "label" in c ? c.label : null,
       current: i === currentIndex && "start" in c,
     })),
-    rows: input.rows.map((row, i) => rowLayout(row, i, input.columns, g)),
+    rows,
     todayX: today === null || days === 0 ? null : g.label + (today + 1 / (2 * days)) * span,
   };
 }
