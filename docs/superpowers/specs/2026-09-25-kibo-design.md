@@ -2477,4 +2477,13 @@ Amende §5 (modèle : `GithubPrRef.review` et `checks`, `DeliveryStep.kind`, `Pr
 
 ### 38.14 Écarts constatés à l'exécution
 
-(À remplir au jalon.)
+Détail tâche par tâche dans la section « Écarts » du plan `2026-10-17-kibo-phase-26.md` ; ce qui change le comportement :
+
+1. **Prochaine étape** (`nextDeliverableStep`, T2) : première étape non commencée (`backlog`, `todo`) ou en review avec `changes_requested` ; une étape `in_progress` est sautée (§38.5). À confirmer par Adam.
+2. **Validation des actions de lot** dans `core/src/project-agent/` (pure), avec `remindQuestion` comme commande du noyau (T6) ; seul le lot encore `pending` en fin de tour est journalisé (§38.1).
+3. **Décision partielle d'un lot** (`keepRest`, T17b, §38.4) : le bandeau de la fiche sprint et la carte Sprint de la fiche fonctionnalité laissent le reste du lot au panneau ; sans `keepRest`, §24.4 inchangé.
+4. **Planning** : le nom du sprint ouvre la fiche sprint, un crayon ouvre « Modifier le sprint » (T17b) ; « Bandes » réutilise la frise partagée, qui gagne une colonne sans date (T14).
+5. **Graphe en colonnes** : empilement à 30 px, défilement natif sans zoom ni mini-carte, bouton « Options » ajouté ; maquette P5 redessinée selon cette règle (§38.7, « Maquette P5 v2 ») ; les tickets hors fonctionnalité restent dans la vue en vagues (T9).
+6. **Poller des PR** : intervalle réglable pour les tests par `KIBO_PR_POLL_MS` (chiffres seuls, minimum 20 ms, `0` coupe) ; le réveil de fin de sprint part du premier tick (T15).
+7. **Mesure pixel** : la comparaison se fait par une capture stable et un seul `toMatchSnapshot` contre la référence tirée de la maquette ; la mesure de T13 en clair comparait deux captures entre elles et a été réécrite (T16). Masques restants : compte du système, âge de synchronisation, âges relatifs d'un fait semé à l'heure réelle, « S45 2 nov. » (Planning), compteur des dépendances (Graphe).
+8. **Fichiers au-dessus de 300 lignes** hérités : `ui/src/shell/Workspace.tsx` (321) et `daemon/src/service.ts` (306), Workspace inchangé en taille, service.ts grandi d’une ligne pour le câblage de l’activité.
