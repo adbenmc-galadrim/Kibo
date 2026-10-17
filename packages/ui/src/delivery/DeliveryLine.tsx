@@ -14,7 +14,13 @@ export function DeliveryLine({ delivery, now = Date.now() }: Props) {
   return (
     <div className="grid gap-1.5">
       <p>
-        <span className="font-medium">{frDelivery.line(delivery.step, DELIVERY_STEP_MAX, label)}</span>
+        <span className="font-medium">
+          {(delivery.kind === "update" ? frDelivery.retouchLine : frDelivery.line)(
+            delivery.step,
+            DELIVERY_STEP_MAX,
+            label,
+          )}
+        </span>
         <span className="text-muted-foreground">{parts.map((p) => ` · ${p}`).join("")}</span>
       </p>
       <div

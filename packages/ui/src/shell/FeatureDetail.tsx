@@ -16,12 +16,14 @@ import { DependenciesCard } from "./feature/DependenciesCard";
 import { ExpectedResult } from "./feature/ExpectedResult";
 import { FeatureHeader } from "./feature/FeatureHeader";
 import { ActivityCard, QuestionsCard } from "./feature/FeedCards";
-import { featureActivity, featureQuestions } from "./feature/feature-feed";
+import { featureActivity, featureQuestions, journalActivity } from "./feature/feature-feed";
 import { featureDependencies } from "./feature/feature-links";
-import { featureBadge, nextToDeliver, sprintFacts, stepModels } from "./feature/feature-model";
+import { featureBadge, nextStep, sprintFacts, stepModels } from "./feature/feature-model";
 import { NextStepAction } from "./feature/NextStepAction";
 import { SprintCard } from "./feature/SprintCard";
 import { StepsTimeline } from "./feature/StepsTimeline";
+import { useFeatureJournal, useProjectCiRuns } from "./feature/use-feature-feed";
+import { useSprintProposal } from "./feature/use-sprint-proposal";
 import { useOptionalHost } from "./Host";
 
 type Props = {
@@ -61,8 +63,12 @@ export function FeatureDetail({
     execution === "shown" && editable
       ? [{ label: frDelivery.deliverChildren, icon: Truck, onSelect: () => void group.deliver() }]
       : [];
-  const steps = stepModels(project, f.id, agents?.runs ?? [], now);
-  const next = nextToDeliver(steps);
+  const ciRuns = useProjectCiRuns(project.meta.id);
+  const journal = useFeatureJournal(project, f.id);
+  const proposal = useSprintProposal(project.meta.id, f.key);
+  const steps = stepModels(project, f.id, { runs: agents?.runs ?? [], ciRuns, now, execution });
+  const next = nextStep(steps);
+  const activity = journal.length > 0 ? journalActivity(journal, project, now) : featureActivity(steps, now);
   const facts = sprintFacts(project, f);
   const setSprint = (sprintId: string | null) =>
     void sprintCommand.run({ method: "setTicketSprint", ticketId: f.id, sprintId });
@@ -133,10 +139,17 @@ export function FeatureDetail({
           />
         </div>
         <aside className="flex w-full flex-col gap-[14px] @min-[900px]:w-[320px] @min-[900px]:shrink-0">
-          <SprintCard facts={facts} sprints={project.sprints} editable={editable} onSetSprint={setSprint} />
-          {sprintCommand.error && (
+          <SprintCard
+            facts={facts}
+            sprints={project.sprints}
+            editable={editable}
+            proposal={proposal.proposal}
+            onSetSprint={setSprint}
+            onApplyProposal={proposal.apply}
+          />
+          {(sprintCommand.error ?? proposal.error) && (
             <p role="alert" className="text-[12px] text-(--tracking-red)">
-              {sprintCommand.error}
+              {sprintCommand.error ?? proposal.error}
             </p>
           )}
           <DependenciesCard dependencies={featureDependencies(project, f.id)} onOpenTicket={onOpenTicket} />
@@ -144,7 +157,7 @@ export function FeatureDetail({
             questions={featureQuestions(project, f.id, now)}
             onOpenQuestion={(id) => host?.openView("questions", undefined, id)}
           />
-          <ActivityCard items={featureActivity(steps, now)} />
+          <ActivityCard items={activity} />
           <p className="flex items-start gap-[8px] text-[11.5px] leading-[17px] text-(--tracking-dim)">
             <Lock absoluteStrokeWidth size={13} aria-hidden className="size-[13px] shrink-0" />
             {t.footer}

@@ -38,3 +38,8 @@ test("nothing without a delivery step", () => {
   const { container } = render(<DeliveryLine delivery={null} now={now} />);
   expect(container.innerHTML).toBe("");
 });
+
+test("a touch-up on a done ticket reads Retouche", () => {
+  const { container } = render(<DeliveryLine delivery={{ ...delivery, kind: "update" }} now={now} />);
+  expect(container.textContent).toContain("Retouche : 7/11 · Porte qualité · il y a 3 min");
+});

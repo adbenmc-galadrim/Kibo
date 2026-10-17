@@ -53,7 +53,7 @@ const pr = (number: number, state: "open" | "merged"): ExternalRef => ({
   base: "main",
   head: null,
   review: "none",
-  checks: null,
+  checks: "ok",
 });
 
 const step = (n: number, day: number, h: number, m: number) => ({
@@ -105,6 +105,7 @@ const STEPS: TicketView[] = [
     statusId: "in_progress",
     externalRefs: [{ kind: "git_branch", branch: "feat/envoi-hors-ligne", base: null }],
     delivery: step(7, 16, 14, 51),
+    session: { tool: "T3 Code", startedAt: NOW - 42 * 60_000 },
   }),
   ticket("e34", "EMIS-34", "Tests E2E de l'envoi", { openQuestions: 1 }),
   ticket("e35", "EMIS-35", "Démo client"),

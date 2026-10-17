@@ -1,10 +1,15 @@
 import {
   Activity,
+  Bot,
+  CalendarRange,
+  CircleDot,
   Flag,
+  GitBranch,
   GitMerge,
   GitPullRequest,
   type LucideIcon,
   MessageCircleQuestion,
+  Radio,
 } from "lucide-react";
 import { frFeature as t } from "../../i18n/fr-group";
 import { ASIDE_EMPTY, AsideCard, AsideRow } from "./AsideCard";
@@ -41,7 +46,14 @@ export function QuestionsCard({ questions, onOpenQuestion }: QuestionsProps) {
 const ICONS: Record<ActivityKind, { icon: LucideIcon; tone: string }> = {
   pr_opened: { icon: GitPullRequest, tone: "text-(--tracking-purple)" },
   pr_merged: { icon: GitMerge, tone: "text-(--tracking-green)" },
+  review: { icon: GitPullRequest, tone: "text-(--tracking-purple)" },
   step: { icon: Flag, tone: "text-(--tracking-mfg)" },
+  branch: { icon: GitBranch, tone: "text-(--tracking-blue)" },
+  status: { icon: CircleDot, tone: "text-(--tracking-mfg)" },
+  session: { icon: Radio, tone: "text-(--tracking-brand)" },
+  sprint: { icon: CalendarRange, tone: "text-(--tracking-mfg)" },
+  agent: { icon: Bot, tone: "text-(--tracking-brand)" },
+  question: { icon: MessageCircleQuestion, tone: "text-(--tracking-mfg)" },
 };
 
 export function ActivityCard({ items }: { items: readonly ActivityItem[] }) {
@@ -50,7 +62,7 @@ export function ActivityCard({ items }: { items: readonly ActivityItem[] }) {
       {items.map((item) => {
         const { icon: Icon, tone } = ICONS[item.kind];
         return (
-          <AsideRow key={`${item.kind}-${item.text}`}>
+          <AsideRow key={item.id}>
             <p className="flex w-full items-center gap-[9px] px-[14px] py-[7px]">
               <Icon absoluteStrokeWidth size={13} aria-hidden className={`size-[13px] shrink-0 ${tone}`} />
               <span className="min-w-0 flex-1 truncate text-[12px] leading-[15px] text-(--tracking-fg)">

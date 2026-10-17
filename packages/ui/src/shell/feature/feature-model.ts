@@ -1,10 +1,14 @@
 import {
+  type AgentExecution,
+  type CiRun,
+  type CiTone,
   type FeatureState,
   type FeatureStep,
   featureSteps,
   isTerminal,
-  NOT_STARTED_STATUSES,
+  nextDeliverableStep,
   type ProjectSnapshot,
+  prCiTone,
   type RunView,
   type SprintView,
   sortSprints,
@@ -13,30 +17,46 @@ import {
 
 export type StepRun = Pick<RunView, "ticketId" | "state" | "agentName" | "startedAt" | "createdAt">;
 export type StepSession = { agent: string; minutes: number };
-export type StepModel = FeatureStep & { index: number; session: StepSession | null };
-
-const sessionOf = (runs: readonly StepRun[], ticketId: string, now: number): StepSession | null => {
-  const run = runs.find((r) => r.ticketId === ticketId && !isTerminal(r.state));
-  if (!run) return null;
-  const since = run.startedAt ?? run.createdAt;
-  return { agent: run.agentName, minutes: Math.max(0, Math.floor((now - since) / 60_000)) };
+export type StepModel = FeatureStep & { index: number; session: StepSession | null; ci: CiTone | null };
+export type StepFacts = {
+  runs: readonly StepRun[];
+  ciRuns: readonly CiRun[];
+  now: number;
+  execution: AgentExecution;
 };
+
+const minutesSince = (since: number, now: number): number => Math.max(0, Math.floor((now - since) / 60_000));
+
+function sessionOf(ticket: Pick<TicketView, "id" | "session">, facts: StepFacts): StepSession | null {
+  if (ticket.session)
+    return { agent: ticket.session.tool, minutes: minutesSince(ticket.session.startedAt, facts.now) };
+  if (facts.execution !== "shown") return null;
+  const run = facts.runs.find((r) => r.ticketId === ticket.id && !isTerminal(r.state));
+  return run
+    ? { agent: run.agentName, minutes: minutesSince(run.startedAt ?? run.createdAt, facts.now) }
+    : null;
+}
 
 export function stepModels(
   project: Pick<ProjectSnapshot, "tickets" | "links">,
   featureId: string,
-  runs: readonly StepRun[],
-  now: number,
+  facts: StepFacts,
 ): StepModel[] {
+  const byId = new Map(project.tickets.map((t) => [t.id, t]));
   return featureSteps({ feature: featureId, tickets: project.tickets, links: project.links }).map((s, i) => ({
     ...s,
     index: i + 1,
-    session: sessionOf(runs, s.ticketId, now),
+    session: sessionOf({ id: s.ticketId, session: byId.get(s.ticketId)?.session ?? null }, facts),
+    ci: s.pr ? prCiTone(s.pr, facts.ciRuns) : null,
   }));
 }
 
-export const nextToDeliver = <S extends Pick<FeatureStep, "statusId">>(steps: readonly S[]): S | null =>
-  steps.find((s) => NOT_STARTED_STATUSES.includes(s.statusId)) ?? null;
+export const nextStep = <S extends Parameters<typeof nextDeliverableStep>[0][number]>(
+  steps: readonly S[],
+): S | null => {
+  const id = nextDeliverableStep(steps);
+  return steps.find((s) => s.ticketId === id) ?? null;
+};
 
 export type SprintWarning = { kind: "wontFit" | "over"; remaining: number };
 export type SprintFacts = {

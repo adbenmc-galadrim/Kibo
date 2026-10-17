@@ -11,6 +11,7 @@ import { frFeature as t } from "../../i18n/fr-group";
 import { ASIDE_ROW, AsideCard, AsideRow } from "./AsideCard";
 import type { SprintFacts } from "./feature-model";
 import { SprintChip } from "./SprintChip";
+import type { SprintProposal } from "./sprint-proposal";
 import { STROKE } from "./styles";
 import { dateRange } from "./time-format";
 
@@ -18,8 +19,21 @@ type Props = {
   facts: SprintFacts;
   sprints: readonly SprintView[];
   editable: boolean;
+  proposal: SprintProposal | null;
   onSetSprint(sprintId: string | null): void;
+  onApplyProposal(): void;
 };
+
+const MOVE = `h-[25px] gap-[6px] rounded-[6px] border-0 bg-transparent px-[10px] py-[5px] has-[>svg]:px-[10px] text-[12px] leading-[15px] font-medium text-(--tracking-fg) shadow-none dark:bg-transparent ${STROKE} [&_svg:not([class*='size-'])]:size-[13px]`;
+
+function MoveButton({ code, onClick }: { code: string; onClick(): void }) {
+  return (
+    <Button variant="outline" className={MOVE} onClick={onClick}>
+      <CalendarRange absoluteStrokeWidth size={13} />
+      {t.moveTo(code)}
+    </Button>
+  );
+}
 
 const describe = (s: SprintView): string => `${s.name} · ${dateRange(s.start, s.end)}`;
 
@@ -70,12 +84,35 @@ function SprintPicker({ facts, sprints, editable, onSetSprint }: Props) {
   );
 }
 
-function Warning({ facts, editable, onSetSprint }: Omit<Props, "sprints">) {
-  const { sprint, following, warning } = facts;
-  if (!sprint || !warning) return null;
-  const code = sprint.code;
+type WarningProps = Omit<Props, "sprints">;
+
+function MoveAction({ facts, editable, proposal, onSetSprint, onApplyProposal }: WarningProps) {
+  if (!editable) return null;
+  if (proposal)
+    return (
+      <div className="flex items-center gap-[8px]">
+        <MoveButton code={proposal.sprint} onClick={onApplyProposal} />
+        <span className="text-[12px] leading-[15px] text-(--tracking-brand-text)">{t.proposedByAgent}</span>
+      </div>
+    );
+  const { following } = facts;
+  if (!following) return null;
+  return (
+    <div className="flex items-center gap-[8px]">
+      <MoveButton code={following.code} onClick={() => onSetSprint(following.id)} />
+    </div>
+  );
+}
+
+function Warning(props: WarningProps) {
+  const { sprint, warning } = props.facts;
+  if (!warning && !(props.proposal && props.editable)) return null;
   const text =
-    warning.kind === "wontFit" ? t.wontFit(warning.remaining, code) : t.sprintOver(warning.remaining, code);
+    !sprint || !warning
+      ? null
+      : warning.kind === "wontFit"
+        ? t.wontFit(warning.remaining, sprint.code)
+        : t.sprintOver(warning.remaining, sprint.code);
   return (
     <AsideRow>
       <div className="flex w-full items-start gap-[8px] px-[14px] py-[9px]">
@@ -86,19 +123,8 @@ function Warning({ facts, editable, onSetSprint }: Omit<Props, "sprints">) {
           className="size-[14px] shrink-0 text-(--tracking-red)"
         />
         <div className="flex min-w-0 flex-1 flex-col gap-[6px]">
-          <p className="text-[12.5px] leading-[15px] text-(--tracking-fg)">{text}</p>
-          {editable && following && (
-            <div className="flex items-center gap-[8px]">
-              <Button
-                variant="outline"
-                className={`h-[25px] gap-[6px] rounded-[6px] border-0 bg-transparent px-[10px] py-[5px] has-[>svg]:px-[10px] text-[12px] leading-[15px] font-medium text-(--tracking-fg) shadow-none dark:bg-transparent ${STROKE} [&_svg:not([class*='size-'])]:size-[13px]`}
-                onClick={() => onSetSprint(following.id)}
-              >
-                <CalendarRange absoluteStrokeWidth size={13} />
-                {t.moveTo(following.code)}
-              </Button>
-            </div>
-          )}
+          {text && <p className="text-[12.5px] leading-[15px] text-(--tracking-fg)">{text}</p>}
+          <MoveAction {...props} />
         </div>
       </div>
     </AsideRow>
@@ -111,7 +137,7 @@ export function SprintCard(props: Props) {
       <AsideRow>
         <SprintPicker {...props} />
       </AsideRow>
-      <Warning facts={props.facts} editable={props.editable} onSetSprint={props.onSetSprint} />
+      <Warning {...props} />
     </AsideCard>
   );
 }

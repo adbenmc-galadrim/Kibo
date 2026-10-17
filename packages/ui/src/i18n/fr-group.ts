@@ -24,6 +24,12 @@ const MONTHS = [
   "déc.",
 ];
 
+const REVIEWS: Record<string, string> = {
+  changes_requested: "changements demandés",
+  approved: "approuvée",
+};
+const CHECKS: Record<string, string> = { ok: "CI verte", running: "CI en cours", error: "CI rouge" };
+
 export const frFeature = {
   kicker: (shortKey: string | null, key: string) =>
     ["Fonctionnalité", shortKey, key].filter((p) => p !== null).join(" · "),
@@ -46,6 +52,8 @@ export const frFeature = {
   journeyHint: "étapes libres, dans l'ordre des dépendances",
   addStep: "Ajouter une étape",
   merged: "fusionnée",
+  changesRequested: "changements demandés",
+  ci: { ok: "CI réussie", error: "CI cassée", running: "CI en cours", neutral: "CI sans conclusion" },
   waiting: (key: string) => `attend ${key}`,
   session: (agent: string, minutes: number) => `session · ${agent} · ${minutes} min`,
   noDelivery: "—",
@@ -65,6 +73,7 @@ export const frFeature = {
   sprintOver: (n: number, sprint: string) =>
     `${plural(n, "étape restante", "étapes restantes")} : ${sprint} est terminé.`,
   moveTo: (sprint: string) => `Déplacer en ${sprint}`,
+  proposedByAgent: "proposé par l'agent",
   dependencies: "Dépendances",
   waitsFor: "Attend",
   unblocks: "Débloque",
@@ -76,6 +85,29 @@ export const frFeature = {
   prOpened: (n: number, key: string) => `PR #${n} ouverte · ${key}`,
   prMerged: (n: number, key: string) => `PR #${n} fusionnée · ${key}`,
   stepDone: (step: number, label: string, key: string) => `Étape ${step} · ${label} · ${key}`,
+  events: {
+    branch: (name: string) => `Branche ${name} créée`,
+    prOpened: (n: number) => `PR #${n} ouverte`,
+    prMerged: (n: number, delivered: string | null) =>
+      delivered === null ? `PR #${n} fusionnée` : `PR #${n} fusionnée · ${delivered} livrée`,
+    review: (n: number, review: string | null) => `PR #${n} · ${REVIEWS[review ?? ""] ?? "review demandée"}`,
+    checks: (n: number, checks: string | null) => `PR #${n} · ${CHECKS[checks ?? ""] ?? "CI sans verdict"}`,
+    status: (label: string) => `Passé en ${label}`,
+    step: (step: number, label: string) => `Étape ${step} · ${label}`,
+    retouch: (step: number, label: string) => `Retouche · ${step} · ${label}`,
+    sessionStarted: "Session démarrée",
+    sessionStopped: "Session terminée",
+    sprintCreated: (code: string) => `Sprint ${code} créé`,
+    postponed: (feature: string, sprint: string) => `${feature} reportée en ${sprint}`,
+    planned: (feature: string, sprint: string) => `${feature} planifiée en ${sprint}`,
+    unplanned: (feature: string) => `${feature} retirée du planning`,
+    batchProposed: (seq: number) => `Suivi mis à jour · lot n° ${seq} proposé`,
+    batchApplied: (seq: number) => `Lot n° ${seq} validé`,
+    batchRejected: (seq: number) => `Lot n° ${seq} refusé`,
+    questionCreated: "Question posée",
+    questionAnswered: "Question répondue",
+    reminded: (ref: string | null) => `${ref ?? "Question"} relancée`,
+  },
   footer: "Une fonctionnalité ne se lance pas : chaque étape se livre dans T3 Code avec full-delivery.",
   optional: "Étape facultative",
   optionalHint: "Ne compte pas pour livrer la fonctionnalité",
