@@ -1,0 +1,47 @@
+{
+  "turns": [
+    {
+      "steps": [
+        {
+          "mcp": "propose_batch",
+          "input": {
+            "summary": "Replanifier",
+            "actions": [
+              { "id": 1, "type": "setSprint", "ticket": "KIB-3", "sprint": "S43", "why": "Étape en retard." },
+              { "id": 2, "type": "setSprint", "ticket": "KIB-1", "sprint": "S99", "why": "Sprint suivant." },
+              {
+                "id": 3,
+                "type": "createSprint",
+                "code": "S42",
+                "name": "Doublon",
+                "start": "2026-11-02",
+                "end": "2026-11-06",
+                "why": "Nouveau sprint."
+              }
+            ]
+          }
+        },
+        {
+          "mcp": "propose_batch",
+          "input": {
+            "summary": "Replanifier",
+            "actions": [
+              {
+                "id": 1,
+                "type": "createSprint",
+                "code": "S45",
+                "name": "Clôture",
+                "start": "2026-11-02",
+                "end": "2026-11-06",
+                "why": "Nouveau sprint."
+              },
+              { "id": 2, "type": "setSprint", "ticket": "KIB-1", "sprint": "S45", "why": "Sprint suivant." }
+            ]
+          }
+        }
+      ],
+      "result": "Lot corrigé.",
+      "tokens": 800
+    }
+  ]
+}

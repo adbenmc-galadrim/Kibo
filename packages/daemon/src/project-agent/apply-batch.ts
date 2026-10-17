@@ -13,7 +13,9 @@ import {
   type Actor,
   type Batch,
   KiboError,
+  type ProjectEventSink,
   type ProposedAction,
+  Question,
   Ticket,
 } from "@kibo/schema";
 import { type SignalRefsPort, signalRefs } from "./signal-refs";
@@ -23,6 +25,7 @@ export type ApplyBatchDeps = {
   data: ProjectAgentDataPort;
   agents: () => ProjectAgentAgentsPort;
   signals: SignalRefsPort;
+  events?: ProjectEventSink;
   now?: () => number;
 };
 
@@ -68,11 +71,30 @@ function idOf(ids: TicketIds, ref: string): string {
   return id;
 }
 
-const namesRecipient = (action: ProposedAction): boolean =>
-  (action.type === "createQuestion" || action.type === "updateQuestion") && action.recipient !== undefined;
+const readsFreshProject = (action: ProposedAction): boolean =>
+  action.type === "setSprint" ||
+  ((action.type === "createQuestion" || action.type === "updateQuestion") && action.recipient !== undefined);
 
 const projectFor = (run: Run, action: ProposedAction) =>
-  namesRecipient(action) ? run.deps.data.project(run.batch.projectId) : run.ctx.project;
+  readsFreshProject(action) ? run.deps.data.project(run.batch.projectId) : run.ctx.project;
+
+function rootOf(run: Run, ticketId: string): string {
+  const byId = new Map(run.deps.data.project(run.batch.projectId).tickets.map((t) => [t.id, t]));
+  let current = byId.get(ticketId);
+  while (current?.parentId) current = byId.get(current.parentId);
+  return current?.id ?? ticketId;
+}
+
+function recordReminder(run: Run, out: unknown): void {
+  const question = Question.parse(out);
+  run.deps.events?.record(run.batch.projectId, {
+    kind: "question_reminded",
+    ticketId: question.ticketId,
+    featureId: rootOf(run, question.ticketId),
+    source: "project-agent",
+    data: { questionId: question.id, title: question.title },
+  });
+}
 
 async function execute(run: Run, action: ProposedAction, ids: TicketIds): Promise<Created | null> {
   const { data } = run.deps;
@@ -107,6 +129,7 @@ async function execute(run: Run, action: ProposedAction, ids: TicketIds): Promis
       for (const command of commandsFor(action, ids, run.by, projectFor(run, action))) {
         const out = data.runCommand(projectId, command);
         if (command.method === "createTicket") created = createdTicket(run, out);
+        if (command.method === "remindQuestion") recordReminder(run, out);
       }
       return created;
     }

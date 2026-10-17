@@ -9,6 +9,7 @@ import {
   foldBatch,
   KiboError,
   type ProjectAgentSession,
+  type ProjectEventSink,
   type ProjectFingerprint,
   ProjectFingerprintSchema,
   ProposedAction,
@@ -16,6 +17,7 @@ import {
 } from "@kibo/schema";
 import { z } from "zod";
 import { immediateTransaction, SQLITE_BUSY_TIMEOUT_MS } from "../sqlite-busy";
+import { journalDecided, journalProposed } from "./batch-journal";
 import { withKnownBlockers } from "./stored-blockers";
 
 export type NewBatch = Omit<BatchRow, "seq">;
@@ -137,7 +139,7 @@ function openDatabase(home: string): Database {
   }
 }
 
-export function openProjectAgentStore(home: string): ProjectAgentStore {
+export function openProjectAgentStore(home: string, events?: ProjectEventSink): ProjectAgentStore {
   const db = openDatabase(home);
   const sessionsOf = db.query(
     "SELECT * FROM project_agent_sessions WHERE project_id = $project_id ORDER BY started_at DESC, rowid DESC",
@@ -237,12 +239,18 @@ export function openProjectAgentStore(home: string): ProjectAgentStore {
         "UPDATE project_agent_sessions SET fingerprint = $fingerprint, last_turn_at = $at WHERE run_id = $run_id",
       ).run({ run_id: runId, fingerprint: JSON.stringify(fp), at });
     },
-    createBatch: (row) => createBatch(row),
+    createBatch(row) {
+      const created = createBatch(row);
+      journalProposed(events, created);
+      return created;
+    },
     appendBatchEvent(batchId, event, at) {
       const row = batchById.get({ id: batchId }) as BatchDbRow | null;
       if (!row) throw new KiboError("NOT_FOUND", `batch ${batchId} not found`);
       insertEvent.run({ batch_id: batchId, at, data: JSON.stringify(event) });
-      return folded(row);
+      const batch = folded(row);
+      journalDecided(events, batch, event);
+      return batch;
     },
     batch,
     batches: (runId) =>

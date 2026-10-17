@@ -1,0 +1,26 @@
+{
+  "turns": [
+    {
+      "steps": [
+        { "mcp": "list_sprints" },
+        {
+          "mcp": "propose_batch",
+          "input": {
+            "summary": "Fin de S42 : reporter KIB-1 en S43.",
+            "actions": [
+              {
+                "id": 1,
+                "type": "setSprint",
+                "ticket": "KIB-1",
+                "sprint": "S43",
+                "why": "S42 est terminé et KIB-1 n'est pas livrée."
+              }
+            ]
+          }
+        }
+      ],
+      "result": "J'ai proposé le report de KIB-1 en S43.",
+      "tokens": 900
+    }
+  ]
+}

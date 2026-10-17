@@ -1,5 +1,5 @@
 import { DEFAULT_PROJECT_AGENT_BODY } from "@kibo/core/agents/compose";
-import { PROJECT_AGENT_REF, type ProjectFingerprint } from "@kibo/schema";
+import { PROJECT_AGENT_REF, type ProjectEventSink, type ProjectFingerprint } from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
 import type { AgentDataPort } from "../agents/orchestrator-types";
 import type { Docs } from "../docs";
@@ -28,6 +28,7 @@ export type ProjectAgentBootInput = {
   notify: (notice: Notice) => void;
   signals: ProjectAgentSignalsPort;
   agentBody?: () => string;
+  events?: ProjectEventSink;
 };
 
 export const projectAgentBody = (data: Pick<AgentDataPort, "agentOf">): string =>
@@ -39,9 +40,10 @@ type OpsDeps = {
   signals: ProjectAgentSignalsPort;
   store: ProjectAgentStore;
   agent: () => ProjectAgentService;
+  events?: ProjectEventSink;
 };
 
-function projectAgentOps({ data, agents, signals, store, agent }: OpsDeps): ProjectAgentOps {
+function projectAgentOps({ data, agents, signals, store, agent, events }: OpsDeps): ProjectAgentOps {
   const toolDeps = {
     data,
     agents,
@@ -55,13 +57,13 @@ function projectAgentOps({ data, agents, signals, store, agent }: OpsDeps): Proj
   };
   return {
     tool: (run, tool, input) => handleProjectTool(toolDeps, run, tool, input),
-    apply: (batch, chosen, by) => applyBatch({ data, agents, signals }, batch, chosen, by),
+    apply: (batch, chosen, by) => applyBatch({ data, agents, signals, events }, batch, chosen, by),
   };
 }
 
 export function startProjectAgent(input: ProjectAgentBootInput): ProjectAgentBoot {
   const { service } = input;
-  const store = openProjectAgentStore(input.home);
+  const store = openProjectAgentStore(input.home, input.events);
   const data = createProjectAgentDataPort({
     docs: service.docs,
     notes: input.notes,
@@ -81,6 +83,7 @@ export function startProjectAgent(input: ProjectAgentBootInput): ProjectAgentBoo
       signals: input.signals,
       store,
       agent: () => ready(self, "INTERNAL", "the project agent is not ready"),
+      events: input.events,
     }),
     agents,
     notify: input.notify,
