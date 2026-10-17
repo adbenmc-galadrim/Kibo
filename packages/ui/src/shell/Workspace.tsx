@@ -6,23 +6,18 @@ import {
   targetProjectId,
 } from "@kibo/schema";
 import { SidebarInset } from "@kibo/sdk/ui/sidebar";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useRef } from "react";
 import { useRunNotifications } from "../agents/use-run-notifications";
 import { useProjectGit } from "../code/use-project-git";
-import { resolveWorktree } from "../code/use-worktrees";
 import { useDesktopIntegration } from "../desktop/use-desktop-integration";
 import { useWindowTitle } from "../desktop/use-window-title";
 import { projectDomainsOf } from "../lib/project-domains";
-import type { PaletteContext } from "../palette/palette-items";
 import { useRoute } from "../route";
 import { useConfig, useNow } from "../state/use-agents";
-import { useExecutionShown } from "../state/use-app-settings";
-import { useProject } from "../state/use-projects";
 import { describeTarget } from "../tabs/tab-title";
 import { activeTarget } from "../tabs/tabs-model";
 import { targetToHash } from "../tabs/target-hash";
 import { useHashSync } from "../tabs/use-hash-sync";
-import { useShownTabs } from "../tabs/use-shown-tabs";
 import type { TabsApi } from "../tabs/use-tabs";
 import { cycleTheme } from "../theme";
 import { AgentsShellProvider } from "./AgentsShellProvider";
@@ -30,7 +25,7 @@ import { AppSidebar } from "./AppSidebar";
 import { ContentView } from "./ContentView";
 import { HostProvider } from "./Host";
 import { helpPatch } from "./help-dialogs";
-import { CommandPalette, TutorialSlot } from "./lazy-dialogs";
+import { TutorialSlot } from "./lazy-dialogs";
 import {
   AgentPanel,
   ProjectAgentPanel,
@@ -49,15 +44,17 @@ import { ShellHeader } from "./ShellHeader";
 import { fileTabOpener, paletteActionHandler } from "./shell-actions";
 import { useAppHelp } from "./use-app-help";
 import { useOpenView, useSnapshotLookup } from "./use-open-view";
-import { useOpened } from "./use-opened";
 import { useProjectAgentPanel } from "./use-project-agent-panel";
+import { useProjectFocus } from "./use-project-focus";
 import { useProjectLanding } from "./use-project-landing";
 import { useRunPanel } from "./use-run-panel";
 import { useScreenVisit } from "./use-screen-visit";
 import { useShellDialogs } from "./use-shell-dialogs";
 import { useWorkspaceHost } from "./use-workspace-host";
-import { useWorkspaceKeys } from "./use-workspace-keys";
 import { useWorkspaceSnapshots } from "./use-workspace-snapshots";
+import { useWorkspaceTabs } from "./use-workspace-tabs";
+import { useWorkspaceView } from "./use-workspace-view";
+import { WorkspacePalette } from "./WorkspacePalette";
 
 type WorkspaceProps = ShellProps & { projects: ProjectSummary[]; tabs: TabsApi; agents: AgentsState | null };
 
@@ -67,35 +64,25 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   const active = activeTarget(tabs.state);
   const screen = active?.kind === "screen" ? active.screen : null;
   const activeProjectId = active ? targetProjectId(active) : null;
-  const [lastProjectId, setLastProjectId] = useState<string | null>(activeProjectId);
-  const ticketProject = useProject(activeProjectId ?? lastProjectId);
-  const project = activeProjectId ? ticketProject : null;
+  const { lastProjectId, ticketProject, project, projectRef, currentProject, forget } =
+    useProjectFocus(activeProjectId);
   useProjectLanding(tabs, project);
   const { snapshots, mineCount, inboxCount } = useWorkspaceSnapshots(projects, viewer);
   const config = useConfig();
-  const executionShown = useExecutionShown();
   const now = useNow();
   const git = useProjectGit(ticketProject?.meta.id ?? null, ticketProject?.meta.folder ?? null);
-  const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = useShellDialogs();
-  const paletteOpened = useOpened(palette !== null);
+  const shell = useShellDialogs();
+  const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = shell;
   const agentPanel = useProjectAgentPanel(project);
   const runPanel = useRunPanel(activeProjectId, agentPanel);
   useRunNotifications(agents, notifications === "browser", runPanel.open);
   useAppHelp(set);
   const editRequests = useRef(new Set<string>());
-  const projectRef = useRef(project);
   const { open } = tabs;
 
-  const runs = agents?.runs;
-  const describe = (t: TabTarget) => describeTarget(t, { projects, snapshots, runs });
+  const describe = (t: TabTarget) => describeTarget(t, { projects, snapshots, runs: agents?.runs });
   useWindowTitle(active ? describe(active).title : null);
   useDesktopIntegration();
-  useEffect(() => {
-    if (activeProjectId) setLastProjectId(activeProjectId);
-  }, [activeProjectId]);
-  useEffect(() => {
-    projectRef.current = project;
-  }, [project]);
 
   const launch = useCallback(() => set({ assign: { projectId: null, ticketId: null } }), [set]);
   const go = useCallback(
@@ -103,10 +90,9 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
       open(target, keep === undefined ? { newTab } : { newTab, keep }),
     [open],
   );
-  const currentProject = useCallback(() => projectRef.current, []);
   const closeProject = (projectId: string) => {
     tabs.dispatch({ type: "closeProject", projectId });
-    setLastProjectId((id) => (id === projectId ? null : id));
+    forget(projectId);
     go(null);
   };
   const views = useOpenView(currentProject, go, useSnapshotLookup(snapshots));
@@ -123,32 +109,23 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     showProjectAgent: agentPanel.show,
   });
 
-  const shownTabs = useShownTabs(tabs);
-  useWorkspaceKeys({ tabs: shownTabs, dialogs, palette, set, setPalette, toggleAgent: agentPanel.toggle });
+  const shownTabs = useWorkspaceTabs(tabs, shell, agentPanel.toggle);
 
   const onAction = paletteActionHandler({ set, setFocusRun, go, activeProjectId, cycleTheme });
   const openFileTab = fileTabOpener({ editRequests: editRequests.current, set, go });
 
-  const branch =
-    active?.kind === "changes" ? (resolveWorktree(git.worktrees, active.worktree)?.branch ?? null) : null;
-  const isDirty = (t: TabTarget) =>
-    t.kind === "changes" &&
-    t.projectId === ticketProject?.meta.id &&
-    (t.worktree === null || t.worktree === git.main?.path) &&
-    (git.changesCount ?? 0) > 0;
-  const sheetProjectId = dialogs.sheet?.projectId ?? null;
-  const sheetProject =
-    sheetProjectId === project?.meta.id
-      ? project
-      : sheetProjectId
-        ? (snapshots.get(sheetProjectId) ?? null)
-        : null;
-  const recents = tabs.state.recents;
-  const activeTicketId = active?.kind === "ticket" ? active.ticketId : (dialogs.sheet?.ticketId ?? null);
-  const paletteContext = useMemo<PaletteContext>(
-    () => ({ projects, snapshots, recents, activeProjectId, activeTicketId, agents, executionShown }),
-    [projects, snapshots, recents, activeProjectId, activeTicketId, agents, executionShown],
-  );
+  const { branch, isDirty, sheetProject, paletteContext } = useWorkspaceView({
+    active,
+    project,
+    ticketProject,
+    git,
+    dialogs,
+    projects,
+    snapshots,
+    recents: tabs.state.recents,
+    activeProjectId,
+    agents,
+  });
 
   return (
     <HostProvider host={host}>
@@ -306,17 +283,14 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
               onDeleteDemo={(projectId) => set({ deleteProject: projectId })}
             />
             {views.dialog}
-            {paletteOpened && (
-              <CommandPalette
-                open={palette !== null}
-                onOpenChange={(o) => !o && setPalette(null)}
-                newTab={palette?.newTab ?? false}
-                context={paletteContext}
-                onOpenTarget={go}
-                onOpenTicketSheet={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
-                onAction={onAction}
-              />
-            )}
+            <WorkspacePalette
+              request={palette}
+              onClose={() => setPalette(null)}
+              context={paletteContext}
+              onOpenTarget={go}
+              onOpenTicketSheet={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
+              onAction={onAction}
+            />
           </WorkspaceFrame>
         </PageActionsProvider>
       </AgentsShellProvider>
