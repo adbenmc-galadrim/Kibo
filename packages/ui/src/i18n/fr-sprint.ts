@@ -35,8 +35,9 @@ export const frSprint = {
     },
     apply: "Valider",
     reject: "Refuser",
-    rejectTitle: (seq: number) => `Refuser le lot n° ${seq} ?`,
-    rejectHelp: "Tout le lot est refusé, y compris ses autres actions ; l'agent de projet en est informé.",
+    rejectTitle: (seq: number) => `Refuser le report proposé par le lot n° ${seq} ?`,
+    rejectHelp:
+      "Seul le report est refusé ; les autres actions du lot restent à valider dans le panneau de l'agent de projet.",
     cancel: "Annuler",
     failed: "Impossible d'appliquer la décision.",
   },

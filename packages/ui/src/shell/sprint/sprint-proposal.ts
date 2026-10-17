@@ -1,4 +1,4 @@
-import type { Batch, SprintView, TicketView } from "@kibo/schema";
+import { type Batch, type SprintView, type TicketView, undecidedActionIds } from "@kibo/schema";
 
 export type SprintMove = { actionId: number; shortKey: string; to: string | null };
 export type SprintProposal = { batchId: string; seq: number; moves: SprintMove[] };
@@ -13,8 +13,9 @@ export function pendingSprintActions(
   const inSprint = new Map(
     tickets.filter((t) => t.feature !== null && t.sprintId === sprint.id && t.key).map((t) => [t.key, t]),
   );
+  const undecided = new Set(undecidedActionIds(pending));
   const moves = pending.actions.flatMap((a) => {
-    if (a.type !== "setSprint") return [];
+    if (a.type !== "setSprint" || !undecided.has(a.id)) return [];
     const feature = inSprint.get(a.ticket);
     return feature ? [{ actionId: a.id, shortKey: feature.shortKey ?? a.ticket, to: a.sprint }] : [];
   });

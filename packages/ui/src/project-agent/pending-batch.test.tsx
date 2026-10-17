@@ -6,11 +6,11 @@ import { projectLabels } from "./batch-groups";
 import { PendingBatch } from "./PendingBatch";
 import { trackingBatch, trackingProject } from "./tracking-fixtures";
 
-function show() {
+function show(batch = trackingBatch()) {
   const decisions: Decision[] = [];
   render(
     <PendingBatch
-      batch={trackingBatch()}
+      batch={batch}
       labels={projectLabels(trackingProject())}
       onDecide={async (d) => {
         decisions.push(d);
@@ -51,4 +51,18 @@ test("Refuser asks for a confirmation before rejecting the batch", async () => {
   await user.click(card.getByRole("button", { name: "Refuser" }));
   await user.click(card.getByRole("button", { name: "Confirmer le refus" }));
   await waitFor(() => expect(decisions).toEqual([{ decision: "reject" }]));
+});
+
+test("a partly decided batch shows and decides only its undecided actions", async () => {
+  const applied = { actionId: 1, outcome: "applied" as const, detail: null, created: null };
+  const { card, decisions } = show(trackingBatch({ chosen: [1], results: [applied] }));
+  expect(card.getByText("2 actions")).toBeTruthy();
+  expect(card.getAllByRole("checkbox").map((b) => b.getAttribute("aria-label"))).toEqual([
+    "Planifier F9 en S44",
+    "Relancer le client sur Q14",
+  ]);
+  const user = userEvent.setup();
+  await user.click(card.getByRole("checkbox", { name: "Planifier F9 en S44" }));
+  await user.click(card.getByRole("button", { name: "Valider (1)" }));
+  await waitFor(() => expect(decisions).toEqual([{ decision: "apply", actionIds: [3] }]));
 });

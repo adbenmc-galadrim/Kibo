@@ -41,3 +41,9 @@ test("no proposal from a decided batch, for another feature, or to take it off t
   expect(sprintProposal([batch([setSprint(1, "EMIS-30", null)])], "EMIS-30")).toBeNull();
   expect(sprintProposal([batch([setSprint(1, "EMIS-30", "S43")])], null)).toBeNull();
 });
+
+test("no proposal once its action is decided in a batch still pending", () => {
+  const decided = batch([setSprint(1, "EMIS-30", "S43"), setSprint(2, "EMIS-90", "S44")], { chosen: [1] });
+  expect(sprintProposal([decided], "EMIS-30")).toBeNull();
+  expect(sprintProposal([decided], "EMIS-90")).toEqual({ batchId: "b7", actionId: 2, sprint: "S44" });
+});

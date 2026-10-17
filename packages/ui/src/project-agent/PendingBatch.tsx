@@ -1,4 +1,4 @@
-import type { Batch, ProposedAction } from "@kibo/schema";
+import { type Batch, type ProposedAction, undecidedActionIds } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { useState } from "react";
@@ -41,7 +41,9 @@ export function PendingBatch({ batch, labels, onDecide }: Props) {
   const [rejecting, setRejecting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
-  const chosen = batch.actions.map((a) => a.id).filter((id) => checked.has(id));
+  const undecided = new Set(undecidedActionIds(batch));
+  const shown = batch.actions.filter((a) => undecided.has(a.id)).sort((a, b) => a.id - b.id);
+  const chosen = shown.map((a) => a.id).filter((id) => checked.has(id));
 
   const check = (id: number, on: boolean) =>
     setChecked((prev) => {
@@ -71,21 +73,19 @@ export function PendingBatch({ batch, labels, onDecide }: Props) {
       <header className="flex items-center gap-[8px] bg-(--tracking-brand-soft) px-[14px] py-[10px] leading-[15px]">
         <h3 className="text-[13px] font-semibold text-(--tracking-brand-text)">{t.region(batch.seq)}</h3>
         <span className="ml-auto text-[12px] leading-[15px] text-(--tracking-mfg)">
-          {t.count(batch.actions.length)}
+          {t.count(shown.length)}
         </span>
       </header>
       <ul className="divide-y divide-(--tracking-soft) border-y border-(--tracking-soft)">
-        {[...batch.actions]
-          .sort((a, b) => a.id - b.id)
-          .map((action) => (
-            <ActionRow
-              key={action.id}
-              action={action}
-              labels={labels}
-              checked={checked.has(action.id)}
-              onCheck={(on) => check(action.id, on)}
-            />
-          ))}
+        {shown.map((action) => (
+          <ActionRow
+            key={action.id}
+            action={action}
+            labels={labels}
+            checked={checked.has(action.id)}
+            onCheck={(on) => check(action.id, on)}
+          />
+        ))}
       </ul>
       <footer className="flex items-center gap-[8px] px-[14px] pt-[12px] pb-[11px]">
         {rejecting ? (

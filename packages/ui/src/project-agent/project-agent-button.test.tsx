@@ -8,15 +8,20 @@ import { pendingBatch, viewFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
 const THREE = pendingBatch().actions.slice(0, 3);
+let served = pendingBatch({ id: "b1", actions: THREE });
+const listeners: (() => void)[] = [];
 
 mock.module("../api", () =>
   apiMock({
     client: {
       rpc: (req: RpcRequest) => {
         calls.push(req);
-        return Promise.resolve(viewFixture({ batches: [pendingBatch({ id: "b1", actions: THREE })] }));
+        return Promise.resolve(viewFixture({ batches: [served] }));
       },
-      subscribeTopic: () => () => {},
+      subscribeTopic: (_topic: string, listener: () => void) => {
+        listeners.push(listener);
+        return () => {};
+      },
     },
   }),
 );
@@ -25,6 +30,8 @@ const { ProjectAgentButton, signalCount } = await import("./ProjectAgentButton")
 
 beforeEach(() => {
   calls.length = 0;
+  listeners.length = 0;
+  served = pendingBatch({ id: "b1", actions: THREE });
 });
 
 function agents(open: number, pendingBatchId: string | null = null): AgentsState {
@@ -101,4 +108,15 @@ test("a click on the badge opens the signals, elsewhere it toggles the panel", a
   await user.click(screen.getByRole("button", { name: "Ouvrir la boîte à signaux" }));
   await user.click(screen.getByRole("button", { name: "Agent de projet · 1 signal en boîte" }));
   expect(calls).toEqual(["signals", "toggle"]);
+});
+
+test("the count follows a partial decision of the pending batch", async () => {
+  show(agents(0, "b1"));
+  await screen.findByRole("button", { name: "Agent de projet · 3 actions à valider" });
+  const first = THREE[0];
+  if (!first) throw new Error("no action");
+  served = { ...served, chosen: [first.id] };
+  for (const listener of listeners) listener();
+  await screen.findByRole("button", { name: "Agent de projet · 2 actions à valider" });
+  expect(document.querySelector("[data-pending]")?.textContent).toBe("2");
 });

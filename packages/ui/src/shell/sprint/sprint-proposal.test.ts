@@ -16,3 +16,13 @@ test("no pending batch, or none aimed at this sprint, makes no proposal", () => 
   expect(pendingSprintActions([batch([moveF5], "applied")], s42, project.tickets)).toBeNull();
   expect(pendingSprintActions([batch([remindQ14, moveF7])], s42, project.tickets)).toBeNull();
 });
+
+test("a move already decided leaves the proposal while the batch stays pending", () => {
+  const decided = { ...batch([moveF5, remindQ14]), chosen: [1] };
+  expect(pendingSprintActions([decided], s42, project.tickets)).toBeNull();
+  const skipped = {
+    ...batch([moveF5, remindQ14]),
+    results: [{ actionId: 1, outcome: "skipped" as const, detail: null, created: null }],
+  };
+  expect(pendingSprintActions([skipped], s42, project.tickets)).toBeNull();
+});

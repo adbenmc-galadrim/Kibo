@@ -5,9 +5,12 @@ import { useState } from "react";
 import { frSprint } from "../../i18n/fr-sprint";
 import type { SprintProposal } from "./sprint-proposal";
 
-export type SprintDecision =
-  | { batchId: string; decision: "apply"; actionIds: number[] }
-  | { batchId: string; decision: "reject" };
+export type SprintDecision = {
+  batchId: string;
+  decision: "apply" | "reject";
+  actionIds: number[];
+  keepRest: true;
+};
 
 type Props = {
   proposal: SprintProposal | null;
@@ -22,12 +25,13 @@ export function SprintReportBanner({ proposal, editable, decide }: Props) {
   const [rejecting, setRejecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   if (!proposal) return null;
-  const apply = () =>
-    decide({
-      batchId: proposal.batchId,
-      decision: "apply",
-      actionIds: proposal.moves.map((m) => m.actionId),
-    }).catch(() => setError(t.failed));
+  const decision = (kind: SprintDecision["decision"]): SprintDecision => ({
+    batchId: proposal.batchId,
+    decision: kind,
+    actionIds: proposal.moves.map((m) => m.actionId),
+    keepRest: true,
+  });
+  const apply = () => decide(decision("apply")).catch(() => setError(t.failed));
   return (
     <section
       aria-label={t.label}
@@ -64,7 +68,7 @@ export function SprintReportBanner({ proposal, editable, decide }: Props) {
         description={t.rejectHelp}
         confirmLabel={t.reject}
         cancelLabel={t.cancel}
-        onConfirm={() => decide({ batchId: proposal.batchId, decision: "reject" })}
+        onConfirm={() => decide(decision("reject"))}
       />
     </section>
   );

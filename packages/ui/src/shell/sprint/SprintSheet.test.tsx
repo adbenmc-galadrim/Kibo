@@ -70,12 +70,19 @@ test("the sheet shows the sprint, its timing, its features and the footer", asyn
   expect(tabs).toEqual([{ kind: "sprint", projectId: "emis", sprintId: "s42" }]);
 });
 
-test("the end of sprint banner applies only the sprint's action of the pending batch", async () => {
+test("the end of sprint banner applies only the sprint's action and keeps the rest of the batch", async () => {
   mount();
   await waitFor(() => expect(screen.getByText("Fin de sprint : reporter F5 en S43 ?")).toBeTruthy());
   await userEvent.click(screen.getByRole("button", { name: "Valider" }));
   expect(calls).toEqual([
-    { method: "decideBatch", projectId: "emis", batchId: "b7", decision: "apply", actionIds: [1] },
+    {
+      method: "decideBatch",
+      projectId: "emis",
+      batchId: "b7",
+      decision: "apply",
+      actionIds: [1],
+      keepRest: true,
+    },
   ]);
 });
 
