@@ -1,5 +1,5 @@
 import type { NoteHash } from "@kibo/core/project-agent/fingerprint";
-import type { ProjectFingerprint } from "@kibo/schema";
+import type { AgentExecution, ProjectFingerprint } from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
 import type { Orchestrator } from "../agents/orchestrator";
 import type { ProjectAgentStore } from "./store";
@@ -23,6 +23,7 @@ export type ProjectAgentDeps = {
   now?: () => number;
   formatTime?: (at: number) => string;
   agentBody?: () => string;
+  agentExecution?: () => AgentExecution;
 };
 
 export type AgentContext = Required<ProjectAgentDeps> & {

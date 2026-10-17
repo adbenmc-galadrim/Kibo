@@ -38,6 +38,7 @@ const context = (access: ProjectSnapshot["sync"]["access"]): PaletteContext => (
   activeProjectId: "p1",
   activeTicketId: null,
   agents: null,
+  executionShown: true,
 });
 const actions = (access: ProjectSnapshot["sync"]["access"]) =>
   buildItems(context(access))

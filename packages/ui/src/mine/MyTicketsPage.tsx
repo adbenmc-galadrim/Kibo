@@ -5,6 +5,7 @@ import { useId, useMemo, useState } from "react";
 import { fr } from "../i18n/fr";
 import { displayName } from "../lib/inbox";
 import { projectDomainsOf } from "../lib/project-domains";
+import { useExecutionShown } from "../state/use-app-settings";
 import { MyTicketRow } from "./MyTicketRow";
 import { countMine, type MineGroup, type MineTab, myTickets } from "./my-tickets";
 
@@ -44,12 +45,22 @@ function MineTabs({ value, onChange }: { value: MineTab; onChange(tab: MineTab):
 }
 
 type SectionProps = Pick<Props, "config" | "onOpenTicket" | "onAssign" | "onFile"> & {
+  canAssign: boolean;
   group: MineGroup;
   tab: MineTab;
   snapshot: ProjectSnapshot | undefined;
 };
 
-function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign, onFile }: SectionProps) {
+function MineSection({
+  group,
+  tab,
+  snapshot,
+  config,
+  canAssign,
+  onOpenTicket,
+  onAssign,
+  onFile,
+}: SectionProps) {
   const titleId = useId();
   const { project, tickets } = group;
   const domainOf = (id: string | null) =>
@@ -73,6 +84,7 @@ function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign, onF
             domain={domainOf(ticket.domainId)}
             agent={ticket.assignee?.kind === "agent" ? agentName(ticket.assignee.ref) : null}
             workflow={snapshot?.workflow ?? []}
+            canAssign={canAssign}
             canRun={project.folder !== null}
             inbox={isInbox(project.id)}
             onOpen={() => onOpenTicket(project.id, ticket.id)}
@@ -86,7 +98,9 @@ function MineSection({ group, tab, snapshot, config, onOpenTicket, onAssign, onF
 }
 
 export function MyTicketsPage({ viewer, projects, snapshots, ...p }: Props) {
-  const [tab, setTab] = useState<MineTab>("assigned");
+  const executionShown = useExecutionShown();
+  const [chosen, setTab] = useState<MineTab>("assigned");
+  const tab = executionShown ? chosen : "assigned";
   const groups = useMemo(
     () => myTickets(projects, snapshots, viewer, tab),
     [projects, snapshots, viewer, tab],
@@ -94,7 +108,7 @@ export function MyTicketsPage({ viewer, projects, snapshots, ...p }: Props) {
   return (
     <TooltipProvider>
       <div className="flex items-center justify-between gap-4 border-b px-6 py-3">
-        <MineTabs value={tab} onChange={setTab} />
+        {executionShown ? <MineTabs value={tab} onChange={setTab} /> : <span />}
         <p className="text-xs text-muted-foreground tabular-nums">
           {fr.mine.summary(countMine(groups), groups.length)}
         </p>
@@ -109,6 +123,7 @@ export function MyTicketsPage({ viewer, projects, snapshots, ...p }: Props) {
               group={group}
               tab={tab}
               snapshot={snapshots.get(group.project.id)}
+              canAssign={executionShown}
               {...p}
             />
           ))}

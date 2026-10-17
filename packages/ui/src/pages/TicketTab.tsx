@@ -10,6 +10,7 @@ import { FeatureDetail } from "../shell/FeatureDetail";
 import { GroupDetail } from "../shell/GroupDetail";
 import { KeyRequired } from "../shell/KeyRequired";
 import { ActivityTab } from "../shell/lazy-screens";
+import { ExecutionGate } from "../shell/nav/ExecutionGate";
 import { importTitle } from "../shell/sheet/import-title";
 import { GithubLinkNote, GithubRefs } from "../shell/sheet/lazy-sections";
 import { descendantCount, TicketDetail } from "../shell/TicketDetail";
@@ -78,17 +79,19 @@ export function TicketTab({ project, ticketId, domains, viewer, onAssign, onOpen
           </span>
         )}
         {onAssign && !group && !isInbox(project.meta.id) && (
-          <KeyRequired ticket={t}>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2 w-fit border-brand/50 text-brand-strong dark:text-brand"
-              onClick={() => onAssign(t.id)}
-            >
-              <Bot />
-              {fr.ticket.assignAgent}
-            </Button>
-          </KeyRequired>
+          <ExecutionGate>
+            <KeyRequired ticket={t}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2 w-fit border-brand/50 text-brand-strong dark:text-brand"
+                onClick={() => onAssign(t.id)}
+              >
+                <Bot />
+                {fr.ticket.assignAgent}
+              </Button>
+            </KeyRequired>
+          </ExecutionGate>
         )}
       </header>
       {group ? (

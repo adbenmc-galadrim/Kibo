@@ -33,7 +33,7 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
 };
 
 const setup = (surface: "view" | "widget" = "view") => {
-  const m = createMockSdk(manifest, { seed, viewer: "adam", surface });
+  const m = createMockSdk(manifest, { seed, viewer: "adam", surface, agentExecution: "shown" });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />

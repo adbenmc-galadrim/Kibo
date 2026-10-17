@@ -50,3 +50,14 @@ export function stepViews(state: TutorialState, projectId: string, pages: readon
     };
   });
 }
+
+export const shownStepIds = (executionShown: boolean): readonly TutorialStep[] =>
+  executionShown ? TUTORIAL_STEPS : TUTORIAL_STEPS.filter((s) => s !== "agent");
+
+export function shownSteps(views: readonly StepView[], executionShown: boolean): StepView[] {
+  if (executionShown) return [...views];
+  const kept = views.filter((v) => v.step !== "agent");
+  const current = kept.some((v) => v.current) || views.some((v) => v.current && v.step === "agent");
+  const next = current ? kept.find((v) => !v.done)?.step : undefined;
+  return kept.map((v) => ({ ...v, current: v.step === next }));
+}

@@ -82,6 +82,7 @@ function systemPrompt(ctx: AgentContext, projectId: string, projectName: string)
     memoryPath: MEMORY_NOTE_PATH,
     viewer: ctx.data.viewer(projectId),
     agentBody: ctx.agentBody(),
+    agentExecution: ctx.agentExecution(),
   });
 }
 

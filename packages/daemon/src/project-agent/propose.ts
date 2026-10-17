@@ -22,6 +22,7 @@ function batchContext(ctx: AgentContext, run: RunView, projectId: string): Batch
     demoProject: ctx.data.isDemoProject(projectId),
     viewer: ctx.data.viewer(projectId),
     ...signalRefs(ctx.signals, projectId),
+    agentExecution: ctx.agentExecution(),
   };
 }
 

@@ -58,6 +58,20 @@ test("bands: one column per sprint then the backlog, one row per open feature", 
   expect(screen.queryByRole("region", { name: /^S42 / })).toBeNull();
 });
 
+test("the header shrinks its texts and wraps its actions under the title rather than overflowing", async () => {
+  setupPlanning(TODAY, bands);
+  const hint = await screen.findByText("Glisse en Colonnes pour planifier");
+  const titles = hint.parentElement;
+  const header = titles?.parentElement;
+  expect(header?.className).toContain("flex-wrap");
+  expect(titles?.className).toContain("min-w-0");
+  expect(hint.className).toContain("truncate");
+  expect(screen.getByText(/fonctionnalités? livrées? sur/).className).toContain("truncate");
+  const actions = screen.getByRole("group", { name: "Disposition" }).parentElement;
+  expect(actions?.parentElement).toBe(header);
+  expect(actions?.className).toContain("flex-wrap");
+});
+
 test("bands: delivered features are folded under their count", async () => {
   setupPlanning(TODAY, bands);
   const frise = await timeline();

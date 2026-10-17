@@ -13,6 +13,9 @@ export type IndicatorTexts = {
 };
 
 const t = fr.indicators;
+const TIGHT_CELLS_FROM = 13;
+
+export const featureCellGap = (count: number): number => (count >= TIGHT_CELLS_FROM ? 2 : 3);
 
 function sprintText(sprint: OverviewIndicators["sprint"]): IndicatorText {
   if ("next" in sprint) {

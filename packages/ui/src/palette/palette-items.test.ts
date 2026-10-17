@@ -36,6 +36,7 @@ const context: PaletteContext = {
   activeProjectId: INBOX_ID,
   activeTicketId: "i3",
   agents: null,
+  executionShown: true,
 };
 
 test("the palette finds INB-n under the inbox name, opening its ticket", () => {

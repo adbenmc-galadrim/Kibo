@@ -37,6 +37,9 @@ export const isActive = (q: TicketsQuery): boolean =>
 
 export const cleared = (q: TicketsQuery): TicketsQuery => ({ ...EMPTY_QUERY, sort: q.sort });
 
+export const visibleQuery = (q: TicketsQuery, tracesShown: boolean): TicketsQuery =>
+  !tracesShown && q.assignee === "agents" ? { ...q, assignee: "all" } : q;
+
 export const projectLabels = (tickets: readonly Ticket[]): string[] =>
   [...new Set(tickets.flatMap((t) => t.labels))].sort();
 

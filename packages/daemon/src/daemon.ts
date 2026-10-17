@@ -128,6 +128,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     orchestrator: () => ready(agents, "INTERNAL", "agents are not ready"),
     notify: opts.notify ?? (() => {}),
     signals: signals.service,
+    agentExecution: () => tracking.appSettings.get().agentExecution,
     events: tracking.sink,
   });
   closers.push(() => projectAgent.stop());

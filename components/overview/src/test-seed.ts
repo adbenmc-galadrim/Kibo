@@ -167,3 +167,13 @@ export function seedOverview(run: Run) {
 export const seed = (run: Run) => {
   seedOverview(run);
 };
+
+export const seedCrowded = (run: Run) => {
+  const { loose } = seedOverview(run);
+  for (let n = 1; n <= 7; n += 1) {
+    const root = ticket(run, `Fonctionnalité en plus ${n}`, null);
+    ticket(run, `Étape en plus ${n}`, root.id);
+  }
+  for (let n = 1; n <= 9; n += 1)
+    question(run, loose.id, `Question en plus ${n}`, `Q${30 + n}`, "client", false);
+};

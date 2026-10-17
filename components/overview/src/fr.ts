@@ -64,6 +64,8 @@ export const fr = {
     title: "Questions",
     blocking: "bloquante",
     none: "Aucune question ouverte.",
+    more: (n: number) => `Afficher plus (${n})`,
+    all: (n: number) => `Toutes les questions (${n})`,
     age: {
       now: "à l'instant",
       minutes: (n: number) => `il y a ${n} min`,

@@ -8,6 +8,7 @@ import {
   type WorkspaceConfig,
 } from "@kibo/schema";
 import { withInbox } from "../lib/inbox";
+import { useExecutionShown } from "../state/use-app-settings";
 import {
   AgentsPage,
   AppearancePage,
@@ -26,6 +27,7 @@ import {
   SyncSettingsPage,
   WorkspacePage,
 } from "./lazy-screens";
+import { isExecutionScreen } from "./nav/execution-visibility";
 
 type Props = {
   screen: Screen;
@@ -65,6 +67,8 @@ export function ScreenView(props: Props) {
     onNewTicket,
     ...p
   } = props;
+  const executionShown = useExecutionShown();
+  if (!executionShown && isExecutionScreen(screen)) return null;
   if (screen === "components") return <ComponentsPage onOpen={onOpen} />;
   if (screen === "creations") return <CreationsPage agents={agents} now={now} />;
   if (screen === "general") return <GeneralPage />;

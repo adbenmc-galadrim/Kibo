@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { type Page, TUTORIAL_NEVER, type TutorialSeed, type TutorialState } from "@kibo/schema";
-import { stepViews } from "./tutorial-steps";
+import { shownSteps, stepViews } from "./tutorial-steps";
 
 const seed: TutorialSeed = {
   ticketIds: [],
@@ -63,4 +63,25 @@ test("a finished tutorial has every step done and none current", () => {
     completed: ["kanban", "links", "note", "dashboard", "agent", "component"],
   };
   expect(stepViews(done, "p", pages).every((v) => v.done && !v.current)).toBe(true);
+});
+
+test("hidden execution: the agent step leaves the tour and the next open step becomes current", () => {
+  const atAgent: TutorialState = { ...active, completed: ["kanban", "links", "note", "dashboard"] };
+  const views = shownSteps(stepViews(atAgent, "p", pages), false);
+  expect(views.map((v) => v.step)).toEqual(["kanban", "links", "note", "dashboard", "component"]);
+  expect(views.find((v) => v.current)?.step).toBe("component");
+  expect(views.some((v) => v.title.includes("agent"))).toBe(false);
+});
+
+test("shown execution: the agent step is back in the tour, current when due", () => {
+  const atAgent: TutorialState = { ...active, completed: ["kanban", "links", "note", "dashboard"] };
+  const views = shownSteps(stepViews(atAgent, "p", pages), true);
+  expect(views).toHaveLength(6);
+  expect(views.find((v) => v.current)?.step).toBe("agent");
+});
+
+test("hidden execution: a tour with only the agent step left has no current step", () => {
+  const left: TutorialState = { ...active, completed: ["kanban", "links", "note", "dashboard", "component"] };
+  const views = shownSteps(stepViews(left, "p", pages), false);
+  expect(views.every((v) => v.done && !v.current)).toBe(true);
 });

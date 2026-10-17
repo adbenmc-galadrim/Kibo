@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@kibo/sdk/ui/tabs";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { FileText, Folder } from "lucide-react";
 import { frDomains } from "../i18n/fr-domains";
+import { ExecutionGate } from "../shell/nav/ExecutionGate";
 import { DomainConfirmations } from "./DomainConfirmations";
 import { DomainHeader } from "./DomainHeader";
 import { treeEntries } from "./domains-entries";
@@ -134,7 +135,9 @@ export function DomainsPage(props: DomainsPageArgs) {
           <h1 className="text-xl font-semibold">{frDomains.title}</h1>
           <p className="text-sm text-muted-foreground">{frDomains.subtitle}</p>
         </div>
-        <HowAgentsAreConfigured />
+        <ExecutionGate>
+          <HowAgentsAreConfigured />
+        </ExecutionGate>
         <div className="grid min-h-[32rem] grid-cols-[18rem_1fr] items-start gap-4">
           <nav aria-label={frDomains.folders} className="grid gap-1 rounded-lg border bg-card p-2">
             <p className="px-2 pt-1 text-3xs font-medium uppercase tracking-wide text-muted-foreground">

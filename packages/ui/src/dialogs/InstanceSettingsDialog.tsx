@@ -30,6 +30,7 @@ import {
   parseFieldInput,
   withFieldValue,
 } from "../lib/config-form";
+import { useExecutionShown } from "../state/use-app-settings";
 import { AssetField } from "./AssetField";
 import { FrameField, isBadFrame } from "./FrameField";
 import { FrameListField, frameListProblem } from "./FrameListField";
@@ -68,6 +69,7 @@ const valueWhenFilled = (key: string, field: ConfigField): FieldValue =>
   configFields({ [key]: { ...field, nullable: false } }, {})[0]?.value ?? "";
 
 function FieldInput({ id, projectId, field, value, disabled, refreshKey, frameHint, onChange }: FieldProps) {
+  const executionShown = useExecutionShown();
   const kind = fieldKind(field.field);
   const label = fieldLabel(field.key, field.field);
   if (kind === "asset" && field.field.asset)
@@ -117,7 +119,7 @@ function FieldInput({ id, projectId, field, value, disabled, refreshKey, frameHi
         <SelectContent>
           {(field.field.enum ?? []).map((e) => (
             <SelectItem key={String(e)} value={String(e)}>
-              {t.valueLabel(e)}
+              {t.valueLabel(e, executionShown)}
             </SelectItem>
           ))}
         </SelectContent>

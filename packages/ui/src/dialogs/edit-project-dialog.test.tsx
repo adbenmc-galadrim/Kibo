@@ -578,3 +578,25 @@ test("the description is saved trimmed, and emptied it is saved as null (remote 
     ]),
   );
 });
+
+const sections = async (execution: "hidden" | "shown") => {
+  const { AppSettingsProvider, fixedStore } = await import("../state/use-app-settings");
+  render(
+    <AppSettingsProvider store={fixedStore({ agentExecution: execution })}>
+      <EditProjectDialog project={project} remote={false} onClose={() => {}} />
+    </AppSettingsProvider>,
+  );
+  return Array.from(document.querySelectorAll("fieldset > legend"), (l) => l.textContent ?? "");
+};
+
+test("hidden execution: the project settings have no agent worktrees nor Livraison section", async () => {
+  const titles = await sections("hidden");
+  expect(titles.some((t) => t.includes("Livraison"))).toBe(false);
+  expect(titles.some((t) => t.includes("Worktrees des agents"))).toBe(false);
+});
+
+test("shown execution: the agent worktrees and Livraison sections come back", async () => {
+  const titles = await sections("shown");
+  expect(titles.some((t) => t.includes("Livraison"))).toBe(true);
+  expect(titles.some((t) => t.includes("Worktrees des agents"))).toBe(true);
+});

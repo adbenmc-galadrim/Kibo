@@ -23,6 +23,7 @@ const { ShellHeader } = await import("../ShellHeader");
 const { AppSettingsProvider, fixedStore } = await import("../../state/use-app-settings");
 const { ExecutionGate } = await import("./ExecutionGate");
 const { HiddenScreenSlot } = await import("./HiddenScreenSlot");
+const { HiddenScreenNotice } = await import("./HiddenScreenNotice");
 
 const noop = () => {};
 
@@ -128,4 +129,45 @@ test("no notice when execution is shown or on another screen", () => {
   expect(screen.queryByRole("status")).toBeNull();
   notice("hidden", "inbox");
   expect(screen.queryByRole("status")).toBeNull();
+});
+
+test("hidden execution: an Agents screen opened by URL has no Nouvel agent action", async () => {
+  shell("hidden", "agents");
+  expect(await screen.findByRole("button", { name: /Boîte de réception/ })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Nouvel agent" })).toBeNull();
+});
+
+test("shown execution: the Agents screen offers Nouvel agent again", async () => {
+  shell("shown", "agents");
+  expect(await screen.findByRole("button", { name: "Nouvel agent" })).toBeTruthy();
+});
+
+const skillTab = (execution: AgentExecution) =>
+  render(
+    <AppSettingsProvider store={fixedStore({ agentExecution: execution })}>
+      <ExecutionGate fallback={<HiddenScreenNotice onOpen={noop} />}>
+        <p>Skill brainstorming</p>
+      </ExecutionGate>
+    </AppSettingsProvider>,
+  );
+
+test("hidden execution: a skill tab shows the notice instead of the skill", async () => {
+  skillTab("hidden");
+  expect((await screen.findByRole("status")).textContent).toContain("L'exécution des agents est masquée.");
+  expect(screen.queryByText("Skill brainstorming")).toBeNull();
+});
+
+test("shown execution: a skill tab shows the skill again", () => {
+  skillTab("shown");
+  expect(screen.getByText("Skill brainstorming")).toBeTruthy();
+  expect(screen.queryByRole("status")).toBeNull();
+});
+
+test("run and skill tabs, and the agent screens, are execution targets; the rest is not", async () => {
+  const { isExecutionTarget } = await import("./execution-visibility");
+  expect(isExecutionTarget({ kind: "run", runId: "r1" })).toBe(true);
+  expect(isExecutionTarget({ kind: "skill", skillId: "superpowers:brainstorming" })).toBe(true);
+  expect(isExecutionTarget({ kind: "screen", screen: "queue" })).toBe(true);
+  expect(isExecutionTarget({ kind: "screen", screen: "inbox" })).toBe(false);
+  expect(isExecutionTarget({ kind: "ticket", projectId: "p1", ticketId: "t1" })).toBe(false);
 });

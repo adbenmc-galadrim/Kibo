@@ -1,4 +1,5 @@
 import {
+  type AgentExecution,
   type AgentSummary,
   findRecipient,
   isArchived,
@@ -25,6 +26,7 @@ export type BatchContext = {
   viewer: string;
   signals: readonly SignalRef[];
   closedSignals: readonly SignalRef[];
+  agentExecution?: AgentExecution;
 };
 
 export type TicketLookup = (ref: string) => TicketView | null;

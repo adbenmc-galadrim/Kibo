@@ -54,7 +54,7 @@ function Row({ row, last, width, onOpen }: RowProps) {
       <StepCases cases={row.cases} y={row.y} />
       {row.slip && (
         <span
-          className="absolute flex items-center gap-[4px] font-medium text-(--tracking-red) text-[12px] leading-[15px]"
+          className="absolute flex items-center gap-[4px] whitespace-nowrap font-medium text-(--tracking-red) text-[12px] leading-[15px]"
           style={{ left: row.slip.x, top: row.y + 8 }}
         >
           <ClockAlert absoluteStrokeWidth size={12} aria-hidden />
@@ -63,7 +63,7 @@ function Row({ row, last, width, onOpen }: RowProps) {
       )}
       {row.blocked && (
         <span
-          className="absolute flex h-[19px] items-center gap-[5px] rounded-[10px] bg-(--tracking-red-soft) px-[8px] font-medium text-(--tracking-red) text-[12px] leading-[15px]"
+          className="absolute flex h-[19px] items-center gap-[5px] whitespace-nowrap rounded-[10px] bg-(--tracking-red-soft) px-[8px] font-medium text-(--tracking-red) text-[12px] leading-[15px]"
           style={{ left: row.blocked.x, top: row.y + 7 }}
         >
           <Lock absoluteStrokeWidth size={12} aria-hidden />

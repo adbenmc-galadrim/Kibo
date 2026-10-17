@@ -3,8 +3,9 @@ import { DEFAULT_RECIPIENTS, type ProjectEvent, type TicketView } from "@kibo/sc
 import { createMockSdk } from "@kibo/sdk/mock";
 import { activityRows } from "./activity-model";
 import { manifest } from "./index";
-import { indicatorTexts } from "./indicator-texts";
+import { featureCellGap, indicatorTexts } from "./indicator-texts";
 import { type OverviewInput, overviewModel } from "./overview-model";
+import { QUESTION_PAGE, type QuestionRow, questionPage } from "./review-model";
 import { NOW, seedOverview, TODAY } from "./test-seed";
 
 const at = (time: string) => Date.parse(`${TODAY}T${time}:00`);
@@ -167,6 +168,51 @@ test("the open questions, blocking first, with reference, recipient and age", ()
     ["Quota par affaire : 2 Go ou 5 Go ?", "F5", "Q16 · Produit · hier", false],
     ["Un rapport par chef de chantier ou par affaire ?", "F7", "Q17 · Client · il y a 2 h", false],
   ]);
+});
+
+const row = (n: number, blocking = false): QuestionRow => ({
+  id: `q${n}`,
+  title: `Question ${n}`,
+  feature: null,
+  meta: "",
+  blocking,
+});
+
+test("the questions show five at a time and count the hidden ones", () => {
+  const rows = Array.from({ length: 12 }, (_, i) => row(i + 1));
+  expect(QUESTION_PAGE).toBe(5);
+  const first = questionPage(rows, QUESTION_PAGE);
+  expect(first.rows.map((q) => q.id)).toEqual(["q1", "q2", "q3", "q4", "q5"]);
+  expect(first.more).toBe(7);
+  expect(questionPage(rows, 10).more).toBe(2);
+  const last = questionPage(rows, 15);
+  expect(last.rows.length).toBe(12);
+  expect(last.more).toBe(0);
+  expect(questionPage(rows.slice(0, 3), QUESTION_PAGE)).toEqual({ rows: rows.slice(0, 3), more: 0 });
+});
+
+test("the first page keeps the blocking questions ahead of the others, in rank order", () => {
+  const { input } = build();
+  const [sample] = input.questions;
+  if (sample === undefined) throw new Error("no question");
+  const ask = (id: string, blocking: boolean) => ({ ...sample, id, blocking });
+  const questions = [
+    ask("p1", false),
+    ask("p2", false),
+    ask("p3", false),
+    ask("p4", false),
+    ask("b1", true),
+    ask("p5", false),
+    ask("b2", true),
+  ];
+  const rows = overviewModel({ ...input, questions }).questions;
+  expect(questionPage(rows, QUESTION_PAGE).rows.map((q) => q.id)).toEqual(["b1", "b2", "p1", "p2", "p3"]);
+});
+
+test("the feature cells tighten their gap beyond twelve features", () => {
+  expect(featureCellGap(9)).toBe(3);
+  expect(featureCellGap(12)).toBe(3);
+  expect(featureCellGap(13)).toBe(2);
 });
 
 test("the activity shows the four latest events, and filters by source", () => {

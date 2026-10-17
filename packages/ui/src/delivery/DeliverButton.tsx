@@ -5,12 +5,22 @@ import { Truck } from "lucide-react";
 import { frDelivery } from "../i18n/fr-delivery";
 import { canEdit } from "../state/access";
 import { useAgentsState } from "../state/agents-context";
+import { useExecutionShown } from "../state/use-app-settings";
+import { CopyDeliveryButton } from "./CopyDeliveryButton";
 import { DeliverChildrenDialog } from "./DeliverChildrenDialog";
 import { activeRunOf, hasChildren, useDeliver, useDeliveryAgentKnown } from "./use-deliver";
 
 type Props = { project: ProjectSnapshot; ticket: TicketView };
 
 export function DeliverButton({ project, ticket }: Props) {
+  return useExecutionShown() ? (
+    <LaunchDeliveryButton project={project} ticket={ticket} />
+  ) : (
+    <CopyDeliveryButton ticket={ticket} />
+  );
+}
+
+function LaunchDeliveryButton({ project, ticket }: Props) {
   const agents = useAgentsState();
   const flow = useDeliver(project.meta.id, ticket);
   const agentKnown = useDeliveryAgentKnown(project.meta.id);

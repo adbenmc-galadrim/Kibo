@@ -19,7 +19,7 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
 runConformance({ manifest, Component }, seed);
 
 const mount = (surface: Surface, opts: MockSdkOptions = {}) => {
-  const m = createMockSdk(manifest, { seed, surface, ...opts });
+  const m = createMockSdk(manifest, { seed, surface, agentExecution: "shown", ...opts });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />

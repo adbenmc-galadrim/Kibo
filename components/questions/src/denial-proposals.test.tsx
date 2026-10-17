@@ -49,6 +49,7 @@ const mount = ({ state = "waiting_input", reader = false, denials = true }: Setu
     seed,
     surface: "view",
     denials: recorded,
+    agentExecution: "shown",
   });
   m.setRuns([{ ticketId, runId: "r1", label: "emis · full-delivery · EMIS-15", state, position: null }]);
   if (reader) m.setAccess("read-only");

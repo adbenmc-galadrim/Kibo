@@ -113,6 +113,14 @@ test("a blocked feature carries its question in the next column", () => {
   expect(f6?.blocked).toEqual({ x: 538, ref: "Q14" });
 });
 
+test("a blocked feature of the last column widens the grid by one column for its chip", () => {
+  const last = row({ ...F6, column: 3, sprintId: "backlog" });
+  const g = TIMELINE_GEOMETRY;
+  const span = g.label + COLUMNS.length * g.column;
+  expect(timelineLayout({ columns: COLUMNS, rows: [last], today: null }).width).toBe(span + g.column);
+  expect(timelineLayout({ columns: COLUMNS, rows: [F6], today: null }).width).toBe(span);
+});
+
 test("a slip whose sprint is outside the window is not drawn", () => {
   const late = row({ ...F5, column: 3, sprintId: "s45", slipTo: { id: "s46", code: "S46" } });
   const drawn = timelineLayout({ columns: COLUMNS, rows: [late], today: null }).rows[0];

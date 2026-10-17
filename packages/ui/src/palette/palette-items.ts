@@ -12,6 +12,7 @@ import { fr } from "../i18n/fr";
 import { withInbox } from "../lib/inbox";
 import { HELP_DIALOGS, type HelpDialog } from "../shell/help-dialogs";
 import { helpLabel } from "../shell/help-labels";
+import { isExecutionScreen } from "../shell/nav/execution-visibility";
 import { canEdit } from "../state/access";
 import { SCREENS } from "../tabs/screens";
 
@@ -58,6 +59,7 @@ export type PaletteContext = {
   activeProjectId: string | null;
   activeTicketId: string | null;
   agents: AgentsState | null;
+  executionShown: boolean;
 };
 
 const TICKET_CAP = 4;
@@ -88,16 +90,18 @@ export function activeTicket(ctx: PaletteContext): PaletteItem["ticket"] {
   return t ? { projectId: ctx.activeProjectId, ticketId: t.id, keyLabel: t.keyLabel } : null;
 }
 
-const screenItems = (): PaletteItem[] =>
-  Screen.options.map((screen) => ({
-    ...base,
-    id: `screen:${screen}`,
-    group: "pages",
-    label: SCREENS[screen].title,
-    keywords: normalize(SCREENS[screen].crumbs.join(" ")),
-    icon: screen,
-    run: { kind: "target", target: { kind: "screen", screen } },
-  }));
+const screenItems = (executionShown: boolean): PaletteItem[] =>
+  Screen.options
+    .filter((screen) => executionShown || !isExecutionScreen(screen))
+    .map((screen) => ({
+      ...base,
+      id: `screen:${screen}`,
+      group: "pages",
+      label: SCREENS[screen].title,
+      keywords: normalize(SCREENS[screen].crumbs.join(" ")),
+      icon: screen,
+      run: { kind: "target", target: { kind: "screen", screen } },
+    }));
 
 const projectItem = (project: ProjectMeta): PaletteItem => ({
   ...base,
@@ -111,8 +115,8 @@ const projectItem = (project: ProjectMeta): PaletteItem => ({
 });
 
 function targets(ctx: PaletteContext): PaletteItem[] {
-  const out: PaletteItem[] = screenItems();
-  const queued = queuePositions(ctx.agents);
+  const out: PaletteItem[] = screenItems(ctx.executionShown);
+  const queued = queuePositions(ctx.executionShown ? ctx.agents : null);
   for (const project of withInbox(ctx.projects, ctx.snapshots)) {
     const snapshot = ctx.snapshots.get(project.id);
     if (!isInbox(project.id)) out.push(projectItem(project));

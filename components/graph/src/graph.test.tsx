@@ -45,6 +45,7 @@ const setup = (surface: "view" | "widget", seedFn: typeof seed | null = seed, fo
     ...(format && { format }),
     surface,
     viewer: "adam",
+    agentExecution: "shown",
   });
   render(
     <SdkProvider sdk={m.sdk}>

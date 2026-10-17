@@ -1,5 +1,6 @@
 import { isGroup, type TicketRun, type TicketView } from "@kibo/schema";
-import { liveRun, useEntities, useSdk } from "@kibo/sdk";
+import { agentTracesShown, liveRun, useEntities, useSdk, withoutAgentAssignee } from "@kibo/sdk";
+import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { useMemo } from "react";
 import { criticalPath } from "./critical-path";
 import { ENSEMBLE_PREFIX, ensembleIndex } from "./ensembles";
@@ -36,11 +37,15 @@ export function useGraphData(filter: GraphFilter, display: GraphDisplay = DEFAUL
   const tickets = useEntities("ticket");
   const links = useEntities("link");
   const runList = useEntities("run");
-  const runs = useMemo(() => new Map(runList.data.map((r) => [r.ticketId, r])), [runList.data]);
-  const input = useMemo(
-    () => graphInput(tickets.data, links.data, filter, sdk.viewer),
-    [tickets.data, links.data, filter, sdk.viewer],
+  const traces = agentTracesShown(useComponentSettings().agentExecution);
+  const runs = useMemo(
+    () => new Map(traces ? runList.data.map((r) => [r.ticketId, r]) : []),
+    [runList.data, traces],
   );
+  const input = useMemo(() => {
+    const shown = graphInput(tickets.data, links.data, filter, sdk.viewer);
+    return traces ? shown : { ...shown, tickets: shown.tickets.map(withoutAgentAssignee) };
+  }, [tickets.data, links.data, filter, sdk.viewer, traces]);
   const scope = useMemo(
     () => graphInput(tickets.data, [], { ...filter, showDone: true, startable: false }, sdk.viewer).tickets,
     [tickets.data, filter, sdk.viewer],

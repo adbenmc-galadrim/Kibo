@@ -1,4 +1,11 @@
-import { ASK_QUESTION_TOOL, ASK_TOOL, type Guideline, mcpToolName, PROJECT_AGENT_TOOLS } from "@kibo/schema";
+import {
+  type AgentExecution,
+  ASK_QUESTION_TOOL,
+  ASK_TOOL,
+  type Guideline,
+  mcpToolName,
+  PROJECT_AGENT_TOOLS,
+} from "@kibo/schema";
 import { ALL_SKILLS_RULE, SKILL_REVIEW_RULE } from "../context";
 
 export type ProjectAgentPromptInput = {
@@ -7,6 +14,7 @@ export type ProjectAgentPromptInput = {
   memoryPath: string;
   viewer: string;
   agentBody: string;
+  agentExecution?: AgentExecution;
 };
 
 const PROPOSE = mcpToolName("propose_batch");
@@ -33,12 +41,20 @@ export const DEFAULT_PROJECT_AGENT_BODY = roleLines("courant", "l'utilisateur").
 const agentLines = (input: ProjectAgentPromptInput): string[] =>
   input.agentBody.trim() ? [input.agentBody.trim()] : roleLines(input.projectName, input.viewer);
 
-function protocolLines(viewer: string): string[] {
+const HIDDEN_EXECUTION_LINE =
+  "- Exécution des agents masquée dans Kibo : le développement se fait dans T3 Code. Ne propose ni `assignAgent` ni `deliverAnswers` : un lot qui en contient est refusé.";
+
+function protocolLines(viewer: string, execution: AgentExecution): string[] {
+  const hidden = execution === "hidden";
+  const scope = hidden
+    ? "tickets, statuts, liens, questions, notes"
+    : "tickets, statuts, liens, agents, réponses, questions, notes";
   return [
     "",
     "## Protocole",
     "",
-    `- Toute modification du projet passe par \`${PROPOSE}\` : tickets, statuts, liens, agents, réponses, questions, notes. Rien ne change avant la validation de ${viewer}.`,
+    `- Toute modification du projet passe par \`${PROPOSE}\` : ${scope}. Rien ne change avant la validation de ${viewer}.`,
+    ...(hidden ? [HIDDEN_EXECUTION_LINE] : []),
     "- Au plus une seule proposition par tour : regroupe tout dans un lot, avec un résumé en français.",
     "- Chaque action porte une ligne de « pourquoi », courte et concrète.",
     "- Un ticket créé dans le lot se cite par sa référence `new:<n>`, déclarée avant tout usage.",
@@ -112,7 +128,7 @@ function guidelineLines(chain: readonly Guideline[]): string[] {
 export function buildProjectAgentPrompt(input: ProjectAgentPromptInput): string {
   return `${[
     ...agentLines(input),
-    ...protocolLines(input.viewer),
+    ...protocolLines(input.viewer, input.agentExecution ?? "shown"),
     ...memoryLines(input.memoryPath),
     ...signalLines(),
     ...skillLines(),

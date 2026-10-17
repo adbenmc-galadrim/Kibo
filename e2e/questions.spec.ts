@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { createAgent, livraisonOpus, rpc, runState, text } from "./agents-seed";
+import { createAgent, livraisonOpus, rpc, runState, showAgentExecution, text } from "./agents-seed";
 import { addComponent, createPage, createSidebarPage, pairAndCreateProject } from "./helpers";
 import {
   capture,
@@ -40,6 +40,7 @@ async function seedQuestions(page: Page, projectId: string): Promise<void> {
 test("le widget et la vue Questions répondent, filtrent et créent", async ({ page }, info) => {
   const key = projectKey("QST", info);
   await pairAndCreateProject(page, info, key);
+  await showAgentExecution(page);
   await seedQuestions(page, projectIdOf(page));
 
   await createPage(page, "Tableau de bord", "Tableau de bord");
@@ -133,6 +134,7 @@ test("les réponses se modifient tant qu'elles ne sont pas transmises, les quest
   test.setTimeout(150_000);
   const key = projectKey("QSR", info);
   await pairAndCreateProject(page, info, key);
+  await showAgentExecution(page);
   const projectId = projectIdOf(page);
   const storage = await seedTicket(page, projectId, "Stockage S3");
   const exports = await seedTicket(page, projectId, "Export des affaires");

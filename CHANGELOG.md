@@ -6,6 +6,13 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.26.0-alpha.2 — 2026-10-17
+
+- Vue d'ensemble : cinq questions au plus, les bloquantes d'abord, avec « Afficher plus » et « Toutes les questions » ; les cases de l'indicateur Fonctionnalités ne débordent plus.
+- Planning : l'en-tête et ses actions tiennent dans la fenêtre, même avec le panneau de l'agent ouvert ; les pastilles « bloquée · Q10 » restent sur une ligne.
+- Barre latérale : le « ⋯ » d'une page n'apparaît que sur sa ligne et ne recouvre plus son compteur.
+- Exécution des agents masquée : plus aucune trace de lancement d'agent (Assigner, Livrer, onglet Agents, palette, pastilles, relances, notifications, didacticiel, réglages) ; « Livrer » devient « Copier /full-delivery ». L'agent de projet ne propose plus de lancer un agent.
+
 ## 0.26.0-alpha.1 — 2026-10-17
 
 - Vue d'ensemble du projet, en première page : indicateurs, sessions T3 Code en cours, échéances sur quatre semaines, sprint en cours et suivant, prochaine fonctionnalité à finir avec « Copier /full-delivery <CLÉ> », PR en review avec leur CI, questions, activité filtrable.

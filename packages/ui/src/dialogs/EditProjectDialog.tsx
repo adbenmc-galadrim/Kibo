@@ -27,6 +27,7 @@ import { errorMessage } from "../lib/error-message";
 import { PROJECT_COLORS } from "../lib/project-colors";
 import { isRemoteView } from "../lib/remote-view";
 import { DuplicationFields } from "../overlaps/DuplicationFields";
+import { ExecutionGate } from "../shell/nav/ExecutionGate";
 import { DeliverySection } from "./DeliverySection";
 import { DescriptionField } from "./DescriptionField";
 import { FolderField, type FolderFieldProps } from "./FolderField";
@@ -206,7 +207,7 @@ export function EditProjectDialog({
             </div>
           )}
           {showWorktree && (
-            <>
+            <ExecutionGate>
               <WorktreeFields
                 key={`worktree-${revision}`}
                 value={worktree}
@@ -227,7 +228,7 @@ export function EditProjectDialog({
                   imported(meta);
                 }}
               />
-            </>
+            </ExecutionGate>
           )}
           {!remote && (
             <StorybookFields

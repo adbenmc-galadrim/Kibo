@@ -45,6 +45,14 @@ test("the timeline shows the week headers, the rows, today, the slip and the leg
   expect(container.querySelector("[data-current]")?.textContent).toContain("S42");
 });
 
+test("the blocked chip and the slip label stay on one line", () => {
+  const late = row("f5", { cells: [todo, { ...todo, slipped: true }], slipTo: { id: "s43", code: "S43" } });
+  const blocked = row("f6", { blockedBy: "Q14", column: 2 });
+  render(<SprintTimeline columns={COLUMNS} rows={[late, blocked]} today={null} />);
+  expect(screen.getByText("bloquée · Q14").className).toContain("whitespace-nowrap");
+  expect(screen.getByText("glisse en S43").className).toContain("whitespace-nowrap");
+});
+
 test("a feature opens on a click on its label", async () => {
   const opened: string[] = [];
   render(

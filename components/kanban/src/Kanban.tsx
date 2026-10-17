@@ -10,6 +10,7 @@ import {
 } from "@dnd-kit/core";
 import { isGroup, type StatusId, type TicketView } from "@kibo/schema";
 import {
+  agentTracesShown,
   filterBySource,
   groupOfTicket,
   menuDeliverEntry,
@@ -24,6 +25,7 @@ import {
   useSdk,
   useSelection,
   useSharing,
+  withoutAgentAssignee,
 } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
@@ -83,13 +85,14 @@ export function Kanban() {
   const ciOf = (t: TicketView): CiChip | undefined =>
     ciChipOf(ciRuns.filter((r) => t.key !== null && r.ticketKey === t.key));
   const groupOf = groupOfTicket(tickets);
+  const agentTraces = agentTracesShown(agentExecution);
   const factsOf = (t: TicketView): CardFacts => ({
-    ticket: t,
+    ticket: agentTraces ? t : withoutAgentAssignee(t),
     group: groupOf(t),
-    run: runOf.get(t.id) ?? null,
+    run: agentTraces ? (runOf.get(t.id) ?? null) : null,
     ci: ciOf(t),
     members: sharing.members,
-    remote: remoteRuns(peers, t.key),
+    remote: agentTraces ? remoteRuns(peers, t.key) : [],
     questions,
   });
   const deliverOf = (t: TicketView) =>
@@ -160,6 +163,7 @@ export function Kanban() {
   return (
     <div className="flex h-full flex-col">
       <KanbanToolbar
+        agentTraces={agentTraces}
         filter={filter}
         onFilter={setFilter}
         label={labelFilter.label}

@@ -2,6 +2,7 @@ export { type CiTone, ciTone, latestCiRunPerWorkflow, ticketRuns, worstCiTone } 
 export * from "./adapter";
 export * from "./agent-badge";
 export * from "./agent-mention";
+export * from "./agent-traces";
 export * from "./client";
 export * from "./deliver-flow";
 export * from "./deliver-state";

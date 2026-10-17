@@ -15,6 +15,7 @@ import { type KanbanFilter, LABEL_ALL } from "./filter";
 import { fr } from "./fr";
 
 type Props = {
+  agentTraces: boolean;
   filter: KanbanFilter;
   onFilter: (filter: KanbanFilter) => void;
   label: string | null;
@@ -28,12 +29,12 @@ type Props = {
   children?: ReactNode;
 };
 
-const FILTERS: { value: KanbanFilter; label: string }[] = [
-  { value: "mine-and-agents", label: fr.filter.mineAndAgents },
+const filtersOf = (agentTraces: boolean): { value: KanbanFilter; label: string }[] => [
+  { value: "mine-and-agents", label: agentTraces ? fr.filter.mineAndAgents : fr.filter.mine },
   { value: "all", label: fr.filter.all },
 ];
 
-const isFilter = (value: string): value is KanbanFilter => FILTERS.some((f) => f.value === value);
+const isFilter = (value: string): value is KanbanFilter => value === "mine-and-agents" || value === "all";
 
 type LabelMenuProps = Pick<Props, "label" | "labels" | "onLabel">;
 
@@ -74,7 +75,8 @@ function LabelMenu({ label, labels, onLabel }: LabelMenuProps) {
 
 export function KanbanToolbar(props: Props) {
   const { filter, onFilter, label, startable, onShowAll, shown, total, children } = props;
-  const filterLabel = FILTERS.find((f) => f.value === filter)?.label ?? "";
+  const filters = filtersOf(props.agentTraces);
+  const filterLabel = filters.find((f) => f.value === filter)?.label ?? "";
   const hidden = total - shown;
   return (
     <header className="flex h-10 items-center gap-2 border-b px-3 text-sm">
@@ -86,7 +88,7 @@ export function KanbanToolbar(props: Props) {
         value={filter}
         onValueChange={(value) => isFilter(value) && onFilter(value)}
       >
-        {FILTERS.map((f) => (
+        {filters.map((f) => (
           <ToggleGroupItem key={f.value} value={f.value} className="px-2.5 text-xs">
             {f.label}
           </ToggleGroupItem>

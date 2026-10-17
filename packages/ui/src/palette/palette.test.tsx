@@ -83,6 +83,7 @@ const context: PaletteContext = {
   recents: [{ kind: "page", projectId: "p1", pageId: "1@9" }],
   activeProjectId: "p1",
   activeTicketId: "12@1",
+  executionShown: true,
   agents: {
     ...agentsFixture(),
     runs: [

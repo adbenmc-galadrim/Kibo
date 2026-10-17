@@ -81,3 +81,12 @@ export function questionRows(input: {
     blocking: q.blocking,
   }));
 }
+
+export const QUESTION_PAGE = 5;
+
+export function questionPage(
+  rows: readonly QuestionRow[],
+  shown: number,
+): { rows: readonly QuestionRow[]; more: number } {
+  return { rows: rows.slice(0, shown), more: Math.max(0, rows.length - shown) };
+}

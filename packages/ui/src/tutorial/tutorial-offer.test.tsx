@@ -87,3 +87,15 @@ test("a failed start keeps the dialog open with an error", async () => {
   expect(logged).toHaveBeenCalled();
   logged.mockRestore();
 });
+
+test("hidden execution: the offer lists five steps, without the agent one", async () => {
+  const { AppSettingsProvider, fixedStore } = await import("../state/use-app-settings");
+  render(
+    <AppSettingsProvider store={fixedStore({ agentExecution: "hidden" })}>
+      <TutorialOffer open onClose={() => {}} onOpen={() => {}} />
+    </AppSettingsProvider>,
+  );
+  const dialog = within(screen.getByRole("dialog"));
+  expect(dialog.getAllByRole("listitem")).toHaveLength(5);
+  expect(dialog.queryByText("Confier un ticket à un agent")).toBeNull();
+});

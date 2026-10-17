@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { configFixture, kiboProject, projectsFixture } from "../agents/fixtures";
 import { formatTokens } from "../agents/format";
 import { apiMock } from "../api-mock";
+import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
 import { previewBlocks } from "./preview";
 
 const calls: RpcRequest[] = [];
@@ -362,4 +363,23 @@ test("settings navigation marks the current page and links every entry", () => {
   expect(nav.getByRole("link", { name: "Domaines & guidelines" }).getAttribute("aria-current")).toBe("page");
   expect(nav.getByRole("link", { name: "Général" }).getAttribute("href")).toBe("#/settings/general");
   expect(nav.queryByRole("button")).toBeNull();
+});
+
+const helpToggle = () => screen.queryByRole("button", { name: "Comment les agents sont configurés" });
+const showWith = (agentExecution: "hidden" | "shown") =>
+  render(
+    <AppSettingsProvider store={fixedStore({ agentExecution })}>
+      <DomainsPage config={configFixture()} projects={projectsFixture} />
+    </AppSettingsProvider>,
+  );
+
+test("hidden execution: no « Comment les agents sont configurés » card", () => {
+  showWith("hidden");
+  expect(screen.getByRole("heading", { name: "Domaines & guidelines" })).toBeTruthy();
+  expect(helpToggle()).toBeNull();
+});
+
+test("shown execution: the « Comment les agents sont configurés » card is back", () => {
+  showWith("shown");
+  expect(helpToggle()).toBeTruthy();
 });
