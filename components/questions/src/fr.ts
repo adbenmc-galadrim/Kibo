@@ -147,6 +147,7 @@ export const fr = {
     form: (title: string) => `Coller la réponse à ${title}`,
     label: "Réponse reçue",
     help: "Enregistrée comme ta réponse ; « Transmettre à l'agent » l'envoie ensuite.",
+    helpWithoutAgent: "Enregistrée comme ta réponse.",
     save: "Enregistrer",
   },
   mention: {

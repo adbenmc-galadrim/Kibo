@@ -1,4 +1,6 @@
 import type { Question } from "@kibo/schema";
+import { agentTracesShown } from "@kibo/sdk";
+import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { Button } from "@kibo/sdk/ui/button";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { ClipboardPaste } from "lucide-react";
@@ -10,6 +12,7 @@ import { useAnswer } from "./use-questions";
 
 export function PasteAnswerForm({ question }: { question: Question }) {
   const answer = useAnswer();
+  const traces = agentTracesShown(useComponentSettings().agentExecution);
   const fieldId = useId();
   const [text, setText] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -55,7 +58,7 @@ export function PasteAnswerForm({ question }: { question: Question }) {
         autoFocus
         onChange={(e) => setText(e.target.value)}
       />
-      <p className="text-2xs text-muted-foreground">{fr.paste.help}</p>
+      <p className="text-2xs text-muted-foreground">{traces ? fr.paste.help : fr.paste.helpWithoutAgent}</p>
       <div className="flex justify-end gap-2">
         <Button
           type="button"

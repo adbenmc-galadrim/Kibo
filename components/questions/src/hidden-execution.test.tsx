@@ -4,6 +4,7 @@ import { SdkProvider } from "@kibo/sdk";
 import { seedDemo, seedQuestions } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 
 afterEach(cleanup);
@@ -82,4 +83,20 @@ test("shown execution: « Transmettre à l'agent » comes back in the view and t
     expect(await screen.findByRole("button", { name: /Transmettre à l'agent/ })).toBeTruthy();
     cleanup();
   }
+});
+
+async function pasteHelp(agentExecution: AgentExecution): Promise<string> {
+  questions(agentExecution, "view");
+  const card = await screen.findByRole("article", { name: /Garder l'ordre/ });
+  await userEvent.setup().click(within(card).getByRole("button", { name: "Coller la réponse" }));
+  return within(card).getByText(/^Enregistrée comme ta réponse/).textContent ?? "";
+}
+
+test("hidden execution: the paste help does not mention the agent", async () => {
+  const help = await pasteHelp("hidden");
+  expect(help).not.toContain("agent");
+});
+
+test("shown execution: the paste help names « Transmettre à l'agent » again", async () => {
+  expect(await pasteHelp("shown")).toContain("« Transmettre à l'agent »");
 });
