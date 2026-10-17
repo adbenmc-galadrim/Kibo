@@ -116,7 +116,7 @@ function PageRow({
     <li className="group/menu-item relative">
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          <div className={cn("relative rounded-md", inside.isOver && "ring-2 ring-ring")}>
+          <div className={cn("k-page-row relative rounded-md", inside.isOver && "ring-2 ring-ring")}>
             {editable && (
               <>
                 <ZoneLayer kind="before" setNodeRef={before.setNodeRef} />
@@ -142,7 +142,7 @@ function PageRow({
             >
               {icon}
               <span>{page.title}</span>
-              {badge && <NavCount>{badge}</NavCount>}
+              {badge && <NavCount yields={editable}>{badge}</NavCount>}
             </button>
             {editable && (
               <PageRowMenu

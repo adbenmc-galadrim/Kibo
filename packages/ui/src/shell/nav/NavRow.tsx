@@ -11,9 +11,9 @@ type Props = ComponentProps<"button"> & {
   trail?: ReactNode;
 };
 
-export function NavCount({ children }: { children: string }) {
+export function NavCount({ children, yields = false }: { children: string; yields?: boolean }) {
   return (
-    <span aria-hidden className="k-count">
+    <span aria-hidden className={yields ? "k-count k-yield" : "k-count"}>
       {children}
     </span>
   );

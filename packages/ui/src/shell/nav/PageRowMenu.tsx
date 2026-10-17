@@ -27,9 +27,8 @@ export function PageRowMenu({ title, projectId, instance, entries, flash }: Prop
     <DropdownMenu onOpenChange={(open) => open && setOpened(true)}>
       <DropdownMenuTrigger asChild>
         <SidebarMenuAction
-          showOnHover
           aria-label={fr.nav.pageActions(title)}
-          className="top-[5px] right-1 size-5"
+          className="k-page-action top-[5px] right-1 size-5"
         >
           <Ellipsis />
         </SidebarMenuAction>

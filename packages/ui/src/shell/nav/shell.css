@@ -77,6 +77,30 @@
   color: var(--tracking-dim);
 }
 
+@media (min-width: 48rem) {
+  .k-page-action {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .k-yield {
+    visibility: hidden;
+  }
+}
+
+.k-page-row:hover > .k-page-action,
+.k-page-row:focus-within > .k-page-action,
+.k-page-action[data-state="open"] {
+  opacity: 1;
+}
+
+.k-page-row:hover > .k-row > .k-yield,
+.k-page-row:focus-within > .k-row > .k-yield,
+.k-page-row:has(> .k-page-action[data-state="open"]) > .k-row > .k-yield {
+  visibility: hidden;
+}
+
 .k-dot {
   width: 8px;
   height: 8px;
