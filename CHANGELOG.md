@@ -6,6 +6,17 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.25.0-alpha.1 — 2026-10-17
+
+- Kibo devient un outil de suivi : le développement se fait dans T3 Code avec `/full-delivery`, Kibo suit l'avancement depuis git et les PR, sans jeton, avec une limite de fonctionnalités ouvertes réglable. L'exécution des agents dans Kibo est masquée par défaut ; « Paramètres › Général › Exécution des agents dans Kibo » la rétablit. Masquée, les menus proposent « Copier /full-delivery <CLÉ> ».
+- Fonctionnalités : un ticket qui regroupe des étapes devient une fonctionnalité (F1, F2…). Sa fiche montre les étapes, leur PR, la prochaine étape à livrer et l'activité. Une fonctionnalité est « ouverte » dès qu'une étape a commencé, « en retard » si son sprint est fini avant ses étapes obligatoires.
+- Sprints : de vrais sprints (code, nom, dates). Nouveau composant Planning : une colonne par sprint, glisser une fonctionnalité d'un sprint à l'autre, « Nouveau sprint ». `kibo sprints list` et `kibo tickets list --sprint current`.
+- Tickets : menus « Ouverts » et « Fonctionnalité », recherche avec `/`, section « Terminés » avec les quatre dernières livraisons.
+- Nouvelle coque : barre latérale des projets et de leurs pages, en-tête de page avec ses actions, barre d'onglets visible seulement à partir de deux onglets, menu du composant dans le « ⋯ » de la page.
+- Une branche créée dans le dépôt local (`feat/emis-45-…`) se rattache au ticket du même nom ; `kibo tickets set <CLÉ> branch=… base=…` la déclare à la main.
+- La pastille de synchronisation de la barre latérale affiche « Hors ligne » ou « Erreur de sync » quand la sync est interrompue.
+- Les écrans suivent les maquettes au pixel près, en sombre et en clair.
+
 ## 0.24.0-alpha.4 — 2026-10-15
 
 - Ensembles de tickets : un ticket qui regroupe des sous-tickets (comme C4) n'est plus traité comme un ticket. Il n'apparaît plus dans la page Tickets ni dans le Kanban, où ses sous-tickets portent une puce « C4 » ; dans le graphe, il devient un cadre autour de ses sous-tickets (« C4 · titre · 3/7 »), repliable. Sa fiche montre l'avancement, les sous-tickets et « Livrer les sous-tickets », sans agent ni statut à choisir : son état suit celui de ses sous-tickets.
