@@ -163,13 +163,23 @@ async function applyOne(
   }
 }
 
+function earlierRefs(batch: Batch): Map<string, Created> {
+  const refs = new Map<string, Created>();
+  for (const r of batch.results) {
+    const action = batch.actions.find((a) => a.id === r.actionId);
+    if (r.outcome === "applied" && r.created && action?.type === "createTicket")
+      refs.set(action.ref, r.created);
+  }
+  return refs;
+}
+
 export async function applyBatch(
   deps: ApplyBatchDeps,
   batch: Batch,
   chosen: ReadonlySet<number>,
   by: Actor,
 ): Promise<ActionResult[]> {
-  const run: Run = { deps, batch, ctx: await contextOf(deps, batch), by, refs: new Map() };
+  const run: Run = { deps, batch, ctx: await contextOf(deps, batch), by, refs: earlierRefs(batch) };
   const results: ActionResult[] = [];
   for (const action of [...batch.actions].sort((a, b) => a.id - b.id)) {
     results.push(await applyOne(run, action, chosen));

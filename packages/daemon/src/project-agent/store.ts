@@ -161,6 +161,12 @@ export function openProjectAgentStore(home: string, journal?: BatchJournalPort):
     "INSERT INTO project_agent_batches (id, project_id, run_id, session_id, seq, summary, actions, expected, " +
       "created_at) VALUES ($id, $project_id, $run_id, $session_id, $seq, $summary, $actions, $expected, $created_at)",
   );
+  const openBatches = db.query(
+    "SELECT b.* FROM project_agent_batches b WHERE b.project_id = $project_id AND NOT EXISTS " +
+      "(SELECT 1 FROM project_agent_batch_events e WHERE e.batch_id = b.id AND " +
+      "json_extract(e.data, '$.type') <> 'results' AND COALESCE(json_extract(e.data, '$.keepRest'), 0) = 0) " +
+      "ORDER BY b.seq DESC",
+  );
   const insertEvent = db.query(
     "INSERT INTO project_agent_batch_events (batch_id, at, data) VALUES ($batch_id, $at, $data)",
   );
@@ -259,11 +265,9 @@ export function openProjectAgentStore(home: string, journal?: BatchJournalPort):
         }) as BatchDbRow[]
       ).map(folded),
     pendingBatch: (projectId) =>
-      first(
-        "SELECT b.* FROM project_agent_batches b WHERE b.project_id = $project_id AND NOT EXISTS " +
-          "(SELECT 1 FROM project_agent_batch_events e WHERE e.batch_id = b.id) ORDER BY b.seq DESC LIMIT 1",
-        { project_id: projectId },
-      ),
+      (openBatches.all({ project_id: projectId }) as BatchDbRow[])
+        .map(folded)
+        .find((b) => b.status === "pending") ?? null,
     lastDecided: (projectId, since) =>
       first(
         "SELECT b.* FROM project_agent_batches b JOIN project_agent_batch_events e ON e.batch_id = b.id " +

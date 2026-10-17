@@ -235,3 +235,22 @@ describe("stale targets are never overwritten", () => {
     ]);
   });
 });
+
+describe("applyBatch after a partial decision", () => {
+  test("a new: reference resolves on the ticket created by an earlier decision, not on a skipped one", async () => {
+    const h = setup();
+    await seed(h);
+    const batch = await propose(h, [
+      { id: 1, why, type: "createTicket", ref: "new:1", title: "Nouveau" },
+      { id: 2, why, type: "setStatus", ticket: "new:1", statusId: "in_progress" },
+    ]);
+    const first = await apply(h, batch, new Set([1]));
+    const earlier = first.filter((r) => r.actionId === 1);
+    const later = await apply(h, { ...batch, chosen: [1], results: earlier }, new Set([2]));
+    expect(later.find((r) => r.actionId === 2)?.outcome).toBe("applied");
+    expect(statusOf(h, earlier[0]?.created?.key ?? "")).toBe("in_progress");
+    const skipped = earlier.map((r) => ({ ...r, outcome: "skipped" as const, created: null }));
+    const none = await apply(h, { ...batch, results: skipped }, new Set([2]));
+    expect(none.find((r) => r.actionId === 2)?.outcome).toBe("skipped");
+  });
+});

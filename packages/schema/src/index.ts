@@ -13,6 +13,7 @@ export * from "./app-version";
 export * from "./asset";
 export * from "./asset-extension";
 export * from "./backup";
+export * from "./batch-fold";
 export * from "./branch-match";
 export * from "./call";
 export * from "./capability";

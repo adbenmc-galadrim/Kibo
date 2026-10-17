@@ -1,12 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import fc from "fast-check";
+import { batchStatusOfResults, foldBatch, isDecidable } from "./batch-fold";
 import {
   ACTION_GROUPS,
   type ActionResult,
   type BatchRow,
-  batchStatusOfResults,
-  foldBatch,
-  isDecidable,
   ProposeBatchInput,
   ProposedAction,
   TicketRef,
