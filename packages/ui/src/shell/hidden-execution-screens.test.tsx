@@ -7,6 +7,7 @@ import { apiMock } from "../api-mock";
 
 const REPLIES: Partial<Record<RpcRequest["method"], unknown>> = {
   getTabs: EMPTY_TABS,
+  "agents.list": { agents: [], partialWatch: false, notices: [] },
 };
 
 mock.module("../api", () =>
