@@ -31,6 +31,13 @@ test("a branch created in a worktree is read from the project folder", async () 
 test("a folder without a repository reads no branch and is logged", async () => {
   const { seen, log } = collect();
   expect(await readBranches(tmp(), {}, log)).toEqual([]);
-  expect(await readBranches(join(tmp(), "missing"), {}, log)).toEqual([]);
-  expect(seen).toHaveLength(2);
+  expect(seen).toHaveLength(1);
+});
+
+test("a folder that no longer exists reads no branch and is not logged", async () => {
+  const { seen, log } = collect();
+  const missing = join(tmp(), "missing");
+  expect(await readBranches(missing, {}, log)).toEqual([]);
+  expect(await readBranches(missing, {}, log)).toEqual([]);
+  expect(seen).toEqual([]);
 });

@@ -1,3 +1,4 @@
+import { stat } from "node:fs/promises";
 import { stripRemote } from "@kibo/schema";
 import { createGit, type Env } from "../code/run";
 
@@ -14,7 +15,14 @@ const branchesOf = (stdout: string): string[] => {
   return [...new Set(names)].sort();
 };
 
+const exists = (folder: string): Promise<boolean> =>
+  stat(folder).then(
+    () => true,
+    () => false,
+  );
+
 export async function readBranches(folder: string, env: Env, log: Log): Promise<string[]> {
+  if (!(await exists(folder))) return [];
   try {
     const result = await createGit(folder, env).run(REFS);
     if (result.code === 0) return branchesOf(result.stdout);
