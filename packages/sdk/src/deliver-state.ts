@@ -75,15 +75,19 @@ export type DeliveryMenu = {
 };
 
 export function deliveryMenuActions(menu: DeliveryMenu): MenuAction[] {
-  const { key, statusId } = menu.ticket;
-  const retouch = FINAL_STATUSES.includes(statusId);
+  const retouch = FINAL_STATUSES.includes(menu.ticket.statusId);
   if (menu.execution === "shown")
     return retouch
       ? deliverMenuActions(menu.entry, () => menu.deliver("update"), deliveryTexts.retouch)
       : deliverMenuActions(menu.entry, () => menu.deliver("delivery"));
-  if (key === null) return [];
-  const command = retouch ? updateBrief(key) : deliveryBrief(key);
+  const command = deliveryCommand(menu.ticket);
+  if (command === null) return [];
   return [{ label: deliveryTexts.copy(command), icon: Copy, onSelect: () => menu.copy(command) }];
+}
+
+export function deliveryCommand({ key, statusId }: Pick<TicketView, "key" | "statusId">): string | null {
+  if (key === null) return null;
+  return FINAL_STATUSES.includes(statusId) ? updateBrief(key) : deliveryBrief(key);
 }
 
 export const copyDeliveryCommand = (command: string): Promise<void> =>

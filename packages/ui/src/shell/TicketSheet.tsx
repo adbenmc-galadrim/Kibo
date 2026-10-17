@@ -19,6 +19,7 @@ import { FeatureDetail } from "./FeatureDetail";
 import { GroupDetail } from "./GroupDetail";
 import { KeyRequired } from "./KeyRequired";
 import { ActivityTab } from "./lazy-screens";
+import { ExecutionGate } from "./nav/ExecutionGate";
 import { importTitle } from "./sheet/import-title";
 import { GithubLinkNote, GithubRefs } from "./sheet/lazy-sections";
 import { descendantCount, TicketDetail } from "./TicketDetail";
@@ -121,17 +122,19 @@ export function TicketSheet({
           {!inbox && (
             <div className="mt-2 flex flex-wrap gap-2">
               {!group && (
-                <KeyRequired ticket={t}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-brand/50 text-brand-strong dark:text-brand"
-                    onClick={onAssign}
-                  >
-                    <Bot />
-                    {fr.ticket.assignAgent}
-                  </Button>
-                </KeyRequired>
+                <ExecutionGate>
+                  <KeyRequired ticket={t}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-brand/50 text-brand-strong dark:text-brand"
+                      onClick={onAssign}
+                    >
+                      <Bot />
+                      {fr.ticket.assignAgent}
+                    </Button>
+                  </KeyRequired>
+                </ExecutionGate>
               )}
               {editable && (
                 <DeliverButton key={project.meta.delivery?.agent ?? ""} project={project} ticket={t} />

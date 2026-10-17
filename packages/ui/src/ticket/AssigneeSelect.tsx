@@ -3,6 +3,7 @@ import { assigneeLabel } from "@kibo/sdk";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { useId } from "react";
 import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
+import { useExecutionShown } from "../state/use-app-settings";
 import type { TicketCommand } from "./use-ticket-command";
 
 type Props = {
@@ -28,16 +29,18 @@ function selectValue(assignee: Assignee | null, viewer: string): string {
 
 export function AssigneeSelect({ ticket, viewer, members, editable, command }: Props) {
   const hintId = useId();
+  const shown = useExecutionShown();
+  const assignee = shown || ticket.assignee?.kind !== "agent" ? ticket.assignee : null;
   const others = members.filter((m) => m.userId !== viewer);
-  const label = ticket.assignee ? assigneeLabel(ticket.assignee, members) : t.nobody;
+  const label = assignee ? assigneeLabel(assignee, members) : t.nobody;
   if (!editable) return <span>{label}</span>;
-  const agent = ticket.assignee?.kind === "agent";
+  const agent = assignee?.kind === "agent";
   const pick = (value: string) =>
     void command.run({ method: "updateTicket", ticketId: ticket.id, assignee: assigneeOf(value, viewer) });
   return (
     <span className="grid gap-1">
       <Select
-        value={agent ? ticket.assignee?.ref : selectValue(ticket.assignee, viewer)}
+        value={agent ? assignee?.ref : selectValue(assignee, viewer)}
         onValueChange={pick}
         disabled={agent}
       >
@@ -50,9 +53,7 @@ export function AssigneeSelect({ ticket, viewer, members, editable, command }: P
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {agent && ticket.assignee && (
-            <SelectItem value={ticket.assignee.ref}>{ticket.assignee.ref}</SelectItem>
-          )}
+          {agent && assignee && <SelectItem value={assignee.ref}>{assignee.ref}</SelectItem>}
           <SelectItem value={NOBODY}>{t.nobody}</SelectItem>
           <SelectItem value={ME}>{t.me}</SelectItem>
           {others.map((m) => (
