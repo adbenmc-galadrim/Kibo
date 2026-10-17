@@ -24,7 +24,7 @@ const actions = () => ({
   remove: () => {},
 });
 
-function mount(editable: boolean, shifted: boolean) {
+function mount(editable: boolean, shifted: boolean, onOverviewAdded: ((id: string) => void) | null = null) {
   return render(
     <SidebarProvider>
       <SidebarMenu>
@@ -35,6 +35,7 @@ function mount(editable: boolean, shifted: boolean) {
             shifted={shifted}
             actions={actions()}
             onPlanningAdded={null}
+            onOverviewAdded={onOverviewAdded}
           >
             <SidebarMenuButton>Kibo</SidebarMenuButton>
           </ProjectHeaderMenu>
@@ -70,6 +71,19 @@ test("a non editable project only shares and removes", () => {
   fireEvent.contextMenu(screen.getByRole("button", { name: "Kibo" }));
   expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toEqual([
     "Partager",
+    "Fichiers du projet…",
+    "Supprimer…",
+  ]);
+});
+
+test("a project without its Vue d'ensemble page offers to add it after « Nouvelle page »", async () => {
+  mount(true, false, () => {});
+  await userEvent.click(screen.getByRole("button", { name: "Actions de Kibo" }));
+  expect(screen.getAllByRole("menuitem").map((m) => m.textContent)).toEqual([
+    "Nouvelle page",
+    "Ajouter la page Vue d'ensemble",
+    "Partager",
+    "Modifier…",
     "Fichiers du projet…",
     "Supprimer…",
   ]);

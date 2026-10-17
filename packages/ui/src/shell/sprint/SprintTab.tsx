@@ -1,5 +1,5 @@
 import type { ProjectSnapshot } from "@kibo/schema";
-import { frTracking } from "../../i18n/fr-tracking";
+import { frNavTracking } from "../../i18n/fr-nav-tracking";
 import { SprintDetail } from "./SprintDetail";
 import { SprintReportBanner } from "./SprintReportBanner";
 import { useSprintView } from "./use-sprint-view";
@@ -9,7 +9,7 @@ type Props = { project: ProjectSnapshot; sprintId: string; onOpenTicket(ticketId
 export function SprintTab({ project, sprintId, onOpenTicket }: Props) {
   const v = useSprintView(project, sprintId);
   if (!v.sprint || !v.timing)
-    return <p className="p-8 text-sm text-muted-foreground">{frTracking.missingSprint}</p>;
+    return <p className="p-8 text-sm text-muted-foreground">{frNavTracking.missingSprint}</p>;
   return (
     <div className="mx-auto w-full max-w-[640px]">
       <SprintDetail

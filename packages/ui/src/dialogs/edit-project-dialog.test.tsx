@@ -12,7 +12,7 @@ import {
   type RpcRequest,
   type TabTarget,
 } from "@kibo/schema";
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { summaryFixture } from "../agents/catalog/fixtures";
 import { configFixture } from "../agents/fixtures";
@@ -552,4 +552,29 @@ test("a remote session greys the duplication section and never sends it", () => 
   expect(duplicationSection()).toBeTruthy();
   expect(detection().hasAttribute("disabled")).toBe(true);
   expect(screen.getByText("Réglage local : il se modifie sur l'ordinateur où tourne Kibo.")).toBeTruthy();
+});
+
+test("the description is saved trimmed, and emptied it is saved as null (remote too)", async () => {
+  const closed = mock(() => {});
+  const described = { ...project, description: "App terrain des chefs de chantier" };
+  render(<EditProjectDialog project={described} remote onClose={closed} />);
+  const field = screen.getByLabelText("Description") as HTMLInputElement;
+  expect(field.value).toBe("App terrain des chefs de chantier");
+  expect(field.maxLength).toBe(200);
+  const user = userEvent.setup();
+  await user.clear(field);
+  await user.type(field, "   ");
+  await user.click(saveButton());
+  await waitFor(() => expect(closed).toHaveBeenCalled());
+  expect(calls).toEqual([{ method: "updateProject", projectId: "kibo", patch: { description: null } }]);
+  cleanup();
+  calls.length = 0;
+  render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
+  await user.type(screen.getByLabelText("Description"), "  Suivi des soudures ");
+  await user.click(saveButton());
+  await waitFor(() =>
+    expect(calls).toEqual([
+      { method: "updateProject", projectId: "kibo", patch: { description: "Suivi des soudures" } },
+    ]),
+  );
 });

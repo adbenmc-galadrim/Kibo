@@ -1,6 +1,6 @@
 import { isInbox, type ProjectSnapshot, type RunView, type Screen, type TabTarget } from "@kibo/schema";
 import { fr } from "../i18n/fr";
-import { frTracking } from "../i18n/fr-tracking";
+import { frNavTracking } from "../i18n/fr-nav-tracking";
 import { displayName } from "../lib/inbox";
 import { SCREENS } from "../tabs/screens";
 import { featureOf, planningPageOf } from "./nav/planning-missing";
@@ -48,8 +48,8 @@ function ticketCrumbs(p: ProjectSnapshot, ticketId: string, project: Crumb): Cru
 
 function sprintCrumbs(p: ProjectSnapshot, sprintId: string, project: Crumb): Crumb[] {
   const sprint = p.sprints.find((s) => s.id === sprintId);
-  if (!sprint) return [project, text(frTracking.missingSprint)];
-  return underPlanning(p, project, text(frTracking.sprintLabel(sprint.code, sprint.name)));
+  if (!sprint) return [project, text(frNavTracking.missingSprint)];
+  return underPlanning(p, project, text(frNavTracking.sprintLabel(sprint.code, sprint.name)));
 }
 
 export function crumbsFor(

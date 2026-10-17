@@ -5,8 +5,11 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 import { linkedRepos } from "../dialogs/sync/linked-repos";
 import { fr } from "../i18n/fr";
+import { frNavTracking } from "../i18n/fr-nav-tracking";
 import { compactInstances } from "../lib/format-grid";
+import { useHost } from "../shell/Host";
 import { PresenceAvatars, SourceHeader } from "../shell/lazy-screens";
+import { newTicketSource } from "../shell/nav/new-ticket-pages";
 import { PageActions } from "../shell/page-actions";
 import { canEdit } from "../state/access";
 import { DashboardGrid } from "./DashboardGrid";
@@ -28,6 +31,7 @@ const PublishDialog = lazyPanel(
 
 type Props = { project: ProjectSnapshot; page: Page; viewer: string; question?: string | null };
 export function PageView({ project, page, viewer, question = null }: Props) {
+  const host = useHost();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(false);
   const [publishing, setPublishing] = useState<string | null>(null);
@@ -54,6 +58,17 @@ export function PageView({ project, page, viewer, question = null }: Props) {
               pages={project.pages}
               pageId={page.id}
             />
+          </PageActions>
+        )}
+        {editable && newTicketSource(page.id, instances) === "shell" && (
+          <PageActions>
+            <Button
+              variant="outline"
+              className="h-[25px] gap-[6px] rounded-[6px] px-[10px] text-[12px] font-medium shadow-none has-[>svg]:px-[10px] [&_svg:not([class*='size-'])]:size-[13px]"
+              onClick={() => host.openNewTicket({})}
+            >
+              <Plus absoluteStrokeWidth size={13} /> {frNavTracking.newTicket}
+            </Button>
           </PageActions>
         )}
         {layoutMode && !editing && (

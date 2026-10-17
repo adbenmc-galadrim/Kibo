@@ -16,7 +16,7 @@ import {
   Ticket,
 } from "lucide-react";
 import { fr } from "../i18n/fr";
-import { frTracking } from "../i18n/fr-tracking";
+import { frNavTracking } from "../i18n/fr-nav-tracking";
 import { displayName, inboxMeta } from "../lib/inbox";
 import { pageIcon } from "../registry";
 import { SCREENS } from "./screens";
@@ -87,7 +87,7 @@ export function describeTarget(target: TabTarget, ctx: DescribeContext): TabDesc
       const sprint = snapshot?.sprints.find((s) => s.id === target.sprintId);
       if (!sprint)
         return {
-          title: snapshot ? frTracking.missingSprint : displayName(project),
+          title: snapshot ? frNavTracking.missingSprint : displayName(project),
           icon: CalendarRange,
           color,
           missing: !!snapshot,

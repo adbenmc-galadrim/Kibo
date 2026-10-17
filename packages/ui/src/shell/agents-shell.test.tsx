@@ -399,6 +399,7 @@ test("right click and the ellipsis open the same project menu; edit and delete o
   const names = () => screen.getAllByRole("menuitem").map((i) => i.textContent);
   expect(names()).toEqual([
     "Nouvelle page",
+    "Ajouter la page Vue d'ensemble",
     "Ajouter la page Planning",
     "Partager",
     "Modifier…",
@@ -409,6 +410,7 @@ test("right click and the ellipsis open the same project menu; edit and delete o
   await user.click(screen.getByRole("button", { name: "Actions de Kibo" }));
   expect(names()).toEqual([
     "Nouvelle page",
+    "Ajouter la page Vue d'ensemble",
     "Ajouter la page Planning",
     "Partager",
     "Modifier…",

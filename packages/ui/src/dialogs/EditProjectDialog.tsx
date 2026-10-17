@@ -28,6 +28,7 @@ import { PROJECT_COLORS } from "../lib/project-colors";
 import { isRemoteView } from "../lib/remote-view";
 import { DuplicationFields } from "../overlaps/DuplicationFields";
 import { DeliverySection } from "./DeliverySection";
+import { DescriptionField } from "./DescriptionField";
 import { FolderField, type FolderFieldProps } from "./FolderField";
 import { GuidelinesField } from "./GuidelinesField";
 import { IconField } from "./IconField";
@@ -70,6 +71,7 @@ export function EditProjectDialog({
   const folderHelpId = useId();
   const [name, setName] = useState(project.name);
   const [color, setColor] = useState<string>(project.color);
+  const [description, setDescription] = useState(project.description ?? "");
   const [folder, setFolder] = useState(project.folder ?? "");
   const [worktree, setWorktree] = useState<WorktreeSettings | null>(project.worktree ?? WORKTREE_DEFAULTS);
   const [storybook, setStorybook] = useState<StorybookSettings | null>(
@@ -92,6 +94,7 @@ export function EditProjectDialog({
   const patch = projectPatch(saved, {
     name,
     color,
+    description,
     tracking,
     folder: remote ? (project.folder ?? "") : folder,
     ...(showWorktree && { worktree, delivery }),
@@ -155,6 +158,7 @@ export function EditProjectDialog({
               onChange={(e) => setName(e.target.value)}
             />
           </div>
+          <DescriptionField value={description} onChange={setDescription} disabled={busy} />
           <div className="grid gap-1.5">
             <span className="text-sm font-medium">{t.color}</span>
             <RadioGroup value={color} onValueChange={setColor} aria-label={t.color} className="flex gap-2">
