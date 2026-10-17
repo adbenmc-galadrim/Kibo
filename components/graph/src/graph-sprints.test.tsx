@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SEED_TODAY, seedSprintGraph } from "./graph-sprints-seed";
 import { Component, manifest } from "./index";
@@ -11,8 +11,17 @@ import { kitInput } from "./sprint-lanes-kit";
 
 afterEach(cleanup);
 
-const setup = (seed = seedSprintGraph, config: Record<string, unknown> = {}) => {
-  const m = createMockSdk(manifest, { seed, surface: "view", viewer: "adam", today: SEED_TODAY, config });
+type Execution = "hidden" | "shown";
+
+const setup = (seed = seedSprintGraph, config: Record<string, unknown> = {}, agentExecution?: Execution) => {
+  const m = createMockSdk(manifest, {
+    seed,
+    surface: "view",
+    viewer: "adam",
+    today: SEED_TODAY,
+    config,
+    ...(agentExecution === undefined ? {} : { agentExecution }),
+  });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />
@@ -161,4 +170,35 @@ test("clicking a frame title or a step opens the ticket", async () => {
   await userEvent.click(screen.getByRole("button", { name: "Saisir un tronçon hors ligne" }));
   await userEvent.click(screen.getByRole("button", { name: "Conflits de saisie" }));
   expect(opened).toEqual(["EMIS-40", "EMIS-45"]);
+});
+
+const TESTS_STEP = "Envoyer les photos d'un tronçon · étape 4";
+
+async function withLiveRun(agentExecution: Execution) {
+  const m = setup(seedSprintGraph, {}, agentExecution);
+  await lanes();
+  const step = m.snapshot().tickets.find((t) => t.title === TESTS_STEP);
+  if (step === undefined) throw new Error("missing step");
+  act(() => m.setRuns([{ ticketId: step.id, runId: "r1", label: "Opus", state: "running", position: null }]));
+  const row = await screen.findByRole("button", { name: TESTS_STEP });
+  return row.closest("li");
+}
+
+test("a live run lights the step only when the execution is shown", async () => {
+  const row = await withLiveRun("shown");
+  expect(row?.getAttribute("data-session")).toBe("true");
+  expect(row?.className).toContain("border-(--tracking-brand-line)");
+});
+
+test("a live run stays dark when the execution is hidden", async () => {
+  const row = await withLiveRun("hidden");
+  expect(row?.getAttribute("data-session")).toBeNull();
+  expect(row?.className).not.toContain("border-(--tracking-brand-line)");
+});
+
+test("a T3 Code session always lights the step, without any run", () => {
+  render(<SprintLanes model={kitModel()} onOpen={() => undefined} />);
+  const f5 = screen.getByRole("article", { name: /^F5 / });
+  const row = within(f5).getByRole("button", { name: "Écran d'envoi hors ligne" }).closest("li");
+  expect(row?.getAttribute("data-session")).toBe("true");
 });
