@@ -102,7 +102,7 @@ export function TicketRow(props: RowFacts) {
               className={cn("font-mono", TEXT_12, done ? "text-(--tracking-dim)" : "text-(--tracking-mfg)")}
             />
           </span>
-          <span className={cn(CELL.title, "relative")}>
+          <span data-cell="title" className={cn(CELL.title, "relative")}>
             <RowDetails ticket={t} run={run} members={props.members} questions={questions}>
               <button
                 type="button"
@@ -116,6 +116,11 @@ export function TicketRow(props: RowFacts) {
                 {t.title}
               </button>
             </RowDetails>
+            {feature && (
+              <span data-slot="feature-inline" className="flex min-w-0 shrink @xl:hidden">
+                <FeatureChip feature={feature} onOpen={(id) => sdk.openTicket(id)} />
+              </span>
+            )}
             {running && (
               <span
                 role="img"
@@ -138,7 +143,7 @@ export function TicketRow(props: RowFacts) {
               <TicketRowActions entries={entries} label={fr.actions(t.keyLabel)} readOnly={readOnly} />
             </span>
           </span>
-          <span className={CELL.feature}>
+          <span data-cell="feature" className={CELL.feature}>
             {feature && <FeatureChip feature={feature} onOpen={(id) => sdk.openTicket(id)} />}
           </span>
           <span data-cell="status" className={CELL.status}>

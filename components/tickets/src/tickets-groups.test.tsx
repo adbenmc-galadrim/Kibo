@@ -28,10 +28,29 @@ test("groups have no row: the launchable tickets are listed, each with the chip 
   expect(titles).toEqual(["Bouton Livrer", "Puce d'étape", "Ligne de la fiche", "Un seul worktree"]);
   expect(screen.queryByRole("button", { name: "Parcours de livraison" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Étapes visibles" })).toBeNull();
-  const chips = screen.getAllByRole("button", {
-    name: "Ouvrir la fonctionnalité F1 · Parcours de livraison",
-  });
+  const chips = screen
+    .getAllByRole("button", { name: "Ouvrir la fonctionnalité F1 · Parcours de livraison" })
+    .filter((chip) => chip.closest("[data-cell=feature]"));
   expect(chips).toHaveLength(4);
   fireEvent.click(chips[0] ?? document.body);
   expect(m.opened).toEqual([m.snapshot().tickets.find((t) => t.key === "KIB-1")?.id ?? ""]);
+});
+
+test("below the wide breakpoint, the feature chip moves into the title cell", async () => {
+  const m = createMockSdk(manifest, { seed });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  await screen.findByText("Bouton Livrer");
+  const rows = Array.from(document.querySelectorAll("li [data-selected]"));
+  expect(rows).toHaveLength(4);
+  for (const row of rows) {
+    const inline = row.querySelector("[data-cell=title] [data-slot=feature-inline]");
+    expect(inline?.className.split(" ")).toContain("@xl:hidden");
+    expect(inline?.textContent).toBe("F1 · Parcours de livraison");
+    const column = row.querySelector("[data-cell=feature]");
+    expect(column?.className.split(" ")).toEqual(expect.arrayContaining(["hidden", "@xl:flex"]));
+  }
 });

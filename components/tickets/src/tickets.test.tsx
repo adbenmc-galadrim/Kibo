@@ -51,6 +51,12 @@ const rowKeys = (inSection: boolean) =>
     .map((r) => r.querySelector("span")?.textContent);
 const keysShown = () => rowKeys(false);
 
+const featureCell = (row: HTMLElement): HTMLElement => {
+  const found = row.querySelector<HTMLElement>("[data-cell=feature]");
+  if (!found) throw new Error("row without feature cell");
+  return found;
+};
+
 test("P4: title, sprint summary, columns, and the footer that says states come from git", async () => {
   setup();
   expect(await screen.findByRole("heading", { name: "Tickets" })).toBeTruthy();
@@ -76,7 +82,7 @@ test("open steps come first by recent activity, with their feature, state, git, 
   const row = await rowOf("KIB-14");
   expect(keysShown()).toEqual(["KIB-14", "KIB-9", "KIB-13", "KIB-10", "KIB-15"]);
   expect(
-    within(row).getByRole("button", {
+    within(featureCell(row)).getByRole("button", {
       name: "Ouvrir la fonctionnalité F3 · Envoyer les photos d'un tronçon",
     }),
   ).toBeTruthy();
@@ -135,7 +141,7 @@ test("a folded choice is remembered by the instance; Hors fonctionnalité opens 
 test("the feature chip opens the feature", async () => {
   const m = setup();
   const row = await rowOf("KIB-14");
-  fireEvent.click(within(row).getByRole("button", { name: /^Ouvrir la fonctionnalité F3/ }));
+  fireEvent.click(within(featureCell(row)).getByRole("button", { name: /^Ouvrir la fonctionnalité F3/ }));
   expect(m.opened).toEqual([m.snapshot().tickets.find((t) => t.keyLabel === "KIB-11")?.id ?? ""]);
 });
 

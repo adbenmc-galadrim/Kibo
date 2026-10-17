@@ -56,7 +56,9 @@ test("steps are rows, their feature is a chip; a root without step waits in Hors
   expect(await screen.findByText("tous les sprints · 2 tickets dans 1 fonctionnalité")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Arbre des pages" })).toBeNull();
   expect(
-    screen.getAllByRole("button", { name: "Ouvrir la fonctionnalité F1 · Arbre des pages" }),
+    screen
+      .getAllByRole("button", { name: "Ouvrir la fonctionnalité F1 · Arbre des pages" })
+      .filter((chip) => chip.closest("[data-cell=feature]")),
   ).toHaveLength(2);
   fireEvent.click(screen.getByRole("button", { name: "Déplacement" }));
   expect(m.opened).toEqual([byKey(m, "KIB-2")?.id ?? ""]);
