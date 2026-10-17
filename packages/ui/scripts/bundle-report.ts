@@ -9,16 +9,21 @@ export type EntryReport = {
   files: string[];
   gzipBytes: number;
   budget: number;
+  phaseBudget: number;
   forbidden: { file: string; module: string }[];
   ok: boolean;
 };
 export type ReportOptions = {
   budget: number;
+  phaseBudget?: number;
   forbidden: readonly RegExp[];
   gzip(bytes: Uint8Array<ArrayBuffer>): number;
 };
 
 export const ENTRY_GZIP_BUDGET = 230_000;
+export const PHASE_BUDGET = 224_000;
+
+export const formatGzip = (bytes: number): string => `${(bytes / 1000).toFixed(1)} kB (${bytes} octets)`;
 
 export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/node_modules\/(@codemirror|@lezer|@shikijs)\//,
@@ -125,6 +130,7 @@ export function initialChunks(chunks: readonly BuiltChunk[]): BuiltChunk[] {
 
 const DEFAULTS: ReportOptions = {
   budget: ENTRY_GZIP_BUDGET,
+  phaseBudget: PHASE_BUDGET,
   forbidden: FORBIDDEN_IN_ENTRY,
   gzip: gzipLevel9,
 };
@@ -138,12 +144,14 @@ export function reportEntry(chunks: readonly BuiltChunk[], opts: ReportOptions =
       .filter((id) => opts.forbidden.some((r) => r.test(id)))
       .map((module) => ({ file: c.fileName, module })),
   );
+  const phaseBudget = opts.phaseBudget ?? opts.budget;
   return {
     files: initial.map((c) => c.fileName),
     gzipBytes,
     budget: opts.budget,
+    phaseBudget,
     forbidden,
-    ok: gzipBytes <= opts.budget && forbidden.length === 0,
+    ok: gzipBytes <= opts.budget && gzipBytes <= phaseBudget && forbidden.length === 0,
   };
 }
 

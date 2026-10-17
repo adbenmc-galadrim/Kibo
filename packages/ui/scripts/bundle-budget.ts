@@ -1,6 +1,6 @@
 import { resolve } from "node:path";
 import { build, type Rollup } from "vite";
-import { type BuiltChunk, reportEntry, reportGraph } from "./bundle-report";
+import { type BuiltChunk, formatGzip, reportEntry, reportGraph } from "./bundle-report";
 
 const root = resolve(import.meta.dir, "..");
 const result = await build({
@@ -29,9 +29,9 @@ const chunks: BuiltChunk[] = outputs.flatMap((o) =>
 const emitted = outputs.flatMap((o) => o.output.map((c) => c.fileName));
 const graph = reportGraph(chunks, emitted);
 const report = reportEntry(chunks);
-const kb = (n: number) => `${(n / 1000).toFixed(1)} kB`;
 console.log(`Chargement initial : ${report.files.join(", ")}`);
-console.log(`gzip : ${kb(report.gzipBytes)} (budget ${kb(report.budget)})`);
+console.log(`gzip : ${formatGzip(report.gzipBytes)}`);
+console.log(`Exigence de phase : ${formatGzip(report.phaseBudget)}, plafond : ${formatGzip(report.budget)}`);
 for (const f of report.forbidden)
   console.error(`Module interdit au chargement initial : ${f.module} (${f.file})`);
 console.log(`Worker de l'aperçu : ${graph.previewWorker ?? "absent de workers/"}`);
