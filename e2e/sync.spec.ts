@@ -99,7 +99,8 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   await fetch(`http://127.0.0.1:${SYNC_PORTS.control}/stop`, { method: "POST" });
   await expect(adam.getByText("Kibo · sync hors ligne")).toBeVisible({ timeout: 10_000 });
   const leaHeader = lea.getByRole("main").locator("header").first();
-  await expect(leaHeader.getByText("· hors ligne")).toBeVisible({ timeout: 10_000 });
+  await expect(leaHeader.getByText("Hors ligne", { exact: true })).toBeVisible({ timeout: 10_000 });
+  await expect(leaHeader.getByText("Synchronisé")).toHaveCount(0);
   await expect(lea.getByText("Kibo · sync hors ligne")).toHaveCount(0);
   await adam.getByRole("button", { name: "Nouveau ticket dans À faire" }).click();
   await adam.getByLabel("Titre").fill("Créé hors ligne");
@@ -114,7 +115,8 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   await expect(adam.getByText(`${key}-…`)).toHaveCount(0);
   await expect(lea.getByText("Créé hors ligne")).toBeVisible({ timeout: 70_000 });
   await expect(lea.getByText(`${key}-2`)).toBeVisible();
-  await expect(leaHeader.getByText("· hors ligne")).toHaveCount(0);
+  await expect(leaHeader.getByText("Hors ligne", { exact: true })).toHaveCount(0);
+  await expect(leaHeader.getByText("Synchronisé")).toBeVisible();
 
   await adam.context().close();
   await lea.context().close();
