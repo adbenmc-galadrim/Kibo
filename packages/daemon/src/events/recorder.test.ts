@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import type { GithubPrRef, Sprint } from "@kibo/schema";
+import type { Sprint } from "@kibo/schema";
 import { KIBO_COMMAND } from "../docs";
-import { type EventsHarness, eventsHarness } from "./events.test-helper";
+import { type EventsHarness, eventsHarness, PR_18, seedFeature } from "./events.test-helper";
 
 let h: EventsHarness;
 beforeEach(() => {
@@ -9,32 +9,11 @@ beforeEach(() => {
 });
 afterEach(() => h.close());
 
-const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 const kinds = () => h.journal().map((e) => e.kind);
 const last = () => h.journal().at(-1);
-const PR: GithubPrRef = {
-  kind: "github_pr",
-  url: "https://github.com/galadrimteam/emis/pull/18",
-  number: 18,
-  state: "open",
-  base: "dev",
-  head: "feat/f3",
-  review: "none",
-  checks: "running",
-};
-
+const PR = PR_18;
 const BRANCH = { kind: "git_branch" as const, branch: "feat/f3", base: "dev" };
-
-function feature() {
-  const root = h.ticket("Synchronisation");
-  h.run({ method: "updateTicket", ticketId: root, shortKey: "F3" });
-  const done = h.ticket("Schéma", root);
-  const step = h.ticket("Envoi", root);
-  const demo = h.ticket("Démo", root);
-  h.run({ method: "setTicketOptional", ticketId: demo, optional: true });
-  h.run({ method: "setStatus", ticketId: done, statusId: "done" });
-  return { root, step, demo };
-}
+const feature = () => seedFeature(h);
 
 test("a status change is one event, with its root and its origin, a repeated status none", () => {
   const { root, step } = feature();
@@ -127,34 +106,6 @@ test("a delivery step is recorded by its kind, a retouch as update-delivery", ()
   ]);
 });
 
-test("a merge that delivers the last mandatory step is one line naming the feature", async () => {
-  const { root, step } = feature();
-  h.run({ method: "setStatus", ticketId: step, statusId: "in_review" });
-  h.run({ method: "upsertExternalRef", ticketId: step, ref: PR });
-  const before = h.journal().length;
-  h.run({ method: "upsertExternalRef", ticketId: step, ref: { ...PR, state: "merged", checks: "ok" } });
-  h.service.triggerRules(h.project.id, { kind: "pr_merged", ticketId: step });
-  await tick();
-  expect(h.journal().slice(before)).toMatchObject([
-    { kind: "pr_merged", ticketId: step, featureId: root, data: { number: 18, delivered: "F3" } },
-  ]);
-});
-
-test("a merge without a status change is recorded on its own, without delivery", async () => {
-  const { step } = feature();
-  h.run({ method: "upsertExternalRef", ticketId: step, ref: PR });
-  h.changes.length = 0;
-  h.run({ method: "upsertExternalRef", ticketId: step, ref: { ...PR, state: "merged" } });
-  await tick();
-  expect(last()).toMatchObject({ kind: "pr_merged", data: { number: 18 } });
-  expect(last()?.data.delivered).toBeUndefined();
-  expect(h.changes.filter((id) => id === h.project.id).length).toBeGreaterThanOrEqual(2);
-  h.run({ method: "setStatus", ticketId: step, statusId: "done" });
-  expect(h.journal().filter((e) => e.data.delivered !== undefined)).toMatchObject([
-    { kind: "status_changed", ticketId: step, data: { to: "done", delivered: "F3" } },
-  ]);
-});
-
 test("questions created and answered are recorded on their ticket", () => {
   const { root, step } = feature();
   const question = h.run({
@@ -214,4 +165,20 @@ test("after stop, commands are no longer recorded", () => {
   h.ticket("Seul");
   h.run({ method: "createSprint", code: "S44", name: "Fin", start: "2026-10-26", end: "2026-10-30" });
   expect(h.journal().length).toBe(before);
+});
+
+test("an event keeps the root of its ticket at the time of the fact", () => {
+  const first = h.ticket("Export");
+  const second = h.ticket("Import");
+  const step = h.ticket("Format", first);
+  h.ticket("Contrôle", second);
+  h.run({ method: "setStatus", ticketId: step, statusId: "in_progress" });
+  h.run({ method: "moveTicket", ticketId: step, parentId: second, index: 0 });
+  h.run({ method: "setStatus", ticketId: step, statusId: "in_review" });
+  expect(
+    h
+      .journal()
+      .filter((e) => e.ticketId === step)
+      .map((e) => e.featureId),
+  ).toEqual([first, second]);
 });

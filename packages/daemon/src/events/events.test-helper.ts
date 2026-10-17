@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { ProjectCommand, ProjectEvent, ProjectMeta, Ticket } from "@kibo/schema";
+import type { GithubPrRef, ProjectCommand, ProjectEvent, ProjectMeta, Ticket } from "@kibo/schema";
 import { type CommandMeta, USER_COMMAND } from "../docs";
 import { call, createService, type Service } from "../service";
 import { openStore, type Store } from "../store";
@@ -53,4 +53,28 @@ export function eventsHarness(): EventsHarness {
       rmSync(dir, { recursive: true, force: true });
     },
   };
+}
+
+export const PR_18: GithubPrRef = {
+  kind: "github_pr",
+  url: "https://github.com/galadrimteam/emis/pull/18",
+  number: 18,
+  state: "open",
+  base: "dev",
+  head: "feat/f3",
+  review: "none",
+  checks: "running",
+};
+
+export const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+
+export function seedFeature(h: EventsHarness) {
+  const root = h.ticket("Synchronisation");
+  h.run({ method: "updateTicket", ticketId: root, shortKey: "F3" });
+  const done = h.ticket("Schéma", root);
+  const step = h.ticket("Envoi", root);
+  const demo = h.ticket("Démo", root);
+  h.run({ method: "setTicketOptional", ticketId: demo, optional: true });
+  h.run({ method: "setStatus", ticketId: done, statusId: "done" });
+  return { root, step, demo };
 }

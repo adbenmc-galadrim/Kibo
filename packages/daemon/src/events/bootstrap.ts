@@ -34,6 +34,7 @@ export function startProjectEvents(deps: ProjectEventsDeps): ProjectEvents {
     store,
     snapshot: (projectId) => readProject(docs.project(projectId), docs.today(), docs.activity(projectId)),
     emit: (projectId) => docs.emit({ projectId }),
+    log,
   });
   const collected = new Map<string, Collected>();
 

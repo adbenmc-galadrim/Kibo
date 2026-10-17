@@ -13,6 +13,7 @@ export type EventRecorderDeps = {
   store: EventStore;
   snapshot(projectId: string): ProjectSnapshot;
   emit(projectId: string): void;
+  log(what: string, e: unknown): void;
 };
 export type EventRecorder = ProjectEventSink & {
   beforeCommand(projectId: string, token: unknown, method: ProjectCommand["method"]): void;
@@ -22,7 +23,7 @@ export type EventRecorder = ProjectEventSink & {
 type Pending = { token: unknown; snapshot: ProjectSnapshot | null };
 type Held = { events: ProjectEventInput[]; merged: ReadonlySet<string>; before: ProjectSnapshot };
 
-const followsMerge = (held: Held, done: readonly CommandEvent[]): boolean => {
+const isRuleOfMerge = (held: Held, done: readonly CommandEvent[]): boolean => {
   const first = done[0]?.command;
   return (
     first?.method === "setStatus" &&
@@ -30,6 +31,9 @@ const followsMerge = (held: Held, done: readonly CommandEvent[]): boolean => {
     done.every((e) => e.command.method === "setStatus")
   );
 };
+
+const droppedByMerge = (held: Held, event: ProjectEventInput): boolean =>
+  event.kind === "status_changed" && event.ticketId !== null && held.merged.has(event.ticketId);
 
 export function createEventRecorder(deps: EventRecorderDeps): EventRecorder {
   const pending = new Map<string, Pending>();
@@ -48,7 +52,11 @@ export function createEventRecorder(deps: EventRecorderDeps): EventRecorder {
   const hold = (projectId: string, waiting: Held) => {
     held.set(projectId, waiting);
     queueMicrotask(() => {
-      if (held.get(projectId) === waiting && release(projectId)) deps.emit(projectId);
+      try {
+        if (held.get(projectId) === waiting && release(projectId)) deps.emit(projectId);
+      } catch (e) {
+        deps.log(`held project events not recorded for ${projectId}`, e);
+      }
     });
   };
 
@@ -71,16 +79,17 @@ export function createEventRecorder(deps: EventRecorderDeps): EventRecorder {
       pending.delete(projectId);
       if (!done.some((e) => TRACKED_METHODS.has(e.command.method))) return;
       const after = deps.snapshot(projectId);
+      const before = known?.snapshot ?? after;
+      const events = translate({ before, after }, done);
       const waiting = held.get(projectId);
-      if (waiting && followsMerge(waiting, done)) {
+      if (waiting && isRuleOfMerge(waiting, done)) {
         held.delete(projectId);
-        markDelivered(waiting.events, deliveredRoots({ before: waiting.before, after }));
-        write(projectId, waiting.events);
+        const all = [...waiting.events, ...events.filter((e) => !droppedByMerge(waiting, e))];
+        markDelivered(all, deliveredRoots({ before: waiting.before, after }));
+        write(projectId, all);
         return;
       }
       release(projectId);
-      const before = known?.snapshot ?? after;
-      const events = translate({ before, after }, done);
       markDelivered(events, deliveredRoots({ before, after }));
       const merged = new Set(
         events.flatMap((e) => (e.kind === "pr_merged" && e.ticketId ? [e.ticketId] : [])),
