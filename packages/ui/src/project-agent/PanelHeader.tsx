@@ -15,7 +15,7 @@ type Props = {
 
 export function PanelHeader({ project, status, lastTurnAt, menu, onClose }: Props) {
   return (
-    <header className="flex h-[60px] shrink-0 items-center gap-[10px] border-b border-(--tracking-soft) px-[18px]">
+    <header className="flex h-[61px] shrink-0 items-center gap-[10px] border-b border-(--tracking-soft) px-[18px]">
       <span className="flex size-[30px] shrink-0 items-center justify-center rounded-full border border-(--tracking-brand-line) bg-(--tracking-brand-soft)">
         <Bot aria-hidden className="size-[17px] text-(--tracking-brand)" />
       </span>

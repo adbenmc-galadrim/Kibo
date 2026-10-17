@@ -50,12 +50,13 @@ async function openProjectPanel(page: Page, projectId: string): Promise<Locator>
   return panel;
 }
 
-async function expectBelow(panel: Locator, header: Locator): Promise<void> {
+async function expectDocked(panel: Locator, header: Locator): Promise<void> {
   const panelBox = await panel.boundingBox();
   const headerBox = await header.boundingBox();
   if (!panelBox || !headerBox) throw new Error("panel or header not laid out");
-  expect(panelBox.y).toBeGreaterThanOrEqual(headerBox.y + headerBox.height);
-  expect(panelBox.width).toBe(340);
+  expect(panelBox.y).toBeLessThanOrEqual(headerBox.y);
+  expect(headerBox.x + headerBox.width).toBeLessThanOrEqual(panelBox.x);
+  expect(panelBox.width).toBe(341);
 }
 
 async function say(panel: Locator, message: string): Promise<void> {
@@ -87,7 +88,7 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
   await expect(button).toBeVisible();
   await expect(button).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("navigation", { name: "Fil d'Ariane" })).toBeVisible();
-  await expectBelow(panel, button);
+  await expectDocked(panel, button);
   await button.click();
   await expect(panel).toBeHidden();
   await button.click();

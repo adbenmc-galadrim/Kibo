@@ -1,7 +1,7 @@
 import type { TabTarget } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { SidebarProvider } from "@kibo/sdk/ui/sidebar";
-import type { CSSProperties, ReactNode } from "react";
+import { type CSSProperties, type ReactNode, useEffect } from "react";
 import { TabBar } from "../../tabs/TabBar";
 import type { TabDescription } from "../../tabs/tab-title";
 import type { TabsApi } from "../../tabs/use-tabs";
@@ -33,6 +33,14 @@ export function WorkspaceFrame({
   children,
 }: Props) {
   const visible = showTabBar(tabs.state, tabs.error);
+  useEffect(() => {
+    if (visible) return;
+    const root = document.documentElement.style;
+    root.setProperty("--tabbar-h", "0px");
+    return () => {
+      root.removeProperty("--tabbar-h");
+    };
+  }, [visible]);
   return (
     <div className={cn("flex h-svh flex-col", !visible && "[--tabbar-h:0px]")}>
       {visible && (

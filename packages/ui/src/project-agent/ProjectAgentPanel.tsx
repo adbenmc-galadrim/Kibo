@@ -27,6 +27,9 @@ import { TrackingView } from "./TrackingView";
 import { usePanelWidth } from "./use-panel-width";
 import { useProjectAgent } from "./use-project-agent";
 
+const DOCK_VAR = "--project-agent-w";
+const DOCK_RULE = 1;
+
 type Props = {
   open: boolean;
   project: ProjectSnapshot;
@@ -43,6 +46,15 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
   const host = useHost();
   const projectId = project.meta.id;
   const [width, setWidth] = usePanelWidth();
+  const docked = width + DOCK_RULE;
+  useEffect(() => {
+    if (!open) return;
+    const root = document.documentElement.style;
+    root.setProperty(DOCK_VAR, `${docked}px`);
+    return () => {
+      root.removeProperty(DOCK_VAR);
+    };
+  }, [open, docked]);
   const [mode, setMode] = useState<Mode>(tab === "signals" ? CURRENT : TRACKING);
   const tabNow = useRef(tab);
   tabNow.current = tab;
@@ -119,8 +131,8 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
       <SheetContent
         side="right"
         showCloseButton={false}
-        className="gap-0 bg-(--tracking-panel) p-0 sm:max-w-none"
-        style={{ width, top: "var(--shell-top)", height: "auto" }}
+        className="box-content gap-0 bg-(--tracking-panel) p-0 sm:max-w-none"
+        style={{ width, top: "var(--tabbar-h)", height: "auto" }}
         onInteractOutside={(e) => e.preventDefault()}
         onOpenAutoFocus={(e) => e.preventDefault()}
         onEscapeKeyDown={keepLayerOnSkillEscape}

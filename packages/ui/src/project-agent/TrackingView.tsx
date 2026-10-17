@@ -20,9 +20,9 @@ type Props = {
 };
 
 const t = frProjectAgent.tracking;
-const HEADING = "text-[12px] leading-[1.2] font-semibold tracking-[0.5px] text-(--tracking-mfg) uppercase";
+const HEADING = "text-[12px] leading-[15px] font-semibold tracking-[0.5px] text-(--tracking-mfg) uppercase";
 const SUMMARY =
-  "gap-[8px] text-[13px] leading-[1.55] text-(--tracking-mfg) [&>:first-child]:text-[14px] [&>:first-child]:leading-[1.45] [&>:first-child]:font-medium [&>:first-child]:text-(--tracking-fg)";
+  "gap-[8px] text-[13px] leading-[20.33px] text-(--tracking-mfg) [&>:first-child]:text-[14px] [&>:first-child]:leading-[21px] [&>:first-child]:font-medium [&>:first-child]:text-(--tracking-fg)";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();

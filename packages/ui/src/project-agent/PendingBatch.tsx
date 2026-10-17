@@ -28,9 +28,9 @@ function ActionRow({ action, labels, checked, onCheck }: RowProps) {
         onCheckedChange={(v) => onCheck(v === true)}
         className={BOX}
       />
-      <div className="grid min-w-0 flex-1 gap-[3px] leading-[1.2]">
-        <span className="text-[13px] font-medium text-(--tracking-fg)">{title}</span>
-        {action.why && <span className="text-[12px] text-(--tracking-mfg)">{action.why}</span>}
+      <div className="grid min-w-0 flex-1 gap-[3px]">
+        <span className="text-[13px] leading-[16px] font-medium text-(--tracking-fg)">{title}</span>
+        {action.why && <span className="text-[12px] leading-[15px] text-(--tracking-mfg)">{action.why}</span>}
       </div>
     </li>
   );
@@ -68,9 +68,11 @@ export function PendingBatch({ batch, labels, onDecide }: Props) {
       aria-label={t.region(batch.seq)}
       className="flex w-full flex-col overflow-hidden rounded-[10px] border border-(--tracking-brand-line) bg-(--tracking-card)"
     >
-      <header className="flex items-center gap-[8px] bg-(--tracking-brand-soft) px-[14px] py-[10px] leading-[1.2]">
+      <header className="flex items-center gap-[8px] bg-(--tracking-brand-soft) px-[14px] py-[10px] leading-[15px]">
         <h3 className="text-[13px] font-semibold text-(--tracking-brand-text)">{t.region(batch.seq)}</h3>
-        <span className="ml-auto text-[12px] text-(--tracking-mfg)">{t.count(batch.actions.length)}</span>
+        <span className="ml-auto text-[12px] leading-[15px] text-(--tracking-mfg)">
+          {t.count(batch.actions.length)}
+        </span>
       </header>
       <ul className="divide-y divide-(--tracking-soft) border-y border-(--tracking-soft)">
         {[...batch.actions]
@@ -85,7 +87,7 @@ export function PendingBatch({ batch, labels, onDecide }: Props) {
             />
           ))}
       </ul>
-      <footer className="flex items-center gap-[8px] px-[14px] py-[12px]">
+      <footer className="flex items-center gap-[8px] px-[14px] pt-[12px] pb-[11px]">
         {rejecting ? (
           <>
             <Button

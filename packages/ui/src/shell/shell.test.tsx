@@ -757,19 +757,23 @@ test("a read-only project has no project agent: no button, ⌘J does nothing", a
   expect(localStorage.getItem("kibo.projectAgent.open")).toBeNull();
 });
 
-test("the project agent opens below the header, whose button stays pressed and closes it", async () => {
+test("the project agent docks beside the content under the tab bar, its button stays pressed and closes it", async () => {
   renderShell();
   await go("#/p/p1/");
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Agent de projet" }));
   const panel = await screen.findByRole("dialog", { name: "Agent de projet · Kibo" });
-  expect(panel.style.top).toBe("var(--shell-top)");
+  expect(panel.style.top).toBe("var(--tabbar-h)");
   expect(panel.style.height).toBe("auto");
+  expect(panel.style.width).toBe("340px");
+  const docked = () => document.documentElement.style.getPropertyValue("--project-agent-w");
+  expect(docked()).toBe("341px");
   const button = screen.getByRole("button", { name: "Agent de projet" });
   expect(button.getAttribute("aria-pressed")).toBe("true");
   await user.click(button);
   await waitFor(() => expect(screen.queryByRole("dialog", { name: /^Agent de projet/ })).toBeNull());
   expect(screen.getByRole("button", { name: "Agent de projet" }).getAttribute("aria-pressed")).toBe("false");
+  expect(docked()).toBe("");
 });
 
 test("the signal badge of the header opens the project agent on its signal box", async () => {
