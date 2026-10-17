@@ -98,6 +98,10 @@ test("an edited answer reads old → new, archive and restore are one word", () 
   ]);
 });
 
+test("a reminder is one word", () => {
+  expect(lines(question([event("reminded", 4)]))).toEqual(["il y a 4 min · Adam · Relancée"]);
+});
+
 test("each entry knows the state right after its event, newest first", () => {
   const q = question([event("updated", 5, { title: "A" }), event("updated", 3, { title: "B" })], {
     title: "C",

@@ -122,6 +122,9 @@ export function capture(
     case "unlink":
     case "createQuestion":
     case "dismissSignal":
+    case "setSprint":
+    case "createSprint":
+    case "remindQuestion":
       return {};
   }
 }

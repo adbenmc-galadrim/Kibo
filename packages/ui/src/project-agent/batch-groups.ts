@@ -23,7 +23,7 @@ export type DiffLabels = {
   recipient(recipient: string): string;
 };
 
-const ORDER: readonly ActionGroup[] = ["tickets", "agents", "questions", "notes", "signals"];
+const ORDER: readonly ActionGroup[] = ["tickets", "sprints", "agents", "questions", "notes", "signals"];
 const t = frProjectAgent.action;
 const field = frProjectAgent.field;
 const NOTHING = "—";
@@ -100,6 +100,12 @@ export function actionTitle(action: ProposedAction, labels: DiffLabels = default
       return t.updateNote(action.path);
     case "dismissSignal":
       return t.dismissSignal(action.signal);
+    case "setSprint":
+      return action.sprint === null ? t.unplan(action.ticket) : t.setSprint(action.ticket, action.sprint);
+    case "createSprint":
+      return t.createSprint(action.code, action.name);
+    case "remindQuestion":
+      return t.remindQuestion(questionTitle(action.questionId, labels));
   }
 }
 

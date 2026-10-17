@@ -37,6 +37,7 @@ const MCP_DETAILS: Record<ProjectAgentTool, (input: ToolInput) => string | null>
   list_tickets: filters("status", "label"),
   get_ticket: (input) => text(input.key),
   list_questions: filters("state", "ticketKey"),
+  list_sprints: () => null,
   list_runs: filters("state"),
   list_notes: () => null,
   read_note: (input) => text(input.path),

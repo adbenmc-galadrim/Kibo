@@ -32,3 +32,7 @@ test("the history keeps the last twenty events, the oldest goes first", () => {
   expect(full).toHaveLength(20);
   expect(pushEvent([], event(1))).toEqual([event(1)]);
 });
+
+test("a reminder is a question event without previous values", () => {
+  expect(QuestionEvent.parse({ kind: "reminded", at: 2, by: ADAM, previous: {} }).kind).toBe("reminded");
+});

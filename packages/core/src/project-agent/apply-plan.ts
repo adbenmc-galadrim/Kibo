@@ -187,6 +187,9 @@ export function commandsFor(
     case "createNote":
     case "updateNote":
     case "dismissSignal":
+    case "setSprint":
+    case "createSprint":
+    case "remindQuestion":
       return [];
   }
 }

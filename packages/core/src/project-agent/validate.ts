@@ -88,6 +88,8 @@ function existingLink(scan: Scan, kind: "blocks" | "relates", from: string, to: 
   );
 }
 
+const notYetApplied = (): string[] => ["action pas encore prise en charge par Kibo"];
+
 const checks: { [T in ActionType]: Check<T> } = {
   createTicket(scan, a, i) {
     if (scan.declared.get(a.ref) !== i) return [`référence ${a.ref} déclarée deux fois`];
@@ -170,6 +172,9 @@ const checks: { [T in ActionType]: Check<T> } = {
   dismissSignal(scan, a) {
     return touch(scan, a.signal);
   },
+  setSprint: notYetApplied,
+  createSprint: notYetApplied,
+  remindQuestion: notYetApplied,
 };
 
 function runCheck<T extends ActionType>(

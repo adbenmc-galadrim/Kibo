@@ -9,6 +9,7 @@ import {
   type ProjectSnapshot,
   type QueueEntry,
   type RunView,
+  sprintSummaries,
   type TicketCard,
 } from "@kibo/schema";
 import { runModel } from "../agents/compose";
@@ -78,6 +79,7 @@ export function projectOverview(input: OverviewInput): ProjectOverview {
     profiles: assignableAgents(input.agents, input.demoProject).map(assignableEntry),
     memory: input.memory,
     openSignals: input.openSignals,
+    sprints: sprintSummaries(project),
   };
 }
 

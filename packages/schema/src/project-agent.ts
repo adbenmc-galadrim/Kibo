@@ -13,6 +13,7 @@ import {
 import { QuestionRecipient, RECIPIENT_ID_MAX } from "./question-recipient";
 import type { RunView } from "./run";
 import { ActionId, SIGNAL_REFS_MAX, SignalRef } from "./signal";
+import { SprintCode, SprintDate, SprintName } from "./sprint";
 import { StatusId } from "./status";
 
 export const MEMORY_NOTE_PATH = "agent-de-projet/memoire.md";
@@ -112,10 +113,20 @@ export const ProposedAction = z.discriminatedUnion("type", [
   z.object({ ...base, type: z.literal("createNote"), path: NotePath, content: NoteBody }),
   z.object({ ...base, type: z.literal("updateNote"), path: NotePath, content: NoteBody }),
   z.object({ ...base, type: z.literal("dismissSignal"), signal: SignalRef }),
+  z.object({ ...base, type: z.literal("setSprint"), ticket: TicketRef, sprint: SprintCode.nullable() }),
+  z.object({
+    ...base,
+    type: z.literal("createSprint"),
+    code: SprintCode,
+    name: SprintName,
+    start: SprintDate,
+    end: SprintDate,
+  }),
+  z.object({ ...base, type: z.literal("remindQuestion"), questionId: NodeId }),
 ]);
 export type ProposedAction = z.infer<typeof ProposedAction>;
 export type ActionType = ProposedAction["type"];
-export type ActionGroup = "tickets" | "agents" | "questions" | "notes" | "signals";
+export type ActionGroup = "tickets" | "sprints" | "agents" | "questions" | "notes" | "signals";
 
 export const ACTION_GROUPS: Record<ActionType, ActionGroup> = {
   createTicket: "tickets",
@@ -135,6 +146,9 @@ export const ACTION_GROUPS: Record<ActionType, ActionGroup> = {
   createNote: "notes",
   updateNote: "notes",
   dismissSignal: "signals",
+  setSprint: "sprints",
+  createSprint: "sprints",
+  remindQuestion: "questions",
 };
 
 export const ProposeBatchInput = z.object({

@@ -12,6 +12,7 @@ const FRESH_REASONS: Record<SessionFreshReason, string> = {
 
 const GROUPS: Record<ActionGroup, string> = {
   tickets: "Tickets",
+  sprints: "Sprints",
   agents: "Agents",
   questions: "Questions",
   notes: "Notes",
@@ -144,6 +145,10 @@ export const frProjectAgent = {
     createNote: (path: string) => `Créer la note ${path}`,
     updateNote: (path: string) => `Mettre à jour la note ${path}`,
     dismissSignal: (ref: string) => `Signal ${ref} : sans suite`,
+    setSprint: (ticket: string, sprint: string) => `Déplacer ${ticket} en ${sprint}`,
+    unplan: (ticket: string) => `Retirer ${ticket} du planning`,
+    createSprint: (code: string, name: string) => `Créer le sprint ${code} · ${name}`,
+    remindQuestion: (title: string) => `Relancer « ${title} »`,
     confirm: "Confirmer",
     none: "aucun",
     unknownTicket: "ticket introuvable",

@@ -103,6 +103,7 @@ export * from "./skill-rpc";
 export * from "./skill-suggest";
 export * from "./sprint";
 export * from "./sprint-end";
+export * from "./sprint-summary";
 export * from "./startable";
 export * from "./status";
 export * from "./status-projection";

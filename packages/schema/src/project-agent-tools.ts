@@ -10,6 +10,7 @@ import { type QuestionRecipient, RECIPIENT_ID_MAX } from "./question-recipient";
 import { RunState } from "./run";
 import { PROJECT_SIGNAL_TOOLS } from "./signal";
 import { SHARED_TOOL_NAMES, SKILL_REVIEW_TOOL } from "./skill";
+import type { SprintSummary } from "./sprint-summary";
 import { StatusId } from "./status";
 
 export const PROJECT_AGENT_TOOLS = [
@@ -17,6 +18,7 @@ export const PROJECT_AGENT_TOOLS = [
   "list_tickets",
   "get_ticket",
   "list_questions",
+  "list_sprints",
   "list_runs",
   "list_notes",
   "read_note",
@@ -72,6 +74,7 @@ export const TOOL_INPUTS: Record<ProjectAgentTool, z.ZodTypeAny> = {
   list_tickets: ListTicketsInput,
   get_ticket: GetTicketInput,
   list_questions: ListQuestionsInput,
+  list_sprints: NoInput,
   list_runs: ListRunsInput,
   list_notes: CursorInput,
   read_note: ReadNoteInput,
@@ -144,4 +147,5 @@ export type ProjectOverview = {
   profiles: AssignableAgent[];
   memory: string;
   openSignals: number;
+  sprints: SprintSummary[];
 };
