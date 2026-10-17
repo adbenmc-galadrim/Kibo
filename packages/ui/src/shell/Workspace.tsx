@@ -22,6 +22,7 @@ import { describeTarget } from "../tabs/tab-title";
 import { activeTarget } from "../tabs/tabs-model";
 import { targetToHash } from "../tabs/target-hash";
 import { useHashSync } from "../tabs/use-hash-sync";
+import { useShownTabs } from "../tabs/use-shown-tabs";
 import type { TabsApi } from "../tabs/use-tabs";
 import { cycleTheme } from "../theme";
 import { AgentsShellProvider } from "./AgentsShellProvider";
@@ -122,7 +123,8 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     showProjectAgent: agentPanel.show,
   });
 
-  useWorkspaceKeys({ tabs, dialogs, palette, set, setPalette, toggleAgent: agentPanel.toggle });
+  const shownTabs = useShownTabs(tabs);
+  useWorkspaceKeys({ tabs: shownTabs, dialogs, palette, set, setPalette, toggleAgent: agentPanel.toggle });
 
   const onAction = paletteActionHandler({ set, setFocusRun, go, activeProjectId, cycleTheme });
   const openFileTab = fileTabOpener({ editRequests: editRequests.current, set, go });
@@ -153,7 +155,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
       <AgentsShellProvider agents={agents} openView={views.openView}>
         <PageActionsProvider>
           <WorkspaceFrame
-            tabs={tabs}
+            tabs={shownTabs}
             describe={describe}
             isDirty={isDirty}
             onNewTab={() => setPalette({ newTab: true })}

@@ -5,7 +5,16 @@ import { fr } from "../i18n/fr";
 import { PageView } from "../pages/PageView";
 import { ProjectHome } from "../pages/ProjectHome";
 import { targetToHash } from "../tabs/target-hash";
-import { ChangesView, FileTabView, RunPage, SkillsPage, TicketTab, Welcome } from "./lazy-screens";
+import {
+  ChangesView,
+  FileTabView,
+  HiddenScreenNotice,
+  RunPage,
+  SkillsPage,
+  TicketTab,
+  Welcome,
+} from "./lazy-screens";
+import { ExecutionGate } from "./nav/ExecutionGate";
 import { Overview } from "./Overview";
 
 type Props = {
@@ -54,7 +63,11 @@ export function ContentView(p: Props) {
     );
   if (t.kind === "run") return <RunPage key={t.runId} runId={t.runId} />;
   if (t.kind === "skill")
-    return <SkillsPage key={t.skillId} projects={p.projects} initialSkill={t.skillId} />;
+    return (
+      <ExecutionGate fallback={<HiddenScreenNotice onOpen={(target) => p.onOpen(target)} />}>
+        <SkillsPage key={t.skillId} projects={p.projects} initialSkill={t.skillId} />
+      </ExecutionGate>
+    );
   if (!p.project) return null;
   switch (t.kind) {
     case "project":
