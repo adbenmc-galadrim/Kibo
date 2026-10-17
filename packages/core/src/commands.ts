@@ -212,10 +212,15 @@ export function readProject(
   const questions = listQuestions(doc);
   const links = listLinks(doc);
   const sprints = listSprints(doc);
-  const tickets = ticketViews(
-    { projectKey: meta.key, tickets: listTickets(doc), links, questions, sprints, today },
+  const tickets = ticketViews({
+    projectKey: meta.key,
+    tickets: listTickets(doc),
+    links,
+    questions,
+    sprints,
+    today,
     activity,
-  );
+  });
   return {
     meta,
     workflow: getWorkflow(doc),

@@ -94,6 +94,17 @@ describe("project meta", () => {
     expect(() => setProjectMeta(doc, { tracking: { openLimit: 11 } })).toThrow("INVALID_INPUT");
     expect(setProjectMeta(doc, { tracking: null }).tracking).toBeNull();
   });
+
+  test("setProjectMeta writes the description, which survives a snapshot and can be cleared", () => {
+    const doc = createProjectDoc(meta);
+    const description = "Application terrain des contrôleurs";
+    expect(setProjectMeta(doc, { description }).description).toBe(description);
+    const copy = new LoroDoc();
+    copy.import(doc.export({ mode: "snapshot" }));
+    expect(getProjectMeta(copy).description).toBe(description);
+    expect(() => setProjectMeta(doc, { description: "x".repeat(201) })).toThrow("INVALID_INPUT");
+    expect(setProjectMeta(doc, { description: null }).description).toBeNull();
+  });
 });
 
 describe("project", () => {

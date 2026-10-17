@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { Sprint, Ticket } from "@kibo/schema";
+import { NO_ACTIVITY, type ProjectActivity, type Sprint, type Ticket } from "@kibo/schema";
 import { createProjectDoc, executeProjectCommand, readProject } from "./index";
 
 const newDoc = () =>
@@ -153,4 +153,35 @@ test("a feature whose next step has an open blocking question is blocked", () =>
     createdBy: { kind: "human", ref: "adam" },
   });
   expect(view(d, f6.id).feature).toMatchObject({ status: "blocked", nextStepId: a.id });
+});
+
+const activityOf = (input: Partial<ProjectActivity>): ProjectActivity => ({ ...NO_ACTIVITY, ...input });
+const viewWith = (d: ReturnType<typeof newDoc>, activity: ProjectActivity, id: string) => {
+  const t = readProject(d, "2026-10-16", activity).tickets.find((x) => x.id === id);
+  if (!t) throw new Error(`missing ${id}`);
+  return t;
+};
+
+test("a ticket in a session carries it and is busy, the others have none", () => {
+  const d = newDoc();
+  const a = create(d, "A");
+  const b = create(d, "B");
+  const session = { tool: "T3 Code", startedAt: 1_000 };
+  const activity = activityOf({ sessions: new Map([[a.id, session]]) });
+  expect(viewWith(d, activity, a.id)).toMatchObject({ session, startable: false });
+  expect(viewWith(d, activity, b.id)).toMatchObject({ session: null, startable: true });
+});
+
+test("updatedAt is the last event of the ticket, else its delivery step, else null", () => {
+  const d = newDoc();
+  const a = create(d, "A");
+  const b = create(d, "B");
+  const c = create(d, "C");
+  const delivery = { step: 7, note: "", at: 2_000, runId: null, kind: "delivery" as const };
+  executeProjectCommand(d, { method: "setTicketDelivery", ticketId: a.id, delivery });
+  executeProjectCommand(d, { method: "setTicketDelivery", ticketId: b.id, delivery });
+  const activity = activityOf({ lastEventAt: new Map([[a.id, 5_000]]) });
+  expect(viewWith(d, activity, a.id).updatedAt).toBe(5_000);
+  expect(viewWith(d, activity, b.id).updatedAt).toBe(2_000);
+  expect(viewWith(d, activity, c.id).updatedAt).toBeNull();
 });
