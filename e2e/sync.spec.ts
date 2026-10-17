@@ -23,7 +23,6 @@ async function openAs(browser: Browser, port: number, colorScheme: "dark" | "lig
 async function pair(page: Page) {
   await page.goto(`/#pair=${E2E_TOKEN}`);
   await expect(page.getByRole("button", { name: "Ajouter un projet" })).toBeVisible();
-  await showAgentExecution(page);
 }
 
 async function connect(page: Page, code: string, device: string) {
@@ -44,6 +43,7 @@ function presentIn(page: Page, name: string) {
   return page
     .getByRole("main")
     .getByRole("list", { name: "Personnes présentes" })
+    .last()
     .getByRole("img", { name, exact: true });
 }
 
@@ -99,6 +99,9 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
 
   await fetch(`http://127.0.0.1:${SYNC_PORTS.control}/stop`, { method: "POST" });
   await expect(adam.getByText("Kibo · sync hors ligne")).toBeVisible({ timeout: 10_000 });
+  const leaHeader = lea.getByRole("main").locator("header").first();
+  await expect(leaHeader.getByText("· hors ligne")).toBeVisible({ timeout: 10_000 });
+  await expect(lea.getByText("Kibo · sync hors ligne")).toHaveCount(0);
   await adam.getByRole("button", { name: "Nouveau ticket dans À faire" }).click();
   await adam.getByLabel("Titre").fill("Créé hors ligne");
   await adam.getByRole("button", { name: "Créer le ticket" }).click();
@@ -112,6 +115,7 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   await expect(adam.getByText(`${key}-…`)).toHaveCount(0);
   await expect(lea.getByText("Créé hors ligne")).toBeVisible({ timeout: 70_000 });
   await expect(lea.getByText(`${key}-2`)).toBeVisible();
+  await expect(leaHeader.getByText("· hors ligne")).toHaveCount(0);
 
   await adam.context().close();
   await lea.context().close();
