@@ -49,7 +49,7 @@ function ticketCrumbs(p: ProjectSnapshot, ticketId: string, project: Crumb): Cru
 function sprintCrumbs(p: ProjectSnapshot, sprintId: string, project: Crumb): Crumb[] {
   const sprint = p.sprints.find((s) => s.id === sprintId);
   if (!sprint) return [project, text(frNavTracking.missingSprint)];
-  return underPlanning(p, project, text(frNavTracking.sprintLabel(sprint.code, sprint.name)));
+  return underPlanning(p, project, text(`${sprint.code} · ${sprint.name}`));
 }
 
 export function crumbsFor(

@@ -5,11 +5,8 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 import { linkedRepos } from "../dialogs/sync/linked-repos";
 import { fr } from "../i18n/fr";
-import { frNavTracking } from "../i18n/fr-nav-tracking";
 import { compactInstances } from "../lib/format-grid";
-import { useHost } from "../shell/Host";
 import { PresenceAvatars, SourceHeader } from "../shell/lazy-screens";
-import { newTicketSource } from "../shell/nav/new-ticket-pages";
 import { PageActions } from "../shell/page-actions";
 import { canEdit } from "../state/access";
 import { DashboardGrid } from "./DashboardGrid";
@@ -22,6 +19,11 @@ const AddComponentDialog = lazyPanel(
   fr.lazy,
   { fallback: "sr-only" },
 );
+const NewTicketAction = lazyPanel(
+  () => import("../shell/nav/NewTicketAction").then((m) => m.NewTicketAction),
+  fr.lazy,
+  { fallback: "sr-only" },
+);
 const EditLayout = lazyPanel(() => import("./EditLayout").then((m) => m.EditLayout), fr.lazy);
 const PublishDialog = lazyPanel(
   () => import("../components-page/PublishDialog").then((m) => m.PublishDialog),
@@ -31,7 +33,6 @@ const PublishDialog = lazyPanel(
 
 type Props = { project: ProjectSnapshot; page: Page; viewer: string; question?: string | null };
 export function PageView({ project, page, viewer, question = null }: Props) {
-  const host = useHost();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(false);
   const [publishing, setPublishing] = useState<string | null>(null);
@@ -60,17 +61,7 @@ export function PageView({ project, page, viewer, question = null }: Props) {
             />
           </PageActions>
         )}
-        {editable && newTicketSource(page.id, instances) === "shell" && (
-          <PageActions>
-            <Button
-              variant="outline"
-              className="h-[25px] gap-[6px] rounded-[6px] px-[10px] text-[12px] font-medium shadow-none has-[>svg]:px-[10px] [&_svg:not([class*='size-'])]:size-[13px]"
-              onClick={() => host.openNewTicket({})}
-            >
-              <Plus absoluteStrokeWidth size={13} /> {frNavTracking.newTicket}
-            </Button>
-          </PageActions>
-        )}
+        {editable && <NewTicketAction pageId={page.id} instances={instances} />}
         {layoutMode && !editing && (
           <PageActions>
             <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
