@@ -43,6 +43,7 @@ export const TabTarget = z.discriminatedUnion("kind", [
     line: z.number().int().positive().nullable(),
   }),
   z.object({ kind: z.literal("ticket"), projectId: ProjectId, ticketId: NodeId }),
+  z.object({ kind: z.literal("sprint"), projectId: ProjectId, sprintId: NodeId }),
   z.object({ kind: z.literal("screen"), screen: Screen, projectId: ProjectId.nullable().optional() }),
   z.object({ kind: z.literal("run"), runId: z.string().min(1) }),
   z.object({ kind: z.literal("skill"), skillId: SkillId }),
