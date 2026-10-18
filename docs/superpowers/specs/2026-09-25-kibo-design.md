@@ -2634,6 +2634,19 @@ Le dépôt est public : il ne contient aucune donnée d'un projet client, ni son
 - **Historique git** : laissé tel quel (décision d'Adam).
 - **Machine d'Adam** : le projet client reste dans son Kibo local ; aucune tâche ne lit ni n'écrit son démon.
 
+### 40.1 Écarts constatés à l'exécution (phase 28)
+
+Détail par tâche dans la section « Écarts » du plan `2026-10-18-kibo-phase-28.md` ; ce qui compte pour la suite :
+
+1. **Garde-fou** (`scripts/forbidden-terms`) : NFC, insensible à la casse ; un terme compte s'il n'est pas collé à une autre lettre, sauf à une frontière camelCase (minuscule puis majuscule) ; tiret bas, chiffres et ponctuation sont des séparateurs ; noms de fichiers scannés ; contenu binaire ignoré ; rapport masqué (`<terme k>`, jamais le texte du terme) ; `FORBIDDEN_TERMS_SCOPE` borne le scan, `FORBIDDEN_TERMS_PATH` change la liste ; sauté si la liste est absente (CI).
+2. **Clés** : `SILO` pour les fixtures, maquettes et semis ; dans les docs historiques, le vrai projet s'écrit « le projet client », clé `CLIENT`, sans numéro de ticket qui puisse être rapproché d'un ticket Silo.
+3. **Branches** en minuscules (`feat/silo-45`).
+4. **Vocabulaire métier** neutralisé au-delà des termes listés (location de box : centres, box, constats, contrats, clients) ; seuls les mots d'outillage génériques restent.
+5. **Maquettes** : boards neutralisés sur place (textes et calques) plutôt que redessinés, pour garder les retouches faites hors scripts ; scripts neutralisés eux aussi ; plan F00 à F21 des pages Styles et Vues réécrit en fictif, calendrier décalé.
+6. **PDF** épissés par `pypdf` (pages 27, 35 et 36), nombre de pages inchangé ; `kibo.penpot.xz` vérifié par sa structure.
+7. **Pixel** repassé sans ajustement (dérive maximale 0,065 point).
+8. **E2E** : `projects.spec.ts` cherchait le sprint par son texte et tombait sur le badge du sprint courant de la barre latérale, masqué au survol ; il cherche maintenant la colonne du Planning, indépendamment du jour réel.
+
 ## 41. Phase 29 : mettre une étape en attente (demande d'Adam du 2026-10-19)
 
 Une étape peut dépendre d'une chose que l'équipe n'a pas encore (un environnement fourni par le client, des accès). On la met **en attente** avec sa raison, la fonctionnalité avance sans elle, et on la **reprend** quand la chose arrive.

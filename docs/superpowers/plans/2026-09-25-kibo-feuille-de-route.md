@@ -183,3 +183,7 @@ Contenu : **P1 bis Vue d'ensemble** du projet, page de type vue créée par la m
 ## Phase 27 ✅ · Suivi seul, création de projet, le projet client sur une base neuve, critiques UX (v0.27.0-alpha.1)
 
 Plan : `2026-10-18-kibo-phase-27.md` · Spec : conception §39 (constats retenus §39.6, écarts §39.7, ports et codes §39.8) · Rapports : `2026-10-18-critiques.md`, `2026-10-18-jalon-v0.27.md`. Demande d'Adam du 2026-10-18 : Kibo ne lance plus d'agent de ticket ; création de projet avec ses sprints et cinq pages ; le projet client reformaté (F1 à F15, CLIENT-1 à CLIENT-n) et replanifié par sprints d'une semaine ; trois tours de critique UX (chef de projet, développeur, nouveau venu), 41 constats retenus et corrigés (T22 à T25). Le rebase du projet client sur les données d'Adam se fait après l'installation de la 0.27, avec son accord.
+
+## Phase 28 ✅ · Un dépôt sans données client (v0.28.0-alpha.1)
+
+Plan : `2026-10-18-kibo-phase-28.md` · Spec : conception §40 (écarts §40.1) · Rapport : `2026-10-19-jalon-v0.28.md`. Demande d'Adam du 2026-10-18 : le dépôt est public, il ne contient plus aucune donnée de projet client ; projet fictif « Silo » partout, garde-fou des termes interdits (liste hors dépôt), script d'import client retiré, maquettes, PDF et exports neutralisés, pixel repassé ; historique git laissé tel quel.
