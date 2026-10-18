@@ -472,18 +472,6 @@
         "@types/bun": "1.4.2",
       },
     },
-    "scripts/import-emis": {
-      "name": "@kibo/import-emis",
-      "version": "0.0.0",
-      "dependencies": {
-        "@kibo/schema": "workspace:*",
-        "zod": "3.25.76",
-      },
-      "devDependencies": {
-        "@types/bun": "1.4.2",
-        "fast-check": "4.3.0",
-      },
-    },
     "scripts/install": {
       "name": "@kibo/install",
       "version": "0.0.0",
@@ -765,8 +753,6 @@
     "@kibo/e2e": ["@kibo/e2e@workspace:e2e"],
 
     "@kibo/forbidden-terms": ["@kibo/forbidden-terms@workspace:scripts/forbidden-terms"],
-
-    "@kibo/import-emis": ["@kibo/import-emis@workspace:scripts/import-emis"],
 
     "@kibo/install": ["@kibo/install@workspace:scripts/install"],
 
