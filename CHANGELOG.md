@@ -6,6 +6,13 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.28.0-alpha.1 — 2026-10-19
+
+- Le dépôt public ne contient plus aucune donnée de projet client : tests, démo, exemples de la CLI, maquettes, PDF, spec et plans emploient le projet fictif « Silo » (location de box) ; tes projets locaux ne changent pas.
+- Un test du dépôt échoue si un terme interdit réapparaît (liste gardée hors dépôt, dans `~/.config/kibo/termes-interdits.txt`) ; il voit aussi les identifiants composés.
+- Le script d'import et de rebase propre à un projet client est retiré du dépôt.
+- Le test de création de projet ne dépend plus de la date du jour.
+
 ## 0.27.0-alpha.1 — 2026-10-18
 
 - Kibo ne lance plus d'agent de ticket : le réglage disparaît, le démon refuse toute demande de lancement ; l'agent de projet reste et ne fait que surveiller et proposer.
