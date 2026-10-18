@@ -3,21 +3,29 @@ import { History } from "lucide-react";
 import { fr } from "./fr";
 import { type HistoryContext, historyEntries, historyLine } from "./question-history-text";
 
-type Props = { question: Question; context: HistoryContext };
+type ToggleProps = { question: Question; open: boolean; onToggle(): void };
 
-export function QuestionHistory({ question, context }: Props) {
+export function HistoryToggle({ question, open, onToggle }: ToggleProps) {
   if (question.history.length === 0) return null;
   return (
-    <details className="group text-2xs text-muted-foreground">
-      <summary className="inline-flex cursor-pointer select-none items-center gap-1 rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        <History aria-hidden className="size-3" />
-        {fr.history(question.history.length)}
-      </summary>
-      <ul className="mt-1.5 grid gap-1 border-l pl-3">
-        {historyEntries(question).map((entry) => (
-          <li key={entry.position}>{historyLine(entry, context)}</li>
-        ))}
-      </ul>
-    </details>
+    <button
+      type="button"
+      aria-expanded={open}
+      onClick={onToggle}
+      className="inline-flex cursor-pointer select-none items-center gap-1 rounded-sm text-2xs text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <History aria-hidden className="size-3" />
+      {fr.history(question.history.length)}
+    </button>
+  );
+}
+
+export function QuestionHistory({ question, context }: { question: Question; context: HistoryContext }) {
+  return (
+    <ul className="grid gap-1 border-l pl-3 text-2xs text-muted-foreground">
+      {historyEntries(question).map((entry) => (
+        <li key={entry.position}>{historyLine(entry, context)}</li>
+      ))}
+    </ul>
   );
 }

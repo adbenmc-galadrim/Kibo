@@ -63,7 +63,7 @@ test("the filters count open questions per recipient, hide empty ones, filter th
     within(filters)
       .getAllByRole("radio")
       .map((r) => r.getAttribute("aria-label")),
-  ).toEqual(["Tous (5)", "Moi (technique) (2)", "Produit (1)", "Client (2)"]);
+  ).toEqual(["Tous (5)", "Client (2)", "Moi (technique) (2)", "Produit (1)"]);
   await user.click(within(filters).getByRole("radio", { name: "Client (2)" }));
   expect(screen.getAllByRole("article").map((a) => a.getAttribute("aria-label"))).toEqual([
     "Faut-il garder l'historique ?",
@@ -123,6 +123,23 @@ test("« Exporter » copies the ready text, then marks the question sent", async
   expect(written[0]).toContain(`${questionLabel(q as Question)} · ${OPEN}`);
   await waitFor(() => expect(exported(named(m, OPEN))).toBe(true));
   expect(await within(card).findByText(`envoyée le ${dayMonth(Date.now())}`)).toBeTruthy();
+});
+
+test("the card actions sit in its header row, the history opens from the meta line", async () => {
+  mount();
+  const user = userEvent.setup();
+  clipboard();
+  const card = await screen.findByRole("article", { name: OPEN });
+  const header = card.querySelector("header");
+  if (header === null) throw new Error("the card has no header");
+  expect(within(header).getByRole("button", { name: "Exporter" })).toBeTruthy();
+  expect(within(header).getByRole("button", { name: "Coller la réponse" })).toBeTruthy();
+  await user.click(within(header).getByRole("button", { name: "Exporter" }));
+  const toggle = await within(card).findByRole("button", { name: "Historique (1)" });
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  await user.click(toggle);
+  expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  expect(within(card).getByRole("list")).toBeTruthy();
 });
 
 test("« Exporter pour le client (n) » copies the open client questions and marks them sent", async () => {

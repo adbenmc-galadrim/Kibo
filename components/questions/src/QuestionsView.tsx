@@ -45,7 +45,7 @@ function FeatureChip({ label }: { label: string }) {
 function BlockingLine({ blocking, open }: { blocking: number; open: number }) {
   if (blocking === 0) return null;
   return (
-    <p className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
+    <p className="flex items-center gap-2 text-[12.5px] leading-[1.2] text-muted-foreground">
       <Lock aria-hidden className="size-3.25 text-destructive" />
       {fr.blockingSummary(blocking, open)}
     </p>
@@ -63,7 +63,7 @@ function QuestionGroup({ group, data, now }: { group: ViewGroup; data: Questions
       <header className="flex flex-wrap items-center gap-2">
         <button
           type="button"
-          className="min-w-0 truncate text-left text-[13px] font-semibold hover:underline"
+          className="min-w-0 truncate text-left text-[13px] leading-[1.2] font-semibold hover:underline"
           onClick={() => sdk.openTicket(t.id)}
         >
           <span className="mr-2 font-mono text-xs font-normal text-muted-foreground">{t.keyLabel}</span>

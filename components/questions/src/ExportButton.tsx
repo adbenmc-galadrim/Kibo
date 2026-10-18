@@ -7,7 +7,16 @@ import { ExportToast } from "./ExportToast";
 import { type ExportEntry, exportAll, exportDate } from "./export-text";
 import { fr } from "./fr";
 
-type Props = { label: string; recipient: string; summary: string; entries: readonly ExportEntry[] };
+type Props = {
+  label: string;
+  recipient: string;
+  summary: string;
+  entries: readonly ExportEntry[];
+  variant?: "outline" | "ghost";
+  className?: string;
+};
+
+const TOOLBAR_BUTTON = "h-6.5 text-xs";
 
 async function copy(text: string): Promise<void> {
   try {
@@ -17,7 +26,7 @@ async function copy(text: string): Promise<void> {
   }
 }
 
-export function ExportButton({ label, recipient, summary, entries }: Props) {
+export function ExportButton({ label, recipient, summary, entries, variant, className }: Props) {
   const sdk = useSdk();
   const [text, setText] = useState<string | null>(null);
   const [marked, setMarked] = useState<string[] | null>(null);
@@ -59,9 +68,9 @@ export function ExportButton({ label, recipient, summary, entries }: Props) {
       <PopoverAnchor asChild>
         <Button
           type="button"
-          variant="outline"
+          variant={variant ?? "outline"}
           size="sm"
-          className="h-6.5 text-xs"
+          className={className ?? TOOLBAR_BUTTON}
           disabled={entries.length === 0}
           onClick={() => void exportNow()}
         >

@@ -10,7 +10,7 @@ import {
 import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
-import { Archive, ArchiveRestore, Lock, Send } from "lucide-react";
+import { Archive, ArchiveRestore, ClipboardPaste, Lock, Send } from "lucide-react";
 import { useState } from "react";
 import { AnswerActionButtons, AnswerEditForm } from "./AnswerActions";
 import { DenialProposals } from "./DenialProposals";
@@ -19,8 +19,8 @@ import { ExportButton } from "./ExportButton";
 import { dayMonth, exportLabels } from "./export-text";
 import { fr } from "./fr";
 import { PasteAnswerForm } from "./PasteAnswerForm";
-import { QuestionAnswerForm } from "./QuestionAnswerForm";
-import { QuestionHistory } from "./QuestionHistory";
+import { AGENT_ACCENT, QuestionAnswerForm } from "./QuestionAnswerForm";
+import { HistoryToggle, QuestionHistory } from "./QuestionHistory";
 import { QuestionImages } from "./QuestionImages";
 import { QuestionAnswerLine, QuestionAuthor } from "./QuestionMeta";
 import {
@@ -50,7 +50,7 @@ type Props = {
   ticketLabel(ticketId: string): string;
 };
 
-const HEADER_ACTION = "h-6 px-2 text-2xs text-muted-foreground";
+const HEADER_ACTION = "h-5 px-2 text-2xs text-muted-foreground";
 
 function SentLine({ question }: { question: Question }) {
   const at = lastExportedAt(question);
@@ -80,6 +80,8 @@ function ExportOne({ question: q, impact, name }: { question: Question; impact: 
       recipient={name}
       summary={summary}
       entries={[{ question: q, impact }]}
+      variant="ghost"
+      className={HEADER_ACTION}
     />
   );
 }
@@ -151,6 +153,8 @@ export function QuestionCard(props: Props) {
   const sdk = useSdk();
   const [archiving, setArchiving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [pasting, setPasting] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const spotlight = useSpotlightCard(q.id);
   const archived = isArchived(q);
   const open = isOpen(q) && !readOnly;
@@ -172,10 +176,24 @@ export function QuestionCard(props: Props) {
         >
           {questionLabel(q)}
         </span>
-        <h4 className="min-w-0 break-words text-[13.5px] font-semibold">{q.title}</h4>
+        <h4 className="min-w-0 break-words text-[13.5px] leading-[1.2] font-semibold">{q.title}</h4>
         {blocking && <BlockingPill />}
         <span className="min-w-8 flex-1" />
         <div className="ml-auto flex flex-wrap items-center justify-end gap-1">
+          {open && (
+            <ExportOne question={q} impact={impact} name={recipientName(recipients, q.recipient, client)} />
+          )}
+          {open && !pasting && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`${HEADER_ACTION} ${AGENT_ACCENT}`}
+              onClick={() => setPasting(true)}
+            >
+              <ClipboardPaste aria-hidden />
+              {fr.paste.open}
+            </Button>
+          )}
           {!readOnly && editedAnswer === null && (
             <AnswerActionButtons question={q} onEdit={() => setEditing(true)} />
           )}
@@ -195,6 +213,7 @@ export function QuestionCard(props: Props) {
         <span className="text-2xs text-muted-foreground">{relativeAge(q.createdAt, now)}</span>
         <SentLine question={q} />
         <RemindedLine question={q} now={now} />
+        <HistoryToggle question={q} open={historyOpen} onToggle={() => setHistoryOpen((o) => !o)} />
       </div>
       <ArchivedLine question={q} now={now} />
       {context !== null && <div className="grid gap-1.5 text-xs text-muted-foreground">{context}</div>}
@@ -210,13 +229,13 @@ export function QuestionCard(props: Props) {
         <AnswerEditForm question={q} answer={editedAnswer} onClose={() => setEditing(false)} />
       )}
       <AnswerArea question={q} readOnly={readOnly} run={runOf(q.runId)} />
-      {open && (
-        <div className="flex flex-wrap justify-end gap-2">
-          <ExportOne question={q} impact={impact} name={recipientName(recipients, q.recipient, client)} />
-          <PasteAnswerForm question={q} />
-        </div>
+      {open && pasting && <PasteAnswerForm question={q} onClose={() => setPasting(false)} />}
+      {historyOpen && (
+        <QuestionHistory
+          question={q}
+          context={{ recipients, runLabel, ticketLabel: props.ticketLabel, now }}
+        />
       )}
-      <QuestionHistory question={q} context={{ recipients, runLabel, ticketLabel: props.ticketLabel, now }} />
       <ConfirmDialog
         open={archiving}
         onOpenChange={setArchiving}

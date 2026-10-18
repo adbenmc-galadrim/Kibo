@@ -90,11 +90,11 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Pr
           ))}
         </div>
       )}
-      <div className="flex gap-1.5">
+      <div className="flex items-center gap-2">
         <Input
           aria-label={fr.other}
           placeholder={fr.other}
-          className="h-7 text-xs"
+          className="h-9 text-[13px] md:text-[13px]"
           value={choice.text}
           disabled={busy}
           onChange={(e) => setChoice({ ...EMPTY, text: e.target.value })}
@@ -104,7 +104,13 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Pr
             {fr.cancel}
           </Button>
         )}
-        <Button type="submit" size="sm" className="h-7 text-xs" disabled={busy || !ready}>
+        <Button
+          type="submit"
+          variant="secondary"
+          size="sm"
+          className="h-6.25 px-2.5 text-xs disabled:opacity-100"
+          disabled={busy || !ready}
+        >
           {editing ? fr.save : fr.reply}
         </Button>
       </div>

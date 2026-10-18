@@ -6,7 +6,7 @@ import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { Plus } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { fr } from "./fr";
-import { type RecipientCounts, recipientName } from "./questions-logic";
+import { CLIENT_RECIPIENT, type RecipientCounts, recipientName } from "./questions-logic";
 
 const ALL = "*";
 
@@ -86,7 +86,9 @@ function AddRecipient() {
 
 export function RecipientFilters({ recipients, client, counts, value, readOnly, onChange }: Props) {
   const count = (id: string) => counts.byRecipient.get(id) ?? 0;
-  const shown = recipients.filter((r) => r.id === value || count(r.id) > 0);
+  const shown = recipients
+    .filter((r) => r.id === value || count(r.id) > 0)
+    .sort((a, b) => Number(b.id === CLIENT_RECIPIENT) - Number(a.id === CLIENT_RECIPIENT));
   return (
     <div className="flex items-center gap-1">
       <ToggleGroup
