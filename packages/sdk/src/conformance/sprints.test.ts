@@ -37,7 +37,7 @@ test("the mock plans a feature on assign, and its sprint view counts it", async 
   const mock = createMockSdk(manifest(["ticket", "sprint"]), { today: "2026-10-14" });
   const s42 = await mock.sdk.sprints.create({
     code: "S42",
-    name: "Terrain hors ligne",
+    name: "Saisie hors ligne",
     start: "2026-10-12",
     end: "2026-10-16",
   });
@@ -58,7 +58,7 @@ test("the mock refuses a sprint code already taken in the project, case ignored"
   const mock = createMockSdk(manifest(["sprint"]));
   await mock.sdk.sprints.create({
     code: "S42",
-    name: "Terrain hors ligne",
+    name: "Saisie hors ligne",
     start: "2026-10-12",
     end: "2026-10-16",
   });

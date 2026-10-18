@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { type DeliverInput, deliverEntry, deliveryMenuActions, menuDeliverEntry } from "./deliver-state";
 
 const input = (patch: Partial<DeliverInput> = {}): DeliverInput => ({
-  ticket: { key: "EMIS-15", statusId: "todo", startable: true, waitingOn: [] },
+  ticket: { key: "SILO-15", statusId: "todo", startable: true, waitingOn: [] },
   editable: true,
   agentKnown: true,
   parent: false,
@@ -23,21 +23,21 @@ test("Livrer is absent for a reader, a done ticket, a ticket without key or with
 });
 
 test("an active run disables Livrer and names the run", () => {
-  const run = { label: "emis · full-delivery · EMIS-15", state: "running" } as const;
+  const run = { label: "silo · full-delivery · SILO-15", state: "running" } as const;
   expect(deliverEntry(input({ run }))).toEqual({
-    disabledReason: "déjà un run : emis · full-delivery · EMIS-15",
+    disabledReason: "déjà un run : silo · full-delivery · SILO-15",
   });
   expect(deliverEntry(input({ run: { ...run, state: "done" } }))).toEqual({ disabledReason: null });
 });
 
 test("a ticket that cannot start says why", () => {
   const ticket: DeliverInput["ticket"] = {
-    key: "EMIS-22",
+    key: "SILO-22",
     statusId: "todo",
     startable: false,
-    waitingOn: ["EMIS-21"],
+    waitingOn: ["SILO-21"],
   };
-  expect(deliverEntry(input({ ticket }))).toEqual({ disabledReason: "bloqué par EMIS-21" });
+  expect(deliverEntry(input({ ticket }))).toEqual({ disabledReason: "bloqué par SILO-21" });
   expect(deliverEntry(input({ ticket: { ...ticket, waitingOn: [] } }))).toEqual({
     disabledReason: "question bloquante",
   });
@@ -45,10 +45,10 @@ test("a ticket that cannot start says why", () => {
 
 test("a parent or a ticket already in progress stays deliverable", () => {
   const ticket: DeliverInput["ticket"] = {
-    key: "EMIS-17",
+    key: "SILO-17",
     statusId: "todo",
     startable: false,
-    waitingOn: ["EMIS-9"],
+    waitingOn: ["SILO-9"],
   };
   expect(deliverEntry(input({ ticket, parent: true }))).toEqual({ disabledReason: null });
   const started: DeliverInput["ticket"] = { ...ticket, statusId: "in_progress" };
@@ -72,7 +72,7 @@ const withClipboard = async (work: () => Promise<void>): Promise<string[]> => {
 const menuOf = (
   execution: "hidden" | "shown",
   statusId: "todo" | "done" = "todo",
-  key: string | null = "EMIS-33",
+  key: string | null = "SILO-33",
 ) => {
   const calls: string[] = [];
   const entries = deliveryMenuActions({
@@ -87,12 +87,12 @@ const menuOf = (
 
 test("hidden execution swaps Livrer for copying the full-delivery command", async () => {
   const { entries, calls } = menuOf("hidden");
-  expect(entries.map((e) => e.label)).toEqual(["Copier /full-delivery EMIS-33"]);
+  expect(entries.map((e) => e.label)).toEqual(["Copier /full-delivery SILO-33"]);
   const written = await withClipboard(async () => {
     entries[0]?.onSelect();
     await Promise.resolve();
   });
-  expect(written).toEqual(["/full-delivery EMIS-33"]);
+  expect(written).toEqual(["/full-delivery SILO-33"]);
   expect(calls).toEqual([]);
 });
 
@@ -102,28 +102,28 @@ test("hidden execution offers no copy for a ticket without key", () => {
 });
 
 test("a done ticket offers a touch-up: copy /update-delivery when hidden, Livrer la retouche when shown", async () => {
-  const hidden = menuOf("hidden", "done", "EMIS-21");
-  expect(hidden.entries.map((e) => e.label)).toEqual(["Copier /update-delivery EMIS-21"]);
+  const hidden = menuOf("hidden", "done", "SILO-21");
+  expect(hidden.entries.map((e) => e.label)).toEqual(["Copier /update-delivery SILO-21"]);
   const written = await withClipboard(async () => {
     hidden.entries[0]?.onSelect();
     await Promise.resolve();
   });
-  expect(written).toEqual(["/update-delivery EMIS-21"]);
-  const shown = menuOf("shown", "done", "EMIS-21");
+  expect(written).toEqual(["/update-delivery SILO-21"]);
+  const shown = menuOf("shown", "done", "SILO-21");
   expect(shown.entries.map((e) => e.label)).toEqual(["Livrer la retouche"]);
   shown.entries[0]?.onSelect();
   expect(shown.calls).toEqual(["deliver:update"]);
 });
 
 test("the menu entry of a done ticket is the touch-up: an editor with an agent, busy while a run is live", () => {
-  const done: DeliverInput["ticket"] = { ...input().ticket, key: "EMIS-21", statusId: "done" };
+  const done: DeliverInput["ticket"] = { ...input().ticket, key: "SILO-21", statusId: "done" };
   expect(menuDeliverEntry(input({ ticket: done }))).toEqual({ disabledReason: null });
   expect(menuDeliverEntry(input({ ticket: done, editable: false }))).toBeNull();
   expect(menuDeliverEntry(input({ ticket: done, agentKnown: false }))).toBeNull();
   expect(menuDeliverEntry(input({ ticket: { ...done, key: null } }))).toBeNull();
-  const run = { label: "emis · update-delivery · EMIS-21", state: "running" } as const;
+  const run = { label: "silo · update-delivery · SILO-21", state: "running" } as const;
   expect(menuDeliverEntry(input({ ticket: done, run }))).toEqual({
-    disabledReason: "déjà un run : emis · update-delivery · EMIS-21",
+    disabledReason: "déjà un run : silo · update-delivery · SILO-21",
   });
   expect(menuDeliverEntry(input())).toEqual(deliverEntry(input()));
 });
@@ -140,7 +140,7 @@ const sdkMenu = (statusId: "todo" | "done", waitingOn: string[]) => {
   const entries = deliveryMenuActions({
     execution: "hidden",
     entry: { disabledReason: null },
-    ticket: { key: "EMIS-33", statusId, startable: waitingOn.length === 0, waitingOn },
+    ticket: { key: "SILO-33", statusId, startable: waitingOn.length === 0, waitingOn },
     deliver: () => undefined,
     sdk: { toast: (message) => void toasts.push(message) },
   });
@@ -148,15 +148,15 @@ const sdkMenu = (statusId: "todo" | "done", waitingOn: string[]) => {
 };
 
 test("the Copier /full-delivery entry copies the command and says Copié", async () => {
-  const { entries, toasts } = sdkMenu("todo", ["EMIS-30"]);
-  expect(entries.map((e) => e.label)).toEqual(["Copier /full-delivery EMIS-33"]);
+  const { entries, toasts } = sdkMenu("todo", ["SILO-30"]);
+  expect(entries.map((e) => e.label)).toEqual(["Copier /full-delivery SILO-33"]);
   const written = await withClipboard(async () => {
     entries[0]?.onSelect();
     await Promise.resolve();
   });
-  expect(written).toEqual(["/full-delivery EMIS-33"]);
+  expect(written).toEqual(["/full-delivery SILO-33"]);
   await Promise.resolve();
-  expect(toasts).toEqual(["Copié · attend EMIS-30"]);
+  expect(toasts).toEqual(["Copié · attend SILO-30"]);
 });
 
 test("the touch-up entry copies /update-delivery and says Copié", async () => {
@@ -165,7 +165,7 @@ test("the touch-up entry copies /update-delivery and says Copié", async () => {
     entries[0]?.onSelect();
     await Promise.resolve();
   });
-  expect(written).toEqual(["/update-delivery EMIS-33"]);
+  expect(written).toEqual(["/update-delivery SILO-33"]);
   await Promise.resolve();
   expect(toasts).toEqual(["Copié"]);
 });

@@ -12,7 +12,7 @@ const manifest = (reads: ("ticket" | "sprint")[]) => ({
 });
 const PR = {
   kind: "github_pr" as const,
-  url: "https://github.com/galadrimteam/emis/pull/22",
+  url: "https://github.com/silo-labs/silo-location/pull/22",
   number: 22,
   state: "open" as const,
   base: "dev",
@@ -23,7 +23,7 @@ const PR = {
 
 test("the project describes itself and names its repository", async () => {
   const mock = createMockSdk(manifest(["ticket"]), {
-    description: "Suivi de chantier",
+    description: "Location de box",
     today: "2026-10-16",
     seed: (run) => {
       const { id } = Ticket.parse(run({ method: "createTicket", title: "Envoi" }));
@@ -35,10 +35,10 @@ test("the project describes itself and names its repository", async () => {
     key: "KIB",
     name: "Mock",
     color: "#71717A",
-    description: "Suivi de chantier",
+    description: "Location de box",
     client: null,
     hasFolder: false,
-    repo: "galadrimteam/emis",
+    repo: "silo-labs/silo-location",
     today: "2026-10-16",
   });
   expect(mock.used).toContain("read:ticket");
@@ -46,7 +46,7 @@ test("the project describes itself and names its repository", async () => {
 });
 
 test("the mock project tells whether a repository folder is set", async () => {
-  const mock = createMockSdk(manifest(["ticket"]), { folder: "/tmp/emis" });
+  const mock = createMockSdk(manifest(["ticket"]), { folder: "/tmp/silo" });
   expect((await mock.sdk.project.get()).hasFolder).toBe(true);
 });
 
@@ -81,8 +81,8 @@ test("opening a sprint is a host action recorded by the mock", () => {
 });
 
 test("the project names its client when it has one", async () => {
-  const mock = createMockSdk(manifest(["ticket"]), { client: "Emis SA" });
-  expect((await mock.sdk.project.get()).client).toBe("Emis SA");
+  const mock = createMockSdk(manifest(["ticket"]), { client: "Silo SA" });
+  expect((await mock.sdk.project.get()).client).toBe("Silo SA");
 });
 
 test("a toast is a host action recorded by the mock", () => {

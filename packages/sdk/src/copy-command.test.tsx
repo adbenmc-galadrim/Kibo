@@ -22,38 +22,38 @@ function recorder() {
 
 test("a startable ticket copies its full-delivery command and says Copié", async () => {
   const { written, toasts, sdk } = recorder();
-  await copyDeliveryCommand(sdk, { key: "EMIS-45", startable: true, waitingOn: [] });
-  expect(written).toEqual(["/full-delivery EMIS-45"]);
+  await copyDeliveryCommand(sdk, { key: "SILO-45", startable: true, waitingOn: [] });
+  expect(written).toEqual(["/full-delivery SILO-45"]);
   expect(toasts).toEqual(["Copié"]);
 });
 
 test("a ticket that cannot start warns which tickets it waits for", async () => {
   const one = recorder();
-  await copyDeliveryCommand(one.sdk, { key: "EMIS-45", startable: false, waitingOn: ["EMIS-33"] });
-  expect(one.written).toEqual(["/full-delivery EMIS-45"]);
-  expect(one.toasts).toEqual(["Copié · attend EMIS-33"]);
+  await copyDeliveryCommand(one.sdk, { key: "SILO-45", startable: false, waitingOn: ["SILO-33"] });
+  expect(one.written).toEqual(["/full-delivery SILO-45"]);
+  expect(one.toasts).toEqual(["Copié · attend SILO-33"]);
   const two = recorder();
   await copyDeliveryCommand(two.sdk, {
-    key: "EMIS-45",
+    key: "SILO-45",
     startable: false,
-    waitingOn: ["EMIS-33", "EMIS-34"],
+    waitingOn: ["SILO-33", "SILO-34"],
   });
-  expect(two.toasts).toEqual(["Copié · attend EMIS-33, EMIS-34"]);
+  expect(two.toasts).toEqual(["Copié · attend SILO-33, SILO-34"]);
 });
 
 test("a ticket blocked by a question warns which question holds it", async () => {
   const { written, toasts, sdk } = recorder();
-  await copyDeliveryCommand(sdk, { key: "EMIS-51", startable: true, waitingOn: [], question: "Q14" });
-  expect(written).toEqual(["/full-delivery EMIS-51"]);
+  await copyDeliveryCommand(sdk, { key: "SILO-51", startable: true, waitingOn: [], question: "Q14" });
+  expect(written).toEqual(["/full-delivery SILO-51"]);
   expect(toasts).toEqual(["Copié · bloqué par Q14"]);
   const both = recorder();
   await copyDeliveryCommand(both.sdk, {
-    key: "EMIS-51",
+    key: "SILO-51",
     startable: false,
-    waitingOn: ["EMIS-33"],
+    waitingOn: ["SILO-33"],
     question: "Q14",
   });
-  expect(both.toasts).toEqual(["Copié · bloqué par Q14 · attend EMIS-33"]);
+  expect(both.toasts).toEqual(["Copié · bloqué par Q14 · attend SILO-33"]);
 });
 
 test("a refused clipboard says Copie impossible without throwing", async () => {
@@ -64,7 +64,7 @@ test("a refused clipboard says Copie impossible without throwing", async () => {
   try {
     await copyDeliveryCommand(
       { toast: (m) => void toasts.push(m) },
-      { key: "EMIS-45", startable: true, waitingOn: [] },
+      { key: "SILO-45", startable: true, waitingOn: [] },
     );
   } finally {
     console.warn = warn;
@@ -80,7 +80,7 @@ test("a missing clipboard says Copie impossible without throwing", async () => {
   try {
     await copyDeliveryCommand(
       { toast: (m) => void toasts.push(m) },
-      { key: "EMIS-45", startable: true, waitingOn: [] },
+      { key: "SILO-45", startable: true, waitingOn: [] },
     );
   } finally {
     console.warn = warn;

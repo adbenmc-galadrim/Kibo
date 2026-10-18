@@ -8,6 +8,6 @@ test("the toaster shows the toasts a component emits through the SDK", async () 
   await act(async () => {
     await new Promise((r) => setTimeout(r, 0));
   });
-  act(() => emitToast("Copié · attend EMIS-33"));
-  expect(await screen.findByText("Copié · attend EMIS-33")).toBeDefined();
+  act(() => emitToast("Copié · attend SILO-33"));
+  expect(await screen.findByText("Copié · attend SILO-33")).toBeDefined();
 });

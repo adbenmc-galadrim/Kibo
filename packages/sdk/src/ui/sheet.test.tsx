@@ -6,7 +6,7 @@ test("the sheet close button reads Fermer", () => {
   render(
     <Sheet open>
       <SheetContent aria-describedby={undefined}>
-        <SheetTitle>EMIS-45</SheetTitle>
+        <SheetTitle>SILO-45</SheetTitle>
       </SheetContent>
     </Sheet>,
   );
