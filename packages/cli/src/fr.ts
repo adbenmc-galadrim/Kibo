@@ -95,6 +95,16 @@ export const frTickets = {
   sessionOver: (key: string | null) => (key === null ? "✓ Session terminée" : `✓ ${key} : session terminée`),
   noSession: "Aucune session en cours.",
   noBranchTicket: "Aucun ticket ne déclare cette branche.",
+  notStartable: (key: string, reasons: readonly string[]) =>
+    `⚠ ${key} n'était pas démarrable : ${reasons.join(" · ")}`,
+  reasons: {
+    question: (label: string) => `bloqué par ${label}`,
+    blocked: "bloqué",
+    waiting: (keys: readonly string[]) => `attend ${keys.join(", ")}`,
+    sprint: (code: string) => `sprint ${code}`,
+    unplanned: "sans sprint",
+    limit: (count: number, limit: number) => `limite ${count}/${limit}`,
+  },
 };
 
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;

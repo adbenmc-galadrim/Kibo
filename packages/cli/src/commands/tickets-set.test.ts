@@ -130,3 +130,35 @@ describe("kibo tickets set finds the project", () => {
     expect(d.err).toEqual(["Erreur INVALID_INPUT : clé de fonctionnalité : préciser --project"]);
   });
 });
+
+describe("kibo tickets set on a step that was not startable", () => {
+  const waiting = fakeTicket({
+    id: "a",
+    key: "EMIS-33",
+    startable: false,
+    startReason: { kind: "dependency", keys: ["EMIS-30"] },
+  });
+  const tickets = [{ ...waiting, waitingOn: ["EMIS-30"] }];
+
+  test("records the branch, git rules, and warns on stderr with the reason", async () => {
+    const d = await set(["branch=feat/envoi-hors-ligne"], tickets);
+    expect(d.code).toBe(0);
+    expect(d.declarations()).toHaveLength(1);
+    expect(d.out).toEqual(["✓ EMIS-33 : branche feat/envoi-hors-ligne"]);
+    expect(d.err).toEqual(["⚠ EMIS-33 n'était pas démarrable : attend EMIS-30"]);
+  });
+
+  test("warns when the step is put in progress, not for other changes", async () => {
+    expect((await set(["status=wip"], tickets)).err).toEqual([
+      "⚠ EMIS-33 n'était pas démarrable : attend EMIS-30",
+    ]);
+    expect((await set(["status=blocked"], tickets)).err).toEqual([]);
+    expect((await set([`pr=${PR_URL}`], tickets)).err).toEqual([]);
+  });
+
+  test("says nothing for a startable step or a branch already declared", async () => {
+    expect((await set(["branch=feat/envoi-hors-ligne"])).err).toEqual([]);
+    const declared = [{ ...waiting, waitingOn: ["EMIS-30"], externalRefs: [BRANCH] }];
+    expect((await set(["branch=feat/envoi-hors-ligne", "base=dev"], declared)).err).toEqual([]);
+  });
+});

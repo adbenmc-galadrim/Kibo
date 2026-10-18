@@ -7,6 +7,7 @@ import {
   type TicketView,
 } from "@kibo/schema";
 import { fr, frTickets } from "../fr";
+import { notStartableReasons } from "../tickets/start-warning";
 import {
   type Assignments,
   branchRef,
@@ -70,7 +71,8 @@ export async function applySet(req: SetRequest, ident: string, ctx: TicketsConte
     changes.push(frTickets.statusChange(req.set.status ?? status.statusId));
   }
   let moved: StatusId | null = null;
-  for (const { ref, change } of declarationsOf(req, ticket, ctx)) {
+  const declarations = declarationsOf(req, ticket, ctx);
+  for (const { ref, change } of declarations) {
     const ticketKey = ticket.key ?? ident;
     const result = await client.rpc({ method: "declareTicketRef", projectId, ticketKey, ref });
     if (result.statusChanged) moved = result.ticket.statusId;
@@ -81,5 +83,9 @@ export async function applySet(req: SetRequest, ident: string, ctx: TicketsConte
     printJson(io, summaryOf(fresh, ticket.id));
   } else
     io.out(frTickets.updated(ticket.keyLabel, changes, moved === null ? null : statusLabel(snapshot, moved)));
+  const starting =
+    status?.statusId === "in_progress" || declarations.some((d) => d.ref.kind === "git_branch");
+  const reasons = starting ? notStartableReasons(ticket, snapshot) : null;
+  if (reasons !== null) io.err(frTickets.notStartable(ticket.keyLabel, reasons));
   return 0;
 }
