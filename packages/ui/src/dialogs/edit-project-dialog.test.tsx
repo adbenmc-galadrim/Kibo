@@ -158,6 +158,11 @@ test("the guidelines section closes the dialog and opens the project's folder (s
   expect(go).toHaveBeenCalledWith({ kind: "screen", screen: "domains", projectId: "kibo" });
 });
 
+test("asked on its folder field, the dialog puts the focus there instead of the name", () => {
+  render(<EditProjectDialog project={project} remote={false} focus="folder" onClose={() => {}} />);
+  expect(document.activeElement).toBe(screen.getByLabelText("Dossier"));
+});
+
 test("without the configuration the guidelines section is not shown", () => {
   render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
   expect(screen.queryByRole("heading", { name: "Guidelines" })).toBeNull();

@@ -272,6 +272,10 @@ export function createSdk(
         return call<ProjectInfo>({ kind: "project.get" });
       },
       subscribe: (listener) => backend.subscribe(listener),
+      edit: (request) => {
+        if (ctx.editProject) ctx.editProject(request);
+        else console.warn(`[kibo-sdk] ${ctx.instanceId}: no host to edit the project`);
+      },
     },
     openRun: openRunOf(ctx),
     focus: ctx.focus ?? NO_FOCUS,

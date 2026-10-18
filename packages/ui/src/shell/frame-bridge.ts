@@ -6,6 +6,7 @@ import {
   type InitMessage,
   type KeyCombo,
   KiboError,
+  type ProjectEditRequest,
   type Selection,
   type Spotlight,
   type Theme,
@@ -21,6 +22,7 @@ export type BridgeDeps = {
   call(call: ComponentCall): Promise<unknown>;
   onOpenTicket(ticketId: string): void;
   onOpenSprint?(sprintId: string): void;
+  onEditProject?(request: ProjectEditRequest): void;
   onOpenNewTicket(defaults: NewTicketDefaults): void;
   onOpenFile(request: FileOpenRequest): void;
   onOpenView(componentId: string, question?: string): void;
@@ -95,6 +97,9 @@ export function createFrameBridge(deps: BridgeDeps): FrameBridge {
         return;
       case "openSprint":
         deps.onOpenSprint?.(m.sprintId);
+        return;
+      case "editProject":
+        deps.onEditProject?.({ field: m.field });
         return;
       case "openNewTicket":
         deps.onOpenNewTicket(m.defaults);

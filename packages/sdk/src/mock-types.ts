@@ -9,6 +9,7 @@ import type {
   ProjectAccess,
   ProjectAsset,
   ProjectCommand,
+  ProjectEditRequest,
   ProjectEvent,
   ProjectSnapshot,
   RunDenials,
@@ -39,6 +40,7 @@ export type MockSdk = {
   viewRequests: { componentId: string; question: string | null }[];
   openedRuns: string[];
   openedSprints: string[];
+  projectEdits: ProjectEditRequest[];
   toasts: string[];
   deliveries: string[];
   runDeliveries: string[];

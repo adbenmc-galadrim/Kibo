@@ -70,6 +70,10 @@ export const HostToFrame = z.discriminatedUnion("type", [
 export type HostToFrame = z.infer<typeof HostToFrame>;
 export type InitMessage = Extract<HostToFrame, { type: "init" }>;
 
+export const ProjectEditField = z.enum(["folder"]);
+export type ProjectEditField = z.infer<typeof ProjectEditField>;
+export type ProjectEditRequest = { field: ProjectEditField };
+
 export const FrameToHost = z.discriminatedUnion("type", [
   z.object({ kibo: z.literal(1), type: z.literal("ready") }),
   z.object({
@@ -80,6 +84,7 @@ export const FrameToHost = z.discriminatedUnion("type", [
   }),
   z.object({ kibo: z.literal(1), type: z.literal("openTicket"), ticketId: z.string().min(1) }),
   z.object({ kibo: z.literal(1), type: z.literal("openSprint"), sprintId: z.string().min(1) }),
+  z.object({ kibo: z.literal(1), type: z.literal("editProject"), field: ProjectEditField }),
   z.object({
     kibo: z.literal(1),
     type: z.literal("openNewTicket"),

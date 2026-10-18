@@ -228,7 +228,8 @@ export function ShellDialogs({
       {editing && (
         <EditProjectDialog
           project={editing}
-          onClose={() => set({ editProject: null })}
+          focus={state.editFocus ?? undefined}
+          onClose={() => set({ editProject: null, editFocus: null })}
           config={config}
           go={(target) => p.onOpenTarget(target, false)}
         />

@@ -163,7 +163,7 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
       case "settings.get":
         return deps.settings();
       case "project.get":
-        return projectInfo(readProject(deps.doc, deps.today, activityOf(deps.runs())));
+        return projectInfo(readProject(deps.doc, deps.today, activityOf(deps.runs())), deps.today);
       case "assets.list":
         return deps.assets ?? [];
       case "assets.url":

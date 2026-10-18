@@ -12,7 +12,7 @@ const binding: Binding = {
 };
 
 test("the project names itself and its repository from the first pull request", () => {
-  expect(projectInfo({ ...emisSnapshot(), bindings: [] })).toEqual({
+  expect(projectInfo({ ...emisSnapshot(), bindings: [] }, "2026-10-16")).toEqual({
     id: "emis",
     key: "EMIS",
     name: "Emis",
@@ -21,6 +21,7 @@ test("the project names itself and its repository from the first pull request", 
     client: null,
     hasFolder: false,
     repo: "galadrimteam/emis-suivi-chantier",
+    today: "2026-10-16",
   });
 });
 
@@ -34,11 +35,10 @@ test("without binding nor pull request, there is no repository", () => {
 
 test("the project tells whether a repository folder is set, never its path", () => {
   const snapshot = emisSnapshot();
-  const info = projectInfo({
-    ...snapshot,
-    meta: { ...snapshot.meta, folder: "/Users/adam/emis" },
-    bindings: [],
-  });
+  const info = projectInfo(
+    { ...snapshot, meta: { ...snapshot.meta, folder: "/Users/adam/emis" }, bindings: [] },
+    "2026-10-16",
+  );
   expect(info.hasFolder).toBe(true);
   expect(JSON.stringify(info)).not.toContain("/Users/adam");
 });

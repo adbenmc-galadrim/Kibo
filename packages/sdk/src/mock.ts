@@ -14,6 +14,7 @@ import {
   KiboError,
   type ProjectAccess,
   type ProjectCommand,
+  type ProjectEditRequest,
   permissionOfCall,
   type Selection,
 } from "@kibo/schema";
@@ -89,6 +90,7 @@ export function createMockSdk(
   const viewRequests: MockSdk["viewRequests"] = [];
   const deliveries: string[] = [];
   const openedSprints: string[] = [];
+  const projectEdits: ProjectEditRequest[] = [];
   const toasts: string[] = [];
   const embeds = createMockEmbeds(manifest.embeds, opts.embed);
   const focusRequests: boolean[] = [];
@@ -166,6 +168,7 @@ export function createMockSdk(
     },
     openRun: mockRuns.open,
     openSprint: (sprintId) => openedSprints.push(sprintId),
+    editProject: (request) => projectEdits.push(request),
     focus: focusApi(focus, (on) => focusRequests.push(on)),
     visibility: visibilityApi(visible),
     selection: selectionApi(selection, (next) => selections.push(next)),
@@ -263,6 +266,7 @@ export function createMockSdk(
     viewRequests,
     openedRuns: mockRuns.opened,
     openedSprints,
+    projectEdits,
     toasts,
     deliveries,
     runDeliveries: runDelivery.delivered,

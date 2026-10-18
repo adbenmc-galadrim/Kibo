@@ -1,3 +1,4 @@
+import type { IsoDate } from "./iso-date";
 import type { ProjectSnapshot } from "./rpc";
 
 export type ProjectInfo = {
@@ -9,6 +10,7 @@ export type ProjectInfo = {
   client: string | null;
   hasFolder: boolean;
   repo: string | null;
+  today: IsoDate;
 };
 
 const PR_REPO = /^https?:\/\/[^/]+\/([^/]+\/[^/]+)\/pull\/\d+/;
@@ -26,6 +28,7 @@ export function projectRepo(snapshot: Pick<ProjectSnapshot, "bindings" | "ticket
 
 export const projectInfo = (
   snapshot: Pick<ProjectSnapshot, "meta" | "bindings" | "tickets">,
+  today: IsoDate,
 ): ProjectInfo => ({
   id: snapshot.meta.id,
   key: snapshot.meta.key,
@@ -35,4 +38,5 @@ export const projectInfo = (
   client: snapshot.meta.client,
   hasFolder: snapshot.meta.folder !== null,
   repo: projectRepo(snapshot),
+  today,
 });

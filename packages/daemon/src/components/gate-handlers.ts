@@ -149,7 +149,8 @@ export function createGateHandlers(deps: GateHandlersDeps): GateHandlers {
     presence: async (projectId) => deps.presence?.(projectId) ?? [],
     sharing: async (projectId) => deps.sharing?.(projectId) ?? localSyncInfo(docs.project(projectId)),
     project: async (projectId) => {
-      const info = projectInfo(readProject(docs.project(projectId), docs.today(), docs.activity(projectId)));
+      const today = docs.today();
+      const info = projectInfo(readProject(docs.project(projectId), today, docs.activity(projectId)), today);
       return deps.hasFolder ? { ...info, hasFolder: deps.hasFolder(projectId) } : info;
     },
     settings: async (projectId) => ({

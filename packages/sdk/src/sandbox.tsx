@@ -119,6 +119,7 @@ export function createFrameSdk(
       format: init.format ?? defaultFormatOf(manifest),
       openTicket: (ticketId) => port.post({ kibo: 1, type: "openTicket", ticketId }),
       openSprint: (sprintId) => port.post({ kibo: 1, type: "openSprint", sprintId }),
+      editProject: ({ field }) => port.post({ kibo: 1, type: "editProject", field }),
       openNewTicket: ({ statusId, parentId }) =>
         port.post({ kibo: 1, type: "openNewTicket", defaults: { statusId, parentId } }),
       openFile: ({ path, line }) =>

@@ -321,6 +321,8 @@ test("the sandboxed sdk opens a sprint through the host and reads the project by
   const frame = createFrameSdk(ComponentManifest.parse(manifest), init, port);
   frame.sdk.sprints.open("s42");
   expect(sent).toEqual([{ kibo: 1, type: "openSprint", sprintId: "s42" }]);
+  frame.sdk.project.edit({ field: "folder" });
+  expect(sent.at(-1)).toEqual({ kibo: 1, type: "editProject", field: "folder" });
   const pending = frame.sdk.project.get();
   expect(sent.at(-1)).toMatchObject({ type: "call", call: { kind: "project.get" } });
   frame.dispose();

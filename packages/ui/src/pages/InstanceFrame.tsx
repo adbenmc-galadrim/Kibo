@@ -67,6 +67,7 @@ function Mounted({ projectId, instance, viewer, surface, format, mod, mode, apis
           format,
           openTicket: host.openTicket,
           openSprint: host.openSprint,
+          editProject: host.editProject,
           openNewTicket: host.openNewTicket,
           openFile: (r) =>
             host.openFile({

@@ -16,6 +16,7 @@ function setup({ call = async () => ["ok"], surface = "widget" }: Options = {}) 
   const handlers = {
     onOpenTicket: mock((_: string) => {}),
     onOpenSprint: mock((_: string) => {}),
+    onEditProject: mock((_: { field: "folder" }) => {}),
     onOpenNewTicket: mock(() => {}),
     onOpenFile: mock((_: FileOpenRequest) => {}),
     onOpenView: mock((_: string, _question?: string) => {}),
@@ -293,4 +294,12 @@ test("openSprint from the frame opens the sprint sheet, nothing from another win
   expect(handlers.onOpenSprint).not.toHaveBeenCalled();
   from(frame, { kibo: 1, type: "openSprint", sprintId: "s42" });
   expect(handlers.onOpenSprint).toHaveBeenCalledWith("s42");
+});
+
+test("editProject from the frame asks the host for the folder field, nothing from another window", () => {
+  const { frame, other, from, handlers } = setup();
+  from(other, { kibo: 1, type: "editProject", field: "folder" });
+  expect(handlers.onEditProject).not.toHaveBeenCalled();
+  from(frame, { kibo: 1, type: "editProject", field: "folder" });
+  expect(handlers.onEditProject).toHaveBeenCalledWith({ field: "folder" });
 });

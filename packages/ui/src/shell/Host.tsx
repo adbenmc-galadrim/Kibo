@@ -1,4 +1,4 @@
-import type { FileRef, TabTarget } from "@kibo/schema";
+import type { FileRef, ProjectEditRequest, TabTarget } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
 import { createContext, type ReactNode, useContext } from "react";
 import type { ProjectAgentTab } from "./use-project-agent-panel";
@@ -6,6 +6,7 @@ import type { ProjectAgentTab } from "./use-project-agent-panel";
 export type Host = {
   openTicket(id: string): void;
   openSprint?(sprintId: string): void;
+  editProject?(request: ProjectEditRequest): void;
   openNewTicket(d: NewTicketDefaults): void;
   openAssign(ticketId: string): void;
   openFile(ref: FileRef): void;

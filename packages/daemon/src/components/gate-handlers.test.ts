@@ -348,6 +348,7 @@ test("project.get names the project and the repository of its first pull request
     client: null,
     hasFolder: false,
     repo: "galadrimteam/emis",
+    today: "2026-10-16",
   });
 });
 

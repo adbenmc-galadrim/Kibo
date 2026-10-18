@@ -27,6 +27,7 @@ import type {
   PresencePeer,
   ProjectAsset,
   ProjectCommand,
+  ProjectEditRequest,
   ProjectEvent,
   ProjectInfo,
   ProjectSnapshot,
@@ -142,6 +143,7 @@ export type { ProjectInfo };
 export type ProjectApi = {
   get(): Promise<ProjectInfo>;
   subscribe(listener: () => void): () => void;
+  edit(request: ProjectEditRequest): void;
 };
 export type SettingsApi = {
   get(): Promise<ComponentSettings>;
@@ -218,6 +220,7 @@ export type SdkContext = Pick<
 > &
   Partial<Pick<KiboSdk, "focus" | "visibility" | "selection" | "spotlight" | "openRun">> & {
     openSprint?(sprintId: string): void;
+    editProject?(request: ProjectEditRequest): void;
   };
 export type SdkMode = "builtin" | "gated";
 

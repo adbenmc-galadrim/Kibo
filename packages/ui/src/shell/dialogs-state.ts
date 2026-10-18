@@ -1,4 +1,4 @@
-import type { FileRef, Page } from "@kibo/schema";
+import type { FileRef, Page, ProjectEditField } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
 
 export type SheetTicket = { projectId: string; ticketId: string };
@@ -23,6 +23,7 @@ export type DialogsState = {
   renamePage: Page | null;
   deletePage: Page | null;
   editProject: string | null;
+  editFocus: ProjectEditField | null;
   deleteProject: string | null;
   tutorial: boolean;
   about: boolean;
@@ -49,6 +50,7 @@ export const NO_DIALOG: DialogsState = {
   renamePage: null,
   deletePage: null,
   editProject: null,
+  editFocus: null,
   deleteProject: null,
   tutorial: false,
   about: false,

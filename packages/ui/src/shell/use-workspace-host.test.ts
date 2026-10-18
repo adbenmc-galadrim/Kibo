@@ -28,3 +28,12 @@ test("a sprint opened by a component opens the sprint sheet of the active projec
   none.host.openSprint?.("s42");
   expect(none.patches).toEqual([]);
 });
+
+test("a component asks to edit the project on its folder field", () => {
+  const active = host("emis");
+  active.host.editProject?.({ field: "folder" });
+  expect(active.patches).toEqual([{ editProject: "emis", editFocus: "folder" }]);
+  const none = host(null);
+  none.host.editProject?.({ field: "folder" });
+  expect(none.patches).toEqual([]);
+});
