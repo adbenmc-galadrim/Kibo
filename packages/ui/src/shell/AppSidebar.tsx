@@ -1,5 +1,4 @@
 import {
-  type AgentsState,
   type Page,
   type ProjectMeta,
   type ProjectSnapshot,
@@ -15,11 +14,10 @@ import { fr } from "../i18n/fr";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { canEdit } from "../state/access";
 import type { HelpDialog } from "./help-dialogs";
-import { AgentsEntry } from "./lazy-screens";
-import { ExecutionGate } from "./nav/ExecutionGate";
 import { NavRow } from "./nav/NavRow";
 import { ProjectsHeader } from "./nav/ProjectsHeader";
 import { SidebarToggle } from "./nav/SidebarToggle";
+import { useNarrowScreen } from "./nav/use-narrow-screen";
 import { type Link, ProjectEntry } from "./ProjectEntry";
 import { UserMenu } from "./UserMenu";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
@@ -30,8 +28,6 @@ type Props = {
   active: ProjectSnapshot | null;
   activeTarget: TabTarget | null;
   screen: Screen | null;
-  agents: AgentsState | null;
-  changes: { count: number | null } | null;
   mineCount: number | null;
   inboxCount: number | null;
   workspaceName: string | null;
@@ -57,10 +53,8 @@ const screenTarget = (screen: Screen): TabTarget => ({ kind: "screen", screen })
 const SETTINGS_SCREENS: ReadonlySet<Screen> = new Set([
   "general",
   "appearance",
-  "domains",
   "integrations",
   "security",
-  "sources",
   "sync",
   "shortcuts",
   "workspace",
@@ -93,22 +87,19 @@ export function AppSidebar(p: Props) {
       onOpen(target, false, true);
     },
   });
-  const changesOf = active && p.changes ? active.meta.id : null;
+  const narrow = useNarrowScreen();
 
   return (
-    <Sidebar className={cn("select-none border-(--tracking-soft)", p.className)}>
+    <Sidebar
+      collapsible={narrow ? "icon" : "offcanvas"}
+      className={cn("select-none border-(--tracking-soft)", p.className)}
+    >
       <div className="k-sidebar">
         <div className="k-head">
           <WorkspaceSwitcher
             name={p.workspaceName ?? fr.workspace.defaultName}
             icon={p.workspaceIcon}
             onSettings={() => onOpen(screenTarget("workspace"), false)}
-            onComponents={() => onOpen(screenTarget("components"), false)}
-            onChanges={
-              changesOf
-                ? () => onOpen({ kind: "changes", projectId: changesOf, worktree: null }, false)
-                : null
-            }
           />
           <span className="flex-1" />
           <SidebarToggle />
@@ -136,14 +127,9 @@ export function AppSidebar(p: Props) {
               {...link(screenTarget("inbox"))}
             />
           </li>
-          <ExecutionGate>
-            <li className="k-list">
-              <AgentsEntry screen={screen} agents={p.agents} link={link} />
-            </li>
-          </ExecutionGate>
         </ul>
         <ProjectsHeader onNewProject={p.onNewProject} onJoin={p.onJoin} />
-        <SidebarMenu className="min-h-0 flex-1 gap-[2px] overflow-y-auto">
+        <SidebarMenu className="scroll-shadow min-h-0 flex-1 gap-[2px] overflow-y-auto">
           {p.projects.map((project) => {
             const current = active?.meta.id === project.id;
             return (

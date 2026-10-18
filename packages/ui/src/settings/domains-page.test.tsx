@@ -357,10 +357,10 @@ test("preview blocks follow the markdown lines", () => {
   ]);
 });
 
-test("settings navigation marks the current page and links every entry", () => {
+test("settings navigation no longer lists the domains, its links stay plain links", () => {
   render(<SettingsNav active="domains" />);
   const nav = within(screen.getByRole("navigation", { name: "Paramètres" }));
-  expect(nav.getByRole("link", { name: "Domaines & guidelines" }).getAttribute("aria-current")).toBe("page");
+  expect(nav.queryByRole("link", { name: "Domaines & guidelines" })).toBeNull();
   expect(nav.getByRole("link", { name: "Général" }).getAttribute("href")).toBe("#/settings/general");
   expect(nav.queryByRole("button")).toBeNull();
 });

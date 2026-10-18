@@ -9,11 +9,9 @@ export type WorkspaceMenuProps = {
   name: string;
   icon: string | null;
   onSettings(): void;
-  onComponents(): void;
-  onChanges: (() => void) | null;
 };
 
-export function WorkspaceSwitcher({ name, icon, onSettings, onComponents, onChanges }: WorkspaceMenuProps) {
+export function WorkspaceSwitcher({ name, icon, onSettings }: WorkspaceMenuProps) {
   const [open, setOpen] = useState(false);
   return (
     <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
@@ -23,15 +21,7 @@ export function WorkspaceSwitcher({ name, icon, onSettings, onComponents, onChan
         <ChevronDown size={13} absoluteStrokeWidth className="k-dim k-13" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
-        {open && (
-          <WorkspaceMenuItems
-            name={name}
-            icon={icon}
-            onSettings={onSettings}
-            onComponents={onComponents}
-            onChanges={onChanges}
-          />
-        )}
+        {open && <WorkspaceMenuItems name={name} icon={icon} onSettings={onSettings} />}
       </DropdownMenuContent>
     </DropdownMenu>
   );

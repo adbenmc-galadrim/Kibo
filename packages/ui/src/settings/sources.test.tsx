@@ -58,9 +58,7 @@ test("screen 118: title, subtitle and columns; the key fingerprint lives in Deta
   render(<ComponentSourcesPage remote={false} />);
   expect(await screen.findByText("Équipe")).toBeTruthy();
   expect(screen.getByRole("heading", { level: 1, name: "Sources de composants" })).toBeTruthy();
-  expect(screen.getByRole("link", { name: "Sources de composants" }).getAttribute("aria-current")).toBe(
-    "page",
-  );
+  expect(screen.queryByRole("link", { name: "Sources de composants" })).toBeNull();
   expect(
     screen.getByText(
       "Les catalogues où tu installes des composants. Chaque catalogue est signé par sa source.",

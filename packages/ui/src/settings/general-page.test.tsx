@@ -49,11 +49,11 @@ test("the general settings hold the application card, the updates, the backups a
   expect(await screen.findByText("Non installée")).toBeTruthy();
 });
 
-test("the settings navigation marks Général and leads to the domains", async () => {
+test("the settings navigation marks Général and leads to the integrations", async () => {
   location.hash = "#/settings/general";
   render(<GeneralPage />);
   const nav = within(screen.getByRole("navigation", { name: "Paramètres" }));
   expect(nav.getByRole("link", { name: "Général" }).getAttribute("aria-current")).toBe("page");
-  await userEvent.setup().click(nav.getByRole("link", { name: "Domaines & guidelines" }));
-  expect(location.hash).toBe("#/settings/domains");
+  await userEvent.setup().click(nav.getByRole("link", { name: "Intégrations" }));
+  expect(location.hash).toBe("#/settings/integrations");
 });

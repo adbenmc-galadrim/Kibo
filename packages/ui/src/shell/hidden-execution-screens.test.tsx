@@ -2,7 +2,7 @@ import { afterEach, expect, mock, test } from "bun:test";
 import { type AgentExecution, EMPTY_TABS, type RpcRequest, type Screen } from "@kibo/schema";
 import { cleanup, render, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { agentsFixture, configFixture, NOW, projectsFixture } from "../agents/fixtures";
+import { configFixture, projectsFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 
 const REPLIES: Partial<Record<RpcRequest["method"], unknown>> = {
@@ -40,11 +40,7 @@ const screenView = (execution: AgentExecution, current: Screen) =>
       viewer="adam"
       projects={projectsFixture}
       snapshots={new Map()}
-      agents={agentsFixture()}
       config={configFixture()}
-      now={NOW}
-      onAnswer={noop}
-      onOpenRun={noop}
       onOpenTicket={noop}
       onAssign={noop}
       onFile={noop}
@@ -55,15 +51,18 @@ const screenView = (execution: AgentExecution, current: Screen) =>
     />,
   );
 
-test("hidden execution: the Agents and Files d'attente screens render nothing under the notice", () => {
-  for (const current of ["agents", "queue", "skills"] as const) {
-    const view = screenView("hidden", current);
-    expect(view.container.innerHTML).toBe("");
-    view.unmount();
-  }
+const RETIRED = ["agents", "queue", "skills", "creations", "components", "sources", "domains"] as const;
+
+test("the agent-era screens render nothing, whatever the setting", () => {
+  for (const execution of ["hidden", "shown"] as const)
+    for (const current of RETIRED) {
+      const view = screenView(execution, current);
+      expect(view.container.innerHTML).toBe("");
+      view.unmount();
+    }
 });
 
-test("shown execution: the Agents screen renders again", async () => {
-  const view = screenView("shown", "agents");
+test("a tracking screen still renders", async () => {
+  const view = screenView("hidden", "general");
   await waitFor(() => expect(view.container.innerHTML).not.toBe(""));
 });

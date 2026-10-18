@@ -1,5 +1,5 @@
 import type { TabTarget } from "@kibo/schema";
-import { StatusDot } from "@kibo/sdk";
+import { copyDeliveryCommand, StatusDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import {
   Command,
@@ -14,6 +14,7 @@ import {
   Bell,
   Bot,
   Bug,
+  Copy,
   FileText,
   FolderKanban,
   GitCommitHorizontal,
@@ -26,8 +27,10 @@ import {
   Ticket,
 } from "lucide-react";
 import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { fr } from "../i18n/fr";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
+import { useOptionalHost } from "../shell/Host";
 import { SCREENS } from "../tabs/screens";
 import {
   type PaletteAction,
@@ -36,6 +39,7 @@ import {
   type PaletteItem,
   searchItems,
 } from "./palette-items";
+import type { LocalAction } from "./tracking-items";
 import { paletteFilters, paletteItems } from "./visible-items";
 
 type Props = {
@@ -57,6 +61,8 @@ const ICONS = {
   theme: SunMoon,
   reply: Bell,
   assign: Bot,
+  projectAgent: Bot,
+  copy: Copy,
   shortcutsHelp: Keyboard,
   tutorial: GraduationCap,
   whatsNew: Sparkles,
@@ -132,6 +138,11 @@ export function CommandPalette({
   const filters = paletteFilters(context.executionShown);
   const sections = useMemo(() => searchItems(items, query, filter), [items, query, filter]);
   const byId = useMemo(() => new Map(sections.flatMap((s) => s.items).map((i) => [i.id, i])), [sections]);
+  const host = useOptionalHost();
+  const runLocal = (action: LocalAction) => {
+    if (action.kind === "projectAgent") return host?.openProjectAgent?.({ tab: "conversation" });
+    void copyDeliveryCommand({ toast: (message) => void toast(message) }, action.ticket);
+  };
 
   useEffect(() => {
     if (open) return;
@@ -142,6 +153,7 @@ export function CommandPalette({
   const run = (item: PaletteItem, held: boolean) => {
     onOpenChange(false);
     if (item.run.kind === "action") onAction(item.run.action);
+    else if (item.run.kind === "local") runLocal(item.run.action);
     else if (held && item.ticket) onOpenTicketSheet(item.ticket.projectId, item.ticket.ticketId);
     else if (held) onOpenTarget(item.run.target, newTab, true);
     else onOpenTarget(item.run.target, newTab);
@@ -155,7 +167,7 @@ export function CommandPalette({
     }
     if (e.key !== "Enter" || !(e.metaKey || e.ctrlKey)) return;
     const item = byId.get(value);
-    if (!item || item.run.kind === "action") return;
+    if (!item || item.run.kind !== "target") return;
     e.preventDefault();
     run(item, true);
   };

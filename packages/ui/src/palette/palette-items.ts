@@ -12,9 +12,10 @@ import { fr } from "../i18n/fr";
 import { withInbox } from "../lib/inbox";
 import { HELP_DIALOGS, type HelpDialog } from "../shell/help-dialogs";
 import { helpLabel } from "../shell/help-labels";
-import { isExecutionScreen } from "../shell/nav/execution-visibility";
+import { isRetiredScreen, isRetiredTarget } from "../shell/retired-routes";
 import { canEdit } from "../state/access";
 import { SCREENS } from "../tabs/screens";
+import { type LocalAction, trackingItems } from "./tracking-items";
 
 export type PaletteGroup = "recents" | "tickets" | "actions" | "agents" | "pages" | "projects";
 export type PaletteFilter = "all" | "tickets" | "pages" | "projects" | "actions" | "agents";
@@ -46,9 +47,14 @@ export type PaletteItem = {
     | "theme"
     | "reply"
     | "assign"
+    | "projectAgent"
+    | "copy"
     | HelpDialog
     | Screen;
-  run: { kind: "target"; target: TabTarget } | { kind: "action"; action: PaletteAction };
+  run:
+    | { kind: "target"; target: TabTarget }
+    | { kind: "action"; action: PaletteAction }
+    | { kind: "local"; action: LocalAction };
   ticket: { projectId: string; ticketId: string; keyLabel: string } | null;
 };
 export type PaletteSection = { group: PaletteGroup; items: PaletteItem[]; more: string[] };
@@ -90,9 +96,9 @@ export function activeTicket(ctx: PaletteContext): PaletteItem["ticket"] {
   return t ? { projectId: ctx.activeProjectId, ticketId: t.id, keyLabel: t.keyLabel } : null;
 }
 
-const screenItems = (executionShown: boolean): PaletteItem[] =>
+const screenItems = (): PaletteItem[] =>
   Screen.options
-    .filter((screen) => executionShown || !isExecutionScreen(screen))
+    .filter((screen) => !isRetiredScreen(screen))
     .map((screen) => ({
       ...base,
       id: `screen:${screen}`,
@@ -115,7 +121,7 @@ const projectItem = (project: ProjectMeta): PaletteItem => ({
 });
 
 function targets(ctx: PaletteContext): PaletteItem[] {
-  const out: PaletteItem[] = screenItems(ctx.executionShown);
+  const out: PaletteItem[] = screenItems();
   const queued = queuePositions(ctx.executionShown ? ctx.agents : null);
   for (const project of withInbox(ctx.projects, ctx.snapshots)) {
     const snapshot = ctx.snapshots.get(project.id);
@@ -195,13 +201,7 @@ function actions(ctx: PaletteContext): PaletteItem[] {
       }),
     );
   }
-  if (project?.folder)
-    out.push(
-      action("changes", fr.palette.openChanges(project.name), "changes", {
-        kind: "target",
-        target: { kind: "changes", projectId: project.id, worktree: null },
-      }),
-    );
+  out.push(...trackingItems(project, ticket));
   out.push(
     action("newProject", fr.palette.newProject, "new", { kind: "action", action: { kind: "newProject" } }),
   );
@@ -219,6 +219,7 @@ export function buildItems(ctx: PaletteContext): PaletteItem[] {
     all.flatMap((i) => (i.run.kind === "target" ? [[targetKey(i.run.target), i] as const] : [])),
   );
   const recents = ctx.recents.flatMap((r) => {
+    if (isRetiredTarget(r)) return [];
     const item = byKey.get(targetKey(r));
     return item ? [{ ...item, id: `recent:${item.id}`, group: "recents" as const }] : [];
   });

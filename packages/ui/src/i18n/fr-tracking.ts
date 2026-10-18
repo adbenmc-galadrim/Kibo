@@ -9,7 +9,7 @@ export const frTracking = {
   addOverview: "Ajouter la page Vue d'ensemble",
   newTicket: "Nouveau ticket",
   hidden: {
-    notice: "L'exécution des agents est masquée.",
-    show: "Afficher dans Paramètres › Général",
+    notice: "Cet écran a été retiré : Kibo ne fait plus que du suivi.",
+    home: "Retour à l'Accueil",
   },
 };

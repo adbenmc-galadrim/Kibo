@@ -4,48 +4,38 @@ import { buildItems, type PaletteContext, searchItems } from "./palette-items";
 const context: PaletteContext = {
   projects: [],
   snapshots: new Map(),
-  recents: [{ kind: "screen", screen: "queue" }],
+  recents: [{ kind: "screen", screen: "inbox" }],
   activeProjectId: null,
   activeTicketId: null,
   agents: null,
   executionShown: true,
 };
 
-test("the screens are pages of the palette and open as targets", () => {
-  const pages = searchItems(buildItems(context), "attente", "all").find((s) => s.group === "pages");
+test("the tracking screens are pages of the palette and open as targets", () => {
+  const pages = searchItems(buildItems(context), "boite", "all").find((s) => s.group === "pages");
   expect(pages?.items.map((i) => [i.label, i.run])).toEqual([
-    ["Files d'attente", { kind: "target", target: { kind: "screen", screen: "queue" } }],
+    ["Boîte de réception", { kind: "target", target: { kind: "screen", screen: "inbox" } }],
   ]);
-  expect(searchItems(buildItems(context), "domaines", "pages")[0]?.items[0]?.label).toBe(
-    "Domaines & guidelines",
-  );
-  expect(searchItems(buildItems(context), "composants", "pages")[0]?.items[0]?.label).toBe("Composants");
   expect(searchItems(buildItems(context), "parametres general", "pages")[0]?.items[0]?.label).toBe("Général");
   expect(searchItems(buildItems(context), "integrations", "pages")[0]?.items[0]?.label).toBe("Intégrations");
   expect(searchItems(buildItems(context), "mes tickets", "pages")[0]?.items[0]?.label).toBe("Mes tickets");
-  expect(searchItems(buildItems(context), "boite", "pages")[0]?.items[0]?.label).toBe("Boîte de réception");
-  expect(searchItems(buildItems(context), "sources", "pages")[0]?.items[0]?.label).toBe(
-    "Sources de composants",
+});
+
+test("the agent-era screens are gone from the palette, even when execution was shown", () => {
+  const screens = buildItems(context).flatMap((i) =>
+    i.run.kind === "target" && i.run.target.kind === "screen" ? [i.run.target.screen] : [],
   );
+  for (const retired of ["agents", "queue", "skills", "creations", "components", "sources", "domains"])
+    expect(screens).not.toContain(retired);
+  for (const query of ["attente", "skills", "creations", "composants", "domaines", "sources"])
+    expect(searchItems(buildItems(context), query, "pages")).toEqual([]);
 });
 
-test("Skills is a page of the palette under the agents", () => {
-  const item = searchItems(buildItems(context), "skills", "pages")[0]?.items[0];
-  expect([item?.label, item?.run]).toEqual([
-    "Skills",
-    { kind: "target", target: { kind: "screen", screen: "skills" } },
-  ]);
-});
-
-test("Créations is a page of the palette that opens the screen", () => {
-  const item = searchItems(buildItems(context), "creations", "pages")[0]?.items[0];
-  expect([item?.label, item?.run]).toEqual([
-    "Créations",
-    { kind: "target", target: { kind: "screen", screen: "creations" } },
-  ]);
-});
-
-test("an opened screen comes back among the recents", () => {
-  const recents = searchItems(buildItems(context), "", "all").find((s) => s.group === "recents");
-  expect(recents?.items.map((i) => i.label)).toEqual(["Files d'attente"]);
+test("an opened screen comes back among the recents, a retired one does not", () => {
+  const recents = (ctx: PaletteContext) =>
+    searchItems(buildItems(ctx), "", "all")
+      .find((s) => s.group === "recents")
+      ?.items.map((i) => i.label);
+  expect(recents(context)).toEqual(["Boîte de réception"]);
+  expect(recents({ ...context, recents: [{ kind: "screen", screen: "queue" }] })).toBeUndefined();
 });

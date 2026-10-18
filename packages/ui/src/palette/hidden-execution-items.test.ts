@@ -27,12 +27,10 @@ test("hidden execution: no Agents, Files d'attente nor Skills page, even among t
   expect(items.some((i) => i.group === "recents")).toBe(false);
 });
 
-test("shown execution: the agent screens come back as pages and recents", () => {
+test("shown execution: the agent screens stay retired, as pages and as recents", () => {
   const ids = paletteItems(context(true)).map((i) => i.id);
-  expect(ids).toContain("screen:agents");
-  expect(ids).toContain("screen:queue");
-  expect(ids).toContain("screen:skills");
-  expect(ids).toContain("recent:screen:agents");
+  for (const id of ["screen:agents", "screen:queue", "screen:skills", "recent:screen:agents"])
+    expect(ids).not.toContain(id);
 });
 
 test("hidden execution: no assign nor reply entry, and no Agents filter", () => {

@@ -9,6 +9,7 @@ import {
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { agentsFixture, runFixture } from "../agents/fixtures";
+import { type Host, HostProvider } from "../shell/Host";
 import { CommandPalette } from "./CommandPalette";
 import { buildItems, type PaletteContext, searchItems } from "./palette-items";
 
@@ -141,7 +142,8 @@ test("an empty query shows recents, projects and contextual actions", () => {
     "Nouveau ticket",
     "Créer un sous-ticket de KIB-12",
     "Nouvelle page",
-    "Voir les changements de Kibo",
+    "Agent de projet",
+    "Copier /full-delivery KIB-12",
     "Nouveau projet",
     "Basculer le thème (système / clair / sombre)",
     "Raccourcis clavier",
@@ -269,4 +271,54 @@ test("the agents group answers a waiting run and assigns the active ticket, Tab 
   await userEvent.click(input);
   for (let i = 0; i < 5; i++) await userEvent.keyboard("{Tab}");
   expect(within(dialog).getByText("Agents", { selector: "[data-filter]" })).toBeTruthy();
+});
+
+const paletteWithHost = (opened: unknown[]) => {
+  const noop = () => {};
+  const host: Host = {
+    openTicket: noop,
+    openNewTicket: noop,
+    openAssign: noop,
+    openFile: noop,
+    openView: noop,
+    openTarget: noop,
+    openProjectAgent: (opts) => opened.push(opts),
+  };
+  render(
+    <HostProvider host={host}>
+      <CommandPalette
+        open
+        onOpenChange={noop}
+        newTab={false}
+        context={context}
+        onOpenTarget={noop}
+        onOpenTicketSheet={noop}
+        onAction={noop}
+      />
+    </HostProvider>,
+  );
+  return within(screen.getByRole("dialog", { name: "Palette de commandes" }));
+};
+
+test("⌘K « Agent de projet » opens the panel of the current project", async () => {
+  const opened: unknown[] = [];
+  const dialog = paletteWithHost(opened);
+  await userEvent.type(dialog.getByRole("combobox"), "agent de projet");
+  await userEvent.keyboard("{Enter}");
+  expect(opened).toEqual([{ tab: "conversation" }]);
+});
+
+test("⌘K « Copier /full-delivery KIB-12 » copies the command of the open ticket", async () => {
+  const written: string[] = [];
+  const clipboard = navigator.clipboard;
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: async (text: string) => void written.push(text) },
+  });
+  const dialog = paletteWithHost([]);
+  await userEvent.type(dialog.getByRole("combobox"), "copier");
+  await userEvent.keyboard("{Enter}");
+  await new Promise((r) => setTimeout(r, 0));
+  expect(written).toEqual(["/full-delivery KIB-12"]);
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: clipboard });
 });

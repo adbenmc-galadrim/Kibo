@@ -64,9 +64,7 @@ test("renders one row per integration with the screen 16 texts", async () => {
   expect(screen.getByRole("heading", { name: "Intégrations" })).toBeDefined();
   const nav = within(screen.getByRole("navigation", { name: "Paramètres" }));
   expect(nav.getByRole("link", { name: "Intégrations" }).getAttribute("aria-current")).toBe("page");
-  expect(nav.getByRole("link", { name: "Domaines & guidelines" }).getAttribute("href")).toBe(
-    "#/settings/domains",
-  );
+  expect(nav.getByRole("link", { name: "Général" }).getAttribute("href")).toBe("#/settings/general");
   expect(
     screen.getByText(
       "Les secrets sont stockés dans le trousseau système, jamais dans les données du projet.",

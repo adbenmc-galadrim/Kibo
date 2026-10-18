@@ -221,33 +221,14 @@ test("routes name the agent screens", () => {
   expect(parseRoute("#/elsewhere")).toEqual({ projectId: null, pageId: null, target: null });
 });
 
-test("the sidebar leads to the agents, the queue and the settings", async () => {
+test("the sidebar leads to the settings, never to the agents", async () => {
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/");
-  const sidebar = within(screen.getByRole("button", { name: /^Agents/ }).closest("ul") ?? document.body);
-  expect(
-    within(screen.getByRole("button", { name: /^Agents/ }).closest("li") ?? document.body).getByText("3"),
-  ).toBeTruthy();
-  expect(sidebar.queryByRole("button", { name: "Files d'attente" })).toBeNull();
+  expect(await screen.findAllByRole("button", { name: /^Boîte de réception/ })).not.toHaveLength(0);
+  for (const name of [/^Agents/, /^Files d'attente/, /^Skills/])
+    expect(screen.queryByRole("button", { name })).toBeNull();
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: /^Agents/ }));
-  expect(location.hash).toBe("#/agents");
-  expect(await screen.findByRole("heading", { level: 1, name: "Agents" })).toBeTruthy();
-  await waitFor(() => expect(document.title).toBe("Agents — Kibo"));
-  await user.click(screen.getByRole("button", { name: "Files d'attente" }));
-  expect(await screen.findByRole("heading", { level: 1, name: "Files d'attente" })).toBeTruthy();
-  await waitFor(() => expect(document.title).toBe("Files d'attente — Kibo"));
-  expect(screen.queryByRole("tablist", { name: "Onglets" })).toBeNull();
   const crumbs = within(screen.getByRole("navigation", { name: "Fil d'Ariane" }));
-  expect(crumbs.getByText("Agents")).toBeTruthy();
-  expect(crumbs.getByText("Files d'attente").getAttribute("aria-current")).toBe("page");
-  await user.click(screen.getByRole("button", { name: "Skills" }));
-  expect(location.hash).toBe("#/agents/skills");
-  expect(await screen.findByRole("heading", { level: 1, name: "Skills" })).toBeTruthy();
-  expect(
-    screen.getByRole("button", { name: "Skills" }).closest("[data-active]")?.getAttribute("data-active"),
-  ).toBe("true");
-  expect(crumbs.getByText("Skills").getAttribute("aria-current")).toBe("page");
   await user.click(screen.getByRole("button", { name: "Paramètres" }));
   expect(await screen.findByRole("heading", { level: 1, name: "Général" })).toBeTruthy();
   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
@@ -298,26 +279,6 @@ test("the workspace header leads to the workspace settings", async () => {
   await user.click(await screen.findByRole("menuitem", { name: "Paramètres du workspace" }));
   expect(location.hash).toBe("#/settings/workspace");
   expect(await screen.findByRole("heading", { level: 1, name: "Workspace" })).toBeTruthy();
-});
-
-test("the header carries the actions of the agent screens", async () => {
-  render(<Shell viewer="adam" notifications="native" />);
-  await go("#/agents");
-  const user = userEvent.setup();
-  await user.click(await header().findByRole("button", { name: "Nouvel agent" }));
-  expect(await screen.findByRole("dialog", { name: "Nouvel agent" })).toBeTruthy();
-  await user.keyboard("{Escape}");
-  await go("#/agents/queue");
-  await user.click(await header().findByRole("button", { name: "Mettre en pause l'admission" }));
-  expect(calls).toContainEqual({ method: "setHost", patch: { paused: true } });
-});
-
-test("answering from the queue opens the drawer on that run", async () => {
-  render(<Shell viewer="adam" notifications="native" />);
-  await go("#/agents/queue");
-  const waiting = within(await screen.findByRole("region", { name: "En attente de réponse" }));
-  await userEvent.setup().click(waiting.getByRole("button", { name: "Répondre à opus-dev-2" }));
-  await expectDockOn("opus-dev-2");
 });
 
 test("answering from the palette opens the drawer on that run", async () => {
@@ -439,7 +400,7 @@ test("right click and the ellipsis open the same project menu; edit and delete o
   await user.click(screen.getByRole("menuitem", { name: "Supprimer…" }));
   expect(await screen.findByRole("dialog", { name: "Des agents travaillent sur ce projet" })).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "Voir les agents" }));
-  expect(location.hash).toBe("#/agents");
+  await waitFor(() => expect(location.hash).toBe("#/"));
   expect(calls.some((c) => c.method === "deleteProject")).toBe(false);
 });
 

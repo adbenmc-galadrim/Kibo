@@ -34,7 +34,7 @@ import {
   RunSidePanel,
 } from "./lazy-screens";
 import { ExecutionGate } from "./nav/ExecutionGate";
-import { HiddenScreenSlot } from "./nav/HiddenScreenSlot";
+import { RetiredRedirect } from "./nav/lazy-nav";
 import { WorkspaceFrame } from "./nav/WorkspaceFrame";
 import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
@@ -64,8 +64,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   const active = activeTarget(tabs.state);
   const screen = active?.kind === "screen" ? active.screen : null;
   const activeProjectId = active ? targetProjectId(active) : null;
-  const { lastProjectId, ticketProject, project, projectRef, currentProject, forget } =
-    useProjectFocus(activeProjectId);
+  const { ticketProject, project, projectRef, currentProject, forget } = useProjectFocus(activeProjectId);
   useProjectLanding(tabs, project);
   const { snapshots, mineCount, inboxCount } = useWorkspaceSnapshots(projects, viewer);
   const config = useConfig();
@@ -90,6 +89,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
       open(target, keep === undefined ? { newTab } : { newTab, keep }),
     [open],
   );
+  const goHome = useCallback(() => go(null), [go]);
   const closeProject = (projectId: string) => {
     tabs.dispatch({ type: "closeProject", projectId });
     forget(projectId);
@@ -149,8 +149,6 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
               active={project}
               activeTarget={active}
               screen={screen}
-              agents={agents}
-              changes={git.hasRepo ? { count: git.changesCount } : null}
               mineCount={mineCount}
               inboxCount={inboxCount}
               workspaceName={config?.workspaceName ?? null}
@@ -189,22 +187,16 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
               {project?.sync.shared && (
                 <ProjectStatusBanner projectId={project.meta.id} access={project.sync.access} />
               )}
-              <HiddenScreenSlot screen={screen} onOpen={(t) => go(t)} />
+              <RetiredRedirect target={active} onHome={goHome} />
               <div className="min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
                 {screen ? (
                   <ScreenView
                     key={`${screen}-${screenVisit.visit}`}
                     screen={screen}
-                    projectId={active?.kind === "screen" ? active.projectId : null}
-                    currentProjectId={lastProjectId}
                     viewer={viewer}
                     projects={projects}
                     snapshots={snapshots}
-                    agents={agents}
                     config={config}
-                    now={now}
-                    onAnswer={setFocusRun}
-                    onOpenRun={runPanel.open}
                     onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
                     onAssign={(projectId, ticketId) => set({ assign: { projectId, ticketId } })}
                     onFile={(ticketId) => set({ fileTicket: { ticketId } })}

@@ -417,8 +417,8 @@ test("navigation opens one preview tab, a double click in the sidebar opens a ke
   renderShell();
   await go("#/p/p1/1%401");
   await expectTitle("Kibo · Board");
-  await go("#/agents");
-  await expectTitle("Agents");
+  await go("#/settings/general");
+  await expectTitle("Général");
   expect(screen.queryByRole("tablist", { name: "Onglets" })).toBeNull();
   const inbox = screen.getByRole("button", { name: "Boîte de réception" });
   fireEvent.click(inbox);
@@ -450,50 +450,24 @@ test("a project without folder has no Changements entry", async () => {
   expect(menu.queryByRole("menuitem", { name: /Changements/ })).toBeNull();
 });
 
-test("a git project opens its Changements from the workspace menu, and the breadcrumb shows the branch", async () => {
+test("a git project no longer offers Changements in the workspace menu", async () => {
   renderShell();
   await go("#/p/p2/");
   await expectTitle("Portfolio");
-  await userEvent.click((await workspaceMenu()).getByRole("menuitem", { name: "Changements" }));
-  await waitFor(() => expect(location.hash).toBe("#/p/p2/changes"));
-  await waitFor(() => expect(crumbs().getByText("kib-12").getAttribute("aria-current")).toBe("page"));
-  expect(crumbs().getByText("Changements")).toBeTruthy();
+  expect((await workspaceMenu()).queryByRole("menuitem", { name: "Changements" })).toBeNull();
 });
 
-test("a git project lists Changements before its status answers", async () => {
-  statusPending = true;
+test("an agent-era URL leads back home, the tracking screens stay", async () => {
   renderShell();
-  await go("#/p/p2/");
-  await expectTitle("Portfolio");
-  expect((await workspaceMenu()).getByRole("menuitem", { name: "Changements" })).toBeTruthy();
-});
-
-test("coming back from the agents screen keeps Changements without reloading git", async () => {
-  const gitReads = () => code.filter((r) => r.method === "worktrees" || r.method === "status").length;
-  renderShell();
-  await go("#/p/p2/");
-  await waitFor(() => expect(gitReads()).toBeGreaterThan(0));
-  await go("#/agents");
-  await expectTitle("Agents");
-  const before = gitReads();
-  await go("#/p/p2/");
-  await expectTitle("Portfolio");
-  expect(gitReads()).toBe(before);
-});
-
-test("an agent screen keeps its URL and opens in a tab like any target", async () => {
-  renderShell();
-  await go("#/p/p1/1%401");
-  await expectTitle("Kibo · Board");
-  await go("#/agents");
-  expect(location.hash).toBe("#/agents");
-  expect(crumbs().getByText("Agents")).toBeTruthy();
-  await expectTitle("Agents");
-  expect(screen.queryByRole("tablist", { name: "Onglets" })).toBeNull();
-  await userEvent.click(screen.getByRole("button", { name: "Accueil" }));
-  await waitFor(() => expect(location.hash).toBe("#/"));
-  await go("#/agents");
-  await expectTitle("Agents");
+  for (const hash of ["#/agents", "#/agents/queue", "#/components", "#/settings/domains", "#/p/p2/changes"]) {
+    await go("#/p/p1/1%401");
+    await expectTitle("Kibo · Board");
+    await go(hash);
+    await waitFor(() => expect(location.hash).toBe("#/"));
+  }
+  await go("#/inbox");
+  await expectTitle("Boîte de réception");
+  expect(location.hash).toBe("#/inbox");
 });
 
 test("the sidebar lists the inbox after my tickets with its open count, and opens it (screen 113)", async () => {
@@ -513,16 +487,10 @@ test("the sidebar lists the inbox after my tickets with its open count, and open
   expect(entry.getAttribute("data-active")).toBe("true");
 });
 
-test("the workspace menu opens the Components screen in its own tab", async () => {
+test("the workspace menu no longer offers the Components screen", async () => {
   renderShell();
   await go("#/");
-  await userEvent.click((await workspaceMenu()).getByRole("menuitem", { name: "Composants" }));
-  await waitFor(() => expect(location.hash).toBe("#/components"));
-  expect(await screen.findByRole("columnheader", { name: "Confiance" })).toBeTruthy();
-  await expectTitle("Composants");
-  expect(crumbs().queryByRole("heading", { level: 1 })).toBeNull();
-  expect(crumbs().getByText("Composants").getAttribute("aria-current")).toBe("page");
-  expect(screen.getAllByRole("heading", { level: 1, name: "Composants" })).toHaveLength(1);
+  expect((await workspaceMenu()).queryByRole("menuitem", { name: "Composants" })).toBeNull();
 });
 
 test("the header offers no ticket button; the account sits at the foot of the sidebar with its initials", async () => {
