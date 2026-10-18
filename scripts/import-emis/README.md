@@ -41,3 +41,28 @@ Chaque arbitrage du plan (`arbitrages[].items[]`) devient une question Kibo (spe
 - L'arrêt d'`emis-board` (`launchctl unload` du LaunchAgent).
 - La copie des README du dépôt : `pilotage/depot.md` liste seulement leurs chemins.
 - La lecture des secrets d'Emis (`.env*`, `.board/`, `control.key`).
+
+## Rebase (§39.3)
+
+`rebase-emis.ts` recrée Emis sur un projet neuf : fonctionnalités `F1` à `F15` (C0 … CL), étapes `EMIS-1` à `EMIS-n` contiguës dans l'ordre fonctionnalité puis étape, titres sans préfixe de chapitre, étiquettes sans `sprint:*` ni `phase:*`, aucun `assignee`. « TODO » et « Arbitrages » ne sont pas recréés : leurs tickets rejoignent leur fonctionnalité (`src/rebase/todo-placement.ts`), DATA-1 et DATA-2 deviennent des questions au client, les questions suivent leur ticket (`src/rebase/question-placement.ts` pour les cas sans cible). Les sprints d'une semaine partent du lundi 2026-10-19 ; leur capacité est la vitesse observée (étapes `done` dont la PR est fusionnée, par semaine ISO, lue par `gh pr list --state merged`), 5 sans `gh` ou avec moins de deux semaines.
+
+```sh
+bun run --cwd scripts/import-emis rebase -- --dry-run                      # lit EMIS par getProject, écrit le rapport et le plan
+bun run --cwd scripts/import-emis rebase -- --dry-run --no-gh              # vitesse par défaut (5)
+bun run --cwd scripts/import-emis rebase -- --dry-run --from-list          # sans démon : lit tickets-list.json (aperçu, plan non applicable)
+bun run --cwd scripts/import-emis rebase -- --apply --plan <export>/rebase-plan.json --yes
+```
+
+| Option | Défaut | Rôle |
+|---|---|---|
+| `--export <dossier>` | `~/Documents/emis/kibo-export-2026-10-18` | où lire l'export et écrire les fichiers |
+| `--home <dossier>` | `$KIBO_HOME` ou `~/.kibo` | démon lu par `--dry-run`, écrit par `--apply` |
+| `--no-gh` | non | ne lit pas les dates de fusion : vitesse 5 |
+| `--from-list` | non | lit `<export>/tickets-list.json` (`kibo tickets list --json`) au lieu du démon : ni descriptions, ni questions, ni liens `relates` |
+| `--plan <fichier>`, `--yes` | — | obligatoires pour `--apply` |
+
+**`--dry-run`** n'écrit rien dans le démon. Il écrit `<export>/project-old.json` (le `getProject` de l'ancien projet), `<export>/rebase-report.md` (points « à placer », placement de TODO, ancienne clé ⇒ nouvelle clé · fonctionnalité · sprint, questions et cibles, liens tombés, vitesse et sa source, plan par sprint avec dates, comptes attendus) et `<export>/rebase-plan.json` (plan exact, empreinte sha256 du contenu de l'ancien projet). Une dépendance qui ferait un cycle entre fonctionnalités est ignorée dans le sens contraire à l'ordre du plan et listée « à placer ».
+
+**`--apply`** (tâche T19) rejoue le plan relu, dans cet ordre : sauvegarde (`createBackup`) et export complet ⇒ vérification de l'empreinte du plan ⇒ répétition sur un démon temporaire ⇒ `deleteProject` de l'ancien ⇒ `createProject { setup }` ⇒ semis des commandes du plan ⇒ vérification contre `project-old.json`, puis `<export>/rebase-result.md`. Il refuse sans plan relu, avec une empreinte qui ne correspond plus, ou avec un point « à placer ». Tant que T19 n'est pas intégrée, `--apply` sort en code 2 sans rien écrire.
+
+**Restauration à froid** (le démon n'a pas de RPC de restauration) : quitter Kibo, recopier dans `~/.kibo/` le contenu du dossier `~/.kibo/backups/<id>/` pris avant `--apply` (`kibo.db`, `runs.db`, `components/`, `notes/`), relancer Kibo. L'historique de l'agent de projet et le journal `project_events` de l'ancien projet ne sont pas transférés : ils restent dans la sauvegarde.
