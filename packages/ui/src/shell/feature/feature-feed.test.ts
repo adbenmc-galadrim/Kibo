@@ -79,3 +79,8 @@ test("five lines at most, in the order of the journal", () => {
   );
   expect(journalActivity(many, project, NOW)).toHaveLength(5);
 });
+
+test("a broken CI reads « CI cassée », as on the ticket and in the CLI", () => {
+  const broken = event({ kind: "pr_checks", ticketId: "e32", data: { number: 22, checks: "error" } });
+  expect(journalActivity([broken], project, NOW)[0]?.text).toBe("CI cassée sur PR #22 · EMIS-32");
+});
