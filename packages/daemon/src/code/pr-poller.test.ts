@@ -174,6 +174,7 @@ test("a draft PR opened outside Kibo moves the ticket to review, ready does not 
     head: "feat/stockage-fichiers",
     review: "none",
     checks: null,
+    failedCheck: null,
   });
   expect(listCalls("feat/stockage-fichiers")).toBe(1);
   setFakePrs([{ number: 9, state: "OPEN", base: "dev", head: "feat/stockage-fichiers" }]);

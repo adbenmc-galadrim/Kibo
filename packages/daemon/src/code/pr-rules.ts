@@ -11,7 +11,8 @@ export const samePr = (ref: GithubPrRef, info: PrInfo): boolean =>
   ref.base === info.base &&
   ref.head === info.head &&
   ref.review === info.review &&
-  ref.checks === info.checks;
+  ref.checks === info.checks &&
+  (ref.failedCheck ?? null) === (info.failedCheck ?? null);
 
 export function triggerRules(service: Service, projectId: string, trigger: RuleTrigger): void {
   try {
