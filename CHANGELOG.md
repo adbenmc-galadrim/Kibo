@@ -6,6 +6,25 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.27.0-alpha.1 — 2026-10-18
+
+- Kibo ne lance plus d'agent de ticket : le réglage disparaît, le démon refuse toute demande de lancement ; l'agent de projet reste et ne fait que surveiller et proposer.
+- Nouveau projet : nom, clé, client, début du premier sprint, nombre et durée des sprints, dossier ; les cinq pages (Vue d'ensemble, Planning, Kanban, Graphe, Questions) et les sprints sont créés aussitôt ; liste « Pour commencer » à boutons.
+- Une fonctionnalité se désigne par F<n> ; les étapes sont numérotées sans trou ; une étape ajoutée se place avant une dernière étape facultative.
+- Un seul jour partout, celui du démon : un seul sprint courant, « se termine aujourd'hui » le dernier jour, « à risque » pendant le sprint et « en retard » après, sur l'Accueil, la Vue d'ensemble, le Planning, le Graphe et le Kanban.
+- Démarrable : une étape démarre si son sprint a commencé, si la limite de fonctionnalités en cours le permet, si rien ne la bloque ; la dernière étape attend les autres ; chaque copie de `/full-delivery` dit pourquoi une étape n'est pas à démarrer ; `kibo tickets set` avertit sans refuser.
+- Bloqué : une question bloquante, posée sur une étape ou sur sa fonctionnalité, bloque partout (colonne Bloqué du Kanban, fiche, Planning, copie) ; glisser une carte bloquée hors de Bloqué est refusé avec « Répondre ».
+- Planning : « À planifier » à gauche, « Planifier dans ▸ » au clic droit, « + Fonctionnalité » et « + Sprint », « En cours n / limite », charge de chaque sprint, sprint proposé jamais terminé, glissement compté seulement après le début du sprint.
+- Vue d'ensemble : en cours expliqué, « dépassée » nomme les fonctionnalités hors sprint, « glissée de S42 », « Prochaine à finir » par les retards, message entre deux sprints, Échéances jusqu'à la fonctionnalité en cours la plus lointaine.
+- Fiche ticket de suivi : bandeau « Bloqué par Qn », review et CI dans le journal, check en échec nommé avec son lien, « Phase 9/12 · Review », branche « déclarée », « Requise pour livrer », une seule fiche avec une URL par clé (`#/p/EMIS/t/EMIS-45`).
+- Fiche fonctionnalité : étapes sans chevauchement, « Copier la commande » sur la prochaine étape démarrable, « + Question », « + Dépendance », pastille « facultative ».
+- Kanban : filtres cumulables Tous, Sprint courant, Démarrable, À reprendre ; raison courte sur la carte, puce de branche sans PR, review et CI.
+- Questions : Qn, case « bloquante », destinataire client par défaut, export lisible par le client, « F6 débloquée · Voir F6 » ; la relance de l'agent de projet est écrite pour le client.
+- Navigation : un clic navigue dans l'onglet actif (⌘ clic pour un nouvel onglet), barre repliée à initiales avec le menu des pages, panneau de l'agent en surimpression sous 1180 px, palette du suivi (Nouvelle fonctionnalité, Nouveau sprint, Nouvelle question), Mes tickets en liste de travail.
+- CLI : `tickets get` affiche branche, assigné et F<n> ; `tickets list` en tableau avec en-têtes ; `--ready` suit la règle du démon ; les erreurs nomment le démon et sa version.
+- Premier lancement et didacticiel refaits sur le suivi ; pages vides expliquées.
+- Emis repart sur une base neuve : F1 à F15, EMIS-1 à EMIS-n, sprints hebdomadaires à partir du 19 octobre.
+
 ## 0.26.0-alpha.2 — 2026-10-17
 
 - Vue d'ensemble : cinq questions au plus, les bloquantes d'abord, avec « Afficher plus » et « Toutes les questions » ; les cases de l'indicateur Fonctionnalités ne débordent plus.
