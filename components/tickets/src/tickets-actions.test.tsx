@@ -50,7 +50,7 @@ const pickStatus = async (user: ReturnType<typeof userEvent.setup>, name: string
   await user.keyboard("{Enter}");
 };
 
-test("steps are rows, their feature is a chip; a root without step waits in Hors fonctionnalité", async () => {
+test("steps are rows, their feature is a chip; a root without step waits in Hors fonctionnalité, open", async () => {
   const m = createMockSdk(manifest, { seed });
   mount(m);
   expect(await screen.findByText("tous les sprints · 2 tickets dans 1 fonctionnalité")).toBeTruthy();
@@ -64,8 +64,9 @@ test("steps are rows, their feature is a chip; a root without step waits in Hors
   expect(m.opened).toEqual([byKey(m, "KIB-2")?.id ?? ""]);
   fireEvent.click(screen.getByRole("button", { name: fr.newSubTicket("KIB-2") }));
   expect(m.newTicketRequests[0]?.parentId).toBe(byKey(m, "KIB-2")?.id);
-  await userEvent.setup().click(screen.getByRole("button", { name: "Déplier Hors fonctionnalité" }));
   expect(screen.getByRole("button", { name: "Sync" })).toBeTruthy();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Replier Hors fonctionnalité" }));
+  expect(screen.queryByRole("button", { name: "Sync" })).toBeNull();
 });
 
 test("the row menu changes the status; Bloqué asks for a reason", async () => {
@@ -226,5 +227,6 @@ test("with agent execution hidden, the row menu copies the full-delivery command
   await user.click(await screen.findByRole("menuitem", { name: "Copier /full-delivery KIB-3" }));
   expect(screen.queryByRole("menuitem", { name: "Livrer" })).toBeNull();
   await waitFor(async () => expect(await navigator.clipboard.readText()).toBe("/full-delivery KIB-3"));
+  await waitFor(() => expect(m.toasts).toEqual(["Copié"]));
   expect(m.runDeliveries).toEqual([]);
 });

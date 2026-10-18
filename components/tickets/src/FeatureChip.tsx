@@ -1,12 +1,14 @@
-import type { TicketView } from "@kibo/schema";
+import { featureLabel, type TicketView } from "@kibo/schema";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
 import { Package } from "lucide-react";
 import { fr } from "./fr";
 
-export type FeatureRef = Pick<TicketView, "id" | "keyLabel" | "shortKey" | "title">;
+export type FeatureRef = Pick<TicketView, "id" | "key" | "keyLabel" | "shortKey" | "title">;
 type Props = { feature: FeatureRef; onOpen(id: string): void };
 
-export const featureName = (f: FeatureRef): string => fr.feature.name(f.shortKey ?? f.keyLabel, f.title);
+export const featureKey = (f: Omit<FeatureRef, "id" | "title">): string => featureLabel(f) || f.keyLabel;
+
+export const featureName = (f: FeatureRef): string => fr.feature.name(featureKey(f), f.title);
 
 export function FeatureChip({ feature, onOpen }: Props) {
   const name = featureName(feature);

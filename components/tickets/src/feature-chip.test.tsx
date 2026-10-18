@@ -2,7 +2,13 @@ import { expect, test } from "bun:test";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { FeatureChip } from "./FeatureChip";
 
-const F5 = { id: "f5", keyLabel: "EMIS-30", shortKey: "F5", title: "Envoyer les photos d'un tronçon" };
+const F5 = {
+  id: "f5",
+  key: "EMIS-30",
+  keyLabel: "EMIS-30",
+  shortKey: "F5",
+  title: "Envoyer les photos d'un tronçon",
+};
 
 test("the chip reads short key then name on one line, shows the full name on hover and opens the feature", async () => {
   const opened: string[] = [];

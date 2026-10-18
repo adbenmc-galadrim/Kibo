@@ -1,6 +1,7 @@
 import { expect, mock, test } from "bun:test";
 import { DEFAULT_WORKFLOW, EMPTY_PROGRESS, type TicketView } from "@kibo/schema";
 import { isSeparator, isSubmenu } from "@kibo/sdk/ui/menu-entries";
+import { waitFor } from "@testing-library/react";
 import { fr } from "./fr";
 import { type TicketMenuActions, ticketMenuEntries } from "./ticket-menu";
 
@@ -40,8 +41,9 @@ const actions = (): TicketMenuActions => ({
   moveToRoot: mock(() => {}),
   remove: mock(() => {}),
   deliver: mock(() => {}),
-  copyDelivery: mock((_command: string) => {}),
+  attach: mock(() => {}),
 });
+const sdk = () => ({ toast: mock((_message: string) => {}) });
 const labels = (entries: ReturnType<typeof ticketMenuEntries>) =>
   entries.map((e) => (isSeparator(e) ? "—" : isSubmenu(e) ? `${e.label} ▸` : e.label));
 
@@ -54,6 +56,7 @@ test("an editable ticket gets open, status submenu, new sub-ticket, move to root
     deliver: null,
     execution: "shown",
     texts: fr,
+    sdk: sdk(),
     actions: a,
   });
   expect(labels(entries)).toEqual([
@@ -87,6 +90,7 @@ test("a root ticket cannot be moved to the root", () => {
     deliver: null,
     execution: "shown",
     texts: fr,
+    sdk: sdk(),
     actions: actions(),
   });
   const root = entries.find((e) => !isSeparator(e) && !isSubmenu(e) && e.label === "Déplacer à la racine");
@@ -101,6 +105,7 @@ test("read-only keeps only Ouvrir", () => {
     deliver: { disabledReason: null },
     execution: "shown",
     texts: fr,
+    sdk: sdk(),
     actions: actions(),
   });
   expect(labels(entries)).toEqual(["Ouvrir"]);
@@ -114,6 +119,7 @@ const withDeliver = (deliver: { disabledReason: string | null } | null, a = acti
     deliver,
     execution: "shown",
     texts: fr,
+    sdk: sdk(),
     actions: a,
   });
 
@@ -134,15 +140,17 @@ test("Livrer is disabled and says which run is already there", () => {
   expect(deliver.hint).toBe("déjà un run : emis · full-delivery · EMIS-15");
 });
 
-test("hidden agent execution replaces Livrer with copying the full-delivery command", () => {
+test("hidden agent execution replaces Livrer with copying the full-delivery command", async () => {
   const a = actions();
+  const toaster = sdk();
   const entries = ticketMenuEntries({
-    ticket: ticket(),
+    ticket: ticket({ waitingOn: ["KIB-30"] }),
     statuses: DEFAULT_WORKFLOW,
     readOnly: false,
     deliver: { disabledReason: null },
     execution: "hidden",
     texts: fr,
+    sdk: toaster,
     actions: a,
   });
   expect(labels(entries).slice(0, 3)).toEqual(["Ouvrir", "Copier /full-delivery KIB-27", "Statut ▸"]);
@@ -150,12 +158,14 @@ test("hidden agent execution replaces Livrer with copying the full-delivery comm
   const copy = entries[1];
   if (!copy || isSeparator(copy) || isSubmenu(copy)) throw new Error("no copy entry");
   copy.onSelect();
-  expect(a.copyDelivery).toHaveBeenCalledWith("/full-delivery KIB-27");
+  await waitFor(() => expect(toaster.toast).toHaveBeenCalledWith("Copié · attend KIB-30"));
+  expect(await navigator.clipboard.readText()).toBe("/full-delivery KIB-27");
   expect(a.deliver).not.toHaveBeenCalled();
 });
 
 test("a done ticket offers its touch-up: copying /update-delivery when the execution is hidden", () => {
   const a = actions();
+  const toaster = sdk();
   const entries = ticketMenuEntries({
     ticket: ticket({ statusId: "done" }),
     statuses: DEFAULT_WORKFLOW,
@@ -163,7 +173,32 @@ test("a done ticket offers its touch-up: copying /update-delivery when the execu
     deliver: { disabledReason: null },
     execution: "hidden",
     texts: fr,
+    sdk: toaster,
     actions: a,
   });
   expect(labels(entries).slice(0, 2)).toEqual(["Ouvrir", "Copier /update-delivery KIB-27"]);
+});
+
+test("a ticket outside any feature can be attached to one", () => {
+  const a = actions();
+  const entries = (canAttach: boolean) =>
+    ticketMenuEntries({
+      ticket: ticket({ parentId: null }),
+      statuses: DEFAULT_WORKFLOW,
+      readOnly: false,
+      deliver: null,
+      execution: "hidden",
+      texts: fr,
+      sdk: sdk(),
+      canAttach,
+      actions: a,
+    });
+  expect(labels(entries(true))).toContain("Rattacher à une fonctionnalité…");
+  expect(labels(entries(false))).not.toContain("Rattacher à une fonctionnalité…");
+  const attach = entries(true).find(
+    (e) => !isSeparator(e) && !isSubmenu(e) && e.label.startsWith("Rattacher"),
+  );
+  if (!attach || isSeparator(attach) || isSubmenu(attach)) throw new Error("no Rattacher");
+  attach.onSelect();
+  expect(a.attach).toHaveBeenCalled();
 });

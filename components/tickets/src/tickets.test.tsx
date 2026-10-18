@@ -50,6 +50,10 @@ const rowKeys = (inSection: boolean) =>
     .filter((r) => (r.closest("li")?.parentElement?.closest("li") !== null) === inSection)
     .map((r) => r.querySelector("span")?.textContent);
 const keysShown = () => rowKeys(false);
+const doneKeys = () =>
+  Array.from(document.querySelectorAll("[data-selected]"))
+    .filter((r) => r.closest("li")?.parentElement?.closest("li")?.textContent?.startsWith("Terminés"))
+    .map((r) => r.querySelector("span")?.textContent);
 
 const featureCell = (row: HTMLElement): HTMLElement => {
   const found = row.querySelector<HTMLElement>("[data-cell=feature]");
@@ -102,24 +106,24 @@ test("open steps come first by recent activity, with their feature, state, git, 
 test("Terminés dans S42 shows its 4 most recent, the count shows them all, the header folds it", async () => {
   const m = setup();
   await rowOf("KIB-14");
-  expect(rowKeys(true)).toEqual(["KIB-5", "KIB-12", "KIB-8", "KIB-7"]);
+  expect(doneKeys()).toEqual(["KIB-5", "KIB-12", "KIB-8", "KIB-7"]);
   const merged = await rowOf("KIB-5");
   expect(cell(merged, "git")).toBe("#18fusionnée");
   expect(cell(merged, "delivery")).toBe("11 · Livré");
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Afficher les 7 terminés" }));
-  expect(rowKeys(true)).toEqual(["KIB-5", "KIB-12", "KIB-8", "KIB-7", "KIB-2", "KIB-3", "KIB-4"]);
+  expect(doneKeys()).toEqual(["KIB-5", "KIB-12", "KIB-8", "KIB-7", "KIB-2", "KIB-3", "KIB-4"]);
   await user.click(screen.getByRole("button", { name: "Afficher les 4 plus récents" }));
-  expect(rowKeys(true)).toHaveLength(4);
+  expect(doneKeys()).toHaveLength(4);
   await user.click(screen.getByRole("button", { name: "Replier Terminés dans S42" }));
-  expect(rowKeys(true)).toEqual([]);
+  expect(doneKeys()).toEqual([]);
   expect(screen.getByRole("button", { name: "Déplier Terminés dans S42" }).textContent).toBe(
     "Terminés dans S42",
   );
   expect(m.configPatches).toEqual([{ doneOpen: false }]);
 });
 
-test("a folded choice is remembered by the instance; Hors fonctionnalité opens on click", async () => {
+test("a folded choice is remembered by the instance; Hors fonctionnalité is open and folds", async () => {
   const m = createMockSdk(manifest, {
     seed: trackingSeed(Date.now()),
     today: TODAY,
@@ -131,11 +135,12 @@ test("a folded choice is remembered by the instance; Hors fonctionnalité opens 
     </SdkProvider>,
   );
   await rowOf("KIB-14");
-  expect(rowKeys(true)).toEqual([]);
+  expect(doneKeys()).toEqual([]);
   expect(screen.getByRole("button", { name: "Déplier Terminés dans S42" })).toBeTruthy();
-  await userEvent.setup().click(screen.getByRole("button", { name: "Déplier Hors fonctionnalité" }));
   const loose = await rowOf("KIB-16");
   expect(within(loose).queryByRole("button", { name: /^Ouvrir la fonctionnalité/ })).toBeNull();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Replier Hors fonctionnalité" }));
+  expect(screen.queryByText("KIB-16")).toBeNull();
 });
 
 test("the feature chip opens the feature", async () => {
