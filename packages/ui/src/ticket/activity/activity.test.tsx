@@ -113,7 +113,9 @@ const sheet = (project: ProjectSnapshot = progressProject(), agents?: AgentsStat
   );
 
 const openActivity = async () => {
-  await userEvent.setup().click(screen.getByRole("tab", { name: "Activité" }));
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("tab", { name: "Activité" }));
+  await user.click(await screen.findByRole("button", { name: /^Ancien/ }));
   return screen.findByRole("tabpanel", { name: "Activité" });
 };
 
@@ -255,6 +257,7 @@ test("the ticket page offers the same tabs and the choice holds for the session"
   page.unmount();
   sheet(project);
   expect(screen.getByRole("tab", { name: "Activité" }).getAttribute("aria-selected")).toBe("true");
+  await userEvent.setup().click(await screen.findByRole("button", { name: /^Ancien/ }));
   await waitFor(() =>
     expect(calls.some((c) => c.method === "runMoments" && c.runId === REPORTED_RUN)).toBe(true),
   );

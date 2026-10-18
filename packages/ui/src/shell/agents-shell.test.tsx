@@ -318,6 +318,7 @@ test("the ticket sheet offers a domain and the assign action", async () => {
       onDeleted={() => {}}
     />,
   );
+  await userEvent.setup().click(screen.getByRole("button", { name: "Domaine et maquettes" }));
   expect(screen.getByRole("combobox", { name: "Domaine" }).textContent).toContain("UI");
   await userEvent.setup().click(screen.getByRole("button", { name: "Assigner à un agent" }));
   expect(onAssign).toHaveBeenCalled();

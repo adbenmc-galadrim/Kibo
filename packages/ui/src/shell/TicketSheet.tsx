@@ -1,5 +1,4 @@
 import { type Domain, type FileRef, isFeature, isGroup, isInbox, type ProjectSnapshot } from "@kibo/schema";
-import { TicketKeyLabel } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@kibo/sdk/ui/sheet";
@@ -10,15 +9,20 @@ import { frFeature, frGroup } from "../i18n/fr-group";
 import { frPresence } from "../i18n/fr-presence";
 import { canEdit } from "../state/access";
 import { usePresencePeers } from "../state/use-presence";
+import { findTicket } from "../tabs/target-hash";
 import { TicketTabs, useTicketTab } from "../ticket/activity/TicketTabs";
+import { TicketTimeline } from "../ticket/activity/TicketTimeline";
+import { CopyCommandButton } from "../ticket/CopyCommandButton";
 import { LabelsField } from "../ticket/LabelsField";
 import { TicketActionsMenu } from "../ticket/TicketActionsMenu";
+import { TicketHeader } from "../ticket/TicketHeader";
 import { TicketTitle } from "../ticket/TicketTitle";
+import { TrackingBanner } from "../ticket/TrackingBanner";
 import { useTicketCommand } from "../ticket/use-ticket-command";
+import { useTicketCiRuns } from "../ticket/use-ticket-tracking";
 import { FeatureDetail } from "./FeatureDetail";
 import { GroupDetail } from "./GroupDetail";
 import { KeyRequired } from "./KeyRequired";
-import { ActivityTab } from "./lazy-screens";
 import { ExecutionGate } from "./nav/ExecutionGate";
 import { importTitle } from "./sheet/import-title";
 import { GithubLinkNote, GithubRefs } from "./sheet/lazy-sections";
@@ -51,13 +55,14 @@ export function TicketSheet({
   onOpenTicket,
   onDeleted,
 }: Props) {
+  const t = findTicket(project.tickets, ticketId);
   const peers = usePresencePeers(project.sync.shared ? project.meta.id : null).filter(
-    (p) => !p.self && p.ticketId === ticketId,
+    (p) => !p.self && p.ticketId === t?.id,
   );
   const command = useTicketCommand(project.meta.id);
   const labelsCommand = useTicketCommand(project.meta.id);
+  const ciRuns = useTicketCiRuns(project.meta.id, t?.id ?? ticketId);
   const [tab, setTab] = useTicketTab();
-  const t = project.tickets.find((x) => x.id === ticketId);
   if (!t) return null;
   const editable = canEdit(project);
   const inbox = isInbox(project.meta.id);
@@ -101,13 +106,19 @@ export function TicketSheet({
               {frPresence.watching(p.name)}
             </p>
           ))}
-          <div className="flex items-center gap-2">
-            <SheetDescription className="font-mono text-xs">
-              {group ? frGroup.kicker(t.keyLabel) : <TicketKeyLabel ticket={t} />}
+          {group ? (
+            <div className="flex items-center gap-2">
+              <SheetDescription className="font-mono text-xs">{frGroup.kicker(t.keyLabel)}</SheetDescription>
+              <GithubRefs ticket={t} />
+              <span className="mr-8 ml-auto flex items-center gap-2">{actionsMenu()}</span>
+            </div>
+          ) : (
+            <SheetDescription asChild className="mr-8 text-xs">
+              <div>
+                <TicketHeader project={project} ticket={t} actions={actionsMenu()} />
+              </div>
             </SheetDescription>
-            <GithubRefs ticket={t} />
-            <span className="mr-8 ml-auto flex items-center gap-2">{actionsMenu()}</span>
-          </div>
+          )}
           <SheetTitle className="text-lg" aria-label={t.title} title={importTitle(t.externalRefs)}>
             <TicketTitle
               title={t.title}
@@ -119,6 +130,7 @@ export function TicketSheet({
           </SheetTitle>
           <LabelsField ticket={t} editable={editable} command={labelsCommand} />
           <GithubLinkNote ticket={t} />
+          {!group && <TrackingBanner ticket={t} ciRuns={ciRuns} />}
           {!inbox && (
             <div className="mt-2 flex flex-wrap gap-2">
               {!group && (
@@ -136,9 +148,11 @@ export function TicketSheet({
                   </KeyRequired>
                 </ExecutionGate>
               )}
-              {editable && (
-                <DeliverButton key={project.meta.delivery?.agent ?? ""} project={project} ticket={t} />
-              )}
+              <ExecutionGate fallback={<CopyCommandButton ticket={t} />}>
+                {editable && (
+                  <DeliverButton key={project.meta.delivery?.agent ?? ""} project={project} ticket={t} />
+                )}
+              </ExecutionGate>
             </div>
           )}
         </SheetHeader>
@@ -153,12 +167,13 @@ export function TicketSheet({
                 project={project}
                 ticket={t}
                 domains={domains}
+                ciRuns={ciRuns}
                 viewer={viewer}
                 onOpenFile={onOpenFile}
                 onOpenTicket={onOpenTicket}
               />
             }
-            activity={<ActivityTab project={project} ticket={t} onOpenFile={onOpenFile} />}
+            activity={<TicketTimeline project={project} ticket={t} onOpenFile={onOpenFile} />}
           />
         )}
       </SheetContent>

@@ -40,6 +40,7 @@ const tab = (ticketId: string) =>
 test("a ticket tab opened by its key shows the ticket", () => {
   tab("EMIS-33");
   expect(screen.getByRole("heading", { name: "Écran d'envoi hors ligne" })).toBeTruthy();
+  expect(document.querySelector("[data-ticket-context]")?.textContent).toBe("F5 · S42");
 });
 
 test("once shown, the ticket is addressed by its key and the address bar follows", async () => {
