@@ -35,10 +35,10 @@ async function boxOf(locator: Locator) {
   return box;
 }
 
-async function dragBelow(page: Page, source: Locator, target: Locator) {
-  const from = await boxOf(source);
+async function dragBelow(page: Page, source: Locator, key: string, target: Locator) {
+  const label = await boxOf(source.getByText(key, { exact: true }));
   const to = await boxOf(target);
-  const grip = { x: from.x + from.width / 2, y: from.y + 14 };
+  const grip = { x: label.x + label.width / 2, y: label.y + label.height / 2 };
   await page.mouse.move(grip.x, grip.y);
   await page.mouse.down();
   await page.mouse.move(grip.x, grip.y + 10, { steps: 4 });
@@ -107,6 +107,7 @@ test("arbre Tickets filtré et Kanban réordonné", async ({ page }, info) => {
   await dragBelow(
     page,
     todo.getByRole("article", { name: /^KIB-15 / }),
+    "KIB-15",
     todo.getByRole("article", { name: /^KIB-18 / }),
   );
   await expect.poll(keys).toEqual(moved);
