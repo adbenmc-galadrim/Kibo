@@ -14,7 +14,7 @@ let closers: Closer[];
 
 beforeEach(() => {
   git = createGitFixture({ remote: false });
-  git.commit("chore: init", { "README.md": "# emis\n" });
+  git.commit("chore: init", { "README.md": "# silo\n" });
   fx = createObserverFixture(2, git.repo);
   closers = [];
 });
@@ -36,21 +36,21 @@ test("a branch created in a watched worktree starts its ticket without waiting f
   const code = startCodeTracking(fx.service, closers, { env: git.env, prPollMs: 0 });
   expect(code.poller).toBeNull();
   await code.handle({ method: "status", projectId: fx.projectId, worktree: git.repo }, REMOTE);
-  git.git("branch", "feat/emis-1-connexion");
-  await statusBecomes("EMIS-1", "in_progress");
-  expect(fx.branchOf("EMIS-1")).toBe("feat/emis-1-connexion");
+  git.git("branch", "feat/silo-1-connexion");
+  await statusBecomes("SILO-1", "in_progress");
+  expect(fx.branchOf("SILO-1")).toBe("feat/silo-1-connexion");
 });
 
 test("the PR poll observes the branches first, and nothing is observed once the daemon stops", async () => {
   const env = { ...git.env, ...installFakeGh(git.dir) };
   const code = startCodeTracking(fx.service, closers, { env, prPollMs: 30 });
-  git.git("branch", "feat/emis-1-connexion");
-  await statusBecomes("EMIS-1", "in_progress");
+  git.git("branch", "feat/silo-1-connexion");
+  await statusBecomes("SILO-1", "in_progress");
   await shutdown({ front: [], back: closers });
-  git.git("branch", "feat/emis-2-stockage");
+  git.git("branch", "feat/silo-2-stockage");
   await code.poller?.tick();
   await Bun.sleep(100);
-  expect(fx.ticket("EMIS-2").statusId).toBe("todo");
+  expect(fx.ticket("SILO-2").statusId).toBe("todo");
 });
 
 test("the poll passes run before each PR poll and stop with the daemon", async () => {

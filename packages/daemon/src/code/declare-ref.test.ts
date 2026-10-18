@@ -12,7 +12,7 @@ beforeEach(() => {
 });
 afterEach(() => h.close());
 
-const BRANCH: GitBranchRef = { kind: "git_branch", branch: "feat/emis-1", base: "dev" };
+const BRANCH: GitBranchRef = { kind: "git_branch", branch: "feat/silo-1", base: "dev" };
 
 function step(statusId: StatusId = "todo"): Ticket {
   const ticket = h.run({ method: "createTicket", title: "Envoi" }) as Ticket;
@@ -54,9 +54,9 @@ test("a declared branch is journaled as declared, an observed one is not", async
   const branches = h.journal().filter((e) => e.kind === "branch_created");
   expect(branches.find((e) => e.ticketId === declared.id)).toMatchObject({
     source: "git",
-    data: { branch: "feat/emis-1", declared: true },
+    data: { branch: "feat/silo-1", declared: true },
   });
-  expect(branches.find((e) => e.ticketId === observed.id)?.data).toEqual({ branch: "feat/emis-1" });
+  expect(branches.find((e) => e.ticketId === observed.id)?.data).toEqual({ branch: "feat/silo-1" });
 });
 
 test("a branch declared on a ticket in review leaves its status", () => {
@@ -109,7 +109,7 @@ test("a reference written by a plain command runs no rule", () => {
 
 test("an unknown ticket is not found", () => {
   const run = () =>
-    declareTicketRef(h.service, { projectId: h.project.id, ticketKey: "EMIS-99", ref: BRANCH });
+    declareTicketRef(h.service, { projectId: h.project.id, ticketKey: "SILO-99", ref: BRANCH });
   expect(run).toThrow(expect.objectContaining({ code: "NOT_FOUND" }));
 });
 

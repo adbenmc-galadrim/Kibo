@@ -15,7 +15,7 @@ const QUESTION_ID = "6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b";
 
 function setup() {
   const root = imagesTmp();
-  const roots = { cwd: join(root, "worktree"), delivery: join(root, "emis"), notes: join(root, "notes") };
+  const roots = { cwd: join(root, "worktree"), delivery: join(root, "silo"), notes: join(root, "notes") };
   const home = join(root, "kibo");
   const lines: string[] = [];
   const prepare = (paths: readonly string[]) =>

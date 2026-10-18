@@ -10,7 +10,7 @@ import { fakeBuild, okReport } from "./components/service.test-helper";
 import { type Daemon, type DaemonOptions, startDaemon } from "./daemon";
 
 const FIXED_NOW = "2026-10-16T14:52:00+02:00";
-const BRANCH = "feat/emis-1-x";
+const BRANCH = "feat/silo-1-x";
 const PR_URL = "https://github.com/kibo/test/pull/1";
 
 const Answer = z.object({ ok: z.boolean(), result: z.unknown() });
@@ -128,8 +128,8 @@ function project(client: Client, projectId: string) {
 async function createProject(client: Client, folder: string | null): Promise<string> {
   const created = await client.rpc({
     method: "createProject",
-    name: "Emis",
-    key: "EMIS",
+    name: "Silo",
+    key: "SILO",
     folder,
     color: "#F97316",
   });
@@ -139,20 +139,20 @@ async function createProject(client: Client, folder: string | null): Promise<str
 test("a branch, then its PR, then its merge move the ticket and deliver its feature", async () => {
   const fx = createGitFixture({ remote: false });
   cleanups.push(() => fx.cleanup());
-  fx.commit("chore: init", { "README.md": "# emis\n" });
+  fx.commit("chore: init", { "README.md": "# silo\n" });
   const gh = installFakeGh(fx.dir);
   const client = await launch(tempHome(), { code: { env: { ...fx.env, ...gh }, prPollMs: 50 } });
-  const emis = project(client, await createProject(client, fx.repo));
-  const step = await emis.create({ method: "createTicket", title: "Connexion", statusId: "todo" });
-  const feature = await emis.create({ method: "createTicket", title: "Accès" });
-  await emis.command({ method: "moveTicket", ticketId: step, parentId: feature, index: 0 });
-  const demo = await emis.create({ method: "createTicket", title: "Démo client", parentId: feature });
-  await emis.command({ method: "setStatus", ticketId: demo, statusId: "todo" });
-  await emis.command({ method: "setTicketOptional", ticketId: demo, optional: true });
+  const silo = project(client, await createProject(client, fx.repo));
+  const step = await silo.create({ method: "createTicket", title: "Connexion", statusId: "todo" });
+  const feature = await silo.create({ method: "createTicket", title: "Accès" });
+  await silo.command({ method: "moveTicket", ticketId: step, parentId: feature, index: 0 });
+  const demo = await silo.create({ method: "createTicket", title: "Démo client", parentId: feature });
+  await silo.command({ method: "setStatus", ticketId: demo, statusId: "todo" });
+  await silo.command({ method: "setTicketOptional", ticketId: demo, optional: true });
 
-  fx.git("worktree", "add", "-q", "-b", BRANCH, join(fx.dir, "emis-1-x"));
-  const started = await emis.reaches("EMIS-1", "in_progress");
-  expect(emis.ticket(started, "EMIS-1").externalRefs).toContainEqual({
+  fx.git("worktree", "add", "-q", "-b", BRANCH, join(fx.dir, "silo-1-x"));
+  const started = await silo.reaches("SILO-1", "in_progress");
+  expect(silo.ticket(started, "SILO-1").externalRefs).toContainEqual({
     kind: "git_branch",
     branch: BRANCH,
     base: null,
@@ -164,11 +164,11 @@ test("a branch, then its PR, then its merge move the ticket and deliver its feat
       JSON.stringify([{ number: 1, url: PR_URL, state, isDraft: false, head: BRANCH, base: "main" }]),
     );
   pr("OPEN");
-  await emis.reaches("EMIS-1", "in_review");
+  await silo.reaches("SILO-1", "in_review");
   pr("MERGED");
-  const merged = await emis.reaches("EMIS-1", "done");
-  expect(emis.ticket(merged, "EMIS-2").feature?.status).toBe("delivered");
-  expect(emis.ticket(merged, "EMIS-3").statusId).toBe("todo");
+  const merged = await silo.reaches("SILO-1", "done");
+  expect(silo.ticket(merged, "SILO-2").feature?.status).toBe("delivered");
+  expect(silo.ticket(merged, "SILO-3").statusId).toBe("todo");
 });
 
 test("changing an app setting tells every client to reload the configuration", async () => {
@@ -196,7 +196,7 @@ test("an imported plan key becomes the feature's short key and a Planning page, 
   for (let start = 0; start < 2; start += 1) {
     const client = await launch(home);
     const snap = await project(client, projectId).snapshot();
-    expect(project(client, projectId).ticket(snap, "EMIS-1").shortKey).toBe("C4");
+    expect(project(client, projectId).ticket(snap, "SILO-1").shortKey).toBe("C4");
     expect(snap.pages.filter((p) => p.title === "Planning")).toHaveLength(1);
     await client.daemon.stop();
   }

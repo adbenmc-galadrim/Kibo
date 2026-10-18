@@ -8,8 +8,8 @@ import { createSessionSweep } from "./session-sweep";
 const T0 = 1_760_000_000_000;
 const ticket = (id: string, parentId: string | null): SessionTicket => ({
   id,
-  key: `EMIS-${id}`,
-  keyLabel: `EMIS-${id}`,
+  key: `SILO-${id}`,
+  keyLabel: `SILO-${id}`,
   parentId,
   delivery: null,
 });
@@ -52,7 +52,7 @@ test("each pass closes the sessions silent for two hours and journals them", () 
         ticketId: "2",
         featureId: "1",
         source: "full-delivery",
-        data: { ticketKey: "EMIS-2", tool: "T3 Code", durationMs: 20 * 60_000, ended: "timeout" },
+        data: { ticketKey: "SILO-2", tool: "T3 Code", durationMs: 20 * 60_000, ended: "timeout" },
       },
     },
   ]);

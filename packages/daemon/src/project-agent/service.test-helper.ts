@@ -119,8 +119,8 @@ export function serviceKit(): Kit {
   const store = openProjectAgentStore(dir);
   let snapshot = project({
     tickets: [
-      ticket({ id: "t1", key: "EMIS-1", title: "Accueil" }),
-      ticket({ id: "t11", key: "EMIS-11", title: "Panneau", statusId: "in_progress" }),
+      ticket({ id: "t1", key: "SILO-1", title: "Accueil" }),
+      ticket({ id: "t11", key: "SILO-11", title: "Panneau", statusId: "in_progress" }),
     ],
   });
   let writable = true;

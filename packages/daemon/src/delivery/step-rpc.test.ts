@@ -20,7 +20,7 @@ function setup(runs: (projectId: string, ticketId: string) => RunView[] = () => 
   dirs.push(dir);
   const service = createService(openStore(dir), { user: "adam" });
   const project = ProjectMeta.parse(
-    service.handle({ method: "createProject", name: "Emis", key: "EMIS", folder: null, color: "#336699" }),
+    service.handle({ method: "createProject", name: "Silo", key: "SILO", folder: null, color: "#336699" }),
   );
   const ticket = Ticket.parse(
     service.handle({
@@ -49,7 +49,7 @@ test("writes the step as a Kibo command and returns the ticket view", () => {
   const view = setDeliveryStep(deps, {
     method: "setDeliveryStep",
     projectId: project.id,
-    ticketKey: "EMIS-1",
+    ticketKey: "SILO-1",
     step: 7,
     note: "porte qualité",
   });
@@ -67,7 +67,7 @@ test("ties the step to the ticket's active run of the same project", () => {
   const view = setDeliveryStep(deps, {
     method: "setDeliveryStep",
     projectId: project.id,
-    ticketKey: "EMIS-1",
+    ticketKey: "SILO-1",
     step: 0,
   });
   expect(view.delivery).toEqual({ step: 0, note: "", at: 1_700, runId: "r-live", kind: "delivery" });
@@ -75,19 +75,19 @@ test("ties the step to the ticket's active run of the same project", () => {
 
 test("an update step is written as an update, the next plain step as a delivery", () => {
   const { project, deps } = setup();
-  const req = { method: "setDeliveryStep", projectId: project.id, ticketKey: "EMIS-1", step: 7 } as const;
+  const req = { method: "setDeliveryStep", projectId: project.id, ticketKey: "SILO-1", step: 7 } as const;
   expect(setDeliveryStep(deps, { ...req, kind: "update" }).delivery?.kind).toBe("update");
   expect(setDeliveryStep(deps, req).delivery?.kind).toBe("delivery");
 });
 
 test("refuses an unknown key and a read-only project without writing", () => {
   const { service, project, events, deps } = setup();
-  const req = { method: "setDeliveryStep", projectId: project.id, ticketKey: "EMIS-9", step: 3 } as const;
-  expect(() => setDeliveryStep(deps, req)).toThrow(new KiboError("NOT_FOUND", "ticket EMIS-9 not found"));
+  const req = { method: "setDeliveryStep", projectId: project.id, ticketKey: "SILO-9", step: 3 } as const;
+  expect(() => setDeliveryStep(deps, req)).toThrow(new KiboError("NOT_FOUND", "ticket SILO-9 not found"));
   service.docs.setWriteGuard(() => {
     throw new KiboError("FORBIDDEN", "read-only project");
   });
-  expect(() => setDeliveryStep(deps, { ...req, ticketKey: "EMIS-1" })).toThrow("read-only project");
+  expect(() => setDeliveryStep(deps, { ...req, ticketKey: "SILO-1" })).toThrow("read-only project");
   expect(events).toEqual([]);
 });
 
@@ -96,10 +96,10 @@ test("serves the setDeliveryStep method only", async () => {
   const rpc = deliveryStepRpc(deps);
   expect(rpc.methods).toEqual(["setDeliveryStep"]);
   const view = await rpc.handle(
-    { method: "setDeliveryStep", projectId: project.id, ticketKey: "EMIS-1", step: 11, note: "PR #12" },
+    { method: "setDeliveryStep", projectId: project.id, ticketKey: "SILO-1", step: 11, note: "PR #12" },
     LOCAL_CONTEXT,
   );
-  expect(view).toMatchObject({ key: "EMIS-1", delivery: { step: 11, note: "PR #12" } });
+  expect(view).toMatchObject({ key: "SILO-1", delivery: { step: 11, note: "PR #12" } });
   await expect(rpc.handle({ method: "listProjects" }, LOCAL_CONTEXT)).rejects.toMatchObject({
     code: "INTERNAL",
   });

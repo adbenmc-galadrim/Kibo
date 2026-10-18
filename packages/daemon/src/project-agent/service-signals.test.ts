@@ -39,7 +39,7 @@ test("the first turn lists the open signals between the overview and the message
   expect(between(turn.prompt, "# Projet", "## Signaux à traiter", "# Message")).toBe(true);
   expect(turn.prompt).toContain("Signaux ouverts : 2");
   expect(turn.prompt).toContain(
-    "- sig:1 · ticket à créer · opus-dev-2 · EMIS-1 · t1001 · nouveau — « Tests du récepteur »",
+    "- sig:1 · ticket à créer · opus-dev-2 · SILO-1 · t1001 · nouveau — « Tests du récepteur »",
   );
   expect(turn.prompt).toContain("- sig:2 · blocage");
   expect(turn.prompt).not.toContain("sig:3 ·");
@@ -54,8 +54,8 @@ test("the next turns list the signals after the digest, already read ones flagge
   kit.signals.add(2, onProject);
   const turn = await kit.svc.turns.prepare({ ...run, turns: 1, pendingAnswer: "Et ensuite ?" }, kit.dir);
   expect(between(turn.prompt, "## Depuis ton dernier tour", "## Signaux à traiter", "# Message")).toBe(true);
-  expect(turn.prompt).toContain("- sig:1 · ticket à créer · opus-dev-2 · EMIS-1 · t1001 · déjà lu");
-  expect(turn.prompt).toContain("- sig:2 · ticket à créer · opus-dev-2 · EMIS-1 · t1002 · nouveau");
+  expect(turn.prompt).toContain("- sig:1 · ticket à créer · opus-dev-2 · SILO-1 · t1001 · déjà lu");
+  expect(turn.prompt).toContain("- sig:2 · ticket à créer · opus-dev-2 · SILO-1 · t1002 · nouveau");
 });
 
 test("a turn without open signal has no signal section", async () => {

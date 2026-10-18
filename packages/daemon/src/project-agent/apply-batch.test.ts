@@ -50,7 +50,7 @@ describe("applyBatch", () => {
     const results = await apply(h, batch);
     expect(outcomes(results)).toEqual(["applied", "applied"]);
     expect(h.commands.map((c) => c.method)).toEqual(["createTicket"]);
-    expect(results[0]?.created?.key).toBe("EMIS-10");
+    expect(results[0]?.created?.key).toBe("SILO-10");
     expect(results[1]).toEqual({ actionId: 2, outcome: "applied", detail: null, created: null });
   });
 
@@ -59,10 +59,10 @@ describe("applyBatch", () => {
     const s = await seed(h);
     await h.data.writeNote(h.project.id, MEMORY_NOTE_PATH, "", "create");
     const batch = await propose(h, [
-      { id: 1, why, type: "createTicket", ref: "new:1", title: "Nouveau", parent: "EMIS-3" },
+      { id: 1, why, type: "createTicket", ref: "new:1", title: "Nouveau", parent: "SILO-3" },
       { id: 2, why, type: "setStatus", ticket: "new:1", statusId: "in_progress" },
-      { id: 3, why, type: "link", from: "EMIS-1", to: "new:1", kind: "blocks" },
-      { id: 4, why, type: "updateTicket", ticket: "EMIS-2", title: "Deux renommé" },
+      { id: 3, why, type: "link", from: "SILO-1", to: "new:1", kind: "blocks" },
+      { id: 4, why, type: "updateTicket", ticket: "SILO-2", title: "Deux renommé" },
       { id: 5, why, type: "assignAgent", ticket: "new:1", profileId: "global:opus", brief: "Vas-y" },
       { id: 6, why, type: "answerQuestion", questionId: s.open.id, answer: { kind: "text", text: "8080" } },
       { id: 7, why, type: "updateNote", path: MEMORY_NOTE_PATH, content: "# Mémoire\n" },
@@ -75,11 +75,11 @@ describe("applyBatch", () => {
     expect(batchStatusOfResults(results)).toBe("applied");
     const snap = h.data.project(h.project.id);
     const created = snap.tickets.find((t) => t.title === "Nouveau");
-    expect(results[0]?.created).toEqual({ ticketId: created?.id ?? "", key: "EMIS-10" });
+    expect(results[0]?.created).toEqual({ ticketId: created?.id ?? "", key: "SILO-10" });
     expect(created?.statusId).toBe("in_progress");
     expect(created?.parentId).toBe(s.tickets[2]?.id ?? "");
     expect(snap.links.some((l) => l.from === s.tickets[0]?.id && l.to === created?.id)).toBe(true);
-    expect(titleOf(h, "EMIS-2")).toBe("Deux renommé");
+    expect(titleOf(h, "SILO-2")).toBe("Deux renommé");
     expect(h.agents.assigned).toEqual([
       { projectId: h.project.id, ticketId: created?.id ?? "", profileId: "global:opus", brief: "Vas-y" },
     ]);
@@ -92,10 +92,10 @@ describe("applyBatch", () => {
     const h = setup();
     await seed(h);
     const batch = await propose(h, [
-      { id: 1, why, type: "updateTicket", ticket: "EMIS-2", title: "Avant le verrou" },
+      { id: 1, why, type: "updateTicket", ticket: "SILO-2", title: "Avant le verrou" },
       { id: 2, why, type: "createTicket", ref: "new:1", title: "Nouveau" },
       { id: 3, why, type: "setStatus", ticket: "new:1", statusId: "in_progress" },
-      { id: 4, why, type: "link", from: "new:1", to: "EMIS-1", kind: "blocks" },
+      { id: 4, why, type: "link", from: "new:1", to: "SILO-1", kind: "blocks" },
       { id: 5, why, type: "updateNote", path: "a.md", content: "# A bis\n" },
     ]);
     const data = {
@@ -123,21 +123,21 @@ describe("applyBatch", () => {
     const h = setup();
     await seed(h);
     const batch = await propose(h, [
-      { id: 1, why, type: "updateTicket", ticket: "EMIS-1", title: "Non" },
-      { id: 2, why, type: "setStatus", ticket: "EMIS-2", statusId: "done" },
+      { id: 1, why, type: "updateTicket", ticket: "SILO-1", title: "Non" },
+      { id: 2, why, type: "setStatus", ticket: "SILO-2", statusId: "done" },
     ]);
     h.commands.length = 0;
     const results = await apply(h, batch, new Set([2]));
     expect(results[0]).toEqual({ actionId: 1, outcome: "skipped", detail: "décochée", created: null });
     expect(h.commands.map((c) => c.method)).toEqual(["setStatus"]);
-    expect(titleOf(h, "EMIS-1")).toBe("Ticket 1");
+    expect(titleOf(h, "SILO-1")).toBe("Ticket 1");
   });
 
   test("an orchestrator refusal fails the action with its message", async () => {
     const h = setup();
     await seed(h);
     const batch = await propose(h, [
-      { id: 1, why, type: "assignAgent", ticket: "EMIS-3", profileId: "global:opus" },
+      { id: 1, why, type: "assignAgent", ticket: "SILO-3", profileId: "global:opus" },
     ]);
     h.agents.failAssign = new KiboError("CONFLICT", "ticket already has an active run");
     const results = await apply(h, batch);
@@ -151,7 +151,7 @@ describe("applyBatch", () => {
     const s = await seed(h);
     const batch = await propose(h, [
       { id: 1, why, type: "cancelRun", runId: s.runId },
-      { id: 2, why, type: "deliverAnswers", ticket: "EMIS-6" },
+      { id: 2, why, type: "deliverAnswers", ticket: "SILO-6" },
       { id: 3, why, type: "createNote", path: MEMORY_NOTE_PATH, content: "" },
     ]);
     expect(outcomes(await apply(h, batch))).toEqual(["applied", "applied", "applied"]);
@@ -167,16 +167,16 @@ describe("stale targets are never overwritten", () => {
     const h = setup();
     const s = await seed(h);
     const batch = await propose(h, [
-      { id: 1, why, type: "updateTicket", ticket: "EMIS-1", title: "Proposé" },
-      { id: 2, why, type: "updateTicket", ticket: "EMIS-2", title: "Proposé aussi" },
+      { id: 1, why, type: "updateTicket", ticket: "SILO-1", title: "Proposé" },
+      { id: 2, why, type: "updateTicket", ticket: "SILO-2", title: "Proposé aussi" },
     ]);
     h.command({ method: "updateTicket", ticketId: s.tickets[0]?.id ?? "", title: "Changé par Adam" });
     h.command({ method: "updateTicket", ticketId: s.tickets[1]?.id ?? "", description: "Autre chose" });
     const results = await apply(h, batch);
     expect(outcomes(results)).toEqual(["stale", "applied"]);
     expect(results[0]?.detail).toContain("title");
-    expect(titleOf(h, "EMIS-1")).toBe("Changé par Adam");
-    expect(titleOf(h, "EMIS-2")).toBe("Proposé aussi");
+    expect(titleOf(h, "SILO-1")).toBe("Changé par Adam");
+    expect(titleOf(h, "SILO-2")).toBe("Proposé aussi");
   });
 
   test("status, question, notes, runs and answers changed since the proposal are stale", async () => {
@@ -184,13 +184,13 @@ describe("stale targets are never overwritten", () => {
     const s = await seed(h);
     await h.data.writeNote(h.project.id, "b.md", "# B\n", "create");
     const batch = await propose(h, [
-      { id: 1, why, type: "setStatus", ticket: "EMIS-3", statusId: "done" },
+      { id: 1, why, type: "setStatus", ticket: "SILO-3", statusId: "done" },
       { id: 2, why, type: "answerQuestion", questionId: s.open.id, answer: { kind: "text", text: "80" } },
       { id: 3, why, type: "updateNote", path: "a.md", content: "# Proposé\n" },
       { id: 4, why, type: "createNote", path: "c.md", content: "# C\n" },
       { id: 5, why, type: "cancelRun", runId: s.runId },
-      { id: 6, why, type: "deliverAnswers", ticket: "EMIS-6" },
-      { id: 7, why, type: "assignAgent", ticket: "EMIS-4", profileId: "global:opus" },
+      { id: 6, why, type: "deliverAnswers", ticket: "SILO-6" },
+      { id: 7, why, type: "assignAgent", ticket: "SILO-4", profileId: "global:opus" },
     ]);
     const [t3, t4, t6] = [s.tickets[2]?.id ?? "", s.tickets[3]?.id ?? "", s.tickets[5]?.id ?? ""];
     h.command({ method: "setStatus", ticketId: t3, statusId: "in_review" });
@@ -220,7 +220,7 @@ describe("stale targets are never overwritten", () => {
     expect(h.agents.cancelled).toEqual([]);
     expect(h.agents.delivered).toEqual([]);
     expect(h.agents.assigned).toEqual([]);
-    expect(statusOf(h, "EMIS-3")).toBe("in_review");
+    expect(statusOf(h, "SILO-3")).toBe("in_review");
     expect(await h.data.readNote(h.project.id, "a.md")).toBe("# Adam\n");
     expect(await h.data.readNote(h.project.id, "c.md")).toBe("# Déjà là\n");
   });
@@ -228,10 +228,10 @@ describe("stale targets are never overwritten", () => {
   test("a ticket deleted since the proposal is stale", async () => {
     const h = setup();
     const s = await seed(h);
-    const batch = await propose(h, [{ id: 1, why, type: "setStatus", ticket: "EMIS-2", statusId: "done" }]);
+    const batch = await propose(h, [{ id: 1, why, type: "setStatus", ticket: "SILO-2", statusId: "done" }]);
     h.command({ method: "deleteTicket", ticketId: s.tickets[1]?.id ?? "" });
     expect(await apply(h, batch)).toEqual([
-      { actionId: 1, outcome: "stale", detail: "ticket EMIS-2 introuvable", created: null },
+      { actionId: 1, outcome: "stale", detail: "ticket SILO-2 introuvable", created: null },
     ]);
   });
 });
@@ -260,15 +260,15 @@ describe("ticket agents removed", () => {
     const h = setup();
     await seed(h);
     const batch = await propose(h, [
-      { id: 1, why, type: "assignAgent", ticket: "EMIS-3", profileId: "global:opus" },
-      { id: 2, why, type: "setStatus", ticket: "EMIS-2", statusId: "done" },
-      { id: 3, why, type: "deliverAnswers", ticket: "EMIS-6" },
+      { id: 1, why, type: "assignAgent", ticket: "SILO-3", profileId: "global:opus" },
+      { id: 2, why, type: "setStatus", ticket: "SILO-2", statusId: "done" },
+      { id: 3, why, type: "deliverAnswers", ticket: "SILO-6" },
     ]);
     h.agents.mode = "removed";
     const results = await apply(h, batch);
     expect(outcomes(results)).toEqual(["failed", "applied", "failed"]);
     for (const r of [results[0], results[2]]) expect(r?.detail).toStartWith("AGENT_EXECUTION_REMOVED: ");
-    expect(statusOf(h, "EMIS-2")).toBe("done");
+    expect(statusOf(h, "SILO-2")).toBe("done");
     expect(h.agents.assigned).toEqual([]);
     expect(h.agents.delivered).toEqual([]);
   });

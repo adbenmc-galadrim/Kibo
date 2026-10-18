@@ -13,7 +13,7 @@ beforeEach(() => {
 });
 afterEach(() => kit.cleanup());
 
-const proposal = (statusId: "done" | "in_review" = "done", ticket = "EMIS-11"): ProposeBatchInput => ({
+const proposal = (statusId: "done" | "in_review" = "done", ticket = "SILO-11"): ProposeBatchInput => ({
   summary: "Clore le panneau",
   actions: [{ id: 1, why: "livré", type: "setStatus", ticket, statusId }],
 });
@@ -28,7 +28,7 @@ test("send opens a session on the first message and resumes it after", () => {
   const first = kit.svc.send(PROJECT_ID, "Bonjour");
   expect(kit.store.openSession(PROJECT_ID)).toMatchObject({ runId: first.id, sessionId: first.sessionId });
   kit.svc.send(PROJECT_ID, "Et ensuite ?");
-  expect(kit.calls).toEqual(["start:Emis:Bonjour", `answer:${first.id}:Et ensuite ?`]);
+  expect(kit.calls).toEqual(["start:Silo:Bonjour", `answer:${first.id}:Et ensuite ?`]);
   kit.setWritable(false);
   expect(() => kit.svc.send(PROJECT_ID, "Encore")).toThrow(expect.objectContaining({ code: "FORBIDDEN" }));
 });
@@ -52,9 +52,9 @@ test("prepare composes the first turn with the overview and the next turns with 
   kit.setFolder(folder);
   const turn2 = await kit.svc.turns.prepare({ ...run, turns: 1, pendingAnswer: "Et ensuite ?" }, kit.dir);
   expect(turn2.prompt).toContain("## Depuis ton dernier tour");
-  expect(turn2.prompt).toContain("EMIS-11 · renommé");
+  expect(turn2.prompt).toContain("SILO-11 · renommé");
   expect(turn2.prompt).toContain("Et ensuite ?");
-  expect(turn2.systemPrompt).toContain("chef de projet du projet Emis");
+  expect(turn2.systemPrompt).toContain("chef de projet du projet Silo");
   expect(turn2.cwd).toBe(folder);
   expect(kit.calls.filter((c) => c.startsWith("note:"))).toHaveLength(1);
 });
@@ -85,13 +85,13 @@ test("propose validates, captures expected state, supersedes the previous pendin
     "Lot 2 enregistré, en attente de validation d'adam.",
   );
   expect(kit.store.batches(run.id).map((b) => b.status)).toEqual(["superseded", "pending"]);
-  expect(() => kit.svc.propose(run, proposal("done", "EMIS-999"))).toThrow(
+  expect(() => kit.svc.propose(run, proposal("done", "SILO-999"))).toThrow(
     expect.objectContaining({ code: "INVALID_INPUT", detail: expect.stringContaining("#1 setStatus") }),
   );
   expect(kit.store.batches(run.id)).toHaveLength(2);
   expect(kit.notices).toEqual([
-    { title: "Lot à valider", body: "Agent de projet · Emis : lot n° 1" },
-    { title: "Lot à valider", body: "Agent de projet · Emis : lot n° 2" },
+    { title: "Lot à valider", body: "Agent de projet · Silo : lot n° 1" },
+    { title: "Lot à valider", body: "Agent de projet · Silo : lot n° 2" },
   ]);
   expect(kit.emits() - emitted).toBe(2);
   expect(() => kit.svc.propose(run, { summary: "" })).toThrow(
@@ -104,8 +104,8 @@ test("decide apply runs ops.apply with the chosen ids and records the results; r
   kit.svc.propose(run, {
     summary: "Deux gestes",
     actions: [
-      { id: 1, why: "livré", type: "setStatus", ticket: "EMIS-11", statusId: "done" },
-      { id: 2, why: "commencer", type: "setStatus", ticket: "EMIS-1", statusId: "in_progress" },
+      { id: 1, why: "livré", type: "setStatus", ticket: "SILO-11", statusId: "done" },
+      { id: 2, why: "commencer", type: "setStatus", ticket: "SILO-1", statusId: "in_progress" },
     ],
   });
   const pending = kit.store.pendingBatch(PROJECT_ID);
@@ -254,11 +254,11 @@ test("the MCP sink accepts only a live project run token and hands the run to th
 test("the project agent's prompt takes the body of its file, and falls back to Kibo's role", async () => {
   const run = kit.svc.send(PROJECT_ID, "Bonjour");
   const fallback = await kit.svc.turns.prepare(run, kit.dir);
-  expect(fallback.systemPrompt).toContain("chef de projet du projet Emis");
+  expect(fallback.systemPrompt).toContain("chef de projet du projet Silo");
   kit.setAgentBody("Tu es le chef d'orchestre de l'équipe.");
   const custom = await kit.svc.turns.prepare({ ...run, turns: 1, pendingAnswer: "Et ensuite ?" }, kit.dir);
   expect(custom.systemPrompt).toContain("Tu es le chef d'orchestre de l'équipe.");
-  expect(custom.systemPrompt).not.toContain("chef de projet du projet Emis");
+  expect(custom.systemPrompt).not.toContain("chef de projet du projet Silo");
 });
 
 test("the body of kibo-project-agent.md feeds the project agent, Kibo's default role otherwise", () => {
@@ -279,7 +279,7 @@ test("execution hidden: the prompt leaves out the ticket agents and a batch that
   expect(turn.systemPrompt).toContain("ni `assignAgent` ni `deliverAnswers`");
   const launch: ProposeBatchInput = {
     summary: "Confier",
-    actions: [{ id: 1, why: "prêt", type: "assignAgent", ticket: "EMIS-1", profileId: "global:opus-dev" }],
+    actions: [{ id: 1, why: "prêt", type: "assignAgent", ticket: "SILO-1", profileId: "global:opus-dev" }],
   };
   expect(() => kit.svc.propose(run, launch)).toThrow(
     expect.objectContaining({

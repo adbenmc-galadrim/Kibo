@@ -22,12 +22,12 @@ const ACTION: ProposedAction = {
   id: 1,
   why: "trop long",
   type: "setStatus",
-  ticket: "EMIS-1",
+  ticket: "SILO-1",
   statusId: "done",
 };
 const ADAM = { kind: "human" as const, ref: "adam" };
 const PRINT: TicketPrint = {
-  key: "EMIS-1",
+  key: "SILO-1",
   title: "A",
   statusId: "todo",
   labels: [],

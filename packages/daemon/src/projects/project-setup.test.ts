@@ -29,8 +29,8 @@ function open() {
   const create = (setup?: ProjectSetup) =>
     service.handle({
       method: "createProject",
-      name: "Emis",
-      key: "EMIS",
+      name: "Silo",
+      key: "SILO",
       folder: null,
       color: "#F97316",
       ...(setup !== undefined && { setup }),
@@ -177,8 +177,8 @@ test("the seed never goes through the live command path, so a failing command ca
   };
   const project = handleProjectRequest(deps, {
     method: "createProject",
-    name: "Emis",
-    key: "EMIS",
+    name: "Silo",
+    key: "SILO",
     folder: null,
     color: "#F97316",
     setup: SIX_WEEKS,

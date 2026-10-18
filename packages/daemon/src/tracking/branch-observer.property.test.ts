@@ -5,7 +5,7 @@ import { observeBranches } from "./branch-observer";
 import { createObserverFixture } from "./observer-fixture.test-helper";
 
 const TICKETS = 12;
-const keyArb = fc.integer({ min: 1, max: 14 }).map((n) => `emis-${n}`);
+const keyArb = fc.integer({ min: 1, max: 14 }).map((n) => `silo-${n}`);
 const partArb = fc.oneof(
   keyArb,
   keyArb.map((k) => k.toUpperCase()),
@@ -35,7 +35,7 @@ test("kibo links a branch only to the single ticket it names, and a replay chang
         const state = new Map<string, string>();
         const deps = { service: fx.service, refs: async () => branches, log: () => () => undefined };
         await observeBranches(deps, state);
-        const keys = Array.from({ length: TICKETS }, (_, i) => `EMIS-${i + 1}`);
+        const keys = Array.from({ length: TICKETS }, (_, i) => `SILO-${i + 1}`);
         for (const key of keys) {
           const branch = branchRefOf(fx.ticket(key).externalRefs)?.branch;
           if (!branch) continue;

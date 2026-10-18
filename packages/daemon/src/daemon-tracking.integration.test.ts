@@ -70,7 +70,7 @@ test("a daemon built without the option refuses every ticket agent launch", asyn
   const rpc = await launch();
   const Created = z.object({ id: z.string() });
   const project = Created.parse(
-    await rpc({ method: "createProject", name: "Emis", key: "EMIS", folder: null, color: "#3b82f6" }),
+    await rpc({ method: "createProject", name: "Silo", key: "SILO", folder: null, color: "#3b82f6" }),
   );
   const ticket = Created.parse(
     await rpc({ method: "command", projectId: project.id, command: { method: "createTicket", title: "Un" } }),

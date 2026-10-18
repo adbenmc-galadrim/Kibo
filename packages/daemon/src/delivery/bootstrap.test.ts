@@ -58,8 +58,8 @@ async function rig() {
   });
   const project = call(service, {
     method: "createProject",
-    name: "Emis",
-    key: "EMIS",
+    name: "Silo",
+    key: "SILO",
     folder: null,
     color: "#F97316",
   });
@@ -76,7 +76,7 @@ async function rig() {
     id: "r1",
     projectId: project.id,
     ticketId: ticket.id,
-    ticketKey: "EMIS-1",
+    ticketKey: "SILO-1",
     turns: 1,
     state: "waiting_input",
   });
@@ -132,7 +132,7 @@ test("Livrer on a leaf assigns the delivery agent through the RPC, with the brie
       projectId: project.id,
       ticketId: ticket.id,
       profileId: "global:full-delivery",
-      brief: "/full-delivery EMIS-1",
+      brief: "/full-delivery SILO-1",
       fresh: false,
     },
   ]);
@@ -147,7 +147,7 @@ test("a turn ended with refusals asks the denial question and notifies the human
   await delivery.lifecycle({ onTurnEnd: async (_r: RunView) => {} }).onTurnEnd(run);
   const questions = call(service, { method: "getProject", projectId: project.id }).questions;
   expect(questions.map((q) => q.title)).toEqual(["1 action refusée pendant le run"]);
-  expect(notices).toEqual([{ title: "EMIS-1 : 1 action refusée", body: "Kibo propose des règles" }]);
+  expect(notices).toEqual([{ title: "SILO-1 : 1 action refusée", body: "Kibo propose des règles" }]);
   const denials = await delivery.components.call(project.id, { kind: "run.denials", runId: run.id });
   expect(denials).toEqual(expect.objectContaining({ runId: "r1", questionId: questions[0]?.id }));
 });
@@ -168,7 +168,7 @@ test("the machine locks are read from the slots folder given by the environment"
   expect(delivery.locks()).toEqual([]);
   mkdirSync(join(slots, "heavy", "held"), { recursive: true });
   writeFileSync(join(slots, "heavy", "max"), "2");
-  const ticket = { pid: 4101, since: 1, label: "emis:EMIS-15 gates", cwd: "/w", ticket: "1-4101" };
+  const ticket = { pid: 4101, since: 1, label: "silo:SILO-15 gates", cwd: "/w", ticket: "1-4101" };
   writeFileSync(join(slots, "heavy", "held", "1-4101.json"), JSON.stringify(ticket));
   expect(delivery.locks()).toEqual([expect.objectContaining({ name: "heavy", max: 2 })]);
 });

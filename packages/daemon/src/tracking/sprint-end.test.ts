@@ -21,7 +21,7 @@ function setup() {
   dirs.push(dir);
   const service = createService(openStore(dir), { user: "adam" });
   const project = ProjectMeta.parse(
-    service.handle({ method: "createProject", name: "Emis", key: "EMIS", folder: null, color: "#336699" }),
+    service.handle({ method: "createProject", name: "Silo", key: "SILO", folder: null, color: "#336699" }),
   );
   const run = (command: ProjectCommand): unknown =>
     service.handle({ method: "command", projectId: project.id, command });
@@ -63,7 +63,7 @@ test("an ended sprint with work left wakes the project agent once", () => {
   expect(sent).toEqual([
     {
       projectId: project.id,
-      text: "S1 est terminé : F2 a 2 étapes restantes (EMIS-6, EMIS-7). F1 est livrée. Propose un report ou un retrait du planning.",
+      text: "S1 est terminé : F2 a 2 étapes restantes (SILO-6, SILO-7). F1 est livrée. Propose un report ou un retrait du planning.",
     },
   ]);
   expect(store.has(s1)).toBe(true);

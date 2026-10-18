@@ -10,7 +10,7 @@ const open = async () => (await openRepo(fx.repo, fx.env)).open(fx.repo);
 
 beforeEach(async () => {
   fx = createGitFixture();
-  fx.commit("chore: init", { "README.md": "# emis\n", "src/old.ts": "export const old = 1;\n" });
+  fx.commit("chore: init", { "README.md": "# silo\n", "src/old.ts": "export const old = 1;\n" });
   fx.git("push", "-q", "-u", "origin", "main");
   fx.git("checkout", "-q", "-b", "dev");
   fx.commit("feat: dev", { "src/dev.ts": "export const dev = 1;\n" });
@@ -21,7 +21,7 @@ beforeEach(async () => {
 afterEach(() => fx.cleanup());
 
 const workOnBranch = () => {
-  fx.commit("build: minio", { "docker/minio.yml": "image: minio\n", "README.md": "# emis\nminio\n" });
+  fx.commit("build: minio", { "docker/minio.yml": "image: minio\n", "README.md": "# silo\nminio\n" });
   fx.git("mv", "src/old.ts", "src/renamed.ts");
   fx.git("rm", "-q", "src/dev.ts");
   fx.git("commit", "-q", "-m", "refactor: renomme");
@@ -104,12 +104,12 @@ describe("branchChanges", () => {
 describe("branchDiff", () => {
   test("diffs a file between the merge base and HEAD, read only", async () => {
     workOnBranch();
-    fx.write("README.md", "# emis\nminio\nnot committed\n");
+    fx.write("README.md", "# silo\nminio\nnot committed\n");
     const diff = await branchDiff(h, ["origin/dev"], "README.md", null);
     expect(diff.hunkStaging).toBe(false);
     expect([diff.additions, diff.deletions]).toEqual([1, 0]);
     expect(diff.hunks[0]?.lines.map((l) => [l.kind, l.text])).toEqual([
-      ["context", "# emis"],
+      ["context", "# silo"],
       ["add", "minio"],
     ]);
   });

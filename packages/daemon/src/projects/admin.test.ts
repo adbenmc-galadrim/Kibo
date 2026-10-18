@@ -125,7 +125,7 @@ test("worktree settings are local, checked, and work on a read-only shared proje
   });
   const worktree = {
     baseRef: "origin/dev",
-    pathTemplate: "../emis-{slug}",
+    pathTemplate: "../silo-{slug}",
     setup: "pnpm worktree {branch}",
     recipe: null,
   };

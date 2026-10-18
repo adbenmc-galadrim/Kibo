@@ -19,8 +19,8 @@ function seeded(fixedNow: string) {
   const service = createService(store, { user: "adam", clock: createClock(fixedNow) });
   const project = service.handle({
     method: "createProject",
-    name: "Emis",
-    key: "EMIS",
+    name: "Silo",
+    key: "SILO",
     folder: null,
     color: "#F97316",
   }) as ProjectMeta;

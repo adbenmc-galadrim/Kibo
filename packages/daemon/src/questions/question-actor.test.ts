@@ -16,7 +16,7 @@ const answer: ProjectCommand = {
   method: "answerQuestion",
   questionId: "q1",
   answer: { kind: "confirm" },
-  by: { kind: "agent", ref: "emis-livraison" },
+  by: { kind: "agent", ref: "silo-livraison" },
 };
 
 test("a user or a component always writes questions as the viewer of the project", () => {

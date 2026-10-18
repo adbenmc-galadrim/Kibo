@@ -27,7 +27,7 @@ let code: CodeService | null;
 
 beforeEach(() => {
   fx = createGitFixture();
-  fx.commit("chore: init", { "README.md": "# emis\n" });
+  fx.commit("chore: init", { "README.md": "# silo\n" });
   fx.git("push", "-q", "-u", "origin", "main");
   fx.git("checkout", "-q", "-b", "dev");
   fx.commit("feat: dev", { "dev.txt": "dev\n" });
@@ -41,8 +41,8 @@ beforeEach(() => {
   service = createService(store, { user: "adam" });
   project = call(service, {
     method: "createProject",
-    name: "Emis",
-    key: "EMIS",
+    name: "Silo",
+    key: "SILO",
     folder: fx.repo,
     color: "#F97316",
   });
@@ -88,7 +88,7 @@ const linkBranch = (base: string | null) => {
 };
 const DEV: WorktreeSettings = {
   baseRef: "origin/dev",
-  pathTemplate: "../emis-{slug}",
+  pathTemplate: "../silo-{slug}",
   setup: null,
   recipe: null,
 };
