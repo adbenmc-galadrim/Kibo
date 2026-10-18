@@ -184,10 +184,6 @@ export const fr = {
   },
   exportText: {
     header: (recipient: string, date: string) => `Questions pour ${recipient} · ${date}`,
-    blocks: (feature: string) => `bloque « ${feature} »`,
-    for: (feature: string) => `pour « ${feature} »`,
-    planned: (week: string) => `prévue semaine du ${week} · réponse souhaitée avant le ${week}`,
-    unplanned: "à planifier",
     context: "Contexte",
     options: "Options",
     provisional: "Choix provisoire",

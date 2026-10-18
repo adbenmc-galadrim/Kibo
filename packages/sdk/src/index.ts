@@ -4,6 +4,7 @@ export * from "./agent-badge";
 export * from "./agent-mention";
 export * from "./agent-traces";
 export * from "./client";
+export * from "./client-text";
 export * from "./deliver-flow";
 export * from "./deliver-state";
 export * from "./delivery-step-chip";

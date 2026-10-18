@@ -1,22 +1,10 @@
 import { expect, test } from "bun:test";
-import { byExportOrder, exportAll, exportDate, exportQuestionText, impactLine } from "./export-text";
+import { byExportOrder, exportAll, exportDate, exportQuestionText } from "./export-text";
 import { question } from "./question-fixtures.test-helper";
 
 const Q14 = question({ number: 14, blocking: true });
 const Q17 = question({ number: 17, title: "Un rapport par chef de chantier ou par affaire ?" });
 const TRONCONS = { feature: "Tronçons et étapes", week: "2026-10-19" };
-
-test("the impact line names the feature by its title and the week of its sprint", () => {
-  expect(impactLine(Q14, TRONCONS)).toBe(
-    "bloque « Tronçons et étapes », prévue semaine du 19 oct. · réponse souhaitée avant le 19 oct.",
-  );
-  expect(impactLine(Q17, { feature: "Rapports", week: "2026-10-26" })).toBe(
-    "pour « Rapports », prévue semaine du 26 oct. · réponse souhaitée avant le 26 oct.",
-  );
-  expect(impactLine(Q14, { feature: "Tronçons et étapes", week: null })).toBe(
-    "bloque « Tronçons et étapes », à planifier",
-  );
-});
 
 test("a question reads « Qn · title », its impact, then its context as plain text and its options", () => {
   expect(exportQuestionText({ question: Q14, impact: TRONCONS })).toBe(

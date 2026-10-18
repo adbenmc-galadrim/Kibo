@@ -1,4 +1,5 @@
-import { DAY_MS, dayNumber, type Question, questionLabel } from "@kibo/schema";
+import { type Question, questionLabel } from "@kibo/schema";
+import { impactLine } from "@kibo/sdk";
 import { fr } from "./fr";
 import { plainText } from "./plain-text";
 import { isOpenBlocking } from "./questions-logic";
@@ -11,15 +12,6 @@ const INDENT = "   ";
 const DATE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" });
 
 export const exportDate = (at: number): string => DATE.format(at);
-
-const WEEK_DAY = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "UTC" });
-
-const weekDay = (date: string): string => WEEK_DAY.format(dayNumber(date) * DAY_MS);
-
-export const impactLine = (q: Pick<Question, "blocking">, impact: Impact): string =>
-  `${q.blocking ? t.blocks(impact.feature) : t.for(impact.feature)}, ${
-    impact.week === null ? t.unplanned : t.planned(weekDay(impact.week))
-  }`;
 
 const QN = /^Q(\d+)$/;
 
