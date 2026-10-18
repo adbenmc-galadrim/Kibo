@@ -204,25 +204,13 @@ test("the sheet of S42 opens from its Tickets tab and its Planning name; the pen
   await expect(column(page, "S42 Terrain hors ligne")).toBeVisible();
 });
 
-test("the agent execution setting shows, then hides, Agents and the agent bar", async ({ page }) => {
-  const agents = page.getByRole("button", { name: "Agents", exact: true });
-  const bar = page.getByRole("region", { name: "Agents", exact: true });
-  const toggle = async (checked: boolean) => {
-    await page.goto("/#/settings/general");
-    const execution = page.getByRole("switch", { name: EXECUTION });
-    await expect(execution).toHaveAttribute("aria-checked", String(!checked));
-    await execution.click();
-    await expect(execution).toHaveAttribute("aria-checked", String(checked));
-    await openPlanning(page);
-  };
+test("the agent execution setting is gone and Agents and the agent bar never show", async ({ page }) => {
+  await page.goto("/#/settings/general");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByRole("switch", { name: EXECUTION })).toHaveCount(0);
   await openPlanning(page);
-  await expect(agents).toBeHidden();
-  await toggle(true);
-  await expect(agents).toBeVisible();
-  await expect(bar).toBeVisible();
-  await toggle(false);
-  await expect(agents).toBeHidden();
-  await expect(bar).toBeHidden();
+  await expect(page.getByRole("button", { name: "Agents", exact: true })).toBeHidden();
+  await expect(page.getByRole("region", { name: "Agents", exact: true })).toBeHidden();
 });
 
 test("the S43 tab of Tickets has nothing delivered, and a new branch puts EMIS-51 In progress", async ({
