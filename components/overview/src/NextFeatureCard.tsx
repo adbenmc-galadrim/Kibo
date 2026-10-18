@@ -9,11 +9,10 @@ import type { NextCard, RemainingStep } from "./sprint-model";
 
 export type NextActions = {
   execution: "shown" | "hidden";
-  copy(command: string): Promise<void>;
+  copy(ticketId: string): Promise<void>;
   deliver(ticketId: string): Promise<void>;
   onOpenTicket(id: string): void;
 };
-type Feedback = "idle" | "copied" | "refused" | "failed";
 
 const DOT: Record<CaseTone, string> = {
   done: "bg-(--tracking-fg)",
@@ -48,20 +47,15 @@ function StepLine({ step, onOpen }: { step: RemainingStep; onOpen(id: string): v
 }
 
 function NextStep({ deliver, actions }: { deliver: NonNullable<NextCard["deliver"]>; actions: NextActions }) {
-  const [feedback, setFeedback] = useState<Feedback>("idle");
+  const [failed, setFailed] = useState(false);
   const shown = actions.execution === "shown";
   const run = () =>
     shown
       ? actions.deliver(deliver.ticketId).then(
-          () => setFeedback("idle"),
-          () => setFeedback("failed"),
+          () => setFailed(false),
+          () => setFailed(true),
         )
-      : actions.copy(deliver.command).then(
-          () => setFeedback("copied"),
-          () => setFeedback("refused"),
-        );
-  const error =
-    feedback === "refused" ? fr.next.copyRefused : feedback === "failed" ? fr.next.deliverFailed : null;
+      : actions.copy(deliver.ticketId);
   return (
     <div className="flex min-h-[41px] flex-wrap items-center gap-[10px] rounded-[8px] bg-(--tracking-muted) py-[8px] pr-[10px] pl-[12px]">
       <span className="font-medium text-(--tracking-mfg) text-[12px] leading-[15px]">{fr.next.step}</span>
@@ -74,10 +68,9 @@ function NextStep({ deliver, actions }: { deliver: NonNullable<NextCard["deliver
         {shown ? <Truck absoluteStrokeWidth size={13} /> : <Copy absoluteStrokeWidth size={13} />}
         {shown ? fr.next.deliver : fr.next.copy}
       </Button>
-      <output className="sr-only">{feedback === "copied" ? fr.next.copied : ""}</output>
-      {error && (
+      {failed && (
         <p role="alert" className="basis-full text-(--tracking-red) text-[12px]">
-          {error}
+          {fr.next.deliverFailed}
         </p>
       )}
     </div>

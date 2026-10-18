@@ -28,7 +28,13 @@ const event = (id: number, source: ProjectEvent["source"], data: ProjectEvent["d
 });
 
 function setup(opts: MockSdkOptions = {}) {
-  const m = createMockSdk(manifest, { seed, today: TODAY, description: "Suivi de chantier", ...opts });
+  const m = createMockSdk(manifest, {
+    seed,
+    today: TODAY,
+    description: "Suivi de chantier",
+    folder: "/emis",
+    ...opts,
+  });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />
@@ -74,7 +80,9 @@ test("the heading, the indicators and the cards of the project", async () => {
   const indicators = await card("Indicateurs du projet");
   expect(within(indicators).getByText("livrées sur 9")).toBeTruthy();
   expect(within(indicators).getByText("finit ce soir")).toBeTruthy();
-  expect(within(indicators).getByText("limite atteinte")).toBeTruthy();
+  expect(within(indicators).getByText("limite atteinte · 1 bloquée")).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "Pour commencer" })).toBeNull();
+  expect(screen.queryByRole("region", { name: "En retard" })).toBeNull();
   expect(within(indicators).getByText("#20 · #22 · #23")).toBeTruthy();
   expect(within(indicators).getByText("Q14 bloque F6")).toBeTruthy();
   expect(within(await card("En ce moment")).getByText("Aucune session T3 Code")).toBeTruthy();
@@ -95,7 +103,7 @@ test("the heading, the indicators and the cards of the project", async () => {
   expect(within(questions).getByText(/^Q14 · Client · /)).toBeTruthy();
 });
 
-test("copy puts the command of the next step in the clipboard while execution is hidden", async () => {
+test("copy puts the command of the next step in the clipboard and says so", async () => {
   const copied: string[] = [];
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
@@ -107,7 +115,8 @@ test("copy puts the command of the next step in the clipboard while execution is
   const key = m.snapshot().tickets.find((t) => t.title === "Conflits de saisie")?.keyLabel;
   expect(within(next).getByText(`/full-delivery ${key}`)).toBeTruthy();
   await userEvent.click(within(next).getByRole("button", { name: "Copier" }));
-  expect(copied).toEqual([`/full-delivery ${key}`]);
+  await waitFor(() => expect(copied).toEqual([`/full-delivery ${key}`]));
+  expect(m.toasts).toEqual(["Copié"]);
   expect(m.runDeliveries).toEqual([]);
 });
 

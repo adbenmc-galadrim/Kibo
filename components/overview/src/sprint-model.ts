@@ -26,6 +26,7 @@ export type FeatureLine = {
 };
 export type SprintCard = {
   sprint: SprintView;
+  lingering: boolean;
   title: string;
   dates: string;
   open: { text: string; full: boolean };
@@ -52,7 +53,7 @@ export type SprintInput = {
   today: string;
 };
 
-const lineOf = (f: FeatureFacts, blocking: ReadonlyMap<string, string>): FeatureLine => ({
+export const lineOf = (f: FeatureFacts, blocking: ReadonlyMap<string, string>): FeatureLine => ({
   id: f.id,
   shortKey: f.shortKey,
   title: f.title,
@@ -64,6 +65,12 @@ const lineOf = (f: FeatureFacts, blocking: ReadonlyMap<string, string>): Feature
 export const sprintOf = (input: Pick<SprintInput, "sprints" | "today">): SprintView | null =>
   currentSprint(input.sprints, input.today) ?? nextSprint(input.sprints, input.today);
 
+function datesOf(sprint: SprintView, today: string, remaining: number): string {
+  if (sprint.end < today) return fr.sprint.endedOn(dayMonth(sprint.end), remaining);
+  if (sprint.start <= today) return sprintDates(sprint.start, sprint.end);
+  return fr.sprint.startsOn(dayMonth(sprint.start));
+}
+
 export function sprintCard(input: SprintInput): SprintCard | null {
   const sprint = sprintOf(input);
   if (sprint === null) return null;
@@ -73,13 +80,15 @@ export function sprintCard(input: SprintInput): SprintCard | null {
     next: nextToOpen({ tickets: [...input.tickets], sprints: [...input.sprints] }),
     limit: input.limit,
   });
-  const current = sprint.state === "current";
+  const inSprint = input.features.filter((f) => f.sprintId === sprint.id);
+  const remaining = inSprint.filter((f) => f.state.status !== "delivered").length;
   return {
     sprint,
+    lingering: sprint.end < input.today,
     title: fr.sprint.title(sprint.code, sprint.name),
-    dates: current ? sprintDates(sprint.start, sprint.end) : fr.sprint.startsOn(dayMonth(sprint.start)),
+    dates: datesOf(sprint, input.today, remaining),
     open: { text: fr.sprint.open(open.length, input.limit), full: open.length >= input.limit },
-    rows: input.features.filter((f) => f.sprintId === sprint.id).map((f) => lineOf(f, input.blocking)),
+    rows: inSprint.map((f) => lineOf(f, input.blocking)),
     note: note === null ? null : fr.sprint.limit(input.limit, note.next, note.open),
   };
 }

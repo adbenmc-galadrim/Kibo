@@ -13,11 +13,13 @@ import {
   type QuestionRecipient,
   type SprintView,
   type Status,
+  sortSprints,
   type TicketView,
   type TrackingSettings,
   todayOffset,
 } from "@kibo/schema";
 import type { TimelineInput } from "@kibo/sdk/tracking";
+import { type LateRow, lateRows } from "./late-model";
 import {
   blockingRefs,
   duration,
@@ -57,6 +59,8 @@ export type OverviewModel = {
   indicators: OverviewIndicators;
   now: NowRow[];
   deadlines: Omit<TimelineInput, "collapsed">;
+  late: LateRow[];
+  sprints: SprintView[];
   sprint: SprintCard | null;
   next: NextCard | null;
   review: ReviewRow[];
@@ -128,6 +132,8 @@ export function overviewModel(input: OverviewInput): OverviewModel {
     }),
     now: nowRows(input.tickets, input.now),
     deadlines: deadlines(input, features, blocking),
+    late: lateRows({ features, sprints: input.sprints, blocking, today: input.today }),
+    sprints: sortSprints(input.sprints),
     sprint: sprintCard(sprintInput),
     next: nextCard(sprintInput),
     review: reviewRows(input),

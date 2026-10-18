@@ -1,6 +1,15 @@
-import { type KiboSdk, type ProjectInfo, useEntities, useQuestionRecipients, useSdk } from "@kibo/sdk";
+import type { TicketView } from "@kibo/schema";
+import {
+  copyDeliveryCommand,
+  type KiboSdk,
+  type ProjectInfo,
+  useEntities,
+  useQuestionRecipients,
+  useSdk,
+} from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { useEffect, useState } from "react";
+import { gettingStarted } from "./getting-started-model";
 import { type OverviewHandlers, OverviewView } from "./OverviewView";
 import { overviewModel } from "./overview-model";
 
@@ -41,10 +50,20 @@ function useNow(): number {
   return now;
 }
 
-function handlersOf(sdk: KiboSdk, execution: OverviewHandlers["execution"]): OverviewHandlers {
+function handlersOf(
+  sdk: KiboSdk,
+  execution: OverviewHandlers["execution"],
+  tickets: readonly TicketView[],
+  onCopied: () => void,
+): OverviewHandlers {
   return {
     execution,
-    copy: (command) => navigator.clipboard.writeText(command),
+    copy: async (ticketId) => {
+      const ticket = tickets.find((t) => t.id === ticketId);
+      if (ticket === undefined) return;
+      await copyDeliveryCommand(sdk, ticket);
+      onCopied();
+    },
     deliver: async (ticketId) => {
       await sdk.runs.deliver(ticketId);
     },
@@ -52,6 +71,7 @@ function handlersOf(sdk: KiboSdk, execution: OverviewHandlers["execution"]): Ove
     onOpenSprint: (id) => sdk.sprints.open(id),
     onOpenQuestion: (id) => sdk.openView("questions", { question: id }),
     onOpenQuestions: () => sdk.openView("questions"),
+    onOpenPlanning: () => sdk.openView("planning"),
   };
 }
 
@@ -59,6 +79,7 @@ export function Overview() {
   const sdk = useSdk();
   const now = useNow();
   const project = useProjectInfo(sdk);
+  const [copied, setCopied] = useState(false);
   const { tracking, agentExecution } = useComponentSettings();
   const recipients = useQuestionRecipients();
   const { data: tickets } = useEntities("ticket");
@@ -86,7 +107,8 @@ export function Overview() {
       project={project}
       model={overviewModel(input)}
       activity={input}
-      handlers={handlersOf(sdk, agentExecution)}
+      start={project === null ? null : gettingStarted(project, tickets, copied)}
+      handlers={handlersOf(sdk, agentExecution, tickets, () => setCopied(true))}
     />
   );
 }

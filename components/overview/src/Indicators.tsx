@@ -2,6 +2,7 @@ import type { OverviewIndicators } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import {
   CalendarRange,
+  ClockAlert,
   GitPullRequest,
   type LucideIcon,
   MessageCircleQuestion,
@@ -10,7 +11,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "./fr";
-import { featureCellGap, type IndicatorText, indicatorTexts } from "./indicator-texts";
+import { featureCellGap, type IndicatorText, type IndicatorTexts, indicatorTexts } from "./indicator-texts";
 
 const CELL_BG = {
   delivered: "bg-(--tracking-green)",
@@ -57,6 +58,34 @@ function Sub({ text }: { text: IndicatorText }) {
   );
 }
 
+function FeatureCells({ cells }: { cells: IndicatorTexts["features"]["cells"] }) {
+  return (
+    <span
+      className="flex min-w-0 flex-1 items-center overflow-hidden"
+      style={{ columnGap: `${featureCellGap(cells.length)}px` }}
+    >
+      {cells.map((cell, i) => (
+        <span
+          key={`${i}${cell}`}
+          data-cell={cell}
+          className={cn("h-[6px] w-[14px] min-w-[4px] shrink rounded-[1.5px]", CELL_BG[cell])}
+        />
+      ))}
+    </span>
+  );
+}
+
+function FeatureSub({ text }: { text: IndicatorTexts["features"] }) {
+  if (text.sub === undefined) return <FeatureCells cells={text.cells} />;
+  if (!text.alert) return <span className="truncate">{text.sub}</span>;
+  return (
+    <span className="flex min-w-0 items-center gap-[6px] text-(--tracking-red)">
+      <ClockAlert absoluteStrokeWidth size={12} aria-hidden className="shrink-0" />
+      <span className="truncate">{text.sub}</span>
+    </span>
+  );
+}
+
 export function Indicators({ indicators }: { indicators: OverviewIndicators }) {
   const t = indicatorTexts(indicators);
   return (
@@ -65,18 +94,7 @@ export function Indicators({ indicators }: { indicators: OverviewIndicators }) {
       className="flex h-[92px] w-full shrink-0 rounded-[10px] border border-(--tracking-border) bg-(--tracking-card)"
     >
       <Box icon={Package} label={fr.indicators.features} text={t.features}>
-        <span
-          className="flex min-w-0 flex-1 items-center overflow-hidden"
-          style={{ columnGap: `${featureCellGap(t.features.cells.length)}px` }}
-        >
-          {t.features.cells.map((cell, i) => (
-            <span
-              key={`${i}${cell}`}
-              data-cell={cell}
-              className={cn("h-[6px] w-[14px] min-w-[4px] shrink rounded-[1.5px]", CELL_BG[cell])}
-            />
-          ))}
-        </span>
+        <FeatureSub text={t.features} />
       </Box>
       <Box icon={CalendarRange} label={fr.indicators.sprint} text={t.sprint}>
         <Sub text={t.sprint} />
