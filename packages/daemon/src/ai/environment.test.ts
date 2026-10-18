@@ -19,6 +19,7 @@ const app: AppInfo = {
   daemonPid: 42,
   uptimeMs: 1000,
   fixedNow: null,
+  today: "2026-10-16",
 };
 
 test("parseToolVersion keeps major.minor", () => {

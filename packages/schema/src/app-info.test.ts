@@ -10,6 +10,7 @@ test("AppInfo requires a semver version and a known platform", () => {
     userHome: "/Users/adam",
     daemonPid: 42,
     uptimeMs: 0,
+    today: "2026-10-16",
   };
   expect(AppInfo.safeParse(ok).success).toBe(true);
   expect(AppInfo.safeParse({ ...ok, version: "0.16.0-alpha.1" }).success).toBe(true);
@@ -32,9 +33,27 @@ test("AppInfo has no fixed clock by default", () => {
     userHome: "/Users/adam",
     daemonPid: 42,
     uptimeMs: 0,
+    today: "2026-10-16",
   };
   expect(AppInfo.parse(info).fixedNow).toBeNull();
   expect(AppInfo.parse({ ...info, fixedNow: "2026-10-16T14:52:00+02:00" }).fixedNow).toBe(
     "2026-10-16T14:52:00+02:00",
   );
+});
+
+test("AppInfo carries the day of the daemon as an ISO date", () => {
+  const info = {
+    version: "0.27.0-alpha.1",
+    platform: "darwin",
+    arch: "arm64",
+    home: "~/.kibo",
+    userHome: null,
+    daemonPid: 42,
+    uptimeMs: 0,
+    today: "2026-10-16",
+  };
+  expect(AppInfo.parse(info).today).toBe("2026-10-16");
+  expect(AppInfo.safeParse({ ...info, today: "16/10/2026" }).success).toBe(false);
+  const { today: _today, ...undated } = info;
+  expect(AppInfo.safeParse(undated).success).toBe(false);
 });

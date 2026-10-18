@@ -13,6 +13,7 @@ const info: AppInfo = {
   daemonPid: 1,
   uptimeMs: 0,
   fixedNow: null,
+  today: "2026-10-16",
 };
 const flush = () => new Promise((r) => setTimeout(r, 0));
 

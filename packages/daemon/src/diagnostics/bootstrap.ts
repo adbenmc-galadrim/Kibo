@@ -17,6 +17,7 @@ type AppDiagnosticsDeps = {
   components: Pick<ComponentsService, "registry">;
   log: LogBuffer;
   fixedNow?: string | null;
+  today(): string;
 };
 
 export function startAppDiagnostics(deps: AppDiagnosticsDeps): { appInfo: () => AppInfo; rpc: RpcExtension } {
@@ -28,6 +29,7 @@ export function startAppDiagnostics(deps: AppDiagnosticsDeps): { appInfo: () => 
     pid: process.pid,
     startedAt: deps.startedAt,
     now: Date.now,
+    today: deps.today,
     platform: process.platform,
     arch: process.arch,
     fixedNow: deps.fixedNow ?? null,

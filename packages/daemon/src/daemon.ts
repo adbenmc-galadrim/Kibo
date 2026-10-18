@@ -184,6 +184,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     components,
     log: opts.logBuffer ?? createLogBuffer(),
     fixedNow: clock.fixedNow,
+    today: clock.today,
   });
   const server = startServer({
     service,

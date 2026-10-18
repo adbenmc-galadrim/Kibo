@@ -9,4 +9,5 @@ export const appInfoFixture = (userHome: string | null): AppInfo => ({
   daemonPid: 42,
   uptimeMs: 0,
   fixedNow: null,
+  today: "2026-10-16",
 });

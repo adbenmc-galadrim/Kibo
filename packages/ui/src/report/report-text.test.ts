@@ -13,6 +13,7 @@ const app: AppInfo = {
   daemonPid: 42,
   uptimeMs: 65_000,
   fixedNow: null,
+  today: "2026-10-16",
 };
 
 const DIAG: Diagnostics = {

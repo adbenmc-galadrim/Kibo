@@ -24,6 +24,7 @@ const base: Environment = {
     daemonPid: 42,
     uptimeMs: 0,
     fixedNow: null,
+    today: "2026-10-16",
   },
 };
 

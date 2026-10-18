@@ -12,6 +12,7 @@ type AppInfoDeps = {
   pid: number;
   startedAt: number;
   now(): number;
+  today(): string;
   platform: string;
   arch: string;
   fixedNow?: string | null;
@@ -32,5 +33,6 @@ export function createAppInfo(deps: AppInfoDeps): () => AppInfo {
     daemonPid: deps.pid,
     uptimeMs: Math.max(0, deps.now() - deps.startedAt),
     fixedNow: deps.fixedNow ?? null,
+    today: deps.today(),
   });
 }
