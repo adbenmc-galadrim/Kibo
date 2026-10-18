@@ -10,7 +10,9 @@ import {
   updateDeliveryBrief,
 } from "@kibo/schema";
 import { Copy, Truck } from "lucide-react";
+import { copyCommand } from "./copy-command";
 import { deliveryTexts } from "./fr-delivery";
+import type { KiboSdk } from "./types";
 import type { MenuAction } from "./ui/menu-entries";
 
 export type DeliverEntry = { disabledReason: string | null };
@@ -66,12 +68,23 @@ export const deliverMenuActions = (
         },
       ];
 
-export type DeliveryMenu = {
+type MenuCopy =
+  | {
+      sdk: Pick<KiboSdk, "toast">;
+      ticket: Pick<TicketView, "key" | "statusId" | "startable" | "waitingOn">;
+      copy?: never;
+    }
+  | { copy(command: string): void; ticket: Pick<TicketView, "key" | "statusId">; sdk?: never };
+
+export type DeliveryMenu = MenuCopy & {
   execution: AgentExecution;
   entry: DeliverEntry | null;
-  ticket: Pick<TicketView, "key" | "statusId">;
   deliver(mode: DeliveryKind): void;
-  copy(command: string): void;
+};
+
+const copyEntry = (menu: DeliveryMenu, command: string): void => {
+  if (menu.sdk !== undefined) void copyCommand(menu.sdk, command, menu.ticket);
+  else menu.copy(command);
 };
 
 export function deliveryMenuActions(menu: DeliveryMenu): MenuAction[] {
@@ -82,7 +95,7 @@ export function deliveryMenuActions(menu: DeliveryMenu): MenuAction[] {
       : deliverMenuActions(menu.entry, () => menu.deliver("delivery"));
   const command = deliveryCommand(menu.ticket);
   if (command === null) return [];
-  return [{ label: deliveryTexts.copy(command), icon: Copy, onSelect: () => menu.copy(command) }];
+  return [{ label: deliveryTexts.copy(command), icon: Copy, onSelect: () => copyEntry(menu, command) }];
 }
 
 export function deliveryCommand({ key, statusId }: Pick<TicketView, "key" | "statusId">): string | null {
@@ -90,7 +103,4 @@ export function deliveryCommand({ key, statusId }: Pick<TicketView, "key" | "sta
   return FINAL_STATUSES.includes(statusId) ? updateBrief(key) : deliveryBrief(key);
 }
 
-export const copyDeliveryCommand = (command: string): Promise<void> =>
-  navigator.clipboard
-    .writeText(command)
-    .catch((e: unknown) => console.warn("[kibo-sdk] clipboard write refused", e));
+export { type CopyTicket, copyCommand, copyDeliveryCommand } from "./copy-command";

@@ -133,3 +133,52 @@ test("copying the command writes it to the clipboard", async () => {
   }
   expect(written).toEqual(["/full-delivery EMIS-33"]);
 });
+
+const withClipboard = async (work: () => Promise<void>): Promise<string[]> => {
+  const written: string[] = [];
+  const clipboard = { writeText: (text: string) => Promise.resolve(void written.push(text)) };
+  const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", { value: clipboard, configurable: true });
+  try {
+    await work();
+  } finally {
+    if (original) Object.defineProperty(navigator, "clipboard", original);
+    else Reflect.deleteProperty(navigator, "clipboard");
+  }
+  return written;
+};
+
+const sdkMenu = (statusId: "todo" | "done", waitingOn: string[]) => {
+  const toasts: string[] = [];
+  const entries = deliveryMenuActions({
+    execution: "hidden",
+    entry: { disabledReason: null },
+    ticket: { key: "EMIS-33", statusId, startable: waitingOn.length === 0, waitingOn },
+    deliver: () => undefined,
+    sdk: { toast: (message) => void toasts.push(message) },
+  });
+  return { entries, toasts };
+};
+
+test("the Copier /full-delivery entry copies through copyDeliveryCommand and says Copié", async () => {
+  const { entries, toasts } = sdkMenu("todo", ["EMIS-30"]);
+  expect(entries.map((e) => e.label)).toEqual(["Copier /full-delivery EMIS-33"]);
+  const written = await withClipboard(async () => {
+    entries[0]?.onSelect();
+    await Promise.resolve();
+  });
+  expect(written).toEqual(["/full-delivery EMIS-33"]);
+  await Promise.resolve();
+  expect(toasts).toEqual(["Copié · attend EMIS-30"]);
+});
+
+test("the touch-up entry copies /update-delivery and says Copié", async () => {
+  const { entries, toasts } = sdkMenu("done", []);
+  const written = await withClipboard(async () => {
+    entries[0]?.onSelect();
+    await Promise.resolve();
+  });
+  expect(written).toEqual(["/update-delivery EMIS-33"]);
+  await Promise.resolve();
+  expect(toasts).toEqual(["Copié"]);
+});

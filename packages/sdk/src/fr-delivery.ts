@@ -4,6 +4,9 @@ export const deliveryTexts = {
   deliver: "Livrer",
   retouch: "Livrer la retouche",
   copy: (command: string) => `Copier ${command}`,
+  copied: (waiting: readonly string[]) =>
+    waiting.length > 0 ? `Copié · attend ${waiting.join(", ")}` : "Copié",
+  copyFailed: "Copie impossible",
   busy: (label: string) => `déjà un run : ${label}`,
   blockedBy: (keys: readonly string[]) => `bloqué par ${keys.join(", ")}`,
   blockingQuestion: "question bloquante",
