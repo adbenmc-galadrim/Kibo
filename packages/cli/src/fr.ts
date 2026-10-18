@@ -30,7 +30,7 @@ const REVIEW_LABELS: Record<PrReview, string | null> = {
   approved: "approuvée",
   changes_requested: "changements demandés",
 };
-const CHECKS_LABELS: Record<PrChecks, string> = { ok: "CI verte", error: "CI rouge", running: "CI en cours" };
+const CHECKS_LABELS: Record<PrChecks, string> = { ok: "CI verte", error: "CI cassée", running: "CI en cours" };
 const prParts = (pr: PrSummary): string[] =>
   [
     `#${pr.number} (${pr.state})`,

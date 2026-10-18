@@ -78,19 +78,19 @@ describe("kibo tickets list --sprint", () => {
 describe("kibo tickets list, as text", () => {
   test("puts headers and the feature column", async () => {
     const d = await list();
-    expect(d.out[0]?.split(/\s+/)).toEqual(["Clé", "Plan", "F", "Statut", "Titre"]);
+    expect(d.out[0]?.split(/\s+/)).toEqual(["Clé", "F", "Statut", "Titre"]);
     expect(
       d.out
         .find((l) => l.startsWith("EMIS-33"))
         ?.split(/\s+/)
-        .slice(0, 3),
-    ).toEqual(["EMIS-33", "-", "F5"]);
+        .slice(0, 2),
+    ).toEqual(["EMIS-33", "F5"]);
     expect(
       d.out
         .find((l) => l.startsWith("EMIS-50"))
         ?.split(/\s+/)
-        .slice(0, 3),
-    ).toEqual(["EMIS-50", "-", "-"]);
+        .slice(0, 2),
+    ).toEqual(["EMIS-50", "-"]);
   });
 
   test("says when nothing matches, naming the filters", async () => {

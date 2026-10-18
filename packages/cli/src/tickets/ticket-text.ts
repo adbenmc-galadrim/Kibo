@@ -24,6 +24,8 @@ export function displayTitle(s: Pick<TicketSummary, "title" | "feature">): strin
   return t.demo(s.feature.shortKey ?? s.feature.key);
 }
 
+const PLAN_COLUMN = 1;
+
 const listCells = (s: TicketSummary): string[] => [
   s.key,
   s.planId ?? "-",
@@ -33,8 +35,10 @@ const listCells = (s: TicketSummary): string[] => [
 ];
 
 export function listLines(tickets: readonly TicketSummary[]): string[] {
-  const rows = [t.columns, ...tickets.map(listCells)];
-  const widths = t.columns.map((_, i) => Math.max(...rows.map((r) => r[i]?.length ?? 0)));
+  const withPlan = tickets.some((s) => s.planId !== null);
+  const visible = (row: readonly string[]) => (withPlan ? [...row] : row.filter((_, i) => i !== PLAN_COLUMN));
+  const rows = [t.columns, ...tickets.map(listCells)].map(visible);
+  const widths = (rows[0] ?? []).map((_, i) => Math.max(...rows.map((r) => r[i]?.length ?? 0)));
   const line = (row: readonly string[]) =>
     row.map((cell, i) => (i === row.length - 1 ? cell : cell.padEnd((widths[i] ?? 0) + 2))).join("");
   return rows.map(line);

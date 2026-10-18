@@ -60,7 +60,7 @@ test("shows a touch-up step, not a delivery one", () => {
 test("shows the review and the CI of the PR", () => {
   const url = "https://github.com/galadrim/emis/pull/20";
   expect(lines({ pr: pr("changes_requested", "error") })).toContain(
-    `PR : #20 (open) · changements demandés · CI rouge · ${url}`,
+    `PR : #20 (open) · changements demandés · CI cassée · ${url}`,
   );
   expect(lines({ pr: pr("approved", "ok") })).toContain(`PR : #20 (open) · approuvée · CI verte · ${url}`);
   expect(lines({ pr: pr("review_required", "running") })).toContain(`PR : #20 (open) · CI en cours · ${url}`);
@@ -109,5 +109,17 @@ test("lists tickets under aligned headers with their feature", () => {
     "Clé       Plan  F   Statut  Titre",
     "EMIS-46   -     F4  todo    Démo · F4",
     "EMIS-100  C1-2  -   done    Socle",
+  ]);
+});
+
+test("drops the plan column when no ticket has a plan id", () => {
+  const rows = listLines([
+    { ...DETAIL, key: "EMIS-46", title: "Démo client", feature: F4, status: "todo" },
+    { ...DETAIL, key: "EMIS-100", title: "Socle" },
+  ]);
+  expect(rows).toEqual([
+    "Clé       F   Statut  Titre",
+    "EMIS-46   F4  todo    Démo · F4",
+    "EMIS-100  -   done    Socle",
   ]);
 });
