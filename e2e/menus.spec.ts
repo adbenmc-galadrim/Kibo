@@ -39,7 +39,7 @@ test("menus des pages et fiche ticket éditable", async ({ page }, info) => {
   const ticketKey = text(ticket, "key");
 
   const card = page.getByRole("button", { name: "Schéma Loro des tickets", exact: true });
-  await page.getByRole("radio", { name: "Tous", exact: true }).click();
+  await page.getByRole("button", { name: "Tous", exact: true }).click();
   await expect(card).toBeVisible();
   await card.click();
   const sheet = page.getByRole("dialog").filter({ hasText: ticketKey });

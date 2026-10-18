@@ -83,8 +83,11 @@ test("arbre Tickets filtré et Kanban réordonné", async ({ page }, info) => {
   await shot(page, info, "ecran-125");
 
   await sidebar.getByRole("button", { name: "Kanban", exact: true }).click();
-  const filter = page.getByRole("radiogroup", { name: "Tickets affichés" });
-  await expect(filter.getByRole("radio", { name: "Tous", exact: true })).toBeChecked();
+  const filter = page.getByRole("group", { name: "Tickets affichés" });
+  await expect(filter.getByRole("button", { name: "Tous", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await expect(page.getByText("17 tickets · Tous", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Nouveau ticket dans Bloqué" }).click();

@@ -9,8 +9,8 @@ const HEIGHT = PIXEL_HEIGHTS.kanban;
 test("the Kanban of Emis on « Tous » matches the mockup on the whole screen", async ({ page }) => {
   await pairBrowser(page);
   await openPixelPage(page, await emisPageUrl(page, "Kanban"), HEIGHT);
-  const all = page.getByRole("radio", { name: /^Tous/ });
-  await expect(all).toBeChecked();
+  const all = page.getByRole("button", { name: "Tous", exact: true });
+  await expect(all).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText("Écran d'envoi hors ligne")).toBeVisible();
   await settlePointer(page, HEIGHT);
   await measureScreen(page, {

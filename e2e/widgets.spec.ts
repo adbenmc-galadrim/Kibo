@@ -14,9 +14,9 @@ const projectIdOf = (page: Page): string => {
 };
 
 async function showAllTickets(root: Locator) {
-  const all = root.getByRole("radio", { name: "Tous" });
-  if ((await all.getAttribute("aria-checked")) !== "true") await all.click();
-  await expect(all).toHaveAttribute("aria-checked", "true");
+  const all = root.getByRole("button", { name: "Tous", exact: true });
+  if ((await all.getAttribute("aria-pressed")) !== "true") await all.click();
+  await expect(all).toHaveAttribute("aria-pressed", "true");
 }
 
 async function expectColumnScrollsInside(page: Page, root: Locator, info: TestInfo, name: string) {

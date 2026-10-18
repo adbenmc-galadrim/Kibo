@@ -62,7 +62,7 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   await adam.getByRole("button", { name: `Kibo ${key}`, exact: true }).click();
   await createPage(adam, "Kanban", "Vue");
   await addComponent(adam, "Kanban");
-  await adam.getByRole("radio", { name: "Tous", exact: true }).click();
+  await adam.getByRole("button", { name: "Tous", exact: true }).click();
 
   await adam.getByRole("button", { name: `Actions de Kibo ${key}` }).click();
   await adam.getByRole("menuitem", { name: "Partager", exact: true }).click();
@@ -83,7 +83,7 @@ test("deux utilisateurs voient les mêmes tickets en temps réel", async ({ brow
   await lea.getByRole("button", { name: "Rejoindre" }).click();
   await lea.getByRole("button", { name: "Kanban", exact: true }).click();
   await expect(lea.getByRole("region", { name: "À faire" })).toBeVisible();
-  await lea.getByRole("radio", { name: "Tous", exact: true }).click();
+  await lea.getByRole("button", { name: "Tous", exact: true }).click();
 
   await expect(presentIn(adam, "Léa")).toBeVisible({ timeout: 5_000 });
   await expect(presentIn(lea, "Adam")).toBeVisible({ timeout: 5_000 });

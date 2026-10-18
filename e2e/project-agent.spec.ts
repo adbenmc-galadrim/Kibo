@@ -69,8 +69,8 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
   await createPage(page, "Tableau de bord", "Tableau de bord");
   await addComponent(page, "Kanban");
   const kanban = page.locator("[data-instance]").first();
-  const all = kanban.getByRole("radio", { name: "Tous" });
-  if ((await all.getAttribute("aria-checked")) !== "true") await all.click();
+  const all = kanban.getByRole("button", { name: "Tous", exact: true });
+  if ((await all.getAttribute("aria-pressed")) !== "true") await all.click();
   await expect(
     kanban.getByRole("region", { name: "À faire" }).getByText("KIB-1", { exact: true }),
   ).toBeVisible();

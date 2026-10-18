@@ -46,8 +46,8 @@ test("le widget et la vue Questions répondent, filtrent et créent", async ({ p
   await addComponent(page, "Kanban");
   await addComponent(page, "Questions");
   const kanban = page.locator("[data-instance]").first();
-  const all = kanban.getByRole("radio", { name: "Tous" });
-  if ((await all.getAttribute("aria-checked")) !== "true") await all.click();
+  const all = kanban.getByRole("button", { name: "Tous", exact: true });
+  if ((await all.getAttribute("aria-pressed")) !== "true") await all.click();
   const card = kanban.getByRole("article", { name: /Stockage S3/ });
   await expect(card.getByText("2 questions")).toBeVisible();
 
@@ -104,8 +104,8 @@ const LOGO = "Quel logo pour l'export ?";
 
 async function showAllCards(page: Page): Promise<Locator> {
   const kanban = page.locator("[data-instance]").first();
-  const all = kanban.getByRole("radio", { name: "Tous" });
-  if ((await all.getAttribute("aria-checked")) !== "true") await all.click();
+  const all = kanban.getByRole("button", { name: "Tous", exact: true });
+  if ((await all.getAttribute("aria-pressed")) !== "true") await all.click();
   return kanban;
 }
 

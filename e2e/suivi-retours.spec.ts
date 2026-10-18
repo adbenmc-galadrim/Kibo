@@ -30,7 +30,7 @@ test("la fiche EMIS-45 s'ouvre par sa clé : puces, bandeau review et CI, chrono
 
 test("the Kanban « À reprendre » keeps EMIS-45, its PR asks for changes", async ({ page }) => {
   await openEmisPage(page, "Kanban");
-  await page.getByRole("radio", { name: "À reprendre", exact: true }).click();
+  await page.getByRole("button", { name: "À reprendre", exact: true }).click();
   const cards = page.getByRole("article");
   await expect(cards.filter({ hasText: "EMIS-45" })).toHaveCount(1);
   await expect(cards.filter({ hasText: "EMIS-53" })).toHaveCount(0);

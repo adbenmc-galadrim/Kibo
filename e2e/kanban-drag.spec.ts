@@ -46,9 +46,9 @@ const previewAt = (page: Page, point: { x: number; y: number } | null) =>
 const FLAT = { x: 0, y: 0 };
 
 async function showAllTickets(root: Locator) {
-  const all = root.getByRole("radio", { name: "Tous" });
-  if ((await all.getAttribute("aria-checked")) !== "true") await all.click();
-  await expect(all).toHaveAttribute("aria-checked", "true");
+  const all = root.getByRole("button", { name: "Tous", exact: true });
+  if ((await all.getAttribute("aria-pressed")) !== "true") await all.click();
+  await expect(all).toHaveAttribute("aria-pressed", "true");
 }
 
 async function dragToInProgress(page: Page, root: Locator, title: string) {
@@ -248,7 +248,7 @@ test("textes longs : rien ne sort des cartes, aucune barre de défilement", asyn
   const todo = main.getByRole("region", { name: "À faire" });
   const board = todo.locator("xpath=..");
   await expect(todo.getByRole("article")).toHaveCount(3);
-  await expect(todo.getByRole("article", { name: /registry\.ts/ }).getByText("Démarrable")).toBeVisible();
+  await expect(todo.getByRole("article", { name: /registry\.ts/ }).getByText("Démarrable")).toHaveCount(0);
   await shot(page, info, "kanban-textes-longs");
 
   expect(await cardOverflows(main)).toEqual([]);

@@ -120,12 +120,17 @@ test("le graphe cadre les ensembles, focus, zoom éloigné et cadres par étique
   await capture(page, info, "188d");
 });
 
-test("le Kanban signale les tickets démarrables", async () => {
+test("le filtre « Démarrable » du Kanban garde les tickets démarrables", async () => {
   const info = test.info();
   await page.goto(`/#/p/${seeded.projectId}/${encodeURIComponent(seeded.board)}`);
-  await expect(page.getByRole("radio", { name: "Tous", exact: true })).toBeChecked();
+  const all = page.getByRole("button", { name: "Tous", exact: true });
+  await expect(all).toHaveAttribute("aria-pressed", "true");
   const cards = page.getByRole("article");
-  await expect(cards.filter({ hasText: "Démarrable" }).first()).toBeVisible();
-  await expect(cards.filter({ hasText: "KIB-21" }).filter({ hasText: "Démarrable" })).toHaveCount(0);
+  await expect(cards.filter({ hasText: "Démarrable" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Démarrable", exact: true }).click();
+  await expect(cards.first()).toBeVisible();
+  await expect(cards.filter({ hasText: "KIB-21" })).toHaveCount(0);
   await capture(page, info, "188k");
+  await all.click();
+  await expect(all).toHaveAttribute("aria-pressed", "true");
 });
