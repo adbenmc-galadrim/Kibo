@@ -15,6 +15,7 @@ export * from "./group-chip";
 export * from "./lazy";
 export * from "./markdown-lite";
 export * from "./members";
+export * from "./phase-label";
 export * from "./question-preview";
 export * from "./question-preview-text";
 export * from "./questions-chip";
