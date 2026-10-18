@@ -1,14 +1,22 @@
 import { describe, expect, test } from "bun:test";
-import { Question, Ticket } from "@kibo/schema";
+import { ProjectMeta, Question, SETUP_PAGES, Sprint, sprintPlan, Ticket } from "@kibo/schema";
 import { emisShapedSnapshot } from "../../fixtures/emis-shaped";
-import { isPlaced, type Mapping, mapProject } from "./mapping";
+import { isPlaced } from "./mapping";
 import { readOldProject } from "./old-project";
+import { buildRebasePlan, type RebasePlan } from "./plan-file";
 import { QUESTION_PLACEMENT } from "./question-placement";
 import { TODO_PLACEMENT } from "./todo-placement";
 import { type FreshSnapshot, verifyRebase } from "./verify";
 
 const old = readOldProject(emisShapedSnapshot());
-const mapping = mapProject(old, TODO_PLACEMENT, QUESTION_PLACEMENT);
+const plan = buildRebasePlan({
+  old,
+  source: "getProject",
+  merges: null,
+  placement: TODO_PLACEMENT,
+  overrides: QUESTION_PLACEMENT,
+});
+const mapping = plan.mapping;
 
 const BLANK = {
   pendingSeq: null,
@@ -19,7 +27,30 @@ const BLANK = {
   optional: false,
 };
 
-function freshOf(m: Mapping): FreshSnapshot {
+function projectOf(p: RebasePlan) {
+  const sprints = sprintPlan(p.setup).map((s, i) => Sprint.parse({ id: `s${i + 1}`, ...s }));
+  const pages = SETUP_PAGES.map((page, i) => ({
+    id: `p${i}`,
+    title: page.title,
+    kind: "view" as const,
+    parentId: null,
+  }));
+  const instances = SETUP_PAGES.map((page, i) => ({
+    id: `i${i}`,
+    pageId: `p${i}`,
+    component: page.component,
+    layout: { x: 0, y: 0, w: 12, h: 8 },
+    config: page.config,
+    componentHash: null,
+  }));
+  const meta = ProjectMeta.parse({ id: "new", key: "EMIS", name: "Emis", folder: null, color: "#F97316" });
+  const sprintOf = new Map(p.schedule.map((s) => [s.id, `s${s.sprint}`]));
+  return { meta, sprints, pages, instances, sprintOf };
+}
+
+function freshOf(p: RebasePlan): FreshSnapshot {
+  const m = p.mapping;
+  const { sprintOf, ...project } = projectOf(p);
   const idOf = (key: string) => `n-${key}`;
   const tickets = m.features.flatMap((f) => [
     Ticket.parse({
@@ -33,6 +64,7 @@ function freshOf(m: Mapping): FreshSnapshot {
       parentId: null,
       externalRefs: f.ticket.refs,
       labels: f.labels,
+      sprintId: sprintOf.get(f.shortKey) ?? null,
     }),
     ...f.steps.map((s) =>
       Ticket.parse({
@@ -68,14 +100,14 @@ function freshOf(m: Mapping): FreshSnapshot {
       answer: q.old.answer && { kind: "text", option: null, ...q.old.answer },
     }),
   );
-  return { tickets, links, questions };
+  return { ...project, tickets, links, questions };
 }
 
 type Edit = (fresh: FreshSnapshot) => FreshSnapshot;
 const editTicket =
   (key: string, patch: (t: Ticket) => Ticket): Edit =>
   (fresh) => ({ ...fresh, tickets: fresh.tickets.map((t) => (t.key === key ? patch(t) : t)) });
-const problems = (edit: Edit) => verifyRebase(old, edit(freshOf(mapping)), mapping);
+const problems = (edit: Edit) => verifyRebase(old, edit(freshOf(plan)), plan);
 const stepOf = (oldKey: string) => {
   const step = mapping.features.flatMap((f) => f.steps).find((s) => s.ticket.planId === oldKey);
   if (!step) throw new Error(`no step ${oldKey}`);
@@ -84,7 +116,7 @@ const stepOf = (oldKey: string) => {
 
 describe("verifyRebase", () => {
   test("a faithful rebase has no problem", () => {
-    expect(verifyRebase(old, freshOf(mapping), mapping)).toEqual([]);
+    expect(verifyRebase(old, freshOf(plan), plan)).toEqual([]);
   });
 
   test("a different status names the new and the old key", () => {
@@ -145,5 +177,54 @@ describe("verifyRebase", () => {
     expect(lines).toHaveLength(2);
     expect(lines.some((l) => l.includes("description"))).toBe(true);
     expect(lines.some((l) => l.includes("assignee"))).toBe(true);
+  });
+
+  test("a feature in another sprint than the plan is reported", () => {
+    const [first] = plan.schedule;
+    if (!first) throw new Error("the fixture plans features");
+    const feature = mapping.features.find((f) => f.shortKey === first.id);
+    const lines = problems(editTicket(first.id, (t) => ({ ...t, sprintId: null })));
+    expect(lines).toEqual([
+      `${first.id} (ex ${feature?.oldKey}) : sprint S${first.sprint} attendu, aucun trouvé`,
+    ]);
+  });
+
+  test("a different delivery note is reported", () => {
+    const s = stepOf("C2-4");
+    const lines = problems(
+      editTicket(s.newKey, (t) => ({ ...t, delivery: t.delivery && { ...t.delivery, note: "autre" } })),
+    );
+    expect(lines).toEqual([
+      `${s.newKey} (ex ${s.oldKey}) : note de livraison Code en cours attendu, autre trouvé`,
+    ]);
+  });
+
+  test("a different client is reported", () => {
+    const lines = problems((f) => ({ ...f, meta: { ...f.meta, client: "Autre" } }));
+    expect(lines).toEqual(["client aucun attendu, Autre trouvé"]);
+  });
+
+  test("a missing page or instance is reported", () => {
+    const lines = problems((f) => ({
+      ...f,
+      pages: f.pages.slice(0, 4),
+      instances: f.instances.slice(0, 4),
+    }));
+    expect(lines).toContain(
+      "pages : Vue d'ensemble, Planning, Kanban, Graphe, Questions attendues, Vue d'ensemble, Planning, Kanban, Graphe trouvées",
+    );
+    expect(lines).toContain("page Questions : questions@1.0.0 absent");
+  });
+
+  test("a missing or moved sprint is reported", () => {
+    const lines = problems((f) => ({
+      ...f,
+      sprints: f.sprints.slice(1).map((s, i) => (i === 0 ? { ...s, end: s.start } : s)),
+    }));
+    const [first, second] = sprintPlan(plan.setup);
+    expect(lines).toContain(`sprint ${first?.code} manquant`);
+    expect(lines).toContain(
+      `sprint ${second?.code} : ${second?.start} → ${second?.end} attendu, ${second?.start} → ${second?.start} trouvé`,
+    );
   });
 });

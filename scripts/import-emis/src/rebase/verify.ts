@@ -1,26 +1,40 @@
 import {
   type ExternalRef,
+  type Instance,
   type Link,
+  type Page,
+  type ProjectMeta,
   QUESTION_CONTEXT_MAX,
   QUESTION_TITLE_MAX,
   type Question,
+  SETUP_PAGES,
+  type Sprint,
+  sprintPlan,
   type Ticket,
 } from "@kibo/schema";
 import { isPlaced, type Mapping, type PlacedQuestion } from "./mapping";
 import type { OldProject, OldTicket } from "./old-project";
+import type { RebasePlan } from "./plan-file";
 
 export type FreshSnapshot = {
+  meta: Pick<ProjectMeta, "client">;
+  pages: readonly Page[];
+  instances: readonly Instance[];
+  sprints: readonly Sprint[];
   tickets: readonly Ticket[];
   links: readonly Link[];
   questions: readonly Question[];
 };
+export type RebaseTarget = Pick<RebasePlan, "mapping" | "schedule" | "setup">;
 type Expected = {
   newKey: string;
   title: string;
   labels: readonly string[];
   ticket: OldTicket;
   parentKey: string | null;
+  sprint: string | null;
 };
+type Lookup = { keyOf: (id: string | null) => string | null; sprintOf: (id: string | null) => string | null };
 
 const STEP_KEY = /^[A-Z]{2,6}-(\d+)$/;
 const RETIRED_LABEL = /^(sprint|phase):/;
@@ -41,15 +55,24 @@ function refSignature(ref: ExternalRef): string {
 const sameList = (a: readonly string[], b: readonly string[]): boolean =>
   a.length === b.length && [...a].sort().every((v, i) => v === [...b].sort()[i]);
 
-function expectedTickets(mapping: Mapping): Expected[] {
-  return mapping.features.flatMap((f) => [
-    { newKey: f.shortKey, title: f.title, labels: f.labels, ticket: f.ticket, parentKey: null },
+function expectedTickets(target: RebaseTarget): Expected[] {
+  const sprints = new Map(target.schedule.map((s) => [s.id, `S${s.sprint}`]));
+  return target.mapping.features.flatMap((f) => [
+    {
+      newKey: f.shortKey,
+      title: f.title,
+      labels: f.labels,
+      ticket: f.ticket,
+      parentKey: null,
+      sprint: sprints.get(f.shortKey) ?? null,
+    },
     ...f.steps.map((s) => ({
       newKey: s.newKey,
       title: s.title,
       labels: s.labels,
       ticket: s.ticket,
       parentKey: f.shortKey,
+      sprint: null,
     })),
   ]);
 }
@@ -63,7 +86,7 @@ function refProblems(who: string, want: readonly ExternalRef[], got: readonly Ex
   ];
 }
 
-function fieldProblems(e: Expected, t: Ticket, keyOf: (id: string | null) => string | null): string[] {
+function fieldProblems(e: Expected, t: Ticket, lookup: Lookup): string[] {
   const who = `${e.newKey} (ex ${e.ticket.key})`;
   const out: string[] = [];
   const differs = (field: string, want: unknown, got: unknown) => {
@@ -74,10 +97,11 @@ function fieldProblems(e: Expected, t: Ticket, keyOf: (id: string | null) => str
   if (e.parentKey !== null) {
     differs("statut", e.ticket.statusId, t.statusId);
     if (e.ticket.statusId === t.statusId) differs("raison", e.ticket.blockedReason, t.blockedReason);
-    differs("parent", e.parentKey, keyOf(t.parentId));
+    differs("parent", e.parentKey, lookup.keyOf(t.parentId));
     differs("facultative", e.ticket.optional, t.optional);
     differs("étape de livraison", e.ticket.delivery?.step ?? null, t.delivery?.step ?? null);
-  }
+    differs("note de livraison", e.ticket.delivery?.note ?? null, t.delivery?.note ?? null);
+  } else differs("sprint", e.sprint ?? "aucun", lookup.sprintOf(t.sprintId) ?? "aucun");
   if (t.assignee !== null) out.push(`${who} : assignee ${t.assignee.kind}:${t.assignee.ref} recopié`);
   for (const label of t.labels.filter((l) => RETIRED_LABEL.test(l)))
     out.push(`${who} : étiquette ${label} restée`);
@@ -89,7 +113,11 @@ function fieldProblems(e: Expected, t: Ticket, keyOf: (id: string | null) => str
 function ticketProblems(expected: readonly Expected[], fresh: FreshSnapshot): string[] {
   const byKey = new Map(fresh.tickets.map((t) => [t.key, t]));
   const byId = new Map(fresh.tickets.map((t) => [t.id, t.key]));
-  const keyOf = (id: string | null) => (id === null ? null : (byId.get(id) ?? null));
+  const codes = new Map(fresh.sprints.map((s) => [s.id, s.code]));
+  const lookup: Lookup = {
+    keyOf: (id) => (id === null ? null : (byId.get(id) ?? null)),
+    sprintOf: (id) => (id === null ? null : (codes.get(id) ?? id)),
+  };
   return expected.flatMap((e) => {
     const t = byKey.get(e.newKey);
     const who = `${e.newKey} (ex ${e.ticket.key})`;
@@ -97,7 +125,7 @@ function ticketProblems(expected: readonly Expected[], fresh: FreshSnapshot): st
       return [e.parentKey === null ? `${who} : fonctionnalité sans clé ${e.newKey}` : `${who} : absent`];
     if (e.parentKey === null && (t.shortKey !== e.newKey || t.parentId !== null))
       return [`${who} : fonctionnalité sans clé ${e.newKey}`];
-    return fieldProblems(e, t, keyOf);
+    return fieldProblems(e, t, lookup);
   });
 }
 
@@ -173,10 +201,57 @@ function questionProblems(mapping: Mapping, fresh: FreshSnapshot): string[] {
   return [...missing, ...count];
 }
 
-export function verifyRebase(old: OldProject, fresh: FreshSnapshot, mapping: Mapping): string[] {
+function pageProblems(fresh: FreshSnapshot): string[] {
+  const want = SETUP_PAGES.map((p) => p.title);
+  const got = fresh.pages.map((p) => p.title);
+  const order =
+    want.join("|") === got.join("|")
+      ? []
+      : [`pages : ${want.join(", ")} attendues, ${got.join(", ")} trouvées`];
+  const instances = SETUP_PAGES.flatMap((page) => {
+    const pageIds = new Set(fresh.pages.filter((p) => p.title === page.title).map((p) => p.id));
+    const found = fresh.instances.some(
+      (i) =>
+        pageIds.has(i.pageId) &&
+        i.component === page.component &&
+        JSON.stringify(i.config) === JSON.stringify(page.config),
+    );
+    return found ? [] : [`page ${page.title} : ${page.component} absent`];
+  });
+  return [...order, ...instances];
+}
+
+function sprintProblems(target: RebaseTarget, fresh: FreshSnapshot): string[] {
+  const want = sprintPlan(target.setup);
+  const byCode = new Map(fresh.sprints.map((s) => [s.code, s]));
+  const lines = want.flatMap((w) => {
+    const s = byCode.get(w.code);
+    if (s === undefined) return [`sprint ${w.code} manquant`];
+    return s.start === w.start && s.end === w.end
+      ? []
+      : [`sprint ${w.code} : ${w.start} → ${w.end} attendu, ${s.start} → ${s.end} trouvé`];
+  });
+  const count =
+    fresh.sprints.length === want.length
+      ? []
+      : [`sprints : ${want.length} attendus, ${fresh.sprints.length} trouvés`];
+  return [...lines, ...count];
+}
+
+function clientProblems(mapping: Mapping, fresh: FreshSnapshot): string[] {
+  const want = mapping.project.client ?? "aucun";
+  const got = fresh.meta.client ?? "aucun";
+  return want === got ? [] : [`client ${want} attendu, ${got} trouvé`];
+}
+
+export function verifyRebase(old: OldProject, fresh: FreshSnapshot, target: RebaseTarget): string[] {
+  const mapping = target.mapping;
   return [
+    ...clientProblems(mapping, fresh),
+    ...pageProblems(fresh),
+    ...sprintProblems(target, fresh),
     ...countProblems(old, mapping, fresh),
-    ...ticketProblems(expectedTickets(mapping), fresh),
+    ...ticketProblems(expectedTickets(target), fresh),
     ...keyProblems(mapping, fresh),
     ...linkProblems(mapping, fresh),
     ...questionProblems(mapping, fresh),

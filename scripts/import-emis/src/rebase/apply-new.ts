@@ -203,7 +203,7 @@ export async function applyPlan(
   try {
     const { projectId, keys } = await seedPlan(client, plan, progress);
     const fresh = await client.rpc({ method: "getProject", projectId });
-    const problems = verifyRebase(old, fresh, plan.mapping);
+    const problems = verifyRebase(old, fresh, plan);
     writeFileSync(resultFile, renderResult({ ...context, newId: projectId, fresh, problems, failure: null }));
     print(`project ${projectId} · ${problems.length} problem(s) · ${resultFile}`);
     return { projectId, keys, problems, backup };

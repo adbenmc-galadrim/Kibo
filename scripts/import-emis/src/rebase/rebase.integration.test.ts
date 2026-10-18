@@ -75,7 +75,7 @@ async function expectRebased(c: SeedClient, projectId: string, plan: RebasePlan,
     Array.from({ length: steps.length }, (_, i) => `EMIS-${i + 1}`),
   );
   expect(features.filter((t) => t.sprintId !== null)).toHaveLength(plan.schedule.length);
-  expect(verifyRebase(old, fresh, plan.mapping)).toEqual([]);
+  expect(verifyRebase(old, fresh, plan)).toEqual([]);
 }
 
 test("seeds the old project, then a dry run writes the report and the plan without touching it", async () => {

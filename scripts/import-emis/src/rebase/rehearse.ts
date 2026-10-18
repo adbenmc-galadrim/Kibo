@@ -66,7 +66,7 @@ export async function rehearse(plan: RebasePlan, old: OldProject): Promise<strin
         try {
           const { projectId } = await seedPlan(client, plan, progress);
           const fresh = await client.rpc({ method: "getProject", projectId });
-          return verifyRebase(old, fresh, plan.mapping);
+          return verifyRebase(old, fresh, plan);
         } catch (e) {
           return [`répétition interrompue : ${messageOf(e)}`];
         }
