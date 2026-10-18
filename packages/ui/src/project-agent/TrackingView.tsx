@@ -5,7 +5,6 @@ import { type ReactNode, useId, useState } from "react";
 import { formatClock } from "../agents/format";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { AgentText } from "../moments/AgentText";
-import { useNow } from "../state/use-agents";
 import type { Decision } from "./BatchCard";
 import { BatchRecap } from "./BatchRecap";
 import type { DiffLabels } from "./batch-groups";
@@ -80,7 +79,7 @@ export function TrackingView({
 }: Props) {
   const id = useId();
   const [recap, setRecap] = useState<Recap | null>(null);
-  const now = useNow(60_000);
+  const now = Date.now();
   const { summary, summaryAt, exchange } = trackingThread(items);
   const today = summaryAt === null || sameDay(summaryAt, now);
   const asking = exchange.length > 0;
