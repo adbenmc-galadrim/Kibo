@@ -1,9 +1,3 @@
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@kibo/sdk/ui/dropdown-menu";
 import { Plus } from "lucide-react";
 import { fr } from "./fr";
 import { OpenLimitBadge } from "./OpenLimitBadge";
@@ -38,23 +32,15 @@ function LayoutToggle({ layout, onLayout }: { layout: PlanningLayout; onLayout(l
   );
 }
 
-function AddMenu({ onNewFeature, onNewSprint }: { onNewFeature(): void; onNewSprint(): void }) {
+const ADD =
+  "flex h-[25px] items-center gap-1.5 rounded-[6px] border border-(--tracking-border) px-2.5 font-medium text-(--tracking-fg) text-[12px] leading-[15px] hover:bg-(--tracking-hover)";
+
+function AddButton({ label, title, onClick }: { label: string; title: string; onClick(): void }) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={fr.add}
-          className="grid size-[25px] place-items-center rounded-[6px] border border-(--tracking-border) text-(--tracking-fg)"
-        >
-          <Plus absoluteStrokeWidth size={13} aria-hidden />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onSelect={onNewFeature}>{fr.newFeature}</DropdownMenuItem>
-        <DropdownMenuItem onSelect={onNewSprint}>{fr.newSprint}</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <button type="button" title={title} className={ADD} onClick={onClick}>
+      <Plus absoluteStrokeWidth size={13} aria-hidden />
+      {label}
+    </button>
   );
 }
 
@@ -80,7 +66,12 @@ export function PlanningHeader(props: Props) {
         {layout === "bands" && <span className={`${SUBTITLE} shrink-[8]`}>{fr.bands.hint}</span>}
       </div>
       <div className="ml-auto flex min-w-0 flex-wrap items-end justify-end gap-2.5">
-        {!readOnly && <AddMenu onNewFeature={onNewFeature} onNewSprint={onNewSprint} />}
+        {!readOnly && (
+          <>
+            <AddButton label={fr.addFeature} title={fr.newFeature} onClick={onNewFeature} />
+            <AddButton label={fr.addSprint} title={fr.newSprint} onClick={onNewSprint} />
+          </>
+        )}
         <OpenLimitBadge
           open={model.open}
           limit={model.limit}

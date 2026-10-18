@@ -16,8 +16,7 @@ const value = (dialog: HTMLElement, label: string) =>
 test("Nouveau sprint proposes the next code and the week after the last sprint", async () => {
   setupPlanning();
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Ajouter" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Nouveau sprint" }));
+  await user.click(await screen.findByRole("button", { name: "Sprint" }));
   const dialog = await screen.findByRole("dialog", { name: "Nouveau sprint" });
   expect(["Code", "Nom", "Début", "Fin"].map((label) => value(dialog, label))).toEqual([
     "S45",
@@ -31,8 +30,7 @@ test("Nouveau sprint proposes the next code and the week after the last sprint",
 test("a new sprint gets a unique code, a name and dates, reversed dates are refused", async () => {
   const { m } = setupPlanning();
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Ajouter" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Nouveau sprint" }));
+  await user.click(await screen.findByRole("button", { name: "Sprint" }));
   const dialog = await screen.findByRole("dialog", { name: "Nouveau sprint" });
   const create = within(dialog).getByRole("button", { name: "Créer le sprint" });
   await user.type(within(dialog).getByLabelText("Nom"), "Exports");

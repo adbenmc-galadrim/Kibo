@@ -101,7 +101,7 @@ test("open features against the limit: a warning, nothing disabled", async () =>
   setupPlanning();
   const badge = await screen.findByRole("button", { name: /Ouvertes : 2 \/ 2/ });
   expect(badge.getAttribute("data-over")).toBe("false");
-  expect(screen.getByRole("button", { name: "Ajouter" }).hasAttribute("disabled")).toBe(false);
+  expect(screen.getByRole("button", { name: "Fonctionnalité" }).hasAttribute("disabled")).toBe(false);
 });
 
 test("the open limit is the project's tracking setting, updated live", async () => {
@@ -180,8 +180,7 @@ test("two sprints overlap: the one that started last is current, for a new featu
   await waitFor(async () => expect(within(await column("S45 Correctifs")).getByText(note)).toBeTruthy());
   expect(within(await column(/^S42 /)).queryByText(note)).toBeNull();
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Ajouter" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Nouvelle fonctionnalité" }));
+  await user.click(await screen.findByRole("button", { name: "Fonctionnalité" }));
   const dialog = await screen.findByRole("dialog");
   expect(within(dialog).getByLabelText<HTMLSelectElement>("Sprint").value).toBe(late);
 });

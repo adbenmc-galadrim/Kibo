@@ -14,7 +14,10 @@ export function BacklogColumn({ dropping, children, footer }: Props) {
     <section
       ref={setNodeRef}
       aria-label={fr.backlog}
-      className={cn(COLUMN_CLASS, "border-(--tracking-border) border-dashed")}
+      className={cn(
+        COLUMN_CLASS,
+        "sticky left-0 z-10 border-(--tracking-border) border-dashed bg-(--tracking-bg) shadow-[12px_0_0_var(--tracking-bg)]",
+      )}
     >
       <header className="flex flex-col gap-1 px-0.5 pt-0.5 pb-1">
         <div className="flex h-4 items-center gap-1.5">

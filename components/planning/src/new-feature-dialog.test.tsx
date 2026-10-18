@@ -15,8 +15,7 @@ test("steps are one per line, blank lines ignored", () => {
 
 const openDialog = async () => {
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Ajouter" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Nouvelle fonctionnalité" }));
+  await user.click(await screen.findByRole("button", { name: "Fonctionnalité" }));
   return { user, dialog: await screen.findByRole("dialog") };
 };
 

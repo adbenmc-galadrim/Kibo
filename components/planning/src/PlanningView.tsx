@@ -2,6 +2,7 @@ import type { SprintView } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { BacklogColumn } from "./BacklogColumn";
 import type { BandsTimeline } from "./bands-model";
+import { cardEntries, type PlanTarget } from "./card-menu";
 import { BACKLOG_ID } from "./drag";
 import { FeatureCard } from "./FeatureCard";
 import { fr } from "./fr";
@@ -44,6 +45,7 @@ export type PlanningViewProps = {
   onEditSprint(sprint: SprintView): void;
   onNewFeature(): void;
   onNewSprint(): void;
+  onPlan(target: PlanTarget): void;
 };
 
 const limitHolder = (model: PlanningModel): string | null =>
@@ -53,8 +55,12 @@ export function PlanningView(props: PlanningViewProps) {
   const { model, readOnly, target, dragged, onOpen, onOpenSprint, onEditSprint } = props;
   const dropsIn = (columnId: string, own: string | null) =>
     dragged !== null && target === columnId && (own ?? BACKLOG_ID) !== columnId;
+  const sprints = model.sprints.map((c) => c.sprint);
+  const menuOf = (c: Card) => (readOnly ? [] : cardEntries(c, sprints, props.onPlan));
   const cards = (list: readonly Card[]) =>
-    list.map((c) => <FeatureCard key={c.id} card={c} readOnly={readOnly} onOpen={() => onOpen(c.id)} />);
+    list.map((c) => (
+      <FeatureCard key={c.id} card={c} readOnly={readOnly} menu={menuOf(c)} onOpen={() => onOpen(c.id)} />
+    ));
   const holder = limitHolder(model);
   const limitNote = model.overLimit && (
     <Warning tone="amber">{fr.overLimit(model.open, model.limit)}</Warning>
@@ -75,6 +81,12 @@ export function PlanningView(props: PlanningViewProps) {
       ) : (
         <>
           <div className="scrollbar-none -my-px flex min-h-0 flex-1 items-stretch gap-3 overflow-x-auto py-px">
+            <BacklogColumn
+              dropping={dropsIn(BACKLOG_ID, dragged?.sprintId ?? null)}
+              footer={holder === null && limitNote}
+            >
+              {cards(model.backlog)}
+            </BacklogColumn>
             {model.sprints.map((column) => (
               <SprintColumn
                 key={column.sprint.id}
@@ -87,12 +99,6 @@ export function PlanningView(props: PlanningViewProps) {
                 {cards(column.cards)}
               </SprintColumn>
             ))}
-            <BacklogColumn
-              dropping={dropsIn(BACKLOG_ID, dragged?.sprintId ?? null)}
-              footer={holder === null && limitNote}
-            >
-              {cards(model.backlog)}
-            </BacklogColumn>
           </div>
           <Legend error={props.error} />
         </>

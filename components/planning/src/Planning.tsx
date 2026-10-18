@@ -98,6 +98,11 @@ export function Planning() {
     setDragged(null);
     setTarget(null);
   };
+  const plan = (ticketId: string, sprintId: string | null) =>
+    sdk.sprints.assign(ticketId, sprintId).then(
+      () => setError(null),
+      () => setError(fr.moveFailed(cardOf(ticketId)?.shortKey ?? "")),
+    );
   const onDragEnd = (e: DragEndEvent) => {
     stop();
     const drop = planDrop({
@@ -106,10 +111,7 @@ export function Planning() {
       cards,
     });
     if (readOnly || drop === null) return;
-    sdk.sprints.assign(drop.ticketId, drop.sprintId).then(
-      () => setError(null),
-      () => setError(fr.moveFailed(cardOf(drop.ticketId)?.shortKey ?? "")),
-    );
+    void plan(drop.ticketId, drop.sprintId);
   };
   return (
     <DndContext
@@ -134,6 +136,7 @@ export function Planning() {
         onEditSprint={(sprint) => setDialog({ kind: "sprint", sprint })}
         onNewFeature={() => setDialog({ kind: "feature" })}
         onNewSprint={() => setDialog({ kind: "sprint", sprint: null })}
+        onPlan={(target) => plan(target.cardId, target.sprintId)}
       />
       <DragPreview>{dragged ? <FeatureCardPreview card={dragged} /> : null}</DragPreview>
       {dialog?.kind === "sprint" && (
