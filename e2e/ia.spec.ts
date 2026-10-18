@@ -1,5 +1,5 @@
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { createPage, openNewProject as openNewProjectMenu } from "./helpers";
+import { createSidebarPage, openNewProject as openNewProjectMenu } from "./helpers";
 import { E2E_TOKEN } from "./token";
 
 const suffix = (info: TestInfo) => (info.project.name.endsWith("light") ? "L" : "D");
@@ -29,7 +29,7 @@ test("Créer un composant avec un agent, jusqu'au rendu sandboxé", async ({ pag
   await pair(page, info);
   await openNewProject(page);
   await fillProject(page, `Composants ${s}`, `CMP${s}`);
-  await createPage(page, "Tableau de bord", "Tableau de bord");
+  await createSidebarPage(page, `Composants ${s}`, "Tableau de bord", "Tableau de bord");
 
   await page.getByRole("button", { name: "Ajouter un composant" }).click();
   await page.getByRole("button", { name: /Créer un composant/ }).click();

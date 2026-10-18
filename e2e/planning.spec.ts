@@ -102,7 +102,7 @@ async function expectFits(page: Page, layout: "Colonnes" | "Bandes"): Promise<vo
   for (const height of fit.chipLines) expect(height).toBeLessThan(LINE_HEIGHT * 1.5);
 }
 
-test("the Planning holds in the window in Columns and Bands, its blocked chips on one line", async ({
+test("the Planning holds in the window in Columns and Bands, its blocked chips on one line, the agent over it under 1180 px", async ({
   page,
 }) => {
   const f6Sprint = await moveToSprint(page, emis, "F6", null);
@@ -113,12 +113,19 @@ test("the Planning holds in the window in Columns and Bands, its blocked chips o
     ]) {
       await page.setViewportSize(size);
       await openPlanning(page);
-      for (const panel of [false, true]) {
-        if (panel) await page.getByRole("button", { name: /^Agent de projet/ }).click();
+      await expectFits(page, "Bandes");
+      await expectFits(page, "Colonnes");
+      const before = await page.locator("[data-view-body]").boundingBox();
+      await page.getByRole("button", { name: /^Agent de projet/ }).click();
+      const overlay = size.width < 1180;
+      await expect(page.locator("[data-overlay]")).toHaveAttribute("data-overlay", String(overlay));
+      if (overlay) expect(await page.locator("[data-view-body]").boundingBox()).toEqual(before);
+      else {
         await expectFits(page, "Bandes");
         await expectFits(page, "Colonnes");
       }
       await page.getByRole("button", { name: /^Agent de projet/ }).click();
+      await expect(page.locator("[data-overlay]")).toHaveCount(0);
     }
   } finally {
     await page.getByRole("button", { name: "Colonnes", exact: true }).click();
