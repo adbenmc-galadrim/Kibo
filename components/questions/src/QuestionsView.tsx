@@ -187,7 +187,7 @@ export function QuestionsView() {
       {unblocked !== null && (
         <ActionToast
           key={unblocked.ticketId}
-          message={fr.unblocked(unblocked.label)}
+          message={unblocked.message}
           actionLabel={fr.seeFeature(unblocked.label)}
           onAction={() => {
             sdk.openTicket(unblocked.ticketId);

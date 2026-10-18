@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { TicketView } from "@kibo/schema";
 import { answer, question, ticket } from "./question-fixtures.test-helper";
-import { unblockedFeatures } from "./unblock-toast";
+import { unblockedFeatures, unblockedToast } from "./unblock-toast";
 
 const F6 = ticket("f6", "F6", { shortKey: "F6" });
 const STEP = ticket("t51", "EMIS-51", { parentId: "f6" });
@@ -63,4 +63,14 @@ test("F6 is unblocked only once its last blocked step is", () => {
 test("a step of F6 still blocked by its status keeps F6 blocked", () => {
   const onStep = question({ id: "a", ticketId: "t51", blocking: true });
   expect(unblockedFeatures(TICKETS, ticketOf, [onStep], [{ ...onStep, answer: answer(9) }])).toEqual([]);
+});
+
+test("several features unblocked at once read « F6 et 2 autres débloquées »", () => {
+  const f6 = { label: "F6", ticketId: "f6" };
+  expect(unblockedToast([])).toBeNull();
+  expect(unblockedToast([f6])).toEqual({ ...f6, message: "F6 débloquée" });
+  expect(unblockedToast([f6, { label: "F7", ticketId: "f7" }])?.message).toBe("F6 et 1 autre débloquées");
+  expect(
+    unblockedToast([f6, { label: "F7", ticketId: "f7" }, { label: "EMIS-9", ticketId: "t9" }])?.message,
+  ).toBe("F6 et 2 autres débloquées");
 });

@@ -155,6 +155,8 @@ export const fr = {
   blockingSummary: (blocking: number, open: number) =>
     `${blocking} ${plural(blocking, "bloquante", "bloquantes")} en tête · ${open} ${plural(open, "ouverte", "ouvertes")}`,
   unblocked: (label: string) => `${label} débloquée`,
+  unblockedMany: (label: string, others: number) =>
+    `${label} et ${others} ${plural(others, "autre", "autres")} débloquées`,
   seeFeature: (label: string) => `Voir ${label}`,
   feature: (label: string) => `Fonctionnalité ${label}`,
   paste: {
