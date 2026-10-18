@@ -86,7 +86,12 @@ export function trackingItems(
   ];
   if (ticket?.key) {
     const command = deliveryBrief(ticket.key);
-    const copy: CopyTicket = { key: ticket.key, startable: ticket.startable, waitingOn: ticket.waitingOn };
+    const copy: CopyTicket = {
+      key: ticket.key,
+      startable: ticket.startable,
+      waitingOn: ticket.waitingOn,
+      startReason: ticket.startReason,
+    };
     out.push(
       localItem("copyDelivery", t.copy(command), "copy", {
         kind: "copyDelivery",

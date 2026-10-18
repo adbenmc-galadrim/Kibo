@@ -89,3 +89,20 @@ test("a full-page ticket addressed by its key still offers the copy", () => {
   ).map((i) => i.label);
   expect(labels).toContain(`Copier /full-delivery ${ticket.key}`);
 });
+
+test("the palette copy carries the start reason of the ticket", () => {
+  const ticket = emis.tickets.find((t) => t.key === "EMIS-30");
+  if (!ticket?.key) throw new Error("fixture without key");
+  const startReason = { kind: "sprint" as const, code: "S43" };
+  const project = {
+    ...emis,
+    tickets: emis.tickets.map((t) => (t.id === ticket.id ? { ...t, startReason } : t)),
+  };
+  const copy = (
+    searchItems(buildItems({ ...context(project), activeTicketId: ticket.id }), "", "actions")[0]?.items ?? []
+  ).find((i) => i.id === "action:copyDelivery");
+  expect(copy?.run).toMatchObject({
+    kind: "local",
+    action: { kind: "copyDelivery", ticket: { startReason } },
+  });
+});

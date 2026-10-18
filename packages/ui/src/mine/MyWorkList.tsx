@@ -20,7 +20,7 @@ type Props = {
 const toaster = { toast: (message: string) => void toast(message) };
 
 function CopyButton({ item }: { item: WorkItem }) {
-  const { key, startable, waitingOn } = item.ticket;
+  const { key, startable, waitingOn, startReason } = item.ticket;
   if (key === null) return null;
   const label = frMine.copy(deliveryBrief(key));
   return (
@@ -30,7 +30,7 @@ function CopyButton({ item }: { item: WorkItem }) {
       className="size-7 shrink-0 text-muted-foreground"
       aria-label={label}
       title={label}
-      onClick={() => void copyDeliveryCommand(toaster, { key, startable, waitingOn })}
+      onClick={() => void copyDeliveryCommand(toaster, { key, startable, waitingOn, startReason })}
     >
       <Copy aria-hidden />
     </Button>

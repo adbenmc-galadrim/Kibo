@@ -94,3 +94,17 @@ test("a step row names its feature F<n>, its branch and its delivery phase, a cl
   expect(cell.getByText("feat/demo-f4")).toBeTruthy();
   expect(row.querySelector("[data-delivery-step]")?.textContent).toBe("Phase 7/12 · Porte qualité");
 });
+
+test("the copy of a row says why its step cannot start yet", async () => {
+  const { Toaster } = await import("@kibo/sdk/ui/sonner");
+  const step = {
+    ...mineTicket("KIB-47", "todo", { kind: "human", ref: "adam" }),
+    startReason: { kind: "sprint" as const, code: "S43" },
+  };
+  const base = mineSnapshots.get(kib.id);
+  if (!base) throw new Error("fixture without kib");
+  render(<Toaster />);
+  page(noop, new Map([[kib.id, { ...base, tickets: [step] }]]));
+  await userEvent.setup().click(screen.getByRole("button", { name: "Copier /full-delivery KIB-47" }));
+  expect(await screen.findByText("Copié · sprint S43")).toBeTruthy();
+});

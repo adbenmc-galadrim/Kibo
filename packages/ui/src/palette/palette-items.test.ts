@@ -102,7 +102,15 @@ test("on an open ticket, the palette copies its /full-delivery command", () => {
   expect(item?.label).toBe("Copier /full-delivery KIB-15");
   expect(item?.run).toEqual({
     kind: "local",
-    action: { kind: "copyDelivery", ticket: { key: "KIB-15", startable: false, waitingOn: ["KIB-12"] } },
+    action: {
+      kind: "copyDelivery",
+      ticket: {
+        key: "KIB-15",
+        startable: false,
+        waitingOn: ["KIB-12"],
+        startReason: null,
+      },
+    },
   });
   expect(buildItems(onKibo(null)).some((i) => i.label.startsWith("Copier"))).toBe(false);
   expect(buildItems(context).some((i) => i.label.startsWith("Copier"))).toBe(false);
