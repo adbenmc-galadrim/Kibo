@@ -84,3 +84,12 @@ test("an instance set to « mine » keeps narrowing the board and says so", asyn
   expect(await screen.findByText("5 tickets · Tous · Moi")).toBeTruthy();
   expect(screen.queryByText("Hors filtre")).toBeNull();
 });
+
+test("the counter gives way in a narrow widget: it truncates and keeps its full text as a title", async () => {
+  setup();
+  const counter = await screen.findByText("8 tickets · Tous");
+  expect(counter.getAttribute("title")).toBe("8 tickets · Tous");
+  expect(counter.className).toContain("truncate");
+  expect(counter.className).toContain("min-w-0");
+  expect(counter.className).not.toContain("shrink-0");
+});

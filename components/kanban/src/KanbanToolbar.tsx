@@ -76,6 +76,7 @@ function LabelMenu({ label, labels, onLabel }: LabelMenuProps) {
 
 export function KanbanToolbar(props: Props) {
   const { mode, onMode, counts, sprintCode, label, onShowAll, shown, hidden, children } = props;
+  const counter = fr.counter(shown, modeLabel(mode, sprintCode), props.mine);
   return (
     <header className="flex h-12 items-center gap-2 border-b px-4 text-sm">
       <ToggleGroup
@@ -103,8 +104,8 @@ export function KanbanToolbar(props: Props) {
       </ToggleGroup>
       <LabelMenu label={label} labels={props.labels} onLabel={props.onLabel} />
       {children}
-      <span className="ml-auto shrink-0 text-xs text-muted-foreground">
-        {fr.counter(shown, modeLabel(mode, sprintCode), props.mine)}
+      <span title={counter} className="ml-auto min-w-0 truncate text-xs text-muted-foreground">
+        {counter}
       </span>
       {(mode !== "all" || label !== null) && hidden > 0 && (
         <Button size="sm" variant="link" className="h-auto shrink-0 px-0 text-xs" onClick={onShowAll}>
