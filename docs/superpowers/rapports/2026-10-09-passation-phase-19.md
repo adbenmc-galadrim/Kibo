@@ -25,7 +25,7 @@ Ce document permet de reprendre la phase 19 (jeux itch.io et Storybook) sans ré
 
 1. **T7 (vague 3)** : câblage final et E2E. Point bloquant connu : `packages/daemon/src/design/module.ts:40` lève encore `INTERNAL "embed relay not wired"` ; le remplacer par `kit.embed` (T2 expose `IntegrationKit.embed: EmbedService`, déjà créé avant `designModule` dans `integrations/bootstrap.ts`). Tant que ce n'est pas fait, une story déclarée échoue dans le vrai démon. Puis `embed.integration.test.ts`, `storybook.integration.test.ts`, `e2e/embeds.spec.ts` (ports 4461–4462, `fakeItchPort` +5000, `fakeStorybookPort` +6000, `serve.ts --embeds`), captures 178 à 182 dans `screens/`.
 2. **T8 (vague 4)** : Penpot, page 27, écrans 178 à 182, d'après les captures de T7. Worktree déjà créé : `.claude/worktrees/p19-t8` (branche `feat/p19-t8`, à rebaser sur `phase/19`).
-3. **T9 (jalon)** : vérification réelle du chef d'équipe (jeu `sigmatronic.itch.io/una-war`, un jeu non intégrable, Storybook d'Emis et un worktree sur 6007, `curl -I` du relais), version `0.19.0-alpha.1`, CHANGELOG, rapport `2026-10-<jj>-jalon-v0.19.md`, PR `phase/19` → `main`, CI verte, fusion, tag `v0.19.0-alpha.1` posé par le chef d'équipe.
+3. **T9 (jalon)** : vérification réelle du chef d'équipe (jeu `sigmatronic.itch.io/una-war`, un jeu non intégrable, Storybook du projet client et un worktree sur 6007, `curl -I` du relais), version `0.19.0-alpha.1`, CHANGELOG, rapport `2026-10-<jj>-jalon-v0.19.md`, PR `phase/19` → `main`, CI verte, fusion, tag `v0.19.0-alpha.1` posé par le chef d'équipe.
 
 ## À reporter au rapport de jalon
 

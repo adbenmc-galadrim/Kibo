@@ -1,6 +1,6 @@
 # Critiques UX de la phase 27 (boucle §39.4)
 
-Trois personas ont utilisé Kibo (build `phase/27` @ `4cc76cf6`, données « Emis maquettes », 1440 et 1024 px, sombre et clair). Captures : `screens/2026-10-18-critique-chef-de-projet/`, `screens/2026-10-18-critique-developpeur/`, `screens/2026-10-18-critique-nouveau-venu/`.
+Trois personas ont utilisé Kibo (build `phase/27` @ `4cc76cf6`, données « Silo maquettes », 1440 et 1024 px, sombre et clair). Captures : `screens/2026-10-18-critique-chef-de-projet/`, `screens/2026-10-18-critique-developpeur/`, `screens/2026-10-18-critique-nouveau-venu/`.
 
 ## Tour 1 : constats retenus (spec §39.6)
 
