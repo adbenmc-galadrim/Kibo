@@ -1,7 +1,11 @@
-import { expect, test } from "@playwright/test";
-import { rpc, showAgentExecution, text } from "./agents-seed";
+import { execFileSync } from "node:child_process";
+import { join } from "node:path";
+import { expect, type Page, test } from "@playwright/test";
+import { rpc, text } from "./agents-seed";
+import { homeOf } from "./e2e-home";
 import { createE2eRepo, type E2eRepo } from "./git-repo";
-import { createRepoProject, projectKey, shot } from "./repo-project";
+import { openNewProject } from "./helpers";
+import { projectKey, shot } from "./repo-project";
 import { E2E_TOKEN } from "./token";
 
 test.use({ viewport: { width: 1440, height: 900 } });
@@ -17,6 +21,41 @@ const notificationPermissionDefault = () => {
   Object.defineProperty(Notification, "permission", { configurable: true, get: () => "default" });
 };
 
+const CLI = join(import.meta.dirname, "..", "packages", "cli", "src", "bin.ts");
+const SETUP_PAGES = ["Vue d'ensemble", "Planning", "Kanban", "Graphe", "Questions"];
+
+type NewProject = { name: string; key: string; client?: string; folder?: string };
+
+async function fillNewProject(page: Page, project: NewProject) {
+  await openNewProject(page);
+  const dialog = page.getByRole("dialog", { name: "Nouveau projet" });
+  await dialog.getByLabel("Nom", { exact: true }).fill(project.name);
+  await dialog.getByLabel("Clé", { exact: true }).fill(project.key);
+  if (project.client !== undefined) await dialog.getByLabel("Client", { exact: true }).fill(project.client);
+  if (project.folder !== undefined) await dialog.getByLabel("Dossier du dépôt").fill(project.folder);
+  return dialog;
+}
+
+async function createProject(page: Page, project: NewProject) {
+  const dialog = await fillNewProject(page, project);
+  await dialog.getByRole("button", { name: "Créer", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await expect(
+    page.locator('[data-sidebar="sidebar"]').getByRole("button", { name: project.name, exact: true }),
+  ).toBeVisible();
+}
+
+type CliSprint = { code: string; start: string; end: string };
+
+function cliSprints(home: string, key: string): CliSprint[] {
+  const out = execFileSync("bun", [CLI, "sprints", "list", "--project", key, "--json", "--home", home], {
+    encoding: "utf8",
+  });
+  const parsed: unknown = JSON.parse(out);
+  if (!Array.isArray(parsed)) throw new Error(`kibo sprints list printed ${out}`);
+  return parsed.map((s) => ({ code: text(s, "code"), start: text(s, "start"), end: text(s, "end") }));
+}
+
 let repo: E2eRepo | null = null;
 test.afterEach(async () => {
   const created = repo;
@@ -31,8 +70,7 @@ test("modifier, workspace, en-tête, réglages et suppression d'un projet", asyn
   const name = `Projets ${key}`;
   await page.addInitScript(notificationPermissionDefault);
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await showAgentExecution(page);
-  await createRepoProject(page, name, key, created.repo);
+  await createProject(page, { name, key, folder: created.repo });
   const sidebar = page.locator('[data-sidebar="sidebar"]');
   const entry = sidebar.getByRole("button", { name, exact: true });
 
@@ -61,19 +99,8 @@ test("modifier, workspace, en-tête, réglages et suppression d'un projet", asyn
 
   await renamed.click({ button: "right" });
   await page.getByRole("menuitem", { name: "Modifier…" }).click();
-  const worktrees = edit.getByRole("group", { name: "Worktrees des agents" });
-  await expect(worktrees.getByLabel("Base")).toHaveValue("main");
-  await worktrees.getByLabel("Base").fill("origin/dev");
-  await worktrees.getByLabel("Chemin").fill("../emis-{slug}");
-  await worktrees.getByLabel("Commande de préparation").fill("pnpm worktree {branch}");
+  await expect(edit.getByRole("group", { name: "Worktrees des agents" })).toHaveCount(0);
   await shot(page, info, "ecran-167");
-  await edit.getByRole("button", { name: "Enregistrer", exact: true }).click();
-  await expect(edit).toBeHidden();
-  await renamed.click({ button: "right" });
-  await page.getByRole("menuitem", { name: "Modifier…" }).click();
-  await expect(worktrees.getByLabel("Base")).toHaveValue("origin/dev");
-  await expect(worktrees.getByLabel("Chemin")).toHaveValue("../emis-{slug}");
-  await expect(worktrees.getByLabel("Commande de préparation")).toHaveValue("pnpm worktree {branch}");
   await edit.getByRole("button", { name: "Annuler" }).click();
   await expect(edit).toBeHidden();
 
@@ -114,12 +141,7 @@ test("modifier, workspace, en-tête, réglages et suppression d'un projet", asyn
   await shot(page, info, "ecran-77");
 
   const header = page.locator("header").first();
-  await header.getByRole("button", { name: /Historique des runs/ }).click();
-  const bell = page.getByRole("menu", { name: "Historique des runs" });
-  await expect(bell.getByText("Aucun run pour l'instant.")).toBeVisible();
-  await expect(bell.getByRole("button", { name: "Activer les notifications" })).toBeVisible();
-  await shot(page, info, "ecran-111");
-  await page.keyboard.press("Escape");
+  await expect(header.getByRole("button", { name: /Historique des runs/ })).toHaveCount(0);
   await sidebar.getByRole("button", { name: /^Menu de / }).click();
   const menu = page.getByRole("menu", { name: /^Menu de / });
   await menu.getByRole("menuitem", { name: "Thème" }).hover();
@@ -152,4 +174,48 @@ test("modifier, workspace, en-tête, réglages et suppression d'un projet", asyn
   await expect(
     page.getByRole("tablist", { name: "Onglets" }).getByRole("tab", { name: new RegExp(escapeRegExp(name)) }),
   ).toHaveCount(0);
+});
+
+test("créer un projet : cinq pages et six sprints", async ({ page }, info) => {
+  await page.goto(`/#pair=${E2E_TOKEN}`);
+  const dialog = await fillNewProject(page, { name: "Chantier test", key: "CT", client: "ACME" });
+  await dialog.getByLabel("Début du premier sprint").fill("2026-10-19");
+  await dialog.getByLabel("Nombre de sprints").fill("6");
+  await dialog.getByRole("radio", { name: "1 semaine" }).check();
+  await expect(dialog.getByText("6 sprints d'une semaine · du 19 oct. au 27 nov. 2026")).toBeVisible();
+  await shot(page, info, "nouveau-projet");
+  await dialog.getByRole("button", { name: "Créer", exact: true }).click();
+  await expect(dialog).toBeHidden();
+
+  const sidebar = page.locator('[data-sidebar="sidebar"]');
+  const entry = sidebar
+    .locator('[data-sidebar="menu-item"]')
+    .filter({ has: page.getByRole("button", { name: "Chantier test", exact: true }) });
+  const pageActions = entry.getByRole("button", { name: /^Actions de la page / });
+  await expect(pageActions).toHaveCount(SETUP_PAGES.length);
+  const labels = await pageActions.evaluateAll((rows) => rows.map((r) => r.getAttribute("aria-label")));
+  expect(labels).toEqual(SETUP_PAGES.map((title) => `Actions de la page ${title}`));
+
+  await entry.getByText("Vue d'ensemble", { exact: true }).click();
+  await expect(page.getByText("Pour commencer", { exact: true })).toBeVisible();
+  await entry.getByText("Planning", { exact: true }).click();
+  for (const code of ["S1", "S2", "S3", "S4", "S5", "S6"])
+    await expect(page.getByText(new RegExp(`^${code}\\b`)).first()).toBeVisible();
+  await shot(page, info, "projet-cree");
+
+  const sprints = cliSprints(homeOf(info), "CT");
+  expect(sprints.map((s) => s.code)).toEqual(["S1", "S2", "S3", "S4", "S5", "S6"]);
+  expect(sprints[0]).toEqual({ code: "S1", start: "2026-10-19", end: "2026-10-23" });
+  expect(sprints[5]).toEqual({ code: "S6", start: "2026-11-23", end: "2026-11-27" });
+
+  const again = await fillNewProject(page, { name: "Chantier bis", key: "CT" });
+  await expect(again.getByText("Clé déjà prise")).toBeVisible();
+  await expect(again.getByRole("button", { name: "Créer", exact: true })).toBeDisabled();
+  await again.getByRole("button", { name: "Annuler" }).click();
+  await expect(again).toBeHidden();
+
+  await page.goto("/#/");
+  const card = page.getByRole("article").filter({ has: page.getByRole("button", { name: "Chantier test" }) });
+  await expect(card.getByText("CT", { exact: true })).toBeVisible();
+  await expect(card.getByText("client ACME", { exact: true })).toBeVisible();
 });
