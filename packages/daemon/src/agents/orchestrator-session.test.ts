@@ -127,6 +127,7 @@ const answered = (id: string, title: string, text: string, at: number): Question
   blocking: false,
   createdBy: { kind: "human", ref: "adam" },
   createdAt: 1,
+  number: null,
   importRef: null,
   answer: {
     kind: "text",

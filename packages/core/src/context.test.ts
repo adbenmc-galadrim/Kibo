@@ -251,6 +251,7 @@ const question = (ticketId: string, over: Partial<Question>): Question => ({
   blocking: false,
   createdBy: { kind: "agent", ref: "emis-livraison" },
   createdAt: 1,
+  number: null,
   importRef: null,
   answer: null,
   recipient: "me",

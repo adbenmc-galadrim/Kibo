@@ -16,6 +16,7 @@ function question(id: string, extra: Partial<Question> = {}): Question {
     blocking: false,
     createdBy: { kind: "agent", ref: "livraison" },
     createdAt: 1,
+    number: null,
     importRef: null,
     answer: null,
     recipient: "me",

@@ -19,6 +19,7 @@ const question = (n: number, over: Partial<Question> = {}): Question => ({
   blocking: false,
   createdBy: { kind: "agent", ref: "opus-dev-1" },
   createdAt: n,
+  number: null,
   importRef: null,
   answer: null,
   recipient: "client",

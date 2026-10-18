@@ -115,6 +115,7 @@ test("a question line of the chronology previews its question and opens it", asy
     blocking: true,
     createdBy: { kind: "agent", ref: "opus-dev-2" },
     createdAt: NOW - 210 * 60_000,
+    number: null,
     importRef: null,
     answer: null,
     recipient: "me",

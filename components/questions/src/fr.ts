@@ -96,6 +96,7 @@ export const fr = {
     archived: "Archivée",
     restored: "Restaurée",
     reminded: "Relancée",
+    exported: "Marquée envoyée",
     title: (before: string, after: string) => `titre : « ${before} » → « ${after} »`,
     context: "contenu remplacé",
     change: (field: string, before: string, after: string) => `${field} : ${before} → ${after}`,

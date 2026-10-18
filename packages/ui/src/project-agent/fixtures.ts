@@ -279,6 +279,7 @@ const asked = (id: string, ticketId: string, title: string, recipient: string): 
   blocking: false,
   createdBy: { kind: "agent", ref: "opus-dev-1" },
   createdAt: 1,
+  number: null,
   importRef: null,
   answer: null,
   recipient,

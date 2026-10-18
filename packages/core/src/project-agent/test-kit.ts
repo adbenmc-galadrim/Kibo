@@ -59,6 +59,7 @@ export function question(p: Partial<Question> & Pick<Question, "id" | "ticketId"
     blocking: false,
     createdBy: { kind: "agent", ref: "opus" },
     createdAt: 0,
+    number: null,
     importRef: null,
     answer: null,
     recipient: "me",

@@ -26,6 +26,7 @@ const question = (n: number, recipient: string): Question => ({
   blocking: false,
   createdBy: { kind: "agent", ref: "opus-dev-1" },
   createdAt: 1,
+  number: null,
   importRef: null,
   answer: null,
   recipient,

@@ -36,3 +36,7 @@ test("the history keeps the last twenty events, the oldest goes first", () => {
 test("a reminder is a question event without previous values", () => {
   expect(QuestionEvent.parse({ kind: "reminded", at: 2, by: ADAM, previous: {} }).kind).toBe("reminded");
 });
+
+test("an export is recorded in the history", () => {
+  expect(QuestionEvent.parse({ kind: "exported", at: 5, by: ADAM, previous: {} }).kind).toBe("exported");
+});

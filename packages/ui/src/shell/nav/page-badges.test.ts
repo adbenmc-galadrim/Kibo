@@ -38,6 +38,7 @@ const question = (id: string, answered: boolean): Question => ({
   blocking: false,
   createdBy: { kind: "agent", ref: "opus" },
   createdAt: 0,
+  number: null,
   importRef: null,
   answer: answered
     ? {

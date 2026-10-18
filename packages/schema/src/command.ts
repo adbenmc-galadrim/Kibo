@@ -33,6 +33,8 @@ const JsonRecord = z.record(z.string(), z.unknown());
 const questionEdit = <M extends string>(method: M) =>
   z.object({ method: z.literal(method), questionId: NodeId, by: Actor, at: z.number().int().optional() });
 
+const QuestionIds = z.array(NodeId).min(1).max(QUESTIONS_PER_TICKET_MAX);
+
 const QUESTION_EDIT_FIELDS = ["title", "context", "options", "provisional", "ticketId", "recipient"] as const;
 
 export const ProjectCommand = z
@@ -49,6 +51,7 @@ export const ProjectCommand = z
     z.object({
       method: z.literal("createTicket"),
       title: z.string(),
+      feature: z.boolean().optional(),
       description: z.string().optional(),
       statusId: StatusId.optional(),
       blockedReason: z.string().optional(),
@@ -186,6 +189,13 @@ export const ProjectCommand = z
     questionEdit("restoreQuestion"),
     questionEdit("remindQuestion"),
     z.object({
+      method: z.literal("markQuestionsExported"),
+      questionIds: QuestionIds,
+      by: Actor,
+      at: z.number().int().optional(),
+    }),
+    z.object({ method: z.literal("unmarkQuestionsExported"), questionIds: QuestionIds }),
+    z.object({
       method: z.literal("createSprint"),
       code: SprintCode,
       name: SprintName,
@@ -248,6 +258,8 @@ export const COMMAND_WRITES: Record<ProjectCommand["method"], EntityType | null>
   archiveQuestion: "question",
   restoreQuestion: "question",
   remindQuestion: "question",
+  markQuestionsExported: "question",
+  unmarkQuestionsExported: "question",
   createSprint: "sprint",
   updateSprint: "sprint",
   deleteSprint: "sprint",
@@ -299,6 +311,8 @@ export type CommandResult = {
   archiveQuestion: Question;
   restoreQuestion: Question;
   remindQuestion: Question;
+  markQuestionsExported: Question[];
+  unmarkQuestionsExported: Question[];
   createSprint: Sprint;
   updateSprint: Sprint;
   deleteSprint: null;

@@ -172,6 +172,7 @@ const Q16: Question = {
   blocking: false,
   createdBy: { kind: "human", ref: "adam" },
   createdAt: at(15, 10, 0),
+  number: null,
   importRef: { kind: "import_ref", source: "plan", id: "Q16" },
   answer: null,
   recipient: "product",

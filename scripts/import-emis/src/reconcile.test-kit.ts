@@ -118,6 +118,7 @@ function createLocally(snapshot: ReconcileSnapshot, c: Cmd<"createQuestion">): R
     blocking: c.blocking ?? false,
     createdBy: c.createdBy,
     createdAt: 0,
+    number: null,
     importRef: c.importRef ?? null,
     answer: null,
     recipient: "me",

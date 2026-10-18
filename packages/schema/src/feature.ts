@@ -1,7 +1,10 @@
 import { z } from "zod";
+import type { Ticket } from "./ticket";
 
 export const ShortKey = z.string().regex(/^[A-Z]{1,3}[0-9]{1,3}$/);
 export type ShortKey = z.infer<typeof ShortKey>;
+
+export const featureLabel = (t: Pick<Ticket, "key" | "shortKey">): string => t.shortKey ?? t.key ?? "";
 
 export const isFeature = (t: { parentId: string | null; progress: { total: number } }): boolean =>
   t.parentId === null && t.progress.total > 0;

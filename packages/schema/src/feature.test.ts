@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { effectiveSprintId, isFeature, ShortKey } from "./feature";
+import { effectiveSprintId, featureLabel, isFeature, ShortKey } from "./feature";
 import { type FeatureStepSource, featureSteps } from "./feature-steps";
 import type { Link } from "./link";
 
@@ -109,4 +109,10 @@ test("a step carries its status, delivery, branch and pull request", () => {
 
 test("a feature without children has no steps", () => {
   expect(featureSteps({ feature: "f9", tickets: [step("f9", { parentId: null })], links: [] })).toEqual([]);
+});
+
+test("a feature is named by its short key, else by its own key", () => {
+  expect(featureLabel({ key: "EMIS-7", shortKey: "F3" })).toBe("F3");
+  expect(featureLabel({ key: "F4", shortKey: "F4" })).toBe("F4");
+  expect(featureLabel({ key: "EMIS-9", shortKey: null })).toBe("EMIS-9");
 });

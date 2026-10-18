@@ -94,6 +94,7 @@ export * from "./question";
 export * from "./question-ask";
 export * from "./question-history";
 export * from "./question-image";
+export * from "./question-label";
 export * from "./question-recipient";
 export * from "./rpc";
 export * from "./rule";
