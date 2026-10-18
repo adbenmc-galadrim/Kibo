@@ -14,6 +14,7 @@ import {
   Bell,
   Bot,
   Bug,
+  CalendarRange,
   Copy,
   FileText,
   FolderKanban,
@@ -63,6 +64,7 @@ const ICONS = {
   assign: Bot,
   projectAgent: Bot,
   copy: Copy,
+  sprint: CalendarRange,
   shortcutsHelp: Keyboard,
   tutorial: GraduationCap,
   whatsNew: Sparkles,
@@ -141,6 +143,8 @@ export function CommandPalette({
   const host = useOptionalHost();
   const runLocal = (action: LocalAction) => {
     if (action.kind === "projectAgent") return host?.openProjectAgent?.({ tab: "conversation" });
+    if (action.kind === "openView") return host?.openView(action.componentId);
+    if (action.kind === "openSprint") return host?.openSprint?.(action.sprintId);
     void copyDeliveryCommand({ toast: (message) => void toast(message) }, action.ticket);
   };
 

@@ -1,9 +1,22 @@
-import { deliveryBrief, isInbox, type ProjectMeta, type TicketView } from "@kibo/schema";
+import {
+  deliveryBrief,
+  isInbox,
+  type ProjectMeta,
+  type ProjectSnapshot,
+  type TicketView,
+} from "@kibo/schema";
 import type { CopyTicket } from "@kibo/sdk";
 import { frShell } from "../i18n/fr-shell";
 import { normalize, type PaletteItem } from "./palette-items";
 
-export type LocalAction = { kind: "projectAgent" } | { kind: "copyDelivery"; ticket: CopyTicket };
+export type LocalAction =
+  | { kind: "projectAgent" }
+  | { kind: "copyDelivery"; ticket: CopyTicket }
+  | { kind: "openView"; componentId: "planning" | "questions" }
+  | { kind: "openSprint"; sprintId: string };
+
+export const isTracked = (snapshot: Pick<ProjectSnapshot, "sprints"> | undefined): boolean =>
+  snapshot !== undefined && snapshot.sprints.length > 0;
 
 const localItem = (
   id: string,
@@ -23,19 +36,45 @@ const localItem = (
   ticket: null,
 });
 
+const t = frShell.palette;
+
+function creationItems(snapshot: ProjectSnapshot | undefined, editable: boolean): PaletteItem[] {
+  if (!editable || !isTracked(snapshot)) return [];
+  return [
+    localItem("newFeature", t.newFeature, "new", { kind: "openView", componentId: "planning" }),
+    localItem("newSprint", t.newSprint, "new", { kind: "openView", componentId: "planning" }),
+    localItem("newQuestion", t.newQuestion, "new", { kind: "openView", componentId: "questions" }),
+  ];
+}
+
+export function sprintItems(project: ProjectMeta, snapshot: ProjectSnapshot | undefined): PaletteItem[] {
+  return (snapshot?.sprints ?? []).map((sprint) => ({
+    ...localItem(`sprint:${sprint.id}`, t.sprint(sprint.code, sprint.name), "sprint", {
+      kind: "openSprint",
+      sprintId: sprint.id,
+    }),
+    id: `sprint:${project.id}:${sprint.id}`,
+    group: "pages",
+    keywords: normalize(`${sprint.code} ${sprint.name} ${project.name}`),
+  }));
+}
+
 export function trackingItems(
   project: ProjectMeta | undefined,
+  snapshot: ProjectSnapshot | undefined,
   ticket: TicketView | undefined,
+  editable: boolean,
 ): PaletteItem[] {
   if (!project || isInbox(project.id)) return [];
   const out = [
-    localItem("projectAgent", frShell.palette.projectAgent, "projectAgent", { kind: "projectAgent" }),
+    ...creationItems(snapshot, editable),
+    localItem("projectAgent", t.projectAgent, "projectAgent", { kind: "projectAgent" }),
   ];
   if (ticket?.key) {
     const command = deliveryBrief(ticket.key);
     const copy: CopyTicket = { key: ticket.key, startable: ticket.startable, waitingOn: ticket.waitingOn };
     out.push(
-      localItem("copyDelivery", frShell.palette.copy(command), "copy", {
+      localItem("copyDelivery", t.copy(command), "copy", {
         kind: "copyDelivery",
         ticket: copy,
       }),

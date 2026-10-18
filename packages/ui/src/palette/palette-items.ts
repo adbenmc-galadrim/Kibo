@@ -15,7 +15,7 @@ import { helpLabel } from "../shell/help-labels";
 import { isRetiredScreen, isRetiredTarget } from "../shell/retired-routes";
 import { canEdit } from "../state/access";
 import { SCREENS } from "../tabs/screens";
-import { type LocalAction, trackingItems } from "./tracking-items";
+import { isTracked, type LocalAction, sprintItems, trackingItems } from "./tracking-items";
 
 export type PaletteGroup = "recents" | "tickets" | "actions" | "agents" | "pages" | "projects";
 export type PaletteFilter = "all" | "tickets" | "pages" | "projects" | "actions" | "agents";
@@ -49,6 +49,7 @@ export type PaletteItem = {
     | "assign"
     | "projectAgent"
     | "copy"
+    | "sprint"
     | HelpDialog
     | Screen;
   run:
@@ -137,14 +138,15 @@ function targets(ctx: PaletteContext): PaletteItem[] {
         run: { kind: "target", target: { kind: "page", projectId: project.id, pageId: page.id } },
       });
     }
+    if (project.id === ctx.activeProjectId) out.push(...sprintItems(project, snapshot));
     for (const t of snapshot?.tickets ?? []) {
       const position = queued.get(`${project.id}:${t.id}`);
       out.push({
         ...base,
         id: `ticket:${project.id}:${t.id}`,
         group: "tickets",
-        label: `${t.keyLabel} · ${t.title}`,
-        keywords: normalize(`${t.keyLabel} ${t.title} ${project.name}`),
+        label: `${t.shortKey ?? t.keyLabel} · ${t.title}`,
+        keywords: normalize(`${t.shortKey ?? ""} ${t.keyLabel} ${t.title} ${project.name}`),
         detail:
           position !== undefined
             ? fr.agents.position(position)
@@ -180,7 +182,8 @@ function actions(ctx: PaletteContext): PaletteItem[] {
   });
   const out: PaletteItem[] = [];
   const snapshot = project ? ctx.snapshots.get(project.id) : undefined;
-  if (project && (!snapshot || canEdit(snapshot))) {
+  const editable = project !== undefined && (!snapshot || canEdit(snapshot));
+  if (project && editable) {
     out.push(
       action("newTicket", fr.palette.newTicket, "new", {
         kind: "action",
@@ -194,14 +197,15 @@ function actions(ctx: PaletteContext): PaletteItem[] {
           action: { kind: "newTicket", projectId: project.id, parentId: ticket.id },
         }),
       );
-    out.push(
-      action("newPage", fr.palette.newPage, "new", {
-        kind: "action",
-        action: { kind: "newPage", projectId: project.id },
-      }),
-    );
+    if (!isTracked(snapshot))
+      out.push(
+        action("newPage", fr.palette.newPage, "new", {
+          kind: "action",
+          action: { kind: "newPage", projectId: project.id },
+        }),
+      );
   }
-  out.push(...trackingItems(project, ticket));
+  out.push(...trackingItems(project, snapshot, ticket, editable));
   out.push(
     action("newProject", fr.palette.newProject, "new", { kind: "action", action: { kind: "newProject" } }),
   );

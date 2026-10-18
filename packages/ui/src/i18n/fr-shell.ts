@@ -2,6 +2,10 @@ export const frShell = {
   palette: {
     projectAgent: "Agent de projet",
     copy: (command: string) => `Copier ${command}`,
+    newFeature: "Nouvelle fonctionnalité",
+    newSprint: "Nouveau sprint",
+    newQuestion: "Nouvelle question",
+    sprint: (code: string, name: string) => `${code} · ${name}`,
   },
   notFound: {
     title: "Introuvable",

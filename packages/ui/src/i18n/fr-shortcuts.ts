@@ -17,7 +17,7 @@ export const frShortcuts = {
     help: "Aide des raccourcis",
     projectAgent: "Agent de projet",
     openSelection: "Ouvrir la sélection",
-    openInSheet: "Ouvrir un ticket dans le Sheet",
+    openInSheet: "Ouvrir un ticket dans le volet",
     nextFilter: "Filtre suivant (Tout, Tickets, Pages…)",
     save: "Enregistrer le fichier édité",
     externalEditor: "Ouvrir dans l'éditeur externe",

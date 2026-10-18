@@ -41,7 +41,7 @@ export const frCode = {
     more: (n: number, keys: string) => `+ ${n} autre${s(n)} : ${keys}`,
     hintNavigate: "naviguer",
     hintOpen: "ouvrir",
-    hintSheet: "ouvrir dans le Sheet",
+    hintSheet: "ouvrir dans le volet",
     hintFilter: "filtrer par type",
     esc: "esc",
     newTicket: "Nouveau ticket",

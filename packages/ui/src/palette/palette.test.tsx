@@ -8,7 +8,8 @@ import {
 } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { agentsFixture, runFixture } from "../agents/fixtures";
+import { agentsFixture, projectsFixture, runFixture } from "../agents/fixtures";
+import { trackingProject } from "../project-agent/tracking-fixtures";
 import { type Host, HostProvider } from "../shell/Host";
 import { CommandPalette } from "./CommandPalette";
 import { buildItems, type PaletteContext, searchItems } from "./palette-items";
@@ -224,7 +225,7 @@ const renderPalette = () =>
   );
 
 test("the sheet hint shows ⌘↵ on macOS and Ctrl+↵ elsewhere", () => {
-  const sheetHint = () => screen.getByText("ouvrir dans le Sheet").querySelector("kbd")?.textContent;
+  const sheetHint = () => screen.getByText("ouvrir dans le volet").querySelector("kbd")?.textContent;
   const restoreMac = setPlatform("MacIntel");
   try {
     const { unmount } = renderPalette();
@@ -322,4 +323,63 @@ test("⌘K « Copier /full-delivery KIB-12 » copies the command of the open tic
   await new Promise((r) => setTimeout(r, 0));
   expect(written).toEqual(["/full-delivery KIB-12"]);
   Object.defineProperty(navigator, "clipboard", { configurable: true, value: clipboard });
+});
+
+test("⌘K « Nouvelle question » opens the Questions view, a sprint opens its sheet", async () => {
+  const emis = trackingProject();
+  const counts = projectsFixture[0]?.counts;
+  if (!counts) throw new Error("fixture without counts");
+  const views: string[] = [];
+  const sprints: string[] = [];
+  const noop = () => {};
+  const host: Host = {
+    openTicket: noop,
+    openNewTicket: noop,
+    openAssign: noop,
+    openFile: noop,
+    openView: (id) => views.push(id),
+    openTarget: noop,
+    openSprint: (id) => sprints.push(id),
+  };
+  const tracked: PaletteContext = {
+    ...context,
+    projects: [{ ...emis.meta, counts }],
+    snapshots: new Map([[emis.meta.id, emis]]),
+    activeProjectId: emis.meta.id,
+    activeTicketId: null,
+  };
+  const { unmount } = render(
+    <HostProvider host={host}>
+      <CommandPalette
+        open
+        onOpenChange={noop}
+        newTab={false}
+        context={tracked}
+        onOpenTarget={noop}
+        onOpenTicketSheet={noop}
+        onAction={noop}
+      />
+    </HostProvider>,
+  );
+  const dialog = within(screen.getByRole("dialog", { name: "Palette de commandes" }));
+  await userEvent.type(dialog.getByRole("combobox"), "nouvelle question");
+  await userEvent.keyboard("{Enter}");
+  expect(views).toEqual(["questions"]);
+  unmount();
+  render(
+    <HostProvider host={host}>
+      <CommandPalette
+        open
+        onOpenChange={noop}
+        newTab={false}
+        context={tracked}
+        onOpenTarget={noop}
+        onOpenTicketSheet={noop}
+        onAction={noop}
+      />
+    </HostProvider>,
+  );
+  await userEvent.type(screen.getByRole("combobox"), "S44");
+  await userEvent.keyboard("{Enter}");
+  expect(sprints).toEqual(["s44"]);
 });
