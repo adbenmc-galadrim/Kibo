@@ -58,7 +58,9 @@ test("graphe et notes intégrés", async ({ page }, info) => {
   await pairAndCreateProject(page, info, key);
   await createPage(page, "Graphe", "Vue");
   await addComponent(page, "Graphe de dépendances");
-  await expect(page.getByText("Aucune dépendance entre les tickets affichés.")).toBeVisible();
+  await expect(
+    page.getByText("Les dépendances entre fonctionnalités et étapes apparaissent ici."),
+  ).toBeVisible();
 
   await createSidebarPage(page, `Kibo ${key}`, "Notes", "Vue");
   await addComponent(page, "Notes");
