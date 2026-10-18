@@ -29,6 +29,9 @@ export const CARD_CLASS =
 
 export type CardGroup = GroupRef & Pick<TicketView, "shortKey">;
 
+const FEATURE_TEXT =
+  "max-w-none rounded-none border-0 bg-transparent px-0 text-2xs text-muted-foreground before:mr-1.5 before:content-['·'] hover:bg-transparent hover:underline dark:hover:bg-transparent";
+
 const featureChipRef = (group: CardGroup): GroupRef => ({
   ...group,
   keyLabel: group.shortKey ?? group.keyLabel,
@@ -63,9 +66,15 @@ export function KanbanCardContent(props: Props) {
   const sdk = useSdk();
   return (
     <>
-      <div className="flex h-3.5 items-center gap-2">
+      <div className="flex h-3.5 items-center gap-1.5">
         <TicketKeyLabel ticket={t} className="min-w-0 truncate font-mono text-2xs text-muted-foreground" />
-        {group && <GroupChip group={featureChipRef(group)} onOpen={(id) => sdk.openTicket(id)} />}
+        {group && (
+          <GroupChip
+            group={featureChipRef(group)}
+            onOpen={(id) => sdk.openTicket(id)}
+            className={FEATURE_TEXT}
+          />
+        )}
         {t.session && (
           <span
             role="img"
