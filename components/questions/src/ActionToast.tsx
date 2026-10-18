@@ -21,7 +21,7 @@ export function ActionToast({ message, actionLabel, alert = null, onAction, onCl
   return (
     <output
       aria-label={message}
-      className="fixed right-10 bottom-7 z-50 flex items-center gap-2.5 rounded-lg border bg-card px-3.5 py-3 text-card-foreground shadow-md"
+      className="fixed right-[calc(var(--project-agent-edge,0px)+2.5rem)] bottom-7 z-[60] flex items-center gap-2.5 rounded-lg border bg-card px-3.5 py-3 text-card-foreground shadow-md"
     >
       <CircleCheck aria-hidden className="size-4 text-emerald-500" />
       <span className="grid text-sm font-medium">

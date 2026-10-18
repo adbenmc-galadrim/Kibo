@@ -83,3 +83,11 @@ test("unmounting stops listening", () => {
   unmount();
   expect(listeners.size).toBe(0);
 });
+
+test("toasts sit left of the docked project agent panel", async () => {
+  render(<IntegrationNotices notifications="native" />);
+  await emit({ type: "sync.conflict", projectId: "p1", ticketKey: "KIB-8", field: "title" });
+  await screen.findByText("Conflit résolu sur KIB-8 : titre repris de GitHub");
+  const list = document.querySelector<HTMLElement>("[data-sonner-toaster]");
+  expect(list?.style.getPropertyValue("--offset-right")).toBe("calc(var(--project-agent-edge, 0px) + 16px)");
+});
