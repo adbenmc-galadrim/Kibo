@@ -88,6 +88,15 @@ export const frProjectAgent = {
     showSuperseded: "Afficher les lots remplacés",
     show: "Afficher",
   },
+  reminder: {
+    greeting: "Bonjour,",
+    about: (question: string) => `Je reviens vers vous au sujet de ${question}`,
+    blocks: (feature: string) => `Elle bloque ${feature}`,
+    concerns: (feature: string) => `Elle concerne ${feature}`,
+    planned: (sprint: string) => `, prévue en ${sprint}`,
+    closing: "Pourriez-vous nous répondre ? Merci.",
+    copy: "Copier la relance",
+  },
   recap: {
     title: (seq: number) => `Lot n° ${seq} validé`,
     close: "Fermer",

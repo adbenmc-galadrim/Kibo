@@ -1,4 +1,4 @@
-import { expect, test } from "bun:test";
+import { expect, mock, test } from "bun:test";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BatchRecap } from "./BatchRecap";
@@ -50,4 +50,28 @@ test("Fermer closes the recap", async () => {
   const { card, closed } = show();
   await userEvent.setup().click(card.getByRole("button", { name: "Fermer" }));
   expect(closed()).toBe(1);
+});
+
+test("an applied reminder offers its text to copy for the recipient", async () => {
+  const written: string[] = [];
+  const user = userEvent.setup();
+  Object.defineProperty(navigator, "clipboard", {
+    value: { writeText: mock(async (text: string) => void written.push(text)) },
+    configurable: true,
+  });
+  const { card } = show(
+    decidedTrackingBatch([
+      { actionId: 1, outcome: "applied", detail: null, created: null },
+      { actionId: 2, outcome: "applied", detail: null, created: null },
+      { actionId: 3, outcome: "applied", detail: null, created: null },
+    ]),
+  );
+  expect(card.getAllByRole("button", { name: "Copier la relance" })).toHaveLength(1);
+  await user.click(card.getByRole("button", { name: "Copier la relance" }));
+  expect(written[0]?.split("\n")[1]).toBe("Je reviens vers vous au sujet de Q14 · Client - Logo ?");
+});
+
+test("a failed reminder has nothing to copy", () => {
+  const { card } = show();
+  expect(card.queryByRole("button", { name: "Copier la relance" })).toBeNull();
 });

@@ -1,7 +1,9 @@
 import type { ActionOutcome, ActionResult, Batch, ProposedAction } from "@kibo/schema";
+import { copyCommand } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
-import { Check, CircleCheck, Minus, X } from "lucide-react";
+import { Check, CircleCheck, Copy, Minus, X } from "lucide-react";
+import { toast } from "sonner";
 import { formatClock } from "../agents/format";
 import { frProjectAgent, type RecapOutcome } from "../i18n/fr-project-agent";
 import { actionTitle, type DiffLabels } from "./batch-groups";
@@ -38,6 +40,27 @@ function noteOf(action: ProposedAction, result: ActionResult, labels: DiffLabels
   const outcome = RECAP_OF[result.outcome];
   const extra = (outcome === "applied" ? slipText(action, labels) : null) ?? result.detail;
   return extra ? `${t.outcome(outcome)} · ${extra}` : t.outcome(outcome);
+}
+
+const toaster = { toast: (message: string) => void toast(message) };
+const NO_WAIT = { startable: true, waitingOn: [] };
+
+function reminderOf(action: ProposedAction, outcome: RecapOutcome, labels: DiffLabels): string | null {
+  if (action.type !== "remindQuestion" || outcome !== "applied") return null;
+  return labels.reminderText?.(action.questionId) ?? null;
+}
+
+function CopyReminder({ text }: { text: string }) {
+  return (
+    <Button
+      variant="outline"
+      className="mt-[4px] h-[24px] w-fit gap-[6px] rounded-[6px] px-[8px] text-[12px] font-medium [&_svg:not([class*='size-'])]:size-[12px]"
+      onClick={() => void copyCommand(toaster, text, NO_WAIT)}
+    >
+      <Copy aria-hidden />
+      {frProjectAgent.reminder.copy}
+    </Button>
+  );
 }
 
 export function BatchRecap({ batch, labels, onClose }: Props) {
@@ -83,6 +106,7 @@ export function BatchRecap({ batch, labels, onClose }: Props) {
       <ul className="divide-y divide-(--tracking-soft)">
         {rows.map(({ action, result, outcome }) => {
           const Icon = ICON[outcome];
+          const reminder = reminderOf(action, outcome, labels);
           return (
             <li key={action.id} className="flex items-start gap-[10px] px-[14px] py-[11px]">
               <Icon aria-hidden className={cn("mt-px size-[14px] shrink-0", TONE[outcome])} />
@@ -98,6 +122,7 @@ export function BatchRecap({ batch, labels, onClose }: Props) {
                 >
                   {noteOf(action, result, labels)}
                 </span>
+                {reminder !== null && <CopyReminder text={reminder} />}
               </div>
             </li>
           );
