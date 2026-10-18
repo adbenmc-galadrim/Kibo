@@ -19,9 +19,9 @@ kibo tickets set <CLÉ> branch=<branche> base=<base>   # À faire ou Backlog ⇒
 kibo tickets set <CLÉ> pr=<n|url>                     # À faire, Backlog ou En cours ⇒ En review
 ```
 
-La CLI déclare la référence au démon (RPC `declareTicketRef`), qui applique les mêmes règles et le même journal que l'observateur git : `branch_created`, `pr_opened`, puis `pr_merged` quand le démon voit la fusion. Un ticket *En review*, *Bloqué* ou *Terminé* ne recule pas ; une référence déjà déclarée ne change rien. La sortie nomme le nouveau statut : `✓ EMIS-12 : branche feat/x (base dev) · En cours`.
+La CLI déclare la référence au démon (RPC `declareTicketRef`), qui applique les mêmes règles et le même journal que l'observateur git : `branch_created`, `pr_opened`, puis `pr_merged` quand le démon voit la fusion. Un ticket *En review*, *Bloqué* ou *Terminé* ne recule pas ; une référence déjà déclarée ne change rien. La sortie nomme le nouveau statut : `✓ SILO-12 : branche feat/x (base dev) · En cours`.
 
-Le projet vient de `--project`, sinon du préfixe de la clé (`EMIS-12` ⇒ `EMIS`), sinon du dossier courant. Une clé de fonctionnalité (`F5`) ou un identifiant du plan (`C2-5`) demande `--project` hors du dossier du projet.
+Le projet vient de `--project`, sinon du préfixe de la clé (`SILO-12` ⇒ `SILO`), sinon du dossier courant. Une clé de fonctionnalité (`F5`) ou un identifiant du plan (`C2-5`) demande `--project` hors du dossier du projet.
 
 Le démon visé est celui de `$KIBO_HOME/daemon.json` (défaut `~/.kibo`), ou de `--home <dossier>`.
 
