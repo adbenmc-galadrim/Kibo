@@ -21,18 +21,18 @@ S.draw.v4 = (x, y) => { const K = S.K;
   const root = S.col(f, { name: "root", w: 1440, h: 960, pad: [28, 56] });
   const top = S.row(root, { fx: true, gap: 22 }); S.T(top, "KIBO", { size: 11, weight: 600, ls: 2.5, color: K.ink2 }); S.T(top, "Silo", { title: true, size: 18, weight: 600 });
   for (const n of ["Planning", "Tickets", "Graphe", "Notes", "Questions"]) S.T(top, n, { size: 13, color: K.ink2 });
-  S.spacer(top); S.T(top, "Vendredi 16 octobre", { title: true, italic: true, size: 15, color: K.ink2 });
+  S.spacer(top); S.T(top, "Vendredi 15 janvier", { title: true, italic: true, size: 15, color: K.ink2 });
   const wrap = S.row(root, { fx: true, fy: true, justify: "center", align: "center" });
   const c = S.col(wrap, { w: 1040, gap: 44 });
-  S.T(c, "Silo avance : une fonctionnalité livrée sur vingt-deux. La mise en production du 18 décembre tient si F01 et F02 ferment la semaine prochaine et si la DSI valide le staging.", { title: true, size: 50, weight: 400, lh: 1.22, ls: -0.6, w: 1040 });
+  S.T(c, "Silo avance : une fonctionnalité livrée sur vingt-deux. La mise en production du 19 mars tient si F01 et F02 ferment la semaine prochaine et si le prestataire signe le contrat de paiement.", { title: true, size: 50, weight: 400, lh: 1.22, ls: -0.6, w: 1040 });
   S.T(c, "Rien n'est encore déployé ; quatre PR attendent ta relecture.", { title: true, italic: true, size: 24, color: K.accent });
   S.box(c, { h: 1, w: 10, fx: true, fill: K.rule2 });
   const links = S.row(c, { fx: true, gap: 40, align: "start" });
   const lk = (label, title, detail) => { const l = S.col(links, { fx: true, gap: 8 }); S.T(l, label.toUpperCase(), { size: 11, weight: 600, ls: 1.4, color: K.ink2 });
     const t = S.row(l, { gap: 10 }); S.T(t, title, { title: true, size: 26, weight: 600 }); S.icon(t, "arrowRight", 20, K.accent); S.T(l, detail, { size: 14, color: K.ink2, lh: 1.45, fill: true }); };
   lk("Où en est-on", "1 sur 22", "Sprint S1, dernier jour. F01 et F02 ouvertes, aucune fermée.");
-  lk("Ce qui bloque", "3 points", "Staging en attente de la DSI, une question sur la création de client, quatre PR.");
-  lk("La suite", "F01 · PR #11", "Fusionner la PR #11, puis lancer le profil courant (N01).");
+  lk("Ce qui bloque", "3 points", "Paiement en attente du prestataire, une question sur la création de client, quatre PR.");
+  lk("La suite", "F01 · PR #31", "Fusionner la PR #31, puis lancer le reçu de paiement (N11).");
   const ag = S.row(root, { fx: true, gap: 10 }); S.icon(ag, "bot", 14, K.accent); S.T(ag, "Synthèse rédigée par l'agent de projet à 14:40 · Lot n° 8 à valider (3)", { size: 12.5, color: K.ink2 });
   return f; };
 
@@ -44,7 +44,7 @@ S.draw.v5 = (x, y) => { const K = S.K, E = S.E;
   for (const n of ["Planning", "Tickets", "Graphe", "Notes", "Questions"]) S.T(top, n, { size: 13.5, color: K.ink2 });
   const hd = S.row(root, { fx: true, gap: 36, align: "end" });
   const kpi = (big, small, color) => { const k = S.col(hd, { gap: 2 }); S.T(k, big, { size: 34, weight: 700, color: color || K.ink }); S.T(k, small, { size: 13, color: K.ink2 }); };
-  kpi("1 / 22", "fonctionnalités livrées"); kpi("S1 · J5/5", "sprint en cours"); kpi("J−63", "avant le 18/12 · à risque", K.alert); kpi("3", "blocages piqués sur la frise", K.alert);
+  kpi("1 / 22", "fonctionnalités livrées"); kpi("S1 · J5/5", "sprint en cours"); kpi("J−63", "avant le 19/03 · à risque", K.alert); kpi("3", "blocages piqués sur la frise", K.alert);
   const W = 1360, H = 600, cv = S.box(root, { name: "frise", w: W, h: H, fill: K.panel, radius: 10, stroke: K.line });
   const L = 30, R = 90, cw = (W - L - R) / 10, X = (i) => L + i * cw, LA = 190, LB = 300, LP = 440, BH = 76;
   E.sprints.forEach((s, i) => { S.box(cv, { x: X(i), y: 70, w: 1, h: H - 100, fill: K.line });
@@ -64,18 +64,18 @@ S.draw.v5 = (x, y) => { const K = S.K, E = S.E;
   const tx = X(0) + cw * 0.95; S.box(cv, { name: "today", x: tx, y: 110, w: 2, h: H - 140, fill: K.cyan });
   const tl = S.row(cv, { x: tx - 40, y: H - 28, pad: [3, 8], radius: 4, fill: K.cyan }); S.T(tl, "aujourd'hui", { size: 11, weight: 700, color: K.bg });
   S.box(cv, { name: "mep", x: X(10), y: 70, w: 2, h: H - 100, fill: K.alert });
-  const mp = S.col(cv, { x: X(10) + 10, y: 76, gap: 2 }); S.icon(mp, "rocket", 18, K.alert); S.T(mp, "MEP", { mono: true, size: 12, weight: 700, color: K.alert }); S.T(mp, "18/12", { mono: true, size: 11, color: K.alert });
+  const mp = S.col(cv, { x: X(10) + 10, y: 76, gap: 2 }); S.icon(mp, "rocket", 18, K.alert); S.T(mp, "MEP", { mono: true, size: 12, weight: 700, color: K.alert }); S.T(mp, "19/03", { mono: true, size: 11, color: K.alert });
   S.T(cv, "après : F16 à F21", { size: 11.5, color: K.faint, x: X(10) + 8, y: LA + 10, w: 76 });
   // blocages piqués
   const pin = (px, py, n, text) => { S.box(cv, { x: px, y: py, w: 1.5, h: 26, fill: K.alert });
     const p = S.box(cv, { x: px - 12, y: py - 24, w: 24, h: 24, radius: 12, fill: K.alert, dir: "row", align: "center", justify: "center" }); S.T(p, String(n), { size: 12, weight: 700, color: K.bg });
     const t = S.col(cv, { x: px + 18, y: py - 26, w: 230, pad: [6, 10], radius: 6, fill: K.bg, stroke: K.alert, vs: "auto" }); S.T(t, text, { size: 12, weight: 500, fill: true, lh: 1.35 }); };
-  pin(X(0) + 70, LP - 2, 1, "Staging : le compte AWS attend la DSI");
+  pin(X(0) + 70, LP - 2, 1, "Paiement : le contrat attend le prestataire");
   pin(X(1) + 40, LB - 2, 2, "F02 · Qui peut créer un client ?");
-  pin(X(0) + 120, LA - 2, 3, "F01 · PR #11 et #12 à relire");
+  pin(X(0) + 120, LA - 2, 3, "F01 · PR #31 et #32 à relire");
   // la suite
   const nx = S.row(root, { fx: true, gap: 14, pad: [12, 16], radius: 10, fill: K.panel, stroke: K.line });
-  S.T(nx, "LA SUITE", { mono: true, size: 11, weight: 700, color: K.cyan }); S.T(nx, "F01 · Se connecter avec Microsoft : fusionner la PR #11, puis lancer N01.", { size: 14, weight: 500 }); S.spacer(nx);
+  S.T(nx, "LA SUITE", { mono: true, size: 11, weight: 700, color: K.cyan }); S.T(nx, "F01 · Payer sa location en ligne : fusionner la PR #31, puis lancer N11.", { size: 14, weight: 500 }); S.spacer(nx);
   const ag = S.row(nx, { gap: 8 }); S.icon(ag, "bot", 14, K.ink2); S.T(ag, "Agent : lot n° 8 à valider (3)", { size: 12.5, color: K.ink2 });
   return f; };
 
@@ -84,7 +84,7 @@ S.draw.v6 = (x, y) => { const K = S.K;
   const f = S.sbox("Vue 6 · Trois colonnes", x, y, 1440, 960);
   const root = S.col(f, { name: "root", w: 1440, h: 960, pad: [26, 48, 30, 48], gap: 26 });
   const top = S.row(root, { fx: true, gap: 22 }); S.logo(top, 24); S.T(top, "Silo", { size: 17, weight: 700 }); S.T(top, "Vue d'ensemble", { size: 14, weight: 600 });
-  for (const n of ["Planning", "Tickets", "Graphe", "Notes", "Questions"]) S.T(top, n, { size: 14, color: K.ink2 }); S.spacer(top); S.T(top, "ven. 16 oct.", { size: 14, color: K.ink2 }); S.avatar(top, "AB", 30, { fill: K.panel, stroke: K.line, color: K.ink });
+  for (const n of ["Planning", "Tickets", "Graphe", "Notes", "Questions"]) S.T(top, n, { size: 14, color: K.ink2 }); S.spacer(top); S.T(top, "ven. 15 janv.", { size: 14, color: K.ink2 }); S.avatar(top, "AB", 30, { fill: K.panel, stroke: K.line, color: K.ink });
   const cols = S.row(root, { fx: true, fy: true, gap: 28, align: "stretch" });
   const col = (color, label, num, unit, caption, items, link) => { const c = S.col(cols, { fx: true, fy: true, gap: 18 });
     S.box(c, { h: 6, w: 10, fx: true, fill: color }); S.T(c, label, { size: 15, weight: 700, color: color });
@@ -93,10 +93,10 @@ S.draw.v6 = (x, y) => { const K = S.K;
     S.box(c, { h: 1, w: 10, fx: true, fill: K.line });
     for (const it of items) S.T(c, it, { size: 15, lh: 1.45, color: K.ink2, fill: true });
     S.box(c, { w: 4, h: 4, fy: true }); const l = S.row(c, { gap: 8 }); S.T(l, link, { size: 15, weight: 700, color: color }); S.icon(l, "arrowRight", 16, color); };
-  col(K.c1, "Où en est-on", "1", "/22", "fonctionnalité livrée. S1 finit aujourd'hui, sans fermeture.", ["F01 et F02 sont ouvertes et passent en S2.", "Mise en production le 18/12 : à risque, six fonctionnalités tombent après."], "Planning");
-  col(K.c2, "Ce qui bloque", "3", null, "points attendent quelqu'un d'autre que le code.", ["Le staging attend la validation DSI (SILO-6, SILO-7).", "Qui peut créer un client ? (F02)", "Quatre PR à relire : #11, #12, #13, #9."], "Questions et PR");
-  col(K.c3, "La suite", "5", null, "étapes avant de fermer F01, Se connecter avec Microsoft.", ["Maintenant : fusionner la PR #11 après MICROSOFT_* dans .env.dev.", "Puis : N01, le profil courant · /full-delivery N01"], "Fiche de F01");
-  const ag = S.row(root, { fx: true, gap: 10 }); S.icon(ag, "bot", 15, K.ink2); S.T(ag, "Agent de projet : « Le staging reste le premier risque pour le 18/12. » · Lot n° 8 à valider (3)", { size: 13.5, color: K.ink2 });
+  col(K.c1, "Où en est-on", "1", "/22", "fonctionnalité livrée. S1 finit aujourd'hui, sans fermeture.", ["F01 et F02 sont ouvertes et passent en S2.", "Mise en production le 19/03 : à risque, six fonctionnalités tombent après."], "Planning");
+  col(K.c2, "Ce qui bloque", "3", null, "points attendent quelqu'un d'autre que le code.", ["Le paiement attend le contrat du prestataire (SILO-6, SILO-7).", "Qui peut créer un client ? (F02)", "Quatre PR à relire : #31, #32, #33, #29."], "Questions et PR");
+  col(K.c3, "La suite", "5", null, "étapes avant de fermer F01, Payer sa location en ligne.", ["Maintenant : fusionner la PR #31 après PAYMENT_* dans .env.dev.", "Puis : N11, le reçu de paiement · /full-delivery N11"], "Fiche de F01");
+  const ag = S.row(root, { fx: true, gap: 10 }); S.icon(ag, "bot", 15, K.ink2); S.T(ag, "Agent de projet : « Le contrat de paiement reste le premier risque pour le 19/03. » · Lot n° 8 à valider (3)", { size: 13.5, color: K.ink2 });
   return f; };
 
 // ---------- 7 · Tableau de bord minimal ----------
@@ -111,15 +111,15 @@ S.draw.v7 = (x, y) => { const K = S.K;
     S.T(c, label, { size: 13, weight: 500, color: K.ink2 }); S.T(c, big, { title: true, size: 56, weight: 700, ls: -2, color: color || K.ink }); S.T(c, sub, { size: 13, color: K.ink2 }); };
   num("1/22", "Fonctionnalités livrées", "F00 seule, F01 et F02 ouvertes");
   num("S1", "Sprint en cours", "dernier jour · 0 fermeture");
-  num("J−63", "Mise en production", "18/12 · à risque", K.alert);
-  num("3", "Blocages", "staging, question, 4 PR", K.alert);
+  num("J−63", "Mise en production", "19/03 · à risque", K.alert);
+  num("3", "Blocages", "paiement, question, 4 PR", K.alert);
   const lc = S.col(root, { fx: true, fy: true, radius: 16, fill: K.card, stroke: K.line, clip: true });
   const lh = S.row(lc, { fx: true, h: 60, pad: [0, 24], gap: 10 }); S.T(lh, "À faire maintenant", { title: true, size: 22, weight: 700 }); S.T(lh, "dans cet ordre", { size: 14, color: K.ink2 });
   const items = [
-    ["Ajouter les variables MICROSOFT_* à .env.dev, puis fusionner la PR #11", "F01 · débloque la connexion pour toute l'équipe", "Ouvrir la PR", false],
-    ["Répondre : qui peut créer un client ?", "F02 · la garde de création N04 en dépend", "Répondre", false],
-    ["Relancer la DSI sur le dossier d'hébergement", "P1 · sans staging, pas de recette client", "Ouvrir SILO-6", false],
-    ["Relire les PR #12 et #13", "F01 et F02 · empilées sur la #11", "Ouvrir", false],
+    ["Ajouter les variables PAYMENT_* à .env.dev, puis fusionner la PR #31", "F01 · débloque le paiement pour tous les locataires", "Ouvrir la PR", false],
+    ["Répondre : qui peut créer un client ?", "F02 · la garde de création N14 en dépend", "Répondre", false],
+    ["Relancer le prestataire sur le contrat de paiement", "P1 · sans contrat, pas de recette du paiement", "Ouvrir SILO-6", false],
+    ["Relire les PR #32 et #33", "F01 et F02 · empilées sur la #31", "Ouvrir", false],
     ["Valider le lot n° 8 de l'agent de projet", "3 actions : reporter, planifier, relancer", "Examiner", true] ];
   items.forEach(([t, m, a, agent], i) => { S.box(lc, { h: 1, w: 10, fx: true, fill: K.line });
     const r = S.row(lc, { fx: true, gap: 18, pad: [18, 24] });

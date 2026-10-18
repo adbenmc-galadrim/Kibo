@@ -124,8 +124,8 @@ finir, étape suivante). L'agent de projet reste discret : une phrase de synthè
 shadcn n'est plus un cadre obligatoire : chaque direction a sa typographie, sa grille, ses couleurs et ses visualisations.
 
 Données : plan fictif de Silo (location de box, `scripts/60-styles.js`, vocabulaire de `design/donnees-fictives.md`) : 22 fonctionnalités
-F00 à F21 (F00 livrée), F01 et F02 ouvertes, sprints S1 (en cours, dernier jour) à S10, mise en production le 18/12,
-pistes P1 staging (bloquée : DSI et compte AWS) et P2 production, F16 à F21 à arbitrer après le 18/12.
+F00 à F21 (F00 livrée), F01 et F02 ouvertes, sprints S1 (en cours, dernier jour, 11-15 janv. 2027) à S10, mise en production
+le 19/03, pistes P1 recette du paiement (bloquée : contrat du prestataire de paiement) et P2 production, F16 à F21 à arbitrer après le 19/03.
 
 Page Penpot « Styles » (`scripts/60-styles.js`, `scripts/70-vues.js`), sombre à x = 0 et clair à x = 1 540, rangées de 1 150 px.
 
@@ -135,7 +135,7 @@ Page Penpot « Styles » (`scripts/60-styles.js`, `scripts/70-vues.js`), sombre 
 | Style 2 · Vue d'ensemble et Planning | **Instrument** : panneaux numérotés, jauge des 22 fonctionnalités coupée par le trait de la mise en production, règle des sprints ; planning en matrice avec histogramme des ouvertes | IBM Plex Sans et Mono, quasi monochrome, un vert signal et un rouge d'alerte |
 | Style 3 · Vue d'ensemble et Planning | **Atelier** : trois grandes cartes douces, une couleur en aplat par fonctionnalité, étapes en pastilles ; planning en colonnes de sprint avec carte glissée | Bricolage Grotesque et DM Sans, crème en clair, orange pour l'action principale et l'agent |
 | Vue 4 · Une phrase | une synthèse rédigée en grand, trois liens dessous | Newsreader |
-| Vue 5 · Frise | toute la page est la frise jusqu'au 18/12 : deux voies (la limite de deux ouvertes), pistes, « aujourd'hui », blocages piqués | Space Grotesk et JetBrains Mono, bleu de plan |
+| Vue 5 · Frise | toute la page est la frise jusqu'au 19/03 : deux voies (la limite de deux ouvertes), pistes, « aujourd'hui », blocages piqués | Space Grotesk et JetBrains Mono, bleu de plan |
 | Vue 6 · Trois colonnes | trois colonnes égales, un seul chiffre fort par colonne (1/22, 3, 5) | Inter très gras, noir, rouge et bleu |
 | Vue 7 · Tableau de bord minimal | quatre grands chiffres et une seule liste « À faire maintenant », ordonnée | Manrope et Geist, zinc et orange |
 
