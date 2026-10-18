@@ -22,6 +22,7 @@ function rig(writable: (projectId: string) => boolean) {
     }),
     agents: () => [testAgent({ id: "full-delivery", name: "full-delivery" })],
     orchestrator: {
+      ticketExecution: () => "allowed",
       state: () => ({ runs: [] }),
       assign(input) {
         assigned.push(input.ticketId);

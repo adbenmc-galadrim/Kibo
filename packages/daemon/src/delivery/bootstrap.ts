@@ -29,7 +29,7 @@ export type DeliveryInput = {
   notesDir(projectId: string): string | null;
   moments(): Pick<TraceService, "page">;
   agentSettings(): { settings(ref: string, patch: AgentSettingsPatch): AgentSettings };
-  orchestrator(): Pick<Orchestrator, "state" | "assign" | "answer"> | null;
+  orchestrator(): Pick<Orchestrator, "state" | "assign" | "answer" | "ticketExecution"> | null;
   db?: Database;
   alive?(pid: number): boolean;
 };

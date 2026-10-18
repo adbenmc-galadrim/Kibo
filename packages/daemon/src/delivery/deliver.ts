@@ -16,6 +16,7 @@ import {
   type TicketView,
   updateDeliveryBrief,
 } from "@kibo/schema";
+import { assertTicketExecution } from "../agents/execution-removed";
 import type { Orchestrator } from "../agents/orchestrator-types";
 
 export const NO_DELIVERY_AGENT = "aucun agent de livraison : choisis-le dans Modifier le projet";
@@ -33,6 +34,7 @@ export type DeliverDeps = {
   orchestrator: {
     state(): { runs: readonly Pick<RunView, "ticketId" | "state">[] };
     assign: Orchestrator["assign"];
+    ticketExecution: Orchestrator["ticketExecution"];
   };
 };
 
@@ -45,6 +47,7 @@ function busyTickets(runs: readonly Pick<RunView, "ticketId" | "state">[]): Set<
 }
 
 export function deliver(deps: DeliverDeps, input: DeliverInput): DeliverResult {
+  assertTicketExecution(deps.orchestrator.ticketExecution(), "deliver");
   const project = deps.project(input.projectId);
   const ticket = project.tickets.find((t) => t.id === input.ticketId);
   if (!ticket) throw new KiboError("NOT_FOUND", `ticket ${input.ticketId} not found`);

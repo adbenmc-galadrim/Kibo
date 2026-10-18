@@ -15,6 +15,7 @@ import {
   type RunView,
 } from "@kibo/schema";
 import { denialStore } from "../agents/denial-store";
+import type { TicketExecution } from "../agents/execution-removed";
 import { runView } from "../questions/questions.test-helper";
 import { type AllowResumeDeps, allowAndResume } from "./allow-resume";
 
@@ -46,7 +47,7 @@ function agentWith(settings: AgentSettings): Agent {
   };
 }
 
-function setup(run: RunView, resumable: string[] = []) {
+function setup(run: RunView, resumable: string[] = [], ticketExecution: TicketExecution = "allowed") {
   const store = denialStore(new Database(":memory:", { strict: true }));
   store.save({ runId: "r1", turn: 1, items: ITEMS, questionId: "q1", seq: 3, at: 1 });
   let settings: AgentSettings = { ...DEFAULT_AGENT_SETTINGS, allow: ["Bash(git *)", "Bash(pnpm *)"] };
@@ -79,6 +80,7 @@ function setup(run: RunView, resumable: string[] = []) {
     orchestrator: {
       state: (): Pick<AgentsState, "runs" | "resumable"> => ({ runs: [run], resumable }),
       answer: answerRun,
+      ticketExecution: () => ticketExecution,
     },
     denials: store,
     viewer: () => "adam",
@@ -195,5 +197,11 @@ test("rules, folders and questions foreign to the run are refused", () => {
   expect(() => allowAndResume(deps, { ...input, runId: "r9" })).toThrow(
     expect.objectContaining({ code: "NOT_FOUND" }),
   );
+  expect(calls).toEqual([]);
+});
+
+test("without ticket execution a ticket run is not resumed, nothing is patched and the question stays open", () => {
+  const { deps, calls } = setup(waiting, [], "removed");
+  expect(() => allowAndResume(deps, input)).toThrow("AGENT_EXECUTION_REMOVED");
   expect(calls).toEqual([]);
 });

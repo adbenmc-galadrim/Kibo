@@ -27,7 +27,7 @@ export type DeliveryOpsDeps = {
   docs(): DeliveryDocs;
   agentData(): Pick<AgentDataPort, "agents" | "agentOf" | "markAnswersDelivered">;
   agentSettings(): { settings(ref: string, patch: AgentSettingsPatch): AgentSettings };
-  orchestrator(): Pick<Orchestrator, "state" | "assign" | "answer">;
+  orchestrator(): Pick<Orchestrator, "state" | "assign" | "answer" | "ticketExecution">;
   denials: Pick<DenialStore, "get">;
 };
 export type DeliveryOps = {
