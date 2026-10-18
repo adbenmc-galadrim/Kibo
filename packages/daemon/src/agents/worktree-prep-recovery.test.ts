@@ -11,7 +11,7 @@ afterEach(cleanupTmp);
 const ref = (branch: string): GitBranchRef => ({ kind: "git_branch", branch, base: null });
 const input = (root: string, patch: Partial<WorktreeInput> = {}): WorktreeInput => ({
   root,
-  ticketKey: "EMIS-22",
+  ticketKey: "SILO-22",
   branchRef: ref("feat/perimetre"),
   settings: WORKTREE_DEFAULTS,
   runDir: join(tmp(), "run"),

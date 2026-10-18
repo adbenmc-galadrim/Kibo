@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 const HUMAN = { kind: "human", ref: "adam" } as const;
-const RUN = { id: "r1", profileName: "emis-livraison" };
+const RUN = { id: "r1", profileName: "silo-livraison" };
 const ask = (title: string, blocking = false): AskInput => ({
   kind: "question",
   images: [],
@@ -44,7 +44,7 @@ function setup() {
 
 test("an agent question is created for its run, as the agent, without touching the status", () => {
   const { s, project, ticket, events } = setup();
-  const p = project("EMIS");
+  const p = project("SILO");
   const t = ticket(p.id);
   events.length = 0;
   const q = s.agentData.createQuestion(p.id, t.id, RUN, ask("Bloquer le dépôt ?"));
@@ -53,7 +53,7 @@ test("an agent question is created for its run, as the agent, without touching t
     runId: "r1",
     blocking: false,
     provisional: "Non",
-    createdBy: { kind: "agent", ref: "emis-livraison" },
+    createdBy: { kind: "agent", ref: "silo-livraison" },
   });
   expect(events.map((e) => [e.command.method, e.meta.origin])).toEqual([["createQuestion", "agent"]]);
   expect(s.agentData.ticketContext(p.id, t.id).ticket.statusId).toBe("in_progress");
@@ -61,7 +61,7 @@ test("an agent question is created for its run, as the agent, without touching t
 
 test("a run past its open questions quota is ignored and nothing is sent", () => {
   const { s, project, ticket, events } = setup();
-  const p = project("EMIS");
+  const p = project("SILO");
   const t = ticket(p.id);
   for (let i = 0; i < OPEN_PER_RUN_MAX; i++) s.agentData.createQuestion(p.id, t.id, RUN, ask(`Q${i}`));
   events.length = 0;
@@ -71,7 +71,7 @@ test("a run past its open questions quota is ignored and nothing is sent", () =>
 
 test("the drawer answer goes to the open blocking question of the run", () => {
   const { s, project, ticket } = setup();
-  const p = project("EMIS");
+  const p = project("SILO");
   const t = ticket(p.id);
   s.agentData.createQuestion(p.id, t.id, RUN, ask("À valider"));
   expect(s.agentData.answerRunQuestion(p.id, "r1", "443", HUMAN)).toBeNull();
@@ -84,7 +84,7 @@ test("the drawer answer goes to the open blocking question of the run", () => {
 
 test("run counts span every project, and delivery marks answers with the reserved command", () => {
   const { s, project, ticket, events } = setup();
-  const [a, b] = [project("EMIS"), project("KIB")];
+  const [a, b] = [project("SILO"), project("KIB")];
   const [ta, tb] = [ticket(a.id), ticket(b.id)];
   const q1 = Question.parse(s.agentData.createQuestion(a.id, ta.id, RUN, ask("Q1")));
   s.agentData.createQuestion(a.id, ta.id, RUN, ask("Q2"));
@@ -110,7 +110,7 @@ test("run counts span every project, and delivery marks answers with the reserve
 
 test("an agent question is routed to its recipient in a single command", () => {
   const { s, project, ticket, events } = setup();
-  const p = project("EMIS");
+  const p = project("SILO");
   const t = ticket(p.id);
   events.length = 0;
   const routed = s.agentData.createQuestion(p.id, t.id, RUN, {

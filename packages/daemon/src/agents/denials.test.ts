@@ -6,7 +6,7 @@ import { CLAUDE_DENIAL_TEXT } from "./fake-claude-transcript";
 const HOME = "/Users/dev";
 const CTX = {
   home: HOME,
-  cwd: `${HOME}/Documents/emis-feat-15`,
+  cwd: `${HOME}/Documents/silo-feat-15`,
   known: [`${HOME}/.claude/skills`],
   allowed: [],
   addDirs: [],
@@ -18,20 +18,20 @@ const refused = (tool: string, input: Record<string, unknown>, output = CLAUDE_D
 const ok = (tool: string, input: Record<string, unknown>): RunAction =>
   actionOf({ tool, input, output: "ok", isError: false, denied: false, patch: null });
 
-const EMIS_15: RunAction[] = [
-  ok("Read", { file_path: `${HOME}/Documents/emis-feat-15/src/app.ts` }),
+const SILO_15: RunAction[] = [
+  ok("Read", { file_path: `${HOME}/Documents/silo-feat-15/src/app.ts` }),
   refused("Bash", { command: "cd apps/api && pnpm test 2>&1 | tail -40" }),
   refused("Read", { file_path: `${HOME}/.claude/skills/full-delivery/reference/kibo.md` }),
   refused("Bash", { command: 'git commit -m "feat: export" && git push' }),
   refused("Bash", { command: 'sh -c "rm -rf dist"' }),
   refused("Skill", { skill: "deploy" }, KIBO_TEXT),
-  refused("mcp__kibo__peek_work", { run: "EMIS-12" }),
+  refused("mcp__kibo__peek_work", { run: "SILO-12" }),
   ok("Bash", { command: "ls" }),
 ];
 
 test("Claude Code refusals of a turn become proposals, Kibo refusals are ignored", () => {
-  expect(refusedActions(EMIS_15, [])).toHaveLength(5);
-  expect(denialsOfTurn(EMIS_15, [], CTX)).toEqual([
+  expect(refusedActions(SILO_15, [])).toHaveLength(5);
+  expect(denialsOfTurn(SILO_15, [], CTX)).toEqual([
     { tool: "Bash", target: "cd apps/api", rule: "Bash(cd *)", addDir: null, reason: "ok" },
     { tool: "Bash", target: "pnpm test 2>&1", rule: "Bash(pnpm *)", addDir: null, reason: "ok" },
     { tool: "Bash", target: "tail -40", rule: "Bash(tail *)", addDir: null, reason: "ok" },
@@ -49,7 +49,7 @@ test("Claude Code refusals of a turn become proposals, Kibo refusals are ignored
 });
 
 test("rules and folders already allowed on the agent or the project are left out", () => {
-  const items = denialsOfTurn(EMIS_15, [], {
+  const items = denialsOfTurn(SILO_15, [], {
     ...CTX,
     allowed: ["Bash(pnpm *)", "Bash(git *)"],
     addDirs: [`${HOME}/.claude`],

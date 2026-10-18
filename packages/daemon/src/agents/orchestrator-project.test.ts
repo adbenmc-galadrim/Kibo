@@ -26,7 +26,7 @@ cleanHarness();
 
 const profiles = [testAgent(), projectAgentAgent()];
 const start = (h: Harness, text = "Où en est-on ?", projectId = "p1") =>
-  h.orch.startProjectRun({ projectId, projectName: "Emis", text });
+  h.orch.startProjectRun({ projectId, projectName: "Silo", text });
 const flagOf = (argv: string[], name: string) => argv[argv.indexOf(name) + 1] ?? "";
 
 test("startProjectRun queues a project run at the head with its first message", () => {
@@ -39,7 +39,7 @@ test("startProjectRun queues a project run at the head with its first message", 
     ticketId: null,
     profileId: PROJECT_AGENT_REF,
     label: "kib · kibo-project-agent",
-    ticketTitle: "Agent de projet · Emis",
+    ticketTitle: "Agent de projet · Silo",
     brief: "",
     state: "queued",
     pendingAnswer: "Où en est-on ?",
@@ -56,10 +56,10 @@ test("each message is a turn: resume after done, pending during a turn, prompt c
     workspace: "projet",
     session: { mode: "fresh", reason: "no_previous" },
   });
-  h.orch.answer(r.id, "Et EMIS-11 ?");
+  h.orch.answer(r.id, "Et SILO-11 ?");
   await waitUntil(() => run(h, r.id).state === "done" && run(h, r.id).turns === 2);
   const calls = fakeCalls(h.state, r.sessionId);
-  expect(calls.map((c) => c.prompt)).toEqual(["[tour 1] Où en est-on ?", "[tour 2] Et EMIS-11 ?"]);
+  expect(calls.map((c) => c.prompt)).toEqual(["[tour 1] Où en est-on ?", "[tour 2] Et SILO-11 ?"]);
   expect(calls[0]?.argv.slice(-2)).toEqual(["--session-id", r.sessionId]);
   expect(calls[1]?.argv.slice(-2)).toEqual(["--resume", r.sessionId]);
   expect(calls[0]?.cwd).toBe(realpathSync(join(h.home, "project")));

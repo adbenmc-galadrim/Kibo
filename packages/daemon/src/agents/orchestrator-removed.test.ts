@@ -48,9 +48,9 @@ test("without ticket execution, project runs and component drafts still run and 
   await h.orch.stop();
   const orch = bareOrchestrator(h);
   try {
-    const project = orch.startProjectRun({ projectId: "p1", projectName: "Emis", text: "Où en est-on ?" });
+    const project = orch.startProjectRun({ projectId: "p1", projectName: "Silo", text: "Où en est-on ?" });
     await waitUntil(() => orch.state().runs.find((r) => r.id === project.id)?.state === "done");
-    expect(orch.answer(project.id, "Et EMIS-11 ?").id).toBe(project.id);
+    expect(orch.answer(project.id, "Et SILO-11 ?").id).toBe(project.id);
     const cwd = join(h.home, "draft");
     mkdirSync(cwd);
     const draft = orch.submit({

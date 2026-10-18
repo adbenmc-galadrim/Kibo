@@ -6,7 +6,7 @@
           "hook": "PreToolUse",
           "tool": "mcp__kibo__ask_question",
           "input": {
-            "question": "Bloquer le dépôt sur une affaire archivée ?",
+            "question": "Bloquer le dépôt sur un client archivé ?",
             "options": ["Oui", "Non"],
             "provisional": "Non"
           }
@@ -15,7 +15,7 @@
           "hook": "PostToolUse",
           "tool": "mcp__kibo__ask_question",
           "input": {
-            "question": "Bloquer le dépôt sur une affaire archivée ?",
+            "question": "Bloquer le dépôt sur un client archivé ?",
             "options": ["Oui", "Non"],
             "provisional": "Non"
           }

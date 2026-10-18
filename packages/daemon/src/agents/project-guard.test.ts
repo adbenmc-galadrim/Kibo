@@ -9,7 +9,7 @@ const record: RunRecord = {
   projectId: "p1",
   ticketId: null,
   ticketKey: null,
-  ticketTitle: "Agent de projet · Emis",
+  ticketTitle: "Agent de projet · Silo",
   profileId: "system:project-agent",
   profileName: "project-agent",
   agentScope: "global",
@@ -21,7 +21,7 @@ const record: RunRecord = {
   resumedFrom: null,
 };
 const projectRun: RunView = initRun(record, 0, 0);
-const ticketRun: RunView = initRun({ ...record, ticketId: "t1", ticketKey: "EMIS-1", kind: "ticket" }, 0, 0);
+const ticketRun: RunView = initRun({ ...record, ticketId: "t1", ticketKey: "SILO-1", kind: "ticket" }, 0, 0);
 const call = (tool: string) => ({ tool, input: null });
 
 test("a project run is denied every shell, write and web tool, whatever the rule form", () => {

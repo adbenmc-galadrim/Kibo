@@ -91,8 +91,8 @@ test("the gate gives the instance config to the journal and never lets a reader 
 
 const META: ProjectMeta = {
   id: "p1",
-  key: "EMIS",
-  name: "Emis",
+  key: "SILO",
+  name: "Silo",
   folder: null,
   color: "#14B8A6",
   worktree: null,
@@ -100,7 +100,7 @@ const META: ProjectMeta = {
   duplication: null,
   delivery: null,
   tracking: null,
-  description: "Suivi de chantier",
+  description: "Location de box",
   client: null,
 };
 
@@ -110,7 +110,7 @@ function projectHandlers(withPr: boolean, withBinding: boolean) {
   if (withPr)
     upsertExternalRef(project, ticket.id, {
       kind: "github_pr",
-      url: "https://github.com/galadrimteam/emis/pull/22",
+      url: "https://github.com/silo-labs/silo-location/pull/22",
       number: 22,
       state: "open",
       base: "dev",
@@ -122,7 +122,7 @@ function projectHandlers(withPr: boolean, withBinding: boolean) {
     addBinding(project, {
       id: "b1",
       adapter: "github-issues",
-      config: { repo: "galadrimteam/emis-board", project: null, importClosed: false, labels: [] },
+      config: { repo: "silo-labs/silo-board", project: null, importClosed: false, labels: [] },
       createdBy: "adam",
       runner: "adam",
     });
@@ -134,9 +134,9 @@ function projectHandlers(withPr: boolean, withBinding: boolean) {
 
 test("project.get names the repository of the GitHub binding first, then of a PR, else none", async () => {
   expect(await projectHandlers(true, true).project("p1")).toMatchObject({
-    description: "Suivi de chantier",
-    repo: "galadrimteam/emis-board",
+    description: "Location de box",
+    repo: "silo-labs/silo-board",
   });
-  expect((await projectHandlers(true, false).project("p1")).repo).toBe("galadrimteam/emis");
+  expect((await projectHandlers(true, false).project("p1")).repo).toBe("silo-labs/silo-location");
   expect((await projectHandlers(false, false).project("p1")).repo).toBeNull();
 });

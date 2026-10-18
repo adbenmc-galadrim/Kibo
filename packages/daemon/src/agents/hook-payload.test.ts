@@ -178,13 +178,13 @@ const mcpDetail = (tool: string, input: Record<string, unknown>) =>
   }).detail;
 
 test("project tool reads are summarized by what they target", () => {
-  expect(mcpDetail("get_ticket", { key: "EMIS-11" })).toBe("EMIS-11");
+  expect(mcpDetail("get_ticket", { key: "SILO-11" })).toBe("SILO-11");
   expect(mcpDetail("read_note", { path: "agent-de-projet/memoire.md" })).toBe("agent-de-projet/memoire.md");
   expect(mcpDetail("list_tickets", { status: "done", label: "x" })).toBe("status=done label=x");
   expect(mcpDetail("list_tickets", {})).toBeNull();
   expect(mcpDetail("list_tickets", { query: "SECRET", cursor: "50" })).toBeNull();
-  expect(mcpDetail("list_questions", { state: "all", ticketKey: "EMIS-2" })).toBe(
-    "state=all ticketKey=EMIS-2",
+  expect(mcpDetail("list_questions", { state: "all", ticketKey: "SILO-2" })).toBe(
+    "state=all ticketKey=SILO-2",
   );
   expect(mcpDetail("list_runs", { state: "running" })).toBe("state=running");
   expect(mcpDetail("project_overview", {})).toBeNull();

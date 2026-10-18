@@ -23,11 +23,11 @@ import {
 
 afterEach(cleanupTmp);
 
-const SIBLING_ENV = "WEB_PORT=3010\nSERVER_PORT=3011\nDATABASE_URL=postgres://db/emis_dev\n";
+const SIBLING_ENV = "WEB_PORT=3010\nSERVER_PORT=3011\nDATABASE_URL=postgres://db/silo_dev\n";
 const ENV: NonNullable<WorktreeRecipe["env"]> = {
   file: ".env",
   ports: { keys: { WEB_PORT: 3000, SERVER_PORT: 3001 }, from: 0, step: 10, count: 5 },
-  replace: { DATABASE_URL: ["emis_dev", "emis_{short_}"] },
+  replace: { DATABASE_URL: ["silo_dev", "silo_{short_}"] },
   set: { PUBLIC_URL: "http://localhost:{WEB_PORT}" },
 };
 const RECIPE: WorktreeRecipe = { copyFrom: ["{repo}", "{sibling}"], copy: [".env"], env: ENV, after: [] };
@@ -35,7 +35,7 @@ const RECIPE: WorktreeRecipe = { copyFrom: ["{repo}", "{sibling}"], copy: [".env
 const varsOf = (root: string, path: string): RecipeVars => ({
   branch: "feat/compte-non-provisionne",
   slug: "feat-compte-non-provisionne",
-  key: "emis-15",
+  key: "silo-15",
   path,
   short: "compte-non-provisionne",
   short_: "compte_non_provisionne",
@@ -89,7 +89,7 @@ test("copies, picks free ports, replaces, sets, then runs the after commands fro
     ports: { WEB_PORT: 3020, SERVER_PORT: 3021 },
   });
   expect(readFileSync(join(f.dir, ".env"), "utf8")).toBe(
-    "WEB_PORT=3020\nSERVER_PORT=3021\nDATABASE_URL=postgres://db/emis_compte_non_provisionne\nPUBLIC_URL=http://localhost:3020\n",
+    "WEB_PORT=3020\nSERVER_PORT=3021\nDATABASE_URL=postgres://db/silo_compte_non_provisionne\nPUBLIC_URL=http://localhost:3020\n",
   );
   expect(readFileSync(join(f.dir, "after.txt"), "utf8")).toBe("compte-non-provisionne\n");
   const log = f.lines.join("\n");
@@ -206,7 +206,7 @@ test("a refused source falls back to the next one", async () => {
 
 test("a replacement value is inserted literally", async () => {
   const f = await fixture({
-    env: { ...ENV, ports: null, replace: { DATABASE_URL: ["emis_dev", "x$&y$1"] }, set: {} },
+    env: { ...ENV, ports: null, replace: { DATABASE_URL: ["silo_dev", "x$&y$1"] }, set: {} },
   });
   await applyRecipe(f.input);
   expect(readFileSync(join(f.dir, ".env"), "utf8")).toContain("DATABASE_URL=postgres://db/x$&y$1\n");

@@ -208,7 +208,7 @@ test("auto is passed through when the CLI lists it, refused otherwise", () => {
 });
 
 test("Kibo passes the added folders in one --add-dir closed by the session flag", () => {
-  const dirs = ["/Users/a/.claude/skills", "/Users/a/Documents/emis"];
+  const dirs = ["/Users/a/.claude/skills", "/Users/a/Documents/silo"];
   for (const resume of [false, true]) {
     const args = claudeArgs({ ...base, extraArgs: ["--tools", ""], addDirs: dirs, sessionId: "s1", resume });
     const at = args.indexOf("--add-dir");

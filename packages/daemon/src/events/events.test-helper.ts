@@ -25,8 +25,8 @@ export function eventsHarness(): EventsHarness {
   const service = createService(store, { user: "adam" });
   const project = call(service, {
     method: "createProject",
-    name: "Emis",
-    key: "EMIS",
+    name: "Silo",
+    key: "SILO",
     folder: null,
     color: "#F97316",
   });
@@ -57,7 +57,7 @@ export function eventsHarness(): EventsHarness {
 
 export const PR_18: GithubPrRef = {
   kind: "github_pr",
-  url: "https://github.com/galadrimteam/emis/pull/18",
+  url: "https://github.com/silo-labs/silo-location/pull/18",
   number: 18,
   state: "open",
   base: "dev",

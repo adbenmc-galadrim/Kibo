@@ -20,7 +20,7 @@
           }
         },
         {
-          "bash": "kibo tickets step EMIS-15 4 \"worktree\""
+          "bash": "kibo tickets step SILO-15 4 \"worktree\""
         },
         {
           "write": "shots/1-no-access.png",
@@ -33,7 +33,7 @@
           "binary": true
         },
         {
-          "bash": "kibo tickets step EMIS-15 7 \"porte qualité\""
+          "bash": "kibo tickets step SILO-15 7 \"porte qualité\""
         },
         {
           "hook": "PreToolUse",
@@ -62,7 +62,7 @@
     {
       "steps": [
         {
-          "bash": "kibo tickets step EMIS-15 11 \"PR #12\""
+          "bash": "kibo tickets step SILO-15 11 \"PR #12\""
         },
         {
           "mcp": "ticket_progress",

@@ -36,7 +36,7 @@ const fullDelivery = () =>
     permissionMode: "default",
     maxParallel: 3,
     allow: ["Bash(git *)", "Bash(make *)"],
-    addDirs: ["/Users/a/Documents/emis"],
+    addDirs: ["/Users/a/Documents/silo"],
   });
 
 test("the delivery preset merges its rules and folders into the agent and keeps the rest", () => {
@@ -47,7 +47,7 @@ test("the delivery preset merges its rules and folders into the agent and keeps 
     {
       ...patch,
       allow: ["Bash(git *)", "Bash(make *)", ...DELIVERY_ALLOW_DEFAULTS.filter((r) => r !== "Bash(git *)")],
-      addDirs: ["/Users/a/Documents/emis", SKILLS],
+      addDirs: ["/Users/a/Documents/silo", SKILLS],
     },
   ]);
   expect(agent.settings).toMatchObject({

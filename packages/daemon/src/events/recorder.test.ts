@@ -44,7 +44,7 @@ test("a sprint created and a ticket moved between sprints name the codes before 
   const s42 = h.run({
     method: "createSprint",
     code: "S42",
-    name: "Terrain",
+    name: "Saisie hors ligne",
     start: "2026-10-12",
     end: "2026-10-16",
   });
@@ -59,7 +59,12 @@ test("a sprint created and a ticket moved between sprints name the codes before 
   h.run({ method: "setTicketSprint", ticketId: root, sprintId: (s43 as Sprint).id });
   h.run({ method: "setTicketSprint", ticketId: root, sprintId: (s43 as Sprint).id });
   expect(h.journal().filter((e) => e.kind.startsWith("sprint_"))).toMatchObject([
-    { kind: "sprint_created", ticketId: null, featureId: null, data: { code: "S42", name: "Terrain" } },
+    {
+      kind: "sprint_created",
+      ticketId: null,
+      featureId: null,
+      data: { code: "S42", name: "Saisie hors ligne" },
+    },
     { kind: "sprint_created", data: { code: "S43" } },
     { kind: "sprint_set", ticketId: root, featureId: root, source: "user", data: { from: null, to: "S42" } },
     { kind: "sprint_set", data: { from: "S42", to: "S43" } },

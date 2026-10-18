@@ -11,7 +11,7 @@ const title = fc.oneof(
   fc.constantFrom("Tests", "Ordre", "Port ?", "x".repeat(201), "", "  "),
   fc.nat({ max: 40 }).map((n) => `Spam ${n}`),
 );
-const ticket = fc.constantFrom(undefined, "EMIS-1", "EMIS-2", "EMIS-99", "emis-1");
+const ticket = fc.constantFrom(undefined, "SILO-1", "SILO-2", "SILO-99", "silo-1");
 const input = fc.oneof(
   fc.record({ kind: fc.constantFrom(...KINDS), title, body: fc.string({ maxLength: 40 }), ticket }),
   fc.record({ kind: fc.constantFrom("idea", 3), title }),

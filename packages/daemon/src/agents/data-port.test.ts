@@ -247,12 +247,12 @@ test("a run reads the local worktree settings of its project", () => {
     const s = createService(openStore(dir), { user: "adam" });
     const meta = call(s, {
       method: "createProject",
-      name: "Emis",
-      key: "EMIS",
+      name: "Silo",
+      key: "SILO",
       folder: null,
       color: "#F97316",
     }) as ProjectMeta;
-    const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: null, recipe: null };
+    const worktree = { baseRef: "origin/dev", pathTemplate: "../silo-{slug}", setup: null, recipe: null };
     s.docs.updateProjectMeta(meta.id, { worktree }, true);
     const ticket = call(s, {
       method: "command",
