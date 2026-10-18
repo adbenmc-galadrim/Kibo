@@ -13,6 +13,7 @@ import {
 } from "@kibo/schema";
 import type { CommandHub } from "../command-path";
 import type { ComponentDelivery } from "../delivery/component-calls";
+import { hasLinkedRepo } from "../demo/demo-project";
 import type { Docs } from "../docs";
 import { createFilesService, type FilesService } from "../files/service";
 import type { ComponentIntegrationHooks } from "../integrations/types";
@@ -158,7 +159,8 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       appSettings: () => deps.appSettings.get(),
       hasFolder: (projectId) => {
         const doc = deps.docs.project(projectId);
-        return localFolder(settings, getProjectMeta(doc), getKeyAllocator(doc) === "server") !== null;
+        const local = localFolder(settings, getProjectMeta(doc), getKeyAllocator(doc) === "server");
+        return hasLinkedRepo(settings, projectId, local !== null);
       },
     }),
   });
