@@ -1,4 +1,4 @@
-import { type Assignee, type ProjectMeta, type ProjectSnapshot, StatusId } from "@kibo/schema";
+import { type Assignee, type ProjectMeta, type ProjectSnapshot, StatusId, Ticket } from "@kibo/schema";
 import { type NewTicketDefaults, StatusDot } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import {
@@ -14,9 +14,13 @@ import { Label } from "@kibo/sdk/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@kibo/sdk/ui/select";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { type FormEvent, useId, useState } from "react";
+import { toast } from "sonner";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frNewTicket } from "../i18n/fr-new-ticket";
 import { displayName } from "../lib/inbox";
+import { type Host, useOptionalHost } from "../shell/Host";
+import { FeatureSelect, NO_FEATURE, placementOf } from "./FeatureSelect";
 
 export type NewTicketDialogProps = {
   projects: readonly ProjectMeta[];
@@ -42,6 +46,17 @@ const nameOf = (meta: ProjectMeta | undefined): string => (meta ? displayName(me
 function assigneeOf(value: string, me: string): Assignee | null {
   if (value === NOBODY) return null;
   return { kind: "human", ref: value === ME ? me : value };
+}
+
+function announce(result: unknown, projectId: string, host: Host | null): void {
+  const created = Ticket.safeParse(result);
+  if (!created.success) return;
+  const { id, key } = created.data;
+  const open = () => {
+    if (host?.projectId === projectId) host.openTicket(id);
+    else host?.openTarget({ kind: "ticket", projectId, ticketId: id });
+  };
+  toast(frNewTicket.created(key), { action: { label: frNewTicket.open, onClick: open } });
 }
 
 type ProjectFieldProps = {
@@ -122,13 +137,16 @@ export function NewTicketDialog(p: NewTicketDialogProps) {
   const [statusId, setStatusId] = useState<StatusId>(defaults.statusId ?? "todo");
   const [reason, setReason] = useState("");
   const [assignee, setAssignee] = useState(ME);
+  const [feature, setFeature] = useState(NO_FEATURE);
   const [failed, setFailed] = useState(false);
+  const host = useOptionalHost();
   const blocked = statusId === "blocked";
   const parent = project?.tickets.find((x) => x.id === defaults.parentId);
   const ready = project !== null && title.trim() !== "" && (!blocked || reason.trim() !== "");
   const pickProject = (next: string) => {
     setProjectId(next);
     setAssignee(ME);
+    setFeature(NO_FEATURE);
   };
   const pickStatus = (v: string) => {
     const parsed = StatusId.safeParse(v);
@@ -138,8 +156,9 @@ export function NewTicketDialog(p: NewTicketDialogProps) {
     e.preventDefault();
     if (!project || !ready) return;
     setFailed(false);
+    let result: unknown;
     try {
-      await client.rpc({
+      result = await client.rpc({
         method: "command",
         projectId,
         command: {
@@ -148,7 +167,7 @@ export function NewTicketDialog(p: NewTicketDialogProps) {
           description,
           statusId,
           ...(blocked && { blockedReason: reason.trim() }),
-          parentId: defaults.parentId ?? null,
+          ...placementOf(defaults.parentId, feature),
           assignee: assigneeOf(assignee, project.viewer ?? p.viewer),
         },
         ...(defaults.instanceId && { instanceId: defaults.instanceId }),
@@ -157,6 +176,7 @@ export function NewTicketDialog(p: NewTicketDialogProps) {
       setFailed(true);
       return;
     }
+    announce(result, projectId, host);
     onClose();
   };
   const workflow = [...(project?.workflow ?? [])].sort((a, b) => a.order - b.order);
@@ -186,6 +206,14 @@ export function NewTicketDialog(p: NewTicketDialogProps) {
             <p className="text-sm text-muted-foreground">
               {t.parent} : <span className="font-mono">{parent.keyLabel}</span> {parent.title}
             </p>
+          )}
+          {!defaults.parentId && (
+            <FeatureSelect
+              id={`${id}-feature`}
+              tickets={project?.tickets ?? []}
+              value={feature}
+              onChange={setFeature}
+            />
           )}
           <div className="grid gap-2">
             <Label htmlFor={`${id}-title`}>{t.name}</Label>
