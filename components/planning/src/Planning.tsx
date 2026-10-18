@@ -20,7 +20,7 @@ import { fr } from "./fr";
 import { NewFeatureDialog } from "./NewFeatureDialog";
 import type { PlanningLayout } from "./PlanningHeader";
 import { PlanningView } from "./PlanningView";
-import { type FeatureCard, isCurrentSprint, planningModel } from "./planning-model";
+import { type FeatureCard, planningModel } from "./planning-model";
 import { SprintDialog } from "./SprintDialog";
 import { sprintLabel } from "./sprint-label";
 
@@ -59,6 +59,7 @@ export function Planning() {
     sprints,
     questions,
     events,
+    today,
     openLimit: openLimitOf(tracking),
   });
   const cards = [...model.sprints.flatMap((c) => c.cards), ...model.backlog];
@@ -110,7 +111,6 @@ export function Planning() {
       () => setError(fr.moveFailed(cardOf(drop.ticketId)?.shortKey ?? "")),
     );
   };
-  const current = sprints.find(isCurrentSprint) ?? null;
   return (
     <DndContext
       sensors={sensors}
@@ -145,7 +145,11 @@ export function Planning() {
         />
       )}
       {dialog?.kind === "feature" && (
-        <NewFeatureDialog sprints={sprints} sprintId={current?.id ?? null} onClose={() => setDialog(null)} />
+        <NewFeatureDialog
+          sprints={sprints}
+          sprintId={model.currentSprintId}
+          onClose={() => setDialog(null)}
+        />
       )}
     </DndContext>
   );

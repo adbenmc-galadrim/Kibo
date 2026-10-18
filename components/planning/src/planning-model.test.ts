@@ -18,7 +18,7 @@ const SPRINT: SprintView = {
   lingering: false,
 };
 const columnCode = (sprint: SprintView) =>
-  planningModel({ tickets: [], links: [], sprints: [sprint], questions: [] }).sprints[0]?.code;
+  planningModel({ tickets: [], links: [], sprints: [sprint], questions: [], today: TODAY }).sprints[0]?.code;
 
 const build = (today = TODAY, openLimit?: number) => {
   let seeded: ReturnType<typeof seedPlanning> | undefined;
@@ -35,6 +35,7 @@ const build = (today = TODAY, openLimit?: number) => {
     links: s.links,
     sprints: s.sprints,
     questions: s.questions,
+    today,
     openLimit,
   });
   return { model, seeded, m };

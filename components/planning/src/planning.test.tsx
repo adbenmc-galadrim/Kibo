@@ -3,7 +3,7 @@ import type { ProjectEvent } from "@kibo/schema";
 import { LAZY_FALLBACK_SELECTOR, SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest, planningPanel } from "./index";
 import { cardIn, column, setupPlanning } from "./planning-kit";
@@ -145,4 +145,26 @@ test("a feature moved out of its sprint says where it slipped from", async () =>
     expect(within(await cardIn(/^S43 /, "F8")).getByText("glissée de S42")).toBeTruthy(),
   );
   expect(within(await cardIn(/^S43 /, "F6")).queryByText(/^glissée/)).toBeNull();
+});
+
+test("two sprints overlap: the one that started last is current, for a new feature and the limit note", async () => {
+  const { m } = setupPlanning(TODAY, { tracking: { openLimit: 1 } });
+  act(() => {
+    m.run({
+      method: "createSprint",
+      code: "S45",
+      name: "Correctifs",
+      start: "2026-10-14",
+      end: "2026-10-20",
+    });
+  });
+  const late = m.snapshot().sprints.find((s) => s.code === "S45")?.id ?? "";
+  const note = /2 fonctionnalités ouvertes pour une limite de 1/;
+  await waitFor(async () => expect(within(await column("S45 Correctifs")).getByText(note)).toBeTruthy());
+  expect(within(await column(/^S42 /)).queryByText(note)).toBeNull();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Ajouter" }));
+  await user.click(await screen.findByRole("menuitem", { name: "Nouvelle fonctionnalité" }));
+  const dialog = await screen.findByRole("dialog");
+  expect(within(dialog).getByLabelText<HTMLSelectElement>("Sprint").value).toBe(late);
 });

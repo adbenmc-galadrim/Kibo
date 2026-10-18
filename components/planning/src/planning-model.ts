@@ -1,4 +1,5 @@
 import {
+  currentSprint,
   DEFAULT_OPEN_LIMIT,
   DELIVERY_STEP_MAX,
   type FeatureState,
@@ -62,6 +63,7 @@ export type PlanningModel = {
   limit: number;
   overLimit: boolean;
   openCards: FeatureCard[];
+  currentSprintId: string | null;
 };
 export type PlanningInput = {
   tickets: readonly TicketView[];
@@ -69,11 +71,9 @@ export type PlanningInput = {
   sprints: readonly SprintView[];
   questions: readonly Question[];
   events?: readonly ProjectEvent[] | undefined;
+  today: string;
   openLimit?: number | undefined;
 };
-
-export const isCurrentSprint = (s: Pick<SprintView, "state" | "lingering">): boolean =>
-  s.state === "current" || s.lingering;
 
 type Facts = {
   input: PlanningInput;
@@ -180,5 +180,6 @@ export function planningModel(input: PlanningInput): PlanningModel {
     limit,
     overLimit: open > limit,
     openCards: all.filter((c) => openIds.has(c.id)),
+    currentSprintId: currentSprint(input.sprints, input.today)?.id ?? null,
   };
 }
