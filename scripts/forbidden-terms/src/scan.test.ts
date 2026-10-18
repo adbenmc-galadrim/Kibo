@@ -34,8 +34,15 @@ test("compares accented letters case-insensitively", () => {
   expect(findForbidden("zoéa", terms)).toEqual([]);
 });
 
-test("matches a decomposed accented letter", () => {
-  expect(findForbidden("Zoé", terms)).toEqual([{ term: 4, line: 1 }]);
+test("matches a decomposed text with a composed term", () => {
+  const decomposed = "Zo\u00e9".normalize("NFD");
+  expect(decomposed).toHaveLength(4);
+  expect(findForbidden(decomposed, terms)).toEqual([{ term: 4, line: 1 }]);
+});
+
+test("matches a composed text with a decomposed term", () => {
+  const decomposedTerms = terms.map((term) => term.normalize("NFD"));
+  expect(findForbidden("Zo\u00e9", decomposedTerms)).toEqual([{ term: 4, line: 1 }]);
 });
 
 test("reports the line of each match", () => {
