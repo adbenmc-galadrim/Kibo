@@ -1,11 +1,10 @@
 import { afterEach, expect, mock, test } from "bun:test";
 import type { ProjectEvent, RpcRequest, TicketView } from "@kibo/schema";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 import { emisFeatureProject, NOW } from "./feature/fixture";
 
-const toasts: string[] = [];
 const journal: ProjectEvent[] = [
   {
     id: 1,
@@ -19,7 +18,6 @@ const journal: ProjectEvent[] = [
   },
 ];
 
-mock.module("sonner", () => ({ toast: (message: string) => toasts.push(message), Toaster: () => null }));
 mock.module("../api", () =>
   apiMock({
     client: {
@@ -40,6 +38,7 @@ mock.module("../api", () =>
 );
 
 const { TicketSheet } = await import("./TicketSheet");
+const { Toaster } = await import("@kibo/sdk/ui/sonner");
 
 afterEach(cleanup);
 
@@ -85,9 +84,10 @@ test("Domaine and Maquettes stay folded until asked for", async () => {
 });
 
 test("copying /full-delivery writes the command and says what it waits for", async () => {
+  render(<Toaster />);
   open("e33", { startable: false, waitingOn: ["EMIS-32"] });
   await userEvent.setup().click(screen.getByRole("button", { name: "Copier /full-delivery EMIS-33" }));
-  await waitFor(() => expect(toasts.at(-1)).toBe("Copié · attend EMIS-32"));
+  expect(await screen.findByText("Copié · attend EMIS-32")).toBeTruthy();
   expect(await navigator.clipboard.readText()).toBe("/full-delivery EMIS-33");
 });
 
