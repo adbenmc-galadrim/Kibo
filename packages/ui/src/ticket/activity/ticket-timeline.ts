@@ -1,4 +1,5 @@
 import {
+  type CiRun,
   deliveryStepLabel,
   type ProjectEvent,
   type ProjectEventKind,
@@ -11,19 +12,31 @@ export type TimelineKind =
   | "branch"
   | "pr"
   | "review"
+  | "checks"
   | "step"
   | "session"
   | "status"
   | "sprint"
   | "question"
   | "other";
-export type TimelineLine = { id: string; kind: TimelineKind; text: string; time: string };
+export type TimelineAside = { text: string; link: { label: string; url: string } | null };
+export type TimelineLine = {
+  id: string;
+  kind: TimelineKind;
+  tone: "ok" | "error" | "running" | null;
+  text: string;
+  time: string;
+  aside: TimelineAside | null;
+};
 
 type Data = ProjectEvent["data"];
-type Line = { kind: TimelineKind; text: string };
+type Line = { kind: TimelineKind; text: string; tone?: TimelineLine["tone"] };
 type TimelineProject = Pick<ProjectSnapshot, "workflow">;
 
 const e = frTicketTracking.events;
+const STATUS_WINDOW_MS = 120_000;
+const TONES: Record<string, TimelineLine["tone"]> = { ok: "ok", error: "error", running: "running" };
+
 const num = (d: Data, key: string): number | null => {
   const v = d[key];
   return typeof v === "number" ? v : null;
@@ -42,18 +55,24 @@ function stepText(d: Data, ev: ProjectEvent): string {
     : e.step(label);
 }
 
+const statusLabel = (d: Data, p: TimelineProject): string | null => {
+  const to = str(d, "to");
+  return p.workflow.find((s) => s.id === to)?.label ?? to;
+};
+
 const other = (): Line => ({ kind: "other", text: e.other });
 
 const LINES: Record<ProjectEventKind, (d: Data, ev: ProjectEvent, p: TimelineProject) => Line> = {
   branch_created: (d) => ({ kind: "branch", text: e.branch(str(d, "branch")) }),
   pr_opened: (d) => ({ kind: "pr", text: e.prOpened(num(d, "number")) }),
   pr_review: (d) => ({ kind: "review", text: e.review(num(d, "number"), str(d, "review")) }),
-  pr_checks: (d) => ({ kind: "review", text: e.checks(num(d, "number"), str(d, "checks")) }),
+  pr_checks: (d) => ({
+    kind: "checks",
+    tone: TONES[str(d, "checks") ?? ""] ?? null,
+    text: e.checks(num(d, "number"), str(d, "checks")),
+  }),
   pr_merged: (d) => ({ kind: "pr", text: e.prMerged(num(d, "number")) }),
-  status_changed: (d, _ev, p) => {
-    const to = str(d, "to");
-    return { kind: "status", text: e.status(p.workflow.find((s) => s.id === to)?.label ?? to) };
-  },
+  status_changed: (d, _ev, p) => ({ kind: "status", text: e.status(statusLabel(d, p)) }),
   step_set: (d, ev) => ({ kind: "step", text: stepText(d, ev) }),
   session_started: (d) => ({ kind: "session", text: e.sessionStarted(str(d, "tool")) }),
   session_stopped: (d) => ({ kind: "session", text: e.sessionStopped(str(d, "tool")) }),
@@ -66,16 +85,56 @@ const LINES: Record<ProjectEventKind, (d: Data, ev: ProjectEvent, p: TimelinePro
   batch_decided: other,
 };
 
+const HOSTS: ReadonlySet<ProjectEventKind> = new Set([
+  "branch_created",
+  "pr_opened",
+  "pr_merged",
+  "step_set",
+]);
+
+function statusHosts(events: readonly ProjectEvent[]): Map<number, ProjectEvent> {
+  const hosts = new Map<number, ProjectEvent>();
+  for (const status of events.filter((ev) => ev.kind === "status_changed")) {
+    const host = events.find(
+      (ev) => HOSTS.has(ev.kind) && Math.abs(ev.at - status.at) <= STATUS_WINDOW_MS && !hosts.has(ev.id),
+    );
+    if (host) hosts.set(host.id, status);
+  }
+  return hosts;
+}
+
+function failedJob(ev: ProjectEvent, runs: readonly CiRun[]): TimelineAside | null {
+  if (ev.kind !== "pr_checks" || str(ev.data, "checks") !== "error") return null;
+  const run = runs.find((r) => r.prNumber === num(ev.data, "number") && r.conclusion === "failure");
+  if (!run) return null;
+  const job = run.jobs.find((j) => j.conclusion === "failure") ?? run.jobs[0];
+  return { text: job ? e.jobAside(job.name) : "", link: { label: e.seeLog, url: run.url } };
+}
+
 const newestFirst = (a: ProjectEvent, b: ProjectEvent) => b.at - a.at || b.id - a.id;
 
 export function ticketTimeline(
   events: readonly ProjectEvent[],
   project: TimelineProject,
   now: number,
+  runs: readonly CiRun[] = [],
 ): TimelineLine[] {
-  return [...events].sort(newestFirst).map((ev) => ({
-    id: `event-${ev.id}`,
-    ...LINES[ev.kind](ev.data, ev, project),
-    time: stepTime(ev.at, now),
-  }));
+  const hosts = statusHosts(events);
+  const absorbed = new Set([...hosts.values()].map((ev) => ev.id));
+  return [...events]
+    .filter((ev) => !absorbed.has(ev.id))
+    .sort(newestFirst)
+    .map((ev) => {
+      const line = LINES[ev.kind](ev.data, ev, project);
+      const status = hosts.get(ev.id);
+      const label = status ? statusLabel(status.data, project) : null;
+      return {
+        id: `event-${ev.id}`,
+        kind: line.kind,
+        tone: line.tone ?? null,
+        text: line.text,
+        time: stepTime(ev.at, now),
+        aside: label ? { text: e.statusAside(label), link: null } : failedJob(ev, runs),
+      };
+    });
 }

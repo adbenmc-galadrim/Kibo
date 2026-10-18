@@ -45,8 +45,9 @@ test("changes requested and a broken CI make one banner with links to the PR and
   render(<TrackingBanner ticket={ticket(pr({ review: "changes_requested" }))} ciRuns={[run({})]} />);
   const banner = screen.getByRole("status");
   expect(banner.textContent).toContain("PR #20 · changements demandés · CI cassée");
-  expect(screen.getByRole("link", { name: /PR #20/ }).getAttribute("href")).toBe(PR_URL);
-  expect(screen.getByRole("link", { name: "Voir le job" }).getAttribute("href")).toBe(
+  expect(banner.className).toContain("amber");
+  expect(screen.getByRole("link", { name: "PR" }).getAttribute("href")).toBe(PR_URL);
+  expect(screen.getByRole("link", { name: "Job" }).getAttribute("href")).toBe(
     "https://github.com/galadrim/emis/actions/runs/7",
   );
 });
@@ -56,7 +57,7 @@ test("without a CI run the banner reads the checks of the PR and offers no job l
     <TrackingBanner ticket={ticket(pr({ review: "changes_requested", checks: "error" }))} ciRuns={[]} />,
   );
   expect(screen.getByRole("status").textContent).toContain("PR #20 · changements demandés · CI cassée");
-  expect(screen.queryByRole("link", { name: "Voir le job" })).toBeNull();
+  expect(screen.queryByRole("link", { name: "Job" })).toBeNull();
 });
 
 test("an open PR with nothing to fix shows no banner", () => {
@@ -66,6 +67,13 @@ test("an open PR with nothing to fix shows no banner", () => {
     <TrackingBanner ticket={ticket(pr({ review: "changes_requested", state: "merged" }))} ciRuns={[]} />,
   );
   expect(screen.queryByRole("status")).toBeNull();
+});
+
+test("a broken CI alone makes a red banner", () => {
+  render(<TrackingBanner ticket={ticket(pr({ checks: "error" }))} ciRuns={[]} />);
+  const banner = screen.getByRole("status");
+  expect(banner.textContent).toContain("PR #20 · CI cassée");
+  expect(banner.className).toContain("red");
 });
 
 test("a running CI is announced as « CI en cours »", () => {

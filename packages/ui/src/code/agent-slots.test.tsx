@@ -131,7 +131,6 @@ const renderChanges = (worktree: string, snapshot = project()) => {
       onSuggestPages={() => {}}
       onOpen={() => {}}
       onOpenFile={() => {}}
-      onAssign={() => {}}
       onOpenTicket={() => {}}
     />,
   );

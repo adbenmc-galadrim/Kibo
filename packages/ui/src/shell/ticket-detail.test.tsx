@@ -1,15 +1,13 @@
-import { expect, mock, test } from "bun:test";
+import { afterEach, expect, mock, test } from "bun:test";
 import {
-  type AgentsState,
   DEFAULT_WORKFLOW,
   EMPTY_PROGRESS,
   type ProjectSnapshot,
+  type Question,
   type TicketView,
 } from "@kibo/schema";
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactNode } from "react";
-import { agentsFixture, runFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 
 mock.module("../api", () =>
@@ -17,6 +15,7 @@ mock.module("../api", () =>
     client: {
       rpc: async (req: { method: string }) => {
         if (req.method === "getSyncState") return { bindings: [], pending: [], errors: [] };
+        if (req.method === "autoLinks.list") return [];
         return null;
       },
       subscribe: () => () => undefined,
@@ -28,7 +27,8 @@ mock.module("../api", () =>
 
 const { TicketDetail } = await import("./TicketDetail");
 const { HostProvider } = await import("./Host");
-const { AgentsProvider } = await import("../state/agents-context");
+
+afterEach(cleanup);
 
 const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   id: "12@1",
@@ -60,7 +60,31 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   ...patch,
 });
 
-const project = (t: TicketView): ProjectSnapshot => ({
+const question = (patch: Partial<Question> = {}): Question => ({
+  kind: "question",
+  images: [],
+  id: "q1",
+  ticketId: "12@1",
+  runId: null,
+  title: "Quota par affaire ?",
+  context: "",
+  options: [],
+  provisional: null,
+  blocking: false,
+  createdBy: { kind: "human", ref: "adam" },
+  createdAt: 1,
+  number: 4,
+  importRef: null,
+  answer: null,
+  recipient: "product",
+  sentAt: null,
+  history: [],
+  archivedAt: null,
+  archivedBy: null,
+  ...patch,
+});
+
+const project = (t: TicketView, questions: Question[] = []): ProjectSnapshot => ({
   meta: {
     id: "p1",
     name: "Kibo",
@@ -78,7 +102,7 @@ const project = (t: TicketView): ProjectSnapshot => ({
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   links: [],
-  questions: [],
+  questions,
   questionRecipients: [],
   instances: [],
   rules: [],
@@ -99,66 +123,53 @@ const host = {
   openTarget: () => undefined,
 };
 
-const show = (t: TicketView, agents: AgentsState | null, wrap = true) => {
-  const detail = (
-    <TicketDetail
-      project={project(t)}
-      ticket={t}
-      viewer="adam"
-      onOpenFile={() => {}}
-      onOpenTicket={() => {}}
-    />
-  );
-  const tree: ReactNode = wrap ? (
+const show = (t: TicketView, questions: Question[] = []) =>
+  render(
     <HostProvider host={host}>
-      <AgentsProvider agents={agents}>{detail}</AgentsProvider>
-    </HostProvider>
-  ) : (
-    detail
+      <TicketDetail
+        project={project(t, questions)}
+        ticket={t}
+        onOpenFile={() => {}}
+        onOpenTicket={() => {}}
+      />
+    </HostProvider>,
   );
-  return render(tree);
-};
 
-const agents = (runs: AgentsState["runs"]): AgentsState => ({ ...agentsFixture(), runs });
-
-test("the questions badge opens the Questions view, and stays hidden at zero", async () => {
+test("the open questions of the ticket are listed and open the Questions view", async () => {
   views.length = 0;
-  const view = show(ticket({ openQuestions: 2 }), null);
-  await userEvent.setup().click(screen.getByRole("button", { name: "2 questions" }));
+  show(ticket(), [
+    question(),
+    question({
+      id: "q2",
+      answer: {
+        kind: "text",
+        option: null,
+        text: "5 Go",
+        by: { kind: "human", ref: "adam" },
+        at: 2,
+        deliveredAt: null,
+        deliveredRunId: null,
+      },
+    }),
+  ]);
+  await userEvent.setup().click(screen.getByRole("button", { name: /Quota par affaire/ }));
   expect(views).toEqual(["questions"]);
-  expect(screen.getByRole("button", { name: "2 questions" }).getAttribute("title")).toBe(
-    "Ouvrir les questions",
+  expect(screen.getByText("Q4")).toBeTruthy();
+});
+
+test("without a question the section says so", () => {
+  show(ticket());
+  expect(screen.getByText("Aucune question sur ce ticket.")).toBeTruthy();
+  expect(screen.getByText("Dépendances : aucune")).toBeTruthy();
+});
+
+test("the details read Suivi, Description, Dépendances, Questions, then Domaine and Maquettes folded", () => {
+  const { container } = show(ticket());
+  const text = container.textContent ?? "";
+  const order = ["Suivi", "Description", "Dépendances", "Questions", "Domaine", "Maquettes"].map((w) =>
+    text.indexOf(w),
   );
-  view.unmount();
-  show(ticket({ openQuestions: 0 }), null);
-  expect(screen.queryByRole("button", { name: /question/ })).toBeNull();
-});
-
-test("the main session of the ticket sits under the assignee", () => {
-  const runs = [
-    runFixture({ id: "r1", seq: 1, ticketId: "12@1", label: "opus-dev-1", startedAt: 1, turns: 1 }),
-    runFixture({ id: "r2", seq: 2, ticketId: "12@1", label: "opus-dev-2", startedAt: 2, turns: 3 }),
-    runFixture({ id: "r3", seq: 3, ticketId: "12@1", label: "opus-dev-3", startedAt: null, turns: 0 }),
-    runFixture({ id: "r4", seq: 4, ticketId: "other", label: "opus-dev-4", startedAt: 4, turns: 9 }),
-  ];
-  show(ticket(), agents(runs));
-  expect(screen.getByText("Session principale")).toBeTruthy();
-  expect(screen.getByText("opus-dev-2 · 3 tours")).toBeTruthy();
-});
-
-test("no started run, no agents state or no shell host: no session line and no failure", () => {
-  show(ticket(), agents([runFixture({ id: "r3", seq: 3, ticketId: "12@1", startedAt: null })]));
-  expect(screen.queryByText("Session principale")).toBeNull();
-  show(ticket({ openQuestions: 1 }), null, false);
-  expect(screen.getByRole("button", { name: "1 question" })).toBeTruthy();
-});
-
-test("a step offers « Étape facultative » and a lone root ticket offers its sprint", () => {
-  const view = show(ticket({ parentId: "f5" }), null);
-  expect(screen.getByRole("switch", { name: "Étape facultative" })).toBeTruthy();
-  expect(screen.queryByRole("combobox", { name: "Sprint" })).toBeNull();
-  view.unmount();
-  show(ticket(), null);
-  expect(screen.queryByRole("switch", { name: "Étape facultative" })).toBeNull();
-  expect(screen.getByRole("combobox", { name: "Sprint" })).toBeTruthy();
+  expect(order.every((at, i) => at >= 0 && (i === 0 || at > (order[i - 1] ?? 0)))).toBe(true);
+  expect(screen.getByRole("button", { name: /^Domaine/ }).getAttribute("aria-expanded")).toBe("false");
+  expect(screen.getByRole("button", { name: /^Maquettes/ }).getAttribute("aria-expanded")).toBe("false");
 });

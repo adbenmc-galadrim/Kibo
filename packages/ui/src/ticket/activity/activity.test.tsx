@@ -103,7 +103,6 @@ const sheet = (project: ProjectSnapshot = progressProject(), agents?: AgentsStat
       domains={[]}
       viewer="adam"
       onClose={() => {}}
-      onAssign={() => {}}
       onOpenInTab={() => {}}
       onOpenFile={() => {}}
       onOpenTicket={() => {}}
@@ -115,15 +114,18 @@ const sheet = (project: ProjectSnapshot = progressProject(), agents?: AgentsStat
 const openActivity = async () => {
   const user = userEvent.setup();
   await user.click(screen.getByRole("tab", { name: "Activité" }));
-  await user.click(await screen.findByRole("button", { name: /^Ancien/ }));
-  return screen.findByRole("tabpanel", { name: "Activité" });
+  const oldRuns = await screen.findByRole("button", { name: /^Ancien/ });
+  await user.click(oldRuns);
+  const fold = oldRuns.closest<HTMLElement>("[data-slot=collapsible]");
+  if (!fold) throw new Error("the old runs fold");
+  return fold;
 };
 
 test("the sheet opens on Détails and offers Activité", () => {
   sheet();
   expect(screen.getByRole("tab", { name: "Détails" }).getAttribute("aria-selected")).toBe("true");
   expect(screen.getByRole("tab", { name: "Activité" }).getAttribute("aria-selected")).toBe("false");
-  expect(screen.getByText("Statut")).toBeTruthy();
+  expect(screen.getByRole("combobox", { name: "Statut" })).toBeTruthy();
 });
 
 test("Activité leads with the report of the last run", async () => {

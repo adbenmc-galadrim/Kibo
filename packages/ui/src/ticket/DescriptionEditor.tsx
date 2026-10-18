@@ -21,9 +21,9 @@ export function DescriptionEditor({ ticketId, description, editable, command, on
     if (await command.run({ method: "updateTicket", ticketId, description: draft })) setDraft(null);
   };
   return (
-    <section className="grid gap-2 px-4 text-sm">
+    <section className="grid gap-2 text-sm">
       <div className="flex items-center gap-2">
-        <h3 className="text-xs font-medium">{fr.ticket.description}</h3>
+        <h3 className="text-[13px] font-semibold">{fr.ticket.description}</h3>
         {editable && draft === null && (
           <Button
             size="sm"

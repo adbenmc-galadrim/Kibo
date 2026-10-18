@@ -133,7 +133,6 @@ const show = (main = ticket(), access: ProjectSnapshot["sync"]["access"] = "writ
       domains={[]}
       viewer="adam"
       onClose={() => {}}
-      onAssign={() => {}}
       onOpenInTab={() => {}}
       onOpenFile={() => {}}
       onOpenTicket={onOpenTicket}

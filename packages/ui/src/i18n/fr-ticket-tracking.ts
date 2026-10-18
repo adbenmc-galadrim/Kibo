@@ -1,5 +1,7 @@
 import type { CiTone, PrReview } from "@kibo/schema";
 
+const pr = (n: number | null) => (n === null ? "PR" : `PR #${n}`);
+
 export const frTicketTracking = {
   pr: (n: number) => `PR #${n}`,
   review: {
@@ -14,37 +16,61 @@ export const frTicketTracking = {
     running: "CI en cours",
     neutral: "CI sans verdict",
   } satisfies Record<CiTone, string>,
+  noCi: "Pas de CI",
   openPr: (n: number) => `Ouvrir la PR #${n} sur GitHub`,
-  openJob: "Voir le job",
+  prLink: "PR",
+  jobLink: "Job",
   banner: "État de la review et de la CI",
   section: "Suivi",
+  sectionHint: "remonté de git, des PR et de full-delivery",
   branch: "Branche",
-  branchOn: (base: string) => `sur ${base}`,
+  on: "sur",
   prRow: "PR",
+  reviewRow: "Review",
   ciRow: "CI",
   session: "Session",
   step: "Étape",
   issues: "Issues",
+  prSince: (state: string, when: string | null) => (when ? `${state} ${when}` : state),
+  job: (name: string | null, when: string | null) =>
+    [name && `job ${name}`, when].filter(Boolean).join(" · "),
+  next: (label: string) => `· suivante : ${label}`,
   sessionLine: (tool: string, duration: string) => `${tool} · ${duration}`,
   minutes: (n: number) => `${n} min`,
   hours: (n: number) => `${n} h`,
   days: (n: number) => `${n} j`,
+  today: (clock: string) => `à ${clock}`,
+  yesterday: (clock: string) => `hier à ${clock}`,
+  onDay: (day: string, clock: string) => `le ${day} à ${clock}`,
   retouch: (label: string) => `Retouche · ${label}`,
   empty: "Aucun suivi git : déclare la branche avec kibo tickets set",
-  more: "Domaine et maquettes",
-  oldRuns: (n: number) => (n === 1 ? "Ancien run" : `Anciens runs · ${n}`),
-  journal: "Journal du ticket",
+  copyLink: "Copier le lien du ticket",
+  linkCopied: "Lien copié",
+  linkFailed: "Copie impossible",
+  close: "Fermer",
+  domain: "Domaine",
+  mockups: "Maquettes",
+  questions: "Questions",
+  noQuestion: "Aucune question sur ce ticket.",
+  noDependency: "Dépendances : aucune",
+  journal: "Chronologie",
+  journalHint: "journal du ticket : branche, PR, étapes, sessions, statut",
   noJournal: "Rien dans le journal de ce ticket pour l'instant.",
   journalError: "Journal du ticket indisponible.",
+  oldRuns: "Anciens runs",
+  oldRunsHint: "runs d'agents d'avant la phase 27, en lecture seule",
   events: {
-    branch: (name: string | null) => (name ? `Branche ${name} créée` : "Branche créée"),
-    prOpened: (n: number | null) => (n === null ? "PR ouverte" : `PR #${n} ouverte`),
-    prMerged: (n: number | null) => (n === null ? "PR fusionnée" : `PR #${n} fusionnée`),
+    branch: (name: string | null) => (name ? `Branche ${name} poussée` : "Branche poussée"),
+    prOpened: (n: number | null) => `${pr(n)} ouverte`,
+    prMerged: (n: number | null) => `${pr(n)} fusionnée`,
     review: (n: number | null, review: string | null) =>
-      `${n === null ? "PR" : `PR #${n}`} · ${REVIEW_TEXTS[review ?? ""] ?? "review demandée"}`,
+      `${REVIEW_TEXTS[review ?? ""] ?? "Review demandée"} sur ${pr(n)}`,
     checks: (n: number | null, checks: string | null) =>
-      `${n === null ? "PR" : `PR #${n}`} · ${CHECK_TEXTS[checks ?? ""] ?? "CI sans verdict"}`,
+      `${CHECK_TEXTS[checks ?? ""] ?? "CI sans verdict"} sur ${pr(n)}`,
     status: (label: string | null) => (label ? `Passé en ${label}` : "Statut changé"),
+    statusAside: (label: string) => `statut ⇒ ${label}`,
+    jobAside: (name: string) => `job ${name} · `,
+    seeLog: "voir le journal",
     step: (label: string | null) => (label ? `Étape ${label}` : "Étape mise à jour"),
     sessionStarted: (tool: string | null) => (tool ? `Session ${tool} ouverte` : "Session ouverte"),
     sessionStopped: (tool: string | null) => (tool ? `Session ${tool} fermée` : "Session fermée"),
@@ -57,7 +83,7 @@ export const frTicketTracking = {
 };
 
 const REVIEW_TEXTS: Record<string, string> = {
-  approved: "approuvée",
-  changes_requested: "changements demandés",
+  approved: "Approuvée",
+  changes_requested: "Changements demandés",
 };
 const CHECK_TEXTS: Record<string, string> = { ok: "CI verte", running: "CI en cours", error: "CI cassée" };

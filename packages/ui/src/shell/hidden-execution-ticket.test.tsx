@@ -45,7 +45,6 @@ const sheet = (execution: AgentExecution) =>
       domains={[]}
       viewer="adam"
       onClose={noop}
-      onAssign={noop}
       onOpenInTab={noop}
       onOpenFile={noop}
       onOpenTicket={noop}
@@ -56,53 +55,29 @@ const sheet = (execution: AgentExecution) =>
 const tab = (execution: AgentExecution) =>
   withSetting(
     execution,
-    <TicketTab
-      project={kiboProject()}
-      ticketId="t12"
-      viewer="adam"
-      onAssign={noop}
-      onOpenFile={noop}
-      onOpenTicket={noop}
-    />,
+    <TicketTab project={kiboProject()} ticketId="t12" viewer="adam" onOpenFile={noop} onOpenTicket={noop} />,
   );
 
-test("hidden execution: the ticket sheet has no assign, no Livrer, but copies /full-delivery", async () => {
-  sheet("hidden");
-  expect(await screen.findByRole("button", { name: "Copier /full-delivery KIB-12" })).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Assigner à un agent" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Livrer" })).toBeNull();
-});
+for (const execution of ["hidden", "shown"] as const) {
+  test(`${execution} execution: the ticket sheet has no assign, no Livrer, but copies /full-delivery`, async () => {
+    sheet(execution);
+    expect(await screen.findByRole("button", { name: "Copier /full-delivery KIB-12" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Assigner à un agent" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Livrer" })).toBeNull();
+  });
 
-test("shown execution: the ticket sheet offers assign and Livrer again", async () => {
-  sheet("shown");
-  expect(await screen.findByRole("button", { name: "Livrer" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Assigner à un agent" })).toBeTruthy();
-  expect(screen.queryByRole("button", { name: /^Copier \/full-delivery/ })).toBeNull();
-});
+  test(`${execution} execution: the Assigné field never names an agent profile`, async () => {
+    sheet(execution);
+    const field = await screen.findByRole("combobox", { name: "Assigné" });
+    expect(field.textContent).toBe("Personne");
+    expect(field.hasAttribute("disabled")).toBe(false);
+    expect(screen.queryByText("Choisis un profil via Assigner à un agent")).toBeNull();
+    expect(screen.queryByText("opus-dev")).toBeNull();
+  });
 
-test("hidden execution: the Assigné field shows nobody instead of the agent profile, without its help", async () => {
-  sheet("hidden");
-  const field = await screen.findByRole("combobox", { name: "Assigné" });
-  expect(field.textContent).toBe("Personne");
-  expect(field.hasAttribute("disabled")).toBe(false);
-  expect(screen.queryByText("Choisis un profil via Assigner à un agent")).toBeNull();
-  expect(screen.queryByText("opus-dev")).toBeNull();
-});
-
-test("shown execution: the Assigné field names the agent profile with its help", async () => {
-  sheet("shown");
-  const field = await screen.findByRole("combobox", { name: "Assigné" });
-  expect(field.textContent).toBe("opus-dev");
-  expect(screen.getByText("Choisis un profil via Assigner à un agent")).toBeTruthy();
-});
-
-test("hidden execution: the ticket tab has no assign action", async () => {
-  tab("hidden");
-  expect(await screen.findByRole("combobox", { name: "Assigné" })).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Assigner à un agent" })).toBeNull();
-});
-
-test("shown execution: the ticket tab offers assign again", async () => {
-  tab("shown");
-  expect(await screen.findByRole("button", { name: "Assigner à un agent" })).toBeTruthy();
-});
+  test(`${execution} execution: the ticket tab has no assign action`, async () => {
+    tab(execution);
+    expect(await screen.findByRole("combobox", { name: "Assigné" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Assigner à un agent" })).toBeNull();
+  });
+}

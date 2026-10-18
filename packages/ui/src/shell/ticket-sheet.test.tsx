@@ -53,7 +53,6 @@ const open = (ticketId: string, patch: Partial<TicketView> = {}) =>
       domains={[]}
       viewer="adam"
       onClose={noop}
-      onAssign={noop}
       onOpenInTab={noop}
       onOpenFile={noop}
       onOpenTicket={noop}
@@ -76,11 +75,11 @@ test("the sheet is found by the key of the ticket as well", () => {
 
 test("Domaine and Maquettes stay folded until asked for", async () => {
   open("e33");
-  const more = screen.getByRole("button", { name: "Domaine et maquettes" });
-  expect(more.getAttribute("aria-expanded")).toBe("false");
-  expect(screen.queryByText("Maquettes")).toBeNull();
-  await userEvent.setup().click(more);
-  expect(more.getAttribute("aria-expanded")).toBe("true");
+  const domain = screen.getByRole("button", { name: /^Domaine/ });
+  const mockups = screen.getByRole("button", { name: /^Maquettes/ });
+  expect([domain, mockups].map((b) => b.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
+  await userEvent.setup().click(mockups);
+  expect(mockups.getAttribute("aria-expanded")).toBe("true");
 });
 
 test("copying /full-delivery writes the command and says what it waits for", async () => {
@@ -114,7 +113,29 @@ test("the banner warns of requested changes on the PR of the step", () => {
 test("the Activité tab reads the journal of the ticket", async () => {
   open("e33");
   await userEvent.setup().click(screen.getByRole("tab", { name: "Activité" }));
-  const journalRegion = await screen.findByRole("region", { name: "Journal du ticket" });
-  expect(await within(journalRegion).findByText("Branche feat/envoi-hors-ligne créée")).toBeTruthy();
+  const journalRegion = await screen.findByRole("region", { name: "Chronologie" });
+  expect(await within(journalRegion).findByText("Branche feat/envoi-hors-ligne poussée")).toBeTruthy();
   expect(screen.queryByRole("button", { name: /^Ancien/ })).toBeNull();
+});
+
+test("status and assignee are pills under the title; a step toggles « facultative », a lone ticket picks its sprint", () => {
+  const view = open("e33");
+  expect(screen.getByRole("combobox", { name: "Statut" })).toBeTruthy();
+  expect(screen.getByRole("combobox", { name: "Assigné" })).toBeTruthy();
+  expect(screen.getByRole("switch", { name: "Étape facultative" })).toBeTruthy();
+  expect(screen.queryByRole("combobox", { name: "Sprint" })).toBeNull();
+  view.unmount();
+  open("e33", { parentId: null });
+  expect(screen.queryByRole("switch", { name: "Étape facultative" })).toBeNull();
+  expect(screen.getByRole("combobox", { name: "Sprint" })).toBeTruthy();
+});
+
+test("the top bar names the key and holds Copier, the link and Fermer", () => {
+  open("e33");
+  const close = screen.getByRole("button", { name: "Fermer" });
+  expect(close.textContent).toBe("Fermer");
+  const bar = close.parentElement?.parentElement;
+  expect(bar?.textContent).toContain("EMIS-33");
+  expect(bar?.textContent).toContain("Copier /full-delivery EMIS-33");
+  expect(screen.getByRole("button", { name: "Copier le lien du ticket" })).toBeTruthy();
 });

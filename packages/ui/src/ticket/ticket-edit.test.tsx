@@ -124,7 +124,6 @@ const show = (main = ticket(), access: ProjectSnapshot["sync"]["access"] = "writ
       domains={[]}
       viewer="adam"
       onClose={() => {}}
-      onAssign={() => {}}
       onOpenInTab={onOpenInTab}
       onOpenFile={() => {}}
       onOpenTicket={onOpenTicket}
@@ -252,12 +251,12 @@ test("the assignee select offers nobody, me and the members; an agent assignee i
   });
 });
 
-test("an agent assignee shows a disabled select with the hint", () => {
+test("an agent assignee left from the agent era reads as nobody", () => {
   show(ticket({ assignee: { kind: "agent", ref: "opus-dev-1" } }));
   const select = screen.getByRole("combobox", { name: "Assigné" });
-  expect(select.getAttribute("data-disabled")).not.toBeNull();
-  expect(select.textContent).toContain("opus-dev-1");
-  expect(screen.getByText("Choisis un profil via Assigner à un agent")).toBeTruthy();
+  expect(select.getAttribute("data-disabled")).toBeNull();
+  expect(select.textContent).toBe("Personne");
+  expect(screen.queryByText("Choisis un profil via Assigner à un agent")).toBeNull();
 });
 
 test("the description is edited in a textarea and saved", async () => {

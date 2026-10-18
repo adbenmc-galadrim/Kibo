@@ -302,8 +302,7 @@ test("launching an agent from the drawer opens the assign dialog", async () => {
   expect(within(screen.getByRole("dialog")).getByText("Lancer un agent")).toBeTruthy();
 });
 
-test("the ticket sheet offers a domain and the assign action", async () => {
-  const onAssign = mock(() => {});
+test("the ticket sheet offers a domain, folded, and no assign action", async () => {
   render(
     <TicketSheet
       project={kiboProject()}
@@ -311,17 +310,15 @@ test("the ticket sheet offers a domain and the assign action", async () => {
       domains={domainsFixture}
       viewer="adam"
       onClose={() => {}}
-      onAssign={onAssign}
       onOpenInTab={() => {}}
       onOpenFile={() => {}}
       onOpenTicket={() => {}}
       onDeleted={() => {}}
     />,
   );
-  await userEvent.setup().click(screen.getByRole("button", { name: "Domaine et maquettes" }));
+  await userEvent.setup().click(screen.getByRole("button", { name: /^Domaine/ }));
   expect(screen.getByRole("combobox", { name: "Domaine" }).textContent).toContain("UI");
-  await userEvent.setup().click(screen.getByRole("button", { name: "Assigner à un agent" }));
-  expect(onAssign).toHaveBeenCalled();
+  expect(screen.queryByRole("button", { name: "Assigner à un agent" })).toBeNull();
 });
 
 test("the bell asks for notification permission once", async () => {

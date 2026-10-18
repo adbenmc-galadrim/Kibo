@@ -204,7 +204,6 @@ const show = async (shown: TicketView = ticket) => {
       domains={[]}
       viewer="adam"
       onClose={() => {}}
-      onAssign={() => {}}
       onOpenInTab={() => {}}
       onOpenFile={() => {}}
       onOpenTicket={() => {}}
@@ -218,7 +217,7 @@ const show = async (shown: TicketView = ticket) => {
 };
 
 const openMockups = async () => {
-  await userEvent.setup().click(screen.getByRole("button", { name: "Domaine et maquettes" }));
+  await userEvent.setup().click(screen.getByRole("button", { name: /^Maquettes/ }));
   await screen.findAllByText("Tickets / Arbre");
 };
 
@@ -291,7 +290,7 @@ test("the Suivi block names the branch and its base, a stacked merge names its p
   if (!header) throw new Error("sheet has a header");
   expect(tracking().getByRole("link", { name: "#12" }).getAttribute("title")).toBe("fusionnée dans feat/a");
   const branch = tracking().getByText("feat/x");
-  expect(branch.parentElement?.textContent).toBe("feat/x sur feat/parent");
+  expect(branch.parentElement?.textContent).toBe("feat/xsurfeat/parent");
   expect(branch.tagName).not.toBe("A");
   expect(header.textContent).not.toContain("C0-9");
   expect(screen.getByRole("heading", { name: "Arbre" }).getAttribute("title")).toBe("Importé de plan · C0-9");

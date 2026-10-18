@@ -1,4 +1,4 @@
-import { type CiRun, KiboError, type ProjectEvent, type ProjectSnapshot } from "@kibo/schema";
+import { type CiRun, KiboError, type ProjectEvent, type TicketView } from "@kibo/schema";
 import { useEffect, useState } from "react";
 import { client } from "../api";
 
@@ -10,24 +10,36 @@ const quiet = (what: string) => (e: unknown) => {
 
 export type TicketJournal = { events: ProjectEvent[]; error: boolean };
 
-export function useTicketJournal(project: ProjectSnapshot, ticketId: string): TicketJournal {
-  const [journal, setJournal] = useState<TicketJournal>({ events: [], error: false });
+type JournalFacts = Pick<
+  TicketView,
+  "id" | "statusId" | "delivery" | "session" | "externalRefs" | "sprintId"
+>;
+
+export const journalSignal = (ticket: JournalFacts): string =>
+  JSON.stringify([ticket.statusId, ticket.delivery, ticket.session, ticket.externalRefs, ticket.sprintId]);
+
+export function useTicketJournal(projectId: string, ticket: JournalFacts): TicketJournal {
+  const [journal, setJournal] = useState<TicketJournal & { signal: string | null }>({
+    events: [],
+    error: false,
+    signal: null,
+  });
+  const ticketId = ticket.id;
+  const signal = journalSignal(ticket);
   useEffect(() => {
     let alive = true;
-    client
-      .rpc({ method: "listProjectEvents", projectId: project.meta.id, ticketId, limit: JOURNAL_LIMIT })
-      .then(
-        (page) => alive && setJournal({ events: page?.items ?? [], error: false }),
-        (e: unknown) => {
-          quiet("ticket journal")(e);
-          if (alive) setJournal((prev) => ({ ...prev, error: true }));
-        },
-      );
+    client.rpc({ method: "listProjectEvents", projectId, ticketId, limit: JOURNAL_LIMIT }).then(
+      (page) => alive && setJournal({ events: page?.items ?? [], error: false, signal }),
+      (e: unknown) => {
+        quiet("ticket journal")(e);
+        if (alive) setJournal((prev) => ({ ...prev, error: true, signal }));
+      },
+    );
     return () => {
       alive = false;
     };
-  }, [project, ticketId]);
-  return journal;
+  }, [projectId, ticketId, signal]);
+  return { events: journal.events, error: journal.error };
 }
 
 export function useTicketCiRuns(projectId: string, ticketId: string): CiRun[] {

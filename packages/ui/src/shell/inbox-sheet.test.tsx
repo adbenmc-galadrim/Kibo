@@ -41,7 +41,6 @@ test("an inbox ticket sheet offers filing instead of an agent", async () => {
       domains={[]}
       viewer="adam"
       onClose={noop}
-      onAssign={noop}
       onFile={() => filed.push("inb2")}
       onOpenInTab={noop}
       onOpenFile={noop}
@@ -60,14 +59,7 @@ test("an inbox ticket sheet offers filing instead of an agent", async () => {
 
 test("an inbox ticket tab never offers an agent", () => {
   render(
-    <TicketTab
-      project={inboxSnapshot}
-      ticketId="inb2"
-      viewer="adam"
-      onAssign={noop}
-      onOpenFile={noop}
-      onOpenTicket={noop}
-    />,
+    <TicketTab project={inboxSnapshot} ticketId="inb2" viewer="adam" onOpenFile={noop} onOpenTicket={noop} />,
   );
   expect(screen.getByRole("heading", { name: "Appeler le comptable" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Assigner à un agent" })).toBeNull();

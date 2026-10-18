@@ -50,7 +50,7 @@ export function LabelsField({ ticket, editable, command }: Props) {
           placeholder={frLabels.add}
           value={draft}
           aria-invalid={invalid}
-          className="h-6 w-48 text-xs"
+          className="h-6 w-48 border-transparent bg-transparent px-1 text-xs shadow-none hover:border-border focus-visible:border-border dark:bg-transparent"
           onChange={(e) => {
             setDraft(e.target.value);
             setInvalid(false);

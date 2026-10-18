@@ -14,7 +14,7 @@ import { fr } from "../i18n/fr";
 import { PageBoundary } from "../pages/PageBoundary";
 import { PageView } from "../pages/PageView";
 import { ProjectHome } from "../pages/ProjectHome";
-import { targetToHash } from "../tabs/target-hash";
+import { findTicket, targetToHash } from "../tabs/target-hash";
 import {
   ChangesView,
   FileTabView,
@@ -43,7 +43,6 @@ type Props = {
   onSuggestPages(projectId: string): void;
   onOpen(target: TabTarget | null, newTab?: boolean): void;
   onOpenFile(ref: FileRef): void;
-  onAssign(ticketId: string): void;
   onOpenTicket(projectId: string, ticketId: string): void;
 };
 
@@ -60,8 +59,8 @@ const unknownProject = (p: Props, target: TabTarget): boolean => {
   return id !== null && !isInbox(id) && !p.projects.some((project) => project.id === id);
 };
 
-const knownTicket = (project: ProjectSnapshot, ticketId: string): boolean =>
-  project.tickets.some((t) => t.id === ticketId || t.key === ticketId);
+const knownTicket = (project: ProjectSnapshot, ref: string): boolean =>
+  findTicket(project.tickets, ref) !== undefined;
 
 export function ContentView(p: Props) {
   return <PageBoundary resetKey={targetToHash(p.target)}>{content(p)}</PageBoundary>;
@@ -168,7 +167,6 @@ function content(p: Props): ReactNode {
           ticketId={t.ticketId}
           domains={p.domains}
           viewer={p.project.viewer ?? p.viewer}
-          onAssign={p.onAssign}
           onOpenFile={p.onOpenFile}
           onOpenTicket={(ticketId) => p.onOpenTicket(t.projectId, ticketId)}
         />

@@ -222,7 +222,6 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                     onSuggestPages={(projectId) => set({ suggestFor: projectId })}
                     onOpen={(t, newTab) => go(t, newTab)}
                     onOpenFile={(ref) => set({ preview: ref })}
-                    onAssign={(ticketId) => set({ assign: { projectId: null, ticketId } })}
                     onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
                   />
                 )}

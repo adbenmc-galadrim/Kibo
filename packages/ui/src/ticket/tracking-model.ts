@@ -2,15 +2,19 @@ import {
   type CiRun,
   type CiTone,
   ciTone,
+  DELIVERY_STEP_MAX,
   deliveryStepLabel,
   type ExternalRef,
   featureLabel,
   type GithubPrRef,
   latestCiRunPerWorkflow,
+  type ProjectEvent,
+  type ProjectEventKind,
   type ProjectSnapshot,
   prCiTone,
   type TicketView,
 } from "@kibo/schema";
+import { frFeature } from "../i18n/fr-group";
 import { frTicketTracking as t } from "../i18n/fr-ticket-tracking";
 
 const LIVE: ReadonlySet<GithubPrRef["state"]> = new Set(["open", "draft"]);
@@ -26,35 +30,35 @@ export function mainPr(refs: readonly ExternalRef[]): GithubPrRef | null {
 }
 
 type HeaderProject = Pick<ProjectSnapshot, "tickets" | "sprints">;
-export type HeaderContext = { feature: boolean; lead: string; pr: GithubPrRef | null; text: string };
-
-const joined = (parts: readonly (string | null)[]): string =>
-  parts.filter((p): p is string => p !== null && p !== "").join(" · ");
+export type HeaderContext = {
+  feature: string | null;
+  sprint: string | null;
+  pr: GithubPrRef | null;
+  text: string;
+};
 
 export function headerContext(ticket: TicketView, project: HeaderProject): HeaderContext {
   const parent = project.tickets.find((x) => x.id === ticket.parentId);
+  const feature = parent ? featureLabel(parent) || null : null;
   const sprint = project.sprints.find((s) => s.id === ticket.effectiveSprintId)?.code ?? null;
   const pr = mainPr(ticket.externalRefs);
-  const lead = joined([parent ? featureLabel(parent) : null, sprint]);
-  const prLabel = pr ? t.pr(pr.number) : null;
-  const text = joined([parent ? null : ticket.keyLabel, lead, prLabel]);
-  return { feature: parent !== undefined, lead, pr, text };
+  const text = [feature, sprint, pr ? t.pr(pr.number) : null].filter((p) => p !== null).join(" · ");
+  return { feature, sprint, pr, text };
 }
 
-const ALERT: ReadonlySet<CiTone> = new Set(["error", "running"]);
-
+export type AlertPart = { text: string; tone: "amber" | "red" };
 export type TrackingAlert = {
   pr: GithubPrRef;
-  tone: "error" | "running";
-  parts: string[];
+  tone: "amber" | "red";
+  parts: AlertPart[];
   jobUrl: string | null;
 };
 
 const runsOf = (pr: GithubPrRef, runs: readonly CiRun[]) =>
   latestCiRunPerWorkflow(runs.filter((r) => r.prNumber === pr.number));
 
-export function ciJobUrl(pr: GithubPrRef, runs: readonly CiRun[], tone: CiTone): string | null {
-  return runsOf(pr, runs).find((r) => ciTone(r) === tone)?.url ?? null;
+export function ciRunOf(pr: GithubPrRef, runs: readonly CiRun[], tone: CiTone): CiRun | null {
+  return runsOf(pr, runs).find((r) => ciTone(r) === tone) ?? null;
 }
 
 export function trackingAlert(ticket: TicketView, runs: readonly CiRun[]): TrackingAlert | null {
@@ -62,13 +66,62 @@ export function trackingAlert(ticket: TicketView, runs: readonly CiRun[]): Track
   if (pr === null || !LIVE.has(pr.state)) return null;
   const changes = pr.review === "changes_requested";
   const ci = prCiTone(pr, runs);
-  const ciAlert = ci !== null && ALERT.has(ci);
-  if (!changes && !ciAlert) return null;
-  const parts = [t.pr(pr.number)];
-  if (changes) parts.push(t.review.changes_requested);
-  if (ci !== null && ciAlert) parts.push(t.ci[ci]);
-  const tone = changes || ci === "error" ? "error" : "running";
-  return { pr, tone, parts, jobUrl: ci !== null && ciAlert ? ciJobUrl(pr, runs, ci) : null };
+  const parts: AlertPart[] = [];
+  if (changes) parts.push({ text: t.review.changes_requested, tone: "amber" });
+  if (ci === "error") parts.push({ text: t.ci.error, tone: "red" });
+  if (ci === "running") parts.push({ text: t.ci.running, tone: "amber" });
+  if (parts.length === 0) return null;
+  const tone = changes || ci === "running" ? "amber" : "red";
+  const jobUrl = ci === "error" || ci === "running" ? (ciRunOf(pr, runs, ci)?.url ?? null) : null;
+  return { pr, tone, parts, jobUrl };
+}
+
+export type CiDetail = { tone: CiTone; job: string | null; at: number | null; url: string | null };
+
+export function ciDetail(
+  pr: GithubPrRef,
+  runs: readonly CiRun[],
+  events: readonly ProjectEvent[],
+): CiDetail | null {
+  const tone = prCiTone(pr, runs);
+  if (tone === null) return null;
+  const run = ciRunOf(pr, runs, tone);
+  const failed = run?.jobs.find((j) => j.conclusion === "failure") ?? run?.jobs[0];
+  const at = run ? Date.parse(run.updatedAt) : (lastEvent(events, "pr_checks", pr.number)?.at ?? null);
+  return { tone, job: failed?.name ?? null, at: Number.isNaN(at) ? null : at, url: run?.url ?? null };
+}
+
+export function lastEvent(
+  events: readonly ProjectEvent[],
+  kind: ProjectEventKind,
+  number?: number,
+): ProjectEvent | undefined {
+  return events
+    .filter((e) => e.kind === kind && (number === undefined || e.data.number === number))
+    .reduce<ProjectEvent | undefined>(
+      (last, e) => (last === undefined || e.at > last.at ? e : last),
+      undefined,
+    );
+}
+
+const DAY_MS = 86_400_000;
+const pad = (n: number) => String(n).padStart(2, "0");
+const midnight = (at: number) => {
+  const d = new Date(at);
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+};
+
+export function clockOf(at: number): string {
+  const d = new Date(at);
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function whenLabel(at: number, now: number): string {
+  const days = Math.round((midnight(now) - midnight(at)) / DAY_MS);
+  if (days <= 0) return t.today(clockOf(at));
+  if (days === 1) return t.yesterday(clockOf(at));
+  const d = new Date(at);
+  return t.onDay(`${d.getDate()} ${frFeature.month(d.getMonth())}`, clockOf(at));
 }
 
 const MINUTE = 60_000;
@@ -84,3 +137,6 @@ export function stepLine(delivery: NonNullable<TicketView["delivery"]>): string 
   const label = deliveryStepLabel(delivery.step);
   return delivery.kind === "update" ? t.retouch(label) : label;
 }
+
+export const nextStepLabel = (step: number): string | null =>
+  step < DELIVERY_STEP_MAX ? deliveryStepLabel(step + 1) : null;

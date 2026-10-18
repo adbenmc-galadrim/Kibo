@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import type { CiRun, ExternalRef, GithubPrRef, TicketView } from "@kibo/schema";
+import type { CiRun, ExternalRef, GithubPrRef, ProjectEvent, TicketView } from "@kibo/schema";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { emisFeatureProject, NOW } from "../shell/feature/fixture";
 import { TrackingSection } from "./TrackingSection";
@@ -34,35 +34,88 @@ const failing: CiRun = {
   jobs: [],
 };
 const ticket = (patch: Partial<TicketView>): TicketView => ({ ...base, ...patch });
-const row = (name: string) =>
-  within(screen.getByRole("region", { name: "Suivi" }))
+const row = (name: string) => {
+  const term = within(screen.getByRole("region", { name: /^Suivi/ }))
     .getAllByRole("term")
-    .find((term) => term.textContent === name)?.nextElementSibling?.textContent;
+    .find((t) => t.textContent === name);
+  return term?.nextElementSibling ?? null;
+};
+const words = (name: string) =>
+  Array.from(row(name)?.querySelectorAll("span, a") ?? [])
+    .filter((el) => Array.from(el.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && n.textContent))
+    .map((el) => el.textContent);
+const at = (h: number, m: number) => new Date(2026, 9, 16, h, m).getTime();
+const event = (kind: ProjectEvent["kind"], when: number, data: ProjectEvent["data"]): ProjectEvent => ({
+  id: when,
+  projectId: "emis",
+  kind,
+  ticketId: "e33",
+  featureId: "f5",
+  source: "git",
+  data,
+  at: when,
+});
 
-test("the Suivi block names the branch, the PR and its review, the CI, the session and the step", () => {
+test("the Suivi block names the branch, the PR, its review, the CI, the session and the step, with their times", () => {
   render(
     <TrackingSection
       ticket={ticket({
         externalRefs: [branch, pr()],
         session: { tool: "T3 Code", startedAt: NOW - 42 * 60_000 },
-        delivery: { step: 7, note: "", at: NOW, runId: null, kind: "delivery" },
+        delivery: { step: 9, note: "", at: NOW, runId: null, kind: "delivery" },
       })}
-      ciRuns={[failing]}
+      ciRuns={[
+        {
+          ...failing,
+          updatedAt: new Date(at(11, 58)).toISOString(),
+          jobs: [
+            {
+              jobId: 1,
+              name: "e2e",
+              status: "completed",
+              conclusion: "failure",
+              startedAt: null,
+              completedAt: null,
+            },
+          ],
+        },
+      ]}
+      events={[
+        event("pr_opened", NOW - 22 * 3_600_000, { number: 20 }),
+        event("pr_review", at(13, 47), { number: 20, review: "changes_requested" }),
+      ]}
       now={NOW}
     />,
   );
-  expect(row("Branche")).toBe("feat/emis-45 sur dev");
-  expect(row("PR")).toBe("#20 · ouverte · changements demandés");
-  expect(row("CI")).toContain("CI cassée");
-  expect(row("Session")).toBe("T3 Code · 42 min");
-  expect(row("Étape")).toBe("7 · Porte qualité");
+  expect(screen.getByText("remonté de git, des PR et de full-delivery")).toBeTruthy();
+  expect(words("Branche")).toEqual(["feat/emis-45", "sur", "dev"]);
+  expect(words("PR")).toEqual(["#20", "ouverte hier à 16:52"]);
+  expect(words("Review")).toEqual(["changements demandés", "13:47"]);
+  expect(words("CI")).toEqual(["CI cassée", "job e2e · 11:58"]);
+  expect(row("Session")?.textContent).toBe("T3 Code · 42 min");
+  expect(words("Étape")).toEqual(["9 · Review", "· suivante : 10 · Démo"]);
 });
 
-test("the CI row falls back to the checks of the PR when no run is known", () => {
-  render(
-    <TrackingSection ticket={ticket({ externalRefs: [pr({ checks: "running" })] })} ciRuns={[]} now={NOW} />,
+test("the CI row reads the checks of the PR when no run is known, and says « Pas de CI » without any", () => {
+  const view = render(
+    <TrackingSection
+      ticket={ticket({ externalRefs: [pr({ checks: "running" })] })}
+      ciRuns={[]}
+      events={[]}
+      now={NOW}
+    />,
   );
-  expect(row("CI")).toBe("CI en cours");
+  expect(words("CI")[0]).toBe("CI en cours");
+  view.unmount();
+  render(
+    <TrackingSection
+      ticket={ticket({ externalRefs: [pr({ checks: null })] })}
+      ciRuns={[]}
+      events={[]}
+      now={NOW}
+    />,
+  );
+  expect(row("CI")?.textContent).toBe("Pas de CI");
 });
 
 test("a retouch names its step « Retouche · 7 · Porte qualité »", () => {
@@ -73,10 +126,11 @@ test("a retouch names its step « Retouche · 7 · Porte qualité »", () => {
         delivery: { step: 7, note: "", at: NOW, runId: null, kind: "update" },
       })}
       ciRuns={[]}
+      events={[]}
       now={NOW}
     />,
   );
-  expect(row("Étape")).toBe("Retouche · 7 · Porte qualité");
+  expect(words("Étape")[0]).toBe("Retouche · 7 · Porte qualité");
 });
 
 test("a ticket without any tracking says how to declare its branch", () => {
@@ -84,6 +138,7 @@ test("a ticket without any tracking says how to declare its branch", () => {
     <TrackingSection
       ticket={ticket({ externalRefs: [], session: null, delivery: null })}
       ciRuns={[]}
+      events={[]}
       now={NOW}
     />,
   );

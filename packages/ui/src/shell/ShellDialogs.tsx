@@ -151,9 +151,6 @@ export function ShellDialogs({
           domains={projectDomainsOf(sheetProject, config) ?? []}
           viewer={viewer}
           onClose={() => set({ sheet: null })}
-          onAssign={() =>
-            set({ sheet: null, assign: { projectId: sheet.projectId, ticketId: sheet.ticketId } })
-          }
           onFile={() => set({ sheet: null, fileTicket: { ticketId: sheet.ticketId } })}
           onOpenInTab={() => {
             set({ sheet: null });

@@ -160,7 +160,7 @@ test("presence is read for the shown project only, and refreshed by its own even
   expect(presenceReads()).toHaveLength(2);
 });
 
-test("the sheet says who is looking at the ticket and disables the agent", async () => {
+test("the sheet says who is looking at the ticket and offers no command to copy yet", async () => {
   peers = [peer("Léa", 1, { ticketId: "t1" }), peer("Sam", 2, { ticketId: "t9" })];
   render(
     <TicketSheet
@@ -169,7 +169,6 @@ test("the sheet says who is looking at the ticket and disables the agent", async
       domains={[]}
       viewer="adam"
       onClose={noop}
-      onAssign={noop}
       onOpenInTab={noop}
       onOpenFile={noop}
       onOpenTicket={noop}
@@ -179,26 +178,13 @@ test("the sheet says who is looking at the ticket and disables the agent", async
   expect(await screen.findByText("Léa regarde ce ticket")).toBeTruthy();
   expect(screen.queryByText("Sam regarde ce ticket")).toBeNull();
   expect(screen.getByText("KIB-…").className).toContain("italic");
-  expect((screen.getByRole("button", { name: "Assigner à un agent" }) as HTMLButtonElement).disabled).toBe(
-    true,
-  );
+  expect(screen.queryByRole("button", { name: /^Copier \/full-delivery/ })).toBeNull();
 });
 
-test("the ticket tab shows the provisional key and keeps the agent away", () => {
-  render(
-    <TicketTab
-      project={project}
-      ticketId="t1"
-      viewer="adam"
-      onAssign={noop}
-      onOpenFile={noop}
-      onOpenTicket={noop}
-    />,
-  );
+test("the ticket tab shows the provisional key and offers no command to copy yet", () => {
+  render(<TicketTab project={project} ticketId="t1" viewer="adam" onOpenFile={noop} onOpenTicket={noop} />);
   expect(screen.getByText("KIB-…").className).toContain("italic");
-  expect((screen.getByRole("button", { name: "Assigner à un agent" }) as HTMLButtonElement).disabled).toBe(
-    true,
-  );
+  expect(screen.queryByRole("button", { name: /^Copier \/full-delivery/ })).toBeNull();
 });
 
 test("actions that need a key are disabled with an explanation", () => {
