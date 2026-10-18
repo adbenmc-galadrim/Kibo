@@ -68,7 +68,7 @@ test("an applied reminder offers its text to copy for the recipient", async () =
   );
   expect(card.getAllByRole("button", { name: "Copier la relance" })).toHaveLength(1);
   await user.click(card.getByRole("button", { name: "Copier la relance" }));
-  expect(written[0]?.split("\n")[1]).toBe("Je reviens vers vous au sujet de Q14 · Client - Logo ?");
+  expect(written[0]?.split("\n")[1]).toBe("Je reviens vers vous au sujet de « Client - Logo ? »");
 });
 
 test("a failed reminder has nothing to copy", () => {

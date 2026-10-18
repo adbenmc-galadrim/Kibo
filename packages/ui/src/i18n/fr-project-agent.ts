@@ -90,10 +90,9 @@ export const frProjectAgent = {
   },
   reminder: {
     greeting: "Bonjour,",
-    about: (question: string) => `Je reviens vers vous au sujet de ${question}`,
-    blocks: (feature: string) => `Elle bloque ${feature}`,
-    concerns: (feature: string) => `Elle concerne ${feature}`,
-    planned: (sprint: string) => `, prévue en ${sprint}`,
+    about: (question: string) => `Je reviens vers vous au sujet de « ${question} »`,
+    blocks: (impact: string) => `Elle ${impact}`,
+    concerns: (impact: string) => `Elle est posée ${impact}`,
     closing: "Pourriez-vous nous répondre ? Merci.",
     copy: "Copier la relance",
   },
