@@ -1,13 +1,26 @@
 import { expect, test } from "bun:test";
-import type { ProjectCommand, Ticket } from "@kibo/schema";
+import type { ProjectCommand, Sprint, Ticket } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 
+const TODAY = "2026-10-14";
+const plan = (run: (cmd: ProjectCommand) => unknown, ticketId: string) => {
+  const sprint = run({
+    method: "createSprint",
+    code: "S42",
+    name: "S42",
+    start: "2026-10-12",
+    end: "2026-10-16",
+  });
+  run({ method: "setTicketSprint", ticketId, sprintId: (sprint as Sprint).id });
+};
+
 const seed = (run: (cmd: ProjectCommand) => unknown) => {
   const core = run({ method: "createTicket", title: "Noyau de données" }) as Ticket;
+  plan(run, core.id);
   run({
     method: "createTicket",
     title: "Schéma Loro des tickets",
@@ -33,7 +46,7 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
 };
 
 const setup = (surface: "view" | "widget" = "view") => {
-  const m = createMockSdk(manifest, { seed, viewer: "adam", surface, agentExecution: "shown" });
+  const m = createMockSdk(manifest, { seed, today: TODAY, viewer: "adam", surface, agentExecution: "shown" });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />

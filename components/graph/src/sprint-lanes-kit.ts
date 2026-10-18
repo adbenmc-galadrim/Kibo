@@ -170,6 +170,7 @@ export function kitView(over: Partial<TicketView> & Pick<TicketView, "id" | "tit
     keyLabel: over.id,
     openQuestions: 0,
     startable: false,
+    startReason: null,
     effectiveSprintId: null,
     feature: null,
     session: null,

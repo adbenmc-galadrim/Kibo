@@ -1,6 +1,7 @@
 import {
   KiboError,
   NO_ACTIVITY,
+  openLimitOf,
   type ProjectActivity,
   type ProjectCommand,
   type ProjectSnapshot,
@@ -229,6 +230,7 @@ export function readProject(
     sprints,
     today,
     activity,
+    openLimit: openLimitOf(meta.tracking),
   });
   return {
     meta,

@@ -54,6 +54,7 @@ const ticket = (n: number, title: string): TicketView => ({
   waitingOn: [],
   openQuestions: 0,
   startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,

@@ -47,6 +47,7 @@ function ticket(
     keyLabel: `EMIS-${id}`,
     openQuestions: 0,
     startable: true,
+    startReason: null,
   };
 }
 

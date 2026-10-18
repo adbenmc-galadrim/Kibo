@@ -51,6 +51,7 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   waitingOn: [],
   openQuestions: 0,
   startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,

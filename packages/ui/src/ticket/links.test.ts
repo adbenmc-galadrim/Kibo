@@ -26,6 +26,7 @@ const t = (n: number, title: string, statusId: TicketView["statusId"] = "todo"):
   waitingOn: [],
   openQuestions: 0,
   startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,

@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import type { ComponentManifestInput, ProjectCommand, Ticket, TicketView } from "@kibo/schema";
+import type { ComponentManifestInput, ProjectCommand, Sprint, Ticket, TicketView } from "@kibo/schema";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useDeliverFlow } from "./deliver-flow";
@@ -17,8 +17,21 @@ const manifest: ComponentManifestInput = {
   writes: ["ticket", "run"],
 };
 
+const TODAY = "2026-10-14";
+const plan = (run: (cmd: ProjectCommand) => unknown, ticketId: string) => {
+  const sprint = run({
+    method: "createSprint",
+    code: "S42",
+    name: "S42",
+    start: "2026-10-12",
+    end: "2026-10-16",
+  });
+  run({ method: "setTicketSprint", ticketId, sprintId: (sprint as Sprint).id });
+};
+
 const seed = (run: (cmd: ProjectCommand) => unknown) => {
   const parent = run({ method: "createTicket", title: "Regroupement" }) as Ticket;
+  plan(run, parent.id);
   run({ method: "createTicket", title: "Feuille A", parentId: parent.id });
   run({ method: "createTicket", title: "Feuille B", parentId: parent.id });
   run({ method: "createTicket", title: "Seul" });
@@ -53,7 +66,7 @@ function Probe() {
 }
 
 const setup = () => {
-  const m = createMockSdk(manifest, { seed });
+  const m = createMockSdk(manifest, { seed, today: TODAY });
   render(
     <SdkProvider sdk={m.sdk}>
       <Probe />
@@ -90,7 +103,7 @@ test("a refusal is reported with the ticket key", async () => {
 });
 
 test("the update mode reaches the delivery with the touch-up brief", async () => {
-  const m = createMockSdk(manifest, { seed });
+  const m = createMockSdk(manifest, { seed, today: TODAY });
   const seul = m.snapshot().tickets.find((t) => t.title === "Seul");
   const result = await m.sdk.runs.deliver(seul?.id ?? "", "update");
   expect("brief" in result ? result.brief : null).toBe(`/update-delivery ${seul?.keyLabel}`);

@@ -43,6 +43,7 @@ export function ticket(p: Partial<TicketView> & Pick<TicketView, "id">): TicketV
     keyLabel: key ?? "EMIS-…",
     openQuestions: 0,
     startable: false,
+    startReason: null,
     ...p,
   };
 }

@@ -49,6 +49,7 @@ const mineTicket = (id: string, key: string, title: string, statusId: StatusId):
   waitingOn: [],
   openQuestions: 0,
   startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,

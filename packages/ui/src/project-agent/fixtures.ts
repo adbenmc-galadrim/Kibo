@@ -36,6 +36,7 @@ const ticket = (id: string, key: string, title: string, statusId: TicketView["st
   waitingOn: [],
   openQuestions: 0,
   startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,

@@ -103,6 +103,7 @@ export function viewOf(over: Partial<TicketView> & Pick<TicketView, "id" | "titl
     keyLabel: over.id.toUpperCase(),
     openQuestions: 0,
     startable: false,
+    startReason: null,
     effectiveSprintId: null,
     feature: null,
     session: null,

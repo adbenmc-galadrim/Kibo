@@ -44,7 +44,7 @@ test("by default a group is a dashed frame around its sub-tickets, never a node"
   ).toBeTruthy();
   expect(within(canvas()).queryByRole("button", { name: /Parcours de livraison$/ })).toBeNull();
   expect(within(canvas()).queryByRole("button", { name: /Étapes visibles$/ })).toBeNull();
-  expect(screen.getByText("5 tickets · 4 ouverts · 3 démarrables")).toBeTruthy();
+  expect(screen.getByText("5 tickets · 4 ouverts · 0 démarrable")).toBeTruthy();
   fireEvent.click(within(canvas()).getByRole("button", { name: "Ouvrir l'ensemble KIB-1" }));
   expect(m.opened).toEqual([m.snapshot().tickets.find((t) => t.key === "KIB-1")?.id ?? ""]);
   expect(canvas().querySelectorAll("path[marker-end]").length).toBeGreaterThan(0);

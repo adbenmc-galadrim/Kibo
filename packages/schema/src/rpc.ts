@@ -26,6 +26,7 @@ import type { ProjectSyncInfo } from "./sharing";
 import { SIGNAL_RPC, type SignalRpcResult } from "./signal-rpc";
 import { SKILL_RPC, type SkillRpcResult } from "./skill-rpc";
 import type { SprintView } from "./sprint";
+import type { StartReason } from "./startability";
 import type { Status, StatusId } from "./status";
 import { SUBAGENT_RPC, type SubagentRpcResult } from "./subagent";
 import type { Phase7Event } from "./sync";
@@ -42,6 +43,7 @@ export type TicketView = Ticket & {
   keyLabel: string;
   openQuestions: number;
   startable: boolean;
+  startReason: StartReason | null;
   effectiveSprintId: string | null;
   feature: FeatureState | null;
   session: TicketSession | null;

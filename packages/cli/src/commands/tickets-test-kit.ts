@@ -54,6 +54,7 @@ export function fakeTicket(input: TicketInput): TicketView {
     keyLabel: input.key,
     openQuestions: 0,
     startable: true,
+    startReason: null,
   };
 }
 

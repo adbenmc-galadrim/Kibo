@@ -105,5 +105,6 @@ export function exampleTicket(project: ProjectSnapshot): TicketView {
     keyLabel: key,
     openQuestions: 0,
     startable: true,
+    startReason: null,
   };
 }
