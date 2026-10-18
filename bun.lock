@@ -207,11 +207,13 @@
         "@kibo/schema": "workspace:*",
         "@kibo/sdk": "workspace:*",
         "lucide-react": "1.48.0",
+        "markdown-it": "14.3.1",
       },
       "devDependencies": {
         "@testing-library/dom": "10.4.2",
         "@testing-library/react": "16.3.0",
         "@testing-library/user-event": "14.6.1",
+        "@types/markdown-it": "14.1.2",
         "@types/react": "19.1.13",
         "fast-check": "4.3.0",
         "react": "19.1.1",
