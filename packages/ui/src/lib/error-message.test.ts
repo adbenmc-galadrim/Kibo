@@ -36,3 +36,9 @@ test("every component error code has its own French text", () => {
     "La migration de la configuration a échoué. (hello@0.2.0: step 1 failed)",
   );
 });
+
+test("a refused ticket agent says where development happens now", () => {
+  expect(errorMessage(new KiboError("AGENT_EXECUTION_REMOVED", "assign: x"))).toBe(
+    "Kibo ne lance plus d'agent de ticket : le développement se fait dans T3 Code avec /full-delivery.",
+  );
+});

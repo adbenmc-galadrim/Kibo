@@ -18,20 +18,29 @@ function setup() {
 
 const show: RpcRequest = { method: "setAppSettings", patch: { agentExecution: "shown" } };
 
-test("the settings are read by any session and written from this machine, with a config message", async () => {
+test("the settings are read by any session; an empty patch is written from this machine", async () => {
   const { rpc, sent } = setup();
   expect(rpc.methods).toEqual(["getAppSettings", "setAppSettings"]);
   expect(await rpc.handle({ method: "getAppSettings" }, REMOTE)).toEqual({ agentExecution: "hidden" });
-  expect(await rpc.handle(show, LOCAL_CONTEXT)).toEqual({ agentExecution: "shown" });
+  expect(await rpc.handle({ method: "setAppSettings", patch: {} }, LOCAL_CONTEXT)).toEqual({
+    agentExecution: "hidden",
+  });
   expect(sent).toEqual([{ topic: "config" }]);
-  expect(await rpc.handle({ method: "getAppSettings" }, LOCAL_CONTEXT)).toEqual({ agentExecution: "shown" });
+});
+
+test("showing agent execution is refused with the stable code and changes nothing", async () => {
+  const { rpc, sent } = setup();
+  await expect(rpc.handle(show, LOCAL_CONTEXT)).rejects.toThrow("AGENT_EXECUTION_REMOVED");
+  const hide: RpcRequest = { method: "setAppSettings", patch: { agentExecution: "hidden" } };
+  await expect(rpc.handle(hide, LOCAL_CONTEXT)).rejects.toThrow("AGENT_EXECUTION_REMOVED");
+  expect(sent).toEqual([]);
+  expect(await rpc.handle({ method: "getAppSettings" }, LOCAL_CONTEXT)).toEqual({ agentExecution: "hidden" });
 });
 
 test("a remote session cannot change the settings", async () => {
   const { rpc, sent } = setup();
-  await expect(rpc.handle(show, REMOTE)).rejects.toThrow("FORBIDDEN");
+  await expect(rpc.handle({ method: "setAppSettings", patch: {} }, REMOTE)).rejects.toThrow("FORBIDDEN");
   expect(sent).toEqual([]);
-  expect(await rpc.handle({ method: "getAppSettings" }, LOCAL_CONTEXT)).toEqual({ agentExecution: "hidden" });
 });
 
 test("a malformed patch is refused", async () => {
