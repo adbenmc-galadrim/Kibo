@@ -58,3 +58,11 @@ test("the demo project carries a Démo badge after its name, other projects do n
   show(summary(false));
   expect(screen.queryByText("Démo")).toBeNull();
 });
+
+test("the project row reserves the room of its hover actions and its Démo badge yields to them", () => {
+  show(summary(true));
+  const row = screen.getByText("Démo Kibo").closest("button");
+  expect(row?.classList.contains("k-project-row")).toBe(true);
+  expect(row?.getAttribute("data-actions")).toBe("1");
+  expect(screen.getByText("Démo").classList.contains("k-yield")).toBe(true);
+});

@@ -70,6 +70,9 @@ export function ProjectEntry({ project, active, current, editable, link, ...p }:
           label={project.name}
           active={p.projectActive}
           count={project.demo ? fr.nav.demo : null}
+          countYields
+          className="k-project-row"
+          data-actions={editable ? "2" : "1"}
           lead={<ProjectLead color={project.color} open={active !== null} />}
           {...link({ kind: "project", projectId: project.id })}
         />
