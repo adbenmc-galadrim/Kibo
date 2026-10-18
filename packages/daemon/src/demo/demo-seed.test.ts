@@ -3,10 +3,11 @@ import { StatusId } from "@kibo/schema";
 import { DEMO_FEATURES, DEMO_LINKS, DEMO_QUESTION, DEMO_ROLES, demoSetup } from "./demo-seed";
 
 const steps = DEMO_FEATURES.flatMap((f) => f.steps);
+const byNumber = (a: string, b: string) => Number(a.split("-")[1]) - Number(b.split("-")[1]);
 
-test("three features over the three sprints, their steps keyed DEMO-1 to DEMO-7 in order", () => {
+test("three features over the three sprints, their steps keyed DEMO-1 to DEMO-8", () => {
   expect(DEMO_FEATURES.map((f) => f.sprint)).toEqual([0, 1, 2]);
-  expect(steps.map((s) => s.key)).toEqual([
+  expect(steps.map((s) => s.key).sort(byNumber)).toEqual([
     "DEMO-1",
     "DEMO-2",
     "DEMO-3",
@@ -14,6 +15,7 @@ test("three features over the three sprints, their steps keyed DEMO-1 to DEMO-7 
     "DEMO-5",
     "DEMO-6",
     "DEMO-7",
+    "DEMO-8",
   ]);
   for (const s of steps) expect(StatusId.safeParse(s.status).success).toBe(true);
 });
@@ -24,6 +26,12 @@ test("one step in review with an open pull request, one in progress on a branch"
   const review = steps.find((s) => s.key === DEMO_ROLES.review);
   expect([review?.status, review?.branch]).toEqual(["in_progress", "demo/paiement"]);
   expect(steps.find((s) => s.key === DEMO_ROLES.copy)?.status).toBe("todo");
+});
+
+test("the step to copy is not the last of its feature, so it can start before the others are done", () => {
+  const feature = DEMO_FEATURES.find((f) => f.steps.some((s) => s.key === DEMO_ROLES.copy));
+  expect(feature?.steps.at(-1)?.key).not.toBe(DEMO_ROLES.copy);
+  expect(feature?.steps.at(-1)?.key).toBe("DEMO-8");
 });
 
 test("a blocking question for the client on a step of the last feature", () => {

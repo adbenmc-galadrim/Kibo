@@ -2,10 +2,11 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { readProject } from "@kibo/core";
 import { branchRefOf, type ProjectSnapshot, type ProjectSummary, type RpcRequest } from "@kibo/schema";
 import { boot, type Harness } from "../components/service.test-helper";
 import { createProjectSettings } from "../notes/settings";
-import { createDemoProject, DEMO_FLAG, isDemoProject, seedFromProject } from "./demo-project";
+import { createDemoProject, DEMO_FLAG, hasLinkedRepo, isDemoProject, seedFromProject } from "./demo-project";
 
 const dirs: string[] = [];
 const harnesses: Harness[] = [];
@@ -75,8 +76,15 @@ test("the demo is a tracking project: five pages, three sprints, three features 
     ["DEMO-3", "in_review"],
     ["DEMO-4", "in_progress"],
     ["DEMO-5", "todo"],
+    ["DEMO-8", "todo"],
     ["DEMO-6", "todo"],
     ["DEMO-7", "todo"],
+  ]);
+  expect(steps.filter((t) => t.parentId === byKey(snap, "DEMO-3")?.parentId).map((t) => t.key)).toEqual([
+    "DEMO-3",
+    "DEMO-4",
+    "DEMO-5",
+    "DEMO-8",
   ]);
   const pr = byKey(snap, "DEMO-3")?.externalRefs.find((r) => r.kind === "github_pr");
   expect(pr).toMatchObject({ number: 3, state: "open", url: "https://github.com/kibo-demo/boutique/pull/3" });
@@ -108,6 +116,18 @@ test("one blocking question for the client, and the seed names what the tour wat
   expect(seedFromProject(snap)).toEqual(seed);
 });
 
+test("the tour copies a startable step; the last step of its feature waits for the others", async () => {
+  const { h, deps } = await setup();
+  const { projectId, seed } = await createDemoProject(deps);
+  const snap = readProject(h.service.docs.project(projectId), TODAY);
+  const copied = snap.tickets.find((t) => t.id === seed.copyTicketId);
+  expect([copied?.key, copied?.startable, copied?.startReason]).toEqual(["DEMO-5", true, null]);
+  expect(byKey(snap, "DEMO-8")?.startReason).toEqual({
+    kind: "dependency",
+    keys: ["DEMO-3", "DEMO-4", "DEMO-5"],
+  });
+});
+
 test("createDemoProject refuses when a DEMO project already exists", async () => {
   const { h, deps, summaries } = await setup();
   h.service.handle({ method: "createProject", name: "Démo", key: "DEMO", folder: null, color: "#F97316" });
@@ -124,4 +144,19 @@ test("seedFromProject refuses a demo that lost its pages, steps or question", as
   expect(() => seedFromProject({ ...snap, tickets: snap.tickets.filter((t) => t.key !== "DEMO-4") })).toThrow(
     "CONFLICT",
   );
+});
+
+test("the demo counts as linked to its repository, any other project only through its folder", async () => {
+  const { h, settings, deps } = await setup();
+  const { projectId } = await createDemoProject(deps);
+  const other = h.service.handle({
+    method: "createProject",
+    name: "Autre",
+    key: "AUT",
+    folder: null,
+    color: "#F97316",
+  }) as { id: string };
+  expect(hasLinkedRepo(settings, projectId, false)).toBe(true);
+  expect(hasLinkedRepo(settings, other.id, false)).toBe(false);
+  expect(hasLinkedRepo(settings, other.id, true)).toBe(true);
 });

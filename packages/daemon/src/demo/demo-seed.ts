@@ -74,6 +74,12 @@ export const DEMO_FEATURES: readonly DemoFeature[] = [
         status: "todo",
         description: "Envoyer le récapitulatif et l'heure de retrait.",
       },
+      {
+        key: "DEMO-8",
+        title: "Démo au client",
+        status: "todo",
+        description: "Montrer la commande en ligne à la boulangerie, du panier au retrait.",
+      },
     ],
   },
   {

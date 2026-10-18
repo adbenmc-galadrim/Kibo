@@ -3,6 +3,7 @@ import { lazyPanel } from "@kibo/sdk";
 import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { copyKeyOf } from "./copy-key";
 import { tutorialPanelVisible, useTutorial } from "./use-tutorial";
 
 const TutorialPanel = lazyPanel(() => import("./TutorialPanel").then((m) => m.TutorialPanel), fr.lazy, {
@@ -17,10 +18,8 @@ type Props = {
   onDeleteDemo(projectId: string): void;
 };
 
-const copyKeyOf = (state: TutorialState, snapshots: ReadonlyMap<string, ProjectSnapshot>): string | null => {
-  const tickets = (state.projectId && snapshots.get(state.projectId)?.tickets) || [];
-  return tickets.find((t) => t.id === state.seed?.copyTicketId)?.key ?? null;
-};
+const copyKeyIn = (state: TutorialState, snapshots: ReadonlyMap<string, ProjectSnapshot>): string | null =>
+  copyKeyOf(state, (state.projectId && snapshots.get(state.projectId)?.tickets) || []);
 
 export function TutorialSlot({ projects, snapshots, ...p }: Props) {
   const { state } = useTutorial();
@@ -30,5 +29,5 @@ export function TutorialSlot({ projects, snapshots, ...p }: Props) {
     setClosed({ startedAt: state.startedAt });
     client.rpc({ method: "closeTutorial" }).catch((e: unknown) => console.error("closeTutorial failed", e));
   };
-  return <TutorialPanel state={state} copyKey={copyKeyOf(state, snapshots)} {...p} onClose={close} />;
+  return <TutorialPanel state={state} copyKey={copyKeyIn(state, snapshots)} {...p} onClose={close} />;
 }

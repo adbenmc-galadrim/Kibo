@@ -41,6 +41,12 @@ export type DemoProjectDeps = {
 export const isDemoProject = (settings: Pick<ProjectSettings, "get">, projectId: string): boolean =>
   settings.get(projectId, DEMO_FLAG) === "1";
 
+export const hasLinkedRepo = (
+  settings: Pick<ProjectSettings, "get">,
+  projectId: string,
+  hasLocalFolder: boolean,
+): boolean => hasLocalFolder || isDemoProject(settings, projectId);
+
 export { noteHashOf };
 
 async function rejectExistingDemo(deps: DemoProjectDeps): Promise<void> {
@@ -89,8 +95,10 @@ async function seedStep(run: Run, parentId: string, step: DemoStep): Promise<Tic
   return ticket;
 }
 
+const keyNumber = (step: DemoStep): number => Number(step.key.slice(step.key.lastIndexOf("-") + 1));
+
 async function seedFeatures(run: Run, sprints: Sprint[]): Promise<Map<string, string>> {
-  const ids = new Map<string, string>();
+  const pending: { rootId: string; step: DemoStep }[] = [];
   for (const feature of DEMO_FEATURES) {
     const root = await run(Ticket, {
       method: "createTicket",
@@ -103,8 +111,11 @@ async function seedFeatures(run: Run, sprints: Sprint[]): Promise<Map<string, st
       ticketId: root.id,
       sprintId: sprints[feature.sprint]?.id ?? null,
     });
-    for (const step of feature.steps) ids.set(step.key, (await seedStep(run, root.id, step)).id);
+    for (const step of feature.steps) pending.push({ rootId: root.id, step });
   }
+  pending.sort((a, b) => keyNumber(a.step) - keyNumber(b.step));
+  const ids = new Map<string, string>();
+  for (const { rootId, step } of pending) ids.set(step.key, (await seedStep(run, rootId, step)).id);
   return ids;
 }
 

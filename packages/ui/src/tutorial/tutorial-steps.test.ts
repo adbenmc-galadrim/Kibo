@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { TUTORIAL_NEVER, type TutorialSeed, type TutorialState } from "@kibo/schema";
+import { copyKeyOf } from "./copy-key";
 import { stepViews } from "./tutorial-steps";
 
 const seed: TutorialSeed = {
@@ -53,4 +54,20 @@ test("a finished tour has every step done and none current", () => {
     completed: ["overview", "feature", "review", "question", "copy"],
   };
   expect(stepViews(done, "p").every((v) => v.done && !v.current)).toBe(true);
+});
+
+const step = (id: string, key: string, startable: boolean) => ({ id, key, parentId: "f1", startable });
+
+test("the copy step names the seeded step while it can start, otherwise the first startable step", () => {
+  const tickets = [step("s3", "DEMO-3", false), step("s5", "DEMO-5", true), step("s6", "DEMO-6", true)];
+  expect(copyKeyOf(active, tickets)).toBe("DEMO-5");
+  const held = tickets.map((t) => (t.id === "s5" ? { ...t, startable: false } : t));
+  expect(copyKeyOf(active, held)).toBe("DEMO-6");
+  expect(
+    copyKeyOf(
+      active,
+      held.map((t) => ({ ...t, startable: false })),
+    ),
+  ).toBe("DEMO-5");
+  expect(copyKeyOf({ ...active, seed: null }, tickets)).toBeNull();
 });
