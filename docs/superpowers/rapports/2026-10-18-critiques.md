@@ -28,7 +28,28 @@ Proposés à Adam (non retenus sans son avis) : couleurs sémantiques, glossaire
 
 ## Tour 2
 
-(À remplir.)
+Build `phase/27` @ `53347ed4` (T1 à T21 intégrées). Captures : `screens/2026-10-18-critique-t2-{chef,developpeur,nouveau-venu}/`.
+
+Re-vérification du tour 1 : fermés 3, 5, 9, 12, 13, 14, 15 ; partiellement 1 (libellé « terminé » le jour même), 4 (colonne Bloqué, fiche), 6 et 7 (lien du job, chronologie review et CI, volet et URL), 8 (accueil, didacticiel, Ajouter un composant), 10 (CLI), 11 (copie d'un ticket bloqué), 16 (barre en icônes, panneau à 1024 px), 17 (erreurs de la CLI).
+
+Incident : un critique a lancé une fois `kibo tickets set` sans `--home` ; le démon d'Adam (0.23) l'a refusée, rien n'a été écrit. Au tour 3, la commande est donnée complète avec `--home`.
+
+| # | Constat (tour 2) | Gravité | Relevé par | Tâche | Re-vérifié |
+|---|---|---|---|---|---|
+| 18 | Sprint « terminé » le jour même, retard dès 14 h | gênant | développeur, nouveau venu | T23.1, T23.3, T23.4, T23.8 | |
+| 19 | Bloqué par une question absent de la colonne, de la fiche et de la copie | gênant | les trois | T23.1, T23.2, T23.6 | |
+| 20 | « Démarrable » ignore sprint et limite ; filtres exclusifs | gênant | développeur, chef de projet | T23.1, T23.2, T23.7 | |
+| 21 | « Ouvertes » à deux sens, pas d'« à risque », glissement oublié | gênant | chef de projet | T23.1, T23.3 | |
+| 22 | « Pour commencer » non actionnable, « À planifier » hors écran | gênant | chef de projet, nouveau venu | T23.3, T23.4 | |
+| 23 | Fiche fonctionnalité : chevauchements, F1 F1, facultative par défaut | gênant | chef de projet, nouveau venu | T23.4 | |
+| 24 | Export client en jargon, relance sans texte | gênant | chef de projet | T23.5, T23.8 | |
+| 25 | Chronologie sans review ni CI, pas de lien du job, deux fiches, vocabulaire « étape » | gênant | développeur, nouveau venu | T23.6 | |
+| 26 | Mes tickets sans suivi | gênant | développeur | T23.8 | |
+| 27 | CLI : branche absente, UUID, erreur muette sur le démon | gênant | développeur | T23.7 | |
+| 28 | 1024 px : barre en points, panneau envahissant ; onglets, palette | gênant | les trois | T23.8 | |
+| 29 | Didacticiel et premier écran de l'ancien Kibo | bloquant | nouveau venu | T23.9 | |
+
+Non retenus au tour 2 : orange hors agent et glossaire (décision d'Adam en attente), gras vide dans les notes (à reproduire), heures réelles du seed (montage de test).
 
 ## Tour 3
 
