@@ -171,6 +171,22 @@ const { TicketSheet } = await import("./TicketSheet");
 const { NotifyButton } = await import("./NotifyButton");
 const { parseRoute } = await import("../route");
 
+const realMatchMedia = window.matchMedia;
+const wideScreen = (media: string): MediaQueryList =>
+  Object.assign(new EventTarget(), {
+    matches: false,
+    media,
+    onchange: null,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+  });
+beforeEach(() => {
+  window.matchMedia = wideScreen;
+});
+afterEach(() => {
+  window.matchMedia = realMatchMedia;
+});
+
 beforeEach(() => {
   calls.length = 0;
   agents = agentsFixture;

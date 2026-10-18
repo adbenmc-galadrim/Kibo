@@ -1,4 +1,4 @@
-import { beforeEach, expect, mock, spyOn, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, spyOn, test } from "bun:test";
 import {
   type AgentsState,
   type CodeEvent,
@@ -296,6 +296,22 @@ const workspaceMenu = async () => {
   await userEvent.click(await screen.findByRole("button", { name: "Perso" }));
   return within(await screen.findByRole("menu"));
 };
+
+const realMatchMedia = window.matchMedia;
+const wideScreen = (media: string): MediaQueryList =>
+  Object.assign(new EventTarget(), {
+    matches: false,
+    media,
+    onchange: null,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+  });
+beforeEach(() => {
+  window.matchMedia = wideScreen;
+});
+afterEach(() => {
+  window.matchMedia = realMatchMedia;
+});
 
 beforeEach(() => {
   syncStatus = unconfigured;

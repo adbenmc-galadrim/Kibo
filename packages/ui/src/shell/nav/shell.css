@@ -420,3 +420,26 @@
 [data-collapsible="icon"] .k-nested {
   display: none;
 }
+
+.k-initials {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: #fff;
+}
+
+.k-rail-menu .k-rail-title {
+  font-weight: 600;
+  color: var(--tracking-fg);
+}
+
+.k-rail-menu .k-list {
+  margin-top: 2px;
+}

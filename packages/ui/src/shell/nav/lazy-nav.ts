@@ -6,3 +6,9 @@ export const RetiredRedirect = lazyPanel(
   fr.lazy,
   { fallback: "sr-only" },
 );
+
+export const RailProjectMenu = lazyPanel(
+  () => import("./RailProjectMenu").then((m) => m.RailProjectMenu),
+  fr.lazy,
+  { fallback: "children" },
+);

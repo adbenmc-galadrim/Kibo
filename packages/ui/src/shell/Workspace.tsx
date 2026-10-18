@@ -154,6 +154,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                 config?.workspaceIcon ? iconUrl({ kind: "workspace" }, config.workspaceIcon) : null
               }
               viewer={viewer}
+              snapshots={snapshots}
               onOpen={screenVisit.open}
               {...sidebarHandlers(set, setPalette)}
             />

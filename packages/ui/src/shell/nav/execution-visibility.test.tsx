@@ -35,6 +35,7 @@ function shell(execution: AgentExecution, current: Screen | null = null) {
         <AppSidebar
           projects={projectsFixture}
           active={project}
+          snapshots={new Map()}
           activeTarget={current ? { kind: "screen", screen: current } : null}
           screen={current}
           mineCount={2}

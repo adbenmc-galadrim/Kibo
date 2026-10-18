@@ -1,7 +1,7 @@
 import { afterEach, expect, mock, test } from "bun:test";
 import type { Screen } from "@kibo/schema";
 import { SidebarProvider } from "@kibo/sdk/ui/sidebar";
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { kiboProject, projectsFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
@@ -43,13 +43,26 @@ const viewport = (width: number) => {
 
 const noop = () => {};
 
-function sidebar(current: Screen | null = null, open = true) {
+const withPages = () => ({
+  ...kiboProject(),
+  pages: [
+    { id: "1@1", title: "Vue d'ensemble", kind: "view" as const, parentId: null },
+    { id: "2@1", title: "Planning", kind: "view" as const, parentId: null },
+  ],
+});
+
+function sidebar(
+  current: Screen | null = null,
+  open = true,
+  onOpen: (t: unknown, newTab: boolean) => void = noop,
+) {
   return render(
     <AppSettingsProvider store={fixedStore({ agentExecution: "shown" })}>
       <SidebarProvider defaultOpen={open}>
         <AppSidebar
           projects={projectsFixture}
-          active={kiboProject()}
+          active={withPages()}
+          snapshots={new Map([["kibo", withPages()]])}
           activeTarget={current ? { kind: "screen", screen: current } : null}
           screen={current}
           mineCount={2}
@@ -58,7 +71,7 @@ function sidebar(current: Screen | null = null, open = true) {
           workspaceIcon={null}
           viewer="adam"
           onHelp={noop}
-          onOpen={noop}
+          onOpen={onOpen}
           onSearch={noop}
           onNewProject={noop}
           onNewPage={noop}
@@ -110,4 +123,19 @@ test("counts and sprint codes never wrap", async () => {
   sidebar();
   const count = (await screen.findByRole("button", { name: /^Mes tickets/ })).querySelector(".k-count");
   expect(count?.className).toContain("whitespace-nowrap");
+});
+
+test("the folded sidebar shows each project by its initials, its name and pages on hover or click", async () => {
+  viewport(1024);
+  const opened: unknown[] = [];
+  sidebar(null, false, (t, newTab) => opened.push([t, newTab]));
+  const user = userEvent.setup();
+  const kibo = () => screen.getByRole("button", { name: "Kibo" });
+  await waitFor(() => expect(kibo().getAttribute("data-state")).toBe("closed"));
+  expect(kibo().textContent).toBe("K");
+  await user.click(kibo());
+  const menu = await screen.findByRole("navigation", { name: "Pages de Kibo" });
+  expect(menu.textContent).toContain("Kibo");
+  await user.click(await screen.findByRole("button", { name: "Planning" }));
+  expect(opened).toEqual([[{ kind: "page", projectId: "kibo", pageId: "2@1" }, false]]);
 });
