@@ -1993,9 +1993,9 @@ kibo tickets set <clé | id du plan | id> [status=<s>] [pr=<n | url>] [reason=<t
 
 ### 35.1 Constats sur les runs du 14 octobre (`~/.kibo/runs.db`, lecture seule)
 
-- **CLIENT-15** (`global:full-delivery`, réglages `{ maxParallel: 3 }` seulement ⇒ `permissionMode: "default"`, `allow: []`) : en `-p` avec `--permission-prompts none`, tout outil non couvert par une règle est refusé d'office (« Permission for this tool use was denied. It requires approval, and this session has no approval surface… ») : `cat ~/.claude/skills/full-delivery/reference/kibo.md` (hors du worktree), `pnpm db:test:up`, `rm`, puis chaque commande `pnpm` ; l'agent a codé sans typage ni tests, n'a pas poussé et a terminé sur une question.
+- **Un ticket feuille du projet client** (`global:full-delivery`, réglages `{ maxParallel: 3 }` seulement ⇒ `permissionMode: "default"`, `allow: []`) : en `-p` avec `--permission-prompts none`, tout outil non couvert par une règle est refusé d'office (« Permission for this tool use was denied. It requires approval, and this session has no approval surface… ») : `cat ~/.claude/skills/full-delivery/reference/kibo.md` (hors du worktree), `pnpm db:test:up`, `rm`, puis chaque commande `pnpm` ; l'agent a codé sans typage ni tests, n'a pas poussé et a terminé sur une question.
 - **CLIENT-11** (`client-livraison`, mode `auto`, règles `pnpm`, `git`, `gh pr`, `docker compose`, `npx playwright`) : 23 recouvrements `file` avec CLIENT-14 sur `README.md`, `AGENTS.md`, `turbo.json`, `packages/i18n/src/locales/fr.ts`, `packages/env/src/server.ts`, `packages/contract/package.json`… ; le rappel au `Stop` (§29.6) a bloqué la fin de tour **quatre fois** (une clé `overlap:<id>` par recouvrement : chaque nouveau recouvrement livré rouvre le blocage), l'agent a réécrit trois fois son compte rendu puis a signalé le hook à l'agent de projet.
-- **CLIENT-17 et CLIENT-23** (tickets parents C2 et C3) : assignés tels quels, le run constate « rien à livrer », crée un worktree `client-client-17` inutile et s'arrête en attente (37 s, 0 fichier).
+- **Deux tickets parents du projet client** : assignés tels quels, le run constate « rien à livrer », crée un worktree `client-client-<n>` inutile et s'arrête en attente (37 s, 0 fichier).
 - Ce qui marche déjà et sert de base : `reference/kibo.md` (une seule session, pas de slot `pr`, `mcp__kibo__ask_user`), le worktree de Kibo créé par `pnpm worktree <branche>` au même chemin que celui de `delivery-worktree` (`../client-<branche tiretée>`), le moment `actions` avec `outcome: "denied"` tiré de la transcription (§26.2), `permission_denials` de la ligne `result` (`RunView.denied`), le réglage « Tous les sous-agents » (§28.15).
 
 ### 35.2 Principe et périmètre
@@ -2140,7 +2140,7 @@ Trois volets, dans cet ordre : **A. Débloquer** (A1 préréglage « Livraison �
 
 ### 35.20 Jalon
 
-`v0.24.0-alpha.1`. Vérification de bout en bout avec Adam sur le projet client : préréglage appliqué à `full-delivery`, import du registre, « Livrer » sur CLIENT-15 (porte qualité qui tourne, étapes visibles, validation d'écran), « Livrer » sur CLIENT-17 (sous-tickets prêts), un refus d'outil réglé par « Autoriser et relancer », aucun blocage au `Stop`, verrous visibles pendant les gates. Rapport `docs/superpowers/rapports/2026-10-<jj>-jalon-v0.24.md` ; écarts reportés en §35.22.
+`v0.24.0-alpha.1`. Vérification de bout en bout avec Adam sur le projet client : préréglage appliqué à `full-delivery`, import du registre, « Livrer » sur un ticket feuille (porte qualité qui tourne, étapes visibles, validation d'écran), « Livrer » sur un ticket parent (sous-tickets prêts), un refus d'outil réglé par « Autoriser et relancer », aucun blocage au `Stop`, verrous visibles pendant les gates. Rapport `docs/superpowers/rapports/2026-10-<jj>-jalon-v0.24.md` ; écarts reportés en §35.22.
 
 ### 35.21 Tracer les sous-agents dans Kibo (demande d'Adam du 2026-10-14)
 
