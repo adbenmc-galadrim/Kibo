@@ -174,14 +174,23 @@ const ticketDialog = (p: Partial<Parameters<typeof NewTicketDialog>[0]> = {}) =>
   );
 const created = () => calls.filter((c) => c.method === "command");
 
-test("the project selector lists the inbox first, preselects the given project, and creates there (screen 114)", async () => {
+test("the project selector offers the projects, not the inbox, and creates in the chosen one (screen 114)", async () => {
   ticketDialog();
   const user = userEvent.setup();
   expect(screen.getByRole("combobox", { name: "Projet" }).textContent).toBe("Kibo");
   expect(await screen.findByText("Clé KIB-25")).toBeTruthy();
   await openSelect(user, "Projet");
-  expect(await options()).toEqual(["Boîte de réception", "Kibo", "Portfolio"]);
-  await user.click(screen.getByRole("option", { name: "Boîte de réception" }));
+  expect(await options()).toEqual(["Kibo", "Portfolio"]);
+  await user.click(screen.getByRole("option", { name: "Kibo" }));
+  await user.type(screen.getByLabelText("Titre"), "Appeler le comptable");
+  await user.click(screen.getByRole("button", { name: "Créer le ticket" }));
+  await waitFor(() => expect(created().map((c) => c.projectId)).toEqual(["p1"]));
+});
+
+test("opened from the inbox, the dialog keeps it selected and creates there", async () => {
+  ticketDialog({ initialProjectId: INBOX_ID });
+  const user = userEvent.setup();
+  expect(screen.getByRole("combobox", { name: "Projet" }).textContent).toBe("Boîte de réception");
   expect(await screen.findByText("Clé INB-4")).toBeTruthy();
   await user.type(screen.getByLabelText("Titre"), "Appeler le comptable");
   await user.click(screen.getByRole("button", { name: "Créer le ticket" }));
@@ -273,7 +282,7 @@ test("with a parent the project is locked and explained, and the parent is named
 test("opened from an instance, the project is locked and the instance id is sent", async () => {
   ticketDialog({ lockProject: true, defaults: { statusId: "in_progress", instanceId: "i1" } });
   const user = userEvent.setup();
-  expect(screen.getByText("Un ticket créé depuis un widget reste dans le projet de sa page.")).toBeTruthy();
+  expect(screen.getByText("Le ticket est créé dans le projet de la page ouverte.")).toBeTruthy();
   await screen.findByText("Clé KIB-25");
   await user.type(screen.getByLabelText("Titre"), "  Depuis le Kanban ");
   await user.click(screen.getByRole("button", { name: "Créer le ticket" }));

@@ -184,3 +184,42 @@ test("after creation, a toast « EMIS-12 créé » offers to open the ticket", a
   );
   expect(host.openTicket).toHaveBeenCalledWith("e12");
 });
+
+const inbox = { ...emis.meta, id: "inbox", key: "INB", name: "Boîte de réception" };
+
+test("the inbox is not offered as a project", async () => {
+  render(
+    <HostProvider host={host}>
+      <NewTicketDialog
+        projects={[inbox, emis.meta]}
+        snapshots={new Map([["p1", emis]])}
+        initialProjectId="p1"
+        lockProject={false}
+        viewer="adam"
+        defaults={{}}
+        onClose={() => {}}
+      />
+    </HostProvider>,
+  );
+  screen.getByRole("combobox", { name: "Projet" }).focus();
+  await userEvent.setup().keyboard("{ArrowDown}");
+  expect((await screen.findAllByRole("option")).map((o) => o.textContent)).toEqual(["Emis"]);
+});
+
+test("a ticket created from a page says it stays in the project of that page", () => {
+  render(
+    <HostProvider host={host}>
+      <NewTicketDialog
+        projects={[emis.meta]}
+        snapshots={new Map([["p1", emis]])}
+        initialProjectId="p1"
+        lockProject
+        viewer="adam"
+        defaults={{}}
+        onClose={() => {}}
+      />
+    </HostProvider>,
+  );
+  expect(screen.getByText("Le ticket est créé dans le projet de la page ouverte.")).toBeTruthy();
+  expect(screen.queryByText(/widget/)).toBeNull();
+});

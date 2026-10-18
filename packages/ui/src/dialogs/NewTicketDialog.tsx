@@ -1,4 +1,11 @@
-import { type Assignee, type ProjectMeta, type ProjectSnapshot, StatusId, Ticket } from "@kibo/schema";
+import {
+  type Assignee,
+  isInbox,
+  type ProjectMeta,
+  type ProjectSnapshot,
+  StatusId,
+  Ticket,
+} from "@kibo/schema";
 import { type NewTicketDefaults, StatusDot } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import {
@@ -84,11 +91,13 @@ function ProjectField({ id, projects, value, locked, onChange }: ProjectFieldPro
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {projects.map((p) => (
-            <SelectItem key={p.id} value={p.id}>
-              {displayName(p)}
-            </SelectItem>
-          ))}
+          {projects
+            .filter((p) => !isInbox(p.id) || p.id === value)
+            .map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {displayName(p)}
+              </SelectItem>
+            ))}
         </SelectContent>
       </Select>
     </div>
@@ -196,7 +205,7 @@ export function NewTicketDialog(p: NewTicketDialogProps) {
               p.lockProject
                 ? {
                     name: nameOf(project?.meta ?? p.projects.find((x) => x.id === projectId)),
-                    help: defaults.parentId ? t.projectLocked : t.projectFromWidget,
+                    help: defaults.parentId ? t.projectLocked : t.projectFromPage,
                   }
                 : null
             }

@@ -188,7 +188,7 @@ export const fr = {
     project: "Projet",
     projectFixed: (project: string) => `Projet : ${project}`,
     projectLocked: "Un sous-ticket reste dans le projet de son parent.",
-    projectFromWidget: "Un ticket créé depuis un widget reste dans le projet de sa page.",
+    projectFromPage: "Le ticket est créé dans le projet de la page ouverte.",
     name: "Titre",
     description: "Description",
     status: "Statut",
