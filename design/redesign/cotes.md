@@ -2965,158 +2965,156 @@ Exports : `exports/proposition-vue-ensemble-v3-dark.png` et `exports/proposition
 37. « Fonctionnalités » (x 303, y 142)
 38. « 3 » (x 283, y 162)
 39. « livrées sur 9 » (x 307, y 174)
-40. « Sprint en cours » (x 465,2, y 142)
-41. « S42 » (x 445,2, y 162)
-42. « finit ce soir » (x 505,2, y 174)
-43. « Terrain hors ligne » (x 445,2, y 195,5)
-44. « Ouvertes » (x 627,4, y 142)
-45. « 2 » (x 607,4, y 162)
-46. « sur 2 max » (x 631,4, y 174)
-47. « limite » (x 618,4, y 195,5)
-48. « · » (x 653,4, y 195,5)
-49. « 1 bloquée » (x 671,4, y 195,5)
-50. « En review » (x 789,6, y 142)
-51. « 3 » (x 769,6, y 162)
-52. « PR » (x 793,6, y 174)
-53. « #20 · #22 · #23 » (x 769,6, y 195,5)
-54. « Questions » (x 951,8, y 142)
-55. « 3 » (x 931,8, y 162)
-56. « ouvertes » (x 955,8, y 174)
-57. « Q14 bloque F6 » (x 944,8, y 195,5)
-58. « En ce moment » (x 302, y 261,5)
-59. « 2 sessions T3 Code » (x 281, y 281,5)
-60. « F5 » (x 454, y 252,5)
-61. « EMIS-33 » (x 488, y 252,5)
-62. « Écran d'envoi hors ligne » (x 547, y 252)
-63. « 7 · Porte qualité » (x 859, y 252,5)
-64. « 42 min » (x 1020, y 252,5)
-65. « F4 » (x 454, y 289,5)
-66. « EMIS-45 » (x 488, y 289,5)
-67. « Conflits de saisie » (x 547, y 289)
-68. « 9 · Review » (x 859, y 289,5)
-69. « 18 min » (x 1023, y 289,5)
-70. « Échéances » (x 304, y 349,5)
-71. « fonctionnalités par sprint » (x 916, y 350,5)
-72. « S42 » (x 525, y 390)
-73. « 12 oct. » (x 553, y 390)
-74. « S43 » (x 664, y 390)
-75. « 19 oct. » (x 692, y 390)
-76. « S44 » (x 803, y 390)
-77. « 26 oct. » (x 831, y 390)
-78. « S45 » (x 942, y 390)
-79. « 2 nov. » (x 970, y 390)
-80. « F4 » (x 281, y 419)
-81. « Saisir un tronçon hors ligne » (x 304, y 419)
-82. « F5 » (x 281, y 449)
-83. « Envoyer les photos d'un tronçon » (x 304, y 449)
-84. « glisse en S43 » (x 783,6, y 449)
-85. « bloquée · Q14 » (x 828, y 480)
-86. « F6 » (x 281, y 479)
-87. « Importer les ISO depuis Excel » (x 304, y 479)
-88. « F8 » (x 281, y 509)
-89. « Valider les soudures par lot » (x 304, y 509)
-90. « F7 » (x 281, y 539)
-91. « Rapport de chantier journalier » (x 304, y 539)
-92. « aujourd'hui » (x 616,4, y 544)
-93. « étape livrée » (x 299, y 578)
-94. « en review » (x 397, y 578)
-95. « en cours » (x 484, y 578)
-96. « bloquée » (x 565, y 578)
-97. « à faire » (x 644, y 578)
-98. « glissement prévu » (x 713, y 578)
-99. « Sprint S42 · Terrain hors ligne » (x 304, y 630,5)
-100. « 12–16 oct. » (x 589, y 631,5)
-101. « 2/2 ouvertes » (x 662, y 631,5)
-102. « F3 » (x 281, y 673,5)
-103. « Réaffecter un ISO » (x 317, y 673)
-104. « livrée » (x 566, y 673,5)
-105. « 4/4 » (x 720, y 673,5)
-106. « F4 » (x 281, y 712,5)
-107. « Saisir un tronçon hors ligne » (x 317, y 712)
-108. « ouverte » (x 549, y 712,5)
-109. « 3/5 » (x 720, y 712,5)
-110. « F5 » (x 281, y 751,5)
-111. « Envoyer les photos d'un tronçon » (x 317, y 751)
-112. « en retard » (x 566, y 751,5)
-113. « 1/5 » (x 720, y 751,5)
-114. « Limite de 2 ouvertes atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 789)
-115. « Prochaine à finir » (x 304, y 841,5)
-116. « la plus avancée du sprint » (x 601, y 842,5)
-117. « F4 » (x 281, y 875,5)
-118. « Saisir un tronçon hors ligne » (x 306, y 874)
-119. « 3/5 » (x 720, y 875,5)
-120. « EMIS-45 » (x 297, y 902,5)
-121. « Conflits de saisie » (x 356, y 902)
-122. « changements demandés » (x 466, y 902,5)
-123. « EMIS-46 » (x 297, y 924,5)
-124. « Démo client » (x 356, y 924)
-125. « Étape suivante » (x 293, y 963)
-126. « /full-delivery EMIS-45 » (x 387, y 963)
-127. « Copier » (x 685, y 963)
-128. « Activité » (x 304, y 1032,5)
-129. « git » (x 633, y 1033,5)
-130. « full-delivery » (x 668, y 1033,5)
-131. « 15:04 » (x 281, y 1075,5)
-132. « PR #22 ouverte » (x 355, y 1075)
-133. « EMIS-32 » (x 643, y 1075,5)
-134. « F5 » (x 722, y 1075,5)
-135. « 14:51 » (x 281, y 1114,5)
-136. « Étape 7 · Porte qualité » (x 355, y 1114)
-137. « EMIS-33 » (x 643, y 1114,5)
-138. « F5 » (x 722, y 1114,5)
-139. « 14:40 » (x 281, y 1153,5)
-140. « Suivi mis à jour · lot n° 7 proposé » (x 355, y 1153)
-141. « Agent de projet » (x 658, y 1153,5)
-142. « 14:36 » (x 281, y 1192,5)
-143. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
-144. « EMIS-21 » (x 643, y 1192,5)
-145. « F3 » (x 722, y 1192,5)
-146. « En review » (x 814, y 630,5)
-147. « 3 » (x 894, y 631,5)
-148. « #22 » (x 818, y 672)
-149. « Route d'envoi des photos » (x 848, y 672)
-150. « EMIS-32 » (x 818, y 693)
-151. « F5 » (x 897, y 693)
-152. « CI verte » (x 836, y 713)
-153. « #20 » (x 818, y 749)
-154. « Conflits de saisie » (x 848, y 749)
-155. « EMIS-45 » (x 818, y 770)
-156. « F4 » (x 897, y 770)
-157. « changements demandés » (x 836, y 790)
-158. « #23 » (x 818, y 826)
-159. « Passage à Expo SDK 54 » (x 848, y 826)
-160. « EMIS-61 » (x 818, y 846)
-161. « CI en cours » (x 835, y 865)
-162. « Questions » (x 814, y 917,5)
-163. « 3 » (x 898, y 918,5)
-164. « Un ISO réaffecté garde-t-il ses photos ? » (x 791, y 959)
-165. « F6 » (x 813, y 984)
-166. « Q14 · Client · il y a 3 j » (x 840, y 984)
-167. « bloquante » (x 965, y 984)
-168. « Quota par affaire : 2 Go ou 5 Go ? » (x 791, y 1022)
-169. « F5 » (x 813, y 1046)
-170. « Q16 · Produit · hier » (x 840, y 1046)
-171. « Un rapport par chef de chantier ou par affaire ? » (x 791, y 1083)
-172. « F7 » (x 813, y 1125)
-173. « Q17 · Client · il y a 2 h » (x 840, y 1125)
-174. « Agent de projet » (x 1158, y 13)
-175. « Suivi à jour · il y a 4 min » (x 1158, y 32)
-176. « Résumé du jour » (x 1118, y 79)
-177. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1118, y 102)
-178. « S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1118, y 131)
-179. « À valider » (x 1118, y 229)
-180. « Lot n° 7 » (x 1132, y 264)
-181. « 3 actions » (x 1357, y 264,5)
-182. « Reporter F5 en S43 » (x 1158, y 302)
-183. « 4 étapes restantes, S42 finit aujourd'hui » (x 1158, y 321)
-184. « Planifier F9 en S44 » (x 1158, y 359)
-185. « seule fonctionnalité à planifier » (x 1158, y 378)
-186. « Relancer le client sur Q14 » (x 1158, y 416)
-187. « bloque F6, prévue en S43 » (x 1158, y 435)
-188. « Valider (3) » (x 1142, y 479)
-189. « Refuser » (x 1227, y 479)
-190. « Les états avancent seuls (git, PR, étapes full-delivery). L'agent propose, tu valides. » (x 1139, y 525)
-191. « Demander à l'agent de projet… » (x 1130, y 1217)
+40. « 2 à risque » (x 364, y 195,5)
+41. « Sprint en cours » (x 465,2, y 142)
+42. « S42 » (x 445,2, y 162)
+43. « Terrain ho… » (x 505,2, y 174)
+44. « se termine aujourd'hui » (x 445,2, y 195,5)
+45. « En cours » (x 627,4, y 142)
+46. « 2 » (x 607,4, y 162)
+47. « / 2 » (x 631,4, y 174)
+48. « limite · bloquée : F6 » (x 620,4, y 195,5)
+49. « En review » (x 789,6, y 142)
+50. « 3 » (x 769,6, y 162)
+51. « PR » (x 793,6, y 174)
+52. « #20 · #22 · #23 » (x 769,6, y 195,5)
+53. « Questions » (x 951,8, y 142)
+54. « 3 » (x 931,8, y 162)
+55. « ouvertes » (x 955,8, y 174)
+56. « Q14 bloque F6 » (x 944,8, y 195,5)
+57. « En ce moment » (x 302, y 261,5)
+58. « 2 sessions T3 Code » (x 281, y 281,5)
+59. « F5 » (x 454, y 252,5)
+60. « EMIS-33 » (x 488, y 252,5)
+61. « Écran d'envoi hors ligne » (x 547, y 252)
+62. « 7 · Porte qualité » (x 859, y 252,5)
+63. « 42 min » (x 1020, y 252,5)
+64. « F4 » (x 454, y 289,5)
+65. « EMIS-45 » (x 488, y 289,5)
+66. « Conflits de saisie » (x 547, y 289)
+67. « 9 · Review » (x 859, y 289,5)
+68. « 18 min » (x 1023, y 289,5)
+69. « Échéances » (x 304, y 349,5)
+70. « fonctionnalités par sprint » (x 916, y 350,5)
+71. « S42 » (x 525, y 390)
+72. « 12 oct. » (x 553, y 390)
+73. « S43 » (x 664, y 390)
+74. « 19 oct. » (x 692, y 390)
+75. « S44 » (x 803, y 390)
+76. « 26 oct. » (x 831, y 390)
+77. « S45 » (x 942, y 390)
+78. « 2 nov. » (x 970, y 390)
+79. « F4 » (x 281, y 419)
+80. « Saisir un tronçon hors ligne » (x 304, y 419)
+81. « F5 » (x 281, y 449)
+82. « Envoyer les photos d'un tronçon » (x 304, y 449)
+83. « bloquée · Q14 » (x 828, y 480)
+84. « F6 » (x 281, y 479)
+85. « Importer les ISO depuis Excel » (x 304, y 479)
+86. « F8 » (x 281, y 509)
+87. « Valider les soudures par lot » (x 304, y 509)
+88. « F7 » (x 281, y 539)
+89. « Rapport de chantier journalier » (x 304, y 539)
+90. « aujourd'hui » (x 616,4, y 544)
+91. « étape livrée » (x 299, y 578)
+92. « en review » (x 397, y 578)
+93. « en cours » (x 484, y 578)
+94. « bloquée » (x 565, y 578)
+95. « à faire » (x 644, y 578)
+96. « glissement prévu » (x 713, y 578)
+97. « Sprint S42 · Terrain hors ligne » (x 304, y 630,5)
+98. « 12–16 oct. » (x 590, y 631,5)
+99. « 2/2 en cours » (x 663, y 631,5)
+100. « F3 » (x 281, y 673,5)
+101. « Réaffecter un ISO » (x 317, y 673)
+102. « livrée » (x 566, y 673,5)
+103. « 4/4 » (x 720, y 673,5)
+104. « F4 » (x 281, y 712,5)
+105. « Saisir un tronçon hors ligne » (x 317, y 712)
+106. « à risque » (x 566, y 712,5)
+107. « 3/5 » (x 720, y 712,5)
+108. « F5 » (x 281, y 751,5)
+109. « Envoyer les photos d'un tronçon » (x 317, y 751)
+110. « à risque » (x 566, y 751,5)
+111. « 1/5 » (x 720, y 751,5)
+112. « Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 789)
+113. « Prochaine à finir » (x 304, y 841,5)
+114. « la plus avancée du sprint » (x 601, y 842,5)
+115. « F4 » (x 281, y 875,5)
+116. « Saisir un tronçon hors ligne » (x 306, y 874)
+117. « 3/5 » (x 720, y 875,5)
+118. « EMIS-45 » (x 297, y 902,5)
+119. « Conflits de saisie » (x 356, y 902)
+120. « changements demandés » (x 466, y 902,5)
+121. « EMIS-46 » (x 297, y 924,5)
+122. « Démo client » (x 356, y 924)
+123. « Étape suivante » (x 293, y 963)
+124. « /full-delivery EMIS-45 » (x 387, y 963)
+125. « Copier » (x 685, y 963)
+126. « Activité » (x 304, y 1032,5)
+127. « git » (x 633, y 1033,5)
+128. « full-delivery » (x 668, y 1033,5)
+129. « 15:04 » (x 281, y 1075,5)
+130. « PR #22 ouverte » (x 355, y 1075)
+131. « EMIS-32 » (x 643, y 1075,5)
+132. « F5 » (x 722, y 1075,5)
+133. « 14:51 » (x 281, y 1114,5)
+134. « Étape 7 · Porte qualité » (x 355, y 1114)
+135. « EMIS-33 » (x 643, y 1114,5)
+136. « F5 » (x 722, y 1114,5)
+137. « 14:40 » (x 281, y 1153,5)
+138. « Suivi mis à jour · lot n° 7 proposé » (x 355, y 1153)
+139. « Agent de projet » (x 658, y 1153,5)
+140. « 14:36 » (x 281, y 1192,5)
+141. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
+142. « EMIS-21 » (x 643, y 1192,5)
+143. « F3 » (x 722, y 1192,5)
+144. « En review » (x 814, y 630,5)
+145. « 3 » (x 894, y 631,5)
+146. « #22 » (x 818, y 672)
+147. « Route d'envoi des photos » (x 848, y 672)
+148. « EMIS-32 » (x 818, y 693)
+149. « F5 » (x 897, y 693)
+150. « CI verte » (x 836, y 713)
+151. « #20 » (x 818, y 749)
+152. « Conflits de saisie » (x 848, y 749)
+153. « EMIS-45 » (x 818, y 770)
+154. « F4 » (x 897, y 770)
+155. « changements demandés » (x 836, y 790)
+156. « #23 » (x 818, y 826)
+157. « Passage à Expo SDK 54 » (x 848, y 826)
+158. « EMIS-61 » (x 818, y 846)
+159. « CI en cours » (x 835, y 865)
+160. « Questions » (x 814, y 917,5)
+161. « 3 » (x 898, y 918,5)
+162. « Un ISO réaffecté garde-t-il ses photos ? » (x 791, y 959)
+163. « F6 » (x 813, y 984)
+164. « Q14 · Client · il y a 3 j » (x 840, y 984)
+165. « bloquante » (x 965, y 984)
+166. « Quota par affaire : 2 Go ou 5 Go ? » (x 791, y 1022)
+167. « F5 » (x 813, y 1046)
+168. « Q16 · Produit · hier » (x 840, y 1046)
+169. « Un rapport par chef de chantier ou par affaire ? » (x 791, y 1083)
+170. « F7 » (x 813, y 1125)
+171. « Q17 · Client · il y a 2 h » (x 840, y 1125)
+172. « Agent de projet » (x 1158, y 13)
+173. « Suivi à jour · il y a 4 min » (x 1158, y 32)
+174. « Résumé du jour » (x 1118, y 79)
+175. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1118, y 102)
+176. « S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1118, y 131)
+177. « À valider » (x 1118, y 229)
+178. « Lot n° 7 » (x 1132, y 264)
+179. « 3 actions » (x 1357, y 264,5)
+180. « Reporter F5 en S43 » (x 1158, y 302)
+181. « 4 étapes restantes, S42 finit aujourd'hui » (x 1158, y 321)
+182. « Planifier F9 en S44 » (x 1158, y 359)
+183. « seule fonctionnalité à planifier » (x 1158, y 378)
+184. « Relancer le client sur Q14 » (x 1158, y 416)
+185. « bloque F6, prévue en S43 » (x 1158, y 435)
+186. « Valider (3) » (x 1142, y 479)
+187. « Refuser » (x 1227, y 479)
+188. « Les états avancent seuls (git, PR, étapes full-delivery). L'agent propose, tu valides. » (x 1139, y 525)
+189. « Demander à l'agent de projet… » (x 1130, y 1217)
 
 ### Blocs
 
@@ -3232,17 +3230,18 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 283, y 162, 96 × 28 · flex ligne, espacement 6, marges internes 0, alignement end/start
               - « 3 » — Geist 28 / 600, interligne 1, couleur `fg`, interlettrage -0,5 — x 283, y 162, 18 × 28
               - « livrées sur 9 » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 307, y 174, 72 × 16
-            - **box** (bloc) · x 283, y 195, 150 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension auto/fixe
-              - **segs** (bloc) · x 283, y 200, 150 × 6 · flex ligne, espacement 3, marges internes 0, alignement center/start
-                - **seg** (bloc) · x 283, y 200, 14 × 6 · fond `green` · rayon 1,5 · dimension fixe/fixe
-                - **seg** (bloc) · x 300, y 200, 14 × 6 · fond `green` · rayon 1,5 · dimension fixe/fixe
-                - **seg** (bloc) · x 317, y 200, 14 × 6 · fond `green` · rayon 1,5 · dimension fixe/fixe
-                - **seg** (bloc) · x 334, y 200, 14 × 6 · fond `blue` · rayon 1,5 · dimension fixe/fixe
-                - **seg** (bloc) · x 351, y 200, 14 × 6 · fond `blue` · rayon 1,5 · dimension fixe/fixe
-                - **seg** (bloc) · x 368, y 200, 14 × 6 · fond `border` · rayon 1,5 · dimension fixe/fixe
-                - **seg** (bloc) · x 385, y 200, 14 × 6 · fond `border` · rayon 1,5 · dimension fixe/fixe
-                - **seg** (bloc) · x 402, y 200, 14 × 6 · fond `border` · rayon 1,5 · dimension fixe/fixe
-                - **seg** (bloc) · x 419, y 200, 14 × 6 · fond `border` · rayon 1,5 · dimension fixe/fixe
+            - **box** (bloc) · x 283, y 195, 125,2 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/fixe
+              - **segs** (bloc) · x 283, y 200, 69 × 6 · flex ligne, espacement 3, marges internes 0, alignement center/start
+                - **seg** (bloc) · x 283, y 200, 5 × 6 · fond `green` · rayon 1,5 · dimension fixe/fixe
+                - **seg** (bloc) · x 291, y 200, 5 × 6 · fond `green` · rayon 1,5 · dimension fixe/fixe
+                - **seg** (bloc) · x 299, y 200, 5 × 6 · fond `green` · rayon 1,5 · dimension fixe/fixe
+                - **seg** (bloc) · x 307, y 200, 5 × 6 · fond `blue` · rayon 1,5 · dimension fixe/fixe
+                - **seg** (bloc) · x 315, y 200, 5 × 6 · fond `blue` · rayon 1,5 · dimension fixe/fixe
+                - **seg** (bloc) · x 323, y 200, 5 × 6 · fond `border` · rayon 1,5 · dimension fixe/fixe
+                - **seg** (bloc) · x 331, y 200, 5 × 6 · fond `border` · rayon 1,5 · dimension fixe/fixe
+                - **seg** (bloc) · x 339, y 200, 5 × 6 · fond `border` · rayon 1,5 · dimension fixe/fixe
+                - **seg** (bloc) · x 347, y 200, 5 × 6 · fond `border` · rayon 1,5 · dimension fixe/fixe
+              - « 2 à risque » — Geist 12 / 400, interligne 1,2, couleur `amber` — x 364, y 195,5, 54 × 15
           - **vline** (bloc) · x 426,2, y 130, 1 × 92 · fond `soft` · dimension fixe/remplit
           - **box** (bloc) · x 427,2, y 130, 161,2 × 93 · flex colonne, espacement 5, marges internes 12 18 12 18, alignement start/start · dimension remplit/auto
             - **box** (bloc) · x 445,2, y 142, 109 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
@@ -3250,23 +3249,20 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « Sprint en cours » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 465,2, y 142, 89 × 15
             - **box** (bloc) · x 445,2, y 162, 126 × 28 · flex ligne, espacement 6, marges internes 0, alignement end/start
               - « S42 » — Geist 28 / 600, interligne 1, couleur `fg`, interlettrage -0,5 — x 445,2, y 162, 54 × 28
-              - « finit ce soir » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 505,2, y 174, 66 × 16
-            - **box** (bloc) · x 445,2, y 195, 94 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension auto/fixe
-              - « Terrain hors ligne » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 445,2, y 195,5, 94 × 15
+              - « Terrain ho… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 505,2, y 174, 66 × 16
+            - **box** (bloc) · x 445,2, y 195, 121 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension auto/fixe
+              - « se termine aujourd'hui » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 445,2, y 195,5, 121 × 15
           - **vline** (bloc) · x 588,4, y 130, 1 × 92 · fond `soft` · dimension fixe/remplit
           - **box** (bloc) · x 589,4, y 130, 161,2 × 93 · flex colonne, espacement 5, marges internes 12 18 12 18, alignement start/start · dimension remplit/auto
-            - **box** (bloc) · x 607,4, y 142, 74 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
+            - **box** (bloc) · x 607,4, y 142, 71 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
               - icône `target` 14 px, `mfg` — x 607,4, y 142,5, 14 × 14
-              - « Ouvertes » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 627,4, y 142, 54 × 15
-            - **box** (bloc) · x 607,4, y 162, 84 × 28 · flex ligne, espacement 6, marges internes 0, alignement end/start
+              - « En cours » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 627,4, y 142, 51 × 15
+            - **box** (bloc) · x 607,4, y 162, 42 × 28 · flex ligne, espacement 6, marges internes 0, alignement end/start
               - « 2 » — Geist 28 / 600, interligne 1, couleur `fg`, interlettrage -0,5 — x 607,4, y 162, 18 × 28
-              - « sur 2 max » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 631,4, y 174, 60 × 16
-            - **box** (bloc) · x 607,4, y 195, 116 × 16 · flex ligne, espacement 4, marges internes 0, alignement center/start · dimension auto/fixe
-              - **dot** (pastille) · x 607,4, y 199,5, 7 × 7 · fond `amber` · dimension fixe/fixe
-              - « limite » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 618,4, y 195,5, 31 × 15
-              - « · » — Geist 12 / 400, interligne 1,2, couleur `faint` — x 653,4, y 195,5, 3 × 15
-              - **dot** (pastille) · x 660,4, y 199,5, 7 × 7 · fond `red` · dimension fixe/fixe
-              - « 1 bloquée » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 671,4, y 195,5, 52 × 15
+              - « / 2 » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 631,4, y 174, 18 × 16
+            - **box** (bloc) · x 607,4, y 195, 120 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension auto/fixe
+              - **dot** (pastille) · x 607,4, y 199,5, 7 × 7 · fond `red` · dimension fixe/fixe
+              - « limite · bloquée : F6 » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 620,4, y 195,5, 107 × 15
           - **vline** (bloc) · x 750,6, y 130, 1 × 92 · fond `soft` · dimension fixe/remplit
           - **box** (bloc) · x 751,6, y 130, 161,2 × 93 · flex colonne, espacement 5, marges internes 12 18 12 18, alignement start/start · dimension remplit/auto
             - **box** (bloc) · x 769,6, y 142, 77 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
@@ -3386,18 +3382,11 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 281, y 449, 206 × 15 · flex ligne, espacement 8, marges internes 0, alignement center/start
               - « F5 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 449, 15 × 15
               - « Envoyer les photos d'un tronçon » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 304, y 449, 183 × 15
-            - **box** (bloc) · x 767,6, y 449, 92 × 15 · flex ligne, espacement 4, marges internes 0, alignement center/start
-              - icône `clockAlert` 12 px, `red` — x 767,6, y 450,5, 12 × 12
-              - « glisse en S43 » — Geist 12 / 500, interligne 1,2, couleur `red` — x 783,6, y 449, 76 × 15
             - **box** (bloc) · x 525, y 451, 21,4 × 12 · fond `fg` · rayon 2
             - **box** (bloc) · x 549,4, y 451, 21,4 × 12 · fond `purple` · rayon 2
             - **box** (bloc) · x 573,8, y 451, 21,4 × 12 · fond `blue` · rayon 2
             - **box** (bloc) · x 598,2, y 451, 21,4 × 12 · fond `border` · rayon 2
             - **box** (bloc) · x 622,6, y 451, 21,4 × 12 · fond `border` · rayon 2
-            - **box** (bloc) · x 664, y 451, 21,4 × 12 · fond `redSoft` · bordure 1 `red` · rayon 2
-            - **box** (bloc) · x 688,4, y 451, 21,4 × 12 · fond `redSoft` · bordure 1 `red` · rayon 2
-            - **box** (bloc) · x 712,8, y 451, 21,4 × 12 · fond `redSoft` · bordure 1 `red` · rayon 2
-            - **box** (bloc) · x 737,2, y 451, 21,4 × 12 · fond `redSoft` · bordure 1 `red` · rayon 2
             - **box** (bloc) · x 281, y 471, 790 × 1 · fond `soft (60 %)`
             - **box** (bloc) · x 803, y 478, 108 × 19 · flex ligne, espacement 0, marges internes 0, alignement center/start
               - **pill** (bloc) · x 803, y 478, 108 × 19 · flex ligne, espacement 5, marges internes 2 8 2 8, alignement center/start · fond `redSoft` · rayon 10
@@ -3455,9 +3444,9 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - **box** (bloc) · x 265, y 617, 494 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
                 - icône `sprint` 15 px, `mfg` — x 281, y 631,5, 15 × 15
                 - « Sprint S42 · Terrain hors ligne » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 630,5, 197 × 17
-                - « 12–16 oct. » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 589, y 631,5, 57 × 15
-                - **pill** (bloc) · x 654, y 629,5, 89 × 19 · flex ligne, espacement 5, marges internes 2 8 2 8, alignement center/start · fond `amberSoft` · rayon 10
-                  - « 2/2 ouvertes » — Geist 12 / 500, interligne 1,2, couleur `amber` — x 662, y 631,5, 73 × 15
+                - « 12–16 oct. » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 590, y 631,5, 57 × 15
+                - **pill** (bloc) · x 655, y 629,5, 88 × 19 · flex ligne, espacement 5, marges internes 2 8 2 8, alignement center/start · fond `amberSoft` · rayon 10
+                  - « 2/2 en cours » — Geist 12 / 500, interligne 1,2, couleur `amber` — x 663, y 631,5, 72 × 15
               - **line** (bloc) · x 265, y 661, 494 × 1 · fond `soft` · dimension remplit/fixe
               - **box** (bloc) · x 265, y 662, 494 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
                 - **box** (bloc) · x 281, y 673,5, 26 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
@@ -3483,8 +3472,9 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - **box** (bloc) · x 317, y 712, 214 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
                   - « Saisir un tronçon hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 317, y 712, 167 × 16
                 - **box** (bloc) · x 541, y 710,5, 86 × 19 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                  - **pill** (bloc) · x 541, y 710,5, 59 × 19 · flex ligne, espacement 5, marges internes 2 8 2 8, alignement center/start · fond `blueSoft` · rayon 10
-                    - « ouverte » — Geist 12 / 500, interligne 1,2, couleur `blue` — x 549, y 712,5, 43 × 15
+                  - **pill** (bloc) · x 541, y 710,5, 78 × 19 · flex ligne, espacement 5, marges internes 2 8 2 8, alignement center/start · fond `amberSoft` · rayon 10
+                    - icône `triangleAlert` 12 px, `amber` — x 549, y 714, 12 × 12
+                    - « à risque » — Geist 12 / 500, interligne 1,2, couleur `amber` — x 566, y 712,5, 45 × 15
                 - **box** (bloc) · x 637, y 716, 66 × 8 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
                   - **segs** (bloc) · x 637, y 716, 62 × 8 · flex ligne, espacement 3, marges internes 0, alignement center/start
                     - **seg** (bloc) · x 637, y 716, 10 × 8 · fond `fg` · rayon 1,5 · dimension fixe/fixe
@@ -3501,9 +3491,9 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - **box** (bloc) · x 317, y 751, 214 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
                   - « Envoyer les photos d'un tronçon » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 317, y 751, 195 × 16
                 - **box** (bloc) · x 541, y 749,5, 86 × 19 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                  - **pill** (bloc) · x 541, y 749,5, 84 × 19 · flex ligne, espacement 5, marges internes 2 8 2 8, alignement center/start · fond `redSoft` · rayon 10
-                    - icône `clockAlert` 12 px, `red` — x 549, y 753, 12 × 12
-                    - « en retard » — Geist 12 / 500, interligne 1,2, couleur `red` — x 566, y 751,5, 51 × 15
+                  - **pill** (bloc) · x 541, y 749,5, 78 × 19 · flex ligne, espacement 5, marges internes 2 8 2 8, alignement center/start · fond `amberSoft` · rayon 10
+                    - icône `triangleAlert` 12 px, `amber` — x 549, y 753, 12 × 12
+                    - « à risque » — Geist 12 / 500, interligne 1,2, couleur `amber` — x 566, y 751,5, 45 × 15
                 - **box** (bloc) · x 637, y 755, 66 × 8 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
                   - **segs** (bloc) · x 637, y 755, 62 × 8 · flex ligne, espacement 3, marges internes 0, alignement center/start
                     - **seg** (bloc) · x 637, y 755, 10 × 8 · fond `fg` · rayon 1,5 · dimension fixe/fixe
@@ -3516,7 +3506,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - **line** (bloc) · x 265, y 778, 494 × 1 · fond `soft` · dimension remplit/fixe
               - **box** (bloc) · x 265, y 779, 494 × 35 · flex ligne, espacement 8, marges internes 10 16 10 16, alignement center/start · fond `panel` · dimension remplit/auto
                 - icône `target` 13 px, `mfg` — x 281, y 790, 13 × 13
-                - « Limite de 2 ouvertes atteinte : F6 attendra la fin de F4 ou de F5. » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 302, y 789, 441 × 15
+                - « Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5. » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 302, y 789, 441 × 15
             - **card / Prochaine à finir** (bloc) · x 265, y 828, 494 × 177 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
               - **box** (bloc) · x 265, y 828, 494 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
                 - icône `flag` 15 px, `mfg` — x 281, y 842,5, 15 × 15
@@ -3794,165 +3784,163 @@ Exports : `exports/proposition-vue-ensemble-v3-retard-dark.png` et `exports/prop
 40. « 1 en retard » (x 301, y 195,5)
 41. « Sprint en cours » (x 465,2, y 142)
 42. « S42 » (x 445,2, y 162)
-43. « terminé » (x 505,2, y 174)
-44. « le 16 oct. » (x 445,2, y 195,5)
-45. « Ouvertes » (x 627,4, y 142)
+43. « Terrain ho… » (x 505,2, y 174)
+44. « terminé le 16 oct. · reste 2 » (x 445,2, y 195,5)
+45. « En cours » (x 627,4, y 142)
 46. « 2 » (x 607,4, y 162)
-47. « sur 2 max » (x 631,4, y 174)
-48. « limite » (x 618,4, y 195,5)
-49. « · » (x 653,4, y 195,5)
-50. « 1 bloquée » (x 671,4, y 195,5)
-51. « En review » (x 789,6, y 142)
-52. « 3 » (x 769,6, y 162)
-53. « PR » (x 793,6, y 174)
-54. « #20 · #22 · #23 » (x 769,6, y 195,5)
-55. « Questions » (x 951,8, y 142)
-56. « 3 » (x 931,8, y 162)
-57. « ouvertes » (x 955,8, y 174)
-58. « Q14 bloque F6 » (x 944,8, y 195,5)
-59. « En ce moment » (x 302, y 261,5)
-60. « 2 sessions T3 Code » (x 281, y 281,5)
-61. « F5 » (x 454, y 252,5)
-62. « EMIS-33 » (x 488, y 252,5)
-63. « Écran d'envoi hors ligne » (x 547, y 252)
-64. « 7 · Porte qualité » (x 859, y 252,5)
-65. « 42 min » (x 1020, y 252,5)
-66. « F4 » (x 454, y 289,5)
-67. « EMIS-45 » (x 488, y 289,5)
-68. « Conflits de saisie » (x 547, y 289)
-69. « 9 · Review » (x 859, y 289,5)
-70. « 18 min » (x 1023, y 289,5)
-71. « Échéances » (x 304, y 349,5)
-72. « fonctionnalités par sprint » (x 916, y 350,5)
-73. « S42 » (x 525, y 390)
-74. « 12 oct. » (x 553, y 390)
-75. « S43 » (x 664, y 390)
-76. « 19 oct. » (x 692, y 390)
-77. « S44 » (x 803, y 390)
-78. « 26 oct. » (x 831, y 390)
-79. « S45 » (x 942, y 390)
-80. « 2 nov. » (x 970, y 390)
-81. « F4 » (x 281, y 419)
-82. « Saisir un tronçon hors ligne » (x 304, y 419)
-83. « F5 » (x 281, y 449)
-84. « Envoyer les photos d'un tronçon » (x 304, y 449)
-85. « glisse en S43 » (x 783,6, y 449)
-86. « bloquée · Q14 » (x 828, y 480)
-87. « F6 » (x 281, y 479)
-88. « Importer les ISO depuis Excel » (x 304, y 479)
-89. « F8 » (x 281, y 509)
-90. « Valider les soudures par lot » (x 304, y 509)
-91. « F7 » (x 281, y 539)
-92. « Rapport de chantier journalier » (x 304, y 539)
-93. « aujourd'hui » (x 656,1, y 544)
-94. « étape livrée » (x 299, y 578)
-95. « en review » (x 397, y 578)
-96. « en cours » (x 484, y 578)
-97. « bloquée » (x 565, y 578)
-98. « à faire » (x 644, y 578)
-99. « glissement prévu » (x 713, y 578)
-100. « En retard » (x 304, y 630,5)
-101. « 1 » (x 381, y 631,5)
-102. « sprint terminé, étapes obligatoires restantes » (x 807, y 631,5)
-103. « F5 » (x 281, y 673,5)
-104. « Envoyer les photos d'un tronçon » (x 317, y 673)
-105. « S42 » (x 655, y 673,5)
-106. « · terminé le 16 oct. » (x 683, y 673,5)
-107. « reste 4 étapes » (x 832, y 673,5)
-108. « 1/5 » (x 1036, y 673,5)
-109. « Sprint S42 · Terrain hors ligne » (x 304, y 727,5)
-110. « 12–16 oct. » (x 589, y 728,5)
-111. « 2/2 ouvertes » (x 662, y 728,5)
-112. « F3 » (x 281, y 770,5)
-113. « Réaffecter un ISO » (x 317, y 770)
-114. « livrée » (x 566, y 770,5)
-115. « 4/4 » (x 720, y 770,5)
-116. « F4 » (x 281, y 809,5)
-117. « Saisir un tronçon hors ligne » (x 317, y 809)
-118. « ouverte » (x 549, y 809,5)
-119. « 3/5 » (x 720, y 809,5)
-120. « F5 » (x 281, y 848,5)
-121. « Envoyer les photos d'un tronçon » (x 317, y 848)
-122. « en retard » (x 566, y 848,5)
-123. « 1/5 » (x 720, y 848,5)
-124. « Limite de 2 ouvertes atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 886)
-125. « Prochaine à finir » (x 304, y 938,5)
-126. « la plus avancée du sprint » (x 601, y 939,5)
-127. « F4 » (x 281, y 972,5)
-128. « Saisir un tronçon hors ligne » (x 306, y 971)
-129. « 3/5 » (x 720, y 972,5)
-130. « EMIS-45 » (x 297, y 999,5)
-131. « Conflits de saisie » (x 356, y 999)
-132. « changements demandés » (x 466, y 999,5)
-133. « EMIS-46 » (x 297, y 1021,5)
-134. « Démo client » (x 356, y 1021)
-135. « Étape suivante » (x 293, y 1060)
-136. « /full-delivery EMIS-45 » (x 387, y 1060)
-137. « Copier » (x 685, y 1060)
-138. « Activité » (x 304, y 1129,5)
-139. « git » (x 633, y 1130,5)
-140. « full-delivery » (x 668, y 1130,5)
-141. « 15:04 » (x 281, y 1172,5)
-142. « PR #22 ouverte » (x 355, y 1172)
-143. « EMIS-32 » (x 643, y 1172,5)
-144. « F5 » (x 722, y 1172,5)
-145. « 14:51 » (x 281, y 1211,5)
-146. « Étape 7 · Porte qualité » (x 355, y 1211)
-147. « EMIS-33 » (x 643, y 1211,5)
-148. « F5 » (x 722, y 1211,5)
-149. « 14:40 » (x 281, y 1250,5)
-150. « Suivi mis à jour · lot n° 7 proposé » (x 355, y 1250)
-151. « Agent de projet » (x 658, y 1250,5)
-152. « 14:36 » (x 281, y 1289,5)
-153. « PR #18 fusionnée · F3 livrée » (x 355, y 1289)
-154. « EMIS-21 » (x 643, y 1289,5)
-155. « F3 » (x 722, y 1289,5)
-156. « En review » (x 814, y 727,5)
-157. « 3 » (x 894, y 728,5)
-158. « #22 » (x 818, y 769)
-159. « Route d'envoi des photos » (x 848, y 769)
-160. « EMIS-32 » (x 818, y 790)
-161. « F5 » (x 897, y 790)
-162. « CI verte » (x 836, y 810)
-163. « #20 » (x 818, y 846)
-164. « Conflits de saisie » (x 848, y 846)
-165. « EMIS-45 » (x 818, y 867)
-166. « F4 » (x 897, y 867)
-167. « changements demandés » (x 836, y 887)
-168. « #23 » (x 818, y 923)
-169. « Passage à Expo SDK 54 » (x 848, y 923)
-170. « EMIS-61 » (x 818, y 943)
-171. « CI en cours » (x 835, y 962)
-172. « Questions » (x 814, y 1014,5)
-173. « 3 » (x 898, y 1015,5)
-174. « Un ISO réaffecté garde-t-il ses photos ? » (x 791, y 1056)
-175. « F6 » (x 813, y 1081)
-176. « Q14 · Client · il y a 3 j » (x 840, y 1081)
-177. « bloquante » (x 965, y 1081)
-178. « Quota par affaire : 2 Go ou 5 Go ? » (x 791, y 1119)
-179. « F5 » (x 813, y 1143)
-180. « Q16 · Produit · hier » (x 840, y 1143)
-181. « Un rapport par chef de chantier ou par affaire ? » (x 791, y 1180)
-182. « F7 » (x 813, y 1222)
-183. « Q17 · Client · il y a 2 h » (x 840, y 1222)
-184. « Agent de projet » (x 1158, y 13)
-185. « Suivi à jour · il y a 4 min » (x 1158, y 32)
-186. « Résumé du jour » (x 1118, y 79)
-187. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1118, y 102)
-188. « S42 est terminé depuis vendredi et F5 n'y a pas tenu : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1118, y 131)
-189. « À valider » (x 1118, y 229)
-190. « Lot n° 7 » (x 1132, y 264)
-191. « 3 actions » (x 1357, y 264,5)
-192. « Reporter F5 en S43 » (x 1158, y 302)
-193. « 4 étapes restantes, S42 terminé le 16 oct. » (x 1158, y 321)
-194. « Planifier F9 en S44 » (x 1158, y 359)
-195. « seule fonctionnalité à planifier » (x 1158, y 378)
-196. « Relancer le client sur Q14 » (x 1158, y 416)
-197. « bloque F6, prévue en S43 » (x 1158, y 435)
-198. « Valider (3) » (x 1142, y 479)
-199. « Refuser » (x 1227, y 479)
-200. « Les états avancent seuls (git, PR, étapes full-delivery). L'agent propose, tu valides. » (x 1139, y 525)
-201. « Demander à l'agent de projet… » (x 1130, y 1317)
+47. « / 2 » (x 631,4, y 174)
+48. « limite · bloquée : F6 » (x 620,4, y 195,5)
+49. « En review » (x 789,6, y 142)
+50. « 3 » (x 769,6, y 162)
+51. « PR » (x 793,6, y 174)
+52. « #20 · #22 · #23 » (x 769,6, y 195,5)
+53. « Questions » (x 951,8, y 142)
+54. « 3 » (x 931,8, y 162)
+55. « ouvertes » (x 955,8, y 174)
+56. « Q14 bloque F6 » (x 944,8, y 195,5)
+57. « En ce moment » (x 302, y 261,5)
+58. « 2 sessions T3 Code » (x 281, y 281,5)
+59. « F5 » (x 454, y 252,5)
+60. « EMIS-33 » (x 488, y 252,5)
+61. « Écran d'envoi hors ligne » (x 547, y 252)
+62. « 7 · Porte qualité » (x 859, y 252,5)
+63. « 42 min » (x 1020, y 252,5)
+64. « F4 » (x 454, y 289,5)
+65. « EMIS-45 » (x 488, y 289,5)
+66. « Conflits de saisie » (x 547, y 289)
+67. « 9 · Review » (x 859, y 289,5)
+68. « 18 min » (x 1023, y 289,5)
+69. « Échéances » (x 304, y 349,5)
+70. « fonctionnalités par sprint » (x 916, y 350,5)
+71. « S42 » (x 525, y 390)
+72. « 12 oct. » (x 553, y 390)
+73. « S43 » (x 664, y 390)
+74. « 19 oct. » (x 692, y 390)
+75. « S44 » (x 803, y 390)
+76. « 26 oct. » (x 831, y 390)
+77. « S45 » (x 942, y 390)
+78. « 2 nov. » (x 970, y 390)
+79. « F4 » (x 281, y 419)
+80. « Saisir un tronçon hors ligne » (x 304, y 419)
+81. « F5 » (x 281, y 449)
+82. « Envoyer les photos d'un tronçon » (x 304, y 449)
+83. « glisse en S43 » (x 783,6, y 449)
+84. « bloquée · Q14 » (x 828, y 480)
+85. « F6 » (x 281, y 479)
+86. « Importer les ISO depuis Excel » (x 304, y 479)
+87. « F8 » (x 281, y 509)
+88. « Valider les soudures par lot » (x 304, y 509)
+89. « F7 » (x 281, y 539)
+90. « Rapport de chantier journalier » (x 304, y 539)
+91. « aujourd'hui » (x 656,1, y 544)
+92. « étape livrée » (x 299, y 578)
+93. « en review » (x 397, y 578)
+94. « en cours » (x 484, y 578)
+95. « bloquée » (x 565, y 578)
+96. « à faire » (x 644, y 578)
+97. « glissement prévu » (x 713, y 578)
+98. « En retard » (x 304, y 630,5)
+99. « 1 » (x 381, y 631,5)
+100. « sprint terminé, étapes obligatoires restantes » (x 807, y 631,5)
+101. « F5 » (x 281, y 673,5)
+102. « Envoyer les photos d'un tronçon » (x 317, y 673)
+103. « S42 » (x 655, y 673,5)
+104. « · terminé le 16 oct. » (x 683, y 673,5)
+105. « reste 4 étapes » (x 832, y 673,5)
+106. « 1/5 » (x 1036, y 673,5)
+107. « Sprint S42 · Terrain hors ligne » (x 304, y 727,5)
+108. « terminé le 16 oct. · reste 2 » (x 517, y 728,5)
+109. « 2/2 en cours » (x 679, y 728,5)
+110. « F3 » (x 281, y 770,5)
+111. « Réaffecter un ISO » (x 317, y 770)
+112. « livrée » (x 566, y 770,5)
+113. « 4/4 » (x 720, y 770,5)
+114. « F4 » (x 281, y 809,5)
+115. « Saisir un tronçon hors ligne » (x 317, y 809)
+116. « en cours » (x 549, y 809,5)
+117. « 3/5 » (x 720, y 809,5)
+118. « F5 » (x 281, y 848,5)
+119. « Envoyer les photos d'un tronçon » (x 317, y 848)
+120. « en retard » (x 566, y 848,5)
+121. « 1/5 » (x 720, y 848,5)
+122. « Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5. » (x 302, y 886)
+123. « Prochaine à finir » (x 304, y 938,5)
+124. « la plus avancée du sprint » (x 601, y 939,5)
+125. « F4 » (x 281, y 972,5)
+126. « Saisir un tronçon hors ligne » (x 306, y 971)
+127. « 3/5 » (x 720, y 972,5)
+128. « EMIS-45 » (x 297, y 999,5)
+129. « Conflits de saisie » (x 356, y 999)
+130. « changements demandés » (x 466, y 999,5)
+131. « EMIS-46 » (x 297, y 1021,5)
+132. « Démo client » (x 356, y 1021)
+133. « Étape suivante » (x 293, y 1060)
+134. « /full-delivery EMIS-45 » (x 387, y 1060)
+135. « Copier » (x 685, y 1060)
+136. « Activité » (x 304, y 1129,5)
+137. « git » (x 633, y 1130,5)
+138. « full-delivery » (x 668, y 1130,5)
+139. « 15:04 » (x 281, y 1172,5)
+140. « PR #22 ouverte » (x 355, y 1172)
+141. « EMIS-32 » (x 643, y 1172,5)
+142. « F5 » (x 722, y 1172,5)
+143. « 14:51 » (x 281, y 1211,5)
+144. « Étape 7 · Porte qualité » (x 355, y 1211)
+145. « EMIS-33 » (x 643, y 1211,5)
+146. « F5 » (x 722, y 1211,5)
+147. « 14:40 » (x 281, y 1250,5)
+148. « Suivi mis à jour · lot n° 7 proposé » (x 355, y 1250)
+149. « Agent de projet » (x 658, y 1250,5)
+150. « 14:36 » (x 281, y 1289,5)
+151. « PR #18 fusionnée · F3 livrée » (x 355, y 1289)
+152. « EMIS-21 » (x 643, y 1289,5)
+153. « F3 » (x 722, y 1289,5)
+154. « En review » (x 814, y 727,5)
+155. « 3 » (x 894, y 728,5)
+156. « #22 » (x 818, y 769)
+157. « Route d'envoi des photos » (x 848, y 769)
+158. « EMIS-32 » (x 818, y 790)
+159. « F5 » (x 897, y 790)
+160. « CI verte » (x 836, y 810)
+161. « #20 » (x 818, y 846)
+162. « Conflits de saisie » (x 848, y 846)
+163. « EMIS-45 » (x 818, y 867)
+164. « F4 » (x 897, y 867)
+165. « changements demandés » (x 836, y 887)
+166. « #23 » (x 818, y 923)
+167. « Passage à Expo SDK 54 » (x 848, y 923)
+168. « EMIS-61 » (x 818, y 943)
+169. « CI en cours » (x 835, y 962)
+170. « Questions » (x 814, y 1014,5)
+171. « 3 » (x 898, y 1015,5)
+172. « Un ISO réaffecté garde-t-il ses photos ? » (x 791, y 1056)
+173. « F6 » (x 813, y 1081)
+174. « Q14 · Client · il y a 3 j » (x 840, y 1081)
+175. « bloquante » (x 965, y 1081)
+176. « Quota par affaire : 2 Go ou 5 Go ? » (x 791, y 1119)
+177. « F5 » (x 813, y 1143)
+178. « Q16 · Produit · hier » (x 840, y 1143)
+179. « Un rapport par chef de chantier ou par affaire ? » (x 791, y 1180)
+180. « F7 » (x 813, y 1222)
+181. « Q17 · Client · il y a 2 h » (x 840, y 1222)
+182. « Agent de projet » (x 1158, y 13)
+183. « Suivi à jour · il y a 4 min » (x 1158, y 32)
+184. « Résumé du jour » (x 1118, y 79)
+185. « F3 est livrée : 3 fonctionnalités sur 9. » (x 1118, y 102)
+186. « S42 est terminé depuis vendredi et F5 n'y a pas tenu : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. » (x 1118, y 131)
+187. « À valider » (x 1118, y 229)
+188. « Lot n° 7 » (x 1132, y 264)
+189. « 3 actions » (x 1357, y 264,5)
+190. « Reporter F5 en S43 » (x 1158, y 302)
+191. « 4 étapes restantes, S42 terminé le 16 oct. » (x 1158, y 321)
+192. « Planifier F9 en S44 » (x 1158, y 359)
+193. « seule fonctionnalité à planifier » (x 1158, y 378)
+194. « Relancer le client sur Q14 » (x 1158, y 416)
+195. « bloque F6, prévue en S43 » (x 1158, y 435)
+196. « Valider (3) » (x 1142, y 479)
+197. « Refuser » (x 1227, y 479)
+198. « Les états avancent seuls (git, PR, étapes full-delivery). L'agent propose, tu valides. » (x 1139, y 525)
+199. « Demander à l'agent de projet… » (x 1130, y 1317)
 
 ### Blocs
 
@@ -4076,25 +4064,22 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 445,2, y 142, 109 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
               - icône `sprint` 14 px, `mfg` — x 445,2, y 142,5, 14 × 14
               - « Sprint en cours » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 465,2, y 142, 89 × 15
-            - **box** (bloc) · x 445,2, y 162, 106 × 28 · flex ligne, espacement 6, marges internes 0, alignement end/start
+            - **box** (bloc) · x 445,2, y 162, 126 × 28 · flex ligne, espacement 6, marges internes 0, alignement end/start
               - « S42 » — Geist 28 / 600, interligne 1, couleur `fg`, interlettrage -0,5 — x 445,2, y 162, 54 × 28
-              - « terminé » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 505,2, y 174, 46 × 16
-            - **box** (bloc) · x 445,2, y 195, 48 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension auto/fixe
-              - « le 16 oct. » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 445,2, y 195,5, 48 × 15
+              - « Terrain ho… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 505,2, y 174, 66 × 16
+            - **box** (bloc) · x 445,2, y 195, 140 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension auto/fixe
+              - « terminé le 16 oct. · reste 2 » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 445,2, y 195,5, 140 × 15
           - **vline** (bloc) · x 588,4, y 130, 1 × 92 · fond `soft` · dimension fixe/remplit
           - **box** (bloc) · x 589,4, y 130, 161,2 × 93 · flex colonne, espacement 5, marges internes 12 18 12 18, alignement start/start · dimension remplit/auto
-            - **box** (bloc) · x 607,4, y 142, 74 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
+            - **box** (bloc) · x 607,4, y 142, 71 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
               - icône `target` 14 px, `mfg` — x 607,4, y 142,5, 14 × 14
-              - « Ouvertes » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 627,4, y 142, 54 × 15
-            - **box** (bloc) · x 607,4, y 162, 84 × 28 · flex ligne, espacement 6, marges internes 0, alignement end/start
+              - « En cours » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 627,4, y 142, 51 × 15
+            - **box** (bloc) · x 607,4, y 162, 42 × 28 · flex ligne, espacement 6, marges internes 0, alignement end/start
               - « 2 » — Geist 28 / 600, interligne 1, couleur `fg`, interlettrage -0,5 — x 607,4, y 162, 18 × 28
-              - « sur 2 max » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 631,4, y 174, 60 × 16
-            - **box** (bloc) · x 607,4, y 195, 116 × 16 · flex ligne, espacement 4, marges internes 0, alignement center/start · dimension auto/fixe
-              - **dot** (pastille) · x 607,4, y 199,5, 7 × 7 · fond `amber` · dimension fixe/fixe
-              - « limite » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 618,4, y 195,5, 31 × 15
-              - « · » — Geist 12 / 400, interligne 1,2, couleur `faint` — x 653,4, y 195,5, 3 × 15
-              - **dot** (pastille) · x 660,4, y 199,5, 7 × 7 · fond `red` · dimension fixe/fixe
-              - « 1 bloquée » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 671,4, y 195,5, 52 × 15
+              - « / 2 » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 631,4, y 174, 18 × 16
+            - **box** (bloc) · x 607,4, y 195, 120 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension auto/fixe
+              - **dot** (pastille) · x 607,4, y 199,5, 7 × 7 · fond `red` · dimension fixe/fixe
+              - « limite · bloquée : F6 » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 620,4, y 195,5, 107 × 15
           - **vline** (bloc) · x 750,6, y 130, 1 × 92 · fond `soft` · dimension fixe/remplit
           - **box** (bloc) · x 751,6, y 130, 161,2 × 93 · flex colonne, espacement 5, marges internes 12 18 12 18, alignement start/start · dimension remplit/auto
             - **box** (bloc) · x 769,6, y 142, 77 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
@@ -4313,9 +4298,9 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - **box** (bloc) · x 265, y 714, 494 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
                 - icône `sprint` 15 px, `mfg` — x 281, y 728,5, 15 × 15
                 - « Sprint S42 · Terrain hors ligne » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 727,5, 197 × 17
-                - « 12–16 oct. » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 589, y 728,5, 57 × 15
-                - **pill** (bloc) · x 654, y 726,5, 89 × 19 · flex ligne, espacement 5, marges internes 2 8 2 8, alignement center/start · fond `amberSoft` · rayon 10
-                  - « 2/2 ouvertes » — Geist 12 / 500, interligne 1,2, couleur `amber` — x 662, y 728,5, 73 × 15
+                - « terminé le 16 oct. · reste 2 » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 517, y 728,5, 146 × 15
+                - **pill** (bloc) · x 671, y 726,5, 88 × 19 · flex ligne, espacement 5, marges internes 2 8 2 8, alignement center/start · fond `amberSoft` · rayon 10
+                  - « 2/2 en cours » — Geist 12 / 500, interligne 1,2, couleur `amber` — x 679, y 728,5, 72 × 15
               - **line** (bloc) · x 265, y 758, 494 × 1 · fond `soft` · dimension remplit/fixe
               - **box** (bloc) · x 265, y 759, 494 × 38 · flex ligne, espacement 10, marges internes 10 16 10 16, alignement center/start · dimension remplit/fixe
                 - **box** (bloc) · x 281, y 770,5, 26 × 15 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
@@ -4341,8 +4326,8 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - **box** (bloc) · x 317, y 809, 214 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
                   - « Saisir un tronçon hors ligne » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 317, y 809, 167 × 16
                 - **box** (bloc) · x 541, y 807,5, 86 × 19 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
-                  - **pill** (bloc) · x 541, y 807,5, 59 × 19 · flex ligne, espacement 5, marges internes 2 8 2 8, alignement center/start · fond `blueSoft` · rayon 10
-                    - « ouverte » — Geist 12 / 500, interligne 1,2, couleur `blue` — x 549, y 809,5, 43 × 15
+                  - **pill** (bloc) · x 541, y 807,5, 65 × 19 · flex ligne, espacement 5, marges internes 2 8 2 8, alignement center/start · fond `blueSoft` · rayon 10
+                    - « en cours » — Geist 12 / 500, interligne 1,2, couleur `blue` — x 549, y 809,5, 49 × 15
                 - **box** (bloc) · x 637, y 813, 66 × 8 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension fixe/auto
                   - **segs** (bloc) · x 637, y 813, 62 × 8 · flex ligne, espacement 3, marges internes 0, alignement center/start
                     - **seg** (bloc) · x 637, y 813, 10 × 8 · fond `fg` · rayon 1,5 · dimension fixe/fixe
@@ -4374,7 +4359,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - **line** (bloc) · x 265, y 875, 494 × 1 · fond `soft` · dimension remplit/fixe
               - **box** (bloc) · x 265, y 876, 494 × 35 · flex ligne, espacement 8, marges internes 10 16 10 16, alignement center/start · fond `panel` · dimension remplit/auto
                 - icône `target` 13 px, `mfg` — x 281, y 887, 13 × 13
-                - « Limite de 2 ouvertes atteinte : F6 attendra la fin de F4 ou de F5. » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 302, y 886, 441 × 15
+                - « Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5. » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 302, y 886, 441 × 15
             - **card / Prochaine à finir** (bloc) · x 265, y 925, 494 × 177 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
               - **box** (bloc) · x 265, y 925, 494 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
                 - icône `flag` 15 px, `mfg` — x 281, y 939,5, 15 × 15
@@ -4648,10 +4633,10 @@ Exports : `exports/proposition-vue-ensemble-v3-pour-commencer-dark.png` et `expo
 36. « Sprint en cours » (x 533,4, y 142)
 37. « — » (x 513,4, y 162)
 38. « S1 commence le lun. 19 oct. » (x 513,4, y 195,5)
-39. « Ouvertes » (x 763,8, y 142)
+39. « En cours » (x 763,8, y 142)
 40. « 0 » (x 743,8, y 162)
-41. « sur 2 max » (x 768,8, y 174)
-42. « aucune ouverte » (x 743,8, y 195,5)
+41. « / 2 » (x 768,8, y 174)
+42. « aucune en cours » (x 743,8, y 195,5)
 43. « En review » (x 994,2, y 142)
 44. « 0 » (x 974,2, y 162)
 45. « PR » (x 999,2, y 174)
@@ -4661,36 +4646,34 @@ Exports : `exports/proposition-vue-ensemble-v3-pour-commencer-dark.png` et `expo
 49. « ouvertes » (x 1229,6, y 174)
 50. « aucune question » (x 1204,6, y 195,5)
 51. « Pour commencer » (x 304, y 249,5)
-52. « 0/3 » (x 433, y 250,5)
-53. « trois étapes pour suivre le projet » (x 900, y 250,5)
+52. « 0/2 » (x 433, y 250,5)
+53. « deux étapes pour suivre le projet » (x 897, y 250,5)
 54. « Relier le dépôt » (x 311, y 295)
-55. « Dans les réglages du projet (menu ⋯ d'Emis), choisis le dossier du dépôt : branches, PR et CI remontent seuls. » (x 311, y 316)
-56. « Créer une fonctionnalité » (x 311, y 363)
-57. « Dans le Planning, « Nouvelle fonctionnalité » ; ses étapes deviennent EMIS-1, EMIS-2… » (x 311, y 384)
-58. « Ouvrir le Planning » (x 974, y 368)
-59. « Copier » (x 311, y 431)
-60. « /full-delivery EMIS-1 » (x 359, y 431,5)
-61. « Sur la fiche de la première étape, « Copier », puis colle la commande dans T3 Code. » (x 311, y 452)
-62. « Sprints » (x 1155, y 249,5)
-63. « 6 » (x 1219, y 250,5)
-64. « S1 » (x 1132, y 292,5)
-65. « Sprint 1 » (x 1168, y 292)
-66. « 19–23 oct. » (x 1340, y 292,5)
-67. « S2 » (x 1132, y 331,5)
-68. « Sprint 2 » (x 1168, y 331)
-69. « 26–30 oct. » (x 1337, y 331,5)
-70. « S3 » (x 1132, y 370,5)
-71. « Sprint 3 » (x 1168, y 370)
-72. « 2–6 nov. » (x 1351, y 370,5)
-73. « S4 » (x 1132, y 409,5)
-74. « Sprint 4 » (x 1168, y 409)
-75. « 9–13 nov. » (x 1347, y 409,5)
-76. « S5 » (x 1132, y 448,5)
-77. « Sprint 5 » (x 1168, y 448)
-78. « 16–20 nov. » (x 1338, y 448,5)
-79. « S6 » (x 1132, y 487,5)
-80. « Sprint 6 » (x 1168, y 487)
-81. « 23–27 nov. » (x 1338, y 487,5)
+55. « Choisis le dossier du dépôt : branches, PR et CI remontent seuls. » (x 311, y 316)
+56. « Choisir le dossier » (x 977, y 300)
+57. « Créer une fonctionnalité » (x 311, y 363)
+58. « Elle se livre de A à Z ; ses étapes deviennent EMIS-1, EMIS-2… » (x 311, y 384)
+59. « Ouvrir le Planning » (x 974, y 368)
+60. « Sprints » (x 1155, y 249,5)
+61. « 6 » (x 1219, y 250,5)
+62. « S1 » (x 1132, y 292,5)
+63. « Sprint 1 » (x 1168, y 292)
+64. « 19–23 oct. » (x 1340, y 292,5)
+65. « S2 » (x 1132, y 331,5)
+66. « Sprint 2 » (x 1168, y 331)
+67. « 26–30 oct. » (x 1337, y 331,5)
+68. « S3 » (x 1132, y 370,5)
+69. « Sprint 3 » (x 1168, y 370)
+70. « 2–6 nov. » (x 1351, y 370,5)
+71. « S4 » (x 1132, y 409,5)
+72. « Sprint 4 » (x 1168, y 409)
+73. « 9–13 nov. » (x 1347, y 409,5)
+74. « S5 » (x 1132, y 448,5)
+75. « Sprint 5 » (x 1168, y 448)
+76. « 16–20 nov. » (x 1338, y 448,5)
+77. « S6 » (x 1132, y 487,5)
+78. « Sprint 6 » (x 1168, y 487)
+79. « 23–27 nov. » (x 1338, y 487,5)
 
 ### Blocs
 
@@ -4809,14 +4792,14 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « S1 commence le lun. 19 oct. » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 513,4, y 195,5, 150 × 15
           - **vline** (bloc) · x 724,8, y 130, 1 × 92 · fond `soft` · dimension fixe/remplit
           - **box** (bloc) · x 725,8, y 130, 229,4 × 93 · flex colonne, espacement 5, marges internes 12 18 12 18, alignement start/start · dimension remplit/auto
-            - **box** (bloc) · x 743,8, y 142, 74 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
+            - **box** (bloc) · x 743,8, y 142, 71 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
               - icône `target` 14 px, `mfg` — x 743,8, y 142,5, 14 × 14
-              - « Ouvertes » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 763,8, y 142, 54 × 15
-            - **box** (bloc) · x 743,8, y 162, 85 × 28 · flex ligne, espacement 6, marges internes 0, alignement end/start
+              - « En cours » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 763,8, y 142, 51 × 15
+            - **box** (bloc) · x 743,8, y 162, 43 × 28 · flex ligne, espacement 6, marges internes 0, alignement end/start
               - « 0 » — Geist 28 / 600, interligne 1, couleur `fg`, interlettrage -0,5 — x 743,8, y 162, 19 × 28
-              - « sur 2 max » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 768,8, y 174, 60 × 16
-            - **box** (bloc) · x 743,8, y 195, 85 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension auto/fixe
-              - « aucune ouverte » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 743,8, y 195,5, 85 × 15
+              - « / 2 » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 768,8, y 174, 18 × 16
+            - **box** (bloc) · x 743,8, y 195, 91 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension auto/fixe
+              - « aucune en cours » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 743,8, y 195,5, 91 × 15
           - **vline** (bloc) · x 955,2, y 130, 1 × 92 · fond `soft` · dimension fixe/remplit
           - **box** (bloc) · x 956,2, y 130, 229,4 × 93 · flex colonne, espacement 5, marges internes 12 18 12 18, alignement start/start · dimension remplit/auto
             - **box** (bloc) · x 974,2, y 142, 77 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start
@@ -4838,38 +4821,33 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 1204,6, y 195, 91 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension auto/fixe
               - « aucune question » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1204,6, y 195,5, 91 × 15
         - **box** (bloc) · x 265, y 236, 1151 × 278 · flex ligne, espacement 16, marges internes 0, alignement start/start · dimension remplit/auto
-          - **card / Pour commencer** (bloc) · x 265, y 236, 835 × 248 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
+          - **card / Pour commencer** (bloc) · x 265, y 236, 835 × 180 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension remplit/auto
             - **box** (bloc) · x 265, y 236, 835 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
               - icône `flag` 15 px, `mfg` — x 281, y 250,5, 15 × 15
               - « Pour commencer » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 304, y 249,5, 114 × 17
               - **box** (bloc) · x 426, y 250,5, 36 × 15 · flex ligne, espacement 0, marges internes 0 7 0 7, alignement center/start · fond `muted` · rayon 9
-                - « 0/3 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 433, y 250,5, 22 × 15
-              - « trois étapes pour suivre le projet » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 900, y 250,5, 184 × 15
+                - « 0/2 » — Geist Mono 12 / 500, interligne 1,2, couleur `mfg` — x 433, y 250,5, 22 × 15
+              - « deux étapes pour suivre le projet » — Geist 12,5 / 400, interligne 1,2, couleur `mfg` — x 897, y 250,5, 187 × 15
             - **line** (bloc) · x 265, y 280, 835 × 1 · fond `soft` · dimension remplit/fixe
             - **box** (bloc) · x 265, y 281, 835 × 67 · flex ligne, espacement 12, marges internes 14 16 14 16, alignement start/start · dimension remplit/auto
               - **check** (bloc) · x 281, y 295, 18 × 18 · flex ligne, espacement 0, marges internes 0, alignement center/center · bordure 1 `border` · rayon 9 · dimension fixe/fixe
-              - **box** (bloc) · x 311, y 295, 773 × 39 · flex colonne, espacement 4, marges internes 0, alignement start/start · dimension remplit/auto
+              - **box** (bloc) · x 311, y 295, 625 × 39 · flex colonne, espacement 4, marges internes 0, alignement start/start · dimension remplit/auto
                 - **box** (bloc) · x 311, y 295, 92 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/start
                   - « Relier le dépôt » — Geist 13,5 / 500, interligne 1,2, couleur `fg` — x 311, y 295, 92 × 17
-                - « Dans les réglages du projet (menu ⋯ d'Emis), choisis le dossier du dépôt : branches, PR et CI remontent seuls. » — Geist 12,5 / 400, interligne 1,4, couleur `mfg` — x 311, y 316, 773 × 18
+                - « Choisis le dossier du dépôt : branches, PR et CI remontent seuls. » — Geist 12,5 / 400, interligne 1,4, couleur `mfg` — x 311, y 316, 625 × 18
+              - **Button / outline** (bloc) · x 948, y 295, 136 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
+                - icône `folderOpen` 13 px, `fg` — x 958, y 301, 13 × 13
+                - « Choisir le dossier » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 977, y 300, 97 × 15
             - **line** (bloc) · x 265, y 348, 835 × 1 · fond `soft` · dimension remplit/fixe
             - **box** (bloc) · x 265, y 349, 835 × 67 · flex ligne, espacement 12, marges internes 14 16 14 16, alignement start/start · dimension remplit/auto
               - **check** (bloc) · x 281, y 363, 18 × 18 · flex ligne, espacement 0, marges internes 0, alignement center/center · bordure 1 `border` · rayon 9 · dimension fixe/fixe
               - **box** (bloc) · x 311, y 363, 622 × 39 · flex colonne, espacement 4, marges internes 0, alignement start/start · dimension remplit/auto
                 - **box** (bloc) · x 311, y 363, 153 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/start
                   - « Créer une fonctionnalité » — Geist 13,5 / 500, interligne 1,2, couleur `fg` — x 311, y 363, 153 × 17
-                - « Dans le Planning, « Nouvelle fonctionnalité » ; ses étapes deviennent EMIS-1, EMIS-2… » — Geist 12,5 / 400, interligne 1,4, couleur `mfg` — x 311, y 384, 622 × 18
+                - « Elle se livre de A à Z ; ses étapes deviennent EMIS-1, EMIS-2… » — Geist 12,5 / 400, interligne 1,4, couleur `mfg` — x 311, y 384, 622 × 18
               - **Button / outline** (bloc) · x 945, y 363, 139 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
                 - icône `sprint` 13 px, `fg` — x 955, y 369, 13 × 13
                 - « Ouvrir le Planning » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 974, y 368, 100 × 15
-            - **line** (bloc) · x 265, y 416, 835 × 1 · fond `soft` · dimension remplit/fixe
-            - **box** (bloc) · x 265, y 417, 835 × 67 · flex ligne, espacement 12, marges internes 14 16 14 16, alignement start/start · dimension remplit/auto
-              - **check** (bloc) · x 281, y 431, 18 × 18 · flex ligne, espacement 0, marges internes 0, alignement center/center · bordure 1 `border` · rayon 9 · dimension fixe/fixe
-              - **box** (bloc) · x 311, y 431, 773 × 39 · flex colonne, espacement 4, marges internes 0, alignement start/start · dimension remplit/auto
-                - **box** (bloc) · x 311, y 431, 212 × 17 · flex ligne, espacement 6, marges internes 0, alignement center/start
-                  - « Copier » — Geist 13,5 / 500, interligne 1,2, couleur `fg` — x 311, y 431, 42 × 17
-                  - « /full-delivery EMIS-1 » — Geist Mono 13 / 400, interligne 1,2, couleur `fg` — x 359, y 431,5, 164 × 16
-                - « Sur la fiche de la première étape, « Copier », puis colle la commande dans T3 Code. » — Geist 12,5 / 400, interligne 1,4, couleur `mfg` — x 311, y 452, 773 × 18
           - **card / Sprints** (bloc) · x 1116, y 236, 300 × 278 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `border` · rayon 10 · dimension fixe/auto
             - **box** (bloc) · x 1116, y 236, 300 × 44 · flex ligne, espacement 8, marges internes 0 16 0 16, alignement center/start · dimension remplit/fixe
               - icône `sprint` 15 px, `mfg` — x 1132, y 250,5, 15 × 15
