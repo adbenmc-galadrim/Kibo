@@ -53,4 +53,25 @@ Non retenus au tour 2 : orange hors agent et glossaire (décision d'Adam en atte
 
 ## Tour 3
 
-(À remplir.)
+Build `phase/27` @ `bc37b32c` (T23 intégrée, gate verte : 9556 unitaires, 210 E2E). Captures : `screens/2026-10-18-critique-t3-{chef,developpeur,nouveau-venu}/`.
+
+Verdicts : chef de projet « non » (bloqué sur une fonctionnalité, vocabulaire du Planning, relance en jargon) ; développeur « pas tout à fait » (démarrage silencieux d'une étape non démarrable) ; nouveau venu « oui ». Aucun constat bloquant.
+
+Re-vérification des tours 1 et 2 : fermés 1/18 (Vue d'ensemble, Graphe), 3, 6, 9, 10, 12, 14, 15, 16/28, 22, 29 ; partiellement 4/19 (question sur une fonctionnalité), 5 et 21 (Accueil, Planning), 7/25 (lien du job), 11 (palette en pleine page), 17/27 (CLI), 20 (copie, CLI, dernière étape), 23 (+ Question), 24 (relance), 26 (Mes tickets).
+
+| # | Constat (tour 3) | Gravité | Relevé par | Tâche | État final |
+|---|---|---|---|---|---|
+| 30 | Jour et état du sprint différents selon l'écran ; « Ouvertes » au Planning | gênant | les trois | T25.1, T25.2 | |
+| 31 | Sprint terminé proposé, glissement le jour de la création | gênant | chef de projet, nouveau venu | T25.1 | |
+| 32 | Pas d'alerte de charge par sprint | gênant | chef de projet | T25.1 | |
+| 33 | Copie, fiche, CLI et didacticiel démarrent une étape non démarrable | gênant | développeur, nouveau venu | T25.3, T25.4 | |
+| 34 | « Démo client » démarrable avant les autres étapes | gênant | chef de projet | T25.3 | |
+| 35 | Question bloquante sur une fonctionnalité sans effet | gênant | chef de projet | T25.3 | |
+| 36 | Glisser refusé sans explication | gênant | développeur | T25.5 | |
+| 37 | Fiche ticket, palette en pleine page, Mes tickets, lien du job | gênant | développeur, nouveau venu | T25.6 | |
+| 38 | Relance en jargon interne | gênant | chef de projet | T25.6 | |
+| 39 | « Phase » et « étape » mélangées | gênant | développeur, nouveau venu | T25.2, T25.5, T25.6 | |
+| 40 | Pages vides sans explication | gênant | nouveau venu | T25.1, T25.2, T25.5 | |
+| 41 | Finitions (barre latérale, F2 F2, italique, 1024 px, CLI, « Close ») | finition | les trois | T25.1 à T25.6 | |
+
+Non retenus, listés comme risques du jalon : « + Question » qui ferme la fiche fonctionnalité ; position d'une étape ajoutée après « Démo client » ; compteurs des filtres du Kanban et filtres dans l'URL ; une seule ligne GitHub à l'accueil ; glossaire (décision d'Adam).
