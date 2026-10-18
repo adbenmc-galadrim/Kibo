@@ -94,6 +94,7 @@ export function ShellDialogs({
           open={state.newProject}
           onOpenChange={(o) => set(o ? { newProject: true } : { newProject: false, newProjectFocus: "name" })}
           count={projects.length}
+          existingKeys={projects.map((x) => x.key)}
           focusFolder={state.newProjectFocus === "folder"}
         />
       )}

@@ -1,4 +1,4 @@
-import { ProjectKey, RESERVED_PROJECT_KEYS, type Role } from "@kibo/schema";
+import { KiboError, type KiboErrorCode } from "@kibo/schema";
 import { Alert, AlertDescription } from "@kibo/sdk/ui/alert";
 import { Button } from "@kibo/sdk/ui/button";
 import {
@@ -9,54 +9,90 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@kibo/sdk/ui/dialog";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
-import { frAi } from "../i18n/fr-ai";
+import { frNewProject as t } from "../i18n/fr-new-project";
 import { PROJECT_COLORS } from "../lib/project-colors";
-import { suggestProjectKey } from "../lib/project-key";
-import { applyStarterPlan } from "../onboarding/apply-plan";
-import { useStarterCatalog } from "../onboarding/catalog-refs";
-import { chosenPages, presetFor, toSelection } from "../onboarding/presets";
-import { RoleStep } from "../onboarding/RoleStep";
 import { navigate } from "../route";
-import { NewProjectForm, type ProjectFields, type ProjectStart } from "./NewProjectForm";
-import { projectErrorMessage } from "./project-error";
+import { localDay } from "../shell/sprint/sprint-facts";
+import { NewProjectForm } from "./NewProjectForm";
+import { defaultFields, effectiveKey, type NewProjectFields, toRequest, validate } from "./new-project-model";
 
-type Props = { open: boolean; onOpenChange: (o: boolean) => void; count: number; focusFolder?: boolean };
+type Props = {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  count: number;
+  existingKeys: readonly string[];
+  focusFolder?: boolean;
+};
 
-export function NewProjectDialog({ open, onOpenChange, count, focusFolder = false }: Props) {
+type BodyProps = Omit<Required<Props>, "open"> & { today: string };
+
+export function NewProjectDialog({ open, onOpenChange, count, existingKeys, focusFolder = false }: Props) {
+  const today = useToday();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-        <NewProjectSteps onOpenChange={onOpenChange} count={count} focusFolder={focusFolder} />
+      <DialogContent className="max-h-[90vh] gap-[18px] overflow-y-auto rounded-[12px] p-6 sm:max-w-[520px]">
+        <DialogHeader className="gap-[6px]">
+          <DialogTitle className="text-[18px] leading-[22px]">{t.title}</DialogTitle>
+          <DialogDescription className="text-[13px] leading-4">{t.subtitle}</DialogDescription>
+        </DialogHeader>
+        {today !== null && (
+          <NewProjectBody
+            today={today}
+            onOpenChange={onOpenChange}
+            count={count}
+            existingKeys={existingKeys}
+            focusFolder={focusFolder}
+          />
+        )}
       </DialogContent>
     </Dialog>
   );
 }
 
-function NewProjectSteps({ onOpenChange, count, focusFolder }: Omit<Required<Props>, "open">) {
-  const { refs, titles } = useStarterCatalog();
-  const available = useMemo(() => new Set(refs.keys()), [refs]);
-  const [step, setStep] = useState<1 | 2>(focusFolder ? 2 : 1);
-  const [role, setRole] = useState<Role>("dev");
-  const [selection, setSelection] = useState(() => toSelection(presetFor("dev", available)));
-  const [start, setStart] = useState<ProjectStart>("empty");
-  const [skipped, setSkipped] = useState(false);
-  const [fields, setFields] = useState<ProjectFields>({ name: "", key: null, folder: "" });
+function useToday(): string | null {
+  const [today, setToday] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const settle = (fixedNow: string | null | undefined) => {
+      const at = fixedNow ? Date.parse(fixedNow) : Number.NaN;
+      if (alive) setToday(localDay(Number.isNaN(at) ? Date.now() : at));
+    };
+    client.rpc({ method: "getAppInfo" }).then(
+      (info) => settle(info?.fixedNow),
+      () => settle(null),
+    );
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return today;
+}
+
+const ERRORS: Partial<Record<KiboErrorCode, string>> = t.errors;
+
+function errorMessage(err: unknown): string {
+  const message = err instanceof KiboError ? ERRORS[err.code] : undefined;
+  if (message) return message;
+  console.error(err);
+  return fr.common.error;
+}
+
+async function createdAnyway(key: string, existingKeys: readonly string[]): Promise<string | null> {
+  if (existingKeys.includes(key)) return null;
+  const projects = await client.rpc({ method: "listProjects" }).catch(() => []);
+  return projects.find((p) => p.key === key)?.id ?? null;
+}
+
+function NewProjectBody({ today, onOpenChange, count, existingKeys, focusFolder }: BodyProps) {
+  const [fields, setFields] = useState<NewProjectFields>(() => defaultFields(today));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<string | null>(null);
-  const pages = skipped ? [] : chosenPages(selection);
-  const effectiveKey = fields.key ?? suggestProjectKey(fields.name);
-  const keyReserved = RESERVED_PROJECT_KEYS.includes(effectiveKey);
-  const valid = fields.name.trim().length > 0 && ProjectKey.safeParse(effectiveKey).success && !keyReserved;
+  const validation = validate(fields, existingKeys);
 
-  const toForm = (skip: boolean) => {
-    setSkipped(skip);
-    setStart(!skip && chosenPages(selection).length > 0 ? "suggested" : "empty");
-    setStep(2);
-  };
   const openProject = (projectId: string) => {
     onOpenChange(false);
     navigate(projectId);
@@ -64,87 +100,46 @@ function NewProjectSteps({ onOpenChange, count, focusFolder }: Omit<Required<Pro
   const submit = async () => {
     setBusy(true);
     setError(null);
+    const color = PROJECT_COLORS[count % PROJECT_COLORS.length] ?? "#64748B";
     try {
-      const p = await client.rpc({
-        method: "createProject",
-        name: fields.name.trim(),
-        key: effectiveKey,
-        folder: fields.folder.trim() || null,
-        color: PROJECT_COLORS[count % PROJECT_COLORS.length] ?? "#64748B",
-      });
-      const failures = start === "suggested" ? await applyStarterPlan(client, p.id, pages, refs) : [];
-      if (failures.length === 0) return openProject(p.id);
-      console.error(failures);
-      setCreated(p.id);
+      const project = await client.rpc(toRequest(fields, color));
+      openProject(project.id);
     } catch (err) {
-      setError(projectErrorMessage(err));
+      const partial =
+        err instanceof KiboError && err.code === "INVALID_INPUT"
+          ? null
+          : await createdAnyway(effectiveKey(fields), existingKeys);
+      if (partial === null) setError(errorMessage(err));
+      else {
+        console.error(err);
+        setCreated(partial);
+      }
     } finally {
       setBusy(false);
     }
   };
 
+  if (created !== null)
+    return (
+      <>
+        <Alert>
+          <AlertDescription>{t.partial}</AlertDescription>
+        </Alert>
+        <DialogFooter>
+          <Button onClick={() => openProject(created)}>{t.open}</Button>
+        </DialogFooter>
+      </>
+    );
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>{fr.newProject.title}</DialogTitle>
-        <DialogDescription>
-          {step === 1 ? frAi.onboarding.roleSubtitle : fr.newProject.subtitle}
-        </DialogDescription>
-      </DialogHeader>
-      {created !== null ? (
-        <>
-          <Alert>
-            <AlertDescription>{frAi.onboarding.partial}</AlertDescription>
-          </Alert>
-          <DialogFooter>
-            <Button onClick={() => openProject(created)}>{frAi.onboarding.openProject}</Button>
-          </DialogFooter>
-        </>
-      ) : (
-        <>
-          {step === 1 && (
-            <div className="grid gap-4">
-              <RoleStep
-                available={available}
-                titles={titles}
-                selection={selection}
-                onSelection={setSelection}
-                role={role}
-                onRole={setRole}
-              />
-              <DialogFooter className="items-center sm:justify-between">
-                <span className="text-xs text-muted-foreground">{frAi.onboarding.step(1)}</span>
-                <div className="flex flex-col-reverse gap-2 sm:flex-row">
-                  <Button type="button" variant="ghost" onClick={() => toForm(true)}>
-                    {frAi.onboarding.skip}
-                  </Button>
-                  <Button type="button" onClick={() => toForm(false)}>
-                    {frAi.onboarding.continue}
-                  </Button>
-                </div>
-              </DialogFooter>
-            </div>
-          )}
-          {step === 2 && (
-            <NewProjectForm
-              fields={fields}
-              onFields={(patch) => setFields((f) => ({ ...f, ...patch }))}
-              effectiveKey={effectiveKey}
-              keyReserved={keyReserved}
-              valid={valid}
-              busy={busy}
-              error={error}
-              focusFolder={focusFolder}
-              pageTitles={pages.map((p) => p.title)}
-              start={start}
-              onStart={setStart}
-              onBack={() => setStep(1)}
-              onCancel={() => onOpenChange(false)}
-              onSubmit={submit}
-            />
-          )}
-        </>
-      )}
-    </>
+    <NewProjectForm
+      fields={fields}
+      onFields={(patch) => setFields((f) => ({ ...f, ...patch }))}
+      validation={validation}
+      busy={busy}
+      error={error}
+      focusFolder={focusFolder}
+      onCancel={() => onOpenChange(false)}
+      onSubmit={submit}
+    />
   );
 }

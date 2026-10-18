@@ -228,7 +228,7 @@ test("the empty project home suggests pages for its project", async () => {
 });
 
 test("NewProjectDialog focuses the folder when importing", async () => {
-  render(<NewProjectDialog open onOpenChange={() => {}} count={0} focusFolder />);
-  const folder = await screen.findByLabelText("Dossier du projet");
+  render(<NewProjectDialog open onOpenChange={() => {}} count={0} existingKeys={[]} focusFolder />);
+  const folder = await screen.findByLabelText("Dossier du dépôt");
   expect(document.activeElement).toBe(folder);
 });

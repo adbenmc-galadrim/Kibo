@@ -15,8 +15,8 @@ export async function createRepoProject(page: Page, name: string, key: string, f
   await skipRoleStep(page);
   await page.getByLabel("Nom", { exact: true }).fill(name);
   await page.getByLabel("Clé").fill(key);
-  await page.getByLabel("Dossier du projet").fill(folder);
-  await page.getByRole("button", { name: "Créer le projet" }).click();
+  await page.getByLabel("Dossier du dépôt").fill(folder);
+  await page.getByRole("button", { name: "Créer", exact: true }).click();
   await expect(page.getByText("Projet créé")).toBeVisible();
 }
 

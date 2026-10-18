@@ -2,7 +2,7 @@ import { expect, type Page, type TestInfo } from "@playwright/test";
 import { E2E_TOKEN } from "./token";
 
 export async function skipRoleStep(page: Page) {
-  await page.getByRole("button", { name: "Passer" }).click();
+  await expect(page.getByRole("dialog", { name: "Nouveau projet" })).toBeVisible();
 }
 
 export async function openNewProject(page: Page) {
@@ -53,7 +53,7 @@ export async function pairAndCreateProject(page: Page, info: TestInfo, key: stri
   await skipRoleStep(page);
   await page.getByLabel("Nom", { exact: true }).fill(`Kibo ${key}`);
   await page.getByLabel("Clé").fill(key);
-  await page.getByRole("button", { name: "Créer le projet" }).click();
+  await page.getByRole("button", { name: "Créer", exact: true }).click();
   await expect(page.getByText("Projet créé")).toBeVisible();
   await expect(page.getByRole("main")).toHaveCount(1);
 }

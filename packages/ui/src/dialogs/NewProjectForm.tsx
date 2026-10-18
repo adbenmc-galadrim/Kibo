@@ -1,45 +1,49 @@
+import { PROJECT_CLIENT_MAX } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { DialogFooter } from "@kibo/sdk/ui/dialog";
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
-import { RadioGroup } from "@kibo/sdk/ui/radio-group";
-import { LayoutDashboard, Plus } from "lucide-react";
 import { type FormEvent, useId } from "react";
-import { fr } from "../i18n/fr";
-import { frAi } from "../i18n/fr-ai";
-import { ChoiceCard } from "./ChoiceCard";
+import { frNewProject as t } from "../i18n/fr-new-project";
 import { FolderField } from "./FolderField";
-
-export type ProjectFields = { name: string; key: string | null; folder: string };
-export type ProjectStart = "suggested" | "empty";
+import { effectiveKey, type KeyProblem, type NewProjectFields, type Validation } from "./new-project-model";
+import { SprintSetupFields } from "./SprintSetupFields";
 
 type Props = {
-  fields: ProjectFields;
-  onFields: (patch: Partial<ProjectFields>) => void;
-  effectiveKey: string;
-  keyReserved: boolean;
-  valid: boolean;
+  fields: NewProjectFields;
+  onFields: (patch: Partial<NewProjectFields>) => void;
+  validation: Validation;
   busy: boolean;
   error: string | null;
   focusFolder: boolean;
-  pageTitles: string[];
-  start: ProjectStart;
-  onStart: (start: ProjectStart) => void;
-  onBack: () => void;
   onCancel: () => void;
   onSubmit: () => void;
 };
 
+const LABEL = "text-[13px] leading-4 font-medium";
+const FIELD = "grid content-start gap-[6px]";
+const HELP = "text-xs leading-[17px] text-muted-foreground";
+
+function keyMessage(problem: KeyProblem | null, key: string): string | null {
+  if (problem === "taken") return t.keyTaken;
+  if (problem === "reserved") return t.keyReserved(key);
+  return null;
+}
+
 export function NewProjectForm(p: Props) {
   const id = useId();
+  const key = effectiveKey(p.fields);
+  const keyAlert = keyMessage(p.validation.key, key);
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    p.onSubmit();
+    if (p.validation.ok) p.onSubmit();
   };
   return (
-    <form onSubmit={submit} className="grid gap-4">
-      <div className="grid gap-2">
-        <Label htmlFor={`${id}-name`}>{fr.newProject.name}</Label>
+    <form onSubmit={submit} className="grid gap-[18px]">
+      <div className={FIELD}>
+        <Label htmlFor={`${id}-name`} className={LABEL}>
+          {t.name}
+        </Label>
         <Input
           id={`${id}-name`}
           value={p.fields.name}
@@ -47,73 +51,74 @@ export function NewProjectForm(p: Props) {
           autoFocus={!p.focusFolder}
         />
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor={`${id}-key`}>{fr.newProject.key}</Label>
-        <Input
-          id={`${id}-key`}
-          value={p.effectiveKey}
-          onChange={(e) => p.onFields({ key: e.target.value.toUpperCase() })}
-          className="font-mono"
-        />
-        {p.keyReserved ? (
-          <p role="alert" className="text-xs text-destructive">
-            {fr.newProject.keyReserved(p.effectiveKey)}
+      <div className="flex gap-3">
+        <div className={`${FIELD} w-[190px]`}>
+          <Label htmlFor={`${id}-key`} className={LABEL}>
+            {t.key}
+          </Label>
+          <Input
+            id={`${id}-key`}
+            value={key}
+            onChange={(e) => p.onFields({ key: e.target.value.toUpperCase() })}
+            aria-invalid={keyAlert !== null || p.validation.key === "invalid"}
+            aria-describedby={`${id}-key-help`}
+            className="font-mono"
+          />
+          {keyAlert ? (
+            <p id={`${id}-key-help`} role="alert" className="text-xs leading-[17px] text-destructive">
+              {keyAlert}
+            </p>
+          ) : (
+            <p id={`${id}-key-help`} className={HELP}>
+              {t.keyHelp}
+            </p>
+          )}
+        </div>
+        <div className={`${FIELD} flex-1`}>
+          <Label htmlFor={`${id}-client`} className={LABEL}>
+            {t.client}
+          </Label>
+          <Input
+            id={`${id}-client`}
+            value={p.fields.client}
+            maxLength={PROJECT_CLIENT_MAX}
+            onChange={(e) => p.onFields({ client: e.target.value })}
+            aria-describedby={`${id}-client-help`}
+          />
+          <p id={`${id}-client-help`} className={HELP}>
+            {t.clientHelp}
           </p>
-        ) : (
-          <p className="text-xs text-muted-foreground">{fr.newProject.keyHelp}</p>
-        )}
+        </div>
       </div>
-      <div className="grid gap-2">
-        <Label htmlFor={`${id}-folder`}>{fr.newProject.folder}</Label>
+      <SprintSetupFields fields={p.fields} onFields={p.onFields} problems={p.validation} />
+      <div className={FIELD}>
+        <Label htmlFor={`${id}-folder`} className={LABEL}>
+          {t.folder}
+        </Label>
         <FolderField
           id={`${id}-folder`}
           value={p.fields.folder}
           onChange={(folder) => p.onFields({ folder })}
           autoFocus={p.focusFolder}
-          placeholder="/Users/adam/code/kibo"
+          placeholder={t.noFolder}
           describedBy={`${id}-folder-help`}
         />
-        <p id={`${id}-folder-help`} className="text-xs text-muted-foreground">
-          {fr.newProject.folderHelp}
+        <p id={`${id}-folder-help`} className={HELP}>
+          {t.folderHelp}
         </p>
       </div>
-      <fieldset className="grid gap-2">
-        <legend className="mb-2 text-sm font-medium">{fr.newProject.start}</legend>
-        <RadioGroup
-          value={p.start}
-          onValueChange={(v) => p.onStart(v === "suggested" ? "suggested" : "empty")}
-          className="grid gap-2 sm:grid-cols-3"
-        >
-          <ChoiceCard
-            stacked
-            value="empty"
-            icon={Plus}
-            title={fr.newProject.startEmpty}
-            description={fr.newProject.startEmptyHelp}
-          />
-          <ChoiceCard
-            stacked
-            value="suggested"
-            icon={LayoutDashboard}
-            title={frAi.onboarding.startSuggested}
-            description={p.pageTitles.length > 0 ? p.pageTitles.join(", ") : frAi.onboarding.noPage}
-            disabled={p.pageTitles.length === 0}
-          />
-        </RadioGroup>
-      </fieldset>
-      {p.error && <p className="text-sm text-destructive">{p.error}</p>}
-      <DialogFooter className="sm:justify-between">
-        <Button type="button" variant="ghost" onClick={p.onBack}>
-          {frAi.onboarding.back}
+      {p.error && (
+        <p role="alert" className="text-sm text-destructive">
+          {p.error}
+        </p>
+      )}
+      <DialogFooter className="pt-1">
+        <Button type="button" variant="outline" onClick={p.onCancel}>
+          {t.cancel}
         </Button>
-        <div className="flex flex-col-reverse gap-2 sm:flex-row">
-          <Button type="button" variant="ghost" onClick={p.onCancel}>
-            {fr.common.cancel}
-          </Button>
-          <Button type="submit" disabled={!p.valid || p.busy}>
-            {fr.newProject.submit}
-          </Button>
-        </div>
+        <Button type="submit" variant="agent" disabled={!p.validation.ok || p.busy}>
+          {t.submit}
+        </Button>
       </DialogFooter>
     </form>
   );

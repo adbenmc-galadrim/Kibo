@@ -6,25 +6,17 @@ import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
-const ok = {
-  available: true,
-  reason: null,
-  version: "2.1.283",
-  loggedIn: true,
-  profiles: { assistant: true, generateur: true },
-};
+const FIXED_NOW = "2026-10-16T14:52:00+02:00";
+
 mock.module("../api", () =>
   apiMock({
     client: {
       rpc: async (req: RpcRequest) => {
         calls.push(req);
-        if (req.method === "getAiStatus") return ok;
-        if (req.method === "listComponents" || req.method === "listDrafts") return [];
+        if (req.method === "getAppInfo") return { fixedNow: FIXED_NOW };
         return answer(req);
       },
       subscribe: () => () => {},
-      subscribeAi: () => () => {},
-      onRunChanged: () => () => {},
       onConnection: () => () => {},
       online: () => true,
     },
@@ -33,172 +25,157 @@ mock.module("../api", () =>
 
 const { NewProjectDialog } = await import("./NewProjectDialog");
 
-const addedPages = () =>
-  calls.flatMap((c) => (c.method === "command" && c.command.method === "addPage" ? [c.command.title] : []));
-const addedInstances = () =>
-  calls.flatMap((c) =>
-    c.method === "command" && c.command.method === "addInstance" ? [c.command.component] : [],
-  );
-
-const creating = (req: RpcRequest) => {
-  if (req.method === "createProject")
-    return { id: "p9", name: req.name, key: req.key, folder: null, color: req.color };
-  if (req.method === "command" && req.command.method === "addPage") {
-    if (req.command.title === "Tickets") throw new Error("boom");
-    return {
-      id: `pg-${req.command.title}`,
-      title: req.command.title,
-      kind: req.command.kind,
-      parentId: null,
-    };
-  }
-  return { id: "i1" };
-};
-
-const checked = (name: string) => screen.getByRole("radio", { name }).getAttribute("data-state");
+const created = (req: RpcRequest) =>
+  req.method === "createProject"
+    ? { id: "p9", name: req.name, key: req.key, folder: null, color: req.color }
+    : null;
+const createCalls = () => calls.filter((c) => c.method === "createProject");
+const submitButton = () => screen.getByRole("button", { name: "Créer" });
+const disabled = (el: HTMLElement) => el.hasAttribute("disabled");
 
 beforeEach(() => {
   calls.length = 0;
-  answer = () => null;
-  Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
+  answer = created;
+  location.hash = "";
 });
 
-test("NewProjectDialog creates the project then the checked pages", async () => {
-  answer = (req) => {
-    if (req.method === "createProject")
-      return { id: "p9", name: req.name, key: req.key, folder: null, color: req.color };
-    if (req.method === "command" && req.command.method === "addPage")
-      return {
-        id: `pg-${req.command.title}`,
-        title: req.command.title,
-        kind: req.command.kind,
-        parentId: null,
-      };
-    return { id: "i1" };
-  };
+test("NewProjectDialog is a single step with the defaults of the next Monday", async () => {
+  render(<NewProjectDialog open onOpenChange={() => {}} count={0} existingKeys={[]} />);
+  expect(await screen.findByDisplayValue("2026-10-19")).toBeTruthy();
+  expect(screen.getByLabelText("Nombre de sprints").getAttribute("value")).toBe("6");
+  expect(screen.getByRole("radio", { name: "1 semaine" }).getAttribute("data-state")).toBe("checked");
+  expect(screen.getByText("6 sprints d'une semaine · du 19 oct. au 27 nov. 2026")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Continuer" })).toBeNull();
+  expect(disabled(submitButton())).toBe(true);
+});
+
+test("NewProjectDialog preview follows the sprint fields", async () => {
+  render(<NewProjectDialog open onOpenChange={() => {}} count={0} existingKeys={[]} />);
+  const user = userEvent.setup();
+  const count = await screen.findByLabelText("Nombre de sprints");
+  await user.clear(count);
+  await user.type(count, "2");
+  await user.click(screen.getByRole("radio", { name: "2 semaines" }));
+  expect(screen.getByText("2 sprints de deux semaines · du 19 oct. au 13 nov. 2026")).toBeTruthy();
+  await user.clear(count);
+  await user.type(count, "53");
+  expect(screen.getByText("De 1 à 52.")).toBeTruthy();
+});
+
+test("NewProjectDialog derives the key, keeps a typed one and refuses a taken one", async () => {
+  render(<NewProjectDialog open onOpenChange={() => {}} count={0} existingKeys={["EMIS"]} />);
+  const user = userEvent.setup();
+  await user.type(await screen.findByLabelText("Nom"), "Suivi de chantier");
+  const key = screen.getByLabelText("Clé");
+  expect(key.getAttribute("value")).toBe("SC");
+  await user.clear(key);
+  await user.type(key, "emis");
+  expect(key.getAttribute("value")).toBe("EMIS");
+  expect(screen.getByText("Clé déjà prise")).toBeTruthy();
+  expect(disabled(submitButton())).toBe(true);
+  await user.type(key, "X");
+  expect(screen.queryByText("Clé déjà prise")).toBeNull();
+  expect(disabled(submitButton())).toBe(false);
+});
+
+test("NewProjectDialog refuses the key reserved for the inbox", async () => {
+  render(<NewProjectDialog open onOpenChange={() => {}} count={0} existingKeys={[]} />);
+  const user = userEvent.setup();
+  await user.type(await screen.findByLabelText("Nom"), "Courrier");
+  const key = screen.getByLabelText("Clé");
+  await user.clear(key);
+  await user.type(key, "inb");
+  expect(screen.getByText("La clé INB est réservée à la boîte de réception.")).toBeTruthy();
+  expect(disabled(submitButton())).toBe(true);
+});
+
+test("NewProjectDialog creates the project with its setup and client, then opens it", async () => {
   const onOpenChange = mock((_: boolean) => {});
-  render(<NewProjectDialog open onOpenChange={onOpenChange} count={0} />);
+  render(<NewProjectDialog open onOpenChange={onOpenChange} count={1} existingKeys={[]} />);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("radio", { name: "Chef·fe de projet" }));
-  await user.click(screen.getByLabelText("Inclure Graphe"));
-  await user.click(screen.getByRole("button", { name: "Continuer" }));
-  expect(screen.getByRole("radio", { name: "Pages conseillées" }).getAttribute("data-state")).toBe("checked");
-  await user.type(screen.getByLabelText("Nom"), "Facturation");
-  await user.click(screen.getByRole("button", { name: "Créer le projet" }));
-  expect(addedPages()).toEqual(["Tableau de bord", "Tickets"]);
-  expect(addedInstances()).toEqual(["kanban@1.0.0", "graph@1.0.0", "tickets@1.0.0"]);
+  await user.type(await screen.findByLabelText("Nom"), "Emis");
+  const key = screen.getByLabelText("Clé");
+  await user.clear(key);
+  await user.type(key, "EMIS");
+  await user.type(screen.getByLabelText("Client"), "Emis SA");
+  await user.click(submitButton());
+  expect(createCalls()).toEqual([
+    {
+      method: "createProject",
+      name: "Emis",
+      key: "EMIS",
+      client: "Emis SA",
+      folder: null,
+      color: expect.stringMatching(/^#[0-9A-Fa-f]{6}$/),
+      setup: { sprintStart: "2026-10-19", sprintCount: 6, sprintWeeks: 1 },
+    },
+  ]);
+  expect(calls.some((c) => c.method === "command")).toBe(false);
   expect(onOpenChange).toHaveBeenCalledWith(false);
-});
-
-test("NewProjectDialog Passer creates an empty project", async () => {
-  answer = creating;
-  render(<NewProjectDialog open onOpenChange={() => {}} count={0} />);
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Passer" }));
-  expect(screen.getByRole("radio", { name: "Projet vide" }).getAttribute("data-state")).toBe("checked");
-  expect(screen.getByRole("radio", { name: "Pages conseillées" }).hasAttribute("disabled")).toBe(true);
-  expect(screen.queryByRole("radio", { name: /Depuis un projet/ })).toBeNull();
-  await user.type(screen.getByLabelText("Nom"), "Vide");
-  await user.click(screen.getByRole("button", { name: "Créer le projet" }));
-  expect(calls.some((c) => c.method === "createProject")).toBe(true);
-  expect(addedPages()).toEqual([]);
-});
-
-test("NewProjectDialog Retour goes back to the role step with its choice", async () => {
-  render(<NewProjectDialog open onOpenChange={() => {}} count={0} />);
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("radio", { name: "Designer" }));
-  await user.click(screen.getByRole("button", { name: "Continuer" }));
-  await user.click(screen.getByRole("button", { name: "Retour" }));
-  expect(screen.getByRole("radio", { name: "Designer" }).getAttribute("data-state")).toBe("checked");
-  expect(screen.getByText("Mes tickets · Notes")).toBeTruthy();
-});
-
-test("NewProjectDialog keeps the dialog open on a partial creation", async () => {
-  answer = creating;
-  const onOpenChange = mock((_: boolean) => {});
-  render(<NewProjectDialog open onOpenChange={onOpenChange} count={0} />);
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Continuer" }));
-  await user.type(screen.getByLabelText("Nom"), "Kibo");
-  await user.click(screen.getByRole("button", { name: "Créer le projet" }));
-  expect(
-    await screen.findByText("Projet créé, mais certaines pages n'ont pas pu être ajoutées."),
-  ).toBeTruthy();
-  expect(onOpenChange).not.toHaveBeenCalled();
-  expect(addedPages()).toEqual(["Tableau de bord", "Kanban", "Tickets", "Graphe", "Notes"]);
-  await user.click(screen.getByRole("button", { name: "Ouvrir le projet" }));
-  expect(onOpenChange).toHaveBeenCalledWith(false);
-  expect(calls.filter((c) => c.method === "createProject")).toHaveLength(1);
-});
-
-test("NewProjectDialog starts over at the role step when reopened", async () => {
-  const view = render(<NewProjectDialog open onOpenChange={() => {}} count={0} />);
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Continuer" }));
-  view.rerender(<NewProjectDialog open={false} onOpenChange={() => {}} count={0} />);
-  view.rerender(<NewProjectDialog open onOpenChange={() => {}} count={0} />);
-  expect(await screen.findByRole("button", { name: "Continuer" })).toBeTruthy();
-});
-
-test("NewProjectDialog Passer then Retour brings the role preset back", async () => {
-  render(<NewProjectDialog open onOpenChange={() => {}} count={0} />);
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Passer" }));
-  await user.click(screen.getByRole("button", { name: "Retour" }));
-  expect(screen.getByLabelText("Inclure Tableau de bord").getAttribute("data-state")).toBe("checked");
-  await user.click(screen.getByRole("button", { name: "Continuer" }));
-  expect(checked("Pages conseillées")).toBe("checked");
-});
-
-test("NewProjectDialog importing a folder starts on an empty project", async () => {
-  render(<NewProjectDialog open onOpenChange={() => {}} count={0} focusFolder />);
-  await screen.findByLabelText("Dossier du projet");
-  expect(checked("Projet vide")).toBe("checked");
+  expect(location.hash).toContain("p9");
 });
 
 test("NewProjectDialog translates a refused creation, never shows it raw", async () => {
   answer = (req) => {
     if (req.method === "createProject") throw new KiboError("INVALID_INPUT", "project KIB already exists");
+    if (req.method === "listProjects") return [];
     return null;
   };
-  render(<NewProjectDialog open onOpenChange={() => {}} count={0} />);
+  render(<NewProjectDialog open onOpenChange={() => {}} count={0} existingKeys={[]} />);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Passer" }));
-  await user.type(screen.getByLabelText("Nom"), "Kibo");
-  await user.click(screen.getByRole("button", { name: "Créer le projet" }));
+  await user.type(await screen.findByLabelText("Nom"), "Kibo");
+  await user.click(submitButton());
   expect(
     await screen.findByText("Projet refusé : cette clé est peut-être déjà prise, ou un champ est invalide."),
   ).toBeTruthy();
   expect(screen.queryByText(/already exists/)).toBeNull();
 });
 
+test("NewProjectDialog offers to open a project whose pages or sprints failed", async () => {
+  answer = (req) => {
+    if (req.method === "createProject") throw new KiboError("INTERNAL", "seed failed");
+    if (req.method === "listProjects") return [{ id: "p9", key: "KIB", name: "Kibo" }];
+    return null;
+  };
+  const onOpenChange = mock((_: boolean) => {});
+  render(<NewProjectDialog open onOpenChange={onOpenChange} count={0} existingKeys={[]} />);
+  const user = userEvent.setup();
+  await user.type(await screen.findByLabelText("Nom"), "Kibo");
+  await user.click(submitButton());
+  expect(await screen.findByText("Projet créé, pages ou sprints incomplets.")).toBeTruthy();
+  expect(onOpenChange).not.toHaveBeenCalled();
+  await user.click(screen.getByRole("button", { name: "Ouvrir" }));
+  expect(onOpenChange).toHaveBeenCalledWith(false);
+  expect(location.hash).toContain("p9");
+  expect(createCalls()).toHaveLength(1);
+});
+
 test("NewProjectDialog falls back to the generic error for an unknown failure", async () => {
   answer = (req) => {
     if (req.method === "createProject") throw new Error("socket hang up");
+    if (req.method === "listProjects") return [];
     return null;
   };
-  render(<NewProjectDialog open onOpenChange={() => {}} count={0} />);
+  render(<NewProjectDialog open onOpenChange={() => {}} count={0} existingKeys={[]} />);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Passer" }));
-  await user.type(screen.getByLabelText("Nom"), "Kibo");
-  await user.click(screen.getByRole("button", { name: "Créer le projet" }));
+  await user.type(await screen.findByLabelText("Nom"), "Kibo");
+  await user.click(submitButton());
   expect(await screen.findByText("Une erreur est survenue.")).toBeTruthy();
   expect(screen.queryByText(/socket hang up/)).toBeNull();
 });
 
-test("NewProjectDialog refuses the key reserved for the inbox", async () => {
-  answer = creating;
-  render(<NewProjectDialog open onOpenChange={() => {}} count={0} />);
+test("NewProjectDialog starts over when reopened", async () => {
+  const view = render(<NewProjectDialog open onOpenChange={() => {}} count={0} existingKeys={[]} />);
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Passer" }));
-  await user.type(screen.getByLabelText("Nom"), "Courrier");
-  const key = screen.getByLabelText("Clé");
-  await user.clear(key);
-  await user.type(key, "inb");
-  expect(screen.getByText("La clé INB est réservée à la boîte de réception.")).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Créer le projet" }).hasAttribute("disabled")).toBe(true);
-  await user.type(key, "X");
-  expect(screen.queryByText("La clé INB est réservée à la boîte de réception.")).toBeNull();
-  expect(screen.getByRole("button", { name: "Créer le projet" }).hasAttribute("disabled")).toBe(false);
+  await user.type(await screen.findByLabelText("Nom"), "Brouillon");
+  view.rerender(<NewProjectDialog open={false} onOpenChange={() => {}} count={0} existingKeys={[]} />);
+  view.rerender(<NewProjectDialog open onOpenChange={() => {}} count={0} existingKeys={[]} />);
+  expect((await screen.findByLabelText("Nom")).getAttribute("value")).toBe("");
+});
+
+test("NewProjectDialog focuses the folder when importing one", async () => {
+  render(<NewProjectDialog open onOpenChange={() => {}} count={0} existingKeys={[]} focusFolder />);
+  const folder = await screen.findByLabelText("Dossier du dépôt");
+  expect(document.activeElement).toBe(folder);
+  expect(screen.getByText("Facultatif. Sans dossier, pas de suivi git.")).toBeTruthy();
 });
