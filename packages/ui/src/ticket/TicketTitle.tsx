@@ -4,6 +4,7 @@ import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
 
 type Props = {
   title: string;
+  label?: string;
   editable: boolean;
   error: string | null;
   onSave(title: string): Promise<boolean>;
@@ -11,7 +12,7 @@ type Props = {
   className?: string;
 };
 
-export function TicketTitle({ title, editable, error, onSave, onCancel, className }: Props) {
+export function TicketTitle({ title, label = title, editable, error, onSave, onCancel, className }: Props) {
   const [draft, setDraft] = useState<string | null>(null);
   const stop = () => {
     setDraft(null);
@@ -25,7 +26,7 @@ export function TicketTitle({ title, editable, error, onSave, onCancel, classNam
     if (e.key === "Enter") void save();
     if (e.key === "Escape") stop();
   };
-  if (!editable) return <span className={className}>{title}</span>;
+  if (!editable) return <span className={className}>{label}</span>;
   if (draft === null)
     return (
       <button
@@ -34,7 +35,7 @@ export function TicketTitle({ title, editable, error, onSave, onCancel, classNam
         className={`text-left hover:underline decoration-dotted underline-offset-4 ${className ?? ""}`}
         onClick={() => setDraft(title)}
       >
-        {title}
+        {label}
       </button>
     );
   return (

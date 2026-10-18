@@ -146,3 +146,10 @@ test("the top bar names the key and holds Copier, the link and Fermer", async ()
   expect(bar?.textContent).toContain("Copier /full-delivery EMIS-33");
   expect(screen.getByRole("button", { name: "Copier le lien du ticket" })).toBeTruthy();
 });
+
+test("a client demo step is titled « Démo · F5 », its edit keeps the stored title", async () => {
+  await open("e35");
+  const heading = screen.getByRole("heading", { name: "Démo · F5" });
+  await userEvent.setup().click(within(heading).getByRole("button"));
+  expect(screen.getByRole("textbox", { name: "Titre" })).toHaveProperty("value", "Démo client");
+});

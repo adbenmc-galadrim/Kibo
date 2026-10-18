@@ -24,6 +24,7 @@ export * from "./signal";
 export * from "./source";
 export * from "./spotlight";
 export * from "./status";
+export * from "./step-title";
 export * from "./ticket-key";
 export * from "./types";
 export * from "./use-delivery-agent";

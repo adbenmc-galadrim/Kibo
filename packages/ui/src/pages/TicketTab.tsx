@@ -83,8 +83,8 @@ export function TicketTab({ project, ticketId, domains, viewer, onOpenFile, onOp
         ticket={t}
         domains={domains}
         viewer={viewer}
-        heading={(title) => (
-          <h1 className={HEADING} aria-label={t.title} title={importTitle(t.externalRefs)}>
+        heading={(title, label) => (
+          <h1 className={HEADING} aria-label={label} title={importTitle(t.externalRefs)}>
             {title}
           </h1>
         )}

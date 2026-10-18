@@ -3,6 +3,7 @@ export const fr = {
   selected: (count: number) => (count === 1 ? "1 sélectionné" : `${count} sélectionnés`),
   clearSelection: "Effacer la sélection",
   runMissing: "Run introuvable",
+  demo: (feature: string) => `Démo · ${feature}`,
   group: {
     name: (key: string, title: string) => `${key} · ${title}`,
     open: (name: string) => `Ouvrir l'ensemble ${name}`,

@@ -151,10 +151,10 @@ export function TicketSheet({
           domains={domains}
           viewer={viewer}
           notice={notice}
-          heading={(title) => (
+          heading={(title, label) => (
             <SheetTitle
               className="text-[22px] font-semibold tracking-[-0.3px]"
-              aria-label={t.title}
+              aria-label={label}
               title={importTitle(t.externalRefs)}
             >
               {title}

@@ -1,4 +1,5 @@
 import type { Domain, FileRef, ProjectSnapshot, TicketView } from "@kibo/schema";
+import { stepTitle } from "@kibo/sdk";
 import type { ReactNode } from "react";
 import { fr } from "../i18n/fr";
 import { useOptionalHost } from "../shell/Host";
@@ -25,7 +26,7 @@ type Props = {
   domains?: Domain[];
   viewer: string;
   notice?: ReactNode;
-  heading(title: ReactNode): ReactNode;
+  heading(title: ReactNode, label: string): ReactNode;
   onOpenFile(ref: FileRef): void;
   onOpenTicket(ticketId: string): void;
 };
@@ -48,6 +49,7 @@ export function TicketBody({
   const [tab, setTab] = useTicketTab();
   const editable = canEdit(project);
   const host = useOptionalHost();
+  const label = stepTitle(t, project.tickets.find((x) => x.id === t.parentId) ?? null);
   return (
     <div className="grid gap-4 px-6 pt-[18px] pb-6">
       {notice}
@@ -61,11 +63,13 @@ export function TicketBody({
       {heading(
         <TicketTitle
           title={t.title}
+          label={label}
           editable={editable}
           error={titleCommand.error}
           onSave={(title) => titleCommand.run({ method: "updateTicket", ticketId: t.id, title })}
           onCancel={titleCommand.clearError}
         />,
+        label,
       )}
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <StatusSelect ticket={t} workflow={project.workflow} editable={editable} command={fieldCommand} />
