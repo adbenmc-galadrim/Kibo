@@ -125,6 +125,13 @@ test("start after a finished tutorial whose project was deleted begins again", a
   expect([again.status, again.completed, again.projectId]).toEqual(["active", [], "demo-2"]);
 });
 
+test("the five steps without the agent finish the tutorial", async () => {
+  const s = setup();
+  await s.service.start();
+  for (const step of ["kanban", "links", "note", "dashboard", "component"] as const) s.service.skipStep(step);
+  expect(s.service.get().status).toBe("done");
+});
+
 test("pause, skip, reset and skipStep change the status or the completed list and emit", async () => {
   const s = setup();
   expect(s.service.pause()).toEqual(TUTORIAL_NEVER);

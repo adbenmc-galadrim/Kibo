@@ -10,6 +10,7 @@ import {
   type TutorialStep,
 } from "@kibo/schema";
 import { linkKeyOf } from "./demo-project";
+import { tutorialComplete } from "./tutorial-required";
 
 export type TutorialRun = Pick<RunView, "profileId" | "projectId" | "state">;
 export type TutorialSnapshot = {
@@ -55,5 +56,5 @@ export function evaluateTutorial(state: TutorialState, snap: TutorialSnapshot): 
     (step) => state.completed.includes(step) || CHECKS[step](seed, state, snap),
   );
   if (completed.length === state.completed.length) return state;
-  return { ...state, completed, status: completed.length === TUTORIAL_STEPS.length ? "done" : "active" };
+  return { ...state, completed, status: tutorialComplete(completed) ? "done" : "active" };
 }

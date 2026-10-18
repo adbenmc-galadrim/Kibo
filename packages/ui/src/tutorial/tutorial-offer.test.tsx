@@ -106,4 +106,5 @@ test("hidden execution: the offer lists five steps, without the agent one", asyn
   const dialog = within(screen.getByRole("dialog"));
   expect(dialog.getAllByRole("listitem")).toHaveLength(5);
   expect(dialog.queryByText("Confier un ticket à un agent")).toBeNull();
+  expect(dialog.getByText("Cinq étapes dans un projet de démonstration, environ dix minutes.")).toBeTruthy();
 });

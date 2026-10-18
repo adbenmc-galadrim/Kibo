@@ -132,6 +132,19 @@ test("all six completed turns the status to done", () => {
   expect(next.completed).toEqual(["kanban", "links", "note", "dashboard", "agent", "component"]);
 });
 
+test("the five steps without the agent turn the status to done", () => {
+  const state: TutorialState = { ...ACTIVE, completed: ["kanban", "links", "note", "dashboard"] };
+  const next = evaluateTutorial(state, {
+    ...BASE,
+    runs: [],
+    noteHash: SEED.noteHash,
+    aiComponentIds: ["chart"],
+    instances: [...BASE.instances, instance("w2", "chart@0.1.0")],
+  });
+  expect(next.status).toBe("done");
+  expect(next.completed).toEqual(["kanban", "links", "note", "dashboard", "component"]);
+});
+
 test("a paused or skipped state is never advanced", () => {
   const changed = { ...BASE, noteHash: "b".repeat(64) };
   for (const status of ["paused", "skipped", "never", "done"] as const) {

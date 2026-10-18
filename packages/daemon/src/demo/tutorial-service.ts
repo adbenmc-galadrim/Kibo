@@ -8,6 +8,7 @@ import {
 } from "@kibo/schema";
 import type { LocalSettings } from "../settings";
 import { evaluateTutorial, type TutorialSnapshot } from "./tutorial-eval";
+import { tutorialComplete } from "./tutorial-required";
 
 export type TutorialService = {
   get(): TutorialState;
@@ -74,7 +75,7 @@ export function createTutorialService(deps: TutorialServiceDeps): TutorialServic
   const withCompleted = (s: TutorialState, completed: TutorialStep[]): TutorialState => ({
     ...s,
     completed,
-    status: completed.length === TUTORIAL_STEPS.length ? "done" : s.status,
+    status: tutorialComplete(completed) ? "done" : s.status,
   });
 
   return {

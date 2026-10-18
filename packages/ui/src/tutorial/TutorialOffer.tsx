@@ -60,7 +60,7 @@ export function TutorialOffer({ open, onClose, onOpen }: Props) {
             <GraduationCap aria-hidden className="size-4" />
             {t.offer.title}
           </DialogTitle>
-          <DialogDescription>{t.offer.text}</DialogDescription>
+          <DialogDescription>{executionShown ? t.offer.text : t.offer.textTracking}</DialogDescription>
         </DialogHeader>
         <ol className="grid list-decimal gap-1 pl-5 text-sm">
           {shownStepIds(executionShown).map((step) => (

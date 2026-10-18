@@ -17,6 +17,7 @@ export const frTutorial = {
   offer: {
     title: "Faire le tour de Kibo ?",
     text: "Six étapes dans un projet de démonstration, environ dix minutes. L'agent de démonstration ne consomme aucun token.",
+    textTracking: "Cinq étapes dans un projet de démonstration, environ dix minutes.",
     start: "Commencer",
     later: "Plus tard",
     resume: "Reprendre",
