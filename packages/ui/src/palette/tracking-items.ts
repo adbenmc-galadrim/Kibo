@@ -3,6 +3,7 @@ import {
   isInbox,
   type ProjectMeta,
   type ProjectSnapshot,
+  type Spotlight,
   type TicketView,
 } from "@kibo/schema";
 import type { CopyTicket } from "@kibo/sdk";
@@ -12,7 +13,7 @@ import { normalize, type PaletteItem } from "./palette-items";
 export type LocalAction =
   | { kind: "projectAgent" }
   | { kind: "copyDelivery"; ticket: CopyTicket }
-  | { kind: "openView"; componentId: "planning" | "questions" }
+  | { kind: "openView"; componentId: "planning" | "questions"; spotlight?: Spotlight }
   | { kind: "openSprint"; sprintId: string };
 
 export const isTracked = (snapshot: Pick<ProjectSnapshot, "sprints"> | undefined): boolean =>
@@ -38,12 +39,25 @@ const localItem = (
 
 const t = frShell.palette;
 
-function creationItems(snapshot: ProjectSnapshot | undefined, editable: boolean): PaletteItem[] {
+const newQuestion = (ticket: TicketView | undefined): LocalAction =>
+  ticket
+    ? { kind: "openView", componentId: "questions", spotlight: { kind: "newQuestion", ticketId: ticket.id } }
+    : { kind: "openView", componentId: "questions" };
+
+function creationItems(
+  snapshot: ProjectSnapshot | undefined,
+  ticket: TicketView | undefined,
+  editable: boolean,
+): PaletteItem[] {
   if (!editable || !isTracked(snapshot)) return [];
   return [
-    localItem("newFeature", t.newFeature, "new", { kind: "openView", componentId: "planning" }),
+    localItem("newFeature", t.newFeature, "new", {
+      kind: "openView",
+      componentId: "planning",
+      spotlight: { kind: "newFeature" },
+    }),
     localItem("newSprint", t.newSprint, "new", { kind: "openView", componentId: "planning" }),
-    localItem("newQuestion", t.newQuestion, "new", { kind: "openView", componentId: "questions" }),
+    localItem("newQuestion", t.newQuestion, "new", newQuestion(ticket)),
   ];
 }
 
@@ -67,7 +81,7 @@ export function trackingItems(
 ): PaletteItem[] {
   if (!project || isInbox(project.id)) return [];
   const out = [
-    ...creationItems(snapshot, editable),
+    ...creationItems(snapshot, ticket, editable),
     localItem("projectAgent", t.projectAgent, "projectAgent", { kind: "projectAgent" }),
   ];
   if (ticket?.key) {

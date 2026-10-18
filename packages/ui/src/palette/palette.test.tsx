@@ -325,11 +325,12 @@ test("⌘K « Copier /full-delivery KIB-12 » copies the command of the open tic
   Object.defineProperty(navigator, "clipboard", { configurable: true, value: clipboard });
 });
 
-test("⌘K « Nouvelle question » opens the Questions view, a sprint opens its sheet", async () => {
+test("⌘K « Nouvelle fonctionnalité » opens Planning with the newFeature intent, a sprint opens its sheet", async () => {
   const emis = trackingProject();
   const counts = projectsFixture[0]?.counts;
   if (!counts) throw new Error("fixture without counts");
   const views: string[] = [];
+  const intents: (string | undefined)[] = [];
   const sprints: string[] = [];
   const noop = () => {};
   const host: Host = {
@@ -337,7 +338,10 @@ test("⌘K « Nouvelle question » opens the Questions view, a sprint opens its 
     openNewTicket: noop,
     openAssign: noop,
     openFile: noop,
-    openView: (id) => views.push(id),
+    openView: (id, _project, spotlight) => {
+      views.push(id);
+      intents.push(spotlight?.kind);
+    },
     openTarget: noop,
     openSprint: (id) => sprints.push(id),
   };
@@ -362,9 +366,10 @@ test("⌘K « Nouvelle question » opens the Questions view, a sprint opens its 
     </HostProvider>,
   );
   const dialog = within(screen.getByRole("dialog", { name: "Palette de commandes" }));
-  await userEvent.type(dialog.getByRole("combobox"), "nouvelle question");
+  await userEvent.type(dialog.getByRole("combobox"), "nouvelle fonctionnalite");
   await userEvent.keyboard("{Enter}");
-  expect(views).toEqual(["questions"]);
+  expect(views).toEqual(["planning"]);
+  expect(intents).toEqual(["newFeature"]);
   unmount();
   render(
     <HostProvider host={host}>

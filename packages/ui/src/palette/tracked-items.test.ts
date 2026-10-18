@@ -30,12 +30,15 @@ test("a tracked project offers its creations and no Nouvelle page", () => {
   expect(labels).not.toContain("Nouvelle page");
 });
 
-test("the creations open their page: Planning for a feature or a sprint, Questions for a question", () => {
+const creationRun = (ctx: PaletteContext, label: string) =>
+  (searchItems(buildItems(ctx), "", "actions")[0]?.items ?? []).find((i) => i.label === label)?.run;
+
+test("the creations carry their intent: newFeature on Planning, a sprint opens Planning, newQuestion without a ticket opens Questions", () => {
   const items = searchItems(buildItems(context(emis)), "", "actions")[0]?.items ?? [];
   const runOf = (label: string) => items.find((i) => i.label === label)?.run;
   expect(runOf("Nouvelle fonctionnalité")).toEqual({
     kind: "local",
-    action: { kind: "openView", componentId: "planning" },
+    action: { kind: "openView", componentId: "planning", spotlight: { kind: "newFeature" } },
   });
   expect(runOf("Nouveau sprint")).toEqual({
     kind: "local",
@@ -44,6 +47,19 @@ test("the creations open their page: Planning for a feature or a sprint, Questio
   expect(runOf("Nouvelle question")).toEqual({
     kind: "local",
     action: { kind: "openView", componentId: "questions" },
+  });
+});
+
+test("Nouvelle question asks about the current ticket when there is one", () => {
+  const ticket = emis.tickets.find((t) => t.key);
+  if (!ticket) throw new Error("fixture without ticket");
+  expect(creationRun({ ...context(emis), activeTicketId: ticket.id }, "Nouvelle question")).toEqual({
+    kind: "local",
+    action: {
+      kind: "openView",
+      componentId: "questions",
+      spotlight: { kind: "newQuestion", ticketId: ticket.id },
+    },
   });
 });
 

@@ -143,7 +143,7 @@ export function CommandPalette({
   const host = useOptionalHost();
   const runLocal = (action: LocalAction) => {
     if (action.kind === "projectAgent") return host?.openProjectAgent?.({ tab: "conversation" });
-    if (action.kind === "openView") return host?.openView(action.componentId);
+    if (action.kind === "openView") return host?.openView(action.componentId, undefined, action.spotlight);
     if (action.kind === "openSprint") return host?.openSprint?.(action.sprintId);
     void copyDeliveryCommand({ toast: (message) => void toast(message) }, action.ticket);
   };
