@@ -276,9 +276,9 @@ S.draw["p-fiche-act"] = (x, y) => S.draw["p-fiche"](x, y, "activity");
 
 // ---------- P9 · Questions : Qn, « bloquante », bloquantes en tête, export ----------
 S.QUESTIONS27 = [
-  { id: "Q14", tk: "EMIS-51", f: "F6", group: "Lecture du fichier Excel", text: "Un ISO réaffecté garde-t-il ses photos ?", to: "Client", blocking: true, age: "il y a 3 j" },
+  { id: "Q14", tk: "EMIS-51", f: "F6", group: "Lecture du fichier Excel", text: "Un ISO réaffecté garde-t-il ses photos ?", to: "Emis SA", blocking: true, age: "il y a 3 j" },
   { id: "Q16", tk: "EMIS-34", f: "F5", group: "Tests E2E de l'envoi", text: "Quota par affaire : 2 Go ou 5 Go ?", to: "Produit", age: "hier" },
-  { id: "Q17", tk: "EMIS-81", f: "F7", group: "Modèle du rapport", text: "Un rapport par chef de chantier ou par affaire ?", to: "Client", age: "il y a 2 h" } ];
+  { id: "Q17", tk: "EMIS-81", f: "F7", group: "Modèle du rapport", text: "Un rapport par chef de chantier ou par affaire ?", to: "Emis SA", age: "il y a 2 h" } ];
 S.qcard27 = (p, q) => { const C = S.C, sec = C.mfg;
   const g = S.col(p, { name: "group " + q.tk, fx: true, gap: 8 });
   const gh = S.row(g, { gap: 8 }); S.txt(gh, q.tk, { size: 12, mono: true, color: sec }); S.txt(gh, q.group, { size: 13, weight: 600 }); S.fChip2(gh, q.f);
@@ -295,7 +295,7 @@ S.draw["p-questions"] = (x, y) => { const C = S.C, sec = C.mfg;
   const tb = S.row(main, { name: "toolbar", fx: true, h: 52, pad: [0, 16], gap: 8 });
   const seg = S.row(tb, { pad: 2, radius: 7, fill: C.muted, gap: 2 });
   for (const [l, on] of [["Ouvertes", true], ["Répondues"], ["Toutes"], ["Archivées"]]) { const s = S.row(seg, { pad: [4, 10], radius: 5, fill: on ? C.bg : null, stroke: on ? C.border : null }); S.txt(s, l, { size: 12.5, weight: 500, color: on ? C.fg : sec }); }
-  const rc = S.row(tb, { gap: 4 }); for (const [l, n, on] of [["Tous", "3", true], ["Client", "2"], ["Produit", "1"]]) { const s = S.row(rc, { pad: [4, 10], gap: 6, radius: 6, stroke: on ? C.mfg : C.border }); S.txt(s, l, { size: 12.5, weight: 500, color: on ? C.fg : sec }); S.txt(s, n, { size: 11, mono: true, color: C.dim }); }
+  const rc = S.row(tb, { gap: 4 }); for (const [l, n, on] of [["Tous", "3", true], ["Emis SA", "2"], ["Produit", "1"]]) { const s = S.row(rc, { pad: [4, 10], gap: 6, radius: 6, stroke: on ? C.mfg : C.border }); S.txt(s, l, { size: 12.5, weight: 500, color: on ? C.fg : sec }); S.txt(s, n, { size: 11, mono: true, color: C.dim }); }
   S.spacer(tb); S.btn(tb, "Exporter pour le client (2)", "outline", { sm: true, icon: "upload" }); S.btn(tb, "Nouvelle question", "default", { sm: true, icon: "plus" });
   S.hline(main, C.soft);
   const list = S.col(main, { name: "list", fx: true, fy: true, pad: [18, 24], gap: 20 });

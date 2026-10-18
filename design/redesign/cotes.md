@@ -7987,10 +7987,10 @@ Exports : `exports/proposition-questions-dark.png` et `exports/proposition-quest
 36. « Archivées » (x 495, y 67,5)
 37. « Tous » (x 583, y 67,5)
 38. « 3 » (x 617, y 68)
-39. « Client » (x 648, y 67,5)
-40. « 2 » (x 689, y 68)
-41. « Produit » (x 720, y 67,5)
-42. « 1 » (x 769, y 68)
+39. « Emis SA » (x 648, y 67,5)
+40. « 2 » (x 702, y 68)
+41. « Produit » (x 733, y 67,5)
+42. « 1 » (x 782, y 68)
 43. « Exporter pour le client (2) » (x 1123, y 67,5)
 44. « Nouvelle question » (x 1312, y 67,5)
 45. « 1 bloquante en tête · 3 ouvertes » (x 286, y 120)
@@ -8000,10 +8000,10 @@ Exports : `exports/proposition-questions-dark.png` et `exports/proposition-quest
 49. « Q14 » (x 279, y 194)
 50. « Un ISO réaffecté garde-t-il ses photos ? » (x 310, y 193)
 51. « bloquante » (x 599, y 194)
-52. « Pour : Client » (x 304, y 224)
-53. « posée par » (x 404, y 224)
-54. « AB » (x 471, y 227)
-55. « Adam · il y a 3 j » (x 493, y 224)
+52. « Pour : Emis SA » (x 304, y 224)
+53. « posée par » (x 417, y 224)
+54. « AB » (x 484, y 227)
+55. « Adam · il y a 3 j » (x 506, y 224)
 56. « Autre réponse… » (x 291, y 262)
 57. « Répondre » (x 1337, y 262,5)
 58. « EMIS-34 » (x 265, y 321)
@@ -8022,10 +8022,10 @@ Exports : `exports/proposition-questions-dark.png` et `exports/proposition-quest
 71. « F7 » (x 469, y 484)
 72. « Q17 » (x 279, y 521)
 73. « Un rapport par chef de chantier ou par affaire ? » (x 310, y 520)
-74. « Pour : Client » (x 304, y 550)
-75. « posée par » (x 404, y 550)
-76. « AB » (x 471, y 553)
-77. « Adam · il y a 2 h » (x 493, y 550)
+74. « Pour : Emis SA » (x 304, y 550)
+75. « posée par » (x 417, y 550)
+76. « AB » (x 484, y 553)
+77. « Adam · il y a 2 h » (x 506, y 550)
 78. « Autre réponse… » (x 291, y 588)
 79. « Répondre » (x 1337, y 588,5)
 80. « Texte exporté » (x 868, y 108)
@@ -8148,16 +8148,16 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - « Toutes » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 433, y 67,5, 40 × 15
           - **box** (bloc) · x 485, y 63,5, 78 × 23 · flex ligne, espacement 0, marges internes 4 10 4 10, alignement center/start · rayon 5
             - « Archivées » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 495, y 67,5, 58 × 15
-        - **box** (bloc) · x 573, y 63,5, 213 × 23 · flex ligne, espacement 4, marges internes 0, alignement center/start
+        - **box** (bloc) · x 573, y 63,5, 226 × 23 · flex ligne, espacement 4, marges internes 0, alignement center/start
           - **box** (bloc) · x 573, y 63,5, 61 × 23 · flex ligne, espacement 6, marges internes 4 10 4 10, alignement center/start · bordure 1 `mfg` · rayon 6
             - « Tous » — Geist 12,5 / 500, interligne 1,2, couleur `fg` — x 583, y 67,5, 28 × 15
             - « 3 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 617, y 68, 7 × 14
-          - **box** (bloc) · x 638, y 63,5, 68 × 23 · flex ligne, espacement 6, marges internes 4 10 4 10, alignement center/start · bordure 1 `border` · rayon 6
-            - « Client » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 648, y 67,5, 35 × 15
-            - « 2 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 689, y 68, 7 × 14
-          - **box** (bloc) · x 710, y 63,5, 76 × 23 · flex ligne, espacement 6, marges internes 4 10 4 10, alignement center/start · bordure 1 `border` · rayon 6
-            - « Produit » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 720, y 67,5, 43 × 15
-            - « 1 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 769, y 68, 7 × 14
+          - **box** (bloc) · x 638, y 63,5, 81 × 23 · flex ligne, espacement 6, marges internes 4 10 4 10, alignement center/start · bordure 1 `border` · rayon 6
+            - « Emis SA » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 648, y 67,5, 48 × 15
+            - « 2 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 702, y 68, 7 × 14
+          - **box** (bloc) · x 723, y 63,5, 76 × 23 · flex ligne, espacement 6, marges internes 4 10 4 10, alignement center/start · bordure 1 `border` · rayon 6
+            - « Produit » — Geist 12,5 / 500, interligne 1,2, couleur `mfg` — x 733, y 67,5, 43 × 15
+            - « 1 » — Geist Mono 11 / 400, interligne 1,2, couleur `dim` — x 782, y 68, 7 × 14
         - **Button / outline** (bloc) · x 1094, y 62,5, 181 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
           - icône `upload` 13 px, `fg` — x 1104, y 68,5, 13 × 13
           - « Exporter pour le client (2) » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1123, y 67,5, 142 × 15
@@ -8184,15 +8184,15 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - icône `lock` 12 px, `red` — x 582, y 195,5, 12 × 12
                 - « bloquante » — Geist 12 / 500, interligne 1,2, couleur `red` — x 599, y 194, 57 × 15
               - icône `more` 15 px, `dim` — x 1387, y 194, 15 × 15
-            - **box** (bloc) · x 279, y 221, 296 × 21 · flex ligne, espacement 8, marges internes 0, alignement center/start
-              - **box** (bloc) · x 279, y 221, 117 × 21 · flex ligne, espacement 5, marges internes 3 8 3 8, alignement center/start · bordure 1 `border` · rayon 12
+            - **box** (bloc) · x 279, y 221, 309 × 21 · flex ligne, espacement 8, marges internes 0, alignement center/start
+              - **box** (bloc) · x 279, y 221, 130 × 21 · flex ligne, espacement 5, marges internes 3 8 3 8, alignement center/start · bordure 1 `border` · rayon 12
                 - icône `user` 12 px, `mfg` — x 287, y 225,5, 12 × 12
-                - « Pour : Client » — Geist 12 / 400, interligne 1,2, couleur `fg` — x 304, y 224, 68 × 15
-                - icône `chevDown` 11 px, `dim` — x 377, y 226, 11 × 11
-              - « posée par » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 404, y 224, 55 × 15
-              - **avatar** (bloc) · x 467, y 222,5, 18 × 18 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 9 · dimension fixe/fixe
-                - « AB » — Geist 7 / 600, interligne 1,2, couleur `fg` — x 471, y 227, 10 × 9
-              - « Adam · il y a 3 j » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 493, y 224, 82 × 15
+                - « Pour : Emis SA » — Geist 12 / 400, interligne 1,2, couleur `fg` — x 304, y 224, 81 × 15
+                - icône `chevDown` 11 px, `dim` — x 390, y 226, 11 × 11
+              - « posée par » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 417, y 224, 55 × 15
+              - **avatar** (bloc) · x 480, y 222,5, 18 × 18 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 9 · dimension fixe/fixe
+                - « AB » — Geist 7 / 600, interligne 1,2, couleur `fg` — x 484, y 227, 10 × 9
+              - « Adam · il y a 3 j » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 506, y 224, 82 × 15
             - **box** (bloc) · x 279, y 252, 1123 × 36 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
               - **input** (bloc) · x 279, y 252, 1040 × 36 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 6 · dimension remplit/fixe
                 - « Autre réponse… » — Geist 13 / 400, interligne 1,2, couleur `dim` — x 291, y 262, 91 × 16
@@ -8236,15 +8236,15 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « Q17 » — Geist Mono 12,5 / 600, interligne 1,2, couleur `mfg` — x 279, y 521, 23 × 15
               - « Un rapport par chef de chantier ou par affaire ? » — Geist 13,5 / 600, interligne 1,2, couleur `fg` — x 310, y 520, 303 × 17
               - icône `more` 15 px, `dim` — x 1387, y 521, 15 × 15
-            - **box** (bloc) · x 279, y 547, 300 × 21 · flex ligne, espacement 8, marges internes 0, alignement center/start
-              - **box** (bloc) · x 279, y 547, 117 × 21 · flex ligne, espacement 5, marges internes 3 8 3 8, alignement center/start · bordure 1 `border` · rayon 12
+            - **box** (bloc) · x 279, y 547, 313 × 21 · flex ligne, espacement 8, marges internes 0, alignement center/start
+              - **box** (bloc) · x 279, y 547, 130 × 21 · flex ligne, espacement 5, marges internes 3 8 3 8, alignement center/start · bordure 1 `border` · rayon 12
                 - icône `user` 12 px, `mfg` — x 287, y 551,5, 12 × 12
-                - « Pour : Client » — Geist 12 / 400, interligne 1,2, couleur `fg` — x 304, y 550, 68 × 15
-                - icône `chevDown` 11 px, `dim` — x 377, y 552, 11 × 11
-              - « posée par » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 404, y 550, 55 × 15
-              - **avatar** (bloc) · x 467, y 548,5, 18 × 18 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 9 · dimension fixe/fixe
-                - « AB » — Geist 7 / 600, interligne 1,2, couleur `fg` — x 471, y 553, 10 × 9
-              - « Adam · il y a 2 h » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 493, y 550, 86 × 15
+                - « Pour : Emis SA » — Geist 12 / 400, interligne 1,2, couleur `fg` — x 304, y 550, 81 × 15
+                - icône `chevDown` 11 px, `dim` — x 390, y 552, 11 × 11
+              - « posée par » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 417, y 550, 55 × 15
+              - **avatar** (bloc) · x 480, y 548,5, 18 × 18 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `muted` · bordure 1 `border` · rayon 9 · dimension fixe/fixe
+                - « AB » — Geist 7 / 600, interligne 1,2, couleur `fg` — x 484, y 553, 10 × 9
+              - « Adam · il y a 2 h » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 506, y 550, 86 × 15
             - **box** (bloc) · x 279, y 578, 1123 × 36 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
               - **input** (bloc) · x 279, y 578, 1040 × 36 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 6 · dimension remplit/fixe
                 - « Autre réponse… » — Geist 13 / 400, interligne 1,2, couleur `dim` — x 291, y 588, 91 × 16
