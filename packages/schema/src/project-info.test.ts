@@ -19,6 +19,7 @@ test("the project names itself and its repository from the first pull request", 
     color: "#14B8A6",
     description: "Suivi de chantier",
     client: null,
+    hasFolder: false,
     repo: "galadrimteam/emis-suivi-chantier",
   });
 });
@@ -29,4 +30,15 @@ test("a GitHub binding names the repository first", () => {
 
 test("without binding nor pull request, there is no repository", () => {
   expect(projectRepo({ tickets: [viewOf({ id: "t1", title: "Seul" })], bindings: [] })).toBeNull();
+});
+
+test("the project tells whether a repository folder is set, never its path", () => {
+  const snapshot = emisSnapshot();
+  const info = projectInfo({
+    ...snapshot,
+    meta: { ...snapshot.meta, folder: "/Users/adam/emis" },
+    bindings: [],
+  });
+  expect(info.hasFolder).toBe(true);
+  expect(JSON.stringify(info)).not.toContain("/Users/adam");
 });

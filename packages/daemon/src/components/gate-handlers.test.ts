@@ -346,6 +346,7 @@ test("project.get names the project and the repository of its first pull request
     color: "#14B8A6",
     description: null,
     client: null,
+    hasFolder: false,
     repo: "galadrimteam/emis",
   });
 });

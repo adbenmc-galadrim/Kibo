@@ -52,7 +52,7 @@ export function createMockSdk(
     id: "mock",
     key: PROJECT_KEY,
     name: "Mock",
-    folder: null,
+    folder: opts.folder ?? null,
     color: "#71717A",
     worktree: null,
     storybook: null,

@@ -81,6 +81,7 @@ export type MockSdkOptions = {
   events?: ProjectEvent[];
   description?: string | null;
   client?: string | null;
+  folder?: string | null;
   presence?: PresencePeer[];
   shared?: boolean;
   members?: MemberInfo[];

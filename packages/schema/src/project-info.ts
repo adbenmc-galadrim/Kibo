@@ -7,6 +7,7 @@ export type ProjectInfo = {
   color: string;
   description: string | null;
   client: string | null;
+  hasFolder: boolean;
   repo: string | null;
 };
 
@@ -32,5 +33,6 @@ export const projectInfo = (
   color: snapshot.meta.color,
   description: snapshot.meta.description,
   client: snapshot.meta.client,
+  hasFolder: snapshot.meta.folder !== null,
   repo: projectRepo(snapshot),
 });

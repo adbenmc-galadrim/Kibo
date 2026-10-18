@@ -36,10 +36,16 @@ test("the project describes itself and names its repository", async () => {
     color: "#71717A",
     description: "Suivi de chantier",
     client: null,
+    hasFolder: false,
     repo: "galadrimteam/emis",
   });
   expect(mock.used).toContain("read:ticket");
   expect(mock.violations).toEqual([]);
+});
+
+test("the mock project tells whether a repository folder is set", async () => {
+  const mock = createMockSdk(manifest(["ticket"]), { folder: "/tmp/emis" });
+  expect((await mock.sdk.project.get()).hasFolder).toBe(true);
 });
 
 test("reading the project needs read:ticket", async () => {
