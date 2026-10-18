@@ -2,7 +2,6 @@ import { afterEach, expect, test } from "bun:test";
 import { type CiRun, EMPTY_PROGRESS, type GithubPrRef, type TicketView } from "@kibo/schema";
 import { cleanup, render, screen } from "@testing-library/react";
 import { BlockedBadge, CardBadges } from "./CardBadges";
-import { cardTitle } from "./card-title";
 
 afterEach(cleanup);
 
@@ -132,13 +131,4 @@ test("the blocked badge names the blocking question, or just says blocked", () =
   cleanup();
   render(<BlockedBadge question={null} />);
   expect(screen.getByText("bloqué")).toBeTruthy();
-});
-
-test("a 'Démo client' step is titled after its feature, other titles stay", () => {
-  const group = { id: "f", keyLabel: "EMIS-3", title: "Import", shortKey: "F6" };
-  expect(cardTitle(ticket([], { title: "Démo client" }), group)).toBe("Démo · F6");
-  expect(cardTitle(ticket([], { title: " démo client " }), group)).toBe("Démo · F6");
-  expect(cardTitle(ticket([], { title: "Démo client" }), { ...group, shortKey: null })).toBe("Démo · EMIS-3");
-  expect(cardTitle(ticket([], { title: "Démo client" }), null)).toBe("Démo client");
-  expect(cardTitle(ticket([], { title: "Écran d'import" }), group)).toBe("Écran d'import");
 });

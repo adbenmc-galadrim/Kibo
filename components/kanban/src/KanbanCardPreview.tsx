@@ -1,6 +1,6 @@
+import { stepTitle } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { MoreHorizontal } from "lucide-react";
-import { cardTitle } from "./card-title";
 import { CARD_CLASS, CARD_TITLE_CLASS, type CardFacts, KanbanCardContent } from "./KanbanCardContent";
 
 type Props = CardFacts & { readOnly: boolean; refused?: boolean };
@@ -26,7 +26,7 @@ export function KanbanCardPreview(props: Props) {
       <KanbanCardContent
         {...props}
         menu={menu}
-        title={<span className={CARD_TITLE_CLASS}>{cardTitle(t, props.group)}</span>}
+        title={<span className={CARD_TITLE_CLASS}>{stepTitle(t, props.group)}</span>}
       />
     </div>
   );

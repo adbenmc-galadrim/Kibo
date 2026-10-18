@@ -66,7 +66,6 @@ export const fr = {
   blocked: "bloqué",
   blockedBy: (question: string) => `bloqué · ${question}`,
   optional: "facultative",
-  demo: (feature: string) => `Démo · ${feature}`,
   ciUnavailable: (message: string) => `CI indisponible : ${message}`,
   reason: {
     sprint: (code: string) => `sprint ${code}`,

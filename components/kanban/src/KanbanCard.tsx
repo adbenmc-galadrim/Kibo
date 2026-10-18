@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import type { AgentExecution, DeliveryKind, Status, StatusId } from "@kibo/schema";
-import { type DeliverEntry, useSdk } from "@kibo/sdk";
+import { type DeliverEntry, stepTitle, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
@@ -9,7 +9,6 @@ import { ContextMenuEntries, DropdownMenuEntries } from "@kibo/sdk/ui/menu-entri
 import { MoreHorizontal } from "lucide-react";
 import type { PointerEvent } from "react";
 import { cardMenuEntries } from "./card-menu";
-import { cardTitle } from "./card-title";
 import { fr } from "./fr";
 import { CARD_CLASS, CARD_TITLE_CLASS, type CardFacts, KanbanCardContent } from "./KanbanCardContent";
 
@@ -84,7 +83,7 @@ export function KanbanCard(props: Props) {
   );
   const title = (
     <button type="button" className={cn(CARD_TITLE_CLASS, "cursor-pointer")} onClick={onOpen}>
-      {cardTitle(t, props.group)}
+      {stepTitle(t, props.group)}
     </button>
   );
   return (
