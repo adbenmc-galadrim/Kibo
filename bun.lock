@@ -465,6 +465,13 @@
         "@types/bun": "1.4.2",
       },
     },
+    "scripts/forbidden-terms": {
+      "name": "@kibo/forbidden-terms",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@types/bun": "1.4.2",
+      },
+    },
     "scripts/import-emis": {
       "name": "@kibo/import-emis",
       "version": "0.0.0",
@@ -756,6 +763,8 @@
     "@kibo/dogfood": ["@kibo/dogfood@workspace:scripts/dogfood"],
 
     "@kibo/e2e": ["@kibo/e2e@workspace:e2e"],
+
+    "@kibo/forbidden-terms": ["@kibo/forbidden-terms@workspace:scripts/forbidden-terms"],
 
     "@kibo/import-emis": ["@kibo/import-emis@workspace:scripts/import-emis"],
 
