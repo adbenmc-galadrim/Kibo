@@ -137,4 +137,8 @@ test("the summary is dated: its time today, its day and time before", () => {
   show();
   const before = within(screen.getByRole("region", { name: "Dernier résumé" }));
   expect(before.getByText("16 oct. · 14:48")).toBeTruthy();
+  cleanup();
+  setSystemTime(new Date(2026, 9, 15, 9, 0));
+  show();
+  expect(screen.getByRole("region", { name: "Résumé du jour" })).toBeTruthy();
 });

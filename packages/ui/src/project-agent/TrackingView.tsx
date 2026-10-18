@@ -81,7 +81,7 @@ export function TrackingView({
   const [recap, setRecap] = useState<Recap | null>(null);
   const now = Date.now();
   const { summary, summaryAt, exchange } = trackingThread(items);
-  const today = summaryAt === null || sameDay(summaryAt, now);
+  const today = summaryAt === null || summaryAt > now || sameDay(summaryAt, now);
   const asking = exchange.length > 0;
   const decide = async (pending: Batch, d: Decision) => {
     const decidedWith = labels;
