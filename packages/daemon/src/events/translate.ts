@@ -88,13 +88,18 @@ function prDrafts(ticketId: string, pr: GithubPrRef, previous: GithubPrRef | nul
   ];
 }
 
-function refDrafts(running: Running, cmd: Extract<ProjectCommand, { method: "upsertExternalRef" }>): Draft[] {
+type RefCommand = Extract<ProjectCommand, { method: "upsertExternalRef" }>;
+
+const branchData = (branch: string, e: CommandEvent): Draft["data"] =>
+  e.meta.origin === "user" ? { branch, declared: true } : { branch };
+
+function refDrafts(running: Running, cmd: RefCommand, e: CommandEvent): Draft[] {
   const key = refKey(cmd.ticketId, cmd.ref);
   const previous = running.refs.get(key) ?? null;
   running.refs.set(key, cmd.ref);
   if (cmd.ref.kind === "git_branch")
     return previous === null
-      ? [{ kind: "branch_created", ticketId: cmd.ticketId, data: { branch: cmd.ref.branch } }]
+      ? [{ kind: "branch_created", ticketId: cmd.ticketId, data: branchData(cmd.ref.branch, e) }]
       : [];
   if (cmd.ref.kind !== "github_pr") return [];
   return prDrafts(cmd.ticketId, cmd.ref, previous?.kind === "github_pr" ? previous : null);
@@ -138,7 +143,7 @@ function drafts(facts: Facts, running: Running, e: CommandEvent): Draft[] {
     case "createSprint":
       return [{ kind: "sprint_created", ticketId: null, data: { code: cmd.code, name: cmd.name } }];
     case "upsertExternalRef":
-      return refDrafts(running, cmd);
+      return refDrafts(running, cmd, e);
     case "setTicketDelivery":
       return cmd.delivery === null
         ? []

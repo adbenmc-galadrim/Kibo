@@ -8,7 +8,7 @@ import {
   KiboError,
   type TicketView,
 } from "@kibo/schema";
-import { KIBO_COMMAND } from "../docs";
+import { USER_COMMAND } from "../docs";
 import { type RpcExtension, requireLocal } from "../rpc-extensions";
 import { call, type Service } from "../service";
 import { completeMerge, isFollowed, samePr, triggerRules } from "./pr-rules";
@@ -23,7 +23,7 @@ function ticketOf(service: Service, projectId: string, key: string): TicketView 
 }
 
 function upsert(service: Service, projectId: string, ticketId: string, ref: ExternalRef): void {
-  service.docs.run(projectId, { method: "upsertExternalRef", ticketId, ref }, KIBO_COMMAND);
+  service.docs.run(projectId, { method: "upsertExternalRef", ticketId, ref }, USER_COMMAND);
 }
 
 function declareBranch(service: Service, projectId: string, ticket: TicketView, ref: GitBranchRef): void {

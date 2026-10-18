@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { type GitBranchRef, type GithubPrRef, KiboError, type StatusId, type Ticket } from "@kibo/schema";
+import { KIBO_COMMAND } from "../docs";
 import { type EventsHarness, eventsHarness, PR_18, tick } from "../events/events.test-helper";
 import { dispatchRpc, LOCAL_CONTEXT } from "../rpc-extensions";
 import { call } from "../service";
@@ -42,6 +43,20 @@ test("a branch declared on a ticket to do starts it, with the observer's journal
   expect(result.ticket.statusId).toBe("in_progress");
   expect(result.ticket.externalRefs).toContainEqual(BRANCH);
   expect((await kinds(ticket.id)).slice(before)).toEqual(["branch_created", "status_changed"]);
+});
+
+test("a declared branch is journaled as declared, an observed one is not", async () => {
+  const declared = step();
+  declare(declared, BRANCH);
+  const observed = step();
+  h.run({ method: "upsertExternalRef", ticketId: observed.id, ref: BRANCH }, KIBO_COMMAND);
+  await tick();
+  const branches = h.journal().filter((e) => e.kind === "branch_created");
+  expect(branches.find((e) => e.ticketId === declared.id)).toMatchObject({
+    source: "git",
+    data: { branch: "feat/emis-1", declared: true },
+  });
+  expect(branches.find((e) => e.ticketId === observed.id)?.data).toEqual({ branch: "feat/emis-1" });
 });
 
 test("a branch declared on a ticket in review leaves its status", () => {
