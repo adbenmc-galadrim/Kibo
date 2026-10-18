@@ -998,38 +998,39 @@ Exports : `exports/proposition-planning-dark.png` et `exports/proposition-planni
 74. « Envoyer les photos d'un tronçon » (x 739, y 439)
 75. « 1/5 étapes » (x 739, y 495)
 76. « EMIS-33 » (x 862, y 495)
-77. « F5 ne tiendra pas : 4 étapes restantes » (x 754, y 535)
-78. « S43 » (x 955, y 120)
-79. « Import et soudures » (x 985, y 120)
-80. « 19–23 oct. » (x 955, y 140)
-81. « 2 prévues » (x 1093, y 140)
-82. « F6 » (x 984, y 179,5)
-83. « bloquée · Q14 » (x 1063, y 180)
-84. « Importer les ISO depuis Excel » (x 965, y 203)
-85. « 0/4 étapes » (x 965, y 259)
-86. « suivante : EMIS-51 » (x 1042, y 259)
-87. « F8 » (x 984, y 303)
-88. « Valider les soudures par lot » (x 965, y 325)
-89. « 0/4 étapes » (x 965, y 365)
-90. « suivante : EMIS-71 » (x 1043, y 365)
-91. « S44 » (x 1181, y 120)
-92. « Rapports » (x 1211, y 120)
-93. « 26–30 oct. » (x 1181, y 140)
-94. « 1 prévue » (x 1328, y 140)
-95. « F7 » (x 1210, y 178)
-96. « Rapport de chantier journalier » (x 1191, y 200)
-97. « 0/5 étapes » (x 1191, y 256)
-98. « suivante : EMIS-81 » (x 1268, y 256)
-99. « Déposer pour planifier en S44 » (x 1192, y 343,5)
-100. « 26–30 oct. » (x 1248, y 364,5)
-101. « étape livrée » (x 283, y 968)
-102. « en review » (x 377, y 968)
-103. « en cours » (x 460, y 968)
-104. « bloquée » (x 538, y 968)
-105. « à faire » (x 613, y 968)
-106. « · une case par étape, dans l'ordre des dépendances » (x 660, y 968)
-107. « F9 » (x 1230, y 399)
-108. « Exporter le dossier client » (x 1211, y 421)
+77. « F4 ne tiendra pas : 1 étape restante » (x 754, y 535)
+78. « F5 ne tiendra pas : 4 étapes restantes » (x 754, y 585)
+79. « S43 » (x 955, y 120)
+80. « Import et soudures » (x 985, y 120)
+81. « 19–23 oct. » (x 955, y 140)
+82. « 2 prévues » (x 1093, y 140)
+83. « F6 » (x 984, y 179,5)
+84. « bloquée · Q14 » (x 1063, y 180)
+85. « Importer les ISO depuis Excel » (x 965, y 203)
+86. « 0/4 étapes » (x 965, y 259)
+87. « suivante : EMIS-51 » (x 1042, y 259)
+88. « F8 » (x 984, y 303)
+89. « Valider les soudures par lot » (x 965, y 325)
+90. « 0/4 étapes » (x 965, y 365)
+91. « suivante : EMIS-71 » (x 1043, y 365)
+92. « S44 » (x 1181, y 120)
+93. « Rapports » (x 1211, y 120)
+94. « 26–30 oct. » (x 1181, y 140)
+95. « 1 prévue » (x 1328, y 140)
+96. « F7 » (x 1210, y 178)
+97. « Rapport de chantier journalier » (x 1191, y 200)
+98. « 0/5 étapes » (x 1191, y 256)
+99. « suivante : EMIS-81 » (x 1268, y 256)
+100. « Déposer pour planifier en S44 » (x 1192, y 343,5)
+101. « 26–30 oct. » (x 1248, y 364,5)
+102. « étape livrée » (x 283, y 968)
+103. « en review » (x 377, y 968)
+104. « en cours » (x 460, y 968)
+105. « bloquée » (x 538, y 968)
+106. « à faire » (x 613, y 968)
+107. « · une case par étape, dans l'ordre des dépendances » (x 660, y 968)
+108. « F9 » (x 1230, y 399)
+109. « Exporter le dossier client » (x 1211, y 421)
 
 ### Blocs
 
@@ -1259,7 +1260,10 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                 - « EMIS-33 » — Geist Mono 11 / 400, interligne 1,2, couleur `brandText` — x 862, y 495, 47 × 14
             - **box** (bloc) · x 727, y 529, 194 × 40 · flex ligne, espacement 6, marges internes 6 8 6 8, alignement center/start · fond `amberSoft` · rayon 6 · dimension remplit/auto
               - icône `clockAlert` 13 px, `amber` — x 735, y 542,5, 13 × 13
-              - « F5 ne tiendra pas : 4 étapes restantes » — Geist 11,5 / 400, interligne 1,2, couleur `amber` — x 754, y 535, 159 × 28
+              - « F4 ne tiendra pas : 1 étape restante » — Geist 11,5 / 400, interligne 1,2, couleur `amber` — x 754, y 535, 159 × 28
+            - **box** (bloc) · x 727, y 579, 194 × 40 · flex ligne, espacement 6, marges internes 6 8 6 8, alignement center/start · fond `amberSoft` · rayon 6 · dimension remplit/auto
+              - icône `clockAlert` 13 px, `amber` — x 735, y 592,5, 13 × 13
+              - « F5 ne tiendra pas : 4 étapes restantes » — Geist 11,5 / 400, interligne 1,2, couleur `amber` — x 754, y 585, 159 × 28
           - **col S43** (bloc) · x 943, y 108, 214 × 846 · flex colonne, espacement 10, marges internes 10, alignement start/start · fond `panel` · bordure 1 `border` · rayon 10 · dimension fixe/remplit
             - **box** (bloc) · x 953, y 118, 194 × 40 · flex colonne, espacement 4, marges internes 2 2 4 2, alignement start/start · dimension remplit/auto
               - **box** (bloc) · x 955, y 120, 190 × 16 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto

@@ -224,7 +224,7 @@ S.draw["p-planning"] = (x, y) => { const C = S.C, P = S.P;
   const hint = S.col(rc, { fx: true, gap: 6, pad: [8, 4] }); S.txt(hint, "Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite d'ouvertes.", { size: 11.5, color: C.dim, fill: true, lh: 1.45 });
   for (const sp of P.sprints) { const c = column(sp);
     for (const ft of P.features.filter(x => x.sprint === sp.key)) S.featCard(c, ft.k === "F5" ? { ...ft, late: false } : ft, { w: CW - 20, compact: sp.state === "Terminé" });
-    if (sp.key === "S42") { const w = S.row(c, { fx: true, gap: 6, pad: [6, 8], radius: 6, fill: C.amberSoft }); S.icon(w, "clockAlert", 13, C.amber); S.txt(w, "F5 ne tiendra pas : 4 étapes restantes", { size: 11.5, color: C.amber, fill: true }); }
+    if (sp.key === "S42") for (const t of ["F4 ne tiendra pas : 1 étape restante", "F5 ne tiendra pas : 4 étapes restantes"]) { const w = S.row(c, { fx: true, gap: 6, pad: [6, 8], radius: 6, fill: C.amberSoft }); S.icon(w, "clockAlert", 13, C.amber); S.txt(w, t, { size: 11.5, color: C.amber, fill: true }); }
     if (sp.key === "S44") { const dz = S.col(c, { name: "dropzone", fx: true, h: 120, radius: 8, stroke: C.fg, dashed: true, fill: C.muted, align: "center", justify: "center", gap: 6 });
       S.icon(dz, "sprint", 16, C.fg); S.txt(dz, "Déposer pour planifier en S44", { size: 12, weight: 500 }); S.txt(dz, "26–30 oct.", { size: 11, color: C.dim }); } }
   // Carte en cours de glissement, au-dessus de la zone de dépôt de S44.
