@@ -200,7 +200,7 @@ test("créer un projet : cinq pages et six sprints", async ({ page }, info) => {
   await expect(page.getByText("Pour commencer", { exact: true })).toBeVisible();
   await entry.getByText("Planning", { exact: true }).click();
   for (const code of ["S1", "S2", "S3", "S4", "S5", "S6"])
-    await expect(page.getByText(new RegExp(`^${code}\\b`)).first()).toBeVisible();
+    await expect(page.getByRole("region", { name: new RegExp(`^${code} `) })).toBeVisible();
   await shot(page, info, "projet-cree");
 
   const sprints = cliSprints(homeOf(info), "CT");
