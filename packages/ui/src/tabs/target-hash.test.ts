@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { TabTarget } from "@kibo/schema";
-import { hashToTarget, rememberTicketKey, targetToHash } from "./target-hash";
+import { hashToTarget, rememberTicketKey, resolveProjectKey, targetToHash } from "./target-hash";
 
 const run: TabTarget = { kind: "run", runId: "r1" };
 
@@ -53,4 +53,30 @@ test("a ticket is addressed by its key once known, and read back by key or by id
   });
   expect(targetToHash({ kind: "ticket", projectId: "emis", ticketId: "EMIS-33" })).toBe("#/p/emis/t/EMIS-33");
   expect(hashToTarget("#/p/emis/t/562%4079")).toEqual(byId);
+});
+
+test("an address may name the project by its key instead of its id", () => {
+  const projects = [
+    { id: "p-emis", key: "EMIS" },
+    { id: "EMIS2", key: "KIB" },
+  ];
+  expect(resolveProjectKey(hashToTarget("#/p/EMIS/t/EMIS-45"), projects)).toEqual({
+    kind: "ticket",
+    projectId: "p-emis",
+    ticketId: "EMIS-45",
+  });
+  expect(resolveProjectKey(hashToTarget("#/p/p-emis/"), projects)).toEqual({
+    kind: "project",
+    projectId: "p-emis",
+  });
+  expect(resolveProjectKey(hashToTarget("#/p/EMIS2/"), projects)).toEqual({
+    kind: "project",
+    projectId: "EMIS2",
+  });
+  expect(resolveProjectKey(hashToTarget("#/p/ZZZ/"), projects)).toEqual({
+    kind: "project",
+    projectId: "ZZZ",
+  });
+  expect(resolveProjectKey(hashToTarget("#/runs/r1"), projects)).toEqual(run);
+  expect(resolveProjectKey(null, projects)).toBeNull();
 });

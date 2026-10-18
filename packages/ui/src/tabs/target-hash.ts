@@ -112,6 +112,19 @@ function pathCandidate(path: string, query: string): unknown {
   return candidate(decodeURIComponent(m[1]), m[2] ?? "", new URLSearchParams(query));
 }
 
+type ProjectRef = { id: string; key: string };
+
+export function resolveProjectKey(
+  target: TabTarget | null,
+  projects: readonly ProjectRef[],
+): TabTarget | null {
+  if (target === null || !("projectId" in target) || typeof target.projectId !== "string") return target;
+  const projectId = target.projectId;
+  if (projects.some((p) => p.id === projectId)) return target;
+  const byKey = projects.find((p) => p.key === projectId);
+  return byKey ? { ...target, projectId: byKey.id } : target;
+}
+
 export function hashToTarget(hash: string): TabTarget | null {
   const screen = screenTarget(hash);
   if (screen) return screen;

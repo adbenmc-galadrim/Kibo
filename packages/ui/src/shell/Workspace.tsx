@@ -16,7 +16,7 @@ import { useRoute } from "../route";
 import { useConfig, useNow } from "../state/use-agents";
 import { describeTarget } from "../tabs/tab-title";
 import { activeTarget } from "../tabs/tabs-model";
-import { targetToHash } from "../tabs/target-hash";
+import { resolveProjectKey, targetToHash } from "../tabs/target-hash";
 import { useHashSync } from "../tabs/use-hash-sync";
 import type { TabsApi } from "../tabs/use-tabs";
 import { cycleTheme } from "../theme";
@@ -49,6 +49,7 @@ import { useProjectFocus } from "./use-project-focus";
 import { useProjectLanding } from "./use-project-landing";
 import { useRunPanel } from "./use-run-panel";
 import { useScreenVisit } from "./use-screen-visit";
+import { useSheetAddress } from "./use-sheet-address";
 import { useShellDialogs } from "./use-shell-dialogs";
 import { useWorkspaceHost } from "./use-workspace-host";
 import { useWorkspaceSnapshots } from "./use-workspace-snapshots";
@@ -60,7 +61,6 @@ type WorkspaceProps = ShellProps & { projects: ProjectSummary[]; tabs: TabsApi; 
 
 export function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceProps) {
   const route = useRoute();
-  useHashSync(tabs, route.target);
   const active = activeTarget(tabs.state);
   const screen = active?.kind === "screen" ? active.screen : null;
   const activeProjectId = active ? targetProjectId(active) : null;
@@ -126,6 +126,9 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     activeProjectId,
     agents,
   });
+  const closeSheet = useCallback(() => set({ sheet: null }), [set]);
+  const routeTarget = resolveProjectKey(route.target, projects);
+  useHashSync(tabs, useSheetAddress(dialogs.sheet, sheetProject?.tickets ?? null, routeTarget, closeSheet));
 
   return (
     <HostProvider host={host}>
