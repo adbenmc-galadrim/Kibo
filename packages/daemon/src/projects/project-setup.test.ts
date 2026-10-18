@@ -2,13 +2,16 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { readProject } from "@kibo/core";
 import type { ProjectCommand, ProjectMeta, ProjectSetup, ProjectSnapshot } from "@kibo/schema";
+import type { LoroDoc } from "loro-crdt";
 import { createClock } from "../clock";
 import type { CommandMeta, Docs } from "../docs";
 import { migrateTracking, OVERVIEW_MIGRATED_KEY, TRACKING_MIGRATED_KEY } from "../migrations/tracking";
 import { createProjectSettings } from "../notes/settings";
 import { createService } from "../service";
 import { openStore } from "../store";
+import { handleProjectRequest, type ProjectRpcDeps } from "./project-rpc";
 import { setupProject } from "./project-setup";
 
 const NOW = "2026-10-16T14:52:00+02:00";
@@ -142,4 +145,47 @@ test("setupProject runs its commands through the given runner and returns what t
     "Questions",
   ]);
   expect(seeded.sprints.map((s) => [s.code, s.start, s.end])).toEqual([["S1", "2026-10-19", "2026-10-23"]]);
+});
+
+test("the seed is built before registration: a refused project leaves no page, sprint nor doc behind", () => {
+  const { service, settings, create } = open();
+  const first = create();
+  const before = service.docs.projectIds();
+  expect(() => create(SIX_WEEKS)).toThrow(expect.objectContaining({ code: "INVALID_INPUT" }));
+  expect(service.docs.projectIds()).toEqual(before);
+  expect(service.handle({ method: "listProjects" })).toEqual([expect.objectContaining({ id: first.id })]);
+  expect(settings.get(first.id, TRACKING_MIGRATED_KEY)).toBeNull();
+});
+
+test("the seed never goes through the live command path, so a failing command cannot leave a half-seeded project", () => {
+  const { service, settings } = open();
+  const adopted = new Map<string, LoroDoc>();
+  const deps: ProjectRpcDeps = {
+    workspace: service.docs.workspace,
+    docs: {
+      ...service.docs,
+      save: () => {},
+      run: () => {
+        throw new Error("the live command path must not seed a new project");
+      },
+    },
+    icons: service.icons,
+    settings,
+    collab: () => null,
+    adopt: (id, doc) => adopted.set(id, doc),
+    fileTicket: () => ({ ticketId: "", key: null }),
+  };
+  const project = handleProjectRequest(deps, {
+    method: "createProject",
+    name: "Emis",
+    key: "EMIS",
+    folder: null,
+    color: "#F97316",
+    setup: SIX_WEEKS,
+  }) as ProjectMeta;
+  const doc = adopted.get(project.id);
+  if (!doc) throw new Error("the project doc was not adopted");
+  const snap = readProject(doc, "2026-10-16");
+  expect(snap.pages).toHaveLength(5);
+  expect(snap.sprints).toHaveLength(6);
 });

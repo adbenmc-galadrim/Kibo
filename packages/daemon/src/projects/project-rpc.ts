@@ -2,6 +2,7 @@ import {
   assertShellCommand,
   countTicketsByStatus,
   createProjectDoc,
+  executeProjectCommand,
   getKeyAllocator,
   getProjectMeta,
   listInstances,
@@ -21,7 +22,7 @@ import {
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { isDemoProject } from "../demo/demo-project";
-import { type Docs, KIBO_COMMAND } from "../docs";
+import type { Docs } from "../docs";
 import type { IconStore } from "../icons/icon-store";
 import type { createFileTicket } from "../inbox/file-ticket";
 import { assertProjectKeyAllowed } from "../inbox/inbox-rules";
@@ -59,9 +60,11 @@ function parsedSetup(setup: unknown): ProjectSetup | null {
   return parsed.data;
 }
 
-function seedProject(deps: ProjectRpcDeps, projectId: string, setup: ProjectSetup): void {
-  setupProject((command) => deps.docs.run(projectId, command, KIBO_COMMAND), setup);
-  markMigrated(deps.settings, projectId, deps.docs.today());
+function newProjectDoc(meta: ProjectMeta, client: string | null, setup: ProjectSetup | null): LoroDoc {
+  const doc = createProjectDoc(meta);
+  if (client) setProjectMeta(doc, { client });
+  if (setup) setupProject((command) => executeProjectCommand(doc, command), setup);
+  return doc;
 }
 
 const projectIcon = (projectId: string) => iconOwnerKey({ kind: "project", projectId });
@@ -86,14 +89,13 @@ function createProject(
     description: null,
     client: null,
   };
-  const doc = createProjectDoc(meta);
-  if (req.client) setProjectMeta(doc, { client: req.client });
+  const doc = newProjectDoc(meta, req.client ?? null, setup);
   registerProject(deps.workspace, meta);
   deps.adopt(meta.id, doc);
+  if (setup) markMigrated(deps.settings, meta.id, deps.docs.today());
   deps.docs.save(meta.id);
   deps.docs.save(null);
   deps.docs.emit({ projectId: null });
-  if (setup !== null) seedProject(deps, meta.id, setup);
   return { ...meta, client: getProjectMeta(doc).client };
 }
 
