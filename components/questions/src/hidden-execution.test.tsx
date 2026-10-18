@@ -80,6 +80,8 @@ test("hidden execution: no « Transmettre à l'agent » in the view nor the widg
 test("shown execution: « Transmettre à l'agent » comes back in the view and the widget", async () => {
   for (const surface of ["view", "widget"] as const) {
     questions("shown", surface);
+    if (surface === "view")
+      await userEvent.setup().click(await screen.findByRole("radio", { name: "Toutes" }));
     expect(await screen.findByRole("button", { name: /Transmettre à l'agent/ })).toBeTruthy();
     cleanup();
   }

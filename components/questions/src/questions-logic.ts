@@ -60,8 +60,30 @@ export function recipientCounts(questions: readonly Question[]): RecipientCounts
   return { total, byRecipient };
 }
 
-export const recipientName = (recipients: readonly QuestionRecipient[], id: string): string =>
-  recipients.find((r) => r.id === id)?.name ?? fr.removedRecipient;
+export const CLIENT_RECIPIENT = "client";
+
+export const recipientName = (
+  recipients: readonly QuestionRecipient[],
+  id: string,
+  client: string | null = null,
+): string =>
+  id === CLIENT_RECIPIENT && client !== null
+    ? client
+    : (recipients.find((r) => r.id === id)?.name ?? fr.removedRecipient);
+
+export const isOpenBlocking = (q: Question): boolean => q.blocking && isOpen(q);
+
+export const blockingFirst = (a: Question, b: Question): number =>
+  Number(isOpenBlocking(b)) - Number(isOpenBlocking(a)) || byNewest(a, b);
+
+export function blockingSummary(shown: readonly Question[]): { blocking: number; open: number } {
+  return { blocking: shown.filter(isOpenBlocking).length, open: shown.filter(isOpen).length };
+}
+
+export function lastExportedAt(q: Question): number | null {
+  const exports = q.history.filter((e) => e.kind === "exported").map((e) => e.at);
+  return exports.length > 0 ? Math.max(...exports) : q.sentAt;
+}
 
 export const byNewest = (a: Question, b: Question): number => b.createdAt - a.createdAt;
 
@@ -78,6 +100,8 @@ export function groupByTicket(questions: readonly Question[], tickets: readonly 
     .filter((g) => g.questions.length > 0);
 }
 
+const leadsWithBlocking = (g: TicketGroup): number => Number(g.questions.some(isOpenBlocking));
+
 export function viewGroups(
   questions: readonly Question[],
   tickets: readonly TicketView[],
@@ -91,10 +115,11 @@ export function viewGroups(
     .sort(byKey)
     .map((ticket) => ({
       ticket,
-      questions: shown.filter((q) => q.ticketId === ticket.id).sort(byNewest),
+      questions: shown.filter((q) => q.ticketId === ticket.id).sort(blockingFirst),
       undelivered: answersToDeliver(questions, ticket.id),
     }))
-    .filter((g) => g.questions.length > 0 || (recipient === null && g.undelivered.length > 0));
+    .filter((g) => g.questions.length > 0)
+    .sort((a, b) => leadsWithBlocking(b) - leadsWithBlocking(a));
 }
 
 export function answerFrom(form: AnswerForm): AnswerInput | null {

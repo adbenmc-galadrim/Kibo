@@ -65,9 +65,9 @@ test("a free answer and an option answer go through the same form", async () => 
 test("answers wait for « Transmettre à l'agent » and the button calls the SDK", async () => {
   const m = mount("view");
   const user = userEvent.setup();
+  await user.click(await screen.findByRole("radio", { name: "Toutes" }));
   const group = await screen.findByRole("region", { name: /KIB-14/ });
   const deliver = within(group).getByRole("button", { name: "Transmettre à l'agent (1)" });
-  await user.click(screen.getByRole("radio", { name: "Toutes" }));
   expect(within(group).getByText("à transmettre")).toBeTruthy();
   expect(within(group).getByText(/^Répondu par adam/)).toBeTruthy();
   await user.click(deliver);
@@ -81,6 +81,7 @@ test("answers wait for « Transmettre à l'agent » and the button calls the SDK
 test("a refused delivery says there is no session to resume", async () => {
   mount("view", { deliveryRefused: true });
   const user = userEvent.setup();
+  await user.click(await screen.findByRole("radio", { name: "Toutes" }));
   const group = await screen.findByRole("region", { name: /KIB-14/ });
   await user.click(within(group).getByRole("button", { name: "Transmettre à l'agent (1)" }));
   expect(
@@ -269,6 +270,7 @@ test("« Coller la réponse » records a text answer, then offers the delivery",
       by: { kind: "human", ref: "adam" },
     }),
   );
-  const group = screen.getByRole("region", { name: /KIB-12/ });
+  await user.click(screen.getByRole("radio", { name: "Toutes" }));
+  const group = await screen.findByRole("region", { name: /KIB-12/ });
   expect(await within(group).findByRole("button", { name: "Transmettre à l'agent (1)" })).toBeTruthy();
 });

@@ -3,16 +3,20 @@ import type {
   KiboError,
   Question,
   QuestionRecipient,
+  SprintView,
   TicketRun,
   TicketView,
 } from "@kibo/schema";
 import { useEntities, useQuestionRecipients, useReadOnly, useSdk } from "@kibo/sdk";
 import { useCallback, useMemo } from "react";
+import { useProjectClient } from "./use-project-client";
 
 export type QuestionsData = {
   questions: Question[];
   tickets: TicketView[];
   runs: TicketRun[];
+  sprints: SprintView[];
+  client: string | null;
   recipients: QuestionRecipient[];
   loading: boolean;
   error: KiboError | null;
@@ -28,6 +32,8 @@ export function useQuestions(): QuestionsData {
   const questions = useEntities("question");
   const tickets = useEntities("ticket");
   const runs = useEntities("run");
+  const sprints = useEntities("sprint");
+  const client = useProjectClient();
   const readOnly = useReadOnly();
   const recipients = useQuestionRecipients();
   const runLabel = useCallback(
@@ -44,6 +50,8 @@ export function useQuestions(): QuestionsData {
     questions: questions.data,
     tickets: tickets.data,
     runs: runs.data,
+    sprints: sprints.data,
+    client,
     recipients,
     loading: questions.loading || tickets.loading,
     error: questions.error ?? tickets.error,

@@ -10,6 +10,7 @@ import {
 import fc from "fast-check";
 import {
   answerFrom,
+  blockingSummary,
   canArchive,
   filterQuestions,
   groupByTicket,
@@ -137,6 +138,12 @@ test("recipientName reads the name of a recipient, « (supprimé) » once it is 
   expect(recipientName(DEFAULT_RECIPIENTS, "x1")).toBe("(supprimé)");
 });
 
+test("the client recipient reads as the client of the project when it is set", () => {
+  expect(recipientName(DEFAULT_RECIPIENTS, "client", "Emis SA")).toBe("Emis SA");
+  expect(recipientName(DEFAULT_RECIPIENTS, "client", null)).toBe("Client");
+  expect(recipientName(DEFAULT_RECIPIENTS, "product", "Emis SA")).toBe("Produit");
+});
+
 test("groupByTicket follows ticket keys, newest question first, and skips empty tickets", () => {
   const tickets = [ticket(T1, "KIB-10"), ticket(T2, "KIB-2"), ticket(T3, "KIB-3")];
   const old = question({ id: "old", ticketId: T1, createdAt: 1 });
@@ -148,23 +155,27 @@ test("groupByTicket follows ticket keys, newest question first, and skips empty 
   expect(groups[1]?.questions.map((q) => q.id)).toEqual(["fresh", "old"]);
 });
 
-test("viewGroups keeps a ticket whose answers wait for delivery even when the filter hides them", () => {
+test("viewGroups puts open blocking questions first, then ticket keys, and renders no empty group", () => {
   const tickets = [ticket(T1, "KIB-1"), ticket(T2, "KIB-2"), ticket(T3, "KIB-3")];
-  const open = question({ id: "open", ticketId: T1 });
-  const pending = answered({ id: "pending", ticketId: T2 });
-  const delivered = answered({ id: "sent", ticketId: T3 });
-  const sent = {
-    ...delivered,
-    answer: delivered.answer && { ...delivered.answer, deliveredAt: 6, deliveredRunId: "r1" },
-  };
-  const groups = viewGroups([open, pending, sent], tickets, "open", null);
-  expect(
-    groups.map((g) => [g.ticket.keyLabel, g.questions.map((q) => q.id), g.undelivered.map((q) => q.id)]),
-  ).toEqual([
-    ["KIB-1", ["open"], []],
-    ["KIB-2", [], ["pending"]],
+  const plain = question({ id: "plain", ticketId: T1 });
+  const blocking = question({ id: "blocking", ticketId: T2, blocking: true, createdAt: 1 });
+  const newer = question({ id: "newer", ticketId: T2, createdAt: 9 });
+  const pending = answered({ id: "pending", ticketId: T3, blocking: true });
+  const groups = viewGroups([plain, blocking, newer, pending], tickets, "open", null);
+  expect(groups.map((g) => [g.ticket.keyLabel, g.questions.map((q) => q.id)])).toEqual([
+    ["KIB-2", ["blocking", "newer"]],
+    ["KIB-1", ["plain"]],
   ]);
-  expect(viewGroups([open, pending, sent], tickets, "open", T1).map((g) => g.ticket.id)).toEqual([T1]);
+  expect(viewGroups([plain, blocking], tickets, "open", T1).map((g) => g.ticket.id)).toEqual([T1]);
+});
+
+test("blockingSummary counts the open blocking questions shown and the open ones", () => {
+  const shown = [
+    question({ id: "a", blocking: true }),
+    question({ id: "b" }),
+    answered({ id: "c", blocking: true }),
+  ];
+  expect(blockingSummary(shown)).toEqual({ blocking: 1, open: 2 });
 });
 
 test("viewGroups filtered by recipient keeps only that recipient's questions", () => {

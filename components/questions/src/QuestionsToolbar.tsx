@@ -11,7 +11,7 @@ import {
 import { Input } from "@kibo/sdk/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { ChevronDown, Plus } from "lucide-react";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { fr } from "./fr";
 import type { Scope } from "./questions-logic";
 
@@ -25,6 +25,8 @@ type Props = {
   onScope(scope: Scope): void;
   onTicket(ticketId: string | null): void;
   onNew(): void;
+  filters: ReactNode;
+  actions: ReactNode;
 };
 
 function TicketMenu({ ticket, tickets, onTicket }: Pick<Props, "ticket" | "tickets" | "onTicket">) {
@@ -34,7 +36,7 @@ function TicketMenu({ ticket, tickets, onTicket }: Pick<Props, "ticket" | "ticke
   return (
     <DropdownMenu onOpenChange={() => setSearch("")}>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-7 gap-1 px-2.5 text-xs font-normal">
+        <Button variant="outline" size="sm" className="h-5.75 gap-1 px-2.5 text-[12.5px] font-medium">
           {ticket ? <TicketKeyLabel ticket={ticket} className="font-mono" /> : fr.ticketFilter.all}
           <ChevronDown aria-hidden className="size-3.5 text-muted-foreground" />
         </Button>
@@ -66,14 +68,18 @@ function TicketMenu({ ticket, tickets, onTicket }: Pick<Props, "ticket" | "ticke
   );
 }
 
-export function QuestionsToolbar({ scope, ticket, tickets, readOnly, onScope, onTicket, onNew }: Props) {
+const SEGMENT =
+  "h-5.75 rounded-[5px] border border-transparent px-2.5 text-[12.5px] font-medium text-muted-foreground data-[state=on]:border-border data-[state=on]:bg-background data-[state=on]:text-foreground";
+
+export function QuestionsToolbar(props: Props) {
+  const { scope, ticket, tickets, readOnly, onScope, onTicket, onNew, filters, actions } = props;
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b px-3 py-2">
+    <div className="flex min-h-13 flex-wrap items-center gap-2 border-b px-4 py-1.5">
       <ToggleGroup
         type="single"
-        variant="outline"
         size="sm"
         aria-label={fr.scope.label}
+        className="gap-0.5 rounded-[7px] bg-muted p-0.5"
         value={scope}
         onValueChange={(v) => {
           const next = SCOPES.find((s) => s === v);
@@ -81,17 +87,19 @@ export function QuestionsToolbar({ scope, ticket, tickets, readOnly, onScope, on
         }}
       >
         {SCOPES.map((s) => (
-          <ToggleGroupItem key={s} value={s} className="h-7 px-2.5 text-xs font-normal">
+          <ToggleGroupItem key={s} value={s} className={SEGMENT}>
             {fr.scope[s]}
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
+      {filters}
       <TicketMenu ticket={ticket} tickets={tickets} onTicket={onTicket} />
       <span className="flex-1" />
+      {actions}
       {readOnly ? (
         <span className="text-xs text-muted-foreground">{fr.readOnly}</span>
       ) : (
-        <Button size="sm" className="h-7 text-xs" onClick={onNew}>
+        <Button size="sm" className="h-6.5 text-xs" onClick={onNew}>
           <Plus aria-hidden />
           {fr.newQuestion}
         </Button>

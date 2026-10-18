@@ -1,67 +1,51 @@
 import { expect, test } from "bun:test";
-import type { Question } from "@kibo/schema";
-import { exportAll, exportQuestionText } from "./export-text";
+import { exportAll, exportDate, exportQuestionText, impactLine } from "./export-text";
+import { question } from "./question-fixtures.test-helper";
 
-const ticket = { keyLabel: "KIB-12", title: "Schéma Loro des tickets" };
+const Q14 = question({ number: 14, blocking: true });
+const Q17 = question({ number: 17, title: "Un rapport par chef de chantier ou par affaire ?" });
 
-const question = (over: Partial<Question>): Question => ({
-  kind: "question",
-  images: [],
-  id: "11111111-1111-4111-8111-111111111111",
-  ticketId: "22222222-2222-4222-8222-222222222222",
-  runId: null,
-  title: "Faut-il garder l'historique des tickets supprimés ?",
-  context: "Aujourd'hui un ticket supprimé disparaît.",
-  options: ["Oui, corbeille de 30 jours", "Non"],
-  provisional: "Non",
-  blocking: false,
-  createdBy: { kind: "agent", ref: "opus-dev-1" },
-  createdAt: 1,
-  number: null,
-  importRef: null,
-  answer: null,
-  recipient: "client",
-  sentAt: null,
-  history: [],
-  archivedAt: null,
-  archivedBy: null,
-  ...over,
+test("the impact line names the feature and its sprint", () => {
+  expect(impactLine(Q14, { feature: "F6", sprint: "S43" })).toBe("bloque F6, prévue en S43");
+  expect(impactLine(Q17, { feature: "F7", sprint: "S44" })).toBe("pour F7, prévue en S44");
+  expect(impactLine(Q14, { feature: "F6", sprint: null })).toBe("bloque F6, à planifier");
 });
 
-test("exportQuestionText follows the fixed format, line by line", () => {
-  expect(exportQuestionText(question({}), ticket, "Client")).toBe(
+test("a question reads « Qn · title », its impact, then its context and options", () => {
+  expect(exportQuestionText({ question: Q14, impact: { feature: "F6", sprint: "S43" } })).toBe(
+    ["Q14 · Un ISO réaffecté garde-t-il ses photos ?", "   bloque F6, prévue en S43"].join("\n"),
+  );
+  const detailed = question({
+    importRef: { kind: "import_ref", source: "plan", id: "Q5" },
+    context: " Les photos suivent l'ISO. ",
+    options: ["Oui", "Non"],
+    provisional: "Oui",
+  });
+  expect(exportQuestionText({ question: detailed, impact: { feature: "EMIS-9", sprint: null } })).toBe(
     [
-      "[KIB-12] Schéma Loro des tickets",
-      "Question : Faut-il garder l'historique des tickets supprimés ?",
-      "Contexte : Aujourd'hui un ticket supprimé disparaît.",
-      "Options : Oui, corbeille de 30 jours · Non",
-      "Choix provisoire : Non",
-      "Destinataire : Client",
+      "Q5 · Un ISO réaffecté garde-t-il ses photos ?",
+      "   pour EMIS-9, à planifier",
+      "   Contexte : Les photos suivent l'ISO.",
+      "   Options : Oui · Non",
+      "   Choix provisoire : Oui",
     ].join("\n"),
   );
 });
 
-test("an empty context, no options and no provisional choice are omitted", () => {
-  expect(
-    exportQuestionText(question({ context: "  ", options: [], provisional: null }), ticket, "Produit"),
-  ).toBe(
+test("the export starts with the recipient and the date, one blank line between questions", () => {
+  const entries = [
+    { question: Q14, impact: { feature: "F6", sprint: "S43" } },
+    { question: Q17, impact: { feature: "F7", sprint: "S44" } },
+  ];
+  expect(exportAll("Emis SA", exportDate(Date.parse("2026-10-16T14:52:00+02:00")), entries)).toBe(
     [
-      "[KIB-12] Schéma Loro des tickets",
-      "Question : Faut-il garder l'historique des tickets supprimés ?",
-      "Destinataire : Produit",
+      "Questions pour Emis SA · 16 oct. 2026",
+      "",
+      "Q14 · Un ISO réaffecté garde-t-il ses photos ?",
+      "   bloque F6, prévue en S43",
+      "",
+      "Q17 · Un rapport par chef de chantier ou par affaire ?",
+      "   pour F7, prévue en S44",
     ].join("\n"),
   );
-});
-
-test("exportAll separates the questions by an empty line", () => {
-  const a = { question: question({ title: "A ?" }), ticket, recipient: "Client" };
-  const b = {
-    question: question({ title: "B ?", context: "", options: [], provisional: null }),
-    ticket: { keyLabel: "KIB-16", title: "Moteur de règles" },
-    recipient: "Client",
-  };
-  expect(exportAll([a, b])).toBe(
-    `${exportQuestionText(a.question, a.ticket, a.recipient)}\n\n${exportQuestionText(b.question, b.ticket, b.recipient)}`,
-  );
-  expect(exportAll([])).toBe("");
 });

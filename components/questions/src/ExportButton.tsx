@@ -1,73 +1,92 @@
 import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
-import { Textarea } from "@kibo/sdk/ui/textarea";
-import { Share } from "lucide-react";
-import { useState } from "react";
-import { type ExportEntry, exportAll } from "./export-text";
+import { Popover, PopoverAnchor, PopoverContent } from "@kibo/sdk/ui/popover";
+import { Copy, Upload } from "lucide-react";
+import { useCallback, useState } from "react";
+import { ExportToast } from "./ExportToast";
+import { type ExportEntry, exportAll, exportDate } from "./export-text";
 import { fr } from "./fr";
 
-type Props = { label: string; entries: readonly ExportEntry[] };
+type Props = { label: string; recipient: string; summary: string; entries: readonly ExportEntry[] };
 
-async function copied(text: string): Promise<boolean> {
+async function copy(text: string): Promise<void> {
   try {
     await navigator.clipboard.writeText(text);
-    return true;
   } catch (e) {
     console.warn(e);
-    return false;
   }
 }
 
-export function ExportButton({ label, entries }: Props) {
+export function ExportButton({ label, recipient, summary, entries }: Props) {
   const sdk = useSdk();
-  const [busy, setBusy] = useState(false);
-  const [fallback, setFallback] = useState<string | null>(null);
+  const [text, setText] = useState<string | null>(null);
+  const [marked, setMarked] = useState<string[] | null>(null);
   const [failed, setFailed] = useState(false);
-  const exportNow = async () => {
-    const text = exportAll(entries);
-    setBusy(true);
+  const closeToast = useCallback(() => setMarked(null), []);
+  const run = async (command: () => Promise<unknown>) => {
     setFailed(false);
-    setFallback((await copied(text)) ? null : text);
     try {
-      for (const e of entries) await sdk.run({ method: "markQuestionSent", questionId: e.question.id });
+      await command();
+      return true;
     } catch (e) {
       console.error(e);
       setFailed(true);
-    } finally {
-      setBusy(false);
+      return false;
     }
   };
+  const exportNow = async () => {
+    const next = exportAll(recipient, exportDate(Date.now()), entries);
+    setText(next);
+    await copy(next);
+    const questionIds = entries.map((e) => e.question.id);
+    const by = { kind: "human", ref: sdk.viewer } as const;
+    if (await run(() => sdk.run({ method: "markQuestionsExported", questionIds, by })))
+      setMarked(questionIds);
+  };
+  const undo = async () => {
+    const questionIds = marked ?? [];
+    setMarked(null);
+    await run(() => sdk.run({ method: "unmarkQuestionsExported", questionIds }));
+  };
   return (
-    <>
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className="h-7 text-xs"
-        disabled={busy || entries.length === 0}
-        onClick={() => void exportNow()}
-      >
-        <Share aria-hidden />
-        {label}
-      </Button>
-      {fallback !== null && (
-        <div className="grid w-full gap-1">
-          <Textarea
-            aria-label={fr.exporting.fallback}
-            readOnly
-            rows={6}
-            className="font-mono text-xs"
-            value={fallback}
-            ref={(el) => el?.select()}
-          />
-          <p className="text-2xs text-muted-foreground">{fr.exporting.fallbackHelp}</p>
-        </div>
-      )}
+    <Popover open={text !== null} onOpenChange={(open) => !open && setText(null)}>
+      <PopoverAnchor asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-6.5 text-xs"
+          disabled={entries.length === 0}
+          onClick={() => void exportNow()}
+        >
+          <Upload aria-hidden />
+          {label}
+        </Button>
+      </PopoverAnchor>
+      <PopoverContent align="end" className="grid w-105 gap-2.5 rounded-[10px] bg-card p-3.5">
+        <header className="flex items-center gap-2">
+          <h3 className="flex-1 text-sm font-semibold">{fr.exporting.preview}</h3>
+          <span className="text-xs text-muted-foreground">{summary}</span>
+        </header>
+        <pre className="max-h-72 overflow-auto rounded-md bg-muted px-3 py-2.5 font-mono text-xs leading-[1.75] whitespace-pre-wrap select-all">
+          {text}
+        </pre>
+        <footer className="flex items-center gap-2">
+          <p className="flex-1 text-xs text-muted-foreground">{fr.exporting.help}</p>
+          <Button type="button" size="sm" className="h-6.5 text-xs" onClick={() => void copy(text ?? "")}>
+            <Copy aria-hidden />
+            {fr.exporting.copy}
+          </Button>
+        </footer>
+      </PopoverContent>
       {failed && (
-        <p role="alert" className="w-full text-xs text-destructive">
+        <p role="alert" className="text-xs text-destructive">
           {fr.exporting.failed}
         </p>
       )}
-    </>
+      {marked !== null && (
+        <ExportToast count={marked.length} onUndo={() => void undo()} onClose={closeToast} />
+      )}
+    </Popover>
   );
 }

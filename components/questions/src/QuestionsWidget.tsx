@@ -1,11 +1,11 @@
-import { answersToDeliver, isOpen, type Question, type TicketView } from "@kibo/schema";
+import { answersToDeliver, isOpen, type Question, questionLabel, type TicketView } from "@kibo/schema";
 import { TicketKeyLabel, useSdk } from "@kibo/sdk";
 import { useMemo, useState } from "react";
 import { DeliverButton, DeliveryMessage, type DeliveryNotice } from "./DeliverButton";
 import { fr } from "./fr";
 import { QuestionAnswerForm } from "./QuestionAnswerForm";
 import { QuestionAnswerLine, QuestionAuthor } from "./QuestionMeta";
-import { byNewest, filterQuestions, lastReminder, relativeAge } from "./questions-logic";
+import { blockingFirst, filterQuestions, isOpenBlocking, lastReminder, relativeAge } from "./questions-logic";
 import { type QuestionsData, useQuestions } from "./use-questions";
 
 type RowProps = { question: Question; ticket: TicketView | null; data: QuestionsData; now: number };
@@ -21,7 +21,15 @@ function QuestionRow({ question: q, ticket, data, now }: RowProps) {
         className="grid gap-1 text-left"
         onClick={() => setOpen((o) => !o)}
       >
-        <span className="text-sm font-medium">{q.title}</span>
+        <span className="text-sm font-medium">
+          <span
+            className={`mr-1.5 font-mono text-xs font-semibold ${isOpenBlocking(q) ? "text-destructive" : "text-muted-foreground"}`}
+          >
+            {questionLabel(q)}
+          </span>
+          {q.title}
+          {isOpenBlocking(q) && <span className="ml-1.5 text-2xs text-destructive">{fr.blocking}</span>}
+        </span>
         <span className="flex flex-wrap items-center gap-2 text-2xs text-muted-foreground">
           {ticket && <TicketKeyLabel ticket={ticket} className="font-mono" />}
           <QuestionAuthor actor={q.createdBy} />
@@ -70,7 +78,7 @@ export function QuestionsWidget() {
   const data = useQuestions();
   const scope = sdk.config.scope === "all" ? "all" : "open";
   const shown = useMemo(
-    () => filterQuestions(data.questions, scope, null).sort(byNewest),
+    () => filterQuestions(data.questions, scope, null).sort(blockingFirst),
     [data.questions, scope],
   );
   const openCount = data.questions.filter(isOpen).length;
