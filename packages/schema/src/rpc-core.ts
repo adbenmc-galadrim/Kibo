@@ -42,6 +42,7 @@ export const CORE_RPC = [
     key: ProjectKey,
     folder: z.string().nullable(),
     color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+    client: z.string().trim().min(1).max(80).optional(),
     setup: ProjectSetup.optional(),
   }),
   z.object({ method: z.literal("getProject"), projectId: z.string().min(1) }),
