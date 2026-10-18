@@ -197,13 +197,13 @@ test("a feature at risk wears the amber at-risk pill instead of in progress", as
 
 test("each sprint header weighs its planned steps against its capacity", async () => {
   const { m } = setupPlanning();
-  const s42 = within(await column(/^S42 /)).getByText("14 étapes prévues · capacité 3");
+  const s42 = within(await column(/^S42 /)).getByText("14 étapes prévues · capacité 5");
   expect(s42.getAttribute("data-over")).toBe("true");
   expect(s42.className).toContain("text-(--tracking-amber)");
   act(() => {
     m.run({ method: "createSprint", code: "S45", name: "Recette", start: "2026-11-02", end: "2026-11-13" });
   });
-  const s45 = within(await column("S45 Recette")).getByText("0 étape prévue · capacité 6");
+  const s45 = within(await column("S45 Recette")).getByText("0 étape prévue · capacité 10");
   expect(s45.getAttribute("data-over")).toBe("false");
 });
 

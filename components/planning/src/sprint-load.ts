@@ -2,7 +2,7 @@ import { dayNumber, type SprintView } from "@kibo/schema";
 
 export type SprintLoad = { steps: number; capacity: number; over: boolean };
 
-export const STEPS_PER_WEEK = 3;
+export const STEPS_PER_WEEK = 5;
 const WEEK_DAYS = 7;
 
 export const sprintWeeks = (sprint: Pick<SprintView, "start" | "end">): number =>
