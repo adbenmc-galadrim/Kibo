@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { ProjectPatch } from "@kibo/schema";
 import type { Subprocess } from "bun";
 import { connectLocalDaemon, readDaemonAccess, type SeedClient } from "../daemon-client";
 import { type SeedProgress, seedPlan } from "./apply-new";
@@ -57,7 +58,11 @@ export async function startTempDaemon(home: string, options: { version?: string 
 
 const messageOf = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
-export async function rehearse(plan: RebasePlan, old: OldProject): Promise<string[]> {
+export async function rehearse(
+  plan: RebasePlan,
+  old: OldProject,
+  settings: ProjectPatch | null = null,
+): Promise<string[]> {
   const home = mkdtempSync(join(tmpdir(), "kibo-rebase-rehearsal-"));
   try {
     const daemon = await startTempDaemon(home);
@@ -65,7 +70,7 @@ export async function rehearse(plan: RebasePlan, old: OldProject): Promise<strin
       return await daemon.withClient(async (client) => {
         const progress: SeedProgress = { projectId: null };
         try {
-          const { projectId } = await seedPlan(client, plan, progress);
+          const { projectId } = await seedPlan(client, plan, progress, settings);
           const fresh = await client.rpc({ method: "getProject", projectId });
           return verifyRebase(old, fresh, plan);
         } catch (e) {

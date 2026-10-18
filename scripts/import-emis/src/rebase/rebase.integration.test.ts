@@ -16,8 +16,10 @@ import { verifyRebase } from "./verify";
 
 const SCRIPT = join(import.meta.dir, "..", "..", "rebase-emis.ts");
 const CLIENT = "Client fictif";
+const SETTINGS = { description: "Projet fictif de démonstration.", tracking: { openLimit: 3 } };
 const home = mkdtempSync(join(tmpdir(), "kibo-rebase-home-"));
 const exportDir = mkdtempSync(join(tmpdir(), "kibo-rebase-export-"));
+const notesDir = mkdtempSync(join(tmpdir(), "kibo-rebase-notes-"));
 const VERSION = { version: requiredDaemonVersion() };
 let daemon: TempDaemon = await startTempDaemon(home, VERSION);
 const state: { old: OldProject | null; plan: RebasePlan | null; newId: string | null } = {
@@ -30,6 +32,7 @@ afterAll(async () => {
   await daemon.stop();
   rmSync(home, { recursive: true, force: true });
   rmSync(exportDir, { recursive: true, force: true });
+  rmSync(notesDir, { recursive: true, force: true });
 });
 
 const ready = <T>(value: T | null, what: string): T => {
@@ -41,7 +44,13 @@ const projects = (c: SeedClient) => c.rpc({ method: "listProjects" });
 
 async function seedOld(c: SeedClient): Promise<void> {
   const { projectId } = await seedEmisShaped(c);
-  await c.rpc({ method: "updateProject", projectId, patch: { client: CLIENT } });
+  await c.rpc({ method: "updateProject", projectId, patch: { client: CLIENT, ...SETTINGS } });
+  await c.rpc({ method: "setNotesDir", projectId, dir: notesDir });
+  await c.rpc({
+    method: "command",
+    projectId,
+    command: { method: "addPage", title: "Tableau de bord", kind: "view" },
+  });
 }
 
 async function dryRun(c: SeedClient, dir: string): Promise<{ old: OldProject; plan: RebasePlan }> {
@@ -64,7 +73,8 @@ async function dryRun(c: SeedClient, dir: string): Promise<{ old: OldProject; pl
 
 async function expectRebased(c: SeedClient, projectId: string, plan: RebasePlan, old: OldProject) {
   const fresh = await c.rpc({ method: "getProject", projectId });
-  expect(fresh.meta).toMatchObject({ key: "EMIS", client: CLIENT });
+  expect(fresh.meta).toMatchObject({ key: "EMIS", client: CLIENT, ...SETTINGS });
+  expect((await c.rpc({ method: "getNotesDir", projectId })).dir).toBe(notesDir);
   expect(fresh.pages.map((p) => p.title)).toEqual(SETUP_PAGES.map((p) => p.title));
   expect(fresh.sprints.map((s) => s.code)).toEqual(
     Array.from({ length: plan.setup.sprintCount }, (_, i) => `S${i + 1}`),
@@ -115,6 +125,9 @@ test("applies the plan: backup, old project deleted, new project verified", asyn
   const result = readFileSync(join(exportDir, "rebase-result.md"), "utf8");
   expect(result).toContain("**Conforme**");
   expect(result).toContain(`- Sauvegarde : ${backupId}`);
+  expect(result).toContain("- Réglages recopiés : tracking, description, dossier de notes");
+  expect(result).toContain("- Pages et instances de l'ancien projet (Tableau de bord)");
+  expect(result).not.toContain("règle(s) d'automatisation");
 }, 60_000);
 
 test("after a restart the new project still has its pages, sprints, client and tickets", async () => {

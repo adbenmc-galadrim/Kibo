@@ -5,10 +5,13 @@ import {
   compareAppVersions,
   KiboError,
   ProjectCommand,
+  type ProjectMeta,
+  type ProjectPatch,
   type ProjectSnapshot,
 } from "@kibo/schema";
 import { z } from "zod";
 import type { SeedClient } from "../daemon-client";
+import { renderResult } from "./apply-result";
 import type { PlannedCommand } from "./desired-new";
 import { readOldProject } from "./old-project";
 import type { RebasePlan } from "./plan-file";
@@ -49,10 +52,18 @@ function checkedKey(planned: Extract<PlannedCommand, { op: "command" }>, result:
     );
 }
 
+const SETTING_KEYS = ["worktree", "storybook", "duplication", "delivery", "tracking", "description"] as const;
+
+export function settingsPatch(meta: ProjectMeta): ProjectPatch | null {
+  const entries = SETTING_KEYS.flatMap((key) => (meta[key] === null ? [] : [[key, meta[key]] as const]));
+  return entries.length > 0 ? Object.fromEntries(entries) : null;
+}
+
 export async function seedPlan(
   client: SeedClient,
   plan: RebasePlan,
   progress: SeedProgress,
+  settings: ProjectPatch | null = null,
 ): Promise<{ projectId: string; keys: Map<string, string> }> {
   const [head, ...rest] = plan.commands;
   if (head?.op !== "createProject")
@@ -69,6 +80,7 @@ export async function seedPlan(
   });
   const projectId = meta.id;
   progress.projectId = projectId;
+  if (settings !== null) await client.rpc({ method: "updateProject", projectId, patch: settings });
   const created = await client.rpc({ method: "getProject", projectId });
   const ids = new Map(created.sprints.map((s) => [`sprint:${s.code}`, s.id]));
   for (const planned of rest) {
@@ -147,78 +159,20 @@ export async function readCurrent(
   return { projectId: project.id, snapshot };
 }
 
-type ResultInput = {
-  plan: RebasePlan;
-  backup: BackupInfo;
-  backupDir: string;
-  oldId: string;
-  newId: string | null;
-  fresh: ProjectSnapshot | null;
-  problems: readonly string[];
-  failure: string | null;
-};
+type NotesCopy = { copied: string[]; notCopied: string[] };
 
-function verdict(input: ResultInput): string[] {
-  if (input.failure !== null) {
-    const kept = input.newId
-      ? `Le projet neuf ${input.newId} est conservé, incomplet : le supprimer, puis relancer \`--dry-run\`, ou restaurer à froid.`
-      : "Aucun projet neuf n'a été créé : restaurer à froid.";
-    const stage = input.failure.includes("key check") ? "à la vérification des clés" : "pendant le semis";
-    return [`**Arrêt ${stage}** : ${input.failure}`, "", kept];
+async function copyNotesDir(client: SeedClient, projectId: string, dir: string): Promise<NotesCopy> {
+  if ((await client.rpc({ method: "getNotesDir", projectId })).dir === dir)
+    return { copied: [], notCopied: [] };
+  try {
+    await client.rpc({ method: "setNotesDir", projectId, dir });
+    return { copied: ["dossier de notes"], notCopied: [] };
+  } catch (e) {
+    return {
+      copied: [],
+      notCopied: [`Dossier de notes ${dir} : ${e instanceof Error ? e.message : String(e)}.`],
+    };
   }
-  if (input.problems.length === 0) return ["**Conforme** : rien de perdu, rien d'inventé."];
-  return [`**${input.problems.length} écart(s)** :`, "", ...input.problems.map((p) => `- ${p}`)];
-}
-
-function counts(fresh: ProjectSnapshot | null): string[] {
-  if (fresh === null) return ["Aucun projet neuf à compter."];
-  const features = fresh.tickets.filter((t) => t.parentId === null).length;
-  return [
-    `- pages : ${fresh.pages.length}`,
-    `- sprints : ${fresh.sprints.length}`,
-    `- fonctionnalités : ${features}`,
-    `- étapes : ${fresh.tickets.length - features}`,
-    `- liens : ${fresh.links.length}`,
-    `- questions : ${fresh.questions.length}`,
-    `- client : ${fresh.meta.client ?? "aucun"}`,
-  ];
-}
-
-export function renderResult(input: ResultInput): string {
-  const keys = [...input.plan.mapping.keys.entries()].map(([from, to]) => `| ${from} | ${to} |`);
-  return [
-    "# Rebase d'Emis · résultat",
-    "",
-    `- Sauvegarde : ${input.backup.id} (${input.backupDir}, ${input.backup.bytes} octets)`,
-    `- Ancien projet : ${input.oldId} (supprimé)`,
-    `- Nouveau projet : ${input.newId ?? "non créé"}`,
-    `- Empreinte du plan : ${input.plan.fingerprint.slice(0, 12)}`,
-    "",
-    "## Vérification",
-    "",
-    ...verdict(input),
-    "",
-    "## Comptes",
-    "",
-    ...counts(input.fresh),
-    "",
-    "## Clés",
-    "",
-    "| Ancienne clé | Nouvelle clé |",
-    "|---|---|",
-    ...keys,
-    "",
-    "## Non transféré",
-    "",
-    "- L'historique de l'agent de projet et le journal `project_events` de l'ancien projet : ils restent dans la sauvegarde.",
-    "",
-    "## Restauration à froid",
-    "",
-    "1. Quitter Kibo (le démon s'arrête avec l'application).",
-    `2. Recopier le contenu de \`${input.backupDir}\` (\`kibo.db\`, \`runs.db\`, \`components/\`, \`notes/\`) dans le dossier du démon (\`$KIBO_HOME\`, défaut \`~/.kibo\`).`,
-    "3. Relancer Kibo.",
-    "",
-  ].join("\n");
 }
 
 export async function applyPlan(
@@ -231,27 +185,35 @@ export async function applyPlan(
   await assertDaemonRecent(client);
   const { projectId: oldId, snapshot } = await readCurrent(client, plan);
   const old = readOldProject(snapshot);
+  const notes = await client.rpc({ method: "getNotesDir", projectId: oldId });
+  const settings = settingsPatch(snapshot.meta);
   const backup = await client.rpc({ method: "createBackup", reason: "manual" });
   const { status } = await client.rpc({ method: "getBackups" });
-  const context = { plan, backup, backupDir: join(status.dir, backup.id), oldId };
+  const context = { plan, backup, backupDir: join(status.dir, backup.id), oldId, old: snapshot };
   writeFileSync(join(options.exportDir, "project-old.json"), `${JSON.stringify(snapshot, null, 2)}\n`);
   print(`backup ${backup.id} · export project-old.json`);
   const resultFile = join(options.exportDir, "rebase-result.md");
   await client.rpc({ method: "deleteProject", projectId: oldId });
   const progress: SeedProgress = { projectId: null };
+  const copied = Object.keys(settings ?? {});
   try {
-    const { projectId, keys } = await seedPlan(client, plan, progress);
+    const { projectId, keys } = await seedPlan(client, plan, progress, settings);
+    const notesCopy = await copyNotesDir(client, projectId, notes.dir);
     const fresh = await client.rpc({ method: "getProject", projectId });
     const problems = verifyRebase(old, fresh, plan);
-    writeFileSync(resultFile, renderResult({ ...context, newId: projectId, fresh, problems, failure: null }));
+    const result = { ...context, newId: projectId, fresh, problems, failure: null };
+    const notCopied = notesCopy.notCopied;
+    writeFileSync(
+      resultFile,
+      renderResult({ ...result, copied: [...copied, ...notesCopy.copied], notCopied }),
+    );
+    for (const line of notCopied) print(line);
     print(`project ${projectId} · ${problems.length} problem(s) · ${resultFile}`);
     return { projectId, keys, problems, backup };
   } catch (e) {
     const failure = e instanceof Error ? e.message : String(e);
-    writeFileSync(
-      resultFile,
-      renderResult({ ...context, newId: progress.projectId, fresh: null, problems: [], failure }),
-    );
+    const result = { ...context, newId: progress.projectId, fresh: null, problems: [], failure };
+    writeFileSync(resultFile, renderResult({ ...result, copied: [], notCopied: [] }));
     throw e;
   }
 }

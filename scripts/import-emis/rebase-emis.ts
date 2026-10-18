@@ -5,7 +5,13 @@ import { parseArgs } from "node:util";
 import { KiboError, sprintPlan } from "@kibo/schema";
 import { connectLocalDaemon, readDaemonAccess } from "./src/daemon-client";
 import { readMerges } from "./src/gh";
-import { applyPlan, assertApplicable, assertDaemonRecent, readCurrent } from "./src/rebase/apply-new";
+import {
+  applyPlan,
+  assertApplicable,
+  assertDaemonRecent,
+  readCurrent,
+  settingsPatch,
+} from "./src/rebase/apply-new";
 import { mapProject } from "./src/rebase/mapping";
 import { type OldProject, readOldProject, readTicketsList } from "./src/rebase/old-project";
 import {
@@ -133,7 +139,7 @@ async function apply(): Promise<void> {
         "the plan differs from a fresh dry run: rerun --dry-run, do not edit it",
       );
     print("rehearsal on a temporary daemon…");
-    const rehearsal = await rehearse(plan, old);
+    const rehearsal = await rehearse(plan, old, settingsPatch(snapshot.meta));
     if (rehearsal.length > 0)
       throw new KiboError("CONFLICT", `rehearsal failed, nothing written:\n${rehearsal.join("\n")}`);
     const outcome = await applyPlan(client, plan, { exportDir, print });

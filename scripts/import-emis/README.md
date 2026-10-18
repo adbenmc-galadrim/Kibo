@@ -73,6 +73,10 @@ bun run --cwd scripts/import-emis rebase -- --apply --plan <export>/rebase-plan.
 
 Ensuite : sauvegarde (`createBackup`) et export complet dans `<export>/project-old.json` ⇒ `deleteProject` de l'ancien ⇒ `createProject { setup }` (cinq pages, sprints S1 à Sn, client) ⇒ commandes du plan, la clé de chaque ticket créé comparée à la clé prédite ⇒ vérification (`verify.ts` : comptes, statuts, PR, branches, liens, questions, descriptions, étiquettes, clés `EMIS-1..n` contiguës, `F1..F15`, aucun `assignee`) ⇒ `<export>/rebase-result.md` (sauvegarde, comptes, clés, écarts, restauration). Un écart de vérification sort en code 1 avec la liste. Si une clé reçue diffère de la clé prédite, le script s'arrête aussitôt : le projet neuf incomplet est conservé et `rebase-result.md` dit « Arrêt à la vérification des clés ».
 
+**Réglages recopiés** : le nom, la clé, le dossier, la couleur et le client passent par `createProject` ; `worktree`, `storybook`, `duplication`, `delivery`, `tracking` et `description` par `updateProject` (tout ce que `ProjectPatch` accepte) ; le dossier de notes par `setNotesDir`. La répétition recopie les mêmes réglages, sauf le dossier de notes.
+
+**Non transféré** (listé dans `rebase-result.md`) : les pages et instances de l'ancien projet, remplacées par les cinq pages ; l'icône ; les domaines et leurs guidelines ; les règles d'automatisation propres à l'ancien projet ; les liaisons de composant ; les destinataires de questions ajoutés ; le partage ; l'historique de l'agent de projet, le journal `project_events` et l'historique d'édition des questions. Tout reste dans la sauvegarde.
+
 Procédure pour le chef d'équipe :
 
 1. quitter Kibo et faire la copie à froid (`cp -Rp ~/.kibo ~/.kibo-avant-rebase-<date>`), puis **redémarrer Kibo sur le build courant avant --apply** ;
