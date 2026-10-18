@@ -46,7 +46,7 @@ export function RailProjectMenu({ name, projectId, snapshot, activePageId, onOpe
   const pages = (snapshot?.pages ?? []).filter((p) => p.parentId === null);
   return (
     <HoverCard open={open} onOpenChange={setOpen} openDelay={150} closeDelay={150}>
-      <HoverCardTrigger asChild onClick={() => setOpen((o) => !o)}>
+      <HoverCardTrigger asChild onClick={() => setOpen(true)}>
         {children}
       </HoverCardTrigger>
       <HoverCardContent side="right" align="start" sideOffset={8} className="k-rail-menu w-56 p-1.5">
