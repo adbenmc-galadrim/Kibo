@@ -206,14 +206,19 @@ const seeded = await seedScenario().then(
     return false;
   },
 );
-const ready =
-  seeded && emisMaquettes
-    ? Bun.serve({
-        hostname: "127.0.0.1",
-        port: seedReadyPort(Number(port)),
-        fetch: () => new Response("seeded"),
-      })
-    : null;
+function openReadyPort() {
+  try {
+    return Bun.serve({
+      hostname: "127.0.0.1",
+      port: seedReadyPort(Number(port)),
+      fetch: () => new Response("seeded"),
+    });
+  } catch (error) {
+    proc.kill("SIGTERM");
+    throw error;
+  }
+}
+const ready = seeded && emisMaquettes ? openReadyPort() : null;
 const exited = await proc.exited;
 ready?.stop(true);
 const code = seeded ? exited : 1;

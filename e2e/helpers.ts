@@ -2,10 +2,6 @@ import { expect, type Page, type TestInfo } from "@playwright/test";
 import { rpc, text } from "./agents-seed";
 import { E2E_TOKEN } from "./token";
 
-export async function skipRoleStep(page: Page) {
-  await expect(page.getByRole("dialog", { name: "Nouveau projet" })).toBeVisible();
-}
-
 export async function openNewProject(page: Page) {
   await page.getByRole("button", { name: "Ajouter un projet" }).click();
   await page.getByRole("menuitem", { name: "Nouveau projet" }).click();
