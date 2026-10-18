@@ -238,3 +238,12 @@ Jalon de la phase 27 (T26) : P2 (« En cours : 2 / 2 », « à risque », ligne 
 « Phase 7/12 », résumé daté, lots remplacés masqués, « + Nouvelle fonctionnalité », « Dernier sprint · S42 terminé » au 18 oct.), P6 (fond
 redessiné), P7 (puces « Phase n/12 · … »), P8 et P8b, la barre repliée et le panneau de l'agent suivent l'application ; copiés dans la page
 « 36 · Suivi seul » du fichier « Kibo » (voir `design/penpot/README.md`).
+
+## Phase 28 (2026-10-18)
+
+Données neutralisées : projet fictif Silo (location de box, section « Projet Silo » de `design/donnees-fictives.md`), dans les scripts
+et dans les boards des pages « Proposition » et « Choix ». Les boards existants ont gardé leurs tailles, positions et retouches : seuls
+leurs textes et noms de calques ont changé (dictionnaire appliqué par le plugin, puis initiales des projets de la barre repliée). Exports,
+puis cotes régénérées par `cotes.py <JSON> --sections 1,…,13` sur l'ancien `cotes.md` passé au dictionnaire (en-tête et notes de masques gardés).
+Piège : `board.export()` peut renvoyer l'image d'avant une modification de texte (vu sur P5 sombre) ; exporter alors un clone du board
+(`b.clone()`, export, `remove()`), puis vérifier chaque PNG à l'œil.
