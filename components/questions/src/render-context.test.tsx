@@ -37,3 +37,17 @@ test("bold spans are rendered, outside inline code only", () => {
 test("an empty context renders nothing", () => {
   expect(renderContext("  \n ")).toBeNull();
 });
+
+test("italic spans are rendered like bold ones, outside inline code and words only", () => {
+  const root = html("Décision *provisoire*, _à confirmer_ et **ferme**, sauf `*brut*`");
+  expect(Array.from(root.querySelectorAll("p > em")).map((e) => e.textContent)).toEqual([
+    "provisoire",
+    "à confirmer",
+  ]);
+  expect(root.querySelector("p > strong")?.textContent).toBe("ferme");
+  expect(root.querySelector("code")?.textContent).toBe("*brut*");
+  expect(root.textContent).toBe("Décision provisoire, à confirmer et ferme, sauf *brut*");
+  expect(html("2 * 3 * 4").querySelector("em")).toBeNull();
+  expect(html("snake_case_name").querySelector("em")).toBeNull();
+  expect(html("**gras _et italique_**").querySelector("strong > em")?.textContent).toBe("et italique");
+});

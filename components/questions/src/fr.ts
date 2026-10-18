@@ -71,6 +71,7 @@ export const fr = {
   openView: "Ouvrir les questions →",
   emptyOpen: "Aucune question ouverte.",
   empty: "Aucune question.",
+  emptyPage: "Pose ici les questions au client ou à l'équipe : une question bloquante retient son étape.",
   readOnly: "Lecture seule",
   archive: "Archiver",
   archiveTitle: (title: string) => `Archiver « ${title} » ?`,

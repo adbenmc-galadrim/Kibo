@@ -4,6 +4,7 @@ import { Lock, Package } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ActionToast } from "./ActionToast";
 import { DeliverButton, DeliveryMessage, type DeliveryNotice } from "./DeliverButton";
+import { EmptyPage } from "./EmptyPage";
 import { ExportButton } from "./ExportButton";
 import { byExportOrder, type ExportEntry, exportLabels } from "./export-text";
 import { fr } from "./fr";
@@ -179,8 +180,13 @@ export function QuestionsView() {
       />
       <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto px-6 py-4.5">
         <BlockingLine blocking={summary.blocking} open={summary.open} />
-        {!data.loading && groups.length === 0 && (
-          <p className="text-sm text-muted-foreground">{scope === "open" ? fr.emptyOpen : fr.empty}</p>
+        {!data.loading && data.questions.length === 0 ? (
+          <EmptyPage onNew={data.readOnly ? undefined : () => setCreating("")} />
+        ) : (
+          !data.loading &&
+          groups.length === 0 && (
+            <p className="text-sm text-muted-foreground">{scope === "open" ? fr.emptyOpen : fr.empty}</p>
+          )
         )}
         {groups.map((g) => (
           <QuestionGroup key={g.ticket.id} group={g} data={data} now={now} />

@@ -20,7 +20,7 @@ test("an intent for a new question opens the dialog on its ticket, once per requ
       <Component />
     </SdkProvider>,
   );
-  await screen.findByRole("button", { name: /Nouvelle question/ });
+  await screen.findAllByRole("button", { name: /Nouvelle question/ });
   const intent: Spotlight = { kind: "newQuestion", ticketId: ids["KIB-12"] ?? "" };
   act(() => m.setSpotlight(intent));
   const dialog = await screen.findByRole("dialog", { name: "Nouvelle question" });
