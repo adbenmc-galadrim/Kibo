@@ -66,7 +66,7 @@ export function KanbanCardContent(props: Props) {
   const { ticket: t, group, run, ciRuns, blocked, blocking, members, remote, questions, menu, title } = props;
   const otherQuestions = t.openQuestions - (blocking === null ? 0 : 1);
   const sdk = useSdk();
-  const reason = startReasonText(t.startReason);
+  const reason = startReasonText(t.startReason, t.waitingOn);
   return (
     <>
       <div className="flex h-3.5 items-center gap-1.5">

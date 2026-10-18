@@ -71,7 +71,7 @@ export const fr = {
   reason: {
     sprint: (code: string) => `sprint ${code}`,
     unplanned: "sans sprint",
-    limit: "limite atteinte",
+    limit: (count: number, limit: number) => `limite ${count}/${limit}`,
   },
   branch: (name: string) => `Branche ${name}`,
   changesShort: "changements",
