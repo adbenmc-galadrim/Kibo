@@ -56,3 +56,17 @@ test("the next feature to finish is a late one first, the most advanced", () => 
   expect(next?.late).toBe(true);
   expect(build().model.next?.late).toBe(false);
 });
+
+test("the deadlines tint the features at risk and say where a feature slipped from", () => {
+  const rows = build().model.deadlines.rows;
+  expect(rows.map((r) => [r.shortKey, r.tone ?? null])).toEqual([
+    ["F4", "risk"],
+    ["F5", "risk"],
+    ["F6", null],
+    ["F8", null],
+    ["F7", null],
+  ]);
+  const slipped = slippedF5(MONDAY).deadlines.rows.find((r) => r.shortKey === "F5");
+  expect(slipped?.note).toBe("glissée de S42");
+  expect(build("2026-10-18").model.deadlines.rows.find((r) => r.shortKey === "F5")?.tone).toBe("late");
+});

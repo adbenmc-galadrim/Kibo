@@ -53,3 +53,14 @@ test("a slipped feature of the sprint says where it comes from", () => {
   expect(within(card).getByText("glissée de S41")).toBeTruthy();
   expect(card.querySelectorAll("[data-risk]").length).toBe(2);
 });
+
+test("the deadlines show the features at risk in amber and the slipped note", () => {
+  const { model } = build();
+  const rows = model.deadlines.rows.map((r) => (r.shortKey === "F6" ? { ...r, note: "glissée de S42" } : r));
+  view({ ...model, deadlines: { ...model.deadlines, rows } });
+  const card = screen.getByRole("region", { name: "Échéances" });
+  expect(
+    Array.from(card.querySelectorAll("[data-mark='risk']")).map((e) => e.getAttribute("data-feature")),
+  ).toEqual(["F4", "F5"]);
+  expect(within(card).getByText("glissée de S42")).toBeTruthy();
+});

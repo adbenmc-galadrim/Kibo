@@ -1,9 +1,10 @@
-import { SprintTimeline, type TimelineInput } from "@kibo/sdk/tracking";
+import { SprintTimeline } from "@kibo/sdk/tracking";
 import { Calendar } from "lucide-react";
 import { fr } from "./fr";
+import type { Deadlines } from "./overview-model";
 import { CARD, CardHeader, ROW_LINE } from "./parts";
 
-type Props = { deadlines: Omit<TimelineInput, "collapsed">; onOpenTicket(id: string): void };
+type Props = { deadlines: Deadlines; onOpenTicket(id: string): void };
 
 export function DeadlinesCard({ deadlines, onOpenTicket }: Props) {
   return (

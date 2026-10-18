@@ -18,7 +18,8 @@ import {
   type TrackingSettings,
   todayOffset,
 } from "@kibo/schema";
-import type { TimelineInput } from "@kibo/sdk/tracking";
+import type { MarkedRow, TimelineInput } from "@kibo/sdk/tracking";
+import { markRows } from "./deadline-marks";
 import type { IndicatorFacts } from "./indicator-texts";
 import { type LateRow, lateRows } from "./late-model";
 import {
@@ -56,10 +57,11 @@ export type NowRow = {
   segments: Segment[];
   duration: string;
 };
+export type Deadlines = Omit<TimelineInput, "collapsed" | "rows"> & { rows: MarkedRow[] };
 export type OverviewModel = {
   indicators: IndicatorFacts;
   now: NowRow[];
-  deadlines: Omit<TimelineInput, "collapsed">;
+  deadlines: Deadlines;
   late: LateRow[];
   sprints: SprintView[];
   sprint: SprintCard | null;
@@ -99,12 +101,15 @@ function deadlines(input: OverviewInput, features: readonly FeatureFacts[], bloc
   const planned = features.flatMap((f) => (f.sprintId === null ? [] : [{ ...f, sprintId: f.sprintId }]));
   return {
     columns,
-    rows: deadlineRows({
-      sprints: input.sprints,
-      features: planned,
-      blockingQuestions: blocking,
-      today: input.today,
-    }),
+    rows: markRows(
+      deadlineRows({
+        sprints: input.sprints,
+        features: planned,
+        blockingQuestions: blocking,
+        today: input.today,
+      }),
+      { features, sprints: input.sprints, events: input.events, today: input.today },
+    ),
     today: todayOffset(columns, input.today),
   };
 }
