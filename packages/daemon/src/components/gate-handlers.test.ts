@@ -350,3 +350,17 @@ test("project.get names the project and the repository of its first pull request
     repo: "galadrimteam/emis",
   });
 });
+
+test("project.get tells whether the machine has a folder for the project, from the local port", async () => {
+  const project = createProjectDoc({ ...metaWith(null), description: null });
+  const docs = {
+    ...stubDocs,
+    project: () => project,
+    activity: () => NO_ACTIVITY,
+    today: () => "2026-10-16",
+  };
+  const linked = createGateHandlers({ ...stubHandlerDeps, docs, hasFolder: (id) => id === "p1" });
+  expect((await linked.project("p1")).hasFolder).toBe(true);
+  const unlinked = createGateHandlers({ ...stubHandlerDeps, docs, hasFolder: () => false });
+  expect((await unlinked.project("p1")).hasFolder).toBe(false);
+});

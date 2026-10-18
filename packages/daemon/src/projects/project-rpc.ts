@@ -24,9 +24,9 @@ import type { createFileTicket } from "../inbox/file-ticket";
 import { assertProjectKeyAllowed } from "../inbox/inbox-rules";
 import type { ProjectSettings } from "../notes/settings";
 import {
-  LOCAL_FOLDER_KEY,
   localDelivery,
   localDuplication,
+  localFolder,
   localStorybook,
   localWorktree,
 } from "../project-folder";
@@ -44,10 +44,8 @@ export type ProjectRpcDeps = {
 
 export const NOT_HANDLED: unique symbol = Symbol("not handled");
 
-function localFolder(deps: ProjectRpcDeps, meta: ProjectMeta): string | null {
-  const local = deps.settings.get(meta.id, LOCAL_FOLDER_KEY);
-  return getKeyAllocator(deps.docs.project(meta.id)) === "server" ? local : (local ?? meta.folder);
-}
+const folderOf = (deps: ProjectRpcDeps, meta: ProjectMeta): string | null =>
+  localFolder(deps.settings, meta, getKeyAllocator(deps.docs.project(meta.id)) === "server");
 
 const projectIcon = (projectId: string) => iconOwnerKey({ kind: "project", projectId });
 
@@ -108,7 +106,7 @@ export function handleProjectRequest(deps: ProjectRpcDeps, req: RpcRequest): unk
     case "listProjects":
       return listProjects(deps.workspace).map((meta) => ({
         ...meta,
-        folder: localFolder(deps, meta),
+        folder: folderOf(deps, meta),
         worktree: localWorktree(deps.settings, meta.id),
         storybook: localStorybook(deps.settings, meta.id),
         duplication: localDuplication(deps.settings, meta.id),

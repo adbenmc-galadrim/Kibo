@@ -39,6 +39,15 @@ function localJson<T>(
   return null;
 }
 
+export function localFolder(
+  settings: Reader,
+  meta: Pick<ProjectMeta, "id" | "folder">,
+  shared: boolean,
+): string | null {
+  const local = settings.get(meta.id, LOCAL_FOLDER_KEY);
+  return shared ? local : (local ?? meta.folder);
+}
+
 export const localWorktree = (settings: Reader, projectId: string): WorktreeSettings | null =>
   localJson(settings, projectId, LOCAL_WORKTREE_KEY, WorktreeSettings);
 
