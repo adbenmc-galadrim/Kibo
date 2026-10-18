@@ -28,7 +28,7 @@ export const formatGzip = (bytes: number): string => `${(bytes / 1000).toFixed(1
 export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/node_modules\/(@codemirror|@lezer|@shikijs)\//,
   /\/node_modules\/(codemirror|markdown-it|shiki|sonner|next-themes)\//,
-  /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/(ChangesView|ChangesBody|DiscardDialog)|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome|PairingScreen)|pages\/SourceHeader|dialogs\/mcp-source\/McpSourceStep|ai\/[A-Za-z]+)\.tsx$/,
+  /\/packages\/ui\/src\/(agents\/(AgentsPage|QueuePage)|settings\/DomainsPage|components-page\/ComponentsPage|mine\/MyTicketsPage|code\/(ChangesView|ChangesBody|DiscardDialog)|files\/(FileTabView|FilePreviewSheet)|shell\/(IntegrationNotices|Welcome|PairingScreen)|pages\/SourceHeader|ai\/[A-Za-z]+)\.tsx$/,
   /\/packages\/ui\/src\/(dialogs\/(NewProjectDialog|NewPageDialog|NewTicketDialog)|agents\/(AssignDialog|ProfileSheet)|shell\/TicketSheet|palette\/CommandPalette|components-page\/PublishDialog|onboarding\/StarterDialog)\.tsx$/,
   /\/components\/(graph\/src\/GraphView|kanban\/src\/Kanban|notes\/src\/NotesView|mcp-source\/src\/McpSource|viewer-3d\/src\/Viewer3d|mockup\/src\/Mockup)\.tsx$/,
   /\/packages\/ui\/src\/(pages\/TicketTab|shell\/(TicketDetail|PresenceAvatars|ProjectPresence|KeyRequired))\.tsx$/,
@@ -69,7 +69,7 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(pages\/(InstanceMenuContent|LayoutEditor|LayoutToolbar|FormatMenu|EditorWidget|GridGuides|EditLayout)\.tsx|pages\/layout-draft\.ts|i18n\/fr-layout\.ts)$/,
   /\/packages\/ui\/src\/(creations\/[A-Za-z-]+\.tsx?|i18n\/fr-creations\.ts)$/,
   /\/packages\/sdk\/src\/(mock|mock-calls|mock-notes|fixtures|fixtures-glb)\.tsx?$/,
-  /\/packages\/ui\/src\/(settings\/ExecutionCard\.tsx|dialogs\/TrackingSection\.tsx|shell\/nav\/(planning-page\.ts|(AgentsEntry|HiddenScreenNotice|WorkspaceMenuItems)\.tsx)|i18n\/fr-tracking\.ts)$/,
+  /\/packages\/ui\/src\/(dialogs\/TrackingSection\.tsx|shell\/nav\/(planning-page\.ts|(AgentsEntry|HiddenScreenNotice|WorkspaceMenuItems)\.tsx)|i18n\/fr-tracking\.ts)$/,
   /\/node_modules\/three\//,
   /\/packages\/sdk\/src\/(three|game)\//,
   /\/packages\/ui\/src\/ai\/(worker-backend|preview-protocol|preview-backend|draft-preview-worker|revise-escape)\.ts$/,
@@ -108,6 +108,8 @@ export const FORBIDDEN_IN_ENTRY: readonly RegExp[] = [
   /\/packages\/ui\/src\/(shell\/sprint\/[A-Za-z-]+\.tsx?|i18n\/fr-sprint\.ts)$/,
   /\/packages\/ui\/src\/shell\/nav\/(overview-page\.ts|new-ticket-pages\.ts|NewTicketAction\.tsx)$/,
   /\/packages\/ui\/src\/i18n\/fr-ai\.ts$/,
+  /\/packages\/ui\/src\/i18n\/fr-(new-project|new-ticket|home|ticket-tracking)\.ts$/,
+  /\/packages\/ui\/src\/(dialogs\/(SprintSetupFields|SprintPreview|FeatureSelect)|shell\/NotFound|pages\/PageErrorBoundary)\.tsx$/,
 ];
 
 export const gzipLevel9 = (bytes: Uint8Array<ArrayBuffer>): number =>

@@ -1,8 +1,8 @@
 import {
   currentStep,
-  type Page,
   type TabTarget,
   TUTORIAL_STEPS,
+  type TutorialSeed,
   type TutorialState,
   type TutorialStep,
 } from "@kibo/schema";
@@ -17,47 +17,26 @@ export type StepView = {
   current: boolean;
 };
 
-type Destination = { seed: "dashboardPageId" | "graphPageId" } | { title: string };
+type PageOfSeed = "overviewPageId" | "planningPageId" | "kanbanPageId" | "questionsPageId";
 
-const KANBAN: Destination = { title: "Kanban" };
-const DASHBOARD: Destination = { seed: "dashboardPageId" };
-
-const DESTINATIONS: Record<TutorialStep, Destination> = {
-  kanban: KANBAN,
-  links: { seed: "graphPageId" },
-  note: { title: "Notes" },
-  dashboard: DASHBOARD,
-  agent: KANBAN,
-  component: DASHBOARD,
+const DESTINATIONS: Record<TutorialStep, PageOfSeed> = {
+  overview: "overviewPageId",
+  feature: "planningPageId",
+  review: "kanbanPageId",
+  question: "questionsPageId",
+  copy: "kanbanPageId",
 };
 
-function pageOf(state: TutorialState, pages: readonly Page[], to: Destination): Page | null {
-  if ("title" in to) return pages.find((p) => p.title === to.title) ?? null;
-  const id = state.seed?.[to.seed];
-  return pages.find((p) => p.id === id) ?? null;
-}
+const whereOf = (seed: TutorialSeed | null, projectId: string, step: TutorialStep): TabTarget | null =>
+  seed ? { kind: "page", projectId, pageId: seed[DESTINATIONS[step]] } : null;
 
-export function stepViews(state: TutorialState, projectId: string, pages: readonly Page[]): StepView[] {
+export function stepViews(state: TutorialState, projectId: string): StepView[] {
   const current = currentStep(state);
-  return TUTORIAL_STEPS.map((step) => {
-    const page = pageOf(state, pages, DESTINATIONS[step]);
-    return {
-      step,
-      ...frTutorial.steps[step],
-      where: page ? { kind: "page", projectId, pageId: page.id } : null,
-      done: state.completed.includes(step),
-      current: step === current,
-    };
-  });
-}
-
-export const shownStepIds = (executionShown: boolean): readonly TutorialStep[] =>
-  executionShown ? TUTORIAL_STEPS : TUTORIAL_STEPS.filter((s) => s !== "agent");
-
-export function shownSteps(views: readonly StepView[], executionShown: boolean): StepView[] {
-  if (executionShown) return [...views];
-  const kept = views.filter((v) => v.step !== "agent");
-  const current = kept.some((v) => v.current) || views.some((v) => v.current && v.step === "agent");
-  const next = current ? kept.find((v) => !v.done)?.step : undefined;
-  return kept.map((v) => ({ ...v, current: v.step === next }));
+  return TUTORIAL_STEPS.map((step) => ({
+    step,
+    ...frTutorial.steps[step],
+    where: whereOf(state.seed, projectId, step),
+    done: state.completed.includes(step),
+    current: step === current,
+  }));
 }

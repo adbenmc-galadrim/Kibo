@@ -8,6 +8,21 @@ export type DaemonClient = {
   close(): Promise<void>;
 };
 
+export type DaemonIdentity = { home: string; version: string | null };
+
+export class DaemonError extends KiboError {
+  constructor(
+    code: KiboError["code"],
+    detail: string,
+    readonly daemon: DaemonIdentity | null = null,
+  ) {
+    super(code, detail);
+  }
+}
+
+export const isUnknownMethod = (e: unknown): boolean =>
+  e instanceof KiboError && e.code === "INVALID_INPUT" && e.detail === "invalid request: method";
+
 const Port = z.number().int().min(0).max(65_535);
 const DaemonInfo = z.object({ port: Port, sandboxPort: Port, pid: z.number().int().positive() });
 
@@ -32,11 +47,11 @@ function readDaemonPort(home: string): number | null {
   return parsed.data.port;
 }
 
-function errorOf(body: object): KiboError {
+function errorOf(body: object): DaemonError {
   const error: unknown = Reflect.get(body, "error");
   const code = typeof error === "object" && error !== null ? Reflect.get(error, "code") : null;
   const message = typeof error === "object" && error !== null ? String(Reflect.get(error, "message")) : "";
-  return new KiboError(isKiboErrorCode(code) ? code : "INTERNAL", message);
+  return new DaemonError(isKiboErrorCode(code) ? code : "INTERNAL", message);
 }
 
 async function pair(base: string, token: string): Promise<string> {

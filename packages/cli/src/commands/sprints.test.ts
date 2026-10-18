@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { KiboError } from "@kibo/schema";
 import { sprintsCommand } from "./sprints";
 import { fakeDaemon } from "./tickets-test-kit";
 
@@ -56,9 +57,21 @@ describe("kibo sprints list", () => {
     const unknown = await sprints(["list"], { project: "NOPE" });
     expect(unknown.code).toBe(1);
     expect(unknown.err).toEqual(["Projet introuvable : NOPE"]);
-    const usage = await sprints(["list"], {});
-    expect(usage.code).toBe(2);
-    expect(usage.err.join("\n")).toContain("kibo sprints list --project");
     expect((await sprints([], { project: "EMIS" })).code).toBe(2);
+  });
+
+  test("suggests the project key when --project is missing", async () => {
+    const d = await sprints(["list"], {});
+    expect(d.code).toBe(2);
+    expect(d.err).toEqual(["précise --project EMIS"]);
+  });
+
+  test("prints its usage when --project is missing and Kibo is not running", async () => {
+    const d = fakeDaemon();
+    const down = async () => {
+      throw new KiboError("DAEMON_NOT_RUNNING", "no daemon.json");
+    };
+    expect(await sprintsCommand(["list"], {}, d.io, down)).toBe(2);
+    expect(d.err.join("\n")).toContain("kibo sprints list --project");
   });
 });

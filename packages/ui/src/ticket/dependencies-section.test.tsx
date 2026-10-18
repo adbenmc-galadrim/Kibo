@@ -54,6 +54,7 @@ const ticket = (n: number, title: string): TicketView => ({
   waitingOn: [],
   openQuestions: 0,
   startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,
@@ -78,6 +79,7 @@ const project: ProjectSnapshot = {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -122,6 +124,7 @@ const row = (key: string) => {
   return within(item);
 };
 const badgeOf = (key: string) => row(key).queryByRole("button", { name: `Lien ajouté par Kibo avec ${key}` });
+const badge = (key: string) => row(key).getByRole("button", { name: `Lien ajouté par Kibo avec ${key}` });
 
 beforeEach(() => {
   calls.length = 0;
@@ -147,7 +150,7 @@ test("cancelling from the badge calls the daemon and drops the badge", async () 
   draw();
   const user = userEvent.setup();
   await waitFor(() => expect(badgeOf("BOU-12")).toBeTruthy());
-  await user.click(badgeOf("BOU-12") as HTMLElement);
+  await user.click(badge("BOU-12"));
   await user.click(await screen.findByRole("button", { name: "Annuler" }));
   expect(calls).toContainEqual({ method: "autoLinks.cancel", id: "al1" });
   await waitFor(() => expect(badgeOf("BOU-12")).toBeNull());
@@ -167,7 +170,7 @@ test("the cross still removes the link the usual way", async () => {
 test("a reader sees the badge without the cancel button", async () => {
   draw(false);
   await waitFor(() => expect(badgeOf("BOU-12")).toBeTruthy());
-  await userEvent.setup().click(badgeOf("BOU-12") as HTMLElement);
+  await userEvent.setup().click(badge("BOU-12"));
   await screen.findByRole("dialog");
   expect(screen.queryByRole("button", { name: "Annuler" })).toBeNull();
 });
@@ -184,4 +187,10 @@ test("no auto links error line while the list reads fine", async () => {
   draw();
   await waitFor(() => expect(badgeOf("BOU-12")).toBeTruthy());
   expect(screen.queryByText("Liens ajoutés par Kibo indisponibles pour l'instant.")).toBeNull();
+});
+
+test("the search field suggests a key of the current project", async () => {
+  draw();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Ajouter une dépendance" }));
+  expect(screen.getByRole("textbox", { name: "Ticket" }).getAttribute("placeholder")).toBe("BOU-2…");
 });

@@ -9,6 +9,7 @@ import {
   type SprintState,
   type SprintView,
   sortSprints,
+  sprintState,
   type TicketView,
 } from "@kibo/schema";
 import {
@@ -20,6 +21,7 @@ import {
   STACK_GAP,
   titleLines,
 } from "./frame-geometry";
+import { lanePhase, sprintStateLabel } from "./sprint-label";
 
 export { frameWidth } from "./frame-geometry";
 
@@ -63,6 +65,7 @@ export type Lane = {
   code: string | null;
   name: string | null;
   state: SprintState | null;
+  label: string | null;
   tone: "canvas" | "panel";
   x: number;
   width: number;
@@ -85,6 +88,7 @@ export type SprintLanesInput = {
   questions: readonly Question[];
   live: ReadonlySet<string>;
   collapseDelivered: boolean;
+  today: string | null;
 };
 
 export const RESERVE_LANE = "reserve";
@@ -155,7 +159,7 @@ function draftOf(f: Feature, facts: Facts, sorted: readonly SprintView[]): Draft
   };
 }
 
-type LaneSeed = Pick<Lane, "id" | "code" | "name" | "state"> & { drafts: Draft[] };
+type LaneSeed = Pick<Lane, "id" | "code" | "name" | "state" | "label"> & { drafts: Draft[] };
 
 function placeLane(seed: LaneSeed, index: number, x: number): Lane {
   const widths = seed.drafts.map((d) => (d.collapsed ? FRAME_MIN_W : frameWidth(d.title, d.steps)));
@@ -209,6 +213,12 @@ function linksOf(
   return { edges: [...edges.values()], stepLinks };
 }
 
+const unfinished = (ids: readonly string[], byId: ReadonlyMap<string, TicketView>): number =>
+  ids.filter((id) => {
+    const status = byId.get(id)?.feature?.status;
+    return status !== undefined && status !== "delivered";
+  }).length;
+
 export function sprintLanes(input: SprintLanesInput): SprintLanesModel | null {
   if (input.sprints.length === 0) return null;
   const byId = new Map(input.tickets.map((t) => [t.id, t]));
@@ -222,7 +232,8 @@ export function sprintLanes(input: SprintLanesInput): SprintLanesModel | null {
       id: s.id,
       code: s.code,
       name: s.name,
-      state: s.state,
+      state: input.today === null ? s.state : sprintState(s, input.today),
+      label: sprintStateLabel(lanePhase(s, input.today), s.end, unfinished(s.features, byId)),
       drafts: s.features.flatMap((id) => drafts.get(id) ?? []),
     })),
     {
@@ -230,6 +241,7 @@ export function sprintLanes(input: SprintLanesInput): SprintLanesModel | null {
       code: null,
       name: null,
       state: null,
+      label: null,
       drafts: features.filter((f) => !planned.has(f.id)).flatMap((f) => drafts.get(f.id) ?? []),
     },
   ];

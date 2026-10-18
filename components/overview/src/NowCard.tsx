@@ -72,20 +72,14 @@ export function NowCard({ rows, onOpenTicket }: Props) {
           </span>
         </span>
         <span className="text-(--tracking-mfg) text-[12px] leading-[15px]">
-          {rows.length === 0 ? fr.now.none : fr.now.sessions(rows.length)}
+          {fr.now.sessions(rows.length)}
         </span>
       </div>
-      {rows.length === 0 ? (
-        <p className="flex flex-1 items-center px-[16px] font-mono text-(--tracking-mfg) text-[12px]">
-          {fr.now.hint}
-        </p>
-      ) : (
-        <ul className="flex min-w-0 flex-1 flex-col px-[16px] py-[6px]">
-          {rows.map((row) => (
-            <SessionRow key={row.ticketId} row={row} onOpenTicket={onOpenTicket} />
-          ))}
-        </ul>
-      )}
+      <ul className="flex min-w-0 flex-1 flex-col px-[16px] py-[6px]">
+        {rows.map((row) => (
+          <SessionRow key={row.ticketId} row={row} onOpenTicket={onOpenTicket} />
+        ))}
+      </ul>
     </section>
   );
 }

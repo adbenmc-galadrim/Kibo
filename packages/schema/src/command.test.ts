@@ -141,3 +141,27 @@ test("a ticket update may set or clear its short key, in the short key format", 
     false,
   );
 });
+
+test("a feature is created as such, questions are marked exported and back", () => {
+  expect(ProjectCommand.safeParse({ method: "createTicket", title: "Photos", feature: true }).success).toBe(
+    true,
+  );
+  expect(ProjectCommand.safeParse({ method: "createTicket", title: "Photos", feature: "yes" }).success).toBe(
+    false,
+  );
+  const by = { kind: "human", ref: "adam" };
+  expect(
+    ProjectCommand.safeParse({ method: "markQuestionsExported", questionIds: ["q1", "q2"], by }).success,
+  ).toBe(true);
+  expect(ProjectCommand.safeParse({ method: "markQuestionsExported", questionIds: [], by }).success).toBe(
+    false,
+  );
+  expect(ProjectCommand.safeParse({ method: "markQuestionsExported", questionIds: ["q1"] }).success).toBe(
+    false,
+  );
+  expect(ProjectCommand.safeParse({ method: "unmarkQuestionsExported", questionIds: ["q1"] }).success).toBe(
+    true,
+  );
+  expect(COMMAND_WRITES.markQuestionsExported).toBe("question");
+  expect(COMMAND_WRITES.unmarkQuestionsExported).toBe("question");
+});

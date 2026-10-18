@@ -39,6 +39,7 @@ function setup(extra: Record<string, unknown>, mode: SdkMode = "builtin") {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   const calls: ComponentCall[] = [];
   const runs: unknown[] = [];

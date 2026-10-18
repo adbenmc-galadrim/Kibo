@@ -7,12 +7,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
-import { BookOpen, Ellipsis, History, LayoutList, MessagesSquare, Radar, RotateCcw } from "lucide-react";
+import {
+  BookOpen,
+  Ellipsis,
+  Eye,
+  EyeOff,
+  History,
+  LayoutList,
+  MessagesSquare,
+  Radar,
+  RotateCcw,
+} from "lucide-react";
 import { useState } from "react";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 
 type Props = {
   signals: number;
+  superseded: { count: number; shown: boolean; onToggle(): void };
   onTracking?(): void;
   onConversation(): void;
   onSignals(): void;
@@ -25,6 +36,7 @@ const t = frProjectAgent.menu;
 
 export function PanelMenu({
   signals,
+  superseded,
   onTracking,
   onConversation,
   onSignals,
@@ -61,6 +73,12 @@ export function PanelMenu({
             <Radar />
             {t.signals(signals)}
           </DropdownMenuItem>
+          {superseded.count > 0 && (
+            <DropdownMenuItem onSelect={superseded.onToggle}>
+              {superseded.shown ? <EyeOff /> : <Eye />}
+              {superseded.shown ? t.hideSuperseded : t.showSuperseded}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={onPast}>
             <History />

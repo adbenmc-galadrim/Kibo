@@ -1,6 +1,6 @@
 import { ProjectMeta } from "@kibo/schema";
 import { isContainer, type LoroDoc, LoroMap, type LoroTree } from "loro-crdt";
-import { FeatureSeq } from "./project";
+import { FeatureSeq, QuestionSeq } from "./project";
 import { sprintsViolation } from "./sprints";
 import { depthViolation } from "./update-depth";
 import { bindingsUpdateViolation, type UpdateAuthor } from "./validate-bindings";
@@ -14,7 +14,9 @@ const EDITABLE_META_FIELDS = {
   color: ProjectMeta.shape.color,
   tracking: ProjectMeta.shape.tracking,
   description: ProjectMeta.shape.description,
+  client: ProjectMeta.shape.client,
   featureSeq: FeatureSeq,
+  questionSeq: QuestionSeq,
 };
 const KNOWN_META_FIELDS = new Set([...FROZEN_META_FIELDS, "members", ...Object.keys(EDITABLE_META_FIELDS)]);
 

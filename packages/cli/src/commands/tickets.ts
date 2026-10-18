@@ -2,11 +2,18 @@ import { existsSync } from "node:fs";
 import type { Parsed } from "../args";
 import { frTickets } from "../fr";
 import { briefFile, detailExtras, notesOrEmpty } from "../tickets/ticket-detail";
-import { detailLines, listLine, type TicketDetail } from "../tickets/ticket-text";
+import { detailLines, listLines, type TicketDetail } from "../tickets/ticket-text";
 import { sprintSelector } from "../tickets/ticket-tracking";
-import { isReady, lookupTicket, matchesStatus, statusFilter, summarize } from "../tickets/ticket-view";
-import { type Connect, findProject, printJson, type SessionIo, withClient } from "./daemon-session";
-import { notFound, summaryOf, type TicketsContext } from "./tickets-context";
+import {
+  lookupTicket,
+  matchesStatus,
+  statusFilter,
+  summarize,
+  type TicketSummary,
+} from "../tickets/ticket-view";
+import { type Connect, printJson, type SessionIo, withClient } from "./daemon-session";
+import { missingProject } from "./project-hint";
+import { chooseProject, notFound, summaryOf, type TicketsContext } from "./tickets-context";
 import { ticketsSession } from "./tickets-session";
 import { applySet, type SetRequest, setRequestOrExit } from "./tickets-set";
 import { ticketsStep } from "./tickets-step";
@@ -16,6 +23,18 @@ type Flags = Parsed["flags"];
 
 const SUBCOMMANDS = new Set(["list", "get", "set"]);
 
+const givenFilters = (flags: Flags): string[] => [
+  ...(flags.ready === true ? ["--ready"] : []),
+  ...(typeof flags.status === "string" ? [`--status ${flags.status}`] : []),
+  ...(typeof flags.sprint === "string" ? [`--sprint ${flags.sprint}`] : []),
+];
+
+function listText(tickets: readonly TicketSummary[], flags: Flags): string[] {
+  if (tickets.length > 0) return listLines(tickets);
+  const filters = givenFilters(flags);
+  return [filters.length === 0 ? frTickets.noTickets : frTickets.noMatch(filters.join(" "))];
+}
+
 function listCommand({ snapshot, flags, io }: TicketsContext): number {
   const wanted = typeof flags.status === "string" ? statusFilter(flags.status) : null;
   const inSprint = typeof flags.sprint === "string" ? sprintSelector(flags.sprint, snapshot.sprints) : null;
@@ -24,11 +43,11 @@ function listCommand({ snapshot, flags, io }: TicketsContext): number {
     return 1;
   }
   const tickets = summarize(snapshot)
-    .filter((t) => flags.ready !== true || isReady(t))
+    .filter((t) => flags.ready !== true || t.startable)
     .filter((t) => wanted === null || matchesStatus(t, wanted))
     .filter((t) => inSprint === null || inSprint(t));
   if (flags.json === true) printJson(io, tickets);
-  else for (const t of tickets) io.out(listLine(t));
+  else for (const line of listText(tickets, flags)) io.out(line);
   return 0;
 }
 
@@ -57,7 +76,7 @@ function isUsage(sub: string | undefined, ident: string | undefined, flags: Flag
   return (
     sub === undefined ||
     !SUBCOMMANDS.has(sub) ||
-    typeof flags.project !== "string" ||
+    flags.project === true ||
     flags.sprint === true ||
     (sub !== "list" && !ident)
   );
@@ -68,26 +87,28 @@ export async function runTicketsCommand(
   flags: Flags,
   io: TicketsIo,
   connect?: Connect,
+  cwd: string = process.cwd(),
 ): Promise<number> {
   const [sub, ident, ...rest] = positional;
   if (sub === "step") return ticketsStep(positional.slice(1), flags, io, connect);
   if (sub === "session") return ticketsSession(positional.slice(1), flags, io, connect);
-  const project = flags.project;
-  if (isUsage(sub, ident, flags) || typeof project !== "string") {
+  const project = flags.project === true ? undefined : flags.project;
+  if (isUsage(sub, ident, flags)) {
     io.err(frTickets.usage);
     return 2;
   }
+  if (sub === "list" && project === undefined) return missingProject(io, frTickets.usage, connect);
   const request: SetRequest | number | null = sub === "set" ? setRequestOrExit(rest, io) : null;
   if (typeof request === "number") return request;
   return withClient(
     io,
     async (client) => {
-      const summary = findProject(await client.rpc({ method: "listProjects" }), project);
-      if (!summary) {
-        io.err(frTickets.projectNotFound(project));
-        return 1;
+      const choice = chooseProject(await client.rpc({ method: "listProjects" }), ident ?? "", project, cwd);
+      if ("problem" in choice) {
+        io.err(choice.problem);
+        return choice.code;
       }
-      const snapshot = await client.rpc({ method: "getProject", projectId: summary.id });
+      const snapshot = await client.rpc({ method: "getProject", projectId: choice.project.id });
       const ctx = { client, snapshot, flags, io };
       if (sub === "list") return listCommand(ctx);
       if (request !== null) return applySet(request, ident ?? "", ctx);

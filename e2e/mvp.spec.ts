@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { addComponent, createPage, openNewProject, pairAndCreateProject, skipRoleStep } from "./helpers";
+import { addComponent, createPage, openNewProject, pairAndCreateProject } from "./helpers";
 import { projectKey } from "./repo-project";
 
 async function createTicket(page: Page, opener: Locator, title: string) {
@@ -22,7 +22,7 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   );
   const todo = page.getByRole("region", { name: "À faire" });
   await expect(todo.getByText(`${key}-1`)).toBeVisible();
-  await expect(page.getByText("1 / 1 · Moi")).toBeVisible();
+  await expect(page.getByText("1 ticket · Tous", { exact: true })).toBeVisible();
 
   await todo.getByRole("button", { name: `Actions ${key}-1` }).click();
   await page.getByRole("menuitem", { name: "Déplacer vers" }).click();
@@ -42,11 +42,16 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   const other = `Autre ${key}`;
   await page.getByRole("button", { name: "Accueil" }).click();
   await openNewProject(page);
-  await skipRoleStep(page);
   await page.getByLabel("Nom", { exact: true }).fill(other);
   await page.getByLabel("Clé").fill(`${key}B`);
-  await page.getByRole("button", { name: "Créer le projet" }).click();
-  await expect(page.getByText("Projet créé")).toBeVisible();
+  await page.getByRole("button", { name: "Créer", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Nouveau projet" })).toBeHidden();
+  const otherPages = page
+    .locator('[data-sidebar="sidebar"]')
+    .getByRole("listitem")
+    .filter({ has: page.getByRole("button", { name: other, exact: true }) })
+    .getByRole("list");
+  await expect(otherPages.getByRole("button", { name: "Vue d'ensemble", exact: true })).toBeVisible();
 
   const main = page.getByRole("main");
   await page.getByRole("button", { name: "Accueil" }).click();
@@ -54,7 +59,7 @@ test("projet → page → Kanban → ticket, persisté", async ({ page }, info) 
   await expect(page.getByRole("region", { name: "À faire" })).toBeVisible();
   await page.getByRole("button", { name: "Accueil" }).click();
   await main.getByText(other).click();
-  await expect(page.getByText("Projet créé")).toBeVisible();
+  await expect(page.getByText(`Projet créé : ${other}`)).toHaveCount(0);
   await expect(page.getByRole("region", { name: "À faire" })).toHaveCount(0);
 });
 
@@ -70,7 +75,7 @@ test("tableau de bord Tickets + Kanban, sous-ticket et fiche", async ({ page }, 
   await expect(tickets).toBeVisible();
   await expect(todo).toBeVisible();
   const left = await tickets.boundingBox();
-  const right = await page.getByText("0 / 0 · Moi").boundingBox();
+  const right = await page.getByText("0 ticket · Tous", { exact: true }).boundingBox();
   expect(left && right && left.x + left.width <= right.x).toBe(true);
 
   await createTicket(
@@ -78,7 +83,6 @@ test("tableau de bord Tickets + Kanban, sous-ticket et fiche", async ({ page }, 
     tickets.getByRole("button", { name: "Nouveau ticket", exact: true }).first(),
     "Préparer la démo",
   );
-  await tickets.getByRole("button", { name: "Déplier Hors fonctionnalité" }).click();
   await expect(tickets.getByText(`${key}-1`)).toBeVisible();
 
   await tickets.getByRole("button", { name: `Nouveau sous-ticket de ${key}-1` }).click();
@@ -92,12 +96,12 @@ test("tableau de bord Tickets + Kanban, sous-ticket et fiche", async ({ page }, 
   const featureChip = "Ouvrir la fonctionnalité F1 · Préparer la démo";
   await expect(tickets.getByRole("button", { name: featureChip })).toBeVisible();
   await expect(todo.getByRole("article").filter({ hasText: "Préparer la démo" })).toHaveCount(0);
-  await expect(page.getByText("1 / 1 · Moi")).toBeVisible();
+  await expect(page.getByTitle("1 ticket · Tous", { exact: true })).toBeAttached();
 
   await todo.getByRole("article").getByRole("button", { name: chip }).click();
   const sheet = page.getByRole("dialog");
   await expect(sheet.getByRole("heading", { level: 1, name: "Préparer la démo" })).toBeVisible();
-  await expect(sheet).toContainText(`Fonctionnalité · F1 · ${key}-1`);
+  await expect(sheet).toContainText("Fonctionnalité · F1");
   await expect(sheet.getByText("0 étape livrée sur 1")).toBeVisible();
   await expect(sheet.getByText("Enregistrer la vidéo")).toBeVisible();
 });

@@ -1,37 +1,13 @@
-import { type KiboSdk, type ProjectInfo, useEntities, useQuestionRecipients, useSdk } from "@kibo/sdk";
+import type { TicketView } from "@kibo/schema";
+import { copyDeliveryCommand, type KiboSdk, useEntities, useQuestionRecipients, useSdk } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
+import { useProject } from "@kibo/sdk/hooks/use-project";
 import { useEffect, useState } from "react";
+import { gettingStarted } from "./getting-started-model";
 import { type OverviewHandlers, OverviewView } from "./OverviewView";
 import { overviewModel } from "./overview-model";
 
 const MINUTE = 60_000;
-const pad = (n: number) => String(n).padStart(2, "0");
-export const localToday = (now: number): string => {
-  const d = new Date(now);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-};
-
-function useProjectInfo(sdk: KiboSdk): ProjectInfo | null {
-  const [project, setProject] = useState<ProjectInfo | null>(null);
-  useEffect(() => {
-    let alive = true;
-    const load = () =>
-      sdk.project.get().then(
-        (info) => {
-          if (alive) setProject(info);
-        },
-        (e: unknown) => console.warn("[overview] project info unavailable", e),
-      );
-    void load();
-    const stop = sdk.project.subscribe(() => void load());
-    return () => {
-      alive = false;
-      stop();
-    };
-  }, [sdk]);
-  return project;
-}
-
 function useNow(): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -41,10 +17,20 @@ function useNow(): number {
   return now;
 }
 
-function handlersOf(sdk: KiboSdk, execution: OverviewHandlers["execution"]): OverviewHandlers {
+function handlersOf(
+  sdk: KiboSdk,
+  execution: OverviewHandlers["execution"],
+  tickets: readonly TicketView[],
+  onCopied: () => void,
+): OverviewHandlers {
   return {
     execution,
-    copy: (command) => navigator.clipboard.writeText(command),
+    copy: async (ticketId) => {
+      const ticket = tickets.find((t) => t.id === ticketId);
+      if (ticket === undefined) return;
+      await copyDeliveryCommand(sdk, ticket);
+      onCopied();
+    },
     deliver: async (ticketId) => {
       await sdk.runs.deliver(ticketId);
     },
@@ -52,13 +38,16 @@ function handlersOf(sdk: KiboSdk, execution: OverviewHandlers["execution"]): Ove
     onOpenSprint: (id) => sdk.sprints.open(id),
     onOpenQuestion: (id) => sdk.openView("questions", { question: id }),
     onOpenQuestions: () => sdk.openView("questions"),
+    onNewFeature: () => sdk.openView("planning", { intent: { kind: "newFeature" } }),
+    onChooseFolder: () => sdk.project.edit({ field: "folder" }),
   };
 }
 
 export function Overview() {
   const sdk = useSdk();
   const now = useNow();
-  const project = useProjectInfo(sdk);
+  const project = useProject();
+  const [copied, setCopied] = useState(false);
   const { tracking, agentExecution } = useComponentSettings();
   const recipients = useQuestionRecipients();
   const { data: tickets } = useEntities("ticket");
@@ -68,6 +57,7 @@ export function Overview() {
   const { data: questions } = useEntities("question");
   const { data: events } = useEntities("project_event");
   const { data: ciRuns } = useEntities("ci_run");
+  if (project === null) return null;
   const input = {
     tickets,
     links,
@@ -78,7 +68,7 @@ export function Overview() {
     recipients,
     workflow,
     tracking,
-    today: localToday(now),
+    today: project.today,
     now,
   };
   return (
@@ -86,7 +76,8 @@ export function Overview() {
       project={project}
       model={overviewModel(input)}
       activity={input}
-      handlers={handlersOf(sdk, agentExecution)}
+      start={gettingStarted(project, tickets, copied)}
+      handlers={handlersOf(sdk, agentExecution, tickets, () => setCopied(true))}
     />
   );
 }

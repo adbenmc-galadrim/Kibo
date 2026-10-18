@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { type AgentsState, INBOX_ID, type Question, type RpcRequest, type RunView } from "@kibo/schema";
+import type { TicketExecution } from "./agents/execution-removed";
 import {
   type AgentQuestions,
   type AgentsPort,
@@ -11,7 +12,7 @@ import { answered, HUMAN, runView } from "./questions/questions.test-helper";
 
 const IMPORT = { kind: "import", ref: "plan" } as const;
 
-function recordingPort(calls: string[]): AgentsPort {
+function recordingPort(calls: string[], ticketExecution: TicketExecution = "allowed"): AgentsPort {
   const record =
     (name: string) =>
     (..._args: unknown[]): never => {
@@ -19,6 +20,7 @@ function recordingPort(calls: string[]): AgentsPort {
       throw new Error(`${name} should not be reached`);
     };
   return {
+    ticketExecution: () => ticketExecution,
     assign: record("assign"),
     preview: record("preview"),
     answer: record("answer"),
@@ -54,8 +56,12 @@ function questionsStub(calls: string[], undelivered: Question[] = [], blocking: 
   return questions;
 }
 
-function agentsPort(calls: string[], runs: RunView[]): AgentsPort {
-  const port = recordingPort(calls);
+function agentsPort(
+  calls: string[],
+  runs: RunView[],
+  ticketExecution: TicketExecution = "allowed",
+): AgentsPort {
+  const port = recordingPort(calls, ticketExecution);
   const state: AgentsState = {
     runs,
     queue: [],
@@ -215,4 +221,26 @@ test("the agents state carries the open signal counts of each project", () => {
   const state = handleAgentRequest(port, { method: "getAgents" }, questionsStub([]));
   expect(state).toMatchObject({ signals: counts });
   expect(port.state().signals).toEqual(counts);
+});
+
+test("without ticket execution a ticket run is never answered and answers are never delivered", () => {
+  const calls: string[] = [];
+  const waiting = runView({ id: "r1", state: "waiting_input" });
+  const port = agentsPort(calls, [waiting], "removed");
+  const questions = questionsStub(calls, [answered("q1")], answered("q1", { blocking: true }));
+  expect(() =>
+    handleAgentRequest(port, { method: "answerRun", runId: "r1", text: "443" }, questions),
+  ).toThrow("AGENT_EXECUTION_REMOVED");
+  expect(() =>
+    handleAgentRequest(port, { method: "deliverAnswers", projectId: "p1", ticketId: "t1" }, questions),
+  ).toThrow("AGENT_EXECUTION_REMOVED");
+  expect(calls).toEqual(["writable:p1"]);
+});
+
+test("without ticket execution a waiting project run is still answered", () => {
+  const calls: string[] = [];
+  const project = runView({ id: "pa1", state: "waiting_input", kind: "project", ticketId: null });
+  const port = agentsPort(calls, [project], "removed");
+  handleAgentRequest(port, { method: "answerRun", runId: "pa1", text: "oui" }, questionsStub(calls));
+  expect(calls).toEqual(["drawer:p1:pa1:oui:human:adam", "answer:pa1:oui"]);
 });

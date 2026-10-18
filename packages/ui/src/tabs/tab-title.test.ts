@@ -19,6 +19,7 @@ const inbox: ProjectSnapshot = {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   tickets: (kibo.tickets[0] ? [kibo.tickets[0]] : []).map((t) => ({
     ...t,
@@ -30,9 +31,9 @@ const inbox: ProjectSnapshot = {
 const ctx = { projects: projectsFixture, snapshots: new Map([[INBOX_ID, inbox]]) };
 const inboxTicket: TabTarget = { kind: "ticket", projectId: INBOX_ID, ticketId: "i3" };
 
-test("an inbox ticket tab is titled after the inbox, never as a missing project", () => {
+test("an inbox ticket tab is titled after its key and title, never as a missing project", () => {
   const tab = describeTarget(inboxTicket, ctx);
-  expect(tab.title).toBe("Boîte de réception · INB-3");
+  expect(tab.title).toBe(`INB-3 · ${inbox.tickets[0]?.title}`);
   expect(tab.missing).toBe(false);
 });
 
@@ -92,4 +93,25 @@ test("a sprint tab is titled after its code and its crumbs lead back to the Plan
     "Emis",
     "S42 · Terrain hors ligne",
   ]);
+});
+
+test("a ticket tab is titled « key · title » and found by its key as well as by its id", async () => {
+  const { emisFeatureProject } = await import("../shell/feature/fixture");
+  const emis = emisFeatureProject();
+  const projects = [{ ...emis.meta, counts: projectsFixture[0]?.counts ?? {} }] as typeof projectsFixture;
+  const emisCtx = { projects, snapshots: new Map([["emis", emis]]) };
+  const byId: TabTarget = { kind: "ticket", projectId: "emis", ticketId: "e33" };
+  const byKey: TabTarget = { kind: "ticket", projectId: "emis", ticketId: "EMIS-33" };
+  expect(describeTarget(byId, emisCtx)).toMatchObject({
+    title: "EMIS-33 · Écran d'envoi hors ligne",
+    missing: false,
+  });
+  expect(describeTarget(byKey, emisCtx)).toMatchObject({
+    title: "EMIS-33 · Écran d'envoi hors ligne",
+    missing: false,
+  });
+  expect(describeTarget({ ...byKey, ticketId: "EMIS-999" }, emisCtx).missing).toBe(true);
+  const crumbs = (target: TabTarget) =>
+    crumbsFor(target, { project: emis, branch: null }).map((c) => c.label);
+  expect(crumbs(byKey)).toEqual(crumbs(byId));
 });

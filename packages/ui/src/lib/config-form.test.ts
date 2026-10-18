@@ -103,7 +103,7 @@ const third = (configSchema: ConfigSchema | undefined): ComponentSummary[] => [
 
 test("the schema comes from the registry for a built-in, from the installed version for a third party, null when empty", () => {
   expect(configSchemaOf(instance("kanban@1.0.0"), null)).toEqual({
-    filter: { enum: ["mine-and-agents", "all"], default: "mine-and-agents" },
+    filter: { enum: ["mine-and-agents", "all"], default: "all" },
   });
   expect(configSchemaOf(instance("pr-queue@0.3.0"), third({ limit: { type: "number" } }))).toEqual({
     limit: { type: "number" },

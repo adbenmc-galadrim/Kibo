@@ -18,7 +18,11 @@ const MANIFEST: ComponentManifestInput = {
 
 function Probe() {
   const spotlight = useSpotlight();
-  return <output>{spotlight === null ? "aucune" : `${spotlight.kind}:${spotlight.id}`}</output>;
+  return (
+    <output>
+      {spotlight?.kind === "question" ? `${spotlight.kind}:${spotlight.id}` : (spotlight?.kind ?? "aucune")}
+    </output>
+  );
 }
 
 test("a spotlight store holds one target and tells its listeners", () => {

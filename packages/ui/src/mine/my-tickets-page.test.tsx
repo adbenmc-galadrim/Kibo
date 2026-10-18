@@ -1,10 +1,18 @@
 import { describe, expect, test } from "bun:test";
 import { INBOX_ID, type ProjectSnapshot } from "@kibo/schema";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render as renderPlain, screen, within } from "@testing-library/react";
+import type { ReactElement, ReactNode } from "react";
 import { configFixture } from "../agents/fixtures";
 import { withInbox } from "../lib/inbox";
+import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
 import { fac, kib, mineSnapshots, mineTicket, por } from "./fixtures";
 import { MyTicketsPage } from "./MyTicketsPage";
+
+const shownExecution = fixedStore({ agentExecution: "shown" });
+const ShownExecution = ({ children }: { children: ReactNode }) => (
+  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
+);
+const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 type Handlers = {
   onOpenTicket?(p: string, t: string): void;
@@ -124,6 +132,7 @@ describe("my tickets page", () => {
         delivery: null,
         tracking: null,
         description: null,
+        client: null,
       },
       tickets: [mineTicket("INB-2", "todo", { kind: "human", ref: "adam" })],
     };

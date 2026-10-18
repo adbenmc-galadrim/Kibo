@@ -7,16 +7,18 @@ import { PIXEL_WIDTH } from "./pixel-settings";
 
 const HEIGHT = 1000;
 const CONTENT = contentBox(241, HEIGHT);
-const DRAG_DELTA = { x: -206, y: 221 };
+const DROP_INSET_X = 40;
+const DROP_DOWN_Y = 221;
 
 async function dragF9OverS44(page: Page): Promise<void> {
   const box = await page.getByRole("button", { name: /^F9 / }).boundingBox();
-  if (!box) throw new Error("F9 card is not visible");
+  const s44 = await page.getByRole("region", { name: /^S44 / }).boundingBox();
+  if (!box || !s44) throw new Error("F9 card or S44 is not visible");
   const grab = { x: box.x + 10, y: box.y + box.height / 2 };
   await page.mouse.move(grab.x, grab.y);
   await page.mouse.down();
-  await page.mouse.move(grab.x - 10, grab.y + 10, { steps: 4 });
-  await page.mouse.move(grab.x + DRAG_DELTA.x, grab.y + DRAG_DELTA.y, { steps: 12 });
+  await page.mouse.move(grab.x + 10, grab.y + 10, { steps: 4 });
+  await page.mouse.move(s44.x + DROP_INSET_X, grab.y + DROP_DOWN_Y, { steps: 12 });
   await expect(page.getByText("Déposer pour planifier en S44")).toBeVisible();
 }
 

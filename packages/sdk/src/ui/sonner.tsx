@@ -6,10 +6,13 @@ import {
   TriangleAlertIcon,
 } from "lucide-react"
 import { useTheme } from "next-themes"
-import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { useEffect } from "react"
+import { Toaster as Sonner, type ToasterProps, toast } from "sonner"
+import { onToast } from "../toast-bus"
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme()
+  useEffect(() => onToast((message) => toast(message)), [])
 
   return (
     <Sonner

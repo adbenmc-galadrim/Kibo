@@ -7,19 +7,40 @@ import {
   GitBranch,
   GitMerge,
   GitPullRequest,
+  Lock,
   type LucideIcon,
   MessageCircleQuestion,
+  Plus,
   Radio,
 } from "lucide-react";
 import { frFeature as t } from "../../i18n/fr-group";
-import { ASIDE_EMPTY, AsideCard, AsideRow } from "./AsideCard";
+import { ASIDE_ACTION, ASIDE_EMPTY, AsideCard, AsideRow } from "./AsideCard";
 import type { ActivityItem, ActivityKind, FeatureQuestion } from "./feature-feed";
 
-type QuestionsProps = { questions: readonly FeatureQuestion[]; onOpenQuestion(id: string): void };
+type QuestionsProps = {
+  questions: readonly FeatureQuestion[];
+  onOpenQuestion(id: string): void;
+  onNewQuestion?: () => void;
+};
 
-export function QuestionsCard({ questions, onOpenQuestion }: QuestionsProps) {
+function BlockingBadge() {
   return (
-    <AsideCard icon={MessageCircleQuestion} title={t.questions} count={questions.length}>
+    <span className="inline-flex h-[18px] shrink-0 items-center gap-[4px] rounded-full bg-(--tracking-red-soft) px-[7px] text-[11px] leading-none font-medium text-(--tracking-red)">
+      <Lock absoluteStrokeWidth size={11} aria-hidden className="size-[11px]" />
+      {t.blockingQuestion}
+    </span>
+  );
+}
+
+export function QuestionsCard({ questions, onOpenQuestion, onNewQuestion }: QuestionsProps) {
+  const action = onNewQuestion && (
+    <button type="button" className={ASIDE_ACTION} onClick={onNewQuestion}>
+      <Plus absoluteStrokeWidth size={12} aria-hidden className="size-[12px]" />
+      {t.addQuestion}
+    </button>
+  );
+  return (
+    <AsideCard icon={MessageCircleQuestion} title={t.questions} count={questions.length} action={action}>
       {questions.map((q) => (
         <AsideRow key={q.id}>
           <button
@@ -27,8 +48,11 @@ export function QuestionsCard({ questions, onOpenQuestion }: QuestionsProps) {
             className="flex w-full flex-col items-start gap-[2px] px-[14px] py-[9px] text-left hover:bg-(--tracking-hover)"
             onClick={() => onOpenQuestion(q.id)}
           >
-            <span className="w-full truncate text-[12.5px] leading-[15px] text-(--tracking-fg)">
-              {q.title}
+            <span className="flex w-full min-w-0 items-center gap-[6px]">
+              <span className="min-w-0 flex-1 truncate text-[12.5px] leading-[15px] text-(--tracking-fg)">
+                {q.title}
+              </span>
+              {q.blocking && <BlockingBadge />}
             </span>
             <span className="text-[11px] leading-[14px] text-(--tracking-dim)">{q.meta}</span>
           </button>

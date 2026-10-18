@@ -196,6 +196,7 @@ const openQuestion = (id: string, title: string, createdAt: number): Question =>
   blocking: true,
   createdBy: { kind: "agent", ref: "opus-dev-2" },
   createdAt,
+  number: null,
   importRef: null,
   answer: null,
   recipient: "me",

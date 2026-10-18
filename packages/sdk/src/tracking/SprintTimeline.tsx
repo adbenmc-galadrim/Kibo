@@ -1,3 +1,4 @@
+import type { DeadlineRow } from "@kibo/schema";
 import { ClockAlert, Lock } from "lucide-react";
 import { useState } from "react";
 import { trackingFr as t } from "./fr";
@@ -14,17 +15,43 @@ import {
   timelineLayout,
 } from "./timeline-model";
 
-type Props = TimelineInput<TimelineColumnInput> & { onOpen?(featureId: string): void; legend?: boolean };
-type RowProps = { row: TimelineRow; last: boolean; width: number; onOpen?(featureId: string): void };
+export type RowMark = { tone?: "risk" | "late"; note?: string };
+export type MarkedRow = DeadlineRow & RowMark;
+type Props = Omit<TimelineInput<TimelineColumnInput>, "rows" | "collapsed"> & {
+  rows: MarkedRow[];
+  collapsed?: { label: string; rows: MarkedRow[] };
+  onOpen?(featureId: string): void;
+  legend?: boolean;
+  todayLabel?: string;
+};
+type Marks = ReadonlyMap<string, RowMark>;
+type RowProps = {
+  row: TimelineRow;
+  mark: RowMark | undefined;
+  last: boolean;
+  width: number;
+  onOpen?(featureId: string): void;
+};
+
+const MARK_TEXT: Record<NonNullable<RowMark["tone"]>, string> = {
+  risk: "text-(--tracking-amber)",
+  late: "text-(--tracking-red)",
+};
 
 const LABEL_X = 16;
 const LEGEND: readonly CaseTone[] = ["done", "review", "progress", "blocked", "todo"];
 
-function RowLabel({ row, onOpen }: Pick<RowProps, "row" | "onOpen">) {
+function RowLabel({ row, mark, onOpen }: Pick<RowProps, "row" | "mark" | "onOpen">) {
+  const tone = mark?.tone === undefined ? null : MARK_TEXT[mark.tone];
   const content = (
     <>
-      <span className="font-mono text-[12px] text-(--tracking-mfg)">{row.row.shortKey}</span>
+      <span className={`font-mono text-[12px] ${tone ?? "text-(--tracking-mfg)"}`}>{row.row.shortKey}</span>
       <span className="truncate text-[12.5px] text-(--tracking-fg)">{row.row.title}</span>
+      {mark?.note && (
+        <span className={`shrink-0 whitespace-nowrap text-[11px] ${tone ?? "text-(--tracking-dim)"}`}>
+          {mark.note}
+        </span>
+      )}
     </>
   );
   const className = "absolute flex max-w-[226px] items-center gap-[8px] leading-[15px]";
@@ -47,10 +74,10 @@ function RowLabel({ row, onOpen }: Pick<RowProps, "row" | "onOpen">) {
   );
 }
 
-function Row({ row, last, width, onOpen }: RowProps) {
+function Row({ row, mark, last, width, onOpen }: RowProps) {
   return (
-    <div data-feature={row.row.shortKey}>
-      <RowLabel row={row} onOpen={onOpen} />
+    <div data-feature={row.row.shortKey} data-mark={mark?.tone}>
+      <RowLabel row={row} mark={mark} onOpen={onOpen} />
       <StepCases cases={row.cases} y={row.y} />
       {row.slip && (
         <span
@@ -81,20 +108,57 @@ function Row({ row, last, width, onOpen }: RowProps) {
   );
 }
 
-function Today({ layout }: { layout: TimelineLayout }) {
+const TODAY_ROOM = 22;
+
+const TODAY_WIDTH = 90;
+const CUSTOM_WIDTH = 140;
+const MARK_WIDTH = 110;
+const ROW_LABEL_WIDTH = 226;
+
+type Span = readonly [number, number];
+
+function labelSpan(todayX: number, label: string | undefined): Span {
+  return label === undefined ? [todayX, todayX + 6 + TODAY_WIDTH] : [todayX - 6 - CUSTOM_WIDTH, todayX];
+}
+
+function lastRowSpans(layout: TimelineLayout): Span[] {
+  const row = layout.rows.at(-1);
+  if (row === undefined) return [];
+  const marks = [row.slip, row.blocked].flatMap((m): Span[] => (m === null ? [] : [[m.x, m.x + MARK_WIDTH]]));
+  return [
+    [LABEL_X, LABEL_X + ROW_LABEL_WIDTH],
+    ...row.cases.map((c): Span => [c.x, c.x + c.width]),
+    ...marks,
+  ];
+}
+
+function roomFor(layout: TimelineLayout, label?: string): number {
+  if (layout.todayX === null) return 0;
+  const [a, b] = labelSpan(layout.todayX, label);
+  return lastRowSpans(layout).some(([x, y]) => x < b && y > a) ? TODAY_ROOM : 0;
+}
+
+function Today({ layout, label }: { layout: TimelineLayout; label: string | undefined }) {
   if (layout.todayX === null) return null;
+  const room = roomFor(layout, label);
+  const height = layout.height + room;
+  const left = label === undefined ? layout.todayX + 6 : layout.todayX - 6;
   return (
     <>
       <span
         aria-hidden
         className="absolute w-[2px] bg-(--tracking-fg)"
-        style={{ left: layout.todayX, top: 24, height: layout.height - 24 }}
+        style={{ left: layout.todayX, top: 24, height: height - 24 }}
       />
       <span
-        className="absolute rounded-[4px] bg-primary px-[6px] py-px font-semibold text-[12px] text-primary-foreground leading-[15px]"
-        style={{ left: layout.todayX + 6, top: layout.height - 24 }}
+        className="absolute whitespace-nowrap rounded-[4px] bg-primary px-[6px] py-px font-semibold text-[12px] text-primary-foreground leading-[15px]"
+        style={{
+          left,
+          top: room === 0 ? layout.height - 24 : height - 20,
+          ...(label === undefined ? {} : { transform: "translateX(-100%)" }),
+        }}
       >
-        {t.today}
+        {label ?? t.today}
       </span>
     </>
   );
@@ -104,24 +168,32 @@ function Grid({
   layout,
   g,
   onOpen,
+  todayLabel,
+  marks,
 }: {
   layout: TimelineLayout;
   g: TimelineGeometry;
   onOpen?(id: string): void;
+  todayLabel?: string | undefined;
+  marks: Marks;
 }) {
   return (
-    <div className="relative shrink-0" style={{ width: layout.width, height: layout.height }}>
-      <TimelineHeader columns={layout.columns} height={layout.height} g={g} />
+    <div
+      className="relative shrink-0"
+      style={{ width: layout.width, height: layout.height + roomFor(layout, todayLabel) }}
+    >
+      <TimelineHeader columns={layout.columns} height={layout.height + roomFor(layout, todayLabel)} g={g} />
       {layout.rows.map((row, i) => (
         <Row
           key={row.row.featureId}
           row={row}
+          mark={marks.get(row.row.featureId)}
           last={i === layout.rows.length - 1}
           width={layout.width}
           onOpen={onOpen}
         />
       ))}
-      <Today layout={layout} />
+      <Today layout={layout} label={todayLabel} />
     </div>
   );
 }
@@ -144,7 +216,11 @@ function Legend() {
   );
 }
 
-export function SprintTimeline({ columns, rows, today, collapsed, onOpen, legend = false }: Props) {
+export function SprintTimeline(props: Props) {
+  const { columns, rows, today, collapsed, onOpen, legend = false, todayLabel } = props;
+  const marks: Marks = new Map(
+    [...rows, ...(collapsed?.rows ?? [])].map((r) => [r.featureId, { tone: r.tone, note: r.note }]),
+  );
   const [open, setOpen] = useState(false);
   const g = TIMELINE_GEOMETRY;
   const layout = timelineLayout({ columns, rows, today }, g);
@@ -154,7 +230,7 @@ export function SprintTimeline({ columns, rows, today, collapsed, onOpen, legend
   return (
     <section aria-label={t.timeline} className="flex min-w-0 flex-col">
       <div className="overflow-x-auto">
-        <Grid layout={layout} g={g} onOpen={onOpen} />
+        <Grid layout={layout} g={g} onOpen={onOpen} todayLabel={todayLabel} marks={marks} />
         {collapsed && collapsed.rows.length > 0 && (
           <button
             type="button"
@@ -165,7 +241,7 @@ export function SprintTimeline({ columns, rows, today, collapsed, onOpen, legend
             {collapsed.label}
           </button>
         )}
-        {extra && <Grid layout={extra} g={folded} onOpen={onOpen} />}
+        {extra && <Grid layout={extra} g={folded} onOpen={onOpen} marks={marks} />}
       </div>
       {legend && <Legend />}
     </section>

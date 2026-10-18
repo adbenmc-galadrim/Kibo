@@ -103,6 +103,7 @@ export function viewOf(over: Partial<TicketView> & Pick<TicketView, "id" | "titl
     keyLabel: over.id.toUpperCase(),
     openQuestions: 0,
     startable: false,
+    startReason: null,
     effectiveSprintId: null,
     feature: null,
     session: null,
@@ -147,12 +148,13 @@ export const SPRINT_VIEWS: SprintView[] = SPRINTS.map(([code, name, start, end])
     features: features.map((f) => key(f.n)),
     delivered: features.filter((f) => f.steps.every((s) => s.status === "done" || s.optional)).length,
     total: features.length,
+    lingering: false,
   };
 });
 
 export const BLOCKING: ReadonlyMap<string, string> = new Map([["EMIS-51", "Q14"]]);
 
-export function emisTickets(): TicketView[] {
+export function emisTickets(today: string = TODAY): TicketView[] {
   const rows = FEATURES.flatMap((f) => [
     viewOf({
       id: key(f.n),
@@ -183,7 +185,7 @@ export function emisTickets(): TicketView[] {
             steps: featureSteps({ feature: t.id, tickets, links: [] }),
             blockingQuestions: new Set(BLOCKING.keys()),
             sprint: t.sprintId === null ? null : (sprints.get(t.sprintId) ?? null),
-            today: TODAY,
+            today,
           }),
         },
   );
@@ -223,6 +225,7 @@ export const META: ProjectMeta = {
   delivery: null,
   tracking: null,
   description: "Suivi de chantier",
+  client: null,
 };
 
 export const emisSnapshot = () => ({

@@ -3,6 +3,7 @@ import {
   iconUrl,
   type ProjectSummary,
   type TabTarget,
+  type TicketView,
   targetProjectId,
 } from "@kibo/schema";
 import { SidebarInset } from "@kibo/sdk/ui/sidebar";
@@ -16,7 +17,7 @@ import { useRoute } from "../route";
 import { useConfig, useNow } from "../state/use-agents";
 import { describeTarget } from "../tabs/tab-title";
 import { activeTarget } from "../tabs/tabs-model";
-import { targetToHash } from "../tabs/target-hash";
+import { resolveProjectKey, targetToHash } from "../tabs/target-hash";
 import { useHashSync } from "../tabs/use-hash-sync";
 import type { TabsApi } from "../tabs/use-tabs";
 import { cycleTheme } from "../theme";
@@ -24,7 +25,6 @@ import { AgentsShellProvider } from "./AgentsShellProvider";
 import { AppSidebar } from "./AppSidebar";
 import { ContentView } from "./ContentView";
 import { HostProvider } from "./Host";
-import { helpPatch } from "./help-dialogs";
 import { TutorialSlot } from "./lazy-dialogs";
 import {
   AgentPanel,
@@ -34,7 +34,7 @@ import {
   RunSidePanel,
 } from "./lazy-screens";
 import { ExecutionGate } from "./nav/ExecutionGate";
-import { HiddenScreenSlot } from "./nav/HiddenScreenSlot";
+import { RetiredRedirect } from "./nav/lazy-nav";
 import { WorkspaceFrame } from "./nav/WorkspaceFrame";
 import { PageActionsProvider } from "./page-actions";
 import { ScreenView } from "./ScreenView";
@@ -42,6 +42,7 @@ import type { ShellProps } from "./Shell";
 import { ShellDialogs } from "./ShellDialogs";
 import { ShellHeader } from "./ShellHeader";
 import { fileTabOpener, paletteActionHandler } from "./shell-actions";
+import { sidebarHandlers } from "./sidebar-handlers";
 import { useAppHelp } from "./use-app-help";
 import { useOpenView, useSnapshotLookup } from "./use-open-view";
 import { useProjectAgentPanel } from "./use-project-agent-panel";
@@ -49,8 +50,10 @@ import { useProjectFocus } from "./use-project-focus";
 import { useProjectLanding } from "./use-project-landing";
 import { useRunPanel } from "./use-run-panel";
 import { useScreenVisit } from "./use-screen-visit";
+import { useSheetAddress } from "./use-sheet-address";
 import { useShellDialogs } from "./use-shell-dialogs";
 import { useWorkspaceHost } from "./use-workspace-host";
+import { useWorkspaceNav } from "./use-workspace-nav";
 import { useWorkspaceSnapshots } from "./use-workspace-snapshots";
 import { useWorkspaceTabs } from "./use-workspace-tabs";
 import { useWorkspaceView } from "./use-workspace-view";
@@ -60,41 +63,35 @@ type WorkspaceProps = ShellProps & { projects: ProjectSummary[]; tabs: TabsApi; 
 
 export function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceProps) {
   const route = useRoute();
-  useHashSync(tabs, route.target);
+  const shell = useShellDialogs();
+  const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = shell;
+  const sheetTickets = useRef<readonly TicketView[] | null>(null);
+  const closeSheet = useCallback(() => set({ sheet: null }), [set]);
+  const routeTarget = resolveProjectKey(route.target, projects);
+  useHashSync(
+    tabs,
+    useSheetAddress(dialogs.sheet, () => sheetTickets.current, routeTarget, closeSheet),
+  );
   const active = activeTarget(tabs.state);
   const screen = active?.kind === "screen" ? active.screen : null;
   const activeProjectId = active ? targetProjectId(active) : null;
-  const { lastProjectId, ticketProject, project, projectRef, currentProject, forget } =
-    useProjectFocus(activeProjectId);
+  const { ticketProject, project, projectRef, currentProject, forget } = useProjectFocus(activeProjectId);
   useProjectLanding(tabs, project);
   const { snapshots, mineCount, inboxCount } = useWorkspaceSnapshots(projects, viewer);
   const config = useConfig();
   const now = useNow();
   const git = useProjectGit(ticketProject?.meta.id ?? null, ticketProject?.meta.folder ?? null);
-  const shell = useShellDialogs();
-  const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = shell;
   const agentPanel = useProjectAgentPanel(project);
   const runPanel = useRunPanel(activeProjectId, agentPanel);
   useRunNotifications(agents, notifications === "browser", runPanel.open);
   useAppHelp(set);
   const editRequests = useRef(new Set<string>());
-  const { open } = tabs;
 
   const describe = (t: TabTarget) => describeTarget(t, { projects, snapshots, runs: agents?.runs });
   useWindowTitle(active ? describe(active).title : null);
   useDesktopIntegration();
 
-  const launch = useCallback(() => set({ assign: { projectId: null, ticketId: null } }), [set]);
-  const go = useCallback(
-    (target: TabTarget | null, newTab = false, keep?: boolean) =>
-      open(target, keep === undefined ? { newTab } : { newTab, keep }),
-    [open],
-  );
-  const closeProject = (projectId: string) => {
-    tabs.dispatch({ type: "closeProject", projectId });
-    forget(projectId);
-    go(null);
-  };
+  const { go, goHome, launch, closeProject } = useWorkspaceNav({ tabs, set, forget });
   const views = useOpenView(currentProject, go, useSnapshotLookup(snapshots));
   const screenVisit = useScreenVisit(screen, go);
 
@@ -126,6 +123,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     activeProjectId,
     agents,
   });
+  sheetTickets.current = sheetProject?.tickets ?? null;
 
   return (
     <HostProvider host={host}>
@@ -149,8 +147,6 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
               active={project}
               activeTarget={active}
               screen={screen}
-              agents={agents}
-              changes={git.hasRepo ? { count: git.changesCount } : null}
               mineCount={mineCount}
               inboxCount={inboxCount}
               workspaceName={config?.workspaceName ?? null}
@@ -158,17 +154,9 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                 config?.workspaceIcon ? iconUrl({ kind: "workspace" }, config.workspaceIcon) : null
               }
               viewer={viewer}
-              onHelp={(key) => set(helpPatch(key))}
+              snapshots={snapshots}
               onOpen={screenVisit.open}
-              onSearch={() => setPalette({ newTab: false })}
-              onNewProject={() => set({ newProject: true })}
-              onNewPage={(parentId) => set({ newPageParent: parentId })}
-              onRenamePage={(page) => set({ renamePage: page })}
-              onDeletePage={(page) => set({ deletePage: page })}
-              onShare={(projectId) => set({ share: projectId })}
-              onEditProject={(projectId) => set({ editProject: projectId })}
-              onDeleteProject={(projectId) => set({ deleteProject: projectId })}
-              onJoin={() => set({ join: true })}
+              {...sidebarHandlers(set, setPalette)}
             />
             <SidebarInset className="min-h-0 min-w-0 mr-(--project-agent-w)">
               <ShellHeader
@@ -189,22 +177,16 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
               {project?.sync.shared && (
                 <ProjectStatusBanner projectId={project.meta.id} access={project.sync.access} />
               )}
-              <HiddenScreenSlot screen={screen} onOpen={(t) => go(t)} />
+              <RetiredRedirect target={active} onHome={goHome} />
               <div className="min-h-0 flex-1 overflow-auto" data-viewer={viewer}>
                 {screen ? (
                   <ScreenView
                     key={`${screen}-${screenVisit.visit}`}
                     screen={screen}
-                    projectId={active?.kind === "screen" ? active.projectId : null}
-                    currentProjectId={lastProjectId}
                     viewer={viewer}
                     projects={projects}
                     snapshots={snapshots}
-                    agents={agents}
                     config={config}
-                    now={now}
-                    onAnswer={setFocusRun}
-                    onOpenRun={runPanel.open}
                     onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
                     onAssign={(projectId, ticketId) => set({ assign: { projectId, ticketId } })}
                     onFile={(ticketId) => set({ fileTicket: { ticketId } })}
@@ -218,6 +200,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                     target={active}
                     viewer={viewer}
                     projects={projects}
+                    snapshots={snapshots}
                     inboxCount={inboxCount}
                     project={project}
                     domains={projectDomainsOf(project, config)}
@@ -229,7 +212,6 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                     onSuggestPages={(projectId) => set({ suggestFor: projectId })}
                     onOpen={(t, newTab) => go(t, newTab)}
                     onOpenFile={(ref) => set({ preview: ref })}
-                    onAssign={(ticketId) => set({ assign: { projectId: null, ticketId } })}
                     onOpenTicket={(projectId, ticketId) => set({ sheet: { projectId, ticketId } })}
                   />
                 )}

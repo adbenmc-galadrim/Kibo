@@ -101,6 +101,7 @@ const META: ProjectMeta = {
   delivery: null,
   tracking: null,
   description: "Suivi de chantier",
+  client: null,
 };
 
 function projectHandlers(withPr: boolean, withBinding: boolean) {

@@ -14,18 +14,20 @@ import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { type FormEvent, useId, useState } from "react";
 import { fr } from "./fr";
+import { proposeNextSprint } from "./next-sprint";
 
-type Props = { sprint: SprintView | null; today: string; onClose(): void };
+type Props = { sprint: SprintView | null; sprints: readonly SprintView[]; today: string; onClose(): void };
 
 const t = fr.sprintDialog;
 
-export function SprintDialog({ sprint, today, onClose }: Props) {
+export function SprintDialog({ sprint, sprints, today, onClose }: Props) {
   const sdk = useSdk();
   const id = useId();
-  const [code, setCode] = useState(sprint?.code ?? "");
-  const [name, setName] = useState(sprint?.name ?? "");
-  const [start, setStart] = useState(sprint?.start ?? today);
-  const [end, setEnd] = useState(sprint?.end ?? today);
+  const [initial] = useState(() => sprint ?? proposeNextSprint(sprints, today));
+  const [code, setCode] = useState(initial.code);
+  const [name, setName] = useState(initial.name);
+  const [start, setStart] = useState(initial.start);
+  const [end, setEnd] = useState(initial.end);
   const [error, setError] = useState<string | null>(null);
   const [removing, setRemoving] = useState(false);
   const reversed = start !== "" && end !== "" && end < start;

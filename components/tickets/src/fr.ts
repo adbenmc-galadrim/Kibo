@@ -72,6 +72,14 @@ export const fr = {
   },
   done: (sprint: string | null) => (sprint === null ? "Terminés" : `Terminés dans ${sprint}`),
   loose: "Hors fonctionnalité",
+  attach: {
+    action: "Rattacher à une fonctionnalité…",
+    title: (key: string) => `Rattacher ${key} à une fonctionnalité`,
+    description: "Le ticket devient la dernière étape de la fonctionnalité choisie.",
+    none: "Aucune fonctionnalité dans ce projet.",
+    cancel: "Annuler",
+    failed: (key: string) => `Impossible de rattacher ${key}.`,
+  },
   collapse: (section: string) => `Replier ${section}`,
   expand: (section: string) => `Déplier ${section}`,
   footer:

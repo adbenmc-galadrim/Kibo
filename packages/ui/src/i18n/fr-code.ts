@@ -41,7 +41,7 @@ export const frCode = {
     more: (n: number, keys: string) => `+ ${n} autre${s(n)} : ${keys}`,
     hintNavigate: "naviguer",
     hintOpen: "ouvrir",
-    hintSheet: "ouvrir dans le Sheet",
+    hintSheet: "ouvrir dans le volet",
     hintFilter: "filtrer par type",
     esc: "esc",
     newTicket: "Nouveau ticket",
@@ -242,5 +242,7 @@ export const frCode = {
     INVALID_INPUT: "Requête invalide.",
     NOT_FOUND: "Élément introuvable.",
     FORBIDDEN: "Cette action n'est possible que depuis l'ordinateur où tourne Kibo.",
+    AGENT_EXECUTION_REMOVED:
+      "Kibo ne lance plus d'agent de ticket : le développement se fait dans T3 Code avec /full-delivery.",
   },
 } as const;

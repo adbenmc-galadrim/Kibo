@@ -16,6 +16,7 @@ export const INBOX_META: ProjectMeta = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
 };
 
 export function loadInbox(store: Store): LoroDoc {

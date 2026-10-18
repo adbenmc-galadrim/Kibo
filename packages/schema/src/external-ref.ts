@@ -19,6 +19,7 @@ export const GithubPrRef = z.object({
   head: z.string().nullable().default(null),
   review: PrReview.default("none"),
   checks: PrChecks.nullable().default(null),
+  failedCheck: z.string().max(200).nullable().optional(),
 });
 export type GithubPrRef = z.infer<typeof GithubPrRef>;
 

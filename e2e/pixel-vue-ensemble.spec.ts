@@ -23,7 +23,7 @@ test("the Vue d'ensemble of Emis with the tracking panel open matches the mockup
     masks: PIXEL_MASKS["vue-ensemble"],
     content: contentBox(241, HEIGHT),
     root: (p) => p.locator("[data-view-body]"),
-    outDir: screensDir("2026-10-17-t16"),
+    outDir: screensDir("2026-10-18-p27-t20"),
     contentInformative: true,
   });
 });

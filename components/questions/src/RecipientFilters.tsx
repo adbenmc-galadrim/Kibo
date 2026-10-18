@@ -4,19 +4,19 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { Plus } from "lucide-react";
-import { type FormEvent, type ReactNode, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { fr } from "./fr";
-import type { RecipientCounts } from "./questions-logic";
+import { CLIENT_RECIPIENT, type RecipientCounts, recipientName } from "./questions-logic";
 
 const ALL = "*";
 
 type Props = {
   recipients: readonly QuestionRecipient[];
+  client: string | null;
   counts: RecipientCounts;
   value: string | null;
   readOnly: boolean;
   onChange(recipient: string | null): void;
-  children?: ReactNode;
 };
 
 function Pill({ value, name, count }: { value: string; name: string; count: number }) {
@@ -24,10 +24,10 @@ function Pill({ value, name, count }: { value: string; name: string; count: numb
     <ToggleGroupItem
       value={value}
       aria-label={fr.recipients.filter(name, count)}
-      className="h-7 gap-1.5 rounded-full border px-3 text-xs font-normal first:rounded-full last:rounded-full data-[state=on]:border-foreground"
+      className="h-5.75 gap-1.5 rounded-md border px-2.5 text-[12.5px] font-medium text-muted-foreground first:rounded-md last:rounded-md data-[state=on]:border-muted-foreground data-[state=on]:text-foreground"
     >
       {name}
-      <span className="text-muted-foreground">{count}</span>
+      <span className="font-mono text-[11px] font-normal text-muted-foreground">{count}</span>
     </ToggleGroupItem>
   );
 }
@@ -38,9 +38,15 @@ function AddRecipient() {
   const [failure, setFailure] = useState<string | null>(null);
   if (name === null)
     return (
-      <Button variant="ghost" size="sm" className="h-7 text-xs font-normal" onClick={() => setName("")}>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label={fr.recipients.add}
+        title={fr.recipients.addLabel}
+        className="size-6.5 p-0 text-muted-foreground"
+        onClick={() => setName("")}
+      >
         <Plus aria-hidden />
-        {fr.recipients.add}
       </Button>
     );
   const submit = async (e: FormEvent) => {
@@ -78,27 +84,29 @@ function AddRecipient() {
   );
 }
 
-export function RecipientFilters({ recipients, counts, value, readOnly, onChange, children }: Props) {
+export function RecipientFilters({ recipients, client, counts, value, readOnly, onChange }: Props) {
+  const count = (id: string) => counts.byRecipient.get(id) ?? 0;
+  const shown = recipients
+    .filter((r) => r.id === value || count(r.id) > 0)
+    .sort((a, b) => Number(b.id === CLIENT_RECIPIENT) - Number(a.id === CLIENT_RECIPIENT));
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
+    <div className="flex items-center gap-1">
       <ToggleGroup
         type="single"
         size="sm"
         aria-label={fr.recipients.label}
-        className="flex-wrap gap-1.5"
+        className="flex-wrap gap-1"
         value={value ?? ALL}
         onValueChange={(v) => {
           if (v !== "") onChange(v === ALL ? null : v);
         }}
       >
         <Pill value={ALL} name={fr.recipients.all} count={counts.total} />
-        {recipients.map((r) => (
-          <Pill key={r.id} value={r.id} name={r.name} count={counts.byRecipient.get(r.id) ?? 0} />
+        {shown.map((r) => (
+          <Pill key={r.id} value={r.id} name={recipientName(recipients, r.id, client)} count={count(r.id)} />
         ))}
       </ToggleGroup>
       {!readOnly && <AddRecipient />}
-      <span className="flex-1" />
-      {children}
     </div>
   );
 }

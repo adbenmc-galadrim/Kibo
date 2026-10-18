@@ -27,6 +27,7 @@ const question = (patch: Partial<Question> & Pick<Question, "id" | "createdAt">)
   provisional: null,
   blocking: false,
   createdBy: { kind: "agent", ref: "opus-dev-2" },
+  number: null,
   importRef: null,
   answer: null,
   recipient: "me",

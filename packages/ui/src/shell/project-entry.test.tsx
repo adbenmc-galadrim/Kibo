@@ -19,6 +19,7 @@ const summary = (demo: boolean): ProjectSummary => ({
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
   demo,
 });
@@ -56,4 +57,12 @@ test("the demo project carries a Démo badge after its name, other projects do n
   unmount();
   show(summary(false));
   expect(screen.queryByText("Démo")).toBeNull();
+});
+
+test("the project row reserves the room of its hover actions and its Démo badge yields to them", () => {
+  show(summary(true));
+  const row = screen.getByText("Démo Kibo").closest("button");
+  expect(row?.classList.contains("k-project-row")).toBe(true);
+  expect(row?.getAttribute("data-actions")).toBe("1");
+  expect(screen.getByText("Démo").classList.contains("k-yield")).toBe(true);
 });

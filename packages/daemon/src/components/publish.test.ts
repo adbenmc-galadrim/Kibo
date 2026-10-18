@@ -85,6 +85,7 @@ beforeEach(() => {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   updates = [];
   failFor = null;

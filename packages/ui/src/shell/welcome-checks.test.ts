@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { Environment, SandboxStatus } from "@kibo/schema";
+import type { Environment } from "@kibo/schema";
 import { welcomeChecks } from "./welcome-checks";
 
 const base: Environment = {
@@ -24,90 +24,76 @@ const base: Environment = {
     daemonPid: 42,
     uptimeMs: 0,
     fixedNow: null,
+    today: "2026-10-16",
   },
 };
 
-const isolated: SandboxStatus = {
-  kind: "bwrap",
-  available: true,
-  reason: null,
-  fix: null,
-  allowUnsandboxed: false,
-};
-
-const byId = (env: Environment, sandbox: SandboxStatus | null, id: string) => {
-  const row = welcomeChecks(env, sandbox).find((c) => c.id === id);
+const byId = (env: Environment, id: string) => {
+  const row = welcomeChecks(env).find((c) => c.id === id);
   if (!row) throw new Error(`missing row ${id}`);
   return row;
 };
 
-test("claude missing: warn, help with the two commands, retry", () => {
-  const [, claude] = welcomeChecks(
-    { ...base, ai: { ...base.ai, available: false, reason: "missing", loggedIn: null, version: null } },
-    null,
-  );
-  expect(claude).toMatchObject({ id: "claude", state: "warn", retry: true });
-  expect(claude?.help?.commands).toEqual(["npm install -g @anthropic-ai/claude-code", "claude"]);
-  expect(claude?.detail).toBe("claude introuvable dans le PATH · les agents sont désactivés");
-});
-
-test("claude logged out: warn with /login help", () => {
-  const claude = byId(
-    { ...base, ai: { ...base.ai, available: false, reason: "logged_out", loggedIn: false } },
-    null,
-    "claude",
-  );
-  expect(claude).toMatchObject({ state: "warn", retry: true, detail: "claude détecté · non connecté" });
-  expect(claude.help?.text).toContain("/login");
-  expect(claude.help?.commands).toEqual(["claude"]);
-});
-
-test("git and gh are two rows; gh missing is optional, git missing is warn with retry", () => {
-  const env = { ...base, git: null, gh: null };
-  expect(welcomeChecks(env, null).map((c) => c.id)).toEqual([
-    "daemon",
-    "claude",
-    "git",
-    "gh",
-    "capacity",
-    "github",
+test("only what tracking needs: git, gh, Claude Code for the project agent and the GitHub account", () => {
+  expect(welcomeChecks(base).map((c) => [c.id, c.title])).toEqual([
+    ["git", "Git"],
+    ["gh", "GitHub CLI"],
+    ["claude", "Claude Code · pour l'agent de projet"],
+    ["github", "Compte GitHub"],
   ]);
-  expect(byId(env, null, "git")).toMatchObject({
+});
+
+test("claude missing or logged out is optional: only the project agent is unavailable", () => {
+  const missing = byId(
+    { ...base, ai: { ...base.ai, available: false, reason: "missing", loggedIn: null, version: null } },
+    "claude",
+  );
+  expect(missing).toMatchObject({
+    state: "optional",
+    retry: true,
+    detail: "claude introuvable · l'agent de projet n'est pas disponible",
+  });
+  expect(missing.help?.commands).toEqual(["npm install -g @anthropic-ai/claude-code", "claude"]);
+  const loggedOut = byId(
+    { ...base, ai: { ...base.ai, available: false, reason: "logged_out", loggedIn: false } },
+    "claude",
+  );
+  expect(loggedOut).toMatchObject({
+    state: "optional",
+    detail: "claude détecté · non connecté, l'agent de projet n'est pas disponible",
+  });
+  expect(loggedOut.help?.commands).toEqual(["claude"]);
+  expect(byId(base, "claude")).toMatchObject({
+    state: "ok",
+    detail: "claude détecté · connecté à ton abonnement",
+  });
+});
+
+test("git missing: warn with retry, branches are not followed", () => {
+  expect(byId({ ...base, git: null }, "git")).toMatchObject({
     state: "warn",
     retry: true,
-    title: "Git",
-    detail: "git introuvable",
+    detail: "git introuvable · sans lui, Kibo ne suit pas les branches",
   });
-  expect(byId(env, null, "gh")).toMatchObject({
-    state: "optional",
-    retry: false,
-    title: "GitHub CLI",
-    detail: "gh introuvable · facultatif",
+});
+
+test("gh missing is not optional: warn, what is lost, and how to install it", () => {
+  const gh = byId({ ...base, gh: null }, "gh");
+  expect(gh).toMatchObject({
+    state: "warn",
+    retry: true,
+    detail: "gh introuvable · sans lui, ni PR, ni review, ni CI dans Kibo",
   });
-  expect(byId(base, null, "gh")).toMatchObject({
+  expect(gh.help?.commands).toEqual(["brew install gh", "gh auth login"]);
+  expect(byId(base, "gh")).toMatchObject({
     state: "ok",
-    detail: "gh 2.80 · pour les PR et la CI depuis Kibo",
+    detail: "gh 2.80 · remonte les PR, leur review et la CI",
   });
 });
 
-test("a stopped isolation is a warn row with its fix command", () => {
-  const sandbox = {
-    ...isolated,
-    available: false,
-    reason: "bubblewrap (bwrap) is not installed",
-    fix: "sudo apt install bubblewrap",
-  };
-  const row = byId(base, sandbox, "isolation");
-  expect(row).toMatchObject({ state: "warn", retry: true });
-  expect(row.help).toEqual({
-    text: "Pour réactiver l'isolation, lance :",
-    commands: ["sudo apt install bubblewrap"],
-  });
-});
-
-test("all green: no help, no retry", () => {
-  const rows = welcomeChecks(base, isolated);
-  expect(rows.map((c) => c.id)).toEqual(["daemon", "claude", "git", "gh", "capacity", "isolation", "github"]);
+test("all green: no help, no retry, the account stays to connect", () => {
+  const rows = welcomeChecks(base);
   expect(rows.every((c) => c.help === undefined && !c.retry)).toBe(true);
   expect(rows.filter((c) => c.state !== "ok").map((c) => c.id)).toEqual(["github"]);
+  expect(byId({ ...base, github: { connected: true } }, "github").state).toBe("ok");
 });

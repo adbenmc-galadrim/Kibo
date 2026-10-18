@@ -31,7 +31,7 @@ export type ProjectAgentDataPort = {
 
 export type ProjectAgentAgentsPort = Pick<
   Orchestrator,
-  "startProjectRun" | "answer" | "cancel" | "assign" | "state" | "log"
+  "startProjectRun" | "answer" | "cancel" | "assign" | "state" | "log" | "ticketExecution"
 > & { deliverAnswers(projectId: string, ticketId: string): DeliveryResult };
 
 export type ProjectAgentOps = {

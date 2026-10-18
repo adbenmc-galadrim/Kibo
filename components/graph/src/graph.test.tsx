@@ -221,7 +221,10 @@ test("§22.1: in the hierarchical layout the isolated block is labelled, and onl
 
 test("D9: empty states", async () => {
   setup("view", null);
-  expect(await screen.findByText("Aucune dépendance entre les tickets affichés.")).toBeTruthy();
+  expect(
+    await screen.findByText("Les dépendances entre fonctionnalités et étapes apparaissent ici."),
+  ).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Nouvelle fonctionnalité" })).toBeTruthy();
 });
 
 test("D9: empty widget", async () => {

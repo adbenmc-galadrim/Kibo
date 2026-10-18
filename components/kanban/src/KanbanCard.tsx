@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import type { AgentExecution, DeliveryKind, Status, StatusId } from "@kibo/schema";
-import { copyDeliveryCommand, type DeliverEntry } from "@kibo/sdk";
+import { type DeliverEntry, stepTitle, useSdk } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
@@ -39,6 +39,7 @@ export function KanbanCard(props: Props) {
     onRemove,
     onDeliver,
   } = props;
+  const sdk = useSdk();
   const sortable = useSortable({ id: t.id, disabled: readOnly, attributes: { role: "article" } });
   const { attributes, listeners, transform, transition, isDragging } = sortable;
   const ref = (node: HTMLElement | null) => {
@@ -58,13 +59,8 @@ export function KanbanCard(props: Props) {
     deliver,
     execution,
     texts: fr,
-    actions: {
-      open: onOpen,
-      move: onMove,
-      remove: onRemove,
-      deliver: onDeliver,
-      copyDelivery: (command) => void copyDeliveryCommand(command),
-    },
+    sdk,
+    actions: { open: onOpen, move: onMove, remove: onRemove, deliver: onDeliver },
   });
   const menu = !readOnly && (
     <DropdownMenu>
@@ -87,7 +83,7 @@ export function KanbanCard(props: Props) {
   );
   const title = (
     <button type="button" className={cn(CARD_TITLE_CLASS, "cursor-pointer")} onClick={onOpen}>
-      {t.title}
+      {stepTitle(t, props.group)}
     </button>
   );
   return (
@@ -109,6 +105,7 @@ export function KanbanCard(props: Props) {
             insertion &&
               "before:-top-1.5 before:absolute before:inset-x-1 before:h-0.5 before:rounded-full before:bg-ring",
             t.key === null && "border-dashed",
+            t.session && "border-(--tracking-brand-line)",
             selected === true && "ring-2 ring-ring ring-inset",
             selected === false && !isDragging && "opacity-50",
           )}

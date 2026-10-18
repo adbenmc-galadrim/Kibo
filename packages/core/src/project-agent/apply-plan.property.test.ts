@@ -25,6 +25,7 @@ const base: BatchContext = {
   viewer: "adam",
   signals: [],
   closedSignals: [],
+  agentExecution: "shown",
 };
 
 const why = "";

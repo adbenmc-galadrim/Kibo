@@ -2,7 +2,14 @@ import { expect, test } from "bun:test";
 import type { CiRun, ProjectSnapshot } from "@kibo/schema";
 import { featureActivity, featureQuestions } from "./feature-feed";
 import { featureDependencies } from "./feature-links";
-import { featureBadge, nextStep, type StepFacts, sprintFacts, stepModels } from "./feature-model";
+import {
+  featureBadge,
+  nextStartableStep,
+  nextStep,
+  type StepFacts,
+  sprintFacts,
+  stepModels,
+} from "./feature-model";
 import { emisFeatureProject, NOW, SESSION_RUN } from "./fixture";
 
 const project = emisFeatureProject();
@@ -78,8 +85,46 @@ test("the next step to deliver is the first one not started, or back in review w
   expect(nextStep(steps.map((s) => ({ ...s, statusId: "done" as const })))).toBeNull();
 });
 
-test("the fixture F5 is late on the last day of S42 (end ≤ today, §37.3)", () => {
-  expect(f5().feature?.status).toBe("late");
+const startability = (patch: Record<string, Partial<ProjectSnapshot["tickets"][number]>>) =>
+  project.tickets.map((t) => ({ ...t, ...patch[t.id] }));
+
+test("the action proposes only a startable step, the first one in order", () => {
+  const steps = stepModels(project, "f5", facts());
+  const tickets = startability({ e35: { startable: true } });
+  expect(nextStartableStep(steps, tickets)).toEqual({
+    step: expect.objectContaining({ key: "EMIS-35" }),
+    reason: null,
+  });
+  const both = startability({ e34: { startable: true }, e35: { startable: true } });
+  expect(nextStartableStep(steps, both)?.step.key).toBe("EMIS-34");
+});
+
+test("with no startable step, the next step comes with the reason it waits", () => {
+  const steps = stepModels(project, "f5", facts());
+  expect(nextStartableStep(steps, project.tickets)).toEqual({
+    step: expect.objectContaining({ key: "EMIS-34" }),
+    reason: { kind: "dependency", keys: ["EMIS-33"] },
+  });
+  expect(
+    nextStartableStep(
+      steps.map((s) => ({ ...s, statusId: "done" as const })),
+      project.tickets,
+    ),
+  ).toBeNull();
+});
+
+test("a step back in review with changes requested is proposed as a touch-up", () => {
+  const steps = stepModels(project, "f5", facts()).map((s) =>
+    s.pr && s.key === "EMIS-32" ? { ...s, pr: { ...s.pr, review: "changes_requested" as const } } : s,
+  );
+  expect(nextStartableStep(steps, project.tickets)).toEqual({
+    step: expect.objectContaining({ key: "EMIS-32" }),
+    reason: null,
+  });
+});
+
+test("the fixture F5 is still open on the last day of S42, late only the day after (§39.6.18)", () => {
+  expect(f5().feature?.status).toBe("open");
   expect(f5().feature?.remaining).toBe(4);
 });
 
@@ -88,32 +133,33 @@ const withStatus = (status: "open" | "late") => {
   if (!state) throw new Error("F5 is a feature");
   return { ...f5(), feature: { ...state, status } };
 };
+const f5Steps = () => stepModels(project, "f5", facts());
+const on = (today: string) => ({ today, steps: f5Steps() });
 
-test("a late feature in a running sprint will not fit and can move to the next sprint", () => {
-  const facts = sprintFacts(project, withStatus("late"));
-  expect(facts.sprint?.id).toBe("s42");
-  expect(facts.following?.id).toBe("s43");
-  expect(facts.warning).toEqual({ kind: "wontFit", remaining: 4 });
+test("on the last day of S42, F5 is at risk: it will not fit and can move to the next sprint", () => {
+  const sprint = sprintFacts(project, withStatus("open"), on("2026-10-16"));
+  expect(sprint.sprint?.id).toBe("s42");
+  expect(sprint.following?.id).toBe("s43");
+  expect(sprint.warning).toEqual({ kind: "wontFit", remaining: 4 });
   expect(featureBadge(withStatus("late").feature)).toBe("late");
 });
 
-test("an open feature gets no warning, whatever the dates", () => {
+test("early in the sprint, a feature with enough working days left gets no warning", () => {
   const open = withStatus("open");
-  expect(sprintFacts(project, open).warning).toBeNull();
+  expect(sprintFacts(project, open, on("2026-10-12")).warning).toBeNull();
   expect(featureBadge(open.feature)).toBe("open");
 });
 
-test("a late feature whose sprint is done says the sprint is over", () => {
-  const sprints = project.sprints.map((s) => (s.id === "s42" ? { ...s, state: "done" as const } : s));
-  expect(sprintFacts({ ...project, sprints }, withStatus("late")).warning).toEqual({
+test("the day after S42, a late feature says the sprint is over", () => {
+  expect(sprintFacts(project, withStatus("late"), on("2026-10-17")).warning).toEqual({
     kind: "over",
     remaining: 4,
   });
 });
 
 test("an unplanned feature has no sprint and nothing to move", () => {
-  const facts = sprintFacts(project, { ...f5(), sprintId: null });
-  expect(facts).toEqual({ sprint: null, following: null, warning: null });
+  const unplanned = sprintFacts(project, { ...f5(), sprintId: null }, on("2026-10-16"));
+  expect(unplanned).toEqual({ sprint: null, following: null, warning: null });
 });
 
 test("dependencies between features are read on the roots and on their steps", () => {
@@ -132,7 +178,7 @@ test("the activity lists PRs and delivery steps, newest first", () => {
   const steps = stepModels(project, "f5", facts());
   expect(featureActivity(steps, NOW).map((i) => [i.kind, i.text, i.time])).toEqual([
     ["pr_opened", "PR #22 ouverte · EMIS-32", "15:04"],
-    ["step", "Étape 7 · Porte qualité · EMIS-33", "14:51"],
+    ["step", "Phase 7/12 · Porte qualité · EMIS-33", "14:51"],
     ["pr_merged", "PR #19 fusionnée · EMIS-31", "hier"],
   ]);
 });
@@ -151,6 +197,25 @@ test("the open questions of the feature and its steps are listed with their orig
   };
   const answered = { ...q16, id: "q17", answer };
   expect(featureQuestions({ ...project, questions: [q16, answered] }, "f5", NOW)).toEqual([
-    { id: "q16", title: "Quota par affaire : 2 Go ou 5 Go ?", meta: "Q16 · Produit · hier · EMIS-34" },
+    {
+      id: "q16",
+      title: "Quota par affaire : 2 Go ou 5 Go ?",
+      meta: "Q16 · Produit · hier · EMIS-34",
+      blocking: false,
+    },
+  ]);
+});
+
+test("a blocking question asked on the feature is listed with its Qn and flagged blocking", () => {
+  const [q16] = project.questions;
+  if (!q16) throw new Error("fixture without Q16");
+  const onFeature = { ...q16, id: "q1", ticketId: "f5", blocking: true, importRef: null, number: 1 };
+  expect(featureQuestions({ ...project, questions: [onFeature] }, "f5", NOW)).toEqual([
+    {
+      id: "q1",
+      title: "Quota par affaire : 2 Go ou 5 Go ?",
+      meta: "Q1 · Produit · hier · F5",
+      blocking: true,
+    },
   ]);
 });

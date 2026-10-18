@@ -1,5 +1,4 @@
 import {
-  type AgentsState,
   INBOX_ID,
   type ProjectSnapshot,
   type ProjectSummary,
@@ -8,39 +7,24 @@ import {
   type WorkspaceConfig,
 } from "@kibo/schema";
 import { withInbox } from "../lib/inbox";
-import { useExecutionShown } from "../state/use-app-settings";
 import {
-  AgentsPage,
   AppearancePage,
-  ComponentSourcesPage,
-  ComponentsPage,
-  CreationsPage,
-  DomainsPage,
   GeneralPage,
   InboxPage,
   IntegrationsPage,
   MyTicketsPage,
-  QueuePage,
   SecurityPage,
   ShortcutsPage,
-  SkillsPage,
   SyncSettingsPage,
   WorkspacePage,
 } from "./lazy-screens";
-import { isExecutionScreen } from "./nav/execution-visibility";
 
 type Props = {
   screen: Screen;
-  projectId?: string | null;
-  currentProjectId?: string | null;
   viewer: string;
   projects: ProjectSummary[];
   snapshots: ReadonlyMap<string, ProjectSnapshot>;
-  agents: AgentsState | null;
   config: WorkspaceConfig | null;
-  now: number;
-  onAnswer(runId: string): void;
-  onOpenRun(runId: string): void;
   onOpenTicket(projectId: string, ticketId: string): void;
   onAssign(projectId: string, ticketId: string): void;
   onFile(ticketId: string): void;
@@ -51,26 +35,7 @@ type Props = {
 };
 
 export function ScreenView(props: Props) {
-  const {
-    screen,
-    projectId,
-    currentProjectId,
-    projects,
-    agents,
-    config,
-    now,
-    onAnswer,
-    onOpenRun,
-    onOpen,
-    onShare,
-    onDeleteProject,
-    onNewTicket,
-    ...p
-  } = props;
-  const executionShown = useExecutionShown();
-  if (!executionShown && isExecutionScreen(screen)) return null;
-  if (screen === "components") return <ComponentsPage onOpen={onOpen} />;
-  if (screen === "creations") return <CreationsPage agents={agents} now={now} />;
+  const { screen, projects, config, onOpen, onShare, onDeleteProject, onNewTicket, ...p } = props;
   if (screen === "general") return <GeneralPage />;
   if (screen === "integrations") return <IntegrationsPage />;
   if (screen === "appearance") return <AppearancePage />;
@@ -85,7 +50,6 @@ export function ScreenView(props: Props) {
         onDeleteProject={onDeleteProject}
       />
     );
-  if (screen === "sources") return <ComponentSourcesPage />;
   if (screen === "shortcuts") return <ShortcutsPage />;
   if (screen === "mine")
     return <MyTicketsPage projects={withInbox(projects, p.snapshots)} config={config} {...p} />;
@@ -101,20 +65,5 @@ export function ScreenView(props: Props) {
       />
     );
   if (screen === "workspace") return <WorkspacePage config={config} />;
-  if (screen === "skills") return <SkillsPage projects={projects} />;
-  if (!config) return null;
-  if (screen === "domains")
-    return (
-      <DomainsPage
-        config={config}
-        projects={projects}
-        snapshots={p.snapshots}
-        projectId={projectId}
-        currentProjectId={currentProjectId}
-      />
-    );
-  if (!agents) return null;
-  if (screen === "agents")
-    return <AgentsPage state={agents} projects={projects} now={now} onOpenRun={onOpenRun} />;
-  return <QueuePage state={agents} projects={projects} now={now} onAnswer={onAnswer} />;
+  return null;
 }

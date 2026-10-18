@@ -7,6 +7,8 @@ import { fr } from "../i18n/fr";
 import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
 import type { TicketCommand } from "./use-ticket-command";
 
+export const PILL = "h-[26px] w-auto gap-1.5 px-2.5 text-[12.5px] shadow-none";
+
 type Props = { ticket: TicketView; workflow: Status[]; editable: boolean; command: TicketCommand };
 
 export function StatusSelect({ ticket, workflow, editable, command }: Props) {
@@ -26,7 +28,7 @@ export function StatusSelect({ ticket, workflow, editable, command }: Props) {
   return (
     <>
       <Select value={ticket.statusId} onValueChange={pick}>
-        <SelectTrigger size="sm" aria-label={fr.ticket.status} className="w-48">
+        <SelectTrigger size="sm" aria-label={fr.ticket.status} className={PILL}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

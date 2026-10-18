@@ -103,3 +103,19 @@ test("a frame may ask the host to open a sprint", () => {
   });
   expect(FrameToHost.safeParse({ kibo: 1, type: "openSprint", sprintId: "" }).success).toBe(false);
 });
+
+test("a spotlight may ask for a new question on a ticket, or for a new feature", () => {
+  expect(Spotlight.parse({ kind: "newQuestion", ticketId: "f5" })).toEqual({
+    kind: "newQuestion",
+    ticketId: "f5",
+  });
+  expect(Spotlight.parse({ kind: "newFeature" })).toEqual({ kind: "newFeature" });
+  expect(Spotlight.safeParse({ kind: "newQuestion" }).success).toBe(false);
+  expect(Spotlight.safeParse({ kind: "newFeature", ticketId: "f5" }).success).toBe(false);
+  expect(Spotlight.safeParse({ kind: "question", id: "q1", extra: 1 }).success).toBe(false);
+  const open = { kibo: 1, type: "openView", componentId: "questions" };
+  expect(FrameToHost.safeParse({ ...open, intent: { kind: "newQuestion", ticketId: "t1" } }).success).toBe(
+    true,
+  );
+  expect(FrameToHost.safeParse({ ...open, intent: { kind: "ticket" } }).success).toBe(false);
+});

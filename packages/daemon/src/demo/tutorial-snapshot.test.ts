@@ -1,14 +1,11 @@
 import { afterEach, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { putRegistryVersion } from "@kibo/core";
-import { NO_PERMISSIONS, type ProjectMeta, type Ticket } from "@kibo/schema";
+import type { ProjectMeta, Question, Ticket } from "@kibo/schema";
 import { createService } from "../service";
 import { openStore, type Store } from "../store";
-import { noteHashOf } from "./demo-project";
-import { DEMO_NOTE } from "./demo-seed";
-import { aiComponentIds, createTutorialSnapshot } from "./tutorial-snapshot";
+import { createTutorialSnapshot } from "./tutorial-snapshot";
 
 const dirs: string[] = [];
 const stores: Store[] = [];
@@ -30,54 +27,33 @@ function setup() {
     folder: null,
     color: "#F97316",
   }) as ProjectMeta;
-  const notesDir = join(home, "notes", "DEMO");
-  const snapshot = createTutorialSnapshot({
-    docs: service.docs,
-    notesDir: () => notesDir,
-    runs: () => [{ profileId: "system:demo", projectId: meta.id, state: "done" }],
-  });
-  return { service, meta, notesDir, snapshot };
+  const run = (command: object) =>
+    service.handle({ method: "command", projectId: meta.id, command } as never);
+  return { meta, run, snapshot: createTutorialSnapshot({ docs: service.docs }) };
 }
 
-const registryVersion = (origin: "ai" | "user") => ({
-  version: "0.1.0",
-  hash: "a".repeat(64),
-  origin,
-  trust: "sandboxed" as const,
-  approvedHash: null,
-  granted: NO_PERMISSIONS,
-  publishedAt: 1,
-  autoUpdate: false,
-  source: null,
-  revoked: null,
-});
-
-test("the snapshot reads the demo doc, the welcome note, the runs and the ai components", () => {
-  const { service, meta, notesDir, snapshot } = setup();
-  const ticket = service.handle({
-    method: "command",
-    projectId: meta.id,
-    command: { method: "createTicket", title: "Essai", statusId: "in_progress" },
-  }) as Ticket;
-  expect(snapshot(meta.id)?.noteHash).toBeNull();
-  mkdirSync(notesDir, { recursive: true });
-  writeFileSync(join(notesDir, DEMO_NOTE.path), "# Bienvenue\n");
-  putRegistryVersion(service.docs.workspace, "chart", "Graphique", registryVersion("ai"));
-  const snap = snapshot(meta.id);
-  expect(snap?.tickets.map((t) => [t.id, t.statusId])).toEqual([[ticket.id, "in_progress"]]);
-  expect(snap?.noteHash).toBe(noteHashOf("# Bienvenue\n"));
-  expect(snap?.runs).toEqual([{ profileId: "system:demo", projectId: meta.id, state: "done" }]);
-  expect(snap?.aiComponentIds).toEqual(["chart"]);
+test("the snapshot reads the tickets and whether each question is answered", () => {
+  const { meta, run, snapshot } = setup();
+  const feature = run({ method: "createTicket", title: "Panier", feature: true }) as Ticket;
+  const step = run({ method: "createTicket", title: "Paiement", parentId: feature.id }) as Ticket;
+  const by = { kind: "human", ref: "adam" };
+  const question = run({
+    method: "createQuestion",
+    ticketId: step.id,
+    title: "Carte ?",
+    createdBy: by,
+  }) as Question;
+  const before = snapshot(meta.id);
+  expect(before?.tickets.map((t) => [t.id, t.parentId, t.shortKey])).toEqual([
+    [feature.id, null, "F1"],
+    [step.id, feature.id, null],
+  ]);
+  expect(before?.questions).toEqual([{ id: question.id, answered: false }]);
+  run({ method: "answerQuestion", questionId: question.id, answer: { kind: "text", text: "Oui" }, by });
+  expect(snapshot(meta.id)?.questions).toEqual([{ id: question.id, answered: true }]);
 });
 
 test("a deleted project has no snapshot", () => {
   const { snapshot } = setup();
   expect(snapshot("gone")).toBeNull();
-});
-
-test("only components with an ai version count as ai components", () => {
-  const { service } = setup();
-  putRegistryVersion(service.docs.workspace, "mine", "Mien", registryVersion("user"));
-  putRegistryVersion(service.docs.workspace, "chart", "Graphique", registryVersion("ai"));
-  expect(aiComponentIds(service.docs.workspace)).toEqual(["chart"]);
 });

@@ -3,6 +3,7 @@ import type { Parsed } from "../args";
 import type { DaemonClient } from "../daemon-client";
 import { frSprints, frTickets } from "../fr";
 import { type Connect, findProject, printJson, type SessionIo, withClient } from "./daemon-session";
+import { missingProject } from "./project-hint";
 
 type SprintSummary = Pick<SprintView, "id" | "code" | "name" | "start" | "end" | "state"> & {
   features: string[];
@@ -45,6 +46,7 @@ export async function sprintsCommand(
 ): Promise<number> {
   const [sub] = positional;
   const project = flags.project;
+  if (sub === "list" && project === undefined) return missingProject(io, frSprints.usage, connect);
   if (sub !== "list" || typeof project !== "string") {
     io.err(frSprints.usage);
     return 2;

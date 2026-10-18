@@ -24,15 +24,8 @@ const MONTHS = [
   "déc.",
 ];
 
-const REVIEWS: Record<string, string> = {
-  changes_requested: "changements demandés",
-  approved: "approuvée",
-};
-const CHECKS: Record<string, string> = { ok: "CI verte", running: "CI en cours", error: "CI rouge" };
-
 export const frFeature = {
-  kicker: (shortKey: string | null, key: string) =>
-    ["Fonctionnalité", shortKey, key].filter((p) => p !== null).join(" · "),
+  kicker: (shortKey: string | null, key: string) => `Fonctionnalité · ${shortKey ?? key}`,
   badges: {
     late: "en retard",
     open: "ouverte",
@@ -62,6 +55,10 @@ export const frFeature = {
       ? "Prochaine étape à livrer."
       : `Prochaine étape à livrer une fois ${blockers.join(", ")} ${blockers.length > 1 ? "fusionnées" : "fusionné"}.`,
   deliverNext: "Livrer la prochaine étape",
+  copyCommand: "Copier la commande",
+  nextStepWaits: (key: string, reason: string) => `Prochaine étape ${key} : ${reason}.`,
+  noStartableStep: "Aucune étape démarrable pour l'instant.",
+  blockingQuestion: "bloquante",
   copied: "Commande copiée",
   copyRefused: "Copie refusée : sélectionne la commande à la main.",
   sprint: "Sprint",
@@ -84,19 +81,10 @@ export const frFeature = {
   noActivity: "Aucune activité de livraison.",
   prOpened: (n: number, key: string) => `PR #${n} ouverte · ${key}`,
   prMerged: (n: number, key: string) => `PR #${n} fusionnée · ${key}`,
-  stepDone: (step: number, label: string, key: string) => `Étape ${step} · ${label} · ${key}`,
+  stepDone: (phase: string, key: string) => `${phase} · ${key}`,
   events: {
-    branch: (name: string) => `Branche ${name} créée`,
-    prOpened: (n: number) => `PR #${n} ouverte`,
     prMerged: (n: number, delivered: string | null) =>
       delivered === null ? `PR #${n} fusionnée` : `PR #${n} fusionnée · ${delivered} livrée`,
-    review: (n: number, review: string | null) => `PR #${n} · ${REVIEWS[review ?? ""] ?? "review demandée"}`,
-    checks: (n: number, checks: string | null) => `PR #${n} · ${CHECKS[checks ?? ""] ?? "CI sans verdict"}`,
-    status: (label: string) => `Passé en ${label}`,
-    step: (step: number, label: string) => `Étape ${step} · ${label}`,
-    retouch: (step: number, label: string) => `Retouche · ${step} · ${label}`,
-    sessionStarted: "Session démarrée",
-    sessionStopped: "Session terminée",
     sprintCreated: (code: string) => `Sprint ${code} créé`,
     postponed: (feature: string, sprint: string) => `${feature} reportée en ${sprint}`,
     planned: (feature: string, sprint: string) => `${feature} planifiée en ${sprint}`,
@@ -104,13 +92,14 @@ export const frFeature = {
     batchProposed: (seq: number) => `Suivi mis à jour · lot n° ${seq} proposé`,
     batchApplied: (seq: number) => `Lot n° ${seq} validé`,
     batchRejected: (seq: number) => `Lot n° ${seq} refusé`,
-    questionCreated: "Question posée",
-    questionAnswered: "Question répondue",
-    reminded: (ref: string | null) => `${ref ?? "Question"} relancée`,
   },
   footer: "Une fonctionnalité ne se lance pas : chaque étape se livre dans T3 Code avec full-delivery.",
-  optional: "Étape facultative",
-  optionalHint: "Ne compte pas pour livrer la fonctionnalité",
+  optionalPill: "facultative",
+  addQuestion: "Question",
+  addDependency: "Dépendance",
+  addDependencyTitle: "Ajouter une dépendance : cette fonctionnalité attend…",
+  noCandidate: "Aucune autre fonctionnalité",
+  requiredToggle: "Requise pour livrer",
   ticketSprint: "Sprint",
   yesterday: "hier",
   today: "aujourd'hui",

@@ -1,5 +1,6 @@
 import {
   type CheckRollupItem,
+  failedCheckName,
   GhLogin,
   type GhStatus,
   isGitBranchName,
@@ -70,10 +71,12 @@ function toRollup(data: unknown): CheckRollupItem[] {
     status: text(item, "status"),
     conclusion: text(item, "conclusion") ?? null,
     state: text(item, "state"),
+    name: text(item, "name") ?? text(item, "context"),
   }));
 }
 
 function parsePrInfo(data: unknown): PrInfo {
+  const rollup = toRollup(data);
   const parsed = PrInfo.safeParse({
     number: field(data, "number"),
     url: field(data, "url"),
@@ -81,7 +84,8 @@ function parsePrInfo(data: unknown): PrInfo {
     base: field(data, "baseRefName") ?? null,
     head: field(data, "headRefName") ?? null,
     review: toReview(data),
-    checks: prChecksTone(toRollup(data)),
+    checks: prChecksTone(rollup),
+    failedCheck: failedCheckName(rollup),
   });
   if (!parsed.success) throw new KiboError("GH_FAILED", "unexpected gh output");
   return parsed.data;

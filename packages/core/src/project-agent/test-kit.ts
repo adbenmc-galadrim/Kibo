@@ -43,6 +43,7 @@ export function ticket(p: Partial<TicketView> & Pick<TicketView, "id">): TicketV
     keyLabel: key ?? "EMIS-…",
     openQuestions: 0,
     startable: false,
+    startReason: null,
     ...p,
   };
 }
@@ -59,6 +60,7 @@ export function question(p: Partial<Question> & Pick<Question, "id" | "ticketId"
     blocking: false,
     createdBy: { kind: "agent", ref: "opus" },
     createdAt: 0,
+    number: null,
     importRef: null,
     answer: null,
     recipient: "me",
@@ -106,6 +108,7 @@ export function project(p: Partial<ProjectSnapshot> = {}): ProjectSnapshot {
       delivery: null,
       tracking: null,
       description: null,
+      client: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],

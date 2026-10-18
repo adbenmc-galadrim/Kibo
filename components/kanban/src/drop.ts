@@ -5,7 +5,9 @@ import { type ColumnOrder, ORDER_KEY, orderColumn, type Place, placeInColumn } f
 type Id = string | number;
 export type DropEvent = { active: { id: Id }; over: { id: Id } | null };
 export type Drop = { ticketId: string; statusId: StatusId; overId: string | null; place: Place };
-type Placed = { id: string; statusId: StatusId };
+type Placed = { id: string; statusId: StatusId; column?: StatusId };
+
+const columnOfPlaced = (t: Placed): StatusId => t.column ?? t.statusId;
 
 const columnOf = (columns: ColumnOrder, id: string): string | undefined =>
   Object.keys(columns).find((s) => columns[s]?.includes(id));
@@ -47,7 +49,7 @@ export function readColumnOrder(value: unknown): ColumnOrder {
 export function nextOrder(saved: ColumnOrder, tickets: readonly Placed[], drop: Drop): ColumnOrder {
   const moved = tickets.find((t) => t.id === drop.ticketId);
   const idsIn = (statusId: StatusId) =>
-    tickets.filter((t) => t.statusId === statusId && t.id !== drop.ticketId).map((t) => t.id);
+    tickets.filter((t) => columnOfPlaced(t) === statusId && t.id !== drop.ticketId).map((t) => t.id);
   const next: ColumnOrder = {
     ...saved,
     [drop.statusId]: placeInColumn(
@@ -58,7 +60,7 @@ export function nextOrder(saved: ColumnOrder, tickets: readonly Placed[], drop: 
       drop.place,
     ),
   };
-  const source = moved?.statusId;
+  const source = moved === undefined ? undefined : columnOfPlaced(moved);
   if (source !== undefined && source !== drop.statusId && saved[source] !== undefined) {
     next[source] = orderColumn(
       idsIn(source).map((id) => ({ id })),
@@ -75,7 +77,7 @@ export async function commitDrop(
   reason?: string,
 ): Promise<ColumnOrder> {
   const moved = tickets.find((t) => t.id === drop.ticketId);
-  if (moved && moved.statusId !== drop.statusId) {
+  if (moved && columnOfPlaced(moved) !== drop.statusId && moved.statusId !== drop.statusId) {
     await sdk.run({ method: "setStatus", ticketId: drop.ticketId, statusId: drop.statusId, reason });
   }
   const saved = readColumnOrder(await sdk.data.get(ORDER_KEY));

@@ -1,5 +1,5 @@
 import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { createPage, openNewProject as openNewProjectMenu, skipRoleStep } from "./helpers";
+import { createSidebarPage, openNewProject as openNewProjectMenu } from "./helpers";
 import { E2E_TOKEN } from "./token";
 
 const suffix = (info: TestInfo) => (info.project.name.endsWith("light") ? "L" : "D");
@@ -19,67 +19,17 @@ async function openNewProject(page: Page) {
 async function fillProject(page: Page, name: string, key: string) {
   await page.getByLabel("Nom", { exact: true }).fill(name);
   await page.getByLabel("Clé").fill(key);
-  await page.getByRole("button", { name: "Créer le projet" }).click();
+  await page.getByRole("button", { name: "Créer", exact: true }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
 }
-
-function projectPages(page: Page, name: string) {
-  return page
-    .getByRole("listitem")
-    .filter({ has: page.getByRole("button", { name, exact: true }) })
-    .getByRole("list");
-}
-
-async function finishProject(page: Page, name: string, key: string) {
-  await page.getByRole("button", { name: "Continuer" }).click();
-  await expect(page.getByRole("radio", { name: /Pages conseillées/ })).toHaveAttribute(
-    "data-state",
-    "checked",
-  );
-  await fillProject(page, name, key);
-}
-
-test("Ton rôle : preset Designer, une page décochée", async ({ page }, info) => {
-  const s = suffix(info);
-  await pair(page, info);
-  await openNewProject(page);
-  await page.getByRole("radio", { name: /Designer/ }).click();
-  await page.getByLabel("Inclure Kanban").click();
-  await finishProject(page, `Design ${s}`, `DSG${s}`);
-  const pages = projectPages(page, `Design ${s}`);
-  await expect(pages.getByRole("button", { name: "Tableau de bord", exact: true })).toBeVisible();
-  await expect(pages.getByRole("button", { name: "Notes", exact: true })).toBeVisible();
-  await expect(pages.getByRole("button", { name: "Kanban", exact: true })).toHaveCount(0);
-  const tickets = page.getByRole("region", { name: "Tickets" });
-  await expect(tickets.getByText("tous les sprints · 0 ticket dans 0 fonctionnalité")).toBeVisible();
-  await page.getByRole("button", { name: "Actions Tickets" }).click();
-  await page.getByRole("menuitem", { name: "Réglages…" }).click();
-  await expect(page.getByRole("dialog").getByRole("combobox", { name: "Filtre" })).toHaveText("Mes tickets");
-});
-
-test("Ton rôle : suggestion de Claude (faux claude)", async ({ page }, info) => {
-  const s = suffix(info);
-  await pair(page, info);
-  await openNewProject(page);
-  await page.getByRole("radio", { name: /Autre/ }).click();
-  await page.getByLabel("Décris ton usage en une phrase").fill("Je suis freelance et je suis trois clients");
-  await page.getByRole("button", { name: "Proposer avec Claude" }).click();
-  await expect(page.getByText("Proposition de Claude")).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByLabel("Nom de la page 1")).toHaveValue("Suivi clients");
-  await finishProject(page, `Freelance ${s}`, `FRL${s}`);
-  const pages = projectPages(page, `Freelance ${s}`);
-  await expect(pages.getByRole("button", { name: "Suivi clients", exact: true })).toBeVisible();
-  await expect(pages.getByRole("button", { name: "Tickets", exact: true })).toBeVisible();
-});
 
 test("Créer un composant avec un agent, jusqu'au rendu sandboxé", async ({ page }, info) => {
   test.setTimeout(180_000);
   const s = suffix(info);
   await pair(page, info);
   await openNewProject(page);
-  await skipRoleStep(page);
   await fillProject(page, `Composants ${s}`, `CMP${s}`);
-  await createPage(page, "Tableau de bord", "Tableau de bord");
+  await createSidebarPage(page, `Composants ${s}`, "Tableau de bord", "Tableau de bord");
 
   await page.getByRole("button", { name: "Ajouter un composant" }).click();
   await page.getByRole("button", { name: /Créer un composant/ }).click();

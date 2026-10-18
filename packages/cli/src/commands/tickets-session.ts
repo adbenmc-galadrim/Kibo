@@ -1,4 +1,3 @@
-import { isAbsolute, relative } from "node:path";
 import {
   DEFAULT_SESSION_TOOL,
   KiboError,
@@ -13,6 +12,7 @@ import type { DaemonClient } from "../daemon-client";
 import { frTickets } from "../fr";
 import { clockTime } from "../tickets/ticket-text";
 import { type Connect, findProject, printJson, type SessionIo, withClient } from "./daemon-session";
+import { byFolder } from "./tickets-context";
 
 type SessionRequest = { ticketKey: string | null; state: SessionState; tool: string };
 type Flags = Parsed["flags"];
@@ -26,19 +26,6 @@ function parseRequest(args: readonly string[], flags: Flags): SessionRequest | n
   if (rest.length > 0 || !state.success || !tool.success || flags.project === true) return null;
   if (key !== null && !key.success) return null;
   return { ticketKey: key?.data ?? null, state: state.data, tool: tool.data };
-}
-
-const holds = (folder: string, cwd: string): boolean => {
-  const rel = relative(folder, cwd);
-  return !rel.startsWith("..") && !isAbsolute(rel);
-};
-
-function byFolder(projects: readonly ProjectSummary[], cwd: string): ProjectSummary[] {
-  const depth = (p: ProjectSummary) => (p.folder !== null && holds(p.folder, cwd) ? p.folder.length : -1);
-  return projects
-    .map((p, index) => ({ p, index, depth: depth(p) }))
-    .sort((a, b) => b.depth - a.depth || a.index - b.index)
-    .map(({ p }) => p);
 }
 
 const isNotFound = (e: unknown): boolean => e instanceof KiboError && e.code === "NOT_FOUND";

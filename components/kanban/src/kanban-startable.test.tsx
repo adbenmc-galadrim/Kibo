@@ -3,7 +3,6 @@ import type { RunPeek } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 import { seed } from "./test-seed";
 
@@ -40,39 +39,19 @@ const card = async (key: string) => {
   return found;
 };
 
-test("screen 188k: a startable card shows a neutral 'Démarrable' badge, the others none", async () => {
+test("screen 188k: no card carries a 'Démarrable' badge, the filter keeps the startable ones", async () => {
   const m = setup();
   queueKib5(m);
-  const badge = within(await card("KIB-1")).getByText("Démarrable");
-  expect(badge.getAttribute("data-slot")).toBe("badge");
-  expect(badge.getAttribute("data-variant")).toBe("outline");
-  expect(badge.className).toContain("zinc");
-  expect(badge.className).toContain("bg-background");
-  expect(badge.className).not.toContain("orange");
-  expect(badge.className).not.toContain("brand");
-  expect(within(await card("KIB-5")).queryByText("Démarrable")).toBeNull();
-  expect(within(await card("KIB-2")).queryByText("Démarrable")).toBeNull();
-  expect(within(await card("KIB-4")).queryByText("Démarrable")).toBeNull();
-  act(() => m.setRuns([]));
-  expect(await within(await card("KIB-5")).findByText("Démarrable")).toBeTruthy();
-});
-
-test("the 'Démarrables' toggle sits after the label menu, narrows the board and is reset by 'Tout afficher'", async () => {
-  queueKib5(setup());
-  const user = userEvent.setup();
-  const toggle = await screen.findByRole("button", { name: "Démarrables" });
-  const labels = screen.getByRole("button", { name: "Étiquette : toutes" });
-  expect(labels.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  expect(toggle.getAttribute("aria-pressed")).toBe("false");
-  await user.click(toggle);
-  expect(toggle.getAttribute("aria-pressed")).toBe("true");
-  expect(await screen.findByText("1 / 6 · Moi + agents")).toBeTruthy();
+  await card("KIB-1");
+  for (const article of screen.getAllByRole("article"))
+    expect(within(article).queryByText("Démarrable")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Démarrable" }));
+  expect(await card("KIB-1")).toBeTruthy();
+  expect(screen.queryByText("KIB-5")).toBeNull();
   expect(screen.queryByText("KIB-2")).toBeNull();
-  await user.click(screen.getByRole("radio", { name: "Tous" }));
-  expect(await screen.findByText("2 / 6 · Tous")).toBeTruthy();
-  await user.click(screen.getByRole("button", { name: "4 masqués · Tout afficher" }));
-  expect(await screen.findByText("6 / 6 · Tous")).toBeTruthy();
-  expect(toggle.getAttribute("aria-pressed")).toBe("false");
+  expect(screen.queryByText("KIB-4")).toBeNull();
+  act(() => m.setRuns([]));
+  expect(await card("KIB-5")).toBeTruthy();
 });
 
 test("a live run on a card is an agent mention: hover peeks the run, click opens it", async () => {

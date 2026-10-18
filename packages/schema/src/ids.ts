@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const ProjectKey = z.string().regex(/^[A-Z]{2,6}$/);
-export const TicketKey = z.string().regex(/^[A-Z]{2,6}-\d+$/);
+export const TicketKey = z.string().regex(/^([A-Z]{2,6}-\d+|F\d+)$/);
 export const NodeId = z.string().min(1);
 export const Sha256 = z.string().regex(/^[0-9a-f]{64}$/);
 export const Base64 = z

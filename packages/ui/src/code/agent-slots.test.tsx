@@ -90,6 +90,7 @@ const project = (rules = DEFAULT_RULES): ProjectSnapshot => ({
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -118,6 +119,7 @@ const renderChanges = (worktree: string, snapshot = project()) => {
       target={target}
       viewer="adam"
       projects={[]}
+      snapshots={new Map()}
       inboxCount={0}
       project={snapshot}
       domains={[]}
@@ -129,7 +131,6 @@ const renderChanges = (worktree: string, snapshot = project()) => {
       onSuggestPages={() => {}}
       onOpen={() => {}}
       onOpenFile={() => {}}
-      onAssign={() => {}}
       onOpenTicket={() => {}}
     />,
   );

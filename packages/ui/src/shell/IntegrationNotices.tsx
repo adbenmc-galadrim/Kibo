@@ -6,6 +6,8 @@ import { client } from "../api";
 import { frIntegrations } from "../i18n/fr-integrations";
 import { useTheme } from "../theme";
 
+const TOAST_OFFSET = { right: "calc(var(--project-agent-edge, 0px) + 16px)" };
+
 function showNotice(e: Extract<IntegrationEvent, { type: "notice" }>): void {
   if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
   const shown = new Notification(e.title, { body: e.body });
@@ -22,5 +24,5 @@ export function IntegrationNotices({ notifications }: { notifications: Session["
       }),
     [notifications],
   );
-  return <Toaster theme={theme} position="bottom-right" />;
+  return <Toaster theme={theme} position="bottom-right" offset={TOAST_OFFSET} />;
 }

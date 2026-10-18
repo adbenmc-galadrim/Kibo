@@ -28,7 +28,13 @@ const event = (id: number, source: ProjectEvent["source"], data: ProjectEvent["d
 });
 
 function setup(opts: MockSdkOptions = {}) {
-  const m = createMockSdk(manifest, { seed, today: TODAY, description: "Suivi de chantier", ...opts });
+  const m = createMockSdk(manifest, {
+    seed,
+    today: TODAY,
+    description: "Suivi de chantier",
+    folder: "/emis",
+    ...opts,
+  });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />
@@ -73,18 +79,23 @@ test("the heading, the indicators and the cards of the project", async () => {
   expect(screen.getByText("Suivi de chantier")).toBeTruthy();
   const indicators = await card("Indicateurs du projet");
   expect(within(indicators).getByText("livrées sur 9")).toBeTruthy();
-  expect(within(indicators).getByText("finit ce soir")).toBeTruthy();
-  expect(within(indicators).getByText("limite atteinte")).toBeTruthy();
+  expect(within(indicators).getByText("se termine aujourd'hui")).toBeTruthy();
+  expect(within(indicators).getByText("limite · bloquée : F6")).toBeTruthy();
+  expect(within(indicators).getByText("2 à risque")).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "Pour commencer" })).toBeNull();
+  expect(screen.queryByRole("region", { name: "En retard" })).toBeNull();
   expect(within(indicators).getByText("#20 · #22 · #23")).toBeTruthy();
   expect(within(indicators).getByText("Q14 bloque F6")).toBeTruthy();
-  expect(within(await card("En ce moment")).getByText("Aucune session T3 Code")).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "En ce moment" })).toBeNull();
   const deadlines = await card("Échéances");
-  expect(within(deadlines).getByText("glisse en S43")).toBeTruthy();
+  expect(within(deadlines).queryByText("glisse en S43")).toBeNull();
   expect(within(deadlines).getByText("bloquée · Q14")).toBeTruthy();
   const sprint = await card("Sprint S42 · Terrain hors ligne");
-  expect(within(sprint).getByText("2/2 ouvertes")).toBeTruthy();
+  expect(within(sprint).getByText("12–16 oct.")).toBeTruthy();
+  expect(within(sprint).queryByText("2/2 en cours")).toBeNull();
+  expect(within(sprint).getAllByText("à risque").length).toBe(2);
   expect(
-    within(sprint).getByText("Limite de 2 ouvertes atteinte : F6 attendra la fin de F4 ou de F5."),
+    within(sprint).getByText("Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5."),
   ).toBeTruthy();
   const review = await card("En review");
   expect(within(review).getByText("CI verte")).toBeTruthy();
@@ -95,7 +106,7 @@ test("the heading, the indicators and the cards of the project", async () => {
   expect(within(questions).getByText(/^Q14 · Client · /)).toBeTruthy();
 });
 
-test("copy puts the command of the next step in the clipboard while execution is hidden", async () => {
+test("copy puts the command of the next step in the clipboard and says so", async () => {
   const copied: string[] = [];
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
@@ -107,7 +118,8 @@ test("copy puts the command of the next step in the clipboard while execution is
   const key = m.snapshot().tickets.find((t) => t.title === "Conflits de saisie")?.keyLabel;
   expect(within(next).getByText(`/full-delivery ${key}`)).toBeTruthy();
   await userEvent.click(within(next).getByRole("button", { name: "Copier" }));
-  expect(copied).toEqual([`/full-delivery ${key}`]);
+  await waitFor(() => expect(copied).toEqual([`/full-delivery ${key}`]));
+  expect(m.toasts).toEqual(["Copié"]);
   expect(m.runDeliveries).toEqual([]);
 });
 
@@ -143,7 +155,7 @@ test("the activity shows four events, filters by source and unfolds on fifty", a
   const activity = await card("Activité");
   const items = () => within(activity).queryAllByRole("listitem");
   await waitFor(() => expect(items().length).toBe(4));
-  expect(items()[0]?.textContent).toContain("Étape 7 · Porte qualité");
+  expect(items()[0]?.textContent).toContain("Phase 7/12 · Porte qualité");
   await userEvent.click(within(activity).getByRole("button", { name: "git" }));
   expect(items().every((li) => li.textContent?.includes("PR #"))).toBe(true);
   await userEvent.click(within(activity).getByRole("button", { name: "git" }));
@@ -193,4 +205,22 @@ test("nine feature cells keep their width and gap", async () => {
   const indicators = await card("Indicateurs du projet");
   await waitFor(() => expect(featureCells(indicators).length).toBe(9));
   expect(featureCells(indicators)[0]?.parentElement?.style.columnGap).toBe("3px");
+});
+
+test("the in-progress box explains what it counts and where its limit is set", async () => {
+  setup();
+  const indicators = await card("Indicateurs du projet");
+  const label = within(indicators).getByRole("button", { name: "En cours" });
+  expect(within(indicators).getByText("/ 2")).toBeTruthy();
+  await userEvent.hover(label);
+  const hint = "fonctionnalités démarrées, non livrées ; limite réglable dans Modifier le projet";
+  expect((await screen.findByRole("tooltip")).textContent).toBe(hint);
+});
+
+test("the overview follows the host's day, not the browser clock", async () => {
+  setSystemTime(new Date("2026-10-18T10:00:00"));
+  setup();
+  const indicators = await card("Indicateurs du projet");
+  expect(within(indicators).getByText("se termine aujourd'hui")).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "En retard" })).toBeNull();
 });

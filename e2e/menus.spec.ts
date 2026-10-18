@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { rpc, text } from "./agents-seed";
 import { createE2eRepo, type E2eRepo } from "./git-repo";
-import { addComponent, createPage, openWorkspaceMenuItem, showTabBar } from "./helpers";
+import { addComponent, createPage, showTabBar } from "./helpers";
 import { createRepoProject, projectKey, shot } from "./repo-project";
 import { E2E_TOKEN } from "./token";
 
@@ -14,7 +14,7 @@ test.afterEach(async () => {
   if (created) await expect(() => created.remove()).toPass();
 });
 
-test("menus des pages, fiche ticket éditable, annulation d'un fichier", async ({ page }, info) => {
+test("menus des pages et fiche ticket éditable", async ({ page }, info) => {
   const key = projectKey("MNU", info);
   const created = createE2eRepo(key);
   repo = created;
@@ -39,7 +39,7 @@ test("menus des pages, fiche ticket éditable, annulation d'un fichier", async (
   const ticketKey = text(ticket, "key");
 
   const card = page.getByRole("button", { name: "Schéma Loro des tickets", exact: true });
-  await page.getByRole("radio", { name: "Tous", exact: true }).click();
+  await page.getByRole("button", { name: "Tous", exact: true }).click();
   await expect(card).toBeVisible();
   await card.click();
   const sheet = page.getByRole("dialog").filter({ hasText: ticketKey });
@@ -70,27 +70,6 @@ test("menus des pages, fiche ticket éditable, annulation d'un fichier", async (
   await rename.getByRole("button", { name: "Renommer" }).click();
   await expect(rename).toBeHidden();
   await expect(bar.getByRole("tab", { name: `${name} · Tableau` })).toHaveAttribute("aria-selected", "true");
-
-  created.write("README.md", "# test\nligne ajoutée\n");
-  created.write("docs/notes.md", "# notes\n");
-  await openWorkspaceMenuItem(page, "Changements");
-  const unstaged = page.getByRole("group", { name: /^Modifications \(/ });
-  await expect(unstaged.getByText("README.md")).toBeVisible();
-  await expect(unstaged.getByText("notes.md")).toBeVisible();
-  await unstaged
-    .getByRole("button", { name: /notes\.md/ })
-    .first()
-    .click({ button: "right" });
-  await expect(page.getByRole("menuitem", { name: "Annuler les changements…" })).toBeVisible();
-  await shot(page, info, "ecran-104");
-  await page.getByRole("menuitem", { name: "Annuler les changements…" }).click();
-  const confirm = page.getByRole("alertdialog", { name: "Annuler les changements de notes.md ?" });
-  await expect(confirm.getByText("notes.md est nouveau : il sera supprimé du disque.")).toBeVisible();
-  await confirm.getByRole("button", { name: "Annuler les changements" }).click();
-  await expect(confirm).toBeHidden();
-  await expect(unstaged.getByText("notes.md")).toBeHidden();
-  await expect(unstaged.getByText("README.md")).toBeVisible();
-  expect(created.git("status", "--porcelain")).not.toContain("notes.md");
 
   const renamed = page.getByRole("button", { name: "Tableau", exact: true });
   await renamed.click();

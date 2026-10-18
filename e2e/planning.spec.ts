@@ -4,7 +4,6 @@ import { EMIS_FEATURES, EMIS_LOOSE_TICKETS } from "./fixtures/emis-maquettes";
 import { PIXEL_WIDTH } from "./pixel-settings";
 import {
   attachRepo,
-  clipboardText,
   createBranch,
   dragOnto,
   type Emis,
@@ -41,10 +40,11 @@ async function openPlanning(page: Page, s42 = "S42 Terrain hors ligne"): Promise
   await expect(column(page, s42)).toBeVisible();
 }
 
-async function addFromMenu(page: Page, item: string) {
-  await page.getByRole("button", { name: "Ajouter", exact: true }).click();
-  await page.getByRole("menuitem", { name: item }).click();
-  return page.getByRole("dialog", { name: item });
+const ADD_BUTTONS = { "Nouveau sprint": "Sprint", "Nouvelle fonctionnalité": "Fonctionnalité" } as const;
+
+async function addFromHeader(page: Page, dialog: keyof typeof ADD_BUTTONS) {
+  await page.getByRole("button", { name: ADD_BUTTONS[dialog], exact: true }).click();
+  return page.getByRole("dialog", { name: dialog });
 }
 
 type Fit = {
@@ -101,7 +101,7 @@ async function expectFits(page: Page, layout: "Colonnes" | "Bandes"): Promise<vo
   for (const height of fit.chipLines) expect(height).toBeLessThan(LINE_HEIGHT * 1.5);
 }
 
-test("the Planning holds in the window in Columns and Bands, its blocked chips on one line", async ({
+test("the Planning holds in the window in Columns and Bands, its blocked chips on one line, the agent over it under 1180 px", async ({
   page,
 }) => {
   const f6Sprint = await moveToSprint(page, emis, "F6", null);
@@ -112,12 +112,20 @@ test("the Planning holds in the window in Columns and Bands, its blocked chips o
     ]) {
       await page.setViewportSize(size);
       await openPlanning(page);
-      for (const panel of [false, true]) {
-        if (panel) await page.getByRole("button", { name: /^Agent de projet/ }).click();
+      await expectFits(page, "Bandes");
+      await expectFits(page, "Colonnes");
+      const before = await page.locator("[data-view-body]").boundingBox();
+      await page.getByRole("button", { name: /^Agent de projet/ }).click();
+      const overlay = size.width < 1180;
+      await expect(page.locator("[data-overlay]")).toHaveAttribute("data-overlay", String(overlay));
+      if (overlay) expect(await page.locator("[data-view-body]").boundingBox()).toEqual(before);
+      else {
         await expectFits(page, "Bandes");
         await expectFits(page, "Colonnes");
       }
-      await page.getByRole("button", { name: /^Agent de projet/ }).click();
+      const close = overlay ? "Fermer le panneau" : /^Agent de projet/;
+      await page.getByRole("button", { name: close }).click();
+      await expect(page.locator("[data-overlay]")).toHaveCount(0);
     }
   } finally {
     await page.getByRole("button", { name: "Colonnes", exact: true }).click();
@@ -140,14 +148,14 @@ test("dragging F9 onto S44 plans it, and the CLI lists it in S44", async ({ page
 
 test("a new sprint S45 and a new feature F10 with three steps show in the Planning", async ({ page }) => {
   await openPlanning(page);
-  const sprint = await addFromMenu(page, "Nouveau sprint");
+  const sprint = await addFromHeader(page, "Nouveau sprint");
   await sprint.getByLabel("Code").fill("S45");
   await sprint.getByLabel("Nom").fill("Exports");
   await sprint.getByLabel("Début").fill("2026-11-02");
   await sprint.getByLabel("Fin").fill("2026-11-06");
   await sprint.getByRole("button", { name: "Créer le sprint" }).click();
   await expect(column(page, "S45 Exports")).toBeVisible();
-  const feature = await addFromMenu(page, "Nouvelle fonctionnalité");
+  const feature = await addFromHeader(page, "Nouvelle fonctionnalité");
   await feature.getByLabel("Nom").fill("Signer un PV");
   await feature.getByLabel("Sprint").selectOption({ label: "S45 Exports" });
   await feature.getByLabel("Étapes, une par ligne").fill("Écran de signature\nExport PDF\nDémo client");
@@ -159,17 +167,15 @@ test("a new sprint S45 and a new feature F10 with three steps show in the Planni
 
 test("starting a step of F7 opens a third feature and the limit warns", async ({ page }) => {
   await openPlanning(page);
-  await expect(page.getByText("Ouvertes : 2 / 2")).toBeVisible();
+  await expect(page.getByText("En cours : 2 / 2")).toBeVisible();
   await setStatus(page, emis, "EMIS-81", "in_progress");
-  await expect(page.getByText("Ouvertes : 3 / 2")).toBeVisible();
+  await expect(page.getByText("En cours : 3 / 2")).toBeVisible();
 });
 
-test("the sheet of F5 copies the command of its next step", async ({ page, context }) => {
-  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+test("the sheet of F5 names why its next step cannot start, with nothing to copy", async ({ page }) => {
   await page.goto(emis.ticketUrl("EMIS-30"));
-  await page.getByRole("button", { name: "Livrer la prochaine étape" }).click();
-  await expect(page.getByText("Commande copiée")).toBeAttached();
-  expect(await clipboardText(page)).toBe("/full-delivery EMIS-34");
+  await expect(page.getByText("Prochaine étape EMIS-34 : attend EMIS-33.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Copier la commande" })).toHaveCount(0);
 });
 
 test("the sheet of S42 opens from its Tickets tab and its Planning name; the pencil edits it", async ({
@@ -204,25 +210,13 @@ test("the sheet of S42 opens from its Tickets tab and its Planning name; the pen
   await expect(column(page, "S42 Terrain hors ligne")).toBeVisible();
 });
 
-test("the agent execution setting shows, then hides, Agents and the agent bar", async ({ page }) => {
-  const agents = page.getByRole("button", { name: "Agents", exact: true });
-  const bar = page.getByRole("region", { name: "Agents", exact: true });
-  const toggle = async (checked: boolean) => {
-    await page.goto("/#/settings/general");
-    const execution = page.getByRole("switch", { name: EXECUTION });
-    await expect(execution).toHaveAttribute("aria-checked", String(!checked));
-    await execution.click();
-    await expect(execution).toHaveAttribute("aria-checked", String(checked));
-    await openPlanning(page);
-  };
+test("the agent execution setting is gone and Agents and the agent bar never show", async ({ page }) => {
+  await page.goto("/#/settings/general");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByRole("switch", { name: EXECUTION })).toHaveCount(0);
   await openPlanning(page);
-  await expect(agents).toBeHidden();
-  await toggle(true);
-  await expect(agents).toBeVisible();
-  await expect(bar).toBeVisible();
-  await toggle(false);
-  await expect(agents).toBeHidden();
-  await expect(bar).toBeHidden();
+  await expect(page.getByRole("button", { name: "Agents", exact: true })).toBeHidden();
+  await expect(page.getByRole("region", { name: "Agents", exact: true })).toBeHidden();
 });
 
 test("the S43 tab of Tickets has nothing delivered, and a new branch puts EMIS-51 In progress", async ({

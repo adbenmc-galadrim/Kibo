@@ -31,6 +31,7 @@ const question = (history: QuestionEvent[], over: Partial<Question> = {}): Quest
   blocking: false,
   createdBy: ADAM,
   createdAt: 1,
+  number: null,
   importRef: null,
   answer: null,
   recipient: "client",
@@ -100,6 +101,7 @@ test("an edited answer reads old → new, archive and restore are one word", () 
 
 test("a reminder is one word", () => {
   expect(lines(question([event("reminded", 4)]))).toEqual(["il y a 4 min · Adam · Relancée"]);
+  expect(lines(question([event("exported", 4)]))).toEqual(["il y a 4 min · Adam · Marquée envoyée"]);
 });
 
 test("each entry knows the state right after its event, newest first", () => {

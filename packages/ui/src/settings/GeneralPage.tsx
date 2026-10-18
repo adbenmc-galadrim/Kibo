@@ -3,7 +3,7 @@ import { fr } from "../i18n/fr";
 import { UpdateCard } from "../updates/UpdateCard";
 import { ApplicationCard } from "./ApplicationCard";
 import { CliInstallCard } from "./CliInstallCard";
-import { ExecutionCard } from "./ExecutionCard";
+import { MachineCard } from "./MachineCard";
 import { SettingsLayout } from "./SettingsLayout";
 
 export function GeneralPage() {
@@ -15,10 +15,10 @@ export function GeneralPage() {
           <p className="text-sm text-muted-foreground">{fr.settings.generalSubtitle}</p>
         </div>
         <ApplicationCard />
-        <ExecutionCard />
         <UpdateCard />
         <BackupsCard />
         <CliInstallCard />
+        <MachineCard />
       </div>
     </SettingsLayout>
   );

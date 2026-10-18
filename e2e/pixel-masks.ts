@@ -1,7 +1,16 @@
 import type { Box } from "./pixel-report";
 
 export type PixelMask = Box & { why: string };
-export type MaskedScreen = "planning" | "fonctionnalite" | "tickets" | "vue-ensemble" | "graphe";
+export type MaskedScreen =
+  | "planning"
+  | "fonctionnalite"
+  | "tickets"
+  | "vue-ensemble"
+  | "graphe"
+  | "nouveau-projet"
+  | "kanban"
+  | "fiche-ticket"
+  | "questions";
 
 export const MASK_COLOR = "#FF00FF";
 export const MASK_RGB: readonly [number, number, number] = [255, 0, 255];
@@ -13,6 +22,16 @@ export const PIXEL_HEIGHTS: Record<MaskedScreen, number> = {
   tickets: 1000,
   "vue-ensemble": 1260,
   graphe: 1000,
+  "nouveau-projet": 1000,
+  kanban: 1000,
+  "fiche-ticket": 1000,
+  questions: 1000,
+};
+
+export const DIALOG_SCREENS: Partial<Record<MaskedScreen, Box>> = {
+  "nouveau-projet": { x: 460, y: 170, w: 520, h: 660 },
+  "fiche-ticket": { x: 904, y: 189, w: 512, h: 36 },
+  questions: { x: 854, y: 94, w: 420, h: 250 },
 };
 
 const user = (y: number): PixelMask => ({
@@ -106,11 +125,15 @@ export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
       why: "compteur des dépendances : la maquette compte 13 liens d'étapes que la fixture ne sème pas",
     },
   ],
+  "nouveau-projet": [],
+  kanban: [],
+  "fiche-ticket": [],
+  questions: [],
 };
 
 const isMaskedScreen = (screen: string): screen is MaskedScreen => Object.hasOwn(PIXEL_MASKS, screen);
 
-const REFERENCE_FILES: Partial<Record<string, string>> = { "vue-ensemble": "vue-ensemble-v2" };
+const REFERENCE_FILES: Partial<Record<string, string>> = { "vue-ensemble": "vue-ensemble-v3" };
 
 export const referenceOf = (screen: string): string => REFERENCE_FILES[screen] ?? screen;
 

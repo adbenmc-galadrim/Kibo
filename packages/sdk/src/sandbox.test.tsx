@@ -277,11 +277,13 @@ test("host helpers post typed messages; the host fixes the surface and origin", 
   frame.sdk.openFile({ path: "src/a.ts", line: 12, origin: null });
   frame.sdk.openNewTicket({ statusId: "todo" });
   frame.sdk.openView("graph");
+  frame.sdk.openView("questions", { intent: { kind: "newQuestion", ticketId: "f5" } });
   expect(sent).toEqual([
     { kibo: 1, type: "openFile", path: "src/a.ts" },
     { kibo: 1, type: "openFile", path: "src/a.ts", line: 12 },
     { kibo: 1, type: "openNewTicket", defaults: { statusId: "todo" } },
     { kibo: 1, type: "openView", componentId: "graph" },
+    { kibo: 1, type: "openView", componentId: "questions", intent: { kind: "newQuestion", ticketId: "f5" } },
   ]);
   expect(frame.sdk.surface).toBe("view");
   frame.dispose();
@@ -321,6 +323,8 @@ test("the sandboxed sdk opens a sprint through the host and reads the project by
   const frame = createFrameSdk(ComponentManifest.parse(manifest), init, port);
   frame.sdk.sprints.open("s42");
   expect(sent).toEqual([{ kibo: 1, type: "openSprint", sprintId: "s42" }]);
+  frame.sdk.project.edit({ field: "folder" });
+  expect(sent.at(-1)).toEqual({ kibo: 1, type: "editProject", field: "folder" });
   const pending = frame.sdk.project.get();
   expect(sent.at(-1)).toMatchObject({ type: "call", call: { kind: "project.get" } });
   frame.dispose();

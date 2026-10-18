@@ -12,6 +12,7 @@ import {
   type RunView,
   Ticket,
 } from "@kibo/schema";
+import type { TicketExecution } from "./agents/execution-removed";
 import type { AgentsPort } from "./agents-rpc";
 import { runView } from "./questions/questions.test-helper";
 import { call, createService } from "./service";
@@ -31,7 +32,11 @@ const ask = {
   images: [],
 };
 
-function fakeAgents(runs: RunView[], answers: [string, string][]): AgentsPort {
+function fakeAgents(
+  runs: RunView[],
+  answers: [string, string][],
+  ticketExecution: TicketExecution,
+): AgentsPort {
   const unused = () => {
     throw new Error("not used");
   };
@@ -59,6 +64,7 @@ function fakeAgents(runs: RunView[], answers: [string, string][]): AgentsPort {
     signals: [],
   });
   return {
+    ticketExecution: () => ticketExecution,
     assign: unused,
     preview: unused,
     cancel: unused,
@@ -77,7 +83,7 @@ function fakeAgents(runs: RunView[], answers: [string, string][]): AgentsPort {
   };
 }
 
-function setup(runState: RunView["state"]) {
+function setup(runState: RunView["state"], ticketExecution: TicketExecution = "allowed") {
   const dir = mkdtempSync(join(tmpdir(), "kibo-service-q-"));
   dirs.push(dir);
   const s = createService(openStore(dir), { user: "adam" });
@@ -98,7 +104,7 @@ function setup(runState: RunView["state"]) {
   const run = runView({ id: "r1", projectId: project.id, ticketId: ticket.id, state: runState });
   const answers: [string, string][] = [];
   const runs = [run];
-  s.attachAgents(fakeAgents(runs, answers));
+  s.attachAgents(fakeAgents(runs, answers, ticketExecution));
   const messages: ChangeMessage[] = [];
   s.onChange((m) => messages.push(m));
   const agentQuestion = (title: string, blocking: boolean) =>
@@ -229,5 +235,17 @@ test("recipient commands update the snapshot and announce the project", () => {
   expect(messages).toContainEqual({ projectId: project.id });
   expect(() => command({ method: "removeQuestionRecipient", recipientId: "client" })).toThrow(
     expect.objectContaining({ code: "CONFLICT" }),
+  );
+});
+
+test("without ticket execution a blocking answer is recorded, no run resumes and delivering is refused", () => {
+  const { s, project, ticket, answers, agentQuestion, answer, snapshot } = setup("waiting_input", "removed");
+  const q = agentQuestion("Quel port ?", true);
+  const answered = answer(q?.id ?? "", { kind: "option", option: "Oui" });
+  expect(answered.answer).toMatchObject({ kind: "option", option: "Oui", deliveredAt: null });
+  expect(answers).toEqual([]);
+  expect(snapshot().questions[0]?.answer).toMatchObject({ deliveredRunId: null });
+  expect(() => call(s, { method: "deliverAnswers", projectId: project.id, ticketId: ticket.id })).toThrow(
+    "AGENT_EXECUTION_REMOVED",
   );
 });

@@ -20,6 +20,7 @@ const newProjectDoc = (key: string) =>
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
 
 test("questions created in the same millisecond come back in creation order, every time", () => {

@@ -1,6 +1,7 @@
 import { ME_RECIPIENT, QUESTION_OPTIONS_MAX, type QuestionRecipient, type TicketView } from "@kibo/schema";
 import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
+import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -15,12 +16,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { type FormEvent, useId, useState } from "react";
 import { fr } from "./fr";
+import { CLIENT_RECIPIENT } from "./questions-logic";
 
 const NONE = "__none__";
 
 type Props = {
   tickets: readonly TicketView[];
   recipients: readonly QuestionRecipient[];
+  client: string | null;
+  initialTicketId?: string;
   onOpenChange(open: boolean): void;
 };
 
@@ -30,24 +34,41 @@ export const optionLines = (text: string): string[] =>
     .map((line) => line.trim())
     .filter((line) => line !== "");
 
+const hasClient = (recipients: readonly QuestionRecipient[], client: string | null): boolean =>
+  client !== null && recipients.some((r) => r.id === CLIENT_RECIPIENT);
+
+export const defaultRecipient = (recipients: readonly QuestionRecipient[], client: string | null): string =>
+  hasClient(recipients, client) ? CLIENT_RECIPIENT : ME_RECIPIENT;
+
+const recipientLabel = (r: QuestionRecipient, client: string | null): string =>
+  r.id === CLIENT_RECIPIENT && client !== null ? fr.dialog.clientRecipient(client) : r.name;
+
 function optionsProblem(options: readonly string[]): string | null {
   if (options.length > QUESTION_OPTIONS_MAX) return fr.dialog.tooMany;
   return new Set(options).size === options.length ? null : fr.dialog.duplicate;
 }
 
-export function NewQuestionDialog({ tickets, recipients, onOpenChange }: Props) {
+export function NewQuestionDialog({
+  tickets,
+  recipients,
+  client,
+  initialTicketId = "",
+  onOpenChange,
+}: Props) {
   const sdk = useSdk();
   const id = useId();
-  const [ticketId, setTicketId] = useState("");
+  const [ticketId, setTicketId] = useState(initialTicketId);
   const [title, setTitle] = useState("");
   const [context, setContext] = useState("");
   const [optionsText, setOptionsText] = useState("");
   const [provisional, setProvisional] = useState(NONE);
-  const [recipient, setRecipient] = useState(ME_RECIPIENT);
+  const [picked, setPicked] = useState<string | null>(null);
+  const [blocking, setBlocking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const options = optionLines(optionsText);
   const pending = tickets.filter((t) => t.statusId !== "done");
+  const recipient = picked ?? defaultRecipient(recipients, client);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const problem = optionsProblem(options);
@@ -62,7 +83,7 @@ export function NewQuestionDialog({ tickets, recipients, onOpenChange }: Props) 
         context,
         options,
         provisional: options.includes(provisional) ? provisional : null,
-        blocking: false,
+        blocking,
         runId: null,
         recipient,
         createdBy: { kind: "human", ref: sdk.viewer },
@@ -147,18 +168,26 @@ export function NewQuestionDialog({ tickets, recipients, onOpenChange }: Props) 
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor={`${id}-recipient`}>{fr.dialog.recipient}</Label>
-            <Select value={recipient} onValueChange={setRecipient}>
+            <Select value={recipient} onValueChange={setPicked}>
               <SelectTrigger id={`${id}-recipient`} aria-label={fr.dialog.recipient} className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {recipients.map((r) => (
                   <SelectItem key={r.id} value={r.id}>
-                    {r.name}
+                    {recipientLabel(r, client)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id={`${id}-blocking`}
+              checked={blocking}
+              onCheckedChange={(v) => setBlocking(v === true)}
+            />
+            <Label htmlFor={`${id}-blocking`}>{fr.dialog.blocking}</Label>
           </div>
           {error && (
             <p role="alert" className="text-sm text-destructive">

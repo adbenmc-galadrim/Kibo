@@ -79,6 +79,7 @@ test("createPr pushes then calls gh with safe arguments and the body on stdin", 
     head: "kib-12",
     review: "none",
     checks: null,
+    failedCheck: null,
   });
 });
 
@@ -130,6 +131,7 @@ test("PR states map from gh JSON", async () => {
     head: "feat/x",
     review: "none",
     checks: null,
+    failedCheck: null,
   });
   expect(toPrInfo('{"number":4,"url":"https://github.com/a/b/pull/4","state":"MERGED"}')).toMatchObject({
     base: null,
@@ -201,6 +203,7 @@ test("prsForBranch lists every PR of a branch, read only", async () => {
       head: "kib-12",
       review: "none",
       checks: null,
+      failedCheck: null,
     },
   ]);
   expect(await prsForBranch("feat/autre", fx.repo, env)).toEqual([]);
@@ -222,4 +225,20 @@ test("prsForBranch refuses an invalid branch before calling gh", async () => {
     code: "INVALID_INPUT",
   });
   expect(readFakeGhLog(gh)).toEqual([]);
+});
+
+test("the first failing check of the rollup is named, by its name or its context", () => {
+  expect(
+    withReview(
+      '"statusCheckRollup":[{"__typename":"CheckRun","name":"build","status":"COMPLETED","conclusion":"SUCCESS"},{"__typename":"CheckRun","name":"lint","status":"COMPLETED","conclusion":"FAILURE"},{"__typename":"CheckRun","name":"e2e","status":"COMPLETED","conclusion":"FAILURE"}]',
+    ).failedCheck,
+  ).toBe("lint");
+  expect(
+    withReview('"statusCheckRollup":[{"__typename":"StatusContext","context":"ci/deploy","state":"ERROR"}]')
+      .failedCheck,
+  ).toBe("ci/deploy");
+  expect(
+    withReview('"statusCheckRollup":[{"status":"COMPLETED","conclusion":"SUCCESS","name":"lint"}]')
+      .failedCheck,
+  ).toBeNull();
 });

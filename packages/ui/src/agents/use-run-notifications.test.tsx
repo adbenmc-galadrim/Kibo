@@ -6,6 +6,11 @@ import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
 import { agentsFixture, runFixture } from "./fixtures";
 import { batchNotices, runNotices, useRunNotifications } from "./use-run-notifications";
 
+const shownExecution = fixedStore({ agentExecution: "shown" });
+const ShownExecution = ({ children }: { children: ReactNode }) => (
+  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
+);
+
 test("only entries into waiting, done or failed are announced", () => {
   const previous = new Map<string, RunState>([
     ["a", "running"],
@@ -90,6 +95,7 @@ test("a granted, enabled browser shows the changes after the first state only", 
     const first = agentsFixture();
     const view = renderHook(({ state }) => useRunNotifications(state, true), {
       initialProps: { state: first },
+      wrapper: ShownExecution,
     });
     expect(shown).toEqual([]);
     view.rerender({ state: finish(first, "r42") });
@@ -106,6 +112,7 @@ test("nothing is shown when disabled or not granted", () => {
       const first = agentsFixture();
       const view = renderHook(({ state }) => useRunNotifications(state, enabled), {
         initialProps: { state: first },
+        wrapper: ShownExecution,
       });
       view.rerender({ state: finish(first, "r42") });
       expect(shown).toEqual([]);
@@ -124,6 +131,7 @@ test("a question asked by a running agent is announced once, with its ticket", (
     });
     const view = renderHook(({ state }) => useRunNotifications(state, true), {
       initialProps: { state: first },
+      wrapper: ShownExecution,
     });
     view.rerender({ state: asked(1) });
     view.rerender({ state: asked(1) });
@@ -181,6 +189,7 @@ test("a click on a run's notification opens the run's side panel", () => {
     };
     const view = renderHook(({ state }) => useRunNotifications(state, true, onOpen), {
       initialProps: { state: first },
+      wrapper: ShownExecution,
     });
     view.rerender({ state: finish(asked, "r42") });
     for (const click of clicks) click();

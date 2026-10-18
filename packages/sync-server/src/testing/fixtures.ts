@@ -42,6 +42,7 @@ export function ownerSnapshot(projectId = "p1"): Uint8Array {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   createTicket(doc, { title: "Noyau de données" });
   createTicket(doc, { title: "Schéma Loro des tickets" });

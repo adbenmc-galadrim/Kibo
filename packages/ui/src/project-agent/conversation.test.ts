@@ -1,7 +1,16 @@
 import { expect, test } from "bun:test";
 import type { RunLogEntry } from "@kibo/schema";
 import { NOW } from "../agents/fixtures";
-import { buildConversation, headerLine, lastAgentText, lastUserMessage, panelStatus } from "./conversation";
+import {
+  buildConversation,
+  type ConversationItem,
+  headerLine,
+  lastAgentText,
+  lastUserMessage,
+  panelStatus,
+  supersededCount,
+  trackingThread,
+} from "./conversation";
 import { CONVERSATION_LOG, partialBatch, pendingBatch, projectRun } from "./fixtures";
 
 const shape = (items: ReturnType<typeof buildConversation>) =>
@@ -189,4 +198,62 @@ test("headerLine says the last turn while idle, the state while busy", () => {
   expect(headerLine("thinking", now - 4 * 60_000, now)).toBe("Réfléchit…");
   expect(headerLine("queued", null, now)).toBe("En file");
   expect(headerLine("ready", null, now)).toBe("Prêt");
+});
+
+test("superseded batches are left out unless asked for, and counted", () => {
+  const batches = [
+    pendingBatch({ id: "b-old", createdAt: 15, status: "superseded" }),
+    pendingBatch({ id: "b-new", createdAt: 35 }),
+  ];
+  const ids = (items: ConversationItem[]) => items.flatMap((i) => (i.kind === "batch" ? [i.batch.id] : []));
+  expect(ids(buildConversation(wakeLog, batches, projectRun()))).toEqual(["b-new"]);
+  expect(ids(buildConversation(wakeLog, batches, projectRun(), { superseded: true }))).toEqual([
+    "b-old",
+    "b-new",
+  ]);
+  expect(supersededCount(batches)).toBe(1);
+});
+
+const user = (id: string, text: string): ConversationItem => ({ kind: "user", id, at: 1, text });
+const agent = (id: string, text: string): ConversationItem => ({ kind: "agent", id, at: 1, text });
+
+test("the question asked after the summary is the exchange, the summary stays", () => {
+  const items = [user("u1", "Fais le point"), agent("a1", "F3 est livrée."), user("u2", "Où en est F5 ?")];
+  expect(trackingThread(items)).toEqual({
+    summary: "F3 est livrée.",
+    summaryAt: 1,
+    exchange: items.slice(2),
+  });
+  const answered = [...items, agent("a2", "Il reste 4 étapes.")];
+  expect(trackingThread(answered)).toEqual({
+    summary: "F3 est livrée.",
+    summaryAt: 1,
+    exchange: answered.slice(2),
+  });
+});
+
+test("the turn that wrote the summary shows no exchange, a first question does until answered", () => {
+  const point = [user("u1", "Fais le point"), agent("a1", "F3 est livrée.")];
+  expect(trackingThread(point)).toEqual({ summary: "F3 est livrée.", summaryAt: 1, exchange: [] });
+  const first = [user("u1", "Où en est F5 ?")];
+  expect(trackingThread(first)).toEqual({ summary: null, summaryAt: null, exchange: first });
+  expect(trackingThread([])).toEqual({ summary: null, summaryAt: null, exchange: [] });
+});
+
+test("the exchange keeps a failed turn but drops muted session lines", () => {
+  const event = (id: string, tone: "muted" | "red"): ConversationItem => ({
+    kind: "event",
+    id,
+    at: 1,
+    text: id,
+    tone,
+    retry: false,
+  });
+  const items = [
+    agent("a1", "F3 est livrée."),
+    user("u1", "Et F5 ?"),
+    event("reprise", "muted"),
+    event("échec", "red"),
+  ];
+  expect(trackingThread(items).exchange.map((i) => i.id)).toEqual(["u1", "échec"]);
 });

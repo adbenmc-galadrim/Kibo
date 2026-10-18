@@ -12,14 +12,14 @@
     },
     "title": "Kanban",
     "description": "Tickets par statut, glisser-déposer",
-    "reads": ["ticket", "status", "run", "ci_run", "question"],
+    "reads": ["ticket", "status", "run", "ci_run", "question", "sprint"],
     "selection": true,
     "writes": ["ticket", "run"],
     "data": true,
     "configSchema": {
       "filter": {
         "enum": ["mine-and-agents", "all"],
-        "default": "mine-and-agents"
+        "default": "all"
       }
     }
   },
@@ -292,7 +292,7 @@
     "size": { "min": { "w": 4, "h": 3 } },
     "title": "Questions",
     "description": "Questions des agents, à valider ou à répondre",
-    "reads": ["question", "ticket", "status", "run"],
+    "reads": ["question", "ticket", "status", "run", "sprint"],
     "writes": ["question", "run"],
     "selection": false,
     "configSchema": { "scope": { "enum": ["open", "all"], "default": "open", "label": "Afficher" } }
@@ -305,7 +305,7 @@
     "size": { "min": { "w": 6, "h": 4 } },
     "title": "Planning",
     "description": "Fonctionnalités par sprint, glisser pour planifier",
-    "reads": ["ticket", "link", "status", "sprint", "question"],
+    "reads": ["ticket", "link", "status", "sprint", "question", "project_event"],
     "writes": ["ticket", "sprint"],
     "configSchema": {
       "layout": { "enum": ["columns", "bands"], "default": "columns", "label": "Disposition" }

@@ -1,19 +1,11 @@
 import { execFileSync } from "node:child_process";
-import { appendFileSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { type Browser, expect, type Locator, type Page, type TestInfo, test } from "@playwright/test";
-import {
-  assign,
-  createAgent,
-  livraisonOpus,
-  rpc,
-  type Seeded,
-  seedWorkspace,
-  showAgentExecution,
-} from "./agents-seed";
+import { rpc, type Seeded, seedWorkspace } from "./agents-seed";
 import { GIT_IDENTITY } from "./git-repo";
-import { openChangesInNewTab, showTabBar } from "./helpers";
+import { showTabBar } from "./helpers";
 import { E2E_TOKEN } from "./token";
 
 test.describe.configure({ mode: "serial" });
@@ -79,86 +71,21 @@ const TICKET_BEFORE = [
   "",
 ];
 
-const TICKET_AFTER = [
-  ...PREFIX,
-  "export const TicketSchema = z.object({",
-  "  id: z.string(),",
-  "  key: z.string().regex(/^[A-Z]+-\\d+(\\.\\d+)*$/),",
-  "  statusId: z.string(),",
-  "  domainId: z.string().optional(),",
-  "  assignee: AssigneeSchema.optional(),",
-  "});",
-  "",
-  "export type Ticket = z.infer<typeof TicketSchema>;",
-  "",
-  "export function moveTicket(tree: LoroTree, id: TreeID, parent: TreeID) {",
-  "  tree.move(id, parent);",
-  "}",
-  "",
-  "export function toIndexRow(t: Ticket) {",
-  "  return { id: t.id, key: t.key, status: t.statusId };",
-  "}",
-  "",
-];
-
-const lines = (count: number, make: (i: number) => string) =>
-  `${Array.from({ length: count }, (_, i) => make(i + 1)).join("\n")}\n`;
-
-type MockupRepo = { repo: string; worktree: string; remove(): void };
+type MockupRepo = { repo: string; remove(): void };
 
 function createMockupRepo(): MockupRepo {
   const dir = realpathSync(mkdtempSync(join(tmpdir(), "kibo-e2e-screens-")));
   const repo = join(dir, "repo");
-  const remote = join(dir, "remote.git");
-  const worktree = join(repo, ".kibo", "worktrees", "kib-28");
-  mkdirSync(repo);
+  mkdirSync(join(repo, "packages", "core"), { recursive: true });
   const env = { ...process.env, ...GIT_IDENTITY };
-  const gitIn =
-    (cwd: string) =>
-    (...args: string[]) =>
-      execFileSync("git", args, { cwd, env, encoding: "utf8" });
-  const writeIn = (root: string) => (path: string, content: string) => {
-    mkdirSync(dirname(join(root, path)), { recursive: true });
-    writeFileSync(join(root, path), content);
-  };
-  const git = gitIn(repo);
-  const write = writeIn(repo);
-  execFileSync("git", ["init", "-q", "--bare", "-b", "main", remote], { env });
+  const git = (...args: string[]) => execFileSync("git", args, { cwd: repo, env, encoding: "utf8" });
   git("init", "-q", "-b", "main");
   git("config", "commit.gpgsign", "false");
-  git("remote", "add", "origin", remote);
-  appendFileSync(join(repo, ".git", "info", "exclude"), ".kibo/\n");
-  write("package.json", '{ "name": "kibo", "workspaces": ["packages/*"] }\n');
-  write("packages/core/ticket.ts", `${TICKET_BEFORE.join("\n")}`);
-  write("packages/core/index.ts", 'export * from "./ticket";\nexport * from "./legacy-tree";\n');
-  write(
-    "packages/core/legacy-tree.ts",
-    lines(56, (i) => `export const legacy${i} = ${i};`),
-  );
+  writeFileSync(join(repo, "package.json"), '{ "name": "kibo", "workspaces": ["packages/*"] }\n');
+  writeFileSync(join(repo, "packages/core/ticket.ts"), TICKET_BEFORE.join("\n"));
   git("add", "-A");
   git("commit", "-q", "-m", "chore: monorepo Bun workspaces");
-  git("push", "-q", "-u", "origin", "main");
-  git("worktree", "add", "-q", "-b", "kib-28", worktree, "main");
-  const wt = gitIn(worktree);
-  const wWrite = writeIn(worktree);
-  wWrite("packages/core/move.ts", "export const reparent = (id: string, parent: string) => [id, parent];\n");
-  wt("add", "-A");
-  wt("commit", "-q", "-m", "feat(core): opérations move / reparent");
-  wWrite("packages/core/convergence.test.ts", 'import { test } from "bun:test";\ntest.todo("fast-check");\n');
-  wt("add", "-A");
-  wt("commit", "-q", "-m", "test(core): convergence fast-check");
-  wWrite("packages/core/ticket.ts", TICKET_AFTER.join("\n"));
-  wWrite(
-    "packages/core/tree.ts",
-    lines(120, (i) => `export const node${i} = "n${i}";`),
-  );
-  wt("add", "packages/core/ticket.ts", "packages/core/tree.ts");
-  wWrite(
-    "packages/core/index.ts",
-    'export * from "./ticket";\nexport * from "./tree";\nexport * from "./move";\nexport * from "./sqlite";\n',
-  );
-  rmSync(join(worktree, "packages/core/legacy-tree.ts"));
-  return { repo, worktree, remove: () => rmSync(dir, { recursive: true, force: true }) };
+  return { repo, remove: () => rmSync(dir, { recursive: true, force: true }) };
 }
 
 let page: Page;
@@ -183,9 +110,6 @@ test.beforeAll(async ({ browser }, info) => {
   mockup = createMockupRepo();
   await page.goto(`/#pair=${E2E_TOKEN}`);
   await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
-  await showAgentExecution(page);
-  await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
-  await createAgent(page, livraisonOpus("worktree"));
   seeded = await seedWorkspace(page, mockup.repo);
   await rpc(page, {
     method: "command",
@@ -196,8 +120,6 @@ test.beforeAll(async ({ browser }, info) => {
       description: "Arbre des tickets sur LoroTree : voir packages/core/ticket.ts:43 pour le schéma.",
     },
   });
-  await assign(page, seeded, 28, "livraison-opus", "running");
-  await assign(page, seeded, 14, "livraison-opus", "waiting_input");
 });
 
 test.afterAll(async () => {
@@ -238,8 +160,9 @@ test("20 · menu contextuel d'un onglet", async () => {
   const palette = page.getByRole("dialog", { name: "Palette de commandes" });
   await palette.getByRole("combobox").fill("KIB-12");
   await palette.getByRole("option", { name: /KIB-12 · Schéma Loro/ }).click();
-  await openChangesInNewTab(page, "Kibo");
-  await bar().getByRole("tab", { name: "Kibo · KIB-12" }).click();
+  await bar()
+    .getByRole("tab", { name: /^KIB-12 · / })
+    .click();
   await page.getByRole("button", { name: "packages/core/ticket.ts:43" }).click();
   await page.getByRole("button", { name: "Ouvrir dans un onglet" }).click();
   await expect(bar().getByRole("tab", { name: "ticket.ts" })).toBeVisible();
@@ -249,35 +172,6 @@ test("20 · menu contextuel d'un onglet", async () => {
   await expect(page.getByRole("menuitem", { name: /Fermer les onglets à droite/ })).toBeVisible();
   await capture(info, "20");
   await page.keyboard.press("Escape");
-});
-
-test("21 · Changements, fichier indexé sélectionné", async () => {
-  const info = test.info();
-  await page.goto(`/#/p/${seeded.projectId}/changes?wt=${encodeURIComponent(mockup.worktree)}`);
-  const staged = page.getByRole("group", { name: /^Dans le prochain commit \(/ });
-  await staged
-    .getByRole("button", { name: /ticket\.ts/ })
-    .first()
-    .click();
-  await expect(page.getByRole("button", { name: "Retirer le bloc du commit" }).first()).toBeVisible();
-  await expect(page.getByText("↑2").first()).toBeVisible();
-  await expect(page.getByLabel("Message")).not.toHaveValue("");
-  await expect(
-    page.getByText("global · livraison-opus · KIB-28 travaille dans ce worktree.", { exact: false }),
-  ).toBeVisible();
-  await capture(info, "21");
-});
-
-test("22 · dialogue PR avec fichiers indexés non commités", async () => {
-  const info = test.info();
-  await page.getByRole("button", { name: "Pousser et créer la PR" }).click();
-  const dialog = page.getByRole("dialog", { name: "Pousser et créer la PR" });
-  await expect(dialog.getByRole("button", { name: "Commiter d'abord" })).toBeVisible();
-  await expect(dialog.getByLabel("Titre")).not.toHaveValue("");
-  await expect(dialog.getByText("kib-28 → main · 2 commits non poussés · 2 fichiers")).toBeVisible();
-  await capture(info, "22");
-  await dialog.getByRole("button", { name: "Annuler" }).click();
-  await expect(dialog).toBeHidden();
 });
 
 test("23 · aperçu de ticket.ts ouvert depuis un ticket", async () => {
@@ -307,7 +201,7 @@ test("12 · Mes tickets", async () => {
   const count = Number(await entry.locator("..").getByText(/^\d+$/).textContent());
   expect(count).toBeGreaterThan(0);
   await entry.click();
-  await expect(page.getByRole("radio", { name: "Assignés à moi" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Mes tickets" })).toBeVisible();
   await expect(page.getByText(new RegExp(`^${count} tickets? · \\d+ projets?$`))).toBeVisible();
   await capture(info, "12");
 });

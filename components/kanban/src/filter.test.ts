@@ -1,14 +1,21 @@
 import { expect, test } from "bun:test";
-import type { TicketView } from "@kibo/schema";
+import type { CiRun, GithubPrRef, TicketView } from "@kibo/schema";
 import { EMPTY_PROGRESS } from "@kibo/schema";
 import fc from "fast-check";
-import { filterTickets, labelFilterOf, projectLabels } from "./filter";
+import {
+  filterTickets,
+  inFilters,
+  type KanbanFilterKey,
+  labelFilterOf,
+  projectLabels,
+  toFix,
+} from "./filter";
+import { ticketPr } from "./ticket-pr";
 
 const t = (
   key: string,
   assignee: TicketView["assignee"],
   labels: string[] = [],
-  startable = false,
   children = 0,
 ): TicketView => ({
   id: key,
@@ -27,7 +34,8 @@ const t = (
   progress: { done: 0, total: children },
   waitingOn: [],
   openQuestions: 0,
-  startable,
+  startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,
@@ -64,30 +72,6 @@ test("the label filter keeps the tickets carrying it and combines with 'mine and
   expect(projectLabels(all)).toEqual(["area:api", "phase:p1"]);
 });
 
-test("the startable filter keeps only startable tickets and combines with labels and assignee", () => {
-  const adam = { kind: "human", ref: "adam" } as const;
-  const all = [
-    t("KIB-1", adam, ["area:api"], true),
-    t("KIB-2", adam, ["area:api"], false),
-    t("KIB-3", { kind: "human", ref: "lea" }, ["area:api"], true),
-    t("KIB-4", { kind: "agent", ref: "opus-dev" }, [], true),
-  ];
-  expect(filterTickets(all, "all", "adam", null, true).map((x) => x.key)).toEqual([
-    "KIB-1",
-    "KIB-3",
-    "KIB-4",
-  ]);
-  expect(filterTickets(all, "all", "adam", "area:api", true).map((x) => x.key)).toEqual(["KIB-1", "KIB-3"]);
-  expect(filterTickets(all, "mine-and-agents", "adam", null, true).map((x) => x.key)).toEqual([
-    "KIB-1",
-    "KIB-4",
-  ]);
-  expect(filterTickets(all, "mine-and-agents", "adam", "area:api", true).map((x) => x.key)).toEqual([
-    "KIB-1",
-  ]);
-  expect(filterTickets(all, "all", "adam", null, false)).toHaveLength(4);
-});
-
 test("the saved label filter reads back only a label, '*' and anything else mean all", () => {
   expect(labelFilterOf("area:api")).toBe("area:api");
   expect(labelFilterOf("*")).toBeNull();
@@ -108,11 +92,76 @@ test("a label filter only ever narrows the board", () => {
 });
 
 test("a group of tickets never gets a card, whatever the filter", () => {
-  const all = [
-    t("KIB-1", null, [], false, 2),
-    t("KIB-2", null),
-    t("KIB-3", { kind: "agent", ref: "opus" }, [], false, 1),
-  ];
+  const all = [t("KIB-1", null, [], 2), t("KIB-2", null), t("KIB-3", { kind: "agent", ref: "opus" }, [], 1)];
   expect(filterTickets(all, "all", "adam").map((x) => x.key)).toEqual(["KIB-2"]);
   expect(filterTickets(all, "mine-and-agents", "adam")).toEqual([]);
+});
+
+const pr = (number: number, over: Partial<GithubPrRef> = {}): GithubPrRef => ({
+  kind: "github_pr",
+  url: `https://github.com/galadrim/emis/pull/${number}`,
+  number,
+  state: "open",
+  base: null,
+  head: null,
+  review: "none",
+  checks: null,
+  ...over,
+});
+const withRefs = (key: string, refs: GithubPrRef[]): TicketView => ({ ...t(key, null), externalRefs: refs });
+const ci = (prNumber: number, conclusion: string | null): CiRun => ({
+  repo: "galadrim/emis",
+  runId: prNumber * 10,
+  prNumber,
+  ticketKey: "EMIS-45",
+  headSha: "abc",
+  workflow: "CI",
+  status: conclusion === null ? "in_progress" : "completed",
+  conclusion,
+  url: "https://github.com/galadrim/emis/actions/runs/1",
+  startedAt: null,
+  updatedAt: "2026-10-16T10:00:00Z",
+  jobs: [],
+});
+
+test("the PR of a ticket is its live PR, else its latest one", () => {
+  expect(ticketPr(t("EMIS-1", null))).toBeNull();
+  expect(ticketPr(withRefs("EMIS-1", [pr(3, { state: "merged" }), pr(2)]))?.number).toBe(2);
+  expect(ticketPr(withRefs("EMIS-1", [pr(3, { state: "merged" }), pr(5, { state: "closed" })]))?.number).toBe(
+    5,
+  );
+});
+
+test("a ticket is to fix when its live PR has changes requested or a broken CI", () => {
+  expect(toFix(withRefs("EMIS-45", [pr(20, { review: "changes_requested" })]), [])).toBe(true);
+  expect(toFix(withRefs("EMIS-45", [pr(20, { checks: "error" })]), [])).toBe(true);
+  expect(toFix(withRefs("EMIS-45", [pr(20, { checks: "ok" })]), [ci(20, "failure")])).toBe(true);
+  expect(toFix(withRefs("EMIS-45", [pr(20, { checks: "error" })]), [ci(20, "success")])).toBe(false);
+  expect(toFix(withRefs("EMIS-45", [pr(20, { review: "approved", checks: "ok" })]), [])).toBe(false);
+  expect(toFix(withRefs("EMIS-45", [pr(20, { state: "merged", review: "changes_requested" })]), [])).toBe(
+    false,
+  );
+  expect(toFix(t("EMIS-45", null), [ci(20, "failure")])).toBe(false);
+});
+
+test("the board filters add up: none keeps every ticket, each one narrows the others", () => {
+  const facts = { currentSprintId: "S42", ciRuns: [] };
+  const inSprint = { ...t("EMIS-1", null), effectiveSprintId: "S42" };
+  const ready = { ...inSprint, key: "EMIS-2", startable: true };
+  const broken = { ...withRefs("EMIS-45", [pr(20, { checks: "error" })]), effectiveSprintId: "S42" };
+  const later = { ...t("EMIS-9", null), startable: true, effectiveSprintId: "S43" };
+  const all = [inSprint, ready, broken, later];
+  const keys = (filters: readonly KanbanFilterKey[]) =>
+    all.filter((x) => inFilters(x, filters, facts)).map((x) => x.key);
+  expect(keys([])).toEqual(["EMIS-1", "EMIS-2", "EMIS-45", "EMIS-9"]);
+  expect(keys(["sprint"])).toEqual(["EMIS-1", "EMIS-2", "EMIS-45"]);
+  expect(keys(["startable"])).toEqual(["EMIS-2", "EMIS-9"]);
+  expect(keys(["sprint", "startable"])).toEqual(["EMIS-2"]);
+  expect(keys(["sprint", "toFix"])).toEqual(["EMIS-45"]);
+  expect(keys(["startable", "toFix"])).toEqual([]);
+});
+
+test("without a current sprint, the sprint filter keeps nothing", () => {
+  const inSprint = { ...t("EMIS-1", null), effectiveSprintId: "S42" };
+  expect(inFilters(inSprint, ["sprint"], { currentSprintId: null, ciRuns: [] })).toBe(false);
 });

@@ -2,6 +2,7 @@ import {
   branchRefOf,
   type ExternalRef,
   GitBranchRef,
+  type GithubPrRef,
   KiboError,
   type ProjectCommand,
   type StatusId,
@@ -17,7 +18,6 @@ export type Assignments = {
 };
 type SetTarget = { id: string; statusId: StatusId; externalRefs: ExternalRef[] };
 type SetStatus = Extract<ProjectCommand, { method: "setStatus" }>;
-type UpsertRef = Extract<ProjectCommand, { method: "upsertExternalRef" }>;
 
 const KEYS = new Set(["status", "pr", "reason", "branch", "base"]);
 
@@ -84,22 +84,18 @@ function prUrl(value: string, tickets: readonly SetTarget[]): { url: string; num
   return { url: `${projectRepo(tickets)}/pull/${number}`, number };
 }
 
-export function prCommand(ticket: SetTarget, value: string, tickets: readonly SetTarget[]): UpsertRef | null {
+export function prRef(ticket: SetTarget, value: string, tickets: readonly SetTarget[]): GithubPrRef | null {
   const { url, number } = prUrl(value, tickets);
   if (ticket.externalRefs.some((r) => r.kind === "github_pr" && r.url === url)) return null;
   return {
-    method: "upsertExternalRef",
-    ticketId: ticket.id,
-    ref: {
-      kind: "github_pr",
-      url,
-      number,
-      state: "open",
-      base: null,
-      head: null,
-      review: "none",
-      checks: null,
-    },
+    kind: "github_pr",
+    url,
+    number,
+    state: "open",
+    base: null,
+    head: null,
+    review: "none",
+    checks: null,
   };
 }
 
@@ -114,8 +110,7 @@ export function branchRef(set: Assignments): GitBranchRef | null {
   return parsed.data;
 }
 
-export function branchCommand(ticket: SetTarget, ref: GitBranchRef): UpsertRef | null {
+export function branchToDeclare(ticket: SetTarget, ref: GitBranchRef): GitBranchRef | null {
   const current = branchRefOf(ticket.externalRefs);
-  if (current?.branch === ref.branch && current.base === ref.base) return null;
-  return { method: "upsertExternalRef", ticketId: ticket.id, ref };
+  return current?.branch === ref.branch && current.base === ref.base ? null : ref;
 }

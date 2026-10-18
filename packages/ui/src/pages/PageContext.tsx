@@ -1,4 +1,4 @@
-import type { ComponentSummary } from "@kibo/schema";
+import type { ComponentSummary, Spotlight } from "@kibo/schema";
 import { createSpotlightStore, type SpotlightApi } from "@kibo/sdk";
 import { createContext, useContext, useEffect, useMemo, useReducer, useState } from "react";
 import { useComponents } from "../state/use-components";
@@ -17,13 +17,10 @@ export const PageContext = createContext<PageState | null>(null);
 
 export const usePageContext = (): PageState | null => useContext(PageContext);
 
-export function usePageState(focusable: readonly string[], question: string | null = null): PageState {
+export function usePageState(focusable: readonly string[], target: Spotlight | null = null): PageState {
   const [bus] = useState(createSelectionBus);
   const [spotlight] = useState(createSpotlightStore);
-  useEffect(
-    () => spotlight.set(question === null ? null : { kind: "question", id: question }),
-    [spotlight, question],
-  );
+  useEffect(() => spotlight.set(target), [spotlight, target]);
   const { components, error } = useComponents();
   const known = error ? [] : components;
   const [requested, dispatch] = useReducer(focusReducer, null);

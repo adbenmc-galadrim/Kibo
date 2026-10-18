@@ -66,7 +66,8 @@ test("journal, sessions, sprint end, batches and the overview page are wired in 
     expect.objectContaining({ kind: "github_pr", number: 7, review: "changes_requested", checks: "error" }),
   );
   suivi.prs([pr("APPROVED", PASSED)]);
-  await until(async () => ((await again.kinds()).includes("pr_checks") ? true : undefined), "pr_checks");
+  const checks = async () => (await again.kinds()).filter((k) => k === "pr_checks").length;
+  await until(async () => ((await checks()) === 2 ? true : undefined), "the second pr_checks");
 
   const pending = await until(async () => {
     const [batch] = (await again.agent()).batches;
@@ -90,6 +91,8 @@ test("journal, sessions, sprint end, batches and the overview page are wired in 
     "branch_created",
     "status_changed",
     "pr_opened",
+    "pr_review",
+    "pr_checks",
     "status_changed",
     "pr_review",
     "pr_checks",

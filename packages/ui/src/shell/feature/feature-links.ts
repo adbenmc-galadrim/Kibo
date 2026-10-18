@@ -1,4 +1,4 @@
-import type { ProjectSnapshot, TicketView } from "@kibo/schema";
+import { isFeature, type ProjectSnapshot, type TicketView } from "@kibo/schema";
 
 export type FeatureDependency = {
   id: string;
@@ -47,4 +47,10 @@ export function featureDependencies(project: Project, featureId: string): Featur
   const ordered = (m: Map<string, TicketView>) =>
     project.tickets.filter((t) => m.has(t.id)).map((t) => dependency(project, t));
   return { waits: ordered(waits), unblocks: ordered(unblocks) };
+}
+
+export function dependencyCandidates(project: Project, featureId: string): FeatureDependency[] {
+  const { waits, unblocks } = featureDependencies(project, featureId);
+  const taken = new Set([featureId, ...waits.map((d) => d.id), ...unblocks.map((d) => d.id)]);
+  return project.tickets.filter((t) => isFeature(t) && !taken.has(t.id)).map((t) => dependency(project, t));
 }

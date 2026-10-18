@@ -21,6 +21,7 @@ const t = (id: string, parentId: string | null, total = 0, done = 0): TicketView
   waitingOn: [],
   openQuestions: 0,
   startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,

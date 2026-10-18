@@ -1,0 +1,56 @@
+import { expect, test } from "bun:test";
+import { overviewIndicators } from "@kibo/schema";
+import { homeCard } from "./home-cards";
+import { emisHomeSnapshot, HOME_TODAY, question, summaryOf } from "./home-fixtures";
+
+const snapshot = emisHomeSnapshot();
+const project = summaryOf(snapshot);
+
+test("homeCard gives the key, the client and the counts of the project", () => {
+  expect(homeCard(project, snapshot, HOME_TODAY)).toEqual({
+    id: "emis",
+    key: "EMIS",
+    name: "Emis",
+    color: "#14B8A6",
+    client: "Emis SA",
+    counts: { open: 7, blocked: 5, late: 1, risk: 0, sprint: "S42", done: 1, total: 8 },
+  });
+});
+
+test("homeCard never exposes the folder of the project", () => {
+  const card = homeCard(project, snapshot, HOME_TODAY);
+  expect(JSON.stringify(card)).not.toContain("/Users/");
+});
+
+test("homeCard counts like the overview of the project", () => {
+  const indicators = overviewIndicators({ snapshot, today: HOME_TODAY });
+  const card = homeCard(project, snapshot, HOME_TODAY);
+  expect(card.counts?.blocked).toBe(indicators.blocked.count);
+  expect(card.counts?.late).toBe(indicators.features.late);
+});
+
+test("an archived blocking question no longer blocks its ticket", () => {
+  const answered = {
+    ...snapshot,
+    questions: snapshot.questions.map((q) => (q.id === "q14" ? { ...q, archivedAt: 1 } : q)),
+  };
+  expect(homeCard(project, answered, HOME_TODAY).counts?.blocked).toBe(4);
+  const extra = { ...snapshot, questions: [...snapshot.questions, question({ id: "q15", ticketId: "s1" })] };
+  expect(homeCard(project, extra, HOME_TODAY).counts?.blocked).toBe(5);
+});
+
+test("homeCard follows the current sprint of the day", () => {
+  expect(homeCard(project, snapshot, "2026-10-19").counts?.sprint).toBe("S43");
+  expect(homeCard(project, { ...snapshot, sprints: [] }, HOME_TODAY).counts?.sprint).toBeNull();
+});
+
+test("homeCard reads the live project and waits for its snapshot to count", () => {
+  const renamed = { ...snapshot, meta: { ...snapshot.meta, client: null, name: "Emis 2" } };
+  expect(homeCard(project, renamed, HOME_TODAY)).toMatchObject({ name: "Emis 2", client: null });
+  expect(homeCard(project, undefined, HOME_TODAY)).toMatchObject({ client: "Emis SA", counts: null });
+});
+
+test("during its sprint a feature is at risk, after its end it is late, like the overview", () => {
+  expect(homeCard(project, snapshot, "2026-10-16").counts).toMatchObject({ late: 0, risk: 1 });
+  expect(homeCard(project, snapshot, HOME_TODAY).counts).toMatchObject({ late: 1, risk: 0 });
+});

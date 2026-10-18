@@ -16,9 +16,10 @@ import { Textarea } from "@kibo/sdk/ui/textarea";
 import { type FormEvent, useId, useRef, useState } from "react";
 import { createFeature, freshProgress } from "./create-feature";
 import { fr } from "./fr";
+import { proposedSprint, sprintChoices } from "./proposed-sprint";
 import { sprintLabel } from "./sprint-label";
 
-type Props = { sprints: readonly SprintView[]; sprintId: string | null; onClose(): void };
+type Props = { sprints: readonly SprintView[]; today: string; onClose(): void };
 
 const t = fr.featureDialog;
 
@@ -31,14 +32,15 @@ export const stepTitles = (text: string): string[] =>
 const SELECT_CLASS =
   "h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50";
 
-export function NewFeatureDialog({ sprints, sprintId, onClose }: Props) {
+export function NewFeatureDialog({ sprints, today, onClose }: Props) {
   const sdk = useSdk();
   const id = useId();
   const [name, setName] = useState("");
   const [expected, setExpected] = useState("");
-  const [sprint, setSprint] = useState(sprintId ?? "");
+  const [choice, setSprint] = useState<string | null>(null);
+  const sprint = choice ?? proposedSprint(sprints, today) ?? "";
   const [steps, setSteps] = useState(t.defaultSteps);
-  const [lastOptional, setLastOptional] = useState(true);
+  const [lastRequired, setLastRequired] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const titles = stepTitles(steps);
   const valid = name.trim() !== "" && titles.length > 0;
@@ -46,7 +48,13 @@ export function NewFeatureDialog({ sprints, sprintId, onClose }: Props) {
   const create = () =>
     createFeature(
       sdk,
-      { name: name.trim(), expected, sprintId: sprint === "" ? null : sprint, steps: titles, lastOptional },
+      {
+        name: name.trim(),
+        expected,
+        sprintId: sprint === "" ? null : sprint,
+        steps: titles,
+        lastOptional: !lastRequired,
+      },
       progress.current,
     );
   const submit = async (e: FormEvent) => {
@@ -84,9 +92,9 @@ export function NewFeatureDialog({ sprints, sprintId, onClose }: Props) {
               onChange={(e) => setSprint(e.target.value)}
             >
               <option value="">{t.none}</option>
-              {sprints.map((s) => (
+              {sprintChoices(sprints, today).map(({ sprint: s, over }) => (
                 <option key={s.id} value={s.id}>
-                  {sprintLabel(s)}
+                  {over ? t.over(sprintLabel(s)) : sprintLabel(s)}
                 </option>
               ))}
             </select>
@@ -97,10 +105,10 @@ export function NewFeatureDialog({ sprints, sprintId, onClose }: Props) {
             <div className="flex items-center gap-2">
               <Checkbox
                 id={`${id}-optional`}
-                checked={lastOptional}
-                onCheckedChange={(v) => setLastOptional(v === true)}
+                checked={lastRequired}
+                onCheckedChange={(v) => setLastRequired(v === true)}
               />
-              <Label htmlFor={`${id}-optional`}>{t.lastOptional}</Label>
+              <Label htmlFor={`${id}-optional`}>{t.lastRequired}</Label>
             </div>
           </div>
           {(error || titles.length === 0) && (

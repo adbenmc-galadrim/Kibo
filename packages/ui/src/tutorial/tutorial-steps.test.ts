@@ -1,87 +1,73 @@
 import { expect, test } from "bun:test";
-import { type Page, TUTORIAL_NEVER, type TutorialSeed, type TutorialState } from "@kibo/schema";
-import { shownSteps, stepViews } from "./tutorial-steps";
+import { TUTORIAL_NEVER, type TutorialSeed, type TutorialState } from "@kibo/schema";
+import { copyKeyOf } from "./copy-key";
+import { stepViews } from "./tutorial-steps";
 
 const seed: TutorialSeed = {
-  ticketIds: [],
-  linkKeys: [],
-  layouts: {},
-  noteHash: "h",
-  dashboardPageId: "pd",
-  graphPageId: "pg",
+  featureIds: ["f1"],
+  reviewTicketId: "s4",
+  questionId: "q1",
+  copyTicketId: "s5",
+  overviewPageId: "po",
+  planningPageId: "pp",
+  kanbanPageId: "pk",
+  questionsPageId: "pq",
 };
-const page = (id: string, title: string, kind: Page["kind"]): Page => ({ id, title, kind, parentId: null });
-const pages = [
-  page("pd", "Tableau de bord", "dashboard"),
-  page("pk", "Kanban", "view"),
-  page("pg", "Graphe", "view"),
-  page("pn", "Notes", "view"),
-];
 const active: TutorialState = {
   ...TUTORIAL_NEVER,
   status: "active",
   startedAt: 1,
   projectId: "p",
-  completed: ["kanban"],
+  completed: ["overview"],
   seed,
 };
+const at = (pageId: string) => ({ kind: "page" as const, projectId: "p", pageId });
 
-test("stepViews marks completed and current steps and points each step to its page", () => {
-  const views = stepViews(active, "p", pages);
+test("five tracking steps, each pointing to its page of the demo", () => {
+  const views = stepViews(active, "p");
   expect(views.map((v) => [v.step, v.done, v.current])).toEqual([
-    ["kanban", true, false],
-    ["links", false, true],
-    ["note", false, false],
-    ["dashboard", false, false],
-    ["agent", false, false],
-    ["component", false, false],
+    ["overview", true, false],
+    ["feature", false, true],
+    ["review", false, false],
+    ["question", false, false],
+    ["copy", false, false],
   ]);
-  expect(views.map((v) => v.where)).toEqual([
-    { kind: "page", projectId: "p", pageId: "pk" },
-    { kind: "page", projectId: "p", pageId: "pg" },
-    { kind: "page", projectId: "p", pageId: "pn" },
-    { kind: "page", projectId: "p", pageId: "pd" },
-    { kind: "page", projectId: "p", pageId: "pk" },
-    { kind: "page", projectId: "p", pageId: "pd" },
+  expect(views.map((v) => v.where)).toEqual([at("po"), at("pp"), at("pk"), at("pq"), at("pk")]);
+  expect(views.map((v) => v.title)).toEqual([
+    "Lire la Vue d'ensemble",
+    "Créer une fonctionnalité",
+    "Voir une étape passer en review",
+    "Répondre à une question",
+    "Copier /full-delivery",
   ]);
-  expect(views[1]?.instruction).toContain("Graphe");
-  expect(views[0]?.title).toBe("Créer un ticket et le déplacer");
+  expect(views[1]?.instruction).toContain("Planning");
 });
 
-test("a renamed or missing page leaves the step without destination, the seed ids still win", () => {
-  const renamed = [page("pd", "Accueil", "dashboard"), page("pg", "Liens", "view")];
-  const views = stepViews(active, "p", renamed);
-  expect(views[0]?.where).toBeNull();
-  expect(views[1]?.where).toEqual({ kind: "page", projectId: "p", pageId: "pg" });
-  expect(views[3]?.where).toEqual({ kind: "page", projectId: "p", pageId: "pd" });
+test("a tour without seed has steps without destination", () => {
+  expect(stepViews({ ...active, seed: null }, "p").every((v) => v.where === null)).toBe(true);
 });
 
-test("a finished tutorial has every step done and none current", () => {
+test("a finished tour has every step done and none current", () => {
   const done: TutorialState = {
     ...active,
     status: "done",
-    completed: ["kanban", "links", "note", "dashboard", "agent", "component"],
+    completed: ["overview", "feature", "review", "question", "copy"],
   };
-  expect(stepViews(done, "p", pages).every((v) => v.done && !v.current)).toBe(true);
+  expect(stepViews(done, "p").every((v) => v.done && !v.current)).toBe(true);
 });
 
-test("hidden execution: the agent step leaves the tour and the next open step becomes current", () => {
-  const atAgent: TutorialState = { ...active, completed: ["kanban", "links", "note", "dashboard"] };
-  const views = shownSteps(stepViews(atAgent, "p", pages), false);
-  expect(views.map((v) => v.step)).toEqual(["kanban", "links", "note", "dashboard", "component"]);
-  expect(views.find((v) => v.current)?.step).toBe("component");
-  expect(views.some((v) => v.title.includes("agent"))).toBe(false);
-});
+const step = (id: string, key: string, startable: boolean) => ({ id, key, parentId: "f1", startable });
 
-test("shown execution: the agent step is back in the tour, current when due", () => {
-  const atAgent: TutorialState = { ...active, completed: ["kanban", "links", "note", "dashboard"] };
-  const views = shownSteps(stepViews(atAgent, "p", pages), true);
-  expect(views).toHaveLength(6);
-  expect(views.find((v) => v.current)?.step).toBe("agent");
-});
-
-test("hidden execution: a tour with only the agent step left has no current step", () => {
-  const left: TutorialState = { ...active, completed: ["kanban", "links", "note", "dashboard", "component"] };
-  const views = shownSteps(stepViews(left, "p", pages), false);
-  expect(views.every((v) => v.done && !v.current)).toBe(true);
+test("the copy step names the seeded step while it can start, otherwise the first startable step", () => {
+  const tickets = [step("s3", "DEMO-3", false), step("s5", "DEMO-5", true), step("s6", "DEMO-6", true)];
+  expect(copyKeyOf(active, tickets)).toBe("DEMO-5");
+  const held = tickets.map((t) => (t.id === "s5" ? { ...t, startable: false } : t));
+  expect(copyKeyOf(active, held)).toBe("DEMO-6");
+  expect(
+    copyKeyOf(
+      active,
+      held.map((t) => ({ ...t, startable: false })),
+    ),
+  ).toBe("DEMO-5");
+  expect(copyKeyOf({ ...active, seed: null }, tickets)).toBeNull();
 });

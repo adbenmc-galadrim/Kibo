@@ -108,7 +108,8 @@ export const TOOL_SPECS: readonly ToolSpec[] = [
   },
   {
     name: "list_tickets",
-    description: "Liste les tickets du projet, filtrés par statut, étiquette ou texte, 50 par page.",
+    description:
+      "Liste les tickets du projet, filtrés par statut, étiquette ou texte, 50 par page ; chaque ticket dit s'il est démarrable, sinon pourquoi (startReason : dépendance, question bloquante, sprint à venir, sans sprint, limite des fonctionnalités en cours).",
     inputSchema: object({
       status: statusId,
       label: { type: "string" },

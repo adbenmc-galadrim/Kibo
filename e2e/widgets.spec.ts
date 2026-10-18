@@ -14,9 +14,9 @@ const projectIdOf = (page: Page): string => {
 };
 
 async function showAllTickets(root: Locator) {
-  const all = root.getByRole("radio", { name: "Tous" });
-  if ((await all.getAttribute("aria-checked")) !== "true") await all.click();
-  await expect(all).toHaveAttribute("aria-checked", "true");
+  const all = root.getByRole("button", { name: "Tous", exact: true });
+  if ((await all.getAttribute("aria-pressed")) !== "true") await all.click();
+  await expect(all).toHaveAttribute("aria-pressed", "true");
 }
 
 async function expectColumnScrollsInside(page: Page, root: Locator, info: TestInfo, name: string) {
@@ -74,7 +74,6 @@ test("les étiquettes filtrent les Tickets et le Kanban, la fiche les modifie", 
   await createPage(page, "Étiquettes", "Tableau de bord");
   await addComponent(page, "Tickets");
   const tickets = page.locator("[data-instance]").first();
-  await tickets.getByRole("button", { name: "Déplier Hors fonctionnalité" }).click();
   await expect(tickets.getByText("Contrat de l'API")).toBeVisible();
   await tickets.getByRole("button", { name: "Fonctionnalité", exact: true }).click();
   await page.getByRole("menuitemcheckbox", { name: "area:api" }).click();

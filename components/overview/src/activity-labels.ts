@@ -1,4 +1,5 @@
-import { deliveryStepLabel, type ProjectEvent, type ProjectEventKind } from "@kibo/schema";
+import { DELIVERY_STEP_LABELS, type ProjectEvent, type ProjectEventKind } from "@kibo/schema";
+import { phaseLabel } from "@kibo/sdk";
 
 export type ActivityContext = {
   subject: string;
@@ -37,7 +38,7 @@ const REVIEW: Record<string, (p: string) => string> = {
   approved: (p) => `${p} approuvée`,
   review_required: (p) => `${p} · review demandée`,
 };
-const CHECKS: Record<string, string> = { ok: "CI verte", error: "CI rouge", running: "CI en cours" };
+const CHECKS: Record<string, string> = { ok: "CI verte", error: "CI cassée", running: "CI en cours" };
 const DECISION: Record<string, string> = { apply: "validé", reject: "refusé" };
 
 function sprintSet(data: Data, ctx: ActivityContext): string {
@@ -49,9 +50,9 @@ function sprintSet(data: Data, ctx: ActivityContext): string {
 
 function stepSet(data: Data, _ctx: ActivityContext, event: ProjectEvent): string {
   const step = num(data, "step");
-  if (step === null) return event.source === "update-delivery" ? "Retouche" : "Étape";
-  const label = deliveryStepLabel(step);
-  return event.source === "update-delivery" ? `Retouche · ${label}` : `Étape ${label}`;
+  if (step === null) return event.source === "update-delivery" ? "Retouche" : "Phase de livraison";
+  const label = phaseLabel(step, DELIVERY_STEP_LABELS[step] ?? "");
+  return event.source === "update-delivery" ? `Retouche · ${label}` : label;
 }
 
 function sessionStopped(data: Data): string {

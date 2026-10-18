@@ -17,14 +17,15 @@ import { ExpectedResult } from "./feature/ExpectedResult";
 import { FeatureHeader } from "./feature/FeatureHeader";
 import { ActivityCard, QuestionsCard } from "./feature/FeedCards";
 import { featureActivity, featureQuestions, journalActivity } from "./feature/feature-feed";
-import { featureDependencies } from "./feature/feature-links";
-import { featureBadge, nextStep, sprintFacts, stepModels } from "./feature/feature-model";
+import { dependencyCandidates, featureDependencies } from "./feature/feature-links";
+import { featureBadge, nextStartableStep, sprintFacts, stepModels } from "./feature/feature-model";
 import { NextStepAction } from "./feature/NextStepAction";
 import { SprintCard } from "./feature/SprintCard";
 import { StepsTimeline } from "./feature/StepsTimeline";
 import { useFeatureJournal, useProjectCiRuns } from "./feature/use-feature-feed";
 import { useSprintProposal } from "./feature/use-sprint-proposal";
 import { useOptionalHost } from "./Host";
+import { useDaemonToday } from "./use-daemon-today";
 
 type Props = {
   project: ProjectSnapshot;
@@ -52,11 +53,13 @@ export function FeatureDetail({
   const setting = useAppSettings().agentExecution;
   const execution = forced ?? setting;
   const now = fixedNow ?? liveNow;
+  const today = useDaemonToday(fixedNow);
   const host = useOptionalHost();
   const agents = useAgentsState();
   const titleCommand = useTicketCommand(project.meta.id);
   const descriptionCommand = useTicketCommand(project.meta.id);
   const sprintCommand = useTicketCommand(project.meta.id);
+  const linkCommand = useTicketCommand(project.meta.id);
   const editable = canEdit(project);
   const group = useDeliver(project.meta.id, f);
   const deliveryEntries: MenuEntry[] =
@@ -67,9 +70,10 @@ export function FeatureDetail({
   const journal = useFeatureJournal(project, f.id);
   const proposal = useSprintProposal(project.meta.id, f.key);
   const steps = stepModels(project, f.id, { runs: agents?.runs ?? [], ciRuns, now, execution });
-  const next = nextStep(steps);
+  const next = nextStartableStep(steps, project.tickets);
   const activity = journal.length > 0 ? journalActivity(journal, project, now) : featureActivity(steps, now);
-  const facts = sprintFacts(project, f);
+  if (today === null) return null;
+  const facts = sprintFacts(project, f, { today, steps });
   const setSprint = (sprintId: string | null) =>
     void sprintCommand.run({ method: "setTicketSprint", ticketId: f.id, sprintId });
   const openFile = (r: { path: string; line: number | null }) =>
@@ -131,9 +135,16 @@ export function FeatureDetail({
             steps={steps}
             workflow={project.workflow}
             now={now}
-            nextId={next?.ticketId ?? null}
+            nextId={next?.step.ticketId ?? null}
             nextAction={
-              next && <NextStepAction projectId={project.meta.id} step={next} execution={execution} />
+              next && (
+                <NextStepAction
+                  projectId={project.meta.id}
+                  step={next.step}
+                  reason={next.reason}
+                  execution={execution}
+                />
+              )
             }
             onOpenTicket={onOpenTicket}
           />
@@ -147,15 +158,30 @@ export function FeatureDetail({
             onSetSprint={setSprint}
             onApplyProposal={proposal.apply}
           />
-          {(sprintCommand.error ?? proposal.error) && (
+          {(sprintCommand.error ?? proposal.error ?? linkCommand.error) && (
             <p role="alert" className="text-[12px] text-(--tracking-red)">
-              {sprintCommand.error ?? proposal.error}
+              {sprintCommand.error ?? proposal.error ?? linkCommand.error}
             </p>
           )}
-          <DependenciesCard dependencies={featureDependencies(project, f.id)} onOpenTicket={onOpenTicket} />
+          <DependenciesCard
+            dependencies={featureDependencies(project, f.id)}
+            {...(editable && {
+              adding: {
+                candidates: dependencyCandidates(project, f.id),
+                onAdd: (from: string) =>
+                  void linkCommand.run({ method: "addLink", from, to: f.id, type: "blocks" }),
+              },
+            })}
+            onOpenTicket={onOpenTicket}
+          />
           <QuestionsCard
             questions={featureQuestions(project, f.id, now)}
-            onOpenQuestion={(id) => host?.openView("questions", undefined, id)}
+            onOpenQuestion={(id) => host?.openView("questions", undefined, { kind: "question", id })}
+            {...(editable &&
+              host && {
+                onNewQuestion: () =>
+                  host.openView("questions", undefined, { kind: "newQuestion", ticketId: f.id }),
+              })}
           />
           <ActivityCard items={activity} />
           <p className="flex items-start gap-[8px] text-[11.5px] leading-[17px] text-(--tracking-dim)">

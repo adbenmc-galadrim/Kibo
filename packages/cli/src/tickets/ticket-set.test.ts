@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { ExternalRef, StatusId } from "@kibo/schema";
-import { parseAssignments, prCommand, statusCommand } from "./ticket-set";
+import { parseAssignments, prRef, statusCommand } from "./ticket-set";
 
 const DEFAULT_REASON = "Bloqué par la livraison (kibo tickets)";
 const pr = (url: string, number: number): ExternalRef => ({
@@ -71,34 +71,31 @@ describe("set assignments", () => {
 
   test("builds a PR reference from a number and the project repository, or from a URL", () => {
     const known = [ticket("a", "done", [pr("https://github.com/o/r/pull/3", 3)])];
-    expect(prCommand(ticket("t", "todo"), "12", known)).toEqual({
-      method: "upsertExternalRef",
-      ticketId: "t",
-      ref: {
-        kind: "github_pr",
-        url: "https://github.com/o/r/pull/12",
-        number: 12,
-        state: "open",
-        base: null,
-        head: null,
-        review: "none",
-        checks: null,
-      },
+    expect(prRef(ticket("t", "todo"), "12", known)).toEqual({
+      kind: "github_pr",
+      url: "https://github.com/o/r/pull/12",
+      number: 12,
+      state: "open",
+      base: null,
+      head: null,
+      review: "none",
+      checks: null,
     });
-    expect(prCommand(ticket("t", "todo"), "https://github.com/x/y/pull/9", [])).toMatchObject({
-      ref: { url: "https://github.com/x/y/pull/9", number: 9 },
+    expect(prRef(ticket("t", "todo"), "https://github.com/x/y/pull/9", [])).toMatchObject({
+      url: "https://github.com/x/y/pull/9",
+      number: 9,
     });
   });
 
   test("keeps a PR already attached and refuses an unknown or ambiguous repository", () => {
     const attached = ticket("t", "in_progress", [pr("https://github.com/o/r/pull/12", 12)]);
-    expect(prCommand(attached, "12", [attached])).toBeNull();
-    expect(() => prCommand(ticket("t", "todo"), "12", [])).toThrow("pr=<url>");
+    expect(prRef(attached, "12", [attached])).toBeNull();
+    expect(() => prRef(ticket("t", "todo"), "12", [])).toThrow("pr=<url>");
     const two = [
       ticket("a", "done", [pr("https://github.com/o/r/pull/3", 3)]),
       ticket("b", "done", [pr("https://github.com/o/other/pull/4", 4)]),
     ];
-    expect(() => prCommand(ticket("t", "todo"), "12", two)).toThrow("pr=<url>");
-    expect(() => prCommand(ticket("t", "todo"), "douze", two)).toThrow("INVALID_INPUT");
+    expect(() => prRef(ticket("t", "todo"), "12", two)).toThrow("pr=<url>");
+    expect(() => prRef(ticket("t", "todo"), "douze", two)).toThrow("INVALID_INPUT");
   });
 });

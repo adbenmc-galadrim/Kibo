@@ -19,6 +19,7 @@ import {
   Ticket,
 } from "@kibo/schema";
 import { testAgent } from "../agents/agents-port.test-helper";
+import type { TicketExecution } from "../agents/execution-removed";
 import type { AssignInput } from "../agents/orchestrator-types";
 import { ensureNotesTables } from "../notes/index";
 import { createNotesService, type NotesService } from "../notes/service";
@@ -51,6 +52,7 @@ export type FakeAgents = ProjectAgentAgentsPort & {
   cancelled: string[];
   delivered: { projectId: string; ticketId: string }[];
   failAssign: KiboError | null;
+  mode: TicketExecution;
 };
 
 const HOST = {
@@ -78,6 +80,8 @@ export function fakeAgents(): FakeAgents {
     cancelled: [],
     delivered: [],
     failAssign: null,
+    mode: "allowed",
+    ticketExecution: () => fake.mode,
     startProjectRun: unused,
     answer: unused,
     log: unused,
@@ -207,7 +211,8 @@ export async function contextOf(h: Harness): Promise<BatchContext> {
 }
 
 export async function propose(h: Harness, actions: ProposedAction[]): Promise<Batch> {
-  const checked = validateBatch({ summary: "Ranger le projet", actions }, await contextOf(h));
+  const context = { ...(await contextOf(h)), agentExecution: "shown" as const };
+  const checked = validateBatch({ summary: "Ranger le projet", actions }, context);
   if (!checked.ok) throw new Error(renderProblems(checked.problems));
   return {
     id: "b1",

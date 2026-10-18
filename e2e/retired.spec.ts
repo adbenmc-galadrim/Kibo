@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import { rpc } from "./agents-seed";
 import { createPage, pairAndCreateProject } from "./helpers";
 import { projectKey, shot } from "./repo-project";
+import { E2E_TOKEN } from "./token";
 
 test.use({ viewport: { width: 1440, height: 900 } });
 
@@ -38,4 +39,28 @@ test("un jeu ou un serpent déjà posé s'affiche absent et se retire de la page
   await expect(main.getByText("Composant absent : itch@1.0.0")).toHaveCount(0);
   await expect(main.getByText("Composant absent : snake@1.0.0")).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+const RETIRED_URLS = [
+  "/#/agents",
+  "/#/agents/queue",
+  "/#/agents/skills",
+  "/#/creations",
+  "/#/components",
+  "/#/settings/components",
+  "/#/settings/domains",
+  "/#/code",
+];
+
+test("les anciennes URL des écrans retirés ramènent à l'Accueil", async ({ page }) => {
+  await page.goto(`/#pair=${E2E_TOKEN}`);
+  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
+  for (const url of RETIRED_URLS) {
+    await page.goto("about:blank");
+    await page.goto(url);
+    await expect(page).toHaveURL(/#\/$/);
+  }
+  const sidebar = page.locator('[data-sidebar="sidebar"]');
+  for (const name of ["Agents", "Files d'attente", "Skills", "Créations", "Composants"])
+    await expect(sidebar.getByRole("button", { name, exact: true })).toHaveCount(0);
 });

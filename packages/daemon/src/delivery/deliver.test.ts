@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { type Agent, EMPTY_DELIVERY, KiboError, type ProjectDelivery, type RunView } from "@kibo/schema";
 import { testAgent } from "../agents/agents-port.test-helper";
+import type { TicketExecution } from "../agents/execution-removed";
 import type { AssignInput } from "../agents/orchestrator-types";
 import { runView } from "../questions/questions.test-helper";
 import { type DeliverDeps, type DeliveryProject, deliver, NO_DELIVERY_AGENT } from "./deliver";
@@ -29,7 +30,14 @@ const TICKETS: Row[] = [
 
 const fullDelivery = (enabled = true) => testAgent({ id: "full-delivery", name: "full-delivery", enabled });
 
-function rig(over: { agents?: Agent[]; delivery?: ProjectDelivery | null; runs?: RunView[] } = {}) {
+type RigOptions = {
+  agents?: Agent[];
+  delivery?: ProjectDelivery | null;
+  runs?: RunView[];
+  ticketExecution?: TicketExecution;
+};
+
+function rig(over: RigOptions = {}) {
   const assigned: AssignInput[] = [];
   const project: DeliveryProject = {
     delivery: over.delivery === undefined ? EMPTY_DELIVERY : over.delivery,
@@ -41,6 +49,7 @@ function rig(over: { agents?: Agent[]; delivery?: ProjectDelivery | null; runs?:
     project: () => project,
     agents: () => over.agents ?? [fullDelivery()],
     orchestrator: {
+      ticketExecution: () => over.ticketExecution ?? "allowed",
       state: () => ({ runs: over.runs ?? [] }),
       assign(input) {
         assigned.push(input);
@@ -159,6 +168,16 @@ test("a touch-up refuses a ticket with sub-tickets", () => {
   const { deps, assigned } = rig();
   expect(() => deliver(deps, { projectId: "p1", ticketId: "17", mode: "update" })).toThrow(
     expect.objectContaining({ code: "TICKET_HAS_CHILDREN" }),
+  );
+  expect(assigned).toEqual([]);
+});
+
+test("without ticket execution a leaf and a parent are both refused, nothing is assigned or listed", () => {
+  const { deps, assigned } = rig({ ticketExecution: "removed" });
+  for (const ticketId of ["15", "17"])
+    expect(() => deliver(deps, { projectId: "p1", ticketId })).toThrow("AGENT_EXECUTION_REMOVED");
+  expect(() => deliver(deps, { projectId: "p1", ticketId: "15", mode: "update" })).toThrow(
+    "AGENT_EXECUTION_REMOVED",
   );
   expect(assigned).toEqual([]);
 });

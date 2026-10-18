@@ -26,7 +26,7 @@ export function TicketTabs({ tab, onTab, details, activity }: Props) {
   const t = frMoments.activity;
   return (
     <Tabs value={tab} onValueChange={onTab} className="gap-4">
-      <TabsList variant="line" aria-label={t.tabs} className="mx-4 w-auto justify-start border-b">
+      <TabsList variant="line" aria-label={t.tabs} className="w-full justify-start border-b">
         <TabsTrigger value="details" className={TRIGGER}>
           {t.details}
         </TabsTrigger>

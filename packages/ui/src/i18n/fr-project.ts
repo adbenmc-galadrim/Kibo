@@ -92,7 +92,6 @@ export const frProject = {
     busyTitle: "Des agents travaillent sur ce projet",
     busy: (n: number) =>
       `${n} run${n > 1 ? "s" : ""} en cours ou en file : arrête-les avant de supprimer le projet.`,
-    seeAgents: "Voir les agents",
     sharedTitle: "Ce projet est partagé",
     sharedOwner:
       "Tu en es propriétaire : arrête d'abord le partage, ce qui le supprime du serveur pour tout le monde.",

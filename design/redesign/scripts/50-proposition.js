@@ -10,6 +10,9 @@ Object.assign(S.ICONS, {
   grip: '<circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/>',
   grab: '<path d="M18 11.5V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v1.4"/><path d="M14 10V8a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 9.9V9a2 2 0 0 0-2-2a2 2 0 0 0-2 2v5"/><path d="M6 14a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-4a8 8 0 0 1-8-8 2 2 0 1 1 4 0"/>',
   clockAlert: '<path d="M12 6v6l4 2"/><path d="M16 21.16a10 10 0 1 1 5-13.516"/><path d="M20 11.5v6"/><path d="M20 21.5h.01"/>',
+  pencil: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+  radio: '<path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/>',
+  triangleAlert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
 });
 S.NAV_ICON.Planning = "sprint";
 S.PAGES_P = ["Vue d'ensemble", "Planning", "Tickets", "Kanban", "Graphe", "Notes", "Questions"];
@@ -188,7 +191,8 @@ S.featCard = (p, ft, o = {}) => { const C = S.C, done = S.fDone(ft), n = ft.step
   const r = S.row(c, { fx: true, gap: 6 }); S.icon(r, "grip", 13, C.faint); S.txt(r, ft.k, { size: 11, mono: true, color: C.dim }); S.spacer(r);
   if (full) { S.icon(r, "circleCheck", 13, C.green); S.txt(r, "livrée", { size: 11.5, color: C.green }); }
   else if (ft.late) S.lateChip(r, "en retard"); else if (ft.blocked) S.chip(r, "bloquée · " + ft.blocked, { icon: "lock", ic: C.red, color: C.red, stroke: null, fill: C.redSoft, size: 10.5 });
-  else if (S.fState(ft) === "Ouverte") S.chip(r, "ouverte", { color: C.blue, stroke: null, fill: C.blueSoft, size: 10.5 });
+  else if (S.fState(ft) === "Ouverte" && o.risk) S.chip(r, "à risque", { icon: "triangleAlert", ic: C.amber, color: C.amber, stroke: null, fill: C.amberSoft, size: 10.5 });
+  else if (S.fState(ft) === "Ouverte") S.chip(r, "en cours", { color: C.blue, stroke: null, fill: C.blueSoft, size: 10.5 });
   S.txt(c, ft.name, { size: 13, weight: 500, fill: true, color: full ? C.mfg : C.fg });
   if (!o.compact) { const sw = Math.floor((o.w - 24 - (n - 1) * 3) / n); S.segs(c, ft.steps.map(t => S.caseColor(t.st)), { w: sw, h: 8, gap: 3, radius: 2 });
     const m = S.row(c, { fx: true, gap: 6 }); S.txt(m, `${done}/${n} étapes`, { size: 11.5, color: C.dim }); S.spacer(m);
@@ -197,37 +201,40 @@ S.featCard = (p, ft, o = {}) => { const C = S.C, done = S.fDone(ft), n = ft.step
   return c; };
 S.draw["p-planning"] = (x, y) => { const C = S.C, P = S.P;
   const f = S.screen("P2 · Planning", x, y, 1440, 1000);
-  const { main } = S.shellP(f, "Planning", { right: t => S.btn(t, "Nouveau sprint", "outline", { sm: true, icon: "plus" }) });
+  const { main } = S.shellP(f, "Planning");
   const body = S.col(main, { fx: true, fy: true, pad: [18, 24], gap: 14 });
   const hd = S.row(body, { fx: true, gap: 10, align: "end" }); S.txt(hd, "Planning", { size: 22, weight: 600 }); S.txt(hd, "3 fonctionnalités livrées sur 9 · 1 à planifier", { size: 12.5, color: C.dim }); S.spacer(hd);
-  const lim = S.row(hd, { gap: 6, pad: [5, 10], radius: 6, stroke: C.border }); S.icon(lim, "target", 13, C.amber); S.txt(lim, "Ouvertes : 2 / 2", { size: 12.5, weight: 500 }); S.icon(lim, "chevDown", 12, C.dim);
+  S.btn(hd, "Fonctionnalité", "outline", { sm: true, icon: "plus" }); S.btn(hd, "Sprint", "outline", { sm: true, icon: "plus" });
+  const lim = S.row(hd, { gap: 6, pad: [5, 10], radius: 6, stroke: C.border }); S.icon(lim, "target", 13, C.amber); S.txt(lim, "En cours : 2 / 2", { size: 12.5, weight: 500 }); S.icon(lim, "chevDown", 12, C.dim);
   const seg = S.row(hd, { pad: 2, radius: 7, fill: C.muted, gap: 2 }); for (const [l, on] of [["Colonnes", true], ["Bandes"]]) { const s = S.row(seg, { pad: [4, 10], radius: 5, fill: on ? C.bg : null, stroke: on ? C.border : null }); S.txt(s, l, { size: 12.5, weight: 500, color: on ? C.fg : C.mfg }); }
   const cols = S.row(body, { name: "sprints", fx: true, fy: true, gap: 12, align: "stretch" });
   const CW = 214;
   const column = (sp) => { const cur = sp && sp.key === "S42", res = !sp;
     const c = S.col(cols, { name: "col " + (sp ? sp.key : "reserve"), w: CW, fy: true, pad: 10, gap: 10, radius: 10, fill: res ? null : cur ? C.card : C.panel, stroke: cur ? C.mfg : C.border, dashed: res });
     const h = S.col(c, { fx: true, gap: 4, pad: [2, 2, 4, 2] }); const a = S.row(h, { fx: true, gap: 6 });
-    if (sp) { S.txt(a, sp.key, { size: 13, weight: 600, mono: true }); S.txt(a, sp.name, { size: 13, weight: 600 }); }
+    if (sp) { S.txt(a, sp.key, { size: 13, weight: 600, mono: true }); S.txt(a, sp.name, { size: 13, weight: 600 }); S.icon(a, "pencil", 13, C.dim); }
     else { S.icon(a, "inbox", 14, C.mfg); S.txt(a, "À planifier", { size: 13, weight: 600 }); }
     const m = S.row(h, { fx: true, gap: 6 });
     if (sp) { S.txt(m, sp.dates, { size: 11.5, color: C.dim }); S.spacer(m);
       const fs = P.features.filter(x => x.sprint === sp.key), d = fs.filter(x => S.fState(x) === "Livrée").length;
       if (sp.state === "Terminé") S.chip(m, "terminé", { icon: "circleCheck", ic: C.green, color: C.green, stroke: null, fill: C.greenSoft, size: 10.5 });
-      else if (cur) S.chip(m, "en cours", { color: C.fg, stroke: null, fill: C.muted, size: 10.5 });
+      else if (cur) S.chip(m, "se termine aujourd'hui", { color: C.fg, stroke: null, fill: C.muted, size: 10.5 });
       else S.txt(m, `${fs.length} prévue${fs.length > 1 ? "s" : ""}`, { size: 11.5, color: C.dim });
-      if (sp.state !== "Prévu") { const pr = S.row(h, { fx: true, gap: 6 }); S.bar(pr, CW - 110, d / fs.length, { h: 3, color: C.green }); S.txt(pr, `${d}/${fs.length} livrées`, { size: 11, color: C.dim }); } }
+      if (sp.state !== "Prévu") { const pr = S.row(h, { fx: true, gap: 6 }); S.bar(pr, CW - 110, d / fs.length, { h: 3, color: C.green }); S.txt(pr, `${d}/${fs.length} livrées`, { size: 11, color: C.dim }); }
+      const steps = fs.reduce((n, x) => n + x.steps.length, 0), cap = 5;
+      S.txt(h, `${steps} étapes prévues · capacité ${cap}`, { name: "load", size: 11, color: steps > cap ? C.amber : C.dim }); }
     else S.txt(m, "Glisse une fonctionnalité vers un sprint", { size: 11.5, color: C.dim });
     return c; };
-  for (const sp of P.sprints) { const c = column(sp);
-    for (const ft of P.features.filter(x => x.sprint === sp.key)) S.featCard(c, ft, { w: CW - 20, compact: sp.state === "Terminé" });
-    if (sp.key === "S42") { const w = S.row(c, { fx: true, gap: 6, pad: [6, 8], radius: 6, fill: C.redSoft }); S.icon(w, "clockAlert", 13, C.red); S.txt(w, "F5 ne tiendra pas : 4 étapes restantes", { size: 11.5, color: C.red, fill: true }); }
-    if (sp.key === "S44") { const dz = S.col(c, { name: "dropzone", fx: true, h: 120, radius: 8, stroke: C.fg, dashed: true, fill: C.muted, align: "center", justify: "center", gap: 6 });
-      S.icon(dz, "sprint", 16, C.fg); S.txt(dz, "Déposer pour planifier en S44", { size: 12, weight: 500 }); S.txt(dz, "26–30 oct.", { size: 11, color: C.dim }); } }
   const rc = column(null);
   const f9 = S.feat("F9"); const ghostSrc = S.featCard(rc, f9, { w: CW - 20 }); ghostSrc.opacity = 0.35;
-  const hint = S.col(rc, { fx: true, gap: 6, pad: [8, 4] }); S.txt(hint, "Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite d'ouvertes.", { size: 11.5, color: C.dim, fill: true, lh: 1.45 });
+  const hint = S.col(rc, { fx: true, gap: 6, pad: [8, 4] }); S.txt(hint, "Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite des fonctionnalités en cours.", { size: 11.5, color: C.dim, fill: true, lh: 1.45 });
+  for (const sp of P.sprints) { const c = column(sp);
+    for (const ft of P.features.filter(x => x.sprint === sp.key)) S.featCard(c, ft.k === "F5" ? { ...ft, late: false } : ft, { w: CW - 20, compact: sp.state === "Terminé", risk: sp.key === "S42" });
+    if (sp.key === "S42") for (const t of ["F4 ne tiendra pas : 1 étape restante", "F5 ne tiendra pas : 4 étapes restantes"]) { const w = S.row(c, { fx: true, gap: 6, pad: [6, 8], radius: 6, fill: C.amberSoft }); S.icon(w, "clockAlert", 13, C.amber); S.txt(w, t, { size: 11.5, color: C.amber, fill: true }); }
+    if (sp.key === "S44") { const dz = S.col(c, { name: "dropzone", fx: true, h: 120, radius: 8, stroke: C.fg, dashed: true, fill: C.muted, align: "center", justify: "center", gap: 6 });
+      S.icon(dz, "sprint", 16, C.fg); S.txt(dz, "Déposer pour planifier en S44", { size: 12, weight: 500 }); S.txt(dz, "26–30 oct.", { size: 11, color: C.dim }); } }
   // Carte en cours de glissement, au-dessus de la zone de dépôt de S44.
-  const gw = CW - 20, gx = 240 + 1 + 24 + 3 * (CW + 12) + 30, gy = 48 + 1 + 18 + 40 + 14 + 268;
+  const gw = CW - 20, gx = 240 + 1 + 24 + 4 * (CW + 12) + 30, gy = 48 + 1 + 18 + 40 + 14 + 268;
   const g = S.col(f, { name: "dragging F9", x: gx, y: gy, w: gw, pad: [10, 12], gap: 8, radius: 8, fill: C.card, stroke: C.fg, shadow: 8, vs: "auto" });
   const gr = S.row(g, { fx: true, gap: 6 }); S.icon(gr, "grip", 13, C.mfg); S.txt(gr, "F9", { size: 11, mono: true, color: C.dim });
   S.txt(g, f9.name, { size: 13, weight: 500, fill: true }); S.segs(g, f9.steps.map(() => C.track), { w: Math.floor((gw - 24 - 6) / 3), h: 8, gap: 3, radius: 2 });
@@ -243,7 +250,7 @@ S.draw["p-fonctionnalite"] = (x, y) => { const C = S.C, ft = S.feat("F5");
   const { main } = S.shellP(f, "Planning", { crumbs: ["Emis", "Planning", "F5 · Envoyer les photos d'un tronçon"] });
   const body = S.row(main, { fx: true, fy: true, pad: [22, 28], gap: 28, align: "start" });
   const L = S.col(body, { fx: true, gap: 18 });
-  const ov = S.row(L, { gap: 8 }); S.icon(ov, "package", 14, C.mfg); S.txt(ov, "Fonctionnalité · F5 · EMIS-30", { size: 12, color: C.mfg }); S.sprintChip(ov, "S42"); S.lateChip(ov, "en retard");
+  const ov = S.row(L, { gap: 8 }); S.icon(ov, "package", 14, C.mfg); S.txt(ov, "Fonctionnalité · F5", { size: 12, color: C.mfg }); S.sprintChip(ov, "S42"); S.chip(ov, "ouverte", { color: C.blue, stroke: null, fill: C.blueSoft, size: 10.5 });
   S.txt(L, ft.name, { size: 26, weight: 600, ls: -0.4 });
   const pr = S.row(L, { gap: 12 }); S.fCases(pr, ft, { w: 40, h: 8, gap: 4 }); S.txt(pr, "1 étape livrée sur 5", { size: 13, color: C.mfg });
   const res = S.row(L, { fx: true, gap: 0, align: "stretch", radius: 8, fill: C.card, stroke: C.border, clip: true });
@@ -265,23 +272,23 @@ S.draw["p-fonctionnalite"] = (x, y) => { const C = S.C, ft = S.feat("F5");
     if (t.live) S.liveChip(a, { text: "session · T3 Code · 42 min" }); S.spacer(a);
     const st = S.row(a, { gap: 6 }); S.status(st, t.st, 8); S.txt(st, t.st, { size: 12.5 });
     const b = S.row(c, { fx: true, gap: 12 }); S.gitRef(b, t); if (t.at) S.txt(b, t.at, { size: 11.5, color: C.dim }); S.spacer(b); S.stepCell(b, t.step);
-    if (next) { const nb = S.row(c, { fx: true, gap: 8, pad: [4, 0, 0, 0] }); S.txt(nb, "Prochaine étape à livrer une fois EMIS-33 fusionné.", { size: 12, color: C.mfg }); S.spacer(nb);
-      const cm = S.row(nb, { gap: 6, pad: [5, 10], radius: 6, fill: C.primary }); S.icon(cm, "copy", 13, C.pfg); S.txt(cm, "Livrer la prochaine étape", { size: 12.5, weight: 500, color: C.pfg });
-      const cc = S.row(nb, { gap: 6, pad: [5, 9], radius: 6, stroke: C.border }); S.txt(cc, "/full-delivery EMIS-34", { size: 11.5, mono: true, color: C.mfg }); } });
+    if (next) { const nb = S.row(c, { fx: true, h: 28, gap: 8, pad: [4, 0, 0, 0] }); S.txt(nb, "Prochaine étape EMIS-34 : attend EMIS-33.", { size: 12, color: C.mfg }); } });
   // Colonne de droite
   const R = S.col(body, { w: 320, gap: 14 });
   const sp = S.card(R, "Sprint", "sprint", { w: 320 });
   { const r = S.cardRow(sp, { gap: 8 }); S.sprintChip(r, "S42"); S.txt(r, "Terrain hors ligne · 12–16 oct.", { size: 12.5 }); S.spacer(r); S.icon(r, "chevDown", 13, C.dim); }
   { const r = S.cardRow(sp, { gap: 8, align: "start" }); S.icon(r, "clockAlert", 14, C.red); const tc = S.col(r, { fx: true, gap: 6 }); S.txt(tc, "4 étapes restantes : ne tiendra pas dans S42.", { size: 12.5, fill: true });
     const b = S.row(tc, { gap: 8 }); S.btn(b, "Déplacer en S43", "outline", { sm: true, icon: "sprint" }); S.txt(b, "proposé par l'agent", { size: 11.5, color: C.brandText }); }
-  const dp = S.card(R, "Dépendances", "link", { w: 320 });
+  const addIn = (label) => (h) => S.btn(h, label, "ghost", { sm: true, icon: "plus", pad: [4, 6], size: 11.5 });
+  const dp = S.card(R, "Dépendances", "link", { w: 320, right: addIn("Dépendance") });
   { const r = S.cardRow(dp, { gap: 8 }); S.txt(r, "Attend", { size: 12, color: C.dim, w: 56 }); S.txt(r, "F3", { size: 11, mono: true, color: C.mfg }); S.txt(r, "Réaffecter un ISO", { size: 12.5 }); S.spacer(r); S.icon(r, "circleCheck", 13, C.green); }
-  { const r = S.cardRow(dp, { gap: 8 }); S.txt(r, "Débloque", { size: 12, color: C.dim, w: 56 }); S.txt(r, "F7", { size: 11, mono: true, color: C.mfg }); S.txt(r, "Rapport de chantier", { size: 12.5 }); S.spacer(r); S.txt(r, "S44", { size: 11, mono: true, color: C.dim }); }
-  const q = S.card(R, "Questions", "question", { w: 320, count: "1" });
+  { const r = S.cardRow(dp, { gap: 8 }); S.txt(r, "Débloque", { size: 12, color: C.dim, w: 56 }); S.txt(r, "F7", { size: 11, mono: true, color: C.mfg }); S.txt(r, "Rapport de chantier journalier", { size: 12.5 }); S.spacer(r); S.txt(r, "S44", { size: 11, mono: true, color: C.dim }); }
+  const q = S.card(R, "Questions", "question", { w: 320, count: "1", right: addIn("Question") });
   { const r = S.cardRow(q, { align: "start" }); const tc = S.col(r, { fx: true, gap: 2 }); S.txt(tc, "Quota par affaire : 2 Go ou 5 Go ?", { size: 12.5, fill: true }); S.txt(tc, "Q16 · Produit · hier · EMIS-34", { size: 11, color: C.dim }); }
   const ac = S.card(R, "Activité", "activity", { w: 320 });
-  for (const a of S.P.activity.filter(a => a.f === "F5")) { const r = S.cardRow(ac, { gap: 9, pad: [7, 14] }); S.icon(r, a.icon, 13, a.color ? C[a.color] : C.mfg); S.fillX(S.txt(r, `${a.text} · ${a.tk}`, { size: 12 })); S.txt(r, a.t, { size: 11, mono: true, color: C.dim }); }
-  { const r = S.cardRow(ac, { gap: 9, pad: [7, 14] }); S.icon(r, "merge", 13, C.green); S.fillX(S.txt(r, "PR #19 fusionnée · EMIS-31", { size: 12 })); S.txt(r, "hier", { size: 11, color: C.dim }); }
+  for (const [icon, col, text, t] of [["pr", C.purple, "PR #22 ouverte · EMIS-32", "15:04"], ["flag", C.mfg, "Phase 7/12 · Porte qualité · EMIS-33", "14:51"], ["radio", C.brand, "Session T3 Code ouverte · EMIS-33", "14:34"],
+    ["flag", C.mfg, "Phase 10/12 · Démo · EMIS-32", "hier"], ["flag", C.mfg, "Phase 11/12 · Livré · EMIS-31", "hier"]]) {
+    const r = S.cardRow(ac, { gap: 9, pad: [7, 14] }); S.icon(r, icon, 13, col); S.fillX(S.txt(r, text, { size: 12 })); S.txt(r, t, { size: 11, mono: true, color: C.dim }); }
   const nb = S.row(R, { fx: true, gap: 8, align: "start" }); S.icon(nb, "lock", 13, C.dim); S.txt(nb, "Une fonctionnalité ne se lance pas : chaque étape se livre dans T3 Code avec full-delivery.", { size: 11.5, color: C.dim, fill: true, lh: 1.45 });
   return f; };
 

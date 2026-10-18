@@ -29,6 +29,7 @@ const doc = () =>
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
 
 describe("keys", () => {

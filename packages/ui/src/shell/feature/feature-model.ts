@@ -1,16 +1,19 @@
 import {
   type AgentExecution,
+  atRisk,
   type CiRun,
   type CiTone,
   type FeatureState,
   type FeatureStep,
   featureSteps,
+  isSprintOver,
   isTerminal,
   nextDeliverableStep,
   type ProjectSnapshot,
   prCiTone,
   type RunView,
   type SprintView,
+  type StartReason,
   sortSprints,
   type TicketView,
 } from "@kibo/schema";
@@ -58,6 +61,24 @@ export const nextStep = <S extends Parameters<typeof nextDeliverableStep>[0][num
   return steps.find((s) => s.ticketId === id) ?? null;
 };
 
+type Startability = Pick<TicketView, "id" | "startable" | "startReason">;
+export type NextStartable<S> = { step: S; reason: StartReason | null };
+
+const isTouchUp = (s: Pick<FeatureStep, "statusId" | "pr">): boolean =>
+  s.statusId === "in_review" && s.pr?.review === "changes_requested";
+
+export function nextStartableStep<S extends Parameters<typeof nextDeliverableStep>[0][number]>(
+  steps: readonly S[],
+  tickets: readonly Startability[],
+): NextStartable<S> | null {
+  const byId = new Map(tickets.map((t) => [t.id, t]));
+  const ready = steps.find((s) => isTouchUp(s) || byId.get(s.ticketId)?.startable === true);
+  if (ready !== undefined) return { step: ready, reason: null };
+  const next = nextStep(steps);
+  if (next === null) return null;
+  return { step: next, reason: byId.get(next.ticketId)?.startReason ?? { kind: "status" } };
+}
+
 export type SprintWarning = { kind: "wontFit" | "over"; remaining: number };
 export type SprintFacts = {
   sprint: SprintView | null;
@@ -65,14 +86,21 @@ export type SprintFacts = {
   warning: SprintWarning | null;
 };
 
-function warningOf(sprint: SprintView, state: FeatureState | null): SprintWarning | null {
-  if (state?.status !== "late") return null;
-  return { kind: sprint.state === "done" ? "over" : "wontFit", remaining: state.remaining };
+export type SprintClock = { today: string; steps: readonly FeatureStep[] };
+
+function warningOf(sprint: SprintView, state: FeatureState | null, clock: SprintClock): SprintWarning | null {
+  if (state === null || state.status === "delivered") return null;
+  if (isSprintOver(sprint, clock.today))
+    return state.status === "late" ? { kind: "over", remaining: state.remaining } : null;
+  return atRisk({ sprint, steps: clock.steps }, clock.today)
+    ? { kind: "wontFit", remaining: state.remaining }
+    : null;
 }
 
 export function sprintFacts(
   project: Pick<ProjectSnapshot, "sprints">,
   feature: Pick<TicketView, "sprintId" | "feature">,
+  clock: SprintClock,
 ): SprintFacts {
   const sorted = sortSprints(project.sprints);
   const index = sorted.findIndex((s) => s.id === feature.sprintId);
@@ -81,7 +109,7 @@ export function sprintFacts(
   return {
     sprint,
     following: sorted.slice(index + 1).find((s) => s.state !== "done") ?? null,
-    warning: warningOf(sprint, feature.feature),
+    warning: warningOf(sprint, feature.feature, clock),
   };
 }
 

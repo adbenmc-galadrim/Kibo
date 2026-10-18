@@ -52,13 +52,15 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Pr
   };
   const pressed = (on: boolean) => (editing ? on : undefined);
   const ready = editing ? answerFrom(choice) !== null : choice.text.trim() !== "";
+  const choices = question.options.length > 0 || question.provisional !== null;
+  const freeLabel = choices ? fr.other : fr.yourAnswer;
   return (
     <form
       aria-label={editing ? fr.answerEditTo(question.title) : fr.answerTo(question.title)}
       className="grid gap-2"
       onSubmit={submit}
     >
-      {(question.options.length > 0 || question.provisional !== null) && (
+      {choices && (
         <div className="flex flex-wrap gap-1.5">
           {question.provisional !== null && (
             <Button
@@ -90,11 +92,11 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Pr
           ))}
         </div>
       )}
-      <div className="flex gap-1.5">
+      <div className="flex items-center gap-2">
         <Input
-          aria-label={fr.other}
-          placeholder={fr.other}
-          className="h-7 text-xs"
+          aria-label={freeLabel}
+          placeholder={freeLabel}
+          className="h-9 text-[13px] md:text-[13px]"
           value={choice.text}
           disabled={busy}
           onChange={(e) => setChoice({ ...EMPTY, text: e.target.value })}
@@ -104,7 +106,13 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Pr
             {fr.cancel}
           </Button>
         )}
-        <Button type="submit" size="sm" className="h-7 text-xs" disabled={busy || !ready}>
+        <Button
+          type="submit"
+          variant="secondary"
+          size="sm"
+          className="h-6.25 px-2.5 text-xs disabled:opacity-100"
+          disabled={busy || !ready}
+        >
           {editing ? fr.save : fr.reply}
         </Button>
       </div>

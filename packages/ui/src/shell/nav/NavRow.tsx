@@ -5,6 +5,7 @@ type Props = ComponentProps<"button"> & {
   icon?: LucideIcon | null;
   label: string;
   count?: string | null;
+  countYields?: boolean;
   active?: boolean;
   nested?: boolean;
   lead?: ReactNode;
@@ -13,7 +14,7 @@ type Props = ComponentProps<"button"> & {
 
 export function NavCount({ children, yields = false }: { children: string; yields?: boolean }) {
   return (
-    <span aria-hidden className={yields ? "k-count k-yield" : "k-count"}>
+    <span aria-hidden className={yields ? "k-count k-yield whitespace-nowrap" : "k-count whitespace-nowrap"}>
       {children}
     </span>
   );
@@ -23,6 +24,7 @@ export function NavRow({
   icon: Icon,
   label,
   count,
+  countYields = false,
   active = false,
   nested = false,
   lead,
@@ -35,13 +37,13 @@ export function NavRow({
       type="button"
       data-active={active || undefined}
       aria-current={active ? "page" : undefined}
-      className={nested ? "k-row k-nested" : "k-row"}
+      className={[nested ? "k-row k-nested" : "k-row", className].filter(Boolean).join(" ")}
       {...rest}
     >
       {lead}
       {Icon && <Icon size={15} absoluteStrokeWidth />}
       <span>{label}</span>
-      {count && <NavCount>{count}</NavCount>}
+      {count && <NavCount yields={countYields}>{count}</NavCount>}
       {trail}
     </button>
   );

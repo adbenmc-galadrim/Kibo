@@ -1,4 +1,5 @@
 import type { ProjectSnapshot } from "@kibo/schema";
+import { cn } from "@kibo/sdk/lib/utils";
 import { Sheet, SheetContent } from "@kibo/sdk/ui/sheet";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAgentList } from "../agents/catalog/use-agent-list";
@@ -14,7 +15,7 @@ import type { Decision } from "./BatchCard";
 import { projectLabels } from "./batch-groups";
 import { ComposeBox } from "./ComposeBox";
 import { ConversationView } from "./ConversationView";
-import { buildConversation, lastAgentText, lastUserMessage, panelStatus } from "./conversation";
+import { buildConversation, lastUserMessage, panelStatus, supersededCount } from "./conversation";
 import { PanelHeader } from "./PanelHeader";
 import { PanelMenu } from "./PanelMenu";
 import { PanelTabs } from "./PanelTabs";
@@ -24,11 +25,9 @@ import { SignalBox } from "./signals/SignalBox";
 import { boxSections } from "./signals/signal-sections";
 import { useSignals } from "./signals/use-signals";
 import { TrackingView } from "./TrackingView";
+import { usePanelDock } from "./use-panel-dock";
 import { usePanelWidth } from "./use-panel-width";
 import { useProjectAgent } from "./use-project-agent";
-
-const DOCK_VAR = "--project-agent-w";
-const DOCK_RULE = 1;
 
 type Props = {
   open: boolean;
@@ -46,15 +45,7 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
   const host = useHost();
   const projectId = project.meta.id;
   const [width, setWidth] = usePanelWidth();
-  const docked = width + DOCK_RULE;
-  useEffect(() => {
-    if (!open) return;
-    const root = document.documentElement.style;
-    root.setProperty(DOCK_VAR, `${docked}px`);
-    return () => {
-      root.removeProperty(DOCK_VAR);
-    };
-  }, [open, docked]);
+  const { overlay } = usePanelDock(open, width);
   const [mode, setMode] = useState<Mode>(tab === "signals" ? CURRENT : TRACKING);
   const tabNow = useRef(tab);
   tabNow.current = tab;
@@ -71,15 +62,27 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
   const openSignals = signals.view ? boxSections(signals.view).open.length : 0;
   const readOnly = mode.kind === "past";
   const pending = view?.batches.find((b) => b.status === "pending") ?? null;
+  const [showSuperseded, setShowSuperseded] = useState(false);
+  const superseded = supersededCount(view?.batches ?? []);
   const items = useMemo(
     () => buildConversation(log ?? [], view?.batches ?? [], view?.run ?? null),
     [log, view],
+  );
+  const shownItems = useMemo(
+    () =>
+      showSuperseded
+        ? buildConversation(log ?? [], view?.batches ?? [], view?.run ?? null, { superseded: true })
+        : items,
+    [log, view, items, showSuperseded],
   );
   const agentList = useAgentList(projectId);
   const labels = useMemo(() => projectLabels(project, agentList.agents ?? []), [project, agentList.agents]);
   const runs = useAgentsState()?.runs;
   const links = useMemo(
-    () => projectQuestionLinks(project, runs ?? [], (id) => host.openView("questions", projectId, id)),
+    () =>
+      projectQuestionLinks(project, runs ?? [], (id) =>
+        host.openView("questions", projectId, { kind: "question", id }),
+      ),
     [project, runs, host, projectId],
   );
 
@@ -88,8 +91,9 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
     reload();
   };
   const decide = async (batchId: string, d: Decision) => {
-    await client.rpc({ method: "decideBatch", projectId, batchId, ...d });
+    const batch = await client.rpc({ method: "decideBatch", projectId, batchId, ...d });
     reload();
+    return batch;
   };
   const reset = async () => {
     await client.rpc({ method: "resetProjectAgent", projectId });
@@ -108,6 +112,10 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
     setMode(CURRENT);
     onTab(next);
   };
+  const showReplaced = () => {
+    setShowSuperseded(true);
+    show("conversation");
+  };
   const tracking = () => {
     setMode(TRACKING);
     onTab("conversation");
@@ -115,7 +123,7 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
   const conversation = (
     <QuestionLinksContext.Provider value={links}>
       <ConversationView
-        items={items}
+        items={shownItems}
         readOnly={readOnly}
         labels={labels}
         signals={signals.view?.signals ?? []}
@@ -131,7 +139,8 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
       <SheetContent
         side="right"
         showCloseButton={false}
-        className="box-content gap-0 bg-(--tracking-panel) p-0 sm:max-w-none"
+        data-overlay={overlay}
+        className={cn("box-content gap-0 bg-(--tracking-panel) p-0 sm:max-w-none", overlay && "shadow-2xl")}
         style={{ width, top: "var(--tabbar-h)", height: "auto" }}
         onInteractOutside={(e) => e.preventDefault()}
         onOpenAutoFocus={(e) => e.preventDefault()}
@@ -145,6 +154,11 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
           menu={
             <PanelMenu
               signals={openSignals}
+              superseded={{
+                count: superseded,
+                shown: showSuperseded,
+                onToggle: () => setShowSuperseded((on) => !on),
+              }}
               {...(mode.kind === "tracking" ? {} : { onTracking: tracking })}
               onConversation={() => show("conversation")}
               onSignals={() => show("signals")}
@@ -162,14 +176,17 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
         )}
         {mode.kind === "tracking" && (
           <TrackingView
+            key={view?.session?.runId ?? null}
             projectId={projectId}
             projectName={project.meta.name}
-            summary={lastAgentText(items)}
+            items={items}
             batch={pending}
+            superseded={superseded}
             labels={labels}
             onTicket={openTicket}
             onDecide={decide}
             onSend={send}
+            onShowSuperseded={showReplaced}
           />
         )}
         {mode.kind === "list" && (

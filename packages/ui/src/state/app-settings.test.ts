@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test";
 import type { AppSettings, AppSettingsPatch } from "@kibo/schema";
+import { renderHook } from "@testing-library/react";
 import { type AppSettingsSource, createAppSettingsStore, DEFAULT_APP_SETTINGS } from "./app-settings";
+import { useAppSettings, useExecutionShown } from "./use-app-settings";
 
 type FakeSource = AppSettingsSource & {
   stored: AppSettings;
@@ -90,4 +92,9 @@ test("a failed read keeps the current settings", async () => {
   await flush();
   expect(store.get()).toEqual(DEFAULT_APP_SETTINGS);
   off();
+});
+
+test("without a provider, agent execution is hidden", () => {
+  expect(renderHook(() => useAppSettings()).result.current).toEqual({ agentExecution: "hidden" });
+  expect(renderHook(() => useExecutionShown()).result.current).toBe(false);
 });

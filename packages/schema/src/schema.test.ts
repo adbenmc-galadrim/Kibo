@@ -37,6 +37,12 @@ describe("keys", () => {
     expect(TicketKey.safeParse("KIB-12.1").success).toBe(false);
     expect(TicketKey.safeParse("kib-12").success).toBe(false);
   });
+  test("a feature key is F and a number", () => {
+    expect(TicketKey.safeParse("F12").success).toBe(true);
+    expect(TicketKey.safeParse("F1").success).toBe(true);
+    for (const key of ["F", "f1", "EMIS-F1", "F-1", "FF1"])
+      expect(TicketKey.safeParse(key).success).toBe(false);
+  });
   test("project keys are 2 to 6 uppercase letters", () => {
     expect(ProjectKey.safeParse("KIB").success).toBe(true);
     expect(ProjectKey.safeParse("K").success).toBe(false);
@@ -241,6 +247,11 @@ test("the agent error codes replace the profile one", () => {
   expect(isKiboErrorCode("PROFILE_IN_USE")).toBe(false);
 });
 
+test("the ticket agents are refused with a stable code", () => {
+  expect(isKiboErrorCode("AGENT_EXECUTION_REMOVED")).toBe(true);
+  expect(new KiboError("AGENT_EXECUTION_REMOVED", "assign").code).toBe("AGENT_EXECUTION_REMOVED");
+});
+
 describe("phase 7 error codes", () => {
   test("new codes are accepted by KiboError", () => {
     const codes = [
@@ -365,7 +376,7 @@ test("phase 14 methods are part of RpcRequest", () => {
   expect(RpcRequest.safeParse({ method: "deleteBackup", id: "../x" }).success).toBe(false);
   expect(RpcRequest.safeParse({ method: "setBackupSettings", patch: { dir: null } }).success).toBe(true);
   expect(RpcRequest.safeParse({ method: "setBackupSettings", patch: { nope: 1 } }).success).toBe(false);
-  expect(RpcRequest.safeParse({ method: "skipTutorialStep", step: "agent" }).success).toBe(true);
+  expect(RpcRequest.safeParse({ method: "skipTutorialStep", step: "review" }).success).toBe(true);
   expect(RpcRequest.safeParse({ method: "markTutorialSeen", view: "kanban" }).success).toBe(false);
 });
 

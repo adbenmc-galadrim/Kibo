@@ -130,7 +130,7 @@ export function createProjectAgentService(deps: ProjectAgentDeps): ProjectAgentS
     now: deps.now ?? Date.now,
     formatTime: deps.formatTime ?? formatClock,
     agentBody: deps.agentBody ?? (() => ""),
-    agentExecution: deps.agentExecution ?? (() => "shown"),
+    agentExecution: deps.agentExecution ?? (() => "hidden"),
     turnNotes: new Map(),
     baselines: new Map(),
   };

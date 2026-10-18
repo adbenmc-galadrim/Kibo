@@ -10,6 +10,7 @@ const info = {
   daemonPid: 42,
   uptimeMs: 65_000,
   fixedNow: null,
+  today: "2026-10-16",
 } as const;
 
 test("aboutText lists version, platform, daemon and shell on separate lines", () => {

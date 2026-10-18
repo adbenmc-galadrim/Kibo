@@ -19,6 +19,7 @@ export const QuestionEventKind = z.enum([
   "archived",
   "restored",
   "reminded",
+  "exported",
 ]);
 export type QuestionEventKind = z.infer<typeof QuestionEventKind>;
 

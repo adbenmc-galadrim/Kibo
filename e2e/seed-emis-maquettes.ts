@@ -6,6 +6,7 @@ import {
 } from "../packages/schema/src/index";
 import {
   EMIS_BASE_BRANCH,
+  EMIS_CLIENT,
   EMIS_FEATURE_LINKS,
   EMIS_FEATURES,
   EMIS_LAST_TICKET,
@@ -92,6 +93,8 @@ function deliveryOrder(steps: readonly StepSpec[]): DeliveredStep[] {
 
 const mergedByPoller = (step: StepSpec | undefined): boolean => step?.pr?.number === EMIS_CLOSING.merged;
 
+const descriptionOf = (text: string | undefined) => (text === undefined ? {} : { description: text });
+
 const stepSpecs = (): Map<number, StepSpec> =>
   new Map([...emisSteps(), ...EMIS_LOOSE_TICKETS].map((s) => [s.n, s]));
 
@@ -105,7 +108,7 @@ async function createTickets(emis: Emis, ids: Map<number, string>): Promise<void
       method: "createTicket",
       title: step?.title ?? root?.title ?? `Brouillon ${n}`,
       statusId: mergedByPoller(step) ? "in_review" : (step?.status ?? "todo"),
-      ...(root?.result === undefined ? {} : { description: root.result }),
+      ...descriptionOf(step?.description ?? root?.result),
       ...(step?.mine ? { assignee: { kind: "human", ref: emis.user } } : {}),
     });
     ids.set(n, textOf(created, "id"));
@@ -228,7 +231,11 @@ async function seedEmis(rpc: SeedRpc, projectId: string, user: string, options: 
     projectId,
   };
   await buildTickets(emis, ids);
-  await rpc({ method: "updateProject", projectId, patch: { description: EMIS_DESCRIPTION } });
+  await rpc({
+    method: "updateProject",
+    projectId,
+    patch: { description: EMIS_DESCRIPTION, client: EMIS_CLIENT },
+  });
   await addPages(emis);
   const deliveries = deliveryOrder([...stepSpecs().values()]);
   const closing = deliveries.find((s) => s.n === EMIS_CLOSING.delivery);

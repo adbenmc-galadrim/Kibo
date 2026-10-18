@@ -69,6 +69,13 @@ function openTarget(
     const aimed = state.tabs.map((t) => (t.id === existing.id ? { ...t, target } : t));
     return { ...state, tabs: keep ? permanent(aimed, existing.id) : aimed, activeId: existing.id, recents };
   }
+  const current = state.tabs.find((t) => t.id === state.activeId && !t.pinned);
+  if (!newTab && current) {
+    const tabs = state.tabs.map((t) =>
+      t.id === current.id ? { ...t, target, preview: t.preview && !keep } : t,
+    );
+    return { ...state, tabs, recents };
+  }
   const preview = state.tabs.find((t) => t.preview);
   if (!newTab && preview) {
     const tabs = state.tabs.map((t) => (t.id === preview.id ? { ...t, target, preview: !keep } : t));

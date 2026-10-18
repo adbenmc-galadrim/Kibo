@@ -14,6 +14,7 @@ import {
   KiboError,
   type ProjectAccess,
   type ProjectCommand,
+  type ProjectEditRequest,
   permissionOfCall,
   type Selection,
 } from "@kibo/schema";
@@ -52,7 +53,7 @@ export function createMockSdk(
     id: "mock",
     key: PROJECT_KEY,
     name: "Mock",
-    folder: null,
+    folder: opts.folder ?? null,
     color: "#71717A",
     worktree: null,
     storybook: null,
@@ -60,6 +61,7 @@ export function createMockSdk(
     delivery: null,
     tracking: opts.tracking ?? null,
     description: opts.description ?? null,
+    client: opts.client ?? null,
   });
   const changes = createNotifier();
   const runChanges = createNotifier();
@@ -88,6 +90,8 @@ export function createMockSdk(
   const viewRequests: MockSdk["viewRequests"] = [];
   const deliveries: string[] = [];
   const openedSprints: string[] = [];
+  const projectEdits: ProjectEditRequest[] = [];
+  const toasts: string[] = [];
   const embeds = createMockEmbeds(manifest.embeds, opts.embed);
   const focusRequests: boolean[] = [];
   const selections: (Selection | null)[] = [];
@@ -160,10 +164,12 @@ export function createMockSdk(
     openFile: (target) => openedFiles.push(target),
     openView: (componentId, viewOpts) => {
       openedViews.push(componentId);
-      viewRequests.push({ componentId, question: viewOpts?.question ?? null });
+      const intent = viewOpts?.intent;
+      viewRequests.push({ componentId, question: viewOpts?.question ?? null, ...(intent && { intent }) });
     },
     openRun: mockRuns.open,
     openSprint: (sprintId) => openedSprints.push(sprintId),
+    editProject: (request) => projectEdits.push(request),
     focus: focusApi(focus, (on) => focusRequests.push(on)),
     visibility: visibilityApi(visible),
     selection: selectionApi(selection, (next) => selections.push(next)),
@@ -189,6 +195,7 @@ export function createMockSdk(
 
   const sdk: KiboSdk = {
     ...inner,
+    toast: (message) => void toasts.push(message),
     list: <T extends EntityType>(type: T): Promise<EntityMap[T][]> =>
       record(`read:${type}`, `read ${type}`, () => inner.list(type)),
     run: (cmd) =>
@@ -260,6 +267,8 @@ export function createMockSdk(
     viewRequests,
     openedRuns: mockRuns.opened,
     openedSprints,
+    projectEdits,
+    toasts,
     deliveries,
     runDeliveries: runDelivery.delivered,
     allowed: runDelivery.allowed,

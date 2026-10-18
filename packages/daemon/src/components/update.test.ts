@@ -49,6 +49,7 @@ function setup(
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   const page = executeProjectCommand(doc, { method: "addPage", title: "Board", kind: "dashboard" }) as Page;
   const inst = executeProjectCommand(doc, {

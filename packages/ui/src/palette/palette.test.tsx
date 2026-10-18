@@ -8,7 +8,9 @@ import {
 } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { agentsFixture, runFixture } from "../agents/fixtures";
+import { agentsFixture, projectsFixture, runFixture } from "../agents/fixtures";
+import { trackingProject } from "../project-agent/tracking-fixtures";
+import { type Host, HostProvider } from "../shell/Host";
 import { CommandPalette } from "./CommandPalette";
 import { buildItems, type PaletteContext, searchItems } from "./palette-items";
 
@@ -30,6 +32,7 @@ const ticket = (n: number, title: string, statusId: TicketView["statusId"] = "in
   waitingOn: [],
   openQuestions: 0,
   startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,
@@ -52,6 +55,7 @@ const summary: ProjectSummary = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
 };
 const snapshot: ProjectSnapshot = {
@@ -140,7 +144,8 @@ test("an empty query shows recents, projects and contextual actions", () => {
     "Nouveau ticket",
     "Créer un sous-ticket de KIB-12",
     "Nouvelle page",
-    "Voir les changements de Kibo",
+    "Agent de projet",
+    "Copier /full-delivery KIB-12",
     "Nouveau projet",
     "Basculer le thème (système / clair / sombre)",
     "Raccourcis clavier",
@@ -220,7 +225,7 @@ const renderPalette = () =>
   );
 
 test("the sheet hint shows ⌘↵ on macOS and Ctrl+↵ elsewhere", () => {
-  const sheetHint = () => screen.getByText("ouvrir dans le Sheet").querySelector("kbd")?.textContent;
+  const sheetHint = () => screen.getByText("ouvrir dans le volet").querySelector("kbd")?.textContent;
   const restoreMac = setPlatform("MacIntel");
   try {
     const { unmount } = renderPalette();
@@ -268,4 +273,118 @@ test("the agents group answers a waiting run and assigns the active ticket, Tab 
   await userEvent.click(input);
   for (let i = 0; i < 5; i++) await userEvent.keyboard("{Tab}");
   expect(within(dialog).getByText("Agents", { selector: "[data-filter]" })).toBeTruthy();
+});
+
+const paletteWithHost = (opened: unknown[]) => {
+  const noop = () => {};
+  const host: Host = {
+    openTicket: noop,
+    openNewTicket: noop,
+    openAssign: noop,
+    openFile: noop,
+    openView: noop,
+    openTarget: noop,
+    openProjectAgent: (opts) => opened.push(opts),
+  };
+  render(
+    <HostProvider host={host}>
+      <CommandPalette
+        open
+        onOpenChange={noop}
+        newTab={false}
+        context={context}
+        onOpenTarget={noop}
+        onOpenTicketSheet={noop}
+        onAction={noop}
+      />
+    </HostProvider>,
+  );
+  return within(screen.getByRole("dialog", { name: "Palette de commandes" }));
+};
+
+test("⌘K « Agent de projet » opens the panel of the current project", async () => {
+  const opened: unknown[] = [];
+  const dialog = paletteWithHost(opened);
+  await userEvent.type(dialog.getByRole("combobox"), "agent de projet");
+  await userEvent.keyboard("{Enter}");
+  expect(opened).toEqual([{ tab: "conversation" }]);
+});
+
+test("⌘K « Copier /full-delivery KIB-12 » copies the command of the open ticket", async () => {
+  const written: string[] = [];
+  const clipboard = navigator.clipboard;
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText: async (text: string) => void written.push(text) },
+  });
+  const dialog = paletteWithHost([]);
+  await userEvent.type(dialog.getByRole("combobox"), "copier");
+  await userEvent.keyboard("{Enter}");
+  await new Promise((r) => setTimeout(r, 0));
+  expect(written).toEqual(["/full-delivery KIB-12"]);
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: clipboard });
+});
+
+test("⌘K « Nouvelle fonctionnalité » opens Planning with the newFeature intent, a sprint opens its sheet", async () => {
+  const emis = trackingProject();
+  const counts = projectsFixture[0]?.counts;
+  if (!counts) throw new Error("fixture without counts");
+  const views: string[] = [];
+  const intents: (string | undefined)[] = [];
+  const sprints: string[] = [];
+  const noop = () => {};
+  const host: Host = {
+    openTicket: noop,
+    openNewTicket: noop,
+    openAssign: noop,
+    openFile: noop,
+    openView: (id, _project, spotlight) => {
+      views.push(id);
+      intents.push(spotlight?.kind);
+    },
+    openTarget: noop,
+    openSprint: (id) => sprints.push(id),
+  };
+  const tracked: PaletteContext = {
+    ...context,
+    projects: [{ ...emis.meta, counts }],
+    snapshots: new Map([[emis.meta.id, emis]]),
+    activeProjectId: emis.meta.id,
+    activeTicketId: null,
+  };
+  const { unmount } = render(
+    <HostProvider host={host}>
+      <CommandPalette
+        open
+        onOpenChange={noop}
+        newTab={false}
+        context={tracked}
+        onOpenTarget={noop}
+        onOpenTicketSheet={noop}
+        onAction={noop}
+      />
+    </HostProvider>,
+  );
+  const dialog = within(screen.getByRole("dialog", { name: "Palette de commandes" }));
+  await userEvent.type(dialog.getByRole("combobox"), "nouvelle fonctionnalite");
+  await userEvent.keyboard("{Enter}");
+  expect(views).toEqual(["planning"]);
+  expect(intents).toEqual(["newFeature"]);
+  unmount();
+  render(
+    <HostProvider host={host}>
+      <CommandPalette
+        open
+        onOpenChange={noop}
+        newTab={false}
+        context={tracked}
+        onOpenTarget={noop}
+        onOpenTicketSheet={noop}
+        onAction={noop}
+      />
+    </HostProvider>,
+  );
+  await userEvent.type(screen.getByRole("combobox"), "S44");
+  await userEvent.keyboard("{Enter}");
+  expect(sprints).toEqual(["s44"]);
 });

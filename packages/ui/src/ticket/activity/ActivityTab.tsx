@@ -101,7 +101,8 @@ export function ActivityTab({ project, ticket, onOpenFile }: Props) {
     recipients: project.questionRecipients,
     ticketOf: () => ticket,
     runLabel: runLabelIn(runs),
-    open: (questionId: string) => host?.openView("questions", undefined, questionId),
+    open: (questionId: string) =>
+      host?.openView("questions", undefined, { kind: "question", id: questionId }),
   };
   return (
     <QuestionLinksContext.Provider value={links}>

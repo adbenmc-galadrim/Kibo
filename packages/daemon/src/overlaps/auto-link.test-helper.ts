@@ -40,6 +40,7 @@ export function linkWorld(opts: LinkWorldOptions = {}) {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   const tickets = titles.map(
     (title) =>

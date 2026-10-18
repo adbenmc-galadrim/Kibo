@@ -31,6 +31,7 @@ async function ensureRoot(sdk: FeatureSdk, draft: FeatureDraft, progress: Featur
     method: "createTicket",
     title: draft.name,
     description: draft.expected,
+    feature: true,
   });
   progress.rootId = root.id;
   return root.id;

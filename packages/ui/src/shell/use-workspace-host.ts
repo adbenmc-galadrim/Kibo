@@ -26,6 +26,9 @@ export function useWorkspaceHost(d: Deps): Host {
       openSprint: (sprintId) => {
         if (activeProjectId) set({ sprintSheet: { projectId: activeProjectId, sprintId } });
       },
+      editProject: ({ field }) => {
+        if (activeProjectId) set({ editProject: activeProjectId, editFocus: field });
+      },
       openNewTicket: (nt) => {
         if (projectRef.current && !canEdit(projectRef.current)) return;
         set({ newTicket: activeProjectId ? { ...nt, projectId: activeProjectId } : nt });

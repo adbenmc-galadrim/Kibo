@@ -153,6 +153,7 @@ describe("kibo tickets against a real daemon", () => {
       deps: [{ key: "EMIS-2", planId: "C1-1", status: "done" }],
       pr: null,
       assignee: null,
+      branch: null,
       labels: [],
       sprint: null,
       feature: { key: "EMIS-1", shortKey: "F1", title: "Chantier 1" },
@@ -161,8 +162,10 @@ describe("kibo tickets against a real daemon", () => {
       session: null,
       updatedAt: null,
       refs: [{ kind: "import_ref", source: "plan", id: "C1-2" }],
+      startable: false,
+      startReason: { kind: "question", label: "Q1" },
     });
-    expect(await t.json("list", "--project", "Emis", "--ready")).toMatchObject([{ planId: "C1-2" }]);
+    expect(await t.json("list", "--project", "Emis", "--ready")).toEqual([]);
     expect(await t.json("list", "--project", projectId, "--status", "wip,done")).toMatchObject([
       { planId: "C1" },
       { planId: "C1-1" },
@@ -170,7 +173,7 @@ describe("kibo tickets against a real daemon", () => {
     ]);
     t.out.length = 0;
     expect(await t.run("list", "--project", "EMIS", "--ready")).toBe(0);
-    expect(t.out).toEqual(["EMIS-3\tC1-2\ttodo\tStockage"]);
+    expect(t.out).toEqual(["Aucun ticket pour ces filtres : --ready"]);
   });
 
   test("get adds the description, pending questions, linked notes and the brief", async () => {
@@ -198,13 +201,13 @@ describe("kibo tickets against a real daemon", () => {
     expect(t.out.at(-1)).toBe("Tout le détail.");
   });
 
-  test("set writes the status and the PR through project commands", async () => {
+  test("set writes the status, then the PR moves the ticket to review like git", async () => {
     const t = cli(home);
     expect(await t.run("set", "C1-2", "status=wip", "pr=12", "--project", "EMIS")).toBe(0);
-    expect(t.out.at(-1)).toBe("✓ EMIS-3 : status=wip pr=12");
-    expect(await t.json("get", "C1-2", "--project", "EMIS")).toMatchObject({
+    expect(t.out.at(-1)).toBe("✓ EMIS-3 : statut wip, PR #12 · En review");
+    expect(await t.json("get", "EMIS-3")).toMatchObject({
       status: "wip",
-      kiboStatus: "in_progress",
+      kiboStatus: "in_review",
       pr: {
         number: 12,
         url: "https://github.com/galadrim/emis/pull/12",

@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import { listProjects, readProject } from "@kibo/core";
+import { getKeyAllocator, getProjectMeta, listProjects, readProject } from "@kibo/core";
 import { type BuildOutput, type Toolchain, validateComponent } from "@kibo/devkit";
 import {
   type DeliveryResult,
@@ -13,12 +13,14 @@ import {
 } from "@kibo/schema";
 import type { CommandHub } from "../command-path";
 import type { ComponentDelivery } from "../delivery/component-calls";
+import { hasLinkedRepo } from "../demo/demo-project";
 import type { Docs } from "../docs";
 import { createFilesService, type FilesService } from "../files/service";
 import type { ComponentIntegrationHooks } from "../integrations/types";
 import { ensureNotesTables } from "../notes/index";
 import { createNotesService, type NotesService } from "../notes/service";
-import { ensureSettingsTable } from "../notes/settings";
+import { createProjectSettings, ensureSettingsTable } from "../notes/settings";
+import { localFolder } from "../project-folder";
 import type { AppSettingsStore } from "../settings/app-settings-store";
 import { createBackends } from "./backends";
 import { approvedHashOf, stampComponentHash } from "./component-hash";
@@ -94,6 +96,7 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
   let offStamp: (() => void) | null = null;
   ensureEventsTable(deps.db);
   ensureSettingsTable(deps.db);
+  const settings = createProjectSettings(deps.db);
   ensureNotesTables(deps.db);
   const events = createEventLog(deps.db);
   const store = createComponentStore({
@@ -154,6 +157,11 @@ export function createComponentsService(deps: ComponentsDeps): ComponentsService
       backends: () => backends,
       manifestOf: (ref) => registry.manifestOf(ref),
       appSettings: () => deps.appSettings.get(),
+      hasFolder: (projectId) => {
+        const doc = deps.docs.project(projectId);
+        const local = localFolder(settings, getProjectMeta(doc), getKeyAllocator(doc) === "server");
+        return hasLinkedRepo(settings, projectId, local !== null);
+      },
     }),
   });
 

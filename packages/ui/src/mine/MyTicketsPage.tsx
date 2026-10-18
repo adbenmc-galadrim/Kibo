@@ -7,6 +7,7 @@ import { displayName } from "../lib/inbox";
 import { projectDomainsOf } from "../lib/project-domains";
 import { useExecutionShown } from "../state/use-app-settings";
 import { MyTicketRow } from "./MyTicketRow";
+import { MyWorkList } from "./MyWorkList";
 import { countMine, type MineGroup, type MineTab, myTickets } from "./my-tickets";
 
 type Props = {
@@ -97,10 +98,22 @@ function MineSection({
   );
 }
 
-export function MyTicketsPage({ viewer, projects, snapshots, ...p }: Props) {
+export function MyTicketsPage(props: Props) {
   const executionShown = useExecutionShown();
-  const [chosen, setTab] = useState<MineTab>("assigned");
-  const tab = executionShown ? chosen : "assigned";
+  if (!executionShown)
+    return (
+      <MyWorkList
+        viewer={props.viewer}
+        projects={props.projects}
+        snapshots={props.snapshots}
+        onOpenTicket={props.onOpenTicket}
+      />
+    );
+  return <AgentTicketsPage {...props} />;
+}
+
+function AgentTicketsPage({ viewer, projects, snapshots, ...p }: Props) {
+  const [tab, setTab] = useState<MineTab>("assigned");
   const groups = useMemo(
     () => myTickets(projects, snapshots, viewer, tab),
     [projects, snapshots, viewer, tab],
@@ -108,7 +121,7 @@ export function MyTicketsPage({ viewer, projects, snapshots, ...p }: Props) {
   return (
     <TooltipProvider>
       <div className="flex items-center justify-between gap-4 border-b px-6 py-3">
-        {executionShown ? <MineTabs value={tab} onChange={setTab} /> : <span />}
+        <MineTabs value={tab} onChange={setTab} />
         <p className="text-xs text-muted-foreground tabular-nums">
           {fr.mine.summary(countMine(groups), groups.length)}
         </p>
@@ -123,7 +136,7 @@ export function MyTicketsPage({ viewer, projects, snapshots, ...p }: Props) {
               group={group}
               tab={tab}
               snapshot={snapshots.get(group.project.id)}
-              canAssign={executionShown}
+              canAssign
               {...p}
             />
           ))}

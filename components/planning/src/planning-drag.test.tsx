@@ -50,7 +50,7 @@ test("dragging F9 from the backlog onto S44 plans it there, with a drop zone whi
   f9.focus();
   const user = userEvent.setup();
   await user.keyboard("[Space]");
-  await user.keyboard("[ArrowLeft]");
+  for (let i = 0; i < 4; i += 1) await user.keyboard("[ArrowRight]");
   expect(await screen.findByText("Déposer pour planifier en S44")).toBeTruthy();
   expect(document.querySelector('[data-slot="planning-drag-preview"]')?.textContent).toContain(
     "Exporter le dossier client",
@@ -66,7 +66,7 @@ test("a delivered feature can be dragged back to the backlog", async () => {
   f1.focus();
   const user = userEvent.setup();
   await user.keyboard("[Space]");
-  for (let i = 0; i < 4; i += 1) await user.keyboard("[ArrowRight]");
+  await user.keyboard("[ArrowLeft]");
   await user.keyboard("[Space]");
   await waitFor(() => expect(sprintOf(m, seeded.features.f1.root.id)).toBeNull());
 });

@@ -1,10 +1,12 @@
 import { homedir } from "node:os";
 import { ticketRuns } from "@kibo/schema";
 import { lateAgentSource } from "./agents/agent-source";
+import { allowsTicketExecution } from "./agents/execution-removed";
 import type { Orchestrator } from "./agents/orchestrator";
 import { withSignalCounts } from "./agents-rpc";
 import type { DraftAssets } from "./ai/draft-preview";
 import { backupsRpc } from "./backups/rpc";
+import { declareRefRpc } from "./code/declare-ref";
 import { startCollab } from "./collab/bootstrap";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { componentTrustGuard } from "./components/trust-guard";
@@ -128,7 +130,8 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     orchestrator: () => ready(agents, "INTERNAL", "agents are not ready"),
     notify: opts.notify ?? (() => {}),
     signals: signals.service,
-    agentExecution: () => tracking.appSettings.get().agentExecution,
+    agentExecution: () =>
+      allowsTicketExecution(opts.ticketExecution) ? "shown" : tracking.appSettings.get().agentExecution,
     events: tracking.sink,
   });
   closers.push(() => projectAgent.stop());
@@ -160,7 +163,6 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     settings: openLocalSettings(store),
     projectSettings: createProjectSettings(store.db),
     notesDir: (projectId) => components.notesDir(projectId),
-    runs: () => (agents ? agents.state().runs : []),
     log: (message, ...error) => console.error(`[kibo-daemon] ${message}`, ...error),
   });
   closers.push(() => tutorial.stop());
@@ -182,6 +184,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     components,
     log: opts.logBuffer ?? createLogBuffer(),
     fixedNow: clock.fixedNow,
+    today: clock.today,
   });
   const server = startServer({
     service,
@@ -195,6 +198,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       backupsRpc(local.backups),
       app.rpc,
       ...tracking.rpc,
+      declareRefRpc(service),
       tutorial.rpc,
       projectAgent.agent.rpc,
       visibility.rpc,

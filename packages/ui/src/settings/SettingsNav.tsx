@@ -3,10 +3,8 @@ import { cn } from "@kibo/sdk/lib/utils";
 import {
   Building2,
   Cloud,
-  FileText,
   Keyboard,
   type LucideIcon,
-  Package,
   Palette,
   Plug,
   Shield,
@@ -34,11 +32,9 @@ const ITEMS: Item[] = [
   { id: "workspace", label: fr.settings.workspace, icon: Building2, screen: "workspace" },
   { id: "general", label: fr.settings.general, icon: SlidersHorizontal, screen: "general" },
   { id: "appearance", label: fr.settings.appearance, icon: Palette, screen: "appearance" },
-  { id: "domains", label: fr.settings.domains, icon: FileText, screen: "domains" },
   { id: "integrations", label: fr.settings.integrations, icon: Plug, screen: "integrations" },
   { id: "sync", label: frCollab.sync.section, icon: Cloud, screen: "sync" },
   { id: "security", label: fr.settings.security, icon: Shield, screen: "security" },
-  { id: "components", label: fr.marketSources.title, icon: Package, screen: "sources" },
   { id: "shortcuts", label: fr.settings.shortcuts, icon: Keyboard, screen: "shortcuts" },
 ];
 

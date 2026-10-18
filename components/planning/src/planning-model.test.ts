@@ -2,8 +2,10 @@ import { expect, test } from "bun:test";
 import type { SprintView } from "@kibo/schema";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { manifest } from "./index";
-import { type FeatureCard, planningModel, sprintDates } from "./planning-model";
+import { type FeatureCard, planningModel, type SprintWarning, sprintDates } from "./planning-model";
 import { seedPlanning, TODAY } from "./test-seed";
+
+const DAY_AFTER = "2026-10-17";
 
 const SPRINT: SprintView = {
   id: "s",
@@ -15,9 +17,10 @@ const SPRINT: SprintView = {
   features: [],
   delivered: 0,
   total: 0,
+  lingering: false,
 };
 const columnCode = (sprint: SprintView) =>
-  planningModel({ tickets: [], links: [], sprints: [sprint], questions: [] }).sprints[0]?.code;
+  planningModel({ tickets: [], links: [], sprints: [sprint], questions: [], today: TODAY }).sprints[0]?.code;
 
 const build = (today = TODAY, openLimit?: number) => {
   let seeded: ReturnType<typeof seedPlanning> | undefined;
@@ -34,6 +37,7 @@ const build = (today = TODAY, openLimit?: number) => {
     links: s.links,
     sprints: s.sprints,
     questions: s.questions,
+    today,
     openLimit,
   });
   return { model, seeded, m };
@@ -103,14 +107,16 @@ test("a step case per step, toned by its status or its blocking question", () =>
   expect(card(s43?.cards ?? [], "F6").steps.map((s) => s.tone)).toEqual(["blocked", "todo", "todo", "todo"]);
 });
 
-test("badges: delivered, open, late, blocked with the question, nothing when not started", () => {
+test("badges: delivered, open, at risk, late, blocked with the question, nothing when not started", () => {
   const { model } = build();
   const [s41, s42, s43] = model.sprints;
   expect(card(s41?.cards ?? [], "F1").badge).toEqual({ kind: "delivered", demo: false });
   expect(card(s43?.cards ?? [], "F6").badge).toEqual({ kind: "blocked", question: "Q14" });
   expect(card(s43?.cards ?? [], "F8").badge).toBeNull();
   expect(card(s42?.cards ?? [], "F4").badge).toEqual({ kind: "open" });
-  expect(card(s42?.cards ?? [], "F5").badge).toEqual({ kind: "late" });
+  expect(card(s42?.cards ?? [], "F5").badge).toEqual({ kind: "risk" });
+  const after = build(DAY_AFTER).model.sprints[1]?.cards ?? [];
+  expect(card(after, "F5").badge).toEqual({ kind: "late" });
 });
 
 test("the card reads the feature state as is, the interface computes no state", () => {
@@ -139,11 +145,28 @@ test("the footer shows the step in session, else the next step, never a step wai
   expect(card(s42?.cards ?? [], "F3").next).toBeNull();
 });
 
-test("a late feature gets a warning under its sprint", () => {
-  const { model } = build();
+test("a late feature gets a red warning under its sprint, from the day after its end", () => {
+  const { model } = build(DAY_AFTER);
   expect(card(model.sprints[1]?.cards ?? [], "F5")).toMatchObject({ badge: { kind: "late" }, late: true });
-  expect(model.sprints[1]?.warnings).toEqual([{ shortKey: "F5", remaining: 4 }]);
-  expect(build("2026-10-14").model.sprints[1]?.warnings).toEqual([]);
+  expect(model.sprints[1]?.warnings).toEqual([
+    { shortKey: "F4", remaining: 1, tone: "red" },
+    { shortKey: "F5", remaining: 4, tone: "red" },
+  ]);
+});
+
+test("during the sprint, an at-risk feature gets an amber warning, by its working days left", () => {
+  const atRisk: SprintWarning[] = [{ shortKey: "F5", remaining: 4, tone: "amber" }];
+  expect(build().model.sprints[1]?.warnings).toEqual(atRisk);
+  expect(build("2026-10-14").model.sprints[1]?.warnings).toEqual(atRisk);
+  expect(build("2026-10-12").model.sprints[1]?.warnings).toEqual([]);
+  expect(card(build().model.sprints[1]?.cards ?? [], "F5")).toMatchObject({ late: false, atRisk: true });
+});
+
+test("each column carries the phase of its sprint: ends today, then ended the day after", () => {
+  const phases = (today: string) => build(today).model.sprints.map((c) => c.phase);
+  expect(phases(TODAY)).toEqual(["ended", "ends-today", "upcoming", "upcoming"]);
+  expect(phases("2026-10-14")).toEqual(["ended", "current", "upcoming", "upcoming"]);
+  expect(phases(DAY_AFTER)).toEqual(["ended", "ended", "upcoming", "upcoming"]);
 });
 
 test("open features count only planned ones, the limit is a warning", () => {

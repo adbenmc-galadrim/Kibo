@@ -33,6 +33,7 @@ const ticket = (id: string, key: string, title: string, patch: Partial<TicketVie
   waitingOn: [],
   openQuestions: 0,
   startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,
@@ -81,6 +82,7 @@ const sprint = (
   features: [],
   delivered: 0,
   total: 0,
+  lingering: false,
 });
 
 export const SPRINTS: SprintView[] = [
@@ -107,8 +109,15 @@ const STEPS: TicketView[] = [
     delivery: step(7, 16, 14, 51),
     session: { tool: "T3 Code", startedAt: NOW - 42 * 60_000 },
   }),
-  ticket("e34", "EMIS-34", "Tests E2E de l'envoi", { openQuestions: 1 }),
-  ticket("e35", "EMIS-35", "Démo client"),
+  ticket("e34", "EMIS-34", "Tests E2E de l'envoi", {
+    openQuestions: 1,
+    waitingOn: ["EMIS-33"],
+    startReason: { kind: "dependency", keys: ["EMIS-33"] },
+  }),
+  ticket("e35", "EMIS-35", "Démo client", {
+    waitingOn: ["EMIS-34"],
+    startReason: { kind: "dependency", keys: ["EMIS-34", "EMIS-32", "EMIS-33"] },
+  }),
 ];
 
 const LINKS: Link[] = [
@@ -171,6 +180,7 @@ const Q16: Question = {
   blocking: false,
   createdBy: { kind: "human", ref: "adam" },
   createdAt: at(15, 10, 0),
+  number: null,
   importRef: { kind: "import_ref", source: "plan", id: "Q16" },
   answer: null,
   recipient: "product",
@@ -194,6 +204,7 @@ export function emisFeatureProject(): ProjectSnapshot {
       delivery: null,
       tracking: null,
       description: null,
+      client: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],

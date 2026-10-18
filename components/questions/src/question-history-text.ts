@@ -90,6 +90,8 @@ function what(entry: HistoryEntry, ctx: HistoryContext): string {
       return t.restored;
     case "reminded":
       return t.reminded;
+    case "exported":
+      return t.exported;
   }
 }
 

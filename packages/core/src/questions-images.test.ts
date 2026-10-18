@@ -21,6 +21,7 @@ const projectDoc = () =>
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
 
 test("a validation question keeps its kind and image metadata in the document", () => {

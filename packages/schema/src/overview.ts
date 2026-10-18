@@ -1,30 +1,34 @@
+import { blockedCount } from "./blocked";
 import type { GithubPrRef } from "./external-ref";
+import { isFeature } from "./feature";
 import { type FeatureState, isOpenFeature } from "./feature-state";
+import { dayNumber } from "./iso-date";
+import { type FeatureView, lateFeatures } from "./late-features";
 import { isOpen } from "./question";
 import type { ProjectSnapshot, TicketView } from "./rpc";
 import { currentSprint, nextSprint, type Sprint, sortSprints } from "./sprint";
+import { sprintPhase } from "./sprint-phase";
 import { openLimitOf } from "./tracking-settings";
 
 type FeatureCell = "delivered" | "open" | "todo";
 type SprintIndicator =
-  | { code: string; name: string; ending: "today" | { days: number } }
+  | { code: string; name: string; ending: "today" | { days: number } | { ended: string } }
   | { next: Pick<Sprint, "code" | "start"> | null };
 export type OverviewIndicators = {
-  features: { delivered: number; total: number; cells: FeatureCell[] };
+  features: { delivered: number; total: number; cells: FeatureCell[]; late: number };
   sprint: SprintIndicator;
   open: { count: number; limit: number; level: "under" | "reached" | "over" };
   review: { count: number; numbers: number[] };
   questions: { open: number; blocking: { ref: string; shortKey: string } | null };
+  blocked: { count: number };
 };
 type OverviewSnapshot = Pick<ProjectSnapshot, "tickets" | "sprints" | "questions" | "meta">;
 type Feature = { ticket: TicketView; state: FeatureState; rank: number };
 export type ReviewCard = { pr: GithubPrRef; ticket: TicketView; feature: { shortKey: string } | null };
 
-const DAY_MS = 86_400_000;
 const REVIEWED: readonly GithubPrRef["state"][] = ["open", "draft"];
 
-const daysBetween = (from: string, to: string): number =>
-  Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS);
+const daysBetween = (from: string, to: string): number => dayNumber(to) - dayNumber(from);
 
 export function plannedFeatures(snapshot: Pick<ProjectSnapshot, "tickets" | "sprints">): Feature[] {
   const order = new Map(sortSprints(snapshot.sprints).map((s, i) => [s.id, i]));
@@ -34,6 +38,13 @@ export function plannedFeatures(snapshot: Pick<ProjectSnapshot, "tickets" | "spr
     .flatMap((ticket, rank) => (ticket.feature === null ? [] : [{ ticket, state: ticket.feature, rank }]))
     .sort((a, b) => sprintRank(a.ticket) - sprintRank(b.ticket) || a.rank - b.rank);
 }
+
+const lateView = (f: Feature): FeatureView => ({
+  id: f.ticket.id,
+  sprintId: f.ticket.sprintId,
+  rank: f.rank,
+  remaining: f.state.remaining,
+});
 
 const cellOf = (state: FeatureState): FeatureCell => {
   if (state.status === "delivered") return "delivered";
@@ -46,8 +57,13 @@ function sprintIndicator(snapshot: OverviewSnapshot, today: string): SprintIndic
     const next = nextSprint(snapshot.sprints, today);
     return { next: next === null ? null : { code: next.code, start: next.start } };
   }
-  const days = daysBetween(today, current.end);
-  return { code: current.code, name: current.name, ending: days === 0 ? "today" : { days } };
+  const phase = sprintPhase(current, today);
+  if (phase === "ended") return { code: current.code, name: current.name, ending: { ended: current.end } };
+  return {
+    code: current.code,
+    name: current.name,
+    ending: phase === "ends-today" ? "today" : { days: daysBetween(today, current.end) },
+  };
 }
 
 const prsInReview = (t: Pick<TicketView, "externalRefs">): GithubPrRef[] =>
@@ -87,11 +103,18 @@ export function overviewIndicators(input: { snapshot: OverviewSnapshot; today: s
       delivered: features.filter((f) => f.state.status === "delivered").length,
       total: features.length,
       cells: features.map((f) => cellOf(f.state)),
+      late: lateFeatures(features.map(lateView), snapshot.sprints, today).length,
     },
     sprint: sprintIndicator(snapshot, today),
     open: { count: open, limit, level: open < limit ? "under" : open === limit ? "reached" : "over" },
     review: { count: numbers.length, numbers },
     questions: { open: snapshot.questions.filter(isOpen).length, blocking: blockingQuestion(snapshot) },
+    blocked: {
+      count: blockedCount(
+        snapshot.tickets.filter((t) => !isFeature(t)),
+        snapshot.questions,
+      ),
+    },
   };
 }
 

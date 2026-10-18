@@ -18,6 +18,7 @@ const newDoc = () =>
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
 type Doc = ReturnType<typeof newDoc>;
 
@@ -124,7 +125,14 @@ describe("sprint views", () => {
       ["S42", "current"],
       ["S43", "planned"],
     ]);
-    expect(views[1]).toEqual({ ...s42, state: "current", features: [f1.id, f2.id], delivered: 1, total: 2 });
+    expect(views[1]).toEqual({
+      ...s42,
+      state: "current",
+      features: [f1.id, f2.id],
+      delivered: 1,
+      total: 2,
+      lingering: false,
+    });
     expect(views[0]).toMatchObject({ id: s41.id, features: [], delivered: 0, total: 0 });
     expect(views[2]?.id).toBe(s43.id);
   });
@@ -133,7 +141,7 @@ describe("sprint views", () => {
     const d = newDoc();
     const s42 = sprint(d, "S42", "2026-10-12", "2026-10-16");
     expect(readProject(d, "2026-10-17").sprints).toEqual([
-      { ...s42, state: "done", features: [], delivered: 0, total: 0 },
+      { ...s42, state: "done", features: [], delivered: 0, total: 0, lingering: true },
     ]);
   });
 });

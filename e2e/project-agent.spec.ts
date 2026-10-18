@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { agentRefs, createAgent, list, pairBrowser, rpc, showAgentExecution, text } from "./agents-seed";
+import { list, pairBrowser, rpc, text } from "./agents-seed";
 import { addComponent, createPage, createSidebarPage, pairAndCreateProject } from "./helpers";
 import { capture, hoverBadge, questionArticle, seedAnswered, seedQuestion } from "./questions-kit";
 import { shot } from "./repo-project";
@@ -22,23 +22,18 @@ async function seed(page: Page, projectId: string): Promise<void> {
       projectId,
       command: { method: "createTicket", title, statusId: "todo" },
     });
-  await createAgent(page, livraison);
 }
-
-const livraison = {
-  name: "livraison",
-  description: "Livre un ticket en TDD avec des commits propres",
-  model: "opus",
-  settings: { permissionMode: "acceptEdits", workspace: "isolated", maxParallel: 1 },
-} as const;
 
 const panelOf = (page: Page): Locator => page.getByRole("dialog", { name: `Agent de projet · ${PROJECT}` });
 
-async function toConversation(page: Page, panel: Locator): Promise<void> {
+async function toView(page: Page, panel: Locator, view: "Conversation" | "Suivi"): Promise<void> {
   await panel.getByRole("button", { name: "Actions de l'agent de projet" }).click();
-  await page.getByRole("menuitem", { name: "Conversation" }).click();
-  await expect(panel.getByRole("tab", { name: "Conversation" })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("menuitem", { name: view, exact: true }).click();
+  if (view === "Suivi") await expect(panel.getByRole("heading", { name: "Résumé du jour" })).toBeVisible();
+  else await expect(panel.getByRole("tab", { name: view })).toHaveAttribute("aria-selected", "true");
 }
+
+const toConversation = (page: Page, panel: Locator) => toView(page, panel, "Conversation");
 
 async function openProjectPanel(page: Page, projectId: string): Promise<Locator> {
   await page.goto(`/#/p/${encodeURIComponent(projectId)}/`);
@@ -69,14 +64,13 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
 }, info) => {
   test.setTimeout(180_000);
   await pairAndCreateProject(page, info, "KIB");
-  await showAgentExecution(page);
   const projectId = projectIdOf(page);
   await seed(page, projectId);
   await createPage(page, "Tableau de bord", "Tableau de bord");
   await addComponent(page, "Kanban");
   const kanban = page.locator("[data-instance]").first();
-  const all = kanban.getByRole("radio", { name: "Tous" });
-  if ((await all.getAttribute("aria-checked")) !== "true") await all.click();
+  const all = kanban.getByRole("button", { name: "Tous", exact: true });
+  if ((await all.getAttribute("aria-pressed")) !== "true") await all.click();
   await expect(
     kanban.getByRole("region", { name: "À faire" }).getByText("KIB-1", { exact: true }),
   ).toBeVisible();
@@ -121,15 +115,27 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
     kanban.getByRole("region", { name: "En cours" }).getByText("KIB-1", { exact: true }),
   ).toBeVisible();
 
+  await toView(page, panel, "Suivi");
   await say(panel, "Propose un lot invalide");
   await expect(panel.getByText("Lot corrigé.")).toBeVisible({ timeout: 30_000 });
+  const exchange = panel.getByRole("list", { name: "Dernière question" });
+  await expect(exchange.getByText("Propose un lot invalide")).toBeVisible();
+  await expect(panel.getByText("épinglé", { exact: true })).toBeVisible();
   const second = panel.getByRole("region", { name: "Lot n° 2" });
-  await expect(second).toBeVisible();
-  await expect(panel.getByRole("region", { name: /^Lot n° \d+$/ })).toHaveCount(2);
-  await second.getByRole("button", { name: "Refuser" }).click();
-  await second.getByLabel("Commentaire pour l'agent (facultatif)").fill("Pas cette semaine");
-  await second.getByRole("button", { name: "Confirmer le refus" }).click();
-  await expect(second.getByText("Refusé", { exact: true })).toBeVisible();
+  await second.getByRole("button", { name: /^Valider/ }).click();
+  const recap = panel.getByRole("region", { name: "Lot n° 2 validé" });
+  await expect(recap.getByText("1 appliquée · 0 échouée · 0 ignorée")).toBeVisible();
+  await shot(page, info, "ecran-175c");
+
+  await toConversation(page, panel);
+  await say(panel, "Propose encore un lot invalide");
+  await expect(panel.getByText("Lot corrigé.")).toHaveCount(2, { timeout: 30_000 });
+  const third = panel.getByRole("region", { name: "Lot n° 3" });
+  await expect(third).toBeVisible();
+  await third.getByRole("button", { name: "Refuser" }).click();
+  await third.getByLabel("Commentaire pour l'agent (facultatif)").fill("Pas cette semaine");
+  await third.getByRole("button", { name: "Confirmer le refus" }).click();
+  await expect(third.getByText("Refusé", { exact: true })).toBeVisible();
   await expect(panel.getByText("Compris, je retire la proposition.")).toBeVisible({ timeout: 30_000 });
 
   await panel.getByRole("button", { name: "Actions de l'agent de projet" }).click();
@@ -143,15 +149,6 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
   await panel.getByRole("button", { name: /^Session du / }).click();
   await expect(panel.getByText("Ancien agent · lecture seule")).toBeVisible();
   await expect(panel.getByRole("region", { name: "Lot n° 1" })).toBeVisible();
-
-  await page.getByRole("button", { name: "Agents", exact: true }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Agents" })).toBeVisible();
-  await expect(page.getByText(`Agent de projet · ${PROJECT}`).first()).toBeVisible();
-  await page.getByRole("button", { name: /^Agents de Kibo/ }).click();
-  await page.getByRole("button", { name: "Ouvrir l'agent kibo-project-agent" }).click();
-  await page.getByRole("button", { name: /^Réglages techniques/ }).click();
-  await expect(page.getByText("Agent de Kibo : ces réglages sont fixés par Kibo.")).toBeVisible();
-  await shot(page, info, "ecran-177");
 });
 
 const COLOR = "Client - Couleur ?";
@@ -160,7 +157,6 @@ const LOGO = "Client - Logo ?";
 
 async function kibProject(page: Page): Promise<string> {
   await pairBrowser(page);
-  await showAgentExecution(page);
   const projects = list({ projects: await rpc(page, { method: "listProjects" }) }, "projects");
   const found = projects.find((p) => text(p, "name") === PROJECT);
   if (found !== undefined) return text(found, "id");
@@ -176,10 +172,6 @@ async function kibProject(page: Page): Promise<string> {
   return projectId;
 }
 
-async function questionsOf(page: Page, projectId: string): Promise<unknown[]> {
-  return list(await rpc(page, { method: "getProject", projectId }), "questions");
-}
-
 async function ticketIdOf(page: Page, projectId: string, key: string): Promise<string> {
   const tickets = list(await rpc(page, { method: "getProject", projectId }), "tickets");
   const found = tickets.find((t) => text(t, "key") === key);
@@ -187,39 +179,13 @@ async function ticketIdOf(page: Page, projectId: string, key: string): Promise<s
   return text(found, "id");
 }
 
-async function deliver(page: Page, projectId: string, ticketId: string, title: string): Promise<void> {
-  const profileId = (await agentRefs(page)).get("livraison");
-  await rpc(page, { method: "assignAgent", projectId, ticketId, profileId, brief: "" });
-  const deliveredAt = async () => {
-    const q = (await questionsOf(page, projectId)).find((x) => text(x, "title") === title);
-    const answer: unknown = q === undefined ? null : Reflect.get(Object(q), "answer");
-    return answer === null ? null : Reflect.get(Object(answer), "deliveredAt");
-  };
-  await expect.poll(deliveredAt, { timeout: 20_000 }).not.toBeNull();
-}
-
-type LeafTicket = { id: string; key: string };
-
-async function createLeafTicket(page: Page, projectId: string, title: string): Promise<LeafTicket> {
-  const command = { method: "createTicket", title, statusId: "todo" };
-  const id = text(await rpc(page, { method: "command", projectId, command }), "id");
-  const tickets = list(await rpc(page, { method: "getProject", projectId }), "tickets");
-  const found = tickets.find((t) => text(t, "id") === id);
-  if (found === undefined) throw new Error(`no ticket ${id}`);
-  return { id, key: text(found, "key") };
-}
-
-async function seedProjectQuestions(
-  page: Page,
-  projectId: string,
-): Promise<{ logo: string; leaf: LeafTicket }> {
+async function seedProjectQuestions(page: Page, projectId: string): Promise<void> {
   const first = await ticketIdOf(page, projectId, "KIB-1");
-  const leaf = await createLeafTicket(page, projectId, "Logo du client");
+  const command = { method: "createTicket", title: "Logo du client", statusId: "todo" };
+  const leaf = text(await rpc(page, { method: "command", projectId, command }), "id");
   await seedQuestion(page, projectId, first, COLOR, { recipient: "client" });
   await seedAnswered(page, projectId, first, FONT, "Oui", { recipient: "client" });
-  const logo = await seedAnswered(page, projectId, leaf.id, LOGO, "Oui", { recipient: "client" });
-  await deliver(page, projectId, leaf.id, LOGO);
-  return { logo, leaf };
+  await seedAnswered(page, projectId, leaf, LOGO, "Oui", { recipient: "client" });
 }
 
 const lastBatch = (panel: Locator): Locator => panel.getByRole("region", { name: /^Lot n° \d+$/ }).last();
@@ -227,7 +193,7 @@ const lastBatch = (panel: Locator): Locator => panel.getByRole("region", { name:
 test("l'agent de projet renomme, réassigne, rouvre et archive des questions", async ({ page }, info) => {
   test.setTimeout(180_000);
   const projectId = await kibProject(page);
-  const { logo, leaf } = await seedProjectQuestions(page, projectId);
+  await seedProjectQuestions(page, projectId);
   const panel = await openProjectPanel(page, projectId);
 
   await say(panel, "Peux-tu ranger les questions ?");
@@ -250,7 +216,6 @@ test("l'agent de projet renomme, réassigne, rouvre et archive des questions", a
   await shot(page, info, "204");
   const preview = await hoverBadge(page, reopen);
   await expect(preview.getByText(/Décision prise provisoirement/)).toBeVisible();
-  await expect(preview.getByText(new RegExp(`transmise à global · livraison · ${leaf.key}$`))).toBeVisible();
   await capture(page, info, "205b");
   await page.mouse.move(0, 0);
 
@@ -268,28 +233,6 @@ test("l'agent de projet renomme, réassigne, rouvre et archive des questions", a
   await expect(questionArticle(view, FONT)).toHaveCount(0);
   await view.getByRole("radio", { name: "Archivées" }).click();
   await expect(questionArticle(view, FONT).getByRole("button", { name: "Restaurer" })).toBeVisible();
-
-  await rpc(page, {
-    method: "command",
-    projectId,
-    command: {
-      method: "answerQuestion",
-      questionId: logo,
-      answer: { kind: "option", option: "Non" },
-      by: { kind: "human", ref: "e2e" },
-    },
-  });
-  await deliver(page, projectId, leaf.id, LOGO);
-  await page.keyboard.press("ControlOrMeta+j");
-  await expect(panel).toBeVisible();
-  await toConversation(page, panel);
-  await say(panel, "Renomme la question transmise");
-  await expect(panel.getByText("Lot de questions corrigé.")).toBeVisible({ timeout: 30_000 });
-  const corrected = lastBatch(panel).getByRole("group", { name: "Questions" });
-  await expect(
-    corrected.getByRole("button", { name: `Rouvrir « ${LOGO} » (réponse retirée)` }),
-  ).toBeVisible();
-  await expect(corrected.getByRole("button", { name: `Modifier la question « ${LOGO} »` })).toBeVisible();
 });
 
 test("la réponse de l'agent de projet montre un tableau, qu'Agrandir ouvre dans un volet", async ({

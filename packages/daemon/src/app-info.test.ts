@@ -17,6 +17,7 @@ test("createAppInfo maps the platform and counts uptime from the injected clock"
     pid: 7,
     startedAt: 4_000,
     now: () => now,
+    today: () => "2026-10-16",
     platform: "darwin",
     arch: "arm64",
   });
@@ -29,6 +30,7 @@ test("createAppInfo maps the platform and counts uptime from the injected clock"
     daemonPid: 7,
     uptimeMs: 6_000,
     fixedNow: null,
+    today: "2026-10-16",
   });
   now = 20_000;
   expect(info().uptimeMs).toBe(16_000);
@@ -42,6 +44,7 @@ test("createAppInfo reports the frozen instant of the daemon clock", () => {
     pid: 7,
     startedAt: 0,
     now: () => 0,
+    today: () => "2026-10-16",
     platform: "darwin",
     arch: "arm64",
     fixedNow: "2026-10-16T14:52:00+02:00",
@@ -50,9 +53,35 @@ test("createAppInfo reports the frozen instant of the daemon clock", () => {
 });
 
 test("createAppInfo refuses a platform or an architecture Kibo does not ship", () => {
-  const base = { version: "1.5.0", home: "/h", userHome: "/h", pid: 7, startedAt: 0, now: () => 0 };
+  const base = {
+    version: "1.5.0",
+    home: "/h",
+    userHome: "/h",
+    pid: 7,
+    startedAt: 0,
+    now: () => 0,
+    today: () => "2026-10-16",
+  };
   expect(() => createAppInfo({ ...base, platform: "win32", arch: "x64" })).toThrow(/unsupported platform/);
   expect(() => createAppInfo({ ...base, platform: "linux", arch: "ia32" })).toThrow(
     /unsupported architecture/,
   );
+});
+
+test("createAppInfo reads the day from the daemon clock on every call", () => {
+  let day = "2026-10-16";
+  const info = createAppInfo({
+    version: "1.5.0",
+    home: "/h",
+    userHome: "/u",
+    pid: 7,
+    startedAt: 0,
+    now: () => 0,
+    today: () => day,
+    platform: "darwin",
+    arch: "arm64",
+  });
+  expect(info().today).toBe("2026-10-16");
+  day = "2026-10-17";
+  expect(info().today).toBe("2026-10-17");
 });

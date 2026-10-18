@@ -1,4 +1,4 @@
-import type { RunState } from "@kibo/schema";
+import { DELIVERY_STEP_LABELS, DELIVERY_STEP_MAX, FULL_DELIVERY_AGENT, type RunState } from "@kibo/schema";
 
 const RUN_STATES: Record<RunState, string> = {
   queued: "En file",
@@ -13,8 +13,15 @@ const RUN_STATES: Record<RunState, string> = {
 export const fr = {
   session: (tool: string) => `Session ${tool} en cours`,
   retouch: (step: string) => `retouche · ${step}`,
-  filter: { label: "Tickets affichés", mineAndAgents: "Moi + agents", mine: "Moi", all: "Tous" },
-  counter: (shown: number, total: number, filter: string) => `${shown} / ${total} · ${filter}`,
+  filter: { label: "Tickets affichés", mineAndAgents: "Moi + agents", mine: "Moi" },
+  mode: {
+    all: "Tous",
+    sprint: (code: string | null) => (code === null ? "Sprint courant" : `Sprint courant · ${code}`),
+    startable: "Démarrable",
+    toFix: "À reprendre",
+  },
+  counter: (shown: number, mode: string, mine: string | null) =>
+    `${shown} ticket${shown > 1 ? "s" : ""} · ${mode}${mine === null ? "" : ` · ${mine}`}`,
   labelFilter: {
     label: "Filtrer par étiquette",
     all: "Étiquette : toutes",
@@ -44,14 +51,29 @@ export const fr = {
     cancelled: (key: string) => `Déplacement de ${key} annulé.`,
   },
   moveFailed: (key: string) => `Impossible de déplacer ${key}.`,
+  heldBy: (key: string, question: string) => `${key} reste bloqué par ${question}`,
+  answer: "Répondre",
+  empty: { text: "Les étapes avancent seules avec git et les PR.", action: "Nouveau ticket" },
+  phaseHint: (step: number) =>
+    `Phase ${step} sur ${DELIVERY_STEP_MAX + 1} de ${FULL_DELIVERY_AGENT} : ${DELIVERY_STEP_LABELS[step] ?? ""}`,
   waitingOn: (key: string) => `attend ${key}`,
   questions: (n: number) => `${n} question${n > 1 ? "s" : ""}`,
   questionsOpen: (n: number) => `${n} question${n > 1 ? "s" : ""}, ouvrir`,
   blockedReason: (reason: string) => `Motif : ${reason}`,
   ci: { ok: "CI réussie", error: "CI cassée", running: "CI en cours", neutral: "CI sans verdict" },
+  ciShort: { ok: "CI", error: "CI cassée", running: "CI en cours", neutral: "CI" },
+  changesRequested: "changements demandés",
+  blocked: "bloqué",
+  blockedBy: (question: string) => `bloqué · ${question}`,
+  optional: "facultative",
   ciUnavailable: (message: string) => `CI indisponible : ${message}`,
-  startable: "Démarrable",
-  startableFilter: "Démarrables",
+  reason: {
+    sprint: (code: string) => `sprint ${code}`,
+    unplanned: "sans sprint",
+    limit: (count: number, limit: number) => `limite ${count}/${limit}`,
+  },
+  branch: (name: string) => `Branche ${name}`,
+  changesShort: "changements",
   mention: {
     history: "Voir l'historique",
     reply: "Répondre",

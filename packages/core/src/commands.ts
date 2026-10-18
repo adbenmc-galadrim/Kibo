@@ -1,6 +1,7 @@
 import {
   KiboError,
   NO_ACTIVITY,
+  openLimitOf,
   type ProjectActivity,
   type ProjectCommand,
   type ProjectSnapshot,
@@ -41,9 +42,11 @@ import {
 } from "./questions";
 import {
   archiveQuestion,
+  markQuestionsExported,
   remindQuestion,
   reopenQuestion,
   restoreQuestion,
+  unmarkQuestionsExported,
   updateAnswer,
   updateQuestion,
 } from "./questions-edit";
@@ -178,6 +181,10 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
       return archiveQuestion(doc, cmd);
     case "restoreQuestion":
       return restoreQuestion(doc, cmd);
+    case "markQuestionsExported":
+      return markQuestionsExported(doc, cmd);
+    case "unmarkQuestionsExported":
+      return unmarkQuestionsExported(doc, cmd);
     case "createSprint":
       return createSprint(doc, { code: cmd.code, name: cmd.name, start: cmd.start, end: cmd.end });
     case "updateSprint":
@@ -223,6 +230,7 @@ export function readProject(
     sprints,
     today,
     activity,
+    openLimit: openLimitOf(meta.tracking),
   });
   return {
     meta,

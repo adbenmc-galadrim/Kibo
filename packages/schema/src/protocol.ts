@@ -40,7 +40,11 @@ const Reply = z.object({
   error: WireError.optional(),
 });
 
-export const Spotlight = z.object({ kind: z.literal("question"), id: NodeId });
+export const Spotlight = z.discriminatedUnion("kind", [
+  z.strictObject({ kind: z.literal("question"), id: NodeId }),
+  z.strictObject({ kind: z.literal("newQuestion"), ticketId: NodeId }),
+  z.strictObject({ kind: z.literal("newFeature") }),
+]);
 export type Spotlight = z.infer<typeof Spotlight>;
 
 export const HostToFrame = z.discriminatedUnion("type", [
@@ -70,6 +74,10 @@ export const HostToFrame = z.discriminatedUnion("type", [
 export type HostToFrame = z.infer<typeof HostToFrame>;
 export type InitMessage = Extract<HostToFrame, { type: "init" }>;
 
+export const ProjectEditField = z.enum(["folder"]);
+export type ProjectEditField = z.infer<typeof ProjectEditField>;
+export type ProjectEditRequest = { field: ProjectEditField };
+
 export const FrameToHost = z.discriminatedUnion("type", [
   z.object({ kibo: z.literal(1), type: z.literal("ready") }),
   z.object({
@@ -80,6 +88,7 @@ export const FrameToHost = z.discriminatedUnion("type", [
   }),
   z.object({ kibo: z.literal(1), type: z.literal("openTicket"), ticketId: z.string().min(1) }),
   z.object({ kibo: z.literal(1), type: z.literal("openSprint"), sprintId: z.string().min(1) }),
+  z.object({ kibo: z.literal(1), type: z.literal("editProject"), field: ProjectEditField }),
   z.object({
     kibo: z.literal(1),
     type: z.literal("openNewTicket"),
@@ -96,6 +105,7 @@ export const FrameToHost = z.discriminatedUnion("type", [
     type: z.literal("openView"),
     componentId: z.string().min(1).max(128),
     question: NodeId.optional(),
+    intent: Spotlight.optional(),
   }),
   z.object({ kibo: z.literal(1), type: z.literal("key"), combo: KeyCombo }),
   z.object({ kibo: z.literal(1), type: z.literal("resize"), height: z.number().int().min(0).max(10_000) }),

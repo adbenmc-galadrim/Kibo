@@ -92,6 +92,7 @@ async function boot(
     toolchain: DEV_TOOLCHAIN,
     user: "adam",
     claudeBin: FAKE_CLAUDE,
+    ticketExecution: "allowed",
     sampler: () => ({ cpu: 5, ram: 5 }),
     notify: (notice) => notices.push(notice),
     transcriptRoot: join(home, "fake"),
@@ -129,7 +130,6 @@ export async function startStack(
     daemon = null;
     rmSync(home, { recursive: true, force: true });
   });
-  await stack.rpc({ method: "setAppSettings", patch: { agentExecution: "shown" } });
   return stack;
 }
 

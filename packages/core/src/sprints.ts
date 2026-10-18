@@ -1,5 +1,6 @@
 import {
   isFeature,
+  isLingering,
   KiboError,
   Sprint,
   type SprintPatch,
@@ -86,6 +87,7 @@ export function sprintViews(
       features: own.map((t) => t.id),
       delivered: own.filter((t) => t.feature?.status === "delivered").length,
       total: own.length,
+      lingering: isLingering(sprint, sprints, today),
     };
   });
 }

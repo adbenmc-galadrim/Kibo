@@ -13,15 +13,21 @@ type HeaderProps = {
   icon: LucideIcon;
   title: ReactNode;
   aside?: ReactNode;
-  count?: number;
+  count?: ReactNode;
+  alert?: boolean;
   onTitle?(): void;
 };
 
-export function CardHeader({ icon: Icon, title, aside, count, onTitle }: HeaderProps) {
+export function CardHeader({ icon: Icon, title, aside, count, alert, onTitle }: HeaderProps) {
   const heading = "font-semibold text-(--tracking-fg) text-[14px] leading-[17px]";
   return (
     <div className="flex h-[43px] shrink-0 items-center gap-[8px] px-[16px]">
-      <Icon absoluteStrokeWidth size={15} aria-hidden className="text-(--tracking-mfg)" />
+      <Icon
+        absoluteStrokeWidth
+        size={15}
+        aria-hidden
+        className={alert ? "text-(--tracking-red)" : "text-(--tracking-mfg)"}
+      />
       {onTitle ? (
         <button type="button" className={cn(heading, "cursor-pointer hover:underline")} onClick={onTitle}>
           {title}
@@ -30,7 +36,14 @@ export function CardHeader({ icon: Icon, title, aside, count, onTitle }: HeaderP
         <h2 className={heading}>{title}</h2>
       )}
       {count !== undefined && (
-        <span className="flex h-[15px] items-center rounded-[9px] bg-(--tracking-muted) px-[7px] font-medium font-mono text-(--tracking-mfg) text-[12px]">
+        <span
+          className={cn(
+            "flex h-[15px] items-center rounded-[9px] px-[7px] font-medium font-mono text-[12px]",
+            alert
+              ? "bg-(--tracking-red-soft) text-(--tracking-red)"
+              : "bg-(--tracking-muted) text-(--tracking-mfg)",
+          )}
+        >
           {count}
         </span>
       )}

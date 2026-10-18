@@ -71,7 +71,7 @@ def emit(r, l, depth, out):
 out = []
 used_fonts = collections.Counter(); used_colors = collections.Counter(); radii = collections.Counter(); gaps = collections.Counter()
 screens_md = []
-for i, name, png in SCREENS:
+def screen_md(i, name, png, where):
     dk = json.load(open(f"{D}/_dump-{i}-dark.json"))[name]; lt = json.load(open(f"{D}/_dump-{i}-light.json"))[name + " (clair)"]
     assert len(dk) == len(lt), name
     td, tl = tree(dk), tree(lt)
@@ -83,14 +83,40 @@ for i, name, png in SCREENS:
             if a.get(k): used_colors[tok(a[k][0], b[k][0])] += 1
         if a.get("r"): radii[num(a["r"])] += 1
         if a.get("flex"): gaps[num(a["flex"]["gap"])] += 1
-    md = [f"## {name}", "", f"Board `{name}` (sombre) et `{name} (clair)`, page « Proposition » du fichier Penpot « Kibo · Redesign » ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Emis » du fichier « Kibo ».",
+    md = [f"## {name}", "", f"Board `{name}` (sombre) et `{name} (clair)`, page « Proposition » du fichier Penpot « Kibo · Redesign »{where}.",
           f"Exports : `exports/{png}-dark.png` et `exports/{png}-light.png`, {size(W + '/exports/' + png + '-dark.png')} px (échelle 1).", "",
           "### Données affichées (ordre de lecture)", ""]
     texts = texts_of(td, tl, [])
     md += [f"{k + 1}. « {r['c'].replace(chr(10), ' ⏎ ')} » (x {num(r['x'])}, y {num(r['y'])})" for k, r in enumerate(texts)]
     md += ["", "### Blocs", "", "Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en tokens (tableau en tête), sinon en hex sombre / clair.", ""]
     emit(td, tl, 0, md)
-    screens_md.append("\n".join(md))
+    return "\n".join(md)
+SCREENS27 = [(6, "P1 bis v3 · Vue d'ensemble", "proposition-vue-ensemble-v3"), (13, "P1 bis v3 · En retard au 18 oct.", "proposition-vue-ensemble-v3-retard"), (7, "P1 bis v3 · Pour commencer", "proposition-vue-ensemble-v3-pour-commencer"),
+    (8, "P6 · Nouveau projet", "proposition-nouveau-projet"), (9, "P7 · Kanban", "proposition-kanban"), (10, "P8 · Fiche ticket", "proposition-fiche-ticket"),
+    (11, "P8b · Fiche ticket, Activité", "proposition-fiche-ticket-activite"), (12, "P9 · Questions", "proposition-questions")]
+MARK27 = "\n## Phase 27\n"
+if "--sections" in sys.argv:
+    wanted = sys.argv[sys.argv.index("--sections") + 1].split(",")
+    cur = open(W + "/cotes.md").read()
+    for i, name, png in SCREENS + SCREENS27:
+        if str(i) not in wanted: continue
+        where = "" if (i, name, png) in SCREENS27 else f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Emis » du fichier « Kibo »"
+        start = cur.index(f"\n## {name}\n") + 1
+        nxt = re.search(r"\n## ", cur[start + 3:]); end = start + 3 + nxt.start() + 1 if nxt else len(cur)
+        cur = cur[:start] + screen_md(i, name, png, where) + ("\n\n" if nxt else "\n") + cur[end:]
+    open(W + "/cotes.md", "w").write(cur)
+    print(sum(1 for _ in open(W + "/cotes.md")))
+    sys.exit(0)
+if "--phase27" in sys.argv:
+    cur = open(W + "/cotes.md").read()
+    cur = cur.split(MARK27)[0].rstrip("\n") + "\n"
+    intro = ["## Phase 27", "", "Boards de la phase 27 (spec §39, §39.6), relevés comme les précédents : `scripts/95-cotes.js` par board, puis `python3 scripts/cotes.py <dossier des JSON> --phase27`, qui remplace cette partie seulement. Rangées à partir de y = 8 000 (pas de 1 500 px). Mêmes tokens, polices et règles qu'en tête ; horloge figée au vendredi 16 octobre (S42), sauf la variante « En retard au 18 oct. » (dimanche, S42 terminé), données `emis-maquettes`. La barre repliée (`exports/proposition-barre-repliee-*.png`, 1 180 × 1 000) et le panneau de l'agent (`exports/proposition-agent-{question,recap}-*.png`, 340 × 1 000) servent de référence visuelle, sans cotes ni comparaison au pixel."]
+    parts = [screen_md(i, name, png, "") for i, name, png in SCREENS27]
+    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
+    print(sum(1 for _ in open(W + "/cotes.md")))
+    sys.exit(0)
+for i, name, png in SCREENS:
+    screens_md.append(screen_md(i, name, png, f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Emis » du fichier « Kibo »"))
 head = ["# Cotes du redesign", "",
  "Relevé automatique des boards validés (P1 bis, P2 à P5) par l'API du plugin Penpot (`penpotUtils.findShapes`, géométrie, `flex`, `layoutChild`, polices et remplissages), sombre et clair comparés nœud à nœud. Source : page « Proposition » du fichier « Kibo · Redesign » ; copie identique en page « 35 · Redesign Emis » du fichier « Kibo » (écrans 210 à 214). Relevé : `scripts/95-cotes.js` dans le plugin (un board par appel, JSON reçu par `receiver.py`), puis `python3 scripts/cotes.py <dossier des JSON>`.",
  "", "Horloge figée : vendredi 16 octobre (S42, 12–16 oct.), dernière activité à 15:04, « Synchronisé · il y a 1 min », « Suivi à jour · il y a 4 min ». Les données affichées sont listées exactement par écran (section « Données affichées ») ; une fixture e2e doit les reproduire.",

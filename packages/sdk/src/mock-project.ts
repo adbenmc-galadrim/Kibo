@@ -13,6 +13,7 @@ export function recordedTrackingApis(
     project: {
       get: () => record("read:ticket", "read project", () => inner.project.get()),
       subscribe: inner.project.subscribe,
+      edit: inner.project.edit,
     },
     sprints: sprintsApi({
       list: (type) => outer().list(type),

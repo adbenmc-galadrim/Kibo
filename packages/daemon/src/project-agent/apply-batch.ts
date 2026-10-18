@@ -18,6 +18,7 @@ import {
   Question,
   Ticket,
 } from "@kibo/schema";
+import { assertTicketExecution } from "../agents/execution-removed";
 import { type SignalRefsPort, signalRefs } from "./signal-refs";
 import type { ProjectAgentAgentsPort, ProjectAgentDataPort } from "./types";
 
@@ -40,6 +41,8 @@ const result = (
   created: Created | null = null,
 ): ActionResult => ({ actionId: action.id, outcome, detail: detail?.slice(0, DETAIL_MAX) ?? null, created });
 
+const failure = (e: KiboError): string => (e.code === "AGENT_EXECUTION_REMOVED" ? e.message : e.detail);
+
 async function contextOf(deps: ApplyBatchDeps, batch: Batch): Promise<BatchContext> {
   const { data } = deps;
   const project = data.project(batch.projectId);
@@ -51,6 +54,7 @@ async function contextOf(deps: ApplyBatchDeps, batch: Batch): Promise<BatchConte
     agents: data.agents(batch.projectId),
     demoProject: data.isDemoProject(batch.projectId),
     viewer: data.viewer(batch.projectId),
+    agentExecution: "hidden",
     ...signalRefs(deps.signals, batch.projectId),
   };
 }
@@ -101,6 +105,7 @@ async function execute(run: Run, action: ProposedAction, ids: TicketIds): Promis
   const { projectId } = run.batch;
   switch (action.type) {
     case "assignAgent":
+      assertTicketExecution(run.deps.agents().ticketExecution(), "assignAgent");
       run.deps.agents().assign({
         projectId,
         ticketId: idOf(ids, action.ticket),
@@ -110,6 +115,7 @@ async function execute(run: Run, action: ProposedAction, ids: TicketIds): Promis
       });
       return null;
     case "deliverAnswers":
+      assertTicketExecution(run.deps.agents().ticketExecution(), "deliverAnswers");
       run.deps.agents().deliverAnswers(projectId, idOf(ids, action.ticket));
       return null;
     case "cancelRun":
@@ -158,7 +164,7 @@ async function applyOne(
     if (created && action.type === "createTicket") run.refs.set(action.ref, created);
     return result(action, "applied", null, created);
   } catch (e) {
-    if (e instanceof KiboError) return result(action, "failed", e.detail);
+    if (e instanceof KiboError) return result(action, "failed", failure(e));
     throw e;
   }
 }

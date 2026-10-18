@@ -94,6 +94,7 @@ export function ShellDialogs({
           open={state.newProject}
           onOpenChange={(o) => set(o ? { newProject: true } : { newProject: false, newProjectFocus: "name" })}
           count={projects.length}
+          existingKeys={projects.map((x) => x.key)}
           focusFolder={state.newProjectFocus === "folder"}
         />
       )}
@@ -148,11 +149,8 @@ export function ShellDialogs({
           project={sheetProject}
           ticketId={sheet.ticketId}
           domains={projectDomainsOf(sheetProject, config) ?? []}
-          viewer={viewer}
+          viewer={sheetProject.viewer ?? viewer}
           onClose={() => set({ sheet: null })}
-          onAssign={() =>
-            set({ sheet: null, assign: { projectId: sheet.projectId, ticketId: sheet.ticketId } })
-          }
           onFile={() => set({ sheet: null, fileTicket: { ticketId: sheet.ticketId } })}
           onOpenInTab={() => {
             set({ sheet: null });
@@ -230,7 +228,8 @@ export function ShellDialogs({
       {editing && (
         <EditProjectDialog
           project={editing}
-          onClose={() => set({ editProject: null })}
+          focus={state.editFocus ?? undefined}
+          onClose={() => set({ editProject: null, editFocus: null })}
           config={config}
           go={(target) => p.onOpenTarget(target, false)}
         />
@@ -248,10 +247,6 @@ export function ShellDialogs({
           onDeleted={(projectId) => {
             set({ deleteProject: null });
             p.onCloseProject(projectId);
-          }}
-          onOpenAgents={() => {
-            set({ deleteProject: null });
-            p.onOpenTarget({ kind: "screen", screen: "agents" }, false);
           }}
           onShare={() => set({ deleteProject: null, share: doomedProject.id })}
         />

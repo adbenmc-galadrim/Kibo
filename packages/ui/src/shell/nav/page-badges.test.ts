@@ -22,6 +22,7 @@ const sprint = (id: string, code: string, state: SprintView["state"], start: str
   features: [],
   delivered: 0,
   total: 0,
+  lingering: false,
 });
 
 const question = (id: string, answered: boolean): Question => ({
@@ -37,6 +38,7 @@ const question = (id: string, answered: boolean): Question => ({
   blocking: false,
   createdBy: { kind: "agent", ref: "opus" },
   createdAt: 0,
+  number: null,
   importRef: null,
   answer: answered
     ? {

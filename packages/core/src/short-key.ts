@@ -5,7 +5,7 @@ import { featureSeqOf, setFeatureSeq } from "./project";
 import { getNode, walkDepthFirst } from "./tree";
 
 const FEATURE_PREFIX = "F";
-const MAX_FEATURE_SEQ = 999;
+export const MAX_FEATURE_SEQ = 999;
 
 const tickets = (doc: LoroDoc) => doc.getTree("tickets");
 
@@ -18,17 +18,22 @@ function usedShortKeys(doc: LoroDoc, exceptId: string | null): Set<string> {
   return used;
 }
 
-export type ShortKeyAllocation = { ticketId: string; key: string; seq: number };
+export type FeatureSlot = { key: string; seq: number };
+export type ShortKeyAllocation = FeatureSlot & { ticketId: string };
 
-export function nextShortKey(doc: LoroDoc, ticketId: string): ShortKeyAllocation | null {
-  const node = getNode(tickets(doc), ticketId);
-  if (node.parent() !== undefined || typeof node.data.get("shortKey") === "string") return null;
-  const used = usedShortKeys(doc, ticketId);
+export function nextFeatureSlot(doc: LoroDoc, exceptId: string | null): FeatureSlot {
+  const used = usedShortKeys(doc, exceptId);
   let seq = featureSeqOf(doc) + 1;
   while (used.has(`${FEATURE_PREFIX}${seq}`)) seq += 1;
   if (seq > MAX_FEATURE_SEQ)
     throw new KiboError("INVALID_INPUT", `no short key left after ${FEATURE_PREFIX}${MAX_FEATURE_SEQ}`);
-  return { ticketId, key: `${FEATURE_PREFIX}${seq}`, seq };
+  return { key: `${FEATURE_PREFIX}${seq}`, seq };
+}
+
+export function nextShortKey(doc: LoroDoc, ticketId: string): ShortKeyAllocation | null {
+  const node = getNode(tickets(doc), ticketId);
+  if (node.parent() !== undefined || typeof node.data.get("shortKey") === "string") return null;
+  return { ticketId, ...nextFeatureSlot(doc, ticketId) };
 }
 
 export function assignShortKey(doc: LoroDoc, allocation: ShortKeyAllocation | null): void {

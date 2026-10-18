@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
 import { Package } from "lucide-react";
-import { type FeatureRef, featureName } from "./FeatureChip";
+import { type FeatureRef, featureKey, featureName } from "./FeatureChip";
 import type { TicketsQuery } from "./filter-tickets";
 import { fr } from "./fr";
 import { LabelsMenuItems } from "./LabelsMenu";
@@ -36,7 +36,7 @@ export function FeatureMenu({ query, features, tickets, onChange }: Props) {
           aria-pressed={chosen !== null || query.labels.size > 0}
         >
           <Package absoluteStrokeWidth size={13} aria-hidden className="size-[13px]" />
-          {chosen ? (chosen.shortKey ?? chosen.keyLabel) : fr.filters.feature}
+          {chosen ? featureKey(chosen) : fr.filters.feature}
           {query.labels.size > 0 && (
             <span className="font-mono text-[11px] text-(--tracking-dim)">{query.labels.size}</span>
           )}

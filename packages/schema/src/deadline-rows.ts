@@ -1,11 +1,12 @@
 import type { FeatureState } from "./feature-state";
 import type { FeatureStep } from "./feature-steps";
+import { dateOf, dayNumber } from "./iso-date";
 import { currentSprint, nextSprint, type Sprint, type SprintView, sortSprints } from "./sprint";
 import { FINAL_STATUSES } from "./startable";
 import type { StatusId } from "./status";
 
 export const DEADLINE_WEEKS = 4;
-const DAY_MS = 86_400_000;
+export const DEADLINE_MAX_WEEKS = 12;
 const WEEK_DAYS = 7;
 
 export type DeadlineColumn = { start: string; sprint: Pick<Sprint, "id" | "code"> | null };
@@ -34,21 +35,27 @@ export type DeadlineInput = {
   features: readonly DeadlineFeature[];
   blockingQuestions: ReadonlyMap<string, string>;
   today: string;
+  weeks?: number;
 };
 
-const dayNumber = (date: string): number => Date.parse(`${date}T00:00:00Z`) / DAY_MS;
-const dateOf = (day: number): string => new Date(day * DAY_MS).toISOString().slice(0, 10);
 const sprintRef = (s: Pick<Sprint, "id" | "code">): Pick<Sprint, "id" | "code"> => ({
   id: s.id,
   code: s.code,
 });
 
-export function deadlineColumns(sprints: readonly SprintView[], today: string): DeadlineColumn[] {
+const windowWeeks = (weeks: number): number =>
+  Math.min(DEADLINE_MAX_WEEKS, Math.max(DEADLINE_WEEKS, Math.ceil(weeks)));
+
+export function deadlineColumns(
+  sprints: readonly SprintView[],
+  today: string,
+  weeks: number = DEADLINE_WEEKS,
+): DeadlineColumn[] {
   const anchor = currentSprint(sprints, today) ?? nextSprint(sprints, today);
   if (anchor === null) return [];
   const first = dayNumber(anchor.start);
   const sorted = sortSprints(sprints);
-  return Array.from({ length: DEADLINE_WEEKS }, (_, week) => {
+  return Array.from({ length: windowWeeks(weeks) }, (_, week) => {
     const from = first + week * WEEK_DAYS;
     const starting = sorted.find((s) => dayNumber(s.start) >= from && dayNumber(s.start) < from + WEEK_DAYS);
     return { start: dateOf(from), sprint: starting === undefined ? null : sprintRef(starting) };
@@ -80,7 +87,7 @@ function slipTarget(f: DeadlineFeature, sorted: readonly Sprint[]): Pick<Sprint,
 }
 
 export function deadlineRows(input: DeadlineInput): DeadlineRow[] {
-  const columns = deadlineColumns(input.sprints, input.today);
+  const columns = deadlineColumns(input.sprints, input.today, input.weeks);
   const columnOf = new Map(columns.flatMap((c, i) => (c.sprint === null ? [] : [[c.sprint.id, i] as const])));
   const sorted = sortSprints(input.sprints);
   return input.features

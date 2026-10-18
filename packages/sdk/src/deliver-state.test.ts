@@ -1,11 +1,5 @@
 import { expect, test } from "bun:test";
-import {
-  copyDeliveryCommand,
-  type DeliverInput,
-  deliverEntry,
-  deliveryMenuActions,
-  menuDeliverEntry,
-} from "./deliver-state";
+import { type DeliverInput, deliverEntry, deliveryMenuActions, menuDeliverEntry } from "./deliver-state";
 
 const input = (patch: Partial<DeliverInput> = {}): DeliverInput => ({
   ticket: { key: "EMIS-15", statusId: "todo", startable: true, waitingOn: [] },
@@ -61,6 +55,20 @@ test("a parent or a ticket already in progress stays deliverable", () => {
   expect(deliverEntry(input({ ticket: started }))).toEqual({ disabledReason: null });
 });
 
+const withClipboard = async (work: () => Promise<void>): Promise<string[]> => {
+  const written: string[] = [];
+  const clipboard = { writeText: (text: string) => Promise.resolve(void written.push(text)) };
+  const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", { value: clipboard, configurable: true });
+  try {
+    await work();
+  } finally {
+    if (original) Object.defineProperty(navigator, "clipboard", original);
+    else Reflect.deleteProperty(navigator, "clipboard");
+  }
+  return written;
+};
+
 const menuOf = (
   execution: "hidden" | "shown",
   statusId: "todo" | "done" = "todo",
@@ -70,18 +78,22 @@ const menuOf = (
   const entries = deliveryMenuActions({
     execution,
     entry: { disabledReason: null },
-    ticket: { key, statusId },
+    ticket: { key, statusId, startable: true, waitingOn: [] },
     deliver: (mode) => calls.push(`deliver:${mode}`),
-    copy: (command) => calls.push(command),
+    sdk: { toast: () => undefined },
   });
   return { entries, calls };
 };
 
-test("hidden execution swaps Livrer for copying the full-delivery command", () => {
+test("hidden execution swaps Livrer for copying the full-delivery command", async () => {
   const { entries, calls } = menuOf("hidden");
   expect(entries.map((e) => e.label)).toEqual(["Copier /full-delivery EMIS-33"]);
-  entries[0]?.onSelect();
-  expect(calls).toEqual(["/full-delivery EMIS-33"]);
+  const written = await withClipboard(async () => {
+    entries[0]?.onSelect();
+    await Promise.resolve();
+  });
+  expect(written).toEqual(["/full-delivery EMIS-33"]);
+  expect(calls).toEqual([]);
 });
 
 test("hidden execution offers no copy for a ticket without key", () => {
@@ -89,11 +101,14 @@ test("hidden execution offers no copy for a ticket without key", () => {
   expect(menuOf("hidden", "done", null).entries).toEqual([]);
 });
 
-test("a done ticket offers a touch-up: copy /update-delivery when hidden, Livrer la retouche when shown", () => {
+test("a done ticket offers a touch-up: copy /update-delivery when hidden, Livrer la retouche when shown", async () => {
   const hidden = menuOf("hidden", "done", "EMIS-21");
   expect(hidden.entries.map((e) => e.label)).toEqual(["Copier /update-delivery EMIS-21"]);
-  hidden.entries[0]?.onSelect();
-  expect(hidden.calls).toEqual(["/update-delivery EMIS-21"]);
+  const written = await withClipboard(async () => {
+    hidden.entries[0]?.onSelect();
+    await Promise.resolve();
+  });
+  expect(written).toEqual(["/update-delivery EMIS-21"]);
   const shown = menuOf("shown", "done", "EMIS-21");
   expect(shown.entries.map((e) => e.label)).toEqual(["Livrer la retouche"]);
   shown.entries[0]?.onSelect();
@@ -120,16 +135,37 @@ test("shown execution keeps Livrer on an open ticket", () => {
   expect(calls).toEqual(["deliver:delivery"]);
 });
 
-test("copying the command writes it to the clipboard", async () => {
-  const written: string[] = [];
-  const clipboard = { writeText: (text: string) => Promise.resolve(void written.push(text)) };
-  const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
-  Object.defineProperty(navigator, "clipboard", { value: clipboard, configurable: true });
-  try {
-    await copyDeliveryCommand("/full-delivery EMIS-33");
-  } finally {
-    if (original) Object.defineProperty(navigator, "clipboard", original);
-    else Reflect.deleteProperty(navigator, "clipboard");
-  }
+const sdkMenu = (statusId: "todo" | "done", waitingOn: string[]) => {
+  const toasts: string[] = [];
+  const entries = deliveryMenuActions({
+    execution: "hidden",
+    entry: { disabledReason: null },
+    ticket: { key: "EMIS-33", statusId, startable: waitingOn.length === 0, waitingOn },
+    deliver: () => undefined,
+    sdk: { toast: (message) => void toasts.push(message) },
+  });
+  return { entries, toasts };
+};
+
+test("the Copier /full-delivery entry copies the command and says Copié", async () => {
+  const { entries, toasts } = sdkMenu("todo", ["EMIS-30"]);
+  expect(entries.map((e) => e.label)).toEqual(["Copier /full-delivery EMIS-33"]);
+  const written = await withClipboard(async () => {
+    entries[0]?.onSelect();
+    await Promise.resolve();
+  });
   expect(written).toEqual(["/full-delivery EMIS-33"]);
+  await Promise.resolve();
+  expect(toasts).toEqual(["Copié · attend EMIS-30"]);
+});
+
+test("the touch-up entry copies /update-delivery and says Copié", async () => {
+  const { entries, toasts } = sdkMenu("done", []);
+  const written = await withClipboard(async () => {
+    entries[0]?.onSelect();
+    await Promise.resolve();
+  });
+  expect(written).toEqual(["/update-delivery EMIS-33"]);
+  await Promise.resolve();
+  expect(toasts).toEqual(["Copié"]);
 });

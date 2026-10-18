@@ -8,7 +8,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { isGroup, type StatusId, type TicketView } from "@kibo/schema";
+import { blockingQuestion, isBlocked, questionLabel, type StatusId, type TicketView } from "@kibo/schema";
 import {
   agentTracesShown,
   filterBySource,
@@ -28,33 +28,42 @@ import {
   withoutAgentAssignee,
 } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
-import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { useState } from "react";
 import { announce } from "./announcements";
 import { BlockDialog } from "./BlockDialog";
+import { boardColumn, heldBy } from "./board-column";
 import { type ColumnOrder, orderColumn } from "./column-order";
 import { DragPreview } from "./DragPreview";
-import { commitDrop, type Drop, dropInColumn, nextOrder } from "./drop";
-import { filterTickets, type KanbanFilter, projectLabels } from "./filter";
+import { type Drop, dropInColumn } from "./drop";
+import { type KanbanFilter, projectLabels } from "./filter";
 import { fr } from "./fr";
 import { KanbanCard } from "./KanbanCard";
-import { type CardFacts, type CiChip, ciChipOf } from "./KanbanCardContent";
+import type { CardFacts } from "./KanbanCardContent";
 import { KanbanCardPreview } from "./KanbanCardPreview";
 import { KanbanColumn } from "./KanbanColumn";
+import { KanbanEmpty } from "./KanbanEmpty";
 import { KanbanToolbar } from "./KanbanToolbar";
 import { cardSteps } from "./keyboard-steps";
+import { RemoveDialog } from "./RemoveDialog";
+import { ToolbarAlerts } from "./ToolbarAlerts";
+import { ticketCiRuns } from "./ticket-pr";
+import { useBoardView } from "./use-board-view";
+import { useCardMoves } from "./use-card-moves";
 import { useColumnOrder } from "./use-column-order";
+import { useHeldToast } from "./use-held-toast";
 import { useLabelFilter } from "./use-label-filter";
 
 type Blocking = { ticket: TicketView; drop: Drop | null };
 
 export function Kanban() {
   const sdk = useSdk();
-  const { data: tickets } = useEntities("ticket");
+  const { data: tickets, loading } = useEntities("ticket");
   const { data: statuses } = useEntities("status");
   const { data: runs } = useEntities("run");
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
   const questions = useQuestionsChipData(runs);
+  const { data: questionList } = useEntities("question");
+  const { data: sprints } = useEntities("sprint");
   const source = readSource(sdk.config);
   const { data: ciRuns, error: ciError } = useEntities("ci_run");
   const peers = usePresence();
@@ -71,26 +80,32 @@ export function Kanban() {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: cardSteps }),
   );
-  const [filter, setFilter] = useState<KanbanFilter>(
-    source !== null || sdk.config.filter === "all" ? "all" : "mine-and-agents",
-  );
-  const [startable, setStartable] = useState(false);
+  const scope: KanbanFilter =
+    source === null && sdk.config.filter === "mine-and-agents" ? "mine-and-agents" : "all";
   const [blocking, setBlocking] = useState<Blocking | null>(null);
   const [removing, setRemoving] = useState<TicketView | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const held = useHeldToast();
   const [targetColumn, setTargetColumn] = useState<StatusId | null>(null);
   const [dragged, setDragged] = useState<string | null>(null);
   const scoped = filterBySource(tickets, source);
-  const shown = filterTickets(scoped, filter, sdk.viewer, labelFilter.label, startable);
-  const ciOf = (t: TicketView): CiChip | undefined =>
-    ciChipOf(ciRuns.filter((r) => t.key !== null && r.ticketKey === t.key));
+  const board = useBoardView({
+    scoped,
+    scope,
+    viewer: sdk.viewer,
+    label: labelFilter.label,
+    sprints,
+    ciRuns,
+  });
+  const shown = board.shown;
   const groupOf = groupOfTicket(tickets);
   const agentTraces = agentTracesShown(agentExecution);
   const factsOf = (t: TicketView): CardFacts => ({
     ticket: agentTraces ? t : withoutAgentAssignee(t),
     group: groupOf(t),
     run: agentTraces ? (runOf.get(t.id) ?? null) : null,
-    ci: ciOf(t),
+    ciRuns: ticketCiRuns(t, ciRuns),
+    blocked: isBlocked(t, questionList),
+    blocking: blockingQuestion(t, questionList),
     members: sharing.members,
     remote: agentTraces ? remoteRuns(peers, t.key) : [],
     questions,
@@ -106,11 +121,23 @@ export function Kanban() {
   const draggedTicket = tickets.find((t) => t.id === dragged);
   const ciProblem = ciError && ciError.code !== "NOT_CONNECTED" ? ciError.detail : null;
   const ordered = [...statuses].sort((a, b) => a.order - b.order);
+  const statusIds = new Set(ordered.map((s) => s.id));
+  const columnOf = (t: TicketView): StatusId => boardColumn(t, isBlocked(t, questionList), statusIds);
+  const holdOf = (t: TicketView, target: StatusId) => heldBy(t, columnOf(t), target, questionList);
+  const forbidden = (target: StatusId) =>
+    draggedTicket !== undefined && holdOf(draggedTicket, target) !== null;
+  const refusalOf = (active: string | number, over: string | number): string | null => {
+    const drop = dropInColumn({ active: { id: active }, over: { id: over } }, visible);
+    const t = tickets.find((x) => x.id === drop?.ticketId);
+    const question = drop && t ? holdOf(t, drop.statusId) : null;
+    return t && question ? `${fr.heldBy(t.keyLabel, questionLabel(question))}.` : null;
+  };
+  const placed = tickets.map((t) => ({ id: t.id, statusId: t.statusId, column: columnOf(t) }));
   const columns = new Map(
     ordered.map((s) => [
       s.id,
       orderColumn(
-        shown.filter((t) => t.statusId === s.id),
+        shown.filter((t) => columnOf(t) === s.id),
         columnOrder.order[s.id],
       ),
     ]),
@@ -122,23 +149,7 @@ export function Kanban() {
   const keyOf = (id: string | number) => tickets.find((t) => t.id === id)?.keyLabel ?? statusLabel(id);
   const statusLabel = (id: string | number) => ordered.find((s) => s.id === id)?.label ?? "";
 
-  const setStatus = async (t: TicketView, statusId: StatusId, reason?: string): Promise<boolean> => {
-    try {
-      await sdk.run({ method: "setStatus", ticketId: t.id, statusId, reason });
-      setError(null);
-      return true;
-    } catch {
-      setError(fr.moveFailed(t.keyLabel));
-      return false;
-    }
-  };
-  const place = async (t: TicketView, drop: Drop, reason?: string): Promise<boolean> => {
-    const done = await columnOrder.write(nextOrder(columnOrder.order, tickets, drop), () =>
-      commitDrop(sdk, tickets, drop, reason),
-    );
-    setError(done ? null : fr.moveFailed(t.keyLabel));
-    return done;
-  };
+  const { error, setStatus, place } = useCardMoves(sdk, columnOrder, placed);
   const move = (t: TicketView, statusId: StatusId) => {
     if (statusId === t.statusId) return;
     if (statusId === "blocked") setBlocking({ ticket: t, drop: null });
@@ -156,56 +167,49 @@ export function Kanban() {
     const drop = dropInColumn(e, visible);
     const t = tickets.find((x) => x.id === drop?.ticketId);
     if (!drop || !t) return;
-    if (drop.statusId === "blocked" && t.statusId !== "blocked") setBlocking({ ticket: t, drop });
+    const question = holdOf(t, drop.statusId);
+    if (question !== null) {
+      held.hold(t, question);
+      return;
+    }
+    if (drop.statusId === "blocked" && columnOf(t) !== "blocked") setBlocking({ ticket: t, drop });
     else void place(t, drop);
   };
 
   return (
     <div className="flex h-full flex-col">
       <KanbanToolbar
-        agentTraces={agentTraces}
-        filter={filter}
-        onFilter={setFilter}
+        mine={scope === "all" ? null : agentTraces ? fr.filter.mineAndAgents : fr.filter.mine}
+        filters={board.filters}
+        onFilters={board.choose}
+        onClear={board.clear}
+        total={board.total}
+        counts={board.counts}
+        sprintCode={board.sprintCode}
         label={labelFilter.label}
         labels={projectLabels(scoped)}
         onLabel={labelFilter.choose}
-        startable={startable}
-        onStartable={setStartable}
         onShowAll={() => {
-          setFilter("all");
-          setStartable(false);
+          board.clear();
           if (labelFilter.label !== null) labelFilter.choose(null);
         }}
         shown={shown.length}
-        total={scoped.filter((t) => !isGroup(t)).length}
+        hidden={board.hidden}
       >
         <SelectionChip selection={selection} onClear={() => setSelection(null)} />
-        {error && !blocking && (
-          <p role="alert" className="truncate text-destructive">
-            {error}
-          </p>
-        )}
-        {delivery.error && (
-          <p role="alert" className="truncate text-destructive">
-            {delivery.error}
-          </p>
-        )}
-        {columnOrder.failed && (
-          <p role="alert" className="truncate text-destructive">
-            {fr.orderUnavailable}
-          </p>
-        )}
-        {labelFilter.failed && (
-          <p role="alert" className="truncate text-destructive">
-            {fr.labelFilter.failed}
-          </p>
-        )}
-        {ciProblem && (
-          <p role="alert" className="truncate text-destructive">
-            {fr.ciUnavailable(ciProblem)}
-          </p>
-        )}
+        <ToolbarAlerts
+          messages={[
+            !blocking && error,
+            delivery.error,
+            columnOrder.failed && fr.orderUnavailable,
+            labelFilter.failed && fr.labelFilter.failed,
+            ciProblem && fr.ciUnavailable(ciProblem),
+          ]}
+        />
       </KanbanToolbar>
+      {!loading && scoped.length === 0 && (
+        <KanbanEmpty onNew={readOnly ? undefined : () => sdk.openNewTicket({})} />
+      )}
       <DndContext
         sensors={sensors}
         onDragStart={onDragStart}
@@ -214,7 +218,7 @@ export function Kanban() {
         onDragEnd={onDragEnd}
         accessibility={{
           screenReaderInstructions: { draggable: fr.drag.help },
-          announcements: announce(keyOf),
+          announcements: announce(keyOf, refusalOf),
         }}
       >
         <div className="scrollbar-none flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">
@@ -224,6 +228,7 @@ export function Kanban() {
               status={s}
               ids={visible[s.id] ?? []}
               targeted={targetColumn === s.id}
+              forbidden={forbidden(s.id)}
               onAdd={readOnly ? undefined : () => sdk.openNewTicket({ statusId: s.id })}
             >
               {(columns.get(s.id) ?? []).map((t) => (
@@ -245,7 +250,13 @@ export function Kanban() {
           ))}
         </div>
         <DragPreview>
-          {draggedTicket ? <KanbanCardPreview {...factsOf(draggedTicket)} readOnly={readOnly} /> : null}
+          {draggedTicket ? (
+            <KanbanCardPreview
+              {...factsOf(draggedTicket)}
+              readOnly={readOnly}
+              refused={targetColumn !== null && forbidden(targetColumn)}
+            />
+          ) : null}
         </DragPreview>
       </DndContext>
       {blocking && (
@@ -262,18 +273,13 @@ export function Kanban() {
           }}
         />
       )}
+      {held.toast}
       {delivery.dialog}
       {removing && (
-        <ConfirmDialog
-          open
-          onOpenChange={(o) => !o && setRemoving(null)}
-          title={fr.removeTitle(removing.keyLabel)}
-          description={fr.removeHelp(tickets.filter((x) => x.parentId === removing.id).length)}
-          confirmLabel={fr.removeConfirm}
-          cancelLabel={fr.cancel}
-          onConfirm={async () => {
-            await sdk.run({ method: "deleteTicket", ticketId: removing.id });
-          }}
+        <RemoveDialog
+          ticket={removing}
+          childCount={tickets.filter((x) => x.parentId === removing.id).length}
+          onClose={() => setRemoving(null)}
         />
       )}
     </div>

@@ -1,9 +1,4 @@
 export const frTracking = {
-  execution: {
-    title: "Exécution des agents dans Kibo",
-    help: "Le développement se fait dans T3 Code avec full-delivery. Activer pour lancer et suivre des agents depuis Kibo.",
-    failed: "Impossible de changer ce réglage.",
-  },
   section: {
     title: "Suivi",
     openLimit: "Limite de fonctionnalités ouvertes",
@@ -14,7 +9,7 @@ export const frTracking = {
   addOverview: "Ajouter la page Vue d'ensemble",
   newTicket: "Nouveau ticket",
   hidden: {
-    notice: "L'exécution des agents est masquée.",
-    show: "Afficher dans Paramètres › Général",
+    notice: "Cet écran a été retiré : Kibo ne fait plus que du suivi.",
+    home: "Retour à l'Accueil",
   },
 };

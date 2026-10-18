@@ -86,9 +86,11 @@ function mount(src = "about:blank", apis: InstanceApis = testApis().apis) {
   const opened: FileRef[] = [];
   const newTickets: NewTicketDefaults[] = [];
   const sprints: string[] = [];
+  const edits: { field: "folder" }[] = [];
   const host: Host = {
     openTicket: () => {},
     openSprint: (id) => sprints.push(id),
+    editProject: (opts) => edits.push(opts),
     openNewTicket: (d) => newTickets.push(d),
     openAssign: () => {},
     openFile: (ref) => opened.push(ref),
@@ -163,6 +165,7 @@ function mount(src = "about:blank", apis: InstanceApis = testApis().apis) {
     opened,
     newTickets,
     sprints,
+    edits,
     fromFrame,
     loaded,
     navigate,
@@ -182,6 +185,13 @@ test("a sprint opened by the frame goes to the host sheet", () => {
   const { sprints, fromFrame, view } = mount();
   fromFrame({ kibo: 1, type: "openSprint", sprintId: "s42" });
   expect(sprints).toEqual(["s42"]);
+  view.unmount();
+});
+
+test("a project edit asked by the frame goes to the host", () => {
+  const { edits, fromFrame, view } = mount();
+  fromFrame({ kibo: 1, type: "editProject", field: "folder" });
+  expect(edits).toEqual([{ field: "folder" }]);
   view.unmount();
 });
 

@@ -10,8 +10,9 @@ import {
   type StatusId,
   type TicketView,
 } from "@kibo/schema";
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render as renderPlain, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement, ReactNode } from "react";
 import {
   agentsFixture,
   configFixture,
@@ -22,6 +23,13 @@ import {
 } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 import type { Route } from "../route";
+import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
+
+const shownExecution = fixedStore({ agentExecution: "shown" });
+const ShownExecution = ({ children }: { children: ReactNode }) => (
+  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
+);
+const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const mineTicket = (id: string, key: string, title: string, statusId: StatusId): TicketView => ({
   id,
@@ -41,6 +49,7 @@ const mineTicket = (id: string, key: string, title: string, statusId: StatusId):
   waitingOn: [],
   openQuestions: 0,
   startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,
@@ -69,6 +78,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
         delivery: null,
         tracking: null,
         description: null,
+        client: null,
       },
       tickets: [mineTicket("i2", "INB-2", "Appeler le comptable", "todo")],
       links: [],
@@ -94,6 +104,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
       delivery: null,
       tracking: null,
       description: null,
+      client: null,
     },
     tickets: [mineTicket("f31", "FAC-31", "Export PDF des factures", "in_progress")],
   };
@@ -160,6 +171,22 @@ const { TicketSheet } = await import("./TicketSheet");
 const { NotifyButton } = await import("./NotifyButton");
 const { parseRoute } = await import("../route");
 
+const realMatchMedia = window.matchMedia;
+const wideScreen = (media: string): MediaQueryList =>
+  Object.assign(new EventTarget(), {
+    matches: false,
+    media,
+    onchange: null,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+  });
+beforeEach(() => {
+  window.matchMedia = wideScreen;
+});
+afterEach(() => {
+  window.matchMedia = realMatchMedia;
+});
+
 beforeEach(() => {
   calls.length = 0;
   agents = agentsFixture;
@@ -211,33 +238,14 @@ test("routes name the agent screens", () => {
   expect(parseRoute("#/elsewhere")).toEqual({ projectId: null, pageId: null, target: null });
 });
 
-test("the sidebar leads to the agents, the queue and the settings", async () => {
+test("the sidebar leads to the settings, never to the agents", async () => {
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/");
-  const sidebar = within(screen.getByRole("button", { name: /^Agents/ }).closest("ul") ?? document.body);
-  expect(
-    within(screen.getByRole("button", { name: /^Agents/ }).closest("li") ?? document.body).getByText("3"),
-  ).toBeTruthy();
-  expect(sidebar.queryByRole("button", { name: "Files d'attente" })).toBeNull();
+  expect(await screen.findAllByRole("button", { name: /^Boîte de réception/ })).not.toHaveLength(0);
+  for (const name of [/^Agents/, /^Files d'attente/, /^Skills/])
+    expect(screen.queryByRole("button", { name })).toBeNull();
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: /^Agents/ }));
-  expect(location.hash).toBe("#/agents");
-  expect(await screen.findByRole("heading", { level: 1, name: "Agents" })).toBeTruthy();
-  await waitFor(() => expect(document.title).toBe("Agents — Kibo"));
-  await user.click(screen.getByRole("button", { name: "Files d'attente" }));
-  expect(await screen.findByRole("heading", { level: 1, name: "Files d'attente" })).toBeTruthy();
-  await waitFor(() => expect(document.title).toBe("Files d'attente — Kibo"));
-  expect(screen.queryByRole("tablist", { name: "Onglets" })).toBeNull();
   const crumbs = within(screen.getByRole("navigation", { name: "Fil d'Ariane" }));
-  expect(crumbs.getByText("Agents")).toBeTruthy();
-  expect(crumbs.getByText("Files d'attente").getAttribute("aria-current")).toBe("page");
-  await user.click(screen.getByRole("button", { name: "Skills" }));
-  expect(location.hash).toBe("#/agents/skills");
-  expect(await screen.findByRole("heading", { level: 1, name: "Skills" })).toBeTruthy();
-  expect(
-    screen.getByRole("button", { name: "Skills" }).closest("[data-active]")?.getAttribute("data-active"),
-  ).toBe("true");
-  expect(crumbs.getByText("Skills").getAttribute("aria-current")).toBe("page");
   await user.click(screen.getByRole("button", { name: "Paramètres" }));
   expect(await screen.findByRole("heading", { level: 1, name: "Général" })).toBeTruthy();
   expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
@@ -290,26 +298,6 @@ test("the workspace header leads to the workspace settings", async () => {
   expect(await screen.findByRole("heading", { level: 1, name: "Workspace" })).toBeTruthy();
 });
 
-test("the header carries the actions of the agent screens", async () => {
-  render(<Shell viewer="adam" notifications="native" />);
-  await go("#/agents");
-  const user = userEvent.setup();
-  await user.click(await header().findByRole("button", { name: "Nouvel agent" }));
-  expect(await screen.findByRole("dialog", { name: "Nouvel agent" })).toBeTruthy();
-  await user.keyboard("{Escape}");
-  await go("#/agents/queue");
-  await user.click(await header().findByRole("button", { name: "Mettre en pause l'admission" }));
-  expect(calls).toContainEqual({ method: "setHost", patch: { paused: true } });
-});
-
-test("answering from the queue opens the drawer on that run", async () => {
-  render(<Shell viewer="adam" notifications="native" />);
-  await go("#/agents/queue");
-  const waiting = within(await screen.findByRole("region", { name: "En attente de réponse" }));
-  await userEvent.setup().click(waiting.getByRole("button", { name: "Répondre à opus-dev-2" }));
-  await expectDockOn("opus-dev-2");
-});
-
 test("answering from the palette opens the drawer on that run", async () => {
   render(<Shell viewer="adam" notifications="native" />);
   await go("#/p/kibo/");
@@ -331,8 +319,7 @@ test("launching an agent from the drawer opens the assign dialog", async () => {
   expect(within(screen.getByRole("dialog")).getByText("Lancer un agent")).toBeTruthy();
 });
 
-test("the ticket sheet offers a domain and the assign action", async () => {
-  const onAssign = mock(() => {});
+test("the ticket sheet offers a domain, folded, and no assign action", async () => {
   render(
     <TicketSheet
       project={kiboProject()}
@@ -340,16 +327,15 @@ test("the ticket sheet offers a domain and the assign action", async () => {
       domains={domainsFixture}
       viewer="adam"
       onClose={() => {}}
-      onAssign={onAssign}
       onOpenInTab={() => {}}
       onOpenFile={() => {}}
       onOpenTicket={() => {}}
       onDeleted={() => {}}
     />,
   );
+  await userEvent.setup().click(screen.getByRole("button", { name: /^Domaine/ }));
   expect(screen.getByRole("combobox", { name: "Domaine" }).textContent).toContain("UI");
-  await userEvent.setup().click(screen.getByRole("button", { name: "Assigner à un agent" }));
-  expect(onAssign).toHaveBeenCalled();
+  expect(screen.queryByRole("button", { name: "Assigner à un agent" })).toBeNull();
 });
 
 test("the bell asks for notification permission once", async () => {
@@ -428,8 +414,9 @@ test("right click and the ellipsis open the same project menu; edit and delete o
   await user.click(screen.getByRole("button", { name: "Actions de Kibo" }));
   await user.click(screen.getByRole("menuitem", { name: "Supprimer…" }));
   expect(await screen.findByRole("dialog", { name: "Des agents travaillent sur ce projet" })).toBeTruthy();
-  await user.click(screen.getByRole("button", { name: "Voir les agents" }));
-  expect(location.hash).toBe("#/agents");
+  expect(screen.queryByRole("button", { name: "Voir les agents" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Annuler" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   expect(calls.some((c) => c.method === "deleteProject")).toBe(false);
 });
 

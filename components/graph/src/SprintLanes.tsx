@@ -1,5 +1,6 @@
 import { cn } from "@kibo/sdk/lib/utils";
 import { CalendarRange, Inbox } from "lucide-react";
+import { EmptyGraph } from "./EmptyGraph";
 import { FeatureFrame } from "./FeatureFrame";
 import { fr } from "./fr";
 import { LANE_MARGIN } from "./frame-geometry";
@@ -30,9 +31,7 @@ function LaneHeader({ lane }: { lane: Lane }) {
           </>
         )}
       </div>
-      {lane.state !== null && (
-        <span className={cn("text-[11px] leading-[14px]", soft)}>{fr.sprints.state[lane.state]}</span>
-      )}
+      {lane.label !== null && <span className={cn("text-[11px] leading-[14px]", soft)}>{lane.label}</span>}
     </div>
   );
 }
@@ -40,9 +39,9 @@ function LaneHeader({ lane }: { lane: Lane }) {
 const laneLabel = (lane: Lane): string =>
   lane.code === null ? fr.sprints.reserve : `${lane.code} ${lane.name ?? ""}`.trim();
 
-type Props = { model: SprintLanesModel; onOpen(id: string): void };
+type Props = { model: SprintLanesModel; onOpen(id: string): void; onNewFeature(): void };
 
-export function SprintLanes({ model, onOpen }: Props) {
+export function SprintLanes({ model, onOpen, onNewFeature }: Props) {
   return (
     <div className="relative h-full min-h-0 bg-(--tracking-canvas)">
       <section aria-label={fr.sprints.canvas} className="h-full overflow-auto">
@@ -66,6 +65,9 @@ export function SprintLanes({ model, onOpen }: Props) {
           <LaneEdges model={model} />
           {model.lanes.flatMap((lane) =>
             lane.frames.map((frame) => <FeatureFrame key={frame.id} frame={frame} onOpen={onOpen} />),
+          )}
+          {model.features === 0 && (
+            <EmptyGraph onNewFeature={onNewFeature} className="absolute inset-x-0 top-[51px] bottom-0" />
           )}
         </div>
       </section>

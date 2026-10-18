@@ -35,6 +35,7 @@ const META = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
 };
 const EDITOR: UpdateAuthor = { userId: "u1", role: "editor" };
 

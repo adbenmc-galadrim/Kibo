@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { resolveToolchain, type Toolchain } from "@kibo/devkit";
 import { KiboError, Template } from "@kibo/schema";
 import { type Parsed, parseArgs } from "./args";
@@ -15,7 +15,8 @@ import {
 import { sprintsCommand } from "./commands/sprints";
 import { componentDir, testCommand } from "./commands/test";
 import { runTicketsCommand } from "./commands/tickets";
-import { fr } from "./fr";
+import { DaemonError, isUnknownMethod } from "./daemon-client";
+import { fr, frTickets } from "./fr";
 
 export type CliIo = { home: string; toolchain: Toolchain; out(line: string): void; err(line: string): void };
 
@@ -92,25 +93,45 @@ function marketDeps(io: CliIo): MarketCliDeps {
   };
 }
 
-async function reportingErrors(io: CliIo, run: () => Promise<number>): Promise<number> {
+function errorText(e: KiboError, command: string): string {
+  if (!(e instanceof DaemonError) || e.daemon === null) return fr.error(e.code, e.detail);
+  const { home, version } = e.daemon;
+  if (isUnknownMethod(e)) return fr.daemonTooOld(fr.daemonName(home, version), command);
+  return fr.daemonError(e.code, e.detail, home, version);
+}
+
+async function reportingErrors(io: CliIo, run: () => Promise<number>, command = ""): Promise<number> {
   try {
     return await run();
   } catch (e) {
     if (!(e instanceof KiboError)) throw e;
-    io.err(fr.error(e.code, e.detail));
+    io.err(errorText(e, command));
     return 1;
   }
 }
 
-export async function runCli(argv: string[], io: CliIo): Promise<number> {
+const withHome = (io: CliIo, flags: Parsed["flags"]): CliIo =>
+  typeof flags.home === "string" ? { ...io, home: resolve(flags.home) } : io;
+
+function help(scope: string | undefined, io: CliIo): number {
+  io.out(scope === "tickets" ? frTickets.usage : fr.usage);
+  return 0;
+}
+
+export async function runCli(argv: string[], given: CliIo): Promise<number> {
   const { positional, flags } = parseArgs(argv);
+  const io = withHome(given, flags);
   const [scope, command, target] = positional;
+  const label = [scope, command].filter((part) => part !== undefined).join(" ");
+  if (flags.help === true) return help(scope, io);
   if (scope === "market")
     return reportingErrors(io, () => runMarketCommand(positional.slice(1), flags, marketDeps(io)));
   if (scope === "tickets")
-    return reportingErrors(io, () => runTicketsCommand(positional.slice(1), flags, io));
-  if (scope === "sprints") return reportingErrors(io, () => sprintsCommand(positional.slice(1), flags, io));
-  if (scope === "projects") return reportingErrors(io, () => projectsCommand(positional.slice(1), flags, io));
+    return reportingErrors(io, () => runTicketsCommand(positional.slice(1), flags, io), label);
+  if (scope === "sprints")
+    return reportingErrors(io, () => sprintsCommand(positional.slice(1), flags, io), label);
+  if (scope === "projects")
+    return reportingErrors(io, () => projectsCommand(positional.slice(1), flags, io), label);
   if (scope !== "component" || !command || !target) {
     io.err(fr.usage);
     return 2;

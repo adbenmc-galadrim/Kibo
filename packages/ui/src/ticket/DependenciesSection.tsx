@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import type { ReactNode } from "react";
 import { frOverlaps } from "../i18n/fr-overlaps";
 import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
+import { frTicketTracking } from "../i18n/fr-ticket-tracking";
 import { AutoLinkBadge } from "../overlaps/AutoLinkBadge";
 import { useAutoLinks } from "../overlaps/use-auto-links";
 import { AddLinkForm } from "./AddLinkForm";
@@ -93,8 +94,9 @@ export function DependenciesSection({ project, ticket, editable, onOpenTicket }:
     />
   );
   return (
-    <section aria-label={t.deps.title} className="grid gap-3 px-4 text-xs">
-      <h3 className="font-medium">{t.deps.title}</h3>
+    <section aria-label={t.deps.title} className="grid gap-3 text-xs">
+      <h3 className="text-[13px] font-semibold">{t.deps.title}</h3>
+      {empty && <p className="text-[12.5px] text-muted-foreground">{frTicketTracking.noDependency}</p>}
       {group(t.deps.blockedBy, links.blockedBy)}
       {group(t.deps.blocks, links.blocks)}
       {group(t.deps.related, links.related)}

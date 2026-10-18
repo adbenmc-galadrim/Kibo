@@ -24,7 +24,8 @@ import { Base64, NodeId, ProjectKey, Sha256 } from "./ids";
 import type { Instance } from "./instance";
 import { ComponentId } from "./manifest";
 import type { NoteMeta, NotesInfo } from "./note";
-import { type ProjectMeta, ProjectPatch } from "./project";
+import { ProjectClient, type ProjectMeta, ProjectPatch } from "./project";
+import { ProjectSetup } from "./project-setup";
 import type { DeliveryResult } from "./question";
 import type { ProjectSnapshot, ProjectSummary, Session } from "./rpc";
 import type { AgentsState, AssignPreview, HostView, RunLogEntry, RunView } from "./run";
@@ -41,6 +42,8 @@ export const CORE_RPC = [
     key: ProjectKey,
     folder: z.string().nullable(),
     color: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
+    client: ProjectClient.nullable().optional(),
+    setup: ProjectSetup.optional(),
   }),
   z.object({ method: z.literal("getProject"), projectId: z.string().min(1) }),
   z.object({ method: z.literal("updateProject"), projectId: z.string().min(1), patch: ProjectPatch }),

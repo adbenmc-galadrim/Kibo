@@ -7,7 +7,7 @@ import { frProjectAgent } from "../i18n/fr-project-agent";
 import { AgentText } from "../moments/AgentText";
 import { BatchCard, type Decision } from "./BatchCard";
 import type { DiffLabels } from "./batch-groups";
-import type { ConversationItem } from "./conversation";
+import { type ConversationItem, readingText } from "./conversation";
 
 type Props = {
   items: ConversationItem[];
@@ -16,19 +16,10 @@ type Props = {
   signals: readonly Signal[];
   onTicket(key: string): void;
   onRetry(): void;
-  onDecide(batchId: string, d: Decision): Promise<void>;
+  onDecide(batchId: string, d: Decision): Promise<unknown>;
 };
 
 const t = frProjectAgent.conversation;
-
-function readingText(tools: readonly string[]): string {
-  return t.reading(
-    tools.map((tool) => {
-      const [name = "", ...rest] = tool.split(" ");
-      return t.tool(name, rest.length > 0 ? rest.join(" ") : null);
-    }),
-  );
-}
 
 function Item({
   item,
@@ -71,7 +62,9 @@ function Item({
             signals={signals}
             afterWakeup={item.afterWakeup}
             readOnly={readOnly}
-            onDecide={(d) => onDecide(item.batch.id, d)}
+            onDecide={async (d) => {
+              await onDecide(item.batch.id, d);
+            }}
           />
         </li>
       );

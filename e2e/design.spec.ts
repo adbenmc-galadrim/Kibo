@@ -142,10 +142,11 @@ async function browseFrames(page: Page, info: Parameters<typeof shot>[1], penpot
 }
 
 async function openTicket(page: Page, key: string): Promise<Locator> {
-  await page.getByRole("radio", { name: "Tous", exact: true }).click();
+  await page.getByRole("button", { name: "Tous", exact: true }).click();
   await page.getByRole("button", { name: TICKET, exact: true }).click();
   const sheet = page.getByRole("dialog").filter({ hasText: key });
-  await expect(sheet.getByRole("heading", { name: "Maquettes" })).toBeVisible();
+  await sheet.getByRole("button", { name: "Maquettes" }).click();
+  await expect(sheet.getByRole("textbox", { name: "Lier un cadre" })).toBeVisible();
   return sheet;
 }
 

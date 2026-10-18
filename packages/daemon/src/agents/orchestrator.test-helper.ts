@@ -48,6 +48,7 @@ const ticket = (id: string, key: string | null): TicketView => ({
   waitingOn: [],
   openQuestions: 0,
   startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,
@@ -77,6 +78,7 @@ export const testProject: ProjectSnapshot = {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -133,6 +135,7 @@ type Setup = {
   cliFallbacks?: OrchestratorOptions["cliFallbacks"];
   skills?: Skill[];
   locks?: OrchestratorOptions["locks"];
+  ticketExecution?: OrchestratorOptions["ticketExecution"];
   children?: Record<string, number>;
   externalRefs?: Record<string, TicketView["externalRefs"]>;
 };
@@ -245,6 +248,7 @@ export function setup(o: Setup): Harness {
     ...o.lifecycle,
     cliFallbacks: o.cliFallbacks,
     locks: o.locks,
+    ticketExecution: o.ticketExecution ?? "allowed",
   };
   orch = createOrchestrator(options);
   current = {

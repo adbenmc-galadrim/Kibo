@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test";
-import { type ProjectCommand, Question } from "@kibo/schema";
+import { type ProjectCommand, Question, questionLabel } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { seedDemo, seedQuestions } from "@kibo/sdk/fixtures";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { exportAll, exportQuestionText } from "./export-text";
+import { dayMonth, exportDate } from "./export-text";
 import { Component, manifest } from "./index";
 
 const OPEN = "Garder l'ordre des sous-tickets par index fractionnaire ?";
@@ -54,12 +54,7 @@ const clipboard = () => {
 const named = (m: ReturnType<typeof mount>, title: string) =>
   m.snapshot().questions.find((q) => q.title === title);
 
-const ticketOf = (m: ReturnType<typeof mount>, q: Question | undefined) => {
-  const t = m.snapshot().tickets.find((x) => x.id === q?.ticketId);
-  return { keyLabel: t?.keyLabel ?? "", title: t?.title ?? "" };
-};
-
-test("the filters count open questions per recipient, filter the page and add a recipient", async () => {
+test("the filters count open questions per recipient, hide empty ones, filter the page and add a recipient", async () => {
   const m = mount();
   const user = userEvent.setup();
   const filters = await screen.findByRole("radiogroup", { name: "Destinataire" });
@@ -68,7 +63,7 @@ test("the filters count open questions per recipient, filter the page and add a 
     within(filters)
       .getAllByRole("radio")
       .map((r) => r.getAttribute("aria-label")),
-  ).toEqual(["Tous (5)", "Moi (technique) (2)", "Produit (1)", "Client (2)"]);
+  ).toEqual(["Tous (5)", "Client (2)", "Moi (technique) (2)", "Produit (1)"]);
   await user.click(within(filters).getByRole("radio", { name: "Client (2)" }));
   expect(screen.getAllByRole("article").map((a) => a.getAttribute("aria-label"))).toEqual([
     "Faut-il garder l'historique ?",
@@ -76,8 +71,8 @@ test("the filters count open questions per recipient, filter the page and add a 
   ]);
   await user.click(screen.getByRole("button", { name: "Destinataire" }));
   await user.type(screen.getByRole("textbox", { name: "Nouveau destinataire" }), "Juridique{Enter}");
-  expect(await within(filters).findByRole("radio", { name: "Juridique (0)" })).toBeTruthy();
-  expect(m.snapshot().questionRecipients.map((r) => r.name)).toContain("Juridique");
+  await waitFor(() => expect(m.snapshot().questionRecipients.map((r) => r.name)).toContain("Juridique"));
+  expect(within(filters).queryByRole("radio", { name: "Juridique (0)" })).toBeNull();
 });
 
 test("a question changes recipient from its menu", async () => {
@@ -114,6 +109,8 @@ test("« Nouvelle question » picks a recipient, « Moi (technique) » by defaul
   expect(within(card).getByRole("button", { name: "Destinataire : Client" })).toBeTruthy();
 });
 
+const exported = (q: Question | undefined) => q?.history.some((e) => e.kind === "exported") ?? false;
+
 test("« Exporter » copies the ready text, then marks the question sent", async () => {
   const m = mount();
   const user = userEvent.setup();
@@ -121,27 +118,43 @@ test("« Exporter » copies the ready text, then marks the question sent", async
   const card = await screen.findByRole("article", { name: OPEN });
   await user.click(within(card).getByRole("button", { name: "Exporter" }));
   const q = named(m, OPEN);
-  expect(written).toEqual([exportQuestionText(q as Question, ticketOf(m, q), "Moi (technique)")]);
-  await waitFor(() => expect(named(m, OPEN)?.sentAt).not.toBeNull());
-  expect(await within(card).findByText("envoyée à l'instant")).toBeTruthy();
+  expect(written).toHaveLength(1);
+  expect(written[0]).toStartWith(`Questions pour Moi (technique) · ${exportDate(Date.now())}`);
+  expect(written[0]).toContain(`${questionLabel(q as Question)} · ${OPEN}`);
+  await waitFor(() => expect(exported(named(m, OPEN))).toBe(true));
+  expect(await within(card).findByText(`envoyée le ${dayMonth(Date.now())}`)).toBeTruthy();
 });
 
-test("« Exporter tout (n) » copies the open questions of the recipient and marks them sent", async () => {
+test("the card actions sit in its header row, the history opens from the meta line", async () => {
+  mount();
+  const user = userEvent.setup();
+  clipboard();
+  const card = await screen.findByRole("article", { name: OPEN });
+  const header = card.querySelector("header");
+  if (header === null) throw new Error("the card has no header");
+  expect(within(header).getByRole("button", { name: "Exporter" })).toBeTruthy();
+  expect(within(header).getByRole("button", { name: "Coller la réponse" })).toBeTruthy();
+  await user.click(within(header).getByRole("button", { name: "Exporter" }));
+  const toggle = await within(card).findByRole("button", { name: "Historique (1)" });
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  await user.click(toggle);
+  expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  expect(within(card).getByRole("list")).toBeTruthy();
+});
+
+test("« Exporter pour le client (n) » copies the open client questions and marks them sent", async () => {
   const m = mount();
   const user = userEvent.setup();
   const written = clipboard();
   await user.click(await screen.findByRole("radio", { name: "Client (2)" }));
-  await user.click(screen.getByRole("button", { name: "Exporter tout (2)" }));
+  await user.click(screen.getByRole("button", { name: "Exporter pour le client (2)" }));
   const titles = ["Faut-il garder l'historique ?", "Le client modifie-t-il les règles ?"];
-  const entries = titles.map((title) => {
-    const q = named(m, title) as Question;
-    return { question: q, ticket: ticketOf(m, q), recipient: "Client" };
-  });
-  expect(written).toEqual([exportAll(entries)]);
-  await waitFor(() => expect(titles.map((t) => named(m, t)?.sentAt === null)).toEqual([false, false]));
+  for (const title of titles) expect(written[0]).toContain(title);
+  expect(written[0]).not.toContain("Un composant lit-il les fichiers ?");
+  await waitFor(() => expect(titles.map((t) => exported(named(m, t)))).toEqual([true, true]));
 });
 
-test("a failed copy shows the text, selected, and still marks the question sent", async () => {
+test("a failed copy still shows the text and marks the question sent", async () => {
   const m = mount();
   const user = userEvent.setup();
   Object.defineProperty(navigator, "clipboard", {
@@ -150,9 +163,8 @@ test("a failed copy shows the text, selected, and still marks the question sent"
   });
   const card = await screen.findByRole("article", { name: OPEN });
   await user.click(within(card).getByRole("button", { name: "Exporter" }));
-  const shown = (await within(card).findByRole("textbox", { name: "Texte à copier" })) as HTMLTextAreaElement;
-  expect(shown.value).toContain(`Question : ${OPEN}`);
-  await waitFor(() => expect(named(m, OPEN)?.sentAt).not.toBeNull());
+  expect(await screen.findByText(new RegExp(`· ${OPEN.replace("?", "\\?")}`))).toBeTruthy();
+  await waitFor(() => expect(exported(named(m, OPEN))).toBe(true));
 });
 
 test("read-only projects show the recipient without its menu, and no export", async () => {

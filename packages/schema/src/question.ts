@@ -78,6 +78,7 @@ export const Question = z
     blocking: z.boolean(),
     createdBy: Actor,
     createdAt: z.number().int(),
+    number: z.number().int().positive().nullable().default(null),
     importRef: ImportRef.nullable().default(null),
     answer: QuestionAnswer.nullable(),
     recipient: z.string().max(RECIPIENT_ID_MAX).default(ME_RECIPIENT),

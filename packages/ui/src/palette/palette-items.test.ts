@@ -22,6 +22,7 @@ const inbox: ProjectSnapshot = {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   tickets: [{ ...model, id: "i3", key: "INB-3", keyLabel: "INB-3", title: "Appeler le comptable" }],
   links: [],
@@ -77,4 +78,44 @@ test("the help entries are palette actions, in the help menu order", () => {
   expect(searchItems(buildItems(context), "a propos", "actions")[0]?.items.map((i) => i.label)).toEqual([
     "À propos de Kibo",
   ]);
+});
+
+const onKibo = (activeTicketId: string | null): PaletteContext => ({
+  ...context,
+  activeProjectId: "kibo",
+  activeTicketId,
+});
+
+test("on a project, the palette opens its project agent", () => {
+  const item = buildItems(onKibo(null)).find((i) => i.label === "Agent de projet");
+  expect(item?.run).toEqual({ kind: "local", action: { kind: "projectAgent" } });
+  expect(searchItems(buildItems(onKibo(null)), "agent projet", "actions")[0]?.items[0]?.label).toBe(
+    "Agent de projet",
+  );
+  expect(buildItems({ ...context, activeProjectId: null }).some((i) => i.label === "Agent de projet")).toBe(
+    false,
+  );
+});
+
+test("on an open ticket, the palette copies its /full-delivery command", () => {
+  const item = buildItems(onKibo("t15")).find((i) => i.label.startsWith("Copier"));
+  expect(item?.label).toBe("Copier /full-delivery KIB-15");
+  expect(item?.run).toEqual({
+    kind: "local",
+    action: {
+      kind: "copyDelivery",
+      ticket: {
+        key: "KIB-15",
+        startable: false,
+        waitingOn: ["KIB-12"],
+        startReason: null,
+      },
+    },
+  });
+  expect(buildItems(onKibo(null)).some((i) => i.label.startsWith("Copier"))).toBe(false);
+  expect(buildItems(context).some((i) => i.label.startsWith("Copier"))).toBe(false);
+});
+
+test("the palette no longer opens the git changes", () => {
+  expect(buildItems(onKibo(null)).some((i) => i.id === "action:changes")).toBe(false);
 });

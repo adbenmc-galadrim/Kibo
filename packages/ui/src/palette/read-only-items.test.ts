@@ -14,6 +14,7 @@ const meta = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
 };
 const counts = { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 };
 const snapshot = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot => ({

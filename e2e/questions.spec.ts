@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { createAgent, livraisonOpus, rpc, runState, showAgentExecution, text } from "./agents-seed";
+import { rpc, text } from "./agents-seed";
 import { addComponent, createPage, createSidebarPage, pairAndCreateProject } from "./helpers";
 import {
   capture,
@@ -40,15 +40,14 @@ async function seedQuestions(page: Page, projectId: string): Promise<void> {
 test("le widget et la vue Questions répondent, filtrent et créent", async ({ page }, info) => {
   const key = projectKey("QST", info);
   await pairAndCreateProject(page, info, key);
-  await showAgentExecution(page);
   await seedQuestions(page, projectIdOf(page));
 
   await createPage(page, "Tableau de bord", "Tableau de bord");
   await addComponent(page, "Kanban");
   await addComponent(page, "Questions");
   const kanban = page.locator("[data-instance]").first();
-  const all = kanban.getByRole("radio", { name: "Tous" });
-  if ((await all.getAttribute("aria-checked")) !== "true") await all.click();
+  const all = kanban.getByRole("button", { name: "Tous", exact: true });
+  if ((await all.getAttribute("aria-pressed")) !== "true") await all.click();
   const card = kanban.getByRole("article", { name: /Stockage S3/ });
   await expect(card.getByText("2 questions")).toBeVisible();
 
@@ -62,11 +61,12 @@ test("le widget et la vue Questions répondent, filtrent et créent", async ({ p
   await widget.getByRole("button", { name: "Valider le choix provisoire" }).click();
   await expect(widget.getByText("Questions ouvertes · 1")).toBeVisible();
   await expect(card.getByText("1 question", { exact: true })).toBeVisible();
-  await expect(widget.getByRole("button", { name: /Transmettre à l'agent \(1\)/ })).toBeVisible();
+  await expect(widget.getByRole("button", { name: /Transmettre à l'agent/ })).toHaveCount(0);
 
   await card.getByRole("button", { name: "Stockage S3" }).click();
   const sheet = page.getByRole("dialog");
-  await expect(sheet.getByRole("button", { name: "1 question" })).toBeVisible();
+  const asked = sheet.getByRole("region", { name: "Questions" });
+  await expect(asked.getByRole("button", { name: /Un admin non affecté/ })).toBeVisible();
   await shot(page, info, "ecran-170-fiche");
   await page.keyboard.press("Escape");
   await expect(sheet).toBeHidden();
@@ -104,8 +104,8 @@ const LOGO = "Quel logo pour l'export ?";
 
 async function showAllCards(page: Page): Promise<Locator> {
   const kanban = page.locator("[data-instance]").first();
-  const all = kanban.getByRole("radio", { name: "Tous" });
-  if ((await all.getAttribute("aria-checked")) !== "true") await all.click();
+  const all = kanban.getByRole("button", { name: "Tous", exact: true });
+  if ((await all.getAttribute("aria-pressed")) !== "true") await all.click();
   return kanban;
 }
 
@@ -114,18 +114,27 @@ async function confirm(page: Page, label: string): Promise<void> {
   await expect(page.getByRole("alertdialog")).toBeHidden();
 }
 
-async function answerBlockingQuestion(page: Page, view: Locator, projectId: string, key: string) {
-  const agent = await createAgent(page, livraisonOpus("isolated"));
-  const ticketId = await seedTicket(page, projectId, "Port du récepteur");
-  await rpc(page, { method: "assignAgent", projectId, ticketId, profileId: agent, brief: "" });
-  await expect.poll(() => runState(page, `${key}-4`), { timeout: 20_000 }).toBe("waiting_input");
+async function answerBlockingQuestion(page: Page, view: Locator, projectId: string) {
+  const command = (cmd: Record<string, unknown>) => rpc(page, { method: "command", projectId, command: cmd });
+  const feature = text(await command({ method: "createTicket", title: "Récepteur", feature: true }), "id");
+  const ticketId = text(
+    await command({
+      method: "createTicket",
+      title: "Port du récepteur",
+      parentId: feature,
+      statusId: "todo",
+    }),
+    "id",
+  );
+  await seedQuestion(page, projectId, ticketId, PORT, { blocking: true });
   const port = questionArticle(view, PORT);
+  await expect(port.getByText("bloquante", { exact: true })).toBeVisible();
+  await expect(port.getByText(/^Q\d+$/)).toBeVisible();
+  await expect(port.getByRole("button", { name: /Transmettre à l'agent/ })).toHaveCount(0);
   await port.getByRole("textbox", { name: "Autre réponse…" }).fill("8080");
   await port.getByRole("textbox", { name: "Autre réponse…" }).press("Enter");
-  await expect(port.getByText(/^transmise à .*livraison-opus.* · figée$/)).toBeVisible();
-  await expect(port.getByRole("button", { name: "Modifier la réponse" })).toHaveCount(0);
-  await expect(port.getByRole("button", { name: "Retirer la réponse" })).toHaveCount(0);
-  await expect.poll(() => runState(page, `${key}-4`), { timeout: 20_000 }).toBe("done");
+  await expect(page.getByText("F1 débloquée")).toBeVisible();
+  await expect(port.getByText("Réponse : 8080")).toBeVisible();
 }
 
 test("les réponses se modifient tant qu'elles ne sont pas transmises, les questions s'archivent et se retrouvent", async ({
@@ -134,7 +143,6 @@ test("les réponses se modifient tant qu'elles ne sont pas transmises, les quest
   test.setTimeout(150_000);
   const key = projectKey("QSR", info);
   await pairAndCreateProject(page, info, key);
-  await showAgentExecution(page);
   const projectId = projectIdOf(page);
   const storage = await seedTicket(page, projectId, "Stockage S3");
   const exports = await seedTicket(page, projectId, "Export des affaires");
@@ -169,7 +177,7 @@ test("les réponses se modifient tant qu'elles ne sont pas transmises, les quest
   await expect(answered.getByText(/Rouverte \(réponse « Non » retirée\)$/)).toBeVisible();
   await capture(page, info, "203b");
 
-  await answerBlockingQuestion(page, view, projectId, key);
+  await answerBlockingQuestion(page, view, projectId);
   await expect(questionArticle(view, PURGE).getByText("à transmettre")).toBeVisible();
   await questionArticle(view, PORT).scrollIntoViewIfNeeded();
   await capture(page, info, "202");
@@ -200,6 +208,10 @@ test("les réponses se modifient tant qu'elles ne sont pas transmises, les quest
   await expect(
     questionArticle(view, LOGO).getByRole("button", { name: "Destinataire : Client" }),
   ).toBeVisible();
+  await questionArticle(view, LOGO).getByRole("button", { name: "Exporter", exact: true }).click();
+  await expect(page.getByText("1 question marquée envoyée")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Annuler" })).toBeVisible();
+  await page.keyboard.press("Escape");
 
   await page.goto(dashboard);
   const kanban = await showAllCards(page);
@@ -225,7 +237,11 @@ test("les réponses se modifient tant qu'elles ne sont pas transmises, les quest
       name: "Export des affaires",
     })
     .click();
-  await page.getByRole("dialog").getByRole("button", { name: "1 question" }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("region", { name: "Questions" })
+    .getByRole("button", { name: /Exporter en CSV ou en JSON/ })
+    .click();
   const calm = questionArticle(page.getByRole("main"), FORMAT);
   await expect(calm).toHaveAttribute("data-spotlight", "fade");
   const animation = await calm.evaluate((el) => getComputedStyle(el).animationName);

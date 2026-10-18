@@ -32,6 +32,7 @@ const meta = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
 };
 const OWNER: UpdateAuthor = { userId: "u-adam", role: "owner" };
 

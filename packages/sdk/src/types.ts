@@ -27,6 +27,7 @@ import type {
   PresencePeer,
   ProjectAsset,
   ProjectCommand,
+  ProjectEditRequest,
   ProjectEvent,
   ProjectInfo,
   ProjectSnapshot,
@@ -142,12 +143,13 @@ export type { ProjectInfo };
 export type ProjectApi = {
   get(): Promise<ProjectInfo>;
   subscribe(listener: () => void): () => void;
+  edit(request: ProjectEditRequest): void;
 };
 export type SettingsApi = {
   get(): Promise<ComponentSettings>;
   subscribe(listener: () => void): () => void;
 };
-export type OpenViewOptions = { question?: string };
+export type OpenViewOptions = { question?: string; intent?: Spotlight };
 
 export type KiboSdk = {
   instanceId: string;
@@ -162,6 +164,7 @@ export type KiboSdk = {
   openNewTicket(defaults: NewTicketDefaults): void;
   openFile(request: FileOpenRequest): void;
   openView(componentId: string, opts?: OpenViewOptions): void;
+  toast(message: string): void;
   data: InstanceData;
   fetch(url: string, init?: FetchInitInput): Promise<FetchResponse>;
   action<T = unknown>(name: string, input?: unknown): Promise<T>;
@@ -217,6 +220,7 @@ export type SdkContext = Pick<
 > &
   Partial<Pick<KiboSdk, "focus" | "visibility" | "selection" | "spotlight" | "openRun">> & {
     openSprint?(sprintId: string): void;
+    editProject?(request: ProjectEditRequest): void;
   };
 export type SdkMode = "builtin" | "gated";
 

@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, expect, mock, test } from "bun:test";
-import type { AgentExecution, ProjectSnapshot, RpcRequest } from "@kibo/schema";
+import { afterEach, beforeEach, expect, mock, setSystemTime, test } from "bun:test";
+import type { AgentExecution, ProjectSnapshot, RpcRequest, Spotlight } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
 import { isSeparator, isSubmenu, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { cleanup, render, screen, within } from "@testing-library/react";
@@ -16,6 +16,7 @@ const answer = (req: RpcRequest): unknown => {
   if (req.method === "listProjectEvents") return { items: [], nextBefore: null };
   if (req.method === "listCiRuns") return [];
   if (req.method === "getProjectAgent") return viewFixture({ batches: [] });
+  if (req.method === "getAppInfo") return { today: "2026-10-16" };
   return null;
 };
 
@@ -35,7 +36,7 @@ mock.module("../api", () =>
 const { FeatureDetail } = await import("./FeatureDetail");
 
 const created: NewTicketDefaults[] = [];
-const views: (string | undefined)[] = [];
+const views: (Spotlight | undefined)[] = [];
 const host: Host = {
   openTicket: () => undefined,
   openNewTicket: (d) => void created.push(d),
@@ -50,7 +51,17 @@ beforeEach(() => {
   created.length = 0;
   views.length = 0;
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  setSystemTime();
+});
+
+const withStartableE34 = (project: ProjectSnapshot): ProjectSnapshot => ({
+  ...project,
+  tickets: project.tickets.map((t) =>
+    t.id === "e34" ? { ...t, startable: true, startReason: null, waitingOn: [] } : t,
+  ),
+});
 
 const renderFeature = (project: ProjectSnapshot = emisFeatureProject(), opened: string[] = []) => {
   const feature = project.tickets.find((t) => t.id === "f5");
@@ -72,11 +83,31 @@ const renderFeature = (project: ProjectSnapshot = emisFeatureProject(), opened: 
 const commands = () => calls.flatMap((c) => (c.method === "command" ? [c.command] : []));
 const aside = (name: string) => within(screen.getByRole("region", { name }));
 
+test("the sprint card counts on the day of the daemon, not of the browser", async () => {
+  setSystemTime(new Date(2026, 9, 20, 10));
+  const project = emisFeatureProject();
+  const feature = project.tickets.find((t) => t.id === "f5");
+  if (!feature) throw new Error("fixture without F5");
+  render(
+    <HostProvider host={host}>
+      <FeatureDetail
+        project={project}
+        ticket={feature}
+        execution="hidden"
+        onOpenFile={() => undefined}
+        onOpenTicket={() => undefined}
+      />
+    </HostProvider>,
+  );
+  expect(await screen.findByText("4 étapes restantes : ne tiendra pas dans S42.")).toBeTruthy();
+  expect(calls.filter((c) => c.method === "getAppInfo")).toHaveLength(1);
+});
+
 test("the header names the feature, its sprint, its state and its progress", () => {
   renderFeature();
-  expect(screen.getByText("Fonctionnalité · F5 · EMIS-30")).toBeTruthy();
+  expect(screen.getByText("Fonctionnalité · F5")).toBeTruthy();
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Envoyer les photos d'un tronçon");
-  expect(screen.getByText("en retard")).toBeTruthy();
+  expect(screen.getByText("ouverte")).toBeTruthy();
   expect(screen.getByText("1 étape livrée sur 5")).toBeTruthy();
   const bar = screen.getByRole("img", { name: "Étapes de la fonctionnalité" });
   expect(Array.from(bar.children, (c) => c.getAttribute("data-step"))).toEqual([
@@ -108,7 +139,7 @@ test("the journey lists the steps in order and offers the next one to deliver", 
     configurable: true,
     value: { writeText: async (text: string) => void written.push(text) },
   });
-  renderFeature();
+  renderFeature(withStartableE34(emisFeatureProject()));
   const titles = screen
     .getAllByRole("listitem")
     .map((li) => within(li).getAllByRole("button")[0]?.textContent);
@@ -119,8 +150,14 @@ test("the journey lists the steps in order and offers the next one to deliver", 
     "Tests E2E de l'envoi",
     "Démo client",
   ]);
-  await user.click(screen.getByRole("button", { name: "Livrer la prochaine étape" }));
+  await user.click(screen.getByRole("button", { name: "Copier la commande" }));
   expect(written).toEqual(["/full-delivery EMIS-34"]);
+});
+
+test("when the next step cannot start, the journey says why and offers nothing to copy", () => {
+  renderFeature();
+  expect(screen.getByText("Prochaine étape EMIS-34 : attend EMIS-33.")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Copier la commande" })).toBeNull();
 });
 
 test("adding a step opens the ticket dialog under the feature", async () => {
@@ -129,8 +166,16 @@ test("adding a step opens the ticket dialog under the feature", async () => {
   expect(created).toEqual([{ parentId: "f5" }]);
 });
 
-test("the sprint card warns that the feature will not fit and moves it to the next sprint", async () => {
-  renderFeature();
+const lateF5Project = (): ProjectSnapshot => {
+  const project = emisFeatureProject();
+  const tickets = project.tickets.map((t) =>
+    t.id === "f5" && t.feature !== null ? { ...t, feature: { ...t.feature, status: "late" as const } } : t,
+  );
+  return { ...project, tickets };
+};
+
+test("the sprint card warns that a late feature will not fit and moves it to the next sprint", async () => {
+  renderFeature(lateF5Project());
   const sprint = aside("Sprint");
   expect(sprint.getByText("Terrain hors ligne · 12–16 oct.")).toBeTruthy();
   expect(sprint.getByText("4 étapes restantes : ne tiendra pas dans S42.")).toBeTruthy();
@@ -143,6 +188,7 @@ test("the side cards show dependencies, questions, activity and the footer", asy
   renderFeature(emisFeatureProject(), opened);
   const deps = aside("Dépendances");
   expect(deps.getAllByRole("button").map((b) => b.textContent)).toEqual([
+    "Dépendance",
     "AttendF3Réaffecter un ISO",
     "DébloqueF7Rapport de chantierS44",
   ]);
@@ -152,14 +198,16 @@ test("the side cards show dependencies, questions, activity and the footer", asy
   const questions = aside("Questions");
   expect(questions.getByText("Q16 · Produit · hier · EMIS-34")).toBeTruthy();
   await user.click(questions.getByText("Quota par affaire : 2 Go ou 5 Go ?"));
-  expect(views).toEqual(["q16"]);
+  expect(views).toEqual([{ kind: "question", id: "q16" }]);
+  await user.click(questions.getByRole("button", { name: "Question" }));
+  expect(views.at(-1)).toEqual({ kind: "newQuestion", ticketId: "f5" });
   expect(
     aside("Activité")
       .getAllByRole("paragraph")
       .map((p) => p.textContent),
   ).toEqual([
     "PR #22 ouverte · EMIS-3215:04",
-    "Étape 7 · Porte qualité · EMIS-3314:51",
+    "Phase 7/12 · Porte qualité · EMIS-3314:51",
     "PR #19 fusionnée · EMIS-31hier",
   ]);
   expect(
@@ -176,12 +224,13 @@ test("a read-only project hides the editing actions", () => {
   expect(screen.queryByRole("button", { name: "Déplacer en S43" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Modifier le résultat attendu" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Choisir le sprint" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Dépendance" })).toBeNull();
 });
 
 const { AppSettingsProvider, fixedStore } = await import("../state/use-app-settings");
 
 const renderWithSetting = (agentExecution: "hidden" | "shown") => {
-  const project = emisFeatureProject();
+  const project = withStartableE34(emisFeatureProject());
   const feature = project.tickets.find((t) => t.id === "f5");
   if (!feature) throw new Error("fixture without F5");
   render(
@@ -207,7 +256,7 @@ test("without an explicit mode, the next step follows the agent execution settin
   cleanup();
   calls.length = 0;
   renderWithSetting("hidden");
-  await user.click(screen.getByRole("button", { name: "Livrer la prochaine étape" }));
+  await user.click(screen.getByRole("button", { name: "Copier la commande" }));
   expect(await navigator.clipboard.readText()).toMatch(/^\/full-delivery EMIS-/);
   expect(calls.some((c) => c.method === "deliver")).toBe(false);
 });
@@ -259,4 +308,15 @@ test("execution hidden, the header menu offers no delivery", () => {
   renderWithMenu("hidden");
   const menu = within(screen.getByRole("list", { name: "Menu de la fiche" }));
   expect(menu.queryByRole("button", { name: "Livrer les sous-tickets" })).toBeNull();
+});
+
+test("a blocking question asked on the feature shows in Questions with the « bloquante » badge", () => {
+  const project = emisFeatureProject();
+  const [q16] = project.questions;
+  if (!q16) throw new Error("fixture without Q16");
+  const onFeature = { ...q16, id: "q1", ticketId: "f5", blocking: true, importRef: null, number: 1 };
+  renderFeature({ ...project, questions: [onFeature] });
+  const row = screen.getByRole("button", { name: /Quota par affaire/ });
+  expect(within(row).getByText("bloquante")).toBeTruthy();
+  expect(within(row).getByText("Q1 · Produit · hier · F5")).toBeTruthy();
 });

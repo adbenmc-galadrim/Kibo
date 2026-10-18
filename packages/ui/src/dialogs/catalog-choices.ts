@@ -25,6 +25,11 @@ export function hostLabel(rule: string): string {
   return HOSTS[host] ?? host;
 }
 
+const NOT_FOR_TRACKING = new Set(["mcp-source", "viewer-3d"]);
+
+export const offeredBuiltins = (modules: ComponentModule[]): ComponentModule[] =>
+  modules.filter(({ manifest }) => !NOT_FOR_TRACKING.has(manifest.id));
+
 export function builtinChoices(modules: ComponentModule[]): Choice[] {
   return modules.map(({ manifest: m }) => ({
     ref: componentRef(m),

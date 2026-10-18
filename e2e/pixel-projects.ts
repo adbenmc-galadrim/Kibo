@@ -9,13 +9,17 @@ import {
 
 const PIXEL_DARK_PORT = 4477;
 const PIXEL_LIGHT_PORT = 4478;
+const PIXEL_SPECS =
+  /pixel-(planning|fonctionnalite|tickets|coque|vue-ensemble|graphe|nouveau-projet|kanban|fiche-ticket)\.spec\.ts/;
+const QUESTIONS_SPEC = /pixel-questions\.spec\.ts/;
+const questionsProjectOf = (scheme: string): string => `pixel-questions-${scheme}`;
 
 export const PIXEL_DAEMONS = [
   {
     name: "pixel-dark",
     scheme: "dark",
     port: PIXEL_DARK_PORT,
-    spec: /pixel-(planning|fonctionnalite|tickets|coque|vue-ensemble|graphe)\.spec\.ts/,
+    spec: PIXEL_SPECS,
     scenario: EMIS_MAQUETTES,
     integrations: true,
   },
@@ -23,7 +27,7 @@ export const PIXEL_DAEMONS = [
     name: "pixel-light",
     scheme: "light",
     port: PIXEL_LIGHT_PORT,
-    spec: /pixel-(planning|fonctionnalite|tickets|coque|vue-ensemble|graphe)\.spec\.ts/,
+    spec: PIXEL_SPECS,
     scenario: EMIS_MAQUETTES,
     integrations: true,
   },
@@ -35,8 +39,11 @@ const screenshotOptions = (sources: string): Partial<Project> => ({
   expect: { toHaveScreenshot: PIXEL_SCREENSHOT },
 });
 
-export const pixelProjectOptions = (name: string): Partial<Project> =>
-  PIXEL_DAEMONS.some((d) => d.name === name) ? screenshotOptions(DESIGN_REFERENCES) : {};
+export function pixelProjectOptions(name: string): Partial<Project> {
+  const daemon = PIXEL_DAEMONS.find((d) => d.name === name);
+  if (daemon === undefined) return {};
+  return { ...screenshotOptions(DESIGN_REFERENCES), dependencies: [questionsProjectOf(daemon.scheme)] };
+}
 
 export const pixelKitProject = (): Project => ({
   name: "pixel-kit",
@@ -57,6 +64,12 @@ export const trackingProjects = (daemons: readonly string[]): Project[] =>
     };
     const planning = `planning-${d.scheme}`;
     return [
+      {
+        name: questionsProjectOf(d.scheme),
+        testMatch: QUESTIONS_SPEC,
+        use,
+        ...screenshotOptions(DESIGN_REFERENCES),
+      },
       { name: planning, testMatch: TRACKING_SPEC, dependencies: [d.name], use },
       { name: `traces-${d.scheme}`, testMatch: TRACES_SPEC, dependencies: [planning], use },
     ];

@@ -1,24 +1,15 @@
 import { expect, mock, test } from "bun:test";
-import type { Environment, RpcRequest, SandboxStatus } from "@kibo/schema";
+import type { Environment, RpcRequest } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 
 let env: Environment;
-const isolated: SandboxStatus = {
-  kind: "bwrap",
-  available: true,
-  reason: null,
-  fix: null,
-  allowUnsandboxed: false,
-};
-let sandbox: SandboxStatus = isolated;
 let environmentCalls = 0;
 mock.module("../api", () =>
   apiMock({
     client: {
-      rpc: async (req: RpcRequest) => {
-        if (req.method === "getSandboxStatus") return sandbox;
+      rpc: async (_req: RpcRequest) => {
         environmentCalls += 1;
         return env;
       },
@@ -52,45 +43,44 @@ const base: Environment = {
     daemonPid: 42,
     uptimeMs: 0,
     fixedNow: null,
+    today: "2026-10-16",
   },
 };
 
-test("shows the seven checks of screen 19", async () => {
+test("presents tracking: the value sentence and four checks, no agent slots nor isolation", async () => {
   env = base;
   render(<Welcome {...noop} />);
   expect(await screen.findByText("Bienvenue dans Kibo")).toBeTruthy();
-  expect(await screen.findByText("claude détecté · connecté à ton abonnement")).toBeTruthy();
-  expect(screen.getByText("git 2.51 détecté")).toBeTruthy();
-  expect(screen.getByText("gh 2.80 · pour les PR et la CI depuis Kibo")).toBeTruthy();
-  for (const title of [
-    "Démon local",
-    "Claude Code",
-    "Git",
-    "GitHub CLI",
-    "Capacité machine",
-    "Isolation des composants",
-    "GitHub (optionnel)",
-  ])
+  expect(
+    screen.getByText(
+      "Kibo suit tes projets : sprints, fonctionnalités, branches, PR et CI, mis à jour depuis git et GitHub.",
+    ),
+  ).toBeTruthy();
+  expect(await screen.findByText("git 2.51 détecté")).toBeTruthy();
+  expect(screen.getByText("gh 2.80 · remonte les PR, leur review et la CI")).toBeTruthy();
+  for (const title of ["Git", "GitHub CLI", "Claude Code · pour l'agent de projet", "Compte GitHub"])
     expect(screen.getByText(title)).toBeTruthy();
+  for (const gone of ["Démon local", "Capacité machine", "Isolation des composants"])
+    expect(screen.queryByText(gone)).toBeNull();
+  expect(screen.queryByText(/places d'agents/)).toBeNull();
   expect(screen.queryByRole("button", { name: "Réessayer" })).toBeNull();
-  expect(screen.getByText("8 cœurs, 16 Go → 3 places d'agents (modifiable)")).toBeTruthy();
-  expect(screen.getByText("En marche sur 127.0.0.1:47831 · données dans ~/.kibo")).toBeTruthy();
 });
 
-test("explains a missing claude", async () => {
-  env = { ...base, ai: { ...base.ai, available: false, reason: "missing", version: null, loggedIn: null } };
+test("a missing gh says what is lost and how to install it", async () => {
+  env = { ...base, gh: null };
   render(<Welcome {...noop} />);
   expect(
-    await screen.findByText("claude introuvable dans le PATH · les agents sont désactivés"),
+    await screen.findByText("gh introuvable · sans lui, ni PR, ni review, ni CI dans Kibo"),
   ).toBeTruthy();
-  expect(screen.getByText("npm install -g @anthropic-ai/claude-code")).toBeTruthy();
+  expect(screen.getByText("brew install gh")).toBeTruthy();
+  expect(screen.queryByText(/facultatif/)).toBeNull();
 });
 
-test("explains a logged out claude", async () => {
-  env = { ...base, ai: { ...base.ai, available: false, reason: "logged_out", loggedIn: false } };
+test("a missing claude only disables the project agent", async () => {
+  env = { ...base, ai: { ...base.ai, available: false, reason: "missing", version: null, loggedIn: null } };
   render(<Welcome {...noop} />);
-  expect(await screen.findByText("claude détecté · non connecté")).toBeTruthy();
-  expect(screen.getByText("Lance claude dans un terminal, puis tape /login :")).toBeTruthy();
+  expect(await screen.findByText("claude introuvable · l'agent de projet n'est pas disponible")).toBeTruthy();
+  expect(screen.getByText("npm install -g @anthropic-ai/claude-code")).toBeTruthy();
 });
 
 test("a connected GitHub hides the connect button", async () => {
@@ -115,54 +105,14 @@ test("buttons call their handlers", async () => {
   );
 });
 
-test("the isolation row shows the active mechanism", async () => {
-  env = base;
-  sandbox = isolated;
-  render(<Welcome {...noop} />);
-  expect(await screen.findByText("bubblewrap actif")).toBeTruthy();
-  expect(screen.getByText("Isolation des composants")).toBeTruthy();
-});
-
-test("warns when the OS isolation is unavailable, with the command to run", async () => {
-  env = base;
-  sandbox = {
-    kind: "bwrap",
-    available: false,
-    reason: "bubblewrap (bwrap) is not installed",
-    fix: "sudo apt install bubblewrap",
-    allowUnsandboxed: false,
-  };
-  render(<Welcome {...noop} />);
-  expect(
-    await screen.findByText("⚠ bubblewrap introuvable · les backends sandboxés ne démarreront pas"),
-  ).toBeTruthy();
-  expect(screen.getByText("sudo apt install bubblewrap")).toBeTruthy();
-  expect(
-    screen.getByText(
-      "Une vérification demande ton attention. Tu peux continuer : seuls les backends sandboxés sont arrêtés.",
-    ),
-  ).toBeTruthy();
-  sandbox = isolated;
-});
-
-test("the failure subtitle appears when claude is missing", async () => {
-  env = { ...base, ai: { ...base.ai, available: false, reason: "missing", version: null, loggedIn: null } };
-  render(<Welcome {...noop} />);
-  expect(
-    await screen.findByText(
-      "Une vérification a échoué. Tu peux continuer : tout fonctionne sauf les agents.",
-    ),
-  ).toBeTruthy();
-});
-
 test("Réessayer refetches the environment", async () => {
-  env = { ...base, ai: { ...base.ai, available: false, reason: "missing", version: null, loggedIn: null } };
+  env = { ...base, git: null };
   environmentCalls = 0;
   render(<Welcome {...noop} />);
   const retry = await screen.findByRole("button", { name: "Réessayer" });
   env = base;
   await userEvent.setup().click(retry);
-  expect(await screen.findByText("claude détecté · connecté à ton abonnement")).toBeTruthy();
+  expect(await screen.findByText("git 2.51 détecté")).toBeTruthy();
   expect(environmentCalls).toBe(2);
   expect(screen.queryByRole("button", { name: "Réessayer" })).toBeNull();
 });
@@ -171,8 +121,6 @@ test("the tutorial button calls onTutorial", async () => {
   env = base;
   const onTutorial = mock(() => {});
   render(<Welcome {...noop} onTutorial={onTutorial} />);
-  await userEvent
-    .setup()
-    .click(await screen.findByRole("button", { name: "Suivre le didacticiel (10 min)" }));
+  await userEvent.setup().click(await screen.findByRole("button", { name: "Suivre le didacticiel (5 min)" }));
   expect(onTutorial).toHaveBeenCalledTimes(1);
 });

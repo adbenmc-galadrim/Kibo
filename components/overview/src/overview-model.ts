@@ -4,8 +4,8 @@ import {
   deadlineColumns,
   deadlineRows,
   deliveryStepLabel,
+  inProgressFeatures,
   type Link,
-  type OverviewIndicators,
   openLimitOf,
   overviewIndicators,
   type ProjectEvent,
@@ -13,11 +13,15 @@ import {
   type QuestionRecipient,
   type SprintView,
   type Status,
+  sortSprints,
   type TicketView,
   type TrackingSettings,
   todayOffset,
 } from "@kibo/schema";
-import type { TimelineInput } from "@kibo/sdk/tracking";
+import type { MarkedRow, TimelineInput } from "@kibo/sdk/tracking";
+import { deadlineSpan, markRows } from "./deadline-marks";
+import type { IndicatorFacts } from "./indicator-texts";
+import { type LateRow, lateRows } from "./late-model";
 import {
   blockingRefs,
   duration,
@@ -27,7 +31,7 @@ import {
   metaOf,
 } from "./overview-facts";
 import { type QuestionRow, questionRows, type ReviewRow, reviewRows } from "./review-model";
-import { type NextCard, nextCard, type SprintCard, sprintCard } from "./sprint-model";
+import { aheadOfSprint, type NextCard, nextCard, type SprintCard, sprintCard } from "./sprint-model";
 
 export type OverviewInput = {
   tickets: readonly TicketView[];
@@ -53,10 +57,13 @@ export type NowRow = {
   segments: Segment[];
   duration: string;
 };
+export type Deadlines = Omit<TimelineInput, "collapsed" | "rows"> & { rows: MarkedRow[]; later: number };
 export type OverviewModel = {
-  indicators: OverviewIndicators;
+  indicators: IndicatorFacts;
   now: NowRow[];
-  deadlines: Omit<TimelineInput, "collapsed">;
+  deadlines: Deadlines;
+  late: LateRow[];
+  sprints: SprintView[];
   sprint: SprintCard | null;
   next: NextCard | null;
   review: ReviewRow[];
@@ -89,17 +96,27 @@ export function nowRows(tickets: readonly TicketView[], now: number): NowRow[] {
     });
 }
 
-function deadlines(input: OverviewInput, features: readonly FeatureFacts[], blocking: Map<string, string>) {
-  const columns = deadlineColumns(input.sprints, input.today);
+function deadlines(
+  input: OverviewInput,
+  features: readonly FeatureFacts[],
+  blocking: Map<string, string>,
+): Deadlines {
+  const span = deadlineSpan(input.sprints, features, input.today);
+  const columns = deadlineColumns(input.sprints, input.today, span.weeks);
   const planned = features.flatMap((f) => (f.sprintId === null ? [] : [{ ...f, sprintId: f.sprintId }]));
   return {
     columns,
-    rows: deadlineRows({
-      sprints: input.sprints,
-      features: planned,
-      blockingQuestions: blocking,
-      today: input.today,
-    }),
+    later: span.later,
+    rows: markRows(
+      deadlineRows({
+        sprints: input.sprints,
+        features: planned,
+        blockingQuestions: blocking,
+        today: input.today,
+        weeks: span.weeks,
+      }),
+      { features, sprints: input.sprints, events: input.events, today: input.today },
+    ),
     today: todayOffset(columns, input.today),
   };
 }
@@ -115,20 +132,30 @@ export function overviewModel(input: OverviewInput): OverviewModel {
     blocking,
     limit: openLimitOf(input.tracking),
     today: input.today,
+    events: input.events,
   };
+  const sprint = sprintCard(sprintInput);
   return {
-    indicators: overviewIndicators({
-      snapshot: {
-        tickets,
-        sprints: [...input.sprints],
-        questions: [...input.questions],
-        meta: metaOf(input.tracking),
-      },
-      today: input.today,
-    }),
+    indicators: {
+      ...overviewIndicators({
+        snapshot: {
+          tickets,
+          sprints: [...input.sprints],
+          questions: [...input.questions],
+          meta: metaOf(input.tracking),
+        },
+        today: input.today,
+      }),
+      blockedFeatures: inProgressFeatures(features, sprintInput.limit).blocked.map((f) => f.shortKey),
+      ahead: aheadOfSprint(sprintInput).map((f) => f.shortKey),
+      atRisk: sprint?.rows.filter((r) => r.risk).length ?? 0,
+      remaining: sprint?.remaining ?? 0,
+    },
     now: nowRows(input.tickets, input.now),
     deadlines: deadlines(input, features, blocking),
-    sprint: sprintCard(sprintInput),
+    late: lateRows({ features, sprints: input.sprints, blocking, today: input.today }),
+    sprints: sortSprints(input.sprints),
+    sprint,
     next: nextCard(sprintInput),
     review: reviewRows(input),
     questions: questionRows(input),

@@ -2,7 +2,12 @@ import { type CiTone, worstCiTone } from "./ci-state";
 import type { GithubPrRef, PrChecks, PrReview } from "./external-ref";
 import type { CiRun } from "./integrations";
 
-export type CheckRollupItem = { status?: string; conclusion?: string | null; state?: string };
+export type CheckRollupItem = {
+  status?: string;
+  conclusion?: string | null;
+  state?: string;
+  name?: string;
+};
 
 const FAILING: ReadonlySet<string> = new Set(["FAILURE", "ERROR", "TIMED_OUT", "CANCELLED"]);
 const RUNNING: ReadonlySet<string> = new Set(["IN_PROGRESS", "QUEUED", "PENDING", "EXPECTED"]);
@@ -22,6 +27,9 @@ export function prChecksTone(rollup: readonly CheckRollupItem[]): PrChecks | nul
   if (rollup.some(failed)) return "error";
   return rollup.some(running) ? "running" : "ok";
 }
+
+export const failedCheckName = (rollup: readonly CheckRollupItem[]): string | null =>
+  rollup.find(failed)?.name ?? null;
 
 export function parseReviewDecision(raw: unknown): PrReview {
   return typeof raw === "string" && Object.hasOwn(REVIEWS, raw) ? (REVIEWS[raw] ?? "none") : "none";

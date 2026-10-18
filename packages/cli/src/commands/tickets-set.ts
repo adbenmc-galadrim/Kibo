@@ -1,11 +1,19 @@
-import { type GitBranchRef, KiboError, type ProjectCommand, type TicketView } from "@kibo/schema";
+import {
+  type GitBranchRef,
+  type GithubPrRef,
+  KiboError,
+  type ProjectSnapshot,
+  type StatusId,
+  type TicketView,
+} from "@kibo/schema";
 import { fr, frTickets } from "../fr";
+import { notStartableReasons } from "../tickets/start-warning";
 import {
   type Assignments,
-  branchCommand,
   branchRef,
+  branchToDeclare,
   parseAssignments,
-  prCommand,
+  prRef,
   statusCommand,
 } from "../tickets/ticket-set";
 import { lookupTicket } from "../tickets/ticket-view";
@@ -36,21 +44,20 @@ export function setRequestOrExit(args: readonly string[], io: SessionIo): SetReq
   }
 }
 
-const branchChange = (ref: GitBranchRef): string =>
-  ref.base === null ? `branch=${ref.branch}` : `branch=${ref.branch} base=${ref.base}`;
+type Declaration = { ref: GitBranchRef | GithubPrRef; change: string };
 
-type Write = { command: ProjectCommand | null; change: string };
-
-function writesOf(req: SetRequest, ticket: TicketView, ctx: TicketsContext): Write[] {
-  const { set, branch } = req;
-  const writes: Write[] = [
-    { command: statusCommand(ticket, set, frTickets.defaultBlockedReason), change: `status=${set.status}` },
-  ];
-  if (branch !== null) writes.push({ command: branchCommand(ticket, branch), change: branchChange(branch) });
-  if (set.pr !== null)
-    writes.push({ command: prCommand(ticket, set.pr, ctx.snapshot.tickets), change: `pr=${set.pr}` });
-  return writes;
+function declarationsOf(req: SetRequest, ticket: TicketView, ctx: TicketsContext): Declaration[] {
+  const declarations: Declaration[] = [];
+  const branch = req.branch === null ? null : branchToDeclare(ticket, req.branch);
+  if (branch !== null)
+    declarations.push({ ref: branch, change: frTickets.branchChange(branch.branch, branch.base) });
+  const pr = req.set.pr === null ? null : prRef(ticket, req.set.pr, ctx.snapshot.tickets);
+  if (pr !== null) declarations.push({ ref: pr, change: frTickets.prChange(pr.number) });
+  return declarations;
 }
+
+const statusLabel = (snapshot: ProjectSnapshot, statusId: StatusId): string =>
+  snapshot.workflow.find((s) => s.id === statusId)?.label ?? statusId;
 
 export async function applySet(req: SetRequest, ident: string, ctx: TicketsContext): Promise<number> {
   const { client, snapshot, flags, io } = ctx;
@@ -58,14 +65,27 @@ export async function applySet(req: SetRequest, ident: string, ctx: TicketsConte
   if (!ticket) return notFound(ident, io);
   const projectId = snapshot.meta.id;
   const changes: string[] = [];
-  for (const { command, change } of writesOf(req, ticket, ctx)) {
-    if (command === null) continue;
-    await client.rpc({ method: "command", projectId, command });
+  const status = statusCommand(ticket, req.set, frTickets.defaultBlockedReason);
+  if (status !== null) {
+    await client.rpc({ method: "command", projectId, command: status });
+    changes.push(frTickets.statusChange(req.set.status ?? status.statusId));
+  }
+  let moved: StatusId | null = null;
+  const declarations = declarationsOf(req, ticket, ctx);
+  for (const { ref, change } of declarations) {
+    const ticketKey = ticket.key ?? ident;
+    const result = await client.rpc({ method: "declareTicketRef", projectId, ticketKey, ref });
+    if (result.statusChanged) moved = result.ticket.statusId;
     changes.push(change);
   }
   if (flags.json === true) {
     const fresh = await client.rpc({ method: "getProject", projectId });
     printJson(io, summaryOf(fresh, ticket.id));
-  } else io.out(frTickets.updated(ticket.keyLabel, changes));
+  } else
+    io.out(frTickets.updated(ticket.keyLabel, changes, moved === null ? null : statusLabel(snapshot, moved)));
+  const starting =
+    status?.statusId === "in_progress" || declarations.some((d) => d.ref.kind === "git_branch");
+  const reasons = starting ? notStartableReasons(ticket) : null;
+  if (reasons !== null) io.err(frTickets.notStartable(ticket.keyLabel, reasons));
   return 0;
 }

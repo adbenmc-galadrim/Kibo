@@ -29,6 +29,7 @@ const ctx = (p: Partial<BatchContext> = {}): BatchContext => ({
   viewer: "adam",
   signals: [],
   closedSignals: [],
+  agentExecution: "shown",
   ...p,
 });
 
@@ -337,5 +338,12 @@ describe("validateBatch with the agent execution hidden", () => {
 
   test("accepts them again once the execution is shown", () => {
     expect(problems(assign, ctx({ agentExecution: "shown" }))).toEqual([]);
+  });
+
+  test("refuses them when the context says nothing of the execution", () => {
+    const { agentExecution: _shown, ...silent } = ctx();
+    expect(problems(assign, silent)).toEqual([
+      "#1 exécution des agents masquée dans Kibo : action indisponible",
+    ]);
   });
 });

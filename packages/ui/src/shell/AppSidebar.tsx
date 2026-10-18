@@ -1,5 +1,4 @@
 import {
-  type AgentsState,
   type Page,
   type ProjectMeta,
   type ProjectSnapshot,
@@ -8,18 +7,19 @@ import {
   targetProjectId,
 } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
-import { Sidebar, SidebarMenu, SidebarMenuItem } from "@kibo/sdk/ui/sidebar";
+import { Sidebar, SidebarMenu, SidebarMenuItem, useSidebar } from "@kibo/sdk/ui/sidebar";
 import { House, Inbox, Search, Settings2, Ticket } from "lucide-react";
 import type { MouseEvent } from "react";
 import { fr } from "../i18n/fr";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { canEdit } from "../state/access";
 import type { HelpDialog } from "./help-dialogs";
-import { AgentsEntry } from "./lazy-screens";
-import { ExecutionGate } from "./nav/ExecutionGate";
+import { RailProjectMenu } from "./nav/lazy-nav";
 import { NavRow } from "./nav/NavRow";
 import { ProjectsHeader } from "./nav/ProjectsHeader";
+import { RailBadge } from "./nav/RailBadge";
 import { SidebarToggle } from "./nav/SidebarToggle";
+import { useNarrowScreen } from "./nav/use-narrow-screen";
 import { type Link, ProjectEntry } from "./ProjectEntry";
 import { UserMenu } from "./UserMenu";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
@@ -28,10 +28,9 @@ type Props = {
   className?: string;
   projects: (ProjectMeta & { demo?: boolean })[];
   active: ProjectSnapshot | null;
+  snapshots: ReadonlyMap<string, ProjectSnapshot>;
   activeTarget: TabTarget | null;
   screen: Screen | null;
-  agents: AgentsState | null;
-  changes: { count: number | null } | null;
   mineCount: number | null;
   inboxCount: number | null;
   workspaceName: string | null;
@@ -57,10 +56,8 @@ const screenTarget = (screen: Screen): TabTarget => ({ kind: "screen", screen })
 const SETTINGS_SCREENS: ReadonlySet<Screen> = new Set([
   "general",
   "appearance",
-  "domains",
   "integrations",
   "security",
-  "sources",
   "sync",
   "shortcuts",
   "workspace",
@@ -93,22 +90,22 @@ export function AppSidebar(p: Props) {
       onOpen(target, false, true);
     },
   });
-  const changesOf = active && p.changes ? active.meta.id : null;
+  const narrow = useNarrowScreen();
+  const { state, isMobile } = useSidebar();
+  const rail = narrow && !isMobile && state === "collapsed";
+  const activePageId = activeTarget?.kind === "page" ? activeTarget.pageId : null;
 
   return (
-    <Sidebar className={cn("select-none border-(--tracking-soft)", p.className)}>
+    <Sidebar
+      collapsible={narrow ? "icon" : "offcanvas"}
+      className={cn("select-none border-(--tracking-soft)", p.className)}
+    >
       <div className="k-sidebar">
         <div className="k-head">
           <WorkspaceSwitcher
             name={p.workspaceName ?? fr.workspace.defaultName}
             icon={p.workspaceIcon}
             onSettings={() => onOpen(screenTarget("workspace"), false)}
-            onComponents={() => onOpen(screenTarget("components"), false)}
-            onChanges={
-              changesOf
-                ? () => onOpen({ kind: "changes", projectId: changesOf, worktree: null }, false)
-                : null
-            }
           />
           <span className="flex-1" />
           <SidebarToggle />
@@ -136,16 +133,25 @@ export function AppSidebar(p: Props) {
               {...link(screenTarget("inbox"))}
             />
           </li>
-          <ExecutionGate>
-            <li className="k-list">
-              <AgentsEntry screen={screen} agents={p.agents} link={link} />
-            </li>
-          </ExecutionGate>
         </ul>
         <ProjectsHeader onNewProject={p.onNewProject} onJoin={p.onJoin} />
-        <SidebarMenu className="min-h-0 flex-1 gap-[2px] overflow-y-auto">
+        <SidebarMenu className="scroll-shadow min-h-0 flex-1 gap-[2px] overflow-y-auto">
           {p.projects.map((project) => {
             const current = active?.meta.id === project.id;
+            if (rail)
+              return (
+                <SidebarMenuItem key={project.id}>
+                  <RailProjectMenu
+                    name={project.name}
+                    projectId={project.id}
+                    snapshot={current ? active : (p.snapshots.get(project.id) ?? null)}
+                    activePageId={current ? activePageId : null}
+                    onOpen={onOpen}
+                  >
+                    <RailBadge name={project.name} color={project.color} current={current} />
+                  </RailProjectMenu>
+                </SidebarMenuItem>
+              );
             return (
               <SidebarMenuItem key={project.id} className="flex flex-col">
                 <ProjectEntry

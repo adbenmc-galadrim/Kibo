@@ -56,8 +56,14 @@ test("openFile and openView are forwarded to the host and recorded by the mock",
   const m = createMockSdk(manifest);
   m.sdk.openFile({ path: "packages/core/src/ticket.ts", line: 42 });
   m.sdk.openView("graph");
+  m.sdk.openView("planning", { intent: { kind: "newFeature" } });
+  expect(m.viewRequests.at(-1)).toEqual({
+    componentId: "planning",
+    question: null,
+    intent: { kind: "newFeature" },
+  });
   expect(m.openedFiles).toEqual([{ path: "packages/core/src/ticket.ts", line: 42 }]);
-  expect(m.openedViews).toEqual(["graph"]);
+  expect(m.openedViews).toEqual(["graph", "planning"]);
   expect(m.sdk.surface).toBe("view");
 });
 

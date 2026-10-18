@@ -1,4 +1,4 @@
-import { beforeEach, expect, mock, spyOn, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, spyOn, test } from "bun:test";
 import {
   type AgentsState,
   type CodeEvent,
@@ -33,6 +33,7 @@ const project: ProjectSnapshot = {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [
@@ -69,6 +70,7 @@ const project: ProjectSnapshot = {
       waitingOn: [],
       openQuestions: 0,
       startable: false,
+      startReason: null,
       agentProgress: EMPTY_PROGRESS,
       delivery: null,
       sprintId: null,
@@ -104,6 +106,7 @@ const repo: ProjectSnapshot = {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   pages: [],
   tickets: [],
@@ -137,6 +140,7 @@ const inbox: ProjectSnapshot = {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   pages: [],
   tickets: [
@@ -293,6 +297,22 @@ const workspaceMenu = async () => {
   return within(await screen.findByRole("menu"));
 };
 
+const realMatchMedia = window.matchMedia;
+const wideScreen = (media: string): MediaQueryList =>
+  Object.assign(new EventTarget(), {
+    matches: false,
+    media,
+    onchange: null,
+    addListener: () => undefined,
+    removeListener: () => undefined,
+  });
+beforeEach(() => {
+  window.matchMedia = wideScreen;
+});
+afterEach(() => {
+  window.matchMedia = realMatchMedia;
+});
+
 beforeEach(() => {
   syncStatus = unconfigured;
   agents = null;
@@ -414,8 +434,8 @@ test("navigation opens one preview tab, a double click in the sidebar opens a ke
   renderShell();
   await go("#/p/p1/1%401");
   await expectTitle("Kibo · Board");
-  await go("#/agents");
-  await expectTitle("Agents");
+  await go("#/settings/general");
+  await expectTitle("Général");
   expect(screen.queryByRole("tablist", { name: "Onglets" })).toBeNull();
   const inbox = screen.getByRole("button", { name: "Boîte de réception" });
   fireEvent.click(inbox);
@@ -431,7 +451,7 @@ test("navigation opens one preview tab, a double click in the sidebar opens a ke
 test("a ticket tab shows the detail, its PR and opens file links in the preview", async () => {
   renderShell();
   await go("#/p/p1/t/7%401");
-  await expectTitle("Kibo · KIB-7");
+  await expectTitle("KIB-7 · Schéma");
   expect(await screen.findByRole("link", { name: "#4" })).toBeTruthy();
   expect(crumbs().getByText("KIB-7").getAttribute("aria-current")).toBe("page");
   await userEvent.click(screen.getByRole("button", { name: "src/a.ts:3" }));
@@ -447,50 +467,24 @@ test("a project without folder has no Changements entry", async () => {
   expect(menu.queryByRole("menuitem", { name: /Changements/ })).toBeNull();
 });
 
-test("a git project opens its Changements from the workspace menu, and the breadcrumb shows the branch", async () => {
+test("a git project no longer offers Changements in the workspace menu", async () => {
   renderShell();
   await go("#/p/p2/");
   await expectTitle("Portfolio");
-  await userEvent.click((await workspaceMenu()).getByRole("menuitem", { name: "Changements" }));
-  await waitFor(() => expect(location.hash).toBe("#/p/p2/changes"));
-  await waitFor(() => expect(crumbs().getByText("kib-12").getAttribute("aria-current")).toBe("page"));
-  expect(crumbs().getByText("Changements")).toBeTruthy();
+  expect((await workspaceMenu()).queryByRole("menuitem", { name: "Changements" })).toBeNull();
 });
 
-test("a git project lists Changements before its status answers", async () => {
-  statusPending = true;
+test("an agent-era URL leads back home, the tracking screens stay", async () => {
   renderShell();
-  await go("#/p/p2/");
-  await expectTitle("Portfolio");
-  expect((await workspaceMenu()).getByRole("menuitem", { name: "Changements" })).toBeTruthy();
-});
-
-test("coming back from the agents screen keeps Changements without reloading git", async () => {
-  const gitReads = () => code.filter((r) => r.method === "worktrees" || r.method === "status").length;
-  renderShell();
-  await go("#/p/p2/");
-  await waitFor(() => expect(gitReads()).toBeGreaterThan(0));
-  await go("#/agents");
-  await expectTitle("Agents");
-  const before = gitReads();
-  await go("#/p/p2/");
-  await expectTitle("Portfolio");
-  expect(gitReads()).toBe(before);
-});
-
-test("an agent screen keeps its URL and opens in a tab like any target", async () => {
-  renderShell();
-  await go("#/p/p1/1%401");
-  await expectTitle("Kibo · Board");
-  await go("#/agents");
-  expect(location.hash).toBe("#/agents");
-  expect(crumbs().getByText("Agents")).toBeTruthy();
-  await expectTitle("Agents");
-  expect(screen.queryByRole("tablist", { name: "Onglets" })).toBeNull();
-  await userEvent.click(screen.getByRole("button", { name: "Accueil" }));
-  await waitFor(() => expect(location.hash).toBe("#/"));
-  await go("#/agents");
-  await expectTitle("Agents");
+  for (const hash of ["#/agents", "#/agents/queue", "#/components", "#/settings/domains", "#/p/p2/changes"]) {
+    await go("#/p/p1/1%401");
+    await expectTitle("Kibo · Board");
+    await go(hash);
+    await waitFor(() => expect(location.hash).toBe("#/"));
+  }
+  await go("#/inbox");
+  await expectTitle("Boîte de réception");
+  expect(location.hash).toBe("#/inbox");
 });
 
 test("the sidebar lists the inbox after my tickets with its open count, and opens it (screen 113)", async () => {
@@ -510,16 +504,10 @@ test("the sidebar lists the inbox after my tickets with its open count, and open
   expect(entry.getAttribute("data-active")).toBe("true");
 });
 
-test("the workspace menu opens the Components screen in its own tab", async () => {
+test("the workspace menu no longer offers the Components screen", async () => {
   renderShell();
   await go("#/");
-  await userEvent.click((await workspaceMenu()).getByRole("menuitem", { name: "Composants" }));
-  await waitFor(() => expect(location.hash).toBe("#/components"));
-  expect(await screen.findByRole("columnheader", { name: "Confiance" })).toBeTruthy();
-  await expectTitle("Composants");
-  expect(crumbs().queryByRole("heading", { level: 1 })).toBeNull();
-  expect(crumbs().getByText("Composants").getAttribute("aria-current")).toBe("page");
-  expect(screen.getAllByRole("heading", { level: 1, name: "Composants" })).toHaveLength(1);
+  expect((await workspaceMenu()).queryByRole("menuitem", { name: "Composants" })).toBeNull();
 });
 
 test("the header offers no ticket button; the account sits at the foot of the sidebar with its initials", async () => {
@@ -647,7 +635,10 @@ test("openView aims the view page at one question, even through the page it crea
     );
     return (
       <>
-        <button type="button" onClick={() => openView("questions", undefined, "q1")}>
+        <button
+          type="button"
+          onClick={() => openView("questions", undefined, { kind: "question", id: "q1" })}
+        >
           open
         </button>
         {dialog}
@@ -664,6 +655,48 @@ test("openView aims the view page at one question, even through the page it crea
   await waitFor(() =>
     expect(opened.at(-1)).toEqual({ kind: "page", projectId: "p1", pageId: "9@1", question: "q1" }),
   );
+});
+
+test("openView hands any other intent to the page it opens, outside the address", async () => {
+  const { useOpenView } = await import("./use-open-view");
+  const { pageIntents } = await import("../pages/page-intents");
+  const opened: TabTarget[] = [];
+  const questions = {
+    id: "k3",
+    pageId: "1@1",
+    component: "questions@1.0.0",
+    layout: { x: 0, y: 0, w: 12, h: 8 },
+    config: {},
+    componentHash: null,
+  };
+  let current: ProjectSnapshot = { ...project, instances: [questions] };
+  function Harness() {
+    const { openView, dialog } = useOpenView(
+      () => current,
+      (t) => opened.push(t),
+    );
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => openView("questions", undefined, { kind: "newQuestion", ticketId: "f5" })}
+        >
+          open
+        </button>
+        {dialog}
+      </>
+    );
+  }
+  render(<Harness />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "open" }));
+  expect(opened).toEqual([{ kind: "page", projectId: "p1", pageId: "1@1" }]);
+  expect(pageIntents.take("1@1")?.intent).toEqual({ kind: "newQuestion", ticketId: "f5" });
+  current = project;
+  await user.click(screen.getByRole("button", { name: "open" }));
+  await user.click(await screen.findByRole("button", { name: "Créer la page" }));
+  await waitFor(() => expect(opened.at(-1)).toEqual({ kind: "page", projectId: "p1", pageId: "9@1" }));
+  expect(pageIntents.take("9@1")?.intent).toEqual({ kind: "newQuestion", ticketId: "f5" });
 });
 
 test("a read-only project hides page and ticket creation and shows the banner", async () => {
@@ -757,7 +790,35 @@ test("a read-only project has no project agent: no button, ⌘J does nothing", a
   expect(localStorage.getItem("kibo.projectAgent.open")).toBeNull();
 });
 
+const screenWidth = (narrow: boolean) => {
+  const real = window.matchMedia;
+  window.matchMedia = (media: string): MediaQueryList =>
+    Object.assign(new EventTarget(), {
+      matches: narrow,
+      media,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+    });
+  return () => {
+    window.matchMedia = real;
+  };
+};
+
+test("under 1180 px the project agent covers the content instead of docking", async () => {
+  const restore = screenWidth(true);
+  renderShell();
+  await go("#/p/p1/");
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Agent de projet" }));
+  const panel = await screen.findByRole("dialog", { name: "Agent de projet · Kibo" });
+  expect(panel.dataset.overlay).toBe("true");
+  expect(document.documentElement.style.getPropertyValue("--project-agent-w")).toBe("");
+  restore();
+});
+
 test("the project agent docks beside the content under the tab bar, its button stays pressed and closes it", async () => {
+  const restore = screenWidth(false);
   renderShell();
   await go("#/p/p1/");
   const user = userEvent.setup();
@@ -774,6 +835,7 @@ test("the project agent docks beside the content under the tab bar, its button s
   await waitFor(() => expect(screen.queryByRole("dialog", { name: /^Agent de projet/ })).toBeNull());
   expect(screen.getByRole("button", { name: "Agent de projet" }).getAttribute("aria-pressed")).toBe("false");
   expect(docked()).toBe("");
+  restore();
 });
 
 test("the signal badge of the header opens the project agent on its signal box", async () => {

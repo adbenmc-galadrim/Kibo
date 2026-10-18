@@ -92,7 +92,10 @@ test("execution hidden: no agent trace in the tabs, the sheet, Kanban, Tickets a
     await expect.soft(sheet.getByRole("button", { name: "Assigner à un agent" })).toHaveCount(0);
     await expect.soft(sheet.getByRole("button", { name: /^Livrer/ })).toHaveCount(0);
     await expect.soft(sheet.getByRole("combobox", { name: "Assigné" })).toHaveText("Personne");
-    await expect.soft(sheet.getByText(/Choisis un profil|full-delivery$/)).toHaveCount(0);
+    const agentChoice = sheet
+      .getByText(/Choisis un profil|full-delivery$/)
+      .filter({ hasNotText: "remonté de git, des PR et de full-delivery" });
+    await expect.soft(agentChoice).toHaveCount(0);
     await page.keyboard.press("Escape");
 
     await page.goto(emis.pageUrl("tickets@1.0.0"));

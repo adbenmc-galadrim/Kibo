@@ -18,6 +18,8 @@ mock.module("../api", () =>
 );
 
 const { PageContext, usePageState } = await import("./PageContext");
+const { pageIntents } = await import("./page-intents");
+const { usePageSpotlight } = await import("./use-page-intent");
 const { createSelectionBus } = await import("./selection-bus");
 const { useInstanceApis } = await import("./use-instance-apis");
 
@@ -93,7 +95,7 @@ test("a built-in does not wait for the component list, a third party does", () =
 test("the page aims its instances at the question of its address", () => {
   const spotted: (SpotlightApi | undefined)[] = [];
   function Spot({ question }: { question: string | null }) {
-    const page = usePageState([], question);
+    const page = usePageState([], question === null ? null : { kind: "question", id: question });
     return (
       <PageContext.Provider value={page}>
         <SpotProbe />
@@ -109,5 +111,29 @@ test("the page aims its instances at the question of its address", () => {
   expect(api?.get()).toEqual({ kind: "question", id: "q1" });
   view.rerender(<Spot question={null} />);
   expect(api?.get()).toBeNull();
+  view.unmount();
+});
+
+test("an intent of the page reaches its instances, and stays while the page is shown", () => {
+  const spotted: (SpotlightApi | undefined)[] = [];
+  pageIntents.request("page-1", { kind: "newQuestion", ticketId: "f5" });
+  function Spot() {
+    const intent = usePageSpotlight("page-1", null);
+    const page = usePageState([], intent);
+    return (
+      <PageContext.Provider value={page}>
+        <SpotProbe />
+      </PageContext.Provider>
+    );
+  }
+  function SpotProbe() {
+    spotted.push(useInstanceApis("p1", widget("kanban@1.0.0"), NO_REF)?.spotlight);
+    return null;
+  }
+  const view = render(<Spot />);
+  expect(spotted.at(-1)?.get()).toEqual({ kind: "newQuestion", ticketId: "f5" });
+  expect(pageIntents.take("page-1")).toBeNull();
+  view.rerender(<Spot />);
+  expect(spotted.at(-1)?.get()).toEqual({ kind: "newQuestion", ticketId: "f5" });
   view.unmount();
 });

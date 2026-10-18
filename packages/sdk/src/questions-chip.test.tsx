@@ -19,6 +19,7 @@ const question = (id: string, createdAt: number, answered = false): Question => 
   blocking: false,
   createdBy: { kind: "agent", ref: "opus-dev-1" },
   createdAt,
+  number: null,
   importRef: null,
   answer: answered
     ? {

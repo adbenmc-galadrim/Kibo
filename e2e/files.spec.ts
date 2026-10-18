@@ -1,7 +1,7 @@
 import { sampleGlb } from "@kibo/sdk/fixtures";
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import { rpc } from "./agents-seed";
-import { addComponent, createPage, openWorkspaceMenuItem, pairAndCreateProject } from "./helpers";
+import { createPage, pairAndCreateProject } from "./helpers";
+import { addPendingComponent, publishDraft } from "./publish-kit";
 import { projectKey, shot } from "./repo-project";
 
 test.setTimeout(240_000);
@@ -24,18 +24,6 @@ async function openProjectFiles(page: Page, key: string): Promise<Locator> {
 
 async function importCube(dialog: Locator) {
   await dialog.getByLabel("Choisir des fichiers à importer").setInputFiles(cube());
-}
-
-async function publishViewer(page: Page) {
-  await rpc(page, { method: "previewPublish", id: DRAFT });
-  await openWorkspaceMenuItem(page, "Composants");
-  await expect(page.getByRole("heading", { level: 1, name: "Composants" })).toBeVisible();
-  const draft = page.getByRole("listitem").filter({ hasText: TITLE });
-  await expect(draft.getByText("Tests verts")).toBeVisible({ timeout: 120_000 });
-  await draft.getByRole("button", { name: "Publier" }).click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog.getByText(`Publier « ${TITLE} » 0.1.0`)).toBeVisible({ timeout: 120_000 });
-  await dialog.getByRole("button", { name: "Publier 0.1.0" }).click();
 }
 
 test("fichiers du projet, capacités à l'écran 30, CSP du composant", async ({ page }, info) => {
@@ -64,19 +52,16 @@ test("fichiers du projet, capacités à l'écran 30, CSP du composant", async ({
   await page.keyboard.press("Escape");
   await expect(files).toBeHidden();
 
-  await publishViewer(page);
-  const trust = page.getByRole("dialog", { name: `Autoriser « ${TITLE} » 0.1.0 ?` });
-  await expect(trust.getByText("Lire les manettes branchées")).toBeVisible({ timeout: 60_000 });
+  await publishDraft(page, DRAFT, "new-version");
+  await createPage(page, "Visionneuse", "Tableau de bord");
+  const trust = await addPendingComponent(page, TITLE, "0.1.0");
+  await expect(trust.getByText("Lire les manettes branchées")).toBeVisible();
   await expect(trust.getByText("Lire les fichiers du projet")).toBeVisible();
   await expect(trust.getByText("Aucun accès réseau", { exact: true })).toBeVisible();
   await expect(trust.getByText("Aucun accès réseau, aucun fichier local")).toHaveCount(0);
   await shot(page, info, "ecran-30-capacites");
-  await trust.getByRole("button", { name: "Autoriser" }).click();
-  await page.getByRole("dialog").getByRole("button", { name: "Fermer" }).click();
-
-  await page.getByRole("button", { name: `Kibo ${key}`, exact: true }).click();
-  await createPage(page, "Visionneuse", "Tableau de bord");
-  await addComponent(page, TITLE);
+  await trust.getByRole("button", { name: "Autoriser et ajouter" }).click();
+  await expect(trust).toBeHidden({ timeout: 60_000 });
   const iframe = page.locator(`iframe[title="${TITLE}"]`);
   const allow = (await iframe.getAttribute("allow")) ?? "";
   expect(allow).toContain("gamepad *");

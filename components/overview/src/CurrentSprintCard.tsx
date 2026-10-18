@@ -1,9 +1,17 @@
 import type { FeatureStatus } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
-import { CalendarRange, CircleCheck, ClockAlert, Lock, type LucideIcon, Target } from "lucide-react";
+import {
+  CalendarRange,
+  CircleCheck,
+  ClockAlert,
+  Lock,
+  type LucideIcon,
+  Target,
+  TriangleAlert,
+} from "lucide-react";
 import { fr } from "./fr";
 import { CARD, CardHeader, MONO_KEY, Pill, type PillTone, ROW_LINE, Segments } from "./parts";
-import type { FeatureLine, SprintCard } from "./sprint-model";
+import type { SprintCard, SprintRow } from "./sprint-model";
 
 const STATE_PILL: Record<FeatureStatus, { tone: PillTone; icon?: LucideIcon }> = {
   delivered: { tone: "green", icon: CircleCheck },
@@ -13,7 +21,13 @@ const STATE_PILL: Record<FeatureStatus, { tone: PillTone; icon?: LucideIcon }> =
   todo: { tone: "muted" },
 };
 
-export function StatePill({ state }: { state: FeatureStatus }) {
+export function StatePill({ state, risk = false }: { state: FeatureStatus; risk?: boolean }) {
+  if (risk)
+    return (
+      <Pill tone="amber" icon={TriangleAlert}>
+        {fr.sprint.risk}
+      </Pill>
+    );
   const pill = STATE_PILL[state];
   return (
     <Pill tone={pill.tone} icon={pill.icon}>
@@ -22,10 +36,13 @@ export function StatePill({ state }: { state: FeatureStatus }) {
   );
 }
 
-function FeatureRow({ row, onOpen }: { row: FeatureLine; onOpen(id: string): void }) {
+function FeatureRow({ row, onOpen }: { row: SprintRow; onOpen(id: string): void }) {
   const muted = row.state === "delivered";
   return (
-    <li className={cn("flex h-[39px] items-center gap-[10px] px-[16px]", ROW_LINE)}>
+    <li
+      data-risk={row.risk || undefined}
+      className={cn("flex h-[39px] items-center gap-[10px] px-[16px]", ROW_LINE)}
+    >
       <span className={cn("w-[26px] shrink-0", MONO_KEY)}>{row.shortKey}</span>
       <button
         type="button"
@@ -38,11 +55,16 @@ function FeatureRow({ row, onOpen }: { row: FeatureLine; onOpen(id: string): voi
         {row.title}
       </button>
       <span className="flex w-[86px] shrink-0 items-center">
-        <StatePill state={row.state} />
+        <StatePill state={row.state} risk={row.risk} />
       </span>
       <span className="flex w-[66px] shrink-0 items-center">
         <Segments tones={row.tones} width={10} />
       </span>
+      {row.slipped !== null && (
+        <span className="truncate text-(--tracking-mfg) text-[12px] leading-[15px]">
+          {fr.sprint.slipped(row.slipped)}
+        </span>
+      )}
       <span
         className={cn(
           "ml-auto font-mono text-[12.5px] leading-[15px]",
@@ -73,7 +95,7 @@ export function CurrentSprintCard({ card, onOpenTicket, onOpenSprint }: Props) {
         aside={
           <>
             <span className="text-(--tracking-mfg) text-[12.5px] leading-[15px]">{card.dates}</span>
-            <Pill tone={card.open.full ? "amber" : "muted"}>{card.open.text}</Pill>
+            {card.ahead !== null && <Pill tone="amber">{card.ahead}</Pill>}
           </>
         }
       />

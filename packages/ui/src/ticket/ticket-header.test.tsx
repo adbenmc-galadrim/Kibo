@@ -1,0 +1,68 @@
+import { afterEach, expect, test } from "bun:test";
+import type { ExternalRef, TicketView } from "@kibo/schema";
+import { cleanup, render, screen } from "@testing-library/react";
+import { emisFeatureProject } from "../shell/feature/fixture";
+import { TicketHeader } from "./TicketHeader";
+import { headerContext } from "./tracking-model";
+
+afterEach(cleanup);
+
+const project = emisFeatureProject();
+const e33 = project.tickets.find((t) => t.id === "e33") as TicketView;
+const pr = (number: number, state: "open" | "merged" | "closed"): ExternalRef => ({
+  kind: "github_pr",
+  url: `https://github.com/galadrim/emis/pull/${number}`,
+  number,
+  state,
+  base: "dev",
+  head: null,
+  review: "none",
+  checks: null,
+});
+const withRefs = (refs: ExternalRef[]): TicketView => ({ ...e33, externalRefs: refs });
+
+test("a step names its feature, its sprint and its pull request: « F5 · S42 · PR #20 »", () => {
+  expect(headerContext(withRefs([pr(20, "open")]), project)).toMatchObject({
+    feature: "F5",
+    sprint: "S42",
+    text: "F5 · S42 · PR #20",
+  });
+  expect(headerContext(withRefs([pr(12, "closed"), pr(20, "open"), pr(18, "merged")]), project).text).toBe(
+    "F5 · S42 · PR #20",
+  );
+  expect(headerContext(withRefs([pr(12, "closed"), pr(18, "merged")]), project).text).toBe(
+    "F5 · S42 · PR #18",
+  );
+});
+
+test("without a pull request the header stops at the sprint", () => {
+  expect(headerContext(e33, project).text).toBe("F5 · S42");
+});
+
+const lone: TicketView = {
+  ...e33,
+  id: "e61",
+  key: "EMIS-61",
+  keyLabel: "EMIS-61",
+  parentId: null,
+  effectiveSprintId: null,
+  externalRefs: [],
+};
+
+test("a ticket outside any feature has no feature chip", () => {
+  expect(headerContext(lone, project)).toMatchObject({ feature: null, text: "" });
+  expect(headerContext({ ...lone, externalRefs: [pr(7, "open")] }, project).text).toBe("PR #7");
+});
+
+test("the chip line links the pull request", () => {
+  const { container } = render(<TicketHeader project={project} ticket={withRefs([pr(20, "open")])} />);
+  expect(container.querySelector("[data-ticket-context]")?.textContent).toBe("F5 · S42 · PR #20");
+  expect(screen.getByRole("link", { name: "PR #20" }).getAttribute("href")).toBe(
+    "https://github.com/galadrim/emis/pull/20",
+  );
+});
+
+test("a lone ticket without sprint nor PR has no chip line", () => {
+  const { container } = render(<TicketHeader project={project} ticket={lone} />);
+  expect(container.querySelector("[data-ticket-context]")).toBeNull();
+});

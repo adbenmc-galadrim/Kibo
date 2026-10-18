@@ -79,6 +79,7 @@ describe("projectOverview", () => {
       parent: "EMIS-1",
       openQuestions: 1,
       startable: false,
+      startReason: null,
       group: false,
       branch: "feat/ecran",
       pr: "#7 (open)",
@@ -111,7 +112,7 @@ describe("projectOverview", () => {
 
   test("lists the sprints of the project", () => {
     const sprints = [{ id: "s1", code: "S42", name: "Terrain", start: "2026-10-12", end: "2026-10-16" }].map(
-      (s) => ({ ...s, state: "current" as const, features: [], delivered: 0, total: 0 }),
+      (s) => ({ ...s, state: "current" as const, features: [], delivered: 0, total: 0, lingering: false }),
     );
     const base = input();
     const overview = projectOverview({ ...base, project: { ...base.project, sprints } });
@@ -163,6 +164,12 @@ describe("ticket card and sheet", () => {
     expect(ticketCard(snapshot, ticket({ id: "t7" })).startable).toBe(false);
     const text = renderOverview(projectOverview(input({ project: project({ tickets: [ready] }) })));
     expect(text).toContain("- EMIS-8 · Prêt [in_progress] · démarrable");
+  });
+
+  test("a card says why a ticket cannot start yet", () => {
+    const startReason = { kind: "limit", limit: 2, count: 2 } as const;
+    expect(ticketCard(snapshot, ticket({ id: "t8", startReason })).startReason).toEqual(startReason);
+    expect(ticketCard(snapshot, ticket({ id: "t8", startable: true })).startReason).toBeNull();
   });
 
   test("a pending ticket shows its key label", () => {

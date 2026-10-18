@@ -1,5 +1,5 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import type { Overlap, Question, RpcRequest, RunMomentsPage } from "@kibo/schema";
+import type { Overlap, Question, RpcRequest, RunMomentsPage, Spotlight } from "@kibo/schema";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { NOW } from "../../agents/fixtures";
 import { apiMock } from "../../api-mock";
@@ -115,6 +115,7 @@ test("a question line of the chronology previews its question and opens it", asy
     blocking: true,
     createdBy: { kind: "agent", ref: "opus-dev-2" },
     createdAt: NOW - 210 * 60_000,
+    number: null,
     importRef: null,
     answer: null,
     recipient: "me",
@@ -123,7 +124,7 @@ test("a question line of the chronology previews its question and opens it", asy
     archivedAt: null,
     archivedBy: null,
   };
-  const opened: (string | undefined)[] = [];
+  const opened: (Spotlight | undefined)[] = [];
   const host: Host = {
     openTicket: () => {},
     openNewTicket: () => {},
@@ -143,7 +144,7 @@ test("a question line of the chronology previews its question and opens it", asy
   fireEvent.focus(line);
   expect(await screen.findByText("Le port 4317 est pris par OpenTelemetry.")).toBeTruthy();
   fireEvent.click(line);
-  expect(opened).toEqual(["q-port"]);
+  expect(opened).toEqual([{ kind: "question", id: "q-port" }]);
 });
 
 test("screen 217b: the activity shows a sub-agent as the same folded line, with its summary", async () => {

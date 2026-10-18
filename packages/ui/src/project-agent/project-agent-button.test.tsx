@@ -65,8 +65,9 @@ test("signalCount reads the open signals of this project only", () => {
   expect(signalCount(null, "kibo")).toBe(0);
 });
 
-test("open signals show a numbered badge and are said in the label", () => {
+test("open signals show a numbered badge and are said in the label", async () => {
   show(agents(2, "b1"));
+  await waitFor(() => expect(calls).toEqual([{ method: "getProjectAgent", projectId: "kibo" }]));
   expect(screen.getByRole("button", { name: "Agent de projet · 2 signaux en boîte" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "Ouvrir la boîte à signaux" }).textContent).toBe("2");
 });

@@ -9,6 +9,7 @@ import type {
   ProjectAccess,
   ProjectAsset,
   ProjectCommand,
+  ProjectEditRequest,
   ProjectEvent,
   ProjectSnapshot,
   RunDenials,
@@ -36,9 +37,11 @@ export type MockSdk = {
   newTicketRequests: NewTicketDefaults[];
   openedFiles: FileTarget[];
   openedViews: string[];
-  viewRequests: { componentId: string; question: string | null }[];
+  viewRequests: { componentId: string; question: string | null; intent?: Spotlight }[];
   openedRuns: string[];
   openedSprints: string[];
+  projectEdits: ProjectEditRequest[];
+  toasts: string[];
   deliveries: string[];
   runDeliveries: string[];
   allowed: AllowAndResumeInput[];
@@ -79,6 +82,8 @@ export type MockSdkOptions = {
   ciRuns?: CiRun[];
   events?: ProjectEvent[];
   description?: string | null;
+  client?: string | null;
+  folder?: string | null;
   presence?: PresencePeer[];
   shared?: boolean;
   members?: MemberInfo[];

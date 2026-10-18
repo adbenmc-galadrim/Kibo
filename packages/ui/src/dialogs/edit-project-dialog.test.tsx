@@ -12,12 +12,28 @@ import {
   type RpcRequest,
   type TabTarget,
 } from "@kibo/schema";
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render as renderPlain,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement, ReactNode } from "react";
 import { summaryFixture } from "../agents/catalog/fixtures";
 import { configFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 import { appInfoFixture } from "../lib/app-info-fixture";
+import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
+
+const shownExecution = fixedStore({ agentExecution: "shown" });
+const ShownExecution = ({ children }: { children: ReactNode }) => (
+  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
+);
+const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const calls: RpcRequest[] = [];
 const IMPORTED: DeliveryImportCandidate = {
@@ -46,6 +62,7 @@ const snapshot = (): ProjectSnapshot => ({
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -115,6 +132,7 @@ const project: ProjectSummary = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
   icon: "v1",
 };
@@ -138,6 +156,11 @@ test("the guidelines section closes the dialog and opens the project's folder (s
   await userEvent.setup().click(screen.getByRole("button", { name: "Ouvrir le dossier de guidelines →" }));
   expect(closed).toHaveBeenCalledTimes(1);
   expect(go).toHaveBeenCalledWith({ kind: "screen", screen: "domains", projectId: "kibo" });
+});
+
+test("asked on its folder field, the dialog puts the focus there instead of the name", () => {
+  render(<EditProjectDialog project={project} remote={false} focus="folder" onClose={() => {}} />);
+  expect(document.activeElement).toBe(screen.getByLabelText("Dossier"));
 });
 
 test("without the configuration the guidelines section is not shown", () => {

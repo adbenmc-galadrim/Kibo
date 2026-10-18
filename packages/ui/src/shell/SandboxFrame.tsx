@@ -86,6 +86,7 @@ export function SandboxFrame({
       call: (call) => client.rpc({ method: "componentCall", projectId, instanceId, call }),
       onOpenTicket: (id) => latest.current.host.openTicket(id),
       onOpenSprint: (id) => latest.current.host.openSprint?.(id),
+      onEditProject: (request) => latest.current.host.editProject?.(request),
       onOpenNewTicket: (d) => latest.current.host.openNewTicket({ ...d, instanceId }),
       onOpenFile: (r) =>
         latest.current.host.openFile({
@@ -95,7 +96,7 @@ export function SandboxFrame({
           line: r.line ?? null,
           origin: r.origin ?? null,
         }),
-      onOpenView: (id, question) => latest.current.host.openView(id, undefined, question),
+      onOpenView: (id, spotlight) => latest.current.host.openView(id, undefined, spotlight),
       onKey: (combo) => dispatchCombo(combo),
       onResize: (h) => setHeight(h),
       onReady: () => guard.current?.ready(),

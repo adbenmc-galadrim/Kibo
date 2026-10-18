@@ -16,3 +16,21 @@ test("the navigation sits in a column from md and stacks above the content below
   expect(nav.compareDocumentPosition(content) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(nav.getAttribute("aria-label")).toBe("Paramètres");
 });
+
+test("the settings list the tracking sections only", () => {
+  render(
+    <SettingsLayout active="general">
+      <p>Contenu</p>
+    </SettingsLayout>,
+  );
+  const links = screen.getAllByRole("link").map((l) => l.textContent);
+  expect(links).toEqual([
+    "Workspace",
+    "Général",
+    "Apparence",
+    "Intégrations",
+    "Synchronisation",
+    "Sécurité",
+    "Raccourcis",
+  ]);
+});

@@ -1,20 +1,23 @@
 import {
+  atRisk,
   type DeadlineCell,
-  type DeadlineRow,
   type FeatureState,
   type FeatureStep,
   FINAL_STATUSES,
+  featureLabel,
   featureSteps,
   isFeature,
   isOpen,
   type Link,
+  type ProjectEvent,
   type Question,
   type Sprint,
   type SprintView,
+  slippedFrom,
   sortSprints,
   type TicketView,
 } from "@kibo/schema";
-import type { TimelineColumnInput } from "@kibo/sdk/tracking";
+import type { MarkedRow, RowMark, TimelineColumnInput } from "@kibo/sdk/tracking";
 
 export type BandsInput = {
   tickets: readonly TicketView[];
@@ -23,12 +26,15 @@ export type BandsInput = {
   questions: readonly Question[];
   today: string;
   backlog: string;
+  events?: readonly ProjectEvent[];
+  slipped?: (code: string) => string;
 };
 export type BandsTimeline = {
   columns: TimelineColumnInput[];
-  rows: DeadlineRow[];
+  rows: MarkedRow[];
   today: number | null;
-  delivered: DeadlineRow[];
+  startsIn: number | null;
+  delivered: MarkedRow[];
 };
 
 type Feature = TicketView & { feature: FeatureState };
@@ -46,6 +52,12 @@ export function bandsToday(sprints: readonly Pick<Sprint, "start" | "end">[], to
   const length = dayNumber(sprint.end) - dayNumber(sprint.start) + 1;
   const fraction = (dayNumber(today) - dayNumber(sprint.start)) / length;
   return (index + fraction) / (sprints.length + 1);
+}
+
+export function startsIn(sprints: readonly Pick<Sprint, "start">[], today: string): number | null {
+  const first = sprints[0];
+  if (first === undefined || today >= first.start) return null;
+  return dayNumber(first.start) - dayNumber(today);
 }
 
 function bandColumns(sorted: readonly Sprint[], backlog: string): TimelineColumnInput[] {
@@ -83,20 +95,33 @@ function slipTarget(f: Feature, column: number, sorted: readonly Sprint[]): Spri
   return next === undefined ? null : { id: next.id, code: next.code };
 }
 
-function bandRow(f: Feature, column: number, facts: RowFacts): DeadlineRow {
+function markOf(f: Feature, steps: readonly FeatureStep[], facts: RowFacts): RowMark {
+  const { input, sorted } = facts;
+  const sprint = sorted.find((s) => s.id === f.sprintId) ?? null;
+  const late = f.feature.status === "late";
+  const risk = !late && sprint !== null && atRisk({ sprint, steps }, input.today);
+  const from = slippedFrom(input.events ?? [], f.id, sorted);
+  return {
+    ...(late ? { tone: "late" } : risk ? { tone: "risk" } : {}),
+    ...(from !== null && input.slipped ? { note: input.slipped(from) } : {}),
+  };
+}
+
+function bandRow(f: Feature, column: number, facts: RowFacts): MarkedRow {
   const { input, sorted, blocking } = facts;
   const steps = featureSteps({ feature: f.id, tickets: input.tickets, links: input.links });
   const slipTo = slipTarget(f, column, sorted);
   const next = f.feature.nextStepId;
   return {
     featureId: f.id,
-    shortKey: f.shortKey ?? f.keyLabel,
+    shortKey: featureLabel(f) || f.keyLabel,
     title: f.title,
     sprintId: sorted[column]?.id ?? BACKLOG_COLUMN,
     cells: cellsOf(steps, blocking, slipTo !== null),
     column,
     slipTo,
     blockedBy: f.feature.status === "blocked" && next !== null ? (blocking.get(next) ?? null) : null,
+    ...markOf(f, steps, facts),
   };
 }
 
@@ -120,6 +145,7 @@ export function bandsTimeline(input: BandsInput): BandsTimeline {
     columns: bandColumns(sorted, input.backlog),
     rows: rows.filter((r) => !r.delivered).map((r) => r.row),
     today: bandsToday(sorted, input.today),
+    startsIn: startsIn(sorted, input.today),
     delivered: rows.filter((r) => r.delivered).map((r) => r.row),
   };
 }

@@ -5,6 +5,7 @@ import {
   KiboError,
   type KiboErrorCode,
   type ProjectDelivery,
+  type ProjectEditField,
   type ProjectMeta,
   type ProjectSummary,
   STORYBOOK_DEFAULTS,
@@ -47,6 +48,7 @@ type Props = {
   pick?: FolderFieldProps["pick"];
   config?: WorkspaceConfig | null;
   go?(target: TabTarget): void;
+  focus?: ProjectEditField;
 };
 const t = frProject.edit;
 const KNOWN: Partial<Record<KiboErrorCode, string>> = t.errors;
@@ -66,6 +68,7 @@ export function EditProjectDialog({
   pick,
   config,
   go,
+  focus,
 }: Props) {
   const nameId = useId();
   const folderId = useId();
@@ -155,7 +158,7 @@ export function EditProjectDialog({
               id={nameId}
               value={name}
               maxLength={80}
-              autoFocus
+              autoFocus={focus === undefined}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
@@ -200,6 +203,7 @@ export function EditProjectDialog({
                 canBrowse={canBrowse}
                 pick={pick}
                 onError={setError}
+                autoFocus={focus === "folder"}
               />
               <p id={folderHelpId} className="text-xs text-muted-foreground">
                 {t.folderHelp}

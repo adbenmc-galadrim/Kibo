@@ -3,6 +3,7 @@ import { fr } from "../i18n/fr";
 import { frNavTracking } from "../i18n/fr-nav-tracking";
 import { displayName } from "../lib/inbox";
 import { SCREENS } from "../tabs/screens";
+import { findTicket } from "../tabs/target-hash";
 import { featureOf, planningPageOf } from "./nav/planning-missing";
 
 export type Crumb = { label: string; target: TabTarget | null; color?: string };
@@ -35,10 +36,10 @@ function underPlanning(p: ProjectSnapshot, project: Crumb, title: Crumb): Crumb[
   return [project, { label: planning.title, target }, title];
 }
 
-function ticketCrumbs(p: ProjectSnapshot, ticketId: string, project: Crumb): Crumb[] {
-  const feature = featureOf(p, ticketId);
-  if (!feature)
-    return [project, text(p.tickets.find((t) => t.id === ticketId)?.keyLabel ?? fr.tabs.missingTicket)];
+function ticketCrumbs(p: ProjectSnapshot, ref: string, project: Crumb): Crumb[] {
+  const ticket = findTicket(p.tickets, ref);
+  const feature = ticket ? featureOf(p, ticket.id) : undefined;
+  if (!feature) return [project, text(ticket?.keyLabel ?? fr.tabs.missingTicket)];
   return underPlanning(
     p,
     project,

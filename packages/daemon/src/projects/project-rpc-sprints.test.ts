@@ -64,8 +64,11 @@ test("getProject gives the sprints in order, dated by the daemon clock, and the 
   ]);
   expect(snap.sprints[1]?.features).toEqual([ids.feature]);
   const feature = snap.tickets.find((t) => t.id === ids.feature);
-  expect(feature?.feature?.status).toBe("late");
+  expect(feature?.feature?.status).toBe("todo");
   expect(snap.tickets.find((t) => t.id === ids.step)?.effectiveSprintId).toBe(ids.s42);
+  const after = seeded("2026-10-17T09:00:00+02:00");
+  const late = after.snapshot().tickets.find((t) => t.id === after.ids.feature);
+  expect(late?.feature?.status).toBe("late");
 });
 
 test("the day after the end of its sprint an unfinished feature is still late", () => {

@@ -1,15 +1,15 @@
 import { expect, test } from "bun:test";
 import fc from "fast-check";
 import { frameWidth, sprintLanes } from "./sprint-lanes";
-import { KIT_LINKS, kitInput, kitTickets, kitView } from "./sprint-lanes-kit";
+import { KIT_DAY_AFTER, KIT_LINKS, kitInput, kitTickets, kitView } from "./sprint-lanes-kit";
 
-const model = () => {
-  const out = sprintLanes(kitInput());
+const model = (today?: string) => {
+  const out = sprintLanes(kitInput(today === undefined ? {} : { tickets: kitTickets(today) }));
   if (out === null) throw new Error("expected sprint lanes");
   return out;
 };
-const frame = (shortKey: string) => {
-  const f = model()
+const frame = (shortKey: string, today?: string) => {
+  const f = model(today)
     .lanes.flatMap((l) => l.frames)
     .find((x) => x.shortKey === shortKey);
   if (f === undefined) throw new Error(`missing ${shortKey}`);
@@ -51,8 +51,10 @@ test("delivered features are collapsed, the others list their steps", () => {
 });
 
 test("late and blocked features carry their footer", () => {
-  expect(frame("F5").late).toBe(true);
-  expect(frame("F5").footer).toEqual({ kind: "late", slipTo: "S43" });
+  expect(frame("F5").late).toBe(false);
+  expect(frame("F5").footer).toBeNull();
+  expect(frame("F5", KIT_DAY_AFTER).late).toBe(true);
+  expect(frame("F5", KIT_DAY_AFTER).footer).toEqual({ kind: "late", slipTo: "S43" });
   expect(frame("F6").late).toBe(false);
   expect(frame("F6").footer).toEqual({ kind: "blocked", question: "Q14" });
   expect(frame("F4").footer).toBeNull();
@@ -93,7 +95,7 @@ test("frame width follows the content within 126 to 262, the column adds its mar
 
 test("frames stack by rank with 30 px between them", () => {
   const s42 = model().lanes[1]?.frames ?? [];
-  expect(s42.map((f) => f.height)).toEqual([66, 216, 236]);
+  expect(s42.map((f) => f.height)).toEqual([66, 216, 216]);
   expect(s42.map((f) => f.y)).toEqual([70, 166, 412]);
   expect(frame("F1").height).toBe(81);
   expect(frame("F1").titleLines).toBe(2);
@@ -142,4 +144,12 @@ test("frame width grows with the longest title and stays bounded", () => {
       expect(w(`${short}${short}`)).toBeGreaterThanOrEqual(w(short));
     }),
   );
+});
+
+test("each sprint column says its state with the overview's words", () => {
+  const at = (today: string) =>
+    sprintLanes(kitInput({ tickets: kitTickets(today), today }))?.lanes.map((l) => l.label);
+  expect(at("2026-10-14")).toEqual(["terminé le 9 oct.", "en cours", "prévu", "prévu", null]);
+  expect(at("2026-10-16")).toEqual(["terminé le 9 oct.", "se termine aujourd'hui", "prévu", "prévu", null]);
+  expect(at(KIT_DAY_AFTER)?.[1]).toBe("terminé le 16 oct. · reste 2");
 });

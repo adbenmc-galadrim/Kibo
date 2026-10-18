@@ -49,6 +49,7 @@ export async function startAgents(input: AgentsInput, closers: Closer[]): Promis
     ...(opts.userHome && { userHome: opts.userHome }),
     ...input.lifecycle,
     locks: input.locks,
+    ...(opts.ticketExecution && { ticketExecution: opts.ticketExecution }),
   });
   closers.push(() => orchestrator.stop());
   input.ready(orchestrator);

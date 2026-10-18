@@ -1,52 +1,50 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { StatusId } from "@kibo/schema";
-import { z } from "zod";
-import { DEMO_COMPONENT_VERSION, DEMO_LINKS, DEMO_NOTE, DEMO_PAGES, DEMO_TICKETS } from "./demo-seed";
+import { DEMO_FEATURES, DEMO_LINKS, DEMO_QUESTION, DEMO_ROLES, demoSetup } from "./demo-seed";
 
-const Versioned = z.object({ version: z.string() });
-const REPO_COMPONENTS = join(import.meta.dir, "..", "..", "..", "..", "components");
+const steps = DEMO_FEATURES.flatMap((f) => f.steps);
+const byNumber = (a: string, b: string) => Number(a.split("-")[1]) - Number(b.split("-")[1]);
 
-test("eight tickets with unique refs, valid statuses and known parents", () => {
-  expect(DEMO_TICKETS).toHaveLength(8);
-  const refs = DEMO_TICKETS.map((t) => t.ref);
-  expect(new Set(refs).size).toBe(8);
-  for (const t of DEMO_TICKETS) {
-    expect(StatusId.safeParse(t.status).success).toBe(true);
-    if (t.parent) expect(refs.indexOf(t.parent)).toBeLessThan(refs.indexOf(t.ref));
-    expect(t.status === "blocked").toBe(t.blockedReason !== undefined);
-  }
-  expect(DEMO_TICKETS.filter((t) => t.status === "done")).toHaveLength(2);
-});
-
-test("two blocking links between seeded tickets and no self link", () => {
-  expect(DEMO_LINKS).toHaveLength(2);
-  const refs = DEMO_TICKETS.map((t) => t.ref);
-  for (const l of DEMO_LINKS) {
-    expect(refs).toContain(l.from);
-    expect(refs).toContain(l.to);
-    expect(l.from).not.toBe(l.to);
-    expect(l.type).toBe("blocks");
-  }
-});
-
-test("four pages: a dashboard with three widgets and three views", () => {
-  expect(DEMO_PAGES.map((p) => [p.title, p.kind, p.components.map((c) => c.id)])).toEqual([
-    ["Tableau de bord", "dashboard", ["kanban", "tickets", "notes"]],
-    ["Kanban", "view", ["kanban"]],
-    ["Graphe", "view", ["graph"]],
-    ["Notes", "view", ["notes"]],
+test("three features over the three sprints, their steps keyed DEMO-1 to DEMO-8", () => {
+  expect(DEMO_FEATURES.map((f) => f.sprint)).toEqual([0, 1, 2]);
+  expect(steps.map((s) => s.key).sort(byNumber)).toEqual([
+    "DEMO-1",
+    "DEMO-2",
+    "DEMO-3",
+    "DEMO-4",
+    "DEMO-5",
+    "DEMO-6",
+    "DEMO-7",
+    "DEMO-8",
   ]);
-  expect(DEMO_PAGES[0]?.components.every((c) => c.layout !== undefined)).toBe(true);
-  expect(DEMO_NOTE.path).toBe("bienvenue.md");
-  expect(DEMO_NOTE.markdown).toContain("# Bienvenue");
+  for (const s of steps) expect(StatusId.safeParse(s.status).success).toBe(true);
 });
 
-test("the seeded component version is the version of every builtin manifest used", () => {
-  const ids = new Set(DEMO_PAGES.flatMap((p) => p.components.map((c) => c.id)));
-  for (const id of ids) {
-    const raw: unknown = JSON.parse(readFileSync(join(REPO_COMPONENTS, id, "kibo.component.json"), "utf8"));
-    expect(Versioned.parse(raw).version).toBe(DEMO_COMPONENT_VERSION);
-  }
+test("one step in review with an open pull request, one in progress on a branch", () => {
+  const inReview = steps.filter((s) => s.status === "in_review");
+  expect(inReview.map((s) => [s.key, s.pr?.state])).toEqual([["DEMO-3", "open"]]);
+  const review = steps.find((s) => s.key === DEMO_ROLES.review);
+  expect([review?.status, review?.branch]).toEqual(["in_progress", "demo/paiement"]);
+  expect(steps.find((s) => s.key === DEMO_ROLES.copy)?.status).toBe("todo");
+});
+
+test("the step to copy is not the last of its feature, so it can start before the others are done", () => {
+  const feature = DEMO_FEATURES.find((f) => f.steps.some((s) => s.key === DEMO_ROLES.copy));
+  expect(feature?.steps.at(-1)?.key).not.toBe(DEMO_ROLES.copy);
+  expect(feature?.steps.at(-1)?.key).toBe("DEMO-8");
+});
+
+test("a blocking question for the client on a step of the last feature", () => {
+  expect(DEMO_QUESTION.blocking).toBe(true);
+  expect(DEMO_QUESTION.recipient).toBe("client");
+  expect(DEMO_FEATURES[2]?.steps.map((s) => s.key)).toContain(DEMO_QUESTION.on);
+  for (const l of DEMO_LINKS) expect(steps.map((s) => s.key)).toEqual(expect.arrayContaining([l.from, l.to]));
+});
+
+test("three one-week sprints: the last week, this work week and the next one", () => {
+  expect(demoSetup("2026-10-21")).toEqual({ sprintStart: "2026-10-12", sprintCount: 3, sprintWeeks: 1 });
+  expect(demoSetup("2026-10-19").sprintStart).toBe("2026-10-12");
+  expect(demoSetup("2026-10-23").sprintStart).toBe("2026-10-12");
+  expect(demoSetup("2026-10-24").sprintStart).toBe("2026-10-19");
+  expect(demoSetup("2026-10-18").sprintStart).toBe("2026-10-12");
 });

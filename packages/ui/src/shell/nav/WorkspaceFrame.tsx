@@ -8,6 +8,7 @@ import type { TabsApi } from "../../tabs/use-tabs";
 import type { PresencePlace } from "../ProjectPresence";
 import { inTauri, openWindow } from "../workspace-actions";
 import { showTabBar } from "./tab-bar";
+import { useSidebarOpen } from "./use-narrow-screen";
 
 const SIDEBAR_STYLE: CSSProperties & Record<"--sidebar-width", string> = {
   "--sidebar-width": "calc(var(--tracking-sidebar-w) + 1px)",
@@ -33,6 +34,7 @@ export function WorkspaceFrame({
   children,
 }: Props) {
   const visible = showTabBar(tabs.state, tabs.error);
+  const sidebar = useSidebarOpen();
   useEffect(() => {
     if (visible) return;
     const root = document.documentElement.style;
@@ -56,7 +58,12 @@ export function WorkspaceFrame({
         />
       )}
       {!visible && presence(pageShowsPresence ? "none" : "page")}
-      <SidebarProvider className="min-h-0 flex-1" style={SIDEBAR_STYLE}>
+      <SidebarProvider
+        className="min-h-0 flex-1"
+        style={SIDEBAR_STYLE}
+        open={sidebar.open}
+        onOpenChange={sidebar.onOpenChange}
+      >
         {children}
       </SidebarProvider>
     </div>

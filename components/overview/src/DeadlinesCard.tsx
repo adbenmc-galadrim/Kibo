@@ -1,9 +1,10 @@
-import { SprintTimeline, type TimelineInput } from "@kibo/sdk/tracking";
+import { SprintTimeline } from "@kibo/sdk/tracking";
 import { Calendar } from "lucide-react";
 import { fr } from "./fr";
+import type { Deadlines } from "./overview-model";
 import { CARD, CardHeader, ROW_LINE } from "./parts";
 
-type Props = { deadlines: Omit<TimelineInput, "collapsed">; onOpenTicket(id: string): void };
+type Props = { deadlines: Deadlines; onOpenTicket(id: string): void };
 
 export function DeadlinesCard({ deadlines, onOpenTicket }: Props) {
   return (
@@ -12,7 +13,11 @@ export function DeadlinesCard({ deadlines, onOpenTicket }: Props) {
         icon={Calendar}
         title={fr.deadlines.title}
         aside={
-          <span className="text-(--tracking-mfg) text-[12.5px] leading-[15px]">{fr.deadlines.subtitle}</span>
+          <span className="text-(--tracking-mfg) text-[12.5px] leading-[15px]">
+            {deadlines.later > 0
+              ? `${fr.deadlines.subtitle} · ${fr.deadlines.later(deadlines.later)}`
+              : fr.deadlines.subtitle}
+          </span>
         }
       />
       <div className={ROW_LINE}>

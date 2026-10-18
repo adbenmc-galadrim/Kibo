@@ -1,6 +1,9 @@
 import { expect, test } from "bun:test";
+import fc from "fast-check";
+import { addDays } from "./iso-date";
 import {
   currentSprint,
+  isLingering,
   nextSprint,
   Sprint,
   SprintPatch,
@@ -58,11 +61,61 @@ test("sprints sort by start then name", () => {
   ]);
 });
 
-test("the current sprint is the current one that started last, the next is the first planned", () => {
+test("the current sprint holds today, else the last finished one, never a future one", () => {
   const overlap = { id: "s42b", code: "S42b", name: "Rattrapage", start: "2026-10-14", end: "2026-10-20" };
-  expect(currentSprint([S41, S42, S43, S44], "2026-10-16")?.id).toBe("s42");
+  const all = [S41, S42, S43];
+  expect(currentSprint(all, "2026-10-16")?.id).toBe("s42");
+  expect(currentSprint(all, "2026-10-17")?.id).toBe("s42");
+  expect(currentSprint(all, "2026-10-18")?.id).toBe("s42");
+  expect(currentSprint(all, "2026-10-19")?.id).toBe("s43");
+  expect(currentSprint(all, "2026-10-01")).toBeNull();
   expect(currentSprint([overlap, S42, S43], "2026-10-16")?.id).toBe("s42b");
-  expect(currentSprint([S41, S43], "2026-10-16")).toBeNull();
+  expect(currentSprint([S41, S43], "2026-10-16")?.id).toBe("s41");
+  expect(currentSprint([S44, S41], "2026-12-01")?.id).toBe("s44");
+  expect(currentSprint([], "2026-10-16")).toBeNull();
   expect(nextSprint([S44, S41, S43, S42], "2026-10-16")?.id).toBe("s43");
   expect(nextSprint([S41, S42], "2026-10-16")).toBeNull();
+});
+
+test("a finished sprint lingers until the next one starts", () => {
+  expect(isLingering(S42, [S41, S42, S43], "2026-10-17")).toBe(true);
+  expect(isLingering(S42, [S41, S42, S43], "2026-10-16")).toBe(false);
+  expect(isLingering(S41, [S41, S42, S43], "2026-10-17")).toBe(false);
+  expect(isLingering(S43, [S41, S42, S43], "2026-10-17")).toBe(false);
+});
+
+const isoDay = fc.integer({ min: 0, max: 120 }).map((n) => addDays("2026-09-01", n));
+const sprintArb = fc
+  .tuple(fc.integer({ min: 0, max: 99 }), isoDay, fc.integer({ min: 0, max: 20 }))
+  .map(([n, start, length]) => ({
+    id: `s${n}`,
+    code: `S${n}`,
+    name: `Sprint ${n}`,
+    start,
+    end: addDays(start, length),
+  }));
+
+test("the current sprint holds today or is the most recently finished one", () => {
+  fc.assert(
+    fc.property(
+      fc.uniqueArray(sprintArb, { selector: (s) => s.id, maxLength: 8 }),
+      isoDay,
+      (sprints, today) => {
+        const current = currentSprint(sprints, today);
+        const running = sprints.filter((s) => s.start <= today && today <= s.end);
+        const finished = sprints.filter((s) => s.end < today);
+        if (current === null) {
+          expect(running.length + finished.length).toBe(0);
+          return;
+        }
+        if (running.length > 0) {
+          expect(running).toContain(current);
+          expect(running.every((s) => s.start <= current.start)).toBe(true);
+          return;
+        }
+        expect(finished).toContain(current);
+        expect(finished.every((s) => s.end <= current.end)).toBe(true);
+      },
+    ),
+  );
 });

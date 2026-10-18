@@ -1,9 +1,35 @@
+import type { StartReason } from "@kibo/schema";
+
 const tickets = (n: number) => `${n} ticket${n > 1 ? "s" : ""}`;
 
 export const deliveryTexts = {
   deliver: "Livrer",
   retouch: "Livrer la retouche",
   copy: (command: string) => `Copier ${command}`,
+  copied: (waiting: readonly string[], question: string | null = null) =>
+    [
+      "Copié",
+      ...(question ? [`bloqué par ${question}`] : []),
+      ...(waiting.length > 0 ? [`attend ${waiting.join(", ")}`] : []),
+    ].join(" · "),
+  copiedBecause: (reason: string) => `Copié · ${reason}`,
+  reason: (reason: StartReason): string | null => {
+    switch (reason.kind) {
+      case "dependency":
+        return `attend ${reason.keys.join(", ")}`;
+      case "question":
+        return `bloqué par ${reason.label}`;
+      case "sprint":
+        return `sprint ${reason.code}`;
+      case "unplanned":
+        return "sans sprint";
+      case "limit":
+        return `limite ${reason.count}/${reason.limit} atteinte`;
+      case "status":
+        return null;
+    }
+  },
+  copyFailed: "Copie impossible",
   busy: (label: string) => `déjà un run : ${label}`,
   blockedBy: (keys: readonly string[]) => `bloqué par ${keys.join(", ")}`,
   blockingQuestion: "question bloquante",

@@ -2,7 +2,11 @@ import type { AgentExecution, SyncStatus } from "@kibo/schema";
 import { fr } from "../../i18n/fr";
 import { relativeTime } from "../../lib/relative-time";
 
-export type SyncState = { kind: "synced"; age: string | null } | { kind: "offline" } | { kind: "error" };
+export type SyncState =
+  | { kind: "synced"; age: string | null }
+  | { kind: "offline" }
+  | { kind: "error" }
+  | { kind: "reconnecting" };
 
 function inactiveState(status: SyncStatus, projectId: string): SyncState | null {
   const project = status.projects.find((p) => p.projectId === projectId);
@@ -18,7 +22,9 @@ export function syncState(
   projectId: string,
   now: number,
   execution: AgentExecution,
+  online = true,
 ): SyncState {
+  if (!online) return { kind: "reconnecting" };
   if (status === null) return { kind: "synced", age: null };
   const inactive = execution === "hidden" ? inactiveState(status, projectId) : null;
   if (inactive !== null) return inactive;
@@ -30,6 +36,7 @@ const LABELS: Record<SyncState["kind"], string> = {
   synced: fr.nav.synced,
   offline: fr.nav.syncOffline,
   error: fr.nav.syncError,
+  reconnecting: fr.nav.syncReconnecting,
 };
 
 export const syncChipText = (state: SyncState): { label: string; age: string | null } => ({

@@ -67,7 +67,7 @@ export function AddLinkForm({ project, ticket }: Props) {
         </Select>
         <Input
           aria-label={t.deps.search}
-          placeholder={t.deps.searchPlaceholder}
+          placeholder={t.deps.searchPlaceholder(project.meta.key)}
           value={query}
           autoFocus
           className="h-8"

@@ -31,6 +31,8 @@ test("a group has no card; the cards of its sub-tickets carry its chip, which op
   expect(document.querySelectorAll("article")).toHaveLength(2);
   const chip = card.getByRole("button", { name: "Ouvrir l'ensemble F1 · Parcours de livraison" });
   expect(chip.textContent).toBe("F1");
+  expect(chip.className).toContain("border-0");
+  expect(chip.className).toContain("before:content-['·']");
   fireEvent.click(chip);
   expect(m.opened).toEqual([m.snapshot().tickets.find((t) => t.key === "KIB-1")?.id ?? ""]);
 });

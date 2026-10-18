@@ -3,6 +3,7 @@ import {
   type FeatureStep,
   featureSteps,
   isOpen,
+  isoWeekday,
   type Link,
   type ProjectMeta,
   type Question,
@@ -83,6 +84,7 @@ export const metaOf = (tracking: TrackingSettings | null): ProjectMeta => ({
   delivery: null,
   tracking,
   description: null,
+  client: null,
 });
 
 const parse = (date: string): Date => new Date(`${date}T00:00:00Z`);
@@ -91,6 +93,9 @@ export function dayMonth(date: string): string {
   const d = parse(date);
   return `${d.getUTCDate()} ${fr.months[d.getUTCMonth()] ?? ""}`;
 }
+
+export const weekdayDayMonth = (date: string): string =>
+  `${fr.weekdays[isoWeekday(date) - 1] ?? ""} ${dayMonth(date)}`;
 
 export function sprintDates(start: string, end: string): string {
   const a = parse(start);

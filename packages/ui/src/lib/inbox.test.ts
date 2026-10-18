@@ -30,6 +30,7 @@ function inboxSnapshot(statuses: StatusId[]): ProjectSnapshot {
       delivery: null,
       tracking: null,
       description: null,
+      client: null,
     },
     tickets: statuses.map((statusId, i) => ({
       ...model,
@@ -71,6 +72,7 @@ test("the inbox summary counts its tickets by status and carries the inbox ident
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
 });
 

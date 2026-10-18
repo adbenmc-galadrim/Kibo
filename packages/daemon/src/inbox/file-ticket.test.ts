@@ -17,6 +17,7 @@ const kibo = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
 };
 
 function fixture(

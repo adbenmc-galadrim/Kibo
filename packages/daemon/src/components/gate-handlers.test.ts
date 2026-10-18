@@ -128,6 +128,7 @@ test("a component lists busy tickets as not startable and sprints dated by the d
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   const busy = createTicket(project, { title: "A", statusId: "todo" });
   createTicket(project, { title: "B", statusId: "todo" });
@@ -304,6 +305,7 @@ const metaWith = (tracking: ProjectMeta["tracking"]): ProjectMeta => ({
   delivery: null,
   tracking,
   description: null,
+  client: null,
 });
 
 test("settings.get reads the project tracking and the machine agent execution", async () => {
@@ -343,6 +345,23 @@ test("project.get names the project and the repository of its first pull request
     name: "Emis",
     color: "#14B8A6",
     description: null,
+    client: null,
+    hasFolder: false,
     repo: "galadrimteam/emis",
+    today: "2026-10-16",
   });
+});
+
+test("project.get tells whether the machine has a folder for the project, from the local port", async () => {
+  const project = createProjectDoc({ ...metaWith(null), description: null });
+  const docs = {
+    ...stubDocs,
+    project: () => project,
+    activity: () => NO_ACTIVITY,
+    today: () => "2026-10-16",
+  };
+  const linked = createGateHandlers({ ...stubHandlerDeps, docs, hasFolder: (id) => id === "p1" });
+  expect((await linked.project("p1")).hasFolder).toBe(true);
+  const unlinked = createGateHandlers({ ...stubHandlerDeps, docs, hasFolder: () => false });
+  expect((await unlinked.project("p1")).hasFolder).toBe(false);
 });

@@ -119,6 +119,7 @@ export function createFrameSdk(
       format: init.format ?? defaultFormatOf(manifest),
       openTicket: (ticketId) => port.post({ kibo: 1, type: "openTicket", ticketId }),
       openSprint: (sprintId) => port.post({ kibo: 1, type: "openSprint", sprintId }),
+      editProject: ({ field }) => port.post({ kibo: 1, type: "editProject", field }),
       openNewTicket: ({ statusId, parentId }) =>
         port.post({ kibo: 1, type: "openNewTicket", defaults: { statusId, parentId } }),
       openFile: ({ path, line }) =>
@@ -129,6 +130,7 @@ export function createFrameSdk(
           type: "openView",
           componentId,
           ...(opts?.question !== undefined && { question: opts.question }),
+          ...(opts?.intent !== undefined && { intent: opts.intent }),
         }),
       focus: focusApi(focus, (on) => port.post({ kibo: 1, type: "focus", on })),
       visibility: visibilityApi(visible),

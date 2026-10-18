@@ -112,7 +112,7 @@ test("sélection : clic, Ouvrir, flèches, Entrée, boîte avec Shift", async ({
   await expect(node).toHaveAttribute("data-selected", "true");
   await shot(page, info, "graphe-selection");
   await canvas.getByRole("button", { name: "Ouvrir KIB-11" }).click();
-  await expect(page.getByRole("dialog").getByText("KIB-11")).toBeVisible();
+  await expect(page.getByRole("dialog").getByText("KIB-11", { exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await node.click();
   await canvas.focus();

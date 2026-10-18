@@ -2,17 +2,21 @@ import {
   assertShellCommand,
   countTicketsByStatus,
   createProjectDoc,
+  executeProjectCommand,
   getKeyAllocator,
+  getProjectMeta,
   listInstances,
   listProjects,
   readProject,
   registerProject,
+  setProjectMeta,
 } from "@kibo/core";
 import {
   iconOwnerKey,
   isInbox,
   KiboError,
   type ProjectMeta,
+  ProjectSetup,
   type ProjectSyncInfo,
   type RpcRequest,
 } from "@kibo/schema";
@@ -22,21 +26,23 @@ import type { Docs } from "../docs";
 import type { IconStore } from "../icons/icon-store";
 import type { createFileTicket } from "../inbox/file-ticket";
 import { assertProjectKeyAllowed } from "../inbox/inbox-rules";
+import { markMigrated } from "../migrations/tracking";
 import type { ProjectSettings } from "../notes/settings";
 import {
-  LOCAL_FOLDER_KEY,
   localDelivery,
   localDuplication,
+  localFolder,
   localStorybook,
   localWorktree,
 } from "../project-folder";
+import { setupProject } from "./project-setup";
 
 export type CollabPort = { syncInfo(projectId: string, doc: LoroDoc): ProjectSyncInfo };
 export type ProjectRpcDeps = {
   workspace: LoroDoc;
   docs: Docs;
   icons: Pick<IconStore, "version">;
-  settings: Pick<ProjectSettings, "get">;
+  settings: Pick<ProjectSettings, "get" | "set">;
   collab(): CollabPort | null;
   adopt(id: string, doc: LoroDoc): void;
   fileTicket: ReturnType<typeof createFileTicket>;
@@ -44,9 +50,21 @@ export type ProjectRpcDeps = {
 
 export const NOT_HANDLED: unique symbol = Symbol("not handled");
 
-function localFolder(deps: ProjectRpcDeps, meta: ProjectMeta): string | null {
-  const local = deps.settings.get(meta.id, LOCAL_FOLDER_KEY);
-  return getKeyAllocator(deps.docs.project(meta.id)) === "server" ? local : (local ?? meta.folder);
+const folderOf = (deps: ProjectRpcDeps, meta: ProjectMeta): string | null =>
+  localFolder(deps.settings, meta, getKeyAllocator(deps.docs.project(meta.id)) === "server");
+
+function parsedSetup(setup: unknown): ProjectSetup | null {
+  if (setup === undefined) return null;
+  const parsed = ProjectSetup.safeParse(setup);
+  if (!parsed.success) throw new KiboError("INVALID_INPUT", `invalid project setup: ${parsed.error.message}`);
+  return parsed.data;
+}
+
+function newProjectDoc(meta: ProjectMeta, client: string | null, setup: ProjectSetup | null): LoroDoc {
+  const doc = createProjectDoc(meta);
+  if (client) setProjectMeta(doc, { client });
+  if (setup) setupProject((command) => executeProjectCommand(doc, command), setup);
+  return doc;
 }
 
 const projectIcon = (projectId: string) => iconOwnerKey({ kind: "project", projectId });
@@ -56,6 +74,7 @@ function createProject(
   req: Extract<RpcRequest, { method: "createProject" }>,
 ): ProjectMeta {
   assertProjectKeyAllowed(req.key);
+  const setup = parsedSetup(req.setup);
   const meta: ProjectMeta = {
     id: crypto.randomUUID(),
     key: req.key,
@@ -68,13 +87,16 @@ function createProject(
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   };
+  const doc = newProjectDoc(meta, req.client ?? null, setup);
   registerProject(deps.workspace, meta);
-  deps.adopt(meta.id, createProjectDoc(meta));
+  deps.adopt(meta.id, doc);
+  if (setup) markMigrated(deps.settings, meta.id, deps.docs.today());
   deps.docs.save(meta.id);
   deps.docs.save(null);
   deps.docs.emit({ projectId: null });
-  return meta;
+  return { ...meta, client: getProjectMeta(doc).client };
 }
 
 function getProject(deps: ProjectRpcDeps, projectId: string) {
@@ -107,7 +129,8 @@ export function handleProjectRequest(deps: ProjectRpcDeps, req: RpcRequest): unk
     case "listProjects":
       return listProjects(deps.workspace).map((meta) => ({
         ...meta,
-        folder: localFolder(deps, meta),
+        client: getProjectMeta(deps.docs.project(meta.id)).client,
+        folder: folderOf(deps, meta),
         worktree: localWorktree(deps.settings, meta.id),
         storybook: localStorybook(deps.settings, meta.id),
         duplication: localDuplication(deps.settings, meta.id),

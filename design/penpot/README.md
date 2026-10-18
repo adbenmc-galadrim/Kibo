@@ -52,9 +52,10 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 32 · Doublons entre agents | 197 à 201b (phase 23 : fil `other` et `owner`, fichiers du recouvrement, lien posé et annulé, fiche Détails et Activité, barre, page du run, réglages, « Ce que reçoit l'agent ») ; **dessinés, ajustés après implémentation** |
 | 33 · Questions : modifier, rouvrir, archiver | 202 à 206 (phase 23 : réponses modifiables, archives et historique, lot de questions, aperçu au survol, question mise en évidence) ; **dessinés** |
 | 34 · Domaines & guidelines | 207 à 209b (phase 23 : arbre de dossiers, état vide, domaine de projet et du workspace, projet partagé en lecture seule, encart, sélecteur groupé, lien du projet) ; **dessinés, ajustés après implémentation** |
-| 35 · Redesign Emis | 210 à 218 (redesign validé le 2026-10-16 : vue d'ensemble, Planning, fiche fonctionnalité, Tickets, Graphe ; états fiche de sprint et report, 3/2 ouvertes, démo facultative, infobulle du nom) ; **dessinés** |
+| 35 · Redesign Emis | 210 à 218 (redesign validé le 2026-10-16 : vue d'ensemble, Planning, fiche fonctionnalité, Tickets, Graphe ; états fiche de sprint et report, 3/2 ouvertes, démo facultative, infobulle du nom) ; **dessinés** ; 211, 212 et 214 mis à jour au jalon de la phase 27 |
+| 36 · Suivi seul | 219 à 225b (phase 27 : vue d'ensemble, Pour commencer, en retard au 18 oct., Nouveau projet, Kanban, fiche ticket et Activité, Questions, barre repliée, panneau de l'agent) ; **dessinés** |
 
-Pages 00 à 27 et 29 à 35 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 35.
+Pages 00 à 27 et 29 à 36 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 36.
 
 ## Redesign : les anciennes pages sont une archive
 
@@ -312,9 +313,25 @@ de 1 500 px, clair à x = 1 540 ; états de 604 × 452 à partir de y = 7 500, r
   213 Tickets · 214 Graphe, une colonne par sprint · 215 fiche de sprint S42 et « Fin de sprint : reporter F5 en S43 ? » · 216 « 3/2 ouvertes »,
   « Ouvrir F6 » reste possible · 217 démo client facultative en pointillé, F4 livrée · 218 nom tronqué et infobulle du nom complet.
 
+## Suivi seul (page 36)
+
+Phase 27 (2026-10-18) : les écrans sont dessinés dans le fichier « Kibo · Redesign » (page « Proposition », `design/redesign/scripts/55-phase-27.js`,
+voir `design/redesign/README.md`), puis copiés tels quels dans le fichier « Kibo » au jalon : sélection des boards à partir de y = 8 000 dans
+« Kibo · Redesign », ⌘C, page « 36 · Suivi seul » du fichier « Kibo », ⌘V, puis déplacement (0, 0) et renommage en `n · titre`. Le presse-papiers
+d'un Chromium headless reste interne au navigateur. Même méthode pour 214 (Graphe retouché à la main dans « Kibo · Redesign ») ; 211 et 212 sont
+redessinés par `S.draw["p-planning"]` et `S.draw["p-fonctionnalite"]`.
+
+- 36 · Suivi seul : 219 vue d'ensemble au 16 oct. (client, « En cours », « bloquée : F6 », « à risque », « Phase 7/12 », résumé daté, lots remplacés masqués) ·
+  219b Pour commencer (« Nouvelle fonctionnalité ») · 219c en retard au 18 oct. (« Dernier sprint · S42 terminé », carte « En retard ») · 220 Nouveau projet ·
+  221 Kanban (puces « Phase n/12 · … ») · 222 fiche ticket EMIS-45 (« Requise pour livrer », bandeau, « déclarée », « Livraison ») · 222b Activité ·
+  223 Questions · 224 barre repliée à 1 180 px et menu des pages · 225 agent de projet, question · 225b récapitulatif et « Copier la relance ».
+
 ## Exporter
 
-1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("35")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
-   `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`.
-2. Source : menu du fichier → Exporter (.penpot), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
+1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("36")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
+   `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`. Pour ne changer que quelques boards, remplacer leurs pages et ajouter
+   les nouvelles dans le PDF existant avec `pypdf` (`add_page`, puis `compress_identical_objects`) : `pdfseparate` et `pdfunite` doublent la taille
+   du fichier (polices recopiées à chaque page), au-delà de la limite de 100 Mo de GitHub.
+2. Source : menu du fichier → Exporter (.penpot) (ou, depuis l'onglet headless, la méthode `export-binfile` de l'API, dont l'événement `end` donne
+   l'adresse du fichier à télécharger), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
    que Penpot régénère : l'archive reste sous la limite de 100 Mo de GitHub).

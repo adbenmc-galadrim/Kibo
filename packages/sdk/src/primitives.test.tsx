@@ -71,3 +71,16 @@ test("a dialog is bounded to the window and scrolls inside, unless it handles it
   expect(palette).toContain("overflow-hidden");
   expect(palette).not.toContain("overflow-y-auto");
 });
+
+test("the close button of a dialog speaks French", () => {
+  render(
+    <Dialog open>
+      <DialogContent>
+        <DialogTitle>Titre</DialogTitle>
+        <DialogDescription>Texte</DialogDescription>
+      </DialogContent>
+    </Dialog>,
+  );
+  expect(screen.getByRole("button", { name: "Fermer" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Close" })).toBeNull();
+});

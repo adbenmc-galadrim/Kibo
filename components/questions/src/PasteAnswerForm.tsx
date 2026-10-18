@@ -3,33 +3,18 @@ import { agentTracesShown } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { Button } from "@kibo/sdk/ui/button";
 import { Textarea } from "@kibo/sdk/ui/textarea";
-import { ClipboardPaste } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { fr } from "./fr";
-import { AGENT_ACCENT } from "./QuestionAnswerForm";
 import { answerFrom } from "./questions-logic";
 import { useAnswer } from "./use-questions";
 
-export function PasteAnswerForm({ question }: { question: Question }) {
+export function PasteAnswerForm({ question, onClose }: { question: Question; onClose(): void }) {
   const answer = useAnswer();
   const traces = agentTracesShown(useComponentSettings().agentExecution);
   const fieldId = useId();
-  const [text, setText] = useState<string | null>(null);
+  const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
-  if (text === null)
-    return (
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        className={`h-7 text-xs ${AGENT_ACCENT}`}
-        onClick={() => setText("")}
-      >
-        <ClipboardPaste aria-hidden />
-        {fr.paste.open}
-      </Button>
-    );
   const input = answerFrom({ option: null, text, confirm: false });
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -60,13 +45,7 @@ export function PasteAnswerForm({ question }: { question: Question }) {
       />
       <p className="text-2xs text-muted-foreground">{traces ? fr.paste.help : fr.paste.helpWithoutAgent}</p>
       <div className="flex justify-end gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-7 text-xs"
-          onClick={() => setText(null)}
-        >
+        <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={onClose}>
           {fr.cancel}
         </Button>
         <Button type="submit" size="sm" className="h-7 text-xs" disabled={busy || input === null}>

@@ -72,7 +72,7 @@ export function TicketsTree() {
   const [searching, setSearching] = useState(false);
   const openSearch = useCallback(() => setSearching(true), []);
   const onKeyDown = useSearchKeys(sdk.surface === "view", openSearch);
-  const [looseOpen, setLooseOpen] = useState(false);
+  const [looseOpen, setLooseOpen] = useState(true);
   const [selection, setSelection] = useSelection();
   const actions = useTicketActions(all, runs, statuses);
   const questions = useQuestionsChipData(runs);

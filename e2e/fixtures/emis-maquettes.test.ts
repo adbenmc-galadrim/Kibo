@@ -201,6 +201,13 @@ test("sidebar counters: 6 mine, 2 in the inbox, 3 questions, 24 open tickets", (
 
 test("workspace, projects, description and pages of the mockups", () => {
   expect(today.meta.description).toBe(EMIS_DESCRIPTION);
+  expect(today.meta.client).toBe("Emis SA");
+  expect(ticket(today, 45).description).toStartWith("Deux saisies hors ligne du même tronçon");
+  expect(
+    ticket(today, 45)
+      .externalRefs.map((r) => r.kind)
+      .sort(),
+  ).toEqual(["git_branch", "github_pr"]);
   expect(daemon.workspaceName()).toBe(EMIS_WORKSPACE_NAME);
   expect(daemon.projects().map((p) => p.name)).toEqual(["Emis", ...OTHER_PROJECTS.map((p) => p.name)]);
   expect(today.pages.map((p) => p.title)).toEqual([

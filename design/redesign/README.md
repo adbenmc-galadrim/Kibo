@@ -203,3 +203,38 @@ P1 (`proposition-vue-ensemble-*`, 1 440 × 1 100 px) est remplacé par P1 bis. L
 les couleurs en tokens (sombre et clair), les rayons et bordures, ainsi que la liste exacte des textes affichés. Il est relevé depuis Penpot
 par `scripts/95-cotes.js`, puis mis en forme par `scripts/cotes.py`. Les écrans sont aussi dans le fichier Penpot « Kibo », page
 « 35 · Redesign Emis » (210 à 218).
+
+## Phase 27 (2026-10-18)
+
+Spec §39 : Kibo ne fait que du suivi, création de projet minimale, constats des critiques retenus (§39.6). Couleurs et vocabulaire
+des écrans validés inchangés (les couleurs sémantiques, le glossaire et la liste Questions compacte sont seulement proposés à Adam).
+Page « Proposition », `scripts/55-phase-27.js` (après `55-proposition-v2`), rangées à partir de y = 8 000, pas de 1 500 px, sombre à
+x = 0 et clair à x = 1 540. Données `emis-maquettes` au vendredi 16 octobre (S42).
+
+| Board | Contenu | Export | Taille |
+|---|---|---|---|
+| P1 bis v3 · Vue d'ensemble | P1 bis au vendredi 16 oct. (S42 en cours, donc aucune carte « En retard ») ; sous « Ouvertes », « limite · 1 bloquée » (point rouge : F6, bloquée par Q14). Référence pixel | `proposition-vue-ensemble-v3` | 1 440 × 1 260 |
+| P1 bis v3 · En retard au 18 oct. | variante au dimanche 18 oct., entre deux sprints : S42 reste courant (« terminé le 16 oct. »), « 1 en retard » sous Fonctionnalités, carte « En retard » sous Échéances (F5, S42 · terminé le 16 oct., reste 4 étapes) | `proposition-vue-ensemble-v3-retard` | 1 440 × 1 360 |
+| P1 bis v3 · Pour commencer | projet neuf (cinq pages, S1 à S6) : « Relier le dépôt », « Créer une fonctionnalité », « Copier /full-delivery EMIS-1 » expliqués par des textes d'aide, un seul bouton « Ouvrir le Planning » ; liste des sprints | `proposition-vue-ensemble-v3-pour-commencer` | 1 440 × 1 000 |
+| P6 · Nouveau projet | dialogue de 520 px sur la Vue d'ensemble sous voile `bg` 60 % : Nom, Clé, Client, Début, Nombre de sprints, Durée, aperçu des six sprints, Dossier, « Annuler » et « Créer » | `proposition-nouveau-projet` | 1 440 × 1 000 |
+| P7 · Kanban | « Tous » par défaut, « Sprint courant · S42 », « À reprendre », étiquettes ; cartes « EMIS-45 · F4 », pastilles PR, review et CI, « bloqué · Q14 », « Démo · F6 », point de session, ombre de défilement | `proposition-kanban` | 1 440 × 1 000 |
+| P8 · Fiche ticket | Sheet de 560 px sur le Kanban : « F4 · S42 · PR #20 », « Adam (moi) », « Requise pour livrer », « Ajouter une étiquette », bandeau « PR #20 · changements demandés · CI cassée », Suivi (branche « déclarée », « Livraison : Phase 9/12 · Review »), Description et « Modifier », Dépendances « Aucune » et « Ajouter une dépendance », Questions, Domaine et Maquettes repliés, « Fermer » | `proposition-fiche-ticket` | 1 440 × 1 000 |
+| P8b · Fiche ticket, Activité | même fiche, onglet Activité : chronologie du journal (session, review, CI, étape, PR, branche) puis « Anciens runs » replié | `proposition-fiche-ticket-activite` | 1 440 × 1 000 |
+| P9 · Questions | `Qn`, badge « bloquante », bloquantes en tête, groupes sans vide, texte exporté (« bloque F6, prévue en S43 »), toast « 2 questions marquées envoyées · Annuler » | `proposition-questions` | 1 440 × 1 000 |
+| Barre repliée · Kanban à 1 180 px | rail de 48 px (bascule, recherche, Accueil, Mes tickets, Boîte de réception, pastille d'initiales par projet), menu des pages d'Emis au survol, clés entières, ombres de défilement en bas et à droite | `proposition-barre-repliee` | 1 180 × 1 000 |
+| Agent · question | panneau de 340 px : résumé du jour épinglé et daté (14:40), question d'Adam, réponse, lot n° 7, « Afficher les lots remplacés » | `proposition-agent-question` | 340 × 1 000 |
+| Agent · récapitulatif | après « Valider » : 3 appliquées, 0 échouée, 0 ignorée, « F5 glissée de S42 », « Copier la relance » sur la relance de Q14 | `proposition-agent-recap` | 340 × 1 000 |
+
+Dessin : `await storage.draw27("p-vue3", "dark")` (clés `p-vue3`, `p-vue3-retard`, `p-commencer`, `p-nouveau`, `p-kanban`, `p-fiche`, `p-fiche-act`,
+`p-questions`, `p-barre`, `p-agent-q`, `p-agent-recap`), un écran et un mode par appel. `p-nouveau` clone `p-vue3` et `p-fiche` clone
+`p-kanban` du même mode : les dessiner après. Avant de recharger l'onglet, attendre que le nombre de formes côté serveur (`get-page`)
+égale le nombre local, sinon les derniers écrans sont perdus. Export : `await storage.export27()` (`90-export.js`) ⇒
+`exports/proposition-<écran>-<dark|light>.png`. Cotes : `95-cotes.js` par board, puis `python3 scripts/cotes.py <JSON> --phase27`, qui
+réécrit seulement la partie « Phase 27 » de `cotes.md` (P1 bis v3, sa variante du 18 oct., Pour commencer, P6 à P9, P8b) ; `--sections 2,3,9`
+(numéros des JSON `_dump-<n>-<mode>.json`) ne remplace que les sections de ces boards, sans recalculer les tableaux de tête.
+
+Jalon de la phase 27 (T26) : P2 (« En cours : 2 / 2 », « à risque », ligne de charge « n étapes prévues · capacité 5 », crayon du sprint), P3
+(« Prochaine étape EMIS-34 : attend EMIS-33. », Activité en « Phase n/12 »), P1 bis v3 et ses variantes (client, sans « 2/2 en cours »,
+« Phase 7/12 », résumé daté, lots remplacés masqués, « + Nouvelle fonctionnalité », « Dernier sprint · S42 terminé » au 18 oct.), P6 (fond
+redessiné), P7 (puces « Phase n/12 · … »), P8 et P8b, la barre repliée et le panneau de l'agent suivent l'application ; copiés dans la page
+« 36 · Suivi seul » du fichier « Kibo » (voir `design/penpot/README.md`).

@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { answerPrompt, deliveryPrompt, KiboError, type Question, type RunView } from "@kibo/schema";
 import { answered, HUMAN, runView } from "../questions/questions.test-helper";
+import type { TicketExecution } from "./execution-removed";
 import {
   answerFromDrawer,
   type DeliveryDeps,
@@ -10,10 +11,18 @@ import {
 
 type Calls = { answers: [string, string][]; marks: [string, string, string[], string][]; drawer: string[] };
 
-function deps(runs: RunView[], undelivered: Question[] = [], blocking: Question | null = null) {
+function deps(
+  runs: RunView[],
+  undelivered: Question[] = [],
+  blocking: Question | null = null,
+  ticketExecution: TicketExecution = "allowed",
+) {
   const calls: Calls = { answers: [], marks: [], drawer: [] };
   const order: string[] = [];
+  const logged: string[] = [];
   const d: DeliveryDeps = {
+    ticketExecution,
+    log: (line) => logged.push(line),
     runs: () => runs,
     answer(runId, text) {
       calls.answers.push([runId, text]);
@@ -35,7 +44,7 @@ function deps(runs: RunView[], undelivered: Question[] = [], blocking: Question 
       },
     },
   };
-  return { d, calls, order };
+  return { d, calls, order, logged };
 }
 
 test("a blocking answer reaches its waiting run at once and is marked delivered", () => {
@@ -128,4 +137,22 @@ test("a drawer answer the run refuses leaves the question answered but not deliv
   expect(() => answerFromDrawer(d, run, "443", HUMAN)).toThrow(KiboError);
   expect(calls.drawer).toEqual(["r1:443"]);
   expect(calls.marks).toEqual([]);
+});
+
+test("without ticket execution a blocking answer is kept, resumes nothing and is journaled", () => {
+  const q = answered("q1", { blocking: true });
+  const { d, calls, logged } = deps([runView({ id: "r1", state: "waiting_input" })], [], null, "removed");
+  expect(deliverBlockingAnswer(d, q)).toBe(false);
+  expect(calls).toEqual({ answers: [], marks: [], drawer: [] });
+  expect(logged).toHaveLength(1);
+});
+
+test("without ticket execution delivering answers or answering a ticket run is refused first", () => {
+  const run = runView({ id: "r1", state: "waiting_input" });
+  const { d, calls } = deps([run], [answered("q1")], answered("q1", { blocking: true }), "removed");
+  expect(() => deliverAnswers(d, "p1", "t1")).toThrow("AGENT_EXECUTION_REMOVED");
+  const empty = deps([run], [], null, "removed");
+  expect(() => deliverAnswers(empty.d, "p1", "t1")).toThrow("AGENT_EXECUTION_REMOVED");
+  expect(() => answerFromDrawer(d, run, "443", HUMAN)).toThrow("AGENT_EXECUTION_REMOVED");
+  expect(calls).toEqual({ answers: [], marks: [], drawer: [] });
 });

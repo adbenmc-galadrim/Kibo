@@ -1,14 +1,20 @@
-import { expect, test } from "bun:test";
-import type { ProjectCommand } from "@kibo/schema";
+import { afterEach, expect, test } from "bun:test";
+import type { ProjectCommand, Ticket } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
-import { seed } from "./test-seed";
+import { seed, trackingSeed } from "./test-seed";
 
-const setup = (config: Record<string, unknown> = {}, seeded = seed) => {
-  const m = createMockSdk(manifest, { seed: seeded, viewer: "adam", config, agentExecution: "shown" });
+afterEach(cleanup);
+
+const setup = (
+  config: Record<string, unknown> = {},
+  seeded: (run: (cmd: ProjectCommand) => unknown) => void = trackingSeed,
+  today = "2026-10-17",
+) => {
+  const m = createMockSdk(manifest, { seed: seeded, viewer: "adam", config, today });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />
@@ -17,33 +23,128 @@ const setup = (config: Record<string, unknown> = {}, seeded = seed) => {
   return m;
 };
 
-test("screen 126: the default filter is named next to the counter, and hidden cards can be shown", async () => {
+const toggle = (name: string) => screen.getByRole("button", { name });
+const pressed = (name: string) => toggle(name).getAttribute("aria-pressed");
+
+test("« Tous » by default: every card, other people's too, each filter with its count", async () => {
   setup();
-  expect(await screen.findByText("5 / 6 · Moi + agents")).toBeTruthy();
-  expect(screen.getByRole("radio", { name: "Moi + agents" }).getAttribute("aria-checked")).toBe("true");
-  await userEvent.setup().click(screen.getByRole("button", { name: "1 masqué · Tout afficher" }));
-  expect(await screen.findByText("6 / 6 · Tous")).toBeTruthy();
-  expect(screen.getByRole("radio", { name: "Tous" }).getAttribute("aria-checked")).toBe("true");
-  expect(screen.queryByRole("button", { name: /Tout afficher/ })).toBeNull();
+  expect(await screen.findByText("8 tickets · Tous")).toBeTruthy();
+  expect(screen.getByRole("group", { name: "Tickets affichés" })).toBeTruthy();
+  expect(pressed("Tous")).toBe("true");
+  expect(within(toggle("Tous")).getByText("8")).toBeTruthy();
+  expect(within(toggle("Sprint courant · S42")).getByText("4")).toBeTruthy();
+  expect(within(toggle("Démarrable")).getByText("1")).toBeTruthy();
+  expect(within(toggle("À reprendre")).getByText("1")).toBeTruthy();
   expect(screen.getByText("Hors filtre")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /^Moi/ })).toBeNull();
 });
 
-test("the hidden count is plural, and nothing hidden means no link", async () => {
-  const lea = { kind: "human", ref: "lea" } as const;
-  const others = (run: (cmd: ProjectCommand) => unknown) => {
-    run({ method: "createTicket", title: "Un", assignee: lea });
-    run({ method: "createTicket", title: "Deux", assignee: lea });
-  };
-  setup({}, others);
-  expect(await screen.findByRole("button", { name: "2 masqués · Tout afficher" })).toBeTruthy();
-  await userEvent.setup().click(screen.getByRole("radio", { name: "Tous" }));
-  expect(await screen.findByText("2 / 2 · Tous")).toBeTruthy();
-  await userEvent.setup().click(screen.getByRole("radio", { name: "Moi + agents" }));
-  expect(await screen.findByText("0 / 2 · Moi + agents")).toBeTruthy();
-  cleanup();
-  setup({}, (run) =>
-    run({ method: "createTicket", title: "À moi", assignee: { kind: "human", ref: "adam" } }),
-  );
-  expect(await screen.findByText("1 / 1 · Moi + agents")).toBeTruthy();
-  expect(screen.queryByRole("button", { name: /masqué/ })).toBeNull();
+test("« Sprint courant » keeps the steps of S42, still current the day after it ends", async () => {
+  setup();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Sprint courant · S42" }));
+  expect(await screen.findByText("4 tickets · Sprint courant · S42")).toBeTruthy();
+  expect(pressed("Tous")).toBe("false");
+  expect(screen.getByText("Conflits de saisie")).toBeTruthy();
+  expect(screen.getByText("Lecture du fichier Excel")).toBeTruthy();
+  expect(screen.queryByText("Écran d'import")).toBeNull();
+  expect(screen.queryByText("Hors filtre")).toBeNull();
+  await user.click(screen.getByRole("button", { name: "4 masqués · Tout afficher" }));
+  expect(await screen.findByText("8 tickets · Tous")).toBeTruthy();
+  expect(pressed("Sprint courant · S42")).toBe("false");
+});
+
+const withFinalStep = (run: (cmd: ProjectCommand) => unknown) => {
+  const made = new Map<string, Ticket>();
+  trackingSeed((cmd) => {
+    const result = run(cmd);
+    if (cmd.method === "createTicket" && !made.has(cmd.title)) made.set(cmd.title, result as Ticket);
+    return result;
+  });
+  const f1 = made.get("Saisie terrain");
+  const demo = made.get("Démo client");
+  if (!f1 || !demo) throw new Error("tracking seed without F1 or its demo");
+  const last = run({ method: "createTicket", title: "Mise en production", parentId: f1.id }) as Ticket;
+  run({ method: "addLink", from: demo.id, to: last.id, type: "blocks" });
+};
+
+test("the filters add up, « Tous » clears them", async () => {
+  setup({}, withFinalStep);
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Sprint courant · S42" }));
+  await user.click(toggle("Démarrable"));
+  expect(await screen.findByText("1 ticket · Sprint courant · S42 + Démarrable")).toBeTruthy();
+  expect(pressed("Sprint courant · S42")).toBe("true");
+  expect(pressed("Démarrable")).toBe("true");
+  expect(screen.getByText("Démo · F1")).toBeTruthy();
+  expect(screen.queryByText("Mise en production")).toBeNull();
+  expect(screen.queryByText("Hors filtre")).toBeNull();
+  await user.click(toggle("Sprint courant · S42"));
+  expect(await screen.findByText("2 tickets · Démarrable")).toBeTruthy();
+  expect(screen.getByText("Hors filtre")).toBeTruthy();
+  await user.click(toggle("Tous"));
+  expect(await screen.findByText("9 tickets · Tous")).toBeTruthy();
+  expect(pressed("Démarrable")).toBe("false");
+});
+
+test("« Sprint courant » follows the date: on Monday the 19th it is S43", async () => {
+  setup({}, trackingSeed, "2026-10-19");
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Sprint courant · S43" }));
+  expect(await screen.findByText("2 tickets · Sprint courant · S43")).toBeTruthy();
+  expect(screen.getByText("Écran d'import")).toBeTruthy();
+});
+
+test("when the current sprint goes away, « Sprint courant » falls back to « Tous »", async () => {
+  const m = setup();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Sprint courant · S42" }));
+  expect(await screen.findByText("4 tickets · Sprint courant · S42")).toBeTruthy();
+  act(() => {
+    for (const s of m.snapshot().sprints) m.run({ method: "deleteSprint", sprintId: s.id });
+  });
+  expect(await screen.findByText("8 tickets · Tous")).toBeTruthy();
+  expect(pressed("Tous")).toBe("true");
+  expect(toggle("Sprint courant").hasAttribute("disabled")).toBe(true);
+});
+
+test("« À reprendre » keeps the tickets whose PR has changes requested or a broken CI", async () => {
+  setup();
+  await userEvent.setup().click(await screen.findByRole("button", { name: "À reprendre" }));
+  expect(await screen.findByText("1 ticket · À reprendre")).toBeTruthy();
+  expect(screen.getByText("Conflits de saisie")).toBeTruthy();
+  expect(screen.queryByText("Route d'envoi des photos")).toBeNull();
+  expect(screen.queryByText("Passage à Expo SDK 54")).toBeNull();
+});
+
+test("without any sprint, « Sprint courant » is offered but disabled", async () => {
+  setup({}, (run) => run({ method: "createTicket", title: "Seul" }));
+  expect(await screen.findByText("1 ticket · Tous")).toBeTruthy();
+  const sprint = toggle("Sprint courant");
+  expect(sprint.hasAttribute("disabled")).toBe(true);
+  expect(within(sprint).getByText("0")).toBeTruthy();
+});
+
+test("an instance set to « mine » keeps narrowing the board and says so", async () => {
+  setup({ filter: "mine-and-agents" }, seed);
+  expect(await screen.findByText("5 tickets · Tous · Moi")).toBeTruthy();
+  expect(screen.queryByText("Hors filtre")).toBeNull();
+});
+
+test("the counter gives way in a narrow widget: it truncates and keeps its full text as a title", async () => {
+  setup();
+  const counter = await screen.findByText("8 tickets · Tous");
+  expect(counter.getAttribute("title")).toBe("8 tickets · Tous");
+  expect(counter.className).toContain("truncate");
+  expect(counter.className).toContain("min-w-0");
+  expect(counter.className).not.toContain("shrink-0");
+});
+
+test("in a narrow widget the toolbar drops the counts, then the label text, never the names", async () => {
+  setup();
+  const all = await screen.findByRole("button", { name: "Tous" });
+  expect(all.closest("header")?.className).toContain("@container/toolbar");
+  expect(within(all).getByText("8").className).toContain("@max-[36rem]/toolbar:hidden");
+  const label = screen.getByRole("button", { name: "Étiquette : toutes" });
+  expect(within(label).getByText("Étiquette : toutes").className).toContain("@max-[48rem]/toolbar:sr-only");
 });

@@ -1,40 +1,20 @@
-import type { Page, RpcRequest, TabTarget, TutorialState } from "@kibo/schema";
+import { deliveryBrief, type RpcRequest, type TabTarget, type TutorialState } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
-import { Check, ChevronDown, ChevronUp, GraduationCap } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Check, ChevronDown, ChevronUp, Copy, GraduationCap } from "lucide-react";
+import { useState } from "react";
 import { client } from "../api";
 import { frTutorial as t } from "../i18n/fr-tutorial";
-import { useExecutionShown } from "../state/use-app-settings";
-import { type StepView, shownSteps, stepViews } from "./tutorial-steps";
+import { type StepView, stepViews } from "./tutorial-steps";
 
 type Props = {
   state: TutorialState;
-  pages: readonly Page[];
+  copyKey: string | null;
   activeTarget: TabTarget | null;
   onOpen(target: TabTarget): void;
   onDeleteDemo(projectId: string): void;
   onClose(): void;
 };
-
-const onGraph = (state: TutorialState, target: TabTarget | null): boolean =>
-  target?.kind === "page" &&
-  target.projectId === state.projectId &&
-  target.pageId === state.seed?.graphPageId &&
-  !state.seenViews.includes("graph");
-
-function useGraphSeen(state: TutorialState, target: TabTarget | null) {
-  const sent = useRef(false);
-  const due = onGraph(state, target);
-  useEffect(() => {
-    if (!due || sent.current) return;
-    sent.current = true;
-    client.rpc({ method: "markTutorialSeen", view: "graph" }).catch((e: unknown) => {
-      sent.current = false;
-      console.error("markTutorialSeen failed", e);
-    });
-  }, [due]);
-}
 
 const dotLabel = (v: StepView): string => {
   if (v.done) return `${v.title} · ${t.stepDone}`;
@@ -61,9 +41,62 @@ function Dots({ views }: { views: StepView[] }) {
   );
 }
 
-type BodyProps = { step: StepView; send(req: RpcRequest): void; onOpen(target: TabTarget): void };
+const samePage = (a: TabTarget | null, b: TabTarget | null): boolean =>
+  a?.kind === "page" && b?.kind === "page" && a.projectId === b.projectId && a.pageId === b.pageId;
 
-function CurrentStep({ step, send, onOpen }: BodyProps) {
+type ActionProps = { step: StepView; projectId: string; copyKey: string | null; send(req: RpcRequest): void };
+
+function StepAction({ step, projectId, copyKey, send }: ActionProps) {
+  const [copyFailed, setCopyFailed] = useState(false);
+  if (step.step === "overview")
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => send({ method: "markTutorialSeen", view: "overview" })}
+      >
+        {t.read}
+      </Button>
+    );
+  if (step.step === "review")
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => send({ method: "simulateTutorialReview", projectId })}
+      >
+        {t.simulateReview}
+      </Button>
+    );
+  if (step.step !== "copy" || copyKey === null) return null;
+  const command = deliveryBrief(copyKey);
+  const copy = async () => {
+    setCopyFailed(false);
+    try {
+      await navigator.clipboard.writeText(command);
+      send({ method: "markTutorialSeen", view: "copy" });
+    } catch (e) {
+      console.warn("tutorial copy refused", e);
+      setCopyFailed(true);
+    }
+  };
+  return (
+    <>
+      <Button size="sm" variant="outline" onClick={() => void copy()}>
+        <Copy aria-hidden /> {t.copy(command)}
+      </Button>
+      {copyFailed && (
+        <p role="alert" className="basis-full text-xs text-destructive">
+          {t.copyFailed}
+        </p>
+      )}
+    </>
+  );
+}
+
+type BodyProps = ActionProps & { activeTarget: TabTarget | null; onOpen(target: TabTarget): void };
+
+function CurrentStep({ step, activeTarget, send, onOpen, ...action }: BodyProps) {
   const where = step.where;
   return (
     <div className="grid gap-3">
@@ -72,20 +105,22 @@ function CurrentStep({ step, send, onOpen }: BodyProps) {
         <p className="text-xs text-muted-foreground">{step.instruction}</p>
       </div>
       <div className="flex flex-wrap gap-2">
-        {where && (
+        {where && !samePage(where, activeTarget) && (
           <Button size="sm" onClick={() => onOpen(where)}>
             {t.goTo}
           </Button>
         )}
+        <StepAction step={step} send={send} {...action} />
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-1">
         <Button
           size="sm"
-          variant="outline"
+          variant="link"
+          className="h-auto px-0"
           onClick={() => send({ method: "skipTutorialStep", step: step.step })}
         >
           {t.skipStep}
         </Button>
-      </div>
-      <div className="flex flex-wrap gap-x-3 gap-y-1">
         <Button
           size="sm"
           variant="link"
@@ -126,12 +161,11 @@ function Finished({ onDelete, onClose }: { onDelete(): void; onClose(): void }) 
   );
 }
 
-export function TutorialPanel({ state, pages, activeTarget, onOpen, onDeleteDemo, onClose }: Props) {
+export function TutorialPanel({ state, copyKey, activeTarget, onOpen, onDeleteDemo, onClose }: Props) {
   const [open, setOpen] = useState(true);
   const [failed, setFailed] = useState(false);
-  useGraphSeen(state, activeTarget);
   const projectId = state.projectId ?? "";
-  const views = shownSteps(stepViews(state, projectId, pages), useExecutionShown());
+  const views = stepViews(state, projectId);
   const current = views.find((v) => v.current) ?? null;
   const send = (req: RpcRequest) => {
     setFailed(false);
@@ -163,7 +197,16 @@ export function TutorialPanel({ state, pages, activeTarget, onOpen, onDeleteDemo
         </Button>
       </header>
       <Dots views={views} />
-      {open && current && <CurrentStep step={current} send={send} onOpen={onOpen} />}
+      {open && current && (
+        <CurrentStep
+          step={current}
+          projectId={projectId}
+          copyKey={copyKey}
+          activeTarget={activeTarget}
+          send={send}
+          onOpen={onOpen}
+        />
+      )}
       {open && state.status === "done" && (
         <Finished onDelete={() => onDeleteDemo(projectId)} onClose={onClose} />
       )}

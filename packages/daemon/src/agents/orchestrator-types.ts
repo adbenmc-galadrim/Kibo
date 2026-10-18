@@ -22,6 +22,7 @@ import type {
   TicketView,
 } from "@kibo/schema";
 import type { CliFallbacks } from "./cli-flags";
+import type { TicketExecution } from "./execution-removed";
 import type { HookLauncher } from "./hook-launcher";
 import type { HookSink } from "./hook-route";
 import type { Notice } from "./notifier";
@@ -97,6 +98,7 @@ export type OrchestratorOptions = {
   onEndedWithoutTurn?: (run: RunView) => Promise<void>;
   turnPrefix?: TurnPrefixPort;
   locks?: () => MachineLock[];
+  ticketExecution?: TicketExecution;
 };
 
 export type AssignInput = {
@@ -123,6 +125,7 @@ export type TaskInput = {
 };
 
 export type Orchestrator = {
+  ticketExecution(): TicketExecution;
   assign(input: AssignInput): RunView;
   submit(task: TaskInput): RunView;
   startProjectRun(input: ProjectRunInput): RunView;

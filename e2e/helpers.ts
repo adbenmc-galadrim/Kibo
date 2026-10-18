@@ -1,25 +1,10 @@
 import { expect, type Page, type TestInfo } from "@playwright/test";
+import { rpc, text } from "./agents-seed";
 import { E2E_TOKEN } from "./token";
-
-export async function skipRoleStep(page: Page) {
-  await page.getByRole("button", { name: "Passer" }).click();
-}
 
 export async function openNewProject(page: Page) {
   await page.getByRole("button", { name: "Ajouter un projet" }).click();
   await page.getByRole("menuitem", { name: "Nouveau projet" }).click();
-}
-
-export async function openWorkspaceMenuItem(page: Page, item: "Composants" | "Changements") {
-  await page.locator('[data-sidebar="sidebar"]').getByRole("button").first().click();
-  await page.getByRole("menuitem", { name: item, exact: true }).click();
-}
-
-export async function openChangesInNewTab(page: Page, project: string) {
-  await page.getByRole("button", { name: "Nouvel onglet" }).click();
-  const palette = page.getByRole("dialog", { name: "Palette de commandes" });
-  await palette.getByRole("combobox").fill("changements");
-  await palette.getByRole("option", { name: `Voir les changements de ${project}` }).click();
 }
 
 export async function openNewTicketFromPalette(page: Page) {
@@ -49,13 +34,15 @@ export async function pairAndCreateProject(page: Page, info: TestInfo, key: stri
   if (info.project.name.endsWith("dark")) await expect(html).toHaveClass(/dark/);
   else await expect(html).not.toHaveClass(/dark/);
 
-  await openNewProject(page);
-  await skipRoleStep(page);
-  await page.getByLabel("Nom", { exact: true }).fill(`Kibo ${key}`);
-  await page.getByLabel("Clé").fill(key);
-  await page.getByRole("button", { name: "Créer le projet" }).click();
-  await expect(page.getByText("Projet créé")).toBeVisible();
+  await openEmptyProject(page, `Kibo ${key}`, key, null);
   await expect(page.getByRole("main")).toHaveCount(1);
+}
+
+export async function openEmptyProject(page: Page, name: string, key: string, folder: string | null) {
+  await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
+  const created = await rpc(page, { method: "createProject", name, key, folder, color: "#F97316" });
+  await page.goto(`/#/p/${encodeURIComponent(text(created, "id"))}/`);
+  await expect(page.getByText(`Projet créé : ${name}`)).toBeVisible();
 }
 
 type PageKind = "Tableau de bord" | "Vue";
@@ -68,7 +55,10 @@ async function fillNewPage(page: Page, title: string, kind: PageKind) {
 }
 
 export async function createPage(page: Page, title: string, kind: PageKind) {
-  await page.getByRole("main").getByRole("button", { name: "Nouvelle page" }).click();
+  await page.keyboard.press("ControlOrMeta+k");
+  const palette = page.getByRole("dialog", { name: "Palette de commandes" });
+  await palette.getByRole("combobox").fill("nouvelle page");
+  await palette.getByRole("option", { name: "Nouvelle page", exact: true }).click();
   await fillNewPage(page, title, kind);
 }
 

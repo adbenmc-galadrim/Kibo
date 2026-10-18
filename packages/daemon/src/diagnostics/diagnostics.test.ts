@@ -12,6 +12,7 @@ const app: AppInfo = {
   daemonPid: 1,
   uptimeMs: 5,
   fixedNow: null,
+  today: "2026-10-16",
 };
 const env: Environment = {
   app,

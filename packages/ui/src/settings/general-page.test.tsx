@@ -16,12 +16,12 @@ const BACKUP_STATUS: BackupStatus = {
 mock.module("../api", () =>
   apiMock({
     client: {
-      rpc: (req: RpcRequest) =>
-        Promise.resolve(
-          req.method === "getBackups"
-            ? { status: BACKUP_STATUS, backups: [] }
-            : { path: "/Users/adam/.local/bin/kibo", installed: false },
-        ),
+      rpc: (req: RpcRequest) => {
+        if (req.method === "getBackups") return Promise.resolve({ status: BACKUP_STATUS, backups: [] });
+        if (req.method === "getEnvironment" || req.method === "getSandboxStatus")
+          return new Promise(() => {});
+        return Promise.resolve({ path: "/Users/adam/.local/bin/kibo", installed: false });
+      },
       subscribe: () => () => undefined,
       subscribeEvents: () => () => undefined,
     },
@@ -29,20 +29,16 @@ mock.module("../api", () =>
 );
 const { GeneralPage } = await import("./GeneralPage");
 
-test("the general settings hold the application card, agent execution, the updates, the backups and the kibo command", async () => {
+test("the general settings hold the application card, the updates, the backups and the kibo command", async () => {
   render(<GeneralPage />);
   expect(screen.getByRole("heading", { level: 1, name: "Général" })).toBeTruthy();
   expect(screen.getByText("Mises à jour et outils en ligne de commande.")).toBeTruthy();
   const titles = screen
-    .getAllByText(/^(Application|Exécution des agents dans Kibo|Mises à jour|Sauvegardes|Commande kibo)$/)
+    .getAllByText(/^(Application|Mises à jour|Sauvegardes|Commande kibo|Machine)$/)
     .map((e) => e.textContent);
-  expect(titles).toEqual([
-    "Application",
-    "Exécution des agents dans Kibo",
-    "Mises à jour",
-    "Sauvegardes",
-    "Commande kibo",
-  ]);
+  expect(titles).toEqual(["Application", "Mises à jour", "Sauvegardes", "Commande kibo", "Machine"]);
+  expect(screen.queryByText("Exécution des agents dans Kibo")).toBeNull();
+  expect(screen.queryByRole("switch", { name: "Exécution des agents dans Kibo" })).toBeNull();
   expect(screen.getByText("Ce réglage vit dans l'application de bureau.")).toBeTruthy();
   expect(screen.queryByRole("combobox", { name: "Langue" })).toBeNull();
   expect(screen.queryByRole("switch", { name: "Ouvrir Kibo à l'ouverture de session" })).toBeNull();
@@ -53,11 +49,11 @@ test("the general settings hold the application card, agent execution, the updat
   expect(await screen.findByText("Non installée")).toBeTruthy();
 });
 
-test("the settings navigation marks Général and leads to the domains", async () => {
+test("the settings navigation marks Général and leads to the integrations", async () => {
   location.hash = "#/settings/general";
   render(<GeneralPage />);
   const nav = within(screen.getByRole("navigation", { name: "Paramètres" }));
   expect(nav.getByRole("link", { name: "Général" }).getAttribute("aria-current")).toBe("page");
-  await userEvent.setup().click(nav.getByRole("link", { name: "Domaines & guidelines" }));
-  expect(location.hash).toBe("#/settings/domains");
+  await userEvent.setup().click(nav.getByRole("link", { name: "Intégrations" }));
+  expect(location.hash).toBe("#/settings/integrations");
 });

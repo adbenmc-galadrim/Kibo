@@ -7,9 +7,17 @@ import {
   type RpcRequest,
   type TicketView,
 } from "@kibo/schema";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render as renderPlain, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement, ReactNode } from "react";
 import { apiMock } from "../api-mock";
+import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
+
+const shownExecution = fixedStore({ agentExecution: "shown" });
+const ShownExecution = ({ children }: { children: ReactNode }) => (
+  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
+);
+const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
@@ -50,6 +58,7 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   waitingOn: [],
   openQuestions: 0,
   startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,
@@ -83,6 +92,7 @@ const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -104,7 +114,7 @@ const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "
   },
 });
 
-const show = (main = ticket(), access: ProjectSnapshot["sync"]["access"] = "write") => {
+const show = async (main = ticket(), access: ProjectSnapshot["sync"]["access"] = "write") => {
   const onDeleted = mock(() => {});
   const onOpenTicket = mock((_id: string) => {});
   const onOpenInTab = mock(() => {});
@@ -115,13 +125,13 @@ const show = (main = ticket(), access: ProjectSnapshot["sync"]["access"] = "writ
       domains={[]}
       viewer="adam"
       onClose={() => {}}
-      onAssign={() => {}}
       onOpenInTab={onOpenInTab}
       onOpenFile={() => {}}
       onOpenTicket={onOpenTicket}
       onDeleted={onDeleted}
     />,
   );
+  await act(async () => {});
   return { onDeleted, onOpenTicket, onOpenInTab, user: userEvent.setup() };
 };
 const command = (req: RpcRequest | undefined) => (req?.method === "command" ? req.command : null);
@@ -135,8 +145,8 @@ beforeEach(() => {
   answer = () => null;
 });
 
-test("the sheet title stays a heading named after the ticket, and names the dialog", () => {
-  show();
+test("the sheet title stays a heading named after the ticket, and names the dialog", async () => {
+  await show();
   const dialog = screen.getByRole("dialog", { name: "Schéma Loro des tickets" });
   expect(dialog.className).toContain("w-full sm:max-w-[min(90vw,560px)]");
   const heading = within(dialog).getByRole("heading", { name: "Schéma Loro des tickets" });
@@ -149,13 +159,13 @@ test("the sheet title stays a heading named after the ticket, and names the dial
 });
 
 test("while the title is edited, the sheet keeps its name", async () => {
-  const { user } = show();
+  const { user } = await show();
   await user.click(screen.getByRole("button", { name: "Modifier le titre" }));
   expect(screen.getByRole("textbox", { name: "Titre" })).toBeTruthy();
   expect(screen.getByRole("dialog", { name: "Schéma Loro des tickets" })).toBeTruthy();
 });
 
-test("the tab title stays a heading named after the ticket", () => {
+test("the tab title stays a heading named after the ticket", async () => {
   const main = ticket();
   render(
     <TicketTab
@@ -166,6 +176,7 @@ test("the tab title stays a heading named after the ticket", () => {
       onOpenTicket={() => {}}
     />,
   );
+  await act(async () => {});
   const heading = screen.getByRole("heading", { level: 1, name: "Schéma Loro des tickets" });
   expect(heading.textContent).toBe("Schéma Loro des tickets");
   // Chromium names the heading after the button's aria-label, dom-accessibility-api does not.
@@ -176,7 +187,7 @@ test("the tab title stays a heading named after the ticket", () => {
 });
 
 test("the title is edited in place and saved on Enter", async () => {
-  const { user } = show();
+  const { user } = await show();
   await user.click(screen.getByRole("button", { name: "Modifier le titre" }));
   const field = screen.getByRole("textbox", { name: "Titre" });
   expect(screen.getByText("Entrée pour enregistrer · Échap pour annuler")).toBeTruthy();
@@ -194,7 +205,7 @@ test("an empty title is refused by the daemon: the error shows, the field stays,
   answer = () => {
     throw new KiboError("INVALID_INPUT", "ticket title is empty");
   };
-  const { user } = show();
+  const { user } = await show();
   await user.click(screen.getByRole("button", { name: "Modifier le titre" }));
   const field = screen.getByRole("textbox", { name: "Titre" });
   await user.clear(field);
@@ -209,7 +220,7 @@ test("an empty title is refused by the daemon: the error shows, the field stays,
 });
 
 test("the status select sends setStatus, Bloqué asks for a reason first", async () => {
-  const { user } = show();
+  const { user } = await show();
   await openSelect(user, "Statut");
   await user.click(await screen.findByRole("option", { name: "En review" }));
   expect(command(calls.at(-1))).toEqual({ method: "setStatus", ticketId: "12@1", statusId: "in_review" });
@@ -228,7 +239,7 @@ test("the status select sends setStatus, Bloqué asks for a reason first", async
 });
 
 test("the assignee select offers nobody, me and the members; an agent assignee is not editable here", async () => {
-  const { user } = show();
+  const { user } = await show();
   await openSelect(user, "Assigné");
   expect((await screen.findAllByRole("option")).map((o) => o.textContent)).toEqual([
     "Personne",
@@ -243,16 +254,16 @@ test("the assignee select offers nobody, me and the members; an agent assignee i
   });
 });
 
-test("an agent assignee shows a disabled select with the hint", () => {
-  show(ticket({ assignee: { kind: "agent", ref: "opus-dev-1" } }));
+test("an agent assignee left from the agent era reads as nobody", async () => {
+  await show(ticket({ assignee: { kind: "agent", ref: "opus-dev-1" } }));
   const select = screen.getByRole("combobox", { name: "Assigné" });
-  expect(select.getAttribute("data-disabled")).not.toBeNull();
-  expect(select.textContent).toContain("opus-dev-1");
-  expect(screen.getByText("Choisis un profil via Assigner à un agent")).toBeTruthy();
+  expect(select.getAttribute("data-disabled")).toBeNull();
+  expect(select.textContent).toBe("Personne");
+  expect(screen.queryByText("Choisis un profil via Assigner à un agent")).toBeNull();
 });
 
 test("the description is edited in a textarea and saved", async () => {
-  const { user } = show();
+  const { user } = await show();
   await user.click(screen.getByRole("button", { name: "Modifier" }));
   const field = screen.getByRole("textbox", { name: "Description" });
   await user.clear(field);
@@ -269,7 +280,7 @@ test("a description save error is shown once, inside the editor", async () => {
   answer = () => {
     throw new KiboError("NOT_FOUND", "ticket not found");
   };
-  const { user } = show();
+  const { user } = await show();
   await user.click(screen.getByRole("button", { name: "Modifier" }));
   await user.click(screen.getByRole("button", { name: "Enregistrer" }));
   await screen.findByRole("alert");
@@ -278,14 +289,14 @@ test("a description save error is shown once, inside the editor", async () => {
 });
 
 test("sub-tickets open in the sheet", async () => {
-  const { user, onOpenTicket } = show();
+  const { user, onOpenTicket } = await show();
   await user.click(screen.getByRole("button", { name: /KIB-20/ }));
   expect(onOpenTicket).toHaveBeenCalledWith("20@1");
 });
 
 test("the menu opens in a tab, copies the key and deletes after confirmation", async () => {
   answer = (req) => (command(req)?.method === "deleteTicket" ? ["12@1", "20@1", "21@1"] : null);
-  const { user, onDeleted, onOpenInTab } = show();
+  const { user, onDeleted, onOpenInTab } = await show();
   const written: string[] = [];
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
@@ -315,7 +326,7 @@ test("the menu opens in a tab, copies the key and deletes after confirmation", a
 });
 
 test("a read-only project shows the ticket without any editing control", async () => {
-  const { user } = show(ticket(), "read-only");
+  const { user } = await show(ticket(), "read-only");
   expect(screen.queryByRole("button", { name: "Modifier le titre" })).toBeNull();
   expect(screen.getByRole("heading", { name: "Schéma Loro des tickets" })).toBeTruthy();
   expect(screen.queryByRole("combobox", { name: "Statut" })).toBeNull();

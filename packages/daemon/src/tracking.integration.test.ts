@@ -173,7 +173,7 @@ test("a branch, then its PR, then its merge move the ticket and deliver its feat
 
 test("changing an app setting tells every client to reload the configuration", async () => {
   const client = await launch(tempHome());
-  await client.rpc({ method: "setAppSettings", patch: { agentExecution: "shown" } });
+  await client.rpc({ method: "setAppSettings", patch: {} });
   const isConfig = (e: unknown) => ConfigMessage.safeParse(e).success;
   await until(async () => client.events.find(isConfig), "config message");
 });

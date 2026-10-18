@@ -11,6 +11,7 @@ import {
 import { openLimitOf, type SprintView } from "@kibo/schema";
 import { useEntities, useReadOnly, useSdk } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
+import { useProject } from "@kibo/sdk/hooks/use-project";
 import { useState } from "react";
 import { bandsTimeline } from "./bands-model";
 import { DragPreview } from "./DragPreview";
@@ -23,6 +24,7 @@ import { PlanningView } from "./PlanningView";
 import { type FeatureCard, planningModel } from "./planning-model";
 import { SprintDialog } from "./SprintDialog";
 import { sprintLabel } from "./sprint-label";
+import { useNewFeatureIntent } from "./use-new-feature-intent";
 
 const COLUMN_STEP = 226;
 
@@ -34,29 +36,39 @@ export const columnSteps: KeyboardCoordinateGetter = (event, { currentCoordinate
   return { x: currentCoordinates.x + dx, y: currentCoordinates.y };
 };
 
-const pad = (n: number) => String(n).padStart(2, "0");
-export const localToday = (now = new Date()): string =>
-  `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-
 const initialLayout = (config: Record<string, unknown>): PlanningLayout =>
   config.layout === "bands" ? "bands" : "columns";
 
 type Dialog = { kind: "sprint"; sprint: SprintView | null } | { kind: "feature" } | null;
 
 export function Planning() {
+  const today = useProject()?.today;
+  return today === undefined ? null : <PlanningBoard today={today} />;
+}
+
+function PlanningBoard({ today }: { today: string }) {
   const sdk = useSdk();
   const readOnly = useReadOnly();
   const { data: tickets } = useEntities("ticket");
   const { data: links } = useEntities("link");
   const { data: sprints } = useEntities("sprint");
   const { data: questions } = useEntities("question");
-  const today = localToday();
+  const { data: events } = useEntities("project_event");
   const { tracking } = useComponentSettings();
-  const model = planningModel({ tickets, links, sprints, questions, openLimit: openLimitOf(tracking) });
+  const model = planningModel({
+    tickets,
+    links,
+    sprints,
+    questions,
+    events,
+    today,
+    openLimit: openLimitOf(tracking),
+  });
   const cards = [...model.sprints.flatMap((c) => c.cards), ...model.backlog];
   const [dragged, setDragged] = useState<FeatureCard | null>(null);
   const [target, setTarget] = useState<string | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
+  useNewFeatureIntent(readOnly, () => setDialog({ kind: "feature" }));
   const [error, setError] = useState<string | null>(null);
   const [layout, setLayout] = useState<PlanningLayout>(() => initialLayout(sdk.config));
   const chooseLayout = (next: PlanningLayout) => {
@@ -65,7 +77,16 @@ export function Planning() {
   };
   const bands =
     layout === "bands"
-      ? bandsTimeline({ tickets, links, sprints, questions, today, backlog: fr.backlog })
+      ? bandsTimeline({
+          tickets,
+          links,
+          sprints,
+          questions,
+          events,
+          today,
+          backlog: fr.backlog,
+          slipped: fr.slipped,
+        })
       : null;
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -89,6 +110,11 @@ export function Planning() {
     setDragged(null);
     setTarget(null);
   };
+  const plan = (ticketId: string, sprintId: string | null) =>
+    sdk.sprints.assign(ticketId, sprintId).then(
+      () => setError(null),
+      () => setError(fr.moveFailed(cardOf(ticketId)?.shortKey ?? "")),
+    );
   const onDragEnd = (e: DragEndEvent) => {
     stop();
     const drop = planDrop({
@@ -97,12 +123,8 @@ export function Planning() {
       cards,
     });
     if (readOnly || drop === null) return;
-    sdk.sprints.assign(drop.ticketId, drop.sprintId).then(
-      () => setError(null),
-      () => setError(fr.moveFailed(cardOf(drop.ticketId)?.shortKey ?? "")),
-    );
+    void plan(drop.ticketId, drop.sprintId);
   };
-  const current = sprints.find((s) => s.state === "current") ?? null;
   return (
     <DndContext
       sensors={sensors}
@@ -126,13 +148,19 @@ export function Planning() {
         onEditSprint={(sprint) => setDialog({ kind: "sprint", sprint })}
         onNewFeature={() => setDialog({ kind: "feature" })}
         onNewSprint={() => setDialog({ kind: "sprint", sprint: null })}
+        onPlan={(target) => plan(target.cardId, target.sprintId)}
       />
       <DragPreview>{dragged ? <FeatureCardPreview card={dragged} /> : null}</DragPreview>
       {dialog?.kind === "sprint" && (
-        <SprintDialog sprint={dialog.sprint} today={today} onClose={() => setDialog(null)} />
+        <SprintDialog
+          sprint={dialog.sprint}
+          sprints={sprints}
+          today={today}
+          onClose={() => setDialog(null)}
+        />
       )}
       {dialog?.kind === "feature" && (
-        <NewFeatureDialog sprints={sprints} sprintId={current?.id ?? null} onClose={() => setDialog(null)} />
+        <NewFeatureDialog sprints={sprints} today={today} onClose={() => setDialog(null)} />
       )}
     </DndContext>
   );

@@ -5,6 +5,7 @@ import { createLocksWatch } from "../locks/locks-watch";
 import { agentGuardOf } from "./agent-guard";
 import { activeRunOf } from "./assign-preview";
 import { assertLeaf, childrenProbe } from "./children-probe";
+import { assertTicketExecution, isTicketRun } from "./execution-removed";
 import { createHookSink } from "./hook-sink";
 import { hostSettingsOf, hostViewOf } from "./host-view";
 import { noticeFor } from "./notifier";
@@ -148,7 +149,10 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
     enqueue,
   });
 
+  const ticketExecution = opts.ticketExecution ?? "removed";
+
   return {
+    ticketExecution: () => ticketExecution,
     assign,
     submit,
     startProjectRun(input) {
@@ -162,6 +166,7 @@ export function createOrchestrator(opts: OrchestratorOptions): Orchestrator {
     preview,
     answer(runId, text) {
       const target = registry.get(runId);
+      if (isTicketRun(target)) assertTicketExecution(ticketExecution, "answer");
       if (isTerminal(target.state)) assertLeaf(childrenProbe(opts.data)(target));
       if (isTerminal(target.state) && !canResume(target, resumeContext(registry.all()))) {
         throw new KiboError("INVALID_TRANSITION", `run ${runId} cannot be resumed`);

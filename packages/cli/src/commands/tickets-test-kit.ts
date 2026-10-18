@@ -1,12 +1,15 @@
 import { tmpdir } from "node:os";
 import {
   DEFAULT_WORKFLOW,
+  type DeclareTicketRefResult,
   EMPTY_PROGRESS,
   type ExternalRef,
+  NOT_STARTED_STATUSES,
   type ProjectMeta,
   type ProjectSnapshot,
   type RpcRequest,
   type SprintView,
+  type StartReason,
   type StatusId,
   type TicketView,
 } from "@kibo/schema";
@@ -23,6 +26,8 @@ type TicketInput = {
   optional?: boolean;
   children?: number;
   refs?: ExternalRef[];
+  startable?: boolean;
+  startReason?: StartReason | null;
 };
 
 export function fakeTicket(input: TicketInput): TicketView {
@@ -52,7 +57,9 @@ export function fakeTicket(input: TicketInput): TicketView {
     waitingOn: [],
     keyLabel: input.key,
     openQuestions: 0,
-    startable: true,
+    startable:
+      input.startable ?? (NOT_STARTED_STATUSES.includes(input.statusId ?? "todo") && !input.children),
+    startReason: input.startReason ?? null,
   };
 }
 
@@ -71,6 +78,7 @@ const sprint = (
   state,
   delivered: 0,
   total: 0,
+  lingering: false,
 });
 
 export const EMIS_META: ProjectMeta = {
@@ -85,6 +93,7 @@ export const EMIS_META: ProjectMeta = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
 };
 
 export const SPRINTS: SprintView[] = [
@@ -117,19 +126,43 @@ export function fakeSnapshot(
     questions: [],
     questionRecipients: [],
     sprints,
+    viewer: "u-me",
   };
   return partial as never;
 }
 
-export function fakeDaemon(tickets: TicketView[] = TICKETS, sprints: SprintView[] = SPRINTS) {
+type Declare = Extract<RpcRequest, { method: "declareTicketRef" }>;
+export type FakeDaemonOptions = {
+  projects?: ProjectMeta[];
+  declared?: (req: Declare, ticket: TicketView) => DeclareTicketRefResult;
+};
+
+const unchanged = (_req: Declare, ticket: TicketView): DeclareTicketRefResult => ({
+  ticket,
+  statusChanged: false,
+});
+
+export function fakeDaemon(
+  tickets: TicketView[] = TICKETS,
+  sprints: SprintView[] = SPRINTS,
+  options: FakeDaemonOptions = {},
+) {
   const calls: RpcRequest[] = [];
+  const declared = options.declared ?? unchanged;
   const client: DaemonClient = {
     async rpc(req) {
       const sent: RpcRequest = req;
       calls.push(sent);
-      if (sent.method === "listProjects") return [EMIS_META] as never;
+      if (sent.method === "listProjects") return (options.projects ?? [EMIS_META]) as never;
       if (sent.method === "getProject") return fakeSnapshot(tickets, sprints) as never;
       if (sent.method === "command") return {} as never;
+      if (sent.method === "getNotesDir") return { dir: tmpdir() } as never;
+      if (sent.method === "listNotes") return [] as never;
+      if (sent.method === "declareTicketRef") {
+        const ticket = tickets.find((t) => t.key === sent.ticketKey);
+        if (!ticket) throw new Error(`unknown ${sent.ticketKey}`);
+        return declared(sent, ticket) as never;
+      }
       throw new Error(`unexpected ${sent.method}`);
     },
     async close() {},
@@ -138,5 +171,7 @@ export function fakeDaemon(tickets: TicketView[] = TICKETS, sprints: SprintView[
   const err: string[] = [];
   const io = { home: tmpdir(), out: (l: string) => out.push(l), err: (l: string) => err.push(l) };
   const commands = () => calls.flatMap((c) => (c.method === "command" ? [c.command] : []));
-  return { client, calls, commands, out, err, io, connect: async () => client };
+  const declarations = () =>
+    calls.flatMap((c) => (c.method === "declareTicketRef" ? [{ ticketKey: c.ticketKey, ref: c.ref }] : []));
+  return { client, calls, commands, declarations, out, err, io, connect: async () => client };
 }

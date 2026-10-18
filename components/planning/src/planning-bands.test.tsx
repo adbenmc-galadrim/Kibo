@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, expect, setSystemTime, test } from "bun:test";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { bandsToday } from "./bands-model";
+import { bandsToday, startsIn } from "./bands-model";
 import { column, setupPlanning } from "./planning-kit";
 import { TODAY } from "./test-seed";
+
+const DAY_AFTER = "2026-10-17";
 
 beforeEach(() => setSystemTime(new Date(`${TODAY}T14:52:00`)));
 afterEach(() => setSystemTime());
@@ -41,6 +43,17 @@ test("bands: one column per sprint then the backlog, one row per open feature", 
   expect(rowKeys(frise)).toEqual(["F4", "F5", "F6", "F8", "F7", "F9"]);
   expect(frise.querySelector("[data-current]")?.textContent).toContain("S42");
   expect(tones(frise, "F4")).toEqual(["done", "done", "done", "review", "todo"]);
+  expect(tones(frise, "F5")).toEqual(["done", "review", "progress", "todo", "todo"]);
+  expect(within(frise).queryByText("glisse en S43")).toBeNull();
+  expect(within(frise).getByText("bloquée · Q14")).toBeTruthy();
+  expect(screen.getByText("Glisse en Colonnes pour planifier")).toBeTruthy();
+  expect(screen.queryByRole("region", { name: /^S42 / })).toBeNull();
+});
+
+test("bands: from the day after its sprint, a late feature slips into the next sprint", async () => {
+  setSystemTime(new Date(`${DAY_AFTER}T09:00:00`));
+  setupPlanning(DAY_AFTER, bands);
+  const frise = await timeline();
   expect(tones(frise, "F5")).toEqual([
     "done",
     "review",
@@ -52,10 +65,7 @@ test("bands: one column per sprint then the backlog, one row per open feature", 
     "slipped",
     "slipped",
   ]);
-  expect(within(frise).getByText("glisse en S43")).toBeTruthy();
-  expect(within(frise).getByText("bloquée · Q14")).toBeTruthy();
-  expect(screen.getByText("Glisse en Colonnes pour planifier")).toBeTruthy();
-  expect(screen.queryByRole("region", { name: /^S42 / })).toBeNull();
+  expect(within(frise).getAllByText("glisse en S43").length).toBeGreaterThan(0);
 });
 
 test("the header shrinks its texts and wraps its actions under the title rather than overflowing", async () => {
@@ -100,4 +110,48 @@ test("today sits in its sprint, on the edge of the next one between two sprints,
   expect(bandsToday(sprints, "2026-10-01")).toBe(0);
   expect(bandsToday(sprints, "2026-10-17")).toBeNull();
   expect(bandsToday([], "2026-10-10")).toBeNull();
+});
+
+test("before the first sprint, the bands count the days until it starts", () => {
+  const sprints = [{ start: "2026-10-05", end: "2026-10-09" }];
+  expect(startsIn(sprints, "2026-10-01")).toBe(4);
+  expect(startsIn(sprints, "2026-10-05")).toBeNull();
+  expect(startsIn([], "2026-10-01")).toBeNull();
+});
+
+test("bands before S1: « commence dans n j » on the left, no today line over the rows", async () => {
+  setSystemTime(new Date("2026-10-01T09:00:00"));
+  setupPlanning("2026-10-01", bands);
+  const frise = await timeline();
+  expect(screen.getByText("commence dans 4 j")).toBeTruthy();
+  expect(within(frise).queryByText("aujourd'hui")).toBeNull();
+});
+
+test("bands: an at-risk row is amber, a late one red, a slipped one says where from", async () => {
+  setupPlanning(TODAY, {
+    ...bands,
+    journal: ({ features }) => [
+      {
+        id: 1,
+        projectId: "p",
+        at: new Date(`${TODAY}T09:00:00`).getTime(),
+        kind: "sprint_set",
+        ticketId: features.f8.root.id,
+        featureId: features.f8.root.id,
+        source: "user",
+        data: { from: "S42", to: "S43" },
+      },
+    ],
+  });
+  const frise = await timeline();
+  const mark = (key: string) => frise.querySelector(`[data-feature="${key}"]`)?.getAttribute("data-mark");
+  expect([mark("F5"), mark("F4"), mark("F8")]).toEqual(["risk", null, null]);
+  expect(within(frise).getByText("glissée de S42")).toBeTruthy();
+});
+
+test("bands: from the day after its sprint, a late row is red", async () => {
+  setSystemTime(new Date(`${DAY_AFTER}T09:00:00`));
+  setupPlanning(DAY_AFTER, bands);
+  const frise = await timeline();
+  expect(frise.querySelector('[data-feature="F5"]')?.getAttribute("data-mark")).toBe("late");
 });

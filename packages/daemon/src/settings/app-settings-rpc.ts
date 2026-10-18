@@ -1,4 +1,5 @@
 import { AppSettingsPatch, type ChangeMessage, KiboError, type RpcRequest } from "@kibo/schema";
+import { refuseTicketExecution } from "../agents/execution-removed";
 import { type RpcContext, type RpcExtension, requireLocal } from "../rpc-extensions";
 import type { AppSettingsStore } from "./app-settings-store";
 
@@ -7,6 +8,7 @@ type AppSettingsRpcDeps = { store: AppSettingsStore; emit(message: ChangeMessage
 function parsePatch(patch: unknown): AppSettingsPatch {
   const parsed = AppSettingsPatch.safeParse(patch);
   if (!parsed.success) throw new KiboError("INVALID_INPUT", `invalid app settings: ${parsed.error.message}`);
+  if (parsed.data.agentExecution !== undefined) refuseTicketExecution("setAppSettings");
   return parsed.data;
 }
 

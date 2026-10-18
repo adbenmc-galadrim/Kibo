@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Environment } from "./ai";
 import { APP_VERSION } from "./app-version";
+import { SprintDate } from "./sprint";
 
 export const AppPlatform = z.enum(["darwin", "linux"]);
 export type AppPlatform = z.infer<typeof AppPlatform>;
@@ -19,6 +20,7 @@ export const AppInfo = z.object({
   daemonPid: z.number().int().positive(),
   uptimeMs: z.number().int().nonnegative(),
   fixedNow: z.string().nullable().default(null),
+  today: SprintDate,
 });
 export type AppInfo = z.infer<typeof AppInfo>;
 

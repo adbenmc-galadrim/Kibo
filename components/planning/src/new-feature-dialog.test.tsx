@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, setSystemTime, test } from "bun:test";
-import { screen, waitFor, within } from "@testing-library/react";
+import type { ProjectCommand, Spotlight } from "@kibo/schema";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { stepTitles } from "./NewFeatureDialog";
 import { cardIn, setupPlanning } from "./planning-kit";
@@ -14,12 +15,11 @@ test("steps are one per line, blank lines ignored", () => {
 
 const openDialog = async () => {
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Ajouter" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Nouvelle fonctionnalité" }));
+  await user.click(await screen.findByRole("button", { name: "Fonctionnalité" }));
   return { user, dialog: await screen.findByRole("dialog") };
 };
 
-test("a new feature is created with its steps in order, the last demo optional, in the chosen sprint", async () => {
+test("a new feature is created with its steps in order, all required by default, in the chosen sprint", async () => {
   const { m, seeded } = setupPlanning();
   const { user, dialog } = await openDialog();
   await user.type(within(dialog).getByLabelText("Nom"), "Signer un PV");
@@ -29,24 +29,44 @@ test("a new feature is created with its steps in order, the last demo optional, 
   await user.clear(steps);
   await user.type(steps, "Écran de signature{Enter}Export PDF{Enter}Démo client");
   expect(
-    within(dialog).getByRole("checkbox", { name: "Dernière étape facultative" }).getAttribute("data-state"),
+    within(dialog)
+      .getByRole("checkbox", { name: "Dernière étape requise pour livrer" })
+      .getAttribute("data-state"),
   ).toBe("checked");
+  expect(within(dialog).queryByText("Dernière étape facultative")).toBeNull();
   await user.click(within(dialog).getByRole("button", { name: "Créer la fonctionnalité" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   const tickets = m.snapshot().tickets;
   const root = tickets.find((t) => t.title === "Signer un PV");
   expect(root?.description).toBe("Le PV est signé sur la tablette.");
+  expect([root?.key, root?.shortKey]).toEqual(["F10", "F10"]);
   expect(root?.sprintId).toBe(seeded.sprints.s44.id);
   const children = tickets.filter((t) => t.parentId === root?.id);
   expect(children.map((t) => [t.title, t.optional])).toEqual([
     ["Écran de signature", false],
     ["Export PDF", false],
-    ["Démo client", true],
+    ["Démo client", false],
   ]);
   expect(await cardIn(/^S44 /, root?.shortKey ?? "")).toBeTruthy();
 });
 
-test("the last step stays mandatory when unchecked, and a feature needs a step", async () => {
+test("the feature is created as such: createTicket { title, feature: true }", async () => {
+  const { m } = setupPlanning();
+  const sent: ProjectCommand[] = [];
+  const run = m.sdk.run.bind(m.sdk);
+  m.sdk.run = (cmd) => {
+    sent.push(cmd);
+    return run(cmd);
+  };
+  const { user, dialog } = await openDialog();
+  await user.type(within(dialog).getByLabelText("Nom"), "Signer un PV");
+  await user.click(within(dialog).getByRole("button", { name: "Créer la fonctionnalité" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  expect(sent[0]).toEqual({ method: "createTicket", title: "Signer un PV", description: "", feature: true });
+  expect(await cardIn(/^S42 /, "F10")).toBeTruthy();
+});
+
+test("unchecking « requise pour livrer » makes the last step optional, and a feature needs a step", async () => {
   const { m } = setupPlanning();
   const { user, dialog } = await openDialog();
   await user.type(within(dialog).getByLabelText("Nom"), "Sans démo");
@@ -55,12 +75,12 @@ test("the last step stays mandatory when unchecked, and a feature needs a step",
   expect(create.hasAttribute("disabled")).toBe(true);
   expect(within(dialog).getByRole("alert").textContent).toBe("Ajoute au moins une étape.");
   await user.type(within(dialog).getByLabelText("Étapes, une par ligne"), "Une seule");
-  await user.click(within(dialog).getByRole("checkbox", { name: "Dernière étape facultative" }));
+  await user.click(within(dialog).getByRole("checkbox", { name: "Dernière étape requise pour livrer" }));
   await user.click(create);
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   const root = m.snapshot().tickets.find((t) => t.title === "Sans démo");
   const [only] = m.snapshot().tickets.filter((t) => t.parentId === root?.id);
-  expect(only?.optional).toBe(false);
+  expect(only?.optional).toBe(true);
 });
 
 test("a retry after a partial failure finishes the same feature, without duplicates", async () => {
@@ -92,6 +112,42 @@ test("a retry after a partial failure finishes the same feature, without duplica
   expect(tickets.filter((t) => t.parentId === roots[0]?.id).map((t) => [t.title, t.optional])).toEqual([
     ["Écran de signature", false],
     ["Export PDF", false],
-    ["Démo client", true],
+    ["Démo client", false],
   ]);
+});
+
+test("on the Saturday after S42, the first sprint not ended is proposed and S42 says it is over", async () => {
+  setSystemTime(new Date("2026-10-17T10:00:00"));
+  const { seeded } = setupPlanning("2026-10-17");
+  const { dialog } = await openDialog();
+  const select = within(dialog).getByLabelText<HTMLSelectElement>("Sprint");
+  expect(select.value).toBe(seeded.sprints.s43.id);
+  const labels = Array.from(select.options).map((o) => o.textContent);
+  expect(labels).toEqual([
+    "À planifier",
+    "S41 Accès (terminé)",
+    "S42 Terrain hors ligne (terminé)",
+    "S43 Import et soudures",
+    "S44 Rapports",
+  ]);
+});
+
+test("once every sprint is over, a new feature goes to À planifier", async () => {
+  setupPlanning("2026-11-02");
+  const { dialog } = await openDialog();
+  expect(within(dialog).getByLabelText<HTMLSelectElement>("Sprint").value).toBe("");
+});
+
+test("an intent for a new feature opens the dialog, once per request", async () => {
+  const { m } = setupPlanning();
+  await screen.findByRole("button", { name: "Fonctionnalité" });
+  const intent: Spotlight = { kind: "newFeature" };
+  act(() => m.setSpotlight(intent));
+  const dialog = await screen.findByRole("dialog", { name: "Nouvelle fonctionnalité" });
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(dialog.isConnected).toBe(false));
+  act(() => m.setSpotlight(intent));
+  expect(screen.queryByRole("dialog")).toBeNull();
+  act(() => m.setSpotlight({ kind: "newFeature" }));
+  expect(await screen.findByRole("dialog", { name: "Nouvelle fonctionnalité" })).toBeTruthy();
 });

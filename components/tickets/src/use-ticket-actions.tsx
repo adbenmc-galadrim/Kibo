@@ -6,19 +6,13 @@ import {
   type TicketRun,
   type TicketView,
 } from "@kibo/schema";
-import {
-  copyDeliveryCommand,
-  menuDeliverEntry,
-  useDeliverFlow,
-  useDeliveryAgentKnown,
-  useReadOnly,
-  useSdk,
-} from "@kibo/sdk";
+import { menuDeliverEntry, useDeliverFlow, useDeliveryAgentKnown, useReadOnly, useSdk } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { ReasonDialog } from "@kibo/sdk/ui/reason-dialog";
 import { type ReactNode, useState } from "react";
+import { AttachFeatureDialog, attachTargets, canAttach } from "./AttachFeatureDialog";
 import { fr } from "./fr";
 import { descendantCount, ticketMenuEntries } from "./ticket-menu";
 
@@ -41,6 +35,7 @@ export function useTicketActions(
   const { agentExecution } = useComponentSettings();
   const [blocking, setBlocking] = useState<TicketView | null>(null);
   const [removing, setRemoving] = useState<TicketView | null>(null);
+  const [attaching, setAttaching] = useState<TicketView | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const attempt = async (cmd: ProjectCommand, failure: string): Promise<boolean> => {
@@ -73,9 +68,14 @@ export function useTicketActions(
       }),
       execution: agentExecution,
       texts: fr,
+      sdk,
+      canAttach: canAttach(t),
       actions: {
         deliver: (mode) => delivery.deliver(t, mode),
-        copyDelivery: (command) => void copyDeliveryCommand(command),
+        attach: () => {
+          setError(null);
+          setAttaching(t);
+        },
         open: () => sdk.openTicket(t.id),
         setStatus: (statusId) => setStatus(t, statusId),
         newSubTicket: () => sdk.openNewTicket({ parentId: t.id }),
@@ -107,6 +107,25 @@ export function useTicketActions(
         />
       )}
       {delivery.dialog}
+      {attaching && (
+        <AttachFeatureDialog
+          ticket={attaching}
+          features={attachTargets(all)}
+          error={error}
+          onClose={() => setAttaching(null)}
+          onAttach={(feature) =>
+            void attempt(
+              {
+                method: "moveTicket",
+                ticketId: attaching.id,
+                parentId: feature.id,
+                index: all.filter((x) => x.parentId === feature.id).length,
+              },
+              fr.attach.failed(attaching.keyLabel),
+            ).then((ok) => ok && setAttaching(null))
+          }
+        />
+      )}
       {removing && (
         <ConfirmDialog
           open
@@ -122,5 +141,10 @@ export function useTicketActions(
       )}
     </>
   );
-  return { attempt, entriesFor, error: delivery.error ?? (error && !blocking ? error : null), dialogs };
+  return {
+    attempt,
+    entriesFor,
+    error: delivery.error ?? (error && !blocking && !attaching ? error : null),
+    dialogs,
+  };
 }

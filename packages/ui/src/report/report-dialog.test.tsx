@@ -14,6 +14,7 @@ const app: Diagnostics["app"] = {
   daemonPid: 7,
   uptimeMs: 0,
   fixedNow: null,
+  today: "2026-10-16",
 };
 const DIAG: Diagnostics = {
   app,

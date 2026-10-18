@@ -8,8 +8,8 @@ type Props = { project: ProjectSnapshot; sprintId: string; onOpenTicket(ticketId
 
 export function SprintTab({ project, sprintId, onOpenTicket }: Props) {
   const v = useSprintView(project, sprintId);
-  if (!v.sprint || !v.timing)
-    return <p className="p-8 text-sm text-muted-foreground">{frNavTracking.missingSprint}</p>;
+  if (!v.sprint) return <p className="p-8 text-sm text-muted-foreground">{frNavTracking.missingSprint}</p>;
+  if (!v.timing) return null;
   return (
     <div className="mx-auto w-full max-w-[640px]">
       <SprintDetail

@@ -178,6 +178,17 @@ describe("buildProjectAgentPrompt and the agent execution", () => {
     expect(prompt).not.toContain("liens, agents, réponses");
   });
 
+  test("hidden by default: the reason is stated without an explicit setting", () => {
+    const input = {
+      projectName: "Emis",
+      chain: [],
+      memoryPath: MEMORY_NOTE_PATH,
+      viewer: "adam",
+      agentBody: "",
+    };
+    expect(buildProjectAgentPrompt(input)).toContain("Exécution des agents masquée");
+  });
+
   test("shown: the protocol lists agents and answers again", () => {
     const prompt = promptWith("shown");
     expect(prompt).toContain("liens, agents, réponses");

@@ -1,15 +1,12 @@
-import type { Environment, SandboxStatus } from "@kibo/schema";
+import type { Environment } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Check, Folder, GraduationCap, Plus, RotateCw, TriangleAlert } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frAi } from "../i18n/fr-ai";
-import { frSecurity } from "../i18n/fr-security";
-import { sandboxStopped } from "../lib/sandbox-problem";
-import { useRpcQuery } from "../state/use-rpc-query";
 import { WorkspaceMark } from "./WorkspaceMark";
-import { agentsBlocked, type CheckState, type CheckView, welcomeChecks } from "./welcome-checks";
+import { type CheckState, type CheckView, welcomeChecks } from "./welcome-checks";
 
 type RowProps = { check: CheckView; action?: ReactNode; onRetry: () => void };
 
@@ -110,12 +107,6 @@ function useEnvironment(): EnvironmentQuery {
   return { env, error, reload };
 }
 
-function subtitleOf(checks: CheckView[], sandbox: SandboxStatus | null): string {
-  if (agentsBlocked(checks)) return frAi.welcome.failed;
-  if (sandbox && sandboxStopped(sandbox)) return frSecurity.welcome.subtitle;
-  return frAi.welcome.subtitle;
-}
-
 type Props = {
   onCreate: () => void;
   onImport: () => void;
@@ -125,13 +116,7 @@ type Props = {
 
 export function Welcome({ onCreate, onImport, onConnectGithub, onTutorial }: Props) {
   const { env, error, reload } = useEnvironment();
-  const sandboxQuery = useRpcQuery({ method: "getSandboxStatus" }, ["sandbox.changed"]);
-  const sandbox = sandboxQuery.data;
-  const checks = env ? welcomeChecks(env, sandbox) : [];
-  const retry = () => {
-    reload();
-    sandboxQuery.reload();
-  };
+  const checks = env ? welcomeChecks(env) : [];
   return (
     <main className="grid min-h-full place-items-center bg-background p-6">
       <div className="grid w-full max-w-2xl justify-items-center gap-6 text-center">
@@ -140,10 +125,10 @@ export function Welcome({ onCreate, onImport, onConnectGithub, onTutorial }: Pro
         </span>
         <div className="grid gap-2">
           <h1 className="text-2xl font-semibold">{frAi.welcome.title}</h1>
-          <p className="text-sm text-muted-foreground">{subtitleOf(checks, sandbox)}</p>
+          <p className="text-sm text-muted-foreground">{frAi.welcome.subtitle}</p>
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
-        {env && <EnvironmentChecks checks={checks} onRetry={retry} onConnectGithub={onConnectGithub} />}
+        {env && <EnvironmentChecks checks={checks} onRetry={reload} onConnectGithub={onConnectGithub} />}
         <div className="flex flex-wrap justify-center gap-3">
           <Button variant="secondary" onClick={onTutorial}>
             <GraduationCap className="size-4" /> {frAi.welcome.tutorial}

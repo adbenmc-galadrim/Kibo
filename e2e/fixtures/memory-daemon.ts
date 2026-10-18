@@ -42,6 +42,7 @@ const meta = (id: string, key: string, name: string, folder: string | null, colo
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
 });
 
 export function createMemoryDaemon(user: string, today: string): MemoryDaemon {

@@ -1,6 +1,9 @@
 import { useDraggable } from "@dnd-kit/core";
 import { cn } from "@kibo/sdk/lib/utils";
-import { GripVertical } from "lucide-react";
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from "@kibo/sdk/ui/context-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sdk/ui/dropdown-menu";
+import { ContextMenuEntries, DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
+import { Ellipsis, GripVertical } from "lucide-react";
 import { FeatureBadge } from "./FeatureBadge";
 import { fr } from "./fr";
 import { PenpotStroke } from "./PenpotStroke";
@@ -34,11 +37,30 @@ function CardFooter({ card }: { card: Card }) {
   );
 }
 
-type BodyProps = { card: Card; preview?: boolean; onOpen?: () => void };
+type BodyProps = { card: Card; preview?: boolean; onOpen?: () => void; menu?: readonly MenuEntry[] };
+
+function CardMenu({ card, entries }: { card: Card; entries: readonly MenuEntry[] }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          aria-label={fr.cardActions(card.shortKey)}
+          className="grid size-[14px] shrink-0 place-items-center rounded-[3px] text-(--tracking-dim) opacity-0 hover:text-(--tracking-fg) focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100"
+        >
+          <Ellipsis absoluteStrokeWidth size={13} aria-hidden />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuEntries entries={entries} />
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
 const TITLE_CLASS = "line-clamp-2 text-left font-medium text-[13px] leading-[16px]";
 
-export function FeatureCardBody({ card, preview = false, onOpen }: BodyProps) {
+export function FeatureCardBody({ card, preview = false, onOpen, menu }: BodyProps) {
   const tone = card.muted ? "text-(--tracking-mfg)" : "text-(--tracking-fg)";
   return (
     <>
@@ -51,7 +73,13 @@ export function FeatureCardBody({ card, preview = false, onOpen }: BodyProps) {
         />
         <span className="font-mono text-(--tracking-dim) text-[11px] leading-[14px]">{card.shortKey}</span>
         {!preview && <FeatureBadge badge={card.badge} />}
+        {menu && menu.length > 0 && <CardMenu card={card} entries={menu} />}
       </div>
+      {card.slipped !== null && (
+        <span data-slot="slipped" className="-mt-1 text-(--tracking-dim) text-[11px] leading-[14px]">
+          {fr.slipped(card.slipped)}
+        </span>
+      )}
       {onOpen ? (
         <button
           type="button"
@@ -70,11 +98,11 @@ export function FeatureCardBody({ card, preview = false, onOpen }: BodyProps) {
   );
 }
 
-type Props = { card: Card; readOnly: boolean; onOpen: () => void };
+type Props = { card: Card; readOnly: boolean; onOpen: () => void; menu: readonly MenuEntry[] };
 
-export function FeatureCard({ card, readOnly, onOpen }: Props) {
+export function FeatureCard({ card, readOnly, onOpen, menu }: Props) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: card.id, disabled: readOnly });
-  return (
+  const article = (
     <article
       ref={setNodeRef}
       {...attributes}
@@ -83,15 +111,24 @@ export function FeatureCard({ card, readOnly, onOpen }: Props) {
       data-key={card.shortKey}
       className={cn(
         CARD_CLASS,
-        "relative",
+        "group relative",
         card.late ? "border-transparent" : "border-(--tracking-border)",
         !readOnly && "cursor-grab touch-none",
         isDragging && "opacity-40",
       )}
     >
-      <FeatureCardBody card={card} onOpen={onOpen} />
+      <FeatureCardBody card={card} onOpen={onOpen} menu={menu} />
       {card.late && <PenpotStroke color="var(--tracking-red)" radius={8} border={1} />}
     </article>
+  );
+  if (menu.length === 0) return article;
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>{article}</ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuEntries entries={menu} />
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
 

@@ -4,6 +4,7 @@ import { Textarea } from "@kibo/sdk/ui/textarea";
 import { useState } from "react";
 import { fr } from "../i18n/fr";
 import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
+import { frTicketTracking as tt } from "../i18n/fr-ticket-tracking";
 import type { TicketCommand } from "./use-ticket-command";
 
 type Props = {
@@ -20,11 +21,22 @@ export function DescriptionEditor({ ticketId, description, editable, command, on
     if (draft === null) return;
     if (await command.run({ method: "updateTicket", ticketId, description: draft })) setDraft(null);
   };
+  if (!description && !editable) return null;
+  const empty = !description && draft === null;
   return (
-    <section className="grid gap-2 px-4 text-sm">
+    <section className="grid gap-2 text-sm">
       <div className="flex items-center gap-2">
-        <h3 className="text-xs font-medium">{fr.ticket.description}</h3>
-        {editable && draft === null && (
+        <h3 className="text-[13px] font-semibold">{fr.ticket.description}</h3>
+        {empty && (
+          <span className="flex items-center gap-1 text-[12.5px] text-muted-foreground">
+            {tt.noDescription}
+            <span aria-hidden>·</span>
+            <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={() => setDraft("")}>
+              {tt.addDescription}
+            </Button>
+          </span>
+        )}
+        {editable && description && draft === null && (
           <Button
             size="sm"
             variant="ghost"
@@ -36,9 +48,11 @@ export function DescriptionEditor({ ticketId, description, editable, command, on
         )}
       </div>
       {draft === null ? (
-        <p className="whitespace-pre-wrap text-muted-foreground">
-          {description ? <LinkifiedText text={description} onOpen={onOpenFile} /> : "-"}
-        </p>
+        description && (
+          <p className="whitespace-pre-wrap text-muted-foreground">
+            <LinkifiedText text={description} onOpen={onOpenFile} />
+          </p>
+        )
       ) : (
         <div className="grid gap-2">
           <Textarea

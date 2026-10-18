@@ -67,7 +67,6 @@ test("the Vue d'ensemble leads Emis and opens a feature, the sprint and a questi
 
   const next = section(page, "Prochaine à finir");
   await next.getByRole("button", { name: "Copier" }).click();
-  await expect(page.getByText("Commande copiée")).toBeAttached();
   expect(await clipboardText(page)).toBe("/full-delivery EMIS-45");
 
   const activity = section(page, "Activité");
@@ -79,7 +78,7 @@ test("the Vue d'ensemble leads Emis and opens a feature, the sprint and a questi
   const rows = activity.getByRole("listitem");
   await expect(rows.first()).toBeVisible();
   for (const label of await rows.allTextContents()) expect(label).toMatch(/PR #\d+|Branche/);
-  await expect(activity.getByText(/Lot n° 7|Étape 7/)).toHaveCount(0);
+  await expect(activity.getByText(/Lot n° 7|Phase 7\/12/)).toHaveCount(0);
 
   await section(page, "Sprint S42 · Terrain hors ligne")
     .getByRole("button", { name: "Saisir un tronçon hors ligne" })
@@ -105,8 +104,9 @@ test("the Graphe shows Emis in sprint columns, then in waves", async ({ page }) 
     await expect(lanes.getByRole("group", { name: lane })).toBeVisible();
   await expect(lanes.getByRole("group", { name: "À planifier" })).toBeVisible();
   const f5 = lanes.getByRole("article", { name: /^F5 / });
-  await expect(f5).toHaveAttribute("data-late", "true");
-  await expect(f5).toContainText("en retard · glisse en S43");
+  await expect(f5).toBeVisible();
+  await expect(f5).not.toHaveAttribute("data-late", "true");
+  await expect(f5).not.toContainText("glisse en S43");
 
   const f1 = lanes.getByRole("article", { name: /^F1 / });
   await expect(f1.getByText("Application Azure")).toHaveCount(0);
@@ -195,6 +195,8 @@ test("the sprint sheet carries the report of F5 to S43, and the batch turns part
   await page.keyboard.press("Escape");
 
   await openEmisPage(page, "Planning");
+  const columns = page.getByRole("group", { name: "Disposition" }).getByRole("button", { name: "Colonnes" });
+  if ((await columns.getAttribute("aria-pressed")) !== "true") await columns.click();
   await expect(
     page.getByRole("region", { name: "S43 Import et soudures" }).getByRole("button", { name: /^F5 / }),
   ).toBeVisible();

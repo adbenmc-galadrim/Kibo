@@ -51,6 +51,7 @@ const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   waitingOn: [],
   openQuestions: 0,
   startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,
@@ -140,6 +141,7 @@ const project = (main: TicketView): ProjectSnapshot => ({
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -163,7 +165,6 @@ const showSheet = (main: TicketView) =>
       domains={[]}
       viewer="adam"
       onClose={() => {}}
-      onAssign={() => {}}
       onOpenInTab={() => {}}
       onOpenFile={() => {}}
       onOpenTicket={() => {}}

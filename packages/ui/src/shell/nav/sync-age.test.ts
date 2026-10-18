@@ -63,3 +63,14 @@ test("the chip reads Synchronisé with its age, or the inactive state alone", ()
   expect(syncChipText({ kind: "offline" })).toEqual({ label: "Hors ligne", age: null });
   expect(syncChipText({ kind: "error" })).toEqual({ label: "Erreur de sync", age: null });
 });
+
+test("daemon unreachable: Hors connexion · reconnexion…, then Synchronisé once it is back", () => {
+  const offline = syncState(status(NOW - 60_000), "emis", NOW, "hidden", false);
+  expect(offline).toEqual({ kind: "reconnecting" });
+  expect(syncChipText(offline)).toEqual({ label: "Hors connexion · reconnexion…", age: null });
+  expect(syncState(null, "emis", NOW, "hidden", false)).toEqual({ kind: "reconnecting" });
+  expect(syncChipText(syncState(status(NOW - 60_000), "emis", NOW, "hidden", true))).toEqual({
+    label: "Synchronisé",
+    age: "il y a 1 min",
+  });
+});

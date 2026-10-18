@@ -128,7 +128,7 @@ function guidelineLines(chain: readonly Guideline[]): string[] {
 export function buildProjectAgentPrompt(input: ProjectAgentPromptInput): string {
   return `${[
     ...agentLines(input),
-    ...protocolLines(input.viewer, input.agentExecution ?? "shown"),
+    ...protocolLines(input.viewer, input.agentExecution ?? "hidden"),
     ...memoryLines(input.memoryPath),
     ...signalLines(),
     ...skillLines(),

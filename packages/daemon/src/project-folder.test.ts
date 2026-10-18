@@ -8,6 +8,7 @@ import {
   LOCAL_STORYBOOK_KEY,
   LOCAL_WORKTREE_KEY,
   localDuplication,
+  localFolder,
   localStorybook,
   storybookSettingsOf,
   withLocalSettings,
@@ -25,6 +26,7 @@ const meta = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
 };
 
 test("a shared project gets its folder back from the local settings", () => {
@@ -139,4 +141,16 @@ test("duplication settings come from the local settings only, corrupt ones fall 
   } finally {
     warn.mockRestore();
   }
+});
+
+test("the local folder wins, and a shared project never falls back on the folder of its doc", () => {
+  const db = new Database(":memory:", { strict: true });
+  ensureSettingsTable(db);
+  const settings = createProjectSettings(db);
+  const withDocFolder = { ...meta, folder: "/doc" };
+  expect(localFolder(settings, withDocFolder, false)).toBe("/doc");
+  expect(localFolder(settings, withDocFolder, true)).toBeNull();
+  settings.set("p1", LOCAL_FOLDER_KEY, "/local");
+  expect(localFolder(settings, withDocFolder, false)).toBe("/local");
+  expect(localFolder(settings, withDocFolder, true)).toBe("/local");
 });

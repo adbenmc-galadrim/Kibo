@@ -40,4 +40,15 @@ S.exportPiste = async (x) => { await S.page(S.PAGES[x]); await S.wait(1500); con
     const n = b.name[1], mode = /\(clair\)$/.test(b.name) ? "light" : "dark";
     out.push(await S.exportPng(b, `piste-${x}-${S.FILES[n]}-${mode}.png`)); }
   return out; };
+// Phase 27 : boards à partir de y = 8 000 de la page « Proposition » ⇒ proposition-<écran>-<dark|light>.png
+S.Y27 = 8000;
+Object.assign(S.NAMES, { "p-vue3": "P1 bis v3 · ", "p-commencer": "P1 bis v3 · Pour commencer", "p-nouveau": "P6 · ", "p-kanban": "P7 · ", "p-fiche": "P8 · ",
+  "p-fiche-act": "P8b · ", "p-questions": "P9 · ", "p-barre": "Barre repliée · ", "p-agent-q": "Agent · question", "p-agent-recap": "Agent · récapitulatif", "p-vue3-retard": "P1 bis v3 · En retard" });
+S.FILES27 = { "P1 bis v3 · Vue d'ensemble": "vue-ensemble-v3", "P1 bis v3 · En retard au 18 oct.": "vue-ensemble-v3-retard", "P1 bis v3 · Pour commencer": "vue-ensemble-v3-pour-commencer", "P6 · Nouveau projet": "nouveau-projet",
+  "P7 · Kanban": "kanban", "P8 · Fiche ticket": "fiche-ticket", "P8b · Fiche ticket, Activité": "fiche-ticket-activite", "P9 · Questions": "questions",
+  "Barre repliée · Kanban à 1 180 px": "barre-repliee", "Agent · question": "agent-question", "Agent · récapitulatif": "agent-recap" };
+S.export27 = async (only) => { await S.page("Proposition"); await S.wait(800); const out = [];
+  for (const b of penpot.currentPage.root.children.filter(c => c.type === "board" && c.y >= S.Y27)) { const base = b.name.replace(/ \(clair\)$/, ""), file = S.FILES27[base];
+    if (!file || (only && !only.includes(file))) continue; out.push(await S.exportPng(b, `proposition-${file}-${/\(clair\)$/.test(b.name) ? "light" : "dark"}.png`)); }
+  return out; };
 return "export ok";

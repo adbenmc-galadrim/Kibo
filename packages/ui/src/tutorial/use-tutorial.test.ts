@@ -16,8 +16,8 @@ test("the panel shows while the tour runs or just ended, as long as the demo pro
   expect(tutorialPanelVisible(at("active"), [{ id: "other" }])).toBe(false);
 });
 
-test("a paused, skipped or never started tour hides the panel", () => {
-  for (const status of ["paused", "skipped", "never"] as const)
+test("a paused, skipped, closed or never started tour hides the panel", () => {
+  for (const status of ["paused", "skipped", "closed", "never"] as const)
     expect(tutorialPanelVisible(at(status), demo)).toBe(false);
   expect(tutorialPanelVisible(null, demo)).toBe(false);
   expect(tutorialPanelVisible(at("active", null), demo)).toBe(false);

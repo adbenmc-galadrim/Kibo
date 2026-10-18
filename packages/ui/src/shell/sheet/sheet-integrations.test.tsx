@@ -158,6 +158,7 @@ const ticket: TicketView = {
   waitingOn: [],
   openQuestions: 0,
   startable: false,
+  startReason: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,
@@ -181,6 +182,7 @@ const project: ProjectSnapshot = {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],
@@ -203,7 +205,6 @@ const show = async (shown: TicketView = ticket) => {
       domains={[]}
       viewer="adam"
       onClose={() => {}}
-      onAssign={() => {}}
       onOpenInTab={() => {}}
       onOpenFile={() => {}}
       onOpenTicket={() => {}}
@@ -212,37 +213,44 @@ const show = async (shown: TicketView = ticket) => {
   );
   await screen.findAllByRole("alert");
   if (shown.externalRefs.some((r) => r.kind === "github_pr")) await screen.findByText("3 min 12 s");
-  if (shown.externalRefs.some((r) => r.kind === "figma_node")) await screen.findAllByText("Tickets / Arbre");
+  if (shown.externalRefs.some((r) => r.kind === "figma_node")) await openMockups();
   return view;
 };
+
+const openMockups = async () => {
+  await userEvent.setup().click(screen.getByRole("button", { name: /^Maquettes/ }));
+  await screen.findAllByText("Tickets / Arbre");
+};
+
+const tracking = () => within(screen.getByRole("region", { name: "Suivi" }));
 
 beforeEach(() => {
   calls.length = 0;
   frames = defaultFrames();
 });
 
-test("the issue and PR chips sit in the header, issue first", async () => {
+test("the header names the PR, the Suivi block links the PR and the issue", async () => {
   await show();
   const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
   if (!header) throw new Error("sheet has a header");
-  const links = within(header).getAllByRole("link");
+  expect(header.querySelector("[data-ticket-context]")?.textContent).toBe("PR #12");
+  const links = tracking()
+    .getAllByRole("link")
+    .filter((l) => l.textContent?.startsWith("#"));
   expect(links.map((l) => [l.textContent, l.getAttribute("href")])).toEqual([
-    ["#42", "https://github.com/adam/kibo/issues/42"],
     ["#12", "https://github.com/adam/kibo/pull/12"],
+    ["#42", "https://github.com/adam/kibo/issues/42"],
   ]);
-  expect(screen.getAllByRole("link", { name: "#12" })).toHaveLength(1);
   expect(screen.queryByText("Pull requests")).toBeNull();
 });
 
-test("the ticket tab shows the GitHub chips in its header", async () => {
+test("the ticket tab shows the same Suivi block", async () => {
   render(
     <TicketTab project={project} ticketId="t1" viewer="adam" onOpenFile={() => {}} onOpenTicket={() => {}} />,
   );
-  const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
-  if (!header) throw new Error("tab has a header");
-  expect(await within(header).findByRole("link", { name: "#42" })).toBeDefined();
-  expect(within(header).getByRole("link", { name: "#12" })).toBeDefined();
-  await screen.findAllByText("Tickets / Arbre");
+  expect(await tracking().findByRole("link", { name: "#42" })).toBeDefined();
+  expect(tracking().getByRole("link", { name: "#12" })).toBeDefined();
+  await openMockups();
 });
 
 test("a broken issue link shows a badge instead of a link", async () => {
@@ -260,7 +268,7 @@ test("a broken issue link shows a badge instead of a link", async () => {
   expect(screen.queryByRole("link", { name: "#42" })).toBeNull();
 });
 
-test("the branch chip sits beside the PR, a stacked merge names its parent, imports stay hidden", async () => {
+test("the Suivi block names the branch and its base, a stacked merge names its parent, imports stay hidden", async () => {
   const stacked: TicketView = {
     ...ticket,
     externalRefs: [
@@ -281,23 +289,17 @@ test("the branch chip sits beside the PR, a stacked merge names its parent, impo
   await show(stacked);
   const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
   if (!header) throw new Error("sheet has a header");
-  expect(within(header).getByRole("link", { name: "#12" }).getAttribute("title")).toBe(
-    "fusionnée dans feat/a",
-  );
-  const branch = within(header).getByText("feat/x").closest("[data-slot=badge]");
-  expect(branch?.getAttribute("title")).toBe("Base : feat/parent");
-  expect(branch?.tagName).not.toBe("A");
+  expect(tracking().getByRole("link", { name: "#12" }).getAttribute("title")).toBe("fusionnée dans feat/a");
+  const branch = tracking().getByText("feat/x");
+  expect(branch.parentElement?.textContent).toBe("feat/xsurfeat/parent");
+  expect(branch.tagName).not.toBe("A");
   expect(header.textContent).not.toContain("C0-9");
   expect(screen.getByRole("heading", { name: "Arbre" }).getAttribute("title")).toBe("Importé de plan · C0-9");
 });
 
-test("an unstacked branch chip names the branch", async () => {
+test("an unstacked branch is named alone", async () => {
   await show({ ...ticket, externalRefs: [{ kind: "git_branch", branch: "feat/x", base: null }] });
-  const header = screen.getByRole("heading", { name: "Arbre" }).parentElement;
-  if (!header) throw new Error("sheet has a header");
-  expect(within(header).getByText("feat/x").closest("[data-slot=badge]")?.getAttribute("title")).toBe(
-    "Branche feat/x",
-  );
+  expect(tracking().getByText("feat/x").parentElement?.textContent).toBe("feat/x");
   expect(screen.getByRole("heading", { name: "Arbre" }).getAttribute("title")).toBeNull();
 });
 
@@ -374,7 +376,9 @@ test("the CI section opens the logs, filterable to errors", async () => {
   await show();
   expect(screen.getByText("3 min 12 s")).toBeDefined();
   expect(screen.getByText("Échec")).toBeDefined();
-  expect(screen.getByText("PR #12")).toBeDefined();
+  const ci = screen.getByRole("heading", { name: "CI" }).closest("section");
+  if (!ci) throw new Error("the CI section");
+  expect(within(ci).getByText("PR #12")).toBeDefined();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Voir les logs" }));
   expect(await screen.findByText("Logs · build")).toBeDefined();

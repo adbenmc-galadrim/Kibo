@@ -41,3 +41,48 @@ Chaque arbitrage du plan (`arbitrages[].items[]`) devient une question Kibo (spe
 - L'arrêt d'`emis-board` (`launchctl unload` du LaunchAgent).
 - La copie des README du dépôt : `pilotage/depot.md` liste seulement leurs chemins.
 - La lecture des secrets d'Emis (`.env*`, `.board/`, `control.key`).
+
+## Rebase (§39.3)
+
+`rebase-emis.ts` recrée Emis sur un projet neuf : fonctionnalités `F1` à `F15` (C0 … CL), étapes `EMIS-1` à `EMIS-n` contiguës dans l'ordre fonctionnalité puis étape, titres sans préfixe de chapitre, étiquettes sans `sprint:*` ni `phase:*`, aucun `assignee`. « TODO » et « Arbitrages » ne sont pas recréés : leurs tickets rejoignent leur fonctionnalité (`src/rebase/todo-placement.ts`), DATA-1 et DATA-2 deviennent des questions au client, les questions suivent leur ticket (`src/rebase/question-placement.ts` pour les cas sans cible). Les sprints d'une semaine partent du lundi 2026-10-19 ; leur capacité, en étapes, est la vitesse observée (étapes `done` dont la PR est fusionnée, par semaine ISO, lue par `gh pr list --state merged`), 5 sans `gh` ou avec moins de deux semaines.
+
+```sh
+bun run --cwd scripts/import-emis rebase -- --dry-run                      # lit EMIS par getProject, écrit le rapport et le plan
+bun run --cwd scripts/import-emis rebase -- --dry-run --no-gh              # vitesse par défaut (5)
+bun run --cwd scripts/import-emis rebase -- --dry-run --from-list          # sans démon : lit tickets-list.json (aperçu, plan non applicable)
+bun run --cwd scripts/import-emis rebase -- --apply --plan <export>/rebase-plan.json --yes
+```
+
+| Option | Défaut | Rôle |
+|---|---|---|
+| `--export <dossier>` | `~/Documents/emis/kibo-export-2026-10-18` | où lire l'export et écrire les fichiers |
+| `--home <dossier>` | `$KIBO_HOME` ou `~/.kibo` | démon lu par `--dry-run`, écrit par `--apply` |
+| `--no-gh` | non | ne lit pas les dates de fusion : vitesse 5 |
+| `--from-list` | non | lit `<export>/tickets-list.json` (`kibo tickets list --json`) au lieu du démon : ni descriptions, ni questions, ni liens `relates` |
+| `--plan <fichier>`, `--yes` | — | obligatoires pour `--apply` |
+
+**`--dry-run`** n'écrit aucune donnée dans le démon : il s'apparie (`POST /api/pair`, une session), lit `listProjects` et `getProject`, puis révoque sa session (`revokeSession`) ; avec `--from-list`, il ne contacte pas le démon. Il écrit `<export>/project-old.json` (le `getProject` de l'ancien projet), `<export>/rebase-report.md` (points « à placer », placement de TODO, ancienne clé ⇒ nouvelle clé · fonctionnalité · sprint, questions et cibles, liens tombés, vitesse et sa source, plan par sprint avec dates, comptes attendus) et `<export>/rebase-plan.json` (plan exact, empreinte sha256 du contenu de l'ancien projet). Le plan se fait étape par étape : les étapes restantes (ni `done` ni facultatives) sont triées par leurs liens `blocks`, puis dans l'ordre du plan, à raison de la vitesse par sprint ; une fonctionnalité se termine dans le sprint de sa dernière étape. Une étape prise dans un cycle est placée dans l'ordre du plan et listée « à placer ».
+
+**`--apply --plan <export>/rebase-plan.json --yes`** rejoue le plan relu. Rien n'est écrit tant que ces contrôles ne passent pas :
+
+1. le plan est relu et validé (`version: 1`, source `getProject`, aucun point « à placer ») ; sans `--plan` ou sans `--yes`, refus ;
+2. le démon doit gérer `createProject { setup }` : `getAppInfo().version` doit valoir au moins `0.27.0-alpha.1` et la version du build courant (`apps/desktop/src-tauri/tauri.conf.json`), sinon « démon trop ancien : redémarre Kibo sur la version … avant --apply » ;
+3. l'empreinte du projet `EMIS` courant (`getProject`) doit être celle du plan : un plan rejoué après le rebase, ou un projet modifié depuis le dry-run, est refusé (`fingerprint mismatch`) ;
+4. le dry-run est recalculé depuis le démon (mêmes fusions que le plan) et ses commandes comparées à celles du fichier : un plan retouché à la main est refusé ;
+5. **répétition** : le plan est semé sur un démon temporaire (`KIBO_HOME` dans un dossier temporaire, supprimé ensuite), puis vérifié contre l'ancien projet ; un seul écart arrête tout.
+
+Ensuite : sauvegarde (`createBackup`) et export complet dans `<export>/project-old.json` ⇒ `deleteProject` de l'ancien ⇒ `createProject { setup }` (cinq pages, sprints S1 à Sn, client) ⇒ commandes du plan, la clé de chaque ticket créé comparée à la clé prédite ⇒ vérification (`verify.ts` : comptes, statuts, PR, branches, liens, questions, descriptions, étiquettes, clés `EMIS-1..n` contiguës, `F1..F15`, aucun `assignee`) ⇒ `<export>/rebase-result.md` (sauvegarde, comptes, clés, écarts, restauration). Un écart de vérification sort en code 1 avec la liste. Si une clé reçue diffère de la clé prédite, le script s'arrête aussitôt : le projet neuf incomplet est conservé et `rebase-result.md` dit « Arrêt à la vérification des clés ».
+
+**Réglages recopiés** : le nom, la clé, le dossier, la couleur et le client passent par `createProject` ; `worktree`, `storybook`, `duplication`, `delivery`, `tracking` et `description` par `updateProject` (tout ce que `ProjectPatch` accepte) ; le dossier de notes par `setNotesDir`. La répétition recopie les mêmes réglages, sauf le dossier de notes.
+
+**Non transféré** (listé dans `rebase-result.md`) : les pages et instances de l'ancien projet, remplacées par les cinq pages ; l'icône ; les domaines et leurs guidelines ; les règles d'automatisation propres à l'ancien projet ; les liaisons de composant ; les destinataires de questions ajoutés ; le partage ; l'historique de l'agent de projet, le journal `project_events` et l'historique d'édition des questions. Tout reste dans la sauvegarde.
+
+Procédure pour le chef d'équipe :
+
+1. quitter Kibo et faire la copie à froid (`cp -Rp ~/.kibo ~/.kibo-avant-rebase-<date>`), puis **redémarrer Kibo sur le build courant avant --apply** ;
+2. `rebase -- --dry-run`, relire `rebase-report.md` (placement de TODO, questions, liens tombés, plan par sprint) ;
+3. `rebase -- --apply --plan ~/Documents/emis/kibo-export-2026-10-18/rebase-plan.json --yes` ;
+4. relire `rebase-result.md` : « Conforme » attendu ;
+5. hors du dépôt, mettre à jour le registre de `full-delivery` pour Emis : `idPattern` `^EMIS-[0-9]+$`.
+
+**Restauration à froid** (le démon n'a pas de RPC de restauration) : quitter Kibo, recopier dans `~/.kibo/` le contenu du dossier `~/.kibo/backups/<id>/` pris avant `--apply` (`kibo.db`, `runs.db`, `components/`, `notes/`), relancer Kibo. L'historique de l'agent de projet et le journal `project_events` de l'ancien projet ne sont pas transférés : ils restent dans la sauvegarde.
