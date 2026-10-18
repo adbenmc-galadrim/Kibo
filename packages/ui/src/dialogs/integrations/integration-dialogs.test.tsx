@@ -358,7 +358,9 @@ test("mcp list: toggles, removes after confirmation, reports on close", async ()
   expect(calls).toContainEqual({ method: "removeMcpServer", id: "context7" });
   expect(await screen.findByText("Linear")).toBeDefined();
   expect(screen.queryByText("Context7")).toBeNull();
-  await user.click(screen.getByRole("button", { name: "Fermer" }));
+  const [footerClose] = screen.getAllByRole("button", { name: "Fermer" });
+  if (!footerClose) throw new Error("no Fermer button");
+  await user.click(footerClose);
   expect(onDone).toHaveBeenCalled();
 });
 
