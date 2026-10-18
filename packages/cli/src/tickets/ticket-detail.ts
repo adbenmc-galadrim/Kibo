@@ -3,11 +3,11 @@ import {
   isArchived,
   isDelivered,
   isOpen,
-  KiboError,
   type NoteMeta,
   type Question,
   type QuestionRecipient,
 } from "@kibo/schema";
+import { isUnknownMethod } from "../daemon-client";
 
 export type QuestionSummary = {
   id: string;
@@ -51,9 +51,6 @@ export function detailExtras(
     brief,
   };
 }
-
-const isUnknownMethod = (e: unknown): boolean =>
-  e instanceof KiboError && e.code === "INVALID_INPUT" && e.detail === "invalid request: method";
 
 export async function notesOrEmpty(load: () => Promise<NoteMeta[]>, warn: () => void): Promise<NoteMeta[]> {
   try {

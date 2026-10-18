@@ -2,13 +2,16 @@ import {
   type Assignee,
   type DeliveryStep,
   type ExternalRef,
+  type GitBranchRef,
   type GithubPrRef,
   type ImportRef,
   KiboError,
   type Link,
+  type MemberInfo,
   type PrChecks,
   type PrReview,
   type PrState,
+  type StartReason,
   type Status,
   StatusId,
   type TicketSession,
@@ -39,6 +42,8 @@ export type PrSummary = {
   review: PrReview;
   checks: PrChecks | null;
 };
+export type BranchSummary = { name: string; base: string | null };
+export type AssigneeSummary = Assignee & { name: string | null; me: boolean };
 export type TicketSummary = {
   id: string;
   key: string;
@@ -52,18 +57,23 @@ export type TicketSummary = {
   children: TicketRef[];
   deps: TicketRef[];
   pr: PrSummary | null;
-  assignee: Assignee | null;
+  assignee: AssigneeSummary | null;
+  branch: BranchSummary | null;
   labels: string[];
   delivery: DeliveryStep | null;
   session: TicketSession | null;
   updatedAt: number | null;
   refs: ExternalRef[];
+  startable: boolean;
+  startReason: StartReason | null;
 } & TrackingFields;
 export type TicketsSource = {
   workflow: Status[];
   tickets: TicketView[];
   links: Link[];
   sprints: readonly SprintSource[];
+  viewer?: string;
+  sync?: { members: readonly MemberInfo[] };
 };
 
 const isPlanRef = (r: ExternalRef): r is ImportRef => r.kind === "import_ref" && r.source === "plan";
@@ -79,6 +89,19 @@ export function relevantPr(t: TicketView): PrSummary | null {
   return best
     ? { number: best.number, url: best.url, state: best.state, review: best.review, checks: best.checks }
     : null;
+}
+
+function branchOf(t: TicketView): BranchSummary | null {
+  const ref = t.externalRefs.find((r): r is GitBranchRef => r.kind === "git_branch");
+  return ref ? { name: ref.branch, base: ref.base } : null;
+}
+
+function assigneeOf(t: TicketView, source: TicketsSource): AssigneeSummary | null {
+  if (t.assignee === null) return null;
+  const { kind, ref } = t.assignee;
+  if (kind === "agent") return { kind, ref, name: null, me: false };
+  const name = source.sync?.members.find((m) => m.userId === ref)?.name ?? null;
+  return { kind, ref, name, me: name === null && ref === source.viewer };
 }
 
 const refOf = (t: TicketView): TicketRef => ({
@@ -111,19 +134,19 @@ export function summarize(source: TicketsSource): TicketSummary[] {
       children: refsOf(source.tickets.filter((c) => c.parentId === t.id).map((c) => c.id)),
       deps: refsOf(blockers),
       pr: relevantPr(t),
-      assignee: t.assignee,
+      assignee: assigneeOf(t, source),
+      branch: branchOf(t),
       labels: t.labels,
       ...trackingOf(t, byId, source.sprints),
       delivery: t.delivery,
       session: t.session,
       updatedAt: t.updatedAt,
       refs: t.externalRefs,
+      startable: t.startable,
+      startReason: t.startReason,
     };
   });
 }
-
-export const isReady = (t: TicketSummary): boolean =>
-  t.status === "todo" && t.children.length === 0 && t.deps.every((d) => d.status === "done");
 
 const StatusName = z.union([NormalizedStatus, StatusId]);
 export type StatusName = z.infer<typeof StatusName>;

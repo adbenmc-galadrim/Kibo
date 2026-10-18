@@ -6,7 +6,8 @@ import { fakeDaemon, fakeTicket, SPRINTS } from "./tickets-test-kit";
 async function listIn(d: ReturnType<typeof fakeDaemon>, args: string[]) {
   const { flags } = parseArgs(["--project", "EMIS", ...args]);
   const code = await runTicketsCommand(["list"], flags, d.io, d.connect);
-  const keys = d.out.map((l) => l.split("\t")[0]);
+  const rows = d.out[0]?.startsWith("Clé") ? d.out.slice(1) : [];
+  const keys = rows.map((l) => l.split(/\s+/)[0]);
   return { ...d, code, keys };
 }
 
@@ -71,5 +72,52 @@ describe("kibo tickets list --sprint", () => {
     });
     expect(byKey.get("EMIS-41")).toMatchObject({ sprint: null, feature: { shortKey: "F7" } });
     expect(byKey.get("EMIS-50")).toMatchObject({ sprint: null, feature: null, optional: false });
+  });
+});
+
+describe("kibo tickets list, as text", () => {
+  test("puts headers and the feature column", async () => {
+    const d = await list();
+    expect(d.out[0]?.split(/\s+/)).toEqual(["Clé", "Plan", "F", "Statut", "Titre"]);
+    expect(
+      d.out
+        .find((l) => l.startsWith("EMIS-33"))
+        ?.split(/\s+/)
+        .slice(0, 3),
+    ).toEqual(["EMIS-33", "-", "F5"]);
+    expect(
+      d.out
+        .find((l) => l.startsWith("EMIS-50"))
+        ?.split(/\s+/)
+        .slice(0, 3),
+    ).toEqual(["EMIS-50", "-", "-"]);
+  });
+
+  test("says when nothing matches, naming the filters", async () => {
+    const d = await list("--sprint", "S41", "--ready");
+    expect(d.code).toBe(0);
+    expect(d.out).toEqual(["Aucun ticket pour ces filtres : --ready --sprint S41"]);
+    const empty = await listIn(fakeDaemon([]), []);
+    expect(empty.out).toEqual(["Aucun ticket dans ce projet."]);
+    const json = await list("--sprint", "S41", "--json");
+    expect(json.out).toEqual(["[]"]);
+  });
+});
+
+describe("kibo tickets list --ready", () => {
+  test("keeps what the daemon says is startable, whatever the local status", async () => {
+    const waiting = { kind: "sprint" as const, code: "S43" };
+    const tickets = [
+      fakeTicket({ id: "a", key: "EMIS-1" }),
+      fakeTicket({ id: "b", key: "EMIS-2", startable: false, startReason: waiting }),
+      fakeTicket({ id: "c", key: "EMIS-3", statusId: "backlog" }),
+    ];
+    expect((await listIn(fakeDaemon(tickets), ["--ready"])).keys).toEqual(["EMIS-1", "EMIS-3"]);
+    const json = await listIn(fakeDaemon(tickets), ["--json"]);
+    expect(JSON.parse(json.out.join("\n"))).toMatchObject([
+      { key: "EMIS-1", startable: true, startReason: null },
+      { key: "EMIS-2", startable: false, startReason: waiting },
+      { key: "EMIS-3", startable: true },
+    ]);
   });
 });

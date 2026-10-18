@@ -1,6 +1,6 @@
-import type { Assignee, PrChecks, PrReview } from "@kibo/schema";
+import type { PrChecks, PrReview } from "@kibo/schema";
 import type { FeatureRef, SprintRef } from "./tickets/ticket-tracking";
-import type { PrSummary, TicketRef } from "./tickets/ticket-view";
+import type { AssigneeSummary, BranchSummary, PrSummary, TicketRef } from "./tickets/ticket-view";
 
 const MARKET_USAGE = [
   "  kibo market keygen --out <fichier>",
@@ -39,6 +39,10 @@ const prParts = (pr: PrSummary): string[] =>
     pr.url,
   ].filter((part) => part !== null);
 
+const assigneeName = (a: AssigneeSummary) =>
+  a.kind === "agent" ? `agent ${a.ref}` : (a.name ?? (a.me ? "moi" : a.ref));
+const branchName = (b: BranchSummary) => (b.base === null ? b.name : `${b.name} (base ${b.base})`);
+
 const ref = (r: TicketRef) => `${r.key}${r.planId ? ` (${r.planId}, ${r.status})` : ` (${r.status})`}`;
 const refs = (list: TicketRef[], none: string) => (list.length === 0 ? none : list.map(ref).join(", "));
 
@@ -69,8 +73,12 @@ export const frTickets = {
   pr: (pr: PrSummary | null) => `PR : ${pr ? prParts(pr).join(" · ") : "aucune"}`,
   session: (tool: string, since: string) => `Session : ${tool} · depuis ${since}`,
   touchUp: (step: number, max: number, label: string) => `Retouche : ${step}/${max} · ${label}`,
-  assignee: (a: Assignee | null) =>
-    `Assigné : ${a ? `${a.kind === "agent" ? "agent" : "humain"} ${a.ref}` : "personne"}`,
+  assignee: (a: AssigneeSummary | null) => `Assigné : ${a ? assigneeName(a) : "personne"}`,
+  branch: (b: BranchSummary | null) => `Branche : ${b ? branchName(b) : "aucune"}`,
+  demo: (feature: string) => `Démo · ${feature}`,
+  columns: ["Clé", "Plan", "F", "Statut", "Titre"],
+  noTickets: "Aucun ticket dans ce projet.",
+  noMatch: (filters: string) => `Aucun ticket pour ces filtres : ${filters}`,
   labels: (labels: string[]) => `Étiquettes : ${labels.length === 0 ? "aucune" : labels.join(", ")}`,
   brief: (path: string | null) => `Brief : ${path ?? "aucun"}`,
   notes: (paths: string[]) => `Notes : ${paths.length === 0 ? "aucune" : paths.join(", ")}`,
@@ -78,6 +86,7 @@ export const frTickets = {
   question: (state: string, title: string, recipient: string, blocking: boolean) =>
     `  - [${state}] ${title} → ${recipient}${blocking ? " (bloquante)" : ""}`,
   description: "Description :",
+  noDescription: "Description : aucune",
   stepOutOfRange: (step: string) => `Étape invalide : ${step} (étape entre 0 et 11)`,
   stepDone: (key: string, label: string) => `✓ ${key} : ${label}`,
   touchUpDone: (key: string, label: string) => `✓ ${key} : retouche · ${label}`,
@@ -162,4 +171,9 @@ export const fr = {
     `${n} instance${n > 1 ? "s" : ""} restée${n > 1 ? "s" : ""} sur l'ancienne version :`,
   failedLine: (project: string, page: string, message: string) => `  ${project} › ${page} — ${message}`,
   error: (code: string, message: string) => `Erreur ${code} : ${message}`,
+  daemonTooOld: (daemon: string, command: string) =>
+    `Le démon ${daemon} est trop ancien pour kibo ${command} : mets Kibo à jour, puis réessaie.`,
+  daemonError: (code: string, message: string, home: string, version: string | null) =>
+    `Erreur ${code} : ${message} (démon ${home}, ${version ?? "version inconnue"})`,
+  daemonName: (home: string, version: string | null) => `${home} (${version ?? "version inconnue"})`,
 };

@@ -2,9 +2,15 @@ import { existsSync } from "node:fs";
 import type { Parsed } from "../args";
 import { frTickets } from "../fr";
 import { briefFile, detailExtras, notesOrEmpty } from "../tickets/ticket-detail";
-import { detailLines, listLine, type TicketDetail } from "../tickets/ticket-text";
+import { detailLines, listLines, type TicketDetail } from "../tickets/ticket-text";
 import { sprintSelector } from "../tickets/ticket-tracking";
-import { isReady, lookupTicket, matchesStatus, statusFilter, summarize } from "../tickets/ticket-view";
+import {
+  lookupTicket,
+  matchesStatus,
+  statusFilter,
+  summarize,
+  type TicketSummary,
+} from "../tickets/ticket-view";
 import { type Connect, printJson, type SessionIo, withClient } from "./daemon-session";
 import { chooseProject, notFound, summaryOf, type TicketsContext } from "./tickets-context";
 import { ticketsSession } from "./tickets-session";
@@ -16,6 +22,18 @@ type Flags = Parsed["flags"];
 
 const SUBCOMMANDS = new Set(["list", "get", "set"]);
 
+const givenFilters = (flags: Flags): string[] => [
+  ...(flags.ready === true ? ["--ready"] : []),
+  ...(typeof flags.status === "string" ? [`--status ${flags.status}`] : []),
+  ...(typeof flags.sprint === "string" ? [`--sprint ${flags.sprint}`] : []),
+];
+
+function listText(tickets: readonly TicketSummary[], flags: Flags): string[] {
+  if (tickets.length > 0) return listLines(tickets);
+  const filters = givenFilters(flags);
+  return [filters.length === 0 ? frTickets.noTickets : frTickets.noMatch(filters.join(" "))];
+}
+
 function listCommand({ snapshot, flags, io }: TicketsContext): number {
   const wanted = typeof flags.status === "string" ? statusFilter(flags.status) : null;
   const inSprint = typeof flags.sprint === "string" ? sprintSelector(flags.sprint, snapshot.sprints) : null;
@@ -24,11 +42,11 @@ function listCommand({ snapshot, flags, io }: TicketsContext): number {
     return 1;
   }
   const tickets = summarize(snapshot)
-    .filter((t) => flags.ready !== true || isReady(t))
+    .filter((t) => flags.ready !== true || t.startable)
     .filter((t) => wanted === null || matchesStatus(t, wanted))
     .filter((t) => inSprint === null || inSprint(t));
   if (flags.json === true) printJson(io, tickets);
-  else for (const t of tickets) io.out(listLine(t));
+  else for (const line of listText(tickets, flags)) io.out(line);
   return 0;
 }
 

@@ -4,10 +4,12 @@ import {
   type DeclareTicketRefResult,
   EMPTY_PROGRESS,
   type ExternalRef,
+  NOT_STARTED_STATUSES,
   type ProjectMeta,
   type ProjectSnapshot,
   type RpcRequest,
   type SprintView,
+  type StartReason,
   type StatusId,
   type TicketView,
 } from "@kibo/schema";
@@ -24,6 +26,8 @@ type TicketInput = {
   optional?: boolean;
   children?: number;
   refs?: ExternalRef[];
+  startable?: boolean;
+  startReason?: StartReason | null;
 };
 
 export function fakeTicket(input: TicketInput): TicketView {
@@ -53,8 +57,9 @@ export function fakeTicket(input: TicketInput): TicketView {
     waitingOn: [],
     keyLabel: input.key,
     openQuestions: 0,
-    startable: true,
-    startReason: null,
+    startable:
+      input.startable ?? (NOT_STARTED_STATUSES.includes(input.statusId ?? "todo") && !input.children),
+    startReason: input.startReason ?? null,
   };
 }
 

@@ -153,6 +153,7 @@ describe("kibo tickets against a real daemon", () => {
       deps: [{ key: "EMIS-2", planId: "C1-1", status: "done" }],
       pr: null,
       assignee: null,
+      branch: null,
       labels: [],
       sprint: null,
       feature: { key: "EMIS-1", shortKey: "F1", title: "Chantier 1" },
@@ -161,8 +162,10 @@ describe("kibo tickets against a real daemon", () => {
       session: null,
       updatedAt: null,
       refs: [{ kind: "import_ref", source: "plan", id: "C1-2" }],
+      startable: false,
+      startReason: { kind: "question", label: "Q1" },
     });
-    expect(await t.json("list", "--project", "Emis", "--ready")).toMatchObject([{ planId: "C1-2" }]);
+    expect(await t.json("list", "--project", "Emis", "--ready")).toEqual([]);
     expect(await t.json("list", "--project", projectId, "--status", "wip,done")).toMatchObject([
       { planId: "C1" },
       { planId: "C1-1" },
@@ -170,7 +173,10 @@ describe("kibo tickets against a real daemon", () => {
     ]);
     t.out.length = 0;
     expect(await t.run("list", "--project", "EMIS", "--ready")).toBe(0);
-    expect(t.out).toEqual(["EMIS-3\tC1-2\ttodo\tStockage"]);
+    expect(t.out).toEqual(["Aucun ticket pour ces filtres : --ready"]);
+    t.out.length = 0;
+    expect(await t.run("list", "--project", "EMIS", "--status", "todo")).toBe(0);
+    expect(t.out).toEqual(["Clé     Plan  F   Statut  Titre", "EMIS-3  C1-2  F1  todo    Stockage"]);
   });
 
   test("get adds the description, pending questions, linked notes and the brief", async () => {
@@ -252,6 +258,16 @@ describe("kibo tickets against a real daemon", () => {
     expect(JSON.parse(sprints.out.join("\n"))).toMatchObject([
       { code: "S42", name: "Terrain hors ligne", features: ["EMIS-1"] },
     ]);
+    const viewer = (await seed.rpc({ method: "getProject", projectId })).viewer ?? "";
+    await command({
+      method: "updateTicket",
+      ticketId: ids.get("C1-2") ?? "",
+      assignee: { kind: "human", ref: viewer },
+    });
+    t.out.length = 0;
+    expect(await t.run("get", "C1-2", "--project", "EMIS")).toBe(0);
+    expect(t.out).toContain("Branche : feat/c1-2-stockage (base dev)");
+    expect(t.out).toContain("Assigné : moi");
   });
 
   test("refuses unknown assignments, projects and tickets", async () => {

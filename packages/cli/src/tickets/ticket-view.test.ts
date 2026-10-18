@@ -6,14 +6,7 @@ import {
   type StatusId,
   type TicketView,
 } from "@kibo/schema";
-import {
-  isReady,
-  lookupTicket,
-  matchesStatus,
-  normalizedStatus,
-  statusFilter,
-  summarize,
-} from "./ticket-view";
+import { lookupTicket, matchesStatus, normalizedStatus, statusFilter, summarize } from "./ticket-view";
 
 function ticket(
   id: string,
@@ -119,6 +112,7 @@ describe("ticket view", () => {
       deps: [{ key: "EMIS-2", planId: "C1-1", status: "done" }],
       pr: { number: 7, url: "https://github.com/o/r/pull/7", state: "open", review: "none", checks: null },
       assignee: null,
+      branch: null,
       labels: [],
       sprint: null,
       feature: null,
@@ -127,6 +121,8 @@ describe("ticket view", () => {
       session: null,
       updatedAt: null,
       refs: [plan("C1-2"), pr(5, "closed"), pr(7, "open")],
+      startable: true,
+      startReason: null,
     });
     expect(review).toMatchObject({ status: "wip", kiboStatus: "in_review", column: "En review", pr: null });
   });
@@ -150,11 +146,46 @@ describe("ticket view", () => {
     });
   });
 
-  test("ready means todo, no children and every blocking dependency done", () => {
-    const ready = summarize(snapshot)
-      .filter(isReady)
-      .map((t) => t.key);
-    expect(ready).toEqual(["EMIS-3"]);
+  test("carries the startability the daemon computed", () => {
+    const waiting = { kind: "dependency" as const, keys: ["EMIS-2"] };
+    const tickets = [
+      { ...ticket("7", "todo"), startable: true },
+      { ...ticket("8", "todo"), startable: false, startReason: waiting },
+    ];
+    expect(summarize({ ...snapshot, tickets }).map((t) => [t.startable, t.startReason])).toEqual([
+      [true, null],
+      [false, waiting],
+    ]);
+  });
+
+  test("gives the declared branch", () => {
+    const branch: ExternalRef = { kind: "git_branch", branch: "feat/x", base: "dev" };
+    const [declared, none] = summarize({
+      ...snapshot,
+      tickets: [ticket("7", "todo", { refs: [branch] }), ticket("8", "todo")],
+    });
+    expect(declared?.branch).toEqual({ name: "feat/x", base: "dev" });
+    expect(none?.branch).toBeNull();
+  });
+
+  test("names the assignee from the members, or as the viewer", () => {
+    const assigned = (assignee: TicketView["assignee"]) => ({ ...ticket("7", "todo"), assignee });
+    const members = [{ userId: "u-adam", name: "Adam", role: "owner" as const }];
+    const tickets = [
+      assigned({ kind: "human", ref: "u-adam" }),
+      assigned({ kind: "human", ref: "u-me" }),
+      assigned({ kind: "human", ref: "u-other" }),
+      assigned({ kind: "agent", ref: "livraison" }),
+    ];
+    const people = summarize({ ...snapshot, tickets, viewer: "u-me", sync: { members } }).map(
+      (t) => t.assignee,
+    );
+    expect(people).toEqual([
+      { kind: "human", ref: "u-adam", name: "Adam", me: false },
+      { kind: "human", ref: "u-me", name: null, me: true },
+      { kind: "human", ref: "u-other", name: null, me: false },
+      { kind: "agent", ref: "livraison", name: null, me: false },
+    ]);
   });
 
   test("filters on normalized or Kibo statuses", () => {

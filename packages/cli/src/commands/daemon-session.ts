@@ -1,5 +1,5 @@
 import { KiboError, type ProjectMeta } from "@kibo/schema";
-import { connectDaemon, type DaemonClient, daemonInfoFile } from "../daemon-client";
+import { connectDaemon, type DaemonClient, DaemonError, daemonInfoFile } from "../daemon-client";
 import { fr, frTickets } from "../fr";
 
 export type SessionIo = { home: string; out(line: string): void; err(line: string): void };
@@ -11,6 +11,21 @@ function connectionMessage(e: unknown, home: string): string | null {
   if (e.code === "UNAUTHORIZED") return fr.pairingFailed;
   if (e.code === "STORE_CORRUPT") return fr.daemonInfoCorrupt(daemonInfoFile(home));
   return null;
+}
+
+async function versionOf(client: DaemonClient): Promise<{ home: string; version: string } | null> {
+  try {
+    const info = await client.rpc({ method: "getAppInfo" });
+    return { home: info.home, version: info.version };
+  } catch (e) {
+    if (e instanceof DaemonError) return null;
+    throw e;
+  }
+}
+
+async function located(e: DaemonError, client: DaemonClient, home: string): Promise<DaemonError> {
+  const daemon = (await versionOf(client)) ?? { home, version: null };
+  return new DaemonError(e.code, e.detail, daemon);
 }
 
 export async function withClient(
@@ -29,6 +44,8 @@ export async function withClient(
   }
   try {
     return await run(client);
+  } catch (e) {
+    throw e instanceof DaemonError && e.daemon === null ? await located(e, client, io.home) : e;
   } finally {
     await client.close();
   }
