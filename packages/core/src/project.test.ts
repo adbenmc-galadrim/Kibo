@@ -106,6 +106,16 @@ describe("project meta", () => {
     expect(() => setProjectMeta(doc, { description: "x".repeat(201) })).toThrow("INVALID_INPUT");
     expect(setProjectMeta(doc, { description: null }).description).toBeNull();
   });
+
+  test("setProjectMeta writes the client, which survives a snapshot and can be cleared", () => {
+    const doc = createProjectDoc(meta);
+    expect(setProjectMeta(doc, { client: "Emis SA" }).client).toBe("Emis SA");
+    const copy = new LoroDoc();
+    copy.import(doc.export({ mode: "snapshot" }));
+    expect(getProjectMeta(copy).client).toBe("Emis SA");
+    expect(() => setProjectMeta(doc, { client: "x".repeat(61) })).toThrow("INVALID_INPUT");
+    expect(setProjectMeta(doc, { client: null }).client).toBeNull();
+  });
 });
 
 describe("project", () => {

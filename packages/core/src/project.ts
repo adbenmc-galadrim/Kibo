@@ -67,7 +67,10 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
   };
 }
 
-export type DocProjectPatch = RegisteredProjectPatch & { description?: string | null };
+export type DocProjectPatch = RegisteredProjectPatch & {
+  description?: string | null;
+  client?: string | null;
+};
 
 export function setProjectMeta(doc: LoroDoc, patch: DocProjectPatch): ProjectMeta {
   const fields = valid(ProjectPatch.safeParse(patch));
@@ -77,6 +80,7 @@ export function setProjectMeta(doc: LoroDoc, patch: DocProjectPatch): ProjectMet
   if (fields.folder !== undefined) m.set("folder", fields.folder);
   if (fields.tracking !== undefined) m.set("tracking", fields.tracking);
   if (fields.description !== undefined) m.set("description", fields.description);
+  if (fields.client !== undefined) m.set("client", fields.client);
   doc.commit();
   return getProjectMeta(doc);
 }
@@ -101,6 +105,16 @@ export const featureSeqOf = (doc: LoroDoc): number =>
 export const setFeatureSeq = (doc: LoroDoc, seq: number): void => {
   doc.getMap("meta").set("featureSeq", seq);
 };
+
+export const QuestionSeq = z.number().int().nonnegative().optional();
+
+export function nextQuestionSeq(doc: LoroDoc): number {
+  const meta = doc.getMap("meta");
+  const current = meta.get("questionSeq");
+  const next = (typeof current === "number" ? current : 0) + 1;
+  meta.set("questionSeq", next);
+  return next;
+}
 
 export function nextTicketSeq(doc: LoroDoc): number {
   const next = upcomingSeq(doc);

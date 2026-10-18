@@ -1,6 +1,7 @@
 import { formatTicketKey, ProjectMeta } from "@kibo/schema";
 import { isContainer, type LoroDoc, type LoroMap } from "loro-crdt";
-import { FeatureSeq } from "./project";
+import { isFeatureKey } from "./keys";
+import { FeatureSeq, QuestionSeq } from "./project";
 import { sprintsViolation } from "./sprints";
 import { projectDepthViolation } from "./update-depth";
 import { bindingsSnapshotViolation } from "./validate-bindings";
@@ -15,6 +16,7 @@ const SHAPED_META_FIELDS = {
   description: ProjectMeta.shape.description,
   client: ProjectMeta.shape.client,
   featureSeq: FeatureSeq,
+  questionSeq: QuestionSeq,
 };
 const ALLOWED_META_FIELDS = new Set(["id", "ticketSeq", "keyAllocator", ...Object.keys(SHAPED_META_FIELDS)]);
 
@@ -42,10 +44,11 @@ function metaFieldsViolation(meta: LoroMap, projectId: string): string | null {
   return null;
 }
 
-function allocatedKey(meta: LoroMap): (key: unknown) => boolean {
+function allocatedKey(meta: LoroMap): (key: unknown, shortKey: unknown) => boolean {
   const projectKey = String(meta.get("key"));
   const seq = Number(meta.get("ticketSeq"));
-  return (key) => {
+  return (key, shortKey) => {
+    if (isFeatureKey(key)) return key === shortKey;
     if (typeof key !== "string" || !key.startsWith(`${projectKey}-`)) return false;
     const n = Number(key.slice(projectKey.length + 1));
     return Number.isInteger(n) && n >= 1 && n <= seq && formatTicketKey(projectKey, n) === key;
@@ -61,7 +64,7 @@ function ticketKeysViolation(doc: LoroDoc, meta: LoroMap): string | null {
       if (node.isDeleted()) continue;
       return `ticket ${node.id} has no key`;
     }
-    if (typeof key !== "string" || !isAllocated(key))
+    if (typeof key !== "string" || !isAllocated(key, node.data.get("shortKey")))
       return `ticket ${node.id}: key ${String(key)} is not allocated`;
     if (seen.has(key)) return `ticket key ${key} is used twice`;
     seen.add(key);

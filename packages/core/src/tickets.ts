@@ -16,11 +16,11 @@ import {
   TicketProgress,
 } from "@kibo/schema";
 import { type LoroDoc, LoroText, type LoroTreeNode, type TreeID } from "loro-crdt";
-import { getKeyAllocator, nextPendingSeq } from "./keys";
+import { getKeyAllocator, isFeatureKey, nextPendingSeq } from "./keys";
 import { pruneLinks } from "./links";
 import { getProjectMeta, nextTicketSeq } from "./project";
 import { pruneQuestions } from "./questions";
-import { assignShortKey, checkShortKey, nextShortKey } from "./short-key";
+import { assignShortKey, checkShortKey, nextShortKey, type ShortKeyAllocation } from "./short-key";
 import { getNode, moveNode, subtreeIds, walkDepthFirst } from "./tree";
 
 export type NewTicket = {
@@ -32,6 +32,7 @@ export type NewTicket = {
   assignee?: Assignee | null;
   domainId?: string | null;
   labels?: readonly string[];
+  feature?: boolean;
 };
 export type TicketPatch = {
   title?: string;
@@ -121,18 +122,37 @@ function writeDescription(n: LoroTreeNode, value: string): void {
   if (value) text.insert(0, value);
 }
 
+type TicketKeys = { key: string | null; pendingSeq: number | null; shortKey: ShortKeyAllocation | null };
+
+function stepKeys(doc: LoroDoc, parentId: string | null): TicketKeys {
+  const shortKey = parentId === null ? null : nextShortKey(doc, parentId);
+  if (getKeyAllocator(doc) === "server") return { key: null, pendingSeq: nextPendingSeq(doc), shortKey };
+  return { key: formatTicketKey(getProjectMeta(doc).key, nextTicketSeq(doc)), pendingSeq: null, shortKey };
+}
+
+function featureKeys(doc: LoroDoc, ticketId: string): TicketKeys {
+  const shortKey = nextShortKey(doc, ticketId);
+  if (shortKey === null) throw new KiboError("INVALID_INPUT", "a feature is a root ticket");
+  return { key: shortKey.key, pendingSeq: null, shortKey };
+}
+
+function assertRoot(doc: LoroDoc, ticketId: string, parentId: string | null): void {
+  if (parentId !== null && isFeatureKey(getNode(ticketTree(doc), ticketId).data.get("key")))
+    throw new KiboError("INVALID_INPUT", "a feature is a root ticket");
+}
+
 export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
   const blockedReason = input.statusId === "blocked" ? cleanReason(input.blockedReason) : null;
   const title = cleanTitle(input.title);
   const labels = normalizeLabels(input.labels ?? []);
+  if (input.feature === true && input.parentId)
+    throw new KiboError("INVALID_INPUT", "a feature is a root ticket");
   const parent = input.parentId ? getNode(ticketTree(doc), input.parentId) : undefined;
-  const shortKey = parent ? nextShortKey(doc, parent.id) : null;
-  const serverKeys = getKeyAllocator(doc) === "server";
-  const pendingSeq = serverKeys ? nextPendingSeq(doc) : null;
-  const key = serverKeys ? null : formatTicketKey(getProjectMeta(doc).key, nextTicketSeq(doc));
+  const step = input.feature === true ? null : stepKeys(doc, parent?.id ?? null);
   const node = parent ? parent.createNode() : ticketTree(doc).createNode();
-  node.data.set("key", key);
-  node.data.set("pendingSeq", pendingSeq);
+  const keys = step ?? featureKeys(doc, node.id);
+  node.data.set("key", keys.key);
+  node.data.set("pendingSeq", keys.pendingSeq);
   node.data.set("title", title);
   node.data.set("statusId", input.statusId ?? "todo");
   node.data.set("blockedReason", blockedReason);
@@ -141,7 +161,7 @@ export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
   node.data.set("externalRefs", []);
   node.data.set("labels", labels);
   writeDescription(node, input.description ?? "");
-  assignShortKey(doc, shortKey);
+  assignShortKey(doc, keys.shortKey);
   doc.commit();
   return readTicket(node);
 }
@@ -159,6 +179,9 @@ export function updateTicket(doc: LoroDoc, id: string, patch: TicketPatch): Tick
   const labels = patch.labels === undefined ? undefined : normalizeLabels(patch.labels);
   const title = patch.title === undefined ? undefined : cleanTitle(patch.title);
   const shortKey = patch.shortKey === undefined ? undefined : checkShortKey(doc, id, patch.shortKey);
+  const key = node.data.get("key");
+  if (shortKey !== undefined && isFeatureKey(key) && shortKey !== key)
+    throw new KiboError("INVALID_INPUT", `the short key of feature ${key} is its key`);
   if (title !== undefined) node.data.set("title", title);
   if (patch.description !== undefined) writeDescription(node, patch.description);
   if (patch.domainId !== undefined) node.data.set("domainId", patch.domainId);
@@ -178,6 +201,7 @@ export function setStatus(doc: LoroDoc, id: string, statusId: StatusId, reason?:
 }
 
 export function moveTicket(doc: LoroDoc, id: string, parentId: string | null, index?: number): void {
+  assertRoot(doc, id, parentId);
   const shortKey = parentId === null ? null : nextShortKey(doc, parentId);
   moveNode(ticketTree(doc), id, parentId, index);
   assignShortKey(doc, shortKey);

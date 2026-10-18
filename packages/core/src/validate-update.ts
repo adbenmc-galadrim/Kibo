@@ -1,6 +1,7 @@
 import { ProjectMeta } from "@kibo/schema";
 import { isContainer, type LoroDoc, LoroMap, type LoroTree } from "loro-crdt";
-import { FeatureSeq } from "./project";
+import { isFeatureKey } from "./keys";
+import { FeatureSeq, QuestionSeq } from "./project";
 import { sprintsViolation } from "./sprints";
 import { depthViolation } from "./update-depth";
 import { bindingsUpdateViolation, type UpdateAuthor } from "./validate-bindings";
@@ -16,6 +17,7 @@ const EDITABLE_META_FIELDS = {
   description: ProjectMeta.shape.description,
   client: ProjectMeta.shape.client,
   featureSeq: FeatureSeq,
+  questionSeq: QuestionSeq,
 };
 const KNOWN_META_FIELDS = new Set([...FROZEN_META_FIELDS, "members", ...Object.keys(EDITABLE_META_FIELDS)]);
 
@@ -73,21 +75,31 @@ function membersViolation(before: LoroMap, after: LoroMap): string | null {
   return null;
 }
 
-function assignedKeys(tree: LoroTree): Map<string, unknown> {
-  return new Map(tree.getNodes({ withDeleted: true }).map((node) => [node.id, node.data.get("key")]));
+type KeyFacts = { key: unknown; shortKey: unknown };
+
+function assignedKeys(tree: LoroTree): Map<string, KeyFacts> {
+  return new Map(
+    tree
+      .getNodes({ withDeleted: true })
+      .map((node) => [node.id, { key: node.data.get("key"), shortKey: node.data.get("shortKey") }]),
+  );
 }
 
 const isUnset = (key: unknown): boolean => key === null || key === undefined;
 
+const isNewFeature = (before: KeyFacts | undefined, after: KeyFacts): boolean =>
+  before === undefined && isFeatureKey(after.key) && after.key === after.shortKey;
+
 function keyViolation(before: LoroDoc, after: LoroDoc): string | null {
   const previous = assignedKeys(before.getTree("tickets"));
-  for (const [ticketId, key] of assignedKeys(after.getTree("tickets"))) {
-    const assigned = previous.get(ticketId);
+  for (const [ticketId, facts] of assignedKeys(after.getTree("tickets"))) {
+    const { key } = facts;
+    const assigned = previous.get(ticketId)?.key;
     if (isContainer(key)) return `ticket ${ticketId}: key must be a plain value`;
     if (typeof assigned === "string" && key !== assigned) {
       return `ticket ${ticketId}: assigned key ${assigned} cannot change`;
     }
-    if (isUnset(assigned) && !isUnset(key)) {
+    if (isUnset(assigned) && !isUnset(key) && !isNewFeature(previous.get(ticketId), facts)) {
       return `ticket ${ticketId}: keys are assigned by the server only`;
     }
   }

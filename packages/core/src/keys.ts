@@ -7,6 +7,10 @@ export type Member = { userId: string; name: string };
 
 const SERVER_ORIGIN = "kibo-server";
 
+const FEATURE_KEY = /^F\d+$/;
+
+export const isFeatureKey = (key: unknown): key is string => typeof key === "string" && FEATURE_KEY.test(key);
+
 export function getKeyAllocator(doc: LoroDoc): KeyAllocator {
   return doc.getMap("meta").get("keyAllocator") === "server" ? "server" : "local";
 }
