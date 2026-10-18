@@ -261,3 +261,20 @@ test("an archived question cannot be marked as exported, and nothing is marked t
   expect(code(mark)).toBe("INVALID_INPUT");
   expect(getQuestion(doc, open.id).history).toEqual([]);
 });
+
+test("a refused question burns no number", () => {
+  const { doc, ticket } = setup();
+  const invalid = { ticketId: ticket.id, title: "A", options: ["A"], provisional: "Z", createdBy: ADAM };
+  expect(code(() => createQuestion(doc, invalid))).toBe("INVALID_INPUT");
+  expect(createQuestion(doc, { ticketId: ticket.id, title: "B", createdBy: ADAM }).number).toBe(1);
+});
+
+test("unmarking with an unknown id removes nothing", () => {
+  const { doc, ask } = setup();
+  const q = ask("A");
+  executeProjectCommand(doc, { method: "markQuestionsExported", questionIds: [q.id], by: THEO, at: 40 });
+  const unmark = () =>
+    executeProjectCommand(doc, { method: "unmarkQuestionsExported", questionIds: [q.id, "9@9"] });
+  expect(code(unmark)).toBe("NOT_FOUND");
+  expect(getQuestion(doc, q.id).history).toHaveLength(1);
+});

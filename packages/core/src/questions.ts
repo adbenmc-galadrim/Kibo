@@ -56,14 +56,19 @@ export function getQuestion(doc: LoroDoc, id: string): Question {
   return readQuestion(id, raw);
 }
 
-export function storeQuestion(doc: LoroDoc, candidate: unknown): Question {
+function parseQuestion(candidate: unknown): Question {
   const parsed = Question.safeParse(candidate);
   if (!parsed.success) {
     throw new KiboError("INVALID_INPUT", parsed.error.issues[0]?.message ?? "invalid question");
   }
-  questions(doc).set(parsed.data.id, parsed.data);
-  doc.commit();
   return parsed.data;
+}
+
+export function storeQuestion(doc: LoroDoc, candidate: unknown): Question {
+  const question = parseQuestion(candidate);
+  questions(doc).set(question.id, question);
+  doc.commit();
+  return question;
 }
 
 function freeInstant(taken: readonly Question[], at: number): number {
@@ -87,7 +92,7 @@ export function createQuestion(doc: LoroDoc, input: NewQuestion): Question {
       `ticket ${input.ticketId} already has ${QUESTIONS_PER_TICKET_MAX} questions`,
     );
   }
-  return storeQuestion(doc, {
+  const question = parseQuestion({
     id: crypto.randomUUID(),
     ticketId: input.ticketId,
     runId: input.runId ?? null,
@@ -98,13 +103,13 @@ export function createQuestion(doc: LoroDoc, input: NewQuestion): Question {
     blocking: input.blocking ?? false,
     createdBy: input.createdBy,
     createdAt: freeInstant(all, input.at ?? Date.now()),
-    number: nextQuestionSeq(doc),
     importRef: input.importRef ?? null,
     answer: null,
     kind: input.kind ?? "question",
     images: [...(input.images ?? [])],
     ...(input.recipient === undefined ? {} : { recipient: input.recipient }),
   });
+  return storeQuestion(doc, { ...question, number: nextQuestionSeq(doc) });
 }
 
 export function answerQuestion(

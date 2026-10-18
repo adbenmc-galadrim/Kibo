@@ -146,8 +146,8 @@ function withoutLastExport(history: Question["history"]): Question["history"] {
 }
 
 export function unmarkQuestionsExported(doc: LoroDoc, cmd: Command<"unmarkQuestionsExported">): Question[] {
-  return distinct(cmd.questionIds).map((id) => {
-    const q = getQuestion(doc, id);
+  const resolved = distinct(cmd.questionIds).map((id) => getQuestion(doc, id));
+  return resolved.map((q) => {
     const history = withoutLastExport(q.history);
     return history.length === q.history.length ? q : storeQuestion(doc, { ...q, history });
   });
