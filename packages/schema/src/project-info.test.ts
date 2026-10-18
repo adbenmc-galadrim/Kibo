@@ -18,6 +18,7 @@ test("the project names itself and its repository from the first pull request", 
     name: "Emis",
     color: "#14B8A6",
     description: "Suivi de chantier",
+    client: null,
     repo: "galadrimteam/emis-suivi-chantier",
   });
 });

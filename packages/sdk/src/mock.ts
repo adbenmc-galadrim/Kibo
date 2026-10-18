@@ -60,7 +60,7 @@ export function createMockSdk(
     delivery: null,
     tracking: opts.tracking ?? null,
     description: opts.description ?? null,
-    client: null,
+    client: opts.client ?? null,
   });
   const changes = createNotifier();
   const runChanges = createNotifier();
@@ -89,6 +89,7 @@ export function createMockSdk(
   const viewRequests: MockSdk["viewRequests"] = [];
   const deliveries: string[] = [];
   const openedSprints: string[] = [];
+  const toasts: string[] = [];
   const embeds = createMockEmbeds(manifest.embeds, opts.embed);
   const focusRequests: boolean[] = [];
   const selections: (Selection | null)[] = [];
@@ -190,6 +191,7 @@ export function createMockSdk(
 
   const sdk: KiboSdk = {
     ...inner,
+    toast: (message) => void toasts.push(message),
     list: <T extends EntityType>(type: T): Promise<EntityMap[T][]> =>
       record(`read:${type}`, `read ${type}`, () => inner.list(type)),
     run: (cmd) =>
@@ -261,6 +263,7 @@ export function createMockSdk(
     viewRequests,
     openedRuns: mockRuns.opened,
     openedSprints,
+    toasts,
     deliveries,
     runDeliveries: runDelivery.delivered,
     allowed: runDelivery.allowed,

@@ -39,6 +39,7 @@ export type MockSdk = {
   viewRequests: { componentId: string; question: string | null }[];
   openedRuns: string[];
   openedSprints: string[];
+  toasts: string[];
   deliveries: string[];
   runDeliveries: string[];
   allowed: AllowAndResumeInput[];
@@ -79,6 +80,7 @@ export type MockSdkOptions = {
   ciRuns?: CiRun[];
   events?: ProjectEvent[];
   description?: string | null;
+  client?: string | null;
   presence?: PresencePeer[];
   shared?: boolean;
   members?: MemberInfo[];

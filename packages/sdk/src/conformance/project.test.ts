@@ -35,6 +35,7 @@ test("the project describes itself and names its repository", async () => {
     name: "Mock",
     color: "#71717A",
     description: "Suivi de chantier",
+    client: null,
     repo: "galadrimteam/emis",
   });
   expect(mock.used).toContain("read:ticket");
@@ -63,4 +64,15 @@ test("opening a sprint is a host action recorded by the mock", () => {
   const mock = createMockSdk(manifest(["sprint"]));
   mock.sdk.sprints.open("s42");
   expect(mock.openedSprints).toEqual(["s42"]);
+});
+
+test("the project names its client when it has one", async () => {
+  const mock = createMockSdk(manifest(["ticket"]), { client: "Emis SA" });
+  expect((await mock.sdk.project.get()).client).toBe("Emis SA");
+});
+
+test("a toast is a host action recorded by the mock", () => {
+  const mock = createMockSdk(manifest([]));
+  mock.sdk.toast("Copié");
+  expect(mock.toasts).toEqual(["Copié"]);
 });

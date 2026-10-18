@@ -162,6 +162,7 @@ export type KiboSdk = {
   openNewTicket(defaults: NewTicketDefaults): void;
   openFile(request: FileOpenRequest): void;
   openView(componentId: string, opts?: OpenViewOptions): void;
+  toast(message: string): void;
   data: InstanceData;
   fetch(url: string, init?: FetchInitInput): Promise<FetchResponse>;
   action<T = unknown>(name: string, input?: unknown): Promise<T>;

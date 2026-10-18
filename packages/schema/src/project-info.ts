@@ -6,6 +6,7 @@ export type ProjectInfo = {
   name: string;
   color: string;
   description: string | null;
+  client: string | null;
   repo: string | null;
 };
 
@@ -30,5 +31,6 @@ export const projectInfo = (
   name: snapshot.meta.name,
   color: snapshot.meta.color,
   description: snapshot.meta.description,
+  client: snapshot.meta.client,
   repo: projectRepo(snapshot),
 });
