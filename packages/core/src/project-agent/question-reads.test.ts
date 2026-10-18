@@ -33,7 +33,7 @@ describe("list_questions", () => {
     expect(listQuestions(snapshot, { state: "answered" })).toEqual([
       {
         id: "q2",
-        ticket: "EMIS-1",
+        ticket: "SILO-1",
         title: "Deux",
         state: "answered",
         blocking: false,
@@ -45,7 +45,7 @@ describe("list_questions", () => {
       },
       {
         id: "q3",
-        ticket: "EMIS-1",
+        ticket: "SILO-1",
         title: "Trois",
         state: "answered",
         blocking: false,

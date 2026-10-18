@@ -7,7 +7,7 @@ import { HUMAN, questionContext, questionSnapshot } from "./test-kit";
 const why = "";
 const ctx = questionContext();
 const capture = (action: ProposedAction) => captureExpected(action, ctx);
-const ids = { "EMIS-2": "t2" };
+const ids = { "SILO-2": "t2" };
 const commands = (action: ProposedAction) => commandsFor(action, ids, HUMAN, ctx.project);
 
 describe("expected state of question actions", () => {
@@ -15,7 +15,7 @@ describe("expected state of question actions", () => {
     expect(
       capture({ id: 1, why, type: "updateQuestion", questionId: "q1", title: "B", recipient: "Client" }),
     ).toEqual({ title: "A", recipient: "me", delivered: false });
-    expect(capture({ id: 1, why, type: "updateQuestion", questionId: "q3", ticket: "EMIS-2" })).toEqual({
+    expect(capture({ id: 1, why, type: "updateQuestion", questionId: "q3", ticket: "SILO-2" })).toEqual({
       ticketId: "t1",
       delivered: true,
     });
@@ -57,7 +57,7 @@ describe("commandsFor question actions", () => {
         why,
         type: "updateQuestion",
         questionId: "q1",
-        ticket: "EMIS-2",
+        ticket: "SILO-2",
         recipient: "Client",
       }),
     ).toEqual([
@@ -91,7 +91,7 @@ describe("commandsFor question actions", () => {
       id: 1,
       why,
       type: "createQuestion",
-      ticket: "EMIS-2",
+      ticket: "SILO-2",
       title: "Q",
       recipient: "Produit",
     });

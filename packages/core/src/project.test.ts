@@ -109,10 +109,10 @@ describe("project meta", () => {
 
   test("setProjectMeta writes the client, which survives a snapshot and can be cleared", () => {
     const doc = createProjectDoc(meta);
-    expect(setProjectMeta(doc, { client: "Emis SA" }).client).toBe("Emis SA");
+    expect(setProjectMeta(doc, { client: "Silo SA" }).client).toBe("Silo SA");
     const copy = new LoroDoc();
     copy.import(doc.export({ mode: "snapshot" }));
-    expect(getProjectMeta(copy).client).toBe("Emis SA");
+    expect(getProjectMeta(copy).client).toBe("Silo SA");
     expect(() => setProjectMeta(doc, { client: "x".repeat(61) })).toThrow("INVALID_INPUT");
     expect(setProjectMeta(doc, { client: null }).client).toBeNull();
   });
@@ -126,8 +126,8 @@ describe("project", () => {
   });
 
   test("reads the description the project was created with", () => {
-    const doc = createProjectDoc({ ...meta, description: "Suivi de chantier" });
-    expect(getProjectMeta(doc).description).toBe("Suivi de chantier");
+    const doc = createProjectDoc({ ...meta, description: "Location de box" });
+    expect(getProjectMeta(doc).description).toBe("Location de box");
   });
   test("ticket sequence survives a snapshot round-trip", () => {
     const doc = createProjectDoc(meta);
@@ -235,14 +235,14 @@ test("a duplication row stored before shared files gets the default shared files
 });
 
 test("local delivery settings never reach the project doc nor the workspace", () => {
-  const delivery = { ...EMPTY_DELIVERY, root: "/Users/a/Documents/emis-zz" };
+  const delivery = { ...EMPTY_DELIVERY, root: "/Users/a/Documents/silo-zz" };
   const local = { ...meta, delivery };
   const ws = createWorkspaceDoc();
   registerProject(ws, local);
   const doc = createProjectDoc(local);
   expect(LOCAL_ONLY_META.has("delivery")).toBe(true);
   expect(doc.getMap("meta").get("delivery")).toBeUndefined();
-  expect(JSON.stringify(ws.toJSON())).not.toContain("emis-zz");
+  expect(JSON.stringify(ws.toJSON())).not.toContain("silo-zz");
   expect(getProjectMeta(doc).delivery).toBeNull();
   expect(listProjects(ws)[0]?.delivery).toBeNull();
 });

@@ -20,9 +20,9 @@ const sprint = (id: string, code: string, start: string, end: string): SprintVie
 
 const snapshot = project({
   tickets: [
-    ticket({ id: "t5", key: "EMIS-5", sprintId: "s42" }),
-    ticket({ id: "t6", key: "EMIS-6", parentId: "t5" }),
-    ticket({ id: "t9", key: "EMIS-9" }),
+    ticket({ id: "t5", key: "SILO-5", sprintId: "s42" }),
+    ticket({ id: "t6", key: "SILO-6", parentId: "t5" }),
+    ticket({ id: "t9", key: "SILO-9" }),
   ],
   sprints: [
     sprint("s42", "S42", "2026-10-12", "2026-10-16"),
@@ -44,15 +44,15 @@ describe("sprint actions at validation", () => {
     expect(
       problems(
         batch(
-          { id: 1, why, type: "setSprint", ticket: "EMIS-5", sprint: "s43" },
-          { id: 2, why, type: "setSprint", ticket: "EMIS-9", sprint: null },
+          { id: 1, why, type: "setSprint", ticket: "SILO-5", sprint: "s43" },
+          { id: 2, why, type: "setSprint", ticket: "SILO-9", sprint: null },
         ),
       ),
     ).toEqual([]);
-    expect(problems(batch({ id: 1, why, type: "setSprint", ticket: "EMIS-6", sprint: "S43" }))).toEqual([
+    expect(problems(batch({ id: 1, why, type: "setSprint", ticket: "SILO-6", sprint: "S43" }))).toEqual([
       "#1 sprint set on the root ticket",
     ]);
-    expect(problems(batch({ id: 1, why, type: "setSprint", ticket: "EMIS-5", sprint: "S99" }))).toEqual([
+    expect(problems(batch({ id: 1, why, type: "setSprint", ticket: "SILO-5", sprint: "S99" }))).toEqual([
       "#1 sprint inconnu « S99 » : crée-le plus tôt dans le lot par createSprint",
     ]);
   });
@@ -61,7 +61,7 @@ describe("sprint actions at validation", () => {
     expect(
       problems(
         batch(
-          { id: 1, why, type: "createTicket", ref: "new:1", title: "Étape", parent: "EMIS-5" },
+          { id: 1, why, type: "createTicket", ref: "new:1", title: "Étape", parent: "SILO-5" },
           { id: 2, why, type: "setSprint", ticket: "new:1", sprint: "S43" },
         ),
       ),
@@ -78,7 +78,7 @@ describe("sprint actions at validation", () => {
       start: "2026-11-02",
       end: "2026-11-06",
     };
-    const move: ProposedAction = { id: 2, why, type: "setSprint", ticket: "EMIS-9", sprint: "S45" };
+    const move: ProposedAction = { id: 2, why, type: "setSprint", ticket: "SILO-9", sprint: "S45" };
     expect(problems(batch(create, move))).toEqual([]);
     expect(problems(batch(move, { ...create, id: 3 }))).toEqual([
       "#2 sprint inconnu « S45 » : crée-le plus tôt dans le lot par createSprint",
@@ -129,12 +129,12 @@ describe("sprint actions at validation", () => {
 });
 
 describe("sprint actions: expected state and commands", () => {
-  const move: ProposedAction = { id: 1, why, type: "setSprint", ticket: "EMIS-5", sprint: "S43" };
+  const move: ProposedAction = { id: 1, why, type: "setSprint", ticket: "SILO-5", sprint: "S43" };
 
   test("setSprint captures the current sprint and goes stale when it changes", () => {
     const expected = { actionId: 1, fields: captureExpected(move, ctx()) };
     expect(expected.fields).toEqual({ sprintId: "s42" });
-    const ids = { "EMIS-5": "t5" };
+    const ids = { "SILO-5": "t5" };
     expect(staleReason(move, expected, ctx(), ids)).toBeNull();
     const moved = project({
       ...snapshot,
@@ -172,13 +172,13 @@ describe("sprint actions: expected state and commands", () => {
   });
 
   test("commands: setTicketSprint by the sprint id of the code, createSprint, remindQuestion", () => {
-    expect(commandsFor(move, { "EMIS-5": "t5" }, HUMAN, snapshot)).toEqual([
+    expect(commandsFor(move, { "SILO-5": "t5" }, HUMAN, snapshot)).toEqual([
       { method: "setTicketSprint", ticketId: "t5", sprintId: "s43" },
     ]);
-    expect(commandsFor({ ...move, sprint: null }, { "EMIS-5": "t5" }, HUMAN, snapshot)).toEqual([
+    expect(commandsFor({ ...move, sprint: null }, { "SILO-5": "t5" }, HUMAN, snapshot)).toEqual([
       { method: "setTicketSprint", ticketId: "t5", sprintId: null },
     ]);
-    expect(() => commandsFor({ ...move, sprint: "S99" }, { "EMIS-5": "t5" }, HUMAN, snapshot)).toThrow(
+    expect(() => commandsFor({ ...move, sprint: "S99" }, { "SILO-5": "t5" }, HUMAN, snapshot)).toThrow(
       "sprint S99 not found",
     );
     expect(

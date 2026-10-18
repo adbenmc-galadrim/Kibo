@@ -42,7 +42,7 @@ describe("fingerprint", () => {
       ],
     });
     expect(fp.tickets.t2).toEqual({
-      key: "EMIS-2",
+      key: "SILO-2",
       title: "Deux",
       statusId: "in_progress",
       labels: ["ui"],

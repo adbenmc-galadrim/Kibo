@@ -13,7 +13,7 @@ const names: ChangeNames = {
 };
 
 const print = (p: Partial<TicketPrint> = {}): TicketPrint => ({
-  key: "EMIS-1",
+  key: "SILO-1",
   title: "Un",
   statusId: "todo",
   labels: [],
@@ -78,7 +78,7 @@ describe("diffFingerprints", () => {
   });
 
   test("a deleted ticket gives one line, a created one too", () => {
-    const after = { ...base, tickets: { t2: print({ key: "EMIS-2", title: "Deux" }) } };
+    const after = { ...base, tickets: { t2: print({ key: "SILO-2", title: "Deux" }) } };
     expect(diffFingerprints(base, after, names)).toEqual([
       { category: "tickets", key: "t1", text: "Ticket supprimé : T(t1)" },
       { category: "tickets", key: "t2", text: "Ticket créé : T(t2)" },
@@ -131,13 +131,13 @@ describe("changeNames", () => {
       tickets: [ticket({ id: "t1", title: "Un" })],
       questions: [question({ id: "q1", ticketId: "t1", title: "Quoi ?" })],
     });
-    const named = changeNames(current, [run({ id: "r1", label: "opus-dev · EMIS-1" })], before);
-    expect(named.ticket("t1")).toBe("EMIS-1 · Un");
-    expect(named.ticket("t9")).toBe("EMIS-9 · Supprimé");
+    const named = changeNames(current, [run({ id: "r1", label: "opus-dev · SILO-1" })], before);
+    expect(named.ticket("t1")).toBe("SILO-1 · Un");
+    expect(named.ticket("t9")).toBe("SILO-9 · Supprimé");
     expect(named.ticket("zz")).toBe("zz");
     expect(named.question("q1")).toBe("Quoi ?");
     expect(named.question("q0")).toBe("q0");
-    expect(named.run("r1")).toBe("opus-dev · EMIS-1");
+    expect(named.run("r1")).toBe("opus-dev · SILO-1");
     expect(named.run("r0")).toBe("r0");
   });
 });
@@ -219,7 +219,7 @@ describe("renderDigest", () => {
 
 const ID = fc.constantFrom("a", "b", "c", "d");
 const ticketPrint = fc.record({
-  key: fc.option(fc.constantFrom("EMIS-1", "EMIS-2"), { nil: null }),
+  key: fc.option(fc.constantFrom("SILO-1", "SILO-2"), { nil: null }),
   title: fc.constantFrom("Un", "Deux"),
   statusId: fc.constantFrom("todo", "done"),
   labels: fc.subarray(["ui", "api"]),
@@ -227,7 +227,7 @@ const ticketPrint = fc.record({
   assignee: fc.option(fc.constantFrom("opus", "adam"), { nil: null }),
   branch: fc.option(fc.constantFrom("feat/a"), { nil: null }),
   pr: fc.option(fc.constantFrom("#1 (open)"), { nil: null }),
-  blockedBy: fc.subarray(["EMIS-1", "EMIS-2"]),
+  blockedBy: fc.subarray(["SILO-1", "SILO-2"]),
 });
 const fingerprints = fc.record({
   tickets: fc.dictionary(ID, ticketPrint),

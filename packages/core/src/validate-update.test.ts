@@ -231,7 +231,7 @@ describe("tracking data forged by a client", () => {
         c.getMap("meta").set("description", text);
         c.commit();
       });
-    expect(describeAs("Suivi de chantier")).toEqual({ ok: true });
+    expect(describeAs("Location de box")).toEqual({ ok: true });
     expect(describeAs("x".repeat(201))).toEqual({
       ok: false,
       reason: "meta.description has an invalid value",

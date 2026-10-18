@@ -45,18 +45,18 @@ describe("captureExpected", () => {
   test("captures exactly the fields the action depends on", () => {
     const c = ctx();
     const capture = (action: ProposedAction) => captureExpected(action, c);
-    expect(capture({ id: 1, why, type: "updateTicket", ticket: "EMIS-1", title: "x", labels: [] })).toEqual({
+    expect(capture({ id: 1, why, type: "updateTicket", ticket: "SILO-1", title: "x", labels: [] })).toEqual({
       title: "Un",
       labels: ["ui"],
     });
     expect(
-      capture({ id: 1, why, type: "updateTicket", ticket: "EMIS-2", description: "x", parent: null }),
+      capture({ id: 1, why, type: "updateTicket", ticket: "SILO-2", description: "x", parent: null }),
     ).toEqual({
       description: "",
       parentId: "t1",
     });
     expect(capture({ id: 1, why, type: "updateTicket", ticket: "new:1", title: "x" })).toEqual({});
-    expect(capture({ id: 1, why, type: "setStatus", ticket: "EMIS-1", statusId: "done" })).toEqual({
+    expect(capture({ id: 1, why, type: "setStatus", ticket: "SILO-1", statusId: "done" })).toEqual({
       statusId: "in_progress",
     });
     expect(
@@ -67,22 +67,22 @@ describe("captureExpected", () => {
     expect(capture({ id: 1, why, type: "updateNote", path: "a.md", content: "" })).toEqual({ hash: "h1" });
     expect(capture({ id: 1, why, type: "createNote", path: "b.md", content: "" })).toEqual({ exists: false });
     expect(capture({ id: 1, why, type: "cancelRun", runId: "r1" })).toEqual({ terminal: false });
-    expect(capture({ id: 1, why, type: "deliverAnswers", ticket: "EMIS-3" })).toEqual({
+    expect(capture({ id: 1, why, type: "deliverAnswers", ticket: "SILO-3" })).toEqual({
       undelivered: ["q2"],
     });
     expect(
-      capture({ id: 1, why, type: "assignAgent", ticket: "EMIS-2", profileId: "global:opus-dev" }),
+      capture({ id: 1, why, type: "assignAgent", ticket: "SILO-2", profileId: "global:opus-dev" }),
     ).toEqual({
       activeRun: "r1",
     });
-    expect(capture({ id: 1, why, type: "link", from: "EMIS-1", to: "EMIS-3", kind: "blocks" })).toEqual({});
+    expect(capture({ id: 1, why, type: "link", from: "SILO-1", to: "SILO-3", kind: "blocks" })).toEqual({});
     expect(capture({ id: 1, why, type: "createTicket", ref: "new:1", title: "x" })).toEqual({});
   });
 
   test("a valid batch carries one expected state per action", () => {
     const result = validateBatch(
       batch(
-        { id: 1, why, type: "setStatus", ticket: "EMIS-1", statusId: "done" },
+        { id: 1, why, type: "setStatus", ticket: "SILO-1", statusId: "done" },
         { id: 2, why, type: "createNote", path: "b.md", content: "" },
       ),
       ctx(),
@@ -91,7 +91,7 @@ describe("captureExpected", () => {
       ok: true,
       batch: {
         actions: [
-          { id: 1, why, type: "setStatus", ticket: "EMIS-1", statusId: "done" },
+          { id: 1, why, type: "setStatus", ticket: "SILO-1", statusId: "done" },
           { id: 2, why, type: "createNote", path: "b.md", content: "" },
         ],
         expected: [

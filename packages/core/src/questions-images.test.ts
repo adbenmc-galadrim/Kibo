@@ -5,14 +5,14 @@ import { createProjectDoc } from "./project";
 import { listQuestions } from "./questions";
 import { createTicket } from "./tickets";
 
-const AGENT: Actor = { kind: "agent", ref: "emis-livraison" };
+const AGENT: Actor = { kind: "agent", ref: "silo-livraison" };
 const IMAGE = { id: "i1", name: "1-no-access.png", bytes: 1200, width: 800, height: 600 };
 
 const projectDoc = () =>
   createProjectDoc({
     id: "p1",
-    key: "EMIS",
-    name: "Emis",
+    key: "SILO",
+    name: "Silo",
     folder: null,
     color: "#F97316",
     worktree: null,

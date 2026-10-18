@@ -5,8 +5,8 @@ import { createProjectDoc, createTicket, listTickets, setTicketOptional } from "
 const doc = () =>
   createProjectDoc({
     id: "p1",
-    key: "EMIS",
-    name: "Emis",
+    key: "SILO",
+    name: "Silo",
     folder: null,
     color: "#F97316",
     worktree: null,
@@ -36,7 +36,7 @@ test("a step added to a feature goes before its last optional step", () => {
   const feature = featureWithDemo(d);
   const added = createTicket(d, { title: "Écran hors ligne", parentId: feature.id });
   expect(stepTitles(d, feature.id)).toEqual(["Stockage", "Écran hors ligne", "Démo client"]);
-  expect(added.key).toBe("EMIS-3");
+  expect(added.key).toBe("SILO-3");
 });
 
 test("a step added after a mandatory last step goes last", () => {

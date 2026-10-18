@@ -14,7 +14,7 @@ import {
 } from "./questions";
 import { createTicket, deleteTicket } from "./tickets";
 
-const AGENT: Actor = { kind: "agent", ref: "emis-livraison" };
+const AGENT: Actor = { kind: "agent", ref: "silo-livraison" };
 const HUMAN: Actor = { kind: "human", ref: "adam" };
 
 const newProjectDoc = (key: string) =>

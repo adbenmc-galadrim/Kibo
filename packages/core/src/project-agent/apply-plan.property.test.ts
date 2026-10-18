@@ -30,16 +30,16 @@ const base: BatchContext = {
 
 const why = "";
 const ACTIONS: ProposedAction[] = [
-  { id: 1, why, type: "updateTicket", ticket: "EMIS-1", title: "Nouveau", labels: [] },
-  { id: 2, why, type: "updateTicket", ticket: "EMIS-2", description: "d", parent: null },
-  { id: 3, why, type: "setStatus", ticket: "EMIS-1", statusId: "done" },
+  { id: 1, why, type: "updateTicket", ticket: "SILO-1", title: "Nouveau", labels: [] },
+  { id: 2, why, type: "updateTicket", ticket: "SILO-2", description: "d", parent: null },
+  { id: 3, why, type: "setStatus", ticket: "SILO-1", statusId: "done" },
   { id: 4, why, type: "answerQuestion", questionId: "q1", answer: { kind: "text", text: "oui" } },
   { id: 5, why, type: "updateNote", path: "a.md", content: "x" },
   { id: 6, why, type: "createNote", path: "b.md", content: "x" },
   { id: 7, why, type: "cancelRun", runId: "r1" },
-  { id: 8, why, type: "deliverAnswers", ticket: "EMIS-3" },
-  { id: 9, why, type: "assignAgent", ticket: "EMIS-3", profileId: "global:opus-dev" },
-  { id: 10, why, type: "link", from: "EMIS-1", to: "EMIS-3", kind: "blocks" },
+  { id: 8, why, type: "deliverAnswers", ticket: "SILO-3" },
+  { id: 9, why, type: "assignAgent", ticket: "SILO-3", profileId: "global:opus-dev" },
+  { id: 10, why, type: "link", from: "SILO-1", to: "SILO-3", kind: "blocks" },
   { id: 11, why, type: "updateQuestion", questionId: "q1", title: "Renommée" },
   { id: 12, why, type: "reopenQuestion", questionId: "q2" },
   { id: 13, why, type: "deleteQuestion", questionId: "q5" },
@@ -152,7 +152,7 @@ describe("apply plan properties", () => {
   });
 
   test("an unchecked action produces no command", () => {
-    const ids = { "EMIS-1": "t1", "EMIS-2": "t2", "EMIS-3": "t3" };
+    const ids = { "SILO-1": "t1", "SILO-2": "t2", "SILO-3": "t3" };
     const plan = (chosen: ReadonlySet<number>) =>
       ACTIONS.filter((a) => !isSkipped(a, chosen)).flatMap((a) => commandsFor(a, ids, HUMAN, base.project));
     fc.assert(
