@@ -8,8 +8,13 @@ afterEach(cleanup);
 
 const tickets: readonly TicketView[] = emisFeatureProject().tickets;
 const page: TabTarget = { kind: "page", projectId: "emis", pageId: "kanban" };
-const e33 = tickets.find((t) => t.key === "EMIS-33") as TicketView;
-const e34 = tickets.find((t) => t.key === "EMIS-34") as TicketView;
+function ticketOf(key: string): TicketView {
+  const ticket = tickets.find((t) => t.key === key);
+  if (!ticket) throw new Error(`fixture without ${key}`);
+  return ticket;
+}
+const e33 = ticketOf("EMIS-33");
+const e34 = ticketOf("EMIS-34");
 let closed = 0;
 
 beforeEach(() => {
@@ -18,6 +23,7 @@ beforeEach(() => {
 });
 
 type Props = { sheet: SheetRef | null };
+const NO_SHEET: Props = { sheet: null };
 
 const mount = () =>
   renderHook(
@@ -30,7 +36,7 @@ const mount = () =>
           closed += 1;
         },
       ),
-    { initialProps: { sheet: null } as Props },
+    { initialProps: NO_SHEET },
   );
 
 test("opening the sheet puts the ticket address by key without a new history entry, closing restores the page", () => {

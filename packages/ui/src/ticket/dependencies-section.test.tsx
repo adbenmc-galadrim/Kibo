@@ -124,6 +124,7 @@ const row = (key: string) => {
   return within(item);
 };
 const badgeOf = (key: string) => row(key).queryByRole("button", { name: `Lien ajouté par Kibo avec ${key}` });
+const badge = (key: string) => row(key).getByRole("button", { name: `Lien ajouté par Kibo avec ${key}` });
 
 beforeEach(() => {
   calls.length = 0;
@@ -149,7 +150,7 @@ test("cancelling from the badge calls the daemon and drops the badge", async () 
   draw();
   const user = userEvent.setup();
   await waitFor(() => expect(badgeOf("BOU-12")).toBeTruthy());
-  await user.click(badgeOf("BOU-12") as HTMLElement);
+  await user.click(badge("BOU-12"));
   await user.click(await screen.findByRole("button", { name: "Annuler" }));
   expect(calls).toContainEqual({ method: "autoLinks.cancel", id: "al1" });
   await waitFor(() => expect(badgeOf("BOU-12")).toBeNull());
@@ -169,7 +170,7 @@ test("the cross still removes the link the usual way", async () => {
 test("a reader sees the badge without the cancel button", async () => {
   draw(false);
   await waitFor(() => expect(badgeOf("BOU-12")).toBeTruthy());
-  await userEvent.setup().click(badgeOf("BOU-12") as HTMLElement);
+  await userEvent.setup().click(badge("BOU-12"));
   await screen.findByRole("dialog");
   expect(screen.queryByRole("button", { name: "Annuler" })).toBeNull();
 });
