@@ -218,14 +218,16 @@ test("a reminder records a reminded event on an open question only, without chan
   expect(code(() => remind(archived.id))).toBe("INVALID_TRANSITION");
 });
 
-test("each question created by the command gets the next number, a duplicate keeps its own", () => {
-  const { doc, ticket } = setup();
+test("each question created gets the next number, a duplicate keeps its own", () => {
+  const { doc, ticket, ask } = setup();
   const create = (title: string) =>
     executeProjectCommand(doc, { method: "createQuestion", ticketId: ticket.id, title, createdBy: ADAM });
   expect(create("A")).toMatchObject({ number: 1 });
   expect(create("B")).toMatchObject({ number: 2 });
   expect(create("A")).toMatchObject({ number: 1 });
   expect(create("C")).toMatchObject({ number: 3 });
+  expect(ask("D").number).toBe(4);
+  expect(doc.getMap("meta").get("questionSeq")).toBe(4);
 });
 
 test("marking questions as exported records an event, unmarking removes the last one", () => {

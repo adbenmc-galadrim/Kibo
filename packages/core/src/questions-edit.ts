@@ -14,9 +14,8 @@ import {
   resolveAnswer,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
-import { nextQuestionSeq } from "./project";
 import { assertRecipient } from "./question-recipients";
-import { createQuestion, getQuestion, listQuestions, type NewQuestion, storeQuestion } from "./questions";
+import { getQuestion, listQuestions, storeQuestion } from "./questions";
 import { getNode } from "./tree";
 
 type Command<M extends ProjectCommand["method"]> = Extract<ProjectCommand, { method: M }>;
@@ -129,13 +128,6 @@ export function remindQuestion(doc: LoroDoc, cmd: Command<"remindQuestion">): Qu
   assertNotArchived(q);
   if (isAnswered(q)) refuse(q.id, "is answered: nothing to remind");
   return record(doc, q, cmd, "reminded", {}, {});
-}
-
-export function createNumberedQuestion(doc: LoroDoc, input: NewQuestion): Question {
-  const known = doc.getMap("questions").size;
-  const question = createQuestion(doc, input);
-  if (doc.getMap("questions").size === known) return question;
-  return storeQuestion(doc, { ...question, number: nextQuestionSeq(doc) });
 }
 
 const distinct = (ids: readonly string[]): string[] => [...new Set(ids)];

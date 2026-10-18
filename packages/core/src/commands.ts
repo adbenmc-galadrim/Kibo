@@ -32,10 +32,15 @@ import {
   renameQuestionRecipient,
   setQuestionRecipient,
 } from "./question-recipients";
-import { answerQuestion, listQuestions, markAnswersDelivered, removeQuestion } from "./questions";
+import {
+  answerQuestion,
+  createQuestion,
+  listQuestions,
+  markAnswersDelivered,
+  removeQuestion,
+} from "./questions";
 import {
   archiveQuestion,
-  createNumberedQuestion,
   markQuestionsExported,
   remindQuestion,
   reopenQuestion,
@@ -136,7 +141,7 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
       return null;
     case "createQuestion": {
       const { method: _method, ...input } = cmd;
-      return createNumberedQuestion(doc, input);
+      return createQuestion(doc, input);
     }
     case "answerQuestion":
       return answerQuestion(doc, cmd.questionId, cmd.answer, cmd.by, cmd.at ?? Date.now());

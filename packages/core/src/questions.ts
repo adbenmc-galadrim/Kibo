@@ -12,6 +12,7 @@ import {
   resolveAnswer,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
+import { nextQuestionSeq } from "./project";
 import { assertRecipient } from "./question-recipients";
 import { getNode } from "./tree";
 
@@ -97,6 +98,7 @@ export function createQuestion(doc: LoroDoc, input: NewQuestion): Question {
     blocking: input.blocking ?? false,
     createdBy: input.createdBy,
     createdAt: freeInstant(all, input.at ?? Date.now()),
+    number: nextQuestionSeq(doc),
     importRef: input.importRef ?? null,
     answer: null,
     kind: input.kind ?? "question",
