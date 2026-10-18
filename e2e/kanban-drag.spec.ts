@@ -284,3 +284,70 @@ test("textes longs : rien ne sort des cartes, aucune barre de défilement", asyn
   expect(new Set(await hiddenBars(widgetBoard))).toEqual(new Set(["none"]));
   await shot(page, info, "kanban-textes-longs-tableau");
 });
+
+async function dragCard(page: Page, card: Locator, column: Locator) {
+  await card.hover();
+  const from = await pointIn(card);
+  const to = await pointIn(column, 0.25);
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(from.x + 20, from.y + 10, { steps: 4 });
+  await page.mouse.move(to.x, to.y, { steps: 12 });
+  await expect(column).toHaveClass(/ring-2/);
+  await page.mouse.up();
+  await expect(page.locator(PREVIEW)).toHaveCount(0);
+}
+
+test("une carte bloquée par une question ne quitte pas Bloqué par glisser", async ({ page }, info) => {
+  const run = String.fromCharCode(65 + ((info.repeatEachIndex + info.retry) % 26));
+  const key = projectKey(`QH${run}`, info);
+  await pairAndCreateProject(page, info, key);
+  const projectId = projectIdOf(page);
+  const command = (cmd: Record<string, unknown>) => rpc(page, { method: "command", projectId, command: cmd });
+  const held = await command({ method: "createTicket", title: "Carte retenue", statusId: "todo" });
+  const heldId = typeof held === "object" && held !== null ? String(Reflect.get(held, "id")) : "";
+  await command({
+    method: "createQuestion",
+    ticketId: heldId,
+    title: "Quel format pour l'import ?",
+    blocking: true,
+    createdBy: { kind: "human", ref: "e2e" },
+  });
+  await command({
+    method: "createTicket",
+    title: "Carte au statut",
+    statusId: "blocked",
+    blockedReason: "Client",
+  });
+
+  await createSidebarPage(page, `Kibo ${key}`, "Kanban", "Vue");
+  await addComponent(page, "Kanban");
+  const main = page.getByRole("main");
+  await showAllTickets(main);
+  const blocked = main.getByRole("region", { name: "Bloqué" });
+  const todo = main.getByRole("region", { name: "À faire" });
+  const doing = main.getByRole("region", { name: "En cours" });
+  const card = (title: string) => main.getByRole("article", { name: new RegExp(title) });
+  await expect(blocked.getByRole("article", { name: /Carte retenue/ })).toBeVisible();
+  const statusOf = async (title: string) => {
+    const snapshot = await rpc(page, { method: "getProject", projectId });
+    const tickets = typeof snapshot === "object" && snapshot !== null ? Reflect.get(snapshot, "tickets") : [];
+    const found = (Array.isArray(tickets) ? tickets : []).find((t) => Reflect.get(t, "title") === title);
+    return found === undefined ? null : Reflect.get(found, "statusId");
+  };
+  const refusal = main
+    .getByRole("alert")
+    .filter({ hasText: /^Bloqué par Q\d+ : réponds d'abord à la question\.$/ });
+
+  for (const target of [doing, todo]) {
+    await dragCard(page, card("Carte retenue"), target);
+    await expect(refusal).toBeVisible();
+    await expect(blocked.getByRole("article", { name: /Carte retenue/ })).toBeVisible();
+    expect(await statusOf("Carte retenue")).toBe("todo");
+  }
+
+  await dragCard(page, card("Carte au statut"), doing);
+  await expect(doing.getByRole("article", { name: /Carte au statut/ })).toBeVisible();
+  await expect.poll(() => statusOf("Carte au statut")).toBe("in_progress");
+  await shot(page, info, "kanban-bloque-par-question");
+});

@@ -32,7 +32,7 @@ import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { useState } from "react";
 import { announce } from "./announcements";
 import { BlockDialog } from "./BlockDialog";
-import { boardColumn } from "./board-column";
+import { boardColumn, holdMessage } from "./board-column";
 import { type ColumnOrder, orderColumn } from "./column-order";
 import { DragPreview } from "./DragPreview";
 import { commitDrop, type Drop, dropInColumn, nextOrder } from "./drop";
@@ -119,6 +119,12 @@ export function Kanban() {
   const ordered = [...statuses].sort((a, b) => a.order - b.order);
   const statusIds = new Set(ordered.map((s) => s.id));
   const columnOf = (t: TicketView): StatusId => boardColumn(t, isBlocked(t, questionList), statusIds);
+  const holdOf = (t: TicketView, target: StatusId) => holdMessage(t, columnOf(t), target, questionList);
+  const refusalOf = (active: string | number, over: string | number): string | null => {
+    const drop = dropInColumn({ active: { id: active }, over: { id: over } }, visible);
+    const t = tickets.find((x) => x.id === drop?.ticketId);
+    return drop && t ? holdOf(t, drop.statusId) : null;
+  };
   const placed = tickets.map((t) => ({ id: t.id, statusId: t.statusId, column: columnOf(t) }));
   const columns = new Map(
     ordered.map((s) => [
@@ -170,6 +176,11 @@ export function Kanban() {
     const drop = dropInColumn(e, visible);
     const t = tickets.find((x) => x.id === drop?.ticketId);
     if (!drop || !t) return;
+    const held = holdOf(t, drop.statusId);
+    if (held !== null) {
+      setError(held);
+      return;
+    }
     if (drop.statusId === "blocked" && columnOf(t) !== "blocked") setBlocking({ ticket: t, drop });
     else void place(t, drop);
   };
@@ -229,7 +240,7 @@ export function Kanban() {
         onDragEnd={onDragEnd}
         accessibility={{
           screenReaderInstructions: { draggable: fr.drag.help },
-          announcements: announce(keyOf),
+          announcements: announce(keyOf, refusalOf),
         }}
       >
         <div className="scrollbar-none flex min-h-0 flex-1 gap-2 overflow-x-auto overflow-y-hidden p-3">

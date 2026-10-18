@@ -51,6 +51,7 @@ export const fr = {
     cancelled: (key: string) => `Déplacement de ${key} annulé.`,
   },
   moveFailed: (key: string) => `Impossible de déplacer ${key}.`,
+  heldByQuestion: (question: string) => `Bloqué par ${question} : réponds d'abord à la question.`,
   waitingOn: (key: string) => `attend ${key}`,
   questions: (n: number) => `${n} question${n > 1 ? "s" : ""}`,
   questionsOpen: (n: number) => `${n} question${n > 1 ? "s" : ""}, ouvrir`,
