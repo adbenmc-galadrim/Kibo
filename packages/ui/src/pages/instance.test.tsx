@@ -17,11 +17,18 @@ import {
   useSdk,
   visibilityApi,
 } from "@kibo/sdk";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render as renderPlain, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { apiMock } from "../api-mock";
 import type { InstanceApis } from "../lib/instance-capabilities";
+import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
+
+const shownExecution = fixedStore({ agentExecution: "shown" });
+const ShownExecution = ({ children }: { children: ReactNode }) => (
+  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
+);
+const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const H = "c".repeat(64);
 const LOCAL = { shared: false, keyAllocator: "local", role: null, access: "write", members: [] };

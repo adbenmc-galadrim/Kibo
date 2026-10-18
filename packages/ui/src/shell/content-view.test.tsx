@@ -1,10 +1,18 @@
 import { expect, test } from "bun:test";
 import { DEFAULT_WORKFLOW, type ProjectSnapshot } from "@kibo/schema";
-import { render, screen } from "@testing-library/react";
+import { render as renderPlain, screen } from "@testing-library/react";
+import type { ReactElement, ReactNode } from "react";
 import { agentsFixture } from "../agents/fixtures";
 import { AgentsProvider } from "../state/agents-context";
+import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
 import { ContentView } from "./ContentView";
 import { type Host, HostProvider } from "./Host";
+
+const shownExecution = fixedStore({ agentExecution: "shown" });
+const ShownExecution = ({ children }: { children: ReactNode }) => (
+  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
+);
+const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const summary = {
   id: "p1",

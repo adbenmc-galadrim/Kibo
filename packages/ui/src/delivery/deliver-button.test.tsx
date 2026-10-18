@@ -6,11 +6,19 @@ import {
   type RpcRequest,
   type TicketView,
 } from "@kibo/schema";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render as renderPlain, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement, ReactNode } from "react";
 import { agentsFixture, kiboProject, runFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 import { AgentsProvider } from "../state/agents-context";
+import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
+
+const shownExecution = fixedStore({ agentExecution: "shown" });
+const ShownExecution = ({ children }: { children: ReactNode }) => (
+  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
+);
+const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const calls: RpcRequest[] = [];
 let deliver: () => Promise<unknown> = () => Promise.resolve(runFixture({ id: "r9" }));

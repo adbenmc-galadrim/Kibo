@@ -1,11 +1,19 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import type { AgentsState, AiEvent, ComponentDraft, RpcRequest, Screen, TabTarget } from "@kibo/schema";
 import { SidebarProvider } from "@kibo/sdk/ui/sidebar";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render as renderPlain, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement, ReactNode } from "react";
 import { agentsFixture, kiboProject, NOW, runFixture } from "../agents/fixtures";
 import { draftFixture } from "../ai/draft-fixtures";
 import { apiMock } from "../api-mock";
+import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
+
+const shownExecution = fixedStore({ agentExecution: "shown" });
+const ShownExecution = ({ children }: { children: ReactNode }) => (
+  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
+);
+const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 let drafts: ComponentDraft[] = [];
 const aiListeners = new Set<(e: AiEvent) => void>();

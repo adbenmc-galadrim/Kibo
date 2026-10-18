@@ -7,8 +7,16 @@ import {
   type ProjectSnapshot,
   type RpcRequest,
 } from "@kibo/schema";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { act, render as renderPlain, screen, waitFor, within } from "@testing-library/react";
+import type { ReactElement, ReactNode } from "react";
 import { apiMock } from "../api-mock";
+import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
+
+const shownExecution = fixedStore({ agentExecution: "shown" });
+const ShownExecution = ({ children }: { children: ReactNode }) => (
+  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
+);
+const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const calls: RpcRequest[] = [];
 let peers: PresencePeer[] = [];

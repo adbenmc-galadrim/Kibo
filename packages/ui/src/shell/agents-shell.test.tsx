@@ -10,8 +10,9 @@ import {
   type StatusId,
   type TicketView,
 } from "@kibo/schema";
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render as renderPlain, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement, ReactNode } from "react";
 import {
   agentsFixture,
   configFixture,
@@ -22,6 +23,13 @@ import {
 } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 import type { Route } from "../route";
+import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
+
+const shownExecution = fixedStore({ agentExecution: "shown" });
+const ShownExecution = ({ children }: { children: ReactNode }) => (
+  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
+);
+const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const mineTicket = (id: string, key: string, title: string, statusId: StatusId): TicketView => ({
   id,

@@ -1,8 +1,16 @@
 import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 import { type RpcRequest, TUTORIAL_NEVER, type TutorialState } from "@kibo/schema";
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render as renderPlain, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { ReactElement, ReactNode } from "react";
 import { apiMock } from "../api-mock";
+import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
+
+const shownExecution = fixedStore({ agentExecution: "shown" });
+const ShownExecution = ({ children }: { children: ReactNode }) => (
+  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
+);
+const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const calls: RpcRequest["method"][] = [];
 let current: TutorialState = TUTORIAL_NEVER;
