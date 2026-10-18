@@ -57,12 +57,14 @@ function WorkRow({ item, workflow, many, waiting, onOpen }: RowProps) {
         className="flex min-w-0 flex-1 items-center gap-3 self-stretch rounded-lg pl-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <StatusDot statusId={ticket.statusId} />
-        <span className="key shrink-0 font-mono text-2xs text-muted-foreground">{ticket.keyLabel}</span>
-        {item.feature && (
-          <span className="shrink-0 font-mono text-2xs text-muted-foreground before:mr-1.5 before:content-['·']">
-            {item.feature.shortKey ?? item.feature.keyLabel}
-          </span>
-        )}
+        <span className="flex shrink-0 items-center gap-1.5 font-mono text-2xs text-muted-foreground">
+          <span className="key">{ticket.keyLabel}</span>
+          {item.feature && (
+            <span className="before:mr-1.5 before:content-['·']">
+              {item.feature.shortKey ?? item.feature.keyLabel}
+            </span>
+          )}
+        </span>
         <span className="truncate text-sm">{stepTitle(ticket, item.feature)}</span>
         {many && (
           <span className="flex shrink-0 items-center gap-1.5 text-2xs text-muted-foreground">
