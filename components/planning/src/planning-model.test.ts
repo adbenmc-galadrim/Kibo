@@ -5,6 +5,8 @@ import { manifest } from "./index";
 import { type FeatureCard, planningModel, sprintDates } from "./planning-model";
 import { seedPlanning, TODAY } from "./test-seed";
 
+const DAY_AFTER = "2026-10-17";
+
 const SPRINT: SprintView = {
   id: "s",
   code: "S42",
@@ -112,7 +114,9 @@ test("badges: delivered, open, late, blocked with the question, nothing when not
   expect(card(s43?.cards ?? [], "F6").badge).toEqual({ kind: "blocked", question: "Q14" });
   expect(card(s43?.cards ?? [], "F8").badge).toBeNull();
   expect(card(s42?.cards ?? [], "F4").badge).toEqual({ kind: "open" });
-  expect(card(s42?.cards ?? [], "F5").badge).toEqual({ kind: "late" });
+  expect(card(s42?.cards ?? [], "F5").badge).toEqual({ kind: "open" });
+  const after = build(DAY_AFTER).model.sprints[1]?.cards ?? [];
+  expect(card(after, "F5").badge).toEqual({ kind: "late" });
 });
 
 test("the card reads the feature state as is, the interface computes no state", () => {
@@ -141,11 +145,15 @@ test("the footer shows the step in session, else the next step, never a step wai
   expect(card(s42?.cards ?? [], "F3").next).toBeNull();
 });
 
-test("a late feature gets a warning under its sprint", () => {
-  const { model } = build();
+test("a late feature gets a warning under its sprint, from the day after its end", () => {
+  const { model } = build(DAY_AFTER);
   expect(card(model.sprints[1]?.cards ?? [], "F5")).toMatchObject({ badge: { kind: "late" }, late: true });
-  expect(model.sprints[1]?.warnings).toEqual([{ shortKey: "F5", remaining: 4 }]);
+  expect(model.sprints[1]?.warnings).toEqual([
+    { shortKey: "F4", remaining: 1 },
+    { shortKey: "F5", remaining: 4 },
+  ]);
   expect(build("2026-10-14").model.sprints[1]?.warnings).toEqual([]);
+  expect(build().model.sprints[1]?.warnings).toEqual([]);
 });
 
 test("open features count only planned ones, the limit is a warning", () => {

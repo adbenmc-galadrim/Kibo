@@ -9,6 +9,8 @@ import { Component, manifest, planningPanel } from "./index";
 import { cardIn, column, setupPlanning } from "./planning-kit";
 import { seed, TODAY } from "./test-seed";
 
+const DAY_AFTER = "2026-10-17";
+
 beforeEach(() => setSystemTime(new Date(`${TODAY}T14:52:00`)));
 afterEach(() => setSystemTime());
 
@@ -70,14 +72,22 @@ test("cards show their badge, step count, next step or the step in session", asy
   expect(within(await cardIn(/^S42 /, "F3")).getByText("livrée")).toBeTruthy();
 });
 
-test("a late feature is outlined in red with a warning under its sprint", async () => {
-  setupPlanning();
+test("a late feature is outlined in red with a warning under its sprint, from the day after its end", async () => {
+  setSystemTime(new Date(`${DAY_AFTER}T09:00:00`));
+  setupPlanning(DAY_AFTER);
   const f5 = await cardIn(/^S42 /, "F5");
   expect(within(f5).getByText("en retard")).toBeTruthy();
   const stroke = f5.querySelector("[data-slot=penpot-stroke] rect");
   expect(stroke?.getAttribute("stroke")).toBe("var(--tracking-red)");
-  expect((await cardIn(/^S42 /, "F4")).querySelector("[data-slot=penpot-stroke]")).toBeNull();
   expect(within(await column(/^S42 /)).getByText("F5 ne tiendra pas : 4 étapes restantes")).toBeTruthy();
+});
+
+test("on the last day of its sprint a feature is neither late nor outlined", async () => {
+  setupPlanning();
+  const f5 = await cardIn(/^S42 /, "F5");
+  expect(within(f5).queryByText("en retard")).toBeNull();
+  expect(f5.querySelector("[data-slot=penpot-stroke]")).toBeNull();
+  expect((await cardIn(/^S42 /, "F4")).querySelector("[data-slot=penpot-stroke]")).toBeNull();
 });
 
 test("open features against the limit: a warning, nothing disabled", async () => {

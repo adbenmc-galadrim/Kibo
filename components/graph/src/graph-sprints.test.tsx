@@ -7,7 +7,7 @@ import { SEED_TODAY, seedSprintGraph } from "./graph-sprints-seed";
 import { Component, manifest } from "./index";
 import { SprintLanes } from "./SprintLanes";
 import { sprintLanes } from "./sprint-lanes";
-import { kitInput } from "./sprint-lanes-kit";
+import { KIT_DAY_AFTER, kitInput, kitTickets } from "./sprint-lanes-kit";
 
 afterEach(cleanup);
 
@@ -31,8 +31,8 @@ const setup = (seed = seedSprintGraph, config: Record<string, unknown> = {}, age
 };
 
 const lanes = () => screen.findByRole("region", { name: "Fonctionnalités par sprint" });
-const kitModel = () => {
-  const model = sprintLanes(kitInput());
+const kitModel = (today?: string) => {
+  const model = sprintLanes(kitInput(today === undefined ? {} : { tickets: kitTickets(today) }));
   if (model === null) throw new Error("expected lanes");
   return model;
 };
@@ -138,7 +138,7 @@ test("a frame lists its steps, the session row is outlined in orange", () => {
 });
 
 test("footers: late slips to the next sprint, blocked names its question", () => {
-  render(<SprintLanes model={kitModel()} onOpen={() => undefined} />);
+  render(<SprintLanes model={kitModel(KIT_DAY_AFTER)} onOpen={() => undefined} />);
   const f5 = screen.getByRole("article", { name: /^F5 / });
   expect(within(f5).getByText("en retard · glisse en S43")).toBeTruthy();
   expect(f5.getAttribute("data-late")).toBe("true");

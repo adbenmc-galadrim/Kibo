@@ -44,7 +44,8 @@ test("the sessions in progress, longest first, with their delivery step and dura
 test("the deadlines cover four weeks from the current sprint", () => {
   const { model } = build();
   expect(model.deadlines.rows.map((r) => r.shortKey)).toEqual(["F4", "F5", "F6", "F8", "F7"]);
-  expect(model.deadlines.rows[1]?.slipTo?.code).toBe("S43");
+  expect(model.deadlines.rows[1]?.slipTo).toBeNull();
+  expect(build("2026-10-17").model.deadlines.rows[1]?.slipTo?.code).toBe("S43");
   expect(model.deadlines.rows[2]?.blockedBy).toBe("Q14");
   expect(model.deadlines.columns.map((c) => c.sprint?.code ?? null)).toEqual(["S42", "S43", "S44", null]);
   expect(model.deadlines.today).toBe(4 / 28);
@@ -59,7 +60,7 @@ test("the current sprint lists its features, the open badge and the limit note",
   expect(sprint?.rows.map((r) => [r.shortKey, r.title, r.state, r.steps])).toEqual([
     ["F3", "Réaffecter un ISO", "delivered", "4/4"],
     ["F4", "Saisir un tronçon hors ligne", "open", "3/5"],
-    ["F5", "Envoyer les photos d'un tronçon", "late", "1/5"],
+    ["F5", "Envoyer les photos d'un tronçon", "open", "1/5"],
   ]);
   expect(sprint?.note).toBe("Limite de 2 ouvertes atteinte : F6 attendra la fin de F4 ou de F5.");
 });

@@ -87,7 +87,7 @@ test("the heading, the indicators and the cards of the project", async () => {
   expect(within(indicators).getByText("Q14 bloque F6")).toBeTruthy();
   expect(within(await card("En ce moment")).getByText("Aucune session T3 Code")).toBeTruthy();
   const deadlines = await card("Échéances");
-  expect(within(deadlines).getByText("glisse en S43")).toBeTruthy();
+  expect(within(deadlines).queryByText("glisse en S43")).toBeNull();
   expect(within(deadlines).getByText("bloquée · Q14")).toBeTruthy();
   const sprint = await card("Sprint S42 · Terrain hors ligne");
   expect(within(sprint).getByText("2/2 ouvertes")).toBeTruthy();

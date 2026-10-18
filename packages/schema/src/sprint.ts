@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { NodeId } from "./ids";
+import { sprintPhase } from "./sprint-phase";
 
 export const SprintDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 export const SprintName = z.string().trim().min(1).max(60);
@@ -37,10 +38,11 @@ export type SprintView = Sprint & {
   lingering: boolean;
 };
 
-export const sprintState = (s: Pick<Sprint, "start" | "end">, today: string): SprintState => {
-  if (s.end < today) return "done";
-  return s.start <= today ? "current" : "planned";
-};
+export function sprintState(s: Pick<Sprint, "start" | "end">, today: string): SprintState {
+  const phase = sprintPhase(s, today);
+  if (phase === "ended") return "done";
+  return phase === "upcoming" ? "planned" : "current";
+}
 
 export const sortSprints = <S extends Sprint>(sprints: readonly S[]): S[] =>
   [...sprints].sort((a, b) => a.start.localeCompare(b.start) || a.name.localeCompare(b.name));

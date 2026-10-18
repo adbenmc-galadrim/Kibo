@@ -19,7 +19,7 @@ test("each sprint lists its features with their state and what remains", () => {
   expect(summaries[1]?.features).toEqual([
     { shortKey: "F3", title: "Réaffecter un ISO", state: "delivered", remaining: 0 },
     { shortKey: "F4", title: "Saisir un tronçon hors ligne", state: "open", remaining: 1 },
-    { shortKey: "F5", title: "Envoyer les photos d'un tronçon", state: "late", remaining: 4 },
+    { shortKey: "F5", title: "Envoyer les photos d'un tronçon", state: "open", remaining: 4 },
   ]);
   expect(summaries[2]?.features.map((f) => [f.shortKey, f.state])).toEqual([
     ["F6", "blocked"],

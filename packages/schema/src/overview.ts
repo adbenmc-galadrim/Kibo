@@ -7,6 +7,7 @@ import { type FeatureView, lateFeatures } from "./late-features";
 import { isOpen } from "./question";
 import type { ProjectSnapshot, TicketView } from "./rpc";
 import { currentSprint, nextSprint, type Sprint, sortSprints } from "./sprint";
+import { sprintPhase } from "./sprint-phase";
 import { openLimitOf } from "./tracking-settings";
 
 type FeatureCell = "delivered" | "open" | "todo";
@@ -56,9 +57,13 @@ function sprintIndicator(snapshot: OverviewSnapshot, today: string): SprintIndic
     const next = nextSprint(snapshot.sprints, today);
     return { next: next === null ? null : { code: next.code, start: next.start } };
   }
-  if (current.end < today) return { code: current.code, name: current.name, ending: { ended: current.end } };
-  const days = daysBetween(today, current.end);
-  return { code: current.code, name: current.name, ending: days === 0 ? "today" : { days } };
+  const phase = sprintPhase(current, today);
+  if (phase === "ended") return { code: current.code, name: current.name, ending: { ended: current.end } };
+  return {
+    code: current.code,
+    name: current.name,
+    ending: phase === "ends-today" ? "today" : { days: daysBetween(today, current.end) },
+  };
 }
 
 const prsInReview = (t: Pick<TicketView, "externalRefs">): GithubPrRef[] =>

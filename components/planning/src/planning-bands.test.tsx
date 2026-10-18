@@ -5,6 +5,8 @@ import { bandsToday } from "./bands-model";
 import { column, setupPlanning } from "./planning-kit";
 import { TODAY } from "./test-seed";
 
+const DAY_AFTER = "2026-10-17";
+
 beforeEach(() => setSystemTime(new Date(`${TODAY}T14:52:00`)));
 afterEach(() => setSystemTime());
 
@@ -41,6 +43,17 @@ test("bands: one column per sprint then the backlog, one row per open feature", 
   expect(rowKeys(frise)).toEqual(["F4", "F5", "F6", "F8", "F7", "F9"]);
   expect(frise.querySelector("[data-current]")?.textContent).toContain("S42");
   expect(tones(frise, "F4")).toEqual(["done", "done", "done", "review", "todo"]);
+  expect(tones(frise, "F5")).toEqual(["done", "review", "progress", "todo", "todo"]);
+  expect(within(frise).queryByText("glisse en S43")).toBeNull();
+  expect(within(frise).getByText("bloquée · Q14")).toBeTruthy();
+  expect(screen.getByText("Glisse en Colonnes pour planifier")).toBeTruthy();
+  expect(screen.queryByRole("region", { name: /^S42 / })).toBeNull();
+});
+
+test("bands: from the day after its sprint, a late feature slips into the next sprint", async () => {
+  setSystemTime(new Date(`${DAY_AFTER}T09:00:00`));
+  setupPlanning(DAY_AFTER, bands);
+  const frise = await timeline();
   expect(tones(frise, "F5")).toEqual([
     "done",
     "review",
@@ -52,10 +65,7 @@ test("bands: one column per sprint then the backlog, one row per open feature", 
     "slipped",
     "slipped",
   ]);
-  expect(within(frise).getByText("glisse en S43")).toBeTruthy();
-  expect(within(frise).getByText("bloquée · Q14")).toBeTruthy();
-  expect(screen.getByText("Glisse en Colonnes pour planifier")).toBeTruthy();
-  expect(screen.queryByRole("region", { name: /^S42 / })).toBeNull();
+  expect(within(frise).getAllByText("glisse en S43").length).toBeGreaterThan(0);
 });
 
 test("the header shrinks its texts and wraps its actions under the title rather than overflowing", async () => {

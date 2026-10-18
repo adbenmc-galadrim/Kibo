@@ -153,7 +153,7 @@ export const SPRINT_VIEWS: SprintView[] = SPRINTS.map(([code, name, start, end])
 
 export const BLOCKING: ReadonlyMap<string, string> = new Map([["EMIS-51", "Q14"]]);
 
-export function emisTickets(): TicketView[] {
+export function emisTickets(today: string = TODAY): TicketView[] {
   const rows = FEATURES.flatMap((f) => [
     viewOf({
       id: key(f.n),
@@ -184,7 +184,7 @@ export function emisTickets(): TicketView[] {
             steps: featureSteps({ feature: t.id, tickets, links: [] }),
             blockingQuestions: new Set(BLOCKING.keys()),
             sprint: t.sprintId === null ? null : (sprints.get(t.sprintId) ?? null),
-            today: TODAY,
+            today,
           }),
         },
   );

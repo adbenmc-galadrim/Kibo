@@ -76,7 +76,7 @@ test("the header names the feature, its sprint, its state and its progress", () 
   renderFeature();
   expect(screen.getByText("Fonctionnalité · F5 · EMIS-30")).toBeTruthy();
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Envoyer les photos d'un tronçon");
-  expect(screen.getByText("en retard")).toBeTruthy();
+  expect(screen.getByText("ouverte")).toBeTruthy();
   expect(screen.getByText("1 étape livrée sur 5")).toBeTruthy();
   const bar = screen.getByRole("img", { name: "Étapes de la fonctionnalité" });
   expect(Array.from(bar.children, (c) => c.getAttribute("data-step"))).toEqual([
@@ -129,8 +129,16 @@ test("adding a step opens the ticket dialog under the feature", async () => {
   expect(created).toEqual([{ parentId: "f5" }]);
 });
 
-test("the sprint card warns that the feature will not fit and moves it to the next sprint", async () => {
-  renderFeature();
+const lateF5Project = (): ProjectSnapshot => {
+  const project = emisFeatureProject();
+  const tickets = project.tickets.map((t) =>
+    t.id === "f5" && t.feature !== null ? { ...t, feature: { ...t.feature, status: "late" as const } } : t,
+  );
+  return { ...project, tickets };
+};
+
+test("the sprint card warns that a late feature will not fit and moves it to the next sprint", async () => {
+  renderFeature(lateF5Project());
   const sprint = aside("Sprint");
   expect(sprint.getByText("Terrain hors ligne · 12–16 oct.")).toBeTruthy();
   expect(sprint.getByText("4 étapes restantes : ne tiendra pas dans S42.")).toBeTruthy();

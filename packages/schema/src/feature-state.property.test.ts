@@ -57,16 +57,13 @@ test("an open feature has a started step and is not delivered, whatever the day 
   );
 });
 
-test("a feature with mandatory steps left is late after its sprint, or on its last day with a step not started", () => {
+test("a feature with mandatory steps left is late only after the last day of its sprint", () => {
   fc.assert(
     fc.property(inputArb, fc.boolean(), ({ steps, blocking, sprint: drawn, today }, lastDay) => {
       const sprint = lastDay ? { end: today } : drawn;
       const state = featureState({ steps, blockingQuestions: new Set(blocking), sprint, today });
       const left = steps.filter((s) => !s.optional && s.statusId !== "done");
-      const due =
-        sprint !== null &&
-        (sprint.end < today ||
-          (sprint.end === today && left.some((s) => NOT_STARTED_STATUSES.includes(s.statusId))));
+      const due = sprint !== null && sprint.end < today;
       if (state.status === "late") expect(due).toBe(true);
       if (due && left.length > 0 && state.status !== "blocked") expect(state.status).toBe("late");
     }),

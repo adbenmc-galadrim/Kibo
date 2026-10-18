@@ -3,8 +3,10 @@ import { DEADLINE_WEEKS, deadlineColumns, deadlineRows, todayOffset } from "./de
 import { featureSteps } from "./feature-steps";
 import { BLOCKING, emisTickets, SPRINT_VIEWS, TODAY } from "./overview-test-kit";
 
-const features = () => {
-  const tickets = emisTickets();
+const AFTER = "2026-10-17";
+
+const features = (today: string) => {
+  const tickets = emisTickets(today);
   return tickets.flatMap((t, rank) =>
     t.feature === null || t.sprintId === null || t.shortKey === null
       ? []
@@ -22,7 +24,7 @@ const features = () => {
   );
 };
 const rowsAt = (today: string) =>
-  deadlineRows({ sprints: SPRINT_VIEWS, features: features(), blockingQuestions: BLOCKING, today });
+  deadlineRows({ sprints: SPRINT_VIEWS, features: features(today), blockingQuestions: BLOCKING, today });
 
 test("the window covers four weeks from the start of the current sprint", () => {
   expect(DEADLINE_WEEKS).toBe(4);
@@ -69,8 +71,14 @@ test("one row per undelivered feature of the window, by sprint then rank", () =>
   expect(rows.map((r) => r.column)).toEqual([0, 0, 1, 1, 2]);
 });
 
-test("a late feature slips its remaining steps into the next sprint", () => {
+test("on the last day of its sprint a feature does not slip yet", () => {
   const f5 = rowsAt(TODAY).find((r) => r.shortKey === "F5");
+  expect(f5?.slipTo).toBeNull();
+  expect(f5?.cells.some((c) => c.slipped)).toBe(false);
+});
+
+test("a late feature slips its remaining steps into the next sprint", () => {
+  const f5 = rowsAt(AFTER).find((r) => r.shortKey === "F5");
   expect(f5?.slipTo).toEqual({ id: "s43", code: "S43" });
   expect(f5?.cells.filter((c) => !c.slipped).map((c) => c.statusId)).toEqual([
     "done",
@@ -85,7 +93,7 @@ test("a late feature slips its remaining steps into the next sprint", () => {
     "todo",
     "todo",
   ]);
-  expect(rowsAt(TODAY).find((r) => r.shortKey === "F4")?.slipTo).toBeNull();
+  expect(rowsAt(AFTER).find((r) => r.shortKey === "F4")?.slipTo).toEqual({ id: "s43", code: "S43" });
 });
 
 test("a feature blocked by a question names it", () => {

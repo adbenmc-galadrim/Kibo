@@ -78,8 +78,8 @@ test("the next step to deliver is the first one not started, or back in review w
   expect(nextStep(steps.map((s) => ({ ...s, statusId: "done" as const })))).toBeNull();
 });
 
-test("the fixture F5 is late on the last day of S42 (end ≤ today, §37.3)", () => {
-  expect(f5().feature?.status).toBe("late");
+test("the fixture F5 is still open on the last day of S42, late only the day after (§39.6.18)", () => {
+  expect(f5().feature?.status).toBe("open");
   expect(f5().feature?.remaining).toBe(4);
 });
 

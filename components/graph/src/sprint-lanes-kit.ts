@@ -14,6 +14,7 @@ import {
 import type { SprintLanesInput } from "./sprint-lanes";
 
 export const KIT_TODAY = "2026-10-16";
+export const KIT_DAY_AFTER = "2026-10-17";
 
 type Pr = [number, "open" | "merged", PrReview?];
 type Step = { n: number; title: string; status: StatusId; pr?: Pr; branch?: string; optional?: boolean };
@@ -243,7 +244,7 @@ export const KIT_LINKS: Link[] = [
   ...FEATURE_LINKS.map(([from, to]) => [rootOf(from), rootOf(to)] as const),
 ].map(([from, to], i) => ({ id: `l${i}`, from, to, type: "blocks" as const }));
 
-export function kitTickets(): TicketView[] {
+export function kitTickets(today: string = KIT_TODAY): TicketView[] {
   const rows = FEATURES.flatMap((f) => [
     kitView({
       id: key(f.n),
@@ -266,7 +267,7 @@ export function kitTickets(): TicketView[] {
             steps: featureSteps({ feature: t.id, tickets, links: KIT_LINKS }),
             blockingQuestions: new Set([key(51)]),
             sprint: t.sprintId === null ? null : (sprints.get(t.sprintId) ?? null),
-            today: KIT_TODAY,
+            today,
           }),
         },
   );

@@ -1,4 +1,5 @@
 import type { FeatureStep } from "./feature-steps";
+import { isInProgressFeature } from "./in-progress-features";
 import type { Sprint } from "./sprint";
 import { FINAL_STATUSES, NOT_STARTED_STATUSES } from "./startable";
 
@@ -18,17 +19,12 @@ export type FeatureStateInput = {
 };
 
 export const DEFAULT_OPEN_LIMIT = 2;
-const CLOSED_STATUSES: readonly FeatureStatus[] = ["todo", "delivered"];
 
 const isStarted = (s: { statusId: FeatureStep["statusId"] }): boolean =>
   !NOT_STARTED_STATUSES.includes(s.statusId);
 const isDone = (s: { statusId: FeatureStep["statusId"] }): boolean => FINAL_STATUSES.includes(s.statusId);
 
-function isLate(input: FeatureStateInput): boolean {
-  if (input.sprint === null || input.sprint.end > input.today) return false;
-  if (input.sprint.end < input.today) return true;
-  return input.steps.some((s) => !s.optional && !isStarted(s));
-}
+const isLate = (input: FeatureStateInput): boolean => input.sprint !== null && input.sprint.end < input.today;
 
 function statusOf(input: FeatureStateInput, remaining: number): FeatureStatus {
   if (remaining === 0) return "delivered";
@@ -57,7 +53,7 @@ export function featureState(input: FeatureStateInput): FeatureState {
   };
 }
 
-export const isOpenFeature = (s: FeatureState): boolean => s.started && !CLOSED_STATUSES.includes(s.status);
+export const isOpenFeature = (s: FeatureState): boolean => isInProgressFeature(s);
 
 export const openFeatures = (views: readonly { feature: FeatureState | null }[]): number =>
   views.filter((v) => v.feature !== null && isOpenFeature(v.feature)).length;

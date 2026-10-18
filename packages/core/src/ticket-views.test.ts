@@ -121,7 +121,7 @@ test("a group is done once its mandatory steps are, an optional demo left to do"
   expect(() => optional(d, f3.id)).toThrow("INVALID_INPUT");
 });
 
-test("a feature is late on its sprint's last day with a step to do, dated by the given day", () => {
+test("a feature is late only after its sprint's last day, dated by the given day", () => {
   const d = newDoc();
   const s42 = executeProjectCommand(d, {
     method: "createSprint",
@@ -136,9 +136,10 @@ test("a feature is late on its sprint's last day with a step to do, dated by the
   status(d, a.id, "in_progress");
   executeProjectCommand(d, { method: "setTicketSprint", ticketId: f5.id, sprintId: s42.id });
   expect(viewOn(d, "2026-10-15", f5.id).feature?.status).toBe("open");
-  expect(viewOn(d, "2026-10-16", f5.id).feature).toMatchObject({ status: "late", remaining: 2 });
+  expect(viewOn(d, "2026-10-16", f5.id).feature).toMatchObject({ status: "open", remaining: 2 });
+  expect(viewOn(d, "2026-10-17", f5.id).feature).toMatchObject({ status: "late", remaining: 2 });
   status(d, a.id, "in_review");
-  expect(viewOn(d, "2026-10-16", f5.id).feature?.status).toBe("late");
+  expect(viewOn(d, "2026-10-17", f5.id).feature?.status).toBe("late");
   expect(view(d, f5.id).feature?.status).toBe("open");
 });
 

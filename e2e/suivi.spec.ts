@@ -104,8 +104,9 @@ test("the Graphe shows Emis in sprint columns, then in waves", async ({ page }) 
     await expect(lanes.getByRole("group", { name: lane })).toBeVisible();
   await expect(lanes.getByRole("group", { name: "À planifier" })).toBeVisible();
   const f5 = lanes.getByRole("article", { name: /^F5 / });
-  await expect(f5).toHaveAttribute("data-late", "true");
-  await expect(f5).toContainText("en retard · glisse en S43");
+  await expect(f5).toBeVisible();
+  await expect(f5).not.toHaveAttribute("data-late", "true");
+  await expect(f5).not.toContainText("glisse en S43");
 
   const f1 = lanes.getByRole("article", { name: /^F1 / });
   await expect(f1.getByText("Application Azure")).toHaveCount(0);
