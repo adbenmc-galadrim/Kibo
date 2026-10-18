@@ -171,19 +171,28 @@ export function lastUserMessage(log: readonly RunLogEntry[]): string | null {
   return null;
 }
 
-export function lastAgentText(items: readonly ConversationItem[]): string | null {
+type AgentItem = Extract<ConversationItem, { kind: "agent" }>;
+
+function lastAgent(items: readonly ConversationItem[]): AgentItem | null {
   for (let i = items.length - 1; i >= 0; i--) {
     const item = items[i];
-    if (item?.kind === "agent") return item.text;
+    if (item?.kind === "agent") return item;
   }
   return null;
 }
+
+export const lastAgentText = (items: readonly ConversationItem[]): string | null =>
+  lastAgent(items)?.text ?? null;
 
 export function supersededCount(batches: readonly Batch[]): number {
   return batches.filter((b) => b.status === "superseded").length;
 }
 
-export type TrackingThread = { summary: string | null; exchange: ConversationItem[] };
+export type TrackingThread = {
+  summary: string | null;
+  summaryAt: number | null;
+  exchange: ConversationItem[];
+};
 const inExchange = (item: ConversationItem): boolean =>
   item.kind === "event" ? item.tone === "red" : item.kind !== "batch";
 
@@ -194,11 +203,11 @@ function lastUserIndex(items: readonly ConversationItem[]): number {
 
 export function trackingThread(items: readonly ConversationItem[]): TrackingThread {
   const asked = lastUserIndex(items);
-  const before = asked < 0 ? null : lastAgentText(items.slice(0, asked));
-  const after = asked < 0 ? null : lastAgentText(items.slice(asked));
-  if (asked < 0 || (before === null && after !== null))
-    return { summary: lastAgentText(items), exchange: [] };
-  return { summary: before, exchange: items.slice(asked).filter(inExchange) };
+  const before = asked < 0 ? null : lastAgent(items.slice(0, asked));
+  const after = asked < 0 ? null : lastAgent(items.slice(asked));
+  const summary = asked < 0 || (before === null && after !== null) ? lastAgent(items) : before;
+  const exchange = summary === before && asked >= 0 ? items.slice(asked).filter(inExchange) : [];
+  return { summary: summary?.text ?? null, summaryAt: summary?.at ?? null, exchange };
 }
 
 export function panelStatus(run: RunView | null, pending: Batch | null): PanelStatus {

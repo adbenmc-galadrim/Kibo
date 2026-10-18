@@ -1,8 +1,9 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, setSystemTime, test } from "bun:test";
 import type { ProjectAgentView, RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
+import { NOW } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 import { type Host, HostProvider } from "../shell/Host";
 import type { ProjectAgentTab } from "../shell/use-project-agent-panel";
@@ -41,7 +42,9 @@ const host: Host = {
   openTarget: () => {},
 };
 
+afterEach(() => setSystemTime());
 beforeEach(() => {
+  setSystemTime(new Date(NOW));
   localStorage.clear();
   calls.length = 0;
   current = viewFixture();

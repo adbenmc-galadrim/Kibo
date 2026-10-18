@@ -1,6 +1,6 @@
-import { expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, setSystemTime, test } from "bun:test";
 import type { Batch } from "@kibo/schema";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 import type { Decision } from "./BatchCard";
@@ -19,6 +19,9 @@ const AT = new Date(2026, 9, 16, 14, 48).getTime();
 const agent = (id: string, text: string): ConversationItem => ({ kind: "agent", id, at: AT, text });
 const user = (id: string, text: string): ConversationItem => ({ kind: "user", id, at: AT, text });
 const summaryOnly = (summary: string | null): ConversationItem[] => (summary ? [agent("a1", summary)] : []);
+
+beforeEach(() => setSystemTime(new Date(2026, 9, 16, 15, 0)));
+afterEach(() => setSystemTime());
 
 type Options = { items?: ConversationItem[]; withBatch?: boolean; superseded?: number; result?: Batch };
 
@@ -122,4 +125,16 @@ test("the box asks the project agent", async () => {
   const user = userEvent.setup();
   await user.type(box, "Où en est F5 ?{Enter}");
   await waitFor(() => expect(sent).toEqual(["Où en est F5 ?"]));
+});
+
+test("the summary is dated: its time today, its day and time before", () => {
+  setSystemTime(new Date(2026, 9, 16, 15, 0));
+  show();
+  const today = within(screen.getByRole("region", { name: "Résumé du jour" }));
+  expect(today.getByText("14:48")).toBeTruthy();
+  cleanup();
+  setSystemTime(new Date(2026, 9, 17, 9, 0));
+  show();
+  const before = within(screen.getByRole("region", { name: "Dernier résumé" }));
+  expect(before.getByText("16 oct. · 14:48")).toBeTruthy();
 });

@@ -74,6 +74,8 @@ export const frProjectAgent = {
     title: "Agent de projet",
     upToDate: (age: string) => `Suivi à jour · ${age}`,
     summary: "Résumé du jour",
+    earlierSummary: "Dernier résumé",
+    summaryDay: (day: string, time: string) => `${day} · ${time}`,
     noSummary: (project: string) => `Pose une question sur ${project} ou attends la fin du sprint.`,
     toValidate: "À valider",
     footer: "Les états avancent seuls (git, PR, étapes full-delivery). L'agent propose, tu valides.",

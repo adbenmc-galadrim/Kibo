@@ -2,8 +2,10 @@ import type { Batch } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { History, Pin, RefreshCw } from "lucide-react";
 import { type ReactNode, useId, useState } from "react";
+import { formatClock } from "../agents/format";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { AgentText } from "../moments/AgentText";
+import { useNow } from "../state/use-agents";
 import type { Decision } from "./BatchCard";
 import { BatchRecap } from "./BatchRecap";
 import type { DiffLabels } from "./batch-groups";
@@ -27,6 +29,10 @@ type Props = {
 type Recap = { batch: Batch; labels: DiffLabels };
 
 const t = frProjectAgent.tracking;
+const DAY = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+const sameDay = (a: number, b: number): boolean => new Date(a).toDateString() === new Date(b).toDateString();
+const summaryTime = (at: number, today: boolean): string =>
+  today ? formatClock(at) : t.summaryDay(DAY.format(at), formatClock(at));
 const HEADING = "text-[12px] leading-[15px] font-semibold tracking-[0.5px] text-(--tracking-mfg) uppercase";
 const SUMMARY =
   "gap-[8px] text-[13px] leading-[20.33px] text-(--tracking-mfg) [&>:first-child]:text-[14px] [&>:first-child]:leading-[21px] [&>:first-child]:font-medium [&>:first-child]:text-(--tracking-fg)";
@@ -74,7 +80,9 @@ export function TrackingView({
 }: Props) {
   const id = useId();
   const [recap, setRecap] = useState<Recap | null>(null);
-  const { summary, exchange } = trackingThread(items);
+  const now = useNow(60_000);
+  const { summary, summaryAt, exchange } = trackingThread(items);
+  const today = summaryAt === null || sameDay(summaryAt, now);
   const asking = exchange.length > 0;
   const decide = async (pending: Batch, d: Decision) => {
     const decidedWith = labels;
@@ -94,9 +102,14 @@ export function TrackingView({
           <div className="flex items-center gap-[6px]">
             {asking && <Pin aria-hidden className="size-[12px] text-(--tracking-mfg)" />}
             <h2 id={id} className={HEADING}>
-              {t.summary}
+              {today ? t.summary : t.earlierSummary}
             </h2>
-            {asking && <span className="ml-auto text-[12px] text-(--tracking-mfg)">{t.pinned}</span>}
+            <span className="ml-auto flex gap-[6px] text-[12px] text-(--tracking-mfg)">
+              {summaryAt !== null && (
+                <time dateTime={new Date(summaryAt).toISOString()}>{summaryTime(summaryAt, today)}</time>
+              )}
+              {asking && <span>{t.pinned}</span>}
+            </span>
           </div>
           {summary ? (
             <AgentText text={summary} onTicket={onTicket} className={SUMMARY} />

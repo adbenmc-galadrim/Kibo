@@ -219,17 +219,25 @@ const agent = (id: string, text: string): ConversationItem => ({ kind: "agent", 
 
 test("the question asked after the summary is the exchange, the summary stays", () => {
   const items = [user("u1", "Fais le point"), agent("a1", "F3 est livrée."), user("u2", "Où en est F5 ?")];
-  expect(trackingThread(items)).toEqual({ summary: "F3 est livrée.", exchange: items.slice(2) });
+  expect(trackingThread(items)).toEqual({
+    summary: "F3 est livrée.",
+    summaryAt: 1,
+    exchange: items.slice(2),
+  });
   const answered = [...items, agent("a2", "Il reste 4 étapes.")];
-  expect(trackingThread(answered)).toEqual({ summary: "F3 est livrée.", exchange: answered.slice(2) });
+  expect(trackingThread(answered)).toEqual({
+    summary: "F3 est livrée.",
+    summaryAt: 1,
+    exchange: answered.slice(2),
+  });
 });
 
 test("the turn that wrote the summary shows no exchange, a first question does until answered", () => {
   const point = [user("u1", "Fais le point"), agent("a1", "F3 est livrée.")];
-  expect(trackingThread(point)).toEqual({ summary: "F3 est livrée.", exchange: [] });
+  expect(trackingThread(point)).toEqual({ summary: "F3 est livrée.", summaryAt: 1, exchange: [] });
   const first = [user("u1", "Où en est F5 ?")];
-  expect(trackingThread(first)).toEqual({ summary: null, exchange: first });
-  expect(trackingThread([])).toEqual({ summary: null, exchange: [] });
+  expect(trackingThread(first)).toEqual({ summary: null, summaryAt: null, exchange: first });
+  expect(trackingThread([])).toEqual({ summary: null, summaryAt: null, exchange: [] });
 });
 
 test("the exchange keeps a failed turn but drops muted session lines", () => {
