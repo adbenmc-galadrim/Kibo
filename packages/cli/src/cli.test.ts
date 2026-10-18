@@ -46,6 +46,20 @@ describe("kibo component", () => {
     expect(t.err.at(-1)).toContain("kibo tickets step <clé> <0-11> [note] [--update] [--json]");
   });
 
+  test("--help tells how to reach a daemon, --home picks its folder", async () => {
+    const t = io();
+    const daemon = "Démon : $KIBO_HOME/daemon.json (défaut ~/.kibo), ou --home <dossier>";
+    expect(await runCli(["--help"], t.io)).toBe(0);
+    expect(t.out.at(-1)).toContain(daemon);
+    expect(await runCli(["tickets", "--help"], t.io)).toBe(0);
+    expect(t.out.at(-1)).toContain(daemon);
+    expect(t.out.at(-1)).toContain("kibo tickets set <clé|id du plan>");
+    const elsewhere = join(t.home, "elsewhere");
+    writeFileSync(join(t.home, "daemon.json"), "{corrupt");
+    expect(await runCli(["tickets", "list", "--project", "EMIS", "--home", elsewhere], t.io)).toBe(1);
+    expect(t.err.at(-1)).toBe("Kibo n'est pas lancé : ouvre l'application Kibo, puis réessaie.");
+  });
+
   test("market prints its usage and explains a missing daemon", async () => {
     const t = io();
     expect(await runCli(["market"], t.io)).toBe(2);

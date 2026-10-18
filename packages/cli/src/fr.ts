@@ -8,10 +8,14 @@ const MARKET_USAGE = [
   "  kibo market index --dir <dossier> --key <fichier> --id <source> --name <nom> [--verify <clés>]",
 ];
 
+const DAEMON_HELP = "Démon : $KIBO_HOME/daemon.json (défaut ~/.kibo), ou --home <dossier>";
+const PROJECT_HINT =
+  "Projet de get et set : --project, sinon le préfixe de la clé (EMIS-12), sinon le dossier courant.";
+
 const TICKETS_USAGE = [
   "  kibo tickets list --project <clé|nom|id> [--ready] [--status <s>[,<s>…]] [--sprint <id|code|nom|current|none>] [--json]",
-  "  kibo tickets get <clé|id du plan> --project <p> [--json]",
-  "  kibo tickets set <clé|id du plan> [status=<todo|wip|done|blocked>] [pr=<n|url>] [branch=<nom> [base=<nom>]] [reason=<texte>] --project <p> [--json]",
+  "  kibo tickets get <clé|id du plan> [--project <p>] [--json]",
+  "  kibo tickets set <clé|id du plan> [status=<todo|wip|done|blocked>] [pr=<n|url>] [branch=<nom> [base=<nom>]] [reason=<texte>] [--project <p>] [--json]",
   "  kibo tickets step <clé> <0-11> [note] [--update] [--json]",
   "  kibo tickets session [<clé>] <start|ping|stop> [--tool <nom>] [--project <p>] [--json]",
 ];
@@ -36,18 +40,23 @@ const prParts = (pr: PrSummary): string[] =>
   ].filter((part) => part !== null);
 
 const ref = (r: TicketRef) => `${r.key}${r.planId ? ` (${r.planId}, ${r.status})` : ` (${r.status})`}`;
-const refs = (list: TicketRef[]) => (list.length === 0 ? "aucun" : list.map(ref).join(", "));
+const refs = (list: TicketRef[], none: string) => (list.length === 0 ? none : list.map(ref).join(", "));
 
 export const frTickets = {
-  usage: ["Usage :", ...TICKETS_USAGE].join("\n"),
+  usage: ["Usage :", ...TICKETS_USAGE, "", PROJECT_HINT, DAEMON_HELP].join("\n"),
+  featureNeedsProject: "clé de fonctionnalité : préciser --project",
   notRunning: "Kibo n'est pas lancé : ouvre l'application Kibo, puis réessaie.",
   projectNotFound: (p: string) => `Projet introuvable : ${p}`,
   ticketNotFound: (id: string) => `Ticket introuvable : ${id}`,
   sprintNotFound: (name: string) => `Sprint introuvable : ${name}`,
   notesUnavailable: "Notes liées indisponibles : ce démon Kibo est plus ancien que la commande kibo.",
   defaultBlockedReason: "Bloqué par la livraison (kibo tickets)",
-  updated: (key: string, changes: string[]) =>
-    `✓ ${key} : ${changes.length === 0 ? "déjà à jour" : changes.join(" ")}`,
+  updated: (key: string, changes: string[], status: string | null) =>
+    `✓ ${key} : ${changes.length === 0 ? "déjà à jour" : changes.join(", ")}${status === null ? "" : ` · ${status}`}`,
+  statusChange: (status: string) => `statut ${status}`,
+  branchChange: (branch: string, base: string | null) =>
+    base === null ? `branche ${branch}` : `branche ${branch} (base ${base})`,
+  prChange: (n: number) => `PR #${n}`,
   status: (status: string, column: string) => `Statut : ${status} (${column})`,
   blocked: (reason: string) => `Raison du blocage : ${reason}`,
   parent: (r: TicketRef | null) => `Parent : ${r ? ref(r) : "aucun"}`,
@@ -55,8 +64,8 @@ export const frTickets = {
   feature: (f: FeatureRef | null) =>
     `Fonctionnalité : ${f ? [f.shortKey, f.key, f.title].filter((part) => part !== null).join(" · ") : "aucune"}`,
   optional: "Étape facultative",
-  children: (list: TicketRef[]) => `Enfants : ${refs(list)}`,
-  deps: (list: TicketRef[]) => `Dépendances : ${refs(list)}`,
+  children: (list: TicketRef[]) => `Enfants : ${refs(list, "aucun")}`,
+  deps: (list: TicketRef[]) => `Dépendances : ${refs(list, "aucune")}`,
   pr: (pr: PrSummary | null) => `PR : ${pr ? prParts(pr).join(" · ") : "aucune"}`,
   session: (tool: string, since: string) => `Session : ${tool} · depuis ${since}`,
   touchUp: (step: number, max: number, label: string) => `Retouche : ${step}/${max} · ${label}`,
@@ -112,6 +121,8 @@ export const fr = {
     ...TICKETS_USAGE,
     ...SPRINTS_USAGE,
     ...PROJECTS_USAGE,
+    "",
+    DAEMON_HELP,
   ].join("\n"),
   marketUsage: ["Usage :", ...MARKET_USAGE].join("\n"),
   keyWritten: (file: string, fingerprint: string) =>

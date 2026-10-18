@@ -1,6 +1,7 @@
 import { tmpdir } from "node:os";
 import {
   DEFAULT_WORKFLOW,
+  type DeclareTicketRefResult,
   EMPTY_PROGRESS,
   type ExternalRef,
   type ProjectMeta,
@@ -123,15 +124,38 @@ export function fakeSnapshot(
   return partial as never;
 }
 
-export function fakeDaemon(tickets: TicketView[] = TICKETS, sprints: SprintView[] = SPRINTS) {
+type Declare = Extract<RpcRequest, { method: "declareTicketRef" }>;
+export type FakeDaemonOptions = {
+  projects?: ProjectMeta[];
+  declared?: (req: Declare, ticket: TicketView) => DeclareTicketRefResult;
+};
+
+const unchanged = (_req: Declare, ticket: TicketView): DeclareTicketRefResult => ({
+  ticket,
+  statusChanged: false,
+});
+
+export function fakeDaemon(
+  tickets: TicketView[] = TICKETS,
+  sprints: SprintView[] = SPRINTS,
+  options: FakeDaemonOptions = {},
+) {
   const calls: RpcRequest[] = [];
+  const declared = options.declared ?? unchanged;
   const client: DaemonClient = {
     async rpc(req) {
       const sent: RpcRequest = req;
       calls.push(sent);
-      if (sent.method === "listProjects") return [EMIS_META] as never;
+      if (sent.method === "listProjects") return (options.projects ?? [EMIS_META]) as never;
       if (sent.method === "getProject") return fakeSnapshot(tickets, sprints) as never;
       if (sent.method === "command") return {} as never;
+      if (sent.method === "getNotesDir") return { dir: tmpdir() } as never;
+      if (sent.method === "listNotes") return [] as never;
+      if (sent.method === "declareTicketRef") {
+        const ticket = tickets.find((t) => t.key === sent.ticketKey);
+        if (!ticket) throw new Error(`unknown ${sent.ticketKey}`);
+        return declared(sent, ticket) as never;
+      }
       throw new Error(`unexpected ${sent.method}`);
     },
     async close() {},
@@ -140,5 +164,7 @@ export function fakeDaemon(tickets: TicketView[] = TICKETS, sprints: SprintView[
   const err: string[] = [];
   const io = { home: tmpdir(), out: (l: string) => out.push(l), err: (l: string) => err.push(l) };
   const commands = () => calls.flatMap((c) => (c.method === "command" ? [c.command] : []));
-  return { client, calls, commands, out, err, io, connect: async () => client };
+  const declarations = () =>
+    calls.flatMap((c) => (c.method === "declareTicketRef" ? [{ ticketKey: c.ticketKey, ref: c.ref }] : []));
+  return { client, calls, commands, declarations, out, err, io, connect: async () => client };
 }

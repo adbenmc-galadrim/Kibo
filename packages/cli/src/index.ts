@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { resolveToolchain, type Toolchain } from "@kibo/devkit";
 import { KiboError, Template } from "@kibo/schema";
 import { type Parsed, parseArgs } from "./args";
@@ -15,7 +15,7 @@ import {
 import { sprintsCommand } from "./commands/sprints";
 import { componentDir, testCommand } from "./commands/test";
 import { runTicketsCommand } from "./commands/tickets";
-import { fr } from "./fr";
+import { fr, frTickets } from "./fr";
 
 export type CliIo = { home: string; toolchain: Toolchain; out(line: string): void; err(line: string): void };
 
@@ -102,9 +102,19 @@ async function reportingErrors(io: CliIo, run: () => Promise<number>): Promise<n
   }
 }
 
-export async function runCli(argv: string[], io: CliIo): Promise<number> {
+const withHome = (io: CliIo, flags: Parsed["flags"]): CliIo =>
+  typeof flags.home === "string" ? { ...io, home: resolve(flags.home) } : io;
+
+function help(scope: string | undefined, io: CliIo): number {
+  io.out(scope === "tickets" ? frTickets.usage : fr.usage);
+  return 0;
+}
+
+export async function runCli(argv: string[], given: CliIo): Promise<number> {
   const { positional, flags } = parseArgs(argv);
+  const io = withHome(given, flags);
   const [scope, command, target] = positional;
+  if (flags.help === true) return help(scope, io);
   if (scope === "market")
     return reportingErrors(io, () => runMarketCommand(positional.slice(1), flags, marketDeps(io)));
   if (scope === "tickets")

@@ -198,13 +198,13 @@ describe("kibo tickets against a real daemon", () => {
     expect(t.out.at(-1)).toBe("Tout le détail.");
   });
 
-  test("set writes the status and the PR through project commands", async () => {
+  test("set writes the status, then the PR moves the ticket to review like git", async () => {
     const t = cli(home);
     expect(await t.run("set", "C1-2", "status=wip", "pr=12", "--project", "EMIS")).toBe(0);
-    expect(t.out.at(-1)).toBe("✓ EMIS-3 : status=wip pr=12");
-    expect(await t.json("get", "C1-2", "--project", "EMIS")).toMatchObject({
+    expect(t.out.at(-1)).toBe("✓ EMIS-3 : statut wip, PR #12 · En review");
+    expect(await t.json("get", "EMIS-3")).toMatchObject({
       status: "wip",
-      kiboStatus: "in_progress",
+      kiboStatus: "in_review",
       pr: {
         number: 12,
         url: "https://github.com/galadrim/emis/pull/12",

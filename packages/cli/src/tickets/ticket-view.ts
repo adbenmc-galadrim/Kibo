@@ -143,6 +143,7 @@ export function lookupTicket(tickets: readonly TicketView[], ident: string): Tic
   const wanted = ident.trim().toUpperCase();
   return (
     tickets.find((t) => t.key?.toUpperCase() === wanted) ??
+    tickets.find((t) => t.shortKey?.toUpperCase() === wanted) ??
     tickets.find((t) => planIdOf(t)?.toUpperCase() === wanted) ??
     tickets.find((t) => t.id === ident.trim()) ??
     null

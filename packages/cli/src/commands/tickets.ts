@@ -5,8 +5,8 @@ import { briefFile, detailExtras, notesOrEmpty } from "../tickets/ticket-detail"
 import { detailLines, listLine, type TicketDetail } from "../tickets/ticket-text";
 import { sprintSelector } from "../tickets/ticket-tracking";
 import { isReady, lookupTicket, matchesStatus, statusFilter, summarize } from "../tickets/ticket-view";
-import { type Connect, findProject, printJson, type SessionIo, withClient } from "./daemon-session";
-import { notFound, summaryOf, type TicketsContext } from "./tickets-context";
+import { type Connect, printJson, type SessionIo, withClient } from "./daemon-session";
+import { chooseProject, notFound, summaryOf, type TicketsContext } from "./tickets-context";
 import { ticketsSession } from "./tickets-session";
 import { applySet, type SetRequest, setRequestOrExit } from "./tickets-set";
 import { ticketsStep } from "./tickets-step";
@@ -57,7 +57,8 @@ function isUsage(sub: string | undefined, ident: string | undefined, flags: Flag
   return (
     sub === undefined ||
     !SUBCOMMANDS.has(sub) ||
-    typeof flags.project !== "string" ||
+    flags.project === true ||
+    (sub === "list" && flags.project === undefined) ||
     flags.sprint === true ||
     (sub !== "list" && !ident)
   );
@@ -68,12 +69,13 @@ export async function runTicketsCommand(
   flags: Flags,
   io: TicketsIo,
   connect?: Connect,
+  cwd: string = process.cwd(),
 ): Promise<number> {
   const [sub, ident, ...rest] = positional;
   if (sub === "step") return ticketsStep(positional.slice(1), flags, io, connect);
   if (sub === "session") return ticketsSession(positional.slice(1), flags, io, connect);
-  const project = flags.project;
-  if (isUsage(sub, ident, flags) || typeof project !== "string") {
+  const project = flags.project === true ? undefined : flags.project;
+  if (isUsage(sub, ident, flags)) {
     io.err(frTickets.usage);
     return 2;
   }
@@ -82,12 +84,12 @@ export async function runTicketsCommand(
   return withClient(
     io,
     async (client) => {
-      const summary = findProject(await client.rpc({ method: "listProjects" }), project);
-      if (!summary) {
-        io.err(frTickets.projectNotFound(project));
-        return 1;
+      const choice = chooseProject(await client.rpc({ method: "listProjects" }), ident ?? "", project, cwd);
+      if ("problem" in choice) {
+        io.err(choice.problem);
+        return choice.code;
       }
-      const snapshot = await client.rpc({ method: "getProject", projectId: summary.id });
+      const snapshot = await client.rpc({ method: "getProject", projectId: choice.project.id });
       const ctx = { client, snapshot, flags, io };
       if (sub === "list") return listCommand(ctx);
       if (request !== null) return applySet(request, ident ?? "", ctx);
