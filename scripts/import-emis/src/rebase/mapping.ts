@@ -1,6 +1,6 @@
 import { type Actor, type ImportRef, KiboError, QUESTION_TITLE_MAX } from "@kibo/schema";
 import type { OldLink, OldMeta, OldProject, OldQuestion, OldTicket } from "./old-project";
-import { questionTarget, UNPLACED } from "./question-placement";
+import { type QuestionRules, questionTarget, ruleOf, UNPLACED } from "./question-placement";
 import type { TodoPlacement } from "./todo-placement";
 
 export type NewStep = {
@@ -21,6 +21,7 @@ export type NewFeature = {
   steps: NewStep[];
 };
 export type PlacedQuestion = { old: OldQuestion; ticketOldKey: string };
+export type DroppedQuestion = { id: string; title: string; why: string };
 export type NewLink = { from: string; to: string; type: OldLink["type"] };
 export type DroppedLink = OldLink & { why: string };
 export type Mapping = {
@@ -29,6 +30,7 @@ export type Mapping = {
   keys: Map<string, string>;
   dropped: { oldKey: string; why: string }[];
   questions: PlacedQuestion[];
+  droppedQuestions: DroppedQuestion[];
   links: NewLink[];
   droppedLinks: DroppedLink[];
 };
@@ -146,11 +148,7 @@ function remapLinks(old: OldProject, keys: ReadonlyMap<string, string>, question
   return { links, droppedLinks };
 }
 
-export function mapProject(
-  old: OldProject,
-  placement: TodoPlacement,
-  overrides: Readonly<Record<string, string>>,
-): Mapping {
+export function mapProject(old: OldProject, placement: TodoPlacement, overrides: QuestionRules): Mapping {
   const roots = rootsOf(old);
   assertTwoLevels(old, roots);
   const drafts: Draft[] = CHAPTER_ORDER.flatMap((c) => {
@@ -183,7 +181,14 @@ export function mapProject(
   }
   const kept = old.tickets.filter((t) => keys.has(t.key));
   const asQuestion = new Map(todoQuestions.map((q) => [q.old.ticketKey, q.ticketOldKey]));
-  const placed = old.questions.map((q) => ({
+  const droppedQuestions: DroppedQuestion[] = [];
+  const carried = old.questions.filter((q) => {
+    const rule = ruleOf(q, overrides);
+    if (typeof rule !== "object") return true;
+    droppedQuestions.push({ id: q.importRef?.id ?? q.id, title: q.title, why: rule.drop });
+    return false;
+  });
+  const placed = carried.map((q) => ({
     old: q,
     ticketOldKey: keys.has(q.ticketKey)
       ? q.ticketKey
@@ -196,6 +201,7 @@ export function mapProject(
     keys,
     dropped,
     questions: [...todoQuestions, ...placed],
+    droppedQuestions,
     ...remapLinks(old, keys, questionKeys),
   };
 }

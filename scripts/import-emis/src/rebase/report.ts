@@ -160,6 +160,12 @@ function droppedSections(m: Mapping): string[] {
     "",
     ...m.dropped.map((d) => `- ${d.oldKey} : ${d.why}.`),
     "- Non transférés (présents dans la sauvegarde) : historique de l'agent de projet, journal `project_events`, historique d'édition des questions.",
+    "",
+    "## Questions non reprises",
+    "",
+    ...(m.droppedQuestions.length === 0
+      ? ["Aucune."]
+      : m.droppedQuestions.map((q) => `- ${q.id} « ${q.title} » : ${q.why}.`)),
   ];
 }
 

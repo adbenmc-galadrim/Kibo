@@ -14,6 +14,7 @@ import { desiredCommands, type PlannedCommand, rebaseSetup } from "./desired-new
 import { type Mapping, mapProject } from "./mapping";
 import type { OldProject } from "./old-project";
 import { featureSprints, planSprints, remainingOf, type StepSlot, stepInputs } from "./plan-sprints";
+import type { QuestionRules } from "./question-placement";
 import type { TodoPlacement } from "./todo-placement";
 import { type Merge, observedVelocity, type StepMerge } from "./velocity";
 
@@ -92,6 +93,7 @@ const MappingFile = z.object({
   keys: z.array(z.tuple([z.string(), z.string()])).transform((entries) => new Map(entries)),
   dropped: z.array(z.object({ oldKey: z.string(), why: z.string() })),
   questions: z.array(z.object({ old: OldQuestion, ticketOldKey: z.string() })),
+  droppedQuestions: z.array(z.object({ id: z.string(), title: z.string(), why: z.string() })),
   links: z.array(z.object({ from: z.string(), to: z.string(), type: LinkType })),
   droppedLinks: z.array(
     z.object({ fromKey: z.string(), toKey: z.string(), type: LinkType, why: z.string() }),
@@ -158,7 +160,7 @@ export type PlanRequest = {
   source: PlanSource;
   merges: readonly Merge[] | null;
   placement: TodoPlacement;
-  overrides: Readonly<Record<string, string>>;
+  overrides: QuestionRules;
 };
 
 export function buildRebasePlan(request: PlanRequest): RebasePlan {

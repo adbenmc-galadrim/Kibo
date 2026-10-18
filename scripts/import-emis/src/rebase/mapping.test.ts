@@ -6,7 +6,7 @@ import { QUESTION_PLACEMENT } from "./question-placement";
 import { TODO_PLACEMENT } from "./todo-placement";
 
 const old = readOldProject(emisShapedSnapshot());
-const mapping = mapProject(old, TODO_PLACEMENT, QUESTION_PLACEMENT);
+const mapping = mapProject(old, TODO_PLACEMENT, {});
 const oldKeyOf = (planId: string) => old.tickets.find((t) => t.planId === planId)?.key ?? "";
 const todoKeyOf = (id: string) =>
   old.tickets.find((t) => t.refs.some((r) => r.kind === "import_ref" && r.source === "todo" && r.id === id))
@@ -131,6 +131,22 @@ describe("mapProject", () => {
     expect(mapProject(named, TODO_PLACEMENT, { Q42: "C8-2" }).questions.at(-1)?.ticketOldKey).toBe(
       oldKeyOf("C8-2"),
     );
+  });
+
+  test("a question named by its id is placed or left out with its reason", () => {
+    const arbitrages = oldKeyOf("arbitrages");
+    const loose = withQuestion(old, {
+      ticketKey: arbitrages,
+      title: "Sans cible",
+      context: "",
+      importRef: null,
+    });
+    const placed = mapProject(loose, TODO_PLACEMENT, { qx: "C8-2" });
+    expect(placed.questions.at(-1)?.ticketOldKey).toBe(oldKeyOf("C8-2"));
+    const left = mapProject(loose, TODO_PLACEMENT, { qx: { drop: "doublon" } });
+    expect(left.questions.some((q) => q.old.id === "qx")).toBe(false);
+    expect(left.droppedQuestions).toEqual([{ id: "qx", title: "Sans cible", why: "doublon" }]);
+    expect(mapping.droppedQuestions).toEqual([]);
   });
 
   test("labels lose sprint and phase, and no assignee is carried", () => {

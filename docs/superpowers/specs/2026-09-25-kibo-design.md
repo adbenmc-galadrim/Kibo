@@ -2526,6 +2526,8 @@ Demande : « faire les choses minimales d'abord ». Kibo **suit** le développem
 - **Conservé** : statut, PR, branche et base, étape de livraison, description, dépendances et questions (remappées vers les nouvelles clés), étape facultative.
 - **Nouvelle base** : un projet neuf « Emis » créé par le flux §39.2 (pages minimales) reçoit les tickets reformatés ; l'ancien projet est supprimé après vérification (comptes, statuts, PR, questions). Le skill `full-delivery` est mis à jour (registre : `idPattern` `^EMIS-[0-9]+$`).
 - **Planification réaliste** : sprints d'une semaine à partir du lundi 2026-10-19 ; ordre des dépendances puis du plan ; capacité d'un sprint = vitesse observée sur Emis (étapes livrées par semaine), sinon 5 étapes ; une fonctionnalité est placée dans le sprint où sa dernière étape obligatoire est livrée ; les fonctionnalités bloquées par une question client restent planifiées et gardent leur pastille. Le plan calculé est écrit dans le rapport avant d'être appliqué.
+- **Aucune semaine sautée** (décision d'Adam, 2026-10-18) : les sprints se suivent sans trou, fêtes et vacances comprises ; une semaine creuse se gère par report.
+- **Questions nettoyées** (décision d'Adam, 2026-10-18) : ne sont pas reprises les questions Q1 à Q16 qui ont une version préfixée « Client - » ou « Galadrim - », la question de charge globale (Q13, sans étape cible) et celles des anciens runs d'agents ; la table `question-placement.ts` les nomme avec leur raison, le rapport du dry-run les liste, la sauvegarde les garde.
 
 ### 39.4 Critiques UX
 

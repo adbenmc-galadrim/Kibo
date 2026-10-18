@@ -51,6 +51,7 @@ describe("renderReport", () => {
     ).toBe(true);
     expect(rows(section("Liens tombés"))).toHaveLength(1 + 2);
     expect(section("Tickets non recréés")).toContain("Arbitrages n'est pas une fonctionnalité");
+    expect(section("Questions non reprises")).toContain("Aucune.");
   });
 
   test("gives the observed velocity and its source", () => {
