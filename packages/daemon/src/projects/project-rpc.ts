@@ -3,10 +3,12 @@ import {
   countTicketsByStatus,
   createProjectDoc,
   getKeyAllocator,
+  getProjectMeta,
   listInstances,
   listProjects,
   readProject,
   registerProject,
+  setProjectMeta,
 } from "@kibo/core";
 import {
   iconOwnerKey,
@@ -85,13 +87,14 @@ function createProject(
     client: null,
   };
   const doc = createProjectDoc(meta);
+  if (req.client) setProjectMeta(doc, { client: req.client });
   registerProject(deps.workspace, meta);
   deps.adopt(meta.id, doc);
   deps.docs.save(meta.id);
   deps.docs.save(null);
   deps.docs.emit({ projectId: null });
   if (setup !== null) seedProject(deps, meta.id, setup);
-  return meta;
+  return { ...meta, client: getProjectMeta(doc).client };
 }
 
 function getProject(deps: ProjectRpcDeps, projectId: string) {
@@ -124,6 +127,7 @@ export function handleProjectRequest(deps: ProjectRpcDeps, req: RpcRequest): unk
     case "listProjects":
       return listProjects(deps.workspace).map((meta) => ({
         ...meta,
+        client: getProjectMeta(deps.docs.project(meta.id)).client,
         folder: folderOf(deps, meta),
         worktree: localWorktree(deps.settings, meta.id),
         storybook: localStorybook(deps.settings, meta.id),

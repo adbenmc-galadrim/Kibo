@@ -91,3 +91,53 @@ test("the description is synced in the project doc, never in the workspace regis
     writeProjectMeta(service.docs, settings, project.id, { description: null }, false).description,
   ).toBeNull();
 });
+
+test("the client is synced in the project doc, never in the workspace registry", () => {
+  const { service, settings, project } = setup();
+  for (const folderInDoc of [false, true]) {
+    const client = `Chantiers SA ${folderInDoc}`;
+    const meta = writeProjectMeta(service.docs, settings, project.id, { client }, folderInDoc);
+    expect(meta.client).toBe(client);
+    expect(service.docs.project(project.id).getMap("meta").get("client")).toBe(client);
+    expect(JSON.stringify(service.docs.workspace.toJSON())).not.toContain("Chantiers SA");
+  }
+  expect(writeProjectMeta(service.docs, settings, project.id, { client: null }, false).client).toBeNull();
+});
+
+test("createProject and a later update write the client to the project doc only", () => {
+  const { service } = setup();
+  const created = service.handle({
+    method: "createProject",
+    name: "Suivi",
+    key: "SUI",
+    folder: null,
+    color: "#F97316",
+    client: "Bâtisseurs SA",
+  }) as ProjectMeta;
+  expect(created.client).toBe("Bâtisseurs SA");
+  expect(service.docs.project(created.id).getMap("meta").get("client")).toBe("Bâtisseurs SA");
+  const updated = service.docs.updateProjectMeta(created.id, { client: "Emis SA" }, false);
+  expect(updated.client).toBe("Emis SA");
+  expect(service.docs.project(created.id).getMap("meta").get("client")).toBe("Emis SA");
+  const registry = JSON.stringify(service.docs.workspace.toJSON());
+  expect(registry).not.toContain("Bâtisseurs SA");
+  expect(registry).not.toContain("Emis SA");
+  const listed = service.handle({ method: "listProjects" }) as ProjectSummary[];
+  expect(listed.find((p) => p.id === created.id)?.client).toBe("Emis SA");
+});
+
+test("an invalid client is refused before the project is registered", () => {
+  const { service } = setup();
+  const create = () =>
+    service.handle({
+      method: "createProject",
+      name: "Suivi",
+      key: "SUI",
+      folder: null,
+      color: "#F97316",
+      client: "x".repeat(61),
+    });
+  expect(create).toThrow(expect.objectContaining({ code: "INVALID_INPUT" }));
+  const listed = service.handle({ method: "listProjects" }) as ProjectSummary[];
+  expect(listed.map((p) => p.key)).toEqual(["EMIS"]);
+});
