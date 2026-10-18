@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { configFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
-import { fac, kib, mineSnapshots, por } from "./fixtures";
+import { fac, kib, mineSnapshots, mineTicket, por } from "./fixtures";
 
 const calls: RpcRequest[] = [];
 mock.module("../api", () =>
@@ -24,13 +24,13 @@ const { MyTicketsPage } = await import("./MyTicketsPage");
 afterEach(cleanup);
 const noop = () => undefined;
 
-function page(onOpenTicket: (p: string, t: string) => void = noop) {
+function page(onOpenTicket: (p: string, t: string) => void = noop, snapshots = mineSnapshots) {
   return render(
     <AppSettingsProvider store={fixedStore({ agentExecution: "hidden" })}>
       <MyTicketsPage
         viewer="adam"
         projects={[kib, por, fac]}
-        snapshots={mineSnapshots}
+        snapshots={snapshots}
         config={configFixture()}
         onOpenTicket={onOpenTicket}
         onAssign={noop}
@@ -72,4 +72,25 @@ test("a row opens its ticket and copies its /full-delivery command", async () =>
   await user.click(screen.getByRole("button", { name: /^POR-9 / }));
   expect(opened).toEqual(["por"]);
   expect(screen.getByRole("button", { name: "Copier /full-delivery POR-9" })).toBeTruthy();
+});
+
+test("a step row names its feature F<n>, its branch and its delivery phase, a client demo reads « Démo · F4 »", () => {
+  const feature = { ...mineTicket("KIB-40", "in_progress", null), title: "Envoi", shortKey: "F4" };
+  const step = {
+    ...mineTicket("KIB-46", "in_progress", { kind: "human", ref: "adam" }),
+    title: "Démo client",
+    parentId: feature.id,
+    externalRefs: [{ kind: "git_branch" as const, branch: "feat/demo-f4", base: null }],
+    delivery: { step: 7, note: "", at: 0, runId: null, kind: "delivery" as const },
+  };
+  const base = mineSnapshots.get(kib.id);
+  if (!base) throw new Error("fixture without kib");
+  page(noop, new Map([[kib.id, { ...base, tickets: [feature, step] }]]));
+  const row = screen.getByRole("button", { name: /^KIB-46 / }).closest("li");
+  if (!row) throw new Error("row not found");
+  const cell = within(row);
+  expect(cell.getByText("Démo · F4")).toBeTruthy();
+  expect(cell.getByText("F4")).toBeTruthy();
+  expect(cell.getByText("feat/demo-f4")).toBeTruthy();
+  expect(row.querySelector("[data-delivery-step]")?.textContent).toBe("Phase 7/12 · Porte qualité");
 });

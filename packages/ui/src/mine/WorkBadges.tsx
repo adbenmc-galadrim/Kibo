@@ -1,6 +1,9 @@
+import { FINAL_STATUSES } from "@kibo/schema";
+import { DELIVERY_STEP_CHIP } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
-import { CircleCheck, CircleX, GitPullRequest, Lock } from "lucide-react";
+import { CircleCheck, CircleX, GitBranch, GitPullRequest, Lock } from "lucide-react";
 import { frMine as t } from "../i18n/fr-mine";
+import { stepLine } from "../ticket/tracking-model";
 import type { WorkItem } from "./work-list";
 
 const BADGE =
@@ -33,10 +36,31 @@ function CiBadge({ tone }: { tone: NonNullable<WorkItem["ci"]> }) {
   );
 }
 
+function PhaseChip({ ticket }: { ticket: WorkItem["ticket"] }) {
+  if (ticket.delivery === null || FINAL_STATUSES.includes(ticket.statusId)) return null;
+  return (
+    <span data-delivery-step="" className={cn(DELIVERY_STEP_CHIP, "shrink-0 whitespace-nowrap")}>
+      {stepLine(ticket.delivery)}
+    </span>
+  );
+}
+
 export function WorkBadges({ item, waiting }: { item: WorkItem; waiting: boolean }) {
   const reason = waiting ? waitingText(item) : null;
   return (
     <span className="flex min-w-0 shrink items-center gap-1.5 overflow-hidden">
+      {item.branch && (
+        <span className={cn(OUTLINED, "min-w-0 max-w-[180px]")}>
+          <GitBranch
+            aria-hidden
+            absoluteStrokeWidth
+            size={11}
+            className="size-[11px] shrink-0 text-(--tracking-blue)"
+          />
+          <span className="truncate font-mono text-(--tracking-fg)">{item.branch}</span>
+        </span>
+      )}
+      <PhaseChip ticket={item.ticket} />
       {item.pr && (
         <span data-pr={item.pr.state} className={OUTLINED}>
           <GitPullRequest

@@ -1,5 +1,6 @@
 import {
   blockingQuestion,
+  branchRefOf,
   type CiRun,
   type CiTone,
   type GithubPrRef,
@@ -10,6 +11,7 @@ import {
   type TicketView,
   worstCiTone,
 } from "@kibo/schema";
+import type { StepFeature } from "@kibo/sdk";
 import { compareMine, isMine } from "./my-tickets";
 
 export type WorkGroup = "toFix" | "inProgress" | "startable" | "waiting";
@@ -22,6 +24,8 @@ export type WorkItem = {
   changes: boolean;
   ci: CiTone | null;
   blockedBy: string | null;
+  feature: StepFeature | null;
+  branch: string | null;
 };
 export type WorkSection = { group: WorkGroup; items: WorkItem[] };
 
@@ -58,6 +62,8 @@ function itemOf(
     changes: live && pr.review === "changes_requested",
     ci: ciOf(ticket, live ? pr : null, runs),
     blockedBy: question ? questionLabel(question) : null,
+    feature: snapshot.tickets.find((t) => t.id === ticket.parentId) ?? null,
+    branch: branchRefOf(ticket.externalRefs)?.branch ?? null,
   };
 }
 

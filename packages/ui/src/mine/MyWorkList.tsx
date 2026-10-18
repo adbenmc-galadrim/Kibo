@@ -1,5 +1,5 @@
 import { deliveryBrief, type ProjectMeta, type ProjectSnapshot, type Status } from "@kibo/schema";
-import { copyDeliveryCommand, StatusDot } from "@kibo/sdk";
+import { copyDeliveryCommand, StatusDot, stepTitle } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Copy } from "lucide-react";
 import { useId, useMemo } from "react";
@@ -58,7 +58,12 @@ function WorkRow({ item, workflow, many, waiting, onOpen }: RowProps) {
       >
         <StatusDot statusId={ticket.statusId} />
         <span className="key shrink-0 font-mono text-2xs text-muted-foreground">{ticket.keyLabel}</span>
-        <span className="truncate text-sm">{ticket.title}</span>
+        {item.feature && (
+          <span className="shrink-0 font-mono text-2xs text-muted-foreground before:mr-1.5 before:content-['·']">
+            {item.feature.shortKey ?? item.feature.keyLabel}
+          </span>
+        )}
+        <span className="truncate text-sm">{stepTitle(ticket, item.feature)}</span>
         {many && (
           <span className="flex shrink-0 items-center gap-1.5 text-2xs text-muted-foreground">
             <span aria-hidden className="size-1.5 rounded-full" style={{ background: project.color }} />
