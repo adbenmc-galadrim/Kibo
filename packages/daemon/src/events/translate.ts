@@ -74,13 +74,21 @@ const sprintCode = (facts: Facts, sprintId: string | null): string | null =>
       facts.before.sprints.find((s) => s.id === sprintId)?.code ??
       null);
 
+const VERDICT_REVIEWS: ReadonlySet<string> = new Set(["approved", "changes_requested"]);
+const VERDICT_CHECKS: ReadonlySet<string> = new Set(["ok", "error"]);
+
 function prDrafts(ticketId: string, pr: GithubPrRef, previous: GithubPrRef | null): Draft[] {
   const data = { number: pr.number, state: pr.state, review: pr.review, checks: pr.checks };
   const draft = (kind: Draft["kind"]): Draft => ({ kind, ticketId, data });
   if (previous === null || previous.state !== pr.state) {
     if (pr.state === "merged") return [draft("pr_merged")];
     const reopened = FOLLOWED.has(pr.state) && (previous === null || !FOLLOWED.has(previous.state));
-    return reopened ? [draft("pr_opened")] : [];
+    if (!reopened) return [];
+    return [
+      draft("pr_opened"),
+      ...(VERDICT_REVIEWS.has(pr.review) && previous?.review !== pr.review ? [draft("pr_review")] : []),
+      ...(VERDICT_CHECKS.has(pr.checks ?? "") && previous?.checks !== pr.checks ? [draft("pr_checks")] : []),
+    ];
   }
   return [
     ...(previous.review !== pr.review ? [draft("pr_review")] : []),
