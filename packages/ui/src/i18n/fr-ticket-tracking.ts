@@ -29,7 +29,7 @@ export const frTicketTracking = {
   reviewRow: "Review",
   ciRow: "CI",
   session: "Session",
-  step: "Phase de livraison",
+  step: "Livraison",
   phase: (label: string) => `Phase ${label}`,
   issues: "Issues",
   prSince: (state: string, when: string | null) => (when ? `${state} ${when}` : state),
