@@ -125,6 +125,7 @@ function localShapedDoc(id: string): LoroDoc {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   doc.getMap("meta").delete("folder");
   doc.commit();

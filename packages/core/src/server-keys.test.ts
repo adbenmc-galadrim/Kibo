@@ -27,6 +27,7 @@ const meta = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
 };
 
 function sharedServer(): LoroDoc {

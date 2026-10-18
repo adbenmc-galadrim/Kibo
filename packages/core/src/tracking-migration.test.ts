@@ -19,6 +19,7 @@ const newDoc = () =>
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
 type Doc = ReturnType<typeof newDoc>;
 

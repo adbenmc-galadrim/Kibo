@@ -14,6 +14,7 @@ const meta = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
 };
 
 function sharedCopy(build: (doc: LoroDoc) => void): LoroDoc {

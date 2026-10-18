@@ -145,6 +145,7 @@ const project = (tickets: TicketView[]): ProjectSnapshot => ({
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

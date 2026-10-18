@@ -106,6 +106,7 @@ export function project(p: Partial<ProjectSnapshot> = {}): ProjectSnapshot {
       delivery: null,
       tracking: null,
       description: null,
+      client: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],

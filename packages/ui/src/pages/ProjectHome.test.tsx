@@ -16,6 +16,7 @@ const project = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot => 
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

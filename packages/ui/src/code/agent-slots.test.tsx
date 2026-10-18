@@ -90,6 +90,7 @@ const project = (rules = DEFAULT_RULES): ProjectSnapshot => ({
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

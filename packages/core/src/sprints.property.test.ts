@@ -18,6 +18,7 @@ const base = () =>
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
 
 const fork = (doc: LoroDoc, peer: bigint): LoroDoc => {

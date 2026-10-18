@@ -17,6 +17,7 @@ const project = (id: string, shared = false) => {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   if (shared) doc.getMap("meta").set("keyAllocator", "server");
   return doc;

@@ -83,6 +83,7 @@ const project = (main: TicketView, access: ProjectSnapshot["sync"]["access"] = "
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [],

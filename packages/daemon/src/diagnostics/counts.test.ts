@@ -29,6 +29,7 @@ test("the counts add tickets and instances across projects", () => {
       delivery: null,
       tracking: null,
       description: null,
+      client: null,
     };
     registerProject(workspace, meta);
     docs.set(id, createProjectDoc(meta));

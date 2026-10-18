@@ -77,6 +77,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
         delivery: null,
         tracking: null,
         description: null,
+        client: null,
       },
       tickets: [mineTicket("i2", "INB-2", "Appeler le comptable", "todo")],
       links: [],
@@ -102,6 +103,7 @@ function snapshotOf(projectId: string): ProjectSnapshot {
       delivery: null,
       tracking: null,
       description: null,
+      client: null,
     },
     tickets: [mineTicket("f31", "FAC-31", "Export PDF des factures", "in_progress")],
   };

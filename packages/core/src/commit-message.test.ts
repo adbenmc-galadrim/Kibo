@@ -84,6 +84,7 @@ test("commitDefaults reads the ticket named by the branch", () => {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   const parent = createTicket(doc, { title: "Schéma Loro des tickets (LoroTree)" });
   createTicket(doc, { title: "Index SQLite dérivé", parentId: parent.id, statusId: "done" });

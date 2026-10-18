@@ -29,6 +29,7 @@ const newDoc = () =>
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
 
 const code = (work: () => unknown): string | null => {

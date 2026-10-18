@@ -54,6 +54,7 @@ test("a stored inbox that describes another project is refused as corrupt", () =
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   store.save(projectDocId(INBOX_ID), other.export({ mode: "snapshot" }));
   expect(() => loadInbox(store)).toThrow("STORE_CORRUPT");

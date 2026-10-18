@@ -223,6 +223,7 @@ export const META: ProjectMeta = {
   delivery: null,
   tracking: null,
   description: "Suivi de chantier",
+  client: null,
 };
 
 export const emisSnapshot = () => ({

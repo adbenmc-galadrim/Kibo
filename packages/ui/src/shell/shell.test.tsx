@@ -33,6 +33,7 @@ const project: ProjectSnapshot = {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   workflow: DEFAULT_WORKFLOW,
   pages: [
@@ -104,6 +105,7 @@ const repo: ProjectSnapshot = {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   pages: [],
   tickets: [],
@@ -137,6 +139,7 @@ const inbox: ProjectSnapshot = {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   pages: [],
   tickets: [

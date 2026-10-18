@@ -85,6 +85,7 @@ export const EMIS_META: ProjectMeta = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
 };
 
 export const SPRINTS: SprintView[] = [

@@ -83,6 +83,7 @@ export const metaOf = (tracking: TrackingSettings | null): ProjectMeta => ({
   delivery: null,
   tracking,
   description: null,
+  client: null,
 });
 
 const parse = (date: string): Date => new Date(`${date}T00:00:00Z`);

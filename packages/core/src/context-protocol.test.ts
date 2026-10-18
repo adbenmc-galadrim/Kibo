@@ -24,6 +24,7 @@ function project(plan: boolean) {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   const created = executeProjectCommand(doc, { method: "createTicket", title: "Formulaire" });
   const id = typeof created === "object" && created !== null && "id" in created ? String(created.id) : "";

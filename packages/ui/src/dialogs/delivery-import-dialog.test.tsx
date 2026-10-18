@@ -80,6 +80,7 @@ beforeEach(() => {
     delivery: EMIS.preview.delivery,
     tracking: null,
     description: null,
+    client: null,
   };
 });
 

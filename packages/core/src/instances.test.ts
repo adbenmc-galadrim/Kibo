@@ -26,6 +26,7 @@ test("instances stored before v1.0 are listed with componentHash null", () => {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   doc.getMap("instances").set("i1", {
     id: "i1",
@@ -49,6 +50,7 @@ const META = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
 };
 
 describe("setInstanceLayout", () => {

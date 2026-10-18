@@ -25,6 +25,7 @@ const meta = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
 };
 
 test("a shared project gets its folder back from the local settings", () => {

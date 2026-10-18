@@ -132,6 +132,7 @@ describe("my tickets page", () => {
         delivery: null,
         tracking: null,
         description: null,
+        client: null,
       },
       tickets: [mineTicket("INB-2", "todo", { kind: "human", ref: "adam" })],
     };

@@ -39,6 +39,7 @@ function kibo() {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   const run = (cmd: Parameters<typeof executeProjectCommand>[1]) => executeProjectCommand(doc, cmd);
   const dep = run({ method: "createTicket", title: "Schéma Loro", statusId: "in_progress" }) as Ticket;

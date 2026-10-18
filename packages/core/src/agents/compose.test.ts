@@ -80,6 +80,7 @@ test("an example ticket stands in when none is chosen", () => {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   const ticket = exampleTicket(readProject(doc, "2026-10-16"));
   expect(ticket.key).toBe("BOU-0");

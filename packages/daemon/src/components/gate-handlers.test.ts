@@ -128,6 +128,7 @@ test("a component lists busy tickets as not startable and sprints dated by the d
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   const busy = createTicket(project, { title: "A", statusId: "todo" });
   createTicket(project, { title: "B", statusId: "todo" });
@@ -304,6 +305,7 @@ const metaWith = (tracking: ProjectMeta["tracking"]): ProjectMeta => ({
   delivery: null,
   tracking,
   description: null,
+  client: null,
 });
 
 test("settings.get reads the project tracking and the machine agent execution", async () => {

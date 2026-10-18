@@ -16,6 +16,7 @@ const doc = () =>
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
 const row: SyncProjectRow = {
   projectId: "p1",

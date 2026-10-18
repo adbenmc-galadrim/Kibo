@@ -38,6 +38,7 @@ const META = {
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
 };
 
 function ownerDocOf(adam: TestDevice): LoroDoc {

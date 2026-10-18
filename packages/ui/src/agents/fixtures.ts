@@ -366,6 +366,7 @@ export function kiboProject(): ProjectSnapshot {
       delivery: null,
       tracking: null,
       description: null,
+      client: null,
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],
@@ -425,6 +426,7 @@ export const projectsFixture: ProjectSummary[] = [
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
     counts: { backlog: 1, todo: 3, in_progress: 4, in_review: 2, blocked: 1, done: 2 },
   },
   {
@@ -439,6 +441,7 @@ export const projectsFixture: ProjectSummary[] = [
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
     counts: { backlog: 0, todo: 1, in_progress: 1, in_review: 0, blocked: 0, done: 0 },
   },
 ];

@@ -25,6 +25,7 @@ test("bindings are stored in the project doc and listed in the snapshot", () => 
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   addBinding(d, binding);
   expect(() => addBinding(d, binding)).toThrow("INVALID_INPUT");
@@ -50,6 +51,7 @@ test("an invalid binding never reaches the doc", () => {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
   expect(() => addBinding(d, { ...binding, config: { ...binding.config, repo: "nope" } })).toThrow();
   expect(listBindings(d)).toEqual([]);

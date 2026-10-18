@@ -55,6 +55,7 @@ export const inboxSnapshot: ProjectSnapshot = {
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   },
   tickets: [
     inboxTicket(1, "Idée : export CSV des tickets", "backlog", false),

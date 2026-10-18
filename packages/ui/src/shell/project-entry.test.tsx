@@ -19,6 +19,7 @@ const summary = (demo: boolean): ProjectSummary => ({
   delivery: null,
   tracking: null,
   description: null,
+  client: null,
   counts: { backlog: 0, todo: 0, in_progress: 0, in_review: 0, blocked: 0, done: 0 },
   demo,
 });

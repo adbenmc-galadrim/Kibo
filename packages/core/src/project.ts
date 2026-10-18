@@ -63,6 +63,7 @@ export function getProjectMeta(doc: LoroDoc): ProjectMeta {
       ProjectMeta.shape.description.safeParse(m.get("description") ?? null),
       "project description",
     ),
+    client: stored(ProjectMeta.shape.client.safeParse(m.get("client") ?? null), "project client"),
   };
 }
 

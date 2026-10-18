@@ -84,6 +84,7 @@ describe("planDomainScopes", () => {
               delivery: null,
               tracking: null,
               description: null,
+              client: null,
             }),
           ]),
         );

@@ -82,3 +82,14 @@ test("a project describes itself in 200 characters at most", () => {
   expect(ProjectPatch.parse({ description: null })).toEqual({ description: null });
   expect(ProjectPatch.safeParse({ description: "x".repeat(201) }).success).toBe(false);
 });
+
+test("a project names its client, at most 60 characters", () => {
+  const base = { id: "p", key: "AB", name: "n", folder: null, color: "#123456" };
+  expect(ProjectMeta.parse(base).client).toBeNull();
+  expect(ProjectMeta.parse({ ...base, client: " Emis SA " }).client).toBe("Emis SA");
+  expect(ProjectMeta.safeParse({ ...base, client: "x".repeat(61) }).success).toBe(false);
+  expect(ProjectMeta.safeParse({ ...base, client: "  " }).success).toBe(false);
+  expect(ProjectPatch.parse({ client: "Emis SA" })).toEqual({ client: "Emis SA" });
+  expect(ProjectPatch.parse({ client: null })).toEqual({ client: null });
+  expect(ProjectPatch.safeParse({ client: "x".repeat(61) }).success).toBe(false);
+});

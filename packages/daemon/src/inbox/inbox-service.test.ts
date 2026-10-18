@@ -175,6 +175,7 @@ describe("inbox", () => {
       delivery: null,
       tracking: null,
       description: null,
+      client: null,
     };
     expect(() => s.docs.addProject(meta, inbox)).toThrow("INVALID_INPUT");
     expect(() => s.docs.replaceProject(INBOX_ID, inbox)).toThrow("INVALID_INPUT");

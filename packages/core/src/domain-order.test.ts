@@ -19,6 +19,7 @@ const project = () =>
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
 
 const ids = (list: { id: string }[]) => list.map((d) => d.id);

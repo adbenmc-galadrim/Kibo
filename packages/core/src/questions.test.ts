@@ -30,6 +30,7 @@ const newProjectDoc = (key: string) =>
     delivery: null,
     tracking: null,
     description: null,
+    client: null,
   });
 
 const stored = (ticketId: string) => ({
