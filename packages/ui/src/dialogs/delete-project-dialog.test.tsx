@@ -46,7 +46,6 @@ const shared = (
 const handlers = () => ({
   onClose: mock(() => {}),
   onDeleted: mock(() => {}),
-  onOpenAgents: mock(() => {}),
   onShare: mock(() => {}),
 });
 beforeEach(() => {
@@ -79,7 +78,7 @@ test("deletes after the exact name is typed, spaces around ignored, case respect
   expect(calls).toEqual([{ method: "deleteProject", projectId: "kibo" }]);
 });
 
-test("active runs block the deletion and lead to the agents", async () => {
+test("active runs block the deletion; nothing leads to the retired Agents screen", async () => {
   const h = handlers();
   render(<DeleteProjectDialog project={project} snapshot={local()} activeRuns={2} {...h} />);
   expect(screen.getByRole("dialog", { name: "Des agents travaillent sur ce projet" })).toBeTruthy();
@@ -88,8 +87,9 @@ test("active runs block the deletion and lead to the agents", async () => {
   ).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Supprimer" })).toBeNull();
   expect(screen.queryByRole("textbox")).toBeNull();
-  await userEvent.setup().click(screen.getByRole("button", { name: "Voir les agents" }));
-  expect(h.onOpenAgents).toHaveBeenCalled();
+  expect(screen.queryByRole("button", { name: "Voir les agents" })).toBeNull();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Annuler" }));
+  expect(h.onClose).toHaveBeenCalled();
   expect(calls).toEqual([]);
 });
 

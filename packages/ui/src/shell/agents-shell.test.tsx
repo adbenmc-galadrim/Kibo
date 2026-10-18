@@ -414,8 +414,9 @@ test("right click and the ellipsis open the same project menu; edit and delete o
   await user.click(screen.getByRole("button", { name: "Actions de Kibo" }));
   await user.click(screen.getByRole("menuitem", { name: "Supprimer…" }));
   expect(await screen.findByRole("dialog", { name: "Des agents travaillent sur ce projet" })).toBeTruthy();
-  await user.click(screen.getByRole("button", { name: "Voir les agents" }));
-  await waitFor(() => expect(location.hash).toBe("#/"));
+  expect(screen.queryByRole("button", { name: "Voir les agents" })).toBeNull();
+  await user.click(screen.getByRole("button", { name: "Annuler" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   expect(calls.some((c) => c.method === "deleteProject")).toBe(false);
 });
 

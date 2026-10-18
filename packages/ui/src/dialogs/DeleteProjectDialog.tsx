@@ -21,7 +21,6 @@ type Props = {
   activeRuns: number;
   onClose(): void;
   onDeleted(projectId: string): void;
-  onOpenAgents(): void;
   onShare(): void;
 };
 export type DeleteVariant = "busy" | "shared-owner" | "leave" | "delete";
@@ -45,9 +44,14 @@ export function deleteFailure(e: unknown): string {
   return `${t.failed} ${known ?? errorMessage(e)}`;
 }
 
-type BlockedProps = { title: string; text: string; action: string; onAction(): void; onClose(): void };
+type BlockedProps = {
+  title: string;
+  text: string;
+  action?: { label: string; run(): void };
+  onClose(): void;
+};
 
-function Blocked({ title, text, action, onAction, onClose }: BlockedProps) {
+function Blocked({ title, text, action, onClose }: BlockedProps) {
   return (
     <>
       <DialogHeader>
@@ -58,9 +62,11 @@ function Blocked({ title, text, action, onAction, onClose }: BlockedProps) {
         <Button type="button" variant="outline" onClick={onClose}>
           {t.cancel}
         </Button>
-        <Button type="button" onClick={onAction}>
-          {action}
-        </Button>
+        {action && (
+          <Button type="button" onClick={action.run}>
+            {action.label}
+          </Button>
+        )}
       </DialogFooter>
     </>
   );
@@ -181,34 +187,17 @@ function ConfirmByName({ project, snapshot, leaving, onClose, onDeleted }: Confi
   );
 }
 
-export function DeleteProjectDialog({
-  project,
-  snapshot,
-  activeRuns,
-  onClose,
-  onDeleted,
-  onOpenAgents,
-  onShare,
-}: Props) {
+export function DeleteProjectDialog({ project, snapshot, activeRuns, onClose, onDeleted, onShare }: Props) {
   const variant = deleteVariant(snapshot, activeRuns);
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
-        {variant === "busy" && (
-          <Blocked
-            title={t.busyTitle}
-            text={t.busy(activeRuns)}
-            action={t.seeAgents}
-            onAction={onOpenAgents}
-            onClose={onClose}
-          />
-        )}
+        {variant === "busy" && <Blocked title={t.busyTitle} text={t.busy(activeRuns)} onClose={onClose} />}
         {variant === "shared-owner" && (
           <Blocked
             title={t.sharedTitle}
             text={t.sharedOwner}
-            action={t.openShare}
-            onAction={onShare}
+            action={{ label: t.openShare, run: onShare }}
             onClose={onClose}
           />
         )}

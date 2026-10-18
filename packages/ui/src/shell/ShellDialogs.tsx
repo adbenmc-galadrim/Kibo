@@ -248,10 +248,6 @@ export function ShellDialogs({
             set({ deleteProject: null });
             p.onCloseProject(projectId);
           }}
-          onOpenAgents={() => {
-            set({ deleteProject: null });
-            p.onOpenTarget({ kind: "screen", screen: "agents" }, false);
-          }}
           onShare={() => set({ deleteProject: null, share: doomedProject.id })}
         />
       )}
