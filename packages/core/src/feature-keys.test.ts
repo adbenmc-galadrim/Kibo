@@ -108,24 +108,54 @@ describe("feature keys in a shared project", () => {
     return doc;
   }
 
-  test("the server never allocates a key to a feature", () => {
-    const doc = shared();
+  const peer = (doc: LoroDoc, id: number): LoroDoc => {
+    const copy = LoroDoc.fromSnapshot(doc.export({ mode: "snapshot" }));
+    copy.setPeerId(id);
+    return copy;
+  };
+  const editor = { userId: "u1", role: "editor" } as const;
+
+  test("a feature waits for its key like a step, the server gives F<n> and EMIS-n", () => {
+    const doc = peer(shared(), 5);
     const feature = createTicket(doc, { title: "Socle", feature: true });
     const step = createTicket(doc, { title: "Étape", parentId: feature.id });
-    expect(feature.key).toBe("F1");
-    expect(allocateTicketKeys(doc)).toEqual([{ ticketId: step.id, key: "EMIS-2" }]);
+    const moved = createTicket(doc, { title: "Déplacée" });
+    moveTicket(doc, moved.id, feature.id);
+    expect([feature.key, getTicket(doc, feature.id).shortKey, step.key]).toEqual([null, null, null]);
+    expect(allocateTicketKeys(doc)).toEqual([
+      { ticketId: feature.id, key: "F1" },
+      { ticketId: step.id, key: "EMIS-2" },
+      { ticketId: moved.id, key: "EMIS-3" },
+    ]);
+    expect(getTicket(doc, feature.id)).toMatchObject({ key: "F1", shortKey: "F1" });
+    expect(seqOf(doc)).toBe(3);
   });
 
-  test("a client may write a feature key, never a step key", () => {
+  test("two peers offline both creating the third feature get F3 and F4", () => {
+    const server = shared();
+    createTicket(server, { title: "Socle", feature: true });
+    createTicket(server, { title: "Affaires", feature: true });
+    allocateTicketKeys(server);
+    const a = peer(server, 21);
+    const b = peer(server, 22);
+    const fa = createTicket(a, { title: "Planning", feature: true });
+    const fb = createTicket(b, { title: "Questions", feature: true });
+    expect(validateProjectUpdate(server, a, editor)).toEqual({ ok: true });
+    server.import(a.export({ mode: "update" }));
+    server.import(b.export({ mode: "update" }));
+    allocateTicketKeys(server);
+    const keys = [getTicket(server, fa.id).key, getTicket(server, fb.id).key].sort();
+    expect(keys).toEqual(["F3", "F4"]);
+  });
+
+  test("a client never writes a key, a feature one included", () => {
     const before = shared();
-    const after = LoroDoc.fromSnapshot(before.export({ mode: "snapshot" }));
-    after.setPeerId(7);
-    createTicket(after, { title: "Socle", feature: true });
-    expect(validateProjectUpdate(before, after, { userId: "u1", role: "editor" })).toEqual({ ok: true });
+    const after = peer(before, 7);
     const forged = after.getTree("tickets").createNode();
     forged.data.set("key", "F8");
+    forged.data.set("shortKey", "F8");
     after.commit();
-    expect(validateProjectUpdate(before, after, { userId: "u1", role: "editor" }).ok).toBe(false);
+    expect(validateProjectUpdate(before, after, editor).ok).toBe(false);
   });
 
   test("a snapshot with features is valid", () => {
@@ -135,8 +165,27 @@ describe("feature keys in a shared project", () => {
     doc.getMap("meta").delete("folder");
     doc.commit();
     expect(validateSharedSnapshot(doc, "p1", "u1")).toEqual({ ok: true });
-    doc.getTree("tickets").createNode().data.set("key", "F7");
-    doc.commit();
-    expect(validateSharedSnapshot(doc, "p1", "u1").ok).toBe(false);
+    const verdict = (edit: (d: LoroDoc) => void) => {
+      const copy = LoroDoc.fromSnapshot(doc.export({ mode: "snapshot" }));
+      edit(copy);
+      copy.commit();
+      return validateSharedSnapshot(copy, "p1", "u1").ok;
+    };
+    expect(verdict((d) => d.getTree("tickets").createNode().data.set("key", "F7"))).toBe(false);
+    expect(
+      verdict((d) => {
+        const node = d.getTree("tickets").createNode();
+        node.data.set("key", "F1000");
+        node.data.set("shortKey", "F1000");
+      }),
+    ).toBe(false);
+    expect(
+      verdict((d) => {
+        const root = d.getTree("tickets").roots()[0];
+        const child = root?.createNode();
+        child?.data.set("key", "F9");
+        child?.data.set("shortKey", "F9");
+      }),
+    ).toBe(false);
   });
 });

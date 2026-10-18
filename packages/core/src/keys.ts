@@ -1,6 +1,7 @@
 import { formatTicketKey, type KeyAllocator, KiboError, type ProjectSyncInfo } from "@kibo/schema";
 import { idStrToId, type LoroDoc, LoroMap, type LoroTreeNode, type TreeID } from "loro-crdt";
 import { getProjectMeta } from "./project";
+import { assignShortKey, MAX_FEATURE_SEQ, nextFeatureSlot } from "./short-key";
 import { getNode, walkDepthFirst } from "./tree";
 
 export type Member = { userId: string; name: string };
@@ -9,7 +10,11 @@ const SERVER_ORIGIN = "kibo-server";
 
 const FEATURE_KEY = /^F\d+$/;
 
-export const isFeatureKey = (key: unknown): key is string => typeof key === "string" && FEATURE_KEY.test(key);
+export const isFeatureKey = (key: unknown): key is string =>
+  typeof key === "string" && FEATURE_KEY.test(key) && Number(key.slice(1)) <= MAX_FEATURE_SEQ;
+
+export const isFeatureNode = (node: LoroTreeNode): boolean =>
+  node.data.get("feature") === true || isFeatureKey(node.data.get("key"));
 
 export function getKeyAllocator(doc: LoroDoc): KeyAllocator {
   return doc.getMap("meta").get("keyAllocator") === "server" ? "server" : "local";
@@ -55,6 +60,13 @@ export function pendingTicketOrder(doc: LoroDoc): string[] {
     .map((entry) => entry.id);
 }
 
+function featureKey(doc: LoroDoc, node: LoroTreeNode): string | null {
+  if (node.data.get("feature") !== true || node.parent() !== undefined) return null;
+  const slot = nextFeatureSlot(doc, node.id);
+  assignShortKey(doc, { ticketId: node.id, ...slot });
+  return slot.key;
+}
+
 export function allocateTicketKeys(doc: LoroDoc): { ticketId: string; key: string }[] {
   const order = pendingTicketOrder(doc);
   if (order.length === 0) return [];
@@ -63,9 +75,13 @@ export function allocateTicketKeys(doc: LoroDoc): { ticketId: string; key: strin
   let seq = currentTicketSeq(doc);
   const allocated: { ticketId: string; key: string }[] = [];
   for (const ticketId of order) {
-    seq += 1;
-    const key = formatTicketKey(projectKey, seq);
-    getNode(tickets, ticketId).data.set("key", key);
+    const node = getNode(tickets, ticketId);
+    let key = featureKey(doc, node);
+    if (key === null) {
+      seq += 1;
+      key = formatTicketKey(projectKey, seq);
+    }
+    node.data.set("key", key);
     allocated.push({ ticketId, key });
   }
   doc.getMap("meta").set("ticketSeq", seq);
