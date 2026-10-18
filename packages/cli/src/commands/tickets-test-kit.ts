@@ -7,7 +7,6 @@ import {
   NOT_STARTED_STATUSES,
   type ProjectMeta,
   type ProjectSnapshot,
-  type Question,
   type RpcRequest,
   type SprintView,
   type StartReason,
@@ -115,19 +114,16 @@ export const TICKETS: TicketView[] = [
   fakeTicket({ id: "solo", key: "EMIS-50" }),
 ];
 
-export type SnapshotExtras = { questions?: Question[]; meta?: Partial<ProjectMeta> };
-
 export function fakeSnapshot(
   tickets: TicketView[] = TICKETS,
   sprints: SprintView[] = SPRINTS,
-  extras: SnapshotExtras = {},
 ): ProjectSnapshot {
   const partial = {
-    meta: { ...EMIS_META, ...extras.meta },
+    meta: EMIS_META,
     workflow: DEFAULT_WORKFLOW,
     tickets,
     links: [],
-    questions: extras.questions ?? [],
+    questions: [],
     questionRecipients: [],
     sprints,
     viewer: "u-me",
@@ -136,7 +132,7 @@ export function fakeSnapshot(
 }
 
 type Declare = Extract<RpcRequest, { method: "declareTicketRef" }>;
-export type FakeDaemonOptions = SnapshotExtras & {
+export type FakeDaemonOptions = {
   projects?: ProjectMeta[];
   declared?: (req: Declare, ticket: TicketView) => DeclareTicketRefResult;
 };
@@ -158,7 +154,7 @@ export function fakeDaemon(
       const sent: RpcRequest = req;
       calls.push(sent);
       if (sent.method === "listProjects") return (options.projects ?? [EMIS_META]) as never;
-      if (sent.method === "getProject") return fakeSnapshot(tickets, sprints, options) as never;
+      if (sent.method === "getProject") return fakeSnapshot(tickets, sprints) as never;
       if (sent.method === "command") return {} as never;
       if (sent.method === "getNotesDir") return { dir: tmpdir() } as never;
       if (sent.method === "listNotes") return [] as never;

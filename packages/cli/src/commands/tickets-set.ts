@@ -85,7 +85,7 @@ export async function applySet(req: SetRequest, ident: string, ctx: TicketsConte
     io.out(frTickets.updated(ticket.keyLabel, changes, moved === null ? null : statusLabel(snapshot, moved)));
   const starting =
     status?.statusId === "in_progress" || declarations.some((d) => d.ref.kind === "git_branch");
-  const reasons = starting ? notStartableReasons(ticket, snapshot) : null;
+  const reasons = starting ? notStartableReasons(ticket) : null;
   if (reasons !== null) io.err(frTickets.notStartable(ticket.keyLabel, reasons));
   return 0;
 }

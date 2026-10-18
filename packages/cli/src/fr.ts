@@ -107,11 +107,10 @@ export const frTickets = {
     `⚠ ${key} n'était pas démarrable : ${reasons.join(" · ")}`,
   reasons: {
     question: (label: string) => `bloqué par ${label}`,
-    blocked: "bloqué",
     waiting: (keys: readonly string[]) => `attend ${keys.join(", ")}`,
     sprint: (code: string) => `sprint ${code}`,
     unplanned: "sans sprint",
-    limit: (count: number, limit: number) => `limite ${count}/${limit}`,
+    limit: "limite atteinte",
   },
 };
 
