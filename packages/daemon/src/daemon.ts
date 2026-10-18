@@ -163,7 +163,6 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     settings: openLocalSettings(store),
     projectSettings: createProjectSettings(store.db),
     notesDir: (projectId) => components.notesDir(projectId),
-    runs: () => (agents ? agents.state().runs : []),
     log: (message, ...error) => console.error(`[kibo-daemon] ${message}`, ...error),
   });
   closers.push(() => tutorial.stop());

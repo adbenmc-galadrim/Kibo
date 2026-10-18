@@ -340,25 +340,36 @@ describe("startDaemon", () => {
     expect((await rpc({ method: "deleteProject", projectId })).status).toBe(404);
   });
 
-  test("startTutorial creates project DEMO and getTutorial reports status active with step kanban", async () => {
+  test("startTutorial creates the tracking demo; its steps follow daemon events, the review is simulated", async () => {
     const { d, home } = await launch();
     const rpc = await pair(d);
     const result = async (req: RpcRequest) => ((await (await rpc(req)).json()) as { result: unknown }).result;
     const started = TutorialState.parse(await result({ method: "startTutorial" }));
     const state = TutorialState.parse(await result({ method: "getTutorial" }));
     expect(state).toEqual(started);
-    expect([state.status, currentStep(state)]).toEqual(["active", "kanban"]);
+    expect([state.status, currentStep(state)]).toEqual(["active", "overview"]);
     const projects = ProjectSummaryRow.array().parse(await result({ method: "listProjects" }));
     expect(projects.map((p) => [p.key, p.name, p.demo])).toEqual([["DEMO", "Démo Kibo", true]]);
-    expect(existsSync(join(home, "notes", "DEMO", "bienvenue.md"))).toBe(true);
     const projectId = state.projectId ?? "";
+    await result({ method: "markTutorialSeen", view: "overview" });
     await result({
       method: "command",
       projectId,
-      command: { method: "createTicket", title: "Mon ticket", statusId: "in_progress" },
+      command: { method: "createTicket", title: "Livraison", feature: true },
     });
     const after = TutorialState.parse(await result({ method: "getTutorial" }));
-    expect([after.completed, currentStep(after)]).toEqual([["kanban"], "links"]);
+    expect([after.completed, currentStep(after)]).toEqual([["overview", "feature"], "review"]);
+    const elsewhere = await rpc({ method: "simulateTutorialReview", projectId: "p-other" });
+    expect([elsewhere.status, await elsewhere.text()]).toEqual([
+      400,
+      expect.stringContaining("INVALID_INPUT"),
+    ]);
+    const reviewed = TutorialState.parse(await result({ method: "simulateTutorialReview", projectId }));
+    expect(reviewed.completed).toEqual(["overview", "feature", "review"]);
+    const project = (await result({ method: "getProject", projectId })) as {
+      tickets: { key: string; statusId: string }[];
+    };
+    expect(project.tickets.find((t) => t.key === "DEMO-4")?.statusId).toBe("in_review");
     const folder = await rpc({ method: "updateProject", projectId, patch: { folder: home } });
     expect([folder.status, await folder.text()]).toEqual([
       400,
@@ -366,7 +377,7 @@ describe("startDaemon", () => {
     ]);
     await result({ method: "resetTutorial" });
     const again = TutorialState.parse(await result({ method: "startTutorial" }));
-    expect([again.status, again.projectId, again.completed]).toEqual(["active", projectId, []]);
+    expect([again.status, again.projectId, again.completed]).toEqual(["active", projectId, ["review"]]);
     expect(ProjectSummaryRow.array().parse(await result({ method: "listProjects" }))).toHaveLength(1);
     expect(await result({ method: "deleteProject", projectId })).toBeNull();
     expect(await result({ method: "listProjects" })).toEqual([]);

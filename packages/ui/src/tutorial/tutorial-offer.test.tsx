@@ -1,16 +1,8 @@
 import { beforeEach, expect, mock, spyOn, test } from "bun:test";
 import { type RpcRequest, TUTORIAL_NEVER, type TutorialState } from "@kibo/schema";
-import { cleanup, render as renderPlain, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactElement, ReactNode } from "react";
 import { apiMock } from "../api-mock";
-import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
-
-const shownExecution = fixedStore({ agentExecution: "shown" });
-const ShownExecution = ({ children }: { children: ReactNode }) => (
-  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
-);
-const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const calls: RpcRequest["method"][] = [];
 let current: TutorialState = TUTORIAL_NEVER;
@@ -47,10 +39,21 @@ const show = () => {
   return { onClose, onOpen, dialog: () => within(screen.getByRole("dialog")) };
 };
 
-test("the offer lists the six steps and Commencer starts the tour then opens the demo project", async () => {
+test("the offer lists the five tracking steps and Commencer starts the tour then opens the demo", async () => {
   const { onClose, onOpen, dialog } = show();
   expect(dialog().getByText("Faire le tour de Kibo ?")).toBeTruthy();
-  expect(dialog().getAllByRole("listitem")).toHaveLength(6);
+  expect(
+    dialog()
+      .getAllByRole("listitem")
+      .map((li) => li.textContent),
+  ).toEqual([
+    "Lire la Vue d'ensemble",
+    "Créer une fonctionnalité",
+    "Voir une étape passer en review",
+    "Répondre à une question",
+    "Copier /full-delivery",
+  ]);
+  expect(dialog().getByText(/Aucun agent n'est lancé/)).toBeTruthy();
   await userEvent.setup().click(await dialog().findByRole("button", { name: "Commencer" }));
   await waitFor(() => expect(onOpen).toHaveBeenCalledWith({ kind: "project", projectId: "demo" }));
   expect(onClose).toHaveBeenCalled();
@@ -65,7 +68,7 @@ test("Plus tard closes without any tutorial call", async () => {
 });
 
 test("a paused tour offers Reprendre", async () => {
-  current = { ...started, status: "paused", completed: ["kanban"] };
+  current = { ...started, status: "paused", completed: ["overview"] };
   const { onOpen, dialog } = show();
   await userEvent.setup().click(await dialog().findByRole("button", { name: "Reprendre" }));
   await waitFor(() => expect(onOpen).toHaveBeenCalled());
@@ -73,8 +76,8 @@ test("a paused tour offers Reprendre", async () => {
   expect(calls).toEqual(["getTutorial", "startTutorial"]);
 });
 
-test("a finished or skipped tour offers Recommencer, which resets then starts", async () => {
-  for (const status of ["done", "skipped"] as const) {
+test("a finished, closed or skipped tour offers Recommencer, which resets then starts", async () => {
+  for (const status of ["done", "closed", "skipped"] as const) {
     calls.length = 0;
     current = { ...started, status };
     const { onOpen, dialog } = show();
@@ -94,17 +97,4 @@ test("a failed start keeps the dialog open with an error", async () => {
   expect(onClose).not.toHaveBeenCalled();
   expect(logged).toHaveBeenCalled();
   logged.mockRestore();
-});
-
-test("hidden execution: the offer lists five steps, without the agent one", async () => {
-  const { AppSettingsProvider, fixedStore } = await import("../state/use-app-settings");
-  render(
-    <AppSettingsProvider store={fixedStore({ agentExecution: "hidden" })}>
-      <TutorialOffer open onClose={() => {}} onOpen={() => {}} />
-    </AppSettingsProvider>,
-  );
-  const dialog = within(screen.getByRole("dialog"));
-  expect(dialog.getAllByRole("listitem")).toHaveLength(5);
-  expect(dialog.queryByText("Confier un ticket à un agent")).toBeNull();
-  expect(dialog.getByText("Cinq étapes dans un projet de démonstration, environ dix minutes.")).toBeTruthy();
 });

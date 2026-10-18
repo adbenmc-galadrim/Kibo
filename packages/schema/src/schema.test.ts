@@ -376,7 +376,7 @@ test("phase 14 methods are part of RpcRequest", () => {
   expect(RpcRequest.safeParse({ method: "deleteBackup", id: "../x" }).success).toBe(false);
   expect(RpcRequest.safeParse({ method: "setBackupSettings", patch: { dir: null } }).success).toBe(true);
   expect(RpcRequest.safeParse({ method: "setBackupSettings", patch: { nope: 1 } }).success).toBe(false);
-  expect(RpcRequest.safeParse({ method: "skipTutorialStep", step: "agent" }).success).toBe(true);
+  expect(RpcRequest.safeParse({ method: "skipTutorialStep", step: "review" }).success).toBe(true);
   expect(RpcRequest.safeParse({ method: "markTutorialSeen", view: "kanban" }).success).toBe(false);
 });
 

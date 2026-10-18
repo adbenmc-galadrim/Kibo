@@ -1,101 +1,129 @@
-import type { Layout, StatusId } from "@kibo/schema";
+import {
+  addDays,
+  type IsoDate,
+  isoWeekday,
+  nextMonday,
+  type ProjectSetup,
+  type PrState,
+  type StatusId,
+} from "@kibo/schema";
 
-export type DemoTicket = {
-  ref: string;
+export type DemoPr = { number: number; state: PrState };
+export type DemoStep = {
+  key: string;
   title: string;
   status: StatusId;
-  parent?: string;
-  blockedReason?: string;
   description: string;
+  branch?: string;
+  pr?: DemoPr;
 };
-export type DemoLink = { from: string; to: string; type: "blocks" | "relates" };
-export type DemoComponentId = "kanban" | "tickets" | "notes" | "graph";
-export type DemoPage = {
-  title: string;
-  kind: "dashboard" | "view";
-  components: readonly { id: DemoComponentId; layout?: Layout; config?: { filter: "all" } }[];
-};
+export type DemoFeature = { title: string; description: string; sprint: number; steps: readonly DemoStep[] };
+export type DemoLink = { from: string; to: string };
 
-export const DEMO_COMPONENT_VERSION = "1.0.0";
+export const DEMO_CLIENT = "Boulangerie Martin";
+export const DEMO_REPO = "https://github.com/kibo-demo/boutique";
+export const DEMO_SPRINT_COUNT = 3;
 
-export const DEMO_TICKETS: readonly DemoTicket[] = [
+export const DEMO_FEATURES: readonly DemoFeature[] = [
   {
-    ref: "DEMO-1",
-    title: "Noyau de données",
-    status: "in_progress",
-    description: "Le modèle de données partagé par tous les composants.",
-  },
-  {
-    ref: "DEMO-2",
-    title: "Schéma des tickets",
-    status: "in_progress",
-    parent: "DEMO-1",
-    description: "Décrire un ticket, ses statuts et ses sous-tickets.",
-  },
-  {
-    ref: "DEMO-3",
-    title: "Snapshots ↔ SQLite",
-    status: "done",
-    parent: "DEMO-1",
-    description: "Enregistrer chaque projet sur le disque et le recharger au démarrage.",
-  },
-  {
-    ref: "DEMO-4",
-    title: "Monorepo",
-    status: "done",
-    description: "Un dépôt, plusieurs paquets, une seule commande de test.",
-  },
-  {
-    ref: "DEMO-5",
-    title: "Thème sombre",
-    status: "in_review",
-    description: "Chaque écran existe en sombre et en clair.",
-  },
-  {
-    ref: "DEMO-6",
-    title: "Kanban : glisser-déposer",
-    status: "todo",
-    description: "Déplacer un ticket d'une colonne à l'autre change son statut.",
-  },
-  {
-    ref: "DEMO-7",
-    title: "Coque et sidecar",
-    status: "todo",
-    description: "L'application de bureau lance le démon en arrière-plan.",
-  },
-  {
-    ref: "DEMO-8",
-    title: "Bac à sable des composants",
-    status: "blocked",
-    blockedReason: "Audit en attente",
-    description: "Isoler chaque composant dans son propre cadre.",
-  },
-];
-
-export const DEMO_LINKS: readonly DemoLink[] = [
-  { from: "DEMO-4", to: "DEMO-2", type: "blocks" },
-  { from: "DEMO-2", to: "DEMO-6", type: "blocks" },
-];
-
-export const DEMO_NOTE = {
-  path: "bienvenue.md",
-  markdown:
-    "# Bienvenue dans la démo\n\nCe projet sert au didacticiel. Modifie cette note avec la barre d'outils : mets un mot en **gras**, ajoute une liste.\n",
-} as const;
-
-const ALL_TICKETS = { filter: "all" } as const;
-
-export const DEMO_PAGES: readonly DemoPage[] = [
-  {
-    title: "Tableau de bord",
-    kind: "dashboard",
-    components: [
-      { id: "kanban", layout: { x: 0, y: 0, w: 8, h: 6 }, config: ALL_TICKETS },
-      { id: "tickets", layout: { x: 8, y: 0, w: 4, h: 6 } },
-      { id: "notes", layout: { x: 0, y: 6, w: 12, h: 4 } },
+    title: "Catalogue des produits",
+    description: "Les clients parcourent les pains et les viennoiseries du jour.",
+    sprint: 0,
+    steps: [
+      {
+        key: "DEMO-1",
+        title: "Liste des produits",
+        status: "done",
+        description: "Afficher les produits avec leur photo et leur prix.",
+        branch: "demo/liste-produits",
+        pr: { number: 1, state: "merged" },
+      },
+      {
+        key: "DEMO-2",
+        title: "Fiche produit",
+        status: "done",
+        description: "Une page par produit, avec les allergènes.",
+        branch: "demo/fiche-produit",
+        pr: { number: 2, state: "merged" },
+      },
     ],
   },
-  { title: "Kanban", kind: "view", components: [{ id: "kanban", config: ALL_TICKETS }] },
-  { title: "Graphe", kind: "view", components: [{ id: "graph", config: ALL_TICKETS }] },
-  { title: "Notes", kind: "view", components: [{ id: "notes" }] },
+  {
+    title: "Panier et commande",
+    description: "Commander en ligne et retirer en boutique.",
+    sprint: 1,
+    steps: [
+      {
+        key: "DEMO-3",
+        title: "Panier",
+        status: "in_review",
+        description: "Ajouter, retirer et compter les produits du panier.",
+        branch: "demo/panier",
+        pr: { number: 3, state: "open" },
+      },
+      {
+        key: "DEMO-4",
+        title: "Paiement en ligne",
+        status: "in_progress",
+        description: "Payer la commande par carte avant le retrait.",
+        branch: "demo/paiement",
+      },
+      {
+        key: "DEMO-5",
+        title: "Confirmation par e-mail",
+        status: "todo",
+        description: "Envoyer le récapitulatif et l'heure de retrait.",
+      },
+    ],
+  },
+  {
+    title: "Espace client",
+    description: "Retrouver ses commandes et ses informations.",
+    sprint: 2,
+    steps: [
+      {
+        key: "DEMO-6",
+        title: "Connexion",
+        status: "todo",
+        description: "Se connecter pour retrouver ses commandes.",
+      },
+      {
+        key: "DEMO-7",
+        title: "Historique des commandes",
+        status: "todo",
+        description: "La liste des commandes passées, la plus récente en tête.",
+      },
+    ],
+  },
 ];
+
+export const DEMO_LINKS: readonly DemoLink[] = [{ from: "DEMO-6", to: "DEMO-7" }];
+
+export const DEMO_QUESTION = {
+  on: "DEMO-6",
+  title: "Connexion par e-mail seulement, ou aussi par un compte Google ?",
+  context: "Le client doit trancher avant que la connexion soit développée.",
+  blocking: true,
+  recipient: "client",
+} as const;
+
+export const DEMO_ROLES = { review: "DEMO-4", copy: "DEMO-5" } as const;
+
+export const DEMO_REVIEW_PR = { number: 4, base: "main", head: "demo/paiement" } as const;
+
+export const demoPrUrl = (n: number): string => `${DEMO_REPO}/pull/${n}`;
+
+const LAST_WORKDAY = 5;
+
+function currentWeekMonday(today: IsoDate): IsoDate {
+  const weekday = isoWeekday(today);
+  return weekday > LAST_WORKDAY ? nextMonday(today) : addDays(today, 1 - weekday);
+}
+
+export function demoSetup(today: IsoDate): ProjectSetup {
+  return {
+    sprintStart: addDays(currentWeekMonday(today), -7),
+    sprintCount: DEMO_SPRINT_COUNT,
+    sprintWeeks: 1,
+  };
+}

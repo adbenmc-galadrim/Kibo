@@ -18,8 +18,10 @@ function fakeService() {
     pause: () => answer("pause"),
     skip: () => answer("skip"),
     reset: () => answer("reset"),
+    close: () => answer("close"),
     skipStep: (step) => answer(`skipStep:${step}`),
     markSeen: (view) => answer(`markSeen:${view}`),
+    simulateReview: (projectId) => answer(`simulateReview:${projectId}`),
     refresh: () => {},
   };
   return { service, calls };
@@ -31,17 +33,29 @@ const REQUESTS: RpcRequest[] = [
   { method: "pauseTutorial" },
   { method: "skipTutorial" },
   { method: "resetTutorial" },
-  { method: "skipTutorialStep", step: "note" },
-  { method: "markTutorialSeen", view: "graph" },
+  { method: "skipTutorialStep", step: "question" },
+  { method: "markTutorialSeen", view: "copy" },
+  { method: "closeTutorial" },
+  { method: "simulateTutorialReview", projectId: "demo" },
 ];
 
-test("the seven tutorial methods reach the service", async () => {
+test("the nine tutorial methods reach the service", async () => {
   const { service, calls } = fakeService();
   const rpc = tutorialRpc(service);
   expect([...rpc.methods].sort()).toEqual(REQUESTS.map((r) => r.method).sort());
   for (const req of REQUESTS)
     expect(await rpc.handle(req, LOCAL_CONTEXT)).toMatchObject({ status: "active" });
-  expect(calls).toEqual(["get", "start", "pause", "skip", "reset", "skipStep:note", "markSeen:graph"]);
+  expect(calls).toEqual([
+    "get",
+    "start",
+    "pause",
+    "skip",
+    "reset",
+    "skipStep:question",
+    "markSeen:copy",
+    "close",
+    "simulateReview:demo",
+  ]);
 });
 
 test("every tutorial method is refused to a remote session", async () => {

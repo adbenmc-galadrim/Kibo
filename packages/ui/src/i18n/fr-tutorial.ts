@@ -8,6 +8,10 @@ export const frTutorial = {
   pause: "Mettre en pause",
   stop: "Arrêter le didacticiel",
   close: "Fermer",
+  read: "C'est lu",
+  simulateReview: "Simuler la PR",
+  copy: (command: string) => `Copier ${command}`,
+  copyFailed: "Copie refusée par le navigateur. Réessaie.",
   doneTitle: "Bravo, tu as fait le tour de Kibo",
   doneText: "Tu peux supprimer le projet de démonstration : tes autres projets ne sont pas touchés.",
   deleteDemo: "Supprimer le projet de démo",
@@ -16,41 +20,35 @@ export const frTutorial = {
   failed: "L'action n'a pas abouti. Réessaie.",
   offer: {
     title: "Faire le tour de Kibo ?",
-    text: "Six étapes dans un projet de démonstration, environ dix minutes. L'agent de démonstration ne consomme aucun token.",
-    textTracking: "Cinq étapes dans un projet de démonstration, environ dix minutes.",
+    text: "Cinq étapes dans un projet de démonstration, environ cinq minutes. Aucun agent n'est lancé.",
     start: "Commencer",
     later: "Plus tard",
     resume: "Reprendre",
     restart: "Recommencer",
   },
   steps: {
-    kanban: {
-      title: "Créer un ticket et le déplacer",
-      instruction: "Sur la page Kanban, crée un ticket puis glisse-le dans la colonne En cours.",
-    },
-    links: {
-      title: "Lier deux tickets",
+    overview: {
+      title: "Lire la Vue d'ensemble",
       instruction:
-        "Ouvre la fiche d'un ticket, ajoute une dépendance vers un autre ticket, puis ouvre la page Graphe pour la voir.",
+        "Le sprint courant, les fonctionnalités, la PR en review et la question bloquante : tout se lit ici, mis à jour depuis git et GitHub.",
     },
-    note: {
-      title: "Écrire une note",
+    feature: {
+      title: "Créer une fonctionnalité",
+      instruction: "Dans le Planning, clique sur « Fonctionnalité », donne-lui un titre et crée-la.",
+    },
+    review: {
+      title: "Voir une étape passer en review",
       instruction:
-        "Sur la page Notes, ouvre la note Bienvenue, clique sur Modifier et mets un mot en gras avec la barre d'outils.",
+        "Dans T3 Code, /full-delivery ouvre la PR et Kibo passe l'étape en review. Ici, le démon de démo simule la PR de DEMO-4 : regarde-la passer dans En review.",
     },
-    dashboard: {
-      title: "Réorganiser le tableau de bord",
-      instruction: "Sur le Tableau de bord, passe en mode édition puis déplace ou redimensionne un widget.",
+    question: {
+      title: "Répondre à une question",
+      instruction: "Sur la page Questions, réponds à la question bloquante du client : F3 est débloquée.",
     },
-    agent: {
-      title: "Confier un ticket à un agent",
+    copy: {
+      title: "Copier /full-delivery",
       instruction:
-        "Sur la page Kanban, ouvre un ticket ▸ Assigner à un agent ▸ Agent de démonstration. Réponds à sa question dans la barre des agents.",
-    },
-    component: {
-      title: "Créer un composant",
-      instruction:
-        "Sur le Tableau de bord : Ajouter un composant ▸ Décrire à l'IA ▸ gabarit Graphique, puis ajoute-le à la page.",
+        "Chaque étape se livre dans T3 Code avec /full-delivery et sa clé. Copie la commande, puis colle-la dans T3 Code.",
     },
   },
 } as const;

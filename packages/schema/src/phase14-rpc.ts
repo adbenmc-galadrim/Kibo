@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { AppInfo, Diagnostics } from "./app-info";
 import { BackupId, type BackupInfo, type BackupStatus } from "./backup";
-import { type TutorialState, TutorialStep } from "./tutorial";
+import { type TutorialState, TutorialStep, TutorialView } from "./tutorial";
 
 export const PHASE14_RPC = [
   z.object({ method: z.literal("getAppInfo") }),
@@ -21,7 +21,9 @@ export const PHASE14_RPC = [
   z.object({ method: z.literal("skipTutorial") }),
   z.object({ method: z.literal("resetTutorial") }),
   z.object({ method: z.literal("skipTutorialStep"), step: TutorialStep }),
-  z.object({ method: z.literal("markTutorialSeen"), view: z.literal("graph") }),
+  z.object({ method: z.literal("markTutorialSeen"), view: TutorialView }),
+  z.object({ method: z.literal("closeTutorial") }),
+  z.object({ method: z.literal("simulateTutorialReview"), projectId: z.string().min(1) }),
 ] as const;
 
 export type Phase14RpcResult = {
@@ -38,4 +40,6 @@ export type Phase14RpcResult = {
   resetTutorial: TutorialState;
   skipTutorialStep: TutorialState;
   markTutorialSeen: TutorialState;
+  closeTutorial: TutorialState;
+  simulateTutorialReview: TutorialState;
 };

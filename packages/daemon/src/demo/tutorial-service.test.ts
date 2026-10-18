@@ -16,21 +16,20 @@ afterEach(() => {
 });
 
 const seedOf = (n: number): TutorialSeed => ({
-  ticketIds: ["t1"],
-  linkKeys: [],
-  layouts: {},
-  noteHash: `${n}`.repeat(64),
-  dashboardPageId: "p1",
-  graphPageId: "p2",
+  featureIds: [`f${n}`],
+  reviewTicketId: "s4",
+  questionId: "q1",
+  copyTicketId: "s5",
+  overviewPageId: "p1",
+  planningPageId: "p2",
+  kanbanPageId: "p3",
+  questionsPageId: "p5",
 });
 const SNAP: TutorialSnapshot = {
-  tickets: [{ id: "t1", statusId: "todo" }],
-  links: [],
-  instances: [],
-  noteHash: "1".repeat(64),
-  runs: [],
-  aiComponentIds: [],
+  tickets: [{ id: "s4", statusId: "in_progress", parentId: "f1", shortKey: null }],
+  questions: [{ id: "q1", answered: false }],
 };
+const ALL_STEPS = ["overview", "feature", "review", "question", "copy"] as const;
 
 function setup() {
   const home = mkdtempSync(join(tmpdir(), "kibo-tutorial-"));
@@ -41,6 +40,7 @@ function setup() {
   const created: string[] = [];
   const projects = new Map<string, TutorialSnapshot>();
   const events: Phase7Event[] = [];
+  const reviews: string[] = [];
   const service = createTutorialService({
     settings,
     createDemo: async () => {
@@ -55,10 +55,17 @@ function setup() {
     },
     snapshot: (projectId) => projects.get(projectId) ?? null,
     emit: (e) => events.push(e),
+    simulateReview: (projectId) => {
+      reviews.push(projectId);
+      projects.set(projectId, {
+        ...SNAP,
+        tickets: [{ id: "s4", statusId: "in_review", parentId: "f1", shortKey: null }],
+      });
+    },
     now: () => 1_000,
   });
   const stored = () => settings.get("tutorial", TutorialState, TUTORIAL_NEVER);
-  return { service, created, projects, events, stored };
+  return { service, created, projects, events, stored, settings, reviews };
 }
 
 test("start creates the demo project once, stores the seed and emits tutorial.changed", async () => {
@@ -89,27 +96,27 @@ test("two concurrent starts create a single demo project", async () => {
 test("start on a paused tutorial whose project still exists just resumes", async () => {
   const s = setup();
   await s.service.start();
-  s.service.skipStep("kanban");
+  s.service.skipStep("overview");
   expect(s.service.pause().status).toBe("paused");
   const resumed = await s.service.start();
-  expect([resumed.status, resumed.completed, resumed.projectId]).toEqual(["active", ["kanban"], "demo-1"]);
+  expect([resumed.status, resumed.completed, resumed.projectId]).toEqual(["active", ["overview"], "demo-1"]);
   expect(s.created).toEqual(["demo-1"]);
 });
 
 test("start on a paused tutorial whose project was deleted recreates it and keeps completed steps", async () => {
   const s = setup();
   await s.service.start();
-  s.service.skipStep("kanban");
-  s.service.markSeen("graph");
+  s.service.skipStep("feature");
+  s.service.markSeen("overview");
   s.service.pause();
   s.projects.delete("demo-1");
   const resumed = await s.service.start();
   expect(resumed).toEqual({
     status: "active",
-    completed: ["kanban"],
+    completed: ["overview", "feature"],
     projectId: "demo-2",
     startedAt: 1_000,
-    seenViews: ["graph"],
+    seenViews: ["overview"],
     seed: seedOf(2),
   });
 });
@@ -117,19 +124,55 @@ test("start on a paused tutorial whose project was deleted recreates it and keep
 test("start after a finished tutorial whose project was deleted begins again", async () => {
   const s = setup();
   await s.service.start();
-  for (const step of ["kanban", "links", "note", "dashboard", "agent", "component"] as const)
-    s.service.skipStep(step);
+  for (const step of ALL_STEPS) s.service.skipStep(step);
   expect(s.service.get().status).toBe("done");
   s.projects.delete("demo-1");
   const again = await s.service.start();
   expect([again.status, again.completed, again.projectId]).toEqual(["active", [], "demo-2"]);
 });
 
-test("the five steps without the agent finish the tutorial", async () => {
+test("the five tracking steps finish the tutorial, four do not", async () => {
   const s = setup();
   await s.service.start();
-  for (const step of ["kanban", "links", "note", "dashboard", "component"] as const) s.service.skipStep(step);
+  for (const step of ALL_STEPS.slice(0, 4)) s.service.skipStep(step);
+  expect(s.service.get().status).toBe("active");
+  s.service.skipStep("copy");
   expect(s.service.get().status).toBe("done");
+});
+
+test("closing the finished tour is stored: the Bravo panel does not come back", async () => {
+  const s = setup();
+  await s.service.start();
+  expect(s.service.close().status).toBe("active");
+  for (const step of ALL_STEPS) s.service.skipStep(step);
+  expect(s.service.close().status).toBe("closed");
+  expect(s.stored().status).toBe("closed");
+  expect(s.service.close().status).toBe("closed");
+  s.projects.delete("demo-1");
+  const again = await s.service.start();
+  expect([again.status, again.completed, again.projectId]).toEqual(["active", [], "demo-2"]);
+});
+
+test("the simulated review only acts on the demo of a running tour and completes the review step", async () => {
+  const s = setup();
+  expect(() => s.service.simulateReview("demo-1")).toThrow("INVALID_INPUT");
+  await s.service.start();
+  expect(() => s.service.simulateReview("other")).toThrow("INVALID_INPUT");
+  expect(s.reviews).toEqual([]);
+  const next = s.service.simulateReview("demo-1");
+  expect(s.reviews).toEqual(["demo-1"]);
+  expect(next.completed).toEqual(["review"]);
+  s.service.pause();
+  expect(() => s.service.simulateReview("demo-1")).toThrow("INVALID_INPUT");
+});
+
+test("a tour stored by an older Kibo is read as closed or never, not as a corrupt store", () => {
+  const s = setup();
+  const legacy = { ...TUTORIAL_NEVER, status: "done", completed: ["kanban", "agent"], seenViews: ["graph"] };
+  s.settings.set("tutorial", legacy);
+  expect(s.service.get()).toEqual({ ...TUTORIAL_NEVER, status: "closed" });
+  s.settings.set("tutorial", { ...legacy, status: "active" });
+  expect(s.service.get()).toEqual(TUTORIAL_NEVER);
 });
 
 test("pause, skip, reset and skipStep change the status or the completed list and emit", async () => {
@@ -137,9 +180,9 @@ test("pause, skip, reset and skipStep change the status or the completed list an
   expect(s.service.pause()).toEqual(TUTORIAL_NEVER);
   expect(s.events).toEqual([]);
   await s.service.start();
-  expect(s.service.skipStep("note").completed).toEqual(["note"]);
-  expect(s.service.skipStep("kanban").completed).toEqual(["kanban", "note"]);
-  expect(s.service.skipStep("kanban").completed).toEqual(["kanban", "note"]);
+  expect(s.service.skipStep("review").completed).toEqual(["review"]);
+  expect(s.service.skipStep("overview").completed).toEqual(["overview", "review"]);
+  expect(s.service.skipStep("overview").completed).toEqual(["overview", "review"]);
   expect(s.service.pause().status).toBe("paused");
   expect(s.service.skip().status).toBe("skipped");
   expect(s.stored().status).toBe("skipped");
@@ -154,10 +197,10 @@ test("refresh evaluates the snapshot and persists only when something changed", 
   await s.service.start();
   s.service.refresh();
   expect(s.events).toHaveLength(1);
-  s.projects.set("demo-1", { ...SNAP, noteHash: "f".repeat(64) });
+  s.projects.set("demo-1", { ...SNAP, questions: [{ id: "q1", answered: true }] });
   s.service.refresh();
-  expect(s.service.get().completed).toEqual(["note"]);
-  expect(s.stored().completed).toEqual(["note"]);
+  expect(s.service.get().completed).toEqual(["question"]);
+  expect(s.stored().completed).toEqual(["question"]);
   expect(s.events).toHaveLength(2);
   s.service.refresh();
   expect(s.events).toHaveLength(2);
@@ -166,13 +209,24 @@ test("refresh evaluates the snapshot and persists only when something changed", 
   expect(s.events).toHaveLength(2);
 });
 
-test("markSeen('graph') is idempotent", async () => {
+test("markSeen is idempotent and completes the overview and copy steps", async () => {
   const s = setup();
   await s.service.start();
-  expect(s.service.markSeen("graph").seenViews).toEqual(["graph"]);
-  expect(s.service.markSeen("graph").seenViews).toEqual(["graph"]);
-  expect(s.stored().seenViews).toEqual(["graph"]);
-  expect(s.events).toHaveLength(2);
+  const seen = s.service.markSeen("overview");
+  expect([seen.seenViews, seen.completed]).toEqual([["overview"], ["overview"]]);
+  expect(s.service.markSeen("overview").seenViews).toEqual(["overview"]);
+  expect(s.service.markSeen("copy").completed).toEqual(["overview", "copy"]);
+  expect(s.stored().seenViews).toEqual(["overview", "copy"]);
+  expect(s.events).toHaveLength(3);
+});
+
+test("restarting on a demo already played ticks at once the steps it still satisfies", async () => {
+  const s = setup();
+  await s.service.start();
+  s.service.simulateReview("demo-1");
+  s.service.reset();
+  const again = await s.service.start();
+  expect([again.status, again.completed]).toEqual(["active", ["review"]]);
 });
 
 test("start after a reset takes the existing demo project back instead of creating a second one", async () => {

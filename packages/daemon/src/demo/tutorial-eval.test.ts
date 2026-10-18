@@ -1,15 +1,16 @@
 import { expect, test } from "bun:test";
-import type { Instance, Link, TicketView, TutorialState } from "@kibo/schema";
-import { EMPTY_PROGRESS } from "@kibo/schema";
-import { evaluateTutorial, type TutorialRun, type TutorialSnapshot } from "./tutorial-eval";
+import type { TutorialState } from "@kibo/schema";
+import { evaluateTutorial, type TutorialSnapshot } from "./tutorial-eval";
 
 const SEED = {
-  ticketIds: ["t1", "t2"],
-  linkKeys: ["t1>t2:blocks"],
-  layouts: { w1: { x: 0, y: 0, w: 8, h: 6 } },
-  noteHash: "a".repeat(64),
-  dashboardPageId: "p1",
-  graphPageId: "p2",
+  featureIds: ["f1"],
+  reviewTicketId: "s4",
+  questionId: "q1",
+  copyTicketId: "s5",
+  overviewPageId: "p1",
+  planningPageId: "p2",
+  kanbanPageId: "p3",
+  questionsPageId: "p5",
 };
 const ACTIVE: TutorialState = {
   status: "active",
@@ -20,135 +21,62 @@ const ACTIVE: TutorialState = {
   seed: SEED,
 };
 
-const ticket = (id: string, statusId: TicketView["statusId"]): TicketView => ({
+type SnapTicket = TutorialSnapshot["tickets"][number];
+const ticket = (id: string, over: Partial<SnapTicket> = {}): SnapTicket => ({
   id,
-  key: `DEMO-${id}`,
-  pendingSeq: null,
-  title: id,
-  description: "",
-  statusId,
-  blockedReason: null,
-  domainId: null,
-  assignee: null,
-  parentId: null,
-  labels: [],
-  externalRefs: [],
-  progress: { done: 0, total: 0 },
-  waitingOn: [],
-  openQuestions: 0,
-  startable: false,
-  agentProgress: EMPTY_PROGRESS,
-  delivery: null,
-  sprintId: null,
-  optional: false,
+  statusId: "todo",
+  parentId: "f1",
   shortKey: null,
-  effectiveSprintId: null,
-  session: null,
-  updatedAt: null,
-  feature: null,
-  keyLabel: `DEMO-${id}`,
-});
-const link = (from: string, to: string): Link => ({ id: `${from}${to}`, from, to, type: "blocks" });
-const instance = (id: string, component: string, x = 0): Instance => ({
-  id,
-  pageId: "p1",
-  component,
-  layout: { x, y: 0, w: 8, h: 6 },
-  config: {},
-  componentHash: null,
-});
-const run = (over: Partial<TutorialRun>): TutorialRun => ({
-  profileId: "system:demo",
-  projectId: "demo",
-  state: "done",
   ...over,
 });
-
 const BASE: TutorialSnapshot = {
-  tickets: [ticket("t1", "todo"), ticket("t2", "done")],
-  links: [link("t1", "t2")],
-  instances: [instance("w1", "kanban@1.0.0")],
-  noteHash: SEED.noteHash,
-  runs: [],
-  aiComponentIds: [],
+  tickets: [ticket("f1", { parentId: null, shortKey: "F1" }), ticket("s4", { statusId: "in_progress" })],
+  questions: [{ id: "q1", answered: false }],
 };
-const completedAfter = (snap: Partial<TutorialSnapshot>, state: TutorialState = ACTIVE) =>
-  evaluateTutorial(state, { ...BASE, ...snap }).completed;
 
-test("nothing changes when the snapshot equals the seed", () => {
+test("nothing moves on the seeded demo", () => {
   expect(evaluateTutorial(ACTIVE, BASE)).toBe(ACTIVE);
 });
 
-test("kanban: a ticket outside the seed whose status is neither backlog nor todo completes the step", () => {
-  expect(completedAfter({ tickets: [...BASE.tickets, ticket("t3", "in_progress")] })).toEqual(["kanban"]);
-  expect(completedAfter({ tickets: [...BASE.tickets, ticket("t3", "todo")] })).toEqual([]);
-  expect(completedAfter({ tickets: [...BASE.tickets, ticket("t3", "backlog")] })).toEqual([]);
-  expect(completedAfter({ tickets: [ticket("t1", "in_progress"), ticket("t2", "done")] })).toEqual([]);
+test("reading the overview is the overview view reported by the interface", () => {
+  const next = evaluateTutorial({ ...ACTIVE, seenViews: ["overview"] }, BASE);
+  expect(next.completed).toEqual(["overview"]);
 });
 
-test("links: a new link completes only after the graph was seen", () => {
-  const links = [...BASE.links, link("t2", "t1")];
-  expect(completedAfter({ links })).toEqual([]);
-  expect(completedAfter({ links }, { ...ACTIVE, seenViews: ["graph"] })).toEqual(["links"]);
-  expect(completedAfter({}, { ...ACTIVE, seenViews: ["graph"] })).toEqual([]);
+test("a new feature counts, a new step or the seeded feature does not", () => {
+  const step = { ...BASE, tickets: [...BASE.tickets, ticket("s9")] };
+  expect(evaluateTutorial(ACTIVE, step).completed).toEqual([]);
+  const feature = { ...BASE, tickets: [...BASE.tickets, ticket("f9", { parentId: null, shortKey: "F4" })] };
+  expect(evaluateTutorial(ACTIVE, feature).completed).toEqual(["feature"]);
 });
 
-test("note: a different note hash completes the step", () => {
-  expect(completedAfter({ noteHash: "b".repeat(64) })).toEqual(["note"]);
-  expect(completedAfter({ noteHash: null })).toEqual([]);
-});
-
-test("dashboard: a changed layout of a seeded dashboard instance completes the step", () => {
-  expect(completedAfter({ instances: [instance("w1", "kanban@1.0.0", 2)] })).toEqual(["dashboard"]);
-  expect(completedAfter({ instances: [...BASE.instances, instance("w9", "kanban@1.0.0", 4)] })).toEqual([]);
-});
-
-test("agent: a done run of the demo profile on a demo ticket completes the step", () => {
-  expect(completedAfter({ runs: [run({})] })).toEqual(["agent"]);
-  expect(completedAfter({ runs: [run({ state: "failed" })] })).toEqual([]);
-  expect(completedAfter({ runs: [run({ projectId: "other" })] })).toEqual([]);
-  expect(completedAfter({ runs: [run({ profileId: "opus-dev" })] })).toEqual([]);
-});
-
-test("component: an instance of an ai component on a demo page completes the step", () => {
-  const instances = [...BASE.instances, instance("w2", "chart@0.1.0")];
-  expect(completedAfter({ instances })).toEqual([]);
-  expect(completedAfter({ instances, aiComponentIds: ["chart"] })).toEqual(["component"]);
-});
-
-test("all six completed turns the status to done", () => {
-  const state: TutorialState = {
-    ...ACTIVE,
-    completed: ["kanban", "links", "note", "dashboard", "agent"],
+test("the review step needs the chosen step in review", () => {
+  const other = { ...BASE, tickets: [...BASE.tickets, ticket("s3", { statusId: "in_review" })] };
+  expect(evaluateTutorial(ACTIVE, other).completed).toEqual([]);
+  const moved = {
+    ...BASE,
+    tickets: [BASE.tickets[0] ?? ticket("f1"), ticket("s4", { statusId: "in_review" })],
   };
-  const next = evaluateTutorial(state, {
-    ...BASE,
-    runs: [],
-    noteHash: SEED.noteHash,
-    aiComponentIds: ["chart"],
-    instances: [...BASE.instances, instance("w2", "chart@0.1.0")],
-  });
-  expect(next.status).toBe("done");
-  expect(next.completed).toEqual(["kanban", "links", "note", "dashboard", "agent", "component"]);
+  expect(evaluateTutorial(ACTIVE, moved).completed).toEqual(["review"]);
 });
 
-test("the five steps without the agent turn the status to done", () => {
-  const state: TutorialState = { ...ACTIVE, completed: ["kanban", "links", "note", "dashboard"] };
-  const next = evaluateTutorial(state, {
-    ...BASE,
-    runs: [],
-    noteHash: SEED.noteHash,
-    aiComponentIds: ["chart"],
-    instances: [...BASE.instances, instance("w2", "chart@0.1.0")],
-  });
-  expect(next.status).toBe("done");
-  expect(next.completed).toEqual(["kanban", "links", "note", "dashboard", "component"]);
+test("answering the seeded question completes the question step", () => {
+  const answered = { ...BASE, questions: [{ id: "q1", answered: true }] };
+  expect(evaluateTutorial(ACTIVE, answered).completed).toEqual(["question"]);
 });
 
-test("a paused or skipped state is never advanced", () => {
-  const changed = { ...BASE, noteHash: "b".repeat(64) };
-  for (const status of ["paused", "skipped", "never", "done"] as const) {
-    const state = { ...ACTIVE, status };
-    expect(evaluateTutorial(state, changed)).toBe(state);
-  }
+test("the last step done finishes the tour, steps keep the tour order", () => {
+  const state: TutorialState = { ...ACTIVE, completed: ["overview", "feature", "review", "question"] };
+  const done = evaluateTutorial({ ...state, seenViews: ["copy"] }, BASE);
+  expect([done.status, done.completed]).toEqual([
+    "done",
+    ["overview", "feature", "review", "question", "copy"],
+  ]);
+});
+
+test("a paused tour or a tour without seed is left as is", () => {
+  const paused = { ...ACTIVE, status: "paused" as const, seenViews: ["overview" as const] };
+  expect(evaluateTutorial(paused, BASE)).toBe(paused);
+  const noSeed = { ...ACTIVE, seed: null, seenViews: ["overview" as const] };
+  expect(evaluateTutorial(noSeed, BASE)).toBe(noSeed);
 });

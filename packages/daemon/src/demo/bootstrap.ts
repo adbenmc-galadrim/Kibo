@@ -1,30 +1,24 @@
-import { listPages } from "@kibo/core";
-import type { ChangeMessage, Phase7Event, RpcRequest } from "@kibo/schema";
-import type { CommandHub } from "../command-path";
-import type { Docs } from "../docs";
+import { listInstances, listPages, listQuestions, listTickets } from "@kibo/core";
+import type { ChangeMessage, Phase7Event } from "@kibo/schema";
+import { declareTicketRef } from "../code/declare-ref";
 import type { ProjectSettings } from "../notes/settings";
 import type { RpcExtension, RpcHandler } from "../rpc-extensions";
+import type { Service } from "../service";
 import type { LocalSettings } from "../settings";
 import { createDemoProject, isDemoProject, seedFromProject } from "./demo-project";
+import { DEMO_REVIEW_PR, DEMO_ROLES, demoPrUrl } from "./demo-seed";
 import { demoCommandGuard, demoRpcGuard } from "./local-guard";
 import { demoNotesCleanup, prepareDemoNotes } from "./notes-cleanup";
 import { tutorialRpc } from "./rpc";
-import type { TutorialRun } from "./tutorial-eval";
 import { createTutorialService, type TutorialService } from "./tutorial-service";
 import { createTutorialSnapshot } from "./tutorial-snapshot";
 
 export type TutorialBootDeps = {
   home: string;
-  service: {
-    handle(req: RpcRequest): unknown;
-    onChange(listener: (message: ChangeMessage) => void): () => void;
-    docs: Pick<Docs, "projectIds" | "project" | "workspace" | "emit">;
-    commands: CommandHub;
-  };
+  service: Service;
   settings: LocalSettings;
   projectSettings: ProjectSettings;
   notesDir(projectId: string): string;
-  runs(): TutorialRun[];
   log(message: string, error?: unknown): void;
 };
 
@@ -37,19 +31,40 @@ export type TutorialBoot = {
 };
 
 const concernsDemo = (message: ChangeMessage, projectId: string | null): boolean =>
-  ("type" in message && message.type === "run.changed") ||
-  ("projectId" in message && projectId !== null && message.projectId === projectId);
+  "projectId" in message && projectId !== null && message.projectId === projectId;
+
+function simulateReview(service: Service, projectId: string): void {
+  declareTicketRef(service, {
+    projectId,
+    ticketKey: DEMO_ROLES.review,
+    ref: {
+      kind: "github_pr",
+      url: demoPrUrl(DEMO_REVIEW_PR.number),
+      number: DEMO_REVIEW_PR.number,
+      state: "open",
+      base: DEMO_REVIEW_PR.base,
+      head: DEMO_REVIEW_PR.head,
+      review: "none",
+      checks: null,
+    },
+  });
+}
 
 export function startTutorial(deps: TutorialBootDeps): TutorialBoot {
   const { docs } = deps.service;
   const isDemo = (projectId: string) => isDemoProject(deps.projectSettings, projectId);
-  const snapshot = createTutorialSnapshot({ docs, notesDir: deps.notesDir, runs: deps.runs });
+  const snapshot = createTutorialSnapshot({ docs });
   const findDemo = () => {
     const projectId = docs.projectIds().find(isDemo);
-    const snap = projectId === undefined ? null : snapshot(projectId);
-    if (projectId === undefined || snap === null) return null;
-    const pages = listPages(docs.project(projectId));
-    return { projectId, seed: seedFromProject({ ...snap, pages }, snap.noteHash) };
+    if (projectId === undefined) return null;
+    const doc = docs.project(projectId);
+    const project = {
+      pages: listPages(doc),
+      instances: listInstances(doc),
+      tickets: listTickets(doc),
+      questions: listQuestions(doc),
+    };
+    return { projectId, seed: seedFromProject(project) };
   };
   const tutorial = createTutorialService({
     settings: deps.settings,
@@ -58,6 +73,7 @@ export function startTutorial(deps: TutorialBootDeps): TutorialBoot {
       const created = await createDemoProject({
         handle: async (req) => deps.service.handle(req),
         settings: deps.projectSettings,
+        today: () => docs.today(),
       });
       claimNotes();
       return created;
@@ -65,6 +81,7 @@ export function startTutorial(deps: TutorialBootDeps): TutorialBoot {
     findDemo,
     snapshot,
     emit: (event: Phase7Event) => docs.emit(event),
+    simulateReview: (projectId) => simulateReview(deps.service, projectId),
   });
   const offChange = deps.service.onChange((message) => {
     try {

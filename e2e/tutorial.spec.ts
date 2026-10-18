@@ -1,18 +1,30 @@
 import { expect, type Page, test } from "@playwright/test";
-import { openNewTicketFromPalette } from "./helpers";
+import { rpc } from "./agents-seed";
+import { clipboardText } from "./planning-kit";
 import { shot } from "./repo-project";
 import { E2E_TOKEN } from "./token";
 
 test.use({ viewport: { width: 1440, height: 1000 } });
+
+const QUESTION = "Connexion par e-mail seulement, ou aussi par un compte Google ?";
+const STEPS = [
+  "Lire la Vue d'ensemble",
+  "Créer une fonctionnalité",
+  "Voir une étape passer en review",
+  "Répondre à une question",
+  "Copier /full-delivery",
+];
 
 const panel = (page: Page) => page.getByRole("complementary", { name: "Didacticiel" });
 const dot = (page: Page, title: string, state: "fait" | "en cours") =>
   panel(page).getByRole("listitem", { name: `${title} · ${state}` });
 const sidebar = (page: Page) => page.locator('[data-sidebar="sidebar"]');
 const demoEntry = (page: Page) => sidebar(page).getByRole("button", { name: /^Démo Kibo/ });
+const main = (page: Page) => page.getByRole("main");
 
 async function goToStep(page: Page) {
-  await panel(page).getByRole("button", { name: "Aller à la page" }).click();
+  const go = panel(page).getByRole("button", { name: "Aller à la page" });
+  if (await go.isVisible()) await go.click();
 }
 
 async function openHelpTutorial(page: Page) {
@@ -22,111 +34,103 @@ async function openHelpTutorial(page: Page) {
   return page.getByRole("dialog", { name: "Faire le tour de Kibo ?" });
 }
 
-const widget = (page: Page, title: string) =>
-  page.locator("[data-instance]").filter({ has: page.getByText(title, { exact: true }) });
-
-async function expectDemoWidgets(page: Page) {
-  const tickets = widget(page, "Tickets");
-  await expect(tickets.getByText("DEMO-2", { exact: true })).toBeVisible();
-  const title = tickets.getByRole("button", { name: "Schéma des tickets", exact: true });
-  await expect(title).toBeVisible();
-  const [titleBox, widgetBox] = await Promise.all([title.boundingBox(), tickets.boundingBox()]);
-  if (!titleBox || !widgetBox) throw new Error("tickets widget not laid out");
-  expect(titleBox.width).toBeGreaterThan(40);
-  expect(titleBox.x + titleBox.width).toBeLessThanOrEqual(widgetBox.x + widgetBox.width);
-  const notes = widget(page, "Notes");
-  await expect(notes.locator("strong", { hasText: "gras" })).toBeVisible();
-  await expect(notes.getByText("**gras**")).toHaveCount(0);
-}
-
-test("the tutorial walks the five tracking steps in the demo project, then deletes it in one click", async ({
-  page,
-}, info) => {
-  test.setTimeout(240_000);
+async function startTour(page: Page, info: Parameters<typeof shot>[1]) {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await page.getByRole("main").getByRole("button", { name: "Suivre le didacticiel (10 min)" }).click();
+  await page.getByRole("main").getByRole("button", { name: "Suivre le didacticiel (5 min)" }).click();
   const offer = page.getByRole("dialog", { name: "Faire le tour de Kibo ?" });
-  await expect(offer.getByRole("listitem")).toHaveCount(5);
-  await expect(offer.getByText("Confier un ticket à un agent")).toHaveCount(0);
+  await expect(offer.getByRole("listitem")).toHaveText(STEPS);
+  await expect(offer.getByText(/Aucun agent n'est lancé/)).toBeVisible();
   await shot(page, info, "proposition");
   await offer.getByRole("button", { name: "Commencer" }).click();
   await expect(offer).toBeHidden();
   await expect(demoEntry(page)).toBeVisible();
-  await expect(demoEntry(page)).toContainText("Démo");
-  await expect(dot(page, "Créer un ticket et le déplacer", "en cours")).toBeVisible();
+  for (const title of ["Vue d'ensemble", "Planning", "Kanban", "Graphe", "Questions"])
+    await expect(sidebar(page).getByRole("button", { name: title, exact: true })).toBeVisible();
+}
+
+async function readOverview(page: Page) {
+  await expect(dot(page, STEPS[0] ?? "", "en cours")).toBeVisible();
+  await goToStep(page);
+  await expect(main(page).getByText("Panier et commande").first()).toBeVisible();
+  await panel(page).getByRole("button", { name: "C'est lu" }).click();
+  await expect(dot(page, STEPS[0] ?? "", "fait")).toBeVisible();
+}
+
+async function createFeature(page: Page) {
+  await goToStep(page);
+  await main(page).getByRole("button", { name: "Ajouter", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Nouvelle fonctionnalité" }).click();
+  const dialog = page.getByRole("dialog", { name: "Nouvelle fonctionnalité" });
+  await dialog.getByLabel("Nom").fill("Livraison à domicile");
+  await dialog.getByRole("button", { name: "Créer la fonctionnalité" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(dot(page, STEPS[1] ?? "", "fait")).toBeVisible();
+}
+
+async function simulateReview(page: Page) {
+  await goToStep(page);
+  const review = page.getByRole("region", { name: "En review" });
+  await expect(review.getByText("Paiement en ligne")).toHaveCount(0);
+  await panel(page).getByRole("button", { name: "Simuler la PR" }).click();
+  await expect(review.getByText("Paiement en ligne")).toBeVisible();
+  await expect(dot(page, STEPS[2] ?? "", "fait")).toBeVisible();
+}
+
+async function answerQuestion(page: Page) {
+  await goToStep(page);
+  const question = main(page).getByRole("article", { name: QUESTION, exact: true });
+  await expect(question.getByText("bloquante", { exact: true })).toBeVisible();
+  const field = question.getByRole("textbox", { name: /réponse…$/ });
+  await field.fill("Par e-mail seulement");
+  await field.press("Enter");
+  await expect(page.getByText(/^F3 débloquée/).first()).toBeVisible();
+  await expect(dot(page, STEPS[3] ?? "", "fait")).toBeVisible();
+}
+
+async function copyCommand(page: Page) {
+  await panel(page).getByRole("button", { name: "Copier /full-delivery DEMO-5" }).click();
+  expect(await clipboardText(page)).toBe("/full-delivery DEMO-5");
+  await expect(panel(page).getByText("Bravo, tu as fait le tour de Kibo")).toBeVisible();
+}
+
+test("the tutorial walks the five tracking steps on daemon events, without any agent", async ({
+  page,
+  context,
+}, info) => {
+  test.setTimeout(120_000);
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await startTour(page, info);
   await shot(page, info, "panneau-etape-1");
-  await expectDemoWidgets(page);
-  await shot(page, info, "tableau-de-bord-demo-widgets");
+  await readOverview(page);
 
-  await goToStep(page);
-  await openNewTicketFromPalette(page);
-  const create = page.getByRole("dialog");
-  await create.getByLabel("Titre", { exact: true }).fill("Mon premier ticket");
-  await create.getByLabel("Statut").click();
-  await page.getByRole("option", { name: "En cours" }).click();
-  await create.getByRole("button", { name: "Créer le ticket" }).click();
-  await expect(create).toBeHidden();
-  await expect(dot(page, "Créer un ticket et le déplacer", "fait")).toBeVisible();
+  await panel(page).getByRole("button", { name: "Mettre en pause" }).click();
+  await expect(panel(page)).toHaveCount(0);
+  await page.reload();
+  const resume = await openHelpTutorial(page);
+  await resume.getByRole("button", { name: "Reprendre" }).click();
+  await expect(dot(page, STEPS[1] ?? "", "en cours")).toBeVisible();
 
-  await page
-    .getByRole("region", { name: "En cours" })
-    .getByRole("button", { name: "Mon premier ticket" })
-    .click();
-  const sheet = page.getByRole("dialog");
-  await sheet.getByRole("button", { name: "Ajouter une dépendance" }).click();
-  await sheet.getByRole("textbox", { name: "Ticket" }).fill("Monorepo");
-  await sheet.getByRole("option", { name: /Monorepo/ }).click();
-  await page.keyboard.press("Escape");
-  await expect(sheet).toBeHidden();
-  await expect(dot(page, "Lier deux tickets", "en cours")).toBeVisible();
-  await goToStep(page);
-  await expect(page.getByRole("region", { name: "Graphe des dépendances" })).toBeVisible();
-  await expect(dot(page, "Lier deux tickets", "fait")).toBeVisible();
-
-  await goToStep(page);
-  await page.getByRole("button", { name: /^Bienvenue dans la démo/ }).click();
-  await page.getByRole("article").getByRole("button", { name: "Modifier" }).click();
-  const editor = page.getByRole("textbox", { name: "Contenu de la note" });
-  await editor.click();
-  await page.keyboard.press("ControlOrMeta+End");
-  await page.keyboard.type("\n\nun mot");
-  await page.keyboard.press("Shift+ArrowLeft");
-  await page.keyboard.press("Shift+ArrowLeft");
-  await page.keyboard.press("Shift+ArrowLeft");
-  await page
-    .getByRole("toolbar", { name: "Mise en forme", exact: true })
-    .getByRole("button", { name: "Gras" })
-    .click();
-  await expect(page.getByText("Enregistré • local")).toBeVisible({ timeout: 5_000 });
-  await expect(dot(page, "Écrire une note", "fait")).toBeVisible();
-
-  await goToStep(page);
-  await page.getByRole("button", { name: "Modifier la disposition" }).click();
-  await page.getByRole("button", { name: "Redimensionner Notes (droite)" }).focus();
-  await page.keyboard.press("Shift+ArrowDown");
-  await expect(page.getByRole("toolbar", { name: "Disposition" })).toContainText("1 changement");
-  await page.getByRole("button", { name: "Enregistrer" }).click();
-  await expect(dot(page, "Réorganiser le tableau de bord", "fait")).toBeVisible();
-
-  await goToStep(page);
-  await page.getByRole("button", { name: "Ajouter un composant" }).click();
-  await page.getByRole("button", { name: /Créer un composant/ }).click();
-  const describe = page.getByRole("dialog", { name: "Créer un composant" });
-  await expect(describe.getByText("Agent de démonstration · aucun token consommé")).toBeVisible();
-  await shot(page, info, "decrire-demo");
-  await describe
-    .getByLabel("Ce que doit faire le composant")
-    .fill("Avancement du sprint : tickets terminés par jour.");
-  await describe.getByLabel("Gabarit").click();
-  await page.getByRole("option", { name: "Graphique" }).click();
-  await describe.getByRole("button", { name: "Générer avec un agent" }).click();
-  await expect(describe.getByRole("list", { name: "Relire le diff" })).toBeVisible({ timeout: 120_000 });
-  await describe.getByRole("button", { name: "J'ai relu, continuer" }).click();
-  const trust = page.getByRole("dialog", { name: /^Autoriser « / });
-  await trust.getByRole("button", { name: "Autoriser et ajouter" }).click();
-  await expect(trust).toBeHidden({ timeout: 60_000 });
-  await expect(panel(page).getByText("Bravo, tu as fait le tour de Kibo")).toBeVisible({ timeout: 30_000 });
+  await createFeature(page);
+  await simulateReview(page);
+  await answerQuestion(page);
+  await copyCommand(page);
   await shot(page, info, "fin");
+
+  await panel(page).getByRole("button", { name: "Fermer" }).click();
+  await expect(panel(page)).toHaveCount(0);
+  await page.reload();
+  await expect(demoEntry(page)).toBeVisible();
+  await expect(panel(page)).toHaveCount(0);
+
+  const again = await openHelpTutorial(page);
+  await again.getByRole("button", { name: "Recommencer" }).click();
+  await expect(dot(page, STEPS[0] ?? "", "en cours")).toBeVisible();
+  await expect(dot(page, STEPS[2] ?? "", "fait")).toBeVisible();
+  await expect(dot(page, STEPS[3] ?? "", "fait")).toBeVisible();
+  await panel(page).getByRole("button", { name: "Passer cette étape" }).click();
+  await expect(dot(page, STEPS[0] ?? "", "fait")).toBeVisible();
+  for (const step of ["feature", "copy"] as const) await rpc(page, { method: "skipTutorialStep", step });
+  await expect(panel(page).getByText("Bravo, tu as fait le tour de Kibo")).toBeVisible();
 
   await panel(page).getByRole("button", { name: "Supprimer le projet de démo" }).click();
   const remove = page.getByRole("dialog", { name: "Supprimer le projet de démonstration ?" });
@@ -134,15 +138,4 @@ test("the tutorial walks the five tracking steps in the demo project, then delet
   await remove.getByRole("button", { name: "Supprimer la démo" }).click();
   await expect(demoEntry(page)).toHaveCount(0);
   await expect(panel(page)).toHaveCount(0);
-
-  const again = await openHelpTutorial(page);
-  await again.getByRole("button", { name: "Recommencer" }).click();
-  await expect(demoEntry(page)).toBeVisible();
-  await expect(dot(page, "Créer un ticket et le déplacer", "en cours")).toBeVisible();
-  await panel(page).getByRole("button", { name: "Mettre en pause" }).click();
-  await expect(panel(page)).toHaveCount(0);
-  await page.reload();
-  const resume = await openHelpTutorial(page);
-  await resume.getByRole("button", { name: "Reprendre" }).click();
-  await expect(dot(page, "Créer un ticket et le déplacer", "en cours")).toBeVisible();
 });

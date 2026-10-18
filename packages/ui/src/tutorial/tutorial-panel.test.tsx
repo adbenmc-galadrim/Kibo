@@ -1,23 +1,14 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import {
-  type Page,
   type RpcRequest,
   type TabTarget,
   TUTORIAL_NEVER,
   TUTORIAL_STEPS,
   type TutorialState,
 } from "@kibo/schema";
-import { render as renderPlain, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import type { ReactElement, ReactNode } from "react";
 import { apiMock } from "../api-mock";
-import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
-
-const shownExecution = fixedStore({ agentExecution: "shown" });
-const ShownExecution = ({ children }: { children: ReactNode }) => (
-  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
-);
-const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const calls: RpcRequest[] = [];
 mock.module("../api", () =>
@@ -33,29 +24,24 @@ mock.module("../api", () =>
 
 const { TutorialPanel } = await import("./TutorialPanel");
 
-const page = (id: string, title: string, kind: Page["kind"]): Page => ({ id, title, kind, parentId: null });
-const pages = [
-  page("pd", "Tableau de bord", "dashboard"),
-  page("pk", "Kanban", "view"),
-  page("pg", "Graphe", "view"),
-  page("pn", "Notes", "view"),
-];
 const active: TutorialState = {
   status: "active",
-  completed: ["kanban"],
+  completed: [],
   projectId: "demo",
   startedAt: 1,
   seenViews: [],
   seed: {
-    ticketIds: [],
-    linkKeys: [],
-    layouts: {},
-    noteHash: "h",
-    dashboardPageId: "pd",
-    graphPageId: "pg",
+    featureIds: ["f1"],
+    reviewTicketId: "s4",
+    questionId: "q1",
+    copyTicketId: "s5",
+    overviewPageId: "po",
+    planningPageId: "pp",
+    kanbanPageId: "pk",
+    questionsPageId: "pq",
   },
 };
-
+const at = (pageId: string): TabTarget => ({ kind: "page", projectId: "demo", pageId });
 beforeEach(() => {
   calls.length = 0;
 });
@@ -66,38 +52,62 @@ const show = ({ state = active, target = null }: Overrides = {}) => {
   const onOpen = mock((_t: TabTarget) => {});
   const onDeleteDemo = mock((_id: string) => {});
   const onClose = mock(() => {});
-  const props = { state, pages, onOpen, onDeleteDemo, onClose };
-  const view = render(<TutorialPanel {...props} activeTarget={target} />);
-  const rerender = (next: TabTarget | null, nextState: TutorialState = state) =>
-    view.rerender(<TutorialPanel {...props} state={nextState} activeTarget={next} />);
-  return { onOpen, onDeleteDemo, onClose, rerender, panel: () => within(screen.getByRole("complementary")) };
+  render(
+    <TutorialPanel
+      state={state}
+      copyKey="DEMO-5"
+      activeTarget={target}
+      onOpen={onOpen}
+      onDeleteDemo={onDeleteDemo}
+      onClose={onClose}
+    />,
+  );
+  return { onOpen, onDeleteDemo, onClose, panel: () => within(screen.getByRole("complementary")) };
 };
+const step = (completed: TutorialState["completed"]): TutorialState => ({ ...active, completed });
 
-test("the floating card shows six dots and develops the current step", async () => {
+test("five dots, the current step developed with its page", async () => {
   const { panel, onOpen } = show();
-  expect(screen.getByRole("complementary", { name: "Didacticiel" })).toBeTruthy();
   const dots = panel().getAllByRole("listitem");
   expect(dots).toHaveLength(TUTORIAL_STEPS.length);
-  expect(dots[0]?.getAttribute("aria-label")).toBe("Créer un ticket et le déplacer · fait");
-  expect(dots[1]?.getAttribute("aria-label")).toBe("Lier deux tickets · en cours");
-  expect(panel().getByText("1 sur 6")).toBeTruthy();
-  expect(panel().getByText("Lier deux tickets", { selector: "h3" })).toBeTruthy();
-  expect(panel().getByText(/page Graphe/)).toBeTruthy();
+  expect(dots[0]?.getAttribute("aria-label")).toBe("Lire la Vue d'ensemble · en cours");
+  expect(panel().getByText("0 sur 5")).toBeTruthy();
   await userEvent.setup().click(panel().getByRole("button", { name: "Aller à la page" }));
-  expect(onOpen).toHaveBeenCalledWith({ kind: "page", projectId: "demo", pageId: "pg" });
+  expect(onOpen).toHaveBeenCalledWith(at("po"));
 });
 
-test("skip, pause and stop send their RPC", async () => {
-  const { panel } = show();
+test("on the overview, « C'est lu » reports the overview as read and no page link is offered", async () => {
+  const { panel } = show({ target: at("po") });
+  expect(panel().queryByRole("button", { name: "Aller à la page" })).toBeNull();
+  await userEvent.setup().click(panel().getByRole("button", { name: "C'est lu" }));
+  expect(calls).toEqual([{ method: "markTutorialSeen", view: "overview" }]);
+});
+
+test("the review step asks the demo daemon to simulate the pull request", async () => {
+  const { panel } = show({ state: step(["overview", "feature"]) });
+  await userEvent.setup().click(panel().getByRole("button", { name: "Simuler la PR" }));
+  expect(calls).toEqual([{ method: "simulateTutorialReview", projectId: "demo" }]);
+});
+
+test("the copy step copies /full-delivery and its key, then reports the copy", async () => {
+  const { panel } = show({ state: step(["overview", "feature", "review", "question"]) });
+  await userEvent.setup().click(panel().getByRole("button", { name: "Copier /full-delivery DEMO-5" }));
+  await waitFor(() => expect(calls).toEqual([{ method: "markTutorialSeen", view: "copy" }]));
+  expect(await navigator.clipboard.readText()).toBe("/full-delivery DEMO-5");
+});
+
+test("skip, pause and stop send their RPC; no step launches an agent", async () => {
+  const { panel } = show({ state: step(["overview"]) });
   const user = userEvent.setup();
   await user.click(panel().getByRole("button", { name: "Passer cette étape" }));
   await user.click(panel().getByRole("button", { name: "Mettre en pause" }));
   await user.click(panel().getByRole("button", { name: "Arrêter le didacticiel" }));
   expect(calls).toEqual([
-    { method: "skipTutorialStep", step: "links" },
+    { method: "skipTutorialStep", step: "feature" },
     { method: "pauseTutorial" },
     { method: "skipTutorial" },
   ]);
+  expect(screen.queryByText(/agent/i)).toBeNull();
 });
 
 test("the card collapses to its header and expands back", async () => {
@@ -109,26 +119,7 @@ test("the card collapses to its header and expands back", async () => {
   expect(panel().getByRole("button", { name: "Aller à la page" })).toBeTruthy();
 });
 
-test("opening the demo graph page marks the graph seen once", () => {
-  const graph: TabTarget = { kind: "page", projectId: "demo", pageId: "pg" };
-  const { rerender } = show({ target: { kind: "page", projectId: "demo", pageId: "pk" } });
-  expect(calls).toEqual([]);
-  rerender(graph);
-  rerender({ kind: "project", projectId: "demo" });
-  rerender(graph);
-  expect(calls).toEqual([{ method: "markTutorialSeen", view: "graph" }]);
-});
-
-test("a graph already seen or another project's graph sends nothing", () => {
-  show({
-    state: { ...active, seenViews: ["graph"] },
-    target: { kind: "page", projectId: "demo", pageId: "pg" },
-  });
-  show({ target: { kind: "page", projectId: "other", pageId: "pg" } });
-  expect(calls).toEqual([]);
-});
-
-test("a finished tour congratulates and offers to delete the demo project", async () => {
+test("a finished tour congratulates, offers to delete the demo and closes", async () => {
   const done: TutorialState = { ...active, status: "done", completed: [...TUTORIAL_STEPS] };
   const { panel, onDeleteDemo, onClose } = show({ state: done });
   expect(panel().getByText("Bravo, tu as fait le tour de Kibo")).toBeTruthy();

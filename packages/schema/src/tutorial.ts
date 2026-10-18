@@ -1,19 +1,24 @@
 import { z } from "zod";
 
-export const TUTORIAL_STEPS = ["kanban", "links", "note", "dashboard", "agent", "component"] as const;
+export const TUTORIAL_STEPS = ["overview", "feature", "review", "question", "copy"] as const;
 export const TutorialStep = z.enum(TUTORIAL_STEPS);
 export type TutorialStep = z.infer<typeof TutorialStep>;
-export const TutorialStatus = z.enum(["never", "active", "paused", "skipped", "done"]);
+export const TutorialStatus = z.enum(["never", "active", "paused", "skipped", "done", "closed"]);
 export type TutorialStatus = z.infer<typeof TutorialStatus>;
 
-const Layout = z.object({ x: z.number(), y: z.number(), w: z.number(), h: z.number() });
+export const TutorialView = z.enum(["overview", "copy"]);
+export type TutorialView = z.infer<typeof TutorialView>;
+
+const Id = z.string().min(1);
 export const TutorialSeed = z.object({
-  ticketIds: z.array(z.string().min(1)),
-  linkKeys: z.array(z.string().min(1)),
-  layouts: z.record(z.string(), Layout),
-  noteHash: z.string(),
-  dashboardPageId: z.string().min(1),
-  graphPageId: z.string().min(1),
+  featureIds: z.array(Id),
+  reviewTicketId: Id,
+  questionId: Id,
+  copyTicketId: Id,
+  overviewPageId: Id,
+  planningPageId: Id,
+  kanbanPageId: Id,
+  questionsPageId: Id,
 });
 export type TutorialSeed = z.infer<typeof TutorialSeed>;
 
@@ -22,7 +27,7 @@ export const TutorialState = z.object({
   completed: z.array(TutorialStep).refine((s) => new Set(s).size === s.length, "duplicate steps"),
   projectId: z.string().min(1).nullable(),
   startedAt: z.number().nullable(),
-  seenViews: z.array(z.enum(["graph"])),
+  seenViews: z.array(TutorialView),
   seed: TutorialSeed.nullable(),
 });
 export type TutorialState = z.infer<typeof TutorialState>;
