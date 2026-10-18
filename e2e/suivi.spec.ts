@@ -194,6 +194,8 @@ test("the sprint sheet carries the report of F5 to S43, and the batch turns part
   await page.keyboard.press("Escape");
 
   await openEmisPage(page, "Planning");
+  const columns = page.getByRole("group", { name: "Disposition" }).getByRole("button", { name: "Colonnes" });
+  if ((await columns.getAttribute("aria-pressed")) !== "true") await columns.click();
   await expect(
     page.getByRole("region", { name: "S43 Import et soudures" }).getByRole("button", { name: /^F5 / }),
   ).toBeVisible();
