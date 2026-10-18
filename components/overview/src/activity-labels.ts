@@ -42,7 +42,7 @@ const REVIEW: Record<string, (p: string) => string> = {
   approved: (p) => `${p} approuvée`,
   review_required: (p) => `${p} · review demandée`,
 };
-const CHECKS: Record<string, string> = { ok: "CI verte", error: "CI rouge", running: "CI en cours" };
+const CHECKS: Record<string, string> = { ok: "CI verte", error: "CI cassée", running: "CI en cours" };
 const DECISION: Record<string, string> = { apply: "validé", reject: "refusé" };
 
 function sprintSet(data: Data, ctx: ActivityContext): string {

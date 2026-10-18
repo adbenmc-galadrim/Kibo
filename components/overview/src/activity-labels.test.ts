@@ -26,7 +26,7 @@ test("pull requests read as opened, merged, reviewed or checked", () => {
     "PR #20 · review demandée",
   );
   expect(label(event("pr_checks", { number: 22, checks: "ok" }))).toBe("PR #22 · CI verte");
-  expect(label(event("pr_checks", { number: 22, checks: "error" }))).toBe("PR #22 · CI rouge");
+  expect(label(event("pr_checks", { number: 22, checks: "error" }))).toBe("PR #22 · CI cassée");
   expect(label(event("pr_checks", { number: 22, checks: "running" }))).toBe("PR #22 · CI en cours");
   expect(label(event("branch_created", { branch: "feat/envoi" }))).toBe("Branche feat/envoi créée");
 });

@@ -109,7 +109,7 @@ export const fr = {
   },
   review: {
     title: "En review",
-    ci: { ok: "CI verte", error: "CI rouge", running: "CI en cours", neutral: "CI sans résultat" },
+    ci: { ok: "CI verte", error: "CI cassée", running: "CI en cours", neutral: "CI sans résultat" },
     changes: "changements demandés",
     none: "Aucune PR en review.",
   },
