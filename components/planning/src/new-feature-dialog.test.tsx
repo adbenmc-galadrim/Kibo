@@ -19,7 +19,7 @@ const openDialog = async () => {
   return { user, dialog: await screen.findByRole("dialog") };
 };
 
-test("a new feature is created with its steps in order, the last demo optional, in the chosen sprint", async () => {
+test("a new feature is created with its steps in order, all required by default, in the chosen sprint", async () => {
   const { m, seeded } = setupPlanning();
   const { user, dialog } = await openDialog();
   await user.type(within(dialog).getByLabelText("Nom"), "Signer un PV");
@@ -29,8 +29,11 @@ test("a new feature is created with its steps in order, the last demo optional, 
   await user.clear(steps);
   await user.type(steps, "Écran de signature{Enter}Export PDF{Enter}Démo client");
   expect(
-    within(dialog).getByRole("checkbox", { name: "Dernière étape facultative" }).getAttribute("data-state"),
+    within(dialog)
+      .getByRole("checkbox", { name: "Dernière étape requise pour livrer" })
+      .getAttribute("data-state"),
   ).toBe("checked");
+  expect(within(dialog).queryByText("Dernière étape facultative")).toBeNull();
   await user.click(within(dialog).getByRole("button", { name: "Créer la fonctionnalité" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   const tickets = m.snapshot().tickets;
@@ -42,7 +45,7 @@ test("a new feature is created with its steps in order, the last demo optional, 
   expect(children.map((t) => [t.title, t.optional])).toEqual([
     ["Écran de signature", false],
     ["Export PDF", false],
-    ["Démo client", true],
+    ["Démo client", false],
   ]);
   expect(await cardIn(/^S44 /, root?.shortKey ?? "")).toBeTruthy();
 });
@@ -63,7 +66,7 @@ test("the feature is created as such: createTicket { title, feature: true }", as
   expect(await cardIn(/^S42 /, "F10")).toBeTruthy();
 });
 
-test("the last step stays mandatory when unchecked, and a feature needs a step", async () => {
+test("unchecking « requise pour livrer » makes the last step optional, and a feature needs a step", async () => {
   const { m } = setupPlanning();
   const { user, dialog } = await openDialog();
   await user.type(within(dialog).getByLabelText("Nom"), "Sans démo");
@@ -72,12 +75,12 @@ test("the last step stays mandatory when unchecked, and a feature needs a step",
   expect(create.hasAttribute("disabled")).toBe(true);
   expect(within(dialog).getByRole("alert").textContent).toBe("Ajoute au moins une étape.");
   await user.type(within(dialog).getByLabelText("Étapes, une par ligne"), "Une seule");
-  await user.click(within(dialog).getByRole("checkbox", { name: "Dernière étape facultative" }));
+  await user.click(within(dialog).getByRole("checkbox", { name: "Dernière étape requise pour livrer" }));
   await user.click(create);
   await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
   const root = m.snapshot().tickets.find((t) => t.title === "Sans démo");
   const [only] = m.snapshot().tickets.filter((t) => t.parentId === root?.id);
-  expect(only?.optional).toBe(false);
+  expect(only?.optional).toBe(true);
 });
 
 test("a retry after a partial failure finishes the same feature, without duplicates", async () => {
@@ -109,7 +112,7 @@ test("a retry after a partial failure finishes the same feature, without duplica
   expect(tickets.filter((t) => t.parentId === roots[0]?.id).map((t) => [t.title, t.optional])).toEqual([
     ["Écran de signature", false],
     ["Export PDF", false],
-    ["Démo client", true],
+    ["Démo client", false],
   ]);
 });
 

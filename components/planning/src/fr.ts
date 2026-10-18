@@ -97,7 +97,7 @@ export const fr = {
     none: "À planifier",
     steps: "Étapes, une par ligne",
     defaultSteps: "Démo client",
-    lastOptional: "Dernière étape facultative",
+    lastRequired: "Dernière étape requise pour livrer",
     create: "Créer la fonctionnalité",
     cancel: "Annuler",
     noStep: "Ajoute au moins une étape.",

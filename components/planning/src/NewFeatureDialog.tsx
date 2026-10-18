@@ -38,7 +38,7 @@ export function NewFeatureDialog({ sprints, sprintId, onClose }: Props) {
   const [expected, setExpected] = useState("");
   const [sprint, setSprint] = useState(sprintId ?? "");
   const [steps, setSteps] = useState(t.defaultSteps);
-  const [lastOptional, setLastOptional] = useState(true);
+  const [lastRequired, setLastRequired] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const titles = stepTitles(steps);
   const valid = name.trim() !== "" && titles.length > 0;
@@ -46,7 +46,13 @@ export function NewFeatureDialog({ sprints, sprintId, onClose }: Props) {
   const create = () =>
     createFeature(
       sdk,
-      { name: name.trim(), expected, sprintId: sprint === "" ? null : sprint, steps: titles, lastOptional },
+      {
+        name: name.trim(),
+        expected,
+        sprintId: sprint === "" ? null : sprint,
+        steps: titles,
+        lastOptional: !lastRequired,
+      },
       progress.current,
     );
   const submit = async (e: FormEvent) => {
@@ -97,10 +103,10 @@ export function NewFeatureDialog({ sprints, sprintId, onClose }: Props) {
             <div className="flex items-center gap-2">
               <Checkbox
                 id={`${id}-optional`}
-                checked={lastOptional}
-                onCheckedChange={(v) => setLastOptional(v === true)}
+                checked={lastRequired}
+                onCheckedChange={(v) => setLastRequired(v === true)}
               />
-              <Label htmlFor={`${id}-optional`}>{t.lastOptional}</Label>
+              <Label htmlFor={`${id}-optional`}>{t.lastRequired}</Label>
             </div>
           </div>
           {(error || titles.length === 0) && (
