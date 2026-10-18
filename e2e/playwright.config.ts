@@ -1,5 +1,4 @@
 import { defineConfig, type PlaywrightTestConfig, type Project } from "@playwright/test";
-import { MARKET_PORTS } from "./market-fixture";
 import { PIXEL_DAEMONS, pixelKitProject, pixelProjectOptions, trackingProjects } from "./pixel-projects";
 import { EMIS_MAQUETTES } from "./pixel-settings";
 import { SYNC_PORTS } from "./sync-fixture";
@@ -21,10 +20,6 @@ const inTheme = (scheme: Theme): boolean => only === null || only === scheme;
 const allDaemons = [
   { name: "dark", scheme: "dark", port: 4390, spec: /mvp\.spec\.ts/, scenario: "question" },
   { name: "light", scheme: "light", port: 4391, spec: /mvp\.spec\.ts/, scenario: "question" },
-  { name: "agents-dark", scheme: "dark", port: 4392, spec: /agents\.spec\.ts/, scenario: "routes" },
-  { name: "agents-light", scheme: "light", port: 4393, spec: /agents\.spec\.ts/, scenario: "routes" },
-  { name: "code-dark", scheme: "dark", port: 4394, spec: /code\.spec\.ts/, scenario: "question" },
-  { name: "code-light", scheme: "light", port: 4395, spec: /code\.spec\.ts/, scenario: "question" },
   { name: "tabs-dark", scheme: "dark", port: 4396, spec: /tabs\.spec\.ts/, scenario: "question" },
   { name: "tabs-light", scheme: "light", port: 4397, spec: /tabs\.spec\.ts/, scenario: "question" },
   { name: "screens-dark", scheme: "dark", port: 4398, spec: /screens\.spec\.ts/, scenario: "routes" },
@@ -88,20 +83,6 @@ const allDaemons = [
     port: 4426,
     spec: /creations\.spec\.ts/,
     scenario: "ai/creations-routes",
-  },
-  {
-    name: "conversation-dark",
-    scheme: "dark",
-    port: 4427,
-    spec: /conversation\.spec\.ts/,
-    scenario: "conversation",
-  },
-  {
-    name: "conversation-light",
-    scheme: "light",
-    port: 4428,
-    spec: /conversation\.spec\.ts/,
-    scenario: "conversation",
   },
   { name: "widgets-dark", scheme: "dark", port: 4429, spec: /widgets\.spec\.ts/, scenario: "question" },
   { name: "widgets-light", scheme: "light", port: 4430, spec: /widgets\.spec\.ts/, scenario: "question" },
@@ -231,71 +212,13 @@ const allDaemons = [
     spec: /visibility\.spec\.ts/,
     scenario: "progress-routes",
   },
-  {
-    name: "signals-dark",
-    scheme: "dark",
-    port: 4467,
-    spec: /signals\.spec\.ts/,
-    scenario: "signal-routes",
-  },
-  {
-    name: "signals-light",
-    scheme: "light",
-    port: 4468,
-    spec: /signals\.spec\.ts/,
-    scenario: "signal-routes",
-  },
-  {
-    name: "agents-skills-dark",
-    scheme: "dark",
-    port: 4469,
-    spec: /agents-skills\.spec\.ts/,
-    scenario: "skills-routes",
-  },
-  {
-    name: "agents-skills-light",
-    scheme: "light",
-    port: 4470,
-    spec: /agents-skills\.spec\.ts/,
-    scenario: "skills-routes",
-  },
-  {
-    name: "overlaps-dark",
-    scheme: "dark",
-    port: 4471,
-    spec: /overlaps\.spec\.ts/,
-    scenario: "overlap-routes",
-  },
-  {
-    name: "overlaps-light",
-    scheme: "light",
-    port: 4472,
-    spec: /overlaps\.spec\.ts/,
-    scenario: "overlap-routes",
-  },
-  {
-    name: "delivery-dark",
-    scheme: "dark",
-    port: 4473,
-    spec: /delivery\.spec\.ts/,
-    scenario: "delivery-routes",
-    delivery: true,
-  },
-  {
-    name: "delivery-light",
-    scheme: "light",
-    port: 4474,
-    spec: /delivery\.spec\.ts/,
-    scenario: "delivery-routes",
-    delivery: true,
-  },
   { name: "ensembles-dark", scheme: "dark", port: 4475, spec: /ensembles\.spec\.ts/, scenario: "question" },
   { name: "ensembles-light", scheme: "light", port: 4476, spec: /ensembles\.spec\.ts/, scenario: "question" },
   {
     name: "suivi-dark",
     scheme: "dark",
     port: 4479,
-    spec: /(suivi|barre-laterale)\.spec\.ts/,
+    spec: /(suivi|suivi-retours|barre-laterale)\.spec\.ts/,
     scenario: EMIS_MAQUETTES,
     integrations: true,
   },
@@ -303,15 +226,13 @@ const allDaemons = [
     name: "suivi-light",
     scheme: "light",
     port: 4480,
-    spec: /(suivi|barre-laterale)\.spec\.ts/,
+    spec: /(suivi|suivi-retours|barre-laterale)\.spec\.ts/,
     scenario: EMIS_MAQUETTES,
     integrations: true,
   },
   ...PIXEL_DAEMONS,
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
-
-const marketThemes = THEMES.filter(inTheme);
 
 const allSyncProjects = [
   { name: "sync-dark", scheme: "dark", port: SYNC_PORTS.dark.a, after: [] },
@@ -338,17 +259,6 @@ export default defineConfig({
     ),
     ...(inTheme("dark") ? [pixelKitProject()] : []),
     ...trackingProjects(daemons.map((d) => d.name)),
-    ...marketThemes.map(
-      (theme): Project => ({
-        name: `market-${theme}`,
-        testMatch: /market\.spec\.ts/,
-        use: {
-          browserName: "chromium",
-          colorScheme: theme,
-          baseURL: `http://127.0.0.1:${MARKET_PORTS[theme]}`,
-        },
-      }),
-    ),
     ...syncProjects.map(
       (p): Project => ({
         name: p.name,
@@ -369,7 +279,6 @@ export default defineConfig({
           "noGh" in d ? "--no-gh" : "",
           "design" in d ? "--design" : "",
           "embeds" in d ? "--embeds" : "",
-          "delivery" in d ? "--delivery" : "",
           "drafts" in d ? d.drafts : "",
         ]
           .filter((part) => part !== "")
@@ -379,13 +288,6 @@ export default defineConfig({
         gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
       }),
     ),
-    {
-      command: "bun serve-market.ts",
-      url: `http://127.0.0.1:${MARKET_PORTS.control}/`,
-      reuseExistingServer: false,
-      timeout: 120_000,
-      gracefulShutdown: { signal: "SIGTERM", timeout: 10_000 },
-    },
     {
       command: "bun serve-sync.ts",
       url: `http://127.0.0.1:${SYNC_PORTS.control}/`,
