@@ -96,7 +96,7 @@ test("the indicators of P1 bis", () => {
   expect(indicators.questions).toEqual({ open: 3, blocking: { ref: "Q14", shortKey: "F6" } });
 });
 
-test("deadlines: F4, F5, F6, F8, F7, F5 slips to S43 and F6 waits on Q14", () => {
+test("deadlines: F4, F5, F6, F8, F7, F5 stays in S42 on its last day and F6 waits on Q14", () => {
   const features = today.tickets.flatMap((t, rank) =>
     t.feature === null || t.sprintId === null || t.shortKey === null
       ? []
@@ -120,12 +120,12 @@ test("deadlines: F4, F5, F6, F8, F7, F5 slips to S43 and F6 waits on Q14", () =>
   });
   expect(rows.map((r) => [r.shortKey, r.slipTo?.code ?? null, r.blockedBy])).toEqual([
     ["F4", null, null],
-    ["F5", "S43", null],
+    ["F5", null, null],
     ["F6", null, "Q14"],
     ["F8", null, null],
     ["F7", null, null],
   ]);
-  expect(rows[1]?.cells.filter((c) => c.slipped)).toHaveLength(4);
+  expect(rows[1]?.cells.filter((c) => c.slipped)).toHaveLength(0);
 });
 
 test("the next step to deliver is SILO-45 for F4 and SILO-34 for F5", () => {

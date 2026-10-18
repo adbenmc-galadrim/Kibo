@@ -70,7 +70,7 @@ test("feature states on the 16th, the last day of S42, and on the 15th", () => {
   expect(ticket(today, 46).optional).toBe(true);
   expect(ticket(today, 35).optional).toBe(false);
   expect(feature(today, "F4").progress).toEqual({ done: 3, total: 5 });
-  expect(status(today, "F5")).toBe("late");
+  expect(status(today, "F5")).toBe("open");
   expect(feature(today, "F5").progress).toEqual({ done: 1, total: 5 });
   expect(feature(today, "F5").feature?.remaining).toBe(4);
   expect(status(today, "F6")).toBe("blocked");
