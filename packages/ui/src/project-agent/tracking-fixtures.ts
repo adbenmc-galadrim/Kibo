@@ -1,4 +1,4 @@
-import type { Batch, ProjectSnapshot, ProposedAction, SprintView } from "@kibo/schema";
+import type { ActionResult, Batch, ProjectSnapshot, ProposedAction, SprintView } from "@kibo/schema";
 import { pendingBatch, questionsProject } from "./fixtures";
 
 const sprint = (id: string, code: string, name: string): SprintView => ({
@@ -45,3 +45,18 @@ export const TRACKING_ACTIONS: ProposedAction[] = [
 
 export const trackingBatch = (p: Partial<Batch> = {}): Batch =>
   pendingBatch({ id: "b7", seq: 7, actions: TRACKING_ACTIONS, expected: [], ...p });
+
+const TRACKING_RESULTS: ActionResult[] = [
+  { actionId: 1, outcome: "applied", detail: null, created: null },
+  { actionId: 2, outcome: "applied", detail: null, created: null },
+  { actionId: 3, outcome: "failed", detail: "Q14 modifiée depuis la proposition", created: null },
+];
+
+export const decidedTrackingBatch = (results: ActionResult[] = TRACKING_RESULTS): Batch =>
+  trackingBatch({
+    status: "partial",
+    decidedBy: { kind: "human", ref: "adam" },
+    decidedAt: new Date(2026, 9, 16, 14, 52).getTime(),
+    chosen: [1, 2, 3],
+    results,
+  });

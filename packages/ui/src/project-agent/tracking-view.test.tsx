@@ -1,10 +1,12 @@
 import { expect, mock, test } from "bun:test";
+import type { Batch } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 import type { Decision } from "./BatchCard";
 import { projectLabels } from "./batch-groups";
-import { trackingBatch, trackingProject } from "./tracking-fixtures";
+import type { ConversationItem } from "./conversation";
+import { decidedTrackingBatch, trackingBatch, trackingProject } from "./tracking-fixtures";
 
 mock.module("../api", () =>
   apiMock({ client: { rpc: () => Promise.resolve({ skills: [] }), subscribeTopic: () => () => {} } }),
@@ -13,33 +15,46 @@ mock.module("../api", () =>
 const { TrackingView } = await import("./TrackingView");
 
 const SUMMARY = "F3 est livrée : 3 fonctionnalités sur 9.\n\nS42 finit ce soir et F5 n'y tiendra pas.";
+const AT = new Date(2026, 9, 16, 14, 48).getTime();
+const agent = (id: string, text: string): ConversationItem => ({ kind: "agent", id, at: AT, text });
+const user = (id: string, text: string): ConversationItem => ({ kind: "user", id, at: AT, text });
+const summaryOnly = (summary: string | null): ConversationItem[] => (summary ? [agent("a1", summary)] : []);
 
-function show(summary: string | null, withBatch = true) {
+type Options = { items?: ConversationItem[]; withBatch?: boolean; superseded?: number; result?: Batch };
+
+function show({ items = summaryOnly(SUMMARY), withBatch = true, superseded = 0, result }: Options = {}) {
   const sent: string[] = [];
   const decided: [string, Decision][] = [];
+  let shownSuperseded = 0;
   render(
     <TrackingView
       projectId="emis"
       projectName="Emis"
-      summary={summary}
+      items={items}
       batch={withBatch ? trackingBatch() : null}
+      superseded={superseded}
       labels={projectLabels(trackingProject())}
       onTicket={() => {}}
       onDecide={async (id, d) => {
         decided.push([id, d]);
+        return result ?? trackingBatch({ status: "rejected" });
       }}
       onSend={async (text) => {
         sent.push(text);
       }}
+      onShowSuperseded={() => {
+        shownSuperseded++;
+      }}
     />,
   );
-  return { sent, decided };
+  return { sent, decided, shownSuperseded: () => shownSuperseded };
 }
 
 test("the summary is the agent's last message, the pending batch is to validate", async () => {
-  show(SUMMARY);
+  show();
   const summary = within(screen.getByRole("region", { name: "Résumé du jour" }));
   expect(await summary.findByText("F3 est livrée : 3 fonctionnalités sur 9.")).toBeTruthy();
+  expect(summary.queryByText("épinglé")).toBeNull();
   const todo = within(screen.getByRole("region", { name: "À valider" }));
   expect(todo.getByRole("region", { name: "Lot n° 7" })).toBeTruthy();
   expect(todo.getByText("3 actions")).toBeTruthy();
@@ -52,21 +67,54 @@ test("the summary is the agent's last message, the pending batch is to validate"
   ).toBeTruthy();
 });
 
-test("validating from the card decides the pending batch", async () => {
-  const { decided } = show(SUMMARY);
-  await userEvent.setup().click(screen.getByRole("button", { name: "Valider (3)" }));
+test("the question asked shows under the pinned summary, the answer under the question", async () => {
+  show({
+    items: [
+      agent("a1", SUMMARY),
+      user("u1", "Où en est F5 ?"),
+      agent("a2", "Il reste 4 étapes à F5 et S42 finit ce soir."),
+    ],
+  });
+  const region = screen.getByRole("region", { name: "Résumé du jour" });
+  expect(region.className).toContain("sticky");
+  expect(within(region).getByText("épinglé")).toBeTruthy();
+  const question = screen.getByText("Où en est F5 ?");
+  const answer = await screen.findByText("Il reste 4 étapes à F5 et S42 finit ce soir.");
+  expect(region.compareDocumentPosition(question) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(question.compareDocumentPosition(answer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(screen.getByText("Toi · 14:48")).toBeTruthy();
+  expect(screen.getByRole("region", { name: "Lot n° 7" })).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "À valider" })).toBeNull();
+});
+
+test("validating from the card decides the pending batch and shows its recap until closed", async () => {
+  const { decided } = show({ result: decidedTrackingBatch() });
+  const user = userEvent.setup();
+  await user.click(screen.getByRole("button", { name: "Valider (3)" }));
   await waitFor(() => expect(decided).toEqual([["b7", { decision: "apply", actionIds: [1, 2, 3] }]]));
+  const recap = within(await screen.findByRole("region", { name: "Lot n° 7 validé" }));
+  expect(recap.getByText("2 appliquées · 1 échouée · 0 ignorée")).toBeTruthy();
+  await user.click(recap.getByRole("button", { name: "Fermer" }));
+  expect(screen.queryByRole("region", { name: "Lot n° 7 validé" })).toBeNull();
+});
+
+test("hidden superseded batches are counted and can be shown", async () => {
+  const { shownSuperseded } = show({ superseded: 1 });
+  expect(screen.getByText("1 lot remplacé masqué")).toBeTruthy();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Afficher les lots remplacés" }));
+  expect(shownSuperseded()).toBe(1);
 });
 
 test("without a batch the section is absent, without a message the summary invites to ask", () => {
-  show(null, false);
+  show({ items: [], withBatch: false });
   expect(screen.queryByRole("region", { name: "À valider" })).toBeNull();
+  expect(screen.queryByText(/lots? remplacés? masqués?/)).toBeNull();
   const summary = within(screen.getByRole("region", { name: "Résumé du jour" }));
   expect(summary.getByText("Pose une question sur Emis ou attends la fin du sprint.")).toBeTruthy();
 });
 
 test("the box asks the project agent", async () => {
-  const { sent } = show(null, false);
+  const { sent } = show({ items: [], withBatch: false });
   const box = screen.getByRole("combobox", { name: "Message à l'agent de projet" });
   expect(box.getAttribute("placeholder")).toBe("Demander à l'agent de projet…");
   const user = userEvent.setup();

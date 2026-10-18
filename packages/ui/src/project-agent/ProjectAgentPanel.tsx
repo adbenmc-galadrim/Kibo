@@ -14,7 +14,7 @@ import type { Decision } from "./BatchCard";
 import { projectLabels } from "./batch-groups";
 import { ComposeBox } from "./ComposeBox";
 import { ConversationView } from "./ConversationView";
-import { buildConversation, lastAgentText, lastUserMessage, panelStatus } from "./conversation";
+import { buildConversation, lastUserMessage, panelStatus, supersededCount } from "./conversation";
 import { PanelHeader } from "./PanelHeader";
 import { PanelMenu } from "./PanelMenu";
 import { PanelTabs } from "./PanelTabs";
@@ -71,9 +71,18 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
   const openSignals = signals.view ? boxSections(signals.view).open.length : 0;
   const readOnly = mode.kind === "past";
   const pending = view?.batches.find((b) => b.status === "pending") ?? null;
+  const [showSuperseded, setShowSuperseded] = useState(false);
+  const superseded = supersededCount(view?.batches ?? []);
   const items = useMemo(
     () => buildConversation(log ?? [], view?.batches ?? [], view?.run ?? null),
     [log, view],
+  );
+  const shownItems = useMemo(
+    () =>
+      showSuperseded
+        ? buildConversation(log ?? [], view?.batches ?? [], view?.run ?? null, { superseded: true })
+        : items,
+    [log, view, items, showSuperseded],
   );
   const agentList = useAgentList(projectId);
   const labels = useMemo(() => projectLabels(project, agentList.agents ?? []), [project, agentList.agents]);
@@ -88,8 +97,9 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
     reload();
   };
   const decide = async (batchId: string, d: Decision) => {
-    await client.rpc({ method: "decideBatch", projectId, batchId, ...d });
+    const batch = await client.rpc({ method: "decideBatch", projectId, batchId, ...d });
     reload();
+    return batch;
   };
   const reset = async () => {
     await client.rpc({ method: "resetProjectAgent", projectId });
@@ -108,6 +118,10 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
     setMode(CURRENT);
     onTab(next);
   };
+  const showReplaced = () => {
+    setShowSuperseded(true);
+    show("conversation");
+  };
   const tracking = () => {
     setMode(TRACKING);
     onTab("conversation");
@@ -115,7 +129,7 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
   const conversation = (
     <QuestionLinksContext.Provider value={links}>
       <ConversationView
-        items={items}
+        items={shownItems}
         readOnly={readOnly}
         labels={labels}
         signals={signals.view?.signals ?? []}
@@ -145,6 +159,11 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
           menu={
             <PanelMenu
               signals={openSignals}
+              superseded={{
+                count: superseded,
+                shown: showSuperseded,
+                onToggle: () => setShowSuperseded((on) => !on),
+              }}
               {...(mode.kind === "tracking" ? {} : { onTracking: tracking })}
               onConversation={() => show("conversation")}
               onSignals={() => show("signals")}
@@ -164,12 +183,14 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
           <TrackingView
             projectId={projectId}
             projectName={project.meta.name}
-            summary={lastAgentText(items)}
+            items={items}
             batch={pending}
+            superseded={superseded}
             labels={labels}
             onTicket={openTicket}
             onDecide={decide}
             onSend={send}
+            onShowSuperseded={showReplaced}
           />
         )}
         {mode.kind === "list" && (

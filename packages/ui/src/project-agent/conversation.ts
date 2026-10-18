@@ -30,6 +30,15 @@ export function wakeupText(text: string): string {
   return count === null ? frSignals.wakeup.label : frSignals.wakeup.event(count);
 }
 
+export function readingText(tools: readonly string[]): string {
+  return t.reading(
+    tools.map((tool) => {
+      const [name = "", ...rest] = tool.split(" ");
+      return t.tool(name, rest.length > 0 ? rest.join(" ") : null);
+    }),
+  );
+}
+
 export function readingTool(payload: HookPayload): string | null {
   if (payload.event !== "PostToolUse" || !payload.tool?.startsWith(KIBO_PREFIX)) return null;
   const name = payload.tool.slice(KIBO_PREFIX.length);
@@ -141,12 +150,15 @@ function apply(b: Builder, entry: RunLogEntry): void {
   }
 }
 
+export type ConversationOptions = { superseded?: boolean };
+
 export function buildConversation(
   log: readonly RunLogEntry[],
   batches: readonly Batch[],
   run: RunView | null,
+  { superseded = false }: ConversationOptions = {},
 ): ConversationItem[] {
-  const builder = new Builder(batches);
+  const builder = new Builder(superseded ? batches : batches.filter((b) => b.status !== "superseded"));
   for (const entry of log) apply(builder, entry);
   return builder.finish(run);
 }
@@ -165,6 +177,28 @@ export function lastAgentText(items: readonly ConversationItem[]): string | null
     if (item?.kind === "agent") return item.text;
   }
   return null;
+}
+
+export function supersededCount(batches: readonly Batch[]): number {
+  return batches.filter((b) => b.status === "superseded").length;
+}
+
+export type TrackingThread = { summary: string | null; exchange: ConversationItem[] };
+const inExchange = (item: ConversationItem): boolean =>
+  item.kind === "event" ? item.tone === "red" : item.kind !== "batch";
+
+function lastUserIndex(items: readonly ConversationItem[]): number {
+  for (let i = items.length - 1; i >= 0; i--) if (items[i]?.kind === "user") return i;
+  return -1;
+}
+
+export function trackingThread(items: readonly ConversationItem[]): TrackingThread {
+  const asked = lastUserIndex(items);
+  const before = asked < 0 ? null : lastAgentText(items.slice(0, asked));
+  const after = asked < 0 ? null : lastAgentText(items.slice(asked));
+  if (asked < 0 || (before === null && after !== null))
+    return { summary: lastAgentText(items), exchange: [] };
+  return { summary: before, exchange: items.slice(asked).filter(inExchange) };
 }
 
 export function panelStatus(run: RunView | null, pending: Batch | null): PanelStatus {
