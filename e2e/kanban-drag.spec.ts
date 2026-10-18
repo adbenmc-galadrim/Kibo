@@ -325,7 +325,7 @@ test("une carte bloquée par une question ne quitte pas Bloqué par glisser", as
   await addComponent(page, "Kanban");
   const main = page.getByRole("main");
   await showAllTickets(main);
-  const blocked = main.getByRole("region", { name: "Bloqué" });
+  const blocked = main.getByRole("region", { name: "Bloqué", exact: true });
   const todo = main.getByRole("region", { name: "À faire" });
   const doing = main.getByRole("region", { name: "En cours" });
   const card = (title: string) => main.getByRole("article", { name: new RegExp(title) });
