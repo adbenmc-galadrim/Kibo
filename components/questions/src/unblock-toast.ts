@@ -7,8 +7,11 @@ export function unblockedFeatures(
   before: readonly Question[],
   after: readonly Question[],
 ): string[] {
+  const labelOf = (t: TicketView) => featureOrKey(t, ticketOf);
+  const stillBlocked = new Set(tickets.filter((t) => isBlocked(t, after)).map(labelOf));
   const labels = tickets
     .filter((t) => isBlocked(t, before) && !isBlocked(t, after))
-    .map((t) => featureOrKey(t, ticketOf));
+    .map(labelOf)
+    .filter((label) => !stillBlocked.has(label));
   return [...new Set(labels)];
 }
