@@ -74,7 +74,7 @@ const aside = (name: string) => within(screen.getByRole("region", { name }));
 
 test("the header names the feature, its sprint, its state and its progress", () => {
   renderFeature();
-  expect(screen.getByText("Fonctionnalité · F5 · EMIS-30")).toBeTruthy();
+  expect(screen.getByText("Fonctionnalité · F5")).toBeTruthy();
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Envoyer les photos d'un tronçon");
   expect(screen.getByText("ouverte")).toBeTruthy();
   expect(screen.getByText("1 étape livrée sur 5")).toBeTruthy();
@@ -151,6 +151,7 @@ test("the side cards show dependencies, questions, activity and the footer", asy
   renderFeature(emisFeatureProject(), opened);
   const deps = aside("Dépendances");
   expect(deps.getAllByRole("button").map((b) => b.textContent)).toEqual([
+    "Dépendance",
     "AttendF3Réaffecter un ISO",
     "DébloqueF7Rapport de chantierS44",
   ]);
@@ -184,6 +185,7 @@ test("a read-only project hides the editing actions", () => {
   expect(screen.queryByRole("button", { name: "Déplacer en S43" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Modifier le résultat attendu" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Choisir le sprint" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Dépendance" })).toBeNull();
 });
 
 const { AppSettingsProvider, fixedStore } = await import("../state/use-app-settings");

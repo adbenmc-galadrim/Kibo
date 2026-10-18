@@ -31,8 +31,7 @@ const REVIEWS: Record<string, string> = {
 const CHECKS: Record<string, string> = { ok: "CI verte", running: "CI en cours", error: "CI rouge" };
 
 export const frFeature = {
-  kicker: (shortKey: string | null, key: string) =>
-    ["Fonctionnalité", shortKey, key].filter((p) => p !== null).join(" · "),
+  kicker: (shortKey: string | null, key: string) => `Fonctionnalité · ${shortKey ?? key}`,
   badges: {
     late: "en retard",
     open: "ouverte",
@@ -110,6 +109,10 @@ export const frFeature = {
   },
   footer: "Une fonctionnalité ne se lance pas : chaque étape se livre dans T3 Code avec full-delivery.",
   optional: "Étape facultative",
+  optionalPill: "facultative",
+  addDependency: "Dépendance",
+  addDependencyTitle: "Ajouter une dépendance : cette fonctionnalité attend…",
+  noCandidate: "Aucune autre fonctionnalité",
   optionalHint: "Ne compte pas pour livrer la fonctionnalité",
   ticketSprint: "Sprint",
   yesterday: "hier",

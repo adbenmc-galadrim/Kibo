@@ -57,7 +57,7 @@ export function StepRow({ step, workflow, now, last, action, onOpenTicket }: Pro
     <li
       data-status={step.statusId}
       data-session={step.session !== null}
-      className={`flex w-full gap-[14px] ${last ? "h-[28px]" : "h-[100px]"}`}
+      className={`flex w-full gap-[14px] ${last ? "min-h-[28px]" : "min-h-[100px]"}`}
     >
       <span className="flex w-[28px] shrink-0 flex-col items-center">
         <Marker step={step} />
@@ -68,7 +68,7 @@ export function StepRow({ step, workflow, now, last, action, onOpenTicket }: Pro
           />
         )}
       </span>
-      <div className="min-w-0 flex-1 pb-[16px]">
+      <div className={`min-w-0 flex-1 ${last ? "" : "pb-[4px]"}`}>
         <div className={`flex flex-col gap-[7px] px-[14px] py-[10px] ${cardTone(step, action !== null)}`}>
           <div className="flex w-full items-center gap-[8px]">
             <button
@@ -81,6 +81,11 @@ export function StepRow({ step, workflow, now, last, action, onOpenTicket }: Pro
             <span className="shrink-0 font-mono text-[11.5px] leading-[14px] text-(--tracking-dim)">
               {step.key}
             </span>
+            {step.optional && (
+              <span className="shrink-0 rounded-[4px] bg-(--tracking-muted) px-[6px] py-[1px] text-[10.5px] leading-[13px] font-medium text-(--tracking-mfg)">
+                {t.optionalPill}
+              </span>
+            )}
             {step.session && (
               <span
                 className={`flex shrink-0 items-center gap-[6px] rounded-[12px] bg-(--tracking-brand-soft) px-[8px] py-[3px] ${STROKE_BRAND}`}

@@ -17,7 +17,7 @@ import { ExpectedResult } from "./feature/ExpectedResult";
 import { FeatureHeader } from "./feature/FeatureHeader";
 import { ActivityCard, QuestionsCard } from "./feature/FeedCards";
 import { featureActivity, featureQuestions, journalActivity } from "./feature/feature-feed";
-import { featureDependencies } from "./feature/feature-links";
+import { dependencyCandidates, featureDependencies } from "./feature/feature-links";
 import { featureBadge, nextStep, sprintFacts, stepModels } from "./feature/feature-model";
 import { NextStepAction } from "./feature/NextStepAction";
 import { SprintCard } from "./feature/SprintCard";
@@ -58,6 +58,7 @@ export function FeatureDetail({
   const titleCommand = useTicketCommand(project.meta.id);
   const descriptionCommand = useTicketCommand(project.meta.id);
   const sprintCommand = useTicketCommand(project.meta.id);
+  const linkCommand = useTicketCommand(project.meta.id);
   const editable = canEdit(project);
   const group = useDeliver(project.meta.id, f);
   const deliveryEntries: MenuEntry[] =
@@ -148,12 +149,22 @@ export function FeatureDetail({
             onSetSprint={setSprint}
             onApplyProposal={proposal.apply}
           />
-          {(sprintCommand.error ?? proposal.error) && (
+          {(sprintCommand.error ?? proposal.error ?? linkCommand.error) && (
             <p role="alert" className="text-[12px] text-(--tracking-red)">
-              {sprintCommand.error ?? proposal.error}
+              {sprintCommand.error ?? proposal.error ?? linkCommand.error}
             </p>
           )}
-          <DependenciesCard dependencies={featureDependencies(project, f.id)} onOpenTicket={onOpenTicket} />
+          <DependenciesCard
+            dependencies={featureDependencies(project, f.id)}
+            {...(editable && {
+              adding: {
+                candidates: dependencyCandidates(project, f.id),
+                onAdd: (from: string) =>
+                  void linkCommand.run({ method: "addLink", from, to: f.id, type: "blocks" }),
+              },
+            })}
+            onOpenTicket={onOpenTicket}
+          />
           <QuestionsCard
             questions={featureQuestions(project, f.id, now)}
             onOpenQuestion={(id) => host?.openView("questions", undefined, id)}
