@@ -8,7 +8,7 @@ const MIN = 60_000;
 const ticket = (over: Partial<LockTicket> & Pick<LockTicket, "ticket" | "label">): LockTicket => ({
   pid: 100,
   since: NOW - 3 * MIN,
-  cwd: "/Users/adam/Documents/emis/emis-feat-compte-non-provisionne",
+  cwd: "/Users/adam/Documents/silo/silo-feat-compte-non-provisionne",
   alive: true,
   ...over,
 });
@@ -18,12 +18,12 @@ const LOCKS: MachineLock[] = [
     name: "heavy",
     max: 2,
     held: [
-      ticket({ ticket: "emis:EMIS-15", label: "gates" }),
-      ticket({ ticket: "gereco:C5-3", label: "build", since: NOW - 6 * MIN, alive: false }),
+      ticket({ ticket: "silo:SILO-15", label: "gates" }),
+      ticket({ ticket: "atlas:C5-3", label: "build", since: NOW - 6 * MIN, alive: false }),
     ],
-    waiting: [ticket({ ticket: "emis:EMIS-20", label: "gates", since: NOW - MIN })],
+    waiting: [ticket({ ticket: "silo:SILO-20", label: "gates", since: NOW - MIN })],
   },
-  { name: "review", max: 3, held: [ticket({ ticket: "emis:EMIS-21", label: "review-pr" })], waiting: [] },
+  { name: "review", max: 3, held: [ticket({ ticket: "silo:SILO-21", label: "review-pr" })], waiting: [] },
   { name: "demo", max: 1, held: [], waiting: [] },
 ];
 
@@ -46,11 +46,11 @@ test("one card per lock with its occupancy, one line per ticket with its state",
     if (li === null) throw new Error(`no line for ${text}`);
     return within(li);
   };
-  expect(line("emis:EMIS-15 gates").getByText("3m")).toBeTruthy();
+  expect(line("silo:SILO-15 gates").getByText("3m")).toBeTruthy();
   expect(
-    line("emis:EMIS-15 gates").getByText("~/Documents/emis/emis-feat-compte-non-provisionne"),
+    line("silo:SILO-15 gates").getByText("~/Documents/silo/silo-feat-compte-non-provisionne"),
   ).toBeTruthy();
-  expect(line("gereco:C5-3 build").getByTestId("lock-state").className).toContain("text-red");
+  expect(line("atlas:C5-3 build").getByTestId("lock-state").className).toContain("text-red");
   expect(within(section.getByRole("article", { name: /^demo/ })).getByText("Libre")).toBeTruthy();
   expect(section.getByText(/~\/\.delivery\/slots/)).toBeTruthy();
 });

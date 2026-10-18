@@ -10,7 +10,7 @@ import {
   replacesContent,
   signalProvenance,
 } from "./batch-groups";
-import { emisProject, pendingBatch, questionsProject } from "./fixtures";
+import { pendingBatch, questionsProject, siloProject } from "./fixtures";
 import { OPEN_SIGNALS } from "./signals/fixtures";
 
 test("groupActions keeps Tickets, Agents, Questions, Notes and the id order inside each group", () => {
@@ -28,18 +28,18 @@ test("groupActions keeps Tickets, Agents, Questions, Notes and the id order insi
 
 const titles: [ProposedAction, string][] = [
   [{ id: 1, type: "createTicket", ref: "new:1", title: "Tests", why: "" }, "Créer le ticket « Tests »"],
-  [{ id: 1, type: "updateTicket", ticket: "EMIS-1", title: "X", why: "" }, "Modifier EMIS-1"],
+  [{ id: 1, type: "updateTicket", ticket: "SILO-1", title: "X", why: "" }, "Modifier SILO-1"],
   [
-    { id: 1, type: "setStatus", ticket: "EMIS-1", statusId: "in_review", why: "" },
-    "EMIS-1 : passer en En review",
+    { id: 1, type: "setStatus", ticket: "SILO-1", statusId: "in_review", why: "" },
+    "SILO-1 : passer en En review",
   ],
-  [{ id: 1, type: "link", from: "EMIS-1", to: "new:2", kind: "blocks", why: "" }, "EMIS-1 bloque new:2"],
+  [{ id: 1, type: "link", from: "SILO-1", to: "new:2", kind: "blocks", why: "" }, "SILO-1 bloque new:2"],
   [
-    { id: 1, type: "unlink", from: "EMIS-1", to: "EMIS-2", kind: "relates", why: "" },
-    "Retirer le lien entre EMIS-1 et EMIS-2",
+    { id: 1, type: "unlink", from: "SILO-1", to: "SILO-2", kind: "relates", why: "" },
+    "Retirer le lien entre SILO-1 et SILO-2",
   ],
-  [{ id: 1, type: "assignAgent", ticket: "EMIS-1", profileId: "opus", why: "" }, "Assigner EMIS-1 à opus"],
-  [{ id: 1, type: "deliverAnswers", ticket: "EMIS-1", why: "" }, "Transmettre les réponses de EMIS-1"],
+  [{ id: 1, type: "assignAgent", ticket: "SILO-1", profileId: "opus", why: "" }, "Assigner SILO-1 à opus"],
+  [{ id: 1, type: "deliverAnswers", ticket: "SILO-1", why: "" }, "Transmettre les réponses de SILO-1"],
   [{ id: 1, type: "cancelRun", runId: "r9", why: "" }, "Annuler le run r9"],
   [
     { id: 1, type: "answerQuestion", questionId: "q", answer: { kind: "confirm" }, why: "" },
@@ -60,8 +60,8 @@ const titles: [ProposedAction, string][] = [
     "Répondre « Oui »",
   ],
   [
-    { id: 1, type: "createQuestion", ticket: "EMIS-1", title: "Doc ?", why: "" },
-    "Question sur EMIS-1 : « Doc ? »",
+    { id: 1, type: "createQuestion", ticket: "SILO-1", title: "Doc ?", why: "" },
+    "Question sur SILO-1 : « Doc ? »",
   ],
   [{ id: 1, type: "createNote", path: "a/b.md", content: "", why: "" }, "Créer la note a/b.md"],
   [{ id: 1, type: "updateNote", path: "a/b.md", content: "", why: "" }, "Mettre à jour la note a/b.md"],
@@ -85,7 +85,7 @@ test("actionDiff shows before → after from the captured state", () => {
   const status: ProposedAction = {
     id: 2,
     type: "setStatus",
-    ticket: "EMIS-11",
+    ticket: "SILO-11",
     statusId: "in_review",
     why: "",
   };
@@ -96,7 +96,7 @@ test("actionDiff shows before → after from the captured state", () => {
   const rename: ProposedAction = {
     id: 3,
     type: "updateTicket",
-    ticket: "EMIS-12",
+    ticket: "SILO-12",
     title: "Nouveau",
     why: "",
   };
@@ -107,7 +107,7 @@ test("actionDiff shows before → after from the captured state", () => {
   const labels: ProposedAction = {
     id: 3,
     type: "updateTicket",
-    ticket: "EMIS-12",
+    ticket: "SILO-12",
     labels: ["ui", "bug"],
     why: "",
   };
@@ -123,7 +123,7 @@ test("actionDiff shows before → after from the captured state", () => {
 });
 
 test("custom workflow labels are used when given", () => {
-  const status: ProposedAction = { id: 2, type: "setStatus", ticket: "EMIS-11", statusId: "done", why: "" };
+  const status: ProposedAction = { id: 2, type: "setStatus", ticket: "SILO-11", statusId: "done", why: "" };
   const labels = { ...defaultLabels, status: (id: string) => id.toUpperCase() };
   expect(actionDiff(status, { actionId: 2, fields: { statusId: "todo" } }, labels)).toEqual({
     before: "TODO",
@@ -132,20 +132,20 @@ test("custom workflow labels are used when given", () => {
 });
 
 test("a parent change shows the captured parentId as a key from the project, never a raw id", () => {
-  const labels = projectLabels(emisProject());
+  const labels = projectLabels(siloProject());
   const move = (parent: string | null): ProposedAction => ({
     id: 3,
     type: "updateTicket",
-    ticket: "EMIS-12",
+    ticket: "SILO-12",
     parent,
     why: "",
   });
-  expect(actionDiff(move("EMIS-11"), { actionId: 3, fields: { parentId: null } }, labels)).toEqual({
+  expect(actionDiff(move("SILO-11"), { actionId: 3, fields: { parentId: null } }, labels)).toEqual({
     before: "aucun",
-    after: "EMIS-11",
+    after: "SILO-11",
   });
   expect(actionDiff(move(null), { actionId: 3, fields: { parentId: "t11" } }, labels)).toEqual({
-    before: "EMIS-11",
+    before: "SILO-11",
     after: "aucun",
   });
   expect(
@@ -155,14 +155,14 @@ test("a parent change shows the captured parentId as a key from the project, nev
       labels,
     ),
   ).toEqual({ before: "ticket introuvable", after: "new:1" });
-  expect(actionDiff(move("EMIS-11"), undefined, labels)).toEqual({ before: "—", after: "EMIS-11" });
+  expect(actionDiff(move("SILO-11"), undefined, labels)).toEqual({ before: "—", after: "SILO-11" });
 });
 
 test("an assignment names the agent, never its ref", () => {
-  const assign: ProposedAction = { id: 1, type: "assignAgent", ticket: "EMIS-1", profileId: "p-42", why: "" };
-  const labels = projectLabels(emisProject(), [{ ref: "p-42", name: "opus-dev" }]);
-  expect(actionTitle(assign, labels)).toBe("Assigner EMIS-1 à opus-dev");
-  expect(actionTitle({ ...assign, profileId: "global:gone" }, labels)).toBe("Assigner EMIS-1 à gone");
+  const assign: ProposedAction = { id: 1, type: "assignAgent", ticket: "SILO-1", profileId: "p-42", why: "" };
+  const labels = projectLabels(siloProject(), [{ ref: "p-42", name: "opus-dev" }]);
+  expect(actionTitle(assign, labels)).toBe("Assigner SILO-1 à opus-dev");
+  expect(actionTitle({ ...assign, profileId: "global:gone" }, labels)).toBe("Assigner SILO-1 à gone");
 });
 
 test("dismissSignal goes to the Signaux group, after Notes, with its own title", () => {
@@ -207,22 +207,22 @@ test("question actions read the title and the recipient from the project", () =>
     title({
       id: 1,
       type: "createQuestion",
-      ticket: "EMIS-11",
+      ticket: "SILO-11",
       title: "Police ?",
       recipient: "client",
       why: "",
     }),
-  ).toBe("Question sur EMIS-11 pour Client : « Police ? »");
+  ).toBe("Question sur SILO-11 pour Client : « Police ? »");
   expect(
     title({
       id: 1,
       type: "createQuestion",
-      ticket: "EMIS-11",
+      ticket: "SILO-11",
       title: "Police ?",
       recipient: "Juridique",
       why: "",
     }),
-  ).toBe("Question sur EMIS-11 pour Juridique : « Police ? »");
+  ).toBe("Question sur SILO-11 pour Juridique : « Police ? »");
   expect(labels.recipient("galadrim")).toBe("Galadrim");
   expect(labels.question("q-port")).toBe("Quel port ?");
   expect(defaultLabels.question("q-port")).toBeNull();
@@ -236,7 +236,7 @@ test("an updated question shows one before → after line per field, the recipie
     questionId: "q-logo",
     title: "Logo ?",
     recipient: "Galadrim",
-    ticket: "EMIS-12",
+    ticket: "SILO-12",
     options: ["Grand", "Petit"],
     provisional: "Grand",
     context: "Nouveau contexte",
@@ -257,7 +257,7 @@ test("an updated question shows one before → after line per field, the recipie
   expect(actionDiffs(update, expected, labels)).toEqual([
     { field: "Titre", before: "Client - Logo ?", after: "Logo ?" },
     { field: "Destinataire", before: "Client", after: "Galadrim" },
-    { field: "Ticket", before: "EMIS-11", after: "EMIS-12" },
+    { field: "Ticket", before: "SILO-11", after: "SILO-12" },
     { field: "Options", before: "Oui, Non", after: "Grand, Petit" },
     { field: "Choix provisoire", before: "aucun", after: "Grand" },
   ]);
@@ -277,6 +277,6 @@ test("an updated question shows one before → after line per field, the recipie
       labels,
     ),
   ).toEqual([]);
-  const status: ProposedAction = { id: 2, type: "setStatus", ticket: "EMIS-11", statusId: "done", why: "" };
+  const status: ProposedAction = { id: 2, type: "setStatus", ticket: "SILO-11", statusId: "done", why: "" };
   expect(actionDiffs(status, undefined, labels)).toEqual([{ before: "—", after: "Terminé" }]);
 });

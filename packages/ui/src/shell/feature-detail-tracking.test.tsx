@@ -4,7 +4,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 import { pendingBatch, viewFixture } from "../project-agent/fixtures";
-import { emisFeatureProject, NOW } from "./feature/fixture";
+import { NOW, siloFeatureProject } from "./feature/fixture";
 
 const calls: RpcRequest[] = [];
 const journal: ProjectEvent[] = [];
@@ -40,7 +40,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const renderFeature = () => {
-  const project = emisFeatureProject();
+  const project = siloFeatureProject();
   const feature = project.tickets.find((t) => t.id === "f5");
   if (!feature) throw new Error("fixture without F5");
   return render(
@@ -62,7 +62,7 @@ const aside = (name: string) => within(screen.getByRole("region", { name }));
 test("the activity card reads the journal of the feature when it has facts", async () => {
   const event = (id: number, patch: Partial<ProjectEvent> & Pick<ProjectEvent, "kind">): ProjectEvent => ({
     id,
-    projectId: "emis",
+    projectId: "silo",
     at: NOW - 60_000,
     ticketId: null,
     featureId: "f5",
@@ -75,9 +75,9 @@ test("the activity card reads the journal of the feature when it has facts", asy
     event(2, { kind: "batch_proposed", source: "project-agent", data: { seq: 7 } }),
   );
   renderFeature();
-  expect(await aside("Activité").findByText("PR #22 ouverte · EMIS-32")).toBeTruthy();
+  expect(await aside("Activité").findByText("PR #22 ouverte · SILO-32")).toBeTruthy();
   expect(aside("Activité").getByText("Suivi mis à jour · lot n° 7 proposé")).toBeTruthy();
-  expect(calls).toContainEqual({ method: "listProjectEvents", projectId: "emis", featureId: "f5", limit: 5 });
+  expect(calls).toContainEqual({ method: "listProjectEvents", projectId: "silo", featureId: "f5", limit: 5 });
 });
 
 test("a move proposed by the agent is applied alone from the sprint card, keeping the rest", async () => {
@@ -86,8 +86,8 @@ test("a move proposed by the agent is applied alone from the sprint card, keepin
       id: "b7",
       seq: 7,
       actions: [
-        { id: 1, why: "4 étapes restantes", type: "setSprint", ticket: "EMIS-30", sprint: "S43" },
-        { id: 2, why: "seule à planifier", type: "setSprint", ticket: "EMIS-90", sprint: "S44" },
+        { id: 1, why: "4 étapes restantes", type: "setSprint", ticket: "SILO-30", sprint: "S43" },
+        { id: 2, why: "seule à planifier", type: "setSprint", ticket: "SILO-90", sprint: "S44" },
       ],
     }),
   );
@@ -98,7 +98,7 @@ test("a move proposed by the agent is applied alone from the sprint card, keepin
   expect(decisions()).toEqual([
     {
       method: "decideBatch",
-      projectId: "emis",
+      projectId: "silo",
       batchId: "b7",
       decision: "apply",
       actionIds: [1],

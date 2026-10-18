@@ -22,8 +22,8 @@ test("a secret folder is refused with its reason and never saved", () => {
 test("a tilde is expanded with the home folder of the machine", () => {
   const changed = mock((_: string[]) => {});
   render(<AddDirsField value={[]} home={HOME} onChange={changed} disabled={false} />);
-  type("~/.claude/skills\n\n/Users/adam/Documents/emis\n");
-  expect(changed).toHaveBeenLastCalledWith(["/Users/adam/.claude/skills", "/Users/adam/Documents/emis"]);
+  type("~/.claude/skills\n\n/Users/adam/Documents/silo\n");
+  expect(changed).toHaveBeenLastCalledWith(["/Users/adam/.claude/skills", "/Users/adam/Documents/silo"]);
   expect(field().getAttribute("aria-invalid")).toBeNull();
 });
 

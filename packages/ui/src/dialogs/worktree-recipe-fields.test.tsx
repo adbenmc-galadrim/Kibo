@@ -3,19 +3,19 @@ import type { WorktreeRecipe } from "@kibo/schema";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { WorktreeRecipeFields } from "./WorktreeRecipeFields";
 
-const EMIS: WorktreeRecipe = {
+const SILO: WorktreeRecipe = {
   copyFrom: ["{sibling}", "{repo}"],
   copy: [".env", "apps/web/.env.local"],
   env: {
     file: ".env",
     ports: { keys: { WEB_PORT: 3000, SERVER_PORT: 4000 }, from: 1, step: 10, count: 50 },
-    replace: { DATABASE_URL: ["emis_\\w+", "emis_{short_}"] },
-    set: { APP_NAME: "emis-{short}" },
+    replace: { DATABASE_URL: ["silo_\\w+", "silo_{short_}"] },
+    set: { APP_NAME: "silo-{short}" },
   },
   after: ["pnpm install"],
 };
 
-const draw = (value: WorktreeRecipe | null = EMIS) => {
+const draw = (value: WorktreeRecipe | null = SILO) => {
   const changes: (WorktreeRecipe | null)[] = [];
   const problems = mock((_: string | null) => {});
   render(
@@ -51,13 +51,13 @@ test("editing a field keeps the replacements and assignments of the env file", (
   const { changes, field } = draw();
   fireEvent.change(field("Ports"), { target: { value: "WEB_PORT=3100\nSERVER_PORT=4100\nDB_PORT=5432" } });
   expect(changes.at(-1)).toEqual({
-    ...EMIS,
+    ...SILO,
     env: {
-      ...EMIS.env,
+      ...SILO.env,
       file: ".env",
       ports: { keys: { WEB_PORT: 3100, SERVER_PORT: 4100, DB_PORT: 5432 }, from: 1, step: 10, count: 50 },
-      replace: EMIS.env?.replace ?? {},
-      set: EMIS.env?.set ?? {},
+      replace: SILO.env?.replace ?? {},
+      set: SILO.env?.set ?? {},
     },
   });
 });

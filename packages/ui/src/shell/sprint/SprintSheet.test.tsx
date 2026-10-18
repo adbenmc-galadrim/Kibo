@@ -38,7 +38,7 @@ function mount(sprintId = "s42") {
   const tabs: unknown[] = [];
   const view = render(
     <SprintSheet
-      route={{ projectId: "emis", sprintId }}
+      route={{ projectId: "silo", sprintId }}
       project={project}
       now={NOW}
       onClose={() => {}}
@@ -53,7 +53,7 @@ test("the sheet times the sprint on the day of the daemon, not of the browser", 
   setSystemTime(new Date(2026, 9, 14, 10));
   render(
     <SprintSheet
-      route={{ projectId: "emis", sprintId: "s42" }}
+      route={{ projectId: "silo", sprintId: "s42" }}
       project={project}
       onClose={() => {}}
       onOpenTicket={() => {}}
@@ -65,7 +65,7 @@ test("the sheet times the sprint on the day of the daemon, not of the browser", 
 
 test("the sheet shows the sprint, its timing, its features and the footer", async () => {
   const { opened, tabs } = mount();
-  expect(screen.getByRole("heading", { name: "S42 · Terrain hors ligne" })).toBeTruthy();
+  expect(screen.getByRole("heading", { name: "S42 · Saisie hors ligne" })).toBeTruthy();
   expect(screen.getByText("en cours")).toBeTruthy();
   expect(screen.getByText("12–16 oct.")).toBeTruthy();
   expect(screen.getByText("· finit ce soir · 1 livrée sur 3")).toBeTruthy();
@@ -81,10 +81,10 @@ test("the sheet shows the sprint, its timing, its features and the footer", asyn
       "Ce qui reste à la fin du sprint est reporté à la main, sur proposition de l'agent de projet.",
     ),
   ).toBeTruthy();
-  await userEvent.click(within(list).getByText("Envoyer les photos d'un tronçon"));
+  await userEvent.click(within(list).getByText("Envoyer les photos d'un constat"));
   expect(opened).toEqual(["f5"]);
   await userEvent.click(screen.getByRole("button", { name: "Ouvrir dans un onglet" }));
-  expect(tabs).toEqual([{ kind: "sprint", projectId: "emis", sprintId: "s42" }]);
+  expect(tabs).toEqual([{ kind: "sprint", projectId: "silo", sprintId: "s42" }]);
 });
 
 test("the end of sprint banner applies only the sprint's action and keeps the rest of the batch", async () => {
@@ -94,7 +94,7 @@ test("the end of sprint banner applies only the sprint's action and keeps the re
   expect(calls).toEqual([
     {
       method: "decideBatch",
-      projectId: "emis",
+      projectId: "silo",
       batchId: "b7",
       decision: "apply",
       actionIds: [1],
@@ -117,15 +117,15 @@ test("Modifier edits the sprint and Supprimer warns how many features go back to
   await userEvent.click(screen.getByRole("button", { name: "Modifier" }));
   const name = screen.getByLabelText("Nom");
   await userEvent.clear(name);
-  await userEvent.type(name, "Terrain");
+  await userEvent.type(name, "Saisie");
   await userEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
   expect(calls.at(-1)).toEqual({
     method: "command",
-    projectId: "emis",
+    projectId: "silo",
     command: {
       method: "updateSprint",
       sprintId: "s42",
-      patch: { code: "S42", name: "Terrain", start: "2026-10-12", end: "2026-10-16" },
+      patch: { code: "S42", name: "Saisie", start: "2026-10-12", end: "2026-10-16" },
     },
   });
   await userEvent.click(screen.getByRole("button", { name: "Modifier" }));
@@ -134,7 +134,7 @@ test("Modifier edits the sprint and Supprimer warns how many features go back to
   await userEvent.click(screen.getByRole("button", { name: "Supprimer" }));
   expect(calls.at(-1)).toEqual({
     method: "command",
-    projectId: "emis",
+    projectId: "silo",
     command: { method: "deleteSprint", sprintId: "s42" },
   });
 });

@@ -187,10 +187,10 @@ test("a read-only project renders no drop zone", () => {
 });
 
 test("an open feature lights the Planning page of its project", async () => {
-  const { emisFeatureProject } = await import("./feature/fixture");
-  const emis = emisFeatureProject();
+  const { siloFeatureProject } = await import("./feature/fixture");
+  const silo = siloFeatureProject();
   const planned: ProjectSnapshot = {
-    ...emis,
+    ...silo,
     pages: [page("p-plan", "Planning", null), page("p-tickets", "Tickets", null)],
     instances: [
       {
@@ -210,8 +210,8 @@ test("an open feature lights the Planning page of its project", async () => {
           <SidebarMenuItem>
             <ProjectPages
               project={planned}
-              activeTarget={{ kind: "ticket", projectId: "emis", ticketId }}
-              header={<span>Emis</span>}
+              activeTarget={{ kind: "ticket", projectId: "silo", ticketId }}
+              header={<span>Silo</span>}
               onOpen={() => {}}
               onNewPage={() => {}}
               onRenamePage={() => {}}

@@ -2,7 +2,7 @@ import { expect, mock, test } from "bun:test";
 import type { ProjectSnapshot } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import { apiMock } from "../api-mock";
-import { emisHomeSnapshot, summaryOf } from "./home-fixtures";
+import { siloHomeSnapshot, summaryOf } from "./home-fixtures";
 
 const rpcCalls: string[] = [];
 mock.module("../api", () =>
@@ -20,7 +20,7 @@ mock.module("../api", () =>
 const { Overview } = await import("./Overview");
 
 const NOW = new Date(2026, 9, 17, 10).getTime();
-const project = summaryOf(emisHomeSnapshot());
+const project = summaryOf(siloHomeSnapshot());
 const noInbox = { inboxCount: 0, onOpenInbox: () => {} };
 
 const home = (snapshots: ReadonlyMap<string, ProjectSnapshot>, inbox = noInbox) => (
@@ -33,21 +33,21 @@ const home = (snapshots: ReadonlyMap<string, ProjectSnapshot>, inbox = noInbox) 
     {...inbox}
   />
 );
-const loaded = (snapshot = emisHomeSnapshot()) => new Map([["emis", snapshot]]);
+const loaded = (snapshot = siloHomeSnapshot()) => new Map([["silo", snapshot]]);
 const countOf = async (card: HTMLElement, label: string) =>
   (await within(card).findByText(label)).textContent;
 
 test("the home card shows the project key and client, never its folder", async () => {
   render(home(loaded()));
-  const card = await screen.findByRole("article", { name: "Emis" });
-  expect(within(card).getByText("EMIS")).toBeTruthy();
-  expect(within(card).getByText("client Emis SA")).toBeTruthy();
+  const card = await screen.findByRole("article", { name: "Silo" });
+  expect(within(card).getByText("SILO")).toBeTruthy();
+  expect(within(card).getByText("client Silo SA")).toBeTruthy();
   expect(card.textContent).not.toContain("/Users/");
 });
 
 test("the home card names what it counts: tickets, then features", async () => {
   render(home(loaded()));
-  const card = await screen.findByRole("article", { name: "Emis" });
+  const card = await screen.findByRole("article", { name: "Silo" });
   expect(await countOf(card, "tickets ouverts")).toBe("7 tickets ouverts");
   expect(await countOf(card, "bloqués")).toBe("5 bloqués");
   expect(await countOf(card, "fonctionnalité en retard")).toBe("1 fonctionnalité en retard");
@@ -59,11 +59,11 @@ test("the home card names what it counts: tickets, then features", async () => {
 
 test("the home card follows the workspace snapshots without loading them itself", async () => {
   const { rerender } = render(home(new Map()));
-  const card = await screen.findByRole("article", { name: "Emis" });
+  const card = await screen.findByRole("article", { name: "Silo" });
   expect(within(card).queryByRole("progressbar")).toBeNull();
   rerender(home(loaded()));
   expect(await countOf(card, "bloqués")).toBe("5 bloqués");
-  const changed = emisHomeSnapshot();
+  const changed = siloHomeSnapshot();
   rerender(
     home(
       loaded({
@@ -85,7 +85,7 @@ test("the home greets the viewer", async () => {
 test("the home points to the inbox only when it holds open tickets", async () => {
   const opened: string[] = [];
   const { unmount } = render(home(loaded()));
-  await screen.findByRole("article", { name: "Emis" });
+  await screen.findByRole("article", { name: "Silo" });
   expect(screen.queryByRole("button", { name: /Boîte de réception/ })).toBeNull();
   unmount();
   render(home(loaded(), { inboxCount: 3, onOpenInbox: () => opened.push("inbox") }));

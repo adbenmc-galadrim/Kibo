@@ -2,12 +2,12 @@ import { afterEach, expect, test } from "bun:test";
 import type { MemberInfo, TicketView } from "@kibo/schema";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { emisFeatureProject } from "../shell/feature/fixture";
+import { siloFeatureProject } from "../shell/feature/fixture";
 import { AssigneeSelect } from "./AssigneeSelect";
 
 afterEach(cleanup);
 
-const base = emisFeatureProject().tickets.find((t) => t.id === "e33") as TicketView;
+const base = siloFeatureProject().tickets.find((t) => t.id === "e33") as TicketView;
 const members: MemberInfo[] = [
   { userId: "adam", name: "Adam", role: "owner" },
   { userId: "lea", name: "Léa", role: "editor" },

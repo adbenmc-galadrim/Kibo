@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { act, renderHook } from "@testing-library/react";
 import { kiboProject } from "../agents/fixtures";
-import { emisProject } from "../project-agent/fixtures";
+import { siloProject } from "../project-agent/fixtures";
 import { PANEL_OPEN_KEY, useProjectAgentPanel } from "./use-project-agent-panel";
 
 const realMatchMedia = window.matchMedia;
@@ -32,7 +32,7 @@ test("the badge opens the panel on Signaux, the button on Conversation", () => {
 });
 
 test("a read-only project never opens the panel nor touches the preference", () => {
-  const { result } = renderHook(() => useProjectAgentPanel(emisProject("read-only")));
+  const { result } = renderHook(() => useProjectAgentPanel(siloProject("read-only")));
   act(() => result.current.show("signals"));
   act(() => result.current.toggle());
   expect(result.current.open).toBe(false);

@@ -4,7 +4,7 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 import { viewFixture } from "../project-agent/fixtures";
-import { emisFeatureProject, NOW } from "./feature/fixture";
+import { NOW, siloFeatureProject } from "./feature/fixture";
 import { type Host, HostProvider } from "./Host";
 
 const calls: RpcRequest[] = [];
@@ -75,27 +75,27 @@ function withF8(project: ProjectSnapshot): ProjectSnapshot {
   const f8 = {
     ...f7,
     id: "f8",
-    key: "EMIS-80",
-    keyLabel: "EMIS-80",
+    key: "SILO-80",
+    keyLabel: "SILO-80",
     shortKey: "F8",
-    title: "Valider les soudures",
+    title: "Valider les contrats",
   };
   return { ...project, tickets: [...project.tickets, f8] };
 }
 
 test("the feature is named once, by its F<n> key", () => {
-  renderFeature(emisFeatureProject());
+  renderFeature(siloFeatureProject());
   expect(screen.getByText("Fonctionnalité · F5")).toBeTruthy();
-  expect(screen.queryByText(/EMIS-30/)).toBeNull();
+  expect(screen.queryByText(/SILO-30/)).toBeNull();
 });
 
 test("a feature keyed F5 is not named twice", () => {
-  renderFeature(patchTicket(emisFeatureProject(), "f5", { key: "F5", keyLabel: "F5" }));
+  renderFeature(patchTicket(siloFeatureProject(), "f5", { key: "F5", keyLabel: "F5" }));
   expect(screen.getByText("Fonctionnalité · F5")).toBeTruthy();
 });
 
 test("step cards take their own height: nothing overlaps", () => {
-  renderFeature(emisFeatureProject());
+  renderFeature(siloFeatureProject());
   const steps = within(screen.getByRole("list")).getAllByRole("listitem");
   for (const step of steps) {
     expect(step.className).not.toMatch(/(^|\s)h-\[/);
@@ -104,19 +104,19 @@ test("step cards take their own height: nothing overlaps", () => {
 });
 
 test("an optional step wears a « facultative » pill", () => {
-  renderFeature(patchTicket(emisFeatureProject(), "e35", { optional: true }));
+  renderFeature(patchTicket(siloFeatureProject(), "e35", { optional: true }));
   const steps = within(screen.getByRole("list")).getAllByRole("listitem");
   expect(within(steps[4] as HTMLElement).getByText("facultative")).toBeTruthy();
   expect(within(steps[3] as HTMLElement).queryByText("facultative")).toBeNull();
 });
 
 test("+ Dépendance makes the feature wait for another one", async () => {
-  renderFeature(withF8(emisFeatureProject()));
+  renderFeature(withF8(siloFeatureProject()));
   const user = userEvent.setup();
   const deps = within(screen.getByRole("region", { name: "Dépendances" }));
   await user.click(deps.getByRole("button", { name: "Dépendance" }));
   const options = screen.getAllByRole("menuitem").map((m) => m.textContent);
-  expect(options).toEqual(["F8Valider les soudures"]);
+  expect(options).toEqual(["F8Valider les contrats"]);
   await user.click(screen.getByRole("menuitem", { name: /F8/ }));
   expect(commands()).toEqual([{ method: "addLink", from: "f8", to: "f5", type: "blocks" }]);
 });

@@ -15,7 +15,7 @@ mock.module("../../api", () =>
   }),
 );
 const { ProjectPages } = await import("../ProjectPages");
-const { emisFeatureProject } = await import("../feature/fixture");
+const { siloFeatureProject } = await import("../feature/fixture");
 
 const page = (id: string, title: string, parentId: string | null): Page => ({
   id,
@@ -25,10 +25,10 @@ const page = (id: string, title: string, parentId: string | null): Page => ({
 });
 
 const countedPages = (access: ProjectSnapshot["sync"]["access"]) => {
-  const emis = emisFeatureProject();
+  const silo = siloFeatureProject();
   const counted: ProjectSnapshot = {
-    ...emis,
-    sync: { ...emis.sync, access },
+    ...silo,
+    sync: { ...silo.sync, access },
     pages: [page("p-tickets", "Tickets", null)],
     instances: [
       {
@@ -48,7 +48,7 @@ const countedPages = (access: ProjectSnapshot["sync"]["access"]) => {
           <ProjectPages
             project={counted}
             activeTarget={null}
-            header={<span>Emis</span>}
+            header={<span>Silo</span>}
             onOpen={() => {}}
             onNewPage={() => {}}
             onRenamePage={() => {}}

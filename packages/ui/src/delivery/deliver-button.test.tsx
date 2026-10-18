@@ -77,12 +77,12 @@ test("an active run disables Livrer and names it", async () => {
     id: "r1",
     ticketId: "t14",
     state: "running",
-    label: "emis · full-delivery · EMIS-15",
+    label: "silo · full-delivery · SILO-15",
   });
   show(kiboProject(), "t14", { ...state, runs: [run] });
   const button = await screen.findByRole("button", { name: "Livrer" });
   expect(button.hasAttribute("disabled")).toBe(true);
-  expect(screen.getByText("déjà un run : emis · full-delivery · EMIS-15")).toBeTruthy();
+  expect(screen.getByText("déjà un run : silo · full-delivery · SILO-15")).toBeTruthy();
 });
 
 test("the delivery agent of the project is asked once", async () => {

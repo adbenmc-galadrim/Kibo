@@ -40,7 +40,7 @@ function agents(open: number, pendingBatchId: string | null = null): AgentsState
     projectAgents: [{ projectId: "kibo", runId: "pa1", state: "done", pendingBatchId }],
     signals: [
       { projectId: "kibo", open, unread: open },
-      { projectId: "emis", open: 7, unread: 0 },
+      { projectId: "silo", open: 7, unread: 0 },
     ],
   };
 }

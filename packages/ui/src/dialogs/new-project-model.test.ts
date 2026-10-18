@@ -10,7 +10,7 @@ import {
 
 const base = (patch: Partial<NewProjectFields> = {}): NewProjectFields => ({
   ...defaultFields("2026-10-16"),
-  name: "Emis",
+  name: "Silo",
   ...patch,
 });
 
@@ -28,9 +28,9 @@ test("defaultFields starts the first sprint on the next Monday, six one-week spr
 });
 
 test("effectiveKey derives the key from the name until it is typed", () => {
-  expect(effectiveKey(base({ name: "Suivi de chantier" }))).toBe("SC");
-  expect(effectiveKey(base({ name: "Emis" }))).toBe("EMI");
-  expect(effectiveKey(base({ name: "Emis", key: "EMIS" }))).toBe("EMIS");
+  expect(effectiveKey(base({ name: "Location de box" }))).toBe("LB");
+  expect(effectiveKey(base({ name: "Silo" }))).toBe("SIL");
+  expect(effectiveKey(base({ name: "Silo", key: "SILO" }))).toBe("SILO");
 });
 
 test("validate accepts a complete form", () => {
@@ -46,10 +46,10 @@ test("validate flags an empty name and an empty key", () => {
 
 test("validate classifies key problems", () => {
   expect(validate(base({ key: "INB" }), []).key).toBe("reserved");
-  expect(validate(base({ key: "EMIS" }), ["KIB", "EMIS"]).key).toBe("taken");
+  expect(validate(base({ key: "SILO" }), ["KIB", "SILO"]).key).toBe("taken");
   expect(validate(base({ key: "ABCDEFG" }), []).key).toBe("invalid");
   expect(validate(base({ key: "E1" }), []).key).toBe("invalid");
-  expect(validate(base({ key: "EMIS" }), ["EMIS"]).ok).toBe(false);
+  expect(validate(base({ key: "SILO" }), ["SILO"]).ok).toBe(false);
 });
 
 test("validate bounds the number of sprints to 1..52", () => {
@@ -84,13 +84,13 @@ test("preview is empty while the sprint fields are invalid", () => {
 
 test("toRequest builds createProject with the setup", () => {
   expect(
-    toRequest(base({ name: " Emis ", key: "EMIS", client: " Emis SA ", folder: " /code/emis " }), "#14B8A6"),
+    toRequest(base({ name: " Silo ", key: "SILO", client: " Silo SA ", folder: " /code/silo " }), "#14B8A6"),
   ).toEqual({
     method: "createProject",
-    name: "Emis",
-    key: "EMIS",
-    client: "Emis SA",
-    folder: "/code/emis",
+    name: "Silo",
+    key: "SILO",
+    client: "Silo SA",
+    folder: "/code/silo",
     color: "#14B8A6",
     setup: { sprintStart: "2026-10-19", sprintCount: 6, sprintWeeks: 1 },
   });
@@ -100,5 +100,5 @@ test("toRequest leaves the client out and the folder null when they are blank", 
   const request = toRequest(base({ client: "  ", folder: " " }), "#14B8A6");
   expect(request.folder).toBeNull();
   expect("client" in request).toBe(false);
-  expect(request.key).toBe("EMI");
+  expect(request.key).toBe("SIL");
 });

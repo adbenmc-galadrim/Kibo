@@ -293,10 +293,10 @@ test("screen 210: the Delivery preset updates the settings in place, each field 
   );
   const dirs = screen.getByRole("textbox", { name: "Dossiers supplémentaires" }) as HTMLTextAreaElement;
   expect(dirs.value).toBe("~/.claude/skills");
-  await user.type(dirs, "\n~/Documents/emis");
+  await user.type(dirs, "\n~/Documents/silo");
   await waitFor(() =>
     expect(patches().at(-1)).toEqual({
-      addDirs: ["/Users/adam/.claude/skills", "/Users/adam/Documents/emis"],
+      addDirs: ["/Users/adam/.claude/skills", "/Users/adam/Documents/silo"],
     }),
   );
 });

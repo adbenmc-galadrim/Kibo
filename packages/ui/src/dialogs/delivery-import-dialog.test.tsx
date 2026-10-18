@@ -11,15 +11,15 @@ import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 
 const REGISTRY = "/Users/adam/.claude/skills/full-delivery/projects/registry.json";
-const EMIS: DeliveryImportCandidate = {
-  name: "emis",
-  repo: "/Users/adam/Documents/emis/emis-suivi-chantier",
-  remote: "adam/emis",
-  matched: "emis",
+const SILO: DeliveryImportCandidate = {
+  name: "silo",
+  repo: "/Users/adam/Documents/silo/silo-location",
+  remote: "silo-labs/silo-location",
+  matched: "silo",
   preview: {
     worktree: {
       baseRef: "origin/dev",
-      pathTemplate: "../emis-{slug}",
+      pathTemplate: "../silo-{slug}",
       setup: null,
       recipe: {
         copyFrom: ["{sibling}"],
@@ -35,16 +35,16 @@ const EMIS: DeliveryImportCandidate = {
     },
     delivery: {
       ...EMPTY_DELIVERY,
-      root: "/Users/adam/Documents/emis",
-      profile: "/Users/adam/.claude/skills/full-delivery/projects/emis.md",
+      root: "/Users/adam/Documents/silo",
+      profile: "/Users/adam/.claude/skills/full-delivery/projects/silo.md",
       publication: "draft",
       allow: ["Bash(pnpm *)", "Bash(docker compose *)"],
-      addDirs: ["/Users/adam/Documents/emis", "/Users/adam/Documents/emis/memory"],
+      addDirs: ["/Users/adam/Documents/silo", "/Users/adam/Documents/silo/memory"],
     },
   },
   notices: ["Règle refusée et omise : Bash(sh -c *)"],
 };
-const GERECO: DeliveryImportCandidate = { ...EMIS, name: "gereco", matched: null };
+const ATLAS: DeliveryImportCandidate = { ...SILO, name: "atlas", matched: null };
 const calls: RpcRequest[] = [];
 let candidates: DeliveryImportCandidate[] = [];
 let meta: ProjectMeta;
@@ -67,17 +67,17 @@ const { DeliveryImportDialog } = await import("./DeliveryImportDialog");
 
 beforeEach(() => {
   calls.length = 0;
-  candidates = [GERECO, EMIS];
+  candidates = [ATLAS, SILO];
   meta = {
-    id: "emis",
-    key: "EMIS",
-    name: "Emis",
-    folder: EMIS.repo,
+    id: "silo",
+    key: "SILO",
+    name: "Silo",
+    folder: SILO.repo,
     color: "#F97316",
-    worktree: EMIS.preview.worktree,
+    worktree: SILO.preview.worktree,
     storybook: null,
     duplication: null,
-    delivery: EMIS.preview.delivery,
+    delivery: SILO.preview.delivery,
     tracking: null,
     description: null,
     client: null,
@@ -88,7 +88,7 @@ const draw = () => {
   const imported = mock((_: ProjectMeta) => {});
   render(
     <DeliveryImportDialog
-      projectId="emis"
+      projectId="silo"
       home="/Users/adam"
       current={{ worktree: WORKTREE_DEFAULTS, delivery: null }}
       onClose={() => {}}
@@ -106,10 +106,10 @@ test("screen 215b: the matching candidate with its preview, before → after, th
   expect(((await d.findByRole("textbox", { name: "Registre" })) as HTMLInputElement).value).toBe(
     "~/.claude/skills/full-delivery/projects/registry.json",
   );
-  const candidate = await d.findByRole("radio", { name: /emis/ });
+  const candidate = await d.findByRole("radio", { name: /silo/ });
   expect(candidate.getAttribute("aria-checked")).toBe("true");
   expect(d.getByText("correspond à ce projet")).toBeTruthy();
-  expect(d.queryByRole("radio", { name: /gereco/ })).toBeNull();
+  expect(d.queryByRole("radio", { name: /atlas/ })).toBeNull();
   const rows = within(d.getByRole("table", { name: "Aperçu" }))
     .getAllByRole("row")
     .map((r) =>
@@ -118,18 +118,18 @@ test("screen 215b: the matching candidate with its preview, before → after, th
         .filter((text) => text !== ""),
     );
   expect(rows).toContainEqual(["Base des worktrees", "main", "origin/dev"]);
-  expect(rows).toContainEqual(["Chemin", ".kibo/worktrees/{slug}", "../emis-{slug}"]);
+  expect(rows).toContainEqual(["Chemin", ".kibo/worktrees/{slug}", "../silo-{slug}"]);
   expect(rows).toContainEqual(["Recette", "aucune", ".env copié · WEB_PORT, SERVER_PORT · pnpm install"]);
-  expect(rows).toContainEqual(["Profil", "—", "~/.claude/skills/full-delivery/projects/emis.md"]);
+  expect(rows).toContainEqual(["Profil", "—", "~/.claude/skills/full-delivery/projects/silo.md"]);
   expect(rows).toContainEqual(["Publication", "—", "Brouillon (draft)"]);
   expect(rows).toContainEqual(["Règles", "aucune", "2 règles"]);
-  expect(rows).toContainEqual(["Dossiers", "aucune", "~/Documents/emis, ~/Documents/emis/memory"]);
+  expect(rows).toContainEqual(["Dossiers", "aucune", "~/Documents/silo, ~/Documents/silo/memory"]);
   expect(d.getByText("Règle refusée et omise : Bash(sh -c *)")).toBeTruthy();
   await userEvent.setup().click(d.getByRole("button", { name: "Importer" }));
   expect(calls.at(-1)).toEqual({
     method: "projects.applyDeliveryImport",
-    projectId: "emis",
-    name: "emis",
+    projectId: "silo",
+    name: "silo",
     registryPath: REGISTRY,
   });
   await waitFor(() => expect(imported).toHaveBeenCalledWith(meta));
@@ -150,7 +150,7 @@ test("the registry path can be changed and read again, tilde expanded", async ()
 });
 
 test("no candidate for this folder says so and cannot import", async () => {
-  candidates = [GERECO];
+  candidates = [ATLAS];
   draw();
   const d = await dialog();
   expect(await d.findByText("Aucun projet du registre n'a ce dossier")).toBeTruthy();

@@ -4,7 +4,7 @@ import { expandHome, tildify } from "./expand-home";
 test("a leading tilde becomes the home folder", () => {
   expect(expandHome("~", "/Users/adam")).toBe("/Users/adam");
   expect(expandHome("~/.claude/skills", "/Users/adam")).toBe("/Users/adam/.claude/skills");
-  expect(expandHome("  ~/Documents/emis  ", "/Users/adam")).toBe("/Users/adam/Documents/emis");
+  expect(expandHome("  ~/Documents/silo  ", "/Users/adam")).toBe("/Users/adam/Documents/silo");
 });
 
 test("any other path is kept as typed", () => {

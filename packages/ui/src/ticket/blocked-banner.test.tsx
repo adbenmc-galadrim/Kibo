@@ -2,12 +2,12 @@ import { afterEach, expect, test } from "bun:test";
 import { DEFAULT_RECIPIENTS, type Question, type TicketView } from "@kibo/schema";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { emisFeatureProject } from "../shell/feature/fixture";
+import { siloFeatureProject } from "../shell/feature/fixture";
 import { BlockedBanner } from "./BlockedBanner";
 
 afterEach(cleanup);
 
-const project = emisFeatureProject();
+const project = siloFeatureProject();
 const ticket = project.tickets.find((t) => t.id === "e33") as TicketView;
 const question = (patch: Partial<Question> = {}): Question => ({
   kind: "question",
@@ -15,7 +15,7 @@ const question = (patch: Partial<Question> = {}): Question => ({
   id: "q14",
   ticketId: "e33",
   runId: null,
-  title: "Un ISO réaffecté garde-t-il ses photos ?",
+  title: "Un box réaffecté garde-t-il ses photos ?",
   context: "",
   options: [],
   provisional: null,

@@ -9,35 +9,35 @@ import type {
 } from "@kibo/schema";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { emisFeatureProject, NOW } from "../shell/feature/fixture";
+import { NOW, siloFeatureProject } from "../shell/feature/fixture";
 import { type Host, HostProvider } from "../shell/Host";
 import { TrackingSection } from "./TrackingSection";
 
 afterEach(cleanup);
 
-const base = emisFeatureProject().tickets.find((t) => t.id === "e33") as TicketView;
-const branch: ExternalRef = { kind: "git_branch", branch: "feat/emis-45", base: "dev" };
+const base = siloFeatureProject().tickets.find((t) => t.id === "e33") as TicketView;
+const branch: ExternalRef = { kind: "git_branch", branch: "feat/silo-45", base: "dev" };
 const pr = (patch: Partial<GithubPrRef> = {}): GithubPrRef => ({
   kind: "github_pr",
-  url: "https://github.com/galadrim/emis/pull/20",
+  url: "https://github.com/silo-labs/silo-location/pull/20",
   number: 20,
   state: "open",
   base: "dev",
-  head: "feat/emis-45",
+  head: "feat/silo-45",
   review: "changes_requested",
   checks: "ok",
   ...patch,
 });
 const failing: CiRun = {
-  repo: "galadrim/emis",
+  repo: "silo-labs/silo-location",
   runId: 9,
   prNumber: 20,
-  ticketKey: "EMIS-45",
+  ticketKey: "SILO-45",
   headSha: "abc",
   workflow: "CI",
   status: "completed",
   conclusion: "failure",
-  url: "https://github.com/galadrim/emis/actions/runs/9",
+  url: "https://github.com/silo-labs/silo-location/actions/runs/9",
   startedAt: null,
   updatedAt: "2026-10-16T12:00:00Z",
   jobs: [],
@@ -56,7 +56,7 @@ const words = (name: string) =>
 const at = (h: number, m: number) => new Date(2026, 9, 16, h, m).getTime();
 const event = (kind: ProjectEvent["kind"], when: number, data: ProjectEvent["data"]): ProjectEvent => ({
   id: when,
-  projectId: "emis",
+  projectId: "silo",
   kind,
   ticketId: "e33",
   featureId: "f5",
@@ -97,7 +97,7 @@ test("the Suivi block names the branch, the PR, its review, the CI, the session 
     />,
   );
   expect(screen.getByText("remonté de git, des PR et de full-delivery")).toBeTruthy();
-  expect(words("Branche")).toEqual(["feat/emis-45", "sur", "dev"]);
+  expect(words("Branche")).toEqual(["feat/silo-45", "sur", "dev"]);
   expect(words("PR")).toEqual(["#20", "ouverte hier à 16:52"]);
   expect(words("Review")).toEqual(["changements demandés", "13:47"]);
   expect(words("CI")).toEqual(["CI cassée", "job e2e · 11:58"]);
@@ -105,7 +105,7 @@ test("the Suivi block names the branch, the PR, its review, the CI, the session 
     within(row("CI") as HTMLElement)
       .getByRole("link")
       .getAttribute("href"),
-  ).toBe("https://github.com/galadrim/emis/actions/runs/9/job/1");
+  ).toBe("https://github.com/silo-labs/silo-location/actions/runs/9/job/1");
   expect(row("Session")?.textContent).toBe("T3 Code · 42 min");
   expect(words("Livraison")).toEqual(["Phase 9/12 · Review", "· suivante : Démo"]);
 });
@@ -133,7 +133,7 @@ test("the CI row reads the checks of the PR when no run is known, and says « Pa
     within(row("CI") as HTMLElement)
       .getByRole("link")
       .getAttribute("href"),
-  ).toBe("https://github.com/galadrim/emis/pull/20/checks");
+  ).toBe("https://github.com/silo-labs/silo-location/pull/20/checks");
   expect(words("CI")).toEqual(["CI cassée", "voir les checks"]);
   broken.unmount();
   render(
@@ -172,7 +172,7 @@ test("a ticket without any tracking says how to declare its branch", () => {
     />,
   );
   expect(screen.getByText("Aucun suivi git : déclare la branche avec kibo tickets set")).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Copier kibo tickets set EMIS-33 branch=" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Copier kibo tickets set SILO-33 branch=" })).toBeTruthy();
 });
 
 test("a declared branch is marked « déclarée »", () => {
@@ -229,7 +229,7 @@ test("a ticket of a project without repository offers to choose the folder, the 
   expect(screen.queryByText("Aucun suivi git : déclare la branche avec kibo tickets set")).toBeNull();
   await userEvent.setup().click(screen.getByRole("button", { name: "Choisir le dossier" }));
   expect(edits).toEqual([{ field: "folder" }]);
-  expect(screen.getByRole("button", { name: "Copier kibo tickets set EMIS-33 branch=" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Copier kibo tickets set SILO-33 branch=" })).toBeTruthy();
 });
 
 test("without a CI run the CI row names the failing check of the PR, linked to its checks page", () => {
@@ -246,5 +246,5 @@ test("without a CI run the CI row names the failing check of the PR, linked to i
     within(row("CI") as HTMLElement)
       .getByRole("link")
       .getAttribute("href"),
-  ).toBe("https://github.com/galadrim/emis/pull/20/checks");
+  ).toBe("https://github.com/silo-labs/silo-location/pull/20/checks");
 });

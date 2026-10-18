@@ -26,8 +26,8 @@ test("their real hashes, sub-paths and run, skill and changes tabs lead back hom
     "#/agents/",
     "#/skills/superpowers%3Abrainstorming",
     "#/runs/r1",
-    "#/p/emis/changes",
-    "#/p/emis/changes?wt=feat",
+    "#/p/silo/changes",
+    "#/p/silo/changes?wt=feat",
   ])
     expect([hash, retiredRoute(hash)]).toEqual([hash, HOME]);
 });
@@ -40,10 +40,10 @@ test("the tracking routes stay", () => {
     "#/mine",
     "#/settings/general",
     "#/settings/integrations",
-    "#/p/emis/",
-    "#/p/emis/page1",
-    "#/p/emis/t/EMIS-12",
-    "#/p/emis/file?path=README.md",
+    "#/p/silo/",
+    "#/p/silo/page1",
+    "#/p/silo/t/SILO-12",
+    "#/p/silo/file?path=README.md",
     "#/codex",
   ])
     expect([hash, retiredRoute(hash)]).toEqual([hash, null]);

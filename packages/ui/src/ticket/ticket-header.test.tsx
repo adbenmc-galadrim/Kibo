@@ -1,17 +1,17 @@
 import { afterEach, expect, test } from "bun:test";
 import type { ExternalRef, TicketView } from "@kibo/schema";
 import { cleanup, render, screen } from "@testing-library/react";
-import { emisFeatureProject } from "../shell/feature/fixture";
+import { siloFeatureProject } from "../shell/feature/fixture";
 import { TicketHeader } from "./TicketHeader";
 import { headerContext } from "./tracking-model";
 
 afterEach(cleanup);
 
-const project = emisFeatureProject();
+const project = siloFeatureProject();
 const e33 = project.tickets.find((t) => t.id === "e33") as TicketView;
 const pr = (number: number, state: "open" | "merged" | "closed"): ExternalRef => ({
   kind: "github_pr",
-  url: `https://github.com/galadrim/emis/pull/${number}`,
+  url: `https://github.com/silo-labs/silo-location/pull/${number}`,
   number,
   state,
   base: "dev",
@@ -42,8 +42,8 @@ test("without a pull request the header stops at the sprint", () => {
 const lone: TicketView = {
   ...e33,
   id: "e61",
-  key: "EMIS-61",
-  keyLabel: "EMIS-61",
+  key: "SILO-61",
+  keyLabel: "SILO-61",
   parentId: null,
   effectiveSprintId: null,
   externalRefs: [],
@@ -58,7 +58,7 @@ test("the chip line links the pull request", () => {
   const { container } = render(<TicketHeader project={project} ticket={withRefs([pr(20, "open")])} />);
   expect(container.querySelector("[data-ticket-context]")?.textContent).toBe("F5 · S42 · PR #20");
   expect(screen.getByRole("link", { name: "PR #20" }).getAttribute("href")).toBe(
-    "https://github.com/galadrim/emis/pull/20",
+    "https://github.com/silo-labs/silo-location/pull/20",
   );
 });
 

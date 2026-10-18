@@ -73,7 +73,7 @@ const STEP_STATUSES: readonly StatusId[] = [
 ];
 
 const steps = STEP_STATUSES.map((statusId, i) =>
-  ticket({ id: `s${i + 1}`, key: `EMIS-${i + 1}`, title: `Étape ${i + 1}`, statusId, parentId: "f5" }),
+  ticket({ id: `s${i + 1}`, key: `SILO-${i + 1}`, title: `Étape ${i + 1}`, statusId, parentId: "f5" }),
 );
 
 export const question = (p: Partial<Question> & Pick<Question, "id" | "ticketId">): Question => ({
@@ -98,13 +98,13 @@ export const question = (p: Partial<Question> & Pick<Question, "id" | "ticketId"
   ...p,
 });
 
-export function emisHomeSnapshot(): ProjectSnapshot {
+export function siloHomeSnapshot(): ProjectSnapshot {
   return {
     meta: {
-      id: "emis",
-      key: "EMIS",
-      name: "Emis",
-      folder: "/Users/adam/Documents/emis",
+      id: "silo",
+      key: "SILO",
+      name: "Silo",
+      folder: "/Users/adam/Documents/silo",
       color: "#14B8A6",
       worktree: null,
       storybook: null,
@@ -112,7 +112,7 @@ export function emisHomeSnapshot(): ProjectSnapshot {
       delivery: null,
       tracking: null,
       description: null,
-      client: "Emis SA",
+      client: "Silo SA",
     },
     workflow: DEFAULT_WORKFLOW,
     pages: [],
@@ -121,7 +121,7 @@ export function emisHomeSnapshot(): ProjectSnapshot {
         id: "f5",
         key: "F5",
         shortKey: "F5",
-        title: "Envoyer les photos d'un tronçon",
+        title: "Envoyer les photos d'un constat",
         sprintId: "s42",
         effectiveSprintId: "s42",
         progress: { done: 1, total: 8 },
@@ -151,7 +151,7 @@ export function emisHomeSnapshot(): ProjectSnapshot {
     instances: [],
     rules: [],
     bindings: [],
-    nextTicketKey: "EMIS-9",
+    nextTicketKey: "SILO-9",
     sprints: [
       sprint("s42", "S42", "2026-10-12", "2026-10-16"),
       sprint("s43", "S43", "2026-10-19", "2026-10-23"),

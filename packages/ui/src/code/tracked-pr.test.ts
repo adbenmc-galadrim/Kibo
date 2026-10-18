@@ -4,7 +4,7 @@ import { trackedPr } from "./tracked-pr";
 
 const pr = (number: number, extra: Partial<Extract<ExternalRef, { kind: "github_pr" }>> = {}) => ({
   kind: "github_pr" as const,
-  url: `https://github.com/galadrimteam/emis/pull/${number}`,
+  url: `https://github.com/silo-labs/silo-location/pull/${number}`,
   number,
   state: "draft" as const,
   base: "dev",

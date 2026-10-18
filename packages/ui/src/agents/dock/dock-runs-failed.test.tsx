@@ -6,7 +6,7 @@ import { DockRuns } from "./DockRuns";
 test("a run that failed at launch shows why in the finished runs, not an empty report", () => {
   const failed = runFixture({
     id: "f1",
-    ticketKey: "EMIS-22",
+    ticketKey: "SILO-22",
     state: "failed",
     endedAt: NOW,
     error: "GIT_FAILED: remote feat not found",
@@ -24,7 +24,7 @@ test("a run that failed at launch shows why in the finished runs, not an empty r
   );
   expect(
     screen.getByText(
-      "EMIS-22 · Échec au lancement : git n'a pas pu préparer l'espace de travail (remote feat not found)",
+      "SILO-22 · Échec au lancement : git n'a pas pu préparer l'espace de travail (remote feat not found)",
     ),
   ).toBeTruthy();
 });

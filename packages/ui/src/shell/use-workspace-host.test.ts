@@ -21,18 +21,18 @@ function host(activeProjectId: string | null) {
 }
 
 test("a sprint opened by a component opens the sprint sheet of the active project", () => {
-  const active = host("emis");
+  const active = host("silo");
   active.host.openSprint?.("s42");
-  expect(active.patches).toEqual([{ sprintSheet: { projectId: "emis", sprintId: "s42" } }]);
+  expect(active.patches).toEqual([{ sprintSheet: { projectId: "silo", sprintId: "s42" } }]);
   const none = host(null);
   none.host.openSprint?.("s42");
   expect(none.patches).toEqual([]);
 });
 
 test("a component asks to edit the project on its folder field", () => {
-  const active = host("emis");
+  const active = host("silo");
   active.host.editProject?.({ field: "folder" });
-  expect(active.patches).toEqual([{ editProject: "emis", editFocus: "folder" }]);
+  expect(active.patches).toEqual([{ editProject: "silo", editFocus: "folder" }]);
   const none = host(null);
   none.host.editProject?.({ field: "folder" });
   expect(none.patches).toEqual([]);

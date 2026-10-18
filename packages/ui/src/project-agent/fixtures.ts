@@ -48,12 +48,12 @@ const ticket = (id: string, key: string, title: string, statusId: TicketView["st
   feature: null,
 });
 
-export function emisProject(access: "write" | "read-only" = "write"): ProjectSnapshot {
+export function siloProject(access: "write" | "read-only" = "write"): ProjectSnapshot {
   return {
     meta: {
-      id: "emis",
-      key: "EMIS",
-      name: "Emis",
+      id: "silo",
+      key: "SILO",
+      name: "Silo",
       folder: null,
       color: "#0EA5E9",
       worktree: null,
@@ -67,8 +67,8 @@ export function emisProject(access: "write" | "read-only" = "write"): ProjectSna
     workflow: DEFAULT_WORKFLOW,
     pages: [],
     tickets: [
-      ticket("t11", "EMIS-11", "Import des factures", "in_progress"),
-      ticket("t12", "EMIS-12", "Export CSV", "todo"),
+      ticket("t11", "SILO-11", "Import des factures", "in_progress"),
+      ticket("t12", "SILO-12", "Export CSV", "todo"),
     ],
     links: [],
     questions: [],
@@ -76,7 +76,7 @@ export function emisProject(access: "write" | "read-only" = "write"): ProjectSna
     instances: [],
     rules: [],
     bindings: [],
-    nextTicketKey: "EMIS-13",
+    nextTicketKey: "SILO-13",
     sprints: [],
     sync: {
       shared: access !== "write",
@@ -92,10 +92,10 @@ export function projectRun(p: Partial<RunView> = {}): RunView {
   return runFixture({
     id: "pa1",
     kind: "project",
-    projectId: "emis",
+    projectId: "silo",
     ticketId: null,
     ticketKey: null,
-    ticketTitle: "Agent de projet · Emis",
+    ticketTitle: "Agent de projet · Silo",
     profileId: "system:project-agent",
     profileName: "project-agent",
     label: "project-agent",
@@ -122,7 +122,7 @@ const hook = (event: HookPayload["event"], tool: string | null, detail: string |
 const spawned = (id: number, at: number): RunLogEntry => ({
   id,
   at,
-  event: { type: "spawned", pid: 7, resume: id > 3, workspace: "/tmp/emis", guidelines: 0 },
+  event: { type: "spawned", pid: 7, resume: id > 3, workspace: "/tmp/silo", guidelines: 0 },
 });
 
 const exited = (id: number, at: number, result: string): RunLogEntry => ({
@@ -147,9 +147,9 @@ export const CONVERSATION_LOG: RunLogEntry[] = [
   {
     id: 5,
     at: NOW - 28 * MIN,
-    event: { type: "hook", payload: hook("PostToolUse", "mcp__kibo__get_ticket", "EMIS-11") },
+    event: { type: "hook", payload: hook("PostToolUse", "mcp__kibo__get_ticket", "SILO-11") },
   },
-  exited(6, NOW - 27 * MIN, "**EMIS-11** avance ; je propose de le passer en review."),
+  exited(6, NOW - 27 * MIN, "**SILO-11** avance ; je propose de le passer en review."),
   { id: 7, at: NOW - 10 * MIN, event: { type: "answered", text: "Et l'export ?", rank: 0 } },
   spawned(8, NOW - 9 * MIN),
   { id: 9, at: NOW - 8 * MIN, event: { type: "failed", error: "INTERRUPTED: daemon stopped" } },
@@ -163,19 +163,19 @@ const actions: ProposedAction[] = [
     title: "Tests de l'import",
     why: "Couvrir l'import avant la review",
   },
-  { id: 2, type: "setStatus", ticket: "EMIS-11", statusId: "in_review", why: "Le code est prêt" },
+  { id: 2, type: "setStatus", ticket: "SILO-11", statusId: "in_review", why: "Le code est prêt" },
   {
     id: 3,
     type: "updateTicket",
-    ticket: "EMIS-12",
+    ticket: "SILO-12",
     title: "Export CSV des factures",
     why: "Titre plus précis",
   },
-  { id: 4, type: "assignAgent", ticket: "EMIS-12", profileId: "opus", why: "Personne n'y travaille" },
+  { id: 4, type: "assignAgent", ticket: "SILO-12", profileId: "opus", why: "Personne n'y travaille" },
   {
     id: 5,
     type: "createQuestion",
-    ticket: "EMIS-12",
+    ticket: "SILO-12",
     title: "Séparateur ; ou , ?",
     options: ["Point-virgule", "Virgule"],
     why: "Choix d'Adam",
@@ -185,7 +185,7 @@ const actions: ProposedAction[] = [
     id: 7,
     type: "updateNote",
     path: MEMORY_NOTE_PATH,
-    content: "# Mémoire\n- EMIS-11 en review",
+    content: "# Mémoire\n- SILO-11 en review",
     why: "Mémoire",
   },
 ];
@@ -193,11 +193,11 @@ const actions: ProposedAction[] = [
 export function pendingBatch(p: Partial<Batch> = {}): Batch {
   return {
     id: "b1",
-    projectId: "emis",
+    projectId: "silo",
     runId: "pa1",
     sessionId: "s-pa1",
     seq: 1,
-    summary: "Passer EMIS-11 en review et lancer l'export",
+    summary: "Passer SILO-11 en review et lancer l'export",
     actions,
     expected: [
       { actionId: 2, fields: { statusId: "in_progress" } },
@@ -225,7 +225,7 @@ export function partialBatch(): Batch {
     decidedAt: NOW - 35 * MIN,
     chosen: [1, 2, 3, 4, 6],
     results: [
-      { actionId: 1, outcome: "applied", detail: null, created: { ticketId: "t13", key: "EMIS-13" } },
+      { actionId: 1, outcome: "applied", detail: null, created: { ticketId: "t13", key: "SILO-13" } },
       { actionId: 2, outcome: "applied", detail: null, created: null },
       { actionId: 3, outcome: "stale", detail: "titre modifié depuis la proposition", created: null },
       { actionId: 4, outcome: "failed", detail: "profil désactivé", created: null },
@@ -237,7 +237,7 @@ export function partialBatch(): Batch {
 }
 
 export const session = (p: Partial<ProjectAgentSession> = {}): ProjectAgentSession => ({
-  projectId: "emis",
+  projectId: "silo",
   runId: "pa1",
   sessionId: "s-pa1",
   startedAt: NOW - 30 * MIN,
@@ -292,7 +292,7 @@ const asked = (id: string, ticketId: string, title: string, recipient: string): 
 
 export function questionsProject(): ProjectSnapshot {
   return {
-    ...emisProject(),
+    ...siloProject(),
     questions: [
       asked("q-logo", "t11", "Client - Logo ?", "client"),
       asked("q-port", "t12", "Quel port ?", "me"),

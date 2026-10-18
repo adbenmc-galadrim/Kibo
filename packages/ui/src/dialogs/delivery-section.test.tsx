@@ -10,7 +10,7 @@ let agents: AgentSummary[] = [];
 let userHome: string | null = "/Users/adam";
 const AGENTS = [
   summaryFixture({ name: "full-delivery" }),
-  summaryFixture({ name: "emis-livraison" }),
+  summaryFixture({ name: "silo-livraison" }),
   summaryFixture({ name: "review-pr", settings: { enabled: false } }),
   systemSummaryFixture("assistant"),
 ];
@@ -30,24 +30,24 @@ mock.module("../api", () =>
 
 const { DeliverySection } = await import("./DeliverySection");
 
-const EMIS: ProjectDelivery = {
+const SILO: ProjectDelivery = {
   ...EMPTY_DELIVERY,
-  root: "/Users/adam/Documents/emis",
-  profile: "/Users/adam/.claude/skills/full-delivery/projects/emis.md",
+  root: "/Users/adam/Documents/silo",
+  profile: "/Users/adam/.claude/skills/full-delivery/projects/silo.md",
   idPattern: "^C\\d+(-\\d+)?$",
   publication: "draft",
   allow: ["Bash(pnpm *)"],
-  addDirs: ["/Users/adam/Documents/emis"],
+  addDirs: ["/Users/adam/Documents/silo"],
 };
 
-const draw = (value: ProjectDelivery | null = EMIS) => {
+const draw = (value: ProjectDelivery | null = SILO) => {
   const changes: (ProjectDelivery | null)[] = [];
   const problems: (string | null)[] = [];
   render(
     <DeliverySection
       value={value}
       worktree={null}
-      projectId="emis"
+      projectId="silo"
       disabled={false}
       onChange={(next) => changes.push(next)}
       onProblem={(p) => problems.push(p)}
@@ -87,13 +87,13 @@ test("screen 215: the delivery section shows every field of the project's settin
       "full-delivery (par défaut)",
     ),
   );
-  expect((await field("Dossier de travail du skill")).value).toBe("~/Documents/emis");
-  expect((await field("Profil")).value).toBe("~/.claude/skills/full-delivery/projects/emis.md");
+  expect((await field("Dossier de travail du skill")).value).toBe("~/Documents/silo");
+  expect((await field("Profil")).value).toBe("~/.claude/skills/full-delivery/projects/silo.md");
   for (const name of ["Mémoire", "Briefs", "Rapports", "TODO"]) expect((await field(name)).value).toBe("");
   expect((await field("Format des identifiants")).value).toBe("^C\\d+(-\\d+)?$");
   expect(s.getByRole("combobox", { name: "Publication" }).textContent).toBe("Brouillon (draft)");
   expect((await field("Règles ajoutées aux runs")).value).toBe("Bash(pnpm *)");
-  expect((await field("Dossiers supplémentaires")).value).toBe("~/Documents/emis");
+  expect((await field("Dossiers supplémentaires")).value).toBe("~/Documents/silo");
   expect(s.getByRole("button", { name: "Importer depuis full-delivery" })).toBeTruthy();
 });
 
@@ -104,9 +104,9 @@ test("the delivery agent lists the assignable agents after the default", async (
   s.getByRole("combobox", { name: "Agent de livraison" }).focus();
   await user.keyboard("{Enter}");
   const options = (await screen.findAllByRole("option")).map((o) => o.textContent);
-  expect(options).toEqual(["full-delivery (par défaut)", "full-delivery", "emis-livraison"]);
-  await user.click(screen.getByRole("option", { name: "emis-livraison" }));
-  expect(changes.at(-1)?.agent).toBe("global:emis-livraison");
+  expect(options).toEqual(["full-delivery (par défaut)", "full-delivery", "silo-livraison"]);
+  await user.click(screen.getByRole("option", { name: "silo-livraison" }));
+  expect(changes.at(-1)?.agent).toBe("global:silo-livraison");
 });
 
 test("without a global full-delivery agent, no agent reads « Aucun »", async () => {
@@ -120,10 +120,10 @@ test("without a global full-delivery agent, no agent reads « Aucun »", async (
 
 test("a tilde is expanded when the path is saved", async () => {
   const { changes } = draw(null);
-  fireEvent.change(await field("Mémoire"), { target: { value: "~/Documents/emis/memory/MEMORY.md" } });
+  fireEvent.change(await field("Mémoire"), { target: { value: "~/Documents/silo/memory/MEMORY.md" } });
   expect(changes.at(-1)).toEqual({
     ...EMPTY_DELIVERY,
-    memory: "/Users/adam/Documents/emis/memory/MEMORY.md",
+    memory: "/Users/adam/Documents/silo/memory/MEMORY.md",
   });
 });
 
@@ -149,7 +149,7 @@ test("rules are refused with the text of the agent rules", async () => {
 });
 
 test("emptying every field stores nothing", async () => {
-  const { changes } = draw({ ...EMPTY_DELIVERY, root: "/Users/adam/Documents/emis" });
+  const { changes } = draw({ ...EMPTY_DELIVERY, root: "/Users/adam/Documents/silo" });
   fireEvent.change(await field("Dossier de travail du skill"), { target: { value: "" } });
   expect(changes.at(-1)).toBeNull();
 });

@@ -123,10 +123,10 @@ test("the Créations screen sits under Composants, whose crumb opens the compone
   ]);
 });
 
-test("a feature sits under the Planning page: « Emis / Planning / F5 · title »", async () => {
-  const { emisFeatureProject } = await import("./feature/fixture");
-  const base = emisFeatureProject();
-  const emis: ProjectSnapshot = {
+test("a feature sits under the Planning page: « Silo / Planning / F5 · title »", async () => {
+  const { siloFeatureProject } = await import("./feature/fixture");
+  const base = siloFeatureProject();
+  const silo: ProjectSnapshot = {
     ...base,
     pages: [{ id: "p-plan", title: "Planning", kind: "view", parentId: null }],
     instances: [
@@ -140,18 +140,18 @@ test("a feature sits under the Planning page: « Emis / Planning / F5 · title �
       },
     ],
   };
-  const project = { kind: "project", projectId: "emis" } as const;
+  const project = { kind: "project", projectId: "silo" } as const;
   expect(
-    crumbsFor({ kind: "ticket", projectId: "emis", ticketId: "f5" }, { project: emis, branch: null }),
+    crumbsFor({ kind: "ticket", projectId: "silo", ticketId: "f5" }, { project: silo, branch: null }),
   ).toEqual([
-    { label: "Emis", target: project, color: "#14B8A6" },
-    { label: "Planning", target: { kind: "page", projectId: "emis", pageId: "p-plan" } },
-    { label: "F5 · Envoyer les photos d'un tronçon", target: null },
+    { label: "Silo", target: project, color: "#14B8A6" },
+    { label: "Planning", target: { kind: "page", projectId: "silo", pageId: "p-plan" } },
+    { label: "F5 · Envoyer les photos d'un constat", target: null },
   ]);
   expect(
-    crumbsFor({ kind: "ticket", projectId: "emis", ticketId: "f5" }, { project: base, branch: null }),
+    crumbsFor({ kind: "ticket", projectId: "silo", ticketId: "f5" }, { project: base, branch: null }),
   ).toEqual([
-    { label: "Emis", target: project, color: "#14B8A6" },
-    { label: "F5 · Envoyer les photos d'un tronçon", target: null },
+    { label: "Silo", target: project, color: "#14B8A6" },
+    { label: "F5 · Envoyer les photos d'un constat", target: null },
   ]);
 });

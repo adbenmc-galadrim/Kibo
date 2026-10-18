@@ -21,8 +21,8 @@ const LABELS: DiffLabels = {
 const TABLE = [
   "| Ordre | Ticket | Attend |",
   "|---|---|---|",
-  "| 1 | EMIS-15, compte non provisionné (écran 1.2) | EMIS-14 |",
-  "| 2 | EMIS-76, back-office utilisateurs (écran 10.0) | EMIS-15 |",
+  "| 1 | SILO-15, compte non provisionné (écran 1.2) | SILO-14 |",
+  "| 2 | SILO-76, back-office utilisateurs (écran 10.0) | SILO-15 |",
 ].join("\n");
 
 const moment = (data: MomentData): RunMoment => ({
@@ -79,6 +79,6 @@ test("the project agent chat shows tables with ticket keys that open the ticket"
     />,
   );
   const table = await expectTable(container);
-  fireEvent.click(within(table).getByRole("button", { name: "EMIS-14" }));
-  expect(opened).toEqual(["EMIS-14"]);
+  fireEvent.click(within(table).getByRole("button", { name: "SILO-14" }));
+  expect(opened).toEqual(["SILO-14"]);
 });

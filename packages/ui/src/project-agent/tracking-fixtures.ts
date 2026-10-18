@@ -20,13 +20,13 @@ export function trackingProject(): ProjectSnapshot {
   if (!f5 || !f9) throw new Error("fixture without tickets");
   return {
     ...base,
-    sprints: [sprint("s42", "S42", "Terrain hors ligne"), sprint("s44", "S44", "Clôture")],
+    sprints: [sprint("s42", "S42", "Saisie hors ligne"), sprint("s44", "S44", "Clôture")],
     tickets: [
-      { ...f5, key: "EMIS-30", keyLabel: "EMIS-30", shortKey: "F5", sprintId: "s42" },
-      { ...f9, key: "EMIS-50", keyLabel: "EMIS-50", shortKey: "F9", sprintId: null },
+      { ...f5, key: "SILO-30", keyLabel: "SILO-30", shortKey: "F5", sprintId: "s42" },
+      { ...f9, key: "SILO-50", keyLabel: "SILO-50", shortKey: "F9", sprintId: null },
     ],
     questions: base.questions.map((q) =>
-      q.id === "q-logo" ? { ...q, importRef: { kind: "import_ref", source: "emis", id: "Q14" } } : q,
+      q.id === "q-logo" ? { ...q, importRef: { kind: "import_ref", source: "silo", id: "Q14" } } : q,
     ),
   };
 }
@@ -35,11 +35,11 @@ export const TRACKING_ACTIONS: ProposedAction[] = [
   {
     id: 1,
     type: "setSprint",
-    ticket: "EMIS-30",
+    ticket: "SILO-30",
     sprint: "S43",
     why: "4 étapes restantes, S42 finit aujourd'hui",
   },
-  { id: 2, type: "setSprint", ticket: "EMIS-50", sprint: "S44", why: "seule fonctionnalité à planifier" },
+  { id: 2, type: "setSprint", ticket: "SILO-50", sprint: "S44", why: "seule fonctionnalité à planifier" },
   { id: 3, type: "remindQuestion", questionId: "q-logo", why: "bloque F6, prévue en S43" },
 ];
 

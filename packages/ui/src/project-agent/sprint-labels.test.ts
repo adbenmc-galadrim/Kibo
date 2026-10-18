@@ -6,7 +6,7 @@ import { trackingProject } from "./tracking-fixtures";
 test("sprint actions form the Sprints group, right after Tickets", () => {
   const actions: ProposedAction[] = [
     { id: 1, type: "remindQuestion", questionId: "q-logo", why: "" },
-    { id: 2, type: "setSprint", ticket: "EMIS-30", sprint: "S43", why: "" },
+    { id: 2, type: "setSprint", ticket: "SILO-30", sprint: "S43", why: "" },
     { id: 3, type: "createTicket", ref: "new:1", title: "Tests", why: "" },
     {
       id: 4,
@@ -28,13 +28,13 @@ test("sprint actions form the Sprints group, right after Tickets", () => {
 test("sprint and reminder actions are named with the short key, the sprint codes and the recipient", () => {
   const labels = projectLabels(trackingProject());
   const title = (action: ProposedAction) => actionTitle(action, labels);
-  expect(title({ id: 1, type: "setSprint", ticket: "EMIS-30", sprint: "S43", why: "" })).toBe(
+  expect(title({ id: 1, type: "setSprint", ticket: "SILO-30", sprint: "S43", why: "" })).toBe(
     "Reporter F5 en S43",
   );
-  expect(title({ id: 1, type: "setSprint", ticket: "EMIS-50", sprint: "S44", why: "" })).toBe(
+  expect(title({ id: 1, type: "setSprint", ticket: "SILO-50", sprint: "S44", why: "" })).toBe(
     "Planifier F9 en S44",
   );
-  expect(title({ id: 1, type: "setSprint", ticket: "EMIS-50", sprint: null, why: "" })).toBe(
+  expect(title({ id: 1, type: "setSprint", ticket: "SILO-50", sprint: null, why: "" })).toBe(
     "Retirer F9 du planning",
   );
   expect(
@@ -57,8 +57,8 @@ test("sprint and reminder actions are named with the short key, the sprint codes
   expect(title({ id: 1, type: "remindQuestion", questionId: "gone", why: "" })).toBe(
     "Relancer « question introuvable »",
   );
-  expect(actionTitle({ id: 1, type: "setSprint", ticket: "EMIS-30", sprint: "S43", why: "" })).toBe(
-    "Planifier EMIS-30 en S43",
+  expect(actionTitle({ id: 1, type: "setSprint", ticket: "SILO-30", sprint: "S43", why: "" })).toBe(
+    "Planifier SILO-30 en S43",
   );
 });
 

@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import type { ProjectCommand } from "@kibo/schema";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { emisFeatureProject } from "../shell/feature/fixture";
+import { siloFeatureProject } from "../shell/feature/fixture";
 import { OptionalToggle } from "./OptionalToggle";
 import type { TicketCommand } from "./use-ticket-command";
 
@@ -20,7 +20,7 @@ const command: TicketCommand = {
 };
 
 const find = (id: string) => {
-  const t = emisFeatureProject().tickets.find((x) => x.id === id);
+  const t = siloFeatureProject().tickets.find((x) => x.id === id);
   if (!t) throw new Error(`fixture without ${id}`);
   return t;
 };
