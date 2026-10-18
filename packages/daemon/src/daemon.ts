@@ -5,6 +5,7 @@ import type { Orchestrator } from "./agents/orchestrator";
 import { withSignalCounts } from "./agents-rpc";
 import type { DraftAssets } from "./ai/draft-preview";
 import { backupsRpc } from "./backups/rpc";
+import { declareRefRpc } from "./code/declare-ref";
 import { startCollab } from "./collab/bootstrap";
 import { removeDaemonInfo, writeDaemonInfo } from "./components/daemon-info";
 import { componentTrustGuard } from "./components/trust-guard";
@@ -195,6 +196,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       backupsRpc(local.backups),
       app.rpc,
       ...tracking.rpc,
+      declareRefRpc(service),
       tutorial.rpc,
       projectAgent.agent.rpc,
       visibility.rpc,
