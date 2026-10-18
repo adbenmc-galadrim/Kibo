@@ -176,6 +176,7 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
         )}
         {mode.kind === "tracking" && (
           <TrackingView
+            key={view?.session?.runId ?? null}
             projectId={projectId}
             projectName={project.meta.name}
             items={items}
