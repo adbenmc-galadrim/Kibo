@@ -204,9 +204,14 @@ test("créer un projet : cinq pages et six sprints", async ({ page }, info) => {
   await shot(page, info, "projet-cree");
 
   const sprints = cliSprints(homeOf(info), "CT");
-  expect(sprints.map((s) => s.code)).toEqual(["S1", "S2", "S3", "S4", "S5", "S6"]);
-  expect(sprints[0]).toEqual({ code: "S1", start: "2026-10-19", end: "2026-10-23" });
-  expect(sprints[5]).toEqual({ code: "S6", start: "2026-11-23", end: "2026-11-27" });
+  expect(sprints).toEqual([
+    { code: "S1", start: "2026-10-19", end: "2026-10-23" },
+    { code: "S2", start: "2026-10-26", end: "2026-10-30" },
+    { code: "S3", start: "2026-11-02", end: "2026-11-06" },
+    { code: "S4", start: "2026-11-09", end: "2026-11-13" },
+    { code: "S5", start: "2026-11-16", end: "2026-11-20" },
+    { code: "S6", start: "2026-11-23", end: "2026-11-27" },
+  ]);
 
   const again = await fillNewProject(page, { name: "Chantier bis", key: "CT" });
   await expect(again.getByText("Clé déjà prise")).toBeVisible();
