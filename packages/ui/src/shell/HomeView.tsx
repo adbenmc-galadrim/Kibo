@@ -6,9 +6,8 @@ import { useId } from "react";
 import { fr } from "../i18n/fr";
 import { frHome } from "../i18n/fr-home";
 import { navigate } from "../route";
-import { useNow } from "../state/use-agents";
 import { type HomeCard, type HomeCounts, homeCard } from "./home-cards";
-import { localDay } from "./sprint/sprint-facts";
+import { useDaemonToday } from "./use-daemon-today";
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -17,6 +16,15 @@ function Count({ statusId, value, label }: { statusId: StatusId; value: number; 
     <span className="inline-flex items-center gap-1.5">
       <StatusDot statusId={statusId} />
       <span className="text-xs font-medium text-foreground">{value}</span> {label}
+    </span>
+  );
+}
+
+function RiskCount({ value }: { value: number }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-(--tracking-amber)">
+      <span aria-hidden data-tone="amber" className="inline-block size-2 shrink-0 rounded-full bg-current" />
+      <span className="text-xs font-medium">{value}</span> {frHome.risk(value)}
     </span>
   );
 }
@@ -41,6 +49,7 @@ function CardCounts({ counts, color }: { counts: HomeCounts; color: string }) {
         <Count statusId="todo" value={counts.open} label={frHome.open(counts.open)} />
         <Count statusId="blocked" value={counts.blocked} label={frHome.blocked(counts.blocked)} />
         {counts.late > 0 && <Count statusId="blocked" value={counts.late} label={frHome.late(counts.late)} />}
+        {counts.risk > 0 && <RiskCount value={counts.risk} />}
         {counts.sprint !== null && (
           <span className="ml-auto whitespace-nowrap">{frHome.sprint(counts.sprint)}</span>
         )}
@@ -121,8 +130,7 @@ export function HomeView({
   onNewProject,
   onOpenInbox,
 }: HomeViewProps) {
-  const liveNow = useNow(60_000);
-  const today = localDay(fixedNow ?? liveNow);
+  const today = useDaemonToday(fixedNow);
   const cards = projects.map((p) => homeCard(p, snapshots.get(p.id), today));
   const openTickets = cards.reduce((n, c) => n + (c.counts?.open ?? 0), 0);
   return (

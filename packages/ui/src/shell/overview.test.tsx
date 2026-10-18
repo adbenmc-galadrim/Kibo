@@ -51,6 +51,7 @@ test("the home card names what it counts: tickets, then features", async () => {
   expect(await countOf(card, "tickets ouverts")).toBe("7 tickets ouverts");
   expect(await countOf(card, "bloqués")).toBe("5 bloqués");
   expect(await countOf(card, "fonctionnalité en retard")).toBe("1 fonctionnalité en retard");
+  expect(within(card).queryByText(/à risque/)).toBeNull();
   expect(within(card).getByText("Sprint S42")).toBeTruthy();
   expect(within(card).getByRole("progressbar", { name: "1 terminé sur 8" })).toBeTruthy();
   expect(screen.getByText("1 projet · 7 tickets ouverts")).toBeTruthy();

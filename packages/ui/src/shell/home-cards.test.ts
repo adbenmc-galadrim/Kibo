@@ -13,7 +13,7 @@ test("homeCard gives the key, the client and the counts of the project", () => {
     name: "Emis",
     color: "#14B8A6",
     client: "Emis SA",
-    counts: { open: 7, blocked: 5, late: 1, sprint: "S42", done: 1, total: 8 },
+    counts: { open: 7, blocked: 5, late: 1, risk: 0, sprint: "S42", done: 1, total: 8 },
   });
 });
 
@@ -48,4 +48,9 @@ test("homeCard reads the live project and waits for its snapshot to count", () =
   const renamed = { ...snapshot, meta: { ...snapshot.meta, client: null, name: "Emis 2" } };
   expect(homeCard(project, renamed, HOME_TODAY)).toMatchObject({ name: "Emis 2", client: null });
   expect(homeCard(project, undefined, HOME_TODAY)).toMatchObject({ client: "Emis SA", counts: null });
+});
+
+test("during its sprint a feature is at risk, after its end it is late, like the overview", () => {
+  expect(homeCard(project, snapshot, "2026-10-16").counts).toMatchObject({ late: 0, risk: 1 });
+  expect(homeCard(project, snapshot, HOME_TODAY).counts).toMatchObject({ late: 1, risk: 0 });
 });
