@@ -74,7 +74,7 @@ KIB-11 `area:securite`, `phase:p1`, `urgent` · KIB-7 `area:ui`. Branche de KIB-
 
 ## Questions (phase 17)
 
-Les deux décisions d'EMIS-11, transposées : posées par opus-dev-2 sur KIB-14 par `ask_question`, options Oui / Non, provisoire « Non » pour les deux.
+Les deux décisions du ticket SILO-11, transposées : posées par opus-dev-2 sur KIB-14 par `ask_question`, options Oui / Non, provisoire « Non » pour les deux.
 
 | Ticket | Question | Par | Options · provisoire | État |
 |---|---|---|---|---|
@@ -153,7 +153,7 @@ l'agent, provisoire Non) ; « Faut-il garder l'historique des tickets supprimés
 lui-même les règles d'automatisation ? » (KIB-16, Client) avec la réponse collée « Oui pour les règles simples (statut, assignation). Les règles qui
 touchent la facturation restent chez Adam. — Claire, côté client ». Filtre Client : « Exporter tout (2) ».
 
-Graphe (188 à 188d) : projet de la taille d'Emis repris de `32e-graphe-lisible.js` (69 tickets, 38 ouverts sur 5 vagues, 31 terminés repliés,
+Graphe (188 à 188d) : projet de la taille de Silo repris de `32e-graphe-lisible.js` (69 tickets, 38 ouverts sur 5 vagues, 31 terminés repliés,
 6 démarrables, chapitres C0 à C9, 36 liens tracés et 24 implicites masqués, focus sur KIB-65). Kanban 188k : « Démarrable » sur KIB-22 et KIB-9 ;
 KIB-18 (en file #2) et KIB-15 (attend KIB-12) ne le sont pas.
 
@@ -369,3 +369,195 @@ Encart « Comment les agents sont configurés » : Workspace → Projet du ticke
 Fiche **KIB-14** « Récepteur de hooks Claude Code », domaine **Démon** ; sélecteur : « Aucun », « Domaines de Kibo » (Sync, UI, CI, Démon),
 « Domaines du workspace » (Sécurité). « Modifier le projet » de Kibo (`~/code/kibo`) : « 7 fichiers .md · 4 domaines ».
 
+
+## Projet Silo (phase 28)
+
+Projet fictif de suivi : une application de location de box en libre-service (centres, box, constats avec photos, contrats,
+import Excel, rapport journalier, dossier client). Il sert aux tests, aux semis E2E, au projet de démonstration, aux textes
+d'aide, aux maquettes du redesign (pages 35 et 36, Proposition, Choix) et aux docs. Date des écrans : vendredi 16 octobre 2026,
+14:52 (S42). Colonne « Δ » : écart de longueur, en caractères, admis pour la mise en page des maquettes (0 = même largeur que le
+texte déjà dessiné, ±3 au plus pour un titre).
+
+### Identité
+
+| Champ | Valeur |
+|---|---|
+| Nom | Silo |
+| Clé | `SILO` (tickets `SILO-45`) |
+| Description, sous-titre | Location de box (Δ −2) |
+| Client | Silo SA (« client Silo SA », « Questions pour Silo SA · 16 oct. 2026 ») |
+| Dépôt | `https://github.com/silo-labs/silo-location` (remote `silo-labs/silo-location`, `git@github.com:silo-labs/silo-location.git`, PR `…/silo-location/pull/<n>`) |
+| Branche de base | `dev` |
+| Dossier | `/Users/adam/Documents/silo` (`~/Documents/silo`, `~/Documents/silo/delivery-profile.md`, `~/Documents/silo/TODO.md`, `~/Documents/silo/kibo-notes/briefs`) |
+| Worktrees | `../silo-{slug}`, `~/Documents/silo/silo-{dashed}`, `/home/dev/projects/silo/silo-feat-compte` |
+| Couleur | `#14B8A6` |
+| Workspace | Galadrim |
+| Scénario du faux `claude` | `e2e/agents/scenarios/silo-maquettes.json` (nom `silo-maquettes`) |
+| Dernier ticket | 93 ; étape de livraison « Livré » = 11 |
+| Pages | Vue d'ensemble, Planning, Tickets, Kanban, Graphe, Notes, Questions |
+| Identifiants | `SILO_…` pour les constantes, `silo…` / `Silo…` en camelCase (`siloKey`, `seedSiloMaquettes`, `siloPageUrl`, `siloGhState`) |
+
+Autres projets de la barre latérale, dans cet ordre : Silo `#14B8A6`, Kibo (KIB) `#6366F1`, **Atlas** (ATL, `atlas`) `#84CC16`,
+**Nimbus** (NIM, `nimbus`) `#EC4899`.
+Registre `full-delivery` des tests (trois projets, même forme partout) :
+
+| Projet | Format du plan | Dépôt | Base | Dossier | Particularités |
+|---|---|---|---|---|---|
+| `atlas` | `plan-data-js` | `acme/atlas` | `staging` | `~/Documents/atlas` | tableau sur le port 4848 ; worktrees `~/Documents/atlas/atlas-{slug}`, copie depuis `~/Documents/atlas/atlas-staging`, puis `~/Documents/atlas/bin/atlas-sweep --reap --keep {slug} --yes` |
+| `nimbus` | `plan-data-js` | `acme/nimbus` | `main` | `~/Documents/nimbus` | `env.ports` ; base `nimbus_{slug_}`, conteneur `nimbus-postgres`, worktrees `~/Documents/nimbus/nimbus-{slug}` |
+| `silo` | `kibo` (projet `SILO`) | `silo-labs/silo-location` | `dev` | `~/Documents/silo` | tableau sur le port 4858 ; `env.ports` ; détail `~/Documents/silo/archive-2026-10-08/plan-data.js`, notes `~/Documents/silo/kibo-notes/{briefs,revues}`, worktrees `~/Documents/silo/silo-{dashed}` |
+
+Boîte de réception : « Relire le compte rendu de la réunion client », « Idée : export CSV des contrats ».
+
+### Personnes
+
+| Rôle | Valeur |
+|---|---|
+| Utilisateur | Adam |
+| Destinataires par défaut | Moi (tech), Produit, Silo SA (« Client » dans les listes) |
+| Personnes nommées (exemples de destinataires) | Camille, Malik, Léa |
+
+### Sprints
+
+| Code | Nom | Δ | Dates | État au 16 oct. |
+|---|---|---|---|---|
+| S41 | Accès | 0 | 5-9 oct. (2026-10-05 → 2026-10-09) | terminé |
+| S42 | Saisie hors ligne | −1 | 12-16 oct. | en cours, finit ce soir |
+| S43 | Import et contrats | 0 | 19-23 oct. | à venir |
+| S44 | Rapports | 0 | 26-30 oct. | à venir |
+
+Projet neuf (dialogue « Nouveau projet ») : 6 sprints d'une semaine, S1 19-23 oct., S2 26-30 oct., S3 2-6 nov., S4 9-13 nov.,
+S5 16-20 nov., S6 23-27 nov. 2026.
+
+### Fonctionnalités et étapes
+
+Ordre des racines : 1, 9, 17, 40, 30, 50, 61, 62, 70, 80, 90. Étape de livraison des étapes terminées : 11 (« Livré »).
+Les PR sont décrites plus bas.
+
+| Fonctionnalité | Ticket | Titre | Δ | Sprint | Étapes (n° · titre · statut · étape de livraison · PR) |
+|---|---|---|---|---|---|
+| F1 | 1 | Se connecter avec Microsoft | 0 | S41 | 2 Application Azure · 3 Route de connexion · 4 Écran de connexion · 5 Démo client : terminées |
+| F2 | 9 | Voir ses box affectés | 0 | S41 | 10 Modèle des affectations · 11 Périmètre côté serveur · 12 Règles de synchro · 13 Liste des box · 14 Démo client : terminées |
+| F3 | 17 | Réaffecter un box | 0 | S42 | 18 Historique des affectations · 19 Route de réaffectation · 20 Écran de réaffectation · 21 Démo client (PR #18) : terminées |
+| F4 | 40 | Saisir un constat hors ligne | 0 | S42 | 41 Schéma local des constats (PR #12) · 42 Formulaire de saisie (#14) · 43 Synchro au retour du réseau (#16) : terminées ; 45 Conflits de saisie, en review, étape 9, PR #20, branche `feat/silo-45`, à moi ; 46 Démo client, à faire, à moi, facultative |
+| F5 | 30 | Envoyer les photos d'un constat | 0 | S42 | 31 Stockage des photos sur MinIO (PR #19) : terminée ; 32 Route d'envoi des photos, en review, étape 10, PR #22, à moi ; 33 Écran d'envoi hors ligne, en cours, étape 7, branche `feat/envoi-hors-ligne`, à moi ; 34 Tests E2E de l'envoi, à faire, à moi ; 35 Démo client, à faire, à moi |
+| F6 | 50 | Importer les box depuis Excel | 0 | S43 | 51 Lecture du fichier Excel (à faire, étape 3) · 52 Contrôle des numéros · 53 Écran d'import · 54 Démo client : à faire |
+| F7 | 80 | Rapport de centre journalier | −2 | S44 | 81 Modèle du rapport · 82 Génération PDF · 83 Photos dans le rapport · 84 Envoi le soir · 85 Démo client : à faire |
+| F8 | 70 | Valider les contrats par lot | 0 | S43 | 71 Statuts de contrat · 72 Sélection multiple · 73 Validation par lot · 74 Démo client : à faire |
+| F9 | 90 | Exporter le dossier client | 0 | à planifier | 91 Format du dossier · 92 Archive ZIP · 93 Démo client : à faire |
+
+Résultats attendus :
+- F4 : « Sans réseau, un chef de centre saisit un constat ; la saisie remonte seule au retour du réseau. » (Δ −2)
+- F5 : « Dans un centre sans réseau, un chef de centre photographie un constat. Les photos partent seules au retour du réseau et
+  apparaissent dans le dossier du client. » (Δ −6, texte sur deux lignes)
+
+Description du ticket 45 : « Deux saisies hors ligne du même constat : garder la plus récente et signaler l'autre au chef de
+centre au retour du réseau. » (Δ −2).
+Livraisons récentes, dans l'ordre : 42, 43, 31, 21, 32, 45, 33.
+
+### Tickets libres
+
+| Ticket | Titre | Statut | Sprint | PR |
+|---|---|---|---|---|
+| SILO-61 | Passage à Expo SDK 54 | en review | S42 | #23 |
+| SILO-62 | Journal des erreurs avec Sentry | à faire | à planifier | aucune |
+
+### Liens
+
+Entre étapes : 33 → 34, 34 → 35.
+Entre fonctionnalités : F2 → F3, F2 → F4, F3 → F5, F2 → F6, F4 → F8, F4 → F7, F5 → F7, F7 → F9.
+
+### Questions
+
+| Question | Ticket | Titre | Δ | Destinataire | Bloquante |
+|---|---|---|---|---|---|
+| Q14 | SILO-51 | Un box réaffecté garde-t-il ses photos ? | 0 | Client | oui (bloque F6, prévue en S43) |
+| Q16 | SILO-34 | Quota par client : 2 Go ou 5 Go ? | −1 | Produit | non |
+| Q17 | SILO-81 | Un rapport par chef de centre ou par client ? | −3 | Client | non |
+
+### PR
+
+| PR | Ticket | État | Review | CI |
+|---|---|---|---|---|
+| #12 | SILO-41 | fusionnée | approuvée | verte |
+| #14 | SILO-42 | fusionnée | approuvée | verte |
+| #16 | SILO-43 | fusionnée | approuvée | verte |
+| #18 | SILO-21 | fusionnée (livre F3) | approuvée | verte |
+| #19 | SILO-31 | fusionnée | approuvée | verte |
+| #20 | SILO-45 | ouverte, en retard | changements demandés | rouge |
+| #22 | SILO-32 | ouverte | aucune | verte |
+| #23 | SILO-61 | ouverte | aucune | en cours |
+
+### Suivi et agent de projet
+
+Sessions T3 Code sur SILO-33 (« 7 · Porte qualité », depuis 42 min) et SILO-45. Demande à l'agent : « Fais le point du jour ».
+Résumé du jour : « F3 est livrée : 3 fonctionnalités sur 9. » puis « S42 finit ce soir et F5 n'y tiendra pas : il lui reste
+4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. »
+
+Lot n° 7 (trois actions) :
+1. SILO-30 (F5) vers S43 : « 4 étapes restantes, S42 finit aujourd'hui ».
+2. SILO-90 (F9) vers S44 : « seule fonctionnalité à planifier ».
+3. Relancer Q14 : « bloque F6, prévue en S43 ».
+
+Clôture du jour : PR #18 fusionnée (livre F3), SILO-33 à l'étape 7, PR #22 ouverte sur SILO-32. Derniers faits du journal, du
+plus ancien au plus récent : `pr_merged` SILO-21 (#18, F3), `batch_proposed` (lot n° 7), `step_set` SILO-33 (étape 7),
+`pr_opened` SILO-32 (#22).
+
+### Pistes A, B, C (`design/redesign/scripts/02-data.js`)
+
+Projet : 41 tickets terminés sur 68, 27 ouverts (3 en cours, 4 en review, 1 bloqué, 19 à faire), 3 questions, « ven. 16 oct. », S42.
+
+| Ensemble | Ticket | Titre | Δ | Avancement | Échéance | Ligne |
+|---|---|---|---|---|---|---|
+| C0 | SILO-1 | Socle et déploiement | 0 | 12/12 | 3 oct. | |
+| C1 | SILO-9 | Connexion et comptes | 0 | 8/8 | 10 oct. | |
+| C2 | SILO-17 | Périmètre et affectations | 0 | 4/6 | lun. 19 oct. | Chaque chef de centre ne voit que ses box. (Δ −2) |
+| C3 | SILO-36 | Saisie des box et constats | 0 | 9/14 | ven. 23 oct. | Saisie hors ligne, contrats et import Excel. |
+| C4 | SILO-30 | Fichiers et photos | 0 | 1/5 | ven. 30 oct. | Photos de constat, aperçu hors ligne, quotas. |
+| C5 | SILO-50 | Rapports de centre | −2 | 0/6 | ven. 13 nov. | Rapport journalier PDF et export client. |
+
+| Ticket | Ensemble | Titre | Δ | Statut | Git | Étape | Mis à jour | Échéance |
+|---|---|---|---|---|---|---|---|---|
+| SILO-23 | C2 | 404 indiscernable hors périmètre | 0 | En cours | `feat/perimetre-404`, session | 6 | il y a 4 min | 19 oct. |
+| SILO-33 | C4 | Aperçu des photos hors ligne | 0 | En cours | `feat/apercu-hors-ligne`, session | 7 | il y a 9 min | 30 oct. |
+| SILO-22 | C2 | Périmètre côté serveur et côté synchro | 0 | En review | PR #21, 2 commentaires, CI verte | 9 | il y a 26 min | 19 oct. |
+| SILO-32 | C4 | Envoi des photos de constat | 0 | En review | PR #22, CI verte | 10 | il y a 1 h | 30 oct. |
+| SILO-41 | C3 | Saisie d'un constat hors ligne | 0 | En review | PR #20, changements demandés, CI rouge | 9 | il y a 3 h | 23 oct. |
+| SILO-60 | — | Passage à Expo SDK 54 | 0 | En review | PR #23, CI en cours | — | il y a 5 h | — |
+| SILO-43 | C3 | Validation des contrats par lot | 0 | En cours | `feat/contrats-lot` | 4 | il y a 5 h | 23 oct. |
+| SILO-44 | C3 | Import des box depuis Excel | 0 | Bloqué | attend Q14 | 3 | hier | 23 oct. |
+| SILO-21 | C2 | Réaffectation d'un box | 0 | Terminé | PR #18 fusionnée | 11 | il y a 2 h | — |
+| SILO-31 | C4 | Stockage des fichiers sur MinIO | 0 | Terminé | PR #19 fusionnée | 11 | hier | — |
+| SILO-34 | C4 | Quotas de stockage par client | −1 | À faire | attend SILO-32 | — | hier | 30 oct. |
+| SILO-46 | C3 | Recherche d'un box par numéro | 0 | À faire | — | — | mar. 13 | 23 oct. |
+| SILO-35 | C4 | Purge des fichiers orphelins | 0 | À faire | — | — | lun. 12 | 30 oct. |
+| SILO-52 | C5 | Rapport journalier en PDF | 0 | À faire | attend SILO-23 | — | lun. 12 | 6 nov. |
+
+Questions des pistes : Q14 sur SILO-44 (Client, il y a 3 j, bloquante), Q16 sur SILO-34 (Produit, hier), Q17 sur SILO-52 (Client,
+il y a 2 h), mêmes titres que plus haut.
+
+Activité (aujourd'hui, puis hier) : 15:04 PR #22 ouverte (SILO-32) · 14:51 Étape 7 · Porte qualité (SILO-33) · 14:40 Suivi mis à
+jour · lot n° 6 proposé · 14:36 PR #18 fusionnée dans dev (SILO-21) · 14:20 Branche feat/perimetre-404 poussée (SILO-23) · 13:47
+Étape 9 · Review · 2 commentaires à traiter (SILO-22) · 13:10 Q17 posée au client (SILO-52) · 11:58 CI rouge sur PR #20 (SILO-41) ;
+hier 18:22 PR #19 fusionnée dans dev (SILO-31) · 16:05 Étape 3 · Questions · attend Q14 (SILO-44).
+
+Session : T3 Code sur SILO-33, « 7 · Porte qualité », depuis 42 min. Lot n° 6 des pistes : « Créer SILO-61 · Compresser les
+photos avant envoi » (dans C4 · après SILO-32) ; « Lier SILO-34 : attend la fusion de PR #22 » (SILO-34 → SILO-32) ; « Relancer
+le client sur Q14 » (SILO-44 bloqué depuis 3 j).
+
+### Vocabulaire métier
+
+| Mot | Formes |
+|---|---|
+| centre | « chef de centre », « Rapport de centre journalier », « Rapports de centre », « Centre 1 », « Travailler hors ligne au centre », « Carnet de centre » (style 1 de la page Styles), « location de box » (sous-titre en minuscules) |
+| box (masculin, invariable) | « Voir ses box affectés », « Réaffecter un box », « Liste des box », « Recherche d'un box par numéro », « Import Excel des box », « Plans des box et fichiers », « Plans box » |
+| constat, constats | « Saisir un constat hors ligne », « Saisir un constat… », « Constat hors ligne », « Schéma local des constats », « Saisie des box et constats », « Constats et étapes », « Constats », « Fiche constat », « Gérer un constat », « Photographier un constat », « Voir les constats d'un client », « Importer les constats depuis Excel », « Expédier les constats : BL et sous-traitant » |
+| contrat, contrats | « Valider les contrats par lot », « Valider les contrats », « Contrats par lot », « Statuts de contrat », « Import et contrats », « S43 Import et contrats », branche `feat/contrats-lot` |
+| client (masculin) | « Quota par client », « Quotas par client », « dossier du client », « Créer et consulter ses clients », « Clients », « Constituer l'équipe d'un client », « Organigramme de client », « Clôturer, archiver, exporter un client », « Qui peut créer un client ? », « la création de client », « chargé de clientèle », « Bloquer le dépôt sur un client archivé ? », branche `feat/schema-clients` ; titre coupé sur deux lignes : « … ou par » / « client ? » |
+| numéro, numéros | « Contrôle des numéros », « Recherche par numéro » |
+| saisie | « Saisie hors ligne » (S42, « Sprint S42 · Saisie hors ligne »), libellé court « Saisie », troncature « Saisie ho… » |
+
+Mots communs gardés tels quels : Galadrim, Adam, Microsoft, Microsoft Entra ID, Azure, AWS, MinIO, Expo SDK 54, Sentry, DSI,
+staging, « Démo client », « Import des factures », « Export CSV », atelier, magasin, tags, pistolet, BL, sous-traitant.
+Numéros inchangés partout : tickets, `shortKey` F1 à F9, sprints S41 à S44 et leurs dates, PR #12 à #23, Q14, Q16, Q17, lot n° 7,
+« 42 min », ports.
