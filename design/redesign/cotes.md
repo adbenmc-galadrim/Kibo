@@ -3371,7 +3371,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **today** (bloc) · x 604,4, y 405, 2 × 162 · fond `fg`
             - **box** (bloc) · x 265, y 411, 806 × 1 · fond `soft`
             - **box** (bloc) · x 281, y 419, 179 × 15 · flex ligne, espacement 8, marges internes 0, alignement center/start
-              - « F4 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 419, 15 × 15
+              - « F4 » — Geist Mono 12 / 400, interligne 1,2, couleur `amber` — x 281, y 419, 15 × 15
               - « Saisir un tronçon hors ligne » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 304, y 419, 156 × 15
             - **box** (bloc) · x 525, y 421, 21,4 × 12 · fond `fg` · rayon 2
             - **box** (bloc) · x 549,4, y 421, 21,4 × 12 · fond `fg` · rayon 2
@@ -3380,7 +3380,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 622,6, y 421, 21,4 × 12 · fond `border` · rayon 2
             - **box** (bloc) · x 281, y 441, 790 × 1 · fond `soft (60 %)`
             - **box** (bloc) · x 281, y 449, 206 × 15 · flex ligne, espacement 8, marges internes 0, alignement center/start
-              - « F5 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 449, 15 × 15
+              - « F5 » — Geist Mono 12 / 400, interligne 1,2, couleur `amber` — x 281, y 449, 15 × 15
               - « Envoyer les photos d'un tronçon » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 304, y 449, 183 × 15
             - **box** (bloc) · x 525, y 451, 21,4 × 12 · fond `fg` · rayon 2
             - **box** (bloc) · x 549,4, y 451, 21,4 × 12 · fond `purple` · rayon 2
@@ -4197,7 +4197,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **box** (bloc) · x 622,6, y 421, 21,4 × 12 · fond `border` · rayon 2
             - **box** (bloc) · x 281, y 441, 790 × 1 · fond `soft (60 %)`
             - **box** (bloc) · x 281, y 449, 206 × 15 · flex ligne, espacement 8, marges internes 0, alignement center/start
-              - « F5 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 449, 15 × 15
+              - « F5 » — Geist Mono 12 / 400, interligne 1,2, couleur `red` — x 281, y 449, 15 × 15
               - « Envoyer les photos d'un tronçon » — Geist 12,5 / 400, interligne 1,2, couleur `fg` — x 304, y 449, 183 × 15
             - **box** (bloc) · x 767,6, y 449, 92 × 15 · flex ligne, espacement 4, marges internes 0, alignement center/start
               - icône `clockAlert` 12 px, `red` — x 767,6, y 450,5, 12 × 12

@@ -80,6 +80,8 @@ S.inProgress27 = (f, late) => { const C = S.C;
   S.setText(kpis, "Ouvertes", "En cours"); S.setText(kpis, "sur 2 max", "/ 2");
   const lim = S.setText(kpis, "limite atteinte", "limite · bloquée : F6"), open = S.parentOf(kpis, lim);
   const dot = open.children.find(c => c.name === "dot"); if (dot) dot.fills = [{ fillColor: C.red, fillOpacity: 1 }];
+  const grid = penpotUtils.findShapes(s => s.name === "grid", f)[0];
+  for (const [key, color] of late ? [["F5", C.red]] : [["F4", C.amber], ["F5", C.amber]]) { const t = S.byText(grid, key); if (t) t.fills = [{ fillColor: color, fillOpacity: 1 }]; }
   const sp = penpotUtils.findShapes(s => s.name === "card / Sprint S42 · Terrain hors ligne", f)[0] || f;
   S.setText(sp, "2/2 ouvertes", "2/2 en cours");
   S.setText(sp, "Limite de 2 ouvertes atteinte : F6 attendra la fin de F4 ou de F5.", "Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5.");
