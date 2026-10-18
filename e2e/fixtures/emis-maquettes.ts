@@ -12,6 +12,7 @@ export type StepSpec = {
   branch?: string;
   mine?: boolean;
   optional?: boolean;
+  description?: string;
 };
 export type FeatureSpec = {
   shortKey: string;
@@ -43,6 +44,7 @@ export const INBOX_TITLES: readonly string[] = [
   "Relire le compte rendu de la réunion client",
   "Idée : export CSV des soudures",
 ];
+export const EMIS_CLIENT = "Emis SA";
 export const EMIS_REPO_URL = "https://github.com/galadrimteam/emis-suivi-chantier";
 export const EMIS_BASE_BRANCH = "dev";
 export const EMIS_LAST_TICKET = 93;
@@ -131,6 +133,9 @@ export const EMIS_FEATURES: readonly FeatureSpec[] = [
         status: "in_review",
         delivery: 9,
         pr: open(20, "changes_requested", "error"),
+        branch: "feat/emis-45",
+        description:
+          "Deux saisies hors ligne du même tronçon : garder la plus récente et signaler l'autre au chef de chantier au retour du réseau.",
         mine: true,
       },
       todo(46, "Démo client", { mine: true, optional: true }),

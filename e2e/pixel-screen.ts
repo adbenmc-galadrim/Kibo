@@ -32,7 +32,7 @@ export const contentBox = (left: number, height: number): Box => ({
   h: height - 49,
 });
 
-export const schemeOf = (projectName: string): Scheme => (projectName === "pixel-light" ? "light" : "dark");
+export const schemeOf = (projectName: string): Scheme => (projectName.endsWith("-light") ? "light" : "dark");
 
 const percent = (ratio: number): string => `${(ratio * 100).toFixed(3)} %`;
 

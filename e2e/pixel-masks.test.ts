@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import {
+  DIALOG_SCREENS,
   MASK_AREA_LIMIT,
   type MaskedScreen,
   maskedRatio,
@@ -8,13 +9,24 @@ import {
   outside,
   PIXEL_HEIGHTS,
   PIXEL_MASKS,
+  referenceOf,
 } from "./pixel-masks";
 
 const WIDTH = 1440;
 const screens = Object.keys(PIXEL_MASKS).filter((s): s is MaskedScreen => Object.hasOwn(PIXEL_HEIGHTS, s));
 
 test("every mask stays inside its screen and says why", () => {
-  expect(screens).toEqual(["planning", "fonctionnalite", "tickets", "vue-ensemble", "graphe"]);
+  expect(screens).toEqual([
+    "planning",
+    "fonctionnalite",
+    "tickets",
+    "vue-ensemble",
+    "graphe",
+    "nouveau-projet",
+    "kanban",
+    "fiche-ticket",
+    "questions",
+  ]);
   for (const screen of screens)
     for (const m of PIXEL_MASKS[screen]) {
       expect(outside(m, WIDTH, PIXEL_HEIGHTS[screen])).toBe(false);
@@ -50,4 +62,19 @@ test("the union of masks counts overlapping pixels once", () => {
 test("a screen without masks gets none", () => {
   expect(masksOf("kit")).toEqual([]);
   expect(masksOf("planning")).toBe(PIXEL_MASKS.planning);
+});
+
+test("the phase 27 screens are 1000 px high and the Vue d'ensemble compares against v3", () => {
+  for (const screen of ["nouveau-projet", "kanban", "fiche-ticket", "questions"] as const)
+    expect(PIXEL_HEIGHTS[screen]).toBe(1000);
+  expect(referenceOf("vue-ensemble")).toBe("vue-ensemble-v3");
+  expect(referenceOf("kanban")).toBe("kanban");
+});
+
+test("no mask covers a dialog, a popover or the ticket sheet", () => {
+  for (const [screen, box] of Object.entries(DIALOG_SCREENS))
+    for (const m of masksOf(screen)) {
+      const apart = m.x + m.w <= box.x || box.x + box.w <= m.x || m.y + m.h <= box.y || box.y + box.h <= m.y;
+      expect(apart).toBe(true);
+    }
 });

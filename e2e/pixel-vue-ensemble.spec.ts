@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
+import { waitForEmisSeed } from "./emis-ready";
 import { emisPageUrl } from "./pixel-emis";
 import { PIXEL_HEIGHTS, PIXEL_MASKS } from "./pixel-masks";
 import { contentBox, measureScreen, openPixelPage, screensDir, settlePointer } from "./pixel-screen";
@@ -12,6 +13,7 @@ test("the Vue d'ensemble of Emis with the tracking panel open matches the mockup
 }) => {
   await page.setViewportSize({ width: PIXEL_WIDTH, height: HEIGHT });
   await pairBrowser(page);
+  await waitForEmisSeed(page);
   await openPixelPage(page, await emisPageUrl(page, "Vue d'ensemble"), HEIGHT);
   await expect(page.getByText("2 sessions T3 Code")).toBeVisible();
   await page.getByRole("button", { name: /^Agent de projet/ }).click();
@@ -23,7 +25,7 @@ test("the Vue d'ensemble of Emis with the tracking panel open matches the mockup
     masks: PIXEL_MASKS["vue-ensemble"],
     content: contentBox(241, HEIGHT),
     root: (p) => p.locator("[data-view-body]"),
-    outDir: screensDir("2026-10-17-t16"),
+    outDir: screensDir("2026-10-18-p27-t20"),
     contentInformative: true,
   });
 });
