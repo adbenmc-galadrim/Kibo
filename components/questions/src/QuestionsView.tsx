@@ -22,6 +22,7 @@ import {
 } from "./questions-logic";
 import { RecipientFilters } from "./RecipientFilters";
 import { featureOf, impactOf } from "./ticket-feature";
+import { useNewQuestionIntent } from "./use-new-question-intent";
 import { type QuestionsData, useQuestions } from "./use-questions";
 import { useSpotlightFilters } from "./use-spotlight-filters";
 import { useUnblockToast } from "./use-unblock-toast";
@@ -114,7 +115,8 @@ export function QuestionsView() {
   const [scope, setScope] = useState<Scope>(() => configScope(sdk.config.scope));
   const [ticketId, setTicketId] = useState<string | null>(null);
   const [recipient, setRecipient] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [creating, setCreating] = useState<string | null>(null);
+  useNewQuestionIntent(data.readOnly, setCreating);
   useSpotlightFilters(data.questions, { scope, ticketId, recipient }, (shown) => {
     setScope(shown.scope);
     setTicketId(shown.ticketId);
@@ -152,7 +154,7 @@ export function QuestionsView() {
         readOnly={data.readOnly}
         onScope={setScope}
         onTicket={setTicketId}
-        onNew={() => setCreating(true)}
+        onNew={() => setCreating("")}
         filters={
           <RecipientFilters
             recipients={data.recipients}
@@ -196,12 +198,13 @@ export function QuestionsView() {
           onClose={dismiss}
         />
       )}
-      {creating && (
+      {creating !== null && (
         <NewQuestionDialog
           tickets={data.tickets}
           recipients={data.recipients}
           client={data.client}
-          onOpenChange={setCreating}
+          initialTicketId={creating}
+          onOpenChange={(open) => !open && setCreating(null)}
         />
       )}
     </div>

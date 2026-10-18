@@ -1,4 +1,4 @@
-import type { FileRef, ProjectEditRequest, TabTarget } from "@kibo/schema";
+import type { FileRef, ProjectEditRequest, Spotlight, TabTarget } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
 import { createContext, type ReactNode, useContext } from "react";
 import type { ProjectAgentTab } from "./use-project-agent-panel";
@@ -10,7 +10,7 @@ export type Host = {
   openNewTicket(d: NewTicketDefaults): void;
   openAssign(ticketId: string): void;
   openFile(ref: FileRef): void;
-  openView(componentId: string, projectId?: string, question?: string): void;
+  openView(componentId: string, projectId?: string, spotlight?: Spotlight): void;
   openTarget(target: TabTarget, opts?: { newTab?: boolean; keep?: boolean }): void;
   openRun?(runId: string): void;
   answerRun?(runId: string): void;

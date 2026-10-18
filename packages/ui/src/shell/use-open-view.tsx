@@ -1,21 +1,21 @@
-import type { ProjectSnapshot, TabTarget } from "@kibo/schema";
+import type { ProjectSnapshot, Spotlight, TabTarget } from "@kibo/schema";
 import { type ReactNode, useCallback, useEffect, useRef, useState } from "react";
+import { pageIntents } from "../pages/page-intents";
 import { viewPageFor } from "../pages/view-page";
 import { componentRef, findBuiltin } from "../registry";
 import { OpenViewDialog } from "./lazy-dialogs";
 
-type Pending = { projectId: string; componentId: string; question: string | null };
+type Pending = { projectId: string; componentId: string; spotlight: Spotlight | null };
 export type OpenView = {
-  openView(componentId: string, projectId?: string, question?: string): void;
+  openView(componentId: string, projectId?: string, spotlight?: Spotlight): void;
   dialog: ReactNode;
 };
 
-const pageTarget = (projectId: string, pageId: string, question: string | null): TabTarget => ({
-  kind: "page",
-  projectId,
-  pageId,
-  ...(question !== null && { question }),
-});
+function pageTarget(projectId: string, pageId: string, spotlight: Spotlight | null): TabTarget {
+  if (spotlight?.kind === "question") return { kind: "page", projectId, pageId, question: spotlight.id };
+  if (spotlight !== null) pageIntents.set(pageId, spotlight);
+  return { kind: "page", projectId, pageId };
+}
 
 export function useOpenView(
   current: () => ProjectSnapshot | null,
@@ -24,14 +24,14 @@ export function useOpenView(
 ): OpenView {
   const [pending, setPending] = useState<Pending | null>(null);
   const openView = useCallback(
-    (componentId: string, projectId?: string, question?: string) => {
+    (componentId: string, projectId?: string, spotlight?: Spotlight) => {
       const project = projectId === undefined ? current() : snapshotOf(projectId);
       const id = projectId ?? project?.meta.id;
       if (id === undefined) return;
       const page = project && viewPageFor(project, componentId);
-      if (page) go(pageTarget(id, page.id, question ?? null));
+      if (page) go(pageTarget(id, page.id, spotlight ?? null));
       else if (findBuiltin(componentId))
-        setPending({ projectId: id, componentId, question: question ?? null });
+        setPending({ projectId: id, componentId, spotlight: spotlight ?? null });
     },
     [current, go, snapshotOf],
   );
@@ -43,7 +43,7 @@ export function useOpenView(
       title={target.manifest.title}
       open
       onOpenChange={(open) => !open && setPending(null)}
-      onCreated={(pageId) => go(pageTarget(pending.projectId, pageId, pending.question))}
+      onCreated={(pageId) => go(pageTarget(pending.projectId, pageId, pending.spotlight))}
     />
   );
   return { openView, dialog };

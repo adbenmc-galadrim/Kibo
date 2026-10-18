@@ -1,4 +1,4 @@
-import type { Page, ProjectSnapshot } from "@kibo/schema";
+import type { Page, ProjectSnapshot, Spotlight } from "@kibo/schema";
 import { lazyPanel, readSource } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Plus } from "lucide-react";
@@ -12,6 +12,7 @@ import { canEdit } from "../state/access";
 import { DashboardGrid } from "./DashboardGrid";
 import { PageBoundary } from "./PageBoundary";
 import { PageContext, usePageState } from "./PageContext";
+import { usePageSpotlight } from "./use-page-intent";
 import { useWideGrid } from "./use-wide-grid";
 import { ViewInstance, WidgetCard } from "./WidgetCard";
 
@@ -32,8 +33,8 @@ const PublishDialog = lazyPanel(
   { fallback: "sr-only" },
 );
 
-type Props = { project: ProjectSnapshot; page: Page; viewer: string; question?: string | null };
-export function PageView({ project, page, viewer, question = null }: Props) {
+type Props = { project: ProjectSnapshot; page: Page; viewer: string; spotlight?: Spotlight | null };
+export function PageView({ project, page, viewer, spotlight = null }: Props) {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(false);
   const [publishing, setPublishing] = useState<string | null>(null);
@@ -49,7 +50,8 @@ export function PageView({ project, page, viewer, question = null }: Props) {
   );
   const layoutMode = editable && wide && page.kind === "dashboard" && first !== undefined;
   const grid = page.kind === "dashboard" && first !== undefined && !(editing && layoutMode);
-  const state = usePageState(grid ? instances.map((i) => i.id) : [], question);
+  const target = usePageSpotlight(page.id, spotlight);
+  const state = usePageState(grid ? instances.map((i) => i.id) : [], target);
   return (
     <PageContext.Provider value={state}>
       <div className="flex h-full min-h-0 flex-col">

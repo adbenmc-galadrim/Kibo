@@ -24,6 +24,7 @@ type Props = {
   tickets: readonly TicketView[];
   recipients: readonly QuestionRecipient[];
   client: string | null;
+  initialTicketId?: string;
   onOpenChange(open: boolean): void;
 };
 
@@ -47,10 +48,16 @@ function optionsProblem(options: readonly string[]): string | null {
   return new Set(options).size === options.length ? null : fr.dialog.duplicate;
 }
 
-export function NewQuestionDialog({ tickets, recipients, client, onOpenChange }: Props) {
+export function NewQuestionDialog({
+  tickets,
+  recipients,
+  client,
+  initialTicketId = "",
+  onOpenChange,
+}: Props) {
   const sdk = useSdk();
   const id = useId();
-  const [ticketId, setTicketId] = useState("");
+  const [ticketId, setTicketId] = useState(initialTicketId);
   const [title, setTitle] = useState("");
   const [context, setContext] = useState("");
   const [optionsText, setOptionsText] = useState("");

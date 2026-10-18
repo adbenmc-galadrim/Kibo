@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, mock, test } from "bun:test";
-import type { AgentExecution, ProjectSnapshot, RpcRequest } from "@kibo/schema";
+import type { AgentExecution, ProjectSnapshot, RpcRequest, Spotlight } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
 import { isSeparator, isSubmenu, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { cleanup, render, screen, within } from "@testing-library/react";
@@ -35,7 +35,7 @@ mock.module("../api", () =>
 const { FeatureDetail } = await import("./FeatureDetail");
 
 const created: NewTicketDefaults[] = [];
-const views: (string | undefined)[] = [];
+const views: (Spotlight | undefined)[] = [];
 const host: Host = {
   openTicket: () => undefined,
   openNewTicket: (d) => void created.push(d),
@@ -161,7 +161,9 @@ test("the side cards show dependencies, questions, activity and the footer", asy
   const questions = aside("Questions");
   expect(questions.getByText("Q16 · Produit · hier · EMIS-34")).toBeTruthy();
   await user.click(questions.getByText("Quota par affaire : 2 Go ou 5 Go ?"));
-  expect(views).toEqual(["q16"]);
+  expect(views).toEqual([{ kind: "question", id: "q16" }]);
+  await user.click(questions.getByRole("button", { name: "Question" }));
+  expect(views.at(-1)).toEqual({ kind: "newQuestion", ticketId: "f5" });
   expect(
     aside("Activité")
       .getAllByRole("paragraph")

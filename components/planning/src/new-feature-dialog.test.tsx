@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, setSystemTime, test } from "bun:test";
-import type { ProjectCommand } from "@kibo/schema";
-import { screen, waitFor, within } from "@testing-library/react";
+import type { ProjectCommand, Spotlight } from "@kibo/schema";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { stepTitles } from "./NewFeatureDialog";
 import { cardIn, setupPlanning } from "./planning-kit";
@@ -121,4 +121,16 @@ test("on the Saturday after S42, the lingering S42 stays the default sprint of a
   const { seeded } = setupPlanning("2026-10-17");
   const { dialog } = await openDialog();
   expect(within(dialog).getByLabelText<HTMLSelectElement>("Sprint").value).toBe(seeded.sprints.s42.id);
+});
+
+test("an intent for a new feature opens the dialog, once", async () => {
+  const { m } = setupPlanning();
+  await screen.findByRole("button", { name: "Fonctionnalité" });
+  const intent: Spotlight = { kind: "newFeature" };
+  act(() => m.setSpotlight(intent));
+  const dialog = await screen.findByRole("dialog", { name: "Nouvelle fonctionnalité" });
+  await userEvent.keyboard("{Escape}");
+  await waitFor(() => expect(dialog.isConnected).toBe(false));
+  act(() => m.setSpotlight(intent));
+  expect(screen.queryByRole("dialog")).toBeNull();
 });

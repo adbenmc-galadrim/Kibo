@@ -1,5 +1,12 @@
 import { expect, mock, test } from "bun:test";
-import { type ComponentCall, type HostToFrame, KiboError, type Selection, type Surface } from "@kibo/schema";
+import {
+  type ComponentCall,
+  type HostToFrame,
+  KiboError,
+  type Selection,
+  type Spotlight,
+  type Surface,
+} from "@kibo/schema";
 import type { FileOpenRequest } from "@kibo/sdk";
 import { createFrameBridge, dispatchCombo, MAX_IN_FLIGHT } from "./frame-bridge";
 
@@ -19,7 +26,7 @@ function setup({ call = async () => ["ok"], surface = "widget" }: Options = {}) 
     onEditProject: mock((_: { field: "folder" }) => {}),
     onOpenNewTicket: mock(() => {}),
     onOpenFile: mock((_: FileOpenRequest) => {}),
-    onOpenView: mock((_: string, _question?: string) => {}),
+    onOpenView: mock((_: string, _spotlight?: Spotlight) => {}),
     onKey: mock(() => {}),
     onResize: mock((_: number) => {}),
     onReady: mock(() => {}),
@@ -279,7 +286,16 @@ test("openView may aim at a question, and the spotlight reaches the frame", () =
   const { bridge, messages, frame, handlers, from } = setup();
   from(frame, { kibo: 1, type: "openView", componentId: "questions", question: "q1" });
   from(frame, { kibo: 1, type: "openView", componentId: "questions", question: "" });
-  expect(handlers.onOpenView.mock.calls).toEqual([["questions", "q1"]]);
+  from(frame, {
+    kibo: 1,
+    type: "openView",
+    componentId: "questions",
+    intent: { kind: "newQuestion", ticketId: "f5" },
+  });
+  expect(handlers.onOpenView.mock.calls).toEqual([
+    ["questions", { kind: "question", id: "q1" }],
+    ["questions", { kind: "newQuestion", ticketId: "f5" }],
+  ]);
   bridge.spotlight({ kind: "question", id: "q1" });
   bridge.spotlight(null);
   expect(messages()).toEqual([

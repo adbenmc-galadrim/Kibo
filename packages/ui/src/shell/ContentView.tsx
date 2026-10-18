@@ -119,7 +119,7 @@ function content(p: Props): ReactNode {
           project={p.project}
           page={page}
           viewer={p.project.viewer ?? p.viewer}
-          question={t.question ?? null}
+          spotlight={t.question ? { kind: "question", id: t.question } : null}
         />
       );
     }

@@ -13,6 +13,7 @@ import {
 } from "@kibo/schema";
 import type { FileOpenRequest, NewTicketDefaults } from "@kibo/sdk";
 import { isMacPlatform } from "../tabs/use-tab-shortcuts";
+import { viewSpotlight } from "./view-spotlight";
 
 export const MAX_IN_FLIGHT = 64;
 
@@ -25,7 +26,7 @@ export type BridgeDeps = {
   onEditProject?(request: ProjectEditRequest): void;
   onOpenNewTicket(defaults: NewTicketDefaults): void;
   onOpenFile(request: FileOpenRequest): void;
-  onOpenView(componentId: string, question?: string): void;
+  onOpenView(componentId: string, spotlight?: Spotlight): void;
   onKey(combo: KeyCombo): void;
   onResize(height: number): void;
   onReady(): void;
@@ -107,10 +108,12 @@ export function createFrameBridge(deps: BridgeDeps): FrameBridge {
       case "openFile":
         deps.onOpenFile({ path: m.path, line: m.line ?? null, origin: null });
         return;
-      case "openView":
-        if (m.question === undefined) deps.onOpenView(m.componentId);
-        else deps.onOpenView(m.componentId, m.question);
+      case "openView": {
+        const spotlight = viewSpotlight(m.intent, m.question);
+        if (spotlight === undefined) deps.onOpenView(m.componentId);
+        else deps.onOpenView(m.componentId, spotlight);
         return;
+      }
       case "key":
         deps.onKey(m.combo);
         return;

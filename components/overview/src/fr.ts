@@ -52,7 +52,7 @@ export const fr = {
     feature: {
       title: "Créer une fonctionnalité",
       text: (key: string) => `Elle se livre de A à Z ; ses étapes deviennent ${key}-1, ${key}-2…`,
-      open: "Ouvrir le Planning",
+      open: "Nouvelle fonctionnalité",
     },
     copy: {
       title: "Copier",

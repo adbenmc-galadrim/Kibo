@@ -164,7 +164,8 @@ export function createMockSdk(
     openFile: (target) => openedFiles.push(target),
     openView: (componentId, viewOpts) => {
       openedViews.push(componentId);
-      viewRequests.push({ componentId, question: viewOpts?.question ?? null });
+      const intent = viewOpts?.intent;
+      viewRequests.push({ componentId, question: viewOpts?.question ?? null, ...(intent && { intent }) });
     },
     openRun: mockRuns.open,
     openSprint: (sprintId) => openedSprints.push(sprintId),

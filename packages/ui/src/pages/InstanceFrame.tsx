@@ -18,6 +18,7 @@ import { findComponent } from "../registry";
 import { useHost } from "../shell/Host";
 import { SandboxFrame } from "../shell/SandboxFrame";
 import { loadTrusted, type TrustedModule } from "../shell/trusted-loader";
+import { viewSpotlight } from "../shell/view-spotlight";
 import { useComponents } from "../state/use-components";
 import { useRuntimeInfo } from "../state/use-runtime-info";
 import { BackendGate } from "./BackendStopped";
@@ -77,7 +78,8 @@ function Mounted({ projectId, instance, viewer, surface, format, mod, mode, apis
               line: r.line ?? null,
               origin: r.origin ?? null,
             }),
-          openView: (componentId, opts) => host.openView(componentId, undefined, opts?.question),
+          openView: (componentId, opts) =>
+            host.openView(componentId, undefined, viewSpotlight(opts?.intent, opts?.question)),
           openRun: host.openRun,
           focus,
           visibility,

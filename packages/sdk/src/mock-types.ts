@@ -37,7 +37,7 @@ export type MockSdk = {
   newTicketRequests: NewTicketDefaults[];
   openedFiles: FileTarget[];
   openedViews: string[];
-  viewRequests: { componentId: string; question: string | null }[];
+  viewRequests: { componentId: string; question: string | null; intent?: Spotlight }[];
   openedRuns: string[];
   openedSprints: string[];
   projectEdits: ProjectEditRequest[];

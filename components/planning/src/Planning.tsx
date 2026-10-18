@@ -23,6 +23,7 @@ import { PlanningView } from "./PlanningView";
 import { type FeatureCard, planningModel } from "./planning-model";
 import { SprintDialog } from "./SprintDialog";
 import { sprintLabel } from "./sprint-label";
+import { useNewFeatureIntent } from "./use-new-feature-intent";
 
 const COLUMN_STEP = 226;
 
@@ -66,6 +67,7 @@ export function Planning() {
   const [dragged, setDragged] = useState<FeatureCard | null>(null);
   const [target, setTarget] = useState<string | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
+  useNewFeatureIntent(readOnly, () => setDialog({ kind: "feature" }));
   const [error, setError] = useState<string | null>(null);
   const [layout, setLayout] = useState<PlanningLayout>(() => initialLayout(sdk.config));
   const chooseLayout = (next: PlanningLayout) => {

@@ -130,6 +130,7 @@ export function createFrameSdk(
           type: "openView",
           componentId,
           ...(opts?.question !== undefined && { question: opts.question }),
+          ...(opts?.intent !== undefined && { intent: opts.intent }),
         }),
       focus: focusApi(focus, (on) => port.post({ kibo: 1, type: "focus", on })),
       visibility: visibilityApi(visible),

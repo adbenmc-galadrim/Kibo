@@ -57,9 +57,11 @@ test("a new project lists two steps to start, with its sprints beside them", asy
   expect(within(card).getAllByRole("listitem").length).toBe(2);
   expect(within(card).queryByRole("button", { name: "Copier" })).toBeNull();
   await userEvent.click(
-    within(row(card, "Créer une fonctionnalité")).getByRole("button", { name: "Ouvrir le Planning" }),
+    within(row(card, "Créer une fonctionnalité")).getByRole("button", { name: "Nouvelle fonctionnalité" }),
   );
-  expect(m.viewRequests).toEqual([{ componentId: "planning", question: null }]);
+  expect(m.viewRequests).toEqual([
+    { componentId: "planning", question: null, intent: { kind: "newFeature" } },
+  ]);
   const list = screen.getByRole("region", { name: "Sprints" });
   expect(
     within(list)

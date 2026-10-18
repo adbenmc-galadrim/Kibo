@@ -149,7 +149,7 @@ export type SettingsApi = {
   get(): Promise<ComponentSettings>;
   subscribe(listener: () => void): () => void;
 };
-export type OpenViewOptions = { question?: string };
+export type OpenViewOptions = { question?: string; intent?: Spotlight };
 
 export type KiboSdk = {
   instanceId: string;

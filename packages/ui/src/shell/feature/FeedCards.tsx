@@ -9,17 +9,28 @@ import {
   GitPullRequest,
   type LucideIcon,
   MessageCircleQuestion,
+  Plus,
   Radio,
 } from "lucide-react";
 import { frFeature as t } from "../../i18n/fr-group";
-import { ASIDE_EMPTY, AsideCard, AsideRow } from "./AsideCard";
+import { ASIDE_ACTION, ASIDE_EMPTY, AsideCard, AsideRow } from "./AsideCard";
 import type { ActivityItem, ActivityKind, FeatureQuestion } from "./feature-feed";
 
-type QuestionsProps = { questions: readonly FeatureQuestion[]; onOpenQuestion(id: string): void };
+type QuestionsProps = {
+  questions: readonly FeatureQuestion[];
+  onOpenQuestion(id: string): void;
+  onNewQuestion?: () => void;
+};
 
-export function QuestionsCard({ questions, onOpenQuestion }: QuestionsProps) {
+export function QuestionsCard({ questions, onOpenQuestion, onNewQuestion }: QuestionsProps) {
+  const action = onNewQuestion && (
+    <button type="button" className={ASIDE_ACTION} onClick={onNewQuestion}>
+      <Plus absoluteStrokeWidth size={12} aria-hidden className="size-[12px]" />
+      {t.addQuestion}
+    </button>
+  );
   return (
-    <AsideCard icon={MessageCircleQuestion} title={t.questions} count={questions.length}>
+    <AsideCard icon={MessageCircleQuestion} title={t.questions} count={questions.length} action={action}>
       {questions.map((q) => (
         <AsideRow key={q.id}>
           <button

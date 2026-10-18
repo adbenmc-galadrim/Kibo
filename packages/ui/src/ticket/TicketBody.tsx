@@ -55,7 +55,7 @@ export function TicketBody({
         ticket={t}
         questions={project.questions}
         recipients={project.questionRecipients}
-        onOpen={(id) => host?.openView("questions", undefined, id)}
+        onOpen={(id) => host?.openView("questions", undefined, { kind: "question", id })}
       />
       <TicketHeader project={project} ticket={t} />
       {heading(

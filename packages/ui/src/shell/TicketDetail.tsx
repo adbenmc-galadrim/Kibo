@@ -79,7 +79,7 @@ export function TicketDetail({
       <QuestionsSection
         ticket={t}
         questions={project.questions}
-        onOpen={(id) => host?.openView("questions", undefined, id)}
+        onOpen={(id) => host?.openView("questions", undefined, { kind: "question", id })}
       />
       {children.length > 0 && (
         <section className="grid gap-1 text-xs">

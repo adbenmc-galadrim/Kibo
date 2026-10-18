@@ -88,7 +88,10 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
   const labels = useMemo(() => projectLabels(project, agentList.agents ?? []), [project, agentList.agents]);
   const runs = useAgentsState()?.runs;
   const links = useMemo(
-    () => projectQuestionLinks(project, runs ?? [], (id) => host.openView("questions", projectId, id)),
+    () =>
+      projectQuestionLinks(project, runs ?? [], (id) =>
+        host.openView("questions", projectId, { kind: "question", id }),
+      ),
     [project, runs, host, projectId],
   );
 

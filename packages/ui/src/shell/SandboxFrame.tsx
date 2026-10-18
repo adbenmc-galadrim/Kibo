@@ -96,7 +96,7 @@ export function SandboxFrame({
           line: r.line ?? null,
           origin: r.origin ?? null,
         }),
-      onOpenView: (id, question) => latest.current.host.openView(id, undefined, question),
+      onOpenView: (id, spotlight) => latest.current.host.openView(id, undefined, spotlight),
       onKey: (combo) => dispatchCombo(combo),
       onResize: (h) => setHeight(h),
       onReady: () => guard.current?.ready(),

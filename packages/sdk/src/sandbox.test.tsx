@@ -277,11 +277,13 @@ test("host helpers post typed messages; the host fixes the surface and origin", 
   frame.sdk.openFile({ path: "src/a.ts", line: 12, origin: null });
   frame.sdk.openNewTicket({ statusId: "todo" });
   frame.sdk.openView("graph");
+  frame.sdk.openView("questions", { intent: { kind: "newQuestion", ticketId: "f5" } });
   expect(sent).toEqual([
     { kibo: 1, type: "openFile", path: "src/a.ts" },
     { kibo: 1, type: "openFile", path: "src/a.ts", line: 12 },
     { kibo: 1, type: "openNewTicket", defaults: { statusId: "todo" } },
     { kibo: 1, type: "openView", componentId: "graph" },
+    { kibo: 1, type: "openView", componentId: "questions", intent: { kind: "newQuestion", ticketId: "f5" } },
   ]);
   expect(frame.sdk.surface).toBe("view");
   frame.dispose();

@@ -167,7 +167,12 @@ export function FeatureDetail({
           />
           <QuestionsCard
             questions={featureQuestions(project, f.id, now)}
-            onOpenQuestion={(id) => host?.openView("questions", undefined, id)}
+            onOpenQuestion={(id) => host?.openView("questions", undefined, { kind: "question", id })}
+            {...(editable &&
+              host && {
+                onNewQuestion: () =>
+                  host.openView("questions", undefined, { kind: "newQuestion", ticketId: f.id }),
+              })}
           />
           <ActivityCard items={activity} />
           <p className="flex items-start gap-[8px] text-[11.5px] leading-[17px] text-(--tracking-dim)">

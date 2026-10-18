@@ -110,6 +110,7 @@ export const frFeature = {
   footer: "Une fonctionnalité ne se lance pas : chaque étape se livre dans T3 Code avec full-delivery.",
   optional: "Étape facultative",
   optionalPill: "facultative",
+  addQuestion: "Question",
   addDependency: "Dépendance",
   addDependencyTitle: "Ajouter une dépendance : cette fonctionnalité attend…",
   noCandidate: "Aucune autre fonctionnalité",

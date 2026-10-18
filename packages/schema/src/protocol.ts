@@ -40,7 +40,11 @@ const Reply = z.object({
   error: WireError.optional(),
 });
 
-export const Spotlight = z.object({ kind: z.literal("question"), id: NodeId });
+export const Spotlight = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("question"), id: NodeId }),
+  z.object({ kind: z.literal("newQuestion"), ticketId: NodeId }),
+  z.object({ kind: z.literal("newFeature") }),
+]);
 export type Spotlight = z.infer<typeof Spotlight>;
 
 export const HostToFrame = z.discriminatedUnion("type", [
@@ -101,6 +105,7 @@ export const FrameToHost = z.discriminatedUnion("type", [
     type: z.literal("openView"),
     componentId: z.string().min(1).max(128),
     question: NodeId.optional(),
+    intent: Spotlight.optional(),
   }),
   z.object({ kibo: z.literal(1), type: z.literal("key"), combo: KeyCombo }),
   z.object({ kibo: z.literal(1), type: z.literal("resize"), height: z.number().int().min(0).max(10_000) }),
