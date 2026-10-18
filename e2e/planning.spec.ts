@@ -41,10 +41,11 @@ async function openPlanning(page: Page, s42 = "S42 Terrain hors ligne"): Promise
   await expect(column(page, s42)).toBeVisible();
 }
 
-async function addFromMenu(page: Page, item: string) {
-  await page.getByRole("button", { name: "Ajouter", exact: true }).click();
-  await page.getByRole("menuitem", { name: item }).click();
-  return page.getByRole("dialog", { name: item });
+const ADD_BUTTONS = { "Nouveau sprint": "Sprint", "Nouvelle fonctionnalité": "Fonctionnalité" } as const;
+
+async function addFromHeader(page: Page, dialog: keyof typeof ADD_BUTTONS) {
+  await page.getByRole("button", { name: ADD_BUTTONS[dialog], exact: true }).click();
+  return page.getByRole("dialog", { name: dialog });
 }
 
 type Fit = {
@@ -140,14 +141,14 @@ test("dragging F9 onto S44 plans it, and the CLI lists it in S44", async ({ page
 
 test("a new sprint S45 and a new feature F10 with three steps show in the Planning", async ({ page }) => {
   await openPlanning(page);
-  const sprint = await addFromMenu(page, "Nouveau sprint");
+  const sprint = await addFromHeader(page, "Nouveau sprint");
   await sprint.getByLabel("Code").fill("S45");
   await sprint.getByLabel("Nom").fill("Exports");
   await sprint.getByLabel("Début").fill("2026-11-02");
   await sprint.getByLabel("Fin").fill("2026-11-06");
   await sprint.getByRole("button", { name: "Créer le sprint" }).click();
   await expect(column(page, "S45 Exports")).toBeVisible();
-  const feature = await addFromMenu(page, "Nouvelle fonctionnalité");
+  const feature = await addFromHeader(page, "Nouvelle fonctionnalité");
   await feature.getByLabel("Nom").fill("Signer un PV");
   await feature.getByLabel("Sprint").selectOption({ label: "S45 Exports" });
   await feature.getByLabel("Étapes, une par ligne").fill("Écran de signature\nExport PDF\nDémo client");

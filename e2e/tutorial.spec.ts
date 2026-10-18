@@ -58,8 +58,7 @@ async function readOverview(page: Page) {
 
 async function createFeature(page: Page) {
   await goToStep(page);
-  await main(page).getByRole("button", { name: "Ajouter", exact: true }).click();
-  await page.getByRole("menuitem", { name: "Nouvelle fonctionnalité" }).click();
+  await main(page).getByRole("button", { name: "Fonctionnalité", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Nouvelle fonctionnalité" });
   await dialog.getByLabel("Nom").fill("Livraison à domicile");
   await dialog.getByRole("button", { name: "Créer la fonctionnalité" }).click();
