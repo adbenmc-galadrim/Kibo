@@ -1,4 +1,4 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, setSystemTime, test } from "bun:test";
 import type { RpcRequest } from "@kibo/schema";
 import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -16,6 +16,7 @@ mock.module("../../api", () =>
       rpc: async (req: RpcRequest) => {
         if (req.method === "getProjectAgent")
           return { session: null, run: null, batches, past: [], memoryPath: "/m" };
+        if (req.method === "getAppInfo") return { today: "2026-10-16" };
         calls.push(req);
         return null;
       },
@@ -29,6 +30,8 @@ beforeEach(() => {
   calls.length = 0;
   batches = [batch([moveF5, remindQ14])];
 });
+
+afterEach(() => setSystemTime());
 
 function mount(sprintId = "s42") {
   const opened: string[] = [];
@@ -45,6 +48,20 @@ function mount(sprintId = "s42") {
   );
   return { view, opened, tabs };
 }
+
+test("the sheet times the sprint on the day of the daemon, not of the browser", async () => {
+  setSystemTime(new Date(2026, 9, 14, 10));
+  render(
+    <SprintSheet
+      route={{ projectId: "emis", sprintId: "s42" }}
+      project={project}
+      onClose={() => {}}
+      onOpenTicket={() => {}}
+      onOpenInTab={() => {}}
+    />,
+  );
+  expect(await screen.findByText("· finit ce soir · 1 livrée sur 3")).toBeTruthy();
+});
 
 test("the sheet shows the sprint, its timing, its features and the footer", async () => {
   const { opened, tabs } = mount();

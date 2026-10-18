@@ -25,7 +25,7 @@ import { StepsTimeline } from "./feature/StepsTimeline";
 import { useFeatureJournal, useProjectCiRuns } from "./feature/use-feature-feed";
 import { useSprintProposal } from "./feature/use-sprint-proposal";
 import { useOptionalHost } from "./Host";
-import { localDay } from "./sprint/sprint-facts";
+import { useDaemonToday } from "./use-daemon-today";
 
 type Props = {
   project: ProjectSnapshot;
@@ -53,6 +53,7 @@ export function FeatureDetail({
   const setting = useAppSettings().agentExecution;
   const execution = forced ?? setting;
   const now = fixedNow ?? liveNow;
+  const today = useDaemonToday(fixedNow);
   const host = useOptionalHost();
   const agents = useAgentsState();
   const titleCommand = useTicketCommand(project.meta.id);
@@ -71,7 +72,8 @@ export function FeatureDetail({
   const steps = stepModels(project, f.id, { runs: agents?.runs ?? [], ciRuns, now, execution });
   const next = nextStartableStep(steps, project.tickets);
   const activity = journal.length > 0 ? journalActivity(journal, project, now) : featureActivity(steps, now);
-  const facts = sprintFacts(project, f, { today: localDay(now), steps });
+  if (today === null) return null;
+  const facts = sprintFacts(project, f, { today, steps });
   const setSprint = (sprintId: string | null) =>
     void sprintCommand.run({ method: "setTicketSprint", ticketId: f.id, sprintId });
   const openFile = (r: { path: string; line: number | null }) =>

@@ -15,9 +15,11 @@ mock.module("../api", () =>
         Promise.resolve(
           req.method === "listProjectEvents"
             ? { items: [], nextBefore: null }
-            : LISTS.has(req.method)
-              ? []
-              : null,
+            : req.method === "getAppInfo"
+              ? { today: "2026-10-16" }
+              : LISTS.has(req.method)
+                ? []
+                : null,
         ),
       subscribe: () => () => undefined,
       subscribeTopic: () => () => undefined,

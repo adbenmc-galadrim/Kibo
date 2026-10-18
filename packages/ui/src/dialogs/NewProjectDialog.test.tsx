@@ -1,4 +1,4 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, setSystemTime, test } from "bun:test";
 import { KiboError, type RpcRequest } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -6,14 +6,14 @@ import { apiMock } from "../api-mock";
 
 const calls: RpcRequest[] = [];
 let answer: (req: RpcRequest) => unknown = () => null;
-const FIXED_NOW = "2026-10-16T14:52:00+02:00";
+const DAEMON_TODAY = "2026-10-16";
 
 mock.module("../api", () =>
   apiMock({
     client: {
       rpc: async (req: RpcRequest) => {
         calls.push(req);
-        if (req.method === "getAppInfo") return { fixedNow: FIXED_NOW };
+        if (req.method === "getAppInfo") return { today: DAEMON_TODAY };
         return answer(req);
       },
       subscribe: () => () => {},
@@ -22,6 +22,8 @@ mock.module("../api", () =>
     },
   }),
 );
+
+afterEach(() => setSystemTime());
 
 const { NewProjectDialog } = await import("./NewProjectDialog");
 
@@ -34,6 +36,7 @@ const submitButton = () => screen.getByRole("button", { name: "Créer" });
 const disabled = (el: HTMLElement) => el.hasAttribute("disabled");
 
 beforeEach(() => {
+  setSystemTime(new Date(2026, 9, 27, 10));
   calls.length = 0;
   answer = created;
   location.hash = "";

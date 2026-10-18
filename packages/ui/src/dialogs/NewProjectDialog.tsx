@@ -9,13 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@kibo/sdk/ui/dialog";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
 import { frNewProject as t } from "../i18n/fr-new-project";
 import { PROJECT_COLORS } from "../lib/project-colors";
 import { navigate } from "../route";
-import { localDay } from "../shell/sprint/sprint-facts";
+import { useDaemonToday } from "../shell/use-daemon-today";
 import { NewProjectForm } from "./NewProjectForm";
 import { defaultFields, effectiveKey, type NewProjectFields, toRequest, validate } from "./new-project-model";
 
@@ -30,7 +30,7 @@ type Props = {
 type BodyProps = Omit<Required<Props>, "open"> & { today: string };
 
 export function NewProjectDialog({ open, onOpenChange, count, existingKeys, focusFolder = false }: Props) {
-  const today = useToday();
+  const today = useDaemonToday();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] gap-[18px] overflow-y-auto rounded-[12px] p-6 sm:max-w-[520px]">
@@ -50,25 +50,6 @@ export function NewProjectDialog({ open, onOpenChange, count, existingKeys, focu
       </DialogContent>
     </Dialog>
   );
-}
-
-function useToday(): string | null {
-  const [today, setToday] = useState<string | null>(null);
-  useEffect(() => {
-    let alive = true;
-    const settle = (fixedNow: string | null | undefined) => {
-      const at = fixedNow ? Date.parse(fixedNow) : Number.NaN;
-      if (alive) setToday(localDay(Number.isNaN(at) ? Date.now() : at));
-    };
-    client.rpc({ method: "getAppInfo" }).then(
-      (info) => settle(info?.fixedNow),
-      () => settle(null),
-    );
-    return () => {
-      alive = false;
-    };
-  }, []);
-  return today;
 }
 
 const ERRORS: Partial<Record<KiboErrorCode, string>> = t.errors;

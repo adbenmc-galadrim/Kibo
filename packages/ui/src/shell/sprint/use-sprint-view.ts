@@ -3,14 +3,13 @@ import { useMemo } from "react";
 import { client } from "../../api";
 import { useProjectAgent } from "../../project-agent/use-project-agent";
 import { canEdit } from "../../state/access";
-import { useNow } from "../../state/use-agents";
+import { useDaemonToday } from "../use-daemon-today";
 import type { SprintDecision } from "./SprintReportBanner";
-import { localDay, sprintFeatures, sprintTiming } from "./sprint-facts";
+import { sprintFeatures, sprintTiming } from "./sprint-facts";
 import { pendingSprintActions } from "./sprint-proposal";
 
 export function useSprintView(project: ProjectSnapshot, sprintId: string, fixedNow?: number) {
-  const liveNow = useNow(60_000);
-  const today = localDay(fixedNow ?? liveNow);
+  const today = useDaemonToday(fixedNow);
   const projectId = project.meta.id;
   const { view } = useProjectAgent(projectId);
   const sprint = project.sprints.find((s) => s.id === sprintId) ?? null;
@@ -27,7 +26,7 @@ export function useSprintView(project: ProjectSnapshot, sprintId: string, fixedN
     sprint,
     features,
     proposal,
-    timing: sprint ? sprintTiming(sprint, today) : null,
+    timing: sprint && today !== null ? sprintTiming(sprint, today) : null,
     editable: canEdit(project),
     command,
     decide,

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, setSystemTime, test } from "bun:test";
 import type { AgentExecution, ProjectSnapshot, RpcRequest, Spotlight } from "@kibo/schema";
 import type { NewTicketDefaults } from "@kibo/sdk";
 import { isSeparator, isSubmenu, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
@@ -16,6 +16,7 @@ const answer = (req: RpcRequest): unknown => {
   if (req.method === "listProjectEvents") return { items: [], nextBefore: null };
   if (req.method === "listCiRuns") return [];
   if (req.method === "getProjectAgent") return viewFixture({ batches: [] });
+  if (req.method === "getAppInfo") return { today: "2026-10-16" };
   return null;
 };
 
@@ -50,7 +51,10 @@ beforeEach(() => {
   created.length = 0;
   views.length = 0;
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  setSystemTime();
+});
 
 const withStartableE34 = (project: ProjectSnapshot): ProjectSnapshot => ({
   ...project,
@@ -78,6 +82,26 @@ const renderFeature = (project: ProjectSnapshot = emisFeatureProject(), opened: 
 
 const commands = () => calls.flatMap((c) => (c.method === "command" ? [c.command] : []));
 const aside = (name: string) => within(screen.getByRole("region", { name }));
+
+test("the sprint card counts on the day of the daemon, not of the browser", async () => {
+  setSystemTime(new Date(2026, 9, 20, 10));
+  const project = emisFeatureProject();
+  const feature = project.tickets.find((t) => t.id === "f5");
+  if (!feature) throw new Error("fixture without F5");
+  render(
+    <HostProvider host={host}>
+      <FeatureDetail
+        project={project}
+        ticket={feature}
+        execution="hidden"
+        onOpenFile={() => undefined}
+        onOpenTicket={() => undefined}
+      />
+    </HostProvider>,
+  );
+  expect(await screen.findByText("4 étapes restantes : ne tiendra pas dans S42.")).toBeTruthy();
+  expect(calls.filter((c) => c.method === "getAppInfo")).toHaveLength(1);
+});
 
 test("the header names the feature, its sprint, its state and its progress", () => {
   renderFeature();

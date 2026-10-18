@@ -9,7 +9,7 @@ mock.module("../api", () =>
     client: {
       rpc: async (req: { method: string }) => {
         rpcCalls.push(req.method);
-        if (req.method === "getAppInfo") return { fixedNow: "2026-10-16T14:52:00+02:00" };
+        if (req.method === "getAppInfo") return { today: "2026-10-16" };
         throw new Error(`unexpected rpc ${req.method}`);
       },
       subscribe: () => () => {},
