@@ -6,10 +6,10 @@ import { overviewModel } from "./overview-model";
 const MONDAY = "2026-10-19";
 const WEDNESDAY = "2026-10-14";
 
-const slip = (id: number, ticketId: string, from: string | null): ProjectEvent => ({
+const slip = (id: number, ticketId: string, from: string | null, day: string): ProjectEvent => ({
   id,
   projectId: "mock",
-  at: 0,
+  at: new Date(`${day}T10:00:00`).getTime(),
   kind: "sprint_set",
   ticketId,
   featureId: ticketId,
@@ -17,13 +17,13 @@ const slip = (id: number, ticketId: string, from: string | null): ProjectEvent =
   data: from === null ? { to: "S42" } : { from, to: "S43" },
 });
 
-function slippedF5(today: string) {
+function slippedF5(today: string, movedOn = WEDNESDAY) {
   const { input, byTitle } = build(today);
   const f5 = byTitle("Envoyer les photos d'un tronçon");
   const s43 = input.sprints.find((s) => s.code === "S43");
   if (s43 === undefined) throw new Error("S43");
   const tickets = input.tickets.map((t) => (t.id === f5.id ? { ...t, sprintId: s43.id } : t));
-  const events = [...input.events, slip(100, f5.id, null), slip(101, f5.id, "S42")];
+  const events = [...input.events, slip(100, f5.id, null, "2026-10-05"), slip(101, f5.id, "S42", movedOn)];
   return overviewModel({ ...input, tickets, events });
 }
 
@@ -32,6 +32,12 @@ test("a feature moved from an earlier sprint says where it slipped from", () => 
   const row = model.sprint?.rows.find((r) => r.shortKey === "F5");
   expect(row?.slipped).toBe("S42");
   expect(model.sprint?.rows.find((r) => r.shortKey === "F6")?.slipped).toBeNull();
+});
+
+test("a feature moved before its sprint started has not slipped", () => {
+  const model = slippedF5(MONDAY, "2026-10-09");
+  expect(model.sprint?.rows.find((r) => r.shortKey === "F5")?.slipped).toBeNull();
+  expect(model.deadlines.rows.find((r) => r.shortKey === "F5")?.note).toBeUndefined();
 });
 
 test("a feature is at risk when its mandatory steps outnumber the working days left", () => {

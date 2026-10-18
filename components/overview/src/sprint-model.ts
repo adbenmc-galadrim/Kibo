@@ -114,7 +114,7 @@ export function sprintCard(input: SprintInput): SprintCard | null {
     rows: inSprint.map((f) => ({
       ...lineOf(f, input.blocking),
       risk: f.state.status !== "delivered" && isAtRisk(f, sprint, input.today),
-      slipped: slippedFrom(input.events, f.id),
+      slipped: slippedFrom(input.events, f.id, input.sprints),
     })),
     remaining,
     note: note === null ? null : fr.sprint.limit(input.limit, note.next, note.open),

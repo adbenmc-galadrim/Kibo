@@ -25,7 +25,7 @@ type MarkInput = {
 function markOf(f: FeatureFacts, late: ReadonlySet<string>, input: MarkInput): RowMark {
   const sprint = input.sprints.find((s) => s.id === f.sprintId) ?? null;
   const risk = sprint !== null && atRisk({ sprint, steps: f.steps }, input.today);
-  const from = slippedFrom(input.events, f.id);
+  const from = slippedFrom(input.events, f.id, input.sprints);
   return {
     ...(late.has(f.id) ? { tone: "late" } : risk ? { tone: "risk" } : {}),
     ...(from === null ? {} : { note: fr.sprint.slipped(from) }),

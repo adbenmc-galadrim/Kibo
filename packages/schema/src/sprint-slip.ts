@@ -18,7 +18,7 @@ function beforeStart(e: ProjectEvent, from: string, sprints: readonly SprintStar
 export function sprintOrigins(
   events: readonly ProjectEvent[],
   featureId: string,
-  sprints: readonly SprintStart[] = [],
+  sprints: readonly SprintStart[],
 ): string[] {
   const moves = events
     .filter((e) => e.kind === "sprint_set" && e.ticketId === featureId)
@@ -34,5 +34,5 @@ export function sprintOrigins(
 export const slippedFrom = (
   events: readonly ProjectEvent[],
   featureId: string,
-  sprints: readonly SprintStart[] = [],
+  sprints: readonly SprintStart[],
 ): string | null => sprintOrigins(events, featureId, sprints).at(-1) ?? null;
