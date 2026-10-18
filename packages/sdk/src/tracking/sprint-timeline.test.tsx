@@ -124,3 +124,13 @@ test("a row may carry a tone and a short note", () => {
   expect(note.className).toContain("text-(--tracking-amber)");
   expect(screen.getByText("F6").className).toContain("text-(--tracking-red)");
 });
+
+test("over an empty end of the last row, the today label keeps its place and the height", () => {
+  const rows = [row("f4"), row("f5", { column: 2 })];
+  render(<SprintTimeline columns={COLUMNS} rows={rows} today={4 / 21} />);
+  const label = screen.getByText("aujourd'hui");
+  const grid = label.parentElement;
+  if (!grid) throw new Error("timeline missing");
+  expect(Number.parseFloat(grid.style.height)).toBe(30 + 2 * 30 + 6);
+  expect(top(label)).toBe(30 + 2 * 30 + 6 - 24);
+});

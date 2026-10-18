@@ -110,11 +110,38 @@ function Row({ row, mark, last, width, onOpen }: RowProps) {
 
 const TODAY_ROOM = 22;
 
-const roomFor = (layout: TimelineLayout): number => (layout.todayX === null ? 0 : TODAY_ROOM);
+const TODAY_WIDTH = 90;
+const CUSTOM_WIDTH = 140;
+const MARK_WIDTH = 110;
+const ROW_LABEL_WIDTH = 226;
+
+type Span = readonly [number, number];
+
+function labelSpan(todayX: number, label: string | undefined): Span {
+  return label === undefined ? [todayX, todayX + 6 + TODAY_WIDTH] : [todayX - 6 - CUSTOM_WIDTH, todayX];
+}
+
+function lastRowSpans(layout: TimelineLayout): Span[] {
+  const row = layout.rows.at(-1);
+  if (row === undefined) return [];
+  const marks = [row.slip, row.blocked].flatMap((m): Span[] => (m === null ? [] : [[m.x, m.x + MARK_WIDTH]]));
+  return [
+    [LABEL_X, LABEL_X + ROW_LABEL_WIDTH],
+    ...row.cases.map((c): Span => [c.x, c.x + c.width]),
+    ...marks,
+  ];
+}
+
+function roomFor(layout: TimelineLayout, label?: string): number {
+  if (layout.todayX === null) return 0;
+  const [a, b] = labelSpan(layout.todayX, label);
+  return lastRowSpans(layout).some(([x, y]) => x < b && y > a) ? TODAY_ROOM : 0;
+}
 
 function Today({ layout, label }: { layout: TimelineLayout; label: string | undefined }) {
   if (layout.todayX === null) return null;
-  const height = layout.height + TODAY_ROOM;
+  const room = roomFor(layout, label);
+  const height = layout.height + room;
   const left = label === undefined ? layout.todayX + 6 : layout.todayX - 6;
   return (
     <>
@@ -127,7 +154,7 @@ function Today({ layout, label }: { layout: TimelineLayout; label: string | unde
         className="absolute whitespace-nowrap rounded-[4px] bg-primary px-[6px] py-px font-semibold text-[12px] text-primary-foreground leading-[15px]"
         style={{
           left,
-          top: height - 20,
+          top: room === 0 ? layout.height - 24 : height - 20,
           ...(label === undefined ? {} : { transform: "translateX(-100%)" }),
         }}
       >
@@ -153,9 +180,9 @@ function Grid({
   return (
     <div
       className="relative shrink-0"
-      style={{ width: layout.width, height: layout.height + roomFor(layout) }}
+      style={{ width: layout.width, height: layout.height + roomFor(layout, todayLabel) }}
     >
-      <TimelineHeader columns={layout.columns} height={layout.height + roomFor(layout)} g={g} />
+      <TimelineHeader columns={layout.columns} height={layout.height + roomFor(layout, todayLabel)} g={g} />
       {layout.rows.map((row, i) => (
         <Row
           key={row.row.featureId}
