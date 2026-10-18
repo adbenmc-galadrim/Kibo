@@ -120,6 +120,13 @@ export function lastEvent(
     );
 }
 
+export function isDeclared(events: readonly ProjectEvent[], branch: string): boolean {
+  const last = events
+    .filter((e) => e.kind === "branch_created" && e.data.branch === branch)
+    .reduce<ProjectEvent | undefined>((l, e) => (l === undefined || e.at > l.at ? e : l), undefined);
+  return last?.data.declared === true;
+}
+
 const DAY_MS = 86_400_000;
 const pad = (n: number) => String(n).padStart(2, "0");
 const midnight = (at: number) => {

@@ -8,10 +8,12 @@ import {
   type TicketView,
 } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
-import { CircleX, GitBranch, GitPullRequest } from "lucide-react";
+import { Button } from "@kibo/sdk/ui/button";
+import { CircleX, FolderOpen, GitBranch, GitPullRequest } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "../i18n/fr";
 import { frTicketTracking as t } from "../i18n/fr-ticket-tracking";
+import { useOptionalHost } from "../shell/Host";
 import { frRefs } from "../shell/sheet/fr-refs";
 import { GithubRefs } from "../shell/sheet/lazy-sections";
 import { CopyBranchCommandButton } from "./CopyCommandButton";
@@ -19,6 +21,7 @@ import {
   ciDetail,
   clockOf,
   durationLabel,
+  isDeclared,
   lastEvent,
   mainPr,
   nextStepLabel,
@@ -26,7 +29,13 @@ import {
   whenLabel,
 } from "./tracking-model";
 
-type Props = { ticket: TicketView; ciRuns: readonly CiRun[]; events: readonly ProjectEvent[]; now: number };
+type Props = {
+  ticket: TicketView;
+  ciRuns: readonly CiRun[];
+  events: readonly ProjectEvent[];
+  now: number;
+  repo?: boolean;
+};
 
 const BADGE = "inline-flex items-center gap-1 rounded-[4px] px-1.5 py-0.5 text-[11px] font-medium";
 const CI_BADGE: Record<CiTone, string> = {
@@ -77,7 +86,35 @@ function StepBar({ step }: { step: number }) {
   );
 }
 
-function PrRows({ pr, ciRuns, events, now }: Omit<Props, "ticket"> & { pr: GithubPrRef }) {
+function EmptyTracking({ ticketKey, repo }: { ticketKey: string | null; repo: boolean }) {
+  const host = useOptionalHost();
+  if (repo)
+    return (
+      <div className="grid gap-2">
+        <p className={DIM}>{t.empty}</p>
+        {ticketKey && <CopyBranchCommandButton ticketKey={ticketKey} />}
+      </div>
+    );
+  return (
+    <div className="grid gap-2">
+      <p className={DIM}>{t.noRepo}</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-[25px] w-fit text-xs"
+          onClick={() => host?.editProject?.({ field: "folder" })}
+        >
+          <FolderOpen />
+          {t.chooseFolder}
+        </Button>
+        {ticketKey && <CopyBranchCommandButton ticketKey={ticketKey} secondary />}
+      </div>
+    </div>
+  );
+}
+
+function PrRows({ pr, ciRuns, events, now }: Omit<Props, "ticket" | "repo"> & { pr: GithubPrRef }) {
   const opened = lastEvent(events, "pr_opened", pr.number);
   const reviewed = lastEvent(events, "pr_review", pr.number);
   const review = t.review[pr.review];
@@ -130,7 +167,7 @@ function PrRows({ pr, ciRuns, events, now }: Omit<Props, "ticket"> & { pr: Githu
   );
 }
 
-export function TrackingSection({ ticket, ciRuns, events, now }: Props) {
+export function TrackingSection({ ticket, ciRuns, events, now, repo = true }: Props) {
   const branch = branchRefOf(ticket.externalRefs);
   const pr = mainPr(ticket.externalRefs);
   const issues = issuesOf(ticket);
@@ -146,10 +183,7 @@ export function TrackingSection({ ticket, ciRuns, events, now }: Props) {
         <span className={DIM}>{t.sectionHint}</span>
       </p>
       {empty ? (
-        <div className="grid gap-2">
-          <p className={DIM}>{t.empty}</p>
-          {ticket.key && <CopyBranchCommandButton ticketKey={ticket.key} />}
-        </div>
+        <EmptyTracking ticketKey={ticket.key} repo={repo} />
       ) : (
         <dl className="grid grid-cols-[106px_1fr] items-center gap-y-3">
           {branch && (
@@ -162,6 +196,7 @@ export function TrackingSection({ ticket, ciRuns, events, now }: Props) {
                   <span className="font-mono">{branch.base}</span>
                 </>
               )}
+              {isDeclared(events, branch.branch) && <span className={DIM}>{t.declared}</span>}
             </Row>
           )}
           {pr && <PrRows pr={pr} ciRuns={ciRuns} events={events} now={now} />}

@@ -1,7 +1,16 @@
 import { afterEach, expect, test } from "bun:test";
-import type { CiRun, ExternalRef, GithubPrRef, ProjectEvent, TicketView } from "@kibo/schema";
+import type {
+  CiRun,
+  ExternalRef,
+  GithubPrRef,
+  ProjectEditRequest,
+  ProjectEvent,
+  TicketView,
+} from "@kibo/schema";
 import { cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { emisFeatureProject, NOW } from "../shell/feature/fixture";
+import { type Host, HostProvider } from "../shell/Host";
 import { TrackingSection } from "./TrackingSection";
 
 afterEach(cleanup);
@@ -148,5 +157,62 @@ test("a ticket without any tracking says how to declare its branch", () => {
     />,
   );
   expect(screen.getByText("Aucun suivi git : déclare la branche avec kibo tickets set")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Copier kibo tickets set EMIS-33 branch=" })).toBeTruthy();
+});
+
+test("a declared branch is marked « déclarée »", () => {
+  render(
+    <TrackingSection
+      ticket={ticket({ externalRefs: [{ kind: "git_branch", branch: "feat/x", base: null }] })}
+      ciRuns={[]}
+      events={[event("branch_created", at(14, 12), { branch: "feat/x", declared: true })]}
+      now={NOW}
+    />,
+  );
+  expect(words("Branche")).toEqual(["feat/x", "déclarée"]);
+});
+
+test("a pushed branch is not marked « déclarée »", () => {
+  render(
+    <TrackingSection
+      ticket={ticket({ externalRefs: [{ kind: "git_branch", branch: "feat/x", base: null }] })}
+      ciRuns={[]}
+      events={[
+        event("branch_created", at(14, 12), { branch: "feat/x", declared: true }),
+        event("branch_created", at(14, 20), { branch: "feat/x" }),
+      ]}
+      now={NOW}
+    />,
+  );
+  expect(words("Branche")).toEqual(["feat/x"]);
+});
+
+test("a ticket of a project without repository offers to choose the folder, the CLI as a secondary link", async () => {
+  const edits: ProjectEditRequest[] = [];
+  const none = () => undefined;
+  const host: Host = {
+    openTicket: none,
+    openNewTicket: none,
+    openAssign: none,
+    openFile: none,
+    openView: none,
+    openTarget: none,
+    editProject: (r) => void edits.push(r),
+  };
+  render(
+    <HostProvider host={host}>
+      <TrackingSection
+        ticket={ticket({ externalRefs: [], session: null, delivery: null })}
+        ciRuns={[]}
+        events={[]}
+        now={NOW}
+        repo={false}
+      />
+    </HostProvider>,
+  );
+  expect(screen.getByText("Relie le dépôt pour suivre la branche")).toBeTruthy();
+  expect(screen.queryByText("Aucun suivi git : déclare la branche avec kibo tickets set")).toBeNull();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Choisir le dossier" }));
+  expect(edits).toEqual([{ field: "folder" }]);
   expect(screen.getByRole("button", { name: "Copier kibo tickets set EMIS-33 branch=" })).toBeTruthy();
 });

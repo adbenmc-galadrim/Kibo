@@ -45,13 +45,19 @@ const copyLink = (projectId: string, ticketId: string): Promise<void> =>
     t.linkCopied,
   );
 
-export function CopyBranchCommandButton({ ticketKey }: { ticketKey: string }) {
+export function CopyBranchCommandButton({
+  ticketKey,
+  secondary = false,
+}: {
+  ticketKey: string;
+  secondary?: boolean;
+}) {
   const command = t.branchCommand(ticketKey);
   return (
     <Button
-      variant="outline"
+      variant={secondary ? "link" : "outline"}
       size="sm"
-      className="h-[25px] w-fit text-xs"
+      className={secondary ? "h-[25px] w-fit px-0 text-xs text-muted-foreground" : "h-[25px] w-fit text-xs"}
       onClick={() => void copyText(command, deliveryTexts.copied([]))}
     >
       <Copy />

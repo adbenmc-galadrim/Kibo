@@ -60,7 +60,13 @@ export function TicketDetail({
       <div className="-mx-4 empty:hidden">
         <SyncStatus projectId={project.meta.id} ticket={t} />
       </div>
-      <TrackingSection ticket={t} ciRuns={ciRuns} events={journal.events} now={now} />
+      <TrackingSection
+        ticket={t}
+        ciRuns={ciRuns}
+        events={journal.events}
+        now={now}
+        repo={project.meta.folder !== null}
+      />
       <div className={LINE} />
       {(editable || t.description) && (
         <>
