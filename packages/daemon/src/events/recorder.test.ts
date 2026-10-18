@@ -88,7 +88,7 @@ test("a PR is opened, reviewed and checked in separate events, an identical PR n
   expect(git[3]?.data).toEqual({ number: 18, state: "open", review: "changes_requested", checks: "error" });
 });
 
-test("a PR first seen with a verdict records its review and its CI after its opening", () => {
+test("a PR first seen with a verdict records its review and a broken CI after its opening", () => {
   const { step } = feature();
   h.run({
     method: "upsertExternalRef",
@@ -99,7 +99,7 @@ test("a PR first seen with a verdict records its review and its CI after its ope
   h.run({
     method: "upsertExternalRef",
     ticketId: other,
-    ref: { ...PR, url: `${PR.url}9`, review: "review_required" },
+    ref: { ...PR, url: `${PR.url}9`, review: "review_required", checks: "ok" },
   });
   const kinds = (id: string) =>
     h
@@ -111,7 +111,7 @@ test("a PR first seen with a verdict records its review and its CI after its ope
     ["pr_review", "changes_requested", "error"],
     ["pr_checks", "changes_requested", "error"],
   ]);
-  expect(kinds(other)).toEqual([["pr_opened", "review_required", "running"]]);
+  expect(kinds(other)).toEqual([["pr_opened", "review_required", "ok"]]);
 });
 
 test("a delivery step is recorded by its kind, a retouch as update-delivery", () => {

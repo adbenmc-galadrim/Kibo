@@ -75,7 +75,6 @@ const sprintCode = (facts: Facts, sprintId: string | null): string | null =>
       null);
 
 const VERDICT_REVIEWS: ReadonlySet<string> = new Set(["approved", "changes_requested"]);
-const VERDICT_CHECKS: ReadonlySet<string> = new Set(["ok", "error"]);
 
 function prDrafts(ticketId: string, pr: GithubPrRef, previous: GithubPrRef | null): Draft[] {
   const data = { number: pr.number, state: pr.state, review: pr.review, checks: pr.checks };
@@ -87,7 +86,7 @@ function prDrafts(ticketId: string, pr: GithubPrRef, previous: GithubPrRef | nul
     return [
       draft("pr_opened"),
       ...(VERDICT_REVIEWS.has(pr.review) && previous?.review !== pr.review ? [draft("pr_review")] : []),
-      ...(VERDICT_CHECKS.has(pr.checks ?? "") && previous?.checks !== pr.checks ? [draft("pr_checks")] : []),
+      ...(pr.checks === "error" && previous?.checks !== "error" ? [draft("pr_checks")] : []),
     ];
   }
   return [
