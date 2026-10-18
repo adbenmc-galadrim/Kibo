@@ -42,13 +42,13 @@ describe("kibo tickets get", () => {
   test("asks for --project with a feature key and no project folder", async () => {
     const d = await get("F6");
     expect(d.code).toBe(1);
-    expect(d.err).toEqual(["Erreur INVALID_INPUT : clé de fonctionnalité : préciser --project"]);
+    expect(d.err).toEqual(["Erreur INVALID_INPUT : clé de fonctionnalité : précise --project EMIS"]);
     expect(d.calls).toEqual([{ method: "listProjects" }]);
   });
 
   test("keeps asking for --project with a plan id and no project folder", async () => {
     const d = await get("C1-2");
     expect(d.code).toBe(2);
-    expect(d.err.at(-1)).toContain("kibo tickets get <clé|id du plan>");
+    expect(d.err).toEqual(["précise --project EMIS"]);
   });
 });

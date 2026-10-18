@@ -5,6 +5,7 @@ import type { DaemonClient } from "../daemon-client";
 import { fr, frTickets } from "../fr";
 import { summarize, type TicketSummary } from "../tickets/ticket-view";
 import { findProject, type SessionIo } from "./daemon-session";
+import { projectKeys } from "./project-hint";
 
 export type TicketsContext = {
   client: DaemonClient;
@@ -60,7 +61,9 @@ export function chooseProject(
   const found = byKey ?? inFolder(projects, cwd);
   if (found) return { project: found };
   if (prefix !== undefined) return { problem: frTickets.projectNotFound(prefix), code: 1 };
+  const keys = projectKeys(projects);
+  if (keys.length === 0) return { problem: frTickets.usage, code: 2 };
   if (FEATURE_KEY.test(ident.trim()))
-    return { problem: fr.error("INVALID_INPUT", frTickets.featureNeedsProject), code: 1 };
-  return { problem: frTickets.usage, code: 2 };
+    return { problem: fr.error("INVALID_INPUT", frTickets.featureNeedsProject(keys)), code: 1 };
+  return { problem: frTickets.precise(keys), code: 2 };
 }

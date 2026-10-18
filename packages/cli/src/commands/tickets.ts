@@ -12,6 +12,7 @@ import {
   type TicketSummary,
 } from "../tickets/ticket-view";
 import { type Connect, printJson, type SessionIo, withClient } from "./daemon-session";
+import { missingProject } from "./project-hint";
 import { chooseProject, notFound, summaryOf, type TicketsContext } from "./tickets-context";
 import { ticketsSession } from "./tickets-session";
 import { applySet, type SetRequest, setRequestOrExit } from "./tickets-set";
@@ -76,7 +77,6 @@ function isUsage(sub: string | undefined, ident: string | undefined, flags: Flag
     sub === undefined ||
     !SUBCOMMANDS.has(sub) ||
     flags.project === true ||
-    (sub === "list" && flags.project === undefined) ||
     flags.sprint === true ||
     (sub !== "list" && !ident)
   );
@@ -97,6 +97,7 @@ export async function runTicketsCommand(
     io.err(frTickets.usage);
     return 2;
   }
+  if (sub === "list" && project === undefined) return missingProject(io, frTickets.usage, connect);
   const request: SetRequest | number | null = sub === "set" ? setRequestOrExit(rest, io) : null;
   if (typeof request === "number") return request;
   return withClient(

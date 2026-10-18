@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { parseArgs } from "../args";
 import { runTicketsCommand } from "./tickets";
-import { fakeDaemon, fakeTicket, SPRINTS } from "./tickets-test-kit";
+import { EMIS_META, fakeDaemon, fakeTicket, SPRINTS } from "./tickets-test-kit";
 
 async function listIn(d: ReturnType<typeof fakeDaemon>, args: string[]) {
   const { flags } = parseArgs(["--project", "EMIS", ...args]);
@@ -119,5 +119,23 @@ describe("kibo tickets list --ready", () => {
       { key: "EMIS-2", startable: false, startReason: waiting },
       { key: "EMIS-3", startable: true },
     ]);
+  });
+});
+
+describe("kibo tickets list without --project", () => {
+  test("suggests the only project key, or lists the known ones", async () => {
+    const one = fakeDaemon();
+    expect(await runTicketsCommand(["list"], {}, one.io, one.connect)).toBe(2);
+    expect(one.err).toEqual(["précise --project EMIS"]);
+    const projects = [EMIS_META, { ...EMIS_META, id: "p-pfd", key: "PFD", name: "Pfd" }];
+    const two = fakeDaemon(undefined, undefined, { projects });
+    expect(await runTicketsCommand(["list"], {}, two.io, two.connect)).toBe(2);
+    expect(two.err).toEqual(["précise --project parmi EMIS, PFD"]);
+  });
+
+  test("prints its usage when Kibo knows no project", async () => {
+    const none = fakeDaemon(undefined, undefined, { projects: [] });
+    expect(await runTicketsCommand(["list"], {}, none.io, none.connect)).toBe(2);
+    expect(none.err.join("\n")).toContain("kibo tickets list --project");
   });
 });

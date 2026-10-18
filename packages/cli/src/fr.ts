@@ -30,7 +30,11 @@ const REVIEW_LABELS: Record<PrReview, string | null> = {
   approved: "approuvée",
   changes_requested: "changements demandés",
 };
-const CHECKS_LABELS: Record<PrChecks, string> = { ok: "CI verte", error: "CI cassée", running: "CI en cours" };
+const CHECKS_LABELS: Record<PrChecks, string> = {
+  ok: "CI verte",
+  error: "CI cassée",
+  running: "CI en cours",
+};
 const prParts = (pr: PrSummary): string[] =>
   [
     `#${pr.number} (${pr.state})`,
@@ -46,9 +50,13 @@ const branchName = (b: BranchSummary) => (b.base === null ? b.name : `${b.name} 
 const ref = (r: TicketRef) => `${r.key}${r.planId ? ` (${r.planId}, ${r.status})` : ` (${r.status})`}`;
 const refs = (list: TicketRef[], none: string) => (list.length === 0 ? none : list.map(ref).join(", "));
 
+const precise = (keys: readonly string[]) =>
+  keys.length === 1 ? `précise --project ${keys[0]}` : `précise --project parmi ${keys.join(", ")}`;
+
 export const frTickets = {
   usage: ["Usage :", ...TICKETS_USAGE, "", PROJECT_HINT, DAEMON_HELP].join("\n"),
-  featureNeedsProject: "clé de fonctionnalité : préciser --project",
+  precise,
+  featureNeedsProject: (keys: readonly string[]) => `clé de fonctionnalité : ${precise(keys)}`,
   notRunning: "Kibo n'est pas lancé : ouvre l'application Kibo, puis réessaie.",
   projectNotFound: (p: string) => `Projet introuvable : ${p}`,
   ticketNotFound: (id: string) => `Ticket introuvable : ${id}`,

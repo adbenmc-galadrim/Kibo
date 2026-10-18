@@ -127,7 +127,15 @@ describe("kibo tickets set finds the project", () => {
   test("asks for --project with a feature key outside any project folder", async () => {
     const d = await set(["status=wip"], undefined, {}, "F5");
     expect(d.code).toBe(1);
-    expect(d.err).toEqual(["Erreur INVALID_INPUT : clé de fonctionnalité : préciser --project"]);
+    expect(d.err).toEqual(["Erreur INVALID_INPUT : clé de fonctionnalité : précise --project EMIS"]);
+  });
+
+  test("lists the known keys when several projects could hold the step", async () => {
+    const projects = [EMIS_META, { ...EMIS_META, id: "p-pfd", key: "PFD", name: "Pfd" }];
+    const d = await set(["status=wip"], undefined, { projects }, "F5");
+    expect(d.err).toEqual([
+      "Erreur INVALID_INPUT : clé de fonctionnalité : précise --project parmi EMIS, PFD",
+    ]);
   });
 });
 
