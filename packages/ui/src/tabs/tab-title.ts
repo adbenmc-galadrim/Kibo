@@ -20,6 +20,7 @@ import { frNavTracking } from "../i18n/fr-nav-tracking";
 import { displayName, inboxMeta } from "../lib/inbox";
 import { pageIcon } from "../registry";
 import { SCREENS } from "./screens";
+import { findTicket } from "./target-hash";
 
 export type TabDescription = { title: string; icon: LucideIcon; color: string | null; missing: boolean };
 export type DescribeContext = {
@@ -73,7 +74,7 @@ export function describeTarget(target: TabTarget, ctx: DescribeContext): TabDesc
       };
     }
     case "ticket": {
-      const ticket = snapshot?.tickets.find((t) => t.id === target.ticketId);
+      const ticket = snapshot && findTicket(snapshot.tickets, target.ticketId);
       if (!ticket)
         return {
           title: snapshot ? fr.tabs.missingTicket : displayName(project),
@@ -81,7 +82,7 @@ export function describeTarget(target: TabTarget, ctx: DescribeContext): TabDesc
           color,
           missing: !!snapshot,
         };
-      return { title: titled(ticket.keyLabel), icon: Ticket, color, missing: false };
+      return { title: `${ticket.keyLabel} · ${ticket.title}`, icon: Ticket, color, missing: false };
     }
     case "sprint": {
       const sprint = snapshot?.sprints.find((s) => s.id === target.sprintId);

@@ -15,10 +15,12 @@ import { importTitle } from "../shell/sheet/import-title";
 import { GithubLinkNote, GithubRefs } from "../shell/sheet/lazy-sections";
 import { descendantCount, TicketDetail } from "../shell/TicketDetail";
 import { canEdit } from "../state/access";
+import { findTicket } from "../tabs/target-hash";
 import { TicketTabs, useTicketTab } from "../ticket/activity/TicketTabs";
 import { LabelsField } from "../ticket/LabelsField";
 import { TicketActionsMenu } from "../ticket/TicketActionsMenu";
 import { TicketTitle } from "../ticket/TicketTitle";
+import { useTicketAddress } from "../ticket/use-ticket-address";
 import { useTicketCommand } from "../ticket/use-ticket-command";
 
 type Props = {
@@ -35,7 +37,8 @@ export function TicketTab({ project, ticketId, domains, viewer, onAssign, onOpen
   const command = useTicketCommand(project.meta.id);
   const labelsCommand = useTicketCommand(project.meta.id);
   const [tab, setTab] = useTicketTab();
-  const t = project.tickets.find((x) => x.id === ticketId);
+  const t = findTicket(project.tickets, ticketId);
+  useTicketAddress(project.meta.id, t);
   if (!t) return <p className="p-8 text-sm text-muted-foreground">{fr.tabs.missingTicket}</p>;
   if (isFeature(t))
     return <FeatureDetail project={project} ticket={t} onOpenFile={onOpenFile} onOpenTicket={onOpenTicket} />;

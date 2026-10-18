@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { TabTarget } from "@kibo/schema";
-import { hashToTarget, targetToHash } from "./target-hash";
+import { hashToTarget, rememberTicketKey, targetToHash } from "./target-hash";
 
 const run: TabTarget = { kind: "run", runId: "r1" };
 
@@ -38,4 +38,19 @@ test("the domains page may open on one project folder", () => {
   expect(hashToTarget("#/settings/domains")).toEqual({ kind: "screen", screen: "domains" });
   expect(hashToTarget("#/settings/domains?project=")).toEqual({ kind: "screen", screen: "domains" });
   expect(targetToHash({ kind: "screen", screen: "domains", projectId: null })).toBe("#/settings/domains");
+});
+
+test("a ticket is addressed by its key once known, and read back by key or by id", () => {
+  const byId: TabTarget = { kind: "ticket", projectId: "emis", ticketId: "562@79" };
+  expect(targetToHash(byId)).toBe("#/p/emis/t/562%4079");
+  rememberTicketKey("emis", "562@79", "EMIS-33");
+  expect(targetToHash(byId)).toBe("#/p/emis/t/EMIS-33");
+  expect(targetToHash({ ...byId, projectId: "kibo" })).toBe("#/p/kibo/t/562%4079");
+  expect(hashToTarget("#/p/emis/t/EMIS-33")).toEqual({
+    kind: "ticket",
+    projectId: "emis",
+    ticketId: "EMIS-33",
+  });
+  expect(targetToHash({ kind: "ticket", projectId: "emis", ticketId: "EMIS-33" })).toBe("#/p/emis/t/EMIS-33");
+  expect(hashToTarget("#/p/emis/t/562%4079")).toEqual(byId);
 });

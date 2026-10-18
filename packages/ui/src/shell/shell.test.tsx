@@ -434,7 +434,7 @@ test("navigation opens one preview tab, a double click in the sidebar opens a ke
 test("a ticket tab shows the detail, its PR and opens file links in the preview", async () => {
   renderShell();
   await go("#/p/p1/t/7%401");
-  await expectTitle("Kibo · KIB-7");
+  await expectTitle("KIB-7 · Schéma");
   expect(await screen.findByRole("link", { name: "#4" })).toBeTruthy();
   expect(crumbs().getByText("KIB-7").getAttribute("aria-current")).toBe("page");
   await userEvent.click(screen.getByRole("button", { name: "src/a.ts:3" }));

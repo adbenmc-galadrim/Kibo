@@ -1,6 +1,25 @@
-import { NodeId, Screen, TabTarget } from "@kibo/schema";
+import { featureLabel, isFeature, NodeId, Screen, TabTarget, type TicketView } from "@kibo/schema";
 
 const enc = encodeURIComponent;
+
+const ticketKeys = new Map<string, string>();
+const keySlot = (projectId: string, ticketId: string) => `${projectId}\n${ticketId}`;
+
+export function rememberTicketKey(projectId: string, ticketId: string, key: string): void {
+  ticketKeys.set(keySlot(projectId, ticketId), key);
+}
+
+type Addressable = Pick<TicketView, "id" | "key" | "shortKey">;
+
+export const findTicket = <T extends Addressable>(tickets: readonly T[], ref: string): T | undefined =>
+  tickets.find((t) => t.id === ref) ?? tickets.find((t) => t.key === ref || t.shortKey === ref);
+
+export const ticketAddressKey = (
+  t: Pick<TicketView, "key" | "shortKey" | "parentId" | "progress">,
+): string | null => (isFeature(t) ? featureLabel(t) : t.key) || null;
+
+const ticketAddress = (projectId: string, ticketId: string): string =>
+  ticketKeys.get(keySlot(projectId, ticketId)) ?? ticketId;
 
 const SCREEN_HASHES: Record<Screen, string> = {
   agents: "#/agents",
@@ -34,7 +53,7 @@ export function targetToHash(target: TabTarget | null): string {
     case "page":
       return `${base}/${enc(target.pageId)}${target.question ? `?question=${enc(target.question)}` : ""}`;
     case "ticket":
-      return `${base}/t/${enc(target.ticketId)}`;
+      return `${base}/t/${enc(ticketAddress(target.projectId, target.ticketId))}`;
     case "sprint":
       return `${base}/s/${enc(target.sprintId)}`;
     case "changes":
