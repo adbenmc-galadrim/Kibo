@@ -1,4 +1,5 @@
 import type { ProjectSnapshot } from "@kibo/schema";
+import { cn } from "@kibo/sdk/lib/utils";
 import { Sheet, SheetContent } from "@kibo/sdk/ui/sheet";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAgentList } from "../agents/catalog/use-agent-list";
@@ -24,11 +25,9 @@ import { SignalBox } from "./signals/SignalBox";
 import { boxSections } from "./signals/signal-sections";
 import { useSignals } from "./signals/use-signals";
 import { TrackingView } from "./TrackingView";
+import { usePanelDock } from "./use-panel-dock";
 import { usePanelWidth } from "./use-panel-width";
 import { useProjectAgent } from "./use-project-agent";
-
-const DOCK_VAR = "--project-agent-w";
-const DOCK_RULE = 1;
 
 type Props = {
   open: boolean;
@@ -46,15 +45,7 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
   const host = useHost();
   const projectId = project.meta.id;
   const [width, setWidth] = usePanelWidth();
-  const docked = width + DOCK_RULE;
-  useEffect(() => {
-    if (!open) return;
-    const root = document.documentElement.style;
-    root.setProperty(DOCK_VAR, `${docked}px`);
-    return () => {
-      root.removeProperty(DOCK_VAR);
-    };
-  }, [open, docked]);
+  const { overlay } = usePanelDock(open, width);
   const [mode, setMode] = useState<Mode>(tab === "signals" ? CURRENT : TRACKING);
   const tabNow = useRef(tab);
   tabNow.current = tab;
@@ -148,7 +139,8 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
       <SheetContent
         side="right"
         showCloseButton={false}
-        className="box-content gap-0 bg-(--tracking-panel) p-0 sm:max-w-none"
+        data-overlay={overlay}
+        className={cn("box-content gap-0 bg-(--tracking-panel) p-0 sm:max-w-none", overlay && "shadow-2xl")}
         style={{ width, top: "var(--tabbar-h)", height: "auto" }}
         onInteractOutside={(e) => e.preventDefault()}
         onOpenAutoFocus={(e) => e.preventDefault()}
