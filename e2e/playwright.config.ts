@@ -2,6 +2,7 @@ import { defineConfig, type PlaywrightTestConfig, type Project } from "@playwrig
 import { PIXEL_DAEMONS, pixelKitProject, pixelProjectOptions, trackingProjects } from "./pixel-projects";
 import { EMIS_MAQUETTES } from "./pixel-settings";
 import { SYNC_PORTS } from "./sync-fixture";
+import { seedReadyPort } from "./token";
 
 const THEMES = ["dark", "light"] as const;
 type Theme = (typeof THEMES)[number];
@@ -283,8 +284,9 @@ export default defineConfig({
         ]
           .filter((part) => part !== "")
           .join(" "),
-        url: `http://127.0.0.1:${d.port}/`,
+        url: `http://127.0.0.1:${d.scenario === EMIS_MAQUETTES ? seedReadyPort(d.port) : d.port}/`,
         reuseExistingServer: false,
+        timeout: d.scenario === EMIS_MAQUETTES ? 120_000 : 60_000,
         gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
       }),
     ),

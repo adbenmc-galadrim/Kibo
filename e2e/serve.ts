@@ -34,6 +34,7 @@ import {
   fakeMcpPort,
   fakePenpotPort,
   fakeStorybookPort,
+  seedReadyPort,
 } from "./token";
 
 const root = resolve(import.meta.dir, "..");
@@ -205,7 +206,16 @@ const seeded = await seedScenario().then(
     return false;
   },
 );
+const ready =
+  seeded && emisMaquettes
+    ? Bun.serve({
+        hostname: "127.0.0.1",
+        port: seedReadyPort(Number(port)),
+        fetch: () => new Response("seeded"),
+      })
+    : null;
 const exited = await proc.exited;
+ready?.stop(true);
 const code = seeded ? exited : 1;
 await fakes?.stop();
 await syncServer?.stop();

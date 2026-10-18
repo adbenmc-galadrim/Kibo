@@ -8,3 +8,4 @@ export const fakeFigmaPort = (daemonPort: number): number => daemonPort + 3000;
 export const fakePenpotPort = (daemonPort: number): number => daemonPort + 4000;
 export const fakeStorybookPort = (daemonPort: number): number => daemonPort + 6000;
 export const fakeBranchStorybookPort = (daemonPort: number): number => daemonPort + 7000;
+export const seedReadyPort = (daemonPort: number): number => daemonPort + 8000;
