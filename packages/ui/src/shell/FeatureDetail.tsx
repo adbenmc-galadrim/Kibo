@@ -18,7 +18,7 @@ import { FeatureHeader } from "./feature/FeatureHeader";
 import { ActivityCard, QuestionsCard } from "./feature/FeedCards";
 import { featureActivity, featureQuestions, journalActivity } from "./feature/feature-feed";
 import { dependencyCandidates, featureDependencies } from "./feature/feature-links";
-import { featureBadge, nextStep, sprintFacts, stepModels } from "./feature/feature-model";
+import { featureBadge, nextStartableStep, sprintFacts, stepModels } from "./feature/feature-model";
 import { NextStepAction } from "./feature/NextStepAction";
 import { SprintCard } from "./feature/SprintCard";
 import { StepsTimeline } from "./feature/StepsTimeline";
@@ -69,7 +69,7 @@ export function FeatureDetail({
   const journal = useFeatureJournal(project, f.id);
   const proposal = useSprintProposal(project.meta.id, f.key);
   const steps = stepModels(project, f.id, { runs: agents?.runs ?? [], ciRuns, now, execution });
-  const next = nextStep(steps);
+  const next = nextStartableStep(steps, project.tickets);
   const activity = journal.length > 0 ? journalActivity(journal, project, now) : featureActivity(steps, now);
   const facts = sprintFacts(project, f, { today: localDay(now), steps });
   const setSprint = (sprintId: string | null) =>
@@ -133,9 +133,16 @@ export function FeatureDetail({
             steps={steps}
             workflow={project.workflow}
             now={now}
-            nextId={next?.ticketId ?? null}
+            nextId={next?.step.ticketId ?? null}
             nextAction={
-              next && <NextStepAction projectId={project.meta.id} step={next} execution={execution} />
+              next && (
+                <NextStepAction
+                  projectId={project.meta.id}
+                  step={next.step}
+                  reason={next.reason}
+                  execution={execution}
+                />
+              )
             }
             onOpenTicket={onOpenTicket}
           />

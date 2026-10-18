@@ -2,7 +2,14 @@ import { expect, test } from "bun:test";
 import type { CiRun, ProjectSnapshot } from "@kibo/schema";
 import { featureActivity, featureQuestions } from "./feature-feed";
 import { featureDependencies } from "./feature-links";
-import { featureBadge, nextStep, type StepFacts, sprintFacts, stepModels } from "./feature-model";
+import {
+  featureBadge,
+  nextStartableStep,
+  nextStep,
+  type StepFacts,
+  sprintFacts,
+  stepModels,
+} from "./feature-model";
 import { emisFeatureProject, NOW, SESSION_RUN } from "./fixture";
 
 const project = emisFeatureProject();
@@ -76,6 +83,44 @@ test("the next step to deliver is the first one not started, or back in review w
   );
   expect(nextStep(asked)?.key).toBe("EMIS-32");
   expect(nextStep(steps.map((s) => ({ ...s, statusId: "done" as const })))).toBeNull();
+});
+
+const startability = (patch: Record<string, Partial<ProjectSnapshot["tickets"][number]>>) =>
+  project.tickets.map((t) => ({ ...t, ...patch[t.id] }));
+
+test("the action proposes only a startable step, the first one in order", () => {
+  const steps = stepModels(project, "f5", facts());
+  const tickets = startability({ e35: { startable: true } });
+  expect(nextStartableStep(steps, tickets)).toEqual({
+    step: expect.objectContaining({ key: "EMIS-35" }),
+    reason: null,
+  });
+  const both = startability({ e34: { startable: true }, e35: { startable: true } });
+  expect(nextStartableStep(steps, both)?.step.key).toBe("EMIS-34");
+});
+
+test("with no startable step, the next step comes with the reason it waits", () => {
+  const steps = stepModels(project, "f5", facts());
+  expect(nextStartableStep(steps, project.tickets)).toEqual({
+    step: expect.objectContaining({ key: "EMIS-34" }),
+    reason: { kind: "dependency", keys: ["EMIS-33"] },
+  });
+  expect(
+    nextStartableStep(
+      steps.map((s) => ({ ...s, statusId: "done" as const })),
+      project.tickets,
+    ),
+  ).toBeNull();
+});
+
+test("a step back in review with changes requested is proposed as a touch-up", () => {
+  const steps = stepModels(project, "f5", facts()).map((s) =>
+    s.pr && s.key === "EMIS-32" ? { ...s, pr: { ...s.pr, review: "changes_requested" as const } } : s,
+  );
+  expect(nextStartableStep(steps, project.tickets)).toEqual({
+    step: expect.objectContaining({ key: "EMIS-32" }),
+    reason: null,
+  });
 });
 
 test("the fixture F5 is still open on the last day of S42, late only the day after (§39.6.18)", () => {
@@ -152,6 +197,25 @@ test("the open questions of the feature and its steps are listed with their orig
   };
   const answered = { ...q16, id: "q17", answer };
   expect(featureQuestions({ ...project, questions: [q16, answered] }, "f5", NOW)).toEqual([
-    { id: "q16", title: "Quota par affaire : 2 Go ou 5 Go ?", meta: "Q16 · Produit · hier · EMIS-34" },
+    {
+      id: "q16",
+      title: "Quota par affaire : 2 Go ou 5 Go ?",
+      meta: "Q16 · Produit · hier · EMIS-34",
+      blocking: false,
+    },
+  ]);
+});
+
+test("a blocking question asked on the feature is listed with its Qn and flagged blocking", () => {
+  const [q16] = project.questions;
+  if (!q16) throw new Error("fixture without Q16");
+  const onFeature = { ...q16, id: "q1", ticketId: "f5", blocking: true, importRef: null, number: 1 };
+  expect(featureQuestions({ ...project, questions: [onFeature] }, "f5", NOW)).toEqual([
+    {
+      id: "q1",
+      title: "Quota par affaire : 2 Go ou 5 Go ?",
+      meta: "Q1 · Produit · hier · F5",
+      blocking: true,
+    },
   ]);
 });

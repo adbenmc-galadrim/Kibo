@@ -1,4 +1,5 @@
-import { type AgentExecution, deliveryBrief } from "@kibo/schema";
+import { type AgentExecution, deliveryBrief, type StartReason } from "@kibo/schema";
+import { deliveryTexts } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Copy, Truck } from "lucide-react";
 import { useState } from "react";
@@ -8,12 +9,27 @@ import { frFeature as t } from "../../i18n/fr-group";
 import { STROKE } from "./styles";
 
 type Step = { ticketId: string; key: string; title: string; blockedBy: readonly string[] };
-type Props = { projectId: string; step: Step; execution: AgentExecution };
+type Props = { projectId: string; step: Step; reason: StartReason | null; execution: AgentExecution };
 
 const BUTTON =
   "h-[25px] gap-[6px] rounded-[6px] bg-primary dark:bg-(--tracking-fg) px-[10px] py-[5px] has-[>svg]:px-[10px] text-[12.5px] leading-[15px] font-medium text-primary-foreground shadow-none hover:bg-primary/90 dark:hover:bg-(--tracking-fg)/90 [&_svg:not([class*='size-'])]:size-[13px]";
 
-export function NextStepAction({ projectId, step, execution }: Props) {
+const TEXT = "text-[12px] leading-[15px] text-(--tracking-mfg)";
+
+function WaitingStep({ step, reason }: { step: Step; reason: StartReason }) {
+  const said = deliveryTexts.reason(reason);
+  return (
+    <div className="flex min-h-[29px] flex-wrap items-center gap-[8px] pt-[4px]">
+      <p className={TEXT}>{said === null ? t.noStartableStep : t.nextStepWaits(step.key, said)}</p>
+    </div>
+  );
+}
+
+export function NextStepAction({ reason, ...props }: Props) {
+  return reason === null ? <StartableStep {...props} /> : <WaitingStep step={props.step} reason={reason} />;
+}
+
+function StartableStep({ projectId, step, execution }: Omit<Props, "reason">) {
   const command = deliveryBrief(step.key);
   const flow = useDeliver(projectId, { id: step.ticketId, keyLabel: step.key, title: step.title });
   const [copy, setCopy] = useState<"idle" | "copied" | "refused">("idle");
@@ -30,14 +46,14 @@ export function NextStepAction({ projectId, step, execution }: Props) {
   const error = flow.error ?? (copy === "refused" ? t.copyRefused : null);
   return (
     <div className="flex min-h-[29px] flex-wrap items-center gap-[8px] pt-[4px]">
-      <p className="text-[12px] leading-[15px] text-(--tracking-mfg)">{t.nextStep(step.blockedBy)}</p>
+      <p className={TEXT}>{t.nextStep(step.blockedBy)}</p>
       <Button className={`ml-auto ${BUTTON}`} disabled={flow.busy} onClick={() => void run()}>
         {execution === "shown" ? (
           <Truck absoluteStrokeWidth size={13} />
         ) : (
           <Copy absoluteStrokeWidth size={13} />
         )}
-        {t.deliverNext}
+        {execution === "shown" ? t.deliverNext : t.copyCommand}
       </Button>
       <code
         className={`flex h-[24px] items-center rounded-[6px] px-[9px] font-mono text-[11.5px] leading-[14px] text-(--tracking-mfg) ${STROKE}`}

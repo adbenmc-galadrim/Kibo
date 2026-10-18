@@ -13,6 +13,7 @@ import {
   prCiTone,
   type RunView,
   type SprintView,
+  type StartReason,
   sortSprints,
   type TicketView,
 } from "@kibo/schema";
@@ -59,6 +60,24 @@ export const nextStep = <S extends Parameters<typeof nextDeliverableStep>[0][num
   const id = nextDeliverableStep(steps);
   return steps.find((s) => s.ticketId === id) ?? null;
 };
+
+type Startability = Pick<TicketView, "id" | "startable" | "startReason">;
+export type NextStartable<S> = { step: S; reason: StartReason | null };
+
+const isTouchUp = (s: Pick<FeatureStep, "statusId" | "pr">): boolean =>
+  s.statusId === "in_review" && s.pr?.review === "changes_requested";
+
+export function nextStartableStep<S extends Parameters<typeof nextDeliverableStep>[0][number]>(
+  steps: readonly S[],
+  tickets: readonly Startability[],
+): NextStartable<S> | null {
+  const byId = new Map(tickets.map((t) => [t.id, t]));
+  const ready = steps.find((s) => isTouchUp(s) || byId.get(s.ticketId)?.startable === true);
+  if (ready !== undefined) return { step: ready, reason: null };
+  const next = nextStep(steps);
+  if (next === null) return null;
+  return { step: next, reason: byId.get(next.ticketId)?.startReason ?? { kind: "status" } };
+}
 
 export type SprintWarning = { kind: "wontFit" | "over"; remaining: number };
 export type SprintFacts = {

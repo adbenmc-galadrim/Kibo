@@ -61,6 +61,10 @@ export const frFeature = {
       ? "Prochaine étape à livrer."
       : `Prochaine étape à livrer une fois ${blockers.join(", ")} ${blockers.length > 1 ? "fusionnées" : "fusionné"}.`,
   deliverNext: "Livrer la prochaine étape",
+  copyCommand: "Copier la commande",
+  nextStepWaits: (key: string, reason: string) => `Prochaine étape ${key} : ${reason}.`,
+  noStartableStep: "Aucune étape démarrable pour l'instant.",
+  blockingQuestion: "bloquante",
   copied: "Commande copiée",
   copyRefused: "Copie refusée : sélectionne la commande à la main.",
   sprint: "Sprint",

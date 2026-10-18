@@ -4,6 +4,7 @@ import {
   type ProjectEvent,
   type ProjectEventKind,
   type ProjectSnapshot,
+  questionLabel,
 } from "@kibo/schema";
 import { frFeature as t } from "../../i18n/fr-group";
 import type { StepModel } from "./feature-model";
@@ -112,7 +113,7 @@ export function journalActivity(
   });
 }
 
-export type FeatureQuestion = { id: string; title: string; meta: string };
+export type FeatureQuestion = { id: string; title: string; meta: string; blocking: boolean };
 
 export function featureQuestions(
   project: Pick<ProjectSnapshot, "tickets" | "questions" | "questionRecipients">,
@@ -122,7 +123,7 @@ export function featureQuestions(
   const keys = new Map(
     project.tickets
       .filter((x) => x.id === featureId || x.parentId === featureId)
-      .map((x) => [x.id, x.keyLabel]),
+      .map((x) => [x.id, x.shortKey ?? x.keyLabel]),
   );
   return project.questions
     .filter((q) => q.answer === null && q.archivedAt === null && keys.has(q.ticketId))
@@ -130,12 +131,13 @@ export function featureQuestions(
       id: q.id,
       title: q.title,
       meta: [
-        q.importRef?.id ?? null,
+        questionLabel(q),
         findRecipient(project.questionRecipients, q.recipient)?.name ?? null,
         ageLabel(q.createdAt, now),
         keys.get(q.ticketId) ?? null,
       ]
         .filter((p) => p !== null)
         .join(" · "),
+      blocking: q.blocking,
     }));
 }
