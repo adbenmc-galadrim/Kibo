@@ -25,10 +25,10 @@ S.draw["a-vue"] = (x, y) => { const C = S.C, D = S.D, P = D.project;
   const root = S.box(f, { name: "root", w: 1440, h: 960, dir: "row", align: "stretch" });
   S.sidebar(root, "Vue d'ensemble");
   const main = S.col(root, { name: "main", fx: true, fy: true });
-  S.topbar(main, ["Emis", "Vue d'ensemble"], t => { S.syncChip(t); S.btn(t, "Nouveau ticket", "outline", { sm: true, icon: "plus" }); S.agentButton(t, { on: true }); });
+  S.topbar(main, ["Silo", "Vue d'ensemble"], t => { S.syncChip(t); S.btn(t, "Nouveau ticket", "outline", { sm: true, icon: "plus" }); S.agentButton(t, { on: true }); });
   const body = S.col(main, { fx: true, fy: true, pad: [20, 24], gap: 16 });
   const hd = S.row(body, { fx: true, gap: 12 });
-  const ht = S.col(hd, { gap: 4 }); S.txt(ht, "Emis", { size: 22, weight: 600 });
+  const ht = S.col(hd, { gap: 4 }); S.txt(ht, "Silo", { size: 22, weight: 600 });
   const hs = S.row(ht, { gap: 6 }); S.txt(hs, P.sub, { size: 12.5, color: C.mfg }); S.txt(hs, "·", { size: 12.5, color: C.faint });
   S.icon(hs, "github", 12, C.dim); S.txt(hs, P.repo, { size: 12, mono: true, color: C.dim }); S.icon(hs, "branch", 12, C.dim); S.txt(hs, P.base, { size: 12, mono: true, color: C.dim });
   S.spacer(hd); S.liveChip(hd, { text: "2 sessions actives · T3 Code" });
@@ -46,7 +46,7 @@ S.draw["a-vue"] = (x, y) => { const C = S.C, D = S.D, P = D.project;
   S.vline(k, C.soft);
   kpi("question", "Questions", String(P.questions), "ouvertes", c => { const r = S.row(c, { gap: 6 }); S.dot(r, C.red, 6); S.txt(r, "1 bloquante", { size: 11.5, color: C.dim }); });
   S.vline(k, C.soft);
-  kpi("lock", "Bloqués", String(P.blocked), "ticket", c => S.txt(c, "EMIS-44 attend Q14", { size: 11.5, color: C.dim }));
+  kpi("lock", "Bloqués", String(P.blocked), "ticket", c => S.txt(c, "SILO-44 attend Q14", { size: 11.5, color: C.dim }));
 
   const cols = S.row(body, { fx: true, gap: 16, align: "start" });
   const left = S.col(cols, { fx: true, gap: 16 });
@@ -58,7 +58,7 @@ S.draw["a-vue"] = (x, y) => { const C = S.C, D = S.D, P = D.project;
   { const r = S.cardRow(ens); S.icon(r, "circleCheck", 14, C.green); S.fillX(S.txt(r, "C0 et C1 livrés · 20 tickets", { size: 12.5, color: C.dim })); S.icon(r, "chevRight", 13, C.dim); }
 
   const rev = S.card(left, "En review", "pr", { count: "4", right: h => S.txt(h, "les plus anciennes d'abord", { size: 12, color: C.dim }) });
-  for (const key of ["EMIS-60", "EMIS-41", "EMIS-22", "EMIS-32"]) { const t = S.tk(key), r = S.cardRow(rev, { align: "start" });
+  for (const key of ["SILO-60", "SILO-41", "SILO-22", "SILO-32"]) { const t = S.tk(key), r = S.cardRow(rev, { align: "start" });
     S.icon(r, "pr", 14, S.gitColor(t.git)); S.txt(r, t.ref, { size: 12, mono: true, color: C.mfg });
     const tc = S.col(r, { fx: true, gap: 3 }); S.txt(tc, t.title, { size: 13, fill: true }); const m = S.row(tc, { gap: 6 }); S.txt(m, t.key, { size: 11, mono: true, color: C.dim }); if (t.set) S.setChip(m, t.set);
     S.gitRef(m, { ci: t.ci }, { short: true });
@@ -67,7 +67,7 @@ S.draw["a-vue"] = (x, y) => { const C = S.C, D = S.D, P = D.project;
     const rc = S.col(r, { gap: 3, align: "end" }); S.txt(rc, t.step == null ? "sans étape" : S.stepLabel(t.step), { size: 12, color: t.step == null ? C.faint : C.mfg }); S.txt(rc, t.upd, { size: 11, color: C.dim }); }
 
   const go = S.card(left, "Prêts à démarrer", "flag", { count: "3", right: h => S.txt(h, "à lancer dans T3 Code", { size: 12, color: C.dim }) });
-  for (const [key, set, title] of [["EMIS-46", "C3", "Recherche d'un ISO par repère"], ["EMIS-35", "C4", "Purge des fichiers orphelins"], ["EMIS-61", "C4", "Compresser les photos avant envoi"]]) {
+  for (const [key, set, title] of [["SILO-46", "C3", "Recherche d'un box par numéro"], ["SILO-35", "C4", "Purge des fichiers orphelins"], ["SILO-61", "C4", "Compresser les photos avant envoi"]]) {
     const r = S.cardRow(go); S.setChip(r, set); S.fillX(S.txt(r, title, { size: 13 }));
     const cmd = S.row(r, { gap: 6, pad: [3, 8], radius: 5, fill: C.muted }); S.txt(cmd, "/full-delivery " + key, { size: 11, mono: true, color: C.mfg }); S.icon(cmd, "copy", 12, C.dim); }
 
@@ -98,7 +98,7 @@ S.agentPanelA = (root) => { const C = S.C, D = S.D;
   S.hline(ap, C.soft);
   const b = S.col(ap, { fx: true, fy: true, pad: 16, gap: 14 });
   S.txt(b, "Depuis ce matin", { size: 11, weight: 500, color: C.dim, upper: true, ls: 0.4 });
-  S.txt(b, "Trois tickets ont avancé sans toi : PR #22 ouverte, PR #18 fusionnée, EMIS-23 démarré. EMIS-44 reste bloqué : le client n'a pas répondu à Q14.", { size: 13, lh: 1.5, color: C.fg, fill: true });
+  S.txt(b, "Trois tickets ont avancé sans toi : PR #22 ouverte, PR #18 fusionnée, SILO-23 démarré. SILO-44 reste bloqué : le client n'a pas répondu à Q14.", { size: 13, lh: 1.5, color: C.fg, fill: true });
   const lot = S.col(b, { fx: true, stroke: C.brandLine, radius: 8, clip: true, fill: C.card });
   const lh = S.row(lot, { fx: true, pad: [9, 12], gap: 8, fill: C.brandSoft }); S.txt(lh, `Lot n° ${D.lot.n} · à valider`, { size: 12.5, weight: 600, color: C.brandText }); S.spacer(lh); S.txt(lh, "3 actions", { size: 11.5, color: C.dim });
   for (const it of D.lot.items) { S.hline(lot, C.soft); const r = S.row(lot, { fx: true, pad: [9, 12], gap: 10, align: "start" });
@@ -118,7 +118,7 @@ S.draw["a-tickets"] = (x, y) => { const C = S.C, D = S.D, P = D.project;
   const root = S.box(f, { name: "root", w: 1440, h: 960, dir: "row", align: "stretch" });
   S.sidebar(root, "Tickets");
   const main = S.col(root, { name: "main", fx: true, fy: true });
-  S.topbar(main, ["Emis", "Tickets"], t => { S.syncChip(t); S.agentButton(t, { count: "3" }); });
+  S.topbar(main, ["Silo", "Tickets"], t => { S.syncChip(t); S.agentButton(t, { count: "3" }); });
   const body = S.col(main, { fx: true, fy: true, pad: [20, 24], gap: 14 });
   const hd = S.row(body, { fx: true, gap: 10, align: "end" }); S.txt(hd, "Tickets", { size: 22, weight: 600 });
   S.txt(hd, "27 ouverts · 41 terminés · ensembles en puce", { size: 12.5, color: C.dim }); S.spacer(hd); S.btn(hd, "Nouveau ticket", "default", { sm: true, icon: "plus" });
@@ -164,17 +164,17 @@ S.GRAPH = {
   compact: [{ key: "C0", title: "Socle et déploiement", n: "12/12", c: 0, r: 0 }, { key: "C1", title: "Connexion et comptes", n: "8/8", c: 0, r: 1 }],
   frames: [
     { key: "C2", title: "Périmètre et affectations", n: "4/6", cols: [1, 2], rows: [1, 1], doneN: 4 },
-    { key: "C3", title: "Saisie des ISO et tronçons", n: "9/14", cols: [1, 2], rows: [3, 4], doneN: 9 },
+    { key: "C3", title: "Saisie des box et constats", n: "9/14", cols: [1, 2], rows: [3, 4], doneN: 9 },
     { key: "C4", title: "Fichiers et photos", n: "1/5", cols: [3, 4], rows: [1, 2], doneN: 1 },
-    { key: "C5", title: "Rapports de chantier", n: "0/6", cols: [3, 4], rows: [3.8, 3.8], more: "+ 4 tickets" } ],
+    { key: "C5", title: "Rapports de centre", n: "0/6", cols: [3, 4], rows: [3.8, 3.8], more: "+ 4 tickets" } ],
   nodes: [
-    { key: "EMIS-22", c: 1, r: 1 }, { key: "EMIS-23", c: 2, r: 1 },
-    { key: "EMIS-41", c: 1, r: 3 }, { key: "EMIS-43", c: 2, r: 3 }, { key: "EMIS-44", c: 1, r: 4 }, { key: "EMIS-46", c: 2, r: 4 },
-    { key: "EMIS-32", c: 3, r: 1 }, { key: "EMIS-33", c: 4, r: 1 }, { key: "EMIS-34", c: 3, r: 2 }, { key: "EMIS-35", c: 4, r: 2 },
-    { key: "EMIS-52", c: 3, r: 3.8 }, { key: "EMIS-53", c: 4, r: 3.8, title: "Export des rapports au client", st: "À faire" },
-    { key: "EMIS-60", c: 0, r: 4.3, w: 176 } ],
-  edges: [["C0", "C2"], ["C1", "C2"], ["C1", "C3"], ["EMIS-22", "EMIS-23"], ["EMIS-41", "EMIS-43"], ["EMIS-44", "EMIS-46"],
-    ["EMIS-32", "EMIS-33"], ["EMIS-32", "EMIS-34"], ["EMIS-34", "EMIS-35"], ["EMIS-23", "EMIS-52"], ["EMIS-52", "EMIS-53"], ["C4", "C5"]],
+    { key: "SILO-22", c: 1, r: 1 }, { key: "SILO-23", c: 2, r: 1 },
+    { key: "SILO-41", c: 1, r: 3 }, { key: "SILO-43", c: 2, r: 3 }, { key: "SILO-44", c: 1, r: 4 }, { key: "SILO-46", c: 2, r: 4 },
+    { key: "SILO-32", c: 3, r: 1 }, { key: "SILO-33", c: 4, r: 1 }, { key: "SILO-34", c: 3, r: 2 }, { key: "SILO-35", c: 4, r: 2 },
+    { key: "SILO-52", c: 3, r: 3.8 }, { key: "SILO-53", c: 4, r: 3.8, title: "Export des rapports au client", st: "À faire" },
+    { key: "SILO-60", c: 0, r: 4.3, w: 176 } ],
+  edges: [["C0", "C2"], ["C1", "C2"], ["C1", "C3"], ["SILO-22", "SILO-23"], ["SILO-41", "SILO-43"], ["SILO-44", "SILO-46"],
+    ["SILO-32", "SILO-33"], ["SILO-32", "SILO-34"], ["SILO-34", "SILO-35"], ["SILO-23", "SILO-52"], ["SILO-52", "SILO-53"], ["C4", "C5"]],
 };
 // Géométrie : colonnes et rangées → coordonnées dans le canevas.
 S.graphGeom = (g) => { const xs = [24, g.x1, g.x1 + g.nw + g.gx, g.x1 + 2 * (g.nw + g.gx) + g.fgap, g.x1 + 3 * (g.nw + g.gx) + g.fgap];
@@ -204,7 +204,7 @@ S.draw["a-graphe"] = async (x, y) => { const C = S.C, G = S.GRAPH;
   const root = S.box(f, { name: "root", w: 1440, h: 960, dir: "row", align: "stretch" });
   S.sidebar(root, "Graphe");
   const main = S.col(root, { name: "main", fx: true, fy: true });
-  S.topbar(main, ["Emis", "Graphe"], t => { S.syncChip(t); S.agentButton(t, { count: "3" }); });
+  S.topbar(main, ["Silo", "Graphe"], t => { S.syncChip(t); S.agentButton(t, { count: "3" }); });
   const tb = S.row(main, { fx: true, h: 48, pad: [0, 16], gap: 8 });
   S.btn(tb, "Regrouper : Ensembles", "outline", { sm: true, icon: "layers" }); S.btn(tb, "Terminés repliés", "outline", { sm: true, icon: "circleCheck" }); S.btn(tb, "Démarrables · 3", "outline", { sm: true, icon: "flag" });
   S.spacer(tb); S.txt(tb, "27 tickets ouverts · 4 ensembles en cours", { size: 12, color: C.dim });
@@ -226,12 +226,12 @@ S.draw["a-graphe"] = async (x, y) => { const C = S.C, G = S.GRAPH;
     S.txt(b, c.title, { size: 12, color: C.mfg }); pos[c.key] = { x: cx, y: cy, w: 176, h: 56 }; }
   for (const nd of G.nodes) { const t = { ...(S.tk(nd.key) || { key: nd.key, title: nd.title, st: nd.st }) }; const nx = geo.x(nd.c), ny = geo.y(nd.r) + 6;
     pos[nd.key] = { x: nx, y: ny, w: nd.w || g.nw, h: NH, node: t }; }
-  { const p = pos["EMIS-60"]; const l = S.row(cv, { x: p.x, y: p.y - 24, gap: 6 }); S.txt(l, "Hors ensemble", { size: 11, weight: 500, color: C.dim, upper: true, ls: 0.4 }); }
+  { const p = pos["SILO-60"]; const l = S.row(cv, { x: p.x, y: p.y - 24, gap: 6 }); S.txt(l, "Hors ensemble", { size: 11, weight: 500, color: C.dim, upper: true, ls: 0.4 }); }
   const segs = G.edges.map(([a, b]) => { const A = pos[a], B = pos[b]; const vertical = Math.abs(A.x - B.x) < 40 && !A.node === !B.node;
-    if (vertical) return [A.x + A.w / 2, A.y + A.h, B.x + B.w / 2, B.y - 2, !A.node && !S.GRAPH.compact.find(c => c.key === a), a === "EMIS-32"];
-    return [A.x + A.w, A.y + Math.min(A.h, NH) / 2, B.x - 2, B.y + Math.min(B.h, NH) / 2, !A.node && !S.GRAPH.compact.find(c => c.key === a), a === "EMIS-32"]; });
+    if (vertical) return [A.x + A.w / 2, A.y + A.h, B.x + B.w / 2, B.y - 2, !A.node && !S.GRAPH.compact.find(c => c.key === a), a === "SILO-32"];
+    return [A.x + A.w, A.y + Math.min(A.h, NH) / 2, B.x - 2, B.y + Math.min(B.h, NH) / 2, !A.node && !S.GRAPH.compact.find(c => c.key === a), a === "SILO-32"]; });
   S.svg(cv, S.edgesSvg(1199, 863, segs), "edges", { x: 0, y: 0 });
-  for (const nd of G.nodes) { const p = pos[nd.key]; const n = S.nodeA(cv, p.node, p.x, p.y, p.w); if (nd.key === "EMIS-32") n.strokes = [{ strokeColor: C.fg, strokeWidth: 1.5, strokeAlignment: "inner", strokeOpacity: 1 }]; }
+  for (const nd of G.nodes) { const p = pos[nd.key]; const n = S.nodeA(cv, p.node, p.x, p.y, p.w); if (nd.key === "SILO-32") n.strokes = [{ strokeColor: C.fg, strokeWidth: 1.5, strokeAlignment: "inner", strokeOpacity: 1 }]; }
   // Légende, zoom et minicarte
   const lg = S.row(cv, { name: "legend", x: 16, y: 863 - 52, pad: [8, 12], gap: 14, radius: 8, stroke: C.border, fill: C.card });
   for (const st of ["À faire", "En cours", "En review", "Bloqué"]) { const r = S.row(lg, { gap: 6 }); S.status(r, st, 8); S.txt(r, st, { size: 11.5, color: C.mfg }); }

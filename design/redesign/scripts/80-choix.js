@@ -58,7 +58,7 @@ S.draw["choix-1"] = (x, y) => { const C = S.C, P = S.P;
 S.draw["choix-2"] = (x, y) => { const C = S.C;
   return S.choiceBoard(S.CHOIX[1], x, y, st => {
     const c = S.inner(st, { gap: 0 });
-    const h = S.row(c, { fx: true, gap: 8, pad: [0, 0, 12, 0] }); S.icon(h, "sprint", 15, C.mfg); S.txt(h, "Sprint S42 · Terrain hors ligne", { size: 14, weight: 600 }); S.spacer(h); S.pill(h, "finit ce soir", C.amber, C.amberSoft, "clockAlert");
+    const h = S.row(c, { fx: true, gap: 8, pad: [0, 0, 12, 0] }); S.icon(h, "sprint", 15, C.mfg); S.txt(h, "Sprint S42 · Saisie hors ligne", { size: 14, weight: 600 }); S.spacer(h); S.pill(h, "finit ce soir", C.amber, C.amberSoft, "clockAlert");
     for (const k of ["F3", "F4", "F5"]) { const ft = S.feat(k), d = S.fDone(ft), hot = k === "F5"; S.hline(c, C.soft);
       const r = S.row(c, { fx: true, h: hot ? 70 : 48, gap: 10, pad: [0, 10], fill: hot ? C.redSoft : null, radius: hot ? 8 : 0 });
       const t = S.col(r, { fx: true, gap: 4 }); const l = S.row(t, { gap: 8 }); S.txt(l, k, { size: 12, mono: true, color: C.mfg }); S.txt(l, ft.name, { size: 13.5, weight: hot ? 600 : 500 });
@@ -97,7 +97,7 @@ S.draw["choix-3"] = (x, y) => { const C = S.C;
 // 4 · Limite d'ouvertes
 S.draw["choix-4"] = (x, y) => { const C = S.C;
   const f6 = (c, enabled) => { const card = S.col(c, { fx: true, radius: 10, stroke: C.border, fill: C.panel, pad: 16, gap: 10 });
-    const h = S.row(card, { fx: true, gap: 8 }); S.txt(h, "F6", { size: 12, mono: true, color: C.mfg }); S.txt(h, "Importer les ISO depuis Excel", { size: 14, weight: 600 });
+    const h = S.row(card, { fx: true, gap: 8 }); S.txt(h, "F6", { size: 12, mono: true, color: C.mfg }); S.txt(h, "Importer les box depuis Excel", { size: 14, weight: 600 });
     S.fCases(card, S.feat("F6"), { w: 18, h: 8, gap: 3 });
     const r = S.row(card, { gap: 8 });
     if (enabled) S.btn(r, "Ouvrir F6", "default", { icon: "arrowRight" });
@@ -123,7 +123,7 @@ S.draw["choix-5"] = (x, y) => { const C = S.C;
       if (!demo) S.icon(n, "check", 13, C.pfg, 3);
       S.txt(col, nm, { size: 12, color: demo ? C.mfg : C.fg, align: "center" });
       if (demo) S.txt(col, optional ? "facultative" : "obligatoire", { size: 12, weight: 600, color: optional ? C.mfg : C.fg }); }); };
-  const head = (c, pill) => { const h = S.row(c, { fx: true, gap: 8 }); S.txt(h, "F4", { size: 12, mono: true, color: C.mfg }); S.txt(h, "Saisir un tronçon hors ligne", { size: 15, weight: 600 }); S.spacer(h); pill(h); };
+  const head = (c, pill) => { const h = S.row(c, { fx: true, gap: 8 }); S.txt(h, "F4", { size: 12, mono: true, color: C.mfg }); S.txt(h, "Saisir un constat hors ligne", { size: 15, weight: 600 }); S.spacer(h); pill(h); };
   return S.choiceBoard(S.CHOIX[4], x, y, st => {
     const c = S.inner(st, { y: 60, x: 28, gap: 36 });
     head(c, h => S.pill(h, "livrée", C.green, C.greenSoft, "circleCheck")); frise(c, true);
@@ -134,7 +134,7 @@ S.draw["choix-5"] = (x, y) => { const C = S.C;
 
 // 6 · Nom dans les listes
 S.draw["choix-6"] = (x, y) => { const C = S.C;
-  const rows = [["F4", "Saisir un tronçon hors ligne", "Saisir un tronçon…"], ["F5", "Envoyer les photos d'un tronçon", "Envoyer les photos…"], ["F6", "Importer les ISO depuis Excel", "Importer les ISO…"], ["F8", "Valider les soudures par lot", "Valider les soudures…"]];
+  const rows = [["F4", "Saisir un constat hors ligne", "Saisir un constat…"], ["F5", "Envoyer les photos d'un constat", "Envoyer les photos…"], ["F6", "Importer les box depuis Excel", "Importer les box…"], ["F8", "Valider les contrats par lot", "Valider les contrats…"]];
   const list = (st, short) => { const c = S.inner(st, { gap: 0 });
     const h = S.row(c, { fx: true, h: 30, gap: 10, pad: [0, 10] }); S.secTxt(S.row(h, { w: 26 }), "Clé"); S.secTxt(S.row(h, { w: 170 }), "Fonctionnalité"); S.secTxt(S.row(h, { fx: true }), "Étapes"); S.secTxt(h, "Sprint");
     for (const [k, full, trunc] of rows) { const ft = S.feat(k), hov = short && k === "F5"; S.hline(c, C.soft);
@@ -144,21 +144,21 @@ S.draw["choix-6"] = (x, y) => { const C = S.C;
       S.fCases(S.row(r, { fx: true }), ft, { w: 12, h: 8, gap: 3 }); S.txt(r, ft.sprint, { size: 12, mono: true, color: C.mfg }); }
     return c; };
   return S.choiceBoard(S.CHOIX[5], x, y, st => { list(st, true);
-    const tip = S.row(st, { x: 76, y: 140, pad: [6, 10], radius: 6, fill: C.primary, shadow: 4 }); S.txt(tip, "Envoyer les photos d'un tronçon", { size: 12.5, weight: 500, color: C.pfg });
+    const tip = S.row(st, { x: 76, y: 140, pad: [6, 10], radius: 6, fill: C.primary, shadow: 4 }); S.txt(tip, "Envoyer les photos d'un constat", { size: 12.5, weight: 500, color: C.pfg });
   }, st => { list(st, false); }); };
 
 // 7 · Sprint
 S.draw["choix-7"] = (x, y) => { const C = S.C;
   return S.choiceBoard(S.CHOIX[6], x, y, st => {
     const c = S.inner(st, { gap: 10 });
-    const h = S.row(c, { fx: true, gap: 8 }); S.icon(h, "sprint", 16, C.mfg); S.txt(h, "S42 · Terrain hors ligne", { size: 16, weight: 600 }); S.spacer(h); S.pill(h, "en cours", C.blue, C.blueSoft);
+    const h = S.row(c, { fx: true, gap: 8 }); S.icon(h, "sprint", 16, C.mfg); S.txt(h, "S42 · Saisie hors ligne", { size: 16, weight: 600 }); S.spacer(h); S.pill(h, "en cours", C.blue, C.blueSoft);
     const d = S.row(c, { gap: 8 }); S.icon(d, "calendar", 13, C.mfg); S.txt(d, "12–16 oct.", { size: 13 }); S.secTxt(d, "· finit ce soir · 1 livrée sur 3");
     const l = S.col(c, { fx: true, radius: 8, stroke: C.border, clip: true });
     ["F3", "F4", "F5"].forEach((k, i) => { const ft = S.feat(k); if (i) S.hline(l, C.soft); const r = S.row(l, { fx: true, h: 36, pad: [0, 12], gap: 10 }); S.txt(r, k, { size: 12, mono: true, color: C.mfg }); S.txt(S.row(r, { fx: true }), ft.name, { size: 13 }); S.fCases(r, ft, { w: 10, h: 7, gap: 2 }); });
     const a = S.row(c, { fx: true, pad: [10, 12], gap: 10, radius: 8, fill: C.brandSoft, stroke: C.brandLine }); S.agentMark(a, 22); S.txt(S.row(a, { fx: true }), "Fin de sprint : reporter F5 en S43 ?", { size: 13, weight: 500 }); S.btn(a, "Valider", "brand", { sm: true }); S.btn(a, "Refuser", "outline", { sm: true });
   }, st => {
     const c = S.inner(st, { gap: 0, y: 28 });
-    for (const [tk, t, sp] of [["EMIS-33", "Écran d'envoi hors ligne", "S42"], ["EMIS-45", "Conflits de saisie", "S42"], ["EMIS-34", "Tests E2E de l'envoi", "S42"], ["EMIS-51", "Lecture du fichier Excel", "S43"], ["EMIS-71", "Statuts de soudure", "S43"]]) { S.hline(c, C.soft);
+    for (const [tk, t, sp] of [["SILO-33", "Écran d'envoi hors ligne", "S42"], ["SILO-45", "Conflits de saisie", "S42"], ["SILO-34", "Tests E2E de l'envoi", "S42"], ["SILO-51", "Lecture du fichier Excel", "S43"], ["SILO-71", "Statuts de contrat", "S43"]]) { S.hline(c, C.soft);
       const r = S.row(c, { fx: true, h: 46, gap: 10, pad: [0, 10] }); S.txt(r, tk, { size: 12, mono: true, color: C.mfg }); S.txt(S.row(r, { fx: true }), t, { size: 13.5 });
       const g = S.row(r, { pad: [2, 8], radius: 10, fill: C.muted, gap: 5 }); S.icon(g, "sprint", 12, C.mfg); S.txt(g, sp, { size: 12, mono: true, weight: 500 }); }
   }); };
@@ -200,7 +200,7 @@ S.draw["choix-9"] = (x, y) => { const C = S.C;
   }, st => {
     const sb = S.col(st, { x: 0, y: 0, w: 180, h: S.CH.SH, fill: C.panel, pad: [14, 8], gap: 2 });
     const it = (icon, t, on) => { const r = S.row(sb, { fx: true, pad: [6, 8], gap: 7, radius: 6, fill: on ? C.muted : null, stroke: on ? C.fg : null }); S.icon(r, icon, 13, on ? C.fg : C.mfg); S.txt(r, t, { size: 12.5, weight: on ? 600 : 400, color: on ? C.fg : C.mfg }); };
-    it("home", "Accueil"); it("ticket", "Mes tickets"); it("sprint", "Planning tous projets", true); S.box(sb, { w: 10, h: 10 }); S.secTxt(sb, "PROJETS", { ls: 0.5 }); it("package", "Emis"); it("package", "Kibo"); it("package", "Gereco");
+    it("home", "Accueil"); it("ticket", "Mes tickets"); it("sprint", "Planning tous projets", true); S.box(sb, { w: 10, h: 10 }); S.secTxt(sb, "PROJETS", { ls: 0.5 }); it("package", "Silo"); it("package", "Kibo"); it("package", "Atlas");
     S.box(st, { x: 180, y: 0, w: 1, h: S.CH.SH, fill: C.border });
     const c = S.col(st, { x: 196, y: 20, w: S.CH.SW - 212, gap: 10 }); S.miniBand(c, ["S41", "S42", "S43", "S44"], ["F1", "F2", "F3", "F4", "F5", "F6", "F8", "F7", "F9"], { lw: 40, cw: 8, rh: 30, compact: true });
   }); };

@@ -1,5 +1,5 @@
-// Trois directions de style hors shadcn : 1 « Carnet de chantier », 2 « Instrument », 3 « Atelier ».
-// Données : redécoupage réel d'Emis (22 fonctionnalités F00 à F21, sprints S1 à S10, mise en production le 18/12).
+// Trois directions de style hors shadcn : 1 « Carnet de centre », 2 « Instrument », 3 « Atelier ».
+// Données : plan fictif de Silo (22 fonctionnalités F00 à F21, sprints S1 à S10, mise en production le 18/12).
 const S = storage;
 S.draw = S.draw || {};
 Object.assign(S.ICONS, {
@@ -10,7 +10,7 @@ Object.assign(S.ICONS, {
   copy: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
 });
 
-// ---------- Données Emis (redécoupage du 2026-10-16) ----------
+// ---------- Données Silo (plan fictif, location de box) ----------
 const F = (k, name, short, from, to, steps) => ({ k, name, short, from, to, steps });
 S.E = {
   sprints: ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10"],
@@ -19,34 +19,34 @@ S.E = {
   closed: [[], ["F01", "F02"], ["F03", "F04"], ["F05"], ["F06", "F07"], ["F08", "F09"], ["F10", "F11"], ["F12"], ["F13"], ["F14", "F15"]],
   tracks: ["P1", "P1", "P1", "P1", null, null, null, null, "P2", "P2"],
   f: [
-    F("F00", "Fondations techniques", "Fondations", -1, -1, "LLLLLLLLL"),
+    F("F00", "Socle et déploiement", "Socle", -1, -1, "LLLLLLLLL"),
     F("F01", "Se connecter avec Microsoft", "Connexion Microsoft", 0, 1, "LRRTTT"),
-    F("F02", "Créer et consulter ses affaires", "Affaires", 0, 1, "TRTTTTTTT"),
-    F("F03", "Donner accès à un salarié", "Accès salarié", 2, 2, "TTTTTT"),
-    F("F04", "Voir les tronçons d'une affaire", "Tronçons", 2, 2, "TTTT"),
-    F("F05", "Constituer l'équipe d'une affaire", "Équipe", 3, 3, "TTT"),
-    F("F06", "Valider une étape au clic", "Fiche tronçon", 3, 4, "TTTTT"),
-    F("F07", "Piloter l'atelier au Kanban", "Kanban atelier", 4, 4, "TTTT"),
-    F("F08", "Encoder les tags au magasin", "Tags magasin", 5, 5, "LTTT"),
-    F("F09", "Gérer un tronçon", "Gérer un tronçon", 5, 5, "TTTTTTT"),
-    F("F10", "Importer les tronçons depuis Excel", "Import Excel", 6, 6, "TTTTT"),
-    F("F11", "Plans des ISO et fichiers", "Plans ISO", 6, 6, "RTTT"),
-    F("F12", "Scanner au pistolet", "Scan pistolet", 7, 7, "TTTB"),
-    F("F13", "Expédier les tronçons : BL et sous-traitant", "Expédition", 7, 8, "TTTTT"),
-    F("F14", "Travailler hors ligne sur chantier", "Hors ligne", 8, 9, "TTTTTT"),
-    F("F15", "Suivre l'avancement : KPIs et reporting", "KPIs", 9, 9, "TTTTT"),
-    F("F16", "Être alerté", "Alertes", 10, 10, "TTTTB"),
-    F("F17", "Organigramme d'affaire", "Organigramme", 10, 10, "TTT"),
-    F("F18", "Partager l'avancement avec le client", "Partage client", 10, 10, "TTB"),
-    F("F19", "Photographier un tronçon", "Photos", 10, 10, "TT"),
-    F("F20", "Faire évoluer les droits", "Droits", 10, 10, "TTT"),
-    F("F21", "Clôturer, archiver, exporter une affaire", "Clôture", 10, 10, "TTT") ],
+    F("F02", "Créer et consulter ses clients", "Clients", 0, 1, "TRTTTTTTT"),
+    F("F03", "Donner accès à un locataire", "Accès locataire", 2, 2, "TTTTTT"),
+    F("F04", "Voir les constats d'un client", "Constats", 2, 2, "TTTT"),
+    F("F05", "Constituer l'équipe d'un client", "Équipe", 3, 3, "TTT"),
+    F("F06", "Valider un constat au clic", "Fiche constat", 3, 4, "TTTTT"),
+    F("F07", "Piloter l'accueil au Kanban", "Kanban accueil", 4, 4, "TTTT"),
+    F("F08", "Encoder les badges d'accès", "Badges accès", 5, 5, "LTTT"),
+    F("F09", "Gérer un constat", "Gérer un constat", 5, 5, "TTTTTTT"),
+    F("F10", "Importer les constats depuis Excel", "Import Excel", 6, 6, "TTTTT"),
+    F("F11", "Plans des box et fichiers", "Plans box", 6, 6, "RTTT"),
+    F("F12", "Scanner au lecteur", "Scan lecteur", 7, 7, "TTTB"),
+    F("F13", "Libérer les box : état des lieux et caution", "Libération", 7, 8, "TTTTT"),
+    F("F14", "Travailler hors ligne au centre", "Hors ligne", 8, 9, "TTTTTT"),
+    F("F15", "Suivre l'occupation : KPIs et reporting", "KPIs", 9, 9, "TTTTT"),
+    F("F16", "Être relancé", "Relances", 10, 10, "TTTTB"),
+    F("F17", "Organigramme de client", "Organigramme", 10, 10, "TTT"),
+    F("F18", "Partager l'état du box avec le client", "Partage client", 10, 10, "TTB"),
+    F("F19", "Photographier un constat", "Photos", 10, 10, "TT"),
+    F("F20", "Faire évoluer les tarifs", "Tarifs", 10, 10, "TTT"),
+    F("F21", "Clôturer, archiver, exporter un client", "Clôture", 10, 10, "TTT") ],
   p: [F("P1", "Staging recettable par le client", "Staging", 0, 3, "TBTTTTT"), F("P2", "Mise en production", "Production", 8, 9, "TTTTTTTTT")],
-  f01steps: [["EMIS-13", "Spike SSO Microsoft Entra ID", "L", "livré"], ["EMIS-14", "Connexion Microsoft, écrans 1.0 à 1.3", "R", "PR #11 à relire"], ["EMIS-15", "Compte non provisionné", "R", "PR #12, empilée"],
+  f01steps: [["SILO-13", "Spike SSO Microsoft Entra ID", "L", "livré"], ["SILO-14", "Connexion Microsoft, écrans 1.0 à 1.3", "R", "PR #11 à relire"], ["SILO-15", "Compte non provisionné", "R", "PR #12, empilée"],
     ["N01", "Profil courant côté client", "T", ""], ["N02", "Seed de démo multi-rôles", "T", ""], ["N03", "Démo e2e de la connexion", "T", ""]],
   blockers: [
-    { kind: "BLK", icon: "lock", title: "Le staging attend la DSI", body: "Le compte AWS (EMIS-7) attend la validation DSI ; le dossier d'hébergement (EMIS-6) n'est pas commencé. Pas de recette client d'ici là.", meta: "P1 · Staging recettable" },
-    { kind: "Q", icon: "question", title: "Qui peut créer une affaire ?", body: "Admin seul, ou aussi le chargé d'affaires ? La garde de création (N04) en dépend.", meta: "Question · F02" },
+    { kind: "BLK", icon: "lock", title: "Le staging attend la DSI", body: "Le compte AWS (SILO-7) attend la validation DSI ; le dossier d'hébergement (SILO-6) n'est pas commencé. Pas de recette client d'ici là.", meta: "P1 · Staging recettable" },
+    { kind: "Q", icon: "question", title: "Qui peut créer un client ?", body: "Admin seul, ou aussi le chargé de clientèle ? La garde de création (N04) en dépend.", meta: "Question · F02" },
     { kind: "PR", icon: "pr", title: "Quatre PR à relire", body: "#11 et #12 (F01), #13 en brouillon (F02), #9 (F11, en avance). La #11 attend les variables MICROSOFT_* dans .env.dev.", meta: "PR · F01 F02 F11" } ],
   agent: "S1 se termine sans fonctionnalité fermée : F01 et F02 continuent en S2, comme prévu. Le staging reste le premier risque pour le 18/12.",
 };
@@ -73,13 +73,13 @@ S.sbox = (name, x, y, w, h) => { const f = penpot.createBoard(); f.name = S.mode
 S.T = (p, chars, o = {}) => S.txt(p, chars, { ...o, font: o.title ? S.titleFont : o.font, color: o.color || S.K.ink });
 
 // =====================================================================================
-// Style 1 · Carnet de chantier
+// Style 1 · Carnet de centre
 // =====================================================================================
 S.caseC1 = (c) => ({ L: S.K.ink, R: S.K.review, B: S.K.accent, T: S.K.todo })[c];
 S.mastC1 = (root, active) => { const K = S.K;
   const m = S.row(root, { fx: true, gap: 16, align: "end" });
   const l = S.col(m, { gap: 2 }); S.T(l, "KIBO", { size: 11, weight: 600, color: K.ink2, ls: 2.5 });
-  const t = S.row(l, { gap: 10, align: "end" }); S.T(t, "Emis", { title: true, size: 40, weight: 600, ls: -0.5 }); S.T(t, "suivi de chantier", { title: true, italic: true, size: 22, color: K.ink2 });
+  const t = S.row(l, { gap: 10, align: "end" }); S.T(t, "Silo", { title: true, size: 40, weight: 600, ls: -0.5 }); S.T(t, "location de box", { title: true, italic: true, size: 22, color: K.ink2 });
   S.spacer(m);
   const r = S.col(m, { gap: 3, align: "end" }); S.T(r, "Vendredi 16 octobre 2026", { title: true, italic: true, size: 17 }); S.T(r, "Sprint S1, dernier jour", { size: 12, color: K.ink2 });
   const nav = S.row(root, { fx: true, gap: 24, pad: [18, 0, 10, 0] });
@@ -131,7 +131,7 @@ S.draw["s1-vue"] = (x, y) => { const K = S.K, E = S.E;
   const nx = S.col(c3, { fx: true, gap: 8, pad: [14, 16], fill: K.panel });
   S.T(nx, "Étape suivante", { title: true, italic: true, size: 16, color: K.accent }); S.T(nx, "Relire et fusionner la PR #11, puis lancer le profil courant (N01).", { size: 14, lh: 1.45, fill: true });
   const cm = S.row(nx, { gap: 8 }); S.T(cm, "/full-delivery N01", { mono: true, size: 12.5 }); S.icon(cm, "copy", 13, K.ink2);
-  S.T(c3, "Ensuite : F02 · Créer et consulter ses affaires, 0 étape sur 9.", { size: 13, color: K.ink2, fill: true });
+  S.T(c3, "Ensuite : F02 · Créer et consulter ses clients, 0 étape sur 9.", { size: 13, color: K.ink2, fill: true });
   // Agent, discret
   S.box(root, { name: "rule", h: 1, w: 10, fx: true, fill: K.ink });
   const ag = S.row(root, { fx: true, gap: 14, pad: [14, 0, 0, 0] });
@@ -170,7 +170,7 @@ S.draw["s1-planning"] = (x, y) => { const K = S.K, E = S.E;
     S.icon(c, "grip", 12, K.ink2); S.T(c, k, { mono: true, size: 11.5, color: K.ink2 }); S.T(c, ft.name, { size: 13, color: k === "F19" ? K.faint : K.ink }); }
   S.T(root, "Glisser une fonctionnalité vers un sprint pour la planifier ; Kibo signale le dépassement de la limite de deux ouvertes.", { size: 12.5, color: K.ink2 });
   // F19 en cours de glissement vers S10
-  const g = S.row(f, { name: "dragging F19", x: 610, y: 834, gap: 7, pad: [7, 11], stroke: K.accent, fill: K.bg, shadow: 6 }); S.icon(g, "grip", 12, K.ink); S.T(g, "F19", { mono: true, size: 11.5, color: K.ink2 }); S.T(g, "Photographier un tronçon", { size: 13 });
+  const g = S.row(f, { name: "dragging F19", x: 610, y: 834, gap: 7, pad: [7, 11], stroke: K.accent, fill: K.bg, shadow: 6 }); S.icon(g, "grip", 12, K.ink); S.T(g, "F19", { mono: true, size: 11.5, color: K.ink2 }); S.T(g, "Photographier un constat", { size: 13 });
   const w = S.row(f, { name: "warning", x: 612, y: 808, gap: 6 }); S.T(w, "→ S10 : trois ouvertes, au-delà de la limite de deux", { title: true, italic: true, size: 14, color: K.accent });
   return f; };
 
@@ -180,7 +180,7 @@ S.draw["s1-planning"] = (x, y) => { const K = S.K, E = S.E;
 S.caseC2 = (c) => ({ L: S.K.sig, R: S.K.review, B: S.K.alert, T: S.K.todo })[c];
 S.barC2 = (root, active) => { const K = S.K;
   const b = S.row(root, { fx: true, h: 44, pad: [0, 24], gap: 18 });
-  S.T(b, "KIBO", { mono: true, size: 12, weight: 600 }); S.T(b, "/", { mono: true, size: 12, color: K.faint }); S.T(b, "EMIS", { mono: true, size: 12, weight: 600 });
+  S.T(b, "KIBO", { mono: true, size: 12, weight: 600 }); S.T(b, "/", { mono: true, size: 12, color: K.faint }); S.T(b, "SILO", { mono: true, size: 12, weight: 600 });
   S.box(b, { w: 8, h: 4 });
   for (const n of ["VUE", "PLANNING", "TICKETS", "GRAPHE", "NOTES", "QUESTIONS"]) { const on = n === active; const t = S.row(b, { pad: [3, 7], fill: on ? K.ink : null }); S.T(t, n, { mono: true, size: 11, weight: 500, color: on ? K.bg : K.ink2, ls: 0.6 }); }
   S.spacer(b); S.T(b, "16.10.2026 · S1 J5/5", { mono: true, size: 11.5, color: K.ink2 }); const sy = S.row(b, { gap: 6 }); S.dot(sy, K.sig, 6); S.T(sy, "SYNC 14:58", { mono: true, size: 11.5, color: K.ink2 });
@@ -226,7 +226,7 @@ S.draw["s2-vue"] = (x, y) => { const K = S.K, E = S.E;
     S.T(tr, { L: "LIV", R: "REV", B: "BLK", T: "—" }[c], { mono: true, size: 10, color: c === "L" ? K.sigText : K.ink2, x: xx, y: 36 }); });
   S.T(tr, "▲ ICI", { mono: true, size: 10.5, weight: 600, color: K.sigText, x: sw + 5, y: 54 });
   S.box(p3, { h: 1, w: 10, fx: true, fill: K.grid });
-  S.kvC2(p3, "ÉTAPE SUIVANTE", "EMIS-14 · PR #11"); S.T(p3, "Relire et fusionner la PR #11 (après MICROSOFT_* dans .env.dev), puis lancer N01, le profil courant.", { size: 13, lh: 1.45, color: K.ink2, fill: true });
+  S.kvC2(p3, "ÉTAPE SUIVANTE", "SILO-14 · PR #11"); S.T(p3, "Relire et fusionner la PR #11 (après MICROSOFT_* dans .env.dev), puis lancer N01, le profil courant.", { size: 13, lh: 1.45, color: K.ink2, fill: true });
   const cm = S.row(p3, { fx: true, gap: 10, pad: [10, 12], fill: K.bg, stroke: K.grid2 }); S.T(cm, "$", { mono: true, size: 13, color: K.sigText }); S.T(cm, "/full-delivery N01", { mono: true, size: 13 }); S.spacer(cm); S.T(cm, "COPIER", { mono: true, size: 10.5, color: K.ink2 });
   S.kvC2(p3, "PUIS", "F02 · 0/9 étapes", { color: K.ink2 });
   // Règle des sprints
@@ -283,7 +283,7 @@ S.draw["s2-planning"] = (x, y) => { const K = S.K, E = S.E;
 // =====================================================================================
 S.navC3 = (root, active) => { const K = S.K;
   const n = S.row(root, { fx: true, h: 72, pad: [0, 32], gap: 12 });
-  S.logo(n, 30); const ps = S.row(n, { gap: 8, pad: [7, 14], radius: 999, fill: K.card, stroke: K.line }); S.dot(ps, "#14B8A6", 9); S.T(ps, "Emis", { size: 14, weight: 600 }); S.icon(ps, "chevDown", 14, K.ink2);
+  S.logo(n, 30); const ps = S.row(n, { gap: 8, pad: [7, 14], radius: 999, fill: K.card, stroke: K.line }); S.dot(ps, "#14B8A6", 9); S.T(ps, "Silo", { size: 14, weight: 600 }); S.icon(ps, "chevDown", 14, K.ink2);
   S.box(n, { w: 12, h: 4 });
   for (const l of ["Accueil", "Planning", "Tickets", "Graphe", "Notes", "Questions"]) { const on = l === active; const p = S.row(n, { pad: [8, 16], radius: 999, fill: on ? K.ink : null }); S.T(p, l, { size: 14, weight: 500, color: on ? K.bg : K.ink2 }); }
   S.spacer(n); S.icon(n, "search", 19, K.ink2); S.icon(n, "bell", 19, K.ink2); S.avatar(n, "AB", 36, { fill: K.brandSoft, stroke: K.line, color: K.brand }); };
@@ -295,7 +295,7 @@ S.draw["s3-vue"] = (x, y) => { const K = S.K, E = S.E;
   const root = S.col(f, { name: "root", w: 1440, h: 960 });
   S.navC3(root, "Accueil");
   const body = S.col(root, { fx: true, fy: true, pad: [20, 32, 28, 32], gap: 24 });
-  const gr = S.row(body, { gap: 12, align: "end" }); S.T(gr, "Bonjour Adam,", { title: true, size: 40, weight: 700, ls: -1 }); S.T(gr, "voici Emis ce vendredi.", { title: true, size: 40, weight: 400, color: K.ink2, ls: -1 });
+  const gr = S.row(body, { gap: 12, align: "end" }); S.T(gr, "Bonjour Adam,", { title: true, size: 40, weight: 700, ls: -1 }); S.T(gr, "voici Silo ce vendredi.", { title: true, size: 40, weight: 400, color: K.ink2, ls: -1 });
   const cards = S.row(body, { fx: true, gap: 20, align: "stretch", h: 500 });
   const card = (icon, title, bg, fg) => { const c = S.col(cards, { fx: true, fy: true, pad: 26, gap: 18, radius: 28, fill: K.card, stroke: K.line });
     const h = S.row(c, { gap: 12 }); S.bubble(h, icon, bg, fg, 40); S.T(h, title, { title: true, size: 22, weight: 700 }); return c; };
@@ -320,7 +320,7 @@ S.draw["s3-vue"] = (x, y) => { const K = S.K, E = S.E;
   S.T(fc, "Étape suivante : relire et fusionner la PR #11, puis lancer le profil courant.", { size: 14, lh: 1.45, color: fi, fill: true });
   const bt = S.row(fc, { gap: 8, pad: [10, 16], radius: 999, fill: K.brand }); S.icon(bt, "copy", 15, K.brandInk); S.T(bt, "Copier /full-delivery N01", { size: 14, weight: 600, color: K.brandInk });
   const [f2b, f2i] = S.fcol("F02"); const n2 = S.row(c, { fx: true, gap: 12, pad: [14, 16], radius: 20, fill: K.soft }); S.box(n2, { w: 14, h: 14, radius: 7, fill: f2b, stroke: f2i });
-  const t2 = S.col(n2, { fx: true, gap: 2 }); S.T(t2, "Puis F02 · Créer et consulter ses affaires", { size: 14, weight: 600, fill: true }); S.T(t2, "0 étape sur 9 · PR #13 en brouillon", { size: 13, color: K.ink2 });
+  const t2 = S.col(n2, { fx: true, gap: 2 }); S.T(t2, "Puis F02 · Créer et consulter ses clients", { size: 14, weight: 600, fill: true }); S.T(t2, "0 étape sur 9 · PR #13 en brouillon", { size: 13, color: K.ink2 });
   // Agent
   const ag = S.row(body, { fx: true, gap: 14, align: "center" }); S.bubble(ag, "bot", K.brand, K.brandInk, 44);
   const sp = S.row(ag, { fx: true, gap: 14, pad: [14, 20], radius: 22, fill: K.card, stroke: K.line }); S.T(sp, E.agent, { size: 15, fill: true });
@@ -359,7 +359,7 @@ S.draw["s3-planning"] = (x, y) => { const K = S.K, E = S.E;
   S.T(ar, "S6 → S10 à droite", { size: 12.5, color: K.ink2 });
   // F19 glissée vers S5
   const [gb, gi] = S.fcol("F19"); const g = S.col(f, { name: "dragging F19", x: 1010, y: 640, w: 200, gap: 6, pad: [12, 16], radius: 20, fill: gb, shadow: 10, vs: "auto" });
-  S.T(g, "F19", { size: 12, weight: 700, color: gi }); S.T(g, "Photographier un tronçon", { title: true, size: 16, weight: 700, color: gi, fill: true });
+  S.T(g, "F19", { size: 12, weight: 700, color: gi }); S.T(g, "Photographier un constat", { title: true, size: 16, weight: 700, color: gi, fill: true });
   try { g.rotation = -4; } catch (e) {}
   return f; };
 S.STYLE_OF = { "s1-vue": 1, "s1-planning": 1, "s2-vue": 2, "s2-planning": 2, "s3-vue": 3, "s3-planning": 3 };

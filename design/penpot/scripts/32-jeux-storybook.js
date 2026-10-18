@@ -27,7 +27,7 @@ const game = (p, w, h) => { const g = S.box(p, { name: "GameCanvas", fill: "#1E1
   const s = S.txt(g, "Appuie sur Espace pour jouer", { size: 13, color: "#E9D5FF" }); penpotUtils.setParentXY(s, Math.round(w / 2 - 90), Math.round(h * 0.42)); return g; };
 const story = (p, w, h, o = {}) => { const s = S.box(p, { name: o.figma ? "FigmaFrame" : "StoryFrame", fill: "#FFFFFF", w, h, dir: "column", gap: 14, pad: [0, 0, 16, 0] }); s.clipContent = true;
   const nav = S.box(s, { name: "nav", fill: "#F4F4F5", h: 40, dir: "row", gap: 16, pad: [0, 16], align: "center" }); S.fillX(nav);
-  S.txt(nav, "Emis", { size: 14, weight: 700, color: "#09090B" }); ["Accueil", "Tâches", "Agenda"].forEach((t, i) => S.txt(nav, t, { size: 12, weight: i ? 400 : 600, color: i ? "#52525B" : "#09090B" }));
+  S.txt(nav, "Silo", { size: 14, weight: 700, color: "#09090B" }); ["Accueil", "Tâches", "Agenda"].forEach((t, i) => S.txt(nav, t, { size: 12, weight: i ? 400 : 600, color: i ? "#52525B" : "#09090B" }));
   const body = S.box(s, { name: "body", dir: "column", gap: 12, pad: [0, 16], vs: "auto" }); S.fillX(body);
   S.txt(body, "Bonjour Adam", { size: o.figma ? 24 : 22, weight: 700, color: "#09090B" }); S.txt(body, "3 tâches pour aujourd'hui", { size: 12, color: "#71717A" });
   const cards = S.box(body, { name: "cards", dir: "row", gap: 10, vs: "auto" }); S.fillX(cards);

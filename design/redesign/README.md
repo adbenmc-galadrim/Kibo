@@ -50,10 +50,10 @@ Chaque écran existe en sombre (x = 0) et en clair (x = 1 540), rangées espacé
 
 ## Données
 
-Projet Emis (`galadrimteam/emis-suivi-chantier`, branche `dev`), vendredi 16 octobre (S42). Ensembles C0 Socle (12/12),
-C1 Connexion (8/8), C2 Périmètre et affectations (4/6, échéance lun. 19 oct.), C3 Saisie des ISO et tronçons (9/14),
-C4 Fichiers et photos (1/5), C5 Rapports de chantier (0/6). Tickets EMIS-21 à EMIS-60, PR #18 à #23, questions Q14, Q16, Q17,
-sessions T3 Code sur EMIS-23 et EMIS-33. Correction par rapport aux anciennes maquettes : C4 est un ensemble, sans agent ni
+Projet fictif Silo, location de box (`silo-labs/silo-location`, branche `dev`, jeu « Projet Silo » de `design/donnees-fictives.md`), vendredi 16 octobre (S42). Ensembles C0 Socle (12/12),
+C1 Connexion (8/8), C2 Périmètre et affectations (4/6, échéance lun. 19 oct.), C3 Saisie des box et constats (9/14),
+C4 Fichiers et photos (1/5), C5 Rapports de centre (0/6). Tickets SILO-21 à SILO-60, PR #18 à #23, questions Q14, Q16, Q17,
+sessions T3 Code sur SILO-23 et SILO-33. Correction par rapport aux anciennes maquettes : C4 est un ensemble, sans agent ni
 étape. Tout est dans `scripts/02-data.js`.
 
 ## Procédure
@@ -102,14 +102,14 @@ et « En ce moment » de la piste C, et « une case par étape » de la piste B.
 
 | Board | Contenu |
 |---|---|
-| P1 · Vue d'ensemble | fonctionnalités livrées 3/9 (une case par fonctionnalité), sprint en cours, ouvertes 2/2, PR en review, questions ; « En ce moment » (sessions T3 Code) ; échéances par sprint avec glissement de F5 ; carte du sprint S42 ; « Prochaine à finir » avec `/full-delivery EMIS-45` ; activité ; agent de projet (lot n° 7 : reporter F5, planifier F9, relancer Q14) |
+| P1 · Vue d'ensemble | fonctionnalités livrées 3/9 (une case par fonctionnalité), sprint en cours, ouvertes 2/2, PR en review, questions ; « En ce moment » (sessions T3 Code) ; échéances par sprint avec glissement de F5 ; carte du sprint S42 ; « Prochaine à finir » avec `/full-delivery SILO-45` ; activité ; agent de projet (lot n° 7 : reporter F5, planifier F9, relancer Q14) |
 | P2 · Planning | sprints S41 à S44 en colonnes et réserve « À planifier » ; cartes de fonctionnalité avec leurs étapes en cases ; F5 en retard ; F9 glissée vers la zone de dépôt de S44 ; limite d'ouvertes dans l'en-tête |
-| P3 · Fonctionnalité | F5 « Envoyer les photos d'un tronçon » : résultat attendu, parcours A→Z en frise verticale (ticket, état git et PR, étape full-delivery, session), « Livrer la prochaine étape » (`/full-delivery EMIS-34`), sprint et proposition de report, dépendances, questions, activité |
+| P3 · Fonctionnalité | F5 « Envoyer les photos d'un constat » : résultat attendu, parcours A→Z en frise verticale (ticket, état git et PR, étape full-delivery, session), « Livrer la prochaine étape » (`/full-delivery SILO-34`), sprint et proposition de report, dépendances, questions, activité |
 | P4 · Tickets | liste à plat filtrée par sprint (S42), puce de fonctionnalité, terminés du sprint repliables, « Hors fonctionnalité » |
 | P5 · Graphe | fonctionnalités en cadres placés dans la colonne de leur sprint, étapes listées, dépendances entre fonctionnalités, retard et blocage |
 
-Données : 9 fonctionnalités F1 à F9 (EMIS-1 à EMIS-93), sprints S41 « Accès », S42 « Terrain hors ligne » (en cours, finit
-le 16 oct.), S43 « Import et soudures », S44 « Rapports » ; F9 « Exporter le dossier client » à planifier.
+Données : 9 fonctionnalités F1 à F9 (SILO-1 à SILO-93), sprints S41 « Accès », S42 « Saisie hors ligne » (en cours, finit
+le 16 oct.), S43 « Import et contrats », S44 « Rapports » ; F9 « Exporter le dossier client » à planifier.
 
 Dessin : clés `p-vue`, `p-planning`, `p-fonctionnalite`, `p-tickets`, `p-graphe` sur la page « Proposition » (rangées de
 1 300 px), puis `storage.edgesP()` par mode dans un second appel et `await storage.exportProposition()`
@@ -123,7 +123,7 @@ et à rien d'autre : **où en est-on** (fonctionnalités livrées sur le total, 
 finir, étape suivante). L'agent de projet reste discret : une phrase de synthèse et un lot à valider, sans panneau permanent.
 shadcn n'est plus un cadre obligatoire : chaque direction a sa typographie, sa grille, ses couleurs et ses visualisations.
 
-Données : redécoupage réel d'Emis (`~/Documents/emis/redecoupage-fonctionnalites-2026-10-16.md`) : 22 fonctionnalités
+Données : plan fictif de Silo (location de box, `scripts/60-styles.js`, vocabulaire de `design/donnees-fictives.md`) : 22 fonctionnalités
 F00 à F21 (F00 livrée), F01 et F02 ouvertes, sprints S1 (en cours, dernier jour) à S10, mise en production le 18/12,
 pistes P1 staging (bloquée : DSI et compte AWS) et P2 production, F16 à F21 à arbitrer après le 18/12.
 
@@ -131,7 +131,7 @@ Page Penpot « Styles » (`scripts/60-styles.js`, `scripts/70-vues.js`), sombre 
 
 | Board | Idée | Typographie et couleur |
 |---|---|---|
-| Style 1 · Vue d'ensemble et Planning | **Carnet de chantier** : journal éditorial en trois rubriques numérotées, gros chiffre en sérif ; planning en registre (un sprint par ligne, trait double de la mise en production) | Newsreader et Geist, papier chaud en clair, encre et brique |
+| Style 1 · Vue d'ensemble et Planning | **Carnet de centre** : journal éditorial en trois rubriques numérotées, gros chiffre en sérif ; planning en registre (un sprint par ligne, trait double de la mise en production) | Newsreader et Geist, papier chaud en clair, encre et brique |
 | Style 2 · Vue d'ensemble et Planning | **Instrument** : panneaux numérotés, jauge des 22 fonctionnalités coupée par le trait de la mise en production, règle des sprints ; planning en matrice avec histogramme des ouvertes | IBM Plex Sans et Mono, quasi monochrome, un vert signal et un rouge d'alerte |
 | Style 3 · Vue d'ensemble et Planning | **Atelier** : trois grandes cartes douces, une couleur en aplat par fonctionnalité, étapes en pastilles ; planning en colonnes de sprint avec carte glissée | Bricolage Grotesque et DM Sans, crème en clair, orange pour l'action principale et l'agent |
 | Vue 4 · Une phrase | une synthèse rédigée en grand, trois liens dessous | Newsreader |
@@ -169,7 +169,7 @@ Exports : `exports/proposition-vue-ensemble-v2-{dark,light}.png` (`await storage
 
 Page Penpot « Choix » (`scripts/80-choix.js`) : un tableau par choix ouvert, sombre à x = 0 et clair à x = 1 300,
 rangées de 640 px. Chaque tableau pose la question, puis montre « Recommandé » et « Autre option » côte à côte avec les
-données Emis et une légende d'une ligne.
+données Silo et une légende d'une ligne.
 
 | n° | Question | Recommandé | Autre option |
 |---|---|---|---|
@@ -202,26 +202,26 @@ P1 (`proposition-vue-ensemble-*`, 1 440 × 1 100 px) est remplacé par P1 bis. L
 `cotes.md` donne, pour chaque écran et chaque bloc, la position, la taille, le flex (direction, espacement, marges internes), les polices,
 les couleurs en tokens (sombre et clair), les rayons et bordures, ainsi que la liste exacte des textes affichés. Il est relevé depuis Penpot
 par `scripts/95-cotes.js`, puis mis en forme par `scripts/cotes.py`. Les écrans sont aussi dans le fichier Penpot « Kibo », page
-« 35 · Redesign Emis » (210 à 218).
+« 35 · Redesign Silo » (210 à 218).
 
 ## Phase 27 (2026-10-18)
 
 Spec §39 : Kibo ne fait que du suivi, création de projet minimale, constats des critiques retenus (§39.6). Couleurs et vocabulaire
 des écrans validés inchangés (les couleurs sémantiques, le glossaire et la liste Questions compacte sont seulement proposés à Adam).
 Page « Proposition », `scripts/55-phase-27.js` (après `55-proposition-v2`), rangées à partir de y = 8 000, pas de 1 500 px, sombre à
-x = 0 et clair à x = 1 540. Données `emis-maquettes` au vendredi 16 octobre (S42).
+x = 0 et clair à x = 1 540. Données `silo-maquettes` au vendredi 16 octobre (S42).
 
 | Board | Contenu | Export | Taille |
 |---|---|---|---|
 | P1 bis v3 · Vue d'ensemble | P1 bis au vendredi 16 oct. (S42 en cours, donc aucune carte « En retard ») ; sous « Ouvertes », « limite · 1 bloquée » (point rouge : F6, bloquée par Q14). Référence pixel | `proposition-vue-ensemble-v3` | 1 440 × 1 260 |
 | P1 bis v3 · En retard au 18 oct. | variante au dimanche 18 oct., entre deux sprints : S42 reste courant (« terminé le 16 oct. »), « 1 en retard » sous Fonctionnalités, carte « En retard » sous Échéances (F5, S42 · terminé le 16 oct., reste 4 étapes) | `proposition-vue-ensemble-v3-retard` | 1 440 × 1 360 |
-| P1 bis v3 · Pour commencer | projet neuf (cinq pages, S1 à S6) : « Relier le dépôt », « Créer une fonctionnalité », « Copier /full-delivery EMIS-1 » expliqués par des textes d'aide, un seul bouton « Ouvrir le Planning » ; liste des sprints | `proposition-vue-ensemble-v3-pour-commencer` | 1 440 × 1 000 |
+| P1 bis v3 · Pour commencer | projet neuf (cinq pages, S1 à S6) : « Relier le dépôt », « Créer une fonctionnalité », « Copier /full-delivery SILO-1 » expliqués par des textes d'aide, un seul bouton « Ouvrir le Planning » ; liste des sprints | `proposition-vue-ensemble-v3-pour-commencer` | 1 440 × 1 000 |
 | P6 · Nouveau projet | dialogue de 520 px sur la Vue d'ensemble sous voile `bg` 60 % : Nom, Clé, Client, Début, Nombre de sprints, Durée, aperçu des six sprints, Dossier, « Annuler » et « Créer » | `proposition-nouveau-projet` | 1 440 × 1 000 |
-| P7 · Kanban | « Tous » par défaut, « Sprint courant · S42 », « À reprendre », étiquettes ; cartes « EMIS-45 · F4 », pastilles PR, review et CI, « bloqué · Q14 », « Démo · F6 », point de session, ombre de défilement | `proposition-kanban` | 1 440 × 1 000 |
+| P7 · Kanban | « Tous » par défaut, « Sprint courant · S42 », « À reprendre », étiquettes ; cartes « SILO-45 · F4 », pastilles PR, review et CI, « bloqué · Q14 », « Démo · F6 », point de session, ombre de défilement | `proposition-kanban` | 1 440 × 1 000 |
 | P8 · Fiche ticket | Sheet de 560 px sur le Kanban : « F4 · S42 · PR #20 », « Adam (moi) », « Requise pour livrer », « Ajouter une étiquette », bandeau « PR #20 · changements demandés · CI cassée », Suivi (branche « déclarée », « Livraison : Phase 9/12 · Review »), Description et « Modifier », Dépendances « Aucune » et « Ajouter une dépendance », Questions, Domaine et Maquettes repliés, « Fermer » | `proposition-fiche-ticket` | 1 440 × 1 000 |
 | P8b · Fiche ticket, Activité | même fiche, onglet Activité : chronologie du journal (session, review, CI, étape, PR, branche) puis « Anciens runs » replié | `proposition-fiche-ticket-activite` | 1 440 × 1 000 |
 | P9 · Questions | `Qn`, badge « bloquante », bloquantes en tête, groupes sans vide, texte exporté (« bloque F6, prévue en S43 »), toast « 2 questions marquées envoyées · Annuler » | `proposition-questions` | 1 440 × 1 000 |
-| Barre repliée · Kanban à 1 180 px | rail de 48 px (bascule, recherche, Accueil, Mes tickets, Boîte de réception, pastille d'initiales par projet), menu des pages d'Emis au survol, clés entières, ombres de défilement en bas et à droite | `proposition-barre-repliee` | 1 180 × 1 000 |
+| Barre repliée · Kanban à 1 180 px | rail de 48 px (bascule, recherche, Accueil, Mes tickets, Boîte de réception, pastille d'initiales par projet), menu des pages de Silo au survol, clés entières, ombres de défilement en bas et à droite | `proposition-barre-repliee` | 1 180 × 1 000 |
 | Agent · question | panneau de 340 px : résumé du jour épinglé et daté (14:40), question d'Adam, réponse, lot n° 7, « Afficher les lots remplacés » | `proposition-agent-question` | 340 × 1 000 |
 | Agent · récapitulatif | après « Valider » : 3 appliquées, 0 échouée, 0 ignorée, « F5 glissée de S42 », « Copier la relance » sur la relance de Q14 | `proposition-agent-recap` | 340 × 1 000 |
 
@@ -234,7 +234,7 @@ réécrit seulement la partie « Phase 27 » de `cotes.md` (P1 bis v3, sa varian
 (numéros des JSON `_dump-<n>-<mode>.json`) ne remplace que les sections de ces boards, sans recalculer les tableaux de tête.
 
 Jalon de la phase 27 (T26) : P2 (« En cours : 2 / 2 », « à risque », ligne de charge « n étapes prévues · capacité 5 », crayon du sprint), P3
-(« Prochaine étape EMIS-34 : attend EMIS-33. », Activité en « Phase n/12 »), P1 bis v3 et ses variantes (client, sans « 2/2 en cours »,
+(« Prochaine étape SILO-34 : attend SILO-33. », Activité en « Phase n/12 »), P1 bis v3 et ses variantes (client, sans « 2/2 en cours »,
 « Phase 7/12 », résumé daté, lots remplacés masqués, « + Nouvelle fonctionnalité », « Dernier sprint · S42 terminé » au 18 oct.), P6 (fond
 redessiné), P7 (puces « Phase n/12 · … »), P8 et P8b, la barre repliée et le panneau de l'agent suivent l'application ; copiés dans la page
 « 36 · Suivi seul » du fichier « Kibo » (voir `design/penpot/README.md`).
