@@ -124,3 +124,12 @@ test("the counter gives way in a narrow widget: it truncates and keeps its full 
   expect(counter.className).toContain("min-w-0");
   expect(counter.className).not.toContain("shrink-0");
 });
+
+test("in a narrow widget the toolbar drops the counts, then the label text, never the names", async () => {
+  setup();
+  const all = await screen.findByRole("button", { name: "Tous" });
+  expect(all.closest("header")?.className).toContain("@container/toolbar");
+  expect(within(all).getByText("8").className).toContain("@max-[36rem]/toolbar:hidden");
+  const label = screen.getByRole("button", { name: "Étiquette : toutes" });
+  expect(within(label).getByText("Étiquette : toutes").className).toContain("@max-[48rem]/toolbar:sr-only");
+});

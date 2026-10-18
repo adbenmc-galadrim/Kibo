@@ -32,6 +32,8 @@ type Props = {
 
 const ALL = "all";
 
+const COUNT = "font-mono text-[11px] font-normal text-muted-foreground @max-[36rem]/toolbar:hidden";
+
 const isFilter = (value: string): value is KanbanFilterKey => KANBAN_FILTERS.some((f) => f === value);
 
 const filterLabel = (filter: KanbanFilterKey, sprintCode: string | null): string =>
@@ -57,7 +59,9 @@ function LabelMenu({ label, labels, onLabel }: LabelMenuProps) {
           className="h-[25px] shrink-0 gap-1.5 px-2.5 text-xs font-medium"
         >
           <Tag absoluteStrokeWidth size={13} aria-hidden className="size-[13px]" />
-          {label === null ? fr.labelFilter.all : fr.labelFilter.one(label)}
+          <span className="@max-[48rem]/toolbar:sr-only">
+            {label === null ? fr.labelFilter.all : fr.labelFilter.one(label)}
+          </span>
           <ChevronDown absoluteStrokeWidth size={14} aria-hidden className="size-3.5 text-muted-foreground" />
         </Button>
       </DropdownMenuTrigger>
@@ -102,7 +106,7 @@ function BoardFilters({ filters, onFilters, onClear, total, counts, sprintCode }
     >
       <ToggleGroupItem value={ALL} aria-label={fr.mode.all} className={SEGMENT}>
         {fr.mode.all}
-        <span className="font-mono text-[11px] font-normal text-muted-foreground">{total}</span>
+        <span className={COUNT}>{total}</span>
       </ToggleGroupItem>
       {KANBAN_FILTERS.map((f) => (
         <ToggleGroupItem
@@ -114,7 +118,7 @@ function BoardFilters({ filters, onFilters, onClear, total, counts, sprintCode }
         >
           {f === "toFix" && <RotateCcw absoluteStrokeWidth size={12} aria-hidden className="size-3" />}
           {filterLabel(f, sprintCode)}
-          <span className="font-mono text-[11px] font-normal text-muted-foreground">{counts[f]}</span>
+          <span className={COUNT}>{counts[f]}</span>
         </ToggleGroupItem>
       ))}
     </ToggleGroup>
@@ -125,7 +129,7 @@ export function KanbanToolbar(props: Props) {
   const { filters, sprintCode, label, onShowAll, shown, hidden, children } = props;
   const counter = fr.counter(shown, shownLabel(filters, sprintCode), props.mine);
   return (
-    <header className="flex h-12 items-center gap-2 border-b px-4 text-sm">
+    <header className="@container/toolbar flex h-12 items-center gap-2 border-b px-4 text-sm">
       <BoardFilters {...props} />
       <LabelMenu label={label} labels={props.labels} onLabel={props.onLabel} />
       {children}
