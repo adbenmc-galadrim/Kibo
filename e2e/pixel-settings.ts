@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const FIXED_NOW = "2026-10-16T14:52:00+02:00";
-export const EMIS_MAQUETTES = "emis-maquettes";
+export const SILO_MAQUETTES = "silo-maquettes";
 export const PIXEL_WIDTH = 1440;
 export const DESIGN_REFERENCES = fileURLToPath(new URL("../design/redesign/exports", import.meta.url));
 export const PIXEL_KIT_REFERENCES = join(tmpdir(), "kibo-pixel-kit");

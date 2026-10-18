@@ -1,6 +1,6 @@
 import { defineConfig, type PlaywrightTestConfig, type Project } from "@playwright/test";
 import { PIXEL_DAEMONS, pixelKitProject, pixelProjectOptions, trackingProjects } from "./pixel-projects";
-import { EMIS_MAQUETTES } from "./pixel-settings";
+import { SILO_MAQUETTES } from "./pixel-settings";
 import { SYNC_PORTS } from "./sync-fixture";
 import { seedReadyPort } from "./token";
 
@@ -232,7 +232,7 @@ const allDaemons = [
     scheme: "dark",
     port: 4479,
     spec: /(suivi|suivi-retours|barre-laterale)\.spec\.ts/,
-    scenario: EMIS_MAQUETTES,
+    scenario: SILO_MAQUETTES,
     integrations: true,
   },
   {
@@ -240,7 +240,7 @@ const allDaemons = [
     scheme: "light",
     port: 4480,
     spec: /(suivi|suivi-retours|barre-laterale)\.spec\.ts/,
-    scenario: EMIS_MAQUETTES,
+    scenario: SILO_MAQUETTES,
     integrations: true,
   },
   ...PIXEL_DAEMONS,
@@ -296,9 +296,9 @@ export default defineConfig({
         ]
           .filter((part) => part !== "")
           .join(" "),
-        url: `http://127.0.0.1:${d.scenario === EMIS_MAQUETTES ? seedReadyPort(d.port) : d.port}/`,
+        url: `http://127.0.0.1:${d.scenario === SILO_MAQUETTES ? seedReadyPort(d.port) : d.port}/`,
         reuseExistingServer: false,
-        timeout: d.scenario === EMIS_MAQUETTES ? 120_000 : 60_000,
+        timeout: d.scenario === SILO_MAQUETTES ? 120_000 : 60_000,
         gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
       }),
     ),

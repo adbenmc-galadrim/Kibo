@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page, type TestInfo } from "@playwright/test";
 import { rpc, text } from "./agents-seed";
 
-const BY = { kind: "agent", ref: "emis-livraison" } as const;
+const BY = { kind: "agent", ref: "silo-livraison" } as const;
 
 export const projectIdOf = (page: Page): string => {
   const match = /#\/p\/([^/?]+)\//.exec(page.url());

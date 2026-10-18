@@ -1,42 +1,42 @@
 import { expect, type Page, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
-import { EMIS_FEATURES, EMIS_LOOSE_TICKETS } from "./fixtures/emis-maquettes";
+import { SILO_FEATURES, SILO_LOOSE_TICKETS } from "./fixtures/silo-maquettes";
 import { PIXEL_WIDTH } from "./pixel-settings";
 import {
   attachRepo,
   createBranch,
   dragOnto,
-  type Emis,
   kiboCli,
-  loadEmis,
+  loadSilo,
   moveToSprint,
+  type Silo,
   setStatus,
 } from "./planning-kit";
 
 const EXECUTION = "Exécution des agents dans Kibo";
-const BRANCH = "feat/emis-51-lecture-excel";
+const BRANCH = "feat/silo-51-lecture-excel";
 
 test.describe.configure({ mode: "serial" });
 
-let emis: Emis;
+let silo: Silo;
 
 const S43_TITLES = [
-  ...EMIS_FEATURES.filter((f) => f.sprint === "S43").flatMap((f) => f.steps.map((step) => step.title)),
-  ...EMIS_LOOSE_TICKETS.filter((t) => t.sprint === "S43").map((t) => t.title),
+  ...SILO_FEATURES.filter((f) => f.sprint === "S43").flatMap((f) => f.steps.map((step) => step.title)),
+  ...SILO_LOOSE_TICKETS.filter((t) => t.sprint === "S43").map((t) => t.title),
 ].sort();
 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: PIXEL_WIDTH, height: 1000 });
   await pairBrowser(page);
-  emis = await loadEmis(page);
+  silo = await loadSilo(page);
 });
 
 const column = (page: Page, name: string) => page.getByRole("region", { name });
 const card = (page: Page, shortKey: string) =>
   page.getByRole("button", { name: new RegExp(`^${shortKey} `) });
 
-async function openPlanning(page: Page, s42 = "S42 Terrain hors ligne"): Promise<void> {
-  await page.goto(emis.pageUrl("planning@1.0.0"));
+async function openPlanning(page: Page, s42 = "S42 Saisie hors ligne"): Promise<void> {
+  await page.goto(silo.pageUrl("planning@1.0.0"));
   await expect(column(page, s42)).toBeVisible();
 }
 
@@ -104,7 +104,7 @@ async function expectFits(page: Page, layout: "Colonnes" | "Bandes"): Promise<vo
 test("the Planning holds in the window in Columns and Bands, its blocked chips on one line, the agent over it under 1180 px", async ({
   page,
 }) => {
-  const f6Sprint = await moveToSprint(page, emis, "F6", null);
+  const f6Sprint = await moveToSprint(page, silo, "F6", null);
   try {
     for (const size of [
       { width: 1000, height: 800 },
@@ -129,7 +129,7 @@ test("the Planning holds in the window in Columns and Bands, its blocked chips o
     }
   } finally {
     await page.getByRole("button", { name: "Colonnes", exact: true }).click();
-    await moveToSprint(page, emis, "F6", f6Sprint);
+    await moveToSprint(page, silo, "F6", f6Sprint);
   }
 });
 
@@ -140,10 +140,10 @@ test("dragging F9 onto S44 plans it, and the CLI lists it in S44", async ({ page
   await expect(s44.getByRole("button", { name: /^F9 / })).toBeVisible();
   await expect
     .poll(() => {
-      const sprints: unknown = JSON.parse(kiboCli(info, ["sprints", "list", "--project", "EMIS", "--json"]));
+      const sprints: unknown = JSON.parse(kiboCli(info, ["sprints", "list", "--project", "SILO", "--json"]));
       return Array.isArray(sprints) ? sprints.find((s) => s.code === "S44")?.features : undefined;
     })
-    .toEqual(expect.arrayContaining(["EMIS-90"]));
+    .toEqual(expect.arrayContaining(["SILO-90"]));
 });
 
 test("a new sprint S45 and a new feature F10 with three steps show in the Planning", async ({ page }) => {
@@ -168,46 +168,46 @@ test("a new sprint S45 and a new feature F10 with three steps show in the Planni
 test("starting a step of F7 opens a third feature and the limit warns", async ({ page }) => {
   await openPlanning(page);
   await expect(page.getByText("En cours : 2 / 2")).toBeVisible();
-  await setStatus(page, emis, "EMIS-81", "in_progress");
+  await setStatus(page, silo, "SILO-81", "in_progress");
   await expect(page.getByText("En cours : 3 / 2")).toBeVisible();
 });
 
 test("the sheet of F5 names why its next step cannot start, with nothing to copy", async ({ page }) => {
-  await page.goto(emis.ticketUrl("EMIS-30"));
-  await expect(page.getByText("Prochaine étape EMIS-34 : attend EMIS-33.")).toBeVisible();
+  await page.goto(silo.ticketUrl("SILO-30"));
+  await expect(page.getByText("Prochaine étape SILO-34 : attend SILO-33.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Copier la commande" })).toHaveCount(0);
 });
 
 test("the sheet of S42 opens from its Tickets tab and its Planning name; the pencil edits it", async ({
   page,
 }) => {
-  await page.goto(emis.pageUrl("tickets@1.0.0"));
+  await page.goto(silo.pageUrl("tickets@1.0.0"));
   const s42 = page.getByRole("tablist", { name: "Sprint affiché" }).getByRole("tab", { name: /S42$/ });
   await s42.click({ button: "right" });
   await page.getByRole("menuitem", { name: "Fiche du sprint" }).click();
-  const sheet = page.getByRole("dialog", { name: /S42 · Terrain hors ligne/ });
+  const sheet = page.getByRole("dialog", { name: /S42 · Saisie hors ligne/ });
   await expect(sheet).toBeVisible();
   await expect(sheet.getByRole("list", { name: "Fonctionnalités du sprint" })).toContainText("F4");
   await sheet.getByRole("button", { name: "Modifier" }).click();
   const dialog = page.getByRole("dialog", { name: "Modifier le sprint S42" });
-  await expect(dialog.getByLabel("Nom")).toHaveValue("Terrain hors ligne");
-  await dialog.getByLabel("Nom").fill("Terrain sans réseau");
+  await expect(dialog.getByLabel("Nom")).toHaveValue("Saisie hors ligne");
+  await dialog.getByLabel("Nom").fill("Saisie sans réseau");
   await dialog.getByRole("button", { name: "Enregistrer" }).click();
-  await expect(page.getByRole("dialog", { name: /S42 · Terrain sans réseau/ })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: /S42 · Saisie sans réseau/ })).toBeVisible();
   await page.keyboard.press("Escape");
-  await openPlanning(page, "S42 Terrain sans réseau");
-  const header = column(page, "S42 Terrain sans réseau");
-  await header.getByRole("button", { name: "Fiche du sprint S42 Terrain sans réseau" }).click();
-  const fromPlanning = page.getByRole("dialog", { name: /S42 · Terrain sans réseau/ });
+  await openPlanning(page, "S42 Saisie sans réseau");
+  const header = column(page, "S42 Saisie sans réseau");
+  await header.getByRole("button", { name: "Fiche du sprint S42 Saisie sans réseau" }).click();
+  const fromPlanning = page.getByRole("dialog", { name: /S42 · Saisie sans réseau/ });
   await expect(fromPlanning.getByRole("list", { name: "Fonctionnalités du sprint" })).toContainText("F4");
   await expect(page.getByRole("dialog", { name: "Modifier le sprint S42" })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await expect(fromPlanning).toBeHidden();
   await header.getByRole("button", { name: "Modifier le sprint", exact: true }).click();
   const back = page.getByRole("dialog", { name: "Modifier le sprint S42" });
-  await back.getByLabel("Nom").fill("Terrain hors ligne");
+  await back.getByLabel("Nom").fill("Saisie hors ligne");
   await back.getByRole("button", { name: "Enregistrer" }).click();
-  await expect(column(page, "S42 Terrain hors ligne")).toBeVisible();
+  await expect(column(page, "S42 Saisie hors ligne")).toBeVisible();
 });
 
 test("the agent execution setting is gone and Agents and the agent bar never show", async ({ page }) => {
@@ -219,10 +219,10 @@ test("the agent execution setting is gone and Agents and the agent bar never sho
   await expect(page.getByRole("region", { name: "Agents", exact: true })).toBeHidden();
 });
 
-test("the S43 tab of Tickets has nothing delivered, and a new branch puts EMIS-51 In progress", async ({
+test("the S43 tab of Tickets has nothing delivered, and a new branch puts SILO-51 In progress", async ({
   page,
 }) => {
-  await page.goto(emis.pageUrl("tickets@1.0.0"));
+  await page.goto(silo.pageUrl("tickets@1.0.0"));
   const s43 = page.getByRole("tablist", { name: "Sprint affiché" }).getByRole("tab", { name: /S43$/ });
   await s43.click();
   await expect(s43).toHaveAttribute("aria-selected", "true");
@@ -232,10 +232,10 @@ test("the S43 tab of Tickets has nothing delivered, and a new branch puts EMIS-5
   expect((await titles.allTextContents()).sort()).toEqual(S43_TITLES);
   await expect(page.getByText("Écran d'envoi hors ligne")).toBeHidden();
   await expect(page.getByText(/^Terminés/)).toHaveCount(0);
-  const repo = await attachRepo(page, emis);
+  const repo = await attachRepo(page, silo);
   try {
     createBranch(repo, BRANCH);
-    const row = page.getByRole("listitem").filter({ has: page.getByText("EMIS-51", { exact: true }) });
+    const row = page.getByRole("listitem").filter({ has: page.getByText("SILO-51", { exact: true }) });
     await expect(row).toContainText("En cours", { timeout: 20_000 });
     await expect(row).toContainText(BRANCH);
   } finally {

@@ -16,13 +16,13 @@ import { startFakeMcpHttp } from "../packages/daemon/src/testing/fake-mcp";
 import { PENPOT_IDS, startFakePenpot } from "../packages/daemon/src/testing/fake-penpot";
 import { startFakeStorybook } from "../packages/daemon/src/testing/fake-storybook";
 import { e2eHome } from "./e2e-home";
-import { emisGhState } from "./fixtures/emis-gh";
-import { EMIS_SCENARIO } from "./fixtures/emis-suivi";
+import { siloGhState } from "./fixtures/silo-gh";
+import { SILO_SCENARIO } from "./fixtures/silo-suivi";
 import { createE2eRepo, fakeGhDir, GIT_IDENTITY } from "./git-repo";
-import { EMIS_MAQUETTES, FIXED_NOW } from "./pixel-settings";
+import { FIXED_NOW, SILO_MAQUETTES } from "./pixel-settings";
 import { connectSeedRpc, waitForDaemon } from "./seed-client";
-import { seedEmisMaquettes } from "./seed-emis-maquettes";
-import { type SyncSeed, shareEmis } from "./seed-emis-sync";
+import { seedSiloMaquettes } from "./seed-silo-maquettes";
+import { type SyncSeed, shareSilo } from "./seed-silo-sync";
 import {
   E2E_FIGMA_TOKEN,
   E2E_GH_TOKEN,
@@ -42,7 +42,7 @@ const INTEGRATIONS_FLAG = "--integrations";
 const NO_GH_FLAG = "--no-gh";
 const DESIGN_FLAG = "--design";
 const EMBEDS_FLAG = "--embeds";
-const EMIS_PR_POLL_MS = "200";
+const SILO_PR_POLL_MS = "200";
 const FLAGS = [INTEGRATIONS_FLAG, NO_GH_FLAG, DESIGN_FLAG, EMBEDS_FLAG];
 const argv = process.argv.slice(2);
 const integrations = argv.includes(INTEGRATIONS_FLAG);
@@ -65,7 +65,7 @@ for (const draft of drafts) {
 const agents = join(root, "packages/daemon/src/agents");
 const e2eScenario = join(import.meta.dir, "agents", "scenarios", `${scenario}.json`);
 function scenarioFile(): string {
-  if (scenario === EMIS_MAQUETTES) return EMIS_SCENARIO;
+  if (scenario === SILO_MAQUETTES) return SILO_SCENARIO;
   return existsSync(e2eScenario) ? e2eScenario : join(agents, "scenarios", `${scenario}.json`);
 }
 const ghDir = fakeGhDir(port);
@@ -73,10 +73,10 @@ rmSync(ghDir, { recursive: true, force: true });
 mkdirSync(ghDir, { recursive: true });
 const gh = join(ghDir, "gh");
 const ghState = join(ghDir, "state.json");
-const emisMaquettes = scenario === EMIS_MAQUETTES;
-const writeEmisGh = (merged: boolean) => writeFileSync(ghState, JSON.stringify(emisGhState({ merged })));
-if (emisMaquettes) writeEmisGh(false);
-const emisRepo = emisMaquettes ? createE2eRepo("emis") : null;
+const siloMaquettes = scenario === SILO_MAQUETTES;
+const writeSiloGh = (merged: boolean) => writeFileSync(ghState, JSON.stringify(siloGhState({ merged })));
+if (siloMaquettes) writeSiloGh(false);
+const siloRepo = siloMaquettes ? createE2eRepo("silo") : null;
 if (withGh) {
   copyFileSync(join(root, "packages/daemon/src/code/testing/fake-gh.ts"), gh);
   chmodSync(gh, 0o755);
@@ -148,7 +148,7 @@ function startFakesFor() {
 }
 const fakes = await startFakesFor();
 const syncServer: TestSyncServer | null =
-  scenario === EMIS_MAQUETTES ? await startTestSyncServer({ dataDir: join(home, "sync-server") }) : null;
+  scenario === SILO_MAQUETTES ? await startTestSyncServer({ dataDir: join(home, "sync-server") }) : null;
 async function syncSeed(server: TestSyncServer): Promise<SyncSeed> {
   const caFile = join(home, "sync-ca.pem");
   writeFileSync(caFile, server.caPem, { mode: 0o600 });
@@ -181,7 +181,7 @@ const proc = Bun.spawn(
       KIBO_GH: gh,
       FAKE_GH_STATE: ghState,
       FAKE_GH_LOG: join(ghDir, "log.jsonl"),
-      ...(emisMaquettes ? { KIBO_FIXED_NOW: FIXED_NOW, KIBO_PR_POLL_MS: EMIS_PR_POLL_MS } : {}),
+      ...(siloMaquettes ? { KIBO_FIXED_NOW: FIXED_NOW, KIBO_PR_POLL_MS: SILO_PR_POLL_MS } : {}),
     },
     stdout: "inherit",
     stderr: "inherit",
@@ -191,12 +191,12 @@ const forward = (signal: NodeJS.Signals) => () => proc.kill(signal);
 process.on("SIGTERM", forward("SIGTERM"));
 process.on("SIGINT", forward("SIGINT"));
 async function seedScenario(): Promise<void> {
-  if (scenario !== EMIS_MAQUETTES) return;
+  if (scenario !== SILO_MAQUETTES) return;
   const base = `http://127.0.0.1:${port}`;
   await waitForDaemon(base, 30_000);
   const rpc = await connectSeedRpc(base, E2E_TOKEN);
-  await seedEmisMaquettes(rpc, { folder: emisRepo?.repo ?? null, mergePr: () => writeEmisGh(true) });
-  if (syncServer) await shareEmis(rpc, await syncSeed(syncServer));
+  await seedSiloMaquettes(rpc, { folder: siloRepo?.repo ?? null, mergePr: () => writeSiloGh(true) });
+  if (syncServer) await shareSilo(rpc, await syncSeed(syncServer));
 }
 const seeded = await seedScenario().then(
   () => true,
@@ -218,7 +218,7 @@ function openReadyPort() {
     throw error;
   }
 }
-const ready = seeded && emisMaquettes ? openReadyPort() : null;
+const ready = seeded && siloMaquettes ? openReadyPort() : null;
 const exited = await proc.exited;
 ready?.stop(true);
 const code = seeded ? exited : 1;
@@ -226,5 +226,5 @@ await fakes?.stop();
 await syncServer?.stop();
 rmSync(home, { recursive: true, force: true });
 rmSync(ghDir, { recursive: true, force: true });
-emisRepo?.remove();
+siloRepo?.remove();
 process.exit(code);

@@ -1,14 +1,14 @@
 import { expect, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
-import { emisPageUrl } from "./pixel-emis";
 import { PIXEL_HEIGHTS, PIXEL_MASKS } from "./pixel-masks";
 import { contentBox, measureScreen, openPixelPage, screensDir, settlePointer } from "./pixel-screen";
+import { siloPageUrl } from "./pixel-silo";
 
 const HEIGHT = PIXEL_HEIGHTS.kanban;
 
-test("the Kanban of Emis on « Tous » matches the mockup on the whole screen", async ({ page }) => {
+test("the Kanban of Silo on « Tous » matches the mockup on the whole screen", async ({ page }) => {
   await pairBrowser(page);
-  await openPixelPage(page, await emisPageUrl(page, "Kanban"), HEIGHT);
+  await openPixelPage(page, await siloPageUrl(page, "Kanban"), HEIGHT);
   const all = page.getByRole("button", { name: "Tous", exact: true });
   await expect(all).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText("Écran d'envoi hors ligne")).toBeVisible();

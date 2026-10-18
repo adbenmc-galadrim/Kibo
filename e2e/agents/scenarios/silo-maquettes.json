@@ -20,7 +20,7 @@
                 "id": 1,
                 "why": "Brouillon remplacé par le lot suivant.",
                 "type": "setStatus",
-                "ticket": "EMIS-62",
+                "ticket": "SILO-62",
                 "statusId": "todo"
               }
             ]
@@ -35,7 +35,7 @@
                 "id": 1,
                 "why": "Brouillon remplacé par le lot suivant.",
                 "type": "setStatus",
-                "ticket": "EMIS-62",
+                "ticket": "SILO-62",
                 "statusId": "todo"
               }
             ]
@@ -50,7 +50,7 @@
                 "id": 1,
                 "why": "Brouillon remplacé par le lot suivant.",
                 "type": "setStatus",
-                "ticket": "EMIS-62",
+                "ticket": "SILO-62",
                 "statusId": "todo"
               }
             ]
@@ -65,7 +65,7 @@
                 "id": 1,
                 "why": "Brouillon remplacé par le lot suivant.",
                 "type": "setStatus",
-                "ticket": "EMIS-62",
+                "ticket": "SILO-62",
                 "statusId": "todo"
               }
             ]
@@ -80,7 +80,7 @@
                 "id": 1,
                 "why": "Brouillon remplacé par le lot suivant.",
                 "type": "setStatus",
-                "ticket": "EMIS-62",
+                "ticket": "SILO-62",
                 "statusId": "todo"
               }
             ]
@@ -95,7 +95,7 @@
                 "id": 1,
                 "why": "Brouillon remplacé par le lot suivant.",
                 "type": "setStatus",
-                "ticket": "EMIS-62",
+                "ticket": "SILO-62",
                 "statusId": "todo"
               }
             ]
@@ -110,21 +110,21 @@
                 "id": 1,
                 "why": "4 étapes restantes, S42 finit aujourd'hui",
                 "type": "setSprint",
-                "ticket": "EMIS-30",
+                "ticket": "SILO-30",
                 "sprint": "S43"
               },
               {
                 "id": 2,
                 "why": "seule fonctionnalité à planifier",
                 "type": "setSprint",
-                "ticket": "EMIS-90",
+                "ticket": "SILO-90",
                 "sprint": "S44"
               },
               {
                 "id": 3,
                 "why": "bloque F6, prévue en S43",
                 "type": "remindQuestion",
-                "questionId": "{{question:Un ISO réaffecté garde-t-il ses photos ?}}"
+                "questionId": "{{question:Un box réaffecté garde-t-il ses photos ?}}"
               }
             ]
           }

@@ -1,5 +1,5 @@
-import { EMIS_LAST_FACTS, type FactSpec } from "./fixtures/emis-suivi";
-import type { SeedRpc } from "./seed-emis-maquettes";
+import { type FactSpec, SILO_LAST_FACTS } from "./fixtures/silo-suivi";
+import type { SeedRpc } from "./seed-silo-maquettes";
 
 export type JournalWait = { timeoutMs: number; pollMs: number };
 
@@ -50,13 +50,13 @@ function matches(spec: FactSpec, event: unknown, keys: ReadonlyMap<unknown, unkn
   );
 }
 
-export async function verifyEmisJournal(rpc: SeedRpc, projectId: string): Promise<void> {
-  const newestFirst = await lastEvents(rpc, projectId, EMIS_LAST_FACTS.length);
+export async function verifySiloJournal(rpc: SeedRpc, projectId: string): Promise<void> {
+  const newestFirst = await lastEvents(rpc, projectId, SILO_LAST_FACTS.length);
   const events = [...newestFirst].reverse();
   const keys = await keysById(rpc, projectId);
-  if (EMIS_LAST_FACTS.every((spec, i) => matches(spec, events[i], keys))) return;
+  if (SILO_LAST_FACTS.every((spec, i) => matches(spec, events[i], keys))) return;
   const found = events.map((e) => JSON.stringify(e)).join(" ; ");
   throw new Error(
-    `the journal ends with ${found}, expected ${EMIS_LAST_FACTS.map(describeFact).join(" ; ")}`,
+    `the journal ends with ${found}, expected ${SILO_LAST_FACTS.map(describeFact).join(" ; ")}`,
   );
 }

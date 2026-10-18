@@ -1,9 +1,9 @@
 import { expect, type Page, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
-import { emisComponentUrl } from "./pixel-emis";
 import { PIXEL_MASKS } from "./pixel-masks";
 import { contentBox, measureScreen, openPixelPage, type Phase, screensDir } from "./pixel-screen";
 import { PIXEL_WIDTH } from "./pixel-settings";
+import { siloComponentUrl } from "./pixel-silo";
 
 const HEIGHT = 1000;
 const CONTENT = contentBox(241, HEIGHT);
@@ -43,13 +43,13 @@ async function pose(page: Page, phase: Phase): Promise<void> {
   await dragF9OverS44(page);
 }
 
-test("the Planning of Emis, F9 dragged over S44, matches the mockup on the whole screen", async ({
+test("the Planning of Silo, F9 dragged over S44, matches the mockup on the whole screen", async ({
   page,
 }) => {
   await page.setViewportSize({ width: PIXEL_WIDTH, height: HEIGHT });
   await pairBrowser(page);
-  await openPixelPage(page, await emisComponentUrl(page, "planning@1.0.0"), HEIGHT);
-  await expect(page.getByRole("region", { name: "S42 Terrain hors ligne" })).toBeVisible();
+  await openPixelPage(page, await siloComponentUrl(page, "planning@1.0.0"), HEIGHT);
+  await expect(page.getByRole("region", { name: "S42 Saisie hors ligne" })).toBeVisible();
   await measureScreen(page, {
     screen: "planning",
     height: HEIGHT,

@@ -7,10 +7,10 @@ import {
   type ProjectSnapshot,
   type TicketView,
 } from "../../packages/schema/src/index";
-import { seedEmisMaquettes } from "../seed-emis-maquettes";
-import { EMIS_PROJECT, EMIS_WORKSPACE_NAME, emisKey, OTHER_PROJECTS } from "./emis-maquettes";
-import { EMIS_DESCRIPTION } from "./emis-suivi";
+import { seedSiloMaquettes } from "../seed-silo-maquettes";
 import { createMemoryDaemon, type MemoryDaemon, memorySeed } from "./memory-daemon";
+import { OTHER_PROJECTS, SILO_PROJECT, SILO_WORKSPACE_NAME, siloKey } from "./silo-maquettes";
+import { SILO_DESCRIPTION } from "./silo-suivi";
 
 const VIEWER = "adam";
 const TODAY = "2026-10-16";
@@ -21,13 +21,13 @@ let today: ProjectSnapshot;
 
 beforeAll(async () => {
   daemon = createMemoryDaemon(VIEWER, TODAY);
-  await seedEmisMaquettes(daemon.rpc, memorySeed(daemon));
-  today = daemon.snapshot(EMIS_PROJECT.key, TODAY);
+  await seedSiloMaquettes(daemon.rpc, memorySeed(daemon));
+  today = daemon.snapshot(SILO_PROJECT.key, TODAY);
 });
 
 const ticket = (s: ProjectSnapshot, n: number): TicketView => {
-  const found = s.tickets.find((t) => t.key === emisKey(n));
-  if (found === undefined) throw new Error(`${emisKey(n)} is missing`);
+  const found = s.tickets.find((t) => t.key === siloKey(n));
+  if (found === undefined) throw new Error(`${siloKey(n)} is missing`);
   return found;
 };
 const feature = (s: ProjectSnapshot, shortKey: string): TicketView => {
@@ -48,18 +48,18 @@ const prOf = (t: TicketView): PrFacts | null => {
 test("nine features F1 to F9 on their root tickets, in sprint order", () => {
   const features = today.tickets.filter(isFeature);
   expect(features.map((f) => `${f.shortKey}:${f.key}`)).toEqual([
-    "F1:EMIS-1",
-    "F2:EMIS-9",
-    "F3:EMIS-17",
-    "F4:EMIS-40",
-    "F5:EMIS-30",
-    "F6:EMIS-50",
-    "F8:EMIS-70",
-    "F7:EMIS-80",
-    "F9:EMIS-90",
+    "F1:SILO-1",
+    "F2:SILO-9",
+    "F3:SILO-17",
+    "F4:SILO-40",
+    "F5:SILO-30",
+    "F6:SILO-50",
+    "F8:SILO-70",
+    "F7:SILO-80",
+    "F9:SILO-90",
   ]);
-  expect(feature(today, "F5").title).toBe("Envoyer les photos d'un tronçon");
-  expect(feature(today, "F5").description).toStartWith("Sur le terrain, sans réseau");
+  expect(feature(today, "F5").title).toBe("Envoyer les photos d'un constat");
+  expect(feature(today, "F5").description).toStartWith("Dans un centre sans réseau");
 });
 
 test("feature states on the 16th, the last day of S42, and on the 15th", () => {
@@ -76,7 +76,7 @@ test("feature states on the 16th, the last day of S42, and on the 15th", () => {
   expect(status(today, "F6")).toBe("blocked");
   expect(["F7", "F8", "F9"].map((k) => status(today, k))).toEqual(["todo", "todo", "todo"]);
   expect(openFeatures(today.tickets)).toBe(2);
-  const eve = daemon.snapshot(EMIS_PROJECT.key, EVE);
+  const eve = daemon.snapshot(SILO_PROJECT.key, EVE);
   expect([status(eve, "F4"), status(eve, "F5")]).toEqual(["open", "open"]);
 });
 
@@ -84,8 +84,8 @@ test("sprints S41 to S44 with their dates, states and features", () => {
   const rows = today.sprints.map((s) => [s.code, s.name, s.start, s.end, s.state, s.delivered, s.total]);
   expect(rows).toEqual([
     ["S41", "Accès", "2026-10-05", "2026-10-09", "done", 2, 2],
-    ["S42", "Terrain hors ligne", "2026-10-12", "2026-10-16", "current", 1, 3],
-    ["S43", "Import et soudures", "2026-10-19", "2026-10-23", "planned", 0, 2],
+    ["S42", "Saisie hors ligne", "2026-10-12", "2026-10-16", "current", 1, 3],
+    ["S43", "Import et contrats", "2026-10-19", "2026-10-23", "planned", 0, 2],
     ["S44", "Rapports", "2026-10-26", "2026-10-30", "planned", 0, 1],
   ]);
   const shortKeys = (name: string) =>
@@ -98,7 +98,7 @@ test("sprints S41 to S44 with their dates, states and features", () => {
 });
 
 test("pull requests with their review and CI, branch and delivery steps", () => {
-  const prs = [21, 31, 41, 42, 43, 45, 32, 61].map((n) => [emisKey(n), prOf(ticket(today, n))]);
+  const prs = [21, 31, 41, 42, 43, 45, 32, 61].map((n) => [siloKey(n), prOf(ticket(today, n))]);
   const pr = (
     number: number,
     state: PrFacts["state"],
@@ -112,14 +112,14 @@ test("pull requests with their review and CI, branch and delivery steps", () => 
   });
   const merged = (number: number) => pr(number, "merged", "approved", "ok");
   expect(prs).toEqual([
-    ["EMIS-21", merged(18)],
-    ["EMIS-31", merged(19)],
-    ["EMIS-41", merged(12)],
-    ["EMIS-42", merged(14)],
-    ["EMIS-43", merged(16)],
-    ["EMIS-45", pr(20, "open", "changes_requested", "error")],
-    ["EMIS-32", pr(22, "open", "none", "ok")],
-    ["EMIS-61", pr(23, "open", "none", "running")],
+    ["SILO-21", merged(18)],
+    ["SILO-31", merged(19)],
+    ["SILO-41", merged(12)],
+    ["SILO-42", merged(14)],
+    ["SILO-43", merged(16)],
+    ["SILO-45", pr(20, "open", "changes_requested", "error")],
+    ["SILO-32", pr(22, "open", "none", "ok")],
+    ["SILO-61", pr(23, "open", "none", "running")],
   ]);
   expect(ticket(today, 33).externalRefs).toContainEqual({
     kind: "git_branch",
@@ -133,10 +133,10 @@ test("pull requests with their review and CI, branch and delivery steps", () => 
 });
 
 test("steps wait on each other as on the mockups", () => {
-  expect(ticket(today, 34).waitingOn).toEqual(["EMIS-33"]);
-  expect(ticket(today, 35).waitingOn).toEqual(["EMIS-34"]);
+  expect(ticket(today, 34).waitingOn).toEqual(["SILO-33"]);
+  expect(ticket(today, 35).waitingOn).toEqual(["SILO-34"]);
   expect(ticket(today, 46).waitingOn).toEqual([]);
-  expect(feature(today, "F9").waitingOn).toEqual(["EMIS-80"]);
+  expect(feature(today, "F9").waitingOn).toEqual(["SILO-80"]);
   expect(today.links.filter((l) => l.type === "blocks")).toHaveLength(10);
 });
 
@@ -148,9 +148,9 @@ test("questions Q14, Q16 and Q17 on their tickets", () => {
     q.blocking,
   ]);
   expect(rows).toEqual([
-    ["Q14", "EMIS-51", "client", true],
-    ["Q16", "EMIS-34", "product", false],
-    ["Q17", "EMIS-81", "client", false],
+    ["Q14", "SILO-51", "client", true],
+    ["Q16", "SILO-34", "product", false],
+    ["Q17", "SILO-81", "client", false],
   ]);
 });
 
@@ -159,17 +159,17 @@ test("the Tickets list of S42: 14 tickets in 3 features, 8 done, one outside fea
   expect(steps).toHaveLength(14);
   expect(steps.filter((t) => t.statusId === "done")).toHaveLength(8);
   expect(steps.filter((t) => t.statusId !== "done").map((t) => t.key)).toEqual([
-    "EMIS-45",
-    "EMIS-46",
-    "EMIS-32",
-    "EMIS-33",
-    "EMIS-34",
-    "EMIS-35",
+    "SILO-45",
+    "SILO-46",
+    "SILO-32",
+    "SILO-33",
+    "SILO-34",
+    "SILO-35",
   ]);
   const loose = today.tickets.filter((t) => t.parentId === null && t.progress.total === 0);
   expect(loose.map((t) => [t.key, t.statusId, sprintCodeOf(today, t)])).toEqual([
-    ["EMIS-61", "in_review", "S42"],
-    ["EMIS-62", "todo", null],
+    ["SILO-61", "in_review", "S42"],
+    ["SILO-62", "todo", null],
   ]);
   expect(loose.filter((t) => sprintCodeOf(today, t) === "S42")).toHaveLength(1);
 });
@@ -181,12 +181,12 @@ test("delivery steps are stamped from oldest to newest of P4: 33, 45, 32 on top,
       .sort((a, b) => (b.delivery?.at ?? -1) - (a.delivery?.at ?? -1))
       .filter((t) => t.delivery !== null)
       .map((t) => t.key);
-  expect(recent(steps.filter((t) => t.statusId !== "done"))).toEqual(["EMIS-33", "EMIS-45", "EMIS-32"]);
+  expect(recent(steps.filter((t) => t.statusId !== "done"))).toEqual(["SILO-33", "SILO-45", "SILO-32"]);
   expect(recent(steps.filter((t) => t.statusId === "done")).slice(0, 4)).toEqual([
-    "EMIS-21",
-    "EMIS-31",
-    "EMIS-43",
-    "EMIS-42",
+    "SILO-21",
+    "SILO-31",
+    "SILO-43",
+    "SILO-42",
   ]);
 });
 
@@ -200,16 +200,16 @@ test("sidebar counters: 6 mine, 2 in the inbox, 3 questions, 24 open tickets", (
 });
 
 test("workspace, projects, description and pages of the mockups", () => {
-  expect(today.meta.description).toBe(EMIS_DESCRIPTION);
-  expect(today.meta.client).toBe("Emis SA");
-  expect(ticket(today, 45).description).toStartWith("Deux saisies hors ligne du même tronçon");
+  expect(today.meta.description).toBe(SILO_DESCRIPTION);
+  expect(today.meta.client).toBe("Silo SA");
+  expect(ticket(today, 45).description).toStartWith("Deux saisies hors ligne du même constat");
   expect(
     ticket(today, 45)
       .externalRefs.map((r) => r.kind)
       .sort(),
   ).toEqual(["git_branch", "github_pr"]);
-  expect(daemon.workspaceName()).toBe(EMIS_WORKSPACE_NAME);
-  expect(daemon.projects().map((p) => p.name)).toEqual(["Emis", ...OTHER_PROJECTS.map((p) => p.name)]);
+  expect(daemon.workspaceName()).toBe(SILO_WORKSPACE_NAME);
+  expect(daemon.projects().map((p) => p.name)).toEqual(["Silo", ...OTHER_PROJECTS.map((p) => p.name)]);
   expect(today.pages.map((p) => p.title)).toEqual([
     "Vue d'ensemble",
     "Planning",
@@ -233,6 +233,6 @@ test("workspace, projects, description and pages of the mockups", () => {
 
 test("seeding twice writes nothing the second time", async () => {
   const before = daemon.writes();
-  await seedEmisMaquettes(daemon.rpc, memorySeed(daemon));
+  await seedSiloMaquettes(daemon.rpc, memorySeed(daemon));
   expect(daemon.writes()).toBe(before);
 });

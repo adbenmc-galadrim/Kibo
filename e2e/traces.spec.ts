@@ -3,24 +3,24 @@ import { expect, type Page, type TestInfo, test } from "@playwright/test";
 import { list, pairBrowser, rpc, text } from "./agents-seed";
 import { screensDir } from "./pixel-screen";
 import { PIXEL_WIDTH } from "./pixel-settings";
-import { type Emis, loadEmis, ticketId } from "./planning-kit";
+import { loadSilo, type Silo, ticketId } from "./planning-kit";
 
-const KEY = "EMIS-51";
+const KEY = "SILO-51";
 const PROFILE = "full-delivery";
 const AGENT_TRACES = /Assigner à un agent|^Livrer|Moi \+ agents|full-delivery$/;
 
 test.describe.configure({ mode: "serial" });
 
-let emis: Emis;
+let silo: Silo;
 
 async function pageTarget(page: Page, component: string) {
-  const snapshot = await rpc(page, { method: "getProject", projectId: emis.projectId });
+  const snapshot = await rpc(page, { method: "getProject", projectId: silo.projectId });
   const instance = list(snapshot, "instances").find((i) => text(i, "component") === component);
-  return { kind: "page", projectId: emis.projectId, pageId: text(instance, "pageId") };
+  return { kind: "page", projectId: silo.projectId, pageId: text(instance, "pageId") };
 }
 
 async function ticketTitle(page: Page): Promise<string> {
-  const snapshot = await rpc(page, { method: "getProject", projectId: emis.projectId });
+  const snapshot = await rpc(page, { method: "getProject", projectId: silo.projectId });
   return text(
     list(snapshot, "tickets").find((t) => text(t, "keyLabel") === KEY),
     "title",
@@ -28,10 +28,10 @@ async function ticketTitle(page: Page): Promise<string> {
 }
 
 async function assignAgent(page: Page, assignee: { kind: "agent"; ref: string } | null): Promise<void> {
-  const id = await ticketId(page, emis, KEY);
+  const id = await ticketId(page, silo, KEY);
   await rpc(page, {
     method: "command",
-    projectId: emis.projectId,
+    projectId: silo.projectId,
     command: { method: "updateTicket", ticketId: id, assignee },
   });
 }
@@ -45,7 +45,7 @@ async function capture(page: Page, info: TestInfo, name: string): Promise<void> 
 test.beforeEach(async ({ page }) => {
   await page.setViewportSize({ width: PIXEL_WIDTH, height: 1000 });
   await pairBrowser(page);
-  emis = await loadEmis(page);
+  silo = await loadSilo(page);
 });
 
 test("execution hidden: no agent trace in the tabs, the sheet, Kanban, Tickets and the palette", async ({
@@ -67,7 +67,7 @@ test("execution hidden: no agent trace in the tabs, the sheet, Kanban, Tickets a
     },
   });
   try {
-    await page.goto(emis.pageUrl("kanban@1.0.0"));
+    await page.goto(silo.pageUrl("kanban@1.0.0"));
     await page.reload();
     const tabs = page.getByRole("tablist", { name: "Onglets" });
     const card = page.getByRole("article", { name: new RegExp(`^${KEY} `) });
@@ -98,7 +98,7 @@ test("execution hidden: no agent trace in the tabs, the sheet, Kanban, Tickets a
     await expect.soft(agentChoice).toHaveCount(0);
     await page.keyboard.press("Escape");
 
-    await page.goto(emis.pageUrl("tickets@1.0.0"));
+    await page.goto(silo.pageUrl("tickets@1.0.0"));
     await expect(page.locator("[data-row-title]").first()).toBeVisible();
     await page.getByRole("button", { name: "Ouverts" }).click();
     await capture(page, info, "tickets");

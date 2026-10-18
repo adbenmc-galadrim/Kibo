@@ -1,15 +1,15 @@
 import { expect, test } from "bun:test";
 import { parseReviewDecision, prChecksTone } from "../../packages/schema/src/pr-checks";
-import { emisGhState } from "./emis-gh";
-import { EMIS_LOOSE_TICKETS, emisSteps, prUrl } from "./emis-maquettes";
-import { EMIS_CLOSING } from "./emis-suivi";
+import { siloGhState } from "./silo-gh";
+import { prUrl, SILO_LOOSE_TICKETS, siloSteps } from "./silo-maquettes";
+import { SILO_CLOSING } from "./silo-suivi";
 
-const followed = [...emisSteps(), ...EMIS_LOOSE_TICKETS].flatMap((s) =>
-  s.pr !== undefined && (s.pr.state === "open" || s.pr.number === EMIS_CLOSING.merged) ? [s.pr] : [],
+const followed = [...siloSteps(), ...SILO_LOOSE_TICKETS].flatMap((s) =>
+  s.pr !== undefined && (s.pr.state === "open" || s.pr.number === SILO_CLOSING.merged) ? [s.pr] : [],
 );
 
 test("the fake gh knows every followed pull request with the review and CI of the fixture", () => {
-  const state = emisGhState({ merged: false });
+  const state = siloGhState({ merged: false });
   expect(state.map((p) => p.number).sort((a, b) => a - b)).toEqual(
     followed.map((p) => p.number).sort((a, b) => a - b),
   );
@@ -22,11 +22,11 @@ test("the fake gh knows every followed pull request with the review and CI of th
 });
 
 test("once merged, only the closing pull request changes state", () => {
-  const before = emisGhState({ merged: false });
-  const after = emisGhState({ merged: true });
+  const before = siloGhState({ merged: false });
+  const after = siloGhState({ merged: true });
   const changed = after.filter((p, i) => JSON.stringify(p) !== JSON.stringify(before[i]));
-  expect(changed.map((p) => [p.number, p.state])).toEqual([[EMIS_CLOSING.merged, "MERGED"]]);
+  expect(changed.map((p) => [p.number, p.state])).toEqual([[SILO_CLOSING.merged, "MERGED"]]);
   expect(changed.map((p) => ({ ...p, state: "OPEN" }))).toEqual(
-    before.filter((p) => p.number === EMIS_CLOSING.merged),
+    before.filter((p) => p.number === SILO_CLOSING.merged),
   );
 });

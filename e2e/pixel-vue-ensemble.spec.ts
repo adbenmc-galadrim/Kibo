@@ -1,18 +1,18 @@
 import { expect, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
-import { emisPageUrl } from "./pixel-emis";
 import { PIXEL_HEIGHTS, PIXEL_MASKS } from "./pixel-masks";
 import { contentBox, measureScreen, openPixelPage, screensDir, settlePointer } from "./pixel-screen";
 import { PIXEL_WIDTH } from "./pixel-settings";
+import { siloPageUrl } from "./pixel-silo";
 
 const HEIGHT = PIXEL_HEIGHTS["vue-ensemble"];
 
-test("the Vue d'ensemble of Emis with the tracking panel open matches the mockup on the whole screen", async ({
+test("the Vue d'ensemble of Silo with the tracking panel open matches the mockup on the whole screen", async ({
   page,
 }) => {
   await page.setViewportSize({ width: PIXEL_WIDTH, height: HEIGHT });
   await pairBrowser(page);
-  await openPixelPage(page, await emisPageUrl(page, "Vue d'ensemble"), HEIGHT);
+  await openPixelPage(page, await siloPageUrl(page, "Vue d'ensemble"), HEIGHT);
   await expect(page.getByText("2 sessions T3 Code")).toBeVisible();
   await page.getByRole("button", { name: /^Agent de projet/ }).click();
   await expect(page.getByRole("region", { name: "Lot n° 7" })).toBeVisible();

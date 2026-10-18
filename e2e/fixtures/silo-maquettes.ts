@@ -33,27 +33,27 @@ export type QuestionSpec = {
 };
 export type ProjectSpec = { name: string; key: string; color: string };
 
-export const EMIS_WORKSPACE_NAME = "Galadrim";
-export const EMIS_PROJECT: ProjectSpec = { name: "Emis", key: "EMIS", color: "#14B8A6" };
+export const SILO_WORKSPACE_NAME = "Galadrim";
+export const SILO_PROJECT: ProjectSpec = { name: "Silo", key: "SILO", color: "#14B8A6" };
 export const OTHER_PROJECTS: readonly ProjectSpec[] = [
   { name: "Kibo", key: "KIB", color: "#6366F1" },
-  { name: "Gereco", key: "GER", color: "#84CC16" },
-  { name: "Rapid", key: "RAP", color: "#EC4899" },
+  { name: "Atlas", key: "ATL", color: "#84CC16" },
+  { name: "Nimbus", key: "NIM", color: "#EC4899" },
 ];
 export const INBOX_TITLES: readonly string[] = [
   "Relire le compte rendu de la réunion client",
-  "Idée : export CSV des soudures",
+  "Idée : export CSV des contrats",
 ];
-export const EMIS_CLIENT = "Emis SA";
-export const EMIS_REPO_URL = "https://github.com/galadrimteam/emis-suivi-chantier";
-export const EMIS_BASE_BRANCH = "dev";
-export const EMIS_LAST_TICKET = 93;
+export const SILO_CLIENT = "Silo SA";
+export const SILO_REPO_URL = "https://github.com/silo-labs/silo-location";
+export const SILO_BASE_BRANCH = "dev";
+export const SILO_LAST_TICKET = 93;
 export const DELIVERED_STEP = 11;
 
-export const EMIS_SPRINTS: readonly SprintSpec[] = [
+export const SILO_SPRINTS: readonly SprintSpec[] = [
   { code: "S41", name: "Accès", start: "2026-10-05", end: "2026-10-09" },
-  { code: "S42", name: "Terrain hors ligne", start: "2026-10-12", end: "2026-10-16" },
-  { code: "S43", name: "Import et soudures", start: "2026-10-19", end: "2026-10-23" },
+  { code: "S42", name: "Saisie hors ligne", start: "2026-10-12", end: "2026-10-16" },
+  { code: "S43", name: "Import et contrats", start: "2026-10-19", end: "2026-10-23" },
   { code: "S44", name: "Rapports", start: "2026-10-26", end: "2026-10-30" },
 ];
 
@@ -78,7 +78,7 @@ const open = (number: number, review: PrReviewSpec, checks: PrChecksSpec): PrSpe
   checks,
 });
 
-export const EMIS_FEATURES: readonly FeatureSpec[] = [
+export const SILO_FEATURES: readonly FeatureSpec[] = [
   {
     shortKey: "F1",
     n: 1,
@@ -94,20 +94,20 @@ export const EMIS_FEATURES: readonly FeatureSpec[] = [
   {
     shortKey: "F2",
     n: 9,
-    title: "Voir ses ISO affectés",
+    title: "Voir ses box affectés",
     sprint: "S41",
     steps: [
       done(10, "Modèle des affectations"),
       done(11, "Périmètre côté serveur"),
       done(12, "Règles de synchro"),
-      done(13, "Liste des ISO"),
+      done(13, "Liste des box"),
       done(14, "Démo client"),
     ],
   },
   {
     shortKey: "F3",
     n: 17,
-    title: "Réaffecter un ISO",
+    title: "Réaffecter un box",
     sprint: "S42",
     steps: [
       done(18, "Historique des affectations"),
@@ -119,12 +119,11 @@ export const EMIS_FEATURES: readonly FeatureSpec[] = [
   {
     shortKey: "F4",
     n: 40,
-    title: "Saisir un tronçon hors ligne",
+    title: "Saisir un constat hors ligne",
     sprint: "S42",
-    result:
-      "Sans réseau, un chef de chantier saisit un tronçon ; la saisie remonte seule au retour du réseau.",
+    result: "Sans réseau, un chef de centre saisit un constat ; la saisie remonte seule au retour du réseau.",
     steps: [
-      done(41, "Schéma local des tronçons", merged(12)),
+      done(41, "Schéma local des constats", merged(12)),
       done(42, "Formulaire de saisie", merged(14)),
       done(43, "Synchro au retour du réseau", merged(16)),
       {
@@ -133,9 +132,9 @@ export const EMIS_FEATURES: readonly FeatureSpec[] = [
         status: "in_review",
         delivery: 9,
         pr: open(20, "changes_requested", "error"),
-        branch: "feat/emis-45",
+        branch: "feat/silo-45",
         description:
-          "Deux saisies hors ligne du même tronçon : garder la plus récente et signaler l'autre au chef de chantier au retour du réseau.",
+          "Deux saisies hors ligne du même constat : garder la plus récente et signaler l'autre au chef de centre au retour du réseau.",
         mine: true,
       },
       todo(46, "Démo client", { mine: true, optional: true }),
@@ -144,10 +143,10 @@ export const EMIS_FEATURES: readonly FeatureSpec[] = [
   {
     shortKey: "F5",
     n: 30,
-    title: "Envoyer les photos d'un tronçon",
+    title: "Envoyer les photos d'un constat",
     sprint: "S42",
     result:
-      "Sur le terrain, sans réseau, un chef de chantier photographie un tronçon. Les photos partent seules au retour du réseau et apparaissent dans le dossier de l'affaire.",
+      "Dans un centre sans réseau, un chef de centre photographie un constat. Les photos partent seules au retour du réseau et apparaissent dans le dossier du client.",
     steps: [
       done(31, "Stockage des photos sur MinIO", merged(19)),
       {
@@ -173,11 +172,11 @@ export const EMIS_FEATURES: readonly FeatureSpec[] = [
   {
     shortKey: "F6",
     n: 50,
-    title: "Importer les ISO depuis Excel",
+    title: "Importer les box depuis Excel",
     sprint: "S43",
     steps: [
       todo(51, "Lecture du fichier Excel", { delivery: 3 }),
-      todo(52, "Contrôle des repères"),
+      todo(52, "Contrôle des numéros"),
       todo(53, "Écran d'import"),
       todo(54, "Démo client"),
     ],
@@ -185,7 +184,7 @@ export const EMIS_FEATURES: readonly FeatureSpec[] = [
   {
     shortKey: "F7",
     n: 80,
-    title: "Rapport de chantier journalier",
+    title: "Rapport de centre journalier",
     sprint: "S44",
     steps: [
       todo(81, "Modèle du rapport"),
@@ -198,10 +197,10 @@ export const EMIS_FEATURES: readonly FeatureSpec[] = [
   {
     shortKey: "F8",
     n: 70,
-    title: "Valider les soudures par lot",
+    title: "Valider les contrats par lot",
     sprint: "S43",
     steps: [
-      todo(71, "Statuts de soudure"),
+      todo(71, "Statuts de contrat"),
       todo(72, "Sélection multiple"),
       todo(73, "Validation par lot"),
       todo(74, "Démo client"),
@@ -216,9 +215,9 @@ export const EMIS_FEATURES: readonly FeatureSpec[] = [
   },
 ];
 
-export const EMIS_ROOT_ORDER: readonly number[] = [1, 9, 17, 40, 30, 50, 61, 62, 70, 80, 90];
+export const SILO_ROOT_ORDER: readonly number[] = [1, 9, 17, 40, 30, 50, 61, 62, 70, 80, 90];
 
-export const EMIS_LOOSE_TICKETS: readonly LooseTicketSpec[] = [
+export const SILO_LOOSE_TICKETS: readonly LooseTicketSpec[] = [
   {
     n: 61,
     title: "Passage à Expo SDK 54",
@@ -229,12 +228,12 @@ export const EMIS_LOOSE_TICKETS: readonly LooseTicketSpec[] = [
   { n: 62, title: "Journal des erreurs avec Sentry", status: "todo", sprint: null },
 ];
 
-export const EMIS_STEP_LINKS: readonly (readonly [number, number])[] = [
+export const SILO_STEP_LINKS: readonly (readonly [number, number])[] = [
   [33, 34],
   [34, 35],
 ];
 
-export const EMIS_FEATURE_LINKS: readonly (readonly [string, string])[] = [
+export const SILO_FEATURE_LINKS: readonly (readonly [string, string])[] = [
   ["F2", "F3"],
   ["F2", "F4"],
   ["F3", "F5"],
@@ -245,31 +244,31 @@ export const EMIS_FEATURE_LINKS: readonly (readonly [string, string])[] = [
   ["F7", "F9"],
 ];
 
-export const EMIS_QUESTIONS: readonly QuestionSpec[] = [
+export const SILO_QUESTIONS: readonly QuestionSpec[] = [
   {
     id: "Q14",
     ticket: 51,
-    title: "Un ISO réaffecté garde-t-il ses photos ?",
+    title: "Un box réaffecté garde-t-il ses photos ?",
     recipient: "client",
     blocking: true,
   },
   {
     id: "Q16",
     ticket: 34,
-    title: "Quota par affaire : 2 Go ou 5 Go ?",
+    title: "Quota par client : 2 Go ou 5 Go ?",
     recipient: "product",
     blocking: false,
   },
   {
     id: "Q17",
     ticket: 81,
-    title: "Un rapport par chef de chantier ou par affaire ?",
+    title: "Un rapport par chef de centre ou par client ?",
     recipient: "client",
     blocking: false,
   },
 ];
 
-export const EMIS_PAGES: readonly (readonly [string, string])[] = [
+export const SILO_PAGES: readonly (readonly [string, string])[] = [
   ["Vue d'ensemble", "overview@1.0.0"],
   ["Planning", "planning@1.0.0"],
   ["Tickets", "tickets@1.0.0"],
@@ -279,15 +278,15 @@ export const EMIS_PAGES: readonly (readonly [string, string])[] = [
   ["Questions", "questions@1.0.0"],
 ];
 
-export const emisKey = (n: number): string => `${EMIS_PROJECT.key}-${n}`;
-export const prUrl = (number: number): string => `${EMIS_REPO_URL}/pull/${number}`;
+export const siloKey = (n: number): string => `${SILO_PROJECT.key}-${n}`;
+export const prUrl = (number: number): string => `${SILO_REPO_URL}/pull/${number}`;
 
-export const emisSteps = (): StepSpec[] => EMIS_FEATURES.flatMap((f) => f.steps);
+export const siloSteps = (): StepSpec[] => SILO_FEATURES.flatMap((f) => f.steps);
 
-export const EMIS_RECENT_DELIVERIES: readonly number[] = [42, 43, 31, 21, 32, 45, 33];
+export const SILO_RECENT_DELIVERIES: readonly number[] = [42, 43, 31, 21, 32, 45, 33];
 
-export const emisUsedTickets = (): Set<number> =>
+export const siloUsedTickets = (): Set<number> =>
   new Set([
-    ...EMIS_FEATURES.flatMap((f) => [f.n, ...f.steps.map((s) => s.n)]),
-    ...EMIS_LOOSE_TICKETS.map((t) => t.n),
+    ...SILO_FEATURES.flatMap((f) => [f.n, ...f.steps.map((s) => s.n)]),
+    ...SILO_LOOSE_TICKETS.map((t) => t.n),
   ]);

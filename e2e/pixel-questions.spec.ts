@@ -1,8 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
-import { emisPageUrl } from "./pixel-emis";
 import { PIXEL_HEIGHTS, PIXEL_MASKS } from "./pixel-masks";
 import { contentBox, measureScreen, openPixelPage, screensDir, settlePointer } from "./pixel-screen";
+import { siloPageUrl } from "./pixel-silo";
 import { leaveAndResetTabs } from "./pixel-tabs";
 
 const HEIGHT = PIXEL_HEIGHTS.questions;
@@ -14,12 +14,12 @@ async function undoExport(page: Page): Promise<void> {
   await expect(toast).toBeHidden();
 }
 
-test("the Questions of Emis, exported for the client, match the mockup on the whole screen", async ({
+test("the Questions of Silo, exported for the client, match the mockup on the whole screen", async ({
   page,
 }) => {
   await pairBrowser(page);
-  await openPixelPage(page, await emisPageUrl(page, "Questions"), HEIGHT);
-  await expect(page.getByText("Un ISO réaffecté garde-t-il ses photos ?")).toBeVisible();
+  await openPixelPage(page, await siloPageUrl(page, "Questions"), HEIGHT);
+  await expect(page.getByText("Un box réaffecté garde-t-il ses photos ?")).toBeVisible();
   await page.getByRole("button", { name: /^Exporter pour / }).click();
   await expect(page.getByText("Texte exporté")).toBeVisible();
   await expect(page.getByRole("status", { name: "2 questions marquées envoyées" })).toBeVisible();

@@ -41,7 +41,7 @@ export async function openPixelPage(page: Page, url: string, height: number): Pr
   await page.goto(url);
   const sidebar = page.locator('[data-sidebar="sidebar"]');
   await expect(sidebar.getByText("Galadrim", { exact: true })).toBeVisible();
-  await expect(sidebar.getByText("Rapid", { exact: true })).toBeVisible();
+  await expect(sidebar.getByText("Nimbus", { exact: true })).toBeVisible();
   await expect(page.getByText(/^Synchronisé/).first()).toBeVisible();
 }
 

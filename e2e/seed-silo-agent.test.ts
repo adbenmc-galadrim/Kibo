@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { RpcRequest } from "../packages/schema/src/index";
-import { EMIS_AGENT_PROMPT } from "./fixtures/emis-suivi";
-import { seedEmisAgent } from "./seed-emis-agent";
+import { SILO_AGENT_PROMPT } from "./fixtures/silo-suivi";
+import { seedSiloAgent } from "./seed-silo-agent";
 
 const FAST = { timeoutMs: 200, pollMs: 1 };
 const batch = (seq: number, status: string) => ({ seq, status });
@@ -34,31 +34,31 @@ const proposed: View = {
 
 test("asks for the point of the day once and waits for the end of the turn with batch 7", async () => {
   const agent = fakeAgent([idle, { run: { state: "queued" }, batches: [] }, running, proposed]);
-  expect(await seedEmisAgent(agent.rpc, "p1", FAST)).toBe(true);
+  expect(await seedSiloAgent(agent.rpc, "p1", FAST)).toBe(true);
   expect(agent.sent).toEqual([
-    { method: "sendProjectAgentMessage", projectId: "p1", text: EMIS_AGENT_PROMPT },
+    { method: "sendProjectAgentMessage", projectId: "p1", text: SILO_AGENT_PROMPT },
   ]);
 });
 
 test("a second seeding sends nothing when batch 7 is already pending", async () => {
   const agent = fakeAgent([proposed]);
-  expect(await seedEmisAgent(agent.rpc, "p1", FAST)).toBe(false);
+  expect(await seedSiloAgent(agent.rpc, "p1", FAST)).toBe(false);
   expect(agent.sent).toEqual([]);
 });
 
 test("a failed turn stops the seed", async () => {
   const agent = fakeAgent([idle, { run: { id: "run-2", state: "failed" }, batches: [] }]);
-  await expect(seedEmisAgent(agent.rpc, "p1", FAST)).rejects.toThrow("the project agent turn ended failed");
+  await expect(seedSiloAgent(agent.rpc, "p1", FAST)).rejects.toThrow("the project agent turn ended failed");
 });
 
 test("a turn that ends without batch 7 stops the seed", async () => {
   const agent = fakeAgent([idle, { run: { id: "run-2", state: "done" }, batches: [batch(6, "pending")] }]);
-  await expect(seedEmisAgent(agent.rpc, "p1", FAST)).rejects.toThrow("ended without batch 7");
+  await expect(seedSiloAgent(agent.rpc, "p1", FAST)).rejects.toThrow("ended without batch 7");
 });
 
 test("a turn that never ends is reported", async () => {
   const agent = fakeAgent([idle, running]);
-  await expect(seedEmisAgent(agent.rpc, "p1", FAST)).rejects.toThrow(
+  await expect(seedSiloAgent(agent.rpc, "p1", FAST)).rejects.toThrow(
     "batch 7 was not proposed within 200 ms",
   );
 });
@@ -66,5 +66,5 @@ test("a turn that never ends is reported", async () => {
 test("a previous run already done is not read as the end of the new turn", async () => {
   const previous: View = { run: { id: "run-1", state: "done" }, batches: [batch(6, "pending")] };
   const agent = fakeAgent([previous, previous, running, proposed]);
-  expect(await seedEmisAgent(agent.rpc, "p1", FAST)).toBe(true);
+  expect(await seedSiloAgent(agent.rpc, "p1", FAST)).toBe(true);
 });

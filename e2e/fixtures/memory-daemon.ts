@@ -13,7 +13,7 @@ import {
   type ProjectSnapshot,
   RpcRequest,
 } from "../../packages/schema/src/index";
-import type { SeedOptions, SeedRpc } from "../seed-emis-maquettes";
+import type { SeedOptions, SeedRpc } from "../seed-silo-maquettes";
 import { createMemoryAgent, type MemoryAgent } from "./memory-agent";
 import { eventOf, eventPage, type MemoryEvent, pollerMerge } from "./memory-journal";
 

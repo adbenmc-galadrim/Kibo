@@ -1,14 +1,14 @@
 import { expect, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
-import { emisPageUrl } from "./pixel-emis";
 import { PIXEL_MASKS } from "./pixel-masks";
 import { contentBox, measureScreen, openPixelPage, screensDir, settlePointer } from "./pixel-screen";
+import { siloPageUrl } from "./pixel-silo";
 
 const HEIGHT = 1000;
 
-test("the Tickets page of Emis on sprint S42 matches the mockup on the whole screen", async ({ page }) => {
+test("the Tickets page of Silo on sprint S42 matches the mockup on the whole screen", async ({ page }) => {
   await pairBrowser(page);
-  await openPixelPage(page, await emisPageUrl(page, "Tickets"), HEIGHT);
+  await openPixelPage(page, await siloPageUrl(page, "Tickets"), HEIGHT);
   const s42 = page.getByRole("tablist", { name: "Sprint affiché" }).getByRole("tab", { name: /S42$/ });
   await expect(s42).toBeVisible();
   if ((await s42.getAttribute("aria-selected")) !== "true") await s42.click();
