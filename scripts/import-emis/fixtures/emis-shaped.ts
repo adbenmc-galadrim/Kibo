@@ -46,8 +46,8 @@ const pairs = (text: string, separator = " "): [string, string][] =>
   });
 
 const CHAPTERS = pairs(
-  "C0>Socle C1>Accès C2>Modèle C3>Dossiers C4>Import C5>Segments C6>Badges C7>Tableau " +
-    "C8>Mouvements C9>Terrain CR>Rapports CN>Alertes CP>Partage CE>Équipe CL>Lancement",
+  "C0>Socle C1>Accès C2>Schéma C3>Dossiers C4>Chargement C5>Segments C6>Badges C7>Tableau " +
+    "C8>Transferts C9>Terrain CR>Rapports CN>Alertes CP>Diffusion CE>Personnel CL>Lancement",
 );
 const STEP_COUNT: Record<string, number> = { C1: 4 };
 const LOOSE: Record<string, string> = {
@@ -57,7 +57,7 @@ const LOOSE: Record<string, string> = {
 const TODO_ITEMS = pairs(
   "DATA-1>Liste fictive des sites à confirmer|DATA-2>Colonnes fictives à demander|" +
     "PLAN-1>Trous relevés dans le modèle|DEV-1>Conflit de ports en local|DEV-2>Menu visible de tous les rôles|" +
-    "DEV-3>Première table synchronisée|DEV-4>Base de test partagée|RFID-1>Valider le code des badges|" +
+    "DEV-3>Ranger les journaux de démo|DEV-4>Réinitialiser le bac à sable|RFID-1>Valider le code des badges|" +
     "RFID-2>Renuméroter une migration",
   "|",
 );

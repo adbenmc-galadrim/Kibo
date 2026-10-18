@@ -62,7 +62,7 @@ describe("mapProject", () => {
     const socle = feature(mapping, "C0")?.steps ?? [];
     expect(socle.slice(-2).map((s) => [s.title, s.fromTodo])).toEqual([
       ["Conflit de ports en local", true],
-      ["Base de test partagée", true],
+      ["Réinitialiser le bac à sable", true],
     ]);
     expect(feature(mapping, "C2")?.steps.at(-1)?.oldKey).toBe(todoKeyOf("PLAN-1"));
     expect(socle.filter((s) => !s.fromTodo)).toHaveLength(6);
@@ -150,7 +150,7 @@ describe("mapProject", () => {
   });
 
   test("stripChapterPrefix removes chapter and step prefixes only", () => {
-    expect(stripChapterPrefix("C2 · Modèle")).toBe("Modèle");
+    expect(stripChapterPrefix("C2 · Schéma")).toBe("Schéma");
     expect(stripChapterPrefix("CE-3 · Rôles")).toBe("Rôles");
     expect(stripChapterPrefix("Revoir · les erreurs")).toBe("Revoir · les erreurs");
   });
