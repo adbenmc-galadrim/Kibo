@@ -191,6 +191,7 @@ describe("preview tabs", () => {
     expect(activeTarget(s)).toEqual(page("b"));
     s = tabsReducer(s, { type: "keep", id: "t1" });
     expect(s.tabs[0]?.preview).toBe(false);
+    s = tabsReducer(s, { type: "activate", id: null });
     s = open(s, page("c"), "t3");
     expect(s.tabs.map((t) => [t.target, t.preview])).toEqual([
       [page("b"), false],
@@ -199,12 +200,31 @@ describe("preview tabs", () => {
     s = open(s, page("d"), "t4", true);
     expect(s.tabs.map((t) => t.preview)).toEqual([false, true, false]);
     expect(s.activeId).toBe("t4");
+    s = tabsReducer(s, { type: "activate", id: null });
     s = tabsReducer(s, { type: "open", target: page("e"), newTab: false, id: "t5", keep: true });
     expect(s.tabs.map((t) => [t.target, t.preview])).toEqual([
       [page("b"), false],
       [page("e"), false],
       [page("d"), false],
     ]);
+  });
+
+  test("a plain open navigates in the active tab, permanent or not, and keeps its preview state", () => {
+    let s = open(EMPTY_TABS, page("a"), "t1", true);
+    s = open(s, page("b"), "t2");
+    expect(s.tabs).toEqual([{ id: "t1", target: page("b"), pinned: false, preview: false }]);
+    expect(s.activeId).toBe("t1");
+    s = open(s, page("c"), "t3", true);
+    s = open(s, page("b"), "t4");
+    expect(s.activeId).toBe("t1");
+    expect(s.tabs.map((t) => t.id)).toEqual(["t1", "t3"]);
+    s = tabsReducer(s, { type: "activate", id: "t3" });
+    s = tabsReducer(s, { type: "open", target: page("d"), newTab: false, id: "t5", keep: true });
+    expect(s.tabs.map((t) => [t.id, t.target, t.preview])).toEqual([
+      ["t1", page("b"), false],
+      ["t3", page("d"), false],
+    ]);
+    expect(s.recents.map((r) => (r.kind === "page" ? r.pageId : ""))).toEqual(["d", "b", "c", "a"]);
   });
 
   test("an open target is activated and kept if asked; pin, duplicate and move make permanent", () => {
@@ -214,12 +234,14 @@ describe("preview tabs", () => {
     expect(s.tabs[0]?.preview).toBe(true);
     s = tabsReducer(s, { type: "open", target: page("a"), newTab: false, id: "t3", keep: true });
     expect(s.tabs).toEqual([{ id: "t1", target: page("a"), pinned: false, preview: false }]);
+    s = tabsReducer(s, { type: "activate", id: null });
     s = open(s, page("b"), "t4");
     s = tabsReducer(s, { type: "pin", id: "t4", pinned: true });
     expect(s.tabs.find((t) => t.id === "t4")).toMatchObject({ pinned: true, preview: false });
     s = open(s, page("c"), "t5");
     s = tabsReducer(s, { type: "duplicate", id: "t5", newId: "t6" });
     expect(s.tabs.filter((t) => t.preview)).toHaveLength(0);
+    s = tabsReducer(s, { type: "activate", id: null });
     s = open(s, page("d"), "t7");
     s = tabsReducer(s, { type: "move", id: "t7", toIndex: 1 });
     expect(s.tabs.find((t) => t.id === "t7")?.preview).toBe(false);
