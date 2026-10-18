@@ -1,4 +1,5 @@
 import {
+  atRisk,
   currentSprint,
   DEFAULT_OPEN_LIMIT,
   DELIVERY_STEP_MAX,
@@ -12,11 +13,13 @@ import {
   openFeatures,
   type ProjectEvent,
   type Question,
+  type SprintPhase,
   type SprintView,
+  slippedFrom,
   sortSprints,
+  sprintPhase,
   type TicketView,
 } from "@kibo/schema";
-import { slippedFrom } from "./slipped-from";
 import { sprintDates } from "./sprint-label";
 
 export { sprintDates } from "./sprint-label";
@@ -35,6 +38,7 @@ export type FeatureCard = {
   sprintId: string | null;
   badge: CardBadge | null;
   late: boolean;
+  atRisk: boolean;
   steps: StepCase[];
   done: number;
   total: number;
@@ -45,9 +49,10 @@ export type FeatureCard = {
   muted: boolean;
   slipped: string | null;
 };
-export type SprintWarning = { shortKey: string; remaining: number };
+export type SprintWarning = { shortKey: string; remaining: number; tone: "red" | "amber" };
 export type SprintColumn = {
   sprint: SprintView;
+  phase: SprintPhase;
   code: string;
   dates: string;
   cards: FeatureCard[];
@@ -134,6 +139,7 @@ function cardOf(f: Feature, facts: Facts): FeatureCard {
     sprintId: sprint?.id ?? null,
     badge: badgeOf(state, nextStep === null ? null : (blocking.get(nextStep.ticketId) ?? null)),
     late: state.status === "late",
+    atRisk: !delivered && sprint !== null && atRisk({ sprint, steps }, input.today),
     steps: steps.map((s) => ({ ticketId: s.ticketId, key: s.key, tone: toneOf(s, blocking) })),
     done: state.steps.done,
     total: state.steps.total,
@@ -149,14 +155,24 @@ function cardOf(f: Feature, facts: Facts): FeatureCard {
 const featuresOf = (tickets: readonly TicketView[]): Feature[] =>
   tickets.filter((t): t is Feature => isFeature(t) && t.feature !== null);
 
-function sprintColumn(sprint: SprintView, cards: ReadonlyMap<string, FeatureCard>): SprintColumn {
+const warningOf = (c: FeatureCard): SprintWarning[] =>
+  c.late || c.atRisk
+    ? [{ shortKey: c.shortKey, remaining: c.remaining, tone: c.late ? "red" : "amber" }]
+    : [];
+
+function sprintColumn(
+  sprint: SprintView,
+  cards: ReadonlyMap<string, FeatureCard>,
+  today: string,
+): SprintColumn {
   const own = sprint.features.flatMap((id) => cards.get(id) ?? []);
   return {
     sprint,
+    phase: sprintPhase(sprint, today),
     code: sprint.code,
     dates: sprintDates(sprint.start, sprint.end),
     cards: own,
-    warnings: own.filter((c) => c.late).map((c) => ({ shortKey: c.shortKey, remaining: c.remaining })),
+    warnings: own.flatMap(warningOf),
   };
 }
 
@@ -171,7 +187,7 @@ export function planningModel(input: PlanningInput): PlanningModel {
   const limit = input.openLimit ?? DEFAULT_OPEN_LIMIT;
   const openIds = new Set(planned.filter((f) => openFeatures([f]) === 1).map((f) => f.id));
   return {
-    sprints: sortSprints(input.sprints).map((s) => sprintColumn(s, cards)),
+    sprints: sortSprints(input.sprints).map((s) => sprintColumn(s, cards, input.today)),
     backlog: all.filter((c) => c.sprintId === null),
     delivered: all.filter((c) => c.badge?.kind === "delivered").length,
     total: all.length,

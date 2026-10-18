@@ -13,7 +13,7 @@ export const fr = {
     `${open} fonctionnalités ouvertes pour une limite de ${limit} : finis-en une avant d'en ouvrir une autre.`,
   layout: { label: "Disposition", columns: "Colonnes", bands: "Bandes" },
   bands: { hint: "Glisse en Colonnes pour planifier", delivered: (n: number) => `Livrées · ${n}` },
-  sprintState: { done: "terminé", current: "en cours" },
+  sprintState: { done: "terminé", current: "en cours", endsToday: "se termine aujourd'hui" },
   deliveredOf: (delivered: number, total: number) => `${delivered}/${total} livrées`,
   planned: (n: number) => `${n} ${plural(n, "prévue", "prévues")}`,
   backlog: "À planifier",
@@ -34,6 +34,8 @@ export const fr = {
   session: (key: string) => `${key} en cours de livraison`,
   wontHold: (shortKey: string, remaining: number) =>
     `${shortKey} ne tiendra pas : ${remaining} ${plural(remaining, "étape restante", "étapes restantes")}`,
+  lateBy: (shortKey: string, remaining: number) =>
+    `${shortKey} en retard : ${remaining} ${plural(remaining, "étape restante", "étapes restantes")}`,
   dropIn: (code: string) => `Déposer pour planifier en ${code}`,
   dropBacklog: "Déposer pour retirer du sprint",
   legend: {

@@ -1,4 +1,5 @@
 import { useDroppable } from "@dnd-kit/core";
+import type { SprintPhase } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { CalendarRange, CircleCheck, ClockAlert, Pencil } from "lucide-react";
 import type { ReactNode } from "react";
@@ -30,28 +31,29 @@ function SprintProgress({ delivered, total }: { delivered: number; total: number
   );
 }
 
-function StateChip({ state }: { state: Column["sprint"]["state"] }) {
-  const chip =
-    "ml-auto flex h-[17px] items-center gap-1 rounded-[4px] px-1.5 text-[10.5px] leading-[13px] font-medium";
-  if (state === "done")
+const CHIP =
+  "ml-auto flex h-[17px] items-center gap-1 whitespace-nowrap rounded-[4px] px-1.5 text-[10.5px] leading-[13px] font-medium";
+
+function StateChip({ phase }: { phase: SprintPhase }) {
+  if (phase === "ended")
     return (
-      <span className={cn(chip, "bg-(--tracking-green-soft) text-(--tracking-green)")}>
+      <span className={cn(CHIP, "bg-(--tracking-green-soft) text-(--tracking-green)")}>
         <CircleCheck absoluteStrokeWidth size={12} aria-hidden />
         {fr.sprintState.done}
       </span>
     );
-  if (state === "current")
-    return (
-      <span className={cn(chip, "bg-(--tracking-muted) text-(--tracking-fg)")}>{fr.sprintState.current}</span>
-    );
-  return null;
+  return (
+    <span className={cn(CHIP, "bg-(--tracking-muted) text-(--tracking-fg)")}>
+      {phase === "ends-today" ? fr.sprintState.endsToday : fr.sprintState.current}
+    </span>
+  );
 }
 
 type HeaderProps = { column: Column; onOpen(): void; onEdit?: (() => void) | undefined };
 
 function SprintHeader({ column, onOpen, onEdit }: HeaderProps) {
   const { sprint } = column;
-  const started = sprint.state !== "planned";
+  const started = column.phase !== "upcoming";
   return (
     <header className="flex flex-col gap-1 px-0.5 pt-0.5 pb-1">
       <div className="flex h-4 min-w-0 items-center gap-1.5 text-(--tracking-fg)">
@@ -79,7 +81,7 @@ function SprintHeader({ column, onOpen, onEdit }: HeaderProps) {
       <div className="flex min-h-[14px] items-center gap-1.5">
         <span className="text-(--tracking-dim) text-[11.5px] leading-[14px]">{column.dates}</span>
         {started ? (
-          <StateChip state={sprint.state} />
+          <StateChip phase={column.phase} />
         ) : (
           <span className="ml-auto text-(--tracking-dim) text-[11.5px] leading-[14px]">
             {fr.planned(sprint.total)}
@@ -154,7 +156,9 @@ export function SprintColumn({ column, dropping, onOpen, onEdit, children, foote
         {children}
         {dropping && <DropZone label={fr.dropIn(column.code)} dates={column.dates} />}
         {column.warnings.map((w) => (
-          <Warning key={w.shortKey}>{fr.wontHold(w.shortKey, w.remaining)}</Warning>
+          <Warning key={w.shortKey} tone={w.tone}>
+            {w.tone === "red" ? fr.lateBy(w.shortKey, w.remaining) : fr.wontHold(w.shortKey, w.remaining)}
+          </Warning>
         ))}
         {footer}
       </div>

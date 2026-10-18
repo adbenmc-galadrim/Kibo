@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import type { SprintView } from "@kibo/schema";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { manifest } from "./index";
-import { type FeatureCard, planningModel, sprintDates } from "./planning-model";
+import { type FeatureCard, planningModel, type SprintWarning, sprintDates } from "./planning-model";
 import { seedPlanning, TODAY } from "./test-seed";
 
 const DAY_AFTER = "2026-10-17";
@@ -145,15 +145,28 @@ test("the footer shows the step in session, else the next step, never a step wai
   expect(card(s42?.cards ?? [], "F3").next).toBeNull();
 });
 
-test("a late feature gets a warning under its sprint, from the day after its end", () => {
+test("a late feature gets a red warning under its sprint, from the day after its end", () => {
   const { model } = build(DAY_AFTER);
   expect(card(model.sprints[1]?.cards ?? [], "F5")).toMatchObject({ badge: { kind: "late" }, late: true });
   expect(model.sprints[1]?.warnings).toEqual([
-    { shortKey: "F4", remaining: 1 },
-    { shortKey: "F5", remaining: 4 },
+    { shortKey: "F4", remaining: 1, tone: "red" },
+    { shortKey: "F5", remaining: 4, tone: "red" },
   ]);
-  expect(build("2026-10-14").model.sprints[1]?.warnings).toEqual([]);
-  expect(build().model.sprints[1]?.warnings).toEqual([]);
+});
+
+test("during the sprint, an at-risk feature gets an amber warning, by its working days left", () => {
+  const atRisk: SprintWarning[] = [{ shortKey: "F5", remaining: 4, tone: "amber" }];
+  expect(build().model.sprints[1]?.warnings).toEqual(atRisk);
+  expect(build("2026-10-14").model.sprints[1]?.warnings).toEqual(atRisk);
+  expect(build("2026-10-12").model.sprints[1]?.warnings).toEqual([]);
+  expect(card(build().model.sprints[1]?.cards ?? [], "F5")).toMatchObject({ late: false, atRisk: true });
+});
+
+test("each column carries the phase of its sprint: ends today, then ended the day after", () => {
+  const phases = (today: string) => build(today).model.sprints.map((c) => c.phase);
+  expect(phases(TODAY)).toEqual(["ended", "ends-today", "upcoming", "upcoming"]);
+  expect(phases("2026-10-14")).toEqual(["ended", "current", "upcoming", "upcoming"]);
+  expect(phases(DAY_AFTER)).toEqual(["ended", "ended", "upcoming", "upcoming"]);
 });
 
 test("open features count only planned ones, the limit is a warning", () => {

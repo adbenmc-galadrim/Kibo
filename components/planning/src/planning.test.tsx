@@ -41,7 +41,7 @@ test("one column per sprint with its code, dates and state, then the backlog", a
   expect(within(s41).getByText("2/2 livrées")).toBeTruthy();
   const s42 = await column("S42 Terrain hors ligne");
   expect(s42.getAttribute("data-state")).toBe("current");
-  expect(within(s42).getByText("en cours")).toBeTruthy();
+  expect(within(s42).getByText("se termine aujourd'hui")).toBeTruthy();
   expect(within(s42).getByText("1/3 livrées")).toBeTruthy();
   expect(within(await column("S43 Import et soudures")).getByText("2 prévues")).toBeTruthy();
   expect(within(await column("S44 Rapports")).getByText("1 prévue")).toBeTruthy();
@@ -79,7 +79,14 @@ test("a late feature is outlined in red with a warning under its sprint, from th
   expect(within(f5).getByText("en retard")).toBeTruthy();
   const stroke = f5.querySelector("[data-slot=penpot-stroke] rect");
   expect(stroke?.getAttribute("stroke")).toBe("var(--tracking-red)");
-  expect(within(await column(/^S42 /)).getByText("F5 ne tiendra pas : 4 étapes restantes")).toBeTruthy();
+  expect(within(await column(/^S42 /)).getByText("F5 en retard : 4 étapes restantes")).toBeTruthy();
+  expect(within(await column(/^S42 /)).getByText("terminé")).toBeTruthy();
+});
+
+test("during its sprint, a feature at risk gets an amber warning, not a red outline", async () => {
+  setupPlanning();
+  const note = within(await column(/^S42 /)).getByText("F5 ne tiendra pas : 4 étapes restantes");
+  expect(note.closest("[role=note]")?.className).toContain("text-(--tracking-amber)");
 });
 
 test("on the last day of its sprint a feature is neither late nor outlined", async () => {

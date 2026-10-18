@@ -1,10 +1,12 @@
 import {
   type AgentExecution,
+  atRisk,
   type CiRun,
   type CiTone,
   type FeatureState,
   type FeatureStep,
   featureSteps,
+  isSprintOver,
   isTerminal,
   nextDeliverableStep,
   type ProjectSnapshot,
@@ -65,14 +67,21 @@ export type SprintFacts = {
   warning: SprintWarning | null;
 };
 
-function warningOf(sprint: SprintView, state: FeatureState | null): SprintWarning | null {
-  if (state?.status !== "late") return null;
-  return { kind: sprint.state === "done" ? "over" : "wontFit", remaining: state.remaining };
+export type SprintClock = { today: string; steps: readonly FeatureStep[] };
+
+function warningOf(sprint: SprintView, state: FeatureState | null, clock: SprintClock): SprintWarning | null {
+  if (state === null || state.status === "delivered") return null;
+  if (isSprintOver(sprint, clock.today))
+    return state.status === "late" ? { kind: "over", remaining: state.remaining } : null;
+  return atRisk({ sprint, steps: clock.steps }, clock.today)
+    ? { kind: "wontFit", remaining: state.remaining }
+    : null;
 }
 
 export function sprintFacts(
   project: Pick<ProjectSnapshot, "sprints">,
   feature: Pick<TicketView, "sprintId" | "feature">,
+  clock: SprintClock,
 ): SprintFacts {
   const sorted = sortSprints(project.sprints);
   const index = sorted.findIndex((s) => s.id === feature.sprintId);
@@ -81,7 +90,7 @@ export function sprintFacts(
   return {
     sprint,
     following: sorted.slice(index + 1).find((s) => s.state !== "done") ?? null,
-    warning: warningOf(sprint, feature.feature),
+    warning: warningOf(sprint, feature.feature, clock),
   };
 }
 

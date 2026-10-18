@@ -88,32 +88,33 @@ const withStatus = (status: "open" | "late") => {
   if (!state) throw new Error("F5 is a feature");
   return { ...f5(), feature: { ...state, status } };
 };
+const f5Steps = () => stepModels(project, "f5", facts());
+const on = (today: string) => ({ today, steps: f5Steps() });
 
-test("a late feature in a running sprint will not fit and can move to the next sprint", () => {
-  const facts = sprintFacts(project, withStatus("late"));
-  expect(facts.sprint?.id).toBe("s42");
-  expect(facts.following?.id).toBe("s43");
-  expect(facts.warning).toEqual({ kind: "wontFit", remaining: 4 });
+test("on the last day of S42, F5 is at risk: it will not fit and can move to the next sprint", () => {
+  const sprint = sprintFacts(project, withStatus("open"), on("2026-10-16"));
+  expect(sprint.sprint?.id).toBe("s42");
+  expect(sprint.following?.id).toBe("s43");
+  expect(sprint.warning).toEqual({ kind: "wontFit", remaining: 4 });
   expect(featureBadge(withStatus("late").feature)).toBe("late");
 });
 
-test("an open feature gets no warning, whatever the dates", () => {
+test("early in the sprint, a feature with enough working days left gets no warning", () => {
   const open = withStatus("open");
-  expect(sprintFacts(project, open).warning).toBeNull();
+  expect(sprintFacts(project, open, on("2026-10-12")).warning).toBeNull();
   expect(featureBadge(open.feature)).toBe("open");
 });
 
-test("a late feature whose sprint is done says the sprint is over", () => {
-  const sprints = project.sprints.map((s) => (s.id === "s42" ? { ...s, state: "done" as const } : s));
-  expect(sprintFacts({ ...project, sprints }, withStatus("late")).warning).toEqual({
+test("the day after S42, a late feature says the sprint is over", () => {
+  expect(sprintFacts(project, withStatus("late"), on("2026-10-17")).warning).toEqual({
     kind: "over",
     remaining: 4,
   });
 });
 
 test("an unplanned feature has no sprint and nothing to move", () => {
-  const facts = sprintFacts(project, { ...f5(), sprintId: null });
-  expect(facts).toEqual({ sprint: null, following: null, warning: null });
+  const unplanned = sprintFacts(project, { ...f5(), sprintId: null }, on("2026-10-16"));
+  expect(unplanned).toEqual({ sprint: null, following: null, warning: null });
 });
 
 test("dependencies between features are read on the roots and on their steps", () => {
