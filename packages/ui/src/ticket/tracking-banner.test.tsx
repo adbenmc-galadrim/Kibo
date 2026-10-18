@@ -52,12 +52,12 @@ test("changes requested and a broken CI make one banner with links to the PR and
   );
 });
 
-test("without a CI run the banner reads the checks of the PR and offers no job link", () => {
+test("without a CI run the banner reads the checks of the PR and links to its checks page", () => {
   render(
     <TrackingBanner ticket={ticket(pr({ review: "changes_requested", checks: "error" }))} ciRuns={[]} />,
   );
   expect(screen.getByRole("status").textContent).toContain("PR #20 · changements demandés · CI cassée");
-  expect(screen.queryByRole("link", { name: "Job" })).toBeNull();
+  expect(screen.getByRole("link", { name: "Job" }).getAttribute("href")).toBe(`${PR_URL}/checks`);
 });
 
 test("an open PR with nothing to fix shows no banner", () => {

@@ -152,7 +152,7 @@ function PrRows({ pr, ciRuns, events, now }: Omit<Props, "ticket" | "repo"> & { 
             <span className={DIM}>
               {ci.url ? (
                 <a href={ci.url} target="_blank" rel="noreferrer noopener" className={LINK}>
-                  {t.job(ci.job, ci.at === null ? null : clockOf(ci.at))}
+                  {t.job(ci.job, ci.at === null ? null : clockOf(ci.at)) || t.seeChecks}
                 </a>
               ) : (
                 t.job(ci.job, ci.at === null ? null : clockOf(ci.at))

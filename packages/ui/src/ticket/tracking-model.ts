@@ -63,8 +63,10 @@ export const failedJobOf = (run: Pick<CiRun, "jobs">): CiJobSummary | null =>
 export const jobUrl = (run: Pick<CiRun, "url">, job: Pick<CiJobSummary, "jobId"> | null): string =>
   job !== null && RUN_URL.test(run.url) ? `${run.url}/job/${job.jobId}` : run.url;
 
-function jobLinkOf(run: CiRun | null): TrackingAlert["job"] {
-  if (run === null) return null;
+export const checksUrl = (pr: Pick<GithubPrRef, "url">): string => `${pr.url}/checks`;
+
+function jobLinkOf(pr: GithubPrRef, run: CiRun | null): NonNullable<TrackingAlert["job"]> {
+  if (run === null) return { name: null, url: checksUrl(pr) };
   const job = failedJobOf(run);
   return { name: job?.name ?? null, url: jobUrl(run, job) };
 }
@@ -87,7 +89,7 @@ export function trackingAlert(ticket: TicketView, runs: readonly CiRun[]): Track
   if (ci === "running") parts.push({ text: t.ci.running, tone: "amber" });
   if (parts.length === 0) return null;
   const tone = changes || ci === "running" ? "amber" : "red";
-  const job = ci === "error" || ci === "running" ? jobLinkOf(ciRunOf(pr, runs, ci)) : null;
+  const job = ci === "error" || ci === "running" ? jobLinkOf(pr, ciRunOf(pr, runs, ci)) : null;
   return { pr, tone, parts, job };
 }
 
@@ -103,7 +105,7 @@ export function ciDetail(
   const run = ciRunOf(pr, runs, tone);
   const failed = run ? failedJobOf(run) : null;
   const at = run ? Date.parse(run.updatedAt) : (lastEvent(events, "pr_checks", pr.number)?.at ?? null);
-  const url = run ? jobUrl(run, failed) : null;
+  const url = run ? jobUrl(run, failed) : tone === "error" || tone === "running" ? checksUrl(pr) : null;
   return { tone, job: failed?.name ?? null, at: Number.isNaN(at) ? null : at, url };
 }
 

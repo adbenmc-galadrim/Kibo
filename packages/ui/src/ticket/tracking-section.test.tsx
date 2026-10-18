@@ -121,6 +121,21 @@ test("the CI row reads the checks of the PR when no run is known, and says « Pa
   );
   expect(words("CI")[0]).toBe("CI en cours");
   view.unmount();
+  const broken = render(
+    <TrackingSection
+      ticket={ticket({ externalRefs: [pr({ checks: "error" })] })}
+      ciRuns={[]}
+      events={[]}
+      now={NOW}
+    />,
+  );
+  expect(
+    within(row("CI") as HTMLElement)
+      .getByRole("link")
+      .getAttribute("href"),
+  ).toBe("https://github.com/galadrim/emis/pull/20/checks");
+  expect(words("CI")).toEqual(["CI cassée", "voir les checks"]);
+  broken.unmount();
   render(
     <TrackingSection
       ticket={ticket({ externalRefs: [pr({ checks: null })] })}

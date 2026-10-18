@@ -36,6 +36,7 @@ export const frTicketTracking = {
   job: (name: string | null, when: string | null) =>
     [name && `job ${name}`, when].filter(Boolean).join(" · "),
   next: (label: string) => `· suivante : ${label}`,
+  seeChecks: "voir les checks",
   copyBranchCommand: (command: string) => `Copier ${command}`,
   branchCommand: (key: string) => `kibo tickets set ${key} branch=`,
   sessionLine: (tool: string, duration: string) => `${tool} · ${duration}`,
