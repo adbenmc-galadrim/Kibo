@@ -202,3 +202,7 @@
   animation: scroll-fade linear both;
   animation-timeline: scroll(self inline);
 }
+
+:root:not(.dark) :is([data-slot="dialog-overlay"], [data-slot="sheet-overlay"]) {
+  background-color: rgb(255 255 255 / 0.6);
+}

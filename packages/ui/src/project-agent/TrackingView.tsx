@@ -51,9 +51,10 @@ function SupersededLine({ count, onShow }: { count: number; onShow(): void }) {
       <Button
         variant="ghost"
         className="ml-auto h-auto shrink-0 p-0 text-[11.5px] leading-[14px] font-medium text-(--tracking-fg) hover:bg-transparent hover:underline"
+        aria-label={t.showSuperseded}
         onClick={onShow}
       >
-        {t.showSuperseded}
+        {t.show}
       </Button>
     </p>
   );

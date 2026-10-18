@@ -84,6 +84,7 @@ export const frProjectAgent = {
     superseded: (n: number) =>
       `${n} ${pluralWord(n, "lot")} ${pluralWord(n, "remplacé")} ${pluralWord(n, "masqué")}`,
     showSuperseded: "Afficher les lots remplacés",
+    show: "Afficher",
   },
   recap: {
     title: (seq: number) => `Lot n° ${seq} validé`,

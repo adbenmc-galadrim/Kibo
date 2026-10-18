@@ -101,7 +101,9 @@ test("validating from the card decides the pending batch and shows its recap unt
 test("hidden superseded batches are counted and can be shown", async () => {
   const { shownSuperseded } = show({ superseded: 1 });
   expect(screen.getByText("1 lot remplacé masqué")).toBeTruthy();
-  await userEvent.setup().click(screen.getByRole("button", { name: "Afficher les lots remplacés" }));
+  const showButton = screen.getByRole("button", { name: "Afficher les lots remplacés" });
+  expect(showButton.textContent).toBe("Afficher");
+  await userEvent.setup().click(showButton);
   expect(shownSuperseded()).toBe(1);
 });
 
