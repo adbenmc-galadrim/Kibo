@@ -4,6 +4,7 @@ import type { Plan } from "@kibo/core/scheduler";
 import { type Agent, KiboError, mainSessionOf, type RunView } from "@kibo/schema";
 import { activeRunOf, plannedCwd, previewAssign } from "./assign-preview";
 import { assertLeaf } from "./children-probe";
+import { assertTicketExecution } from "./execution-removed";
 import type { Orchestrator, OrchestratorOptions, TaskSpec } from "./orchestrator-types";
 import type { RunRegistry } from "./run-registry";
 import type { NewRun } from "./run-store";
@@ -35,6 +36,7 @@ export function createAssigner({
 }: AssignerDeps): Assigner {
   return {
     assign(input) {
+      assertTicketExecution(opts.ticketExecution ?? "removed", "assign");
       const agent = ticketAgentOf(input.profileId, input.projectId);
       const { ticket, childCount } = opts.data.ticketContext(input.projectId, input.ticketId);
       if (ticket.key === null) throw new KiboError("INVALID_INPUT", "ticket has no key yet");

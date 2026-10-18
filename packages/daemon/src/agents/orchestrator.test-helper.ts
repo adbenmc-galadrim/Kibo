@@ -134,6 +134,7 @@ type Setup = {
   cliFallbacks?: OrchestratorOptions["cliFallbacks"];
   skills?: Skill[];
   locks?: OrchestratorOptions["locks"];
+  ticketExecution?: OrchestratorOptions["ticketExecution"];
   children?: Record<string, number>;
   externalRefs?: Record<string, TicketView["externalRefs"]>;
 };
@@ -246,6 +247,7 @@ export function setup(o: Setup): Harness {
     ...o.lifecycle,
     cliFallbacks: o.cliFallbacks,
     locks: o.locks,
+    ticketExecution: o.ticketExecution ?? "allowed",
   };
   orch = createOrchestrator(options);
   current = {

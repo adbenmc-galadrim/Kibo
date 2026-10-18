@@ -87,6 +87,7 @@ function boot(scenario: FakeScenarioName): Stack {
     },
     userHome: home,
     tickMs: 100,
+    ticketExecution: "allowed",
   });
   service.attachAgents(orch);
   stack = { home, store, runs, orch, server, messages, agents };

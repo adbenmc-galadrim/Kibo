@@ -1,5 +1,6 @@
 import type { Toolchain } from "@kibo/devkit";
 import type { HostLoad, Session } from "@kibo/schema";
+import type { TicketExecution } from "./agents/execution-removed";
 import type { AgentSource } from "./agents/neutral-agents";
 import type { Notice } from "./agents/notifier";
 import { type Clock, createClock, parseFixedNow } from "./clock";
@@ -34,6 +35,7 @@ export type DaemonOptions = {
   agentSource?: AgentSource;
   clock?: Clock;
   code?: CodeTrackingOptions;
+  ticketExecution?: TicketExecution;
 } & Partial<
   Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli" | "cliStatus">
 >;

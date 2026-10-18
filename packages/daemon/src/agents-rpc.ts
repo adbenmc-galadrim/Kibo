@@ -16,6 +16,7 @@ import type { SignalService } from "./signals/service";
 
 export type AgentsPort = Pick<
   Orchestrator,
+  | "ticketExecution"
   | "assign"
   | "preview"
   | "answer"
@@ -68,12 +69,20 @@ export function withSignalCounts(port: AgentsPort, signals: Pick<SignalService, 
   };
 }
 
-export function deliveryDeps(port: Pick<AgentsPort, "state" | "answer">, q: AgentQuestions): DeliveryDeps {
-  return { runs: () => port.state().runs, answer: (runId, text) => port.answer(runId, text), data: q.data };
+export function deliveryDeps(
+  port: Pick<AgentsPort, "state" | "answer" | "ticketExecution">,
+  q: AgentQuestions,
+): DeliveryDeps {
+  return {
+    ticketExecution: port.ticketExecution(),
+    runs: () => port.state().runs,
+    answer: (runId, text) => port.answer(runId, text),
+    data: q.data,
+  };
 }
 
 export function deliverTicketAnswers(
-  port: Pick<AgentsPort, "state" | "answer">,
+  port: Pick<AgentsPort, "state" | "answer" | "ticketExecution">,
   q: AgentQuestions,
   projectId: string,
   ticketId: string,

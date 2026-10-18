@@ -8,15 +8,26 @@ import {
   type Question,
   type RunView,
 } from "@kibo/schema";
+import {
+  allowsTicketExecution,
+  assertTicketExecution,
+  isTicketRun,
+  type TicketExecution,
+} from "./execution-removed";
 import type { AgentDataPort } from "./orchestrator-types";
 
 export type DeliveryDeps = {
+  ticketExecution: TicketExecution;
+  log?: (line: string) => void;
   runs: () => RunView[];
   answer: (runId: string, text: string) => RunView;
   data: Pick<AgentDataPort, "undeliveredAnswers" | "markAnswersDelivered" | "answerRunQuestion">;
 };
 
+const defaultLog = (line: string) => console.error(`[kibo-daemon] ${line}`);
+
 export function deliverAnswers(deps: DeliveryDeps, projectId: string, ticketId: string): DeliveryResult {
+  assertTicketExecution(deps.ticketExecution, "deliverAnswers");
   const answers = deps.data.undeliveredAnswers(projectId, ticketId);
   if (answers.length === 0) return { sent: 0, runId: null };
   const main = mainSessionOf(deps.runs(), ticketId);
@@ -33,6 +44,10 @@ export function deliverAnswers(deps: DeliveryDeps, projectId: string, ticketId: 
 
 export function deliverBlockingAnswer(deps: DeliveryDeps, question: Question): boolean {
   if (!question.blocking || question.answer === null || question.answer.deliveredAt !== null) return false;
+  if (!allowsTicketExecution(deps.ticketExecution)) {
+    (deps.log ?? defaultLog)(`answer to question ${question.id} kept: Kibo no longer runs ticket agents`);
+    return false;
+  }
   const run = deps.runs().find((r) => r.id === question.runId);
   if (!run?.projectId || run.state !== "waiting_input") return false;
   deps.answer(run.id, answerPrompt(question));
@@ -41,6 +56,7 @@ export function deliverBlockingAnswer(deps: DeliveryDeps, question: Question): b
 }
 
 export function answerFromDrawer(deps: DeliveryDeps, run: RunView, text: string, by: Actor): RunView {
+  if (isTicketRun(run)) assertTicketExecution(deps.ticketExecution, "answerRun");
   const question =
     run.state === "waiting_input" && run.projectId
       ? deps.data.answerRunQuestion(run.projectId, run.id, text, by)

@@ -22,7 +22,11 @@ async function waitRun(harness: AiHarness, runId: string, state: RunView["state"
 }
 
 test("the whole demo run goes through the queue, asks a question, resumes and finishes with zero cost", async () => {
-  h = await startAiHarness({ scenario: "onboarding-ok.json", claudeBin: "/nonexistent/claude" });
+  h = await startAiHarness({
+    scenario: "onboarding-ok.json",
+    claudeBin: "/nonexistent/claude",
+    ticketExecution: "allowed",
+  });
   const status = await h.rpc({ method: "getAiStatus" });
   expect(status).toMatchObject({ available: false, reason: "missing" });
   expect(Object.keys(status.profiles).sort()).toEqual(["assistant", "generateur"]);
@@ -65,7 +69,11 @@ async function waitTutorial(harness: AiHarness, step: "agent" | "component") {
 }
 
 test("a component draft of the demo project is written by the demo agent, without claude, and ticks step 6", async () => {
-  h = await startAiHarness({ scenario: "onboarding-ok.json", claudeBin: "/nonexistent/claude" });
+  h = await startAiHarness({
+    scenario: "onboarding-ok.json",
+    claudeBin: "/nonexistent/claude",
+    ticketExecution: "allowed",
+  });
   const tutorial = await h.rpc({ method: "startTutorial" });
   const projectId = tutorial.projectId ?? "";
   const draft = await h.rpc({
@@ -110,7 +118,11 @@ test("a component draft of the demo project is written by the demo agent, withou
 }, 180_000);
 
 test("without claude a draft outside the demo project is still refused", async () => {
-  h = await startAiHarness({ scenario: "onboarding-ok.json", claudeBin: "/nonexistent/claude" });
+  h = await startAiHarness({
+    scenario: "onboarding-ok.json",
+    claudeBin: "/nonexistent/claude",
+    ticketExecution: "allowed",
+  });
   const draft = {
     mode: "create" as const,
     id: "avancement",

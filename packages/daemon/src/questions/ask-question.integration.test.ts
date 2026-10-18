@@ -67,6 +67,7 @@ async function start(notices: Notice[]) {
     toolchain: DEV_TOOLCHAIN,
     user: "adam",
     claudeBin: FAKE_CLAUDE,
+    ticketExecution: "allowed",
     sampler: () => ({ cpu: 5, ram: 5 }),
     notify: (notice) => notices.push(notice),
     agentEnv: {

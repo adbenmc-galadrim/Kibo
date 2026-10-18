@@ -1,6 +1,7 @@
 import { homedir } from "node:os";
 import { ticketRuns } from "@kibo/schema";
 import { lateAgentSource } from "./agents/agent-source";
+import { allowsTicketExecution } from "./agents/execution-removed";
 import type { Orchestrator } from "./agents/orchestrator";
 import { withSignalCounts } from "./agents-rpc";
 import type { DraftAssets } from "./ai/draft-preview";
@@ -129,7 +130,8 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     orchestrator: () => ready(agents, "INTERNAL", "agents are not ready"),
     notify: opts.notify ?? (() => {}),
     signals: signals.service,
-    agentExecution: () => tracking.appSettings.get().agentExecution,
+    agentExecution: () =>
+      allowsTicketExecution(opts.ticketExecution) ? "shown" : tracking.appSettings.get().agentExecution,
     events: tracking.sink,
   });
   closers.push(() => projectAgent.stop());

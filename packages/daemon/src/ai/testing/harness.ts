@@ -12,6 +12,7 @@ import type {
   ValidationReport,
 } from "@kibo/schema";
 import { z } from "zod";
+import type { TicketExecution } from "../../agents/execution-removed";
 import { aiScenarioPath } from "../../agents/fake-claude-ai";
 import { FAKE_CLAUDE } from "../../agents/fake-claude-scenario";
 import { startDaemon } from "../../daemon";
@@ -33,6 +34,7 @@ export type AiHarnessOptions = {
   toolchain?: Toolchain;
   assistantTimeoutMs?: number;
   validate?: (dir: string, signal: AbortSignal) => Promise<ValidationReport>;
+  ticketExecution?: TicketExecution;
 };
 
 const Envelope = z.union([
@@ -78,6 +80,7 @@ export async function startAiHarness(opts: AiHarnessOptions): Promise<AiHarness>
     claudeBin: opts.claudeBin ?? FAKE_CLAUDE,
     sampler: () => ({ cpu: 5, ram: 5 }),
     ...(opts.validate && { validate: opts.validate }),
+    ...(opts.ticketExecution && { ticketExecution: opts.ticketExecution }),
     agentEnv: {
       PATH: process.env.PATH,
       HOME: process.env.HOME,
