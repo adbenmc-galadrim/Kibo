@@ -177,17 +177,17 @@ S.draw["p-nouveau"] = async (x, y) => { const C = S.C, sec = C.mfg;
   const ft = S.row(d, { fx: true, gap: 8, justify: "end", pad: [4, 0, 0, 0] }); S.btn(ft, "Annuler", "outline"); S.btn(ft, "Créer", "brand");
   return f; };
 
-// ---------- Kanban : barre (Tous, Sprint courant, À reprendre), colonnes du workflow, pastilles ----------
+// ---------- Kanban : barre (Tous, Sprint courant, Démarrable, À reprendre), colonnes du workflow, pastilles ----------
 const K = (key, f, title, o = {}) => ({ key, f, title, ...o });
 S.KANBAN27 = [
   ["Backlog", 0, []],
-  ["À faire", 20, [K("EMIS-46", "F4", "Démo · F4", { optional: true }), K("EMIS-51", "F6", "Lecture du fichier Excel", { blockedQ: "Q14", step: 3 }), K("EMIS-34", "F5", "Tests E2E de l'envoi", { wait: "EMIS-33" }),
-    K("EMIS-35", "F5", "Démo · F5", { wait: "EMIS-34" }), K("EMIS-52", "F6", "Contrôle des repères"), K("EMIS-53", "F6", "Écran d'import"), K("EMIS-54", "F6", "Démo · F6"), K("EMIS-71", "F8", "Statuts de soudure"),
-    K("EMIS-72", "F8", "Sélection multiple"), K("EMIS-73", "F8", "Validation par lot"), K("EMIS-74", "F8", "Démo · F8")]],
-  ["En cours", 1, [K("EMIS-33", "F5", "Écran d'envoi hors ligne", { live: true, step: 7, branch: "feat/envoi-hors-ligne" })]],
+  ["À faire", 19, [K("EMIS-46", "F4", "Démo · F4", { optional: true }), K("EMIS-34", "F5", "Tests E2E de l'envoi", { wait: "EMIS-33" }),
+    K("EMIS-35", "F5", "Démo · F5", { wait: "EMIS-34" }), K("EMIS-52", "F6", "Contrôle des repères", { reason: "sprint S43" }), K("EMIS-53", "F6", "Écran d'import", { reason: "sprint S43" }), K("EMIS-54", "F6", "Démo · F6", { reason: "sprint S43" }), K("EMIS-71", "F8", "Statuts de soudure", { reason: "sprint S43" }),
+    K("EMIS-72", "F8", "Sélection multiple", { reason: "sprint S43" }), K("EMIS-73", "F8", "Validation par lot", { reason: "sprint S43" }), K("EMIS-74", "F8", "Démo · F8", { reason: "sprint S43" })]],
+  ["En cours", 1, [K("EMIS-33", "F5", "Écran d'envoi hors ligne", { live: true, step: 7, branch: "feat/envoi-hors-…" })]],
   ["En review", 3, [K("EMIS-45", "F4", "Conflits de saisie", { live: true, step: 9, pr: "#20", review: "changes", ci: "error" }), K("EMIS-32", "F5", "Route d'envoi des photos", { step: 10, pr: "#22", ci: "ok" }),
     K("EMIS-61", null, "Passage à Expo SDK 54", { pr: "#23", ci: "running" })]],
-  ["Bloqué", 0, []],
+  ["Bloqué", 1, [K("EMIS-51", "F6", "Lecture du fichier Excel", { blockedQ: "Q14", step: 3 })]],
   ["Terminé", 17, [K("EMIS-21", "F3", "Démo · F3", { merged: "#18" }), K("EMIS-31", "F5", "Stockage des photos sur MinIO", { merged: "#19" }), K("EMIS-43", "F4", "Synchro au retour du réseau", { merged: "#16" }),
     K("EMIS-42", "F4", "Formulaire de saisie", { merged: "#14" }), K("EMIS-41", "F4", "Schéma local des tronçons", { merged: "#12" }), K("EMIS-20", "F3", "Écran de réaffectation"), K("EMIS-19", "F3", "Route de réaffectation"),
     K("EMIS-18", "F3", "Historique des affectations"), K("EMIS-14", "F2", "Démo · F2")]] ];
@@ -204,18 +204,20 @@ S.kcard = (p, t) => { const C = S.C, sec = C.mfg, done = !!t.merged || ["EMIS-20
   if (t.optional) S.kb(b, "facultative", sec, { dashed: true });
   if (t.pr) S.kb(b, t.pr, C.fg, { icon: "pr", ic: C.purple, mono: true });
   if (t.merged) S.kb(b, t.merged, sec, { icon: "merge", ic: C.green, mono: true });
+  if (t.branch && !t.pr && !t.merged) S.kb(b, t.branch, C.fg, { icon: "branch", ic: sec, mono: true });
   if (t.review === "changes") S.kb(b, "changements demandés", C.amber, { bg: C.amberSoft });
   if (t.ci === "ok") S.kb(b, "CI", sec, { icon: "circleCheck", ic: C.green });
   if (t.ci === "error") S.kb(b, "CI cassée", C.red, { icon: "circleX", bg: C.redSoft });
   if (t.ci === "running") S.kb(b, "CI en cours", sec, { ring: true });
   if (t.step != null && !t.blockedQ) S.kb(b, S.stepLabel(t.step), t.live ? C.brandText : sec, { mono: true });
   if (t.wait) S.kb(b, "attend " + t.wait, sec);
+  if (t.reason) S.kb(b, t.reason, sec);
   if (!b.children.length) b.remove();
   return c; };
 S.kanban27 = (main, o = {}) => { const C = S.C, sec = C.mfg, W = o.W, H = o.H;
   const tb = S.row(main, { name: "toolbar", fx: true, h: 48, pad: [0, 16], gap: 8 });
   const seg = S.row(tb, { name: "filter", pad: 2, radius: 7, fill: C.muted, gap: 2 });
-  for (const [l, on, n] of [["Tous", true, "41"], ["Sprint courant · S42", false, "15"], ["À reprendre", false, "1"]]) { const s = S.row(seg, { pad: [4, 10], gap: 6, radius: 5, fill: on ? C.bg : null, stroke: on ? C.border : null });
+  for (const [l, on, n] of [["Tous", true, "41"], ["Sprint courant · S42", false, "15"], ["Démarrable", false, "2"], ["À reprendre", false, "1"]]) { const s = S.row(seg, { pad: [4, 10], gap: 6, radius: 5, fill: on ? C.bg : null, stroke: on ? C.border : null });
     if (l === "À reprendre") S.icon(s, "rotate", 12, on ? C.fg : sec); S.txt(s, l, { size: 12.5, weight: 500, color: on ? C.fg : sec }); S.txt(s, n, { size: 11, mono: true, color: C.dim }); }
   S.btn(tb, "Étiquette : toutes", "outline", { sm: true, icon: "tag" });
   S.spacer(tb); S.txt(tb, "41 tickets · Tous", { size: 12, color: sec });
