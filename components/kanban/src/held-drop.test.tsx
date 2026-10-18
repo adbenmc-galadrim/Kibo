@@ -1,15 +1,16 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, expect, jest, test } from "bun:test";
 import { DndContext } from "@dnd-kit/core";
 import { Question, type Status } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { HeldToast } from "./HeldToast";
 import { manifest } from "./index";
 import { KanbanCardPreview } from "./KanbanCardPreview";
 import { KanbanColumn } from "./KanbanColumn";
 import { seed } from "./test-seed";
+import { useHeldToast } from "./use-held-toast";
 
 afterEach(cleanup);
 
@@ -104,4 +105,57 @@ test("over a forbidden column, the dragged card shows the « not allowed » curs
   expect(preview(true).className).toContain("cursor-not-allowed");
   cleanup();
   expect(preview(false).className).toContain("cursor-grabbing");
+});
+
+const other = Question.parse({ ...question, id: "8@1", number: 15 });
+
+const holder = () => {
+  const m = createMockSdk(manifest, { seed });
+  const card = m.snapshot().tickets.find((t) => t.keyLabel === "KIB-1");
+  if (!card) throw new Error("no seeded ticket");
+  let hold: ReturnType<typeof useHeldToast>["hold"] = () => {};
+  function Holder() {
+    const held = useHeldToast();
+    hold = held.hold;
+    return held.toast;
+  }
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Holder />
+    </SdkProvider>,
+  );
+  return { card, hold: (q: Question) => act(() => hold(card, q)) };
+};
+
+const toastShown = () => screen.queryByRole("region", { name: /reste bloqué par/ }) !== null;
+const wait = (ms: number) => act(() => void jest.advanceTimersByTime(ms));
+
+test("the refusal toast closes after 8 s, and each new refusal restarts the delay, on the same card too", () => {
+  jest.useFakeTimers();
+  try {
+    const { hold } = holder();
+    hold(question);
+    wait(7_999);
+    expect(toastShown()).toBe(true);
+    wait(1);
+    expect(toastShown()).toBe(false);
+
+    hold(question);
+    wait(6_000);
+    hold(other);
+    wait(6_000);
+    expect(screen.getByRole("region", { name: "KIB-1 reste bloqué par Q15" })).toBeTruthy();
+    wait(2_000);
+    expect(toastShown()).toBe(false);
+
+    hold(question);
+    wait(6_000);
+    hold(question);
+    wait(6_000);
+    expect(toastShown()).toBe(true);
+    wait(2_000);
+    expect(toastShown()).toBe(false);
+  } finally {
+    jest.useRealTimers();
+  }
 });

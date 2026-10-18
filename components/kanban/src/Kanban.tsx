@@ -8,14 +8,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import {
-  blockingQuestion,
-  isBlocked,
-  type Question,
-  questionLabel,
-  type StatusId,
-  type TicketView,
-} from "@kibo/schema";
+import { blockingQuestion, isBlocked, questionLabel, type StatusId, type TicketView } from "@kibo/schema";
 import {
   agentTracesShown,
   filterBySource,
@@ -35,7 +28,7 @@ import {
   withoutAgentAssignee,
 } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { announce } from "./announcements";
 import { BlockDialog } from "./BlockDialog";
 import { boardColumn, heldBy } from "./board-column";
@@ -44,7 +37,6 @@ import { DragPreview } from "./DragPreview";
 import { type Drop, dropInColumn } from "./drop";
 import { type KanbanFilter, projectLabels } from "./filter";
 import { fr } from "./fr";
-import { HeldToast } from "./HeldToast";
 import { KanbanCard } from "./KanbanCard";
 import type { CardFacts } from "./KanbanCardContent";
 import { KanbanCardPreview } from "./KanbanCardPreview";
@@ -58,10 +50,10 @@ import { ticketCiRuns } from "./ticket-pr";
 import { useBoardView } from "./use-board-view";
 import { useCardMoves } from "./use-card-moves";
 import { useColumnOrder } from "./use-column-order";
+import { useHeldToast } from "./use-held-toast";
 import { useLabelFilter } from "./use-label-filter";
 
 type Blocking = { ticket: TicketView; drop: Drop | null };
-type Held = { ticket: TicketView; question: Question };
 
 export function Kanban() {
   const sdk = useSdk();
@@ -92,8 +84,7 @@ export function Kanban() {
     source === null && sdk.config.filter === "mine-and-agents" ? "mine-and-agents" : "all";
   const [blocking, setBlocking] = useState<Blocking | null>(null);
   const [removing, setRemoving] = useState<TicketView | null>(null);
-  const [held, setHeld] = useState<Held | null>(null);
-  const closeHeld = useCallback(() => setHeld(null), []);
+  const held = useHeldToast();
   const [targetColumn, setTargetColumn] = useState<StatusId | null>(null);
   const [dragged, setDragged] = useState<string | null>(null);
   const scoped = filterBySource(tickets, source);
@@ -178,7 +169,7 @@ export function Kanban() {
     if (!drop || !t) return;
     const question = holdOf(t, drop.statusId);
     if (question !== null) {
-      setHeld({ ticket: t, question });
+      held.hold(t, question);
       return;
     }
     if (drop.statusId === "blocked" && columnOf(t) !== "blocked") setBlocking({ ticket: t, drop });
@@ -282,7 +273,7 @@ export function Kanban() {
           }}
         />
       )}
-      {held && <HeldToast ticketKey={held.ticket.keyLabel} question={held.question} onClose={closeHeld} />}
+      {held.toast}
       {delivery.dialog}
       {removing && (
         <RemoveDialog
