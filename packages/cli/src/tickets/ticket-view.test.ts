@@ -15,7 +15,7 @@ function ticket(
 ): TicketView {
   return {
     id,
-    key: `EMIS-${id}`,
+    key: `SILO-${id}`,
     pendingSeq: null,
     title: `Ticket ${id}`,
     description: `Description ${id}`,
@@ -37,7 +37,7 @@ function ticket(
     feature: null,
     progress: { done: 0, total: 0 },
     waitingOn: [],
-    keyLabel: `EMIS-${id}`,
+    keyLabel: `SILO-${id}`,
     openQuestions: 0,
     startable: true,
     startReason: null,
@@ -90,26 +90,26 @@ describe("ticket view", () => {
   test("summarizes plan ids, column, tree, blocking deps and the relevant PR", () => {
     const [parent, , child, review] = summarize(snapshot);
     expect(parent).toMatchObject({
-      key: "EMIS-1",
+      key: "SILO-1",
       planId: "C1",
       parent: null,
       children: [
-        { key: "EMIS-2", planId: "C1-1", status: "done" },
-        { key: "EMIS-3", planId: "C1-2", status: "todo" },
+        { key: "SILO-2", planId: "C1-1", status: "done" },
+        { key: "SILO-3", planId: "C1-2", status: "todo" },
       ],
     });
     expect(child).toEqual({
       id: "3",
-      key: "EMIS-3",
+      key: "SILO-3",
       planId: "C1-2",
       title: "Ticket 3",
       status: "todo",
       kiboStatus: "todo",
       column: "À faire",
       blockedReason: null,
-      parent: { key: "EMIS-1", planId: "C1", status: "todo" },
+      parent: { key: "SILO-1", planId: "C1", status: "todo" },
       children: [],
-      deps: [{ key: "EMIS-2", planId: "C1-1", status: "done" }],
+      deps: [{ key: "SILO-2", planId: "C1-1", status: "done" }],
       pr: { number: 7, url: "https://github.com/o/r/pull/7", state: "open", review: "none", checks: null },
       assignee: null,
       branch: null,
@@ -147,7 +147,7 @@ describe("ticket view", () => {
   });
 
   test("carries the startability the daemon computed", () => {
-    const waiting = { kind: "dependency" as const, keys: ["EMIS-2"] };
+    const waiting = { kind: "dependency" as const, keys: ["SILO-2"] };
     const tickets = [
       { ...ticket("7", "todo"), startable: true },
       { ...ticket("8", "todo"), startable: false, startReason: waiting },
@@ -193,13 +193,13 @@ describe("ticket view", () => {
       summarize(snapshot)
         .filter((t) => matchesStatus(t, statusFilter(raw)))
         .map((t) => t.key);
-    expect(keys("wip")).toEqual(["EMIS-4"]);
-    expect(keys("in_review,blocked")).toEqual(["EMIS-4", "EMIS-6"]);
+    expect(keys("wip")).toEqual(["SILO-4"]);
+    expect(keys("in_review,blocked")).toEqual(["SILO-4", "SILO-6"]);
     expect(() => statusFilter("shipped")).toThrow("INVALID_INPUT");
   });
 
   test("finds a ticket by key, plan id or node id, ignoring case", () => {
-    expect(lookupTicket(snapshot.tickets, "emis-4")?.id).toBe("4");
+    expect(lookupTicket(snapshot.tickets, "silo-4")?.id).toBe("4");
     expect(lookupTicket(snapshot.tickets, "c1-2")?.id).toBe("3");
     expect(lookupTicket(snapshot.tickets, "5")?.id).toBe("5");
     expect(lookupTicket(snapshot.tickets, "C9-9")).toBeNull();

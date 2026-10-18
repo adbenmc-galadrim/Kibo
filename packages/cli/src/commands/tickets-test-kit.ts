@@ -81,10 +81,10 @@ const sprint = (
   lingering: false,
 });
 
-export const EMIS_META: ProjectMeta = {
-  id: "p-emis",
-  key: "EMIS",
-  name: "Emis",
+export const SILO_META: ProjectMeta = {
+  id: "p-silo",
+  key: "SILO",
+  name: "Silo",
   folder: null,
   color: "#336699",
   worktree: null,
@@ -97,21 +97,21 @@ export const EMIS_META: ProjectMeta = {
 };
 
 export const SPRINTS: SprintView[] = [
-  { ...sprint("s43", ["S43", "Import et soudures"], "2026-10-26", "2026-11-06", "planned"), features: [] },
+  { ...sprint("s43", ["S43", "Import et contrats"], "2026-10-26", "2026-11-06", "planned"), features: [] },
   { ...sprint("s41", ["S41", "Accès"], "2026-09-28", "2026-10-09", "done"), features: [] },
   {
-    ...sprint("s42", ["S42", "Terrain hors ligne"], "2026-10-12", "2026-10-23", "current"),
+    ...sprint("s42", ["S42", "Saisie hors ligne"], "2026-10-12", "2026-10-23", "current"),
     features: ["f5"],
   },
 ];
 
 export const TICKETS: TicketView[] = [
-  fakeTicket({ id: "f5", key: "EMIS-30", shortKey: "F5", sprintId: "s42", children: 2 }),
-  fakeTicket({ id: "a", key: "EMIS-33", parentId: "f5", effectiveSprintId: "s42" }),
-  fakeTicket({ id: "b", key: "EMIS-34", parentId: "f5", effectiveSprintId: "s42", optional: true }),
-  fakeTicket({ id: "f7", key: "EMIS-40", shortKey: "F7", children: 1 }),
-  fakeTicket({ id: "c", key: "EMIS-41", parentId: "f7", statusId: "in_progress" }),
-  fakeTicket({ id: "solo", key: "EMIS-50" }),
+  fakeTicket({ id: "f5", key: "SILO-30", shortKey: "F5", sprintId: "s42", children: 2 }),
+  fakeTicket({ id: "a", key: "SILO-33", parentId: "f5", effectiveSprintId: "s42" }),
+  fakeTicket({ id: "b", key: "SILO-34", parentId: "f5", effectiveSprintId: "s42", optional: true }),
+  fakeTicket({ id: "f7", key: "SILO-40", shortKey: "F7", children: 1 }),
+  fakeTicket({ id: "c", key: "SILO-41", parentId: "f7", statusId: "in_progress" }),
+  fakeTicket({ id: "solo", key: "SILO-50" }),
 ];
 
 export function fakeSnapshot(
@@ -119,7 +119,7 @@ export function fakeSnapshot(
   sprints: SprintView[] = SPRINTS,
 ): ProjectSnapshot {
   const partial = {
-    meta: EMIS_META,
+    meta: SILO_META,
     workflow: DEFAULT_WORKFLOW,
     tickets,
     links: [],
@@ -153,7 +153,7 @@ export function fakeDaemon(
     async rpc(req) {
       const sent: RpcRequest = req;
       calls.push(sent);
-      if (sent.method === "listProjects") return (options.projects ?? [EMIS_META]) as never;
+      if (sent.method === "listProjects") return (options.projects ?? [SILO_META]) as never;
       if (sent.method === "getProject") return fakeSnapshot(tickets, sprints) as never;
       if (sent.method === "command") return {} as never;
       if (sent.method === "getNotesDir") return { dir: tmpdir() } as never;

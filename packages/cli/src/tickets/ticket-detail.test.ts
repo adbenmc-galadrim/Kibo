@@ -50,7 +50,7 @@ const note = (path: string, tickets: string[]): NoteMeta => ({
 describe("ticket detail", () => {
   test("keeps open and undelivered questions and the notes citing the key", () => {
     const extras = detailExtras(
-      { id: "3", key: "EMIS-3", planId: "C1-2" },
+      { id: "3", key: "SILO-3", planId: "C1-2" },
       {
         questions: [
           question("q1", { recipient: "client", blocking: true }),
@@ -62,7 +62,7 @@ describe("ticket detail", () => {
         ],
         questionRecipients: [...DEFAULT_RECIPIENTS],
       },
-      [note("a.md", ["EMIS-3"]), note("briefs/C1-2.md", []), note("b.md", ["EMIS-4"])],
+      [note("a.md", ["SILO-3"]), note("briefs/C1-2.md", []), note("b.md", ["SILO-4"])],
       "/notes/briefs/C1-2.md",
     );
     expect(extras.questions).toEqual([

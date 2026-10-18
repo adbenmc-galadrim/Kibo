@@ -56,7 +56,7 @@ describe("kibo component", () => {
     expect(t.out.at(-1)).toContain("kibo tickets set <clé|id du plan>");
     const elsewhere = join(t.home, "elsewhere");
     writeFileSync(join(t.home, "daemon.json"), "{corrupt");
-    expect(await runCli(["tickets", "list", "--project", "EMIS", "--home", elsewhere], t.io)).toBe(1);
+    expect(await runCli(["tickets", "list", "--project", "SILO", "--home", elsewhere], t.io)).toBe(1);
     expect(t.err.at(-1)).toBe("Kibo n'est pas lancé : ouvre l'application Kibo, puis réessaie.");
   });
 
