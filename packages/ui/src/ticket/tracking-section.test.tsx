@@ -231,3 +231,20 @@ test("a ticket of a project without repository offers to choose the folder, the 
   expect(edits).toEqual([{ field: "folder" }]);
   expect(screen.getByRole("button", { name: "Copier kibo tickets set EMIS-33 branch=" })).toBeTruthy();
 });
+
+test("without a CI run the CI row names the failing check of the PR, linked to its checks page", () => {
+  render(
+    <TrackingSection
+      ticket={ticket({ externalRefs: [pr({ checks: "error", failedCheck: "lint" })] })}
+      ciRuns={[]}
+      events={[]}
+      now={NOW}
+    />,
+  );
+  expect(words("CI")).toEqual(["CI cassée", "job lint"]);
+  expect(
+    within(row("CI") as HTMLElement)
+      .getByRole("link")
+      .getAttribute("href"),
+  ).toBe("https://github.com/galadrim/emis/pull/20/checks");
+});

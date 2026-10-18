@@ -97,3 +97,8 @@ test("the job link of a broken CI names the failed job and points to it", () => 
     "https://github.com/galadrim/emis/actions/runs/7/job/4",
   );
 });
+
+test("without a CI run the job link names the failing check of the PR and opens its checks page", () => {
+  render(<TrackingBanner ticket={ticket(pr({ checks: "error", failedCheck: "lint" }))} ciRuns={[]} />);
+  expect(screen.getByRole("link", { name: "Job lint" }).getAttribute("href")).toBe(`${PR_URL}/checks`);
+});
