@@ -1,6 +1,6 @@
 import { cn } from "@kibo/sdk/lib/utils";
-import { CalendarRange } from "lucide-react";
-import type { ReactNode } from "react";
+import { CalendarRange, Info } from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { RING_CLASS } from "./FrameStepRow";
 import { fr } from "./fr";
 
@@ -36,23 +36,61 @@ const ITEMS: readonly [string, ReactNode][] = [
   ],
 ];
 
+const LEGEND_KEY = "kibo.graph.legend";
+
+function readOpen(): boolean {
+  try {
+    return localStorage.getItem(LEGEND_KEY) !== "closed";
+  } catch {
+    return true;
+  }
+}
+
+function writeOpen(open: boolean): void {
+  try {
+    localStorage.setItem(LEGEND_KEY, open ? "open" : "closed");
+  } catch (e) {
+    console.warn("[graph] legend state not saved", e);
+  }
+}
+
 export function SprintLegend() {
+  const [open, setOpen] = useState(readOpen);
+  const toggle = () => {
+    writeOpen(!open);
+    setOpen(!open);
+  };
   return (
-    <ul
-      aria-label={fr.sprints.legend.label}
-      className="pointer-events-none absolute bottom-[18px] left-4 flex h-[30px] items-center gap-3.5 rounded-[8px] border border-(--tracking-border) bg-(--tracking-card) px-3"
+    <div
+      className={cn(
+        "pointer-events-none absolute bottom-[18px] left-4 flex h-[30px] items-center gap-3 rounded-[8px] border border-(--tracking-border) bg-(--tracking-card) pl-1.5",
+        open ? "pr-3" : "pr-1.5",
+      )}
     >
-      {ITEMS.map(([label, mark]) => (
-        <li
-          key={label}
-          className="flex items-center gap-1.5 text-(--tracking-mfg) text-[11.5px] leading-[14px]"
-        >
-          <span aria-hidden className="contents">
-            {mark}
-          </span>
-          {label}
-        </li>
-      ))}
-    </ul>
+      <button
+        type="button"
+        aria-label={fr.sprints.legend.label}
+        aria-expanded={open}
+        onClick={toggle}
+        className="pointer-events-auto grid size-5 place-items-center rounded-[5px] text-(--tracking-dim) outline-none hover:bg-(--tracking-hover) focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <Info size={13} absoluteStrokeWidth />
+      </button>
+      {open && (
+        <ul aria-label={fr.sprints.legend.label} className="flex items-center gap-3.5">
+          {ITEMS.map(([label, mark]) => (
+            <li
+              key={label}
+              className="flex items-center gap-1.5 text-(--tracking-mfg) text-[11.5px] leading-[14px]"
+            >
+              <span aria-hidden className="contents">
+                {mark}
+              </span>
+              {label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

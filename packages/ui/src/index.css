@@ -149,3 +149,56 @@
 .dark .shiki-token {
   color: var(--shiki-dark, inherit);
 }
+
+@property --scroll-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --scroll-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes scroll-fade {
+  0% {
+    --scroll-fade-start: 0px;
+    --scroll-fade-end: 20px;
+  }
+  8% {
+    --scroll-fade-start: 20px;
+  }
+  92% {
+    --scroll-fade-end: 20px;
+  }
+  100% {
+    --scroll-fade-start: 20px;
+    --scroll-fade-end: 0px;
+  }
+}
+
+@utility scroll-shadow {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--scroll-fade-start),
+    #000 calc(100% - var(--scroll-fade-end)),
+    transparent 100%
+  );
+  animation: scroll-fade linear both;
+  animation-timeline: scroll(self block);
+}
+
+@utility scroll-shadow-x {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--scroll-fade-start),
+    #000 calc(100% - var(--scroll-fade-end)),
+    transparent 100%
+  );
+  animation: scroll-fade linear both;
+  animation-timeline: scroll(self inline);
+}

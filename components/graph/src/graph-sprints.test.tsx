@@ -164,6 +164,35 @@ test("the legend names the mode", () => {
   ]);
 });
 
+test("the Légende button folds the legend and the choice is remembered", async () => {
+  localStorage.removeItem("kibo.graph.legend");
+  const first = render(<SprintLanes model={kitModel()} onOpen={() => undefined} />);
+  const toggle = screen.getByRole("button", { name: "Légende" });
+  expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  await userEvent.click(toggle);
+  expect(screen.queryByRole("list", { name: "Légende" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Légende" }).getAttribute("aria-expanded")).toBe("false");
+  first.unmount();
+  render(<SprintLanes model={kitModel()} onOpen={() => undefined} />);
+  expect(screen.queryByRole("list", { name: "Légende" })).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: "Légende" }));
+  expect(screen.getByRole("list", { name: "Légende" })).toBeTruthy();
+  localStorage.removeItem("kibo.graph.legend");
+});
+
+test("the legend opens when the storage cannot be read", () => {
+  const getItem = Storage.prototype.getItem;
+  Storage.prototype.getItem = () => {
+    throw new Error("denied");
+  };
+  try {
+    render(<SprintLanes model={kitModel()} onOpen={() => undefined} />);
+    expect(screen.getByRole("list", { name: "Légende" })).toBeTruthy();
+  } finally {
+    Storage.prototype.getItem = getItem;
+  }
+});
+
 test("clicking a frame title or a step opens the ticket", async () => {
   const opened: string[] = [];
   render(<SprintLanes model={kitModel()} onOpen={(id) => opened.push(id)} />);

@@ -13,7 +13,7 @@ type Props = ComponentProps<"button"> & {
 
 export function NavCount({ children, yields = false }: { children: string; yields?: boolean }) {
   return (
-    <span aria-hidden className={yields ? "k-count k-yield" : "k-count"}>
+    <span aria-hidden className={yields ? "k-count k-yield whitespace-nowrap" : "k-count whitespace-nowrap"}>
       {children}
     </span>
   );

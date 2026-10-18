@@ -1,4 +1,4 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { afterEach, beforeEach, expect, mock, test } from "bun:test";
 import type { AgentsState, AiEvent, ComponentDraft, RpcRequest, Screen, TabTarget } from "@kibo/schema";
 import { SidebarProvider } from "@kibo/sdk/ui/sidebar";
 import { act, render as renderPlain, screen, waitFor } from "@testing-library/react";
@@ -27,9 +27,14 @@ mock.module("../api", () =>
       },
       subscribeTopic: () => () => {},
       subscribeEvents: () => () => {},
+      online: () => true,
+      onConnection: () => () => {},
     },
   }),
 );
+
+const realAgents = await import("../state/use-agents");
+mock.module("../state/use-agents", () => ({ ...realAgents, useDaemonOnline: () => true }));
 
 const { ShellHeader } = await import("./ShellHeader");
 
@@ -192,7 +197,20 @@ test("the header keeps the breadcrumb, the sync state and the actions; share, ti
     expect(screen.queryByRole("button", { name })).toBeNull();
 });
 
-test("the sidebar toggle shows in the header once the sidebar is closed", () => {
+const realMatchMedia = window.matchMedia;
+afterEach(() => {
+  window.matchMedia = realMatchMedia;
+});
+
+const closedHeader = (matches: boolean) => {
+  window.matchMedia = (media: string) =>
+    Object.assign(new EventTarget(), {
+      matches,
+      media,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+    }) as unknown as MediaQueryList;
   render(
     <SidebarProvider defaultOpen={false}>
       <ShellHeader
@@ -212,5 +230,14 @@ test("the sidebar toggle shows in the header once the sidebar is closed", () => 
       />
     </SidebarProvider>,
   );
+};
+
+test("the sidebar toggle shows in the header once the sidebar is closed", () => {
+  closedHeader(false);
   expect(screen.getByRole("button", { name: "Afficher ou masquer la barre latérale" })).toBeTruthy();
+});
+
+test("under 1180 px the folded rail keeps the toggle, the header does not repeat it", () => {
+  closedHeader(true);
+  expect(screen.queryByRole("button", { name: "Afficher ou masquer la barre latérale" })).toBeNull();
 });
