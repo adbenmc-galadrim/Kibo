@@ -39,8 +39,12 @@ mock.module("../api", () =>
 
 const { TicketSheet } = await import("./TicketSheet");
 const { Toaster } = await import("@kibo/sdk/ui/sonner");
+const { TICKET_TAB_KEY } = await import("../ticket/activity/TicketTabs");
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  sessionStorage.removeItem(TICKET_TAB_KEY);
+});
 
 const noop = () => undefined;
 const project = emisFeatureProject();
