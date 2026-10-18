@@ -2,10 +2,10 @@ import { expect, test } from "bun:test";
 import fc from "fast-check";
 import { matchBranchToTicket } from "./branch-match";
 
-const keyArb = fc.integer({ min: 1, max: 120 }).map((n) => `EMIS-${n}`);
+const keyArb = fc.integer({ min: 1, max: 120 }).map((n) => `SILO-${n}`);
 const branchArb = fc
   .array(
-    fc.oneof(fc.constantFrom("feat/", "fix/", "-", "emis-", "EMIS-", "x", "/"), fc.nat(130).map(String)),
+    fc.oneof(fc.constantFrom("feat/", "fix/", "-", "silo-", "SILO-", "x", "/"), fc.nat(130).map(String)),
     {
       maxLength: 8,
     },

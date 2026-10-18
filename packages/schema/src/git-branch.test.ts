@@ -3,7 +3,7 @@ import fc from "fast-check";
 import { branchSlug, GitBranchRef, ImportRef, isGitBranchName } from "./git-branch";
 
 test("git branch names follow check-ref-format", () => {
-  for (const ok of ["main", "feat/schema-affaires", "fix/a.b", "emis-12", "release-1.0"])
+  for (const ok of ["main", "feat/schema-clients", "fix/a.b", "silo-12", "release-1.0"])
     expect(isGitBranchName(ok)).toBe(true);
   for (const bad of [
     "",
@@ -28,7 +28,7 @@ test("git branch names follow check-ref-format", () => {
 });
 
 test("slug replaces slashes and refs parse with defaults", () => {
-  expect(branchSlug("feat/schema-affaires")).toBe("feat-schema-affaires");
+  expect(branchSlug("feat/schema-clients")).toBe("feat-schema-clients");
   expect(GitBranchRef.parse({ kind: "git_branch", branch: "feat/x", base: null }).base).toBeNull();
   expect(GitBranchRef.safeParse({ kind: "git_branch", branch: "bad branch", base: null }).success).toBe(
     false,

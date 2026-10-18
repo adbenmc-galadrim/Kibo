@@ -60,7 +60,7 @@ test("a 2.x view url with ids in the query is a board", () => {
 
 const storybookOrigin = fc.oneof(
   fc.constantFrom("http://localhost:6006", "http://127.0.0.1:6007", "http://[::1]:6008"),
-  fc.constantFrom("https://sb.example.com", "https://storybook.emis.app:8443"),
+  fc.constantFrom("https://sb.example.com", "https://storybook.silo.app:8443"),
   fc.constantFrom("http://sb.example.com", "http://192.168.1.10:6006", "http://storybook.lan:6006"),
 );
 const storybookId = fc.oneof(

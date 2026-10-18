@@ -22,11 +22,11 @@ test("the delivery requests parse", () => {
   expect(ok({ method: "agents.applyPreset", ref: "global:full-delivery", preset: "review" })).toBe(false);
   expect(ok({ method: "deliver", projectId: "p", ticketId: "t1" })).toBe(true);
   expect(
-    ok({ method: "setDeliveryStep", projectId: "p", ticketKey: "EMIS-15", step: 7, note: "gates" }),
+    ok({ method: "setDeliveryStep", projectId: "p", ticketKey: "SILO-15", step: 7, note: "gates" }),
   ).toBe(true);
-  expect(ok({ method: "setDeliveryStep", projectId: "p", ticketKey: "EMIS-15", step: 7 })).toBe(true);
-  expect(ok({ method: "setDeliveryStep", projectId: "p", ticketKey: "EMIS-15", step: 12 })).toBe(false);
-  expect(ok({ method: "setDeliveryStep", projectId: "p", ticketKey: "emis", step: 1 })).toBe(false);
+  expect(ok({ method: "setDeliveryStep", projectId: "p", ticketKey: "SILO-15", step: 7 })).toBe(true);
+  expect(ok({ method: "setDeliveryStep", projectId: "p", ticketKey: "SILO-15", step: 12 })).toBe(false);
+  expect(ok({ method: "setDeliveryStep", projectId: "p", ticketKey: "silo", step: 1 })).toBe(false);
   expect(ok({ method: "runs.denials", runId: "r1" })).toBe(true);
   const allow = {
     method: "runs.allowAndResume",
@@ -39,7 +39,7 @@ test("the delivery requests parse", () => {
   expect(ok({ ...allow, rules: ["Bash(sh *)"] })).toBe(false);
   expect(ok({ method: "projects.importDelivery" })).toBe(true);
   expect(ok({ method: "projects.importDelivery", registryPath: "relative.json" })).toBe(false);
-  expect(ok({ method: "projects.applyDeliveryImport", projectId: "p", name: "emis" })).toBe(true);
+  expect(ok({ method: "projects.applyDeliveryImport", projectId: "p", name: "silo" })).toBe(true);
 });
 
 test("delivery requests are recognised by their method", () => {
@@ -48,7 +48,7 @@ test("delivery requests are recognised by their method", () => {
 });
 
 test("a delivery step may be declared as an update", () => {
-  const step = { method: "setDeliveryStep", projectId: "p", ticketKey: "EMIS-15", step: 7 };
+  const step = { method: "setDeliveryStep", projectId: "p", ticketKey: "SILO-15", step: 7 };
   expect(ok({ ...step, kind: "update" })).toBe(true);
   expect(ok({ ...step, kind: "delivery" })).toBe(true);
   expect(ok({ ...step, kind: "fix" })).toBe(false);

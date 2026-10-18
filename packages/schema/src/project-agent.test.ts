@@ -12,7 +12,7 @@ import {
 
 const HUMAN = { kind: "human" as const, ref: "adam" };
 const OUTCOMES = ["applied", "stale", "failed", "skipped"] as const;
-const one = { id: 1, why: "", type: "deliverAnswers", ticket: "EMIS-1" };
+const one = { id: 1, why: "", type: "deliverAnswers", ticket: "SILO-1" };
 const row: BatchRow = {
   id: "b1",
   projectId: "p1",
@@ -21,8 +21,8 @@ const row: BatchRow = {
   seq: 1,
   summary: "Ranger le backlog",
   actions: [
-    { id: 1, why: "", type: "setStatus", ticket: "EMIS-1", statusId: "done" },
-    { id: 2, why: "", type: "setStatus", ticket: "EMIS-2", statusId: "todo" },
+    { id: 1, why: "", type: "setStatus", ticket: "SILO-1", statusId: "done" },
+    { id: 2, why: "", type: "setStatus", ticket: "SILO-2", statusId: "todo" },
   ],
   expected: [],
   createdAt: 0,
@@ -43,7 +43,7 @@ describe("project agent schema", () => {
         id: 1,
         why: "",
         type: "setStatus",
-        ticket: "EMIS-11",
+        ticket: "SILO-11",
         statusId: "in_review",
       }).success,
     ).toBe(true);
@@ -53,12 +53,12 @@ describe("project agent schema", () => {
     ).toBe(false);
     expect(ProposedAction.safeParse({ id: 0, why: "", type: "cancelRun", runId: "r1" }).success).toBe(false);
     expect(TicketRef.safeParse("new:0").success).toBe(false);
-    expect(TicketRef.safeParse("emis-11").success).toBe(false);
+    expect(TicketRef.safeParse("silo-11").success).toBe(false);
     expect(
       ProposedAction.safeParse({ id: 2, why: "", type: "createNote", path: "../x.md", content: "" }).success,
     ).toBe(false);
     expect(
-      ProposedAction.safeParse({ id: 2, why: "", type: "link", from: "EMIS-1", to: "new:1", kind: "relates" })
+      ProposedAction.safeParse({ id: 2, why: "", type: "link", from: "SILO-1", to: "new:1", kind: "relates" })
         .success,
     ).toBe(false);
     expect(
@@ -66,8 +66,8 @@ describe("project agent schema", () => {
         id: 2,
         why: "",
         type: "unlink",
-        from: "EMIS-1",
-        to: "EMIS-2",
+        from: "SILO-1",
+        to: "SILO-2",
         kind: "relates",
       }).success,
     ).toBe(true);
@@ -153,9 +153,9 @@ describe("question actions in a batch", () => {
     const empty = { id: 1, why: "", type: "updateQuestion", questionId: qid } as const;
     expect(ProposeBatchInput.parse({ summary: "s", actions: [empty] }).actions).toEqual([empty]);
     expect(ProposedAction.safeParse({ ...update, blocking: true }).success).toBe(false);
-    expect(ProposedAction.parse({ ...update, recipient: "Client", ticket: "EMIS-2" })).toMatchObject({
+    expect(ProposedAction.parse({ ...update, recipient: "Client", ticket: "SILO-2" })).toMatchObject({
       recipient: "Client",
-      ticket: "EMIS-2",
+      ticket: "SILO-2",
     });
   });
 
@@ -176,7 +176,7 @@ describe("question actions in a batch", () => {
       id: 5,
       why: "",
       type: "createQuestion",
-      ticket: "EMIS-1",
+      ticket: "SILO-1",
       title: "Q",
       recipient: "Client",
     };
@@ -184,7 +184,7 @@ describe("question actions in a batch", () => {
   });
 
   test("setSprint moves a feature to a sprint code or out of the planning", () => {
-    const set = { id: 1, why: "fin de S42", type: "setSprint", ticket: "EMIS-30", sprint: "S43" } as const;
+    const set = { id: 1, why: "fin de S42", type: "setSprint", ticket: "SILO-30", sprint: "S43" } as const;
     expect(ProposedAction.parse(set)).toEqual(set);
     expect(ProposedAction.parse({ ...set, sprint: null })).toMatchObject({ sprint: null });
     expect(ProposedAction.safeParse({ ...set, sprint: "S123456789" }).success).toBe(false);

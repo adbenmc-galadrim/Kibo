@@ -34,9 +34,9 @@ test("a session names its tool and its state is closed", () => {
 test("a session is declared by key or by folder", () => {
   const ok = (raw: unknown) => RpcRequest.safeParse(raw).success;
   const base = { method: "setTicketSession", projectId: "p" };
-  expect(ok({ ...base, ticketKey: "EMIS-33", cwd: null, state: "start", tool: "T3 Code" })).toBe(true);
-  expect(ok({ ...base, ticketKey: null, cwd: "/Users/adam/emis", state: "ping" })).toBe(true);
-  expect(ok({ ...base, ticketKey: null, cwd: "emis", state: "ping" })).toBe(false);
-  expect(ok({ ...base, ticketKey: "EMIS-33", cwd: null, state: "pause" })).toBe(false);
+  expect(ok({ ...base, ticketKey: "SILO-33", cwd: null, state: "start", tool: "T3 Code" })).toBe(true);
+  expect(ok({ ...base, ticketKey: null, cwd: "/Users/adam/silo", state: "ping" })).toBe(true);
+  expect(ok({ ...base, ticketKey: null, cwd: "silo", state: "ping" })).toBe(false);
+  expect(ok({ ...base, ticketKey: "SILO-33", cwd: null, state: "pause" })).toBe(false);
   expect(TRACKING_RPC_METHODS).toContain("setTicketSession");
 });

@@ -5,7 +5,7 @@ import type { Link } from "./link";
 
 const step = (id: string, over: Partial<FeatureStepSource> = {}): FeatureStepSource => ({
   id,
-  key: `EMIS-${id}`,
+  key: `SILO-${id}`,
   title: `Étape ${id}`,
   parentId: "f5",
   statusId: "todo",
@@ -17,11 +17,11 @@ const step = (id: string, over: Partial<FeatureStepSource> = {}): FeatureStepSou
 
 const PR = {
   kind: "github_pr" as const,
-  url: "https://github.com/acme/emis/pull/22",
+  url: "https://github.com/acme/silo/pull/22",
   number: 22,
   state: "open" as const,
   base: "main",
-  head: "feat/emis-33",
+  head: "feat/silo-33",
   review: "none" as const,
   checks: null,
 };
@@ -74,9 +74,9 @@ test("the steps are the direct children, blockers first, then rank", () => {
   ];
   const steps = featureSteps({ feature: "f5", tickets, links });
   expect(steps.map((s) => s.ticketId)).toEqual(["31", "33", "32", "35"]);
-  expect(steps.find((s) => s.ticketId === "32")?.blockedBy).toEqual(["EMIS-33"]);
+  expect(steps.find((s) => s.ticketId === "32")?.blockedBy).toEqual(["SILO-33"]);
   expect(steps.find((s) => s.ticketId === "33")?.blockedBy).toEqual([]);
-  expect(steps.find((s) => s.ticketId === "35")?.blockedBy).toEqual(["EMIS-other"]);
+  expect(steps.find((s) => s.ticketId === "35")?.blockedBy).toEqual(["SILO-other"]);
   expect(steps.find((s) => s.ticketId === "35")?.optional).toBe(true);
 });
 
@@ -87,20 +87,20 @@ test("a step carries its status, delivery, branch and pull request", () => {
     step("33", {
       statusId: "in_review",
       delivery,
-      externalRefs: [{ kind: "git_branch", branch: "feat/emis-33", base: "main" }, PR],
+      externalRefs: [{ kind: "git_branch", branch: "feat/silo-33", base: "main" }, PR],
     }),
     step("34"),
   ];
   const [first, second] = featureSteps({ feature: "f5", tickets, links: [] });
   expect(first).toEqual({
     ticketId: "33",
-    key: "EMIS-33",
+    key: "SILO-33",
     title: "Étape 33",
     statusId: "in_review",
     optional: false,
     blockedBy: [],
     delivery,
-    branch: "feat/emis-33",
+    branch: "feat/silo-33",
     pr: PR,
   });
   expect(second?.branch).toBeNull();
@@ -112,7 +112,7 @@ test("a feature without children has no steps", () => {
 });
 
 test("a feature is named by its short key, else by its own key", () => {
-  expect(featureLabel({ key: "EMIS-7", shortKey: "F3" })).toBe("F3");
+  expect(featureLabel({ key: "SILO-7", shortKey: "F3" })).toBe("F3");
   expect(featureLabel({ key: "F4", shortKey: "F4" })).toBe("F4");
-  expect(featureLabel({ key: "EMIS-9", shortKey: null })).toBe("EMIS-9");
+  expect(featureLabel({ key: "SILO-9", shortKey: null })).toBe("SILO-9");
 });

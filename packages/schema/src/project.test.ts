@@ -72,12 +72,12 @@ test("project meta has no tracking settings by default and the patch writes or c
 test("a project describes itself in 200 characters at most", () => {
   const meta = { id: "p", key: "AB", name: "n", folder: null, color: "#123456" };
   expect(ProjectMeta.parse(meta).description).toBeNull();
-  expect(ProjectMeta.parse({ ...meta, description: " Suivi de chantier " }).description).toBe(
-    "Suivi de chantier",
+  expect(ProjectMeta.parse({ ...meta, description: " Location de box " }).description).toBe(
+    "Location de box",
   );
   expect(ProjectMeta.safeParse({ ...meta, description: "x".repeat(201) }).success).toBe(false);
-  expect(ProjectPatch.parse({ description: "Suivi de chantier" })).toEqual({
-    description: "Suivi de chantier",
+  expect(ProjectPatch.parse({ description: "Location de box" })).toEqual({
+    description: "Location de box",
   });
   expect(ProjectPatch.parse({ description: null })).toEqual({ description: null });
   expect(ProjectPatch.safeParse({ description: "x".repeat(201) }).success).toBe(false);
@@ -86,10 +86,10 @@ test("a project describes itself in 200 characters at most", () => {
 test("a project names its client, at most 60 characters", () => {
   const base = { id: "p", key: "AB", name: "n", folder: null, color: "#123456" };
   expect(ProjectMeta.parse(base).client).toBeNull();
-  expect(ProjectMeta.parse({ ...base, client: " Emis SA " }).client).toBe("Emis SA");
+  expect(ProjectMeta.parse({ ...base, client: " Silo SA " }).client).toBe("Silo SA");
   expect(ProjectMeta.safeParse({ ...base, client: "x".repeat(61) }).success).toBe(false);
   expect(ProjectMeta.safeParse({ ...base, client: "  " }).success).toBe(false);
-  expect(ProjectPatch.parse({ client: "Emis SA" })).toEqual({ client: "Emis SA" });
+  expect(ProjectPatch.parse({ client: "Silo SA" })).toEqual({ client: "Silo SA" });
   expect(ProjectPatch.parse({ client: null })).toEqual({ client: null });
   expect(ProjectPatch.safeParse({ client: "x".repeat(61) }).success).toBe(false);
 });

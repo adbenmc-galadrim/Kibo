@@ -2,9 +2,9 @@ import { expect, test } from "bun:test";
 import fc from "fast-check";
 import { deadlineColumns, deadlineRows } from "./deadline-rows";
 import { featureSteps } from "./feature-steps";
-import { BLOCKING, emisTickets, SPRINT_VIEWS } from "./overview-test-kit";
+import { BLOCKING, SPRINT_VIEWS, siloTickets } from "./overview-test-kit";
 
-const tickets = emisTickets();
+const tickets = siloTickets();
 const FEATURES = tickets.flatMap((t, rank) =>
   t.feature === null
     ? []

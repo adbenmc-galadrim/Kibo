@@ -13,33 +13,33 @@ const state = (status: FeatureState["status"], remaining: number): FeatureState 
 });
 const f4 = {
   shortKey: "F4",
-  title: "Saisir un tronçon hors ligne",
+  title: "Saisir un constat hors ligne",
   state: state("delivered", 0),
   remainingKeys: [],
 };
 const f5 = {
   shortKey: "F5",
-  title: "Envoyer les photos d'un tronçon",
+  title: "Envoyer les photos d'un constat",
   state: state("late", 3),
-  remainingKeys: ["EMIS-32", "EMIS-34", "EMIS-35"],
+  remainingKeys: ["SILO-32", "SILO-34", "SILO-35"],
 };
 
 test("the digest of an ended sprint lists what remains and what was delivered", () => {
   if (S42 === undefined) throw new Error("fixture");
   expect(sprintEndDigest(S42, [f4, f5])).toBe(
-    "S42 est terminé : F5 a 3 étapes restantes (EMIS-32, EMIS-34, EMIS-35). F4 est livrée. Propose un report ou un retrait du planning.",
+    "S42 est terminé : F5 a 3 étapes restantes (SILO-32, SILO-34, SILO-35). F4 est livrée. Propose un report ou un retrait du planning.",
   );
 });
 
 test("the digest agrees in number and joins several features", () => {
   if (S42 === undefined) throw new Error("fixture");
   const f3 = { ...f4, shortKey: "F3" };
-  const f6 = { ...f5, shortKey: "F6", state: state("blocked", 1), remainingKeys: ["EMIS-51"] };
+  const f6 = { ...f5, shortKey: "F6", state: state("blocked", 1), remainingKeys: ["SILO-51"] };
   expect(sprintEndDigest(S42, [f3, f4, f5, f6])).toBe(
-    "S42 est terminé : F5 a 3 étapes restantes (EMIS-32, EMIS-34, EMIS-35) ; F6 a 1 étape restante (EMIS-51). F3 et F4 sont livrées. Propose un report ou un retrait du planning.",
+    "S42 est terminé : F5 a 3 étapes restantes (SILO-32, SILO-34, SILO-35) ; F6 a 1 étape restante (SILO-51). F3 et F4 sont livrées. Propose un report ou un retrait du planning.",
   );
   expect(sprintEndDigest(S42, [f6])).toBe(
-    "S42 est terminé : F6 a 1 étape restante (EMIS-51). Propose un report ou un retrait du planning.",
+    "S42 est terminé : F6 a 1 étape restante (SILO-51). Propose un report ou un retrait du planning.",
   );
 });
 

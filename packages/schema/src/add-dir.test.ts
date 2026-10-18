@@ -5,7 +5,7 @@ const HOME = "/Users/a";
 
 test("a folder under the home directory is safe, the home itself is not", () => {
   expect(isSafeAddDir("/Users/a/.claude/skills", HOME)).toBe(true);
-  expect(isSafeAddDir("/Users/a/Documents/emis", HOME)).toBe(true);
+  expect(isSafeAddDir("/Users/a/Documents/silo", HOME)).toBe(true);
   expect(isSafeAddDir("/Users/a", HOME)).toBe(false);
   expect(isSafeAddDir("/Users/a/", HOME)).toBe(false);
 });

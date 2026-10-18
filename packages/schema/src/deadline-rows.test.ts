@@ -7,12 +7,12 @@ import {
   todayOffset,
 } from "./deadline-rows";
 import { featureSteps } from "./feature-steps";
-import { BLOCKING, emisTickets, SPRINT_VIEWS, TODAY } from "./overview-test-kit";
+import { BLOCKING, SPRINT_VIEWS, siloTickets, TODAY } from "./overview-test-kit";
 
 const AFTER = "2026-10-17";
 
 const features = (today: string) => {
-  const tickets = emisTickets(today);
+  const tickets = siloTickets(today);
   return tickets.flatMap((t, rank) =>
     t.feature === null || t.sprintId === null || t.shortKey === null
       ? []

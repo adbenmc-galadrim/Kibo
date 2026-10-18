@@ -20,7 +20,7 @@ test("an empty delivery setting is valid and strict", () => {
 });
 
 test("delivery fields are bounded and checked", () => {
-  const ok = { ...EMPTY_DELIVERY, idPattern: "^C[0-9A-Z]*-[0-9]+$", root: "/Users/a/Documents/emis" };
+  const ok = { ...EMPTY_DELIVERY, idPattern: "^C[0-9A-Z]*-[0-9]+$", root: "/Users/a/Documents/silo" };
   expect(ProjectDelivery.safeParse(ok).success).toBe(true);
   expect(ProjectDelivery.safeParse({ ...EMPTY_DELIVERY, idPattern: "x".repeat(201) }).success).toBe(false);
   expect(ProjectDelivery.safeParse({ ...EMPTY_DELIVERY, idPattern: "(" }).success).toBe(false);
@@ -61,17 +61,17 @@ test("the delivery agent is the project's choice, else the global full-delivery 
   expect(deliveryAgentOf([agent("global:full-delivery")], null)).toBe("global:full-delivery");
   expect(deliveryAgentOf([agent("global:full-delivery", false)], null)).toBeNull();
   expect(deliveryAgentOf([], null)).toBeNull();
-  const chosen = { ...EMPTY_DELIVERY, agent: "global:emis-livraison" };
-  const agents = [agent("global:full-delivery"), agent("global:emis-livraison")];
-  expect(deliveryAgentOf(agents, chosen)).toBe("global:emis-livraison");
+  const chosen = { ...EMPTY_DELIVERY, agent: "global:silo-livraison" };
+  const agents = [agent("global:full-delivery"), agent("global:silo-livraison")];
+  expect(deliveryAgentOf(agents, chosen)).toBe("global:silo-livraison");
   expect(
-    deliveryAgentOf([agent("global:full-delivery"), agent("global:emis-livraison", false)], chosen),
+    deliveryAgentOf([agent("global:full-delivery"), agent("global:silo-livraison", false)], chosen),
   ).toBe("global:full-delivery");
   expect(deliveryAgentOf([agent("global:full-delivery")], chosen)).toBe("global:full-delivery");
 });
 
 test("the delivery brief is written by Kibo", () => {
-  expect(deliveryBrief("EMIS-15")).toBe("/full-delivery EMIS-15");
+  expect(deliveryBrief("SILO-15")).toBe("/full-delivery SILO-15");
 });
 
 test("delivery steps of active runs default to an empty list", () => {
@@ -82,9 +82,9 @@ test("delivery steps of active runs default to an empty list", () => {
 });
 
 test("the delivery agent info gives its ref and name, or null", () => {
-  const chosen = { ...EMPTY_DELIVERY, agent: "global:emis-livraison" };
-  const agents = [agent("global:full-delivery"), agent("global:emis-livraison")];
-  expect(deliveryAgentInfo(agents, chosen)).toEqual({ ref: "global:emis-livraison", name: "emis-livraison" });
+  const chosen = { ...EMPTY_DELIVERY, agent: "global:silo-livraison" };
+  const agents = [agent("global:full-delivery"), agent("global:silo-livraison")];
+  expect(deliveryAgentInfo(agents, chosen)).toEqual({ ref: "global:silo-livraison", name: "silo-livraison" });
   expect(deliveryAgentInfo(agents, null)).toEqual({ ref: "global:full-delivery", name: "full-delivery" });
   expect(deliveryAgentInfo([], null)).toBeNull();
   expect(DeliveryAgent.nullable().safeParse(null).success).toBe(true);

@@ -10,7 +10,7 @@ test("the fingerprint schema reads its own JSON back and refuses garbage", () =>
   const fp: ProjectFingerprint = {
     tickets: {
       t1: {
-        key: "EMIS-1",
+        key: "SILO-1",
         title: "Un",
         statusId: "todo",
         labels: ["ui"],
@@ -18,7 +18,7 @@ test("the fingerprint schema reads its own JSON back and refuses garbage", () =>
         assignee: "opus",
         branch: null,
         pr: "#12 (open)",
-        blockedBy: ["EMIS-3"],
+        blockedBy: ["SILO-3"],
       },
     },
     questions: { q1: "answered" },

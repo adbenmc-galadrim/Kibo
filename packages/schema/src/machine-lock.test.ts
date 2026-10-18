@@ -4,7 +4,7 @@ import { type MachineLock, machineLocks } from "./machine-lock";
 const LOCK: MachineLock = {
   name: "heavy",
   max: 2,
-  held: [{ ticket: "emis:EMIS-15", label: "gates", pid: 42, since: 1, cwd: "/tmp/x", alive: true }],
+  held: [{ ticket: "silo:SILO-15", label: "gates", pid: 42, since: 1, cwd: "/tmp/x", alive: true }],
   waiting: [],
 };
 

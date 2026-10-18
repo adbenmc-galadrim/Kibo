@@ -6,7 +6,7 @@ import { lateFeatures } from "./late-features";
 import { currentSprint, isLingering, sprintState } from "./sprint";
 import { isSprintOver, sprintPhase } from "./sprint-phase";
 
-const S42 = { id: "s42", code: "S42", name: "Terrain", start: "2026-10-12", end: "2026-10-16" };
+const S42 = { id: "s42", code: "S42", name: "Saisie", start: "2026-10-12", end: "2026-10-16" };
 const S43 = { id: "s43", code: "S43", name: "Import", start: "2026-10-19", end: "2026-10-23" };
 const SPRINTS = [S42, S43];
 

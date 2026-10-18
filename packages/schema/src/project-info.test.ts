@@ -1,32 +1,34 @@
 import { expect, test } from "bun:test";
 import type { Binding } from "./integrations";
-import { emisSnapshot, viewOf } from "./overview-test-kit";
+import { siloSnapshot, viewOf } from "./overview-test-kit";
 import { projectInfo, projectRepo } from "./project-info";
 
 const binding: Binding = {
   id: "b1",
   adapter: "github-issues",
-  config: { repo: "galadrim/emis", project: null, importClosed: false, labels: [] },
+  config: { repo: "silo-labs/silo-location", project: null, importClosed: false, labels: [] },
   createdBy: "adam",
   runner: "adam",
 };
 
 test("the project names itself and its repository from the first pull request", () => {
-  expect(projectInfo({ ...emisSnapshot(), bindings: [] }, "2026-10-16")).toEqual({
-    id: "emis",
-    key: "EMIS",
-    name: "Emis",
+  expect(projectInfo({ ...siloSnapshot(), bindings: [] }, "2026-10-16")).toEqual({
+    id: "silo",
+    key: "SILO",
+    name: "Silo",
     color: "#14B8A6",
-    description: "Suivi de chantier",
+    description: "Location de box",
     client: null,
     hasFolder: false,
-    repo: "galadrimteam/emis-suivi-chantier",
+    repo: "silo-labs/silo-location",
     today: "2026-10-16",
   });
 });
 
 test("a GitHub binding names the repository first", () => {
-  expect(projectRepo({ tickets: emisSnapshot().tickets, bindings: [binding] })).toBe("galadrim/emis");
+  expect(projectRepo({ tickets: siloSnapshot().tickets, bindings: [binding] })).toBe(
+    "silo-labs/silo-location",
+  );
 });
 
 test("without binding nor pull request, there is no repository", () => {
@@ -34,9 +36,9 @@ test("without binding nor pull request, there is no repository", () => {
 });
 
 test("the project tells whether a repository folder is set, never its path", () => {
-  const snapshot = emisSnapshot();
+  const snapshot = siloSnapshot();
   const info = projectInfo(
-    { ...snapshot, meta: { ...snapshot.meta, folder: "/Users/adam/emis" }, bindings: [] },
+    { ...snapshot, meta: { ...snapshot.meta, folder: "/Users/adam/silo" }, bindings: [] },
     "2026-10-16",
   );
   expect(info.hasFolder).toBe(true);
