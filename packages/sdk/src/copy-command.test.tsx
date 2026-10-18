@@ -40,6 +40,21 @@ test("a ticket that cannot start warns which tickets it waits for", async () => 
   expect(two.toasts).toEqual(["Copié · attend EMIS-33, EMIS-34"]);
 });
 
+test("a ticket blocked by a question warns which question holds it", async () => {
+  const { written, toasts, sdk } = recorder();
+  await copyDeliveryCommand(sdk, { key: "EMIS-51", startable: true, waitingOn: [], question: "Q14" });
+  expect(written).toEqual(["/full-delivery EMIS-51"]);
+  expect(toasts).toEqual(["Copié · bloqué par Q14"]);
+  const both = recorder();
+  await copyDeliveryCommand(both.sdk, {
+    key: "EMIS-51",
+    startable: false,
+    waitingOn: ["EMIS-33"],
+    question: "Q14",
+  });
+  expect(both.toasts).toEqual(["Copié · bloqué par Q14 · attend EMIS-33"]);
+});
+
 test("a refused clipboard says Copie impossible without throwing", async () => {
   const toasts: string[] = [];
   clipboard(() => Promise.reject(new Error("denied")));

@@ -3,7 +3,8 @@ import { deliveryTexts } from "./fr-delivery";
 import type { KiboSdk } from "./types";
 
 type Toaster = Pick<KiboSdk, "toast">;
-export type CopyTicket = Pick<TicketView, "key" | "startable" | "waitingOn">;
+export type CopyFacts = Pick<TicketView, "startable" | "waitingOn"> & { question?: string | null };
+export type CopyTicket = Pick<TicketView, "key"> & CopyFacts;
 
 const waitingOf = (ticket: Pick<TicketView, "startable" | "waitingOn">): readonly string[] =>
   ticket.startable ? [] : ticket.waitingOn;
@@ -19,16 +20,12 @@ async function writeClipboard(text: string): Promise<boolean> {
   }
 }
 
-export async function copyCommand(
-  sdk: Toaster,
-  command: string,
-  ticket: Pick<TicketView, "startable" | "waitingOn">,
-): Promise<void> {
+export async function copyCommand(sdk: Toaster, command: string, ticket: CopyFacts): Promise<void> {
   if (!(await writeClipboard(command))) {
     sdk.toast(deliveryTexts.copyFailed);
     return;
   }
-  sdk.toast(deliveryTexts.copied(waitingOf(ticket)));
+  sdk.toast(deliveryTexts.copied(waitingOf(ticket), ticket.question ?? null));
 }
 
 export async function copyDeliveryCommand(sdk: Toaster, ticket: CopyTicket): Promise<void> {
