@@ -137,6 +137,28 @@ test("screen 3: built-ins and my components, search, preview and display", async
   expect(screen.getByText("Aucun composant ne correspond.")).toBeTruthy();
 });
 
+test("only the tracking components are built-ins on offer: no MCP source, no 3D viewer", async () => {
+  render(<AddComponentDialog projectId="p1" page={page} taken={[]} open onOpenChange={() => {}} />);
+  const list = within(await screen.findByRole("region", { name: "Composants disponibles" }));
+  await list.findByRole("radio", { name: "Burndown" });
+  const builtins = list
+    .getAllByRole("radio")
+    .map((r) => r.getAttribute("aria-label") ?? r.textContent)
+    .filter((name) => name !== "Burndown");
+  expect(builtins).toHaveLength(8);
+  for (const name of [
+    "Vue d'ensemble",
+    "Planning",
+    "Kanban",
+    "Graphe de dépendances",
+    "Questions",
+    "Tickets",
+  ])
+    expect(list.getByRole("radio", { name })).toBeTruthy();
+  expect(list.queryByRole("radio", { name: "Source MCP" })).toBeNull();
+  expect(list.queryByRole("radio", { name: "Visionneuse 3D" })).toBeNull();
+});
+
 test("header and footer stay outside the two scrolling panes, whatever the list length", async () => {
   const many = Array.from({ length: 40 }, (_, i) => ({ ...burndown, id: `c${i}`, title: `Composant ${i}` }));
   components = () => Promise.resolve(many);

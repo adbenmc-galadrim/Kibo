@@ -1,4 +1,3 @@
-import type { McpSourceStoredConfig } from "@kibo/component-mcp-source";
 import {
   type ComponentSummary,
   DEFAULT_WORKFLOW,
@@ -29,8 +28,7 @@ import { AddComponentList } from "./AddComponentList";
 import { ApprovalScope, useApprovalScope } from "./approval-scope";
 import { Details } from "./ComponentDetails";
 import { CreateComponentDialog } from "./CreateComponentDialog";
-import { builtinChoices, type Choice, matches, mineChoices } from "./catalog-choices";
-import { McpSourceStep } from "./mcp-source/McpSourceStep";
+import { builtinChoices, type Choice, matches, mineChoices, offeredBuiltins } from "./catalog-choices";
 import { FirstSyncStatus } from "./sync/FirstSyncStatus";
 import { type LinkedRepos, repoKey } from "./sync/linked-repos";
 import { type SourceKind, SourcePicker } from "./sync/SourcePicker";
@@ -50,7 +48,7 @@ type Props = {
   linked?: LinkedRepos;
 };
 
-const BUILTINS = builtinChoices(BUILTIN_COMPONENTS);
+const BUILTINS = builtinChoices(offeredBuiltins(BUILTIN_COMPONENTS));
 const sizeOf = (ref: string, components: ComponentSummary[] | null): FormatSize => {
   const { id, version } = splitRef(ref);
   const manifest =
@@ -102,8 +100,6 @@ export function AddComponentDialog({
   );
   const holder = form.repo === null ? null : (others.get(repoKey(form.repo)) ?? null);
   const canRetry = firstSync.binding !== null && firstSync.error !== null;
-  const [mcpConfig, setMcpConfig] = useState<McpSourceStoredConfig | null>(null);
-  const mcpSource = selected?.id === "mcp-source";
   const onFormError = useCallback((m: string) => setSyncError(m), []);
   const openIntegrationSettings = () => {
     onOpenChange(false);
@@ -133,7 +129,6 @@ export function AddComponentDialog({
           component,
           ...(page.kind === "dashboard" && { layout: nextLayout(taken, sizeOf(component, components)) }),
           ...(created && { config: { source: { bindingId: created.id } } }),
-          ...(mcpSource && mcpConfig && { config: mcpConfig }),
         },
       });
       if (created) return firstSync.start(created);
@@ -219,8 +214,6 @@ export function AddComponentDialog({
                           />
                         )}
                       </div>
-                    ) : mcpSource ? (
-                      <McpSourceStep value={mcpConfig} onChange={setMcpConfig} />
                     ) : null
                   }
                 />
@@ -254,7 +247,6 @@ export function AddComponentDialog({
                   disabled={
                     !selected ||
                     (synced && (toBindingConfig(form) === null || holder !== null)) ||
-                    (mcpSource && mcpConfig === null) ||
                     firstSync.binding !== null
                   }
                   onClick={submit}

@@ -1,9 +1,10 @@
 import { sampleGlb } from "@kibo/sdk/fixtures";
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { FORMAT_SIZES } from "../packages/schema/src/index";
 import { coloredGlb } from "../packages/sdk/src/three/glb-test-kit";
 import { rpc, text } from "./agents-seed";
 import { centerPatch, colorGap, hueGap, meanColor, type Rgb, share, srgbOf, toHsv } from "./canvas-pixels";
-import { addComponent, createPage, pairAndCreateProject } from "./helpers";
+import { createPage, pairAndCreateProject } from "./helpers";
 import { projectKey, shot } from "./repo-project";
 
 test.use({ viewport: { width: 1440, height: 900 } });
@@ -17,6 +18,29 @@ const projectIdOf = (page: Page): string => {
   if (!match?.[1]) throw new Error(`no project in ${page.url()}`);
   return decodeURIComponent(match[1]);
 };
+
+const pageIdOf = (page: Page): string => {
+  const match = /#\/p\/[^/]+\/([^/?]+)/.exec(page.url());
+  if (!match?.[1]) throw new Error(`no page in ${page.url()}`);
+  return decodeURIComponent(match[1]);
+};
+
+async function addViewer(page: Page) {
+  await expect(page).toHaveURL(/#\/p\/[^/]+\/[^/?]+/);
+  await rpc(page, {
+    method: "command",
+    projectId: projectIdOf(page),
+    command: {
+      method: "addInstance",
+      pageId: pageIdOf(page),
+      component: "viewer-3d@1.0.0",
+      layout: { x: 0, y: 0, ...FORMAT_SIZES.medium },
+    },
+  });
+  await expect(page.getByRole("main").getByRole("button", { name: "Actions Visionneuse 3D" })).toBeVisible({
+    timeout: SETTINGS_SAVED_MS,
+  });
+}
 
 async function uploadGlb(page: Page, projectId: string, name: string, bytes: Uint8Array) {
   const begun = await rpc(page, {
@@ -75,7 +99,7 @@ async function startViewer(
   await pairAndCreateProject(page, info, projectKey(`${key}${run}`, info));
   for (const [name, bytes] of Object.entries(models)) await uploadGlb(page, projectIdOf(page), name, bytes);
   await createPage(page, "Tableau de bord", "Tableau de bord");
-  await addComponent(page, "Visionneuse 3D", SETTINGS_SAVED_MS);
+  await addViewer(page);
 }
 
 test("la visionneuse affiche le modèle choisi dans les réglages", async ({ page }, info) => {
