@@ -90,3 +90,23 @@ test("an unplanned column shows its label in the text font, without a date", () 
   expect(label.parentElement?.textContent).toBe("À planifier");
   expect(container.querySelectorAll('[data-feature="F9"] [data-tone]').length).toBe(2);
 });
+
+const top = (el: HTMLElement): number => Number.parseFloat(el.style.top);
+
+test("the today label sits under the rows, never over them", () => {
+  const rows = [row("f4"), row("f5")];
+  const { container } = render(<SprintTimeline columns={COLUMNS} rows={rows} today={4 / 21} />);
+  const label = screen.getByText("aujourd'hui");
+  const lastRow = container.querySelector<HTMLElement>('[data-feature="F5"]');
+  const grid = label.parentElement;
+  if (!lastRow || !grid) throw new Error("timeline missing");
+  expect(top(label)).toBeGreaterThanOrEqual(30 + 2 * 30);
+  expect(top(label) + 17).toBeLessThanOrEqual(Number.parseFloat(grid.style.height));
+});
+
+test("a today label of its own, before the first sprint, reads on the left of the line", () => {
+  render(<SprintTimeline columns={COLUMNS} rows={[row("f4")]} today={0} todayLabel="commence dans 4 j" />);
+  const label = screen.getByText("commence dans 4 j");
+  expect(label.style.transform).toBe("translateX(-100%)");
+  expect(screen.queryByText("aujourd'hui")).toBeNull();
+});

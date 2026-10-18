@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, setSystemTime, test } from "bun:test";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { bandsToday } from "./bands-model";
+import { bandsToday, startsIn } from "./bands-model";
 import { column, setupPlanning } from "./planning-kit";
 import { TODAY } from "./test-seed";
 
@@ -110,4 +110,19 @@ test("today sits in its sprint, on the edge of the next one between two sprints,
   expect(bandsToday(sprints, "2026-10-01")).toBe(0);
   expect(bandsToday(sprints, "2026-10-17")).toBeNull();
   expect(bandsToday([], "2026-10-10")).toBeNull();
+});
+
+test("before the first sprint, the bands count the days until it starts", () => {
+  const sprints = [{ start: "2026-10-05", end: "2026-10-09" }];
+  expect(startsIn(sprints, "2026-10-01")).toBe(4);
+  expect(startsIn(sprints, "2026-10-05")).toBeNull();
+  expect(startsIn([], "2026-10-01")).toBeNull();
+});
+
+test("bands before S1: « commence dans n j » on the left, no today line over the rows", async () => {
+  setSystemTime(new Date("2026-10-01T09:00:00"));
+  setupPlanning("2026-10-01", bands);
+  const frise = await timeline();
+  expect(screen.getByText("commence dans 4 j")).toBeTruthy();
+  expect(within(frise).queryByText("aujourd'hui")).toBeNull();
 });

@@ -14,7 +14,11 @@ import {
   timelineLayout,
 } from "./timeline-model";
 
-type Props = TimelineInput<TimelineColumnInput> & { onOpen?(featureId: string): void; legend?: boolean };
+type Props = TimelineInput<TimelineColumnInput> & {
+  onOpen?(featureId: string): void;
+  legend?: boolean;
+  todayLabel?: string;
+};
 type RowProps = { row: TimelineRow; last: boolean; width: number; onOpen?(featureId: string): void };
 
 const LABEL_X = 16;
@@ -81,20 +85,30 @@ function Row({ row, last, width, onOpen }: RowProps) {
   );
 }
 
-function Today({ layout }: { layout: TimelineLayout }) {
+const TODAY_ROOM = 22;
+
+const roomFor = (layout: TimelineLayout): number => (layout.todayX === null ? 0 : TODAY_ROOM);
+
+function Today({ layout, label }: { layout: TimelineLayout; label: string | undefined }) {
   if (layout.todayX === null) return null;
+  const height = layout.height + TODAY_ROOM;
+  const left = label === undefined ? layout.todayX + 6 : layout.todayX - 6;
   return (
     <>
       <span
         aria-hidden
         className="absolute w-[2px] bg-(--tracking-fg)"
-        style={{ left: layout.todayX, top: 24, height: layout.height - 24 }}
+        style={{ left: layout.todayX, top: 24, height: height - 24 }}
       />
       <span
-        className="absolute rounded-[4px] bg-primary px-[6px] py-px font-semibold text-[12px] text-primary-foreground leading-[15px]"
-        style={{ left: layout.todayX + 6, top: layout.height - 24 }}
+        className="absolute whitespace-nowrap rounded-[4px] bg-primary px-[6px] py-px font-semibold text-[12px] text-primary-foreground leading-[15px]"
+        style={{
+          left,
+          top: height - 20,
+          ...(label === undefined ? {} : { transform: "translateX(-100%)" }),
+        }}
       >
-        {t.today}
+        {label ?? t.today}
       </span>
     </>
   );
@@ -104,14 +118,19 @@ function Grid({
   layout,
   g,
   onOpen,
+  todayLabel,
 }: {
   layout: TimelineLayout;
   g: TimelineGeometry;
   onOpen?(id: string): void;
+  todayLabel?: string | undefined;
 }) {
   return (
-    <div className="relative shrink-0" style={{ width: layout.width, height: layout.height }}>
-      <TimelineHeader columns={layout.columns} height={layout.height} g={g} />
+    <div
+      className="relative shrink-0"
+      style={{ width: layout.width, height: layout.height + roomFor(layout) }}
+    >
+      <TimelineHeader columns={layout.columns} height={layout.height + roomFor(layout)} g={g} />
       {layout.rows.map((row, i) => (
         <Row
           key={row.row.featureId}
@@ -121,7 +140,7 @@ function Grid({
           onOpen={onOpen}
         />
       ))}
-      <Today layout={layout} />
+      <Today layout={layout} label={todayLabel} />
     </div>
   );
 }
@@ -144,7 +163,8 @@ function Legend() {
   );
 }
 
-export function SprintTimeline({ columns, rows, today, collapsed, onOpen, legend = false }: Props) {
+export function SprintTimeline(props: Props) {
+  const { columns, rows, today, collapsed, onOpen, legend = false, todayLabel } = props;
   const [open, setOpen] = useState(false);
   const g = TIMELINE_GEOMETRY;
   const layout = timelineLayout({ columns, rows, today }, g);
@@ -154,7 +174,7 @@ export function SprintTimeline({ columns, rows, today, collapsed, onOpen, legend
   return (
     <section aria-label={t.timeline} className="flex min-w-0 flex-col">
       <div className="overflow-x-auto">
-        <Grid layout={layout} g={g} onOpen={onOpen} />
+        <Grid layout={layout} g={g} onOpen={onOpen} todayLabel={todayLabel} />
         {collapsed && collapsed.rows.length > 0 && (
           <button
             type="button"

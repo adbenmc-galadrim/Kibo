@@ -29,6 +29,7 @@ export type BandsTimeline = {
   columns: TimelineColumnInput[];
   rows: DeadlineRow[];
   today: number | null;
+  startsIn: number | null;
   delivered: DeadlineRow[];
 };
 
@@ -47,6 +48,12 @@ export function bandsToday(sprints: readonly Pick<Sprint, "start" | "end">[], to
   const length = dayNumber(sprint.end) - dayNumber(sprint.start) + 1;
   const fraction = (dayNumber(today) - dayNumber(sprint.start)) / length;
   return (index + fraction) / (sprints.length + 1);
+}
+
+export function startsIn(sprints: readonly Pick<Sprint, "start">[], today: string): number | null {
+  const first = sprints[0];
+  if (first === undefined || today >= first.start) return null;
+  return dayNumber(first.start) - dayNumber(today);
 }
 
 function bandColumns(sorted: readonly Sprint[], backlog: string): TimelineColumnInput[] {
@@ -121,6 +128,7 @@ export function bandsTimeline(input: BandsInput): BandsTimeline {
     columns: bandColumns(sorted, input.backlog),
     rows: rows.filter((r) => !r.delivered).map((r) => r.row),
     today: bandsToday(sorted, input.today),
+    startsIn: startsIn(sorted, input.today),
     delivered: rows.filter((r) => r.delivered).map((r) => r.row),
   };
 }
