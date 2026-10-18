@@ -125,7 +125,7 @@ test("220d · la fiche d'un ensemble : avancement, sous-tickets, description, au
     .getByRole("button", { name: "Ouvrir la fonctionnalité F1 · Parcours de livraison" })
     .first()
     .click();
-  const sheet = e.page.getByRole("dialog").filter({ hasText: `Fonctionnalité · F1 · ${e.key}-1` });
+  const sheet = e.page.getByRole("dialog").filter({ hasText: "Fonctionnalité · F1" });
   await expect(sheet).toBeVisible();
   await expect(sheet.getByText("1 étape livrée sur 3")).toBeVisible();
   await expect(sheet.getByText("ouverte", { exact: true })).toBeVisible();

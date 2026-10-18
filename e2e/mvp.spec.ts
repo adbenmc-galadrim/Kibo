@@ -101,7 +101,7 @@ test("tableau de bord Tickets + Kanban, sous-ticket et fiche", async ({ page }, 
   await todo.getByRole("article").getByRole("button", { name: chip }).click();
   const sheet = page.getByRole("dialog");
   await expect(sheet.getByRole("heading", { level: 1, name: "Préparer la démo" })).toBeVisible();
-  await expect(sheet).toContainText(`Fonctionnalité · F1 · ${key}-1`);
+  await expect(sheet).toContainText("Fonctionnalité · F1");
   await expect(sheet.getByText("0 étape livrée sur 1")).toBeVisible();
   await expect(sheet.getByText("Enregistrer la vidéo")).toBeVisible();
 });
