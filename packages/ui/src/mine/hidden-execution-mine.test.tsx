@@ -1,10 +1,15 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, expect, mock, test } from "bun:test";
 import type { AgentExecution } from "@kibo/schema";
 import { cleanup, render, screen } from "@testing-library/react";
 import { configFixture } from "../agents/fixtures";
+import { apiMock } from "../api-mock";
 import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
 import { fac, kib, mineSnapshots, por } from "./fixtures";
-import { MyTicketsPage } from "./MyTicketsPage";
+
+mock.module("../api", () =>
+  apiMock({ client: { rpc: () => Promise.resolve([]), subscribeIntegrations: () => () => {} } }),
+);
+const { MyTicketsPage } = await import("./MyTicketsPage");
 
 afterEach(cleanup);
 const noop = () => undefined;
