@@ -22,9 +22,14 @@ type Props = { sheet: SheetRef | null };
 const mount = () =>
   renderHook(
     ({ sheet }: Props) =>
-      useSheetAddress(sheet, tickets, page, () => {
-        closed += 1;
-      }),
+      useSheetAddress(
+        sheet,
+        () => tickets,
+        page,
+        () => {
+          closed += 1;
+        },
+      ),
     { initialProps: { sheet: null } as Props },
   );
 

@@ -8,6 +8,8 @@ type Own = { sheet: string; hash: string; under: TabTarget | null; underHash: st
 const sheetId = (s: SheetRef): string => `${s.projectId}\n${s.ticketId}`;
 const urlOf = (hash: string): string => hash || `${location.pathname}${location.search}`;
 
+type Tickets = () => readonly TicketView[] | null;
+
 function addressOf(sheet: SheetRef, tickets: readonly TicketView[] | null): string | null {
   const ticket = tickets ? findTicket(tickets, sheet.ticketId) : undefined;
   if (!ticket) return null;
@@ -18,7 +20,7 @@ function addressOf(sheet: SheetRef, tickets: readonly TicketView[] | null): stri
 
 export function useSheetAddress(
   sheet: SheetRef | null,
-  tickets: readonly TicketView[] | null,
+  tickets: Tickets,
   route: TabTarget | null,
   close: () => void,
 ): TabTarget | null {
@@ -36,7 +38,7 @@ export function useSheetAddress(
       return;
     }
     if (mine?.sheet === sheetId(sheet)) return;
-    const address = addressOf(sheet, tickets);
+    const address = addressOf(sheet, tickets());
     if (address === null) return;
     const underHash = mine?.underHash ?? location.hash;
     history.replaceState(history.state, "", urlOf(address));

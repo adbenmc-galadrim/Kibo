@@ -3,6 +3,7 @@ import {
   iconUrl,
   type ProjectSummary,
   type TabTarget,
+  type TicketView,
   targetProjectId,
 } from "@kibo/schema";
 import { SidebarInset } from "@kibo/sdk/ui/sidebar";
@@ -61,6 +62,15 @@ type WorkspaceProps = ShellProps & { projects: ProjectSummary[]; tabs: TabsApi; 
 
 export function Workspace({ viewer, notifications, projects, tabs, agents }: WorkspaceProps) {
   const route = useRoute();
+  const shell = useShellDialogs();
+  const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = shell;
+  const sheetTickets = useRef<readonly TicketView[] | null>(null);
+  const closeSheet = useCallback(() => set({ sheet: null }), [set]);
+  const routeTarget = resolveProjectKey(route.target, projects);
+  useHashSync(
+    tabs,
+    useSheetAddress(dialogs.sheet, () => sheetTickets.current, routeTarget, closeSheet),
+  );
   const active = activeTarget(tabs.state);
   const screen = active?.kind === "screen" ? active.screen : null;
   const activeProjectId = active ? targetProjectId(active) : null;
@@ -70,8 +80,6 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   const config = useConfig();
   const now = useNow();
   const git = useProjectGit(ticketProject?.meta.id ?? null, ticketProject?.meta.folder ?? null);
-  const shell = useShellDialogs();
-  const { dialogs, set, focusRun, setFocusRun, clearFocus, palette, setPalette } = shell;
   const agentPanel = useProjectAgentPanel(project);
   const runPanel = useRunPanel(activeProjectId, agentPanel);
   useRunNotifications(agents, notifications === "browser", runPanel.open);
@@ -126,9 +134,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
     activeProjectId,
     agents,
   });
-  const closeSheet = useCallback(() => set({ sheet: null }), [set]);
-  const routeTarget = resolveProjectKey(route.target, projects);
-  useHashSync(tabs, useSheetAddress(dialogs.sheet, sheetProject?.tickets ?? null, routeTarget, closeSheet));
+  sheetTickets.current = sheetProject?.tickets ?? null;
 
   return (
     <HostProvider host={host}>
