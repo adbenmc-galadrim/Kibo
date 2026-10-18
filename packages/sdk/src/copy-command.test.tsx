@@ -1,4 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
+import type { StartReason } from "@kibo/schema";
 import { copyDeliveryCommand } from "./copy-command";
 
 const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
@@ -92,4 +93,43 @@ test("a ticket without key cannot be copied", async () => {
   await copyDeliveryCommand(sdk, { key: null, startable: true, waitingOn: [] });
   expect(written).toEqual([]);
   expect(toasts).toEqual(["Copie impossible"]);
+});
+
+test("every copy says why the ticket cannot start yet, from its start reason", async () => {
+  const cases: [StartReason, string][] = [
+    [{ kind: "sprint", code: "S43" }, "Copié · sprint S43"],
+    [{ kind: "limit", limit: 2, count: 2 }, "Copié · limite 2/2 atteinte"],
+    [{ kind: "dependency", keys: ["PFD-3"] }, "Copié · attend PFD-3"],
+    [{ kind: "question", label: "Q14" }, "Copié · bloqué par Q14"],
+    [{ kind: "unplanned" }, "Copié · sans sprint"],
+  ];
+  for (const [startReason, toast] of cases) {
+    const { toasts, sdk } = recorder();
+    await copyDeliveryCommand(sdk, { key: "PFD-4", startable: false, waitingOn: [], startReason });
+    expect(toasts).toEqual([toast]);
+  }
+});
+
+test("the start reason replaces the former warnings, a started ticket keeps its question", async () => {
+  const waiting = recorder();
+  await copyDeliveryCommand(waiting.sdk, {
+    key: "PFD-4",
+    startable: false,
+    waitingOn: ["PFD-3"],
+    question: "Q14",
+    startReason: { kind: "dependency", keys: ["PFD-3", "PFD-2"] },
+  });
+  expect(waiting.toasts).toEqual(["Copié · attend PFD-3, PFD-2"]);
+  const started = recorder();
+  await copyDeliveryCommand(started.sdk, {
+    key: "PFD-2",
+    startable: false,
+    waitingOn: [],
+    question: "Q1",
+    startReason: { kind: "status" },
+  });
+  expect(started.toasts).toEqual(["Copié · bloqué par Q1"]);
+  const ready = recorder();
+  await copyDeliveryCommand(ready.sdk, { key: "PFD-1", startable: true, waitingOn: [], startReason: null });
+  expect(ready.toasts).toEqual(["Copié"]);
 });

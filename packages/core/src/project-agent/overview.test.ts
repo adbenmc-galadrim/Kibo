@@ -167,7 +167,7 @@ describe("ticket card and sheet", () => {
   });
 
   test("a card says why a ticket cannot start yet", () => {
-    const startReason = { kind: "limit", limit: 2 } as const;
+    const startReason = { kind: "limit", limit: 2, count: 2 } as const;
     expect(ticketCard(snapshot, ticket({ id: "t8", startReason })).startReason).toEqual(startReason);
     expect(ticketCard(snapshot, ticket({ id: "t8", startable: true })).startReason).toBeNull();
   });

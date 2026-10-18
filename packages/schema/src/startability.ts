@@ -28,7 +28,7 @@ export type StartReason =
   | { kind: "question"; label: string }
   | { kind: "sprint"; code: string }
   | { kind: "unplanned" }
-  | { kind: "limit"; limit: number };
+  | { kind: "limit"; limit: number; count: number };
 type StartFeatureSprint = NonNullable<StartFacts["feature"]>["sprint"];
 export type Startability = { startable: true } | { startable: false; reason: StartReason };
 
@@ -45,7 +45,9 @@ function featureReason(feature: NonNullable<StartFacts["feature"]>, ctx: StartCo
   const waiting = sprintReason(feature.sprint, ctx);
   if (waiting !== null) return waiting;
   const full = ctx.inProgressFeatures.size >= ctx.limit;
-  return full && !ctx.inProgressFeatures.has(feature.id) ? { kind: "limit", limit: ctx.limit } : null;
+  return full && !ctx.inProgressFeatures.has(feature.id)
+    ? { kind: "limit", limit: ctx.limit, count: ctx.inProgressFeatures.size }
+    : null;
 }
 
 export type StepFacts = Pick<FeatureStep, "ticketId" | "key" | "statusId" | "optional">;

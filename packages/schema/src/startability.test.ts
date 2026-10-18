@@ -86,7 +86,7 @@ test("in a project without any sprint, the sprint condition does not apply, the 
   });
   expect(startable({ ...ready, feature: { id: "f7", sprint: null, waitingSteps: [] } }, unplanned)).toEqual({
     startable: false,
-    reason: { kind: "limit", limit: 2 },
+    reason: { kind: "limit", limit: 2, count: 2 },
   });
 });
 
@@ -94,7 +94,7 @@ test("the limit of features in progress stops a new feature, not one already in 
   const f7 = { id: "f7", sprint: S42, waitingSteps: [] };
   expect(startable({ ...ready, feature: f7 }, ctx)).toEqual({
     startable: false,
-    reason: { kind: "limit", limit: 2 },
+    reason: { kind: "limit", limit: 2, count: 2 },
   });
   expect(startable({ ...ready, feature: f7 }, { ...ctx, limit: 3 })).toEqual({ startable: true });
   expect(startable(ready, { ...ctx, limit: 1 })).toEqual({ startable: true });

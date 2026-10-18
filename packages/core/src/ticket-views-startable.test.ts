@@ -64,7 +64,7 @@ test("in a project without any sprint, steps are startable, within the limit of 
   expect(reasonOf(d, open.first.id)).toEqual({ startable: true, startReason: null });
   status(d, open.first.id, "in_progress");
   expect(reasonOf(d, open.second.id)).toEqual({ startable: true, startReason: null });
-  expect(reasonOf(d, next.first.id).startReason).toEqual({ kind: "limit", limit: 1 });
+  expect(reasonOf(d, next.first.id).startReason).toEqual({ kind: "limit", limit: 1, count: 1 });
 });
 
 test("a step of a feature of a future sprint waits for it, one without sprint is unplanned", () => {
@@ -88,7 +88,7 @@ test("once the limit of features in progress is reached, only those stay startab
   expect(reasonOf(d, open.second.id)).toEqual({ startable: true, startReason: null });
   expect(reasonOf(d, next.first.id)).toEqual({
     startable: false,
-    startReason: { kind: "limit", limit: 1 },
+    startReason: { kind: "limit", limit: 1, count: 1 },
   });
   status(d, open.first.id, "done");
   status(d, open.second.id, "done");
@@ -102,7 +102,7 @@ test("the limit defaults to two features in progress, and spares tickets outside
   for (const title of ["A", "B"]) status(d, feature(d, title, s42).first.id, "in_progress");
   const third = feature(d, "C", s42);
   const solo = create(d, "Seul");
-  expect(reasonOf(d, third.first.id).startReason).toEqual({ kind: "limit", limit: 2 });
+  expect(reasonOf(d, third.first.id).startReason).toEqual({ kind: "limit", limit: 2, count: 2 });
   expect(reasonOf(d, solo.id)).toEqual({ startable: true, startReason: null });
 });
 
