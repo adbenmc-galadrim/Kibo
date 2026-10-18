@@ -7,7 +7,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 
-test("an intent for a new question opens the dialog on its ticket, once", async () => {
+test("an intent for a new question opens the dialog on its ticket, once per request", async () => {
   let ids: Record<string, string> = {};
   const m = createMockSdk(manifest, {
     seed: (run: (cmd: ProjectCommand) => unknown) => {
@@ -29,4 +29,6 @@ test("an intent for a new question opens the dialog on its ticket, once", async 
   await waitFor(() => expect(dialog.isConnected).toBe(false));
   act(() => m.setSpotlight(intent));
   expect(screen.queryByRole("dialog")).toBeNull();
+  act(() => m.setSpotlight({ ...intent }));
+  expect(await screen.findByRole("dialog", { name: "Nouvelle question" })).toBeTruthy();
 });

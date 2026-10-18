@@ -19,7 +19,7 @@ mock.module("../api", () =>
 
 const { PageContext, usePageState } = await import("./PageContext");
 const { pageIntents } = await import("./page-intents");
-const { usePageIntent } = await import("./use-page-intent");
+const { usePageSpotlight } = await import("./use-page-intent");
 const { createSelectionBus } = await import("./selection-bus");
 const { useInstanceApis } = await import("./use-instance-apis");
 
@@ -116,9 +116,9 @@ test("the page aims its instances at the question of its address", () => {
 
 test("an intent of the page reaches its instances, and stays while the page is shown", () => {
   const spotted: (SpotlightApi | undefined)[] = [];
-  pageIntents.set("page-1", { kind: "newQuestion", ticketId: "f5" });
+  pageIntents.request("page-1", { kind: "newQuestion", ticketId: "f5" });
   function Spot() {
-    const intent = usePageIntent("page-1");
+    const intent = usePageSpotlight("page-1", null);
     const page = usePageState([], intent);
     return (
       <PageContext.Provider value={page}>
@@ -132,7 +132,7 @@ test("an intent of the page reaches its instances, and stays while the page is s
   }
   const view = render(<Spot />);
   expect(spotted.at(-1)?.get()).toEqual({ kind: "newQuestion", ticketId: "f5" });
-  expect(pageIntents.peek("page-1")).toBeNull();
+  expect(pageIntents.take("page-1")).toBeNull();
   view.rerender(<Spot />);
   expect(spotted.at(-1)?.get()).toEqual({ kind: "newQuestion", ticketId: "f5" });
   view.unmount();

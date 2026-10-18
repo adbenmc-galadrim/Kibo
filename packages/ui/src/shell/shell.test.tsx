@@ -675,12 +675,12 @@ test("openView hands any other intent to the page it opens, outside the address"
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "open" }));
   expect(opened).toEqual([{ kind: "page", projectId: "p1", pageId: "1@1" }]);
-  expect(pageIntents.take("1@1")).toEqual({ kind: "newQuestion", ticketId: "f5" });
+  expect(pageIntents.take("1@1")?.intent).toEqual({ kind: "newQuestion", ticketId: "f5" });
   current = project;
   await user.click(screen.getByRole("button", { name: "open" }));
   await user.click(await screen.findByRole("button", { name: "Créer la page" }));
   await waitFor(() => expect(opened.at(-1)).toEqual({ kind: "page", projectId: "p1", pageId: "9@1" }));
-  expect(pageIntents.take("9@1")).toEqual({ kind: "newQuestion", ticketId: "f5" });
+  expect(pageIntents.take("9@1")?.intent).toEqual({ kind: "newQuestion", ticketId: "f5" });
 });
 
 test("a read-only project hides page and ticket creation and shows the banner", async () => {

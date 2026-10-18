@@ -41,9 +41,9 @@ const Reply = z.object({
 });
 
 export const Spotlight = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("question"), id: NodeId }),
-  z.object({ kind: z.literal("newQuestion"), ticketId: NodeId }),
-  z.object({ kind: z.literal("newFeature") }),
+  z.strictObject({ kind: z.literal("question"), id: NodeId }),
+  z.strictObject({ kind: z.literal("newQuestion"), ticketId: NodeId }),
+  z.strictObject({ kind: z.literal("newFeature") }),
 ]);
 export type Spotlight = z.infer<typeof Spotlight>;
 

@@ -12,8 +12,9 @@ export type OpenView = {
 };
 
 function pageTarget(projectId: string, pageId: string, spotlight: Spotlight | null): TabTarget {
+  if (spotlight === null || spotlight.kind === "question") pageIntents.clear();
+  else pageIntents.request(pageId, spotlight);
   if (spotlight?.kind === "question") return { kind: "page", projectId, pageId, question: spotlight.id };
-  if (spotlight !== null) pageIntents.set(pageId, spotlight);
   return { kind: "page", projectId, pageId };
 }
 

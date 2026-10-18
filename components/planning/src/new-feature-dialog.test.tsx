@@ -123,7 +123,7 @@ test("on the Saturday after S42, the lingering S42 stays the default sprint of a
   expect(within(dialog).getByLabelText<HTMLSelectElement>("Sprint").value).toBe(seeded.sprints.s42.id);
 });
 
-test("an intent for a new feature opens the dialog, once", async () => {
+test("an intent for a new feature opens the dialog, once per request", async () => {
   const { m } = setupPlanning();
   await screen.findByRole("button", { name: "Fonctionnalité" });
   const intent: Spotlight = { kind: "newFeature" };
@@ -133,4 +133,6 @@ test("an intent for a new feature opens the dialog, once", async () => {
   await waitFor(() => expect(dialog.isConnected).toBe(false));
   act(() => m.setSpotlight(intent));
   expect(screen.queryByRole("dialog")).toBeNull();
+  act(() => m.setSpotlight({ kind: "newFeature" }));
+  expect(await screen.findByRole("dialog", { name: "Nouvelle fonctionnalité" })).toBeTruthy();
 });
