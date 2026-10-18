@@ -160,6 +160,12 @@ function assertRoot(doc: LoroDoc, ticketId: string, parentId: string | null): vo
     throw new KiboError("INVALID_INPUT", "a feature is a root ticket");
 }
 
+function stepIndex(parent: LoroTreeNode): number | undefined {
+  const siblings = parent.children() ?? [];
+  const last = siblings.at(-1);
+  return last?.data.get("optional") === true ? siblings.length - 1 : undefined;
+}
+
 export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
   const blockedReason = input.statusId === "blocked" ? cleanReason(input.blockedReason) : null;
   const title = cleanTitle(input.title);
@@ -168,7 +174,7 @@ export function createTicket(doc: LoroDoc, input: NewTicket): Ticket {
     throw new KiboError("INVALID_INPUT", "a feature is a root ticket");
   const parent = input.parentId ? getNode(ticketTree(doc), input.parentId) : undefined;
   const keys = input.feature === true ? featureKeys(doc) : stepKeys(doc, parent);
-  const node = parent ? parent.createNode() : ticketTree(doc).createNode();
+  const node = parent ? parent.createNode(stepIndex(parent)) : ticketTree(doc).createNode();
   node.data.set("key", keys.key);
   node.data.set("pendingSeq", keys.pendingSeq);
   if (keys.feature) node.data.set("feature", true);
