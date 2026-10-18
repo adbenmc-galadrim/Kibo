@@ -1,4 +1,4 @@
-import { CircleCheck, ClockAlert, Lock } from "lucide-react";
+import { CircleCheck, ClockAlert, Lock, TriangleAlert } from "lucide-react";
 import { fr } from "./fr";
 import type { CardBadge } from "./planning-model";
 
@@ -17,6 +17,13 @@ export function FeatureBadge({ badge }: { badge: CardBadge | null }) {
   if (badge.kind === "open")
     return (
       <span className={`${CHIP} bg-(--tracking-blue-soft) text-(--tracking-blue)`}>{fr.badge.open}</span>
+    );
+  if (badge.kind === "risk")
+    return (
+      <span className={`${CHIP} bg-(--tracking-amber-soft) text-(--tracking-amber)`}>
+        <TriangleAlert absoluteStrokeWidth size={12} aria-hidden />
+        {fr.badge.risk}
+      </span>
     );
   if (badge.kind === "late")
     return (

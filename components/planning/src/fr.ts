@@ -5,12 +5,12 @@ export const fr = {
   months: ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."],
   summary: (delivered: number, total: number, unplanned: number) =>
     `${delivered} ${plural(delivered, "fonctionnalité livrée", "fonctionnalités livrées")} sur ${total} · ${unplanned} à planifier`,
-  open: (open: number, limit: number) => `Ouvertes : ${open} / ${limit}`,
-  openMenu: "Fonctionnalités ouvertes",
-  openNone: "Aucune fonctionnalité ouverte",
+  open: (open: number, limit: number) => `En cours : ${open} / ${limit}`,
+  openMenu: "Fonctionnalités en cours",
+  openNone: "Aucune fonctionnalité en cours",
   openHelp: "La limite est un avertissement : rien n'est bloqué.",
   overLimit: (open: number, limit: number) =>
-    `${open} fonctionnalités ouvertes pour une limite de ${limit} : finis-en une avant d'en ouvrir une autre.`,
+    `${open} fonctionnalités en cours pour une limite de ${limit} : finis-en une avant d'en démarrer une autre.`,
   layout: { label: "Disposition", columns: "Colonnes", bands: "Bandes" },
   bands: {
     hint: "Glisse en Colonnes pour planifier",
@@ -20,14 +20,22 @@ export const fr = {
   sprintState: { done: "terminé", current: "en cours", endsToday: "se termine aujourd'hui" },
   deliveredOf: (delivered: number, total: number) => `${delivered}/${total} livrées`,
   planned: (n: number) => `${n} ${plural(n, "prévue", "prévues")}`,
+  load: (steps: number, capacity: number) =>
+    `${steps} ${plural(steps, "étape prévue", "étapes prévues")} · capacité ${capacity}`,
+  loadHint: (velocity: number) => `capacité : ${velocity} étapes par semaine de sprint`,
+  empty: {
+    label: "Planning vide",
+    text: "Le Planning range les fonctionnalités dans les sprints : crée la première, puis glisse-la vers un sprint.",
+  },
   backlog: "À planifier",
   backlogHint: "Glisse une fonctionnalité vers un sprint",
   backlogNote:
-    "Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite d'ouvertes.",
+    "Une fonctionnalité sans sprint n'apparaît ni dans les échéances ni dans la limite des fonctionnalités en cours.",
   badge: {
     delivered: "livrée",
     deliveredDemo: "livrée · démo à faire",
-    open: "ouverte",
+    open: "en cours",
+    risk: "à risque",
     late: "en retard",
     blocked: "bloquée",
     blockedBy: (question: string) => `bloquée · ${question}`,
@@ -95,6 +103,7 @@ export const fr = {
     expected: "Résultat attendu",
     sprint: "Sprint",
     none: "À planifier",
+    over: (label: string) => `${label} (terminé)`,
     steps: "Étapes, une par ligne",
     defaultSteps: "Démo client",
     lastRequired: "Dernière étape requise pour livrer",

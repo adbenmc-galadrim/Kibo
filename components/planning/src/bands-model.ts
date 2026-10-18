@@ -100,7 +100,7 @@ function markOf(f: Feature, steps: readonly FeatureStep[], facts: RowFacts): Row
   const sprint = sorted.find((s) => s.id === f.sprintId) ?? null;
   const late = f.feature.status === "late";
   const risk = !late && sprint !== null && atRisk({ sprint, steps }, input.today);
-  const from = slippedFrom(input.events ?? [], f.id);
+  const from = slippedFrom(input.events ?? [], f.id, sorted);
   return {
     ...(late ? { tone: "late" } : risk ? { tone: "risk" } : {}),
     ...(from !== null && input.slipped ? { note: input.slipped(from) } : {}),

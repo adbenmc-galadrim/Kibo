@@ -166,9 +166,9 @@ test("a new sprint S45 and a new feature F10 with three steps show in the Planni
 
 test("starting a step of F7 opens a third feature and the limit warns", async ({ page }) => {
   await openPlanning(page);
-  await expect(page.getByText("Ouvertes : 2 / 2")).toBeVisible();
+  await expect(page.getByText("En cours : 2 / 2")).toBeVisible();
   await setStatus(page, emis, "EMIS-81", "in_progress");
-  await expect(page.getByText("Ouvertes : 3 / 2")).toBeVisible();
+  await expect(page.getByText("En cours : 3 / 2")).toBeVisible();
 });
 
 test("the sheet of F5 names why its next step cannot start, with nothing to copy", async ({ page }) => {

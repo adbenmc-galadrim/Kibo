@@ -11,6 +11,7 @@ import {
 import { openLimitOf, type SprintView } from "@kibo/schema";
 import { useEntities, useReadOnly, useSdk } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
+import { useProject } from "@kibo/sdk/hooks/use-project";
 import { useState } from "react";
 import { bandsTimeline } from "./bands-model";
 import { DragPreview } from "./DragPreview";
@@ -35,16 +36,17 @@ export const columnSteps: KeyboardCoordinateGetter = (event, { currentCoordinate
   return { x: currentCoordinates.x + dx, y: currentCoordinates.y };
 };
 
-const pad = (n: number) => String(n).padStart(2, "0");
-export const localToday = (now = new Date()): string =>
-  `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-
 const initialLayout = (config: Record<string, unknown>): PlanningLayout =>
   config.layout === "bands" ? "bands" : "columns";
 
 type Dialog = { kind: "sprint"; sprint: SprintView | null } | { kind: "feature" } | null;
 
 export function Planning() {
+  const today = useProject()?.today;
+  return today === undefined ? null : <PlanningBoard today={today} />;
+}
+
+function PlanningBoard({ today }: { today: string }) {
   const sdk = useSdk();
   const readOnly = useReadOnly();
   const { data: tickets } = useEntities("ticket");
@@ -52,7 +54,6 @@ export function Planning() {
   const { data: sprints } = useEntities("sprint");
   const { data: questions } = useEntities("question");
   const { data: events } = useEntities("project_event");
-  const today = localToday();
   const { tracking } = useComponentSettings();
   const model = planningModel({
     tickets,
@@ -159,11 +160,7 @@ export function Planning() {
         />
       )}
       {dialog?.kind === "feature" && (
-        <NewFeatureDialog
-          sprints={sprints}
-          sprintId={model.currentSprintId}
-          onClose={() => setDialog(null)}
-        />
+        <NewFeatureDialog sprints={sprints} today={today} onClose={() => setDialog(null)} />
       )}
     </DndContext>
   );

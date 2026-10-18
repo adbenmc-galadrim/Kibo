@@ -134,7 +134,7 @@ test("bands: an at-risk row is amber, a late one red, a slipped one says where f
       {
         id: 1,
         projectId: "p",
-        at: 1000,
+        at: new Date(`${TODAY}T09:00:00`).getTime(),
         kind: "sprint_set",
         ticketId: features.f8.root.id,
         featureId: features.f8.root.id,

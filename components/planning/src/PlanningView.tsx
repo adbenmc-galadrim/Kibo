@@ -7,7 +7,7 @@ import { BACKLOG_ID } from "./drag";
 import { FeatureCard } from "./FeatureCard";
 import { fr } from "./fr";
 import { PlanningBands } from "./PlanningBands";
-import { PlanningHeader, type PlanningLayout } from "./PlanningHeader";
+import { AddButton, PlanningHeader, type PlanningLayout } from "./PlanningHeader";
 import type { FeatureCard as Card, PlanningModel } from "./planning-model";
 import { SprintColumn, Warning } from "./SprintColumn";
 import { TONE_BG, TONES } from "./tones";
@@ -28,6 +28,18 @@ function Legend({ error }: { error: string | null }) {
         </span>
       )}
     </footer>
+  );
+}
+
+function EmptyPlanning({ readOnly, onNewFeature }: { readOnly: boolean; onNewFeature(): void }) {
+  return (
+    <output
+      aria-label={fr.empty.label}
+      className="flex shrink-0 flex-wrap items-center gap-3 rounded-[10px] border border-(--tracking-border) border-dashed px-4 py-3 text-(--tracking-mfg) text-[12.5px] leading-[16px]"
+    >
+      <span className="min-w-0 flex-1 basis-64">{fr.empty.text}</span>
+      {!readOnly && <AddButton label={fr.addFeature} title={fr.newFeature} onClick={onNewFeature} />}
+    </output>
   );
 }
 
@@ -76,6 +88,7 @@ export function PlanningView(props: PlanningViewProps) {
         onNewFeature={props.onNewFeature}
         onNewSprint={props.onNewSprint}
       />
+      {model.total === 0 && <EmptyPlanning readOnly={readOnly} onNewFeature={props.onNewFeature} />}
       {props.bands ? (
         <PlanningBands timeline={props.bands} onOpen={onOpen} />
       ) : (

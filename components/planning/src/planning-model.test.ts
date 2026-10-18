@@ -107,14 +107,14 @@ test("a step case per step, toned by its status or its blocking question", () =>
   expect(card(s43?.cards ?? [], "F6").steps.map((s) => s.tone)).toEqual(["blocked", "todo", "todo", "todo"]);
 });
 
-test("badges: delivered, open, late, blocked with the question, nothing when not started", () => {
+test("badges: delivered, open, at risk, late, blocked with the question, nothing when not started", () => {
   const { model } = build();
   const [s41, s42, s43] = model.sprints;
   expect(card(s41?.cards ?? [], "F1").badge).toEqual({ kind: "delivered", demo: false });
   expect(card(s43?.cards ?? [], "F6").badge).toEqual({ kind: "blocked", question: "Q14" });
   expect(card(s43?.cards ?? [], "F8").badge).toBeNull();
   expect(card(s42?.cards ?? [], "F4").badge).toEqual({ kind: "open" });
-  expect(card(s42?.cards ?? [], "F5").badge).toEqual({ kind: "open" });
+  expect(card(s42?.cards ?? [], "F5").badge).toEqual({ kind: "risk" });
   const after = build(DAY_AFTER).model.sprints[1]?.cards ?? [];
   expect(card(after, "F5").badge).toEqual({ kind: "late" });
 });

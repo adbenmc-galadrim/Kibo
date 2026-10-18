@@ -72,14 +72,14 @@ export function FeatureCardBody({ card, preview = false, onOpen, menu }: BodyPro
           className={cn(preview ? "text-(--tracking-mfg)" : "text-(--tracking-faint)")}
         />
         <span className="font-mono text-(--tracking-dim) text-[11px] leading-[14px]">{card.shortKey}</span>
-        {card.slipped !== null && (
-          <span className="truncate text-(--tracking-dim) text-[11px] leading-[14px]">
-            {fr.slipped(card.slipped)}
-          </span>
-        )}
         {!preview && <FeatureBadge badge={card.badge} />}
         {menu && menu.length > 0 && <CardMenu card={card} entries={menu} />}
       </div>
+      {card.slipped !== null && (
+        <span data-slot="slipped" className="-mt-1 text-(--tracking-dim) text-[11px] leading-[14px]">
+          {fr.slipped(card.slipped)}
+        </span>
+      )}
       {onOpen ? (
         <button
           type="button"

@@ -35,7 +35,7 @@ function LayoutToggle({ layout, onLayout }: { layout: PlanningLayout; onLayout(l
 const ADD =
   "flex h-[25px] items-center gap-1.5 rounded-[6px] border border-(--tracking-border) px-2.5 font-medium text-(--tracking-fg) text-[12px] leading-[15px] hover:bg-(--tracking-hover)";
 
-function AddButton({ label, title, onClick }: { label: string; title: string; onClick(): void }) {
+export function AddButton({ label, title, onClick }: { label: string; title: string; onClick(): void }) {
   return (
     <button type="button" title={title} className={ADD} onClick={onClick}>
       <Plus absoluteStrokeWidth size={13} aria-hidden />

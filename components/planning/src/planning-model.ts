@@ -21,6 +21,7 @@ import {
   type TicketView,
 } from "@kibo/schema";
 import { sprintDates } from "./sprint-label";
+import { type SprintLoad, sprintLoad } from "./sprint-load";
 
 export { sprintDates } from "./sprint-label";
 
@@ -28,6 +29,7 @@ export type StepTone = "done" | "review" | "progress" | "blocked" | "todo";
 export type CardBadge =
   | { kind: "delivered"; demo: boolean }
   | { kind: "open" }
+  | { kind: "risk" }
   | { kind: "late" }
   | { kind: "blocked"; question: string | null };
 export type StepCase = { ticketId: string; key: string; tone: StepTone };
@@ -57,6 +59,7 @@ export type SprintColumn = {
   dates: string;
   cards: FeatureCard[];
   warnings: SprintWarning[];
+  load: SprintLoad;
 };
 export type PlanningModel = {
   sprints: SprintColumn[];
@@ -118,10 +121,11 @@ function sessionOf(
   return live[0]?.key ?? null;
 }
 
-function badgeOf(state: FeatureState, question: string | null): CardBadge | null {
+function badgeOf(state: FeatureState, question: string | null, risk: boolean): CardBadge | null {
   if (state.status === "delivered") return { kind: "delivered", demo: state.steps.done < state.steps.total };
   if (state.status === "blocked") return { kind: "blocked", question };
   if (state.status === "late") return { kind: "late" };
+  if (risk) return { kind: "risk" };
   return state.status === "open" ? { kind: "open" } : null;
 }
 
@@ -132,14 +136,15 @@ function cardOf(f: Feature, facts: Facts): FeatureCard {
   const sprint = f.sprintId === null ? null : (sprintOf.get(f.sprintId) ?? null);
   const delivered = state.status === "delivered";
   const nextStep = steps.find((s) => s.ticketId === state.nextStepId) ?? null;
+  const risk = !delivered && sprint !== null && atRisk({ sprint, steps }, input.today);
   return {
     id: f.id,
     shortKey: featureLabel(f) || f.keyLabel,
     title: f.title,
     sprintId: sprint?.id ?? null,
-    badge: badgeOf(state, nextStep === null ? null : (blocking.get(nextStep.ticketId) ?? null)),
+    badge: badgeOf(state, nextStep === null ? null : (blocking.get(nextStep.ticketId) ?? null), risk),
     late: state.status === "late",
-    atRisk: !delivered && sprint !== null && atRisk({ sprint, steps }, input.today),
+    atRisk: risk,
     steps: steps.map((s) => ({ ticketId: s.ticketId, key: s.key, tone: toneOf(s, blocking) })),
     done: state.steps.done,
     total: state.steps.total,
@@ -148,7 +153,7 @@ function cardOf(f: Feature, facts: Facts): FeatureCard {
     session: delivered ? null : sessionOf(steps, blocking),
     compact: delivered && sprint?.state === "done",
     muted: delivered,
-    slipped: slippedFrom(input.events ?? [], f.id),
+    slipped: slippedFrom(input.events ?? [], f.id, input.sprints),
   };
 }
 
@@ -173,6 +178,7 @@ function sprintColumn(
     dates: sprintDates(sprint.start, sprint.end),
     cards: own,
     warnings: own.flatMap(warningOf),
+    load: sprintLoad(sprint, own),
   };
 }
 

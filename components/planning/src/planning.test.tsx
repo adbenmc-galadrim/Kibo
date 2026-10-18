@@ -68,7 +68,7 @@ test("cards show their badge, step count, next step or the step in session", asy
   expect(within(f6).getByText("suivante : KIB-25")).toBeTruthy();
   const f5 = await cardIn(/^S42 /, "F5");
   expect(within(f5).getByText("KIB-21")).toBeTruthy();
-  expect(within(await cardIn(/^S42 /, "F4")).getByText("ouverte")).toBeTruthy();
+  expect(within(await cardIn(/^S42 /, "F4")).getByText("en cours")).toBeTruthy();
   expect(within(await cardIn(/^S42 /, "F3")).getByText("livrée")).toBeTruthy();
 });
 
@@ -99,16 +99,16 @@ test("on the last day of its sprint a feature is neither late nor outlined", asy
 
 test("open features against the limit: a warning, nothing disabled", async () => {
   setupPlanning();
-  const badge = await screen.findByRole("button", { name: /Ouvertes : 2 \/ 2/ });
+  const badge = await screen.findByRole("button", { name: /En cours : 2 \/ 2/ });
   expect(badge.getAttribute("data-over")).toBe("false");
   expect(screen.getByRole("button", { name: "Fonctionnalité" }).hasAttribute("disabled")).toBe(false);
 });
 
 test("the open limit is the project's tracking setting, updated live", async () => {
   const { m } = setupPlanning(TODAY, { tracking: { openLimit: 3 } });
-  expect(await screen.findByRole("button", { name: /Ouvertes : 2 \/ 3/ })).toBeTruthy();
+  expect(await screen.findByRole("button", { name: /En cours : 2 \/ 3/ })).toBeTruthy();
   m.setTracking({ openLimit: 1 });
-  const badge = await screen.findByRole("button", { name: /Ouvertes : 2 \/ 1/ });
+  const badge = await screen.findByRole("button", { name: /En cours : 2 \/ 1/ });
   expect(badge.getAttribute("data-over")).toBe("true");
 });
 
@@ -117,10 +117,10 @@ test("the open badge turns amber with a note above the limit, and lists the open
   const [first] = seeded.features.f7.steps;
   if (!first) throw new Error("step missing");
   m.run({ method: "setStatus", ticketId: first.id, statusId: "in_progress" });
-  const badge = await screen.findByRole("button", { name: /Ouvertes : 3 \/ 2/ });
+  const badge = await screen.findByRole("button", { name: /En cours : 3 \/ 2/ });
   expect(badge.getAttribute("data-over")).toBe("true");
   expect(
-    within(await column(/^S42 /)).getByText(/3 fonctionnalités ouvertes pour une limite de 2/),
+    within(await column(/^S42 /)).getByText(/3 fonctionnalités en cours pour une limite de 2/),
   ).toBeTruthy();
   await userEvent.setup().click(badge);
   const menu = await screen.findByRole("menu");
@@ -144,7 +144,7 @@ test("a feature moved out of its sprint says where it slipped from", async () =>
   const sprintSet = (id: number, ticketId: string, from: string | null, to: string): ProjectEvent => ({
     id,
     projectId: "p",
-    at: id,
+    at: new Date(`${TODAY}T09:0${id}:00`).getTime(),
     kind: "sprint_set",
     ticketId,
     featureId: ticketId,
@@ -164,6 +164,49 @@ test("a feature moved out of its sprint says where it slipped from", async () =>
   expect(within(await cardIn(/^S43 /, "F6")).queryByText(/^glissée/)).toBeNull();
 });
 
+test("a feature moved before its sprint starts has not slipped", async () => {
+  const at = new Date(`${TODAY}T09:00:00`).getTime();
+  const move = (ticketId: string): ProjectEvent => ({
+    id: 1,
+    projectId: "p",
+    at,
+    kind: "sprint_set",
+    ticketId,
+    featureId: ticketId,
+    source: "user",
+    data: { from: "S44", to: "S43" },
+  });
+  setupPlanning(TODAY, { journal: ({ features }) => [move(features.f8.root.id)] });
+  const f8 = await cardIn(/^S43 /, "F8");
+  expect(within(f8).queryByText(/^glissée/)).toBeNull();
+});
+
+test("the day comes from the daemon, not from the browser clock", async () => {
+  setSystemTime(new Date(`${TODAY}T14:52:00`));
+  setupPlanning(DAY_AFTER);
+  expect(within(await cardIn(/^S42 /, "F5")).getByText("en retard")).toBeTruthy();
+  expect(within(await column(/^S42 /)).getByText("terminé")).toBeTruthy();
+});
+
+test("a feature at risk wears the amber at-risk pill instead of in progress", async () => {
+  setupPlanning();
+  const pill = within(await cardIn(/^S42 /, "F5")).getByText("à risque");
+  expect(pill.closest("span")?.className).toContain("text-(--tracking-amber)");
+  expect(within(await cardIn(/^S42 /, "F5")).queryByText("en cours")).toBeNull();
+});
+
+test("each sprint header weighs its planned steps against its capacity", async () => {
+  const { m } = setupPlanning();
+  const s42 = within(await column(/^S42 /)).getByText("14 étapes prévues · capacité 3");
+  expect(s42.getAttribute("data-over")).toBe("true");
+  expect(s42.className).toContain("text-(--tracking-amber)");
+  act(() => {
+    m.run({ method: "createSprint", code: "S45", name: "Recette", start: "2026-11-02", end: "2026-11-13" });
+  });
+  const s45 = within(await column("S45 Recette")).getByText("0 étape prévue · capacité 6");
+  expect(s45.getAttribute("data-over")).toBe("false");
+});
+
 test("two sprints overlap: the one that started last is current, for a new feature and the limit note", async () => {
   const { m } = setupPlanning(TODAY, { tracking: { openLimit: 1 } });
   act(() => {
@@ -176,7 +219,7 @@ test("two sprints overlap: the one that started last is current, for a new featu
     });
   });
   const late = m.snapshot().sprints.find((s) => s.code === "S45")?.id ?? "";
-  const note = /2 fonctionnalités ouvertes pour une limite de 1/;
+  const note = /2 fonctionnalités en cours pour une limite de 1/;
   await waitFor(async () => expect(within(await column("S45 Correctifs")).getByText(note)).toBeTruthy());
   expect(within(await column(/^S42 /)).queryByText(note)).toBeNull();
   const user = userEvent.setup();

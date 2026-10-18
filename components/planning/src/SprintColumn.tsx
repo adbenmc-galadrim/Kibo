@@ -7,6 +7,7 @@ import { dashedBorder } from "./dashes";
 import { fr } from "./fr";
 import { PenpotStroke } from "./PenpotStroke";
 import type { SprintColumn as Column } from "./planning-model";
+import { STEPS_PER_WEEK } from "./sprint-load";
 
 export const COLUMN_CLASS =
   "flex w-[214px] shrink-0 flex-col gap-2.5 overflow-y-auto rounded-[10px] border p-[9px] scrollbar-none";
@@ -45,6 +46,21 @@ function StateChip({ phase }: { phase: SprintPhase }) {
   return (
     <span className={cn(CHIP, "bg-(--tracking-muted) text-(--tracking-fg)")}>
       {phase === "ends-today" ? fr.sprintState.endsToday : fr.sprintState.current}
+    </span>
+  );
+}
+
+function SprintLoadLine({ load }: { load: Column["load"] }) {
+  return (
+    <span
+      data-over={load.over}
+      title={fr.loadHint(STEPS_PER_WEEK)}
+      className={cn(
+        "text-[11px] leading-[14px]",
+        load.over ? "text-(--tracking-amber)" : "text-(--tracking-dim)",
+      )}
+    >
+      {fr.load(load.steps, load.capacity)}
     </span>
   );
 }
@@ -89,6 +105,7 @@ function SprintHeader({ column, onOpen, onEdit }: HeaderProps) {
         )}
       </div>
       {started && <SprintProgress delivered={sprint.delivered} total={sprint.total} />}
+      <SprintLoadLine load={column.load} />
     </header>
   );
 }

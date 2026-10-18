@@ -116,11 +116,26 @@ test("a retry after a partial failure finishes the same feature, without duplica
   ]);
 });
 
-test("on the Saturday after S42, the lingering S42 stays the default sprint of a new feature", async () => {
+test("on the Saturday after S42, the first sprint not ended is proposed and S42 says it is over", async () => {
   setSystemTime(new Date("2026-10-17T10:00:00"));
   const { seeded } = setupPlanning("2026-10-17");
   const { dialog } = await openDialog();
-  expect(within(dialog).getByLabelText<HTMLSelectElement>("Sprint").value).toBe(seeded.sprints.s42.id);
+  const select = within(dialog).getByLabelText<HTMLSelectElement>("Sprint");
+  expect(select.value).toBe(seeded.sprints.s43.id);
+  const labels = Array.from(select.options).map((o) => o.textContent);
+  expect(labels).toEqual([
+    "À planifier",
+    "S41 Accès (terminé)",
+    "S42 Terrain hors ligne (terminé)",
+    "S43 Import et soudures",
+    "S44 Rapports",
+  ]);
+});
+
+test("once every sprint is over, a new feature goes to À planifier", async () => {
+  setupPlanning("2026-11-02");
+  const { dialog } = await openDialog();
+  expect(within(dialog).getByLabelText<HTMLSelectElement>("Sprint").value).toBe("");
 });
 
 test("an intent for a new feature opens the dialog, once per request", async () => {
