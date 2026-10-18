@@ -15,6 +15,7 @@ const sprint = (id: string, code: string, start: string, end: string): SprintVie
   features: [],
   delivered: 0,
   total: 0,
+  lingering: false,
 });
 
 const snapshot = project({

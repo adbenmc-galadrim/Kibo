@@ -1,9 +1,18 @@
 import { expect, test } from "bun:test";
 import { nextFeature } from "./feature-state";
 import { featureSteps } from "./feature-steps";
+import { lateFeatures } from "./late-features";
 import { nextDeliverableStep } from "./next-step";
-import { limitNote, nextToOpen, overviewIndicators, reviewCards } from "./overview";
+import { limitNote, nextToOpen, overviewIndicators, plannedFeatures, reviewCards } from "./overview";
 import { emisSnapshot, emisTickets, META, TODAY } from "./overview-test-kit";
+
+const plannedLate = (snapshot: ReturnType<typeof emisSnapshot>) =>
+  plannedFeatures(snapshot).map((f) => ({
+    id: f.ticket.id,
+    sprintId: f.ticket.sprintId,
+    rank: f.rank,
+    remaining: f.state.remaining,
+  }));
 
 test("the indicators of the mockup project", () => {
   const indicators = overviewIndicators({ snapshot: emisSnapshot(), today: TODAY });
@@ -11,14 +20,35 @@ test("the indicators of the mockup project", () => {
     delivered: 3,
     total: 9,
     cells: ["delivered", "delivered", "delivered", "open", "open", "todo", "todo", "todo", "todo"],
+    late: 0,
   });
   expect(indicators.sprint).toEqual({ code: "S42", name: "Terrain hors ligne", ending: "today" });
   expect(indicators.open).toEqual({ count: 2, limit: 2, level: "reached" });
   expect(indicators.review).toEqual({ count: 3, numbers: [20, 22, 23] });
   expect(indicators.questions).toEqual({ open: 3, blocking: { ref: "Q14", shortKey: "F6" } });
+  expect(indicators.blocked).toEqual({ count: 1 });
 });
 
-test("the current sprint ends in days, else the next one is announced", () => {
+test("late features are counted once their sprint is over", () => {
+  const snapshot = emisSnapshot();
+  const late = (today: string) => overviewIndicators({ snapshot, today }).features.late;
+  expect(late(TODAY)).toBe(0);
+  expect(late("2026-10-17")).toBe(lateFeatures(plannedLate(snapshot), snapshot.sprints, "2026-10-17").length);
+  expect(late("2026-10-17")).toBe(2);
+});
+
+test("blocked steps and open blocking questions are counted together", () => {
+  const snapshot = emisSnapshot();
+  const stuck = new Set(["EMIS-33", "EMIS-34", "EMIS-35", "EMIS-46"]);
+  const tickets = snapshot.tickets.map((t) =>
+    stuck.has(t.id) ? { ...t, statusId: "blocked" as const, blockedReason: "Attente" } : t,
+  );
+  expect(overviewIndicators({ snapshot: { ...snapshot, tickets }, today: TODAY }).blocked).toEqual({
+    count: 5,
+  });
+});
+
+test("the current sprint ends in days or lingers, else the next one is announced", () => {
   const snapshot = emisSnapshot();
   expect(overviewIndicators({ snapshot, today: "2026-10-20" }).sprint).toEqual({
     code: "S43",
@@ -26,9 +56,21 @@ test("the current sprint ends in days, else the next one is announced", () => {
     ending: { days: 3 },
   });
   expect(overviewIndicators({ snapshot, today: "2026-10-17" }).sprint).toEqual({
-    next: { code: "S43", start: "2026-10-19" },
+    code: "S42",
+    name: "Terrain hors ligne",
+    ending: { ended: "2026-10-16" },
   });
-  expect(overviewIndicators({ snapshot, today: "2026-12-01" }).sprint).toEqual({ next: null });
+  expect(overviewIndicators({ snapshot, today: "2026-12-01" }).sprint).toEqual({
+    code: "S44",
+    name: "Rapports",
+    ending: { ended: "2026-10-30" },
+  });
+  expect(overviewIndicators({ snapshot, today: "2026-10-01" }).sprint).toEqual({
+    next: { code: "S41", start: "2026-10-05" },
+  });
+  expect(overviewIndicators({ snapshot: { ...snapshot, sprints: [] }, today: TODAY }).sprint).toEqual({
+    next: null,
+  });
 });
 
 test("the open level follows the project limit", () => {

@@ -15,6 +15,7 @@ const SPRINT: SprintView = {
   features: [],
   delivered: 0,
   total: 0,
+  lingering: false,
 };
 const columnCode = (sprint: SprintView) =>
   planningModel({ tickets: [], links: [], sprints: [sprint], questions: [] }).sprints[0]?.code;

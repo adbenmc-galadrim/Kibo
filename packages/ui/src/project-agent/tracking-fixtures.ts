@@ -11,6 +11,7 @@ const sprint = (id: string, code: string, name: string): SprintView => ({
   features: [],
   delivered: 0,
   total: 0,
+  lingering: false,
 });
 
 export function trackingProject(): ProjectSnapshot {

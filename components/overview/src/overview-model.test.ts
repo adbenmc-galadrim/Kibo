@@ -102,6 +102,16 @@ test("the five indicators read as the mockup", () => {
   });
 });
 
+test("a finished sprint that stays current says when it ended", () => {
+  const { model } = build();
+  const sprint = { code: "S42", name: "Terrain hors ligne", ending: { ended: "2026-10-16" } };
+  expect(indicatorTexts({ ...model.indicators, sprint }).sprint).toEqual({
+    value: "S42",
+    unit: "terminé le 16 oct.",
+    sub: "Terrain hors ligne",
+  });
+});
+
 test("the sessions in progress, longest first, with their delivery step and duration", () => {
   const { model } = build();
   expect(model.now.map((r) => [r.feature, r.title, r.step, r.duration])).toEqual([

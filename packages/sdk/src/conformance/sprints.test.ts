@@ -45,7 +45,7 @@ test("the mock plans a feature on assign, and its sprint view counts it", async 
   const step = await mock.sdk.run({ method: "createTicket", title: "Envoi", parentId: f5.id });
   await mock.sdk.sprints.assign(f5.id, s42.id);
   expect(await mock.sdk.sprints.list()).toEqual([
-    { ...s42, state: "current", features: [f5.id], delivered: 0, total: 1 },
+    { ...s42, state: "current", features: [f5.id], delivered: 0, total: 1, lingering: false },
   ]);
   const tickets = await mock.sdk.list("ticket");
   expect(tickets.find((t) => t.id === step.id)?.effectiveSprintId).toBe(s42.id);

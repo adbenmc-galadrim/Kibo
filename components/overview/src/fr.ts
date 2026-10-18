@@ -11,6 +11,7 @@ export const fr = {
     sprint: "Sprint en cours",
     endsToday: "finit ce soir",
     endsIn: (days: number) => `finit dans ${days} j`,
+    endedOn: (date: string) => `terminé le ${date}`,
     noSprint: "aucun",
     startsOn: (code: string, date: string) => `${code} commence le ${date}`,
     open: "Ouvertes",

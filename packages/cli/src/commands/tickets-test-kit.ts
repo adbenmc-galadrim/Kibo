@@ -71,6 +71,7 @@ const sprint = (
   state,
   delivered: 0,
   total: 0,
+  lingering: false,
 });
 
 export const EMIS_META: ProjectMeta = {

@@ -215,6 +215,7 @@ export const KIT_SPRINTS: SprintView[] = SPRINTS.map(([code, name, start, end]) 
     features: own.map((f) => key(f.n)),
     delivered: 0,
     total: own.length,
+    lingering: false,
   };
 });
 

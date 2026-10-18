@@ -38,6 +38,7 @@ const S44: SprintView = {
   features: ["f9"],
   delivered: 0,
   total: 1,
+  lingering: false,
 };
 
 const backendOf = (runs: ProjectCommand[], calls: ComponentCall[] = []): ProjectBackend => ({

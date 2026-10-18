@@ -81,6 +81,7 @@ const sprint = (
   features: [],
   delivered: 0,
   total: 0,
+  lingering: false,
 });
 
 export const SPRINTS: SprintView[] = [

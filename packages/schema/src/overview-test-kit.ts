@@ -147,6 +147,7 @@ export const SPRINT_VIEWS: SprintView[] = SPRINTS.map(([code, name, start, end])
     features: features.map((f) => key(f.n)),
     delivered: features.filter((f) => f.steps.every((s) => s.status === "done" || s.optional)).length,
     total: features.length,
+    lingering: false,
   };
 });
 

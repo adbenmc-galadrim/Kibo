@@ -40,12 +40,19 @@ test("the window covers four weeks from the start of the current sprint", () => 
   ]);
 });
 
-test("without a current sprint, the window starts with the next one", () => {
+test("a finished sprint anchors the window until the next starts, else the next one does", () => {
   expect(deadlineColumns(SPRINT_VIEWS, "2026-10-17")[0]).toEqual({
-    start: "2026-10-19",
-    sprint: { id: "s43", code: "S43" },
+    start: "2026-10-12",
+    sprint: { id: "s42", code: "S42" },
   });
-  expect(deadlineColumns(SPRINT_VIEWS, "2026-11-20")).toEqual([]);
+  expect(deadlineColumns(SPRINT_VIEWS, "2026-11-20")[0]).toEqual({
+    start: "2026-10-26",
+    sprint: { id: "s44", code: "S44" },
+  });
+  expect(deadlineColumns(SPRINT_VIEWS, "2026-10-01")[0]).toEqual({
+    start: "2026-10-05",
+    sprint: { id: "s41", code: "S41" },
+  });
   expect(deadlineColumns([], TODAY)).toEqual([]);
 });
 

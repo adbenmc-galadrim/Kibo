@@ -64,6 +64,7 @@ test("a tab shows the sprint code, never its name", async () => {
     features: [],
     delivered: 0,
     total: 0,
+    lingering: false,
   });
   render(
     <SprintTabs

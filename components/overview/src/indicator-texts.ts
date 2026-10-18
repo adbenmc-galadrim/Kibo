@@ -17,6 +17,11 @@ const TIGHT_CELLS_FROM = 13;
 
 export const featureCellGap = (count: number): number => (count >= TIGHT_CELLS_FROM ? 2 : 3);
 
+function endingText(ending: Extract<OverviewIndicators["sprint"], { ending: unknown }>["ending"]): string {
+  if (ending === "today") return t.endsToday;
+  return "days" in ending ? t.endsIn(ending.days) : t.endedOn(dayMonth(ending.ended));
+}
+
 function sprintText(sprint: OverviewIndicators["sprint"]): IndicatorText {
   if ("next" in sprint) {
     const next = sprint.next;
@@ -26,8 +31,7 @@ function sprintText(sprint: OverviewIndicators["sprint"]): IndicatorText {
       ...(next === null ? {} : { sub: t.startsOn(next.code, dayMonth(next.start)) }),
     };
   }
-  const unit = sprint.ending === "today" ? t.endsToday : t.endsIn(sprint.ending.days);
-  return { value: sprint.code, unit, sub: sprint.name };
+  return { value: sprint.code, unit: endingText(sprint.ending), sub: sprint.name };
 }
 
 function openText(open: OverviewIndicators["open"]): IndicatorText {
