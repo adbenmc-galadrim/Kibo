@@ -287,7 +287,7 @@ S.qcard27 = (p, q) => { const C = S.C, sec = C.mfg;
   if (q.blocking) S.pill(t, "bloquante", C.red, C.redSoft, "lock"); S.spacer(t); S.icon(t, "more", 15, C.dim);
   const m = S.row(c, { gap: 8 }); const to = S.row(m, { gap: 5, pad: [3, 8], radius: 12, stroke: C.border }); S.icon(to, "user", 12, sec); S.txt(to, "Pour : " + q.to, { size: 12 }); S.icon(to, "chevDown", 11, C.dim);
   S.txt(m, "posée par", { size: 12, color: sec }); S.avatar(m, "AB", 18); S.txt(m, "Adam · " + q.age, { size: 12, color: sec });
-  const a = S.row(c, { fx: true, gap: 8 }); S.input(a, "Autre réponse…", { placeholder: true }); S.btn(a, "Répondre", "soft", { sm: true });
+  const a = S.row(c, { fx: true, gap: 8 }); S.input(a, "Votre réponse…", { placeholder: true }); S.btn(a, "Répondre", "soft", { sm: true });
   return g; };
 S.draw["p-questions"] = (x, y) => { const C = S.C, sec = C.mfg;
   const f = S.screen("P9 · Questions", x, y, 1440, 1000);
@@ -304,8 +304,11 @@ S.draw["p-questions"] = (x, y) => { const C = S.C, sec = C.mfg;
   const pop = S.col(f, { name: "export-preview", x: 1440 - 16 - 420 - 150, y: 48 + 46, w: 420, pad: 14, gap: 10, radius: 10, stroke: C.border, fill: C.card, shadow: 10 });
   const ph = S.row(pop, { fx: true, gap: 8 }); S.txt(ph, "Texte exporté", { size: 13, weight: 600 }); S.spacer(ph); S.txt(ph, "2 questions client", { size: 12, color: sec });
   const pre = S.col(pop, { fx: true, pad: [10, 12], gap: 6, radius: 6, fill: C.muted });
-  for (const l of ["Questions pour Emis SA · 16 oct. 2026", "", "Q14 · Un ISO réaffecté garde-t-il ses photos ?", "   bloque F6, prévue en S43", "", "Q17 · Un rapport par chef de chantier ou par affaire ?", "   pour F7, prévue en S44"])
-    S.txt(pre, l || " ", { name: "export-line", size: 12, mono: true, color: l.startsWith("   ") ? sec : C.fg });
+  const lines = [["Questions pour Emis SA · 16 oct. 2026"], [""], ["Q14 · Un ISO réaffecté garde-t-il ses photos ?"],
+    ["   bloque « Importer les ISO depuis Excel »,", sec], ["prévue semaine du 19 oct. · réponse souhaitée", sec], ["avant le 19 oct.", sec], [""],
+    ["Q17 · Un rapport par chef de chantier ou par"], ["affaire ?"],
+    ["   pour « Rapport de chantier journalier », prévue", sec], ["semaine du 26 oct. · réponse souhaitée avant le 26", sec], ["oct.", sec]];
+  for (const [l, color] of lines) S.txt(pre, l || " ", { name: "export-line", size: 12, mono: true, color: color || C.fg });
   const pf = S.row(pop, { fx: true, gap: 8 }); S.txt(pf, "Les questions exportées sont marquées envoyées.", { size: 12, color: sec, fill: true }); S.btn(pf, "Copier", "default", { sm: true, icon: "copy" });
   S.toast(f, "2 questions marquées envoyées", "Annuler", { x: 1440 - 24 - 340, y: 1000 - 24 - 54 });
   return f; };

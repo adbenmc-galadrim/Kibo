@@ -8004,7 +8004,7 @@ Exports : `exports/proposition-questions-dark.png` et `exports/proposition-quest
 53. « posée par » (x 417, y 224)
 54. « AB » (x 484, y 227)
 55. « Adam · il y a 3 j » (x 506, y 224)
-56. « Autre réponse… » (x 291, y 262)
+56. « Votre réponse… » (x 291, y 262)
 57. « Répondre » (x 1337, y 262,5)
 58. « EMIS-34 » (x 265, y 321)
 59. « Tests E2E de l'envoi » (x 324, y 320,5)
@@ -8015,7 +8015,7 @@ Exports : `exports/proposition-questions-dark.png` et `exports/proposition-quest
 64. « posée par » (x 411, y 387)
 65. « AB » (x 478, y 390)
 66. « Adam · hier » (x 500, y 387)
-67. « Autre réponse… » (x 291, y 425)
+67. « Votre réponse… » (x 291, y 425)
 68. « Répondre » (x 1337, y 425,5)
 69. « EMIS-81 » (x 265, y 484)
 70. « Modèle du rapport » (x 324, y 483,5)
@@ -8026,21 +8026,26 @@ Exports : `exports/proposition-questions-dark.png` et `exports/proposition-quest
 75. « posée par » (x 417, y 550)
 76. « AB » (x 484, y 553)
 77. « Adam · il y a 2 h » (x 506, y 550)
-78. « Autre réponse… » (x 291, y 588)
+78. « Votre réponse… » (x 291, y 588)
 79. « Répondre » (x 1337, y 588,5)
 80. « Texte exporté » (x 868, y 108)
 81. « 2 questions client » (x 1162, y 108,5)
 82. « Questions pour Emis SA · 16 oct. 2026 » (x 880, y 144)
 83. «   » (x 880, y 165)
 84. « Q14 · Un ISO réaffecté garde-t-il ses photos ? » (x 880, y 186)
-85. «    bloque F6, prévue en S43 » (x 880, y 207)
-86. «   » (x 880, y 228)
-87. « Q17 · Un rapport par chef de chantier ou par affaire ? » (x 880, y 249)
-88. «    pour F7, prévue en S44 » (x 880, y 270)
-89. « Les questions exportées sont marquées envoyées. » (x 868, y 310)
-90. « Copier » (x 1212, y 310)
-91. « 2 questions marquées envoyées » (x 1115, y 938,5)
-92. « Annuler » (x 1331, y 939)
+85. «    bloque « Importer les ISO depuis Excel », » (x 880, y 207)
+86. « prévue semaine du 19 oct. · réponse souhaitée » (x 880, y 228)
+87. « avant le 19 oct. » (x 880, y 249)
+88. «   » (x 880, y 270)
+89. « Q17 · Un rapport par chef de chantier ou par » (x 880, y 291)
+90. « affaire ? » (x 880, y 312)
+91. «    pour « Rapport de chantier journalier », prévue » (x 880, y 333)
+92. « semaine du 26 oct. · réponse souhaitée avant le 26 » (x 880, y 354)
+93. « oct. » (x 880, y 375)
+94. « Les questions exportées sont marquées envoyées. » (x 868, y 415)
+95. « Copier » (x 1212, y 415)
+96. « 2 questions marquées envoyées » (x 1115, y 938,5)
+97. « Annuler » (x 1331, y 939)
 
 ### Blocs
 
@@ -8195,7 +8200,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « Adam · il y a 3 j » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 506, y 224, 82 × 15
             - **box** (bloc) · x 279, y 252, 1123 × 36 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
               - **input** (bloc) · x 279, y 252, 1040 × 36 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 6 · dimension remplit/fixe
-                - « Autre réponse… » — Geist 13 / 400, interligne 1,2, couleur `dim` — x 291, y 262, 91 × 16
+                - « Votre réponse… » — Geist 13 / 400, interligne 1,2, couleur `dim` — x 291, y 262, 91 × 16
               - **Button / soft** (bloc) · x 1327, y 257,5, 75 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · fond `muted` · rayon 6
                 - « Répondre » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1337, y 262,5, 55 × 15
         - **group EMIS-34** (bloc) · x 265, y 320, 1151 × 143 · flex colonne, espacement 8, marges internes 0, alignement start/start · dimension remplit/auto
@@ -8221,7 +8226,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « Adam · hier » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 500, y 387, 62 × 15
             - **box** (bloc) · x 279, y 415, 1123 × 36 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
               - **input** (bloc) · x 279, y 415, 1040 × 36 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 6 · dimension remplit/fixe
-                - « Autre réponse… » — Geist 13 / 400, interligne 1,2, couleur `dim` — x 291, y 425, 91 × 16
+                - « Votre réponse… » — Geist 13 / 400, interligne 1,2, couleur `dim` — x 291, y 425, 91 × 16
               - **Button / soft** (bloc) · x 1327, y 420,5, 75 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · fond `muted` · rayon 6
                 - « Répondre » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1337, y 425,5, 55 × 15
         - **group EMIS-81** (bloc) · x 265, y 483, 1151 × 143 · flex colonne, espacement 8, marges internes 0, alignement start/start · dimension remplit/auto
@@ -8247,26 +8252,31 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
               - « Adam · il y a 2 h » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 506, y 550, 86 × 15
             - **box** (bloc) · x 279, y 578, 1123 × 36 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
               - **input** (bloc) · x 279, y 578, 1040 × 36 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 6 · dimension remplit/fixe
-                - « Autre réponse… » — Geist 13 / 400, interligne 1,2, couleur `dim` — x 291, y 588, 91 × 16
+                - « Votre réponse… » — Geist 13 / 400, interligne 1,2, couleur `dim` — x 291, y 588, 91 × 16
               - **Button / soft** (bloc) · x 1327, y 583,5, 75 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · fond `muted` · rayon 6
                 - « Répondre » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 1337, y 588,5, 55 × 15
-  - **export-preview** (bloc) · x 854, y 94, 420 × 250 · flex colonne, espacement 10, marges internes 14, alignement start/start · fond `card` · bordure 1 `border` · rayon 10
+  - **export-preview** (bloc) · x 854, y 94, 420 × 355 · flex colonne, espacement 10, marges internes 14, alignement start/start · fond `card` · bordure 1 `border` · rayon 10
     - **box** (bloc) · x 868, y 108, 392 × 16 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
       - « Texte exporté » — Geist 13 / 600, interligne 1,2, couleur `fg` — x 868, y 108, 86 × 16
       - « 2 questions client » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 1162, y 108,5, 98 × 15
-    - **box** (bloc) · x 868, y 134, 392 × 161 · flex colonne, espacement 6, marges internes 10 12 10 12, alignement start/start · fond `muted` · rayon 6 · dimension remplit/auto
+    - **box** (bloc) · x 868, y 134, 392 × 266 · flex colonne, espacement 6, marges internes 10 12 10 12, alignement start/start · fond `muted` · rayon 6 · dimension remplit/auto
       - « Questions pour Emis SA · 16 oct. 2026 » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 880, y 144, 267 × 15
       - «   » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 880, y 165, 8 × 15
       - « Q14 · Un ISO réaffecté garde-t-il ses photos ? » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 880, y 186, 332 × 15
-      - «    bloque F6, prévue en S43 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 880, y 207, 195 × 15
-      - «   » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 880, y 228, 8 × 15
-      - « Q17 · Un rapport par chef de chantier ou par affaire ? » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 880, y 249, 389 × 15
-      - «    pour F7, prévue en S44 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 880, y 270, 180 × 15
-    - **box** (bloc) · x 868, y 305, 392 × 25 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
-      - « Les questions exportées sont marquées envoyées. » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 868, y 310, 307 × 15
-      - **Button / default** (bloc) · x 1183, y 305, 77 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · fond `primary` · rayon 6
-        - icône `copy` 13 px, `pfg` — x 1193, y 311, 13 × 13
-        - « Copier » — Geist 12 / 500, interligne 1,2, couleur `pfg` — x 1212, y 310, 38 × 15
+      - «    bloque « Importer les ISO depuis Excel », » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 880, y 207, 317 × 15
+      - « prévue semaine du 19 oct. · réponse souhaitée » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 880, y 228, 324 × 15
+      - « avant le 19 oct. » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 880, y 249, 116 × 15
+      - «   » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 880, y 270, 8 × 15
+      - « Q17 · Un rapport par chef de chantier ou par » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 880, y 291, 317 × 15
+      - « affaire ? » — Geist Mono 12 / 400, interligne 1,2, couleur `fg` — x 880, y 312, 65 × 15
+      - «    pour « Rapport de chantier journalier », prévue » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 880, y 333, 360 × 15
+      - « semaine du 26 oct. · réponse souhaitée avant le 26 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 880, y 354, 360 × 15
+      - « oct. » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 880, y 375, 29 × 15
+    - **box** (bloc) · x 868, y 410, 392 × 25 · flex ligne, espacement 8, marges internes 0, alignement center/start · dimension remplit/auto
+      - « Les questions exportées sont marquées envoyées. » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 868, y 415, 307 × 15
+      - **Button / default** (bloc) · x 1183, y 410, 77 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · fond `primary` · rayon 6
+        - icône `copy` 13 px, `pfg` — x 1193, y 416, 13 × 13
+        - « Copier » — Geist 12 / 500, interligne 1,2, couleur `pfg` — x 1212, y 415, 38 × 15
   - **toast** (bloc) · x 1076, y 922, 323 × 49 · flex ligne, espacement 10, marges internes 12 14 12 14, alignement center/start · fond `card` · bordure 1 `border` · rayon 8
     - icône `circleCheck` 15 px, `green` — x 1090, y 939, 15 × 15
     - « 2 questions marquées envoyées » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 1115, y 938,5, 196 × 16
