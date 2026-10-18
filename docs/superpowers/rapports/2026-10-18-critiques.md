@@ -61,17 +61,19 @@ Re-vérification des tours 1 et 2 : fermés 1/18 (Vue d'ensemble, Graphe), 3, 6,
 
 | # | Constat (tour 3) | Gravité | Relevé par | Tâche | État final |
 |---|---|---|---|---|---|
-| 30 | Jour et état du sprint différents selon l'écran ; « Ouvertes » au Planning | gênant | les trois | T25.1, T25.2 | |
-| 31 | Sprint terminé proposé, glissement le jour de la création | gênant | chef de projet, nouveau venu | T25.1 | |
-| 32 | Pas d'alerte de charge par sprint | gênant | chef de projet | T25.1 | |
-| 33 | Copie, fiche, CLI et didacticiel démarrent une étape non démarrable | gênant | développeur, nouveau venu | T25.3, T25.4 | |
-| 34 | « Démo client » démarrable avant les autres étapes | gênant | chef de projet | T25.3 | |
-| 35 | Question bloquante sur une fonctionnalité sans effet | gênant | chef de projet | T25.3 | |
-| 36 | Glisser refusé sans explication | gênant | développeur | T25.5 | |
-| 37 | Fiche ticket, palette en pleine page, Mes tickets, lien du job | gênant | développeur, nouveau venu | T25.6 | |
-| 38 | Relance en jargon interne | gênant | chef de projet | T25.6 | |
-| 39 | « Phase » et « étape » mélangées | gênant | développeur, nouveau venu | T25.2, T25.5, T25.6 | |
-| 40 | Pages vides sans explication | gênant | nouveau venu | T25.1, T25.2, T25.5 | |
-| 41 | Finitions (barre latérale, F2 F2, italique, 1024 px, CLI, « Close ») | finition | les trois | T25.1 à T25.6 | |
+| 30 | Jour et état du sprint différents selon l'écran ; « Ouvertes » au Planning | gênant | les trois | T25.1, T25.2 | fermé (T25, gate 9661 / 210) |
+| 31 | Sprint terminé proposé, glissement le jour de la création | gênant | chef de projet, nouveau venu | T25.1 | fermé (T25, gate 9661 / 210) |
+| 32 | Pas d'alerte de charge par sprint | gênant | chef de projet | T25.1 | fermé (T25, gate 9661 / 210) |
+| 33 | Copie, fiche, CLI et didacticiel démarrent une étape non démarrable | gênant | développeur, nouveau venu | T25.3, T25.4 | fermé (T25, gate 9661 / 210) |
+| 34 | « Démo client » démarrable avant les autres étapes | gênant | chef de projet | T25.3 | fermé (T25, gate 9661 / 210) |
+| 35 | Question bloquante sur une fonctionnalité sans effet | gênant | chef de projet | T25.3 | fermé (T25, gate 9661 / 210) |
+| 36 | Glisser refusé sans explication | gênant | développeur | T25.5 | fermé (T25, gate 9661 / 210) |
+| 37 | Fiche ticket, palette en pleine page, Mes tickets, lien du job | gênant | développeur, nouveau venu | T25.6 | fermé (T25, gate 9661 / 210) |
+| 38 | Relance en jargon interne | gênant | chef de projet | T25.6 | fermé (T25, gate 9661 / 210) |
+| 39 | « Phase » et « étape » mélangées | gênant | développeur, nouveau venu | T25.2, T25.5, T25.6 | fermé (T25, gate 9661 / 210) |
+| 40 | Pages vides sans explication | gênant | nouveau venu | T25.1, T25.2, T25.5 | fermé (T25, gate 9661 / 210) |
+| 41 | Finitions (barre latérale, F2 F2, italique, 1024 px, CLI, « Close ») | finition | les trois | T25.1 à T25.6 | fermé (T25, gate 9661 / 210) |
+
+Clôture : T25.1 à T25.7 intégrées, suite unitaire 9661 et E2E 210 verts sur `phase/27`, specs pixel ≤ 2 %. Écarts restants (avertissement de `tickets set` limité à la première raison du démon, « En ce moment » en forme courte, italique à remonter dans le SDK) au rapport du jalon.
 
 Non retenus, listés comme risques du jalon : « + Question » qui ferme la fiche fonctionnalité ; position d'une étape ajoutée après « Démo client » ; compteurs des filtres du Kanban et filtres dans l'URL ; une seule ligne GitHub à l'accueil ; glossaire (décision d'Adam).
