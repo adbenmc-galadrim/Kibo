@@ -19,7 +19,7 @@ import {
   todayOffset,
 } from "@kibo/schema";
 import type { MarkedRow, TimelineInput } from "@kibo/sdk/tracking";
-import { markRows } from "./deadline-marks";
+import { deadlineSpan, markRows } from "./deadline-marks";
 import type { IndicatorFacts } from "./indicator-texts";
 import { type LateRow, lateRows } from "./late-model";
 import {
@@ -31,7 +31,7 @@ import {
   metaOf,
 } from "./overview-facts";
 import { type QuestionRow, questionRows, type ReviewRow, reviewRows } from "./review-model";
-import { type NextCard, nextCard, type SprintCard, sprintCard } from "./sprint-model";
+import { aheadOfSprint, type NextCard, nextCard, type SprintCard, sprintCard } from "./sprint-model";
 
 export type OverviewInput = {
   tickets: readonly TicketView[];
@@ -57,7 +57,7 @@ export type NowRow = {
   segments: Segment[];
   duration: string;
 };
-export type Deadlines = Omit<TimelineInput, "collapsed" | "rows"> & { rows: MarkedRow[] };
+export type Deadlines = Omit<TimelineInput, "collapsed" | "rows"> & { rows: MarkedRow[]; later: number };
 export type OverviewModel = {
   indicators: IndicatorFacts;
   now: NowRow[];
@@ -96,17 +96,24 @@ export function nowRows(tickets: readonly TicketView[], now: number): NowRow[] {
     });
 }
 
-function deadlines(input: OverviewInput, features: readonly FeatureFacts[], blocking: Map<string, string>) {
-  const columns = deadlineColumns(input.sprints, input.today);
+function deadlines(
+  input: OverviewInput,
+  features: readonly FeatureFacts[],
+  blocking: Map<string, string>,
+): Deadlines {
+  const span = deadlineSpan(input.sprints, features, input.today);
+  const columns = deadlineColumns(input.sprints, input.today, span.weeks);
   const planned = features.flatMap((f) => (f.sprintId === null ? [] : [{ ...f, sprintId: f.sprintId }]));
   return {
     columns,
+    later: span.later,
     rows: markRows(
       deadlineRows({
         sprints: input.sprints,
         features: planned,
         blockingQuestions: blocking,
         today: input.today,
+        weeks: span.weeks,
       }),
       { features, sprints: input.sprints, events: input.events, today: input.today },
     ),
@@ -140,6 +147,7 @@ export function overviewModel(input: OverviewInput): OverviewModel {
         today: input.today,
       }),
       blockedFeatures: inProgressFeatures(features, sprintInput.limit).blocked.map((f) => f.shortKey),
+      ahead: aheadOfSprint(sprintInput).map((f) => f.shortKey),
       atRisk: sprint?.rows.filter((r) => r.risk).length ?? 0,
       remaining: sprint?.remaining ?? 0,
     },

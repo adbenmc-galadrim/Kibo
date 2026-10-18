@@ -19,7 +19,7 @@ import {
 import type { CaseTone } from "@kibo/sdk/tracking";
 import { fr } from "./fr";
 import { type FeatureFacts, stepTone } from "./overview-facts";
-import { sprintCardDates } from "./sprint-label";
+import { lingeringDates, sprintCardDates } from "./sprint-label";
 
 export type FeatureLine = {
   id: string;
@@ -35,7 +35,7 @@ export type SprintCard = {
   lingering: boolean;
   title: string;
   dates: string;
-  open: { text: string; full: boolean };
+  ahead: string | null;
   rows: SprintRow[];
   remaining: number;
   note: string | null;
@@ -49,6 +49,7 @@ export type RemainingStep = {
 };
 export type NextCard = FeatureLine & {
   late: boolean;
+  from: string | null;
   remaining: RemainingStep[];
   deliver: { ticketId: string; key: string; command: string } | null;
 };
@@ -74,13 +75,23 @@ export const lineOf = (f: FeatureFacts, blocking: ReadonlyMap<string, string>): 
 export const sprintOf = (input: Pick<SprintInput, "sprints" | "today">): SprintView | null =>
   currentSprint(input.sprints, input.today) ?? nextSprint(input.sprints, input.today);
 
+export function aheadOfSprint(input: Pick<SprintInput, "features" | "sprints" | "today" | "limit">) {
+  const sprint = sprintOf(input);
+  if (sprint === null) return [];
+  const { inProgress } = inProgressFeatures(input.features, input.limit);
+  return inProgress.flatMap((f) => {
+    const own = input.sprints.find((s) => s.id === f.sprintId);
+    return own !== undefined && own.start > sprint.start ? [{ shortKey: f.shortKey, code: own.code }] : [];
+  });
+}
+
 const isAtRisk = (f: FeatureFacts, sprint: SprintView, today: string): boolean =>
   atRisk({ sprint, steps: f.steps }, today);
 
 export function sprintCard(input: SprintInput): SprintCard | null {
   const sprint = sprintOf(input);
   if (sprint === null) return null;
-  const { inProgress, count } = inProgressFeatures(input.features, input.limit);
+  const { inProgress } = inProgressFeatures(input.features, input.limit);
   const note = limitNote({
     open: inProgress.map((f) => f.shortKey),
     next: nextToOpen({ tickets: [...input.tickets], sprints: [...input.sprints] }),
@@ -88,12 +99,18 @@ export function sprintCard(input: SprintInput): SprintCard | null {
   });
   const inSprint = input.features.filter((f) => f.sprintId === sprint.id);
   const remaining = inSprint.filter((f) => f.state.status !== "delivered").length;
+  const lingering = sprint.end < input.today;
+  const following = nextSprint(input.sprints, input.today);
+  const ahead = aheadOfSprint(input);
   return {
     sprint,
-    lingering: sprint.end < input.today,
-    title: fr.sprint.title(sprint.code, sprint.name),
-    dates: sprintCardDates(sprint, input.today, remaining),
-    open: { text: fr.sprint.open(count, input.limit), full: count >= input.limit },
+    lingering,
+    title: lingering ? fr.sprint.lastTitle(sprint.code) : fr.sprint.title(sprint.code, sprint.name),
+    dates:
+      lingering && following !== null
+        ? lingeringDates(following)
+        : sprintCardDates(sprint, input.today, remaining),
+    ahead: ahead.length === 0 ? null : fr.sprint.ahead(ahead),
     rows: inSprint.map((f) => ({
       ...lineOf(f, input.blocking),
       risk: f.state.status !== "delivered" && isAtRisk(f, sprint, input.today),
@@ -104,17 +121,27 @@ export function sprintCard(input: SprintInput): SprintCard | null {
   };
 }
 
-function lateFirst(input: SprintInput): { feature: FeatureFacts; late: boolean } | null {
+type PickedFeature = { feature: FeatureFacts; late: boolean; from: string | null };
+
+function mostAdvancedOf(features: readonly FeatureFacts[], sprint: SprintView | null): FeatureFacts | null {
+  const candidates = features.filter((f) => sprint !== null && f.sprintId === sprint.id);
+  const id = nextFeature(candidates);
+  return candidates.find((f) => f.id === id) ?? null;
+}
+
+function lateFirst(input: SprintInput): PickedFeature | null {
   const views = input.features.map((f) => ({ ...f, remaining: f.state.remaining }));
   const late = lateFeatures(views, input.sprints, input.today);
   const lateId = nextFeature(late) ?? late[0]?.id;
   const lateOne = input.features.find((f) => f.id === lateId);
-  if (lateOne !== undefined) return { feature: lateOne, late: true };
+  if (lateOne !== undefined) return { feature: lateOne, late: true, from: null };
   const sprint = sprintOf(input);
-  const candidates = input.features.filter((f) => sprint !== null && f.sprintId === sprint.id);
-  const id = nextFeature(candidates);
-  const feature = candidates.find((f) => f.id === id);
-  return feature === undefined ? null : { feature, late: false };
+  const feature = mostAdvancedOf(input.features, sprint);
+  if (feature !== null) return { feature, late: false, from: null };
+  if (sprint === null || sprint.end >= input.today) return null;
+  const following = nextSprint(input.sprints, input.today);
+  const ahead = mostAdvancedOf(input.features, following);
+  return ahead === null || following === null ? null : { feature: ahead, late: false, from: following.code };
 }
 
 export function nextCard(input: SprintInput): NextCard | null {
@@ -126,6 +153,7 @@ export function nextCard(input: SprintInput): NextCard | null {
   return {
     ...lineOf(feature, input.blocking),
     late: pick.late,
+    from: pick.from,
     remaining: feature.steps
       .filter((s) => !FINAL_STATUSES.includes(s.statusId))
       .map((s) => ({

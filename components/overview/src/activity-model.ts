@@ -51,7 +51,7 @@ export function activityRows(input: ActivityInput, query: ActivityQuery): Activi
         kind: e.kind,
         label: activityLabel(e, { subject, statusName, questionRef }),
         ticketId: ticket?.id ?? null,
-        key: agent ? null : (ticket?.keyLabel ?? null),
+        key: agent || ticket?.id === feature?.id ? null : (ticket?.keyLabel ?? null),
         feature: agent ? null : (feature?.shortKey ?? null),
         featureId: feature?.id ?? null,
         agent,

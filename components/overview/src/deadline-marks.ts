@@ -1,6 +1,11 @@
 import {
   atRisk,
+  DEADLINE_MAX_WEEKS,
+  DEADLINE_WEEKS,
   type DeadlineRow,
+  dayNumber,
+  deadlineColumns,
+  isInProgressFeature,
   lateFeatures,
   type ProjectEvent,
   type SprintView,
@@ -35,4 +40,23 @@ export function markRows(rows: readonly DeadlineRow[], input: MarkInput): Marked
     const feature = byId.get(row.featureId);
     return feature === undefined ? row : { ...row, ...markOf(feature, late, input) };
   });
+}
+
+const WEEK_DAYS = 7;
+
+export function deadlineSpan(
+  sprints: readonly SprintView[],
+  features: readonly FeatureFacts[],
+  today: string,
+): { weeks: number; later: number } {
+  const first = deadlineColumns(sprints, today)[0];
+  if (first === undefined) return { weeks: DEADLINE_WEEKS, later: 0 };
+  const weeksTo = features.flatMap((f) => {
+    const sprint = sprints.find((s) => s.id === f.sprintId);
+    if (sprint === undefined || !isInProgressFeature(f.state)) return [];
+    return [Math.floor((dayNumber(sprint.start) - dayNumber(first.start)) / WEEK_DAYS) + 1];
+  });
+  const later = weeksTo.filter((w) => w > DEADLINE_MAX_WEEKS).length;
+  const weeks = later > 0 ? DEADLINE_MAX_WEEKS : Math.max(DEADLINE_WEEKS, ...weeksTo);
+  return { weeks, later };
 }

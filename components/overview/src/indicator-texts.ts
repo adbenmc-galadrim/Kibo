@@ -5,6 +5,7 @@ import { dayMonth, weekdayDayMonth } from "./overview-facts";
 type Dot = "amber" | "red";
 export type IndicatorFacts = OverviewIndicators & {
   blockedFeatures: readonly string[];
+  ahead: readonly string[];
   atRisk: number;
   remaining: number;
 };
@@ -54,19 +55,30 @@ function sprintText(sprint: OverviewIndicators["sprint"], remaining: number): In
   };
 }
 
-function blockedText(open: OverviewIndicators["open"], blocked: readonly string[]): string {
-  const level = open.count === 0 ? null : t.levelShort[open.level];
+function levelText(
+  open: OverviewIndicators["open"],
+  ahead: readonly string[],
+  short: boolean,
+): string | null {
+  if (open.count === 0) return short ? null : t.noneOpen;
+  if (open.level === "over" && ahead.length > 0) return t.ahead(ahead);
+  return short ? t.levelShort[open.level] : t.level[open.level];
+}
+
+function openSub(open: OverviewIndicators["open"], blocked: readonly string[], ahead: readonly string[]) {
+  if (blocked.length === 0) return levelText(open, ahead, false) ?? t.noneOpen;
+  const level = levelText(open, ahead, true);
   return level === null ? t.blocked(blocked) : `${level} · ${t.blocked(blocked)}`;
 }
 
-function openText(open: OverviewIndicators["open"], blocked: readonly string[]): IndicatorText {
+function openText(ind: IndicatorFacts): IndicatorText {
+  const { open, blockedFeatures: blocked } = ind;
   const level = open.level === "reached" ? "amber" : open.level === "over" ? "red" : undefined;
   const dot: Dot | undefined = blocked.length > 0 ? "red" : level;
-  const sub = open.count === 0 ? t.noneOpen : t.level[open.level];
   return {
     value: String(open.count),
     unit: t.openOf(open.limit),
-    sub: blocked.length > 0 ? blockedText(open, blocked) : sub,
+    sub: openSub(open, blocked, ind.ahead),
     ...(dot ? { dot } : {}),
   };
 }
@@ -97,7 +109,7 @@ export function indicatorTexts(ind: IndicatorFacts): IndicatorTexts {
   return {
     features: featuresText(ind.features, ind.atRisk),
     sprint: sprintText(ind.sprint, ind.remaining),
-    open: openText(ind.open, ind.blockedFeatures),
+    open: openText(ind),
     review: {
       value: String(ind.review.count),
       unit: t.pr,

@@ -55,12 +55,11 @@ test("the deadlines cover four weeks from the current sprint", () => {
   expect(model.deadlines.today).toBe(4 / 28);
 });
 
-test("the current sprint lists its features, the open badge and the limit note", () => {
+test("the current sprint lists its features and the limit note", () => {
   const { model } = build();
   const sprint = model.sprint;
   expect(sprint?.title).toBe("Sprint S42 · Terrain hors ligne");
   expect(sprint?.dates).toBe("12–16 oct.");
-  expect(sprint?.open).toEqual({ text: "2/2 en cours", full: true });
   expect(sprint?.rows.map((r) => [r.shortKey, r.title, r.state, r.steps, r.risk, r.slipped])).toEqual([
     ["F3", "Réaffecter un ISO", "delivered", "4/4", false, null],
     ["F4", "Saisir un tronçon hors ligne", "open", "3/5", true, null],
@@ -153,12 +152,12 @@ test("the activity shows the four latest events, and filters by source", () => {
   const rows = activityRows(input, { sources: [], limit: 4 });
   expect(rows.map((r) => [r.time, r.label, r.feature, r.agent])).toEqual([
     ["15:04", "PR #22 ouverte", "F5", false],
-    ["14:51", "Étape 7 · Porte qualité", "F5", false],
+    ["14:51", "Phase 7/12 · Porte qualité", "F5", false],
     ["14:40", "Suivi mis à jour · lot n° 7 proposé", null, true],
     ["14:36", "PR #18 fusionnée · F3 livrée", "F3", false],
   ]);
   expect(activityRows(input, { sources: ["full-delivery"], limit: 4 }).map((r) => r.label)).toEqual([
-    "Étape 7 · Porte qualité",
+    "Phase 7/12 · Porte qualité",
   ]);
   expect(activityRows(input, { sources: ["git"], limit: 50 }).length).toBe(4);
 });

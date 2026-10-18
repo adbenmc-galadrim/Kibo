@@ -1,8 +1,11 @@
 import { type Sprint, type SprintPhase, sprintPhase } from "@kibo/schema";
 import { fr } from "./fr";
-import { dayMonth, sprintDates } from "./overview-facts";
+import { dayMonth, sprintDates, weekdayDayMonth } from "./overview-facts";
 
 type Dates = Pick<Sprint, "start" | "end">;
+
+export const lingeringDates = (next: Pick<Sprint, "code" | "start">): string =>
+  fr.sprint.nextStarts(next.code, weekdayDayMonth(next.start));
 
 export function phaseLabel(phase: SprintPhase, sprint: Dates): string {
   const t = fr.sprint.phase;

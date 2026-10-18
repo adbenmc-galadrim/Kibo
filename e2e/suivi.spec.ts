@@ -78,7 +78,7 @@ test("the Vue d'ensemble leads Emis and opens a feature, the sprint and a questi
   const rows = activity.getByRole("listitem");
   await expect(rows.first()).toBeVisible();
   for (const label of await rows.allTextContents()) expect(label).toMatch(/PR #\d+|Branche/);
-  await expect(activity.getByText(/Lot n° 7|Étape 7/)).toHaveCount(0);
+  await expect(activity.getByText(/Lot n° 7|Phase 7\/12/)).toHaveCount(0);
 
   await section(page, "Sprint S42 · Terrain hors ligne")
     .getByRole("button", { name: "Saisir un tronçon hors ligne" })

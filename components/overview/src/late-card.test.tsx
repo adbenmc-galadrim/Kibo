@@ -36,8 +36,8 @@ test("between two sprints, the late features are listed under the deadlines and 
   expect(m.opened).toEqual([f5?.id ?? ""]);
   const indicators = screen.getByRole("region", { name: "Indicateurs du projet" });
   expect(within(indicators).getByText("2 en retard")).toBeTruthy();
-  const sprint = screen.getByRole("region", { name: "Sprint S42 · Terrain hors ligne" });
-  expect(within(sprint).getByText("terminé le 16 oct. · reste 2")).toBeTruthy();
+  const sprint = screen.getByRole("region", { name: "Dernier sprint · S42 terminé" });
+  expect(within(sprint).getByText("S43 commence lun. 19 oct.")).toBeTruthy();
 });
 
 test("while the sprint runs, no late card is shown", async () => {

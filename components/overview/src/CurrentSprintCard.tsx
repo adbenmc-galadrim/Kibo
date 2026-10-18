@@ -95,7 +95,7 @@ export function CurrentSprintCard({ card, onOpenTicket, onOpenSprint }: Props) {
         aside={
           <>
             <span className="text-(--tracking-mfg) text-[12.5px] leading-[15px]">{card.dates}</span>
-            <Pill tone={card.open.full ? "amber" : "muted"}>{card.open.text}</Pill>
+            {card.ahead !== null && <Pill tone="amber">{card.ahead}</Pill>}
           </>
         }
       />

@@ -77,6 +77,11 @@ function NextStep({ deliver, actions }: { deliver: NonNullable<NextCard["deliver
   );
 }
 
+const subtitleOf = (card: NextCard | null): string => {
+  if (card?.late) return fr.next.lateSubtitle;
+  return card?.from ? fr.next.fromSubtitle(card.from) : fr.next.subtitle;
+};
+
 export function NextFeatureCard({ card, actions }: { card: NextCard | null; actions: NextActions }) {
   const width =
     card === null ? 0 : (SEGMENTS_WIDTH - 3 * (card.tones.length - 1)) / Math.max(1, card.tones.length);
@@ -92,7 +97,7 @@ export function NextFeatureCard({ card, actions }: { card: NextCard | null; acti
               card?.late ? "text-(--tracking-red)" : "text-(--tracking-mfg)",
             )}
           >
-            {card?.late ? fr.next.lateSubtitle : fr.next.subtitle}
+            {subtitleOf(card)}
           </span>
         }
       />

@@ -25,6 +25,8 @@ export const fr = {
     openOf: (limit: number) => `/ ${limit}`,
     level: { under: "sous la limite", reached: "limite atteinte", over: "dépassée" },
     levelShort: { under: null, reached: "limite", over: "dépassée" },
+    ahead: (keys: readonly string[]) =>
+      `dépassée : ${keys.join(", ")} ${plural(keys.length, "démarrée avant son sprint", "démarrées avant leur sprint")}`,
     review: "En review",
     pr: "PR",
     noPr: "aucune PR",
@@ -39,7 +41,12 @@ export const fr = {
     minutes: (n: number) => `${n} min`,
     hours: (h: number, m: number) => (m === 0 ? `${h} h` : `${h} h ${m}`),
   },
-  deadlines: { title: "Échéances", subtitle: "fonctionnalités par sprint", empty: "Aucun sprint à venir." },
+  deadlines: {
+    title: "Échéances",
+    subtitle: "fonctionnalités par sprint",
+    later: (n: number) => `+ ${n} plus tard`,
+    empty: "Aucun sprint à venir.",
+  },
   start: {
     title: "Pour commencer",
     subtitle: (n: number) => `${n === 3 ? "trois" : "deux"} étapes pour suivre le projet`,
@@ -56,7 +63,7 @@ export const fr = {
     },
     copy: {
       title: "Copier",
-      text: "À coller dans T3 Code pour livrer la première étape.",
+      text: "À coller dans T3 Code pour livrer la prochaine étape.",
       button: "Copier",
     },
   },
@@ -70,6 +77,10 @@ export const fr = {
   },
   sprint: {
     title: (code: string, name: string) => `Sprint ${code} · ${name}`,
+    lastTitle: (code: string) => `Dernier sprint · ${code} terminé`,
+    nextStarts: (code: string, date: string) => `${code} commence ${date}`,
+    ahead: (features: readonly { shortKey: string; code: string }[]) =>
+      `hors sprint : ${features.map((f) => `${f.shortKey} (${f.code})`).join(", ")}`,
     phase: {
       upcoming: (date: string) => `commence le ${date}`,
       current: "en cours",
@@ -77,7 +88,6 @@ export const fr = {
       ended: (date: string) => `terminé le ${date}`,
     },
     rest: (n: number) => `reste ${n}`,
-    open: (count: number, limit: number) => `${count}/${limit} en cours`,
     state: { delivered: "livrée", open: "en cours", late: "en retard", blocked: "bloquée", todo: "à faire" },
     risk: "à risque",
     slipped: (code: string) => `glissée de ${code}`,
@@ -88,6 +98,7 @@ export const fr = {
   next: {
     title: "Prochaine à finir",
     subtitle: "la plus avancée du sprint",
+    fromSubtitle: (code: string) => `la plus avancée de ${code}`,
     lateSubtitle: "en retard, la plus avancée",
     changes: "changements demandés",
     step: "Étape suivante",

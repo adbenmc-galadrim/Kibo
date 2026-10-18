@@ -92,7 +92,7 @@ test("the heading, the indicators and the cards of the project", async () => {
   expect(within(deadlines).getByText("bloquée · Q14")).toBeTruthy();
   const sprint = await card("Sprint S42 · Terrain hors ligne");
   expect(within(sprint).getByText("12–16 oct.")).toBeTruthy();
-  expect(within(sprint).getByText("2/2 en cours")).toBeTruthy();
+  expect(within(sprint).queryByText("2/2 en cours")).toBeNull();
   expect(within(sprint).getAllByText("à risque").length).toBe(2);
   expect(
     within(sprint).getByText("Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5."),
@@ -155,7 +155,7 @@ test("the activity shows four events, filters by source and unfolds on fifty", a
   const activity = await card("Activité");
   const items = () => within(activity).queryAllByRole("listitem");
   await waitFor(() => expect(items().length).toBe(4));
-  expect(items()[0]?.textContent).toContain("Étape 7 · Porte qualité");
+  expect(items()[0]?.textContent).toContain("Phase 7/12 · Porte qualité");
   await userEvent.click(within(activity).getByRole("button", { name: "git" }));
   expect(items().every((li) => li.textContent?.includes("PR #"))).toBe(true);
   await userEvent.click(within(activity).getByRole("button", { name: "git" }));

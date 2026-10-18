@@ -13,7 +13,11 @@ export function DeadlinesCard({ deadlines, onOpenTicket }: Props) {
         icon={Calendar}
         title={fr.deadlines.title}
         aside={
-          <span className="text-(--tracking-mfg) text-[12.5px] leading-[15px]">{fr.deadlines.subtitle}</span>
+          <span className="text-(--tracking-mfg) text-[12.5px] leading-[15px]">
+            {deadlines.later > 0
+              ? `${fr.deadlines.subtitle} · ${fr.deadlines.later(deadlines.later)}`
+              : fr.deadlines.subtitle}
+          </span>
         }
       />
       <div className={ROW_LINE}>

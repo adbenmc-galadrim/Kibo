@@ -9,12 +9,12 @@ const SATURDAY = "2026-10-17";
 const SUNDAY = "2026-10-18";
 const MONDAY = "2026-10-19";
 
-test("between two sprints, the finished sprint stays current and says what remains", () => {
+test("between two sprints, the finished sprint stays current and says when the next one starts", () => {
   const sprint = build(SATURDAY).model.sprint;
-  expect(sprint?.title).toBe("Sprint S42 · Terrain hors ligne");
+  expect(sprint?.title).toBe("Dernier sprint · S42 terminé");
   expect(sprint?.lingering).toBe(true);
-  expect(sprint?.dates).toBe("terminé le 16 oct. · reste 2");
-  expect(build(SUNDAY).model.sprint?.dates).toBe("terminé le 16 oct. · reste 2");
+  expect(sprint?.dates).toBe("S43 commence lun. 19 oct.");
+  expect(build(SUNDAY).model.sprint?.dates).toBe("S43 commence lun. 19 oct.");
   expect(build().model.sprint?.lingering).toBe(false);
 });
 
@@ -72,6 +72,7 @@ test("an empty project reads as the Pour commencer mockup", () => {
     questions: { open: 0, blocking: null },
     blocked: { count: 0 },
     blockedFeatures: [],
+    ahead: [],
     atRisk: 0,
     remaining: 0,
   };
