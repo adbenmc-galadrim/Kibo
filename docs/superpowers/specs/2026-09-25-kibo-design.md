@@ -2617,6 +2617,7 @@ Détail par tâche dans la section « Écarts » du plan `2026-10-18-kibo-phase-
 10. **« En ce moment »** garde la forme courte « n · phase » (colonne étroite) ; ailleurs « Phase n/12 · … » (`phaseLabel` du SDK).
 11. **Kanban vide** : le bloc explicatif s'ajoute au-dessus des colonnes au lieu de les remplacer.
 12. **Check en échec** : `GithubPrRef.failedCheck` (facultatif), lu dans `statusCheckRollup` ; lien `…/pull/<n>/checks` à défaut d'exécution connue.
+13. **Rebase appliqué** (2026-10-18) : déclarer la branche prévue d'une étape « à faire » vaut « branche créée » et la passe en cours ; EMIS-17, dont la branche n'existe ni en local ni sur GitHub, a été remis à « à faire » par `kibo tickets set`, seul écart de la vérification.
 
 ### 39.8 Ports et codes (phase 27)
 
