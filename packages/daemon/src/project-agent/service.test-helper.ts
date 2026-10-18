@@ -85,6 +85,7 @@ function fakeAgents(runs: Map<string, RunView>, calls: string[]): ProjectAgentAg
       calls.push(`cancel:${runId}`);
       return update(runId, { state: "cancelled" });
     },
+    ticketExecution: () => "removed",
     assign: refuse("assign"),
     deliverAnswers: refuse("deliverAnswers"),
     log: () => [],
@@ -127,7 +128,7 @@ export function serviceKit(): Kit {
   let apply = applyAll;
   let clock = 100;
   let agentBody = "";
-  let agentExecution: AgentExecution = "shown";
+  let agentExecution: AgentExecution = "hidden";
   let emitted = 0;
   const calls: string[] = [];
   const notices: Notice[] = [];

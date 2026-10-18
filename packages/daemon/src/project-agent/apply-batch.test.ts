@@ -254,3 +254,22 @@ describe("applyBatch after a partial decision", () => {
     expect(none.find((r) => r.actionId === 2)?.outcome).toBe("skipped");
   });
 });
+
+describe("ticket agents removed", () => {
+  test("a pending batch keeps its other actions but fails assignAgent and deliverAnswers with the code", async () => {
+    const h = setup();
+    await seed(h);
+    const batch = await propose(h, [
+      { id: 1, why, type: "assignAgent", ticket: "EMIS-3", profileId: "global:opus" },
+      { id: 2, why, type: "setStatus", ticket: "EMIS-2", statusId: "done" },
+      { id: 3, why, type: "deliverAnswers", ticket: "EMIS-6" },
+    ]);
+    h.agents.mode = "removed";
+    const results = await apply(h, batch);
+    expect(outcomes(results)).toEqual(["failed", "applied", "failed"]);
+    for (const r of [results[0], results[2]]) expect(r?.detail).toStartWith("AGENT_EXECUTION_REMOVED: ");
+    expect(statusOf(h, "EMIS-2")).toBe("done");
+    expect(h.agents.assigned).toEqual([]);
+    expect(h.agents.delivered).toEqual([]);
+  });
+});
