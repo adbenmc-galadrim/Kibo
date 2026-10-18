@@ -505,6 +505,8 @@ plus ancien au plus récent : `pr_merged` SILO-21 (#18, F3), `batch_proposed` (l
 
 ### Pistes A, B, C (`design/redesign/scripts/02-data.js`)
 
+Ce jeu est indépendant de celui des fonctionnalités : les mêmes numéros de tickets y portent d'autres titres et d'autres statuts.
+
 Projet : 41 tickets terminés sur 68, 27 ouverts (3 en cours, 4 en review, 1 bloqué, 19 à faire), 3 questions, « ven. 16 oct. », S42.
 
 | Ensemble | Ticket | Titre | Δ | Avancement | Échéance | Ligne |
@@ -542,7 +544,8 @@ jour · lot n° 6 proposé · 14:36 PR #18 fusionnée dans dev (SILO-21) · 14:2
 hier 18:22 PR #19 fusionnée dans dev (SILO-31) · 16:05 Étape 3 · Questions · attend Q14 (SILO-44).
 
 Session : T3 Code sur SILO-33, « 7 · Porte qualité », depuis 42 min. Lot n° 6 des pistes : « Créer SILO-61 · Compresser les
-photos avant envoi » (dans C4 · après SILO-32) ; « Lier SILO-34 : attend la fusion de PR #22 » (SILO-34 → SILO-32) ; « Relancer
+photos avant envoi » (dans C4 · après SILO-32 ; ici SILO-61 est un ticket à créer, propre aux pistes, sans lien avec le
+SILO-61 « Passage à Expo SDK 54 » du jeu des fonctionnalités) ; « Lier SILO-34 : attend la fusion de PR #22 » (SILO-34 → SILO-32) ; « Relancer
 le client sur Q14 » (SILO-44 bloqué depuis 3 j).
 
 ### Vocabulaire métier
@@ -551,13 +554,24 @@ le client sur Q14 » (SILO-44 bloqué depuis 3 j).
 |---|---|
 | centre | « chef de centre », « Rapport de centre journalier », « Rapports de centre », « Centre 1 », « Travailler hors ligne au centre », « Carnet de centre » (style 1 de la page Styles), « location de box » (sous-titre en minuscules) |
 | box (masculin, invariable) | « Voir ses box affectés », « Réaffecter un box », « Liste des box », « Recherche d'un box par numéro », « Import Excel des box », « Plans des box et fichiers », « Plans box » |
-| constat, constats | « Saisir un constat hors ligne », « Saisir un constat… », « Constat hors ligne », « Schéma local des constats », « Saisie des box et constats », « Constats et étapes », « Constats », « Fiche constat », « Gérer un constat », « Photographier un constat », « Voir les constats d'un client », « Importer les constats depuis Excel », « Expédier les constats : BL et sous-traitant » |
+| constat, constats | « Saisir un constat hors ligne », « Saisir un constat… », « Constat hors ligne », « Schéma local des constats », « Saisie des box et constats », « Constats et étapes », « Constats », « Fiche constat », « Gérer un constat », « Photographier un constat », « Voir les constats d'un client », « Importer les constats depuis Excel » |
 | contrat, contrats | « Valider les contrats par lot », « Valider les contrats », « Contrats par lot », « Statuts de contrat », « Import et contrats », « S43 Import et contrats », branche `feat/contrats-lot` |
 | client (masculin) | « Quota par client », « Quotas par client », « dossier du client », « Créer et consulter ses clients », « Clients », « Constituer l'équipe d'un client », « Organigramme de client », « Clôturer, archiver, exporter un client », « Qui peut créer un client ? », « la création de client », « chargé de clientèle », « Bloquer le dépôt sur un client archivé ? », branche `feat/schema-clients` ; titre coupé sur deux lignes : « … ou par » / « client ? » |
 | numéro, numéros | « Contrôle des numéros », « Recherche par numéro » |
 | saisie | « Saisie hors ligne » (S42, « Sprint S42 · Saisie hors ligne »), libellé court « Saisie », troncature « Saisie ho… » |
+| accueil, badge, lecteur | « Piloter l'accueil au Kanban », « Kanban accueil », « Encoder les badges d'accès », « Badges accès », « Scanner au lecteur », « Scan lecteur » |
+| libération, état des lieux, caution | « Libérer les box : état des lieux et caution », libellé court « Libération » |
+
+Fonctionnalités de la page Styles qui portent ce vocabulaire (les autres suivent les règles ci-dessus) :
+
+| Fonctionnalité | Titre | Δ | Libellé court | Δ |
+|---|---|---|---|---|
+| F07 | Piloter l'accueil au Kanban | 0 | Kanban accueil | 0 |
+| F08 | Encoder les badges d'accès | −1 | Badges accès | 0 |
+| F12 | Scanner au lecteur | −1 | Scan lecteur | −1 |
+| F13 | Libérer les box : état des lieux et caution | 0 | Libération | 0 |
 
 Mots communs gardés tels quels : Galadrim, Adam, Microsoft, Microsoft Entra ID, Azure, AWS, MinIO, Expo SDK 54, Sentry, DSI,
-staging, « Démo client », « Import des factures », « Export CSV », atelier, magasin, tags, pistolet, BL, sous-traitant.
+staging, « Démo client », « Import des factures », « Export CSV ».
 Numéros inchangés partout : tickets, `shortKey` F1 à F9, sprints S41 à S44 et leurs dates, PR #12 à #23, Q14, Q16, Q17, lot n° 7,
 « 42 min », ports.
