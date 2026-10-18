@@ -11,6 +11,7 @@ import { RunState } from "./run";
 import { PROJECT_SIGNAL_TOOLS } from "./signal";
 import { SHARED_TOOL_NAMES, SKILL_REVIEW_TOOL } from "./skill";
 import type { SprintSummary } from "./sprint-summary";
+import type { StartReason } from "./startability";
 import { StatusId } from "./status";
 
 export const PROJECT_AGENT_TOOLS = [
@@ -112,6 +113,7 @@ export type TicketCard = {
   parent: string | null;
   openQuestions: number;
   startable: boolean;
+  startReason: StartReason | null;
   group: boolean;
   branch: string | null;
   pr: string | null;

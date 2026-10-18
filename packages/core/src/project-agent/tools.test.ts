@@ -51,6 +51,7 @@ describe("listTickets", () => {
           parent: null,
           openQuestions: 0,
           startable: false,
+          startReason: null,
           group: false,
           branch: null,
           pr: null,
