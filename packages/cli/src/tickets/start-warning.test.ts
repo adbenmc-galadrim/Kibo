@@ -13,7 +13,7 @@ describe("notStartableReasons", () => {
     ]);
     expect(refused({ kind: "sprint", code: "S43" })).toEqual(["sprint S43"]);
     expect(refused({ kind: "unplanned" })).toEqual(["sans sprint"]);
-    expect(refused({ kind: "limit", limit: 2 })).toEqual(["limite atteinte"]);
+    expect(refused({ kind: "limit", limit: 2, count: 2 })).toEqual(["limite atteinte"]);
   });
 
   test("adds the steps the ticket waits on, once", () => {

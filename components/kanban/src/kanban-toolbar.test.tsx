@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from "bun:test";
-import type { ProjectCommand } from "@kibo/schema";
+import type { ProjectCommand, Ticket } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
@@ -54,21 +54,36 @@ test("« Sprint courant » keeps the steps of S42, still current the day after i
   expect(pressed("Sprint courant · S42")).toBe("false");
 });
 
+const withFinalStep = (run: (cmd: ProjectCommand) => unknown) => {
+  const made = new Map<string, Ticket>();
+  trackingSeed((cmd) => {
+    const result = run(cmd);
+    if (cmd.method === "createTicket" && !made.has(cmd.title)) made.set(cmd.title, result as Ticket);
+    return result;
+  });
+  const f1 = made.get("Saisie terrain");
+  const demo = made.get("Démo client");
+  if (!f1 || !demo) throw new Error("tracking seed without F1 or its demo");
+  const last = run({ method: "createTicket", title: "Mise en production", parentId: f1.id }) as Ticket;
+  run({ method: "addLink", from: demo.id, to: last.id, type: "blocks" });
+};
+
 test("the filters add up, « Tous » clears them", async () => {
-  setup();
+  setup({}, withFinalStep);
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Sprint courant · S42" }));
   await user.click(toggle("Démarrable"));
-  expect(await screen.findByText("0 ticket · Sprint courant · S42 + Démarrable")).toBeTruthy();
+  expect(await screen.findByText("1 ticket · Sprint courant · S42 + Démarrable")).toBeTruthy();
   expect(pressed("Sprint courant · S42")).toBe("true");
   expect(pressed("Démarrable")).toBe("true");
-  expect(screen.queryByText("Démo · F1")).toBeNull();
+  expect(screen.getByText("Démo · F1")).toBeTruthy();
+  expect(screen.queryByText("Mise en production")).toBeNull();
   expect(screen.queryByText("Hors filtre")).toBeNull();
   await user.click(toggle("Sprint courant · S42"));
-  expect(await screen.findByText("1 ticket · Démarrable")).toBeTruthy();
+  expect(await screen.findByText("2 tickets · Démarrable")).toBeTruthy();
   expect(screen.getByText("Hors filtre")).toBeTruthy();
   await user.click(toggle("Tous"));
-  expect(await screen.findByText("8 tickets · Tous")).toBeTruthy();
+  expect(await screen.findByText("9 tickets · Tous")).toBeTruthy();
   expect(pressed("Démarrable")).toBe("false");
 });
 
