@@ -18,14 +18,12 @@ import { AgentChip } from "./AgentChip";
 import { BlockedBadge, CardBadges, OptionalBadge } from "./CardBadges";
 import { fr } from "./fr";
 import { LabelChips } from "./LabelChips";
-
-export const STARTABLE_BADGE =
-  "border-zinc-400 bg-background text-2xs font-medium text-zinc-700 dark:border-zinc-500 dark:text-zinc-200";
+import { startReasonText } from "./start-reason";
 
 export const CARD_TITLE_CLASS = "w-fit max-w-full text-left text-[13px] font-medium wrap-anywhere";
 
 export const CARD_CLASS =
-  "relative grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 rounded-lg border bg-card px-3 py-2.5 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring";
+  "@container/card relative grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 rounded-lg border bg-card px-3 py-2.5 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export type CardGroup = GroupRef & Pick<TicketView, "shortKey">;
 
@@ -64,6 +62,7 @@ export function KanbanCardContent(props: Props) {
   const { ticket: t, group, run, ciRuns, blocked, blocking, members, remote, questions, menu, title } = props;
   const otherQuestions = t.openQuestions - (blocking === null ? 0 : 1);
   const sdk = useSdk();
+  const reason = startReasonText(t.startReason);
   return (
     <>
       <div className="flex h-3.5 items-center gap-1.5">
@@ -101,9 +100,9 @@ export function KanbanCardContent(props: Props) {
           </Badge>
         ))}
         <CardBadges ticket={t} ciRuns={ciRuns} />
-        {t.startable && (
-          <Badge variant="outline" className={STARTABLE_BADGE}>
-            {fr.startable}
+        {reason !== null && (
+          <Badge variant="outline" className="max-w-full text-3xs">
+            <span className="truncate">{reason}</span>
           </Badge>
         )}
         <AgentChip

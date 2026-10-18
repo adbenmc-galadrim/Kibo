@@ -49,7 +49,7 @@ export const trackingSeed = (run: Run) => {
   const excel = step(run, f1.id, "Lecture du fichier Excel");
   const demo = step(run, f1.id, "Démo client");
   const f2 = run({ method: "createTicket", title: "Import" }) as Ticket;
-  step(run, f2.id, "Écran d'import");
+  const importScreen = step(run, f2.id, "Écran d'import");
   step(run, f2.id, "Démo client");
   const expo = run({
     method: "createTicket",
@@ -63,6 +63,11 @@ export const trackingSeed = (run: Run) => {
   run({ method: "upsertExternalRef", ticketId: photos.id, ref: pr(22, "none", "ok") });
   run({ method: "upsertExternalRef", ticketId: expo.id, ref: pr(23, "none", "running") });
   run({ method: "setTicketOptional", ticketId: demo.id, optional: true });
+  run({
+    method: "upsertExternalRef",
+    ticketId: importScreen.id,
+    ref: { kind: "git_branch", branch: "feat/emis-import", base: null },
+  });
   run({
     method: "createQuestion",
     ticketId: excel.id,

@@ -1,4 +1,5 @@
 import {
+  branchRefOf,
   type CiRun,
   type CiTone,
   type GithubPrRef,
@@ -12,6 +13,7 @@ import { cn } from "@kibo/sdk/lib/utils";
 import {
   CircleCheck,
   CircleX,
+  GitBranch,
   GitMerge,
   GitPullRequest,
   GitPullRequestClosed,
@@ -81,6 +83,33 @@ function CiBadge({ tone }: { tone: CiTone }) {
   );
 }
 
+function ChangesBadge() {
+  return (
+    <span
+      role="note"
+      aria-label={fr.changesRequested}
+      title={fr.changesRequested}
+      className={cn(BADGE_CLASS, "whitespace-nowrap bg-(--tracking-amber-soft) text-(--tracking-amber)")}
+    >
+      <span aria-hidden className="@max-[144px]/card:hidden">
+        {fr.changesRequested}
+      </span>
+      <span aria-hidden className="hidden @max-[144px]/card:inline">
+        {fr.changesShort}
+      </span>
+    </span>
+  );
+}
+
+function BranchBadge({ name }: { name: string }) {
+  return (
+    <span role="note" aria-label={fr.branch(name)} title={name} className={OUTLINED}>
+      <GitBranch absoluteStrokeWidth size={11} aria-hidden className="size-[11px] shrink-0" />
+      <span className="truncate font-mono text-(--tracking-fg)">{name}</span>
+    </span>
+  );
+}
+
 type Props = { ticket: Pick<TicketView, "externalRefs">; ciRuns: readonly CiRun[] };
 
 export function CardBadges({ ticket, ciRuns }: Props) {
@@ -89,18 +118,12 @@ export function CardBadges({ ticket, ciRuns }: Props) {
   const latestRun = [...ciRuns].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
   const number = pr?.number ?? latestRun?.prNumber ?? null;
   const changes = pr !== null && isLivePr(pr) && pr.review === "changes_requested";
+  const branch = branchRefOf(ticket.externalRefs);
   return (
     <>
       {number !== null && <PrBadge number={number} state={pr?.state ?? "open"} />}
-      {changes && (
-        <span
-          role="note"
-          aria-label={fr.changesRequested}
-          className={cn(BADGE_CLASS, "bg-(--tracking-amber-soft) text-(--tracking-amber)")}
-        >
-          {fr.changesRequested}
-        </span>
-      )}
+      {changes && <ChangesBadge />}
+      {pr === null && branch !== null && <BranchBadge name={branch.branch} />}
       {tone !== null && <CiBadge tone={tone} />}
     </>
   );

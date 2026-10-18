@@ -39,21 +39,19 @@ const card = async (key: string) => {
   return found;
 };
 
-test("screen 188k: a startable card shows a neutral 'Démarrable' badge, the others none", async () => {
+test("screen 188k: no card carries a 'Démarrable' badge, the filter keeps the startable ones", async () => {
   const m = setup();
   queueKib5(m);
-  const badge = within(await card("KIB-1")).getByText("Démarrable");
-  expect(badge.getAttribute("data-slot")).toBe("badge");
-  expect(badge.getAttribute("data-variant")).toBe("outline");
-  expect(badge.className).toContain("zinc");
-  expect(badge.className).toContain("bg-background");
-  expect(badge.className).not.toContain("orange");
-  expect(badge.className).not.toContain("brand");
-  expect(within(await card("KIB-5")).queryByText("Démarrable")).toBeNull();
-  expect(within(await card("KIB-2")).queryByText("Démarrable")).toBeNull();
-  expect(within(await card("KIB-4")).queryByText("Démarrable")).toBeNull();
+  await card("KIB-1");
+  for (const article of screen.getAllByRole("article"))
+    expect(within(article).queryByText("Démarrable")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Démarrable" }));
+  expect(await card("KIB-1")).toBeTruthy();
+  expect(screen.queryByText("KIB-5")).toBeNull();
+  expect(screen.queryByText("KIB-2")).toBeNull();
+  expect(screen.queryByText("KIB-4")).toBeNull();
   act(() => m.setRuns([]));
-  expect(await within(await card("KIB-5")).findByText("Démarrable")).toBeTruthy();
+  expect(await card("KIB-5")).toBeTruthy();
 });
 
 test("a live run on a card is an agent mention: hover peeks the run, click opens it", async () => {

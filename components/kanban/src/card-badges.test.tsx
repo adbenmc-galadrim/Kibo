@@ -69,7 +69,14 @@ const badges = (t: TicketView, runs: CiRun[] = []) => render(<CardBadges ticket=
 test("a PR with changes requested and a broken CI shows its number, the review and the CI", () => {
   badges(ticket([pr({ review: "changes_requested", checks: "error" })]));
   expect(screen.getByText("#20")).toBeTruthy();
-  expect(screen.getByLabelText("changements demandés").textContent).toBe("changements demandés");
+  const changes = screen.getByLabelText("changements demandés");
+  expect(changes.getAttribute("title")).toBe("changements demandés");
+  expect(changes.className).toContain("whitespace-nowrap");
+  const [long, short] = Array.from(changes.children);
+  expect(long?.textContent).toBe("changements demandés");
+  expect(long?.className).toContain("@max-[144px]/card:hidden");
+  expect(short?.textContent).toBe("changements");
+  expect(short?.className).toContain("@max-[144px]/card:inline");
   expect(screen.getByLabelText("CI cassée").closest("[data-ci]")?.textContent).toBe("CI cassée");
 });
 
@@ -96,6 +103,16 @@ test("an approved PR shows no review badge, a merged PR no review either", () =>
 test("no PR and no CI run: no badge at all", () => {
   const { container } = badges(ticket([]));
   expect(container.textContent).toBe("");
+});
+
+test("a branch without a PR shows the branch; once a PR exists, only the PR", () => {
+  const branch = { kind: "git_branch" as const, branch: "feat/emis-53", base: null };
+  render(<CardBadges ticket={{ externalRefs: [branch] }} ciRuns={[]} />);
+  expect(screen.getByLabelText("Branche feat/emis-53").textContent).toBe("feat/emis-53");
+  cleanup();
+  render(<CardBadges ticket={{ externalRefs: [branch, pr()] }} ciRuns={[]} />);
+  expect(screen.queryByLabelText("Branche feat/emis-53")).toBeNull();
+  expect(screen.getByText("#20")).toBeTruthy();
 });
 
 test("a CI run without a PR still shows the CI and the PR number it carries", () => {
