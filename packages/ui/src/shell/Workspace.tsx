@@ -210,6 +210,7 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                     target={active}
                     viewer={viewer}
                     projects={projects}
+                    snapshots={snapshots}
                     inboxCount={inboxCount}
                     project={project}
                     domains={projectDomainsOf(project, config)}

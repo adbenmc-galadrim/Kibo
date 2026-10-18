@@ -40,9 +40,7 @@ mock.module("../api", () =>
           ? []
           : req.method === "getSandboxStatus"
             ? isolated
-            : req.method === "getProject"
-              ? empty
-              : environment,
+            : environment,
       subscribe: none,
       subscribeEvents: none,
       subscribeAi: none,
@@ -118,6 +116,7 @@ test("PairingScreen shows the logo, a centred title and the security notice", ()
 
 const contentProps = {
   inboxCount: 0,
+  snapshots: new Map([["p1", empty]]),
   target: null,
   viewer: "adam",
   project: null,

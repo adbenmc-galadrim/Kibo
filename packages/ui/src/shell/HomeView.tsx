@@ -1,13 +1,12 @@
-import type { ProjectSummary, StatusId } from "@kibo/schema";
+import type { ProjectSnapshot, ProjectSummary, StatusId } from "@kibo/schema";
 import { StatusDot } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { Inbox, Plus } from "lucide-react";
-import { useId, useMemo } from "react";
+import { useId } from "react";
 import { fr } from "../i18n/fr";
 import { frHome } from "../i18n/fr-home";
 import { navigate } from "../route";
 import { useNow } from "../state/use-agents";
-import { useSnapshots } from "../state/use-snapshots";
 import { type HomeCard, type HomeCounts, homeCard } from "./home-cards";
 import { localDay } from "./sprint/sprint-facts";
 
@@ -41,7 +40,7 @@ function CardCounts({ counts, color }: { counts: HomeCounts; color: string }) {
       <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-2xs text-muted-foreground">
         <Count statusId="todo" value={counts.open} label={frHome.open(counts.open)} />
         <Count statusId="blocked" value={counts.blocked} label={frHome.blocked(counts.blocked)} />
-        {counts.late > 0 && <Count statusId="blocked" value={counts.late} label={frHome.late} />}
+        {counts.late > 0 && <Count statusId="blocked" value={counts.late} label={frHome.late(counts.late)} />}
         {counts.sprint !== null && (
           <span className="ml-auto whitespace-nowrap">{frHome.sprint(counts.sprint)}</span>
         )}
@@ -55,7 +54,7 @@ function ProjectCard({ card }: { card: HomeCard }) {
   return (
     <article
       aria-labelledby={nameId}
-      className="relative grid gap-4 rounded-xl border bg-card p-4 text-card-foreground shadow-sm transition-colors hover:bg-accent/50"
+      className="relative grid content-start gap-4 rounded-xl border bg-card p-4 text-card-foreground shadow-sm transition-colors hover:bg-accent/50"
     >
       <div className="flex items-start gap-3">
         <span
@@ -106,6 +105,7 @@ function InboxCard({ count, onOpen }: { count: number; onOpen(): void }) {
 export type HomeViewProps = {
   viewer: string;
   projects: ProjectSummary[];
+  snapshots: ReadonlyMap<string, ProjectSnapshot>;
   inboxCount: number;
   now?: number;
   onNewProject: () => void;
@@ -115,6 +115,7 @@ export type HomeViewProps = {
 export function HomeView({
   viewer,
   projects,
+  snapshots,
   inboxCount,
   now: fixedNow,
   onNewProject,
@@ -122,8 +123,6 @@ export function HomeView({
 }: HomeViewProps) {
   const liveNow = useNow(60_000);
   const today = localDay(fixedNow ?? liveNow);
-  const ids = useMemo(() => projects.map((p) => p.id), [projects]);
-  const snapshots = useSnapshots(ids);
   const cards = projects.map((p) => homeCard(p, snapshots.get(p.id), today));
   const openTickets = cards.reduce((n, c) => n + (c.counts?.open ?? 0), 0);
   return (

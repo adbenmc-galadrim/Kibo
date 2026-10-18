@@ -31,6 +31,7 @@ type Props = {
   target: TabTarget | null;
   viewer: string;
   projects: ProjectSummary[];
+  snapshots: ReadonlyMap<string, ProjectSnapshot>;
   inboxCount: number;
   project: ProjectSnapshot | null;
   domains: Domain[] | undefined;
@@ -83,6 +84,7 @@ function content(p: Props): ReactNode {
       <Overview
         viewer={p.viewer}
         projects={p.projects}
+        snapshots={p.snapshots}
         inboxCount={p.inboxCount}
         onNewProject={p.onNewProject}
         onOpenInbox={() => p.onOpen({ kind: "screen", screen: "inbox" })}

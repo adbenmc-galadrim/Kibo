@@ -119,6 +119,7 @@ const renderChanges = (worktree: string, snapshot = project()) => {
       target={target}
       viewer="adam"
       projects={[]}
+      snapshots={new Map()}
       inboxCount={0}
       project={snapshot}
       domains={[]}
