@@ -3,34 +3,33 @@ import type { KiboErrorCode } from "@kibo/schema";
 export const frAi = {
   welcome: {
     title: "Bienvenue dans Kibo",
-    subtitle: "Ton centre de contrôle local. Vérifions l'environnement avant de créer ton premier projet.",
-    daemon: "Démon local",
-    daemonDetail: (address: string, home: string) => `En marche sur ${address} · données dans ${home}`,
-    claude: "Claude Code",
+    subtitle:
+      "Kibo suit tes projets : sprints, fonctionnalités, branches, PR et CI, mis à jour depuis git et GitHub.",
+    claude: "Claude Code · pour l'agent de projet",
     claudeReady: "claude détecté · connecté à ton abonnement",
     claudeUnverified: "claude détecté · connexion non vérifiée",
-    claudeLoggedOut: "claude détecté · non connecté",
-    claudeMissing: "claude introuvable dans le PATH · les agents sont désactivés",
+    claudeLoggedOut: "claude détecté · non connecté, l'agent de projet n'est pas disponible",
+    claudeMissing: "claude introuvable · l'agent de projet n'est pas disponible",
     claudeInstallHelp: "Installe Claude Code, puis lance claude et tape /login :",
     claudeLoginHelp: "Lance claude dans un terminal, puis tape /login :",
     git: "Git",
-    gitDetail: (git: string | null) => (git === null ? "git introuvable" : `git ${git} détecté`),
+    gitDetail: (git: string | null) =>
+      git === null ? "git introuvable · sans lui, Kibo ne suit pas les branches" : `git ${git} détecté`,
     gh: "GitHub CLI",
     ghDetail: (gh: string | null) =>
-      gh === null ? "gh introuvable · facultatif" : `gh ${gh} · pour les PR et la CI depuis Kibo`,
-    capacity: "Capacité machine",
-    capacityDetail: (cores: number, ramGb: number, slots: number) =>
-      `${cores} cœurs, ${ramGb} Go → ${slots} place${slots > 1 ? "s" : ""} d'agents (modifiable)`,
-    github: "GitHub (optionnel)",
-    githubDetail: "Pour synchroniser issues, PR et CI",
+      gh === null
+        ? "gh introuvable · sans lui, ni PR, ni review, ni CI dans Kibo"
+        : `gh ${gh} · remonte les PR, leur review et la CI`,
+    ghInstallHelp: "Installe gh, puis connecte ton compte GitHub :",
+    github: "Compte GitHub",
+    githubDetail: "Pour lier tes dépôts : issues, PR et CI",
     githubConnect: "Connecter",
     githubConnected: "Connecté",
     importFolder: "Importer un dossier existant",
     createFirst: "Créer mon premier projet",
-    tutorial: "Suivre le didacticiel (10 min)",
+    tutorial: "Suivre le didacticiel (5 min)",
     retry: "Réessayer",
     showHelp: "Comment corriger",
-    failed: "Une vérification a échoué. Tu peux continuer : tout fonctionne sauf les agents.",
   },
   onboarding: {
     step: (n: number) => `Étape ${n} sur 2`,

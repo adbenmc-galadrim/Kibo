@@ -3,6 +3,7 @@ import { fr } from "../i18n/fr";
 import { UpdateCard } from "../updates/UpdateCard";
 import { ApplicationCard } from "./ApplicationCard";
 import { CliInstallCard } from "./CliInstallCard";
+import { MachineCard } from "./MachineCard";
 import { SettingsLayout } from "./SettingsLayout";
 
 export function GeneralPage() {
@@ -17,6 +18,7 @@ export function GeneralPage() {
         <UpdateCard />
         <BackupsCard />
         <CliInstallCard />
+        <MachineCard />
       </div>
     </SettingsLayout>
   );
