@@ -22,7 +22,8 @@ S.draw["p-vue2"] = (x, y) => { const C = S.C, P = S.P, sec = C.mfg;
   // En-tête du projet
   const hd = S.row(body, { fx: true, gap: 12, align: "end" });
   const ht = S.col(hd, { gap: 4 }); S.txt(ht, "Emis", { size: 24, weight: 600, ls: -0.3 });
-  const hs = S.row(ht, { gap: 8 }); S.txt(hs, "Suivi de chantier", { size: 13, color: sec }); S.txt(hs, "·", { size: 13, color: C.faint }); S.icon(hs, "github", 13, sec); S.txt(hs, "galadrimteam/emis-suivi-chantier", { size: 12, mono: true, color: sec });
+  const hs = S.row(ht, { gap: 8 }); if (S.V3) { S.icon(hs, "building", 13, sec); S.txt(hs, "client Emis SA", { size: 13, color: sec }); S.txt(hs, "·", { size: 13, color: C.faint }); }
+  S.txt(hs, "Suivi de chantier", { size: 13, color: sec }); S.txt(hs, "·", { size: 13, color: C.faint }); S.icon(hs, "github", 13, sec); S.txt(hs, "galadrimteam/emis-suivi-chantier", { size: 12, mono: true, color: sec });
 
   // 1. Indicateurs : cinq cellules égales, chiffre dominant, libellé au-dessus, sous-ligne de hauteur fixe.
   const k = S.row(body, { name: "kpis", fx: true, h: 92, stroke: C.border, radius: 10, fill: C.card, align: "stretch" });
@@ -114,7 +115,7 @@ S.draw["p-vue2"] = (x, y) => { const C = S.C, P = S.P, sec = C.mfg;
   for (const a of P.activity.slice(0, 4)) { const r = S.row2(act, { h: 38, gap: 10 });
     const t = S.row(r, { w: 40 }); S.txt(t, a.t, { size: 12, mono: true, color: sec });
     S.icon(r, a.icon, 14, a.src === "agent" ? C.brand : a.color ? C[a.color] : sec);
-    const b = S.row(r, { fx: true }); S.txt(b, a.text, { size: 13, color: a.src === "agent" ? C.brandText : C.fg });
+    const b = S.row(r, { fx: true }); S.txt(b, S.V3 && a.text === "Étape 7 · Porte qualité" ? "Phase 7/12 · Porte qualité" : a.text, { size: 13, color: a.src === "agent" ? C.brandText : C.fg });
     const m = S.row(r, { w: 110, gap: 6, justify: "end" }); if (a.tk) { S.txt(m, a.tk, { size: 12, mono: true, color: sec }); S.fChip2(m, a.f); } else S.txt(m, "Agent de projet", { size: 12, color: C.brandText }); }
   S.vline(root, C.soft);
   S.agentPanelP2(root);
@@ -128,7 +129,8 @@ S.agentPanelP2 = (root) => { const C = S.C, sec = C.mfg;
   S.spacer(h); S.icon(h, "more", 16, sec); S.icon(h, "x", 16, sec);
   S.hline(ap, C.soft);
   const sm = S.col(ap, { fx: true, pad: [18, 18], gap: 8 });
-  S.txt(sm, "Résumé du jour", { size: 12, weight: 600, color: sec, upper: true, ls: 0.5 });
+  const smh = S.row(sm, { fx: true, gap: 6 }); S.txt(smh, "Résumé du jour", { size: 12, weight: 600, color: sec, upper: true, ls: 0.5 });
+  if (S.V3) { S.spacer(smh); S.txt(smh, "14:40", { size: 12, color: sec }); }
   S.txt(sm, "F3 est livrée : 3 fonctionnalités sur 9.", { size: 14, weight: 500, lh: 1.45, fill: true });
   S.txt(sm, "S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo.", { size: 13, lh: 1.55, color: sec, fill: true });
   S.hline(ap, C.soft);
@@ -141,6 +143,7 @@ S.agentPanelP2 = (root) => { const C = S.C, sec = C.mfg;
     const tc = S.col(r, { fx: true, gap: 3 }); S.txt(tc, it.text, { size: 13, weight: 500, fill: true }); S.txt(tc, it.meta, { size: 12, color: sec, fill: true }); }
   S.hline(lot, C.soft);
   const lf = S.row(lot, { fx: true, pad: [12, 14], gap: 8 }); S.btn(lf, "Valider (3)", "brand", { sm: true }); S.btn(lf, "Refuser", "outline", { sm: true });
+  if (S.V3) { const hid = S.row(lb, { name: "superseded", fx: true, gap: 8 }); S.icon(hid, "history", 13, sec); S.txt(hid, "6 lots remplacés masqués", { size: 12, color: sec }); S.spacer(hid); S.txt(hid, "Afficher", { size: 12, weight: 600 }); }
   const note = S.row(lb, { fx: true, gap: 8, align: "start", pad: [4, 0, 0, 0] }); S.icon(note, "refresh", 13, sec);
   S.txt(note, "Les états avancent seuls (git, PR, étapes full-delivery). L'agent propose, tu valides.", { size: 12, color: sec, lh: 1.5, fill: true });
   S.box(ap, { w: 4, h: 4, fy: true });

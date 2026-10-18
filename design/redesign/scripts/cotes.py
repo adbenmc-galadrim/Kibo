@@ -95,6 +95,18 @@ SCREENS27 = [(6, "P1 bis v3 · Vue d'ensemble", "proposition-vue-ensemble-v3"), 
     (8, "P6 · Nouveau projet", "proposition-nouveau-projet"), (9, "P7 · Kanban", "proposition-kanban"), (10, "P8 · Fiche ticket", "proposition-fiche-ticket"),
     (11, "P8b · Fiche ticket, Activité", "proposition-fiche-ticket-activite"), (12, "P9 · Questions", "proposition-questions")]
 MARK27 = "\n## Phase 27\n"
+if "--sections" in sys.argv:
+    wanted = sys.argv[sys.argv.index("--sections") + 1].split(",")
+    cur = open(W + "/cotes.md").read()
+    for i, name, png in SCREENS + SCREENS27:
+        if str(i) not in wanted: continue
+        where = "" if (i, name, png) in SCREENS27 else f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Emis » du fichier « Kibo »"
+        start = cur.index(f"\n## {name}\n") + 1
+        nxt = re.search(r"\n## ", cur[start + 3:]); end = start + 3 + nxt.start() + 1 if nxt else len(cur)
+        cur = cur[:start] + screen_md(i, name, png, where) + ("\n\n" if nxt else "\n") + cur[end:]
+    open(W + "/cotes.md", "w").write(cur)
+    print(sum(1 for _ in open(W + "/cotes.md")))
+    sys.exit(0)
 if "--phase27" in sys.argv:
     cur = open(W + "/cotes.md").read()
     cur = cur.split(MARK27)[0].rstrip("\n") + "\n"
