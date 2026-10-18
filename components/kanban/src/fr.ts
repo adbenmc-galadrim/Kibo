@@ -17,6 +17,7 @@ export const fr = {
   mode: {
     all: "Tous",
     sprint: (code: string | null) => (code === null ? "Sprint courant" : `Sprint courant · ${code}`),
+    startable: "Démarrable",
     toFix: "À reprendre",
   },
   counter: (shown: number, mode: string, mine: string | null) =>
@@ -62,7 +63,13 @@ export const fr = {
   optional: "facultative",
   demo: (feature: string) => `Démo · ${feature}`,
   ciUnavailable: (message: string) => `CI indisponible : ${message}`,
-  startable: "Démarrable",
+  reason: {
+    sprint: (code: string) => `sprint ${code}`,
+    unplanned: "sans sprint",
+    limit: "limite atteinte",
+  },
+  branch: (name: string) => `Branche ${name}`,
+  changesShort: "changements",
   mention: {
     history: "Voir l'historique",
     reply: "Répondre",

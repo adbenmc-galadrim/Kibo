@@ -1,10 +1,10 @@
-import { type CiRun, isGroup, LabelName, prCiTone, type Sprint, type TicketView } from "@kibo/schema";
+import { type CiRun, isGroup, LabelName, prCiTone, type TicketView } from "@kibo/schema";
 import { inCurrentSprint } from "./sprint-filter";
 import { isLivePr, ticketCiRuns, ticketPr } from "./ticket-pr";
 
 export type KanbanFilter = "mine-and-agents" | "all";
-export type KanbanMode = "all" | "sprint" | "toFix";
-export const KANBAN_MODES: readonly KanbanMode[] = ["all", "sprint", "toFix"];
+export type KanbanFilterKey = "sprint" | "startable" | "toFix";
+export const KANBAN_FILTERS: readonly KanbanFilterKey[] = ["sprint", "startable", "toFix"];
 
 export const LABEL_ALL = "*";
 export const LABEL_FILTER_KEY = "labelFilter";
@@ -34,10 +34,16 @@ export function toFix(ticket: Pick<TicketView, "externalRefs">, ciRuns: readonly
   return pr.review === "changes_requested" || prCiTone(pr, ciRuns) === "error";
 }
 
-export type ModeFacts = { sprints: readonly Sprint[]; today: string; ciRuns: readonly CiRun[] };
+export type FilterFacts = { currentSprintId: string | null; ciRuns: readonly CiRun[] };
 
-export function inMode(ticket: TicketView, mode: KanbanMode, facts: ModeFacts): boolean {
-  if (mode === "sprint") return inCurrentSprint(ticket, facts.sprints, facts.today);
-  if (mode === "toFix") return toFix(ticket, ticketCiRuns(ticket, facts.ciRuns));
-  return true;
+function matches(ticket: TicketView, filter: KanbanFilterKey, facts: FilterFacts): boolean {
+  if (filter === "sprint") return inCurrentSprint(ticket, facts.currentSprintId);
+  if (filter === "startable") return ticket.startable;
+  return toFix(ticket, ticketCiRuns(ticket, facts.ciRuns));
 }
+
+export const inFilters = (
+  ticket: TicketView,
+  filters: readonly KanbanFilterKey[],
+  facts: FilterFacts,
+): boolean => filters.every((f) => matches(ticket, f, facts));

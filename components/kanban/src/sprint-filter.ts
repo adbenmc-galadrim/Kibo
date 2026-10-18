@@ -1,13 +1,11 @@
-import { currentSprint, type Sprint, type TicketView } from "@kibo/schema";
+import { type SprintView, sortSprints, type TicketView } from "@kibo/schema";
 
-export function inCurrentSprint(
-  ticket: Pick<TicketView, "effectiveSprintId">,
-  sprints: readonly Sprint[],
-  today: string,
-): boolean {
-  const current = currentSprint(sprints, today);
-  return current !== null && ticket.effectiveSprintId === current.id;
+export function currentSprintOf(sprints: readonly SprintView[]): SprintView | null {
+  const sorted = sortSprints(sprints);
+  return sorted.filter((s) => s.state === "current").at(-1) ?? sorted.find((s) => s.lingering) ?? null;
 }
 
-export const localToday = (now = new Date()): string =>
-  `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+export const inCurrentSprint = (
+  ticket: Pick<TicketView, "effectiveSprintId">,
+  currentSprintId: string | null,
+): boolean => currentSprintId !== null && ticket.effectiveSprintId === currentSprintId;

@@ -1,8 +1,15 @@
 import { expect, test } from "bun:test";
-import type { CiRun, GithubPrRef, Sprint, TicketView } from "@kibo/schema";
+import type { CiRun, GithubPrRef, TicketView } from "@kibo/schema";
 import { EMPTY_PROGRESS } from "@kibo/schema";
 import fc from "fast-check";
-import { filterTickets, inMode, labelFilterOf, projectLabels, toFix } from "./filter";
+import {
+  filterTickets,
+  inFilters,
+  type KanbanFilterKey,
+  labelFilterOf,
+  projectLabels,
+  toFix,
+} from "./filter";
 import { ticketPr } from "./ticket-pr";
 
 const t = (
@@ -137,12 +144,24 @@ test("a ticket is to fix when its live PR has changes requested or a broken CI",
   expect(toFix(t("EMIS-45", null), [ci(20, "failure")])).toBe(false);
 });
 
-test("the board modes: every ticket, the current sprint, or the tickets to fix", () => {
-  const sprints: Sprint[] = [{ id: "S42", code: "S42", name: "S42", start: "2026-10-12", end: "2026-10-16" }];
-  const facts = { sprints, today: "2026-10-17", ciRuns: [] };
+test("the board filters add up: none keeps every ticket, each one narrows the others", () => {
+  const facts = { currentSprintId: "S42", ciRuns: [] };
   const inSprint = { ...t("EMIS-1", null), effectiveSprintId: "S42" };
-  const broken = withRefs("EMIS-45", [pr(20, { checks: "error" })]);
-  expect([inSprint, broken].filter((x) => inMode(x, "all", facts))).toHaveLength(2);
-  expect([inSprint, broken].filter((x) => inMode(x, "sprint", facts))).toEqual([inSprint]);
-  expect([inSprint, broken].filter((x) => inMode(x, "toFix", facts))).toEqual([broken]);
+  const ready = { ...inSprint, key: "EMIS-2", startable: true };
+  const broken = { ...withRefs("EMIS-45", [pr(20, { checks: "error" })]), effectiveSprintId: "S42" };
+  const later = { ...t("EMIS-9", null), startable: true, effectiveSprintId: "S43" };
+  const all = [inSprint, ready, broken, later];
+  const keys = (filters: readonly KanbanFilterKey[]) =>
+    all.filter((x) => inFilters(x, filters, facts)).map((x) => x.key);
+  expect(keys([])).toEqual(["EMIS-1", "EMIS-2", "EMIS-45", "EMIS-9"]);
+  expect(keys(["sprint"])).toEqual(["EMIS-1", "EMIS-2", "EMIS-45"]);
+  expect(keys(["startable"])).toEqual(["EMIS-2", "EMIS-9"]);
+  expect(keys(["sprint", "startable"])).toEqual(["EMIS-2"]);
+  expect(keys(["sprint", "toFix"])).toEqual(["EMIS-45"]);
+  expect(keys(["startable", "toFix"])).toEqual([]);
+});
+
+test("without a current sprint, the sprint filter keeps nothing", () => {
+  const inSprint = { ...t("EMIS-1", null), effectiveSprintId: "S42" };
+  expect(inFilters(inSprint, ["sprint"], { currentSprintId: null, ciRuns: [] })).toBe(false);
 });

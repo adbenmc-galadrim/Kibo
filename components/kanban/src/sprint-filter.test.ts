@@ -1,28 +1,42 @@
 import { expect, test } from "bun:test";
-import type { Sprint } from "@kibo/schema";
-import { inCurrentSprint } from "./sprint-filter";
+import type { SprintView } from "@kibo/schema";
+import { currentSprintOf } from "./sprint-filter";
 
-const sprint = (id: string, start: string, end: string): Sprint => ({ id, code: id, name: id, start, end });
-const SPRINTS = [
-  sprint("S41", "2026-10-05", "2026-10-09"),
-  sprint("S42", "2026-10-12", "2026-10-16"),
-  sprint("S43", "2026-10-19", "2026-10-23"),
-];
-const inS = (effectiveSprintId: string | null) => ({ effectiveSprintId });
-
-test("a ticket is in the current sprint through its effective sprint", () => {
-  expect(inCurrentSprint(inS("S42"), SPRINTS, "2026-10-16")).toBe(true);
-  expect(inCurrentSprint(inS("S43"), SPRINTS, "2026-10-16")).toBe(false);
-  expect(inCurrentSprint(inS(null), SPRINTS, "2026-10-16")).toBe(false);
+const view = (code: string, start: string, state: SprintView["state"], lingering = false): SprintView => ({
+  id: code,
+  code,
+  name: code,
+  start,
+  end: start,
+  state,
+  features: [],
+  delivered: 0,
+  total: 0,
+  lingering,
 });
 
-test("between two sprints, the finished one stays current", () => {
-  expect(inCurrentSprint(inS("S42"), SPRINTS, "2026-10-17")).toBe(true);
-  expect(inCurrentSprint(inS("S43"), SPRINTS, "2026-10-17")).toBe(false);
-  expect(inCurrentSprint(inS("S43"), SPRINTS, "2026-10-19")).toBe(true);
+test("the current sprint is the running one, as computed by the daemon", () => {
+  const sprints = [
+    view("S41", "2026-10-05", "done"),
+    view("S42", "2026-10-12", "current"),
+    view("S43", "2026-10-19", "planned"),
+  ];
+  expect(currentSprintOf(sprints)?.code).toBe("S42");
 });
 
-test("before any sprint, nothing is in the current sprint", () => {
-  expect(inCurrentSprint(inS("S41"), SPRINTS, "2026-10-01")).toBe(false);
-  expect(inCurrentSprint(inS(null), [], "2026-10-16")).toBe(false);
+test("between two sprints, the finished one that lingers stays current", () => {
+  const sprints = [
+    view("S41", "2026-10-05", "done"),
+    view("S42", "2026-10-12", "done", true),
+    view("S43", "2026-10-19", "planned"),
+  ];
+  expect(currentSprintOf(sprints)?.code).toBe("S42");
+});
+
+test("two running sprints: the one started last; none running nor lingering: none", () => {
+  expect(
+    currentSprintOf([view("A", "2026-10-12", "current"), view("B", "2026-10-14", "current")])?.code,
+  ).toBe("B");
+  expect(currentSprintOf([view("S43", "2026-10-19", "planned")])).toBeNull();
+  expect(currentSprintOf([])).toBeNull();
 });

@@ -32,6 +32,7 @@ import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { useState } from "react";
 import { announce } from "./announcements";
 import { BlockDialog } from "./BlockDialog";
+import { boardColumn } from "./board-column";
 import { type ColumnOrder, orderColumn } from "./column-order";
 import { DragPreview } from "./DragPreview";
 import { commitDrop, type Drop, dropInColumn, nextOrder } from "./drop";
@@ -116,11 +117,14 @@ export function Kanban() {
   const draggedTicket = tickets.find((t) => t.id === dragged);
   const ciProblem = ciError && ciError.code !== "NOT_CONNECTED" ? ciError.detail : null;
   const ordered = [...statuses].sort((a, b) => a.order - b.order);
+  const statusIds = new Set(ordered.map((s) => s.id));
+  const columnOf = (t: TicketView): StatusId => boardColumn(t, isBlocked(t, questionList), statusIds);
+  const placed = tickets.map((t) => ({ id: t.id, statusId: t.statusId, column: columnOf(t) }));
   const columns = new Map(
     ordered.map((s) => [
       s.id,
       orderColumn(
-        shown.filter((t) => t.statusId === s.id),
+        shown.filter((t) => columnOf(t) === s.id),
         columnOrder.order[s.id],
       ),
     ]),
@@ -143,8 +147,8 @@ export function Kanban() {
     }
   };
   const place = async (t: TicketView, drop: Drop, reason?: string): Promise<boolean> => {
-    const done = await columnOrder.write(nextOrder(columnOrder.order, tickets, drop), () =>
-      commitDrop(sdk, tickets, drop, reason),
+    const done = await columnOrder.write(nextOrder(columnOrder.order, placed, drop), () =>
+      commitDrop(sdk, placed, drop, reason),
     );
     setError(done ? null : fr.moveFailed(t.keyLabel));
     return done;
@@ -166,7 +170,7 @@ export function Kanban() {
     const drop = dropInColumn(e, visible);
     const t = tickets.find((x) => x.id === drop?.ticketId);
     if (!drop || !t) return;
-    if (drop.statusId === "blocked" && t.statusId !== "blocked") setBlocking({ ticket: t, drop });
+    if (drop.statusId === "blocked" && columnOf(t) !== "blocked") setBlocking({ ticket: t, drop });
     else void place(t, drop);
   };
 
@@ -174,15 +178,17 @@ export function Kanban() {
     <div className="flex h-full flex-col">
       <KanbanToolbar
         mine={scope === "all" ? null : agentTraces ? fr.filter.mineAndAgents : fr.filter.mine}
-        mode={board.mode}
-        onMode={board.setMode}
+        filters={board.filters}
+        onFilters={board.choose}
+        onClear={board.clear}
+        total={board.total}
         counts={board.counts}
         sprintCode={board.sprintCode}
         label={labelFilter.label}
         labels={projectLabels(scoped)}
         onLabel={labelFilter.choose}
         onShowAll={() => {
-          board.setMode("all");
+          board.clear();
           if (labelFilter.label !== null) labelFilter.choose(null);
         }}
         shown={shown.length}
