@@ -103,7 +103,7 @@ export function TrackingView({
             <h2 id={id} className={HEADING}>
               {today ? t.summary : t.earlierSummary}
             </h2>
-            <span className="ml-auto flex gap-[6px] text-[12px] text-(--tracking-mfg)">
+            <span className="ml-auto flex gap-[6px] text-[12px] leading-[15px] text-(--tracking-mfg)">
               {summaryAt !== null && (
                 <time dateTime={new Date(summaryAt).toISOString()}>{summaryTime(summaryAt, today)}</time>
               )}
