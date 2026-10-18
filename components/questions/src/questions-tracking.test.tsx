@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { type ProjectCommand, type Question, Sprint, Ticket } from "@kibo/schema";
-import { SdkProvider } from "@kibo/sdk";
+import { type KiboSdk, SdkProvider } from "@kibo/sdk";
 import { createMockSdk, type MockSdkOptions } from "@kibo/sdk/mock";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -37,6 +37,20 @@ const mount = (opts: MockSdkOptions = {}) => {
   const m = createMockSdk(manifest, { seed, surface: "view", client: "Emis SA", ...opts });
   render(
     <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  return m;
+};
+
+const mountRefusing = (method: ProjectCommand["method"]) => {
+  const m = createMockSdk(manifest, { seed, surface: "view", client: "Emis SA" });
+  const sdk: KiboSdk = {
+    ...m.sdk,
+    run: (cmd) => (cmd.method === method ? Promise.reject(new Error("refused")) : m.sdk.run(cmd)),
+  };
+  render(
+    <SdkProvider sdk={sdk}>
       <Component />
     </SdkProvider>,
   );
@@ -109,4 +123,24 @@ test("answering the blocking question toasts « F1 débloquée »", async () => 
   await user.type(within(card).getByRole("textbox", { name: "Autre réponse…" }), "Oui");
   await user.click(within(card).getByRole("button", { name: "Répondre" }));
   await waitFor(() => expect(m.toasts).toEqual(["F1 débloquée"]));
+});
+
+test("a refused marking says so and offers no undo", async () => {
+  const m = mountRefusing("markQuestionsExported");
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Exporter pour le client (2)" }));
+  expect(await screen.findByText("Impossible de marquer les questions envoyées.")).toBeTruthy();
+  expect(screen.queryByRole("status", { name: "2 questions marquées envoyées" })).toBeNull();
+  expect(named(m, Q14)?.history).toEqual([]);
+});
+
+test("a refused undo keeps the toast and its « Annuler », with its own message", async () => {
+  const m = mountRefusing("unmarkQuestionsExported");
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "Exporter pour le client (2)" }));
+  const toast = await screen.findByRole("status", { name: "2 questions marquées envoyées" });
+  await user.click(within(toast).getByRole("button", { name: "Annuler" }));
+  expect(await within(toast).findByText("Impossible d'annuler l'envoi.")).toBeTruthy();
+  expect(within(toast).getByRole("button", { name: "Annuler" })).toBeTruthy();
+  expect(named(m, Q14)?.history.map((e) => e.kind)).toEqual(["exported"]);
 });

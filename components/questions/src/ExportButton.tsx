@@ -22,6 +22,7 @@ export function ExportButton({ label, recipient, summary, entries }: Props) {
   const [text, setText] = useState<string | null>(null);
   const [marked, setMarked] = useState<string[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [undoFailed, setUndoFailed] = useState(false);
   const closeToast = useCallback(() => setMarked(null), []);
   const run = async (command: () => Promise<unknown>) => {
     setFailed(false);
@@ -44,9 +45,14 @@ export function ExportButton({ label, recipient, summary, entries }: Props) {
       setMarked(questionIds);
   };
   const undo = async () => {
-    const questionIds = marked ?? [];
-    setMarked(null);
-    await run(() => sdk.run({ method: "unmarkQuestionsExported", questionIds }));
+    setUndoFailed(false);
+    try {
+      await sdk.run({ method: "unmarkQuestionsExported", questionIds: marked ?? [] });
+      setMarked(null);
+    } catch (e) {
+      console.error(e);
+      setUndoFailed(true);
+    }
   };
   return (
     <Popover open={text !== null} onOpenChange={(open) => !open && setText(null)}>
@@ -85,7 +91,12 @@ export function ExportButton({ label, recipient, summary, entries }: Props) {
         </p>
       )}
       {marked !== null && (
-        <ExportToast count={marked.length} onUndo={() => void undo()} onClose={closeToast} />
+        <ExportToast
+          count={marked.length}
+          undoFailed={undoFailed}
+          onUndo={() => void undo()}
+          onClose={closeToast}
+        />
       )}
     </Popover>
   );

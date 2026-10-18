@@ -146,6 +146,7 @@ export const fr = {
     copy: "Copier",
     marked: (n: number) => `${n} ${plural(n, "question marquée envoyée", "questions marquées envoyées")}`,
     undo: "Annuler",
+    undoFailed: "Impossible d'annuler l'envoi.",
     failed: "Impossible de marquer les questions envoyées.",
     sentOn: (date: string) => `envoyée le ${date}`,
   },
