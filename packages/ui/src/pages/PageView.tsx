@@ -10,6 +10,7 @@ import { PresenceAvatars, SourceHeader } from "../shell/lazy-screens";
 import { PageActions } from "../shell/page-actions";
 import { canEdit } from "../state/access";
 import { DashboardGrid } from "./DashboardGrid";
+import { PageBoundary } from "./PageBoundary";
 import { PageContext, usePageState } from "./PageContext";
 import { useWideGrid } from "./use-wide-grid";
 import { ViewInstance, WidgetCard } from "./WidgetCard";
@@ -80,7 +81,9 @@ export function PageView({ project, page, viewer, question = null }: Props) {
           <>
             {readSource(first.config) && <SourceHeader project={project} instance={first} />}
             <div data-view-body className="flex min-h-0 flex-1 flex-col">
-              <ViewInstance projectId={projectId} instance={first} viewer={viewer} />
+              <PageBoundary resetKey={first.id}>
+                <ViewInstance projectId={projectId} instance={first} viewer={viewer} />
+              </PageBoundary>
             </div>
           </>
         ) : editing && layoutMode ? (
@@ -99,14 +102,16 @@ export function PageView({ project, page, viewer, question = null }: Props) {
             narrow={!wide}
             focused={state.focusedId !== null}
             renderWidget={(i, layout) => (
-              <WidgetCard
-                project={project}
-                page={page}
-                instance={i}
-                layout={layout}
-                viewer={viewer}
-                editable={editable}
-              />
+              <PageBoundary resetKey={i.id}>
+                <WidgetCard
+                  project={project}
+                  page={page}
+                  instance={i}
+                  layout={layout}
+                  viewer={viewer}
+                  editable={editable}
+                />
+              </PageBoundary>
             )}
             trailing={
               <div className="flex flex-wrap items-center gap-3">

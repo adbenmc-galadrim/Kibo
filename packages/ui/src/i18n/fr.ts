@@ -49,6 +49,7 @@ export const fr = {
     synced: "Synchronisé",
     syncOffline: "Hors ligne",
     syncError: "Erreur de sync",
+    syncReconnecting: "Hors connexion · reconnexion…",
     openNewTab: "Ouvrir dans un nouvel onglet",
     rename: "Renommer…",
     moveUp: "Monter",

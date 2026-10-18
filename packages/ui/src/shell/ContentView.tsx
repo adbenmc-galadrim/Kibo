@@ -1,7 +1,17 @@
-import type { Domain, FileRef, ProjectSnapshot, ProjectSummary, TabTarget } from "@kibo/schema";
+import {
+  type Domain,
+  type FileRef,
+  isInbox,
+  type ProjectSnapshot,
+  type ProjectSummary,
+  type TabTarget,
+  targetProjectId,
+} from "@kibo/schema";
 import { lazyPanel } from "@kibo/sdk";
+import type { ReactNode } from "react";
 import { useChangesSlots } from "../code/agent-slots";
 import { fr } from "../i18n/fr";
+import { PageBoundary } from "../pages/PageBoundary";
 import { PageView } from "../pages/PageView";
 import { ProjectHome } from "../pages/ProjectHome";
 import { targetToHash } from "../tabs/target-hash";
@@ -30,7 +40,7 @@ type Props = {
   onTutorial(): void;
   onNewPage(): void;
   onSuggestPages(projectId: string): void;
-  onOpen(target: TabTarget, newTab?: boolean): void;
+  onOpen(target: TabTarget | null, newTab?: boolean): void;
   onOpenFile(ref: FileRef): void;
   onAssign(ticketId: string): void;
   onOpenTicket(projectId: string, ticketId: string): void;
@@ -38,10 +48,27 @@ type Props = {
 
 const SprintTab = lazyPanel(() => import("./sprint/SprintTab").then((m) => m.SprintTab), fr.lazy);
 
+const NotFound = lazyPanel(() => import("./NotFound").then((m) => m.NotFound), fr.lazy, {
+  fallback: "sr-only",
+});
+
 const missing = (label: string) => <p className="p-8 text-sm text-muted-foreground">{label}</p>;
 
+const unknownProject = (p: Props, target: TabTarget): boolean => {
+  const id = targetProjectId(target);
+  return id !== null && !isInbox(id) && !p.projects.some((project) => project.id === id);
+};
+
+const knownTicket = (project: ProjectSnapshot, ticketId: string): boolean =>
+  project.tickets.some((t) => t.id === ticketId || t.key === ticketId);
+
 export function ContentView(p: Props) {
+  return <PageBoundary resetKey={targetToHash(p.target)}>{content(p)}</PageBoundary>;
+}
+
+function content(p: Props): ReactNode {
   const t = p.target;
+  const home = () => p.onOpen(null);
   if (!t && p.projects.length === 0)
     return (
       <Welcome
@@ -63,7 +90,7 @@ export function ContentView(p: Props) {
     );
   if (t.kind === "run" || t.kind === "skill")
     return (
-      <ExecutionGate fallback={<HiddenScreenNotice onOpen={(target) => p.onOpen(target)} />}>
+      <ExecutionGate fallback={<HiddenScreenNotice onHome={home} />}>
         {t.kind === "run" ? (
           <RunPage key={t.runId} runId={t.runId} />
         ) : (
@@ -71,7 +98,7 @@ export function ContentView(p: Props) {
         )}
       </ExecutionGate>
     );
-  if (!p.project) return null;
+  if (!p.project) return unknownProject(p, t) ? <NotFound what="project" onHome={home} /> : null;
   switch (t.kind) {
     case "project":
       if (p.project.pages.length > 0) return null;
@@ -132,6 +159,7 @@ export function ContentView(p: Props) {
         />
       );
     case "ticket":
+      if (!knownTicket(p.project, t.ticketId)) return <NotFound what="ticket" onHome={home} />;
       return (
         <TicketTab
           project={p.project}

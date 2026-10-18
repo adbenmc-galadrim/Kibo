@@ -105,3 +105,46 @@ test("a run target shows the run's own page, even without an open project", asyn
   );
   expect(await screen.findByText("Run introuvable")).toBeTruthy();
 });
+
+const contentAt = (target: Parameters<typeof ContentView>[0]["target"], snapshot: ProjectSnapshot | null) => {
+  const opened: unknown[] = [];
+  render(
+    <ContentView
+      target={target}
+      viewer="me"
+      projects={[summary]}
+      inboxCount={0}
+      project={snapshot}
+      domains={[]}
+      startEditing={false}
+      onNewProject={noop}
+      onImportProject={noop}
+      onTutorial={noop}
+      onNewPage={noop}
+      onSuggestPages={noop}
+      onOpen={(t) => opened.push(t)}
+      onOpenFile={noop}
+      onAssign={noop}
+      onOpenTicket={noop}
+    />,
+  );
+  return opened;
+};
+
+test("an unknown project shows « Introuvable » and leads back home", async () => {
+  const opened = contentAt({ kind: "project", projectId: "inconnu" }, null);
+  expect(await screen.findByRole("heading", { name: "Introuvable" })).toBeTruthy();
+  screen.getByRole("button", { name: "Retour à l'Accueil" }).click();
+  expect(opened).toEqual([null]);
+});
+
+test("a known project still loading shows nothing yet", async () => {
+  contentAt({ kind: "project", projectId: "p1" }, null);
+  await new Promise((r) => setTimeout(r, 50));
+  expect(screen.queryByRole("heading", { name: "Introuvable" })).toBeNull();
+});
+
+test("an unknown ticket of a known project shows « Introuvable »", async () => {
+  contentAt({ kind: "ticket", projectId: "p1", ticketId: "KIB-999" }, project);
+  expect(await screen.findByText("Ce ticket n'existe pas ou a été supprimé.")).toBeTruthy();
+});
