@@ -15,6 +15,7 @@ import {
   prCiTone,
   type TicketView,
 } from "@kibo/schema";
+import { phaseLabel } from "@kibo/sdk";
 import { frFeature } from "../i18n/fr-group";
 import { frTicketTracking as t } from "../i18n/fr-ticket-tracking";
 
@@ -159,11 +160,10 @@ export function durationLabel(ms: number): string {
   return hours < 24 ? t.hours(hours) : t.days(Math.floor(hours / 24));
 }
 
-export const phaseLabel = (step: number): string =>
-  t.phase(`${step}/${DELIVERY_STEP_MAX + 1} · ${DELIVERY_STEP_LABELS[step] ?? ""}`);
+export const deliveryPhase = (step: number): string => phaseLabel(step, DELIVERY_STEP_LABELS[step] ?? "");
 
 export function stepLine(delivery: NonNullable<TicketView["delivery"]>): string {
-  const label = phaseLabel(delivery.step);
+  const label = deliveryPhase(delivery.step);
   return delivery.kind === "update" ? t.retouch(label) : label;
 }
 

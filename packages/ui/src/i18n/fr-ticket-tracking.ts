@@ -30,7 +30,6 @@ export const frTicketTracking = {
   ciRow: "CI",
   session: "Session",
   step: "Livraison",
-  phase: (label: string) => `Phase ${label}`,
   issues: "Issues",
   prSince: (state: string, when: string | null) => (when ? `${state} ${when}` : state),
   job: (name: string | null, when: string | null) =>

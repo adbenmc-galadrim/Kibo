@@ -7,7 +7,7 @@ import {
 } from "@kibo/schema";
 import { frFeature as t } from "../../i18n/fr-group";
 import { eventLine } from "../../ticket/activity/ticket-timeline";
-import { phaseLabel } from "../../ticket/tracking-model";
+import { deliveryPhase } from "../../ticket/tracking-model";
 import type { StepModel } from "./feature-model";
 import { ageLabel, shortTime } from "./time-format";
 
@@ -31,7 +31,7 @@ const itemOf = (s: StepModel, delivery: NonNullable<StepModel["delivery"]>, now:
   if (s.pr?.state === "merged") return { ...base, kind: "pr_merged", text: t.prMerged(s.pr.number, s.key) };
   if (s.pr && s.pr.state !== "closed")
     return { ...base, kind: "pr_opened", text: t.prOpened(s.pr.number, s.key) };
-  return { ...base, kind: "step", text: t.stepDone(phaseLabel(delivery.step), s.key) };
+  return { ...base, kind: "step", text: t.stepDone(deliveryPhase(delivery.step), s.key) };
 };
 
 export function featureActivity(steps: readonly StepModel[], now: number): ActivityItem[] {

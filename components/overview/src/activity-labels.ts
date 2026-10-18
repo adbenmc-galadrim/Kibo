@@ -1,9 +1,5 @@
-import {
-  DELIVERY_STEP_LABELS,
-  DELIVERY_STEP_MAX,
-  type ProjectEvent,
-  type ProjectEventKind,
-} from "@kibo/schema";
+import { DELIVERY_STEP_LABELS, type ProjectEvent, type ProjectEventKind } from "@kibo/schema";
+import { phaseLabel } from "@kibo/sdk";
 
 export type ActivityContext = {
   subject: string;
@@ -55,7 +51,7 @@ function sprintSet(data: Data, ctx: ActivityContext): string {
 function stepSet(data: Data, _ctx: ActivityContext, event: ProjectEvent): string {
   const step = num(data, "step");
   if (step === null) return event.source === "update-delivery" ? "Retouche" : "Phase de livraison";
-  const label = `Phase ${step}/${DELIVERY_STEP_MAX + 1} · ${DELIVERY_STEP_LABELS[step] ?? ""}`;
+  const label = phaseLabel(step, DELIVERY_STEP_LABELS[step] ?? "");
   return event.source === "update-delivery" ? `Retouche · ${label}` : label;
 }
 
