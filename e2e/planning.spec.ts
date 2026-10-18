@@ -4,7 +4,6 @@ import { EMIS_FEATURES, EMIS_LOOSE_TICKETS } from "./fixtures/emis-maquettes";
 import { PIXEL_WIDTH } from "./pixel-settings";
 import {
   attachRepo,
-  clipboardText,
   createBranch,
   dragOnto,
   type Emis,
@@ -172,12 +171,10 @@ test("starting a step of F7 opens a third feature and the limit warns", async ({
   await expect(page.getByText("Ouvertes : 3 / 2")).toBeVisible();
 });
 
-test("the sheet of F5 copies the command of its next step", async ({ page, context }) => {
-  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+test("the sheet of F5 names why its next step cannot start, with nothing to copy", async ({ page }) => {
   await page.goto(emis.ticketUrl("EMIS-30"));
-  await page.getByRole("button", { name: "Livrer la prochaine étape" }).click();
-  await expect(page.getByText("Commande copiée")).toBeAttached();
-  expect(await clipboardText(page)).toBe("/full-delivery EMIS-34");
+  await expect(page.getByText("Prochaine étape EMIS-34 : attend EMIS-33.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Copier la commande" })).toHaveCount(0);
 });
 
 test("the sheet of S42 opens from its Tickets tab and its Planning name; the pencil edits it", async ({

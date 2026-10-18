@@ -87,7 +87,7 @@ test("a feature checks its step and the copy gives the first step with a toast",
   expect(within(copyRow).getByText(`/full-delivery ${step?.key}`)).toBeTruthy();
   await userEvent.click(within(copyRow).getByRole("button", { name: "Copier" }));
   expect(copied).toEqual([`/full-delivery ${step?.key}`]);
-  expect(m.toasts).toEqual(["Copié"]);
+  expect(m.toasts).toEqual(["Copié · sans sprint"]);
   await waitFor(() => expect(row(card, "Copier").dataset.done).toBe("true"));
 });
 

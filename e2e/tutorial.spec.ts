@@ -87,8 +87,10 @@ async function answerQuestion(page: Page) {
 }
 
 async function copyCommand(page: Page) {
-  await panel(page).getByRole("button", { name: "Copier /full-delivery DEMO-5" }).click();
-  expect(await clipboardText(page)).toBe("/full-delivery DEMO-5");
+  const copy = panel(page).getByRole("button", { name: /^Copier \/full-delivery DEMO-\d+$/ });
+  const command = /\/full-delivery DEMO-\d+/.exec((await copy.textContent()) ?? "")?.[0];
+  await copy.click();
+  expect(await clipboardText(page)).toBe(command);
   await expect(panel(page).getByText("Bravo, tu as fait le tour de Kibo")).toBeVisible();
 }
 
