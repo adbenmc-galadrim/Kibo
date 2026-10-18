@@ -63,6 +63,21 @@ bun run --cwd scripts/import-emis rebase -- --apply --plan <export>/rebase-plan.
 
 **`--dry-run`** n'écrit aucune donnée dans le démon : il s'apparie (`POST /api/pair`, une session), lit `listProjects` et `getProject`, puis révoque sa session (`revokeSession`) ; avec `--from-list`, il ne contacte pas le démon. Il écrit `<export>/project-old.json` (le `getProject` de l'ancien projet), `<export>/rebase-report.md` (points « à placer », placement de TODO, ancienne clé ⇒ nouvelle clé · fonctionnalité · sprint, questions et cibles, liens tombés, vitesse et sa source, plan par sprint avec dates, comptes attendus) et `<export>/rebase-plan.json` (plan exact, empreinte sha256 du contenu de l'ancien projet). Le plan se fait étape par étape : les étapes restantes (ni `done` ni facultatives) sont triées par leurs liens `blocks`, puis dans l'ordre du plan, à raison de la vitesse par sprint ; une fonctionnalité se termine dans le sprint de sa dernière étape. Une étape prise dans un cycle est placée dans l'ordre du plan et listée « à placer ».
 
-**`--apply`** (tâche T19) rejoue le plan relu, dans cet ordre : sauvegarde (`createBackup`) et export complet ⇒ vérification de l'empreinte du plan ⇒ répétition sur un démon temporaire ⇒ `deleteProject` de l'ancien ⇒ `createProject { setup }` ⇒ semis des commandes du plan ⇒ vérification contre `project-old.json`, puis `<export>/rebase-result.md`. Il refuse sans plan relu, avec une empreinte qui ne correspond plus, ou avec un point « à placer ». Tant que T19 n'est pas intégrée, `--apply` sort en code 2 sans rien écrire.
+**`--apply --plan <export>/rebase-plan.json --yes`** rejoue le plan relu. Rien n'est écrit tant que ces contrôles ne passent pas :
+
+1. le plan est relu et validé (`version: 1`, source `getProject`, aucun point « à placer ») ; sans `--plan` ou sans `--yes`, refus ;
+2. l'empreinte du projet `EMIS` courant (`getProject`) doit être celle du plan : un plan rejoué après le rebase, ou un projet modifié depuis le dry-run, est refusé (`fingerprint mismatch`) ;
+3. le dry-run est recalculé depuis le démon (mêmes fusions que le plan) et ses commandes comparées à celles du fichier : un plan retouché à la main est refusé ;
+4. **répétition** : le plan est semé sur un démon temporaire (`KIBO_HOME` dans un dossier temporaire, supprimé ensuite), puis vérifié contre l'ancien projet ; un seul écart arrête tout.
+
+Ensuite : sauvegarde (`createBackup`) et export complet dans `<export>/project-old.json` ⇒ `deleteProject` de l'ancien ⇒ `createProject { setup }` (cinq pages, sprints S1 à Sn, client) ⇒ commandes du plan, la clé de chaque ticket créé comparée à la clé prédite ⇒ vérification (`verify.ts` : comptes, statuts, PR, branches, liens, questions, descriptions, étiquettes, clés `EMIS-1..n` contiguës, `F1..F15`, aucun `assignee`) ⇒ `<export>/rebase-result.md` (sauvegarde, comptes, clés, écarts, restauration). Un écart de vérification sort en code 1 avec la liste. Si une clé reçue diffère de la clé prédite, le script s'arrête aussitôt : le projet neuf incomplet est conservé et `rebase-result.md` dit « Arrêt à la vérification des clés ».
+
+Procédure pour le chef d'équipe :
+
+1. quitter Kibo et faire la copie à froid (`cp -Rp ~/.kibo ~/.kibo-avant-rebase-<date>`), relancer Kibo ;
+2. `rebase -- --dry-run`, relire `rebase-report.md` (placement de TODO, questions, liens tombés, plan par sprint) ;
+3. `rebase -- --apply --plan ~/Documents/emis/kibo-export-2026-10-18/rebase-plan.json --yes` ;
+4. relire `rebase-result.md` : « Conforme » attendu ;
+5. hors du dépôt, mettre à jour le registre de `full-delivery` pour Emis : `idPattern` `^EMIS-[0-9]+$`.
 
 **Restauration à froid** (le démon n'a pas de RPC de restauration) : quitter Kibo, recopier dans `~/.kibo/` le contenu du dossier `~/.kibo/backups/<id>/` pris avant `--apply` (`kibo.db`, `runs.db`, `components/`, `notes/`), relancer Kibo. L'historique de l'agent de projet et le journal `project_events` de l'ancien projet ne sont pas transférés : ils restent dans la sauvegarde.

@@ -5,10 +5,18 @@ import { parseArgs } from "node:util";
 import { KiboError, sprintPlan } from "@kibo/schema";
 import { connectLocalDaemon, readDaemonAccess } from "./src/daemon-client";
 import { readMerges } from "./src/gh";
+import { applyPlan, assertApplicable, readCurrent } from "./src/rebase/apply-new";
 import { mapProject } from "./src/rebase/mapping";
 import { type OldProject, readOldProject, readTicketsList } from "./src/rebase/old-project";
-import { buildRebasePlan, type PlanSource, type RebasePlan, serializePlan } from "./src/rebase/plan-file";
+import {
+  buildRebasePlan,
+  type PlanSource,
+  parsePlan,
+  type RebasePlan,
+  serializePlan,
+} from "./src/rebase/plan-file";
 import { QUESTION_PLACEMENT } from "./src/rebase/question-placement";
+import { rehearse } from "./src/rebase/rehearse";
 import { pointsToPlace, renderReport } from "./src/rebase/report";
 import { TODO_PLACEMENT } from "./src/rebase/todo-placement";
 import { type Merge, repoOf } from "./src/rebase/velocity";
@@ -94,10 +102,51 @@ async function dryRun(): Promise<void> {
   for (const line of summary(plan, planFile)) print(line);
 }
 
+const commandsOf = (plan: RebasePlan): string => JSON.stringify(parsePlan(serializePlan(plan)).commands);
+
+function readPlan(): RebasePlan {
+  if (values.plan === undefined)
+    throw new KiboError("INVALID_INPUT", "--apply needs --plan <export>/rebase-plan.json from --dry-run");
+  if (!values.yes) throw new KiboError("FORBIDDEN", "--apply rewrites the project: confirm with --yes");
+  const plan = parsePlan(readFileSync(resolve(values.plan), "utf8"));
+  assertApplicable(plan);
+  return plan;
+}
+
+async function apply(): Promise<void> {
+  const plan = readPlan();
+  const client = await connectLocalDaemon(readDaemonAccess(values.home));
+  try {
+    const { snapshot } = await readCurrent(client, plan);
+    const old = readOldProject(snapshot);
+    const again = buildRebasePlan({
+      old,
+      source: "getProject",
+      merges: plan.merges,
+      placement: TODO_PLACEMENT,
+      overrides: QUESTION_PLACEMENT,
+    });
+    if (commandsOf(again) !== commandsOf(plan))
+      throw new KiboError(
+        "CONFLICT",
+        "the plan differs from a fresh dry run: rerun --dry-run, do not edit it",
+      );
+    print("rehearsal on a temporary daemon…");
+    const rehearsal = await rehearse(plan, old);
+    if (rehearsal.length > 0)
+      throw new KiboError("CONFLICT", `rehearsal failed, nothing written:\n${rehearsal.join("\n")}`);
+    const outcome = await applyPlan(client, plan, { exportDir, print });
+    for (const line of outcome.problems) print(`- ${line}`);
+    if (outcome.problems.length > 0) process.exitCode = 1;
+  } finally {
+    await client.close();
+  }
+}
+
 async function main(): Promise<void> {
   if (values.apply) {
-    console.error("--apply is delivered by T19 of phase 27; nothing was written");
-    process.exit(2);
+    await apply();
+    return;
   }
   if (!values["dry-run"])
     throw new KiboError("INVALID_INPUT", "choose --dry-run (or --apply --plan <file> --yes)");
