@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { Question, type StatusId } from "@kibo/schema";
-import { boardColumn, heldByQuestion, holdMessage } from "./board-column";
+import { boardColumn, heldBy, heldByQuestion } from "./board-column";
 import { fr } from "./fr";
 
 const WITH_BLOCKED = new Set<StatusId>(["backlog", "todo", "in_progress", "blocked", "done"]);
@@ -32,11 +32,12 @@ test("a card blocked only by its status, or not blocked, moves freely", () => {
   expect(heldByQuestion("done", "todo", "Q14")).toBeNull();
 });
 
-test("the refusal names the question and asks to answer it first", () => {
-  expect(fr.heldByQuestion("Q14")).toBe("Bloqué par Q14 : réponds d'abord à la question.");
+test("the refusal names the card and the question that holds it", () => {
+  expect(fr.heldBy("EMIS-51", "Q14")).toBe("EMIS-51 reste bloqué par Q14");
+  expect(fr.answer).toBe("Répondre");
 });
 
-test("the hold message comes from the open blocking question of the ticket", () => {
+test("the hold comes from the open blocking question of the ticket", () => {
   const question = Question.parse({
     id: "1@1",
     ticketId: "2@1",
@@ -51,9 +52,7 @@ test("the hold message comes from the open blocking question of the ticket", () 
     number: 14,
     answer: null,
   });
-  expect(holdMessage({ id: "2@1" }, "blocked", "in_progress", [question])).toBe(
-    "Bloqué par Q14 : réponds d'abord à la question.",
-  );
-  expect(holdMessage({ id: "2@1" }, "blocked", "blocked", [question])).toBeNull();
-  expect(holdMessage({ id: "3@1" }, "blocked", "in_progress", [question])).toBeNull();
+  expect(heldBy({ id: "2@1" }, "blocked", "in_progress", [question])).toBe(question);
+  expect(heldBy({ id: "2@1" }, "blocked", "blocked", [question])).toBeNull();
+  expect(heldBy({ id: "3@1" }, "blocked", "in_progress", [question])).toBeNull();
 });

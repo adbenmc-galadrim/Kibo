@@ -8,17 +8,27 @@ import { Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "./fr";
 
-type Props = { status: Status; ids: string[]; targeted: boolean; children: ReactNode; onAdd?: () => void };
+type Props = {
+  status: Status;
+  ids: string[];
+  targeted: boolean;
+  forbidden?: boolean;
+  children: ReactNode;
+  onAdd?: () => void;
+};
 
-export function KanbanColumn({ status, ids, targeted, children, onAdd }: Props) {
+export function KanbanColumn({ status, ids, targeted, forbidden = false, children, onAdd }: Props) {
   const { setNodeRef } = useDroppable({ id: status.id });
   return (
     <section
       ref={setNodeRef}
       aria-label={status.label}
+      data-forbidden={forbidden || undefined}
       className={cn(
-        "flex min-h-0 min-w-[180px] flex-1 flex-col rounded-lg bg-muted/40 p-2",
+        "flex min-h-0 min-w-[180px] flex-1 flex-col rounded-lg bg-muted/40 p-2 transition-opacity",
         targeted && "ring-2 ring-ring",
+        forbidden && "cursor-not-allowed opacity-50",
+        forbidden && targeted && "ring-destructive/60",
       )}
     >
       <header className="flex h-7 items-center gap-2 px-1 text-xs">

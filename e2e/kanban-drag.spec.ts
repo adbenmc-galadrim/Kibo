@@ -285,7 +285,7 @@ test("textes longs : rien ne sort des cartes, aucune barre de défilement", asyn
   await shot(page, info, "kanban-textes-longs-tableau");
 });
 
-async function dragCard(page: Page, card: Locator, column: Locator) {
+async function dragCard(page: Page, card: Locator, column: Locator, during?: () => Promise<void>) {
   await card.hover();
   const from = await pointIn(card);
   const to = await pointIn(column, 0.25);
@@ -294,6 +294,7 @@ async function dragCard(page: Page, card: Locator, column: Locator) {
   await page.mouse.move(from.x + 20, from.y + 10, { steps: 4 });
   await page.mouse.move(to.x, to.y, { steps: 12 });
   await expect(column).toHaveClass(/ring-2/);
+  await during?.();
   await page.mouse.up();
   await expect(page.locator(PREVIEW)).toHaveCount(0);
 }
@@ -335,19 +336,29 @@ test("une carte bloquée par une question ne quitte pas Bloqué par glisser", as
     const found = (Array.isArray(tickets) ? tickets : []).find((t) => Reflect.get(t, "title") === title);
     return found === undefined ? null : Reflect.get(found, "statusId");
   };
-  const refusal = main
-    .getByRole("alert")
-    .filter({ hasText: /^Bloqué par Q\d+ : réponds d'abord à la question\.$/ });
+  const refusal = page.getByRole("region", { name: new RegExp(`^${key}-\\d+ reste bloqué par Q\\d+$`) });
+  const greyed = async () => {
+    await expect(doing).toHaveAttribute("data-forbidden", "true");
+    await expect(todo).toHaveAttribute("data-forbidden", "true");
+    await expect(blocked).not.toHaveAttribute("data-forbidden");
+    await expect(page.locator(PREVIEW)).toHaveClass(/cursor-not-allowed/);
+  };
+
+  await dragCard(page, card("Carte au statut"), doing, async () => {
+    await expect(doing).not.toHaveAttribute("data-forbidden");
+  });
+  await expect(doing.getByRole("article", { name: /Carte au statut/ })).toBeVisible();
+  await expect.poll(() => statusOf("Carte au statut")).toBe("in_progress");
 
   for (const target of [doing, todo]) {
-    await dragCard(page, card("Carte retenue"), target);
+    await dragCard(page, card("Carte retenue"), target, greyed);
     await expect(refusal).toBeVisible();
     await expect(blocked.getByRole("article", { name: /Carte retenue/ })).toBeVisible();
     expect(await statusOf("Carte retenue")).toBe("todo");
   }
-
-  await dragCard(page, card("Carte au statut"), doing);
-  await expect(doing.getByRole("article", { name: /Carte au statut/ })).toBeVisible();
-  await expect.poll(() => statusOf("Carte au statut")).toBe("in_progress");
   await shot(page, info, "kanban-bloque-par-question");
+  await refusal.getByRole("button", { name: "Répondre" }).click();
+  const create = page.getByRole("dialog", { name: "Créer une page Questions ?" });
+  await create.getByRole("button", { name: "Créer la page" }).click();
+  await expect(page.getByRole("main").getByText("Quel format pour l'import ?")).toBeVisible();
 });

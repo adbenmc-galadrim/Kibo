@@ -585,9 +585,9 @@ test("a card shows its delivery step next to the agent, never once done", async 
   });
   const progress = await screen.findByRole("region", { name: "En cours" });
   const card = within(progress).getByRole("article", { name: /Récepteur/ });
-  expect(within(card).getByText("7 · Porte qualité")).toBeTruthy();
+  expect(within(card).getByText("Phase 7/12 · Porte qualité")).toBeTruthy();
   const done = screen.getByRole("region", { name: "Terminé" });
-  expect(within(done).queryByText("7 · Porte qualité")).toBeNull();
+  expect(within(done).queryByText("Phase 7/12 · Porte qualité")).toBeNull();
 });
 
 test("without a delivery agent the menu has no Livrer", async () => {

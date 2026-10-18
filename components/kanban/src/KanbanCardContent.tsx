@@ -1,11 +1,11 @@
 import type { CiRun, MemberInfo, Question, TicketRun, TicketView } from "@kibo/schema";
-import { deliveryStepLabel } from "@kibo/schema";
+import { DELIVERY_STEP_LABELS, FINAL_STATUSES } from "@kibo/schema";
 import {
   assigneeLabel,
   DELIVERY_STEP_CHIP,
-  DeliveryStepChip,
   GroupChip,
   type GroupRef,
+  phaseLabel,
   QuestionsChip,
   type QuestionsChipData,
   TicketKeyLabel,
@@ -50,10 +50,14 @@ export type CardFacts = {
 type Props = CardFacts & { menu: ReactNode; title: ReactNode };
 
 function StepChip({ ticket }: { ticket: TicketView }) {
-  if (ticket.delivery?.kind !== "update") return <DeliveryStepChip ticket={ticket} />;
+  const delivery = ticket.delivery;
+  if (delivery === null) return null;
+  const update = delivery.kind === "update";
+  if (!update && FINAL_STATUSES.includes(ticket.statusId)) return null;
+  const phase = phaseLabel(delivery.step, DELIVERY_STEP_LABELS[delivery.step] ?? "");
   return (
-    <span data-delivery-step="" className={DELIVERY_STEP_CHIP}>
-      <span className="truncate">{fr.retouch(deliveryStepLabel(ticket.delivery.step))}</span>
+    <span data-delivery-step="" title={fr.phaseHint(delivery.step)} className={DELIVERY_STEP_CHIP}>
+      <span className="truncate">{update ? fr.retouch(phase) : phase}</span>
     </span>
   );
 }

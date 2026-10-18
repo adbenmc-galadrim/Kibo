@@ -40,12 +40,19 @@ test("no session, no dot", () => {
   expect(screen.queryByRole("img", { name: "Session T3 Code en cours" })).toBeNull();
 });
 
-test("a touch-up on a done card reads retouche · 7 · Porte qualité", () => {
+test("a touch-up on a done card reads retouche · Phase 7/12 · Porte qualité", () => {
   const c = renderCard({
     statusId: "done",
     delivery: { step: 7, note: "", at: 0, runId: null, kind: "update" },
   });
-  expect(c.querySelector("[data-delivery-step]")?.textContent).toBe("retouche · 7 · Porte qualité");
+  expect(c.querySelector("[data-delivery-step]")?.textContent).toBe("retouche · Phase 7/12 · Porte qualité");
+});
+
+test("the delivery step reads as a phase of full-delivery, its tooltip too", () => {
+  const c = renderCard({ delivery: { step: 9, note: "", at: 0, runId: null, kind: "delivery" } });
+  const chip = c.querySelector("[data-delivery-step]");
+  expect(chip?.textContent).toBe("Phase 9/12 · Review");
+  expect(chip?.getAttribute("title")).toBe("Phase 9 sur 12 de full-delivery : Review");
 });
 
 test("a delivered card without touch-up shows no step chip", () => {

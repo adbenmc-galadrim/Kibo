@@ -1,5 +1,4 @@
 import { blockingQuestion, type Question, questionLabel, type StatusId, type Ticket } from "@kibo/schema";
-import { fr } from "./fr";
 
 export function boardColumn(
   ticket: Pick<Ticket, "statusId">,
@@ -13,13 +12,13 @@ export function boardColumn(
 export const heldByQuestion = (column: StatusId, target: StatusId, question: string | null): string | null =>
   column === "blocked" && target !== "blocked" ? question : null;
 
-export function holdMessage(
+export function heldBy(
   ticket: Pick<Ticket, "id">,
   column: StatusId,
   target: StatusId,
   questions: readonly Question[],
-): string | null {
+): Question | null {
   const question = blockingQuestion(ticket, questions);
-  const held = heldByQuestion(column, target, question === null ? null : questionLabel(question));
-  return held === null ? null : fr.heldByQuestion(held);
+  if (question === null) return null;
+  return heldByQuestion(column, target, questionLabel(question)) === null ? null : question;
 }

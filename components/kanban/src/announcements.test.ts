@@ -24,9 +24,9 @@ const event = (over: string | null) => ({
 
 test("a refused drop is announced with its reason instead of « déposé »", () => {
   const refusal = (_active: string | number, over: string | number) =>
-    over === "in_progress" ? "Bloqué par Q14 : réponds d'abord à la question." : null;
+    over === "in_progress" ? "EMIS-51 reste bloqué par Q14." : null;
   const a = announce(labelOf, refusal);
-  expect(a.onDragEnd(event("in_progress"))).toBe("Bloqué par Q14 : réponds d'abord à la question.");
+  expect(a.onDragEnd(event("in_progress"))).toBe("EMIS-51 reste bloqué par Q14.");
   expect(a.onDragEnd(event("blocked"))).toBe("EMIS-51 déposé sur blocked.");
   expect(a.onDragEnd(event(null))).toBe("Déplacement de EMIS-51 annulé.");
 });

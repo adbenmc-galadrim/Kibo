@@ -1,4 +1,4 @@
-import type { RunState } from "@kibo/schema";
+import { DELIVERY_STEP_LABELS, DELIVERY_STEP_MAX, FULL_DELIVERY_AGENT, type RunState } from "@kibo/schema";
 
 const RUN_STATES: Record<RunState, string> = {
   queued: "En file",
@@ -51,7 +51,11 @@ export const fr = {
     cancelled: (key: string) => `Déplacement de ${key} annulé.`,
   },
   moveFailed: (key: string) => `Impossible de déplacer ${key}.`,
-  heldByQuestion: (question: string) => `Bloqué par ${question} : réponds d'abord à la question.`,
+  heldBy: (key: string, question: string) => `${key} reste bloqué par ${question}`,
+  answer: "Répondre",
+  empty: { text: "Les étapes avancent seules avec git et les PR.", action: "Nouveau ticket" },
+  phaseHint: (step: number) =>
+    `Phase ${step} sur ${DELIVERY_STEP_MAX + 1} de ${FULL_DELIVERY_AGENT} : ${DELIVERY_STEP_LABELS[step] ?? ""}`,
   waitingOn: (key: string) => `attend ${key}`,
   questions: (n: number) => `${n} question${n > 1 ? "s" : ""}`,
   questionsOpen: (n: number) => `${n} question${n > 1 ? "s" : ""}, ouvrir`,

@@ -8,7 +8,14 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { blockingQuestion, isBlocked, type StatusId, type TicketView } from "@kibo/schema";
+import {
+  blockingQuestion,
+  isBlocked,
+  type Question,
+  questionLabel,
+  type StatusId,
+  type TicketView,
+} from "@kibo/schema";
 import {
   agentTracesShown,
   filterBySource,
@@ -28,32 +35,37 @@ import {
   withoutAgentAssignee,
 } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
-import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { announce } from "./announcements";
 import { BlockDialog } from "./BlockDialog";
-import { boardColumn, holdMessage } from "./board-column";
+import { boardColumn, heldBy } from "./board-column";
 import { type ColumnOrder, orderColumn } from "./column-order";
 import { DragPreview } from "./DragPreview";
-import { commitDrop, type Drop, dropInColumn, nextOrder } from "./drop";
+import { type Drop, dropInColumn } from "./drop";
 import { type KanbanFilter, projectLabels } from "./filter";
 import { fr } from "./fr";
+import { HeldToast } from "./HeldToast";
 import { KanbanCard } from "./KanbanCard";
 import type { CardFacts } from "./KanbanCardContent";
 import { KanbanCardPreview } from "./KanbanCardPreview";
 import { KanbanColumn } from "./KanbanColumn";
+import { KanbanEmpty } from "./KanbanEmpty";
 import { KanbanToolbar } from "./KanbanToolbar";
 import { cardSteps } from "./keyboard-steps";
+import { RemoveDialog } from "./RemoveDialog";
+import { ToolbarAlerts } from "./ToolbarAlerts";
 import { ticketCiRuns } from "./ticket-pr";
 import { useBoardView } from "./use-board-view";
+import { useCardMoves } from "./use-card-moves";
 import { useColumnOrder } from "./use-column-order";
 import { useLabelFilter } from "./use-label-filter";
 
 type Blocking = { ticket: TicketView; drop: Drop | null };
+type Held = { ticket: TicketView; question: Question };
 
 export function Kanban() {
   const sdk = useSdk();
-  const { data: tickets } = useEntities("ticket");
+  const { data: tickets, loading } = useEntities("ticket");
   const { data: statuses } = useEntities("status");
   const { data: runs } = useEntities("run");
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
@@ -80,7 +92,8 @@ export function Kanban() {
     source === null && sdk.config.filter === "mine-and-agents" ? "mine-and-agents" : "all";
   const [blocking, setBlocking] = useState<Blocking | null>(null);
   const [removing, setRemoving] = useState<TicketView | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [held, setHeld] = useState<Held | null>(null);
+  const closeHeld = useCallback(() => setHeld(null), []);
   const [targetColumn, setTargetColumn] = useState<StatusId | null>(null);
   const [dragged, setDragged] = useState<string | null>(null);
   const scoped = filterBySource(tickets, source);
@@ -119,11 +132,14 @@ export function Kanban() {
   const ordered = [...statuses].sort((a, b) => a.order - b.order);
   const statusIds = new Set(ordered.map((s) => s.id));
   const columnOf = (t: TicketView): StatusId => boardColumn(t, isBlocked(t, questionList), statusIds);
-  const holdOf = (t: TicketView, target: StatusId) => holdMessage(t, columnOf(t), target, questionList);
+  const holdOf = (t: TicketView, target: StatusId) => heldBy(t, columnOf(t), target, questionList);
+  const forbidden = (target: StatusId) =>
+    draggedTicket !== undefined && holdOf(draggedTicket, target) !== null;
   const refusalOf = (active: string | number, over: string | number): string | null => {
     const drop = dropInColumn({ active: { id: active }, over: { id: over } }, visible);
     const t = tickets.find((x) => x.id === drop?.ticketId);
-    return drop && t ? holdOf(t, drop.statusId) : null;
+    const question = drop && t ? holdOf(t, drop.statusId) : null;
+    return t && question ? `${fr.heldBy(t.keyLabel, questionLabel(question))}.` : null;
   };
   const placed = tickets.map((t) => ({ id: t.id, statusId: t.statusId, column: columnOf(t) }));
   const columns = new Map(
@@ -142,23 +158,7 @@ export function Kanban() {
   const keyOf = (id: string | number) => tickets.find((t) => t.id === id)?.keyLabel ?? statusLabel(id);
   const statusLabel = (id: string | number) => ordered.find((s) => s.id === id)?.label ?? "";
 
-  const setStatus = async (t: TicketView, statusId: StatusId, reason?: string): Promise<boolean> => {
-    try {
-      await sdk.run({ method: "setStatus", ticketId: t.id, statusId, reason });
-      setError(null);
-      return true;
-    } catch {
-      setError(fr.moveFailed(t.keyLabel));
-      return false;
-    }
-  };
-  const place = async (t: TicketView, drop: Drop, reason?: string): Promise<boolean> => {
-    const done = await columnOrder.write(nextOrder(columnOrder.order, placed, drop), () =>
-      commitDrop(sdk, placed, drop, reason),
-    );
-    setError(done ? null : fr.moveFailed(t.keyLabel));
-    return done;
-  };
+  const { error, setStatus, place } = useCardMoves(sdk, columnOrder, placed);
   const move = (t: TicketView, statusId: StatusId) => {
     if (statusId === t.statusId) return;
     if (statusId === "blocked") setBlocking({ ticket: t, drop: null });
@@ -176,9 +176,9 @@ export function Kanban() {
     const drop = dropInColumn(e, visible);
     const t = tickets.find((x) => x.id === drop?.ticketId);
     if (!drop || !t) return;
-    const held = holdOf(t, drop.statusId);
-    if (held !== null) {
-      setError(held);
+    const question = holdOf(t, drop.statusId);
+    if (question !== null) {
+      setHeld({ ticket: t, question });
       return;
     }
     if (drop.statusId === "blocked" && columnOf(t) !== "blocked") setBlocking({ ticket: t, drop });
@@ -206,32 +206,19 @@ export function Kanban() {
         hidden={board.hidden}
       >
         <SelectionChip selection={selection} onClear={() => setSelection(null)} />
-        {error && !blocking && (
-          <p role="alert" className="truncate text-destructive">
-            {error}
-          </p>
-        )}
-        {delivery.error && (
-          <p role="alert" className="truncate text-destructive">
-            {delivery.error}
-          </p>
-        )}
-        {columnOrder.failed && (
-          <p role="alert" className="truncate text-destructive">
-            {fr.orderUnavailable}
-          </p>
-        )}
-        {labelFilter.failed && (
-          <p role="alert" className="truncate text-destructive">
-            {fr.labelFilter.failed}
-          </p>
-        )}
-        {ciProblem && (
-          <p role="alert" className="truncate text-destructive">
-            {fr.ciUnavailable(ciProblem)}
-          </p>
-        )}
+        <ToolbarAlerts
+          messages={[
+            !blocking && error,
+            delivery.error,
+            columnOrder.failed && fr.orderUnavailable,
+            labelFilter.failed && fr.labelFilter.failed,
+            ciProblem && fr.ciUnavailable(ciProblem),
+          ]}
+        />
       </KanbanToolbar>
+      {!loading && scoped.length === 0 && (
+        <KanbanEmpty onNew={readOnly ? undefined : () => sdk.openNewTicket({})} />
+      )}
       <DndContext
         sensors={sensors}
         onDragStart={onDragStart}
@@ -250,6 +237,7 @@ export function Kanban() {
               status={s}
               ids={visible[s.id] ?? []}
               targeted={targetColumn === s.id}
+              forbidden={forbidden(s.id)}
               onAdd={readOnly ? undefined : () => sdk.openNewTicket({ statusId: s.id })}
             >
               {(columns.get(s.id) ?? []).map((t) => (
@@ -271,7 +259,13 @@ export function Kanban() {
           ))}
         </div>
         <DragPreview>
-          {draggedTicket ? <KanbanCardPreview {...factsOf(draggedTicket)} readOnly={readOnly} /> : null}
+          {draggedTicket ? (
+            <KanbanCardPreview
+              {...factsOf(draggedTicket)}
+              readOnly={readOnly}
+              refused={targetColumn !== null && forbidden(targetColumn)}
+            />
+          ) : null}
         </DragPreview>
       </DndContext>
       {blocking && (
@@ -288,18 +282,13 @@ export function Kanban() {
           }}
         />
       )}
+      {held && <HeldToast ticketKey={held.ticket.keyLabel} question={held.question} onClose={closeHeld} />}
       {delivery.dialog}
       {removing && (
-        <ConfirmDialog
-          open
-          onOpenChange={(o) => !o && setRemoving(null)}
-          title={fr.removeTitle(removing.keyLabel)}
-          description={fr.removeHelp(tickets.filter((x) => x.parentId === removing.id).length)}
-          confirmLabel={fr.removeConfirm}
-          cancelLabel={fr.cancel}
-          onConfirm={async () => {
-            await sdk.run({ method: "deleteTicket", ticketId: removing.id });
-          }}
+        <RemoveDialog
+          ticket={removing}
+          childCount={tickets.filter((x) => x.parentId === removing.id).length}
+          onClose={() => setRemoving(null)}
         />
       )}
     </div>
