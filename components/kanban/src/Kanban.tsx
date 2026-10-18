@@ -8,7 +8,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { isGroup, type StatusId, type TicketView } from "@kibo/schema";
+import { blockingQuestion, isBlocked, type StatusId, type TicketView } from "@kibo/schema";
 import {
   agentTracesShown,
   filterBySource,
@@ -35,14 +35,16 @@ import { BlockDialog } from "./BlockDialog";
 import { type ColumnOrder, orderColumn } from "./column-order";
 import { DragPreview } from "./DragPreview";
 import { commitDrop, type Drop, dropInColumn, nextOrder } from "./drop";
-import { filterTickets, type KanbanFilter, projectLabels } from "./filter";
+import { type KanbanFilter, projectLabels } from "./filter";
 import { fr } from "./fr";
 import { KanbanCard } from "./KanbanCard";
-import { type CardFacts, type CiChip, ciChipOf } from "./KanbanCardContent";
+import type { CardFacts } from "./KanbanCardContent";
 import { KanbanCardPreview } from "./KanbanCardPreview";
 import { KanbanColumn } from "./KanbanColumn";
 import { KanbanToolbar } from "./KanbanToolbar";
 import { cardSteps } from "./keyboard-steps";
+import { ticketCiRuns } from "./ticket-pr";
+import { useBoardView } from "./use-board-view";
 import { useColumnOrder } from "./use-column-order";
 import { useLabelFilter } from "./use-label-filter";
 
@@ -55,6 +57,8 @@ export function Kanban() {
   const { data: runs } = useEntities("run");
   const runOf = new Map(runs.map((r) => [r.ticketId, r]));
   const questions = useQuestionsChipData(runs);
+  const { data: questionList } = useEntities("question");
+  const { data: sprints } = useEntities("sprint");
   const source = readSource(sdk.config);
   const { data: ciRuns, error: ciError } = useEntities("ci_run");
   const peers = usePresence();
@@ -71,26 +75,32 @@ export function Kanban() {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: cardSteps }),
   );
-  const [filter, setFilter] = useState<KanbanFilter>(
-    source !== null || sdk.config.filter === "all" ? "all" : "mine-and-agents",
-  );
-  const [startable, setStartable] = useState(false);
+  const scope: KanbanFilter =
+    source === null && sdk.config.filter === "mine-and-agents" ? "mine-and-agents" : "all";
   const [blocking, setBlocking] = useState<Blocking | null>(null);
   const [removing, setRemoving] = useState<TicketView | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [targetColumn, setTargetColumn] = useState<StatusId | null>(null);
   const [dragged, setDragged] = useState<string | null>(null);
   const scoped = filterBySource(tickets, source);
-  const shown = filterTickets(scoped, filter, sdk.viewer, labelFilter.label, startable);
-  const ciOf = (t: TicketView): CiChip | undefined =>
-    ciChipOf(ciRuns.filter((r) => t.key !== null && r.ticketKey === t.key));
+  const board = useBoardView({
+    scoped,
+    scope,
+    viewer: sdk.viewer,
+    label: labelFilter.label,
+    sprints,
+    ciRuns,
+  });
+  const shown = board.shown;
   const groupOf = groupOfTicket(tickets);
   const agentTraces = agentTracesShown(agentExecution);
   const factsOf = (t: TicketView): CardFacts => ({
     ticket: agentTraces ? t : withoutAgentAssignee(t),
     group: groupOf(t),
     run: agentTraces ? (runOf.get(t.id) ?? null) : null,
-    ci: ciOf(t),
+    ciRuns: ticketCiRuns(t, ciRuns),
+    blocked: isBlocked(t, questionList),
+    blocking: blockingQuestion(t, questionList),
     members: sharing.members,
     remote: agentTraces ? remoteRuns(peers, t.key) : [],
     questions,
@@ -163,21 +173,20 @@ export function Kanban() {
   return (
     <div className="flex h-full flex-col">
       <KanbanToolbar
-        agentTraces={agentTraces}
-        filter={filter}
-        onFilter={setFilter}
+        mine={scope === "all" ? null : agentTraces ? fr.filter.mineAndAgents : fr.filter.mine}
+        mode={board.mode}
+        onMode={board.setMode}
+        counts={board.counts}
+        sprintCode={board.sprintCode}
         label={labelFilter.label}
         labels={projectLabels(scoped)}
         onLabel={labelFilter.choose}
-        startable={startable}
-        onStartable={setStartable}
         onShowAll={() => {
-          setFilter("all");
-          setStartable(false);
+          board.setMode("all");
           if (labelFilter.label !== null) labelFilter.choose(null);
         }}
         shown={shown.length}
-        total={scoped.filter((t) => !isGroup(t)).length}
+        hidden={board.hidden}
       >
         <SelectionChip selection={selection} onClear={() => setSelection(null)} />
         {error && !blocking && (

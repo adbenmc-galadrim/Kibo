@@ -127,7 +127,7 @@ test("screen 3: built-ins and my components, search, preview and display", async
   expect(await screen.findByRole("radio", { name: "Synchronisée · GitHub Issues" })).toBeTruthy();
   expect(
     screen.getByText(
-      "Intégré · confiance totale · lit : ticket, status, run, runs CI, question · écrit : ticket, run",
+      "Intégré · confiance totale · lit : ticket, status, run, runs CI, question, sprint · écrit : ticket, run",
     ),
   ).toBeTruthy();
   await user.type(search(), "burn");

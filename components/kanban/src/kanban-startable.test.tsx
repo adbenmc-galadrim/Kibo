@@ -3,7 +3,6 @@ import type { RunPeek } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 import { seed } from "./test-seed";
 
@@ -55,24 +54,6 @@ test("screen 188k: a startable card shows a neutral 'Démarrable' badge, the oth
   expect(within(await card("KIB-4")).queryByText("Démarrable")).toBeNull();
   act(() => m.setRuns([]));
   expect(await within(await card("KIB-5")).findByText("Démarrable")).toBeTruthy();
-});
-
-test("the 'Démarrables' toggle sits after the label menu, narrows the board and is reset by 'Tout afficher'", async () => {
-  queueKib5(setup());
-  const user = userEvent.setup();
-  const toggle = await screen.findByRole("button", { name: "Démarrables" });
-  const labels = screen.getByRole("button", { name: "Étiquette : toutes" });
-  expect(labels.compareDocumentPosition(toggle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  expect(toggle.getAttribute("aria-pressed")).toBe("false");
-  await user.click(toggle);
-  expect(toggle.getAttribute("aria-pressed")).toBe("true");
-  expect(await screen.findByText("1 / 6 · Moi + agents")).toBeTruthy();
-  expect(screen.queryByText("KIB-2")).toBeNull();
-  await user.click(screen.getByRole("radio", { name: "Tous" }));
-  expect(await screen.findByText("2 / 6 · Tous")).toBeTruthy();
-  await user.click(screen.getByRole("button", { name: "4 masqués · Tout afficher" }));
-  expect(await screen.findByText("6 / 6 · Tous")).toBeTruthy();
-  expect(toggle.getAttribute("aria-pressed")).toBe("false");
 });
 
 test("a live run on a card is an agent mention: hover peeks the run, click opens it", async () => {

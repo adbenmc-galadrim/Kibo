@@ -493,7 +493,7 @@ test("a widget with a config schema offers its settings", async () => {
   ]);
   await user.click(screen.getByRole("menuitem", { name: "Réglages…" }));
   expect(await screen.findByRole("dialog", { name: "Réglages · Kanban" })).toBeTruthy();
-  expect(screen.getByRole("combobox", { name: "Filtre" }).textContent).toBe("Moi + agents");
+  expect(screen.getByRole("combobox", { name: "Filtre" }).textContent).toBe("Tous");
 });
 
 test("D6: the notes folder dialog shows and saves the folder", async () => {

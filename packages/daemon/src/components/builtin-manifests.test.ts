@@ -26,3 +26,10 @@ test("builtinManifestOf resolves an exact id@version only", () => {
   expect(builtinManifestOf("viewer-3d@9.9.9")).toBeNull();
   expect(builtinManifestOf("ghost@1.0.0")).toBeNull();
 });
+
+test("the Kanban shows every ticket by default and reads the sprints", () => {
+  const kanban = builtinManifestOf("kanban@1.0.0");
+  expect(kanban?.configSchema).toEqual({ filter: { enum: ["mine-and-agents", "all"], default: "all" } });
+  expect(kanban?.reads).toContain("sprint");
+  expect(kanban?.reads).toContain("question");
+});

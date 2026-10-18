@@ -1,4 +1,4 @@
-import { expect, mock, test } from "bun:test";
+import { afterEach, expect, mock, test } from "bun:test";
 import { DEFAULT_WORKFLOW, EMPTY_PROGRESS, type TicketView } from "@kibo/schema";
 import { isSeparator, isSubmenu } from "@kibo/sdk/ui/menu-entries";
 import { type CardMenuActions, cardMenuEntries } from "./card-menu";
@@ -37,7 +37,14 @@ const actions = (): CardMenuActions => ({
   move: mock((_s: string) => {}),
   remove: mock(() => {}),
   deliver: mock(() => {}),
-  copyDelivery: mock((_command: string) => {}),
+});
+const toasts: string[] = [];
+const sdk = { toast: (message: string) => void toasts.push(message) };
+const original = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+afterEach(() => {
+  toasts.length = 0;
+  if (original) Object.defineProperty(navigator, "clipboard", original);
+  else Reflect.deleteProperty(navigator, "clipboard");
 });
 const labels = (entries: ReturnType<typeof cardMenuEntries>) =>
   entries.map((e) => (isSeparator(e) ? "—" : isSubmenu(e) ? `${e.label} ▸` : e.label));
@@ -51,6 +58,7 @@ test("an editable card offers open, move to the other statuses, delete", () => {
     deliver: null,
     execution: "shown",
     texts: fr,
+    sdk,
     actions: a,
   });
   expect(labels(entries)).toEqual(["Ouvrir", "Déplacer vers ▸", "—", "Supprimer…"]);
@@ -70,6 +78,7 @@ test("read-only keeps only Ouvrir", () => {
         deliver: { disabledReason: null },
         execution: "shown",
         texts: fr,
+        sdk,
         actions: actions(),
       }),
     ),
@@ -84,6 +93,7 @@ const entriesWith = (deliver: { disabledReason: string | null } | null, a = acti
     deliver,
     execution: "shown",
     texts: fr,
+    sdk,
     actions: a,
   });
 
@@ -109,7 +119,7 @@ test("no Livrer without a deliverable ticket", () => {
   expect(labels(entriesWith(null))).toEqual(["Ouvrir", "Déplacer vers ▸", "—", "Supprimer…"]);
 });
 
-test("hidden agent execution replaces Livrer with copying the full-delivery command", () => {
+test("hidden agent execution replaces Livrer with copying the full-delivery command, with feedback", async () => {
   const a = actions();
   const entries = cardMenuEntries({
     ticket,
@@ -118,6 +128,7 @@ test("hidden agent execution replaces Livrer with copying the full-delivery comm
     deliver: { disabledReason: null },
     execution: "hidden",
     texts: fr,
+    sdk,
     actions: a,
   });
   expect(labels(entries)).toEqual([
@@ -130,8 +141,16 @@ test("hidden agent execution replaces Livrer with copying the full-delivery comm
   expect(labels(entries)).not.toContain("Livrer");
   const copy = entries[1];
   if (!copy || isSeparator(copy) || isSubmenu(copy)) throw new Error("no copy entry");
+  const written: string[] = [];
+  Object.defineProperty(navigator, "clipboard", {
+    value: { writeText: (text: string) => Promise.resolve(void written.push(text)) },
+    configurable: true,
+  });
   copy.onSelect();
-  expect(a.copyDelivery).toHaveBeenCalledWith("/full-delivery KIB-1");
+  await Promise.resolve();
+  await Promise.resolve();
+  expect(written).toEqual(["/full-delivery KIB-1"]);
+  expect(toasts).toEqual(["Copié"]);
   expect(a.deliver).not.toHaveBeenCalled();
 });
 
@@ -144,6 +163,7 @@ test("a done card offers Livrer la retouche when the execution is shown", () => 
     deliver: { disabledReason: null },
     execution: "shown",
     texts: fr,
+    sdk,
     actions: a,
   });
   expect(labels(entries).slice(0, 2)).toEqual(["Ouvrir", "Livrer la retouche"]);

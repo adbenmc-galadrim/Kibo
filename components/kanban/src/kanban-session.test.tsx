@@ -17,6 +17,9 @@ const renderCard = (patch: Partial<TicketView>) => {
         ticket={{ ...base, ...patch }}
         group={null}
         run={null}
+        ciRuns={[]}
+        blocked={false}
+        blocking={null}
         members={[]}
         remote={[]}
         questions={{ questions: [], recipients: [], runLabel: () => "", onOpen: () => {} }}

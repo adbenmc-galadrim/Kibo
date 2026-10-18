@@ -13,8 +13,14 @@ const RUN_STATES: Record<RunState, string> = {
 export const fr = {
   session: (tool: string) => `Session ${tool} en cours`,
   retouch: (step: string) => `retouche · ${step}`,
-  filter: { label: "Tickets affichés", mineAndAgents: "Moi + agents", mine: "Moi", all: "Tous" },
-  counter: (shown: number, total: number, filter: string) => `${shown} / ${total} · ${filter}`,
+  filter: { label: "Tickets affichés", mineAndAgents: "Moi + agents", mine: "Moi" },
+  mode: {
+    all: "Tous",
+    sprint: (code: string | null) => (code === null ? "Sprint courant" : `Sprint courant · ${code}`),
+    toFix: "À reprendre",
+  },
+  counter: (shown: number, mode: string, mine: string | null) =>
+    `${shown} ticket${shown > 1 ? "s" : ""} · ${mode}${mine === null ? "" : ` · ${mine}`}`,
   labelFilter: {
     label: "Filtrer par étiquette",
     all: "Étiquette : toutes",
@@ -49,9 +55,14 @@ export const fr = {
   questionsOpen: (n: number) => `${n} question${n > 1 ? "s" : ""}, ouvrir`,
   blockedReason: (reason: string) => `Motif : ${reason}`,
   ci: { ok: "CI réussie", error: "CI cassée", running: "CI en cours", neutral: "CI sans verdict" },
+  ciShort: { ok: "CI", error: "CI cassée", running: "CI en cours", neutral: "CI" },
+  changesRequested: "changements demandés",
+  blocked: "bloqué",
+  blockedBy: (question: string) => `bloqué · ${question}`,
+  optional: "facultative",
+  demo: (feature: string) => `Démo · ${feature}`,
   ciUnavailable: (message: string) => `CI indisponible : ${message}`,
   startable: "Démarrable",
-  startableFilter: "Démarrables",
   mention: {
     history: "Voir l'historique",
     reply: "Répondre",

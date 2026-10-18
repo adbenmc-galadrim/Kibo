@@ -12,14 +12,14 @@
     },
     "title": "Kanban",
     "description": "Tickets par statut, glisser-déposer",
-    "reads": ["ticket", "status", "run", "ci_run", "question"],
+    "reads": ["ticket", "status", "run", "ci_run", "question", "sprint"],
     "selection": true,
     "writes": ["ticket", "run"],
     "data": true,
     "configSchema": {
       "filter": {
         "enum": ["mine-and-agents", "all"],
-        "default": "mine-and-agents"
+        "default": "all"
       }
     }
   },

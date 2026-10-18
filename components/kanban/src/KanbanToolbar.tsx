@@ -7,34 +7,34 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
-import { Toggle } from "@kibo/sdk/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
-import { ChevronDown, ListFilter } from "lucide-react";
+import { ChevronDown, RotateCcw, Tag } from "lucide-react";
 import type { ReactNode } from "react";
-import { type KanbanFilter, LABEL_ALL } from "./filter";
+import { KANBAN_MODES, type KanbanMode, LABEL_ALL } from "./filter";
 import { fr } from "./fr";
 
 type Props = {
-  agentTraces: boolean;
-  filter: KanbanFilter;
-  onFilter: (filter: KanbanFilter) => void;
+  mine: string | null;
+  mode: KanbanMode;
+  onMode: (mode: KanbanMode) => void;
+  counts: Record<KanbanMode, number>;
+  sprintCode: string | null;
   label: string | null;
   labels: readonly string[];
   onLabel: (label: string | null) => void;
-  startable: boolean;
-  onStartable: (startable: boolean) => void;
   onShowAll: () => void;
   shown: number;
-  total: number;
+  hidden: number;
   children?: ReactNode;
 };
 
-const filtersOf = (agentTraces: boolean): { value: KanbanFilter; label: string }[] => [
-  { value: "mine-and-agents", label: agentTraces ? fr.filter.mineAndAgents : fr.filter.mine },
-  { value: "all", label: fr.filter.all },
-];
+const isMode = (value: string): value is KanbanMode => KANBAN_MODES.some((m) => m === value);
 
-const isFilter = (value: string): value is KanbanFilter => value === "mine-and-agents" || value === "all";
+const modeLabel = (mode: KanbanMode, sprintCode: string | null): string =>
+  mode === "sprint" ? fr.mode.sprint(sprintCode) : fr.mode[mode];
+
+const SEGMENT =
+  "h-[23px] gap-1.5 rounded-[5px] border border-transparent px-2.5 text-[12.5px] font-medium text-muted-foreground shadow-none hover:bg-transparent hover:text-foreground data-[state=on]:border-border data-[state=on]:bg-background data-[state=on]:text-foreground";
 
 type LabelMenuProps = Pick<Props, "label" | "labels" | "onLabel">;
 
@@ -47,8 +47,9 @@ function LabelMenu({ label, labels, onLabel }: LabelMenuProps) {
           size="sm"
           title={fr.labelFilter.label}
           disabled={labels.length === 0 && label === null}
-          className="h-7 shrink-0 gap-1 px-2.5 text-xs font-normal"
+          className="h-[25px] shrink-0 gap-1.5 px-2.5 text-xs font-medium"
         >
+          <Tag absoluteStrokeWidth size={13} aria-hidden className="size-[13px]" />
           {label === null ? fr.labelFilter.all : fr.labelFilter.one(label)}
           <ChevronDown absoluteStrokeWidth size={14} aria-hidden className="size-3.5 text-muted-foreground" />
         </Button>
@@ -74,42 +75,38 @@ function LabelMenu({ label, labels, onLabel }: LabelMenuProps) {
 }
 
 export function KanbanToolbar(props: Props) {
-  const { filter, onFilter, label, startable, onShowAll, shown, total, children } = props;
-  const filters = filtersOf(props.agentTraces);
-  const filterLabel = filters.find((f) => f.value === filter)?.label ?? "";
-  const hidden = total - shown;
+  const { mode, onMode, counts, sprintCode, label, onShowAll, shown, hidden, children } = props;
   return (
-    <header className="flex h-10 items-center gap-2 border-b px-3 text-sm">
+    <header className="flex h-12 items-center gap-2 border-b px-4 text-sm">
       <ToggleGroup
         type="single"
         size="sm"
-        variant="outline"
+        spacing={0.5}
         aria-label={fr.filter.label}
-        value={filter}
-        onValueChange={(value) => isFilter(value) && onFilter(value)}
+        value={mode}
+        onValueChange={(value) => isMode(value) && onMode(value)}
+        className="shrink-0 rounded-[7px] bg-muted p-0.5"
       >
-        {filters.map((f) => (
-          <ToggleGroupItem key={f.value} value={f.value} className="px-2.5 text-xs">
-            {f.label}
+        {KANBAN_MODES.map((m) => (
+          <ToggleGroupItem
+            key={m}
+            value={m}
+            aria-label={modeLabel(m, sprintCode)}
+            disabled={m === "sprint" && sprintCode === null}
+            className={SEGMENT}
+          >
+            {m === "toFix" && <RotateCcw absoluteStrokeWidth size={12} aria-hidden className="size-3" />}
+            {modeLabel(m, sprintCode)}
+            <span className="font-mono text-[11px] font-normal text-muted-foreground">{counts[m]}</span>
           </ToggleGroupItem>
         ))}
       </ToggleGroup>
       <LabelMenu label={label} labels={props.labels} onLabel={props.onLabel} />
-      <Toggle
-        variant="outline"
-        size="sm"
-        pressed={startable}
-        onPressedChange={props.onStartable}
-        className="h-7 shrink-0 gap-1 px-2.5 text-xs font-normal"
-      >
-        <ListFilter absoluteStrokeWidth size={14} aria-hidden className="size-3.5" />
-        {fr.startableFilter}
-      </Toggle>
       {children}
-      <span className="ml-auto shrink-0 font-mono text-xs text-muted-foreground">
-        {fr.counter(shown, total, filterLabel)}
+      <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+        {fr.counter(shown, modeLabel(mode, sprintCode), props.mine)}
       </span>
-      {(filter !== "all" || label !== null || startable) && hidden > 0 && (
+      {(mode !== "all" || label !== null) && hidden > 0 && (
         <Button size="sm" variant="link" className="h-auto shrink-0 px-0 text-xs" onClick={onShowAll}>
           {fr.hidden(hidden)}
         </Button>

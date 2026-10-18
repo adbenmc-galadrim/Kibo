@@ -56,10 +56,10 @@ test("columns follow the workflow, counter shows filtered / total, waiting badge
   const todo = await screen.findByRole("region", { name: "À faire" });
   expect(within(todo).getByText("KIB-1")).toBeTruthy();
   expect(within(todo).getByText("À faire")).toBeTruthy();
-  expect(within(todo).getByText("2")).toBeTruthy();
+  expect(within(todo).getByText("3")).toBeTruthy();
   expect(within(todo).getAllByRole("article")[0]?.getAttribute("tabindex")).toBe("0");
   expect(screen.getByRole("region", { name: "Bloqué" })).toBeTruthy();
-  expect(screen.getByText("5 / 6 · Moi + agents")).toBeTruthy();
+  expect(screen.getByText("6 tickets · Tous")).toBeTruthy();
   expect(screen.getByText("attend KIB-1")).toBeTruthy();
 });
 
@@ -255,9 +255,10 @@ test("a synced Kanban shows only the binding's tickets, on the 'all' filter", as
   expect(screen.getByRole("button", { name: "Ouvrir l'ensemble F1 · Issue synchronisée" })).toBeTruthy();
   expect(screen.queryByText("Issue synchronisée")).toBeNull();
   expect(screen.queryByText("Ticket local")).toBeNull();
-  expect(screen.getByText("2 / 2 · Tous")).toBeTruthy();
+  expect(screen.getByText("2 tickets · Tous")).toBeTruthy();
   const chip = await screen.findByLabelText("CI cassée");
-  expect(chip.parentElement?.textContent).toBe("#12");
+  expect(chip.closest("[data-ci]")?.textContent).toBe("CI cassée");
+  expect(chip.closest("article")?.querySelector("[data-pr]")?.textContent).toBe("#12");
   expect(screen.queryByLabelText("CI réussie")).toBeNull();
 });
 
@@ -276,9 +277,13 @@ test("the CI chip follows the tones of the ticket sheet", async () => {
       <Component />
     </SdkProvider>,
   );
-  expect((await screen.findByLabelText("CI en cours")).parentElement?.textContent).toBe("#3");
-  expect(screen.getByLabelText("CI réussie").parentElement?.textContent).toBe("#4");
-  expect(screen.getByLabelText("CI sans verdict").parentElement?.textContent).toBe("");
+  const prOf = (label: string) => screen.getByLabelText(label).closest("article")?.querySelector("[data-pr]");
+  expect((await screen.findByLabelText("CI en cours")).closest("[data-ci]")?.textContent).toBe("CI en cours");
+  expect(prOf("CI en cours")?.textContent).toBe("#3");
+  expect(screen.getByLabelText("CI réussie").closest("[data-ci]")?.textContent).toBe("CI");
+  expect(prOf("CI réussie")?.textContent).toBe("#4");
+  expect(screen.getByLabelText("CI sans verdict").closest("[data-ci]")?.textContent).toBe("CI");
+  expect(prOf("CI sans verdict")?.textContent).toBe("#12");
 });
 
 test("the CI chip shows the worst latest run of each workflow", async () => {
@@ -302,7 +307,8 @@ test("the CI chip shows the worst latest run of each workflow", async () => {
       <Component />
     </SdkProvider>,
   );
-  expect((await screen.findByLabelText("CI cassée")).parentElement?.textContent).toBe("#12");
+  const broken = await screen.findByLabelText("CI cassée");
+  expect(broken.closest("article")?.querySelector("[data-pr]")?.textContent).toBe("#12");
   expect(screen.queryByLabelText("CI réussie")).toBeNull();
 });
 
@@ -394,6 +400,7 @@ test("in a shared project, 'Moi + agents' follows the account id", async () => {
   const m = createMockSdk(manifest, {
     viewer: "u-adam",
     shared: true,
+    config: { filter: "mine-and-agents" },
     seed: (run) => {
       run({ method: "createTicket", title: "À moi", assignee: { kind: "human", ref: "u-adam" } });
       run({ method: "createTicket", title: "Au nom local", assignee: { kind: "human", ref: "adam" } });
