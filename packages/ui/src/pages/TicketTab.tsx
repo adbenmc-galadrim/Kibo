@@ -74,6 +74,7 @@ export function TicketTab({ project, ticketId, domains, viewer, onOpenFile, onOp
       <TicketTopBar
         projectId={project.meta.id}
         ticket={t}
+        questions={project.questions}
         copy={!isInbox(project.meta.id)}
         actions={actions}
       />

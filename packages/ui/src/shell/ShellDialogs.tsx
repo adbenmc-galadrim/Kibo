@@ -149,7 +149,7 @@ export function ShellDialogs({
           project={sheetProject}
           ticketId={sheet.ticketId}
           domains={projectDomainsOf(sheetProject, config) ?? []}
-          viewer={viewer}
+          viewer={sheetProject.viewer ?? viewer}
           onClose={() => set({ sheet: null })}
           onFile={() => set({ sheet: null, fileTicket: { ticketId: sheet.ticketId } })}
           onOpenInTab={() => {

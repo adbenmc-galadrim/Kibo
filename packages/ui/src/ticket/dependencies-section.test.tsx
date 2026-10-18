@@ -187,3 +187,9 @@ test("no auto links error line while the list reads fine", async () => {
   await waitFor(() => expect(badgeOf("BOU-12")).toBeTruthy());
   expect(screen.queryByText("Liens ajoutés par Kibo indisponibles pour l'instant.")).toBeNull();
 });
+
+test("the search field suggests a key of the current project", async () => {
+  draw();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Ajouter une dépendance" }));
+  expect(screen.getByRole("textbox", { name: "Ticket" }).getAttribute("placeholder")).toBe("BOU-2…");
+});

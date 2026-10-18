@@ -62,14 +62,18 @@ export function TicketDetail({
       </div>
       <TrackingSection ticket={t} ciRuns={ciRuns} events={journal.events} now={now} />
       <div className={LINE} />
-      <DescriptionEditor
-        ticketId={t.id}
-        description={t.description}
-        editable={editable}
-        command={descriptionCommand}
-        onOpenFile={open}
-      />
-      <div className={LINE} />
+      {(editable || t.description) && (
+        <>
+          <DescriptionEditor
+            ticketId={t.id}
+            description={t.description}
+            editable={editable}
+            command={descriptionCommand}
+            onOpenFile={open}
+          />
+          <div className={LINE} />
+        </>
+      )}
       <DependenciesSection project={project} ticket={t} editable={editable} onOpenTicket={onOpenTicket} />
       <div className={LINE} />
       <QuestionsSection

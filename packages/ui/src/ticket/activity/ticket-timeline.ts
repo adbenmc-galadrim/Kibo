@@ -1,12 +1,7 @@
-import {
-  type CiRun,
-  deliveryStepLabel,
-  type ProjectEvent,
-  type ProjectEventKind,
-  type ProjectSnapshot,
-} from "@kibo/schema";
+import type { CiRun, ProjectEvent, ProjectEventKind, ProjectSnapshot } from "@kibo/schema";
 import { frTicketTracking } from "../../i18n/fr-ticket-tracking";
-import { stepTime } from "../../shell/feature/time-format";
+import { failedJobOf, jobUrl, phaseLabel } from "../tracking-model";
+import { journalTime } from "./journal-time";
 
 export type TimelineKind =
   | "branch"
@@ -49,11 +44,27 @@ const str = (d: Data, key: string): string | null => {
 function stepText(d: Data, ev: ProjectEvent): string {
   const step = num(d, "step");
   if (step === null) return e.step(null);
-  const label = deliveryStepLabel(step);
+  const label = phaseLabel(step);
   return ev.source === "update-delivery" || str(d, "kind") === "update"
     ? frTicketTracking.retouch(label)
-    : e.step(label);
+    : label;
 }
+
+type Runs = readonly CiRun[];
+
+const failedRun = (d: Data, runs: Runs): CiRun | null =>
+  str(d, "checks") === "error"
+    ? (runs.find((r) => r.prNumber === num(d, "number") && r.conclusion === "failure") ?? null)
+    : null;
+
+function checksText(d: Data, runs: Runs): string {
+  const run = failedRun(d, runs);
+  const job = run ? failedJobOf(run) : null;
+  return job ? e.checksJob(str(d, "checks"), job.name) : e.checks(num(d, "number"), str(d, "checks"));
+}
+
+const branchText = (d: Data): string =>
+  d.declared === true ? e.branchDeclared(str(d, "branch")) : e.branch(str(d, "branch"));
 
 const statusLabel = (d: Data, p: TimelineProject): string | null => {
   const to = str(d, "to");
@@ -62,14 +73,14 @@ const statusLabel = (d: Data, p: TimelineProject): string | null => {
 
 const other = (): Line => ({ kind: "other", text: e.other });
 
-const LINES: Record<ProjectEventKind, (d: Data, ev: ProjectEvent, p: TimelineProject) => Line> = {
-  branch_created: (d) => ({ kind: "branch", text: e.branch(str(d, "branch")) }),
+const LINES: Record<ProjectEventKind, (d: Data, ev: ProjectEvent, p: TimelineProject, runs: Runs) => Line> = {
+  branch_created: (d) => ({ kind: "branch", text: branchText(d) }),
   pr_opened: (d) => ({ kind: "pr", text: e.prOpened(num(d, "number")) }),
   pr_review: (d) => ({ kind: "review", text: e.review(num(d, "number"), str(d, "review")) }),
-  pr_checks: (d) => ({
+  pr_checks: (d, _ev, _p, runs) => ({
     kind: "checks",
     tone: TONES[str(d, "checks") ?? ""] ?? null,
-    text: e.checks(num(d, "number"), str(d, "checks")),
+    text: checksText(d, runs),
   }),
   pr_merged: (d) => ({ kind: "pr", text: e.prMerged(num(d, "number")) }),
   status_changed: (d, _ev, p) => ({ kind: "status", text: e.status(statusLabel(d, p)) }),
@@ -115,12 +126,11 @@ function statusHosts(events: readonly ProjectEvent[], project: TimelineProject):
   return hosts;
 }
 
-function failedJob(ev: ProjectEvent, runs: readonly CiRun[]): TimelineAside | null {
-  if (ev.kind !== "pr_checks" || str(ev.data, "checks") !== "error") return null;
-  const run = runs.find((r) => r.prNumber === num(ev.data, "number") && r.conclusion === "failure");
+function failedJob(ev: ProjectEvent, runs: Runs): TimelineAside | null {
+  if (ev.kind !== "pr_checks") return null;
+  const run = failedRun(ev.data, runs);
   if (!run) return null;
-  const job = run.jobs.find((j) => j.conclusion === "failure") ?? run.jobs[0];
-  return { text: job ? e.jobAside(job.name) : "", link: { label: e.seeLog, url: run.url } };
+  return { text: "", link: { label: e.seeLog, url: jobUrl(run, failedJobOf(run)) } };
 }
 
 const newestFirst = (a: ProjectEvent, b: ProjectEvent) => b.at - a.at || b.id - a.id;
@@ -137,7 +147,7 @@ export function ticketTimeline(
     .filter((ev) => !absorbed.has(ev.id))
     .sort(newestFirst)
     .map((ev) => {
-      const line = LINES[ev.kind](ev.data, ev, project);
+      const line = LINES[ev.kind](ev.data, ev, project, runs);
       const status = hosts.get(ev.id);
       const label = status ? statusLabel(status.data, project) : null;
       return {
@@ -145,7 +155,7 @@ export function ticketTimeline(
         kind: line.kind,
         tone: line.tone ?? null,
         text: line.text,
-        time: stepTime(ev.at, now),
+        time: journalTime(ev.at, now),
         aside: label ? { text: e.statusAside(label), link: null } : failedJob(ev, runs),
       };
     });

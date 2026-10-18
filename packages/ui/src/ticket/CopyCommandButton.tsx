@@ -6,11 +6,14 @@ import { toast } from "sonner";
 import { frTicketTracking as t } from "../i18n/fr-ticket-tracking";
 import { targetToHash } from "../tabs/target-hash";
 
-type Props = { ticket: Pick<TicketView, "key" | "statusId" | "startable" | "waitingOn"> };
+type Props = {
+  ticket: Pick<TicketView, "key" | "statusId" | "startable" | "waitingOn">;
+  question: string | null;
+};
 
 const toaster = { toast: (message: string) => void toast(message) };
 
-export function CopyCommandButton({ ticket }: Props) {
+export function CopyCommandButton({ ticket, question }: Props) {
   const command = deliveryCommand(ticket);
   if (command === null) return null;
   return (
@@ -18,7 +21,7 @@ export function CopyCommandButton({ ticket }: Props) {
       variant="outline"
       size="sm"
       className="h-[25px] text-xs"
-      onClick={() => void copyCommand(toaster, command, ticket)}
+      onClick={() => void copyCommand(toaster, command, { ...ticket, question })}
     >
       <Copy />
       {deliveryTexts.copy(command)}
@@ -26,15 +29,35 @@ export function CopyCommandButton({ ticket }: Props) {
   );
 }
 
-async function copyLink(projectId: string, ticketId: string): Promise<void> {
-  const url = `${location.origin}${location.pathname}${targetToHash({ kind: "ticket", projectId, ticketId })}`;
+async function copyText(text: string, done: string): Promise<void> {
   try {
-    await navigator.clipboard.writeText(url);
-    toast(t.linkCopied);
+    await navigator.clipboard.writeText(text);
+    toast(done);
   } catch (e) {
     console.warn("[kibo] clipboard write refused", e);
     toast(t.linkFailed);
   }
+}
+
+const copyLink = (projectId: string, ticketId: string): Promise<void> =>
+  copyText(
+    `${location.origin}${location.pathname}${targetToHash({ kind: "ticket", projectId, ticketId })}`,
+    t.linkCopied,
+  );
+
+export function CopyBranchCommandButton({ ticketKey }: { ticketKey: string }) {
+  const command = t.branchCommand(ticketKey);
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="h-[25px] w-fit text-xs"
+      onClick={() => void copyText(command, deliveryTexts.copied([]))}
+    >
+      <Copy />
+      {t.copyBranchCommand(command)}
+    </Button>
+  );
 }
 
 export function CopyLinkButton({ projectId, ticketId }: { projectId: string; ticketId: string }) {

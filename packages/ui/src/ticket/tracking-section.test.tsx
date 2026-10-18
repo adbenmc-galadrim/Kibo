@@ -92,8 +92,13 @@ test("the Suivi block names the branch, the PR, its review, the CI, the session 
   expect(words("PR")).toEqual(["#20", "ouverte hier à 16:52"]);
   expect(words("Review")).toEqual(["changements demandés", "13:47"]);
   expect(words("CI")).toEqual(["CI cassée", "job e2e · 11:58"]);
+  expect(
+    within(row("CI") as HTMLElement)
+      .getByRole("link")
+      .getAttribute("href"),
+  ).toBe("https://github.com/galadrim/emis/actions/runs/9/job/1");
   expect(row("Session")?.textContent).toBe("T3 Code · 42 min");
-  expect(words("Étape")).toEqual(["9 · Review", "· suivante : 10 · Démo"]);
+  expect(words("Phase de livraison")).toEqual(["Phase 9/12 · Review", "· suivante : Démo"]);
 });
 
 test("the CI row reads the checks of the PR when no run is known, and says « Pas de CI » without any", () => {
@@ -118,7 +123,7 @@ test("the CI row reads the checks of the PR when no run is known, and says « Pa
   expect(row("CI")?.textContent).toBe("Pas de CI");
 });
 
-test("a retouch names its step « Retouche · 7 · Porte qualité »", () => {
+test("a retouch names its phase « Retouche · Phase 7/12 · Porte qualité »", () => {
   render(
     <TrackingSection
       ticket={ticket({
@@ -130,7 +135,7 @@ test("a retouch names its step « Retouche · 7 · Porte qualité »", () => {
       now={NOW}
     />,
   );
-  expect(words("Étape")[0]).toBe("Retouche · 7 · Porte qualité");
+  expect(words("Phase de livraison")[0]).toBe("Retouche · Phase 7/12 · Porte qualité");
 });
 
 test("a ticket without any tracking says how to declare its branch", () => {
@@ -143,4 +148,5 @@ test("a ticket without any tracking says how to declare its branch", () => {
     />,
   );
   expect(screen.getByText("Aucun suivi git : déclare la branche avec kibo tickets set")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Copier kibo tickets set EMIS-33 branch=" })).toBeTruthy();
 });

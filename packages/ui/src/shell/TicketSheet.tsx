@@ -133,6 +133,7 @@ export function TicketSheet({
         <TicketTopBar
           projectId={project.meta.id}
           ticket={t}
+          questions={project.questions}
           copy={!inbox}
           actions={actionsMenu()}
           close={

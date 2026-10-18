@@ -1,9 +1,10 @@
 import {
+  type CiJobSummary,
   type CiRun,
   type CiTone,
   ciTone,
+  DELIVERY_STEP_LABELS,
   DELIVERY_STEP_MAX,
-  deliveryStepLabel,
   type ExternalRef,
   featureLabel,
   type GithubPrRef,
@@ -51,8 +52,22 @@ export type TrackingAlert = {
   pr: GithubPrRef;
   tone: "amber" | "red";
   parts: AlertPart[];
-  jobUrl: string | null;
+  job: { name: string | null; url: string } | null;
 };
+
+const RUN_URL = /\/actions\/runs\/\d+$/;
+
+export const failedJobOf = (run: Pick<CiRun, "jobs">): CiJobSummary | null =>
+  run.jobs.find((j) => j.conclusion === "failure") ?? run.jobs[0] ?? null;
+
+export const jobUrl = (run: Pick<CiRun, "url">, job: Pick<CiJobSummary, "jobId"> | null): string =>
+  job !== null && RUN_URL.test(run.url) ? `${run.url}/job/${job.jobId}` : run.url;
+
+function jobLinkOf(run: CiRun | null): TrackingAlert["job"] {
+  if (run === null) return null;
+  const job = failedJobOf(run);
+  return { name: job?.name ?? null, url: jobUrl(run, job) };
+}
 
 const runsOf = (pr: GithubPrRef, runs: readonly CiRun[]) =>
   latestCiRunPerWorkflow(runs.filter((r) => r.prNumber === pr.number));
@@ -72,8 +87,8 @@ export function trackingAlert(ticket: TicketView, runs: readonly CiRun[]): Track
   if (ci === "running") parts.push({ text: t.ci.running, tone: "amber" });
   if (parts.length === 0) return null;
   const tone = changes || ci === "running" ? "amber" : "red";
-  const jobUrl = ci === "error" || ci === "running" ? (ciRunOf(pr, runs, ci)?.url ?? null) : null;
-  return { pr, tone, parts, jobUrl };
+  const job = ci === "error" || ci === "running" ? jobLinkOf(ciRunOf(pr, runs, ci)) : null;
+  return { pr, tone, parts, job };
 }
 
 export type CiDetail = { tone: CiTone; job: string | null; at: number | null; url: string | null };
@@ -86,9 +101,10 @@ export function ciDetail(
   const tone = prCiTone(pr, runs);
   if (tone === null) return null;
   const run = ciRunOf(pr, runs, tone);
-  const failed = run?.jobs.find((j) => j.conclusion === "failure") ?? run?.jobs[0];
+  const failed = run ? failedJobOf(run) : null;
   const at = run ? Date.parse(run.updatedAt) : (lastEvent(events, "pr_checks", pr.number)?.at ?? null);
-  return { tone, job: failed?.name ?? null, at: Number.isNaN(at) ? null : at, url: run?.url ?? null };
+  const url = run ? jobUrl(run, failed) : null;
+  return { tone, job: failed?.name ?? null, at: Number.isNaN(at) ? null : at, url };
 }
 
 export function lastEvent(
@@ -133,10 +149,13 @@ export function durationLabel(ms: number): string {
   return hours < 24 ? t.hours(hours) : t.days(Math.floor(hours / 24));
 }
 
+export const phaseLabel = (step: number): string =>
+  t.phase(`${step}/${DELIVERY_STEP_MAX + 1} · ${DELIVERY_STEP_LABELS[step] ?? ""}`);
+
 export function stepLine(delivery: NonNullable<TicketView["delivery"]>): string {
-  const label = deliveryStepLabel(delivery.step);
+  const label = phaseLabel(delivery.step);
   return delivery.kind === "update" ? t.retouch(label) : label;
 }
 
 export const nextStepLabel = (step: number): string | null =>
-  step < DELIVERY_STEP_MAX ? deliveryStepLabel(step + 1) : null;
+  step < DELIVERY_STEP_MAX ? (DELIVERY_STEP_LABELS[step + 1] ?? null) : null;

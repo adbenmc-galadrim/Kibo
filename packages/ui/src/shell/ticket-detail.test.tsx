@@ -161,7 +161,17 @@ test("the open questions of the ticket are listed and open the Questions view", 
 test("without a question the section says so", () => {
   show(ticket());
   expect(screen.getByText("Aucune question sur ce ticket.")).toBeTruthy();
-  expect(screen.getByText("Dépendances : aucune")).toBeTruthy();
+  const deps = screen.getByRole("heading", { name: "Dépendances" }).closest("section") as HTMLElement;
+  expect(deps.textContent).toContain("Aucune");
+  expect(deps.textContent).not.toContain("Dépendances : aucune");
+});
+
+test("an empty description reads « Aucune description · Ajouter », and Ajouter opens the editor", async () => {
+  show(ticket());
+  expect(screen.getByText("Aucune description")).toBeTruthy();
+  expect(screen.queryByText("-")).toBeNull();
+  await userEvent.setup().click(screen.getByRole("button", { name: "Ajouter" }));
+  expect(screen.getByRole("textbox", { name: "Description" })).toBeTruthy();
 });
 
 test("the details read Suivi, Description, Dépendances, Questions, then Domaine and Maquettes folded", () => {

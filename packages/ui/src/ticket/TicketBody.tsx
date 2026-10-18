@@ -1,12 +1,14 @@
 import type { Domain, FileRef, ProjectSnapshot, TicketView } from "@kibo/schema";
 import type { ReactNode } from "react";
 import { fr } from "../i18n/fr";
+import { useOptionalHost } from "../shell/Host";
 import { GithubLinkNote } from "../shell/sheet/lazy-sections";
 import { TicketDetail } from "../shell/TicketDetail";
 import { canEdit } from "../state/access";
 import { AssigneeSelect } from "./AssigneeSelect";
 import { TicketTabs, useTicketTab } from "./activity/TicketTabs";
 import { TicketTimeline } from "./activity/TicketTimeline";
+import { BlockedBanner } from "./BlockedBanner";
 import { LabelsField } from "./LabelsField";
 import { OptionalToggle } from "./OptionalToggle";
 import { SprintField } from "./SprintField";
@@ -45,9 +47,16 @@ export function TicketBody({
   const journal = useTicketJournal(project.meta.id, t);
   const [tab, setTab] = useTicketTab();
   const editable = canEdit(project);
+  const host = useOptionalHost();
   return (
     <div className="grid gap-4 px-6 pt-[18px] pb-6">
       {notice}
+      <BlockedBanner
+        ticket={t}
+        questions={project.questions}
+        recipients={project.questionRecipients}
+        onOpen={(id) => host?.openView("questions", undefined, id)}
+      />
       <TicketHeader project={project} ticket={t} />
       {heading(
         <TicketTitle

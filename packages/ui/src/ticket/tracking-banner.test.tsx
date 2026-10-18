@@ -82,3 +82,18 @@ test("a running CI is announced as « CI en cours »", () => {
   );
   expect(screen.getByRole("status").textContent).toContain("PR #20 · CI en cours");
 });
+
+test("the job link of a broken CI names the failed job and points to it", () => {
+  const job = {
+    jobId: 4,
+    name: "lint",
+    status: "completed",
+    conclusion: "failure",
+    startedAt: null,
+    completedAt: null,
+  };
+  render(<TrackingBanner ticket={ticket(pr({ checks: "error" }))} ciRuns={[run({ jobs: [job] })]} />);
+  expect(screen.getByRole("link", { name: "Job lint" }).getAttribute("href")).toBe(
+    "https://github.com/galadrim/emis/actions/runs/7/job/4",
+  );
+});

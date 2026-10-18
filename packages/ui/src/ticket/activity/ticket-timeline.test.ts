@@ -38,10 +38,10 @@ test("the journal of a ticket reads as dated lines, newest first, the status rid
   );
   expect(lines.map((l) => [l.kind, l.text, l.time, l.aside?.text ?? null])).toEqual([
     ["pr", "PR #20 ouverte", "15:00", "statut ⇒ En review"],
-    ["step", "Étape 7 · Porte qualité", "14:51", null],
+    ["step", "Phase 7/12 · Porte qualité", "14:51", null],
     ["session", "Session T3 Code ouverte", "14:10", null],
     ["status", "Passé en En cours", "hier 10:00", null],
-    ["branch", "Branche feat/envoi-hors-ligne poussée", "14 oct. 09:05", "statut ⇒ En cours"],
+    ["branch", "Branche feat/envoi-hors-ligne poussée", "mer. 09:05", "statut ⇒ En cours"],
   ]);
 });
 
@@ -61,7 +61,7 @@ test("reviews, checks, merges, retouches and sprints get their own words", () =>
   expect(texts).toEqual([
     "Session T3 Code fermée",
     "Planifié en S42",
-    "Retouche · 7 · Porte qualité",
+    "Retouche · Phase 7/12 · Porte qualité",
     "PR #20 fusionnée",
     "CI cassée sur PR #20",
     "Changements demandés sur PR #20",
@@ -98,7 +98,8 @@ test("a broken CI names its failed job and links to the log", () => {
     NOW,
     [run],
   );
-  expect(line?.aside).toEqual({ text: "job e2e · ", link: { label: "voir le journal", url: run.url } });
+  expect(line?.text).toBe("CI cassée · e2e");
+  expect(line?.aside).toEqual({ text: "", link: { label: "voir le journal", url: `${run.url}/job/1` } });
 });
 
 test("missing or odd data degrades to a plain line, never an error", () => {
@@ -117,7 +118,7 @@ test("missing or odd data degrades to a plain line, never an error", () => {
   expect(texts).toEqual([
     "Mise à jour du suivi",
     "Session ouverte",
-    "Étape mise à jour",
+    "Phase de livraison mise à jour",
     "Passé en nowhere",
     "Branche poussée",
     "PR ouverte",
@@ -164,5 +165,22 @@ test("two quick statuses around one event both stay visible", () => {
   ).toEqual([
     ["status", null],
     ["pr", "statut ⇒ En review"],
+  ]);
+});
+
+test("a branch declared by the CLI is declared, not pushed, and an old line keeps its date", () => {
+  const lines = ticketTimeline(
+    [
+      ev("branch_created", at(16, 9, 0), { branch: "feat/x", declared: true }),
+      ev("pr_checks", at(9, 10, 0), { number: 20, checks: "ok" }),
+      ev("pr_review", at(15, 16, 40), { number: 20, review: "approved" }),
+    ],
+    project,
+    NOW,
+  );
+  expect(lines.map((l) => [l.text, l.time])).toEqual([
+    ["Branche feat/x déclarée", "09:00"],
+    ["Approuvée sur PR #20", "hier 16:40"],
+    ["CI verte sur PR #20", "9 oct. 10:00"],
   ]);
 });

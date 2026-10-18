@@ -41,7 +41,7 @@ export function TrackingBanner({ ticket, ciRuns }: { ticket: TicketView; ciRuns:
       </p>
       <span className="flex shrink-0 items-center gap-2 text-xs">
         <External href={alert.pr.url} label={t.prLink} />
-        {alert.jobUrl && <External href={alert.jobUrl} label={t.jobLink} />}
+        {alert.job && <External href={alert.job.url} label={t.jobLink(alert.job.name)} />}
       </span>
     </output>
   );

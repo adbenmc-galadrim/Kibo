@@ -14,6 +14,7 @@ import { fr } from "../i18n/fr";
 import { frTicketTracking as t } from "../i18n/fr-ticket-tracking";
 import { frRefs } from "../shell/sheet/fr-refs";
 import { GithubRefs } from "../shell/sheet/lazy-sections";
+import { CopyBranchCommandButton } from "./CopyCommandButton";
 import {
   ciDetail,
   clockOf,
@@ -145,7 +146,10 @@ export function TrackingSection({ ticket, ciRuns, events, now }: Props) {
         <span className={DIM}>{t.sectionHint}</span>
       </p>
       {empty ? (
-        <p className={DIM}>{t.empty}</p>
+        <div className="grid gap-2">
+          <p className={DIM}>{t.empty}</p>
+          {ticket.key && <CopyBranchCommandButton ticketKey={ticket.key} />}
+        </div>
       ) : (
         <dl className="grid grid-cols-[106px_1fr] items-center gap-y-3">
           {branch && (
