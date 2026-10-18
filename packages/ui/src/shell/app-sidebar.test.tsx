@@ -1,6 +1,6 @@
 import { afterEach, expect, mock, test } from "bun:test";
 import type { Screen } from "@kibo/schema";
-import { SidebarProvider } from "@kibo/sdk/ui/sidebar";
+import { SidebarProvider, SidebarTrigger } from "@kibo/sdk/ui/sidebar";
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { kiboProject, projectsFixture } from "../agents/fixtures";
@@ -59,6 +59,7 @@ function sidebar(
   return render(
     <AppSettingsProvider store={fixedStore({ agentExecution: "shown" })}>
       <SidebarProvider defaultOpen={open}>
+        <SidebarTrigger />
         <AppSidebar
           projects={projectsFixture}
           active={withPages()}
@@ -138,4 +139,19 @@ test("the folded sidebar shows each project by its initials, its name and pages 
   expect(menu.textContent).toContain("Kibo");
   await user.click(await screen.findByRole("button", { name: "Planning" }));
   expect(opened).toEqual([[{ kind: "page", projectId: "kibo", pageId: "2@1" }, false]]);
+});
+
+test("under 48 rem the sheet opened over the page lists each project in full, not by its initials", async () => {
+  viewport(700);
+  const width = window.innerWidth;
+  Object.defineProperty(window, "innerWidth", { configurable: true, value: 700 });
+  try {
+    sidebar(null, false);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Toggle Sidebar" }));
+    expect(await screen.findByRole("button", { name: "Planning" })).toBeDefined();
+    expect(screen.queryByRole("navigation", { name: "Pages de Kibo" })).toBeNull();
+  } finally {
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+  }
 });

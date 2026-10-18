@@ -91,8 +91,8 @@ export function AppSidebar(p: Props) {
     },
   });
   const narrow = useNarrowScreen();
-  const folded = useSidebar().state === "collapsed";
-  const rail = narrow && folded;
+  const { state, isMobile } = useSidebar();
+  const rail = narrow && !isMobile && state === "collapsed";
   const activePageId = activeTarget?.kind === "page" ? activeTarget.pageId : null;
 
   return (
