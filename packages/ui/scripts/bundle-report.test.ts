@@ -490,4 +490,24 @@ describe("bundle report", () => {
     expect(i18n("fr-components-manage.ts")).toBe(true);
     expect(i18n("fr-components.ts")).toBe(false);
   });
+  test("phase 27, the execution card is gone and the new deferred screens stay out of the entry", () => {
+    expect(FORBIDDEN_IN_ENTRY.some((r) => r.source.includes("ExecutionCard"))).toBe(false);
+    const ui = (p: string) => FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`));
+    for (const p of [
+      "i18n/fr-tracking.ts",
+      "dialogs/TrackingSection.tsx",
+      "i18n/fr-new-project.ts",
+      "i18n/fr-new-ticket.ts",
+      "i18n/fr-home.ts",
+      "i18n/fr-ticket-tracking.ts",
+      "dialogs/SprintSetupFields.tsx",
+      "dialogs/SprintPreview.tsx",
+      "dialogs/FeatureSelect.tsx",
+      "shell/NotFound.tsx",
+      "pages/PageErrorBoundary.tsx",
+    ])
+      expect(ui(p)).toBe(true);
+    for (const p of ["i18n/fr.ts", "dialogs/new-project-model.ts", "pages/PageView.tsx"])
+      expect(ui(p)).toBe(false);
+  });
 });
