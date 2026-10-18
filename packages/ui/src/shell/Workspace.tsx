@@ -25,7 +25,6 @@ import { AgentsShellProvider } from "./AgentsShellProvider";
 import { AppSidebar } from "./AppSidebar";
 import { ContentView } from "./ContentView";
 import { HostProvider } from "./Host";
-import { helpPatch } from "./help-dialogs";
 import { TutorialSlot } from "./lazy-dialogs";
 import {
   AgentPanel,
@@ -43,6 +42,7 @@ import type { ShellProps } from "./Shell";
 import { ShellDialogs } from "./ShellDialogs";
 import { ShellHeader } from "./ShellHeader";
 import { fileTabOpener, paletteActionHandler } from "./shell-actions";
+import { sidebarHandlers } from "./sidebar-handlers";
 import { useAppHelp } from "./use-app-help";
 import { useOpenView, useSnapshotLookup } from "./use-open-view";
 import { useProjectAgentPanel } from "./use-project-agent-panel";
@@ -53,6 +53,7 @@ import { useScreenVisit } from "./use-screen-visit";
 import { useSheetAddress } from "./use-sheet-address";
 import { useShellDialogs } from "./use-shell-dialogs";
 import { useWorkspaceHost } from "./use-workspace-host";
+import { useWorkspaceNav } from "./use-workspace-nav";
 import { useWorkspaceSnapshots } from "./use-workspace-snapshots";
 import { useWorkspaceTabs } from "./use-workspace-tabs";
 import { useWorkspaceView } from "./use-workspace-view";
@@ -85,24 +86,12 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
   useRunNotifications(agents, notifications === "browser", runPanel.open);
   useAppHelp(set);
   const editRequests = useRef(new Set<string>());
-  const { open } = tabs;
 
   const describe = (t: TabTarget) => describeTarget(t, { projects, snapshots, runs: agents?.runs });
   useWindowTitle(active ? describe(active).title : null);
   useDesktopIntegration();
 
-  const launch = useCallback(() => set({ assign: { projectId: null, ticketId: null } }), [set]);
-  const go = useCallback(
-    (target: TabTarget | null, newTab = false, keep?: boolean) =>
-      open(target, keep === undefined ? { newTab } : { newTab, keep }),
-    [open],
-  );
-  const goHome = useCallback(() => go(null), [go]);
-  const closeProject = (projectId: string) => {
-    tabs.dispatch({ type: "closeProject", projectId });
-    forget(projectId);
-    go(null);
-  };
+  const { go, goHome, launch, closeProject } = useWorkspaceNav({ tabs, set, forget });
   const views = useOpenView(currentProject, go, useSnapshotLookup(snapshots));
   const screenVisit = useScreenVisit(screen, go);
 
@@ -165,17 +154,8 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                 config?.workspaceIcon ? iconUrl({ kind: "workspace" }, config.workspaceIcon) : null
               }
               viewer={viewer}
-              onHelp={(key) => set(helpPatch(key))}
               onOpen={screenVisit.open}
-              onSearch={() => setPalette({ newTab: false })}
-              onNewProject={() => set({ newProject: true })}
-              onNewPage={(parentId) => set({ newPageParent: parentId })}
-              onRenamePage={(page) => set({ renamePage: page })}
-              onDeletePage={(page) => set({ deletePage: page })}
-              onShare={(projectId) => set({ share: projectId })}
-              onEditProject={(projectId) => set({ editProject: projectId })}
-              onDeleteProject={(projectId) => set({ deleteProject: projectId })}
-              onJoin={() => set({ join: true })}
+              {...sidebarHandlers(set, setPalette)}
             />
             <SidebarInset className="min-h-0 min-w-0 mr-(--project-agent-w)">
               <ShellHeader
