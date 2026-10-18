@@ -1,5 +1,5 @@
 import { listInstances, listPages, listQuestions, listTickets } from "@kibo/core";
-import type { ChangeMessage, Phase7Event } from "@kibo/schema";
+import { type ChangeMessage, KiboError, type Phase7Event } from "@kibo/schema";
 import { declareTicketRef } from "../code/declare-ref";
 import type { ProjectSettings } from "../notes/settings";
 import type { RpcExtension, RpcHandler } from "../rpc-extensions";
@@ -33,7 +33,12 @@ export type TutorialBoot = {
 const concernsDemo = (message: ChangeMessage, projectId: string | null): boolean =>
   "projectId" in message && projectId !== null && message.projectId === projectId;
 
-function simulateReview(service: Service, projectId: string): void {
+export function simulateDemoReview(
+  service: Service,
+  isDemo: (projectId: string) => boolean,
+  projectId: string,
+): void {
+  if (!isDemo(projectId)) throw new KiboError("INVALID_INPUT", "only the demo project simulates a review");
   declareTicketRef(service, {
     projectId,
     ticketKey: DEMO_ROLES.review,
@@ -81,7 +86,7 @@ export function startTutorial(deps: TutorialBootDeps): TutorialBoot {
     findDemo,
     snapshot,
     emit: (event: Phase7Event) => docs.emit(event),
-    simulateReview: (projectId) => simulateReview(deps.service, projectId),
+    simulateReview: (projectId) => simulateDemoReview(deps.service, isDemo, projectId),
   });
   const offChange = deps.service.onChange((message) => {
     try {
