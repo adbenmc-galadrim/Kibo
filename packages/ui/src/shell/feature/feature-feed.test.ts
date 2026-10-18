@@ -35,7 +35,7 @@ test("the journal gives the activity lines, with the key of the step", () => {
   );
   expect(items.map((i) => [i.kind, i.text])).toEqual([
     ["pr_opened", "PR #22 ouverte · EMIS-32"],
-    ["step", "Étape 7 · Porte qualité · EMIS-33"],
+    ["step", "Phase 7/12 · Porte qualité · EMIS-33"],
     ["agent", "Suivi mis à jour · lot n° 7 proposé"],
     ["pr_merged", "PR #19 fusionnée · F5 livrée · EMIS-31"],
     ["sprint", "F5 reportée en S43"],
@@ -43,25 +43,32 @@ test("the journal gives the activity lines, with the key of the step", () => {
   expect(items[0]?.time).toBe("15:04");
 });
 
-test("the other facts of the journal read as the overview does", () => {
+test("the other facts of the journal read as on the ticket", () => {
   const texts = journalActivity(
     [
       event({ kind: "batch_decided", source: "project-agent", data: { seq: 7, decision: "apply" } }),
       event({ kind: "branch_created", ticketId: "e33", data: { branch: "feat/envoi-hors-ligne" } }),
+      event({ kind: "branch_created", ticketId: "e34", data: { branch: "feat/x", declared: true } }),
       event({ kind: "session_started", ticketId: "e33", source: "full-delivery" }),
       event({ kind: "question_reminded", ticketId: "e34", source: "project-agent", data: { ref: "Q16" } }),
-      event({ kind: "sprint_set", ticketId: "f5", source: "project-agent", data: { from: null, to: "S44" } }),
     ],
     project,
     NOW,
   ).map((i) => i.text);
   expect(texts).toEqual([
     "Lot n° 7 validé",
-    "Branche feat/envoi-hors-ligne créée · EMIS-33",
-    "Session démarrée · EMIS-33",
+    "Branche feat/envoi-hors-ligne poussée · EMIS-33",
+    "Branche feat/x déclarée · EMIS-34",
+    "Session ouverte · EMIS-33",
     "Q16 relancée · EMIS-34",
-    "F5 planifiée en S44",
   ]);
+  const late = event({
+    kind: "sprint_set",
+    ticketId: "f5",
+    source: "project-agent",
+    data: { from: null, to: "S44" },
+  });
+  expect(journalActivity([late], project, NOW)[0]?.text).toBe("F5 planifiée en S44");
   const off = event({ kind: "sprint_set", ticketId: "f5", source: "user", data: { from: "S42", to: null } });
   expect(journalActivity([off], project, NOW)[0]?.text).toBe("F5 retirée du planning");
 });

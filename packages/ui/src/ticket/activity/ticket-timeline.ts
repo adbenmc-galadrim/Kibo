@@ -96,6 +96,9 @@ const LINES: Record<ProjectEventKind, (d: Data, ev: ProjectEvent, p: TimelinePro
   batch_decided: other,
 };
 
+export const eventLine = (ev: ProjectEvent, project: TimelineProject, runs: Runs = []): Line =>
+  LINES[ev.kind](ev.data, ev, project, runs);
+
 const HOSTS: ReadonlySet<ProjectEventKind> = new Set([
   "branch_created",
   "pr_opened",
@@ -147,7 +150,7 @@ export function ticketTimeline(
     .filter((ev) => !absorbed.has(ev.id))
     .sort(newestFirst)
     .map((ev) => {
-      const line = LINES[ev.kind](ev.data, ev, project, runs);
+      const line = eventLine(ev, project, runs);
       const status = hosts.get(ev.id);
       const label = status ? statusLabel(status.data, project) : null;
       return {

@@ -178,7 +178,7 @@ test("the activity lists PRs and delivery steps, newest first", () => {
   const steps = stepModels(project, "f5", facts());
   expect(featureActivity(steps, NOW).map((i) => [i.kind, i.text, i.time])).toEqual([
     ["pr_opened", "PR #22 ouverte · EMIS-32", "15:04"],
-    ["step", "Étape 7 · Porte qualité · EMIS-33", "14:51"],
+    ["step", "Phase 7/12 · Porte qualité · EMIS-33", "14:51"],
     ["pr_merged", "PR #19 fusionnée · EMIS-31", "hier"],
   ]);
 });

@@ -183,7 +183,7 @@ test("the side cards show dependencies, questions, activity and the footer", asy
       .map((p) => p.textContent),
   ).toEqual([
     "PR #22 ouverte · EMIS-3215:04",
-    "Étape 7 · Porte qualité · EMIS-3314:51",
+    "Phase 7/12 · Porte qualité · EMIS-3314:51",
     "PR #19 fusionnée · EMIS-31hier",
   ]);
   expect(
