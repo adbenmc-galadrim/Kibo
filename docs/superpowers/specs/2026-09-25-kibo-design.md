@@ -2633,3 +2633,22 @@ Le dépôt est public : il ne contient aucune donnée d'un projet client, ni son
 - **Maquettes** : les pages du redesign sont redessinées avec les données fictives, sombre et clair, `kibo.penpot.xz`, les PDF et `design/redesign/exports/` réexportés ; l'acceptation au pixel près (2 %, écran entier, sans masque ajouté) est repassée.
 - **Historique git** : laissé tel quel (décision d'Adam).
 - **Machine d'Adam** : le projet client reste dans son Kibo local ; aucune tâche ne lit ni n'écrit son démon.
+
+## 41. Phase 29 : mettre une étape en attente (demande d'Adam du 2026-10-19)
+
+Une étape peut dépendre d'une chose que l'équipe n'a pas encore (un environnement fourni par le client, des accès). On la met **en attente** avec sa raison, la fonctionnalité avance sans elle, et on la **reprend** quand la chose arrive.
+
+- **Modèle** : une étape (jamais une fonctionnalité : `INVALID_INPUT`) gagne `hold: { reason, since } | null` (raison de 1 à 80 caractères, `since` = jour du démon). Commande `setHold { ticketId, reason | null }` ; événements d'historique `held` et `resumed`. Le statut ne change pas.
+- **En attente par dépendance** (dérivé, jamais stocké) : une étape qui dépend, directement ou non, d'une étape en attente par un lien `blocks` est elle aussi en attente, avec « Attend SILO-n » ; elle redevient normale dès que la source est reprise.
+- **Démarrable** : une étape en attente n'est pas démarrable, raison `onHold` (« En attente : <raison> » ou « En attente de SILO-n ») ; `kibo tickets list --ready` et la copie `/full-delivery` le disent.
+- **Fonctionnalité** : ses étapes en attente sortent du calcul. Elle est **livrée** quand toutes ses étapes obligatoires hors attente sont terminées (« livrée · n en attente ») ; « à risque » et « en retard » ne comptent pas les étapes en attente ; la règle « la dernière étape attend les autres » les ignore.
+- **Reprendre** : retire l'attente ; si la fonctionnalité était livrée, elle redevient ouverte. « Reprendre dans ▸ Sx » reprend l'étape et planifie sa fonctionnalité dans Sx quand son sprint est terminé.
+- **Écrans** :
+  - fiche ticket : menu « Mettre en attente… » (raison, suggestions tirées des raisons déjà employées dans le projet), bandeau « En attente · <raison> · depuis le <jour> · Reprendre » ;
+  - fiche fonctionnalité : étapes en attente groupées en bas, icône ⏸, état « livrée · n en attente » ;
+  - Planning : dans « À planifier », une section « En attente (n) », regroupée par raison, avec « Reprendre dans ▸ » ;
+  - Kanban : la carte garde sa colonne avec une puce ⏸ et la raison courte ; elle sort du filtre « Démarrable » ; un filtre « En attente » s'ajoute ;
+  - Vue d'ensemble : indicateur « En attente n », regroupé par raison, cliquable vers le Planning.
+- **CLI** : `kibo tickets set <CLÉ> hold="<raison>"` et `hold=off` ; `tickets get` affiche l'attente ; `tickets list` marque ⏸.
+- **Agent de projet** : `list_tickets` et `project_overview` rendent `hold` ; action de lot `setHold { ticket, reason | null }`.
+- **Maquettes** : les états nouveaux sont dessinés dans Penpot, en sombre et en clair, avant le code ; l'acceptation au pixel près des écrans existants reste à 2 %.
