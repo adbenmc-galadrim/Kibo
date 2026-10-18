@@ -15,6 +15,7 @@ import { helpLabel } from "../shell/help-labels";
 import { isRetiredScreen, isRetiredTarget } from "../shell/retired-routes";
 import { canEdit } from "../state/access";
 import { SCREENS } from "../tabs/screens";
+import { findTicket } from "../tabs/target-hash";
 import { isTracked, type LocalAction, sprintItems, trackingItems } from "./tracking-items";
 
 export type PaletteGroup = "recents" | "tickets" | "actions" | "agents" | "pages" | "projects";
@@ -93,7 +94,7 @@ function queuePositions(agents: AgentsState | null): Map<string, number> {
 
 export function activeTicket(ctx: PaletteContext): PaletteItem["ticket"] {
   if (!ctx.activeProjectId || !ctx.activeTicketId) return null;
-  const t = ctx.snapshots.get(ctx.activeProjectId)?.tickets.find((x) => x.id === ctx.activeTicketId);
+  const t = findTicket(ctx.snapshots.get(ctx.activeProjectId)?.tickets ?? [], ctx.activeTicketId);
   return t ? { projectId: ctx.activeProjectId, ticketId: t.id, keyLabel: t.keyLabel } : null;
 }
 
@@ -163,9 +164,10 @@ function targets(ctx: PaletteContext): PaletteItem[] {
 
 function actions(ctx: PaletteContext): PaletteItem[] {
   const project = ctx.projects.find((p) => p.id === ctx.activeProjectId);
-  const ticket = project
-    ? ctx.snapshots.get(project.id)?.tickets.find((t) => t.id === ctx.activeTicketId)
-    : undefined;
+  const ticket =
+    project && ctx.activeTicketId
+      ? findTicket(ctx.snapshots.get(project.id)?.tickets ?? [], ctx.activeTicketId)
+      : undefined;
   const action = (
     id: string,
     label: string,

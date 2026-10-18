@@ -80,3 +80,12 @@ test("sprints and features are indexed: S42 opens its sheet, F5 its feature", ()
   const feature = searchItems(all, "F5", "tickets")[0]?.items[0];
   expect(feature?.label.startsWith("F5 · ")).toBe(true);
 });
+
+test("a full-page ticket addressed by its key still offers the copy", () => {
+  const ticket = emis.tickets.find((t) => t.key === "EMIS-30");
+  if (!ticket?.key) throw new Error("fixture without key");
+  const labels = (
+    searchItems(buildItems({ ...context(emis), activeTicketId: ticket.key }), "", "actions")[0]?.items ?? []
+  ).map((i) => i.label);
+  expect(labels).toContain(`Copier /full-delivery ${ticket.key}`);
+});
