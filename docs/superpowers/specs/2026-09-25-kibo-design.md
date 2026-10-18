@@ -2598,3 +2598,27 @@ Tour 3, non retenu (risques du jalon) : « + Question » qui ferme la fiche fonc
 Tour 2, non retenu : orange hors agent (« Créer », « Coller la réponse », « En cours n / limite ») attend la décision d'Adam sur les couleurs sémantiques (proposée au tour 1) ; glossaire complet idem ; astérisques d'un gras vide dans les notes (confiance moyenne, à reproduire) ; heures réelles dans les données de démonstration (montage de test).
 
 Proposé à Adam, pas retenu sans son avis (le design validé et les maquettes au pixel près en dépendent) : couleurs sémantiques (orange réservé à l'agent de projet, ambre pour limites et changements demandés, vert pour « étape livrée »), glossaire unifié (« En revue », « À trier »…), liste Questions compacte. Reporté à une phase ultérieure : point client exportable et partage en lecture seule, navigation par liens et j/k, couloirs et priorités du Kanban, accueil « santé des projets » complet.
+
+### 39.7 Écarts constatés à l'exécution (phase 27)
+
+Détail par tâche dans la section « Écarts » du plan `2026-10-18-kibo-phase-27.md` ; ce qui change le comportement :
+
+1. **Clés** : les fonctionnalités portent `F<n>`, les étapes seules `EMIS-n` ; le calcul des sprints est pur et vit dans `schema` (l'interface ne peut pas importer `core`).
+2. **Suppression de l'ancien Emis** : « après vérification » est réalisé par une répétition complète sur un démon temporaire avant `deleteProject`, la clé `EMIS` ne pouvant exister deux fois.
+3. **Questions marquées envoyées** : événement d'historique `exported` (`markQuestionsExported`, `unmarkQuestionsExported`).
+4. **Démarrable** : dans un projet sans sprint, la condition de sprint ne s'applique pas ; la dernière étape d'une fonctionnalité attend ses autres étapes obligatoires (ordre `featureSteps`, dépendances puis rang) ; une question bloquante sur une fonctionnalité bloque ses étapes non commencées et n'est qu'une mention sur une étape en cours.
+5. **`kibo tickets set`** avertit avec la seule raison rendue par le démon (`startReason`) ; plusieurs raisons demanderaient `startReasons` au schéma.
+6. **Jour** : `AppInfo.today` et `ProjectInfo.today` viennent du démon (`clock.today`, `KIBO_FIXED_NOW`) ; aucun écran ne déduit le jour de l'horloge du navigateur, hors âges relatifs.
+7. **Glissement** : un report fait avant le début du sprint d'origine n'est pas un glissement (`slippedFrom`, `sprintOrigins` reçoivent les sprints).
+8. **Capacité d'un sprint** au Planning : vitesse observée, sinon 5 étapes par semaine.
+9. **Onglets** : §22.11 amendée, un clic ordinaire navigue dans l'onglet actif.
+10. **« En ce moment »** garde la forme courte « n · phase » (colonne étroite) ; ailleurs « Phase n/12 · … » (`phaseLabel` du SDK).
+11. **Kanban vide** : le bloc explicatif s'ajoute au-dessus des colonnes au lieu de les remplacer.
+12. **Check en échec** : `GithubPrRef.failedCheck` (facultatif), lu dans `statusCheckRollup` ; lien `…/pull/<n>/checks` à défaut d'exécution connue.
+
+### 39.8 Ports et codes (phase 27)
+
+- **Ports libérés** (§25.9 amendé) : 4392-4393, 4427-4428, 4467-4468, 4471-4474 (specs d'agents de ticket retirées) ; port de disponibilité du semis `emis-maquettes` = port du démon + 8000.
+- **Codes** : `AGENT_EXECUTION_REMOVED`.
+- **RPC** : `createProject { setup }` (cinq pages, sprints, client), `declareTicketRef` (origine utilisateur, branche « déclarée »), `markQuestionsExported` / `unmarkQuestionsExported`.
+- **Contrats** : `ProjectInfo.today`, `AppInfo.today`, `StartReason` (`limit.count`), `Spotlight` (`question`, `newQuestion`, `newFeature`), `OpenViewOptions.intent`, `sdk.project.edit`, `phaseLabel`, `stepTitle`, `client-text`.
