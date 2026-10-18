@@ -13,6 +13,8 @@ Object.assign(S.ICONS, {
   chevUp: '<path d="m18 15-6-6-6 6"/>',
   tag: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1"/>',
   minus: '<circle cx="12" cy="12" r="10"/><path d="M8 12h8"/>',
+  triangleAlert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  folderOpen: '<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>',
 });
 S.Y27 = 8000; S.STEP27 = 1500;
 S.ROWS27 = ["p-vue3", "p-commencer", "p-nouveau", "p-kanban", "p-fiche", "p-fiche-act", "p-questions", "p-barre", "p-agent-q", "p-agent-recap", "p-vue3-retard"];
@@ -72,16 +74,34 @@ S.toast = (p, text, action, o = {}) => { const C = S.C;
 // Au 16 oct., S42 est en cours : aucune carte « En retard » (référence pixel). Au 18 oct., entre deux sprints, S42 reste courant
 // (« terminé le 16 oct. ») et F5 est en retard : carte « En retard » sous Échéances et « 1 en retard » sous Fonctionnalités.
 S.setText = (scope, from, to) => { const t = S.byText(scope, from); if (!t) throw new Error("missing text: " + from); t.characters = to; return t; };
-S.vue3 = (x, y, late) => { const C = S.C, sec = C.mfg;
-  const f = S.rename(S.draw["p-vue2"](x, y), late ? "P1 bis v3 · En retard au 18 oct." : "P1 bis v3 · Vue d'ensemble");
+// Tour 2 (§39.6.18, .21) : « En cours n / limite », bloquées nommées, état du sprint par sprintPhase, « à risque » au 16 oct.
+S.inProgress27 = (f, late) => { const C = S.C;
   const kpis = penpotUtils.findShapes(s => s.name === "kpis", f)[0];
-  const lim = S.setText(kpis, "limite atteinte", "limite"), open = S.parentOf(kpis, lim); open.flex.columnGap = 4;
-  S.txt(open, "·", { size: 12, color: C.faint }); S.dot(open, C.red, 7); S.txt(open, "1 bloquée", { size: 12, color: sec });
+  S.setText(kpis, "Ouvertes", "En cours"); S.setText(kpis, "sur 2 max", "/ 2");
+  const lim = S.setText(kpis, "limite atteinte", "limite · bloquée : F6"), open = S.parentOf(kpis, lim);
+  const dot = open.children.find(c => c.name === "dot"); if (dot) dot.fills = [{ fillColor: C.red, fillOpacity: 1 }];
+  const sp = penpotUtils.findShapes(s => s.name === "card / Sprint S42 · Terrain hors ligne", f)[0] || f;
+  S.setText(sp, "2/2 ouvertes", "2/2 en cours");
+  S.setText(sp, "Limite de 2 ouvertes atteinte : F6 attendra la fin de F4 ou de F5.", "Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5.");
+  if (late) S.setText(sp, "12–16 oct.", "terminé le 16 oct. · reste 2");
+  for (const t of penpotUtils.findShapes(s => s.type === "text" && s.characters === "ouverte", sp)) { const pill = S.parentOf(sp, t), st = S.parentOf(sp, pill); pill.remove();
+    if (late) S.pill(st, "en cours", C.blue, C.blueSoft); else S.pill(st, "à risque", C.amber, C.amberSoft, "triangleAlert"); }
+  if (!late) for (const t of penpotUtils.findShapes(s => s.type === "text" && s.characters === "en retard", sp)) { const pill = S.parentOf(sp, t), st = S.parentOf(sp, pill); pill.remove(); S.pill(st, "à risque", C.amber, C.amberSoft, "triangleAlert"); }
+  if (late) return kpis;
+  S.setText(kpis, "finit ce soir", "Terrain ho…"); S.setText(kpis, "Terrain hors ligne", "se termine aujourd'hui");
+  const segs = penpotUtils.findShapes(s => s.name === "segs", kpis)[0], sub = S.parentOf(kpis, segs);
+  for (const c of segs.children) c.resize(5, c.height);
+  sub.layoutChild.horizontalSizing = "fill"; S.spacer(sub); S.txt(sub, "2 à risque", { size: 12, color: C.amber });
+  return kpis; };
+S.vue3 = (x, y, late) => { const C = S.C, sec = C.mfg;
+  const f5 = S.feat("F5"), wasLate = f5.late; if (!late) f5.late = false;
+  let f; try { f = S.rename(S.draw["p-vue2"](x, y), late ? "P1 bis v3 · En retard au 18 oct." : "P1 bis v3 · Vue d'ensemble"); } finally { f5.late = wasLate; }
+  const kpis = S.inProgress27(f, late);
   if (!late) return f;
   S.resizeScreen(f, 1360);
   const segs = penpotUtils.findShapes(s => s.name === "segs", kpis)[0], sub = S.parentOf(kpis, segs);
   segs.remove(); S.icon(sub, "clockAlert", 12, C.red); S.txt(sub, "1 en retard", { size: 12, weight: 500, color: C.red });
-  S.setText(kpis, "finit ce soir", "terminé"); S.setText(kpis, "Terrain hors ligne", "le 16 oct.");
+  S.setText(kpis, "finit ce soir", "Terrain ho…"); S.setText(kpis, "Terrain hors ligne", "terminé le 16 oct. · reste 2");
   S.setText(f, "S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo.",
     "S42 est terminé depuis vendredi et F5 n'y a pas tenu : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo.");
   S.setText(f, "4 étapes restantes, S42 finit aujourd'hui", "4 étapes restantes, S42 terminé le 16 oct.");
@@ -120,15 +140,14 @@ S.draw["p-commencer"] = (x, y) => { const C = S.C, sec = C.mfg;
   const ht = S.col(body, { gap: 4 }); S.txt(ht, "Emis", { size: 24, weight: 600, ls: -0.3 });
   const hs = S.row(ht, { gap: 8 }); S.icon(hs, "building", 13, sec); S.txt(hs, "client Emis SA", { size: 13, color: sec }); S.txt(hs, "·", { size: 13, color: C.faint }); S.txt(hs, "6 sprints d'une semaine · du 19 oct. au 27 nov. 2026", { size: 13, color: sec });
   S.kpis27(body, [["package", "Fonctionnalités", "0", "livrées sur 0", "aucune pour l'instant"], ["sprint", "Sprint en cours", "—", null, "S1 commence le lun. 19 oct."],
-    ["target", "Ouvertes", "0", "sur 2 max", "aucune ouverte"], ["pr", "En review", "0", "PR", "aucune PR"], ["question", "Questions", "0", "ouvertes", "aucune question"]]);
+    ["target", "En cours", "0", "/ 2", "aucune en cours"], ["pr", "En review", "0", "PR", "aucune PR"], ["question", "Questions", "0", "ouvertes", "aucune question"]]);
   const cols = S.row(body, { fx: true, gap: 16, align: "start" });
-  const go = S.card2(cols, "Pour commencer", "flag", { count: "0/3", right: h => S.txt(h, "trois étapes pour suivre le projet", { size: 12.5, color: sec }) });
-  const step = (title, mono, help, btn) => { const r = S.row2(go, { pad: [14, 16], gap: 12, align: "start" }); S.checkbox(r, false);
-    const tc = S.col(r, { fx: true, gap: 4 }); const tt = S.row(tc, { gap: 6 }); S.txt(tt, title, { size: 13.5, weight: 500 }); if (mono) S.txt(tt, mono, { size: 13, mono: true });
-    S.txt(tc, help, { size: 12.5, color: sec, fill: true, lh: 1.4 }); if (btn) S.btn(r, btn, "outline", { sm: true, icon: "sprint" }); };
-  step("Relier le dépôt", null, "Dans les réglages du projet (menu ⋯ d'Emis), choisis le dossier du dépôt : branches, PR et CI remontent seuls.");
-  step("Créer une fonctionnalité", null, "Dans le Planning, « Nouvelle fonctionnalité » ; ses étapes deviennent EMIS-1, EMIS-2…", "Ouvrir le Planning");
-  step("Copier", "/full-delivery EMIS-1", "Sur la fiche de la première étape, « Copier », puis colle la commande dans T3 Code.");
+  const go = S.card2(cols, "Pour commencer", "flag", { count: "0/2", right: h => S.txt(h, "deux étapes pour suivre le projet", { size: 12.5, color: sec }) });
+  const step = (title, help, btn, icon) => { const r = S.row2(go, { pad: [14, 16], gap: 12, align: "start" }); S.checkbox(r, false);
+    const tc = S.col(r, { fx: true, gap: 4 }); const tt = S.row(tc, { gap: 6 }); S.txt(tt, title, { size: 13.5, weight: 500 });
+    S.txt(tc, help, { size: 12.5, color: sec, fill: true, lh: 1.4 }); S.btn(r, btn, "outline", { sm: true, icon }); };
+  step("Relier le dépôt", "Choisis le dossier du dépôt : branches, PR et CI remontent seuls.", "Choisir le dossier", "folderOpen");
+  step("Créer une fonctionnalité", "Elle se livre de A à Z ; ses étapes deviennent EMIS-1, EMIS-2…", "Ouvrir le Planning", "sprint");
   const sp = S.card2(cols, "Sprints", "sprint", { w: 300, count: "6" });
   S.SPRINTS27.forEach(([k, d], i) => { const r = S.row2(sp, { h: 38, gap: 10 }); const a = S.row(r, { w: 26 }); S.txt(a, k, { size: 12, mono: true, color: i ? sec : C.fg, weight: i ? 400 : 600 });
     const b = S.row(r, { fx: true }); S.txt(b, "Sprint " + (i + 1), { size: 13 }); S.txt(r, d, { size: 12.5, color: sec }); });
