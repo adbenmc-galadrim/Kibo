@@ -13,9 +13,10 @@ export type ClientImpact = { feature: string; week: IsoDate | null };
 export type ClientTicket = Pick<TicketView, "id" | "title" | "parentId" | "shortKey" | "effectiveSprintId">;
 
 const t = fr.clientText;
-const WEEK_DAY = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "UTC" });
+const WEEK_DAY: Intl.DateTimeFormatOptions = { day: "numeric", month: "short", timeZone: "UTC" };
 
-export const clientWeek = (date: IsoDate): string => WEEK_DAY.format(dayNumber(date) * DAY_MS);
+export const clientWeek = (date: IsoDate): string =>
+  new Intl.DateTimeFormat("fr-FR", WEEK_DAY).format(dayNumber(date) * DAY_MS);
 
 export const impactLine = (q: { blocking: boolean }, impact: ClientImpact): string =>
   `${q.blocking ? t.blocks(impact.feature) : t.for(impact.feature)}, ${
