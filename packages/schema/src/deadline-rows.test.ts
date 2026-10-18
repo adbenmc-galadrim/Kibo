@@ -1,5 +1,11 @@
 import { expect, test } from "bun:test";
-import { DEADLINE_WEEKS, deadlineColumns, deadlineRows, todayOffset } from "./deadline-rows";
+import {
+  DEADLINE_MAX_WEEKS,
+  DEADLINE_WEEKS,
+  deadlineColumns,
+  deadlineRows,
+  todayOffset,
+} from "./deadline-rows";
 import { featureSteps } from "./feature-steps";
 import { BLOCKING, emisTickets, SPRINT_VIEWS, TODAY } from "./overview-test-kit";
 
@@ -56,6 +62,22 @@ test("a finished sprint anchors the window until the next starts, else the next 
     sprint: { id: "s41", code: "S41" },
   });
   expect(deadlineColumns([], TODAY)).toEqual([]);
+});
+
+test("the window stretches to the weeks asked, up to twelve", () => {
+  const six = deadlineColumns(SPRINT_VIEWS, TODAY, 6);
+  expect(six.map((c) => c.start).slice(4)).toEqual(["2026-11-09", "2026-11-16"]);
+  expect(deadlineColumns(SPRINT_VIEWS, TODAY, 20).length).toBe(DEADLINE_MAX_WEEKS);
+  expect(deadlineColumns(SPRINT_VIEWS, TODAY, 1).length).toBe(DEADLINE_WEEKS);
+  expect(todayOffset(six, TODAY)).toBe(4 / 42);
+  const rows = deadlineRows({
+    sprints: SPRINT_VIEWS,
+    features: features(TODAY),
+    blockingQuestions: BLOCKING,
+    today: TODAY,
+    weeks: 6,
+  });
+  expect(rows.map((r) => r.shortKey)).toEqual(rowsAt(TODAY).map((r) => r.shortKey));
 });
 
 test("today sits four days into the 28 of the window", () => {
