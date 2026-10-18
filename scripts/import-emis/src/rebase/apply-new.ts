@@ -1,6 +1,12 @@
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { type BackupInfo, KiboError, ProjectCommand, type ProjectSnapshot } from "@kibo/schema";
+import {
+  type BackupInfo,
+  compareAppVersions,
+  KiboError,
+  ProjectCommand,
+  type ProjectSnapshot,
+} from "@kibo/schema";
 import { z } from "zod";
 import type { SeedClient } from "../daemon-client";
 import type { PlannedCommand } from "./desired-new";
@@ -89,6 +95,38 @@ export function assertApplicable(plan: RebasePlan): void {
     throw new KiboError(
       "INVALID_INPUT",
       `plan has ${toPlace.length} point(s) to place: ${toPlace.join(" ")}`,
+    );
+}
+
+export const MIN_DAEMON_VERSION = "0.27.0-alpha.1";
+const TAURI_CONF = join(
+  import.meta.dir,
+  "..",
+  "..",
+  "..",
+  "..",
+  "apps",
+  "desktop",
+  "src-tauri",
+  "tauri.conf.json",
+);
+const BuildVersion = z.object({ version: z.string() });
+
+export function requiredDaemonVersion(
+  build = BuildVersion.parse(JSON.parse(readFileSync(TAURI_CONF, "utf8"))),
+): string {
+  return compareAppVersions(build.version, MIN_DAEMON_VERSION) > 0 ? build.version : MIN_DAEMON_VERSION;
+}
+
+export async function assertDaemonRecent(
+  client: SeedClient,
+  required = requiredDaemonVersion(),
+): Promise<void> {
+  const { version } = await client.rpc({ method: "getAppInfo" });
+  if (compareAppVersions(version, required) < 0)
+    throw new KiboError(
+      "CONFLICT",
+      `démon trop ancien (${version}) : redémarre Kibo sur la version ${required} ou plus récente avant --apply`,
     );
 }
 
@@ -190,6 +228,7 @@ export async function applyPlan(
 ): Promise<ApplyOutcome> {
   const print = options.print ?? (() => {});
   assertApplicable(plan);
+  await assertDaemonRecent(client);
   const { projectId: oldId, snapshot } = await readCurrent(client, plan);
   const old = readOldProject(snapshot);
   const backup = await client.rpc({ method: "createBackup", reason: "manual" });

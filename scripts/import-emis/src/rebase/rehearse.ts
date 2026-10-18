@@ -29,9 +29,10 @@ async function waitReady(proc: Subprocess<"ignore", "pipe", "ignore">): Promise<
   reader.releaseLock();
 }
 
-export async function startTempDaemon(home: string): Promise<TempDaemon> {
+export async function startTempDaemon(home: string, options: { version?: string } = {}): Promise<TempDaemon> {
+  const version = options.version ? { KIBO_VERSION: options.version } : {};
   const proc = Bun.spawn(["bun", DAEMON_MAIN, "--port", "0", ...ISOLATED], {
-    env: { ...process.env, KIBO_HOME: home },
+    env: { ...process.env, KIBO_HOME: home, ...version },
     stdin: "ignore",
     stdout: "pipe",
     stderr: "ignore",

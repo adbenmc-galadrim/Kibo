@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { SETUP_PAGES } from "@kibo/schema";
 import { seedEmisShaped } from "../../fixtures/emis-shaped";
 import type { SeedClient } from "../daemon-client";
-import { applyPlan } from "./apply-new";
+import { applyPlan, requiredDaemonVersion } from "./apply-new";
 import { type OldProject, readOldProject } from "./old-project";
 import { buildRebasePlan, parsePlan, type RebasePlan, serializePlan } from "./plan-file";
 import { QUESTION_PLACEMENT } from "./question-placement";
@@ -18,7 +18,8 @@ const SCRIPT = join(import.meta.dir, "..", "..", "rebase-emis.ts");
 const CLIENT = "Client fictif";
 const home = mkdtempSync(join(tmpdir(), "kibo-rebase-home-"));
 const exportDir = mkdtempSync(join(tmpdir(), "kibo-rebase-export-"));
-let daemon: TempDaemon = await startTempDaemon(home);
+const VERSION = { version: requiredDaemonVersion() };
+let daemon: TempDaemon = await startTempDaemon(home, VERSION);
 const state: { old: OldProject | null; plan: RebasePlan | null; newId: string | null } = {
   old: null,
   plan: null,
@@ -119,7 +120,7 @@ test("applies the plan: backup, old project deleted, new project verified", asyn
 test("after a restart the new project still has its pages, sprints, client and tickets", async () => {
   const projectId = ready(state.newId, "new project");
   await daemon.stop();
-  daemon = await startTempDaemon(home);
+  daemon = await startTempDaemon(home, VERSION);
   await daemon.withClient((c) =>
     expectRebased(c, projectId, ready(state.plan, "plan"), ready(state.old, "old")),
   );
@@ -180,5 +181,28 @@ test("a plan edited by hand stops at the key check and keeps the new project", a
     expect(result).toContain("est conservé");
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+}, 60_000);
+
+test("a daemon older than the build is refused before any write", async () => {
+  const oldHome = mkdtempSync(join(tmpdir(), "kibo-rebase-old-daemon-"));
+  const out = mkdtempSync(join(tmpdir(), "kibo-rebase-old-export-"));
+  const stale = await startTempDaemon(oldHome, { version: "0.26.0-alpha.2" });
+  try {
+    await stale.withClient(async (c) => {
+      await seedOld(c);
+      const { plan } = await dryRun(c, out);
+      const before = { backups: await backups(c), projects: await projects(c) };
+      await expect(applyPlan(c, plan, { exportDir: out })).rejects.toThrow(
+        `démon trop ancien (0.26.0-alpha.2) : redémarre Kibo sur la version ${requiredDaemonVersion()}`,
+      );
+      expect(await backups(c)).toBe(before.backups);
+      expect(await projects(c)).toEqual(before.projects);
+      expect(existsSync(join(out, "rebase-result.md"))).toBe(false);
+    });
+  } finally {
+    await stale.stop();
+    rmSync(oldHome, { recursive: true, force: true });
+    rmSync(out, { recursive: true, force: true });
   }
 }, 60_000);

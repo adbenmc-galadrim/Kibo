@@ -5,7 +5,7 @@ import { parseArgs } from "node:util";
 import { KiboError, sprintPlan } from "@kibo/schema";
 import { connectLocalDaemon, readDaemonAccess } from "./src/daemon-client";
 import { readMerges } from "./src/gh";
-import { applyPlan, assertApplicable, readCurrent } from "./src/rebase/apply-new";
+import { applyPlan, assertApplicable, assertDaemonRecent, readCurrent } from "./src/rebase/apply-new";
 import { mapProject } from "./src/rebase/mapping";
 import { type OldProject, readOldProject, readTicketsList } from "./src/rebase/old-project";
 import {
@@ -117,6 +117,7 @@ async function apply(): Promise<void> {
   const plan = readPlan();
   const client = await connectLocalDaemon(readDaemonAccess(values.home));
   try {
+    await assertDaemonRecent(client);
     const { snapshot } = await readCurrent(client, plan);
     const old = readOldProject(snapshot);
     const again = buildRebasePlan({

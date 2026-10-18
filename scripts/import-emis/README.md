@@ -66,15 +66,16 @@ bun run --cwd scripts/import-emis rebase -- --apply --plan <export>/rebase-plan.
 **`--apply --plan <export>/rebase-plan.json --yes`** rejoue le plan relu. Rien n'est écrit tant que ces contrôles ne passent pas :
 
 1. le plan est relu et validé (`version: 1`, source `getProject`, aucun point « à placer ») ; sans `--plan` ou sans `--yes`, refus ;
-2. l'empreinte du projet `EMIS` courant (`getProject`) doit être celle du plan : un plan rejoué après le rebase, ou un projet modifié depuis le dry-run, est refusé (`fingerprint mismatch`) ;
-3. le dry-run est recalculé depuis le démon (mêmes fusions que le plan) et ses commandes comparées à celles du fichier : un plan retouché à la main est refusé ;
-4. **répétition** : le plan est semé sur un démon temporaire (`KIBO_HOME` dans un dossier temporaire, supprimé ensuite), puis vérifié contre l'ancien projet ; un seul écart arrête tout.
+2. le démon doit gérer `createProject { setup }` : `getAppInfo().version` doit valoir au moins `0.27.0-alpha.1` et la version du build courant (`apps/desktop/src-tauri/tauri.conf.json`), sinon « démon trop ancien : redémarre Kibo sur la version … avant --apply » ;
+3. l'empreinte du projet `EMIS` courant (`getProject`) doit être celle du plan : un plan rejoué après le rebase, ou un projet modifié depuis le dry-run, est refusé (`fingerprint mismatch`) ;
+4. le dry-run est recalculé depuis le démon (mêmes fusions que le plan) et ses commandes comparées à celles du fichier : un plan retouché à la main est refusé ;
+5. **répétition** : le plan est semé sur un démon temporaire (`KIBO_HOME` dans un dossier temporaire, supprimé ensuite), puis vérifié contre l'ancien projet ; un seul écart arrête tout.
 
 Ensuite : sauvegarde (`createBackup`) et export complet dans `<export>/project-old.json` ⇒ `deleteProject` de l'ancien ⇒ `createProject { setup }` (cinq pages, sprints S1 à Sn, client) ⇒ commandes du plan, la clé de chaque ticket créé comparée à la clé prédite ⇒ vérification (`verify.ts` : comptes, statuts, PR, branches, liens, questions, descriptions, étiquettes, clés `EMIS-1..n` contiguës, `F1..F15`, aucun `assignee`) ⇒ `<export>/rebase-result.md` (sauvegarde, comptes, clés, écarts, restauration). Un écart de vérification sort en code 1 avec la liste. Si une clé reçue diffère de la clé prédite, le script s'arrête aussitôt : le projet neuf incomplet est conservé et `rebase-result.md` dit « Arrêt à la vérification des clés ».
 
 Procédure pour le chef d'équipe :
 
-1. quitter Kibo et faire la copie à froid (`cp -Rp ~/.kibo ~/.kibo-avant-rebase-<date>`), relancer Kibo ;
+1. quitter Kibo et faire la copie à froid (`cp -Rp ~/.kibo ~/.kibo-avant-rebase-<date>`), puis **redémarrer Kibo sur le build courant avant --apply** ;
 2. `rebase -- --dry-run`, relire `rebase-report.md` (placement de TODO, questions, liens tombés, plan par sprint) ;
 3. `rebase -- --apply --plan ~/Documents/emis/kibo-export-2026-10-18/rebase-plan.json --yes` ;
 4. relire `rebase-result.md` : « Conforme » attendu ;
