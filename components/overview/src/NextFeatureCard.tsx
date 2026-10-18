@@ -85,7 +85,16 @@ export function NextFeatureCard({ card, actions }: { card: NextCard | null; acti
       <CardHeader
         icon={Flag}
         title={fr.next.title}
-        aside={<span className="text-(--tracking-mfg) text-[12.5px] leading-[15px]">{fr.next.subtitle}</span>}
+        aside={
+          <span
+            className={cn(
+              "text-[12.5px] leading-[15px]",
+              card?.late ? "text-(--tracking-red)" : "text-(--tracking-mfg)",
+            )}
+          >
+            {card?.late ? fr.next.lateSubtitle : fr.next.subtitle}
+          </span>
+        }
       />
       {card === null ? (
         <p className="px-[16px] pb-[14px] text-(--tracking-mfg) text-[12.5px]">{fr.next.none}</p>

@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from "bun:test";
+import { afterEach, beforeEach, expect, setSystemTime, test } from "bun:test";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
@@ -9,7 +9,11 @@ import { SprintLanes } from "./SprintLanes";
 import { sprintLanes } from "./sprint-lanes";
 import { KIT_DAY_AFTER, kitInput, kitTickets } from "./sprint-lanes-kit";
 
-afterEach(cleanup);
+beforeEach(() => setSystemTime(new Date(`${SEED_TODAY}T14:52:00`)));
+afterEach(() => {
+  setSystemTime();
+  cleanup();
+});
 
 type Execution = "hidden" | "shown";
 
@@ -63,8 +67,8 @@ test("sprints mode: toolbar, counter, one column per sprint and the reserve", as
     "À planifier",
   ]);
   const s42 = within(region).getByRole("group", { name: "S42 Terrain hors ligne" });
-  expect(within(s42).getByText("en cours")).toBeTruthy();
-  expect(within(region).getByRole("group", { name: "S41 Accès" }).textContent).toContain("terminé");
+  expect(within(s42).getByText("se termine aujourd'hui")).toBeTruthy();
+  expect(within(region).getByRole("group", { name: "S41 Accès" }).textContent).toContain("terminé le 9 oct.");
   expect(screen.queryByRole("radio", { name: "Vagues" })).toBeNull();
   expect(screen.getByRole("list", { name: "Légende" }).textContent).toContain("Colonne = sprint");
 });

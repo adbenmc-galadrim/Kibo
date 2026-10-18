@@ -30,9 +30,7 @@ function LaneHeader({ lane }: { lane: Lane }) {
           </>
         )}
       </div>
-      {lane.state !== null && (
-        <span className={cn("text-[11px] leading-[14px]", soft)}>{fr.sprints.state[lane.state]}</span>
-      )}
+      {lane.label !== null && <span className={cn("text-[11px] leading-[14px]", soft)}>{lane.label}</span>}
     </div>
   );
 }

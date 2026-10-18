@@ -145,3 +145,11 @@ test("frame width grows with the longest title and stays bounded", () => {
     }),
   );
 });
+
+test("each sprint column says its state with the overview's words", () => {
+  const at = (today: string) =>
+    sprintLanes(kitInput({ tickets: kitTickets(today), today }))?.lanes.map((l) => l.label);
+  expect(at("2026-10-14")).toEqual(["terminé le 9 oct.", "en cours", "prévu", "prévu", null]);
+  expect(at("2026-10-16")).toEqual(["terminé le 9 oct.", "se termine aujourd'hui", "prévu", "prévu", null]);
+  expect(at(KIT_DAY_AFTER)?.[1]).toBe("terminé le 16 oct. · reste 2");
+});

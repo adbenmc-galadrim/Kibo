@@ -22,7 +22,7 @@ test("on Monday the next sprint is current", () => {
   const sprint = build(MONDAY).model.sprint;
   expect(sprint?.sprint.code).toBe("S43");
   expect(sprint?.lingering).toBe(false);
-  expect(sprint?.dates).toBe("19–23 oct.");
+  expect(sprint?.dates).toBe("19–23 oct. · en cours");
 });
 
 test("the sprint of the card is the shared current sprint", () => {
@@ -47,20 +47,20 @@ test("once the sprint is over, its unfinished features are late, oldest sprint f
     ["F5", "Envoyer les photos d'un tronçon", "S42", "· terminé le 16 oct.", "reste 4 étapes", "1/5"],
   ]);
   expect(model.late[1]?.tones.length).toBe(5);
-  expect(indicatorTexts(model.indicators).features.sub).toBe("2 en retard");
+  expect(indicatorTexts(model.indicators).features).toMatchObject({ sub: "2 en retard", tone: "red" });
 });
 
-test("the open indicator counts the blocked tickets, status or blocking question", () => {
+test("the in-progress indicator names the blocked features", () => {
   const { model } = build();
-  expect(model.indicators.blocked.count).toBe(1);
+  expect(model.indicators.blockedFeatures).toEqual(["F6"]);
   expect(indicatorTexts(model.indicators).open).toEqual({
     value: "2",
-    unit: "sur 2 max",
-    sub: "limite atteinte · 1 bloquée",
+    unit: "/ 2",
+    sub: "limite atteinte · bloquée : F6",
     dot: "red",
   });
-  const blocked = { ...model.indicators, blocked: { count: 5 } };
-  expect(indicatorTexts(blocked).open.sub).toBe("limite atteinte · 5 bloquées");
+  const blocked = { ...model.indicators, blockedFeatures: ["F6", "F8"] };
+  expect(indicatorTexts(blocked).open.sub).toBe("limite atteinte · bloquées : F6, F8");
 });
 
 test("an empty project reads as the Pour commencer mockup", () => {
@@ -71,11 +71,14 @@ test("an empty project reads as the Pour commencer mockup", () => {
     review: { count: 0, numbers: [] },
     questions: { open: 0, blocking: null },
     blocked: { count: 0 },
+    blockedFeatures: [],
+    atRisk: 0,
+    remaining: 0,
   };
   expect(indicatorTexts(empty)).toEqual({
     features: { value: "0", unit: "livrées sur 0", cells: [], sub: "aucune pour l'instant" },
     sprint: { value: "—", unit: "", sub: "S1 commence le lun. 19 oct." },
-    open: { value: "0", unit: "sur 2 max", sub: "aucune ouverte" },
+    open: { value: "0", unit: "/ 2", sub: "aucune en cours" },
     review: { value: "0", unit: "PR", sub: "aucune PR" },
     questions: { value: "0", unit: "ouvertes", sub: "aucune question" },
   });

@@ -1,5 +1,5 @@
-import type { OverviewIndicators } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
 import {
   CalendarRange,
   ClockAlert,
@@ -11,7 +11,13 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "./fr";
-import { featureCellGap, type IndicatorText, type IndicatorTexts, indicatorTexts } from "./indicator-texts";
+import {
+  featureCellGap,
+  type IndicatorFacts,
+  type IndicatorText,
+  type IndicatorTexts,
+  indicatorTexts,
+} from "./indicator-texts";
 
 const CELL_BG = {
   delivered: "bg-(--tracking-green)",
@@ -23,17 +29,41 @@ const DOT_BG = { amber: "bg-(--tracking-amber)", red: "bg-(--tracking-red)" };
 type BoxProps = {
   icon: LucideIcon;
   label: string;
+  hint?: string;
   text: Pick<IndicatorText, "value" | "unit">;
   children?: ReactNode;
 };
 
-function Box({ icon: Icon, label, text, children }: BoxProps) {
+const LABEL = "flex h-[15px] items-center gap-[6px] font-medium text-(--tracking-mfg) text-[12.5px]";
+
+function BoxLabel({ icon: Icon, label, hint }: Pick<BoxProps, "icon" | "label" | "hint">) {
+  const content = (
+    <>
+      <Icon absoluteStrokeWidth size={14} aria-hidden />
+      {label}
+    </>
+  );
+  if (hint === undefined) return <span className={LABEL}>{content}</span>;
+  return (
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button type="button" aria-description={hint} className={cn(LABEL, "w-fit cursor-help")}>
+            {content}
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="bottom" sideOffset={4} className="max-w-[260px] rounded-[6px] text-[12px]">
+          {hint}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+function Box({ icon, label, hint, text, children }: BoxProps) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-[5px] border-(--tracking-soft) border-l px-[18px] py-[12px] first:border-l-0">
-      <span className="flex h-[15px] items-center gap-[6px] font-medium text-(--tracking-mfg) text-[12.5px]">
-        <Icon absoluteStrokeWidth size={14} aria-hidden />
-        {label}
-      </span>
+      <BoxLabel icon={icon} label={label} hint={hint} />
       <span className="flex h-[28px] items-end gap-[6px]">
         <span className="font-semibold text-(--tracking-fg) text-[28px] leading-[28px] tracking-[-0.5px]">
           {text.value}
@@ -77,7 +107,14 @@ function FeatureCells({ cells }: { cells: IndicatorTexts["features"]["cells"] })
 
 function FeatureSub({ text }: { text: IndicatorTexts["features"] }) {
   if (text.sub === undefined) return <FeatureCells cells={text.cells} />;
-  if (!text.alert) return <span className="truncate">{text.sub}</span>;
+  if (text.tone === undefined) return <span className="truncate">{text.sub}</span>;
+  if (text.tone === "amber")
+    return (
+      <>
+        <FeatureCells cells={text.cells} />
+        <span className="shrink-0 whitespace-nowrap text-(--tracking-amber)">{text.sub}</span>
+      </>
+    );
   return (
     <span className="flex min-w-0 items-center gap-[6px] text-(--tracking-red)">
       <ClockAlert absoluteStrokeWidth size={12} aria-hidden className="shrink-0" />
@@ -86,7 +123,7 @@ function FeatureSub({ text }: { text: IndicatorTexts["features"] }) {
   );
 }
 
-export function Indicators({ indicators }: { indicators: OverviewIndicators }) {
+export function Indicators({ indicators }: { indicators: IndicatorFacts }) {
   const t = indicatorTexts(indicators);
   return (
     <section
@@ -99,7 +136,7 @@ export function Indicators({ indicators }: { indicators: OverviewIndicators }) {
       <Box icon={CalendarRange} label={fr.indicators.sprint} text={t.sprint}>
         <Sub text={t.sprint} />
       </Box>
-      <Box icon={Target} label={fr.indicators.open} text={t.open}>
+      <Box icon={Target} label={fr.indicators.open} hint={fr.indicators.openHint} text={t.open}>
         <Sub text={t.open} />
       </Box>
       <Box icon={GitPullRequest} label={fr.indicators.review} text={t.review}>

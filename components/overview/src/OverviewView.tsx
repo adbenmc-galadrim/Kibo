@@ -79,7 +79,7 @@ function ProjectCards({ project, model, activity, start, handlers }: Props) {
       {project !== null && start !== null && (
         <StartCard project={project} start={start} handlers={handlers} />
       )}
-      <NowCard rows={model.now} onOpenTicket={handlers.onOpenTicket} />
+      {model.now.length > 0 && <NowCard rows={model.now} onOpenTicket={handlers.onOpenTicket} />}
       <DeadlinesCard deadlines={model.deadlines} onOpenTicket={handlers.onOpenTicket} />
       <LateCard rows={model.late} onOpenTicket={handlers.onOpenTicket} />
       <div className="flex items-start gap-[16px]">

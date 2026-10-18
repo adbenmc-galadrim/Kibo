@@ -12,9 +12,11 @@ test("the five indicators read as the mockup", () => {
       value: "3",
       unit: "livrées sur 9",
       cells: ["delivered", "delivered", "delivered", "open", "open", "todo", "todo", "todo", "todo"],
+      sub: "2 à risque",
+      tone: "amber",
     },
-    sprint: { value: "S42", unit: "finit ce soir", sub: "Terrain hors ligne" },
-    open: { value: "2", unit: "sur 2 max", sub: "limite atteinte · 1 bloquée", dot: "red" },
+    sprint: { value: "S42", unit: "se termine aujourd'hui", sub: "Terrain hors ligne" },
+    open: { value: "2", unit: "/ 2", sub: "limite atteinte · bloquée : F6", dot: "red" },
     review: { value: "3", unit: "PR", sub: "#20 · #22 · #23" },
     questions: { value: "3", unit: "ouvertes", sub: "Q14 bloque F6", dot: "red" },
   });
@@ -23,11 +25,13 @@ test("the five indicators read as the mockup", () => {
 test("a finished sprint that stays current says when it ended", () => {
   const { model } = build();
   const sprint = { code: "S42", name: "Terrain hors ligne", ending: { ended: "2026-10-16" } };
-  expect(indicatorTexts({ ...model.indicators, sprint }).sprint).toEqual({
+  expect(indicatorTexts({ ...model.indicators, sprint, remaining: 2 }).sprint).toEqual({
     value: "S42",
     unit: "terminé le 16 oct.",
-    sub: "Terrain hors ligne",
+    sub: "reste 2 · Terrain hors ligne",
   });
+  const running = { ...sprint, ending: { days: 3 } };
+  expect(indicatorTexts({ ...model.indicators, sprint: running }).sprint.unit).toBe("en cours");
 });
 
 test("the sessions in progress, longest first, with their delivery step and duration", () => {
@@ -55,14 +59,14 @@ test("the current sprint lists its features, the open badge and the limit note",
   const { model } = build();
   const sprint = model.sprint;
   expect(sprint?.title).toBe("Sprint S42 · Terrain hors ligne");
-  expect(sprint?.dates).toBe("12–16 oct.");
-  expect(sprint?.open).toEqual({ text: "2/2 ouvertes", full: true });
-  expect(sprint?.rows.map((r) => [r.shortKey, r.title, r.state, r.steps])).toEqual([
-    ["F3", "Réaffecter un ISO", "delivered", "4/4"],
-    ["F4", "Saisir un tronçon hors ligne", "open", "3/5"],
-    ["F5", "Envoyer les photos d'un tronçon", "open", "1/5"],
+  expect(sprint?.dates).toBe("12–16 oct. · se termine aujourd'hui");
+  expect(sprint?.open).toEqual({ text: "2/2 en cours", full: true });
+  expect(sprint?.rows.map((r) => [r.shortKey, r.title, r.state, r.steps, r.risk, r.slipped])).toEqual([
+    ["F3", "Réaffecter un ISO", "delivered", "4/4", false, null],
+    ["F4", "Saisir un tronçon hors ligne", "open", "3/5", true, null],
+    ["F5", "Envoyer les photos d'un tronçon", "open", "1/5", true, null],
   ]);
-  expect(sprint?.note).toBe("Limite de 2 ouvertes atteinte : F6 attendra la fin de F4 ou de F5.");
+  expect(sprint?.note).toBe("Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5.");
 });
 
 test("the next feature to finish is the most advanced one of the sprint", () => {

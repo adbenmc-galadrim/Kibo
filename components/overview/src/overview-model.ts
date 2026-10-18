@@ -4,8 +4,8 @@ import {
   deadlineColumns,
   deadlineRows,
   deliveryStepLabel,
+  inProgressFeatures,
   type Link,
-  type OverviewIndicators,
   openLimitOf,
   overviewIndicators,
   type ProjectEvent,
@@ -19,6 +19,7 @@ import {
   todayOffset,
 } from "@kibo/schema";
 import type { TimelineInput } from "@kibo/sdk/tracking";
+import type { IndicatorFacts } from "./indicator-texts";
 import { type LateRow, lateRows } from "./late-model";
 import {
   blockingRefs,
@@ -56,7 +57,7 @@ export type NowRow = {
   duration: string;
 };
 export type OverviewModel = {
-  indicators: OverviewIndicators;
+  indicators: IndicatorFacts;
   now: NowRow[];
   deadlines: Omit<TimelineInput, "collapsed">;
   late: LateRow[];
@@ -119,22 +120,29 @@ export function overviewModel(input: OverviewInput): OverviewModel {
     blocking,
     limit: openLimitOf(input.tracking),
     today: input.today,
+    events: input.events,
   };
+  const sprint = sprintCard(sprintInput);
   return {
-    indicators: overviewIndicators({
-      snapshot: {
-        tickets,
-        sprints: [...input.sprints],
-        questions: [...input.questions],
-        meta: metaOf(input.tracking),
-      },
-      today: input.today,
-    }),
+    indicators: {
+      ...overviewIndicators({
+        snapshot: {
+          tickets,
+          sprints: [...input.sprints],
+          questions: [...input.questions],
+          meta: metaOf(input.tracking),
+        },
+        today: input.today,
+      }),
+      blockedFeatures: inProgressFeatures(features, sprintInput.limit).blocked.map((f) => f.shortKey),
+      atRisk: sprint?.rows.filter((r) => r.risk).length ?? 0,
+      remaining: sprint?.remaining ?? 0,
+    },
     now: nowRows(input.tickets, input.now),
     deadlines: deadlines(input, features, blocking),
     late: lateRows({ features, sprints: input.sprints, blocking, today: input.today }),
     sprints: sortSprints(input.sprints),
-    sprint: sprintCard(sprintInput),
+    sprint,
     next: nextCard(sprintInput),
     review: reviewRows(input),
     questions: questionRows(input),

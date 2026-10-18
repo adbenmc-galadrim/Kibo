@@ -4,7 +4,7 @@ import type { ProjectInfo } from "@kibo/sdk";
 export type StartStep = "folder" | "feature" | "copy";
 export type GettingStartedModel = {
   done: Record<StartStep, boolean>;
-  command: string;
+  command: string | null;
   target: TicketView | null;
 };
 
@@ -17,7 +17,7 @@ export function firstStep(tickets: readonly TicketView[]): TicketView | null {
 }
 
 export function gettingStarted(
-  project: Pick<ProjectInfo, "key" | "hasFolder">,
+  project: Pick<ProjectInfo, "hasFolder">,
   tickets: readonly TicketView[],
   copied: boolean,
 ): GettingStartedModel | null {
@@ -26,7 +26,7 @@ export function gettingStarted(
   const target = firstStep(tickets);
   return {
     done: { folder: project.hasFolder, feature: hasFeature, copy: copied },
-    command: deliveryBrief(target?.key ?? `${project.key}-1`),
+    command: target?.key ? deliveryBrief(target.key) : null,
     target,
   };
 }

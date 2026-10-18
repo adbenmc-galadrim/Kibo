@@ -101,7 +101,27 @@ export const fr = {
     counter: (features: number, steps: number, links: number) =>
       `${features} fonctionnalité${s(features)} · ${steps} dépendance${s(steps)} entre étapes, ${links} entre fonctionnalités`,
     reserve: "À planifier",
-    state: { done: "terminé", current: "en cours", planned: "prévu" },
+    phase: {
+      upcoming: "prévu",
+      current: "en cours",
+      "ends-today": "se termine aujourd'hui",
+      ended: (date: string) => `terminé le ${date}`,
+    },
+    rest: (n: number) => `reste ${n}`,
+    months: [
+      "janv.",
+      "févr.",
+      "mars",
+      "avr.",
+      "mai",
+      "juin",
+      "juil.",
+      "août",
+      "sept.",
+      "oct.",
+      "nov.",
+      "déc.",
+    ],
     blockedBy: (question: string | null) =>
       question ? `bloquée par ${question}` : "bloquée par une question",
     late: (slipTo: string | null) => (slipTo ? `en retard · glisse en ${slipTo}` : "en retard"),

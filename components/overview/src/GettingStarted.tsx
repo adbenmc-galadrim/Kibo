@@ -17,19 +17,9 @@ const BUTTON =
   "h-[25px] shrink-0 gap-[6px] rounded-[6px] px-[10px] py-[5px] font-medium text-[12px] shadow-none has-[>svg]:px-[10px]";
 const t = fr.start;
 
-function Action({
-  icon: Icon,
-  label,
-  onClick,
-  disabled,
-}: {
-  icon: LucideIcon;
-  label: string;
-  onClick(): void;
-  disabled?: boolean;
-}) {
+function Action({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string; onClick(): void }) {
   return (
-    <Button variant="outline" className={BUTTON} onClick={onClick} disabled={disabled}>
+    <Button variant="outline" className={BUTTON} onClick={onClick}>
       <Icon absoluteStrokeWidth size={13} />
       {label}
     </Button>
@@ -78,14 +68,20 @@ function Step({
 }
 
 export function GettingStarted({ model, projectKey, onOpenPlanning, onCopy }: Props) {
-  const count = Object.values(model.done).filter(Boolean).length;
+  const target = model.target;
+  const shown: StartStep[] = target === null ? ["folder", "feature"] : ["folder", "feature", "copy"];
+  const count = shown.filter((step) => model.done[step]).length;
   return (
     <section aria-label={t.title} className={CARD}>
       <CardHeader
         icon={Flag}
         title={t.title}
-        count={t.count(count, 3)}
-        aside={<span className="text-(--tracking-mfg) text-[12.5px] leading-[15px]">{t.subtitle}</span>}
+        count={t.count(count, shown.length)}
+        aside={
+          <span className="text-(--tracking-mfg) text-[12.5px] leading-[15px]">
+            {t.subtitle(shown.length)}
+          </span>
+        }
       />
       <ul>
         <Step
@@ -106,20 +102,20 @@ export function GettingStarted({ model, projectKey, onOpenPlanning, onCopy }: Pr
           text={t.feature.text(projectKey)}
           aside={<Action icon={MapIcon} label={t.feature.open} onClick={onOpenPlanning} />}
         />
-        <Step
-          step="copy"
-          done={model.done.copy}
-          title={
-            <>
-              {t.copy.title}
-              <code className="font-mono font-normal text-[13px] leading-[16px]">{model.command}</code>
-            </>
-          }
-          text={t.copy.text}
-          aside={
-            <Action icon={Copy} label={t.copy.button} onClick={onCopy} disabled={model.target === null} />
-          }
-        />
+        {target !== null && (
+          <Step
+            step="copy"
+            done={model.done.copy}
+            title={
+              <>
+                {t.copy.title}
+                <code className="font-mono font-normal text-[13px] leading-[16px]">{model.command}</code>
+              </>
+            }
+            text={t.copy.text}
+            aside={<Action icon={Copy} label={t.copy.button} onClick={onCopy} />}
+          />
+        )}
       </ul>
     </section>
   );

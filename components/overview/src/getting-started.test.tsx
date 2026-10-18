@@ -43,18 +43,18 @@ const row = (card: HTMLElement, name: string) => {
   return found;
 };
 
-test("a new project lists three steps to start, with its sprints beside them", async () => {
+test("a new project lists two steps to start, with its sprints beside them", async () => {
   const m = setup({ seed: sprints });
   const card = await start();
-  expect(within(card).getByText("0/3")).toBeTruthy();
+  expect(within(card).getByText("0/2")).toBeTruthy();
+  expect(within(card).getByText("deux étapes pour suivre le projet")).toBeTruthy();
   expect(
     within(row(card, "Relier le dépôt")).getByText("Modifier le projet › Dossier du dépôt"),
   ).toBeTruthy();
   expect(row(card, "Relier le dépôt").dataset.done).toBe("false");
   expect(row(card, "Créer une fonctionnalité").dataset.done).toBe("false");
-  const copy = within(row(card, "Copier")).getByRole("button", { name: "Copier" });
-  expect(copy.hasAttribute("disabled")).toBe(true);
-  expect(within(row(card, "Copier")).getByText("/full-delivery KIB-1")).toBeTruthy();
+  expect(within(card).getAllByRole("listitem").length).toBe(2);
+  expect(within(card).queryByRole("button", { name: "Copier" })).toBeNull();
   await userEvent.click(
     within(row(card, "Créer une fonctionnalité")).getByRole("button", { name: "Ouvrir le Planning" }),
   );
