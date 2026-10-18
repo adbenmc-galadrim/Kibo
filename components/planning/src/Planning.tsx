@@ -20,7 +20,7 @@ import { fr } from "./fr";
 import { NewFeatureDialog } from "./NewFeatureDialog";
 import type { PlanningLayout } from "./PlanningHeader";
 import { PlanningView } from "./PlanningView";
-import { type FeatureCard, planningModel } from "./planning-model";
+import { type FeatureCard, isCurrentSprint, planningModel } from "./planning-model";
 import { SprintDialog } from "./SprintDialog";
 import { sprintLabel } from "./sprint-label";
 
@@ -50,9 +50,17 @@ export function Planning() {
   const { data: links } = useEntities("link");
   const { data: sprints } = useEntities("sprint");
   const { data: questions } = useEntities("question");
+  const { data: events } = useEntities("project_event");
   const today = localToday();
   const { tracking } = useComponentSettings();
-  const model = planningModel({ tickets, links, sprints, questions, openLimit: openLimitOf(tracking) });
+  const model = planningModel({
+    tickets,
+    links,
+    sprints,
+    questions,
+    events,
+    openLimit: openLimitOf(tracking),
+  });
   const cards = [...model.sprints.flatMap((c) => c.cards), ...model.backlog];
   const [dragged, setDragged] = useState<FeatureCard | null>(null);
   const [target, setTarget] = useState<string | null>(null);
@@ -102,7 +110,7 @@ export function Planning() {
       () => setError(fr.moveFailed(cardOf(drop.ticketId)?.shortKey ?? "")),
     );
   };
-  const current = sprints.find((s) => s.state === "current") ?? null;
+  const current = sprints.find(isCurrentSprint) ?? null;
   return (
     <DndContext
       sensors={sensors}
@@ -129,7 +137,12 @@ export function Planning() {
       />
       <DragPreview>{dragged ? <FeatureCardPreview card={dragged} /> : null}</DragPreview>
       {dialog?.kind === "sprint" && (
-        <SprintDialog sprint={dialog.sprint} today={today} onClose={() => setDialog(null)} />
+        <SprintDialog
+          sprint={dialog.sprint}
+          sprints={sprints}
+          today={today}
+          onClose={() => setDialog(null)}
+        />
       )}
       {dialog?.kind === "feature" && (
         <NewFeatureDialog sprints={sprints} sprintId={current?.id ?? null} onClose={() => setDialog(null)} />

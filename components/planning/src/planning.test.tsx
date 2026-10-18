@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, setSystemTime, test } from "bun:test";
+import type { ProjectEvent } from "@kibo/schema";
 import { LAZY_FALLBACK_SELECTOR, SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
@@ -120,4 +121,28 @@ test("clicking a feature title opens its sheet", async () => {
   const { m, seeded } = setupPlanning();
   await userEvent.setup().click(await screen.findByRole("button", { name: "Exporter le dossier client" }));
   await waitFor(() => expect(m.opened).toEqual([seeded.features.f9.root.id]));
+});
+
+test("a feature moved out of its sprint says where it slipped from", async () => {
+  const sprintSet = (id: number, ticketId: string, from: string | null, to: string): ProjectEvent => ({
+    id,
+    projectId: "p",
+    at: id,
+    kind: "sprint_set",
+    ticketId,
+    featureId: ticketId,
+    source: "user",
+    data: { from, to },
+  });
+  setupPlanning(TODAY, {
+    journal: ({ features }) => [
+      sprintSet(1, features.f8.root.id, null, "S42"),
+      sprintSet(2, features.f8.root.id, "S42", "S43"),
+      sprintSet(3, features.f6.root.id, null, "S43"),
+    ],
+  });
+  await waitFor(async () =>
+    expect(within(await cardIn(/^S43 /, "F8")).getByText("glissée de S42")).toBeTruthy(),
+  );
+  expect(within(await cardIn(/^S43 /, "F6")).queryByText(/^glissée/)).toBeNull();
 });

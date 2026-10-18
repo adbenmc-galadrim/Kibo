@@ -30,6 +30,7 @@ export const fr = {
   },
   steps: (done: number, total: number) => `${done}/${total} étapes`,
   next: (key: string) => `suivante : ${key}`,
+  slipped: (code: string) => `glissée de ${code}`,
   session: (key: string) => `${key} en cours de livraison`,
   wontHold: (shortKey: string, remaining: number) =>
     `${shortKey} ne tiendra pas : ${remaining} ${plural(remaining, "étape restante", "étapes restantes")}`,

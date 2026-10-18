@@ -305,7 +305,7 @@
     "size": { "min": { "w": 6, "h": 4 } },
     "title": "Planning",
     "description": "Fonctionnalités par sprint, glisser pour planifier",
-    "reads": ["ticket", "link", "status", "sprint", "question"],
+    "reads": ["ticket", "link", "status", "sprint", "question", "project_event"],
     "writes": ["ticket", "sprint"],
     "configSchema": {
       "layout": { "enum": ["columns", "bands"], "default": "columns", "label": "Disposition" }

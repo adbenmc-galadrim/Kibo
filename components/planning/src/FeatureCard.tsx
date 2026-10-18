@@ -50,6 +50,11 @@ export function FeatureCardBody({ card, preview = false, onOpen }: BodyProps) {
           className={cn(preview ? "text-(--tracking-mfg)" : "text-(--tracking-faint)")}
         />
         <span className="font-mono text-(--tracking-dim) text-[11px] leading-[14px]">{card.shortKey}</span>
+        {card.slipped !== null && (
+          <span className="truncate text-(--tracking-dim) text-[11px] leading-[14px]">
+            {fr.slipped(card.slipped)}
+          </span>
+        )}
         {!preview && <FeatureBadge badge={card.badge} />}
       </div>
       {onOpen ? (

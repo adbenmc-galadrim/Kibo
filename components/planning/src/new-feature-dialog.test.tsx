@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, expect, setSystemTime, test } from "bun:test";
+import type { ProjectCommand } from "@kibo/schema";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { stepTitles } from "./NewFeatureDialog";
@@ -36,6 +37,7 @@ test("a new feature is created with its steps in order, the last demo optional, 
   const tickets = m.snapshot().tickets;
   const root = tickets.find((t) => t.title === "Signer un PV");
   expect(root?.description).toBe("Le PV est signé sur la tablette.");
+  expect([root?.key, root?.shortKey]).toEqual(["F10", "F10"]);
   expect(root?.sprintId).toBe(seeded.sprints.s44.id);
   const children = tickets.filter((t) => t.parentId === root?.id);
   expect(children.map((t) => [t.title, t.optional])).toEqual([
@@ -44,6 +46,22 @@ test("a new feature is created with its steps in order, the last demo optional, 
     ["Démo client", true],
   ]);
   expect(await cardIn(/^S44 /, root?.shortKey ?? "")).toBeTruthy();
+});
+
+test("the feature is created as such: createTicket { title, feature: true }", async () => {
+  const { m } = setupPlanning();
+  const sent: ProjectCommand[] = [];
+  const run = m.sdk.run.bind(m.sdk);
+  m.sdk.run = (cmd) => {
+    sent.push(cmd);
+    return run(cmd);
+  };
+  const { user, dialog } = await openDialog();
+  await user.type(within(dialog).getByLabelText("Nom"), "Signer un PV");
+  await user.click(within(dialog).getByRole("button", { name: "Créer la fonctionnalité" }));
+  await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  expect(sent[0]).toEqual({ method: "createTicket", title: "Signer un PV", description: "", feature: true });
+  expect(await cardIn(/^S42 /, "F10")).toBeTruthy();
 });
 
 test("the last step stays mandatory when unchecked, and a feature needs a step", async () => {
@@ -94,4 +112,11 @@ test("a retry after a partial failure finishes the same feature, without duplica
     ["Export PDF", false],
     ["Démo client", true],
   ]);
+});
+
+test("on the Saturday after S42, the lingering S42 stays the default sprint of a new feature", async () => {
+  setSystemTime(new Date("2026-10-17T10:00:00"));
+  const { seeded } = setupPlanning("2026-10-17");
+  const { dialog } = await openDialog();
+  expect(within(dialog).getByLabelText<HTMLSelectElement>("Sprint").value).toBe(seeded.sprints.s42.id);
 });

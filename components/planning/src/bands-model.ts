@@ -4,6 +4,7 @@ import {
   type FeatureState,
   type FeatureStep,
   FINAL_STATUSES,
+  featureLabel,
   featureSteps,
   isFeature,
   isOpen,
@@ -90,7 +91,7 @@ function bandRow(f: Feature, column: number, facts: RowFacts): DeadlineRow {
   const next = f.feature.nextStepId;
   return {
     featureId: f.id,
-    shortKey: f.shortKey ?? f.keyLabel,
+    shortKey: featureLabel(f) || f.keyLabel,
     title: f.title,
     sprintId: sorted[column]?.id ?? BACKLOG_COLUMN,
     cells: cellsOf(steps, blocking, slipTo !== null),

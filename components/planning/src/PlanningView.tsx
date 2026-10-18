@@ -7,7 +7,7 @@ import { FeatureCard } from "./FeatureCard";
 import { fr } from "./fr";
 import { PlanningBands } from "./PlanningBands";
 import { PlanningHeader, type PlanningLayout } from "./PlanningHeader";
-import type { FeatureCard as Card, PlanningModel } from "./planning-model";
+import { type FeatureCard as Card, isCurrentSprint, type PlanningModel } from "./planning-model";
 import { SprintColumn, Warning } from "./SprintColumn";
 import { TONE_BG, TONES } from "./tones";
 
@@ -47,7 +47,7 @@ export type PlanningViewProps = {
 };
 
 const limitHolder = (model: PlanningModel): string | null =>
-  (model.sprints.find((c) => c.sprint.state === "current") ?? model.sprints[0])?.sprint.id ?? null;
+  (model.sprints.find((c) => isCurrentSprint(c.sprint)) ?? model.sprints[0])?.sprint.id ?? null;
 
 export function PlanningView(props: PlanningViewProps) {
   const { model, readOnly, target, dragged, onOpen, onOpenSprint, onEditSprint } = props;

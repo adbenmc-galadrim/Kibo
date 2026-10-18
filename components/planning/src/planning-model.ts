@@ -3,16 +3,19 @@ import {
   DELIVERY_STEP_MAX,
   type FeatureState,
   type FeatureStep,
+  featureLabel,
   featureSteps,
   isFeature,
   isOpen,
   type Link,
   openFeatures,
+  type ProjectEvent,
   type Question,
   type SprintView,
   sortSprints,
   type TicketView,
 } from "@kibo/schema";
+import { slippedFrom } from "./slipped-from";
 import { sprintDates } from "./sprint-label";
 
 export { sprintDates } from "./sprint-label";
@@ -39,6 +42,7 @@ export type FeatureCard = {
   session: string | null;
   compact: boolean;
   muted: boolean;
+  slipped: string | null;
 };
 export type SprintWarning = { shortKey: string; remaining: number };
 export type SprintColumn = {
@@ -64,8 +68,12 @@ export type PlanningInput = {
   links: readonly Link[];
   sprints: readonly SprintView[];
   questions: readonly Question[];
+  events?: readonly ProjectEvent[] | undefined;
   openLimit?: number | undefined;
 };
+
+export const isCurrentSprint = (s: Pick<SprintView, "state" | "lingering">): boolean =>
+  s.state === "current" || s.lingering;
 
 type Facts = {
   input: PlanningInput;
@@ -121,7 +129,7 @@ function cardOf(f: Feature, facts: Facts): FeatureCard {
   const nextStep = steps.find((s) => s.ticketId === state.nextStepId) ?? null;
   return {
     id: f.id,
-    shortKey: f.shortKey ?? f.keyLabel,
+    shortKey: featureLabel(f) || f.keyLabel,
     title: f.title,
     sprintId: sprint?.id ?? null,
     badge: badgeOf(state, nextStep === null ? null : (blocking.get(nextStep.ticketId) ?? null)),
@@ -134,6 +142,7 @@ function cardOf(f: Feature, facts: Facts): FeatureCard {
     session: delivered ? null : sessionOf(steps, blocking),
     compact: delivered && sprint?.state === "done",
     muted: delivered,
+    slipped: slippedFrom(input.events ?? [], f.id),
   };
 }
 
