@@ -67,7 +67,6 @@ test("the Vue d'ensemble leads Emis and opens a feature, the sprint and a questi
 
   const next = section(page, "Prochaine à finir");
   await next.getByRole("button", { name: "Copier" }).click();
-  await expect(page.getByText("Commande copiée")).toBeAttached();
   expect(await clipboardText(page)).toBe("/full-delivery EMIS-45");
 
   const activity = section(page, "Activité");

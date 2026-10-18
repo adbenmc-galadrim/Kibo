@@ -142,12 +142,6 @@ export async function rpc(page: Page, body: Body): Promise<unknown> {
   return field(payload, "result");
 }
 
-export async function showAgentExecution(page: Page): Promise<void> {
-  await expect(async () => {
-    await rpc(page, { method: "setAppSettings", patch: { agentExecution: "shown" } });
-  }).toPass({ timeout: 15_000 });
-}
-
 export function createGitRepo(): string {
   const dir = mkdtempSync(join(tmpdir(), "kibo-e2e-repo-"));
   const git = (...args: string[]) => execFileSync("git", args, { cwd: dir, stdio: "ignore" });
@@ -177,76 +171,14 @@ async function seedConfig(page: Page, projectId: string): Promise<Map<string, st
   return domains;
 }
 
-export type AgentSpec = {
-  name: string;
-  description: string;
-  model: "opus" | "sonnet" | "haiku";
-  template?: "blank" | "delivery" | "review" | "seo" | "conductor";
-  settings: Body;
-};
-
-const SEEDED_AGENTS: AgentSpec[] = [
-  {
-    name: "review-plan",
-    description: "Relit un plan de phase et rend un verdict accepté ou refusé",
-    model: "sonnet",
-    template: "review",
-    settings: { permissionMode: "plan", maxParallel: 3, workspace: "isolated" },
-  },
-  {
-    name: "tests-rapides",
-    description: "Lance les tests du ticket et résume les échecs en quelques lignes",
-    model: "haiku",
-    settings: { permissionMode: "acceptEdits", maxParallel: 2, workspace: "isolated" },
-  },
-  {
-    name: "livraison",
-    description: "Livre un ticket en TDD avec des commits propres",
-    model: "opus",
-    template: "delivery",
-    settings: { workspace: "worktree", maxParallel: 1 },
-  },
-];
-
-export const livraisonOpus = (workspace: "isolated" | "repo" | "worktree", maxParallel = 2): AgentSpec => ({
-  name: "livraison-opus",
-  description: "Livre un ticket avec Opus, en acceptant les modifications",
-  model: "opus",
-  settings: { permissionMode: "acceptEdits", workspace, maxParallel },
-});
-
-export async function agentRefs(page: Page): Promise<Map<string, string>> {
-  const listed = list(await rpc(page, { method: "agents.list" }), "agents");
-  return new Map(listed.map((a) => [text(a, "name"), text(a, "ref")]));
-}
-
-export async function createAgent(page: Page, spec: AgentSpec): Promise<string> {
-  const { settings, ...input } = spec;
-  const created = await rpc(page, { method: "agents.create", scope: "global", ...input });
-  const ref = text(field(created, "agent"), "ref");
-  await rpc(page, { method: "agents.list" });
-  await rpc(page, { method: "agents.settings", ref, patch: settings });
-  return ref;
-}
-
-export async function createAgents(page: Page): Promise<Map<string, string>> {
-  const existing = await agentRefs(page);
-  for (const spec of SEEDED_AGENTS) {
-    if (!existing.has(spec.name)) await createAgent(page, spec);
-  }
-  return agentRefs(page);
-}
-
 export type Seeded = {
   projectId: string;
   board: string;
   tickets: Map<number, string>;
-  agents: Map<string, string>;
 };
 
 export async function seedWorkspace(page: Page, folder: string): Promise<Seeded> {
   const user = text(await rpc(page, { method: "getSession" }), "user");
-  await createAgents(page);
   const created = await rpc(page, {
     method: "createProject",
     name: "Kibo",
@@ -308,31 +240,5 @@ export async function seedWorkspace(page: Page, folder: string): Promise<Seeded>
     await command({ method: "addLink", from: tickets.get(from), to: tickets.get(to), type: "blocks" });
   }
   await command({ method: "addLink", from: tickets.get(12), to: tickets.get(16), type: "relates" });
-  return { projectId, board, tickets, agents: await agentRefs(page) };
-}
-
-export async function runState(page: Page, ticketKey: string): Promise<string | null> {
-  const runs = list(await rpc(page, { method: "getAgents" }), "runs").filter(
-    (r) => field(r, "ticketKey") === ticketKey,
-  );
-  const last = runs.at(-1);
-  return last === undefined ? null : text(last, "state");
-}
-
-export async function assign(
-  page: Page,
-  seeded: Seeded,
-  n: number,
-  agent: string,
-  state: string,
-): Promise<string> {
-  const run = await rpc(page, {
-    method: "assignAgent",
-    projectId: seeded.projectId,
-    ticketId: seeded.tickets.get(n),
-    profileId: seeded.agents.get(agent),
-    brief: "",
-  });
-  await expect.poll(() => runState(page, `KIB-${n}`), { timeout: 20_000 }).toBe(state);
-  return text(run, "id");
+  return { projectId, board, tickets };
 }

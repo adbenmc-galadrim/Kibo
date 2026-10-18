@@ -1,5 +1,4 @@
 import { expect, type Page, test } from "@playwright/test";
-import { list, rpc, showAgentExecution, text } from "./agents-seed";
 import { openNewTicketFromPalette } from "./helpers";
 import { shot } from "./repo-project";
 import { E2E_TOKEN } from "./token";
@@ -40,20 +39,15 @@ async function expectDemoWidgets(page: Page) {
   await expect(notes.getByText("**gras**")).toHaveCount(0);
 }
 
-async function demoRuns(page: Page) {
-  const agents = await rpc(page, { method: "getAgents" });
-  return list(agents, "runs").filter((r) => text(r, "profileId") === "system:demo");
-}
-
-test("the tutorial walks the six steps in the demo project, then deletes it in one click", async ({
+test("the tutorial walks the five tracking steps in the demo project, then deletes it in one click", async ({
   page,
 }, info) => {
   test.setTimeout(240_000);
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await showAgentExecution(page);
   await page.getByRole("main").getByRole("button", { name: "Suivre le didacticiel (10 min)" }).click();
   const offer = page.getByRole("dialog", { name: "Faire le tour de Kibo ?" });
-  await expect(offer.getByRole("listitem")).toHaveCount(6);
+  await expect(offer.getByRole("listitem")).toHaveCount(5);
+  await expect(offer.getByText("Confier un ticket à un agent")).toHaveCount(0);
   await shot(page, info, "proposition");
   await offer.getByRole("button", { name: "Commencer" }).click();
   await expect(offer).toBeHidden();
@@ -115,29 +109,6 @@ test("the tutorial walks the six steps in the demo project, then deletes it in o
   await expect(dot(page, "Réorganiser le tableau de bord", "fait")).toBeVisible();
 
   await goToStep(page);
-  await page
-    .getByRole("region", { name: "À faire" })
-    .getByRole("button", { name: "Coque et sidecar" })
-    .click();
-  await page.getByRole("dialog").getByRole("button", { name: "Assigner à un agent" }).click();
-  const assign = page.getByRole("dialog");
-  await expect(assign.getByLabel("Agent")).toHaveText("Agent de démonstration · aucun token consommé");
-  await shot(page, info, "assigner-demo");
-  await assign.getByRole("button", { name: "Mettre en file" }).click();
-  await expect(assign).toBeHidden();
-  await page.getByRole("button", { name: /^Répondre à / }).click({ timeout: 30_000 });
-  await page.getByLabel(/^Réponse à /).fill("Non");
-  await page.getByRole("button", { name: "Envoyer" }).click();
-  await expect(dot(page, "Confier un ticket à un agent", "fait")).toBeVisible({ timeout: 45_000 });
-  await expect(
-    page.getByRole("region", { name: "Agents" }).getByText("Agent de démonstration · aucun token consommé"),
-  ).toBeVisible();
-  await shot(page, info, "tiroir-demo");
-  const runs = await demoRuns(page);
-  expect(runs.length).toBe(1);
-  expect(runs[0]).toMatchObject({ state: "done", tokens: 0, costUsd: 0 });
-
-  await goToStep(page);
   await page.getByRole("button", { name: "Ajouter un composant" }).click();
   await page.getByRole("button", { name: /Créer un composant/ }).click();
   const describe = page.getByRole("dialog", { name: "Créer un composant" });
@@ -174,10 +145,4 @@ test("the tutorial walks the six steps in the demo project, then deletes it in o
   const resume = await openHelpTutorial(page);
   await resume.getByRole("button", { name: "Reprendre" }).click();
   await expect(dot(page, "Créer un ticket et le déplacer", "en cours")).toBeVisible();
-
-  await page.goto("/#/agents");
-  await page.getByRole("button", { name: /^Agents de Kibo/ }).click();
-  const demoCard = page.getByRole("article", { name: "kibo-demo" });
-  await expect(demoCard.getByText("Joue les tickets du projet de démonstration de Kibo")).toBeVisible();
-  await shot(page, info, "agents-demo");
 });

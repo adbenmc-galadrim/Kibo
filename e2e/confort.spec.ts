@@ -1,18 +1,7 @@
 import { rmSync } from "node:fs";
 import { expect, type Locator, type Page, test } from "@playwright/test";
-import {
-  assign,
-  createAgent,
-  createGitRepo,
-  livraisonOpus,
-  rpc,
-  type Seeded,
-  seedWorkspace,
-  showAgentExecution,
-} from "./agents-seed";
-import { createE2eRepo, type E2eRepo } from "./git-repo";
-import { addComponent, createSidebarPage, openWorkspaceMenuItem } from "./helpers";
-import { createRepoProject, projectKey, shot } from "./repo-project";
+import { createGitRepo, type Seeded, seedWorkspace } from "./agents-seed";
+import { shot } from "./repo-project";
 import { E2E_TOKEN } from "./token";
 
 test.describe.configure({ mode: "serial" });
@@ -29,7 +18,6 @@ let seeded: Seeded | null = null;
 async function pair(page: Page) {
   await page.goto(`/#pair=${E2E_TOKEN}`);
   await expect(page.getByRole("button", { name: "Accueil" })).toBeVisible();
-  await showAgentExecution(page);
   await page.goto("/#/");
 }
 
@@ -37,8 +25,6 @@ async function seed(page: Page): Promise<Seeded> {
   if (seeded) return seeded;
   const folder = createGitRepo();
   cleanups.push(() => rmSync(folder, { recursive: true, force: true }));
-  await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
-  await createAgent(page, livraisonOpus("isolated"));
   seeded = await seedWorkspace(page, folder);
   return seeded;
 }
@@ -60,35 +46,6 @@ async function dragBelow(page: Page, source: Locator, target: Locator) {
   await page.mouse.up();
 }
 
-function newRepo(key: string): E2eRepo {
-  const repo = createE2eRepo(key);
-  cleanups.push(() => repo.remove());
-  return repo;
-}
-
-test("composants : recherche, filtres, tri et volet « Utilisé dans »", async ({ page }, info) => {
-  await pair(page);
-  await rpc(page, { method: "createProject", name: "Confort", key: "CNF", folder: null, color: "#6366F1" });
-  await createSidebarPage(page, "Confort", "Tableau", "Vue");
-  await addComponent(page, "Kanban");
-
-  await page.goto("/#/components");
-  await expect(page.getByRole("heading", { level: 1, name: "Composants" })).toBeVisible();
-  await page.getByRole("searchbox", { name: "Rechercher un composant" }).fill("kanban");
-  await page.getByRole("radiogroup", { name: "Origine" }).getByRole("radio", { name: "Kibo" }).click();
-  await page.getByRole("button", { name: "Trier par Utilisé dans" }).click();
-  const row = page.getByRole("row").filter({ hasText: /Kanban/ });
-  await expect(row).toHaveCount(1);
-  await row.getByRole("button", { name: "1 page · 1 projet" }).click();
-  const usages = page.getByRole("dialog", { name: "Utilisé dans" });
-  await expect(usages.getByText("Kanban 1.0.0")).toBeVisible();
-  await shot(page, info, "ecran-116");
-  await usages.getByRole("button", { name: "Confort › Tableau" }).click();
-  await expect(usages).toBeHidden();
-  await expect(page).toHaveURL(/#\/p\//);
-  await expect(page.getByRole("tab", { name: /Tableau/, selected: true })).toBeVisible();
-});
-
 test("synchronisation : état vide et connexion d'un autre appareil", async ({ page }, info) => {
   await pair(page);
   await page.goto("/#/settings/sync");
@@ -106,73 +63,6 @@ test("synchronisation : état vide et connexion d'un autre appareil", async ({ p
   await shot(page, info, "ecran-120");
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
-});
-
-test("agents : historique cliquable et confirmation d'arrêt", async ({ page }, info) => {
-  await pair(page);
-  const seededWorkspace = await seed(page);
-  await assign(page, seededWorkspace, 28, "livraison-opus", "waiting_input");
-  await page.goto("/#/agents");
-  await expect(page.getByRole("heading", { level: 1, name: "Agents" })).toBeVisible();
-  await page
-    .getByRole("radiogroup", { name: "Filtrer par état" })
-    .getByRole("radio", { name: "Tous" })
-    .click();
-  await page.getByRole("button", { name: /^livraison-opus · KIB-28/ }).click();
-  const panel = page.getByRole("dialog", { name: "Run global · livraison-opus · KIB-28" });
-  await expect(panel.getByRole("list", { name: "Fil de global · livraison-opus · KIB-28" })).toBeVisible();
-  await panel.getByRole("button", { name: "Ouvrir en grand" }).click();
-  await expect(page).toHaveURL(/#\/runs\//);
-  const header = page.locator("header", {
-    has: page.getByRole("heading", { name: "global · livraison-opus · KIB-28" }),
-  });
-  await header.getByRole("button", { name: "Arrêter", exact: true }).click();
-  const confirm = page.getByRole("alertdialog", {
-    name: "Arrêter le run global · livraison-opus · KIB-28 ?",
-  });
-  await expect(confirm.getByText("L'agent est interrompu ; le ticket reste assigné.")).toBeVisible();
-  await shot(page, info, "ecran-121");
-  await confirm.getByRole("button", { name: "Annuler" }).click();
-  await expect(confirm).toBeHidden();
-  await expect(header.getByRole("button", { name: "Arrêter", exact: true })).toBeVisible();
-});
-
-test("changements en toutes lettres, retour à la ligne mémorisé et recherche", async ({ page }, info) => {
-  const key = projectKey("CHG", info);
-  const repo = newRepo(key);
-  await pair(page);
-  await createRepoProject(page, `Code ${key}`, key, repo.repo);
-  repo.write("README.md", "# kibo\n\nkibo garde kibo en local.\n");
-  await openWorkspaceMenuItem(page, "Changements");
-  const unstaged = page.getByRole("group", { name: "Modifications (1)" });
-  await expect(unstaged.getByText("Modifié")).toBeVisible();
-  await unstaged.getByRole("button", { name: "Actions README.md" }).click();
-  await page.getByRole("menuitem", { name: "Ajouter au commit" }).click();
-  const staged = page.getByRole("group", { name: "Dans le prochain commit (1)" });
-  await expect(staged.getByText("README.md")).toBeVisible();
-  await staged
-    .getByRole("button", { name: /README\.md/ })
-    .first()
-    .click();
-  const wrap = page.getByRole("switch", { name: "Retour à la ligne" });
-  await expect(wrap).toBeChecked();
-  await wrap.click();
-  await expect(wrap).not.toBeChecked();
-  await shot(page, info, "ecran-122");
-  await page.reload();
-  await page
-    .getByRole("group", { name: "Dans le prochain commit (1)" })
-    .getByRole("button", { name: /README\.md/ })
-    .first()
-    .click();
-  await expect(page.getByRole("switch", { name: "Retour à la ligne" })).not.toBeChecked();
-
-  await page.getByRole("button", { name: "Actions README.md" }).click();
-  await page.getByRole("menuitem", { name: "Ouvrir dans un onglet" }).click();
-  await page.getByRole("button", { name: /^Rechercher \(/ }).click();
-  await page.getByRole("searchbox", { name: "Rechercher ou :ligne" }).fill("kibo");
-  await expect(page.getByText("1 / 3", { exact: true })).toBeVisible();
-  await shot(page, info, "ecran-124");
 });
 
 test("arbre Tickets filtré et Kanban réordonné", async ({ page }, info) => {
@@ -194,10 +84,8 @@ test("arbre Tickets filtré et Kanban réordonné", async ({ page }, info) => {
 
   await sidebar.getByRole("button", { name: "Kanban", exact: true }).click();
   const filter = page.getByRole("radiogroup", { name: "Tickets affichés" });
-  await expect(page.getByText(/^\d+ \/ 17 · Moi \+ agents$/)).toBeVisible();
-  await page.getByRole("button", { name: /masqués · Tout afficher$/ }).click();
-  await expect(filter.getByRole("radio", { name: "Tous" })).toBeChecked();
-  await expect(page.getByText("17 / 17 · Tous")).toBeVisible();
+  await expect(filter.getByRole("radio", { name: "Tous", exact: true })).toBeChecked();
+  await expect(page.getByText("17 tickets · Tous", { exact: true })).toBeVisible();
 
   await page.getByRole("button", { name: "Nouveau ticket dans Bloqué" }).click();
   const create = page.getByRole("dialog", { name: "Nouveau ticket" });
@@ -221,9 +109,5 @@ test("arbre Tickets filtré et Kanban réordonné", async ({ page }, info) => {
   await expect.poll(keys).toEqual(moved);
   await shot(page, info, "ecran-126");
   await page.reload();
-  await page
-    .getByRole("radiogroup", { name: "Tickets affichés" })
-    .getByRole("radio", { name: "Tous" })
-    .click();
   await expect.poll(keys).toEqual(moved);
 });

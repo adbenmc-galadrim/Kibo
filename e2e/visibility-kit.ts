@@ -1,18 +1,6 @@
-import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Browser, Page, TestInfo } from "@playwright/test";
-import {
-  createAgent,
-  createGitRepo,
-  livraisonOpus,
-  pairBrowser,
-  rpc,
-  type Seeded,
-  seedWorkspace,
-  showAgentExecution,
-  text,
-} from "./agents-seed";
-import { homeOf } from "./e2e-home";
+import { createGitRepo, pairBrowser, rpc, type Seeded, seedWorkspace, text } from "./agents-seed";
 
 export const WIDE = { width: 1440, height: 900 };
 
@@ -31,9 +19,6 @@ export async function openVisibility(browser: Browser, info: TestInfo): Promise<
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   const page = await context.newPage();
   await pairBrowser(page);
-  await showAgentExecution(page);
-  await rpc(page, { method: "setHost", patch: { hostSlots: 3 } });
-  await createAgent(page, livraisonOpus("repo"));
   const repo = createGitRepo();
   return { page, repo, seeded: await seedWorkspace(page, repo) };
 }
@@ -42,24 +27,6 @@ export const ticketOf = (v: Visibility, n: number): string => v.seeded.tickets.g
 
 const command = (v: Visibility, cmd: Record<string, unknown>) =>
   rpc(v.page, { method: "command", projectId: v.seeded.projectId, command: cmd });
-
-export async function assignOpus(v: Visibility, n: number): Promise<string> {
-  const run = await rpc(v.page, {
-    method: "assignAgent",
-    projectId: v.seeded.projectId,
-    ticketId: ticketOf(v, n),
-    profileId: v.seeded.agents.get("livraison-opus"),
-    brief: "",
-  });
-  return text(run, "id");
-}
-
-export async function releaseHold(v: Visibility, info: TestInfo, runId: string) {
-  const agents = await rpc(v.page, { method: "getAgents" });
-  const runs = (agents as { runs: { id: string; sessionId: string }[] }).runs;
-  const session = runs.find((r) => r.id === runId)?.sessionId ?? "";
-  writeFileSync(join(homeOf(info), "claude", "projects", `${session}.release`), "");
-}
 
 export async function addViewPage(v: Visibility, title: string, component: string): Promise<string> {
   const pageId = text(await command(v, { method: "addPage", title, kind: "view" }), "id");

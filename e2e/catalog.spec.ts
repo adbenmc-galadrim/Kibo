@@ -1,38 +1,15 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { expect, type Page, type TestInfo, test } from "@playwright/test";
-import { rpc } from "./agents-seed";
+import { expect, type TestInfo, test } from "@playwright/test";
 import { homeOf } from "./e2e-home";
-import {
-  addComponent,
-  createPage,
-  createSidebarPage,
-  openWorkspaceMenuItem,
-  pairAndCreateProject,
-} from "./helpers";
+import { addComponent, createPage, createSidebarPage, pairAndCreateProject } from "./helpers";
+import { addPendingComponent, publishDraft } from "./publish-kit";
 import { projectKey } from "./repo-project";
 
 test.setTimeout(240_000);
 
 const DRAFT = "hello";
 const TITLE = "Hello";
-
-async function openComponents(page: Page) {
-  await openWorkspaceMenuItem(page, "Composants");
-  await expect(page.getByRole("heading", { level: 1, name: "Composants" })).toBeVisible();
-}
-
-async function publishDraft(page: Page, version: string, strategy?: "Mettre à jour partout") {
-  await rpc(page, { method: "previewPublish", id: DRAFT });
-  await openComponents(page);
-  const draft = page.getByRole("listitem").filter({ hasText: TITLE });
-  await expect(draft.getByText("Tests verts")).toBeVisible();
-  await draft.getByRole("button", { name: "Publier" }).click();
-  const dialog = page.getByRole("dialog");
-  await expect(dialog.getByText(`Publier « ${TITLE} » ${version}`)).toBeVisible({ timeout: 120_000 });
-  if (strategy) await dialog.getByRole("radio", { name: new RegExp(strategy) }).check();
-  await dialog.getByRole("button", { name: `Publier ${version}` }).click();
-}
 
 function bumpDraft(info: TestInfo, version: string, change: string) {
   const file = join(homeOf(info), "components", "src", DRAFT, "kibo.component.json");
@@ -45,18 +22,17 @@ test("publier, autoriser, rendre en sandbox, mettre à jour partout", async ({ p
   const key = projectKey("CMP", info);
   await pairAndCreateProject(page, info, key);
 
-  await publishDraft(page, "0.1.0");
-  const trust = page.getByRole("dialog", { name: `Autoriser « ${TITLE} » 0.1.0 ?` });
-  await expect(trust.getByText("Lire les tickets du projet")).toBeVisible({ timeout: 60_000 });
-  await expect(trust.getByText("Aucun accès réseau, aucun fichier local")).toBeVisible();
-  await expect(trust.getByRole("radio", { name: /Isolé \(recommandé\)/ })).toBeChecked();
-  await trust.getByRole("button", { name: "Autoriser" }).click();
-  await page.getByRole("dialog").getByRole("button", { name: "Fermer" }).click();
-  await expect(page.getByRole("row", { name: new RegExp(`${TITLE}.*0\\.1\\.0.*Isolé`) })).toBeVisible();
-
-  for (const pageTitle of ["Tableau A", "Tableau B"]) {
+  await publishDraft(page, DRAFT, "new-version");
+  for (const [index, pageTitle] of ["Tableau A", "Tableau B"].entries()) {
     await createSidebarPage(page, `Kibo ${key}`, pageTitle, "Tableau de bord");
-    await addComponent(page, TITLE);
+    if (index === 0) {
+      const trust = await addPendingComponent(page, TITLE, "0.1.0");
+      await expect(trust.getByText("Lire les tickets du projet")).toBeVisible();
+      await expect(trust.getByText("Aucun accès réseau, aucun fichier local")).toBeVisible();
+      await expect(trust.getByRole("radio", { name: /Isolé \(recommandé\)/ })).toBeChecked();
+      await trust.getByRole("button", { name: "Autoriser et ajouter" }).click();
+      await expect(trust).toBeHidden({ timeout: 60_000 });
+    } else await addComponent(page, TITLE);
     const frame = page.frameLocator(`iframe[title="${TITLE}"]`);
     await expect(frame.getByText("Hello")).toBeVisible();
     await expect(frame.getByText("Version 0.1.0")).toBeVisible();
@@ -69,19 +45,12 @@ test("publier, autoriser, rendre en sandbox, mettre à jour partout", async ({ p
   }
 
   bumpDraft(info, "0.2.0", "Affiche la version");
-  await publishDraft(page, "0.2.0", "Mettre à jour partout");
-  const dialog = page.getByRole("dialog");
-  await expect(dialog.getByText("Utilisé dans 1 projet")).toBeVisible();
-  await expect(dialog.getByText("Affiche la version")).toBeVisible();
-  await expect(dialog.getByText("Version 0.2.0 publiée.")).toBeVisible({ timeout: 60_000 });
-  await dialog.getByRole("button", { name: "Fermer" }).click();
-  await expect(
-    page.getByRole("row", { name: new RegExp(`${TITLE}.*0\\.2\\.0.*2 pages · 1 projet`) }),
-  ).toBeVisible();
-
-  await page.getByRole("button", { name: `Kibo ${key}`, exact: true }).click();
-  await page.getByRole("button", { name: "Tableau A", exact: true }).click();
-  await expect(page.frameLocator(`iframe[title="${TITLE}"]`).getByText("Version 0.2.0")).toBeVisible();
+  await publishDraft(page, DRAFT, "update-all");
+  const sidebar = page.locator('[data-sidebar="sidebar"]');
+  await sidebar.getByRole("button", { name: "Tableau A", exact: true }).click();
+  await expect(page.frameLocator(`iframe[title="${TITLE}"]`).getByText("Version 0.2.0")).toBeVisible({
+    timeout: 60_000,
+  });
 });
 
 test("graphe et notes intégrés", async ({ page }, info) => {

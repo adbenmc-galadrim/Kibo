@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { rpc, showAgentExecution } from "./agents-seed";
+import { rpc } from "./agents-seed";
 import { shot } from "./repo-project";
 import { E2E_TOKEN } from "./token";
 
@@ -7,7 +7,6 @@ test.use({ viewport: { width: 1440, height: 900 } });
 
 test("un ticket sans projet, puis rattaché avec une nouvelle clé", async ({ page }, info) => {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  await showAgentExecution(page);
   await page
     .locator('[data-sidebar="sidebar"]')
     .getByRole("button", { name: /^Boîte de réception/ })

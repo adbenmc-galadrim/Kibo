@@ -1,4 +1,13 @@
-import { chmodSync, copyFileSync, cpSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  copyFileSync,
+  cpSync,
+  existsSync,
+  mkdirSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { join, resolve } from "node:path";
 import { startTestSyncServer, type TestSyncServer } from "@kibo/sync-server/testing";
 import { FAKE_FIGMA_IMAGE_HOST, startFakeFigma } from "../packages/daemon/src/testing/fake-figma";
@@ -32,14 +41,12 @@ const INTEGRATIONS_FLAG = "--integrations";
 const NO_GH_FLAG = "--no-gh";
 const DESIGN_FLAG = "--design";
 const EMBEDS_FLAG = "--embeds";
-const DELIVERY_FLAG = "--delivery";
 const EMIS_PR_POLL_MS = "200";
-const FLAGS = [INTEGRATIONS_FLAG, NO_GH_FLAG, DESIGN_FLAG, EMBEDS_FLAG, DELIVERY_FLAG];
+const FLAGS = [INTEGRATIONS_FLAG, NO_GH_FLAG, DESIGN_FLAG, EMBEDS_FLAG];
 const argv = process.argv.slice(2);
 const integrations = argv.includes(INTEGRATIONS_FLAG);
 const design = argv.includes(DESIGN_FLAG);
 const embeds = argv.includes(EMBEDS_FLAG);
-const delivery = argv.includes(DELIVERY_FLAG);
 const withGh = !argv.includes(NO_GH_FLAG);
 const [port = "4390", scenario = "question", ...drafts] = argv.filter((a) => !FLAGS.includes(a));
 const home = e2eHome(port);
@@ -55,6 +62,11 @@ for (const draft of drafts) {
   renameSync(join(dir, "component.test.tsx.fixture"), join(dir, "component.test.tsx"));
 }
 const agents = join(root, "packages/daemon/src/agents");
+const e2eScenario = join(import.meta.dir, "agents", "scenarios", `${scenario}.json`);
+function scenarioFile(): string {
+  if (scenario === EMIS_MAQUETTES) return EMIS_SCENARIO;
+  return existsSync(e2eScenario) ? e2eScenario : join(agents, "scenarios", `${scenario}.json`);
+}
 const ghDir = fakeGhDir(port);
 rmSync(ghDir, { recursive: true, force: true });
 mkdirSync(ghDir, { recursive: true });
@@ -127,12 +139,6 @@ function startEmbedFakes() {
     },
   };
 }
-const deliveryEnv = () => ({
-  HOME: home,
-  KIBO_CLI: join(root, "packages/cli/src/bin.ts"),
-  DELIVERY_SLOTS: join(home, "slots"),
-  DELIVERY_REGISTRY: join(home, "registry.json"),
-});
 function startFakesFor() {
   if (integrations) return startFakes();
   if (design) return startDesignFakes();
@@ -168,14 +174,12 @@ const proc = Bun.spawn(
       ...process.env,
       ...GIT_IDENTITY,
       KIBO_HOME: home,
-      KIBO_FAKE_CLAUDE_SCENARIO:
-        scenario === EMIS_MAQUETTES ? EMIS_SCENARIO : join(agents, "scenarios", `${scenario}.json`),
+      KIBO_FAKE_CLAUDE_SCENARIO: scenarioFile(),
       KIBO_FAKE_CLAUDE_STATE: fakeState,
       CLAUDE_CONFIG_DIR: claudeConfig,
       KIBO_GH: gh,
       FAKE_GH_STATE: ghState,
       FAKE_GH_LOG: join(ghDir, "log.jsonl"),
-      ...(delivery ? deliveryEnv() : {}),
       ...(emisMaquettes ? { KIBO_FIXED_NOW: FIXED_NOW, KIBO_PR_POLL_MS: EMIS_PR_POLL_MS } : {}),
     },
     stdout: "inherit",

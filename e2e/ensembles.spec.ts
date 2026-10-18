@@ -1,5 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
-import { rpc, showAgentExecution, text } from "./agents-seed";
+import { rpc, text } from "./agents-seed";
 import { pairAndCreateProject } from "./helpers";
 import { projectKey } from "./repo-project";
 import { capture, WIDE } from "./visibility-kit";
@@ -7,7 +7,7 @@ import { capture, WIDE } from "./visibility-kit";
 test.use({ viewport: WIDE });
 test.describe.configure({ mode: "serial" });
 
-type Ensembles = { page: Page; key: string; projectId: string; pages: Record<View, string> };
+type Ensembles = { page: Page; key: string; projectId: string; pages: Record<View, string>; feature: string };
 type View = "tickets" | "kanban" | "graph";
 
 const COMPONENTS: Record<View, [string, string]> = {
@@ -24,7 +24,10 @@ const projectIdOf = (page: Page): string => {
   return decodeURIComponent(match[1]);
 };
 
-async function seed(page: Page, projectId: string): Promise<Record<View, string>> {
+async function seed(
+  page: Page,
+  projectId: string,
+): Promise<{ pages: Record<View, string>; feature: string }> {
   const command = async (cmd: Record<string, unknown>) =>
     text(await rpc(page, { method: "command", projectId, command: cmd }), "id");
   const ticket = (title: string, parentId: string | null, statusId = "todo") =>
@@ -46,7 +49,7 @@ async function seed(page: Page, projectId: string): Promise<Record<View, string>
   }
   const { tickets, kanban, graph } = pages;
   if (!tickets || !kanban || !graph) throw new Error("pages not created");
-  return { tickets, kanban, graph };
+  return { pages: { tickets, kanban, graph }, feature: c4 };
 }
 
 const open = async (view: View) => {
@@ -61,9 +64,8 @@ test.beforeAll(async ({ browser }, info) => {
   const page = await context.newPage();
   const key = projectKey("ENS", info);
   await pairAndCreateProject(page, info, key);
-  await showAgentExecution(page);
   const projectId = projectIdOf(page);
-  e = { page, key, projectId, pages: await seed(page, projectId) };
+  e = { page, key, projectId, ...(await seed(page, projectId)) };
 });
 
 test.afterAll(async () => {
@@ -74,7 +76,6 @@ test("220 · la page Tickets liste les sous-tickets à la place de l'ensemble, a
   await open("tickets");
   const tree = main().getByRole("region", { name: "Tickets" });
   await expect(tree.getByRole("button", { name: "Un seul worktree" })).toBeVisible();
-  await tree.getByRole("button", { name: "Déplier Hors fonctionnalité" }).click();
   for (const title of ["Bouton Livrer", "Puce d'étape", "Ligne de la fiche", "Après le parcours"])
     await expect(tree.getByRole("button", { name: title, exact: true })).toBeVisible();
   await expect(tree.getByRole("button", { name: "Parcours de livraison", exact: true })).toHaveCount(0);
@@ -137,5 +138,8 @@ test("220d · la fiche d'un ensemble : avancement, sous-tickets, description, au
   await expect(sheet.getByText("Tout le parcours de livraison.")).toBeVisible();
   await expect(sheet.getByRole("button", { name: "Assigner à un agent" })).toHaveCount(0);
   await expect(sheet.getByRole("combobox", { name: "Statut" })).toHaveCount(0);
+  await expect(
+    rpc(e.page, { method: "deliver", projectId: e.projectId, ticketId: e.feature }),
+  ).rejects.toThrow("AGENT_EXECUTION_REMOVED");
   await shoot("220d");
 });
