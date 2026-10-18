@@ -123,3 +123,46 @@ test("missing or odd data degrades to a plain line, never an error", () => {
     "PR ouverte",
   ]);
 });
+
+const asides = (events: ProjectEvent[]) =>
+  ticketTimeline(events, project, NOW).map((l) => [l.kind, l.aside?.text ?? null]);
+
+test("a status without a known target keeps its own line, even next to a branch", () => {
+  const lines = ticketTimeline(
+    [ev("branch_created", at(16, 9, 0), { branch: "feat/x" }), ev("status_changed", at(16, 9, 1), {})],
+    project,
+    NOW,
+  );
+  expect(lines.map((l) => [l.kind, l.text, l.aside?.text ?? null])).toEqual([
+    ["status", "Statut changé", null],
+    ["branch", "Branche feat/x poussée", null],
+  ]);
+});
+
+test("a status rides on the closest event, not the first one found", () => {
+  const when = at(16, 10, 0);
+  expect(
+    asides([
+      ev("branch_created", when - 100_000, { branch: "feat/x" }),
+      ev("status_changed", when, { from: "todo", to: "in_progress" }),
+      ev("step_set", when + 5_000, { step: 3, note: "" }, "full-delivery"),
+    ]),
+  ).toEqual([
+    ["step", "statut ⇒ En cours"],
+    ["branch", null],
+  ]);
+});
+
+test("two quick statuses around one event both stay visible", () => {
+  const when = at(16, 11, 0);
+  expect(
+    asides([
+      ev("pr_opened", when, { number: 20 }),
+      ev("status_changed", when + 10_000, { from: "in_progress", to: "in_review" }),
+      ev("status_changed", when + 30_000, { from: "in_review", to: "in_progress" }),
+    ]),
+  ).toEqual([
+    ["status", null],
+    ["pr", "statut ⇒ En review"],
+  ]);
+});

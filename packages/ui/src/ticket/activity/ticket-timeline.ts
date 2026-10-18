@@ -92,13 +92,25 @@ const HOSTS: ReadonlySet<ProjectEventKind> = new Set([
   "step_set",
 ]);
 
-function statusHosts(events: readonly ProjectEvent[]): Map<number, ProjectEvent> {
+type Pairing = { host: ProjectEvent; status: ProjectEvent; gap: number };
+
+const byGap = (a: Pairing, b: Pairing) => a.gap - b.gap || a.host.id - b.host.id || a.status.id - b.status.id;
+
+function statusHosts(events: readonly ProjectEvent[], project: TimelineProject): Map<number, ProjectEvent> {
+  const statuses = events.filter(
+    (ev) => ev.kind === "status_changed" && statusLabel(ev.data, project) !== null,
+  );
+  const pairings = events
+    .filter((ev) => HOSTS.has(ev.kind))
+    .flatMap((host) => statuses.map((status) => ({ host, status, gap: Math.abs(host.at - status.at) })))
+    .filter((p) => p.gap <= STATUS_WINDOW_MS)
+    .sort(byGap);
   const hosts = new Map<number, ProjectEvent>();
-  for (const status of events.filter((ev) => ev.kind === "status_changed")) {
-    const host = events.find(
-      (ev) => HOSTS.has(ev.kind) && Math.abs(ev.at - status.at) <= STATUS_WINDOW_MS && !hosts.has(ev.id),
-    );
-    if (host) hosts.set(host.id, status);
+  const taken = new Set<number>();
+  for (const { host, status } of pairings) {
+    if (hosts.has(host.id) || taken.has(status.id)) continue;
+    hosts.set(host.id, status);
+    taken.add(status.id);
   }
   return hosts;
 }
@@ -119,7 +131,7 @@ export function ticketTimeline(
   now: number,
   runs: readonly CiRun[] = [],
 ): TimelineLine[] {
-  const hosts = statusHosts(events);
+  const hosts = statusHosts(events, project);
   const absorbed = new Set([...hosts.values()].map((ev) => ev.id));
   return [...events]
     .filter((ev) => !absorbed.has(ev.id))
