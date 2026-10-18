@@ -312,6 +312,9 @@ de 1 500 px, clair à x = 1 540 ; états de 604 × 452 à partir de y = 7 500, r
   213 Tickets · 214 Graphe, une colonne par sprint · 215 fiche de sprint S42 et « Fin de sprint : reporter F5 en S43 ? » · 216 « 3/2 ouvertes »,
   « Ouvrir F6 » reste possible · 217 démo client facultative en pointillé, F4 livrée · 218 nom tronqué et infobulle du nom complet.
 
+Phase 27 (2026-10-18) : les écrans P1 bis v3, P6 à P9, la barre repliée et le panneau de l'agent ne sont dessinés que dans le fichier
+« Kibo · Redesign » (page « Proposition », voir `design/redesign/README.md`) ; le fichier « Kibo », `kibo.penpot.xz` et les PDF restent à la page 35.
+
 ## Exporter
 
 1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("35")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
