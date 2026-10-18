@@ -211,7 +211,7 @@ function actionProblems(
     ...[...new Set(signalRefsOf(action))].flatMap((ref) => signalProblem(scan, ref) ?? []),
   ];
   if (refs.length > 0) return refs;
-  if (scan.ctx.agentExecution === "hidden" && TICKET_AGENT_ACTIONS.has(action.type))
+  if (scan.ctx.agentExecution !== "shown" && TICKET_AGENT_ACTIONS.has(action.type))
     return ["exécution des agents masquée dans Kibo : action indisponible"];
   const parent =
     action.type === "assignAgent" ? parentProblem(scan, action.ticket, actions.slice(index + 1)) : null;

@@ -20,6 +20,7 @@ const ctx = (p: Partial<BatchContext> = {}): BatchContext => ({
   viewer: "adam",
   signals: [],
   closedSignals: [],
+  agentExecution: "shown",
   ...p,
 });
 

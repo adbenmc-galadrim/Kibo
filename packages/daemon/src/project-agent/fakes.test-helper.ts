@@ -207,7 +207,8 @@ export async function contextOf(h: Harness): Promise<BatchContext> {
 }
 
 export async function propose(h: Harness, actions: ProposedAction[]): Promise<Batch> {
-  const checked = validateBatch({ summary: "Ranger le projet", actions }, await contextOf(h));
+  const context = { ...(await contextOf(h)), agentExecution: "shown" as const };
+  const checked = validateBatch({ summary: "Ranger le projet", actions }, context);
   if (!checked.ok) throw new Error(renderProblems(checked.problems));
   return {
     id: "b1",
