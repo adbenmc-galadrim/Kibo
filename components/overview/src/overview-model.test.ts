@@ -15,7 +15,7 @@ test("the five indicators read as the mockup", () => {
       sub: "2 à risque",
       tone: "amber",
     },
-    sprint: { value: "S42", unit: "Terrain hors ligne", sub: "se termine aujourd'hui" },
+    sprint: { value: "S42", unit: "Saisie hors ligne", sub: "se termine aujourd'hui" },
     open: { value: "2", unit: "/ 2", sub: "limite · bloquée : F6", dot: "red" },
     review: { value: "3", unit: "PR", sub: "#20 · #22 · #23" },
     questions: { value: "3", unit: "ouvertes", sub: "Q14 bloque F6", dot: "red" },
@@ -24,10 +24,10 @@ test("the five indicators read as the mockup", () => {
 
 test("a finished sprint that stays current says when it ended", () => {
   const { model } = build();
-  const sprint = { code: "S42", name: "Terrain hors ligne", ending: { ended: "2026-10-16" } };
+  const sprint = { code: "S42", name: "Saisie hors ligne", ending: { ended: "2026-10-16" } };
   expect(indicatorTexts({ ...model.indicators, sprint, remaining: 2 }).sprint).toEqual({
     value: "S42",
-    unit: "Terrain hors ligne",
+    unit: "Saisie hors ligne",
     sub: "terminé le 16 oct. · reste 2",
   });
   const running = { ...sprint, ending: { days: 3 } };
@@ -58,12 +58,12 @@ test("the deadlines cover four weeks from the current sprint", () => {
 test("the current sprint lists its features and the limit note", () => {
   const { model } = build();
   const sprint = model.sprint;
-  expect(sprint?.title).toBe("Sprint S42 · Terrain hors ligne");
+  expect(sprint?.title).toBe("Sprint S42 · Saisie hors ligne");
   expect(sprint?.dates).toBe("12–16 oct.");
   expect(sprint?.rows.map((r) => [r.shortKey, r.title, r.state, r.steps, r.risk, r.slipped])).toEqual([
-    ["F3", "Réaffecter un ISO", "delivered", "4/4", false, null],
-    ["F4", "Saisir un tronçon hors ligne", "open", "3/5", true, null],
-    ["F5", "Envoyer les photos d'un tronçon", "open", "1/5", true, null],
+    ["F3", "Réaffecter un box", "delivered", "4/4", false, null],
+    ["F4", "Saisir un constat hors ligne", "open", "3/5", true, null],
+    ["F5", "Envoyer les photos d'un constat", "open", "1/5", true, null],
   ]);
   expect(sprint?.note).toBe("Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5.");
 });
@@ -71,7 +71,7 @@ test("the current sprint lists its features and the limit note", () => {
 test("the next feature to finish is the most advanced one of the sprint", () => {
   const { model, byTitle } = build();
   const next = model.next;
-  expect([next?.shortKey, next?.title, next?.steps]).toEqual(["F4", "Saisir un tronçon hors ligne", "3/5"]);
+  expect([next?.shortKey, next?.title, next?.steps]).toEqual(["F4", "Saisir un constat hors ligne", "3/5"]);
   expect(next?.remaining.map((s) => [s.title, s.tone, s.changes])).toEqual([
     ["Conflits de saisie", "review", true],
     ["Démo client", "todo", false],
@@ -96,9 +96,9 @@ test("the pull requests in review, latest event first, with their review or CI",
 test("the open questions, blocking first, with reference, recipient and age", () => {
   const { model } = build();
   expect(model.questions.map((q) => [q.title, q.feature, q.meta, q.blocking])).toEqual([
-    ["Un ISO réaffecté garde-t-il ses photos ?", "F6", "Q14 · Client · il y a 3 j", true],
-    ["Quota par affaire : 2 Go ou 5 Go ?", "F5", "Q16 · Produit · hier", false],
-    ["Un rapport par chef de chantier ou par affaire ?", "F7", "Q17 · Client · il y a 2 h", false],
+    ["Un box réaffecté garde-t-il ses photos ?", "F6", "Q14 · Client · il y a 3 j", true],
+    ["Quota par client : 2 Go ou 5 Go ?", "F5", "Q16 · Produit · hier", false],
+    ["Un rapport par chef de centre ou par client ?", "F7", "Q17 · Client · il y a 2 h", false],
   ]);
 });
 

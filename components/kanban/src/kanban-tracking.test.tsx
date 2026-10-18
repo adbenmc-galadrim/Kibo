@@ -108,6 +108,6 @@ test("no card says « Démarrable »; a step waiting for its sprint says which o
 test("a step with a branch and no PR shows its branch, a step with a PR does not", async () => {
   setup();
   const later = await card("Écran d'import");
-  expect(within(later).getByLabelText("Branche feat/emis-import")).toBeTruthy();
+  expect(within(later).getByLabelText("Branche feat/silo-import")).toBeTruthy();
   expect(within(await card("Conflits de saisie")).queryByLabelText(/^Branche/)).toBeNull();
 });

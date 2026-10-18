@@ -10,7 +10,7 @@ import { lastReminder } from "./questions-logic";
 const NOW = new Date("2026-10-16T14:52:00").getTime();
 const HOUR = 3_600_000;
 const ADAM = { kind: "human" as const, ref: "adam" };
-const REMINDED = "Un ISO réaffecté garde-t-il ses photos ?";
+const REMINDED = "Un box réaffecté garde-t-il ses photos ?";
 const ANSWERED = "Faut-il garder l'export PDF ?";
 
 beforeEach(() => setSystemTime(new Date(NOW)));

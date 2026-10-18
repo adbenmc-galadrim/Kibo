@@ -22,7 +22,7 @@ const question = (images: typeof IMAGES) =>
     options: ["Valider", "Demander une correction"],
     provisional: null,
     blocking: true,
-    createdBy: { kind: "agent", ref: "emis-livraison" },
+    createdBy: { kind: "agent", ref: "silo-livraison" },
     createdAt: 1,
     answer: null,
     kind: "validation",

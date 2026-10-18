@@ -51,7 +51,7 @@ const mount = ({ state = "waiting_input", reader = false, denials = true }: Setu
     denials: recorded,
     agentExecution: "shown",
   });
-  m.setRuns([{ ticketId, runId: "r1", label: "emis · full-delivery · EMIS-15", state, position: null }]);
+  m.setRuns([{ ticketId, runId: "r1", label: "silo · full-delivery · SILO-15", state, position: null }]);
   if (reader) m.setAccess("read-only");
   render(
     <SdkProvider sdk={m.sdk}>

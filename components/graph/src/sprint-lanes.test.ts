@@ -37,7 +37,7 @@ test("delivered features are collapsed, the others list their steps", () => {
   }
   for (const key of ["F4", "F5", "F6", "F7", "F8", "F9"]) expect(frame(key).collapsed).toBe(false);
   expect(frame("F4").steps.map((s) => s.title)).toEqual([
-    "Schéma local des tronçons",
+    "Schéma local des constats",
     "Formulaire de saisie",
     "Synchro au retour du réseau",
     "Conflits de saisie",
@@ -71,7 +71,7 @@ test("steps carry their tone, their git mark and the session", () => {
   expect(f5[1]?.git).toEqual({ kind: "pr", tone: "purple" });
   expect(f5[2]).toMatchObject({ tone: "progress", git: { kind: "branch", tone: "blue" }, session: true });
   expect(frame("F6").steps[0]?.tone).toBe("blocked");
-  const live = sprintLanes(kitInput({ live: new Set(["EMIS-34"]) }));
+  const live = sprintLanes(kitInput({ live: new Set(["SILO-34"]) }));
   const tests = live?.lanes[1]?.frames[2]?.steps[3];
   expect(tests?.session).toBe(true);
 });
@@ -116,11 +116,11 @@ test("edges link feature roots only, step links are counted", () => {
 });
 
 test("a link between steps of two features is lifted to their roots", () => {
-  const extra = { id: "lx", from: "EMIS-54", to: "EMIS-71", type: "blocks" as const };
+  const extra = { id: "lx", from: "SILO-54", to: "SILO-71", type: "blocks" as const };
   const m = sprintLanes(kitInput({ links: [...KIT_LINKS, extra] }));
   expect(m?.featureLinks).toBe(9);
   expect(m?.stepLinks).toBe(3);
-  expect(m?.edges.some((e) => e.from === "EMIS-50" && e.to === "EMIS-70")).toBe(true);
+  expect(m?.edges.some((e) => e.from === "SILO-50" && e.to === "SILO-70")).toBe(true);
 });
 
 test("without any sprint the graph falls back to waves", () => {
@@ -129,8 +129,8 @@ test("without any sprint the graph falls back to waves", () => {
 
 test("loose tickets are not frames", () => {
   const ids = model().lanes.flatMap((l) => l.frames.map((f) => f.id));
-  expect(ids).not.toContain("EMIS-61");
-  expect(kitTickets().some((t) => t.id === "EMIS-61")).toBe(true);
+  expect(ids).not.toContain("SILO-61");
+  expect(kitTickets().some((t) => t.id === "SILO-61")).toBe(true);
 });
 
 test("frame width grows with the longest title and stays bounded", () => {

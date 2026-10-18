@@ -110,10 +110,10 @@ test("Livrer comes right after Ouvrir when the ticket can be delivered", () => {
 });
 
 test("Livrer is disabled and says which run is already there", () => {
-  const deliver = entriesWith({ disabledReason: "déjà un run : emis · full-delivery · EMIS-15" })[1];
+  const deliver = entriesWith({ disabledReason: "déjà un run : silo · full-delivery · SILO-15" })[1];
   if (!deliver || isSeparator(deliver) || isSubmenu(deliver)) throw new Error("no Livrer");
   expect(deliver.disabled).toBe(true);
-  expect(deliver.hint).toBe("déjà un run : emis · full-delivery · EMIS-15");
+  expect(deliver.hint).toBe("déjà un run : silo · full-delivery · SILO-15");
 });
 
 test("no Livrer without a deliverable ticket", () => {

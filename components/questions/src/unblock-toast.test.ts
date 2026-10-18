@@ -4,10 +4,10 @@ import { answer, question, ticket } from "./question-fixtures.test-helper";
 import { unblockedFeatures, unblockedToast } from "./unblock-toast";
 
 const F6 = ticket("f6", "F6", { shortKey: "F6" });
-const STEP = ticket("t51", "EMIS-51", { parentId: "f6" });
-const STUCK = ticket("t52", "EMIS-52", { parentId: "f6", statusId: "blocked" });
-const SECOND = ticket("t53", "EMIS-53", { parentId: "f6" });
-const LOOSE = ticket("t9", "EMIS-9");
+const STEP = ticket("t51", "SILO-51", { parentId: "f6" });
+const STUCK = ticket("t52", "SILO-52", { parentId: "f6", statusId: "blocked" });
+const SECOND = ticket("t53", "SILO-53", { parentId: "f6" });
+const LOOSE = ticket("t9", "SILO-9");
 const TICKETS = [F6, STEP, STUCK, LOOSE];
 const TWO_STEPS = [F6, STEP, SECOND, LOOSE];
 const twoById = new Map<string, TicketView>(TWO_STEPS.map((t) => [t.id, t]));
@@ -45,7 +45,7 @@ test("a ticket outside any feature is reported by its key, once", () => {
     ),
   ).toEqual([
     { label: "F6", ticketId: "f6" },
-    { label: "EMIS-9", ticketId: "t9" },
+    { label: "SILO-9", ticketId: "t9" },
   ]);
 });
 
@@ -71,6 +71,6 @@ test("several features unblocked at once read « F6 et 2 autres débloquées »"
   expect(unblockedToast([f6])).toEqual({ ...f6, message: "F6 débloquée" });
   expect(unblockedToast([f6, { label: "F7", ticketId: "f7" }])?.message).toBe("F6 et 1 autre débloquées");
   expect(
-    unblockedToast([f6, { label: "F7", ticketId: "f7" }, { label: "EMIS-9", ticketId: "t9" }])?.message,
+    unblockedToast([f6, { label: "F7", ticketId: "f7" }, { label: "SILO-9", ticketId: "t9" }])?.message,
   ).toBe("F6 et 2 autres débloquées");
 });

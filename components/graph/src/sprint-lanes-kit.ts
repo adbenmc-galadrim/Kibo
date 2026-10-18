@@ -30,8 +30,8 @@ const todo = (n: number, title: string, optional = false): Step => ({ n, title, 
 
 const SPRINTS = [
   ["S41", "Accès", "2026-10-05", "2026-10-09"],
-  ["S42", "Terrain hors ligne", "2026-10-12", "2026-10-16"],
-  ["S43", "Import et soudures", "2026-10-19", "2026-10-23"],
+  ["S42", "Saisie hors ligne", "2026-10-12", "2026-10-16"],
+  ["S43", "Import et contrats", "2026-10-19", "2026-10-23"],
   ["S44", "Rapports", "2026-10-26", "2026-10-30"],
 ] as const;
 
@@ -46,24 +46,24 @@ const FEATURES: readonly Feature[] = [
   {
     shortKey: "F2",
     n: 9,
-    title: "Voir ses ISO affectés",
+    title: "Voir ses box affectés",
     sprint: "S41",
     steps: [10, 11, 12, 13, 14].map((n) => done(n, `Étape ${n}`)),
   },
   {
     shortKey: "F3",
     n: 17,
-    title: "Réaffecter un ISO",
+    title: "Réaffecter un box",
     sprint: "S42",
     steps: [done(18, "Historique"), done(19, "Route"), done(20, "Écran"), done(21, "Démo client", 18)],
   },
   {
     shortKey: "F4",
     n: 40,
-    title: "Saisir un tronçon hors ligne",
+    title: "Saisir un constat hors ligne",
     sprint: "S42",
     steps: [
-      done(41, "Schéma local des tronçons", 12),
+      done(41, "Schéma local des constats", 12),
       done(42, "Formulaire de saisie", 14),
       done(43, "Synchro au retour du réseau", 16),
       { n: 45, title: "Conflits de saisie", status: "in_review", pr: [20, "open", "changes_requested"] },
@@ -73,7 +73,7 @@ const FEATURES: readonly Feature[] = [
   {
     shortKey: "F5",
     n: 30,
-    title: "Envoyer les photos d'un tronçon",
+    title: "Envoyer les photos d'un constat",
     sprint: "S42",
     steps: [
       done(31, "Stockage des photos sur MinIO", 19),
@@ -86,11 +86,11 @@ const FEATURES: readonly Feature[] = [
   {
     shortKey: "F6",
     n: 50,
-    title: "Importer les ISO depuis Excel",
+    title: "Importer les box depuis Excel",
     sprint: "S43",
     steps: [
       todo(51, "Lecture du fichier Excel"),
-      todo(52, "Contrôle des repères"),
+      todo(52, "Contrôle des numéros"),
       todo(53, "Écran d'import"),
       todo(54, "Démo client"),
     ],
@@ -98,7 +98,7 @@ const FEATURES: readonly Feature[] = [
   {
     shortKey: "F7",
     n: 80,
-    title: "Rapport de chantier journalier",
+    title: "Rapport de centre journalier",
     sprint: "S44",
     steps: [
       todo(81, "Modèle du rapport"),
@@ -111,10 +111,10 @@ const FEATURES: readonly Feature[] = [
   {
     shortKey: "F8",
     n: 70,
-    title: "Valider les soudures par lot",
+    title: "Valider les contrats par lot",
     sprint: "S43",
     steps: [
-      todo(71, "Statuts de soudure"),
+      todo(71, "Statuts de contrat"),
       todo(72, "Sélection multiple"),
       todo(73, "Validation par lot"),
       todo(74, "Démo client"),
@@ -143,9 +143,9 @@ const FEATURE_LINKS: readonly [string, string][] = [
   ["F5", "F7"],
   ["F7", "F9"],
 ];
-const SESSIONS = new Set(["EMIS-33", "EMIS-45"]);
+const SESSIONS = new Set(["SILO-33", "SILO-45"]);
 
-const key = (n: number) => `EMIS-${n}`;
+const key = (n: number) => `SILO-${n}`;
 const sprintIdOf = (code: string | null) => (code === null ? null : code.toLowerCase());
 
 export function kitView(over: Partial<TicketView> & Pick<TicketView, "id" | "title">): TicketView {
@@ -181,7 +181,7 @@ export function kitView(over: Partial<TicketView> & Pick<TicketView, "id" | "tit
 
 const prRef = ([number, state, review = "none"]: Pr): GithubPrRef => ({
   kind: "github_pr",
-  url: `https://github.com/galadrimteam/emis/pull/${number}`,
+  url: `https://github.com/silo-labs/silo-location/pull/${number}`,
   number,
   state,
   base: "dev",
@@ -226,14 +226,14 @@ export const KIT_QUESTIONS: Question[] = [
     id: "q-14",
     ticketId: key(51),
     runId: null,
-    title: "Un ISO réaffecté garde-t-il ses photos ?",
+    title: "Un box réaffecté garde-t-il ses photos ?",
     context: "",
     options: [],
     provisional: null,
     blocking: true,
-    createdBy: { kind: "import", ref: "emis" },
+    createdBy: { kind: "import", ref: "silo" },
     createdAt: 1,
-    importRef: { kind: "import_ref", source: "emis", id: "Q14" },
+    importRef: { kind: "import_ref", source: "silo", id: "Q14" },
     answer: null,
   }),
 ];

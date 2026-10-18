@@ -31,8 +31,8 @@ function setup(opts: MockSdkOptions = {}) {
   const m = createMockSdk(manifest, {
     seed,
     today: TODAY,
-    description: "Suivi de chantier",
-    folder: "/emis",
+    description: "Location de box",
+    folder: "/silo",
     ...opts,
   });
   render(
@@ -76,7 +76,7 @@ test("the manifest reads the tracking entities and writes only runs", () => {
 test("the heading, the indicators and the cards of the project", async () => {
   setup();
   expect(await screen.findByRole("heading", { name: "Mock" })).toBeTruthy();
-  expect(screen.getByText("Suivi de chantier")).toBeTruthy();
+  expect(screen.getByText("Location de box")).toBeTruthy();
   const indicators = await card("Indicateurs du projet");
   expect(within(indicators).getByText("livrées sur 9")).toBeTruthy();
   expect(within(indicators).getByText("se termine aujourd'hui")).toBeTruthy();
@@ -90,7 +90,7 @@ test("the heading, the indicators and the cards of the project", async () => {
   const deadlines = await card("Échéances");
   expect(within(deadlines).queryByText("glisse en S43")).toBeNull();
   expect(within(deadlines).getByText("bloquée · Q14")).toBeTruthy();
-  const sprint = await card("Sprint S42 · Terrain hors ligne");
+  const sprint = await card("Sprint S42 · Saisie hors ligne");
   expect(within(sprint).getByText("12–16 oct.")).toBeTruthy();
   expect(within(sprint).queryByText("2/2 en cours")).toBeNull();
   expect(within(sprint).getAllByText("à risque").length).toBe(2);
@@ -133,15 +133,15 @@ test("deliver starts the run of the next step when execution is shown", async ()
 
 test("features, sprint and questions open in the shell", async () => {
   const m = setup();
-  const sprint = await card("Sprint S42 · Terrain hors ligne");
-  await userEvent.click(within(sprint).getByRole("button", { name: "Sprint S42 · Terrain hors ligne" }));
+  const sprint = await card("Sprint S42 · Saisie hors ligne");
+  await userEvent.click(within(sprint).getByRole("button", { name: "Sprint S42 · Saisie hors ligne" }));
   expect(m.openedSprints).toEqual([m.snapshot().sprints.find((s) => s.code === "S42")?.id ?? ""]);
-  await userEvent.click(within(sprint).getByRole("button", { name: "Saisir un tronçon hors ligne" }));
-  const f4 = m.snapshot().tickets.find((t) => t.title === "Saisir un tronçon hors ligne");
+  await userEvent.click(within(sprint).getByRole("button", { name: "Saisir un constat hors ligne" }));
+  const f4 = m.snapshot().tickets.find((t) => t.title === "Saisir un constat hors ligne");
   expect(m.opened).toEqual([f4?.id ?? ""]);
   const questions = await card("Questions");
   await userEvent.click(
-    within(questions).getByRole("button", { name: "Un ISO réaffecté garde-t-il ses photos ?" }),
+    within(questions).getByRole("button", { name: "Un box réaffecté garde-t-il ses photos ?" }),
   );
   const q14 = m.snapshot().questions.find((q) => q.importRef?.id === "Q14");
   expect(m.viewRequests).toEqual([{ componentId: "questions", question: q14?.id ?? null }]);

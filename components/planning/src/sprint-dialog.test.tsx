@@ -74,9 +74,9 @@ test("the sprint name opens its sheet, the pencil next to it opens the dialog", 
 test("a reader opens the sheet from the name but has no pencil", async () => {
   const { m, seeded } = setupPlanning(TODAY, { shared: true });
   act(() => m.setAccess("read-only"));
-  const s43 = within(await column("S43 Import et soudures"));
+  const s43 = within(await column("S43 Import et contrats"));
   await waitFor(() => expect(s43.queryByRole("button", { name: "Modifier le sprint" })).toBeNull());
-  await userEvent.setup().click(s43.getByRole("button", { name: "Fiche du sprint S43 Import et soudures" }));
+  await userEvent.setup().click(s43.getByRole("button", { name: "Fiche du sprint S43 Import et contrats" }));
   expect(m.openedSprints).toEqual([seeded.sprints.s43.id]);
 });
 
@@ -99,7 +99,7 @@ test("a sprint is edited from its column header", async () => {
 test("deleting a sprint asks first and sends its features back to the backlog", async () => {
   const { m, seeded } = setupPlanning();
   const user = userEvent.setup();
-  await user.click(await pencil("S43 Import et soudures"));
+  await user.click(await pencil("S43 Import et contrats"));
   const dialog = await screen.findByRole("dialog", { name: "Modifier le sprint S43" });
   await user.click(within(dialog).getByRole("button", { name: "Supprimer" }));
   const confirm = await screen.findByRole("alertdialog", { name: "Supprimer le sprint S43 ?" });

@@ -6,7 +6,7 @@ export const question = (over: Partial<Question>): Question => ({
   id: "11111111-1111-4111-8111-111111111111",
   ticketId: "22222222-2222-4222-8222-222222222222",
   runId: null,
-  title: "Un ISO réaffecté garde-t-il ses photos ?",
+  title: "Un box réaffecté garde-t-il ses photos ?",
   context: "",
   options: [],
   provisional: null,

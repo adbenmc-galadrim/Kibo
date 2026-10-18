@@ -99,7 +99,7 @@ test("a group of tickets never gets a card, whatever the filter", () => {
 
 const pr = (number: number, over: Partial<GithubPrRef> = {}): GithubPrRef => ({
   kind: "github_pr",
-  url: `https://github.com/galadrim/emis/pull/${number}`,
+  url: `https://github.com/silo-labs/silo-location/pull/${number}`,
   number,
   state: "open",
   base: null,
@@ -110,58 +110,58 @@ const pr = (number: number, over: Partial<GithubPrRef> = {}): GithubPrRef => ({
 });
 const withRefs = (key: string, refs: GithubPrRef[]): TicketView => ({ ...t(key, null), externalRefs: refs });
 const ci = (prNumber: number, conclusion: string | null): CiRun => ({
-  repo: "galadrim/emis",
+  repo: "silo-labs/silo-location",
   runId: prNumber * 10,
   prNumber,
-  ticketKey: "EMIS-45",
+  ticketKey: "SILO-45",
   headSha: "abc",
   workflow: "CI",
   status: conclusion === null ? "in_progress" : "completed",
   conclusion,
-  url: "https://github.com/galadrim/emis/actions/runs/1",
+  url: "https://github.com/silo-labs/silo-location/actions/runs/1",
   startedAt: null,
   updatedAt: "2026-10-16T10:00:00Z",
   jobs: [],
 });
 
 test("the PR of a ticket is its live PR, else its latest one", () => {
-  expect(ticketPr(t("EMIS-1", null))).toBeNull();
-  expect(ticketPr(withRefs("EMIS-1", [pr(3, { state: "merged" }), pr(2)]))?.number).toBe(2);
-  expect(ticketPr(withRefs("EMIS-1", [pr(3, { state: "merged" }), pr(5, { state: "closed" })]))?.number).toBe(
+  expect(ticketPr(t("SILO-1", null))).toBeNull();
+  expect(ticketPr(withRefs("SILO-1", [pr(3, { state: "merged" }), pr(2)]))?.number).toBe(2);
+  expect(ticketPr(withRefs("SILO-1", [pr(3, { state: "merged" }), pr(5, { state: "closed" })]))?.number).toBe(
     5,
   );
 });
 
 test("a ticket is to fix when its live PR has changes requested or a broken CI", () => {
-  expect(toFix(withRefs("EMIS-45", [pr(20, { review: "changes_requested" })]), [])).toBe(true);
-  expect(toFix(withRefs("EMIS-45", [pr(20, { checks: "error" })]), [])).toBe(true);
-  expect(toFix(withRefs("EMIS-45", [pr(20, { checks: "ok" })]), [ci(20, "failure")])).toBe(true);
-  expect(toFix(withRefs("EMIS-45", [pr(20, { checks: "error" })]), [ci(20, "success")])).toBe(false);
-  expect(toFix(withRefs("EMIS-45", [pr(20, { review: "approved", checks: "ok" })]), [])).toBe(false);
-  expect(toFix(withRefs("EMIS-45", [pr(20, { state: "merged", review: "changes_requested" })]), [])).toBe(
+  expect(toFix(withRefs("SILO-45", [pr(20, { review: "changes_requested" })]), [])).toBe(true);
+  expect(toFix(withRefs("SILO-45", [pr(20, { checks: "error" })]), [])).toBe(true);
+  expect(toFix(withRefs("SILO-45", [pr(20, { checks: "ok" })]), [ci(20, "failure")])).toBe(true);
+  expect(toFix(withRefs("SILO-45", [pr(20, { checks: "error" })]), [ci(20, "success")])).toBe(false);
+  expect(toFix(withRefs("SILO-45", [pr(20, { review: "approved", checks: "ok" })]), [])).toBe(false);
+  expect(toFix(withRefs("SILO-45", [pr(20, { state: "merged", review: "changes_requested" })]), [])).toBe(
     false,
   );
-  expect(toFix(t("EMIS-45", null), [ci(20, "failure")])).toBe(false);
+  expect(toFix(t("SILO-45", null), [ci(20, "failure")])).toBe(false);
 });
 
 test("the board filters add up: none keeps every ticket, each one narrows the others", () => {
   const facts = { currentSprintId: "S42", ciRuns: [] };
-  const inSprint = { ...t("EMIS-1", null), effectiveSprintId: "S42" };
-  const ready = { ...inSprint, key: "EMIS-2", startable: true };
-  const broken = { ...withRefs("EMIS-45", [pr(20, { checks: "error" })]), effectiveSprintId: "S42" };
-  const later = { ...t("EMIS-9", null), startable: true, effectiveSprintId: "S43" };
+  const inSprint = { ...t("SILO-1", null), effectiveSprintId: "S42" };
+  const ready = { ...inSprint, key: "SILO-2", startable: true };
+  const broken = { ...withRefs("SILO-45", [pr(20, { checks: "error" })]), effectiveSprintId: "S42" };
+  const later = { ...t("SILO-9", null), startable: true, effectiveSprintId: "S43" };
   const all = [inSprint, ready, broken, later];
   const keys = (filters: readonly KanbanFilterKey[]) =>
     all.filter((x) => inFilters(x, filters, facts)).map((x) => x.key);
-  expect(keys([])).toEqual(["EMIS-1", "EMIS-2", "EMIS-45", "EMIS-9"]);
-  expect(keys(["sprint"])).toEqual(["EMIS-1", "EMIS-2", "EMIS-45"]);
-  expect(keys(["startable"])).toEqual(["EMIS-2", "EMIS-9"]);
-  expect(keys(["sprint", "startable"])).toEqual(["EMIS-2"]);
-  expect(keys(["sprint", "toFix"])).toEqual(["EMIS-45"]);
+  expect(keys([])).toEqual(["SILO-1", "SILO-2", "SILO-45", "SILO-9"]);
+  expect(keys(["sprint"])).toEqual(["SILO-1", "SILO-2", "SILO-45"]);
+  expect(keys(["startable"])).toEqual(["SILO-2", "SILO-9"]);
+  expect(keys(["sprint", "startable"])).toEqual(["SILO-2"]);
+  expect(keys(["sprint", "toFix"])).toEqual(["SILO-45"]);
   expect(keys(["startable", "toFix"])).toEqual([]);
 });
 
 test("without a current sprint, the sprint filter keeps nothing", () => {
-  const inSprint = { ...t("EMIS-1", null), effectiveSprintId: "S42" };
+  const inSprint = { ...t("SILO-1", null), effectiveSprintId: "S42" };
   expect(inFilters(inSprint, ["sprint"], { currentSprintId: null, ciRuns: [] })).toBe(false);
 });

@@ -50,8 +50,8 @@ test("a link keeps its text and its address, parentheses included", () => {
 });
 
 test("an image reads « [image : alt] (url) »", () => {
-  expect(plainText("![plan du tronçon](https://example.com/p.png)")).toEqual([
-    "[image : plan du tronçon] (https://example.com/p.png)",
+  expect(plainText("![plan du constat](https://example.com/p.png)")).toEqual([
+    "[image : plan du constat] (https://example.com/p.png)",
   ]);
 });
 

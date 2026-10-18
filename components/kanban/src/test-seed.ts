@@ -16,7 +16,7 @@ type Run = (cmd: ProjectCommand) => unknown;
 
 const pr = (number: number, review: "none" | "changes_requested", checks: "ok" | "error" | "running") => ({
   kind: "github_pr" as const,
-  url: `https://github.com/galadrim/emis/pull/${number}`,
+  url: `https://github.com/silo-labs/silo-location/pull/${number}`,
   number,
   state: "open" as const,
   base: "main",
@@ -66,7 +66,7 @@ export const trackingSeed = (run: Run) => {
   run({
     method: "upsertExternalRef",
     ticketId: importScreen.id,
-    ref: { kind: "git_branch", branch: "feat/emis-import", base: null },
+    ref: { kind: "git_branch", branch: "feat/silo-import", base: null },
   });
   run({
     method: "createQuestion",

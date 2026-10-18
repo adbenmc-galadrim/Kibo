@@ -9,7 +9,7 @@ import { Component, manifest } from "./index";
 import { TODAY, trackingSeed } from "./test-seed";
 
 const ci = (ticketKey: string, conclusion: string): CiRun => ({
-  repo: "galadrim/emis",
+  repo: "silo-labs/silo-location",
   runId: 1,
   prNumber: 22,
   ticketKey,
@@ -17,7 +17,7 @@ const ci = (ticketKey: string, conclusion: string): CiRun => ({
   workflow: "ci",
   status: "completed",
   conclusion,
-  url: "https://github.com/galadrim/emis/actions/runs/1",
+  url: "https://github.com/silo-labs/silo-location/actions/runs/1",
   startedAt: null,
   updatedAt: "2026-10-16T12:00:00Z",
   jobs: [],
@@ -87,7 +87,7 @@ test("open steps come first by recent activity, with their feature, state, git, 
   expect(keysShown()).toEqual(["KIB-14", "KIB-9", "KIB-13", "KIB-10", "KIB-15"]);
   expect(
     within(featureCell(row)).getByRole("button", {
-      name: "Ouvrir la fonctionnalité F3 · Envoyer les photos d'un tronçon",
+      name: "Ouvrir la fonctionnalité F3 · Envoyer les photos d'un constat",
     }),
   ).toBeTruthy();
   expect(cell(row, "status")).toBe("En cours");
@@ -164,11 +164,11 @@ test("Ouverts hides the done tickets, Fonctionnalité keeps one feature, the sor
   await user.click(screen.getByRole("button", { name: "Fonctionnalité" }));
   expect((await screen.findAllByRole("menuitemradio")).map((i) => i.textContent)).toEqual([
     "Toutes les fonctionnalités",
-    "F1 · Réaffecter un ISO",
-    "F2 · Saisir un tronçon hors ligne",
-    "F3 · Envoyer les photos d'un tronçon",
+    "F1 · Réaffecter un box",
+    "F2 · Saisir un constat hors ligne",
+    "F3 · Envoyer les photos d'un constat",
   ]);
-  await user.click(screen.getByRole("menuitemradio", { name: "F2 · Saisir un tronçon hors ligne" }));
+  await user.click(screen.getByRole("menuitemradio", { name: "F2 · Saisir un constat hors ligne" }));
   expect(keysShown()).toEqual(["KIB-9", "KIB-10"]);
   expect(screen.getByRole("button", { name: "F2" }).getAttribute("aria-pressed")).toBe("true");
   expect(screen.queryByRole("button", { name: "Déplier Hors fonctionnalité" })).toBeNull();

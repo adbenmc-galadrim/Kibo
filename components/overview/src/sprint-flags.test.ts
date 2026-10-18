@@ -19,7 +19,7 @@ const slip = (id: number, ticketId: string, from: string | null, day: string): P
 
 function slippedF5(today: string, movedOn = WEDNESDAY) {
   const { input, byTitle } = build(today);
-  const f5 = byTitle("Envoyer les photos d'un tronçon");
+  const f5 = byTitle("Envoyer les photos d'un constat");
   const s43 = input.sprints.find((s) => s.code === "S43");
   if (s43 === undefined) throw new Error("S43");
   const tickets = input.tickets.map((t) => (t.id === f5.id ? { ...t, sprintId: s43.id } : t));

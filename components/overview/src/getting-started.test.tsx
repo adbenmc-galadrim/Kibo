@@ -26,7 +26,7 @@ const withFeature = (run: Run) => {
 };
 
 function setup(opts: MockSdkOptions) {
-  const m = createMockSdk(manifest, { today: TODAY, client: "Emis SA", ...opts });
+  const m = createMockSdk(manifest, { today: TODAY, client: "Silo SA", ...opts });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />
@@ -69,7 +69,7 @@ test("a new project lists two steps to start, with its sprints beside them", asy
       .map((li) => li.textContent),
   ).toEqual(["S1Sprint 119–23 oct.", "S2Sprint 226–30 oct."]);
   expect(screen.queryByRole("region", { name: "Échéances" })).toBeNull();
-  expect(screen.getByText("client Emis SA")).toBeTruthy();
+  expect(screen.getByText("client Silo SA")).toBeTruthy();
 });
 
 test("a feature checks its step and the copy gives the first step with a toast", async () => {
@@ -92,13 +92,13 @@ test("a feature checks its step and the copy gives the first step with a toast",
 });
 
 test("a linked folder checks the first step", async () => {
-  setup({ seed: sprints, folder: "/emis" });
+  setup({ seed: sprints, folder: "/silo" });
   const card = await start();
   await waitFor(() => expect(row(card, "Relier le dépôt").dataset.done).toBe("true"));
 });
 
 test("with a feature and a folder the list is gone", async () => {
-  setup({ seed: withFeature, folder: "/emis" });
+  setup({ seed: withFeature, folder: "/silo" });
   await screen.findByRole("region", { name: "Indicateurs du projet" });
   await screen.findByRole("region", { name: "Échéances" });
   expect(screen.queryByRole("region", { name: "Pour commencer" })).toBeNull();

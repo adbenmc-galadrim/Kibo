@@ -7,15 +7,15 @@ import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
 
 const ADAM = { kind: "human", ref: "adam" } as const;
-const Q14 = "Un ISO réaffecté garde-t-il ses photos ?";
-const Q17 = "Un rapport par chef de chantier ou par affaire ?";
-const Q16 = "Quota par affaire : 2 Go ou 5 Go ?";
+const Q14 = "Un box réaffecté garde-t-il ses photos ?";
+const Q17 = "Un rapport par chef de centre ou par client ?";
+const Q16 = "Quota par client : 2 Go ou 5 Go ?";
 
 const seed = (run: (cmd: ProjectCommand) => unknown) => {
   const s43 = Sprint.parse(
     run({ method: "createSprint", code: "S43", name: "Sprint 43", start: "2026-10-19", end: "2026-10-23" }),
   );
-  const f6 = Ticket.parse(run({ method: "createTicket", title: "Tronçons", feature: true }));
+  const f6 = Ticket.parse(run({ method: "createTicket", title: "Constats", feature: true }));
   run({ method: "setTicketSprint", ticketId: f6.id, sprintId: s43.id });
   const step = Ticket.parse(
     run({ method: "createTicket", title: "Lecture du fichier Excel", parentId: f6.id }),
@@ -34,7 +34,7 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
 };
 
 const mount = (opts: MockSdkOptions = {}) => {
-  const m = createMockSdk(manifest, { seed, surface: "view", client: "Emis SA", ...opts });
+  const m = createMockSdk(manifest, { seed, surface: "view", client: "Silo SA", ...opts });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />
@@ -44,7 +44,7 @@ const mount = (opts: MockSdkOptions = {}) => {
 };
 
 const mountRefusing = (method: ProjectCommand["method"]) => {
-  const m = createMockSdk(manifest, { seed, surface: "view", client: "Emis SA" });
+  const m = createMockSdk(manifest, { seed, surface: "view", client: "Silo SA" });
   const sdk: KiboSdk = {
     ...m.sdk,
     run: (cmd) => (cmd.method === method ? Promise.reject(new Error("refused")) : m.sdk.run(cmd)),
@@ -75,7 +75,7 @@ test("cards carry Qn, the blocking badge and come blocking first", async () => {
 test("the client recipient shows the client of the project", async () => {
   mount();
   const card = await screen.findByRole("article", { name: Q14 });
-  expect(within(card).getByText("Pour : Emis SA")).toBeTruthy();
+  expect(within(card).getByText("Pour : Silo SA")).toBeTruthy();
 });
 
 test("« Exporter » copies the text, marks the questions sent and can be undone", async () => {
@@ -83,13 +83,13 @@ test("« Exporter » copies the text, marks the questions sent and can be undone
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Exporter pour le client (2)" }));
   const copied = await navigator.clipboard.readText();
-  expect(copied).toContain("Questions pour Emis SA · ");
+  expect(copied).toContain("Questions pour Silo SA · ");
   expect(copied).toEndWith(
     [
-      "Q3 · Un ISO réaffecté garde-t-il ses photos ?",
-      "   bloque « Tronçons », prévue semaine du 19 oct. · réponse souhaitée avant le 19 oct.",
+      "Q3 · Un box réaffecté garde-t-il ses photos ?",
+      "   bloque « Constats », prévue semaine du 19 oct. · réponse souhaitée avant le 19 oct.",
       "",
-      "Q1 · Un rapport par chef de chantier ou par affaire ?",
+      "Q1 · Un rapport par chef de centre ou par client ?",
       "   pour « Modèle du rapport », à planifier",
     ].join("\n"),
   );
@@ -143,7 +143,7 @@ test("answering the blocking question toasts « F1 débloquée » with « Voir F
   await user.click(within(card).getByRole("button", { name: "Répondre" }));
   const toast = await screen.findByRole("status", { name: "F1 débloquée" });
   await user.click(within(toast).getByRole("button", { name: "Voir F1" }));
-  const f1 = m.snapshot().tickets.find((t) => t.title === "Tronçons");
+  const f1 = m.snapshot().tickets.find((t) => t.title === "Constats");
   expect(m.opened).toEqual([f1?.id ?? ""]);
   expect(m.toasts).toEqual([]);
 });
@@ -170,7 +170,7 @@ test("a new question can be blocking and goes to the client of the project by de
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Nouvelle question" }));
   const dialog = await screen.findByRole("dialog");
-  expect(within(dialog).getByRole("combobox", { name: "Destinataire" }).textContent).toBe("Client · Emis SA");
+  expect(within(dialog).getByRole("combobox", { name: "Destinataire" }).textContent).toBe("Client · Silo SA");
   const ticket = within(dialog).getByRole("combobox", { name: "Ticket" });
   ticket.focus();
   await user.keyboard("{Enter}");

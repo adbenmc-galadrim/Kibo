@@ -10,7 +10,7 @@ const DAY_AFTER = "2026-10-17";
 const SPRINT: SprintView = {
   id: "s",
   code: "S42",
-  name: "X9 Terrain",
+  name: "X9 Saisie",
   start: TODAY,
   end: TODAY,
   state: "current",
@@ -178,7 +178,7 @@ test("open features count only planned ones, the limit is a warning", () => {
 
 test("the column shows the sprint code, never derived from its name", () => {
   const { model } = build();
-  expect(model.sprints[1]?.sprint.name).toBe("Terrain hors ligne");
+  expect(model.sprints[1]?.sprint.name).toBe("Saisie hors ligne");
   expect(columnCode(SPRINT)).toBe("S42");
 });
 

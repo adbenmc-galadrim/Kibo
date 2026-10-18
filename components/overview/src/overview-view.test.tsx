@@ -40,7 +40,7 @@ test("the next feature to finish says when it is a late one", () => {
   view(model, "2026-10-19");
   const next = screen.getByRole("region", { name: "Prochaine à finir" });
   expect(within(next).getByText("en retard, la plus avancée")).toBeTruthy();
-  expect(within(next).getByText("Saisir un tronçon hors ligne")).toBeTruthy();
+  expect(within(next).getByText("Saisir un constat hors ligne")).toBeTruthy();
 });
 
 test("a slipped feature of the sprint says where it comes from", () => {
@@ -49,7 +49,7 @@ test("a slipped feature of the sprint says where it comes from", () => {
   if (sprint === null) throw new Error("sprint");
   const rows = sprint.rows.map((r) => (r.shortKey === "F5" ? { ...r, slipped: "S41" } : r));
   view({ ...model, sprint: { ...sprint, rows } });
-  const card = screen.getByRole("region", { name: "Sprint S42 · Terrain hors ligne" });
+  const card = screen.getByRole("region", { name: "Sprint S42 · Saisie hors ligne" });
   expect(within(card).getByText("glissée de S41")).toBeTruthy();
   expect(card.querySelectorAll("[data-risk]").length).toBe(2);
 });

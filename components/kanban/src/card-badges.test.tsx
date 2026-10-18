@@ -7,7 +7,7 @@ afterEach(cleanup);
 
 const pr = (over: Partial<GithubPrRef> = {}): GithubPrRef => ({
   kind: "github_pr",
-  url: "https://github.com/galadrim/emis/pull/20",
+  url: "https://github.com/silo-labs/silo-location/pull/20",
   number: 20,
   state: "open",
   base: null,
@@ -19,9 +19,9 @@ const pr = (over: Partial<GithubPrRef> = {}): GithubPrRef => ({
 
 const ticket = (refs: GithubPrRef[], over: Partial<TicketView> = {}): TicketView => ({
   id: "1@1",
-  key: "EMIS-45",
+  key: "SILO-45",
   pendingSeq: null,
-  keyLabel: "EMIS-45",
+  keyLabel: "SILO-45",
   title: "Conflits de saisie",
   description: "",
   statusId: "in_review",
@@ -49,15 +49,15 @@ const ticket = (refs: GithubPrRef[], over: Partial<TicketView> = {}): TicketView
 });
 
 const run = (conclusion: string | null): CiRun => ({
-  repo: "galadrim/emis",
+  repo: "silo-labs/silo-location",
   runId: 1,
   prNumber: 20,
-  ticketKey: "EMIS-45",
+  ticketKey: "SILO-45",
   headSha: "abc",
   workflow: "CI",
   status: conclusion === null ? "in_progress" : "completed",
   conclusion,
-  url: "https://github.com/galadrim/emis/actions/runs/1",
+  url: "https://github.com/silo-labs/silo-location/actions/runs/1",
   startedAt: null,
   updatedAt: "2026-10-16T10:00:00Z",
   jobs: [],
@@ -105,12 +105,12 @@ test("no PR and no CI run: no badge at all", () => {
 });
 
 test("a branch without a PR shows the branch; once a PR exists, only the PR", () => {
-  const branch = { kind: "git_branch" as const, branch: "feat/emis-53", base: null };
+  const branch = { kind: "git_branch" as const, branch: "feat/silo-53", base: null };
   render(<CardBadges ticket={{ externalRefs: [branch] }} ciRuns={[]} />);
-  expect(screen.getByLabelText("Branche feat/emis-53").textContent).toBe("feat/emis-53");
+  expect(screen.getByLabelText("Branche feat/silo-53").textContent).toBe("feat/silo-53");
   cleanup();
   render(<CardBadges ticket={{ externalRefs: [branch, pr()] }} ciRuns={[]} />);
-  expect(screen.queryByLabelText("Branche feat/emis-53")).toBeNull();
+  expect(screen.queryByLabelText("Branche feat/silo-53")).toBeNull();
   expect(screen.getByText("#20")).toBeTruthy();
 });
 

@@ -68,7 +68,7 @@ test("a tab shows the sprint code, never its name", async () => {
   });
   render(
     <SprintTabs
-      sprints={[sprint("s41", "S41", "Accès", "done"), sprint("s42", "S42", "Terrain hors ligne", "current")]}
+      sprints={[sprint("s41", "S41", "Accès", "done"), sprint("s42", "S42", "Saisie hors ligne", "current")]}
       value="s42"
       onChange={() => undefined}
     />,
@@ -80,7 +80,7 @@ test("a tab shows the sprint code, never its name", async () => {
     "S42",
     "À planifier",
   ]);
-  expect(screen.queryByText("Terrain hors ligne")).toBeNull();
+  expect(screen.queryByText("Saisie hors ligne")).toBeNull();
 });
 
 test("the menu of a sprint tab opens the sprint sheet", async () => {

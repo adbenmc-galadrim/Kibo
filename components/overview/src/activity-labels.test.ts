@@ -62,11 +62,11 @@ test("batches, sprints and questions read as the agent and the plan say", () => 
   expect(label(event("sprint_created", { code: "S45" }, "user"))).toBe("Sprint S45 créé");
   expect(label(event("question_created", { ref: "Q14" }, "user"))).toBe("Question Q14 posée");
   expect(label(event("question_answered", { ref: "Q14" }, "user"))).toBe("Q14 répondue");
-  expect(label(event("question_reminded", { questionId: "q14", title: "Un ISO ?" }, "project-agent"))).toBe(
+  expect(label(event("question_reminded", { questionId: "q14", title: "Un box ?" }, "project-agent"))).toBe(
     "Q14 relancée",
   );
-  expect(label(event("question_reminded", { questionId: "q9", title: "Un ISO ?" }, "project-agent"))).toBe(
-    "Un ISO ? relancée",
+  expect(label(event("question_reminded", { questionId: "q9", title: "Un box ?" }, "project-agent"))).toBe(
+    "Un box ? relancée",
   );
 });
 

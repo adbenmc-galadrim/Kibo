@@ -33,7 +33,7 @@ test("a card blocked only by its status, or not blocked, moves freely", () => {
 });
 
 test("the refusal names the card and the question that holds it", () => {
-  expect(fr.heldBy("EMIS-51", "Q14")).toBe("EMIS-51 reste bloqué par Q14");
+  expect(fr.heldBy("SILO-51", "Q14")).toBe("SILO-51 reste bloqué par Q14");
   expect(fr.answer).toBe("Répondre");
 });
 

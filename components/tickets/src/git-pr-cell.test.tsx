@@ -11,7 +11,7 @@ const pr = (
   patch: PrPatch = {},
 ): ExternalRef => ({
   kind: "github_pr",
-  url: `https://github.com/galadrim/emis/pull/${number}`,
+  url: `https://github.com/silo-labs/silo-location/pull/${number}`,
   number,
   state,
   base: "main",
@@ -20,15 +20,15 @@ const pr = (
   checks: patch.checks ?? null,
 });
 const ciRun = (prNumber: number, conclusion: string): CiRun => ({
-  repo: "galadrim/emis",
+  repo: "silo-labs/silo-location",
   runId: prNumber * 10,
   prNumber,
-  ticketKey: "EMIS-45",
+  ticketKey: "SILO-45",
   headSha: "abc",
   workflow: "ci",
   status: "completed",
   conclusion,
-  url: "https://github.com/galadrim/emis/actions/runs/1",
+  url: "https://github.com/silo-labs/silo-location/actions/runs/1",
   startedAt: null,
   updatedAt: "2026-10-16T12:00:00Z",
   jobs: [],
