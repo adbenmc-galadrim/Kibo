@@ -32,9 +32,13 @@ const question = (patch: Partial<Question> = {}): Question => ({
   archivedBy: null,
   ...patch,
 });
-const draw = (questions: Question[], onOpen: (id: string) => void = () => undefined) =>
+const draw = (
+  questions: Question[],
+  onOpen: (id: string) => void = () => undefined,
+  held: TicketView = ticket,
+) =>
   render(
-    <BlockedBanner ticket={ticket} questions={questions} recipients={DEFAULT_RECIPIENTS} onOpen={onOpen} />,
+    <BlockedBanner ticket={held} questions={questions} recipients={DEFAULT_RECIPIENTS} onOpen={onOpen} />,
   );
 
 test("a blocking question puts a red banner naming it, its recipient and when it was sent", async () => {
@@ -58,4 +62,21 @@ test("no banner without an open blocking question", () => {
     question({ id: "q2", archivedAt: 5, archivedBy: { kind: "human", ref: "adam" } }),
   ]);
   expect(container.textContent).toBe("");
+});
+
+test("a step not started yet is blocked by the question of its feature", () => {
+  draw([question({ ticketId: "f5" })], undefined, { ...ticket, statusId: "todo" });
+  const banner = screen.getByRole("alert", { name: "Ticket bloqué" });
+  expect(banner.textContent).toContain("Bloqué par Q14 (Client, posée le 12 oct.)");
+});
+
+test("a step in progress only mentions the question of its feature, without blocking", async () => {
+  const opened: string[] = [];
+  draw([question({ ticketId: "f5" })], (id) => opened.push(id));
+  expect(screen.queryByRole("alert")).toBeNull();
+  const note = screen.getByRole("status", { name: "Question sur la fonctionnalité" });
+  expect(note.textContent).toContain("Q14 ouverte sur la fonctionnalité (Client, posée le 12 oct.)");
+  expect(note.className).not.toContain("red");
+  await userEvent.setup().click(screen.getByRole("button", { name: "Ouvrir" }));
+  expect(opened).toEqual(["q14"]);
 });

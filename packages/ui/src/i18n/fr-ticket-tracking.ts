@@ -66,6 +66,8 @@ export const frTicketTracking = {
   blocked: {
     label: "Ticket bloqué",
     by: (question: string, detail: string) => `Bloqué par ${question} (${detail})`,
+    mentionLabel: "Question sur la fonctionnalité",
+    mention: (question: string, detail: string) => `${question} ouverte sur la fonctionnalité (${detail})`,
     sent: (recipient: string, day: string) => `${recipient}, envoyée le ${day}`,
     asked: (recipient: string, day: string) => `${recipient}, posée le ${day}`,
     open: "Ouvrir",
