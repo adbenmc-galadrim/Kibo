@@ -110,3 +110,17 @@ test("a today label of its own, before the first sprint, reads on the left of th
   expect(label.style.transform).toBe("translateX(-100%)");
   expect(screen.queryByText("aujourd'hui")).toBeNull();
 });
+
+test("a row may carry a tone and a short note", () => {
+  const rows = [
+    { ...row("f5"), tone: "risk" as const, note: "glissée de S42" },
+    { ...row("f6"), tone: "late" as const },
+    row("f4"),
+  ];
+  const { container } = render(<SprintTimeline columns={COLUMNS} rows={rows} today={null} />);
+  const mark = (key: string) => container.querySelector(`[data-feature="${key}"]`)?.getAttribute("data-mark");
+  expect([mark("F5"), mark("F6"), mark("F4")]).toEqual(["risk", "late", null]);
+  const note = screen.getByText("glissée de S42");
+  expect(note.className).toContain("text-(--tracking-amber)");
+  expect(screen.getByText("F6").className).toContain("text-(--tracking-red)");
+});

@@ -74,7 +74,16 @@ export function Planning() {
   };
   const bands =
     layout === "bands"
-      ? bandsTimeline({ tickets, links, sprints, questions, today, backlog: fr.backlog })
+      ? bandsTimeline({
+          tickets,
+          links,
+          sprints,
+          questions,
+          events,
+          today,
+          backlog: fr.backlog,
+          slipped: fr.slipped,
+        })
       : null;
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),

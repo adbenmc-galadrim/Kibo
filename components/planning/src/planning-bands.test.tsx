@@ -126,3 +126,32 @@ test("bands before S1: « commence dans n j » on the left, no today line over t
   expect(screen.getByText("commence dans 4 j")).toBeTruthy();
   expect(within(frise).queryByText("aujourd'hui")).toBeNull();
 });
+
+test("bands: an at-risk row is amber, a late one red, a slipped one says where from", async () => {
+  setupPlanning(TODAY, {
+    ...bands,
+    journal: ({ features }) => [
+      {
+        id: 1,
+        projectId: "p",
+        at: 1000,
+        kind: "sprint_set",
+        ticketId: features.f8.root.id,
+        featureId: features.f8.root.id,
+        source: "user",
+        data: { from: "S42", to: "S43" },
+      },
+    ],
+  });
+  const frise = await timeline();
+  const mark = (key: string) => frise.querySelector(`[data-feature="${key}"]`)?.getAttribute("data-mark");
+  expect([mark("F5"), mark("F4"), mark("F8")]).toEqual(["risk", null, null]);
+  expect(within(frise).getByText("glissée de S42")).toBeTruthy();
+});
+
+test("bands: from the day after its sprint, a late row is red", async () => {
+  setSystemTime(new Date(`${DAY_AFTER}T09:00:00`));
+  setupPlanning(DAY_AFTER, bands);
+  const frise = await timeline();
+  expect(frise.querySelector('[data-feature="F5"]')?.getAttribute("data-mark")).toBe("late");
+});

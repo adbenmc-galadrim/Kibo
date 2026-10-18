@@ -1,3 +1,4 @@
+import type { DeadlineRow } from "@kibo/schema";
 import { ClockAlert, Lock } from "lucide-react";
 import { useState } from "react";
 import { trackingFr as t } from "./fr";
@@ -14,21 +15,43 @@ import {
   timelineLayout,
 } from "./timeline-model";
 
-type Props = TimelineInput<TimelineColumnInput> & {
+export type RowMark = { tone?: "risk" | "late"; note?: string };
+export type MarkedRow = DeadlineRow & RowMark;
+type Props = Omit<TimelineInput<TimelineColumnInput>, "rows" | "collapsed"> & {
+  rows: MarkedRow[];
+  collapsed?: { label: string; rows: MarkedRow[] };
   onOpen?(featureId: string): void;
   legend?: boolean;
   todayLabel?: string;
 };
-type RowProps = { row: TimelineRow; last: boolean; width: number; onOpen?(featureId: string): void };
+type Marks = ReadonlyMap<string, RowMark>;
+type RowProps = {
+  row: TimelineRow;
+  mark: RowMark | undefined;
+  last: boolean;
+  width: number;
+  onOpen?(featureId: string): void;
+};
+
+const MARK_TEXT: Record<NonNullable<RowMark["tone"]>, string> = {
+  risk: "text-(--tracking-amber)",
+  late: "text-(--tracking-red)",
+};
 
 const LABEL_X = 16;
 const LEGEND: readonly CaseTone[] = ["done", "review", "progress", "blocked", "todo"];
 
-function RowLabel({ row, onOpen }: Pick<RowProps, "row" | "onOpen">) {
+function RowLabel({ row, mark, onOpen }: Pick<RowProps, "row" | "mark" | "onOpen">) {
+  const tone = mark?.tone === undefined ? null : MARK_TEXT[mark.tone];
   const content = (
     <>
-      <span className="font-mono text-[12px] text-(--tracking-mfg)">{row.row.shortKey}</span>
+      <span className={`font-mono text-[12px] ${tone ?? "text-(--tracking-mfg)"}`}>{row.row.shortKey}</span>
       <span className="truncate text-[12.5px] text-(--tracking-fg)">{row.row.title}</span>
+      {mark?.note && (
+        <span className={`shrink-0 whitespace-nowrap text-[11px] ${tone ?? "text-(--tracking-dim)"}`}>
+          {mark.note}
+        </span>
+      )}
     </>
   );
   const className = "absolute flex max-w-[226px] items-center gap-[8px] leading-[15px]";
@@ -51,10 +74,10 @@ function RowLabel({ row, onOpen }: Pick<RowProps, "row" | "onOpen">) {
   );
 }
 
-function Row({ row, last, width, onOpen }: RowProps) {
+function Row({ row, mark, last, width, onOpen }: RowProps) {
   return (
-    <div data-feature={row.row.shortKey}>
-      <RowLabel row={row} onOpen={onOpen} />
+    <div data-feature={row.row.shortKey} data-mark={mark?.tone}>
+      <RowLabel row={row} mark={mark} onOpen={onOpen} />
       <StepCases cases={row.cases} y={row.y} />
       {row.slip && (
         <span
@@ -119,11 +142,13 @@ function Grid({
   g,
   onOpen,
   todayLabel,
+  marks,
 }: {
   layout: TimelineLayout;
   g: TimelineGeometry;
   onOpen?(id: string): void;
   todayLabel?: string | undefined;
+  marks: Marks;
 }) {
   return (
     <div
@@ -135,6 +160,7 @@ function Grid({
         <Row
           key={row.row.featureId}
           row={row}
+          mark={marks.get(row.row.featureId)}
           last={i === layout.rows.length - 1}
           width={layout.width}
           onOpen={onOpen}
@@ -165,6 +191,9 @@ function Legend() {
 
 export function SprintTimeline(props: Props) {
   const { columns, rows, today, collapsed, onOpen, legend = false, todayLabel } = props;
+  const marks: Marks = new Map(
+    [...rows, ...(collapsed?.rows ?? [])].map((r) => [r.featureId, { tone: r.tone, note: r.note }]),
+  );
   const [open, setOpen] = useState(false);
   const g = TIMELINE_GEOMETRY;
   const layout = timelineLayout({ columns, rows, today }, g);
@@ -174,7 +203,7 @@ export function SprintTimeline(props: Props) {
   return (
     <section aria-label={t.timeline} className="flex min-w-0 flex-col">
       <div className="overflow-x-auto">
-        <Grid layout={layout} g={g} onOpen={onOpen} todayLabel={todayLabel} />
+        <Grid layout={layout} g={g} onOpen={onOpen} todayLabel={todayLabel} marks={marks} />
         {collapsed && collapsed.rows.length > 0 && (
           <button
             type="button"
@@ -185,7 +214,7 @@ export function SprintTimeline(props: Props) {
             {collapsed.label}
           </button>
         )}
-        {extra && <Grid layout={extra} g={folded} onOpen={onOpen} />}
+        {extra && <Grid layout={extra} g={folded} onOpen={onOpen} marks={marks} />}
       </div>
       {legend && <Legend />}
     </section>

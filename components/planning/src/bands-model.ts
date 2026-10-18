@@ -1,6 +1,6 @@
 import {
+  atRisk,
   type DeadlineCell,
-  type DeadlineRow,
   type FeatureState,
   type FeatureStep,
   FINAL_STATUSES,
@@ -9,13 +9,15 @@ import {
   isFeature,
   isOpen,
   type Link,
+  type ProjectEvent,
   type Question,
   type Sprint,
   type SprintView,
+  slippedFrom,
   sortSprints,
   type TicketView,
 } from "@kibo/schema";
-import type { TimelineColumnInput } from "@kibo/sdk/tracking";
+import type { MarkedRow, RowMark, TimelineColumnInput } from "@kibo/sdk/tracking";
 
 export type BandsInput = {
   tickets: readonly TicketView[];
@@ -24,13 +26,15 @@ export type BandsInput = {
   questions: readonly Question[];
   today: string;
   backlog: string;
+  events?: readonly ProjectEvent[];
+  slipped?: (code: string) => string;
 };
 export type BandsTimeline = {
   columns: TimelineColumnInput[];
-  rows: DeadlineRow[];
+  rows: MarkedRow[];
   today: number | null;
   startsIn: number | null;
-  delivered: DeadlineRow[];
+  delivered: MarkedRow[];
 };
 
 type Feature = TicketView & { feature: FeatureState };
@@ -91,7 +95,19 @@ function slipTarget(f: Feature, column: number, sorted: readonly Sprint[]): Spri
   return next === undefined ? null : { id: next.id, code: next.code };
 }
 
-function bandRow(f: Feature, column: number, facts: RowFacts): DeadlineRow {
+function markOf(f: Feature, steps: readonly FeatureStep[], facts: RowFacts): RowMark {
+  const { input, sorted } = facts;
+  const sprint = sorted.find((s) => s.id === f.sprintId) ?? null;
+  const late = f.feature.status === "late";
+  const risk = !late && sprint !== null && atRisk({ sprint, steps }, input.today);
+  const from = slippedFrom(input.events ?? [], f.id);
+  return {
+    ...(late ? { tone: "late" } : risk ? { tone: "risk" } : {}),
+    ...(from !== null && input.slipped ? { note: input.slipped(from) } : {}),
+  };
+}
+
+function bandRow(f: Feature, column: number, facts: RowFacts): MarkedRow {
   const { input, sorted, blocking } = facts;
   const steps = featureSteps({ feature: f.id, tickets: input.tickets, links: input.links });
   const slipTo = slipTarget(f, column, sorted);
@@ -105,6 +121,7 @@ function bandRow(f: Feature, column: number, facts: RowFacts): DeadlineRow {
     column,
     slipTo,
     blockedBy: f.feature.status === "blocked" && next !== null ? (blocking.get(next) ?? null) : null,
+    ...markOf(f, steps, facts),
   };
 }
 
