@@ -68,23 +68,12 @@ export const deliverMenuActions = (
         },
       ];
 
-type MenuCopy =
-  | {
-      sdk: Pick<KiboSdk, "toast">;
-      ticket: Pick<TicketView, "key" | "statusId" | "startable" | "waitingOn">;
-      copy?: never;
-    }
-  | { copy(command: string): void; ticket: Pick<TicketView, "key" | "statusId">; sdk?: never };
-
-export type DeliveryMenu = MenuCopy & {
+export type DeliveryMenu = {
+  sdk: Pick<KiboSdk, "toast">;
+  ticket: Pick<TicketView, "key" | "statusId" | "startable" | "waitingOn">;
   execution: AgentExecution;
   entry: DeliverEntry | null;
   deliver(mode: DeliveryKind): void;
-};
-
-const copyEntry = (menu: DeliveryMenu, command: string): void => {
-  if (menu.sdk !== undefined) void copyCommand(menu.sdk, command, menu.ticket);
-  else menu.copy(command);
 };
 
 export function deliveryMenuActions(menu: DeliveryMenu): MenuAction[] {
@@ -95,7 +84,13 @@ export function deliveryMenuActions(menu: DeliveryMenu): MenuAction[] {
       : deliverMenuActions(menu.entry, () => menu.deliver("delivery"));
   const command = deliveryCommand(menu.ticket);
   if (command === null) return [];
-  return [{ label: deliveryTexts.copy(command), icon: Copy, onSelect: () => copyEntry(menu, command) }];
+  return [
+    {
+      label: deliveryTexts.copy(command),
+      icon: Copy,
+      onSelect: () => void copyCommand(menu.sdk, command, menu.ticket),
+    },
+  ];
 }
 
 export function deliveryCommand({ key, statusId }: Pick<TicketView, "key" | "statusId">): string | null {

@@ -31,16 +31,10 @@ export async function copyCommand(
   sdk.toast(deliveryTexts.copied(waitingOf(ticket)));
 }
 
-export function copyDeliveryCommand(command: string): Promise<void>;
-export function copyDeliveryCommand(sdk: Toaster, ticket: CopyTicket): Promise<void>;
-export async function copyDeliveryCommand(target: string | Toaster, ticket?: CopyTicket): Promise<void> {
-  if (typeof target === "string") {
-    await writeClipboard(target);
+export async function copyDeliveryCommand(sdk: Toaster, ticket: CopyTicket): Promise<void> {
+  if (ticket.key === null) {
+    sdk.toast(deliveryTexts.copyFailed);
     return;
   }
-  if (ticket === undefined || ticket.key === null) {
-    target.toast(deliveryTexts.copyFailed);
-    return;
-  }
-  await copyCommand(target, deliveryBrief(ticket.key), ticket);
+  await copyCommand(sdk, deliveryBrief(ticket.key), ticket);
 }
