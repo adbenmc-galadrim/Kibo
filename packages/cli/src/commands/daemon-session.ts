@@ -17,9 +17,8 @@ async function versionOf(client: DaemonClient): Promise<{ home: string; version:
   try {
     const info = await client.rpc({ method: "getAppInfo" });
     return { home: info.home, version: info.version };
-  } catch (e) {
-    if (e instanceof DaemonError) return null;
-    throw e;
+  } catch {
+    return null;
   }
 }
 

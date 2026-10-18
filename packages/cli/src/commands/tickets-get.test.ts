@@ -3,9 +3,17 @@ import { runTicketsCommand } from "./tickets";
 import { fakeDaemon, fakeTicket, TICKETS } from "./tickets-test-kit";
 
 const FEATURE = fakeTicket({ id: "f6", key: "F6", shortKey: "F6" });
+const MINE = {
+  ...fakeTicket({
+    id: "mine",
+    key: "EMIS-60",
+    refs: [{ kind: "git_branch", branch: "feat/x", base: "dev" }],
+  }),
+  assignee: { kind: "human" as const, ref: "u-me" },
+};
 
 async function get(ident: string, flags: Record<string, string> = {}) {
-  const d = fakeDaemon([...TICKETS, FEATURE]);
+  const d = fakeDaemon([...TICKETS, FEATURE, MINE]);
   const code = await runTicketsCommand(["get", ident], flags, d.io, d.connect, "/nowhere");
   return { ...d, code };
 }
@@ -15,6 +23,12 @@ describe("kibo tickets get", () => {
     const d = await get("EMIS-50");
     expect(d.code).toBe(0);
     expect(d.out).toContain("Dépendances : aucune");
+  });
+
+  test("shows the declared branch and names the viewer as assignee", async () => {
+    const d = await get("EMIS-60");
+    expect(d.out).toContain("Branche : feat/x (base dev)");
+    expect(d.out).toContain("Assigné : moi");
   });
 
   test("finds a feature by its F key once the project is given", async () => {

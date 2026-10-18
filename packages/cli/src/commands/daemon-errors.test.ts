@@ -7,7 +7,7 @@ import { runCli } from "../index";
 import { EMIS_META, fakeSnapshot } from "./tickets-test-kit";
 
 type Answer = { ok: true; result: unknown } | { ok: false; error: { code: string; message: string } };
-type Rpc = (method: string) => Answer | null;
+type Rpc = (method: string) => Answer | Response | null;
 
 const APP_INFO = {
   version: "0.23.0-alpha.3",
@@ -38,7 +38,8 @@ function fakeOldDaemon(answer: Rpc) {
       if (method === "listSessions") return Response.json(ok([]));
       if (method === "listProjects") return Response.json(ok([{ ...EMIS_META, counts: {} }]));
       if (method === "getProject") return Response.json(ok(fakeSnapshot()));
-      return Response.json(answer(method) ?? refused("INVALID_INPUT", "invalid request: method"));
+      const given = answer(method) ?? refused("INVALID_INPUT", "invalid request: method");
+      return given instanceof Response ? given : Response.json(given);
     },
   });
   const home = mkdtempSync(join(tmpdir(), "kibo-cli-old-"));
@@ -76,5 +77,17 @@ test("falls back on the home it reached when the daemon cannot tell its version"
   expect(await d.run("tickets", "set", "EMIS-33", "status=wip")).toBe(1);
   expect(d.err.at(-1)).toMatch(
     /^Le démon \/.+kibo-cli-old-\S+ \(version inconnue\) est trop ancien pour kibo tickets set :/,
+  );
+});
+
+test("keeps the original error when getAppInfo answers garbage", async () => {
+  const d = fakeOldDaemon((m) => {
+    if (m === "getAppInfo") return new Response("<html>", { headers: { "content-type": "text/html" } });
+    if (m === "declareTicketRef") return refused("NOT_FOUND", "ticket EMIS-33");
+    return null;
+  });
+  expect(await d.run("tickets", "set", "EMIS-33", "branch=feat/x")).toBe(1);
+  expect(d.err.at(-1)).toMatch(
+    /^Erreur NOT_FOUND : ticket EMIS-33 \(démon \/\S+kibo-cli-old-\S+, version inconnue\)$/,
   );
 });

@@ -126,6 +126,7 @@ export function fakeSnapshot(
     questions: [],
     questionRecipients: [],
     sprints,
+    viewer: "u-me",
   };
   return partial as never;
 }
