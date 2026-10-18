@@ -217,3 +217,45 @@ test("a reminder records a reminded event on an open question only, without chan
   const archived = archiveQuestion(doc, edit("archiveQuestion", ask("C").id));
   expect(code(() => remind(archived.id))).toBe("INVALID_TRANSITION");
 });
+
+test("each question created by the command gets the next number, a duplicate keeps its own", () => {
+  const { doc, ticket } = setup();
+  const create = (title: string) =>
+    executeProjectCommand(doc, { method: "createQuestion", ticketId: ticket.id, title, createdBy: ADAM });
+  expect(create("A")).toMatchObject({ number: 1 });
+  expect(create("B")).toMatchObject({ number: 2 });
+  expect(create("A")).toMatchObject({ number: 1 });
+  expect(create("C")).toMatchObject({ number: 3 });
+});
+
+test("marking questions as exported records an event, unmarking removes the last one", () => {
+  const { doc, ask } = setup();
+  const [a, b] = [ask("A"), ask("B")];
+  const run = (cmd: ProjectCommand) => executeProjectCommand(doc, cmd);
+  const ids = [a.id, b.id];
+  run({ method: "markQuestionsExported", questionIds: ids, by: THEO, at: 40 });
+  run({ method: "markQuestionsExported", questionIds: [a.id], by: THEO, at: 50 });
+  const exported = { kind: "exported" as const, by: THEO, previous: {} };
+  expect(getQuestion(doc, a.id).history).toEqual([
+    { ...exported, at: 40 },
+    { ...exported, at: 50 },
+  ]);
+  run({ method: "unmarkQuestionsExported", questionIds: ids });
+  expect(getQuestion(doc, a.id).history).toEqual([{ ...exported, at: 40 }]);
+  expect(getQuestion(doc, b.id).history).toEqual([]);
+  expect(run({ method: "unmarkQuestionsExported", questionIds: [b.id] })).toEqual([getQuestion(doc, b.id)]);
+});
+
+test("an archived question cannot be marked as exported, and nothing is marked then", () => {
+  const { doc, ask } = setup();
+  const open = ask("A");
+  const archived = archiveQuestion(doc, edit("archiveQuestion", ask("B").id));
+  const mark = () =>
+    executeProjectCommand(doc, {
+      method: "markQuestionsExported",
+      questionIds: [open.id, archived.id],
+      by: THEO,
+    });
+  expect(code(mark)).toBe("INVALID_INPUT");
+  expect(getQuestion(doc, open.id).history).toEqual([]);
+});

@@ -186,3 +186,26 @@ test("updatedAt is the last event of the ticket, else its delivery step, else nu
   expect(viewWith(d, activity, b.id).updatedAt).toBe(2_000);
   expect(viewWith(d, activity, c.id).updatedAt).toBeNull();
 });
+
+test("the finished sprint stays current until the next one starts, flagged as lingering", () => {
+  const d = newDoc();
+  for (const [code, start, end] of [
+    ["S42", "2026-10-12", "2026-10-16"],
+    ["S43", "2026-10-19", "2026-10-23"],
+  ] as const)
+    executeProjectCommand(d, { method: "createSprint", code, name: code, start, end });
+  const lingering = (today: string) =>
+    readProject(d, today).sprints.map((s) => [s.code, s.state, s.lingering]);
+  expect(lingering("2026-10-16")).toEqual([
+    ["S42", "current", false],
+    ["S43", "planned", false],
+  ]);
+  expect(lingering("2026-10-17")).toEqual([
+    ["S42", "done", true],
+    ["S43", "planned", false],
+  ]);
+  expect(lingering("2026-10-19")).toEqual([
+    ["S42", "done", false],
+    ["S43", "current", false],
+  ]);
+});

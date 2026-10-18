@@ -14,8 +14,9 @@ import {
   resolveAnswer,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
+import { nextQuestionSeq } from "./project";
 import { assertRecipient } from "./question-recipients";
-import { getQuestion, listQuestions, storeQuestion } from "./questions";
+import { createQuestion, getQuestion, listQuestions, type NewQuestion, storeQuestion } from "./questions";
 import { getNode } from "./tree";
 
 type Command<M extends ProjectCommand["method"]> = Extract<ProjectCommand, { method: M }>;
@@ -128,4 +129,34 @@ export function remindQuestion(doc: LoroDoc, cmd: Command<"remindQuestion">): Qu
   assertNotArchived(q);
   if (isAnswered(q)) refuse(q.id, "is answered: nothing to remind");
   return record(doc, q, cmd, "reminded", {}, {});
+}
+
+export function createNumberedQuestion(doc: LoroDoc, input: NewQuestion): Question {
+  const known = doc.getMap("questions").size;
+  const question = createQuestion(doc, input);
+  if (doc.getMap("questions").size === known) return question;
+  return storeQuestion(doc, { ...question, number: nextQuestionSeq(doc) });
+}
+
+const distinct = (ids: readonly string[]): string[] => [...new Set(ids)];
+
+export function markQuestionsExported(doc: LoroDoc, cmd: Command<"markQuestionsExported">): Question[] {
+  const marked = distinct(cmd.questionIds).map((id) => getQuestion(doc, id));
+  const archived = marked.find(isArchived);
+  if (archived) throw new KiboError("INVALID_INPUT", `question ${archived.id} is archived`);
+  const at = cmd.at ?? Date.now();
+  return marked.map((q) => record(doc, q, { questionId: q.id, by: cmd.by, at }, "exported", {}, {}));
+}
+
+function withoutLastExport(history: Question["history"]): Question["history"] {
+  const last = history.map((event) => event.kind).lastIndexOf("exported");
+  return last === -1 ? [...history] : history.filter((_, index) => index !== last);
+}
+
+export function unmarkQuestionsExported(doc: LoroDoc, cmd: Command<"unmarkQuestionsExported">): Question[] {
+  return distinct(cmd.questionIds).map((id) => {
+    const q = getQuestion(doc, id);
+    const history = withoutLastExport(q.history);
+    return history.length === q.history.length ? q : storeQuestion(doc, { ...q, history });
+  });
 }

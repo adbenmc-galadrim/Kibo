@@ -32,18 +32,15 @@ import {
   renameQuestionRecipient,
   setQuestionRecipient,
 } from "./question-recipients";
-import {
-  answerQuestion,
-  createQuestion,
-  listQuestions,
-  markAnswersDelivered,
-  removeQuestion,
-} from "./questions";
+import { answerQuestion, listQuestions, markAnswersDelivered, removeQuestion } from "./questions";
 import {
   archiveQuestion,
+  createNumberedQuestion,
+  markQuestionsExported,
   remindQuestion,
   reopenQuestion,
   restoreQuestion,
+  unmarkQuestionsExported,
   updateAnswer,
   updateQuestion,
 } from "./questions-edit";
@@ -139,7 +136,7 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
       return null;
     case "createQuestion": {
       const { method: _method, ...input } = cmd;
-      return createQuestion(doc, input);
+      return createNumberedQuestion(doc, input);
     }
     case "answerQuestion":
       return answerQuestion(doc, cmd.questionId, cmd.answer, cmd.by, cmd.at ?? Date.now());
@@ -178,6 +175,10 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
       return archiveQuestion(doc, cmd);
     case "restoreQuestion":
       return restoreQuestion(doc, cmd);
+    case "markQuestionsExported":
+      return markQuestionsExported(doc, cmd);
+    case "unmarkQuestionsExported":
+      return unmarkQuestionsExported(doc, cmd);
     case "createSprint":
       return createSprint(doc, { code: cmd.code, name: cmd.name, start: cmd.start, end: cmd.end });
     case "updateSprint":
