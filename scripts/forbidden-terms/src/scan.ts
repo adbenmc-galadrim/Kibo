@@ -1,14 +1,33 @@
 export type Match = { term: number; line: number };
 
 const BINARY_HEAD_BYTES = 8192;
-const WORD_CHAR = "[\\p{L}\\p{M}\\p{N}_]";
+const LETTER = /[\p{L}\p{M}]/u;
+const UPPER = /\p{Lu}/u;
+const LOWER = /\p{Ll}/u;
+
+type Range = { start: number; end: number };
 
 function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export function termPattern(term: string): RegExp {
-  return new RegExp(`(?<!${WORD_CHAR})${escapeRegExp(term.normalize("NFC"))}(?!${WORD_CHAR})`, "giu");
+const isLetter = (char: string | undefined): boolean => char !== undefined && LETTER.test(char);
+const camelStep = (left: string | undefined, right: string | undefined): boolean =>
+  left !== undefined && right !== undefined && LOWER.test(left) && UPPER.test(right);
+
+function standsAlone(text: string, { start, end }: Range): boolean {
+  const before = text[start - 1];
+  const after = text[end];
+  const leftOk = !isLetter(before) || camelStep(before, text[start]);
+  const rightOk = !isLetter(after) || camelStep(text[end - 1], after);
+  return leftOk && rightOk;
+}
+
+function termRanges(text: string, term: string): Range[] {
+  const pattern = new RegExp(escapeRegExp(term.normalize("NFC")), "giu");
+  return [...text.matchAll(pattern)]
+    .map((found) => ({ start: found.index, end: found.index + found[0].length }))
+    .filter((range) => standsAlone(text, range));
 }
 
 function lineStarts(text: string): number[] {
@@ -35,9 +54,9 @@ export function findForbidden(text: string, terms: readonly string[]): Match[] {
   const matches: Match[] = [];
   let starts: number[] | null = null;
   terms.forEach((term, position) => {
-    for (const found of normalized.matchAll(termPattern(term))) {
+    for (const range of termRanges(normalized, term)) {
       starts ??= lineStarts(normalized);
-      matches.push({ term: position + 1, line: lineOf(starts, found.index) });
+      matches.push({ term: position + 1, line: lineOf(starts, range.start) });
     }
   });
   return matches.sort((a, b) => a.line - b.line || a.term - b.term);
@@ -52,7 +71,13 @@ export function maskTerms(text: string, terms: readonly string[]): string {
     .map((term, position) => ({ term, position }))
     .sort((a, b) => b.term.length - a.term.length)
     .reduce(
-      (masked, { term, position }) => masked.replace(termPattern(term), `<terme ${position + 1}>`),
+      (masked, { term, position }) => maskOne(masked, term, `<terme ${position + 1}>`),
       text.normalize("NFC"),
     );
+}
+
+function maskOne(text: string, term: string, label: string): string {
+  return termRanges(text, term)
+    .reverse()
+    .reduce((masked, { start, end }) => `${masked.slice(0, start)}${label}${masked.slice(end)}`, text);
 }

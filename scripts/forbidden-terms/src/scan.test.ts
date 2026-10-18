@@ -11,7 +11,26 @@ test("matches whole words whatever the case", () => {
 });
 
 test("ignores a term embedded in a longer word", () => {
-  expect(findForbidden("retolo tolos tolo_x tolo2", terms)).toEqual([]);
+  expect(findForbidden("retolo tolos RETOLO Retolos", terms)).toEqual([]);
+});
+
+test("finds a term glued to an underscore or a digit", () => {
+  expect(findForbidden("TOLO_META x_tolo tolo2", terms)).toEqual([
+    { term: 1, line: 1 },
+    { term: 1, line: 1 },
+    { term: 1, line: 1 },
+  ]);
+});
+
+test("finds a term inside a camelCase identifier", () => {
+  expect(findForbidden("seedToloMaquettes toloKey", terms)).toEqual([
+    { term: 1, line: 1 },
+    { term: 1, line: 1 },
+  ]);
+});
+
+test("finds a term right after a tab escape", () => {
+  expect(findForbidden("\\tTolo", terms)).toEqual([{ term: 1, line: 1 }]);
 });
 
 test("finds a hyphenated term and its whole-word part", () => {
