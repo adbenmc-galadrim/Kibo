@@ -13,15 +13,17 @@ import {
   isInbox,
   KiboError,
   type ProjectMeta,
+  ProjectSetup,
   type ProjectSyncInfo,
   type RpcRequest,
 } from "@kibo/schema";
 import type { LoroDoc } from "loro-crdt";
 import { isDemoProject } from "../demo/demo-project";
-import type { Docs } from "../docs";
+import { type Docs, KIBO_COMMAND } from "../docs";
 import type { IconStore } from "../icons/icon-store";
 import type { createFileTicket } from "../inbox/file-ticket";
 import { assertProjectKeyAllowed } from "../inbox/inbox-rules";
+import { markMigrated } from "../migrations/tracking";
 import type { ProjectSettings } from "../notes/settings";
 import {
   localDelivery,
@@ -30,13 +32,14 @@ import {
   localStorybook,
   localWorktree,
 } from "../project-folder";
+import { setupProject } from "./project-setup";
 
 export type CollabPort = { syncInfo(projectId: string, doc: LoroDoc): ProjectSyncInfo };
 export type ProjectRpcDeps = {
   workspace: LoroDoc;
   docs: Docs;
   icons: Pick<IconStore, "version">;
-  settings: Pick<ProjectSettings, "get">;
+  settings: Pick<ProjectSettings, "get" | "set">;
   collab(): CollabPort | null;
   adopt(id: string, doc: LoroDoc): void;
   fileTicket: ReturnType<typeof createFileTicket>;
@@ -47,6 +50,18 @@ export const NOT_HANDLED: unique symbol = Symbol("not handled");
 const folderOf = (deps: ProjectRpcDeps, meta: ProjectMeta): string | null =>
   localFolder(deps.settings, meta, getKeyAllocator(deps.docs.project(meta.id)) === "server");
 
+function parsedSetup(setup: unknown): ProjectSetup | null {
+  if (setup === undefined) return null;
+  const parsed = ProjectSetup.safeParse(setup);
+  if (!parsed.success) throw new KiboError("INVALID_INPUT", `invalid project setup: ${parsed.error.message}`);
+  return parsed.data;
+}
+
+function seedProject(deps: ProjectRpcDeps, projectId: string, setup: ProjectSetup): void {
+  setupProject((command) => deps.docs.run(projectId, command, KIBO_COMMAND), setup);
+  markMigrated(deps.settings, projectId, deps.docs.today());
+}
+
 const projectIcon = (projectId: string) => iconOwnerKey({ kind: "project", projectId });
 
 function createProject(
@@ -54,6 +69,7 @@ function createProject(
   req: Extract<RpcRequest, { method: "createProject" }>,
 ): ProjectMeta {
   assertProjectKeyAllowed(req.key);
+  const setup = parsedSetup(req.setup);
   const meta: ProjectMeta = {
     id: crypto.randomUUID(),
     key: req.key,
@@ -68,11 +84,13 @@ function createProject(
     description: null,
     client: null,
   };
+  const doc = createProjectDoc(meta);
   registerProject(deps.workspace, meta);
-  deps.adopt(meta.id, createProjectDoc(meta));
+  deps.adopt(meta.id, doc);
   deps.docs.save(meta.id);
   deps.docs.save(null);
   deps.docs.emit({ projectId: null });
+  if (setup !== null) seedProject(deps, meta.id, setup);
   return meta;
 }
 

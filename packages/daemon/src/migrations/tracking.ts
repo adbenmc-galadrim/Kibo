@@ -37,6 +37,11 @@ function migrateProject(deps: TrackingMigrationDeps, projectId: string): number 
   return applied;
 }
 
+export function markMigrated(settings: Pick<ProjectSettings, "set">, projectId: string, at: string): void {
+  settings.set(projectId, TRACKING_MIGRATED_KEY, at);
+  settings.set(projectId, OVERVIEW_MIGRATED_KEY, at);
+}
+
 export function migrateTracking(deps: TrackingMigrationDeps): { migrated: number; skipped: number } {
   let migrated = 0;
   let skipped = 0;
