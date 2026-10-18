@@ -14,14 +14,14 @@ export function OptionalToggle({ ticket, editable, command }: Props) {
   return (
     <span className="flex items-center gap-2">
       <Switch
-        aria-label={t.optional}
-        checked={ticket.optional}
+        aria-label={t.requiredToggle}
+        checked={!ticket.optional}
         disabled={!editable || command.busy}
-        onCheckedChange={(optional) =>
-          void command.run({ method: "setTicketOptional", ticketId: ticket.id, optional })
+        onCheckedChange={(required) =>
+          void command.run({ method: "setTicketOptional", ticketId: ticket.id, optional: !required })
         }
       />
-      <span className="text-muted-foreground">{t.optionalHint}</span>
+      <span className="text-muted-foreground">{t.requiredToggle}</span>
     </span>
   );
 }

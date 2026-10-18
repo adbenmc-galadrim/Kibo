@@ -25,19 +25,22 @@ const find = (id: string) => {
   return t;
 };
 
-test("a step can be marked optional", async () => {
+test("a required step is checked and unchecking makes it optional", async () => {
   sent.length = 0;
   render(<OptionalToggle ticket={find("e35")} editable command={command} />);
-  const toggle = screen.getByRole("switch", { name: "Étape facultative" });
-  expect(toggle.getAttribute("aria-checked")).toBe("false");
+  const toggle = screen.getByRole("switch", { name: "Requise pour livrer" });
+  expect(toggle.getAttribute("aria-checked")).toBe("true");
+  expect(screen.getByText("Requise pour livrer")).toBeTruthy();
   await userEvent.setup().click(toggle);
   expect(sent).toEqual([{ method: "setTicketOptional", ticketId: "e35", optional: true }]);
 });
 
-test("an optional step can be made mandatory again", async () => {
+test("an optional step is unchecked and checking makes it required again", async () => {
   sent.length = 0;
   render(<OptionalToggle ticket={{ ...find("e35"), optional: true }} editable command={command} />);
-  await userEvent.setup().click(screen.getByRole("switch", { name: "Étape facultative" }));
+  const toggle = screen.getByRole("switch", { name: "Requise pour livrer" });
+  expect(toggle.getAttribute("aria-checked")).toBe("false");
+  await userEvent.setup().click(toggle);
   expect(sent).toEqual([{ method: "setTicketOptional", ticketId: "e35", optional: false }]);
 });
 
@@ -48,5 +51,5 @@ test("a root ticket has no optional toggle", () => {
 
 test("a reader sees the toggle disabled", () => {
   render(<OptionalToggle ticket={find("e35")} editable={false} command={command} />);
-  expect(screen.getByRole("switch", { name: "Étape facultative" }).hasAttribute("disabled")).toBe(true);
+  expect(screen.getByRole("switch", { name: "Requise pour livrer" }).hasAttribute("disabled")).toBe(true);
 });

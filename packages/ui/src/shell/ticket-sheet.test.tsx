@@ -129,11 +129,11 @@ test("status and assignee are pills under the title; a step toggles « facultati
   const view = await open("e33");
   expect(screen.getByRole("combobox", { name: "Statut" })).toBeTruthy();
   expect(screen.getByRole("combobox", { name: "Assigné" })).toBeTruthy();
-  expect(screen.getByRole("switch", { name: "Étape facultative" })).toBeTruthy();
+  expect(screen.getByRole("switch", { name: "Requise pour livrer" })).toBeTruthy();
   expect(screen.queryByRole("combobox", { name: "Sprint" })).toBeNull();
   view.unmount();
   await open("e33", { parentId: null });
-  expect(screen.queryByRole("switch", { name: "Étape facultative" })).toBeNull();
+  expect(screen.queryByRole("switch", { name: "Requise pour livrer" })).toBeNull();
   expect(screen.getByRole("combobox", { name: "Sprint" })).toBeTruthy();
 });
 
