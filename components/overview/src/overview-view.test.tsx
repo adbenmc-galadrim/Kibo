@@ -16,6 +16,7 @@ const handlers: OverviewHandlers = {
   onOpenQuestion: noop,
   onOpenQuestions: noop,
   onOpenPlanning: noop,
+  onChooseFolder: noop,
 };
 
 function view(model: OverviewModel, today?: string) {

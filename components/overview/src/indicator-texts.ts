@@ -46,11 +46,17 @@ function sprintText(sprint: OverviewIndicators["sprint"], remaining: number): In
     };
   }
   const ended = typeof sprint.ending === "object" && "ended" in sprint.ending;
+  const state = endingText(sprint.ending);
   return {
     value: sprint.code,
-    unit: endingText(sprint.ending),
-    sub: ended ? `${fr.sprint.rest(remaining)} · ${sprint.name}` : sprint.name,
+    unit: sprint.name,
+    sub: ended ? `${state} · ${fr.sprint.rest(remaining)}` : state,
   };
+}
+
+function blockedText(open: OverviewIndicators["open"], blocked: readonly string[]): string {
+  const level = open.count === 0 ? null : t.levelShort[open.level];
+  return level === null ? t.blocked(blocked) : `${level} · ${t.blocked(blocked)}`;
 }
 
 function openText(open: OverviewIndicators["open"], blocked: readonly string[]): IndicatorText {
@@ -60,7 +66,7 @@ function openText(open: OverviewIndicators["open"], blocked: readonly string[]):
   return {
     value: String(open.count),
     unit: t.openOf(open.limit),
-    sub: blocked.length > 0 ? `${sub} · ${t.blocked(blocked)}` : sub,
+    sub: blocked.length > 0 ? blockedText(open, blocked) : sub,
     ...(dot ? { dot } : {}),
   };
 }

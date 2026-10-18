@@ -20,6 +20,7 @@ export type OverviewHandlers = NextActions & {
   onOpenQuestion(id: string): void;
   onOpenQuestions(): void;
   onOpenPlanning(): void;
+  onChooseFolder(): void;
 };
 type Props = {
   project: ProjectInfo | null;
@@ -44,6 +45,7 @@ function StartCard({
       model={start}
       projectKey={project.key}
       onOpenPlanning={handlers.onOpenPlanning}
+      onChooseFolder={handlers.onChooseFolder}
       onCopy={() => {
         if (target !== null) void handlers.copy(target.id);
       }}

@@ -21,7 +21,7 @@ import {
   STACK_GAP,
   titleLines,
 } from "./frame-geometry";
-import { sprintStateLabel } from "./sprint-label";
+import { lanePhase, sprintStateLabel } from "./sprint-label";
 
 export { frameWidth } from "./frame-geometry";
 
@@ -88,7 +88,7 @@ export type SprintLanesInput = {
   questions: readonly Question[];
   live: ReadonlySet<string>;
   collapseDelivered: boolean;
-  today: string;
+  today: string | null;
 };
 
 export const RESERVE_LANE = "reserve";
@@ -232,8 +232,8 @@ export function sprintLanes(input: SprintLanesInput): SprintLanesModel | null {
       id: s.id,
       code: s.code,
       name: s.name,
-      state: sprintState(s, input.today),
-      label: sprintStateLabel(s, input.today, unfinished(s.features, byId)),
+      state: input.today === null ? s.state : sprintState(s, input.today),
+      label: sprintStateLabel(lanePhase(s, input.today), s.end, unfinished(s.features, byId)),
       drafts: s.features.flatMap((id) => drafts.get(id) ?? []),
     })),
     {

@@ -48,9 +48,10 @@ test("a new project lists two steps to start, with its sprints beside them", asy
   const card = await start();
   expect(within(card).getByText("0/2")).toBeTruthy();
   expect(within(card).getByText("deux étapes pour suivre le projet")).toBeTruthy();
-  expect(
-    within(row(card, "Relier le dépôt")).getByText("Modifier le projet › Dossier du dépôt"),
-  ).toBeTruthy();
+  await userEvent.click(
+    within(row(card, "Relier le dépôt")).getByRole("button", { name: "Choisir le dossier" }),
+  );
+  expect(m.projectEdits).toEqual([{ field: "folder" }]);
   expect(row(card, "Relier le dépôt").dataset.done).toBe("false");
   expect(row(card, "Créer une fonctionnalité").dataset.done).toBe("false");
   expect(within(card).getAllByRole("listitem").length).toBe(2);

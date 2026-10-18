@@ -15,8 +15,8 @@ test("the five indicators read as the mockup", () => {
       sub: "2 à risque",
       tone: "amber",
     },
-    sprint: { value: "S42", unit: "se termine aujourd'hui", sub: "Terrain hors ligne" },
-    open: { value: "2", unit: "/ 2", sub: "limite atteinte · bloquée : F6", dot: "red" },
+    sprint: { value: "S42", unit: "Terrain hors ligne", sub: "se termine aujourd'hui" },
+    open: { value: "2", unit: "/ 2", sub: "limite · bloquée : F6", dot: "red" },
     review: { value: "3", unit: "PR", sub: "#20 · #22 · #23" },
     questions: { value: "3", unit: "ouvertes", sub: "Q14 bloque F6", dot: "red" },
   });
@@ -27,11 +27,11 @@ test("a finished sprint that stays current says when it ended", () => {
   const sprint = { code: "S42", name: "Terrain hors ligne", ending: { ended: "2026-10-16" } };
   expect(indicatorTexts({ ...model.indicators, sprint, remaining: 2 }).sprint).toEqual({
     value: "S42",
-    unit: "terminé le 16 oct.",
-    sub: "reste 2 · Terrain hors ligne",
+    unit: "Terrain hors ligne",
+    sub: "terminé le 16 oct. · reste 2",
   });
   const running = { ...sprint, ending: { days: 3 } };
-  expect(indicatorTexts({ ...model.indicators, sprint: running }).sprint.unit).toBe("en cours");
+  expect(indicatorTexts({ ...model.indicators, sprint: running }).sprint.sub).toBe("en cours");
 });
 
 test("the sessions in progress, longest first, with their delivery step and duration", () => {
@@ -59,7 +59,7 @@ test("the current sprint lists its features, the open badge and the limit note",
   const { model } = build();
   const sprint = model.sprint;
   expect(sprint?.title).toBe("Sprint S42 · Terrain hors ligne");
-  expect(sprint?.dates).toBe("12–16 oct. · se termine aujourd'hui");
+  expect(sprint?.dates).toBe("12–16 oct.");
   expect(sprint?.open).toEqual({ text: "2/2 en cours", full: true });
   expect(sprint?.rows.map((r) => [r.shortKey, r.title, r.state, r.steps, r.risk, r.slipped])).toEqual([
     ["F3", "Réaffecter un ISO", "delivered", "4/4", false, null],

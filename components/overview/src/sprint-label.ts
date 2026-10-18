@@ -16,5 +16,5 @@ export function sprintCardDates(sprint: Dates, today: string, remaining: number)
   const label = phaseLabel(phase, sprint);
   if (phase === "ended") return `${label} · ${fr.sprint.rest(remaining)}`;
   if (phase === "upcoming") return label;
-  return `${sprintDates(sprint.start, sprint.end)} · ${label}`;
+  return sprintDates(sprint.start, sprint.end);
 }

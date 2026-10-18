@@ -1,6 +1,6 @@
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
-import { Check, Copy, Flag, type LucideIcon, Map as MapIcon } from "lucide-react";
+import { Check, Copy, Flag, FolderOpen, type LucideIcon, Map as MapIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { fr } from "./fr";
 import type { GettingStartedModel, StartStep } from "./getting-started-model";
@@ -10,6 +10,7 @@ type Props = {
   model: GettingStartedModel;
   projectKey: string;
   onOpenPlanning(): void;
+  onChooseFolder(): void;
   onCopy(): void;
 };
 
@@ -67,7 +68,7 @@ function Step({
   );
 }
 
-export function GettingStarted({ model, projectKey, onOpenPlanning, onCopy }: Props) {
+export function GettingStarted({ model, projectKey, onOpenPlanning, onChooseFolder, onCopy }: Props) {
   const target = model.target;
   const shown: StartStep[] = target === null ? ["folder", "feature"] : ["folder", "feature", "copy"];
   const count = shown.filter((step) => model.done[step]).length;
@@ -89,11 +90,7 @@ export function GettingStarted({ model, projectKey, onOpenPlanning, onCopy }: Pr
           done={model.done.folder}
           title={t.folder.title}
           text={t.folder.text}
-          aside={
-            <span className="shrink-0 text-(--tracking-mfg) text-[12px] leading-[25px]">
-              {t.folder.where}
-            </span>
-          }
+          aside={<Action icon={FolderOpen} label={t.folder.choose} onClick={onChooseFolder} />}
         />
         <Step
           step="feature"

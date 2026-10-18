@@ -24,6 +24,7 @@ export const fr = {
     openHint: "fonctionnalités démarrées, non livrées ; limite réglable dans Modifier le projet",
     openOf: (limit: number) => `/ ${limit}`,
     level: { under: "sous la limite", reached: "limite atteinte", over: "dépassée" },
+    levelShort: { under: null, reached: "limite", over: "dépassée" },
     review: "En review",
     pr: "PR",
     noPr: "aucune PR",
@@ -46,7 +47,7 @@ export const fr = {
     folder: {
       title: "Relier le dépôt",
       text: "Choisis le dossier du dépôt : branches, PR et CI remontent seuls.",
-      where: "Modifier le projet › Dossier du dépôt",
+      choose: "Choisir le dossier",
     },
     feature: {
       title: "Créer une fonctionnalité",

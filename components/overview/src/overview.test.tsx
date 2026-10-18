@@ -80,7 +80,7 @@ test("the heading, the indicators and the cards of the project", async () => {
   const indicators = await card("Indicateurs du projet");
   expect(within(indicators).getByText("livrées sur 9")).toBeTruthy();
   expect(within(indicators).getByText("se termine aujourd'hui")).toBeTruthy();
-  expect(within(indicators).getByText("limite atteinte · bloquée : F6")).toBeTruthy();
+  expect(within(indicators).getByText("limite · bloquée : F6")).toBeTruthy();
   expect(within(indicators).getByText("2 à risque")).toBeTruthy();
   expect(screen.queryByRole("region", { name: "Pour commencer" })).toBeNull();
   expect(screen.queryByRole("region", { name: "En retard" })).toBeNull();
@@ -91,7 +91,7 @@ test("the heading, the indicators and the cards of the project", async () => {
   expect(within(deadlines).queryByText("glisse en S43")).toBeNull();
   expect(within(deadlines).getByText("bloquée · Q14")).toBeTruthy();
   const sprint = await card("Sprint S42 · Terrain hors ligne");
-  expect(within(sprint).getByText("12–16 oct. · se termine aujourd'hui")).toBeTruthy();
+  expect(within(sprint).getByText("12–16 oct.")).toBeTruthy();
   expect(within(sprint).getByText("2/2 en cours")).toBeTruthy();
   expect(within(sprint).getAllByText("à risque").length).toBe(2);
   expect(
@@ -215,4 +215,12 @@ test("the in-progress box explains what it counts and where its limit is set", a
   await userEvent.hover(label);
   const hint = "fonctionnalités démarrées, non livrées ; limite réglable dans Modifier le projet";
   expect((await screen.findByRole("tooltip")).textContent).toBe(hint);
+});
+
+test("the overview follows the host's day, not the browser clock", async () => {
+  setSystemTime(new Date("2026-10-18T10:00:00"));
+  setup();
+  const indicators = await card("Indicateurs du projet");
+  expect(within(indicators).getByText("se termine aujourd'hui")).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "En retard" })).toBeNull();
 });

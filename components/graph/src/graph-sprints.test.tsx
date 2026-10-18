@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, expect, setSystemTime, test } from "bun:test";
+import { afterEach, expect, setSystemTime, test } from "bun:test";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
@@ -9,11 +9,7 @@ import { SprintLanes } from "./SprintLanes";
 import { sprintLanes } from "./sprint-lanes";
 import { KIT_DAY_AFTER, kitInput, kitTickets } from "./sprint-lanes-kit";
 
-beforeEach(() => setSystemTime(new Date(`${SEED_TODAY}T14:52:00`)));
-afterEach(() => {
-  setSystemTime();
-  cleanup();
-});
+afterEach(cleanup);
 
 type Execution = "hidden" | "shown";
 
@@ -234,4 +230,16 @@ test("a T3 Code session always lights the step, without any run", () => {
   const f5 = screen.getByRole("article", { name: /^F5 / });
   const row = within(f5).getByRole("button", { name: "Écran d'envoi hors ligne" }).closest("li");
   expect(row?.getAttribute("data-session")).toBe("true");
+});
+
+test("the sprint columns follow the host's day, not the browser clock", async () => {
+  setSystemTime(new Date("2026-10-18T10:00:00"));
+  try {
+    setup();
+    const region = await lanes();
+    const s42 = within(region).getByRole("group", { name: "S42 Terrain hors ligne" });
+    expect(await within(s42).findByText("se termine aujourd'hui")).toBeTruthy();
+  } finally {
+    setSystemTime();
+  }
 });

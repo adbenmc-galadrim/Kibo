@@ -64,11 +64,11 @@ function Box({ icon, label, hint, text, children }: BoxProps) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-[5px] border-(--tracking-soft) border-l px-[18px] py-[12px] first:border-l-0">
       <BoxLabel icon={icon} label={label} hint={hint} />
-      <span className="flex h-[28px] items-end gap-[6px]">
-        <span className="font-semibold text-(--tracking-fg) text-[28px] leading-[28px] tracking-[-0.5px]">
+      <span className="flex h-[28px] min-w-0 items-end gap-[6px]">
+        <span className="shrink-0 font-semibold text-(--tracking-fg) text-[28px] leading-[28px] tracking-[-0.5px]">
           {text.value}
         </span>
-        <span className="whitespace-nowrap text-(--tracking-mfg) text-[13px] leading-[16px]">
+        <span title={text.unit} className="min-w-0 truncate text-(--tracking-mfg) text-[13px] leading-[16px]">
           {text.unit}
         </span>
       </span>
@@ -83,7 +83,9 @@ function Sub({ text }: { text: IndicatorText }) {
   return (
     <>
       {text.dot && <span aria-hidden className={cn("size-[7px] shrink-0 rounded-full", DOT_BG[text.dot])} />}
-      <span className="truncate">{text.sub}</span>
+      <span title={text.sub} className="truncate">
+        {text.sub}
+      </span>
     </>
   );
 }

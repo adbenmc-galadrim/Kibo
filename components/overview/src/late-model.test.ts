@@ -22,7 +22,7 @@ test("on Monday the next sprint is current", () => {
   const sprint = build(MONDAY).model.sprint;
   expect(sprint?.sprint.code).toBe("S43");
   expect(sprint?.lingering).toBe(false);
-  expect(sprint?.dates).toBe("19–23 oct. · en cours");
+  expect(sprint?.dates).toBe("19–23 oct.");
 });
 
 test("the sprint of the card is the shared current sprint", () => {
@@ -56,11 +56,11 @@ test("the in-progress indicator names the blocked features", () => {
   expect(indicatorTexts(model.indicators).open).toEqual({
     value: "2",
     unit: "/ 2",
-    sub: "limite atteinte · bloquée : F6",
+    sub: "limite · bloquée : F6",
     dot: "red",
   });
   const blocked = { ...model.indicators, blockedFeatures: ["F6", "F8"] };
-  expect(indicatorTexts(blocked).open.sub).toBe("limite atteinte · bloquées : F6, F8");
+  expect(indicatorTexts(blocked).open.sub).toBe("limite · bloquées : F6, F8");
 });
 
 test("an empty project reads as the Pour commencer mockup", () => {
