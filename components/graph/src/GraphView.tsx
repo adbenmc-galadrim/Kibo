@@ -1,5 +1,6 @@
 import { useSdk } from "@kibo/sdk";
 import { useMemo, useState } from "react";
+import { EmptyGraph } from "./EmptyGraph";
 import { type GraphFilter, initialFilter } from "./filter";
 import { fr } from "./fr";
 import { GraphCanvas } from "./GraphCanvas";
@@ -32,6 +33,7 @@ export function GraphView() {
   const blocked = input.tickets.filter((t) => path.includes(t.id) && t.statusId === "blocked").length;
   const setMode = (mode: GraphMode) => setDisplay((d) => ({ ...d, mode }));
   const onToggleCritical = () => setShowCritical((v) => !v);
+  const onNewFeature = () => sdk.openView("planning", { intent: { kind: "newFeature" } });
 
   if (effectiveColumns(columns, lanes !== null) === "sprints" && lanes !== null) {
     return (
@@ -56,11 +58,7 @@ export function GraphView() {
           }}
         />
         <div className="min-h-0 flex-1">
-          <SprintLanes
-            model={lanes}
-            onOpen={(id) => sdk.openTicket(id)}
-            onNewFeature={() => sdk.openView("planning", { intent: { kind: "newFeature" } })}
-          />
+          <SprintLanes model={lanes} onOpen={(id) => sdk.openTicket(id)} onNewFeature={onNewFeature} />
         </div>
       </div>
     );
@@ -108,7 +106,9 @@ export function GraphView() {
           {fr.loadFailed}
         </p>
       )}
-      {!data.loading && !data.failed && data.empty ? (
+      {!data.loading && !data.failed && data.allTickets.length === 0 ? (
+        <EmptyGraph onNewFeature={onNewFeature} className="flex-1" />
+      ) : !data.loading && !data.failed && data.empty ? (
         <p className="grid flex-1 place-items-center p-6 text-sm text-muted-foreground">{fr.emptyView}</p>
       ) : (
         <div className="min-h-0 flex-1">

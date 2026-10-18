@@ -1,6 +1,6 @@
 import { cn } from "@kibo/sdk/lib/utils";
-import { Button } from "@kibo/sdk/ui/button";
-import { CalendarRange, Inbox, Plus } from "lucide-react";
+import { CalendarRange, Inbox } from "lucide-react";
+import { EmptyGraph } from "./EmptyGraph";
 import { FeatureFrame } from "./FeatureFrame";
 import { fr } from "./fr";
 import { LANE_MARGIN } from "./frame-geometry";
@@ -39,18 +39,6 @@ function LaneHeader({ lane }: { lane: Lane }) {
 const laneLabel = (lane: Lane): string =>
   lane.code === null ? fr.sprints.reserve : `${lane.code} ${lane.name ?? ""}`.trim();
 
-function EmptyLanes({ onNewFeature }: { onNewFeature(): void }) {
-  return (
-    <div className="absolute inset-x-0 top-[51px] bottom-0 flex flex-col items-center justify-center gap-3 p-6">
-      <p className="text-(--tracking-mfg) text-sm">{fr.sprints.empty}</p>
-      <Button variant="outline" size="sm" onClick={onNewFeature}>
-        <Plus absoluteStrokeWidth size={14} aria-hidden />
-        {fr.sprints.newFeature}
-      </Button>
-    </div>
-  );
-}
-
 type Props = { model: SprintLanesModel; onOpen(id: string): void; onNewFeature(): void };
 
 export function SprintLanes({ model, onOpen, onNewFeature }: Props) {
@@ -78,7 +66,9 @@ export function SprintLanes({ model, onOpen, onNewFeature }: Props) {
           {model.lanes.flatMap((lane) =>
             lane.frames.map((frame) => <FeatureFrame key={frame.id} frame={frame} onOpen={onOpen} />),
           )}
-          {model.features === 0 && <EmptyLanes onNewFeature={onNewFeature} />}
+          {model.features === 0 && (
+            <EmptyGraph onNewFeature={onNewFeature} className="absolute inset-x-0 top-[51px] bottom-0" />
+          )}
         </div>
       </section>
       <SprintLegend />
