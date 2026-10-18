@@ -69,9 +69,9 @@ export function pointsToPlace(plan: RebasePlan): string[] {
         (q) =>
           `Question ${q.old.importRef?.id ?? q.old.id} « ${q.old.title} » sans cible : la nommer dans question-placement.ts.`,
       ),
-    ...plan.ignoredDependencies.map(
-      (d) =>
-        `Dépendance ignorée pour casser un cycle : ${d.feature} attendait ${d.blockedBy} (ordre du plan retenu).`,
+    ...plan.forced.map(
+      (key) =>
+        `Étape ${key} placée malgré une dépendance circulaire entre étapes : corriger les liens puis rejouer.`,
     ),
     ...m.questions
       .filter((q) => q.old.recipient !== null && !KNOWN_RECIPIENTS.includes(q.old.recipient))
@@ -176,30 +176,51 @@ function velocitySection(plan: RebasePlan): string[] {
   ];
 }
 
+function sprintDetail(plan: RebasePlan, sprint: number, ending: string): string[] {
+  const titles = new Map(plan.mapping.features.flatMap((f) => f.steps.map((st) => [st.newKey, st.title])));
+  const steps = plan.steps.filter((x) => x.sprint === sprint);
+  return [
+    ...steps.map((x) => `- ${x.key} · ${titles.get(x.key) ?? "?"} (${x.feature})`),
+    `- Fonctionnalités terminées : ${ending || "aucune"}.`,
+  ];
+}
+
 function sprintsSection(plan: RebasePlan): string[] {
   const { byOldKey } = contexts(plan);
   const features = new Map([...byOldKey.values()].map((f) => [f.shortKey, f]));
   const sprints = sprintPlan(plan.setup);
-  const total = plan.schedule.reduce((n, s) => n + s.remaining, 0);
-  const body = sprints.map((s, i) => {
-    const placed = plan.schedule.filter((x) => x.sprint === i + 1).map((x) => features.get(x.id));
-    const names = placed.map((f) => (f ? featureLabel(f) : "?")).join(", ");
-    const load = Math.max(0, Math.min(plan.velocity, total - i * plan.velocity));
-    return [s.code, rangeLabel(s.start, s.end), names || "—", String(load)];
-  });
+  const ending = (sprint: number): string =>
+    plan.schedule
+      .filter((x) => x.sprint === sprint)
+      .map((x) => features.get(x.id))
+      .map((f) => (f ? featureLabel(f) : "?"))
+      .join(", ");
+  const body = sprints.map((s, i) => [
+    s.code,
+    rangeLabel(s.start, s.end),
+    ending(i + 1) || "—",
+    String(plan.steps.filter((x) => x.sprint === i + 1).length),
+  ]);
+  const details = sprints.flatMap((s, i) => [
+    "",
+    `### ${s.code} · ${rangeLabel(s.start, s.end)}`,
+    "",
+    ...sprintDetail(plan, i + 1, ending(i + 1)),
+  ]);
   const delivered = plan.mapping.features.filter((f) => !plan.schedule.some((s) => s.id === f.shortKey));
   const last = sprints.at(-1);
   return [
     "## Plan de sprints",
     "",
-    `Sprints d'une semaine à partir du lundi ${plan.setup.sprintStart}, ${plan.velocity} étapes par sprint, ordre des dépendances puis du plan.`,
+    `Sprints d'une semaine à partir du lundi ${plan.setup.sprintStart}, ${plan.velocity} étapes par sprint, étape par étape : dépendances entre étapes puis ordre du plan ; une fonctionnalité se termine dans le sprint de sa dernière étape obligatoire.`,
     "",
-    ...table(["Sprint", "Dates", "Fonctionnalités", "Étapes"], body),
+    ...table(["Sprint", "Dates", "Fonctionnalités terminées", "Étapes"], body),
     "",
-    `Fin prévue : ${last ? dayLabel(last.end, true) : "—"} (${plan.setup.sprintCount} sprints, ${total} étapes restantes).`,
+    `Fin prévue : ${last ? dayLabel(last.end, true) : "—"} (${plan.setup.sprintCount} sprints, ${plan.steps.length} étapes restantes).`,
     ...(delivered.length > 0
       ? [`Déjà livrées, sans sprint : ${delivered.map(featureLabel).join(", ")}.`]
       : []),
+    ...details,
   ];
 }
 

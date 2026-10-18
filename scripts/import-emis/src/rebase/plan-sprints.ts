@@ -1,111 +1,77 @@
 import { KiboError, SPRINT_COUNT_MAX } from "@kibo/schema";
 import type { Mapping, NewFeature } from "./mapping";
 
-export type PlanInput = { id: string; order: number; remaining: number; blockedBy: readonly string[] };
+export type StepInput = { key: string; feature: string; order: number; blockedBy: readonly string[] };
+export type StepSlot = { key: string; feature: string; sprint: number };
+export type StepPlan = { slots: StepSlot[]; forced: string[] };
 export type Scheduled = { id: string; sprint: number };
-export type IgnoredDependency = { feature: string; blockedBy: string };
 
-function topological(features: readonly PlanInput[]): PlanInput[] {
-  const pending = [...features].sort((a, b) => a.order - b.order);
-  const ids = new Set(pending.map((f) => f.id));
-  const placed = new Set<string>();
-  const out: PlanInput[] = [];
-  while (pending.length > 0) {
-    const index = pending.findIndex((f) => f.blockedBy.every((b) => !ids.has(b) || placed.has(b)));
-    const next = pending[index];
-    if (next === undefined)
-      throw new KiboError("INVALID_INPUT", `dependency cycle between ${pending.map((f) => f.id).join(", ")}`);
-    pending.splice(index, 1);
-    placed.add(next.id);
-    out.push(next);
-  }
-  return out;
-}
-
-function ordered(features: readonly PlanInput[], capacity: number): PlanInput[] {
+function assertCapacity(steps: readonly StepInput[], capacity: number): void {
   if (!Number.isInteger(capacity) || capacity < 1)
     throw new KiboError("INVALID_INPUT", `capacity must be a positive integer, got ${capacity}`);
-  const open = topological(features.filter((f) => f.remaining > 0));
-  const total = open.reduce((n, f) => n + f.remaining, 0);
-  if (total > SPRINT_COUNT_MAX * capacity)
+  if (steps.length > SPRINT_COUNT_MAX * capacity)
     throw new KiboError(
       "INVALID_INPUT",
-      `plan trop long pour ${SPRINT_COUNT_MAX} sprints : vitesse ${capacity}, ${total} étapes`,
+      `plan trop long pour ${SPRINT_COUNT_MAX} sprints : vitesse ${capacity}, ${steps.length} étapes`,
     );
-  return open;
 }
 
-export function planSprints(features: readonly PlanInput[], capacity: number): Scheduled[] {
-  let used = 0;
-  return ordered(features, capacity).map((f) => {
-    used += f.remaining;
-    return { id: f.id, sprint: Math.ceil(used / capacity) };
-  });
+export function planSprints(steps: readonly StepInput[], capacity: number): StepPlan {
+  assertCapacity(steps, capacity);
+  const pending = [...steps].sort((a, b) => a.order - b.order);
+  const known = new Set(pending.map((s) => s.key));
+  const placed = new Set<string>();
+  const slots: StepSlot[] = [];
+  const forced: string[] = [];
+  while (pending.length > 0) {
+    const free = pending.findIndex((s) => s.blockedBy.every((b) => !known.has(b) || placed.has(b)));
+    const index = free >= 0 ? free : 0;
+    const [next] = pending.splice(index, 1);
+    if (next === undefined) break;
+    if (free < 0) forced.push(next.key);
+    placed.add(next.key);
+    slots.push({ key: next.key, feature: next.feature, sprint: Math.floor(slots.length / capacity) + 1 });
+  }
+  return { slots, forced };
 }
 
-export function sprintLoads(features: readonly PlanInput[], capacity: number): number[] {
-  const total = ordered(features, capacity).reduce((n, f) => n + f.remaining, 0);
-  const sprints = Math.ceil(total / capacity);
-  return Array.from({ length: sprints }, (_, i) => Math.min(capacity, total - i * capacity));
+export function featureSprints(slots: readonly StepSlot[], featureOrder: readonly string[]): Scheduled[] {
+  const last = new Map<string, number>();
+  for (const s of slots) last.set(s.feature, Math.max(last.get(s.feature) ?? 0, s.sprint));
+  return [...last.entries()]
+    .map(([id, sprint]) => ({ id, sprint }))
+    .sort((a, b) => a.sprint - b.sprint || featureOrder.indexOf(a.id) - featureOrder.indexOf(b.id));
 }
 
 const isRemaining = (t: { statusId: string; optional: boolean }): boolean =>
   t.statusId !== "done" && !t.optional;
-const remainingOf = (f: NewFeature): number => f.steps.filter((s) => isRemaining(s.ticket)).length;
+export const remainingOf = (f: NewFeature): number => f.steps.filter((s) => isRemaining(s.ticket)).length;
 
-function openOwners(mapping: Mapping): Map<string, string> {
-  const owner = new Map<string, string>();
+function members(mapping: Mapping): Map<string, string[]> {
+  const of = new Map<string, string[]>();
   for (const f of mapping.features) {
-    if (remainingOf(f) > 0) owner.set(f.shortKey, f.shortKey);
-    for (const s of f.steps) if (isRemaining(s.ticket)) owner.set(s.newKey, f.shortKey);
+    const open = f.steps.filter((s) => isRemaining(s.ticket)).map((s) => s.newKey);
+    of.set(f.shortKey, open);
+    for (const key of open) of.set(key, [key]);
   }
-  return owner;
+  return of;
 }
 
-function components(ids: readonly string[], edges: ReadonlyMap<string, Set<string>>): Map<string, number> {
-  const reach = (from: string): Set<string> => {
-    const seen = new Set<string>([from]);
-    const stack = [from];
-    for (let id = stack.pop(); id !== undefined; id = stack.pop()) {
-      const fresh = [...(edges.get(id) ?? [])].filter((next) => !seen.has(next));
-      for (const next of fresh) seen.add(next);
-      stack.push(...fresh);
-    }
-    return seen;
-  };
-  const reaches = new Map(ids.map((id) => [id, reach(id)]));
-  const component = new Map<string, number>();
-  ids.forEach((id, i) => {
-    const same = ids.find((other) => reaches.get(id)?.has(other) && reaches.get(other)?.has(id));
-    component.set(id, same === undefined ? i : ids.indexOf(same));
-  });
-  return component;
-}
-
-export function featureInputs(mapping: Mapping): { inputs: PlanInput[]; ignored: IgnoredDependency[] } {
-  const owner = openOwners(mapping);
-  const ids = mapping.features.map((f) => f.shortKey);
-  const blockers = new Map<string, Set<string>>(ids.map((id) => [id, new Set<string>()]));
+export function stepInputs(mapping: Mapping): StepInput[] {
+  const of = members(mapping);
+  const blockers = new Map<string, Set<string>>();
   for (const l of mapping.links) {
-    const from = owner.get(l.from);
-    const to = owner.get(l.to);
-    if (l.type === "blocks" && from !== undefined && to !== undefined && from !== to)
-      blockers.get(to)?.add(from);
+    if (l.type !== "blocks") continue;
+    for (const to of of.get(l.to) ?? [])
+      for (const from of of.get(l.from) ?? [])
+        if (from !== to) blockers.set(to, (blockers.get(to) ?? new Set()).add(from));
   }
-  const component = components(ids, blockers);
-  const ignored: IgnoredDependency[] = [];
-  const inputs = mapping.features.map((f, order) => {
-    const blockedBy = [...(blockers.get(f.shortKey) ?? [])].filter((b) => {
-      const kept = component.get(b) !== component.get(f.shortKey) || ids.indexOf(b) < order;
-      if (!kept) ignored.push({ feature: f.shortKey, blockedBy: b });
-      return kept;
-    });
-    return {
-      id: f.shortKey,
-      order,
-      remaining: remainingOf(f),
-      blockedBy: blockedBy.sort((a, b) => ids.indexOf(a) - ids.indexOf(b)),
-    };
-  });
-  return { inputs, ignored };
+  let order = 0;
+  return mapping.features.flatMap((f) =>
+    f.steps.flatMap((s) => {
+      order += 1;
+      if (!isRemaining(s.ticket)) return [];
+      return [{ key: s.newKey, feature: f.shortKey, order, blockedBy: [...(blockers.get(s.newKey) ?? [])] }];
+    }),
+  );
 }

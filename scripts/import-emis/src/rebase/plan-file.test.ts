@@ -23,7 +23,8 @@ describe("buildRebasePlan", () => {
     expect(plan.schedule[0]).toEqual({ id: "F1", sprint: 1, remaining: 4 });
     expect(plan.setup.sprintCount).toBe(Math.max(...plan.schedule.map((s) => s.sprint)));
     expect(plan.commands[0]?.op).toBe("createProject");
-    expect(plan.ignoredDependencies).toEqual([]);
+    expect(plan.forced).toEqual([]);
+    expect(plan.steps).toHaveLength(71);
   });
 });
 

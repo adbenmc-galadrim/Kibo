@@ -4,11 +4,14 @@ import { emisShapedSnapshot } from "../../fixtures/emis-shaped";
 import { desiredCommands, type PlannedCommand, rebaseSetup } from "./desired-new";
 import { mapProject } from "./mapping";
 import { readOldProject } from "./old-project";
-import { featureInputs, planSprints } from "./plan-sprints";
+import { featureSprints, planSprints, stepInputs } from "./plan-sprints";
 import { TODO_PLACEMENT } from "./todo-placement";
 
 const mapping = mapProject(readOldProject(emisShapedSnapshot()), TODO_PLACEMENT, {});
-const schedule = planSprints(featureInputs(mapping).inputs, 5);
+const schedule = featureSprints(
+  planSprints(stepInputs(mapping), 5).slots,
+  mapping.features.map((f) => f.shortKey),
+);
 const commands = desiredCommands(mapping, schedule);
 const sent = (c: PlannedCommand): ProjectCommand | null => (c.op === "command" ? c.command : null);
 const methods: string[] = commands.map((c) => sent(c)?.method ?? c.op);

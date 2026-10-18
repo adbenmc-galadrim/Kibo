@@ -13,7 +13,7 @@ import { z } from "zod";
 import { desiredCommands, type PlannedCommand, rebaseSetup } from "./desired-new";
 import { type Mapping, mapProject } from "./mapping";
 import type { OldProject } from "./old-project";
-import { featureInputs, type IgnoredDependency, planSprints } from "./plan-sprints";
+import { featureSprints, planSprints, remainingOf, type StepSlot, stepInputs } from "./plan-sprints";
 import type { TodoPlacement } from "./todo-placement";
 import { type Merge, observedVelocity, type StepMerge } from "./velocity";
 
@@ -28,7 +28,8 @@ export type RebasePlan = {
   velocitySource: string;
   merges: StepMerge[];
   schedule: ScheduledFeature[];
-  ignoredDependencies: IgnoredDependency[];
+  steps: StepSlot[];
+  forced: string[];
   mapping: Mapping;
   commands: PlannedCommand[];
 };
@@ -131,7 +132,8 @@ const RebasePlanFile: z.ZodType<RebasePlan, z.ZodTypeDef, unknown> = z.object({
     z.object({ number: z.number().int(), mergedAt: z.string(), key: z.string(), week: z.string() }),
   ),
   schedule: z.array(z.object({ id: z.string(), sprint: z.number().int(), remaining: z.number().int() })),
-  ignoredDependencies: z.array(z.object({ feature: z.string(), blockedBy: z.string() })),
+  steps: z.array(z.object({ key: z.string(), feature: z.string(), sprint: z.number().int() })),
+  forced: z.array(z.string()),
   mapping: MappingFile,
   commands: z.array(PlannedCommandFile),
 });
@@ -162,9 +164,12 @@ export type PlanRequest = {
 export function buildRebasePlan(request: PlanRequest): RebasePlan {
   const mapping = mapProject(request.old, request.placement, request.overrides);
   const observed = observedVelocity(mapping, request.merges);
-  const { inputs, ignored } = featureInputs(mapping);
-  const scheduled = planSprints(inputs, observed.velocity);
-  const remaining = new Map(inputs.map((i) => [i.id, i.remaining]));
+  const { slots, forced } = planSprints(stepInputs(mapping), observed.velocity);
+  const scheduled = featureSprints(
+    slots,
+    mapping.features.map((f) => f.shortKey),
+  );
+  const remaining = new Map(mapping.features.map((f) => [f.shortKey, remainingOf(f)]));
   return {
     version: 1,
     source: request.source,
@@ -174,7 +179,8 @@ export function buildRebasePlan(request: PlanRequest): RebasePlan {
     velocitySource: observed.source,
     merges: observed.merges,
     schedule: scheduled.map((s) => ({ ...s, remaining: remaining.get(s.id) ?? 0 })),
-    ignoredDependencies: ignored,
+    steps: slots,
+    forced,
     mapping,
     commands: desiredCommands(mapping, scheduled),
   };

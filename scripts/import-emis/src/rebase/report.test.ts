@@ -62,8 +62,12 @@ describe("renderReport", () => {
 
   test("plans each sprint with dates, features and step count, then expected counts", () => {
     const sprints = rows(section("Plan de sprints"));
-    expect(sprints[0]).toBe("| Sprint | Dates | Fonctionnalités | Étapes |");
+    expect(sprints[0]).toBe("| Sprint | Dates | Fonctionnalités terminées | Étapes |");
     expect(sprints[1]).toBe("| S1 | 19 → 23 oct. 2026 | F1 · Socle | 5 |");
+    const s1 = report.slice(report.indexOf("### S1 · 19 → 23 oct. 2026"), report.indexOf("### S2"));
+    expect(s1).toContain("- EMIS-5 · Nettoyer les données de test (F1)");
+    expect(s1.split("\n").filter((l) => l.startsWith("- EMIS-"))).toHaveLength(5);
+    expect(s1).toContain("- Fonctionnalités terminées : F1 · Socle.");
     expect(sprints).toHaveLength(1 + plan.setup.sprintCount);
     expect(section("Plan de sprints")).toContain("Fin prévue :");
     const counts = section("Comptes attendus");
