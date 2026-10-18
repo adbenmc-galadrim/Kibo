@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "import": "bun import-emis.ts",
-    "rebase": "bun rebase-emis.ts"
+    "rebase": "bun rebase-emis.ts",
+    "replan": "bun replan-emis.ts"
   },
   "dependencies": {
     "@kibo/schema": "workspace:*",

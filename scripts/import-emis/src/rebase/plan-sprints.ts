@@ -1,5 +1,5 @@
 import { KiboError, SPRINT_COUNT_MAX } from "@kibo/schema";
-import type { Mapping, NewFeature } from "./mapping";
+import type { NewFeature } from "./mapping";
 
 export type StepInput = { key: string; feature: string; order: number; blockedBy: readonly string[] };
 export type StepSlot = { key: string; feature: string; sprint: number };
@@ -47,7 +47,15 @@ const isRemaining = (t: { statusId: string; optional: boolean }): boolean =>
   t.statusId !== "done" && !t.optional;
 export const remainingOf = (f: NewFeature): number => f.steps.filter((s) => isRemaining(s.ticket)).length;
 
-function members(mapping: Mapping): Map<string, string[]> {
+export type ScheduleSource = {
+  features: readonly {
+    shortKey: string;
+    steps: readonly { newKey: string; ticket: { statusId: string; optional: boolean } }[];
+  }[];
+  links: readonly { from: string; to: string; type: string }[];
+};
+
+function members(mapping: ScheduleSource): Map<string, string[]> {
   const of = new Map<string, string[]>();
   for (const f of mapping.features) {
     const open = f.steps.filter((s) => isRemaining(s.ticket)).map((s) => s.newKey);
@@ -57,7 +65,7 @@ function members(mapping: Mapping): Map<string, string[]> {
   return of;
 }
 
-export function stepInputs(mapping: Mapping): StepInput[] {
+export function stepInputs(mapping: ScheduleSource): StepInput[] {
   const of = members(mapping);
   const blockers = new Map<string, Set<string>>();
   for (const l of mapping.links) {
