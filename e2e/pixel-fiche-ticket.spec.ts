@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
-import { waitForEmisSeed } from "./emis-ready";
 import { emisPageUrl } from "./pixel-emis";
 import { PIXEL_HEIGHTS, PIXEL_MASKS } from "./pixel-masks";
 import { contentBox, measureScreen, openPixelPage, screensDir, settlePointer } from "./pixel-screen";
@@ -11,7 +10,6 @@ test("the sheet of EMIS-45 opened from the Kanban matches the mockup on the whol
   page,
 }) => {
   await pairBrowser(page);
-  await waitForEmisSeed(page);
   await openPixelPage(page, await emisPageUrl(page, "Kanban"), HEIGHT);
   await page.getByText("Conflits de saisie", { exact: true }).click();
   const sheet = page.getByRole("dialog", { name: /Conflits de saisie/ });

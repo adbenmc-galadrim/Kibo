@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
-import { waitForEmisSeed } from "./emis-ready";
 import { openNewProject } from "./helpers";
 import { emisPageUrl } from "./pixel-emis";
 import { PIXEL_HEIGHTS, PIXEL_MASKS } from "./pixel-masks";
@@ -14,7 +13,6 @@ test("the Nouveau projet dialog over the Vue d'ensemble matches the mockup on th
   page,
 }) => {
   await pairBrowser(page);
-  await waitForEmisSeed(page);
   await openPixelPage(page, await emisPageUrl(page, "Vue d'ensemble"), HEIGHT);
   await expect(page.getByText("2 sessions T3 Code")).toBeVisible();
   await page.getByRole("button", { name: /^Agent de projet/ }).click();

@@ -1,6 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
 import { pairBrowser } from "./agents-seed";
-import { waitForEmisSeed } from "./emis-ready";
 import { emisPageUrl } from "./pixel-emis";
 import { PIXEL_HEIGHTS, PIXEL_MASKS } from "./pixel-masks";
 import { contentBox, measureScreen, openPixelPage, screensDir, settlePointer } from "./pixel-screen";
@@ -19,7 +18,6 @@ test("the Questions of Emis, exported for the client, match the mockup on the wh
   page,
 }) => {
   await pairBrowser(page);
-  await waitForEmisSeed(page);
   await openPixelPage(page, await emisPageUrl(page, "Questions"), HEIGHT);
   await expect(page.getByText("Un ISO réaffecté garde-t-il ses photos ?")).toBeVisible();
   await page.getByRole("button", { name: /^Exporter pour / }).click();
