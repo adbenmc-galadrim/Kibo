@@ -71,3 +71,40 @@ test("four blocked tickets and one blocking question count five", () => {
   expect(blockedCount(tickets, QUESTIONS)).toBe(5);
   expect(openCount(tickets)).toBe(6);
 });
+
+const FEATURE_QUESTION = [question("q1", "f2")];
+const step = (id: string, statusId: StatusId) => ({ id, parentId: "f2", statusId });
+
+test("a blocking question on a feature blocks its steps not started yet", () => {
+  expect(isBlocked(step("s1", "todo"), FEATURE_QUESTION)).toBe(true);
+  expect(isBlocked(step("s2", "backlog"), FEATURE_QUESTION)).toBe(true);
+  expect(blockingQuestion(step("s1", "todo"), FEATURE_QUESTION)?.id).toBe("q1");
+});
+
+test("a step already started keeps its column but carries the feature question", () => {
+  expect(isBlocked(step("s3", "in_progress"), FEATURE_QUESTION)).toBe(false);
+  expect(isBlocked(step("s4", "in_review"), FEATURE_QUESTION)).toBe(false);
+  expect(blockingQuestion(step("s3", "in_progress"), FEATURE_QUESTION)?.id).toBe("q1");
+});
+
+test("a delivered step is not touched by the feature question", () => {
+  expect(isBlocked(step("s5", "done"), FEATURE_QUESTION)).toBe(false);
+  expect(blockingQuestion(step("s5", "done"), FEATURE_QUESTION)).toBeNull();
+});
+
+test("the step's own question comes before the feature question", () => {
+  const both = [...FEATURE_QUESTION, question("q2", "s1")];
+  expect(blockingQuestion(step("s1", "todo"), both)?.id).toBe("q2");
+});
+
+test("an answered feature question no longer blocks the steps", () => {
+  const done = [question("q1", "f2", { answer: { ...answered, deliveredAt: null, deliveredRunId: null } })];
+  expect(isBlocked(step("s1", "todo"), done)).toBe(false);
+  expect(blockingQuestion(step("s1", "todo"), done)).toBeNull();
+});
+
+test("the blocked count counts the steps held by a feature question once each", () => {
+  const steps = [step("s1", "todo"), step("s2", "todo"), step("s3", "in_progress"), step("s5", "done")];
+  expect(blockedCount(steps, FEATURE_QUESTION)).toBe(2);
+  expect(blockedCount(steps, [...FEATURE_QUESTION, question("q2", "s1")])).toBe(2);
+});

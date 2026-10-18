@@ -44,8 +44,9 @@ const feature = (d: Doc, title: string, s: Sprint | null) => {
   const root = create(d, title);
   const first = create(d, `${title} 1`, root.id);
   const second = create(d, `${title} 2`, root.id);
+  const last = create(d, `${title} 3`, root.id);
   if (s !== null) plan(d, root.id, s);
-  return { root, first, second };
+  return { root, first, second, last };
 };
 
 test("a step of a feature of the current or a past sprint is startable, with no reason", () => {
@@ -91,6 +92,7 @@ test("once the limit of features in progress is reached, only those stay startab
   });
   status(d, open.first.id, "done");
   status(d, open.second.id, "done");
+  status(d, open.last.id, "done");
   expect(reasonOf(d, next.first.id).startable).toBe(true);
 });
 
@@ -136,4 +138,49 @@ test("a group is never startable, without a reason to show", () => {
   const d = newDoc();
   const f = feature(d, "Photos", sprint(d, "S42", "2026-10-12", "2026-10-16"));
   expect(reasonOf(d, f.root.id)).toEqual({ startable: false, startReason: { kind: "status" } });
+});
+
+const ask = (d: Doc, ticketId: string) =>
+  executeProjectCommand(d, {
+    method: "createQuestion",
+    ticketId,
+    title: "Quel format ?",
+    blocking: true,
+    createdBy: ADAM,
+  }) as Question;
+
+test("the last step waits for the other mandatory steps, an optional one does not hold it", () => {
+  const d = newDoc();
+  const f = feature(d, "Photos", sprint(d, "S42", "2026-10-12", "2026-10-16"));
+  const keys = (id: string) => view(d, id).keyLabel;
+  expect(reasonOf(d, f.last.id).startReason).toEqual({
+    kind: "dependency",
+    keys: [keys(f.first.id), keys(f.second.id)],
+  });
+  status(d, f.first.id, "done");
+  executeProjectCommand(d, { method: "setTicketOptional", ticketId: f.second.id, optional: true });
+  expect(reasonOf(d, f.last.id)).toEqual({ startable: true, startReason: null });
+});
+
+test("the last step follows the order of dependencies, not the order of creation", () => {
+  const d = newDoc();
+  const f = feature(d, "Photos", sprint(d, "S42", "2026-10-12", "2026-10-16"));
+  executeProjectCommand(d, { method: "addLink", from: f.last.id, to: f.second.id, type: "blocks" });
+  expect(reasonOf(d, f.last.id)).toEqual({ startable: true, startReason: null });
+  expect(reasonOf(d, f.second.id).startReason).toEqual({
+    kind: "dependency",
+    keys: [view(d, f.last.id).keyLabel, view(d, f.first.id).keyLabel],
+  });
+});
+
+test("a blocking question on a feature holds its steps not started, and blocks the feature", () => {
+  const d = newDoc();
+  const f = feature(d, "Photos", sprint(d, "S42", "2026-10-12", "2026-10-16"));
+  status(d, f.first.id, "in_progress");
+  const q = ask(d, f.root.id);
+  expect(reasonOf(d, f.second.id).startReason).toEqual({ kind: "question", label: `Q${q.number}` });
+  expect(reasonOf(d, f.first.id).startReason).toEqual({ kind: "status" });
+  expect(view(d, f.root.id).feature?.status).toBe("open");
+  status(d, f.first.id, "done");
+  expect(view(d, f.root.id).feature?.status).toBe("blocked");
 });

@@ -25,6 +25,7 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
     assignee: { kind: "agent", ref: "opus-dev" },
   });
   run({ method: "createTicket", title: "Lecture", parentId: root.id });
+  run({ method: "createTicket", title: "Recette", parentId: root.id });
 };
 
 const PEEK: RunPeek = {

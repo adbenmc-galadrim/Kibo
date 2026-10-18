@@ -33,7 +33,7 @@ test("« Tous » by default: every card, other people's too, each filter with it
   expect(pressed("Tous")).toBe("true");
   expect(within(toggle("Tous")).getByText("8")).toBeTruthy();
   expect(within(toggle("Sprint courant · S42")).getByText("4")).toBeTruthy();
-  expect(within(toggle("Démarrable")).getByText("2")).toBeTruthy();
+  expect(within(toggle("Démarrable")).getByText("1")).toBeTruthy();
   expect(within(toggle("À reprendre")).getByText("1")).toBeTruthy();
   expect(screen.getByText("Hors filtre")).toBeTruthy();
   expect(screen.queryByRole("button", { name: /^Moi/ })).toBeNull();
@@ -59,13 +59,13 @@ test("the filters add up, « Tous » clears them", async () => {
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Sprint courant · S42" }));
   await user.click(toggle("Démarrable"));
-  expect(await screen.findByText("1 ticket · Sprint courant · S42 + Démarrable")).toBeTruthy();
+  expect(await screen.findByText("0 ticket · Sprint courant · S42 + Démarrable")).toBeTruthy();
   expect(pressed("Sprint courant · S42")).toBe("true");
   expect(pressed("Démarrable")).toBe("true");
-  expect(screen.getByText("Démo · F1")).toBeTruthy();
+  expect(screen.queryByText("Démo · F1")).toBeNull();
   expect(screen.queryByText("Hors filtre")).toBeNull();
   await user.click(toggle("Sprint courant · S42"));
-  expect(await screen.findByText("2 tickets · Démarrable")).toBeTruthy();
+  expect(await screen.findByText("1 ticket · Démarrable")).toBeTruthy();
   expect(screen.getByText("Hors filtre")).toBeTruthy();
   await user.click(toggle("Tous"));
   expect(await screen.findByText("8 tickets · Tous")).toBeTruthy();

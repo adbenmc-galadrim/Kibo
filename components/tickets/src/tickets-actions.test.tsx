@@ -20,6 +20,7 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
   run({ method: "createTicket", title: "Renommage", parentId: parent.id });
   const other = run({ method: "createTicket", title: "Sync" }) as Ticket;
   run({ method: "setStatus", ticketId: other.id, statusId: "blocked", reason: "Attente client" });
+  run({ method: "createTicket", title: "Recette", parentId: parent.id });
 };
 
 const runs = (s: ProjectSnapshot): TicketRun[] => [
@@ -53,13 +54,13 @@ const pickStatus = async (user: ReturnType<typeof userEvent.setup>, name: string
 test("steps are rows, their feature is a chip; a root without step waits in Hors fonctionnalité, open", async () => {
   const m = createMockSdk(manifest, { seed });
   mount(m);
-  expect(await screen.findByText("tous les sprints · 2 tickets dans 1 fonctionnalité")).toBeTruthy();
+  expect(await screen.findByText("tous les sprints · 3 tickets dans 1 fonctionnalité")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Arbre des pages" })).toBeNull();
   expect(
     screen
       .getAllByRole("button", { name: "Ouvrir la fonctionnalité F1 · Arbre des pages" })
       .filter((chip) => chip.closest("[data-cell=feature]")),
-  ).toHaveLength(2);
+  ).toHaveLength(3);
   fireEvent.click(screen.getByRole("button", { name: "Déplacement" }));
   expect(m.opened).toEqual([byKey(m, "KIB-2")?.id ?? ""]);
   fireEvent.click(screen.getByRole("button", { name: fr.newSubTicket("KIB-2") }));

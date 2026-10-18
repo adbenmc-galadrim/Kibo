@@ -59,6 +59,7 @@ function featureOf(
     if (ticket.parentId !== null || progress.total === 0) return null;
     return featureState({
       steps: featureSteps({ feature: ticket.id, tickets: effective, links: facts.links }),
+      featureId: ticket.id,
       blockingQuestions,
       sprint: ticket.sprintId === null ? null : (sprints.get(ticket.sprintId) ?? null),
       today: facts.today,
@@ -98,6 +99,7 @@ export function ticketViews(facts: ViewFacts): TicketView[] {
     openLimit: facts.openLimit,
     sprints: facts.sprints,
     byId,
+    links: facts.links,
     features,
     blockingQuestions: blocking,
   });

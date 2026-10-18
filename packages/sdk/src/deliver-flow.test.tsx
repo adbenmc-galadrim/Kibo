@@ -21,6 +21,7 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
   const parent = run({ method: "createTicket", title: "Regroupement" }) as Ticket;
   run({ method: "createTicket", title: "Feuille A", parentId: parent.id });
   run({ method: "createTicket", title: "Feuille B", parentId: parent.id });
+  run({ method: "createTicket", title: "Feuille C", parentId: parent.id });
   run({ method: "createTicket", title: "Seul" });
 };
 

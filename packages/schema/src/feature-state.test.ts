@@ -153,3 +153,11 @@ test("the open features count goes through the open predicate, ignoring tickets 
   expect(openFeatures(views)).toBe(3);
   expect(openFeatures([])).toBe(0);
 });
+
+test("a blocking question on the feature blocks it while its next step is not started", () => {
+  const held = { ...base, featureId: "f2", blockingQuestions: new Set(["f2"]) };
+  expect(featureState({ ...held, steps: steps("done", "todo", "todo") }).status).toBe("blocked");
+  expect(featureState({ ...held, steps: steps("done", "in_progress", "todo") }).status).toBe("open");
+  expect(featureState({ ...held, steps: steps("done", "done") }).status).toBe("delivered");
+  expect(featureState({ ...base, featureId: "f2", steps: steps("done", "todo") }).status).toBe("open");
+});

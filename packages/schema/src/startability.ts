@@ -1,3 +1,4 @@
+import type { FeatureStep } from "./feature-steps";
 import type { Question } from "./question";
 import { questionLabel } from "./question-label";
 import type { Sprint } from "./sprint";
@@ -9,7 +10,11 @@ export type StartFacts = {
   busy: boolean;
   blockers: readonly { key: string; statusId: StatusId }[];
   blockingQuestion: Pick<Question, "number" | "importRef"> | null;
-  feature: { id: string; sprint: Pick<Sprint, "code" | "start"> | null } | null;
+  feature: {
+    id: string;
+    sprint: Pick<Sprint, "code" | "start"> | null;
+    waitingSteps: readonly string[];
+  } | null;
 };
 export type StartContext = {
   today: string;
@@ -43,9 +48,24 @@ function featureReason(feature: NonNullable<StartFacts["feature"]>, ctx: StartCo
   return full && !ctx.inProgressFeatures.has(feature.id) ? { kind: "limit", limit: ctx.limit } : null;
 }
 
+export type StepFacts = Pick<FeatureStep, "ticketId" | "key" | "statusId" | "optional">;
+
+export function lastStepWaitsOn(ticketId: string, steps: readonly StepFacts[]): string[] {
+  if (steps.length < 2 || steps.at(-1)?.ticketId !== ticketId) return [];
+  return steps
+    .slice(0, -1)
+    .filter((s) => !s.optional && !FINAL_STATUSES.includes(s.statusId))
+    .map((s) => s.key);
+}
+
+function waitingOf(ticket: StartFacts): string[] {
+  const blockers = ticket.blockers.filter((b) => !FINAL_STATUSES.includes(b.statusId)).map((b) => b.key);
+  return [...new Set([...blockers, ...(ticket.feature?.waitingSteps ?? [])])];
+}
+
 export function startable(ticket: StartFacts, ctx: StartContext): Startability {
   if (!NOT_STARTED_STATUSES.includes(ticket.statusId) || ticket.busy) return refuse({ kind: "status" });
-  const waiting = ticket.blockers.filter((b) => !FINAL_STATUSES.includes(b.statusId)).map((b) => b.key);
+  const waiting = waitingOf(ticket);
   if (waiting.length > 0) return refuse({ kind: "dependency", keys: waiting });
   if (ticket.blockingQuestion !== null)
     return refuse({ kind: "question", label: questionLabel(ticket.blockingQuestion) });
