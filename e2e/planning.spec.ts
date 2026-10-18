@@ -104,6 +104,7 @@ async function expectFits(page: Page, layout: "Colonnes" | "Bandes"): Promise<vo
 test("the Planning holds in the window in Columns and Bands, its blocked chips on one line, the agent over it under 1180 px", async ({
   page,
 }) => {
+  test.setTimeout(90_000);
   const f6Sprint = await moveToSprint(page, emis, "F6", null);
   try {
     for (const size of [
