@@ -11,7 +11,7 @@ import {
 import { USER_COMMAND } from "../docs";
 import { type RpcExtension, requireLocal } from "../rpc-extensions";
 import { call, type Service } from "../service";
-import { completeMerge, isFollowed, samePr, triggerRules } from "./pr-rules";
+import { applyPr, triggerRules } from "./pr-rules";
 
 const isPr = (ref: ExternalRef): ref is GithubPrRef => ref.kind === "github_pr";
 
@@ -46,12 +46,9 @@ const keepKnown = (declared: GithubPrRef, previous: GithubPrRef | null): GithubP
 function declarePr(service: Service, projectId: string, ticket: TicketView, declared: GithubPrRef): void {
   const previous = ticket.externalRefs.filter(isPr).find((r) => r.url === declared.url) ?? null;
   const ref = keepKnown(declared, previous);
-  if (previous && samePr(previous, ref)) return;
-  upsert(service, projectId, ticket.id, ref);
-  if (isFollowed(ref) && !(previous && isFollowed(previous)))
-    triggerRules(service, projectId, { kind: "pr_opened", ticketId: ticket.id });
-  if (ref.state === "merged" && previous?.state !== "merged")
-    completeMerge(service, projectId, ticket.id, ref);
+  applyPr(service, { projectId, ticketId: ticket.id, previous, ref }, (next) =>
+    upsert(service, projectId, ticket.id, next),
+  );
 }
 
 export function declareTicketRef(service: Service, input: DeclareTicketRefInput): DeclareTicketRefResult {

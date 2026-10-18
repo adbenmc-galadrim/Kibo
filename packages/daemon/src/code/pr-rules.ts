@@ -34,3 +34,21 @@ export function completeMerge(service: Service, projectId: string, ticketId: str
 export function recordPr(service: Service, projectId: string, ticketId: string, ref: GithubPrRef): void {
   call(service, { method: "command", projectId, command: { method: "upsertExternalRef", ticketId, ref } });
 }
+
+export type PrWrite = (ref: GithubPrRef) => void;
+export type PrTransition = {
+  projectId: string;
+  ticketId: string;
+  previous: GithubPrRef | null;
+  ref: GithubPrRef;
+};
+
+export function applyPr(service: Service, change: PrTransition, write: PrWrite): void {
+  const { projectId, ticketId, previous, ref } = change;
+  if (previous && samePr(previous, ref)) return;
+  write(ref);
+  if (isFollowed(ref) && !(previous && isFollowed(previous)))
+    triggerRules(service, projectId, { kind: "pr_opened", ticketId });
+  if (ref.state === "merged" && previous?.state !== "merged")
+    completeMerge(service, projectId, ticketId, ref);
+}

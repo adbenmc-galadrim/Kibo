@@ -1,6 +1,6 @@
 import { branchRefOf, type ExternalRef, type GithubPrRef, type PrInfo, type PrState } from "@kibo/schema";
 import { call, type Service } from "../service";
-import { completeMerge, isFollowed, recordPr, samePr, triggerRules } from "./pr-rules";
+import { applyPr, isFollowed, recordPr } from "./pr-rules";
 import { prsForBranch } from "./remote-ops";
 import type { Env } from "./run";
 
@@ -41,11 +41,8 @@ export async function findPr(candidate: Candidate, env: Env): Promise<PrInfo | n
 export function attachPr(service: Service, candidate: Candidate, info: PrInfo): void {
   const { projectId, ticketId } = candidate;
   const previous = candidate.known.find((r) => r.url === info.url) ?? null;
-  if (previous && samePr(previous, info)) return;
   const ref: GithubPrRef = { kind: "github_pr", ...info };
-  recordPr(service, projectId, ticketId, ref);
-  if (isFollowed(ref) && !(previous && isFollowed(previous)))
-    triggerRules(service, projectId, { kind: "pr_opened", ticketId });
-  if (info.state === "merged" && previous?.state !== "merged")
-    completeMerge(service, projectId, ticketId, ref);
+  applyPr(service, { projectId, ticketId, previous, ref }, (next) =>
+    recordPr(service, projectId, ticketId, next),
+  );
 }
