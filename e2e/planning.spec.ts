@@ -124,7 +124,8 @@ test("the Planning holds in the window in Columns and Bands, its blocked chips o
         await expectFits(page, "Bandes");
         await expectFits(page, "Colonnes");
       }
-      await page.getByRole("button", { name: /^Agent de projet/ }).click();
+      const close = overlay ? "Fermer le panneau" : /^Agent de projet/;
+      await page.getByRole("button", { name: close }).click();
       await expect(page.locator("[data-overlay]")).toHaveCount(0);
     }
   } finally {
