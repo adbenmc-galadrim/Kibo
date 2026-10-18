@@ -2622,3 +2622,14 @@ Détail par tâche dans la section « Écarts » du plan `2026-10-18-kibo-phase-
 - **Codes** : `AGENT_EXECUTION_REMOVED`.
 - **RPC** : `createProject { setup }` (cinq pages, sprints, client), `declareTicketRef` (origine utilisateur, branche « déclarée »), `markQuestionsExported` / `unmarkQuestionsExported`.
 - **Contrats** : `ProjectInfo.today`, `AppInfo.today`, `StartReason` (`limit.count`), `Spotlight` (`question`, `newQuestion`, `newFeature`), `OpenViewOptions.intent`, `sdk.project.edit`, `phaseLabel`, `stepTitle`, `client-text`.
+
+## 40. Phase 28 : un dépôt sans données client (demande d'Adam du 2026-10-18)
+
+Le dépôt est public : il ne contient aucune donnée d'un projet client, ni son nom, ni ses clés, ni ses personnes, ni son plan.
+
+- **Retiré du dépôt** : le script d'import et de rebase propre au projet client, ses fixtures et ses rapports d'exécution ; ils vivent chez Adam, hors dépôt. Aucun code de Kibo ne dépend d'un projet nommé.
+- **Données fictives** : tests, semis E2E, projet de démonstration, textes d'aide de la CLI, maquettes Penpot et leurs exports, spec, plans et rapports n'emploient que des données fictives, consignées dans `design/donnees-fictives.md` (un projet fictif de suivi remplace le projet client : nom, clé, dépôt, personnes, fonctionnalités, sprints, questions, PR). La correspondance n'est écrite nulle part dans le dépôt.
+- **Garde-fou** : un test du dépôt échoue si un terme interdit réapparaît dans les fichiers suivis ; la liste des termes est lue hors dépôt (`~/.config/kibo/termes-interdits.txt`), le test est sauté quand le fichier est absent (CI).
+- **Maquettes** : les pages du redesign sont redessinées avec les données fictives, sombre et clair, `kibo.penpot.xz`, les PDF et `design/redesign/exports/` réexportés ; l'acceptation au pixel près (2 %, écran entier, sans masque ajouté) est repassée.
+- **Historique git** : laissé tel quel (décision d'Adam).
+- **Machine d'Adam** : le projet client reste dans son Kibo local ; aucune tâche ne lit ni n'écrit son démon.
