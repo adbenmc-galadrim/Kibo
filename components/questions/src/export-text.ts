@@ -1,5 +1,7 @@
-import { type Question, questionLabel } from "@kibo/schema";
+import { DAY_MS, dayNumber, type Question, questionLabel } from "@kibo/schema";
 import { fr } from "./fr";
+import { plainText } from "./plain-text";
+import { isOpenBlocking } from "./questions-logic";
 import type { Impact } from "./ticket-feature";
 
 export type ExportEntry = { question: Question; impact: Impact };
@@ -10,16 +12,31 @@ const DATE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", 
 
 export const exportDate = (at: number): string => DATE.format(at);
 
+const WEEK_DAY = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "UTC" });
+
+const weekDay = (date: string): string => WEEK_DAY.format(dayNumber(date) * DAY_MS);
+
 export const impactLine = (q: Pick<Question, "blocking">, impact: Impact): string =>
   `${q.blocking ? t.blocks(impact.feature) : t.for(impact.feature)}, ${
-    impact.sprint === null ? t.unplanned : t.planned(impact.sprint)
+    impact.week === null ? t.unplanned : t.planned(weekDay(impact.week))
   }`;
 
+const QN = /^Q(\d+)$/;
+
+const rankOf = (q: Question): number => Number(QN.exec(questionLabel(q))?.[1] ?? Number.POSITIVE_INFINITY);
+
+export const byExportOrder = (a: Question, b: Question): number =>
+  Number(isOpenBlocking(b)) - Number(isOpenBlocking(a)) || rankOf(a) - rankOf(b) || a.createdAt - b.createdAt;
+
+function contextLines(context: string): string[] {
+  const [first, ...rest] = plainText(context);
+  return first === undefined ? [] : [`${t.context} : ${first}`, ...rest];
+}
+
 export function exportQuestionText({ question: q, impact }: ExportEntry): string {
-  const context = q.context.trim();
   const details = [
     impactLine(q, impact),
-    ...(context === "" ? [] : [`${t.context} : ${context}`]),
+    ...contextLines(q.context),
     ...(q.options.length === 0 ? [] : [`${t.options} : ${q.options.join(" · ")}`]),
     ...(q.provisional === null ? [] : [`${t.provisional} : ${q.provisional}`]),
   ];

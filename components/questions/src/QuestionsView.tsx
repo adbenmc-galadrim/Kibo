@@ -2,15 +2,15 @@ import { featureLabel } from "@kibo/schema";
 import { useSdk } from "@kibo/sdk";
 import { Lock, Package } from "lucide-react";
 import { useMemo, useState } from "react";
+import { ActionToast } from "./ActionToast";
 import { DeliverButton, DeliveryMessage, type DeliveryNotice } from "./DeliverButton";
 import { ExportButton } from "./ExportButton";
-import { type ExportEntry, exportLabels } from "./export-text";
+import { byExportOrder, type ExportEntry, exportLabels } from "./export-text";
 import { fr } from "./fr";
 import { NewQuestionDialog } from "./NewQuestionDialog";
 import { QuestionCard } from "./QuestionCard";
 import { QuestionsToolbar } from "./QuestionsToolbar";
 import {
-  blockingFirst,
   blockingSummary,
   CLIENT_RECIPIENT,
   filterQuestions,
@@ -101,7 +101,7 @@ function QuestionGroup({ group, data, now }: { group: ViewGroup; data: Questions
 }
 
 function exportEntries(data: QuestionsData, ticketId: string | null, recipient: string): ExportEntry[] {
-  const open = filterQuestions(data.questions, "open", ticketId, recipient).sort(blockingFirst);
+  const open = filterQuestions(data.questions, "open", ticketId, recipient).sort(byExportOrder);
   return open.flatMap((question) => {
     const ticket = data.ticketOf(question.ticketId);
     return ticket ? [{ question, impact: impactOf(ticket, data.ticketOf, data.sprints) }] : [];
@@ -130,7 +130,7 @@ export function QuestionsView() {
   const targetName = recipientName(data.recipients, target, data.client);
   const exportText = exportLabels(target, targetName, toExport.length);
   const summary = useMemo(() => blockingSummary(groups.flatMap((g) => g.questions)), [groups]);
-  useUnblockToast(data.loading, data.questions, data.tickets, data.ticketOf);
+  const { unblocked, dismiss } = useUnblockToast(data.loading, data.questions, data.tickets, data.ticketOf);
   const asked = useMemo(
     () => data.tickets.filter((t) => data.questions.some((q) => q.ticketId === t.id)),
     [data.tickets, data.questions],
@@ -184,8 +184,25 @@ export function QuestionsView() {
           <QuestionGroup key={g.ticket.id} group={g} data={data} now={now} />
         ))}
       </div>
+      {unblocked !== null && (
+        <ActionToast
+          key={unblocked.ticketId}
+          message={fr.unblocked(unblocked.label)}
+          actionLabel={fr.seeFeature(unblocked.label)}
+          onAction={() => {
+            sdk.openTicket(unblocked.ticketId);
+            dismiss();
+          }}
+          onClose={dismiss}
+        />
+      )}
       {creating && (
-        <NewQuestionDialog tickets={data.tickets} recipients={data.recipients} onOpenChange={setCreating} />
+        <NewQuestionDialog
+          tickets={data.tickets}
+          recipients={data.recipients}
+          client={data.client}
+          onOpenChange={setCreating}
+        />
       )}
     </div>
   );

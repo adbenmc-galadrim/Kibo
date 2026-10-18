@@ -160,6 +160,6 @@ test("a reader sees the proposals without any button", async () => {
 test("without recorded denials the card falls back to the ordinary answer form", async () => {
   mount({ denials: false });
   const card = await screen.findByRole("article", { name: TITLE });
-  expect(await within(card).findByRole("textbox", { name: "Autre réponse…" })).toBeTruthy();
+  expect(await within(card).findByRole("textbox", { name: "Votre réponse…" })).toBeTruthy();
   expect(within(card).queryByRole("region", { name: "Propositions de Kibo" })).toBeNull();
 });

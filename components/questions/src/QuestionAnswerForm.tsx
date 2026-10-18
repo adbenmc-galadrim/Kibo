@@ -52,13 +52,15 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Pr
   };
   const pressed = (on: boolean) => (editing ? on : undefined);
   const ready = editing ? answerFrom(choice) !== null : choice.text.trim() !== "";
+  const choices = question.options.length > 0 || question.provisional !== null;
+  const freeLabel = choices ? fr.other : fr.yourAnswer;
   return (
     <form
       aria-label={editing ? fr.answerEditTo(question.title) : fr.answerTo(question.title)}
       className="grid gap-2"
       onSubmit={submit}
     >
-      {(question.options.length > 0 || question.provisional !== null) && (
+      {choices && (
         <div className="flex flex-wrap gap-1.5">
           {question.provisional !== null && (
             <Button
@@ -92,8 +94,8 @@ export function QuestionAnswerForm({ question, initial, onSubmit, onCancel }: Pr
       )}
       <div className="flex items-center gap-2">
         <Input
-          aria-label={fr.other}
-          placeholder={fr.other}
+          aria-label={freeLabel}
+          placeholder={freeLabel}
           className="h-9 text-[13px] md:text-[13px]"
           value={choice.text}
           disabled={busy}

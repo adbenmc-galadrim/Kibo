@@ -18,8 +18,8 @@ const ticketOf = (id: string) => byId.get(id) ?? null;
 const open = question({ id: "q14", ticketId: "t51", blocking: true });
 const done = { ...open, answer: answer(9) };
 
-test("an answer that unblocks a step of F6 reports F6", () => {
-  expect(unblockedFeatures(TWO_STEPS, twoOf, [open], [done])).toEqual(["F6"]);
+test("an answer that unblocks a step of F6 reports F6 and the feature to open", () => {
+  expect(unblockedFeatures(TWO_STEPS, twoOf, [open], [done])).toEqual([{ label: "F6", ticketId: "f6" }]);
 });
 
 test("nothing is reported while the ticket stays blocked or was never blocked", () => {
@@ -43,7 +43,10 @@ test("a ticket outside any feature is reported by its key, once", () => {
         { ...b, answer: answer(9) },
       ],
     ),
-  ).toEqual(["F6", "EMIS-9"]);
+  ).toEqual([
+    { label: "F6", ticketId: "f6" },
+    { label: "EMIS-9", ticketId: "t9" },
+  ]);
 });
 
 test("F6 is unblocked only once its last blocked step is", () => {
@@ -52,7 +55,9 @@ test("F6 is unblocked only once its last blocked step is", () => {
   const firstDone = { ...first, answer: answer(9) };
   const secondDone = { ...second, answer: answer(10) };
   expect(unblockedFeatures(TWO_STEPS, twoOf, [first, second], [firstDone, second])).toEqual([]);
-  expect(unblockedFeatures(TWO_STEPS, twoOf, [firstDone, second], [firstDone, secondDone])).toEqual(["F6"]);
+  expect(unblockedFeatures(TWO_STEPS, twoOf, [firstDone, second], [firstDone, secondDone])).toEqual([
+    { label: "F6", ticketId: "f6" },
+  ]);
 });
 
 test("a step of F6 still blocked by its status keeps F6 blocked", () => {

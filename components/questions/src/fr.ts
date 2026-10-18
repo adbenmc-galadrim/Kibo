@@ -49,6 +49,7 @@ export const fr = {
   },
   confirm: "Valider le choix provisoire",
   other: "Autre réponse…",
+  yourAnswer: "Votre réponse…",
   reply: "Répondre",
   answerTo: (title: string) => `Répondre à ${title}`,
   answerEditTo: (title: string) => `Modifier la réponse à ${title}`,
@@ -154,6 +155,7 @@ export const fr = {
   blockingSummary: (blocking: number, open: number) =>
     `${blocking} ${plural(blocking, "bloquante", "bloquantes")} en tête · ${open} ${plural(open, "ouverte", "ouvertes")}`,
   unblocked: (label: string) => `${label} débloquée`,
+  seeFeature: (label: string) => `Voir ${label}`,
   feature: (label: string) => `Fonctionnalité ${label}`,
   paste: {
     open: "Coller la réponse",
@@ -180,9 +182,9 @@ export const fr = {
   },
   exportText: {
     header: (recipient: string, date: string) => `Questions pour ${recipient} · ${date}`,
-    blocks: (feature: string) => `bloque ${feature}`,
-    for: (feature: string) => `pour ${feature}`,
-    planned: (sprint: string) => `prévue en ${sprint}`,
+    blocks: (feature: string) => `bloque « ${feature} »`,
+    for: (feature: string) => `pour « ${feature} »`,
+    planned: (week: string) => `prévue semaine du ${week} · réponse souhaitée avant le ${week}`,
     unplanned: "à planifier",
     context: "Contexte",
     options: "Options",
@@ -208,6 +210,8 @@ export const fr = {
     duplicate: "Deux options identiques.",
     provisional: "Choix provisoire",
     recipient: "Destinataire",
+    clientRecipient: (name: string) => `Client · ${name}`,
+    blocking: "Bloquante",
     none: "Aucun",
     cancel: "Annuler",
     create: "Créer la question",

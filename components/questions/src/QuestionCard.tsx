@@ -142,6 +142,17 @@ function RestoreButton({ questionId }: { questionId: string }) {
   );
 }
 
+function ChoicesLine({ question: q, asButtons }: { question: Question; asButtons: boolean }) {
+  const options = asButtons ? [] : q.options;
+  if (isScreenValidation(q) || (options.length === 0 && q.provisional === null)) return null;
+  return (
+    <p className="flex flex-wrap gap-x-3 text-2xs text-muted-foreground">
+      {options.length > 0 && <span>{`${fr.options} : ${options.join(" · ")}`}</span>}
+      {q.provisional !== null && <span>{fr.provisional(q.provisional)}</span>}
+    </p>
+  );
+}
+
 function RemindedLine({ question, now }: { question: Question; now: number }) {
   const at = lastReminder(question);
   if (at === null) return null;
@@ -218,12 +229,7 @@ export function QuestionCard(props: Props) {
       <ArchivedLine question={q} now={now} />
       {context !== null && <div className="grid gap-1.5 text-xs text-muted-foreground">{context}</div>}
       <QuestionImages question={q} />
-      {!isScreenValidation(q) && (q.options.length > 0 || q.provisional !== null) && (
-        <p className="flex flex-wrap gap-x-3 text-2xs text-muted-foreground">
-          {q.options.length > 0 && <span>{`${fr.options} : ${q.options.join(" · ")}`}</span>}
-          {q.provisional !== null && <span>{fr.provisional(q.provisional)}</span>}
-        </p>
-      )}
+      <ChoicesLine question={q} asButtons={open && !isDenialQuestion(q)} />
       <QuestionAnswerLine question={q} now={now} runLabel={runLabel} />
       {editedAnswer !== null && (
         <AnswerEditForm question={q} answer={editedAnswer} onClose={() => setEditing(false)} />
