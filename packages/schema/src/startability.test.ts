@@ -6,7 +6,12 @@ import { StatusId } from "./status";
 
 const S42 = { code: "S42", start: "2026-10-12" };
 const S43 = { code: "S43", start: "2026-10-19" };
-const ctx: StartContext = { today: "2026-10-16", limit: 2, inProgressFeatures: new Set(["f4", "f5"]) };
+const ctx: StartContext = {
+  today: "2026-10-16",
+  limit: 2,
+  inProgressFeatures: new Set(["f4", "f5"]),
+  planned: true,
+};
 const ready: StartFacts = {
   statusId: "todo",
   busy: false,
@@ -61,6 +66,20 @@ test("a step of an unplanned feature is not startable", () => {
   expect(startable({ ...ready, feature: { id: "f9", sprint: null } }, ctx)).toEqual({
     startable: false,
     reason: { kind: "unplanned" },
+  });
+});
+
+test("in a project without any sprint, the sprint condition does not apply, the limit still does", () => {
+  const unplanned = { ...ctx, planned: false };
+  expect(startable({ ...ready, feature: { id: "f4", sprint: null } }, unplanned)).toEqual({
+    startable: true,
+  });
+  expect(startable({ ...ready, feature: { id: "f6", sprint: S43 } }, { ...unplanned, limit: 3 })).toEqual({
+    startable: true,
+  });
+  expect(startable({ ...ready, feature: { id: "f7", sprint: null } }, unplanned)).toEqual({
+    startable: false,
+    reason: { kind: "limit", limit: 2 },
   });
 });
 

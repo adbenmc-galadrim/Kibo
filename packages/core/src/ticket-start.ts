@@ -50,7 +50,12 @@ export function startabilityOf(source: StartSource): (candidate: StartCandidate)
   const sprints = new Map(source.sprints.map((s) => [s.id, s]));
   const inProgress = new Set<string>();
   for (const [id, state] of source.features) if (isInProgressFeature(state)) inProgress.add(id);
-  const ctx: StartContext = { today: source.today, limit: source.openLimit, inProgressFeatures: inProgress };
+  const ctx: StartContext = {
+    today: source.today,
+    limit: source.openLimit,
+    inProgressFeatures: inProgress,
+    planned: source.sprints.length > 0,
+  };
   const rootOf = rootFinder(source.byId);
   const featureOf = (ticketId: string): StartFacts["feature"] => {
     const rootId = rootOf(ticketId);

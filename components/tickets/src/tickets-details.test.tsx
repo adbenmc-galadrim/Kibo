@@ -1,25 +1,12 @@
 import { expect, test } from "bun:test";
-import type { ProjectCommand, RunPeek, Sprint, Ticket } from "@kibo/schema";
+import type { ProjectCommand, RunPeek, Ticket } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { Component, manifest } from "./index";
 
-const TODAY = "2026-10-14";
-const plan = (run: (cmd: ProjectCommand) => unknown, ticketId: string) => {
-  const sprint = run({
-    method: "createSprint",
-    code: "S42",
-    name: "S42",
-    start: "2026-10-12",
-    end: "2026-10-16",
-  });
-  run({ method: "setTicketSprint", ticketId, sprintId: (sprint as Sprint).id });
-};
-
 const seed = (run: (cmd: ProjectCommand) => unknown) => {
   const root = run({ method: "createTicket", title: "Arbre des pages" }) as Ticket;
-  plan(run, root.id);
   run({
     method: "createTicket",
     title: "Déplacement",
@@ -55,7 +42,6 @@ const PEEK: RunPeek = {
 const setup = () => {
   const m = createMockSdk(manifest, {
     seed,
-    today: TODAY,
     shared: true,
     members: [{ userId: "u-lea", name: "Léa", role: "editor" }],
     peeks: { r1: PEEK },

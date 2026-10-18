@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { ProjectCommand, ProjectSnapshot, Sprint, Ticket, TicketRun } from "@kibo/schema";
+import type { ProjectCommand, ProjectSnapshot, Ticket, TicketRun } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { runConformance } from "@kibo/sdk/conformance";
 import { createMockSdk } from "@kibo/sdk/mock";
@@ -20,19 +20,6 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
   run({ method: "createTicket", title: "Renommage", parentId: parent.id });
   const other = run({ method: "createTicket", title: "Sync" }) as Ticket;
   run({ method: "setStatus", ticketId: other.id, statusId: "blocked", reason: "Attente client" });
-  return parent;
-};
-
-const plannedSeed = (run: (cmd: ProjectCommand) => unknown) => {
-  const parent = seed(run);
-  const sprint = run({
-    method: "createSprint",
-    code: "S42",
-    name: "S42",
-    start: "2026-10-12",
-    end: "2026-10-16",
-  });
-  run({ method: "setTicketSprint", ticketId: parent.id, sprintId: (sprint as Sprint).id });
 };
 
 const runs = (s: ProjectSnapshot): TicketRun[] => [
@@ -219,15 +206,14 @@ test("the open questions of a row sit in its hover card, never a zero", async ()
 });
 
 test("Livrer on a step asks the SDK for a run; without a delivery agent there is no Livrer", async () => {
-  const planned = { seed: plannedSeed, today: "2026-10-14" };
-  const m = createMockSdk(manifest, { ...planned, agentExecution: "shown" });
+  const m = createMockSdk(manifest, { seed, agentExecution: "shown" });
   const { unmount } = mount(m);
   const user = userEvent.setup();
   await user.click(await screen.findByRole("button", { name: "Actions KIB-3" }));
   await user.click(await screen.findByRole("menuitem", { name: "Livrer" }));
   await waitFor(() => expect(m.runDeliveries).toEqual([byKey(m, "KIB-3")?.id ?? ""]));
   unmount();
-  mount(createMockSdk(manifest, { ...planned, deliveryAgent: null, agentExecution: "shown" }));
+  mount(createMockSdk(manifest, { seed, deliveryAgent: null, agentExecution: "shown" }));
   await user.click(await screen.findByRole("button", { name: "Actions KIB-3" }));
   await screen.findByRole("menuitem", { name: "Ouvrir" });
   expect(screen.queryByRole("menuitem", { name: /^Livrer/ })).toBeNull();

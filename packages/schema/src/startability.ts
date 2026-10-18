@@ -11,7 +11,12 @@ export type StartFacts = {
   blockingQuestion: Pick<Question, "number" | "importRef"> | null;
   feature: { id: string; sprint: Pick<Sprint, "code" | "start"> | null } | null;
 };
-export type StartContext = { today: string; limit: number; inProgressFeatures: ReadonlySet<string> };
+export type StartContext = {
+  today: string;
+  limit: number;
+  inProgressFeatures: ReadonlySet<string>;
+  planned: boolean;
+};
 export type StartReason =
   | { kind: "status" }
   | { kind: "dependency"; keys: string[] }
@@ -19,14 +24,21 @@ export type StartReason =
   | { kind: "sprint"; code: string }
   | { kind: "unplanned" }
   | { kind: "limit"; limit: number };
+type StartFeatureSprint = NonNullable<StartFacts["feature"]>["sprint"];
 export type Startability = { startable: true } | { startable: false; reason: StartReason };
 
 const START: Startability = { startable: true };
 const refuse = (reason: StartReason): Startability => ({ startable: false, reason });
 
+function sprintReason(sprint: StartFeatureSprint, ctx: StartContext): StartReason | null {
+  if (!ctx.planned) return null;
+  if (sprint === null) return { kind: "unplanned" };
+  return sprint.start > ctx.today ? { kind: "sprint", code: sprint.code } : null;
+}
+
 function featureReason(feature: NonNullable<StartFacts["feature"]>, ctx: StartContext): StartReason | null {
-  if (feature.sprint === null) return { kind: "unplanned" };
-  if (feature.sprint.start > ctx.today) return { kind: "sprint", code: feature.sprint.code };
+  const waiting = sprintReason(feature.sprint, ctx);
+  if (waiting !== null) return waiting;
   const full = ctx.inProgressFeatures.size >= ctx.limit;
   return full && !ctx.inProgressFeatures.has(feature.id) ? { kind: "limit", limit: ctx.limit } : null;
 }

@@ -56,6 +56,16 @@ test("a step of a feature of the current or a past sprint is startable, with no 
   expect(reasonOf(d, past.first.id)).toEqual({ startable: true, startReason: null });
 });
 
+test("in a project without any sprint, steps are startable, within the limit of features in progress", () => {
+  const d = newDoc({ openLimit: 1 });
+  const open = feature(d, "Photos", null);
+  const next = feature(d, "Rapports", null);
+  expect(reasonOf(d, open.first.id)).toEqual({ startable: true, startReason: null });
+  status(d, open.first.id, "in_progress");
+  expect(reasonOf(d, open.second.id)).toEqual({ startable: true, startReason: null });
+  expect(reasonOf(d, next.first.id).startReason).toEqual({ kind: "limit", limit: 1 });
+});
+
 test("a step of a feature of a future sprint waits for it, one without sprint is unplanned", () => {
   const d = newDoc();
   const later = feature(d, "Signature", sprint(d, "S43", "2026-10-19", "2026-10-23"));
