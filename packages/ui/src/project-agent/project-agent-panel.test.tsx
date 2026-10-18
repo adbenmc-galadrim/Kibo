@@ -1,6 +1,6 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import type { ProjectAgentView, RpcRequest, RunLogEntry, SignalsView } from "@kibo/schema";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { apiMock } from "../api-mock";
@@ -235,6 +235,7 @@ test("the panel is 340 px wide by default", async () => {
 test("the width is bounded, remembered, and the edge resizes with Shift+arrows", async () => {
   localStorage.setItem("kibo.projectAgent.width", "9999");
   show();
+  await panel().findByText("Mettre à jour la note agent-de-projet/memoire.md");
   await waitFor(() => expect(screen.getByRole("dialog").style.width).toBe("720px"));
   const edge = panel().getByRole("button", { name: "Redimensionner le panneau" });
   edge.focus();
@@ -245,7 +246,9 @@ test("the width is bounded, remembered, and the edge resizes with Shift+arrows",
   await user.keyboard("{Shift>}{ArrowLeft}{/Shift}{Shift>}{ArrowLeft}{/Shift}");
   expect(screen.getByRole("dialog").style.width).toBe("720px");
   localStorage.setItem("kibo.projectAgent.width", "10");
-  window.dispatchEvent(new StorageEvent("storage", { key: "kibo.projectAgent.width" }));
+  act(() => {
+    window.dispatchEvent(new StorageEvent("storage", { key: "kibo.projectAgent.width" }));
+  });
   await waitFor(() => expect(screen.getByRole("dialog").style.width).toBe("340px"));
 });
 

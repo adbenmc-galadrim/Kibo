@@ -1,6 +1,6 @@
 import { afterEach, expect, mock, test } from "bun:test";
 import type { ProjectEvent, RpcRequest, TicketView } from "@kibo/schema";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 import { emisFeatureProject, NOW } from "./feature/fixture";
@@ -49,8 +49,8 @@ afterEach(() => {
 const noop = () => undefined;
 const project = emisFeatureProject();
 
-const open = (ticketId: string, patch: Partial<TicketView> = {}) =>
-  render(
+const open = async (ticketId: string, patch: Partial<TicketView> = {}) => {
+  const result = render(
     <TicketSheet
       project={{ ...project, tickets: project.tickets.map((t) => (t.id === "e33" ? { ...t, ...patch } : t)) }}
       ticketId={ticketId}
@@ -63,22 +63,25 @@ const open = (ticketId: string, patch: Partial<TicketView> = {}) =>
       onDeleted={noop}
     />,
   );
+  await act(async () => {});
+  return result;
+};
 
-test("the sheet of a step leads with « F5 · S42 », its Suivi block and a « Fermer » button", () => {
-  open("e33");
+test("the sheet of a step leads with « F5 · S42 », its Suivi block and a « Fermer » button", async () => {
+  await open("e33");
   const dialog = screen.getByRole("dialog");
   expect(dialog.querySelector("[data-ticket-context]")?.textContent).toBe("F5 · S42");
   expect(within(dialog).getByRole("region", { name: "Suivi" })).toBeTruthy();
   expect(within(dialog).getByRole("button", { name: "Fermer" })).toBeTruthy();
 });
 
-test("the sheet is found by the key of the ticket as well", () => {
-  open("EMIS-33");
+test("the sheet is found by the key of the ticket as well", async () => {
+  await open("EMIS-33");
   expect(screen.getByRole("heading", { name: "Écran d'envoi hors ligne" })).toBeTruthy();
 });
 
 test("Domaine and Maquettes stay folded until asked for", async () => {
-  open("e33");
+  await open("e33");
   const domain = screen.getByRole("button", { name: /^Domaine/ });
   const mockups = screen.getByRole("button", { name: /^Maquettes/ });
   expect([domain, mockups].map((b) => b.getAttribute("aria-expanded"))).toEqual(["false", "false"]);
@@ -88,14 +91,14 @@ test("Domaine and Maquettes stay folded until asked for", async () => {
 
 test("copying /full-delivery writes the command and says what it waits for", async () => {
   render(<Toaster />);
-  open("e33", { startable: false, waitingOn: ["EMIS-32"] });
+  await open("e33", { startable: false, waitingOn: ["EMIS-32"] });
   await userEvent.setup().click(screen.getByRole("button", { name: "Copier /full-delivery EMIS-33" }));
   expect(await screen.findByText("Copié · attend EMIS-32")).toBeTruthy();
   expect(await navigator.clipboard.readText()).toBe("/full-delivery EMIS-33");
 });
 
-test("the banner warns of requested changes on the PR of the step", () => {
-  open("e33", {
+test("the banner warns of requested changes on the PR of the step", async () => {
+  await open("e33", {
     externalRefs: [
       {
         kind: "github_pr",
@@ -115,27 +118,27 @@ test("the banner warns of requested changes on the PR of the step", () => {
 });
 
 test("the Activité tab reads the journal of the ticket", async () => {
-  open("e33");
+  await open("e33");
   await userEvent.setup().click(screen.getByRole("tab", { name: "Activité" }));
   const journalRegion = await screen.findByRole("region", { name: "Chronologie" });
   expect(await within(journalRegion).findByText("Branche feat/envoi-hors-ligne poussée")).toBeTruthy();
   expect(screen.queryByRole("button", { name: /^Ancien/ })).toBeNull();
 });
 
-test("status and assignee are pills under the title; a step toggles « facultative », a lone ticket picks its sprint", () => {
-  const view = open("e33");
+test("status and assignee are pills under the title; a step toggles « facultative », a lone ticket picks its sprint", async () => {
+  const view = await open("e33");
   expect(screen.getByRole("combobox", { name: "Statut" })).toBeTruthy();
   expect(screen.getByRole("combobox", { name: "Assigné" })).toBeTruthy();
   expect(screen.getByRole("switch", { name: "Étape facultative" })).toBeTruthy();
   expect(screen.queryByRole("combobox", { name: "Sprint" })).toBeNull();
   view.unmount();
-  open("e33", { parentId: null });
+  await open("e33", { parentId: null });
   expect(screen.queryByRole("switch", { name: "Étape facultative" })).toBeNull();
   expect(screen.getByRole("combobox", { name: "Sprint" })).toBeTruthy();
 });
 
-test("the top bar names the key and holds Copier, the link and Fermer", () => {
-  open("e33");
+test("the top bar names the key and holds Copier, the link and Fermer", async () => {
+  await open("e33");
   const close = screen.getByRole("button", { name: "Fermer" });
   expect(close.textContent).toBe("Fermer");
   const bar = close.parentElement?.parentElement;

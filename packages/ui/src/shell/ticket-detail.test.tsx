@@ -6,7 +6,7 @@ import {
   type Question,
   type TicketView,
 } from "@kibo/schema";
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 
@@ -124,8 +124,8 @@ const host = {
   openTarget: () => undefined,
 };
 
-const show = (t: TicketView, questions: Question[] = []) =>
-  render(
+const show = async (t: TicketView, questions: Question[] = []) => {
+  const result = render(
     <HostProvider host={host}>
       <TicketDetail
         project={project(t, questions)}
@@ -135,10 +135,13 @@ const show = (t: TicketView, questions: Question[] = []) =>
       />
     </HostProvider>,
   );
+  await act(async () => {});
+  return result;
+};
 
 test("the open questions of the ticket are listed and open the Questions view", async () => {
   views.length = 0;
-  show(ticket(), [
+  await show(ticket(), [
     question(),
     question({
       id: "q2",
@@ -158,8 +161,8 @@ test("the open questions of the ticket are listed and open the Questions view", 
   expect(screen.getByText("Q4")).toBeTruthy();
 });
 
-test("without a question the section says so", () => {
-  show(ticket());
+test("without a question the section says so", async () => {
+  await show(ticket());
   expect(screen.getByText("Aucune question sur ce ticket.")).toBeTruthy();
   const deps = screen.getByRole("heading", { name: "Dépendances" }).closest("section") as HTMLElement;
   expect(deps.textContent).toContain("Aucune");
@@ -167,15 +170,15 @@ test("without a question the section says so", () => {
 });
 
 test("an empty description reads « Aucune description · Ajouter », and Ajouter opens the editor", async () => {
-  show(ticket());
+  await show(ticket());
   expect(screen.getByText("Aucune description")).toBeTruthy();
   expect(screen.queryByText("-")).toBeNull();
   await userEvent.setup().click(screen.getByRole("button", { name: "Ajouter" }));
   expect(screen.getByRole("textbox", { name: "Description" })).toBeTruthy();
 });
 
-test("the details read Suivi, Description, Dépendances, Questions, then Domaine and Maquettes folded", () => {
-  const { container } = show(ticket());
+test("the details read Suivi, Description, Dépendances, Questions, then Domaine and Maquettes folded", async () => {
+  const { container } = await show(ticket());
   const text = container.textContent ?? "";
   const order = ["Suivi", "Description", "Dépendances", "Questions", "Domaine", "Maquettes"].map((w) =>
     text.indexOf(w),

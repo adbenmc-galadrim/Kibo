@@ -95,8 +95,8 @@ afterEach(() => {
 const show = (node: ReactNode, agents: AgentsState = dockState()) =>
   render(<AgentsProvider agents={agents}>{node}</AgentsProvider>);
 
-const sheet = (project: ProjectSnapshot = progressProject(), agents?: AgentsState) =>
-  show(
+const sheet = async (project: ProjectSnapshot = progressProject(), agents?: AgentsState) => {
+  const result = show(
     <TicketSheet
       project={project}
       ticketId="t14"
@@ -110,6 +110,9 @@ const sheet = (project: ProjectSnapshot = progressProject(), agents?: AgentsStat
     />,
     agents,
   );
+  await act(async () => {});
+  return result;
+};
 
 const openActivity = async () => {
   const user = userEvent.setup();
@@ -121,15 +124,15 @@ const openActivity = async () => {
   return fold;
 };
 
-test("the sheet opens on Détails and offers Activité", () => {
-  sheet();
+test("the sheet opens on Détails and offers Activité", async () => {
+  await sheet();
   expect(screen.getByRole("tab", { name: "Détails" }).getAttribute("aria-selected")).toBe("true");
   expect(screen.getByRole("tab", { name: "Activité" }).getAttribute("aria-selected")).toBe("false");
   expect(screen.getByRole("combobox", { name: "Statut" })).toBeTruthy();
 });
 
 test("Activité leads with the report of the last run", async () => {
-  sheet();
+  await sheet();
   const panel = await openActivity();
   const report = await within(panel).findByRole("region", { name: "Compte rendu" });
   for (const text of ["Fait", "Décisions", "À vérifier (2)", "Suite"]) {
@@ -140,7 +143,7 @@ test("Activité leads with the report of the last run", async () => {
 });
 
 test("screen 196: the skill reviews of the last run sit under the report", async () => {
-  sheet();
+  await sheet();
   const panel = await openActivity();
   const block = await within(panel).findByRole("region", { name: "Reviews de skills" });
   expect(within(block).getByRole("button", { name: "porte-qualite" })).toBeTruthy();
@@ -156,13 +159,13 @@ test("without a report, the tab says so", async () => {
     ...project,
     tickets: project.tickets.map((t) => (t.id === "t14" ? { ...t, agentProgress: EMPTY_PROGRESS } : t)),
   };
-  sheet(bare);
+  await sheet(bare);
   const panel = await openActivity();
   expect((await within(panel).findAllByText("Pas de compte rendu pour ce run")).length).toBeGreaterThan(0);
 });
 
 test("a wide sheet shows one chronology with the plan in a column", async () => {
-  sheet();
+  await sheet();
   const panel = await openActivity();
   const chronology = await within(panel).findByRole("region", { name: "Chronologie" });
   const plan = within(panel).getByRole("region", { name: "Plan" });
@@ -182,7 +185,7 @@ test("a plan step highlights its moments in the chronology", async () => {
   HTMLElement.prototype.scrollIntoView = function scroll(this: HTMLElement) {
     scrolled.push(this.dataset.step ?? "");
   };
-  sheet();
+  await sheet();
   const panel = await openActivity();
   const chronology = await within(panel).findByRole("region", { name: "Chronologie" });
   await within(chronology).findByText("Je relis le récepteur et ses tests avant de toucher au port.");
@@ -196,7 +199,7 @@ test("a plan step highlights its moments in the chronology", async () => {
 
 test("a narrow sheet stacks the plan, then the runs, the latest one open", async () => {
   width = 900;
-  sheet();
+  await sheet();
   const panel = await openActivity();
   await within(panel).findByText("Chronologie des runs");
   expect(within(panel).queryByRole("region", { name: "Chronologie" })).toBeNull();
@@ -213,7 +216,7 @@ test("a narrow sheet stacks the plan, then the runs, the latest one open", async
 
 test("the layout follows the width of the sheet", async () => {
   width = 900;
-  sheet();
+  await sheet();
   const panel = await openActivity();
   await within(panel).findByText("Chronologie des runs");
   act(() => resizeTo(1_200));
@@ -231,7 +234,7 @@ test("only the ten latest runs are loaded until older ones are asked for", async
       endedAt: NOW - (99 - i) * 60_000,
     }),
   );
-  sheet(progressProject(), { ...dockState(), runs });
+  await sheet(progressProject(), { ...dockState(), runs });
   const panel = await openActivity();
   const older = await within(panel).findByRole("button", { name: "Charger les runs plus anciens" });
   const loaded = () => new Set(calls.flatMap((c) => (c.method === "runMoments" ? [c.runId] : [])));
@@ -257,7 +260,7 @@ test("the ticket page offers the same tabs and the choice holds for the session"
   await openActivity();
   expect(await screen.findByRole("region", { name: "Compte rendu" })).toBeTruthy();
   page.unmount();
-  sheet(project);
+  await sheet(project);
   expect(screen.getByRole("tab", { name: "Activité" }).getAttribute("aria-selected")).toBe("true");
   await userEvent.setup().click(await screen.findByRole("button", { name: /^Ancien/ }));
   await waitFor(() =>
@@ -269,7 +272,7 @@ test("the ticket page offers the same tabs and the choice holds for the session"
 });
 
 test("the plan counts the moments of a step without the reasoning", async () => {
-  sheet();
+  await sheet();
   const panel = await openActivity();
   const plan = await within(panel).findByRole("region", { name: "Plan" });
   const step = within(plan).getByRole("button", { name: /Corriger la validation du corps/ });
@@ -277,7 +280,7 @@ test("the plan counts the moments of a step without the reasoning", async () => 
 });
 
 test("the moments subscription ends with the tab and with the sheet", async () => {
-  const view = sheet();
+  const view = await sheet();
   await openActivity();
   await waitFor(() => expect(moments.on).toBe(1));
   await userEvent.setup().click(screen.getByRole("tab", { name: "Détails" }));
