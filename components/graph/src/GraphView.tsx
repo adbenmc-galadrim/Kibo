@@ -56,7 +56,11 @@ export function GraphView() {
           }}
         />
         <div className="min-h-0 flex-1">
-          <SprintLanes model={lanes} onOpen={(id) => sdk.openTicket(id)} />
+          <SprintLanes
+            model={lanes}
+            onOpen={(id) => sdk.openTicket(id)}
+            onNewFeature={() => sdk.openView("planning", { intent: { kind: "newFeature" } })}
+          />
         </div>
       </div>
     );

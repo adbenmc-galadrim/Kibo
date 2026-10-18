@@ -121,7 +121,7 @@ test("without any sprint the columns switch is disabled and the waves stay", asy
 });
 
 test("a frame lists its steps, the session row is outlined in orange", () => {
-  render(<SprintLanes model={kitModel()} onOpen={() => undefined} />);
+  render(<SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />);
   const f4 = screen.getByRole("article", { name: "F4 Saisir un tronçon hors ligne" });
   const rows = within(f4).getAllByRole("listitem");
   expect(rows.map((r) => r.textContent)).toEqual([
@@ -138,7 +138,9 @@ test("a frame lists its steps, the session row is outlined in orange", () => {
 });
 
 test("footers: late slips to the next sprint, blocked names its question", () => {
-  render(<SprintLanes model={kitModel(KIT_DAY_AFTER)} onOpen={() => undefined} />);
+  render(
+    <SprintLanes model={kitModel(KIT_DAY_AFTER)} onOpen={() => undefined} onNewFeature={() => undefined} />,
+  );
   const f5 = screen.getByRole("article", { name: /^F5 / });
   expect(within(f5).getByText("en retard · glisse en S43")).toBeTruthy();
   expect(f5.getAttribute("data-late")).toBe("true");
@@ -147,7 +149,7 @@ test("footers: late slips to the next sprint, blocked names its question", () =>
 });
 
 test("the legend names the mode", () => {
-  render(<SprintLanes model={kitModel()} onOpen={() => undefined} />);
+  render(<SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />);
   const legend = screen.getByRole("list", { name: "Légende" });
   expect(
     within(legend)
@@ -166,14 +168,16 @@ test("the legend names the mode", () => {
 
 test("the Légende button folds the legend and the choice is remembered", async () => {
   localStorage.removeItem("kibo.graph.legend");
-  const first = render(<SprintLanes model={kitModel()} onOpen={() => undefined} />);
+  const first = render(
+    <SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />,
+  );
   const toggle = screen.getByRole("button", { name: "Légende" });
   expect(toggle.getAttribute("aria-expanded")).toBe("true");
   await userEvent.click(toggle);
   expect(screen.queryByRole("list", { name: "Légende" })).toBeNull();
   expect(screen.getByRole("button", { name: "Légende" }).getAttribute("aria-expanded")).toBe("false");
   first.unmount();
-  render(<SprintLanes model={kitModel()} onOpen={() => undefined} />);
+  render(<SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />);
   expect(screen.queryByRole("list", { name: "Légende" })).toBeNull();
   await userEvent.click(screen.getByRole("button", { name: "Légende" }));
   expect(screen.getByRole("list", { name: "Légende" })).toBeTruthy();
@@ -186,7 +190,7 @@ test("the legend opens when the storage cannot be read", () => {
     throw new Error("denied");
   };
   try {
-    render(<SprintLanes model={kitModel()} onOpen={() => undefined} />);
+    render(<SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />);
     expect(screen.getByRole("list", { name: "Légende" })).toBeTruthy();
   } finally {
     Storage.prototype.getItem = getItem;
@@ -195,7 +199,7 @@ test("the legend opens when the storage cannot be read", () => {
 
 test("clicking a frame title or a step opens the ticket", async () => {
   const opened: string[] = [];
-  render(<SprintLanes model={kitModel()} onOpen={(id) => opened.push(id)} />);
+  render(<SprintLanes model={kitModel()} onOpen={(id) => opened.push(id)} onNewFeature={() => undefined} />);
   await userEvent.click(screen.getByRole("button", { name: "Saisir un tronçon hors ligne" }));
   await userEvent.click(screen.getByRole("button", { name: "Conflits de saisie" }));
   expect(opened).toEqual(["EMIS-40", "EMIS-45"]);
@@ -226,7 +230,7 @@ test("a live run stays dark when the execution is hidden", async () => {
 });
 
 test("a T3 Code session always lights the step, without any run", () => {
-  render(<SprintLanes model={kitModel()} onOpen={() => undefined} />);
+  render(<SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />);
   const f5 = screen.getByRole("article", { name: /^F5 / });
   const row = within(f5).getByRole("button", { name: "Écran d'envoi hors ligne" }).closest("li");
   expect(row?.getAttribute("data-session")).toBe("true");
@@ -242,4 +246,16 @@ test("the sprint columns follow the host's day, not the browser clock", async ()
   } finally {
     setSystemTime();
   }
+});
+
+test("an empty project says what the Graphe is for and opens a new feature on the Planning", async () => {
+  const m = setup((run) => {
+    run({ method: "createSprint", code: "S1", name: "Sprint 1", start: "2026-10-12", end: "2026-10-23" });
+  });
+  await lanes();
+  expect(screen.getByText("Les dépendances entre fonctionnalités et étapes apparaissent ici.")).toBeTruthy();
+  await userEvent.click(screen.getByRole("button", { name: "Nouvelle fonctionnalité" }));
+  expect(m.viewRequests).toEqual([
+    { componentId: "planning", question: null, intent: { kind: "newFeature" } },
+  ]);
 });

@@ -1,5 +1,6 @@
 import { cn } from "@kibo/sdk/lib/utils";
-import { CalendarRange, Inbox } from "lucide-react";
+import { Button } from "@kibo/sdk/ui/button";
+import { CalendarRange, Inbox, Plus } from "lucide-react";
 import { FeatureFrame } from "./FeatureFrame";
 import { fr } from "./fr";
 import { LANE_MARGIN } from "./frame-geometry";
@@ -38,9 +39,21 @@ function LaneHeader({ lane }: { lane: Lane }) {
 const laneLabel = (lane: Lane): string =>
   lane.code === null ? fr.sprints.reserve : `${lane.code} ${lane.name ?? ""}`.trim();
 
-type Props = { model: SprintLanesModel; onOpen(id: string): void };
+function EmptyLanes({ onNewFeature }: { onNewFeature(): void }) {
+  return (
+    <div className="absolute inset-x-0 top-[51px] bottom-0 flex flex-col items-center justify-center gap-3 p-6">
+      <p className="text-(--tracking-mfg) text-sm">{fr.sprints.empty}</p>
+      <Button variant="outline" size="sm" onClick={onNewFeature}>
+        <Plus absoluteStrokeWidth size={14} aria-hidden />
+        {fr.sprints.newFeature}
+      </Button>
+    </div>
+  );
+}
 
-export function SprintLanes({ model, onOpen }: Props) {
+type Props = { model: SprintLanesModel; onOpen(id: string): void; onNewFeature(): void };
+
+export function SprintLanes({ model, onOpen, onNewFeature }: Props) {
   return (
     <div className="relative h-full min-h-0 bg-(--tracking-canvas)">
       <section aria-label={fr.sprints.canvas} className="h-full overflow-auto">
@@ -65,6 +78,7 @@ export function SprintLanes({ model, onOpen }: Props) {
           {model.lanes.flatMap((lane) =>
             lane.frames.map((frame) => <FeatureFrame key={frame.id} frame={frame} onOpen={onOpen} />),
           )}
+          {model.features === 0 && <EmptyLanes onNewFeature={onNewFeature} />}
         </div>
       </section>
       <SprintLegend />

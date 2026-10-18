@@ -101,6 +101,8 @@ export const fr = {
     counter: (features: number, steps: number, links: number) =>
       `${features} fonctionnalité${s(features)} · ${steps} dépendance${s(steps)} entre étapes, ${links} entre fonctionnalités`,
     reserve: "À planifier",
+    empty: "Les dépendances entre fonctionnalités et étapes apparaissent ici.",
+    newFeature: "Nouvelle fonctionnalité",
     phase: {
       upcoming: "prévu",
       current: "en cours",
