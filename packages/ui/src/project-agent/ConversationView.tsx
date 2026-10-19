@@ -1,7 +1,8 @@
 import type { Signal } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
-import { BookSearch, RotateCcw } from "lucide-react";
+import { AlarmClock, BookSearch, RotateCcw } from "lucide-react";
+import { formatClock } from "../agents/format";
 import { useFollowBottom } from "../agents/use-follow-bottom";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { AgentText } from "../moments/AgentText";
@@ -66,6 +67,16 @@ function Item({
               await onDecide(item.batch.id, d);
             }}
           />
+        </li>
+      );
+    case "wakeup":
+      return (
+        <li className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <AlarmClock className="size-3.5 shrink-0" aria-hidden />
+          <span className="min-w-0">{item.text}</span>
+          <time className="ml-auto shrink-0" dateTime={new Date(item.at).toISOString()}>
+            {formatClock(item.at)}
+          </time>
         </li>
       );
     case "event":

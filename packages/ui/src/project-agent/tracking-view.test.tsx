@@ -90,6 +90,26 @@ test("the question asked shows under the pinned summary, the answer under the qu
   expect(screen.queryByRole("region", { name: "À valider" })).toBeNull();
 });
 
+test("a wakeup on an answer opens the exchange: the line, its time, then the agent and the batch", async () => {
+  const wakeAt = new Date(2026, 9, 16, 14, 52).getTime();
+  show({
+    items: [
+      agent("a1", SUMMARY),
+      { kind: "wakeup", id: "w1", at: wakeAt, text: "Q16 répondue : « 5 Go »" },
+      agent("a2", "Q16 répondue : le quota est de 5 Go par client. Je propose :"),
+    ],
+  });
+  const region = screen.getByRole("region", { name: "Résumé du jour" });
+  expect(within(region).getByText("épinglé")).toBeTruthy();
+  const line = screen.getByText("Q16 répondue : « 5 Go »");
+  expect(within(line.closest("li") ?? line).getByText("14:52")).toBeTruthy();
+  const answer = await screen.findByText("Q16 répondue : le quota est de 5 Go par client. Je propose :");
+  expect(line.compareDocumentPosition(answer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(screen.queryByText(/^Toi · /)).toBeNull();
+  expect(screen.getByRole("region", { name: "Lot n° 7" })).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "À valider" })).toBeNull();
+});
+
 test("validating from the card decides the pending batch and shows its recap until closed", async () => {
   const { decided } = show({ result: decidedTrackingBatch() });
   const user = userEvent.setup();

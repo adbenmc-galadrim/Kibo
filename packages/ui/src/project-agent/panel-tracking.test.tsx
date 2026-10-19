@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, mock, setSystemTime, test } from "bun:test";
-import type { ProjectAgentView, RpcRequest } from "@kibo/schema";
+import { type ProjectAgentView, type RpcRequest, type RunLogEntry, WAKEUP_PREFIX } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
@@ -12,6 +12,7 @@ import { signalsView } from "./signals/fixtures";
 
 const calls: RpcRequest[] = [];
 let current: ProjectAgentView = viewFixture();
+let runLog: RunLogEntry[] = CONVERSATION_LOG;
 
 mock.module("../api", () =>
   apiMock({
@@ -19,7 +20,7 @@ mock.module("../api", () =>
       rpc: (req: RpcRequest) => {
         calls.push(req);
         if (req.method === "getProjectAgent") return Promise.resolve(current);
-        if (req.method === "getRunLog") return Promise.resolve(CONVERSATION_LOG);
+        if (req.method === "getRunLog") return Promise.resolve(runLog);
         if (req.method === "listSignals") return Promise.resolve(signalsView());
         if (req.method === "agents.list")
           return Promise.resolve({ agents: [], notices: [], partialWatch: false });
@@ -48,6 +49,7 @@ beforeEach(() => {
   localStorage.clear();
   calls.length = 0;
   current = viewFixture();
+  runLog = CONVERSATION_LOG;
 });
 
 function Panel() {
@@ -137,4 +139,35 @@ test("Afficher les lots remplacés from Suivi opens the conversation with them",
   await userEvent.setup().click(await panel().findByRole("button", { name: "Afficher les lots remplacés" }));
   expect(await panel().findByRole("tab", { name: "Conversation", selected: true })).toBeTruthy();
   expect(await panel().findByRole("region", { name: "Lot n° 4" })).toBeTruthy();
+});
+
+const ANSWER_WAKEUP = `${WAKEUP_PREFIX}1 réponse à lire.\n- Q16 répondue : « 5 Go »\nLis chaque réponse.`;
+
+test("a wakeup on an answer shows in Suivi and in the conversation, never as a bubble from Adam", async () => {
+  runLog = [
+    ...CONVERSATION_LOG.slice(0, 6),
+    { id: 90, at: NOW - 2_000, event: { type: "answered", text: ANSWER_WAKEUP, rank: 0 } },
+    {
+      id: 91,
+      at: NOW - 1_000,
+      event: {
+        type: "exited",
+        code: 0,
+        isError: false,
+        result: "Q16 répondue : le quota est de 5 Go par client. Je propose :",
+        tokens: 0,
+        costUsd: 0,
+        denied: [],
+      },
+    },
+  ];
+  show();
+  expect(await panel().findByText("Q16 répondue : « 5 Go »")).toBeTruthy();
+  expect(
+    await panel().findByText("Q16 répondue : le quota est de 5 Go par client. Je propose :"),
+  ).toBeTruthy();
+  expect(panel().queryByText(/^Toi · /)).toBeNull();
+  await choose("Conversation");
+  expect(await panel().findByText("Q16 répondue : « 5 Go »")).toBeTruthy();
+  expect(panel().queryByText(ANSWER_WAKEUP)).toBeNull();
 });
