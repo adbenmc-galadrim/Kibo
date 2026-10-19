@@ -101,24 +101,36 @@ SCREENS29 = [(14, "P1 bis · Vue d'ensemble · en attente", "proposition-attente
     (20, "P8d · Fiche ticket, menu", "proposition-attente-fiche-menu"), (21, "P8e · Fiche ticket en attente, menu", "proposition-attente-fiche-menu-reprendre"),
     (22, "P2b · Planning, Reprendre dans", "proposition-attente-planning-menu")]
 MARK29 = "\n## Phase 29\n"
+SCREENS_A2 = [(23, "P9b · Questions, menu", "proposition-questions-menu"), (24, "P9c · Supprimer la question", "proposition-questions-supprimer"),
+    (25, "P9d · Questions, répondues", "proposition-questions-repondues")]
+MARK_A2 = "\n## 0.29.0-alpha.2\n"
 if "--sections" in sys.argv:
     wanted = sys.argv[sys.argv.index("--sections") + 1].split(",")
     cur = open(W + "/cotes.md").read()
-    for i, name, png in SCREENS + SCREENS27 + SCREENS29:
+    for i, name, png in SCREENS + SCREENS27 + SCREENS29 + SCREENS_A2:
         if str(i) not in wanted: continue
-        where = "" if (i, name, png) in SCREENS27 + SCREENS29 else f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Silo » du fichier « Kibo »"
+        where = "" if (i, name, png) in SCREENS27 + SCREENS29 + SCREENS_A2 else f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Silo » du fichier « Kibo »"
         start = cur.index(f"\n## {name}\n") + 1
         nxt = re.search(r"\n## ", cur[start + 3:]); end = start + 3 + nxt.start() + 1 if nxt else len(cur)
         cur = cur[:start] + screen_md(i, name, png, where) + ("\n\n" if nxt else "\n") + cur[end:]
     open(W + "/cotes.md", "w").write(cur)
     print(sum(1 for _ in open(W + "/cotes.md")))
     sys.exit(0)
+if "--alpha2" in sys.argv:
+    cur = open(W + "/cotes.md").read()
+    cur = cur.split(MARK_A2)[0].rstrip("\n") + "\n"
+    intro = ["## 0.29.0-alpha.2", "", "Questions sans transmission et suppression d'une question (spec §42), données de la sous-section « 0.29.0-alpha.2 » du projet Silo (`design/donnees-fictives.md`). Chaque board clone « P9 · Questions » sans l'aperçu d'export ni le toast (`scripts/57-alpha2-questions.js`) : P9b ouvre le menu « ⋯ » de Q16, P9c pose le dialogue de suppression de Q16 sur fond assombri, P9d montre le filtre « Répondues » avec la réponse de Q16. Rangées à partir de y = 38 000 (pas de 1 500 px), sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` par board (`_dump-23` à `_dump-25`), puis `python3 scripts/cotes.py <dossier des JSON> --alpha2`, qui remplace cette partie seulement. Pas de comparaison au pixel (capture seulement) ; P9 et sa référence ne changent pas."]
+    parts = [screen_md(i, name, png, "") for i, name, png in SCREENS_A2]
+    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
+    print(sum(1 for _ in open(W + "/cotes.md")))
+    sys.exit(0)
 if "--phase29" in sys.argv:
     cur = open(W + "/cotes.md").read()
+    tail_a2 = (MARK_A2 + cur.split(MARK_A2)[1]) if MARK_A2 in cur else ""
     cur = cur.split(MARK29)[0].rstrip("\n") + "\n"
     intro = ["## Phase 29", "", "Étapes en attente (spec §41), données `silo-attente` (section « Phase 29 · étapes en attente » de `design/donnees-fictives.md`). Chaque board clone la référence pixel de son écran (P1 bis v3, P2, P3, P7, P8) puis y pose l'attente (`scripts/56-phase-29.js`) ; P8c pose le dialogue « Mettre SILO-82 en attente » sur le Kanban en attente. Rangées à partir de y = 24 500 (pas de 1 500 px), sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` par board, puis `python3 scripts/cotes.py <dossier des JSON> --phase29`, qui remplace cette partie seulement. Le dialogue et les menus (P8d, P8e, P2b) n'ont pas de comparaison au pixel (capture seulement)."]
     parts = [screen_md(i, name, png, "") for i, name, png in SCREENS29]
-    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
+    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n" + tail_a2)
     print(sum(1 for _ in open(W + "/cotes.md")))
     sys.exit(0)
 if "--phase27" in sys.argv:

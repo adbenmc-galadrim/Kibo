@@ -163,19 +163,19 @@ test("answering a question to validate of a finished run sends nothing and leave
   ]);
 });
 
-test("answering the blocking question of a waiting run resumes it at once and marks the answer", () => {
+test("answering the blocking question of a waiting run resumes nothing and leaves the answer unmarked", () => {
   const { answers, agentQuestion, answer, snapshot } = setup("waiting_input");
   const q = agentQuestion("Quel port ?", true);
-  const answered = answer(q?.id ?? "", { kind: "option", option: "Oui" });
-  expect(answers).toEqual([["r1", answerPrompt(answered)]]);
-  expect(snapshot().questions[0]?.answer).toMatchObject({ deliveredRunId: "r1" });
+  answer(q?.id ?? "", { kind: "option", option: "Oui" });
+  expect(answers).toEqual([]);
+  expect(snapshot().questions[0]?.answer).toMatchObject({ deliveredAt: null, deliveredRunId: null });
 });
 
 test("delivering the answers of a ticket sends one message to its session and marks them", () => {
   const { s, project, ticket, answers, agentQuestion, answer, snapshot } = setup("done");
   const first = answer(agentQuestion("Bloquer le dépôt ?", false)?.id ?? "");
   const second = answer(agentQuestion("Garder les archives ?", false)?.id ?? "");
-  expect(call(s, { method: "deliverAnswers", projectId: project.id, ticketId: ticket.id })).toEqual({
+  expect(s.deliverAnswers(project.id, ticket.id)).toEqual({
     sent: 2,
     runId: "r1",
   });
@@ -191,7 +191,7 @@ test("an inherited run of the ticket shows the answers still to deliver and rece
   expect(call(s, { method: "getAgents" }).questions).toEqual([
     { runId: "r2", open: 0, undelivered: 1, latestTitle: null },
   ]);
-  expect(call(s, { method: "deliverAnswers", projectId: project.id, ticketId: ticket.id })).toEqual({
+  expect(s.deliverAnswers(project.id, ticket.id)).toEqual({
     sent: 1,
     runId: "r2",
   });
@@ -245,7 +245,5 @@ test("without ticket execution a blocking answer is recorded, no run resumes and
   expect(answered.answer).toMatchObject({ kind: "option", option: "Oui", deliveredAt: null });
   expect(answers).toEqual([]);
   expect(snapshot().questions[0]?.answer).toMatchObject({ deliveredRunId: null });
-  expect(() => call(s, { method: "deliverAnswers", projectId: project.id, ticketId: ticket.id })).toThrow(
-    "AGENT_EXECUTION_REMOVED",
-  );
+  expect(() => s.deliverAnswers(project.id, ticket.id)).toThrow("AGENT_EXECUTION_REMOVED");
 });

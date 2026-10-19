@@ -2,7 +2,6 @@ import {
   findRecipient,
   isAnswered,
   isArchived,
-  isDelivered,
   isOpen,
   isTerminal,
   type Question,
@@ -65,8 +64,6 @@ const updateQuestion: Check<"updateQuestion"> = (scan, a) => {
   if (typeof q === "string") return [q];
   if (UPDATE_FIELDS.every((f) => a[f] === undefined)) return ["rien à modifier"];
   const reopened = scan.reopened.has(q.id);
-  if (isDelivered(q) && !reopened)
-    return ["réponse déjà transmise à un agent : rouvre-la d'abord (reopenQuestion)"];
   if (isAnswered(q) && !reopened && (a.options !== undefined || a.provisional !== undefined)) {
     return ["question répondue : options et choix provisoire figés, rouvre-la d'abord"];
   }

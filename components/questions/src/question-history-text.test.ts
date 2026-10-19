@@ -55,7 +55,7 @@ const event = (
 
 const ctx = {
   recipients: [...DEFAULT_RECIPIENTS, { id: "galadrim", name: "Galadrim" }],
-  runLabel: (id: string) => (id === "run-2" ? "opus-dev-2" : id),
+  members: [],
   ticketLabel: (id: string) => (id === T1 ? "KIB-1" : "KIB-2"),
   now: NOW,
 };
@@ -78,11 +78,9 @@ test("context, options and provisional choice read as replaced content and lists
   ]);
 });
 
-test("a reopening cites the removed answer and the run it reached", () => {
+test("a reopening cites the removed answer, never a run, even when it was marked delivered", () => {
   const q = question([event("reopened", 2, { answer: answer("Oui", true) })]);
-  expect(lines(q)).toEqual([
-    "il y a 2 min · Adam · Rouverte (réponse « Oui » retirée, transmise à opus-dev-2)",
-  ]);
+  expect(lines(q)).toEqual(["il y a 2 min · Adam · Rouverte (réponse « Oui » retirée)"]);
   const quiet = question([event("reopened", 2, { answer: answer("Oui") })]);
   expect(lines(quiet)).toEqual(["il y a 2 min · Adam · Rouverte (réponse « Oui » retirée)"]);
 });

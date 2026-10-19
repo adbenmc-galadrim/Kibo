@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, beforeEach, expect, jest, mock, test } from "bun:test";
 import { DEFAULT_RECIPIENTS, type Question } from "@kibo/schema";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { createElement } from "react";
 import { QuestionPreview, type QuestionPreviewProps } from "./question-preview";
 
@@ -144,4 +144,22 @@ test("without hover, the trigger stays a plain button and hovering opens nothing
   await settle(400);
   expect(screen.queryByText("Question 1 ?")).toBeNull();
   expect(trigger.getAttribute("data-state")).toBeNull();
+});
+
+test("the question mode names its human author by the project members, never by an account id", async () => {
+  const adam = "1789b628-9778-4031-95aa-0dbd53d0ebf5";
+  const unknown = "2a4e8c1d-0b3f-4e5a-9c7d-6f8e9a0b1c2d";
+  const members = [{ userId: adam, name: "Adam", role: "owner" as const }];
+  const byAdam = question(1, { createdBy: { kind: "human", ref: adam } });
+  const { trigger } = mount({ mode: "question", questions: [byAdam], members });
+  fireEvent.focus(trigger);
+  await settle(0);
+  expect(screen.getByText(/^posée par Adam · /)).toBeTruthy();
+  cleanup();
+  const byStranger = question(2, { createdBy: { kind: "human", ref: unknown } });
+  const second = mount({ mode: "question", questions: [byStranger], members });
+  fireEvent.focus(second.trigger);
+  await settle(0);
+  expect(screen.getByText(/^posée par un membre · /)).toBeTruthy();
+  expect(document.body.textContent).not.toContain(unknown);
 });

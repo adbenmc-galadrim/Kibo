@@ -3,7 +3,6 @@ import { useSdk } from "@kibo/sdk";
 import { Lock, Package } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ActionToast } from "./ActionToast";
-import { DeliverButton, DeliveryMessage, type DeliveryNotice } from "./DeliverButton";
 import { EmptyPage } from "./EmptyPage";
 import { ExportButton } from "./ExportButton";
 import { byExportOrder, type ExportEntry, exportLabels } from "./export-text";
@@ -56,7 +55,6 @@ function BlockingLine({ blocking, open }: { blocking: number; open: number }) {
 
 function QuestionGroup({ group, data, now }: { group: ViewGroup; data: QuestionsData; now: number }) {
   const sdk = useSdk();
-  const [notice, setNotice] = useState<DeliveryNotice | null>(null);
   const t = group.ticket;
   const feature = featureOf(t, data.ticketOf);
   const impact = impactOf(t, data.ticketOf, data.sprints);
@@ -72,17 +70,7 @@ function QuestionGroup({ group, data, now }: { group: ViewGroup; data: Questions
           {t.title}
         </button>
         {feature !== null && feature.id !== t.id && <FeatureChip label={featureLabel(feature)} />}
-        <span className="flex-1" />
-        {!data.readOnly && group.undelivered.length > 0 && (
-          <DeliverButton
-            ticketId={t.id}
-            label={fr.deliver(group.undelivered.length)}
-            runLabel={data.runLabel}
-            onNotice={setNotice}
-          />
-        )}
       </header>
-      <DeliveryMessage notice={notice} />
       {group.questions.map((q) => (
         <QuestionCard
           key={q.id}
@@ -93,7 +81,6 @@ function QuestionGroup({ group, data, now }: { group: ViewGroup; data: Questions
           now={now}
           readOnly={data.readOnly}
           viewer={data.viewer}
-          runLabel={data.runLabel}
           runOf={data.runOf}
           ticketLabel={keyOf(data)}
         />

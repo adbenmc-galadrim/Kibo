@@ -62,41 +62,21 @@ test("a free answer and an option answer go through the same form", async () => 
   );
 });
 
-test("answers wait for « Transmettre à l'agent » and the button calls the SDK", async () => {
-  const m = mount("view");
+test("a saved answer is shown as given, with no delivery to do", async () => {
+  mount("view");
   const user = userEvent.setup();
   await user.click(await screen.findByRole("radio", { name: "Toutes" }));
   const group = await screen.findByRole("region", { name: /KIB-14/ });
-  const deliver = within(group).getByRole("button", { name: "Transmettre à l'agent (1)" });
-  expect(within(group).getByText("à transmettre")).toBeTruthy();
   expect(within(group).getByText(/^Répondu par adam/)).toBeTruthy();
-  await user.click(deliver);
-  expect(await within(group).findByText("Transmis à mock")).toBeTruthy();
-  expect(m.deliveries).toEqual([questionNamed(m, ANSWERED)?.ticketId ?? ""]);
-  await waitFor(() => expect(within(group).queryByText("à transmettre")).toBeNull());
-  expect(within(group).getByText("transmise à mock · figée")).toBeTruthy();
-  expect(within(group).queryByRole("button", { name: /Transmettre à l'agent/ })).toBeNull();
+  expect(within(group).queryByText("à transmettre")).toBeNull();
+  expect(within(group).queryByText(/figée/)).toBeNull();
+  expect(screen.queryByRole("button", { name: /Transmettre/ })).toBeNull();
 });
 
-test("a refused delivery says there is no session to resume", async () => {
-  mount("view", { deliveryRefused: true });
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("radio", { name: "Toutes" }));
-  const group = await screen.findByRole("region", { name: /KIB-14/ });
-  await user.click(within(group).getByRole("button", { name: "Transmettre à l'agent (1)" }));
-  expect(
-    await within(group).findByText(
-      "Aucune session à reprendre : assigne le ticket, le brief portera les réponses.",
-    ),
-  ).toBeTruthy();
-});
-
-test("the widget offers the delivery of pending answers under its list", async () => {
-  const m = mount("widget");
-  const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Transmettre à l'agent (1) · KIB-14" }));
-  expect(await screen.findByText("Transmis à mock")).toBeTruthy();
-  expect(m.deliveries).toHaveLength(1);
+test("the widget offers no delivery under its list", async () => {
+  mount("widget");
+  expect(await screen.findByText(OPEN)).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /Transmettre/ })).toBeNull();
 });
 
 const IMPORT = { kind: "import", ref: "plan" } as const;
@@ -120,21 +100,16 @@ const seedImported = (run: (cmd: ProjectCommand) => unknown) => {
   });
 };
 
-test("an imported answer, not given in Kibo, offers nothing to deliver", async () => {
+test("an imported answer is shown like any other", async () => {
   mount("view", { seed: seedImported });
   const user = userEvent.setup();
   expect(await screen.findByText("Aucune question ouverte.")).toBeTruthy();
   await user.click(screen.getByRole("radio", { name: "Toutes" }));
   const group = await screen.findByRole("region", { name: /KIB-12/ });
   expect(within(group).getByText("Arbitrage importé du plan ?")).toBeTruthy();
+  expect(within(group).getByText("Réponse : Tranché dans le plan")).toBeTruthy();
   expect(within(group).queryByText("à transmettre")).toBeNull();
-  expect(screen.queryByRole("button", { name: /Transmettre à l'agent/ })).toBeNull();
-});
-
-test("the widget offers no delivery for imported answers", async () => {
-  mount("widget", { seed: seedImported });
-  expect(await screen.findByText("Aucune question ouverte.")).toBeTruthy();
-  expect(screen.queryByRole("button", { name: /Transmettre à l'agent/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /Transmettre/ })).toBeNull();
 });
 
 test("read-only projects hide the forms", async () => {
@@ -144,8 +119,7 @@ test("read-only projects hide the forms", async () => {
   await screen.findByText(OPEN);
   expect(screen.queryByRole("button", { name: "Valider le choix provisoire" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Nouvelle question" })).toBeNull();
-  expect(screen.queryByRole("button", { name: /Transmettre à l'agent/ })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Archiver" })).toBeNull();
+  expect(screen.queryByRole("button", { name: /^Actions de / })).toBeNull();
   expect(screen.queryByRole("button", { name: "Coller la réponse" })).toBeNull();
 });
 
@@ -251,7 +225,7 @@ test("an agent question names its run with a mention that opens the run", async 
   expect(m.openedRuns).toEqual([RUN_ID]);
 });
 
-test("« Coller la réponse » records a text answer, then offers the delivery", async () => {
+test("« Coller la réponse » records a text answer, shown at once as answered", async () => {
   const m = mount("view");
   const user = userEvent.setup();
   const card = await screen.findByRole("article", { name: OPEN });
@@ -272,5 +246,6 @@ test("« Coller la réponse » records a text answer, then offers the delivery",
   );
   await user.click(screen.getByRole("radio", { name: "Toutes" }));
   const group = await screen.findByRole("region", { name: /KIB-12/ });
-  expect(await within(group).findByRole("button", { name: "Transmettre à l'agent (1)" })).toBeTruthy();
+  expect(await within(group).findByText("Réponse : Oui, à la racine. — Claire")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /Transmettre/ })).toBeNull();
 });

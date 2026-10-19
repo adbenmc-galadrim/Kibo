@@ -43,6 +43,7 @@ const ICONS: Record<ProjectEventKind, [LucideIcon, string]> = {
   question_created: [MessageCircleQuestion, "text-(--tracking-mfg)"],
   question_answered: [MessageCircleQuestion, "text-(--tracking-mfg)"],
   question_reminded: [MessageCircleQuestion, "text-(--tracking-brand)"],
+  question_deleted: [MessageCircleQuestion, "text-(--tracking-mfg)"],
   held: [Pause, "text-(--tracking-mfg)"],
   resumed: [Pause, "text-(--tracking-mfg)"],
 };

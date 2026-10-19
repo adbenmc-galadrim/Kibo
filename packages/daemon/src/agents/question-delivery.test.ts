@@ -1,13 +1,8 @@
 import { expect, test } from "bun:test";
-import { answerPrompt, deliveryPrompt, KiboError, type Question, type RunView } from "@kibo/schema";
+import { deliveryPrompt, KiboError, type Question, type RunView } from "@kibo/schema";
 import { answered, HUMAN, runView } from "../questions/questions.test-helper";
 import type { TicketExecution } from "./execution-removed";
-import {
-  answerFromDrawer,
-  type DeliveryDeps,
-  deliverAnswers,
-  deliverBlockingAnswer,
-} from "./question-delivery";
+import { answerFromDrawer, type DeliveryDeps, deliverAnswers } from "./question-delivery";
 
 type Calls = { answers: [string, string][]; marks: [string, string, string[], string][]; drawer: string[] };
 
@@ -19,10 +14,8 @@ function deps(
 ) {
   const calls: Calls = { answers: [], marks: [], drawer: [] };
   const order: string[] = [];
-  const logged: string[] = [];
   const d: DeliveryDeps = {
     ticketExecution,
-    log: (line) => logged.push(line),
     runs: () => runs,
     answer(runId, text) {
       calls.answers.push([runId, text]);
@@ -44,31 +37,8 @@ function deps(
       },
     },
   };
-  return { d, calls, order, logged };
+  return { d, calls, order };
 }
-
-test("a blocking answer reaches its waiting run at once and is marked delivered", () => {
-  const q = answered("q1", { blocking: true });
-  const { d, calls, order } = deps([runView({ id: "r1", state: "waiting_input" })]);
-  expect(deliverBlockingAnswer(d, q)).toBe(true);
-  expect(calls.answers).toEqual([["r1", answerPrompt(q)]]);
-  expect(calls.marks).toEqual([["p1", "t1", ["q1"], "r1"]]);
-  expect(order).toEqual(["answer", "mark"]);
-});
-
-test("an answer to a question to validate, or of a run that does not wait, is never sent alone", () => {
-  const done = runView({ id: "r1", state: "done" });
-  for (const [q, runs] of [
-    [answered("q1"), [done]],
-    [answered("q2", { blocking: true }), [done]],
-    [answered("q3", { blocking: true, runId: null }), [done]],
-    [answered("q4", { blocking: true, runId: "gone" }), [done]],
-  ] as const) {
-    const { d, calls } = deps([...runs]);
-    expect(deliverBlockingAnswer(d, q)).toBe(false);
-    expect(calls).toEqual({ answers: [], marks: [], drawer: [] });
-  }
-});
 
 test("delivering sends one message with every answer to the main session, then marks them", () => {
   const first = answered("q1", { at: 10 });
@@ -137,14 +107,6 @@ test("a drawer answer the run refuses leaves the question answered but not deliv
   expect(() => answerFromDrawer(d, run, "443", HUMAN)).toThrow(KiboError);
   expect(calls.drawer).toEqual(["r1:443"]);
   expect(calls.marks).toEqual([]);
-});
-
-test("without ticket execution a blocking answer is kept, resumes nothing and is journaled", () => {
-  const q = answered("q1", { blocking: true });
-  const { d, calls, logged } = deps([runView({ id: "r1", state: "waiting_input" })], [], null, "removed");
-  expect(deliverBlockingAnswer(d, q)).toBe(false);
-  expect(calls).toEqual({ answers: [], marks: [], drawer: [] });
-  expect(logged).toHaveLength(1);
 });
 
 test("without ticket execution delivering answers or answering a ticket run is refused first", () => {

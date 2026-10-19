@@ -1,23 +1,8 @@
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 import type { ChangeMessage, ProjectCommand } from "@kibo/schema";
-import { fakeAgentsPort } from "../agents-port.test-helper";
-import type { AgentQuestions } from "../agents-rpc";
 import type { CommandEvent } from "../docs";
-import { afterQuestionCommands } from "./question-events";
-import { answered, HUMAN, runView } from "./questions.test-helper";
-
-const QUESTIONS: AgentQuestions = {
-  data: {
-    runQuestions: () => [],
-    undeliveredAnswers: () => [],
-    markAnswersDelivered: () => {},
-    answerRunQuestion: () => null,
-  },
-  projectIds: () => [],
-  projectAgents: () => [],
-  viewer: () => "adam",
-  assertWritable: () => {},
-};
+import { afterQuestionCommands, type QuestionEventDeps } from "./question-events";
+import { answered, HUMAN } from "./questions.test-helper";
 
 const EDITS: ProjectCommand[] = [
   { method: "updateQuestion", questionId: "q1", by: HUMAN, title: "B" },
@@ -27,18 +12,67 @@ const EDITS: ProjectCommand[] = [
   { method: "restoreQuestion", questionId: "q1", by: HUMAN },
 ];
 
-test("each question edit refreshes the agents and never sends an answer to a waiting run", () => {
-  const blocking = answered("q1", { blocking: true });
-  const agents = fakeAgentsPort([runView({ id: "r1", state: "waiting_input" })]);
+const eventOf = (
+  command: ProjectCommand,
+  result: unknown = answered("q1", { blocking: true }),
+): CommandEvent => ({
+  projectId: "p1",
+  command,
+  result,
+  meta: { origin: "user", instanceId: null },
+});
+
+function harness(): QuestionEventDeps & { messages: ChangeMessage[]; removed: string[] } {
+  const messages: ChangeMessage[] = [];
+  const removed: string[] = [];
+  return {
+    messages,
+    removed,
+    emit: (m) => messages.push(m),
+    images: { remove: (questionId) => removed.push(questionId) },
+  };
+}
+
+test("each question edit refreshes the agents and removes no image", () => {
   for (const command of EDITS) {
-    const messages: ChangeMessage[] = [];
-    const event: CommandEvent = {
-      projectId: "p1",
-      command,
-      result: blocking,
-      meta: { origin: "user", instanceId: null },
-    };
-    afterQuestionCommands([event], { emit: (m) => messages.push(m), agents, questions: QUESTIONS });
-    expect(messages).toEqual([{ topic: "agents" }]);
+    const h = harness();
+    afterQuestionCommands([eventOf(command)], h);
+    expect(h.messages).toEqual([{ topic: "agents" }]);
+    expect(h.removed).toEqual([]);
   }
+});
+
+test("a removed question has its images removed once", () => {
+  const h = harness();
+  afterQuestionCommands([eventOf({ method: "removeQuestion", questionId: "q1" }, null)], h);
+  expect(h.removed).toEqual(["q1"]);
+  expect(h.messages).toEqual([{ topic: "agents" }]);
+});
+
+test("without an image store, a removed question only refreshes the agents", () => {
+  const messages: ChangeMessage[] = [];
+  afterQuestionCommands([eventOf({ method: "removeQuestion", questionId: "q1" }, null)], {
+    emit: (m) => messages.push(m),
+    images: null,
+  });
+  expect(messages).toEqual([{ topic: "agents" }]);
+});
+
+test("an answer from the user is not delivered and writes no line", () => {
+  const error = spyOn(console, "error").mockImplementation(() => {});
+  const h = harness();
+  afterQuestionCommands(
+    [
+      eventOf({
+        method: "answerQuestion",
+        questionId: "q1",
+        answer: { kind: "text", text: "5 Go" },
+        by: HUMAN,
+      }),
+    ],
+    h,
+  );
+  expect(h.messages).toEqual([{ topic: "agents" }]);
+  expect(error).not.toHaveBeenCalled();
+  error.mockRestore();
 });

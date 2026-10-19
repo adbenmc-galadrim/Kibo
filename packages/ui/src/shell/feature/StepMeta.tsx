@@ -1,4 +1,4 @@
-import type { CiTone } from "@kibo/schema";
+import { type CiTone, liveReview } from "@kibo/schema";
 import { CircleCheck, CircleDashed, CircleX, GitBranch, GitMerge, GitPullRequest, Link } from "lucide-react";
 import { frFeature as t } from "../../i18n/fr-group";
 import { DeliverySegments } from "./DeliverySegments";
@@ -43,7 +43,7 @@ function Origin({ step }: { step: StepModel }) {
         />
         <span className={MONO}>{`#${step.pr.number}`}</span>
         {merged && <span className={DIM}>{t.merged}</span>}
-        {step.pr.review === "changes_requested" && (
+        {liveReview(step.pr) === "changes_requested" && (
           <span className="text-[12px] leading-[15px] text-(--tracking-brand-text)">
             {t.changesRequested}
           </span>

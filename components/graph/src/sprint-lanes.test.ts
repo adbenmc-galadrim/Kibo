@@ -60,6 +60,19 @@ test("late and blocked features carry their footer", () => {
   expect(frame("F4").footer).toBeNull();
 });
 
+test("a merged PR with changes requested is marked merged, not amber", () => {
+  const tickets = kitTickets().map((t) => ({
+    ...t,
+    externalRefs: t.externalRefs.map((r) =>
+      r.kind === "github_pr" && r.review === "changes_requested" ? { ...r, state: "merged" as const } : r,
+    ),
+  }));
+  const f4 = sprintLanes(kitInput({ tickets }))
+    ?.lanes.flatMap((l) => l.frames)
+    .find((f) => f.shortKey === "F4");
+  expect(f4?.steps[3]?.git).toEqual({ kind: "merged", tone: "green" });
+});
+
 test("steps carry their tone, their git mark and the session", () => {
   const f4 = frame("F4").steps;
   expect(f4.map((s) => s.tone)).toEqual(["done", "done", "done", "review", "todo"]);

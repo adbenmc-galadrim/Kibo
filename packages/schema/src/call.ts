@@ -72,7 +72,6 @@ export const ComponentCall = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("design.storybooks") }),
   z.object({ kind: z.literal("embed.open"), url: z.string().min(1).max(EMBED_URL_MAX) }),
   z.object({ kind: z.literal("config.set"), patch: z.record(z.string(), z.unknown()) }),
-  z.object({ kind: z.literal("questions.deliver"), ticketId: NodeId }),
   z.object({ kind: z.literal("questions.recipients") }),
   z.object({ kind: z.literal("run.peek"), runId: z.string().min(1) }),
   z.object({ kind: z.literal("run.deliver"), ticketId: NodeId, mode: DeliveryKind.optional() }),

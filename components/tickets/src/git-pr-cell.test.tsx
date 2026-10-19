@@ -85,3 +85,8 @@ test("without branch nor PR: what it waits on, else a dash", () => {
   expect(cell([], ["KIB-14"]).textContent).toBe("attend KIB-14");
   expect(cell([]).textContent).toBe("—");
 });
+
+test("a merged PR drops its stale changes requested but keeps its approval", () => {
+  expect(cell([pr(20, "merged", { review: "changes_requested" })]).textContent).toBe("#20fusionnée");
+  expect(cell([pr(18, "merged", { review: "approved" })]).textContent).toBe("#18fusionnéeapprouvée");
+});

@@ -1,7 +1,6 @@
-import { answersToDeliver, isOpen, type Question, questionLabel, type TicketView } from "@kibo/schema";
+import { isOpen, type Question, questionLabel, type TicketView } from "@kibo/schema";
 import { TicketKeyLabel, useSdk } from "@kibo/sdk";
 import { useMemo, useState } from "react";
-import { DeliverButton, DeliveryMessage, type DeliveryNotice } from "./DeliverButton";
 import { fr } from "./fr";
 import { QuestionAnswerForm } from "./QuestionAnswerForm";
 import { QuestionAnswerLine, QuestionAuthor } from "./QuestionMeta";
@@ -42,34 +41,9 @@ function QuestionRow({ question: q, ticket, data, now }: RowProps) {
         (isOpen(q) ? (
           !data.readOnly && <QuestionAnswerForm question={q} />
         ) : (
-          <QuestionAnswerLine question={q} now={now} runLabel={data.runLabel} />
+          <QuestionAnswerLine question={q} now={now} />
         ))}
     </li>
-  );
-}
-
-function PendingDeliveries({ data }: { data: QuestionsData }) {
-  const [notice, setNotice] = useState<DeliveryNotice | null>(null);
-  const pending = data.tickets
-    .map((ticket) => ({ ticket, count: answersToDeliver(data.questions, ticket.id).length }))
-    .filter((p) => p.count > 0);
-  return (
-    <div className="grid gap-1.5">
-      {!data.readOnly && pending.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {pending.map(({ ticket, count }) => (
-            <DeliverButton
-              key={ticket.id}
-              ticketId={ticket.id}
-              label={fr.deliverFor(ticket.keyLabel, count)}
-              runLabel={data.runLabel}
-              onNotice={setNotice}
-            />
-          ))}
-        </div>
-      )}
-      <DeliveryMessage notice={notice} />
-    </div>
   );
 }
 
@@ -110,7 +84,6 @@ export function QuestionsWidget() {
           </ul>
         )}
       </div>
-      <PendingDeliveries data={data} />
       <button
         type="button"
         className="w-fit text-xs text-muted-foreground hover:text-foreground hover:underline"

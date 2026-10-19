@@ -1,12 +1,12 @@
-import type { Actor, Question, QuestionAnswer, QuestionEvent, QuestionRecipient } from "@kibo/schema";
+import type { MemberInfo, Question, QuestionAnswer, QuestionEvent, QuestionRecipient } from "@kibo/schema";
 import { fr } from "./fr";
-import { recipientName, relativeAge } from "./questions-logic";
+import { actorName, recipientName, relativeAge } from "./questions-logic";
 
 type QuestionState = Required<QuestionEvent["previous"]>;
 export type HistoryEntry = { event: QuestionEvent; after: QuestionState; position: number };
 export type HistoryContext = {
   recipients: readonly QuestionRecipient[];
-  runLabel(runId: string): string;
+  members: readonly MemberInfo[];
   ticketLabel(ticketId: string): string;
   now: number;
 };
@@ -43,8 +43,6 @@ export function historyEntries(q: Question): HistoryEntry[] {
   return entries;
 }
 
-const actorName = (actor: Actor): string => (actor.kind === "import" ? fr.imported(actor.ref) : actor.ref);
-
 const answerText = (a: QuestionAnswer | null): string =>
   a === null ? t.noAnswer : a.kind === "text" ? a.text : (a.option ?? "");
 
@@ -69,19 +67,13 @@ function changes(entry: HistoryEntry, ctx: HistoryContext): string {
   return parts.join(" ; ");
 }
 
-function reopened(previous: QuestionAnswer | null | undefined, ctx: HistoryContext): string {
-  const value = answerText(previous ?? null);
-  const run = previous?.deliveredRunId ?? null;
-  return run === null ? t.reopened(value) : t.reopenedDelivered(value, ctx.runLabel(run));
-}
-
 function what(entry: HistoryEntry, ctx: HistoryContext): string {
   const { event } = entry;
   switch (event.kind) {
     case "updated":
       return t.updated(changes(entry, ctx));
     case "reopened":
-      return reopened(event.previous.answer, ctx);
+      return t.reopened(answerText(event.previous.answer ?? null));
     case "answer_edited":
       return t.answerEdited(answerText(event.previous.answer ?? null), answerText(entry.after.answer));
     case "archived":
@@ -96,4 +88,4 @@ function what(entry: HistoryEntry, ctx: HistoryContext): string {
 }
 
 export const historyLine = (entry: HistoryEntry, ctx: HistoryContext): string =>
-  t.line(relativeAge(entry.event.at, ctx.now), actorName(entry.event.by), what(entry, ctx));
+  t.line(relativeAge(entry.event.at, ctx.now), actorName(entry.event.by, ctx.members), what(entry, ctx));

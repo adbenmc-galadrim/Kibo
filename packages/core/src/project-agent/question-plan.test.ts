@@ -11,13 +11,12 @@ const ids = { "SILO-2": "t2" };
 const commands = (action: ProposedAction) => commandsFor(action, ids, HUMAN, ctx.project);
 
 describe("expected state of question actions", () => {
-  test("an update expects the fields it changes and the delivery", () => {
+  test("an update expects the fields it changes, never a delivery", () => {
     expect(
       capture({ id: 1, why, type: "updateQuestion", questionId: "q1", title: "B", recipient: "Client" }),
-    ).toEqual({ title: "A", recipient: "me", delivered: false });
+    ).toEqual({ title: "A", recipient: "me" });
     expect(capture({ id: 1, why, type: "updateQuestion", questionId: "q3", ticket: "SILO-2" })).toEqual({
       ticketId: "t1",
-      delivered: true,
     });
   });
 

@@ -90,20 +90,33 @@ test("« Retirer la réponse » asks first, then reopens the question", async ()
   expect(within(card).getByText("à l'instant · adam · Rouverte (réponse « Oui » retirée)")).toBeTruthy();
 });
 
-test("a delivered answer is frozen, with only « Rouvrir »", async () => {
+const markDelivered = (m: ReturnType<typeof mount>, title: string) => {
+  const q = named(m, title);
+  if (q === undefined) throw new Error(`no question ${title}`);
+  act(() => {
+    m.run({
+      method: "markAnswersDelivered",
+      ticketId: q.ticketId,
+      questionIds: [q.id],
+      runId: "r-old",
+      at: 5,
+    });
+  });
+};
+
+test("an answer marked delivered before stays editable and removable", async () => {
   const m = mount();
+  markDelivered(m, ANSWERED);
   const user = userEvent.setup();
-  const group = await screen.findByRole("region", { name: /KIB-14/ });
-  await user.click(within(group).getByRole("button", { name: "Transmettre à l'agent (1)" }));
-  const card = screen.getByRole("article", { name: ANSWERED });
-  expect(await within(card).findByText("transmise à mock · figée")).toBeTruthy();
-  expect(within(card).queryByRole("button", { name: "Modifier la réponse" })).toBeNull();
-  expect(within(card).queryByRole("button", { name: "Retirer la réponse" })).toBeNull();
-  await user.click(within(card).getByRole("button", { name: "Rouvrir" }));
-  expect(
-    within(await screen.findByRole("alertdialog")).getByText("La réponse transmise reste dans l'historique."),
-  ).toBeTruthy();
-  await confirmIn("Rouvrir");
+  const card = await screen.findByRole("article", { name: ANSWERED });
+  expect(within(card).queryByText(/figée/)).toBeNull();
+  expect(within(card).queryByRole("button", { name: "Rouvrir" })).toBeNull();
+  await user.click(within(card).getByRole("button", { name: "Modifier la réponse" }));
+  await user.click(within(card).getByRole("button", { name: "Non" }));
+  await user.click(within(card).getByRole("button", { name: "Enregistrer" }));
+  await waitFor(() => expect(named(m, ANSWERED)?.answer).toMatchObject({ option: "Non", deliveredAt: null }));
+  await user.click(await within(card).findByRole("button", { name: "Retirer la réponse" }));
+  await confirmIn("Retirer la réponse");
   await waitFor(() => expect(named(m, ANSWERED)?.answer).toBeNull());
 });
 
@@ -113,29 +126,29 @@ const headerOf = (card: HTMLElement) => {
   return within(header);
 };
 
-test("answer actions sit in the card header, next to « Archiver »", async () => {
-  mount();
+test("answer actions sit in the card header, next to the card menu", async () => {
+  const m = mount();
   const user = userEvent.setup();
   const card = await screen.findByRole("article", { name: ANSWERED });
   const header = headerOf(card);
-  const names = header.getAllByRole("button").map((b) => b.textContent);
-  expect(names).toEqual(["Modifier la réponse", "Retirer la réponse", "Archiver"]);
+  const names = header.getAllByRole("button").map((b) => b.getAttribute("aria-label") ?? b.textContent);
+  expect(names).toEqual(["Modifier la réponse", "Retirer la réponse", expect.stringMatching(/^Actions de /)]);
   await user.click(header.getByRole("button", { name: "Modifier la réponse" }));
   const form = within(card).getByRole("form", { name: `Modifier la réponse à ${ANSWERED}` });
   expect(form.closest("header")).toBeNull();
   expect(header.queryByRole("button", { name: "Modifier la réponse" })).toBeNull();
   await user.click(within(form).getByRole("button", { name: "Annuler" }));
-  const group = await screen.findByRole("region", { name: /KIB-14/ });
-  await user.click(within(group).getByRole("button", { name: "Transmettre à l'agent (1)" }));
-  await within(card).findByText("transmise à mock · figée");
-  expect(
-    headerOf(card)
-      .getAllByRole("button")
-      .map((b) => b.textContent),
-  ).toEqual(["Rouvrir", "Archiver"]);
+  markDelivered(m, ANSWERED);
+  await waitFor(() =>
+    expect(
+      headerOf(card)
+        .getAllByRole("button")
+        .map((b) => b.getAttribute("aria-label") ?? b.textContent),
+    ).toEqual(["Modifier la réponse", "Retirer la réponse", expect.stringMatching(/^Actions de /)]),
+  );
 });
 
-test("an imported answer not delivered stays editable", async () => {
+test("an imported answer stays editable", async () => {
   const seedImported = (run: (cmd: ProjectCommand) => unknown) => {
     const ids = seedDemo(run);
     const q = Question.parse(
@@ -158,11 +171,11 @@ test("an imported answer not delivered stays editable", async () => {
   expect(within(card).getByRole("button", { name: "Modifier la réponse" })).toBeTruthy();
 });
 
-test("read-only projects show no edit, archive nor restore button", async () => {
+test("read-only projects show no edit, menu nor restore button", async () => {
   const m = mount();
   act(() => m.setAccess("read-only"));
   const card = await screen.findByRole("article", { name: ANSWERED });
-  for (const name of ["Modifier la réponse", "Retirer la réponse", "Archiver", "Rouvrir"])
+  for (const name of ["Modifier la réponse", "Retirer la réponse", /^Actions de /, "Restaurer"])
     expect(within(card).queryByRole("button", { name })).toBeNull();
 });
 
@@ -170,9 +183,13 @@ test("« Archiver » hides the question, « Archivées » shows it with « Resta
   const m = mount();
   const user = userEvent.setup();
   const open = await screen.findByRole("article", { name: OPEN });
-  expect(within(open).queryByRole("button", { name: "Archiver" })).toBeNull();
+  await user.click(within(open).getByRole("button", { name: /^Actions de / }));
+  expect(screen.queryByRole("menuitem", { name: "Archiver" })).toBeNull();
+  expect(screen.getByRole("menuitem", { name: "Supprimer" })).toBeTruthy();
+  await user.keyboard("{Escape}");
   const card = screen.getByRole("article", { name: ANSWERED });
-  await user.click(within(card).getByRole("button", { name: "Archiver" }));
+  await user.click(within(card).getByRole("button", { name: /^Actions de / }));
+  await user.click(await screen.findByRole("menuitem", { name: "Archiver" }));
   const dialog = await screen.findByRole("alertdialog");
   expect(
     within(dialog).getByText(

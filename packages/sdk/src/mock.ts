@@ -26,7 +26,6 @@ import { applyMockHolds } from "./mock-holds";
 import { createMockNotes } from "./mock-notes";
 import { createNotifier } from "./mock-notifier";
 import { recordedTrackingApis } from "./mock-project";
-import { createMockDelivery } from "./mock-questions";
 import { recordedAgentApis } from "./mock-recorded";
 import { activityOf, createMockRuns } from "./mock-runs";
 import { createMockSettings } from "./mock-settings";
@@ -90,7 +89,6 @@ export function createMockSdk(
   const openedFiles: FileTarget[] = [];
   const openedViews: string[] = [];
   const viewRequests: MockSdk["viewRequests"] = [];
-  const deliveries: string[] = [];
   const openedSprints: string[] = [];
   const projectEdits: ProjectEditRequest[] = [];
   const toasts: string[] = [];
@@ -141,12 +139,6 @@ export function createMockSdk(
       peek: mockRuns.peek,
       settings: () => settings.read(),
       delivery: runDelivery,
-      deliver: createMockDelivery({
-        doc,
-        refused: opts.deliveryRefused ?? false,
-        deliveries,
-        changed: changes.emit,
-      }),
     }),
     subscribe: changes.subscribe,
     runs: async () => runs,
@@ -271,7 +263,6 @@ export function createMockSdk(
     openedSprints,
     projectEdits,
     toasts,
-    deliveries,
     runDeliveries: runDelivery.delivered,
     allowed: runDelivery.allowed,
     embedCalls: embeds.calls,

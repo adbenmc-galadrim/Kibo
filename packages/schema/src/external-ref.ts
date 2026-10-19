@@ -23,6 +23,14 @@ export const GithubPrRef = z.object({
 });
 export type GithubPrRef = z.infer<typeof GithubPrRef>;
 
+const LIVE_PR_STATES: ReadonlySet<PrState> = new Set(["open", "draft"]);
+const SETTLED_REVIEWS: ReadonlySet<PrReview> = new Set(["approved"]);
+
+export const isLivePr = (pr: Pick<GithubPrRef, "state">): boolean => LIVE_PR_STATES.has(pr.state);
+
+export const liveReview = (pr: Pick<GithubPrRef, "state" | "review">): PrReview =>
+  isLivePr(pr) || SETTLED_REVIEWS.has(pr.review) ? pr.review : "none";
+
 export const ExternalRef = z.discriminatedUnion("kind", [
   GithubPrRef,
   GithubIssueRef,

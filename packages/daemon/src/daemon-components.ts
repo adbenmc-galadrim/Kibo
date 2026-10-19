@@ -37,7 +37,6 @@ export async function startDaemonComponents(
     ...(opts.validate && { validate: opts.validate }),
     ...(opts.processCommand && { processCommand: opts.processCommand }),
     ...(opts.net && { net: opts.net }),
-    deliverAnswers: (projectId, ticketId) => service.deliverAnswers(projectId, ticketId),
     ...(opts.installCli && { installCli: opts.installCli }),
     ...(opts.cliStatus && { cliStatus: opts.cliStatus }),
   });

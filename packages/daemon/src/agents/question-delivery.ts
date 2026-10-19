@@ -1,30 +1,20 @@
 import {
   type Actor,
-  answerPrompt,
   type DeliveryResult,
   deliveryPrompt,
   KiboError,
   mainSessionOf,
-  type Question,
   type RunView,
 } from "@kibo/schema";
-import {
-  allowsTicketExecution,
-  assertTicketExecution,
-  isTicketRun,
-  type TicketExecution,
-} from "./execution-removed";
+import { assertTicketExecution, isTicketRun, type TicketExecution } from "./execution-removed";
 import type { AgentDataPort } from "./orchestrator-types";
 
 export type DeliveryDeps = {
   ticketExecution: TicketExecution;
-  log?: (line: string) => void;
   runs: () => RunView[];
   answer: (runId: string, text: string) => RunView;
   data: Pick<AgentDataPort, "undeliveredAnswers" | "markAnswersDelivered" | "answerRunQuestion">;
 };
-
-const defaultLog = (line: string) => console.error(`[kibo-daemon] ${line}`);
 
 export function deliverAnswers(deps: DeliveryDeps, projectId: string, ticketId: string): DeliveryResult {
   assertTicketExecution(deps.ticketExecution, "deliverAnswers");
@@ -40,19 +30,6 @@ export function deliverAnswers(deps: DeliveryDeps, projectId: string, ticketId: 
     run.id,
   );
   return { sent: answers.length, runId: run.id };
-}
-
-export function deliverBlockingAnswer(deps: DeliveryDeps, question: Question): boolean {
-  if (!question.blocking || question.answer === null || question.answer.deliveredAt !== null) return false;
-  if (!allowsTicketExecution(deps.ticketExecution)) {
-    (deps.log ?? defaultLog)(`answer to question ${question.id} kept: Kibo no longer runs ticket agents`);
-    return false;
-  }
-  const run = deps.runs().find((r) => r.id === question.runId);
-  if (!run?.projectId || run.state !== "waiting_input") return false;
-  deps.answer(run.id, answerPrompt(question));
-  deps.data.markAnswersDelivered(run.projectId, question.ticketId, [question.id], run.id);
-  return true;
 }
 
 export function answerFromDrawer(deps: DeliveryDeps, run: RunView, text: string, by: Actor): RunView {

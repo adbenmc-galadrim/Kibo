@@ -2,8 +2,6 @@ import {
   type Actor,
   isAnswered,
   isArchived,
-  isDelivered,
-  isEditableAnswer,
   KiboError,
   type ProjectCommand,
   pushEvent,
@@ -79,7 +77,6 @@ function assertProvisional(options: readonly string[], provisional: string | nul
 export function updateQuestion(doc: LoroDoc, cmd: Command<"updateQuestion">): Question {
   const q = getQuestion(doc, cmd.questionId);
   assertNotArchived(q);
-  if (isDelivered(q)) refuse(q.id, "has a delivered answer: reopen it first");
   const fields = changedFields(q, cmd);
   if (fields.length === 0) return q;
   if (isAnswered(q) && (fields.includes("options") || fields.includes("provisional"))) {
@@ -97,7 +94,7 @@ export function updateQuestion(doc: LoroDoc, cmd: Command<"updateQuestion">): Qu
 
 export function updateAnswer(doc: LoroDoc, cmd: Command<"updateAnswer">): Question {
   const q = getQuestion(doc, cmd.questionId);
-  if (!isEditableAnswer(q)) refuse(q.id, "has no answer that can still be edited");
+  if (!isAnswered(q)) refuse(q.id, "has no answer that can still be edited");
   const at = cmd.at ?? Date.now();
   const answer = { ...resolveAnswer(q, cmd.answer), by: cmd.by, at, deliveredAt: null, deliveredRunId: null };
   return record(doc, q, { ...cmd, at }, "answer_edited", { answer }, { answer: q.answer });

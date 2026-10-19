@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { mkdirSync, readFileSync, statSync, symlinkSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { QUESTION_IMAGE_LIMITS } from "@kibo/schema";
 import {
@@ -7,9 +7,10 @@ import {
   prepareQuestionImages,
   questionImagesDir,
   readQuestionImage,
+  removeQuestionImages,
   storeQuestionImages,
 } from "./question-images";
-import { imagesTmp, pngBytes, writeImage } from "./question-images.test-helper";
+import { imagesTmp, pngBytes, removalFs, writeImage } from "./question-images.test-helper";
 
 const QUESTION_ID = "6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b";
 
@@ -104,4 +105,25 @@ test("stored images are private copies that outlive the original and are read ba
   expect(read(png.image.id, "6f1c2a3b-4d5e-4f60-8a7b-000000000000")).toBeNull();
   expect(read("../../kibo")).toBeNull();
   expect(read(png.image.id, "..")).toBeNull();
+});
+
+test("removing the images of a question removes its folder under the home", () => {
+  const fs = removalFs();
+  removeQuestionImages({ home: "/home/kibo", questionId: QUESTION_ID, fs });
+  expect(fs.removed).toEqual([join("/home/kibo", "questions", QUESTION_ID)]);
+});
+
+test("a question id that cannot name a folder removes nothing", () => {
+  const fs = removalFs();
+  removeQuestionImages({ home: "/home/kibo", questionId: "../notes", fs });
+  expect(fs.removed).toEqual([]);
+});
+
+test("the node file system removes a folder and accepts one that is already gone", () => {
+  const { home } = setup();
+  const dir = questionImagesDir(home, QUESTION_ID);
+  writeImage(join(dir, "1.png"));
+  nodeImageFs.remove(dir);
+  expect(existsSync(dir)).toBe(false);
+  expect(() => nodeImageFs.remove(dir)).not.toThrow();
 });

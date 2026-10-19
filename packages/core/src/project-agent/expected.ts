@@ -3,7 +3,6 @@ import {
   type AgentSummary,
   findRecipient,
   isArchived,
-  isDelivered,
   isOpen,
   isTerminal,
   type ProjectSnapshot,
@@ -75,7 +74,6 @@ function questionFields(action: QuestionUpdate, q: Question): Record<string, unk
     ...(action.provisional !== undefined ? { provisional: q.provisional } : {}),
     ...(action.ticket !== undefined ? { ticketId: q.ticketId } : {}),
     ...(action.recipient !== undefined ? { recipient: q.recipient } : {}),
-    delivered: isDelivered(q),
   };
 }
 

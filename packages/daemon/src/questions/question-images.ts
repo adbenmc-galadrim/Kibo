@@ -1,4 +1,4 @@
-import { lstatSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { lstatSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { basename, extname, isAbsolute, join, sep } from "node:path";
 import { QUESTION_IMAGE_LIMITS, type QuestionImage } from "@kibo/schema";
 import { imageSize } from "./image-size";
@@ -9,6 +9,7 @@ export type ImageFs = {
   readFile(path: string): Uint8Array;
   mkdir(dir: string): void;
   writeFile(path: string, bytes: Uint8Array): void;
+  remove(dir: string): void;
 };
 
 export const nodeImageFs: ImageFs = {
@@ -23,6 +24,9 @@ export const nodeImageFs: ImageFs = {
   },
   writeFile(path, bytes) {
     writeFileSync(path, bytes, { mode: 0o600, flag: "wx" });
+  },
+  remove(dir) {
+    rmSync(dir, { recursive: true, force: true });
   },
 };
 
@@ -130,6 +134,11 @@ export function storeQuestionImages(input: {
   input.fs.mkdir(dir);
   for (const { image, ext, bytes } of input.images)
     input.fs.writeFile(join(dir, `${image.id}.${ext}`), bytes);
+}
+
+export function removeQuestionImages(input: { home: string; questionId: string; fs: ImageFs }): void {
+  if (!ID.test(input.questionId)) return;
+  input.fs.remove(questionImagesDir(input.home, input.questionId));
 }
 
 export function readQuestionImage(input: {

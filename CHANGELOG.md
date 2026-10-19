@@ -6,6 +6,14 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.29.0-alpha.2 — 2026-10-19
+
+- Une réponse à une question est disponible pour l'agent de projet dès qu'elle est enregistrée : plus de « à transmettre » ni de « Transmettre à l'agent ».
+- Toute réponse se modifie et se retire.
+- Une question se supprime depuis le menu « ⋯ » de sa carte, après confirmation ; son numéro n'est jamais réutilisé et l'Activité garde la trace. « Archiver » passe dans ce menu.
+- « Répondu par » et « posée par » affichent le nom du membre, jamais son identifiant de compte.
+- Une PR fusionnée n'affiche plus « changements demandés » (fiche fonctionnalité, tickets, Vue d'ensemble, Graphe).
+
 ## 0.29.0-alpha.1 — 2026-10-19
 
 - Une étape se met en attente avec sa raison (« Mettre en attente… » dans la fiche) ; sa fonctionnalité avance sans elle et peut être « livrée · n en attente » ; les étapes qui en dépendent attendent aussi.

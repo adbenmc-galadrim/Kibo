@@ -134,7 +134,6 @@ export type TicketSheet = TicketCard & {
     answer: string | null;
     recipient: string;
     blocking: boolean;
-    delivered: boolean;
   }[];
   runs: { id: string; label: string; state: RunState; turns: number }[];
 };

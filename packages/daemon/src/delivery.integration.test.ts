@@ -125,16 +125,7 @@ test("Livrer SILO-15 : la CLI du run pose les étapes, la capture est servie, «
   expect(served.status).toBe(200);
   expect(served.headers.get("content-type")).toBe("image/png");
   expect((await fetch(url)).status).toBe(401);
-  await s.kit.rpc({
-    method: "command",
-    projectId: s.project.id,
-    command: {
-      method: "answerQuestion",
-      questionId: question.id,
-      answer: { kind: "option", option: "Valider" },
-      by: { kind: "human", ref: "adam" },
-    },
-  });
+  await s.kit.rpc({ method: "answerRun", runId: run.id, text: "Valider" });
   await runIn(s, run.id, ["done"], 2);
   expect((await ticketView(s, "SILO-15"))?.delivery).toMatchObject({ step: 11, note: "PR #12" });
 }, 90_000);

@@ -3,6 +3,7 @@ import {
   type CiRun,
   type CiTone,
   type GithubPrRef,
+  liveReview,
   type OnHold,
   prCiTone,
   type Question,
@@ -23,7 +24,7 @@ import {
   Pause,
 } from "lucide-react";
 import { fr } from "./fr";
-import { isLivePr, ticketPr } from "./ticket-pr";
+import { ticketPr } from "./ticket-pr";
 
 export const BADGE_CLASS =
   "inline-flex h-[18px] max-w-full items-center gap-1 rounded-[4px] px-1.5 text-[11px] font-medium leading-none";
@@ -119,7 +120,7 @@ export function CardBadges({ ticket, ciRuns }: Props) {
   const tone = (pr === null ? null : prCiTone(pr, ciRuns)) ?? worstCiTone(ciRuns);
   const latestRun = [...ciRuns].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
   const number = pr?.number ?? latestRun?.prNumber ?? null;
-  const changes = pr !== null && isLivePr(pr) && pr.review === "changes_requested";
+  const changes = pr !== null && liveReview(pr) === "changes_requested";
   const branch = branchRefOf(ticket.externalRefs);
   return (
     <>

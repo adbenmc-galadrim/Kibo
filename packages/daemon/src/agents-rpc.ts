@@ -1,6 +1,5 @@
 import {
-  awaitsDelivery,
-  type DeliveryResult,
+  answersToDeliver,
   isTerminal,
   KiboError,
   type ProjectAgentSummary,
@@ -9,7 +8,7 @@ import {
   type RunView,
 } from "@kibo/schema";
 import type { AgentDataPort, Orchestrator } from "./agents/orchestrator";
-import { answerFromDrawer, type DeliveryDeps, deliverAnswers } from "./agents/question-delivery";
+import { answerFromDrawer, type DeliveryDeps } from "./agents/question-delivery";
 import { assertNotInboxForAgents } from "./inbox/inbox-rules";
 import { runTallies } from "./questions/run-tallies";
 import type { SignalService } from "./signals/service";
@@ -81,22 +80,13 @@ export function deliveryDeps(
   };
 }
 
-export function deliverTicketAnswers(
-  port: Pick<AgentsPort, "state" | "answer" | "ticketExecution">,
-  q: AgentQuestions,
-  projectId: string,
-  ticketId: string,
-): DeliveryResult {
-  assertNotInboxForAgents(projectId);
-  q.assertWritable(projectId);
-  return deliverAnswers(deliveryDeps(port, q), projectId, ticketId);
-}
-
 function agentsState(port: AgentsPort, q: AgentQuestions) {
   const state = port.state();
   const known = new Set(q.projectIds());
   const undeliveredOf = (projectId: string, ticketId: string) =>
-    known.has(projectId) ? q.data.undeliveredAnswers(projectId, ticketId).filter(awaitsDelivery).length : 0;
+    known.has(projectId)
+      ? answersToDeliver(q.data.undeliveredAnswers(projectId, ticketId), ticketId).length
+      : 0;
   return {
     ...state,
     questions: runTallies(q.data.runQuestions(), state.runs, undeliveredOf),
@@ -130,8 +120,6 @@ export function handleAgentRequest(port: AgentsPort, req: RpcRequest, q: AgentQu
       });
     case "answerRun":
       return answerRun(port, q, req.runId, req.text);
-    case "deliverAnswers":
-      return deliverTicketAnswers(port, q, req.projectId, req.ticketId);
     case "cancelRun":
       return port.cancel(req.runId);
     case "moveRun":

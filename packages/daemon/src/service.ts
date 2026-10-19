@@ -23,7 +23,8 @@ import type { LoroDoc } from "loro-crdt";
 import { createDataPort } from "./agents/data-port";
 import type { AgentSource } from "./agents/neutral-agents";
 import type { AgentDataPort } from "./agents/orchestrator";
-import { type AgentQuestions, type AgentsPort, deliverTicketAnswers, handleAgentRequest } from "./agents-rpc";
+import { deliverAnswers } from "./agents/question-delivery";
+import { type AgentQuestions, type AgentsPort, deliveryDeps, handleAgentRequest } from "./agents-rpc";
 import { type AiPort, isAiRequest } from "./ai/methods";
 import { type Clock, createClock } from "./clock";
 import { type CommandHub, createCommandPath } from "./command-path";
@@ -32,7 +33,7 @@ import type { Docs } from "./docs";
 import { createIconStore, ensureIconsTable, type IconStore } from "./icons/icon-store";
 import { createFileTicket } from "./inbox/file-ticket";
 import { loadInbox } from "./inbox/inbox-doc";
-import { assertInboxCommand, assertNotInbox } from "./inbox/inbox-rules";
+import { assertInboxCommand, assertNotInbox, assertNotInboxForAgents } from "./inbox/inbox-rules";
 import { isIntegrationRequest } from "./integrations/methods";
 import type { IntegrationRpc } from "./integrations/registry";
 import { createProjectSettings, ensureSettingsTable } from "./notes/settings";
@@ -44,7 +45,7 @@ import { type CollabPort, handleProjectRequest, NOT_HANDLED } from "./projects/p
 import { createProjectRemoval } from "./projects/remove";
 import { questionActorInterceptor } from "./questions/question-actor";
 import { afterQuestionCommands } from "./questions/question-events";
-import type { QuestionImageDeps } from "./questions/question-images-port";
+import { type QuestionImageDeps, questionImagesOf } from "./questions/question-images-port";
 import { portSlot, ready } from "./service-ports";
 import { loadDoc, type Store } from "./store";
 import { readTabs, saveTabs } from "./tabs-store";
@@ -105,6 +106,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   projects.set(INBOX_ID, loadInbox(store));
   const listeners = new Set<(message: ChangeMessage) => void>();
   let agents: AgentsPort | null = null;
+  const questionImages = questionImagesOf(opts.questionImages ?? null, () => null);
   let tracker: ActivityTracker | null = null;
   const components = portSlot<ComponentsPort>();
   const integrations = portSlot<IntegrationRpc>();
@@ -145,7 +147,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       docs.emit({ projectId });
       if (done.some((e) => changesDomainUsage(e.command))) docs.emit({ topic: "config" });
       components.get()?.afterCommand(projectId);
-      afterQuestionCommands(done, { emit: (m) => docs.emit(m), agents, questions });
+      afterQuestionCommands(done, { emit: (m) => docs.emit(m), images: questionImages });
     },
   });
   const docs: Docs = {
@@ -250,8 +252,11 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     docs,
     icons,
     agentData,
-    deliverAnswers: (projectId, ticketId) =>
-      deliverTicketAnswers(agentsReady(), questions, projectId, ticketId),
+    deliverAnswers(projectId, ticketId) {
+      assertNotInboxForAgents(projectId);
+      questions.assertWritable(projectId);
+      return deliverAnswers(deliveryDeps(agentsReady(), questions), projectId, ticketId);
+    },
     attachAgents(port) {
       agents = port;
       const activity = createActivityTracker(port.state().runs, opts.activity);

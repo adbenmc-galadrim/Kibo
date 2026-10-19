@@ -1,92 +1,50 @@
-import { KiboError, type RunQuestions, type RunView } from "@kibo/schema";
+import type { RunQuestions, RunView } from "@kibo/schema";
 import { firstOpenQuestion, QuestionPreview } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { MessageCircleQuestion } from "lucide-react";
-import { useState } from "react";
-import { client } from "../api";
 import { frRunChat } from "../i18n/fr-run-chat";
-import { canEdit } from "../state/access";
 import { useProject } from "../state/use-projects";
 import { useOpenQuestions } from "./open-questions";
 
 type Props = { run: RunView; questions: RunQuestions | null };
 
-const failureText = (e: unknown) =>
-  e instanceof KiboError && e.code === "INVALID_TRANSITION" ? frRunChat.noSession : frRunChat.deliverFailed;
-
 export function RunQuestionsBar({ run, questions }: Props) {
   const openQuestions = useOpenQuestions();
   const project = useProject(run.ticketId === null ? null : run.projectId);
-  const writable = project !== null && canEdit(project);
-  const [sending, setSending] = useState(false);
-  const [failure, setFailure] = useState<string | null>(null);
   const open = questions?.open ?? 0;
-  const undelivered = writable ? (questions?.undelivered ?? 0) : 0;
   const { projectId, ticketId } = run;
-  if (open === 0 && undelivered === 0) return null;
+  if (open === 0) return null;
   const first = project && ticketId ? firstOpenQuestion(project.questions, ticketId) : null;
   const show = (questionId: string | null) => {
     if (openQuestions && projectId) openQuestions(projectId, questionId ?? undefined);
   };
   const label = <span className="text-orange-600 dark:text-orange-400">{frRunChat.openQuestions(open)}</span>;
-  const deliver = async () => {
-    if (!projectId || !ticketId) return;
-    setFailure(null);
-    setSending(true);
-    try {
-      await client.rpc({ method: "deliverAnswers", projectId, ticketId });
-    } catch (e) {
-      setFailure(failureText(e));
-    } finally {
-      setSending(false);
-    }
-  };
   return (
     <div className="grid gap-1 text-xs">
-      {open > 0 && (
-        <p className="flex items-center gap-2">
-          <MessageCircleQuestion aria-hidden className="size-3.5 text-orange-600 dark:text-orange-400" />
-          {project && ticketId ? (
-            <QuestionPreview
-              mode="ticket"
-              questions={project.questions}
-              recipients={project.questionRecipients}
-              ticket={{ id: ticketId, keyLabel: run.ticketKey ?? "", title: run.ticketTitle ?? "" }}
-              runLabel={(runId) => (runId === run.id ? run.label : runId)}
-              onOpen={show}
-            >
-              <button type="button" className="rounded-sm hover:underline" onClick={() => show(first)}>
-                {label}
-              </button>
-            </QuestionPreview>
-          ) : (
-            label
-          )}
-          {openQuestions && projectId && (
-            <Button size="sm" variant="link" className="h-6 px-0" onClick={() => show(first)}>
-              {frRunChat.openQuestionsLink}
-            </Button>
-          )}
-        </p>
-      )}
-      {undelivered > 0 && projectId && ticketId && (
-        <p className="flex items-center gap-2">
-          <span className="text-muted-foreground">{frRunChat.undelivered(undelivered)}</span>
-          <Button
-            size="sm"
-            className="h-6 bg-brand-strong text-white hover:bg-brand-strong/90"
-            disabled={sending}
-            onClick={deliver}
+      <p className="flex items-center gap-2">
+        <MessageCircleQuestion aria-hidden className="size-3.5 text-orange-600 dark:text-orange-400" />
+        {project && ticketId ? (
+          <QuestionPreview
+            mode="ticket"
+            questions={project.questions}
+            recipients={project.questionRecipients}
+            ticket={{ id: ticketId, keyLabel: run.ticketKey ?? "", title: run.ticketTitle ?? "" }}
+            runLabel={(runId) => (runId === run.id ? run.label : runId)}
+            onOpen={show}
           >
-            {frRunChat.deliver}
+            <button type="button" className="rounded-sm hover:underline" onClick={() => show(first)}>
+              {label}
+            </button>
+          </QuestionPreview>
+        ) : (
+          label
+        )}
+        {openQuestions && projectId && (
+          <Button size="sm" variant="link" className="h-6 px-0" onClick={() => show(first)}>
+            {frRunChat.openQuestionsLink}
           </Button>
-        </p>
-      )}
-      {failure && (
-        <p role="alert" className="text-destructive">
-          {failure}
-        </p>
-      )}
+        )}
+      </p>
     </div>
   );
 }

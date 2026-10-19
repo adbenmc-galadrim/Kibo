@@ -68,25 +68,6 @@ function questions(agentExecution: AgentExecution, surface: "view" | "widget") {
   );
 }
 
-test("hidden execution: no « Transmettre à l'agent » in the view nor the widget", async () => {
-  for (const surface of ["view", "widget"] as const) {
-    questions("hidden", surface);
-    await screen.findByText(/Garder l'ordre/);
-    expect(screen.queryByRole("button", { name: /Transmettre à l'agent/ })).toBeNull();
-    cleanup();
-  }
-});
-
-test("shown execution: « Transmettre à l'agent » comes back in the view and the widget", async () => {
-  for (const surface of ["view", "widget"] as const) {
-    questions("shown", surface);
-    if (surface === "view")
-      await userEvent.setup().click(await screen.findByRole("radio", { name: "Toutes" }));
-    expect(await screen.findByRole("button", { name: /Transmettre à l'agent/ })).toBeTruthy();
-    cleanup();
-  }
-});
-
 async function pasteHelp(agentExecution: AgentExecution): Promise<string> {
   questions(agentExecution, "view");
   const card = await screen.findByRole("article", { name: /Garder l'ordre/ });
@@ -94,11 +75,9 @@ async function pasteHelp(agentExecution: AgentExecution): Promise<string> {
   return within(card).getByText(/^Enregistrée comme ta réponse/).textContent ?? "";
 }
 
-test("hidden execution: the paste help does not mention the agent", async () => {
-  const help = await pasteHelp("hidden");
-  expect(help).not.toContain("agent");
-});
-
-test("shown execution: the paste help names « Transmettre à l'agent » again", async () => {
-  expect(await pasteHelp("shown")).toContain("« Transmettre à l'agent »");
+test("the paste help is the same whatever the agent execution", async () => {
+  for (const execution of ["hidden", "shown"] as const) {
+    expect(await pasteHelp(execution)).toBe("Enregistrée comme ta réponse.");
+    cleanup();
+  }
 });

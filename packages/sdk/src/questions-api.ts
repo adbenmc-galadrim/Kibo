@@ -1,4 +1,4 @@
-import type { ComponentCall, DeliveryResult, EntityType, QuestionRecipient } from "@kibo/schema";
+import type { ComponentCall, EntityType, QuestionRecipient } from "@kibo/schema";
 import type { ProjectBackend, QuestionsApi, SdkMode } from "./types";
 
 type Call = <T>(c: ComponentCall) => Promise<T>;
@@ -9,10 +9,6 @@ export const questionImageUrl = (questionId: string, imageId: string): string =>
 
 export function questionsApi(needs: Needs, call: Call, backend: ProjectBackend, mode: SdkMode): QuestionsApi {
   return {
-    async deliver(ticketId) {
-      needs.write("question");
-      return call<DeliveryResult>({ kind: "questions.deliver", ticketId });
-    },
     async recipients() {
       needs.read("question");
       if (mode === "gated") return call<QuestionRecipient[]>({ kind: "questions.recipients" });

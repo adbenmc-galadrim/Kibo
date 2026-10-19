@@ -3,6 +3,7 @@ import {
   type CiRun,
   type ExternalRef,
   type GithubPrRef,
+  liveReview,
   type PrReview,
   prCiTone,
   type TicketView,
@@ -56,7 +57,8 @@ const ROW = "flex min-w-0 items-center gap-[5px]";
 function PrLine({ pr, runs }: { pr: GithubPrRef; runs: readonly CiRun[] }) {
   const Icon = PR_ICON[pr.state];
   const state = fr.git.prState(pr.state);
-  const review = fr.git.review(pr.review);
+  const shown = liveReview(pr);
+  const review = fr.git.review(shown);
   const ci = prCiTone(pr, runs);
   const Mark = ci === null ? null : CI_ICON[ci];
   return (
@@ -69,7 +71,7 @@ function PrLine({ pr, runs }: { pr: GithubPrRef; runs: readonly CiRun[] }) {
       />
       <span className={cn("font-mono text-(--tracking-fg)", TEXT_12)}>{fr.git.pr(pr.number)}</span>
       {state && <span className={cn("truncate text-(--tracking-dim)", TEXT_12)}>{state}</span>}
-      {review && <span className={cn("truncate", REVIEW_COLOR[pr.review], TEXT_12)}>{review}</span>}
+      {review && <span className={cn("truncate", REVIEW_COLOR[shown], TEXT_12)}>{review}</span>}
       {Mark && ci && (
         <Mark
           absoluteStrokeWidth

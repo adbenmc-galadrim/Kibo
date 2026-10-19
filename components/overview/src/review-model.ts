@@ -3,6 +3,7 @@ import {
   type CiTone,
   findRecipient,
   isOpen,
+  liveReview,
   type ProjectEvent,
   prCiTone,
   type Question,
@@ -54,7 +55,7 @@ export function reviewRows(input: {
       title: ticket.title,
       key: ticket.keyLabel,
       feature: feature?.shortKey ?? null,
-      state: pr.review === "changes_requested" ? "changes" : prCiTone(pr, input.ciRuns),
+      state: liveReview(pr) === "changes_requested" ? "changes" : prCiTone(pr, input.ciRuns),
     }),
   );
 }

@@ -97,7 +97,7 @@ test("an update checks the ticket, its quota, the recipient and the provisional 
   });
 });
 
-test("an answered question keeps its options until reopened, a delivered or archived one is frozen", () => {
+test("an answered question keeps its options until reopened, an archived one is frozen", () => {
   const { doc, ask, answer, ticket } = setup();
   const waiting = answer(ask("A"));
   expect(updateQuestion(doc, update(waiting.id, { title: "A bis" })).title).toBe("A bis");
@@ -109,7 +109,10 @@ test("an answered question keeps its options until reopened, a delivered or arch
   );
   const delivered = answer(ask("D"));
   markAnswersDelivered(doc, { ticketId: ticket.id, questionIds: [delivered.id], runId: "r1", at: 3 });
-  expect(code(() => updateQuestion(doc, update(delivered.id, { title: "E" })))).toBe("INVALID_TRANSITION");
+  expect(updateQuestion(doc, update(delivered.id, { title: "E" })).title).toBe("E");
+  expect(code(() => updateQuestion(doc, update(delivered.id, { options: ["A", "C"] })))).toBe(
+    "INVALID_TRANSITION",
+  );
   const archived = archiveQuestion(doc, edit("archiveQuestion", ask("F").id));
   expect(code(() => updateQuestion(doc, update(archived.id, { title: "G" })))).toBe("INVALID_TRANSITION");
 });
@@ -120,8 +123,8 @@ test("two questions of a ticket may share a title after an update", () => {
   expect(updateQuestion(doc, update(ask("B").id, { title: "A" })).title).toBe("A");
 });
 
-test("an undelivered answer is replaced, born undelivered, by the given actor", () => {
-  const { doc, ask, answer, ticket } = setup();
+test("an answer is replaced, born undelivered, by the given actor", () => {
+  const { doc, ask, answer } = setup();
   const q = answer(ask("A"));
   const edited = updateAnswer(doc, {
     method: "updateAnswer",
@@ -150,10 +153,30 @@ test("an undelivered answer is replaced, born undelivered, by the given actor", 
   } as const;
   expect(code(() => updateAnswer(doc, empty))).toBe("INVALID_INPUT");
   expect(code(() => updateAnswer(doc, { ...empty, questionId: ask("B").id }))).toBe("INVALID_TRANSITION");
-  markAnswersDelivered(doc, { ticketId: ticket.id, questionIds: [q.id], runId: "r1", at: 40 });
-  expect(code(() => updateAnswer(doc, { ...empty, answer: { kind: "text", text: "x" } }))).toBe(
-    "INVALID_TRANSITION",
-  );
+  const archived = archiveQuestion(doc, edit("archiveQuestion", answer(ask("C")).id));
+  expect(
+    code(() => updateAnswer(doc, { ...empty, questionId: archived.id, answer: { kind: "text", text: "x" } })),
+  ).toBe("INVALID_TRANSITION");
+});
+
+test("an answer marked as delivered is still edited, and the new one is not marked", () => {
+  const { doc, ask, answer, ticket } = setup();
+  const q = answer(ask("A"));
+  const [marked] = markAnswersDelivered(doc, {
+    ticketId: ticket.id,
+    questionIds: [q.id],
+    runId: "r1",
+    at: 2,
+  });
+  expect(marked?.answer).toMatchObject({ deliveredAt: 2, deliveredRunId: "r1" });
+  const edited = updateAnswer(doc, {
+    method: "updateAnswer",
+    questionId: q.id,
+    answer: { kind: "option", option: "B" },
+    by: THEO,
+    at: 30,
+  });
+  expect(edited.answer).toMatchObject({ option: "B", deliveredAt: null, deliveredRunId: null });
 });
 
 test("reopening keeps the withdrawn answer with its delivery mark", () => {

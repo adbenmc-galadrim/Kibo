@@ -54,19 +54,18 @@ test("previewExcerpt strips the Markdown marks and cuts at the last whole word",
   expect(previewExcerpt("", 200)).toBe("");
 });
 
-test("previewState reads open, answered to deliver, answered or delivered to a run", () => {
-  const runLabel = (id: string) => (id === "r2" ? "opus-dev-2" : id);
-  expect(previewState(question({}), runLabel)).toBe("ouverte");
-  expect(previewState(question({ answer: answer() }), runLabel)).toBe("répondue · à transmettre");
-  expect(previewState(question({ answer: answer({ by: { kind: "import", ref: "plan" } }) }), runLabel)).toBe(
+test("previewState reads open, answered or archived, whatever an old delivery mark says", () => {
+  expect(previewState(question({}))).toBe("ouverte");
+  expect(previewState(question({ answer: answer() }))).toBe("répondue");
+  expect(previewState(question({ answer: answer({ by: { kind: "import", ref: "plan" } }) }))).toBe(
     "répondue",
   );
-  expect(previewState(question({ answer: answer({ deliveredAt: 3, deliveredRunId: "r2" }) }), runLabel)).toBe(
-    "transmise à opus-dev-2",
+  expect(previewState(question({ answer: answer({ deliveredAt: 3, deliveredRunId: "r2" }) }))).toBe(
+    "répondue",
   );
-  expect(
-    previewState(question({ archivedAt: 4, archivedBy: { kind: "human", ref: "adam" } }), runLabel),
-  ).toBe("archivée");
+  expect(previewState(question({ archivedAt: 4, archivedBy: { kind: "human", ref: "adam" } }))).toBe(
+    "archivée",
+  );
 });
 
 test("ticketPreviewRows keeps five open questions of the ticket, oldest first, and counts the rest", () => {

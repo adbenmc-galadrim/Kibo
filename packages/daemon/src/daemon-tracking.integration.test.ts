@@ -81,7 +81,6 @@ test("a daemon built without the option refuses every ticket agent launch", asyn
     await rpc({ method: "assignAgent", ...target, profileId: "global:opus", brief: "", fresh: false }),
   ).toEqual(refused);
   expect(await rpc({ method: "deliver", ...target })).toEqual(refused);
-  expect(await rpc({ method: "deliverAnswers", ...target })).toEqual(refused);
   const agents = z.object({ runs: z.array(z.unknown()) }).parse(await rpc({ method: "getAgents" }));
   expect(agents.runs).toEqual([]);
 });

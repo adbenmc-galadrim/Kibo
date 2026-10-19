@@ -1,7 +1,8 @@
-import type { Question, QuestionRecipient } from "@kibo/schema";
+import type { Actor, MemberInfo, Question, QuestionRecipient } from "@kibo/schema";
 import { CircleAlert } from "lucide-react";
 import type { MouseEvent } from "react";
 import { cn } from "./lib/utils";
+import { memberName } from "./members";
 import type { QuestionPreviewProps } from "./question-preview";
 import {
   PREVIEW_EXCERPT_MAX,
@@ -16,6 +17,9 @@ type ContentProps = Omit<QuestionPreviewProps, "children"> & { now: number };
 
 const recipientOf = (recipients: readonly QuestionRecipient[], id: string): string =>
   recipients.find((r) => r.id === id)?.name ?? previewFr.removedRecipient;
+
+const authorOf = (actor: Actor, members: readonly MemberInfo[] = []): string =>
+  actor.kind === "human" ? memberName(actor.ref, members, previewFr.unknownMember) : actor.ref;
 
 const META = "text-2xs text-muted-foreground";
 
@@ -56,7 +60,7 @@ function TicketRows(props: ContentProps) {
               <span className={META}>
                 {[
                   previewFr.for(recipientOf(props.recipients, q.recipient)),
-                  previewState(q, props.runLabel),
+                  previewState(q),
                   previewAge(q.createdAt, props.now),
                 ].join(" · ")}
               </span>
@@ -89,9 +93,11 @@ function OneQuestion({ question: q, ...props }: ContentProps & { question: Quest
         </p>
       )}
       <p className={META}>
-        {`${previewFr.for(recipientOf(props.recipients, q.recipient))} · ${previewState(q, props.runLabel)}`}
+        {`${previewFr.for(recipientOf(props.recipients, q.recipient))} · ${previewState(q)}`}
       </p>
-      <p className={META}>{previewFr.by(q.createdBy.ref, previewAge(q.createdAt, props.now))}</p>
+      <p className={META}>
+        {previewFr.by(authorOf(q.createdBy, props.members), previewAge(q.createdAt, props.now))}
+      </p>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { Question } from "@kibo/schema";
 import { nodeImageFs, questionImagesDir } from "./question-images";
-import { imagesTmp, writeImage } from "./question-images.test-helper";
+import { imagesTmp, removalFs, writeImage } from "./question-images.test-helper";
 import { questionImageFiles, questionImagesOf } from "./question-images-port";
 
 const question = (images: Question["images"]) =>
@@ -74,4 +74,28 @@ test("the image files of the daemon live under its home and are read back for th
   const id = prepared[0]?.image.id ?? "";
   expect(files.read(kept.id, id)?.mime).toBe("image/png");
   expect(files.read(kept.id, "00000000-0000-4000-8000-000000000000")).toBeNull();
+});
+
+const QUESTION_ID = "6f1c2a3b-4d5e-4f60-8a7b-9c0d1e2f3a4b";
+
+test("removing the images of a question removes its folder under the home of the daemon", () => {
+  const fs = removalFs();
+  const port = questionImagesOf({ home: "/home/kibo", notesDir: () => null, fs, log: () => {} }, () => null);
+  port.remove(QUESTION_ID);
+  expect(fs.removed).toEqual([questionImagesDir("/home/kibo", QUESTION_ID)]);
+});
+
+test("without an image store, removing images does nothing", () => {
+  expect(() => questionImagesOf(null, () => null).remove(QUESTION_ID)).not.toThrow();
+});
+
+test("a folder that cannot be removed is logged and the removal does not fail", () => {
+  const lines: string[] = [];
+  const fs = removalFs(new Error("EACCES"));
+  const port = questionImagesOf(
+    { home: "/home/kibo", notesDir: () => null, fs, log: (l) => lines.push(l) },
+    () => null,
+  );
+  expect(() => port.remove(QUESTION_ID)).not.toThrow();
+  expect(lines).toEqual([`images de la question ${QUESTION_ID} non effacées : EACCES`]);
 });

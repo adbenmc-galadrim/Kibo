@@ -22,7 +22,6 @@ export type QuestionsData = {
   error: KiboError | null;
   readOnly: boolean;
   viewer: string;
-  runLabel(runId: string): string;
   runOf(runId: string | null): TicketRun | null;
   ticketOf(id: string): TicketView | null;
 };
@@ -36,10 +35,6 @@ export function useQuestions(): QuestionsData {
   const client = useProjectClient();
   const readOnly = useReadOnly();
   const recipients = useQuestionRecipients();
-  const runLabel = useCallback(
-    (runId: string) => runs.data.find((r) => r.runId === runId)?.label ?? runId,
-    [runs.data],
-  );
   const runOf = useCallback(
     (runId: string | null) => (runId === null ? null : (runs.data.find((r) => r.runId === runId) ?? null)),
     [runs.data],
@@ -57,7 +52,6 @@ export function useQuestions(): QuestionsData {
     error: questions.error ?? tickets.error,
     readOnly,
     viewer: sdk.viewer,
-    runLabel,
     runOf,
     ticketOf,
   };

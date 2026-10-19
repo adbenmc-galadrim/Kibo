@@ -128,8 +128,7 @@ export const isArchived = (q: Question): boolean => q.archivedAt !== null;
 export const isOpen = (q: Question): boolean => q.answer === null && !isArchived(q);
 export const isAnswered = (q: Question): boolean => q.answer !== null && !isArchived(q);
 export const isDelivered = (q: Question): boolean => q.answer !== null && q.answer.deliveredAt !== null;
-export const isEditableAnswer = (q: Question): boolean => isAnswered(q) && !isDelivered(q);
-const isUndelivered = isEditableAnswer;
+const isUndelivered = (q: Question): boolean => isAnswered(q) && !isDelivered(q);
 
 export function openQuestions(questions: readonly Question[], ticketId: string): Question[] {
   return questions.filter((q) => q.ticketId === ticketId && isOpen(q));

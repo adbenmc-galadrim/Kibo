@@ -128,15 +128,6 @@ test("presence.list and sharing.get reach their handlers for the caller's projec
   expect(asked).toEqual(["p1", "p2", "p3"]);
 });
 
-test("questions.deliver needs write:question and reaches the questions handler", async () => {
-  const deliver: ComponentCall = { kind: "questions.deliver", ticketId: "t1" };
-  const denied = testGate();
-  await refused(denied.gate.call("p1", "thirdparty", deliver), "PERMISSION_DENIED");
-  const allowed = testGate(createQuotas(), { ...granted, writes: ["question"] });
-  expect(await allowed.gate.call("p1", "thirdparty", deliver)).toEqual({ sent: 1, runId: "r1" });
-  expect(allowed.handled).toEqual(["questions:p1:t1"]);
-});
-
 test("questions.recipients needs read:question and reaches the recipients handler", async () => {
   const recipients: ComponentCall = { kind: "questions.recipients" };
   const denied = testGate();

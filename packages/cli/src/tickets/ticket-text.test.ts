@@ -69,6 +69,12 @@ test("shows the review and the CI of the PR", () => {
   expect(lines({})).toContain("PR : aucune");
 });
 
+test("a merged PR drops its stale changes requested", () => {
+  const url = "https://github.com/silo-labs/silo-location/pull/20";
+  const merged = { ...pr("changes_requested", "ok"), state: "merged" as const };
+  expect(lines({ pr: merged })).toContain(`PR : #20 (merged) · CI verte · ${url}`);
+});
+
 const F4 = { key: "SILO-40", shortKey: "F4", title: "Saisir un constat hors ligne" };
 
 test("names a client demo step after its feature", () => {

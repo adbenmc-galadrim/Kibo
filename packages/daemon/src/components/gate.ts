@@ -3,7 +3,6 @@ import {
   type ComponentCall,
   type ComponentSettings,
   covers,
-  type DeliveryResult,
   type FetchInit,
   type FetchResponse,
   type GrantedPermissions,
@@ -66,7 +65,6 @@ export type GateHandlers = {
   sharing(projectId: string): Promise<ProjectSyncInfo>;
   settings(projectId: string): Promise<ComponentSettings>;
   project(projectId: string): Promise<ProjectInfo>;
-  questions(projectId: string, ticketId: string): Promise<DeliveryResult>;
   recipients(projectId: string): Promise<QuestionRecipient[]>;
   peek(projectId: string, runId: string): Promise<RunPeek>;
   delivery(projectId: string, call: DeliveryCall): Promise<unknown>;
@@ -143,8 +141,6 @@ function dispatch(
       return h.embed(projectId, inst, call.url);
     case "config.set":
       return h.config(projectId, inst, call.patch);
-    case "questions.deliver":
-      return h.questions(projectId, call.ticketId);
     case "questions.recipients":
       return h.recipients(projectId);
     case "run.peek":

@@ -1,4 +1,4 @@
-import type { GithubPrRef } from "./external-ref";
+import { type GithubPrRef, liveReview } from "./external-ref";
 import type { FeatureStep } from "./feature-steps";
 import { addDays, dayNumber, isoWeekday } from "./iso-date";
 import type { Sprint } from "./sprint";
@@ -6,7 +6,7 @@ import { isSprintRunning } from "./sprint-phase";
 import { FINAL_STATUSES } from "./startable";
 
 export type AtRiskStep = Pick<FeatureStep, "statusId" | "optional"> & {
-  pr: Pick<GithubPrRef, "review"> | null;
+  pr: Pick<GithubPrRef, "state" | "review"> | null;
 };
 export type AtRiskFeature = { sprint: Pick<Sprint, "start" | "end"> | null; steps: readonly AtRiskStep[] };
 
@@ -22,7 +22,7 @@ export function workingDaysLeft(sprint: Pick<Sprint, "start" | "end">, today: st
 
 const isLeft = (step: AtRiskStep): boolean => !FINAL_STATUSES.includes(step.statusId);
 const changesRequested = (step: AtRiskStep): boolean =>
-  isLeft(step) && step.pr?.review === "changes_requested";
+  isLeft(step) && step.pr !== null && liveReview(step.pr) === "changes_requested";
 
 export function atRisk(feature: AtRiskFeature, today: string): boolean {
   const { sprint } = feature;

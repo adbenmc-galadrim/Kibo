@@ -4,7 +4,6 @@ import {
   type ComponentCall,
   type ComponentManifest,
   type ComponentSettings,
-  type DeliveryResult,
   type EntityType,
   type FetchInit,
   type FetchResponse,
@@ -44,7 +43,6 @@ export type MockCallDeps = {
   peers(): PresencePeer[];
   access(): ProjectAccess;
   serverContext(): ServerContext;
-  deliver(ticketId: string): DeliveryResult;
   peek(runId: string): RunPeek;
   settings(): ComponentSettings;
   delivery: MockRunDelivery;
@@ -174,8 +172,6 @@ export function createMockCalls(deps: MockCallDeps): (c: ComponentCall) => Promi
         return deps.storybooks ?? [];
       case "embed.open":
         return deps.embeds.open(c.url);
-      case "questions.deliver":
-        return deps.deliver(c.ticketId);
       case "run.peek":
         return deps.peek(c.runId);
       case "run.deliver":

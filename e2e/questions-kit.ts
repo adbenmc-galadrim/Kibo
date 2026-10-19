@@ -56,6 +56,28 @@ export async function seedAnswered(
 export const questionArticle = (view: Locator, title: string): Locator =>
   view.getByRole("article", { name: title, exact: true });
 
+export async function questionLabelOf(article: Locator): Promise<string> {
+  const label = await article.getByText(/^Q\d+$/).textContent();
+  if (label === null) throw new Error("question without a number");
+  return label;
+}
+
+export const questionNumber = (label: string): number => Number(label.slice(1));
+
+export async function settled(...targets: Locator[]): Promise<void> {
+  for (const target of targets) {
+    await expect(target).toBeVisible();
+    await target.evaluate((el) => Promise.all(el.getAnimations().map((animation) => animation.finished)));
+  }
+}
+
+export async function openCardMenu(page: Page, article: Locator, label: string): Promise<Locator> {
+  await article.getByRole("button", { name: `Actions de ${label}` }).click();
+  const menu = page.getByRole("menu");
+  await settled(menu);
+  return menu;
+}
+
 export const previewCard = (page: Page): Locator => page.locator('[data-slot="hover-card-content"]');
 
 export async function hoverBadge(page: Page, badge: Locator): Promise<Locator> {

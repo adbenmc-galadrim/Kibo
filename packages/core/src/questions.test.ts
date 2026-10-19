@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test";
-import { type Actor, KiboError, type ProjectCommand, Question, undeliveredAnswers } from "@kibo/schema";
+import {
+  type Actor,
+  isBlocked,
+  KiboError,
+  type ProjectCommand,
+  Question,
+  undeliveredAnswers,
+} from "@kibo/schema";
 import fc from "fast-check";
 import { assertShellCommand, executeProjectCommand, readProject } from "./commands";
 import { createProjectDoc } from "./project";
@@ -114,6 +121,24 @@ test("a question takes the defaults, refuses what the schema refuses, and is rem
   expect(listQuestions(doc)).toEqual([]);
   expect(() => removeQuestion(doc, q.id)).toThrow(new KiboError("NOT_FOUND", `question ${q.id} not found`));
   expect(() => answerQuestion(doc, q.id, { kind: "text", text: "x" }, HUMAN, 9)).toThrow(KiboError);
+});
+
+test("any question is removed, whatever its state, and its number is never given again", () => {
+  const doc = newProjectDoc("KIB");
+  const t = createTicket(doc, { title: "Stockage S3" });
+  const ask = (title: string, blocking = false) =>
+    createQuestion(doc, { ticketId: t.id, title, options: ["A"], blocking, createdBy: HUMAN, at: 1 });
+  const open = ask("Ouverte", true);
+  const answered = answerQuestion(doc, ask("Répondue").id, { kind: "option", option: "A" }, HUMAN, 2);
+  markAnswersDelivered(doc, { ticketId: t.id, questionIds: [answered.id], runId: "r1", at: 3 });
+  const archived = ask("Archivée");
+  executeProjectCommand(doc, { method: "archiveQuestion", questionId: archived.id, by: HUMAN, at: 4 });
+  expect(isBlocked({ id: t.id, statusId: "todo" }, listQuestions(doc))).toBe(true);
+  for (const q of [open, answered, archived]) removeQuestion(doc, q.id);
+  expect(listQuestions(doc)).toEqual([]);
+  expect(openQuestionCount(doc, t.id)).toBe(0);
+  expect(isBlocked({ id: t.id, statusId: "todo" }, listQuestions(doc))).toBe(false);
+  expect(ask("Suivante").number).toBe((archived.number ?? 0) + 1);
 });
 
 test("a ticket holds 500 questions at most", () => {

@@ -135,23 +135,6 @@ test("answering a waiting run from the drawer answers its blocking question, the
   expect(calls).toEqual(["answer:r2:et les tests ?"]);
 });
 
-test("delivering the answers of a ticket checks the project, sends one message and marks them", () => {
-  const calls: string[] = [];
-  const port = agentsPort(calls, [runView({ id: "r1" })]);
-  const questions = questionsStub(calls, [answered("q1", { at: 1 }), answered("q2", { at: 2 })]);
-  expect(
-    handleAgentRequest(port, { method: "deliverAnswers", projectId: "p1", ticketId: "t1" }, questions),
-  ).toEqual({
-    sent: 2,
-    runId: "r1",
-  });
-  expect(calls[0]).toBe("writable:p1");
-  expect(calls.slice(2)).toEqual(["mark:p1:t1:q1,q2:r1"]);
-  expect(() =>
-    handleAgentRequest(port, { method: "deliverAnswers", projectId: INBOX_ID, ticketId: "1@1" }, questions),
-  ).toThrow("inbox tickets cannot be assigned to an agent");
-});
-
 test("an inbox ticket is never handed to the orchestrator", () => {
   const calls: string[] = [];
   const port = recordingPort(calls);
@@ -223,7 +206,7 @@ test("the agents state carries the open signal counts of each project", () => {
   expect(port.state().signals).toEqual(counts);
 });
 
-test("without ticket execution a ticket run is never answered and answers are never delivered", () => {
+test("without ticket execution a ticket run is never answered", () => {
   const calls: string[] = [];
   const waiting = runView({ id: "r1", state: "waiting_input" });
   const port = agentsPort(calls, [waiting], "removed");
@@ -231,10 +214,7 @@ test("without ticket execution a ticket run is never answered and answers are ne
   expect(() =>
     handleAgentRequest(port, { method: "answerRun", runId: "r1", text: "443" }, questions),
   ).toThrow("AGENT_EXECUTION_REMOVED");
-  expect(() =>
-    handleAgentRequest(port, { method: "deliverAnswers", projectId: "p1", ticketId: "t1" }, questions),
-  ).toThrow("AGENT_EXECUTION_REMOVED");
-  expect(calls).toEqual(["writable:p1"]);
+  expect(calls).toEqual([]);
 });
 
 test("without ticket execution a waiting project run is still answered", () => {

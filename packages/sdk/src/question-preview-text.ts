@@ -1,4 +1,4 @@
-import { awaitsDelivery, isArchived, isOpen, type Question } from "@kibo/schema";
+import { isArchived, isOpen, type Question } from "@kibo/schema";
 
 export const PREVIEW_ROWS_MAX = 5;
 export const PREVIEW_EXCERPT_MAX = 200;
@@ -6,8 +6,6 @@ export const PREVIEW_EXCERPT_MAX = 200;
 export const previewFr = {
   open: "ouverte",
   answered: "répondue",
-  answeredToDeliver: "répondue · à transmettre",
-  delivered: (label: string) => `transmise à ${label}`,
   archived: "archivée",
   more: (n: number) => `${n} ${n > 1 ? "autres" : "autre"}…`,
   blocking: "bloquante",
@@ -18,6 +16,7 @@ export const previewFr = {
   ticket: (key: string, title: string) => `${key} · ${title}`,
   heading: (n: number) => `${n} ${n > 1 ? "questions ouvertes" : "question ouverte"}`,
   removedRecipient: "(supprimé)",
+  unknownMember: "un membre",
   age: {
     now: "à l'instant",
     minutes: (n: number) => `il y a ${n} min`,
@@ -41,12 +40,9 @@ export function previewExcerpt(markdown: string, max: number): string {
   return `${(space > 0 ? cut.slice(0, space) : cut).trimEnd()}…`;
 }
 
-export function previewState(q: Question, runLabel: (runId: string) => string): string {
+export function previewState(q: Question): string {
   if (isArchived(q)) return previewFr.archived;
-  if (isOpen(q)) return previewFr.open;
-  const run = q.answer?.deliveredRunId ?? null;
-  if (run !== null) return previewFr.delivered(runLabel(run));
-  return awaitsDelivery(q) ? previewFr.answeredToDeliver : previewFr.answered;
+  return isOpen(q) ? previewFr.open : previewFr.answered;
 }
 
 export function ticketPreviewRows(

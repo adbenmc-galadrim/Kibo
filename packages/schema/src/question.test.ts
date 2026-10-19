@@ -13,7 +13,6 @@ import {
   isAnswered,
   isArchived,
   isDelivered,
-  isEditableAnswer,
   isOpen,
   openQuestions,
   Question,
@@ -23,7 +22,6 @@ import {
 } from "./question";
 import { askInputFromTool } from "./question-ask";
 import { openCountByRecipient } from "./question-recipient";
-import { RpcRequest } from "./rpc";
 
 const HUMAN_TEXT = {
   kind: "text",
@@ -220,7 +218,7 @@ test("run counts carry the answers still to deliver", () => {
   ]);
 });
 
-test("marking answers delivered is reserved to the daemon, delivering them is an rpc", () => {
+test("marking answers delivered is reserved to the daemon", () => {
   expect(isReservedCommand("markAnswersDelivered")).toBe(true);
   expect(
     ProjectCommand.parse({
@@ -231,11 +229,6 @@ test("marking answers delivered is reserved to the daemon, delivering them is an
       at: 5,
     }),
   ).toMatchObject({ method: "markAnswersDelivered" });
-  expect(RpcRequest.parse({ method: "deliverAnswers", projectId: "p1", ticketId: "t1" })).toEqual({
-    method: "deliverAnswers",
-    projectId: "p1",
-    ticketId: "t1",
-  });
 });
 
 test("an ask_question provisional choice is kept when the agent gives no options", () => {
@@ -290,12 +283,13 @@ test("a question stored before the history parses with an empty history and no a
   expect(Question.safeParse({ ...base, archivedBy: HUMAN }).success).toBe(false);
 });
 
-test("open, answered and archived split the questions, delivered answers are frozen", () => {
+test("open, answered and archived split the questions, delivered answers leave the undelivered list", () => {
   const open = Question.parse(base);
   const waiting = answeredAt("q2", 20);
   const delivered = answeredAt("q3", 30, 31);
   const imported = Question.parse({
     ...waiting,
+    id: "q4",
     answer: { ...waiting.answer, by: { kind: "import", ref: "plan" } },
   });
   expect([isOpen(open), isAnswered(open), isArchived(open)]).toEqual([true, false, false]);
@@ -306,11 +300,8 @@ test("open, answered and archived split the questions, delivered answers are fro
   ]);
   expect(isAnswered(archived(waiting))).toBe(false);
   expect([isDelivered(waiting), isDelivered(delivered), isDelivered(open)]).toEqual([false, true, false]);
-  expect(isEditableAnswer(waiting)).toBe(true);
-  expect(isEditableAnswer(delivered)).toBe(false);
-  expect(isEditableAnswer(imported)).toBe(true);
-  expect(isEditableAnswer(archived(waiting))).toBe(false);
-  expect(isEditableAnswer(open)).toBe(false);
+  const undelivered = undeliveredAnswers([open, delivered, archived(waiting), waiting, imported], "t1");
+  expect(undelivered.map((q) => q.id)).toEqual(["q2", "q4"]);
 });
 
 test("archived questions leave every list and count", () => {

@@ -53,7 +53,7 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 33 · Questions : modifier, rouvrir, archiver | 202 à 206 (phase 23 : réponses modifiables, archives et historique, lot de questions, aperçu au survol, question mise en évidence) ; **dessinés** |
 | 34 · Domaines & guidelines | 207 à 209b (phase 23 : arbre de dossiers, état vide, domaine de projet et du workspace, projet partagé en lecture seule, encart, sélecteur groupé, lien du projet) ; **dessinés, ajustés après implémentation** |
 | 35 · Redesign Silo | 210 à 218 (redesign validé le 2026-10-16 : vue d'ensemble, Planning, fiche fonctionnalité, Tickets, Graphe ; états fiche de sprint et report, 3/2 ouvertes, démo facultative, infobulle du nom) ; **dessinés** ; 211, 212 et 214 mis à jour au jalon de la phase 27 |
-| 36 · Suivi seul | 219 à 225b (phase 27 : vue d'ensemble, Pour commencer, en retard au 18 oct., Nouveau projet, Kanban, fiche ticket et Activité, Questions, barre repliée, panneau de l'agent) ; 226 à 231d (phase 29 : étapes en attente) ; **dessinés** |
+| 36 · Suivi seul | 219 à 225b (phase 27 : vue d'ensemble, Pour commencer, en retard au 18 oct., Nouveau projet, Kanban, fiche ticket et Activité, Questions, barre repliée, panneau de l'agent) ; 226 à 231d (phase 29 : étapes en attente) ; 232 à 234 (0.29.0-alpha.2 : menu de la carte, suppression, questions répondues) ; **dessinés** |
 
 Pages 00 à 27 et 29 à 36 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 36.
 
@@ -334,12 +334,21 @@ voir `design/redesign/README.md`, version corrigée en T10) copiés de la même 
   231 dialogue « Mettre SILO-82 en attente » · 231b menu de la fiche, « Mettre en attente… » · 231c menu de la fiche en attente, « Reprendre » ·
   231d menu de la ligne du Planning, « Reprendre dans ▸ ».
 
+0.29.0-alpha.2 (2026-10-19) : les boards P9b à P9d de « Kibo · Redesign » (rangées à partir de y = 38 000, voir `design/redesign/README.md`)
+copiés de la même façon, puis déplacés de 30 000 px vers le bas (sous 231d) et renommés.
+
+- 36 · Suivi seul (0.29.0-alpha.2) : 232 menu « ⋯ » de la carte Q16 (« Archiver », « Supprimer ») · 233 dialogue « Supprimer « Quota par
+  client : 2 Go ou 5 Go ? » ? » · 234 filtre « Répondues », Q16 répondue « 5 Go », « Modifier la réponse » et « Retirer la réponse », sans marque
+  de transmission.
+
 ## Exporter
 
 1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("36")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`. Pour ne changer que quelques boards, remplacer leurs pages et ajouter
    les nouvelles dans le PDF existant avec `pypdf` (`add_page`, puis `compress_identical_objects`) : `pdfseparate` et `pdfunite` doublent la taille
    du fichier (polices recopiées à chaque page), au-delà de la limite de 100 Mo de GitHub.
+   Boards ajoutés en fin de page 36 (232 à 234 en 0.29.0-alpha.2) : exporter seulement ces boards (`board.export({ type: "pdf" })`, sombre puis
+   clair, dans l'ordre des rangées) et les ajouter en fin de chaque PDF, les pages existantes restant inchangées.
 2. Source : menu du fichier → Exporter (.penpot) (ou, depuis l'onglet headless, la méthode `export-binfile` de l'API, dont l'événement `end` donne
    l'adresse du fichier à télécharger), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
    que Penpot régénère : l'archive reste sous la limite de 100 Mo de GitHub).

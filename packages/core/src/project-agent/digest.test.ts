@@ -138,6 +138,19 @@ describe("changeNames", () => {
     expect(named.ticket("zz")).toBe("zz");
     expect(named.question("q1")).toBe("Quoi ?");
     expect(named.question("q0")).toBe("q0");
+    const asked = fingerprint({
+      project: project({
+        tickets: [ticket({ id: "t1", title: "Un" })],
+        questions: [question({ id: "q7", ticketId: "t1", title: "Quota par client : 2 Go ou 5 Go ?" })],
+      }),
+      runs: [],
+      notes: [],
+    });
+    const gone = changeNames(current, [], asked);
+    expect(gone.question("q7")).toBe("Quota par client : 2 Go ou 5 Go ?");
+    expect(diffFingerprints(asked, { ...asked, questions: {} }, gone).map((c) => c.text)).toEqual([
+      "Question supprimée : Quota par client : 2 Go ou 5 Go ?",
+    ]);
     expect(named.run("r1")).toBe("opus-dev · SILO-1");
     expect(named.run("r0")).toBe("r0");
   });

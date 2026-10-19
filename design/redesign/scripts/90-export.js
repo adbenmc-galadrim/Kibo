@@ -60,4 +60,11 @@ S.export29 = async (only) => { await S.page("Proposition"); await S.wait(800); c
     if (!file || (only && !only.includes(file))) continue; const c = b.clone(); c.x = -5000; c.y = b.y;
     try { out.push(await S.exportPng(c, `proposition-${file}-${/\(clair\)$/.test(b.name) ? "light" : "dark"}.png`)); } finally { c.remove(); } }
   return out; };
+// 0.29.0-alpha.2 : boards P9b à P9d à partir de S.Y_A2 ⇒ proposition-questions-<écran>-<dark|light>.png, exportés depuis un clone.
+S.FILES_A2 = { "P9b · Questions, menu": "questions-menu", "P9c · Supprimer la question": "questions-supprimer", "P9d · Questions, répondues": "questions-repondues" };
+S.exportA2 = async (only) => { await S.page("Proposition"); await S.wait(800); const out = [];
+  for (const b of penpot.currentPage.root.children.filter(c => c.type === "board" && c.y >= S.Y_A2)) { const base = b.name.replace(/ \(clair\)$/, ""), file = S.FILES_A2[base];
+    if (!file || (only && !only.includes(file))) continue; const c = b.clone(); c.x = -5000; c.y = b.y;
+    try { out.push(await S.exportPng(c, `proposition-${file}-${/\(clair\)$/.test(b.name) ? "light" : "dark"}.png`)); } finally { c.remove(); } }
+  return out; };
 return "export ok";

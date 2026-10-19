@@ -53,8 +53,9 @@ describe("validateBatch on question actions", () => {
 
   test("an update changes something and respects the answer", () => {
     expect(problems(batch(update("q1", {})))).toEqual(["#1 rien à modifier"]);
-    expect(problems(batch(update("q3", { title: "B" })))).toEqual([
-      "#1 réponse déjà transmise à un agent : rouvre-la d'abord (reopenQuestion)",
+    expect(problems(batch(update("q3", { title: "B" })))).toEqual([]);
+    expect(problems(batch(update("q3", { options: ["X"] })))).toEqual([
+      "#1 question répondue : options et choix provisoire figés, rouvre-la d'abord",
     ]);
     expect(problems(batch(update("q2", { options: ["X"] })))).toEqual([
       "#1 question répondue : options et choix provisoire figés, rouvre-la d'abord",
@@ -116,7 +117,7 @@ describe("validateBatch on question actions", () => {
   test("a reopened question may then be updated in the same batch, not before", () => {
     expect(problems(batch(reopen("q3", 1), update("q3", { title: "B", options: ["X"] }, 2)))).toEqual([]);
     expect(problems(batch(update("q3", { title: "B" }, 1), reopen("q3", 2)))).toEqual([
-      "#1 réponse déjà transmise à un agent : rouvre-la d'abord (reopenQuestion)",
+      "#2 question modifiée plus haut dans le lot : place la réouverture avant la modification",
     ]);
     expect(problems(batch(update("q2", { recipient: "client" }, 1), reopen("q2", 2)))).toEqual([
       "#2 question modifiée plus haut dans le lot : place la réouverture avant la modification",

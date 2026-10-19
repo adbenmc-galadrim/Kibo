@@ -20,6 +20,7 @@ export const ProjectEventKind = z.enum([
   "question_created",
   "question_answered",
   "question_reminded",
+  "question_deleted",
   "held",
   "resumed",
 ]);

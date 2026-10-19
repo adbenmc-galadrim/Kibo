@@ -8,7 +8,9 @@ import {
   type ExternalRef,
   featureLabel,
   type GithubPrRef,
+  isLivePr,
   latestCiRunPerWorkflow,
+  liveReview,
   type ProjectEvent,
   type ProjectEventKind,
   type ProjectSnapshot,
@@ -19,11 +21,9 @@ import { phaseLabel } from "@kibo/sdk";
 import { frFeature } from "../i18n/fr-group";
 import { frTicketTracking as t } from "../i18n/fr-ticket-tracking";
 
-const LIVE: ReadonlySet<GithubPrRef["state"]> = new Set(["open", "draft"]);
-
 export function mainPr(refs: readonly ExternalRef[]): GithubPrRef | null {
   const prs = refs.filter((r): r is GithubPrRef => r.kind === "github_pr");
-  const live = prs.filter((p) => LIVE.has(p.state));
+  const live = prs.filter(isLivePr);
   const pool = live.length > 0 ? live : prs;
   return pool.reduce<GithubPrRef | null>(
     (best, p) => (best === null || p.number > best.number ? p : best),
@@ -81,8 +81,8 @@ export function ciRunOf(pr: GithubPrRef, runs: readonly CiRun[], tone: CiTone): 
 
 export function trackingAlert(ticket: TicketView, runs: readonly CiRun[]): TrackingAlert | null {
   const pr = mainPr(ticket.externalRefs);
-  if (pr === null || !LIVE.has(pr.state)) return null;
-  const changes = pr.review === "changes_requested";
+  if (pr === null || !isLivePr(pr)) return null;
+  const changes = liveReview(pr) === "changes_requested";
   const ci = prCiTone(pr, runs);
   const parts: AlertPart[] = [];
   if (changes) parts.push({ text: t.review.changes_requested, tone: "amber" });

@@ -215,17 +215,8 @@ test("design frames reach the design gate with the calling instance, or fail whe
     ).rejects.toThrow("NOT_CONNECTED");
 });
 
-test("delivering answers goes to the agents, and says so when they are not started", async () => {
-  const idle = createGateHandlers(stubHandlerDeps);
-  await expect(idle.questions("p1", "t1")).rejects.toThrow("NOT_CONNECTED");
-  const handlers = createGateHandlers({
-    ...stubHandlerDeps,
-    deliverAnswers: (projectId, ticketId) => ({
-      sent: projectId === "p1" && ticketId === "t1" ? 2 : 0,
-      runId: "r1",
-    }),
-  });
-  expect(await handlers.questions("p1", "t1")).toEqual({ sent: 2, runId: "r1" });
+test("the gate has no handler to deliver answers to an agent", () => {
+  expect("questions" in createGateHandlers(stubHandlerDeps)).toBe(false);
 });
 
 test("embedded frames reach the embed gate with the manifest of the calling instance", async () => {

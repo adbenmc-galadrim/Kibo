@@ -99,6 +99,7 @@ export function ActivityTab({ project, ticket, onOpenFile }: Props) {
   const links = {
     questions,
     recipients: project.questionRecipients,
+    members: project.sync.members,
     ticketOf: () => ticket,
     runLabel: runLabelIn(runs),
     open: (questionId: string) =>
