@@ -163,12 +163,12 @@ test("answering a question to validate of a finished run sends nothing and leave
   ]);
 });
 
-test("answering the blocking question of a waiting run resumes it at once and marks the answer", () => {
+test("answering the blocking question of a waiting run resumes nothing and leaves the answer unmarked", () => {
   const { answers, agentQuestion, answer, snapshot } = setup("waiting_input");
   const q = agentQuestion("Quel port ?", true);
-  const answered = answer(q?.id ?? "", { kind: "option", option: "Oui" });
-  expect(answers).toEqual([["r1", answerPrompt(answered)]]);
-  expect(snapshot().questions[0]?.answer).toMatchObject({ deliveredRunId: "r1" });
+  answer(q?.id ?? "", { kind: "option", option: "Oui" });
+  expect(answers).toEqual([]);
+  expect(snapshot().questions[0]?.answer).toMatchObject({ deliveredAt: null, deliveredRunId: null });
 });
 
 test("delivering the answers of a ticket sends one message to its session and marks them", () => {
