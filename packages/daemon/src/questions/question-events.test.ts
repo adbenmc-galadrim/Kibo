@@ -15,23 +15,79 @@ const EDITS: ProjectCommand[] = [
 const eventOf = (
   command: ProjectCommand,
   result: unknown = answered("q1", { blocking: true }),
+  origin: CommandEvent["meta"]["origin"] = "user",
 ): CommandEvent => ({
   projectId: "p1",
   command,
   result,
-  meta: { origin: "user", instanceId: null },
+  meta: { origin, instanceId: null },
 });
 
-function harness(): QuestionEventDeps & { messages: ChangeMessage[]; removed: string[] } {
+type Harness = QuestionEventDeps & { messages: ChangeMessage[]; removed: string[]; woken: string[][] };
+
+function harness(): Harness {
   const messages: ChangeMessage[] = [];
   const removed: string[] = [];
+  const woken: string[][] = [];
   return {
     messages,
     removed,
+    woken,
     emit: (m) => messages.push(m),
     images: { remove: (questionId) => removed.push(questionId) },
+    wake: (projectId, questionId) => woken.push([projectId, questionId]),
   };
 }
+
+const ANSWER = { kind: "text", text: "5 Go" } as const;
+const IMPORT = { kind: "import", ref: "csv" } as const;
+const ANSWERS: ProjectCommand[] = [
+  { method: "answerQuestion", questionId: "q1", answer: ANSWER, by: HUMAN },
+  { method: "updateAnswer", questionId: "q1", answer: ANSWER, by: HUMAN },
+];
+const SILENT: ProjectCommand[] = [
+  { method: "answerQuestion", questionId: "q1", answer: ANSWER, by: IMPORT },
+  { method: "updateAnswer", questionId: "q1", answer: ANSWER, by: IMPORT },
+  { method: "reopenQuestion", questionId: "q1", by: HUMAN },
+  { method: "archiveQuestion", questionId: "q1", by: HUMAN },
+  { method: "createQuestion", ticketId: "t1", title: "Quota ?", createdBy: HUMAN },
+  { method: "removeQuestion", questionId: "q1" },
+];
+
+test("an answer of a human given by the user wakes the project agent once", () => {
+  for (const command of ANSWERS) {
+    const h = harness();
+    afterQuestionCommands([eventOf(command)], h);
+    expect(h.woken).toEqual([["p1", "q1"]]);
+    expect(h.messages).toEqual([{ topic: "agents" }]);
+  }
+});
+
+test("an imported answer, another command or another origin never wakes the project agent", () => {
+  for (const command of SILENT) {
+    const h = harness();
+    afterQuestionCommands([eventOf(command)], h);
+    expect(h.woken).toEqual([]);
+    expect(h.messages).toEqual([{ topic: "agents" }]);
+  }
+  for (const origin of ["agent", "kibo", "sync"] as const) {
+    for (const command of ANSWERS) {
+      const h = harness();
+      afterQuestionCommands([eventOf(command, undefined, origin)], h);
+      expect(h.woken).toEqual([]);
+    }
+  }
+});
+
+test("without a wake port, an answer only refreshes the agents", () => {
+  const messages: ChangeMessage[] = [];
+  const [command] = ANSWERS;
+  if (!command) throw new Error("no answer command");
+  expect(() =>
+    afterQuestionCommands([eventOf(command)], { emit: (m) => messages.push(m), images: null, wake: null }),
+  ).not.toThrow();
+  expect(messages).toEqual([{ topic: "agents" }]);
+});
 
 test("each question edit refreshes the agents and removes no image", () => {
   for (const command of EDITS) {
@@ -54,6 +110,7 @@ test("without an image store, a removed question only refreshes the agents", () 
   afterQuestionCommands([eventOf({ method: "removeQuestion", questionId: "q1" }, null)], {
     emit: (m) => messages.push(m),
     images: null,
+    wake: null,
   });
   expect(messages).toEqual([{ topic: "agents" }]);
 });

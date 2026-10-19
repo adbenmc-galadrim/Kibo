@@ -44,7 +44,7 @@ import { writeProjectMeta } from "./projects/meta";
 import { type CollabPort, handleProjectRequest, NOT_HANDLED } from "./projects/project-rpc";
 import { createProjectRemoval } from "./projects/remove";
 import { questionActorInterceptor } from "./questions/question-actor";
-import { afterQuestionCommands } from "./questions/question-events";
+import { type AnswerWake, afterQuestionCommands } from "./questions/question-events";
 import { type QuestionImageDeps, questionImagesOf } from "./questions/question-images-port";
 import { portSlot, ready } from "./service-ports";
 import { loadDoc, type Store } from "./store";
@@ -59,6 +59,7 @@ export type ComponentsPort = {
 
 export type { AgentsPort } from "./agents-rpc";
 export type { CollabPort } from "./projects/project-rpc";
+export type AnswerWakePort = { wake: AnswerWake };
 
 export type Service = {
   handle(req: RpcRequest): unknown;
@@ -73,6 +74,7 @@ export type Service = {
   attachAi(port: AiPort): () => void;
   attachCollab(port: CollabPort): () => void;
   attachProjectAgent(port: ProjectAgentSummaries): () => void;
+  attachAnswerWake(port: AnswerWakePort): () => void;
   triggerRules(projectId: string, trigger: RuleTrigger): void;
   transaction<T>(fn: () => T): T;
   commands: CommandHub;
@@ -113,6 +115,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   const ai = portSlot<AiPort>();
   const collab = portSlot<CollabPort>();
   const projectAgent = portSlot<ProjectAgentSummaries>();
+  const answerWake = portSlot<AnswerWakePort>();
   let writeGuard: ((projectId: string) => void) | null = null;
   const osIdentity = () => opts.user;
   let identity: (projectId: string) => string = osIdentity;
@@ -147,7 +150,11 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       docs.emit({ projectId });
       if (done.some((e) => changesDomainUsage(e.command))) docs.emit({ topic: "config" });
       components.get()?.afterCommand(projectId);
-      afterQuestionCommands(done, { emit: (m) => docs.emit(m), images: questionImages });
+      afterQuestionCommands(done, {
+        emit: (m) => docs.emit(m),
+        images: questionImages,
+        wake: answerWake.get()?.wake ?? null,
+      });
     },
   });
   const docs: Docs = {
@@ -279,6 +286,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     attachAi: ai.attach,
     attachCollab: collab.attach,
     attachProjectAgent: projectAgent.attach,
+    attachAnswerWake: answerWake.attach,
     triggerRules(projectId, trigger) {
       docs.trigger(projectId, trigger);
     },

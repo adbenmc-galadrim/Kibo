@@ -122,6 +122,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     agent: () => projectAgent.agent,
   });
   closers.push(signals.stop);
+  closers.push(service.attachAnswerWake({ wake: signals.wakeOnAnswer }));
   const projectAgent = startProjectAgent({
     home: opts.home,
     service,
