@@ -2,6 +2,7 @@ import { afterAll } from "bun:test";
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { type ImageFs, nodeImageFs } from "./question-images";
 
 const dirs: string[] = [];
 afterAll(() => {
@@ -26,4 +27,16 @@ export function writeImage(path: string, bytes: Uint8Array = pngBytes(800, 600))
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, bytes);
   return path;
+}
+
+export function removalFs(fail: Error | null = null): ImageFs & { removed: string[] } {
+  const removed: string[] = [];
+  return {
+    ...nodeImageFs,
+    removed,
+    remove(dir) {
+      if (fail) throw fail;
+      removed.push(dir);
+    },
+  };
 }

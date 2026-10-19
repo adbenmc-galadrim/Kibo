@@ -45,7 +45,7 @@ import { type CollabPort, handleProjectRequest, NOT_HANDLED } from "./projects/p
 import { createProjectRemoval } from "./projects/remove";
 import { questionActorInterceptor } from "./questions/question-actor";
 import { afterQuestionCommands } from "./questions/question-events";
-import type { QuestionImageDeps } from "./questions/question-images-port";
+import { type QuestionImageDeps, questionImagesOf } from "./questions/question-images-port";
 import { portSlot, ready } from "./service-ports";
 import { loadDoc, type Store } from "./store";
 import { readTabs, saveTabs } from "./tabs-store";
@@ -106,6 +106,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
   projects.set(INBOX_ID, loadInbox(store));
   const listeners = new Set<(message: ChangeMessage) => void>();
   let agents: AgentsPort | null = null;
+  const questionImages = questionImagesOf(opts.questionImages ?? null, () => null);
   let tracker: ActivityTracker | null = null;
   const components = portSlot<ComponentsPort>();
   const integrations = portSlot<IntegrationRpc>();
@@ -146,7 +147,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
       docs.emit({ projectId });
       if (done.some((e) => changesDomainUsage(e.command))) docs.emit({ topic: "config" });
       components.get()?.afterCommand(projectId);
-      afterQuestionCommands(done, { emit: (m) => docs.emit(m), agents, questions });
+      afterQuestionCommands(done, { emit: (m) => docs.emit(m), images: questionImages });
     },
   });
   const docs: Docs = {

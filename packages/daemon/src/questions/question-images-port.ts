@@ -6,6 +6,7 @@ import {
   prepareQuestionImages,
   type QuestionImageFile,
   readQuestionImage,
+  removeQuestionImages,
   storeQuestionImages,
 } from "./question-images";
 
@@ -19,7 +20,10 @@ export type QuestionImageDeps = {
 export type QuestionImagesPort = {
   prepare(projectId: string, cwd: string | null, paths: readonly string[]): PreparedImage[];
   store(question: Question, prepared: readonly PreparedImage[]): void;
+  remove(questionId: string): void;
 };
+
+const reason = (e: unknown): string => (e instanceof Error ? e.message : String(e));
 
 const unsupported = (count: number) =>
   console.warn(`[kibo-daemon] ${count} image(s) de question omise(s) : stockage des images absent`);
@@ -45,9 +49,15 @@ export function questionImagesOf(
       try {
         storeQuestionImages({ home: deps.home, questionId: question.id, images: own, fs: deps.fs });
       } catch (e) {
-        deps.log(
-          `images de la question ${question.id} non copiées : ${e instanceof Error ? e.message : String(e)}`,
-        );
+        deps.log(`images de la question ${question.id} non copiées : ${reason(e)}`);
+      }
+    },
+    remove(questionId) {
+      if (!deps) return;
+      try {
+        removeQuestionImages({ home: deps.home, questionId, fs: deps.fs });
+      } catch (e) {
+        deps.log(`images de la question ${questionId} non effacées : ${reason(e)}`);
       }
     },
   };
