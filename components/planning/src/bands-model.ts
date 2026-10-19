@@ -109,7 +109,9 @@ function markOf(f: Feature, steps: readonly FeatureStep[], facts: RowFacts): Row
 
 function bandRow(f: Feature, column: number, facts: RowFacts): MarkedRow {
   const { input, sorted, blocking } = facts;
-  const steps = featureSteps({ feature: f.id, tickets: input.tickets, links: input.links });
+  const steps = featureSteps({ feature: f.id, tickets: input.tickets, links: input.links }).filter(
+    (s) => s.onHold === null,
+  );
   const slipTo = slipTarget(f, column, sorted);
   const next = f.feature.nextStepId;
   return {

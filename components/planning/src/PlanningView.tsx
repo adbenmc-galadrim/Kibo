@@ -6,6 +6,7 @@ import { cardEntries, type PlanTarget } from "./card-menu";
 import { BACKLOG_ID } from "./drag";
 import { FeatureCard } from "./FeatureCard";
 import { fr } from "./fr";
+import { type HeldHandlers, HeldSection } from "./HeldSection";
 import { PlanningBands } from "./PlanningBands";
 import { AddButton, PlanningHeader, type PlanningLayout } from "./PlanningHeader";
 import type { FeatureCard as Card, PlanningModel } from "./planning-model";
@@ -43,7 +44,7 @@ function EmptyPlanning({ readOnly, onNewFeature }: { readOnly: boolean; onNewFea
   );
 }
 
-export type PlanningViewProps = {
+export type PlanningViewProps = Omit<HeldHandlers, "onOpen"> & {
   model: PlanningModel;
   readOnly: boolean;
   target: string | null;
@@ -97,6 +98,15 @@ export function PlanningView(props: PlanningViewProps) {
             <BacklogColumn
               dropping={dropsIn(BACKLOG_ID, dragged?.sprintId ?? null)}
               footer={holder === null && limitNote}
+              held={
+                <HeldSection
+                  groups={model.held}
+                  readOnly={readOnly}
+                  onOpen={onOpen}
+                  onResume={props.onResume}
+                  onResumeIn={props.onResumeIn}
+                />
+              }
             >
               {cards(model.backlog)}
             </BacklogColumn>

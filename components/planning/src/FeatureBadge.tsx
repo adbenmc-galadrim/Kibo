@@ -5,13 +5,18 @@ import type { CardBadge } from "./planning-model";
 const CHIP =
   "ml-auto flex h-[17px] items-center gap-1 rounded-[4px] px-1.5 text-[10.5px] leading-[13px] font-medium";
 
+function deliveredText(badge: { demo: boolean; held: number }): string {
+  if (badge.held > 0) return fr.badge.deliveredHeld(badge.held);
+  return badge.demo ? fr.badge.deliveredDemo : fr.badge.delivered;
+}
+
 export function FeatureBadge({ badge }: { badge: CardBadge | null }) {
   if (badge === null) return null;
   if (badge.kind === "delivered")
     return (
-      <span className="ml-auto flex items-center gap-1.5 text-(--tracking-green) text-[11.5px] leading-[14px]">
+      <span className="ml-auto flex items-center gap-1.5 whitespace-nowrap text-(--tracking-green) text-[11.5px] leading-[14px]">
         <CircleCheck absoluteStrokeWidth size={13} aria-hidden />
-        {badge.demo ? fr.badge.deliveredDemo : fr.badge.delivered}
+        {deliveredText(badge)}
       </span>
     );
   if (badge.kind === "open")

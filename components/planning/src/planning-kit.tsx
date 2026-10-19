@@ -1,4 +1,4 @@
-import type { ProjectEvent } from "@kibo/schema";
+import type { ProjectCommand, ProjectEvent } from "@kibo/schema";
 import { SdkProvider } from "@kibo/sdk";
 import { createMockSdk, type MockSdk, type MockSdkOptions } from "@kibo/sdk/mock";
 import { render, screen, within } from "@testing-library/react";
@@ -8,18 +8,21 @@ import { seedPlanning, TODAY } from "./test-seed";
 export type PlanningSetup = { m: MockSdk; seeded: ReturnType<typeof seedPlanning> };
 
 type Seeded = ReturnType<typeof seedPlanning>;
-type PlanningOptions = MockSdkOptions & { journal?: (seeded: Seeded) => ProjectEvent[] };
+type PlanningOptions = MockSdkOptions & {
+  journal?: (seeded: Seeded) => ProjectEvent[];
+  seedWith?: (run: (cmd: ProjectCommand) => unknown) => Seeded;
+};
 
 export function setupPlanning(today = TODAY, opts: PlanningOptions = {}): PlanningSetup {
   let seeded: Seeded | undefined;
-  const { journal, ...rest } = opts;
+  const { journal, seedWith = seedPlanning, ...rest } = opts;
   const events: ProjectEvent[] = [];
   const m = createMockSdk(manifest, {
     ...rest,
     events,
     today,
     seed: (run) => {
-      seeded = seedPlanning(run);
+      seeded = seedWith(run);
       events.push(...(journal?.(seeded) ?? []));
     },
   });

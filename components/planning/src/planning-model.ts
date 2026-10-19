@@ -20,6 +20,7 @@ import {
   sprintPhase,
   type TicketView,
 } from "@kibo/schema";
+import { type HeldGroup, heldGroups } from "./held-model";
 import { sprintDates } from "./sprint-label";
 import { type SprintLoad, sprintLoad } from "./sprint-load";
 
@@ -27,7 +28,7 @@ export { sprintDates } from "./sprint-label";
 
 export type StepTone = "done" | "review" | "progress" | "blocked" | "todo";
 export type CardBadge =
-  | { kind: "delivered"; demo: boolean }
+  | { kind: "delivered"; demo: boolean; held: number }
   | { kind: "open" }
   | { kind: "risk" }
   | { kind: "late" }
@@ -72,6 +73,7 @@ export type PlanningModel = {
   overLimit: boolean;
   openCards: FeatureCard[];
   currentSprintId: string | null;
+  held: HeldGroup[];
 };
 export type PlanningInput = {
   tickets: readonly TicketView[];
@@ -122,7 +124,8 @@ function sessionOf(
 }
 
 function badgeOf(state: FeatureState, question: string | null, risk: boolean): CardBadge | null {
-  if (state.status === "delivered") return { kind: "delivered", demo: state.steps.done < state.steps.total };
+  if (state.status === "delivered")
+    return { kind: "delivered", demo: state.steps.done < state.steps.total, held: state.held };
   if (state.status === "blocked") return { kind: "blocked", question };
   if (state.status === "late") return { kind: "late" };
   if (risk) return { kind: "risk" };
@@ -133,10 +136,11 @@ function cardOf(f: Feature, facts: Facts): FeatureCard {
   const { input, blocking, sprintOf } = facts;
   const state = f.feature;
   const steps = featureSteps({ feature: f.id, tickets: input.tickets, links: input.links });
+  const active = steps.filter((s) => s.onHold === null);
   const sprint = f.sprintId === null ? null : (sprintOf.get(f.sprintId) ?? null);
   const delivered = state.status === "delivered";
   const nextStep = steps.find((s) => s.ticketId === state.nextStepId) ?? null;
-  const risk = !delivered && sprint !== null && atRisk({ sprint, steps }, input.today);
+  const risk = !delivered && sprint !== null && atRisk({ sprint, steps: active }, input.today);
   return {
     id: f.id,
     shortKey: featureLabel(f) || f.keyLabel,
@@ -145,12 +149,12 @@ function cardOf(f: Feature, facts: Facts): FeatureCard {
     badge: badgeOf(state, nextStep === null ? null : (blocking.get(nextStep.ticketId) ?? null), risk),
     late: state.status === "late",
     atRisk: risk,
-    steps: steps.map((s) => ({ ticketId: s.ticketId, key: s.key, tone: toneOf(s, blocking) })),
+    steps: active.map((s) => ({ ticketId: s.ticketId, key: s.key, tone: toneOf(s, blocking) })),
     done: state.steps.done,
     total: state.steps.total,
     remaining: state.remaining,
     next: delivered ? null : (nextStep?.key ?? null),
-    session: delivered ? null : sessionOf(steps, blocking),
+    session: delivered && state.held === 0 ? null : sessionOf(steps, blocking),
     compact: delivered && sprint?.state === "done",
     muted: delivered,
     slipped: slippedFrom(input.events ?? [], f.id, input.sprints),
@@ -203,5 +207,6 @@ export function planningModel(input: PlanningInput): PlanningModel {
     overLimit: open > limit,
     openCards: all.filter((c) => openIds.has(c.id)),
     currentSprintId: currentSprint(input.sprints, input.today)?.id ?? null,
+    held: heldGroups(input.tickets, input.sprints, input.today),
   };
 }
