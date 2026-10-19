@@ -247,3 +247,33 @@ leurs textes et noms de calques ont changé (dictionnaire appliqué par le plugi
 puis cotes régénérées par `cotes.py <JSON> --sections 1,…,13` sur l'ancien `cotes.md` passé au dictionnaire (en-tête et notes de masques gardés).
 Piège : `board.export()` peut renvoyer l'image d'avant une modification de texte (vu sur P5 sombre) ; exporter alors un clone du board
 (`b.clone()`, export, `remove()`), puis vérifier chaque PNG à l'œil.
+
+## Phase 29 (2026-10-19)
+
+Spec §41 : une étape mise en attente. Données `silo-attente` (section « Phase 29 · étapes en attente » de
+`design/donnees-fictives.md`) : SILO-45 « Règle de fusion à valider par le client », SILO-33 et SILO-82 « Serveur MinIO de recette
+indisponible », SILO-34 et SILO-35 en attente de SILO-33. Page « Proposition », `scripts/56-phase-29.js` (après `55-phase-27`), rangées
+à partir de `S.Y29` = 24 500 (pas de 1 500 px), sombre à x = 0 et clair à x = 1 540.
+
+Chaque board **clone la référence pixel** de son écran (retouches du jalon 27 et textes de la phase 28 compris, qu'un redessin par les
+scripts perdrait), puis y pose l'attente et ses conséquences : un écran sans attente reste identique à sa référence.
+
+| Board | Source clonée | Contenu | Export | Taille |
+|---|---|---|---|---|
+| P1 bis · Vue d'ensemble · en attente | P1 bis v3 · Vue d'ensemble | « 4 livrées sur 9 » et sous-ligne « 3 en attente », « En cours 1 / 2 », carte « En attente » 3 sous Échéances (une ligne par raison, clés, « 2 en dépendent »), F4 livrée, F5 prochaine à finir, trois événements « en attente » dans l'Activité | `proposition-attente-vue-ensemble` | 1 440 × 1 260 |
+| P2 · Planning · en attente | P2 · Planning | « En attente (3) » en pied de « À planifier », un groupe par raison, une carte par étape (clé, fonctionnalité, « ⋯ », titre) ; F4 « livrée · 1 en attente », cases et charges sans les étapes en attente | `proposition-attente-planning` | 1 440 × 1 000 |
+| P3 · Fonctionnalité · en attente | P3 · Fonctionnalité | frise 31, 32 puis « En attente · 3 » (pause à la place du numéro, raison et « Reprendre » sur SILO-33, « attend SILO-33 » sur 34 et 35), « 1 étape livrée sur 2 · 3 en attente » | `proposition-attente-fonctionnalite` | 1 440 × 1 000 |
+| P7 · Kanban · en attente | P7 · Kanban | puce pointillée pause + raison courte (24 caractères) en tête des puces, « attend SILO-33 », filtre « En attente » 5 après « À reprendre » | `proposition-attente-kanban` | 1 440 × 1 000 |
+| P8 · Fiche ticket · en attente | P8 · Fiche ticket | bandeau neutre « En attente · Règle de fusion à valider par le client · depuis le 16 oct. » et « Reprendre » au-dessus du bandeau PR | `proposition-attente-fiche-ticket` | 1 440 × 1 000 |
+| P8c · Mettre en attente | P7 · Kanban · en attente | dialogue de 480 px « Mettre SILO-82 en attente » : raison saisie, « 37/80 », « Raisons déjà employées », « Annuler » et « Mettre en attente » | `proposition-attente-dialogue` | 1 440 × 1 000 |
+
+Dessin : `await storage.draw29("a-vue", "dark")` (clés `a-vue`, `a-planning`, `a-fonctionnalite`, `a-kanban`, `a-fiche`, `a-dialogue`), un écran
+et un mode par appel ; `a-dialogue` clone `a-kanban` du même mode : le dessiner après. Avant d'exporter, attendre que le nombre de formes
+côté serveur (`get-page`) égale le nombre local. Export : `await storage.export29()` (`90-export.js`, depuis un clone de chaque board) ⇒
+`exports/proposition-attente-<écran>-<dark|light>.png`. Cotes : `95-cotes.js` par board (`_dump-14` à `_dump-19`), puis
+`python3 scripts/cotes.py <JSON> --phase29`, qui remplace seulement la partie « Phase 29 » de `cotes.md` (`--phase27` la garde).
+
+Pièges vus : dans le runtime de plugins de Penpot 2.18, `insertChild(i)` compte dans l'ordre affiché (0 = premier élément du flex) alors
+que `children` est rendu dans l'ordre inverse ; un enfant ajouté par `appendChild` à un board passe sous les autres (voile et dialogue :
+`bringToFront()`). `Date.now()` lève une erreur en mode sécurisé : le chargement des scripts n'en dépend pas (`00-charger.js` l'emploie
+seulement pour contourner le cache).

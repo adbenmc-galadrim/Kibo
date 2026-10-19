@@ -326,6 +326,10 @@ redessinés par `S.draw["p-planning"]` et `S.draw["p-fonctionnalite"]`.
   221 Kanban (puces « Phase n/12 · … ») · 222 fiche ticket SILO-45 (« Requise pour livrer », bandeau, « déclarée », « Livraison ») · 222b Activité ·
   223 Questions · 224 barre repliée à 1 180 px et menu des pages · 225 agent de projet, question · 225b récapitulatif et « Copier la relance ».
 
+Phase 29 (à copier au jalon, T11) : les six boards « … · en attente » et « P8c · Mettre en attente » de « Kibo · Redesign » (rangées à partir
+de y = 24 500, voir `design/redesign/README.md`) iront en page « 36 · Suivi seul » : 226 vue d'ensemble en attente · 227 Planning, « En attente (3) » ·
+228 fiche F5, étapes en attente · 229 Kanban, puces et filtre « En attente » · 230 fiche SILO-45, bandeau « En attente » · 231 dialogue « Mettre SILO-82 en attente ».
+
 ## Exporter
 
 1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("36")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
