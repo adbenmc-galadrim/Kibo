@@ -1,6 +1,5 @@
 import {
   type AnswerInput,
-  answersToDeliver,
   isAnswered,
   isArchived,
   isOpen,
@@ -16,7 +15,7 @@ import { fr } from "./fr";
 export type Scope = "open" | "answered" | "all" | "archived";
 export type AnswerForm = { option: string | null; text: string; confirm: boolean };
 export type TicketGroup = { ticket: TicketView; questions: Question[] };
-export type ViewGroup = TicketGroup & { undelivered: Question[] };
+export type ViewGroup = TicketGroup;
 
 const SCOPE_TEST: Record<Scope, (q: Question) => boolean> = {
   open: isOpen,
@@ -116,7 +115,6 @@ export function viewGroups(
     .map((ticket) => ({
       ticket,
       questions: shown.filter((q) => q.ticketId === ticket.id).sort(blockingFirst),
-      undelivered: answersToDeliver(questions, ticket.id),
     }))
     .filter((g) => g.questions.length > 0)
     .sort((a, b) => leadsWithBlocking(b) - leadsWithBlocking(a));

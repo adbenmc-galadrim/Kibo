@@ -1,8 +1,8 @@
-import { isAnswered, isDelivered, type Question, type QuestionAnswer } from "@kibo/schema";
+import { isAnswered, type Question, type QuestionAnswer } from "@kibo/schema";
 import { useSdk } from "@kibo/sdk";
 import { Button } from "@kibo/sdk/ui/button";
 import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
-import { Pencil, RotateCcw, Undo2 } from "lucide-react";
+import { Pencil, Undo2 } from "lucide-react";
 import { useState } from "react";
 import { fr } from "./fr";
 import { QuestionAnswerForm } from "./QuestionAnswerForm";
@@ -13,25 +13,22 @@ export function AnswerActionButtons({ question: q, onEdit }: { question: Questio
   const sdk = useSdk();
   const [reopening, setReopening] = useState(false);
   if (!isAnswered(q) || q.answer === null) return null;
-  const delivered = isDelivered(q);
   return (
     <>
-      {!delivered && (
-        <Button variant="ghost" size="sm" className={ACTION} onClick={onEdit}>
-          <Pencil aria-hidden />
-          {fr.answerEdit}
-        </Button>
-      )}
+      <Button variant="ghost" size="sm" className={ACTION} onClick={onEdit}>
+        <Pencil aria-hidden />
+        {fr.answerEdit}
+      </Button>
       <Button variant="ghost" size="sm" className={ACTION} onClick={() => setReopening(true)}>
-        {delivered ? <RotateCcw aria-hidden /> : <Undo2 aria-hidden />}
-        {delivered ? fr.reopen : fr.answerRemove}
+        <Undo2 aria-hidden />
+        {fr.answerRemove}
       </Button>
       <ConfirmDialog
         open={reopening}
         onOpenChange={setReopening}
-        title={delivered ? fr.reopenTitle(q.title) : fr.answerRemoveTitle(q.title)}
-        description={delivered ? fr.reopenHelp : fr.answerRemoveHelp}
-        confirmLabel={delivered ? fr.reopen : fr.answerRemove}
+        title={fr.answerRemoveTitle(q.title)}
+        description={fr.answerRemoveHelp}
+        confirmLabel={fr.answerRemove}
         cancelLabel={fr.cancel}
         describeError={() => fr.reopenFailed}
         onConfirm={async () => {

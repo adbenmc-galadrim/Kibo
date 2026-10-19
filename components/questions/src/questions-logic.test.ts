@@ -172,6 +172,11 @@ test("viewGroups puts open blocking questions first, then ticket keys, and rende
   expect(viewGroups([plain, blocking], tickets, "open", T1).map((g) => g.ticket.id)).toEqual([T1]);
 });
 
+test("viewGroups carries a ticket and its questions, nothing to deliver", () => {
+  const [group] = viewGroups([answered({ id: "a", ticketId: T1 })], [ticket(T1, "KIB-1")], "all", null);
+  expect(Object.keys(group ?? {}).sort()).toEqual(["questions", "ticket"]);
+});
+
 test("blockingSummary counts the open blocking questions shown and the open ones", () => {
   const shown = [
     question({ id: "a", blocking: true }),

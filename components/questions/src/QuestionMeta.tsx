@@ -1,9 +1,6 @@
-import { type Actor, awaitsDelivery, type Question, type TicketRun } from "@kibo/schema";
+import type { Actor, Question, TicketRun } from "@kibo/schema";
 import { AgentBadge, AgentMention, type MentionTexts, useAgentMention } from "@kibo/sdk";
-import { Badge } from "@kibo/sdk/ui/badge";
-import { Lock } from "lucide-react";
 import { fr } from "./fr";
-import { AGENT_ACCENT } from "./QuestionAnswerForm";
 import { relativeAge } from "./questions-logic";
 
 const RUN_TEXTS = { queued: () => "", waiting: "", failed: "" };
@@ -51,28 +48,13 @@ export function QuestionAuthor({ actor, run = null }: { actor: Actor; run?: Tick
 export const answerValue = (q: Question): string =>
   q.answer === null ? "" : q.answer.kind === "text" ? q.answer.text : (q.answer.option ?? "");
 
-type AnswerProps = { question: Question; now: number; runLabel(runId: string): string };
-
-export function QuestionAnswerLine({ question, now, runLabel }: AnswerProps) {
+export function QuestionAnswerLine({ question, now }: { question: Question; now: number }) {
   const a = question.answer;
   if (a === null) return null;
   return (
     <div className="grid gap-1 rounded-md bg-muted/50 px-2.5 py-2 text-xs">
       <p className="font-medium">{fr.answer(answerValue(question))}</p>
-      <p className="flex flex-wrap items-center gap-2 text-2xs text-muted-foreground">
-        <span>{fr.answeredBy(a.by.ref, relativeAge(a.at, now))}</span>
-        {awaitsDelivery(question) && (
-          <Badge variant="outline" className={`text-3xs ${AGENT_ACCENT}`}>
-            {fr.toDeliver}
-          </Badge>
-        )}
-        {a.deliveredRunId !== null && (
-          <span className="inline-flex items-center gap-1">
-            <Lock aria-hidden className="size-3" />
-            {fr.frozenFor(runLabel(a.deliveredRunId))}
-          </span>
-        )}
-      </p>
+      <p className="text-2xs text-muted-foreground">{fr.answeredBy(a.by.ref, relativeAge(a.at, now))}</p>
     </div>
   );
 }

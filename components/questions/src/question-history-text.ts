@@ -6,7 +6,6 @@ type QuestionState = Required<QuestionEvent["previous"]>;
 export type HistoryEntry = { event: QuestionEvent; after: QuestionState; position: number };
 export type HistoryContext = {
   recipients: readonly QuestionRecipient[];
-  runLabel(runId: string): string;
   ticketLabel(ticketId: string): string;
   now: number;
 };
@@ -69,19 +68,13 @@ function changes(entry: HistoryEntry, ctx: HistoryContext): string {
   return parts.join(" ; ");
 }
 
-function reopened(previous: QuestionAnswer | null | undefined, ctx: HistoryContext): string {
-  const value = answerText(previous ?? null);
-  const run = previous?.deliveredRunId ?? null;
-  return run === null ? t.reopened(value) : t.reopenedDelivered(value, ctx.runLabel(run));
-}
-
 function what(entry: HistoryEntry, ctx: HistoryContext): string {
   const { event } = entry;
   switch (event.kind) {
     case "updated":
       return t.updated(changes(entry, ctx));
     case "reopened":
-      return reopened(event.previous.answer, ctx);
+      return t.reopened(answerText(event.previous.answer ?? null));
     case "answer_edited":
       return t.answerEdited(answerText(event.previous.answer ?? null), answerText(entry.after.answer));
     case "archived":
