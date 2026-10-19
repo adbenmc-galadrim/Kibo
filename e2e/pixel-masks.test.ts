@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import {
+  ATTENTE_ORIGINS,
+  ATTENTE_SCREENS,
   DIALOG_SCREENS,
   MASK_AREA_LIMIT,
   type MaskedScreen,
@@ -26,6 +28,11 @@ test("every mask stays inside its screen and says why", () => {
     "kanban",
     "fiche-ticket",
     "questions",
+    "attente-vue-ensemble",
+    "attente-planning",
+    "attente-fonctionnalite",
+    "attente-kanban",
+    "attente-fiche-ticket",
   ]);
   for (const screen of screens)
     for (const m of PIXEL_MASKS[screen]) {
@@ -77,4 +84,21 @@ test("no mask covers a dialog, a popover or the ticket sheet", () => {
       const apart = m.x + m.w <= box.x || box.x + box.w <= m.x || m.y + m.h <= box.y || box.y + box.h <= m.y;
       expect(apart).toBe(true);
     }
+});
+
+test("each on-hold screen keeps the height, the masks and the dialog of the screen it comes from", () => {
+  expect(ATTENTE_ORIGINS).toEqual({
+    "attente-vue-ensemble": "vue-ensemble",
+    "attente-planning": "planning",
+    "attente-fonctionnalite": "fonctionnalite",
+    "attente-kanban": "kanban",
+    "attente-fiche-ticket": "fiche-ticket",
+  });
+  for (const screen of ATTENTE_SCREENS) {
+    const origin = ATTENTE_ORIGINS[screen];
+    expect(PIXEL_HEIGHTS[screen]).toBe(PIXEL_HEIGHTS[origin]);
+    expect(masksOf(screen)).toEqual(PIXEL_MASKS[origin]);
+    expect(DIALOG_SCREENS[screen]).toEqual(DIALOG_SCREENS[origin]);
+    expect(referenceOf(screen)).toBe(screen);
+  }
 });

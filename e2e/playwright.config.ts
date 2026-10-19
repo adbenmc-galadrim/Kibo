@@ -1,6 +1,13 @@
 import { defineConfig, type PlaywrightTestConfig, type Project } from "@playwright/test";
-import { PIXEL_DAEMONS, pixelKitProject, pixelProjectOptions, trackingProjects } from "./pixel-projects";
-import { SILO_MAQUETTES } from "./pixel-settings";
+import {
+  ATTENTE_DAEMONS,
+  attenteProjects,
+  PIXEL_DAEMONS,
+  pixelKitProject,
+  pixelProjectOptions,
+  trackingProjects,
+} from "./pixel-projects";
+import { isSiloScenario, SILO_MAQUETTES } from "./pixel-settings";
 import { SYNC_PORTS } from "./sync-fixture";
 import { seedReadyPort } from "./token";
 
@@ -246,6 +253,7 @@ const allDaemons = [
   ...PIXEL_DAEMONS,
 ] as const;
 const daemons = allDaemons.filter((d) => inTheme(d.scheme));
+const servers = [...daemons, ...ATTENTE_DAEMONS.filter((d) => inTheme(d.scheme))];
 
 const allSyncProjects = [
   { name: "sync-dark", scheme: "dark", port: SYNC_PORTS.dark.a, after: [] },
@@ -272,6 +280,7 @@ export default defineConfig({
     ),
     ...(inTheme("dark") ? [pixelKitProject()] : []),
     ...trackingProjects(daemons.map((d) => d.name)),
+    ...THEMES.filter(inTheme).flatMap(attenteProjects),
     ...syncProjects.map(
       (p): Project => ({
         name: p.name,
@@ -282,7 +291,7 @@ export default defineConfig({
     ),
   ],
   webServer: [
-    ...daemons.map(
+    ...servers.map(
       (d): WebServer => ({
         command: [
           "bun serve.ts",
@@ -296,9 +305,9 @@ export default defineConfig({
         ]
           .filter((part) => part !== "")
           .join(" "),
-        url: `http://127.0.0.1:${d.scenario === SILO_MAQUETTES ? seedReadyPort(d.port) : d.port}/`,
+        url: `http://127.0.0.1:${isSiloScenario(d.scenario) ? seedReadyPort(d.port) : d.port}/`,
         reuseExistingServer: false,
-        timeout: d.scenario === SILO_MAQUETTES ? 120_000 : 60_000,
+        timeout: isSiloScenario(d.scenario) ? 120_000 : 60_000,
         gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
       }),
     ),

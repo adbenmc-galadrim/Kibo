@@ -4,11 +4,16 @@ import {
   PIXEL_KIT_REFERENCES,
   PIXEL_SCREENSHOT,
   REFERENCES_TEMPLATE,
+  SILO_ATTENTE,
   SILO_MAQUETTES,
 } from "./pixel-settings";
 
 const PIXEL_DARK_PORT = 4477;
 const PIXEL_LIGHT_PORT = 4478;
+const ATTENTE_DARK_PORT = 4481;
+const ATTENTE_LIGHT_PORT = 4482;
+const ATTENTE_PIXEL_SPEC = /pixel-attente\.spec\.ts$/;
+const ATTENTE_SPEC = /\/attente\.spec\.ts$/;
 const PIXEL_SPECS =
   /pixel-(planning|fonctionnalite|tickets|coque|vue-ensemble|graphe|nouveau-projet|kanban|fiche-ticket)\.spec\.ts/;
 const QUESTIONS_SPEC = /pixel-questions\.spec\.ts/;
@@ -29,6 +34,23 @@ export const PIXEL_DAEMONS = [
     port: PIXEL_LIGHT_PORT,
     spec: PIXEL_SPECS,
     scenario: SILO_MAQUETTES,
+    integrations: true,
+  },
+] as const;
+
+export const ATTENTE_DAEMONS = [
+  {
+    name: "attente-dark",
+    scheme: "dark",
+    port: ATTENTE_DARK_PORT,
+    scenario: SILO_ATTENTE,
+    integrations: true,
+  },
+  {
+    name: "attente-light",
+    scheme: "light",
+    port: ATTENTE_LIGHT_PORT,
+    scenario: SILO_ATTENTE,
     integrations: true,
   },
 ] as const;
@@ -74,3 +96,18 @@ export const trackingProjects = (daemons: readonly string[]): Project[] =>
       { name: `traces-${d.scheme}`, testMatch: TRACES_SPEC, dependencies: [planning], use },
     ];
   });
+
+export function attenteProjects(scheme: "dark" | "light"): Project[] {
+  const daemon = ATTENTE_DAEMONS.find((d) => d.scheme === scheme);
+  if (daemon === undefined) return [];
+  const use: Project["use"] = {
+    browserName: "chromium",
+    colorScheme: scheme,
+    baseURL: `http://127.0.0.1:${daemon.port}`,
+  };
+  const pixel = `attente-pixel-${scheme}`;
+  return [
+    { name: pixel, testMatch: ATTENTE_PIXEL_SPEC, use, ...screenshotOptions(DESIGN_REFERENCES) },
+    { name: `attente-${scheme}`, testMatch: ATTENTE_SPEC, dependencies: [pixel], use },
+  ];
+}

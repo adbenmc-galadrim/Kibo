@@ -1,7 +1,7 @@
 import type { Box } from "./pixel-report";
 
 export type PixelMask = Box & { why: string };
-export type MaskedScreen =
+type OriginScreen =
   | "planning"
   | "fonctionnalite"
   | "tickets"
@@ -12,11 +12,29 @@ export type MaskedScreen =
   | "fiche-ticket"
   | "questions";
 
+export const ATTENTE_SCREENS = [
+  "attente-vue-ensemble",
+  "attente-planning",
+  "attente-fonctionnalite",
+  "attente-kanban",
+  "attente-fiche-ticket",
+] as const;
+type AttenteScreen = (typeof ATTENTE_SCREENS)[number];
+export type MaskedScreen = OriginScreen | AttenteScreen;
+
+export const ATTENTE_ORIGINS: Record<AttenteScreen, OriginScreen> = {
+  "attente-vue-ensemble": "vue-ensemble",
+  "attente-planning": "planning",
+  "attente-fonctionnalite": "fonctionnalite",
+  "attente-kanban": "kanban",
+  "attente-fiche-ticket": "fiche-ticket",
+};
+
 export const MASK_COLOR = "#FF00FF";
 export const MASK_RGB: readonly [number, number, number] = [255, 0, 255];
 export const MASK_AREA_LIMIT = 0.04;
 
-export const PIXEL_HEIGHTS: Record<MaskedScreen, number> = {
+const ORIGIN_HEIGHTS: Record<OriginScreen, number> = {
   planning: 1000,
   fonctionnalite: 1000,
   tickets: 1000,
@@ -28,10 +46,24 @@ export const PIXEL_HEIGHTS: Record<MaskedScreen, number> = {
   questions: 1000,
 };
 
-export const DIALOG_SCREENS: Partial<Record<MaskedScreen, Box>> = {
+export const PIXEL_HEIGHTS: Record<MaskedScreen, number> = {
+  ...ORIGIN_HEIGHTS,
+  "attente-vue-ensemble": ORIGIN_HEIGHTS["vue-ensemble"],
+  "attente-planning": ORIGIN_HEIGHTS.planning,
+  "attente-fonctionnalite": ORIGIN_HEIGHTS.fonctionnalite,
+  "attente-kanban": ORIGIN_HEIGHTS.kanban,
+  "attente-fiche-ticket": ORIGIN_HEIGHTS["fiche-ticket"],
+};
+
+const DIALOGS = {
   "nouveau-projet": { x: 460, y: 170, w: 520, h: 660 },
   "fiche-ticket": { x: 904, y: 189, w: 512, h: 36 },
   questions: { x: 854, y: 94, w: 420, h: 250 },
+};
+
+export const DIALOG_SCREENS: Partial<Record<MaskedScreen, Box>> = {
+  ...DIALOGS,
+  "attente-fiche-ticket": DIALOGS["fiche-ticket"],
 };
 
 const user = (y: number): PixelMask => ({
@@ -65,7 +97,7 @@ const clockTime = (x: number, y: number, w: number, h: number, what: string): Pi
   why: `${what} : heure réelle d'un fait semé sous l'horloge figée (§37.15 point 13)`,
 });
 
-export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
+const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
   planning: [USER, syncAge(987)],
   fonctionnalite: [
     USER,
@@ -131,9 +163,21 @@ export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
   questions: [],
 };
 
+export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
+  ...ORIGIN_MASKS,
+  "attente-vue-ensemble": ORIGIN_MASKS["vue-ensemble"],
+  "attente-planning": ORIGIN_MASKS.planning,
+  "attente-fonctionnalite": ORIGIN_MASKS.fonctionnalite,
+  "attente-kanban": ORIGIN_MASKS.kanban,
+  "attente-fiche-ticket": ORIGIN_MASKS["fiche-ticket"],
+};
+
 const isMaskedScreen = (screen: string): screen is MaskedScreen => Object.hasOwn(PIXEL_MASKS, screen);
 
-const REFERENCE_FILES: Partial<Record<string, string>> = { "vue-ensemble": "vue-ensemble-v3" };
+const REFERENCE_FILES: Partial<Record<string, string>> = {
+  "vue-ensemble": "vue-ensemble-v3",
+  "attente-vue-ensemble": "attente-vue-ensemble",
+};
 
 export const referenceOf = (screen: string): string => REFERENCE_FILES[screen] ?? screen;
 
