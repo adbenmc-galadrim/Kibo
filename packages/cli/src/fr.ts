@@ -1,4 +1,4 @@
-import type { PrChecks, PrReview } from "@kibo/schema";
+import type { OnHold, PrChecks, PrReview } from "@kibo/schema";
 import type { FeatureRef, SprintRef } from "./tickets/ticket-tracking";
 import type { AssigneeSummary, BranchSummary, PrSummary, TicketRef } from "./tickets/ticket-view";
 
@@ -15,7 +15,7 @@ const PROJECT_HINT =
 const TICKETS_USAGE = [
   "  kibo tickets list --project <clé|nom|id> [--ready] [--status <s>[,<s>…]] [--sprint <id|code|nom|current|none>] [--json]",
   "  kibo tickets get <clé|id du plan> [--project <p>] [--json]",
-  "  kibo tickets set <clé|id du plan> [status=<todo|wip|done|blocked>] [pr=<n|url>] [branch=<nom> [base=<nom>]] [reason=<texte>] [--project <p>] [--json]",
+  "  kibo tickets set <clé|id du plan> [status=<todo|wip|done|blocked>] [pr=<n|url>] [branch=<nom> [base=<nom>]] [reason=<texte>] [hold=<raison>|off] [--project <p>] [--json]",
   "  kibo tickets step <clé> <0-11> [note] [--update] [--json]",
   "  kibo tickets session [<clé>] <start|ping|stop> [--tool <nom>] [--project <p>] [--json]",
 ];
@@ -111,6 +111,30 @@ export const frTickets = {
     sprint: (code: string) => `sprint ${code}`,
     unplanned: "sans sprint",
     limit: "limite atteinte",
+    onHold: (hold: OnHold) =>
+      hold.source === "own" ? `en attente : ${hold.reason}` : `en attente de ${hold.key}`,
+  },
+  hold: {
+    set: (reason: string) => `en attente : ${reason}`,
+    off: "reprise",
+    since: (day: string) => `depuis le ${day}`,
+    line: (reason: string, day: string) => `En attente : ${reason} · ${day}`,
+    of: (key: string) => `En attente de ${key}`,
+    empty: "hold= attend une raison ou off",
+    months: [
+      "janv.",
+      "févr.",
+      "mars",
+      "avr.",
+      "mai",
+      "juin",
+      "juil.",
+      "août",
+      "sept.",
+      "oct.",
+      "nov.",
+      "déc.",
+    ],
   },
 };
 

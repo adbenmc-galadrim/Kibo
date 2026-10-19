@@ -8,6 +8,7 @@ import {
   KiboError,
   type Link,
   type MemberInfo,
+  type OnHold,
   type PrChecks,
   type PrReview,
   type PrState,
@@ -66,6 +67,7 @@ export type TicketSummary = {
   refs: ExternalRef[];
   startable: boolean;
   startReason: StartReason | null;
+  onHold: OnHold | null;
 } & TrackingFields;
 export type TicketsSource = {
   workflow: Status[];
@@ -144,6 +146,7 @@ export function summarize(source: TicketsSource): TicketSummary[] {
       refs: t.externalRefs,
       startable: t.startable,
       startReason: t.startReason,
+      onHold: t.onHold,
     };
   });
 }

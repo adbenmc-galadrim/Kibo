@@ -8,6 +8,7 @@ function reasonText(reason: Exclude<StartReason, { kind: "status" }>): string {
   if (reason.kind === "question") return r.question(reason.label);
   if (reason.kind === "sprint") return r.sprint(reason.code);
   if (reason.kind === "unplanned") return r.unplanned;
+  if (reason.kind === "onHold") return r.onHold(reason.hold);
   return r.limit;
 }
 

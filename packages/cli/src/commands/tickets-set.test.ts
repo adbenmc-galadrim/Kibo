@@ -170,3 +170,64 @@ describe("kibo tickets set on a step that was not startable", () => {
     expect((await set(["branch=feat/envoi-hors-ligne", "base=dev"], declared)).err).toEqual([]);
   });
 });
+
+describe("kibo tickets set hold=", () => {
+  const since = "2026-10-16";
+  const held = fakeTicket({ id: "a", key: "SILO-33", hold: { reason: "Accès au serveur", since } });
+
+  test("puts the step on hold without sending a day: the daemon stamps it", async () => {
+    const d = await set(["hold=Accès au serveur"]);
+    expect(d.code).toBe(0);
+    expect(d.commands()).toEqual([{ method: "setHold", ticketId: "a", reason: "Accès au serveur" }]);
+    expect(d.out).toEqual(["✓ SILO-33 : en attente : Accès au serveur"]);
+  });
+
+  test("resumes with hold=off, and says so", async () => {
+    const d = await set(["hold=off"], [held]);
+    expect(d.commands()).toEqual([{ method: "setHold", ticketId: "a", reason: null }]);
+    expect(d.out).toEqual(["✓ SILO-33 : reprise"]);
+  });
+
+  test("sends nothing when the hold is already as asked", async () => {
+    const off = await set(["hold=off"]);
+    expect(off.commands()).toEqual([]);
+    expect(off.out).toEqual(["✓ SILO-33 : déjà à jour"]);
+    expect((await set(["hold=Accès au serveur"], [held])).commands()).toEqual([]);
+    expect((await set(["hold=Autre raison"], [held])).commands()).toEqual([
+      { method: "setHold", ticketId: "a", reason: "Autre raison" },
+    ]);
+  });
+
+  test("refuses an empty reason as a usage error", async () => {
+    const d = await set(["hold="]);
+    expect(d.code).toBe(2);
+    expect(d.err[0]).toBe("Erreur INVALID_INPUT : hold= attend une raison ou off");
+    expect(d.calls).toEqual([]);
+  });
+
+  test("sends the hold before the status and the branch", async () => {
+    const d = await set(["status=wip", "branch=feat/x", "hold=Accès au serveur"]);
+    expect(d.calls.map((c) => c.method)).toEqual([
+      "listProjects",
+      "getProject",
+      "command",
+      "command",
+      "declareTicketRef",
+    ]);
+    expect(d.commands().map((c) => c.method)).toEqual(["setHold", "setStatus"]);
+    expect(d.out).toEqual(["✓ SILO-33 : en attente : Accès au serveur, statut wip, branche feat/x"]);
+  });
+
+  test("warns that a held step was not startable when a branch starts it", async () => {
+    const onHold = { source: "own" as const, key: "SILO-33", reason: "Accès au serveur", since };
+    const blocked = {
+      ...held,
+      startable: false,
+      startReason: { kind: "onHold" as const, hold: onHold },
+      onHold,
+    };
+    const d = await set(["hold=Accès au serveur", "branch=feat/x"], [blocked]);
+    expect(d.declarations()).toHaveLength(1);
+    expect(d.err).toEqual(["⚠ SILO-33 n'était pas démarrable : en attente : Accès au serveur"]);
+  });
+});

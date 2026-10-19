@@ -1,5 +1,6 @@
 import { DELIVERY_STEP_LABELS, DELIVERY_STEP_MAX, type DeliveryStep } from "@kibo/schema";
 import { frTickets as t } from "../fr";
+import { holdLine } from "./hold-text";
 import type { DetailExtras } from "./ticket-detail";
 import type { TicketSummary } from "./ticket-view";
 
@@ -30,7 +31,7 @@ const listCells = (s: TicketSummary): string[] => [
   s.key,
   s.planId ?? "-",
   s.feature?.shortKey ?? "-",
-  s.status,
+  `${s.onHold === null ? "" : "⏸ "}${s.status}`,
   displayTitle(s),
 ];
 
@@ -51,6 +52,7 @@ export function detailLines(d: TicketDetail): string[] {
   return [
     [d.key, d.planId, displayTitle(d)].filter((part) => part !== null).join(" · "),
     t.status(d.status, d.column),
+    ...(d.onHold === null ? [] : [holdLine(d.onHold)]),
     ...(d.blockedReason === null ? [] : [t.blocked(d.blockedReason)]),
     t.parent(d.parent),
     t.feature(d.feature),

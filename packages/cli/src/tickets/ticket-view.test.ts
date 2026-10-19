@@ -125,6 +125,7 @@ describe("ticket view", () => {
       refs: [plan("C1-2"), pr(5, "closed"), pr(7, "open")],
       startable: true,
       startReason: null,
+      onHold: null,
     });
     expect(review).toMatchObject({ status: "wip", kiboStatus: "in_review", column: "En review", pr: null });
   });

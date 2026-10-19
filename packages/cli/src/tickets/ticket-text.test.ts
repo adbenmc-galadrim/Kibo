@@ -35,6 +35,7 @@ const DETAIL: TicketDetail = {
   refs: [],
   startable: false,
   startReason: { kind: "status" },
+  onHold: null,
   questions: [],
   notes: [],
   brief: null,

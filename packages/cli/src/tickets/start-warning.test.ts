@@ -14,6 +14,11 @@ describe("notStartableReasons", () => {
     expect(refused({ kind: "sprint", code: "S43" })).toEqual(["sprint S43"]);
     expect(refused({ kind: "unplanned" })).toEqual(["sans sprint"]);
     expect(refused({ kind: "limit", limit: 2, count: 2 })).toEqual(["limite atteinte"]);
+    const hold = { source: "own" as const, key: "SILO-33", reason: "Accès au serveur", since: "2026-10-16" };
+    expect(refused({ kind: "onHold", hold })).toEqual(["en attente : Accès au serveur"]);
+    expect(refused({ kind: "onHold", hold: { ...hold, source: "dependency" } })).toEqual([
+      "en attente de SILO-33",
+    ]);
   });
 
   test("adds the steps the ticket waits on, once", () => {
