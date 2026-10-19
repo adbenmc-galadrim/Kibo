@@ -19,6 +19,7 @@ test("the fingerprint schema reads its own JSON back and refuses garbage", () =>
         branch: null,
         pr: "#12 (open)",
         blockedBy: ["SILO-3"],
+        hold: { reason: "R", since: "2026-10-16" },
       },
     },
     questions: { q1: "answered" },

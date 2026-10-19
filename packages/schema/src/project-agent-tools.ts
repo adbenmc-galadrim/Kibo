@@ -4,6 +4,7 @@ import type { KiboErrorCode } from "./errors";
 import { TicketKey } from "./ids";
 import { LabelName } from "./label";
 import { NotePath } from "./note";
+import type { OnHold } from "./on-hold";
 import { TICKET_TOOL_NAMES } from "./progress";
 import { ProposeBatchInput } from "./project-agent";
 import { type QuestionRecipient, RECIPIENT_ID_MAX } from "./question-recipient";
@@ -114,6 +115,7 @@ export type TicketCard = {
   openQuestions: number;
   startable: boolean;
   startReason: StartReason | null;
+  onHold: OnHold | null;
   group: boolean;
   branch: string | null;
   pr: string | null;
@@ -150,4 +152,5 @@ export type ProjectOverview = {
   memory: string;
   openSignals: number;
   sprints: SprintSummary[];
+  held: TicketCard[];
 };

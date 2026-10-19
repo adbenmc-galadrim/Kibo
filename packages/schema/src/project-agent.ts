@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { HoldReason } from "./hold";
 import { NodeId, TicketKey } from "./ids";
 import { Labels } from "./label";
 import { MAX_NOTE_CHARS, NotePath } from "./note";
@@ -123,6 +124,7 @@ export const ProposedAction = z.discriminatedUnion("type", [
     end: SprintDate,
   }),
   z.object({ ...base, type: z.literal("remindQuestion"), questionId: NodeId }),
+  z.object({ ...base, type: z.literal("setHold"), ticket: TicketRef, reason: HoldReason.nullable() }),
 ]);
 export type ProposedAction = z.infer<typeof ProposedAction>;
 export type ActionType = ProposedAction["type"];
@@ -149,6 +151,7 @@ export const ACTION_GROUPS: Record<ActionType, ActionGroup> = {
   setSprint: "sprints",
   createSprint: "sprints",
   remindQuestion: "questions",
+  setHold: "tickets",
 };
 
 export const ProposeBatchInput = z.object({
