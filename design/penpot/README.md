@@ -53,7 +53,7 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 33 · Questions : modifier, rouvrir, archiver | 202 à 206 (phase 23 : réponses modifiables, archives et historique, lot de questions, aperçu au survol, question mise en évidence) ; **dessinés** |
 | 34 · Domaines & guidelines | 207 à 209b (phase 23 : arbre de dossiers, état vide, domaine de projet et du workspace, projet partagé en lecture seule, encart, sélecteur groupé, lien du projet) ; **dessinés, ajustés après implémentation** |
 | 35 · Redesign Silo | 210 à 218 (redesign validé le 2026-10-16 : vue d'ensemble, Planning, fiche fonctionnalité, Tickets, Graphe ; états fiche de sprint et report, 3/2 ouvertes, démo facultative, infobulle du nom) ; **dessinés** ; 211, 212 et 214 mis à jour au jalon de la phase 27 |
-| 36 · Suivi seul | 219 à 225b (phase 27 : vue d'ensemble, Pour commencer, en retard au 18 oct., Nouveau projet, Kanban, fiche ticket et Activité, Questions, barre repliée, panneau de l'agent) ; **dessinés** |
+| 36 · Suivi seul | 219 à 225b (phase 27 : vue d'ensemble, Pour commencer, en retard au 18 oct., Nouveau projet, Kanban, fiche ticket et Activité, Questions, barre repliée, panneau de l'agent) ; 226 à 231d (phase 29 : étapes en attente) ; **dessinés** |
 
 Pages 00 à 27 et 29 à 36 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 36.
 
@@ -326,10 +326,13 @@ redessinés par `S.draw["p-planning"]` et `S.draw["p-fonctionnalite"]`.
   221 Kanban (puces « Phase n/12 · … ») · 222 fiche ticket SILO-45 (« Requise pour livrer », bandeau, « déclarée », « Livraison ») · 222b Activité ·
   223 Questions · 224 barre repliée à 1 180 px et menu des pages · 225 agent de projet, question · 225b récapitulatif et « Copier la relance ».
 
-Phase 29 (à copier au jalon, T11) : les six boards « … · en attente » et « P8c · Mettre en attente » de « Kibo · Redesign » (rangées à partir
-de y = 24 500, voir `design/redesign/README.md`) iront en page « 36 · Suivi seul » : 226 vue d'ensemble en attente · 227 Planning, « En attente (3) » ·
-228 fiche F5, étapes en attente · 229 Kanban, puces et filtre « En attente » · 230 fiche SILO-45, bandeau « En attente » · 231 dialogue « Mettre SILO-82 en attente » · 231b menu de la fiche, « Mettre en attente… » ·
-231c menu de la fiche en attente, « Reprendre » · 231d menu de la carte du Planning, « Reprendre dans ▸ ».
+Phase 29 (2026-10-19) : les boards « … · en attente » et les menus P8c à P8e et P2b de « Kibo · Redesign » (rangées à partir de y = 24 500,
+voir `design/redesign/README.md`, version corrigée en T10) copiés de la même façon, puis déplacés de 16 500 px vers le bas (sous 219c) et renommés.
+
+- 36 · Suivi seul (phase 29) : 226 vue d'ensemble en attente (« 3 en attente », carte « En attente ») · 227 Planning, « En attente (3) » ·
+  228 fiche F5, étapes en attente · 229 Kanban, puces et filtre « En attente » · 230 fiche SILO-45, bandeau « En attente » ·
+  231 dialogue « Mettre SILO-82 en attente » · 231b menu de la fiche, « Mettre en attente… » · 231c menu de la fiche en attente, « Reprendre » ·
+  231d menu de la ligne du Planning, « Reprendre dans ▸ ».
 
 ## Exporter
 
