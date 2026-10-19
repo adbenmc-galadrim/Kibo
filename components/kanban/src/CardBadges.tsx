@@ -3,6 +3,7 @@ import {
   type CiRun,
   type CiTone,
   type GithubPrRef,
+  type OnHold,
   prCiTone,
   type Question,
   questionLabel,
@@ -19,6 +20,7 @@ import {
   GitPullRequestClosed,
   Lock,
   type LucideIcon,
+  Pause,
 } from "lucide-react";
 import { fr } from "./fr";
 import { isLivePr, ticketPr } from "./ticket-pr";
@@ -144,6 +146,21 @@ export function OptionalBadge() {
       className={cn(BADGE_CLASS, "border border-dashed border-(--tracking-border) text-(--tracking-mfg)")}
     >
       {fr.optional}
+    </span>
+  );
+}
+
+export function HeldBadge({ hold }: { hold: OnHold }) {
+  const own = hold.source === "own";
+  return (
+    <span
+      role="note"
+      aria-label={own ? fr.hold.own(hold.reason) : fr.hold.dependency(hold.key)}
+      title={own ? hold.reason : undefined}
+      className={cn(BADGE_CLASS, "border border-dashed border-(--tracking-border) text-(--tracking-mfg)")}
+    >
+      <Pause absoluteStrokeWidth size={12} aria-hidden className="size-3 shrink-0" />
+      <span className="truncate">{own ? fr.hold.short(hold.reason) : fr.hold.by(hold.key)}</span>
     </span>
   );
 }

@@ -167,3 +167,22 @@ test("without a current sprint, the sprint filter keeps nothing", () => {
   const inSprint = { ...t("SILO-1", null), effectiveSprintId: "S42" };
   expect(inFilters(inSprint, ["sprint"], { currentSprintId: null, ciRuns: [] })).toBe(false);
 });
+
+test("the « En attente » filter keeps the steps on hold, their own or by dependency, and adds up", () => {
+  const facts = { currentSprintId: "S42", ciRuns: [] };
+  const hold = (source: "own" | "dependency") => ({
+    source,
+    key: "SILO-33",
+    reason: "Serveur MinIO de recette indisponible",
+    since: "2026-10-16",
+  });
+  const own = { ...t("SILO-33", null), effectiveSprintId: "S42", onHold: hold("own") };
+  const waiting = { ...t("SILO-34", null), effectiveSprintId: "S42", onHold: hold("dependency") };
+  const later = { ...t("SILO-82", null), effectiveSprintId: "S44", onHold: hold("own") };
+  const free = { ...t("SILO-32", null), effectiveSprintId: "S42" };
+  const all = [own, waiting, later, free];
+  const keys = (filters: readonly KanbanFilterKey[]) =>
+    all.filter((x) => inFilters(x, filters, facts)).map((x) => x.key);
+  expect(keys(["held"])).toEqual(["SILO-33", "SILO-34", "SILO-82"]);
+  expect(keys(["sprint", "held"])).toEqual(["SILO-33", "SILO-34"]);
+});

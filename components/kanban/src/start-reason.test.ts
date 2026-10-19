@@ -16,5 +16,7 @@ test("the last step waits for the steps that no « attend » badge names yet", (
 test("no extra text when another badge already says it, or nothing is to say", () => {
   expect(startReasonText({ kind: "question", label: "Q14" })).toBeNull();
   expect(startReasonText({ kind: "status" })).toBeNull();
+  const hold = { source: "own", key: "SILO-33", reason: "Serveur MinIO", since: "2026-10-16" } as const;
+  expect(startReasonText({ kind: "onHold", hold }, [])).toBeNull();
   expect(startReasonText(null)).toBeNull();
 });

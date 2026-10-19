@@ -32,7 +32,13 @@ export function useBoardView({ scoped, scope, viewer, label, sprints, ciRuns }: 
   const facts = { currentSprintId: current?.id ?? null, ciRuns };
   const base = filterTickets(scoped, scope, viewer, label);
   const count = (f: KanbanFilterKey) => base.filter((t) => inFilters(t, [f], facts)).length;
-  const counts = { sprint: count("sprint"), startable: count("startable"), toFix: count("toFix") };
+  const counts = {
+    sprint: count("sprint"),
+    startable: count("startable"),
+    toFix: count("toFix"),
+    held: count("held"),
+  };
+  if (counts.held === 0 && filters.includes("held")) setFilters(filters.filter((f) => f !== "held"));
   const shown = base.filter((t) => inFilters(t, filters, facts));
   const inScope = filterTickets(scoped, scope, viewer).filter((t) => !isGroup(t)).length;
   return {

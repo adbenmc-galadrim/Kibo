@@ -77,3 +77,24 @@ export const trackingSeed = (run: Run) => {
     importRef: { kind: "import_ref", source: "plan", id: "Q14" },
   });
 };
+
+export const HOLD_REASONS = {
+  merge: "Règle de fusion à valider par le client",
+  minio: "Serveur MinIO de recette indisponible",
+};
+
+export const heldSeed = (run: Run) => {
+  const f4 = run({ method: "createTicket", title: "Saisir un constat hors ligne" }) as Ticket;
+  const conflicts = step(run, f4.id, "Conflits de saisie", "in_review");
+  run({ method: "upsertExternalRef", ticketId: conflicts.id, ref: pr(20, "changes_requested", "error") });
+  const f5 = run({ method: "createTicket", title: "Envoyer les photos d'un constat" }) as Ticket;
+  step(run, f5.id, "Route d'envoi des photos", "in_review");
+  const sending = step(run, f5.id, "Écran d'envoi hors ligne");
+  const tests = step(run, f5.id, "Tests E2E de l'envoi");
+  const demo = step(run, f5.id, "Démo · F5");
+  run({ method: "addLink", from: sending.id, to: tests.id, type: "blocks" });
+  run({ method: "addLink", from: tests.id, to: demo.id, type: "blocks" });
+  const since = "2026-10-16";
+  run({ method: "setHold", ticketId: conflicts.id, reason: HOLD_REASONS.merge, since });
+  run({ method: "setHold", ticketId: sending.id, reason: HOLD_REASONS.minio, since });
+};

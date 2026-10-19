@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
-import { ChevronDown, RotateCcw, Tag } from "lucide-react";
+import { ChevronDown, Pause, RotateCcw, Tag } from "lucide-react";
 import type { ReactNode } from "react";
 import { KANBAN_FILTERS, type KanbanFilterKey, LABEL_ALL } from "./filter";
 import { fr } from "./fr";
@@ -108,7 +108,7 @@ function BoardFilters({ filters, onFilters, onClear, total, counts, sprintCode }
         {fr.mode.all}
         <span className={COUNT}>{total}</span>
       </ToggleGroupItem>
-      {KANBAN_FILTERS.map((f) => (
+      {KANBAN_FILTERS.filter((f) => f !== "held" || counts.held > 0).map((f) => (
         <ToggleGroupItem
           key={f}
           value={f}
@@ -117,6 +117,7 @@ function BoardFilters({ filters, onFilters, onClear, total, counts, sprintCode }
           className={SEGMENT}
         >
           {f === "toFix" && <RotateCcw absoluteStrokeWidth size={12} aria-hidden className="size-3" />}
+          {f === "held" && <Pause absoluteStrokeWidth size={12} aria-hidden className="size-3" />}
           {filterLabel(f, sprintCode)}
           <span className={COUNT}>{counts[f]}</span>
         </ToggleGroupItem>

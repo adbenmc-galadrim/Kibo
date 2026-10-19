@@ -5,7 +5,7 @@ export function startReasonText(
   reason: StartReason | null,
   waitingOn: readonly string[] = [],
 ): string | null {
-  if (reason === null) return null;
+  if (reason === null || reason.kind === "onHold") return null;
   if (reason.kind === "sprint") return fr.reason.sprint(reason.code);
   if (reason.kind === "unplanned") return fr.reason.unplanned;
   if (reason.kind === "limit") return fr.reason.limit(reason.count, reason.limit);
