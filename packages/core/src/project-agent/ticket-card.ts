@@ -1,6 +1,5 @@
 import {
   isArchived,
-  isDelivered,
   isGroup,
   type Link,
   type ProjectSnapshot,
@@ -65,7 +64,6 @@ export function ticketSheet(
         answer: answerText(q),
         recipient: q.recipient,
         blocking: q.blocking,
-        delivered: isDelivered(q),
       })),
     runs: runs
       .filter((r) => r.ticketId === ticket.id)

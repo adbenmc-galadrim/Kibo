@@ -29,7 +29,7 @@ describe("list_questions", () => {
     );
   });
 
-  test("a line tells the recipient and the delivery", () => {
+  test("a line tells the recipient, never a delivery", () => {
     expect(listQuestions(snapshot, { state: "answered" })).toEqual([
       {
         id: "q2",
@@ -40,7 +40,6 @@ describe("list_questions", () => {
         answer: "oui",
         recipient: "me",
         recipientName: "Moi (technique)",
-        delivered: false,
         sentAt: null,
       },
       {
@@ -52,7 +51,6 @@ describe("list_questions", () => {
         answer: "oui",
         recipient: "client",
         recipientName: "Client",
-        delivered: true,
         sentAt: null,
       },
     ]);
@@ -60,7 +58,7 @@ describe("list_questions", () => {
 });
 
 describe("get_ticket and project_overview", () => {
-  test("the sheet lists the questions with recipient, blocking and delivery, archived ones aside", () => {
+  test("the sheet lists the questions with recipient and blocking, archived ones aside", () => {
     const [t1] = snapshot.tickets;
     if (!t1) throw new Error("fixture");
     expect(ticketSheet(snapshot, t1, []).questions).toEqual([
@@ -71,7 +69,6 @@ describe("get_ticket and project_overview", () => {
         answer: null,
         recipient: "me",
         blocking: false,
-        delivered: false,
       },
       {
         id: "q2",
@@ -80,7 +77,6 @@ describe("get_ticket and project_overview", () => {
         answer: "oui",
         recipient: "me",
         blocking: false,
-        delivered: false,
       },
       {
         id: "q3",
@@ -89,7 +85,6 @@ describe("get_ticket and project_overview", () => {
         answer: "oui",
         recipient: "client",
         blocking: false,
-        delivered: true,
       },
     ]);
   });

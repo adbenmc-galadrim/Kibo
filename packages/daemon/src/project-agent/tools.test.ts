@@ -193,13 +193,12 @@ describe("read tools", () => {
         state: "archived",
         recipient: "me",
         recipientName: "Moi (technique)",
-        delivered: false,
       },
     ]);
     expect(await w.json("list_questions", { state: "all", recipient: "Client" })).toEqual([]);
     expect(await codeOf(w.tool("list_questions", { recipient: "Galadrim" }))).toBe("INVALID_INPUT");
     expect(await w.json("get_ticket", { key: "SILO-1" })).toMatchObject({
-      questions: [{ title: "Quelle base ?", recipient: "me", blocking: false, delivered: false }],
+      questions: [{ title: "Quelle base ?", recipient: "me", blocking: false }],
     });
     expect(await w.json("project_overview")).toMatchObject({
       recipients: [

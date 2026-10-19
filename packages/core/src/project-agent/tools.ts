@@ -1,7 +1,6 @@
 import {
   findRecipient,
   isArchived,
-  isDelivered,
   isOpenSignal,
   KiboError,
   type ListQuestionsInput,
@@ -59,7 +58,6 @@ export type QuestionLine = {
   answer: string | null;
   recipient: string;
   recipientName: string;
-  delivered: boolean;
   sentAt: number | null;
 };
 
@@ -89,7 +87,6 @@ function questionLine(project: ProjectSnapshot, q: Question): QuestionLine {
     answer: answerText(q),
     recipient: q.recipient,
     recipientName: findRecipient(project.questionRecipients, q.recipient)?.name ?? q.recipient,
-    delivered: isDelivered(q),
     sentAt: q.sentAt,
   };
 }

@@ -179,6 +179,11 @@ export function diffFingerprints(
   ];
 }
 
+function printedTitle(before: ProjectFingerprint, id: string): string | null {
+  const print = before.questions[id];
+  return print === undefined ? null : readPrint(print).title;
+}
+
 export function changeNames(
   project: ProjectSnapshot,
   runs: readonly RunView[],
@@ -192,7 +197,7 @@ export function changeNames(
       const old = before.tickets[id];
       return old ? label(old.key, old.title, id) : id;
     },
-    question: (id) => project.questions.find((q) => q.id === id)?.title ?? id,
+    question: (id) => project.questions.find((q) => q.id === id)?.title ?? printedTitle(before, id) ?? id,
     run: (id) => runs.find((r) => r.id === id)?.label ?? id,
     recipient: (id) => project.questionRecipients.find((r) => r.id === id)?.name ?? id,
   };

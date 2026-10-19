@@ -109,7 +109,7 @@ test("a question batch adds a recipient, asks, renames, reopens and archives, th
   expect(listed?.text).toContain("Client - Logo ?");
 }, 90_000);
 
-test("an update of a delivered answer is refused, the batch reopens it first and applies", async () => {
+test("an answer marked as delivered no longer blocks an update, the batch is proposed at once", async () => {
   const stack = await startStack();
   const seeded = await seedKibo(stack.rpc);
   const { project } = seeded;
@@ -120,15 +120,17 @@ test("an update of a delivered answer is refused, the batch reopens it first and
   const [call] = stack.calls(run.sessionId);
   expect(call?.mcp.map((c) => [c.tool, c.isError])).toEqual([
     ["list_questions", false],
-    ["propose_batch", true],
+    ["propose_batch", false],
     ["propose_batch", false],
   ]);
-  expect(call?.mcp[1]?.text).toContain(
-    "#1 updateQuestion : réponse déjà transmise à un agent : rouvre-la d'abord (reopenQuestion)",
-  );
-  const [batch] = (await viewOf(stack.rpc, project.id)).batches;
-  expect(batch?.actions.map((a) => a.type)).toEqual(["reopenQuestion", "updateQuestion"]);
-  const decided = await decide(stack.rpc, { projectId: project.id, batchId: batch?.id, decision: "apply" });
+  expect(call?.mcp[0]?.text).not.toContain("delivered");
+  const batches = (await viewOf(stack.rpc, project.id)).batches;
+  expect(batches.map((b) => b.status).sort()).toEqual(["pending", "superseded"]);
+  const superseded = batches.find((b) => b.status === "superseded");
+  expect(superseded?.actions.map((a) => a.type)).toEqual(["updateQuestion"]);
+  const pending = batches.find((b) => b.status === "pending");
+  expect(pending?.actions.map((a) => a.type)).toEqual(["reopenQuestion", "updateQuestion"]);
+  const decided = await decide(stack.rpc, { projectId: project.id, batchId: pending?.id, decision: "apply" });
   expect(decided.results.map((r) => r.outcome)).toEqual(["applied", "applied"]);
   const logo = byTitle(await snapshotOf(stack.rpc, project.id), "Logo ?");
   expect(logo?.answer).toBeNull();

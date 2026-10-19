@@ -89,7 +89,6 @@ describe("listQuestions", () => {
         answer: null,
         recipient: "me",
         recipientName: "Moi (technique)",
-        delivered: false,
         sentAt: null,
       },
     ]);
@@ -103,7 +102,6 @@ describe("listQuestions", () => {
         answer: "JSON",
         recipient: "me",
         recipientName: "Moi (technique)",
-        delivered: false,
         sentAt: null,
       },
     ]);

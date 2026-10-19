@@ -67,9 +67,15 @@ describe("buildProjectAgentPrompt", () => {
       "addRecipient",
       "reopenQuestion",
       "deleteQuestion` archive",
+      "Lis `recipient` dans `list_questions`",
     ]) {
       expect(prompt).toContain(fragment);
     }
+  });
+
+  test("the prompt never speaks of a delivered answer", () => {
+    expect(prompt).not.toContain("transmise");
+    expect(prompt).not.toContain("delivered");
   });
 
   test("the sprint rules follow the questions: tools, actions and the end of sprint protocol", () => {
