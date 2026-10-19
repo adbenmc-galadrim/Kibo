@@ -527,9 +527,13 @@ Ordre des groupes par raison : première `since`, puis raison (« Règle de fusi
   au 18 oct.) ; « En cours 1 / 2 · bloquée : F6 », sans note de limite ; carte « En attente » 3 sous Échéances : « Règle de fusion à
   valider par le client · SILO-45 », « Serveur MinIO de recette indisponible · SILO-33, SILO-82 · 2 en dépendent » ; Activité :
   « SILO-82 en attente · … », « SILO-33 en attente · … », « SILO-45 en attente · … ».
-- Planning : « 4 fonctionnalités livrées sur 9 · 1 à planifier », « En cours : 1 / 2 » ; en pied de « À planifier », « En attente (3) » :
-  groupe « Règle de fusion à valider par le client » (SILO-45 · F4 · Conflits de saisie), groupe « Serveur MinIO de recette
-  indisponible » (SILO-33 · F5 · Écran d'envoi hors ligne, SILO-82 · F7 · Génération PDF, « 2 en dépendent »).
+- Planning : « 4 fonctionnalités livrées sur 9 · 1 à planifier », « En cours : 1 / 2 » ; en pied de « À planifier », « En attente (3) »,
+  une carte par étape sur deux lignes (« SILO-45 · F4 » et « ⋯ », puis le titre) : groupe « Règle de fusion à valider par le client »
+  (« SILO-45 · F4 » / « Conflits de saisie »), groupe « Serveur MinIO de recette indisponible » (« SILO-33 · F5 » / « Écran d'envoi
+  hors ligne », « SILO-82 · F7 » / « Génération PDF », puis « 2 en dépendent »). Menu de la carte SILO-45 : « Reprendre », et
+  « Reprendre dans ▸ » (« S43 · Import et contrats », « S44 · Rapports ») quand le sprint de la fonctionnalité est terminé ou absent.
+- Menu « ⋯ » de la fiche : « Ouvrir dans un onglet », « Copier la clé », « Mettre en attente… » (étape sans attente) ou « Reprendre »
+  (étape en attente), séparateur, « Supprimer… ».
 - Fiche F5 : frise 31, 32 puis « En attente · 3 » : SILO-33 « Serveur MinIO de recette indisponible · depuis le 16 oct. » et
   « Reprendre », SILO-34 et SILO-35 « attend SILO-33 » ; Activité « Mise en attente · Serveur MinIO de r… ».
 - Kanban : SILO-45 garde sa colonne *En review* avec la puce « Règle de fusion à valide… », SILO-33 *En cours* avec « Serveur
