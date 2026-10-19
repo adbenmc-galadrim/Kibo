@@ -48,6 +48,7 @@ import type { QuestionImageDeps } from "./questions/question-images-port";
 import { portSlot, ready } from "./service-ports";
 import { loadDoc, type Store } from "./store";
 import { readTabs, saveTabs } from "./tabs-store";
+import { holdSinceInterceptor } from "./tracking/hold-since";
 import { readConfig, runConfigCommand } from "./workspace-config";
 
 export type ComponentsPort = {
@@ -230,6 +231,7 @@ export function createService(store: Store, opts: ServiceOptions): Service {
     assertWritable: (projectId) => docs.assertWritable(projectId),
   };
   path.commands.intercept(questionActorInterceptor(questions.viewer));
+  path.commands.intercept(holdSinceInterceptor(docs.today));
   const componentsReady = () => ready(components.get(), "INTERNAL", "components are not ready");
   const integrationsReady = () => ready(integrations.get(), "INTERNAL", "integrations are not ready");
   const aiReady = () => ready(ai.get(), "AI_UNAVAILABLE", "the AI is not started");
