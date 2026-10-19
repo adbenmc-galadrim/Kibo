@@ -2700,4 +2700,12 @@ Depuis la phase 27 (§39.1), Kibo ne lance plus d'agent de ticket : la transmiss
 
 ### 42.1 Écarts constatés à l'exécution (0.29.0-alpha.2)
 
-À remplir au jalon depuis la section « Écarts » du plan `2026-10-19-kibo-0.29-alpha2-questions.md`.
+Détail par tâche dans la section « Écarts » du plan `2026-10-19-kibo-0.29-alpha2-questions.md` ; ce qui compte pour la suite :
+
+1. **État « transmise »** : les champs `deliveredAt` / `deliveredRunId` restent dans les données stockées mais ne sont plus lus par l'interface ni par l'agent de projet ; `isEditableAnswer` est retirée, `isUndelivered` est privée ; `Service.deliverAnswers` et l'action de lot `deliverAnswers` restent pour le code des agents de ticket (toujours refusée), jusqu'à son retrait.
+2. **Agent de projet** : la règle « options d'une question répondue figées jusqu'à `reopenQuestion` » reste, sans mention de transmission.
+3. **Journal** : `question_deleted` reprend la règle de `question_created` pour `ref` (identifiant d'import, sinon le titre) ; rien n'est écrit si la question n'existait pas.
+4. **Images** : effacées seulement pour un identifiant UUID, dans le dossier de la question ; un échec d'effacement est journalisé sans annuler la suppression. `deleteTicket` n'efface toujours pas les images des questions qu'il purge.
+5. **Carte** : menu « ⋯ » non modal (« Archiver » selon la règle d'archivage, puis « Supprimer ») ; l'en-tête d'un groupe de ticket perd la zone vide du message de transmission (− 8 px).
+6. **Auteur** : « Répondu par », « posée par » et l'historique nomment le membre par son nom (`memberName`), jamais par son identifiant de compte ; « un membre » pour un membre inconnu.
+7. **Maquettes** : P9b à P9d (232 à 234) sans aperçu d'export ni toast ; référence pixel de l'écran Questions inchangée (1,790 % / 1,888 %).
