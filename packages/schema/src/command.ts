@@ -3,6 +3,7 @@ import { DeliveryStep } from "./delivery";
 import { ExternalRef, ExternalRefKind } from "./external-ref";
 import { ShortKey } from "./feature";
 import { ImportRef } from "./git-branch";
+import { HoldReason } from "./hold";
 import { NodeId, Sha256 } from "./ids";
 import { ComponentRef, DataKey, type Instance, Layout } from "./instance";
 import { Binding } from "./integrations";
@@ -206,6 +207,12 @@ export const ProjectCommand = z
     z.object({ method: z.literal("deleteSprint"), sprintId: NodeId }),
     z.object({ method: z.literal("setTicketSprint"), ticketId: NodeId, sprintId: NodeId.nullable() }),
     z.object({ method: z.literal("setTicketOptional"), ticketId: NodeId, optional: z.boolean() }),
+    z.object({
+      method: z.literal("setHold"),
+      ticketId: NodeId,
+      reason: HoldReason.nullable(),
+      since: SprintDate.optional(),
+    }),
   ])
   .superRefine((cmd, ctx) => {
     if (cmd.method === "updateQuestion" && QUESTION_EDIT_FIELDS.every((field) => cmd[field] === undefined)) {
@@ -265,6 +272,7 @@ export const COMMAND_WRITES: Record<ProjectCommand["method"], EntityType | null>
   deleteSprint: "sprint",
   setTicketSprint: "ticket",
   setTicketOptional: "ticket",
+  setHold: "ticket",
 };
 
 export const isReservedCommand = (method: ProjectCommand["method"]): boolean =>
@@ -318,4 +326,5 @@ export type CommandResult = {
   deleteSprint: null;
   setTicketSprint: Ticket;
   setTicketOptional: Ticket;
+  setHold: Ticket;
 };

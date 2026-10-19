@@ -12,6 +12,7 @@ import { INTEGRATION_RPC, type IntegrationRpcResult } from "./integrations-rpc";
 import type { Link } from "./link";
 import { MARKET_RPC_REQUESTS, type MarketRpcResult } from "./market-rpc";
 import type { RunMomentsEvent } from "./moment";
+import type { OnHold } from "./on-hold";
 import { OVERLAP_RPC, type OverlapRpcResult } from "./overlap-rpc";
 import type { Page } from "./page";
 import { PHASE14_RPC, type Phase14RpcResult } from "./phase14-rpc";
@@ -48,6 +49,7 @@ export type TicketView = Ticket & {
   feature: FeatureState | null;
   session: TicketSession | null;
   updatedAt: number | null;
+  onHold: OnHold | null;
 };
 export type ProjectSnapshot = {
   meta: ProjectMeta;
