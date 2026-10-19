@@ -31,6 +31,9 @@ export type SignalStore = {
   wakeup(projectId: string): Wakeup;
   saveWakeup(w: Wakeup): void;
   due(): Wakeup[];
+  queueAnswer(projectId: string, questionId: string, at: number): void;
+  queuedAnswers(projectId: string): string[];
+  dropAnswers(projectId: string): void;
   close(): void;
 };
 
@@ -45,6 +48,8 @@ const SCHEMA = [
     "signal_id TEXT NOT NULL REFERENCES project_signals(id), at INTEGER NOT NULL, data TEXT NOT NULL)",
   "CREATE INDEX IF NOT EXISTS project_signal_events_by_signal ON project_signal_events (signal_id, id)",
   "CREATE TABLE IF NOT EXISTS project_agent_wakeups (project_id TEXT PRIMARY KEY, last_at INTEGER, due_at INTEGER)",
+  "CREATE TABLE IF NOT EXISTS project_agent_wakeup_answers (project_id TEXT NOT NULL, question_id TEXT NOT NULL, " +
+    "queued_at INTEGER NOT NULL, PRIMARY KEY (project_id, question_id))",
   ...APPEND_ONLY.flatMap((t) => [
     `CREATE TRIGGER IF NOT EXISTS ${t}_no_update BEFORE UPDATE ON ${t} BEGIN SELECT RAISE(ABORT, 'append-only'); END`,
     `CREATE TRIGGER IF NOT EXISTS ${t}_no_delete BEFORE DELETE ON ${t} BEGIN SELECT RAISE(ABORT, 'append-only'); END`,
@@ -236,6 +241,24 @@ export function openSignalStore(home: string): SignalStore {
           .query("SELECT * FROM project_agent_wakeups WHERE due_at IS NOT NULL ORDER BY due_at, project_id")
           .all() as WakeupRow[]
       ).map(toWakeup),
+    queueAnswer(projectId, questionId, at) {
+      db.query(
+        "INSERT INTO project_agent_wakeup_answers (project_id, question_id, queued_at) VALUES ($p, $q, $at) " +
+          "ON CONFLICT (project_id, question_id) DO NOTHING",
+      ).run({ p: projectId, q: questionId, at });
+    },
+    queuedAnswers: (projectId) =>
+      (
+        db
+          .query(
+            "SELECT question_id FROM project_agent_wakeup_answers WHERE project_id = $p " +
+              "ORDER BY queued_at, question_id",
+          )
+          .all({ p: projectId }) as { question_id: string }[]
+      ).map((r) => r.question_id),
+    dropAnswers(projectId) {
+      db.query("DELETE FROM project_agent_wakeup_answers WHERE project_id = $p").run({ p: projectId });
+    },
     close: () => db.close(),
   };
 }

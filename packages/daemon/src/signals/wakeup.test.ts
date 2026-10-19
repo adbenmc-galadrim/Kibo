@@ -2,10 +2,11 @@ import { describe, expect, spyOn, test } from "bun:test";
 import { KiboError, SIGNAL_WAKE_WINDOW_MS, WAKEUP_PREFIX } from "@kibo/schema";
 import fc from "fast-check";
 import { fakeWakeupStore } from "./signals.test-helper";
-import { createWakeupScheduler, type WakeupDeps } from "./wakeup";
+import { ANSWER_WAKE_GRACE_MS, createWakeupScheduler, type WakeupDeps } from "./wakeup";
 
 const MIN = 60_000;
 const T0 = 1_000 * MIN;
+const GRACE = ANSWER_WAKE_GRACE_MS;
 
 type Timer = { fn: () => void; at: number; cleared: boolean };
 
@@ -16,8 +17,21 @@ function rig(over: Partial<WakeupDeps> = {}) {
   const timers: Timer[] = [];
   let clock = T0;
   let writable = true;
+  const labels = new Map([
+    ["q16", "Q16"],
+    ["q17", "Q17"],
+  ]);
+  const quotes = new Map([
+    ["q16", "5 Go"],
+    ["q17", "Oui"],
+  ]);
   const scheduler = createWakeupScheduler({
     store,
+    answered: (_projectId, ids) =>
+      ids.flatMap((id) => {
+        const quote = quotes.get(id);
+        return quote === undefined ? [] : [{ label: labels.get(id) ?? "Q?", quote }];
+      }),
     send: (projectId, text) => {
       sent.push({ projectId, text, at: clock });
     },
@@ -37,6 +51,7 @@ function rig(over: Partial<WakeupDeps> = {}) {
   const live = () => timers.filter((t) => !t.cleared);
   return {
     store,
+    quotes,
     sent,
     timers,
     live,
@@ -187,20 +202,27 @@ describe("createWakeupScheduler", () => {
     errors.mockRestore();
   });
 
-  test("two wake-ups of a project are always a window apart", () => {
+  test("two wake-ups of a project are always a window apart, answers included", () => {
     fc.assert(
       fc.property(
-        fc.array(fc.record({ gap: fc.nat({ max: 3 * SIGNAL_WAKE_WINDOW_MS }), blocker: fc.boolean() }), {
-          minLength: 1,
-          maxLength: 120,
-        }),
+        fc.array(
+          fc.record({
+            gap: fc.nat({ max: 3 * SIGNAL_WAKE_WINDOW_MS }),
+            kind: fc.constantFrom("ticket", "blocker", "answer"),
+          }),
+          {
+            minLength: 1,
+            maxLength: 120,
+          },
+        ),
         (steps) => {
           const r = rig();
           let t = T0;
           for (const step of steps) {
             t += step.gap;
             r.fireDue(t);
-            r.scheduler.request("p1", step.blocker ? "blocker" : "ticket");
+            if (step.kind === "answer") r.scheduler.requestAnswer("p1", "q16");
+            else r.scheduler.request("p1", step.kind);
           }
           r.fireDue(t + SIGNAL_WAKE_WINDOW_MS);
           const at = r.sent.map((s) => s.at);
@@ -208,5 +230,122 @@ describe("createWakeupScheduler", () => {
         },
       ),
     );
+  });
+});
+
+describe("waking on an answer", () => {
+  function answerRig(over: Partial<WakeupDeps> = {}) {
+    const r = rig(over);
+    r.store.kinds.set("p1", []);
+    return r;
+  }
+
+  test("waits a grace delay, then sends one message citing the answer", () => {
+    const r = answerRig();
+    expect(r.scheduler.requestAnswer("p1", "q16")).toEqual({ kind: "scheduled", at: T0 + GRACE });
+    expect(r.sent).toHaveLength(0);
+    expect(r.store.wakeup("p1").dueAt).toBe(T0 + GRACE);
+    expect(r.live().map((t) => t.at)).toEqual([T0 + GRACE]);
+    r.fireDue(T0 + GRACE);
+    expect(r.sent).toHaveLength(1);
+    const text = r.sent[0]?.text ?? "";
+    expect(text.startsWith(`${WAKEUP_PREFIX}1 réponse à lire.`)).toBe(true);
+    expect(text).toContain("- Q16 répondue : « 5 Go »");
+    expect(r.store.queuedAnswers("p1")).toEqual([]);
+    expect(r.store.wakeup("p1")).toEqual({ projectId: "p1", lastAt: T0 + GRACE, dueAt: null });
+  });
+
+  test("answers given during the grace delay make a single turn", () => {
+    const r = answerRig();
+    r.scheduler.requestAnswer("p1", "q16");
+    r.at(T0 + 10_000);
+    expect(r.scheduler.requestAnswer("p1", "q17")).toEqual({ kind: "already", at: T0 + GRACE });
+    r.fireDue(T0 + GRACE);
+    expect(r.sent).toHaveLength(1);
+    expect(r.sent[0]?.text).toContain(
+      "2 réponses à lire.\n- Q16 répondue : « 5 Go »\n- Q17 répondue : « Oui »",
+    );
+  });
+
+  test("a grace delay of zero wakes at once", () => {
+    const r = answerRig({ grace: 0 });
+    expect(r.scheduler.requestAnswer("p1", "q16")).toEqual({ kind: "now" });
+    expect(r.sent.map((s) => s.at)).toEqual([T0]);
+  });
+
+  test("later answers join the end of the window, in the order they were given", () => {
+    const r = answerRig();
+    r.scheduler.requestAnswer("p1", "q16");
+    r.fireDue(T0 + GRACE);
+    r.at(T0 + GRACE + MIN);
+    expect(r.scheduler.requestAnswer("p1", "q17")).toEqual({ kind: "scheduled", at: T0 + GRACE + 10 * MIN });
+    r.at(T0 + GRACE + 2 * MIN);
+    expect(r.scheduler.requestAnswer("p1", "q16")).toEqual({
+      kind: "already",
+      at: T0 + GRACE + 10 * MIN,
+    });
+    expect(r.sent).toHaveLength(1);
+    r.fireDue(T0 + GRACE + 10 * MIN);
+    expect(r.sent).toHaveLength(2);
+    expect(r.sent[1]?.text).toContain(
+      "2 réponses à lire.\n- Q17 répondue : « Oui »\n- Q16 répondue : « 5 Go »",
+    );
+  });
+
+  test("an answer changed before the deadline is cited as it is now, once", () => {
+    const r = answerRig();
+    r.scheduler.requestAnswer("p1", "q16");
+    r.scheduler.requestAnswer("p1", "q16");
+    r.quotes.set("q16", "2 Go");
+    r.fireDue(T0 + GRACE);
+    const text = r.sent[0]?.text ?? "";
+    expect(text).toContain("- Q16 répondue : « 2 Go »");
+    expect(text.split("répondue").length).toBe(2);
+  });
+
+  test("an answer withdrawn without any signal sends nothing and empties the queue", () => {
+    const r = answerRig();
+    r.store.saveWakeup({ projectId: "p1", lastAt: T0 - 20 * MIN, dueAt: null });
+    r.scheduler.requestAnswer("p1", "q16");
+    r.quotes.delete("q16");
+    r.fireDue(T0 + GRACE);
+    expect(r.sent).toHaveLength(0);
+    expect(r.store.queuedAnswers("p1")).toEqual([]);
+    expect(r.store.wakeup("p1")).toEqual({ projectId: "p1", lastAt: T0 - 20 * MIN, dueAt: null });
+  });
+
+  test("a project this instance cannot write is never woken and its queue is emptied", () => {
+    const r = answerRig();
+    r.setWritable(false);
+    r.scheduler.requestAnswer("p1", "q16");
+    r.fireDue(T0 + GRACE);
+    expect(r.sent).toHaveLength(0);
+    expect(r.store.queuedAnswers("p1")).toEqual([]);
+  });
+
+  test("a blocker keeps its immediate wake-up and carries the waiting answer", () => {
+    const r = answerRig();
+    r.scheduler.requestAnswer("p1", "q16");
+    r.store.kinds.set("p1", ["ticket", "blocker"]);
+    r.at(T0 + 5_000);
+    expect(r.scheduler.request("p1", "blocker")).toEqual({ kind: "now" });
+    expect(r.sent).toHaveLength(1);
+    expect(r.sent[0]?.text).toContain(
+      "2 signaux à traiter (1 ticket à créer, 1 blocage) et 1 réponse à lire.\n- Q16 répondue : « 5 Go »",
+    );
+    expect(r.live()).toHaveLength(0);
+    expect(r.store.wakeup("p1")).toEqual({ projectId: "p1", lastAt: T0 + 5_000, dueAt: null });
+    r.fireDue(T0 + GRACE);
+    expect(r.sent).toHaveLength(1);
+  });
+
+  test("a deadline left by the previous daemon replays the waiting answers at start", () => {
+    const r = answerRig();
+    r.store.queueAnswer("p1", "q17", T0 - MIN);
+    r.store.saveWakeup({ projectId: "p1", lastAt: T0 - 20 * MIN, dueAt: T0 - 1 });
+    r.scheduler.start();
+    expect(r.sent).toHaveLength(1);
+    expect(r.sent[0]?.text).toContain("- Q17 répondue : « Oui »");
+    expect(r.store.queuedAnswers("p1")).toEqual([]);
   });
 });
