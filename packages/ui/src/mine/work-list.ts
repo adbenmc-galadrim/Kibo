@@ -4,6 +4,8 @@ import {
   type CiRun,
   type CiTone,
   type GithubPrRef,
+  isLivePr,
+  liveReview,
   type ProjectMeta,
   type ProjectSnapshot,
   prCiTone,
@@ -29,7 +31,6 @@ export type WorkItem = {
 };
 export type WorkSection = { group: WorkGroup; items: WorkItem[] };
 
-const LIVE: ReadonlySet<GithubPrRef["state"]> = new Set(["open", "draft"]);
 const ACTIVE: ReadonlySet<TicketView["statusId"]> = new Set(["in_progress", "in_review"]);
 
 const latest = (prs: readonly GithubPrRef[]): GithubPrRef | null =>
@@ -37,7 +38,7 @@ const latest = (prs: readonly GithubPrRef[]): GithubPrRef | null =>
 
 function ticketPr(ticket: TicketView): GithubPrRef | null {
   const prs = ticket.externalRefs.filter((r): r is GithubPrRef => r.kind === "github_pr");
-  return latest(prs.filter((pr) => LIVE.has(pr.state))) ?? latest(prs);
+  return latest(prs.filter(isLivePr)) ?? latest(prs);
 }
 
 function ciOf(ticket: TicketView, pr: GithubPrRef | null, runs: readonly CiRun[]): CiTone | null {
@@ -53,13 +54,13 @@ function itemOf(
   runs: readonly CiRun[],
 ): WorkItem {
   const pr = ticketPr(ticket);
-  const live = pr !== null && LIVE.has(pr.state);
+  const live = pr !== null && isLivePr(pr);
   const question = blockingQuestion(ticket, snapshot.questions);
   return {
     project,
     ticket,
     pr,
-    changes: live && pr.review === "changes_requested",
+    changes: pr !== null && liveReview(pr) === "changes_requested",
     ci: ciOf(ticket, live ? pr : null, runs),
     blockedBy: question ? questionLabel(question) : null,
     feature: snapshot.tickets.find((t) => t.id === ticket.parentId) ?? null,

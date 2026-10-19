@@ -82,6 +82,20 @@ describe("my work list", () => {
     expect(keys(project())[0]).toEqual(["toFix", ["KIB-45"]]);
   });
 
+  test("a merged PR with changes requested is not to fix", () => {
+    const snapshot = project();
+    const tickets = snapshot.tickets.map((t) =>
+      t.key === "KIB-45"
+        ? { ...t, externalRefs: [{ ...pr(20, "changes_requested"), state: "merged" as const }] }
+        : t,
+    );
+    const items = workList([kib], new Map([[kib.id, { ...snapshot, tickets }]]), "adam", new Map()).flatMap(
+      (g) => g.items,
+    );
+    expect(items.find((i) => i.ticket.key === "KIB-45")?.changes).toBe(false);
+    expect(keys({ ...snapshot, tickets })[0]?.[0]).not.toBe("toFix");
+  });
+
   test("an item carries its PR, its CI and the blocking question", () => {
     const snapshot = project();
     const asked = snapshot.tickets.find((t) => t.key === "KIB-51");

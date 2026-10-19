@@ -1,6 +1,14 @@
-import { type CiRun, isGroup, LabelName, prCiTone, type TicketView } from "@kibo/schema";
+import {
+  type CiRun,
+  isGroup,
+  isLivePr,
+  LabelName,
+  liveReview,
+  prCiTone,
+  type TicketView,
+} from "@kibo/schema";
 import { inCurrentSprint } from "./sprint-filter";
-import { isLivePr, ticketCiRuns, ticketPr } from "./ticket-pr";
+import { ticketCiRuns, ticketPr } from "./ticket-pr";
 
 export type KanbanFilter = "mine-and-agents" | "all";
 export type KanbanFilterKey = "sprint" | "startable" | "toFix" | "held";
@@ -31,7 +39,7 @@ export function filterTickets(
 export function toFix(ticket: Pick<TicketView, "externalRefs">, ciRuns: readonly CiRun[]): boolean {
   const pr = ticketPr(ticket);
   if (pr === null || !isLivePr(pr)) return false;
-  return pr.review === "changes_requested" || prCiTone(pr, ciRuns) === "error";
+  return liveReview(pr) === "changes_requested" || prCiTone(pr, ciRuns) === "error";
 }
 
 export type FilterFacts = { currentSprintId: string | null; ciRuns: readonly CiRun[] };

@@ -5,6 +5,7 @@ import {
   isFeature,
   isOpen,
   type Link,
+  liveReview,
   type Question,
   type SprintState,
   type SprintView,
@@ -121,7 +122,7 @@ function gitOf(step: FeatureStep): GitMark | null {
   if (pr === null) return step.branch === null ? null : { kind: "branch", tone: "blue" };
   if (pr.state === "merged") return { kind: "merged", tone: "green" };
   if (pr.state === "closed") return { kind: "pr", tone: "dim" };
-  return { kind: "pr", tone: pr.review === "changes_requested" ? "amber" : "purple" };
+  return { kind: "pr", tone: liveReview(pr) === "changes_requested" ? "amber" : "purple" };
 }
 
 function footerOf(f: Feature, facts: Facts, sorted: readonly SprintView[]): FrameFooter | null {
