@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { assertFixedNow, FIXED_NOW } from "./pixel-settings";
+import { assertFixedNow, FIXED_NOW, isSiloScenario, SILO_ATTENTE, SILO_MAQUETTES } from "./pixel-settings";
 
 const info = { version: "0.25.0-alpha.1", platform: "darwin" };
 
@@ -26,4 +26,11 @@ test("a daemon frozen at the same instant is accepted, whatever the notation", (
 
 test("an answer that is not an object is refused", () => {
   expect(() => assertFixedNow(null)).toThrow("getAppInfo");
+});
+
+test("both Silo scenarios are seeded under the frozen clock, no other one", () => {
+  expect(isSiloScenario(SILO_MAQUETTES)).toBe(true);
+  expect(isSiloScenario(SILO_ATTENTE)).toBe(true);
+  expect(SILO_ATTENTE).toBe("silo-attente");
+  expect(isSiloScenario("question")).toBe(false);
 });

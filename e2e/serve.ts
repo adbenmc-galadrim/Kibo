@@ -19,8 +19,9 @@ import { e2eHome } from "./e2e-home";
 import { siloGhState } from "./fixtures/silo-gh";
 import { SILO_SCENARIO } from "./fixtures/silo-suivi";
 import { createE2eRepo, fakeGhDir, GIT_IDENTITY } from "./git-repo";
-import { FIXED_NOW, SILO_MAQUETTES } from "./pixel-settings";
+import { FIXED_NOW, isSiloScenario, SILO_ATTENTE } from "./pixel-settings";
 import { connectSeedRpc, waitForDaemon } from "./seed-client";
+import { seedSiloAttente } from "./seed-silo-attente";
 import { seedSiloMaquettes } from "./seed-silo-maquettes";
 import { type SyncSeed, shareSilo } from "./seed-silo-sync";
 import {
@@ -65,7 +66,7 @@ for (const draft of drafts) {
 const agents = join(root, "packages/daemon/src/agents");
 const e2eScenario = join(import.meta.dir, "agents", "scenarios", `${scenario}.json`);
 function scenarioFile(): string {
-  if (scenario === SILO_MAQUETTES) return SILO_SCENARIO;
+  if (siloScenario) return SILO_SCENARIO;
   return existsSync(e2eScenario) ? e2eScenario : join(agents, "scenarios", `${scenario}.json`);
 }
 const ghDir = fakeGhDir(port);
@@ -73,10 +74,10 @@ rmSync(ghDir, { recursive: true, force: true });
 mkdirSync(ghDir, { recursive: true });
 const gh = join(ghDir, "gh");
 const ghState = join(ghDir, "state.json");
-const siloMaquettes = scenario === SILO_MAQUETTES;
+const siloScenario = isSiloScenario(scenario);
 const writeSiloGh = (merged: boolean) => writeFileSync(ghState, JSON.stringify(siloGhState({ merged })));
-if (siloMaquettes) writeSiloGh(false);
-const siloRepo = siloMaquettes ? createE2eRepo("silo") : null;
+if (siloScenario) writeSiloGh(false);
+const siloRepo = siloScenario ? createE2eRepo("silo") : null;
 if (withGh) {
   copyFileSync(join(root, "packages/daemon/src/code/testing/fake-gh.ts"), gh);
   chmodSync(gh, 0o755);
@@ -147,8 +148,9 @@ function startFakesFor() {
   return null;
 }
 const fakes = await startFakesFor();
-const syncServer: TestSyncServer | null =
-  scenario === SILO_MAQUETTES ? await startTestSyncServer({ dataDir: join(home, "sync-server") }) : null;
+const syncServer: TestSyncServer | null = siloScenario
+  ? await startTestSyncServer({ dataDir: join(home, "sync-server") })
+  : null;
 async function syncSeed(server: TestSyncServer): Promise<SyncSeed> {
   const caFile = join(home, "sync-ca.pem");
   writeFileSync(caFile, server.caPem, { mode: 0o600 });
@@ -181,7 +183,7 @@ const proc = Bun.spawn(
       KIBO_GH: gh,
       FAKE_GH_STATE: ghState,
       FAKE_GH_LOG: join(ghDir, "log.jsonl"),
-      ...(siloMaquettes ? { KIBO_FIXED_NOW: FIXED_NOW, KIBO_PR_POLL_MS: SILO_PR_POLL_MS } : {}),
+      ...(siloScenario ? { KIBO_FIXED_NOW: FIXED_NOW, KIBO_PR_POLL_MS: SILO_PR_POLL_MS } : {}),
     },
     stdout: "inherit",
     stderr: "inherit",
@@ -191,11 +193,12 @@ const forward = (signal: NodeJS.Signals) => () => proc.kill(signal);
 process.on("SIGTERM", forward("SIGTERM"));
 process.on("SIGINT", forward("SIGINT"));
 async function seedScenario(): Promise<void> {
-  if (scenario !== SILO_MAQUETTES) return;
+  if (!siloScenario) return;
   const base = `http://127.0.0.1:${port}`;
   await waitForDaemon(base, 30_000);
   const rpc = await connectSeedRpc(base, E2E_TOKEN);
-  await seedSiloMaquettes(rpc, { folder: siloRepo?.repo ?? null, mergePr: () => writeSiloGh(true) });
+  const seed = scenario === SILO_ATTENTE ? seedSiloAttente : seedSiloMaquettes;
+  await seed(rpc, { folder: siloRepo?.repo ?? null, mergePr: () => writeSiloGh(true) });
   if (syncServer) await shareSilo(rpc, await syncSeed(syncServer));
 }
 const seeded = await seedScenario().then(
@@ -218,7 +221,7 @@ function openReadyPort() {
     throw error;
   }
 }
-const ready = seeded && siloMaquettes ? openReadyPort() : null;
+const ready = seeded && siloScenario ? openReadyPort() : null;
 const exited = await proc.exited;
 ready?.stop(true);
 const code = seeded ? exited : 1;
