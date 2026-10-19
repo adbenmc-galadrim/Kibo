@@ -97,7 +97,9 @@ SCREENS27 = [(6, "P1 bis v3 · Vue d'ensemble", "proposition-vue-ensemble-v3"), 
 MARK27 = "\n## Phase 27\n"
 SCREENS29 = [(14, "P1 bis · Vue d'ensemble · en attente", "proposition-attente-vue-ensemble"), (15, "P2 · Planning · en attente", "proposition-attente-planning"),
     (16, "P3 · Fonctionnalité · en attente", "proposition-attente-fonctionnalite"), (17, "P7 · Kanban · en attente", "proposition-attente-kanban"),
-    (18, "P8 · Fiche ticket · en attente", "proposition-attente-fiche-ticket"), (19, "P8c · Mettre en attente", "proposition-attente-dialogue")]
+    (18, "P8 · Fiche ticket · en attente", "proposition-attente-fiche-ticket"), (19, "P8c · Mettre en attente", "proposition-attente-dialogue"),
+    (20, "P8d · Fiche ticket, menu", "proposition-attente-fiche-menu"), (21, "P8e · Fiche ticket en attente, menu", "proposition-attente-fiche-menu-reprendre"),
+    (22, "P2b · Planning, Reprendre dans", "proposition-attente-planning-menu")]
 MARK29 = "\n## Phase 29\n"
 if "--sections" in sys.argv:
     wanted = sys.argv[sys.argv.index("--sections") + 1].split(",")
@@ -114,7 +116,7 @@ if "--sections" in sys.argv:
 if "--phase29" in sys.argv:
     cur = open(W + "/cotes.md").read()
     cur = cur.split(MARK29)[0].rstrip("\n") + "\n"
-    intro = ["## Phase 29", "", "Étapes en attente (spec §41), données `silo-attente` (section « Phase 29 · étapes en attente » de `design/donnees-fictives.md`). Chaque board clone la référence pixel de son écran (P1 bis v3, P2, P3, P7, P8) puis y pose l'attente (`scripts/56-phase-29.js`) ; P8c pose le dialogue « Mettre SILO-82 en attente » sur le Kanban en attente. Rangées à partir de y = 24 500 (pas de 1 500 px), sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` par board, puis `python3 scripts/cotes.py <dossier des JSON> --phase29`, qui remplace cette partie seulement. Le dialogue n'a pas de comparaison au pixel (capture seulement)."]
+    intro = ["## Phase 29", "", "Étapes en attente (spec §41), données `silo-attente` (section « Phase 29 · étapes en attente » de `design/donnees-fictives.md`). Chaque board clone la référence pixel de son écran (P1 bis v3, P2, P3, P7, P8) puis y pose l'attente (`scripts/56-phase-29.js`) ; P8c pose le dialogue « Mettre SILO-82 en attente » sur le Kanban en attente. Rangées à partir de y = 24 500 (pas de 1 500 px), sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` par board, puis `python3 scripts/cotes.py <dossier des JSON> --phase29`, qui remplace cette partie seulement. Le dialogue et les menus (P8d, P8e, P2b) n'ont pas de comparaison au pixel (capture seulement)."]
     parts = [screen_md(i, name, png, "") for i, name, png in SCREENS29]
     open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
     print(sum(1 for _ in open(W + "/cotes.md")))

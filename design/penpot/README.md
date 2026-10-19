@@ -328,7 +328,8 @@ redessinés par `S.draw["p-planning"]` et `S.draw["p-fonctionnalite"]`.
 
 Phase 29 (à copier au jalon, T11) : les six boards « … · en attente » et « P8c · Mettre en attente » de « Kibo · Redesign » (rangées à partir
 de y = 24 500, voir `design/redesign/README.md`) iront en page « 36 · Suivi seul » : 226 vue d'ensemble en attente · 227 Planning, « En attente (3) » ·
-228 fiche F5, étapes en attente · 229 Kanban, puces et filtre « En attente » · 230 fiche SILO-45, bandeau « En attente » · 231 dialogue « Mettre SILO-82 en attente ».
+228 fiche F5, étapes en attente · 229 Kanban, puces et filtre « En attente » · 230 fiche SILO-45, bandeau « En attente » · 231 dialogue « Mettre SILO-82 en attente » · 231b menu de la fiche, « Mettre en attente… » ·
+231c menu de la fiche en attente, « Reprendre » · 231d menu de la carte du Planning, « Reprendre dans ▸ ».
 
 ## Exporter
 

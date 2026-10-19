@@ -2,7 +2,9 @@
 // Chaque board clone la référence pixel de son écran (retouches du jalon 27 et textes de la phase 28 compris), puis y pose l'attente.
 const S = storage;
 S.draw = S.draw || {};
-Object.assign(S.ICONS, { pause: '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>' });
+Object.assign(S.ICONS, { pause: '<rect x="14" y="3" width="5" height="18" rx="1"/><rect x="5" y="3" width="5" height="18" rx="1"/>',
+  play: '<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>',
+  trash: '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' });
 S.HOLDS = [
   { key: "SILO-45", title: "Conflits de saisie", f: "F4", reason: "Règle de fusion à valider par le client" },
   { key: "SILO-33", title: "Écran d'envoi hors ligne", f: "F5", reason: "Serveur MinIO de recette indisponible" },
@@ -15,11 +17,13 @@ S.heldGroups = () => { const reasons = [...new Set(S.HOLDS.map(h => h.reason))].
   return reasons.map(reason => { const steps = S.HOLDS.filter(h => h.reason === reason).sort((a, b) => a.key.localeCompare(b.key, "fr", { numeric: true }));
     const dependents = Object.values(S.HELD_BY).filter(k => steps.some(s => s.key === k)).length; return { reason, steps, dependents }; }); };
 S.Y29 = S.Y27 + S.STEP27 * S.ROWS27.length;
-S.ROWS29 = ["a-vue", "a-planning", "a-fonctionnalite", "a-kanban", "a-fiche", "a-dialogue"];
+S.ROWS29 = ["a-vue", "a-planning", "a-fonctionnalite", "a-kanban", "a-fiche", "a-dialogue", "a-fiche-menu", "a-fiche-menu-reprendre", "a-planning-menu"];
 S.SRC29 = { "a-vue": "P1 bis v3 · Vue d'ensemble", "a-planning": "P2 · Planning", "a-fonctionnalite": "P3 · Fonctionnalité", "a-kanban": "P7 · Kanban",
-  "a-fiche": "P8 · Fiche ticket", "a-dialogue": "P7 · Kanban · en attente" };
+  "a-fiche": "P8 · Fiche ticket", "a-dialogue": "P7 · Kanban · en attente", "a-fiche-menu": "P8 · Fiche ticket", "a-fiche-menu-reprendre": "P8 · Fiche ticket · en attente",
+  "a-planning-menu": "P2 · Planning · en attente" };
 S.NAMES29 = { "a-vue": "P1 bis · Vue d'ensemble · en attente", "a-planning": "P2 · Planning · en attente", "a-fonctionnalite": "P3 · Fonctionnalité · en attente",
-  "a-kanban": "P7 · Kanban · en attente", "a-fiche": "P8 · Fiche ticket · en attente", "a-dialogue": "P8c · Mettre en attente" };
+  "a-kanban": "P7 · Kanban · en attente", "a-fiche": "P8 · Fiche ticket · en attente", "a-dialogue": "P8c · Mettre en attente",
+  "a-fiche-menu": "P8d · Fiche ticket, menu", "a-fiche-menu-reprendre": "P8e · Fiche ticket en attente, menu", "a-planning-menu": "P2b · Planning, Reprendre dans" };
 S.find29 = (scope, pred) => penpotUtils.findShapes(pred, scope)[0];
 S.named = (scope, name) => { const s = S.find29(scope, z => z.name === name); if (!s) throw new Error("missing shape: " + name); return s; };
 S.shownIndex = (parent, ref) => parent.children.length - 1 - parent.children.findIndex(c => c.id === ref.id);
@@ -187,6 +191,26 @@ S.draw29k["a-dialogue"] = (f) => { const C = S.C, sec = C.mfg, h = S.holdOf("SIL
   const sr = S.row(sg, { fx: true, gap: 6, wrap: true }); for (const g of S.heldGroups()) S.btn(sr, g.reason, "outline", { sm: true, icon: "pause", ic: sec });
   const ft = S.row(d, { fx: true, gap: 8, justify: "end", pad: [4, 0, 0, 0] }); S.btn(ft, "Annuler", "outline"); S.btn(ft, "Mettre en attente", "brand");
   d.bringToFront(); return f; };
+
+// ---------- Menus : « ⋯ » de la fiche (Mettre en attente…, Reprendre) et ligne du Planning (Reprendre, Reprendre dans ▸) ----------
+S.menu29 = (f, x, y, w, items) => { const C = S.C;
+  const m = S.col(f, { name: "menu", x, y, w, pad: 4, gap: 0, radius: 8, stroke: C.border, fill: C.card, shadow: 10 });
+  for (const it of items) { if (it === "sep") { const l = S.box(m, { name: "separator", w: 10, h: 9, fx: true, dir: "column", justify: "center", pad: [4, 0] }); S.hline(l, C.border); continue; }
+    const r = S.row(m, { name: "item " + it.label, fx: true, h: 30, pad: [0, 8], gap: 8, radius: 5, fill: it.on ? C.hover : null });
+    const tone = it.danger ? C.red : C.fg; if (it.icon) S.icon(r, it.icon, 14, it.danger ? C.red : C.mfg);
+    S.txt(r, it.label, { size: 13, color: tone }); if (it.chev) { S.spacer(r); S.icon(r, "chevRight", 14, C.mfg); } }
+  m.bringToFront(); return m; };
+S.ficheMenu = (f, hold) => { const sheet = S.named(f, "sheet"), more = S.find29(sheet, z => z.name.startsWith("icon") && z.name.endsWith("more"));
+  const x = Math.round(more.x - f.x + more.width - 224), y = Math.round(more.y - f.y + more.height + 8);
+  return S.menu29(f, x, y, 224, [{ label: "Ouvrir dans un onglet", icon: "maximize" }, { label: "Copier la clé", icon: "copy" },
+    hold ? { label: "Reprendre", icon: "play", on: true } : { label: "Mettre en attente…", icon: "pause", on: true }, "sep", { label: "Supprimer…", icon: "trash", danger: true }]); };
+S.draw29k["a-fiche-menu"] = (f) => { S.ficheMenu(f, false); return f; };
+S.draw29k["a-fiche-menu-reprendre"] = (f) => { S.ficheMenu(f, true); return f; };
+S.draw29k["a-planning-menu"] = (f) => { const row = S.named(f, "held SILO-45"), more = S.find29(row, z => z.name.startsWith("icon") && z.name.endsWith("more"));
+  const x = Math.round(more.x - f.x - 4), y = Math.round(more.y - f.y + more.height + 6);
+  S.menu29(f, x, y, 200, [{ label: "Reprendre", icon: "play" }, { label: "Reprendre dans", icon: "sprint", chev: true, on: true }]);
+  S.menu29(f, x + 200 + 4, y + 34, 220, [{ label: "S43 · Import et contrats", on: true }, { label: "S44 · Rapports" }]);
+  return f; };
 
 // ---------- Dessin (export : 90-export.js, S.export29) ----------
 S.draw29 = async (key, mode) => { await S.page("Proposition"); S.setMode(mode);

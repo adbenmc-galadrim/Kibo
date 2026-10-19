@@ -53,7 +53,8 @@ S.export27 = async (only) => { await S.page("Proposition"); await S.wait(800); c
   return out; };
 // Phase 29 : boards « … · en attente » à partir de S.Y29 ⇒ proposition-attente-<écran>-<dark|light>.png, exportés depuis un clone (board.export() peut rendre l'image d'avant une retouche).
 S.FILES29 = { "P1 bis · Vue d'ensemble · en attente": "attente-vue-ensemble", "P2 · Planning · en attente": "attente-planning", "P3 · Fonctionnalité · en attente": "attente-fonctionnalite",
-  "P7 · Kanban · en attente": "attente-kanban", "P8 · Fiche ticket · en attente": "attente-fiche-ticket", "P8c · Mettre en attente": "attente-dialogue" };
+  "P7 · Kanban · en attente": "attente-kanban", "P8 · Fiche ticket · en attente": "attente-fiche-ticket", "P8c · Mettre en attente": "attente-dialogue",
+  "P8d · Fiche ticket, menu": "attente-fiche-menu", "P8e · Fiche ticket en attente, menu": "attente-fiche-menu-reprendre", "P2b · Planning, Reprendre dans": "attente-planning-menu" };
 S.export29 = async (only) => { await S.page("Proposition"); await S.wait(800); const out = [];
   for (const b of penpot.currentPage.root.children.filter(c => c.type === "board" && c.y >= S.Y29)) { const base = b.name.replace(/ \(clair\)$/, ""), file = S.FILES29[base];
     if (!file || (only && !only.includes(file))) continue; const c = b.clone(); c.x = -5000; c.y = b.y;

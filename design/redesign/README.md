@@ -266,11 +266,15 @@ scripts perdrait), puis y pose l'attente et ses conséquences : un écran sans a
 | P7 · Kanban · en attente | P7 · Kanban | puce pointillée pause + raison courte (24 caractères) en tête des puces, « attend SILO-33 », filtre « En attente » 5 après « À reprendre » | `proposition-attente-kanban` | 1 440 × 1 000 |
 | P8 · Fiche ticket · en attente | P8 · Fiche ticket | bandeau neutre « En attente · Règle de fusion à valider par le client · depuis le 16 oct. » et « Reprendre » au-dessus du bandeau PR | `proposition-attente-fiche-ticket` | 1 440 × 1 000 |
 | P8c · Mettre en attente | P7 · Kanban · en attente | dialogue de 480 px « Mettre SILO-82 en attente » : raison saisie, « 37/80 », « Raisons déjà employées », « Annuler » et « Mettre en attente » | `proposition-attente-dialogue` | 1 440 × 1 000 |
+| P8d · Fiche ticket, menu | P8 · Fiche ticket | menu « ⋯ » ouvert : « Ouvrir dans un onglet », « Copier la clé », « Mettre en attente… » (survolé), « Supprimer… » | `proposition-attente-fiche-menu` | 1 440 × 1 000 |
+| P8e · Fiche ticket en attente, menu | P8 · Fiche ticket · en attente | même menu sur l'étape en attente : « Reprendre » à la place de « Mettre en attente… » | `proposition-attente-fiche-menu-reprendre` | 1 440 × 1 000 |
+| P2b · Planning, Reprendre dans | P2 · Planning · en attente | menu de la carte SILO-45 : « Reprendre », « Reprendre dans ▸ » ouvert sur « S43 · Import et contrats » et « S44 · Rapports » (offert quand le sprint de la fonctionnalité est terminé ou absent) | `proposition-attente-planning-menu` | 1 440 × 1 000 |
 
-Dessin : `await storage.draw29("a-vue", "dark")` (clés `a-vue`, `a-planning`, `a-fonctionnalite`, `a-kanban`, `a-fiche`, `a-dialogue`), un écran
-et un mode par appel ; `a-dialogue` clone `a-kanban` du même mode : le dessiner après. Avant d'exporter, attendre que le nombre de formes
+Dessin : `await storage.draw29("a-vue", "dark")` (clés `a-vue`, `a-planning`, `a-fonctionnalite`, `a-kanban`, `a-fiche`, `a-dialogue`, `a-fiche-menu`,
+`a-fiche-menu-reprendre`, `a-planning-menu`), un écran et un mode par appel ; `a-dialogue`, `a-fiche-menu-reprendre` et `a-planning-menu` clonent
+`a-kanban`, `a-fiche` et `a-planning` du même mode : les dessiner après. Avant d'exporter, attendre que le nombre de formes
 côté serveur (`get-page`) égale le nombre local. Export : `await storage.export29()` (`90-export.js`, depuis un clone de chaque board) ⇒
-`exports/proposition-attente-<écran>-<dark|light>.png`. Cotes : `95-cotes.js` par board (`_dump-14` à `_dump-19`), puis
+`exports/proposition-attente-<écran>-<dark|light>.png`. Cotes : `95-cotes.js` par board (`_dump-14` à `_dump-22`), puis
 `python3 scripts/cotes.py <JSON> --phase29`, qui remplace seulement la partie « Phase 29 » de `cotes.md` (`--phase27` la garde).
 
 Pièges vus : dans le runtime de plugins de Penpot 2.18, `insertChild(i)` compte dans l'ordre affiché (0 = premier élément du flex) alors
