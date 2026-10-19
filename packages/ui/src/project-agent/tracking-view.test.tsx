@@ -110,6 +110,18 @@ test("a wakeup on an answer opens the exchange: the line, its time, then the age
   expect(screen.queryByRole("region", { name: "À valider" })).toBeNull();
 });
 
+test("the batch proposed after a wakeup says so on the card, as in the conversation", () => {
+  show({
+    items: [
+      agent("a1", SUMMARY),
+      { kind: "wakeup", id: "w1", at: AT, text: "Q16 répondue : « 5 Go »" },
+      { kind: "batch", id: "batch-b7", at: AT, batch: trackingBatch(), afterWakeup: true },
+    ],
+  });
+  const card = within(screen.getByRole("region", { name: "Lot n° 7" }));
+  expect(card.getByText("3 actions · après réveil")).toBeTruthy();
+});
+
 test("validating from the card decides the pending batch and shows its recap until closed", async () => {
   const { decided } = show({ result: decidedTrackingBatch() });
   const user = userEvent.setup();
