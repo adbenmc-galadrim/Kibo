@@ -234,6 +234,7 @@ export const ALL_DAEMONS = [
     scenario: SILO_MAQUETTES,
     agentScenario: "reveil-routes",
     answerWakeGraceMs: 0,
+    integrations: true,
   },
   {
     name: "reveil-light",
@@ -243,6 +244,7 @@ export const ALL_DAEMONS = [
     scenario: SILO_MAQUETTES,
     agentScenario: "reveil-routes",
     answerWakeGraceMs: 0,
+    integrations: true,
   },
   ...PIXEL_DAEMONS,
 ] as const;
