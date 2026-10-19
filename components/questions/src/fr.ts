@@ -107,6 +107,7 @@ export const fr = {
   cancel: "Annuler",
   agent: "agent",
   imported: (ref: string) => `import ${ref}`,
+  unknownMember: "un membre",
   openTicket: (key: string, title: string) => `${key} · ${title}`,
   questions: (n: number) => `${n} ${plural(n, "question", "questions")}`,
   scope: { label: "État", open: "Ouvertes", answered: "Répondues", all: "Toutes", archived: "Archivées" },

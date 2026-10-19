@@ -16,6 +16,7 @@ export const previewFr = {
   ticket: (key: string, title: string) => `${key} · ${title}`,
   heading: (n: number) => `${n} ${n > 1 ? "questions ouvertes" : "question ouverte"}`,
   removedRecipient: "(supprimé)",
+  unknownMember: "un membre",
   age: {
     now: "à l'instant",
     minutes: (n: number) => `il y a ${n} min`,

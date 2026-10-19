@@ -1,15 +1,18 @@
 import {
+  type Actor,
   type AnswerInput,
   isAnswered,
   isArchived,
   isOpen,
   isTerminal,
+  type MemberInfo,
   openCountByRecipient,
   type Question,
   type QuestionRecipient,
   type TicketRun,
   type TicketView,
 } from "@kibo/schema";
+import { memberName } from "@kibo/sdk";
 import { fr } from "./fr";
 
 export type Scope = "open" | "answered" | "all" | "archived";
@@ -144,3 +147,8 @@ export function lastReminder(q: Question): number | null {
   const reminders = q.history.filter((e) => e.kind === "reminded").map((e) => e.at);
   return reminders.length > 0 ? Math.max(...reminders) : null;
 }
+
+export const actorName = (actor: Actor, members: readonly MemberInfo[]): string => {
+  if (actor.kind === "import") return fr.imported(actor.ref);
+  return actor.kind === "human" ? memberName(actor.ref, members, fr.unknownMember) : actor.ref;
+};
