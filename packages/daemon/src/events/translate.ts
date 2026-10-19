@@ -20,6 +20,7 @@ export const TRACKED_METHODS: ReadonlySet<ProjectCommand["method"]> = new Set([
   "setTicketDelivery",
   "createQuestion",
   "answerQuestion",
+  "removeQuestion",
   "setHold",
 ]);
 
@@ -115,22 +116,24 @@ function refDrafts(running: Running, cmd: RefCommand, e: CommandEvent): Draft[] 
   return prDrafts(cmd.ticketId, cmd.ref, previous?.kind === "github_pr" ? previous : null);
 }
 
+const questionData = (question: Question): Draft["data"] => ({
+  questionId: question.id,
+  title: question.title.slice(0, TEXT_MAX),
+  ref: (question.importRef?.id ?? question.title).slice(0, TEXT_MAX),
+});
+
 function questionDraft(facts: Facts, e: CommandEvent, questionId: string): Draft[] {
   const parsed = Question.safeParse(e.result);
   const question = parsed.success ? parsed.data : facts.after.questions.find((q) => q.id === questionId);
   if (!question) return [];
   const kind = e.command.method === "createQuestion" ? "question_created" : "question_answered";
-  return [
-    {
-      kind,
-      ticketId: question.ticketId,
-      data: {
-        questionId: question.id,
-        title: question.title.slice(0, TEXT_MAX),
-        ref: (question.importRef?.id ?? question.title).slice(0, TEXT_MAX),
-      },
-    },
-  ];
+  return [{ kind, ticketId: question.ticketId, data: questionData(question) }];
+}
+
+function removedQuestionDraft(facts: Facts, questionId: string): Draft[] {
+  const question = facts.before.questions.find((q) => q.id === questionId);
+  if (!question) return [];
+  return [{ kind: "question_deleted", ticketId: question.ticketId, data: questionData(question) }];
 }
 
 type HoldCommand = Extract<ProjectCommand, { method: "setHold" }>;
@@ -179,6 +182,8 @@ function drafts(facts: Facts, running: Running, e: CommandEvent): Draft[] {
       return questionDraft(facts, e, "");
     case "answerQuestion":
       return questionDraft(facts, e, cmd.questionId);
+    case "removeQuestion":
+      return removedQuestionDraft(facts, cmd.questionId);
     case "setHold":
       return holdDrafts(running, cmd);
     default:
