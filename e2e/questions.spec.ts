@@ -4,11 +4,15 @@ import { addComponent, createPage, createSidebarPage, pairAndCreateProject } fro
 import {
   capture,
   hoverBadge,
+  openCardMenu,
   projectIdOf,
   questionArticle,
+  questionLabelOf,
+  questionNumber,
   seedAnswered,
   seedQuestion,
   seedTicket,
+  settled,
 } from "./questions-kit";
 import { projectKey, shot } from "./repo-project";
 
@@ -61,7 +65,7 @@ test("le widget et la vue Questions répondent, filtrent et créent", async ({ p
   await widget.getByRole("button", { name: "Valider le choix provisoire" }).click();
   await expect(widget.getByText("Questions ouvertes · 1")).toBeVisible();
   await expect(card.getByText("1 question", { exact: true })).toBeVisible();
-  await expect(widget.getByRole("button", { name: /Transmettre à l'agent/ })).toHaveCount(0);
+  await expect(widget.getByText(/Transmettre/)).toHaveCount(0);
 
   await card.getByRole("button", { name: "Stockage S3" }).click();
   const sheet = page.getByRole("dialog");
@@ -79,7 +83,7 @@ test("le widget et la vue Questions répondent, filtrent et créent", async ({ p
   await view.getByRole("radio", { name: "Répondues" }).click();
   const answered = view.getByRole("article", { name: ARCHIVE });
   await expect(answered.getByText(/^Répondu par /)).toBeVisible();
-  await expect(answered.getByText("à transmettre")).toBeVisible();
+  await expect(answered.getByText("à transmettre")).toHaveCount(0);
   await view.getByRole("radio", { name: "Toutes" }).click();
   await shot(page, info, "ecran-171");
 
@@ -130,14 +134,14 @@ async function answerBlockingQuestion(page: Page, view: Locator, projectId: stri
   const port = questionArticle(view, PORT);
   await expect(port.getByText("bloquante", { exact: true })).toBeVisible();
   await expect(port.getByText(/^Q\d+$/)).toBeVisible();
-  await expect(port.getByRole("button", { name: /Transmettre à l'agent/ })).toHaveCount(0);
+  await expect(port.getByText(/Transmettre/)).toHaveCount(0);
   await port.getByRole("textbox", { name: "Autre réponse…" }).fill("8080");
   await port.getByRole("textbox", { name: "Autre réponse…" }).press("Enter");
   await expect(page.getByText("F1 débloquée")).toBeVisible();
   await expect(port.getByText("Réponse : 8080")).toBeVisible();
 }
 
-test("les réponses se modifient tant qu'elles ne sont pas transmises, les questions s'archivent et se retrouvent", async ({
+test("les réponses se modifient, les questions s'archivent, se retrouvent et se suppriment", async ({
   page,
 }, info) => {
   test.setTimeout(150_000);
@@ -178,12 +182,15 @@ test("les réponses se modifient tant qu'elles ne sont pas transmises, les quest
   await capture(page, info, "203b");
 
   await answerBlockingQuestion(page, view, projectId);
-  await expect(questionArticle(view, PURGE).getByText("à transmettre")).toBeVisible();
+  await expect(questionArticle(view, PURGE).getByText(/^Répondu par /)).toBeVisible();
+  await expect(questionArticle(view, PURGE).getByText("à transmettre")).toHaveCount(0);
   await questionArticle(view, PORT).scrollIntoViewIfNeeded();
   await capture(page, info, "202");
 
   const purge = questionArticle(view, PURGE);
-  await purge.getByRole("button", { name: "Archiver" }).click();
+  const purgeLabel = await questionLabelOf(purge);
+  await openCardMenu(page, purge, purgeLabel);
+  await page.getByRole("menuitem", { name: "Archiver" }).click();
   await confirm(page, "Archiver");
   await expect(purge).toHaveCount(0);
   await view.getByRole("radio", { name: "Archivées" }).click();
@@ -195,6 +202,17 @@ test("les réponses se modifient tant qu'elles ne sont pas transmises, les quest
   await expect(purge).toHaveCount(0);
   await view.getByRole("radio", { name: "Toutes" }).click();
   await expect(purge.getByText("Réponse : Non")).toBeVisible();
+
+  const menu = await openCardMenu(page, purge, purgeLabel);
+  await expect(menu.getByRole("menuitem")).toHaveText(["Archiver", "Supprimer"]);
+  await capture(page, info, "202c");
+  await menu.getByRole("menuitem", { name: "Supprimer" }).click();
+  const removal = page.getByRole("alertdialog");
+  await expect(removal.getByText(`Supprimer « ${PURGE} » ?`)).toBeVisible();
+  await settled(removal, page.locator('[data-slot="alert-dialog-overlay"]'));
+  await capture(page, info, "202d");
+  await confirm(page, "Supprimer");
+  await expect(purge).toHaveCount(0);
 
   await view.getByRole("button", { name: "Nouvelle question" }).click();
   const dialog = page.getByRole("dialog");
@@ -208,6 +226,9 @@ test("les réponses se modifient tant qu'elles ne sont pas transmises, les quest
   await expect(
     questionArticle(view, LOGO).getByRole("button", { name: "Destinataire : Client" }),
   ).toBeVisible();
+  expect(questionNumber(await questionLabelOf(questionArticle(view, LOGO)))).toBeGreaterThan(
+    questionNumber(purgeLabel),
+  );
   await questionArticle(view, LOGO).getByRole("button", { name: "Exporter", exact: true }).click();
   await expect(page.getByText("1 question marquée envoyée")).toBeVisible();
   await expect(page.getByRole("button", { name: "Annuler" })).toBeVisible();
@@ -221,6 +242,17 @@ test("les réponses se modifient tant qu'elles ne sont pas transmises, les quest
   await expect(preview.getByText(ADMIN)).toBeVisible();
   await expect(preview.getByText(ARCHIVE)).toBeVisible();
   await capture(page, info, "205");
+  await page.mouse.move(0, 0);
+  await kanban
+    .getByRole("article", { name: /Chiffrement/ })
+    .getByRole("button", { name: "Chiffrement" })
+    .click();
+  const sheet = page.getByRole("dialog");
+  await sheet.getByRole("tab", { name: "Activité" }).click();
+  await expect(sheet.getByText("Question supprimée").first()).toBeVisible();
+  await sheet.getByRole("tab", { name: "Détails" }).click();
+  await page.keyboard.press("Escape");
+  await expect(sheet).toBeHidden();
   await chip.click();
   await expect(page).toHaveURL(/\?question=/);
   const aimed = questionArticle(page.getByRole("main"), ADMIN);
