@@ -21,7 +21,8 @@ export type ActivityKind =
   | "session"
   | "sprint"
   | "agent"
-  | "question";
+  | "question"
+  | "hold";
 export type ActivityItem = { id: string; kind: ActivityKind; text: string; time: string };
 
 export const ACTIVITY_MAX = 5;
@@ -91,8 +92,8 @@ const LINES: Record<ProjectEventKind, LineOf> = {
   question_created: asTicket("question"),
   question_answered: asTicket("question"),
   question_reminded: asTicket("question"),
-  held: asTicket("status"),
-  resumed: asTicket("status"),
+  held: asTicket("hold"),
+  resumed: asTicket("hold"),
 };
 
 const OWN_SUBJECT: ReadonlySet<ProjectEventKind> = new Set(["sprint_set"]);

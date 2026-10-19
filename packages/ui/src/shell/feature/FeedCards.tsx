@@ -10,6 +10,7 @@ import {
   Lock,
   type LucideIcon,
   MessageCircleQuestion,
+  Pause,
   Plus,
   Radio,
 } from "lucide-react";
@@ -78,6 +79,7 @@ const ICONS: Record<ActivityKind, { icon: LucideIcon; tone: string }> = {
   sprint: { icon: CalendarRange, tone: "text-(--tracking-mfg)" },
   agent: { icon: Bot, tone: "text-(--tracking-brand)" },
   question: { icon: MessageCircleQuestion, tone: "text-(--tracking-mfg)" },
+  hold: { icon: Pause, tone: "text-(--tracking-mfg)" },
 };
 
 export function ActivityCard({ items }: { items: readonly ActivityItem[] }) {

@@ -18,7 +18,7 @@ import { FeatureHeader } from "./feature/FeatureHeader";
 import { ActivityCard, QuestionsCard } from "./feature/FeedCards";
 import { featureActivity, featureQuestions, journalActivity } from "./feature/feature-feed";
 import { dependencyCandidates, featureDependencies } from "./feature/feature-links";
-import { featureBadge, nextStartableStep, sprintFacts, stepModels } from "./feature/feature-model";
+import { featureBadge, nextStartableStep, splitHeld, sprintFacts, stepModels } from "./feature/feature-model";
 import { NextStepAction } from "./feature/NextStepAction";
 import { SprintCard } from "./feature/SprintCard";
 import { StepsTimeline } from "./feature/StepsTimeline";
@@ -70,7 +70,8 @@ export function FeatureDetail({
   const journal = useFeatureJournal(project, f.id);
   const proposal = useSprintProposal(project.meta.id, f.key);
   const steps = stepModels(project, f.id, { runs: agents?.runs ?? [], ciRuns, now, execution });
-  const next = nextStartableStep(steps, project.tickets);
+  const { active, held } = splitHeld(steps);
+  const next = nextStartableStep(active, project.tickets);
   const activity = journal.length > 0 ? journalActivity(journal, project, now) : featureActivity(steps, now);
   if (today === null) return null;
   const facts = sprintFacts(project, f, { today, steps });
@@ -92,7 +93,8 @@ export function FeatureDetail({
             feature={f}
             sprintCode={facts.sprint?.code ?? null}
             badge={featureBadge(f.feature)}
-            steps={steps}
+            steps={active}
+            held={held.length}
             editable={editable}
             command={titleCommand}
             actions={actions?.(deliveryEntries)}
@@ -132,7 +134,8 @@ export function FeatureDetail({
             )}
           </div>
           <StepsTimeline
-            steps={steps}
+            steps={active}
+            held={{ steps: held, projectId: project.meta.id, editable }}
             workflow={project.workflow}
             now={now}
             nextId={next?.step.ticketId ?? null}

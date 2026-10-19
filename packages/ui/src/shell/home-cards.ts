@@ -24,6 +24,9 @@ export type HomeCard = Pick<ProjectMeta, "id" | "key" | "name" | "color" | "clie
   counts: HomeCounts | null;
 };
 
+const activeSteps = <S extends { onHold: unknown }>(steps: readonly S[]): S[] =>
+  steps.filter((s) => s.onHold === null);
+
 function atRiskCount(snapshot: ProjectSnapshot, sprint: SprintView | null, today: string): number {
   if (sprint === null) return 0;
   const { tickets, links } = snapshot;
@@ -32,7 +35,7 @@ function atRiskCount(snapshot: ProjectSnapshot, sprint: SprintView | null, today
       t.feature !== null &&
       t.sprintId === sprint.id &&
       t.feature.status !== "delivered" &&
-      atRisk({ sprint, steps: featureSteps({ feature: t.id, tickets, links }) }, today),
+      atRisk({ sprint, steps: activeSteps(featureSteps({ feature: t.id, tickets, links })) }, today),
   ).length;
 }
 

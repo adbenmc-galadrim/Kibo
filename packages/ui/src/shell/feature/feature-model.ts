@@ -46,12 +46,20 @@ export function stepModels(
   facts: StepFacts,
 ): StepModel[] {
   const byId = new Map(project.tickets.map((t) => [t.id, t]));
-  return featureSteps({ feature: featureId, tickets: project.tickets, links: project.links }).map((s, i) => ({
+  const steps = featureSteps({ feature: featureId, tickets: project.tickets, links: project.links });
+  const { active, held } = splitHeld(steps);
+  return [...active, ...held].map((s, i) => ({
     ...s,
     index: i + 1,
     session: sessionOf({ id: s.ticketId, session: byId.get(s.ticketId)?.session ?? null }, facts),
     ci: s.pr ? prCiTone(s.pr, facts.ciRuns) : null,
   }));
+}
+
+export function splitHeld<S extends Pick<FeatureStep, "onHold">>(
+  steps: readonly S[],
+): { active: S[]; held: S[] } {
+  return { active: steps.filter((s) => s.onHold === null), held: steps.filter((s) => s.onHold !== null) };
 }
 
 export const nextStep = <S extends Parameters<typeof nextDeliverableStep>[0][number]>(
@@ -92,7 +100,7 @@ function warningOf(sprint: SprintView, state: FeatureState | null, clock: Sprint
   if (state === null || state.status === "delivered") return null;
   if (isSprintOver(sprint, clock.today))
     return state.status === "late" ? { kind: "over", remaining: state.remaining } : null;
-  return atRisk({ sprint, steps: clock.steps }, clock.today)
+  return atRisk({ sprint, steps: splitHeld(clock.steps).active }, clock.today)
     ? { kind: "wontFit", remaining: state.remaining }
     : null;
 }
@@ -113,9 +121,9 @@ export function sprintFacts(
   };
 }
 
-export type FeatureBadge = "late" | "open" | "blocked" | "delivered" | null;
+export type FeatureBadge = "late" | "open" | "blocked" | "delivered" | "deliveredHeld" | null;
 
 export function featureBadge(state: FeatureState | null): FeatureBadge {
   if (!state || state.status === "todo") return null;
-  return state.status;
+  return state.status === "delivered" && state.held > 0 ? "deliveredHeld" : state.status;
 }
