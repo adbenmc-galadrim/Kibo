@@ -1,4 +1,5 @@
 import type { FeatureStep } from "./feature-steps";
+import type { OnHold } from "./on-hold";
 import type { Question } from "./question";
 import { questionLabel } from "./question-label";
 import type { Sprint } from "./sprint";
@@ -10,6 +11,7 @@ export type StartFacts = {
   busy: boolean;
   blockers: readonly { key: string; statusId: StatusId }[];
   blockingQuestion: Pick<Question, "number" | "importRef"> | null;
+  onHold: OnHold | null;
   feature: {
     id: string;
     sprint: Pick<Sprint, "code" | "start"> | null;
@@ -24,6 +26,7 @@ export type StartContext = {
 };
 export type StartReason =
   | { kind: "status" }
+  | { kind: "onHold"; hold: OnHold }
   | { kind: "dependency"; keys: string[] }
   | { kind: "question"; label: string }
   | { kind: "sprint"; code: string }
@@ -50,11 +53,12 @@ function featureReason(feature: NonNullable<StartFacts["feature"]>, ctx: StartCo
     : null;
 }
 
-export type StepFacts = Pick<FeatureStep, "ticketId" | "key" | "statusId" | "optional">;
+export type StepFacts = Pick<FeatureStep, "ticketId" | "key" | "statusId" | "optional" | "onHold">;
 
 export function lastStepWaitsOn(ticketId: string, steps: readonly StepFacts[]): string[] {
-  if (steps.length < 2 || steps.at(-1)?.ticketId !== ticketId) return [];
-  return steps
+  const active = steps.filter((s) => s.onHold === null);
+  if (active.length < 2 || active.at(-1)?.ticketId !== ticketId) return [];
+  return active
     .slice(0, -1)
     .filter((s) => !s.optional && !FINAL_STATUSES.includes(s.statusId))
     .map((s) => s.key);
@@ -67,6 +71,7 @@ function waitingOf(ticket: StartFacts): string[] {
 
 export function startable(ticket: StartFacts, ctx: StartContext): Startability {
   if (!NOT_STARTED_STATUSES.includes(ticket.statusId) || ticket.busy) return refuse({ kind: "status" });
+  if (ticket.onHold !== null) return refuse({ kind: "onHold", hold: ticket.onHold });
   const waiting = waitingOf(ticket);
   if (waiting.length > 0) return refuse({ kind: "dependency", keys: waiting });
   if (ticket.blockingQuestion !== null)

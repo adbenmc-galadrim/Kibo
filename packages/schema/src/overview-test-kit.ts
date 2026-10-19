@@ -98,6 +98,7 @@ export function viewOf(over: Partial<TicketView> & Pick<TicketView, "id" | "titl
     sprintId: null,
     optional: false,
     shortKey: null,
+    hold: null,
     progress: { done: 0, total: 0 },
     waitingOn: [],
     keyLabel: over.id.toUpperCase(),
@@ -108,6 +109,7 @@ export function viewOf(over: Partial<TicketView> & Pick<TicketView, "id" | "titl
     feature: null,
     session: null,
     updatedAt: null,
+    onHold: null,
     ...over,
   };
 }

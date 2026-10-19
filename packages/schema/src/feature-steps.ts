@@ -2,6 +2,7 @@ import type { DeliveryStep } from "./delivery";
 import { topoByBlocks } from "./delivery-order";
 import { branchRefOf, type GithubPrRef } from "./external-ref";
 import type { Link } from "./link";
+import type { OnHold } from "./on-hold";
 import type { TicketView } from "./rpc";
 import { FINAL_STATUSES } from "./startable";
 import type { StatusId } from "./status";
@@ -16,10 +17,11 @@ export type FeatureStep = {
   delivery: DeliveryStep | null;
   branch: string | null;
   pr: GithubPrRef | null;
+  onHold: OnHold | null;
 };
 export type FeatureStepSource = Pick<
   TicketView,
-  "id" | "key" | "title" | "parentId" | "statusId" | "optional" | "delivery" | "externalRefs"
+  "id" | "key" | "title" | "parentId" | "statusId" | "optional" | "delivery" | "externalRefs" | "onHold"
 >;
 export type FeatureStepsInput = {
   feature: string;
@@ -54,5 +56,6 @@ export function featureSteps(input: FeatureStepsInput): FeatureStep[] {
     delivery: t.delivery,
     branch: branchRefOf(t.externalRefs)?.branch ?? null,
     pr: prOf(t),
+    onHold: t.onHold,
   }));
 }

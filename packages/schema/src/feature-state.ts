@@ -10,9 +10,10 @@ export type FeatureState = {
   nextStepId: string | null;
   remaining: number;
   started: boolean;
+  held: number;
 };
 export type FeatureStateInput = {
-  steps: readonly Pick<FeatureStep, "ticketId" | "statusId" | "optional">[];
+  steps: readonly Pick<FeatureStep, "ticketId" | "statusId" | "optional" | "onHold">[];
   featureId?: string;
   blockingQuestions: ReadonlySet<string>;
   sprint: Pick<Sprint, "end"> | null;
@@ -25,40 +26,47 @@ const isStarted = (s: { statusId: FeatureStep["statusId"] }): boolean =>
   !NOT_STARTED_STATUSES.includes(s.statusId);
 const isDone = (s: { statusId: FeatureStep["statusId"] }): boolean => FINAL_STATUSES.includes(s.statusId);
 
-function heldByFeature(input: FeatureStateInput, next: FeatureStateInput["steps"][number]): boolean {
+function questionedFeature(input: FeatureStateInput, next: FeatureStateInput["steps"][number]): boolean {
   if (input.featureId === undefined || !input.blockingQuestions.has(input.featureId)) return false;
   return NOT_STARTED_STATUSES.includes(next.statusId);
 }
 
 const isLate = (input: FeatureStateInput): boolean => input.sprint !== null && input.sprint.end < input.today;
 
-function statusOf(input: FeatureStateInput, remaining: number): FeatureStatus {
+type Steps = FeatureStateInput["steps"];
+
+function statusOf(input: FeatureStateInput, steps: Steps, remaining: number): FeatureStatus {
+  if (steps.length === 0) return "todo";
   if (remaining === 0) return "delivered";
-  const next = input.steps.find((s) => !isDone(s));
+  const next = steps.find((s) => !isDone(s));
   if (
     next !== undefined &&
-    (next.statusId === "blocked" || input.blockingQuestions.has(next.ticketId) || heldByFeature(input, next))
+    (next.statusId === "blocked" ||
+      input.blockingQuestions.has(next.ticketId) ||
+      questionedFeature(input, next))
   )
     return "blocked";
   if (isLate(input)) return "late";
-  return input.steps.some(isStarted) ? "open" : "todo";
+  return steps.some(isStarted) ? "open" : "todo";
 }
 
 export function featureState(input: FeatureStateInput): FeatureState {
-  const mandatory = input.steps.filter((s) => !s.optional);
+  const active = input.steps.filter((s) => s.onHold === null);
+  const mandatory = active.filter((s) => !s.optional);
   const mandatoryDone = mandatory.filter(isDone).length;
   const remaining = mandatory.length - mandatoryDone;
   return {
-    status: statusOf(input, remaining),
+    status: statusOf(input, active, remaining),
     steps: {
-      done: input.steps.filter(isDone).length,
-      total: input.steps.length,
+      done: active.filter(isDone).length,
+      total: active.length,
       mandatoryDone,
       mandatoryTotal: mandatory.length,
     },
-    nextStepId: input.steps.find((s) => !isDone(s))?.ticketId ?? null,
+    nextStepId: active.find((s) => !isDone(s))?.ticketId ?? null,
     remaining,
-    started: input.steps.some(isStarted),
+    started: active.some(isStarted),
+    held: input.steps.length - active.length,
   };
 }
 

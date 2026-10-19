@@ -3,7 +3,7 @@ import { type FeatureState, featureState, isOpenFeature, nextFeature, openFeatur
 import type { StatusId } from "./status";
 
 const steps = (...statuses: StatusId[]) =>
-  statuses.map((statusId, i) => ({ ticketId: `e${i}`, statusId, optional: false }));
+  statuses.map((statusId, i) => ({ ticketId: `e${i}`, statusId, optional: false, onHold: null }));
 const S42 = { end: "2026-10-16" };
 const base = { blockingQuestions: new Set<string>(), sprint: S42, today: "2026-10-15" };
 
@@ -15,6 +15,7 @@ test("F3 with all its steps done is delivered", () => {
     nextStepId: null,
     remaining: 0,
     started: true,
+    held: 0,
   });
 });
 
@@ -47,7 +48,7 @@ test("on the last day, steps not started or in review keep the feature on time; 
 test("on the last day, an optional step to do does not make a feature late", () => {
   const input = [
     ...steps("done", "done", "done", "in_review"),
-    { ticketId: "demo", statusId: "todo" as const, optional: true },
+    { ticketId: "demo", statusId: "todo" as const, optional: true, onHold: null },
   ];
   const state = featureState({ ...base, steps: input, today: "2026-10-16" });
   expect(state).toMatchObject({ status: "open", remaining: 1, steps: { done: 3, total: 5 } });
@@ -69,7 +70,7 @@ test("F7 without a started step is to do", () => {
 test("a feature whose only remaining steps are optional is delivered", () => {
   const input = [
     ...steps("done", "done", "done", "done"),
-    { ticketId: "demo", statusId: "todo" as const, optional: true },
+    { ticketId: "demo", statusId: "todo" as const, optional: true, onHold: null },
   ];
   const state = featureState({ ...base, steps: input, today: "2026-12-01" });
   expect(state.status).toBe("delivered");
@@ -90,6 +91,7 @@ const stateOf = (
   nextStepId: null,
   remaining,
   started,
+  held: 0,
 });
 
 test("open, blocked and late features are open; to do and delivered are not", () => {
@@ -160,4 +162,71 @@ test("a blocking question on the feature blocks it while its next step is not st
   expect(featureState({ ...held, steps: steps("done", "in_progress", "todo") }).status).toBe("open");
   expect(featureState({ ...held, steps: steps("done", "done") }).status).toBe("delivered");
   expect(featureState({ ...base, featureId: "f2", steps: steps("done", "todo") }).status).toBe("open");
+});
+
+const HOLD = { source: "own" as const, key: "SILO-45", reason: "Règle de fusion", since: "2026-10-16" };
+const step = (ticketId: string, statusId: StatusId, over: { optional?: boolean; held?: boolean } = {}) => ({
+  ticketId,
+  statusId,
+  optional: over.optional ?? false,
+  onHold: over.held === true ? HOLD : null,
+});
+
+test("F4 with its step in review on hold is delivered with one step on hold", () => {
+  const f4 = [
+    step("41", "done"),
+    step("42", "done"),
+    step("43", "done"),
+    step("45", "in_review", { held: true }),
+    step("46", "todo", { optional: true }),
+  ];
+  expect(featureState({ ...base, steps: f4 })).toMatchObject({
+    status: "delivered",
+    held: 1,
+    steps: { done: 3, total: 4, mandatoryDone: 3, mandatoryTotal: 3 },
+    remaining: 0,
+  });
+});
+
+test("F5 goes on without its steps on hold", () => {
+  const f5 = [
+    step("31", "done"),
+    step("32", "in_review"),
+    step("33", "in_progress", { held: true }),
+    step("34", "todo", { held: true }),
+    step("35", "todo", { held: true }),
+  ];
+  expect(featureState({ ...base, steps: f5 })).toMatchObject({
+    status: "open",
+    held: 3,
+    steps: { done: 1, total: 2 },
+    nextStepId: "32",
+    remaining: 1,
+  });
+});
+
+test("a feature whose steps are all on hold is to do, never delivered", () => {
+  const all = [step("33", "in_progress", { held: true }), step("34", "todo", { held: true })];
+  expect(featureState({ ...base, steps: all })).toMatchObject({
+    status: "todo",
+    held: 2,
+    started: false,
+    remaining: 0,
+    nextStepId: null,
+  });
+});
+
+test("a step in progress put on hold no longer starts its feature", () => {
+  const state = featureState({
+    ...base,
+    steps: [step("33", "in_progress", { held: true }), step("34", "todo")],
+  });
+  expect(state).toMatchObject({ status: "todo", started: false, nextStepId: "34" });
+});
+
+test("resuming the step on hold of a delivered feature reopens it", () => {
+  const steps = (held: boolean) => [step("41", "done"), step("45", "in_review", { held })];
+  expect(featureState({ ...base, steps: steps(true) }).status).toBe("delivered");
+  expect(featureState({ ...base, steps: steps(false) }).status).toBe("open");
+  expect(featureState({ ...base, steps: steps(false), today: "2026-10-17" }).status).toBe("late");
 });

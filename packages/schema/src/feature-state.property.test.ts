@@ -12,7 +12,7 @@ const stepsArb = fc.array(
   { minLength: 1, maxLength: 8 },
 );
 const inputArb = fc.record({
-  steps: stepsArb.map((list) => list.map((s, i) => ({ ...s, ticketId: `e${i}` }))),
+  steps: stepsArb.map((list) => list.map((s, i) => ({ ...s, ticketId: `e${i}`, onHold: null }))),
   blocking: fc.array(
     fc.nat(7).map((i) => `e${i}`),
     { maxLength: 3 },
@@ -66,6 +66,58 @@ test("a feature with mandatory steps left is late only after the last day of its
       const due = sprint !== null && sprint.end < today;
       if (state.status === "late") expect(due).toBe(true);
       if (due && left.length > 0 && state.status !== "blocked") expect(state.status).toBe("late");
+    }),
+  );
+});
+
+const HOLD = { source: "own" as const, key: "SILO-1", reason: "R", since: "2026-10-16" };
+const heldInputArb = fc.record({
+  steps: fc
+    .array(
+      fc.record({
+        statusId: fc.constantFrom(...StatusId.options),
+        optional: fc.boolean(),
+        held: fc.boolean(),
+      }),
+      {
+        minLength: 1,
+        maxLength: 8,
+      },
+    )
+    .map((list) =>
+      list.map(({ held, ...s }, i) => ({ ...s, ticketId: `e${i}`, onHold: held ? HOLD : null })),
+    ),
+  blocking: fc.array(
+    fc.nat(7).map((i) => `e${i}`),
+    { maxLength: 3 },
+  ),
+  sprint: fc.option(dateArb.map((end) => ({ end }))),
+  today: dateArb,
+});
+
+test("a step on hold counts as if it were not there, apart from the held count", () => {
+  fc.assert(
+    fc.property(heldInputArb, ({ steps, blocking, sprint, today }) => {
+      const blockingQuestions = new Set(blocking);
+      const active = steps.filter((s) => s.onHold === null);
+      const { held, ...withHolds } = featureState({ steps, blockingQuestions, sprint, today });
+      const { held: none, ...without } = featureState({ steps: active, blockingQuestions, sprint, today });
+      expect(held).toBe(steps.length - active.length);
+      expect(none).toBe(0);
+      expect(withHolds.steps).toEqual(without.steps);
+      expect(withHolds.remaining).toBe(without.remaining);
+      expect(withHolds.nextStepId).toBe(without.nextStepId);
+      expect(withHolds.started).toBe(without.started);
+      if (active.length > 0) expect(withHolds.status).toBe(without.status);
+    }),
+  );
+});
+
+test("a delivered feature has at least one step that is not on hold", () => {
+  fc.assert(
+    fc.property(heldInputArb, ({ steps, blocking, sprint, today }) => {
+      const state = featureState({ steps, blockingQuestions: new Set(blocking), sprint, today });
+      if (state.status === "delivered") expect(steps.some((s) => s.onHold === null)).toBe(true);
     }),
   );
 });
