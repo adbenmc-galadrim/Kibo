@@ -9,8 +9,4 @@ export const frRunChat = {
   reviewFailed: "Impossible de passer le ticket en review.",
   openQuestions: (n: number) => `${n} question${n > 1 ? "s" : ""} ouverte${n > 1 ? "s" : ""}`,
   openQuestionsLink: "Ouvrir les questions",
-  undelivered: (n: number) => `${n} réponse${n > 1 ? "s" : ""} à transmettre`,
-  deliver: "Transmettre à l'agent",
-  noSession: "Aucune session à reprendre : assigne le ticket, le brief portera les réponses.",
-  deliverFailed: "Impossible de transmettre les réponses.",
 };

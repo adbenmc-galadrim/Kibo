@@ -1,19 +1,11 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import {
-  type AgentsState,
-  KiboError,
-  type Question,
-  type RpcRequest,
-  type RunQuestions,
-  type RunView,
-} from "@kibo/schema";
+import type { AgentsState, Question, RpcRequest, RunQuestions, RunView } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
 import { agentsFixture, kiboProject, NOW, runFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];
-let deliver: () => Promise<unknown> = () => Promise.resolve({ sent: 1, runId: "r50" });
 let access: "write" | "read" = "write";
 let questions: Question[] = [];
 const project = () => {
@@ -27,7 +19,6 @@ mock.module("../api", () =>
       rpc: (req: RpcRequest) => {
         calls.push(req);
         if (req.method === "getRunLog") return Promise.resolve([]);
-        if (req.method === "deliverAnswers") return deliver();
         return Promise.resolve(req.method === "getProject" ? project() : null);
       },
       subscribe: () => () => {},
@@ -54,7 +45,6 @@ const { DropdownMenu, DropdownMenuContent } = await import("@kibo/sdk/ui/dropdow
 
 beforeEach(() => {
   calls.length = 0;
-  deliver = () => Promise.resolve({ sent: 1, runId: "r50" });
   access = "write";
   questions = [];
 });
@@ -110,22 +100,11 @@ test("a finished run with open questions says so in the list and opens the quest
   expect(opened).toEqual(["kibo"]);
 });
 
-test("answers waiting for the agent are sent by one click, never by themselves", async () => {
+test("answers of a finished run are never shown as waiting to be sent", async () => {
   render(drawer([tally(0, 1)]));
-  expect(calls.some((c) => c.method === "deliverAnswers")).toBe(false);
-  expect(await screen.findByText("1 réponse à transmettre")).toBeTruthy();
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(screen.queryByText(/transmettre/)).toBeNull();
   expect(screen.queryByRole("button", { name: "Ouvrir les questions" })).toBeNull();
-  await userEvent.click(await screen.findByRole("button", { name: "Transmettre à l'agent" }));
-  expect(calls).toContainEqual({ method: "deliverAnswers", projectId: "kibo", ticketId: "t14" });
-});
-
-test("without a session to resume the drawer says how the answers will still reach the agent", async () => {
-  deliver = () => Promise.reject(new KiboError("INVALID_TRANSITION", "run r50 cannot be resumed"));
-  render(drawer([tally(0, 2)]));
-  await userEvent.click(await screen.findByRole("button", { name: "Transmettre à l'agent" }));
-  expect((await screen.findByRole("alert")).textContent).toBe(
-    "Aucune session à reprendre : assigne le ticket, le brief portera les réponses.",
-  );
 });
 
 test("a run without questions shows no question line", () => {
@@ -173,14 +152,12 @@ test("the bell list says the open questions of a finished run", () => {
   expect(screen.getByText("3 questions").className).toContain("text-orange-600");
 });
 
-test("a reader of the project sees no answer to deliver nor its button", async () => {
+test("a reader of the project sees the open questions and nothing to send", async () => {
   access = "read";
   render(drawer([tally(1, 2)]));
   expect(screen.getByText("1 question ouverte")).toBeTruthy();
   await waitFor(() => expect(calls.some((c) => c.method === "getProject")).toBe(true));
-  await new Promise((resolve) => setTimeout(resolve, 20));
-  expect(screen.queryByText("2 réponses à transmettre")).toBeNull();
-  expect(screen.queryByRole("button", { name: "Transmettre à l'agent" })).toBeNull();
+  expect(screen.queryByText(/transmettre/)).toBeNull();
 });
 
 const openQuestion = (id: string, title: string, createdAt: number): Question => ({

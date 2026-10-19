@@ -221,7 +221,7 @@ test("a question line names its question, previews it and opens it", async () =>
   expect(box.getAttribute("aria-checked")).toBe("true");
 });
 
-test("a question line names the run its answer was delivered to", async () => {
+test("a question line says an old delivered answer is answered, without naming a run", async () => {
   const base = questionsProject();
   const delivered = {
     by: { kind: "human" as const, ref: "adam" },
@@ -251,7 +251,8 @@ test("a question line names the run its answer was delivered to", async () => {
     </QuestionLinksContext.Provider>,
   );
   fireEvent.focus(screen.getByRole("button", { name: "Rouvrir « Quel port ? » (réponse retirée)" }));
-  expect(await screen.findByText(/transmise à opus-dev-4/)).toBeTruthy();
+  expect(await screen.findByText(/· répondue$/)).toBeTruthy();
+  expect(screen.queryByText(/transmise/)).toBeNull();
 });
 
 test("a partly decided batch shows the result of its decided actions and decides only the others", async () => {
