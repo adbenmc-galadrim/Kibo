@@ -503,6 +503,43 @@ Clôture du jour : PR #18 fusionnée (livre F3), SILO-33 à l'étape 7, PR #22 o
 plus ancien au plus récent : `pr_merged` SILO-21 (#18, F3), `batch_proposed` (lot n° 7), `step_set` SILO-33 (étape 7),
 `pr_opened` SILO-32 (#22).
 
+### Phase 29 · étapes en attente
+
+Scénario `silo-attente` (spec §41) : le jeu des fonctionnalités ci-dessus, plus trois attentes propres posées après le semis
+complet, toutes depuis le vendredi 16 octobre 2026 (`since` = `2026-10-16`). Maquettes : boards « … · en attente » et « P8c ·
+Mettre en attente » de la page « Proposition » (`design/redesign/scripts/56-phase-29.js`), exports `proposition-attente-*`.
+
+| Ticket | Titre | Fonctionnalité | Statut gardé | Raison (≤ 80 caractères) | Raison courte (24 + « … ») |
+|---|---|---|---|---|---|
+| SILO-45 | Conflits de saisie | F4 | en review (PR #20) | Règle de fusion à valider par le client | Règle de fusion à valide… |
+| SILO-33 | Écran d'envoi hors ligne | F5 | en cours (session) | Serveur MinIO de recette indisponible | Serveur MinIO de recette… |
+| SILO-82 | Génération PDF | F7 | à faire | Serveur MinIO de recette indisponible | Serveur MinIO de recette… |
+
+Attentes par dépendance (dérivées des liens 33 → 34 → 35, jamais stockées) : SILO-34 et SILO-35 « attend SILO-33 ».
+Ordre des groupes par raison : première `since`, puis raison (« Règle de fusion… » avant « Serveur MinIO… ») ; étapes par clé.
+
+États attendus :
+- F4 « livrée · 1 en attente » (41, 42, 43 terminées ; 46 facultative à faire) : 3/4 étapes, plus de « F4 ne tiendra pas ».
+- F5 ouverte, à risque : « 1 étape livrée sur 2 · 3 en attente », « 1 étape restante : ne tiendra pas dans S42. », prochaine à
+  finir du sprint avec `/full-delivery SILO-32`.
+- F7 : 0/4 étapes ; S42 « 2/3 livrées », « 10 étapes prévues · capacité 5 » ; S44 « 4 étapes prévues · capacité 5 ».
+- Vue d'ensemble : « 4 livrées sur 9 », sous-ligne « 3 en attente » (à la place des cases et des « à risque », comme « 1 en retard »
+  au 18 oct.) ; « En cours 1 / 2 · bloquée : F6 », sans note de limite ; carte « En attente » 3 sous Échéances : « Règle de fusion à
+  valider par le client · SILO-45 », « Serveur MinIO de recette indisponible · SILO-33, SILO-82 · 2 en dépendent » ; Activité :
+  « SILO-82 en attente · … », « SILO-33 en attente · … », « SILO-45 en attente · … ».
+- Planning : « 4 fonctionnalités livrées sur 9 · 1 à planifier », « En cours : 1 / 2 » ; en pied de « À planifier », « En attente (3) » :
+  groupe « Règle de fusion à valider par le client » (SILO-45 · F4 · Conflits de saisie), groupe « Serveur MinIO de recette
+  indisponible » (SILO-33 · F5 · Écran d'envoi hors ligne, SILO-82 · F7 · Génération PDF, « 2 en dépendent »).
+- Fiche F5 : frise 31, 32 puis « En attente · 3 » : SILO-33 « Serveur MinIO de recette indisponible · depuis le 16 oct. » et
+  « Reprendre », SILO-34 et SILO-35 « attend SILO-33 » ; Activité « Mise en attente · Serveur MinIO de r… ».
+- Kanban : SILO-45 garde sa colonne *En review* avec la puce « Règle de fusion à valide… », SILO-33 *En cours* avec « Serveur
+  MinIO de recette… », SILO-34 et SILO-35 « attend SILO-33 » ; filtre « En attente » 5 (propres et par dépendance) après
+  « À reprendre ».
+- Fiche SILO-45 : bandeau « En attente · Règle de fusion à valider par le client · depuis le 16 oct. » et « Reprendre », au-dessus
+  du bandeau « PR #20 · changements demandés · CI cassée ».
+- Dialogue « Mettre SILO-82 en attente » : raison « Serveur MinIO de recette indisponible » saisie, « 37/80 », « Raisons déjà
+  employées » : « Règle de fusion à valider par le client », « Serveur MinIO de recette indisponible ».
+
 ### Pistes A, B, C (`design/redesign/scripts/02-data.js`)
 
 Ce jeu est indépendant de celui des fonctionnalités : les mêmes numéros de tickets y portent d'autres titres et d'autres statuts.
