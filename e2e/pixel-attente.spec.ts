@@ -63,7 +63,8 @@ test("the Vue d'ensemble of Silo with three steps on hold matches the mockup on 
   await expect(page.getByText("2 sessions T3 Code")).toBeVisible();
   await page.getByRole("button", { name: /^Agent de projet/ }).click();
   await expect(page.getByRole("region", { name: "Lot n° 7" })).toBeVisible();
-  await expect.soft(page.getByText("3 en attente", { exact: true })).toBeVisible();
+  await expect(page.getByText("3 en attente", { exact: true })).toBeVisible();
+  await expect(page.getByText("Étape suivante")).toHaveCount(0);
   await settlePointer(page, height);
   await measureScreen(page, {
     screen: "attente-vue-ensemble",
@@ -83,8 +84,9 @@ test("the Planning of Silo with « En attente (3) », F9 dragged over S44, match
   await pairBrowser(page);
   await openPixelPage(page, await siloComponentUrl(page, "planning@1.0.0"), PLANNING_HEIGHT);
   await expect(page.getByRole("region", { name: "S42 Saisie hors ligne" })).toBeVisible();
-  await expect.soft(page.getByText("En attente (3)", { exact: true })).toBeVisible();
-  await expect.soft(page.getByText("livrée · 1 en attente", { exact: true })).toBeVisible();
+  await expect(page.getByText("En attente (3)", { exact: true })).toBeVisible();
+  await expect(page.getByText("livrée · 1 en attente", { exact: true })).toBeVisible();
+  await expect(page.getByText(/ne tiendra pas/)).toHaveCount(0);
   await measureScreen(page, {
     screen: "attente-planning",
     height: PLANNING_HEIGHT,
@@ -106,7 +108,8 @@ test("the feature sheet of F5 with three steps on hold matches the mockup on the
   await expect(
     page.getByRole("heading", { level: 1, name: "Envoyer les photos d'un constat" }),
   ).toBeVisible();
-  await expect.soft(page.getByText("En attente · 3", { exact: true })).toBeVisible();
+  await expect(page.getByText("En attente · 3", { exact: true })).toBeVisible();
+  await expect(page.getByText(/ne tiendra pas/)).toHaveCount(0);
   await measureScreen(page, {
     screen: "attente-fonctionnalite",
     height,
@@ -126,7 +129,7 @@ test("the Kanban of Silo on « Tous » with the « En attente » filter matches 
   const all = page.getByRole("button", { name: "Tous", exact: true });
   await expect(all).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByText("Écran d'envoi hors ligne")).toBeVisible();
-  await expect.soft(page.getByRole("button", { name: /^En attente/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^En attente/ })).toBeVisible();
   await settlePointer(page, height);
   await measureScreen(page, {
     screen: "attente-kanban",
@@ -149,9 +152,9 @@ test("the sheet of SILO-45 on hold opened from the Kanban matches the mockup on 
   const sheet = page.getByRole("dialog", { name: /Conflits de saisie/ });
   await expect(sheet.getByRole("heading", { name: "Conflits de saisie" })).toBeVisible();
   await expect(sheet.getByText("changements demandés").first()).toBeVisible();
-  await expect
-    .soft(sheet.getByText("En attente · Règle de fusion à valider par le client · depuis le 16 oct."))
-    .toBeVisible();
+  await expect(
+    sheet.getByText("En attente · Règle de fusion à valider par le client · depuis le 16 oct."),
+  ).toBeVisible();
   await settlePointer(page, height);
   await measureScreen(page, {
     screen: "attente-fiche-ticket",
