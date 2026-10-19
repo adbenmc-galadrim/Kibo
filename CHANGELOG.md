@@ -6,6 +6,12 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.29.0-alpha.3 — 2026-10-19
+
+- Quand tu réponds à une question, l'agent de projet se réveille, lit la réponse et propose un lot si une action est utile (débloquer, ajuster une étape, prévenir le client) ; les réponses données à la suite (30 s) sont lues en un seul tour.
+- Le Suivi montre « Qn répondue : « … » », le texte de l'agent et le lot « après réveil ».
+- Une réponse importée, synchronisée depuis un pair ou écrite par l'agent ne le réveille pas.
+
 ## 0.29.0-alpha.2 — 2026-10-19
 
 - Une réponse à une question est disponible pour l'agent de projet dès qu'elle est enregistrée : plus de « à transmettre » ni de « Transmettre à l'agent ».
