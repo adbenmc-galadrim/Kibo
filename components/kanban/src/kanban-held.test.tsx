@@ -96,3 +96,24 @@ test("the filter goes away with the last hold, and the board shows every card ag
   expect(await screen.findByText("5 tickets · Tous")).toBeTruthy();
   expect(screen.queryByRole("button", { name: "En attente" })).toBeNull();
 });
+
+test("a new hold after the filter went away shows the button again, not pressed", async () => {
+  const m = setup();
+  const user = userEvent.setup();
+  await user.click(await screen.findByRole("button", { name: "En attente" }));
+  const steps = ["Conflits de saisie", "Écran d'envoi hors ligne"].map(
+    (title) => m.snapshot().tickets.find((t) => t.title === title)?.id ?? "",
+  );
+  for (const ticketId of steps) {
+    act(() => {
+      m.run({ method: "setHold", ticketId, reason: null });
+    });
+  }
+  expect(await screen.findByText("5 tickets · Tous")).toBeTruthy();
+  act(() => {
+    m.run({ method: "setHold", ticketId: steps[0] ?? "", reason: HOLD_REASONS.merge, since: "2026-10-16" });
+  });
+  const button = await screen.findByRole("button", { name: "En attente" });
+  expect(button.getAttribute("aria-pressed")).toBe("false");
+  expect(screen.getByText("5 tickets · Tous")).toBeTruthy();
+});
