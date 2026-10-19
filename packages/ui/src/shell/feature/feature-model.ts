@@ -8,6 +8,7 @@ import {
   featureSteps,
   isSprintOver,
   isTerminal,
+  liveReview,
   nextDeliverableStep,
   type ProjectSnapshot,
   prCiTone,
@@ -73,7 +74,7 @@ type Startability = Pick<TicketView, "id" | "startable" | "startReason">;
 export type NextStartable<S> = { step: S; reason: StartReason | null };
 
 const isTouchUp = (s: Pick<FeatureStep, "statusId" | "pr">): boolean =>
-  s.statusId === "in_review" && s.pr?.review === "changes_requested";
+  s.statusId === "in_review" && s.pr !== null && liveReview(s.pr) === "changes_requested";
 
 export function nextStartableStep<S extends Parameters<typeof nextDeliverableStep>[0][number]>(
   steps: readonly S[],

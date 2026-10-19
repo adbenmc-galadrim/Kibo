@@ -123,6 +123,15 @@ test("a step back in review with changes requested is proposed as a touch-up", (
   });
 });
 
+test("a merged PR with changes requested is no touch-up", () => {
+  const steps = stepModels(project, "f5", facts()).map((s) =>
+    s.pr && s.key === "SILO-32"
+      ? { ...s, pr: { ...s.pr, state: "merged" as const, review: "changes_requested" as const } }
+      : s,
+  );
+  expect(nextStartableStep(steps, project.tickets)?.step.key).toBe("SILO-34");
+});
+
 test("the fixture F5 is still open on the last day of S42, late only the day after (§39.6.18)", () => {
   expect(f5().feature?.status).toBe("open");
   expect(f5().feature?.remaining).toBe(4);

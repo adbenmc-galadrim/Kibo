@@ -119,3 +119,24 @@ test("a PR with changes requested says so after its number, with a red mark for 
   expect(review.getByText("changements demandés")).toBeTruthy();
   expect(review.getByRole("img", { name: "CI cassée" })).toBeTruthy();
 });
+
+test("a merged PR does not say changes requested", () => {
+  const merged = steps.map((s) =>
+    s.pr && s.key === "SILO-32"
+      ? { ...s, pr: { ...s.pr, state: "merged" as const, review: "changes_requested" as const } }
+      : s,
+  );
+  render(
+    <StepsTimeline
+      steps={merged}
+      workflow={DEFAULT_WORKFLOW}
+      now={NOW}
+      nextId={null}
+      nextAction={null}
+      onOpenTicket={() => undefined}
+    />,
+  );
+  const row = within(rows()[1] as HTMLElement);
+  expect(row.getByText("fusionnée")).toBeTruthy();
+  expect(row.queryByText("changements demandés")).toBeNull();
+});

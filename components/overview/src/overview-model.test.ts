@@ -84,6 +84,24 @@ test("the next feature to finish is the most advanced one of the sprint", () => 
   });
 });
 
+test("a merged PR with changes requested is neither a change to make nor a PR in review", () => {
+  const { input, byTitle } = build();
+  const asked = byTitle("Conflits de saisie");
+  const tickets = input.tickets.map((t) =>
+    t.id === asked.id
+      ? {
+          ...t,
+          externalRefs: t.externalRefs.map((r) =>
+            r.kind === "github_pr" ? { ...r, state: "merged" as const } : r,
+          ),
+        }
+      : t,
+  );
+  const model = overviewModel({ ...input, tickets });
+  expect(model.next?.remaining.find((s) => s.ticketId === asked.id)?.changes).toBe(false);
+  expect(model.review.map((r) => r.number)).not.toContain(20);
+});
+
 test("the pull requests in review, latest event first, with their review or CI", () => {
   const { model } = build();
   expect(model.review.map((r) => [r.number, r.title, r.feature, r.state])).toEqual([

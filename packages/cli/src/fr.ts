@@ -1,4 +1,4 @@
-import type { OnHold, PrChecks, PrReview } from "@kibo/schema";
+import { liveReview, type OnHold, type PrChecks, type PrReview } from "@kibo/schema";
 import type { FeatureRef, SprintRef } from "./tickets/ticket-tracking";
 import type { AssigneeSummary, BranchSummary, PrSummary, TicketRef } from "./tickets/ticket-view";
 
@@ -38,7 +38,7 @@ const CHECKS_LABELS: Record<PrChecks, string> = {
 const prParts = (pr: PrSummary): string[] =>
   [
     `#${pr.number} (${pr.state})`,
-    REVIEW_LABELS[pr.review],
+    REVIEW_LABELS[liveReview(pr)],
     pr.checks === null ? null : CHECKS_LABELS[pr.checks],
     pr.url,
   ].filter((part) => part !== null);

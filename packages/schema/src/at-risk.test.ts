@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import fc from "fast-check";
 import { type AtRiskFeature, type AtRiskStep, atRisk, workingDaysLeft } from "./at-risk";
+import { PrReview, PrState } from "./external-ref";
 import { addDays } from "./iso-date";
 import { sprintPhase } from "./sprint-phase";
 import { StatusId } from "./status";
@@ -36,13 +37,20 @@ test("a feature is at risk when its mandatory steps left exceed the working days
 });
 
 test("changes requested on the last day put a feature at risk", () => {
-  const changes = [step("done"), step("in_review", false, { review: "changes_requested" })];
+  const changes = [step("done"), step("in_review", false, { state: "open", review: "changes_requested" })];
   expect(atRisk(feature(changes), "2026-10-16")).toBe(true);
   expect(atRisk(feature(changes), "2026-10-15")).toBe(false);
-  const approved = [step("done"), step("in_review", false, { review: "approved" })];
+  const approved = [step("done"), step("in_review", false, { state: "open", review: "approved" })];
   expect(atRisk(feature(approved), "2026-10-16")).toBe(false);
-  const merged = [step("done", false, { review: "changes_requested" }), step("in_review")];
+  const merged = [step("done", false, { state: "open", review: "changes_requested" }), step("in_review")];
   expect(atRisk(feature(merged), "2026-10-16")).toBe(false);
+});
+
+test("changes requested on a merged PR do not put a feature at risk", () => {
+  const merged = [step("done"), step("in_review", false, { state: "merged", review: "changes_requested" })];
+  expect(atRisk(feature(merged), "2026-10-16")).toBe(false);
+  const open = [step("done"), step("in_review", false, { state: "open", review: "changes_requested" })];
+  expect(atRisk(feature(open), "2026-10-16")).toBe(true);
 });
 
 test("only a feature of the running sprint can be at risk", () => {
@@ -61,7 +69,10 @@ const stepArb = fc.record({
   statusId: fc.constantFrom(...StatusId.options),
   optional: fc.boolean(),
   pr: fc.option(
-    fc.record({ review: fc.constantFrom("none", "approved", "changes_requested", "review_required") }),
+    fc.record({
+      state: fc.constantFrom(...PrState.options),
+      review: fc.constantFrom(...PrReview.options),
+    }),
   ),
 });
 

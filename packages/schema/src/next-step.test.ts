@@ -3,11 +3,11 @@ import type { GithubPrRef, PrReview } from "./external-ref";
 import { nextDeliverableStep } from "./next-step";
 import type { StatusId } from "./status";
 
-const pr = (review: PrReview): GithubPrRef => ({
+const pr = (review: PrReview, state: GithubPrRef["state"] = "open"): GithubPrRef => ({
   kind: "github_pr",
   url: "https://github.com/acme/silo/pull/20",
   number: 20,
-  state: "open",
+  state,
   base: "dev",
   head: null,
   review,
@@ -55,4 +55,9 @@ test("a step on hold is skipped", () => {
   const f5 = [step("SILO-31", "done"), { ...step("SILO-33", "todo"), onHold }, step("SILO-34", "todo")];
   expect(nextDeliverableStep(f5)).toBe("SILO-34");
   expect(nextDeliverableStep([{ ...step("SILO-33", "todo"), onHold }])).toBeNull();
+});
+
+test("a step in review whose merged PR still carries changes requested is skipped", () => {
+  const merged = { ...step("SILO-45", "in_review"), pr: pr("changes_requested", "merged") };
+  expect(nextDeliverableStep([merged, step("SILO-46", "todo")])).toBe("SILO-46");
 });

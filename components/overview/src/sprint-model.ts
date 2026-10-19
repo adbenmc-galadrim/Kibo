@@ -7,6 +7,7 @@ import {
   inProgressFeatures,
   lateFeatures,
   limitNote,
+  liveReview,
   nextDeliverableStep,
   nextFeature,
   nextSprint,
@@ -162,7 +163,7 @@ export function nextCard(input: SprintInput): NextCard | null {
         key: s.key,
         title: s.title,
         tone: stepTone(s, input.blocking),
-        changes: s.pr?.review === "changes_requested",
+        changes: s.pr !== null && liveReview(s.pr) === "changes_requested",
       })),
     deliver:
       step === undefined

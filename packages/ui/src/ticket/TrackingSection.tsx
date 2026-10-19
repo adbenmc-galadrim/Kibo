@@ -4,6 +4,7 @@ import {
   type CiTone,
   DELIVERY_STEP_LABELS,
   type GithubPrRef,
+  liveReview,
   type ProjectEvent,
   type TicketView,
 } from "@kibo/schema";
@@ -117,7 +118,8 @@ function EmptyTracking({ ticketKey, repo }: { ticketKey: string | null; repo: bo
 function PrRows({ pr, ciRuns, events, now }: Omit<Props, "ticket" | "repo"> & { pr: GithubPrRef }) {
   const opened = lastEvent(events, "pr_opened", pr.number);
   const reviewed = lastEvent(events, "pr_review", pr.number);
-  const review = t.review[pr.review];
+  const shown = liveReview(pr);
+  const review = t.review[shown];
   const ci = ciDetail(pr, ciRuns, events);
   return (
     <>
@@ -138,7 +140,7 @@ function PrRows({ pr, ciRuns, events, now }: Omit<Props, "ticket" | "repo"> & { 
       </Row>
       {review && (
         <Row label={t.reviewRow}>
-          <span className={cn(BADGE, REVIEW_BADGE[pr.review])}>{review}</span>
+          <span className={cn(BADGE, REVIEW_BADGE[shown])}>{review}</span>
           {reviewed && <span className={DIM}>{clockOf(reviewed.at)}</span>}
         </Row>
       )}

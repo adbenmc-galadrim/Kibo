@@ -248,3 +248,16 @@ test("without a CI run the CI row names the failing check of the PR, linked to i
       .getAttribute("href"),
   ).toBe("https://github.com/silo-labs/silo-location/pull/20/checks");
 });
+
+test("a merged PR shows no review row for its stale changes requested", () => {
+  render(
+    <TrackingSection
+      ticket={ticket({ externalRefs: [branch, pr({ state: "merged" })] })}
+      ciRuns={[]}
+      events={[]}
+      now={NOW}
+    />,
+  );
+  expect(words("PR")[0]).toBe("#20");
+  expect(row("Review")).toBeNull();
+});

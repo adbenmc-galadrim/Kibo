@@ -4,7 +4,7 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 ## Non publié
 
--
+- Une PR fusionnée n'affiche plus « changements demandés » (fiche fonctionnalité, tickets, Vue d'ensemble, Graphe).
 
 ## 0.29.0-alpha.1 — 2026-10-19
 

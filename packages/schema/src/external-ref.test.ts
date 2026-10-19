@@ -1,5 +1,13 @@
 import { expect, test } from "bun:test";
-import { branchRefOf, ExternalRef, ExternalRefKind, externalRefKey, externalRefTarget } from "./external-ref";
+import {
+  branchRefOf,
+  ExternalRef,
+  ExternalRefKind,
+  externalRefKey,
+  externalRefTarget,
+  isLivePr,
+  liveReview,
+} from "./external-ref";
 import { GitBranchRef } from "./git-branch";
 
 const IDS = {
@@ -77,4 +85,18 @@ test("a pull request ref keeps its review and checks", () => {
   });
   expect(ref).toMatchObject({ review: "changes_requested", checks: "error" });
   expect(() => ExternalRef.parse({ ...ref, review: "dismissed" })).toThrow();
+});
+
+test("a merged or closed PR keeps no pending review", () => {
+  expect(liveReview({ state: "merged", review: "changes_requested" })).toBe("none");
+  expect(liveReview({ state: "closed", review: "changes_requested" })).toBe("none");
+  expect(liveReview({ state: "merged", review: "review_required" })).toBe("none");
+  expect(liveReview({ state: "merged", review: "approved" })).toBe("approved");
+  expect(liveReview({ state: "open", review: "changes_requested" })).toBe("changes_requested");
+  expect(liveReview({ state: "draft", review: "review_required" })).toBe("review_required");
+  expect([isLivePr({ state: "open" }), isLivePr({ state: "draft" }), isLivePr({ state: "merged" })]).toEqual([
+    true,
+    true,
+    false,
+  ]);
 });
