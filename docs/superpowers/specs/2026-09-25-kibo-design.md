@@ -2728,4 +2728,11 @@ Choisi sur maquette : quand une réponse à une question est enregistrée, l'age
 
 ### 43.1 Écarts constatés à l'exécution (0.29.0-alpha.3)
 
-À remplir au jalon depuis la section « Écarts » du plan `2026-10-19-kibo-0.29-alpha3-reveil.md`.
+Détail par tâche dans la section « Écarts » du plan `2026-10-19-kibo-0.29-alpha3-reveil.md` ; ce qui compte pour la suite :
+
+1. **Délai de grâce** : 30 s avant le premier réveil sur réponse (décision du chef), pour lire en un seul tour des réponses données à la suite ; les blocages réveillent toujours aussitôt et emportent les réponses en file. Réglable par l'option `answerWakeGraceMs` du démon et `--answer-wake-grace-ms` en ligne de commande (0 pour les E2E du réveil seulement).
+2. **Robustesse** : une erreur de mise en file est journalisée sans casser la commande déjà publiée ; l'instantané n'est lu que si la file des réponses n'est pas vide.
+3. **Suivi** : un réveil (réponses ou signaux) ouvre l'échange à sa première ligne ; la ligne porte l'icône réveil et l'heure aussi dans la Conversation ; la carte du lot du Suivi dit « après réveil ».
+4. **Heure** : la ligne de réveil suit l'horloge réelle du journal de l'agent (`KIBO_FIXED_NOW` ne la fige pas).
+5. **E2E** : les autres démons gardent la grâce de 30 s du produit.
+6. **Point ouvert** : le réveil de fin de sprint envoie son digest sans préfixe et s'affiche encore comme une bulle d'Adam.
