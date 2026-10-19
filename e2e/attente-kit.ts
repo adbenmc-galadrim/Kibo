@@ -53,7 +53,9 @@ export async function createStepUnder(
     projectId: silo.projectId,
     command: { method: "createTicket", title, parentId: text(feature, "id") },
   });
-  return text(await ticketOf(page, silo, (t) => field(t, "title") === title), "keyLabel");
+  const keyOf = async () => text(await ticketOf(page, silo, (t) => field(t, "title") === title), "keyLabel");
+  await expect.poll(keyOf).toMatch(/^[A-Z]+-\d+$/);
+  return keyOf();
 }
 
 export async function openAttentePage(page: Page, title: string): Promise<void> {
