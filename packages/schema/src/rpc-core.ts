@@ -26,7 +26,6 @@ import { ComponentId } from "./manifest";
 import type { NoteMeta, NotesInfo } from "./note";
 import { ProjectClient, type ProjectMeta, ProjectPatch } from "./project";
 import { ProjectSetup } from "./project-setup";
-import type { DeliveryResult } from "./question";
 import type { ProjectSnapshot, ProjectSummary, Session } from "./rpc";
 import type { AgentsState, AssignPreview, HostView, RunLogEntry, RunView } from "./run";
 import { SemVer } from "./semver";
@@ -84,7 +83,6 @@ export const CORE_RPC = [
     runId: z.string().min(1),
     text: z.string().trim().min(1).max(10_000),
   }),
-  z.object({ method: z.literal("deliverAnswers"), projectId: z.string().min(1), ticketId: NodeId }),
   z.object({ method: z.literal("cancelRun"), runId: z.string().min(1) }),
   z.object({ method: z.literal("moveRun"), runId: z.string().min(1), index: z.number().int().nonnegative() }),
   z.object({ method: z.literal("setRunPriority"), runId: z.string().min(1), priority: z.boolean() }),
@@ -179,7 +177,6 @@ export type CoreRpcResult = {
   previewAssign: AssignPreview;
   assignAgent: RunView;
   answerRun: RunView;
-  deliverAnswers: DeliveryResult;
   cancelRun: RunView;
   moveRun: null;
   setRunPriority: null;

@@ -56,7 +56,7 @@ function TicketRows(props: ContentProps) {
               <span className={META}>
                 {[
                   previewFr.for(recipientOf(props.recipients, q.recipient)),
-                  previewState(q, props.runLabel),
+                  previewState(q),
                   previewAge(q.createdAt, props.now),
                 ].join(" · ")}
               </span>
@@ -89,7 +89,7 @@ function OneQuestion({ question: q, ...props }: ContentProps & { question: Quest
         </p>
       )}
       <p className={META}>
-        {`${previewFr.for(recipientOf(props.recipients, q.recipient))} · ${previewState(q, props.runLabel)}`}
+        {`${previewFr.for(recipientOf(props.recipients, q.recipient))} · ${previewState(q)}`}
       </p>
       <p className={META}>{previewFr.by(q.createdBy.ref, previewAge(q.createdAt, props.now))}</p>
     </div>

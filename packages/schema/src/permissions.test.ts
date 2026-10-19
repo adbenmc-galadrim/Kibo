@@ -22,10 +22,8 @@ test("embed.open needs the embed capability, design.storybooks the design capabi
   expect(ComponentCall.safeParse({ kind: "embed.open", url: "a".repeat(2049) }).success).toBe(false);
 });
 
-test("delivering answers to the agent is a write of questions", () => {
-  expect(permissionOfCall(ComponentCall.parse({ kind: "questions.deliver", ticketId: "t1" }))).toBe(
-    "write:question",
-  );
+test("delivering answers to the agent is no longer a component call", () => {
+  expect(ComponentCall.safeParse({ kind: "questions.deliver", ticketId: "t1" }).success).toBe(false);
 });
 
 test("reading the question recipients is a read of questions", () => {

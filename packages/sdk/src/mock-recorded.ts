@@ -6,8 +6,6 @@ type AgentApis = Pick<KiboSdk, "questions" | "runs" | "settings">;
 export function recordedAgentApis(inner: AgentApis, record: Recorder): AgentApis {
   return {
     questions: {
-      deliver: (ticketId) =>
-        record("write:question", "write question", () => inner.questions.deliver(ticketId)),
       recipients: () => record("read:question", "read question", () => inner.questions.recipients()),
       imageUrl: inner.questions.imageUrl,
     },

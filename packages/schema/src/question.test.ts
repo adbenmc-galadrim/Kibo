@@ -22,7 +22,6 @@ import {
 } from "./question";
 import { askInputFromTool } from "./question-ask";
 import { openCountByRecipient } from "./question-recipient";
-import { RpcRequest } from "./rpc";
 
 const HUMAN_TEXT = {
   kind: "text",
@@ -219,7 +218,7 @@ test("run counts carry the answers still to deliver", () => {
   ]);
 });
 
-test("marking answers delivered is reserved to the daemon, delivering them is an rpc", () => {
+test("marking answers delivered is reserved to the daemon", () => {
   expect(isReservedCommand("markAnswersDelivered")).toBe(true);
   expect(
     ProjectCommand.parse({
@@ -230,11 +229,6 @@ test("marking answers delivered is reserved to the daemon, delivering them is an
       at: 5,
     }),
   ).toMatchObject({ method: "markAnswersDelivered" });
-  expect(RpcRequest.parse({ method: "deliverAnswers", projectId: "p1", ticketId: "t1" })).toEqual({
-    method: "deliverAnswers",
-    projectId: "p1",
-    ticketId: "t1",
-  });
 });
 
 test("an ask_question provisional choice is kept when the agent gives no options", () => {

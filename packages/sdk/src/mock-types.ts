@@ -43,7 +43,6 @@ export type MockSdk = {
   openedSprints: string[];
   projectEdits: ProjectEditRequest[];
   toasts: string[];
-  deliveries: string[];
   runDeliveries: string[];
   allowed: AllowAndResumeInput[];
   embedCalls: string[];
@@ -97,7 +96,6 @@ export type MockSdkOptions = {
   focus?: boolean;
   selection?: Selection | null;
   spotlight?: Spotlight | null;
-  deliveryRefused?: boolean;
   peeks?: Record<string, RunPeek>;
   denials?: Record<string, RunDenials>;
   deliveryAgent?: DeliveryAgent | null;

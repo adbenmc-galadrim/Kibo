@@ -11,7 +11,6 @@ import type {
   DeliverResult,
   DeliveryAgent,
   DeliveryKind,
-  DeliveryResult,
   DesignFrame,
   EmbedView,
   EntityType,
@@ -95,7 +94,6 @@ export type McpApi = {
 };
 
 export type QuestionsApi = {
-  deliver(ticketId: string): Promise<DeliveryResult>;
   recipients(): Promise<QuestionRecipient[]>;
   imageUrl(questionId: string, imageId: string): string;
 };

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { type ProjectCommand, Ticket, undeliveredAnswers } from "@kibo/schema";
+import { type ProjectCommand, Ticket } from "@kibo/schema";
 import { seedQuestions } from "./fixtures";
 import { createMockSdk } from "./mock";
 import { defineServer } from "./server";
@@ -242,21 +242,16 @@ test("questions need read:question to be listed and write:question to be written
   expect([...reader.violations, ...writer.violations]).toEqual(["write removeQuestion", "read question"]);
 });
 
-test("delivering answers needs write:question, marks them and records the ticket", async () => {
+test("questions offer recipients and image urls, no delivery, and marking stays reserved", async () => {
   let ticketId = "";
   const seed = (run: (cmd: ProjectCommand) => unknown) => {
     ticketId = Ticket.parse(run({ method: "createTicket", title: "Stockage S3" })).id;
     seedQuestions(run, [ticketId]);
   };
-  const reader = createMockSdk({ ...base, reads: ["question"], writes: [] }, { seed });
-  await expect(reader.sdk.questions.deliver(ticketId)).rejects.toThrow("PERMISSION_DENIED");
-  expect(reader.violations).toEqual(["write question"]);
   const m = createMockSdk({ ...base, reads: ["question", "ticket"], writes: ["question"] }, { seed });
-  expect(await m.sdk.questions.deliver(ticketId)).toEqual({ sent: 1, runId: "mock" });
-  expect(m.deliveries).toEqual([ticketId]);
-  expect(undeliveredAnswers(await m.sdk.list("question"), ticketId)).toEqual([]);
-  expect(await m.sdk.questions.deliver(ticketId)).toEqual({ sent: 0, runId: null });
-  expect(m.used).toEqual(["write:question", "read:question"]);
+  expect(Object.keys(m.sdk.questions).sort()).toEqual(["imageUrl", "recipients"]);
+  expect("deliveries" in m).toBe(false);
+  expect(m.sdk.questions.imageUrl("q 1", "i/2")).toBe("/api/questions/q%201/images/i%2F2");
   const [answered] = (await m.sdk.list("question")).filter((q) => q.answer !== null);
   await expect(
     m.sdk.run({
@@ -267,12 +262,6 @@ test("delivering answers needs write:question, marks them and records the ticket
       at: 1,
     }),
   ).rejects.toThrow("PERMISSION_DENIED");
-});
-
-test("a refused delivery says there is no session to resume", async () => {
-  const m = createMockSdk({ ...base, reads: ["question"], writes: ["question"] }, { deliveryRefused: true });
-  await expect(m.sdk.questions.deliver("t1")).rejects.toThrow("INVALID_TRANSITION");
-  expect(m.deliveries).toEqual(["t1"]);
 });
 
 test("a ticket with a live run is not startable in snapshot() nor in list('ticket')", async () => {
