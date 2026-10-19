@@ -282,3 +282,29 @@ Pièges vus : dans le runtime de plugins de Penpot 2.18, `insertChild(i)` compte
 que `children` est rendu dans l'ordre inverse ; un enfant ajouté par `appendChild` à un board passe sous les autres (voile et dialogue :
 `bringToFront()`). `Date.now()` lève une erreur en mode sécurisé : le chargement des scripts n'en dépend pas (`00-charger.js` l'emploie
 seulement pour contourner le cache).
+
+## 0.29.0-alpha.2 (2026-10-19)
+
+Spec §42 : une réponse est disponible pour l'agent de projet dès qu'elle est enregistrée (plus de « à transmettre » ni de
+« Transmettre à l'agent ») et une question se supprime depuis le menu « ⋯ » de sa carte. Données : sous-section « 0.29.0-alpha.2 »
+du projet Silo (`design/donnees-fictives.md`). Page « Proposition », `scripts/57-alpha2-questions.js` (après `56-phase-29`), rangées à
+partir de `S.Y_A2` = 38 000 (après les rangées de la phase 29, pas de 1 500 px), sombre à x = 0 et clair à x = 1 540.
+
+Chaque board **clone « P9 · Questions »** sans l'aperçu d'export ni le toast ; P9 et sa référence pixel (`proposition-questions-*`)
+ne changent pas.
+
+| Board | Contenu | Export | Taille |
+|---|---|---|---|
+| P9b · Questions, menu | « ⋯ » de Q16 enfoncé, menu ouvert : « Archiver », séparateur, « Supprimer » en rouge | `proposition-questions-menu` | 1 440 × 1 000 |
+| P9c · Supprimer la question | fond assombri, dialogue de 512 px centré « Supprimer « Quota par client : 2 Go ou 5 Go ? » ? », aide, « Annuler » et « Supprimer » (destructif) | `proposition-questions-supprimer` | 1 440 × 1 000 |
+| P9d · Questions, répondues | segment « Répondues » actif, groupe SILO-34 seul, Q16 avec « Modifier la réponse », « Retirer la réponse », « ⋯ » et le bloc « Réponse : 5 Go » / « Répondu par Adam · il y a 2 h », sans marque de transmission ; filtres « Tous 2 », « Silo SA 2 » (comptes des ouvertes), Questions 2 dans la barre | `proposition-questions-repondues` | 1 440 × 1 000 |
+
+Dessin : `await storage.drawA2("q-menu", "dark")` (clés `q-menu`, `q-supprimer`, `q-repondues`), un écran et un mode par appel. Avant
+d'exporter, attendre que le nombre de formes côté serveur (`get-page`) égale le nombre local. Export : `await storage.exportA2()`
+(`90-export.js`, depuis un clone de chaque board) ⇒ `exports/proposition-questions-<menu|supprimer|repondues>-<dark|light>.png`. Cotes :
+`95-cotes.js` par board (`_dump-23` à `_dump-25`), puis `python3 scripts/cotes.py <JSON> --alpha2`, qui remplace seulement la partie
+« 0.29.0-alpha.2 » de `cotes.md` (`--phase29` la garde). Aucun spec pixel nouveau : menu et dialogue sont des états modaux, capturés en E2E.
+Copiés en page « 36 · Suivi seul » du fichier « Kibo » (232 à 234, voir `design/penpot/README.md`).
+
+Piège vu : le fond d'un bouton enfoncé posé en absolu dans un flex passe au-dessus de l'icône quel que soit son rang ; le fond porte
+donc lui-même l'icône, et un emplacement vide de même taille garde la mise en page de la ligne.

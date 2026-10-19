@@ -550,6 +550,26 @@ Ordre des groupes par raison : première `since`, puis raison (« Règle de fusi
 - Dialogue « Mettre SILO-82 en attente » : raison « Serveur MinIO de recette indisponible » saisie, « 37/80 », « Raisons déjà
   employées » : « Règle de fusion à valider par le client », « Serveur MinIO de recette indisponible ».
 
+### 0.29.0-alpha.2 · questions sans transmission
+
+Jeu des questions ci-dessus (Q14, Q16, Q17), vendredi 16 octobre. Maquettes : boards « P9b · Questions, menu », « P9c · Supprimer
+la question », « P9d · Questions, répondues » de la page « Proposition » (`design/redesign/scripts/57-alpha2-questions.js`),
+exports `proposition-questions-{menu,supprimer,repondues}-*`.
+
+| Question | Ticket | Titre | Réponse | Répondue par | Quand |
+|---|---|---|---|---|---|
+| Q16 | SILO-34 | Quota par client : 2 Go ou 5 Go ? | 5 Go | Adam | il y a 2 h |
+
+États attendus :
+- Menu « ⋯ » de Q16 (ouverte) : « Archiver », séparateur, « Supprimer » (destructif).
+- Dialogue : « Supprimer « Quota par client : 2 Go ou 5 Go ? » ? », aide « Suppression définitive, pour tous les membres du projet :
+  la question, sa réponse et son historique. Pour la masquer sans la perdre, archive-la. », « Annuler » et « Supprimer ».
+- Filtre « Répondues » : groupe SILO-34 « Tests E2E de l'envoi » (F5) seul ; Q16 « Pour : Produit », posée par Adam hier, bloc
+  « Réponse : 5 Go » et « Répondu par Adam · il y a 2 h », actions « Modifier la réponse », « Retirer la réponse » et « ⋯ » ; aucune
+  mention « à transmettre », « transmise » ni « Transmettre à l'agent ». Comptes des destinataires sur les ouvertes : « Tous 2 »,
+  « Silo SA 2 » (« Produit » masqué, sans ouverte) ; Questions 2 dans la barre latérale ; « Exporter pour le client (2) ».
+- Une question supprimée garde son numéro : la suivante créée prend le numéro d'après, jamais celui libéré.
+
 ### Pistes A, B, C (`design/redesign/scripts/02-data.js`)
 
 Ce jeu est indépendant de celui des fonctionnalités : les mêmes numéros de tickets y portent d'autres titres et d'autres statuts.
