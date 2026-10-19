@@ -64,6 +64,7 @@ for (const draft of drafts) {
   renameSync(join(dir, "component.test.tsx.fixture"), join(dir, "component.test.tsx"));
 }
 const agents = join(root, "packages/daemon/src/agents");
+const siloScenario = isSiloScenario(scenario);
 const e2eScenario = join(import.meta.dir, "agents", "scenarios", `${scenario}.json`);
 function scenarioFile(): string {
   if (siloScenario) return SILO_SCENARIO;
@@ -74,7 +75,6 @@ rmSync(ghDir, { recursive: true, force: true });
 mkdirSync(ghDir, { recursive: true });
 const gh = join(ghDir, "gh");
 const ghState = join(ghDir, "state.json");
-const siloScenario = isSiloScenario(scenario);
 const writeSiloGh = (merged: boolean) => writeFileSync(ghState, JSON.stringify(siloGhState({ merged })));
 if (siloScenario) writeSiloGh(false);
 const siloRepo = siloScenario ? createE2eRepo("silo") : null;
