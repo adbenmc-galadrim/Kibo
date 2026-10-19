@@ -260,10 +260,10 @@ scripts perdrait), puis y pose l'attente et ses conséquences : un écran sans a
 
 | Board | Source clonée | Contenu | Export | Taille |
 |---|---|---|---|---|
-| P1 bis · Vue d'ensemble · en attente | P1 bis v3 · Vue d'ensemble | « 4 livrées sur 9 » et sous-ligne « 3 en attente », « En cours 1 / 2 », carte « En attente » 3 sous Échéances (une ligne par raison, clés, « 2 en dépendent »), F4 livrée, F5 prochaine à finir, trois événements « en attente » dans l'Activité | `proposition-attente-vue-ensemble` | 1 440 × 1 260 |
-| P2 · Planning · en attente | P2 · Planning | « En attente (3) » en pied de « À planifier », un groupe par raison, une carte par étape (clé, fonctionnalité, « ⋯ », titre) ; F4 « livrée · 1 en attente », cases et charges sans les étapes en attente | `proposition-attente-planning` | 1 440 × 1 000 |
-| P3 · Fonctionnalité · en attente | P3 · Fonctionnalité | frise 31, 32 puis « En attente · 3 » (pause à la place du numéro, raison et « Reprendre » sur SILO-33, « attend SILO-33 » sur 34 et 35), « 1 étape livrée sur 2 · 3 en attente » | `proposition-attente-fonctionnalite` | 1 440 × 1 000 |
-| P7 · Kanban · en attente | P7 · Kanban | puce pointillée pause + raison courte (24 caractères) en tête des puces, « attend SILO-33 », filtre « En attente » 5 après « À reprendre » | `proposition-attente-kanban` | 1 440 × 1 000 |
+| P1 bis · Vue d'ensemble · en attente | P1 bis v3 · Vue d'ensemble | « 4 livrées sur 9 » et sous-ligne « 3 en attente », « En cours 1 / 2 », carte « En attente » 3 sous Échéances (une ligne par raison, clés, « 2 en dépendent »), F4 livrée et retirée des Échéances, F5 « en cours » en deux cases, prochaine à finir sans « Étape suivante », Activité de quatre lignes (trois « Mise en attente · … », « PR #22 ouverte ») | `proposition-attente-vue-ensemble` | 1 440 × 1 260 |
+| P2 · Planning · en attente | P2 · Planning | « En attente (3) » en pied de « À planifier », un groupe par raison, une carte par étape (clé, fonctionnalité, « ⋯ », titre) ; F4 « livrée · 1 en attente », F5 « en cours » sans « F5 ne tiendra pas », cases et charges sans les étapes en attente | `proposition-attente-planning` | 1 440 × 1 000 |
+| P3 · Fonctionnalité · en attente | P3 · Fonctionnalité | frise 31, 32 puis « En attente · 3 » (pause à la place du numéro, raison et « Reprendre » sur SILO-33, « attend SILO-33 » sur 34 et 35), « 1 étape livrée sur 2 · 3 en attente », carte Sprint sans « ne tiendra pas dans S42 » | `proposition-attente-fonctionnalite` | 1 440 × 1 000 |
+| P7 · Kanban · en attente | P7 · Kanban | puce pointillée pause + raison courte (24 caractères) en tête des puces, « attend SILO-33 », filtre « En attente » 5 après « À reprendre », « Démarrable 2 », puces « Adam » et « 1 question », colonnes *À faire* et *Terminé* du semis `silo-attente` | `proposition-attente-kanban` | 1 440 × 1 000 |
 | P8 · Fiche ticket · en attente | P8 · Fiche ticket | bandeau neutre « En attente · Règle de fusion à valider par le client · depuis le 16 oct. » et « Reprendre » au-dessus du bandeau PR | `proposition-attente-fiche-ticket` | 1 440 × 1 000 |
 | P8c · Mettre en attente | P7 · Kanban · en attente | dialogue de 480 px « Mettre SILO-82 en attente » : raison saisie, « 37/80 », « Raisons déjà employées », « Annuler » et « Mettre en attente » | `proposition-attente-dialogue` | 1 440 × 1 000 |
 | P8d · Fiche ticket, menu | P8 · Fiche ticket | menu « ⋯ » ouvert : « Ouvrir dans un onglet », « Copier la clé », « Mettre en attente… » (survolé), « Supprimer… » | `proposition-attente-fiche-menu` | 1 440 × 1 000 |
@@ -272,7 +272,8 @@ scripts perdrait), puis y pose l'attente et ses conséquences : un écran sans a
 
 Dessin : `await storage.draw29("a-vue", "dark")` (clés `a-vue`, `a-planning`, `a-fonctionnalite`, `a-kanban`, `a-fiche`, `a-dialogue`, `a-fiche-menu`,
 `a-fiche-menu-reprendre`, `a-planning-menu`), un écran et un mode par appel ; `a-dialogue`, `a-fiche-menu-reprendre` et `a-planning-menu` clonent
-`a-kanban`, `a-fiche` et `a-planning` du même mode : les dessiner après. Avant d'exporter, attendre que le nombre de formes
+`a-kanban`, `a-fiche` et `a-planning` du même mode : les dessiner après. Un texte changé par `S.setText` reçoit de nouveau sa police
+(`S.refont`) : sans cela, le canevas et l'export gardent l'ancien texte. Avant d'exporter, attendre que le nombre de formes
 côté serveur (`get-page`) égale le nombre local. Export : `await storage.export29()` (`90-export.js`, depuis un clone de chaque board) ⇒
 `exports/proposition-attente-<écran>-<dark|light>.png`. Cotes : `95-cotes.js` par board (`_dump-14` à `_dump-22`), puis
 `python3 scripts/cotes.py <JSON> --phase29`, qui remplace seulement la partie « Phase 29 » de `cotes.md` (`--phase27` la garde).

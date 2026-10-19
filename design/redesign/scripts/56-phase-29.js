@@ -46,8 +46,30 @@ S.kanbanHolds = (f) => { const C = S.C, sec = C.mfg;
   const s = S.row(null, { name: "filter held", pad: [4, 10], gap: 6, radius: 5 });
   S.icon(s, "pause", 12, sec); S.txt(s, "En attente", { size: 12.5, weight: 500, color: sec }); S.txt(s, "5", { size: 11, mono: true, color: C.dim });
   S.showAfter(seg, last, s); return f; };
+S.MINE29 = ["SILO-46", "SILO-34", "SILO-35", "SILO-33", "SILO-45", "SILO-32"];
+S.DONE29 = [["SILO-2", "F1", "Application Azure"], ["SILO-3", "F1", "Route de connexion"], ["SILO-4", "F1", "Écran de connexion"], ["SILO-5", "F1", "Démo · F1"],
+  ["SILO-10", "F2", "Modèle des affectations"], ["SILO-11", "F2", "Périmètre côté serveur"], ["SILO-12", "F2", "Règles de synchro"], ["SILO-13", "F2", "Liste des box"],
+  ["SILO-14", "F2", "Démo · F2"], ["SILO-18", "F3", "Historique des affectations"], ["SILO-19", "F3", "Route de réaffectation"]];
+S.badgesOf = (card) => { let b = card.children.find(c => c.name === "badges");
+  if (!b) { b = S.row(null, { name: "badges", fx: true, gap: 5, wrap: true }); S.showLast(card, b); b.layoutChild.horizontalSizing = "fill"; } return b; };
+S.questionBadge = (n) => { const C = S.C; const q = S.row(null, { name: "badge question", pad: [2, 8], gap: 4, radius: 10, stroke: C.amber });
+  S.icon(q, "question", 12, C.amber, 1); S.txt(q, `${n} question`, { size: 11, weight: 500, color: C.amber }); return q; };
+S.kanbanSeed29 = (f) => { const C = S.C, sec = C.mfg;
+  const seg = S.named(f, "filter"); S.setText(S.parentOf(seg, S.byText(seg, "Démarrable")), "1", "2");
+  for (const key of S.MINE29) { const card = S.find29(f, s => s.name === "card " + key); if (!card) continue;
+    const b = S.badgesOf(card); S.showLast(b, S.kb(null, "Adam", C.fg, { pill: true }));
+    if (key === "SILO-34") S.showLast(b, S.questionBadge(1)); }
+  const c54 = S.find29(f, s => s.name === "card SILO-54"), b54 = S.badgesOf(c54); for (const b of [...b54.children]) b.remove();
+  S.showLast(b54, S.kb(null, "attend SILO-51, SILO-52, …", sec));
+  const todo = S.parentOf(f, c54), c62 = S.showAfter(todo, c54, S.kcard(null, { key: "SILO-62", f: null, title: "Journal des erreurs avec Sentry" }));
+  c62.layoutChild.horizontalSizing = "fill";
+  const done = S.find29(f, s => s.name === "column Terminé");
+  for (const c of [...done.children]) if (c.name.startsWith("card ")) c.remove();
+  for (const [key, ft, title] of S.DONE29) { const c = S.showLast(done, S.kcard(null, { key, f: ft, title })); c.layoutChild.horizontalSizing = "fill";
+    S.byText(c, title).fills = [{ fillColor: C.fg, fillOpacity: 1 }]; }
+  return f; };
 S.draw29k = {};
-S.draw29k["a-kanban"] = (f) => S.kanbanHolds(f);
+S.draw29k["a-kanban"] = (f) => S.kanbanSeed29(S.kanbanHolds(f));
 
 // ---------- Retouches communes ----------
 S.shown = (parent) => [...parent.children].reverse();
@@ -81,7 +103,8 @@ S.draw29k["a-planning"] = (f) => { const C = S.C;
   S.keepCases(f5, [0, 1], 170); S.setText(f5, "1/5 étapes", "1/2 étapes");
   S.keepCases(f7, [0, 1, 2, 3], 170); S.setText(f7, "0/5 étapes", "0/4 étapes");
   S.parentOf(s42, S.byText(s42, "F4 ne tiendra pas : 1 étape restante")).remove();
-  S.setText(s42, "F5 ne tiendra pas : 4 étapes restantes", "F5 ne tiendra pas : 1 étape restante");
+  S.parentOf(s42, S.byText(s42, "F5 ne tiendra pas : 4 étapes restantes")).remove();
+  const risk = S.find29(f5, z => z.name === "chip"), rh = S.parentOf(f5, risk); risk.remove(); S.chip(rh, "en cours", { color: C.blue, stroke: null, fill: C.blueSoft, size: 10.5 });
   const sp = S.showLast(res, S.box(null, { name: "spacer", w: 10, h: 10 })); sp.layoutChild.verticalSizing = "fill"; sp.layoutChild.horizontalSizing = "fill";
   const held = S.showLast(res, S.heldSection()); held.layoutChild.horizontalSizing = "fill";
   return f; };
@@ -103,7 +126,7 @@ S.activityRow = (icon, color, text, time) => { const C = S.C;
 S.draw29k["a-fonctionnalite"] = (f) => { const C = S.C, sec = C.mfg;
   const bar = S.parentOf(f, S.byText(f, "1 étape livrée sur 5")); const segs = bar.children.find(c => c.name === "segs");
   S.shown(segs).forEach((c, i) => { if (i > 1) c.remove(); }); S.setText(bar, "1 étape livrée sur 5", "1 étape livrée sur 2 · 3 en attente");
-  S.setText(f, "4 étapes restantes : ne tiendra pas dans S42.", "1 étape restante : ne tiendra pas dans S42.");
+  S.byText(f, "4 étapes restantes : ne tiendra pas dans S42.").remove();
   const tl = S.find29(f, z => z.type === "board" && Math.round(z.x - f.x) === 269 && Math.round(z.y - f.y) === 351 && Math.round(z.width) === 795);
   const rows = S.shown(tl); for (const r of rows.slice(2)) r.remove();
   const rail = S.find29(rows[1], z => z.type === "board" && Math.round(z.width) === 2); if (rail) rail.remove();
@@ -133,6 +156,8 @@ S.heldCard = () => { const C = S.C, sec = C.mfg;
     if (g.dependents) S.txt(r, `· ${g.dependents} en dépendent`, { size: 12, color: sec });
     S.icon(r, "chevRight", 13, C.dim); }
   return card; };
+S.ACT29 = { "SILO-45": "Mise en attente · Règle de fusion à valider p…", "SILO-33": "Mise en attente · Serveur MinIO de recette i…",
+  "SILO-82": "Mise en attente · Serveur MinIO de recette i…" };
 S.draw29k["a-vue"] = (f) => { const C = S.C, sec = C.mfg;
   const kpis = S.named(f, "kpis"), cells = S.shown(kpis).filter(c => c.name !== "vline"), fc = cells[0], oc = cells[2];
   S.setText(fc, "3", "4");
@@ -147,22 +172,31 @@ S.draw29k["a-vue"] = (f) => { const C = S.C, sec = C.mfg;
   const pill = S.find29(r4, z => z.name === "pill"), pb = S.parentOf(r4, pill); pill.remove(); S.pill(pb, "livrée", C.green, C.greenSoft, "circleCheck");
   const tb = S.parentOf(r4, S.byText(r4, "Saisir un constat hors ligne")); const hb = S.row(tb, { name: "held", gap: 3, pad: [0, 0, 0, 6] }); S.icon(hb, "pause", 11, C.dim); S.txt(hb, "1", { size: 11.5, mono: true, color: C.dim });
   S.keepCases(r5, [0, 1]); S.setText(r5, "1/5", "1/2");
+  const p5 = S.find29(r5, z => z.name === "pill"), pb5 = S.parentOf(r5, p5); p5.remove(); S.pill(pb5, "en cours", C.blue, C.blueSoft);
   const grid = S.named(f, "grid"), f6 = S.byText(grid, "F6");
-  const f4 = S.byText(grid, "F4"); f4.fills = f6.fills;
+  S.byText(grid, "F5").fills = f6.fills;
   const caseAt = (y) => penpotUtils.findShapes(z => z.type === "board" && Math.round(z.y - grid.y) === y && Math.round(z.height) === 12, grid).sort((a, b) => a.x - b.x);
   const row4 = caseAt(40), row5 = caseAt(70), row7 = caseAt(160);
-  row4[4].x = row4[3].x; row4[3].remove(); for (const c of row5.slice(2)) c.remove(); row7[4].remove();
+  for (const c of row5.slice(2)) c.remove(); row7[4].remove();
+  row5.slice(0, 2).forEach((c, i) => { c.resize(58, c.height); c.x = grid.x + 260 + i * 61; });
+  for (const c of row4) c.remove(); S.parentOf(grid, S.byText(grid, "F4")).remove();
+  const at = (z) => Math.round(z.y - grid.y), line4 = grid.children.find(z => at(z) === 60 && Math.round(z.height) === 1); line4.remove();
+  const full = Math.round(grid.height);
+  for (const z of [...grid.children]) { if (z.name === "today" || Math.round(z.height) === full) z.resize(z.width, z.height - 30); else if (at(z) > 60) z.y -= 30; }
+  grid.resize(grid.width, grid.height - 30);
   const nx = S.named(f, "card / Prochaine à finir");
-  const head = S.rowOf(nx, "Saisir un constat hors ligne"); S.setText(head, "F4", "F5"); S.setText(head, "Saisir un constat hors ligne", "Envoyer les photos d'un constat"); S.setText(head, "3/5", "1/2"); S.keepCases(head, [0, 3]);
+  const head = S.rowOf(nx, "Saisir un constat hors ligne"); S.setText(head, "F4", "F5"); S.setText(head, "Saisir un constat hors ligne", "Envoyer les photos d'un constat"); S.setText(head, "3/5", "1/2"); S.keepCases(head, [0, 3], 122);
   const l1 = S.parentOf(nx, S.byText(nx, "Conflits de saisie")), l2 = S.parentOf(nx, S.byText(nx, "Démo client"));
   S.setText(l1, "SILO-45", "SILO-32"); S.setText(l1, "Conflits de saisie", "Route d'envoi des photos"); S.byText(l1, "changements demandés").remove(); l2.remove();
-  S.setText(nx, "/full-delivery SILO-45", "/full-delivery SILO-32");
+  S.parentOf(nx, S.byText(nx, "Étape suivante")).remove();
   const act = S.named(f, "card / Activité"), base = S.rowOf(act, "PR #22 ouverte"), firstLine = S.shown(act)[1];
   let prev = firstLine;
   for (const h of [...S.HOLDS].reverse()) { const r = base.clone(), l = firstLine.clone();
-    S.setText(r, "15:04", "15:10"); S.setText(r, "PR #22 ouverte", S.shortReason(`${h.key} en attente · ${h.reason}`, 40)); S.setText(r, "SILO-32", h.key); S.setText(r, "F5", h.f);
+    S.setText(r, "15:04", "15:10"); S.setText(r, "PR #22 ouverte", S.ACT29[h.key]); S.setText(r, "SILO-32", h.key); S.setText(r, "F5", h.f);
     const icon = r.children.find(z => z.name.startsWith("icon")); icon.remove(); r.insertChild(1, S.icon(null, "pause", 14, sec));
     S.showAfter(act, prev, r); S.showAfter(act, r, l); prev = l; }
+  const rows = S.shown(act), keep = rows.findIndex(c => c.id === base.id);
+  for (const c of rows.slice(keep + 1)) c.remove();
   const band = S.named(f, "card / Échéances"), body = S.parentOf(f, band);
   const card = S.showAfter(body, band, S.heldCard()); card.layoutChild.horizontalSizing = "fill";
   return f; };
@@ -213,11 +247,20 @@ S.draw29k["a-planning-menu"] = (f) => { const row = S.named(f, "held SILO-45"), 
   return f; };
 
 // ---------- Dessin (export : 90-export.js, S.export29) ----------
+// Un texte changé garde son rendu tant que sa police n'est pas réappliquée (l'export et le canevas montrent l'ancien texte).
+S.refont = (t) => { const f = penpot.fonts.findById(t.fontId) || penpot.fonts.findByName(t.fontFamily), w = String(t.fontWeight), st = t.fontStyle || "normal";
+  if (!f || [w, st, String(t.fontSize)].includes("mixed")) return t;
+  const v = f.variants.find(x => x.fontWeight === w && x.fontStyle === st) || f.variants[0], size = t.fontSize, fills = t.fills, lh = t.lineHeight, ls = t.letterSpacing;
+  f.applyToText(t, v); t.fontSize = size; t.fills = fills; if (lh && lh !== "mixed") t.lineHeight = lh; if (ls && ls !== "mixed") t.letterSpacing = ls; return t; };
+S.withRefont = async (draw) => { const set = S.setText, touched = [];
+  S.setText = (...a) => { const t = set(...a); touched.push(t); return t; };
+  try { await draw(); } finally { S.setText = set; }
+  let n = 0; for (const t of touched) { try { S.refont(t); n++; } catch (e) { } } return n; };
 S.draw29 = async (key, mode) => { await S.page("Proposition"); S.setMode(mode);
   const i = S.ROWS29.indexOf(key), x = mode === "light" ? 1540 : 0, y = S.Y29 + i * S.STEP27;
   for (const b of penpot.currentPage.root.children.filter(c => c.y === y && c.x === x)) b.remove();
   S.placed = []; const f = S.rename(S.cloneScreen(S.SRC29[key], x, y), S.NAMES29[key]);
-  await S.draw29k[key](f); await S.wait(400); const moved = S.replace();
+  const refonts = await S.withRefont(() => S.draw29k[key](f)); await S.wait(400); const moved = S.replace();
   const d = f.children.find(c => c.name === "dialog"); if (d) { await S.wait(1500); d.y = f.y + Math.round((f.height - d.height) / 2); }
-  return { board: f.name, shapes: S.count(f), moved, dialog: d ? d.height : null }; };
+  return { board: f.name, shapes: S.count(f), moved, refonts, dialog: d ? d.height : null }; };
 return "phase 29 ok";
