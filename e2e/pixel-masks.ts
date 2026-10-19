@@ -163,11 +163,32 @@ const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
   questions: [],
 };
 
+const ACTIVITY_HOURS = ["15:04", "14:51", "14:40", "14:36"];
+
+const ATTENTE_VUE_MASKS: readonly PixelMask[] = [
+  ...ORIGIN_MASKS["vue-ensemble"].filter((m) => !/de l'activité|de Q1[467]/.test(m.why)),
+  ...ACTIVITY_HOURS.map((hour, i) => clockTime(279, 1072 + 39 * i, 40, 16, `« ${hour} » de l'activité`)),
+  clockTime(906, 1088, 137, 21, "« il y a 3 j » de Q14 et la puce « bloquante » que sa largeur déplace"),
+  clockTime(912, 1151, 62, 17, "« hier » de Q16"),
+  clockTime(903, 1212, 63, 17, "« il y a 2 h » de Q17"),
+];
+
+const ATTENTE_FEATURE_MASKS: readonly PixelMask[] = [
+  USER,
+  syncAge(1124),
+  clockTime(453, 385, 54, 15, "« hier 18:22 » de la PR #19"),
+  clockTime(393, 485, 32, 15, "« 15:04 » de la PR #22"),
+  clockTime(1178, 392, 26, 14, "« hier » de Q16"),
+  clockTime(1364, 477, 36, 15, "« 15:04 » de l'activité"),
+  clockTime(1364, 507, 36, 15, "« 14:51 » de l'activité"),
+  clockTime(1376, 537, 24, 15, "« hier » de l'activité"),
+];
+
 export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
   ...ORIGIN_MASKS,
-  "attente-vue-ensemble": ORIGIN_MASKS["vue-ensemble"],
+  "attente-vue-ensemble": ATTENTE_VUE_MASKS,
   "attente-planning": ORIGIN_MASKS.planning,
-  "attente-fonctionnalite": ORIGIN_MASKS.fonctionnalite,
+  "attente-fonctionnalite": ATTENTE_FEATURE_MASKS,
   "attente-kanban": ORIGIN_MASKS.kanban,
   "attente-fiche-ticket": ORIGIN_MASKS["fiche-ticket"],
 };
