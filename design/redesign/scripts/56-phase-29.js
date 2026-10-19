@@ -68,8 +68,56 @@ S.kanbanSeed29 = (f) => { const C = S.C, sec = C.mfg;
   for (const [key, ft, title] of S.DONE29) { const c = S.showLast(done, S.kcard(null, { key, f: ft, title })); c.layoutChild.horizontalSizing = "fill";
     S.byText(c, title).fills = [{ fillColor: C.fg, fillOpacity: 1 }]; }
   return f; };
+// ---------- Gabarit des cartes et des en-têtes de colonne du rendu (Kanban en attente seulement ; P7 garde le sien) ----------
+S.CARD_W29 = 147.2;
+S.SHORT29 = { "Serveur MinIO de recette…": "Serveur MinIO de rec…", "Règle de fusion à valide…": "Règle de fusion à vali…" };
+S.restyle29 = (t, o) => { const f = o.mono ? S.mono : (penpot.fonts.findById(t.fontId) || S.font), w = String(o.weight || t.fontWeight);
+  const v = f.variants.find(x => x.fontWeight === w && x.fontStyle === "normal") || f.variants[0], size = String(o.size || t.fontSize), fills = o.color ? [{ fillColor: o.color, fillOpacity: 1 }] : t.fills;
+  f.applyToText(t, v); t.fontSize = size; t.fills = fills; t.lineHeight = String(o.lh || 1.2); return t; };
+S.pad29 = (b, top, right, bottom, left) => { const fl = b.flex; fl.topPadding = top; fl.rightPadding = right; fl.bottomPadding = bottom; fl.leftPadding = left; return b; };
+S.textOf29 = (b) => penpotUtils.findShapes(s => s.type === "text", b)[0];
+S.swapIcon29 = (row, name, color, sw) => { const old = row.children.find(x => x.name.replace(/\s/g, "") === "icon/" + name), size = old.width;
+  const icon = S.showAfter(row, old, S.icon(null, name, size, color, sw)); old.remove(); return icon; };
+S.QUESTION29 = { dark: "#FB923C", light: "#EA580C" };
+S.SURFACE29 = { dark: { column: "#151517", card: "#18181B" }, light: { column: "#FBFBFB", card: "#FFFFFF" } };
+S.badge29 = (b) => { const t = S.textOf29(b), mono = /Mono/.test(t.fontFamily), pill = b.borderRadius >= 10 || /^(attend SILO-51|sprint )/.test(t.characters);
+  if (b.name === "badge question") { const tone = S.QUESTION29[S.mode]; b.borderRadius = 6; S.pad29(b, 3, 7, 3, 7);
+    b.strokes = [{ strokeColor: "#F97316", strokeOpacity: 0.4, strokeWidth: 1, strokeAlignment: "inner" }]; S.swapIcon29(b, "question", tone, 2);
+    S.restyle29(t, { size: 10, weight: 500, lh: 1.4, color: tone }); return b; }
+  if (pill) { b.borderRadius = 10; const px = mono ? 7 : 9; S.pad29(b, 3, px, 3, px); S.restyle29(t, { size: 10, weight: mono || t.characters === "Adam" ? 400 : 500, mono, lh: 1.4 }); return b; }
+  const px = b.strokes.length ? 7 : 6; S.pad29(b, 3, px, 3, px);
+  if (S.SHORT29[t.characters]) t.characters = S.SHORT29[t.characters];
+  S.restyle29(t, { size: 11, weight: 500, mono, lh: 12 / 11 }); return b; };
+S.keyRow29 = (c) => { const C = S.C, row = c.children.find(x => x.name === "box"), texts = row.children.filter(x => x.type === "text");
+  row.flex.columnGap = 6; for (const t of texts) S.restyle29(t, { size: 11, mono: true, weight: 400, color: C.mfg });
+  S.swapIcon29(row, "more", C.fg, 2).layoutChild.rightMargin = 5;
+  const halo = row.children.find(x => x.name === "halo"); if (halo) { halo.remove(); S.showAfter(row, texts.find(t => /^F\d$/.test(t.characters)), S.dot(null, C.brand, 7)); } };
+S.card29 = (c) => { const badges = c.children.find(x => x.name === "badges"), title = c.children.find(x => x.type === "text");
+  S.pad29(c, 11, 13, badges ? 11 : 19, 13); S.keyRow29(c); S.restyle29(title, { size: 13, weight: 500, lh: 20 / 13 });
+  if (badges) for (const b of badges.children) S.badge29(b); };
+S.header29 = (col) => { const C = S.C, h = S.shown(col)[0], texts = h.children.filter(x => x.type === "text"), count = texts.find(t => /^\d+$/.test(t.characters));
+  S.pad29(h, 0, 4, 0, 4); h.flex.columnGap = 8; S.restyle29(texts.find(t => t !== count), { size: 12, weight: 500, lh: 4 / 3 });
+  S.restyle29(count, { size: 11, mono: true, weight: 400, color: C.mfg, lh: 16 / 11 }); S.showAfter(h, h.children.find(x => x.name === "spacer"), count);
+  const plus = S.swapIcon29(h, "plus", C.fg, 2); plus.layoutChild.leftMargin = 5; plus.layoutChild.rightMargin = 5; };
+S.fitBadges29 = (f) => { for (const b of penpotUtils.findShapes(s => s.type === "board" && s.name.startsWith("badge") && s.name !== "badges", f))
+  if (b.width > S.CARD_W29 + 0.5 || S.textOf29(b).characters.endsWith("…")) { b.flex.horizontalSizing = "fix"; b.resize(S.CARD_W29, b.height); b.flex.verticalSizing = "auto"; } };
+S.FILTER_W29 = { "Tous": 68.4, "Sprint courant · S42": 157.4, "Démarrable": 102.6, "À reprendre": 121.3, "En attente": 112.2 };
+S.toolbar29 = (f) => { const C = S.C, tb = S.named(f, "toolbar"), seg = S.named(tb, "filter"); tb.flex.bottomPadding = 1;
+  for (const b of seg.children) { const texts = b.children.filter(x => x.type === "text"), label = texts.find(t => S.FILTER_W29[t.characters]); if (!label) continue;
+    S.restyle29(label, { size: 12.5, weight: 500 }); for (const t of texts) if (t !== label) S.restyle29(t, { size: 11, mono: true, weight: 400, color: C.mfg });
+    b.flex.horizontalSizing = "fix"; b.flex.justifyContent = "center"; b.resize(S.FILTER_W29[label.characters], b.height); }
+  const tag = S.named(tb, "Button / outline"); S.pad29(tag, 0, 11, 0, 11); tag.flex.columnGap = 6; S.restyle29(tag.children.find(x => x.type === "text"), { size: 12, weight: 500, color: C.mfg });
+  S.showLast(tag, S.icon(null, "chevDown", 14, C.mfg)); tag.flex.horizontalSizing = "fix"; tag.resize(157.6, 25); };
+S.kanbanGabarit29 = async (f) => { const row = S.named(f, "columns-row"); row.y -= 1; row.resize(row.width, row.height + 1); S.toolbar29(f);
+  const fill = (s, color) => { s.fills = [{ fillColor: color, fillOpacity: 1 }]; }, surface = S.SURFACE29[S.mode];
+  for (const col of row.children.filter(x => x.name.startsWith("column "))) { S.header29(col); fill(col, surface.column);
+    for (const c of col.children.filter(x => x.name.startsWith("card "))) { S.card29(c); fill(c, surface.card); } }
+  const area = S.named(f, "columns"); for (const sh of area.children.filter(x => x.name === "scroll-shadow")) sh.remove();
+  for (const col of row.children.filter(x => x.name.startsWith("column ")))
+    S.box(area, { name: "scroll-clip", x: Math.round(col.x - area.x) + 8, y: Math.round(col.y + col.height - area.y) - 8, w: Math.round(col.width) - 16, h: 8, fill: surface.column });
+  await S.wait(600); S.fitBadges29(f); return f; };
 S.draw29k = {};
-S.draw29k["a-kanban"] = (f) => S.kanbanSeed29(S.kanbanHolds(f));
+S.draw29k["a-kanban"] = async (f) => S.kanbanGabarit29(S.kanbanSeed29(S.kanbanHolds(f)));
 
 // ---------- Retouches communes ----------
 S.shown = (parent) => [...parent.children].reverse();
