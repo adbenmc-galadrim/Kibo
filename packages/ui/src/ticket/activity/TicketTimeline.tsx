@@ -40,7 +40,7 @@ const ICONS: Record<TimelineKind, { icon: LucideIcon; tone: string }> = {
   status: { icon: CircleDot, tone: "text-(--tracking-mfg)" },
   sprint: { icon: CalendarRange, tone: "text-(--tracking-mfg)" },
   question: { icon: MessageCircleQuestion, tone: "text-(--tracking-mfg)" },
-  hold: { icon: Pause, tone: "text-muted-foreground" },
+  hold: { icon: Pause, tone: "text-(--tracking-mfg)" },
   other: { icon: History, tone: "text-(--tracking-mfg)" },
 };
 const CHECK_TONES = { ok: "text-(--tracking-green)", running: "text-(--tracking-amber)", error: "" } as const;

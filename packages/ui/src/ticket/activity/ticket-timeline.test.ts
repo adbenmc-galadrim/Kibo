@@ -184,3 +184,18 @@ test("a branch declared by the CLI is declared, not pushed, and an old line keep
     ["CI verte sur PR #20", "9 oct. 10:00"],
   ]);
 });
+
+test("a hold and its resumption read as « Mise en attente · <raison> » and « Reprise »", () => {
+  const lines = ticketTimeline(
+    [
+      ev("held", at(16, 15, 10), { reason: "Serveur MinIO de recette indisponible" }, "user"),
+      ev("resumed", at(16, 16, 0), { reason: "Serveur MinIO de recette indisponible" }, "user"),
+    ],
+    project,
+    NOW,
+  );
+  expect(lines.map((l) => [l.kind, l.text])).toEqual([
+    ["hold", "Reprise"],
+    ["hold", "Mise en attente · Serveur MinIO de recette indisponible"],
+  ]);
+});

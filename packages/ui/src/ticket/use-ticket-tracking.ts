@@ -12,11 +12,18 @@ export type TicketJournal = { events: ProjectEvent[]; error: boolean };
 
 type JournalFacts = Pick<
   TicketView,
-  "id" | "statusId" | "delivery" | "session" | "externalRefs" | "sprintId"
+  "id" | "statusId" | "delivery" | "session" | "externalRefs" | "sprintId" | "hold"
 >;
 
 export const journalSignal = (ticket: JournalFacts): string =>
-  JSON.stringify([ticket.statusId, ticket.delivery, ticket.session, ticket.externalRefs, ticket.sprintId]);
+  JSON.stringify([
+    ticket.statusId,
+    ticket.delivery,
+    ticket.session,
+    ticket.externalRefs,
+    ticket.sprintId,
+    ticket.hold,
+  ]);
 
 export function useTicketJournal(projectId: string, ticket: JournalFacts): TicketJournal {
   const [journal, setJournal] = useState<TicketJournal & { signal: string | null }>({
