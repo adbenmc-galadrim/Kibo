@@ -45,7 +45,7 @@ export function createWakeupScheduler(deps: WakeupDeps): WakeupScheduler {
 
   function send(projectId: string, triggers: readonly Signal[]): void {
     try {
-      deps.send(projectId, wakeupMessage(triggers));
+      deps.send(projectId, wakeupMessage({ signals: triggers, answers: [] }));
     } catch (e) {
       console.error(`[kibo-daemon] waking the project agent of ${projectId} failed`, e);
     }
