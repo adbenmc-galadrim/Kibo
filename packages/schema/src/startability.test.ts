@@ -30,11 +30,11 @@ test("a ticket outside any feature ignores sprints and the limit", () => {
 });
 
 test("a step waits for its undelivered dependencies", () => {
-  const delivered = { key: "EMIS-32", statusId: "done" as const };
-  const blockers = [delivered, { key: "EMIS-33", statusId: "in_review" as const }];
+  const delivered = { key: "SILO-32", statusId: "done" as const };
+  const blockers = [delivered, { key: "SILO-33", statusId: "in_review" as const }];
   expect(startable({ ...ready, blockers }, ctx)).toEqual({
     startable: false,
-    reason: { kind: "dependency", keys: ["EMIS-33"] },
+    reason: { kind: "dependency", keys: ["SILO-33"] },
   });
   expect(startable({ ...ready, blockers: [delivered] }, ctx)).toEqual({ startable: true });
 });
@@ -112,7 +112,7 @@ test("reasons come in order: status, dependency, question, sprint, limit", () =>
   const all: StartFacts = {
     statusId: "todo",
     busy: false,
-    blockers: [{ key: "EMIS-33", statusId: "todo" }],
+    blockers: [{ key: "SILO-33", statusId: "todo" }],
     blockingQuestion: { number: 14, importRef: null },
     feature: { id: "f6", sprint: S43, waitingSteps: [] },
   };
@@ -128,7 +128,7 @@ const factsArb = fc.record({
   statusId: fc.constantFrom(...StatusId.options),
   busy: fc.boolean(),
   blockers: fc.array(
-    fc.record({ key: fc.constantFrom("EMIS-1", "EMIS-2"), statusId: fc.constantFrom(...StatusId.options) }),
+    fc.record({ key: fc.constantFrom("SILO-1", "SILO-2"), statusId: fc.constantFrom(...StatusId.options) }),
     { maxLength: 3 },
   ),
   blockingQuestion: fc.option(
@@ -188,11 +188,11 @@ test("a last step waiting for the others says « attend PFD-3 », after its own 
   });
   const blockers = [
     { key: "PFD-3", statusId: "todo" as const },
-    { key: "EMIS-9", statusId: "todo" as const },
+    { key: "SILO-9", statusId: "todo" as const },
   ];
   expect(startable({ ...ready, blockers, feature }, ctx)).toEqual({
     startable: false,
-    reason: { kind: "dependency", keys: ["PFD-3", "EMIS-9", "PFD-2"] },
+    reason: { kind: "dependency", keys: ["PFD-3", "SILO-9", "PFD-2"] },
   });
 });
 

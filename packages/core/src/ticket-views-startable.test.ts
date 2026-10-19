@@ -8,8 +8,8 @@ const ADAM = { kind: "human", ref: "adam" } as const;
 const newDoc = (tracking: TrackingSettings | null = null) =>
   createProjectDoc({
     id: "p1",
-    key: "EMIS",
-    name: "Emis",
+    key: "SILO",
+    name: "Silo",
     folder: null,
     color: "#F97316",
     worktree: null,
@@ -110,7 +110,7 @@ test("a dependency comes before the sprint, and names the ticket it waits for", 
   const d = newDoc();
   const f = feature(d, "Signature", sprint(d, "S43", "2026-10-19", "2026-10-23"));
   executeProjectCommand(d, { method: "addLink", from: f.first.id, to: f.second.id, type: "blocks" });
-  expect(reasonOf(d, f.second.id).startReason).toEqual({ kind: "dependency", keys: ["EMIS-2"] });
+  expect(reasonOf(d, f.second.id).startReason).toEqual({ kind: "dependency", keys: ["SILO-2"] });
 });
 
 test("an open blocking question is named, and no longer blocks once answered then archived", () => {

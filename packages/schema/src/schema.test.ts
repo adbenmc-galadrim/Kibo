@@ -40,7 +40,7 @@ describe("keys", () => {
   test("a feature key is F and a number", () => {
     expect(TicketKey.safeParse("F12").success).toBe(true);
     expect(TicketKey.safeParse("F1").success).toBe(true);
-    for (const key of ["F", "f1", "EMIS-F1", "F-1", "FF1"])
+    for (const key of ["F", "f1", "SILO-F1", "F-1", "FF1"])
       expect(TicketKey.safeParse(key).success).toBe(false);
   });
   test("project keys are 2 to 6 uppercase letters", () => {

@@ -67,7 +67,7 @@ async function world(): Promise<World> {
     state: "running",
   });
   h.agents.runs.push(
-    runView({ id: "r1", projectId: h.project.id, ticketId: t1, ticketKey: "EMIS-1", state: "queued" }),
+    runView({ id: "r1", projectId: h.project.id, ticketId: t1, ticketKey: "SILO-1", state: "queued" }),
     runView({ id: "r2", projectId: other.id, ticketId: "x", ticketKey: "AUTRE-1", state: "running" }),
     run,
   );
@@ -113,7 +113,7 @@ describe("read tools", () => {
     const text = await w.tool("project_overview");
     expect(text).not.toContain("\n  ");
     const overview = JSON.parse(text);
-    expect(overview).toMatchObject({ name: "Emis", key: "EMIS", memory: "# Mémoire\n\nRien.\n" });
+    expect(overview).toMatchObject({ name: "Silo", key: "SILO", memory: "# Mémoire\n\nRien.\n" });
     expect(overview.runs.map((r: { id: string }) => r.id)).toEqual(["r1"]);
     expect(overview.profiles.map((p: { id: string }) => p.id)).toEqual(["global:opus"]);
     expect(overview.openSignals).toBe(2);
@@ -144,11 +144,11 @@ describe("read tools", () => {
     const w = await world();
     const sheet = z
       .object({ key: z.string(), questions: z.array(z.unknown()) })
-      .parse(await w.json("get_ticket", { key: "EMIS-1" }));
-    expect(sheet.key).toBe("EMIS-1");
+      .parse(await w.json("get_ticket", { key: "SILO-1" }));
+    expect(sheet.key).toBe("SILO-1");
     expect(sheet.questions).toHaveLength(2);
     expect(await codeOf(w.tool("get_ticket", { key: "AUTRE-1" }))).toBe("NOT_FOUND");
-    expect(await codeOf(w.tool("get_ticket", { key: "EMIS-999" }))).toBe("NOT_FOUND");
+    expect(await codeOf(w.tool("get_ticket", { key: "SILO-999" }))).toBe("NOT_FOUND");
   });
 
   test("list_tickets and get_ticket say a ticket with a live run is not startable", async () => {
@@ -159,9 +159,9 @@ describe("read tools", () => {
       return z
         .array(Card)
         .parse(page.items)
-        .find((c) => c.key === "EMIS-6")?.startable;
+        .find((c) => c.key === "SILO-6")?.startable;
     };
-    const sheet = async () => Card.parse(await w.json("get_ticket", { key: "EMIS-6" })).startable;
+    const sheet = async () => Card.parse(await w.json("get_ticket", { key: "SILO-6" })).startable;
     expect(await startable()).toBe(true);
     expect(await sheet()).toBe(true);
     const ticketId = w.tickets[5]?.id ?? "";
@@ -175,7 +175,7 @@ describe("read tools", () => {
     const w = await world();
     expect(await w.json("list_questions")).toHaveLength(2);
     expect(await w.json("list_questions", { state: "all" })).toHaveLength(3);
-    expect(await w.json("list_questions", { state: "all", ticketKey: "EMIS-2" })).toMatchObject([
+    expect(await w.json("list_questions", { state: "all", ticketKey: "SILO-2" })).toMatchObject([
       { answer: "JSON" },
     ]);
   });
@@ -198,7 +198,7 @@ describe("read tools", () => {
     ]);
     expect(await w.json("list_questions", { state: "all", recipient: "Client" })).toEqual([]);
     expect(await codeOf(w.tool("list_questions", { recipient: "Galadrim" }))).toBe("INVALID_INPUT");
-    expect(await w.json("get_ticket", { key: "EMIS-1" })).toMatchObject({
+    expect(await w.json("get_ticket", { key: "SILO-1" })).toMatchObject({
       questions: [{ title: "Quelle base ?", recipient: "me", blocking: false, delivered: false }],
     });
     expect(await w.json("project_overview")).toMatchObject({
@@ -214,7 +214,7 @@ describe("read tools", () => {
   test("list_runs lists the ticket runs of the project with their queue position", async () => {
     const w = await world();
     expect(await w.json("list_runs")).toEqual([
-      { id: "r1", label: "opus-dev", state: "queued", subject: "EMIS-1", position: 1 },
+      { id: "r1", label: "opus-dev", state: "queued", subject: "SILO-1", position: 1 },
     ]);
     expect(await w.json("list_runs", { state: "done" })).toEqual([]);
   });
@@ -255,7 +255,7 @@ describe("read tools", () => {
     const digest = await w.tool("project_changes");
     expect(digest).toContain("## Depuis ton dernier tour");
     expect(digest.split("\n").filter((l) => l.startsWith("- "))).toHaveLength(60);
-    expect(digest).toContain("EMIS-60");
+    expect(digest).toContain("SILO-60");
   });
 });
 

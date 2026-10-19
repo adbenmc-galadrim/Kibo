@@ -514,7 +514,7 @@ test("a card shows its open questions, never a zero", async () => {
   expect(within(todo).queryByText(/question/)).toBeNull();
   act(() => {
     ask("Un admin non affecté accède-t-il aux fichiers ?");
-    ask("Bloquer le dépôt sur une affaire archivée ?");
+    ask("Bloquer le dépôt sur un client archivé ?");
   });
   const card = await within(todo).findByRole("article", { name: /Sync/ });
   const chip = await within(card).findByRole("button", { name: "2 questions, ouvrir" });
@@ -531,11 +531,11 @@ test("the questions chip previews them on hover and opens the first one", async 
   const todo = await screen.findByRole("region", { name: "À faire" });
   act(() => {
     ask("Un admin non affecté accède-t-il aux fichiers ?");
-    ask("Bloquer le dépôt sur une affaire archivée ?");
+    ask("Bloquer le dépôt sur un client archivé ?");
   });
   const chip = await within(todo).findByRole("button", { name: "2 questions, ouvrir" });
   fireEvent.focus(chip);
-  expect(await screen.findByText("Bloquer le dépôt sur une affaire archivée ?")).toBeTruthy();
+  expect(await screen.findByText("Bloquer le dépôt sur un client archivé ?")).toBeTruthy();
   fireEvent.click(chip);
   const first = m.snapshot().questions.find((q) => q.title.startsWith("Un admin"))?.id;
   expect(m.viewRequests).toEqual([{ componentId: "questions", question: first ?? "" }]);

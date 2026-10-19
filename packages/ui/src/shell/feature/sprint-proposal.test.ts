@@ -4,7 +4,7 @@ import { sprintApplyRequest, sprintProposal } from "./sprint-proposal";
 
 const batch = (actions: ProposedAction[], patch: Partial<Batch> = {}): Batch => ({
   id: "b7",
-  projectId: "emis",
+  projectId: "silo",
   runId: "pa1",
   sessionId: "s-pa1",
   seq: 7,
@@ -29,29 +29,29 @@ const setSprint = (id: number, ticket: string, sprint: string | null): ProposedA
 });
 
 test("a pending batch that moves the feature gives the proposal and its action", () => {
-  const batches = [batch([setSprint(1, "EMIS-90", "S44"), setSprint(2, "EMIS-30", "S43")])];
-  expect(sprintProposal(batches, "EMIS-30")).toEqual({ batchId: "b7", actionId: 2, sprint: "S43" });
+  const batches = [batch([setSprint(1, "SILO-90", "S44"), setSprint(2, "SILO-30", "S43")])];
+  expect(sprintProposal(batches, "SILO-30")).toEqual({ batchId: "b7", actionId: 2, sprint: "S43" });
 });
 
 test("no proposal from a decided batch, for another feature, or to take it off the planning", () => {
   expect(
-    sprintProposal([batch([setSprint(1, "EMIS-30", "S43")], { status: "superseded" })], "EMIS-30"),
+    sprintProposal([batch([setSprint(1, "SILO-30", "S43")], { status: "superseded" })], "SILO-30"),
   ).toBeNull();
-  expect(sprintProposal([batch([setSprint(1, "EMIS-90", "S43")])], "EMIS-30")).toBeNull();
-  expect(sprintProposal([batch([setSprint(1, "EMIS-30", null)])], "EMIS-30")).toBeNull();
-  expect(sprintProposal([batch([setSprint(1, "EMIS-30", "S43")])], null)).toBeNull();
+  expect(sprintProposal([batch([setSprint(1, "SILO-90", "S43")])], "SILO-30")).toBeNull();
+  expect(sprintProposal([batch([setSprint(1, "SILO-30", null)])], "SILO-30")).toBeNull();
+  expect(sprintProposal([batch([setSprint(1, "SILO-30", "S43")])], null)).toBeNull();
 });
 
 test("no proposal once its action is decided in a batch still pending", () => {
-  const decided = batch([setSprint(1, "EMIS-30", "S43"), setSprint(2, "EMIS-90", "S44")], { chosen: [1] });
-  expect(sprintProposal([decided], "EMIS-30")).toBeNull();
-  expect(sprintProposal([decided], "EMIS-90")).toEqual({ batchId: "b7", actionId: 2, sprint: "S44" });
+  const decided = batch([setSprint(1, "SILO-30", "S43"), setSprint(2, "SILO-90", "S44")], { chosen: [1] });
+  expect(sprintProposal([decided], "SILO-30")).toBeNull();
+  expect(sprintProposal([decided], "SILO-90")).toEqual({ batchId: "b7", actionId: 2, sprint: "S44" });
 });
 
 test("applying the proposal decides its action only and keeps the rest of the batch", () => {
-  expect(sprintApplyRequest("emis", { batchId: "b7", actionId: 2, sprint: "S43" })).toEqual({
+  expect(sprintApplyRequest("silo", { batchId: "b7", actionId: 2, sprint: "S43" })).toEqual({
     method: "decideBatch",
-    projectId: "emis",
+    projectId: "silo",
     batchId: "b7",
     decision: "apply",
     actionIds: [2],

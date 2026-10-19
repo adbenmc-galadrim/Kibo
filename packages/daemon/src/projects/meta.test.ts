@@ -16,7 +16,7 @@ afterEach(() => {
 
 const worktree = {
   baseRef: "origin/dev",
-  pathTemplate: "../emis-{slug}",
+  pathTemplate: "../silo-{slug}",
   setup: "pnpm worktree {branch}",
   recipe: null,
 };
@@ -29,8 +29,8 @@ function setup() {
   const settings = createProjectSettings(store.db);
   const project = service.handle({
     method: "createProject",
-    name: "Emis",
-    key: "EMIS",
+    name: "Silo",
+    key: "SILO",
     folder: null,
     color: "#F97316",
   }) as ProjectMeta;
@@ -50,9 +50,9 @@ test("worktree settings are written locally, never to the project doc nor the wo
 
 test("a mixed patch splits: the name goes to the docs, the worktree stays local", () => {
   const { service, settings, project } = setup();
-  const meta = writeProjectMeta(service.docs, settings, project.id, { name: "Emis 2", worktree }, true);
-  expect(meta).toMatchObject({ name: "Emis 2", worktree });
-  expect(service.docs.project(project.id).getMap("meta").get("name")).toBe("Emis 2");
+  const meta = writeProjectMeta(service.docs, settings, project.id, { name: "Silo 2", worktree }, true);
+  expect(meta).toMatchObject({ name: "Silo 2", worktree });
+  expect(service.docs.project(project.id).getMap("meta").get("name")).toBe("Silo 2");
   expect(service.docs.project(project.id).getMap("meta").get("worktree")).toBeUndefined();
 });
 
@@ -66,12 +66,12 @@ test("a null worktree unsets the local settings", () => {
 
 test("delivery settings are local, listed, and a null delivery unsets them", () => {
   const { service, settings, project } = setup();
-  const delivery = { ...EMPTY_DELIVERY, root: "/home/dev/Documents/emis", allow: ["Bash(pnpm *)"] };
+  const delivery = { ...EMPTY_DELIVERY, root: "/home/dev/Documents/silo", allow: ["Bash(pnpm *)"] };
   const meta = writeProjectMeta(service.docs, settings, project.id, { delivery }, true);
   expect(meta.delivery).toEqual(delivery);
   expect(JSON.parse(settings.get(project.id, LOCAL_DELIVERY_KEY) ?? "null")).toEqual(delivery);
-  expect(JSON.stringify(service.docs.project(project.id).toJSON())).not.toContain("Documents/emis");
-  expect(JSON.stringify(service.docs.workspace.toJSON())).not.toContain("Documents/emis");
+  expect(JSON.stringify(service.docs.project(project.id).toJSON())).not.toContain("Documents/silo");
+  expect(JSON.stringify(service.docs.workspace.toJSON())).not.toContain("Documents/silo");
   const listed = service.handle({ method: "listProjects" }) as ProjectSummary[];
   expect(listed.find((p) => p.id === project.id)?.delivery).toEqual(delivery);
   expect(writeProjectMeta(service.docs, settings, project.id, { delivery: null }, true).delivery).toBeNull();
@@ -81,11 +81,11 @@ test("delivery settings are local, listed, and a null delivery unsets them", () 
 test("the description is synced in the project doc, never in the workspace registry", () => {
   const { service, settings, project } = setup();
   for (const folderInDoc of [false, true]) {
-    const description = `Terrain hors ligne ${folderInDoc}`;
+    const description = `Saisie hors ligne ${folderInDoc}`;
     const meta = writeProjectMeta(service.docs, settings, project.id, { description }, folderInDoc);
     expect(meta.description).toBe(description);
     expect(service.docs.project(project.id).getMap("meta").get("description")).toBe(description);
-    expect(JSON.stringify(service.docs.workspace.toJSON())).not.toContain("Terrain hors ligne");
+    expect(JSON.stringify(service.docs.workspace.toJSON())).not.toContain("Saisie hors ligne");
   }
   expect(
     writeProjectMeta(service.docs, settings, project.id, { description: null }, false).description,
@@ -95,11 +95,11 @@ test("the description is synced in the project doc, never in the workspace regis
 test("the client is synced in the project doc, never in the workspace registry", () => {
   const { service, settings, project } = setup();
   for (const folderInDoc of [false, true]) {
-    const client = `Chantiers SA ${folderInDoc}`;
+    const client = `Silo SA ${folderInDoc}`;
     const meta = writeProjectMeta(service.docs, settings, project.id, { client }, folderInDoc);
     expect(meta.client).toBe(client);
     expect(service.docs.project(project.id).getMap("meta").get("client")).toBe(client);
-    expect(JSON.stringify(service.docs.workspace.toJSON())).not.toContain("Chantiers SA");
+    expect(JSON.stringify(service.docs.workspace.toJSON())).not.toContain("Silo SA");
   }
   expect(writeProjectMeta(service.docs, settings, project.id, { client: null }, false).client).toBeNull();
 });
@@ -116,14 +116,14 @@ test("createProject and a later update write the client to the project doc only"
   }) as ProjectMeta;
   expect(created.client).toBe("Bâtisseurs SA");
   expect(service.docs.project(created.id).getMap("meta").get("client")).toBe("Bâtisseurs SA");
-  const updated = service.docs.updateProjectMeta(created.id, { client: "Emis SA" }, false);
-  expect(updated.client).toBe("Emis SA");
-  expect(service.docs.project(created.id).getMap("meta").get("client")).toBe("Emis SA");
+  const updated = service.docs.updateProjectMeta(created.id, { client: "Silo SA" }, false);
+  expect(updated.client).toBe("Silo SA");
+  expect(service.docs.project(created.id).getMap("meta").get("client")).toBe("Silo SA");
   const registry = JSON.stringify(service.docs.workspace.toJSON());
   expect(registry).not.toContain("Bâtisseurs SA");
-  expect(registry).not.toContain("Emis SA");
+  expect(registry).not.toContain("Silo SA");
   const listed = service.handle({ method: "listProjects" }) as ProjectSummary[];
-  expect(listed.find((p) => p.id === created.id)?.client).toBe("Emis SA");
+  expect(listed.find((p) => p.id === created.id)?.client).toBe("Silo SA");
 });
 
 test("an invalid client is refused before the project is registered", () => {
@@ -139,5 +139,5 @@ test("an invalid client is refused before the project is registered", () => {
     });
   expect(create).toThrow(expect.objectContaining({ code: "INVALID_INPUT" }));
   const listed = service.handle({ method: "listProjects" }) as ProjectSummary[];
-  expect(listed.map((p) => p.key)).toEqual(["EMIS"]);
+  expect(listed.map((p) => p.key)).toEqual(["SILO"]);
 });

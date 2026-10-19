@@ -8,7 +8,7 @@ import { addDirsOf, assertAddDirs, realpathOrNull } from "./add-dirs";
 
 const HOME = "/Users/a";
 const SKILLS = "/Users/a/.claude/skills";
-const EMIS = "/Users/a/Documents/emis";
+const SILO = "/Users/a/Documents/silo";
 
 function io(present: readonly string[]) {
   const lines: string[] = [];
@@ -17,9 +17,9 @@ function io(present: readonly string[]) {
 }
 
 test("the agent folders come first, then the project ones, without duplicates or missing folders", () => {
-  const { lines, io: deps } = io([SKILLS, EMIS]);
-  const project = { ...EMPTY_DELIVERY, addDirs: [EMIS, SKILLS] };
-  expect(addDirsOf({ addDirs: [SKILLS, "/Users/a/gone"] }, project, deps)).toEqual([SKILLS, EMIS]);
+  const { lines, io: deps } = io([SKILLS, SILO]);
+  const project = { ...EMPTY_DELIVERY, addDirs: [SILO, SKILLS] };
+  expect(addDirsOf({ addDirs: [SKILLS, "/Users/a/gone"] }, project, deps)).toEqual([SKILLS, SILO]);
   expect(lines).toHaveLength(1);
   expect(lines[0]).toContain("/Users/a/gone");
 });
@@ -31,7 +31,7 @@ test("without a delivery setting only the agent folders count", () => {
 
 test("a forbidden folder is refused by name, wherever it comes from", () => {
   expect(() => assertAddDirs(["/Users/a/.kibo"], HOME)).toThrow(/INVALID_INPUT.*\.kibo/);
-  expect(() => assertAddDirs([SKILLS, EMIS], HOME)).not.toThrow();
+  expect(() => assertAddDirs([SKILLS, SILO], HOME)).not.toThrow();
   const project = { ...EMPTY_DELIVERY, addDirs: ["/Users/a/.ssh"] };
   expect(() => addDirsOf({ addDirs: [] }, project, io(["/Users/a/.ssh"]).io)).toThrow(/\.ssh/);
   expect(() => addDirsOf({ addDirs: ["/etc"] }, null, io(["/etc"]).io)).toThrow(KiboError);
@@ -71,12 +71,12 @@ function realHome() {
 test("a link to a secret folder is refused once resolved, a link to a safe folder passes resolved", () => {
   const { home, deps } = realHome();
   mkdirSync(join(home, ".ssh"));
-  mkdirSync(join(home, "code", "emis"), { recursive: true });
+  mkdirSync(join(home, "code", "silo"), { recursive: true });
   symlinkSync(join(home, ".ssh"), join(home, "keys"));
-  symlinkSync(join(home, "code", "emis"), join(home, "emis"));
+  symlinkSync(join(home, "code", "silo"), join(home, "silo"));
   expect(() => addDirsOf({ addDirs: [join(home, "keys")] }, null, deps)).toThrow(/INVALID_INPUT.*keys/);
-  expect(addDirsOf({ addDirs: [join(home, "emis")] }, null, deps)).toEqual([
-    realpathSync(join(home, "code", "emis")),
+  expect(addDirsOf({ addDirs: [join(home, "silo")] }, null, deps)).toEqual([
+    realpathSync(join(home, "code", "silo")),
   ]);
 });
 

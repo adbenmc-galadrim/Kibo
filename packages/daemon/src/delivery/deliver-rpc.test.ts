@@ -14,8 +14,8 @@ function rig(writable: (projectId: string) => boolean) {
     project: () => ({
       delivery: EMPTY_DELIVERY,
       tickets: [
-        { id: "15", key: "EMIS-15", title: "T", parentId: null, statusId: "todo", startable: true },
-        { id: "16", key: "EMIS-16", title: "D", parentId: null, statusId: "done", startable: false },
+        { id: "15", key: "SILO-15", title: "T", parentId: null, statusId: "todo", startable: true },
+        { id: "16", key: "SILO-16", title: "D", parentId: null, statusId: "done", startable: false },
       ],
       links: [],
       questions: [],
@@ -67,5 +67,5 @@ test("the inbox is never delivered", async () => {
 test("the update mode reaches the delivery: a done ticket gets its touch-up brief", async () => {
   const { rpc, briefs } = rig(() => true);
   await rpc.handle({ ...req, ticketId: "16", mode: "update" }, LOCAL_CONTEXT);
-  expect(briefs).toEqual(["/update-delivery EMIS-16"]);
+  expect(briefs).toEqual(["/update-delivery SILO-16"]);
 });

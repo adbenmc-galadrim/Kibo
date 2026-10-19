@@ -53,7 +53,7 @@ test("a shared project never takes its folder from the doc", () => {
 
 const worktree = {
   baseRef: "origin/dev",
-  pathTemplate: "../emis-{slug}",
+  pathTemplate: "../silo-{slug}",
   setup: "pnpm worktree {branch}",
   recipe: null,
 };

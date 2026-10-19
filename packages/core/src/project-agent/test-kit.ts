@@ -16,7 +16,7 @@ export const PROJECT_ID = "p1";
 export const HUMAN = { kind: "human" as const, ref: "adam" };
 
 export function ticket(p: Partial<TicketView> & Pick<TicketView, "id">): TicketView {
-  const key = p.key === undefined ? `EMIS-${p.id.replace(/\D/g, "") || "1"}` : p.key;
+  const key = p.key === undefined ? `SILO-${p.id.replace(/\D/g, "") || "1"}` : p.key;
   return {
     key,
     pendingSeq: null,
@@ -40,7 +40,7 @@ export function ticket(p: Partial<TicketView> & Pick<TicketView, "id">): TicketV
     feature: null,
     progress: { done: 0, total: 0 },
     waitingOn: [],
-    keyLabel: key ?? "EMIS-…",
+    keyLabel: key ?? "SILO-…",
     openQuestions: 0,
     startable: false,
     startReason: null,
@@ -98,8 +98,8 @@ export function project(p: Partial<ProjectSnapshot> = {}): ProjectSnapshot {
   return {
     meta: {
       id: PROJECT_ID,
-      key: "EMIS",
-      name: "Emis",
+      key: "SILO",
+      name: "Silo",
       folder: null,
       color: "#14B8A6",
       worktree: null,
@@ -140,7 +140,7 @@ export function run(p: Partial<RunView> & Pick<RunView, "id">): RunView {
     profileName: "opus-dev",
     agentName: "opus-dev",
     agentScope: "global",
-    projectKey: "EMIS",
+    projectKey: "SILO",
     sessionId: `s-${p.id}`,
     brief: "",
     resumedFrom: null,
@@ -223,7 +223,7 @@ export const questionSnapshot = (): ProjectSnapshot =>
 
 export const questionContext = (p: Partial<BatchContext> = {}): BatchContext => ({
   project: questionSnapshot(),
-  runs: [run({ id: ACTIVE_RUN, ticketId: "t2", ticketKey: "EMIS-2", label: "opus-dev-1", state: "running" })],
+  runs: [run({ id: ACTIVE_RUN, ticketId: "t2", ticketKey: "SILO-2", label: "opus-dev-1", state: "running" })],
   notes: [],
   agents: AGENTS,
   demoProject: false,

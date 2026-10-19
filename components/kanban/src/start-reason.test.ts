@@ -10,7 +10,7 @@ test("a short reason for the sprint, the missing sprint and the limit", () => {
 test("the last step waits for the steps that no « attend » badge names yet", () => {
   expect(startReasonText({ kind: "dependency", keys: ["PFD-3"] })).toBe("attend PFD-3");
   expect(startReasonText({ kind: "dependency", keys: ["PFD-2", "PFD-3"] }, ["PFD-2"])).toBe("attend PFD-3");
-  expect(startReasonText({ kind: "dependency", keys: ["EMIS-33"] }, ["EMIS-33"])).toBeNull();
+  expect(startReasonText({ kind: "dependency", keys: ["SILO-33"] }, ["SILO-33"])).toBeNull();
 });
 
 test("no extra text when another badge already says it, or nothing is to say", () => {

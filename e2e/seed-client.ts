@@ -1,5 +1,5 @@
 import { RpcRequest } from "../packages/schema/src/index";
-import type { SeedRpc } from "./seed-emis-maquettes";
+import type { SeedRpc } from "./seed-silo-maquettes";
 
 const field = (value: unknown, key: string): unknown =>
   typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined;

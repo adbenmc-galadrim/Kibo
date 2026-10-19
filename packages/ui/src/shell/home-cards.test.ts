@@ -1,18 +1,18 @@
 import { expect, test } from "bun:test";
 import { overviewIndicators } from "@kibo/schema";
 import { homeCard } from "./home-cards";
-import { emisHomeSnapshot, HOME_TODAY, question, summaryOf } from "./home-fixtures";
+import { HOME_TODAY, question, siloHomeSnapshot, summaryOf } from "./home-fixtures";
 
-const snapshot = emisHomeSnapshot();
+const snapshot = siloHomeSnapshot();
 const project = summaryOf(snapshot);
 
 test("homeCard gives the key, the client and the counts of the project", () => {
   expect(homeCard(project, snapshot, HOME_TODAY)).toEqual({
-    id: "emis",
-    key: "EMIS",
-    name: "Emis",
+    id: "silo",
+    key: "SILO",
+    name: "Silo",
     color: "#14B8A6",
-    client: "Emis SA",
+    client: "Silo SA",
     counts: { open: 7, blocked: 5, late: 1, risk: 0, sprint: "S42", done: 1, total: 8 },
   });
 });
@@ -45,9 +45,9 @@ test("homeCard follows the current sprint of the day", () => {
 });
 
 test("homeCard reads the live project and waits for its snapshot to count", () => {
-  const renamed = { ...snapshot, meta: { ...snapshot.meta, client: null, name: "Emis 2" } };
-  expect(homeCard(project, renamed, HOME_TODAY)).toMatchObject({ name: "Emis 2", client: null });
-  expect(homeCard(project, undefined, HOME_TODAY)).toMatchObject({ client: "Emis SA", counts: null });
+  const renamed = { ...snapshot, meta: { ...snapshot.meta, client: null, name: "Silo 2" } };
+  expect(homeCard(project, renamed, HOME_TODAY)).toMatchObject({ name: "Silo 2", client: null });
+  expect(homeCard(project, undefined, HOME_TODAY)).toMatchObject({ client: "Silo SA", counts: null });
 });
 
 test("during its sprint a feature is at risk, after its end it is late, like the overview", () => {

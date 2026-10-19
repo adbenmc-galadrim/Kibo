@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { expect, type Locator, type Page, type TestInfo } from "@playwright/test";
 import { list, rpc, text } from "./agents-seed";
 import { homeOf } from "./e2e-home";
-import { EMIS_PROJECT } from "./fixtures/emis-maquettes";
+import { SILO_PROJECT } from "./fixtures/silo-maquettes";
 import { createE2eRepo, type E2eRepo } from "./git-repo";
 
 const CLI = join(import.meta.dirname, "..", "packages", "cli", "src", "bin.ts");
@@ -11,22 +11,22 @@ const CLI = join(import.meta.dirname, "..", "packages", "cli", "src", "bin.ts");
 const field = (value: unknown, key: string): unknown =>
   typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined;
 
-export type Emis = {
+export type Silo = {
   projectId: string;
   pageUrl(component: string): string;
   ticketUrl(keyLabel: string): string;
 };
 
-export async function loadEmis(page: Page): Promise<Emis> {
+export async function loadSilo(page: Page): Promise<Silo> {
   const projects = await rpc(page, { method: "listProjects" });
-  const found = (Array.isArray(projects) ? projects : []).find((p) => field(p, "key") === EMIS_PROJECT.key);
+  const found = (Array.isArray(projects) ? projects : []).find((p) => field(p, "key") === SILO_PROJECT.key);
   const projectId = text(found, "id");
   const snapshot = await rpc(page, { method: "getProject", projectId });
   const pages = new Map(list(snapshot, "instances").map((i) => [text(i, "component"), text(i, "pageId")]));
   const tickets = new Map(list(snapshot, "tickets").map((t) => [text(t, "keyLabel"), text(t, "id")]));
   const pick = (map: Map<string, string>, wanted: string): string => {
     const id = map.get(wanted);
-    if (id === undefined) throw new Error(`Emis has no ${wanted}`);
+    if (id === undefined) throw new Error(`Silo has no ${wanted}`);
     return id;
   };
   return {
@@ -36,17 +36,17 @@ export async function loadEmis(page: Page): Promise<Emis> {
   };
 }
 
-export async function ticketId(page: Page, emis: Emis, keyLabel: string): Promise<string> {
-  const snapshot = await rpc(page, { method: "getProject", projectId: emis.projectId });
+export async function ticketId(page: Page, silo: Silo, keyLabel: string): Promise<string> {
+  const snapshot = await rpc(page, { method: "getProject", projectId: silo.projectId });
   const ticket = list(snapshot, "tickets").find((t) => field(t, "keyLabel") === keyLabel);
   return text(ticket, "id");
 }
 
-export async function setStatus(page: Page, emis: Emis, keyLabel: string, statusId: string): Promise<void> {
-  const id = await ticketId(page, emis, keyLabel);
+export async function setStatus(page: Page, silo: Silo, keyLabel: string, statusId: string): Promise<void> {
+  const id = await ticketId(page, silo, keyLabel);
   await rpc(page, {
     method: "command",
-    projectId: emis.projectId,
+    projectId: silo.projectId,
     command: { method: "setStatus", ticketId: id, statusId },
   });
 }
@@ -90,12 +90,12 @@ async function code(page: Page, body: Record<string, unknown>): Promise<unknown>
   return field(payload, "result");
 }
 
-export async function attachRepo(page: Page, emis: Emis): Promise<E2eRepo> {
+export async function attachRepo(page: Page, silo: Silo): Promise<E2eRepo> {
   const repo = createE2eRepo("planning");
-  await rpc(page, { method: "updateProject", projectId: emis.projectId, patch: { folder: repo.repo } });
-  const worktrees = await code(page, { method: "worktrees", projectId: emis.projectId });
+  await rpc(page, { method: "updateProject", projectId: silo.projectId, patch: { folder: repo.repo } });
+  const worktrees = await code(page, { method: "worktrees", projectId: silo.projectId });
   const main = (Array.isArray(worktrees) ? worktrees : []).find((w) => field(w, "isMain") === true);
-  await code(page, { method: "status", projectId: emis.projectId, worktree: text(main, "path") });
+  await code(page, { method: "status", projectId: silo.projectId, worktree: text(main, "path") });
   return repo;
 }
 
@@ -109,16 +109,16 @@ export async function clipboardText(page: Page): Promise<string> {
 
 export async function moveToSprint(
   page: Page,
-  emis: Emis,
+  silo: Silo,
   shortKey: string,
   sprintId: string | null,
 ): Promise<string | null> {
-  const snapshot = await rpc(page, { method: "getProject", projectId: emis.projectId });
+  const snapshot = await rpc(page, { method: "getProject", projectId: silo.projectId });
   const ticket = list(snapshot, "tickets").find((t) => field(t, "shortKey") === shortKey);
   const previous = field(ticket, "sprintId");
   await rpc(page, {
     method: "command",
-    projectId: emis.projectId,
+    projectId: silo.projectId,
     command: { method: "setTicketSprint", ticketId: text(ticket, "id"), sprintId },
   });
   return typeof previous === "string" ? previous : null;

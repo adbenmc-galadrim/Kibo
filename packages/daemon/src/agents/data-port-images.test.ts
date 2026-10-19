@@ -16,8 +16,8 @@ function setup() {
   const s = createService(store, { user: "adam" });
   const meta: ProjectMeta = call(s, {
     method: "createProject",
-    name: "Emis",
-    key: "EMIS",
+    name: "Silo",
+    key: "SILO",
     folder: null,
     color: "#F97316",
   });
@@ -35,7 +35,7 @@ function setup() {
     fs: nodeImageFs,
     log: (line) => lines.push(line),
   });
-  const run = { id: "r1", profileName: "emis-livraison", cwd: join(root, "worktree") };
+  const run = { id: "r1", profileName: "silo-livraison", cwd: join(root, "worktree") };
   const ask = (input: Partial<AskInput>) =>
     port.createQuestion(
       meta.id,
@@ -103,9 +103,9 @@ test("asking again an open question stores no second copy of its images", () => 
 
 test("the delivery root is read from the local setting of the project, never from the shared document", () => {
   const { root, lines, ask, setDeliveryRoot } = setup();
-  const shot = writeImage(join(root, "emis/docs/1.png"));
+  const shot = writeImage(join(root, "silo/docs/1.png"));
   expect(ask({ title: "Avant", kind: "validation", images: [shot] })?.images).toEqual([]);
-  setDeliveryRoot(join(root, "emis"));
+  setDeliveryRoot(join(root, "silo"));
   expect(ask({ title: "Après", kind: "validation", images: [shot] })?.images.map((i) => i.name)).toEqual([
     "1.png",
   ]);

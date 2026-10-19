@@ -66,14 +66,14 @@ test("NewProjectDialog preview follows the sprint fields", async () => {
 });
 
 test("NewProjectDialog derives the key, keeps a typed one and refuses a taken one", async () => {
-  render(<NewProjectDialog open onOpenChange={() => {}} count={0} existingKeys={["EMIS"]} />);
+  render(<NewProjectDialog open onOpenChange={() => {}} count={0} existingKeys={["SILO"]} />);
   const user = userEvent.setup();
-  await user.type(await screen.findByLabelText("Nom"), "Suivi de chantier");
+  await user.type(await screen.findByLabelText("Nom"), "Location de box");
   const key = screen.getByLabelText("Clé");
-  expect(key.getAttribute("value")).toBe("SC");
+  expect(key.getAttribute("value")).toBe("LB");
   await user.clear(key);
-  await user.type(key, "emis");
-  expect(key.getAttribute("value")).toBe("EMIS");
+  await user.type(key, "silo");
+  expect(key.getAttribute("value")).toBe("SILO");
   expect(screen.getByText("Clé déjà prise")).toBeTruthy();
   expect(disabled(submitButton())).toBe(true);
   await user.type(key, "X");
@@ -96,18 +96,18 @@ test("NewProjectDialog creates the project with its setup and client, then opens
   const onOpenChange = mock((_: boolean) => {});
   render(<NewProjectDialog open onOpenChange={onOpenChange} count={1} existingKeys={[]} />);
   const user = userEvent.setup();
-  await user.type(await screen.findByLabelText("Nom"), "Emis");
+  await user.type(await screen.findByLabelText("Nom"), "Silo");
   const key = screen.getByLabelText("Clé");
   await user.clear(key);
-  await user.type(key, "EMIS");
-  await user.type(screen.getByLabelText("Client"), "Emis SA");
+  await user.type(key, "SILO");
+  await user.type(screen.getByLabelText("Client"), "Silo SA");
   await user.click(submitButton());
   expect(createCalls()).toEqual([
     {
       method: "createProject",
-      name: "Emis",
-      key: "EMIS",
-      client: "Emis SA",
+      name: "Silo",
+      key: "SILO",
+      client: "Silo SA",
       folder: null,
       color: expect.stringMatching(/^#[0-9A-Fa-f]{6}$/),
       setup: { sprintStart: "2026-10-19", sprintCount: 6, sprintWeeks: 1 },

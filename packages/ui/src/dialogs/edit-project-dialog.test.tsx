@@ -328,7 +328,7 @@ test("saving the worktree section sends the local settings only", async () => {
   await user.clear(field("Base"));
   await user.type(field("Base"), "origin/dev");
   await user.clear(field("Chemin"));
-  await user.type(field("Chemin"), "../emis-{{slug}");
+  await user.type(field("Chemin"), "../silo-{{slug}");
   await user.type(field("Commande de préparation"), "pnpm worktree {{branch}");
   await user.click(saveButton());
   await waitFor(() => expect(closed).toHaveBeenCalled());
@@ -339,7 +339,7 @@ test("saving the worktree section sends the local settings only", async () => {
       patch: {
         worktree: {
           baseRef: "origin/dev",
-          pathTemplate: "../emis-{slug}",
+          pathTemplate: "../silo-{slug}",
           setup: "pnpm worktree {branch}",
           recipe: null,
         },
@@ -379,7 +379,7 @@ test("a variable between single quotes is explained and blocks the save", async 
 
 test("clearing the three fields forgets the settings", async () => {
   const closed = mock(() => {});
-  const worktree = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: "make wt", recipe: null };
+  const worktree = { baseRef: "origin/dev", pathTemplate: "../silo-{slug}", setup: "make wt", recipe: null };
   render(<EditProjectDialog project={{ ...project, worktree }} remote={false} onClose={closed} />);
   expect(field("Commande de préparation").value).toBe("make wt");
   const user = userEvent.setup();
@@ -409,14 +409,14 @@ test("saving the delivery section sends absolute paths, the tilde expanded", asy
   const closed = mock(() => {});
   render(<EditProjectDialog project={project} remote={false} onClose={closed} />);
   const root = await screen.findByLabelText("Dossier de travail du skill");
-  fireEvent.change(root, { target: { value: "~/Documents/emis" } });
+  fireEvent.change(root, { target: { value: "~/Documents/silo" } });
   await userEvent.setup().click(saveButton());
   await waitFor(() => expect(closed).toHaveBeenCalled());
   expect(calls).toEqual([
     {
       method: "updateProject",
       projectId: "kibo",
-      patch: { delivery: { ...EMPTY_DELIVERY, root: "/Users/adam/Documents/emis" } },
+      patch: { delivery: { ...EMPTY_DELIVERY, root: "/Users/adam/Documents/silo" } },
     },
   ]);
 });
@@ -579,10 +579,10 @@ test("a remote session greys the duplication section and never sends it", () => 
 
 test("the description is saved trimmed, and emptied it is saved as null (remote too)", async () => {
   const closed = mock(() => {});
-  const described = { ...project, description: "App terrain des chefs de chantier" };
+  const described = { ...project, description: "App terrain des chefs de centre" };
   render(<EditProjectDialog project={described} remote onClose={closed} />);
   const field = screen.getByLabelText("Description") as HTMLInputElement;
-  expect(field.value).toBe("App terrain des chefs de chantier");
+  expect(field.value).toBe("App terrain des chefs de centre");
   expect(field.maxLength).toBe(200);
   const user = userEvent.setup();
   await user.clear(field);
@@ -593,11 +593,11 @@ test("the description is saved trimmed, and emptied it is saved as null (remote 
   cleanup();
   calls.length = 0;
   render(<EditProjectDialog project={project} remote={false} onClose={() => {}} />);
-  await user.type(screen.getByLabelText("Description"), "  Suivi des soudures ");
+  await user.type(screen.getByLabelText("Description"), "  Suivi des contrats ");
   await user.click(saveButton());
   await waitFor(() =>
     expect(calls).toEqual([
-      { method: "updateProject", projectId: "kibo", patch: { description: "Suivi des soudures" } },
+      { method: "updateProject", projectId: "kibo", patch: { description: "Suivi des contrats" } },
     ]),
   );
 });

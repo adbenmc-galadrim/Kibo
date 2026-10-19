@@ -48,7 +48,7 @@ const ticket = (id: string, key: string, title: string, patch: Partial<TicketVie
 
 const pr = (number: number, state: "open" | "merged"): ExternalRef => ({
   kind: "github_pr",
-  url: `https://github.com/galadrim/emis/pull/${number}`,
+  url: `https://github.com/silo-labs/silo-location/pull/${number}`,
   number,
   state,
   base: "main",
@@ -87,36 +87,36 @@ const sprint = (
 
 export const SPRINTS: SprintView[] = [
   sprint("s41", "S41", "Accès", "2026-10-05", "2026-10-09", "done"),
-  sprint("s42", "S42", "Terrain hors ligne", "2026-10-12", "2026-10-16", "current"),
-  sprint("s43", "S43", "Import et soudures", "2026-10-19", "2026-10-23", "planned"),
+  sprint("s42", "S42", "Saisie hors ligne", "2026-10-12", "2026-10-16", "current"),
+  sprint("s43", "S43", "Import et contrats", "2026-10-19", "2026-10-23", "planned"),
   sprint("s44", "S44", "Rapports", "2026-10-26", "2026-10-30", "planned"),
 ];
 
 const STEPS: TicketView[] = [
-  ticket("e31", "EMIS-31", "Stockage des photos sur MinIO", {
+  ticket("e31", "SILO-31", "Stockage des photos sur MinIO", {
     statusId: "done",
     externalRefs: [pr(19, "merged")],
     delivery: step(11, 15, 18, 22),
   }),
-  ticket("e32", "EMIS-32", "Route d'envoi des photos", {
+  ticket("e32", "SILO-32", "Route d'envoi des photos", {
     statusId: "in_review",
     externalRefs: [pr(22, "open")],
     delivery: step(10, 16, 15, 4),
   }),
-  ticket("e33", "EMIS-33", "Écran d'envoi hors ligne", {
+  ticket("e33", "SILO-33", "Écran d'envoi hors ligne", {
     statusId: "in_progress",
     externalRefs: [{ kind: "git_branch", branch: "feat/envoi-hors-ligne", base: null }],
     delivery: step(7, 16, 14, 51),
     session: { tool: "T3 Code", startedAt: NOW - 42 * 60_000 },
   }),
-  ticket("e34", "EMIS-34", "Tests E2E de l'envoi", {
+  ticket("e34", "SILO-34", "Tests E2E de l'envoi", {
     openQuestions: 1,
-    waitingOn: ["EMIS-33"],
-    startReason: { kind: "dependency", keys: ["EMIS-33"] },
+    waitingOn: ["SILO-33"],
+    startReason: { kind: "dependency", keys: ["SILO-33"] },
   }),
-  ticket("e35", "EMIS-35", "Démo client", {
-    waitingOn: ["EMIS-34"],
-    startReason: { kind: "dependency", keys: ["EMIS-34", "EMIS-32", "EMIS-33"] },
+  ticket("e35", "SILO-35", "Démo client", {
+    waitingOn: ["SILO-34"],
+    startReason: { kind: "dependency", keys: ["SILO-34", "SILO-32", "SILO-33"] },
   }),
 ];
 
@@ -137,19 +137,19 @@ const feature = (steps: readonly TicketView[], id: string, sprintEnd: string, to
     today,
   });
 
-const F5 = ticket("f5", "EMIS-30", "Envoyer les photos d'un tronçon", {
+const F5 = ticket("f5", "SILO-30", "Envoyer les photos d'un constat", {
   parentId: null,
   statusId: "in_progress",
   shortKey: "F5",
   sprintId: "s42",
   description:
-    "Sur le terrain, sans réseau, un chef de chantier photographie un tronçon. Les photos partent seules au retour du réseau et apparaissent dans le dossier de l'affaire.",
+    "Dans un centre sans réseau, un chef de centre photographie un constat. Les photos partent seules au retour du réseau et apparaissent dans le dossier du client.",
   progress: { done: 1, total: 5 },
   feature: feature(STEPS, "f5", "2026-10-16", "2026-10-16"),
 });
 
-const F3_STEP = ticket("e21", "EMIS-21", "Réaffecter", { parentId: "f3", statusId: "done" });
-const F3 = ticket("f3", "EMIS-20", "Réaffecter un ISO", {
+const F3_STEP = ticket("e21", "SILO-21", "Réaffecter", { parentId: "f3", statusId: "done" });
+const F3 = ticket("f3", "SILO-20", "Réaffecter un box", {
   parentId: null,
   statusId: "done",
   shortKey: "F3",
@@ -157,8 +157,8 @@ const F3 = ticket("f3", "EMIS-20", "Réaffecter un ISO", {
   progress: { done: 1, total: 1 },
   feature: feature([F3_STEP], "f3", "2026-10-16", "2026-10-16"),
 });
-const F7_STEP = ticket("e71", "EMIS-71", "Rapport", { parentId: "f7", effectiveSprintId: "s44" });
-const F7 = ticket("f7", "EMIS-70", "Rapport de chantier", {
+const F7_STEP = ticket("e71", "SILO-71", "Rapport", { parentId: "f7", effectiveSprintId: "s44" });
+const F7 = ticket("f7", "SILO-70", "Rapport de centre", {
   parentId: null,
   shortKey: "F7",
   sprintId: "s44",
@@ -173,7 +173,7 @@ const Q16: Question = {
   id: "q16",
   ticketId: "e34",
   runId: null,
-  title: "Quota par affaire : 2 Go ou 5 Go ?",
+  title: "Quota par client : 2 Go ou 5 Go ?",
   context: "",
   options: ["2 Go", "5 Go"],
   provisional: null,
@@ -190,12 +190,12 @@ const Q16: Question = {
   archivedBy: null,
 };
 
-export function emisFeatureProject(): ProjectSnapshot {
+export function siloFeatureProject(): ProjectSnapshot {
   return {
     meta: {
-      id: "emis",
-      name: "Emis",
-      key: "EMIS",
+      id: "silo",
+      name: "Silo",
+      key: "SILO",
       folder: null,
       color: "#14B8A6",
       worktree: null,
@@ -214,7 +214,7 @@ export function emisFeatureProject(): ProjectSnapshot {
     instances: [],
     rules: [],
     bindings: [],
-    nextTicketKey: "EMIS-94",
+    nextTicketKey: "SILO-94",
     sprints: SPRINTS,
     sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
     tickets: [F3, F3_STEP, F5, ...STEPS, F7, F7_STEP],

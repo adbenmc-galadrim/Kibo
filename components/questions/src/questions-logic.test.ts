@@ -140,9 +140,9 @@ test("recipientName reads the name of a recipient, « (supprimé) » once it is 
 });
 
 test("the client recipient reads as the client of the project when it is set", () => {
-  expect(recipientName(DEFAULT_RECIPIENTS, "client", "Emis SA")).toBe("Emis SA");
+  expect(recipientName(DEFAULT_RECIPIENTS, "client", "Silo SA")).toBe("Silo SA");
   expect(recipientName(DEFAULT_RECIPIENTS, "client", null)).toBe("Client");
-  expect(recipientName(DEFAULT_RECIPIENTS, "product", "Emis SA")).toBe("Produit");
+  expect(recipientName(DEFAULT_RECIPIENTS, "product", "Silo SA")).toBe("Produit");
 });
 
 test("groupByTicket follows ticket keys, newest question first, and skips empty tickets", () => {

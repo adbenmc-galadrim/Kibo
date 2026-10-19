@@ -30,7 +30,7 @@ test("allow rules name a tool with an optional pattern and never bypass", () => 
 
 const refused = (rule: string) => expect(isSafeAllowRule(rule)).toBe(false);
 
-test("the rules planned for Emis stay allowed", () => {
+test("the rules planned for Silo stay allowed", () => {
   for (const rule of [
     "Bash(pnpm *)",
     "Bash(git *)",

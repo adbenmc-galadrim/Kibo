@@ -5,7 +5,7 @@ import {
   ProposeBatchInput,
   type ProposedAction,
 } from "../../packages/schema/src/index";
-import { EMIS_SCENARIO } from "./emis-suivi";
+import { SILO_SCENARIO } from "./silo-suivi";
 
 export type ScenarioTurn = { proposals: unknown[]; result: string };
 const QUESTION_REF = /^\{\{question:(.+)\}\}$/;
@@ -36,7 +36,7 @@ function turnOf(raw: unknown): ScenarioTurn {
   return { proposals, result };
 }
 
-export const scenarioTurns = (file: string = EMIS_SCENARIO): ScenarioTurn[] =>
+export const scenarioTurns = (file: string = SILO_SCENARIO): ScenarioTurn[] =>
   listOf(field(JSON.parse(readFileSync(file, "utf8")), "turns")).map(turnOf);
 
 function bind(value: unknown, snapshot: ProjectSnapshot): unknown {

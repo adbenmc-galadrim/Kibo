@@ -18,7 +18,7 @@ import { denialStore } from "./denial-store";
 import { CLAUDE_DENIAL_TEXT } from "./fake-claude-transcript";
 
 const HOME = "/Users/dev";
-const CWD = `${HOME}/Documents/emis-feat-15`;
+const CWD = `${HOME}/Documents/silo-feat-15`;
 
 const refused = (tool: string, input: Record<string, unknown>): RunAction =>
   actionOf({ tool, input, output: CLAUDE_DENIAL_TEXT, isError: true, denied: true, patch: null });

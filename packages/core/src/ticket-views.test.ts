@@ -5,8 +5,8 @@ import { createProjectDoc, executeProjectCommand, readProject } from "./index";
 const newDoc = () =>
   createProjectDoc({
     id: "p1",
-    key: "EMIS",
-    name: "Emis",
+    key: "SILO",
+    name: "Silo",
     folder: null,
     color: "#F97316",
     worktree: null,
@@ -72,7 +72,7 @@ test("a ticket blocked by a group waits until the group is done", () => {
   const next = create(d, "Suite");
   executeProjectCommand(d, { method: "setStatus", ticketId: group.id, statusId: "done" });
   executeProjectCommand(d, { method: "addLink", from: group.id, to: next.id, type: "blocks" });
-  expect(view(d, next.id)).toMatchObject({ waitingOn: ["EMIS-1"], startable: false });
+  expect(view(d, next.id)).toMatchObject({ waitingOn: ["SILO-1"], startable: false });
   executeProjectCommand(d, { method: "setStatus", ticketId: a.id, statusId: "done" });
   expect(view(d, next.id)).toMatchObject({ waitingOn: [], startable: true });
 });

@@ -4,7 +4,7 @@ import { announce } from "./announcements";
 const labelOf = (id: string | number) => String(id);
 const event = (over: string | null) => ({
   active: {
-    id: "EMIS-51",
+    id: "SILO-51",
     data: { current: undefined },
     rect: { current: { initial: null, translated: null } },
   },
@@ -24,9 +24,9 @@ const event = (over: string | null) => ({
 
 test("a refused drop is announced with its reason instead of « déposé »", () => {
   const refusal = (_active: string | number, over: string | number) =>
-    over === "in_progress" ? "EMIS-51 reste bloqué par Q14." : null;
+    over === "in_progress" ? "SILO-51 reste bloqué par Q14." : null;
   const a = announce(labelOf, refusal);
-  expect(a.onDragEnd(event("in_progress"))).toBe("EMIS-51 reste bloqué par Q14.");
-  expect(a.onDragEnd(event("blocked"))).toBe("EMIS-51 déposé sur blocked.");
-  expect(a.onDragEnd(event(null))).toBe("Déplacement de EMIS-51 annulé.");
+  expect(a.onDragEnd(event("in_progress"))).toBe("SILO-51 reste bloqué par Q14.");
+  expect(a.onDragEnd(event("blocked"))).toBe("SILO-51 déposé sur blocked.");
+  expect(a.onDragEnd(event(null))).toBe("Déplacement de SILO-51 annulé.");
 });

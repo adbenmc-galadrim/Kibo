@@ -29,7 +29,7 @@ const question = Question.parse({
   answer: null,
 });
 
-test("a refused drop shows « EMIS-51 reste bloqué par Q14 » and « Répondre » opens the question", async () => {
+test("a refused drop shows « SILO-51 reste bloqué par Q14 » and « Répondre » opens the question", async () => {
   const m = createMockSdk(manifest, {});
   const views: { id: string; question: string | undefined }[] = [];
   const sdk = {
@@ -39,11 +39,11 @@ test("a refused drop shows « EMIS-51 reste bloqué par Q14 » and « Répondre 
   let closed = 0;
   render(
     <SdkProvider sdk={sdk}>
-      <HeldToast ticketKey="EMIS-51" question={question} onClose={() => closed++} />
+      <HeldToast ticketKey="SILO-51" question={question} onClose={() => closed++} />
     </SdkProvider>,
   );
-  const toast = screen.getByRole("region", { name: "EMIS-51 reste bloqué par Q14" });
-  expect(toast.textContent).toContain("EMIS-51 reste bloqué par Q14");
+  const toast = screen.getByRole("region", { name: "SILO-51 reste bloqué par Q14" });
+  expect(toast.textContent).toContain("SILO-51 reste bloqué par Q14");
   await userEvent.setup().click(screen.getByRole("button", { name: "Répondre" }));
   expect(views).toEqual([{ id: "questions", question: "7@1" }]);
   expect(closed).toBe(1);

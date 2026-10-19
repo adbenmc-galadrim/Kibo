@@ -7,7 +7,7 @@ import { NOW } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 import { type Host, HostProvider } from "../shell/Host";
 import type { ProjectAgentTab } from "../shell/use-project-agent-panel";
-import { CONVERSATION_LOG, emisProject, pendingBatch, projectRun, session, viewFixture } from "./fixtures";
+import { CONVERSATION_LOG, pendingBatch, projectRun, session, siloProject, viewFixture } from "./fixtures";
 import { signalsView } from "./signals/fixtures";
 
 const calls: RpcRequest[] = [];
@@ -52,7 +52,7 @@ beforeEach(() => {
 
 function Panel() {
   const [tab, setTab] = useState<ProjectAgentTab>("conversation");
-  return <ProjectAgentPanel open project={emisProject()} tab={tab} onTab={setTab} onClose={() => {}} />;
+  return <ProjectAgentPanel open project={siloProject()} tab={tab} onTab={setTab} onClose={() => {}} />;
 }
 
 const show = () =>
@@ -88,7 +88,7 @@ test("Suivi is the default view: last turn, summary, last question, pending batc
   await user.type(box, "Et F5 ?{Enter}");
   await waitFor(() =>
     expect(rpcs("sendProjectAgentMessage")).toEqual([
-      { method: "sendProjectAgentMessage", projectId: "emis", text: "Et F5 ?" },
+      { method: "sendProjectAgentMessage", projectId: "silo", text: "Et F5 ?" },
     ]),
   );
 });

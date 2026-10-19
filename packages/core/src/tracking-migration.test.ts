@@ -9,8 +9,8 @@ import { PLANNING_COMPONENT_REF, trackingMigrationCommands } from "./tracking-mi
 const newDoc = () =>
   createProjectDoc({
     id: "p1",
-    key: "EMIS",
-    name: "Emis",
+    key: "SILO",
+    name: "Silo",
     folder: null,
     color: "#F97316",
     worktree: null,
@@ -34,7 +34,7 @@ function rawFeature(d: Doc, title: string, planId: string | null): Ticket {
   return root;
 }
 
-function emisLike(d: Doc): Map<string, Ticket> {
+function siloLike(d: Doc): Map<string, Ticket> {
   const roots = new Map<string, Ticket>();
   for (const id of ["C0", "C1", "C2", "C3", "C4", "C5"]) roots.set(id, rawFeature(d, `Lot ${id}`, id));
   roots.set("free", rawFeature(d, "Sans référence", null));
@@ -63,7 +63,7 @@ function migrate(d: Doc): number {
 describe("tracking migration", () => {
   test("features get the key of their plan, or F<n> by rank, solo tickets none", () => {
     const d = newDoc();
-    const roots = emisLike(d);
+    const roots = siloLike(d);
     const cmds: ProjectCommand[] = trackingMigrationCommands(readProject(d, "2026-10-16")).filter(
       (c) => c.method === "updateTicket",
     );
@@ -83,7 +83,7 @@ describe("tracking migration", () => {
 
   test("a plan key already taken, or a key already set, is kept out of the way", () => {
     const d = newDoc();
-    const roots = emisLike(d);
+    const roots = siloLike(d);
     run(d, { method: "updateTicket", ticketId: idOf(roots, "solo"), shortKey: "C1" });
     run(d, { method: "updateTicket", ticketId: idOf(roots, "free"), shortKey: "F1" });
     const keys = trackingMigrationCommands(readProject(d, "2026-10-16")).flatMap((c) =>
@@ -111,9 +111,9 @@ describe("tracking migration", () => {
     expect(trackingMigrationCommands(readProject(d, "2026-10-16"))).toEqual([]);
   });
 
-  test("an Emis-like project is fully migrated in two passes, then nothing is left to do", () => {
+  test("a Silo-like project is fully migrated in two passes, then nothing is left to do", () => {
     const d = newDoc();
-    emisLike(d);
+    siloLike(d);
     expect(migrate(d)).toBe(2);
     expect(trackingMigrationCommands(readProject(d, "2026-10-16"))).toEqual([]);
   });

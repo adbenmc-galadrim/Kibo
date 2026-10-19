@@ -13,27 +13,27 @@ import {
   WorktreeSettings,
 } from "./worktree";
 
-const vars = { branch: "feat/x", slug: "feat-x", key: "emis-12" };
+const vars = { branch: "feat/x", slug: "feat-x", key: "silo-12" };
 
 test("templates render their variables and refuse unknown ones", () => {
-  expect(renderTemplate("../emis-{slug}", vars)).toBe("../emis-feat-x");
+  expect(renderTemplate("../silo-{slug}", vars)).toBe("../silo-feat-x");
   expect(renderTemplate("pnpm worktree {branch}", { ...vars, path: "/p" })).toBe("pnpm worktree feat/x");
   expect(() => renderTemplate("{nope}", vars)).toThrow(KiboError);
   expect(() => renderTemplate("{path}", vars)).toThrow(KiboError);
 });
 
 test("a worktree path stays in the repo, below it, or beside it", () => {
-  expect(resolveWorktreePath("/home/a/emis", ".kibo/worktrees/{slug}", vars)).toBe(
-    "/home/a/emis/.kibo/worktrees/feat-x",
+  expect(resolveWorktreePath("/home/a/silo", ".kibo/worktrees/{slug}", vars)).toBe(
+    "/home/a/silo/.kibo/worktrees/feat-x",
   );
-  expect(resolveWorktreePath("/home/a/emis", "../emis-{slug}", vars)).toBe("/home/a/emis-feat-x");
-  for (const bad of ["../../x/{slug}", "/tmp/{slug}", "{slug}/../../x", "..", "../emis", "."])
-    expect(() => resolveWorktreePath("/home/a/emis", bad, vars)).toThrow(KiboError);
+  expect(resolveWorktreePath("/home/a/silo", "../silo-{slug}", vars)).toBe("/home/a/silo-feat-x");
+  for (const bad of ["../../x/{slug}", "/tmp/{slug}", "{slug}/../../x", "..", "../silo", "."])
+    expect(() => resolveWorktreePath("/home/a/silo", bad, vars)).toThrow(KiboError);
   fc.assert(
     fc.property(fc.stringMatching(/^[a-z0-9{}/._-]{1,40}$/), (template) => {
       try {
-        const path = resolveWorktreePath("/home/a/emis", template, vars);
-        return path.startsWith("/home/a/emis/") || /^\/home\/a\/[^/]+$/.test(path);
+        const path = resolveWorktreePath("/home/a/silo", template, vars);
+        return path.startsWith("/home/a/silo/") || /^\/home\/a\/[^/]+$/.test(path);
       } catch (e) {
         return e instanceof KiboError && e.code === "INVALID_INPUT";
       }
@@ -49,7 +49,7 @@ test("integration branch drops the remote and defaults to main", () => {
   expect(
     WorktreeSettings.safeParse({
       baseRef: "origin/dev",
-      pathTemplate: "../emis-{slug}",
+      pathTemplate: "../silo-{slug}",
       setup: "pnpm worktree {branch}",
     }).success,
   ).toBe(true);
@@ -78,17 +78,17 @@ test("a variable between single quotes is found, double quotes and bare ones are
 });
 
 test("the planned worktree follows the ticket branch, its base and the settings", () => {
-  const settings = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: null };
-  expect(plannedWorktree({ root: "/code/emis", ticketKey: "EMIS-12", branchRef: null, settings })).toEqual({
-    branch: "emis-12",
+  const settings = { baseRef: "origin/dev", pathTemplate: "../silo-{slug}", setup: null };
+  expect(plannedWorktree({ root: "/code/silo", ticketKey: "SILO-12", branchRef: null, settings })).toEqual({
+    branch: "silo-12",
     base: "origin/dev",
-    path: "/code/emis-emis-12",
+    path: "/code/silo-silo-12",
   });
   const branchRef = { kind: "git_branch" as const, branch: "feat/x", base: "feat/parent" };
-  expect(plannedWorktree({ root: "/code/emis", ticketKey: "EMIS-12", branchRef, settings })).toEqual({
+  expect(plannedWorktree({ root: "/code/silo", ticketKey: "SILO-12", branchRef, settings })).toEqual({
     branch: "feat/x",
     base: "feat/parent",
-    path: "/code/emis-feat-x",
+    path: "/code/silo-feat-x",
   });
   expect(
     plannedWorktree({ root: "/r", ticketKey: "KIB-3", branchRef: null, settings: WORKTREE_DEFAULTS }).path,
@@ -106,7 +106,7 @@ test("the planned worktree follows the ticket branch, its base and the settings"
 test("settings stored without a recipe get none", () => {
   const settings = WorktreeSettings.parse({
     baseRef: "origin/dev",
-    pathTemplate: "../emis-{slug}",
+    pathTemplate: "../silo-{slug}",
     setup: null,
   });
   expect(settings.recipe).toBeNull();
@@ -119,9 +119,9 @@ test("the short slug drops the first segment of the branch", () => {
 });
 
 test("templates render the short slugs, the repo and the ports", () => {
-  const vars = { branch: "feat/compte-non-provisionne", slug: "feat-compte-non-provisionne", key: "emis-15" };
-  expect(renderTemplate("../emis-{short_}", { ...vars, short_: "compte_non_provisionne" })).toBe(
-    "../emis-compte_non_provisionne",
+  const vars = { branch: "feat/compte-non-provisionne", slug: "feat-compte-non-provisionne", key: "silo-15" };
+  expect(renderTemplate("../silo-{short_}", { ...vars, short_: "compte_non_provisionne" })).toBe(
+    "../silo-compte_non_provisionne",
   );
   expect(renderTemplate("{repo}/.env", { ...vars, repo: "/r" })).toBe("/r/.env");
   expect(renderTemplate("{WEB_PORT}", { ...vars, WEB_PORT: 3010 })).toBe("3010");
@@ -132,20 +132,20 @@ test("templates render the short slugs, the repo and the ports", () => {
 test("the planned worktree renders the short slug", () => {
   const settings = WorktreeSettings.parse({
     baseRef: "origin/dev",
-    pathTemplate: "../gereco-{short}",
+    pathTemplate: "../atlas-{short}",
     setup: null,
   });
   const planned = plannedWorktree({
-    root: "/w/gereco",
+    root: "/w/atlas",
     ticketKey: "GER-3",
     branchRef: { kind: "git_branch" as const, branch: "feat/c2-1-export", base: null },
     settings,
   });
-  expect(planned.path).toBe("/w/gereco-c2-1-export");
+  expect(planned.path).toBe("/w/atlas-c2-1-export");
 });
 
 test("settings with a recipe that leaves the repository are refused", () => {
-  const base = { baseRef: "origin/dev", pathTemplate: "../emis-{slug}", setup: null };
+  const base = { baseRef: "origin/dev", pathTemplate: "../silo-{slug}", setup: null };
   const recipe = { copyFrom: ["{repo}"], copy: [".env"], env: null, after: [] };
   expect(WorktreeSettings.safeParse({ ...base, recipe }).success).toBe(true);
   for (const copy of [["../x"], ["/abs/.env"]])

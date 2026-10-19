@@ -31,8 +31,8 @@ function show({ items = summaryOnly(SUMMARY), withBatch = true, superseded = 0, 
   let shownSuperseded = 0;
   render(
     <TrackingView
-      projectId="emis"
-      projectName="Emis"
+      projectId="silo"
+      projectName="Silo"
       items={items}
       batch={withBatch ? trackingBatch() : null}
       superseded={superseded}
@@ -115,7 +115,7 @@ test("without a batch the section is absent, without a message the summary invit
   expect(screen.queryByRole("region", { name: "À valider" })).toBeNull();
   expect(screen.queryByText(/lots? remplacés? masqués?/)).toBeNull();
   const summary = within(screen.getByRole("region", { name: "Résumé du jour" }));
-  expect(summary.getByText("Pose une question sur Emis ou attends la fin du sprint.")).toBeTruthy();
+  expect(summary.getByText("Pose une question sur Silo ou attends la fin du sprint.")).toBeTruthy();
 });
 
 test("the box asks the project agent", async () => {

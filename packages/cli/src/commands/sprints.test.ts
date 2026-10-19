@@ -11,7 +11,7 @@ async function sprints(positional: string[], flags: Record<string, string | true
 
 describe("kibo sprints list", () => {
   test("gives the sprints in order, with their features as keys, in JSON", async () => {
-    const d = await sprints(["list"], { project: "emis", json: true });
+    const d = await sprints(["list"], { project: "silo", json: true });
     expect(d.code).toBe(0);
     expect(JSON.parse(d.out.join("\n"))).toEqual([
       {
@@ -26,16 +26,16 @@ describe("kibo sprints list", () => {
       {
         id: "s42",
         code: "S42",
-        name: "Terrain hors ligne",
+        name: "Saisie hors ligne",
         start: "2026-10-12",
         end: "2026-10-23",
         state: "current",
-        features: ["EMIS-30"],
+        features: ["SILO-30"],
       },
       {
         id: "s43",
         code: "S43",
-        name: "Import et soudures",
+        name: "Import et contrats",
         start: "2026-10-26",
         end: "2026-11-06",
         state: "planned",
@@ -45,11 +45,11 @@ describe("kibo sprints list", () => {
   });
 
   test("writes one line per sprint", async () => {
-    const d = await sprints(["list"], { project: "EMIS" });
+    const d = await sprints(["list"], { project: "SILO" });
     expect(d.out).toEqual([
       "S41\tAccès\t2026-09-28\t2026-10-09\tdone\t-",
-      "S42\tTerrain hors ligne\t2026-10-12\t2026-10-23\tcurrent\tEMIS-30",
-      "S43\tImport et soudures\t2026-10-26\t2026-11-06\tplanned\t-",
+      "S42\tSaisie hors ligne\t2026-10-12\t2026-10-23\tcurrent\tSILO-30",
+      "S43\tImport et contrats\t2026-10-26\t2026-11-06\tplanned\t-",
     ]);
   });
 
@@ -57,13 +57,13 @@ describe("kibo sprints list", () => {
     const unknown = await sprints(["list"], { project: "NOPE" });
     expect(unknown.code).toBe(1);
     expect(unknown.err).toEqual(["Projet introuvable : NOPE"]);
-    expect((await sprints([], { project: "EMIS" })).code).toBe(2);
+    expect((await sprints([], { project: "SILO" })).code).toBe(2);
   });
 
   test("suggests the project key when --project is missing", async () => {
     const d = await sprints(["list"], {});
     expect(d.code).toBe(2);
-    expect(d.err).toEqual(["précise --project EMIS"]);
+    expect(d.err).toEqual(["précise --project SILO"]);
   });
 
   test("prints its usage when --project is missing and Kibo is not running", async () => {

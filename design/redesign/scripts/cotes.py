@@ -100,7 +100,7 @@ if "--sections" in sys.argv:
     cur = open(W + "/cotes.md").read()
     for i, name, png in SCREENS + SCREENS27:
         if str(i) not in wanted: continue
-        where = "" if (i, name, png) in SCREENS27 else f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Emis » du fichier « Kibo »"
+        where = "" if (i, name, png) in SCREENS27 else f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Silo » du fichier « Kibo »"
         start = cur.index(f"\n## {name}\n") + 1
         nxt = re.search(r"\n## ", cur[start + 3:]); end = start + 3 + nxt.start() + 1 if nxt else len(cur)
         cur = cur[:start] + screen_md(i, name, png, where) + ("\n\n" if nxt else "\n") + cur[end:]
@@ -110,15 +110,15 @@ if "--sections" in sys.argv:
 if "--phase27" in sys.argv:
     cur = open(W + "/cotes.md").read()
     cur = cur.split(MARK27)[0].rstrip("\n") + "\n"
-    intro = ["## Phase 27", "", "Boards de la phase 27 (spec §39, §39.6), relevés comme les précédents : `scripts/95-cotes.js` par board, puis `python3 scripts/cotes.py <dossier des JSON> --phase27`, qui remplace cette partie seulement. Rangées à partir de y = 8 000 (pas de 1 500 px). Mêmes tokens, polices et règles qu'en tête ; horloge figée au vendredi 16 octobre (S42), sauf la variante « En retard au 18 oct. » (dimanche, S42 terminé), données `emis-maquettes`. La barre repliée (`exports/proposition-barre-repliee-*.png`, 1 180 × 1 000) et le panneau de l'agent (`exports/proposition-agent-{question,recap}-*.png`, 340 × 1 000) servent de référence visuelle, sans cotes ni comparaison au pixel."]
+    intro = ["## Phase 27", "", "Boards de la phase 27 (spec §39, §39.6), relevés comme les précédents : `scripts/95-cotes.js` par board, puis `python3 scripts/cotes.py <dossier des JSON> --phase27`, qui remplace cette partie seulement. Rangées à partir de y = 8 000 (pas de 1 500 px). Mêmes tokens, polices et règles qu'en tête ; horloge figée au vendredi 16 octobre (S42), sauf la variante « En retard au 18 oct. » (dimanche, S42 terminé), données `silo-maquettes`. La barre repliée (`exports/proposition-barre-repliee-*.png`, 1 180 × 1 000) et le panneau de l'agent (`exports/proposition-agent-{question,recap}-*.png`, 340 × 1 000) servent de référence visuelle, sans cotes ni comparaison au pixel."]
     parts = [screen_md(i, name, png, "") for i, name, png in SCREENS27]
     open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
     print(sum(1 for _ in open(W + "/cotes.md")))
     sys.exit(0)
 for i, name, png in SCREENS:
-    screens_md.append(screen_md(i, name, png, f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Emis » du fichier « Kibo »"))
+    screens_md.append(screen_md(i, name, png, f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Silo » du fichier « Kibo »"))
 head = ["# Cotes du redesign", "",
- "Relevé automatique des boards validés (P1 bis, P2 à P5) par l'API du plugin Penpot (`penpotUtils.findShapes`, géométrie, `flex`, `layoutChild`, polices et remplissages), sombre et clair comparés nœud à nœud. Source : page « Proposition » du fichier « Kibo · Redesign » ; copie identique en page « 35 · Redesign Emis » du fichier « Kibo » (écrans 210 à 214). Relevé : `scripts/95-cotes.js` dans le plugin (un board par appel, JSON reçu par `receiver.py`), puis `python3 scripts/cotes.py <dossier des JSON>`.",
+ "Relevé automatique des boards validés (P1 bis, P2 à P5) par l'API du plugin Penpot (`penpotUtils.findShapes`, géométrie, `flex`, `layoutChild`, polices et remplissages), sombre et clair comparés nœud à nœud. Source : page « Proposition » du fichier « Kibo · Redesign » ; copie identique en page « 35 · Redesign Silo » du fichier « Kibo » (écrans 210 à 214). Relevé : `scripts/95-cotes.js` dans le plugin (un board par appel, JSON reçu par `receiver.py`), puis `python3 scripts/cotes.py <dossier des JSON>`.",
  "", "Horloge figée : vendredi 16 octobre (S42, 12–16 oct.), dernière activité à 15:04, « Synchronisé · il y a 1 min », « Suivi à jour · il y a 4 min ». Les données affichées sont listées exactement par écran (section « Données affichées ») ; une fixture e2e doit les reproduire.",
  "", "Règles générales : écrans de 1 440 px de large ; barre latérale 240 px ; panneau de l'agent 340 px (P1 bis) ; barre du haut 48 px ; polices Geist et Geist Mono ; icônes Lucide, trait 2 px. Les blocs sans fond, bordure ni enfant (espaceurs) sont omis : les positions des voisins en tiennent compte.",
  "", "## Tokens de couleur", "", "| Token | Sombre | Clair |", "|---|---|---|"]

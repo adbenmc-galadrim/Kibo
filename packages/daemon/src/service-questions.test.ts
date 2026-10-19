@@ -89,8 +89,8 @@ function setup(runState: RunView["state"], ticketExecution: TicketExecution = "a
   const s = createService(openStore(dir), { user: "adam" });
   const project = call(s, {
     method: "createProject",
-    name: "Emis",
-    key: "EMIS",
+    name: "Silo",
+    key: "SILO",
     folder: null,
     color: "#F97316",
   });
@@ -140,7 +140,7 @@ test("a component or a user writes questions as the viewer, whatever it announce
         method: "createQuestion",
         ticketId: ticket.id,
         title: "Bloquer le dépôt ?",
-        createdBy: { kind: "agent", ref: "emis-livraison" },
+        createdBy: { kind: "agent", ref: "silo-livraison" },
       },
     }),
   );

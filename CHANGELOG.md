@@ -6,6 +6,13 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.28.0-alpha.1 — 2026-10-19
+
+- Le dépôt public ne contient plus aucune donnée de projet client : tests, démo, exemples de la CLI, maquettes, PDF, spec et plans emploient le projet fictif « Silo » (location de box) ; tes projets locaux ne changent pas.
+- Un test du dépôt échoue si un terme interdit réapparaît (liste gardée hors dépôt, dans `~/.config/kibo/termes-interdits.txt`) ; il voit aussi les identifiants composés.
+- Le script d'import et de rebase propre à un projet client est retiré du dépôt.
+- Le test de création de projet ne dépend plus de la date du jour.
+
 ## 0.27.0-alpha.1 — 2026-10-18
 
 - Kibo ne lance plus d'agent de ticket : le réglage disparaît, le démon refuse toute demande de lancement ; l'agent de projet reste et ne fait que surveiller et proposer.
@@ -16,14 +23,14 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 - Bloqué : une question bloquante, posée sur une étape ou sur sa fonctionnalité, bloque partout (colonne Bloqué du Kanban, fiche, Planning, copie) ; glisser une carte bloquée hors de Bloqué est refusé avec « Répondre ».
 - Planning : « À planifier » à gauche, « Planifier dans ▸ » au clic droit, « + Fonctionnalité » et « + Sprint », « En cours n / limite », charge de chaque sprint, sprint proposé jamais terminé, glissement compté seulement après le début du sprint.
 - Vue d'ensemble : en cours expliqué, « dépassée » nomme les fonctionnalités hors sprint, « glissée de S42 », « Prochaine à finir » par les retards, message entre deux sprints, Échéances jusqu'à la fonctionnalité en cours la plus lointaine.
-- Fiche ticket de suivi : bandeau « Bloqué par Qn », review et CI dans le journal, check en échec nommé avec son lien, « Phase 9/12 · Review », branche « déclarée », « Requise pour livrer », une seule fiche avec une URL par clé (`#/p/EMIS/t/EMIS-45`).
+- Fiche ticket de suivi : bandeau « Bloqué par Qn », review et CI dans le journal, check en échec nommé avec son lien, « Phase 9/12 · Review », branche « déclarée », « Requise pour livrer », une seule fiche avec une URL par clé (`#/p/SILO/t/SILO-45`).
 - Fiche fonctionnalité : étapes sans chevauchement, « Copier la commande » sur la prochaine étape démarrable, « + Question », « + Dépendance », pastille « facultative ».
 - Kanban : filtres cumulables Tous, Sprint courant, Démarrable, À reprendre ; raison courte sur la carte, puce de branche sans PR, review et CI.
 - Questions : Qn, case « bloquante », destinataire client par défaut, export lisible par le client, « F6 débloquée · Voir F6 » ; la relance de l'agent de projet est écrite pour le client.
 - Navigation : un clic navigue dans l'onglet actif (⌘ clic pour un nouvel onglet), barre repliée à initiales avec le menu des pages, panneau de l'agent en surimpression sous 1180 px, palette du suivi (Nouvelle fonctionnalité, Nouveau sprint, Nouvelle question), Mes tickets en liste de travail.
 - CLI : `tickets get` affiche branche, assigné et F<n> ; `tickets list` en tableau avec en-têtes ; `--ready` suit la règle du démon ; les erreurs nomment le démon et sa version.
 - Premier lancement et didacticiel refaits sur le suivi ; pages vides expliquées.
-- Emis repart sur une base neuve : F1 à F15, EMIS-1 à EMIS-n, sprints hebdomadaires à partir du 19 octobre.
+- Le projet client repart sur une base neuve : F1 à F15, CLIENT-1 à CLIENT-n, sprints hebdomadaires à partir du 19 octobre.
 
 ## 0.26.0-alpha.2 — 2026-10-17
 
@@ -51,7 +58,7 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 - Sprints : de vrais sprints (code, nom, dates). Nouveau composant Planning : une colonne par sprint, glisser une fonctionnalité d'un sprint à l'autre, « Nouveau sprint ». `kibo sprints list` et `kibo tickets list --sprint current`.
 - Tickets : menus « Ouverts » et « Fonctionnalité », recherche avec `/`, section « Terminés » avec les quatre dernières livraisons.
 - Nouvelle coque : barre latérale des projets et de leurs pages, en-tête de page avec ses actions, barre d'onglets visible seulement à partir de deux onglets, menu du composant dans le « ⋯ » de la page.
-- Une branche créée dans le dépôt local (`feat/emis-45-…`) se rattache au ticket du même nom ; `kibo tickets set <CLÉ> branch=… base=…` la déclare à la main.
+- Une branche créée dans le dépôt local (`feat/silo-45-…`) se rattache au ticket du même nom ; `kibo tickets set <CLÉ> branch=… base=…` la déclare à la main.
 - La pastille de synchronisation de la barre latérale affiche « Hors ligne » ou « Erreur de sync » quand la sync est interrompue.
 - Les écrans suivent les maquettes au pixel près, en sombre et en clair.
 
@@ -64,7 +71,7 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 ## 0.24.0-alpha.3 — 2026-10-15
 
-- Les runs ne sont plus refusés au hasard avec « Kibo n'a pas pu vérifier cette action » : la recherche de code en double entre agents, toutes les cinq minutes, ne bloque plus Kibo pendant qu'elle compare les espaces de travail (jusqu'à 26 s sur Emis). Le résultat de la détection est inchangé.
+- Les runs ne sont plus refusés au hasard avec « Kibo n'a pas pu vérifier cette action » : la recherche de code en double entre agents, toutes les cinq minutes, ne bloque plus Kibo pendant qu'elle compare les espaces de travail (jusqu'à 26 s sur le projet client). Le résultat de la détection est inchangé.
 - Le journal de Kibo ne répète plus « secret file … never indexed » à chaque passage, et signale les vérifications d'action qui prennent plus d'une seconde.
 
 ## 0.24.0-alpha.2 — 2026-10-15
@@ -182,7 +189,7 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 - Changements : le travail de toute la branche depuis sa base, ses commits poussés ou non, « Voir la PR ».
 - Questions des agents : bloquantes ou à valider, composant Questions (widget et vue), pastille « n questions », « Terminé · n questions », « Transmettre à l'agent ».
 - Le même agent reprend sa session sur un ticket ; « Repartir de zéro » dans « Assigner ».
-- Import du projet Emis rejouable, sans jamais écraser ce que tu as modifié dans Kibo.
+- Import du projet client rejouable, sans jamais écraser ce que tu as modifié dans Kibo.
 - Le toast « Onglet fermé » disparaît (⌘⇧T rouvre toujours l'onglet).
 
 ## 0.16.0-alpha.1 — 2026-10-07

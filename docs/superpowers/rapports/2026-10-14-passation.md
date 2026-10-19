@@ -28,7 +28,7 @@ Chaque tag est une prérelease avec `latest.json`. La CI de `main` est verte sur
 
 - Le skill `~/.claude/skills/full-delivery` détecte un run Kibo par `KIBO_RUN_TOKEN` et lit alors `reference/kibo.md`. La livraison se fait dans le run lui-même : ni `delivery-queue`, ni `claude --bg`, ni slot `pr`. Les questions passent par `mcp__kibo__ask_user`, les captures sont écrites en chemins dans le fil. Hors Kibo, le comportement est inchangé.
 - Sauvegarde du skill d'avant : `~/.claude-skill-full-delivery-avant-kibo-2026-10-13`. Le skill est aussi modifié par une autre session d'Adam : relire avant d'y toucher.
-- L'agent `emis-livraison` a « Tous les sous-agents » activé (fait par Adam) : la porte qualité et ses relecteurs de plugins passent la garde.
+- L'agent `client-livraison` a « Tous les sous-agents » activé (fait par Adam) : la porte qualité et ses relecteurs de plugins passent la garde.
 - Limite connue : la livraison travaille dans le worktree de `delivery-worktree`, pas dans celui du run. La page « Changements » ne montre donc pas ce diff.
 
 ## Ouvert
@@ -56,7 +56,7 @@ Chaque tag est une prérelease avec `latest.json`. La CI de `main` est verte sur
   4. Fusionner en `--merge` et taguer le commit de fusion.
   5. Vérifier la release (prérelease et `latest.json`) et la CI de `main`.
 - **Budget UI** : l'entrée fait 220,8 kB gzip. Plafond de travail : 223 400 octets. Plafond du script : 230 kB, jamais relevé.
-- **Ne jamais** : lire `~/.tauri/kibo-updater.key`, afficher `~/.kibo/token` ou l'URL d'appairage, toucher au trousseau ou à `com.gereco.board`, utiliser `git stash`, `SKIP_GATE` ou un force-push, fusionner une tâche refusée.
+- **Ne jamais** : lire `~/.tauri/kibo-updater.key`, afficher `~/.kibo/token` ou l'URL d'appairage, toucher au trousseau ou à `com.atlas.board`, utiliser `git stash`, `SKIP_GATE` ou un force-push, fusionner une tâche refusée.
 - **Classifieur** : il a refusé la modification d'un réglage d'agent par RPC avec le jeton d'Adam. Ne pas contourner : demander à Adam de le faire dans l'interface.
 
 ## Ménage possible

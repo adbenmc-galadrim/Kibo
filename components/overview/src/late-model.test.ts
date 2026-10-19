@@ -43,8 +43,8 @@ test("once the sprint is over, its unfinished features are late, oldest sprint f
   expect(
     model.late.map((r) => [r.shortKey, r.title, r.sprintCode, r.sprintNote, r.remaining, r.steps]),
   ).toEqual([
-    ["F4", "Saisir un tronçon hors ligne", "S42", "· terminé le 16 oct.", "reste 1 étape", "3/5"],
-    ["F5", "Envoyer les photos d'un tronçon", "S42", "· terminé le 16 oct.", "reste 4 étapes", "1/5"],
+    ["F4", "Saisir un constat hors ligne", "S42", "· terminé le 16 oct.", "reste 1 étape", "3/5"],
+    ["F5", "Envoyer les photos d'un constat", "S42", "· terminé le 16 oct.", "reste 4 étapes", "1/5"],
   ]);
   expect(model.late[1]?.tones.length).toBe(5);
   expect(indicatorTexts(model.indicators).features).toMatchObject({ sub: "2 en retard", tone: "red" });

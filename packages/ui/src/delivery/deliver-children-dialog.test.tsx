@@ -32,16 +32,16 @@ const item = (key: string, patch: Partial<DeliveryItem> = {}): DeliveryItem => (
 });
 
 const ITEMS: DeliveryItem[] = [
-  item("EMIS-18", { reason: "done" }),
-  item("EMIS-20", { ready: true }),
-  item("EMIS-21", { reason: "status" }),
-  item("EMIS-23", { ready: true }),
-  item("EMIS-22", { reason: "blocked", blockedBy: ["EMIS-21"] }),
-  item("EMIS-24", { reason: "question" }),
-  item("EMIS-25", { reason: "busy" }),
+  item("SILO-18", { reason: "done" }),
+  item("SILO-20", { ready: true }),
+  item("SILO-21", { reason: "status" }),
+  item("SILO-23", { ready: true }),
+  item("SILO-22", { reason: "blocked", blockedBy: ["SILO-21"] }),
+  item("SILO-24", { reason: "question" }),
+  item("SILO-25", { reason: "busy" }),
 ];
 
-const parent = { keyLabel: "EMIS-17", title: "C2 · Modèle de données et droits" };
+const parent = { keyLabel: "SILO-17", title: "C2 · Modèle de données et droits" };
 
 beforeEach(() => {
   calls.length = 0;
@@ -50,33 +50,33 @@ beforeEach(() => {
 afterEach(cleanup);
 
 const open = (items = ITEMS, onClose = mock(() => {})) => {
-  render(<DeliverChildrenDialog projectId="emis" parent={parent} items={items} onClose={onClose} />);
+  render(<DeliverChildrenDialog projectId="silo" parent={parent} items={items} onClose={onClose} />);
   return onClose;
 };
 
 test("the dialog lists the sub-tickets in delivery order with their state", () => {
   open();
-  const dialog = screen.getByRole("dialog", { name: "Livrer les sous-tickets de EMIS-17" });
+  const dialog = screen.getByRole("dialog", { name: "Livrer les sous-tickets de SILO-17" });
   expect(within(dialog).getByText(/regroupe 7 sous-tickets/)).toBeTruthy();
   const rows = within(dialog).getAllByRole("listitem");
   expect(rows.map((r) => r.getAttribute("data-key"))).toEqual(ITEMS.map((i) => i.key));
   const state = (key: string) =>
     rows.find((r) => r.getAttribute("data-key") === key)?.querySelector("[data-delivery-state]");
-  expect(state("EMIS-18")?.textContent).toBe("livré");
-  expect(state("EMIS-20")?.textContent).toBe("prêt");
-  expect(state("EMIS-21")?.textContent).toBe("en cours");
-  expect(state("EMIS-22")?.textContent).toBe("bloqué par EMIS-21");
-  expect(state("EMIS-24")?.textContent).toBe("question bloquante");
-  expect(state("EMIS-25")?.textContent).toBe("run en cours");
-  expect(within(dialog).getByText("après EMIS-21")).toBeTruthy();
+  expect(state("SILO-18")?.textContent).toBe("livré");
+  expect(state("SILO-20")?.textContent).toBe("prêt");
+  expect(state("SILO-21")?.textContent).toBe("en cours");
+  expect(state("SILO-22")?.textContent).toBe("bloqué par SILO-21");
+  expect(state("SILO-24")?.textContent).toBe("question bloquante");
+  expect(state("SILO-25")?.textContent).toBe("run en cours");
+  expect(within(dialog).getByText("après SILO-21")).toBeTruthy();
 });
 
 test("ready sub-tickets are checked, the others unchecked and disabled", () => {
   open();
   const box = (key: string) => screen.getByRole("checkbox", { name: `${key} Titre ${key}` });
-  expect(box("EMIS-20").getAttribute("aria-checked")).toBe("true");
-  expect(box("EMIS-23").getAttribute("aria-checked")).toBe("true");
-  for (const key of ["EMIS-18", "EMIS-21", "EMIS-22", "EMIS-24", "EMIS-25"]) {
+  expect(box("SILO-20").getAttribute("aria-checked")).toBe("true");
+  expect(box("SILO-23").getAttribute("aria-checked")).toBe("true");
+  for (const key of ["SILO-18", "SILO-21", "SILO-22", "SILO-24", "SILO-25"]) {
     expect(box(key).getAttribute("aria-checked")).toBe("false");
     expect(box(key).hasAttribute("disabled")).toBe(true);
   }
@@ -94,20 +94,20 @@ test("Livrer sends one deliver per checked ticket, in order, then closes", async
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Livrer 2 tickets" }));
   await waitFor(() => expect(onClose).toHaveBeenCalled());
-  expect(order).toEqual(["id-EMIS-20", "id-EMIS-23"]);
+  expect(order).toEqual(["id-SILO-20", "id-SILO-23"]);
   expect(calls).toEqual([
-    { method: "deliver", projectId: "emis", ticketId: "id-EMIS-20" },
-    { method: "deliver", projectId: "emis", ticketId: "id-EMIS-23" },
+    { method: "deliver", projectId: "silo", ticketId: "id-SILO-20" },
+    { method: "deliver", projectId: "silo", ticketId: "id-SILO-23" },
   ]);
 });
 
 test("unchecking a ready ticket leaves it out", async () => {
   open();
   const user = userEvent.setup();
-  await user.click(screen.getByRole("checkbox", { name: "EMIS-20 Titre EMIS-20" }));
+  await user.click(screen.getByRole("checkbox", { name: "SILO-20 Titre SILO-20" }));
   await user.click(screen.getByRole("button", { name: "Livrer 1 ticket" }));
   await waitFor(() => expect(calls).toHaveLength(1));
-  expect(calls[0]).toEqual({ method: "deliver", projectId: "emis", ticketId: "id-EMIS-23" });
+  expect(calls[0]).toEqual({ method: "deliver", projectId: "silo", ticketId: "id-SILO-23" });
 });
 
 test("a failure stops the sequence and stays open with the reason", async () => {
@@ -115,13 +115,13 @@ test("a failure stops the sequence and stays open with the reason", async () => 
   const onClose = open();
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Livrer 2 tickets" }));
-  expect((await screen.findByRole("alert")).textContent).toContain("EMIS-20");
+  expect((await screen.findByRole("alert")).textContent).toContain("SILO-20");
   expect(calls).toHaveLength(1);
   expect(onClose).not.toHaveBeenCalled();
 });
 
 test("nothing ready says so with the first reason and disables Livrer", () => {
   open(ITEMS.filter((i) => !i.ready));
-  expect(screen.getByText("Rien à livrer : EMIS-18 livré.")).toBeTruthy();
+  expect(screen.getByText("Rien à livrer : SILO-18 livré.")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Livrer 0 ticket" }).hasAttribute("disabled")).toBe(true);
 });

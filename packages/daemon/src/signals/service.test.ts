@@ -88,7 +88,7 @@ test("refusals write nothing and trace nothing", async () => {
   const s = setup();
   const run = s.ticketRun();
   await expect(
-    s.service.record(run, { kind: "ticket", title: "T", ticket: "EMIS-99" }),
+    s.service.record(run, { kind: "ticket", title: "T", ticket: "SILO-99" }),
   ).rejects.toMatchObject({
     code: "INVALID_INPUT",
   });
@@ -224,7 +224,7 @@ test("settling a batch handles the cited signals, ignores the dismissed ones and
     action({ id: 3, why: "sans suite", type: "dismissSignal", signal: "sig:3" }),
   ]);
   const results: ActionResult[] = [
-    { actionId: 1, outcome: "applied", detail: null, created: { ticketId: "t9", key: "EMIS-3" } },
+    { actionId: 1, outcome: "applied", detail: null, created: { ticketId: "t9", key: "SILO-3" } },
     { actionId: 2, outcome: "stale", detail: "changé", created: null },
     { actionId: 3, outcome: "applied", detail: null, created: null },
   ];

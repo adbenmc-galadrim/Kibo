@@ -7,28 +7,28 @@ export const SEED_TODAY = "2026-10-16";
 
 const SPRINTS = [
   ["S41", "Accès", "2026-10-05", "2026-10-09"],
-  ["S42", "Terrain hors ligne", "2026-10-12", "2026-10-16"],
-  ["S43", "Import et soudures", "2026-10-19", "2026-10-23"],
+  ["S42", "Saisie hors ligne", "2026-10-12", "2026-10-16"],
+  ["S43", "Import et contrats", "2026-10-19", "2026-10-23"],
   ["S44", "Rapports", "2026-10-26", "2026-10-30"],
 ] as const;
 
 const FEATURES: readonly FeatureSeed[] = [
   { title: "Se connecter avec Microsoft", sprint: "S41", steps: ["done", "done", "done", "done"] },
-  { title: "Voir ses ISO affectés", sprint: "S41", steps: ["done", "done", "done", "done", "done"] },
-  { title: "Réaffecter un ISO", sprint: "S42", steps: ["done", "done", "done", "done"] },
+  { title: "Voir ses box affectés", sprint: "S41", steps: ["done", "done", "done", "done", "done"] },
+  { title: "Réaffecter un box", sprint: "S42", steps: ["done", "done", "done", "done"] },
   {
-    title: "Saisir un tronçon hors ligne",
+    title: "Saisir un constat hors ligne",
     sprint: "S42",
     steps: ["done", "done", "done", "in_review", "todo"],
   },
   {
-    title: "Envoyer les photos d'un tronçon",
+    title: "Envoyer les photos d'un constat",
     sprint: "S42",
     steps: ["done", "in_review", "in_progress", "todo", "todo"],
   },
-  { title: "Importer les ISO depuis Excel", sprint: "S43", steps: ["todo", "todo", "todo", "todo"] },
-  { title: "Rapport de chantier journalier", sprint: "S44", steps: ["todo", "todo", "todo", "todo", "todo"] },
-  { title: "Valider les soudures par lot", sprint: "S43", steps: ["todo", "todo", "todo", "todo"] },
+  { title: "Importer les box depuis Excel", sprint: "S43", steps: ["todo", "todo", "todo", "todo"] },
+  { title: "Rapport de centre journalier", sprint: "S44", steps: ["todo", "todo", "todo", "todo", "todo"] },
+  { title: "Valider les contrats par lot", sprint: "S43", steps: ["todo", "todo", "todo", "todo"] },
   { title: "Exporter le dossier client", sprint: null, steps: ["todo", "todo", "todo"] },
 ];
 

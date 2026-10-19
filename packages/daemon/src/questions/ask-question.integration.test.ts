@@ -52,7 +52,7 @@ async function waitFor<T>(read: () => Promise<T | undefined>, ms = 20_000): Prom
   }
 }
 
-const LIVRAISON = testAgent({ id: "emis-livraison", name: "emis-livraison", maxParallel: 1 });
+const LIVRAISON = testAgent({ id: "silo-livraison", name: "silo-livraison", maxParallel: 1 });
 
 async function start(notices: Notice[]) {
   const home = mkdtempSync(join(tmpdir(), "kibo-ask-question-"));
@@ -88,8 +88,8 @@ test("a run asks a question to validate, ends done, and gets the answer only whe
   const rpc = await start(notices);
   const project = await rpc<ProjectMeta>({
     method: "createProject",
-    name: "Emis",
-    key: "EMIS",
+    name: "Silo",
+    key: "SILO",
     folder: null,
     color: "#F97316",
   });
@@ -113,18 +113,18 @@ test("a run asks a question to validate, ends done, and gets the answer only whe
   expect(question).toMatchObject({
     ticketId: ticket.id,
     runId: run.id,
-    title: "Bloquer le dépôt sur une affaire archivée ?",
+    title: "Bloquer le dépôt sur un client archivé ?",
     provisional: "Non",
     blocking: false,
-    createdBy: { kind: "agent", ref: "emis-livraison" },
+    createdBy: { kind: "agent", ref: "silo-livraison" },
   });
   expect((await snapshot()).tickets.find((t) => t.id === ticket.id)?.statusId).toBe("in_progress");
   expect((await rpc<AgentsState>({ method: "getAgents" })).questions).toEqual([
-    { runId: run.id, open: 1, undelivered: 0, latestTitle: "Bloquer le dépôt sur une affaire archivée ?" },
+    { runId: run.id, open: 1, undelivered: 0, latestTitle: "Bloquer le dépôt sur un client archivé ?" },
   ]);
   expect(notices).toContainEqual({
-    title: "global · emis-livraison · EMIS-1 a posé une question",
-    body: "EMIS-1 · Bloquer le dépôt sur une affaire archivée ?",
+    title: "global · silo-livraison · SILO-1 a posé une question",
+    body: "SILO-1 · Bloquer le dépôt sur un client archivé ?",
   });
 
   await rpc({

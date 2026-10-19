@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { DENIAL_ITEMS_MAX, isClaudeDenial, proposeRules, RESUME_AFTER_ALLOW } from "./denial";
 
-const CTX = { home: "/Users/a", cwd: "/Users/a/Documents/emis-feat", known: ["/Users/a/.claude/skills"] };
+const CTX = { home: "/Users/a", cwd: "/Users/a/Documents/silo-feat", known: ["/Users/a/.claude/skills"] };
 const bash = (target: string) => ({ tool: "Bash", target });
 const rulesOf = (actions: { tool: string; target: string | null }[]) =>
   proposeRules(actions, CTX).map((i) => i.rule);
@@ -49,8 +49,8 @@ test("a read outside the working folder proposes a folder", () => {
   ]);
   const tilde = { tool: "Read", target: "~/.claude/skills/full-delivery/SKILL.md" };
   expect(proposeRules([tilde], CTX)[0]?.addDir).toBe("/Users/a/.claude/skills");
-  const other = { tool: "Grep", target: "/Users/a/Documents/emis/notes/todo.md" };
-  expect(proposeRules([other], CTX)[0]?.addDir).toBe("/Users/a/Documents/emis/notes");
+  const other = { tool: "Grep", target: "/Users/a/Documents/silo/notes/todo.md" };
+  expect(proposeRules([other], CTX)[0]?.addDir).toBe("/Users/a/Documents/silo/notes");
 });
 
 test("a read inside the working folder or a relative one proposes nothing", () => {

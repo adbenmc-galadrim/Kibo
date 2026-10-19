@@ -17,17 +17,17 @@ const PROFILE =
   "## Publication\n\n`draft` — push\n\n## Autorisations\n\n- `Bash(pnpm *)`\n- `Bash(sh -c *)`\n";
 
 test("the registry lists its three projects", () => {
-  expect(Object.keys(registry).sort()).toEqual(["emis", "gereco", "rapid"]);
+  expect(Object.keys(registry).sort()).toEqual(["atlas", "nimbus", "silo"]);
 });
 
-test("emis becomes worktree and delivery settings of Kibo", () => {
-  const { worktree, delivery, notices } = registryToSettings(entry("emis"), {
+test("silo becomes worktree and delivery settings of Kibo", () => {
+  const { worktree, delivery, notices } = registryToSettings(entry("silo"), {
     home: HOME,
     profileText: PROFILE,
   });
   expect(worktree).toEqual({
     baseRef: "origin/dev",
-    pathTemplate: "../emis-{slug}",
+    pathTemplate: "../silo-{slug}",
     setup: null,
     recipe: {
       copyFrom: ["{repo}", "{sibling}"],
@@ -44,43 +44,43 @@ test("emis becomes worktree and delivery settings of Kibo", () => {
   expect(WorktreeSettings.parse(worktree)).toEqual(worktree);
   expect(delivery).toEqual({
     agent: null,
-    root: "/home/dev/Documents/emis",
-    profile: "/home/dev/Documents/emis/delivery-profile.md",
-    memory: "/home/dev/.claude/projects/-Users-galadrim-Documents-emis/memory/MEMORY.md",
-    briefs: "/home/dev/Documents/emis/kibo-notes/briefs",
-    reports: "/home/dev/Documents/emis/kibo-notes/revues",
-    todo: "/home/dev/Documents/emis/TODO.md",
+    root: "/home/dev/Documents/silo",
+    profile: "/home/dev/Documents/silo/delivery-profile.md",
+    memory: "/home/dev/.claude/projects/-Users-galadrim-Documents-silo/memory/MEMORY.md",
+    briefs: "/home/dev/Documents/silo/kibo-notes/briefs",
+    reports: "/home/dev/Documents/silo/kibo-notes/revues",
+    todo: "/home/dev/Documents/silo/TODO.md",
     idPattern: "^C[0-9A-Z]*-[0-9]+$",
     publication: "draft",
     allow: ["Bash(pnpm *)"],
-    addDirs: ["/home/dev/Documents/emis", "/home/dev/.claude/projects/-Users-galadrim-Documents-emis/memory"],
+    addDirs: ["/home/dev/Documents/silo", "/home/dev/.claude/projects/-Users-galadrim-Documents-silo/memory"],
   });
   expect(notices).toEqual(["Règle refusée par Kibo : Bash(sh -c *)"]);
 });
 
-test("rapid renames the short slug in the database replacement and assignments", () => {
-  const { worktree } = registryToSettings(entry("rapid"), { home: HOME, profileText: null });
-  expect(worktree.pathTemplate).toBe("../rapid-{short}");
-  expect(worktree.recipe?.env?.replace).toEqual({ DATABASE_URL: ["/[^/?]+(\\?|$)", "/rapid_{short_}$1"] });
+test("nimbus renames the short slug in the database replacement and assignments", () => {
+  const { worktree } = registryToSettings(entry("nimbus"), { home: HOME, profileText: null });
+  expect(worktree.pathTemplate).toBe("../nimbus-{short}");
+  expect(worktree.recipe?.env?.replace).toEqual({ DATABASE_URL: ["/[^/?]+(\\?|$)", "/nimbus_{short_}$1"] });
   expect(worktree.recipe?.env?.set).toEqual({
-    DATABASE_NAME: "rapid_{short_}",
+    DATABASE_NAME: "nimbus_{short_}",
     BETTER_AUTH_URL: "http://localhost:{BACKEND_PORT}",
     EXPO_PUBLIC_BACKEND_URL: "http://localhost:{BACKEND_PORT}",
   });
   expect(worktree.recipe?.after[0]).toBe(
-    "docker exec rapid-postgres createdb -U postgres rapid_{short_} 2>/dev/null || true",
+    "docker exec nimbus-postgres createdb -U postgres nimbus_{short_} 2>/dev/null || true",
   );
   expect(worktree.recipe?.copy).toEqual([".env", ".galacryptkey"]);
 });
 
-test("gereco keeps its folders, expands the home and has no env", () => {
-  const { worktree, delivery } = registryToSettings(entry("gereco"), { home: HOME, profileText: "" });
+test("atlas keeps its folders, expands the home and has no env", () => {
+  const { worktree, delivery } = registryToSettings(entry("atlas"), { home: HOME, profileText: "" });
   expect(worktree.baseRef).toBe("origin/staging");
-  expect(worktree.pathTemplate).toBe("../gereco-{short}");
-  expect(worktree.recipe?.copyFrom).toEqual(["/home/dev/Documents/gereco/gereco-staging", "{repo}"]);
+  expect(worktree.pathTemplate).toBe("../atlas-{short}");
+  expect(worktree.recipe?.copyFrom).toEqual(["/home/dev/Documents/atlas/atlas-staging", "{repo}"]);
   expect(worktree.recipe?.env).toBeNull();
   expect(worktree.recipe?.after).toEqual([
-    "~/Documents/gereco/bin/gereco-sweep --reap --keep {short} --yes",
+    "~/Documents/atlas/bin/atlas-sweep --reap --keep {short} --yes",
     "make pr-up",
   ]);
   expect(delivery.publication).toBeNull();
@@ -88,8 +88,8 @@ test("gereco keeps its folders, expands the home and has no env", () => {
 });
 
 test("a missing profile is reported and nothing else is invented", () => {
-  const { notices, delivery } = registryToSettings(entry("rapid"), { home: HOME, profileText: null });
-  expect(notices).toEqual(["Profil illisible : /home/dev/Documents/rapid/delivery-profile.md"]);
+  const { notices, delivery } = registryToSettings(entry("nimbus"), { home: HOME, profileText: null });
+  expect(notices).toEqual(["Profil illisible : /home/dev/Documents/nimbus/delivery-profile.md"]);
   expect(delivery.publication).toBeNull();
 });
 

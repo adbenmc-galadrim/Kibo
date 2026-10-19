@@ -103,19 +103,19 @@ test("a ticket run receives the folders of its agent and of its project, missing
   const meta: Partial<ProjectSnapshot["meta"]> = {};
   const h = setup({ scenario: "done", meta });
   await h.orch.stop();
-  for (const dir of [".claude/skills", "Documents/emis"]) mkdirSync(join(h.home, dir), { recursive: true });
+  for (const dir of [".claude/skills", "Documents/silo"]) mkdirSync(join(h.home, dir), { recursive: true });
   const skills = realpathSync(join(h.home, ".claude", "skills"));
-  const emis = realpathSync(join(h.home, "Documents", "emis"));
-  meta.delivery = { ...EMPTY_DELIVERY, addDirs: [join(h.home, "Documents", "emis"), join(h.home, "gone")] };
+  const silo = realpathSync(join(h.home, "Documents", "silo"));
+  meta.delivery = { ...EMPTY_DELIVERY, addDirs: [join(h.home, "Documents", "silo"), join(h.home, "gone")] };
   const orch = withAgent(h, testAgent({ addDirs: [join(h.home, ".claude", "skills")] }));
   try {
     const run = orch.assign({ projectId: "p1", ticketId: "t1", profileId: testRef("opus"), brief: "" });
     await waitUntil(() => orch.state().runs.find((r) => r.id === run.id)?.state === "done");
     const argv = fakeCalls(h.state, run.sessionId)[0]?.argv ?? [];
     const at = argv.indexOf("--add-dir");
-    expect(argv.slice(at, at + 3)).toEqual(["--add-dir", skills, emis]);
+    expect(argv.slice(at, at + 3)).toEqual(["--add-dir", skills, silo]);
     expect(argv[at + 3]?.startsWith("--")).toBe(true);
-    expect(spawnedOf(orch, run.id)).toMatchObject({ addDirs: [skills, emis] });
+    expect(spawnedOf(orch, run.id)).toMatchObject({ addDirs: [skills, silo] });
   } finally {
     await orch.stop();
   }

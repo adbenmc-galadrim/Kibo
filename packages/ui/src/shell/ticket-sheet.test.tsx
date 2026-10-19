@@ -3,12 +3,12 @@ import type { ProjectEvent, RpcRequest, TicketView } from "@kibo/schema";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { apiMock } from "../api-mock";
-import { emisFeatureProject, NOW } from "./feature/fixture";
+import { NOW, siloFeatureProject } from "./feature/fixture";
 
 const journal: ProjectEvent[] = [
   {
     id: 1,
-    projectId: "emis",
+    projectId: "silo",
     kind: "branch_created",
     ticketId: "e33",
     featureId: "f5",
@@ -47,7 +47,7 @@ afterEach(() => {
 });
 
 const noop = () => undefined;
-const project = emisFeatureProject();
+const project = siloFeatureProject();
 
 const open = async (ticketId: string, patch: Partial<TicketView> = {}) => {
   const result = render(
@@ -76,7 +76,7 @@ test("the sheet of a step leads with « F5 · S42 », its Suivi block and a « F
 });
 
 test("the sheet is found by the key of the ticket as well", async () => {
-  await open("EMIS-33");
+  await open("SILO-33");
   expect(screen.getByRole("heading", { name: "Écran d'envoi hors ligne" })).toBeTruthy();
 });
 
@@ -91,10 +91,10 @@ test("Domaine and Maquettes stay folded until asked for", async () => {
 
 test("copying /full-delivery writes the command and says what it waits for", async () => {
   render(<Toaster />);
-  await open("e33", { startable: false, waitingOn: ["EMIS-32"] });
-  await userEvent.setup().click(screen.getByRole("button", { name: "Copier /full-delivery EMIS-33" }));
-  expect(await screen.findByText("Copié · attend EMIS-32")).toBeTruthy();
-  expect(await navigator.clipboard.readText()).toBe("/full-delivery EMIS-33");
+  await open("e33", { startable: false, waitingOn: ["SILO-32"] });
+  await userEvent.setup().click(screen.getByRole("button", { name: "Copier /full-delivery SILO-33" }));
+  expect(await screen.findByText("Copié · attend SILO-32")).toBeTruthy();
+  expect(await navigator.clipboard.readText()).toBe("/full-delivery SILO-33");
 });
 
 test("the banner warns of requested changes on the PR of the step", async () => {
@@ -102,7 +102,7 @@ test("the banner warns of requested changes on the PR of the step", async () => 
     externalRefs: [
       {
         kind: "github_pr",
-        url: "https://github.com/galadrim/emis/pull/20",
+        url: "https://github.com/silo-labs/silo-location/pull/20",
         number: 20,
         state: "open",
         base: "dev",
@@ -142,8 +142,8 @@ test("the top bar names the key and holds Copier, the link and Fermer", async ()
   const close = screen.getByRole("button", { name: "Fermer" });
   expect(close.textContent).toBe("Fermer");
   const bar = close.parentElement?.parentElement;
-  expect(bar?.textContent).toContain("EMIS-33");
-  expect(bar?.textContent).toContain("Copier /full-delivery EMIS-33");
+  expect(bar?.textContent).toContain("SILO-33");
+  expect(bar?.textContent).toContain("Copier /full-delivery SILO-33");
   expect(screen.getByRole("button", { name: "Copier le lien du ticket" })).toBeTruthy();
 });
 

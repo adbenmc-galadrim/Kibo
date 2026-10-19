@@ -10,7 +10,7 @@ type Row = DeliveryProject["tickets"][number];
 
 const row = (id: string, over: Partial<Row> = {}): Row => ({
   id,
-  key: `EMIS-${id}`,
+  key: `SILO-${id}`,
   title: `Ticket ${id}`,
   parentId: null,
   statusId: "todo",
@@ -73,11 +73,11 @@ test("a leaf is assigned to the delivery agent with the brief written by Kibo", 
       projectId: "p1",
       ticketId: "15",
       profileId: "global:full-delivery",
-      brief: "/full-delivery EMIS-15",
+      brief: "/full-delivery SILO-15",
       fresh: false,
     },
   ]);
-  expect(result).toMatchObject({ id: "r1", brief: "/full-delivery EMIS-15" });
+  expect(result).toMatchObject({ id: "r1", brief: "/full-delivery SILO-15" });
 });
 
 test("the project's delivery agent wins over the global full-delivery agent", () => {
@@ -97,11 +97,11 @@ test("a parent never starts a run: its ready sub-tickets come back in dependency
   expect(assigned).toEqual([]);
   if (result.kind !== "parent") throw new Error("expected the sub-tickets of the parent");
   expect(result.items.map((i) => [i.key, i.ready, i.reason])).toEqual([
-    ["EMIS-18", true, null],
-    ["EMIS-19", false, "blocked"],
-    ["EMIS-20", false, "busy"],
+    ["SILO-18", true, null],
+    ["SILO-19", false, "blocked"],
+    ["SILO-20", false, "busy"],
   ]);
-  expect(result.items.find((i) => i.key === "EMIS-19")?.blockedBy).toEqual(["EMIS-18"]);
+  expect(result.items.find((i) => i.key === "SILO-19")?.blockedBy).toEqual(["SILO-18"]);
 });
 
 test("without a delivery agent nothing is delivered, leaf or parent", () => {
@@ -134,7 +134,7 @@ test("a done ticket, a ticket without key or an unknown ticket is refused before
 test("an active run on the leaf is refused by assign itself", () => {
   const { deps } = rig();
   deps.orchestrator.assign = () => {
-    throw new KiboError("CONFLICT", "ticket EMIS-15 already has an active run");
+    throw new KiboError("CONFLICT", "ticket SILO-15 already has an active run");
   };
   expect(() => deliver(deps, { projectId: "p1", ticketId: "15" })).toThrow(
     expect.objectContaining({ code: "CONFLICT" }),
@@ -149,7 +149,7 @@ test("a touch-up delivers a done ticket with the update-delivery brief", () => {
       projectId: "p1",
       ticketId: "16",
       profileId: "global:full-delivery",
-      brief: "/update-delivery EMIS-16",
+      brief: "/update-delivery SILO-16",
       fresh: false,
     },
   ]);

@@ -30,7 +30,7 @@ S.draw["b-vue"] = (x, y) => { const C = S.C, D = S.D, P = D.project;
   const hero = S.row(c, { fx: true, gap: 48, align: "end" });
   const hl = S.col(hero, { fx: true, gap: 14 });
   S.txt(hl, "Projet · " + P.sub, { size: 11.5, weight: 500, color: C.dim, upper: true, ls: 1.2 });
-  S.txt(hl, "Emis", { size: 52, weight: 600, ls: -1.5 });
+  S.txt(hl, "Silo", { size: 52, weight: 600, ls: -1.5 });
   S.txt(hl, "41 tickets livrés sur 68. Le périmètre se boucle lundi, les photos entrent en review et les rapports n'ont pas commencé.", { size: 18, lh: 1.55, color: C.mfg, w: 600 });
   const meta = S.row(hl, { gap: 8 }); S.icon(meta, "github", 13, C.dim); S.txt(meta, P.repo, { size: 12.5, mono: true, color: C.dim }); S.txt(meta, "·", { color: C.faint });
   S.icon(meta, "refresh", 13, C.dim); S.txt(meta, "synchronisé il y a 1 min", { size: 12.5, color: C.dim });
@@ -45,7 +45,7 @@ S.draw["b-vue"] = (x, y) => { const C = S.C, D = S.D, P = D.project;
   S.box(ag, { w: 2, h: 10, fill: C.brand, fy: true });
   const at = S.col(ag, { fx: true, pad: [4, 0, 4, 24], gap: 12 });
   const ah = S.row(at, { gap: 10 }); S.agentMark(ah, 24); S.txt(ah, "Le point de l'agent de projet", { size: 13.5, weight: 600, color: C.brandText }); S.txt(ah, "mis à jour à 14:40", { size: 12.5, color: C.dim });
-  S.txt(at, "Deux PR attendent ta relecture depuis hier, #21 et #22. Je propose de démarrer EMIS-34 dès la fusion de #22, de créer EMIS-61 pour compresser les photos avant envoi, et de relancer le client sur Q14, qui bloque l'import Excel.", { size: 17, lh: 1.6, color: C.fg, w: 900 });
+  S.txt(at, "Deux PR attendent ta relecture depuis hier, #21 et #22. Je propose de démarrer SILO-34 dès la fusion de #22, de créer SILO-61 pour compresser les photos avant envoi, et de relancer le client sur Q14, qui bloque l'import Excel.", { size: 17, lh: 1.6, color: C.fg, w: 900 });
   const ab = S.row(at, { gap: 10 }); S.btn(ab, "Examiner le lot n° 6 · 3 actions", "brandOutline", { sm: true, icon: "check", ic: C.brandText }); S.btn(ab, "Répondre", "ghost", { sm: true, icon: "message" });
   S.box(c, { w: 4, h: 8 });
 
@@ -70,7 +70,7 @@ S.draw["b-vue"] = (x, y) => { const C = S.C, D = S.D, P = D.project;
   const tri = S.row(c, { fx: true, gap: 40, align: "start" });
   const colB = (title, n) => { const k = S.col(tri, { fx: true, gap: 16 }); const h = S.row(k, { gap: 8 }); S.txt(h, title, { size: 16, weight: 600 }); S.txt(h, n, { size: 12.5, mono: /^[0-9]+$/.test(n), color: C.dim }); S.hline(k, C.border); return k; };
   const rv = colB("À relire", "4");
-  for (const key of ["EMIS-22", "EMIS-32", "EMIS-41"]) { const t = S.tk(key); const it = S.col(rv, { fx: true, gap: 5 });
+  for (const key of ["SILO-22", "SILO-32", "SILO-41"]) { const t = S.tk(key); const it = S.col(rv, { fx: true, gap: 5 });
     const r = S.row(it, { gap: 8 }); S.icon(r, "pr", 14, S.gitColor(t.git)); S.txt(r, t.ref, { size: 13, mono: true, color: C.mfg });
     S.txt(it, t.title, { size: 14.5, fill: true, lh: 1.4 }); S.txt(it, `${t.key} · ${t.set} · ${t.note}`, { size: 12, color: t.git === "changes" ? C.amber : C.dim }); }
   const qs = colB("Questions ouvertes", "3");
@@ -128,11 +128,11 @@ S.draw["b-graphe"] = (x, y) => { const C = S.C, D = S.D;
   // Colonnes-chapitres : C2 → C5, de gauche à droite.
   const X0 = 324, CW = 250, GX = 26, TOP = 24, pos = {};
   const chapters = [
-    { key: "C2", nodes: ["EMIS-22", "EMIS-23"], done: 4 },
-    { key: "C3", nodes: ["EMIS-41", "EMIS-43", "EMIS-44", "EMIS-46"], done: 9 },
-    { key: "C4", nodes: ["EMIS-32", "EMIS-33", "EMIS-34", "EMIS-35"], done: 1 },
-    { key: "C5", nodes: ["EMIS-52", "EMIS-53", "EMIS-54"], done: 0, more: "+ 3 tickets" } ];
-  const extra = { "EMIS-53": { key: "EMIS-53", title: "Export des rapports au client", st: "À faire" }, "EMIS-54": { key: "EMIS-54", title: "Signature du rapport sur tablette", st: "À faire" } };
+    { key: "C2", nodes: ["SILO-22", "SILO-23"], done: 4 },
+    { key: "C3", nodes: ["SILO-41", "SILO-43", "SILO-44", "SILO-46"], done: 9 },
+    { key: "C4", nodes: ["SILO-32", "SILO-33", "SILO-34", "SILO-35"], done: 1 },
+    { key: "C5", nodes: ["SILO-52", "SILO-53", "SILO-54"], done: 0, more: "+ 3 tickets" } ];
+  const extra = { "SILO-53": { key: "SILO-53", title: "Export des rapports au client", st: "À faire" }, "SILO-54": { key: "SILO-54", title: "Signature du rapport sur tablette", st: "À faire" } };
   chapters.forEach((ch, i) => { const s = D.sets.find(x => x.key === ch.key); const fx = X0 + i * (CW + GX);
     const fr = S.col(cv, { name: "frame " + ch.key, x: fx, y: TOP, w: CW, h: 620, pad: [16, 14], gap: 12, radius: 16, stroke: C.border, dashed: true, fill: C.bg, op: 0.6 });
     const hd = S.col(fr, { fx: true, gap: 6 }); const a = S.row(hd, { fx: true, gap: 8 }); S.txt(a, ch.key, { size: 13, mono: true, color: C.dim }); S.spacer(a); S.txt(a, `${s.done}/${s.total}`, { size: 13, mono: true, color: C.mfg });
@@ -140,7 +140,7 @@ S.draw["b-graphe"] = (x, y) => { const C = S.C, D = S.D;
     S.txt(hd, "Échéance " + s.due, { size: 12, color: C.dim });
     if (ch.done) { const d = S.row(fr, { fx: true, gap: 8, pad: [8, 12], radius: 10, fill: C.muted }); S.icon(d, "circleCheck", 13, C.green); S.txt(d, `${ch.done} livré${ch.done > 1 ? "s" : ""}`, { size: 12.5, color: C.mfg }); }
     for (const k of ch.nodes) { const t = S.tk(k) || extra[k];
-      const n = S.col(fr, { name: "node " + k, fx: true, gap: 6, pad: [11, 12], radius: 12, fill: C.card, stroke: t.live ? C.brandLine : k === "EMIS-32" ? C.mfg : C.border, vs: "auto" });
+      const n = S.col(fr, { name: "node " + k, fx: true, gap: 6, pad: [11, 12], radius: 12, fill: C.card, stroke: t.live ? C.brandLine : k === "SILO-32" ? C.mfg : C.border, vs: "auto" });
       const r = S.row(n, { fx: true, gap: 7 }); S.status(r, t.st, 8); S.txt(r, k, { size: 11.5, mono: true, color: C.dim }); S.spacer(r); if (t.live) S.dot(r, C.brand, 7);
       if (t.git) { S.icon(r, S.gitIcon[t.git], 12, S.gitColor(t.git)); if (t.git !== "branch") S.txt(r, t.ref, { size: 11.5, mono: true, color: C.dim }); }
       S.txt(n, t.title, { size: 13.5, fill: true, lh: 1.35 });
@@ -153,11 +153,11 @@ S.draw["b-graphe"] = (x, y) => { const C = S.C, D = S.D;
 S.edgesB = () => { const C = S.C; const f = penpot.currentPage.root.children.find(c => c.name === (S.mode === "light" ? "B3 · Graphe (clair)" : "B3 · Graphe"));
   const cv = penpotUtils.findShapes(s => s.name === "canvas", f)[0]; const old = penpotUtils.findShapes(s => s.name === "edges", cv); old.forEach(o => o.remove());
   const node = k => { const n = penpotUtils.findShapes(s => s.name === "node " + k, cv)[0]; return { x: n.x - cv.x, y: n.y - cv.y, w: n.width, h: n.height }; };
-  const pairs = [["EMIS-22", "EMIS-23"], ["EMIS-41", "EMIS-43"], ["EMIS-44", "EMIS-46"], ["EMIS-32", "EMIS-33"], ["EMIS-32", "EMIS-34"], ["EMIS-34", "EMIS-35"], ["EMIS-52", "EMIS-53"], ["EMIS-23", "EMIS-52"]];
+  const pairs = [["SILO-22", "SILO-23"], ["SILO-41", "SILO-43"], ["SILO-44", "SILO-46"], ["SILO-32", "SILO-33"], ["SILO-32", "SILO-34"], ["SILO-34", "SILO-35"], ["SILO-52", "SILO-53"], ["SILO-23", "SILO-52"]];
   let d = "";
   const head = (x, y, dir, col) => dir === "down" ? `<path d="M${x - 4},${y - 6} L${x},${y} L${x + 4},${y - 6}" stroke="${col}" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`
     : `<path d="M${x - 6},${y - 4} L${x},${y} L${x - 6},${y + 4}" stroke="${col}" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
-  for (const [a, b] of pairs) { const A = node(a), B = node(b); const col = a === "EMIS-32" ? C.mfg : C.faint;
+  for (const [a, b] of pairs) { const A = node(a), B = node(b); const col = a === "SILO-32" ? C.mfg : C.faint;
     if (Math.abs(A.x - B.x) < 20 && B.y - (A.y + A.h) < 20) { const x = A.x + 24, y1 = A.y + A.h, y2 = B.y - 1; d += `<path d="M${x},${y1} L${x},${y2}" stroke="${col}" stroke-width="1.5" fill="none"/>` + head(x, y2, "down", col); }
     else if (Math.abs(A.x - B.x) < 20) { const xa = A.x - 7, ya = A.y + A.h / 2, yb = B.y + B.h / 2;
       d += `<path d="M${A.x},${ya} L${xa + 4},${ya} Q${xa},${ya} ${xa},${ya + 4} L${xa},${yb - 4} Q${xa},${yb} ${xa + 4},${yb} L${B.x - 1},${yb}" stroke="${col}" stroke-width="1.5" fill="none"/>` + head(B.x - 1, yb, "right", col); }

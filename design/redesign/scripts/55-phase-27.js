@@ -34,7 +34,7 @@ S.shell27 = (f, active, o = {}) => { const C = S.C;
   const root = S.box(f, { name: "root", w: f.width, h: f.height, dir: "row", align: "stretch" });
   if (o.collapsed) S.sidebarIcons(root, active); else S.sidebar(root, active, { pages: o.pages || S.PAGES_P, counts: o.counts || S.COUNTS_P });
   const main = S.col(root, { name: "main", fx: true, fy: true });
-  S.topbar(main, o.crumbs || ["Emis", active], t => { S.syncChip(t); if (o.right) o.right(t); S.agentButton(t, o.agentOn ? { on: true } : o.agentCount === null ? {} : { count: o.agentCount || "3" }); });
+  S.topbar(main, o.crumbs || ["Silo", active], t => { S.syncChip(t); if (o.right) o.right(t); S.agentButton(t, o.agentOn ? { on: true } : o.agentCount === null ? {} : { count: o.agentCount || "3" }); });
   return { root, main }; };
 // Barre latérale repliée en icônes (48 px) : sous 1 180 px de large (§39.6.16).
 S.sidebarIcons = (p, active) => { const C = S.C;
@@ -45,12 +45,12 @@ S.sidebarIcons = (p, active) => { const C = S.C;
   item("home"); item("ticket"); item("inbox"); S.box(sb, { w: 4, h: 6 });
   const proj = (n, c, on) => { const b = S.box(sb, { name: "project/" + n, w: 32, h: 32, radius: 6, fill: on ? C.hover : null, dir: "row", align: "center", justify: "center" });
     const t = S.box(b, { w: 22, h: 22, radius: 5, fill: c, dir: "row", align: "center", justify: "center" }); S.txt(t, n[0], { size: 11, weight: 600, color: "#FFFFFF" }); return b; };
-  proj("Emis", S.D.project.color, true); for (const [n, c] of S.D.projects.slice(1)) proj(n, c, false);
+  proj("Silo", S.D.project.color, true); for (const [n, c] of S.D.projects.slice(1)) proj(n, c, false);
   S.box(sb, { w: 4, h: 4, fy: true }); item("settings"); S.avatar(sb, "AB", 24);
   S.vline(p, C.soft); return sb; };
 S.pagesMenu = (f, x, y, active) => { const C = S.C;
   const m = S.col(f, { name: "pages-menu", x, y, w: 222, pad: 6, gap: 2, radius: 8, stroke: C.border, fill: C.card, shadow: 10 });
-  const h = S.row(m, { fx: true, h: 30, pad: [0, 8] }); S.txt(h, "Emis", { size: 13, weight: 600 });
+  const h = S.row(m, { fx: true, h: 30, pad: [0, 8] }); S.txt(h, "Silo", { size: 13, weight: 600 });
   for (const pg of S.PAGES_P) { const on = pg === active, r = S.row(m, { fx: true, h: 32, pad: [0, 8], gap: 10, radius: 6, fill: on ? C.hover : null });
     S.icon(r, S.NAV_ICON[pg], 15, on ? C.fg : C.mfg); S.txt(r, pg, { size: 13, weight: on ? 500 : 400 }); }
   return m; };
@@ -87,15 +87,15 @@ S.inProgress27 = (f, late) => { const C = S.C;
   const dot = open.children.find(c => c.name === "dot"); if (dot) dot.fills = [{ fillColor: C.red, fillOpacity: 1 }];
   const grid = penpotUtils.findShapes(s => s.name === "grid", f)[0];
   for (const [key, color] of late ? [["F5", C.red]] : [["F4", C.amber], ["F5", C.amber]]) { const t = S.byText(grid, key); if (t) t.fills = [{ fillColor: color, fillOpacity: 1 }]; }
-  const sp = penpotUtils.findShapes(s => s.name === "card / Sprint S42 · Terrain hors ligne", f)[0] || f;
+  const sp = penpotUtils.findShapes(s => s.name === "card / Sprint S42 · Saisie hors ligne", f)[0] || f;
   S.parentOf(sp, S.byText(sp, "2/2 ouvertes")).remove();
   S.setText(sp, "Limite de 2 ouvertes atteinte : F6 attendra la fin de F4 ou de F5.", "Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5.");
-  if (late) { S.setText(sp, "12–16 oct.", "S43 commence lun. 19 oct."); S.setText(sp, "Sprint S42 · Terrain hors ligne", "Dernier sprint · S42 terminé"); }
+  if (late) { S.setText(sp, "12–16 oct.", "S43 commence lun. 19 oct."); S.setText(sp, "Sprint S42 · Saisie hors ligne", "Dernier sprint · S42 terminé"); }
   for (const t of penpotUtils.findShapes(s => s.type === "text" && s.characters === "ouverte", sp)) { const pill = S.parentOf(sp, t), st = S.parentOf(sp, pill); pill.remove();
     if (late) S.pill(st, "en cours", C.blue, C.blueSoft); else S.pill(st, "à risque", C.amber, C.amberSoft, "triangleAlert"); }
   if (!late) for (const t of penpotUtils.findShapes(s => s.type === "text" && s.characters === "en retard", sp)) { const pill = S.parentOf(sp, t), st = S.parentOf(sp, pill); pill.remove(); S.pill(st, "à risque", C.amber, C.amberSoft, "triangleAlert"); }
   if (late) return kpis;
-  S.setText(kpis, "finit ce soir", "Terrain ho…"); S.setText(kpis, "Terrain hors ligne", "se termine aujourd'hui");
+  S.setText(kpis, "finit ce soir", "Saisie ho…"); S.setText(kpis, "Saisie hors ligne", "se termine aujourd'hui");
   const segs = penpotUtils.findShapes(s => s.name === "segs", kpis)[0], sub = S.parentOf(kpis, segs);
   for (const c of segs.children) c.resize(5, c.height);
   sub.layoutChild.horizontalSizing = "fill"; S.spacer(sub); S.txt(sub, "2 à risque", { size: 12, color: C.amber });
@@ -108,7 +108,7 @@ S.vue3 = (x, y, late) => { const C = S.C, sec = C.mfg;
   S.resizeScreen(f, 1360);
   const segs = penpotUtils.findShapes(s => s.name === "segs", kpis)[0], sub = S.parentOf(kpis, segs);
   segs.remove(); S.icon(sub, "clockAlert", 12, C.red); S.txt(sub, "1 en retard", { size: 12, weight: 500, color: C.red });
-  S.setText(kpis, "finit ce soir", "Terrain ho…"); S.setText(kpis, "Terrain hors ligne", "terminé le 16 oct. · reste 2");
+  S.setText(kpis, "finit ce soir", "Saisie ho…"); S.setText(kpis, "Saisie hors ligne", "terminé le 16 oct. · reste 2");
   S.setText(f, "S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo.",
     "S42 est terminé depuis vendredi et F5 n'y a pas tenu : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo.");
   S.setText(f, "4 étapes restantes, S42 finit aujourd'hui", "4 étapes restantes, S42 terminé le 16 oct.");
@@ -145,8 +145,8 @@ S.draw["p-commencer"] = (x, y) => { const C = S.C, sec = C.mfg;
   const f = S.screen("P1 bis v3 · Pour commencer", x, y, 1440, 1000);
   const { main } = S.shell27(f, "Vue d'ensemble", { pages: S.PAGES27, counts: {}, agentCount: null, right: t => S.btn(t, "Nouveau ticket", "outline", { sm: true, icon: "plus" }) });
   const body = S.col(main, { fx: true, fy: true, pad: [18, 24, 24, 24], gap: 14 });
-  const ht = S.col(body, { gap: 4 }); S.txt(ht, "Emis", { size: 24, weight: 600, ls: -0.3 });
-  const hs = S.row(ht, { gap: 8 }); S.icon(hs, "building", 13, sec); S.txt(hs, "client Emis SA", { size: 13, color: sec }); S.txt(hs, "·", { size: 13, color: C.faint }); S.txt(hs, "6 sprints d'une semaine · du 19 oct. au 27 nov. 2026", { size: 13, color: sec });
+  const ht = S.col(body, { gap: 4 }); S.txt(ht, "Silo", { size: 24, weight: 600, ls: -0.3 });
+  const hs = S.row(ht, { gap: 8 }); S.icon(hs, "building", 13, sec); S.txt(hs, "client Silo SA", { size: 13, color: sec }); S.txt(hs, "·", { size: 13, color: C.faint }); S.txt(hs, "6 sprints d'une semaine · du 19 oct. au 27 nov. 2026", { size: 13, color: sec });
   S.kpis27(body, [["package", "Fonctionnalités", "0", "livrées sur 0", "aucune pour l'instant"], ["sprint", "Sprint en cours", "—", null, "S1 commence le lun. 19 oct."],
     ["target", "En cours", "0", "/ 2", "aucune en cours"], ["pr", "En review", "0", "PR", "aucune PR"], ["question", "Questions", "0", "ouvertes", "aucune question"]]);
   const cols = S.row(body, { fx: true, gap: 16, align: "start" });
@@ -155,22 +155,22 @@ S.draw["p-commencer"] = (x, y) => { const C = S.C, sec = C.mfg;
     const tc = S.col(r, { fx: true, gap: 4 }); const tt = S.row(tc, { gap: 6 }); S.txt(tt, title, { size: 13.5, weight: 500 });
     S.txt(tc, help, { size: 12.5, color: sec, fill: true, lh: 1.4 }); S.btn(r, btn, "outline", { sm: true, icon }); };
   step("Relier le dépôt", "Choisis le dossier du dépôt : branches, PR et CI remontent seuls.", "Choisir le dossier", "folderOpen");
-  step("Créer une fonctionnalité", "Elle se livre de A à Z ; ses étapes deviennent EMIS-1, EMIS-2…", "Nouvelle fonctionnalité", "plus");
+  step("Créer une fonctionnalité", "Elle se livre de A à Z ; ses étapes deviennent SILO-1, SILO-2…", "Nouvelle fonctionnalité", "plus");
   const sp = S.card2(cols, "Sprints", "sprint", { w: 300, count: "6" });
   S.SPRINTS27.forEach(([k, d], i) => { const r = S.row2(sp, { h: 38, gap: 10 }); const a = S.row(r, { w: 26 }); S.txt(a, k, { size: 12, mono: true, color: i ? sec : C.fg, weight: i ? 400 : 600 });
     const b = S.row(r, { fx: true }); S.txt(b, "Sprint " + (i + 1), { size: 13 }); S.txt(r, d, { size: 12.5, color: sec }); });
   return f; };
 
-// ---------- P6 · Nouveau projet : dialogue de 520 px sur la Vue d'ensemble d'Emis ----------
+// ---------- P6 · Nouveau projet : dialogue de 520 px sur la Vue d'ensemble de Silo ----------
 S.draw["p-nouveau"] = async (x, y) => { const C = S.C, sec = C.mfg;
   const f = S.rename(S.cloneScreen("P1 bis v3 · Vue d'ensemble", x, y), "P6 · Nouveau projet"); S.resizeScreen(f, 1000); S.veil(f);
   const d = S.col(f, { name: "dialog", x: 460, y: 80, w: 520, pad: 24, gap: 18, radius: 12, stroke: C.border, fill: C.bg, shadow: 12 });
   const hd = S.row(d, { fx: true, gap: 12, align: "start" }); const ht = S.col(hd, { fx: true, gap: 6 }); S.txt(ht, "Nouveau projet", { size: 18, weight: 600 });
   S.txt(ht, "Un projet suivi : ses pages et ses sprints sont créés aussitôt.", { size: 13, color: sec, fill: true }); S.icon(hd, "x", 16, sec);
-  S.field(d, "Nom", c => S.input(c, "Emis", { focus: true }));
+  S.field(d, "Nom", c => S.input(c, "Silo", { focus: true }));
   const r1 = S.row(d, { fx: true, gap: 12, align: "start" });
-  S.field(r1, "Clé", c => S.input(c, "EMIS", { mono: true }), "2 à 6 lettres majuscules, unique.", { w: 190 });
-  S.field(r1, "Client", c => S.input(c, "Emis SA"), "Facultatif. Destinataire des questions client.", { opt: false });
+  S.field(r1, "Clé", c => S.input(c, "SILO", { mono: true }), "2 à 6 lettres majuscules, unique.", { w: 190 });
+  S.field(r1, "Client", c => S.input(c, "Silo SA"), "Facultatif. Destinataire des questions client.", { opt: false });
   const r2 = S.row(d, { fx: true, gap: 12, align: "start" });
   S.field(r2, "Début du premier sprint", c => S.input(c, "19/10/2026", { right: r => S.icon(r, "calendar", 14, sec) }));
   S.field(r2, "Nombre de sprints", c => S.input(c, "6", { right: r => { const s = S.col(r, { gap: 0 }); S.icon(s, "chevUp", 11, sec); S.icon(s, "chevDown", 11, sec); } }), null, { w: 150 });
@@ -187,20 +187,20 @@ S.draw["p-nouveau"] = async (x, y) => { const C = S.C, sec = C.mfg;
 const K = (key, f, title, o = {}) => ({ key, f, title, ...o });
 S.KANBAN27 = [
   ["Backlog", 0, []],
-  ["À faire", 19, [K("EMIS-46", "F4", "Démo · F4", { optional: true }), K("EMIS-34", "F5", "Tests E2E de l'envoi", { wait: "EMIS-33" }),
-    K("EMIS-35", "F5", "Démo · F5", { wait: "EMIS-34" }), K("EMIS-52", "F6", "Contrôle des repères", { reason: "sprint S43" }), K("EMIS-53", "F6", "Écran d'import", { reason: "sprint S43" }), K("EMIS-54", "F6", "Démo · F6", { reason: "sprint S43" }), K("EMIS-71", "F8", "Statuts de soudure", { reason: "sprint S43" }),
-    K("EMIS-72", "F8", "Sélection multiple", { reason: "sprint S43" }), K("EMIS-73", "F8", "Validation par lot", { reason: "sprint S43" }), K("EMIS-74", "F8", "Démo · F8", { reason: "sprint S43" })]],
-  ["En cours", 1, [K("EMIS-33", "F5", "Écran d'envoi hors ligne", { live: true, step: 7, phase: "Phase 7/12 · Porte qu…", branch: "feat/envoi-hors-…" })]],
-  ["En review", 3, [K("EMIS-45", "F4", "Conflits de saisie", { live: true, step: 9, pr: "#20", review: "changes", ci: "error" }), K("EMIS-32", "F5", "Route d'envoi des photos", { step: 10, pr: "#22", ci: "ok" }),
-    K("EMIS-61", null, "Passage à Expo SDK 54", { pr: "#23", ci: "running" })]],
-  ["Bloqué", 1, [K("EMIS-51", "F6", "Lecture du fichier Excel", { blockedQ: "Q14", step: 3 })]],
-  ["Terminé", 17, [K("EMIS-21", "F3", "Démo · F3", { merged: "#18" }), K("EMIS-31", "F5", "Stockage des photos sur MinIO", { merged: "#19" }), K("EMIS-43", "F4", "Synchro au retour du réseau", { merged: "#16" }),
-    K("EMIS-42", "F4", "Formulaire de saisie", { merged: "#14" }), K("EMIS-41", "F4", "Schéma local des tronçons", { merged: "#12" }), K("EMIS-20", "F3", "Écran de réaffectation"), K("EMIS-19", "F3", "Route de réaffectation"),
-    K("EMIS-18", "F3", "Historique des affectations"), K("EMIS-14", "F2", "Démo · F2")]] ];
+  ["À faire", 19, [K("SILO-46", "F4", "Démo · F4", { optional: true }), K("SILO-34", "F5", "Tests E2E de l'envoi", { wait: "SILO-33" }),
+    K("SILO-35", "F5", "Démo · F5", { wait: "SILO-34" }), K("SILO-52", "F6", "Contrôle des numéros", { reason: "sprint S43" }), K("SILO-53", "F6", "Écran d'import", { reason: "sprint S43" }), K("SILO-54", "F6", "Démo · F6", { reason: "sprint S43" }), K("SILO-71", "F8", "Statuts de contrat", { reason: "sprint S43" }),
+    K("SILO-72", "F8", "Sélection multiple", { reason: "sprint S43" }), K("SILO-73", "F8", "Validation par lot", { reason: "sprint S43" }), K("SILO-74", "F8", "Démo · F8", { reason: "sprint S43" })]],
+  ["En cours", 1, [K("SILO-33", "F5", "Écran d'envoi hors ligne", { live: true, step: 7, phase: "Phase 7/12 · Porte qu…", branch: "feat/envoi-hors-…" })]],
+  ["En review", 3, [K("SILO-45", "F4", "Conflits de saisie", { live: true, step: 9, pr: "#20", review: "changes", ci: "error" }), K("SILO-32", "F5", "Route d'envoi des photos", { step: 10, pr: "#22", ci: "ok" }),
+    K("SILO-61", null, "Passage à Expo SDK 54", { pr: "#23", ci: "running" })]],
+  ["Bloqué", 1, [K("SILO-51", "F6", "Lecture du fichier Excel", { blockedQ: "Q14", step: 3 })]],
+  ["Terminé", 17, [K("SILO-21", "F3", "Démo · F3", { merged: "#18" }), K("SILO-31", "F5", "Stockage des photos sur MinIO", { merged: "#19" }), K("SILO-43", "F4", "Synchro au retour du réseau", { merged: "#16" }),
+    K("SILO-42", "F4", "Formulaire de saisie", { merged: "#14" }), K("SILO-41", "F4", "Schéma local des constats", { merged: "#12" }), K("SILO-20", "F3", "Écran de réaffectation"), K("SILO-19", "F3", "Route de réaffectation"),
+    K("SILO-18", "F3", "Historique des affectations"), K("SILO-14", "F2", "Démo · F2")]] ];
 S.phaseLabel = (n) => `Phase ${n}/12 · ${S.STEP[n]}`;
 S.kb = (p, text, fg, o = {}) => { const C = S.C; const c = S.row(p, { name: "badge", pad: o.pill ? [2, 8] : [2, 6], gap: 4, radius: o.pill ? 10 : 4, fill: o.bg || null, stroke: o.bg ? null : C.border, dashed: o.dashed });
   if (o.icon) S.icon(c, o.icon, 11, o.ic || fg); if (o.ring) S.ring(c, C.amber, 9, 2); if (text) S.txt(c, text, { size: 11, weight: 500, mono: o.mono, color: fg }); return c; };
-S.kcard = (p, t) => { const C = S.C, sec = C.mfg, done = !!t.merged || ["EMIS-20", "EMIS-19", "EMIS-18", "EMIS-14"].includes(t.key);
+S.kcard = (p, t) => { const C = S.C, sec = C.mfg, done = !!t.merged || ["SILO-20", "SILO-19", "SILO-18", "SILO-14"].includes(t.key);
   const c = S.col(p, { name: "card " + t.key, fx: true, pad: [10, 12], gap: 8, radius: 8, fill: C.card, stroke: t.live ? C.brandLine : C.border });
   const a = S.row(c, { fx: true, gap: 5 }); S.txt(a, t.key, { size: 11.5, mono: true, color: sec, name: "key" });
   if (t.f) { S.txt(a, "·", { size: 11.5, color: C.faint }); S.txt(a, t.f, { size: 11.5, mono: true, color: sec }); }
@@ -255,11 +255,11 @@ S.sec27 = (p, title, o = {}) => { const C = S.C; const c = S.col(p, { name: "sec
 S.switch = (p, on) => { const C = S.C; const t = S.box(p, { name: "switch", w: 32, h: 18, radius: 9, fill: on ? C.fg : C.track, dir: "row", align: "center", justify: on ? "end" : "start", pad: [0, 2] }); S.dot(t, C.bg, 14); return t; };
 S.kv = (p, label, build) => { const C = S.C; const r = S.row(p, { fx: true, h: 30, gap: 10 }); const l = S.row(r, { w: 96 }); S.txt(l, label, { size: 12.5, color: C.mfg }); const v = S.row(r, { fx: true, gap: 6 }); build(v); return r; };
 S.ACT27 = [["14:34", "bot", "brand", "Session T3 Code ouverte", null], ["13:47", "pr", "amber", "Changements demandés sur PR #20", null], ["11:58", "circleX", "red", "CI cassée sur PR #20", "job e2e"],
-  ["hier 17:12", "flag", null, "Étape 9 · Review", null], ["hier 16:40", "pr", "purple", "PR #20 ouverte", "En review"], ["mer. 10:05", "branch", "blue", "Branche feat/emis-45 poussée", "En cours"]];
+  ["hier 17:12", "flag", null, "Étape 9 · Review", null], ["hier 16:40", "pr", "purple", "PR #20 ouverte", "En review"], ["mer. 10:05", "branch", "blue", "Branche feat/silo-45 poussée", "En cours"]];
 S.sheet27 = (f, tab) => { const C = S.C, sec = C.mfg;
   const sh = S.col(f, { name: "sheet", x: f.width - 560, y: 0, w: 560, h: f.height, fill: C.bg, stroke: C.border, shadow: 12, clip: true });
-  const top = S.row(sh, { fx: true, h: 52, pad: [0, 16, 0, 24], gap: 8 }); S.icon(top, "ticket", 14, sec); S.txt(top, "EMIS-45", { size: 12.5, mono: true, color: sec, name: "key" });
-  S.spacer(top); S.btn(top, "Copier /full-delivery EMIS-45", "outline", { sm: true, icon: "copy" }); S.icon(top, "link", 15, sec); S.icon(top, "more", 15, sec); S.btn(top, "Fermer", "ghost", { sm: true, icon: "x" });
+  const top = S.row(sh, { fx: true, h: 52, pad: [0, 16, 0, 24], gap: 8 }); S.icon(top, "ticket", 14, sec); S.txt(top, "SILO-45", { size: 12.5, mono: true, color: sec, name: "key" });
+  S.spacer(top); S.btn(top, "Copier /full-delivery SILO-45", "outline", { sm: true, icon: "copy" }); S.icon(top, "link", 15, sec); S.icon(top, "more", 15, sec); S.btn(top, "Fermer", "ghost", { sm: true, icon: "x" });
   S.hline(sh, C.soft);
   const body = S.col(sh, { fx: true, fy: true, pad: [18, 24], gap: 16 });
   const hl = S.row(body, { name: "header-line", gap: 6 }); S.fChip2(hl, "F4"); S.txt(hl, "·", { size: 12.5, color: C.faint }); S.icon(hl, "sprint", 12, sec); S.txt(hl, "S42", { size: 12.5, mono: true, color: sec });
@@ -278,14 +278,14 @@ S.sheet27 = (f, tab) => { const C = S.C, sec = C.mfg;
   S.hline(tw, C.soft);
   if (tab === "details") {
     const tr = S.sec27(body, "Suivi", { meta: "remonté de git, des PR et de full-delivery", gap: 4 });
-    S.kv(tr, "Branche", v => { S.icon(v, "branch", 13, C.blue); S.txt(v, "feat/emis-45", { size: 12.5, mono: true }); S.txt(v, "sur", { size: 12.5, color: sec }); S.txt(v, "dev", { size: 12.5, mono: true }); S.txt(v, "déclarée", { size: 12.5, color: sec }); });
+    S.kv(tr, "Branche", v => { S.icon(v, "branch", 13, C.blue); S.txt(v, "feat/silo-45", { size: 12.5, mono: true }); S.txt(v, "sur", { size: 12.5, color: sec }); S.txt(v, "dev", { size: 12.5, mono: true }); S.txt(v, "déclarée", { size: 12.5, color: sec }); });
     S.kv(tr, "PR", v => { S.icon(v, "pr", 13, C.purple); S.txt(v, "#20", { size: 12.5, mono: true, weight: 500 }); S.txt(v, "ouverte hier à 16:40", { size: 12.5, color: sec }); });
     S.kv(tr, "Review", v => { S.kb(v, "changements demandés", C.amber, { bg: C.amberSoft }); S.txt(v, "13:47", { size: 12.5, color: sec }); });
     S.kv(tr, "CI", v => { S.kb(v, "CI cassée", C.red, { icon: "circleX", bg: C.redSoft }); S.txt(v, "job e2e · 11:58", { size: 12.5, color: sec }); });
     S.kv(tr, "Session", v => { S.halo(v, C.brand, 6); S.txt(v, "T3 Code · 18 min", { size: 12.5, color: C.brandText, weight: 500 }); });
     S.kv(tr, "Livraison", v => { S.segs(v, S.stepColors(9), { w: 5, h: 12, gap: 2, radius: 1 }); S.txt(v, "Phase 9/12 · Review", { size: 12.5 }); S.txt(v, "· suivante : Démo", { size: 12.5, color: sec }); });
     S.hline(body, C.soft);
-    const ds = S.sec27(body, "Description", { after: h => S.txt(h, "Modifier", { size: 12.5, weight: 500 }) }); S.txt(ds, "Deux saisies hors ligne du même tronçon : garder la plus récente et signaler l'autre au chef de chantier au retour du réseau.", { size: 13, lh: 1.55, fill: true });
+    const ds = S.sec27(body, "Description", { after: h => S.txt(h, "Modifier", { size: 12.5, weight: 500 }) }); S.txt(ds, "Deux saisies hors ligne du même constat : garder la plus récente et signaler l'autre au chef de centre au retour du réseau.", { size: 13, lh: 1.55, fill: true });
     S.hline(body, C.soft);
     const dp = S.sec27(body, "Dépendances", { gap: 12 }); S.txt(dp, "Aucune", { size: 12.5, color: sec }); S.btn(dp, "Ajouter une dépendance", "outline", { sm: true, icon: "plus", pad: [8, 12], size: 12.5 });
     S.hline(body, C.soft);
@@ -310,9 +310,9 @@ S.draw["p-fiche-act"] = (x, y) => S.draw["p-fiche"](x, y, "activity");
 
 // ---------- P9 · Questions : Qn, « bloquante », bloquantes en tête, export ----------
 S.QUESTIONS27 = [
-  { id: "Q14", tk: "EMIS-51", f: "F6", group: "Lecture du fichier Excel", text: "Un ISO réaffecté garde-t-il ses photos ?", to: "Emis SA", blocking: true, age: "il y a 3 j" },
-  { id: "Q16", tk: "EMIS-34", f: "F5", group: "Tests E2E de l'envoi", text: "Quota par affaire : 2 Go ou 5 Go ?", to: "Produit", age: "hier" },
-  { id: "Q17", tk: "EMIS-81", f: "F7", group: "Modèle du rapport", text: "Un rapport par chef de chantier ou par affaire ?", to: "Emis SA", age: "il y a 2 h" } ];
+  { id: "Q14", tk: "SILO-51", f: "F6", group: "Lecture du fichier Excel", text: "Un box réaffecté garde-t-il ses photos ?", to: "Silo SA", blocking: true, age: "il y a 3 j" },
+  { id: "Q16", tk: "SILO-34", f: "F5", group: "Tests E2E de l'envoi", text: "Quota par client : 2 Go ou 5 Go ?", to: "Produit", age: "hier" },
+  { id: "Q17", tk: "SILO-81", f: "F7", group: "Modèle du rapport", text: "Un rapport par chef de centre ou par client ?", to: "Silo SA", age: "il y a 2 h" } ];
 S.qcard27 = (p, q) => { const C = S.C, sec = C.mfg;
   const g = S.col(p, { name: "group " + q.tk, fx: true, gap: 8 });
   const gh = S.row(g, { gap: 8 }); S.txt(gh, q.tk, { size: 12, mono: true, color: sec }); S.txt(gh, q.group, { size: 13, weight: 600 }); S.fChip2(gh, q.f);
@@ -329,7 +329,7 @@ S.draw["p-questions"] = (x, y) => { const C = S.C, sec = C.mfg;
   const tb = S.row(main, { name: "toolbar", fx: true, h: 52, pad: [0, 16], gap: 8 });
   const seg = S.row(tb, { pad: 2, radius: 7, fill: C.muted, gap: 2 });
   for (const [l, on] of [["Ouvertes", true], ["Répondues"], ["Toutes"], ["Archivées"]]) { const s = S.row(seg, { pad: [4, 10], radius: 5, fill: on ? C.bg : null, stroke: on ? C.border : null }); S.txt(s, l, { size: 12.5, weight: 500, color: on ? C.fg : sec }); }
-  const rc = S.row(tb, { gap: 4 }); for (const [l, n, on] of [["Tous", "3", true], ["Emis SA", "2"], ["Produit", "1"]]) { const s = S.row(rc, { pad: [4, 10], gap: 6, radius: 6, stroke: on ? C.mfg : C.border }); S.txt(s, l, { size: 12.5, weight: 500, color: on ? C.fg : sec }); S.txt(s, n, { size: 11, mono: true, color: C.dim }); }
+  const rc = S.row(tb, { gap: 4 }); for (const [l, n, on] of [["Tous", "3", true], ["Silo SA", "2"], ["Produit", "1"]]) { const s = S.row(rc, { pad: [4, 10], gap: 6, radius: 6, stroke: on ? C.mfg : C.border }); S.txt(s, l, { size: 12.5, weight: 500, color: on ? C.fg : sec }); S.txt(s, n, { size: 11, mono: true, color: C.dim }); }
   S.spacer(tb); S.btn(tb, "Exporter pour le client (2)", "outline", { sm: true, icon: "upload" }); S.btn(tb, "Nouvelle question", "default", { sm: true, icon: "plus" });
   S.hline(main, C.soft);
   const list = S.col(main, { name: "list", fx: true, fy: true, pad: [18, 24], gap: 20 });
@@ -338,10 +338,10 @@ S.draw["p-questions"] = (x, y) => { const C = S.C, sec = C.mfg;
   const pop = S.col(f, { name: "export-preview", x: 1440 - 16 - 420 - 150, y: 48 + 46, w: 420, pad: 14, gap: 10, radius: 10, stroke: C.border, fill: C.card, shadow: 10 });
   const ph = S.row(pop, { fx: true, gap: 8 }); S.txt(ph, "Texte exporté", { size: 13, weight: 600 }); S.spacer(ph); S.txt(ph, "2 questions client", { size: 12, color: sec });
   const pre = S.col(pop, { fx: true, pad: [10, 12], gap: 6, radius: 6, fill: C.muted });
-  const lines = [["Questions pour Emis SA · 16 oct. 2026"], [""], ["Q14 · Un ISO réaffecté garde-t-il ses photos ?"],
-    ["   bloque « Importer les ISO depuis Excel »,", sec], ["prévue semaine du 19 oct. · réponse souhaitée", sec], ["avant le 19 oct.", sec], [""],
-    ["Q17 · Un rapport par chef de chantier ou par"], ["affaire ?"],
-    ["   pour « Rapport de chantier journalier », prévue", sec], ["semaine du 26 oct. · réponse souhaitée avant le 26", sec], ["oct.", sec]];
+  const lines = [["Questions pour Silo SA · 16 oct. 2026"], [""], ["Q14 · Un box réaffecté garde-t-il ses photos ?"],
+    ["   bloque « Importer les box depuis Excel »,", sec], ["prévue semaine du 19 oct. · réponse souhaitée", sec], ["avant le 19 oct.", sec], [""],
+    ["Q17 · Un rapport par chef de centre ou par"], ["client ?"],
+    ["   pour « Rapport de centre journalier », prévue", sec], ["semaine du 26 oct. · réponse souhaitée avant le 26", sec], ["oct.", sec]];
   for (const [l, color] of lines) S.txt(pre, l || " ", { name: "export-line", size: 12, mono: true, color: color || C.fg });
   const pf = S.row(pop, { fx: true, gap: 8 }); S.txt(pf, "Les questions exportées sont marquées envoyées.", { size: 12, color: sec, fill: true }); S.btn(pf, "Copier", "default", { sm: true, icon: "copy" });
   S.toast(f, "2 questions marquées envoyées", "Annuler", { x: 1440 - 24 - 340, y: 1000 - 24 - 54 });
@@ -366,7 +366,7 @@ S.draw["p-agent-q"] = (x, y) => { const C = S.C, sec = C.mfg; const { f, ap } = 
   const qr = S.row(b, { fx: true, justify: "end" }); const q = S.col(qr, { name: "user-question", w: 240, pad: [10, 12], gap: 4, radius: 10, fill: C.muted });
   S.txt(q, "Pourquoi F5 glisse en S43 ?", { size: 13, fill: true, lh: 1.45 }); S.txt(q, "Adam · 14:48", { size: 12, color: C.dim });
   const ar = S.row(b, { fx: true, gap: 10, align: "start" }); S.agentMark(ar, 24); const ac = S.col(ar, { fx: true, gap: 8 });
-  S.txt(ac, "Il reste 4 étapes à F5 et S42 finit ce soir. EMIS-32 attend sa review, EMIS-33 est en porte qualité depuis 42 min, EMIS-34 et EMIS-35 n'ont pas commencé.", { size: 13, lh: 1.55, fill: true });
+  S.txt(ac, "Il reste 4 étapes à F5 et S42 finit ce soir. SILO-32 attend sa review, SILO-33 est en porte qualité depuis 42 min, SILO-34 et SILO-35 n'ont pas commencé.", { size: 13, lh: 1.55, fill: true });
   S.txt(ac, "Je propose de la reporter en S43 : c'est la première action du lot n° 7.", { size: 13, lh: 1.55, fill: true });
   S.txt(ac, "Lu : Planning, F5, journal des étapes", { size: 12, color: C.dim });
   const lot = S.col(b, { fx: true, stroke: C.brandLine, radius: 10, clip: true, fill: C.card });

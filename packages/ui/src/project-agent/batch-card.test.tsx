@@ -7,14 +7,14 @@ import { projectQuestionLinks, QuestionLinksContext } from "../moments/QuestionT
 import { AgentsProvider } from "../state/agents-context";
 import { BatchCard, type Decision } from "./BatchCard";
 import { defaultLabels, projectLabels } from "./batch-groups";
-import { emisProject, partialBatch, pendingBatch, questionsProject } from "./fixtures";
+import { partialBatch, pendingBatch, questionsProject, siloProject } from "./fixtures";
 
 function show(batch: Batch, readOnly = false) {
   const decisions: Decision[] = [];
   render(
     <BatchCard
       batch={batch}
-      labels={projectLabels(emisProject())}
+      labels={projectLabels(siloProject())}
       signals={[]}
       afterWakeup={false}
       readOnly={readOnly}
@@ -29,7 +29,7 @@ function show(batch: Batch, readOnly = false) {
 
 test("a pending batch shows its summary, four groups, every box checked and Valider (7)", () => {
   const { card } = show(pendingBatch());
-  expect(card.getByText("Passer EMIS-11 en review et lancer l'export")).toBeTruthy();
+  expect(card.getByText("Passer SILO-11 en review et lancer l'export")).toBeTruthy();
   expect(card.getAllByRole("group").map((g) => g.getAttribute("aria-label"))).toEqual([
     "Tickets",
     "Agents",
@@ -50,8 +50,8 @@ test("a pending batch shows its summary, four groups, every box checked and Vali
 test("Valider counts the checked boxes and sends only them, in order", async () => {
   const { card, decisions } = show(pendingBatch());
   const user = userEvent.setup();
-  await user.click(card.getByRole("checkbox", { name: "Assigner EMIS-12 à opus" }));
-  await user.click(card.getByRole("checkbox", { name: /^Question sur EMIS-12/ }));
+  await user.click(card.getByRole("checkbox", { name: "Assigner SILO-12 à opus" }));
+  await user.click(card.getByRole("checkbox", { name: /^Question sur SILO-12/ }));
   await user.click(card.getByRole("button", { name: "Valider (5)" }));
   expect(decisions).toEqual([{ decision: "apply", actionIds: [1, 2, 3, 6, 7] }]);
 });
@@ -101,7 +101,7 @@ test("after the decision each action shows its result and no box or button remai
   expect(card.getByText("Échec")).toBeTruthy();
   expect(card.getByText("profil désactivé")).toBeTruthy();
   expect(card.getAllByText("Ignorée")).toHaveLength(2);
-  expect(card.getByText("EMIS-13")).toBeTruthy();
+  expect(card.getByText("SILO-13")).toBeTruthy();
 });
 
 test("a batch being applied (partial without results) says so and never shows a failure", () => {
@@ -148,8 +148,8 @@ test("an agent action names the existing run of its ticket, and a cancel names i
     ...base,
     runs: [
       ...base.runs,
-      runFixture({ id: "e1", ticketKey: "EMIS-12", label: "opus-dev-4", state: "done", createdAt: 1 }),
-      runFixture({ id: "e2", ticketKey: "EMIS-12", label: "opus-dev-5", state: "running", createdAt: 2 }),
+      runFixture({ id: "e1", ticketKey: "SILO-12", label: "opus-dev-4", state: "done", createdAt: 1 }),
+      runFixture({ id: "e2", ticketKey: "SILO-12", label: "opus-dev-5", state: "running", createdAt: 2 }),
     ],
   };
   const batch = pendingBatch({
@@ -159,7 +159,7 @@ test("an agent action names the existing run of its ticket, and a cancel names i
     <AgentsProvider agents={agents}>
       <BatchCard
         batch={batch}
-        labels={projectLabels(emisProject())}
+        labels={projectLabels(siloProject())}
         signals={[]}
         afterWakeup={false}
         readOnly={false}
@@ -168,7 +168,7 @@ test("an agent action names the existing run of its ticket, and a cancel names i
     </AgentsProvider>,
   );
   const agentsGroup = within(screen.getByRole("group", { name: "Agents" }));
-  expect(agentsGroup.getByText("Assigner EMIS-12 à opus")).toBeTruthy();
+  expect(agentsGroup.getByText("Assigner SILO-12 à opus")).toBeTruthy();
   expect(agentsGroup.getByRole("button", { name: "opus-dev-5" })).toBeTruthy();
   expect(agentsGroup.getByRole("button", { name: "opus-dev-4" })).toBeTruthy();
 });
@@ -179,7 +179,7 @@ test("a question line names its question, previews it and opens it", async () =>
   const batch = pendingBatch({
     actions: [
       { id: 1, type: "addRecipient", name: "Galadrim", why: "" },
-      { id: 2, type: "createQuestion", ticket: "EMIS-11", title: "Police ?", recipient: "client", why: "" },
+      { id: 2, type: "createQuestion", ticket: "SILO-11", title: "Police ?", recipient: "client", why: "" },
       {
         id: 3,
         type: "updateQuestion",
@@ -206,7 +206,7 @@ test("a question line names its question, previews it and opens it", async () =>
   );
   const group = within(screen.getByRole("group", { name: "Questions" }));
   expect(group.getByText("Ajouter le destinataire « Galadrim »")).toBeTruthy();
-  expect(group.getByText("Question sur EMIS-11 pour Client : « Police ? »")).toBeTruthy();
+  expect(group.getByText("Question sur SILO-11 pour Client : « Police ? »")).toBeTruthy();
   expect(group.getByText("Titre :")).toBeTruthy();
   expect(group.getByText("Client - Logo ?")).toBeTruthy();
   expect(group.getByText("Destinataire :")).toBeTruthy();
@@ -237,7 +237,7 @@ test("a question line names the run its answer was delivered to", async () => {
         : q,
     ),
   };
-  const runs = [runFixture({ id: "e1", ticketKey: "EMIS-12", label: "opus-dev-4", state: "done" })];
+  const runs = [runFixture({ id: "e1", ticketKey: "SILO-12", label: "opus-dev-4", state: "done" })];
   render(
     <QuestionLinksContext.Provider value={projectQuestionLinks(project, runs, () => {})}>
       <BatchCard

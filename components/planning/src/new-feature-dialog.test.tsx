@@ -126,8 +126,8 @@ test("on the Saturday after S42, the first sprint not ended is proposed and S42 
   expect(labels).toEqual([
     "À planifier",
     "S41 Accès (terminé)",
-    "S42 Terrain hors ligne (terminé)",
-    "S43 Import et soudures",
+    "S42 Saisie hors ligne (terminé)",
+    "S43 Import et contrats",
     "S44 Rapports",
   ]);
 });

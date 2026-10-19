@@ -33,7 +33,7 @@ export function build(today: string = TODAY) {
   });
   const ages = [NOW - 3 * DAY, NOW - DAY - 3_600_000, NOW - 2 * 3_600_000];
   const questions = s.questions.map((q, i) => ({ ...q, createdAt: ages[i] ?? NOW }));
-  const f3 = byTitle("Réaffecter un ISO");
+  const f3 = byTitle("Réaffecter un box");
   const event = (
     id: number,
     time: string,
@@ -52,7 +52,7 @@ export function build(today: string = TODAY) {
     source,
     data,
   });
-  const f5 = byTitle("Envoyer les photos d'un tronçon");
+  const f5 = byTitle("Envoyer les photos d'un constat");
   const events: ProjectEvent[] = [
     event(1, "13:10", "pr_checks", byTitle("Passage à Expo SDK 54"), null, "git", {
       number: 23,

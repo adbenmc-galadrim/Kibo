@@ -1,40 +1,40 @@
 import { afterEach, expect, test } from "bun:test";
 import type { CiRun, GithubPrRef, TicketView } from "@kibo/schema";
 import { cleanup, render, screen } from "@testing-library/react";
-import { emisFeatureProject } from "../shell/feature/fixture";
+import { siloFeatureProject } from "../shell/feature/fixture";
 import { TrackingBanner } from "./TrackingBanner";
 
 afterEach(cleanup);
 
-const e45 = emisFeatureProject().tickets.find((t) => t.id === "e33") as TicketView;
-const PR_URL = "https://github.com/galadrim/emis/pull/20";
+const e45 = siloFeatureProject().tickets.find((t) => t.id === "e33") as TicketView;
+const PR_URL = "https://github.com/silo-labs/silo-location/pull/20";
 const pr = (patch: Partial<GithubPrRef> = {}): GithubPrRef => ({
   kind: "github_pr",
   url: PR_URL,
   number: 20,
   state: "open",
   base: "dev",
-  head: "feat/emis-45",
+  head: "feat/silo-45",
   review: "none",
   checks: null,
   ...patch,
 });
 const ticket = (ref: GithubPrRef): TicketView => ({
   ...e45,
-  key: "EMIS-45",
-  keyLabel: "EMIS-45",
+  key: "SILO-45",
+  keyLabel: "SILO-45",
   externalRefs: [ref],
 });
 const run = (patch: Partial<CiRun>): CiRun => ({
-  repo: "galadrim/emis",
+  repo: "silo-labs/silo-location",
   runId: 7,
   prNumber: 20,
-  ticketKey: "EMIS-45",
+  ticketKey: "SILO-45",
   headSha: "abc",
   workflow: "CI",
   status: "completed",
   conclusion: "failure",
-  url: "https://github.com/galadrim/emis/actions/runs/7",
+  url: "https://github.com/silo-labs/silo-location/actions/runs/7",
   startedAt: null,
   updatedAt: "2026-10-16T12:00:00Z",
   jobs: [],
@@ -48,7 +48,7 @@ test("changes requested and a broken CI make one banner with links to the PR and
   expect(banner.className).toContain("amber");
   expect(screen.getByRole("link", { name: "PR" }).getAttribute("href")).toBe(PR_URL);
   expect(screen.getByRole("link", { name: "Job" }).getAttribute("href")).toBe(
-    "https://github.com/galadrim/emis/actions/runs/7",
+    "https://github.com/silo-labs/silo-location/actions/runs/7",
   );
 });
 
@@ -94,7 +94,7 @@ test("the job link of a broken CI names the failed job and points to it", () => 
   };
   render(<TrackingBanner ticket={ticket(pr({ checks: "error" }))} ciRuns={[run({ jobs: [job] })]} />);
   expect(screen.getByRole("link", { name: "Job lint" }).getAttribute("href")).toBe(
-    "https://github.com/galadrim/emis/actions/runs/7/job/4",
+    "https://github.com/silo-labs/silo-location/actions/runs/7/job/4",
   );
 });
 

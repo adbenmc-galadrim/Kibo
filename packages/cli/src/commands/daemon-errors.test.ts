@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
 import { runCli } from "../index";
-import { EMIS_META, fakeSnapshot } from "./tickets-test-kit";
+import { fakeSnapshot, SILO_META } from "./tickets-test-kit";
 
 type Answer = { ok: true; result: unknown } | { ok: false; error: { code: string; message: string } };
 type Rpc = (method: string) => Answer | Response | null;
@@ -36,7 +36,7 @@ function fakeOldDaemon(answer: Rpc) {
         return new Response(null, { status: 204, headers: { "set-cookie": "s=1" } });
       const { method } = (await req.json()) as { method: string };
       if (method === "listSessions") return Response.json(ok([]));
-      if (method === "listProjects") return Response.json(ok([{ ...EMIS_META, counts: {} }]));
+      if (method === "listProjects") return Response.json(ok([{ ...SILO_META, counts: {} }]));
       if (method === "getProject") return Response.json(ok(fakeSnapshot()));
       const given = answer(method) ?? refused("INVALID_INPUT", "invalid request: method");
       return given instanceof Response ? given : Response.json(given);
@@ -56,7 +56,7 @@ function fakeOldDaemon(answer: Rpc) {
 
 test("an unknown method names the daemon, its version and the command to update for", async () => {
   const d = fakeOldDaemon((m) => (m === "getAppInfo" ? ok(APP_INFO) : null));
-  expect(await d.run("tickets", "set", "EMIS-33", "branch=feat/x")).toBe(1);
+  expect(await d.run("tickets", "set", "SILO-33", "branch=feat/x")).toBe(1);
   expect(d.err).toEqual([
     "Le démon ~/.kibo (0.23.0-alpha.3) est trop ancien pour kibo tickets set : mets Kibo à jour, puis réessaie.",
   ]);
@@ -65,16 +65,16 @@ test("an unknown method names the daemon, its version and the command to update 
 test("any other refusal keeps its code and names the daemon", async () => {
   const d = fakeOldDaemon((m) => {
     if (m === "getAppInfo") return ok({ ...APP_INFO, version: "0.27.0-alpha.1" });
-    if (m === "declareTicketRef") return refused("NOT_FOUND", "ticket EMIS-33");
+    if (m === "declareTicketRef") return refused("NOT_FOUND", "ticket SILO-33");
     return null;
   });
-  expect(await d.run("tickets", "set", "EMIS-33", "branch=feat/x")).toBe(1);
-  expect(d.err).toEqual(["Erreur NOT_FOUND : ticket EMIS-33 (démon ~/.kibo, 0.27.0-alpha.1)"]);
+  expect(await d.run("tickets", "set", "SILO-33", "branch=feat/x")).toBe(1);
+  expect(d.err).toEqual(["Erreur NOT_FOUND : ticket SILO-33 (démon ~/.kibo, 0.27.0-alpha.1)"]);
 });
 
 test("falls back on the home it reached when the daemon cannot tell its version", async () => {
   const d = fakeOldDaemon(() => null);
-  expect(await d.run("tickets", "set", "EMIS-33", "status=wip")).toBe(1);
+  expect(await d.run("tickets", "set", "SILO-33", "status=wip")).toBe(1);
   expect(d.err.at(-1)).toMatch(
     /^Le démon \/.+kibo-cli-old-\S+ \(version inconnue\) est trop ancien pour kibo tickets set :/,
   );
@@ -83,11 +83,11 @@ test("falls back on the home it reached when the daemon cannot tell its version"
 test("keeps the original error when getAppInfo answers garbage", async () => {
   const d = fakeOldDaemon((m) => {
     if (m === "getAppInfo") return new Response("<html>", { headers: { "content-type": "text/html" } });
-    if (m === "declareTicketRef") return refused("NOT_FOUND", "ticket EMIS-33");
+    if (m === "declareTicketRef") return refused("NOT_FOUND", "ticket SILO-33");
     return null;
   });
-  expect(await d.run("tickets", "set", "EMIS-33", "branch=feat/x")).toBe(1);
+  expect(await d.run("tickets", "set", "SILO-33", "branch=feat/x")).toBe(1);
   expect(d.err.at(-1)).toMatch(
-    /^Erreur NOT_FOUND : ticket EMIS-33 \(démon \/\S+kibo-cli-old-\S+, version inconnue\)$/,
+    /^Erreur NOT_FOUND : ticket SILO-33 \(démon \/\S+kibo-cli-old-\S+, version inconnue\)$/,
   );
 });

@@ -144,18 +144,18 @@ const withBatch = (state: AgentsState, pendingBatchId: string | null): AgentsSta
   ...state,
   runs: [
     ...state.runs,
-    runFixture({ id: "pa1", kind: "project", ticketKey: null, ticketTitle: "Agent de projet · Emis" }),
+    runFixture({ id: "pa1", kind: "project", ticketKey: null, ticketTitle: "Agent de projet · Silo" }),
   ],
-  projectAgents: [{ projectId: "emis", runId: "pa1", state: "done", pendingBatchId }],
+  projectAgents: [{ projectId: "silo", runId: "pa1", state: "done", pendingBatchId }],
 });
 
 test("a batch waiting for validation is announced once as « Lot à valider »", () => {
   const first = agentsFixture();
   expect(batchNotices(new Map(), withBatch(first, "b1"))).toEqual([
-    { title: "Lot à valider", body: "Agent de projet · Emis", runId: null },
+    { title: "Lot à valider", body: "Agent de projet · Silo", runId: null },
   ]);
-  expect(batchNotices(new Map([["emis", "b1"]]), withBatch(first, "b1"))).toEqual([]);
-  expect(batchNotices(new Map([["emis", "b1"]]), withBatch(first, null))).toEqual([]);
+  expect(batchNotices(new Map([["silo", "b1"]]), withBatch(first, "b1"))).toEqual([]);
+  expect(batchNotices(new Map([["silo", "b1"]]), withBatch(first, null))).toEqual([]);
   withNotification("granted", (shown) => {
     const view = renderHook(({ state }) => useRunNotifications(state, true), {
       initialProps: { state: withBatch(first, null) },

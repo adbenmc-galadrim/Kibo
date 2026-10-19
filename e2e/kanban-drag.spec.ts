@@ -196,7 +196,7 @@ const LONG_WORDS =
   "Relire toutes les étiquettes du tableau de bord et harmoniser les intitulés des colonnes avant la démonstration";
 
 const LONG_PATH =
-  "Étape 3 · Première table synchronisée : mettre dans apps/web/src/lib/powersync/registry.ts la première table";
+  "Étape 3 · Première table synchronisée : mettre dans apps/web/src/lib/sync/registry.ts la première table";
 
 const overflowOf = (el: Element) => ({
   x: el.scrollWidth - el.clientWidth,

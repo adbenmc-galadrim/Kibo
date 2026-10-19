@@ -28,10 +28,10 @@ test("project returns the snapshot with the viewer; an unknown project is NOT_FO
   const h = setup();
   h.ticket("Hooks");
   const snap = h.data.project(h.project.id);
-  expect(snap.meta.key).toBe("EMIS");
+  expect(snap.meta.key).toBe("SILO");
   expect(snap.viewer).toBe("adam");
   expect(snap.tickets.map((t) => t.title)).toEqual(["Hooks"]);
-  expect(h.data.projectName(h.project.id)).toBe("Emis");
+  expect(h.data.projectName(h.project.id)).toBe("Silo");
   expect(h.data.projectFolder(h.project.id)).toBeNull();
   expect(h.data.viewer(h.project.id)).toBe("adam");
   expect(await codeOf(() => h.data.project("nope"))).toBe("NOT_FOUND");

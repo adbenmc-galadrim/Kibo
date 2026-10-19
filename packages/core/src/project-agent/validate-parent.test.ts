@@ -39,11 +39,11 @@ const assign = (ticketRef: string, profileId: string, id = 1): ProposedAction =>
 
 test("a parent ticket is never assigned, whatever the agent", () => {
   for (const profileId of ["global:opus-dev", "system:demo", "nope"]) {
-    expect(problems([assign("EMIS-1", profileId)], ctx({ demoProject: true }))).toEqual([
+    expect(problems([assign("SILO-1", profileId)], ctx({ demoProject: true }))).toEqual([
       "#1 ce ticket regroupe 5 sous-tickets : lance les sous-tickets",
     ]);
   }
-  expect(problems([assign("EMIS-2", "global:opus-dev")])).toEqual([]);
+  expect(problems([assign("SILO-2", "global:opus-dev")])).toEqual([]);
 });
 
 test("a child the batch gives the ticket counts, before or after the assignment", () => {
@@ -56,12 +56,12 @@ test("a child the batch gives the ticket counts, before or after the assignment"
     parent,
   });
   const refused = ["#2 ce ticket regroupe 1 sous-ticket : lance les sous-tickets"];
-  expect(problems([child(1, "EMIS-7"), assign("EMIS-7", "global:opus-dev", 2)])).toEqual(refused);
-  expect(problems([assign("EMIS-7", "global:opus-dev", 2), child(1, "EMIS-7")])).toEqual(refused);
+  expect(problems([child(1, "SILO-7"), assign("SILO-7", "global:opus-dev", 2)])).toEqual(refused);
+  expect(problems([assign("SILO-7", "global:opus-dev", 2), child(1, "SILO-7")])).toEqual(refused);
   expect(
     problems([
-      { id: 1, why, type: "updateTicket", ticket: "EMIS-2", parent: "EMIS-7" },
-      assign("EMIS-7", "global:opus-dev", 2),
+      { id: 1, why, type: "updateTicket", ticket: "SILO-2", parent: "SILO-7" },
+      assign("SILO-7", "global:opus-dev", 2),
     ]),
   ).toEqual(refused);
 });

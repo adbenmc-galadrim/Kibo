@@ -3,8 +3,8 @@ import { suggestProjectKey } from "./project-key";
 
 test.each([
   ["Kibo", "KIB"],
-  ["Emis", "EMI"],
-  ["Suivi de chantier", "SC"],
+  ["Silo", "SIL"],
+  ["Location de box", "LB"],
   ["Gestion des stocks et des achats", "GSA"],
   ["De la suite", "DLS"],
   ["API Facturation", "AF"],

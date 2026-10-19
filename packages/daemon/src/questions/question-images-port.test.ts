@@ -16,7 +16,7 @@ const question = (images: Question["images"]) =>
     options: [],
     provisional: null,
     blocking: true,
-    createdBy: { kind: "agent", ref: "emis-livraison" },
+    createdBy: { kind: "agent", ref: "silo-livraison" },
     createdAt: 1,
     answer: null,
     kind: "validation",
@@ -32,8 +32,8 @@ test("the delivery root of the project is the third allowed folder", () => {
     fs: nodeImageFs,
     log: (l: string) => lines.push(l),
   };
-  const port = questionImagesOf(deps, (projectId) => (projectId === "p1" ? join(root, "emis") : null));
-  const shot = writeImage(join(root, "emis/docs/1.png"));
+  const port = questionImagesOf(deps, (projectId) => (projectId === "p1" ? join(root, "silo") : null));
+  const shot = writeImage(join(root, "silo/docs/1.png"));
   expect(port.prepare("p1", null, [shot]).map((p) => p.image.name)).toEqual(["1.png"]);
   expect(port.prepare("p2", null, [shot])).toEqual([]);
   expect(lines).toEqual(["image omise 1.png : hors des dossiers permis"]);

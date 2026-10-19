@@ -6,7 +6,7 @@ const FEATURE = fakeTicket({ id: "f6", key: "F6", shortKey: "F6" });
 const MINE = {
   ...fakeTicket({
     id: "mine",
-    key: "EMIS-60",
+    key: "SILO-60",
     refs: [{ kind: "git_branch", branch: "feat/x", base: "dev" }],
   }),
   assignee: { kind: "human" as const, ref: "u-me" },
@@ -20,35 +20,35 @@ async function get(ident: string, flags: Record<string, string> = {}) {
 
 describe("kibo tickets get", () => {
   test("says there is no dependency", async () => {
-    const d = await get("EMIS-50");
+    const d = await get("SILO-50");
     expect(d.code).toBe(0);
     expect(d.out).toContain("Dépendances : aucune");
   });
 
   test("shows the declared branch and names the viewer as assignee", async () => {
-    const d = await get("EMIS-60");
+    const d = await get("SILO-60");
     expect(d.out).toContain("Branche : feat/x (base dev)");
     expect(d.out).toContain("Assigné : moi");
   });
 
   test("finds a feature by its F key once the project is given", async () => {
-    const created = await get("F6", { project: "EMIS" });
+    const created = await get("F6", { project: "SILO" });
     expect(created.code).toBe(0);
     expect(created.out[0]).toBe("F6 · Titre F6");
-    const legacy = await get("F5", { project: "EMIS" });
-    expect(legacy.out[0]).toBe("EMIS-30 · Titre EMIS-30");
+    const legacy = await get("F5", { project: "SILO" });
+    expect(legacy.out[0]).toBe("SILO-30 · Titre SILO-30");
   });
 
   test("asks for --project with a feature key and no project folder", async () => {
     const d = await get("F6");
     expect(d.code).toBe(1);
-    expect(d.err).toEqual(["Erreur INVALID_INPUT : clé de fonctionnalité : précise --project EMIS"]);
+    expect(d.err).toEqual(["Erreur INVALID_INPUT : clé de fonctionnalité : précise --project SILO"]);
     expect(d.calls).toEqual([{ method: "listProjects" }]);
   });
 
   test("keeps asking for --project with a plan id and no project folder", async () => {
     const d = await get("C1-2");
     expect(d.code).toBe(2);
-    expect(d.err).toEqual(["précise --project EMIS"]);
+    expect(d.err).toEqual(["précise --project SILO"]);
   });
 });

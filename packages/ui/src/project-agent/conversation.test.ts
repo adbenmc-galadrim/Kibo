@@ -25,8 +25,8 @@ test("a real log becomes messages, grouped reads, the answer and a red retryable
   const items = buildConversation(CONVERSATION_LOG, [], projectRun({ state: "failed" }));
   expect(shape(items)).toEqual([
     ["user", "Où en est-on ?"],
-    ["reading", ["list_tickets", "get_ticket EMIS-11"]],
-    ["agent", "**EMIS-11** avance ; je propose de le passer en review."],
+    ["reading", ["list_tickets", "get_ticket SILO-11"]],
+    ["agent", "**SILO-11** avance ; je propose de le passer en review."],
     ["user", "Et l'export ?"],
     ["event", "red", true],
   ]);
@@ -187,7 +187,7 @@ test("lastUserMessage skips wakeups: Réessayer never replays one", () => {
 
 test("lastAgentText is the agent's latest answer, or null", () => {
   const items = buildConversation(CONVERSATION_LOG, [], projectRun({ state: "failed" }));
-  expect(lastAgentText(items)).toBe("**EMIS-11** avance ; je propose de le passer en review.");
+  expect(lastAgentText(items)).toBe("**SILO-11** avance ; je propose de le passer en review.");
   expect(lastAgentText([])).toBeNull();
 });
 

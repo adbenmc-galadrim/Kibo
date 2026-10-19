@@ -63,15 +63,15 @@ test("the breadcrumb of a run page leads back to the agents", () => {
 });
 
 test("a sprint tab is titled after its code and its crumbs lead back to the Planning", async () => {
-  const { emisFeatureProject } = await import("../shell/feature/fixture");
-  const emis = emisFeatureProject();
-  const projects = [{ ...emis.meta, counts: projectsFixture[0]?.counts ?? {} }] as typeof projectsFixture;
-  const sprintCtx = { projects, snapshots: new Map([["emis", emis]]) };
-  const sprint: TabTarget = { kind: "sprint", projectId: "emis", sprintId: "s42" };
-  expect(describeTarget(sprint, sprintCtx)).toMatchObject({ title: "Emis · S42", missing: false });
+  const { siloFeatureProject } = await import("../shell/feature/fixture");
+  const silo = siloFeatureProject();
+  const projects = [{ ...silo.meta, counts: projectsFixture[0]?.counts ?? {} }] as typeof projectsFixture;
+  const sprintCtx = { projects, snapshots: new Map([["silo", silo]]) };
+  const sprint: TabTarget = { kind: "sprint", projectId: "silo", sprintId: "s42" };
+  expect(describeTarget(sprint, sprintCtx)).toMatchObject({ title: "Silo · S42", missing: false });
   expect(describeTarget({ ...sprint, sprintId: "gone" }, sprintCtx).missing).toBe(true);
   const planned: ProjectSnapshot = {
-    ...emis,
+    ...silo,
     pages: [{ id: "p-plan", title: "Planning", kind: "view", parentId: null }],
     instances: [
       {
@@ -85,33 +85,33 @@ test("a sprint tab is titled after its code and its crumbs lead back to the Plan
     ],
   };
   expect(crumbsFor(sprint, { project: planned, branch: null }).map((c) => c.label)).toEqual([
-    "Emis",
+    "Silo",
     "Planning",
-    "S42 · Terrain hors ligne",
+    "S42 · Saisie hors ligne",
   ]);
-  expect(crumbsFor(sprint, { project: emis, branch: null }).map((c) => c.label)).toEqual([
-    "Emis",
-    "S42 · Terrain hors ligne",
+  expect(crumbsFor(sprint, { project: silo, branch: null }).map((c) => c.label)).toEqual([
+    "Silo",
+    "S42 · Saisie hors ligne",
   ]);
 });
 
 test("a ticket tab is titled « key · title » and found by its key as well as by its id", async () => {
-  const { emisFeatureProject } = await import("../shell/feature/fixture");
-  const emis = emisFeatureProject();
-  const projects = [{ ...emis.meta, counts: projectsFixture[0]?.counts ?? {} }] as typeof projectsFixture;
-  const emisCtx = { projects, snapshots: new Map([["emis", emis]]) };
-  const byId: TabTarget = { kind: "ticket", projectId: "emis", ticketId: "e33" };
-  const byKey: TabTarget = { kind: "ticket", projectId: "emis", ticketId: "EMIS-33" };
-  expect(describeTarget(byId, emisCtx)).toMatchObject({
-    title: "EMIS-33 · Écran d'envoi hors ligne",
+  const { siloFeatureProject } = await import("../shell/feature/fixture");
+  const silo = siloFeatureProject();
+  const projects = [{ ...silo.meta, counts: projectsFixture[0]?.counts ?? {} }] as typeof projectsFixture;
+  const siloCtx = { projects, snapshots: new Map([["silo", silo]]) };
+  const byId: TabTarget = { kind: "ticket", projectId: "silo", ticketId: "e33" };
+  const byKey: TabTarget = { kind: "ticket", projectId: "silo", ticketId: "SILO-33" };
+  expect(describeTarget(byId, siloCtx)).toMatchObject({
+    title: "SILO-33 · Écran d'envoi hors ligne",
     missing: false,
   });
-  expect(describeTarget(byKey, emisCtx)).toMatchObject({
-    title: "EMIS-33 · Écran d'envoi hors ligne",
+  expect(describeTarget(byKey, siloCtx)).toMatchObject({
+    title: "SILO-33 · Écran d'envoi hors ligne",
     missing: false,
   });
-  expect(describeTarget({ ...byKey, ticketId: "EMIS-999" }, emisCtx).missing).toBe(true);
+  expect(describeTarget({ ...byKey, ticketId: "SILO-999" }, siloCtx).missing).toBe(true);
   const crumbs = (target: TabTarget) =>
-    crumbsFor(target, { project: emis, branch: null }).map((c) => c.label);
+    crumbsFor(target, { project: silo, branch: null }).map((c) => c.label);
   expect(crumbs(byKey)).toEqual(crumbs(byId));
 });

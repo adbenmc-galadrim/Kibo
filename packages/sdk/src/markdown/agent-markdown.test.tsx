@@ -44,8 +44,8 @@ test("the table scrolls in its own frame and long cells wrap", () => {
 test("ticket keys in cells open the ticket", () => {
   const opened: string[] = [];
   view(PLAN_TABLE, (key) => opened.push(key));
-  fireEvent.click(screen.getByRole("button", { name: "EMIS-14" }));
-  expect(opened).toEqual(["EMIS-14"]);
+  fireEvent.click(screen.getByRole("button", { name: "SILO-14" }));
+  expect(opened).toEqual(["SILO-14"]);
 });
 
 test("agent HTML and javascript links never become live nodes", () => {

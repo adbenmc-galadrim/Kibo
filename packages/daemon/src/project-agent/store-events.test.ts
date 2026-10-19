@@ -13,8 +13,8 @@ afterEach(() => {
 
 const ADAM = { kind: "human" as const, ref: "adam" };
 const actions: ProposedAction[] = [
-  { id: 1, why: "", type: "setSprint", ticket: "EMIS-30", sprint: "S43" },
-  { id: 2, why: "", type: "setSprint", ticket: "EMIS-40", sprint: "S44" },
+  { id: 1, why: "", type: "setSprint", ticket: "SILO-30", sprint: "S43" },
+  { id: 2, why: "", type: "setSprint", ticket: "SILO-40", sprint: "S44" },
   { id: 3, why: "", type: "remindQuestion", questionId: "q14" },
 ];
 type Recorded = { projectId: string; event: ProjectEventInput };

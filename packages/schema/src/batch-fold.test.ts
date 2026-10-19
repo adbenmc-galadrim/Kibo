@@ -17,7 +17,7 @@ const rowOf = (count: number): BatchRow => ({
     id: i + 1,
     why: "",
     type: "setStatus" as const,
-    ticket: `EMIS-${i + 1}`,
+    ticket: `SILO-${i + 1}`,
     statusId: "done",
   })),
   expected: [],

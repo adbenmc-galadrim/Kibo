@@ -6,7 +6,7 @@ import { useState } from "react";
 import { apiMock } from "../api-mock";
 import { type Host, HostProvider } from "../shell/Host";
 import type { ProjectAgentTab } from "../shell/use-project-agent-panel";
-import { CONVERSATION_LOG, emisProject, emptyView, pendingBatch, projectRun, viewFixture } from "./fixtures";
+import { CONVERSATION_LOG, emptyView, pendingBatch, projectRun, siloProject, viewFixture } from "./fixtures";
 import { emptySignals, signalsView } from "./signals/fixtures";
 
 const calls: RpcRequest[] = [];
@@ -65,7 +65,7 @@ beforeEach(() => {
 
 function Panel({ initial }: { initial: ProjectAgentTab }) {
   const [tab, setTab] = useState(initial);
-  return <ProjectAgentPanel open project={emisProject()} tab={tab} onTab={setTab} onClose={() => {}} />;
+  return <ProjectAgentPanel open project={siloProject()} tab={tab} onTab={setTab} onClose={() => {}} />;
 }
 
 const show = (initial: ProjectAgentTab = "conversation") =>
@@ -92,9 +92,9 @@ test("the conversation is rendered with its batch card", async () => {
   show();
   await toConversation();
   expect(await panel().findByText("Où en est-on ?")).toBeTruthy();
-  expect(panel().getByText("lit les tickets, lit EMIS-11")).toBeTruthy();
+  expect(panel().getByText("lit les tickets, lit SILO-11")).toBeTruthy();
   expect(panel().getByRole("region", { name: /Lot n° 1/ })).toBeTruthy();
-  await userEvent.setup().click(await panel().findByRole("button", { name: "EMIS-11" }));
+  await userEvent.setup().click(await panel().findByRole("button", { name: "SILO-11" }));
   expect(opened).toEqual(["t11"]);
 });
 
@@ -131,7 +131,7 @@ test("Enter adds a line, ⌘↵ sends the message", async () => {
   await user.keyboard("{Meta>}{Enter}{/Meta}");
   await waitFor(() =>
     expect(rpcs("sendProjectAgentMessage")).toEqual([
-      { method: "sendProjectAgentMessage", projectId: "emis", text: "Bonjour\nla suite" },
+      { method: "sendProjectAgentMessage", projectId: "silo", text: "Bonjour\nla suite" },
     ]),
   );
   await waitFor(() => expect((box as HTMLTextAreaElement).value).toBe(""));
@@ -143,7 +143,7 @@ test("without a session the box invites to ask about the project and the state i
   show();
   await toConversation();
   const box = await panel().findByRole("combobox", { name: "Message à l'agent de projet" });
-  await waitFor(() => expect(box.getAttribute("placeholder")).toBe("Demande quelque chose sur Emis…"));
+  await waitFor(() => expect(box.getAttribute("placeholder")).toBe("Demande quelque chose sur Silo…"));
   expect(panel().getByText("Prêt")).toBeTruthy();
   expect(panel().getByText("Aucun message pour l'instant.")).toBeTruthy();
 });
@@ -155,7 +155,7 @@ test("Réessayer sends the last message again", async () => {
   await userEvent.setup().click(await panel().findByRole("button", { name: "Réessayer" }));
   await waitFor(() =>
     expect(rpcs("sendProjectAgentMessage")).toEqual([
-      { method: "sendProjectAgentMessage", projectId: "emis", text: "Et l'export ?" },
+      { method: "sendProjectAgentMessage", projectId: "silo", text: "Et l'export ?" },
     ]),
   );
 });
@@ -169,7 +169,7 @@ test("deciding a batch calls decideBatch for this project", async () => {
   await user.click(card.getByRole("button", { name: "Confirmer le refus" }));
   await waitFor(() =>
     expect(rpcs("decideBatch")).toEqual([
-      { method: "decideBatch", projectId: "emis", batchId: "b1", decision: "reject" },
+      { method: "decideBatch", projectId: "silo", batchId: "b1", decision: "reject" },
     ]),
   );
 });
@@ -182,7 +182,7 @@ test("Nouvel agent de projet asks for confirmation, then resets", async () => {
   expect(rpcs("resetProjectAgent")).toHaveLength(0);
   await user.click(within(confirm).getByRole("button", { name: "Nouvel agent" }));
   await waitFor(() =>
-    expect(rpcs("resetProjectAgent")).toEqual([{ method: "resetProjectAgent", projectId: "emis" }]),
+    expect(rpcs("resetProjectAgent")).toEqual([{ method: "resetProjectAgent", projectId: "silo" }]),
   );
 });
 
@@ -210,7 +210,7 @@ test("Anciens agents lists past sessions, opens one read-only, then goes back", 
   expect(await panel().findByText("Ancien agent · lecture seule")).toBeTruthy();
   expect(rpcs("getProjectAgent").at(-1)).toEqual({
     method: "getProjectAgent",
-    projectId: "emis",
+    projectId: "silo",
     runId: "pa0",
   });
   expect(panel().queryByRole("combobox", { name: "Message à l'agent de projet" })).toBeNull();

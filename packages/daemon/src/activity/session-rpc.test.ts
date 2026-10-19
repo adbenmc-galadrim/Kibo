@@ -23,7 +23,7 @@ async function setup(opts: { sink?: boolean } = {}) {
   const home = await repo();
   const service = createService(openStore(tmp()), { user: "adam" });
   const project = ProjectMeta.parse(
-    service.handle({ method: "createProject", name: "Emis", key: "EMIS", folder: null, color: "#336699" }),
+    service.handle({ method: "createProject", name: "Silo", key: "SILO", folder: null, color: "#336699" }),
   );
   const create = (title: string, parentId: string | null) =>
     Ticket.parse(
@@ -68,7 +68,7 @@ async function setup(opts: { sink?: boolean } = {}) {
 
 test("a remote session may not declare a ticket session", async () => {
   const { project, sessions } = await setup();
-  const req = { method: "setTicketSession", projectId: project.id, ticketKey: "EMIS-2", cwd: null } as const;
+  const req = { method: "setTicketSession", projectId: project.id, ticketKey: "SILO-2", cwd: null } as const;
   await expect(
     sessions.rpc.handle({ ...req, state: "start" }, { sessionHash: "h", remote: true }),
   ).rejects.toThrow(new KiboError("FORBIDDEN", "this action is only allowed from this machine"));
@@ -77,7 +77,7 @@ test("a remote session may not declare a ticket session", async () => {
 test("start opens the session, journals it and leaves the status alone", async () => {
   const { project, feature, step, events, emitted, sessions, ticket, run } = await setup();
   const before = ticket(step.id).statusId;
-  expect(await run({ ticketKey: "EMIS-2", state: "start" })).toEqual({ tool: "T3 Code", startedAt: T0 });
+  expect(await run({ ticketKey: "SILO-2", state: "start" })).toEqual({ tool: "T3 Code", startedAt: T0 });
   expect(sessions.activity(project.id)).toEqual(new Map([[step.id, { tool: "T3 Code", startedAt: T0 }]]));
   expect(events).toEqual([
     {
@@ -87,7 +87,7 @@ test("start opens the session, journals it and leaves the status alone", async (
         ticketId: step.id,
         featureId: feature.id,
         source: "full-delivery",
-        data: { ticketKey: "EMIS-2", tool: "T3 Code" },
+        data: { ticketKey: "SILO-2", tool: "T3 Code" },
       },
     },
   ]);
@@ -97,43 +97,43 @@ test("start opens the session, journals it and leaves the status alone", async (
 
 test("ping extends the session, start again only pings, the tool is kept", async () => {
   const { project, step, events, clock, sessions, run } = await setup();
-  await run({ ticketKey: "EMIS-2", state: "start", tool: "Cursor" });
+  await run({ ticketKey: "SILO-2", state: "start", tool: "Cursor" });
   clock.now = T0 + 90 * 60_000;
-  expect(await run({ ticketKey: "EMIS-2", state: "ping" })).toEqual({ tool: "Cursor", startedAt: T0 });
+  expect(await run({ ticketKey: "SILO-2", state: "ping" })).toEqual({ tool: "Cursor", startedAt: T0 });
   clock.now = T0 + 3 * 3_600_000;
-  expect(await run({ ticketKey: "EMIS-2", state: "start" })).toEqual({ tool: "Cursor", startedAt: T0 });
+  expect(await run({ ticketKey: "SILO-2", state: "start" })).toEqual({ tool: "Cursor", startedAt: T0 });
   expect(sessions.activity(project.id).get(step.id)).toEqual({ tool: "Cursor", startedAt: T0 });
   expect(events.map((e) => e.event.kind)).toEqual(["session_started"]);
 });
 
 test("ping without an open session does nothing", async () => {
   const { events, emitted, run } = await setup();
-  expect(await run({ ticketKey: "EMIS-2", state: "ping" })).toBeNull();
+  expect(await run({ ticketKey: "SILO-2", state: "ping" })).toBeNull();
   expect(events).toEqual([]);
   expect(emitted).toEqual([]);
 });
 
 test("stop closes the session and journals its duration", async () => {
   const { project, step, events, emitted, clock, sessions, run } = await setup();
-  await run({ ticketKey: "EMIS-2", state: "start" });
+  await run({ ticketKey: "SILO-2", state: "start" });
   clock.now = T0 + 42 * 60_000;
-  expect(await run({ ticketKey: "EMIS-2", state: "stop" })).toBeNull();
+  expect(await run({ ticketKey: "SILO-2", state: "stop" })).toBeNull();
   expect(sessions.activity(project.id).size).toBe(0);
   expect(events.at(-1)?.event).toMatchObject({
     kind: "session_stopped",
     ticketId: step.id,
-    data: { ticketKey: "EMIS-2", tool: "T3 Code", durationMs: 42 * 60_000, ended: "stop" },
+    data: { ticketKey: "SILO-2", tool: "T3 Code", durationMs: 42 * 60_000, ended: "stop" },
   });
   expect(emitted).toHaveLength(2);
-  expect(await run({ ticketKey: "EMIS-2", state: "stop" })).toBeNull();
+  expect(await run({ ticketKey: "SILO-2", state: "stop" })).toBeNull();
   expect(events).toHaveLength(2);
 });
 
 test("a session silent for two hours is closed before the next call", async () => {
   const { events, clock, run } = await setup();
-  await run({ ticketKey: "EMIS-2", state: "start" });
+  await run({ ticketKey: "SILO-2", state: "start" });
   clock.now = T0 + SESSION_TIMEOUT_MS + 1;
-  expect(await run({ ticketKey: "EMIS-2", state: "start" })).toEqual({
+  expect(await run({ ticketKey: "SILO-2", state: "start" })).toEqual({
     tool: "T3 Code",
     startedAt: clock.now,
   });
@@ -148,16 +148,16 @@ test("a session of an update is journaled as update-delivery", async () => {
   const { step, events, run, command } = await setup();
   const delivery = { step: 7, note: "", at: T0, runId: null, kind: "update" as const };
   command({ method: "setTicketDelivery", ticketId: step.id, delivery });
-  await run({ ticketKey: "EMIS-2", state: "start" });
+  await run({ ticketKey: "SILO-2", state: "start" });
   expect(events[0]?.event.source).toBe("update-delivery");
 });
 
 test("an unknown key or project is not found", async () => {
   const { sessions, run } = await setup();
-  await expect(run({ ticketKey: "EMIS-9", state: "start" })).rejects.toMatchObject({ code: "NOT_FOUND" });
+  await expect(run({ ticketKey: "SILO-9", state: "start" })).rejects.toMatchObject({ code: "NOT_FOUND" });
   await expect(
     sessions.rpc.handle(
-      { method: "setTicketSession", projectId: "nope", ticketKey: "EMIS-2", cwd: null, state: "start" },
+      { method: "setTicketSession", projectId: "nope", ticketKey: "SILO-2", cwd: null, state: "start" },
       LOCAL_CONTEXT,
     ),
   ).rejects.toMatchObject({ code: "NOT_FOUND" });
@@ -192,7 +192,7 @@ test("without a key, a folder outside a repository or no folder at all is refuse
 
 test("without a sink, nothing is journaled and the session still opens", async () => {
   const { project, step, events, sessions, run } = await setup({ sink: false });
-  await run({ ticketKey: "EMIS-2", state: "start" });
+  await run({ ticketKey: "SILO-2", state: "start" });
   expect(events).toEqual([]);
   expect(sessions.activity(project.id).has(step.id)).toBe(true);
 });

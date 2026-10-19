@@ -62,8 +62,8 @@ test("the project agent is wired to the real project data and tools, and detache
   expect(started.agent.view(h.project.id)).toMatchObject({ session: null, batches: [], past: [] });
   const run = started.agent.mcp.run("p-run");
   if (!run) throw new Error("p-run is not known");
-  const sheet = await started.agent.mcp.call(run, "get_ticket", { key: "EMIS-1" });
-  expect(JSON.parse(sheet)).toMatchObject({ key: "EMIS-1", title: "Récepteur de hooks", statusId: "todo" });
+  const sheet = await started.agent.mcp.call(run, "get_ticket", { key: "SILO-1" });
+  expect(JSON.parse(sheet)).toMatchObject({ key: "SILO-1", title: "Récepteur de hooks", statusId: "todo" });
   await expect(started.agent.mcp.call(run, "propose_batch", {})).rejects.toThrow("INVALID_INPUT");
   h.signals.add(1, { projectId: h.project.id, title: "Tests du récepteur" });
   const listed = JSON.parse(await started.agent.mcp.call(run, "list_signals", {}));
@@ -82,7 +82,7 @@ test("with a journal, only the batch left at the end of the turn is journaled, a
   const propose = (title: string) =>
     started.agent.mcp.call(run, "propose_batch", {
       summary: title,
-      actions: [{ id: 1, why: "", type: "updateTicket", ticket: "EMIS-1", title }],
+      actions: [{ id: 1, why: "", type: "updateTicket", ticket: "SILO-1", title }],
     });
   await propose("Brouillon");
   await propose("Récepteur");

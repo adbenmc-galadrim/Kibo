@@ -8,8 +8,8 @@ import { createSprint, listSprints, updateSprint } from "./sprints";
 const base = () =>
   createProjectDoc({
     id: "p1",
-    key: "EMIS",
-    name: "Emis",
+    key: "SILO",
+    name: "Silo",
     folder: null,
     color: "#F97316",
     worktree: null,

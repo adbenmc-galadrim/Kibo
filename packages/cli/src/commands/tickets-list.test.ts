@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { parseArgs } from "../args";
 import { runTicketsCommand } from "./tickets";
-import { EMIS_META, fakeDaemon, fakeTicket, SPRINTS } from "./tickets-test-kit";
+import { fakeDaemon, fakeTicket, SILO_META, SPRINTS } from "./tickets-test-kit";
 
 async function listIn(d: ReturnType<typeof fakeDaemon>, args: string[]) {
-  const { flags } = parseArgs(["--project", "EMIS", ...args]);
+  const { flags } = parseArgs(["--project", "SILO", ...args]);
   const code = await runTicketsCommand(["list"], flags, d.io, d.connect);
   const rows = d.out[0]?.startsWith("Clé") ? d.out.slice(1) : [];
   const keys = rows.map((l) => l.split(/\s+/)[0]);
@@ -15,9 +15,9 @@ const list = (...args: string[]) => listIn(fakeDaemon(), args);
 
 describe("kibo tickets list --sprint", () => {
   test("keeps the tickets of a sprint by id, code or name, case ignored, steps included", async () => {
-    expect((await list("--sprint", "S42")).keys).toEqual(["EMIS-30", "EMIS-33", "EMIS-34"]);
-    expect((await list("--sprint", "s42")).keys).toEqual(["EMIS-30", "EMIS-33", "EMIS-34"]);
-    expect((await list("--sprint", "terrain HORS ligne")).keys).toEqual(["EMIS-30", "EMIS-33", "EMIS-34"]);
+    expect((await list("--sprint", "S42")).keys).toEqual(["SILO-30", "SILO-33", "SILO-34"]);
+    expect((await list("--sprint", "s42")).keys).toEqual(["SILO-30", "SILO-33", "SILO-34"]);
+    expect((await list("--sprint", "saisie HORS ligne")).keys).toEqual(["SILO-30", "SILO-33", "SILO-34"]);
     expect((await list("--sprint", "S41")).keys).toEqual([]);
   });
 
@@ -29,23 +29,23 @@ describe("kibo tickets list --sprint", () => {
       { ...base, id: "s2", code: "ALPHA", name: "Beta" },
       { ...base, id: "s3", code: "Z1", name: "alpha" },
     ];
-    const tickets = sprints.map((s, i) => fakeTicket({ id: `t${i}`, key: `EMIS-${i + 1}`, sprintId: s.id }));
+    const tickets = sprints.map((s, i) => fakeTicket({ id: `t${i}`, key: `SILO-${i + 1}`, sprintId: s.id }));
     const pick = async (wanted: string) =>
       (await listIn(fakeDaemon(tickets, sprints), ["--sprint", wanted])).keys;
-    expect(await pick("alpha")).toEqual(["EMIS-1"]);
-    expect(await pick("beta")).toEqual(["EMIS-1"]);
-    expect(await pick("Gamma")).toEqual(["EMIS-1"]);
-    expect(await pick("s2")).toEqual(["EMIS-2"]);
-    expect(await pick("z1")).toEqual(["EMIS-3"]);
+    expect(await pick("alpha")).toEqual(["SILO-1"]);
+    expect(await pick("beta")).toEqual(["SILO-1"]);
+    expect(await pick("Gamma")).toEqual(["SILO-1"]);
+    expect(await pick("s2")).toEqual(["SILO-2"]);
+    expect(await pick("z1")).toEqual(["SILO-3"]);
   });
 
   test("current is the sprint the daemon marks current", async () => {
-    expect((await list("--sprint", "current")).keys).toEqual(["EMIS-30", "EMIS-33", "EMIS-34"]);
-    expect((await list("--sprint", "current", "--ready")).keys).toEqual(["EMIS-33", "EMIS-34"]);
+    expect((await list("--sprint", "current")).keys).toEqual(["SILO-30", "SILO-33", "SILO-34"]);
+    expect((await list("--sprint", "current", "--ready")).keys).toEqual(["SILO-33", "SILO-34"]);
   });
 
   test("none keeps what no sprint holds", async () => {
-    expect((await list("--sprint", "none")).keys).toEqual(["EMIS-40", "EMIS-41", "EMIS-50"]);
+    expect((await list("--sprint", "none")).keys).toEqual(["SILO-40", "SILO-41", "SILO-50"]);
   });
 
   test("refuses an unknown sprint and a missing value", async () => {
@@ -60,18 +60,18 @@ describe("kibo tickets list --sprint", () => {
     const byKey = new Map(
       (JSON.parse(d.out.join("\n")) as { key: string }[]).map((t) => [t.key, t] as const),
     );
-    expect(byKey.get("EMIS-34")).toMatchObject({
-      sprint: { id: "s42", code: "S42", name: "Terrain hors ligne" },
-      feature: { key: "EMIS-30", shortKey: "F5", title: "Titre EMIS-30" },
+    expect(byKey.get("SILO-34")).toMatchObject({
+      sprint: { id: "s42", code: "S42", name: "Saisie hors ligne" },
+      feature: { key: "SILO-30", shortKey: "F5", title: "Titre SILO-30" },
       optional: true,
     });
-    expect(byKey.get("EMIS-30")).toMatchObject({
-      sprint: { id: "s42", code: "S42", name: "Terrain hors ligne" },
-      feature: { key: "EMIS-30", shortKey: "F5" },
+    expect(byKey.get("SILO-30")).toMatchObject({
+      sprint: { id: "s42", code: "S42", name: "Saisie hors ligne" },
+      feature: { key: "SILO-30", shortKey: "F5" },
       optional: false,
     });
-    expect(byKey.get("EMIS-41")).toMatchObject({ sprint: null, feature: { shortKey: "F7" } });
-    expect(byKey.get("EMIS-50")).toMatchObject({ sprint: null, feature: null, optional: false });
+    expect(byKey.get("SILO-41")).toMatchObject({ sprint: null, feature: { shortKey: "F7" } });
+    expect(byKey.get("SILO-50")).toMatchObject({ sprint: null, feature: null, optional: false });
   });
 });
 
@@ -81,16 +81,16 @@ describe("kibo tickets list, as text", () => {
     expect(d.out[0]?.split(/\s+/)).toEqual(["Clé", "F", "Statut", "Titre"]);
     expect(
       d.out
-        .find((l) => l.startsWith("EMIS-33"))
+        .find((l) => l.startsWith("SILO-33"))
         ?.split(/\s+/)
         .slice(0, 2),
-    ).toEqual(["EMIS-33", "F5"]);
+    ).toEqual(["SILO-33", "F5"]);
     expect(
       d.out
-        .find((l) => l.startsWith("EMIS-50"))
+        .find((l) => l.startsWith("SILO-50"))
         ?.split(/\s+/)
         .slice(0, 2),
-    ).toEqual(["EMIS-50", "-"]);
+    ).toEqual(["SILO-50", "-"]);
   });
 
   test("says when nothing matches, naming the filters", async () => {
@@ -108,16 +108,16 @@ describe("kibo tickets list --ready", () => {
   test("keeps what the daemon says is startable, whatever the local status", async () => {
     const waiting = { kind: "sprint" as const, code: "S43" };
     const tickets = [
-      fakeTicket({ id: "a", key: "EMIS-1" }),
-      fakeTicket({ id: "b", key: "EMIS-2", startable: false, startReason: waiting }),
-      fakeTicket({ id: "c", key: "EMIS-3", statusId: "backlog" }),
+      fakeTicket({ id: "a", key: "SILO-1" }),
+      fakeTicket({ id: "b", key: "SILO-2", startable: false, startReason: waiting }),
+      fakeTicket({ id: "c", key: "SILO-3", statusId: "backlog" }),
     ];
-    expect((await listIn(fakeDaemon(tickets), ["--ready"])).keys).toEqual(["EMIS-1", "EMIS-3"]);
+    expect((await listIn(fakeDaemon(tickets), ["--ready"])).keys).toEqual(["SILO-1", "SILO-3"]);
     const json = await listIn(fakeDaemon(tickets), ["--json"]);
     expect(JSON.parse(json.out.join("\n"))).toMatchObject([
-      { key: "EMIS-1", startable: true, startReason: null },
-      { key: "EMIS-2", startable: false, startReason: waiting },
-      { key: "EMIS-3", startable: true },
+      { key: "SILO-1", startable: true, startReason: null },
+      { key: "SILO-2", startable: false, startReason: waiting },
+      { key: "SILO-3", startable: true },
     ]);
   });
 });
@@ -126,11 +126,11 @@ describe("kibo tickets list without --project", () => {
   test("suggests the only project key, or lists the known ones", async () => {
     const one = fakeDaemon();
     expect(await runTicketsCommand(["list"], {}, one.io, one.connect)).toBe(2);
-    expect(one.err).toEqual(["précise --project EMIS"]);
-    const projects = [EMIS_META, { ...EMIS_META, id: "p-pfd", key: "PFD", name: "Pfd" }];
+    expect(one.err).toEqual(["précise --project SILO"]);
+    const projects = [SILO_META, { ...SILO_META, id: "p-pfd", key: "PFD", name: "Pfd" }];
     const two = fakeDaemon(undefined, undefined, { projects });
     expect(await runTicketsCommand(["list"], {}, two.io, two.connect)).toBe(2);
-    expect(two.err).toEqual(["précise --project parmi EMIS, PFD"]);
+    expect(two.err).toEqual(["précise --project parmi SILO, PFD"]);
   });
 
   test("prints its usage when Kibo knows no project", async () => {

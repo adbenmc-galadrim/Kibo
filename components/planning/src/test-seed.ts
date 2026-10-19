@@ -33,30 +33,30 @@ export const TODAY = "2026-10-16";
 
 export function seedPlanning(run: Run) {
   const s41 = sprint(run, "S41", "Accès", "2026-10-05", "2026-10-09");
-  const s42 = sprint(run, "S42", "Terrain hors ligne", "2026-10-12", "2026-10-16");
-  const s43 = sprint(run, "S43", "Import et soudures", "2026-10-19", "2026-10-23");
+  const s42 = sprint(run, "S42", "Saisie hors ligne", "2026-10-12", "2026-10-16");
+  const s43 = sprint(run, "S43", "Import et contrats", "2026-10-19", "2026-10-23");
   const s44 = sprint(run, "S44", "Rapports", "2026-10-26", "2026-10-30");
   const f1 = feature(run, "Se connecter avec Microsoft", s41.id, repeat("done", 2));
-  const f2 = feature(run, "Voir ses ISO affectés", s41.id, repeat("done", 2));
-  const f3 = feature(run, "Réaffecter un ISO", s42.id, repeat("done", 4));
-  const f4 = feature(run, "Saisir un tronçon hors ligne", s42.id, [
+  const f2 = feature(run, "Voir ses box affectés", s41.id, repeat("done", 2));
+  const f3 = feature(run, "Réaffecter un box", s42.id, repeat("done", 4));
+  const f4 = feature(run, "Saisir un constat hors ligne", s42.id, [
     ...repeat("done", 3),
     { status: "in_review", delivery: { step: 9, at: 2000 } },
     { status: "todo", optional: true },
   ]);
-  const f5 = feature(run, "Envoyer les photos d'un tronçon", s42.id, [
+  const f5 = feature(run, "Envoyer les photos d'un constat", s42.id, [
     { status: "done" },
     { status: "in_review", delivery: { step: 10, at: 1000 } },
     { status: "in_progress", delivery: { step: 7, at: 3000 } },
     { status: "todo" },
     { status: "todo" },
   ]);
-  const f6 = feature(run, "Importer les ISO depuis Excel", s43.id, [
+  const f6 = feature(run, "Importer les box depuis Excel", s43.id, [
     { status: "todo", delivery: { step: 3, at: 4000 } },
     ...repeat("todo", 3),
   ]);
-  const f7 = feature(run, "Rapport de chantier journalier", s44.id, repeat("todo", 5));
-  const f8 = feature(run, "Valider les soudures par lot", s43.id, repeat("todo", 4));
+  const f7 = feature(run, "Rapport de centre journalier", s44.id, repeat("todo", 5));
+  const f8 = feature(run, "Valider les contrats par lot", s43.id, repeat("todo", 4));
   const f9 = feature(run, "Exporter le dossier client", null, repeat("todo", 3));
   const lone = ticket(run, "Corriger l'export PDF", null);
   const [blockedStep] = f6.steps;

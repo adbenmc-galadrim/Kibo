@@ -21,9 +21,9 @@ S.draw["p-vue2"] = (x, y) => { const C = S.C, P = S.P, sec = C.mfg;
   const body = S.col(main, { fx: true, fy: true, pad: [18, 24, 24, 24], gap: 14 });
   // En-tête du projet
   const hd = S.row(body, { fx: true, gap: 12, align: "end" });
-  const ht = S.col(hd, { gap: 4 }); S.txt(ht, "Emis", { size: 24, weight: 600, ls: -0.3 });
-  const hs = S.row(ht, { gap: 8 }); if (S.V3) { S.icon(hs, "building", 13, sec); S.txt(hs, "client Emis SA", { size: 13, color: sec }); S.txt(hs, "·", { size: 13, color: C.faint }); }
-  S.txt(hs, "Suivi de chantier", { size: 13, color: sec }); S.txt(hs, "·", { size: 13, color: C.faint }); S.icon(hs, "github", 13, sec); S.txt(hs, "galadrimteam/emis-suivi-chantier", { size: 12, mono: true, color: sec });
+  const ht = S.col(hd, { gap: 4 }); S.txt(ht, "Silo", { size: 24, weight: 600, ls: -0.3 });
+  const hs = S.row(ht, { gap: 8 }); if (S.V3) { S.icon(hs, "building", 13, sec); S.txt(hs, "client Silo SA", { size: 13, color: sec }); S.txt(hs, "·", { size: 13, color: C.faint }); }
+  S.txt(hs, "Location de box", { size: 13, color: sec }); S.txt(hs, "·", { size: 13, color: C.faint }); S.icon(hs, "github", 13, sec); S.txt(hs, "silo-labs/silo-location", { size: 12, mono: true, color: sec });
 
   // 1. Indicateurs : cinq cellules égales, chiffre dominant, libellé au-dessus, sous-ligne de hauteur fixe.
   const k = S.row(body, { name: "kpis", fx: true, h: 92, stroke: C.border, radius: 10, fill: C.card, align: "stretch" });
@@ -33,7 +33,7 @@ S.draw["p-vue2"] = (x, y) => { const C = S.C, P = S.P, sec = C.mfg;
     const v = S.row(c, { gap: 6, align: "end" }); S.txt(v, value, { size: 28, weight: 600, ls: -0.5, lh: 1 }); if (unit) S.txt(v, unit, { size: 13, color: sec });
     const s = S.row(c, { h: 16, gap: 6 }); sub(s); };
   kpi("package", "Fonctionnalités", "3", "livrées sur 9", s => S.segs(s, P.features.map(ft => { const st = S.fState(ft); return st === "Livrée" ? C.green : st === "Ouverte" ? C.blue : C.track; }), { w: 14, h: 6, gap: 3, radius: 1.5 }), 0);
-  kpi("sprint", "Sprint en cours", "S42", "finit ce soir", s => S.txt(s, "Terrain hors ligne", { size: 12, color: sec }), 1);
+  kpi("sprint", "Sprint en cours", "S42", "finit ce soir", s => S.txt(s, "Saisie hors ligne", { size: 12, color: sec }), 1);
   kpi("target", "Ouvertes", "2", "sur 2 max", s => { S.dot(s, C.amber, 7); S.txt(s, "limite atteinte", { size: 12, color: sec }); }, 2);
   kpi("pr", "En review", "3", "PR", s => S.txt(s, "#20 · #22 · #23", { size: 12, color: sec }), 3);
   kpi("question", "Questions", "3", "ouvertes", s => { S.dot(s, C.red, 7); S.txt(s, "Q14 bloque F6", { size: 12, color: sec }); }, 4);
@@ -43,7 +43,7 @@ S.draw["p-vue2"] = (x, y) => { const C = S.C, P = S.P, sec = C.mfg;
   const ll = S.col(live, { w: 150, fy: true, pad: [0, 16], gap: 4, justify: "center" }); const lr = S.row(ll, { gap: 8 }); S.halo(lr, C.brand, 7); S.txt(lr, "En ce moment", { size: 13, weight: 600, color: C.brandText }); S.txt(ll, "2 sessions T3 Code", { size: 12, color: sec });
   S.box(live, { w: 1, h: 10, fy: true, fill: C.brandLine });
   const lc = S.col(live, { fx: true, fy: true, pad: [6, 16] });
-  [["F5", "EMIS-33", "42 min"], ["F4", "EMIS-45", "18 min"]].forEach(([fk, tk, since], i) => { const t = S.feat(fk).steps.find(s => s.key === tk);
+  [["F5", "SILO-33", "42 min"], ["F4", "SILO-45", "18 min"]].forEach(([fk, tk, since], i) => { const t = S.feat(fk).steps.find(s => s.key === tk);
     if (i) S.hline(lc, C.brandLine);
     const r = S.row(lc, { fx: true, h: 36, gap: 12 });
     const a = S.row(r, { w: 44 }); S.fChip2(a, fk);
@@ -80,7 +80,7 @@ S.draw["p-vue2"] = (x, y) => { const C = S.C, P = S.P, sec = C.mfg;
   const cols = S.row(body, { fx: true, gap: 16, align: "start" });
   const left = S.col(cols, { fx: true, gap: 14 });
   // Sprint S42 : statut, cases et compteur en colonnes ; note de limite en pied.
-  const sp = S.card2(left, "Sprint S42 · Terrain hors ligne", "sprint", { right: h => { S.txt(h, "12–16 oct.", { size: 12.5, color: sec }); S.pill(h, "2/2 ouvertes", C.amber, C.amberSoft); } });
+  const sp = S.card2(left, "Sprint S42 · Saisie hors ligne", "sprint", { right: h => { S.txt(h, "12–16 oct.", { size: 12.5, color: sec }); S.pill(h, "2/2 ouvertes", C.amber, C.amberSoft); } });
   for (const fk of ["F3", "F4", "F5"]) { const ft = S.feat(fk), done = S.fDone(ft), full = done === ft.steps.length, r = S.row2(sp, { h: 38, gap: 10 });
     const a = S.row(r, { w: 26 }); S.txt(a, fk, { size: 12, mono: true, color: sec });
     const b = S.row(r, { fx: true }); S.txt(b, ft.name, { size: 13, weight: 500, color: full ? sec : C.fg });
@@ -92,11 +92,11 @@ S.draw["p-vue2"] = (x, y) => { const C = S.C, P = S.P, sec = C.mfg;
   // Prochaine à finir
   const nx = S.card2(left, "Prochaine à finir", "flag", { right: h => S.txt(h, "la plus avancée du sprint", { size: 12.5, color: sec }) });
   const nb = S.col(nx, { fx: true, pad: [2, 16, 14, 16], gap: 10 });
-  const nr = S.row(nb, { fx: true, gap: 10 }); S.txt(nr, "F4", { size: 12, mono: true, color: sec }); S.txt(nr, "Saisir un tronçon hors ligne", { size: 15, weight: 600 }); S.spacer(nr); S.fCases(nr, S.feat("F4"), { w: 22, h: 8, gap: 3 }); S.txt(nr, "3/5", { size: 12.5, mono: true });
+  const nr = S.row(nb, { fx: true, gap: 10 }); S.txt(nr, "F4", { size: 12, mono: true, color: sec }); S.txt(nr, "Saisir un constat hors ligne", { size: 15, weight: 600 }); S.spacer(nr); S.fCases(nr, S.feat("F4"), { w: 22, h: 8, gap: 3 }); S.txt(nr, "3/5", { size: 12.5, mono: true });
   const rest = S.col(nb, { fx: true, gap: 6 });
-  { const r = S.row(rest, { gap: 8 }); S.status(r, "En review", 8); S.txt(r, "EMIS-45", { size: 12, mono: true, color: sec }); S.txt(r, "Conflits de saisie", { size: 13 }); S.txt(r, "changements demandés", { size: 12, color: C.amber }); }
-  { const r = S.row(rest, { gap: 8 }); S.status(r, "À faire", 8); S.txt(r, "EMIS-46", { size: 12, mono: true, color: sec }); S.txt(r, "Démo client", { size: 13 }); }
-  const cr = S.row(nb, { fx: true, gap: 10, pad: [8, 10, 8, 12], radius: 8, fill: C.muted }); S.txt(cr, "Étape suivante", { size: 12, weight: 500, color: sec }); S.txt(cr, "/full-delivery EMIS-45", { size: 12.5, mono: true }); S.spacer(cr); S.btn(cr, "Copier", "outline", { sm: true, icon: "copy" });
+  { const r = S.row(rest, { gap: 8 }); S.status(r, "En review", 8); S.txt(r, "SILO-45", { size: 12, mono: true, color: sec }); S.txt(r, "Conflits de saisie", { size: 13 }); S.txt(r, "changements demandés", { size: 12, color: C.amber }); }
+  { const r = S.row(rest, { gap: 8 }); S.status(r, "À faire", 8); S.txt(r, "SILO-46", { size: 12, mono: true, color: sec }); S.txt(r, "Démo client", { size: 13 }); }
+  const cr = S.row(nb, { fx: true, gap: 10, pad: [8, 10, 8, 12], radius: 8, fill: C.muted }); S.txt(cr, "Étape suivante", { size: 12, weight: 500, color: sec }); S.txt(cr, "/full-delivery SILO-45", { size: 12.5, mono: true }); S.spacer(cr); S.btn(cr, "Copier", "outline", { sm: true, icon: "copy" });
   // Colonne droite
   const right = S.col(cols, { w: 300, gap: 14 });
   const rv = S.card2(right, "En review", "pr", { count: "3" });

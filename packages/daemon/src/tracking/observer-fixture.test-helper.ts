@@ -24,8 +24,8 @@ export function createObserverFixture(ticketCount: number, folder?: string): Obs
   const service = createService(store, { user: "adam" });
   const project = call(service, {
     method: "createProject",
-    name: "Emis",
-    key: "EMIS",
+    name: "Silo",
+    key: "SILO",
     folder: folder ?? dir,
     color: "#F97316",
   });

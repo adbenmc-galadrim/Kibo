@@ -25,7 +25,7 @@ const commit = (sha: string, subject: string, pushed: boolean) => ({
   pushed,
 });
 const status: RepoStatus = {
-  worktree: "/emis",
+  worktree: "/silo",
   branch: "feat/stockage-fichiers",
   upstream: "origin/feat/stockage-fichiers",
   ahead: 0,
@@ -69,7 +69,7 @@ const diffOf = (path: string): FileDiff => ({
   ],
 });
 const responses: Partial<Record<CodeRequest["method"], (req: CodeRequest) => unknown>> = {
-  worktrees: () => [{ path: "/emis", branch: "feat/stockage-fichiers", head: "c".repeat(40), isMain: true }],
+  worktrees: () => [{ path: "/silo", branch: "feat/stockage-fichiers", head: "c".repeat(40), isMain: true }],
   status: () => status,
   branchChanges: () => branch,
   branchDiff: (req) => diffOf(req.method === "branchDiff" ? req.path : ""),
@@ -94,9 +94,9 @@ const { ChangesView }: typeof import("./ChangesView") = await import(unmockedMod
 
 const ticket: TicketView = {
   id: "9@1",
-  key: "EMIS-9",
+  key: "SILO-9",
   pendingSeq: null,
-  keyLabel: "EMIS-9",
+  keyLabel: "SILO-9",
   title: "Stockage des fichiers",
   description: "",
   statusId: "in_review",
@@ -109,7 +109,7 @@ const ticket: TicketView = {
     { kind: "git_branch", branch: "feat/stockage-fichiers", base: null },
     {
       kind: "github_pr",
-      url: "https://github.com/galadrimteam/emis/pull/9",
+      url: "https://github.com/silo-labs/silo-location/pull/9",
       number: 9,
       state: "draft",
       base: "dev",
@@ -136,9 +136,9 @@ const ticket: TicketView = {
 const project = (tickets: TicketView[]): ProjectSnapshot => ({
   meta: {
     id: "p1",
-    name: "Emis",
-    key: "EMIS",
-    folder: "/emis",
+    name: "Silo",
+    key: "SILO",
+    folder: "/silo",
     color: "#F97316",
     worktree: null,
     storybook: null,
@@ -157,7 +157,7 @@ const project = (tickets: TicketView[]): ProjectSnapshot => ({
   instances: [],
   rules: [],
   bindings: [],
-  nextTicketKey: "EMIS-10",
+  nextTicketKey: "SILO-10",
   sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 });
@@ -208,7 +208,7 @@ test("every commit of the branch is listed, pushed ones counted out", async () =
 test("the PR of the ticket's branch replaces « Pousser et créer la PR »", async () => {
   renderView([ticket]);
   const link = await screen.findByRole("link", { name: "Voir la PR #9" });
-  expect(link.getAttribute("href")).toBe("https://github.com/galadrimteam/emis/pull/9");
+  expect(link.getAttribute("href")).toBe("https://github.com/silo-labs/silo-location/pull/9");
   expect(screen.queryByRole("button", { name: "Pousser et créer la PR" })).toBeNull();
 });
 

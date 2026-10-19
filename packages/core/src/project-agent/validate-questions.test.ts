@@ -76,13 +76,13 @@ describe("validateBatch on question actions", () => {
   test("the question of an active run is answered, not moved nor archived", () => {
     const active = "#1 question d'un run actif « opus-dev-1 » : réponds-y";
     expect(problems(batch(remove("q5")))).toEqual([active]);
-    expect(problems(batch(update("q5", { ticket: "EMIS-1" })))).toEqual([active]);
+    expect(problems(batch(update("q5", { ticket: "SILO-1" })))).toEqual([active]);
     expect(problems(batch(update("q5", { title: "Cinq bis" })))).toEqual([]);
     expect(problems(batch(remove("q5")), questionContext({ runs: [] }))).toEqual([]);
   });
 
   test("a ticket target follows the reference rules", () => {
-    expect(problems(batch(update("q1", { ticket: "EMIS-9" })))).toEqual(["#1 ticket inconnu « EMIS-9 »"]);
+    expect(problems(batch(update("q1", { ticket: "SILO-9" })))).toEqual(["#1 ticket inconnu « SILO-9 »"]);
     expect(problems(batch(update("q1", { ticket: "new:1" })))).toEqual(["#1 référence new:1 inconnue"]);
   });
 
@@ -100,7 +100,7 @@ describe("validateBatch on question actions", () => {
       id: 1,
       why,
       type: "createQuestion",
-      ticket: "EMIS-1",
+      ticket: "SILO-1",
       title: "Q",
       recipient: "Galadrim",
     };
@@ -126,7 +126,7 @@ describe("validateBatch on question actions", () => {
   test("a recipient is added once and the project keeps twenty at most", () => {
     expect(problems(batch(addRecipient("client")))).toEqual(["#1 destinataire déjà présent"]);
     expect(problems(batch(addRecipient("Client")))).toEqual(["#1 destinataire déjà présent"]);
-    expect(problems(batch(addRecipient("Théo", 1), addRecipient("théo", 2)))).toEqual([
+    expect(problems(batch(addRecipient("Malik", 1), addRecipient("malik", 2)))).toEqual([
       "#2 destinataire déjà présent",
     ]);
     const recipients: QuestionRecipient[] = Array.from({ length: 18 }, (_, i) => ({

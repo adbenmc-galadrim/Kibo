@@ -4,7 +4,7 @@ import type { Link } from "./link";
 
 const ticket = (id: string, rank: number, over: Partial<DeliveryOrderTicket> = {}): DeliveryOrderTicket => ({
   id,
-  key: `EMIS-${id}`,
+  key: `SILO-${id}`,
   title: `Ticket ${id}`,
   parentId: "17",
   statusId: "todo",
@@ -32,19 +32,19 @@ const LINKS: Pick<Link, "from" | "to" | "type">[] = [
 
 test("the leaves of a parent come in dependency order, with their readiness", () => {
   const items = deliveryOrder({ tickets: TICKETS, links: LINKS, busy: new Set(["22"]), parentId: "17" });
-  expect(items.map((i) => i.key)).toEqual(["EMIS-18", "EMIS-19", "EMIS-20", "EMIS-21", "EMIS-22", "EMIS-24"]);
-  expect(items.filter((i) => i.ready).map((i) => i.key)).toEqual(["EMIS-18", "EMIS-24"]);
+  expect(items.map((i) => i.key)).toEqual(["SILO-18", "SILO-19", "SILO-20", "SILO-21", "SILO-22", "SILO-24"]);
+  expect(items.filter((i) => i.ready).map((i) => i.key)).toEqual(["SILO-18", "SILO-24"]);
   const reason = Object.fromEntries(items.map((i) => [i.key, i.reason]));
   expect(reason).toEqual({
-    "EMIS-18": null,
-    "EMIS-19": "blocked",
-    "EMIS-20": "done",
-    "EMIS-21": "question",
-    "EMIS-22": "busy",
-    "EMIS-24": null,
+    "SILO-18": null,
+    "SILO-19": "blocked",
+    "SILO-20": "done",
+    "SILO-21": "question",
+    "SILO-22": "busy",
+    "SILO-24": null,
   });
-  expect(items.find((i) => i.key === "EMIS-19")?.blockedBy).toEqual(["EMIS-18"]);
-  expect(items.find((i) => i.key === "EMIS-18")?.blockedBy).toEqual([]);
+  expect(items.find((i) => i.key === "SILO-19")?.blockedBy).toEqual(["SILO-18"]);
+  expect(items.find((i) => i.key === "SILO-18")?.blockedBy).toEqual([]);
 });
 
 test("a blocker comes first even when its rank is later", () => {

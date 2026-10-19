@@ -40,9 +40,9 @@ const snapshot = project({
 const input = (p: Partial<OverviewInput> = {}): OverviewInput => ({
   project: snapshot,
   runs: [
-    run({ id: "r1", state: "running", ticketId: "t3", ticketKey: "EMIS-3", label: "opus-dev" }),
-    run({ id: "r2", state: "queued", ticketId: "t2", ticketKey: "EMIS-2", label: "opus-dev" }),
-    run({ id: "r3", state: "done", ticketId: "t2", ticketKey: "EMIS-2", label: "opus-dev", turns: 2 }),
+    run({ id: "r1", state: "running", ticketId: "t3", ticketKey: "SILO-3", label: "opus-dev" }),
+    run({ id: "r2", state: "queued", ticketId: "t2", ticketKey: "SILO-2", label: "opus-dev" }),
+    run({ id: "r3", state: "done", ticketId: "t2", ticketKey: "SILO-2", label: "opus-dev", turns: 2 }),
     run({ id: "r4", kind: "project", state: "running" }),
   ],
   queue: [{ runId: "r2", position: 1, reason: null }],
@@ -68,15 +68,15 @@ describe("projectOverview", () => {
 
   test("details the active tickets, active runs, open questions, notes, agents and memory", () => {
     const overview = projectOverview(input());
-    expect(overview).toMatchObject({ name: "Emis", key: "EMIS", memory: "- Adam préfère les petits lots." });
-    expect(overview.active.map((c) => c.key)).toEqual(["EMIS-2", "EMIS-3", "EMIS-4"]);
+    expect(overview).toMatchObject({ name: "Silo", key: "SILO", memory: "- Adam préfère les petits lots." });
+    expect(overview.active.map((c) => c.key)).toEqual(["SILO-2", "SILO-3", "SILO-4"]);
     expect(overview.active[0]).toEqual({
-      key: "EMIS-2",
+      key: "SILO-2",
       title: "Écran",
       statusId: "in_review",
       labels: ["ui"],
       assignee: "opus",
-      parent: "EMIS-1",
+      parent: "SILO-1",
       openQuestions: 1,
       startable: false,
       startReason: null,
@@ -85,11 +85,11 @@ describe("projectOverview", () => {
       pr: "#7 (open)",
     });
     expect(overview.runs).toEqual([
-      { id: "r1", label: "opus-dev", state: "running", subject: "EMIS-3", position: null },
-      { id: "r2", label: "opus-dev", state: "queued", subject: "EMIS-2", position: 1 },
+      { id: "r1", label: "opus-dev", state: "running", subject: "SILO-3", position: null },
+      { id: "r2", label: "opus-dev", state: "queued", subject: "SILO-2", position: 1 },
     ]);
     expect(overview.openQuestions).toEqual([
-      { id: "q1", ticket: "EMIS-2", title: "Couleur ?", blocking: true, recipient: "me" },
+      { id: "q1", ticket: "SILO-2", title: "Couleur ?", blocking: true, recipient: "me" },
     ]);
     expect(overview.notes).toEqual([{ path: "agent-de-projet/memoire.md", title: "Mémoire" }]);
     expect(overview.profiles).toEqual([
@@ -111,7 +111,7 @@ describe("projectOverview", () => {
   });
 
   test("lists the sprints of the project", () => {
-    const sprints = [{ id: "s1", code: "S42", name: "Terrain", start: "2026-10-12", end: "2026-10-16" }].map(
+    const sprints = [{ id: "s1", code: "S42", name: "Saisie", start: "2026-10-12", end: "2026-10-16" }].map(
       (s) => ({ ...s, state: "current" as const, features: [], delivered: 0, total: 0, lingering: false }),
     );
     const base = input();
@@ -120,7 +120,7 @@ describe("projectOverview", () => {
       {
         id: "s1",
         code: "S42",
-        name: "Terrain",
+        name: "Saisie",
         start: "2026-10-12",
         end: "2026-10-16",
         state: "current",
@@ -133,10 +133,10 @@ describe("projectOverview", () => {
 describe("renderOverview", () => {
   test("is compact Markdown with the memory note", () => {
     const text = renderOverview(projectOverview(input()));
-    expect(text).toContain("# Emis (EMIS)");
-    expect(text).toContain("- EMIS-2 · Écran [in_review] étiquettes ui · assigné opus · PR #7 (open)");
-    expect(text).toContain("- opus-dev · EMIS-2 : en file (position 1)");
-    expect(text).toContain("- q1 · EMIS-2 · Couleur ? (bloquante)");
+    expect(text).toContain("# Silo (SILO)");
+    expect(text).toContain("- SILO-2 · Écran [in_review] étiquettes ui · assigné opus · PR #7 (open)");
+    expect(text).toContain("- opus-dev · SILO-2 : en file (position 1)");
+    expect(text).toContain("- q1 · SILO-2 · Couleur ? (bloquante)");
     expect(text).toContain("- Adam préfère les petits lots.");
   });
 
@@ -163,7 +163,7 @@ describe("ticket card and sheet", () => {
     expect(ticketCard(snapshot, ready).startable).toBe(true);
     expect(ticketCard(snapshot, ticket({ id: "t7" })).startable).toBe(false);
     const text = renderOverview(projectOverview(input({ project: project({ tickets: [ready] }) })));
-    expect(text).toContain("- EMIS-8 · Prêt [in_progress] · démarrable");
+    expect(text).toContain("- SILO-8 · Prêt [in_progress] · démarrable");
   });
 
   test("a card says why a ticket cannot start yet", () => {
@@ -174,7 +174,7 @@ describe("ticket card and sheet", () => {
 
   test("a pending ticket shows its key label", () => {
     const pending = ticket({ id: "t9", key: null, pendingSeq: 1 });
-    expect(ticketCard(snapshot, pending).key).toBe("EMIS-…");
+    expect(ticketCard(snapshot, pending).key).toBe("SILO-…");
   });
 
   test("the sheet adds description, links by key, questions with answers and runs", () => {
@@ -182,12 +182,12 @@ describe("ticket card and sheet", () => {
     if (!t2) throw new Error("fixture");
     const sheet = ticketSheet(snapshot, { ...t2, description: "Faire l'écran" }, input().runs);
     expect(sheet).toMatchObject({
-      key: "EMIS-2",
+      key: "SILO-2",
       description: "Faire l'écran",
       blockedReason: null,
-      blocks: ["EMIS-4"],
-      blockedBy: ["EMIS-3"],
-      relates: ["EMIS-5"],
+      blocks: ["SILO-4"],
+      blockedBy: ["SILO-3"],
+      relates: ["SILO-5"],
       questions: [
         { id: "q1", title: "Couleur ?", state: "open", answer: null },
         { id: "q2", title: "Police ?", state: "answered", answer: "Inter" },

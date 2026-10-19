@@ -32,7 +32,7 @@ test("a review decision maps to the closed review states", () => {
 });
 
 const run = (prNumber: number | null, status: string, conclusion: string | null): CiRun => ({
-  repo: "acme/emis",
+  repo: "acme/silo",
   runId: Math.floor(Math.random() * 1e6),
   prNumber,
   ticketKey: null,
@@ -40,7 +40,7 @@ const run = (prNumber: number | null, status: string, conclusion: string | null)
   workflow: `ci-${prNumber}`,
   status,
   conclusion,
-  url: "https://github.com/acme/emis/actions/runs/1",
+  url: "https://github.com/acme/silo/actions/runs/1",
   startedAt: null,
   updatedAt: "2026-10-16T10:00:00Z",
   jobs: [],

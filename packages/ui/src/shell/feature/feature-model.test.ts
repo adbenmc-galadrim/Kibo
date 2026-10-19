@@ -10,9 +10,9 @@ import {
   sprintFacts,
   stepModels,
 } from "./feature-model";
-import { emisFeatureProject, NOW, SESSION_RUN } from "./fixture";
+import { NOW, SESSION_RUN, siloFeatureProject } from "./fixture";
 
-const project = emisFeatureProject();
+const project = siloFeatureProject();
 const facts = (patch: Partial<StepFacts> = {}): StepFacts => ({
   runs: [],
   ciRuns: [],
@@ -25,7 +25,7 @@ const withoutSessions = (p: ProjectSnapshot): ProjectSnapshot => ({
   tickets: p.tickets.map((t) => ({ ...t, session: null })),
 });
 const ciRun = (prNumber: number, conclusion: string): CiRun => ({
-  repo: "galadrim/emis",
+  repo: "silo-labs/silo-location",
   runId: prNumber,
   prNumber,
   ticketKey: null,
@@ -33,7 +33,7 @@ const ciRun = (prNumber: number, conclusion: string): CiRun => ({
   workflow: "ci",
   status: "completed",
   conclusion,
-  url: "https://github.com/galadrim/emis/actions/runs/1",
+  url: "https://github.com/silo-labs/silo-location/actions/runs/1",
   startedAt: null,
   updatedAt: "2026-10-16T12:00:00Z",
   jobs: [],
@@ -47,15 +47,15 @@ const f5 = () => {
 test("the steps follow the dependency order and carry their T3 Code session", () => {
   const steps = stepModels(project, "f5", facts());
   expect(steps.map((s) => [s.index, s.key, s.statusId])).toEqual([
-    [1, "EMIS-31", "done"],
-    [2, "EMIS-32", "in_review"],
-    [3, "EMIS-33", "in_progress"],
-    [4, "EMIS-34", "todo"],
-    [5, "EMIS-35", "todo"],
+    [1, "SILO-31", "done"],
+    [2, "SILO-32", "in_review"],
+    [3, "SILO-33", "in_progress"],
+    [4, "SILO-34", "todo"],
+    [5, "SILO-35", "todo"],
   ]);
   expect(steps[2]?.session).toEqual({ agent: "T3 Code", minutes: 42 });
   expect(steps.filter((s) => s.session !== null)).toHaveLength(1);
-  expect(steps[3]?.blockedBy).toEqual(["EMIS-33"]);
+  expect(steps[3]?.blockedBy).toEqual(["SILO-33"]);
 });
 
 test("a live run is a session only when the execution is shown", () => {
@@ -77,11 +77,11 @@ test("the CI mark of a step comes from the runs of its PR, else from the PR chec
 
 test("the next step to deliver is the first one not started, or back in review with changes requested", () => {
   const steps = stepModels(project, "f5", facts());
-  expect(nextStep(steps)?.key).toBe("EMIS-34");
+  expect(nextStep(steps)?.key).toBe("SILO-34");
   const asked = steps.map((s) =>
-    s.pr && s.key === "EMIS-32" ? { ...s, pr: { ...s.pr, review: "changes_requested" as const } } : s,
+    s.pr && s.key === "SILO-32" ? { ...s, pr: { ...s.pr, review: "changes_requested" as const } } : s,
   );
-  expect(nextStep(asked)?.key).toBe("EMIS-32");
+  expect(nextStep(asked)?.key).toBe("SILO-32");
   expect(nextStep(steps.map((s) => ({ ...s, statusId: "done" as const })))).toBeNull();
 });
 
@@ -92,18 +92,18 @@ test("the action proposes only a startable step, the first one in order", () => 
   const steps = stepModels(project, "f5", facts());
   const tickets = startability({ e35: { startable: true } });
   expect(nextStartableStep(steps, tickets)).toEqual({
-    step: expect.objectContaining({ key: "EMIS-35" }),
+    step: expect.objectContaining({ key: "SILO-35" }),
     reason: null,
   });
   const both = startability({ e34: { startable: true }, e35: { startable: true } });
-  expect(nextStartableStep(steps, both)?.step.key).toBe("EMIS-34");
+  expect(nextStartableStep(steps, both)?.step.key).toBe("SILO-34");
 });
 
 test("with no startable step, the next step comes with the reason it waits", () => {
   const steps = stepModels(project, "f5", facts());
   expect(nextStartableStep(steps, project.tickets)).toEqual({
-    step: expect.objectContaining({ key: "EMIS-34" }),
-    reason: { kind: "dependency", keys: ["EMIS-33"] },
+    step: expect.objectContaining({ key: "SILO-34" }),
+    reason: { kind: "dependency", keys: ["SILO-33"] },
   });
   expect(
     nextStartableStep(
@@ -115,10 +115,10 @@ test("with no startable step, the next step comes with the reason it waits", () 
 
 test("a step back in review with changes requested is proposed as a touch-up", () => {
   const steps = stepModels(project, "f5", facts()).map((s) =>
-    s.pr && s.key === "EMIS-32" ? { ...s, pr: { ...s.pr, review: "changes_requested" as const } } : s,
+    s.pr && s.key === "SILO-32" ? { ...s, pr: { ...s.pr, review: "changes_requested" as const } } : s,
   );
   expect(nextStartableStep(steps, project.tickets)).toEqual({
-    step: expect.objectContaining({ key: "EMIS-32" }),
+    step: expect.objectContaining({ key: "SILO-32" }),
     reason: null,
   });
 });
@@ -166,20 +166,20 @@ test("dependencies between features are read on the roots and on their steps", (
   const extra = { id: "l9", from: "e71", to: "e31", type: "blocks" as const };
   const deps = featureDependencies({ ...project, links: [...project.links, extra] }, "f5");
   expect(deps.waits).toEqual([
-    { id: "f3", label: "F3", title: "Réaffecter un ISO", delivered: true, sprint: "S42" },
-    { id: "f7", label: "F7", title: "Rapport de chantier", delivered: false, sprint: "S44" },
+    { id: "f3", label: "F3", title: "Réaffecter un box", delivered: true, sprint: "S42" },
+    { id: "f7", label: "F7", title: "Rapport de centre", delivered: false, sprint: "S44" },
   ]);
   expect(deps.unblocks).toEqual([
-    { id: "f7", label: "F7", title: "Rapport de chantier", delivered: false, sprint: "S44" },
+    { id: "f7", label: "F7", title: "Rapport de centre", delivered: false, sprint: "S44" },
   ]);
 });
 
 test("the activity lists PRs and delivery steps, newest first", () => {
   const steps = stepModels(project, "f5", facts());
   expect(featureActivity(steps, NOW).map((i) => [i.kind, i.text, i.time])).toEqual([
-    ["pr_opened", "PR #22 ouverte · EMIS-32", "15:04"],
-    ["step", "Phase 7/12 · Porte qualité · EMIS-33", "14:51"],
-    ["pr_merged", "PR #19 fusionnée · EMIS-31", "hier"],
+    ["pr_opened", "PR #22 ouverte · SILO-32", "15:04"],
+    ["step", "Phase 7/12 · Porte qualité · SILO-33", "14:51"],
+    ["pr_merged", "PR #19 fusionnée · SILO-31", "hier"],
   ]);
 });
 
@@ -199,8 +199,8 @@ test("the open questions of the feature and its steps are listed with their orig
   expect(featureQuestions({ ...project, questions: [q16, answered] }, "f5", NOW)).toEqual([
     {
       id: "q16",
-      title: "Quota par affaire : 2 Go ou 5 Go ?",
-      meta: "Q16 · Produit · hier · EMIS-34",
+      title: "Quota par client : 2 Go ou 5 Go ?",
+      meta: "Q16 · Produit · hier · SILO-34",
       blocking: false,
     },
   ]);
@@ -213,7 +213,7 @@ test("a blocking question asked on the feature is listed with its Qn and flagged
   expect(featureQuestions({ ...project, questions: [onFeature] }, "f5", NOW)).toEqual([
     {
       id: "q1",
-      title: "Quota par affaire : 2 Go ou 5 Go ?",
+      title: "Quota par client : 2 Go ou 5 Go ?",
       meta: "Q1 · Produit · hier · F5",
       blocking: true,
     },

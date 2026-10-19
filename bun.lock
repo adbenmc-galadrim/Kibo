@@ -29,7 +29,7 @@
     },
     "apps/desktop": {
       "name": "@kibo/desktop",
-      "version": "0.27.0-alpha.1",
+      "version": "0.28.0-alpha.1",
       "devDependencies": {
         "@kibo/devkit": "workspace:*",
         "@kibo/schema": "workspace:*",
@@ -465,16 +465,11 @@
         "@types/bun": "1.4.2",
       },
     },
-    "scripts/import-emis": {
-      "name": "@kibo/import-emis",
+    "scripts/forbidden-terms": {
+      "name": "@kibo/forbidden-terms",
       "version": "0.0.0",
-      "dependencies": {
-        "@kibo/schema": "workspace:*",
-        "zod": "3.25.76",
-      },
       "devDependencies": {
         "@types/bun": "1.4.2",
-        "fast-check": "4.3.0",
       },
     },
     "scripts/install": {
@@ -757,7 +752,7 @@
 
     "@kibo/e2e": ["@kibo/e2e@workspace:e2e"],
 
-    "@kibo/import-emis": ["@kibo/import-emis@workspace:scripts/import-emis"],
+    "@kibo/forbidden-terms": ["@kibo/forbidden-terms@workspace:scripts/forbidden-terms"],
 
     "@kibo/install": ["@kibo/install@workspace:scripts/install"],
 

@@ -14,9 +14,9 @@ async function threeActions(): Promise<Batch> {
   kit.svc.propose(run, {
     summary: "Fin de sprint",
     actions: [
-      { id: 1, why: "livré", type: "setStatus", ticket: "EMIS-11", statusId: "done" },
-      { id: 2, why: "commencer", type: "setStatus", ticket: "EMIS-1", statusId: "in_progress" },
-      { id: 3, why: "attend", type: "link", from: "EMIS-11", to: "EMIS-1", kind: "blocks" },
+      { id: 1, why: "livré", type: "setStatus", ticket: "SILO-11", statusId: "done" },
+      { id: 2, why: "commencer", type: "setStatus", ticket: "SILO-1", statusId: "in_progress" },
+      { id: 3, why: "attend", type: "link", from: "SILO-11", to: "SILO-1", kind: "blocks" },
     ],
   });
   const pending = kit.store.pendingBatch(PROJECT_ID);
@@ -108,7 +108,7 @@ test("a partly decided batch replaced by a new proposal turns partial", async ()
   if (!view.run) throw new Error("no run");
   kit.svc.propose(view.run, {
     summary: "Autre",
-    actions: [{ id: 1, why: "", type: "setStatus", ticket: "EMIS-1", statusId: "in_progress" }],
+    actions: [{ id: 1, why: "", type: "setStatus", ticket: "SILO-1", statusId: "in_progress" }],
   });
   expect(kit.store.batch(batch.id)?.status).toBe("partial");
 });

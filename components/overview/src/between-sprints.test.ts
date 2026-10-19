@@ -21,10 +21,10 @@ function moveTo(input: OverviewInput, code: string, titles: readonly string[]): 
   return { ...input, tickets };
 }
 
-const F4 = "Saisir un tronçon hors ligne";
-const F5 = "Envoyer les photos d'un tronçon";
-const F8 = "Valider les soudures par lot";
-const F7 = "Rapport de chantier journalier";
+const F4 = "Saisir un constat hors ligne";
+const F5 = "Envoyer les photos d'un constat";
+const F8 = "Valider les contrats par lot";
+const F7 = "Rapport de centre journalier";
 
 test("between two sprints the card names the last sprint and when the next one starts", () => {
   const { model } = build(SUNDAY);

@@ -13,7 +13,7 @@ afterEach(() => {
 
 function setup(today: string) {
   setSystemTime(new Date(Date.parse(`${today}T14:52:00`)));
-  const m = createMockSdk(manifest, { seed, today, folder: "/emis" });
+  const m = createMockSdk(manifest, { seed, today, folder: "/silo" });
   render(
     <SdkProvider sdk={m.sdk}>
       <Component />
@@ -28,11 +28,11 @@ test("between two sprints, the late features are listed under the deadlines and 
   expect(within(late).getByText("sprint fini, étapes obligatoires restantes")).toBeTruthy();
   const rows = within(late).getAllByRole("listitem");
   expect(rows.map((r) => r.textContent)).toEqual([
-    expect.stringContaining("F4Saisir un tronçon hors ligneS42· terminé le 16 oct.reste 1 étape"),
-    expect.stringContaining("F5Envoyer les photos d'un tronçonS42· terminé le 16 oct.reste 4 étapes"),
+    expect.stringContaining("F4Saisir un constat hors ligneS42· terminé le 16 oct.reste 1 étape"),
+    expect.stringContaining("F5Envoyer les photos d'un constatS42· terminé le 16 oct.reste 4 étapes"),
   ]);
-  await userEvent.click(within(late).getByRole("button", { name: "Envoyer les photos d'un tronçon" }));
-  const f5 = m.snapshot().tickets.find((t) => t.title === "Envoyer les photos d'un tronçon");
+  await userEvent.click(within(late).getByRole("button", { name: "Envoyer les photos d'un constat" }));
+  const f5 = m.snapshot().tickets.find((t) => t.title === "Envoyer les photos d'un constat");
   expect(m.opened).toEqual([f5?.id ?? ""]);
   const indicators = screen.getByRole("region", { name: "Indicateurs du projet" });
   expect(within(indicators).getByText("2 en retard")).toBeTruthy();

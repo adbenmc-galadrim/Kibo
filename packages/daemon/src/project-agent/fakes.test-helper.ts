@@ -169,7 +169,7 @@ export function harness(): Harness {
   };
   const createProject = (name: string, key: string): ProjectMeta =>
     call(service, { method: "createProject", name, key, folder: null, color: "#F97316" });
-  const project = createProject("Emis", "EMIS");
+  const project = createProject("Silo", "SILO");
   const command = (cmd: ProjectCommand) =>
     call(service, { method: "command", projectId: project.id, command: cmd });
   return {

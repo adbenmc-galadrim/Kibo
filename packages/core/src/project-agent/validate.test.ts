@@ -43,8 +43,8 @@ const IMPORT = { kind: "import", ref: "plan" } as const;
 
 describe("validateBatch refuses a batch that lies about its targets", () => {
   test("unknown ticket", () => {
-    expect(problems(batch({ id: 1, why, type: "updateTicket", ticket: "EMIS-999", title: "x" }))).toEqual([
-      "#1 ticket inconnu « EMIS-999 »",
+    expect(problems(batch({ id: 1, why, type: "updateTicket", ticket: "SILO-999", title: "x" }))).toEqual([
+      "#1 ticket inconnu « SILO-999 »",
     ]);
   });
 
@@ -53,19 +53,19 @@ describe("validateBatch refuses a batch that lies about its targets", () => {
       project: { ...snapshot, workflow: DEFAULT_WORKFLOW.filter((s) => s.id !== "in_review") },
     });
     expect(
-      problems(batch({ id: 1, why, type: "setStatus", ticket: "EMIS-1", statusId: "in_review" }), narrow),
+      problems(batch({ id: 1, why, type: "setStatus", ticket: "SILO-1", statusId: "in_review" }), narrow),
     ).toEqual(["#1 statut inconnu « in_review »"]);
   });
 
   test("blocked needs a reason", () => {
-    expect(problems(batch({ id: 1, why, type: "setStatus", ticket: "EMIS-1", statusId: "blocked" }))).toEqual(
+    expect(problems(batch({ id: 1, why, type: "setStatus", ticket: "SILO-1", statusId: "blocked" }))).toEqual(
       ["#1 raison de blocage requise"],
     );
   });
 
   test("Kibo agents are not assignable, demo only in the demo project, nor disabled, shadowed or unreadable agents", () => {
     const assign = (profileId: string) =>
-      batch({ id: 1, why, type: "assignAgent", ticket: "EMIS-3", profileId });
+      batch({ id: 1, why, type: "assignAgent", ticket: "SILO-3", profileId });
     for (const ref of ["system:assistant", "system:project-agent", "system:demo", "global:off-dev", "nope"]) {
       expect(problems(assign(ref))).toEqual([`#1 agent non assignable « ${ref} »`]);
     }
@@ -76,7 +76,7 @@ describe("validateBatch refuses a batch that lies about its targets", () => {
 
   test("assigning a ticket that already has an active run is accepted here", () => {
     expect(
-      problems(batch({ id: 1, why, type: "assignAgent", ticket: "EMIS-2", profileId: "global:opus-dev" })),
+      problems(batch({ id: 1, why, type: "assignAgent", ticket: "SILO-2", profileId: "global:opus-dev" })),
     ).toEqual([]);
   });
 
@@ -121,48 +121,48 @@ describe("validateBatch refuses a batch that lies about its targets", () => {
   });
 
   test("delivering answers needs undelivered answers", () => {
-    expect(problems(batch({ id: 1, why, type: "deliverAnswers", ticket: "EMIS-1" }))).toEqual([
-      "#1 aucune réponse à transmettre sur EMIS-1",
+    expect(problems(batch({ id: 1, why, type: "deliverAnswers", ticket: "SILO-1" }))).toEqual([
+      "#1 aucune réponse à transmettre sur SILO-1",
     ]);
-    expect(problems(batch({ id: 1, why, type: "deliverAnswers", ticket: "EMIS-3" }))).toEqual([]);
+    expect(problems(batch({ id: 1, why, type: "deliverAnswers", ticket: "SILO-3" }))).toEqual([]);
   });
 
   test("an imported answer is not an answer to deliver", () => {
     const fromPlan = answered(question({ id: "q9", ticketId: "t2" }));
     const imported = { ...fromPlan, answer: fromPlan.answer && { ...fromPlan.answer, by: IMPORT } };
     const c = ctx({ project: { ...snapshot, questions: [...snapshot.questions, imported] } });
-    expect(problems(batch({ id: 1, why, type: "deliverAnswers", ticket: "EMIS-2" }), c)).toEqual([
-      "#1 aucune réponse à transmettre sur EMIS-2",
+    expect(problems(batch({ id: 1, why, type: "deliverAnswers", ticket: "SILO-2" }), c)).toEqual([
+      "#1 aucune réponse à transmettre sur SILO-2",
     ]);
   });
 
   test("a link that creates a blocks cycle, including through new:", () => {
     expect(
-      problems(batch({ id: 1, why, type: "link", from: "EMIS-2", to: "EMIS-1", kind: "blocks" })),
-    ).toEqual(["#1 lien en cycle : EMIS-2 → EMIS-1"]);
+      problems(batch({ id: 1, why, type: "link", from: "SILO-2", to: "SILO-1", kind: "blocks" })),
+    ).toEqual(["#1 lien en cycle : SILO-2 → SILO-1"]);
     expect(
       problems(
         batch(
           { id: 1, why, type: "createTicket", ref: "new:1", title: "Nouveau" },
-          { id: 2, why, type: "link", from: "EMIS-3", to: "new:1", kind: "blocks" },
-          { id: 3, why, type: "link", from: "new:1", to: "EMIS-3", kind: "blocks" },
+          { id: 2, why, type: "link", from: "SILO-3", to: "new:1", kind: "blocks" },
+          { id: 3, why, type: "link", from: "new:1", to: "SILO-3", kind: "blocks" },
         ),
       ),
-    ).toEqual(["#3 lien en cycle : new:1 → EMIS-3"]);
+    ).toEqual(["#3 lien en cycle : new:1 → SILO-3"]);
     expect(
-      problems(batch({ id: 1, why, type: "link", from: "EMIS-1", to: "EMIS-2", kind: "blocks" })),
+      problems(batch({ id: 1, why, type: "link", from: "SILO-1", to: "SILO-2", kind: "blocks" })),
     ).toEqual(["#1 lien déjà présent"]);
     expect(
-      problems(batch({ id: 1, why, type: "link", from: "EMIS-1", to: "EMIS-1", kind: "blocks" })),
+      problems(batch({ id: 1, why, type: "link", from: "SILO-1", to: "SILO-1", kind: "blocks" })),
     ).toEqual(["#1 un ticket ne peut pas se lier à lui-même"]);
   });
 
   test("unlink needs an existing link, relates in either direction", () => {
     expect(
-      problems(batch({ id: 1, why, type: "unlink", from: "EMIS-3", to: "EMIS-2", kind: "relates" })),
+      problems(batch({ id: 1, why, type: "unlink", from: "SILO-3", to: "SILO-2", kind: "relates" })),
     ).toEqual([]);
     expect(
-      problems(batch({ id: 1, why, type: "unlink", from: "EMIS-2", to: "EMIS-1", kind: "blocks" })),
+      problems(batch({ id: 1, why, type: "unlink", from: "SILO-2", to: "SILO-1", kind: "blocks" })),
     ).toEqual(["#1 lien introuvable"]);
   });
 
@@ -170,8 +170,8 @@ describe("validateBatch refuses a batch that lies about its targets", () => {
     expect(
       problems(
         batch(
-          { id: 1, why, type: "unlink", from: "EMIS-1", to: "EMIS-2", kind: "blocks" },
-          { id: 2, why, type: "link", from: "EMIS-2", to: "EMIS-1", kind: "blocks" },
+          { id: 1, why, type: "unlink", from: "SILO-1", to: "SILO-2", kind: "blocks" },
+          { id: 2, why, type: "link", from: "SILO-2", to: "SILO-1", kind: "blocks" },
         ),
       ),
     ).toEqual([]);
@@ -203,27 +203,27 @@ describe("validateBatch refuses a batch that lies about its targets", () => {
     expect(
       problems(
         batch(
-          { id: 1, why, type: "updateTicket", ticket: "EMIS-1", title: "A" },
-          { id: 2, why, type: "updateTicket", ticket: "EMIS-1", title: "B", description: "d" },
+          { id: 1, why, type: "updateTicket", ticket: "SILO-1", title: "A" },
+          { id: 2, why, type: "updateTicket", ticket: "SILO-1", title: "B", description: "d" },
         ),
       ),
-    ).toEqual(["#2 deux actions sur EMIS-1.title"]);
+    ).toEqual(["#2 deux actions sur SILO-1.title"]);
   });
 
   test("parents never form a cycle", () => {
-    expect(problems(batch({ id: 1, why, type: "updateTicket", ticket: "EMIS-1", parent: "EMIS-2" }))).toEqual(
-      ["#1 parent en cycle : EMIS-2"],
+    expect(problems(batch({ id: 1, why, type: "updateTicket", ticket: "SILO-1", parent: "SILO-2" }))).toEqual(
+      ["#1 parent en cycle : SILO-2"],
     );
-    expect(problems(batch({ id: 1, why, type: "updateTicket", ticket: "EMIS-1", parent: "EMIS-1" }))).toEqual(
-      ["#1 parent en cycle : EMIS-1"],
+    expect(problems(batch({ id: 1, why, type: "updateTicket", ticket: "SILO-1", parent: "SILO-1" }))).toEqual(
+      ["#1 parent en cycle : SILO-1"],
     );
-    expect(problems(batch({ id: 1, why, type: "updateTicket", ticket: "EMIS-3", parent: "EMIS-2" }))).toEqual(
+    expect(problems(batch({ id: 1, why, type: "updateTicket", ticket: "SILO-3", parent: "SILO-2" }))).toEqual(
       [],
     );
   });
 
   test("an update with nothing to change is refused", () => {
-    expect(problems(batch({ id: 1, why, type: "updateTicket", ticket: "EMIS-1" }))).toEqual([
+    expect(problems(batch({ id: 1, why, type: "updateTicket", ticket: "SILO-1" }))).toEqual([
       "#1 rien à modifier",
     ]);
   });
@@ -231,7 +231,7 @@ describe("validateBatch refuses a batch that lies about its targets", () => {
   test("question options are distinct and the provisional choice is one of them", () => {
     expect(
       problems(
-        batch({ id: 1, why, type: "createQuestion", ticket: "EMIS-1", title: "?", options: ["A", "A"] }),
+        batch({ id: 1, why, type: "createQuestion", ticket: "SILO-1", title: "?", options: ["A", "A"] }),
       ),
     ).toEqual(["#1 options en double"]);
     expect(
@@ -240,7 +240,7 @@ describe("validateBatch refuses a batch that lies about its targets", () => {
           id: 1,
           why,
           type: "createQuestion",
-          ticket: "EMIS-1",
+          ticket: "SILO-1",
           title: "?",
           options: ["A"],
           provisional: "B",
@@ -306,7 +306,7 @@ describe("validateBatch checks the signals an action cites", () => {
       id: 2,
       why,
       type: "setStatus",
-      ticket: "EMIS-1",
+      ticket: "SILO-1",
       statusId: "todo",
       signals: ["sig:1", "sig:2"],
     };
@@ -327,8 +327,8 @@ describe("validateBatch checks the signals an action cites", () => {
 
 describe("validateBatch with the agent execution hidden", () => {
   const hidden = ctx({ agentExecution: "hidden" });
-  const assign = batch({ id: 1, why, type: "assignAgent", ticket: "EMIS-3", profileId: "global:opus-dev" });
-  const deliver = batch({ id: 2, why, type: "deliverAnswers", ticket: "EMIS-3" });
+  const assign = batch({ id: 1, why, type: "assignAgent", ticket: "SILO-3", profileId: "global:opus-dev" });
+  const deliver = batch({ id: 2, why, type: "deliverAnswers", ticket: "SILO-3" });
 
   test("refuses assignAgent and deliverAnswers with a clear message", () => {
     const message = "exécution des agents masquée dans Kibo : action indisponible";

@@ -59,7 +59,7 @@ S.draw["c-vue"] = (x, y) => { const C = S.C, D = S.D;
   const fh = S.row(feed, { fx: true, gap: 8 }); S.icon(fh, "activity", 15, C.mfg); S.txt(fh, "Fil d'activité", { size: 13, weight: 600 }); S.spacer(fh);
   for (const [l, on] of [["Tout", true], ["git et PR"], ["full-delivery"], ["Agent de projet"]]) S.chip(fh, l, { size: 11, color: on ? C.fg : C.mfg, fill: on ? C.muted : null, stroke: on ? C.border : null, pad: [3, 8], radius: 12 });
   const live = S.col(feed, { fx: true, stroke: C.brandLine, radius: 10, fill: C.brandSoft, pad: [4, 0] });
-  for (const [k, step, since] of [["EMIS-33", 7, "depuis 42 min"], ["EMIS-23", 6, "depuis 18 min"]]) { const t = S.tk(k);
+  for (const [k, step, since] of [["SILO-33", 7, "depuis 42 min"], ["SILO-23", 6, "depuis 18 min"]]) { const t = S.tk(k);
     const r = S.row(live, { fx: true, pad: [8, 14], gap: 12 }); S.halo(r, C.brand, 7);
     S.txt(r, "En ce moment", { size: 11.5, weight: 600, color: C.brandText }); S.txt(r, `${k} · ${t.title}`, { size: 13 });
     S.spacer(r); S.segs(r, S.stepColors(step), { w: 4, h: 10, gap: 1.5, radius: 1 }); S.txt(r, S.stepLabel(step), { size: 12, color: C.mfg }); S.txt(r, `T3 Code · ${since}`, { size: 11.5, color: C.dim }); }
@@ -87,10 +87,10 @@ S.draw["c-vue"] = (x, y) => { const C = S.C, D = S.D;
     S.txt(db, d, { size: 16, weight: 600, color: warn ? C.amber : C.fg }); S.txt(db, wd, { size: 10.5, color: C.dim });
     const tc = S.col(r, { fx: true, gap: 2 }); S.txt(tc, title, { size: 13 }); S.txt(tc, meta, { size: 11.5, color: C.dim }); }
   const wt = S.card(rc, "Attend ta réponse", "inbox", { count: "3" });
-  for (const [ic, col, text, meta] of [["pr", C.purple, "Relire PR #21 et PR #22", "ouvertes depuis hier · C2 et C4"], ["question", C.red, "Q14 · Un ISO réaffecté garde-t-il ses photos ?", "bloque EMIS-44 depuis 3 j · Client"]]) {
+  for (const [ic, col, text, meta] of [["pr", C.purple, "Relire PR #21 et PR #22", "ouvertes depuis hier · C2 et C4"], ["question", C.red, "Q14 · Un box réaffecté garde-t-il ses photos ?", "bloque SILO-44 depuis 3 j · Client"]]) {
     const r = S.cardRow(wt, { align: "start" }); S.icon(r, ic, 14, col); const tc = S.col(r, { fx: true, gap: 2 }); S.txt(tc, text, { size: 12.5, fill: true }); S.txt(tc, meta, { size: 11.5, color: C.dim }); }
   { const r = S.cardRow(wt, { align: "start" }); S.icon(r, "bot", 14, C.brand); const tc = S.col(r, { fx: true, gap: 6 });
-    S.txt(tc, "Lot n° 6 de l'agent de projet · 3 actions", { size: 12.5, fill: true }); S.txt(tc, "créer EMIS-61, lier EMIS-34, relancer Q14", { size: 11.5, color: C.dim });
+    S.txt(tc, "Lot n° 6 de l'agent de projet · 3 actions", { size: 12.5, fill: true }); S.txt(tc, "créer SILO-61, lier SILO-34, relancer Q14", { size: 11.5, color: C.dim });
     const b = S.row(tc, { gap: 8 }); S.btn(b, "Examiner", "brandOutline", { sm: true }); S.btn(b, "Plus tard", "ghost", { sm: true }); }
   return f; };
 
@@ -116,10 +116,10 @@ S.draw["c-tickets"] = (x, y) => { const C = S.C, D = S.D;
   const th = S.row(tb, { fx: true, h: 34, pad: [0, 16], gap: 12, fill: C.panel });
   const hc = (l, w) => { const c = S.row(th, { w, fx: !w }); S.txt(c, l, { size: 11.5, weight: 500, color: C.dim }); };
   hc("Clé", W.key); hc("Titre"); hc("État", W.st); hc("Livraison · étapes 0 à 11", W.step); hc("Dernier événement", W.ev); hc("Échéance", W.due);
-  const EV = { "EMIS-23": ["branch", C.blue, "branche poussée · 14:20"], "EMIS-33": ["flag", C.mfg, "étape 7 · 14:51"], "EMIS-22": ["flag", C.mfg, "2 commentaires · 13:47"], "EMIS-32": ["pr", C.purple, "PR #22 ouverte · 15:04"], "EMIS-21": ["merge", C.green, "PR #18 fusionnée · 14:36"],
-    "EMIS-41": ["circleX", C.red, "CI rouge sur #20 · 11:58"], "EMIS-60": ["pr", C.purple, "PR #23 ouverte · mer."], "EMIS-43": ["flag", C.mfg, "étape 4 · mer."], "EMIS-44": ["question", C.red, "attend Q14 · mar."],
-    "EMIS-34": ["link", C.dim, "lié à EMIS-32 · hier"], "EMIS-46": ["plus", C.dim, "créé · mar. 13"], "EMIS-35": ["plus", C.dim, "créé · lun. 12"], "EMIS-52": ["question", C.mfg, "Q17 posée · 13:10"] };
-  const groups = [["Aujourd'hui", ["EMIS-32", "EMIS-33", "EMIS-21", "EMIS-23", "EMIS-22", "EMIS-52"]], ["Cette semaine", ["EMIS-41", "EMIS-60", "EMIS-43", "EMIS-44", "EMIS-34"]], ["Plus ancien", ["EMIS-46", "EMIS-35"]]];
+  const EV = { "SILO-23": ["branch", C.blue, "branche poussée · 14:20"], "SILO-33": ["flag", C.mfg, "étape 7 · 14:51"], "SILO-22": ["flag", C.mfg, "2 commentaires · 13:47"], "SILO-32": ["pr", C.purple, "PR #22 ouverte · 15:04"], "SILO-21": ["merge", C.green, "PR #18 fusionnée · 14:36"],
+    "SILO-41": ["circleX", C.red, "CI rouge sur #20 · 11:58"], "SILO-60": ["pr", C.purple, "PR #23 ouverte · mer."], "SILO-43": ["flag", C.mfg, "étape 4 · mer."], "SILO-44": ["question", C.red, "attend Q14 · mar."],
+    "SILO-34": ["link", C.dim, "lié à SILO-32 · hier"], "SILO-46": ["plus", C.dim, "créé · mar. 13"], "SILO-35": ["plus", C.dim, "créé · lun. 12"], "SILO-52": ["question", C.mfg, "Q17 posée · 13:10"] };
+  const groups = [["Aujourd'hui", ["SILO-32", "SILO-33", "SILO-21", "SILO-23", "SILO-22", "SILO-52"]], ["Cette semaine", ["SILO-41", "SILO-60", "SILO-43", "SILO-44", "SILO-34"]], ["Plus ancien", ["SILO-46", "SILO-35"]]];
   for (const [g, keys] of groups) { S.hline(tb, C.soft);
     const gr = S.row(tb, { fx: true, h: 30, pad: [0, 16], gap: 8, fill: C.panel }); S.icon(gr, "chevDown", 13, C.dim); S.txt(gr, g, { size: 12, weight: 600, color: C.mfg }); S.txt(gr, String(keys.length), { size: 11, mono: true, color: C.dim });
     for (const k of keys) { const t = S.tk(k); S.hline(tb, C.soft);
@@ -153,9 +153,9 @@ S.draw["c-graphe"] = (x, y) => { const C = S.C, D = S.D;
   for (let i = 0; i < 7; i++) { S.box(cv, { name: "col", x: X(i), y: 0, w: 1, h: CH, fill: C.grid });
     const l = S.row(cv, { x: X(i) + 8, y: 10, gap: 6 }); S.txt(l, S.WEEKS[i][0], { size: 11.5, weight: 600, mono: true, color: i === 2 ? C.fg : C.mfg }); S.txt(l, S.WEEKS[i][1], { size: 11.5, color: C.dim }); }
   const lanes = [{ key: "C2", rows: 1 }, { key: "C3", rows: 2 }, { key: "C4", rows: 2 }, { key: "C5", rows: 1, more: "+ 4 tickets" }, { key: null, rows: 1 }];
-  const place = { "EMIS-22": ["C2", 1.68, 0], "EMIS-23": ["C2", 2.75, 0], "EMIS-41": ["C3", 1.68, 0], "EMIS-43": ["C3", 2.75, 0], "EMIS-44": ["C3", 1.68, 1], "EMIS-46": ["C3", 2.75, 1],
-    "EMIS-32": ["C4", 1.68, 0], "EMIS-33": ["C4", 2.75, 0], "EMIS-34": ["C4", 3.95, 1], "EMIS-35": ["C4", 4.9, 1], "EMIS-52": ["C5", 3.9, 0], "EMIS-53": ["C5", 4.85, 0], "EMIS-60": [null, 1.68, 0] };
-  const extra = { "EMIS-53": { key: "EMIS-53", title: "Export des rapports", st: "À faire" }, "EMIS-54": { key: "EMIS-54", title: "Signature du rapport", st: "À faire" } };
+  const place = { "SILO-22": ["C2", 1.68, 0], "SILO-23": ["C2", 2.75, 0], "SILO-41": ["C3", 1.68, 0], "SILO-43": ["C3", 2.75, 0], "SILO-44": ["C3", 1.68, 1], "SILO-46": ["C3", 2.75, 1],
+    "SILO-32": ["C4", 1.68, 0], "SILO-33": ["C4", 2.75, 0], "SILO-34": ["C4", 3.95, 1], "SILO-35": ["C4", 4.9, 1], "SILO-52": ["C5", 3.9, 0], "SILO-53": ["C5", 4.85, 0], "SILO-60": [null, 1.68, 0] };
+  const extra = { "SILO-53": { key: "SILO-53", title: "Export des rapports", st: "À faire" }, "SILO-54": { key: "SILO-54", title: "Signature du rapport", st: "À faire" } };
   const done = { C2: [0.6, "4 livrés"], C3: [0.6, "9 livrés"], C4: [0.75, "1 livré"] };
   const RH = 64; let yy = 56; const laneY = {}, pos = {};
   for (const ln of lanes) { const h = ln.rows * RH + 22; laneY[ln.key] = yy; const s = D.sets.find(x => x.key === ln.key);
@@ -169,11 +169,11 @@ S.draw["c-graphe"] = (x, y) => { const C = S.C, D = S.D;
     if (done[ln.key]) { const [w, l] = done[ln.key]; const p = S.row(cv, { x: X(w), y: yy + 14, pad: [5, 10], gap: 6, radius: 14, fill: C.muted }); S.icon(p, "circleCheck", 12, C.green); S.txt(p, l, { size: 11.5, color: C.mfg }); }
     if (ln.more) { const p = S.row(cv, { x: X(5.8), y: yy + 22, pad: [5, 10], radius: 14, stroke: C.border, dashed: true }); S.txt(p, ln.more, { size: 11.5, color: C.dim }); }
     yy += h + 10; }
-  const SHORT = { "EMIS-22": "Périmètre serveur et synchro", "EMIS-23": "404 hors périmètre", "EMIS-41": "Tronçon hors ligne", "EMIS-43": "Soudures par lot", "EMIS-44": "Import Excel des ISO", "EMIS-46": "Recherche par repère",
-    "EMIS-32": "Envoi des photos", "EMIS-33": "Aperçu hors ligne", "EMIS-34": "Quotas par affaire", "EMIS-35": "Purge des orphelins", "EMIS-52": "Rapport journalier PDF", "EMIS-53": "Export des rapports", "EMIS-54": "Signature du rapport", "EMIS-60": "Expo SDK 54" };
+  const SHORT = { "SILO-22": "Périmètre serveur et synchro", "SILO-23": "404 hors périmètre", "SILO-41": "Constat hors ligne", "SILO-43": "Contrats par lot", "SILO-44": "Import Excel des box", "SILO-46": "Recherche par numéro",
+    "SILO-32": "Envoi des photos", "SILO-33": "Aperçu hors ligne", "SILO-34": "Quotas par client", "SILO-35": "Purge des orphelins", "SILO-52": "Rapport journalier PDF", "SILO-53": "Export des rapports", "SILO-54": "Signature du rapport", "SILO-60": "Expo SDK 54" };
   const at = {}; for (const [k, [lane, w, row]] of Object.entries(place)) at[k] = { x: X(w), y: laneY[lane] + 11 + row * RH };
-  { const pairs = [["EMIS-22", "EMIS-23"], ["EMIS-41", "EMIS-43"], ["EMIS-44", "EMIS-46"], ["EMIS-32", "EMIS-33"], ["EMIS-32", "EMIS-34"], ["EMIS-34", "EMIS-35"], ["EMIS-23", "EMIS-52"], ["EMIS-52", "EMIS-53"]];
-    const segs = pairs.map(([a, b]) => [at[a].x + NW, at[a].y + 26, at[b].x - 2, at[b].y + 26, false, a === "EMIS-32"]);
+  { const pairs = [["SILO-22", "SILO-23"], ["SILO-41", "SILO-43"], ["SILO-44", "SILO-46"], ["SILO-32", "SILO-33"], ["SILO-32", "SILO-34"], ["SILO-34", "SILO-35"], ["SILO-23", "SILO-52"], ["SILO-52", "SILO-53"]];
+    const segs = pairs.map(([a, b]) => [at[a].x + NW, at[a].y + 26, at[b].x - 2, at[b].y + 26, false, a === "SILO-32"]);
     S.svg(cv, S.edgesSvg(CW, CH, segs), "edges", { x: 0, y: 0 }); }
   for (const [k, [lane, w, row]] of Object.entries(place)) { const t = { ...(S.tk(k) || extra[k]), title: SHORT[k] }; const nx = X(w), ny = laneY[lane] + 11 + row * RH;
     const n = S.col(cv, { name: "node " + k, x: nx, y: ny, w: NW, pad: [7, 9], gap: 3, radius: 8, fill: C.card, stroke: t.live ? C.brandLine : C.border, vs: "auto" });

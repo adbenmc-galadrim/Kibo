@@ -10,7 +10,7 @@ const MARKET_USAGE = [
 
 const DAEMON_HELP = "Démon : $KIBO_HOME/daemon.json (défaut ~/.kibo), ou --home <dossier>";
 const PROJECT_HINT =
-  "Projet de get et set : --project, sinon le préfixe de la clé (EMIS-12), sinon le dossier courant.";
+  "Projet de get et set : --project, sinon le préfixe de la clé (SILO-12), sinon le dossier courant.";
 
 const TICKETS_USAGE = [
   "  kibo tickets list --project <clé|nom|id> [--ready] [--status <s>[,<s>…]] [--sprint <id|code|nom|current|none>] [--json]",

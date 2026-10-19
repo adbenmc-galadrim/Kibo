@@ -10,7 +10,7 @@ test("a parent ticket refused by the daemon is told in French", async () => {
   render(
     <AllowResumeDialog
       allowance={ALLOWANCE}
-      runLabel="emis · full-delivery · EMIS-15"
+      runLabel="silo · full-delivery · SILO-15"
       onOpenChange={() => undefined}
       onConfirm={() => Promise.reject(new KiboError("TICKET_HAS_CHILDREN", parentTicketDetail(2)))}
     />,

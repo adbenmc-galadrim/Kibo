@@ -3,14 +3,14 @@ import { byExportOrder, exportAll, exportDate, exportQuestionText } from "./expo
 import { question } from "./question-fixtures.test-helper";
 
 const Q14 = question({ number: 14, blocking: true });
-const Q17 = question({ number: 17, title: "Un rapport par chef de chantier ou par affaire ?" });
-const TRONCONS = { feature: "Tronçons et étapes", week: "2026-10-19" };
+const Q17 = question({ number: 17, title: "Un rapport par chef de centre ou par client ?" });
+const CONSTATS = { feature: "Constats et étapes", week: "2026-10-19" };
 
 test("a question reads « Qn · title », its impact, then its context as plain text and its options", () => {
-  expect(exportQuestionText({ question: Q14, impact: TRONCONS })).toBe(
+  expect(exportQuestionText({ question: Q14, impact: CONSTATS })).toBe(
     [
-      "Q14 · Un ISO réaffecté garde-t-il ses photos ?",
-      "   bloque « Tronçons et étapes », prévue semaine du 19 oct. · réponse souhaitée avant le 19 oct.",
+      "Q14 · Un box réaffecté garde-t-il ses photos ?",
+      "   bloque « Constats et étapes », prévue semaine du 19 oct. · réponse souhaitée avant le 19 oct.",
     ].join("\n"),
   );
   const detailed = question({
@@ -21,7 +21,7 @@ test("a question reads « Qn · title », its impact, then its context as plain 
   });
   expect(exportQuestionText({ question: detailed, impact: { feature: "Photos", week: null } })).toBe(
     [
-      "Q5 · Un ISO réaffecté garde-t-il ses photos ?",
+      "Q5 · Un box réaffecté garde-t-il ses photos ?",
       "   pour « Photos », à planifier",
       "   Contexte : Il nous faut les clés API du compte.",
       "   • photos",
@@ -49,17 +49,17 @@ test("blocking questions come first, then by increasing Qn", () => {
 
 test("the export starts with the recipient and the date, one blank line between questions", () => {
   const entries = [
-    { question: Q14, impact: TRONCONS },
+    { question: Q14, impact: CONSTATS },
     { question: Q17, impact: { feature: "Rapports", week: null } },
   ];
-  expect(exportAll("Emis SA", exportDate(Date.parse("2026-10-16T14:52:00+02:00")), entries)).toBe(
+  expect(exportAll("Silo SA", exportDate(Date.parse("2026-10-16T14:52:00+02:00")), entries)).toBe(
     [
-      "Questions pour Emis SA · 16 oct. 2026",
+      "Questions pour Silo SA · 16 oct. 2026",
       "",
-      "Q14 · Un ISO réaffecté garde-t-il ses photos ?",
-      "   bloque « Tronçons et étapes », prévue semaine du 19 oct. · réponse souhaitée avant le 19 oct.",
+      "Q14 · Un box réaffecté garde-t-il ses photos ?",
+      "   bloque « Constats et étapes », prévue semaine du 19 oct. · réponse souhaitée avant le 19 oct.",
       "",
-      "Q17 · Un rapport par chef de chantier ou par affaire ?",
+      "Q17 · Un rapport par chef de centre ou par client ?",
       "   pour « Rapports », à planifier",
     ].join("\n"),
   );

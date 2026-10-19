@@ -33,12 +33,12 @@ describe("kibo tickets without a daemon", () => {
     const home = mkdtempSync(join(tmpdir(), "kibo-cli-tickets-"));
     try {
       const t = cli(home);
-      expect(await t.run("list", "--project", "EMIS")).toBe(1);
+      expect(await t.run("list", "--project", "SILO")).toBe(1);
       expect(t.err).toEqual([NOT_RUNNING]);
       await expect(connectDaemon(home)).rejects.toMatchObject({ code: "DAEMON_NOT_RUNNING" });
       writeFileSync(join(home, "daemon.json"), JSON.stringify({ port: 1, sandboxPort: 1, pid: 1 }));
       writeFileSync(join(home, "token"), "never-printed-token");
-      expect(await t.run("get", "C1-2", "--project", "EMIS")).toBe(1);
+      expect(await t.run("get", "C1-2", "--project", "SILO")).toBe(1);
       expect(t.err.at(-1)).toBe(NOT_RUNNING);
       expect([...t.out, ...t.err].join("\n")).not.toContain("never-printed-token");
     } finally {
@@ -51,7 +51,7 @@ describe("kibo tickets without a daemon", () => {
     expect(await t.run()).toBe(2);
     expect(t.err.at(-1)).toContain("kibo tickets list --project");
     expect(await t.run("list")).toBe(2);
-    expect(await t.run("get", "--project", "EMIS")).toBe(2);
+    expect(await t.run("get", "--project", "SILO")).toBe(2);
   });
 });
 
@@ -91,16 +91,16 @@ describe("kibo tickets against a real daemon", () => {
     stop = async () => daemon.stop();
     seed = await connectDaemon(home);
     projectId = (
-      await seed.rpc({ method: "createProject", name: "Emis", key: "EMIS", folder: null, color: "#336699" })
+      await seed.rpc({ method: "createProject", name: "Silo", key: "SILO", folder: null, color: "#336699" })
     ).id;
-    const parent = await ticket("C1", "Chantier 1");
+    const parent = await ticket("C1", "Centre 1");
     const done = await ticket("C1-1", "Socle", { parentId: parent.id, statusId: "done" });
     await command({
       method: "upsertExternalRef",
       ticketId: done.id,
       ref: {
         kind: "github_pr",
-        url: "https://github.com/galadrim/emis/pull/4",
+        url: "https://github.com/silo-labs/silo-location/pull/4",
         number: 4,
         state: "merged",
         base: "dev",
@@ -120,7 +120,7 @@ describe("kibo tickets against a real daemon", () => {
       recipient: "client",
       blocking: true,
     });
-    const notes = join(home, "notes", "EMIS");
+    const notes = join(home, "notes", "SILO");
     mkdirSync(join(notes, "briefs"), { recursive: true });
     writeFileSync(join(notes, "briefs", "C1-2.md"), "# Brief C1-2\n");
     writeFileSync(join(notes, "stockage.md"), `# Stockage\n\nVoir ${next.key}.\n`);
@@ -134,29 +134,29 @@ describe("kibo tickets against a real daemon", () => {
 
   test("list gives every ticket in JSON with plan ids, deps and the PR", async () => {
     const t = cli(home);
-    const list = await t.json("list", "--project", "emis");
+    const list = await t.json("list", "--project", "silo");
     if (!Array.isArray(list)) throw new Error("list is not an array");
-    const stockage: Record<string, unknown> = list.find((x: { key: string }) => x.key === "EMIS-3");
+    const stockage: Record<string, unknown> = list.find((x: { key: string }) => x.key === "SILO-3");
     expect(stockage).toHaveProperty("updatedAt");
     const settled: Record<string, unknown> = { ...stockage, updatedAt: null };
     expect(settled).toEqual({
       id: ids.get("C1-2"),
-      key: "EMIS-3",
+      key: "SILO-3",
       planId: "C1-2",
       title: "Stockage",
       status: "todo",
       kiboStatus: "todo",
       column: "À faire",
       blockedReason: null,
-      parent: { key: "EMIS-1", planId: "C1", status: "wip" },
+      parent: { key: "SILO-1", planId: "C1", status: "wip" },
       children: [],
-      deps: [{ key: "EMIS-2", planId: "C1-1", status: "done" }],
+      deps: [{ key: "SILO-2", planId: "C1-1", status: "done" }],
       pr: null,
       assignee: null,
       branch: null,
       labels: [],
       sprint: null,
-      feature: { key: "EMIS-1", shortKey: "F1", title: "Chantier 1" },
+      feature: { key: "SILO-1", shortKey: "F1", title: "Centre 1" },
       optional: false,
       delivery: null,
       session: null,
@@ -165,22 +165,22 @@ describe("kibo tickets against a real daemon", () => {
       startable: false,
       startReason: { kind: "question", label: "Q1" },
     });
-    expect(await t.json("list", "--project", "Emis", "--ready")).toEqual([]);
+    expect(await t.json("list", "--project", "Silo", "--ready")).toEqual([]);
     expect(await t.json("list", "--project", projectId, "--status", "wip,done")).toMatchObject([
       { planId: "C1" },
       { planId: "C1-1" },
       { planId: "C1-3" },
     ]);
     t.out.length = 0;
-    expect(await t.run("list", "--project", "EMIS", "--ready")).toBe(0);
+    expect(await t.run("list", "--project", "SILO", "--ready")).toBe(0);
     expect(t.out).toEqual(["Aucun ticket pour ces filtres : --ready"]);
   });
 
   test("get adds the description, pending questions, linked notes and the brief", async () => {
     const t = cli(home);
-    const detail = await t.json("get", "c1-2", "--project", "EMIS");
+    const detail = await t.json("get", "c1-2", "--project", "SILO");
     expect(detail).toMatchObject({
-      key: "EMIS-3",
+      key: "SILO-3",
       planId: "C1-2",
       description: "Tout le détail.",
       questions: [
@@ -192,10 +192,10 @@ describe("kibo tickets against a real daemon", () => {
         },
       ],
       notes: [{ path: "stockage.md", title: "Stockage" }],
-      brief: join(home, "notes", "EMIS", "briefs", "C1-2.md"),
+      brief: join(home, "notes", "SILO", "briefs", "C1-2.md"),
     });
     t.out.length = 0;
-    expect(await t.run("get", "EMIS-3", "--project", "EMIS")).toBe(0);
+    expect(await t.run("get", "SILO-3", "--project", "SILO")).toBe(0);
     expect(t.out).toContain("Statut : todo (À faire)");
     expect(t.out).toContain("  - [open] Quel bucket ? → Client (bloquante)");
     expect(t.out.at(-1)).toBe("Tout le détail.");
@@ -203,22 +203,22 @@ describe("kibo tickets against a real daemon", () => {
 
   test("set writes the status, then the PR moves the ticket to review like git", async () => {
     const t = cli(home);
-    expect(await t.run("set", "C1-2", "status=wip", "pr=12", "--project", "EMIS")).toBe(0);
-    expect(t.out.at(-1)).toBe("✓ EMIS-3 : statut wip, PR #12 · En review");
-    expect(await t.json("get", "EMIS-3")).toMatchObject({
+    expect(await t.run("set", "C1-2", "status=wip", "pr=12", "--project", "SILO")).toBe(0);
+    expect(t.out.at(-1)).toBe("✓ SILO-3 : statut wip, PR #12 · En review");
+    expect(await t.json("get", "SILO-3")).toMatchObject({
       status: "wip",
       kiboStatus: "in_review",
       pr: {
         number: 12,
-        url: "https://github.com/galadrim/emis/pull/12",
+        url: "https://github.com/silo-labs/silo-location/pull/12",
         state: "open",
         review: "none",
         checks: null,
       },
     });
-    expect(await t.run("set", "C1-2", "status=wip", "pr=12", "--project", "EMIS")).toBe(0);
-    expect(t.out.at(-1)).toBe("✓ EMIS-3 : déjà à jour");
-    expect(await t.json("set", "C1-3", "status=blocked", "--project", "EMIS")).toMatchObject({
+    expect(await t.run("set", "C1-2", "status=wip", "pr=12", "--project", "SILO")).toBe(0);
+    expect(t.out.at(-1)).toBe("✓ SILO-3 : déjà à jour");
+    expect(await t.json("set", "C1-3", "status=blocked", "--project", "SILO")).toMatchObject({
       status: "blocked",
       blockedReason: "Bloqué par la livraison (kibo tickets)",
     });
@@ -226,7 +226,7 @@ describe("kibo tickets against a real daemon", () => {
 
   test("declares a branch and follows the sprint of the feature", async () => {
     const t = cli(home);
-    expect(await t.run("set", "C1-2", "branch=feat/c1-2-stockage", "base=dev", "--project", "EMIS")).toBe(0);
+    expect(await t.run("set", "C1-2", "branch=feat/c1-2-stockage", "base=dev", "--project", "SILO")).toBe(0);
     const snapshot = await seed.rpc({ method: "getProject", projectId });
     const stored = snapshot.tickets.find((x) => x.id === ids.get("C1-2"));
     expect(stored?.externalRefs).toContainEqual({
@@ -238,32 +238,32 @@ describe("kibo tickets against a real daemon", () => {
       await command({
         method: "createSprint",
         code: "S42",
-        name: "Terrain hors ligne",
+        name: "Saisie hors ligne",
         start: "2026-10-12",
         end: "2026-10-23",
       }),
     );
     await command({ method: "setTicketSprint", ticketId: ids.get("C1") ?? "", sprintId: sprint.id });
-    expect(await t.json("list", "--project", "EMIS", "--sprint", "s42")).toMatchObject([
-      { planId: "C1", sprint: { id: sprint.id, code: "S42", name: "Terrain hors ligne" } },
+    expect(await t.json("list", "--project", "SILO", "--sprint", "s42")).toMatchObject([
+      { planId: "C1", sprint: { id: sprint.id, code: "S42", name: "Saisie hors ligne" } },
       { planId: "C1-1" },
       { planId: "C1-2" },
       { planId: "C1-3" },
     ]);
     const sprints = cli(home);
-    expect(await runCli(["sprints", "list", "--project", "EMIS", "--json"], sprints.io)).toBe(0);
+    expect(await runCli(["sprints", "list", "--project", "SILO", "--json"], sprints.io)).toBe(0);
     expect(JSON.parse(sprints.out.join("\n"))).toMatchObject([
-      { code: "S42", name: "Terrain hors ligne", features: ["EMIS-1"] },
+      { code: "S42", name: "Saisie hors ligne", features: ["SILO-1"] },
     ]);
   });
 
   test("refuses unknown assignments, projects and tickets", async () => {
     const t = cli(home);
-    expect(await t.run("set", "C1-2", "owner=adam", "--project", "EMIS")).toBe(2);
+    expect(await t.run("set", "C1-2", "owner=adam", "--project", "SILO")).toBe(2);
     expect(t.err.at(-2)).toBe("Erreur INVALID_INPUT : unknown assignment: owner=adam");
     expect(await t.run("list", "--project", "NOPE")).toBe(1);
     expect(t.err.at(-1)).toBe("Projet introuvable : NOPE");
-    expect(await t.run("get", "C9-9", "--project", "EMIS")).toBe(1);
+    expect(await t.run("get", "C9-9", "--project", "SILO")).toBe(1);
     expect(t.err.at(-1)).toBe("Ticket introuvable : C9-9");
   });
 
@@ -272,12 +272,12 @@ describe("kibo tickets against a real daemon", () => {
     const sessions = async () => (await seed.rpc({ method: "listSessions" })).length;
     const before = await sessions();
     const t = cli(home);
-    await t.run("list", "--project", "EMIS", "--json");
-    await t.run("get", "C1-2", "--project", "EMIS");
+    await t.run("list", "--project", "SILO", "--json");
+    await t.run("get", "C1-2", "--project", "SILO");
     expect(await sessions()).toBe(before);
     writeFileSync(join(home, "token"), "wrong-token-value");
     try {
-      expect(await t.run("list", "--project", "EMIS")).toBe(1);
+      expect(await t.run("list", "--project", "SILO")).toBe(1);
       expect(t.err.at(-1)).toBe("Appairage refusé : le jeton de ~/.kibo/token ne correspond pas.");
     } finally {
       writeFileSync(join(home, "token"), token);

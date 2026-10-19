@@ -16,7 +16,7 @@ test.describe.configure({ mode: "serial" });
 test.use({ viewport: { width: 1440, height: 900 } });
 
 const ADMIN = "Un admin non affecté accède-t-il aux fichiers ?";
-const ARCHIVE = "Bloquer le dépôt sur une affaire archivée ?";
+const ARCHIVE = "Bloquer le dépôt sur un client archivé ?";
 
 async function seedQuestions(page: Page, projectId: string): Promise<void> {
   const command = (cmd: Record<string, unknown>) => rpc(page, { method: "command", projectId, command: cmd });
@@ -32,7 +32,7 @@ async function seedQuestions(page: Page, projectId: string): Promise<void> {
       context: "Décision prise **provisoirement** par le run pilote.\n\n- refusé pour l'instant",
       options: ["Oui", "Non"],
       provisional: "Non",
-      createdBy: { kind: "agent", ref: "emis-livraison" },
+      createdBy: { kind: "agent", ref: "silo-livraison" },
     });
   }
 }
@@ -145,7 +145,7 @@ test("les réponses se modifient tant qu'elles ne sont pas transmises, les quest
   await pairAndCreateProject(page, info, key);
   const projectId = projectIdOf(page);
   const storage = await seedTicket(page, projectId, "Stockage S3");
-  const exports = await seedTicket(page, projectId, "Export des affaires");
+  const exports = await seedTicket(page, projectId, "Export des clients");
   const cipher = await seedTicket(page, projectId, "Chiffrement");
   for (const title of [ADMIN, ARCHIVE]) await seedQuestion(page, projectId, storage, title);
   await seedQuestion(page, projectId, exports, FORMAT, { options: ["CSV", "JSON"] });
@@ -232,9 +232,9 @@ test("les réponses se modifient tant qu'elles ne sont pas transmises, les quest
   await page.goto(dashboard);
   const board = await showAllCards(page);
   await board
-    .getByRole("article", { name: /Export des affaires/ })
+    .getByRole("article", { name: /Export des clients/ })
     .getByRole("button", {
-      name: "Export des affaires",
+      name: "Export des clients",
     })
     .click();
   await page

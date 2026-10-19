@@ -59,11 +59,11 @@ const ticket = (id: string, key: string, title: string, patch: Partial<TicketVie
   ...patch,
 });
 
-const emis: ProjectSnapshot = {
+const silo: ProjectSnapshot = {
   meta: {
     id: "p1",
-    name: "Emis",
-    key: "EMIS",
+    name: "Silo",
+    key: "SILO",
     folder: null,
     color: "#14B8A6",
     worktree: null,
@@ -77,10 +77,10 @@ const emis: ProjectSnapshot = {
   workflow: DEFAULT_WORKFLOW,
   pages: [],
   tickets: [
-    ticket("f6", "F6", "Importer les ISO", { shortKey: "F6" }),
-    ticket("e7", "EMIS-7", "Socle", { shortKey: "F3", progress: { done: 0, total: 1 } }),
-    ticket("e8", "EMIS-8", "Étape du socle", { parentId: "e7" }),
-    ticket("e9", "EMIS-9", "Ticket isolé"),
+    ticket("f6", "F6", "Importer les box", { shortKey: "F6" }),
+    ticket("e7", "SILO-7", "Socle", { shortKey: "F3", progress: { done: 0, total: 1 } }),
+    ticket("e8", "SILO-8", "Étape du socle", { parentId: "e7" }),
+    ticket("e9", "SILO-9", "Ticket isolé"),
   ],
   links: [],
   questions: [],
@@ -88,7 +88,7 @@ const emis: ProjectSnapshot = {
   instances: [],
   rules: [],
   bindings: [],
-  nextTicketKey: "EMIS-12",
+  nextTicketKey: "SILO-12",
   sprints: [],
   sync: { shared: false, keyAllocator: "local", role: null, access: "write", members: [] },
 };
@@ -105,7 +105,7 @@ const host: Host & { openTicket: ReturnType<typeof mock> } = {
 
 beforeEach(() => {
   calls.length = 0;
-  outcome = () => Promise.resolve(ticket("e12", "EMIS-12", "Gabarit Excel"));
+  outcome = () => Promise.resolve(ticket("e12", "SILO-12", "Gabarit Excel"));
   host.openTicket.mockClear();
 });
 
@@ -113,8 +113,8 @@ const open = (onClose = () => {}) =>
   render(
     <HostProvider host={host}>
       <NewTicketDialog
-        projects={[emis.meta]}
-        snapshots={new Map([["p1", emis]])}
+        projects={[silo.meta]}
+        snapshots={new Map([["p1", silo]])}
         initialProjectId="p1"
         lockProject={false}
         viewer="adam"
@@ -141,7 +141,7 @@ test("the Fonctionnalité field lists the features by F<n>, then Nouvelle foncti
   expect((await screen.findAllByRole("option")).map((o) => o.textContent)).toEqual([
     "Aucune",
     "F3 · Socle",
-    "F6 · Importer les ISO",
+    "F6 · Importer les box",
     "Nouvelle fonctionnalité",
   ]);
 });
@@ -149,7 +149,7 @@ test("the Fonctionnalité field lists the features by F<n>, then Nouvelle foncti
 test("a ticket created in a feature is its step, at the end", async () => {
   open();
   const user = userEvent.setup();
-  await pickFeature(user, "F6 · Importer les ISO");
+  await pickFeature(user, "F6 · Importer les box");
   await user.type(screen.getByLabelText("Titre"), "Gabarit Excel");
   await user.click(screen.getByRole("button", { name: "Créer le ticket" }));
   await waitFor(() =>
@@ -170,14 +170,14 @@ test("Nouvelle fonctionnalité creates the ticket as a feature, at the root", as
   expect(command?.method === "command" && "parentId" in command.command).toBe(false);
 });
 
-test("after creation, a toast « EMIS-12 créé » offers to open the ticket", async () => {
+test("after creation, a toast « SILO-12 créé » offers to open the ticket", async () => {
   const onClose = mock(() => {});
   open(onClose);
   const user = userEvent.setup();
   await user.type(screen.getByLabelText("Titre"), "Gabarit Excel");
   await user.click(screen.getByRole("button", { name: "Créer le ticket" }));
   await waitFor(() => expect(onClose).toHaveBeenCalled());
-  const toastShown = (await screen.findAllByText("EMIS-12 créé")).at(-1)?.closest("[data-sonner-toast]");
+  const toastShown = (await screen.findAllByText("SILO-12 créé")).at(-1)?.closest("[data-sonner-toast]");
   fireEvent.click(
     within(toastShown instanceof HTMLElement ? toastShown : document.body).getByRole("button", {
       name: "Ouvrir",
@@ -186,14 +186,14 @@ test("after creation, a toast « EMIS-12 créé » offers to open the ticket", a
   expect(host.openTicket).toHaveBeenCalledWith("e12");
 });
 
-const inbox = { ...emis.meta, id: "inbox", key: "INB", name: "Boîte de réception" };
+const inbox = { ...silo.meta, id: "inbox", key: "INB", name: "Boîte de réception" };
 
 test("the inbox is not offered as a project", async () => {
   render(
     <HostProvider host={host}>
       <NewTicketDialog
-        projects={[inbox, emis.meta]}
-        snapshots={new Map([["p1", emis]])}
+        projects={[inbox, silo.meta]}
+        snapshots={new Map([["p1", silo]])}
         initialProjectId="p1"
         lockProject={false}
         viewer="adam"
@@ -204,15 +204,15 @@ test("the inbox is not offered as a project", async () => {
   );
   screen.getByRole("combobox", { name: "Projet" }).focus();
   await userEvent.setup().keyboard("{ArrowDown}");
-  expect((await screen.findAllByRole("option")).map((o) => o.textContent)).toEqual(["Emis"]);
+  expect((await screen.findAllByRole("option")).map((o) => o.textContent)).toEqual(["Silo"]);
 });
 
 test("a ticket created from a page says it stays in the project of that page", () => {
   render(
     <HostProvider host={host}>
       <NewTicketDialog
-        projects={[emis.meta]}
-        snapshots={new Map([["p1", emis]])}
+        projects={[silo.meta]}
+        snapshots={new Map([["p1", silo]])}
         initialProjectId="p1"
         lockProject
         viewer="adam"

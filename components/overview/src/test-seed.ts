@@ -7,7 +7,7 @@ type FeatureSeed = { title: string; sprint: string | null; steps: StepSeed[] };
 
 export const TODAY = "2026-10-16";
 export const NOW = Date.parse(`${TODAY}T14:52:00`);
-const REPO = "https://github.com/galadrimteam/emis-suivi-chantier";
+const REPO = "https://github.com/silo-labs/silo-location";
 
 const merged = (number: number): Pr => ({ number, state: "merged", review: "none", checks: null });
 const done = (title: string, pr?: Pr): StepSeed => ({ title, status: "done", step: 11, pr });
@@ -23,17 +23,17 @@ const FEATURES: readonly FeatureSeed[] = [
     sprint: "S41",
     steps: [done("Application Azure"), done("Démo client")],
   },
-  { title: "Voir ses ISO affectés", sprint: "S41", steps: [done("Liste des ISO"), done("Démo client")] },
+  { title: "Voir ses box affectés", sprint: "S41", steps: [done("Liste des box"), done("Démo client")] },
   {
-    title: "Réaffecter un ISO",
+    title: "Réaffecter un box",
     sprint: "S42",
     steps: [done("Historique"), done("Route"), done("Écran"), done("Démo client", merged(18))],
   },
   {
-    title: "Saisir un tronçon hors ligne",
+    title: "Saisir un constat hors ligne",
     sprint: "S42",
     steps: [
-      done("Schéma local des tronçons", merged(12)),
+      done("Schéma local des constats", merged(12)),
       done("Formulaire de saisie", merged(14)),
       done("Synchro au retour du réseau", merged(16)),
       {
@@ -46,7 +46,7 @@ const FEATURES: readonly FeatureSeed[] = [
     ],
   },
   {
-    title: "Envoyer les photos d'un tronçon",
+    title: "Envoyer les photos d'un constat",
     sprint: "S42",
     steps: [
       done("Stockage des photos sur MinIO", merged(19)),
@@ -62,7 +62,7 @@ const FEATURES: readonly FeatureSeed[] = [
     ],
   },
   {
-    title: "Importer les ISO depuis Excel",
+    title: "Importer les box depuis Excel",
     sprint: "S43",
     steps: [
       todo("Lecture du fichier Excel", { step: 3 }),
@@ -72,12 +72,12 @@ const FEATURES: readonly FeatureSeed[] = [
     ],
   },
   {
-    title: "Rapport de chantier journalier",
+    title: "Rapport de centre journalier",
     sprint: "S44",
     steps: [todo("Modèle du rapport"), todo("PDF"), todo("Photos"), todo("Envoi"), todo("Démo client")],
   },
   {
-    title: "Valider les soudures par lot",
+    title: "Valider les contrats par lot",
     sprint: "S43",
     steps: [todo("Statuts"), todo("Sélection"), todo("Validation"), todo("Démo client")],
   },
@@ -137,8 +137,8 @@ export function seedOverview(run: Run) {
   const sprints = new Map(
     [
       sprint(run, "S41", "Accès", "2026-10-05", "2026-10-09"),
-      sprint(run, "S42", "Terrain hors ligne", "2026-10-12", "2026-10-16"),
-      sprint(run, "S43", "Import et soudures", "2026-10-19", "2026-10-23"),
+      sprint(run, "S42", "Saisie hors ligne", "2026-10-12", "2026-10-16"),
+      sprint(run, "S43", "Import et contrats", "2026-10-19", "2026-10-23"),
       sprint(run, "S44", "Rapports", "2026-10-26", "2026-10-30"),
     ].map((s) => [s.code, s]),
   );
@@ -157,10 +157,10 @@ export function seedOverview(run: Run) {
   if (s34 && s35) run({ method: "addLink", from: s34.id, to: s35.id, type: "blocks" });
   const lecture = f6?.steps[0];
   const modele = f7?.steps[0];
-  if (lecture) question(run, lecture.id, "Un ISO réaffecté garde-t-il ses photos ?", "Q14", "client", true);
-  if (s34) question(run, s34.id, "Quota par affaire : 2 Go ou 5 Go ?", "Q16", "product", false);
+  if (lecture) question(run, lecture.id, "Un box réaffecté garde-t-il ses photos ?", "Q14", "client", true);
+  if (s34) question(run, s34.id, "Quota par client : 2 Go ou 5 Go ?", "Q16", "product", false);
   if (modele)
-    question(run, modele.id, "Un rapport par chef de chantier ou par affaire ?", "Q17", "client", false);
+    question(run, modele.id, "Un rapport par chef de centre ou par client ?", "Q17", "client", false);
   return { sprints, features, loose, f4, f5, s31 };
 }
 

@@ -70,8 +70,8 @@ test("an asked question goes to the recipient the agent proposes, by name or id,
   const s = createService(openStore(dir), { user: "adam" });
   const project = call(s, {
     method: "createProject",
-    name: "Emis",
-    key: "EMIS",
+    name: "Silo",
+    key: "SILO",
     folder: null,
     color: "#F97316",
   });

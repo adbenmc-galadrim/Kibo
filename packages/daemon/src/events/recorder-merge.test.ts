@@ -99,7 +99,7 @@ function manualRecorder(store: EventStore, log: (what: string, e: unknown) => vo
 test("two merges held together are both written, the feature delivered once", async () => {
   const { root, step } = inReview();
   const other = h.ticket("Reçu", root);
-  const PR_19 = { ...PR_18, url: "https://github.com/galadrimteam/emis/pull/19", number: 19 };
+  const PR_19 = { ...PR_18, url: "https://github.com/silo-labs/silo-location/pull/19", number: 19 };
   h.run({ method: "setStatus", ticketId: other, statusId: "in_review" });
   h.run({ method: "upsertExternalRef", ticketId: other, ref: PR_19 });
   const before = h.journal().length;

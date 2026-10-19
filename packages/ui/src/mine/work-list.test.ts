@@ -8,7 +8,7 @@ const pr = (number: number, review: "none" | "changes_requested" = "none"): Exte
   kind: "github_pr",
   number,
   state: "open",
-  url: `https://github.com/galadrimteam/emis/pull/${number}`,
+  url: `https://github.com/silo-labs/silo-location/pull/${number}`,
   base: null,
   head: null,
   review,
@@ -26,7 +26,7 @@ function project(questions: Question[] = []): ProjectSnapshot {
 }
 
 const ciError = (prNumber: number): CiRun => ({
-  repo: "galadrimteam/emis",
+  repo: "silo-labs/silo-location",
   runId: 1,
   prNumber,
   ticketKey: "KIB-46",
@@ -34,7 +34,7 @@ const ciError = (prNumber: number): CiRun => ({
   workflow: "ci",
   status: "completed",
   conclusion: "failure",
-  url: "https://github.com/galadrimteam/emis/actions/runs/1",
+  url: "https://github.com/silo-labs/silo-location/actions/runs/1",
   startedAt: null,
   updatedAt: "2026-10-16T10:00:00Z",
   jobs: [],
@@ -46,7 +46,7 @@ const blockingQuestion = (ticketId: string): Question => ({
   id: "q14",
   ticketId,
   runId: null,
-  title: "Un ISO réaffecté garde-t-il ses photos ?",
+  title: "Un box réaffecté garde-t-il ses photos ?",
   context: "",
   options: [],
   provisional: null,

@@ -28,17 +28,17 @@ const ctx = (p: Partial<BatchContext> = {}): BatchContext => ({
 });
 
 const why = "";
-const created: RefTable = new Map([["new:1", { ticketId: "t9", key: "EMIS-9" }]]);
+const created: RefTable = new Map([["new:1", { ticketId: "t9", key: "SILO-9" }]]);
 
 describe("resolveRefs", () => {
   test("keys and created references resolve to ticket ids", () => {
     expect(
       resolveRefs(
-        { id: 1, why, type: "link", from: "EMIS-1", to: "new:1", kind: "blocks" },
+        { id: 1, why, type: "link", from: "SILO-1", to: "new:1", kind: "blocks" },
         created,
         snapshot,
       ),
-    ).toEqual({ ok: true, ids: { "EMIS-1": "t1", "new:1": "t9" } });
+    ).toEqual({ ok: true, ids: { "SILO-1": "t1", "new:1": "t9" } });
     expect(
       resolveRefs({ id: 1, why, type: "createNote", path: "a.md", content: "" }, created, snapshot),
     ).toEqual({
@@ -52,8 +52,8 @@ describe("resolveRefs", () => {
       resolveRefs({ id: 1, why, type: "setStatus", ticket: "new:2", statusId: "todo" }, created, snapshot),
     ).toEqual({ ok: false, reason: "dépend de new:2 (échouée)" });
     expect(
-      resolveRefs({ id: 1, why, type: "setStatus", ticket: "EMIS-9", statusId: "todo" }, new Map(), snapshot),
-    ).toEqual({ ok: false, reason: "ticket EMIS-9 introuvable" });
+      resolveRefs({ id: 1, why, type: "setStatus", ticket: "SILO-9", statusId: "todo" }, new Map(), snapshot),
+    ).toEqual({ ok: false, reason: "ticket SILO-9 introuvable" });
   });
 });
 
@@ -73,7 +73,7 @@ function stale(action: ProposedAction, after: Partial<BatchContext>): string | n
 
 describe("staleReason", () => {
   test("a ticket field changed since the proposal is stale, another field is not", () => {
-    const rename: ProposedAction = { id: 1, why, type: "updateTicket", ticket: "EMIS-1", title: "Nouveau" };
+    const rename: ProposedAction = { id: 1, why, type: "updateTicket", ticket: "SILO-1", title: "Nouveau" };
     expect(stale(rename, { project: withTicket("t1", { id: "t1", title: "Autre" }) })).toBe(
       "modifié depuis la proposition : title",
     );
@@ -83,7 +83,7 @@ describe("staleReason", () => {
   test("status, question, note, run and answers", () => {
     expect(
       stale(
-        { id: 1, why, type: "setStatus", ticket: "EMIS-1", statusId: "done" },
+        { id: 1, why, type: "setStatus", ticket: "SILO-1", statusId: "done" },
         { project: withTicket("t1", { id: "t1", statusId: "in_review" }) },
       ),
     ).toBe("modifié depuis la proposition : statusId");
@@ -118,7 +118,7 @@ describe("staleReason", () => {
     ).toBe("modifié depuis la proposition : terminal");
     expect(
       stale(
-        { id: 1, why, type: "deliverAnswers", ticket: "EMIS-3" },
+        { id: 1, why, type: "deliverAnswers", ticket: "SILO-3" },
         {
           project: {
             ...snapshot,
@@ -129,19 +129,19 @@ describe("staleReason", () => {
     ).toBe("modifié depuis la proposition : undelivered");
     expect(
       stale(
-        { id: 1, why, type: "assignAgent", ticket: "EMIS-3", profileId: "global:opus-dev" },
+        { id: 1, why, type: "assignAgent", ticket: "SILO-3", profileId: "global:opus-dev" },
         { runs: [run({ id: "r7", ticketId: "t3", state: "queued" })] },
       ),
     ).toBe("modifié depuis la proposition : activeRun");
   });
 
   test("nothing changed: not stale", () => {
-    expect(stale({ id: 1, why, type: "setStatus", ticket: "EMIS-1", statusId: "done" }, {})).toBeNull();
-    expect(stale({ id: 1, why, type: "link", from: "EMIS-1", to: "EMIS-3", kind: "blocks" }, {})).toBeNull();
+    expect(stale({ id: 1, why, type: "setStatus", ticket: "SILO-1", statusId: "done" }, {})).toBeNull();
+    expect(stale({ id: 1, why, type: "link", from: "SILO-1", to: "SILO-3", kind: "blocks" }, {})).toBeNull();
   });
 });
 
-const ids = { "EMIS-1": "t1", "EMIS-2": "t2", "EMIS-3": "t3", "new:1": "t9" };
+const ids = { "SILO-1": "t1", "SILO-2": "t2", "SILO-3": "t3", "new:1": "t9" };
 const commands = (action: ProposedAction) => commandsFor(action, ids, HUMAN, snapshot);
 
 describe("commandsFor", () => {
@@ -158,20 +158,20 @@ describe("commandsFor", () => {
         ref: "new:1",
         title: "Neuf",
         statusId: "todo",
-        parent: "EMIS-1",
+        parent: "SILO-1",
       }),
     ).toEqual([{ method: "createTicket", title: "Neuf", statusId: "todo", parentId: "t1" }]);
     expect(
-      commands({ id: 1, why, type: "updateTicket", ticket: "EMIS-1", title: "T", labels: ["ui"] }),
+      commands({ id: 1, why, type: "updateTicket", ticket: "SILO-1", title: "T", labels: ["ui"] }),
     ).toEqual([{ method: "updateTicket", ticketId: "t1", title: "T", labels: ["ui"] }]);
     expect(
-      commands({ id: 1, why, type: "updateTicket", ticket: "EMIS-2", description: "d", parent: "EMIS-3" }),
+      commands({ id: 1, why, type: "updateTicket", ticket: "SILO-2", description: "d", parent: "SILO-3" }),
     ).toEqual([
       { method: "updateTicket", ticketId: "t2", description: "d" },
       { method: "moveTicket", ticketId: "t2", parentId: "t3" },
     ]);
-    expect(commands({ id: 1, why, type: "updateTicket", ticket: "EMIS-2", parent: "EMIS-1" })).toEqual([]);
-    expect(commands({ id: 1, why, type: "updateTicket", ticket: "EMIS-2", parent: null })).toEqual([
+    expect(commands({ id: 1, why, type: "updateTicket", ticket: "SILO-2", parent: "SILO-1" })).toEqual([]);
+    expect(commands({ id: 1, why, type: "updateTicket", ticket: "SILO-2", parent: null })).toEqual([
       { method: "moveTicket", ticketId: "t2", parentId: null },
     ]);
     expect(
@@ -187,14 +187,14 @@ describe("commandsFor", () => {
   });
 
   test("links", () => {
-    expect(commands({ id: 1, why, type: "link", from: "EMIS-1", to: "new:1", kind: "blocks" })).toEqual([
+    expect(commands({ id: 1, why, type: "link", from: "SILO-1", to: "new:1", kind: "blocks" })).toEqual([
       { method: "addLink", from: "t1", to: "t9", type: "blocks" },
     ]);
-    expect(commands({ id: 1, why, type: "unlink", from: "EMIS-3", to: "EMIS-2", kind: "relates" })).toEqual([
+    expect(commands({ id: 1, why, type: "unlink", from: "SILO-3", to: "SILO-2", kind: "relates" })).toEqual([
       { method: "removeLink", linkId: "l2" },
     ]);
     expect(() =>
-      commands({ id: 1, why, type: "unlink", from: "EMIS-2", to: "EMIS-1", kind: "blocks" }),
+      commands({ id: 1, why, type: "unlink", from: "SILO-2", to: "SILO-1", kind: "blocks" }),
     ).toThrow(KiboError);
   });
 
@@ -215,7 +215,7 @@ describe("commandsFor", () => {
         id: 1,
         why,
         type: "createQuestion",
-        ticket: "EMIS-1",
+        ticket: "SILO-1",
         title: "?",
         options: ["A"],
         blocking: true,
@@ -235,8 +235,8 @@ describe("commandsFor", () => {
 
   test("agents and notes are run by the daemon", () => {
     for (const action of [
-      { id: 1, why, type: "assignAgent", ticket: "EMIS-1", profileId: "global:opus-dev" },
-      { id: 1, why, type: "deliverAnswers", ticket: "EMIS-3" },
+      { id: 1, why, type: "assignAgent", ticket: "SILO-1", profileId: "global:opus-dev" },
+      { id: 1, why, type: "deliverAnswers", ticket: "SILO-3" },
       { id: 1, why, type: "cancelRun", runId: "r1" },
       { id: 1, why, type: "createNote", path: "b.md", content: "" },
       { id: 1, why, type: "updateNote", path: "a.md", content: "" },

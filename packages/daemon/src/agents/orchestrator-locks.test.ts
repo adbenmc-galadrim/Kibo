@@ -9,7 +9,7 @@ const heavy = (held: number): MachineLock => ({
   max: 2,
   held: Array.from({ length: held }, (_, i) => ({
     ticket: `t${i}`,
-    label: "emis:EMIS-15 gates",
+    label: "silo:SILO-15 gates",
     pid: 100 + i,
     since: 0,
     cwd: "/w",

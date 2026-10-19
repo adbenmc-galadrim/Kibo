@@ -8,8 +8,8 @@ import { getTicket } from "./tickets";
 const newDoc = () =>
   createProjectDoc({
     id: "p1",
-    key: "EMIS",
-    name: "Emis",
+    key: "SILO",
+    name: "Silo",
     folder: null,
     color: "#F97316",
     worktree: null,
@@ -44,8 +44,8 @@ describe("sprint commands", () => {
 
   test("a sprint code is unique in the project, case ignored", () => {
     const d = newDoc();
-    const s42 = sprint(d, "Terrain hors ligne", "2026-10-12", "2026-10-16", "S42");
-    const s43 = sprint(d, "Import et soudures", "2026-10-19", "2026-10-23", "S43");
+    const s42 = sprint(d, "Saisie hors ligne", "2026-10-12", "2026-10-16", "S42");
+    const s43 = sprint(d, "Import et contrats", "2026-10-19", "2026-10-23", "S43");
     expect(() => sprint(d, "Autre", "2026-10-19", "2026-10-23", "s42")).toThrow("CONFLICT");
     const rename = (sprintId: string, code: string) =>
       executeProjectCommand(d, { method: "updateSprint", sprintId, patch: { code } });

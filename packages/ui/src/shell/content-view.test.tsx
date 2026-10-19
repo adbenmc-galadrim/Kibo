@@ -176,11 +176,11 @@ test("an unknown ticket of a known project shows « Introuvable »", async () =>
 });
 
 test("a ticket address may be a feature key: t/F5 opens, t/ZZZ-1 is « Introuvable »", async () => {
-  const { emisFeatureProject } = await import("./feature/fixture");
-  const emis = emisFeatureProject();
-  const snapshot = { ...emis, meta: { ...emis.meta, id: "p1" } };
+  const { siloFeatureProject } = await import("./feature/fixture");
+  const silo = siloFeatureProject();
+  const snapshot = { ...silo, meta: { ...silo.meta, id: "p1" } };
   contentAt({ kind: "ticket", projectId: "p1", ticketId: "F5" }, snapshot);
-  expect(await screen.findByText("Envoyer les photos d'un tronçon")).toBeTruthy();
+  expect(await screen.findByText("Envoyer les photos d'un constat")).toBeTruthy();
   expect(screen.queryByRole("heading", { name: "Introuvable" })).toBeNull();
   contentAt({ kind: "ticket", projectId: "p1", ticketId: "ZZZ-1" }, snapshot);
   expect(await screen.findByRole("heading", { name: "Introuvable" })).toBeTruthy();

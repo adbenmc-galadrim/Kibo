@@ -178,7 +178,7 @@ test("modifier, workspace, en-tête, réglages et suppression d'un projet", asyn
 
 test("créer un projet : cinq pages et six sprints", async ({ page }, info) => {
   await page.goto(`/#pair=${E2E_TOKEN}`);
-  const dialog = await fillNewProject(page, { name: "Chantier test", key: "CT", client: "ACME" });
+  const dialog = await fillNewProject(page, { name: "Centre test", key: "CT", client: "ACME" });
   await dialog.getByLabel("Début du premier sprint").fill("2026-10-19");
   await dialog.getByLabel("Nombre de sprints").fill("6");
   await dialog.getByRole("radio", { name: "1 semaine" }).check();
@@ -190,7 +190,7 @@ test("créer un projet : cinq pages et six sprints", async ({ page }, info) => {
   const sidebar = page.locator('[data-sidebar="sidebar"]');
   const entry = sidebar
     .locator('[data-sidebar="menu-item"]')
-    .filter({ has: page.getByRole("button", { name: "Chantier test", exact: true }) });
+    .filter({ has: page.getByRole("button", { name: "Centre test", exact: true }) });
   const pageActions = entry.getByRole("button", { name: /^Actions de la page / });
   await expect(pageActions).toHaveCount(SETUP_PAGES.length);
   const labels = await pageActions.evaluateAll((rows) => rows.map((r) => r.getAttribute("aria-label")));
@@ -200,7 +200,7 @@ test("créer un projet : cinq pages et six sprints", async ({ page }, info) => {
   await expect(page.getByText("Pour commencer", { exact: true })).toBeVisible();
   await entry.getByText("Planning", { exact: true }).click();
   for (const code of ["S1", "S2", "S3", "S4", "S5", "S6"])
-    await expect(page.getByText(new RegExp(`^${code}\\b`)).first()).toBeVisible();
+    await expect(page.getByRole("region", { name: new RegExp(`^${code} `) })).toBeVisible();
   await shot(page, info, "projet-cree");
 
   const sprints = cliSprints(homeOf(info), "CT");
@@ -213,14 +213,14 @@ test("créer un projet : cinq pages et six sprints", async ({ page }, info) => {
     { code: "S6", start: "2026-11-23", end: "2026-11-27" },
   ]);
 
-  const again = await fillNewProject(page, { name: "Chantier bis", key: "CT" });
+  const again = await fillNewProject(page, { name: "Centre bis", key: "CT" });
   await expect(again.getByText("Clé déjà prise")).toBeVisible();
   await expect(again.getByRole("button", { name: "Créer", exact: true })).toBeDisabled();
   await again.getByRole("button", { name: "Annuler" }).click();
   await expect(again).toBeHidden();
 
   await page.goto("/#/");
-  const card = page.getByRole("article").filter({ has: page.getByRole("button", { name: "Chantier test" }) });
+  const card = page.getByRole("article").filter({ has: page.getByRole("button", { name: "Centre test" }) });
   await expect(card.getByText("CT", { exact: true })).toBeVisible();
   await expect(card.getByText("client ACME", { exact: true })).toBeVisible();
 });

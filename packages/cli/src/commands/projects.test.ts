@@ -10,11 +10,11 @@ import { projectsCommand } from "./projects";
 
 const WORKTREE: WorktreeSettings = {
   baseRef: "origin/dev",
-  pathTemplate: "../emis-{slug}",
+  pathTemplate: "../silo-{slug}",
   setup: null,
   recipe: { copyFrom: ["{repo}"], copy: [".env"], env: null, after: ["pnpm install"] },
 };
-const DELIVERY = { ...EMPTY_DELIVERY, agent: "global:full-delivery", root: "/Users/a/emis" };
+const DELIVERY = { ...EMPTY_DELIVERY, agent: "global:full-delivery", root: "/Users/a/silo" };
 
 const meta = (over: Partial<ProjectMeta>): ProjectMeta => ({
   id: "p-kibo",
@@ -32,11 +32,11 @@ const meta = (over: Partial<ProjectMeta>): ProjectMeta => ({
   ...over,
 });
 const KIBO = meta({});
-const EMIS = meta({
-  id: "p-emis",
-  key: "EMIS",
-  name: "Emis",
-  folder: "/Users/a/emis",
+const SILO = meta({
+  id: "p-silo",
+  key: "SILO",
+  name: "Silo",
+  folder: "/Users/a/silo",
   worktree: WORKTREE,
   delivery: DELIVERY,
 });
@@ -47,8 +47,8 @@ function fakeClient() {
     async rpc(req) {
       const sent: RpcRequest = req;
       calls.push(sent);
-      if (sent.method === "listProjects") return [KIBO, { ...EMIS, folder: "/stale" }] as never;
-      if (sent.method === "getProject") return { meta: sent.projectId === EMIS.id ? EMIS : KIBO } as never;
+      if (sent.method === "listProjects") return [KIBO, { ...SILO, folder: "/stale" }] as never;
+      if (sent.method === "getProject") return { meta: sent.projectId === SILO.id ? SILO : KIBO } as never;
       throw new Error(`unexpected ${sent.method}`);
     },
     async close() {},
@@ -70,35 +70,35 @@ test("list gives key, name and folder of every project", async () => {
   expect(await json.code).toBe(0);
   expect(JSON.parse(json.out.join("\n"))).toEqual([
     { key: "KIB", name: "Kibo", folder: null },
-    { key: "EMIS", name: "Emis", folder: "/stale" },
+    { key: "SILO", name: "Silo", folder: "/stale" },
   ]);
   const text = run(["list"]);
   expect(await text.code).toBe(0);
-  expect(text.out).toEqual(["KIB\tKibo\t", "EMIS\tEmis\t/stale"]);
+  expect(text.out).toEqual(["KIB\tKibo\t", "SILO\tSilo\t/stale"]);
 });
 
 test("get gives the local folder, the worktree with its recipe and the delivery settings", async () => {
-  const json = run(["get", "emis"], { json: true });
+  const json = run(["get", "silo"], { json: true });
   expect(await json.code).toBe(0);
   expect(JSON.parse(json.out.join("\n"))).toEqual({
-    key: "EMIS",
-    name: "Emis",
-    folder: "/Users/a/emis",
+    key: "SILO",
+    name: "Silo",
+    folder: "/Users/a/silo",
     worktree: WORKTREE,
     delivery: DELIVERY,
   });
-  expect(json.calls.at(-1)).toEqual({ method: "getProject", projectId: "p-emis" });
+  expect(json.calls.at(-1)).toEqual({ method: "getProject", projectId: "p-silo" });
 });
 
 test("get prints a readable block, with or without settings", async () => {
-  const emis = run(["get", "EMIS"]);
-  expect(await emis.code).toBe(0);
-  expect(emis.out).toEqual([
-    "EMIS · Emis",
-    "Dossier : /Users/a/emis",
-    "Worktree : origin/dev · ../emis-{slug}",
+  const silo = run(["get", "SILO"]);
+  expect(await silo.code).toBe(0);
+  expect(silo.out).toEqual([
+    "SILO · Silo",
+    "Dossier : /Users/a/silo",
+    "Worktree : origin/dev · ../silo-{slug}",
     "Recette : 1 fichier copié, 1 commande après",
-    "Livraison : agent global:full-delivery · dossier /Users/a/emis",
+    "Livraison : agent global:full-delivery · dossier /Users/a/silo",
   ]);
   const kibo = run(["get", "Kibo"]);
   expect(await kibo.code).toBe(0);
@@ -115,7 +115,7 @@ test("refuses an unknown project and a bad usage", async () => {
   const missing = run(["get", "NOPE"]);
   expect(await missing.code).toBe(1);
   expect(missing.err).toEqual(["Projet introuvable : NOPE"]);
-  for (const args of [[], ["get"], ["delete", "EMIS"]]) {
+  for (const args of [[], ["get"], ["delete", "SILO"]]) {
     const bad = run(args);
     expect(await bad.code).toBe(2);
     expect(bad.err.at(-1)).toContain("kibo projects get <clé|nom|id>");

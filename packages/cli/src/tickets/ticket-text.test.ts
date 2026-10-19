@@ -4,7 +4,7 @@ import { detailLines, listLines, type TicketDetail } from "./ticket-text";
 
 const pr = (review: PrReview, checks: PrChecks | null) => ({
   number: 20,
-  url: "https://github.com/galadrim/emis/pull/20",
+  url: "https://github.com/silo-labs/silo-location/pull/20",
   state: "open" as const,
   review,
   checks,
@@ -12,7 +12,7 @@ const pr = (review: PrReview, checks: PrChecks | null) => ({
 
 const DETAIL: TicketDetail = {
   id: "t",
-  key: "EMIS-15",
+  key: "SILO-15",
   planId: null,
   title: "Synchro",
   status: "done",
@@ -58,7 +58,7 @@ test("shows a touch-up step, not a delivery one", () => {
 });
 
 test("shows the review and the CI of the PR", () => {
-  const url = "https://github.com/galadrim/emis/pull/20";
+  const url = "https://github.com/silo-labs/silo-location/pull/20";
   expect(lines({ pr: pr("changes_requested", "error") })).toContain(
     `PR : #20 (open) · changements demandés · CI cassée · ${url}`,
   );
@@ -68,14 +68,14 @@ test("shows the review and the CI of the PR", () => {
   expect(lines({})).toContain("PR : aucune");
 });
 
-const F4 = { key: "EMIS-40", shortKey: "F4", title: "Saisir un tronçon hors ligne" };
+const F4 = { key: "SILO-40", shortKey: "F4", title: "Saisir un constat hors ligne" };
 
 test("names a client demo step after its feature", () => {
-  expect(lines({ title: "Démo client", feature: F4 })[0]).toBe("EMIS-15 · Démo · F4");
+  expect(lines({ title: "Démo client", feature: F4 })[0]).toBe("SILO-15 · Démo · F4");
   expect(lines({ title: "démo CLIENT ", feature: { ...F4, shortKey: null } })[0]).toBe(
-    "EMIS-15 · Démo · EMIS-40",
+    "SILO-15 · Démo · SILO-40",
   );
-  expect(lines({ title: "Démo client" })[0]).toBe("EMIS-15 · Démo client");
+  expect(lines({ title: "Démo client" })[0]).toBe("SILO-15 · Démo client");
 });
 
 test("shows the declared branch", () => {
@@ -102,24 +102,24 @@ test("says when there is no description", () => {
 
 test("lists tickets under aligned headers with their feature", () => {
   const rows = listLines([
-    { ...DETAIL, key: "EMIS-46", title: "Démo client", feature: F4, status: "todo" },
-    { ...DETAIL, key: "EMIS-100", planId: "C1-2", title: "Socle" },
+    { ...DETAIL, key: "SILO-46", title: "Démo client", feature: F4, status: "todo" },
+    { ...DETAIL, key: "SILO-100", planId: "C1-2", title: "Socle" },
   ]);
   expect(rows).toEqual([
     "Clé       Plan  F   Statut  Titre",
-    "EMIS-46   -     F4  todo    Démo · F4",
-    "EMIS-100  C1-2  -   done    Socle",
+    "SILO-46   -     F4  todo    Démo · F4",
+    "SILO-100  C1-2  -   done    Socle",
   ]);
 });
 
 test("drops the plan column when no ticket has a plan id", () => {
   const rows = listLines([
-    { ...DETAIL, key: "EMIS-46", title: "Démo client", feature: F4, status: "todo" },
-    { ...DETAIL, key: "EMIS-100", title: "Socle" },
+    { ...DETAIL, key: "SILO-46", title: "Démo client", feature: F4, status: "todo" },
+    { ...DETAIL, key: "SILO-100", title: "Socle" },
   ]);
   expect(rows).toEqual([
     "Clé       F   Statut  Titre",
-    "EMIS-46   F4  todo    Démo · F4",
-    "EMIS-100  -   done    Socle",
+    "SILO-46   F4  todo    Démo · F4",
+    "SILO-100  -   done    Socle",
   ]);
 });

@@ -18,7 +18,7 @@ S.navItem = (p, icon, label, o = {}) => { const C = S.C;
   if (o.count) S.txt(r, o.count, { size: 11, mono: true, color: C.dim });
   return r; };
 
-// Barre latérale de la piste A : arbre des projets, Emis déplié sur ses pages.
+// Barre latérale de la piste A : arbre des projets, Silo déplié sur ses pages.
 S.sidebar = (p, active, o = {}) => { const C = S.C;
   const sb = S.col(p, { name: "sidebar", w: 240, fy: true, fill: C.panel, pad: [12, 10], gap: 2 });
   const ws = S.row(sb, { fx: true, h: 34, pad: [0, 6], gap: 8 }); S.logo(ws, 22); S.txt(ws, "Galadrim", { size: 13, weight: 600 }); S.icon(ws, "chevDown", 13, C.dim); S.spacer(ws); S.icon(ws, "panelRight", 15, C.dim);
@@ -29,7 +29,7 @@ S.sidebar = (p, active, o = {}) => { const C = S.C;
   S.navItem(sb, "inbox", "Boîte de réception", { count: "2" });
   S.box(sb, { w: 4, h: 12 });
   const h = S.row(sb, { fx: true, h: 24, pad: [0, 8] }); S.txt(h, "Projets", { size: 11, weight: 500, color: C.dim, ls: 0.4, upper: true }); S.spacer(h); S.icon(h, "plus", 13, C.dim);
-  S.navItem(sb, null, "Emis", { chev: "chevDown", dot: S.D.project.color });
+  S.navItem(sb, null, "Silo", { chev: "chevDown", dot: S.D.project.color });
   const counts = o.counts || { "Tickets": "27", "Questions": "3" };
   for (const pg of (o.pages || ["Vue d'ensemble", "Tickets", "Kanban", "Graphe", "Notes", "Questions"]))
     S.navItem(sb, S.NAV_ICON[pg], pg, { indent: 18, active: active === pg, count: counts[pg] || null });
@@ -40,7 +40,7 @@ S.sidebar = (p, active, o = {}) => { const C = S.C;
   S.vline(p, C.soft);
   return sb; };
 
-// Fil d'Ariane : « ● Emis / Page ».
+// Fil d'Ariane : « ● Silo / Page ».
 S.crumbs = (p, items) => { const C = S.C; const r = S.row(p, { gap: 8 });
   items.forEach((it, i) => { if (i) S.txt(r, "/", { size: 13, color: C.faint });
     if (i === 0) S.dot(r, S.D.project.color, 8);
@@ -74,5 +74,5 @@ S.rail = (p, active) => { const C = S.C;
 
 // Sélecteur de projet de la barre du haut (pistes B et C).
 S.projectSwitch = (p, o = {}) => { const C = S.C; const r = S.row(p, { gap: 8, pad: [5, 10], radius: 6, stroke: o.stroke ? C.border : null });
-  S.dot(r, S.D.project.color, 9); S.txt(r, "Emis", { size: o.size || 13.5, weight: 600 }); S.icon(r, "chevDown", 13, C.dim); return r; };
+  S.dot(r, S.D.project.color, 9); S.txt(r, "Silo", { size: o.size || 13.5, weight: 600 }); S.icon(r, "chevDown", 13, C.dim); return r; };
 return "shell ok";

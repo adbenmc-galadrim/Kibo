@@ -189,8 +189,8 @@ test("the sink denies a shell call of a project run even when the CLI let it thr
           id,
           projectId: "p1",
           ticketId: kind === "ticket" ? "t1" : null,
-          ticketKey: kind === "ticket" ? "EMIS-1" : null,
-          ticketTitle: "Agent de projet · Emis",
+          ticketKey: kind === "ticket" ? "SILO-1" : null,
+          ticketTitle: "Agent de projet · Silo",
           profileId: kind === "ticket" ? "global:opus" : "system:project-agent",
           profileName: "x",
           agentScope: "global",
@@ -222,7 +222,7 @@ test("the sink denies a shell call of a project run even when the CLI let it thr
       kind: "permission",
       decision: "deny",
     });
-    expect(sink.receive("p", { ...write, tool: "mcp__kibo__get_ticket" }, { key: "EMIS-1" })).toEqual({
+    expect(sink.receive("p", { ...write, tool: "mcp__kibo__get_ticket" }, { key: "SILO-1" })).toEqual({
       kind: "permission",
       decision: "allow",
       reason: "task",

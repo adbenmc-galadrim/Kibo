@@ -67,7 +67,7 @@ const question = (patch: Partial<Question> = {}): Question => ({
   id: "q1",
   ticketId: "12@1",
   runId: null,
-  title: "Quota par affaire ?",
+  title: "Quota par client ?",
   context: "",
   options: [],
   provisional: null,
@@ -156,7 +156,7 @@ test("the open questions of the ticket are listed and open the Questions view", 
       },
     }),
   ]);
-  await userEvent.setup().click(screen.getByRole("button", { name: /Quota par affaire/ }));
+  await userEvent.setup().click(screen.getByRole("button", { name: /Quota par client/ }));
   expect(views).toEqual(["questions"]);
   expect(screen.getByText("Q4")).toBeTruthy();
 });

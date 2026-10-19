@@ -2,7 +2,7 @@ import { afterEach, expect, test } from "bun:test";
 import type { ProjectCommand, TicketView } from "@kibo/schema";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { emisFeatureProject, SPRINTS } from "../shell/feature/fixture";
+import { SPRINTS, siloFeatureProject } from "../shell/feature/fixture";
 import { SprintField } from "./SprintField";
 import type { TicketCommand } from "./use-ticket-command";
 
@@ -19,7 +19,7 @@ const command: TicketCommand = {
   clearError: () => undefined,
 };
 
-const project = emisFeatureProject();
+const project = siloFeatureProject();
 const lone: TicketView = {
   ...(project.tickets.find((t) => t.id === "e35") as TicketView),
   id: "solo",
@@ -40,11 +40,11 @@ test("a root ticket without steps picks its sprint", async () => {
   expect(list.getAllByRole("option").map((o) => o.textContent)).toEqual([
     "À planifier",
     "S41 · Accès",
-    "S42 · Terrain hors ligne",
-    "S43 · Import et soudures",
+    "S42 · Saisie hors ligne",
+    "S43 · Import et contrats",
     "S44 · Rapports",
   ]);
-  await user.click(list.getByRole("option", { name: "S43 · Import et soudures" }));
+  await user.click(list.getByRole("option", { name: "S43 · Import et contrats" }));
   expect(sent).toEqual([{ method: "setTicketSprint", ticketId: "solo", sprintId: "s43" }]);
 });
 

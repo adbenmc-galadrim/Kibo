@@ -16,8 +16,8 @@ import {
 
 const META: ProjectMeta = {
   id: "p1",
-  key: "EMIS",
-  name: "Emis",
+  key: "SILO",
+  name: "Silo",
   folder: null,
   color: "#F97316",
   worktree: null,
@@ -45,7 +45,7 @@ describe("feature keys", () => {
   test("a feature created as such takes F<n> and leaves the ticket counter alone", () => {
     const doc = createProjectDoc(META);
     const f1 = createTicket(doc, { title: "Socle", feature: true });
-    const f2 = createTicket(doc, { title: "Affaires", feature: true });
+    const f2 = createTicket(doc, { title: "Clients", feature: true });
     expect([f1.key, f1.shortKey, f2.key, f2.shortKey]).toEqual(["F1", "F1", "F2", "F2"]);
     expect(seqOf(doc)).toBe(0);
   });
@@ -54,9 +54,9 @@ describe("feature keys", () => {
     const doc = createProjectDoc(META);
     const f1 = createTicket(doc, { title: "Socle", feature: true });
     const a = createTicket(doc, { title: "Étape A", parentId: f1.id });
-    const f2 = createTicket(doc, { title: "Affaires", feature: true });
+    const f2 = createTicket(doc, { title: "Clients", feature: true });
     const b = createTicket(doc, { title: "Étape B", parentId: f2.id });
-    expect([a.key, b.key]).toEqual(["EMIS-1", "EMIS-2"]);
+    expect([a.key, b.key]).toEqual(["SILO-1", "SILO-2"]);
     expect(getTicket(doc, f1.id).shortKey).toBe("F1");
   });
 
@@ -74,11 +74,11 @@ describe("feature keys", () => {
   test("an older root keeps its key and gains F<n> with its first child", () => {
     const doc = createProjectDoc(META);
     createTicket(doc, { title: "Socle", feature: true });
-    createTicket(doc, { title: "Affaires", feature: true });
+    createTicket(doc, { title: "Clients", feature: true });
     const legacy = createTicket(doc, { title: "Ancienne racine" });
     createTicket(doc, { title: "Étape", parentId: legacy.id });
     const after = getTicket(doc, legacy.id);
-    expect([after.key, after.shortKey]).toEqual(["EMIS-1", "F3"]);
+    expect([after.key, after.shortKey]).toEqual(["SILO-1", "F3"]);
     expect(featureLabel(after)).toBe("F3");
     expect(featureLabel(getTicket(doc, createTicket(doc, { title: "Planning", feature: true }).id))).toBe(
       "F4",
@@ -115,7 +115,7 @@ describe("feature keys in a shared project", () => {
   };
   const editor = { userId: "u1", role: "editor" } as const;
 
-  test("a feature waits for its key like a step, the server gives F<n> and EMIS-n", () => {
+  test("a feature waits for its key like a step, the server gives F<n> and SILO-n", () => {
     const doc = peer(shared(), 5);
     const feature = createTicket(doc, { title: "Socle", feature: true });
     const step = createTicket(doc, { title: "Étape", parentId: feature.id });
@@ -124,8 +124,8 @@ describe("feature keys in a shared project", () => {
     expect([feature.key, getTicket(doc, feature.id).shortKey, step.key]).toEqual([null, null, null]);
     expect(allocateTicketKeys(doc)).toEqual([
       { ticketId: feature.id, key: "F1" },
-      { ticketId: step.id, key: "EMIS-2" },
-      { ticketId: moved.id, key: "EMIS-3" },
+      { ticketId: step.id, key: "SILO-2" },
+      { ticketId: moved.id, key: "SILO-3" },
     ]);
     expect(getTicket(doc, feature.id)).toMatchObject({ key: "F1", shortKey: "F1" });
     expect(seqOf(doc)).toBe(3);
@@ -134,7 +134,7 @@ describe("feature keys in a shared project", () => {
   test("two peers offline both creating the third feature get F3 and F4", () => {
     const server = shared();
     createTicket(server, { title: "Socle", feature: true });
-    createTicket(server, { title: "Affaires", feature: true });
+    createTicket(server, { title: "Clients", feature: true });
     allocateTicketKeys(server);
     const a = peer(server, 21);
     const b = peer(server, 22);

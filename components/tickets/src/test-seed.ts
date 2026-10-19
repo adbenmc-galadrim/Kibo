@@ -12,7 +12,7 @@ type Step = {
 
 const pr = (number: number, state: "open" | "draft" | "merged" | "closed"): ExternalRef => ({
   kind: "github_pr",
-  url: `https://github.com/galadrim/emis/pull/${number}`,
+  url: `https://github.com/silo-labs/silo-location/pull/${number}`,
   number,
   state,
   base: "main",
@@ -28,8 +28,8 @@ export function trackingSeed(now: number) {
     const sprint = (code: string, name: string, start: string, end: string) =>
       run({ method: "createSprint", code, name, start, end }) as Sprint;
     sprint("S41", "Accès", "2026-10-05", "2026-10-09");
-    const s42 = sprint("S42", "Terrain hors ligne", "2026-10-12", TODAY);
-    const s43 = sprint("S43", "Import et soudures", "2026-10-19", "2026-10-23");
+    const s42 = sprint("S42", "Saisie hors ligne", "2026-10-12", TODAY);
+    const s43 = sprint("S43", "Import et contrats", "2026-10-19", "2026-10-23");
     const ticket = (title: string, parentId: string | null, s: Step = { title }) => {
       const t = run({ method: "createTicket", title, parentId, statusId: s.status ?? "todo" }) as Ticket;
       for (const ref of s.refs ?? []) run({ method: "upsertExternalRef", ticketId: t.id, ref });
@@ -53,8 +53,8 @@ export function trackingSeed(now: number) {
       return steps.map((s) => ticket(s.title, root.id, s));
     };
     const day = 24 * 60 * MINUTE;
-    feature("Réaffecter un ISO", s42.id, [
-      { title: "Liste des ISO", status: "done" },
+    feature("Réaffecter un box", s42.id, [
+      { title: "Liste des box", status: "done" },
       { title: "Choix du soudeur", status: "done" },
       { title: "Historique", status: "done" },
       {
@@ -64,7 +64,7 @@ export function trackingSeed(now: number) {
         refs: [pr(18, "merged")],
       },
     ]);
-    feature("Saisir un tronçon hors ligne", s42.id, [
+    feature("Saisir un constat hors ligne", s42.id, [
       {
         title: "Formulaire de saisie",
         status: "done",
@@ -80,7 +80,7 @@ export function trackingSeed(now: number) {
       },
       { title: "Démo client" },
     ]);
-    const [, , ecran, tests] = feature("Envoyer les photos d'un tronçon", s42.id, [
+    const [, , ecran, tests] = feature("Envoyer les photos d'un constat", s42.id, [
       {
         title: "Stockage des photos sur MinIO",
         status: "done",
@@ -104,7 +104,7 @@ export function trackingSeed(now: number) {
     if (ecran && tests) run({ method: "addLink", from: ecran.id, to: tests.id, type: "blocks" });
     const loose = ticket("Mettre à jour la doc", null);
     run({ method: "setTicketSprint", ticketId: loose.id, sprintId: s42.id });
-    feature("Importer les ISO depuis Excel", s43.id, [{ title: "Lecture du fichier" }]);
+    feature("Importer les box depuis Excel", s43.id, [{ title: "Lecture du fichier" }]);
     feature("Exporter le dossier client", null, [{ title: "Gabarit PDF" }]);
   };
 }

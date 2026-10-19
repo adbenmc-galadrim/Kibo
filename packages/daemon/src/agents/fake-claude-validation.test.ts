@@ -34,7 +34,7 @@ test("the delivery-validation scenario writes a real PNG then asks to validate i
     KIBO_FAKE_CLAUDE_STATE: state,
   };
   const args = ["--session-id", "s1", "--settings", settings(log)];
-  const first = await finish(play(cwd, args, env, "Livre EMIS-15."));
+  const first = await finish(play(cwd, args, env, "Livre SILO-15."));
   expect(first.code).toBe(0);
   const shot = join(cwd, "shots/1-no-access.png");
   expect(imageSize(readFileSync(shot))).toEqual({ width: 1, height: 1 });

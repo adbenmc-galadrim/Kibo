@@ -26,7 +26,7 @@ afterEach(cleanupTmp);
 const settings = (patch: Partial<WorktreeSettings>): WorktreeSettings => ({ ...WORKTREE_DEFAULTS, ...patch });
 const input = (root: string, patch: Partial<WorktreeInput> = {}): WorktreeInput => ({
   root,
-  ticketKey: "EMIS-12",
+  ticketKey: "SILO-12",
   branchRef: null,
   settings: WORKTREE_DEFAULTS,
   runDir: join(tmp(), "run"),
@@ -42,8 +42,8 @@ const branchRef = (branch: string, base: string | null = null): GitBranchRef => 
 const SETUP = "git worktree add {path} {branch}";
 
 test("branch and base come from the ticket ref first, then the key and the project", () => {
-  expect(worktreeBranch("EMIS-12", null)).toBe("emis-12");
-  expect(worktreeBranch("EMIS-12", branchRef("feat/x"))).toBe("feat/x");
+  expect(worktreeBranch("SILO-12", null)).toBe("silo-12");
+  expect(worktreeBranch("SILO-12", branchRef("feat/x"))).toBe("feat/x");
   expect(worktreeBase(settings({ baseRef: "origin/dev" }), null)).toBe("origin/dev");
   expect(worktreeBase(settings({ baseRef: "origin/dev" }), branchRef("feat/x", "feat/parent"))).toBe(
     "feat/parent",
@@ -53,22 +53,22 @@ test("branch and base come from the ticket ref first, then the key and the proje
 test("defaults reproduce the current behaviour: .kibo/worktrees/<key> from main", async () => {
   const root = await repo();
   const ws = await prepareWorktree(input(root));
-  expect(ws).toEqual({ cwd: join(root, ".kibo", "worktrees", "emis-12"), label: "worktree:emis-12" });
-  expect(await git(["rev-parse", "--abbrev-ref", "HEAD"], ws.cwd)).toBe("emis-12");
+  expect(ws).toEqual({ cwd: join(root, ".kibo", "worktrees", "silo-12"), label: "worktree:silo-12" });
+  expect(await git(["rev-parse", "--abbrev-ref", "HEAD"], ws.cwd)).toBe("silo-12");
   expect(readFileSync(join(root, ".git", "info", "exclude"), "utf8")).toContain(".kibo/");
 });
 
 test("a sibling template with a slash branch lands beside the repo and is adopted next time", async () => {
   const parent = tmp();
-  const root = await repo("main", join(parent, "emis"));
-  const ref = branchRef("feat/schema-affaires");
-  const s = settings({ pathTemplate: "../emis-{slug}" });
+  const root = await repo("main", join(parent, "silo"));
+  const ref = branchRef("feat/schema-clients");
+  const s = settings({ pathTemplate: "../silo-{slug}" });
   const first = await prepareWorktree(input(root, { branchRef: ref, settings: s }));
   expect(first).toEqual({
-    cwd: join(parent, "emis-feat-schema-affaires"),
-    label: "worktree:feat/schema-affaires",
+    cwd: join(parent, "silo-feat-schema-clients"),
+    label: "worktree:feat/schema-clients",
   });
-  expect(await git(["rev-parse", "--abbrev-ref", "HEAD"], first.cwd)).toBe("feat/schema-affaires");
+  expect(await git(["rev-parse", "--abbrev-ref", "HEAD"], first.cwd)).toBe("feat/schema-clients");
   const second = await prepareWorktree(input(root, { branchRef: ref, settings: s }));
   expect(second.cwd).toBe(first.cwd);
   const exclude = join(root, ".git", "info", "exclude");
@@ -77,12 +77,12 @@ test("a sibling template with a slash branch lands beside the repo and is adopte
 
 test("an existing worktree is adopted as is, but another repository at its path is refused", async () => {
   const parent = tmp();
-  const root = await repo("main", join(parent, "emis"));
-  await git(["worktree", "add", "-b", "feat/y", join(parent, "emis-feat-y")], root);
-  const s = settings({ pathTemplate: "../emis-{slug}", setup: "false" });
+  const root = await repo("main", join(parent, "silo"));
+  await git(["worktree", "add", "-b", "feat/y", join(parent, "silo-feat-y")], root);
+  const s = settings({ pathTemplate: "../silo-{slug}", setup: "false" });
   const adopted = await prepareWorktree(input(root, { branchRef: branchRef("feat/y"), settings: s }));
-  expect(adopted.cwd).toBe(join(parent, "emis-feat-y"));
-  await repo("main", join(parent, "emis-feat-z"));
+  expect(adopted.cwd).toBe(join(parent, "silo-feat-y"));
+  await repo("main", join(parent, "silo-feat-z"));
   await expect(
     prepareWorktree(input(root, { branchRef: branchRef("feat/z"), settings: s })),
   ).rejects.toMatchObject({
@@ -115,12 +115,12 @@ test("a missing remote or a failed fetch is a GIT_FAILED, not a silent fallback"
     code: "GIT_FAILED",
     detail: expect.stringContaining("git fetch origin dev failed"),
   });
-  expect(await git(["branch", "--list", "emis-12"], root)).toBe("");
+  expect(await git(["branch", "--list", "silo-12"], root)).toBe("");
 });
 
 test("a branch that already exists is neither fetched nor recreated", async () => {
   const root = await repo();
-  await git(["branch", "emis-12"], root);
+  await git(["branch", "silo-12"], root);
   const calls: string[][] = [];
   const spy: GitRunner = (args, cwd, timeoutMs) => {
     calls.push(args);
@@ -160,9 +160,9 @@ test("a setup command creates the worktree, gets the variables, and is logged", 
     setup: `echo "$KIBO_BRANCH $KIBO_TICKET" && test "$KIBO_WORKTREE" = {path} && ${SETUP}`,
   });
   const ws = await prepareWorktree(input(root, { settings: s, runDir }));
-  expect(await git(["rev-parse", "--abbrev-ref", "HEAD"], ws.cwd)).toBe("emis-12");
+  expect(await git(["rev-parse", "--abbrev-ref", "HEAD"], ws.cwd)).toBe("silo-12");
   const log = readFileSync(join(runDir, "setup.log"), "utf8");
-  expect(log).toContain("emis-12 EMIS-12");
+  expect(log).toContain("silo-12 SILO-12");
   expect(log).toContain(`$ echo`);
 });
 
@@ -211,17 +211,17 @@ test("variable values reach the setup command through its environment only", asy
     input(root, { branchRef: branchRef("feat/x"), settings: settings({ setup }), shell }),
   );
   expect(await git(["rev-parse", "--abbrev-ref", "HEAD"], ws.cwd)).toBe("feat/x");
-  expect(readFileSync(join(root, "seen.txt"), "utf8")).toBe(`feat/x|feat-x|emis-12|${ws.cwd}`);
+  expect(readFileSync(join(root, "seen.txt"), "utf8")).toBe(`feat/x|feat-x|silo-12|${ws.cwd}`);
   const [call] = seen;
   expect(call?.command).not.toContain("feat");
   expect(call?.command).toContain("$".concat("{KIBO_BRANCH}"));
   expect(call?.env).toMatchObject({
     KIBO_BRANCH: "feat/x",
     KIBO_SLUG: "feat-x",
-    KIBO_KEY: "emis-12",
+    KIBO_KEY: "silo-12",
     KIBO_PATH: ws.cwd,
     KIBO_WORKTREE: ws.cwd,
-    KIBO_TICKET: "EMIS-12",
+    KIBO_TICKET: "SILO-12",
   });
 });
 
@@ -260,7 +260,7 @@ test("a setup command that lies, or lands on the wrong branch, fails with its ou
   ).rejects.toMatchObject({ code: "WORKSPACE_FAILED", detail: expect.stringContaining("nothing happened") });
   await expect(
     prepareWorktree(input(root, { settings: settings({ setup: "git worktree add -b other {path} main" }) })),
-  ).rejects.toMatchObject({ code: "WORKSPACE_FAILED", detail: expect.stringContaining("expected emis-12") });
+  ).rejects.toMatchObject({ code: "WORKSPACE_FAILED", detail: expect.stringContaining("expected silo-12") });
 });
 
 test("a setup command reports its start, then its status and duration, with the values shown", async () => {
@@ -269,7 +269,7 @@ test("a setup command reports its start, then its status and duration, with the 
   const s = settings({ setup: `${SETUP} && echo {key}` });
   await prepareWorktree(input(root, { settings: s, onSetup: (step) => steps.push(step) }));
   expect(steps.map((step) => step.status)).toEqual(["running", "done"]);
-  expect(steps[0]?.command).toBe(`git worktree add ${root}/.kibo/worktrees/emis-12 emis-12 && echo emis-12`);
+  expect(steps[0]?.command).toBe(`git worktree add ${root}/.kibo/worktrees/silo-12 silo-12 && echo silo-12`);
   expect(steps[0]?.durationMs).toBeUndefined();
   expect(steps[1]?.durationMs).toBeGreaterThanOrEqual(0);
 });
@@ -319,13 +319,13 @@ test("a template that leaves the repository is refused before touching git", asy
       code: "WORKSPACE_FAILED",
     });
   }
-  expect(await git(["worktree", "list", "--porcelain"], root)).not.toContain("emis-12");
-  expect(await git(["branch", "--list", "emis-12"], root)).toBe("");
+  expect(await git(["worktree", "list", "--porcelain"], root)).not.toContain("silo-12");
+  expect(await git(["branch", "--list", "silo-12"], root)).toBe("");
 });
 
 test("settings are checked before they are saved", () => {
   expect(() =>
-    assertWorktreeSettings(settings({ pathTemplate: "../emis-{slug}", setup: SETUP })),
+    assertWorktreeSettings(settings({ pathTemplate: "../silo-{slug}", setup: SETUP })),
   ).not.toThrow();
   for (const bad of [
     settings({ pathTemplate: "/tmp/{slug}" }),

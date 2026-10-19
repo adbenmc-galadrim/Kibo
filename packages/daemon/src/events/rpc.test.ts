@@ -19,7 +19,13 @@ const deps = () => ({ events: h.events.store, docs: h.service.docs });
 
 test("listProjectEvents pages the journal of a project", async () => {
   h.ticket("A");
-  h.run({ method: "createSprint", code: "S42", name: "Terrain", start: "2026-10-12", end: "2026-10-16" });
+  h.run({
+    method: "createSprint",
+    code: "S42",
+    name: "Saisie hors ligne",
+    start: "2026-10-12",
+    end: "2026-10-16",
+  });
   h.run({ method: "createSprint", code: "S43", name: "Clôture", start: "2026-10-19", end: "2026-10-23" });
   expect(h.events.rpc.methods).toEqual(["listProjectEvents"]);
   const page = await list({ limit: 1 });
@@ -32,7 +38,13 @@ test("listProjectEvents pages the journal of a project", async () => {
 });
 
 test("a viewer of a read-only project still reads its journal", async () => {
-  h.run({ method: "createSprint", code: "S42", name: "Terrain", start: "2026-10-12", end: "2026-10-16" });
+  h.run({
+    method: "createSprint",
+    code: "S42",
+    name: "Saisie hors ligne",
+    start: "2026-10-12",
+    end: "2026-10-16",
+  });
   h.service.docs.setWriteGuard(() => {
     throw new KiboError("FORBIDDEN", "read-only");
   });

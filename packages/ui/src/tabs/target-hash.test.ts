@@ -41,37 +41,37 @@ test("the domains page may open on one project folder", () => {
 });
 
 test("a ticket is addressed by its key once known, and read back by key or by id", () => {
-  const byId: TabTarget = { kind: "ticket", projectId: "emis", ticketId: "562@79" };
-  expect(targetToHash(byId)).toBe("#/p/emis/t/562%4079");
-  rememberTicketKey("emis", "562@79", "EMIS-33");
-  expect(targetToHash(byId)).toBe("#/p/emis/t/EMIS-33");
+  const byId: TabTarget = { kind: "ticket", projectId: "silo", ticketId: "562@79" };
+  expect(targetToHash(byId)).toBe("#/p/silo/t/562%4079");
+  rememberTicketKey("silo", "562@79", "SILO-33");
+  expect(targetToHash(byId)).toBe("#/p/silo/t/SILO-33");
   expect(targetToHash({ ...byId, projectId: "kibo" })).toBe("#/p/kibo/t/562%4079");
-  expect(hashToTarget("#/p/emis/t/EMIS-33")).toEqual({
+  expect(hashToTarget("#/p/silo/t/SILO-33")).toEqual({
     kind: "ticket",
-    projectId: "emis",
-    ticketId: "EMIS-33",
+    projectId: "silo",
+    ticketId: "SILO-33",
   });
-  expect(targetToHash({ kind: "ticket", projectId: "emis", ticketId: "EMIS-33" })).toBe("#/p/emis/t/EMIS-33");
-  expect(hashToTarget("#/p/emis/t/562%4079")).toEqual(byId);
+  expect(targetToHash({ kind: "ticket", projectId: "silo", ticketId: "SILO-33" })).toBe("#/p/silo/t/SILO-33");
+  expect(hashToTarget("#/p/silo/t/562%4079")).toEqual(byId);
 });
 
 test("an address may name the project by its key instead of its id", () => {
   const projects = [
-    { id: "p-emis", key: "EMIS" },
-    { id: "EMIS2", key: "KIB" },
+    { id: "p-silo", key: "SILO" },
+    { id: "SILO2", key: "KIB" },
   ];
-  expect(resolveProjectKey(hashToTarget("#/p/EMIS/t/EMIS-45"), projects)).toEqual({
+  expect(resolveProjectKey(hashToTarget("#/p/SILO/t/SILO-45"), projects)).toEqual({
     kind: "ticket",
-    projectId: "p-emis",
-    ticketId: "EMIS-45",
+    projectId: "p-silo",
+    ticketId: "SILO-45",
   });
-  expect(resolveProjectKey(hashToTarget("#/p/p-emis/"), projects)).toEqual({
+  expect(resolveProjectKey(hashToTarget("#/p/p-silo/"), projects)).toEqual({
     kind: "project",
-    projectId: "p-emis",
+    projectId: "p-silo",
   });
-  expect(resolveProjectKey(hashToTarget("#/p/EMIS2/"), projects)).toEqual({
+  expect(resolveProjectKey(hashToTarget("#/p/SILO2/"), projects)).toEqual({
     kind: "project",
-    projectId: "EMIS2",
+    projectId: "SILO2",
   });
   expect(resolveProjectKey(hashToTarget("#/p/ZZZ/"), projects)).toEqual({
     kind: "project",

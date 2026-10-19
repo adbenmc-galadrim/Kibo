@@ -105,7 +105,7 @@ test("screen 210: rules and folders come with their origin, agent or project", a
       ],
       addDirs: [
         { dir: "/Users/adam/.claude/skills", origin: "agent" },
-        { dir: "/Users/adam/Documents/emis", origin: "project" },
+        { dir: "/Users/adam/Documents/silo", origin: "project" },
       ],
     },
   };
@@ -123,7 +123,7 @@ test("screen 210: rules and folders come with their origin, agent or project", a
     command.getAllByRole("term").map((term) => [term.textContent, term.nextElementSibling?.textContent]),
   );
   expect(rows.Règles).toBe("Bash(pnpm *) (projet), Bash(git *) (agent)");
-  expect(rows.Dossiers).toBe("~/.claude/skills (agent), ~/Documents/emis (projet)");
+  expect(rows.Dossiers).toBe("~/.claude/skills (agent), ~/Documents/silo (projet)");
 });
 
 test("choosing a ticket composes the preview on that ticket", async () => {

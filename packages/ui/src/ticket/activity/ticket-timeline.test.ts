@@ -12,7 +12,7 @@ const ev = (
   source: ProjectEvent["source"] = "git",
 ): ProjectEvent => ({
   id: ++seq,
-  projectId: "emis",
+  projectId: "silo",
   kind,
   ticketId: "e33",
   featureId: "f5",
@@ -70,15 +70,15 @@ test("reviews, checks, merges, retouches and sprints get their own words", () =>
 
 test("a broken CI names its failed job and links to the log", () => {
   const run: CiRun = {
-    repo: "galadrim/emis",
+    repo: "silo-labs/silo-location",
     runId: 9,
     prNumber: 20,
-    ticketKey: "EMIS-45",
+    ticketKey: "SILO-45",
     headSha: "abc",
     workflow: "CI",
     status: "completed",
     conclusion: "failure",
-    url: "https://github.com/galadrim/emis/actions/runs/9",
+    url: "https://github.com/silo-labs/silo-location/actions/runs/9",
     startedAt: null,
     updatedAt: "2026-10-16T12:00:00Z",
     jobs: [

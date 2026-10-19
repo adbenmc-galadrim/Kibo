@@ -1,17 +1,17 @@
 import { expect, test } from "bun:test";
 import { type ClientTicket, clientImpact, impactLine } from "./client-text";
 
-const TRONCONS = { feature: "Tronçons et étapes", week: "2026-10-19" };
+const CONSTATS = { feature: "Constats et étapes", week: "2026-10-19" };
 
 test("the impact line names the feature by its title and the week of its sprint", () => {
-  expect(impactLine({ blocking: true }, TRONCONS)).toBe(
-    "bloque « Tronçons et étapes », prévue semaine du 19 oct. · réponse souhaitée avant le 19 oct.",
+  expect(impactLine({ blocking: true }, CONSTATS)).toBe(
+    "bloque « Constats et étapes », prévue semaine du 19 oct. · réponse souhaitée avant le 19 oct.",
   );
   expect(impactLine({ blocking: false }, { feature: "Rapports", week: "2026-10-26" })).toBe(
     "pour « Rapports », prévue semaine du 26 oct. · réponse souhaitée avant le 26 oct.",
   );
-  expect(impactLine({ blocking: true }, { feature: "Tronçons et étapes", week: null })).toBe(
-    "bloque « Tronçons et étapes », à planifier",
+  expect(impactLine({ blocking: true }, { feature: "Constats et étapes", week: null })).toBe(
+    "bloque « Constats et étapes », à planifier",
   );
 });
 

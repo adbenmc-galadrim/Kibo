@@ -9,7 +9,7 @@ import { type SprintView, sprintState } from "./sprint";
 import type { StatusId } from "./status";
 
 export const TODAY = "2026-10-16";
-const REPO = "https://github.com/galadrimteam/emis-suivi-chantier";
+const REPO = "https://github.com/silo-labs/silo-location";
 
 type Step = { n: number; status: StatusId; pr?: [number, "open" | "merged", PrReview?]; optional?: boolean };
 type Feature = { shortKey: string; n: number; title: string; sprint: string | null; steps: Step[] };
@@ -19,19 +19,19 @@ const todo = (n: number, optional = false): Step => ({ n, status: "todo", option
 
 const SPRINTS = [
   ["S41", "Accès", "2026-10-05", "2026-10-09"],
-  ["S42", "Terrain hors ligne", "2026-10-12", "2026-10-16"],
-  ["S43", "Import et soudures", "2026-10-19", "2026-10-23"],
+  ["S42", "Saisie hors ligne", "2026-10-12", "2026-10-16"],
+  ["S43", "Import et contrats", "2026-10-19", "2026-10-23"],
   ["S44", "Rapports", "2026-10-26", "2026-10-30"],
 ] as const;
 
 export const FEATURES: readonly Feature[] = [
   { shortKey: "F1", n: 1, title: "Se connecter avec Microsoft", sprint: "S41", steps: [done(2), done(3)] },
-  { shortKey: "F2", n: 9, title: "Voir ses ISO affectés", sprint: "S41", steps: [done(10), done(11)] },
-  { shortKey: "F3", n: 17, title: "Réaffecter un ISO", sprint: "S42", steps: [done(18), done(21, 18)] },
+  { shortKey: "F2", n: 9, title: "Voir ses box affectés", sprint: "S41", steps: [done(10), done(11)] },
+  { shortKey: "F3", n: 17, title: "Réaffecter un box", sprint: "S42", steps: [done(18), done(21, 18)] },
   {
     shortKey: "F4",
     n: 40,
-    title: "Saisir un tronçon hors ligne",
+    title: "Saisir un constat hors ligne",
     sprint: "S42",
     steps: [
       done(41, 12),
@@ -44,7 +44,7 @@ export const FEATURES: readonly Feature[] = [
   {
     shortKey: "F5",
     n: 30,
-    title: "Envoyer les photos d'un tronçon",
+    title: "Envoyer les photos d'un constat",
     sprint: "S42",
     steps: [
       done(31, 19),
@@ -57,28 +57,28 @@ export const FEATURES: readonly Feature[] = [
   {
     shortKey: "F6",
     n: 50,
-    title: "Importer les ISO depuis Excel",
+    title: "Importer les box depuis Excel",
     sprint: "S43",
     steps: [todo(51), todo(52), todo(53), todo(54)],
   },
   {
     shortKey: "F8",
     n: 70,
-    title: "Valider les soudures par lot",
+    title: "Valider les contrats par lot",
     sprint: "S43",
     steps: [todo(71), todo(72), todo(73), todo(74)],
   },
   {
     shortKey: "F7",
     n: 80,
-    title: "Rapport de chantier journalier",
+    title: "Rapport de centre journalier",
     sprint: "S44",
     steps: [todo(81), todo(82), todo(83), todo(84), todo(85)],
   },
   { shortKey: "F9", n: 90, title: "Exporter le dossier client", sprint: null, steps: [todo(91), todo(92)] },
 ];
 
-const key = (n: number) => `EMIS-${n}`;
+const key = (n: number) => `SILO-${n}`;
 const sprintId = (code: string | null) => (code === null ? null : code.toLowerCase());
 
 export function viewOf(over: Partial<TicketView> & Pick<TicketView, "id" | "title">): TicketView {
@@ -152,9 +152,9 @@ export const SPRINT_VIEWS: SprintView[] = SPRINTS.map(([code, name, start, end])
   };
 });
 
-export const BLOCKING: ReadonlyMap<string, string> = new Map([["EMIS-51", "Q14"]]);
+export const BLOCKING: ReadonlyMap<string, string> = new Map([["SILO-51", "Q14"]]);
 
-export function emisTickets(today: string = TODAY): TicketView[] {
+export function siloTickets(today: string = TODAY): TicketView[] {
   const rows = FEATURES.flatMap((f) => [
     viewOf({
       id: key(f.n),
@@ -201,22 +201,22 @@ const question = (id: string, ticketId: string, blocking: boolean, createdAt: nu
     options: [],
     provisional: null,
     blocking,
-    createdBy: { kind: "import", ref: "emis" },
+    createdBy: { kind: "import", ref: "silo" },
     createdAt,
-    importRef: { kind: "import_ref", source: "emis", id },
+    importRef: { kind: "import_ref", source: "silo", id },
     answer: null,
   });
 
 export const QUESTIONS: Question[] = [
-  question("Q14", "EMIS-51", true, 1),
-  question("Q16", "EMIS-34", false, 2),
-  question("Q17", "EMIS-81", false, 3),
+  question("Q14", "SILO-51", true, 1),
+  question("Q16", "SILO-34", false, 2),
+  question("Q17", "SILO-81", false, 3),
 ];
 
 export const META: ProjectMeta = {
-  id: "emis",
-  key: "EMIS",
-  name: "Emis",
+  id: "silo",
+  key: "SILO",
+  name: "Silo",
   folder: null,
   color: "#14B8A6",
   worktree: null,
@@ -224,12 +224,12 @@ export const META: ProjectMeta = {
   duplication: null,
   delivery: null,
   tracking: null,
-  description: "Suivi de chantier",
+  description: "Location de box",
   client: null,
 };
 
-export const emisSnapshot = () => ({
-  tickets: emisTickets(),
+export const siloSnapshot = () => ({
+  tickets: siloTickets(),
   sprints: SPRINT_VIEWS,
   questions: QUESTIONS,
   meta: META,

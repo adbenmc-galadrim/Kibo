@@ -3,7 +3,7 @@ import type { RunView } from "@kibo/schema";
 import { runView } from "../questions/questions.test-helper";
 import { denialNotice, withDenialQuestions } from "./denial-turn";
 
-const run = runView({ id: "r1", ticketKey: "EMIS-15", state: "done" });
+const run = runView({ id: "r1", ticketKey: "SILO-15", state: "done" });
 
 test("the denial question is asked after the trace of the turn, even when the turn end failed", async () => {
   const calls: string[] = [];
@@ -39,11 +39,11 @@ test("a failing denial question is journaled and never breaks the turn end", asy
 
 test("the notice names the ticket and the number of refused actions", () => {
   expect(denialNotice(run, 7)).toEqual({
-    title: "EMIS-15 : 7 actions refusées",
+    title: "SILO-15 : 7 actions refusées",
     body: "Kibo propose des règles",
   });
-  expect(denialNotice({ ...run, ticketKey: null, label: "emis · livraison" }, 1)).toEqual({
-    title: "emis · livraison : 1 action refusée",
+  expect(denialNotice({ ...run, ticketKey: null, label: "silo · livraison" }, 1)).toEqual({
+    title: "silo · livraison : 1 action refusée",
     body: "Kibo propose des règles",
   });
 });

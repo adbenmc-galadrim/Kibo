@@ -1,5 +1,5 @@
 // Page « 28c · Graphe » : graphe lisible (spec §26.8 et §26.9), écrans 188 à 188d et pastille « Démarrable » du Kanban. Requiert 18-socle.js et 24-socle-suite.js.
-// Données inventées dans l'esprit de design/donnees-fictives.md : projet de la taille d'Emis (69 tickets, chapitres C0 à C9, 31 terminés, ~60 liens blocks).
+// Données inventées dans l'esprit de design/donnees-fictives.md : projet de grande taille (69 tickets, chapitres C0 à C9, 31 terminés, ~60 liens blocks).
 const S = storage, C = S.C;
 S.draw = S.draw || {};
 const PAGE = S.graphePage || "28c · Graphe";

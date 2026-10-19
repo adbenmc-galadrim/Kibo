@@ -17,14 +17,14 @@ const RECIPE: WorktreeRecipe = {
 
 async function prepared(recipe: WorktreeRecipe | null) {
   const parent = tmp();
-  const root = await repo("main", join(parent, "emis"));
+  const root = await repo("main", join(parent, "silo"));
   writeFileSync(join(root, ".env"), "WEB_PORT=3000\n");
   const runDir = join(tmp(), "run");
   const steps: SetupStep[] = [];
-  const settings: WorktreeSettings = { ...WORKTREE_DEFAULTS, pathTemplate: "../emis-{short}", recipe };
+  const settings: WorktreeSettings = { ...WORKTREE_DEFAULTS, pathTemplate: "../silo-{short}", recipe };
   const input: WorktreeInput = {
     root,
-    ticketKey: "EMIS-15",
+    ticketKey: "SILO-15",
     branchRef: { kind: "git_branch", branch: "feat/compte-non-provisionne", base: null },
     settings,
     runDir,
@@ -38,7 +38,7 @@ async function prepared(recipe: WorktreeRecipe | null) {
 test("a created worktree plays the recipe once, an adopted one never again", async () => {
   const p = await prepared(RECIPE);
   const first = await prepareWorktree(p.input);
-  expect(first.cwd).toBe(join(p.parent, "emis-compte-non-provisionne"));
+  expect(first.cwd).toBe(join(p.parent, "silo-compte-non-provisionne"));
   expect(readFileSync(join(first.cwd, ".env"), "utf8")).toBe("WEB_PORT=3000\n");
   expect(readFileSync(join(first.cwd, "recipe.log"), "utf8")).toBe("compte-non-provisionne\n");
   expect(p.steps.map((s) => `${s.command} ${s.status}`)).toEqual([
@@ -81,14 +81,14 @@ test("saving settings checks the recipe templates", () => {
 test("imported templates with {short} and {short_} are accepted and expanded", async () => {
   const imported = {
     ...WORKTREE_DEFAULTS,
-    pathTemplate: "../gereco-{short}",
+    pathTemplate: "../atlas-{short}",
     setup: 'echo "db={short_}" && git worktree add {path} {branch}',
     recipe: { ...RECIPE, after: ["echo {short_} > short.txt"] },
   };
   expect(() => assertWorktreeSettings(imported)).not.toThrow();
   const p = await prepared(null);
   const placed = await prepareWorktree({ ...p.input, settings: imported });
-  expect(placed.cwd).toBe(join(p.parent, "gereco-compte-non-provisionne"));
+  expect(placed.cwd).toBe(join(p.parent, "atlas-compte-non-provisionne"));
   expect(readFileSync(join(p.runDir, "setup.log"), "utf8")).toContain("db=compte_non_provisionne\n");
   expect(readFileSync(join(placed.cwd, "short.txt"), "utf8")).toBe("compte_non_provisionne\n");
 });

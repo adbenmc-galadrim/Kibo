@@ -86,8 +86,8 @@ test("a question to validate notifies, a blocking one leaves it to the waiting n
 });
 
 test("a batch to validate names the project and the batch number", () => {
-  expect(batchNotice("Emis", { seq: 3 })).toEqual({
+  expect(batchNotice("Silo", { seq: 3 })).toEqual({
     title: "Lot à valider",
-    body: "Agent de projet · Emis : lot n° 3",
+    body: "Agent de projet · Silo : lot n° 3",
   });
 });

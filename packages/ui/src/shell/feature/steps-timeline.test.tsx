@@ -3,12 +3,12 @@ import { DEFAULT_WORKFLOW } from "@kibo/schema";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { stepModels } from "./feature-model";
-import { emisFeatureProject, NOW } from "./fixture";
+import { NOW, siloFeatureProject } from "./fixture";
 import { StepsTimeline } from "./StepsTimeline";
 
 afterEach(cleanup);
 
-const steps = stepModels(emisFeatureProject(), "f5", {
+const steps = stepModels(siloFeatureProject(), "f5", {
   runs: [],
   ciRuns: [],
   now: NOW,
@@ -47,7 +47,7 @@ test("each step shows its number or check, its title, its key and its state", ()
   ]);
   const first = within(rows()[0] as HTMLElement);
   expect(first.getByText("Stockage des photos sur MinIO")).toBeTruthy();
-  expect(first.getByText("EMIS-31")).toBeTruthy();
+  expect(first.getByText("SILO-31")).toBeTruthy();
   expect(first.getByText("Terminé")).toBeTruthy();
 });
 
@@ -86,7 +86,7 @@ test("a step in session wears the orange session pill", () => {
 test("a waiting step says what it waits for and has no delivery yet", () => {
   renderTimeline();
   const tests = within(rows()[3] as HTMLElement);
-  expect(tests.getByText("attend EMIS-33")).toBeTruthy();
+  expect(tests.getByText("attend SILO-33")).toBeTruthy();
   expect(tests.getByText("—")).toBeTruthy();
   expect(tests.getByText("action suivante")).toBeTruthy();
   expect(within(rows()[4] as HTMLElement).queryByText("action suivante")).toBeNull();
@@ -101,7 +101,7 @@ test("clicking a step title opens its ticket", async () => {
 
 test("a PR with changes requested says so after its number, with a red mark for a failing CI", () => {
   const asked = steps.map((s) =>
-    s.pr && s.key === "EMIS-32"
+    s.pr && s.key === "SILO-32"
       ? { ...s, ci: "error" as const, pr: { ...s.pr, review: "changes_requested" as const } }
       : s,
   );

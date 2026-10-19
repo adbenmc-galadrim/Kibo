@@ -28,7 +28,7 @@ const ctx: BatchContext = {
   closedSignals: [],
 };
 
-const ref = fc.constantFrom("EMIS-1", "EMIS-2", "EMIS-3", "EMIS-999", "new:1", "new:2", "new:3");
+const ref = fc.constantFrom("SILO-1", "SILO-2", "SILO-3", "SILO-999", "new:1", "new:2", "new:3");
 const why = fc.constant("");
 const questionId = fc.constantFrom("q1", "q2", "q3", "q4", "qx");
 type Draft = ProposedAction extends infer A ? (A extends ProposedAction ? Omit<A, "id"> : never) : never;

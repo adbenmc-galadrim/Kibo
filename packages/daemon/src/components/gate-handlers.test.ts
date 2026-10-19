@@ -295,8 +295,8 @@ test("peeking a run goes to the agents, and says so when they are not started", 
 
 const metaWith = (tracking: ProjectMeta["tracking"]): ProjectMeta => ({
   id: "p1",
-  key: "EMIS",
-  name: "Emis",
+  key: "SILO",
+  name: "Silo",
   folder: null,
   color: "#14B8A6",
   worktree: null,
@@ -327,7 +327,7 @@ test("project.get names the project and the repository of its first pull request
   const ticket = createTicket(project, { title: "Envoi", statusId: "in_review" });
   upsertExternalRef(project, ticket.id, {
     kind: "github_pr",
-    url: "https://github.com/galadrimteam/emis/pull/22",
+    url: "https://github.com/silo-labs/silo-location/pull/22",
     number: 22,
     state: "open",
     base: "dev",
@@ -341,13 +341,13 @@ test("project.get names the project and the repository of its first pull request
   });
   expect(await h.project("p1")).toEqual({
     id: "p1",
-    key: "EMIS",
-    name: "Emis",
+    key: "SILO",
+    name: "Silo",
     color: "#14B8A6",
     description: null,
     client: null,
     hasFolder: false,
-    repo: "galadrimteam/emis",
+    repo: "silo-labs/silo-location",
     today: "2026-10-16",
   });
 });

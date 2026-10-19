@@ -11,7 +11,7 @@ const DEV = { ...WORKTREE_DEFAULTS, baseRef: "origin/dev" } satisfies WorktreeSe
 const child = (base: string): GitBranchRef => ({ kind: "git_branch", branch: "feat/child", base });
 const input = (root: string, base: string, patch: Partial<WorktreeInput> = {}): WorktreeInput => ({
   root,
-  ticketKey: "EMIS-22",
+  ticketKey: "SILO-22",
   branchRef: child(base),
   settings: DEV,
   runDir: join(tmp(), "run"),

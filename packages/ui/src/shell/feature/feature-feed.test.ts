@@ -1,13 +1,13 @@
 import { expect, test } from "bun:test";
 import type { ProjectEvent } from "@kibo/schema";
 import { journalActivity } from "./feature-feed";
-import { emisFeatureProject, NOW } from "./fixture";
+import { NOW, siloFeatureProject } from "./fixture";
 
-const project = emisFeatureProject();
+const project = siloFeatureProject();
 let id = 0;
 const event = (patch: Partial<ProjectEvent> & Pick<ProjectEvent, "kind">): ProjectEvent => ({
   id: ++id,
-  projectId: "emis",
+  projectId: "silo",
   at: NOW - 60_000,
   ticketId: null,
   featureId: "f5",
@@ -34,10 +34,10 @@ test("the journal gives the activity lines, with the key of the step", () => {
     NOW,
   );
   expect(items.map((i) => [i.kind, i.text])).toEqual([
-    ["pr_opened", "PR #22 ouverte · EMIS-32"],
-    ["step", "Phase 7/12 · Porte qualité · EMIS-33"],
+    ["pr_opened", "PR #22 ouverte · SILO-32"],
+    ["step", "Phase 7/12 · Porte qualité · SILO-33"],
     ["agent", "Suivi mis à jour · lot n° 7 proposé"],
-    ["pr_merged", "PR #19 fusionnée · F5 livrée · EMIS-31"],
+    ["pr_merged", "PR #19 fusionnée · F5 livrée · SILO-31"],
     ["sprint", "F5 reportée en S43"],
   ]);
   expect(items[0]?.time).toBe("15:04");
@@ -57,10 +57,10 @@ test("the other facts of the journal read as on the ticket", () => {
   ).map((i) => i.text);
   expect(texts).toEqual([
     "Lot n° 7 validé",
-    "Branche feat/envoi-hors-ligne poussée · EMIS-33",
-    "Branche feat/x déclarée · EMIS-34",
-    "Session ouverte · EMIS-33",
-    "Q16 relancée · EMIS-34",
+    "Branche feat/envoi-hors-ligne poussée · SILO-33",
+    "Branche feat/x déclarée · SILO-34",
+    "Session ouverte · SILO-33",
+    "Q16 relancée · SILO-34",
   ]);
   const late = event({
     kind: "sprint_set",
@@ -82,5 +82,5 @@ test("five lines at most, in the order of the journal", () => {
 
 test("a broken CI reads « CI cassée », as on the ticket and in the CLI", () => {
   const broken = event({ kind: "pr_checks", ticketId: "e32", data: { number: 22, checks: "error" } });
-  expect(journalActivity([broken], project, NOW)[0]?.text).toBe("CI cassée sur PR #22 · EMIS-32");
+  expect(journalActivity([broken], project, NOW)[0]?.text).toBe("CI cassée sur PR #22 · SILO-32");
 });

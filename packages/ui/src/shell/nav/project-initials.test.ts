@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { projectInitials } from "./project-initials";
 
 test("one word gives its first letter, several give the first two meaningful words", () => {
-  expect(projectInitials("Emis")).toBe("E");
+  expect(projectInitials("Silo")).toBe("S");
   expect(projectInitials("Site de la boulangerie")).toBe("SB");
   expect(projectInitials("Refonte site Maison Lune")).toBe("RS");
   expect(projectInitials("  kibo  ")).toBe("K");

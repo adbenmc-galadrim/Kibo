@@ -39,12 +39,12 @@ const base = {
   id: "q1",
   ticketId: "t1",
   runId: "r1",
-  title: "Bloquer le dépôt sur une affaire archivée ?",
+  title: "Bloquer le dépôt sur un client archivé ?",
   context: "",
   options: ["Oui", "Non"],
   provisional: "Non",
   blocking: false,
-  createdBy: { kind: "agent", ref: "emis-livraison" },
+  createdBy: { kind: "agent", ref: "silo-livraison" },
   createdAt: 1,
   importRef: null,
   answer: null,
@@ -138,14 +138,14 @@ test("answer prompts are deterministic and run counts split open from undelivere
     answer: { kind: "confirm", option: "Non", text: "", by: { kind: "human", ref: "adam" }, at: 2 },
   });
   expect(answerPrompt(confirmed)).toBe(
-    "Réponse à ta question « Bloquer le dépôt sur une affaire archivée ? » : choix provisoire confirmé (Non).",
+    "Réponse à ta question « Bloquer le dépôt sur un client archivé ? » : choix provisoire confirmé (Non).",
   );
   expect(
     answerPrompt({
       ...confirmed,
       answer: { ...HUMAN_TEXT, text: "Jamais" },
     }),
-  ).toBe("Réponse à ta question « Bloquer le dépôt sur une affaire archivée ? » : Jamais");
+  ).toBe("Réponse à ta question « Bloquer le dépôt sur un client archivé ? » : Jamais");
   expect(
     countOpenByRun([Question.parse(base), confirmed, Question.parse({ ...base, id: "q2", runId: null })]),
   ).toEqual([{ runId: "r1", open: 1, undelivered: 1, latestTitle: base.title }]);

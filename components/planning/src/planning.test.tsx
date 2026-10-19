@@ -39,11 +39,11 @@ test("one column per sprint with its code, dates and state, then the backlog", a
   expect(within(s41).getByText("5–9 oct.")).toBeTruthy();
   expect(within(s41).getByText("terminé")).toBeTruthy();
   expect(within(s41).getByText("2/2 livrées")).toBeTruthy();
-  const s42 = await column("S42 Terrain hors ligne");
+  const s42 = await column("S42 Saisie hors ligne");
   expect(s42.getAttribute("data-state")).toBe("current");
   expect(within(s42).getByText("se termine aujourd'hui")).toBeTruthy();
   expect(within(s42).getByText("1/3 livrées")).toBeTruthy();
-  expect(within(await column("S43 Import et soudures")).getByText("2 prévues")).toBeTruthy();
+  expect(within(await column("S43 Import et contrats")).getByText("2 prévues")).toBeTruthy();
   expect(within(await column("S44 Rapports")).getByText("1 prévue")).toBeTruthy();
   const backlog = await column("À planifier");
   expect(within(backlog).getByText("Glisse une fonctionnalité vers un sprint")).toBeTruthy();
@@ -124,7 +124,7 @@ test("the open badge turns amber with a note above the limit, and lists the open
   ).toBeTruthy();
   await userEvent.setup().click(badge);
   const menu = await screen.findByRole("menu");
-  expect(within(menu).getByText("Rapport de chantier journalier")).toBeTruthy();
+  expect(within(menu).getByText("Rapport de centre journalier")).toBeTruthy();
 });
 
 test("columns is the default layout", async () => {

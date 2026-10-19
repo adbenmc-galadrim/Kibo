@@ -36,7 +36,7 @@ test("a new project gets exactly five pages, in order", () => {
 });
 
 test("createProject takes an optional setup", () => {
-  const base = { method: "createProject", name: "Emis", key: "EMIS", folder: null, color: "#123456" };
+  const base = { method: "createProject", name: "Silo", key: "SILO", folder: null, color: "#123456" };
   expect(RpcRequest.safeParse(base).success).toBe(true);
   expect(RpcRequest.safeParse({ ...base, setup: SETUP }).success).toBe(true);
   expect(RpcRequest.safeParse({ ...base, setup: { ...SETUP, sprintCount: 53 } }).success).toBe(false);

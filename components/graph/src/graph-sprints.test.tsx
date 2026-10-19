@@ -57,12 +57,12 @@ test("sprints mode: toolbar, counter, one column per sprint and the reserve", as
     .map((g) => g.getAttribute("aria-label"));
   expect(columns).toEqual([
     "S41 Accès",
-    "S42 Terrain hors ligne",
-    "S43 Import et soudures",
+    "S42 Saisie hors ligne",
+    "S43 Import et contrats",
     "S44 Rapports",
     "À planifier",
   ]);
-  const s42 = within(region).getByRole("group", { name: "S42 Terrain hors ligne" });
+  const s42 = within(region).getByRole("group", { name: "S42 Saisie hors ligne" });
   expect(within(s42).getByText("se termine aujourd'hui")).toBeTruthy();
   expect(within(region).getByRole("group", { name: "S41 Accès" }).textContent).toContain("terminé le 9 oct.");
   expect(screen.queryByRole("radio", { name: "Vagues" })).toBeNull();
@@ -122,10 +122,10 @@ test("without any sprint the columns switch is disabled and the waves stay", asy
 
 test("a frame lists its steps, the session row is outlined in orange", () => {
   render(<SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />);
-  const f4 = screen.getByRole("article", { name: "F4 Saisir un tronçon hors ligne" });
+  const f4 = screen.getByRole("article", { name: "F4 Saisir un constat hors ligne" });
   const rows = within(f4).getAllByRole("listitem");
   expect(rows.map((r) => r.textContent)).toEqual([
-    "Schéma local des tronçons",
+    "Schéma local des constats",
     "Formulaire de saisie",
     "Synchro au retour du réseau",
     "Conflits de saisie",
@@ -200,12 +200,12 @@ test("the legend opens when the storage cannot be read", () => {
 test("clicking a frame title or a step opens the ticket", async () => {
   const opened: string[] = [];
   render(<SprintLanes model={kitModel()} onOpen={(id) => opened.push(id)} onNewFeature={() => undefined} />);
-  await userEvent.click(screen.getByRole("button", { name: "Saisir un tronçon hors ligne" }));
+  await userEvent.click(screen.getByRole("button", { name: "Saisir un constat hors ligne" }));
   await userEvent.click(screen.getByRole("button", { name: "Conflits de saisie" }));
-  expect(opened).toEqual(["EMIS-40", "EMIS-45"]);
+  expect(opened).toEqual(["SILO-40", "SILO-45"]);
 });
 
-const TESTS_STEP = "Envoyer les photos d'un tronçon · étape 4";
+const TESTS_STEP = "Envoyer les photos d'un constat · étape 4";
 
 async function withLiveRun(agentExecution: Execution) {
   const m = setup(seedSprintGraph, {}, agentExecution);
@@ -241,7 +241,7 @@ test("the sprint columns follow the host's day, not the browser clock", async ()
   try {
     setup();
     const region = await lanes();
-    const s42 = within(region).getByRole("group", { name: "S42 Terrain hors ligne" });
+    const s42 = within(region).getByRole("group", { name: "S42 Saisie hors ligne" });
     expect(await within(s42).findByText("se termine aujourd'hui")).toBeTruthy();
   } finally {
     setSystemTime();

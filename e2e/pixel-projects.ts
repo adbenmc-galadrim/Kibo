@@ -1,10 +1,10 @@
 import type { Project } from "@playwright/test";
 import {
   DESIGN_REFERENCES,
-  EMIS_MAQUETTES,
   PIXEL_KIT_REFERENCES,
   PIXEL_SCREENSHOT,
   REFERENCES_TEMPLATE,
+  SILO_MAQUETTES,
 } from "./pixel-settings";
 
 const PIXEL_DARK_PORT = 4477;
@@ -20,7 +20,7 @@ export const PIXEL_DAEMONS = [
     scheme: "dark",
     port: PIXEL_DARK_PORT,
     spec: PIXEL_SPECS,
-    scenario: EMIS_MAQUETTES,
+    scenario: SILO_MAQUETTES,
     integrations: true,
   },
   {
@@ -28,7 +28,7 @@ export const PIXEL_DAEMONS = [
     scheme: "light",
     port: PIXEL_LIGHT_PORT,
     spec: PIXEL_SPECS,
-    scenario: EMIS_MAQUETTES,
+    scenario: SILO_MAQUETTES,
     integrations: true,
   },
 ] as const;

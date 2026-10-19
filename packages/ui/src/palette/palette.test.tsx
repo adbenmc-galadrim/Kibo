@@ -326,7 +326,7 @@ test("⌘K « Copier /full-delivery KIB-12 » copies the command of the open tic
 });
 
 test("⌘K « Nouvelle fonctionnalité » opens Planning with the newFeature intent, a sprint opens its sheet", async () => {
-  const emis = trackingProject();
+  const silo = trackingProject();
   const counts = projectsFixture[0]?.counts;
   if (!counts) throw new Error("fixture without counts");
   const views: string[] = [];
@@ -347,9 +347,9 @@ test("⌘K « Nouvelle fonctionnalité » opens Planning with the newFeature int
   };
   const tracked: PaletteContext = {
     ...context,
-    projects: [{ ...emis.meta, counts }],
-    snapshots: new Map([[emis.meta.id, emis]]),
-    activeProjectId: emis.meta.id,
+    projects: [{ ...silo.meta, counts }],
+    snapshots: new Map([[silo.meta.id, silo]]),
+    activeProjectId: silo.meta.id,
     activeTicketId: null,
   };
   const { unmount } = render(

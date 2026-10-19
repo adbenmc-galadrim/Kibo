@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import { screensDir } from "./pixel-screen";
-import { openEmis, openEmisPage } from "./suivi-kit";
+import { openSilo, openSiloPage } from "./suivi-kit";
 
 const SHOTS = screensDir("2026-10-17-r26-barre");
 
@@ -27,8 +27,8 @@ const scheme = (): string => test.info().project.name.replace("suivi-", "");
 test("the count of a sidebar page gives way to its ⋯ button on hover, focus and open menu", async ({
   page,
 }) => {
-  await openEmis(page);
-  await openEmisPage(page, "Vue d'ensemble");
+  await openSilo(page);
+  await openSiloPage(page, "Vue d'ensemble");
   const { sidebar, row, count, action } = pageRow(page, "Questions");
   const tickets = pageRow(page, "Tickets");
   await expect(count).toHaveText(/^\d+$/);
@@ -60,9 +60,9 @@ test("the count of a sidebar page gives way to its ⋯ button on hover, focus an
 });
 
 test("under 48rem every ⋯ stays shown and the counts of editable rows stay hidden", async ({ page }) => {
-  await openEmis(page);
+  await openSilo(page);
   await page.setViewportSize({ width: 700, height: 900 });
-  await openEmisPage(page, "Vue d'ensemble");
+  await openSiloPage(page, "Vue d'ensemble");
   await page.getByRole("button", { name: "Afficher ou masquer la barre latérale" }).first().click();
   const questions = pageRow(page, "Questions");
   const tickets = pageRow(page, "Tickets");

@@ -23,36 +23,36 @@ const T = (key, title, st, o = {}) => ({ key, title, st, ...o });
 S.P = {
   sprints: [
     { key: "S41", name: "Accès", dates: "5–9 oct.", state: "Terminé" },
-    { key: "S42", name: "Terrain hors ligne", dates: "12–16 oct.", state: "En cours" },
-    { key: "S43", name: "Import et soudures", dates: "19–23 oct.", state: "Prévu" },
+    { key: "S42", name: "Saisie hors ligne", dates: "12–16 oct.", state: "En cours" },
+    { key: "S43", name: "Import et contrats", dates: "19–23 oct.", state: "Prévu" },
     { key: "S44", name: "Rapports", dates: "26–30 oct.", state: "Prévu" } ],
   features: [
-    { k: "F1", id: "EMIS-1", name: "Se connecter avec Microsoft", sprint: "S41", steps: [T("EMIS-2", "Application Azure", "Terminé"), T("EMIS-3", "Route de connexion", "Terminé"), T("EMIS-4", "Écran de connexion", "Terminé"), T("EMIS-5", "Démo client", "Terminé")] },
-    { k: "F2", id: "EMIS-9", name: "Voir ses ISO affectés", sprint: "S41", steps: [T("EMIS-10", "Modèle des affectations", "Terminé"), T("EMIS-11", "Périmètre côté serveur", "Terminé"), T("EMIS-12", "Règles de synchro", "Terminé"), T("EMIS-13", "Liste des ISO", "Terminé"), T("EMIS-14", "Démo client", "Terminé")] },
-    { k: "F3", id: "EMIS-17", name: "Réaffecter un ISO", sprint: "S42", deps: ["F2"], steps: [T("EMIS-18", "Historique des affectations", "Terminé"), T("EMIS-19", "Route de réaffectation", "Terminé"), T("EMIS-20", "Écran de réaffectation", "Terminé"), T("EMIS-21", "Démo client", "Terminé", { git: "merged", ref: "#18", step: 11 })] },
-    { k: "F4", id: "EMIS-40", name: "Saisir un tronçon hors ligne", sprint: "S42", deps: ["F2"], result: "Sans réseau, un chef de chantier saisit un tronçon ; la saisie remonte seule au retour du réseau.",
-      steps: [T("EMIS-41", "Schéma local des tronçons", "Terminé", { git: "merged", ref: "#12", step: 11 }), T("EMIS-42", "Formulaire de saisie", "Terminé", { git: "merged", ref: "#14", step: 11 }), T("EMIS-43", "Synchro au retour du réseau", "Terminé", { git: "merged", ref: "#16", step: 11 }),
-        T("EMIS-45", "Conflits de saisie", "En review", { git: "changes", ref: "#20", ci: "ko", step: 9, live: true }), T("EMIS-46", "Démo client", "À faire")] },
-    { k: "F5", id: "EMIS-30", name: "Envoyer les photos d'un tronçon", sprint: "S42", late: true, deps: ["F3"],
-      result: "Sur le terrain, sans réseau, un chef de chantier photographie un tronçon. Les photos partent seules au retour du réseau et apparaissent dans le dossier de l'affaire.",
-      steps: [T("EMIS-31", "Stockage des photos sur MinIO", "Terminé", { git: "merged", ref: "#19", ci: "ok", step: 11, at: "hier 18:22" }), T("EMIS-32", "Route d'envoi des photos", "En review", { git: "pr", ref: "#22", ci: "ok", step: 10, at: "15:04" }),
-        T("EMIS-33", "Écran d'envoi hors ligne", "En cours", { git: "branch", ref: "feat/envoi-hors-ligne", step: 7, live: true, at: "14:51" }), T("EMIS-34", "Tests E2E de l'envoi", "À faire", { ref: "attend EMIS-33" }), T("EMIS-35", "Démo client", "À faire", { ref: "attend EMIS-34" })] },
-    { k: "F6", id: "EMIS-50", name: "Importer les ISO depuis Excel", sprint: "S43", blocked: "Q14", deps: ["F2"], steps: [T("EMIS-51", "Lecture du fichier Excel", "Bloqué", { ref: "attend Q14", step: 3 }), T("EMIS-52", "Contrôle des repères", "À faire"), T("EMIS-53", "Écran d'import", "À faire"), T("EMIS-54", "Démo client", "À faire")] },
-    { k: "F8", id: "EMIS-70", name: "Valider les soudures par lot", sprint: "S43", deps: ["F4"], steps: [T("EMIS-71", "Statuts de soudure", "À faire"), T("EMIS-72", "Sélection multiple", "À faire"), T("EMIS-73", "Validation par lot", "À faire"), T("EMIS-74", "Démo client", "À faire")] },
-    { k: "F7", id: "EMIS-80", name: "Rapport de chantier journalier", sprint: "S44", deps: ["F4", "F5"], steps: [T("EMIS-81", "Modèle du rapport", "À faire"), T("EMIS-82", "Génération PDF", "À faire"), T("EMIS-83", "Photos dans le rapport", "À faire"), T("EMIS-84", "Envoi le soir", "À faire"), T("EMIS-85", "Démo client", "À faire")] },
-    { k: "F9", id: "EMIS-90", name: "Exporter le dossier client", sprint: null, deps: ["F7"], steps: [T("EMIS-91", "Format du dossier", "À faire"), T("EMIS-92", "Archive ZIP", "À faire"), T("EMIS-93", "Démo client", "À faire")] } ],
-  other: T("EMIS-61", "Passage à Expo SDK 54", "En review", { git: "pr", ref: "#23", ci: "run" }),
+    { k: "F1", id: "SILO-1", name: "Se connecter avec Microsoft", sprint: "S41", steps: [T("SILO-2", "Application Azure", "Terminé"), T("SILO-3", "Route de connexion", "Terminé"), T("SILO-4", "Écran de connexion", "Terminé"), T("SILO-5", "Démo client", "Terminé")] },
+    { k: "F2", id: "SILO-9", name: "Voir ses box affectés", sprint: "S41", steps: [T("SILO-10", "Modèle des affectations", "Terminé"), T("SILO-11", "Périmètre côté serveur", "Terminé"), T("SILO-12", "Règles de synchro", "Terminé"), T("SILO-13", "Liste des box", "Terminé"), T("SILO-14", "Démo client", "Terminé")] },
+    { k: "F3", id: "SILO-17", name: "Réaffecter un box", sprint: "S42", deps: ["F2"], steps: [T("SILO-18", "Historique des affectations", "Terminé"), T("SILO-19", "Route de réaffectation", "Terminé"), T("SILO-20", "Écran de réaffectation", "Terminé"), T("SILO-21", "Démo client", "Terminé", { git: "merged", ref: "#18", step: 11 })] },
+    { k: "F4", id: "SILO-40", name: "Saisir un constat hors ligne", sprint: "S42", deps: ["F2"], result: "Sans réseau, un chef de centre saisit un constat ; la saisie remonte seule au retour du réseau.",
+      steps: [T("SILO-41", "Schéma local des constats", "Terminé", { git: "merged", ref: "#12", step: 11 }), T("SILO-42", "Formulaire de saisie", "Terminé", { git: "merged", ref: "#14", step: 11 }), T("SILO-43", "Synchro au retour du réseau", "Terminé", { git: "merged", ref: "#16", step: 11 }),
+        T("SILO-45", "Conflits de saisie", "En review", { git: "changes", ref: "#20", ci: "ko", step: 9, live: true }), T("SILO-46", "Démo client", "À faire")] },
+    { k: "F5", id: "SILO-30", name: "Envoyer les photos d'un constat", sprint: "S42", late: true, deps: ["F3"],
+      result: "Dans un centre sans réseau, un chef de centre photographie un constat. Les photos partent seules au retour du réseau et apparaissent dans le dossier du client.",
+      steps: [T("SILO-31", "Stockage des photos sur MinIO", "Terminé", { git: "merged", ref: "#19", ci: "ok", step: 11, at: "hier 18:22" }), T("SILO-32", "Route d'envoi des photos", "En review", { git: "pr", ref: "#22", ci: "ok", step: 10, at: "15:04" }),
+        T("SILO-33", "Écran d'envoi hors ligne", "En cours", { git: "branch", ref: "feat/envoi-hors-ligne", step: 7, live: true, at: "14:51" }), T("SILO-34", "Tests E2E de l'envoi", "À faire", { ref: "attend SILO-33" }), T("SILO-35", "Démo client", "À faire", { ref: "attend SILO-34" })] },
+    { k: "F6", id: "SILO-50", name: "Importer les box depuis Excel", sprint: "S43", blocked: "Q14", deps: ["F2"], steps: [T("SILO-51", "Lecture du fichier Excel", "Bloqué", { ref: "attend Q14", step: 3 }), T("SILO-52", "Contrôle des numéros", "À faire"), T("SILO-53", "Écran d'import", "À faire"), T("SILO-54", "Démo client", "À faire")] },
+    { k: "F8", id: "SILO-70", name: "Valider les contrats par lot", sprint: "S43", deps: ["F4"], steps: [T("SILO-71", "Statuts de contrat", "À faire"), T("SILO-72", "Sélection multiple", "À faire"), T("SILO-73", "Validation par lot", "À faire"), T("SILO-74", "Démo client", "À faire")] },
+    { k: "F7", id: "SILO-80", name: "Rapport de centre journalier", sprint: "S44", deps: ["F4", "F5"], steps: [T("SILO-81", "Modèle du rapport", "À faire"), T("SILO-82", "Génération PDF", "À faire"), T("SILO-83", "Photos dans le rapport", "À faire"), T("SILO-84", "Envoi le soir", "À faire"), T("SILO-85", "Démo client", "À faire")] },
+    { k: "F9", id: "SILO-90", name: "Exporter le dossier client", sprint: null, deps: ["F7"], steps: [T("SILO-91", "Format du dossier", "À faire"), T("SILO-92", "Archive ZIP", "À faire"), T("SILO-93", "Démo client", "À faire")] } ],
+  other: T("SILO-61", "Passage à Expo SDK 54", "En review", { git: "pr", ref: "#23", ci: "run" }),
   questions: [
-    { id: "Q14", text: "Un ISO réaffecté garde-t-il ses photos ?", ticket: "EMIS-51", f: "F6", to: "Client", age: "il y a 3 j", blocking: true },
-    { id: "Q16", text: "Quota par affaire : 2 Go ou 5 Go ?", ticket: "EMIS-34", f: "F5", to: "Produit", age: "hier" },
-    { id: "Q17", text: "Un rapport par chef de chantier ou par affaire ?", ticket: "EMIS-81", f: "F7", to: "Client", age: "il y a 2 h" } ],
+    { id: "Q14", text: "Un box réaffecté garde-t-il ses photos ?", ticket: "SILO-51", f: "F6", to: "Client", age: "il y a 3 j", blocking: true },
+    { id: "Q16", text: "Quota par client : 2 Go ou 5 Go ?", ticket: "SILO-34", f: "F5", to: "Produit", age: "hier" },
+    { id: "Q17", text: "Un rapport par chef de centre ou par client ?", ticket: "SILO-81", f: "F7", to: "Client", age: "il y a 2 h" } ],
   activity: [
-    { t: "15:04", icon: "pr", color: "purple", text: "PR #22 ouverte", tk: "EMIS-32", f: "F5", res: "En review" },
-    { t: "14:51", icon: "flag", text: "Étape 7 · Porte qualité", tk: "EMIS-33", f: "F5" },
+    { t: "15:04", icon: "pr", color: "purple", text: "PR #22 ouverte", tk: "SILO-32", f: "F5", res: "En review" },
+    { t: "14:51", icon: "flag", text: "Étape 7 · Porte qualité", tk: "SILO-33", f: "F5" },
     { t: "14:40", src: "agent", icon: "bot", text: "Suivi mis à jour · lot n° 7 proposé" },
-    { t: "14:36", icon: "merge", color: "green", text: "PR #18 fusionnée · F3 livrée", tk: "EMIS-21", f: "F3", res: "Terminé" },
-    { t: "13:47", icon: "pr", color: "amber", text: "Changements demandés sur PR #20", tk: "EMIS-45", f: "F4" },
-    { t: "11:58", icon: "circleX", color: "red", text: "CI rouge sur PR #20", tk: "EMIS-45", f: "F4" } ],
+    { t: "14:36", icon: "merge", color: "green", text: "PR #18 fusionnée · F3 livrée", tk: "SILO-21", f: "F3", res: "Terminé" },
+    { t: "13:47", icon: "pr", color: "amber", text: "Changements demandés sur PR #20", tk: "SILO-45", f: "F4" },
+    { t: "11:58", icon: "circleX", color: "red", text: "CI rouge sur PR #20", tk: "SILO-45", f: "F4" } ],
   lot: [
     { icon: "sprint", text: "Reporter F5 en S43", meta: "4 étapes restantes, S42 finit aujourd'hui" },
     { icon: "sprint", text: "Planifier F9 en S44", meta: "seule fonctionnalité à planifier" },
@@ -74,7 +74,7 @@ S.shellP = (f, active, o = {}) => { const C = S.C;
   const root = S.box(f, { name: "root", w: 1440, h: f.height, dir: "row", align: "stretch" });
   S.sidebar(root, active, { pages: S.PAGES_P, counts: S.COUNTS_P });
   const main = S.col(root, { name: "main", fx: true, fy: true });
-  S.topbar(main, o.crumbs || ["Emis", active], t => { S.syncChip(t); if (o.right) o.right(t); S.agentButton(t, o.agentOn ? { on: true } : { count: "3" }); });
+  S.topbar(main, o.crumbs || ["Silo", active], t => { S.syncChip(t); if (o.right) o.right(t); S.agentButton(t, o.agentOn ? { on: true } : { count: "3" }); });
   return { root, main }; };
 
 // ---------- P1 · Vue d'ensemble ----------
@@ -83,8 +83,8 @@ S.draw["p-vue"] = (x, y) => { const C = S.C, P = S.P;
   const { root, main } = S.shellP(f, "Vue d'ensemble", { agentOn: true, right: t => S.btn(t, "Nouveau ticket", "outline", { sm: true, icon: "plus" }) });
   const body = S.col(main, { fx: true, fy: true, pad: [18, 24], gap: 14 });
   const hd = S.row(body, { fx: true, gap: 12 });
-  const ht = S.col(hd, { gap: 4 }); S.txt(ht, "Emis", { size: 22, weight: 600 });
-  const hs = S.row(ht, { gap: 6 }); S.txt(hs, "Suivi de chantier", { size: 12.5, color: C.mfg }); S.txt(hs, "·", { color: C.faint }); S.icon(hs, "github", 12, C.dim); S.txt(hs, "galadrimteam/emis-suivi-chantier", { size: 12, mono: true, color: C.dim });
+  const ht = S.col(hd, { gap: 4 }); S.txt(ht, "Silo", { size: 22, weight: 600 });
+  const hs = S.row(ht, { gap: 6 }); S.txt(hs, "Location de box", { size: 12.5, color: C.mfg }); S.txt(hs, "·", { color: C.faint }); S.icon(hs, "github", 12, C.dim); S.txt(hs, "silo-labs/silo-location", { size: 12, mono: true, color: C.dim });
   S.spacer(hd);
   // Indicateurs
   const k = S.row(body, { name: "kpis", fx: true, h: 86, stroke: C.border, radius: 8, fill: C.card, align: "stretch" });
@@ -102,7 +102,7 @@ S.draw["p-vue"] = (x, y) => { const C = S.C, P = S.P;
   kpi("question", "Questions", "3", "ouvertes", c => { const r = S.row(c, { gap: 6 }); S.dot(r, C.red, 6); S.txt(r, "Q14 bloque F6", { size: 11.5, color: C.dim }); });
   // En ce moment (piste C)
   const live = S.col(body, { fx: true, stroke: C.brandLine, radius: 8, fill: C.brandSoft, pad: [3, 0] });
-  for (const [fk, tk, since] of [["F5", "EMIS-33", "depuis 42 min"], ["F4", "EMIS-45", "depuis 18 min"]]) { const t = S.feat(fk).steps.find(s => s.key === tk);
+  for (const [fk, tk, since] of [["F5", "SILO-33", "depuis 42 min"], ["F4", "SILO-45", "depuis 18 min"]]) { const t = S.feat(fk).steps.find(s => s.key === tk);
     const r = S.row(live, { fx: true, pad: [7, 14], gap: 10 }); S.halo(r, C.brand, 7); S.txt(r, "En ce moment", { size: 11.5, weight: 600, color: C.brandText });
     S.fChip(r, fk); S.txt(r, `${tk} · ${t.title}`, { size: 12.5 }); S.spacer(r);
     S.segs(r, S.stepColors(t.step), { w: 4, h: 10, gap: 1.5, radius: 1 }); S.txt(r, S.stepLabel(t.step), { size: 12, color: C.mfg }); S.txt(r, `T3 Code · ${since}`, { size: 11.5, color: C.dim }); }
@@ -110,7 +110,7 @@ S.draw["p-vue"] = (x, y) => { const C = S.C, P = S.P;
   S.bandP(body);
   const cols = S.row(body, { fx: true, gap: 14, align: "start" });
   const left = S.col(cols, { fx: true, gap: 14 });
-  const sp = S.card(left, "Sprint S42 · Terrain hors ligne", "sprint", { right: h => { S.txt(h, "12–16 oct.", { size: 12, color: C.dim }); S.chip(h, "2/2 ouvertes", { size: 10.5, color: C.amber, stroke: null, fill: C.amberSoft }); } });
+  const sp = S.card(left, "Sprint S42 · Saisie hors ligne", "sprint", { right: h => { S.txt(h, "12–16 oct.", { size: 12, color: C.dim }); S.chip(h, "2/2 ouvertes", { size: 10.5, color: C.amber, stroke: null, fill: C.amberSoft }); } });
   for (const fk of ["F3", "F4", "F5"]) { const ft = S.feat(fk), r = S.cardRow(sp, { gap: 10 }), done = S.fDone(ft);
     S.txt(r, fk, { size: 12, mono: true, color: C.mfg }); S.fillX(S.txt(r, ft.name, { size: 13, color: done === ft.steps.length ? C.mfg : C.fg }));
     if (ft.late) S.lateChip(r); S.fCases(r, ft, { w: 12 }); const n = S.row(r, { w: 70, justify: "end" });
@@ -119,9 +119,9 @@ S.draw["p-vue"] = (x, y) => { const C = S.C, P = S.P;
   // Prochaine à finir
   const nx = S.col(left, { fx: true, stroke: C.border, radius: 8, fill: C.card, pad: [12, 14], gap: 10 });
   const nh = S.row(nx, { fx: true, gap: 8 }); S.icon(nh, "flag", 14, C.mfg); S.txt(nh, "Prochaine à finir", { size: 13, weight: 600 }); S.spacer(nh); S.txt(nh, "la plus avancée du sprint", { size: 12, color: C.dim });
-  const nr = S.row(nx, { fx: true, gap: 10 }); S.txt(nr, "F4", { size: 12, mono: true, color: C.mfg }); S.txt(nr, "Saisir un tronçon hors ligne", { size: 14, weight: 500 }); S.fCases(nr, S.feat("F4"), { w: 22, h: 7 }); S.txt(nr, "3/5", { size: 12, mono: true, color: C.dim });
-  const nb = S.row(nx, { fx: true, gap: 10 }); S.txt(nb, "Reste : EMIS-45 Conflits de saisie (changements demandés), puis EMIS-46 Démo client.", { size: 12.5, color: C.mfg, fill: true });
-  const cmd = S.row(nb, { gap: 6, pad: [4, 9], radius: 6, fill: C.muted, stroke: C.border }); S.txt(cmd, "/full-delivery EMIS-45", { size: 11.5, mono: true, color: C.fg }); S.icon(cmd, "copy", 12, C.mfg);
+  const nr = S.row(nx, { fx: true, gap: 10 }); S.txt(nr, "F4", { size: 12, mono: true, color: C.mfg }); S.txt(nr, "Saisir un constat hors ligne", { size: 14, weight: 500 }); S.fCases(nr, S.feat("F4"), { w: 22, h: 7 }); S.txt(nr, "3/5", { size: 12, mono: true, color: C.dim });
+  const nb = S.row(nx, { fx: true, gap: 10 }); S.txt(nb, "Reste : SILO-45 Conflits de saisie (changements demandés), puis SILO-46 Démo client.", { size: 12.5, color: C.mfg, fill: true });
+  const cmd = S.row(nb, { gap: 6, pad: [4, 9], radius: 6, fill: C.muted, stroke: C.border }); S.txt(cmd, "/full-delivery SILO-45", { size: 11.5, mono: true, color: C.fg }); S.icon(cmd, "copy", 12, C.mfg);
   // Colonne de droite
   const right = S.col(cols, { w: 300, gap: 14 });
   const rv = S.card(right, "En review", "pr", { count: "3" });
@@ -247,7 +247,7 @@ S.draw["p-planning"] = (x, y) => { const C = S.C, P = S.P;
 // ---------- P3 · Fiche d'une fonctionnalité ----------
 S.draw["p-fonctionnalite"] = (x, y) => { const C = S.C, ft = S.feat("F5");
   const f = S.screen("P3 · Fonctionnalité", x, y, 1440, 1000);
-  const { main } = S.shellP(f, "Planning", { crumbs: ["Emis", "Planning", "F5 · Envoyer les photos d'un tronçon"] });
+  const { main } = S.shellP(f, "Planning", { crumbs: ["Silo", "Planning", "F5 · Envoyer les photos d'un constat"] });
   const body = S.row(main, { fx: true, fy: true, pad: [22, 28], gap: 28, align: "start" });
   const L = S.col(body, { fx: true, gap: 18 });
   const ov = S.row(L, { gap: 8 }); S.icon(ov, "package", 14, C.mfg); S.txt(ov, "Fonctionnalité · F5", { size: 12, color: C.mfg }); S.sprintChip(ov, "S42"); S.chip(ov, "ouverte", { color: C.blue, stroke: null, fill: C.blueSoft, size: 10.5 });
@@ -259,7 +259,7 @@ S.draw["p-fonctionnalite"] = (x, y) => { const C = S.C, ft = S.feat("F5");
   S.txt(rt, ft.result, { size: 14, lh: 1.55, fill: true });
   const ph = S.row(L, { fx: true, gap: 8 }); S.txt(ph, "Parcours de A à Z", { size: 15, weight: 600 }); S.txt(ph, "étapes libres, dans l'ordre des dépendances", { size: 12.5, color: C.dim }); S.spacer(ph); S.btn(ph, "Ajouter une étape", "ghost", { sm: true, icon: "plus" });
   const tl = S.col(L, { fx: true, gap: 0 });
-  ft.steps.forEach((t, i) => { const last = i === ft.steps.length - 1, next = t.key === "EMIS-34";
+  ft.steps.forEach((t, i) => { const last = i === ft.steps.length - 1, next = t.key === "SILO-34";
     const r = S.row(tl, { fx: true, gap: 14, align: "stretch" });
     const rail = S.col(r, { w: 28, align: "center" });
     const col = S.caseColor(t.st), done = t.st === "Terminé";
@@ -272,22 +272,22 @@ S.draw["p-fonctionnalite"] = (x, y) => { const C = S.C, ft = S.feat("F5");
     if (t.live) S.liveChip(a, { text: "session · T3 Code · 42 min" }); S.spacer(a);
     const st = S.row(a, { gap: 6 }); S.status(st, t.st, 8); S.txt(st, t.st, { size: 12.5 });
     const b = S.row(c, { fx: true, gap: 12 }); S.gitRef(b, t); if (t.at) S.txt(b, t.at, { size: 11.5, color: C.dim }); S.spacer(b); S.stepCell(b, t.step);
-    if (next) { const nb = S.row(c, { fx: true, h: 28, gap: 8, pad: [4, 0, 0, 0] }); S.txt(nb, "Prochaine étape EMIS-34 : attend EMIS-33.", { size: 12, color: C.mfg }); } });
+    if (next) { const nb = S.row(c, { fx: true, h: 28, gap: 8, pad: [4, 0, 0, 0] }); S.txt(nb, "Prochaine étape SILO-34 : attend SILO-33.", { size: 12, color: C.mfg }); } });
   // Colonne de droite
   const R = S.col(body, { w: 320, gap: 14 });
   const sp = S.card(R, "Sprint", "sprint", { w: 320 });
-  { const r = S.cardRow(sp, { gap: 8 }); S.sprintChip(r, "S42"); S.txt(r, "Terrain hors ligne · 12–16 oct.", { size: 12.5 }); S.spacer(r); S.icon(r, "chevDown", 13, C.dim); }
+  { const r = S.cardRow(sp, { gap: 8 }); S.sprintChip(r, "S42"); S.txt(r, "Saisie hors ligne · 12–16 oct.", { size: 12.5 }); S.spacer(r); S.icon(r, "chevDown", 13, C.dim); }
   { const r = S.cardRow(sp, { gap: 8, align: "start" }); S.icon(r, "clockAlert", 14, C.red); const tc = S.col(r, { fx: true, gap: 6 }); S.txt(tc, "4 étapes restantes : ne tiendra pas dans S42.", { size: 12.5, fill: true });
     const b = S.row(tc, { gap: 8 }); S.btn(b, "Déplacer en S43", "outline", { sm: true, icon: "sprint" }); S.txt(b, "proposé par l'agent", { size: 11.5, color: C.brandText }); }
   const addIn = (label) => (h) => S.btn(h, label, "ghost", { sm: true, icon: "plus", pad: [4, 6], size: 11.5 });
   const dp = S.card(R, "Dépendances", "link", { w: 320, right: addIn("Dépendance") });
-  { const r = S.cardRow(dp, { gap: 8 }); S.txt(r, "Attend", { size: 12, color: C.dim, w: 56 }); S.txt(r, "F3", { size: 11, mono: true, color: C.mfg }); S.txt(r, "Réaffecter un ISO", { size: 12.5 }); S.spacer(r); S.icon(r, "circleCheck", 13, C.green); }
-  { const r = S.cardRow(dp, { gap: 8 }); S.txt(r, "Débloque", { size: 12, color: C.dim, w: 56 }); S.txt(r, "F7", { size: 11, mono: true, color: C.mfg }); S.txt(r, "Rapport de chantier journalier", { size: 12.5 }); S.spacer(r); S.txt(r, "S44", { size: 11, mono: true, color: C.dim }); }
+  { const r = S.cardRow(dp, { gap: 8 }); S.txt(r, "Attend", { size: 12, color: C.dim, w: 56 }); S.txt(r, "F3", { size: 11, mono: true, color: C.mfg }); S.txt(r, "Réaffecter un box", { size: 12.5 }); S.spacer(r); S.icon(r, "circleCheck", 13, C.green); }
+  { const r = S.cardRow(dp, { gap: 8 }); S.txt(r, "Débloque", { size: 12, color: C.dim, w: 56 }); S.txt(r, "F7", { size: 11, mono: true, color: C.mfg }); S.txt(r, "Rapport de centre journalier", { size: 12.5 }); S.spacer(r); S.txt(r, "S44", { size: 11, mono: true, color: C.dim }); }
   const q = S.card(R, "Questions", "question", { w: 320, count: "1", right: addIn("Question") });
-  { const r = S.cardRow(q, { align: "start" }); const tc = S.col(r, { fx: true, gap: 2 }); S.txt(tc, "Quota par affaire : 2 Go ou 5 Go ?", { size: 12.5, fill: true }); S.txt(tc, "Q16 · Produit · hier · EMIS-34", { size: 11, color: C.dim }); }
+  { const r = S.cardRow(q, { align: "start" }); const tc = S.col(r, { fx: true, gap: 2 }); S.txt(tc, "Quota par client : 2 Go ou 5 Go ?", { size: 12.5, fill: true }); S.txt(tc, "Q16 · Produit · hier · SILO-34", { size: 11, color: C.dim }); }
   const ac = S.card(R, "Activité", "activity", { w: 320 });
-  for (const [icon, col, text, t] of [["pr", C.purple, "PR #22 ouverte · EMIS-32", "15:04"], ["flag", C.mfg, "Phase 7/12 · Porte qualité · EMIS-33", "14:51"], ["radio", C.brand, "Session T3 Code ouverte · EMIS-33", "14:34"],
-    ["flag", C.mfg, "Phase 10/12 · Démo · EMIS-32", "hier"], ["flag", C.mfg, "Phase 11/12 · Livré · EMIS-31", "hier"]]) {
+  for (const [icon, col, text, t] of [["pr", C.purple, "PR #22 ouverte · SILO-32", "15:04"], ["flag", C.mfg, "Phase 7/12 · Porte qualité · SILO-33", "14:51"], ["radio", C.brand, "Session T3 Code ouverte · SILO-33", "14:34"],
+    ["flag", C.mfg, "Phase 10/12 · Démo · SILO-32", "hier"], ["flag", C.mfg, "Phase 11/12 · Livré · SILO-31", "hier"]]) {
     const r = S.cardRow(ac, { gap: 9, pad: [7, 14] }); S.icon(r, icon, 13, col); S.fillX(S.txt(r, text, { size: 12 })); S.txt(r, t, { size: 11, mono: true, color: C.dim }); }
   const nb = S.row(R, { fx: true, gap: 8, align: "start" }); S.icon(nb, "lock", 13, C.dim); S.txt(nb, "Une fonctionnalité ne se lance pas : chaque étape se livre dans T3 Code avec full-delivery.", { size: 11.5, color: C.dim, fill: true, lh: 1.45 });
   return f; };
@@ -307,8 +307,8 @@ S.draw["p-tickets"] = (x, y) => { const C = S.C, P = S.P;
   const th = S.row(tb, { fx: true, h: 32, pad: [0, 14], gap: 12, fill: C.panel });
   const hc = (l, w) => { const c = S.row(th, { w, fx: !w }); S.txt(c, l, { size: 11.5, weight: 500, color: C.dim }); };
   hc("Clé", W.key); hc("Titre"); hc("Fonctionnalité", W.f); hc("État", W.st); hc("Git et PR", W.git); hc("Livraison", W.step); hc("Mis à jour", W.upd);
-  const upd = { "EMIS-33": "il y a 9 min", "EMIS-45": "il y a 18 min", "EMIS-32": "il y a 1 h", "EMIS-34": "hier", "EMIS-35": "hier", "EMIS-46": "lun.", "EMIS-21": "il y a 2 h", "EMIS-31": "hier", "EMIS-43": "mer.", "EMIS-42": "mar.", "EMIS-41": "lun." };
-  const rows = ["EMIS-33", "EMIS-45", "EMIS-32", "EMIS-34", "EMIS-35", "EMIS-46"].map(k => S.allTickets().find(t => t.key === k));
+  const upd = { "SILO-33": "il y a 9 min", "SILO-45": "il y a 18 min", "SILO-32": "il y a 1 h", "SILO-34": "hier", "SILO-35": "hier", "SILO-46": "lun.", "SILO-21": "il y a 2 h", "SILO-31": "hier", "SILO-43": "mer.", "SILO-42": "mar.", "SILO-41": "lun." };
+  const rows = ["SILO-33", "SILO-45", "SILO-32", "SILO-34", "SILO-35", "SILO-46"].map(k => S.allTickets().find(t => t.key === k));
   const row = (t, dim) => { S.hline(tb, C.soft); const r = S.row(tb, { fx: true, h: 40, pad: [0, 14], gap: 12 });
     const kc = S.row(r, { w: W.key }); S.txt(kc, t.key, { size: 12, mono: true, color: dim ? C.dim : C.mfg });
     const tc = S.row(r, { fx: true, gap: 8 }); S.txt(tc, t.title, { size: 13, color: dim ? C.mfg : C.fg }); if (t.live) S.dot(tc, C.brand, 7);
@@ -319,7 +319,7 @@ S.draw["p-tickets"] = (x, y) => { const C = S.C, P = S.P;
   rows.forEach(t => row(t));
   S.hline(tb, C.soft);
   { const g = S.row(tb, { fx: true, h: 32, pad: [0, 14], gap: 8, fill: C.panel }); S.icon(g, "chevDown", 13, C.dim); S.status(g, "Terminé", 8); S.txt(g, "Terminés dans S42", { size: 12, weight: 500, color: C.mfg }); S.txt(g, "8", { size: 11, mono: true, color: C.dim }); }
-  ["EMIS-21", "EMIS-31", "EMIS-43", "EMIS-42"].map(k => S.allTickets().find(t => t.key === k)).forEach(t => row(t, true));
+  ["SILO-21", "SILO-31", "SILO-43", "SILO-42"].map(k => S.allTickets().find(t => t.key === k)).forEach(t => row(t, true));
   S.hline(tb, C.soft);
   { const g = S.row(tb, { fx: true, h: 32, pad: [0, 14], gap: 8, fill: C.panel }); S.icon(g, "chevRight", 13, C.dim); S.txt(g, "Hors fonctionnalité", { size: 12, weight: 500, color: C.mfg }); S.txt(g, "1", { size: 11, mono: true, color: C.dim }); }
   const ft = S.row(body, { fx: true, gap: 8 }); S.icon(ft, "refresh", 13, C.dim);
@@ -335,7 +335,7 @@ S.draw["p-graphe"] = (x, y) => { const C = S.C, P = S.P;
   S.spacer(tb); S.txt(tb, "9 fonctionnalités · 13 dépendances entre étapes, 7 entre fonctionnalités", { size: 12, color: C.dim });
   S.hline(main, C.soft);
   const CW = 1199, CH = 1000 - 48 - 1 - 46 - 1, cv = S.box(main, { name: "canvas", w: CW, h: CH, fill: C.canvas, fx: true, fy: true, clip: true });
-  const lanes = [["S41", "Accès", "terminé"], ["S42", "Terrain hors ligne", "en cours"], ["S43", "Import et soudures", "prévu"], ["S44", "Rapports", "prévu"], [null, "À planifier", ""]];
+  const lanes = [["S41", "Accès", "terminé"], ["S42", "Saisie hors ligne", "en cours"], ["S43", "Import et contrats", "prévu"], ["S44", "Rapports", "prévu"], [null, "À planifier", ""]];
   const LW = [150, 290, 260, 250, 210], X = []; let xx = 0; LW.forEach(w => { X.push(xx); xx += w; });
   lanes.forEach(([k, n, st], i) => { const cur = k === "S42";
     S.box(cv, { name: "lane " + (k || "reserve"), x: X[i], y: 0, w: LW[i], h: CH, fill: i % 2 ? C.panel : C.canvas });

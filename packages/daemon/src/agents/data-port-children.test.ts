@@ -12,8 +12,8 @@ test("the ticket context counts the direct children of the ticket", () => {
     const s = createService(openStore(dir), { user: "adam" });
     const meta = call(s, {
       method: "createProject",
-      name: "Emis",
-      key: "EMIS",
+      name: "Silo",
+      key: "SILO",
       folder: null,
       color: "#F97316",
     }) as ProjectMeta;

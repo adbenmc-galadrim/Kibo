@@ -16,7 +16,7 @@ export const frProject = {
     worktreeSetup: "Commande de préparation",
     worktreeHelp:
       "Variables : {branch} {slug} {key} ; {path} dans la commande. La commande s'exécute depuis la racine du dépôt, sur ta machine.",
-    worktreeExample: "Exemple : origin/dev · ../emis-{slug} · pnpm worktree {branch}",
+    worktreeExample: "Exemple : origin/dev · ../silo-{slug} · pnpm worktree {branch}",
     worktreeErrors: {
       base: "La base doit être une branche (main) ou une branche distante (origin/dev).",
       path: "Le chemin doit rester dans le dépôt ou à côté de lui.",

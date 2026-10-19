@@ -1,49 +1,49 @@
 {
   "state": "~/.delivery",
   "projects": {
-    "gereco": {
-      "root": "~/Documents/gereco",
-      "repo": "~/Documents/gereco/gereco",
-      "remote": "acme/gereco",
+    "atlas": {
+      "root": "~/Documents/atlas",
+      "repo": "~/Documents/atlas/atlas",
+      "remote": "acme/atlas",
       "base": "staging",
-      "profile": "~/Documents/gereco/delivery-profile.md",
-      "memory": "~/.claude/projects/-home-dev-Documents-gereco/memory/MEMORY.md",
+      "profile": "~/Documents/atlas/delivery-profile.md",
+      "memory": "~/.claude/projects/-home-dev-Documents-atlas/memory/MEMORY.md",
       "plan": {
         "format": "plan-data-js",
-        "path": "~/Documents/gereco/tmp/plan-data.js",
-        "prose": "~/Documents/gereco/tmp/plan-prs-*.md",
+        "path": "~/Documents/atlas/tmp/plan-data.js",
+        "prose": "~/Documents/atlas/tmp/plan-prs-*.md",
         "idPattern": "^C[0-9A-Z]*-[0-9]+$"
       },
-      "briefs": "~/Documents/gereco/tmp/briefs",
-      "reports": "~/Documents/gereco/tmp/reports",
-      "progress": "~/Documents/gereco/.progress",
-      "todo": "~/Documents/gereco/TODO.md",
+      "briefs": "~/Documents/atlas/tmp/briefs",
+      "reports": "~/Documents/atlas/tmp/reports",
+      "progress": "~/Documents/atlas/.progress",
+      "todo": "~/Documents/atlas/TODO.md",
       "board": { "port": 4848 },
       "worktree": {
-        "dir": "~/Documents/gereco/gereco-{slug}",
-        "copyFrom": ["~/Documents/gereco/gereco-staging", "{repo}"],
+        "dir": "~/Documents/atlas/atlas-{slug}",
+        "copyFrom": ["~/Documents/atlas/atlas-staging", "{repo}"],
         "copy": [".galacryptkey", "apps/backend/.env", "apps/backend/.env.test", "apps/frontend/.env"],
-        "after": ["~/Documents/gereco/bin/gereco-sweep --reap --keep {slug} --yes", "make pr-up"]
+        "after": ["~/Documents/atlas/bin/atlas-sweep --reap --keep {slug} --yes", "make pr-up"]
       }
     },
-    "rapid": {
-      "root": "~/Documents/rapid",
-      "repo": "~/Documents/rapid/rapid",
-      "remote": "acme/rapid",
+    "nimbus": {
+      "root": "~/Documents/nimbus",
+      "repo": "~/Documents/nimbus/nimbus",
+      "remote": "acme/nimbus",
       "base": "main",
-      "profile": "~/Documents/rapid/delivery-profile.md",
-      "memory": "~/.claude/projects/-home-dev-Documents-rapid/memory/MEMORY.md",
+      "profile": "~/Documents/nimbus/delivery-profile.md",
+      "memory": "~/.claude/projects/-home-dev-Documents-nimbus/memory/MEMORY.md",
       "plan": {
         "format": "plan-data-js",
-        "path": "~/Documents/rapid/tmp/plan-data.js",
+        "path": "~/Documents/nimbus/tmp/plan-data.js",
         "idPattern": "^(W[0-9A-Z]+|R[0-9]+|N[0-9]+|E|F)$"
       },
-      "briefs": "~/Documents/rapid/tmp/briefs",
-      "reports": "~/Documents/rapid/tmp/reports",
-      "progress": "~/Documents/rapid/.progress",
-      "todo": "~/Documents/rapid/TODO.md",
+      "briefs": "~/Documents/nimbus/tmp/briefs",
+      "reports": "~/Documents/nimbus/tmp/reports",
+      "progress": "~/Documents/nimbus/.progress",
+      "todo": "~/Documents/nimbus/TODO.md",
       "worktree": {
-        "dir": "~/Documents/rapid/rapid-{slug}",
+        "dir": "~/Documents/nimbus/nimbus-{slug}",
         "copyFrom": ["{repo}"],
         "copy": [".env", ".galacryptkey"],
         "env": {
@@ -54,40 +54,40 @@
             "step": 1,
             "count": 59
           },
-          "replace": { "DATABASE_URL": ["/[^/?]+(\\?|$)", "/rapid_{slug_}$1"] },
+          "replace": { "DATABASE_URL": ["/[^/?]+(\\?|$)", "/nimbus_{slug_}$1"] },
           "set": {
-            "DATABASE_NAME": "rapid_{slug_}",
+            "DATABASE_NAME": "nimbus_{slug_}",
             "BETTER_AUTH_URL": "http://localhost:{BACKEND_PORT}",
             "EXPO_PUBLIC_BACKEND_URL": "http://localhost:{BACKEND_PORT}"
           }
         },
         "after": [
-          "docker exec rapid-postgres createdb -U postgres rapid_{slug_} 2>/dev/null || true",
+          "docker exec nimbus-postgres createdb -U postgres nimbus_{slug_} 2>/dev/null || true",
           "pnpm install",
           "pnpm db:migrate"
         ]
       }
     },
-    "emis": {
-      "root": "~/Documents/emis",
-      "repo": "~/Documents/emis/emis",
-      "remote": "galadrimteam/emis-suivi-chantier",
+    "silo": {
+      "root": "~/Documents/silo",
+      "repo": "~/Documents/silo/silo",
+      "remote": "silo-labs/silo-location",
       "base": "dev",
-      "profile": "~/Documents/emis/delivery-profile.md",
-      "memory": "~/.claude/projects/-Users-galadrim-Documents-emis/memory/MEMORY.md",
+      "profile": "~/Documents/silo/delivery-profile.md",
+      "memory": "~/.claude/projects/-Users-galadrim-Documents-silo/memory/MEMORY.md",
       "plan": {
         "format": "kibo",
-        "project": "EMIS",
-        "detail": "~/Documents/emis/archive-2026-10-08/plan-data.js",
+        "project": "SILO",
+        "detail": "~/Documents/silo/archive-2026-10-08/plan-data.js",
         "idPattern": "^C[0-9A-Z]*-[0-9]+$"
       },
-      "briefs": "~/Documents/emis/kibo-notes/briefs",
-      "reports": "~/Documents/emis/kibo-notes/revues",
-      "progress": "~/Documents/emis/.progress",
-      "todo": "~/Documents/emis/TODO.md",
+      "briefs": "~/Documents/silo/kibo-notes/briefs",
+      "reports": "~/Documents/silo/kibo-notes/revues",
+      "progress": "~/Documents/silo/.progress",
+      "todo": "~/Documents/silo/TODO.md",
       "board": { "port": 4858 },
       "worktree": {
-        "dir": "~/Documents/emis/emis-{dashed}",
+        "dir": "~/Documents/silo/silo-{dashed}",
         "copyFrom": ["{repo}", "{sibling}"],
         "copy": [".env"],
         "env": {

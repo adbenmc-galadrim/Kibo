@@ -29,8 +29,8 @@ function setup() {
   const service = createService(store, { user: "adam" });
   const project = service.handle({
     method: "createProject",
-    name: "Emis",
-    key: "EMIS",
+    name: "Silo",
+    key: "SILO",
     folder: null,
     color: "#F97316",
   }) as ProjectMeta;

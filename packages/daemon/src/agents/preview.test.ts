@@ -109,7 +109,7 @@ test("the command shows the merged rules and folders, each with its origin", asy
   const delivery = {
     ...EMPTY_DELIVERY,
     allow: ["Bash(pnpm *)", "Bash(git *)"],
-    addDirs: ["/Users/a/Documents/emis"],
+    addDirs: ["/Users/a/Documents/silo"],
   };
   const withDelivery = previewOf({ ...testProject, meta: { ...testProject.meta, delivery } });
   for (const req of [{ projectId: "p1" }, { projectId: "p1", ticketId: "t3" }]) {
@@ -122,7 +122,7 @@ test("the command shows the merged rules and folders, each with its origin", asy
     ]);
     expect(command.addDirs).toEqual([
       { dir: "/Users/a/.claude/skills", origin: "agent" },
-      { dir: "/Users/a/Documents/emis", origin: "project" },
+      { dir: "/Users/a/Documents/silo", origin: "project" },
     ]);
   }
   const machine = await withDelivery({ ref: "global:review-pr" });

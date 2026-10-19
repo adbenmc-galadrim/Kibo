@@ -135,10 +135,10 @@ test("Livrer comes right after Ouvrir when the ticket can be delivered", () => {
 });
 
 test("Livrer is disabled and says which run is already there", () => {
-  const deliver = withDeliver({ disabledReason: "déjà un run : emis · full-delivery · EMIS-15" })[1];
+  const deliver = withDeliver({ disabledReason: "déjà un run : silo · full-delivery · SILO-15" })[1];
   if (!deliver || isSeparator(deliver) || isSubmenu(deliver)) throw new Error("no Livrer");
   expect(deliver.disabled).toBe(true);
-  expect(deliver.hint).toBe("déjà un run : emis · full-delivery · EMIS-15");
+  expect(deliver.hint).toBe("déjà un run : silo · full-delivery · SILO-15");
 });
 
 test("hidden agent execution replaces Livrer with copying the full-delivery command", async () => {

@@ -82,15 +82,15 @@ const refsChanged = (projectId: string) => {
 test("the observation runs in each poller tick", async () => {
   const poller = fakePoller();
   start(poller, fakeDelay().delay);
-  branches = ["feat/emis-2-a"];
+  branches = ["feat/silo-2-a"];
   await poller.tick();
-  expect(fx.ticket("EMIS-2").statusId).toBe("in_progress");
+  expect(fx.ticket("SILO-2").statusId).toBe("in_progress");
 });
 
 test("ref changes are grouped over 500 ms before one observation", async () => {
   const clock = fakeDelay();
   const t = start(fakePoller(), clock.delay);
-  branches = ["feat/emis-1-a"];
+  branches = ["feat/silo-1-a"];
   refsChanged(fx.projectId);
   clock.advance(300);
   refsChanged(fx.projectId);
@@ -99,7 +99,7 @@ test("ref changes are grouped over 500 ms before one observation", async () => {
   clock.advance(1);
   await t.idle();
   expect(reads).toBe(1);
-  expect(fx.ticket("EMIS-1").statusId).toBe("in_progress");
+  expect(fx.ticket("SILO-1").statusId).toBe("in_progress");
 });
 
 test("stop unregisters the pass, the listener and the pending observation", async () => {
@@ -118,8 +118,8 @@ test("stop unregisters the pass, the listener and the pending observation", asyn
 test("observations never overlap", async () => {
   const poller = fakePoller();
   const t = start(poller, fakeDelay().delay);
-  branches = ["feat/emis-3-a"];
+  branches = ["feat/silo-3-a"];
   await Promise.all([t.observe(), t.observe(), poller.tick()]);
   expect(fx.events.filter((e) => e.meta.origin === "kibo")).toHaveLength(1);
-  expect(fx.ticket("EMIS-3").statusId).toBe("in_progress");
+  expect(fx.ticket("SILO-3").statusId).toBe("in_progress");
 });

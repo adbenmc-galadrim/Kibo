@@ -375,7 +375,7 @@ const projectRecord: RunRecord = {
   ...record,
   ticketId: null,
   ticketKey: null,
-  ticketTitle: "Agent de projet · Emis",
+  ticketTitle: "Agent de projet · Silo",
   profileId: "system:project-agent",
   profileName: "project-agent",
   kind: "project",
@@ -391,8 +391,8 @@ const projectRunning = () =>
 test("a project run takes messages while queued or running, without ticket", () => {
   const queued = reduceRun(initRun(projectRecord, 5, 100), message("Où en est-on ?"), 101);
   expect(queued).toMatchObject({ state: "queued", pendingAnswer: "Où en est-on ?" });
-  expect(reduceRun(queued, message("Et EMIS-11 ?"), 102).pendingAnswer).toBe(
-    "Où en est-on ?\n\nEt EMIS-11 ?",
+  expect(reduceRun(queued, message("Et SILO-11 ?"), 102).pendingAnswer).toBe(
+    "Où en est-on ?\n\nEt SILO-11 ?",
   );
   expect(reduceRun(projectRunning(), message("Et ensuite ?"), 130)).toMatchObject({
     state: "running",
