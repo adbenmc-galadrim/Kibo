@@ -1,8 +1,9 @@
 import type { FileChange, FileRef, ProjectSnapshot, Worktree } from "@kibo/schema";
 import { useRef, useState } from "react";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import { errorMessage } from "../lib/error-message";
+import { AgentWorkingBanner } from "./AgentWorkingBanner";
 import { BranchFiles } from "./BranchFiles";
 import { ChangesFiles } from "./ChangesFiles";
 import { ChangesLayout } from "./ChangesLayout";
@@ -145,7 +146,7 @@ export function ChangesBody(props: Props) {
       ticketId: input.link ? (defaults?.ticketId ?? null) : null,
     });
     setPrOpen(false);
-    setNotice(fr.pr.created(created.number));
+    setNotice(frChanges.pr.created(created.number));
     remote.refresh();
     reload();
   };
@@ -154,9 +155,9 @@ export function ChangesBody(props: Props) {
   const shownFile = branchView.selected ? { ...branchView.selected, area: null } : selected;
   const staged = files.filter((f) => f.area === "staged");
   const prBlocked = !branch
-    ? fr.commit.noBranch
+    ? frChanges.commit.noBranch
     : remote.gh && !remote.gh.available
-      ? fr.commit.ghUnavailable
+      ? frChanges.commit.ghUnavailable
       : null;
   const shownError =
     error ?? statusError ?? diffError ?? branchView.error ?? defaultsError ?? remote.error ?? compare.error;
@@ -174,7 +175,7 @@ export function ChangesBody(props: Props) {
         flash={fileActions.copy}
       />
       <ChangesLayout
-        filesTitle={fr.changes.files(files.length)}
+        filesTitle={frChanges.changes.files(files.length)}
         files={
           <ChangesFiles
             worktrees={worktrees}
@@ -230,7 +231,7 @@ export function ChangesBody(props: Props) {
               canAmend,
               busy,
               onCommit: commit,
-              banner: slots.commitBanner,
+              banner: slots.workingAgent ? <AgentWorkingBanner agent={slots.workingAgent} /> : null,
               messageRef,
             }}
             commits={{
@@ -287,7 +288,7 @@ export function ChangesBody(props: Props) {
           }}
           onSubmit={createPr}
           extraOptions={slots.prOptions}
-          ruleNote={slots.prRuleNote ?? null}
+          ruleNote={slots.prRuleKey ? frChanges.pr.rule(slots.prRuleKey) : null}
         />
       )}
       {fileActions.discarding && (

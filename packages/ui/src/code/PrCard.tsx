@@ -3,6 +3,7 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { GitPullRequest } from "lucide-react";
 import { useId } from "react";
 import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 
 const STATE_TONE: Record<PrState, string> = {
   open: "text-emerald-600 dark:text-emerald-400",
@@ -25,9 +26,11 @@ export function PrCard({ pr, branch, base, ticketKey }: Props) {
     <section aria-labelledby={id} className="grid gap-1.5 rounded-lg border bg-muted/40 p-3">
       <h3 id={id} className="flex items-center gap-2 text-sm font-semibold">
         <GitPullRequest aria-hidden className={cn("size-4 shrink-0", STATE_TONE[pr.state])} />
-        {fr.commit.prCard(pr.number, fr.ticket.prState[pr.state])}
+        {frChanges.commit.prCard(pr.number, fr.ticket.prState[pr.state])}
       </h3>
-      <p className="text-xs text-muted-foreground">{fr.commit.prCardDetail(branch, base, ticketKey)}</p>
+      <p className="text-xs text-muted-foreground">
+        {frChanges.commit.prCardDetail(branch, base, ticketKey)}
+      </p>
     </section>
   );
 }

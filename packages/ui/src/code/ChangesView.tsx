@@ -1,5 +1,5 @@
 import type { FileRef, ProjectSnapshot } from "@kibo/schema";
-import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import { errorMessage } from "../lib/error-message";
 import { isRemoteView } from "../lib/remote-view";
 import { ChangesBody } from "./ChangesBody";
@@ -28,7 +28,7 @@ export function ChangesView({
   const { worktrees, error } = useWorktrees(project.meta.id);
   const current = resolveWorktree(worktrees, worktree) ?? resolveWorktree(worktrees, null);
   if (error?.code === "NOT_A_REPO")
-    return <p className="p-8 text-sm text-muted-foreground">{fr.changes.notRepo}</p>;
+    return <p className="p-8 text-sm text-muted-foreground">{frChanges.changes.notRepo}</p>;
   if (error)
     return (
       <p role="alert" className="p-8 text-sm text-destructive">

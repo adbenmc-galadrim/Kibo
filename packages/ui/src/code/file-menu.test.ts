@@ -1,7 +1,7 @@
 import { expect, mock, test } from "bun:test";
 import type { FileChange } from "@kibo/schema";
 import { isSeparator, isSubmenu } from "@kibo/sdk/ui/menu-entries";
-import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import { discardLines, discardPaths, type FileMenuActions, fileMenuEntries } from "./file-menu";
 
 const file = (patch: Partial<FileChange>): FileChange => ({
@@ -24,7 +24,7 @@ const actions = (): FileMenuActions => ({
 const labels = (entries: ReturnType<typeof fileMenuEntries>) =>
   entries.map((e) => (isSeparator(e) ? "—" : isSubmenu(e) ? `${e.label} ▸` : e.label));
 const entriesFor = (patch: Partial<FileChange>, readOnly = false, a = actions()) =>
-  fileMenuEntries({ file: file(patch), readOnly, texts: fr.changes, actions: a });
+  fileMenuEntries({ file: file(patch), readOnly, texts: frChanges.changes, actions: a });
 
 test("an unstaged file offers Ajouter au commit, a staged one Retirer du commit", () => {
   const a = actions();
@@ -65,7 +65,7 @@ test("a remote session only views, opens in a tab and copies the path", () => {
 });
 
 test("discard lines say what is restored and what is deleted from disk", () => {
-  const lines = (patch: Partial<FileChange>) => discardLines(file(patch), fr.changes);
+  const lines = (patch: Partial<FileChange>) => discardLines(file(patch), frChanges.changes);
   expect(lines({})).toEqual(["ticket.ts reviendra à sa dernière version commitée."]);
   expect(lines({ path: "docs/notes.md", kind: "untracked" })).toEqual([
     "notes.md est nouveau : il sera supprimé du disque.",

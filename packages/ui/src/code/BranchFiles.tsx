@@ -2,7 +2,7 @@ import type { BranchChanges, BranchFile } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { ChevronDown, GitBranch } from "lucide-react";
 import { useId, useState } from "react";
-import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import { ADDED, KIND_TONE, MUTED, REMOVED, splitPath } from "./file-tones";
 
 type View = {
@@ -23,7 +23,7 @@ function Row({ file, active, onSelect }: { file: BranchFile; active: boolean; on
       >
         <span aria-hidden className="size-4 shrink-0" />
         <span className={cn("w-14 shrink-0 text-2xs font-medium", KIND_TONE[file.kind])}>
-          {fr.changes.kind[file.kind]}
+          {frChanges.changes.kind[file.kind]}
         </span>
         <span className="min-w-0 flex-1">
           <span className={cn("block truncate font-mono text-xs", file.kind === "deleted" && MUTED)}>
@@ -45,7 +45,12 @@ export function BranchFiles({ view }: { view: View }) {
   const id = useId();
   const { changes } = view;
   if (!changes?.base || changes.files.length === 0) return null;
-  const title = fr.changes.branch(changes.files.length, changes.additions, changes.deletions, changes.base);
+  const title = frChanges.changes.branch(
+    changes.files.length,
+    changes.additions,
+    changes.deletions,
+    changes.base,
+  );
   return (
     <section aria-labelledby={id} className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-0.5 border-t pt-2">
       <button

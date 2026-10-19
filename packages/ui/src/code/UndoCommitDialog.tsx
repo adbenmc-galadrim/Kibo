@@ -11,6 +11,7 @@ import {
 import { Button } from "@kibo/sdk/ui/button";
 import { useState } from "react";
 import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import { errorMessage } from "../lib/error-message";
 
 type Props = { commit: CommitInfo; newer: number; onClose(): void; onConfirm(): Promise<void> };
@@ -29,8 +30,8 @@ export function UndoCommitDialog({ commit, newer, onClose, onConfirm }: Props) {
     <AlertDialog open onOpenChange={(o) => !o && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{fr.commit.undoTitle}</AlertDialogTitle>
-          <AlertDialogDescription>{fr.commit.undoHelp(commit.shortSha, newer)}</AlertDialogDescription>
+          <AlertDialogTitle>{frChanges.commit.undoTitle}</AlertDialogTitle>
+          <AlertDialogDescription>{frChanges.commit.undoHelp(commit.shortSha, newer)}</AlertDialogDescription>
         </AlertDialogHeader>
         {error && (
           <p role="alert" className="text-sm text-destructive">
@@ -40,7 +41,7 @@ export function UndoCommitDialog({ commit, newer, onClose, onConfirm }: Props) {
         <AlertDialogFooter>
           <AlertDialogCancel>{fr.common.cancel}</AlertDialogCancel>
           <Button variant="destructive" disabled={busy} onClick={confirm}>
-            {fr.commit.undoSubmit}
+            {frChanges.commit.undoSubmit}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,0 +1,148 @@
+const s = (n: number) => (n > 1 ? "s" : "");
+
+export const frChanges = {
+  changes: {
+    title: "Changements",
+    worktree: (branch: string) => `worktree ${branch}`,
+    worktreePicker: "Choisir le worktree",
+    detached: "HEAD détachée",
+    staged: "Dans le prochain commit",
+    unstaged: "Modifications",
+    section: (title: string, n: number) => `${title} (${n})`,
+    files: (n: number) => `Fichiers (${n})`,
+    stageFile: (path: string) => `Ajouter ${path} au commit`,
+    unstageFile: (path: string) => `Retirer ${path} du commit`,
+    stageHunk: "Ajouter le bloc au commit",
+    unstageHunk: "Retirer le bloc du commit",
+    viewMode: "Affichage du diff",
+    unified: "Unifié",
+    split: "Côte à côte",
+    edit: "Édition",
+    openExternal: "Ouvrir dans l'éditeur externe",
+    binary: "Fichier binaire : aucun diff à afficher.",
+    noSelection: "Choisis un fichier pour voir ses changements.",
+    clean: "Aucun changement dans ce worktree.",
+    cleanUncommitted: "Aucun changement non commité.",
+    branch: (n: number, additions: number, deletions: number, base: string) =>
+      `Branche · ${n} fichier${s(n)} · +${additions} −${deletions} depuis ${base}`,
+    loading: "Chargement des changements…",
+    notRepo: "Ce projet n'est lié à aucun dépôt git. Renseigne son dossier pour voir ses changements.",
+    save: "Enregistrer",
+    saving: "Enregistrement…",
+    reload: "Recharger",
+    operation: (op: string) =>
+      `${op} en cours : résous les conflits dans ton éditeur ou abandonne l'opération.`,
+    operations: { rebase: "Rebase", merge: "Fusion", "cherry-pick": "Cherry-pick", revert: "Revert" },
+    abortOperation: "Abandonner",
+    localOnly:
+      "Depuis un autre appareil, tu peux lire les changements mais pas les modifier : ajouter au commit, commiter et pousser se font sur l'ordinateur où tourne Kibo.",
+    kind: {
+      modified: "Modifié",
+      added: "Ajouté",
+      deleted: "Supprimé",
+      renamed: "Renommé",
+      untracked: "Ajouté",
+      conflicted: "Conflit",
+    },
+    fileActions: (path: string) => `Actions ${path}`,
+    viewDiff: "Voir le diff",
+    openInTab: "Ouvrir dans un onglet",
+    copyPath: "Copier le chemin",
+    copied: "Chemin copié",
+    copyFailed: "Impossible de copier le chemin.",
+    stage: "Ajouter au commit",
+    unstage: "Retirer du commit",
+    stageAll: "Tout ajouter",
+    unstageAll: "Tout retirer",
+    discard: "Annuler les changements…",
+    discardTitle: (names: string[]) =>
+      names.length === 1
+        ? `Annuler les changements de ${names[0]} ?`
+        : `Annuler les changements de ${names.length} fichiers ?`,
+    discardRestored: (name: string) => `${name} reviendra à sa dernière version commitée.`,
+    discardDeleted: (name: string) => `${name} est nouveau : il sera supprimé du disque.`,
+    discardRenamed: (from: string, to: string) =>
+      `${to} disparaîtra et ${from} reviendra à sa dernière version commitée.`,
+    discardIrreversible: "Cette action est irréversible.",
+    discardConfirm: "Annuler les changements",
+  },
+  commit: {
+    title: "Commit",
+    stagedCount: (n: number) => `${n} fichier${s(n)} dans le commit`,
+    message: "Message",
+    placeholder: "Message du commit",
+    prefilled: "Pré-rempli depuis le ticket · 0 token",
+    amend: "Modifier le dernier commit (non poussé)",
+    amendDisabled: "Le dernier commit est déjà poussé : il ne peut plus être modifié.",
+    submit: (branch: string) => `Commit sur ${branch}`,
+    submitAmend: (branch: string) => `Modifier le commit sur ${branch}`,
+    nothingStaged: "Ajoute au moins un fichier au commit.",
+    branchCommits: "Commits de la branche",
+    latestCommits: "Derniers commits",
+    noBranchCommits: (base: string) => `Aucun commit depuis ${base}.`,
+    unpushedCount: (n: number) => `${n} commit${s(n)} non poussé${s(n)}`,
+    notPushed: "Non poussé",
+    modify: "Modifier",
+    reword: "Reformuler",
+    undo: "Annuler",
+    pushed: "Poussé · ne peut plus être modifié",
+    rewordTitle: "Reformuler le commit",
+    rewordHelp: (sha: string) => `Seul le message de ${sha} change ; son contenu reste identique.`,
+    rewordSubmit: "Reformuler",
+    undoTitle: "Annuler des commits",
+    undoHelp: (sha: string, newer: number) =>
+      newer === 0
+        ? `Le commit ${sha} est retiré de la branche : ses modifications reviennent dans le prochain commit.`
+        : `Le commit ${sha} et ${newer} commit${s(newer)} plus récent${s(newer)} sont retirés de la branche : leurs modifications reviennent dans le prochain commit.`,
+    undoSubmit: "Annuler les commits",
+    submitPending: "Commit",
+    push: "Pousser",
+    pushingTo: (target: string) => `Envoi vers ${target}…`,
+    pushing: (branch: string, remote: string) => `Publication de la branche ${branch} sur ${remote}…`,
+    details: "Détails",
+    pushFailed: "Le push a échoué",
+    pushFailedHelp:
+      "Git a refusé l'envoi : sa sortie est ci-dessous. Corrige la cause puis réessaie ; Kibo ne force jamais le push.",
+    gitOutput: "Sortie de git",
+    pushCommand: (remote: string, branch: string) => `git push -u ${remote} ${branch}`,
+    pushDetail: (shas: string[]) =>
+      `${shas.length} commit${s(shas.length)}${shas.length > 0 ? ` (${shas.join(", ")})` : ""}. Jamais de force-push. Délai maximal : 2 min.`,
+    elapsed: (seconds: number) => `${seconds} s`,
+    prCard: (n: number, state: string) => `PR #${n} ${state}`,
+    prCardDetail: (branch: string, base: string | null, ticketKey: string | null) =>
+      [base ? `${branch} → ${base}` : branch, ticketKey ? `rattachée à ${ticketKey}` : null]
+        .filter((part) => part !== null)
+        .join(" · "),
+    retry: "Réessayer",
+    nothingToPush: (upstream: string) => `Rien à pousser : la branche est à jour avec ${upstream}.`,
+    pushAndPr: "Pousser et créer la PR",
+    viewPr: (n: number) => `Voir la PR #${n}`,
+    ghUnavailable: "GitHub CLI (gh) introuvable ou non connecté.",
+    noBranch: "HEAD détachée : impossible de pousser.",
+    agentWorking: (agent: string) =>
+      `${agent} travaille dans ce worktree. Tes modifications peuvent entrer en conflit avec les siennes.`,
+  },
+  pr: {
+    title: "Pousser et créer la PR",
+    subtitle: (branch: string, base: string, commits: number, files: number | null) =>
+      `${branch} → ${base} · ${commits} commit${s(commits)} non poussé${s(commits)}${files === null ? "" : ` · ${files} fichier${s(files)}`}`,
+    prTitle: "Titre",
+    description: "Description",
+    base: "Branche de base",
+    reviewers: "Reviewers",
+    reviewersPlaceholder: "@login, @autre",
+    invalidReviewer: (login: string) => `Login GitHub invalide : ${login}`,
+    staged: (n: number) =>
+      n > 1
+        ? `${n} fichiers ajoutés au commit ne sont pas encore commités : ils ne seront pas dans la PR.`
+        : "1 fichier ajouté au commit n'est pas encore commité : il ne sera pas dans la PR.",
+    commitFirst: "Commiter d'abord",
+    draft: "Brouillon (draft)",
+    link: (key: string) => `Lier la PR à ${key}`,
+    submit: "Créer la PR",
+    creating: "Création…",
+    created: (n: number) => `PR #${n} créée`,
+    review: (agent: string) => `Lancer ${agent} sur la PR`,
+    rule: (key: string) => `À l'ouverture de la PR, ${key} passe en « En review » (règle du workflow).`,
+  },
+} as const;

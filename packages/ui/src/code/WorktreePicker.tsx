@@ -8,11 +8,11 @@ import {
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
 import { Check, ChevronDown, GitBranch } from "lucide-react";
-import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 
 type Props = { worktrees: Worktree[]; current: Worktree; ahead: number; onChange(path: string): void };
 
-const labelOf = (w: Worktree) => fr.changes.worktree(w.branch ?? fr.changes.detached);
+const labelOf = (w: Worktree) => frChanges.changes.worktree(w.branch ?? frChanges.changes.detached);
 
 export function WorktreePicker({ worktrees, current, ahead, onChange }: Props) {
   return (
@@ -26,7 +26,7 @@ export function WorktreePicker({ worktrees, current, ahead, onChange }: Props) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-80">
-        <DropdownMenuLabel>{fr.changes.worktreePicker}</DropdownMenuLabel>
+        <DropdownMenuLabel>{frChanges.changes.worktreePicker}</DropdownMenuLabel>
         {worktrees.map((w) => (
           <DropdownMenuItem key={w.path} onSelect={() => onChange(w.path)}>
             {w.path === current.path ? <Check /> : <span className="size-4" />}

@@ -1,7 +1,7 @@
 import type { FileChange, FileRef } from "@kibo/schema";
 import { useState } from "react";
 import { client } from "../api";
-import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import { useFlash } from "../lib/use-flash";
 import { discardPaths } from "./file-menu";
 
@@ -19,9 +19,9 @@ export function useFileActions({ w, run, onDiscarded, onOpenInTab }: Deps) {
   const copyPath = async (f: FileChange) => {
     try {
       await navigator.clipboard.writeText(f.path);
-      copy.flash(fr.changes.copied);
+      copy.flash(frChanges.changes.copied);
     } catch {
-      copy.flash(fr.changes.copyFailed, "error");
+      copy.flash(frChanges.changes.copyFailed, "error");
     }
   };
   const discard = async (f: FileChange) => {
