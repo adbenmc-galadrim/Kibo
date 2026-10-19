@@ -2680,3 +2680,7 @@ Détail par tâche dans la section « Écarts » du plan `2026-10-19-kibo-phase-
 8. **Interface** : le menu « ⋯ » d'une étape en attente propre propose « Reprendre » ; le bouton de confirmation du dialogue est orange, comme « Créer » d'un nouveau projet ; « Reprendre dans ▸ » n'apparaît que si le sprint de la fonctionnalité est terminé ou absent.
 9. **Maquettes corrigées après coup** pour suivre ces règles (Vue d'ensemble, Planning, fiche fonctionnalité, Kanban en attente) ; aucun masque ajouté aux neuf écrans existants. Le Kanban en attente passe à 1,98 % : faible marge, due au gabarit des cartes déjà accepté sur le Kanban.
 10. **Budget** : les textes du client git sont chargés à la demande (− 2,5 kB à l'entrée), ce qui a laissé la place aux écrans de l'attente.
+
+### 41.2 Review d'une PR fusionnée (correctif 0.29.0-alpha.2)
+
+GitHub garde la décision de review d'une PR après sa fusion. Kibo n'affiche une review que sur une PR vivante (ouverte ou brouillon), sauf « approuvée », qui reste affichée sur une PR fusionnée ou fermée (« fusionnée · approuvée »). Une PR fusionnée ou fermée avec « changements demandés » ou « review requise » n'est donc ni « à reprendre », ni à risque, ni la prochaine étape à livrer, sur aucun écran ni dans la CLI ; la sortie JSON et les données stockées restent brutes. Règle unique : `isLivePr` et `liveReview` (`packages/schema/src/external-ref.ts`).
