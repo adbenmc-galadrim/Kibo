@@ -1,0 +1,76 @@
+import { afterEach, beforeEach, expect, setSystemTime, test } from "bun:test";
+import { SdkProvider } from "@kibo/sdk";
+import { createMockSdk } from "@kibo/sdk/mock";
+import { cleanup, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Component, manifest } from "./index";
+import { HOLD_REASONS, NOW, seed, seedHeld, TODAY } from "./test-seed";
+
+beforeEach(() => setSystemTime(new Date(NOW)));
+afterEach(() => {
+  setSystemTime();
+  cleanup();
+});
+
+function setup(held: boolean) {
+  const m = createMockSdk(manifest, { seed: held ? seedHeld : seed, today: TODAY, folder: "/silo" });
+  render(
+    <SdkProvider sdk={m.sdk}>
+      <Component />
+    </SdkProvider>,
+  );
+  return m;
+}
+
+const key = (m: ReturnType<typeof setup>, title: string) =>
+  m.snapshot().tickets.find((t) => t.title === title)?.keyLabel ?? "";
+
+test("the Fonctionnalités indicator says how many steps are on hold, and opens the Planning", async () => {
+  const m = setup(true);
+  const indicators = await screen.findByRole("region", { name: "Indicateurs du projet" });
+  expect(within(indicators).getByText("livrées sur 9")).toBeTruthy();
+  const held = within(indicators).getByRole("button", { name: "3 en attente" });
+  expect(within(indicators).queryByText(/à risque/)).toBeNull();
+  await userEvent.click(held);
+  expect(m.viewRequests).toEqual([{ componentId: "planning", question: null }]);
+});
+
+test("the « En attente » card lists one line per reason, with its steps and their dependents", async () => {
+  const m = setup(true);
+  const card = await screen.findByRole("region", { name: "En attente" });
+  expect(within(card).getByText("3")).toBeTruthy();
+  expect(
+    within(card).getByText("étapes mises de côté, par raison · à reprendre depuis le Planning"),
+  ).toBeTruthy();
+  const rows = within(card).getAllByRole("listitem");
+  expect(rows.map((r) => r.textContent)).toEqual([
+    `${HOLD_REASONS.merge}${key(m, "Conflits de saisie")}`,
+    `${HOLD_REASONS.minio}${key(m, "Écran d'envoi hors ligne")}, ${key(m, "PDF")}· 2 en dépendent`,
+  ]);
+  await userEvent.click(within(card).getByRole("button", { name: new RegExp(HOLD_REASONS.merge) }));
+  expect(m.viewRequests).toEqual([{ componentId: "planning", question: null }]);
+});
+
+test("a delivered feature with steps on hold says how many in the sprint card", async () => {
+  setup(true);
+  const sprint = await screen.findByRole("region", { name: "Sprint S42 · Saisie hors ligne" });
+  const row = (title: string) => {
+    const li = within(sprint).getByText(title).closest("li");
+    if (!(li instanceof HTMLElement)) throw new Error(`no row ${title}`);
+    return li;
+  };
+  const f4 = row("Saisir un constat hors ligne");
+  expect(within(f4).getByText("livrée")).toBeTruthy();
+  expect(within(f4).getByRole("img", { name: "1 étape en attente" })).toBeTruthy();
+  const f5 = row("Envoyer les photos d'un constat");
+  expect(within(f5).queryByRole("img", { name: /en attente/ })).toBeNull();
+});
+
+test("without any hold there is neither a sub-line nor a card", async () => {
+  setup(false);
+  const indicators = await screen.findByRole("region", { name: "Indicateurs du projet" });
+  expect(within(indicators).getByText("2 à risque")).toBeTruthy();
+  expect(within(indicators).queryByRole("button", { name: /en attente/ })).toBeNull();
+  expect(screen.queryByRole("region", { name: "En attente" })).toBeNull();
+  expect(screen.queryByRole("img", { name: /en attente/ })).toBeNull();
+});

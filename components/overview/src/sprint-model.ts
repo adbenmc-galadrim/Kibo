@@ -29,7 +29,7 @@ export type FeatureLine = {
   tones: CaseTone[];
   steps: string;
 };
-export type SprintRow = FeatureLine & { risk: boolean; slipped: string | null };
+export type SprintRow = FeatureLine & { risk: boolean; slipped: string | null; held: number };
 export type SprintCard = {
   sprint: SprintView;
   lingering: boolean;
@@ -115,6 +115,7 @@ export function sprintCard(input: SprintInput): SprintCard | null {
       ...lineOf(f, input.blocking),
       risk: f.state.status !== "delivered" && isAtRisk(f, sprint, input.today),
       slipped: slippedFrom(input.events, f.id, input.sprints),
+      held: f.state.held,
     })),
     remaining,
     note: note === null ? null : fr.sprint.limit(input.limit, note.next, note.open),

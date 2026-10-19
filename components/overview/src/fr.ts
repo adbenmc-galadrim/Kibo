@@ -16,6 +16,7 @@ export const fr = {
     noFeature: "aucune pour l'instant",
     late: (n: number) => `${n} en retard`,
     atRisk: (n: number) => `${n} à risque`,
+    held: (n: number) => `${n} en attente`,
     noneOpen: "aucune en cours",
     blocked: (keys: readonly string[]) =>
       `${plural(keys.length, "bloquée", "bloquées")} : ${keys.join(", ")}`,
@@ -74,6 +75,12 @@ export const fr = {
     subtitle: "sprint fini, étapes obligatoires restantes",
     ended: (date: string) => `· terminé le ${date}`,
     remaining: (n: number) => `reste ${n} ${plural(n, "étape", "étapes")}`,
+  },
+  held: {
+    title: "En attente",
+    subtitle: "étapes mises de côté, par raison · à reprendre depuis le Planning",
+    dependents: (n: number) => `· ${n} en ${plural(n, "dépend", "dépendent")}`,
+    steps: (n: number) => `${n} ${plural(n, "étape", "étapes")} en attente`,
   },
   sprint: {
     title: (code: string, name: string) => `Sprint ${code} · ${name}`,

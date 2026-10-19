@@ -8,6 +8,7 @@ export type IndicatorFacts = OverviewIndicators & {
   ahead: readonly string[];
   atRisk: number;
   remaining: number;
+  held: number;
 };
 export type IndicatorText = { value: string; unit: string; sub?: string; dot?: Dot };
 export type IndicatorTexts = {
@@ -17,6 +18,7 @@ export type IndicatorTexts = {
     cells: OverviewIndicators["features"]["cells"];
     sub?: string;
     tone?: Dot;
+    held?: string;
   };
   sprint: IndicatorText;
   open: IndicatorText;
@@ -83,12 +85,22 @@ function openText(ind: IndicatorFacts): IndicatorText {
   };
 }
 
-function featuresText(features: OverviewIndicators["features"], atRisk: number): IndicatorTexts["features"] {
+function featuresText(
+  features: OverviewIndicators["features"],
+  atRisk: number,
+  held: number,
+): IndicatorTexts["features"] {
   const base = {
     value: String(features.delivered),
     unit: t.deliveredOf(features.delivered, features.total),
     cells: features.cells,
   };
+  if (held > 0)
+    return {
+      ...base,
+      held: t.held(held),
+      ...(features.late > 0 ? { sub: t.late(features.late), tone: "red" as const } : {}),
+    };
   const alerts = [
     ...(features.late > 0 ? [t.late(features.late)] : []),
     ...(atRisk > 0 ? [t.atRisk(atRisk)] : []),
@@ -107,7 +119,7 @@ function questionsText(q: OverviewIndicators["questions"]): IndicatorText {
 
 export function indicatorTexts(ind: IndicatorFacts): IndicatorTexts {
   return {
-    features: featuresText(ind.features, ind.atRisk),
+    features: featuresText(ind.features, ind.atRisk, ind.held),
     sprint: sprintText(ind.sprint, ind.remaining),
     open: openText(ind),
     review: {

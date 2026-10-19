@@ -2,18 +2,19 @@ import { DEFAULT_RECIPIENTS, type ProjectEvent, type TicketView } from "@kibo/sc
 import { createMockSdk } from "@kibo/sdk/mock";
 import { manifest } from "./index";
 import { type OverviewInput, overviewModel } from "./overview-model";
-import { NOW, seedOverview, TODAY } from "./test-seed";
+import { holdSteps, NOW, seedOverview, TODAY } from "./test-seed";
 
 const at = (time: string) => Date.parse(`${TODAY}T${time}:00`);
 const MINUTE = 60_000;
 const DAY = 86_400_000;
 
-export function build(today: string = TODAY) {
+export function build(today: string = TODAY, held = false) {
   let seeded: ReturnType<typeof seedOverview> | undefined;
   const m = createMockSdk(manifest, {
     today,
     seed: (run) => {
       seeded = seedOverview(run);
+      if (held) holdSteps(run, seeded);
     },
   });
   if (!seeded) throw new Error("seed missing");

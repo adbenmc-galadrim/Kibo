@@ -5,6 +5,7 @@ import { CurrentSprintCard } from "./CurrentSprintCard";
 import { DeadlinesCard } from "./DeadlinesCard";
 import { GettingStarted } from "./GettingStarted";
 import type { GettingStartedModel } from "./getting-started-model";
+import { HeldCard } from "./HeldCard";
 import { Indicators } from "./Indicators";
 import { InReviewCard } from "./InReviewCard";
 import { LateCard } from "./LateCard";
@@ -19,6 +20,7 @@ export type OverviewHandlers = NextActions & {
   onOpenSprint(id: string): void;
   onOpenQuestion(id: string): void;
   onOpenQuestions(): void;
+  onOpenPlanning(): void;
   onNewFeature(): void;
   onChooseFolder(): void;
 };
@@ -84,6 +86,7 @@ function ProjectCards({ project, model, activity, start, handlers }: Props) {
       {model.now.length > 0 && <NowCard rows={model.now} onOpenTicket={handlers.onOpenTicket} />}
       <DeadlinesCard deadlines={model.deadlines} onOpenTicket={handlers.onOpenTicket} />
       <LateCard rows={model.late} onOpenTicket={handlers.onOpenTicket} />
+      <HeldCard rows={model.held} onOpenPlanning={handlers.onOpenPlanning} />
       <div className="flex items-start gap-[16px]">
         <div className="flex min-w-0 flex-1 flex-col gap-[14px]">
           <CurrentSprintCard
@@ -108,13 +111,13 @@ function ProjectCards({ project, model, activity, start, handlers }: Props) {
 }
 
 export function OverviewView(props: Props) {
-  const { project, model, start } = props;
+  const { project, model, start, handlers } = props;
   const empty = project !== null && start !== null && !start.done.feature;
   return (
     <div className="h-full overflow-y-auto bg-(--tracking-bg)">
       <div className="flex min-w-0 flex-col gap-[14px] px-[24px] pt-[18px] pb-[24px]">
         <ProjectHeading project={project} />
-        <Indicators indicators={model.indicators} />
+        <Indicators indicators={model.indicators} onOpenHeld={handlers.onOpenPlanning} />
         {empty ? <EmptyProject {...props} project={project} start={start} /> : <ProjectCards {...props} />}
       </div>
     </div>
