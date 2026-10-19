@@ -33,6 +33,7 @@ export const frSignals = {
     last: (time: string) => `dernier réveil à ${time}`,
     none: "aucun réveil prévu",
     event: (n: number) => `Réveil automatique · ${signals(n)}`,
+    answered: (label: string, quote: string) => `${label} répondue : « ${quote} »`,
   },
   button: {
     signals: (n: number) => `${signals(n)} en boîte`,

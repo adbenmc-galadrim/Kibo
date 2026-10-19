@@ -104,24 +104,35 @@ MARK29 = "\n## Phase 29\n"
 SCREENS_A2 = [(23, "P9b · Questions, menu", "proposition-questions-menu"), (24, "P9c · Supprimer la question", "proposition-questions-supprimer"),
     (25, "P9d · Questions, répondues", "proposition-questions-repondues")]
 MARK_A2 = "\n## 0.29.0-alpha.2\n"
+SCREENS_A3 = [(26, "Agent · réveil sur réponse", "proposition-agent-reveil")]
+MARK_A3 = "\n## 0.29.0-alpha.3\n"
 if "--sections" in sys.argv:
     wanted = sys.argv[sys.argv.index("--sections") + 1].split(",")
     cur = open(W + "/cotes.md").read()
-    for i, name, png in SCREENS + SCREENS27 + SCREENS29 + SCREENS_A2:
+    for i, name, png in SCREENS + SCREENS27 + SCREENS29 + SCREENS_A2 + SCREENS_A3:
         if str(i) not in wanted: continue
-        where = "" if (i, name, png) in SCREENS27 + SCREENS29 + SCREENS_A2 else f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Silo » du fichier « Kibo »"
+        where = "" if (i, name, png) in SCREENS27 + SCREENS29 + SCREENS_A2 + SCREENS_A3 else f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Silo » du fichier « Kibo »"
         start = cur.index(f"\n## {name}\n") + 1
         nxt = re.search(r"\n## ", cur[start + 3:]); end = start + 3 + nxt.start() + 1 if nxt else len(cur)
         cur = cur[:start] + screen_md(i, name, png, where) + ("\n\n" if nxt else "\n") + cur[end:]
     open(W + "/cotes.md", "w").write(cur)
     print(sum(1 for _ in open(W + "/cotes.md")))
     sys.exit(0)
+if "--alpha3" in sys.argv:
+    cur = open(W + "/cotes.md").read()
+    cur = cur.split(MARK_A3)[0].rstrip("\n") + "\n"
+    intro = ["## 0.29.0-alpha.3", "", "Réveil de l'agent de projet sur une réponse (spec §43), données de la sous-section « 0.29.0-alpha.3 » du projet Silo (`design/donnees-fictives.md`). Le board clone « Agent · question » (`scripts/58-alpha3-reveil.js`) : la bulle de la question d'Adam devient la ligne de réveil « Q16 répondue : « 5 Go » » (icône `alarm-clock`, heure à droite), suivie du texte de l'agent et du lot n° 8 « après réveil » à une action. Rangée à y = 42 500 (après les rangées de l'alpha 2), sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` (`_dump-26`), puis `python3 scripts/cotes.py <dossier des JSON> --alpha3`, qui remplace cette partie seulement. Pas de comparaison au pixel (panneau, capture en E2E) ; « Agent · question » et sa référence ne changent pas."]
+    parts = [screen_md(i, name, png, "") for i, name, png in SCREENS_A3]
+    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
+    print(sum(1 for _ in open(W + "/cotes.md")))
+    sys.exit(0)
 if "--alpha2" in sys.argv:
     cur = open(W + "/cotes.md").read()
-    cur = cur.split(MARK_A2)[0].rstrip("\n") + "\n"
+    tail_a3 = (MARK_A3 + cur.split(MARK_A3)[1]) if MARK_A3 in cur else ""
+    cur = cur.split(MARK_A3)[0].split(MARK_A2)[0].rstrip("\n") + "\n"
     intro = ["## 0.29.0-alpha.2", "", "Questions sans transmission et suppression d'une question (spec §42), données de la sous-section « 0.29.0-alpha.2 » du projet Silo (`design/donnees-fictives.md`). Chaque board clone « P9 · Questions » sans l'aperçu d'export ni le toast (`scripts/57-alpha2-questions.js`) : P9b ouvre le menu « ⋯ » de Q16, P9c pose le dialogue de suppression de Q16 sur fond assombri, P9d montre le filtre « Répondues » avec la réponse de Q16. Rangées à partir de y = 38 000 (pas de 1 500 px), sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` par board (`_dump-23` à `_dump-25`), puis `python3 scripts/cotes.py <dossier des JSON> --alpha2`, qui remplace cette partie seulement. Pas de comparaison au pixel (capture seulement) ; P9 et sa référence ne changent pas."]
     parts = [screen_md(i, name, png, "") for i, name, png in SCREENS_A2]
-    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
+    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n" + tail_a3)
     print(sum(1 for _ in open(W + "/cotes.md")))
     sys.exit(0)
 if "--phase29" in sys.argv:

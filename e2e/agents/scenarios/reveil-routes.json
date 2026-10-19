@@ -1,0 +1,5 @@
+{
+  "perTurn": true,
+  "routes": [{ "prompt": "- Q16 répondue : « 5 Go »", "scenario": "project-agent-reponse.json" }],
+  "fallback": "silo-maquettes.json"
+}

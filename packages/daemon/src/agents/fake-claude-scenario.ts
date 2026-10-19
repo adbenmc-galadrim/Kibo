@@ -136,6 +136,7 @@ export type FakeScenarioName =
   | "signal"
   | "signal-spam"
   | "project-agent-wakeup"
+  | "project-agent-answer"
   | "signal-routes"
   | "skills-review"
   | "skills-no-review"

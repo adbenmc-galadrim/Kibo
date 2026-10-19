@@ -74,6 +74,8 @@ export default defineConfig({
           "noGh" in d ? "--no-gh" : "",
           "design" in d ? "--design" : "",
           "embeds" in d ? "--embeds" : "",
+          "agentScenario" in d ? `--agent-scenario ${d.agentScenario}` : "",
+          "answerWakeGraceMs" in d ? `--answer-wake-grace-ms ${d.answerWakeGraceMs}` : "",
           "drafts" in d ? d.drafts : "",
         ]
           .filter((part) => part !== "")

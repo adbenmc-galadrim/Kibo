@@ -6,7 +6,12 @@ import { frProjectAgent } from "../i18n/fr-project-agent";
 import type { Decision } from "./BatchCard";
 import { actionTitle, type DiffLabels } from "./batch-groups";
 
-type Props = { batch: Batch; labels: DiffLabels; onDecide(d: Decision): Promise<void> };
+type Props = {
+  batch: Batch;
+  labels: DiffLabels;
+  afterWakeup?: boolean;
+  onDecide(d: Decision): Promise<void>;
+};
 
 const t = frProjectAgent.batch;
 const BUTTON =
@@ -36,7 +41,7 @@ function ActionRow({ action, labels, checked, onCheck }: RowProps) {
   );
 }
 
-export function PendingBatch({ batch, labels, onDecide }: Props) {
+export function PendingBatch({ batch, labels, afterWakeup = false, onDecide }: Props) {
   const [checked, setChecked] = useState<ReadonlySet<number>>(() => new Set(batch.actions.map((a) => a.id)));
   const [rejecting, setRejecting] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -73,7 +78,7 @@ export function PendingBatch({ batch, labels, onDecide }: Props) {
       <header className="flex items-center gap-[8px] bg-(--tracking-brand-soft) px-[14px] py-[10px] leading-[15px]">
         <h3 className="text-[13px] font-semibold text-(--tracking-brand-text)">{t.region(batch.seq)}</h3>
         <span className="ml-auto text-[12px] leading-[15px] text-(--tracking-mfg)">
-          {t.count(shown.length)}
+          {afterWakeup ? `${t.count(shown.length)} · ${t.afterWakeup}` : t.count(shown.length)}
         </span>
       </header>
       <ul className="divide-y divide-(--tracking-soft) border-y border-(--tracking-soft)">

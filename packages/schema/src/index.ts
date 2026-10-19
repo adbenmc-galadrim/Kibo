@@ -137,6 +137,7 @@ export * from "./tracking-rpc";
 export * from "./tracking-settings";
 export * from "./tutorial";
 export * from "./visibility-rpc";
+export * from "./wakeup-message";
 export * from "./workspace-config";
 export * from "./worktree";
 export * from "./worktree-recipe";

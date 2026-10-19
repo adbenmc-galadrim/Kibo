@@ -36,6 +36,9 @@ const HEADING = "text-[12px] leading-[15px] font-semibold tracking-[0.5px] text-
 const SUMMARY =
   "gap-[8px] text-[13px] leading-[20.33px] text-(--tracking-mfg) [&>:first-child]:text-[14px] [&>:first-child]:leading-[21px] [&>:first-child]:font-medium [&>:first-child]:text-(--tracking-fg)";
 
+const proposedAfterWakeup = (items: readonly ConversationItem[], batchId: string): boolean =>
+  items.some((item) => item.kind === "batch" && item.batch.id === batchId && item.afterWakeup);
+
 function Section({ title, children }: { title: string; children: ReactNode }) {
   const id = useId();
   return (
@@ -89,7 +92,13 @@ export function TrackingView({
     if (d.decision === "apply") setRecap({ batch: result, labels: decidedWith });
   };
   const card = batch && (
-    <PendingBatch key={batch.id} batch={batch} labels={labels} onDecide={(d) => decide(batch, d)} />
+    <PendingBatch
+      key={batch.id}
+      batch={batch}
+      labels={labels}
+      afterWakeup={proposedAfterWakeup(items, batch.id)}
+      onDecide={(d) => decide(batch, d)}
+    />
   );
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-(--tracking-panel)">

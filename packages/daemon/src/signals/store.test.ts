@@ -158,6 +158,21 @@ test("wake-ups default to nothing, round-trip, and the due ones are listed", () 
   expect(store.due()).toEqual([]);
 });
 
+test("answers wait once per question, per project, and survive a reopening", () => {
+  const h = home();
+  const store = open(h);
+  store.queueAnswer("p1", "q1", 10);
+  store.queueAnswer("p1", "q2", 20);
+  store.queueAnswer("p1", "q1", 30);
+  store.queueAnswer("p2", "q9", 5);
+  expect(store.queuedAnswers("p1")).toEqual(["q1", "q2"]);
+  expect(store.queuedAnswers("p3")).toEqual([]);
+  expect(open(h).queuedAnswers("p1")).toEqual(["q1", "q2"]);
+  store.dropAnswers("p1");
+  expect(store.queuedAnswers("p1")).toEqual([]);
+  expect(store.queuedAnswers("p2")).toEqual(["q9"]);
+});
+
 test("two connections create a hundred signals in turn without a busy error or a duplicate rank", async () => {
   const h = home();
   const first = open(h);

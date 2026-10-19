@@ -1,4 +1,6 @@
 import {
+  type AnsweredLine,
+  answeredLine,
   SIGNAL_BODY_IN_PROMPT_MAX,
   SIGNALS_IN_PROMPT_MAX,
   type Signal,
@@ -57,12 +59,31 @@ export function signalReply(
   return `Signal ${signal.ref} enregistré. ${wakeText(wake, formatTime)}`;
 }
 
-export function wakeupMessage(signals: readonly Pick<Signal, "kind">[]): string {
+export type WakeupInput = {
+  signals: readonly Pick<Signal, "kind">[];
+  answers: readonly AnsweredLine[];
+};
+
+const SIGNAL_RULE =
+  "Lis « Signaux à traiter » et propose un lot : cite chaque signal (`signals`) dans l'action qui y répond, ou `dismissSignal` s'il n'appelle aucune action.";
+
+const ANSWER_RULE =
+  "Lis chaque réponse (`list_questions`, `get_ticket`) et propose un lot seulement si elle appelle une action : lever un blocage (`setStatus`), ajuster ou reprendre une étape (`updateTicket`, `setHold`), prévenir le client (`createQuestion` à son destinataire) ; sinon dis en une phrase ce que tu en retiens, sans lot.";
+
+function signalsCount(signals: readonly Pick<Signal, "kind">[]): string {
   const byKind = KIND_ORDER.flatMap((kind) => {
     const n = signals.filter((s) => s.kind === kind).length;
     return n === 0 ? [] : [counted(n, SIGNAL_KIND_FR[kind], SIGNAL_KIND_FR_PLURAL[kind])];
   });
-  return `${WAKEUP_PREFIX}${counted(signals.length, "signal", "signaux")} à traiter (${byKind.join(", ")}). Lis « Signaux à traiter » et propose un lot : cite chaque signal (\`signals\`) dans l'action qui y répond, ou \`dismissSignal\` s'il n'appelle aucune action.`;
+  return `${counted(signals.length, "signal", "signaux")} à traiter (${byKind.join(", ")})`;
+}
+
+export function wakeupMessage({ signals, answers }: WakeupInput): string {
+  if (answers.length === 0) return `${WAKEUP_PREFIX}${signalsCount(signals)}. ${SIGNAL_RULE}`;
+  const read = counted(answers.length, "réponse à lire", "réponses à lire");
+  const lines = answers.map(answeredLine).join("\n");
+  if (signals.length === 0) return `${WAKEUP_PREFIX}${read}.\n${lines}\n${ANSWER_RULE}`;
+  return `${WAKEUP_PREFIX}${signalsCount(signals)} et ${read}.\n${lines}\n${SIGNAL_RULE} ${ANSWER_RULE}`;
 }
 
 function signalItem(line: SignalLine, formatTime: (at: number) => string): string[] {

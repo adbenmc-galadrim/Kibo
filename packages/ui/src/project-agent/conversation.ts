@@ -5,6 +5,7 @@ import {
   isWakeupMessage,
   type RunLogEntry,
   type RunView,
+  wakeupAnswers,
   wakeupCount,
 } from "@kibo/schema";
 import { errorText } from "../agents/format";
@@ -17,6 +18,7 @@ export type ConversationItem =
   | { kind: "agent"; id: string; at: number; text: string }
   | { kind: "reading"; id: string; at: number; tools: string[] }
   | { kind: "batch"; id: string; at: number; batch: Batch; afterWakeup: boolean }
+  | { kind: "wakeup"; id: string; at: number; text: string }
   | { kind: "event"; id: string; at: number; text: string; tone: "muted" | "red"; retry: boolean };
 
 type Reading = Extract<ConversationItem, { kind: "reading" }>;
@@ -98,10 +100,20 @@ class Builder {
     this.flushBatches(entry.at);
   }
 
+  wakeupLines(entry: RunLogEntry, text: string): void {
+    const answers = wakeupAnswers(text);
+    answers.forEach(({ label, quote }, k) => {
+      const line = frSignals.wakeup.answered(label, quote);
+      this.push({ kind: "wakeup", id: `log-${entry.id}-a${k}`, at: entry.at, text: line });
+    });
+    if (answers.length === 0 || wakeupCount(text) !== null)
+      this.push({ kind: "wakeup", id: `log-${entry.id}`, at: entry.at, text: wakeupText(text) });
+  }
+
   answered(entry: RunLogEntry, text: string): void {
     this.flushBatches(entry.at - 1);
     this.wakeup = isWakeupMessage(text);
-    if (this.wakeup) this.event(entry, wakeupText(text), "muted");
+    if (this.wakeup) this.wakeupLines(entry, text);
     else if (this.failedTurn && text === this.lastUser) this.event(entry, t.retried, "muted");
     else this.push({ kind: "user", id: `log-${entry.id}`, at: entry.at, text });
     if (!this.wakeup) this.lastUser = text;
@@ -196,13 +208,17 @@ export type TrackingThread = {
 const inExchange = (item: ConversationItem): boolean =>
   item.kind === "event" ? item.tone === "red" : item.kind !== "batch";
 
-function lastUserIndex(items: readonly ConversationItem[]): number {
-  for (let i = items.length - 1; i >= 0; i--) if (items[i]?.kind === "user") return i;
-  return -1;
+const isWakeup = (item: ConversationItem | undefined): boolean => item?.kind === "wakeup";
+
+function lastAskedIndex(items: readonly ConversationItem[]): number {
+  let i = items.length - 1;
+  while (i >= 0 && items[i]?.kind !== "user" && !isWakeup(items[i])) i--;
+  while (i > 0 && isWakeup(items[i]) && isWakeup(items[i - 1])) i--;
+  return i;
 }
 
 export function trackingThread(items: readonly ConversationItem[]): TrackingThread {
-  const asked = lastUserIndex(items);
+  const asked = lastAskedIndex(items);
   const before = asked < 0 ? null : lastAgent(items.slice(0, asked));
   const after = asked < 0 ? null : lastAgent(items.slice(asked));
   const summary = asked < 0 || (before === null && after !== null) ? lastAgent(items) : before;

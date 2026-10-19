@@ -68,6 +68,8 @@ describe("buildProjectAgentPrompt", () => {
       "reopenQuestion",
       "deleteQuestion` archive",
       "Lis `recipient` dans `list_questions`",
+      "Réveillé par une réponse",
+      "sans lot",
     ]) {
       expect(prompt).toContain(fragment);
     }

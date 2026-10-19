@@ -1,5 +1,5 @@
 import { cn } from "@kibo/sdk/lib/utils";
-import { Bot } from "lucide-react";
+import { AlarmClock, Bot } from "lucide-react";
 import { formatClock } from "../agents/format";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { AgentText } from "../moments/AgentText";
@@ -48,6 +48,16 @@ function Item({ item, onTicket }: { item: ConversationItem; onTicket(key: string
           )}
         >
           {item.text}
+        </li>
+      );
+    case "wakeup":
+      return (
+        <li className="flex items-center gap-[6px] text-[12px] leading-[15px] text-(--tracking-mfg)">
+          <AlarmClock aria-hidden className="size-[13px] shrink-0" />
+          <span className="min-w-0">{item.text}</span>
+          <time className="ml-auto shrink-0" dateTime={new Date(item.at).toISOString()}>
+            {formatClock(item.at)}
+          </time>
         </li>
       );
     case "batch":

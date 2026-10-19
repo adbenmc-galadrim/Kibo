@@ -53,7 +53,7 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 33 · Questions : modifier, rouvrir, archiver | 202 à 206 (phase 23 : réponses modifiables, archives et historique, lot de questions, aperçu au survol, question mise en évidence) ; **dessinés** |
 | 34 · Domaines & guidelines | 207 à 209b (phase 23 : arbre de dossiers, état vide, domaine de projet et du workspace, projet partagé en lecture seule, encart, sélecteur groupé, lien du projet) ; **dessinés, ajustés après implémentation** |
 | 35 · Redesign Silo | 210 à 218 (redesign validé le 2026-10-16 : vue d'ensemble, Planning, fiche fonctionnalité, Tickets, Graphe ; états fiche de sprint et report, 3/2 ouvertes, démo facultative, infobulle du nom) ; **dessinés** ; 211, 212 et 214 mis à jour au jalon de la phase 27 |
-| 36 · Suivi seul | 219 à 225b (phase 27 : vue d'ensemble, Pour commencer, en retard au 18 oct., Nouveau projet, Kanban, fiche ticket et Activité, Questions, barre repliée, panneau de l'agent) ; 226 à 231d (phase 29 : étapes en attente) ; 232 à 234 (0.29.0-alpha.2 : menu de la carte, suppression, questions répondues) ; **dessinés** |
+| 36 · Suivi seul | 219 à 225b (phase 27 : vue d'ensemble, Pour commencer, en retard au 18 oct., Nouveau projet, Kanban, fiche ticket et Activité, Questions, barre repliée, panneau de l'agent) ; 226 à 231d (phase 29 : étapes en attente) ; 232 à 234 (0.29.0-alpha.2 : menu de la carte, suppression, questions répondues) ; 235 (0.29.0-alpha.3 : panneau de l'agent, réveil sur réponse) ; **dessinés** |
 
 Pages 00 à 27 et 29 à 36 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 36.
 
@@ -341,13 +341,19 @@ copiés de la même façon, puis déplacés de 30 000 px vers le bas (sous 231d)
   client : 2 Go ou 5 Go ? » ? » · 234 filtre « Répondues », Q16 répondue « 5 Go », « Modifier la réponse » et « Retirer la réponse », sans marque
   de transmission.
 
+0.29.0-alpha.3 (2026-10-19) : le board « Agent · réveil sur réponse » de « Kibo · Redesign » (rangée y = 42 500, voir `design/redesign/README.md`)
+copié de la même façon (collé en (0, 0), puis déplacé à y = 34 500, sous 234) et renommé.
+
+- 36 · Suivi seul (0.29.0-alpha.3) : 235 panneau de l'agent de projet après une réponse à Q16 : ligne de réveil « Q16 répondue : « 5 Go » »
+  (14:52) à la place de la bulle d'Adam, texte de l'agent, lot n° 8 « après réveil » à une action (« Modifier SILO-34 »).
+
 ## Exporter
 
 1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("36")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`. Pour ne changer que quelques boards, remplacer leurs pages et ajouter
    les nouvelles dans le PDF existant avec `pypdf` (`add_page`, puis `compress_identical_objects`) : `pdfseparate` et `pdfunite` doublent la taille
    du fichier (polices recopiées à chaque page), au-delà de la limite de 100 Mo de GitHub.
-   Boards ajoutés en fin de page 36 (232 à 234 en 0.29.0-alpha.2) : exporter seulement ces boards (`board.export({ type: "pdf" })`, sombre puis
+   Boards ajoutés en fin de page 36 (232 à 234 en 0.29.0-alpha.2, 235 en 0.29.0-alpha.3) : exporter seulement ces boards (`board.export({ type: "pdf" })`, sombre puis
    clair, dans l'ordre des rangées) et les ajouter en fin de chaque PDF, les pages existantes restant inchangées.
 2. Source : menu du fichier → Exporter (.penpot) (ou, depuis l'onglet headless, la méthode `export-binfile` de l'API, dont l'événement `end` donne
    l'adresse du fichier à télécharger), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,

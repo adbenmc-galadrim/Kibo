@@ -1,5 +1,5 @@
 import type { Toolchain } from "@kibo/devkit";
-import type { HostLoad, Session } from "@kibo/schema";
+import { type HostLoad, KiboError, type Session } from "@kibo/schema";
 import type { TicketExecution } from "./agents/execution-removed";
 import type { AgentSource } from "./agents/neutral-agents";
 import type { Notice } from "./agents/notifier";
@@ -36,6 +36,7 @@ export type DaemonOptions = {
   clock?: Clock;
   code?: CodeTrackingOptions;
   ticketExecution?: TicketExecution;
+  answerWakeGraceMs?: number;
 } & Partial<
   Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli" | "cliStatus">
 >;
@@ -44,4 +45,14 @@ export function clockFromEnv(env: Record<string, string | undefined>, log: (line
   const clock = createClock(parseFixedNow(env.KIBO_FIXED_NOW));
   if (clock.fixedNow !== null) log(`[kibo-daemon] clock fixed at ${clock.fixedNow}`);
   return clock;
+}
+
+export function answerWakeGraceFromArg(raw: string | undefined): number | undefined {
+  if (raw === undefined) return undefined;
+  if (!/^\d+$/.test(raw))
+    throw new KiboError(
+      "INVALID_INPUT",
+      `--answer-wake-grace-ms must be a whole number of milliseconds, got ${raw}`,
+    );
+  return Number(raw);
 }

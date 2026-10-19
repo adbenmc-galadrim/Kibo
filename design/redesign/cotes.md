@@ -15414,3 +15414,89 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
             - **answer** (bloc) · x 279, y 222, 1123 × 49 · flex colonne, espacement 4, marges internes 8 10 8 10, alignement start/start · fond `muted (50 %)` · rayon 6 · dimension remplit/auto
               - « Réponse : 5 Go » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 289, y 230, 1103 × 15
               - « Répondu par Adam · il y a 2 h » — Geist 11 / 400, interligne 1,2, couleur `mfg` — x 289, y 249, 1103 × 14
+
+## 0.29.0-alpha.3
+
+Réveil de l'agent de projet sur une réponse (spec §43), données de la sous-section « 0.29.0-alpha.3 » du projet Silo (`design/donnees-fictives.md`). Le board clone « Agent · question » (`scripts/58-alpha3-reveil.js`) : la bulle de la question d'Adam devient la ligne de réveil « Q16 répondue : « 5 Go » » (icône `alarm-clock`, heure à droite), suivie du texte de l'agent et du lot n° 8 « après réveil » à une action. Rangée à y = 42 500 (après les rangées de l'alpha 2), sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` (`_dump-26`), puis `python3 scripts/cotes.py <dossier des JSON> --alpha3`, qui remplace cette partie seulement. Pas de comparaison au pixel (panneau, capture en E2E) ; « Agent · question » et sa référence ne changent pas.
+
+## Agent · réveil sur réponse
+
+Board `Agent · réveil sur réponse` (sombre) et `Agent · réveil sur réponse (clair)`, page « Proposition » du fichier Penpot « Kibo · Redesign ».
+Exports : `exports/proposition-agent-reveil-dark.png` et `exports/proposition-agent-reveil-light.png`, 340 × 1000 px (échelle 1).
+
+### Données affichées (ordre de lecture)
+
+1. « Agent de projet » (x 58, y 13)
+2. « Suivi à jour · il y a 4 min » (x 58, y 32)
+3. « Résumé du jour » (x 36, y 75)
+4. « 14:40 » (x 244, y 75)
+5. « épinglé » (x 281, y 75)
+6. « F3 est livrée : 3 fonctionnalités sur 9. S42 finit ce soir, F5 n'y tiendra pas. » (x 18, y 96)
+7. « Q16 répondue : « 5 Go » » (x 37, y 166)
+8. « 14:52 » (x 292, y 166)
+9. « Q16 répondue : le quota est de 5 Go par client. Je propose : » (x 52, y 195)
+10. « Lu : Q16, SILO-34 » (x 52, y 244)
+11. « Lot n° 8 » (x 32, y 283)
+12. « 1 action · après réveil » (x 195, y 283,5)
+13. « Modifier SILO-34 » (x 58, y 320)
+14. « Quota de 5 Go par client à inscrire dans l'étape. » (x 58, y 339)
+15. « Valider (1) » (x 42, y 396)
+16. « Refuser » (x 125, y 396)
+17. « Demander à l'agent de projet… » (x 30, y 957)
+
+### Blocs
+
+Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en tokens (tableau en tête), sinon en hex sombre / clair.
+
+- **Agent · réveil sur réponse** (bloc) · x 0, y 0, 340 × 1000 · fond `bg`
+  - **agent-panel** (bloc) · x 0, y 0, 340 × 1000 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `panel`
+    - **box** (bloc) · x 0, y 0, 340 × 60 · flex ligne, espacement 10, marges internes 0 18 0 18, alignement center/start · dimension remplit/fixe
+      - **avatar** (bloc) · x 18, y 15, 30 × 30 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brandSoft` · bordure 1 `brandLine` · rayon 15 · dimension fixe/fixe
+        - icône `bot` 17 px, `brand` — x 24,5, y 21,5, 17 × 17
+      - **box** (bloc) · x 58, y 13, 128 × 34 · flex colonne, espacement 2, marges internes 0, alignement start/start
+        - « Agent de projet » — Geist 14 / 600, interligne 1,2, couleur `fg` — x 58, y 13, 104 × 17
+        - « Suivi à jour · il y a 4 min » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 58, y 32, 128 × 15
+      - icône `more` 16 px, `mfg` — x 280, y 22, 16 × 16
+      - icône `x` 16 px, `mfg` — x 306, y 22, 16 × 16
+    - **line** (bloc) · x 0, y 60, 340 × 1 · fond `soft` · dimension remplit/fixe
+    - **pinned-summary** (bloc) · x 0, y 61, 340 × 88 · flex colonne, espacement 6, marges internes 14 18 14 18, alignement start/start · fond `panel` · dimension remplit/auto
+      - **box** (bloc) · x 18, y 75, 304 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
+        - icône `pin` 12 px, `mfg` — x 18, y 76,5, 12 × 12
+        - « Résumé du jour » — Geist 12 / 600, interligne 1,2, couleur `mfg`, interlettrage 0,5, majuscules — x 36, y 75, 114 × 15
+        - « 14:40 » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 244, y 75, 31 × 15
+        - « épinglé » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 75, 41 × 15
+      - « F3 est livrée : 3 fonctionnalités sur 9. S42 finit ce soir, F5 n'y tiendra pas. » — Geist 13 / 400, interligne 1,5, couleur `fg` — x 18, y 96, 304 × 39
+    - **pin-shadow** (bloc) · x 0, y 149, 340 × 1 · fond `border` · dimension remplit/fixe
+    - **box** (bloc) · x 0, y 150, 340 × 389,5 · flex colonne, espacement 14, marges internes 16 18 16 18, alignement start/start · fond `bg` · dimension remplit/remplit
+      - **wakeup-answer** (bloc) · x 18, y 166, 304 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/start · dimension remplit/auto
+        - icône `alarm-clock` 13 px, `mfg` — x 18, y 167, 13 × 13
+        - « Q16 répondue : « 5 Go » » — Geist 12 / 400, interligne 1,25, couleur `mfg` — x 37, y 166, 130 × 15
+        - « 14:52 » — Geist 12 / 400, interligne 1,25, couleur `mfg` — x 292, y 166, 30 × 15
+      - **box** (bloc) · x 18, y 195, 304 × 64 · flex ligne, espacement 10, marges internes 0, alignement start/start · dimension remplit/auto
+        - **avatar** (bloc) · x 18, y 195, 24 × 24 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brandSoft` · bordure 1 `brandLine` · rayon 12 · dimension fixe/fixe
+          - icône `bot` 13 px, `brand` — x 23,5, y 200,5, 13 × 13
+        - **box** (bloc) · x 52, y 195, 270 × 64 · flex colonne, espacement 8, marges internes 0, alignement start/start · dimension remplit/auto
+          - « Q16 répondue : le quota est de 5 Go par client. Je propose : » — Geist 13 / 400, interligne 1,55, couleur `fg` — x 52, y 195, 270 × 41
+          - « Lu : Q16, SILO-34 » — Geist 12 / 400, interligne 1,2, couleur `dim` — x 52, y 244, 95 × 15
+      - **box** (bloc) · x 18, y 273, 304 × 155 · flex colonne, espacement 0, marges internes 0, alignement start/start · fond `card` · bordure 1 `brandLine` · rayon 10 · dimension remplit/auto
+        - **box** (bloc) · x 18, y 273, 304 × 36 · flex ligne, espacement 8, marges internes 10 14 10 14, alignement center/start · fond `brandSoft` · dimension remplit/auto
+          - « Lot n° 8 » — Geist 13 / 600, interligne 1,2, couleur `brandText` — x 32, y 283, 49 × 16
+          - « 1 action · après réveil » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 195, y 283,5, 113 × 15
+        - **line** (bloc) · x 18, y 309, 304 × 1 · fond `soft` · dimension remplit/fixe
+        - **box** (bloc) · x 18, y 310, 304 × 68 · flex ligne, espacement 10, marges internes 10 14 10 14, alignement start/start · dimension remplit/auto
+          - **box** (bloc) · x 32, y 320, 16 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/center · fond `brandBtn` · rayon 4 · dimension fixe/fixe
+            - icône `check` 11 px, `#FFFFFF` — x 34,5, y 322,5, 11 × 11
+          - **box** (bloc) · x 58, y 320, 250 × 48 · flex colonne, espacement 3, marges internes 0, alignement start/start · dimension remplit/auto
+            - « Modifier SILO-34 » — Geist 13 / 500, interligne 1,2, couleur `fg` — x 58, y 320, 250 × 16
+            - « Quota de 5 Go par client à inscrire dans l'étape. » — Geist 12 / 400, interligne 1,2, couleur `mfg` — x 58, y 339, 250 × 29
+        - **line** (bloc) · x 18, y 378, 304 × 1 · fond `soft` · dimension remplit/fixe
+        - **box** (bloc) · x 18, y 379, 304 × 49 · flex ligne, espacement 8, marges internes 12 14 12 14, alignement center/start · dimension remplit/auto
+          - **Button / brand** (bloc) · x 32, y 391, 75 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · fond `brandBtn` · rayon 6
+            - « Valider (1) » — Geist 12 / 500, interligne 1,2, couleur `#FFFFFF` — x 42, y 396, 55 × 15
+          - **Button / outline** (bloc) · x 115, y 391, 65 × 25 · flex ligne, espacement 6, marges internes 5 10 5 10, alignement center/center · bordure 1 `border` · rayon 6
+            - « Refuser » — Geist 12 / 500, interligne 1,2, couleur `fg` — x 125, y 396, 45 × 15
+    - **line** (bloc) · x 0, y 929, 340 × 1 · fond `soft` · dimension remplit/fixe
+    - **box** (bloc) · x 0, y 930, 340 × 70 · flex colonne, espacement 0, marges internes 14 18 14 18, alignement start/start · dimension remplit/auto
+      - **box** (bloc) · x 18, y 944, 304 × 42 · flex ligne, espacement 8, marges internes 0 12 0 12, alignement center/start · fond `bg` · bordure 1 `border` · rayon 8 · dimension remplit/fixe
+        - « Demander à l'agent de projet… » — Geist 13 / 400, interligne 1,2, couleur `mfg` — x 30, y 957, 179 × 16
+        - icône `send` 15 px, `mfg` — x 295, y 957,5, 15 × 15

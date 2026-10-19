@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { RunLogEntry } from "@kibo/schema";
+import { type RunLogEntry, WAKEUP_PREFIX } from "@kibo/schema";
 import { NOW } from "../agents/fixtures";
 import {
   buildConversation,
@@ -160,12 +160,51 @@ function exitedAt(id: number, at: number): RunLogEntry {
   };
 }
 
-test("a wakeup message is a muted event line, never a message from Adam", () => {
+const wakeShape = (items: ConversationItem[]) =>
+  items.map((i) => (i.kind === "wakeup" ? [i.kind, i.text] : [i.kind]));
+
+test("a wakeup message is a wakeup line, never a message from Adam", () => {
   const items = buildConversation(wakeLog, [], projectRun());
-  expect(items.map((i) => (i.kind === "event" ? [i.kind, i.text, i.tone] : [i.kind]))).toEqual([
+  expect(wakeShape(items)).toEqual([["user"], ["wakeup", "Réveil automatique · 2 signaux"]]);
+});
+
+const ANSWER_WAKEUP = `${WAKEUP_PREFIX}1 réponse à lire.\n- Q16 répondue : « 5 Go »\nLis chaque réponse.`;
+const MIXED_WAKEUP = `${WAKEUP_PREFIX}2 signaux à traiter (1 ticket à créer, 1 blocage) et 2 réponses à lire.\n- Q16 répondue : « 5 Go »\n- Q17 répondue : « Oui »\nLis « Signaux à traiter ».`;
+
+function answerLog(text: string): RunLogEntry[] {
+  return [
+    { id: 1, at: 10, event: { type: "answered", text: "Où en est-on ?", rank: 0 } },
+    exitedAt(2, 20),
+    { id: 3, at: 30, event: { type: "answered", text, rank: 0 } },
+    exitedAt(4, 40),
+  ];
+}
+
+test("a wakeup on an answer is one line per answer", () => {
+  expect(wakeShape(buildConversation(answerLog(ANSWER_WAKEUP), [], projectRun()))).toEqual([
     ["user"],
-    ["event", "Réveil automatique · 2 signaux", "muted"],
+    ["wakeup", "Q16 répondue : « 5 Go »"],
   ]);
+});
+
+test("a mixed wakeup lists the answers then the signals, with distinct ids", () => {
+  const items = buildConversation(answerLog(MIXED_WAKEUP), [], projectRun());
+  expect(wakeShape(items)).toEqual([
+    ["user"],
+    ["wakeup", "Q16 répondue : « 5 Go »"],
+    ["wakeup", "Q17 répondue : « Oui »"],
+    ["wakeup", "Réveil automatique · 2 signaux"],
+  ]);
+  expect(new Set(items.map((i) => i.id)).size).toBe(items.length);
+});
+
+test("the batch after a wakeup on an answer says so, and Réessayer ignores the wakeup", () => {
+  const log = answerLog(ANSWER_WAKEUP);
+  const items = buildConversation(log, [pendingBatch({ id: "b-wake", createdAt: 35 })], projectRun());
+  expect(items.flatMap((i) => (i.kind === "batch" ? [[i.batch.id, i.afterWakeup]] : []))).toEqual([
+    ["b-wake", true],
+  ]);
+  expect(lastUserMessage(log)).toBe("Où en est-on ?");
 });
 
 test("the batch proposed after a wakeup says so, not the one after a message from Adam", () => {
@@ -216,6 +255,7 @@ test("superseded batches are left out unless asked for, and counted", () => {
 
 const user = (id: string, text: string): ConversationItem => ({ kind: "user", id, at: 1, text });
 const agent = (id: string, text: string): ConversationItem => ({ kind: "agent", id, at: 1, text });
+const wakeup = (id: string, text: string): ConversationItem => ({ kind: "wakeup", id, at: 1, text });
 
 test("the question asked after the summary is the exchange, the summary stays", () => {
   const items = [user("u1", "Fais le point"), agent("a1", "F3 est livrée."), user("u2", "Où en est F5 ?")];
@@ -256,4 +296,24 @@ test("the exchange keeps a failed turn but drops muted session lines", () => {
     event("échec", "red"),
   ];
   expect(trackingThread(items).exchange.map((i) => i.id)).toEqual(["u1", "échec"]);
+});
+
+test("a wakeup opens the exchange like a question from Adam", () => {
+  const w1 = wakeup("w1", "Q16 répondue : « 5 Go »");
+  const said = "Q16 répondue : le quota est de 5 Go par client.";
+  const a1 = agent("a1", "F3 est livrée.");
+  const a2 = agent("a2", said);
+  expect(trackingThread([a1, w1, a2])).toEqual({
+    summary: "F3 est livrée.",
+    summaryAt: 1,
+    exchange: [w1, a2],
+  });
+  expect(trackingThread([w1, a2])).toEqual({ summary: said, summaryAt: 1, exchange: [] });
+  expect(trackingThread([user("u1", "Et F5 ?"), a1, w1]).exchange).toEqual([w1]);
+});
+
+test("the exchange starts at the first line of a wakeup with several answers", () => {
+  const lines = [wakeup("w1-a0", "Q16 répondue : « 5 Go »"), wakeup("w1-a1", "Q17 répondue : « Oui »")];
+  const a2 = agent("a2", "Je propose :");
+  expect(trackingThread([agent("a1", "F3 est livrée."), ...lines, a2]).exchange).toEqual([...lines, a2]);
 });

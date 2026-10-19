@@ -99,18 +99,24 @@ export function fakeSignals(now: () => number = () => 5_000): FakeSignals {
 export type FakeWakeupStore = {
   wakeups: Map<string, Wakeup>;
   kinds: Map<string, SignalKind[]>;
+  answers: Map<string, string[]>;
   wakeup(projectId: string): Wakeup;
   saveWakeup(w: Wakeup): void;
   due(): Wakeup[];
   open(projectId: string): Signal[];
+  queueAnswer(projectId: string, questionId: string, at: number): void;
+  queuedAnswers(projectId: string): string[];
+  dropAnswers(projectId: string): void;
 };
 
 export function fakeWakeupStore(): FakeWakeupStore {
   const wakeups = new Map<string, Wakeup>();
   const kinds = new Map<string, SignalKind[]>();
+  const answers = new Map<string, string[]>();
   return {
     wakeups,
     kinds,
+    answers,
     wakeup: (projectId) => wakeups.get(projectId) ?? { projectId, lastAt: null, dueAt: null },
     saveWakeup: (w) => {
       wakeups.set(w.projectId, w);
@@ -118,5 +124,13 @@ export function fakeWakeupStore(): FakeWakeupStore {
     due: () => [...wakeups.values()].filter((w) => w.dueAt !== null),
     open: (projectId) =>
       (kinds.get(projectId) ?? []).map((kind, i) => foldSignal(signalRow(i + 1, { projectId, kind }), [])),
+    queueAnswer: (projectId, questionId) => {
+      const queued = answers.get(projectId) ?? [];
+      if (!queued.includes(questionId)) answers.set(projectId, [...queued, questionId]);
+    },
+    queuedAnswers: (projectId) => [...(answers.get(projectId) ?? [])],
+    dropAnswers: (projectId) => {
+      answers.delete(projectId);
+    },
   };
 }

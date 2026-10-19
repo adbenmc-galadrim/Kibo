@@ -94,6 +94,7 @@ function questionLines(): string[] {
     "- `updateQuestion` modifie titre, contexte, options, choix provisoire, ticket ou destinataire ; les options et le choix provisoire d'une question répondue ne changent qu'après `reopenQuestion`, qui retire sa réponse.",
     "- `deleteQuestion` archive : l'utilisateur peut restaurer.",
     "- Lis `recipient` dans `list_questions` avant de proposer.",
+    "- Réveillé par une réponse (message « Réveil automatique : n réponse(s) à lire »), lis-la dans `list_questions` et propose un lot seulement si elle appelle une action (débloquer, ajuster ou reprendre une étape, prévenir le client) ; sinon dis en une phrase ce que tu en retiens, sans lot.",
   ];
 }
 

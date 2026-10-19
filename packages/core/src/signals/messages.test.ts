@@ -1,10 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { isWakeupMessage, type SignalKind, type SignalLine, WAKEUP_PREFIX, wakeupCount } from "@kibo/schema";
+import { isWakeupMessage, type SignalKind, type SignalLine, wakeupAnswers, wakeupCount } from "@kibo/schema";
 import { renderSignalsSection, SIGNAL_KIND_FR, signalReply, wakeupMessage } from "./messages";
 
 const fmt = (at: number): string =>
   `${String(Math.floor(at / 60)).padStart(2, "0")}:${String(at % 60).padStart(2, "0")}`;
 const kinds = (...list: SignalKind[]) => list.map((kind) => ({ kind }));
+const only = (...list: SignalKind[]) => ({ signals: kinds(...list), answers: [] });
+const Q16 = { label: "Q16", quote: "5 Go" };
+const Q17 = { label: "Q17", quote: "Oui" };
 const line = (over: Partial<SignalLine> = {}): SignalLine => ({
   ref: "sig:3",
   kind: "blocker",
@@ -40,21 +43,49 @@ describe("signalReply", () => {
 
 describe("wakeupMessage", () => {
   test("counts the signals by kind", () => {
-    const text = wakeupMessage(kinds("ticket", "ticket", "blocker"));
-    expect(text.startsWith(WAKEUP_PREFIX)).toBe(true);
-    expect(text).toContain("3 signaux à traiter (2 tickets à créer, 1 blocage)");
-    expect(text).toContain("`dismissSignal`");
-    expect(wakeupMessage(kinds("ticket"))).toContain("1 signal à traiter (1 ticket à créer)");
-    expect(wakeupMessage(kinds("question", "blocker", "context"))).toContain(
+    const text = wakeupMessage(only("ticket", "ticket", "blocker"));
+    expect(text).toBe(
+      "Réveil automatique : 3 signaux à traiter (2 tickets à créer, 1 blocage). Lis « Signaux à traiter » et propose un lot : cite chaque signal (`signals`) dans l'action qui y répond, ou `dismissSignal` s'il n'appelle aucune action.",
+    );
+    expect(wakeupMessage(only("ticket"))).toContain("1 signal à traiter (1 ticket à créer)");
+    expect(wakeupMessage(only("question", "blocker", "context"))).toContain(
       "3 signaux à traiter (1 blocage, 1 contexte, 1 question)",
     );
   });
 
-  test("the count is read back from the message", () => {
+  test("answers alone are listed with their rule", () => {
+    const text = wakeupMessage({ signals: [], answers: [Q16] });
+    expect(text).toBe(
+      "Réveil automatique : 1 réponse à lire.\n- Q16 répondue : « 5 Go »\nLis chaque réponse (`list_questions`, `get_ticket`) et propose un lot seulement si elle appelle une action : lever un blocage (`setStatus`), ajuster ou reprendre une étape (`updateTicket`, `setHold`), prévenir le client (`createQuestion` à son destinataire) ; sinon dis en une phrase ce que tu en retiens, sans lot.",
+    );
+    expect(text).not.toContain("Signaux à traiter");
+    expect(wakeupMessage({ signals: [], answers: [Q16, Q17] })).toStartWith(
+      "Réveil automatique : 2 réponses à lire.\n- Q16 répondue : « 5 Go »\n- Q17 répondue : « Oui »\nLis chaque réponse",
+    );
+  });
+
+  test("signals and answers share one message and both rules", () => {
+    const text = wakeupMessage({ signals: kinds("ticket", "blocker"), answers: [Q16, Q17] });
+    expect(text).toStartWith(
+      "Réveil automatique : 2 signaux à traiter (1 ticket à créer, 1 blocage) et 2 réponses à lire.\n- Q16 répondue : « 5 Go »\n- Q17 répondue : « Oui »\nLis « Signaux à traiter » et propose un lot : ",
+    );
+    expect(text).toContain(
+      "`dismissSignal` s'il n'appelle aucune action. Lis chaque réponse (`list_questions`",
+    );
+    expect(text).toEndWith("sans lot.");
+  });
+
+  test("the count and the answers are read back from the message", () => {
     for (const list of [kinds("ticket"), kinds("ticket", "blocker", "context")]) {
-      expect(wakeupCount(wakeupMessage(list))).toBe(list.length);
-      expect(isWakeupMessage(wakeupMessage(list))).toBe(true);
+      expect(wakeupCount(wakeupMessage({ signals: list, answers: [] }))).toBe(list.length);
+      expect(isWakeupMessage(wakeupMessage({ signals: list, answers: [] }))).toBe(true);
+      expect(wakeupCount(wakeupMessage({ signals: list, answers: [Q16] }))).toBe(list.length);
     }
+    const answers = wakeupMessage({ signals: [], answers: [Q16, Q17] });
+    expect(wakeupCount(answers)).toBeNull();
+    expect(isWakeupMessage(answers)).toBe(true);
+    expect(wakeupAnswers(answers)).toEqual([Q16, Q17]);
+    expect(wakeupAnswers(wakeupMessage({ signals: kinds("blocker"), answers: [Q17] }))).toEqual([Q17]);
     expect(wakeupCount("Bonjour")).toBeNull();
     expect(isWakeupMessage("Bonjour")).toBe(false);
   });

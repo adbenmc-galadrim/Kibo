@@ -9,6 +9,7 @@ import { stdoutNotifier } from "./agents/notifier";
 import { sandboxPortFor } from "./components/daemon-info";
 import { cliStatus, installCli } from "./components/install-cli";
 import { startDaemon } from "./daemon";
+import { answerWakeGraceFromArg } from "./daemon-options";
 import { parseIntegrationFlags } from "./integrations/bootstrap";
 import { createRedactor, installConsoleRedaction } from "./integrations/redact";
 import { createLogBuffer } from "./log-buffer";
@@ -29,6 +30,7 @@ const { values } = parseArgs({
     "host-load": { type: "string" },
     "test-origins": { type: "string" },
     "memory-secrets": { type: "boolean", default: false },
+    "answer-wake-grace-ms": { type: "string" },
   },
 });
 const port = Number(values.port);
@@ -91,6 +93,7 @@ const daemon = await Promise.resolve()
       redactor,
       logBuffer,
       marketAllowLoopback: process.env.KIBO_MARKET_ALLOW_LOOPBACK === "1",
+      answerWakeGraceMs: answerWakeGraceFromArg(values["answer-wake-grace-ms"]),
     }),
   )
   .catch(failStart);
