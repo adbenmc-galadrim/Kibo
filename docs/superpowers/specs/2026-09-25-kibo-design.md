@@ -2665,3 +2665,18 @@ Une étape peut dépendre d'une chose que l'équipe n'a pas encore (un environne
 - **CLI** : `kibo tickets set <CLÉ> hold="<raison>"` et `hold=off` ; `tickets get` affiche l'attente ; `tickets list` marque ⏸.
 - **Agent de projet** : `list_tickets` et `project_overview` rendent `hold` ; action de lot `setHold { ticket, reason | null }`.
 - **Maquettes** : les états nouveaux sont dessinés dans Penpot, en sombre et en clair, avant le code ; l'acceptation au pixel près des écrans existants reste à 2 %.
+
+### 41.1 Écarts constatés à l'exécution (phase 29)
+
+Détail par tâche dans la section « Écarts » du plan `2026-10-19-kibo-phase-29.md` ; ce qui compte pour la suite :
+
+1. **Refus** : `setHold` est refusé sur une étape terminée et sur une racine (fonctionnalité) ; renvoyer la même raison, ou reprendre une étape sans attente, ne change rien et n'écrit rien au journal.
+2. **Attente par dépendance** : une étape en aval prend l'attente propre de **plus petite clé** qui l'atteint par les liens `blocks`, quelle que soit la distance ; le parcours traverse une étape en attente propre et s'arrête sur une étape terminée ou une racine.
+3. **Fonctionnalité** : sans étape active (aucune, ou toutes en attente), elle est « à faire ». Les étapes en attente sortent des cases, du risque, des Échéances, de « Prochaine à finir » et des bandes ; une fonctionnalité dont il ne reste que des étapes en attente est « livrée · n en attente » et garde sa session.
+4. **Comptes** : la Vue d'ensemble et le Planning comptent les attentes propres ; le filtre « En attente » du Kanban compte aussi les attentes par dépendance ; il est masqué sans attente, et retiré s'il était actif quand la dernière attente est levée.
+5. **Kanban** : la puce ⏸ remplace sur la carte les puces « attend SILO-n » et la raison de non-démarrabilité.
+6. **Journal** : `held` à la pose et à chaque changement de raison, `resumed` porte la raison levée ; libellés « Mise en attente · <raison> » et « Reprise ». `since` est toujours posé par le démon (jour du démon).
+7. **CLI** : `hold=` déjà vrai ⇒ « déjà à jour » sans commande ; raison rognée, refusée au-delà de 80 caractères avant le démon.
+8. **Interface** : le menu « ⋯ » d'une étape en attente propre propose « Reprendre » ; le bouton de confirmation du dialogue est orange, comme « Créer » d'un nouveau projet ; « Reprendre dans ▸ » n'apparaît que si le sprint de la fonctionnalité est terminé ou absent.
+9. **Maquettes corrigées après coup** pour suivre ces règles (Vue d'ensemble, Planning, fiche fonctionnalité, Kanban en attente) ; aucun masque ajouté aux neuf écrans existants. Le Kanban en attente passe à 1,98 % : faible marge, due au gabarit des cartes déjà accepté sur le Kanban.
+10. **Budget** : les textes du client git sont chargés à la demande (− 2,5 kB à l'entrée), ce qui a laissé la place aux écrans de l'attente.
