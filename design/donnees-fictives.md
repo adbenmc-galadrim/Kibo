@@ -570,6 +570,24 @@ exports `proposition-questions-{menu,supprimer,repondues}-*`.
   « Silo SA 2 » (« Produit » masqué, sans ouverte) ; Questions 2 dans la barre latérale ; « Exporter pour le client (2) ».
 - Une question supprimée garde son numéro : la suivante créée prend le numéro d'après, jamais celui libéré.
 
+### 0.29.0-alpha.3 · réveil sur réponse
+
+Jeu des questions ci-dessus, vendredi 16 octobre : Adam répond à Q16 à 14:52 et l'agent de projet se réveille. Maquette : board
+« Agent · réveil sur réponse » de la page « Proposition » (`design/redesign/scripts/58-alpha3-reveil.js`, clone de « Agent · question »),
+exports `proposition-agent-reveil-*` ; page « 36 · Suivi seul » du fichier « Kibo », écran 235.
+
+| Question | Ticket | Réponse | Répondue par | Quand | Lot | Action | Pourquoi |
+|---|---|---|---|---|---|---|---|
+| Q16 | SILO-34 | 5 Go | Adam | 14:52 | n° 8, après réveil | Modifier SILO-34 | Quota de 5 Go par client à inscrire dans l'étape. |
+
+États attendus (panneau Suivi) :
+- Résumé du jour épinglé (14:40) inchangé, puis la ligne de réveil « Q16 répondue : « 5 Go » » (icône réveil, « 14:52 » à droite, texte
+  secondaire), à la place de la bulle d'Adam ; jamais « Toi » ni « Adam · … ».
+- Texte de l'agent : « Q16 répondue : le quota est de 5 Go par client. Je propose : », puis « Lu : Q16, SILO-34 ».
+- Lot n° 8 « 1 action · après réveil » : « Modifier SILO-34 », « Quota de 5 Go par client à inscrire dans l'étape. », « Valider (1) » et
+  « Refuser ».
+- Message reçu par l'agent : « Réveil automatique : 1 réponse à lire. », « - Q16 répondue : « 5 Go » », puis la consigne de lecture (§43).
+
 ### Pistes A, B, C (`design/redesign/scripts/02-data.js`)
 
 Ce jeu est indépendant de celui des fonctionnalités : les mêmes numéros de tickets y portent d'autres titres et d'autres statuts.

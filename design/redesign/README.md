@@ -308,3 +308,23 @@ Copiés en page « 36 · Suivi seul » du fichier « Kibo » (232 à 234, voir `
 
 Piège vu : le fond d'un bouton enfoncé posé en absolu dans un flex passe au-dessus de l'icône quel que soit son rang ; le fond porte
 donc lui-même l'icône, et un emplacement vide de même taille garde la mise en page de la ligne.
+
+## 0.29.0-alpha.3 (2026-10-19)
+
+Spec §43 : une réponse enregistrée réveille l'agent de projet, qui la lit et propose un lot si besoin. Dans le panneau Suivi, la ligne de
+réveil « Q16 répondue : « 5 Go » » ouvre le dernier échange comme une question d'Adam. Données : sous-section « 0.29.0-alpha.3 » du projet
+Silo (`design/donnees-fictives.md`). Page « Proposition », `scripts/58-alpha3-reveil.js` (après `57-alpha2-questions`), rangée `S.Y_A3`
+= 42 500 (après les rangées de l'alpha 2), sombre à x = 0 et clair à x = 1 540.
+
+Le board **clone « Agent · question »** ; ce board et sa référence (`proposition-agent-question-*`) ne changent pas.
+
+| Board | Contenu | Export | Taille |
+|---|---|---|---|
+| Agent · réveil sur réponse | résumé du jour épinglé (14:40), ligne de réveil à la place de la bulle d'Adam (icône `alarm-clock` 13 px, « Q16 répondue : « 5 Go » », « 14:52 » à droite, texte secondaire 12 px), texte de l'agent « Q16 répondue : le quota est de 5 Go par client. Je propose : », « Lu : Q16, SILO-34 », lot n° 8 « 1 action · après réveil » (« Modifier SILO-34 », « Quota de 5 Go par client à inscrire dans l'étape. »), « Valider (1) » et « Refuser » | `proposition-agent-reveil` | 340 × 1 000 |
+
+Dessin : `await storage.drawA3("p-agent-reveil", "dark")` puis `"light"`. Avant d'exporter, attendre que le nombre de formes côté serveur
+(`get-page`) égale le nombre local. Export : `await storage.exportA3()` (`90-export.js`, depuis un clone, après 10 s d'attente : un clone
+pas encore enregistré côté serveur fait échouer l'exporteur, « http error ») ⇒ `exports/proposition-agent-reveil-<dark|light>.png`. Cotes :
+`95-cotes.js` (`_dump-26`), puis `python3 scripts/cotes.py <JSON> --alpha3`, qui remplace seulement la partie « 0.29.0-alpha.3 » de
+`cotes.md` (`--alpha2` la garde). Pas de spec pixel (panneau, capturé en E2E). Copié en page « 36 · Suivi seul » du fichier « Kibo »
+(235, voir `design/penpot/README.md`).

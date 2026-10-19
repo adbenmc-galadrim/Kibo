@@ -67,4 +67,11 @@ S.exportA2 = async (only) => { await S.page("Proposition"); await S.wait(800); c
     if (!file || (only && !only.includes(file))) continue; const c = b.clone(); c.x = -5000; c.y = b.y;
     try { out.push(await S.exportPng(c, `proposition-${file}-${/\(clair\)$/.test(b.name) ? "light" : "dark"}.png`)); } finally { c.remove(); } }
   return out; };
+// 0.29.0-alpha.3 : board « Agent · réveil sur réponse » à partir de S.Y_A3 ⇒ proposition-agent-reveil-<dark|light>.png, exporté depuis un clone enregistré côté serveur.
+S.FILES_A3 = { "Agent · réveil sur réponse": "agent-reveil" };
+S.exportA3 = async (only) => { await S.page("Proposition"); await S.wait(800); const out = [];
+  for (const b of penpot.currentPage.root.children.filter(c => c.type === "board" && c.y >= S.Y_A3)) { const base = b.name.replace(/ \(clair\)$/, ""), file = S.FILES_A3[base];
+    if (!file || (only && !only.includes(file))) continue; const c = b.clone(); c.x = -5000; c.y = b.y; await S.wait(10000);
+    try { out.push(await S.exportPng(c, `proposition-${file}-${/\(clair\)$/.test(b.name) ? "light" : "dark"}.png`)); } finally { c.remove(); } }
+  return out; };
 return "export ok";
