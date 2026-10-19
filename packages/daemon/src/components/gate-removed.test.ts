@@ -34,7 +34,7 @@ const ops: DeliveryOps = {
     ),
 };
 
-test("a component cannot deliver nor resume a run once ticket agents are removed, nor deliver answers", async () => {
+test("a component cannot deliver nor resume a run once ticket agents are removed", async () => {
   const handlers = createGateHandlers({
     ...stubHandlerDeps,
     delivery: componentDelivery(ops),
