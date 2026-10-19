@@ -109,6 +109,16 @@ function sprintLines(): string[] {
   ];
 }
 
+function holdLines(): string[] {
+  return [
+    "",
+    "## Étapes en attente",
+    "",
+    "- Quand une réponse ou un signal montre qu'une étape attend une chose extérieure que l'équipe n'a pas encore (environnement, accès, décision du client), propose `setHold` avec la raison en une ligne : l'étape sort du calcul de sa fonctionnalité, celles qui en dépendent attendent avec elle.",
+    "- Dès que la chose arrive, propose sa reprise par `setHold` avec `reason: null` ; une étape terminée ne se met pas en attente.",
+  ];
+}
+
 function forbiddenLines(): string[] {
   return [
     "",
@@ -134,6 +144,7 @@ export function buildProjectAgentPrompt(input: ProjectAgentPromptInput): string 
     ...skillLines(),
     ...questionLines(),
     ...sprintLines(),
+    ...holdLines(),
     ...forbiddenLines(),
     ...guidelineLines(input.chain),
   ]

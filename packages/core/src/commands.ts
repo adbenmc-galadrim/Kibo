@@ -66,6 +66,7 @@ import {
   getTicket,
   listTickets,
   moveTicket,
+  setHold,
   setStatus,
   setTicketDelivery,
   setTicketOptional,
@@ -196,6 +197,8 @@ export function executeProjectCommand(doc: LoroDoc, cmd: ProjectCommand): unknow
       return getTicket(doc, cmd.ticketId);
     case "setTicketOptional":
       return setTicketOptional(doc, cmd.ticketId, cmd.optional);
+    case "setHold":
+      return setHold(doc, cmd.ticketId, cmd.reason, cmd.since);
   }
 }
 

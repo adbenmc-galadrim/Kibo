@@ -197,6 +197,8 @@ export function commandsFor(
     }
     case "remindQuestion":
       return [{ method: "remindQuestion", questionId: action.questionId, by }];
+    case "setHold":
+      return [{ method: "setHold", ticketId: idOf(ids, action.ticket), reason: action.reason }];
     case "createQuestion":
     case "updateQuestion":
     case "reopenQuestion":

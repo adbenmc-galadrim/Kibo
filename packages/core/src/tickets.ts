@@ -1,10 +1,9 @@
 import {
   type Assignee,
   DeliveryStep,
-  EMPTY_PROGRESS,
-  ExternalRef,
   type FileCheck,
   formatTicketKey,
+  Hold,
   KiboError,
   normalizeLabels,
   REPORTS_MAX,
@@ -27,7 +26,10 @@ import {
   nextShortKey,
   type ShortKeyAllocation,
 } from "./short-key";
+import { readDelivery, readExternalRefs, readHold, readProgress } from "./ticket-fields";
 import { getNode, moveNode, subtreeIds, walkDepthFirst } from "./tree";
+
+export { readExternalRefs } from "./ticket-fields";
 
 export type NewTicket = {
   title: string;
@@ -60,32 +62,6 @@ export type TicketProgressUpdate = {
 
 export const ticketTree = (doc: LoroDoc) => doc.getTree("tickets");
 
-const RefList = ExternalRef.array();
-
-export function readExternalRefs(node: LoroTreeNode): ExternalRef[] {
-  const raw = node.data.get("externalRefs");
-  if (raw === undefined || raw === null) return [];
-  const parsed = RefList.safeParse(raw);
-  if (!parsed.success) throw new KiboError("STORE_CORRUPT", `invalid external refs on ${node.id}`);
-  return parsed.data;
-}
-
-function readProgress(node: LoroTreeNode): TicketProgress {
-  const raw = node.data.get("agentProgress");
-  if (raw === undefined || raw === null) return EMPTY_PROGRESS;
-  const parsed = TicketProgress.safeParse(raw);
-  if (!parsed.success) throw new KiboError("STORE_CORRUPT", `invalid agent progress on ${node.id}`);
-  return parsed.data;
-}
-
-function readDelivery(node: LoroTreeNode): DeliveryStep | null {
-  const raw = node.data.get("delivery");
-  if (raw === undefined || raw === null) return null;
-  const parsed = DeliveryStep.safeParse(raw);
-  if (!parsed.success) throw new KiboError("STORE_CORRUPT", `invalid delivery step on ${node.id}`);
-  return parsed.data;
-}
-
 const cleanTitle = (title: string): string => {
   const t = title.trim();
   if (!t) throw new KiboError("INVALID_INPUT", "ticket title is empty");
@@ -113,6 +89,7 @@ function readTicket(n: LoroTreeNode): Ticket {
     sprintId: (d.get("sprintId") as string | null | undefined) ?? null,
     optional: d.get("optional") === true,
     shortKey: (d.get("shortKey") as string | null | undefined) ?? null,
+    hold: readHold(n),
   };
 }
 
@@ -238,6 +215,26 @@ export function setTicketOptional(doc: LoroDoc, id: string, optional: boolean): 
   if (node.parent() === undefined)
     throw new KiboError("INVALID_INPUT", "an optional step needs a parent ticket");
   node.data.set("optional", optional);
+  doc.commit();
+  return readTicket(node);
+}
+
+function nextHold(node: LoroTreeNode, reason: string, since: string | undefined): Hold {
+  if (node.parent() === undefined)
+    throw new KiboError("INVALID_INPUT", "a hold needs a step (a feature cannot be held)");
+  if (node.data.get("statusId") === "done")
+    throw new KiboError("INVALID_INPUT", "a delivered step cannot be held");
+  if (since === undefined) throw new KiboError("INVALID_INPUT", "a hold needs its day");
+  const parsed = Hold.safeParse({ reason, since: readHold(node)?.since ?? since });
+  if (!parsed.success)
+    throw new KiboError("INVALID_INPUT", parsed.error.issues[0]?.message ?? "invalid hold");
+  return parsed.data;
+}
+
+export function setHold(doc: LoroDoc, id: string, reason: string | null, since?: string): Ticket {
+  const node = getNode(ticketTree(doc), id);
+  if (reason === null && readHold(node) === null) return readTicket(node);
+  node.data.set("hold", reason === null ? null : nextHold(node, reason, since));
   doc.commit();
   return readTicket(node);
 }

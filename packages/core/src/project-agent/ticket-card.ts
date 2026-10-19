@@ -22,6 +22,7 @@ export function ticketCard(project: ProjectSnapshot, ticket: TicketView): Ticket
     openQuestions: ticket.openQuestions,
     startable: ticket.startable,
     startReason: ticket.startReason,
+    onHold: ticket.onHold,
     group: isGroup(ticket),
     branch: branchOf(ticket.externalRefs),
     pr: prOf(ticket.externalRefs),

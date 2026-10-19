@@ -38,6 +38,7 @@ export const ticketPrint = (t: TicketView, blockedBy: readonly string[] = []): T
   branch: branchOf(t.externalRefs),
   pr: prOf(t.externalRefs),
   blockedBy: [...blockedBy],
+  hold: t.hold,
 });
 
 export function fingerprint(input: {

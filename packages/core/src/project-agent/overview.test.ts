@@ -80,6 +80,7 @@ describe("projectOverview", () => {
       openQuestions: 1,
       startable: false,
       startReason: null,
+      onHold: null,
       group: false,
       branch: "feat/ecran",
       pr: "#7 (open)",
@@ -207,5 +208,47 @@ describe("open signals in the overview", () => {
       "## Signaux\n\nSignaux ouverts : 2",
     );
     expect(renderOverview(projectOverview(input()))).toContain("## Signaux\n\nAucun.");
+  });
+});
+
+describe("steps on hold in the overview", () => {
+  const minio = { reason: "Serveur MinIO de recette indisponible", since: "2026-10-16" };
+  const held = project({
+    tickets: [
+      ticket({ id: "t30", title: "Envoi hors ligne" }),
+      ticket({
+        id: "t33",
+        title: "Écran d'envoi",
+        parentId: "t30",
+        statusId: "in_progress",
+        hold: minio,
+        onHold: { source: "own", key: "SILO-33", ...minio },
+      }),
+      ticket({
+        id: "t34",
+        title: "Reprise",
+        parentId: "t30",
+        onHold: { source: "dependency", key: "SILO-33", ...minio },
+      }),
+      ticket({ id: "t35", title: "Libre", parentId: "t30" }),
+    ],
+  });
+
+  test("lists every step on hold, its own or by dependency, with its card", () => {
+    const overview = projectOverview(input({ project: held }));
+    expect(overview.held.map((c) => [c.key, c.onHold?.source])).toEqual([
+      ["SILO-33", "own"],
+      ["SILO-34", "dependency"],
+    ]);
+  });
+
+  test("renders a section with the reason or the step it waits for", () => {
+    const text = renderOverview(projectOverview(input({ project: held })));
+    expect(text).toContain("## En attente");
+    expect(text).toContain(
+      "SILO-33 · Écran d'envoi [in_progress] · en attente : Serveur MinIO de recette indisponible",
+    );
+    expect(text).toContain("SILO-34 · Reprise [todo] · attend SILO-33");
+    expect(renderOverview(projectOverview(input()))).toContain("## En attente\n\nAucune.");
   });
 });

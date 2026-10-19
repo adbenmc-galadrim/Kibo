@@ -5,6 +5,7 @@ import {
   isOpen,
   type Link,
   lastStepWaitsOn,
+  type OnHold,
   type Question,
   type Sprint,
   type Startability,
@@ -20,12 +21,18 @@ export type StartSource = {
   today: string;
   openLimit: number;
   sprints: readonly Sprint[];
-  byId: ReadonlyMap<string, Ticket>;
+  byId: ReadonlyMap<string, HeldTicket>;
   links: readonly Link[];
   features: ReadonlyMap<string, FeatureState>;
   blockingQuestions: ReadonlyMap<string, Question>;
 };
-export type StartCandidate = { ticket: Ticket; isGroup: boolean; blockers: readonly Ticket[]; busy: boolean };
+export type HeldTicket = Ticket & { onHold: OnHold | null };
+export type StartCandidate = {
+  ticket: HeldTicket;
+  isGroup: boolean;
+  blockers: readonly Ticket[];
+  busy: boolean;
+};
 
 const GROUP: Startability = { startable: false, reason: { kind: "status" } };
 
@@ -100,6 +107,7 @@ export function startabilityOf(source: StartSource): (candidate: StartCandidate)
         busy,
         blockers: blockers.map((b) => ({ key: ticketKeyLabel(b, source.projectKey), statusId: b.statusId })),
         blockingQuestion: questionOf(ticket.id, feature),
+        onHold: ticket.onHold,
         feature,
       },
       ctx,

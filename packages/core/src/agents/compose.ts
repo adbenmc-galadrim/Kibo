@@ -93,6 +93,8 @@ export function exampleTicket(project: ProjectSnapshot): TicketView {
     labels: [],
     agentProgress: EMPTY_PROGRESS,
     delivery: null,
+    hold: null,
+    onHold: null,
     sprintId: null,
     optional: false,
     shortKey: null,
