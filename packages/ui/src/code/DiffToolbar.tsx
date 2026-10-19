@@ -3,7 +3,7 @@ import { Toggle } from "@kibo/sdk/ui/toggle";
 import { ToggleGroup, ToggleGroupItem } from "@kibo/sdk/ui/toggle-group";
 import { ExternalLink, FileCode, Pencil } from "lucide-react";
 import { WrapSwitch } from "../files/WrapSwitch";
-import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import type { DiffMode } from "./DiffView";
 
 type Props = {
@@ -46,7 +46,7 @@ export function DiffToolbar(p: Props) {
         type="single"
         variant="outline"
         size="sm"
-        aria-label={fr.changes.viewMode}
+        aria-label={frChanges.changes.viewMode}
         className="shrink-0"
         value={p.mode}
         onValueChange={(v) => {
@@ -54,10 +54,10 @@ export function DiffToolbar(p: Props) {
         }}
       >
         <ToggleGroupItem value="unified" className={COMPACT}>
-          {fr.changes.unified}
+          {frChanges.changes.unified}
         </ToggleGroupItem>
         <ToggleGroupItem value="split" className={COMPACT}>
-          {fr.changes.split}
+          {frChanges.changes.split}
         </ToggleGroupItem>
       </ToggleGroup>
       {!p.readOnly && (
@@ -71,14 +71,14 @@ export function DiffToolbar(p: Props) {
             className="h-7 shrink-0 px-2 text-2xs data-[state=on]:border-orange-500 data-[state=on]:bg-orange-500/15 data-[state=on]:text-foreground"
           >
             <Pencil aria-hidden />
-            {fr.changes.edit}
+            {frChanges.changes.edit}
           </Toggle>
           <Button
             variant="ghost"
             size="icon-sm"
             className="shrink-0"
-            aria-label={fr.changes.openExternal}
-            title={fr.changes.openExternal}
+            aria-label={frChanges.changes.openExternal}
+            title={frChanges.changes.openExternal}
             onClick={p.onOpenExternal}
           >
             <ExternalLink aria-hidden />

@@ -10,6 +10,7 @@ const state = (status: FeatureState["status"], remaining: number): FeatureState 
   nextStepId: null,
   remaining,
   started: true,
+  held: 0,
 });
 const f4 = {
   shortKey: "F4",

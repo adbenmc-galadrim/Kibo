@@ -3,7 +3,7 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { ArrowUpFromLine, Pencil, Undo2 } from "lucide-react";
 import { useId, useState } from "react";
-import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import { RewordDialog } from "./RewordDialog";
 import { UndoCommitDialog } from "./UndoCommitDialog";
 
@@ -28,10 +28,10 @@ export function BranchCommits({ base, commits, busy, onModify, onReword, onUndo 
     <section aria-labelledby={id} className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 border-t pt-4">
       <header className="flex items-center justify-between">
         <h3 id={id} className="text-xs font-semibold">
-          {base ? fr.commit.branchCommits : fr.commit.latestCommits}
+          {base ? frChanges.commit.branchCommits : frChanges.commit.latestCommits}
         </h3>
         <span
-          title={fr.commit.unpushedCount(unpushed.length)}
+          title={frChanges.commit.unpushedCount(unpushed.length)}
           className={cn(
             "font-mono text-2xs",
             unpushed.length > 0 ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground",
@@ -41,7 +41,7 @@ export function BranchCommits({ base, commits, busy, onModify, onReword, onUndo 
         </span>
       </header>
       {base && commits.length === 0 && (
-        <p className="text-xs text-muted-foreground">{fr.commit.noBranchCommits(base)}</p>
+        <p className="text-xs text-muted-foreground">{frChanges.commit.noBranchCommits(base)}</p>
       )}
       <ul className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2">
         {unpushed.map((c, i) => (
@@ -51,7 +51,7 @@ export function BranchCommits({ base, commits, busy, onModify, onReword, onUndo 
               <span className="font-mono text-2xs text-muted-foreground">{c.shortSha}</span>
               <span className="truncate">{c.subject}</span>
             </p>
-            <p className="mt-1 text-2xs text-orange-700 dark:text-orange-400">{fr.commit.notPushed}</p>
+            <p className="mt-1 text-2xs text-orange-700 dark:text-orange-400">{frChanges.commit.notPushed}</p>
             <div className="mt-2 flex flex-wrap gap-1">
               {i === 0 && (
                 <Button
@@ -62,7 +62,7 @@ export function BranchCommits({ base, commits, busy, onModify, onReword, onUndo 
                   onClick={() => onModify(c)}
                 >
                   <Pencil />
-                  {fr.commit.modify}
+                  {frChanges.commit.modify}
                 </Button>
               )}
               <Button
@@ -72,7 +72,7 @@ export function BranchCommits({ base, commits, busy, onModify, onReword, onUndo 
                 disabled={busy}
                 onClick={() => setRewording(c)}
               >
-                {fr.commit.reword}
+                {frChanges.commit.reword}
               </Button>
               <Button
                 variant="ghost"
@@ -82,7 +82,7 @@ export function BranchCommits({ base, commits, busy, onModify, onReword, onUndo 
                 onClick={() => setUndoing(c)}
               >
                 <Undo2 />
-                {fr.commit.undo}
+                {frChanges.commit.undo}
               </Button>
             </div>
           </li>
@@ -91,7 +91,7 @@ export function BranchCommits({ base, commits, busy, onModify, onReword, onUndo 
           <li
             key={c.sha}
             className="min-w-0 rounded-lg border p-3 text-muted-foreground dark:opacity-70"
-            title={fr.commit.pushed}
+            title={frChanges.commit.pushed}
           >
             <p className="flex min-w-0 items-center gap-2 text-xs">
               <span aria-hidden className="size-2 shrink-0 rounded-full bg-muted-foreground/50" />
@@ -100,7 +100,7 @@ export function BranchCommits({ base, commits, busy, onModify, onReword, onUndo 
             </p>
             <p className="mt-1 flex items-center gap-1 text-2xs">
               <ArrowUpFromLine aria-hidden className="size-3.5" />
-              {fr.commit.pushed}
+              {frChanges.commit.pushed}
             </p>
           </li>
         ))}

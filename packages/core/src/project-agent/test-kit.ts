@@ -34,6 +34,8 @@ export function ticket(p: Partial<TicketView> & Pick<TicketView, "id">): TicketV
     sprintId: null,
     optional: false,
     shortKey: null,
+    hold: null,
+    onHold: null,
     effectiveSprintId: null,
     session: null,
     updatedAt: null,

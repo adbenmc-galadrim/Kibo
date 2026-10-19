@@ -3,8 +3,8 @@ import { inCurrentSprint } from "./sprint-filter";
 import { isLivePr, ticketCiRuns, ticketPr } from "./ticket-pr";
 
 export type KanbanFilter = "mine-and-agents" | "all";
-export type KanbanFilterKey = "sprint" | "startable" | "toFix";
-export const KANBAN_FILTERS: readonly KanbanFilterKey[] = ["sprint", "startable", "toFix"];
+export type KanbanFilterKey = "sprint" | "startable" | "toFix" | "held";
+export const KANBAN_FILTERS: readonly KanbanFilterKey[] = ["sprint", "startable", "toFix", "held"];
 
 export const LABEL_ALL = "*";
 export const LABEL_FILTER_KEY = "labelFilter";
@@ -39,6 +39,7 @@ export type FilterFacts = { currentSprintId: string | null; ciRuns: readonly CiR
 function matches(ticket: TicketView, filter: KanbanFilterKey, facts: FilterFacts): boolean {
   if (filter === "sprint") return inCurrentSprint(ticket, facts.currentSprintId);
   if (filter === "startable") return ticket.startable;
+  if (filter === "held") return ticket.onHold !== null;
   return toFix(ticket, ticketCiRuns(ticket, facts.ciRuns));
 }
 

@@ -18,6 +18,7 @@ import { DragPreview } from "./DragPreview";
 import { BACKLOG_ID, planDrop } from "./drag";
 import { FeatureCardPreview } from "./FeatureCard";
 import { fr } from "./fr";
+import type { HeldStep } from "./held-model";
 import { NewFeatureDialog } from "./NewFeatureDialog";
 import type { PlanningLayout } from "./PlanningHeader";
 import { PlanningView } from "./PlanningView";
@@ -115,6 +116,21 @@ function PlanningBoard({ today }: { today: string }) {
       () => setError(null),
       () => setError(fr.moveFailed(cardOf(ticketId)?.shortKey ?? "")),
     );
+  const resume = (step: HeldStep): Promise<boolean> =>
+    sdk.run({ method: "setHold", ticketId: step.ticketId, reason: null }).then(
+      () => {
+        setError(null);
+        sdk.toast(fr.held.resumed(step.key));
+        return true;
+      },
+      () => {
+        setError(fr.held.failed(step.key));
+        return false;
+      },
+    );
+  const resumeIn = async (step: HeldStep, sprintId: string) => {
+    if (await resume(step)) await plan(step.featureId, sprintId);
+  };
   const onDragEnd = (e: DragEndEvent) => {
     stop();
     const drop = planDrop({
@@ -149,6 +165,8 @@ function PlanningBoard({ today }: { today: string }) {
         onNewFeature={() => setDialog({ kind: "feature" })}
         onNewSprint={() => setDialog({ kind: "sprint", sprint: null })}
         onPlan={(target) => plan(target.cardId, target.sprintId)}
+        onResume={(step) => void resume(step)}
+        onResumeIn={(step, sprintId) => void resumeIn(step, sprintId)}
       />
       <DragPreview>{dragged ? <FeatureCardPreview card={dragged} /> : null}</DragPreview>
       {dialog?.kind === "sprint" && (

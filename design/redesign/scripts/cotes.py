@@ -95,24 +95,39 @@ SCREENS27 = [(6, "P1 bis v3 · Vue d'ensemble", "proposition-vue-ensemble-v3"), 
     (8, "P6 · Nouveau projet", "proposition-nouveau-projet"), (9, "P7 · Kanban", "proposition-kanban"), (10, "P8 · Fiche ticket", "proposition-fiche-ticket"),
     (11, "P8b · Fiche ticket, Activité", "proposition-fiche-ticket-activite"), (12, "P9 · Questions", "proposition-questions")]
 MARK27 = "\n## Phase 27\n"
+SCREENS29 = [(14, "P1 bis · Vue d'ensemble · en attente", "proposition-attente-vue-ensemble"), (15, "P2 · Planning · en attente", "proposition-attente-planning"),
+    (16, "P3 · Fonctionnalité · en attente", "proposition-attente-fonctionnalite"), (17, "P7 · Kanban · en attente", "proposition-attente-kanban"),
+    (18, "P8 · Fiche ticket · en attente", "proposition-attente-fiche-ticket"), (19, "P8c · Mettre en attente", "proposition-attente-dialogue"),
+    (20, "P8d · Fiche ticket, menu", "proposition-attente-fiche-menu"), (21, "P8e · Fiche ticket en attente, menu", "proposition-attente-fiche-menu-reprendre"),
+    (22, "P2b · Planning, Reprendre dans", "proposition-attente-planning-menu")]
+MARK29 = "\n## Phase 29\n"
 if "--sections" in sys.argv:
     wanted = sys.argv[sys.argv.index("--sections") + 1].split(",")
     cur = open(W + "/cotes.md").read()
-    for i, name, png in SCREENS + SCREENS27:
+    for i, name, png in SCREENS + SCREENS27 + SCREENS29:
         if str(i) not in wanted: continue
-        where = "" if (i, name, png) in SCREENS27 else f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Silo » du fichier « Kibo »"
+        where = "" if (i, name, png) in SCREENS27 + SCREENS29 else f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Silo » du fichier « Kibo »"
         start = cur.index(f"\n## {name}\n") + 1
         nxt = re.search(r"\n## ", cur[start + 3:]); end = start + 3 + nxt.start() + 1 if nxt else len(cur)
         cur = cur[:start] + screen_md(i, name, png, where) + ("\n\n" if nxt else "\n") + cur[end:]
     open(W + "/cotes.md", "w").write(cur)
     print(sum(1 for _ in open(W + "/cotes.md")))
     sys.exit(0)
+if "--phase29" in sys.argv:
+    cur = open(W + "/cotes.md").read()
+    cur = cur.split(MARK29)[0].rstrip("\n") + "\n"
+    intro = ["## Phase 29", "", "Étapes en attente (spec §41), données `silo-attente` (section « Phase 29 · étapes en attente » de `design/donnees-fictives.md`). Chaque board clone la référence pixel de son écran (P1 bis v3, P2, P3, P7, P8) puis y pose l'attente (`scripts/56-phase-29.js`) ; P8c pose le dialogue « Mettre SILO-82 en attente » sur le Kanban en attente. Rangées à partir de y = 24 500 (pas de 1 500 px), sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` par board, puis `python3 scripts/cotes.py <dossier des JSON> --phase29`, qui remplace cette partie seulement. Le dialogue et les menus (P8d, P8e, P2b) n'ont pas de comparaison au pixel (capture seulement)."]
+    parts = [screen_md(i, name, png, "") for i, name, png in SCREENS29]
+    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
+    print(sum(1 for _ in open(W + "/cotes.md")))
+    sys.exit(0)
 if "--phase27" in sys.argv:
     cur = open(W + "/cotes.md").read()
+    tail29 = (MARK29 + cur.split(MARK29)[1]) if MARK29 in cur else ""
     cur = cur.split(MARK27)[0].rstrip("\n") + "\n"
     intro = ["## Phase 27", "", "Boards de la phase 27 (spec §39, §39.6), relevés comme les précédents : `scripts/95-cotes.js` par board, puis `python3 scripts/cotes.py <dossier des JSON> --phase27`, qui remplace cette partie seulement. Rangées à partir de y = 8 000 (pas de 1 500 px). Mêmes tokens, polices et règles qu'en tête ; horloge figée au vendredi 16 octobre (S42), sauf la variante « En retard au 18 oct. » (dimanche, S42 terminé), données `silo-maquettes`. La barre repliée (`exports/proposition-barre-repliee-*.png`, 1 180 × 1 000) et le panneau de l'agent (`exports/proposition-agent-{question,recap}-*.png`, 340 × 1 000) servent de référence visuelle, sans cotes ni comparaison au pixel."]
     parts = [screen_md(i, name, png, "") for i, name, png in SCREENS27]
-    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
+    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n" + tail29)
     print(sum(1 for _ in open(W + "/cotes.md")))
     sys.exit(0)
 for i, name, png in SCREENS:

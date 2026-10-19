@@ -18,6 +18,7 @@ const step = (ticketId: string, statusId: StatusId, review?: PrReview) => ({
   statusId,
   optional: false,
   pr: review === undefined ? null : pr(review),
+  onHold: null,
 });
 
 test("a step back from review with changes requested is the next to deliver", () => {
@@ -47,4 +48,11 @@ test("a step in review without requested changes or already in progress is skipp
 test("a delivered feature has no next step", () => {
   expect(nextDeliverableStep([step("a", "done"), step("b", "done")])).toBeNull();
   expect(nextDeliverableStep([])).toBeNull();
+});
+
+test("a step on hold is skipped", () => {
+  const onHold = { source: "own" as const, key: "SILO-33", reason: "R", since: "2026-10-16" };
+  const f5 = [step("SILO-31", "done"), { ...step("SILO-33", "todo"), onHold }, step("SILO-34", "todo")];
+  expect(nextDeliverableStep(f5)).toBe("SILO-34");
+  expect(nextDeliverableStep([{ ...step("SILO-33", "todo"), onHold }])).toBeNull();
 });

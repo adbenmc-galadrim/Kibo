@@ -15,7 +15,7 @@ import { Badge } from "@kibo/sdk/ui/badge";
 import { Bot } from "lucide-react";
 import type { ReactNode } from "react";
 import { AgentChip } from "./AgentChip";
-import { BlockedBadge, CardBadges, OptionalBadge } from "./CardBadges";
+import { BlockedBadge, CardBadges, HeldBadge, OptionalBadge } from "./CardBadges";
 import { fr } from "./fr";
 import { LabelChips } from "./LabelChips";
 import { startReasonText } from "./start-reason";
@@ -98,7 +98,8 @@ export function KanbanCardContent(props: Props) {
       <div className="flex flex-wrap items-center gap-[5px]">
         {t.optional && <OptionalBadge />}
         {blocked && <BlockedBadge question={blocking} />}
-        {t.waitingOn.map((k) => (
+        {t.onHold !== null && <HeldBadge hold={t.onHold} />}
+        {(t.onHold === null ? t.waitingOn : []).map((k) => (
           <Badge key={k} variant="outline" className="max-w-full text-3xs">
             <span className="truncate">{fr.waitingOn(k)}</span>
           </Badge>

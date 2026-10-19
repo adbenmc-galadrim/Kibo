@@ -38,6 +38,7 @@ function handlersOf(
     onOpenSprint: (id) => sdk.sprints.open(id),
     onOpenQuestion: (id) => sdk.openView("questions", { question: id }),
     onOpenQuestions: () => sdk.openView("questions"),
+    onOpenPlanning: () => sdk.openView("planning"),
     onNewFeature: () => sdk.openView("planning", { intent: { kind: "newFeature" } }),
     onChooseFolder: () => sdk.project.edit({ field: "folder" }),
   };

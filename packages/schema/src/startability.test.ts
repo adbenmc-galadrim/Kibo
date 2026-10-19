@@ -17,6 +17,7 @@ const ready: StartFacts = {
   busy: false,
   blockers: [],
   blockingQuestion: null,
+  onHold: null,
   feature: { id: "f4", sprint: S42, waitingSteps: [] },
 };
 
@@ -114,6 +115,7 @@ test("reasons come in order: status, dependency, question, sprint, limit", () =>
     busy: false,
     blockers: [{ key: "SILO-33", statusId: "todo" }],
     blockingQuestion: { number: 14, importRef: null },
+    onHold: null,
     feature: { id: "f6", sprint: S43, waitingSteps: [] },
   };
   const full = { ...ctx, limit: 1 };
@@ -134,6 +136,7 @@ const factsArb = fc.record({
   blockingQuestion: fc.option(
     fc.record({ number: fc.integer({ min: 1, max: 30 }), importRef: fc.constant(null) }),
   ),
+  onHold: fc.constant(null),
   feature: fc.constant(null),
 });
 
@@ -152,11 +155,11 @@ test("outside any feature, the rule agrees with the former isStartable", () => {
 });
 
 const steps = [
-  { ticketId: "s1", key: "PFD-1", statusId: "done" as const, optional: false },
-  { ticketId: "s2", key: "PFD-2", statusId: "in_review" as const, optional: false },
-  { ticketId: "s3", key: "PFD-3", statusId: "todo" as const, optional: false },
-  { ticketId: "s4", key: "PFD-4", statusId: "todo" as const, optional: true },
-  { ticketId: "s5", key: "PFD-5", statusId: "todo" as const, optional: true },
+  { ticketId: "s1", key: "PFD-1", statusId: "done" as const, optional: false, onHold: null },
+  { ticketId: "s2", key: "PFD-2", statusId: "in_review" as const, optional: false, onHold: null },
+  { ticketId: "s3", key: "PFD-3", statusId: "todo" as const, optional: false, onHold: null },
+  { ticketId: "s4", key: "PFD-4", statusId: "todo" as const, optional: true, onHold: null },
+  { ticketId: "s5", key: "PFD-5", statusId: "todo" as const, optional: true, onHold: null },
 ];
 
 test("the last step waits for the other mandatory steps not delivered", () => {
@@ -171,7 +174,9 @@ test("an optional step never makes the last step wait, and only the last step wa
 
 test("the only step of a feature does not wait", () => {
   expect(
-    lastStepWaitsOn("s1", [{ ticketId: "s1", key: "PFD-1", statusId: "todo", optional: false }]),
+    lastStepWaitsOn("s1", [
+      { ticketId: "s1", key: "PFD-1", statusId: "todo", optional: false, onHold: null },
+    ]),
   ).toEqual([]);
 });
 
@@ -204,11 +209,40 @@ const stepArb = fc.record({
 test("the last step waits exactly when a mandatory other step is not done", () => {
   fc.assert(
     fc.property(fc.array(stepArb, { minLength: 2, maxLength: 6 }), (raw) => {
-      const all = raw.map((s, i) => ({ ...s, ticketId: `s${i}`, key: `K-${i}` }));
+      const all = raw.map((s, i) => ({ ...s, ticketId: `s${i}`, key: `K-${i}`, onHold: null }));
       const last = all[all.length - 1];
       if (last === undefined) return;
       const pending = all.slice(0, -1).some((s) => !s.optional && s.statusId !== "done");
       expect(lastStepWaitsOn(last.ticketId, all).length > 0).toBe(pending);
     }),
   );
+});
+
+const HOLD = { source: "own" as const, key: "SILO-33", reason: "Serveur MinIO", since: "2026-10-16" };
+const silo = (n: number, statusId: StatusId, held = false) => ({
+  ticketId: String(n),
+  key: `SILO-${n}`,
+  statusId,
+  optional: false,
+  onHold: held ? HOLD : null,
+});
+
+test("a step on hold is not startable, before its dependencies", () => {
+  const blockers = [{ key: "SILO-32", statusId: "in_review" as const }];
+  expect(startable({ ...ready, onHold: HOLD, blockers }, ctx)).toEqual({
+    startable: false,
+    reason: { kind: "onHold", hold: HOLD },
+  });
+  expect(startable({ ...ready, statusId: "in_progress", onHold: HOLD }, ctx)).toEqual({
+    startable: false,
+    reason: { kind: "status" },
+  });
+});
+
+test("the last step does not wait for a step on hold, and a step on hold is not the last", () => {
+  expect(lastStepWaitsOn("35", [silo(33, "todo", true), silo(34, "done"), silo(35, "todo")])).toEqual([]);
+  expect(lastStepWaitsOn("34", [silo(33, "todo"), silo(34, "todo"), silo(35, "todo", true)])).toEqual([
+    "SILO-33",
+  ]);
+  expect(lastStepWaitsOn("35", [silo(33, "todo"), silo(35, "todo", true)])).toEqual([]);
 });

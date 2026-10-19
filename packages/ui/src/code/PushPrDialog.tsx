@@ -15,6 +15,7 @@ import { Textarea } from "@kibo/sdk/ui/textarea";
 import { GitBranch, GitPullRequest, SquareTerminal, TriangleAlert, User } from "lucide-react";
 import { type ReactNode, useEffect, useId, useState } from "react";
 import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import { errorMessage } from "../lib/error-message";
 import { parseReviewers, prCommandPreview } from "./pr-command";
 
@@ -100,13 +101,13 @@ export function PushPrDialog(p: Props) {
         onCloseAutoFocus={p.onCloseAutoFocus}
       >
         <DialogHeader>
-          <DialogTitle>{fr.pr.title}</DialogTitle>
+          <DialogTitle>{frChanges.pr.title}</DialogTitle>
           <DialogDescription>
-            {fr.pr.subtitle(p.branch, p.base, p.unpushedCount, p.fileCount)}
+            {frChanges.pr.subtitle(p.branch, p.base, p.unpushedCount, p.fileCount)}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-2">
-          <Label htmlFor={`${id}-title`}>{fr.pr.prTitle}</Label>
+          <Label htmlFor={`${id}-title`}>{frChanges.pr.prTitle}</Label>
           <Input
             id={`${id}-title`}
             disabled={busy}
@@ -115,7 +116,7 @@ export function PushPrDialog(p: Props) {
           />
         </div>
         <div className="grid gap-2">
-          <Label htmlFor={`${id}-body`}>{fr.pr.description}</Label>
+          <Label htmlFor={`${id}-body`}>{frChanges.pr.description}</Label>
           <Textarea
             id={`${id}-body`}
             disabled={busy}
@@ -126,7 +127,7 @@ export function PushPrDialog(p: Props) {
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="grid gap-2">
-            <Label htmlFor={`${id}-base`}>{fr.pr.base}</Label>
+            <Label htmlFor={`${id}-base`}>{frChanges.pr.base}</Label>
             <Select value={p.base} disabled={busy} onValueChange={p.onBaseChange}>
               <SelectTrigger id={`${id}-base`} className="w-full">
                 <GitBranch aria-hidden className="text-muted-foreground" />
@@ -142,30 +143,30 @@ export function PushPrDialog(p: Props) {
             </Select>
           </div>
           <div className="grid content-start gap-2">
-            <Label htmlFor={`${id}-reviewers`}>{fr.pr.reviewers}</Label>
+            <Label htmlFor={`${id}-reviewers`}>{frChanges.pr.reviewers}</Label>
             <div className="relative">
               <User aria-hidden className="absolute top-2.5 left-3 size-4 text-muted-foreground" />
               <Input
                 id={`${id}-reviewers`}
                 disabled={busy}
                 className="pl-9"
-                placeholder={fr.pr.reviewersPlaceholder}
+                placeholder={frChanges.pr.reviewersPlaceholder}
                 value={reviewers}
                 onChange={(e) => setReviewers(e.target.value)}
                 aria-invalid={parsed.invalid !== null}
               />
             </div>
             {parsed.invalid && (
-              <p className="text-xs text-destructive">{fr.pr.invalidReviewer(parsed.invalid)}</p>
+              <p className="text-xs text-destructive">{frChanges.pr.invalidReviewer(parsed.invalid)}</p>
             )}
           </div>
         </div>
         {p.stagedCount > 0 && (
           <div className="flex items-center gap-3 rounded-md border border-amber-400 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-600/70 dark:bg-amber-500/10 dark:text-amber-300">
             <TriangleAlert aria-hidden className="size-4 shrink-0 text-amber-500" />
-            <span className="flex-1">{fr.pr.staged(p.stagedCount)}</span>
+            <span className="flex-1">{frChanges.pr.staged(p.stagedCount)}</span>
             <Button variant="outline" size="sm" className="text-foreground" onClick={p.onCommitFirst}>
-              {fr.pr.commitFirst}
+              {frChanges.pr.commitFirst}
             </Button>
           </div>
         )}
@@ -178,7 +179,7 @@ export function PushPrDialog(p: Props) {
               onCheckedChange={(v) => setDraft(v === true)}
             />
             <Label htmlFor={`${id}-draft`} className="font-normal">
-              {fr.pr.draft}
+              {frChanges.pr.draft}
             </Label>
           </div>
           {p.ticketKey && (
@@ -190,7 +191,7 @@ export function PushPrDialog(p: Props) {
                 onCheckedChange={(v) => setLink(v === true)}
               />
               <Label htmlFor={`${id}-link`} className="font-normal">
-                {fr.pr.link(p.ticketKey)}
+                {frChanges.pr.link(p.ticketKey)}
               </Label>
             </div>
           )}
@@ -215,7 +216,7 @@ export function PushPrDialog(p: Props) {
             </Button>
             <Button disabled={busy || parsed.invalid !== null || title.trim().length === 0} onClick={submit}>
               <GitPullRequest />
-              {busy ? fr.pr.creating : fr.pr.submit}
+              {busy ? frChanges.pr.creating : frChanges.pr.submit}
             </Button>
           </div>
         </DialogFooter>

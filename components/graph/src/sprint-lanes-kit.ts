@@ -152,6 +152,7 @@ export function kitView(over: Partial<TicketView> & Pick<TicketView, "id" | "tit
   return {
     key: over.id,
     pendingSeq: null,
+    hold: null,
     description: "",
     statusId: "todo",
     blockedReason: null,
@@ -171,6 +172,7 @@ export function kitView(over: Partial<TicketView> & Pick<TicketView, "id" | "tit
     openQuestions: 0,
     startable: false,
     startReason: null,
+    onHold: null,
     effectiveSprintId: null,
     feature: null,
     session: null,

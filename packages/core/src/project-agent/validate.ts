@@ -13,6 +13,7 @@ import {
 import { type BatchContext, captureExpected, ticketByKey, ticketRuns } from "./expected";
 import { assignableAgents } from "./overview";
 import { isNewRef, signalRefsOf, ticketRefsOf } from "./refs";
+import { holdChecks } from "./validate-hold";
 import { answerQuestionCheck, questionChecks } from "./validate-questions";
 import { type Check, type Edge, nodeOf, openScan, type Scan, touch } from "./validate-scan";
 import { sprintChecks } from "./validate-sprints";
@@ -174,6 +175,7 @@ const checks: { [T in ActionType]: Check<T> } = {
     return touch(scan, a.signal);
   },
   ...sprintChecks,
+  ...holdChecks,
 };
 
 function runCheck<T extends ActionType>(

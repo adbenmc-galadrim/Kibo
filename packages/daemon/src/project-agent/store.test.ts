@@ -36,6 +36,7 @@ const PRINT: TicketPrint = {
   branch: null,
   pr: null,
   blockedBy: [],
+  hold: null,
 };
 const FP: ProjectFingerprint = {
   tickets: { t1: PRINT },

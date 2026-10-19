@@ -97,4 +97,23 @@ describe("my work list", () => {
     expect([rework?.pr?.number, rework?.changes]).toEqual([20, true]);
     expect(items.find((i) => i.ticket.key === "KIB-51")?.blockedBy).toBe("Q14");
   });
+
+  test("a step on hold waits, even in review with changes requested or in progress", () => {
+    const base = project();
+    const hold = {
+      source: "own" as const,
+      key: "KIB-45",
+      reason: "Accès VPN du client",
+      since: "2026-10-16",
+    };
+    const held = new Set(["KIB-45", "KIB-7"]);
+    const snapshot = {
+      ...base,
+      tickets: base.tickets.map((t) => (t.key !== null && held.has(t.key) ? { ...t, onHold: hold } : t)),
+    };
+    const groups = keys(snapshot);
+    expect(groups.find(([g]) => g === "toFix")?.[1] ?? []).not.toContain("KIB-45");
+    expect(groups.find(([g]) => g === "inProgress")?.[1] ?? []).not.toContain("KIB-7");
+    expect(groups.find(([g]) => g === "waiting")?.[1]).toEqual(expect.arrayContaining(["KIB-45", "KIB-7"]));
+  });
 });

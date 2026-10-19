@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Hold } from "./hold";
 import { isArchived, isOpen, type Question } from "./question";
 import { RunState } from "./run";
 
@@ -12,6 +13,7 @@ export const TicketPrintSchema = z.object({
   branch: z.string().nullable(),
   pr: z.string().nullable(),
   blockedBy: z.array(z.string()).default([]),
+  hold: Hold.nullable().default(null),
 });
 export type TicketPrint = z.infer<typeof TicketPrintSchema>;
 

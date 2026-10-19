@@ -19,6 +19,7 @@ const ticket = (id: string, key: string, title: string, patch: Partial<TicketVie
   id,
   key,
   pendingSeq: null,
+  hold: null,
   keyLabel: key,
   title,
   description: "",
@@ -34,6 +35,7 @@ const ticket = (id: string, key: string, title: string, patch: Partial<TicketVie
   openQuestions: 0,
   startable: false,
   startReason: null,
+  onHold: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,
@@ -228,3 +230,62 @@ export const SESSION_RUN = {
   startedAt: NOW - 42 * 60_000,
   createdAt: NOW - 45 * 60_000,
 };
+
+export const MINIO = "Serveur MinIO de recette indisponible";
+export const MERGE_RULE = "Règle de fusion à valider par le client";
+const ownHold = (key: string, reason: string) => ({
+  source: "own" as const,
+  key,
+  reason,
+  since: "2026-10-16",
+});
+const HELD_PATCH: Record<string, Partial<TicketView>> = {
+  e33: { hold: { reason: MINIO, since: "2026-10-16" }, onHold: ownHold("SILO-33", MINIO) },
+  e34: { onHold: { ...ownHold("SILO-33", MINIO), source: "dependency" } },
+  e35: { onHold: { ...ownHold("SILO-33", MINIO), source: "dependency" } },
+};
+
+const withHeldReason = (t: TicketView): TicketView => {
+  const patched = { ...t, ...HELD_PATCH[t.id] };
+  return patched.onHold === null || patched.statusId !== "todo"
+    ? patched
+    : { ...patched, startable: false, startReason: { kind: "onHold", hold: patched.onHold } };
+};
+
+const F4_STEPS: TicketView[] = [
+  ticket("e41", "SILO-41", "Schéma local des constats", { parentId: "f4", statusId: "done" }),
+  ticket("e42", "SILO-42", "Formulaire de saisie", { parentId: "f4", statusId: "done" }),
+  ticket("e43", "SILO-43", "Synchro au retour du réseau", { parentId: "f4", statusId: "done" }),
+  ticket("e45", "SILO-45", "Conflits de saisie", {
+    parentId: "f4",
+    statusId: "in_review",
+    hold: { reason: MERGE_RULE, since: "2026-10-16" },
+    onHold: ownHold("SILO-45", MERGE_RULE),
+  }),
+];
+
+export function siloHeldProject(): ProjectSnapshot {
+  const base = siloFeatureProject();
+  const steps = base.tickets.filter((t) => t.parentId === "f5").map(withHeldReason);
+  const f5 = base.tickets.find((t) => t.id === "f5");
+  if (!f5) throw new Error("fixture without F5");
+  const F4 = ticket("f4", "SILO-40", "Saisir un constat hors ligne", {
+    parentId: null,
+    statusId: "in_progress",
+    shortKey: "F4",
+    sprintId: "s42",
+    progress: { done: 3, total: 4 },
+    feature: feature(F4_STEPS, "f4", "2026-10-16", "2026-10-16"),
+  });
+  const others = base.tickets.filter((t) => t.parentId !== "f5" && t.id !== "f5");
+  return {
+    ...base,
+    tickets: [
+      F4,
+      ...F4_STEPS,
+      ...others,
+      { ...f5, feature: feature(steps, "f5", "2026-10-16", "2026-10-16") },
+      ...steps,
+    ],
+  };
+}

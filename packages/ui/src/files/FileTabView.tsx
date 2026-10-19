@@ -4,6 +4,7 @@ import { FileCode, Pencil, RotateCw, Save, SquareTerminal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import { errorMessage } from "../lib/error-message";
 import { isRemoteView } from "../lib/remote-view";
 import { CodeEditor } from "./CodeEditor";
@@ -130,7 +131,7 @@ export function FileTabView({ fileRef, startEditing, remote = isRemoteView() }: 
           {stale && (
             <Button variant="outline" size="sm" onClick={reload}>
               <RotateCw />
-              {fr.changes.reload}
+              {frChanges.changes.reload}
             </Button>
           )}
         </div>

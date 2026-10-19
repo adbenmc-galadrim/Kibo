@@ -98,6 +98,8 @@ export const frTicketTracking = {
     questionCreated: "Question posée",
     questionAnswered: "Question répondue",
     questionReminded: (ref: string | null) => `${ref ?? "Question"} relancée`,
+    held: (reason: string | null) => (reason ? `Mise en attente · ${reason}` : "Mise en attente"),
+    resumed: "Reprise",
     other: "Mise à jour du suivi",
   },
 };

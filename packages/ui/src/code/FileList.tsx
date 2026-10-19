@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@kibo/sd
 import { ContextMenuEntries, DropdownMenuEntries, type MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { ChevronDown, Ellipsis } from "lucide-react";
 import { useId, useState } from "react";
-import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import { fileMenuEntries } from "./file-menu";
 import { ADDED, KIND_TONE, MUTED, REMOVED, splitPath } from "./file-tones";
 
@@ -44,7 +44,7 @@ const rowEntries = ({ file, readOnly, ...h }: RowProps): MenuEntry[] =>
   fileMenuEntries({
     file,
     readOnly,
-    texts: fr.changes,
+    texts: frChanges.changes,
     actions: {
       viewDiff: () => h.onSelect(file),
       openInTab: () => h.onOpenInTab(file),
@@ -63,7 +63,7 @@ function RowActions({ path, entries }: { path: string; entries: MenuEntry[] }) {
           size="icon"
           variant="ghost"
           className="size-6 shrink-0"
-          aria-label={fr.changes.fileActions(path)}
+          aria-label={frChanges.changes.fileActions(path)}
         >
           <Ellipsis aria-hidden className="size-3.5" />
         </Button>
@@ -95,7 +95,9 @@ function Row(props: RowProps) {
             <Checkbox
               checked={staged}
               disabled={busy || file.kind === "conflicted"}
-              aria-label={staged ? fr.changes.unstageFile(file.path) : fr.changes.stageFile(file.path)}
+              aria-label={
+                staged ? frChanges.changes.unstageFile(file.path) : frChanges.changes.stageFile(file.path)
+              }
               onCheckedChange={() => onToggle(file)}
             />
           )}
@@ -106,7 +108,7 @@ function Row(props: RowProps) {
             onClick={() => onSelect(file)}
           >
             <span className={cn("w-14 shrink-0 text-2xs font-medium", KIND_TONE[file.kind])}>
-              {fr.changes.kind[file.kind]}
+              {frChanges.changes.kind[file.kind]}
             </span>
             <span className="min-w-0 flex-1">
               <span className={cn("block truncate font-mono text-xs", file.kind === "deleted" && MUTED)}>
@@ -154,7 +156,7 @@ function Section({ area, title, files, bulk, selected, busy, readOnly, ...handle
         >
           <ChevronDown aria-hidden className={cn("size-3.5 transition-transform", !open && "-rotate-90")} />
           <span id={id} className="truncate">
-            {fr.changes.section(title, files.length)}
+            {frChanges.changes.section(title, files.length)}
           </span>
         </button>
         {!readOnly && files.length > 0 && (
@@ -194,16 +196,16 @@ export function FileList({ files, onStageAll, onUnstageAll, ...rest }: Props) {
     <div className="grid gap-2">
       <Section
         area="staged"
-        title={fr.changes.staged}
+        title={frChanges.changes.staged}
         files={staged}
-        bulk={{ label: fr.changes.unstageAll, onClick: onUnstageAll }}
+        bulk={{ label: frChanges.changes.unstageAll, onClick: onUnstageAll }}
         {...rest}
       />
       <Section
         area="unstaged"
-        title={fr.changes.unstaged}
+        title={frChanges.changes.unstaged}
         files={unstaged}
-        bulk={{ label: fr.changes.stageAll, onClick: onStageAll }}
+        bulk={{ label: frChanges.changes.stageAll, onClick: onStageAll }}
         {...rest}
       />
     </div>

@@ -122,6 +122,8 @@ export function capture(
       return { hash: ctx.notes.find((n) => n.path === action.path)?.hash ?? null };
     case "setSprint":
       return onTicket(action.ticket, ticketOf, (t) => ({ sprintId: t.sprintId }));
+    case "setHold":
+      return onTicket(action.ticket, ticketOf, (t) => ({ hold: t.hold }));
     case "createSprint":
       return { exists: ctx.project.sprints.some((s) => sameSprintCode(s.code, action.code)) };
     case "remindQuestion":

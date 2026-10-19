@@ -12,6 +12,7 @@ import {
   type Assignments,
   branchRef,
   branchToDeclare,
+  holdCommand,
   parseAssignments,
   prRef,
   statusCommand,
@@ -65,6 +66,11 @@ export async function applySet(req: SetRequest, ident: string, ctx: TicketsConte
   if (!ticket) return notFound(ident, io);
   const projectId = snapshot.meta.id;
   const changes: string[] = [];
+  const hold = holdCommand(ticket, req.set);
+  if (hold !== null) {
+    await client.rpc({ method: "command", projectId, command: hold });
+    changes.push(hold.reason === null ? frTickets.hold.off : frTickets.hold.set(hold.reason));
+  }
   const status = statusCommand(ticket, req.set, frTickets.defaultBlockedReason);
   if (status !== null) {
     await client.rpc({ method: "command", projectId, command: status });

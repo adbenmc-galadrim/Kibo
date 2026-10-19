@@ -1,7 +1,7 @@
 import type { ChangeArea, FileChange, FileDiff } from "@kibo/schema";
 import { useState } from "react";
 import { useWrap } from "../files/wrap-pref";
-import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import { DiffEditorPane } from "./DiffEditorPane";
 import { DiffToolbar } from "./DiffToolbar";
 import { type DiffMode, DiffView } from "./DiffView";
@@ -24,7 +24,8 @@ type Props = {
 export function DiffColumn({ file, diff, ...p }: Props) {
   const [editing, setEditing] = useState(false);
   const [wrap, setWrap] = useWrap();
-  if (!file || !diff) return <p className="p-8 text-sm text-muted-foreground">{fr.changes.noSelection}</p>;
+  if (!file || !diff)
+    return <p className="p-8 text-sm text-muted-foreground">{frChanges.changes.noSelection}</p>;
   const canEdit = !p.readOnly && file.area === "unstaged" && file.kind !== "deleted" && !diff.binary;
   const line = diff.hunks[0]?.newStart ?? null;
   return (

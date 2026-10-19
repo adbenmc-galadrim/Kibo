@@ -68,6 +68,7 @@ function itemOf(
 }
 
 export function groupOf(item: WorkItem): WorkGroup {
+  if (item.ticket.onHold !== null) return "waiting";
   if (item.changes || item.ci === "error") return "toFix";
   if (ACTIVE.has(item.ticket.statusId)) return "inProgress";
   if (item.ticket.startable && item.blockedBy === null && item.ticket.statusId !== "blocked")

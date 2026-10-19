@@ -87,6 +87,14 @@ describe("buildProjectAgentPrompt", () => {
     }
   });
 
+  test("the hold rules follow the sprints: when to put a step on hold and when to resume it", () => {
+    const holds = prompt.indexOf("## Étapes en attente");
+    expect(prompt.indexOf("## Sprints")).toBeLessThan(holds);
+    expect(holds).toBeLessThan(prompt.indexOf("## Interdits"));
+    expect(prompt).toContain("`setHold`");
+    expect(prompt).toContain("`reason: null`");
+  });
+
   test("adds the guidelines of the chain afterwards, in order", () => {
     const protocol = prompt.indexOf("propose_batch");
     const first = prompt.indexOf("Toujours en français.");

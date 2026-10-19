@@ -72,6 +72,33 @@ export function seedPlanning(run: Run) {
   return { sprints: { s41, s42, s43, s44 }, features: { f1, f2, f3, f4, f5, f6, f7, f8, f9 }, lone };
 }
 
+export const HOLD_RULE = "Règle de fusion à valider par le client";
+export const HOLD_SERVER = "Serveur MinIO de recette indisponible";
+
+export const hold = (run: Run, step: Ticket | undefined, reason: string) => {
+  if (!step) throw new Error("step missing");
+  run({ method: "setHold", ticketId: step.id, reason, since: TODAY });
+};
+
+export function seedPlanningHeld(run: Run) {
+  const seeded = seedPlanning(run);
+  const { f4, f5, f7 } = seeded.features;
+  const [, , s3, s4, s5] = f5.steps;
+  if (!s3 || !s4 || !s5) throw new Error("F5 steps missing");
+  run({ method: "addLink", from: s3.id, to: s4.id, type: "blocks" });
+  run({ method: "addLink", from: s4.id, to: s5.id, type: "blocks" });
+  hold(run, f4.steps[3], HOLD_RULE);
+  hold(run, s3, HOLD_SERVER);
+  hold(run, f7.steps[1], HOLD_SERVER);
+  return seeded;
+}
+
+export function addHeldStep(run: Run, root: Ticket, reason: string): Ticket {
+  const step = ticket(run, `${root.title} · en attente`, root.id);
+  hold(run, step, reason);
+  return step;
+}
+
 export const seed = (run: Run) => {
   seedPlanning(run);
 };

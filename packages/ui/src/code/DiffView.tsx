@@ -2,7 +2,7 @@ import type { ChangeArea, DiffLine, FileDiff, Hunk } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { memo } from "react";
-import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import { splitRows } from "./diff-rows";
 
 export type DiffMode = "unified" | "split";
@@ -75,8 +75,8 @@ type Props = {
 };
 
 export function DiffView({ diff, area, mode, busy, wrap, onHunk }: Props) {
-  if (diff.binary) return <p className="p-6 text-sm text-muted-foreground">{fr.changes.binary}</p>;
-  const label = area === "unstaged" ? fr.changes.stageHunk : fr.changes.unstageHunk;
+  if (diff.binary) return <p className="p-6 text-sm text-muted-foreground">{frChanges.changes.binary}</p>;
+  const label = area === "unstaged" ? frChanges.changes.stageHunk : frChanges.changes.unstageHunk;
   return (
     <div className="min-w-0 flex-1 overflow-auto font-mono text-xs leading-6">
       {diff.hunks.map((hunk, index) => (

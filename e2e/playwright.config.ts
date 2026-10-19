@@ -1,6 +1,13 @@
 import { defineConfig, type PlaywrightTestConfig, type Project } from "@playwright/test";
-import { PIXEL_DAEMONS, pixelKitProject, pixelProjectOptions, trackingProjects } from "./pixel-projects";
-import { SILO_MAQUETTES } from "./pixel-settings";
+import { ALL_DAEMONS } from "./daemons";
+import {
+  ATTENTE_DAEMONS,
+  attenteProjects,
+  pixelKitProject,
+  pixelProjectOptions,
+  trackingProjects,
+} from "./pixel-projects";
+import { isSiloScenario } from "./pixel-settings";
 import { SYNC_PORTS } from "./sync-fixture";
 import { seedReadyPort } from "./token";
 
@@ -18,234 +25,8 @@ function onlyTheme(): Theme | null {
 const only = onlyTheme();
 const inTheme = (scheme: Theme): boolean => only === null || only === scheme;
 
-const allDaemons = [
-  { name: "dark", scheme: "dark", port: 4390, spec: /mvp\.spec\.ts/, scenario: "question" },
-  { name: "light", scheme: "light", port: 4391, spec: /mvp\.spec\.ts/, scenario: "question" },
-  { name: "tabs-dark", scheme: "dark", port: 4396, spec: /tabs\.spec\.ts/, scenario: "question" },
-  { name: "tabs-light", scheme: "light", port: 4397, spec: /tabs\.spec\.ts/, scenario: "question" },
-  { name: "screens-dark", scheme: "dark", port: 4398, spec: /screens\.spec\.ts/, scenario: "routes" },
-  { name: "screens-light", scheme: "light", port: 4399, spec: /screens\.spec\.ts/, scenario: "routes" },
-  {
-    name: "catalog-dark",
-    scheme: "dark",
-    port: 4400,
-    spec: /catalog\.spec\.ts/,
-    scenario: "question",
-    drafts: "hello",
-  },
-  {
-    name: "catalog-light",
-    scheme: "light",
-    port: 4401,
-    spec: /catalog\.spec\.ts/,
-    scenario: "question",
-    drafts: "hello",
-  },
-  {
-    name: "integrations-dark",
-    scheme: "dark",
-    port: 4402,
-    spec: /integrations\.spec\.ts/,
-    scenario: "question",
-    integrations: true,
-  },
-  {
-    name: "integrations-light",
-    scheme: "light",
-    port: 4403,
-    spec: /integrations\.spec\.ts/,
-    scenario: "question",
-    integrations: true,
-  },
-  { name: "ia-dark", scheme: "dark", port: 4404, spec: /ia\.spec\.ts/, scenario: "ai/e2e-routes" },
-  { name: "ia-light", scheme: "light", port: 4405, spec: /ia\.spec\.ts/, scenario: "ai/e2e-routes" },
-  { name: "menus-dark", scheme: "dark", port: 4415, spec: /menus\.spec\.ts/, scenario: "question" },
-  { name: "menus-light", scheme: "light", port: 4416, spec: /menus\.spec\.ts/, scenario: "question" },
-  { name: "projects-dark", scheme: "dark", port: 4417, spec: /projects\.spec\.ts/, scenario: "question" },
-  { name: "projects-light", scheme: "light", port: 4418, spec: /projects\.spec\.ts/, scenario: "question" },
-  { name: "inbox-dark", scheme: "dark", port: 4419, spec: /inbox\.spec\.ts/, scenario: "question" },
-  { name: "inbox-light", scheme: "light", port: 4420, spec: /inbox\.spec\.ts/, scenario: "question" },
-  { name: "confort-dark", scheme: "dark", port: 4421, spec: /confort\.spec\.ts/, scenario: "question" },
-  { name: "confort-light", scheme: "light", port: 4422, spec: /confort\.spec\.ts/, scenario: "question" },
-  { name: "layout-dark", scheme: "dark", port: 4423, spec: /layout\.spec\.ts/, scenario: "question" },
-  { name: "layout-light", scheme: "light", port: 4424, spec: /layout\.spec\.ts/, scenario: "question" },
-  { name: "notes-dark", scheme: "dark", port: 4431, spec: /notes\.spec\.ts/, scenario: "question" },
-  { name: "notes-light", scheme: "light", port: 4432, spec: /notes\.spec\.ts/, scenario: "question" },
-  {
-    name: "creations-dark",
-    scheme: "dark",
-    port: 4425,
-    spec: /creations\.spec\.ts/,
-    scenario: "ai/creations-routes",
-  },
-  {
-    name: "creations-light",
-    scheme: "light",
-    port: 4426,
-    spec: /creations\.spec\.ts/,
-    scenario: "ai/creations-routes",
-  },
-  { name: "widgets-dark", scheme: "dark", port: 4429, spec: /widgets\.spec\.ts/, scenario: "question" },
-  { name: "widgets-light", scheme: "light", port: 4430, spec: /widgets\.spec\.ts/, scenario: "question" },
-  { name: "graph-dark", scheme: "dark", port: 4433, spec: /graph\.spec\.ts/, scenario: "question" },
-  { name: "graph-light", scheme: "light", port: 4434, spec: /graph\.spec\.ts/, scenario: "question" },
-  { name: "viewer-dark", scheme: "dark", port: 4437, spec: /viewer\.spec\.ts/, scenario: "question" },
-  { name: "viewer-light", scheme: "light", port: 4438, spec: /viewer\.spec\.ts/, scenario: "question" },
-  { name: "selection-dark", scheme: "dark", port: 4441, spec: /selection\.spec\.ts/, scenario: "question" },
-  { name: "selection-light", scheme: "light", port: 4442, spec: /selection\.spec\.ts/, scenario: "question" },
-  { name: "kanban-dark", scheme: "dark", port: 4455, spec: /kanban-drag\.spec\.ts/, scenario: "question" },
-  { name: "kanban-light", scheme: "light", port: 4456, spec: /kanban-drag\.spec\.ts/, scenario: "question" },
-  {
-    name: "questions-dark",
-    scheme: "dark",
-    port: 4457,
-    spec: /\/questions\.spec\.ts$/,
-    scenario: "question",
-  },
-  {
-    name: "questions-light",
-    scheme: "light",
-    port: 4458,
-    spec: /\/questions\.spec\.ts$/,
-    scenario: "question",
-  },
-  {
-    name: "project-agent-dark",
-    scheme: "dark",
-    port: 4459,
-    spec: /project-agent\.spec\.ts/,
-    scenario: "project-agent-routes",
-  },
-  {
-    name: "project-agent-light",
-    scheme: "light",
-    port: 4460,
-    spec: /project-agent\.spec\.ts/,
-    scenario: "project-agent-routes",
-  },
-  {
-    name: "files-dark",
-    scheme: "dark",
-    port: 4435,
-    spec: /files\.spec\.ts/,
-    scenario: "question",
-    drafts: "viewer",
-  },
-  {
-    name: "files-light",
-    scheme: "light",
-    port: 4436,
-    spec: /files\.spec\.ts/,
-    scenario: "question",
-    drafts: "viewer",
-  },
-  { name: "retired-dark", scheme: "dark", port: 4439, spec: /retired\.spec\.ts/, scenario: "question" },
-  { name: "retired-light", scheme: "light", port: 4440, spec: /retired\.spec\.ts/, scenario: "question" },
-  {
-    name: "add-component-dark",
-    scheme: "dark",
-    port: 4463,
-    spec: /add-component\.spec\.ts/,
-    scenario: "question",
-  },
-  {
-    name: "add-component-light",
-    scheme: "light",
-    port: 4464,
-    spec: /add-component\.spec\.ts/,
-    scenario: "question",
-  },
-  {
-    name: "onboarding-dark",
-    scheme: "dark",
-    port: 4443,
-    spec: /onboarding\.spec\.ts/,
-    scenario: "question",
-    noGh: true,
-  },
-  {
-    name: "onboarding-light",
-    scheme: "light",
-    port: 4444,
-    spec: /onboarding\.spec\.ts/,
-    scenario: "question",
-    noGh: true,
-  },
-  { name: "about-dark", scheme: "dark", port: 4449, spec: /about\.spec\.ts/, scenario: "question" },
-  { name: "about-light", scheme: "light", port: 4450, spec: /about\.spec\.ts/, scenario: "question" },
-  { name: "help-dark", scheme: "dark", port: 4451, spec: /help\.spec\.ts/, scenario: "question" },
-  { name: "help-light", scheme: "light", port: 4452, spec: /help\.spec\.ts/, scenario: "question" },
-  { name: "backups-dark", scheme: "dark", port: 4447, spec: /backups\.spec\.ts/, scenario: "question" },
-  { name: "backups-light", scheme: "light", port: 4448, spec: /backups\.spec\.ts/, scenario: "question" },
-  { name: "tutorial-dark", scheme: "dark", port: 4445, spec: /tutorial\.spec\.ts/, scenario: "question" },
-  { name: "tutorial-light", scheme: "light", port: 4446, spec: /tutorial\.spec\.ts/, scenario: "question" },
-  {
-    name: "design-dark",
-    scheme: "dark",
-    port: 4453,
-    spec: /design\.spec\.ts/,
-    scenario: "question",
-    design: true,
-  },
-  {
-    name: "design-light",
-    scheme: "light",
-    port: 4454,
-    spec: /design\.spec\.ts/,
-    scenario: "question",
-    design: true,
-  },
-  {
-    name: "embeds-dark",
-    scheme: "dark",
-    port: 4461,
-    spec: /embeds\.spec\.ts/,
-    scenario: "question",
-    embeds: true,
-  },
-  {
-    name: "embeds-light",
-    scheme: "light",
-    port: 4462,
-    spec: /embeds\.spec\.ts/,
-    scenario: "question",
-    embeds: true,
-  },
-  {
-    name: "visibility-dark",
-    scheme: "dark",
-    port: 4465,
-    spec: /visibility\.spec\.ts/,
-    scenario: "progress-routes",
-  },
-  {
-    name: "visibility-light",
-    scheme: "light",
-    port: 4466,
-    spec: /visibility\.spec\.ts/,
-    scenario: "progress-routes",
-  },
-  { name: "ensembles-dark", scheme: "dark", port: 4475, spec: /ensembles\.spec\.ts/, scenario: "question" },
-  { name: "ensembles-light", scheme: "light", port: 4476, spec: /ensembles\.spec\.ts/, scenario: "question" },
-  {
-    name: "suivi-dark",
-    scheme: "dark",
-    port: 4479,
-    spec: /(suivi|suivi-retours|barre-laterale)\.spec\.ts/,
-    scenario: SILO_MAQUETTES,
-    integrations: true,
-  },
-  {
-    name: "suivi-light",
-    scheme: "light",
-    port: 4480,
-    spec: /(suivi|suivi-retours|barre-laterale)\.spec\.ts/,
-    scenario: SILO_MAQUETTES,
-    integrations: true,
-  },
-  ...PIXEL_DAEMONS,
-] as const;
-const daemons = allDaemons.filter((d) => inTheme(d.scheme));
+const daemons = ALL_DAEMONS.filter((d) => inTheme(d.scheme));
+const servers = [...daemons, ...ATTENTE_DAEMONS.filter((d) => inTheme(d.scheme))];
 
 const allSyncProjects = [
   { name: "sync-dark", scheme: "dark", port: SYNC_PORTS.dark.a, after: [] },
@@ -272,6 +53,7 @@ export default defineConfig({
     ),
     ...(inTheme("dark") ? [pixelKitProject()] : []),
     ...trackingProjects(daemons.map((d) => d.name)),
+    ...THEMES.filter(inTheme).flatMap(attenteProjects),
     ...syncProjects.map(
       (p): Project => ({
         name: p.name,
@@ -282,7 +64,7 @@ export default defineConfig({
     ),
   ],
   webServer: [
-    ...daemons.map(
+    ...servers.map(
       (d): WebServer => ({
         command: [
           "bun serve.ts",
@@ -296,9 +78,9 @@ export default defineConfig({
         ]
           .filter((part) => part !== "")
           .join(" "),
-        url: `http://127.0.0.1:${d.scenario === SILO_MAQUETTES ? seedReadyPort(d.port) : d.port}/`,
+        url: `http://127.0.0.1:${isSiloScenario(d.scenario) ? seedReadyPort(d.port) : d.port}/`,
         reuseExistingServer: false,
-        timeout: d.scenario === SILO_MAQUETTES ? 120_000 : 60_000,
+        timeout: isSiloScenario(d.scenario) ? 120_000 : 60_000,
         gracefulShutdown: { signal: "SIGTERM", timeout: 5_000 },
       }),
     ),

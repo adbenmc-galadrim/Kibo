@@ -26,6 +26,7 @@ const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title"
   openQuestions: 0,
   startable: false,
   startReason: null,
+  onHold: null,
   agentProgress: EMPTY_PROGRESS,
   delivery: null,
   sprintId: null,
@@ -36,6 +37,7 @@ const ticket = (p: Partial<TicketView> & Pick<TicketView, "id" | "key" | "title"
   updatedAt: null,
   feature: null,
   pendingSeq: null,
+  hold: null,
   keyLabel: p.key ?? "",
   ...p,
 });
@@ -59,6 +61,7 @@ const lateFeature: FeatureState = {
   nextStepId: "s1",
   remaining: 7,
   started: true,
+  held: 0,
 };
 
 const STEP_STATUSES: readonly StatusId[] = [

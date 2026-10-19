@@ -22,6 +22,7 @@ const print = (p: Partial<TicketPrint> = {}): TicketPrint => ({
   branch: null,
   pr: null,
   blockedBy: [],
+  hold: null,
   ...p,
 });
 
@@ -228,6 +229,9 @@ const ticketPrint = fc.record({
   branch: fc.option(fc.constantFrom("feat/a"), { nil: null }),
   pr: fc.option(fc.constantFrom("#1 (open)"), { nil: null }),
   blockedBy: fc.subarray(["SILO-1", "SILO-2"]),
+  hold: fc.option(fc.record({ reason: fc.constantFrom("MinIO", "VPN"), since: fc.constant("2026-10-16") }), {
+    nil: null,
+  }),
 });
 const fingerprints = fc.record({
   tickets: fc.dictionary(ID, ticketPrint),
@@ -270,5 +274,18 @@ describe("digest properties", () => {
         expect(diffFingerprints(reversed(a), reversed(b), names)).toEqual(diffFingerprints(a, b, names));
       }),
     );
+  });
+});
+
+describe("holds in the digest", () => {
+  test("a step put on hold, given another reason, then resumed", () => {
+    const minio = { reason: "MinIO", since: "2026-10-16" };
+    const held = { ...base, tickets: { t1: print({ hold: minio }) } };
+    const other = { ...base, tickets: { t1: print({ hold: { ...minio, reason: "VPN" } }) } };
+    expect(diffFingerprints(base, held, names).map((c) => c.text)).toEqual([
+      "T(t1) : mis en attente · MinIO",
+    ]);
+    expect(diffFingerprints(held, other, names).map((c) => c.text)).toEqual(["T(t1) : en attente · VPN"]);
+    expect(diffFingerprints(held, base, names).map((c) => c.text)).toEqual(["T(t1) : repris"]);
   });
 });

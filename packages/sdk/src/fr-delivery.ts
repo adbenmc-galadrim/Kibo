@@ -25,6 +25,10 @@ export const deliveryTexts = {
         return "sans sprint";
       case "limit":
         return `limite ${reason.count}/${reason.limit} atteinte`;
+      case "onHold":
+        return reason.hold.source === "own"
+          ? `en attente : ${reason.hold.reason}`
+          : `en attente de ${reason.hold.key}`;
       case "status":
         return null;
     }

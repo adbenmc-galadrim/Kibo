@@ -10,6 +10,7 @@ import { AssigneeSelect } from "./AssigneeSelect";
 import { TicketTabs, useTicketTab } from "./activity/TicketTabs";
 import { TicketTimeline } from "./activity/TicketTimeline";
 import { BlockedBanner } from "./BlockedBanner";
+import { HoldBanner } from "./HoldBanner";
 import { LabelsField } from "./LabelsField";
 import { OptionalToggle } from "./OptionalToggle";
 import { SprintField } from "./SprintField";
@@ -96,6 +97,13 @@ export function TicketBody({
       )}
       <LabelsField ticket={t} editable={editable} command={labelsCommand} />
       <GithubLinkNote ticket={t} />
+      <HoldBanner
+        projectId={project.meta.id}
+        ticket={t}
+        tickets={project.tickets}
+        editable={editable}
+        onOpenTicket={onOpenTicket}
+      />
       <TrackingBanner ticket={t} ciRuns={ciRuns} />
       <TicketTabs
         tab={tab}

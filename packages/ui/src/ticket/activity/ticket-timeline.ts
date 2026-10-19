@@ -13,6 +13,7 @@ export type TimelineKind =
   | "status"
   | "sprint"
   | "question"
+  | "hold"
   | "other";
 export type TimelineAside = { text: string; link: { label: string; url: string } | null };
 export type TimelineLine = {
@@ -91,6 +92,8 @@ const LINES: Record<ProjectEventKind, (d: Data, ev: ProjectEvent, p: TimelinePro
   question_created: () => ({ kind: "question", text: e.questionCreated }),
   question_answered: () => ({ kind: "question", text: e.questionAnswered }),
   question_reminded: (d) => ({ kind: "question", text: e.questionReminded(str(d, "ref")) }),
+  held: (d) => ({ kind: "hold", text: e.held(str(d, "reason")) }),
+  resumed: () => ({ kind: "hold", text: e.resumed }),
   sprint_created: other,
   batch_proposed: other,
   batch_decided: other,

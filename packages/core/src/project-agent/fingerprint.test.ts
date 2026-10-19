@@ -51,6 +51,7 @@ describe("fingerprint", () => {
       branch: "feat/deux",
       pr: "#12 (open)",
       blockedBy: [],
+      hold: null,
     });
     expect(fp.questions).toEqual({
       q1: { state: "answered", title: "Question q1", recipient: "me" },
@@ -108,5 +109,16 @@ describe("blocking links", () => {
     expect(fp.tickets.t15?.blockedBy).toEqual(["BOU-12", "BOU-13"]);
     expect(fp.tickets.t13?.blockedBy).toEqual(["t9"]);
     expect(fp.tickets.t12?.blockedBy).toEqual([]);
+  });
+});
+
+describe("holds in the fingerprint", () => {
+  test("a hold changes the fingerprint of its step", () => {
+    const hold = { reason: "MinIO", since: "2026-10-16" };
+    const held = project({ tickets: snapshot.tickets.map((t) => (t.id === "t2" ? { ...t, hold } : t)) });
+    const before = fingerprint({ project: snapshot, runs: [], notes: [] });
+    const after = fingerprint({ project: held, runs: [], notes: [] });
+    expect(after.tickets.t2?.hold).toEqual(hold);
+    expect(after).not.toEqual(before);
   });
 });

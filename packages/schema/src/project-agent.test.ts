@@ -9,6 +9,8 @@ import {
   ProposedAction,
   TicketRef,
 } from "./project-agent";
+import { TicketPrintSchema } from "./project-agent-fingerprint";
+import { TOOL_SPECS } from "./project-agent-tool-specs";
 
 const HUMAN = { kind: "human" as const, ref: "adam" };
 const OUTCOMES = ["applied", "stale", "failed", "skipped"] as const;
@@ -218,5 +220,33 @@ describe("question actions in a batch", () => {
     for (const type of ["updateQuestion", "reopenQuestion", "deleteQuestion", "addRecipient"] as const) {
       expect(ACTION_GROUPS[type]).toBe("questions");
     }
+  });
+});
+
+describe("holds in a batch", () => {
+  test("setHold puts a step on hold or resumes it, in the tickets group", () => {
+    const hold = {
+      id: 1,
+      why: "recette indisponible",
+      type: "setHold",
+      ticket: "SILO-33",
+      reason: "R",
+    } as const;
+    expect(ProposedAction.parse(hold)).toEqual(hold);
+    expect(ProposedAction.parse({ ...hold, reason: null })).toMatchObject({ reason: null });
+    expect(ProposedAction.safeParse({ ...hold, reason: "x".repeat(81) }).success).toBe(false);
+    expect(ProposedAction.safeParse({ ...hold, reason: "" }).success).toBe(false);
+    expect(ACTION_GROUPS.setHold).toBe("tickets");
+  });
+
+  test("the ticket print sees the hold, and the batch tool documents its reason", () => {
+    const print = { key: "SILO-33", title: "T", statusId: "todo", labels: [], parentId: "f5" };
+    const base = { ...print, assignee: null, branch: null, pr: null };
+    expect(TicketPrintSchema.parse(base).hold).toBeNull();
+    const hold = { reason: "R", since: "2026-10-16" };
+    expect(TicketPrintSchema.parse({ ...base, hold }).hold).toEqual(hold);
+    const batch = TOOL_SPECS.find((s) => s.name === "propose_batch");
+    expect(JSON.stringify(batch?.inputSchema)).toContain('"reason":{"type":["string","null"],"maxLength":80');
+    expect(TOOL_SPECS.find((s) => s.name === "list_tickets")?.description).toContain("en attente (hold)");
   });
 });

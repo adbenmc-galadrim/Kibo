@@ -164,6 +164,7 @@ describe("kibo tickets against a real daemon", () => {
       refs: [{ kind: "import_ref", source: "plan", id: "C1-2" }],
       startable: false,
       startReason: { kind: "question", label: "Q1" },
+      onHold: null,
     });
     expect(await t.json("list", "--project", "Silo", "--ready")).toEqual([]);
     expect(await t.json("list", "--project", projectId, "--status", "wip,done")).toMatchObject([

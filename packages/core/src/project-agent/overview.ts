@@ -80,6 +80,7 @@ export function projectOverview(input: OverviewInput): ProjectOverview {
     memory: input.memory,
     openSignals: input.openSignals,
     sprints: sprintSummaries(project),
+    held: project.tickets.filter((t) => t.onHold !== null).map((t) => ticketCard(project, t)),
   };
 }
 
@@ -105,6 +106,14 @@ function cardLine(card: TicketCard): string {
   return card.startable ? `${line} · démarrable` : line;
 }
 
+function heldLine(card: TicketCard): string {
+  const head = `- ${card.key} · ${truncate(card.title, OVERVIEW_TITLE_MAX)} [${card.statusId}]`;
+  if (card.onHold === null) return head;
+  return card.onHold.source === "own"
+    ? `${head} · en attente : ${card.onHold.reason}`
+    : `${head} · attend ${card.onHold.key}`;
+}
+
 function section(title: string, lines: readonly string[], empty: string): string[] {
   return ["", `## ${title}`, "", ...(lines.length > 0 ? lines : [empty])];
 }
@@ -125,6 +134,11 @@ export function renderOverview(overview: ProjectOverview): string {
       "Tickets actifs",
       bounded(overview.active.map(cardLine), BUDGET.tickets, (n) => `- … ${n} autres : \`list_tickets\``),
       "Aucun.",
+    ),
+    ...section(
+      "En attente",
+      bounded(overview.held.map(heldLine), BUDGET.tickets, (n) => `- … ${n} autres : \`list_tickets\``),
+      "Aucune.",
     ),
     ...section(
       "Runs",

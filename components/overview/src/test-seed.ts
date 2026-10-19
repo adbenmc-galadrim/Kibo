@@ -164,6 +164,26 @@ export function seedOverview(run: Run) {
   return { sprints, features, loose, f4, f5, s31 };
 }
 
+export const HOLD_REASONS = {
+  merge: "Règle de fusion à valider par le client",
+  minio: "Serveur MinIO de recette indisponible",
+};
+
+export function holdSteps(run: Run, seeded: ReturnType<typeof seedOverview>) {
+  const [, , , f4, f5, , f7] = seeded.features;
+  const holds = [
+    { step: f4?.steps[3], reason: HOLD_REASONS.merge },
+    { step: f5?.steps[2], reason: HOLD_REASONS.minio },
+    { step: f7?.steps[1], reason: HOLD_REASONS.minio },
+  ];
+  for (const { step, reason } of holds)
+    if (step) run({ method: "setHold", ticketId: step.id, reason, since: TODAY });
+}
+
+export const seedHeld = (run: Run) => {
+  holdSteps(run, seedOverview(run));
+};
+
 export const seed = (run: Run) => {
   seedOverview(run);
 };

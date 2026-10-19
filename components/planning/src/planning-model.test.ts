@@ -3,7 +3,7 @@ import type { SprintView } from "@kibo/schema";
 import { createMockSdk } from "@kibo/sdk/mock";
 import { manifest } from "./index";
 import { type FeatureCard, planningModel, type SprintWarning, sprintDates } from "./planning-model";
-import { seedPlanning, TODAY } from "./test-seed";
+import { seedPlanning, seedPlanningHeld, TODAY } from "./test-seed";
 
 const DAY_AFTER = "2026-10-17";
 
@@ -110,7 +110,7 @@ test("a step case per step, toned by its status or its blocking question", () =>
 test("badges: delivered, open, at risk, late, blocked with the question, nothing when not started", () => {
   const { model } = build();
   const [s41, s42, s43] = model.sprints;
-  expect(card(s41?.cards ?? [], "F1").badge).toEqual({ kind: "delivered", demo: false });
+  expect(card(s41?.cards ?? [], "F1").badge).toEqual({ kind: "delivered", demo: false, held: 0 });
   expect(card(s43?.cards ?? [], "F6").badge).toEqual({ kind: "blocked", question: "Q14" });
   expect(card(s43?.cards ?? [], "F8").badge).toBeNull();
   expect(card(s42?.cards ?? [], "F4").badge).toEqual({ kind: "open" });
@@ -186,4 +186,20 @@ test("sprint dates are short and French", () => {
   expect(sprintDates("2026-10-12", "2026-10-16")).toBe("12–16 oct.");
   expect(sprintDates("2026-09-28", "2026-10-02")).toBe("28 sept.–2 oct.");
   expect(sprintDates("2026-12-28", "2027-01-01")).toBe("28 déc.–1 janv.");
+});
+
+test("steps on hold leave the cards and the risk of their feature", () => {
+  const m = createMockSdk(manifest, { today: TODAY, seed: seedPlanningHeld });
+  const s = m.snapshot();
+  const model = planningModel({ ...s, today: TODAY });
+  const [, s42, , s44] = model.sprints;
+  const f5 = card(s42?.cards ?? [], "F5");
+  expect(f5.steps.map((c) => c.tone)).toEqual(["done", "review"]);
+  expect(f5.atRisk).toBe(false);
+  expect(f5.badge).toEqual({ kind: "open" });
+  expect(s42?.warnings.map((w) => w.shortKey)).toEqual([]);
+  expect(card(s42?.cards ?? [], "F4").badge).toEqual({ kind: "delivered", demo: true, held: 1 });
+  expect(card(s42?.cards ?? [], "F4").session).toBe("KIB-16");
+  expect(card(s44?.cards ?? [], "F7").steps).toHaveLength(4);
+  expect(model.held.map((g) => g.steps.length)).toEqual([1, 2]);
 });

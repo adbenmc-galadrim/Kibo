@@ -6,6 +6,7 @@ import {
   ClockAlert,
   Lock,
   type LucideIcon,
+  Pause,
   Target,
   TriangleAlert,
 } from "lucide-react";
@@ -36,24 +37,40 @@ export function StatePill({ state, risk = false }: { state: FeatureStatus; risk?
   );
 }
 
+function HeldMark({ count }: { count: number }) {
+  return (
+    <span
+      role="img"
+      aria-label={fr.held.steps(count)}
+      className="flex shrink-0 items-center gap-[3px] pl-[6px] font-mono text-(--tracking-dim) text-[11.5px] leading-[14px]"
+    >
+      <Pause absoluteStrokeWidth size={11} aria-hidden />
+      {count}
+    </span>
+  );
+}
+
 function FeatureRow({ row, onOpen }: { row: SprintRow; onOpen(id: string): void }) {
-  const muted = row.state === "delivered";
+  const muted = row.state === "delivered" && row.held === 0;
   return (
     <li
       data-risk={row.risk || undefined}
       className={cn("flex h-[39px] items-center gap-[10px] px-[16px]", ROW_LINE)}
     >
       <span className={cn("w-[26px] shrink-0", MONO_KEY)}>{row.shortKey}</span>
-      <button
-        type="button"
-        className={cn(
-          "w-[214px] shrink-0 cursor-pointer truncate text-left font-medium text-[13px] leading-[16px] hover:underline",
-          muted ? "text-(--tracking-mfg)" : "text-(--tracking-fg)",
-        )}
-        onClick={() => onOpen(row.id)}
-      >
-        {row.title}
-      </button>
+      <span className="flex w-[214px] shrink-0 items-center">
+        <button
+          type="button"
+          className={cn(
+            "min-w-0 cursor-pointer truncate text-left font-medium text-[13px] leading-[16px] hover:underline",
+            muted ? "text-(--tracking-mfg)" : "text-(--tracking-fg)",
+          )}
+          onClick={() => onOpen(row.id)}
+        >
+          {row.title}
+        </button>
+        {row.state === "delivered" && row.held > 0 && <HeldMark count={row.held} />}
+      </span>
       <span className="flex w-[86px] shrink-0 items-center">
         <StatePill state={row.state} risk={row.risk} />
       </span>

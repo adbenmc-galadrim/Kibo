@@ -2,6 +2,7 @@ import { z } from "zod";
 import { DeliveryStep } from "./delivery";
 import { ExternalRef } from "./external-ref";
 import { ShortKey } from "./feature";
+import { Hold } from "./hold";
 import { NodeId, TicketKey } from "./ids";
 import { Labels } from "./label";
 import { EMPTY_PROGRESS, TicketProgress } from "./progress";
@@ -29,6 +30,7 @@ export const Ticket = z
     sprintId: NodeId.nullable().default(null),
     optional: z.boolean().default(false),
     shortKey: ShortKey.nullable().default(null),
+    hold: Hold.nullable().default(null),
   })
   .superRefine((t, ctx) => {
     const hasReason = t.blockedReason !== null && t.blockedReason.trim().length > 0;

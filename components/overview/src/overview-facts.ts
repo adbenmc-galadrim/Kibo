@@ -37,7 +37,7 @@ export function featureFacts(tickets: readonly TicketView[], links: readonly Lin
             sprintId: ticket.sprintId,
             rank,
             state: ticket.feature,
-            steps: featureSteps({ feature: ticket.id, tickets, links }),
+            steps: featureSteps({ feature: ticket.id, tickets, links }).filter((s) => s.onHold === null),
           },
         ],
   );

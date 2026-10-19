@@ -9,6 +9,7 @@ const stateOf = (status: FeatureStatus, started: boolean): FeatureState => ({
   nextStepId: null,
   remaining: status === "delivered" ? 0 : 3,
   started,
+  held: 0,
 });
 const feature = (id: string, status: FeatureStatus, started: boolean) => ({
   id,

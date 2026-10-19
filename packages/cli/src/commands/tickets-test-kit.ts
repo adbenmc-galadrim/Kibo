@@ -4,7 +4,9 @@ import {
   type DeclareTicketRefResult,
   EMPTY_PROGRESS,
   type ExternalRef,
+  type Hold,
   NOT_STARTED_STATUSES,
+  type OnHold,
   type ProjectMeta,
   type ProjectSnapshot,
   type RpcRequest,
@@ -28,6 +30,8 @@ type TicketInput = {
   refs?: ExternalRef[];
   startable?: boolean;
   startReason?: StartReason | null;
+  hold?: Hold | null;
+  onHold?: OnHold | null;
 };
 
 export function fakeTicket(input: TicketInput): TicketView {
@@ -35,6 +39,7 @@ export function fakeTicket(input: TicketInput): TicketView {
     id: input.id,
     key: input.key,
     pendingSeq: null,
+    hold: input.hold ?? null,
     title: `Titre ${input.key}`,
     description: "",
     statusId: input.statusId ?? "todo",
@@ -60,6 +65,7 @@ export function fakeTicket(input: TicketInput): TicketView {
     startable:
       input.startable ?? (NOT_STARTED_STATUSES.includes(input.statusId ?? "todo") && !input.children),
     startReason: input.startReason ?? null,
+    onHold: input.onHold ?? null,
   };
 }
 

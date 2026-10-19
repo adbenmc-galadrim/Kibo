@@ -15,6 +15,7 @@ const handlers: OverviewHandlers = {
   onOpenSprint: noop,
   onOpenQuestion: noop,
   onOpenQuestions: noop,
+  onOpenPlanning: noop,
   onNewFeature: noop,
   onChooseFolder: noop,
 };

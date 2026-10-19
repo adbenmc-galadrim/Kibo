@@ -28,7 +28,7 @@ test("a project event parses with its id, project and time", () => {
 });
 
 test("the kinds and sources of the journal are closed", () => {
-  expect(ProjectEventKind.options).toHaveLength(16);
+  expect(ProjectEventKind.options).toHaveLength(18);
   expect(ProjectEventSource.options).toEqual([
     "git",
     "full-delivery",
@@ -66,4 +66,11 @@ test("the journal is listed through the rpc", () => {
     false,
   );
   expect(TRACKING_RPC_METHODS).toContain("listProjectEvents");
+});
+
+test("a step put on hold and resumed are journal events with their reason", () => {
+  for (const kind of ["held", "resumed"]) {
+    const event = { kind, ticketId: TICKET, featureId: FEATURE, source: "user", data: { reason: "MinIO" } };
+    expect(ProjectEventInput.parse(event)).toMatchObject({ kind, data: { reason: "MinIO" } });
+  }
 });

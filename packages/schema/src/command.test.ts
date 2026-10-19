@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { COMMAND_WRITES, type CommandResult, isReservedCommand, ProjectCommand } from "./command";
+import { inboxAllows } from "./inbox";
 import type { Question } from "./question";
 
 test("the progress and recipient commands parse", () => {
@@ -164,4 +165,21 @@ test("a feature is created as such, questions are marked exported and back", () 
   );
   expect(COMMAND_WRITES.markQuestionsExported).toBe("question");
   expect(COMMAND_WRITES.unmarkQuestionsExported).toBe("question");
+});
+
+test("setHold takes a reason of 1 to 80 characters, or null to resume", () => {
+  const hold = { method: "setHold", ticketId: "t1" };
+  expect(ProjectCommand.safeParse({ ...hold, reason: "x".repeat(81) }).success).toBe(false);
+  expect(ProjectCommand.safeParse({ ...hold, reason: "" }).success).toBe(false);
+  expect(ProjectCommand.safeParse({ ...hold, reason: "   " }).success).toBe(false);
+  expect(ProjectCommand.safeParse({ ...hold, reason: null }).success).toBe(true);
+  expect(ProjectCommand.safeParse({ ...hold, reason: "x".repeat(80), since: "2026-10-16" }).success).toBe(
+    true,
+  );
+  expect(ProjectCommand.safeParse({ ...hold, reason: "R", since: "16/10/2026" }).success).toBe(false);
+});
+
+test("setHold writes a ticket and is allowed in the inbox", () => {
+  expect(COMMAND_WRITES.setHold).toBe("ticket");
+  expect(inboxAllows("setHold")).toBe(true);
 });

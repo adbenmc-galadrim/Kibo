@@ -187,3 +187,7 @@ Plan : `2026-10-18-kibo-phase-27.md` · Spec : conception §39 (constats retenus
 ## Phase 28 ✅ · Un dépôt sans données client (v0.28.0-alpha.1)
 
 Plan : `2026-10-18-kibo-phase-28.md` · Spec : conception §40 (écarts §40.1) · Rapport : `2026-10-19-jalon-v0.28.md`. Demande d'Adam du 2026-10-18 : le dépôt est public, il ne contient plus aucune donnée de projet client ; projet fictif « Silo » partout, garde-fou des termes interdits (liste hors dépôt), script d'import client retiré, maquettes, PDF et exports neutralisés, pixel repassé ; historique git laissé tel quel.
+
+## Phase 29 ✅ · Mettre une étape en attente (v0.29.0-alpha.1)
+
+Plan : `2026-10-19-kibo-phase-29.md` · Spec : conception §41 (écarts §41.1) · Rapport : `2026-10-19-jalon-v0.29.md`. Demande d'Adam du 2026-10-19 : pouvoir mettre de côté une étape qui dépend d'un tiers (environnement, accès) pour y revenir plus tard. Attente avec sa raison et son jour, propagée aux étapes qui en dépendent, hors du risque et des démarrables ; fonctionnalité « livrée · n en attente » ; « Reprendre » et « Reprendre dans ▸ » ; visible dans la fiche, la fiche fonctionnalité, Mes tickets, le Planning, le Kanban, la Vue d'ensemble, la CLI et l'agent de projet. Six boards Penpot en sombre et en clair, cinq écrans pixel nouveaux et les neuf existants à 2 % au plus.

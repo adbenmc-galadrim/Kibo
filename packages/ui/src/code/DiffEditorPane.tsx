@@ -4,7 +4,7 @@ import { RotateCw, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { client } from "../api";
 import { CodeEditor } from "../files/CodeEditor";
-import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import { errorMessage } from "../lib/error-message";
 
 type Props = {
@@ -75,14 +75,14 @@ export function DiffEditorPane({ projectId, worktree, path, layout, wrap, onSave
             {stale && (
               <Button variant="outline" size="sm" onClick={() => setVersion((v) => v + 1)}>
                 <RotateCw />
-                {fr.changes.reload}
+                {frChanges.changes.reload}
               </Button>
             )}
           </p>
         )}
         <Button size="sm" disabled={draft === null || saving} onClick={save}>
           <Save />
-          {saving ? fr.changes.saving : fr.changes.save}
+          {saving ? frChanges.changes.saving : frChanges.changes.save}
         </Button>
       </div>
       {files?.current.content != null && (

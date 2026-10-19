@@ -7,6 +7,7 @@ import {
   type LucideIcon,
   MessageCircleQuestion,
   Package,
+  Pause,
   Target,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -107,7 +108,29 @@ function FeatureCells({ cells }: { cells: IndicatorTexts["features"]["cells"] })
   );
 }
 
-function FeatureSub({ text }: { text: IndicatorTexts["features"] }) {
+function HeldSub({ text, onOpen }: { text: string; onOpen(): void }) {
+  return (
+    <button
+      type="button"
+      className="flex min-w-0 shrink-0 cursor-pointer items-center gap-[6px] font-medium hover:underline"
+      onClick={onOpen}
+    >
+      <Pause absoluteStrokeWidth size={12} aria-hidden className="shrink-0" />
+      <span className="truncate">{text}</span>
+    </button>
+  );
+}
+
+type FeatureSubProps = { text: IndicatorTexts["features"]; onOpenHeld(): void };
+
+function FeatureSub({ text, onOpenHeld }: FeatureSubProps) {
+  if (text.held !== undefined)
+    return (
+      <>
+        {text.sub !== undefined && <AlertSub text={text.sub} />}
+        <HeldSub text={text.held} onOpen={onOpenHeld} />
+      </>
+    );
   if (text.sub === undefined) return <FeatureCells cells={text.cells} />;
   if (text.tone === undefined) return <span className="truncate">{text.sub}</span>;
   if (text.tone === "amber")
@@ -117,15 +140,21 @@ function FeatureSub({ text }: { text: IndicatorTexts["features"] }) {
         <span className="shrink-0 whitespace-nowrap text-(--tracking-amber)">{text.sub}</span>
       </>
     );
+  return <AlertSub text={text.sub} />;
+}
+
+function AlertSub({ text }: { text: string }) {
   return (
     <span className="flex min-w-0 items-center gap-[6px] text-(--tracking-red)">
       <ClockAlert absoluteStrokeWidth size={12} aria-hidden className="shrink-0" />
-      <span className="truncate">{text.sub}</span>
+      <span className="truncate">{text}</span>
     </span>
   );
 }
 
-export function Indicators({ indicators }: { indicators: IndicatorFacts }) {
+type Props = { indicators: IndicatorFacts; onOpenHeld(): void };
+
+export function Indicators({ indicators, onOpenHeld }: Props) {
   const t = indicatorTexts(indicators);
   return (
     <section
@@ -133,7 +162,7 @@ export function Indicators({ indicators }: { indicators: IndicatorFacts }) {
       className="flex h-[92px] w-full shrink-0 rounded-[10px] border border-(--tracking-border) bg-(--tracking-card)"
     >
       <Box icon={Package} label={fr.indicators.features} text={t.features}>
-        <FeatureSub text={t.features} />
+        <FeatureSub text={t.features} onOpenHeld={onOpenHeld} />
       </Box>
       <Box icon={CalendarRange} label={fr.indicators.sprint} text={t.sprint}>
         <Sub text={t.sprint} />

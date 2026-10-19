@@ -6,6 +6,14 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.29.0-alpha.1 — 2026-10-19
+
+- Une étape se met en attente avec sa raison (« Mettre en attente… » dans la fiche) ; sa fonctionnalité avance sans elle et peut être « livrée · n en attente » ; les étapes qui en dépendent attendent aussi.
+- « Reprendre », ou « Reprendre dans ▸ » un sprint à venir depuis la section « En attente » du Planning.
+- L'attente se voit dans la fiche, la fiche fonctionnalité, Mes tickets, le Planning, le Kanban (puce ⏸ et filtre « En attente »), la Vue d'ensemble, la CLI (`hold=` et `hold=off`) et l'agent de projet (`setHold`).
+- Une étape en attente ne compte plus dans « à risque » ni dans les étapes démarrables.
+- Les textes du client git sont chargés à la demande.
+
 ## 0.28.0-alpha.1 — 2026-10-19
 
 - Le dépôt public ne contient plus aucune donnée de projet client : tests, démo, exemples de la CLI, maquettes, PDF, spec et plans emploient le projet fictif « Silo » (location de box) ; tes projets locaux ne changent pas.

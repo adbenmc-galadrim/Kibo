@@ -11,6 +11,7 @@ type Props = {
   workflow: readonly Status[];
   now: number;
   last: boolean;
+  spaced?: boolean;
   action: ReactNode | null;
   onOpenTicket(id: string): void;
 };
@@ -51,13 +52,13 @@ const cardTone = (step: StepModel, next: boolean): string => {
   return CARD;
 };
 
-export function StepRow({ step, workflow, now, last, action, onOpenTicket }: Props) {
+export function StepRow({ step, workflow, now, last, spaced = false, action, onOpenTicket }: Props) {
   const done = step.statusId === "done";
   return (
     <li
       data-status={step.statusId}
       data-session={step.session !== null}
-      className={`flex w-full gap-[14px] ${last ? "min-h-[28px]" : "min-h-[100px]"}`}
+      className={`flex w-full gap-[14px] ${last && !spaced ? "min-h-[28px]" : "min-h-[100px]"}`}
     >
       <span className="flex w-[28px] shrink-0 flex-col items-center">
         <Marker step={step} />

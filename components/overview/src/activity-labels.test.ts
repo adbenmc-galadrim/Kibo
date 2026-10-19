@@ -88,6 +88,8 @@ test("a missing key gives a plain label, never an error", () => {
     "question_created",
     "question_answered",
     "question_reminded",
+    "held",
+    "resumed",
   ];
   for (const kind of kinds) expect(typeof label(event(kind, {}))).toBe("string");
   expect(label(event("pr_opened", {}))).toBe("PR ouverte");
@@ -95,4 +97,14 @@ test("a missing key gives a plain label, never an error", () => {
   expect(label(event("sprint_created", {}))).toBe("Sprint créé");
   expect(label(event("batch_proposed", {}))).toBe("Suivi mis à jour · lot proposé");
   expect(label(event("question_created", {}))).toBe("Question posée");
+});
+
+test("a step put on hold says its reason, and its resumption", () => {
+  expect(label(event("held", { reason: "Serveur MinIO de recette indisponible" }, "user"))).toBe(
+    "Mise en attente · Serveur MinIO de recette indisponible",
+  );
+  expect(label(event("held", {}, "user"))).toBe("Mise en attente");
+  expect(label(event("resumed", { reason: "Serveur MinIO de recette indisponible" }, "user"))).toBe(
+    "Reprise",
+  );
 });

@@ -1,3 +1,4 @@
+import { HOLD_REASON_MAX } from "./hold";
 import { LABEL_MAX } from "./label";
 import { MAX_NOTE_CHARS } from "./note";
 import {
@@ -50,6 +51,12 @@ const ACTION = object(
     description: text("Description du ticket, en Markdown.", ACTION_DESCRIPTION_MAX),
     statusId,
     blockedReason: { type: "string" },
+    reason: {
+      type: ["string", "null"],
+      maxLength: HOLD_REASON_MAX,
+      description:
+        "setHold : ce que l'étape attend de l'extérieur (environnement, accès, décision), null pour la reprendre.",
+    },
     labels,
     parent: { ...ticketRef, description: "Ticket parent." },
     profileId: { type: "string", description: "Agent assignable : son id (list_profiles)." },
@@ -103,13 +110,13 @@ export const TOOL_SPECS: readonly ToolSpec[] = [
   {
     name: "project_overview",
     description:
-      "Instantané du projet : statuts, tickets actifs, runs et file, questions ouvertes, destinataires des questions, notes, profils et note mémoire.",
+      "Instantané du projet : statuts, tickets actifs, étapes en attente (held), runs et file, questions ouvertes, destinataires des questions, notes, profils et note mémoire.",
     inputSchema: object(),
   },
   {
     name: "list_tickets",
     description:
-      "Liste les tickets du projet, filtrés par statut, étiquette ou texte, 50 par page ; chaque ticket dit s'il est démarrable, sinon pourquoi (startReason : dépendance, question bloquante, sprint à venir, sans sprint, limite des fonctionnalités en cours).",
+      "Liste les tickets du projet, filtrés par statut, étiquette ou texte, 50 par page ; chaque ticket dit s'il est démarrable, sinon pourquoi (startReason : dépendance, question bloquante, sprint à venir, sans sprint, limite des fonctionnalités en cours, en attente (hold)) et rend son attente (hold : raison propre ou étape attendue).",
     inputSchema: object({
       status: statusId,
       label: { type: "string" },

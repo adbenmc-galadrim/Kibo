@@ -12,6 +12,7 @@ const step = (id: string, over: Partial<FeatureStepSource> = {}): FeatureStepSou
   optional: false,
   delivery: null,
   externalRefs: [],
+  onHold: null,
   ...over,
 });
 
@@ -102,6 +103,7 @@ test("a step carries its status, delivery, branch and pull request", () => {
     delivery,
     branch: "feat/silo-33",
     pr: PR,
+    onHold: null,
   });
   expect(second?.branch).toBeNull();
   expect(second?.pr).toBeNull();

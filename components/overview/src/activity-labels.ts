@@ -88,6 +88,8 @@ const LABELS: Record<ProjectEventKind, Labeler> = {
   question_created: (d, ctx) => `Question${spaced(question(d, ctx))} posée`,
   question_answered: (d, ctx) => `${question(d, ctx) ?? "Question"} répondue`,
   question_reminded: (d, ctx) => `${question(d, ctx) ?? "Question"} relancée`,
+  held: (d) => `Mise en attente${text(d, "reason") === null ? "" : ` · ${text(d, "reason")}`}`,
+  resumed: () => "Reprise",
 };
 
 export const activityLabel = (event: ProjectEvent, ctx: ActivityContext): string =>

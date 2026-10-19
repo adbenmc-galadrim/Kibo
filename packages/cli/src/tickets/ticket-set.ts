@@ -3,10 +3,13 @@ import {
   type ExternalRef,
   GitBranchRef,
   type GithubPrRef,
+  HOLD_REASON_MAX,
+  HoldReason,
   KiboError,
   type ProjectCommand,
   type StatusId,
 } from "@kibo/schema";
+import { frTickets } from "../fr";
 import { type NormalizedStatus, normalizedStatus, type StatusName, statusName } from "./ticket-view";
 
 export type Assignments = {
@@ -15,15 +18,27 @@ export type Assignments = {
   reason: string | null;
   branch: string | null;
   base: string | null;
+  hold?: string | null;
 };
 type SetTarget = { id: string; statusId: StatusId; externalRefs: ExternalRef[] };
 type SetStatus = Extract<ProjectCommand, { method: "setStatus" }>;
+type SetHold = Extract<ProjectCommand, { method: "setHold" }>;
 
-const KEYS = new Set(["status", "pr", "reason", "branch", "base"]);
+const KEYS = new Set(["status", "pr", "reason", "branch", "base", "hold"]);
+const RESUME = "off";
+
+function holdOf(raw: string): string | null {
+  if (raw.trim() === "") throw new KiboError("INVALID_INPUT", frTickets.hold.empty);
+  if (raw.trim() === RESUME) return null;
+  const parsed = HoldReason.safeParse(raw);
+  if (!parsed.success)
+    throw new KiboError("INVALID_INPUT", `hold reason longer than ${HOLD_REASON_MAX} characters`);
+  return parsed.data;
+}
 
 export function parseAssignments(args: readonly string[]): Assignments {
   if (args.length === 0)
-    throw new KiboError("INVALID_INPUT", "nothing to set: use status=…, pr=… or branch=…");
+    throw new KiboError("INVALID_INPUT", "nothing to set: use status=…, pr=…, branch=… or hold=…");
   const values = new Map<string, string>();
   for (const arg of args) {
     const at = arg.indexOf("=");
@@ -34,13 +49,23 @@ export function parseAssignments(args: readonly string[]): Assignments {
   if (values.has("base") && !values.has("branch"))
     throw new KiboError("INVALID_INPUT", "base= needs branch=");
   const status = values.get("status");
+  const hold = values.get("hold");
   return {
     status: status === undefined ? null : statusName(status),
     pr: values.get("pr") ?? null,
     reason: values.get("reason") ?? null,
     branch: values.get("branch") ?? null,
     base: values.get("base") ?? null,
+    ...(hold === undefined ? {} : { hold: holdOf(hold) }),
   };
+}
+
+export function holdCommand(
+  ticket: { id: string; hold: { reason: string } | null },
+  set: Assignments,
+): SetHold | null {
+  if (set.hold === undefined || set.hold === (ticket.hold?.reason ?? null)) return null;
+  return { method: "setHold", ticketId: ticket.id, reason: set.hold };
 }
 
 const KIBO_STATUS: Record<NormalizedStatus, StatusId> = {

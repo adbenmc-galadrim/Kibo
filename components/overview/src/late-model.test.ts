@@ -75,6 +75,7 @@ test("an empty project reads as the Pour commencer mockup", () => {
     ahead: [],
     atRisk: 0,
     remaining: 0,
+    held: 0,
   };
   expect(indicatorTexts(empty)).toEqual({
     features: { value: "0", unit: "livrées sur 0", cells: [], sub: "aucune pour l'instant" },

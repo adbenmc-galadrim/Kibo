@@ -98,4 +98,15 @@ describe("set assignments", () => {
     expect(() => prRef(ticket("t", "todo"), "12", two)).toThrow("pr=<url>");
     expect(() => prRef(ticket("t", "todo"), "douze", two)).toThrow("INVALID_INPUT");
   });
+
+  test("reads a hold reason, off to resume, and refuses an empty one", () => {
+    expect(parseAssignments(["hold=Accès au serveur"])).toMatchObject({ hold: "Accès au serveur" });
+    expect(parseAssignments(["hold=  Accès au serveur "])).toMatchObject({ hold: "Accès au serveur" });
+    expect(parseAssignments(["hold=off"])).toMatchObject({ hold: null });
+    expect(parseAssignments(["status=todo"]).hold).toBeUndefined();
+    expect(parseAssignments(["hold=Accès", "status=todo"])).toMatchObject({ hold: "Accès", status: "todo" });
+    expect(() => parseAssignments(["hold="])).toThrow("hold= attend une raison ou off");
+    expect(() => parseAssignments(["hold=   "])).toThrow("hold= attend une raison ou off");
+    expect(() => parseAssignments([`hold=${"x".repeat(81)}`])).toThrow("INVALID_INPUT");
+  });
 });

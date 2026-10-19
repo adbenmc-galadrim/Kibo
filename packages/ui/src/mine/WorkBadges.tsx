@@ -1,7 +1,7 @@
 import { FINAL_STATUSES } from "@kibo/schema";
 import { DELIVERY_STEP_CHIP } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
-import { CircleCheck, CircleX, GitBranch, GitPullRequest, Lock } from "lucide-react";
+import { CircleCheck, CircleX, GitBranch, GitPullRequest, Lock, Pause } from "lucide-react";
 import { frMine as t } from "../i18n/fr-mine";
 import { stepLine } from "../ticket/tracking-model";
 import type { WorkItem } from "./work-list";
@@ -14,6 +14,7 @@ const RED = cn(BADGE, "bg-(--tracking-red-soft) text-(--tracking-red)");
 function waitingText(item: WorkItem): string | null {
   const { ticket } = item;
   if (item.blockedBy !== null) return t.blockedBy(item.blockedBy);
+  if (ticket.onHold !== null) return t.reason({ kind: "onHold", hold: ticket.onHold });
   if (ticket.statusId === "blocked") return t.blocked;
   if (ticket.startReason) return t.reason(ticket.startReason);
   return ticket.waitingOn.length > 0 ? t.waitingOn(ticket.waitingOn) : null;
@@ -82,6 +83,9 @@ export function WorkBadges({ item, waiting }: { item: WorkItem; waiting: boolean
         <span className={item.blockedBy !== null || item.ticket.statusId === "blocked" ? RED : OUTLINED}>
           {(item.blockedBy !== null || item.ticket.statusId === "blocked") && (
             <Lock aria-hidden absoluteStrokeWidth size={11} className="size-[11px]" />
+          )}
+          {item.blockedBy === null && item.ticket.statusId !== "blocked" && item.ticket.onHold !== null && (
+            <Pause aria-hidden absoluteStrokeWidth size={11} className="size-[11px]" />
           )}
           {reason}
         </span>

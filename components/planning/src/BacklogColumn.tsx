@@ -6,9 +6,9 @@ import { BACKLOG_ID } from "./drag";
 import { fr } from "./fr";
 import { COLUMN_CLASS, DropZone } from "./SprintColumn";
 
-type Props = { dropping: boolean; children: ReactNode; footer?: ReactNode };
+type Props = { dropping: boolean; children: ReactNode; footer?: ReactNode; held?: ReactNode };
 
-export function BacklogColumn({ dropping, children, footer }: Props) {
+export function BacklogColumn({ dropping, children, footer, held }: Props) {
   const { setNodeRef } = useDroppable({ id: BACKLOG_ID });
   return (
     <section
@@ -32,6 +32,7 @@ export function BacklogColumn({ dropping, children, footer }: Props) {
       {dropping && <DropZone label={fr.dropBacklog} dates={null} />}
       <p className="px-1 py-2 text-(--tracking-dim) text-[11.5px] leading-[17px]">{fr.backlogNote}</p>
       {footer}
+      {held}
     </section>
   );
 }

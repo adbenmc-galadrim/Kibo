@@ -11,6 +11,7 @@ import {
   GitPullRequest,
   type LucideIcon,
   MessageCircleQuestion,
+  Pause,
   Timer,
 } from "lucide-react";
 import { useState } from "react";
@@ -42,6 +43,8 @@ const ICONS: Record<ProjectEventKind, [LucideIcon, string]> = {
   question_created: [MessageCircleQuestion, "text-(--tracking-mfg)"],
   question_answered: [MessageCircleQuestion, "text-(--tracking-mfg)"],
   question_reminded: [MessageCircleQuestion, "text-(--tracking-brand)"],
+  held: [Pause, "text-(--tracking-mfg)"],
+  resumed: [Pause, "text-(--tracking-mfg)"],
 };
 
 function Row({ row, onOpenTicket }: { row: ActivityRow; onOpenTicket(id: string): void }) {

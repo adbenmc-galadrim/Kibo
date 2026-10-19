@@ -1,9 +1,9 @@
 import type { FileChange } from "@kibo/schema";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { Copy, ExternalLink, FileDiff, Minus, Plus, SquareArrowOutUpRight, Undo2 } from "lucide-react";
-import type { frCode } from "../i18n/fr-code";
+import type { frChanges } from "../i18n/fr-changes";
 
-export type FileMenuTexts = typeof frCode.changes;
+export type FileMenuTexts = typeof frChanges.changes;
 export type FileMenuActions = {
   viewDiff(): void;
   openInTab(): void;

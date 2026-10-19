@@ -1,6 +1,6 @@
 import type { GitOperation } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
-import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import type { Flash } from "../lib/use-flash";
 
 type Props = { operation: GitOperation; busy: boolean; onAbort: (() => void) | null };
@@ -8,10 +8,10 @@ type Props = { operation: GitOperation; busy: boolean; onAbort: (() => void) | n
 export function OperationBanner({ operation, busy, onAbort }: Props) {
   return (
     <div className="flex items-center gap-3 border-b bg-amber-500/10 px-4 py-2 text-sm text-amber-800 dark:text-amber-300">
-      <span className="flex-1">{fr.changes.operation(fr.changes.operations[operation])}</span>
+      <span className="flex-1">{frChanges.changes.operation(frChanges.changes.operations[operation])}</span>
       {onAbort && (
         <Button variant="outline" size="sm" disabled={busy} onClick={onAbort}>
-          {fr.changes.abortOperation}
+          {frChanges.changes.abortOperation}
         </Button>
       )}
     </div>

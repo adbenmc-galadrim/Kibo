@@ -54,3 +54,14 @@ test("during its sprint a feature is at risk, after its end it is late, like the
   expect(homeCard(project, snapshot, "2026-10-16").counts).toMatchObject({ late: 0, risk: 1 });
   expect(homeCard(project, snapshot, HOME_TODAY).counts).toMatchObject({ late: 1, risk: 0 });
 });
+
+test("the steps on hold do not put their feature at risk", () => {
+  const hold = { source: "own" as const, key: "SILO-1", reason: "Accès VPN du client", since: "2026-10-16" };
+  const held = {
+    ...snapshot,
+    tickets: snapshot.tickets.map((t) =>
+      t.parentId === "f5" && t.statusId !== "done" ? { ...t, onHold: hold } : t,
+    ),
+  };
+  expect(homeCard(project, held, "2026-10-16").counts?.risk).toBe(0);
+});

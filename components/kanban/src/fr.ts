@@ -1,4 +1,10 @@
-import { DELIVERY_STEP_LABELS, DELIVERY_STEP_MAX, FULL_DELIVERY_AGENT, type RunState } from "@kibo/schema";
+import {
+  DELIVERY_STEP_LABELS,
+  DELIVERY_STEP_MAX,
+  FULL_DELIVERY_AGENT,
+  type RunState,
+  shortReason,
+} from "@kibo/schema";
 
 const RUN_STATES: Record<RunState, string> = {
   queued: "En file",
@@ -19,6 +25,13 @@ export const fr = {
     sprint: (code: string | null) => (code === null ? "Sprint courant" : `Sprint courant · ${code}`),
     startable: "Démarrable",
     toFix: "À reprendre",
+    held: "En attente",
+  },
+  hold: {
+    short: (reason: string) => shortReason(reason),
+    by: (key: string) => `attend ${key}`,
+    own: (reason: string) => `En attente : ${reason}`,
+    dependency: (key: string) => `En attente de ${key}`,
   },
   counter: (shown: number, mode: string, mine: string | null) =>
     `${shown} ticket${shown > 1 ? "s" : ""} · ${mode}${mine === null ? "" : ` · ${mine}`}`,

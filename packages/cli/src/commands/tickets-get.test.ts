@@ -1,7 +1,25 @@
 import { describe, expect, test } from "bun:test";
+import type { Parsed } from "../args";
 import { runTicketsCommand } from "./tickets";
 import { fakeDaemon, fakeTicket, TICKETS } from "./tickets-test-kit";
 
+type Flags = Parsed["flags"];
+
+const HELD = fakeTicket({
+  id: "held",
+  key: "SILO-70",
+  onHold: { source: "own", key: "SILO-70", reason: "Serveur de recette indisponible", since: "2026-10-16" },
+});
+const WAITING = fakeTicket({
+  id: "waiting",
+  key: "SILO-71",
+  onHold: {
+    source: "dependency",
+    key: "SILO-70",
+    reason: "Serveur de recette indisponible",
+    since: "2026-10-16",
+  },
+});
 const FEATURE = fakeTicket({ id: "f6", key: "F6", shortKey: "F6" });
 const MINE = {
   ...fakeTicket({
@@ -12,8 +30,8 @@ const MINE = {
   assignee: { kind: "human" as const, ref: "u-me" },
 };
 
-async function get(ident: string, flags: Record<string, string> = {}) {
-  const d = fakeDaemon([...TICKETS, FEATURE, MINE]);
+async function get(ident: string, flags: Flags = {}) {
+  const d = fakeDaemon([...TICKETS, FEATURE, MINE, HELD, WAITING]);
   const code = await runTicketsCommand(["get", ident], flags, d.io, d.connect, "/nowhere");
   return { ...d, code };
 }
@@ -50,5 +68,20 @@ describe("kibo tickets get", () => {
     const d = await get("C1-2");
     expect(d.code).toBe(2);
     expect(d.err).toEqual(["précise --project SILO"]);
+  });
+
+  test("shows the hold right after the status, and nothing without one", async () => {
+    const held = await get("SILO-70");
+    const status = held.out.findIndex((l) => l.startsWith("Statut"));
+    expect(held.out[status + 1]).toBe("En attente : Serveur de recette indisponible · depuis le 16 oct.");
+    expect((await get("SILO-71")).out).toContain("En attente de SILO-70");
+    expect((await get("SILO-50")).out.some((l) => l.startsWith("En attente"))).toBe(false);
+  });
+
+  test("gives the hold as it is in JSON", async () => {
+    const d = await get("SILO-70", { json: true });
+    expect(JSON.parse(d.out.join("\n"))).toMatchObject({ onHold: HELD.onHold });
+    const free = await get("SILO-50", { json: true });
+    expect(JSON.parse(free.out.join("\n"))).toMatchObject({ onHold: null });
   });
 });

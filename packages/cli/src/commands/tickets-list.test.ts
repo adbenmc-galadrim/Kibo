@@ -122,6 +122,36 @@ describe("kibo tickets list --ready", () => {
   });
 });
 
+describe("kibo tickets list, held steps", () => {
+  const onHold = { source: "own" as const, key: "SILO-2", reason: "Accès", since: "2026-10-16" };
+  const tickets = [
+    fakeTicket({ id: "a", key: "SILO-1" }),
+    fakeTicket({
+      id: "b",
+      key: "SILO-2",
+      startable: false,
+      startReason: { kind: "onHold", hold: onHold },
+      onHold,
+    }),
+  ];
+
+  test("marks the status of a held step with ⏸, headers unchanged", async () => {
+    const d = await listIn(fakeDaemon(tickets), []);
+    expect(d.out[0]?.split(/\s+/)).toEqual(["Clé", "F", "Statut", "Titre"]);
+    expect(d.out.find((l) => l.startsWith("SILO-2"))).toContain("⏸ todo");
+    expect(d.out.find((l) => l.startsWith("SILO-1"))).not.toContain("⏸");
+  });
+
+  test("gives the hold in JSON and leaves it out of --ready", async () => {
+    const json = await listIn(fakeDaemon(tickets), ["--json"]);
+    expect(JSON.parse(json.out.join("\n"))).toMatchObject([
+      { key: "SILO-1", onHold: null },
+      { key: "SILO-2", onHold },
+    ]);
+    expect((await listIn(fakeDaemon(tickets), ["--ready"])).keys).toEqual(["SILO-1"]);
+  });
+});
+
 describe("kibo tickets list without --project", () => {
   test("suggests the only project key, or lists the known ones", async () => {
     const one = fakeDaemon();

@@ -28,8 +28,8 @@ test("on its last day S42 stays the current sprint and nothing is late yet", () 
   const f5 = { id: "F5", sprintId: "s42", remaining: 4, rank: 5 };
   expect(lateFeatures([f4, f5], SPRINTS, today)).toEqual([]);
   const steps = [
-    { ticketId: "a", statusId: "done" as const, optional: false },
-    { ticketId: "b", statusId: "todo" as const, optional: false },
+    { ticketId: "a", statusId: "done" as const, optional: false, onHold: null },
+    { ticketId: "b", statusId: "todo" as const, optional: false, onHold: null },
   ];
   expect(featureState({ steps, blockingQuestions: new Set(), sprint: S42, today }).status).toBe("open");
 });

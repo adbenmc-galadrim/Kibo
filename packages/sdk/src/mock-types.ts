@@ -24,6 +24,7 @@ import type {
 import type { MockFetch } from "./mock-calls";
 import type { MockFrame } from "./mock-design";
 import type { MockEmbedOptions } from "./mock-embed";
+import type { MockHold } from "./mock-holds";
 import type { MockNote } from "./mock-notes";
 import type { ServerDefinition } from "./server";
 import type { AllowAndResumeInput, FileTarget, KiboSdk, NewTicketDefaults, ProjectBackend } from "./types";
@@ -69,6 +70,7 @@ export type MockSdkOptions = {
   tracking?: TrackingSettings | null;
   agentExecution?: AgentExecution;
   seed?: (run: (cmd: ProjectCommand) => unknown) => void;
+  holds?: MockHold[];
   viewer?: string;
   config?: Record<string, unknown>;
   surface?: Surface;

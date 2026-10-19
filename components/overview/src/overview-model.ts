@@ -20,6 +20,7 @@ import {
 } from "@kibo/schema";
 import type { MarkedRow, TimelineInput } from "@kibo/sdk/tracking";
 import { deadlineSpan, markRows } from "./deadline-marks";
+import { type HeldRow, heldCount, heldRows } from "./held-model";
 import type { IndicatorFacts } from "./indicator-texts";
 import { type LateRow, lateRows } from "./late-model";
 import {
@@ -63,6 +64,7 @@ export type OverviewModel = {
   now: NowRow[];
   deadlines: Deadlines;
   late: LateRow[];
+  held: HeldRow[];
   sprints: SprintView[];
   sprint: SprintCard | null;
   next: NextCard | null;
@@ -135,6 +137,7 @@ export function overviewModel(input: OverviewInput): OverviewModel {
     events: input.events,
   };
   const sprint = sprintCard(sprintInput);
+  const held = heldRows(input.tickets);
   return {
     indicators: {
       ...overviewIndicators({
@@ -150,10 +153,12 @@ export function overviewModel(input: OverviewInput): OverviewModel {
       ahead: aheadOfSprint(sprintInput).map((f) => f.shortKey),
       atRisk: sprint?.rows.filter((r) => r.risk).length ?? 0,
       remaining: sprint?.remaining ?? 0,
+      held: heldCount(held),
     },
     now: nowRows(input.tickets, input.now),
     deadlines: deadlines(input, features, blocking),
     late: lateRows({ features, sprints: input.sprints, blocking, today: input.today }),
+    held,
     sprints: sortSprints(input.sprints),
     sprint,
     next: nextCard(sprintInput),

@@ -1,6 +1,6 @@
 import type { FileChange, Worktree } from "@kibo/schema";
 import type { ReactNode } from "react";
-import { fr } from "../i18n/fr";
+import { frChanges } from "../i18n/fr-changes";
 import { FileList, type FileSelection } from "./FileList";
 import { WorktreePicker } from "./WorktreePicker";
 
@@ -29,7 +29,7 @@ const PLACEHOLDER_ROWS = ["w-3/4", "w-2/3", "w-4/5"];
 
 function FilesPlaceholder() {
   return (
-    <section aria-label={fr.changes.loading} aria-busy="true" className="grid gap-2 px-2 pt-1">
+    <section aria-label={frChanges.changes.loading} aria-busy="true" className="grid gap-2 px-2 pt-1">
       {PLACEHOLDER_ROWS.map((width) => (
         <div key={width} className={`h-9 animate-pulse rounded-md bg-muted ${width}`} />
       ))}
@@ -54,7 +54,7 @@ export function ChangesFiles({
         <FilesPlaceholder />
       ) : files.length === 0 ? (
         <p className="px-2 text-sm text-muted-foreground">
-          {branchHasWork ? fr.changes.cleanUncommitted : fr.changes.clean}
+          {branchHasWork ? frChanges.changes.cleanUncommitted : frChanges.changes.clean}
         </p>
       ) : (
         <FileList files={files} {...list} />

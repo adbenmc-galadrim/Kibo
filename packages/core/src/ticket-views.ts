@@ -4,6 +4,7 @@ import {
   type FeatureState,
   featureState,
   featureSteps,
+  holdsOf,
   type Link,
   type ProjectActivity,
   type Question,
@@ -13,7 +14,7 @@ import {
   ticketKeyLabel,
 } from "@kibo/schema";
 import { openCountByTicket } from "./questions";
-import { firstBlockingQuestions, startabilityOf } from "./ticket-start";
+import { firstBlockingQuestions, type HeldTicket, startabilityOf } from "./ticket-start";
 
 export type ViewFacts = {
   projectKey: string;
@@ -42,6 +43,18 @@ function effectiveTickets(
   });
 }
 
+function heldTickets(
+  effective: readonly { ticket: Ticket; progress: TicketView["progress"] }[],
+  facts: ViewFacts,
+): { ticket: HeldTicket; progress: TicketView["progress"] }[] {
+  const holds = holdsOf(
+    effective.map((e) => e.ticket),
+    facts.links,
+    facts.projectKey,
+  );
+  return effective.map((e) => ({ ...e, ticket: { ...e.ticket, onHold: holds.get(e.ticket.id) ?? null } }));
+}
+
 function blockersOf(links: readonly Link[]): Map<string, string[]> {
   const blockers = new Map<string, string[]>();
   for (const l of links) if (l.type === "blocks") blockers.set(l.to, [...(blockers.get(l.to) ?? []), l.from]);
@@ -50,7 +63,7 @@ function blockersOf(links: readonly Link[]): Map<string, string[]> {
 
 function featureOf(
   facts: ViewFacts,
-  effective: readonly Ticket[],
+  effective: readonly HeldTicket[],
   blocking: ReadonlyMap<string, Question>,
 ): (ticket: Ticket, progress: TicketView["progress"]) => FeatureState | null {
   const sprints = new Map(facts.sprints.map((s) => [s.id, s]));
@@ -81,7 +94,7 @@ function featureStates(
 
 export function ticketViews(facts: ViewFacts): TicketView[] {
   const { activity } = facts;
-  const effective = effectiveTickets(facts.tickets);
+  const effective = heldTickets(effectiveTickets(facts.tickets), facts);
   const byId = new Map(effective.map((e) => [e.ticket.id, e.ticket]));
   const blockers = blockersOf(facts.links);
   const blocking = firstBlockingQuestions(facts.questions);

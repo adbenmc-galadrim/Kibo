@@ -10,6 +10,7 @@ export function ticketRefsOf(action: ProposedAction): string[] {
       return typeof action.parent === "string" ? [action.ticket, action.parent] : [action.ticket];
     case "setStatus":
     case "setSprint":
+    case "setHold":
     case "assignAgent":
     case "deliverAnswers":
     case "createQuestion":

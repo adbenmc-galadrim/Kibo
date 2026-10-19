@@ -1,6 +1,8 @@
 import { expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import {
+  ATTENTE_ORIGINS,
+  ATTENTE_SCREENS,
   DIALOG_SCREENS,
   MASK_AREA_LIMIT,
   type MaskedScreen,
@@ -26,6 +28,11 @@ test("every mask stays inside its screen and says why", () => {
     "kanban",
     "fiche-ticket",
     "questions",
+    "attente-vue-ensemble",
+    "attente-planning",
+    "attente-fonctionnalite",
+    "attente-kanban",
+    "attente-fiche-ticket",
   ]);
   for (const screen of screens)
     for (const m of PIXEL_MASKS[screen]) {
@@ -77,4 +84,51 @@ test("no mask covers a dialog, a popover or the ticket sheet", () => {
       const apart = m.x + m.w <= box.x || box.x + box.w <= m.x || m.y + m.h <= box.y || box.y + box.h <= m.y;
       expect(apart).toBe(true);
     }
+});
+
+const MOVED: readonly string[] = ["attente-vue-ensemble", "attente-fonctionnalite"];
+const whys = (screen: string) => new Set(masksOf(screen).map((m) => m.why));
+
+test("each on-hold screen keeps the height, the masks and the dialog of the screen it comes from", () => {
+  expect(ATTENTE_ORIGINS).toEqual({
+    "attente-vue-ensemble": "vue-ensemble",
+    "attente-planning": "planning",
+    "attente-fonctionnalite": "fonctionnalite",
+    "attente-kanban": "kanban",
+    "attente-fiche-ticket": "fiche-ticket",
+  });
+  for (const screen of ATTENTE_SCREENS) {
+    const origin = ATTENTE_ORIGINS[screen];
+    expect(PIXEL_HEIGHTS[screen]).toBe(PIXEL_HEIGHTS[origin]);
+    if (MOVED.includes(screen)) expect([...whys(screen)].every((why) => whys(origin).has(why))).toBe(true);
+    else expect(masksOf(screen)).toEqual(PIXEL_MASKS[origin]);
+    expect(DIALOG_SCREENS[screen]).toEqual(DIALOG_SCREENS[origin]);
+    expect(referenceOf(screen)).toBe(screen);
+  }
+});
+
+test("the on-hold Vue d'ensemble masks the hours of its four activity rows and of its questions where they moved", () => {
+  const at = (what: string) =>
+    masksOf("attente-vue-ensemble")
+      .filter((m) => m.why.includes(what))
+      .map((m) => [m.x, m.y]);
+  expect(at("de l'activité")).toEqual([
+    [279, 1072],
+    [279, 1111],
+    [279, 1150],
+    [279, 1189],
+  ]);
+  expect(at("de Q14")).toEqual([[906, 1088]]);
+  expect(at("de Q16")).toEqual([[912, 1151]]);
+  expect(at("de Q17")).toEqual([[903, 1212]]);
+});
+
+test("the on-hold sheet of F5 drops the masks of SILO-33's running step and lifts the side column by 21 px", () => {
+  const ys = masksOf("attente-fonctionnalite")
+    .filter((m) => m.x > 1000)
+    .map((m) => m.y);
+  expect(ys).toEqual([16, 392, 477, 507, 537]);
+  expect(
+    masksOf("attente-fonctionnalite").some((m) => m.why.includes("SILO-33") || m.why.includes("branche")),
+  ).toBe(false);
 });

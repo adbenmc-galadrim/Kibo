@@ -84,3 +84,28 @@ test("a broken CI reads « CI cassée », as on the ticket and in the CLI", () =
   const broken = event({ kind: "pr_checks", ticketId: "e32", data: { number: 22, checks: "error" } });
   expect(journalActivity([broken], project, NOW)[0]?.text).toBe("CI cassée sur PR #22 · SILO-32");
 });
+
+test("a step put on hold or resumed gets the hold kind, with its key", () => {
+  const items = journalActivity(
+    [
+      event({
+        kind: "held",
+        ticketId: "e33",
+        source: "user",
+        data: { reason: "Serveur MinIO de recette indisponible" },
+      }),
+      event({
+        kind: "resumed",
+        ticketId: "e33",
+        source: "user",
+        data: { reason: "Serveur MinIO de recette indisponible" },
+      }),
+    ],
+    project,
+    NOW,
+  );
+  expect(items.map((i) => [i.kind, i.text])).toEqual([
+    ["hold", "Mise en attente · Serveur MinIO de recette indisponible · SILO-33"],
+    ["hold", "Reprise · SILO-33"],
+  ]);
+});

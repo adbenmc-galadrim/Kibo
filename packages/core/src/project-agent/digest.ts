@@ -34,7 +34,7 @@ export const RUN_STATE_TEXT: Record<RunState, string> = {
   cancelled: "annulé",
 };
 
-type Field = { name: Exclude<keyof TicketPrint, "blockedBy">; label: string; none: string };
+type Field = { name: Exclude<keyof TicketPrint, "blockedBy" | "hold">; label: string; none: string };
 const TICKET_FIELDS: readonly Field[] = [
   { name: "title", label: "titre", none: "aucun" },
   { name: "statusId", label: "statut", none: "aucun" },
@@ -59,7 +59,7 @@ function diffRecord<T>(
   );
 }
 
-function fieldText(field: Field, value: TicketPrint[keyof TicketPrint], parentKey: (id: string) => string) {
+function fieldText(field: Field, value: TicketPrint[Field["name"]], parentKey: (id: string) => string) {
   if (value === null || (Array.isArray(value) && value.length === 0)) return field.none;
   if (Array.isArray(value)) return value.join(", ");
   if (field.name === "title") return `« ${value} »`;
@@ -71,6 +71,12 @@ function blockerLines(name: string, old: readonly string[], next: readonly strin
     ...next.filter((k) => !old.includes(k)).map((k) => `${name} : bloqué par ${k}`),
     ...old.filter((k) => !next.includes(k)).map((k) => `${name} : plus bloqué par ${k}`),
   ];
+}
+
+function holdLines(name: string, old: TicketPrint["hold"], next: TicketPrint["hold"]): string[] {
+  if (next === null) return old === null ? [] : [`${name} : repris`];
+  if (old === null) return [`${name} : mis en attente · ${next.reason}`];
+  return old.reason === next.reason ? [] : [`${name} : en attente · ${next.reason}`];
 }
 
 function ticketLines(
@@ -87,6 +93,7 @@ function ticketLines(
         `${name} : ${f.label} ${fieldText(f, old[f.name], parentKey)} → ${fieldText(f, next[f.name], parentKey)}`,
     ),
     ...blockerLines(name, old.blockedBy, next.blockedBy),
+    ...holdLines(name, old.hold, next.hold),
   ];
 }
 
