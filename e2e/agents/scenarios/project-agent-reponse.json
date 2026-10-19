@@ -11,7 +11,7 @@
             "actions": [
               {
                 "id": 1,
-                "why": "Q16 répondue : 5 Go.",
+                "why": "Quota de 5 Go par client à inscrire dans l'étape.",
                 "type": "updateTicket",
                 "ticket": "SILO-34",
                 "description": "Quota de stockage : 5 Go par client (Q16)."
