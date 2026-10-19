@@ -120,6 +120,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
     trace: visibility.trace,
     notify: opts.notify ?? (() => {}),
     agent: () => projectAgent.agent,
+    answerGrace: opts.answerWakeGraceMs,
   });
   closers.push(signals.stop);
   closers.push(service.attachAnswerWake({ wake: signals.wakeOnAnswer }));

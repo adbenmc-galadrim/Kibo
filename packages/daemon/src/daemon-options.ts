@@ -36,6 +36,7 @@ export type DaemonOptions = {
   clock?: Clock;
   code?: CodeTrackingOptions;
   ticketExecution?: TicketExecution;
+  answerWakeGraceMs?: number;
 } & Partial<
   Pick<ComponentsDeps, "build" | "validate" | "processCommand" | "net" | "installCli" | "cliStatus">
 >;

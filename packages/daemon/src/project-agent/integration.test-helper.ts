@@ -24,6 +24,7 @@ import {
 } from "../agents/fake-claude-scenario";
 import type { Notice } from "../agents/notifier";
 import { type Daemon, startDaemon } from "../daemon";
+import type { DaemonOptions } from "../daemon-options";
 
 export type Rpc = <T>(body: Record<string, unknown>) => Promise<T>;
 
@@ -74,6 +75,8 @@ export type Stack = {
   restart(): Promise<void>;
 };
 
+export type StackOptions = Pick<DaemonOptions, "answerWakeGraceMs">;
+
 export const LIVRAISON_AGENT: Agent = testAgent({ id: "livraison", name: "livraison", maxParallel: 1 });
 
 async function boot(
@@ -81,8 +84,10 @@ async function boot(
   notices: Notice[],
   scenario: FakeScenarioName,
   agents: readonly Agent[],
+  options: StackOptions,
 ): Promise<Daemon> {
   return startDaemon({
+    ...options,
     agentSource: testAgentSource(agents).source,
     home,
     port: 0,
@@ -107,11 +112,12 @@ async function boot(
 export async function startStack(
   scenario: FakeScenarioName = "project-agent-routes",
   agents: readonly Agent[] = [LIVRAISON_AGENT],
+  options: StackOptions = {},
 ): Promise<Stack> {
   const home = mkdtempSync(join(tmpdir(), "kibo-project-agent-it-"));
   mkdirSync(join(home, "fake"));
   const notices: Notice[] = [];
-  let daemon: Daemon | null = await boot(home, notices, scenario, agents);
+  let daemon: Daemon | null = await boot(home, notices, scenario, agents, options);
   const stack: Stack = {
     home,
     url: daemon.url,
@@ -120,7 +126,7 @@ export async function startStack(
     calls: (sessionId) => fakeCalls(join(home, "fake"), sessionId),
     async restart() {
       await daemon?.stop();
-      daemon = await boot(home, notices, scenario, agents);
+      daemon = await boot(home, notices, scenario, agents, options);
       stack.url = daemon.url;
       stack.rpc = await client(daemon);
     },

@@ -1,0 +1,26 @@
+{
+  "turns": [
+    {
+      "steps": [
+        { "mcp": "list_questions", "input": { "state": "answered" } },
+        {
+          "mcp": "propose_batch",
+          "input": {
+            "summary": "Reprendre KIB-1",
+            "actions": [
+              {
+                "id": 1,
+                "type": "setStatus",
+                "ticket": "KIB-1",
+                "statusId": "in_progress",
+                "why": "Q1 répondue : 5 Go."
+              }
+            ]
+          }
+        }
+      ],
+      "result": "Q1 répondue : on avance. Je propose :",
+      "tokens": 900
+    }
+  ]
+}
