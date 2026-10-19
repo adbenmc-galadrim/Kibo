@@ -44,8 +44,20 @@ const NO_GH_FLAG = "--no-gh";
 const DESIGN_FLAG = "--design";
 const EMBEDS_FLAG = "--embeds";
 const SILO_PR_POLL_MS = "200";
+const AGENT_SCENARIO_FLAG = "--agent-scenario";
+const ANSWER_GRACE_FLAG = "--answer-wake-grace-ms";
 const FLAGS = [INTEGRATIONS_FLAG, NO_GH_FLAG, DESIGN_FLAG, EMBEDS_FLAG];
-const argv = process.argv.slice(2);
+const VALUE_FLAGS = [AGENT_SCENARIO_FLAG, ANSWER_GRACE_FLAG];
+const rawArgv = process.argv.slice(2);
+const flagValue = (flag: string): string | null => {
+  const at = rawArgv.indexOf(flag);
+  return at < 0 ? null : (rawArgv[at + 1] ?? null);
+};
+const argv = rawArgv.filter(
+  (a, i) => !VALUE_FLAGS.includes(a) && !VALUE_FLAGS.includes(rawArgv[i - 1] ?? ""),
+);
+const agentScenario = flagValue(AGENT_SCENARIO_FLAG);
+const answerGrace = flagValue(ANSWER_GRACE_FLAG);
 const integrations = argv.includes(INTEGRATIONS_FLAG);
 const design = argv.includes(DESIGN_FLAG);
 const embeds = argv.includes(EMBEDS_FLAG);
@@ -67,6 +79,7 @@ const agents = join(root, "packages/daemon/src/agents");
 const siloScenario = isSiloScenario(scenario);
 const e2eScenario = join(import.meta.dir, "agents", "scenarios", `${scenario}.json`);
 function scenarioFile(): string {
+  if (agentScenario !== null) return join(import.meta.dir, "agents", "scenarios", `${agentScenario}.json`);
   if (siloScenario) return SILO_SCENARIO;
   return existsSync(e2eScenario) ? e2eScenario : join(agents, "scenarios", `${scenario}.json`);
 }
@@ -171,6 +184,7 @@ const proc = Bun.spawn(
     "--host-load",
     "62,70",
     ...(fakes?.args ?? []),
+    ...(answerGrace === null ? [] : [ANSWER_GRACE_FLAG, answerGrace]),
   ],
   {
     env: {
