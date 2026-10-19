@@ -2,7 +2,6 @@ import { Database } from "bun:sqlite";
 import { expect, test } from "bun:test";
 import { denialStore } from "../agents/denial-store";
 import { fakeAgentsPort } from "../agents-port.test-helper";
-import { type AgentQuestions, deliverTicketAnswers } from "../agents-rpc";
 import { allowAndResume } from "../delivery/allow-resume";
 import { componentDelivery, type DeliveryCall } from "../delivery/component-calls";
 import { deliver } from "../delivery/deliver";
@@ -13,19 +12,6 @@ import { stubHandlerDeps, unused } from "./gate-test-kit";
 
 const waiting = runView({ id: "r1", state: "waiting_input" });
 const removed = { ...fakeAgentsPort([waiting]), ticketExecution: () => "removed" as const };
-
-const questions: AgentQuestions = {
-  data: {
-    runQuestions: () => [],
-    undeliveredAnswers: unused,
-    markAnswersDelivered: unused,
-    answerRunQuestion: unused,
-  },
-  projectIds: () => ["p1"],
-  projectAgents: () => [],
-  viewer: () => "adam",
-  assertWritable: () => {},
-};
 
 const ops: DeliveryOps = {
   deliverDeps: unused,
@@ -48,10 +34,9 @@ const ops: DeliveryOps = {
     ),
 };
 
-test("a component cannot deliver, resume a run or deliver answers once ticket agents are removed", async () => {
+test("a component cannot deliver nor resume a run once ticket agents are removed, nor deliver answers", async () => {
   const handlers = createGateHandlers({
     ...stubHandlerDeps,
-    deliverAnswers: (projectId, ticketId) => deliverTicketAnswers(removed, questions, projectId, ticketId),
     delivery: componentDelivery(ops),
   });
   await expect(handlers.delivery("p1", { kind: "run.deliver", ticketId: "t1" })).rejects.toThrow(
@@ -65,5 +50,5 @@ test("a component cannot deliver, resume a run or deliver answers once ticket ag
     addDirs: [],
   };
   await expect(handlers.delivery("p1", allow)).rejects.toThrow("AGENT_EXECUTION_REMOVED");
-  await expect(handlers.questions("p1", "t1")).rejects.toThrow("AGENT_EXECUTION_REMOVED");
+  expect("questions" in handlers).toBe(false);
 });

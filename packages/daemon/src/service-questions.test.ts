@@ -175,7 +175,7 @@ test("delivering the answers of a ticket sends one message to its session and ma
   const { s, project, ticket, answers, agentQuestion, answer, snapshot } = setup("done");
   const first = answer(agentQuestion("Bloquer le dépôt ?", false)?.id ?? "");
   const second = answer(agentQuestion("Garder les archives ?", false)?.id ?? "");
-  expect(call(s, { method: "deliverAnswers", projectId: project.id, ticketId: ticket.id })).toEqual({
+  expect(s.deliverAnswers(project.id, ticket.id)).toEqual({
     sent: 2,
     runId: "r1",
   });
@@ -191,7 +191,7 @@ test("an inherited run of the ticket shows the answers still to deliver and rece
   expect(call(s, { method: "getAgents" }).questions).toEqual([
     { runId: "r2", open: 0, undelivered: 1, latestTitle: null },
   ]);
-  expect(call(s, { method: "deliverAnswers", projectId: project.id, ticketId: ticket.id })).toEqual({
+  expect(s.deliverAnswers(project.id, ticket.id)).toEqual({
     sent: 1,
     runId: "r2",
   });
@@ -245,7 +245,5 @@ test("without ticket execution a blocking answer is recorded, no run resumes and
   expect(answered.answer).toMatchObject({ kind: "option", option: "Oui", deliveredAt: null });
   expect(answers).toEqual([]);
   expect(snapshot().questions[0]?.answer).toMatchObject({ deliveredRunId: null });
-  expect(() => call(s, { method: "deliverAnswers", projectId: project.id, ticketId: ticket.id })).toThrow(
-    "AGENT_EXECUTION_REMOVED",
-  );
+  expect(() => s.deliverAnswers(project.id, ticket.id)).toThrow("AGENT_EXECUTION_REMOVED");
 });

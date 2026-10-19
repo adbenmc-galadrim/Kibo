@@ -3,14 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DEV_TOOLCHAIN } from "@kibo/devkit/test-kit";
-import type {
-  AgentsState,
-  DeliveryResult,
-  ProjectMeta,
-  ProjectSnapshot,
-  RunView,
-  Ticket,
-} from "@kibo/schema";
+import type { AgentsState, ProjectMeta, ProjectSnapshot, RunView, Ticket } from "@kibo/schema";
 import { testAgent, testAgentSource } from "../agents/agents-port.test-helper";
 import { FAKE_CLAUDE } from "../agents/fake-claude-scenario";
 import type { Notice } from "../agents/notifier";
@@ -83,7 +76,7 @@ async function start(notices: Notice[]) {
   return client(d);
 }
 
-test("a run asks a question to validate, ends done, and gets the answer only when delivered", async () => {
+test("a run asks a question to validate, ends done, and keeps the answer for its ticket", async () => {
   const notices: Notice[] = [];
   const rpc = await start(notices);
   const project = await rpc<ProjectMeta>({
@@ -142,21 +135,4 @@ test("a run asks a question to validate, ends done, and gets the answer only whe
   expect((await rpc<AgentsState>({ method: "getAgents" })).questions).toEqual([
     { runId: run.id, open: 0, undelivered: 1, latestTitle: null },
   ]);
-
-  expect(
-    await rpc<DeliveryResult>({ method: "deliverAnswers", projectId: project.id, ticketId: ticket.id }),
-  ).toEqual({
-    sent: 1,
-    runId: run.id,
-  });
-  await waitFor(async () => {
-    const current = await runOf();
-    return current?.state === "done" && current.turns === 2 ? current : undefined;
-  });
-  expect((await snapshot()).questions[0]?.answer).toMatchObject({
-    kind: "confirm",
-    by: { kind: "human", ref: "adam" },
-    deliveredRunId: run.id,
-  });
-  expect((await rpc<AgentsState>({ method: "getAgents" })).questions).toEqual([]);
 }, 60_000);

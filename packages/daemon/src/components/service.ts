@@ -2,7 +2,6 @@ import type { Database } from "bun:sqlite";
 import { getKeyAllocator, getProjectMeta, listProjects, readProject } from "@kibo/core";
 import { type BuildOutput, type Toolchain, validateComponent } from "@kibo/devkit";
 import {
-  type DeliveryResult,
   type Instance,
   KiboError,
   type PresencePeer,
@@ -57,7 +56,6 @@ export type ComponentsDeps = {
   integrations?: () => ComponentIntegrationHooks | null;
   presence?: (projectId: string) => PresencePeer[];
   sharing?: (projectId: string) => ProjectSyncInfo;
-  deliverAnswers?: (projectId: string, ticketId: string) => DeliveryResult;
   peekRun?: (projectId: string, runId: string) => RunPeek;
   delivery?: ComponentDelivery;
   appSettings: Pick<AppSettingsStore, "get">;
