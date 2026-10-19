@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { clockFromEnv } from "./daemon-options";
+import { answerWakeGraceFromArg, clockFromEnv } from "./daemon-options";
 
 test("KIBO_FIXED_NOW freezes the daemon clock and says so in the log", () => {
   const lines: string[] = [];
@@ -19,4 +19,15 @@ test("without KIBO_FIXED_NOW the clock is free and nothing is logged", () => {
 
 test("an invalid KIBO_FIXED_NOW stops the start", () => {
   expect(() => clockFromEnv({ KIBO_FIXED_NOW: "16/10/2026" }, () => {})).toThrow("INVALID_INPUT");
+});
+
+test("--answer-wake-grace-ms sets the grace of a wake on an answer, in milliseconds", () => {
+  expect(answerWakeGraceFromArg(undefined)).toBeUndefined();
+  expect(answerWakeGraceFromArg("0")).toBe(0);
+  expect(answerWakeGraceFromArg("1500")).toBe(1500);
+});
+
+test("an invalid --answer-wake-grace-ms stops the start", () => {
+  for (const raw of ["", "-1", "1.5", "30s"])
+    expect(() => answerWakeGraceFromArg(raw)).toThrow("INVALID_INPUT");
 });
