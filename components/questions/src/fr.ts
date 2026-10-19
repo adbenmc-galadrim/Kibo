@@ -71,6 +71,12 @@ export const fr = {
   archiveHelp: "La question est masquée ; tu peux la restaurer depuis le filtre « Archivées ».",
   archived: (who: string, when: string) => `Archivée par ${who} · ${when}`,
   restore: "Restaurer",
+  menu: (label: string) => `Actions de ${label}`,
+  remove: "Supprimer",
+  removeTitle: (title: string) => `Supprimer « ${title} » ?`,
+  removeHelp:
+    "Suppression définitive, pour tous les membres du projet : la question, sa réponse et son historique. Pour la masquer sans la perdre, archive-la.",
+  removeFailed: "Impossible de supprimer la question.",
   answerEdit: "Modifier la réponse",
   answerRemove: "Retirer la réponse",
   answerRemoveTitle: (title: string) => `Retirer la réponse à « ${title} » ?`,

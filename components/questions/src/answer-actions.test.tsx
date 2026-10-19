@@ -126,13 +126,13 @@ const headerOf = (card: HTMLElement) => {
   return within(header);
 };
 
-test("answer actions sit in the card header, next to « Archiver »", async () => {
+test("answer actions sit in the card header, next to the card menu", async () => {
   const m = mount();
   const user = userEvent.setup();
   const card = await screen.findByRole("article", { name: ANSWERED });
   const header = headerOf(card);
   const names = header.getAllByRole("button").map((b) => b.getAttribute("aria-label") ?? b.textContent);
-  expect(names).toEqual(["Modifier la réponse", "Retirer la réponse", "Archiver"]);
+  expect(names).toEqual(["Modifier la réponse", "Retirer la réponse", expect.stringMatching(/^Actions de /)]);
   await user.click(header.getByRole("button", { name: "Modifier la réponse" }));
   const form = within(card).getByRole("form", { name: `Modifier la réponse à ${ANSWERED}` });
   expect(form.closest("header")).toBeNull();
@@ -144,7 +144,7 @@ test("answer actions sit in the card header, next to « Archiver »", async () =
       headerOf(card)
         .getAllByRole("button")
         .map((b) => b.getAttribute("aria-label") ?? b.textContent),
-    ).toEqual(["Modifier la réponse", "Retirer la réponse", "Archiver"]),
+    ).toEqual(["Modifier la réponse", "Retirer la réponse", expect.stringMatching(/^Actions de /)]),
   );
 });
 
@@ -171,11 +171,11 @@ test("an imported answer stays editable", async () => {
   expect(within(card).getByRole("button", { name: "Modifier la réponse" })).toBeTruthy();
 });
 
-test("read-only projects show no edit, archive nor restore button", async () => {
+test("read-only projects show no edit, menu nor restore button", async () => {
   const m = mount();
   act(() => m.setAccess("read-only"));
   const card = await screen.findByRole("article", { name: ANSWERED });
-  for (const name of ["Modifier la réponse", "Retirer la réponse", "Archiver", "Restaurer"])
+  for (const name of ["Modifier la réponse", "Retirer la réponse", /^Actions de /, "Restaurer"])
     expect(within(card).queryByRole("button", { name })).toBeNull();
 });
 
@@ -183,9 +183,13 @@ test("« Archiver » hides the question, « Archivées » shows it with « Resta
   const m = mount();
   const user = userEvent.setup();
   const open = await screen.findByRole("article", { name: OPEN });
-  expect(within(open).queryByRole("button", { name: "Archiver" })).toBeNull();
+  await user.click(within(open).getByRole("button", { name: /^Actions de / }));
+  expect(screen.queryByRole("menuitem", { name: "Archiver" })).toBeNull();
+  expect(screen.getByRole("menuitem", { name: "Supprimer" })).toBeTruthy();
+  await user.keyboard("{Escape}");
   const card = screen.getByRole("article", { name: ANSWERED });
-  await user.click(within(card).getByRole("button", { name: "Archiver" }));
+  await user.click(within(card).getByRole("button", { name: /^Actions de / }));
+  await user.click(await screen.findByRole("menuitem", { name: "Archiver" }));
   const dialog = await screen.findByRole("alertdialog");
   expect(
     within(dialog).getByText(

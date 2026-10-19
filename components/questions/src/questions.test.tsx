@@ -119,7 +119,7 @@ test("read-only projects hide the forms", async () => {
   await screen.findByText(OPEN);
   expect(screen.queryByRole("button", { name: "Valider le choix provisoire" })).toBeNull();
   expect(screen.queryByRole("button", { name: "Nouvelle question" })).toBeNull();
-  expect(screen.queryByRole("button", { name: "Archiver" })).toBeNull();
+  expect(screen.queryByRole("button", { name: /^Actions de / })).toBeNull();
   expect(screen.queryByRole("button", { name: "Coller la réponse" })).toBeNull();
 });
 

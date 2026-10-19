@@ -1,37 +1,13 @@
 import { expect, test } from "bun:test";
-import { type ProjectCommand, type Question, Sprint, Ticket } from "@kibo/schema";
+import type { ProjectCommand, Question } from "@kibo/schema";
 import { type KiboSdk, SdkProvider } from "@kibo/sdk";
 import { createMockSdk, type MockSdkOptions } from "@kibo/sdk/mock";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Component, manifest } from "./index";
+import { ADAM, Q14, Q16, Q17, seedSilo } from "./question-fixtures.test-helper";
 
-const ADAM = { kind: "human", ref: "adam" } as const;
-const Q14 = "Un box réaffecté garde-t-il ses photos ?";
-const Q17 = "Un rapport par chef de centre ou par client ?";
-const Q16 = "Quota par client : 2 Go ou 5 Go ?";
-
-const seed = (run: (cmd: ProjectCommand) => unknown) => {
-  const s43 = Sprint.parse(
-    run({ method: "createSprint", code: "S43", name: "Sprint 43", start: "2026-10-19", end: "2026-10-23" }),
-  );
-  const f6 = Ticket.parse(run({ method: "createTicket", title: "Constats", feature: true }));
-  run({ method: "setTicketSprint", ticketId: f6.id, sprintId: s43.id });
-  const step = Ticket.parse(
-    run({ method: "createTicket", title: "Lecture du fichier Excel", parentId: f6.id }),
-  );
-  const other = Ticket.parse(run({ method: "createTicket", title: "Modèle du rapport" }));
-  run({ method: "createQuestion", ticketId: other.id, title: Q17, recipient: "client", createdBy: ADAM });
-  run({ method: "createQuestion", ticketId: other.id, title: Q16, recipient: "product", createdBy: ADAM });
-  run({
-    method: "createQuestion",
-    ticketId: step.id,
-    title: Q14,
-    blocking: true,
-    recipient: "client",
-    createdBy: ADAM,
-  });
-};
+const seed = seedSilo;
 
 const mount = (opts: MockSdkOptions = {}) => {
   const m = createMockSdk(manifest, { seed, surface: "view", client: "Silo SA", ...opts });

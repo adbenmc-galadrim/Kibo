@@ -13,6 +13,7 @@ import { ConfirmDialog } from "@kibo/sdk/ui/confirm-dialog";
 import { Archive, ArchiveRestore, ClipboardPaste, Lock, Send } from "lucide-react";
 import { useState } from "react";
 import { AnswerActionButtons, AnswerEditForm } from "./AnswerActions";
+import { CardMenu } from "./CardMenu";
 import { DenialProposals } from "./DenialProposals";
 import { isDenialQuestion } from "./denial-logic";
 import { ExportButton } from "./ExportButton";
@@ -162,6 +163,7 @@ export function QuestionCard(props: Props) {
   const { question: q, impact, client, recipients, now, readOnly, viewer, runOf } = props;
   const sdk = useSdk();
   const [archiving, setArchiving] = useState(false);
+  const [removing, setRemoving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [pasting, setPasting] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -208,11 +210,13 @@ export function QuestionCard(props: Props) {
             <AnswerActionButtons question={q} onEdit={() => setEditing(true)} />
           )}
           {!readOnly && archived && <RestoreButton questionId={q.id} />}
-          {!readOnly && canArchive(q, viewer, runOf(q.runId)) && (
-            <Button variant="ghost" size="sm" className={HEADER_ACTION} onClick={() => setArchiving(true)}>
-              <Archive aria-hidden />
-              {fr.archive}
-            </Button>
+          {!readOnly && (
+            <CardMenu
+              question={q}
+              canArchive={canArchive(q, viewer, runOf(q.runId))}
+              onArchive={() => setArchiving(true)}
+              onRemove={() => setRemoving(true)}
+            />
           )}
         </div>
       </header>
@@ -248,6 +252,18 @@ export function QuestionCard(props: Props) {
         describeError={() => fr.archiveFailed}
         onConfirm={async () => {
           await sdk.run({ method: "archiveQuestion", questionId: q.id, by });
+        }}
+      />
+      <ConfirmDialog
+        open={removing}
+        onOpenChange={setRemoving}
+        title={fr.removeTitle(q.title)}
+        description={fr.removeHelp}
+        confirmLabel={fr.remove}
+        cancelLabel={fr.cancel}
+        describeError={() => fr.removeFailed}
+        onConfirm={async () => {
+          await sdk.run({ method: "removeQuestion", questionId: q.id });
         }}
       />
     </article>
