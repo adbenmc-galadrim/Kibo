@@ -20,6 +20,7 @@ export const TRACKED_METHODS: ReadonlySet<ProjectCommand["method"]> = new Set([
   "setTicketDelivery",
   "createQuestion",
   "answerQuestion",
+  "setHold",
 ]);
 
 type Facts = { before: ProjectSnapshot; after: ProjectSnapshot };
@@ -27,6 +28,7 @@ type Running = {
   status: Map<string, string>;
   sprint: Map<string, string | null>;
   refs: Map<string, ExternalRef>;
+  hold: Map<string, string | null>;
 };
 type Draft = Omit<ProjectEventInput, "featureId" | "source">;
 
@@ -58,10 +60,11 @@ export function featureIdOf(snapshot: ProjectSnapshot, ticketId: string | null):
 const refKey = (ticketId: string, ref: ExternalRef) => `${ticketId}|${ref.kind}|${externalRefKey(ref)}`;
 
 function runningFacts(before: ProjectSnapshot): Running {
-  const running: Running = { status: new Map(), sprint: new Map(), refs: new Map() };
+  const running: Running = { status: new Map(), sprint: new Map(), refs: new Map(), hold: new Map() };
   for (const t of before.tickets) {
     running.status.set(t.id, t.statusId);
     running.sprint.set(t.id, t.sprintId);
+    running.hold.set(t.id, t.hold?.reason ?? null);
     for (const ref of t.externalRefs) running.refs.set(refKey(t.id, ref), ref);
   }
   return running;
@@ -130,6 +133,17 @@ function questionDraft(facts: Facts, e: CommandEvent, questionId: string): Draft
   ];
 }
 
+type HoldCommand = Extract<ProjectCommand, { method: "setHold" }>;
+
+function holdDrafts(running: Running, cmd: HoldCommand): Draft[] {
+  const from = running.hold.get(cmd.ticketId) ?? null;
+  running.hold.set(cmd.ticketId, cmd.reason);
+  if (from === cmd.reason) return [];
+  return cmd.reason === null
+    ? [{ kind: "resumed", ticketId: cmd.ticketId, data: { reason: from } }]
+    : [{ kind: "held", ticketId: cmd.ticketId, data: { reason: cmd.reason } }];
+}
+
 function drafts(facts: Facts, running: Running, e: CommandEvent): Draft[] {
   const cmd = e.command;
   switch (cmd.method) {
@@ -165,6 +179,8 @@ function drafts(facts: Facts, running: Running, e: CommandEvent): Draft[] {
       return questionDraft(facts, e, "");
     case "answerQuestion":
       return questionDraft(facts, e, cmd.questionId);
+    case "setHold":
+      return holdDrafts(running, cmd);
     default:
       return [];
   }
