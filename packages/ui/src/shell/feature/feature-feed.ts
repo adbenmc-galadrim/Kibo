@@ -92,6 +92,7 @@ const LINES: Record<ProjectEventKind, LineOf> = {
   question_created: asTicket("question"),
   question_answered: asTicket("question"),
   question_reminded: asTicket("question"),
+  question_deleted: asTicket("question"),
   held: asTicket("hold"),
   resumed: asTicket("hold"),
 };

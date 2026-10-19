@@ -68,6 +68,7 @@ test("batches, sprints and questions read as the agent and the plan say", () => 
   expect(label(event("question_reminded", { questionId: "q9", title: "Un box ?" }, "project-agent"))).toBe(
     "Un box ? relancée",
   );
+  expect(label(event("question_deleted", { questionId: "q16", ref: "Q16" }, "user"))).toBe("Q16 supprimée");
 });
 
 test("a missing key gives a plain label, never an error", () => {
@@ -88,6 +89,7 @@ test("a missing key gives a plain label, never an error", () => {
     "question_created",
     "question_answered",
     "question_reminded",
+    "question_deleted",
     "held",
     "resumed",
   ];
@@ -97,6 +99,7 @@ test("a missing key gives a plain label, never an error", () => {
   expect(label(event("sprint_created", {}))).toBe("Sprint créé");
   expect(label(event("batch_proposed", {}))).toBe("Suivi mis à jour · lot proposé");
   expect(label(event("question_created", {}))).toBe("Question posée");
+  expect(label(event("question_deleted", {}))).toBe("Question supprimée");
 });
 
 test("a step put on hold says its reason, and its resumption", () => {
