@@ -34,6 +34,10 @@ export const frMine = {
         return "hors sprint";
       case "limit":
         return `limite de ${reason.limit} en cours`;
+      case "onHold":
+        return reason.hold.source === "own"
+          ? `en attente : ${reason.hold.reason}`
+          : `en attente de ${reason.hold.key}`;
       case "status":
         return null;
     }

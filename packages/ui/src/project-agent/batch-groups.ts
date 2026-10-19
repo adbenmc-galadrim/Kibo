@@ -133,6 +133,8 @@ export function actionTitle(action: ProposedAction, labels: DiffLabels = default
       return t.createSprint(action.code, action.name);
     case "remindQuestion":
       return reminderTitle(action.questionId, labels);
+    case "setHold":
+      return action.reason === null ? t.resume(action.ticket) : t.hold(action.ticket, action.reason);
   }
 }
 

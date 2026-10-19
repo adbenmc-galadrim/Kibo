@@ -91,6 +91,8 @@ const LINES: Record<ProjectEventKind, LineOf> = {
   question_created: asTicket("question"),
   question_answered: asTicket("question"),
   question_reminded: asTicket("question"),
+  held: asTicket("status"),
+  resumed: asTicket("status"),
 };
 
 const OWN_SUBJECT: ReadonlySet<ProjectEventKind> = new Set(["sprint_set"]);

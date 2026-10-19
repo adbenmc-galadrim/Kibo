@@ -22,6 +22,7 @@ import { actAs } from "./mock-actor";
 import { createMockCalls } from "./mock-calls";
 import { createMockRunDelivery, MOCK_DELIVERY_AGENT_INFO } from "./mock-delivery";
 import { createMockEmbeds, recordedFrameApis } from "./mock-embed";
+import { applyMockHolds } from "./mock-holds";
 import { createMockNotes } from "./mock-notes";
 import { createNotifier } from "./mock-notifier";
 import { recordedTrackingApis } from "./mock-project";
@@ -77,6 +78,7 @@ export function createMockSdk(
   const viewer = opts.viewer ?? "adam";
   const componentRun = (cmd: ProjectCommand) => run(actAs(cmd, viewer));
   opts.seed?.(run);
+  applyMockHolds(doc, run, opts.holds ?? []);
   let runs = opts.runs ?? [];
   const folder = createMockNotes(opts.notes ?? {}, opts.noteAges ?? {}, PROJECT_KEY, changes.emit);
   const data = new Map<string, unknown>();

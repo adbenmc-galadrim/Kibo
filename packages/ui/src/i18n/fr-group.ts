@@ -31,7 +31,9 @@ export const frFeature = {
     open: "ouverte",
     blocked: "bloquée",
     delivered: "livrée",
+    deliveredHeld: (n: number) => `livrée · ${n} en attente`,
   },
+  heldSection: (n: number) => `En attente · ${n}`,
   stepsDelivered: (done: number, total: number) =>
     `${plural(done, "étape livrée", "étapes livrées")} sur ${total}`,
   stepsBar: "Étapes de la fonctionnalité",
