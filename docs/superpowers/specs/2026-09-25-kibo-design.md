@@ -2684,6 +2684,7 @@ Détail par tâche dans la section « Écarts » du plan `2026-10-19-kibo-phase-
 ### 41.2 Review d'une PR fusionnée (correctif 0.29.0-alpha.2)
 
 GitHub garde la décision de review d'une PR après sa fusion. Kibo n'affiche une review que sur une PR vivante (ouverte ou brouillon), sauf « approuvée », qui reste affichée sur une PR fusionnée ou fermée (« fusionnée · approuvée »). Une PR fusionnée ou fermée avec « changements demandés » ou « review requise » n'est donc ni « à reprendre », ni à risque, ni la prochaine étape à livrer, sur aucun écran ni dans la CLI ; la sortie JSON et les données stockées restent brutes. Règle unique : `isLivePr` et `liveReview` (`packages/schema/src/external-ref.ts`).
+
 ## 42. Correctif 0.29.0-alpha.2 : réponses sans transmission, suppression d'une question (demande d'Adam du 2026-10-19)
 
 Depuis la phase 27 (§39.1), Kibo ne lance plus d'agent de ticket : la transmission d'une réponse « à l'agent » (§23.11 point 1, §23.12.3 b, §30.6) n'a plus de destinataire. L'interface marque pourtant encore une réponse « à transmettre » et le démon refuse toute transmission (`AGENT_EXECUTION_REMOVED`) : on ne peut ni transmettre ni faire disparaître la marque. Ce lot retire la transmission et ajoute la suppression pure d'une question.
