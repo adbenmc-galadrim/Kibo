@@ -622,6 +622,31 @@ Branches et statuts : SILO-34 passe **en cours** sur `feat/silo-34` (base `feat/
 - État vide (aucune PR vivante) : « Aucune PR ouverte », puis « Les PR ouvertes des étapes apparaissent ici, empilées sur leur
   branche de base. », compteur « 0 PR ouverte · 0 pile », ni rail ni légende.
 
+### Phase 30 · Aperçu de maquette
+
+Scénario `silo-apercu` (spec §44.8) = `silo-maquettes`, puis Figma connecté (jeton de test, secrets en mémoire) et un cadre lié à
+SILO-45 ; ces données ne touchent pas `silo-maquettes` (la fiche de SILO-45 y garde « Maquettes · 0 »). Maquettes : boards
+« P8f · Fiche ticket, Maquettes » et « P8g · Maquette en plein écran » de la page « Proposition »
+(`design/redesign/scripts/59b-apercu-maquette.js`), exports `proposition-fiche-ticket-maquettes-*`, `proposition-apercu-maquette-*`
+et `proposition-apercu-maquette-cadre.png` (le cadre seul, image servie par le faux Figma).
+
+| Ticket | Cadre | Fournisseur | Fichier | Nœud | Taille | URL |
+|---|---|---|---|---|---|---|
+| SILO-45 « Conflits de saisie » | « Conflit de saisie » | Figma | `AbC123xyz` (« Silo ») | `45:1` | 444 × 960 | `https://www.figma.com/design/AbC123xyz/Silo?node-id=45-1` |
+
+Contenu du cadre (écran mobile de l'app Silo, mêmes couleurs en sombre et en clair : fond blanc, bleu `#2563EB`, gris) :
+- barre d'état « 14:02 » ; titre « Conflit de saisie » ; texte « Deux saisies du constat du box B-114 » ;
+- carte « Version hors ligne · 14:02 » : état « Occupé », 3 photos, note « Cadenas changé » ;
+- carte « Version du serveur · 13:47 » : état « Libre », 2 photos, note vide ;
+- bouton plein « Garder la plus récente », bouton contour « Comparer ».
+
+États attendus :
+- Fiche de SILO-45 (P8f) : propriété « Maquette · Conflit de saisie » ; section « Maquettes » ouverte, « 1 » ; vignette du cadre,
+  puis la ligne d'actions « Plein écran » (en tête) · « Conflit de saisie » · « Actualiser » · « Ouvrir dans Figma » · « Retirer » ;
+  champ « Colle l'URL d'un cadre Figma ou d'un board Penpot » et bouton « Lier un cadre ».
+- Plein écran (P8g) : barre « SILO-45 · Conflit de saisie · Figma · Actualiser · Ouvrir dans Figma · Quitter le plein écran
+  (Échap) » ; un seul cadre, donc aucune navigation « 1 / 1 » ; cadre à l'échelle 1, centré ; zoom « 100 % ».
+
 ### Pistes A, B, C (`design/redesign/scripts/02-data.js`)
 
 Ce jeu est indépendant de celui des fonctionnalités : les mêmes numéros de tickets y portent d'autres titres et d'autres statuts.
