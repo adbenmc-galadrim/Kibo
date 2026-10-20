@@ -34,18 +34,17 @@ const lanes = () => screen.findByRole("region", { name: "Fonctionnalités par sp
 const kitModel = (today?: string) =>
   sprintLanes(kitInput(today === undefined ? {} : { tickets: kitTickets(today) }));
 
-test("the manifest reads sprints and questions and declares the columns", () => {
-  expect(manifest.reads).toEqual(expect.arrayContaining(["sprint", "question"]));
-  expect(manifest.configSchema?.columns).toMatchObject({ enum: ["sprints", "waves"], default: "sprints" });
-  expect(manifest.configSchema?.collapseDelivered).toBeUndefined();
+test("the manifest reads the tracking entities, emits no selection and keeps the widget filter only", () => {
+  expect(manifest.reads).toEqual(["ticket", "status", "link", "run", "sprint", "question"]);
+  expect(manifest.selection).toBe(false);
+  expect(Object.keys(manifest.configSchema ?? {})).toEqual(["filter"]);
 });
 
 test("sprints mode: toolbar, counter, one column per sprint and the reserve", async () => {
   setup();
   const region = await lanes();
-  expect(screen.getByRole("button", { name: "Regrouper : Fonctionnalités" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Colonnes : Sprints" })).toBeTruthy();
-  expect(screen.queryByRole("button", { name: "Livrées repliées" })).toBeNull();
+  for (const name of ["Livrées repliées", "Options", "Colonnes : Sprints", "Regrouper : Fonctionnalités"])
+    expect(screen.queryByRole("button", { name })).toBeNull();
   expect(
     screen.getByText("9 fonctionnalités · 2 dépendances entre étapes, 8 entre fonctionnalités"),
   ).toBeTruthy();
@@ -62,7 +61,6 @@ test("sprints mode: toolbar, counter, one column per sprint and the reserve", as
   const s42 = within(region).getByRole("group", { name: "S42 Saisie hors ligne" });
   expect(within(s42).getByText("se termine aujourd'hui")).toBeTruthy();
   expect(within(region).getByRole("group", { name: "S41 Accès" }).textContent).toContain("terminé le 9 oct.");
-  expect(screen.queryByRole("radio", { name: "Vagues" })).toBeNull();
   expect(screen.getByRole("list", { name: "Légende" }).textContent).toContain("Colonne = sprint");
 });
 
@@ -77,44 +75,18 @@ test("a delivered feature is folded, even with the former config key, and its ti
   expect(m.opened).toEqual([root.id]);
 });
 
-test("the former controls live in « Options »", async () => {
-  setup();
-  await lanes();
-  await userEvent.click(screen.getByRole("button", { name: "Options" }));
-  const menu = await screen.findByRole("menu");
-  for (const name of ["Chemin critique", "Démarrables"])
-    expect(within(menu).getByRole("menuitemcheckbox", { name })).toBeTruthy();
-  expect(within(menu).getByRole("menuitemcheckbox", { name: /^Afficher les terminés/ })).toBeTruthy();
-  expect(within(menu).getByRole("menuitemradio", { name: "Moi" })).toBeTruthy();
-  expect(within(menu).getByRole("menuitemradio", { name: "Tous les domaines" })).toBeTruthy();
-});
-
-test("« Colonnes : Vagues » brings back the waves toolbar, and back", async () => {
-  setup();
-  await lanes();
-  await userEvent.click(screen.getByRole("button", { name: "Colonnes : Sprints" }));
-  await userEvent.click(await screen.findByRole("menuitemradio", { name: "Vagues" }));
-  expect(await screen.findByRole("radio", { name: "Vagues" })).toBeTruthy();
-  expect(screen.getByRole("region", { name: "Graphe des dépendances" })).toBeTruthy();
-  await userEvent.click(screen.getByRole("button", { name: "Colonnes : Vagues" }));
-  await userEvent.click(await screen.findByRole("menuitemradio", { name: "Sprints" }));
-  expect(await lanes()).toBeTruthy();
-});
-
-test("the config can open the graph in waves", async () => {
-  setup(seedSprintGraph, { columns: "waves" });
-  expect(await screen.findByRole("radio", { name: "Vagues" })).toBeTruthy();
-});
-
-test("without any sprint the columns switch is disabled and the waves stay", async () => {
+test("without any sprint a single « À planifier » column holds every feature", async () => {
   setup((run) => {
-    run({ method: "createTicket", title: "Seul", assignee: { kind: "human", ref: "adam" } });
+    const root = run({ method: "createTicket", title: "Exporter le dossier client" }) as { id: string };
+    run({ method: "createTicket", title: "Format du dossier", parentId: root.id });
   });
-  const columns = await screen.findByRole("button", { name: "Colonnes : Vagues" });
-  expect(columns.hasAttribute("disabled")).toBe(true);
-  expect(columns.closest("[title]")?.getAttribute("title")).toBe("Aucun sprint");
-  expect(screen.getByRole("radio", { name: "Vagues" }).getAttribute("aria-checked")).toBe("true");
-  expect(screen.queryByRole("region", { name: "Fonctionnalités par sprint" })).toBeNull();
+  const region = await lanes();
+  expect(
+    within(region)
+      .getAllByRole("group")
+      .map((g) => g.getAttribute("aria-label")),
+  ).toEqual(["À planifier"]);
+  expect(within(region).getByRole("article", { name: /Exporter le dossier client$/ })).toBeTruthy();
 });
 
 test("a frame lists its steps, the session row is outlined in orange", () => {

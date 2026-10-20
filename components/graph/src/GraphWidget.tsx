@@ -43,12 +43,7 @@ function useSummary(): { summary: Summary; loading: boolean; failed: boolean } {
   const links = useEntities("link");
   const assignee = sdk.config.filter === "all" ? "all" : "mine-and-agents";
   const summary = useMemo(() => {
-    const input = graphInput(
-      tickets.data,
-      links.data,
-      { assignee, showDone: false, startable: false, domain: null },
-      sdk.viewer,
-    );
+    const input = graphInput(tickets.data, links.data, assignee, sdk.viewer);
     return summarize(input.tickets, input.edges);
   }, [tickets.data, links.data, assignee, sdk.viewer]);
   return {
