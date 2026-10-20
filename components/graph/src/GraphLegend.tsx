@@ -32,7 +32,7 @@ export function GraphLegend({ items }: { items: readonly LegendItem[] }) {
   return (
     <div
       className={cn(
-        "pointer-events-none absolute bottom-[18px] left-4 flex h-[30px] items-center gap-3 rounded-[8px] border border-(--tracking-border) bg-(--tracking-card) pl-1.5",
+        "pointer-events-none absolute bottom-[18px] left-4 flex h-[30px] max-w-[calc(100%-2rem)] items-center overflow-hidden gap-3 rounded-[8px] border border-(--tracking-border) bg-(--tracking-card) pl-1.5",
         open ? "pr-3" : "pr-1.5",
       )}
     >
@@ -52,7 +52,7 @@ export function GraphLegend({ items }: { items: readonly LegendItem[] }) {
               key={item.key}
               data-separator={item.separator ? "true" : undefined}
               className={cn(
-                "flex items-center gap-1.5 text-(--tracking-mfg) text-[11.5px] leading-[14px]",
+                "flex shrink-0 items-center gap-1.5 whitespace-nowrap text-(--tracking-mfg) text-[11.5px] leading-[14px]",
                 item.separator && "border-(--tracking-border) border-l pl-3.5",
               )}
             >
