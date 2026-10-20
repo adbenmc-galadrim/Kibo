@@ -25,6 +25,7 @@ test("every mask stays inside its screen and says why", () => {
     "vue-ensemble",
     "graphe",
     "graphe-prs",
+    "apercu-maquette",
     "nouveau-projet",
     "kanban",
     "fiche-ticket",
@@ -143,4 +144,10 @@ test("the Graphe compares against P5b and its PRs view against P5c, masking only
     expect.stringContaining("utilisateur"),
     expect.stringContaining("Synchronisé"),
   ]);
+});
+
+test("the full-screen mockup compares against P8g on 1000 px, without a single mask", () => {
+  expect(referenceOf("apercu-maquette")).toBe("apercu-maquette");
+  expect(PIXEL_HEIGHTS["apercu-maquette"]).toBe(1000);
+  expect(PIXEL_MASKS["apercu-maquette"]).toEqual([]);
 });

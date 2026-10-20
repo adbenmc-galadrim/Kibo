@@ -1,8 +1,20 @@
 import { expect, test } from "bun:test";
 import { ALL_DAEMONS } from "./daemons";
-import { ATTENTE_DAEMONS, PIXEL_DAEMONS, PRS_DAEMONS } from "./pixel-projects";
+import {
+  APERCU_DAEMONS,
+  ATTENTE_DAEMONS,
+  PIXEL_DAEMONS,
+  PRS_DAEMONS,
+  SCENARIO_DAEMONS,
+} from "./pixel-projects";
 import { schemeOf } from "./pixel-screen";
-import { COMPARED_REFERENCES, DESIGN_REFERENCES, SILO_ATTENTE, SILO_PRS } from "./pixel-settings";
+import {
+  COMPARED_REFERENCES,
+  DESIGN_REFERENCES,
+  SILO_APERCU,
+  SILO_ATTENTE,
+  SILO_PRS,
+} from "./pixel-settings";
 import config from "./playwright.config";
 import { SYNC_PORTS } from "./sync-fixture";
 import {
@@ -137,6 +149,39 @@ test("no other project picks the stacked pull request specs", () => {
   }
 });
 
+test("the full-screen mockup runs on its own daemons 4487 and 4488, with GitHub and Figma faked together", () => {
+  expect(APERCU_DAEMONS.map((d) => [d.name, d.scheme, d.port, d.scenario, d.integrations, d.design])).toEqual(
+    [
+      ["apercu-dark", "dark", 4487, SILO_APERCU, true, true],
+      ["apercu-light", "light", 4488, SILO_APERCU, true, true],
+    ],
+  );
+  const servers = Array.isArray(config.webServer) ? config.webServer : [];
+  for (const daemon of APERCU_DAEMONS) {
+    const pixel = projectNamed(`apercu-pixel-${daemon.scheme}`);
+    expect(pixel?.use?.baseURL).toBe(`http://127.0.0.1:${daemon.port}`);
+    expect(pixel?.use?.colorScheme).toBe(daemon.scheme);
+    expect(pixel?.snapshotPathTemplate?.startsWith(`${COMPARED_REFERENCES}/`)).toBe(true);
+    expect(pixel?.metadata?.pixelSources).toBe(DESIGN_REFERENCES);
+    expect(pixel?.dependencies ?? []).toEqual([]);
+    expect(projectNamed(`apercu-${daemon.scheme}`)).toBeUndefined();
+    const server = servers.find((w) => w.command.startsWith(`bun serve.ts ${daemon.port} `));
+    expect(server?.command).toBe(`bun serve.ts ${daemon.port} ${SILO_APERCU} --integrations --design`);
+    expect(server?.url).toBe(`http://127.0.0.1:${seedReadyPort(daemon.port)}/`);
+    expect(server?.timeout).toBe(120_000);
+  }
+});
+
+test("only the full-screen pixel projects pick its spec", () => {
+  for (const project of config.projects ?? []) {
+    const match = project.testMatch;
+    if (!(match instanceof RegExp)) continue;
+    const owner = project.name?.startsWith("apercu-pixel-") === true;
+    expect(match.test("/e2e/pixel-apercu.spec.ts")).toBe(owner);
+    if (owner) expect(match.test("/e2e/design.spec.ts")).toBe(false);
+  }
+});
+
 const DERIVED = [
   fakeGithubPort,
   fakeMcpPort,
@@ -147,8 +192,12 @@ const DERIVED = [
   seedReadyPort,
 ];
 
+test("every scenario daemon is in the port check", () => {
+  expect(SCENARIO_DAEMONS).toEqual([...ATTENTE_DAEMONS, ...PRS_DAEMONS, ...APERCU_DAEMONS]);
+});
+
 test("no port of a daemon or of its fake services is taken twice", () => {
-  const daemons = [...ALL_DAEMONS, ...ATTENTE_DAEMONS, ...PRS_DAEMONS].map((d) => d.port);
+  const daemons = [...ALL_DAEMONS, ...SCENARIO_DAEMONS].map((d) => d.port);
   const sync = [SYNC_PORTS.server, SYNC_PORTS.dark.a, SYNC_PORTS.dark.b, SYNC_PORTS.light.a];
   const fixed = [...daemons, ...sync, SYNC_PORTS.light.b, SYNC_PORTS.control];
   const derived = [...daemons, ...sync, SYNC_PORTS.light.b].flatMap((port) => DERIVED.map((of) => of(port)));

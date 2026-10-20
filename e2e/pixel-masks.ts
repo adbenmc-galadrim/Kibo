@@ -8,6 +8,7 @@ type OriginScreen =
   | "vue-ensemble"
   | "graphe"
   | "graphe-prs"
+  | "apercu-maquette"
   | "nouveau-projet"
   | "kanban"
   | "fiche-ticket"
@@ -42,6 +43,7 @@ const ORIGIN_HEIGHTS: Record<OriginScreen, number> = {
   "vue-ensemble": 1260,
   graphe: 1000,
   "graphe-prs": 1000,
+  "apercu-maquette": 1000,
   "nouveau-projet": 1000,
   kanban: 1000,
   "fiche-ticket": 1000,
@@ -160,6 +162,7 @@ const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
     },
   ],
   "graphe-prs": [USER, syncAge(1124)],
+  "apercu-maquette": [],
   "nouveau-projet": [],
   kanban: [],
   "fiche-ticket": [],
