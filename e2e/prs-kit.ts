@@ -3,11 +3,9 @@ import { list, rpc } from "./agents-seed";
 import { siloKey } from "./fixtures/silo-maquettes";
 import { SILO_PRS_COUNTER } from "./fixtures/silo-prs";
 import type { Silo } from "./planning-kit";
+import { field } from "./suivi-kit";
 
 export const PRS_SCREENS_DIR = "2026-10-20-p30";
-
-const field = (value: unknown, key: string): unknown =>
-  typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined;
 
 export const prsCounter = (page: Page): Locator => page.getByText(SILO_PRS_COUNTER, { exact: true });
 

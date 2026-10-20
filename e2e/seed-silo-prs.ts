@@ -14,9 +14,7 @@ import {
   SILO_PRS_REFS,
 } from "./fixtures/silo-prs";
 import { type SeedOptions, type SeedResult, type SeedRpc, seedSiloMaquettes } from "./seed-silo-maquettes";
-
-const field = (value: unknown, key: string): unknown =>
-  typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined;
+import { field } from "./suivi-kit";
 
 type SeededTicket = { id: string; statusId: unknown; refs: ExternalRef[] };
 
