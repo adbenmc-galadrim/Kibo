@@ -2460,7 +2460,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
 ## P5 · Graphe
 
 Board `P5 · Graphe` (sombre) et `P5 · Graphe (clair)`, page « Proposition » du fichier Penpot « Kibo · Redesign » ; écran 214 de la page « 35 · Redesign Silo » du fichier « Kibo ».
-Exports : `exports/proposition-graphe-dark.png` et `exports/proposition-graphe-light.png`, 1440 × 1000 px (échelle 1).
+Exports : retirés en phase 30 (spec §44.5) ; P5 reste à la page 35 du fichier « Kibo ». La référence pixel de « graphe » est désormais P5b, `exports/proposition-graphe-fonctionnalites-{dark,light}.png`, 1440 × 1000 px (échelle 1).
 
 ### Données affichées (ordre de lecture)
 
