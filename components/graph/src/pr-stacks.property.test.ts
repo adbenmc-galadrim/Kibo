@@ -1,7 +1,8 @@
 import { expect, test } from "bun:test";
-import { EMPTY_PROGRESS, type GithubPrRef, isLivePr, type TicketView } from "@kibo/schema";
+import { type GithubPrRef, isLivePr, type TicketView } from "@kibo/schema";
 import fc from "fast-check";
 import { type PrNode, prStacks, stackOrder } from "./pr-stacks";
+import { prTicket, prUrl } from "./pr-stacks.test-helper";
 
 const BRANCHES = ["dev", "main", "feat/a", "feat/b", "feat/c"] as const;
 const branch = fc.option(fc.constantFrom(...BRANCHES), { nil: null });
@@ -17,41 +18,17 @@ const prArb: fc.Arbitrary<GithubPrRef> = fc
   })
   .map((r) => ({
     kind: "github_pr",
-    url: `https://github.com/silo-labs/silo-location/pull/${r.number}`,
+    url: prUrl(r.number),
     ...r,
   }));
 
-const ticket = (n: number, refs: GithubPrRef[], parent: number | null, session: boolean): TicketView => ({
-  id: `t${n}`,
-  key: `SILO-${n}`,
-  pendingSeq: null,
-  hold: null,
-  title: `Ticket ${n}`,
-  description: "",
-  statusId: "in_review",
-  blockedReason: null,
-  domainId: null,
-  assignee: null,
-  parentId: parent === null ? null : `t${parent}`,
-  externalRefs: refs,
-  labels: [],
-  agentProgress: EMPTY_PROGRESS,
-  delivery: null,
-  sprintId: null,
-  optional: false,
-  shortKey: null,
-  progress: { done: 0, total: parent === null ? 1 : 0 },
-  waitingOn: [],
-  keyLabel: `SILO-${n}`,
-  openQuestions: 0,
-  startable: false,
-  startReason: null,
-  onHold: null,
-  effectiveSprintId: null,
-  feature: null,
-  session: session ? { tool: "T3 Code", startedAt: 0 } : null,
-  updatedAt: null,
-});
+const ticket = (n: number, refs: GithubPrRef[], parent: number | null, session: boolean): TicketView =>
+  prTicket(n, {
+    parentId: parent === null ? null : `t${parent}`,
+    externalRefs: refs,
+    progress: { done: 0, total: parent === null ? 1 : 0 },
+    session: session ? { tool: "T3 Code", startedAt: 0 } : null,
+  });
 
 const ticketsArb = fc
   .array(
@@ -122,7 +99,7 @@ test("arbitrary cycles of bases terminate with one cut per cycle", () => {
       picks.map(
         (pick, i): GithubPrRef => ({
           kind: "github_pr",
-          url: `https://github.com/silo-labs/silo-location/pull/${i + 1}`,
+          url: prUrl(i + 1),
           number: i + 1,
           state: "open",
           base: BRANCHES[pick] ?? null,

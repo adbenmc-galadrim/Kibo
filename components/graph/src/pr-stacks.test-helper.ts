@@ -1,0 +1,36 @@
+import { EMPTY_PROGRESS, type TicketView } from "@kibo/schema";
+
+export const prUrl = (number: number): string => `https://github.com/silo-labs/silo-location/pull/${number}`;
+
+export const prTicket = (n: number, over: Partial<TicketView> = {}): TicketView => ({
+  id: `t${n}`,
+  key: `SILO-${n}`,
+  pendingSeq: null,
+  hold: null,
+  title: `Ticket ${n}`,
+  description: "",
+  statusId: "in_review",
+  blockedReason: null,
+  domainId: null,
+  assignee: null,
+  parentId: null,
+  externalRefs: [],
+  labels: [],
+  agentProgress: EMPTY_PROGRESS,
+  delivery: null,
+  sprintId: null,
+  optional: false,
+  shortKey: null,
+  progress: { done: 0, total: 0 },
+  waitingOn: [],
+  keyLabel: `SILO-${n}`,
+  openQuestions: 0,
+  startable: false,
+  startReason: null,
+  onHold: null,
+  effectiveSprintId: null,
+  feature: null,
+  session: null,
+  updatedAt: null,
+  ...over,
+});

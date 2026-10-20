@@ -1,13 +1,14 @@
 import { expect, test } from "bun:test";
-import { EMPTY_PROGRESS, type FeatureState, type GithubPrRef, type TicketView } from "@kibo/schema";
+import type { FeatureState, GithubPrRef, TicketView } from "@kibo/schema";
 import { frPrs } from "./fr-prs";
 import { featureOf, type PrNode, type PrStack, prStacks, reviewToneOf } from "./pr-stacks";
+import { prTicket, prUrl } from "./pr-stacks.test-helper";
 
 type PrSpec = Partial<Omit<GithubPrRef, "kind" | "url">> & { number: number };
 
 const pr = (spec: PrSpec): GithubPrRef => ({
   kind: "github_pr",
-  url: `https://github.com/silo-labs/silo-location/pull/${spec.number}`,
+  url: prUrl(spec.number),
   state: "open",
   base: "dev",
   head: null,
@@ -25,43 +26,10 @@ const FEATURE_LATE: FeatureState = {
   held: 0,
 };
 
-const ticket = (n: number, over: Partial<TicketView> = {}): TicketView => ({
-  id: `t${n}`,
-  key: `SILO-${n}`,
-  pendingSeq: null,
-  hold: null,
-  title: `Ticket ${n}`,
-  description: "",
-  statusId: "in_review",
-  blockedReason: null,
-  domainId: null,
-  assignee: null,
-  parentId: null,
-  externalRefs: [],
-  labels: [],
-  agentProgress: EMPTY_PROGRESS,
-  delivery: null,
-  sprintId: null,
-  optional: false,
-  shortKey: null,
-  progress: { done: 0, total: 0 },
-  waitingOn: [],
-  keyLabel: `SILO-${n}`,
-  openQuestions: 0,
-  startable: false,
-  startReason: null,
-  onHold: null,
-  effectiveSprintId: null,
-  feature: null,
-  session: null,
-  updatedAt: null,
-  ...over,
-});
-
 const withPrs = (n: number, prs: PrSpec[], over: Partial<TicketView> = {}): TicketView =>
-  ticket(n, { externalRefs: prs.map(pr), ...over });
+  prTicket(n, { externalRefs: prs.map(pr), ...over });
 
-const F5 = ticket(30, {
+const F5 = prTicket(30, {
   title: "Envoyer les photos d'un constat",
   shortKey: "F5",
   progress: { done: 1, total: 5 },
@@ -77,7 +45,7 @@ test("a live PR on a step becomes a node with the ticket key, title and root fea
   const m = model([F5, step(32, [{ number: 22, head: "feat/silo-32", checks: "ok" }])]);
   const node = m.stacks[0]?.root;
   expect(node).toMatchObject({
-    id: "https://github.com/silo-labs/silo-location/pull/22",
+    id: prUrl(22),
     number: 22,
     ticketId: "t32",
     key: "SILO-32",
@@ -194,7 +162,7 @@ test("counts: drafts are open but not waiting, review_required waits", () => {
 });
 
 test("late comes from the root feature, session from the ticket or a live run", () => {
-  const late = ticket(40, { shortKey: "F4", progress: { done: 1, total: 3 }, feature: FEATURE_LATE });
+  const late = prTicket(40, { shortKey: "F4", progress: { done: 1, total: 3 }, feature: FEATURE_LATE });
   const m = model(
     [
       late,
@@ -226,7 +194,7 @@ test("reviewToneOf maps the review of a live PR", () => {
 });
 
 test("featureOf: a step gives its root, a root with steps itself, a free ticket null", () => {
-  const free = ticket(61);
+  const free = prTicket(61);
   const s = step(32, []);
   const byId = new Map([F5, s, free].map((t) => [t.id, t]));
   const f5 = { shortKey: "F5", title: "Envoyer les photos d'un constat" };
