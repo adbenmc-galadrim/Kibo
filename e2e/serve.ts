@@ -90,7 +90,10 @@ mkdirSync(ghDir, { recursive: true });
 const gh = join(ghDir, "gh");
 const ghState = join(ghDir, "state.json");
 const siloGh = { merged: false, stateOf: siloGhState };
-const writeSiloGh = () => writeFileSync(ghState, JSON.stringify(siloGh.stateOf({ merged: siloGh.merged })));
+const writeSiloGh = () => {
+  writeFileSync(`${ghState}.next`, JSON.stringify(siloGh.stateOf({ merged: siloGh.merged })));
+  renameSync(`${ghState}.next`, ghState);
+};
 const mergeSiloPr = () => {
   siloGh.merged = true;
   writeSiloGh();
