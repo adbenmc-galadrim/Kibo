@@ -17,7 +17,7 @@ test("the Graphe of Silo in sprint columns matches the mockup on the whole scree
     masks: PIXEL_MASKS.graphe,
     content: contentBox(241, HEIGHT),
     root: (p) => p.locator("[data-view-body]"),
-    outDir: screensDir("2026-10-17-t16"),
+    outDir: screensDir("2026-10-20-p30"),
     contentInformative: true,
   });
 });

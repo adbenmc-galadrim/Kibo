@@ -246,3 +246,31 @@ export const ALL_DAEMONS = [
   },
   ...PIXEL_DAEMONS,
 ] as const;
+
+type ServedDaemon = {
+  port: number;
+  scenario: string;
+  integrations?: boolean;
+  noGh?: boolean;
+  design?: boolean;
+  embeds?: boolean;
+  agentScenario?: string;
+  answerWakeGraceMs?: number;
+  drafts?: string;
+};
+
+export const serveCommand = (d: ServedDaemon): string =>
+  [
+    "bun serve.ts",
+    d.port,
+    d.scenario,
+    "integrations" in d ? "--integrations" : "",
+    "noGh" in d ? "--no-gh" : "",
+    "design" in d ? "--design" : "",
+    "embeds" in d ? "--embeds" : "",
+    "agentScenario" in d ? `--agent-scenario ${d.agentScenario}` : "",
+    "answerWakeGraceMs" in d ? `--answer-wake-grace-ms ${d.answerWakeGraceMs}` : "",
+    "drafts" in d ? d.drafts : "",
+  ]
+    .filter((part) => part !== "")
+    .join(" ");

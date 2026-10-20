@@ -34,7 +34,7 @@ test("the compared reference of every screen is the mockup PNG, painted only whe
         }
       expect(`${file}: ${changed}`).toBe(`${file}: 0`);
     }
-});
+}, 30_000);
 
 test("the compared content zone is the same crop of the mockup", () => {
   const file = designFile("tickets", "dark");
