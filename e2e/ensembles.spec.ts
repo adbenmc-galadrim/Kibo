@@ -100,22 +100,24 @@ test("220b · le Kanban n'a pas de carte pour un ensemble", async () => {
   await shoot("220b");
 });
 
-test("220c · le graphe cadre les sous-tickets de chaque ensemble", async () => {
+test("220c · l'ensemble est un cadre de fonctionnalité dans « À planifier »", async () => {
   await open("graph");
-  const canvas = main().getByRole("region", { name: "Graphe des dépendances" });
-  await expect(canvas.getByRole("button", { name: /Un seul worktree$/ })).toBeVisible();
-  await expect(canvas.locator(`[data-frame="${e.key}-1"]`)).toContainText(
-    `${e.key}-1 · Parcours de livraison · 1/3`,
-  );
-  await expect(canvas.locator(`[data-frame="${e.key}-3"]`)).toContainText(
-    `${e.key}-3 · Étapes visibles · 0/2`,
-  );
-  await expect(canvas.getByRole("button", { name: /Parcours de livraison$/ })).toHaveCount(0);
-  await canvas.getByRole("button", { name: "Tout voir" }).click();
+  const lanes = main().getByRole("region", { name: "Fonctionnalités par sprint" });
+  const reserve = lanes.getByRole("group", { name: "À planifier" });
+  await expect(reserve).toBeVisible();
+  const frame = lanes.getByRole("article", { name: "F1 Parcours de livraison" });
+  await expect(frame).toBeVisible();
+  await expect(frame).toContainText("1/3");
+  await expect(frame.getByRole("listitem")).toHaveText([
+    "Bouton Livrer",
+    "Étapes visibles",
+    "Un seul worktree",
+  ]);
+  await expect(lanes.getByRole("article", { name: /Étapes visibles$/ })).toHaveCount(0);
   await shoot("220c");
-  await canvas.getByRole("button", { name: `Replier ${e.key}-3` }).click();
-  await expect(canvas.getByRole("button", { name: `Déplier ${e.key}-3` })).toHaveText(`${e.key}-3 · 0/2`);
-  await canvas.getByRole("button", { name: `Déplier ${e.key}-3` }).click();
+  await frame.getByRole("button", { name: "Parcours de livraison" }).click();
+  await expect(e.page.getByRole("dialog").filter({ hasText: "Fonctionnalité · F1" })).toBeVisible();
+  await e.page.keyboard.press("Escape");
 });
 
 test("220d · la fiche d'un ensemble : avancement, sous-tickets, description, aucun lancement", async () => {

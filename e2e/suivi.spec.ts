@@ -96,7 +96,7 @@ test("the Vue d'ensemble leads Silo and opens a feature, the sprint and a questi
   await expect(page.getByRole("article", { name: "Un box réaffecté garde-t-il ses photos ?" })).toBeFocused();
 });
 
-test("the Graphe shows Silo in sprint columns, then in waves", async ({ page }) => {
+test("the Graphe shows Silo in sprint columns, delivered features folded", async ({ page }) => {
   await openSiloPage(page, "Graphe");
   const lanes = page.getByRole("region", { name: "Fonctionnalités par sprint" });
   await expect(lanes).toBeVisible();
@@ -109,18 +109,14 @@ test("the Graphe shows Silo in sprint columns, then in waves", async ({ page }) 
   await expect(f5).not.toContainText("glisse en S43");
 
   const f1 = lanes.getByRole("article", { name: /^F1 / });
+  await expect(f1).toBeVisible();
   await expect(f1.getByText("Application Azure")).toHaveCount(0);
-  const fold = page.getByRole("button", { name: "Livrées repliées" });
-  await expect(fold).toHaveAttribute("aria-pressed", "true");
-  await fold.click();
-  await expect(fold).toHaveAttribute("aria-pressed", "false");
-  await expect(f1.getByText("Application Azure")).toBeVisible();
-
-  await page.getByRole("button", { name: "Colonnes : Sprints" }).click();
-  await page.getByRole("menuitemradio", { name: "Vagues" }).click();
-  await expect(lanes).toBeHidden();
-  await expect(page.getByRole("region", { name: "Graphe des dépendances" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Colonnes : Vagues" })).toBeEnabled();
+  for (const name of ["Livrées repliées", "Options", "Colonnes : Sprints", "Regrouper : Fonctionnalités"])
+    await expect(page.getByRole("button", { name })).toHaveCount(0);
+  await expect(page.getByRole("radiogroup", { name: "Vue" }).getByRole("radio")).toHaveText([
+    "Fonctionnalités",
+    "PRs",
+  ]);
 });
 
 test("the Planning switches to Bandes and back to Colonnes", async ({ page }) => {

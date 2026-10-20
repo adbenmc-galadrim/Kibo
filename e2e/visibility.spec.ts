@@ -1,14 +1,7 @@
 import { rmSync } from "node:fs";
 import { expect, type Page, test } from "@playwright/test";
-import type { Seeded } from "./agents-seed";
-import {
-  addViewPage,
-  askQuestion,
-  capture,
-  labelChapters,
-  openVisibility,
-  type Visibility,
-} from "./visibility-kit";
+import { rpc, type Seeded } from "./agents-seed";
+import { addViewPage, askQuestion, capture, openVisibility, type Visibility } from "./visibility-kit";
 
 test.setTimeout(240_000);
 test.describe.configure({ mode: "serial" });
@@ -80,44 +73,35 @@ test("la page Questions filtre par destinataire, exporte et enregistre une répo
   await page.keyboard.press("Escape");
 });
 
-test("le graphe cadre les ensembles, focus, zoom éloigné et cadres par étiquette", async () => {
+test("le graphe par colonnes cadre la fonctionnalité et allume l'étape en session", async () => {
   const info = test.info();
-  await labelChapters(v, [
-    [7, "c1"],
-    [9, "c1"],
-    [11, "c1"],
-    [14, "c1"],
-    [15, "c2"],
-    [21, "c2"],
-    [22, "c2"],
-  ]);
+  const session = (state: "start" | "stop") =>
+    rpc(page, {
+      method: "setTicketSession",
+      projectId: seeded.projectId,
+      ticketKey: "KIB-14",
+      cwd: null,
+      state,
+      tool: "T3 Code",
+    });
+  await session("start");
   const graphPage = await addViewPage(v, "Graphe", "graph@1.0.0");
   await page.goto(`/#/p/${seeded.projectId}/${encodeURIComponent(graphPage)}`);
-  const canvas = page.getByRole("region", { name: "Graphe des dépendances" });
-  await expect(canvas.locator("[data-frame]").first()).toBeVisible();
-  await expect(page.getByRole("button", { name: /^Afficher les terminés \(\d+\)$/ })).toBeVisible();
-  await expect(canvas.getByRole("button", { name: /^KIB-13 / })).toHaveCount(0);
+  const lanes = page.getByRole("region", { name: "Fonctionnalités par sprint" });
+  const frame = lanes.getByRole("article", { name: /Orchestration des agents$/ });
+  await expect(frame).toBeVisible();
+  const step = frame.getByRole("listitem").filter({ hasText: "Récepteur de hooks Claude Code" });
+  await expect(step).toHaveAttribute("data-session", "true");
+  await expect(
+    frame.getByRole("listitem").filter({ hasText: "Moteur de règles déclaratif" }),
+  ).not.toHaveAttribute("data-session", "true");
+  await expect(page.getByRole("button", { name: "Zoom arrière" })).toHaveCount(0);
   await capture(page, info, "188");
 
-  await canvas.getByRole("button", { name: /^KIB-21 / }).click();
-  await expect(page.getByText(/^Focus : KIB-21 · /)).toBeVisible();
-  await expect(canvas.getByRole("button", { name: /^KIB-9 / })).toHaveAttribute("data-focus", "out");
+  await session("stop");
+  await expect(step).not.toHaveAttribute("data-session", "true");
+  await expect(frame).toBeVisible();
   await capture(page, info, "188b");
-  await page.keyboard.press("Escape");
-  await expect(page.getByText(/^Focus : KIB-21 · /)).toHaveCount(0);
-
-  for (let i = 0; i < 5; i += 1) await page.getByRole("button", { name: "Zoom arrière" }).click();
-  await expect.poll(async () => Number(await canvas.getAttribute("data-zoom"))).toBeLessThan(0.6);
-  await capture(page, info, "188c");
-  await page.getByRole("button", { name: "Taille réelle" }).click();
-
-  await page.getByRole("button", { name: "Affichage" }).click();
-  await page.getByRole("menuitem", { name: "Regrouper par étiquette" }).click();
-  await page.getByRole("menuitemradio", { name: "chapitre:" }).click();
-  await expect(canvas.getByRole("button", { name: "Replier c1" })).toBeVisible();
-  await canvas.getByRole("button", { name: "Replier c2" }).click();
-  await expect(canvas.getByRole("button", { name: "Déplier c2" })).toBeVisible();
-  await capture(page, info, "188d");
 });
 
 test("le filtre « Démarrable » du Kanban garde les tickets démarrables", async () => {
