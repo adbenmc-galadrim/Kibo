@@ -195,3 +195,7 @@ Plan : `2026-10-19-kibo-phase-29.md` · Spec : conception §41 (écarts §41.1) 
 **0.29.0-alpha.2** · Plan : `2026-10-19-kibo-0.29-alpha2-questions.md` · Spec : §41.2, §42 (écarts §42.1). Demandes d'Adam du 2026-10-19 : une réponse va directement à l'agent de projet (plus de transmission), suppression pure d'une question ; review d'une PR fusionnée ignorée ; nom du membre au lieu de son identifiant.
 
 **0.29.0-alpha.3** · Plan : `2026-10-19-kibo-0.29-alpha3-reveil.md` · Spec : §43 (écarts §43.1). Décision d'Adam du 2026-10-19 : une réponse à une question réveille l'agent de projet (délai de grâce de 30 s), qui la lit et propose un lot ; affichée dans le Suivi.
+
+## Phase 30 ✅ · Graphe simplifié, vue PRs et plein écran des maquettes (v0.30.0-alpha.1)
+
+Plan : `2026-10-20-kibo-phase-30.md` · Spec : conception §44 (écarts §44.7) · Rapport : `2026-10-20-jalon-v0.30.md`. Demandes d'Adam du 2026-10-20 : le Graphe ne garde qu'un sélecteur « Fonctionnalités | PRs » (colonnes par sprint, livrées repliées) ; la vue PRs empile les PR ouvertes de bas en haut sur leur branche de base, avec le ticket, sa fonctionnalité, la review, la CI et la session, et ouvre la fiche au clic ; vagues, regroupement par étiquette, filtres et mini-carte retirés (6 443 lignes supprimées). Les maquettes de la fiche ticket s'ouvrent en plein écran depuis la section « Maquettes » (zoom, déplacement, cadre suivant, Échap). Cinq boards Penpot en sombre et en clair, deux écrans pixel nouveaux (« graphe-prs », « apercu-maquette »), « graphe » comparé à P5b, les autres écrans à 2 % au plus.

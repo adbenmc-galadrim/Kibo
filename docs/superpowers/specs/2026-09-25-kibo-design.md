@@ -2801,4 +2801,26 @@ Le composant `graph` ne garde que ce que les deux vues et le widget emploient. S
 
 ### 44.7 Écarts constatés à l'exécution (phase 30)
 
-_(à remplir au jalon depuis la section « Écarts » du plan `2026-10-20-kibo-phase-30.md`)_
+Détail par tâche dans la section « Écarts » du plan `2026-10-20-kibo-phase-30.md` ; ce qui compte pour la suite.
+
+**Graphe**
+
+1. **Sélection partagée** : ni Tickets ni Kanban ne l'émettent (ils la suivent et l'effacent) ; sans le Graphe, aucun composant intégré ne l'émet. `selection.spec.ts` et ses démons `selection-*` (4441-4442) sont supprimés ; l'API de sélection du SDK et ses tests restent pour les composants tiers.
+2. **Démons** `prs-dark` / `prs-light` sur 4485 / 4486 (4483 / 4484 sont pris par `reveil-*`) ; un test vérifie qu'aucun port de démon, de sync ni de faux service dérivé ne se répète.
+3. **Modèle des piles** : `PrStack.depth` compte les niveaux (une PR seule ⇒ 1) ; « à corriger » compte les PR non brouillon en `changes_requested` ; une PR dont le `head` égale sa propre `base` passe au candidat suivant.
+4. **Sélecteur** : dessiné comme P5b (segments sur `--tracking-muted`, actif sur `--tracking-bg`) ; Radix le rend en `radiogroup` « Vue » à deux `radio`.
+5. **Géométrie de la vue PRs** calée sur P5c : rail à 118 px du bas pour le haut de ses points, trait de 30 px entre la racine et le rail, cartes centrées par arrondi ; une pile en arbre plus large que sa part élargit sa colonne, liens d'arbre en équerre. Icônes de la maquette : `LoaderCircle` pour « CI en cours », `MousePointerClick` dans la légende. Le compteur de la barre vient de la vue PRs (`onCounter`), qui reste dans son chunk.
+6. **Écran 188** : faute de run lançable en E2E, l'étape s'allume par une session T3 Code puis s'éteint ; le cas du run vivant reste couvert par les tests de composant.
+7. **Semis `silo-prs`** : le faux `gh` publie les PR empilées (`base`/`head`) seulement après le semis (`stackPrs`), sans quoi la découverte des PR rattachait #24 à SILO-33 pendant le semis et le passait en revue au hasard ; l'état du faux `gh` est écrit d'un bloc (fichier temporaire puis `rename`).
+8. **Captures** prises animations coupées ; le choix de vue vit dans le `localStorage` du contexte, chaque test E2E reclique « PRs ».
+9. **Maquettes** : les exports de P5 sont retirés, P5b sert de référence ; deux exports de P5b le même jour diffèrent (rendu instable de l'exporteur), références non régénérées, pixel vert.
+
+**Plein écran des maquettes**
+
+10. **Barre** : titre tronqué sans `flex-1`, badges juste après le nom, groupe de droite poussé à droite ; « Actualiser » et « Ouvrir dans … » en icônes seules de 14 px (libellé accessible et infobulle) ; badges et actions partagés avec l'en-tête du widget (`FrameTools.tsx`).
+11. **Couleurs** : le dialogue redéfinit localement `--card`, `--muted`, `--secondary` et `--border` sur les jetons `--tracking-*` (P8g), identiques en clair.
+12. **Accessibilité** : `aria-modal` posé explicitement (Radix ne le pose pas) ; sans déclencheur Radix, le focus est rendu à l'élément d'ouverture par `onOpenAutoFocus` / `onCloseAutoFocus`. La vignette est une `div` avec un bouton « Plein écran · <nom> » en surcouche (la vignette en échec contient « Réessayer »).
+13. **Section « Maquettes »** : le titre « Maquettes » en double est retiré, la `section` porte `aria-label` « Maquettes » ; un cadre reste prêt pendant un « Actualiser » (sinon le plein écran se fermerait), une vignette en échec repasse en chargement.
+14. **Chargement** : `FrameFullscreen` n'est rendu et chargé qu'à l'ouverture ; `FrameFullscreen.tsx`, `LinkedFrame.tsx`, `use-design-thumbs.ts` et `lazy-fullscreen.ts` sont interdits à l'entrée.
+15. **E2E** : `serve.ts` compose `--integrations`, `--design` et `--embeds` en un seul `--test-origins` et un seul `--memory-secrets` ; le nœud `45:1` est servi par le faux Figma de tout démon `--design` ; `apercu-*` sur 4487 / 4488. La zone de contenu du pixel « apercu-maquette » est le visualiseur (y = 40), le dialogue couvrant la fenêtre.
+16. **P8f / P8g** : corps de la feuille remonté de 386 px (sombre) et 383 (clair) pour que la section touche le bas ; puce et « 100 % » en mono 11 ; P8f est comparée à l'œil.
