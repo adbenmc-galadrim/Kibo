@@ -92,10 +92,11 @@ test("the model is deterministic and ignores the order of tickets", () => {
   );
 });
 
-test("arbitrary cycles of bases terminate with one cut per cycle", () => {
-  const cyclic = fc
-    .array(fc.integer({ min: 0, max: BRANCHES.length - 1 }), { minLength: 1, maxLength: 6 })
-    .map((picks) =>
+const cyclicArb = fc
+  .array(fc.integer({ min: 0, max: BRANCHES.length - 1 }), { minLength: 1, maxLength: 6 })
+  .map((picks) => [
+    ticket(
+      1,
       picks.map(
         (pick, i): GithubPrRef => ({
           kind: "github_pr",
@@ -108,12 +109,57 @@ test("arbitrary cycles of bases terminate with one cut per cycle", () => {
           checks: null,
         }),
       ),
-    );
+      null,
+      false,
+    ),
+  ]);
+
+const byNumber = (a: PrNode, b: PrNode): number =>
+  a.number - b.number || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+
+const candidateOf = (pr: PrNode, nodes: readonly PrNode[]): PrNode | null =>
+  nodes.filter((n) => n.id !== pr.id && n.head !== null && n.head === pr.base).sort(byNumber)[0] ?? null;
+
+const pathTo = (from: PrNode, id: string): PrNode[] | null => {
+  if (from.id === id) return [from];
+  for (const child of from.children) {
+    const rest = pathTo(child, id);
+    if (rest !== null) return [from, ...rest];
+  }
+  return null;
+};
+
+const anyTickets = fc.oneof(ticketsArb, cyclicArb);
+
+test("a root with a parent candidate is the cut of its own cycle, at its smallest PR", () => {
   fc.assert(
-    fc.property(cyclic, (refs) => {
-      const model = prStacks({ tickets: [ticket(1, refs, null, false)], live: new Set() });
-      expect(model.counts.open).toBe(refs.length);
-      expect(model.stacks.length).toBeGreaterThan(0);
+    fc.property(anyTickets, (tickets) => {
+      const model = prStacks({ tickets, live: new Set() });
+      const nodes = model.stacks.flatMap((s) => flatten(s.root));
+      expect(model.counts.open).toBe(nodes.length);
+      for (const { root } of model.stacks) {
+        const candidate = candidateOf(root, nodes);
+        if (candidate === null) continue;
+        const cycle = pathTo(root, candidate.id);
+        expect(cycle).not.toBeNull();
+        for (const n of cycle ?? []) expect(n.number).toBeGreaterThanOrEqual(root.number);
+      }
+    }),
+  );
+});
+
+test("every child sits on its parent's head and children go by number", () => {
+  fc.assert(
+    fc.property(anyTickets, (tickets) => {
+      const nodes = prStacks({ tickets, live: new Set() }).stacks.flatMap((s) => flatten(s.root));
+      for (const parent of nodes) {
+        expect([...parent.children].sort(byNumber)).toEqual(parent.children);
+        for (const child of parent.children) {
+          expect(parent.head).not.toBeNull();
+          expect(child.base).toBe(parent.head);
+          expect(candidateOf(child, nodes)?.id).toBe(parent.id);
+        }
+      }
     }),
   );
 });
