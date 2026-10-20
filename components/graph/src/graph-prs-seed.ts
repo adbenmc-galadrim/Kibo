@@ -1,6 +1,6 @@
-import type { GithubPrRef, ProjectCommand, StatusId, Ticket, TicketRun } from "@kibo/schema";
+import type { GithubPrRef, StatusId, Ticket, TicketRun } from "@kibo/schema";
+import { createSeedTicket, type SeedRun } from "./graph-seed";
 
-type Run = (cmd: ProjectCommand) => unknown;
 type Pr = Pick<GithubPrRef, "number" | "state" | "review" | "checks" | "base" | "head">;
 type StepSeed = { title: string; status: StatusId; pr?: Pr };
 type FeatureSeed = { shortKey: string; title: string; steps: StepSeed[] };
@@ -71,13 +71,8 @@ const FREE: StepSeed = {
   pr: pr(23, { checks: "running", head: "chore/expo-54" }),
 };
 
-function create(run: Run, step: StepSeed, parentId: string | null): Ticket {
-  const ticket = run({
-    method: "createTicket",
-    title: step.title,
-    parentId,
-    statusId: step.status,
-  }) as Ticket;
+function createStep(run: SeedRun, step: StepSeed, parentId: string | null): Ticket {
+  const ticket = createSeedTicket(run, { title: step.title, parentId, statusId: step.status });
   if (step.pr !== undefined)
     run({
       method: "upsertExternalRef",
@@ -87,13 +82,13 @@ function create(run: Run, step: StepSeed, parentId: string | null): Ticket {
   return ticket;
 }
 
-export function seedPrGraph(run: Run): void {
+export function seedPrGraph(run: SeedRun): void {
   for (const f of FEATURES) {
-    const root = run({ method: "createTicket", title: f.title }) as Ticket;
-    for (const s of f.steps) create(run, s, root.id);
+    const root = createSeedTicket(run, { title: f.title });
+    for (const s of f.steps) createStep(run, s, root.id);
     run({ method: "updateTicket", ticketId: root.id, shortKey: f.shortKey });
   }
-  create(run, FREE, null);
+  createStep(run, FREE, null);
 }
 
 export const sessionRuns = (tickets: readonly Ticket[]): TicketRun[] =>
