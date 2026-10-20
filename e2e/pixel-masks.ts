@@ -7,6 +7,8 @@ type OriginScreen =
   | "tickets"
   | "vue-ensemble"
   | "graphe"
+  | "graphe-prs"
+  | "apercu-maquette"
   | "nouveau-projet"
   | "kanban"
   | "fiche-ticket"
@@ -40,6 +42,8 @@ const ORIGIN_HEIGHTS: Record<OriginScreen, number> = {
   tickets: 1000,
   "vue-ensemble": 1260,
   graphe: 1000,
+  "graphe-prs": 1000,
+  "apercu-maquette": 1000,
   "nouveau-projet": 1000,
   kanban: 1000,
   "fiche-ticket": 1000,
@@ -157,6 +161,8 @@ const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
       why: "compteur des dépendances : la maquette compte 13 liens d'étapes que la fixture ne sème pas",
     },
   ],
+  "graphe-prs": [USER, syncAge(1124)],
+  "apercu-maquette": [],
   "nouveau-projet": [],
   kanban: [],
   "fiche-ticket": [],
@@ -197,6 +203,7 @@ const isMaskedScreen = (screen: string): screen is MaskedScreen => Object.hasOwn
 
 const REFERENCE_FILES: Partial<Record<string, string>> = {
   "vue-ensemble": "vue-ensemble-v3",
+  graphe: "graphe-fonctionnalites",
   "attente-vue-ensemble": "attente-vue-ensemble",
 };
 

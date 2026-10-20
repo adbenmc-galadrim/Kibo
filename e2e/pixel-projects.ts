@@ -4,14 +4,23 @@ import {
   PIXEL_KIT_REFERENCES,
   PIXEL_SCREENSHOT,
   REFERENCES_TEMPLATE,
+  SILO_APERCU,
   SILO_ATTENTE,
   SILO_MAQUETTES,
+  SILO_PRS,
 } from "./pixel-settings";
 
 const PIXEL_DARK_PORT = 4477;
 const PIXEL_LIGHT_PORT = 4478;
 const ATTENTE_DARK_PORT = 4481;
 const ATTENTE_LIGHT_PORT = 4482;
+const PRS_DARK_PORT = 4485;
+const PRS_LIGHT_PORT = 4486;
+const APERCU_DARK_PORT = 4487;
+const APERCU_LIGHT_PORT = 4488;
+const APERCU_PIXEL_SPEC = /pixel-apercu\.spec\.ts$/;
+const PRS_PIXEL_SPEC = /pixel-prs\.spec\.ts$/;
+const PRS_SPEC = /\/prs\.spec\.ts$/;
 const ATTENTE_PIXEL_SPEC = /pixel-attente\.spec\.ts$/;
 const ATTENTE_SPEC = /\/attente\.spec\.ts$/;
 const PIXEL_SPECS =
@@ -55,6 +64,32 @@ export const ATTENTE_DAEMONS = [
   },
 ] as const;
 
+export const PRS_DAEMONS = [
+  { name: "prs-dark", scheme: "dark", port: PRS_DARK_PORT, scenario: SILO_PRS, integrations: true },
+  { name: "prs-light", scheme: "light", port: PRS_LIGHT_PORT, scenario: SILO_PRS, integrations: true },
+] as const;
+
+export const APERCU_DAEMONS = [
+  {
+    name: "apercu-dark",
+    scheme: "dark",
+    port: APERCU_DARK_PORT,
+    scenario: SILO_APERCU,
+    integrations: true,
+    design: true,
+  },
+  {
+    name: "apercu-light",
+    scheme: "light",
+    port: APERCU_LIGHT_PORT,
+    scenario: SILO_APERCU,
+    integrations: true,
+    design: true,
+  },
+] as const;
+
+export const SCENARIO_DAEMONS = [...ATTENTE_DAEMONS, ...PRS_DAEMONS, ...APERCU_DAEMONS] as const;
+
 const screenshotOptions = (sources: string): Partial<Project> => ({
   snapshotPathTemplate: REFERENCES_TEMPLATE,
   metadata: { pixelSources: sources },
@@ -97,17 +132,51 @@ export const trackingProjects = (daemons: readonly string[]): Project[] =>
     ];
   });
 
-export function attenteProjects(scheme: "dark" | "light"): Project[] {
-  const daemon = ATTENTE_DAEMONS.find((d) => d.scheme === scheme);
+type Scheme = "dark" | "light";
+type ScenarioDaemon = { scheme: Scheme; port: number };
+type ScenarioSpecs = { prefix: string; pixel: RegExp; journey?: RegExp };
+
+function scenarioProjects(
+  daemons: readonly ScenarioDaemon[],
+  specs: ScenarioSpecs,
+  scheme: Scheme,
+): Project[] {
+  const daemon = daemons.find((d) => d.scheme === scheme);
   if (daemon === undefined) return [];
   const use: Project["use"] = {
     browserName: "chromium",
     colorScheme: scheme,
     baseURL: `http://127.0.0.1:${daemon.port}`,
   };
-  const pixel = `attente-pixel-${scheme}`;
+  const pixel = `${specs.prefix}-pixel-${scheme}`;
+  const pixelProject: Project = {
+    name: pixel,
+    testMatch: specs.pixel,
+    use,
+    ...screenshotOptions(DESIGN_REFERENCES),
+  };
+  if (specs.journey === undefined) return [pixelProject];
   return [
-    { name: pixel, testMatch: ATTENTE_PIXEL_SPEC, use, ...screenshotOptions(DESIGN_REFERENCES) },
-    { name: `attente-${scheme}`, testMatch: ATTENTE_SPEC, dependencies: [pixel], use },
+    pixelProject,
+    { name: `${specs.prefix}-${scheme}`, testMatch: specs.journey, dependencies: [pixel], use },
   ];
 }
+
+export const attenteProjects = (scheme: Scheme): Project[] =>
+  scenarioProjects(
+    ATTENTE_DAEMONS,
+    { prefix: "attente", pixel: ATTENTE_PIXEL_SPEC, journey: ATTENTE_SPEC },
+    scheme,
+  );
+
+export const prsProjects = (scheme: Scheme): Project[] =>
+  scenarioProjects(PRS_DAEMONS, { prefix: "prs", pixel: PRS_PIXEL_SPEC, journey: PRS_SPEC }, scheme);
+
+export const apercuProjects = (scheme: Scheme): Project[] =>
+  scenarioProjects(APERCU_DAEMONS, { prefix: "apercu", pixel: APERCU_PIXEL_SPEC }, scheme);
+
+export const scenarioProjectsOf = (scheme: Scheme): Project[] => [
+  ...attenteProjects(scheme),
+  ...prsProjects(scheme),
+  ...apercuProjects(scheme),
+];

@@ -6,7 +6,7 @@ import { useMemo } from "react";
 import { compareKeys, criticalPath, type GraphEdge } from "./critical-path";
 import { graphInput } from "./filter";
 import { fr } from "./fr";
-import { GraphFramed, GraphView } from "./lazy-panels";
+import { GraphView } from "./lazy-panels";
 import { readyTickets, waitingOn } from "./waiting";
 
 const MAX_WAITING_ROWS = 6;
@@ -43,12 +43,7 @@ function useSummary(): { summary: Summary; loading: boolean; failed: boolean } {
   const links = useEntities("link");
   const assignee = sdk.config.filter === "all" ? "all" : "mine-and-agents";
   const summary = useMemo(() => {
-    const input = graphInput(
-      tickets.data,
-      links.data,
-      { assignee, showDone: false, startable: false, domain: null },
-      sdk.viewer,
-    );
+    const input = graphInput(tickets.data, links.data, assignee, sdk.viewer);
     return summarize(input.tickets, input.edges);
   }, [tickets.data, links.data, assignee, sdk.viewer]);
   return {
@@ -168,7 +163,6 @@ function SummaryWidget({ small }: { small: boolean }) {
 
 export function GraphWidget() {
   const { format } = useSdk();
-  if (format === "full") return <GraphView />;
-  if (format === "large" || format === "half") return <GraphFramed />;
-  return <SummaryWidget small={format === "small"} />;
+  if (format === "small" || format === "medium") return <SummaryWidget small={format === "small"} />;
+  return <GraphView />;
 }

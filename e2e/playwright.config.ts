@@ -1,10 +1,10 @@
 import { defineConfig, type PlaywrightTestConfig, type Project } from "@playwright/test";
-import { ALL_DAEMONS } from "./daemons";
+import { ALL_DAEMONS, serveCommand } from "./daemons";
 import {
-  ATTENTE_DAEMONS,
-  attenteProjects,
   pixelKitProject,
   pixelProjectOptions,
+  SCENARIO_DAEMONS,
+  scenarioProjectsOf,
   trackingProjects,
 } from "./pixel-projects";
 import { isSiloScenario } from "./pixel-settings";
@@ -26,7 +26,7 @@ const only = onlyTheme();
 const inTheme = (scheme: Theme): boolean => only === null || only === scheme;
 
 const daemons = ALL_DAEMONS.filter((d) => inTheme(d.scheme));
-const servers = [...daemons, ...ATTENTE_DAEMONS.filter((d) => inTheme(d.scheme))];
+const servers = [...daemons, ...SCENARIO_DAEMONS.filter((d) => inTheme(d.scheme))];
 
 const allSyncProjects = [
   { name: "sync-dark", scheme: "dark", port: SYNC_PORTS.dark.a, after: [] },
@@ -53,7 +53,7 @@ export default defineConfig({
     ),
     ...(inTheme("dark") ? [pixelKitProject()] : []),
     ...trackingProjects(daemons.map((d) => d.name)),
-    ...THEMES.filter(inTheme).flatMap(attenteProjects),
+    ...THEMES.filter(inTheme).flatMap(scenarioProjectsOf),
     ...syncProjects.map(
       (p): Project => ({
         name: p.name,
@@ -66,20 +66,7 @@ export default defineConfig({
   webServer: [
     ...servers.map(
       (d): WebServer => ({
-        command: [
-          "bun serve.ts",
-          d.port,
-          d.scenario,
-          "integrations" in d ? "--integrations" : "",
-          "noGh" in d ? "--no-gh" : "",
-          "design" in d ? "--design" : "",
-          "embeds" in d ? "--embeds" : "",
-          "agentScenario" in d ? `--agent-scenario ${d.agentScenario}` : "",
-          "answerWakeGraceMs" in d ? `--answer-wake-grace-ms ${d.answerWakeGraceMs}` : "",
-          "drafts" in d ? d.drafts : "",
-        ]
-          .filter((part) => part !== "")
-          .join(" "),
+        command: serveCommand(d),
         url: `http://127.0.0.1:${isSiloScenario(d.scenario) ? seedReadyPort(d.port) : d.port}/`,
         reuseExistingServer: false,
         timeout: isSiloScenario(d.scenario) ? 120_000 : 60_000,

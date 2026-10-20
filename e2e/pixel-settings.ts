@@ -5,8 +5,10 @@ import { fileURLToPath } from "node:url";
 export const FIXED_NOW = "2026-10-16T14:52:00+02:00";
 export const SILO_MAQUETTES = "silo-maquettes";
 export const SILO_ATTENTE = "silo-attente";
-export const isSiloScenario = (scenario: string): boolean =>
-  scenario === SILO_MAQUETTES || scenario === SILO_ATTENTE;
+export const SILO_PRS = "silo-prs";
+export const SILO_APERCU = "silo-apercu";
+const SILO_SCENARIOS: readonly string[] = [SILO_MAQUETTES, SILO_ATTENTE, SILO_PRS, SILO_APERCU];
+export const isSiloScenario = (scenario: string): boolean => SILO_SCENARIOS.includes(scenario);
 export const PIXEL_WIDTH = 1440;
 export const DESIGN_REFERENCES = fileURLToPath(new URL("../design/redesign/exports", import.meta.url));
 export const PIXEL_KIT_REFERENCES = join(tmpdir(), "kibo-pixel-kit");

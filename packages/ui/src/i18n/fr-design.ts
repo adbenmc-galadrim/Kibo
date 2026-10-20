@@ -86,6 +86,8 @@ export const frDesign = {
     placeholder: "Colle l'URL d'un cadre Figma ou d'un board Penpot",
     unlink: "Retirer",
     refresh: "Actualiser",
+    fullscreen: "Plein écran",
+    fullscreenOf: (name: string) => `Plein écran · ${name}`,
     open: (provider: DesignProvider) => `Ouvrir dans ${PROVIDERS[provider]}`,
   },
   field: {

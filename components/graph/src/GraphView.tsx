@@ -1,127 +1,40 @@
 import { useSdk } from "@kibo/sdk";
-import { useMemo, useState } from "react";
-import { EmptyGraph } from "./EmptyGraph";
-import { type GraphFilter, initialFilter } from "./filter";
+import { useState } from "react";
 import { fr } from "./fr";
-import { GraphCanvas } from "./GraphCanvas";
-import { ColumnsMenu, GraphToolbar } from "./GraphToolbar";
-import { effectiveColumns, type GraphColumns, type GraphMode, initialColumns } from "./graph-model";
+import { type GraphViewKind, readView, writeView } from "./graph-view-pref";
+import { PrsView } from "./lazy-panels";
 import { SprintLanes } from "./SprintLanes";
-import { SprintToolbar } from "./SprintToolbar";
-import { DEFAULT_DISPLAY, type GraphDisplay, useGraphData } from "./use-graph-data";
+import { Toolbar } from "./Toolbar";
 import { useSprintLanes } from "./use-sprint-lanes";
-import { ViewMenu } from "./ViewMenu";
-
-const toggled = (set: ReadonlySet<string>, value: string): Set<string> => {
-  const next = new Set(set);
-  if (next.has(value)) next.delete(value);
-  else next.add(value);
-  return next;
-};
 
 export function GraphView() {
   const sdk = useSdk();
-  const [showCritical, setShowCritical] = useState(true);
-  const [filter, setFilter] = useState<GraphFilter>(() => initialFilter(sdk.config));
-  const [display, setDisplay] = useState<GraphDisplay>(DEFAULT_DISPLAY);
-  const [columns, setColumns] = useState<GraphColumns>(() => initialColumns(sdk.config));
-  const [collapseDelivered, setCollapseDelivered] = useState(() => sdk.config.collapseDelivered !== false);
-  const data = useGraphData(filter, display);
-  const lanes = useSprintLanes(collapseDelivered);
-  const { input, path, counts } = data;
-  const critical = useMemo(() => new Set(showCritical ? path : []), [path, showCritical]);
-  const blocked = input.tickets.filter((t) => path.includes(t.id) && t.statusId === "blocked").length;
-  const setMode = (mode: GraphMode) => setDisplay((d) => ({ ...d, mode }));
-  const onToggleCritical = () => setShowCritical((v) => !v);
+  const [view, setView] = useState<GraphViewKind>(() => readView(sdk.instanceId));
+  const [prsCounter, setPrsCounter] = useState<string | null>(null);
+  const lanes = useSprintLanes();
+  const onView = (next: GraphViewKind) => {
+    writeView(sdk.instanceId, next);
+    setView(next);
+  };
   const onNewFeature = () => sdk.openView("planning", { intent: { kind: "newFeature" } });
-
-  if (effectiveColumns(columns, lanes !== null) === "sprints" && lanes !== null) {
-    return (
-      <div className="flex h-full flex-col">
-        <SprintToolbar
-          model={lanes}
-          prefixes={data.prefixes}
-          collapseDelivered={collapseDelivered}
-          onToggleCollapse={() => setCollapseDelivered((v) => !v)}
-          onColumns={setColumns}
-          onGroupBy={(groupBy) => {
-            setColumns("waves");
-            setDisplay((d) => ({ ...d, groupBy, collapsed: new Set() }));
-          }}
-          options={{
-            tickets: data.allTickets,
-            filter,
-            setFilter,
-            showCritical,
-            onToggleCritical,
-            doneCount: data.doneCount,
-          }}
-        />
-        <div className="min-h-0 flex-1">
-          <SprintLanes model={lanes} onOpen={(id) => sdk.openTicket(id)} onNewFeature={onNewFeature} />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-full flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b px-4 py-2">
-        <ColumnsMenu value="waves" disabled={lanes === null} className="h-7 text-xs" onChange={setColumns} />
-        <GraphToolbar
-          tickets={data.allTickets}
-          filter={filter}
-          setFilter={setFilter}
-          mode={display.mode}
-          onMode={setMode}
-          showCritical={showCritical}
-          onToggleCritical={onToggleCritical}
-          doneCount={data.doneCount}
-        >
-          <ViewMenu
-            prefixes={data.prefixes}
-            groupBy={display.groupBy}
-            framed={data.groupValues.length > 0}
-            disabled={display.mode !== "waves"}
-            onGroupBy={(groupBy) => setDisplay((d) => ({ ...d, groupBy, collapsed: new Set() }))}
-            onExpandAll={() => setDisplay((d) => ({ ...d, collapsed: new Set() }))}
-            onCollapseAll={() => setDisplay((d) => ({ ...d, collapsed: new Set(data.groupValues) }))}
-          />
-        </GraphToolbar>
-        <span className="flex-1" />
-        <span className="text-xs text-muted-foreground">
-          {fr.counts(counts.total, counts.open, counts.startable)}
-        </span>
-        {data.model.implied.length > 0 && (
-          <span className="text-xs text-muted-foreground/80">
-            {fr.impliedHidden(data.model.implied.length)}
-          </span>
-        )}
-        {path.length > 0 && (
-          <span className="text-xs text-muted-foreground">{fr.summary(path.length, blocked)}</span>
+      <Toolbar
+        view={view}
+        onView={onView}
+        counter={
+          view === "prs"
+            ? prsCounter
+            : fr.sprints.counter(lanes.features, lanes.stepLinks, lanes.featureLinks)
+        }
+      />
+      <div className="min-h-0 flex-1">
+        {view === "prs" ? (
+          <PrsView onCounter={setPrsCounter} />
+        ) : (
+          <SprintLanes model={lanes} onOpen={(id) => sdk.openTicket(id)} onNewFeature={onNewFeature} />
         )}
       </div>
-      {data.failed && (
-        <p role="alert" className="p-4 text-sm text-destructive">
-          {fr.loadFailed}
-        </p>
-      )}
-      {!data.loading && !data.failed && data.allTickets.length === 0 ? (
-        <EmptyGraph onNewFeature={onNewFeature} className="flex-1" />
-      ) : !data.loading && !data.failed && data.empty ? (
-        <p className="grid flex-1 place-items-center p-6 text-sm text-muted-foreground">{fr.emptyView}</p>
-      ) : (
-        <div className="min-h-0 flex-1">
-          <GraphCanvas
-            tickets={input.tickets}
-            model={data.model}
-            critical={critical}
-            runs={data.runs}
-            onOpen={(id) => sdk.openTicket(id)}
-            onToggleFrame={(value) => setDisplay((d) => ({ ...d, collapsed: toggled(d.collapsed, value) }))}
-          />
-        </div>
-      )}
     </div>
   );
 }

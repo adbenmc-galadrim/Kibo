@@ -174,7 +174,28 @@ async function expectLoaded(img: Locator) {
     .toBeGreaterThan(0);
 }
 
+async function browseFullscreen(page: Page, info: Parameters<typeof shot>[1], board: Locator) {
+  const open = board.getByRole("button", { name: "Plein écran", exact: true });
+  await open.click();
+  const view = page.getByRole("dialog", { name: "Accueil", exact: true });
+  await expectLoaded(view.getByRole("img", { name: "Accueil" }));
+  await expect(view.getByText("100 %", { exact: true })).toBeVisible();
+  await view.getByRole("group", { name: /^Aperçu de Accueil/ }).click();
+  await page.keyboard.press("+");
+  await expect(view.getByText("125 %", { exact: true })).toBeVisible();
+  await page.keyboard.press("ArrowLeft");
+  const previous = page.getByRole("dialog", { name: "Tickets", exact: true });
+  await expectLoaded(previous.getByRole("img", { name: "Tickets" }));
+  await expect(previous.getByText("100 %", { exact: true })).toBeVisible();
+  await shot(page, info, "ecran-4-plein-ecran");
+  await page.keyboard.press("Escape");
+  await expect(previous).toBeHidden();
+  await expect(board).toBeVisible();
+  await expect(open).toBeFocused();
+}
+
 test("maquettes Figma et Penpot : connexion, widget, fiche, hors ligne", async ({ page, baseURL }, info) => {
+  test.setTimeout(60_000);
   const penpot = penpotOf(baseURL);
   const leaked = watchLeaks(page);
   const served = watchFrames(page);
@@ -225,6 +246,7 @@ test("maquettes Figma et Penpot : connexion, widget, fiche, hors ligne", async (
   await expectLoaded(board.getByRole("img", { name: "Accueil" }));
   await expectNoSecretOnScreen(page);
   await shot(page, info, "ecran-4");
+  await browseFullscreen(page, info, board);
 
   expect((await fetch(`${penpot}/__test/offline`, { method: "POST" })).ok).toBe(true);
   await board.getByRole("button", { name: "Actualiser" }).click();

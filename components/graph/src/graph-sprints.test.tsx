@@ -31,24 +31,20 @@ const setup = (seed = seedSprintGraph, config: Record<string, unknown> = {}, age
 };
 
 const lanes = () => screen.findByRole("region", { name: "Fonctionnalités par sprint" });
-const kitModel = (today?: string) => {
-  const model = sprintLanes(kitInput(today === undefined ? {} : { tickets: kitTickets(today) }));
-  if (model === null) throw new Error("expected lanes");
-  return model;
-};
+const kitModel = (today?: string) =>
+  sprintLanes(kitInput(today === undefined ? {} : { tickets: kitTickets(today) }));
 
-test("the manifest reads sprints and questions and declares the columns", () => {
-  expect(manifest.reads).toEqual(expect.arrayContaining(["sprint", "question"]));
-  expect(manifest.configSchema?.columns).toMatchObject({ enum: ["sprints", "waves"], default: "sprints" });
-  expect(manifest.configSchema?.collapseDelivered).toMatchObject({ type: "boolean", default: true });
+test("the manifest reads the tracking entities, emits no selection and keeps the widget filter only", () => {
+  expect(manifest.reads).toEqual(["ticket", "status", "link", "run", "sprint", "question"]);
+  expect(manifest.selection).toBe(false);
+  expect(Object.keys(manifest.configSchema ?? {})).toEqual(["filter"]);
 });
 
 test("sprints mode: toolbar, counter, one column per sprint and the reserve", async () => {
   setup();
   const region = await lanes();
-  expect(screen.getByRole("button", { name: "Regrouper : Fonctionnalités" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Colonnes : Sprints" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Livrées repliées" }).getAttribute("aria-pressed")).toBe("true");
+  for (const name of ["Livrées repliées", "Options", "Colonnes : Sprints", "Regrouper : Fonctionnalités"])
+    expect(screen.queryByRole("button", { name })).toBeNull();
   expect(
     screen.getByText("9 fonctionnalités · 2 dépendances entre étapes, 8 entre fonctionnalités"),
   ).toBeTruthy();
@@ -65,59 +61,89 @@ test("sprints mode: toolbar, counter, one column per sprint and the reserve", as
   const s42 = within(region).getByRole("group", { name: "S42 Saisie hors ligne" });
   expect(within(s42).getByText("se termine aujourd'hui")).toBeTruthy();
   expect(within(region).getByRole("group", { name: "S41 Accès" }).textContent).toContain("terminé le 9 oct.");
-  expect(screen.queryByRole("radio", { name: "Vagues" })).toBeNull();
   expect(screen.getByRole("list", { name: "Légende" }).textContent).toContain("Colonne = sprint");
 });
 
-test("« Livrées repliées » unfolds delivered features", async () => {
+test("the bar holds the « Vue » switch and the counter only, « Fonctionnalités » first", async () => {
+  localStorage.clear();
   setup();
-  const region = await lanes();
-  const f1 = within(region).getByRole("article", { name: /^F1 / });
-  expect(within(f1).queryAllByRole("listitem")).toHaveLength(0);
-  await userEvent.click(screen.getByRole("button", { name: "Livrées repliées" }));
-  expect(within(within(region).getByRole("article", { name: /^F1 / })).getAllByRole("listitem")).toHaveLength(
-    4,
+  await lanes();
+  const bar = screen.getByRole("radiogroup", { name: "Vue" });
+  expect(
+    within(bar)
+      .getAllByRole("radio")
+      .map((r) => [r.textContent, r.getAttribute("aria-checked")]),
+  ).toEqual([
+    ["Fonctionnalités", "true"],
+    ["PRs", "false"],
+  ]);
+  const toolbar = bar.parentElement;
+  expect(toolbar?.querySelectorAll("button")).toHaveLength(2);
+  expect(toolbar?.textContent).toBe(
+    "FonctionnalitésPRs9 fonctionnalités · 2 dépendances entre étapes, 8 entre fonctionnalités",
   );
 });
 
-test("the former controls live in « Options »", async () => {
-  setup();
+test("« PRs » swaps the columns for the PR view and is remembered for this instance", async () => {
+  localStorage.clear();
+  const m = setup();
   await lanes();
-  await userEvent.click(screen.getByRole("button", { name: "Options" }));
-  const menu = await screen.findByRole("menu");
-  for (const name of ["Chemin critique", "Démarrables"])
-    expect(within(menu).getByRole("menuitemcheckbox", { name })).toBeTruthy();
-  expect(within(menu).getByRole("menuitemcheckbox", { name: /^Afficher les terminés/ })).toBeTruthy();
-  expect(within(menu).getByRole("menuitemradio", { name: "Moi" })).toBeTruthy();
-  expect(within(menu).getByRole("menuitemradio", { name: "Tous les domaines" })).toBeTruthy();
-});
-
-test("« Colonnes : Vagues » brings back the waves toolbar, and back", async () => {
-  setup();
-  await lanes();
-  await userEvent.click(screen.getByRole("button", { name: "Colonnes : Sprints" }));
-  await userEvent.click(await screen.findByRole("menuitemradio", { name: "Vagues" }));
-  expect(await screen.findByRole("radio", { name: "Vagues" })).toBeTruthy();
-  expect(screen.getByRole("region", { name: "Graphe des dépendances" })).toBeTruthy();
-  await userEvent.click(screen.getByRole("button", { name: "Colonnes : Vagues" }));
-  await userEvent.click(await screen.findByRole("menuitemradio", { name: "Sprints" }));
-  expect(await lanes()).toBeTruthy();
-});
-
-test("the config can open the graph in waves", async () => {
-  setup(seedSprintGraph, { columns: "waves" });
-  expect(await screen.findByRole("radio", { name: "Vagues" })).toBeTruthy();
-});
-
-test("without any sprint the columns switch is disabled and the waves stay", async () => {
-  setup((run) => {
-    run({ method: "createTicket", title: "Seul", assignee: { kind: "human", ref: "adam" } });
-  });
-  const columns = await screen.findByRole("button", { name: "Colonnes : Vagues" });
-  expect(columns.hasAttribute("disabled")).toBe(true);
-  expect(columns.closest("[title]")?.getAttribute("title")).toBe("Aucun sprint");
-  expect(screen.getByRole("radio", { name: "Vagues" }).getAttribute("aria-checked")).toBe("true");
+  await userEvent.click(screen.getByRole("radio", { name: "PRs" }));
+  expect(await screen.findByRole("region", { name: "PR ouvertes" })).toBeTruthy();
   expect(screen.queryByRole("region", { name: "Fonctionnalités par sprint" })).toBeNull();
+  expect(screen.getByRole("radio", { name: "PRs" }).getAttribute("aria-checked")).toBe("true");
+  expect(localStorage.getItem(`kibo.graph.view.${m.sdk.instanceId}`)).toBe("prs");
+  await userEvent.click(screen.getByRole("radio", { name: "Fonctionnalités" }));
+  expect(await lanes()).toBeTruthy();
+  expect(localStorage.getItem(`kibo.graph.view.${m.sdk.instanceId}`)).toBe("features");
+  localStorage.clear();
+});
+
+test("a stored « prs » opens the PR view", async () => {
+  localStorage.setItem("kibo.graph.view.mock-instance", "prs");
+  setup();
+  expect(await screen.findByRole("region", { name: "PR ouvertes" })).toBeTruthy();
+  expect(screen.getByRole("radio", { name: "PRs" }).getAttribute("aria-checked")).toBe("true");
+  localStorage.clear();
+});
+
+test("a storage that cannot be read keeps « Fonctionnalités »", async () => {
+  const getItem = Storage.prototype.getItem;
+  Storage.prototype.getItem = () => {
+    throw new Error("denied");
+  };
+  try {
+    setup();
+    expect(await lanes()).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Fonctionnalités" }).getAttribute("aria-checked")).toBe("true");
+  } finally {
+    Storage.prototype.getItem = getItem;
+  }
+});
+
+test("a delivered feature is folded, even with the former config keys, and its title opens it", async () => {
+  const m = setup(seedSprintGraph, { collapseDelivered: false, showDone: true, columns: "waves" });
+  const region = await lanes();
+  const f1 = within(region).getByRole("article", { name: /^F1 / });
+  expect(within(f1).queryAllByRole("listitem")).toHaveLength(0);
+  await userEvent.click(within(f1).getByRole("button", { name: "Se connecter avec Microsoft" }));
+  const root = m.snapshot().tickets.find((t) => t.title === "Se connecter avec Microsoft");
+  if (root === undefined) throw new Error("missing F1");
+  expect(m.opened).toEqual([root.id]);
+});
+
+test("without any sprint a single « À planifier » column holds every feature", async () => {
+  setup((run) => {
+    const root = run({ method: "createTicket", title: "Exporter le dossier client" }) as { id: string };
+    run({ method: "createTicket", title: "Format du dossier", parentId: root.id });
+  });
+  const region = await lanes();
+  expect(
+    within(region)
+      .getAllByRole("group")
+      .map((g) => g.getAttribute("aria-label")),
+  ).toEqual(["À planifier"]);
+  expect(within(region).getByRole("article", { name: /Exporter le dossier client$/ })).toBeTruthy();
 });
 
 test("a frame lists its steps, the session row is outlined in orange", () => {
@@ -146,55 +172,6 @@ test("footers: late slips to the next sprint, blocked names its question", () =>
   expect(f5.getAttribute("data-late")).toBe("true");
   const f6 = screen.getByRole("article", { name: /^F6 / });
   expect(within(f6).getByText("bloquée par Q14")).toBeTruthy();
-});
-
-test("the legend names the mode", () => {
-  render(<SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />);
-  const legend = screen.getByRole("list", { name: "Légende" });
-  expect(
-    within(legend)
-      .getAllByRole("listitem")
-      .map((i) => i.textContent),
-  ).toEqual([
-    "À faire",
-    "En cours",
-    "En review",
-    "Bloqué",
-    "Fonctionnalité",
-    "Colonne = sprint",
-    "Session active",
-  ]);
-});
-
-test("the Légende button folds the legend and the choice is remembered", async () => {
-  localStorage.removeItem("kibo.graph.legend");
-  const first = render(
-    <SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />,
-  );
-  const toggle = screen.getByRole("button", { name: "Légende" });
-  expect(toggle.getAttribute("aria-expanded")).toBe("true");
-  await userEvent.click(toggle);
-  expect(screen.queryByRole("list", { name: "Légende" })).toBeNull();
-  expect(screen.getByRole("button", { name: "Légende" }).getAttribute("aria-expanded")).toBe("false");
-  first.unmount();
-  render(<SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />);
-  expect(screen.queryByRole("list", { name: "Légende" })).toBeNull();
-  await userEvent.click(screen.getByRole("button", { name: "Légende" }));
-  expect(screen.getByRole("list", { name: "Légende" })).toBeTruthy();
-  localStorage.removeItem("kibo.graph.legend");
-});
-
-test("the legend opens when the storage cannot be read", () => {
-  const getItem = Storage.prototype.getItem;
-  Storage.prototype.getItem = () => {
-    throw new Error("denied");
-  };
-  try {
-    render(<SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />);
-    expect(screen.getByRole("list", { name: "Légende" })).toBeTruthy();
-  } finally {
-    Storage.prototype.getItem = getItem;
-  }
 });
 
 test("clicking a frame title or a step opens the ticket", async () => {

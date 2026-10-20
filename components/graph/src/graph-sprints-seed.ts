@@ -1,6 +1,6 @@
-import type { ProjectCommand, Sprint, StatusId, Ticket } from "@kibo/schema";
+import type { Sprint, StatusId, Ticket } from "@kibo/schema";
+import { createSeedTicket, type SeedRun } from "./graph-seed";
 
-type Run = (cmd: ProjectCommand) => unknown;
 type FeatureSeed = { title: string; sprint: string | null; steps: StatusId[] };
 
 export const SEED_TODAY = "2026-10-16";
@@ -43,16 +43,10 @@ const FEATURE_LINKS: readonly [number, number][] = [
   [6, 8],
 ];
 
-const create = (run: Run, title: string, parentId: string | null, statusId: StatusId = "todo"): Ticket =>
-  run({
-    method: "createTicket",
-    title,
-    parentId,
-    statusId,
-    assignee: { kind: "human", ref: "adam" },
-  }) as Ticket;
+const create = (run: SeedRun, title: string, parentId: string | null, statusId: StatusId = "todo"): Ticket =>
+  createSeedTicket(run, { title, parentId, statusId, assignee: { kind: "human", ref: "adam" } });
 
-export function seedSprintGraph(run: Run): void {
+export function seedSprintGraph(run: SeedRun): void {
   const sprints = new Map<string, Sprint>(
     SPRINTS.map(([code, name, start, end]) => [
       code,

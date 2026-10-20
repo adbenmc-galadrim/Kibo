@@ -1,149 +1,28 @@
-import {
-  type DesignFrame,
-  designUrlProblem,
-  externalRefKey,
-  type FrameProblemKind,
-  frameProblemOf,
-  type TicketView,
-} from "@kibo/schema";
-import { Badge } from "@kibo/sdk/ui/badge";
+import { designUrlProblem, externalRefKey, type TicketView } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import { Input } from "@kibo/sdk/ui/input";
-import { Skeleton } from "@kibo/sdk/ui/skeleton";
-import { RefreshCw } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { client } from "../../api";
 import { frDesign } from "../../i18n/fr-design";
-import { failureText } from "../../lib/remote-error";
-import { frameErrorText, linkErrorText } from "./design-errors";
-import { type DesignRef, designRefs, refProvider } from "./design-refs";
+import { linkErrorText } from "./design-errors";
+import { designRefs } from "./design-refs";
+import { LinkedFrame } from "./LinkedFrame";
+import { FrameFullscreen } from "./lazy-fullscreen";
+import { useDesignThumbs } from "./use-design-thumbs";
 
 const t = frDesign.sheet;
-
-type Thumb =
-  | { state: "loading" }
-  | { state: "ready"; frame: DesignFrame }
-  | { state: "failed"; error: unknown };
-
-const QUIET: ReadonlySet<FrameProblemKind> = new Set(["notConnected", "noThumbnail"]);
-
-function useFrame(url: string, refreshes: number): Thumb {
-  const [thumb, setThumb] = useState<Thumb>({ state: "loading" });
-  useEffect(() => {
-    let live = true;
-    setThumb({ state: "loading" });
-    client
-      .rpc({ method: "getDesignFrame", url, refresh: refreshes > 0 })
-      .then((frame) => live && setThumb({ state: "ready", frame }))
-      .catch((error: unknown) => live && setThumb({ state: "failed", error }));
-    return () => {
-      live = false;
-    };
-  }, [url, refreshes]);
-  return thumb;
-}
-
-const warning = "border-amber-500/50 text-amber-700 dark:text-amber-400";
-
-function Failure({ error, node, onRetry }: { error: unknown; node: DesignRef; onRetry(): void }) {
-  const { kind } = frameProblemOf(error, refProvider(node));
-  return (
-    <div className="grid justify-items-center gap-2 p-3 text-center">
-      <p role={QUIET.has(kind) ? "status" : "alert"} className="text-muted-foreground">
-        {frameErrorText(error, node)}
-      </p>
-      <Button variant="outline" size="xs" onClick={onRetry}>
-        {frDesign.retry}
-      </Button>
-    </div>
-  );
-}
-
-function Thumbnail({ thumb, node, onRetry }: { thumb: Thumb; node: DesignRef; onRetry(): void }) {
-  if (thumb.state === "failed") return <Failure error={thumb.error} node={node} onRetry={onRetry} />;
-  if (thumb.state === "loading") return <Skeleton className="size-full rounded-none" />;
-  const { frame } = thumb;
-  return (
-    <>
-      <img src={frame.url} alt={node.name} crossOrigin="anonymous" className="size-full object-contain" />
-      {(frame.stale || !frame.reachable) && (
-        <div className="absolute top-1.5 left-1.5 flex gap-1">
-          {frame.stale && (
-            <Badge variant="outline" className={`bg-background ${warning}`}>
-              {frDesign.badges.stale}
-            </Badge>
-          )}
-          {!frame.reachable && (
-            <Badge variant="outline" className="bg-background">
-              {frDesign.badges.offline}
-            </Badge>
-          )}
-        </div>
-      )}
-    </>
-  );
-}
-
-function LinkedFrame({
-  projectId,
-  ticketId,
-  node,
-}: {
-  projectId: string;
-  ticketId: string;
-  node: DesignRef;
-}) {
-  const [refreshes, setRefreshes] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const thumb = useFrame(node.url, refreshes);
-  const refresh = () => setRefreshes((n) => n + 1);
-  const unlink = async () => {
-    try {
-      await client.rpc({
-        method: "command",
-        projectId,
-        command: { method: "removeExternalRef", ticketId, kind: node.kind, key: externalRefKey(node) },
-      });
-    } catch (e) {
-      setError(failureText(e));
-    }
-  };
-  return (
-    <li className="grid gap-1.5">
-      <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-md border bg-muted">
-        <Thumbnail thumb={thumb} node={node} onRetry={refresh} />
-      </div>
-      <div className="flex min-w-0 items-center gap-1">
-        <span className="truncate font-medium">{node.name}</span>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="ml-auto size-7 shrink-0"
-          aria-label={t.refresh}
-          title={t.refresh}
-          disabled={thumb.state === "loading"}
-          onClick={refresh}
-        >
-          <RefreshCw aria-hidden />
-        </Button>
-        <Button variant="ghost" size="sm" className="h-7 shrink-0 text-xs" asChild>
-          <a href={node.url} target="_blank" rel="noreferrer noopener">
-            {t.open(refProvider(node))}
-          </a>
-        </Button>
-        <Button variant="ghost" size="sm" className="h-7 shrink-0 text-xs" onClick={() => void unlink()}>
-          {t.unlink}
-        </Button>
-      </div>
-      {error && <p className="text-destructive">{error}</p>}
-    </li>
-  );
-}
 
 export function DesignSection({ projectId, ticket }: { projectId: string; ticket: TicketView }) {
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [opened, setOpened] = useState<string | null>(null);
   const nodes = designRefs(ticket);
+  const { thumbs, refresh, refreshing } = useDesignThumbs(nodes.map((n) => n.url));
+  const loaded = nodes.flatMap((n) => {
+    const thumb = thumbs.get(n.url);
+    return thumb?.state === "ready" ? [{ url: n.url, frame: thumb.frame }] : [];
+  });
+  const index = loaded.findIndex((f) => f.url === opened);
   const link = async () => {
     const problem = designUrlProblem(url);
     if (problem) {
@@ -159,8 +38,7 @@ export function DesignSection({ projectId, ticket }: { projectId: string; ticket
     }
   };
   return (
-    <section className="grid gap-2 px-4 pb-4 text-xs">
-      <h3 className="font-medium">{t.mockups}</h3>
+    <section aria-label={t.mockups} className="grid gap-2 px-4 pb-4 text-xs">
       {nodes.length > 0 && (
         <ul className="grid gap-3">
           {nodes.map((n) => (
@@ -169,6 +47,10 @@ export function DesignSection({ projectId, ticket }: { projectId: string; ticket
               projectId={projectId}
               ticketId={ticket.id}
               node={n}
+              thumb={thumbs.get(n.url) ?? { state: "loading" }}
+              refreshing={refreshing(n.url)}
+              onRefresh={() => refresh(n.url)}
+              onFullscreen={() => setOpened(n.url)}
             />
           ))}
         </ul>
@@ -200,6 +82,20 @@ export function DesignSection({ projectId, ticket }: { projectId: string; ticket
         <p role="alert" className="text-destructive">
           {error}
         </p>
+      )}
+      {index >= 0 && (
+        <FrameFullscreen
+          open
+          frames={loaded}
+          index={index}
+          context={ticket.keyLabel}
+          onIndexChange={(i) => setOpened(loaded[i]?.url ?? null)}
+          onOpenChange={(open) => {
+            if (!open) setOpened(null);
+          }}
+          onRefresh={refresh}
+          refreshing={refreshing(loaded[index]?.url ?? "")}
+        />
       )}
     </section>
   );

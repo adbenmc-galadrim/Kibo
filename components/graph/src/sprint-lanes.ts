@@ -88,7 +88,6 @@ export type SprintLanesInput = {
   sprints: readonly SprintView[];
   questions: readonly Question[];
   live: ReadonlySet<string>;
-  collapseDelivered: boolean;
   today: string | null;
 };
 
@@ -146,7 +145,7 @@ function draftOf(f: Feature, facts: Facts, sorted: readonly SprintView[]): Draft
     total: f.feature.steps.total,
     delivered,
     late: f.feature.status === "late",
-    collapsed: delivered && input.collapseDelivered,
+    collapsed: delivered,
     segments: steps.map((s) => ({ ticketId: s.ticketId, tone: toneOf(s, blocking) })),
     steps: steps.map((s) => ({
       ticketId: s.ticketId,
@@ -220,8 +219,7 @@ const unfinished = (ids: readonly string[], byId: ReadonlyMap<string, TicketView
     return status !== undefined && status !== "delivered";
   }).length;
 
-export function sprintLanes(input: SprintLanesInput): SprintLanesModel | null {
-  if (input.sprints.length === 0) return null;
+export function sprintLanes(input: SprintLanesInput): SprintLanesModel {
   const byId = new Map(input.tickets.map((t) => [t.id, t]));
   const facts: Facts = { input, blocking: blockingQuestions(input.questions), byId };
   const sorted = sortSprints(input.sprints);

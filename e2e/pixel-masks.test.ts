@@ -24,6 +24,8 @@ test("every mask stays inside its screen and says why", () => {
     "tickets",
     "vue-ensemble",
     "graphe",
+    "graphe-prs",
+    "apercu-maquette",
     "nouveau-projet",
     "kanban",
     "fiche-ticket",
@@ -131,4 +133,21 @@ test("the on-hold sheet of F5 drops the masks of SILO-33's running step and lift
   expect(
     masksOf("attente-fonctionnalite").some((m) => m.why.includes("SILO-33") || m.why.includes("branche")),
   ).toBe(false);
+});
+
+test("the Graphe compares against P5b and its PRs view against P5c, masking only the user and the sync age", () => {
+  expect(referenceOf("graphe")).toBe("graphe-fonctionnalites");
+  expect(referenceOf("graphe-prs")).toBe("graphe-prs");
+  expect(PIXEL_HEIGHTS["graphe-prs"]).toBe(1000);
+  expect(masksOf("graphe-prs")).toEqual(masksOf("graphe").slice(0, 2));
+  expect(masksOf("graphe-prs").map((m) => m.why)).toEqual([
+    expect.stringContaining("utilisateur"),
+    expect.stringContaining("Synchronisé"),
+  ]);
+});
+
+test("the full-screen mockup compares against P8g on 1000 px, without a single mask", () => {
+  expect(referenceOf("apercu-maquette")).toBe("apercu-maquette");
+  expect(PIXEL_HEIGHTS["apercu-maquette"]).toBe(1000);
+  expect(PIXEL_MASKS["apercu-maquette"]).toEqual([]);
 });

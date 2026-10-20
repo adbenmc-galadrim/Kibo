@@ -3,11 +3,8 @@ import fc from "fast-check";
 import { frameWidth, sprintLanes } from "./sprint-lanes";
 import { KIT_DAY_AFTER, KIT_LINKS, kitInput, kitTickets, kitView } from "./sprint-lanes-kit";
 
-const model = (today?: string) => {
-  const out = sprintLanes(kitInput(today === undefined ? {} : { tickets: kitTickets(today) }));
-  if (out === null) throw new Error("expected sprint lanes");
-  return out;
-};
+const model = (today?: string) =>
+  sprintLanes(kitInput(today === undefined ? {} : { tickets: kitTickets(today) }));
 const frame = (shortKey: string, today?: string) => {
   const f = model(today)
     .lanes.flatMap((l) => l.frames)
@@ -30,7 +27,7 @@ test("one column per sorted sprint, then « À planifier »", () => {
   expect(lanes.map((l) => l.tone)).toEqual(["canvas", "panel", "canvas", "panel", "canvas"]);
 });
 
-test("delivered features are collapsed, the others list their steps", () => {
+test("delivered features are always collapsed, the others list their steps", () => {
   for (const key of ["F1", "F2", "F3"]) {
     expect(frame(key).collapsed).toBe(true);
     expect(frame(key).delivered).toBe(true);
@@ -44,10 +41,8 @@ test("delivered features are collapsed, the others list their steps", () => {
     "Démo client",
   ]);
   expect([frame("F4").done, frame("F4").total]).toEqual([3, 5]);
-  const open = sprintLanes(kitInput({ collapseDelivered: false }));
-  const f1 = open?.lanes[0]?.frames[0];
-  expect(f1?.collapsed).toBe(false);
-  expect(f1?.steps).toHaveLength(4);
+  for (const f of model().lanes.flatMap((l) => l.frames)) expect(f.collapsed).toBe(f.delivered);
+  expect(frame("F1").steps).toHaveLength(0);
 });
 
 test("late and blocked features carry their footer", () => {
@@ -68,7 +63,7 @@ test("a merged PR with changes requested is marked merged, not amber", () => {
     ),
   }));
   const f4 = sprintLanes(kitInput({ tickets }))
-    ?.lanes.flatMap((l) => l.frames)
+    .lanes.flatMap((l) => l.frames)
     .find((f) => f.shortKey === "F4");
   expect(f4?.steps[3]?.git).toEqual({ kind: "merged", tone: "green" });
 });
@@ -85,7 +80,7 @@ test("steps carry their tone, their git mark and the session", () => {
   expect(f5[2]).toMatchObject({ tone: "progress", git: { kind: "branch", tone: "blue" }, session: true });
   expect(frame("F6").steps[0]?.tone).toBe("blocked");
   const live = sprintLanes(kitInput({ live: new Set(["SILO-34"]) }));
-  const tests = live?.lanes[1]?.frames[2]?.steps[3];
+  const tests = live.lanes[1]?.frames[2]?.steps[3];
   expect(tests?.session).toBe(true);
 });
 
@@ -131,13 +126,26 @@ test("edges link feature roots only, step links are counted", () => {
 test("a link between steps of two features is lifted to their roots", () => {
   const extra = { id: "lx", from: "SILO-54", to: "SILO-71", type: "blocks" as const };
   const m = sprintLanes(kitInput({ links: [...KIT_LINKS, extra] }));
-  expect(m?.featureLinks).toBe(9);
-  expect(m?.stepLinks).toBe(3);
-  expect(m?.edges.some((e) => e.from === "SILO-50" && e.to === "SILO-70")).toBe(true);
+  expect(m.featureLinks).toBe(9);
+  expect(m.stepLinks).toBe(3);
+  expect(m.edges.some((e) => e.from === "SILO-50" && e.to === "SILO-70")).toBe(true);
 });
 
-test("without any sprint the graph falls back to waves", () => {
-  expect(sprintLanes(kitInput({ sprints: [] }))).toBeNull();
+test("without any sprint every feature sits in a single « À planifier » column", () => {
+  const m = sprintLanes(kitInput({ sprints: [] }));
+  expect(m.lanes.map((l) => [l.id, l.code, l.tone])).toEqual([["reserve", null, "canvas"]]);
+  expect(m.lanes[0]?.frames.map((f) => f.shortKey)).toEqual([
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8",
+    "F9",
+  ]);
+  expect(m.features).toBe(9);
 });
 
 test("loose tickets are not frames", () => {
@@ -161,7 +169,7 @@ test("frame width grows with the longest title and stays bounded", () => {
 
 test("each sprint column says its state with the overview's words", () => {
   const at = (today: string) =>
-    sprintLanes(kitInput({ tickets: kitTickets(today), today }))?.lanes.map((l) => l.label);
+    sprintLanes(kitInput({ tickets: kitTickets(today), today })).lanes.map((l) => l.label);
   expect(at("2026-10-14")).toEqual(["terminé le 9 oct.", "en cours", "prévu", "prévu", null]);
   expect(at("2026-10-16")).toEqual(["terminé le 9 oct.", "se termine aujourd'hui", "prévu", "prévu", null]);
   expect(at(KIT_DAY_AFTER)?.[1]).toBe("terminé le 16 oct. · reste 2");

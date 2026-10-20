@@ -195,7 +195,7 @@ Exports : `exports/choix-<n>-<slug>-{dark,light}.png` (`await storage.exportChoi
 | P2 · Planning | `exports/proposition-planning-{dark,light}.png` | 1 440 × 1 000 px |
 | P3 · Fonctionnalité | `exports/proposition-fonctionnalite-{dark,light}.png` | 1 440 × 1 000 px |
 | P4 · Tickets | `exports/proposition-tickets-{dark,light}.png` | 1 440 × 1 000 px |
-| P5 · Graphe | `exports/proposition-graphe-{dark,light}.png` | 1 440 × 1 000 px |
+| P5b · Graphe, Fonctionnalités | `exports/proposition-graphe-fonctionnalites-{dark,light}.png` (référence pixel de « graphe » ; exports P5 retirés en phase 30, P5 reste page 35 du fichier « Kibo ») | 1 440 × 1 000 px |
 
 P1 (`proposition-vue-ensemble-*`, 1 440 × 1 100 px) est remplacé par P1 bis. Les tableaux de choix font 1 200 × 560 px.
 
@@ -328,3 +328,67 @@ pas encore enregistré côté serveur fait échouer l'exporteur, « http error �
 `95-cotes.js` (`_dump-26`), puis `python3 scripts/cotes.py <JSON> --alpha3`, qui remplace seulement la partie « 0.29.0-alpha.3 » de
 `cotes.md` (`--alpha2` la garde). Pas de spec pixel (panneau, capturé en E2E). Copié en page « 36 · Suivi seul » du fichier « Kibo »
 (235, voir `design/penpot/README.md`).
+
+## Phase 30 (2026-10-20)
+
+Spec §44 : la page Graphe n'a plus qu'un sélecteur « Fonctionnalités | PRs » et un compteur ; « Regrouper », « Colonnes », « Livrées
+repliées » et « Options » disparaissent. La vue PRs dessine chaque PR vivante en carte, empilée de bas en haut sur la PR dont elle part,
+une colonne par pile, au-dessus du rail « dev · branche de base ». Données : sous-section « Phase 30 · PR empilées » du projet Silo
+(`design/donnees-fictives.md`, scénario `silo-prs`). Page « Proposition », `scripts/59-graphe-prs.js` (après `58-alpha3-reveil`), rangées à
+partir de `S.Y_GR` = 44 000 (après la rangée de l'alpha 3, pas de 1 500 px), sombre à x = 0 et clair à x = 1 540.
+
+Chaque board **clone « P5 · Graphe »** puis remplace la barre (`S.toolbarGR`) ; P5 reste au fichier, sa référence `proposition-graphe-*`
+est retirée des exports avec le changement de référence pixel.
+
+| Board | Contenu | Export | Taille |
+|---|---|---|---|
+| P5b · Graphe, Fonctionnalités | colonnes par sprint de P5, barre réduite au sélecteur (« Fonctionnalités » actif) et au compteur « 9 fonctionnalités · 13 dépendances entre étapes, 7 entre fonctionnalités » | `proposition-graphe-fonctionnalites` | 1 440 × 1 000 |
+| P5c · Graphe, PRs | « PRs » actif, compteur « 5 PR ouvertes · 3 piles · 2 en attente de review · 1 à corriger », trois colonnes (#22 → #24 → #25 F5, #20 F4, #23 hors fonctionnalité) avec leur en-tête, cartes 364 × 92 (icône, numéro, titre du ticket, « session » sur #24 et #20, clé et fonctionnalité, puces de review et de CI, branche `head`), traits « sur feat/… », rail « dev · branche de base », légende (dont « Approuvée ») | `proposition-graphe-prs` | 1 440 × 1 000 |
+| P5e · Graphe, aucune PR | « PRs » actif, compteur « 0 PR ouverte · 0 pile », canevas vide : « Aucune PR ouverte » (14 px, 500, `mfg`) et « Les PR ouvertes des étapes apparaissent ici, empilées sur leur branche de base. » (13 px, `dim`) centrés, ni rail ni légende | `proposition-graphe-prs-vide` | 1 440 × 1 000 |
+
+Correction de P5c (2026-10-20) : #20 porte « session » (session T3 Code de SILO-45) et non « en retard » (« en retard » ne vient que d'une
+fonctionnalité en retard, et aucune ne l'est au 16 oct.) ; la légende gagne « Approuvée » (point vert) après « Changements demandés ».
+La variante **P5d « PRs par fonctionnalité »** (un cadre par fonctionnalité, la pile dedans) est **écartée** : boards supprimés du fichier,
+dessin (`miniGR`, `stemGR`, `frameGR`, `alignFramesGR`) et exports `proposition-graphe-prs-variante-*` retirés ; P5e occupe sa rangée (y = 47 000).
+
+Dessin : `await storage.drawGR("g-prs", "dark")` (clés `g-fonctionnalites`, `g-prs`, `g-prs-vide`), un écran et un mode par appel. Avant
+d'exporter, attendre que le nombre de formes côté serveur (`get-page`) égale le nombre local. Export : `await storage.exportGR(["graphe-prs",
+"graphe-prs-vide"])` (depuis un clone, après 10 s d'attente) ⇒ `exports/proposition-graphe-<fonctionnalites|prs|prs-vide>-<dark|light>.png`.
+Cotes : `95-cotes.js` par board (`_dump-27` à `_dump-29`), puis `python3 scripts/cotes.py <JSON> --phase30`, qui remplace seulement la
+partie « Phase 30 » de `cotes.md` (`--alpha3` la garde). Comparaison au pixel : « graphe » sur P5b (`silo-maquettes`) et « graphe-prs » sur
+P5c (`silo-prs`) ; P5e a une capture seulement. À copier en page « 36 · Suivi seul » du fichier « Kibo » (236, 237, 237b, voir
+`design/penpot/README.md`).
+
+Piège vu : `Date.now()` lève une erreur dans le compartiment du plugin piloté depuis Chromium headless ; `00-charger.js` s'en sert pour
+contourner le cache, il faut alors un compteur à la place pour charger les scripts.
+
+### Aperçu de maquette
+
+Spec §44.8 : les maquettes de la fiche ticket s'ouvrent en plein écran de Kibo (vue qui couvre la fenêtre, jamais l'API Fullscreen du
+navigateur). Données : sous-section « Phase 30 · Aperçu de maquette » du projet Silo (`design/donnees-fictives.md`, scénario
+`silo-apercu`) : SILO-45 lié au cadre Figma « Conflit de saisie » (444 × 960, écran mobile de l'app Silo). Page « Proposition »,
+`scripts/59b-apercu-maquette.js` (après `59-graphe-prs`), rangées à partir de `S.Y_AP` = 48 500 (après P5e, pas de 1 500 px), sombre à
+x = 0 et clair à x = 1 540.
+
+| Board | Contenu | Export | Taille |
+|---|---|---|---|
+| P8f · Fiche ticket, Maquettes | clone de « P8 · Fiche ticket » ; section « Maquettes » ouverte (« 1 ») : propriété « Maquette · Conflit de saisie » (icône `frame`), vignette 512 × 288 (`muted`, bord, rayon 6) avec le cadre réduit (`S.frameAP(p, 133.2, 288)`, échelle 0,3, centré), ligne d'actions « Plein écran » (`maximize-2`, 28 × 28, en tête) · « Conflit de saisie » · « Actualiser » · « Ouvrir dans Figma » · « Retirer », champ « Colle l'URL d'un cadre Figma ou d'un board Penpot » et « Lier un cadre » (désactivé) ; corps de la feuille sorti du flux et remonté jusqu'à ce que la section touche le bas (386 px en sombre, 383 en clair), en-tête de la feuille au-dessus | `proposition-fiche-ticket-maquettes` | 1 440 × 1 000 |
+| P8g · Maquette en plein écran | fond `card` ; barre de 40 px (bord bas `border`) : puce « SILO-45 » (mono 11), « Conflit de saisie » (13, 500), badge « Figma », puis « Actualiser » et « Ouvrir dans Figma » (icônes 14 dans 24 × 24) et « Quitter le plein écran (Échap) » (`x`, 12,5, 500) ; visualiseur `muted` 1 440 × 960 ; **cadre** (forme « cadre », 444 × 960, échelle 1) en (498, 40) sur une ombre `shadow-sm` portée par une forme à part (« cadre-ombre ») ; barre de zoom en bas à droite (8 px des bords) : « − », « 100 % » (mono 11), « + », « Ajuster » (grisé) | `proposition-apercu-maquette` | 1 440 × 1 000 |
+
+Le cadre « Conflit de saisie » (`S.frameAP(p, w, h)`, dessiné à l'échelle `w / 444`) a les couleurs de l'app Silo, identiques en sombre et
+en clair : barre d'état « 14:02 », titre, « Deux saisies du constat du box B-114 », cartes « Version hors ligne · 14:02 » (bord bleu
+`#2563EB`, « Occupé », 3 photos, « Cadenas changé ») et « Version du serveur · 13:47 » (« Libre », 2 photos, note vide), boutons
+« Garder la plus récente » (plein) et « Comparer » (contour).
+
+Dessin : `await storage.drawAP("ap-fiche", "dark")` (clés `ap-fiche`, `ap-plein-ecran`), un écran et un mode par appel ; attendre que
+les formes côté serveur (`get-page`) égalent les formes locales. Export : `await storage.exportAP(["fiche-ticket-maquettes",
+"apercu-maquette"])` (depuis un clone, après 10 s) ⇒ `exports/proposition-<fiche-ticket-maquettes|apercu-maquette>-<dark|light>.png`.
+Export du cadre seul : `await storage.exportFrameAP()` ⇒ `exports/proposition-apercu-maquette-cadre.png` (444 × 960, forme « cadre »
+du board sombre, échelle 1), l'image que le faux Figma sert pour le nœud `45:1` ; ses pixels égalent la zone (498, 40, 444 × 960) de
+`proposition-apercu-maquette-dark.png` à l'anticrénelage près (34 pixels, écart ≤ 7 / 255). Cotes : `_dump-30` et `_dump-31`, dans la
+partie « Phase 30 » de `cotes.md` (`--phase30`). Comparaison au pixel : « apercu-maquette » sur P8g (`silo-apercu`, aucun masque) ; P8f a une
+capture seulement. À copier en page « 36 · Suivi seul » du fichier « Kibo » (238, 238b, voir `design/penpot/README.md`).
+
+Pièges vus : dans un board sans flex, une forme ajoutée par `appendChild` passe sous les précédentes ; `S.stackAP` les remet dans l'ordre
+du dessin (`bringToFront`). Un enfant absolu d'un flex reste au-dessus des autres : l'en-tête de la feuille reçoit `layoutChild.zIndex = 2`.
+Les formes du plugin se comparent par `id`, jamais par `===`.

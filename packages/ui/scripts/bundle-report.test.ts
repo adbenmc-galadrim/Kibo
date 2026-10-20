@@ -337,7 +337,11 @@ describe("bundle report", () => {
       "/x/packages/ui/src/shell/sheet/DesignSection.tsx",
       "/x/packages/ui/src/shell/sheet/DesignProperty.tsx",
       "/x/packages/ui/src/shell/sheet/design-refs.ts",
+      "/x/packages/ui/src/shell/sheet/LinkedFrame.tsx",
+      "/x/packages/ui/src/shell/sheet/use-design-thumbs.ts",
+      "/x/packages/ui/src/shell/sheet/lazy-fullscreen.ts",
       "/x/packages/ui/src/dialogs/FrameField.tsx",
+      "/x/components/mockup/src/FrameFullscreen.tsx",
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });

@@ -588,6 +588,65 @@ exports `proposition-agent-reveil-*` ; page « 36 · Suivi seul » du fichier «
   « Refuser ».
 - Message reçu par l'agent : « Réveil automatique : 1 réponse à lire. », « - Q16 répondue : « 5 Go » », puis la consigne de lecture (§43).
 
+### Phase 30 · PR empilées
+
+Scénario `silo-prs` (spec §44.4) : le jeu des fonctionnalités ci-dessus, vendredi 16 octobre, puis deux PR, une branche et un
+statut posés après le semis complet (comme `silo-attente`) ; `silo-maquettes` n'est pas modifié. Maquettes : boards « P5c · Graphe,
+PRs » et « P5e · Graphe, aucune PR » de la page « Proposition » (`design/redesign/scripts/59-graphe-prs.js`), exports
+`proposition-graphe-prs-*` et `proposition-graphe-prs-vide-*`.
+
+| PR | Ticket | État | Review | CI | Base | Head |
+|---|---|---|---|---|---|---|
+| #22 | SILO-32 | ouverte | aucune | verte | `dev` | `feat/silo-32` |
+| #20 | SILO-45 | ouverte | changements demandés | rouge | `dev` | `feat/silo-45` |
+| #23 | SILO-61 | ouverte | aucune | en cours | `dev` | `chore/expo-54` |
+| #24 | SILO-33 | brouillon | aucune | en cours | `feat/silo-32` | `feat/envoi-hors-ligne` |
+| #25 | SILO-34 | brouillon | aucune | verte | `feat/envoi-hors-ligne` | `feat/silo-34` |
+
+Branches et statuts : SILO-34 passe **en cours** sur `feat/silo-34` (base `feat/envoi-hors-ligne`) ; SILO-33 déclare sa branche
+`feat/envoi-hors-ligne` sur `feat/silo-32`. Les PR fusionnées (#12 à #19) n'apparaissent pas.
+
+| Pile (de bas en haut) | En-tête | Fonctionnalité |
+|---|---|---|
+| #22 → #24 → #25 | « 3 PR empilées » · « F5 · Envoyer les photos d'un constat · #22 à #25 » | F5 |
+| #20 | « 1 PR » · « F4 · Saisir un constat hors ligne · #20 » | F4 |
+| #23 | « 1 PR » · « Hors fonctionnalité · #23 » | aucune (ticket libre) |
+
+États attendus (vue « PRs » du Graphe) :
+- Rail « dev · branche de base » ; compteur « 5 PR ouvertes · 3 piles · 2 en attente de review · 1 à corriger ».
+- Marques : « session » sur #24 et #20 (sessions T3 Code de SILO-33 et SILO-45) ; aucune « en retard » au 16 oct. (aucune
+  fonctionnalité n'est en retard) ; bordure rouge sur #20 (changements demandés) ; « sur feat/silo-32 » entre #22 et #24,
+  « sur feat/envoi-hors-ligne » entre #24 et #25.
+- Légende : Brouillon, En attente de review, Changements demandés, Approuvée, CI verte, CI rouge, CI en cours, | Basée sur la PR
+  du dessous, Session active, Clic : fiche du ticket.
+- État vide (aucune PR vivante) : « Aucune PR ouverte », puis « Les PR ouvertes des étapes apparaissent ici, empilées sur leur
+  branche de base. », compteur « 0 PR ouverte · 0 pile », ni rail ni légende.
+
+### Phase 30 · Aperçu de maquette
+
+Scénario `silo-apercu` (spec §44.8) = `silo-maquettes`, puis Figma connecté (jeton de test, secrets en mémoire) et un cadre lié à
+SILO-45 ; ces données ne touchent pas `silo-maquettes` (la fiche de SILO-45 y garde « Maquettes · 0 »). Maquettes : boards
+« P8f · Fiche ticket, Maquettes » et « P8g · Maquette en plein écran » de la page « Proposition »
+(`design/redesign/scripts/59b-apercu-maquette.js`), exports `proposition-fiche-ticket-maquettes-*`, `proposition-apercu-maquette-*`
+et `proposition-apercu-maquette-cadre.png` (le cadre seul, image servie par le faux Figma).
+
+| Ticket | Cadre | Fournisseur | Fichier | Nœud | Taille | URL |
+|---|---|---|---|---|---|---|
+| SILO-45 « Conflits de saisie » | « Conflit de saisie » | Figma | `AbC123xyz` (« Silo ») | `45:1` | 444 × 960 | `https://www.figma.com/design/AbC123xyz/Silo?node-id=45-1` |
+
+Contenu du cadre (écran mobile de l'app Silo, mêmes couleurs en sombre et en clair : fond blanc, bleu `#2563EB`, gris) :
+- barre d'état « 14:02 » ; titre « Conflit de saisie » ; texte « Deux saisies du constat du box B-114 » ;
+- carte « Version hors ligne · 14:02 » : état « Occupé », 3 photos, note « Cadenas changé » ;
+- carte « Version du serveur · 13:47 » : état « Libre », 2 photos, note vide ;
+- bouton plein « Garder la plus récente », bouton contour « Comparer ».
+
+États attendus :
+- Fiche de SILO-45 (P8f) : propriété « Maquette · Conflit de saisie » ; section « Maquettes » ouverte, « 1 » ; vignette du cadre,
+  puis la ligne d'actions « Plein écran » (en tête) · « Conflit de saisie » · « Actualiser » · « Ouvrir dans Figma » · « Retirer » ;
+  champ « Colle l'URL d'un cadre Figma ou d'un board Penpot » et bouton « Lier un cadre ».
+- Plein écran (P8g) : barre « SILO-45 · Conflit de saisie · Figma · Actualiser · Ouvrir dans Figma · Quitter le plein écran
+  (Échap) » ; un seul cadre, donc aucune navigation « 1 / 1 » ; cadre à l'échelle 1, centré ; zoom « 100 % ».
+
 ### Pistes A, B, C (`design/redesign/scripts/02-data.js`)
 
 Ce jeu est indépendant de celui des fonctionnalités : les mêmes numéros de tickets y portent d'autres titres et d'autres statuts.

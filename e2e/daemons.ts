@@ -74,8 +74,6 @@ export const ALL_DAEMONS = [
   { name: "graph-light", scheme: "light", port: 4434, spec: /graph\.spec\.ts/, scenario: "question" },
   { name: "viewer-dark", scheme: "dark", port: 4437, spec: /viewer\.spec\.ts/, scenario: "question" },
   { name: "viewer-light", scheme: "light", port: 4438, spec: /viewer\.spec\.ts/, scenario: "question" },
-  { name: "selection-dark", scheme: "dark", port: 4441, spec: /selection\.spec\.ts/, scenario: "question" },
-  { name: "selection-light", scheme: "light", port: 4442, spec: /selection\.spec\.ts/, scenario: "question" },
   { name: "kanban-dark", scheme: "dark", port: 4455, spec: /kanban-drag\.spec\.ts/, scenario: "question" },
   { name: "kanban-light", scheme: "light", port: 4456, spec: /kanban-drag\.spec\.ts/, scenario: "question" },
   {
@@ -248,3 +246,31 @@ export const ALL_DAEMONS = [
   },
   ...PIXEL_DAEMONS,
 ] as const;
+
+type ServedDaemon = {
+  port: number;
+  scenario: string;
+  integrations?: boolean;
+  noGh?: boolean;
+  design?: boolean;
+  embeds?: boolean;
+  agentScenario?: string;
+  answerWakeGraceMs?: number;
+  drafts?: string;
+};
+
+export const serveCommand = (d: ServedDaemon): string =>
+  [
+    "bun serve.ts",
+    d.port,
+    d.scenario,
+    "integrations" in d ? "--integrations" : "",
+    "noGh" in d ? "--no-gh" : "",
+    "design" in d ? "--design" : "",
+    "embeds" in d ? "--embeds" : "",
+    "agentScenario" in d ? `--agent-scenario ${d.agentScenario}` : "",
+    "answerWakeGraceMs" in d ? `--answer-wake-grace-ms ${d.answerWakeGraceMs}` : "",
+    "drafts" in d ? d.drafts : "",
+  ]
+    .filter((part) => part !== "")
+    .join(" ");

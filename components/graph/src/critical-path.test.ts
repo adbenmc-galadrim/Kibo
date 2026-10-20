@@ -1,6 +1,29 @@
 import { expect, test } from "bun:test";
 import { compareKeys, criticalPath, type GraphEdge, type GraphTicket } from "./critical-path";
-import { DEMO_EDGES, DEMO_TICKETS } from "./demo-graph";
+
+const t = (key: string, statusId: GraphTicket["statusId"]): GraphTicket => ({ id: key, key, statusId });
+const DEMO_TICKETS: GraphTicket[] = [
+  t("KIB-5", "done"),
+  t("KIB-13", "done"),
+  t("KIB-12", "in_progress"),
+  t("KIB-15", "todo"),
+  t("KIB-11", "in_review"),
+  t("KIB-21", "blocked"),
+  t("KIB-22", "backlog"),
+  t("KIB-16", "in_progress"),
+  t("KIB-14", "in_progress"),
+  t("KIB-18", "todo"),
+  t("KIB-9", "todo"),
+];
+const DEMO_EDGES: GraphEdge[] = [
+  { from: "KIB-5", to: "KIB-12", type: "blocks" },
+  { from: "KIB-13", to: "KIB-12", type: "blocks" },
+  { from: "KIB-12", to: "KIB-15", type: "blocks" },
+  { from: "KIB-11", to: "KIB-21", type: "blocks" },
+  { from: "KIB-21", to: "KIB-22", type: "blocks" },
+  { from: "KIB-16", to: "KIB-22", type: "blocks" },
+  { from: "KIB-12", to: "KIB-16", type: "relates" },
+];
 
 const todo = (n: number): GraphTicket[] =>
   Array.from({ length: n }, (_, i) => ({ id: `t${i}`, key: `KIB-${i + 1}`, statusId: "todo" }));
