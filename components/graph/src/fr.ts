@@ -13,6 +13,7 @@ export const fr = {
   more: (n: number) => `+${n}`,
   emptyWidget: "Aucun chemin critique : aucun ticket bloquant.",
   loadFailed: "Impossible de charger les tickets.",
+  views: { label: "Vue", features: "Fonctionnalités", prs: "PRs" },
   sprints: {
     canvas: "Fonctionnalités par sprint",
     counter: (features: number, steps: number, links: number) =>

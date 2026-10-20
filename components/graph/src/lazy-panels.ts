@@ -4,3 +4,5 @@ import { frLazy } from "./fr-lazy";
 export const GraphView = lazyPanel(() => import("./GraphView").then((m) => m.GraphView), frLazy);
 
 export const GraphWidget = lazyPanel(() => import("./GraphWidget").then((m) => m.GraphWidget), frLazy);
+
+export const PrsView = lazyPanel(() => import("./PrsView").then((m) => m.PrsView), frLazy);

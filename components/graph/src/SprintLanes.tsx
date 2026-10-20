@@ -4,9 +4,10 @@ import { EmptyGraph } from "./EmptyGraph";
 import { FeatureFrame } from "./FeatureFrame";
 import { fr } from "./fr";
 import { LANE_MARGIN } from "./frame-geometry";
+import { GraphLegend } from "./GraphLegend";
 import { LaneEdges } from "./LaneEdges";
-import { SprintLegend } from "./SprintLegend";
 import type { Lane, SprintLanesModel } from "./sprint-lanes";
+import { SPRINT_LEGEND } from "./sprint-legend-items";
 
 const HEADER_TOP = 12;
 
@@ -71,7 +72,7 @@ export function SprintLanes({ model, onOpen, onNewFeature }: Props) {
           )}
         </div>
       </section>
-      <SprintLegend />
+      <GraphLegend items={SPRINT_LEGEND} />
     </div>
   );
 }

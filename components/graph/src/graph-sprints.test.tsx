@@ -64,6 +64,63 @@ test("sprints mode: toolbar, counter, one column per sprint and the reserve", as
   expect(screen.getByRole("list", { name: "Légende" }).textContent).toContain("Colonne = sprint");
 });
 
+test("the bar holds the « Vue » switch and the counter only, « Fonctionnalités » first", async () => {
+  localStorage.clear();
+  setup();
+  await lanes();
+  const bar = screen.getByRole("radiogroup", { name: "Vue" });
+  expect(
+    within(bar)
+      .getAllByRole("radio")
+      .map((r) => [r.textContent, r.getAttribute("aria-checked")]),
+  ).toEqual([
+    ["Fonctionnalités", "true"],
+    ["PRs", "false"],
+  ]);
+  const toolbar = bar.parentElement;
+  expect(toolbar?.querySelectorAll("button")).toHaveLength(2);
+  expect(toolbar?.textContent).toBe(
+    "FonctionnalitésPRs9 fonctionnalités · 2 dépendances entre étapes, 8 entre fonctionnalités",
+  );
+});
+
+test("« PRs » swaps the columns for the PR view and is remembered for this instance", async () => {
+  localStorage.clear();
+  const m = setup();
+  await lanes();
+  await userEvent.click(screen.getByRole("radio", { name: "PRs" }));
+  expect(await screen.findByTestId("prs-view")).toBeTruthy();
+  expect(screen.queryByRole("region", { name: "Fonctionnalités par sprint" })).toBeNull();
+  expect(screen.getByRole("radio", { name: "PRs" }).getAttribute("aria-checked")).toBe("true");
+  expect(localStorage.getItem(`kibo.graph.view.${m.sdk.instanceId}`)).toBe("prs");
+  await userEvent.click(screen.getByRole("radio", { name: "Fonctionnalités" }));
+  expect(await lanes()).toBeTruthy();
+  expect(localStorage.getItem(`kibo.graph.view.${m.sdk.instanceId}`)).toBe("features");
+  localStorage.clear();
+});
+
+test("a stored « prs » opens the PR view", async () => {
+  localStorage.setItem("kibo.graph.view.mock-instance", "prs");
+  setup();
+  expect(await screen.findByTestId("prs-view")).toBeTruthy();
+  expect(screen.getByRole("radio", { name: "PRs" }).getAttribute("aria-checked")).toBe("true");
+  localStorage.clear();
+});
+
+test("a storage that cannot be read keeps « Fonctionnalités »", async () => {
+  const getItem = Storage.prototype.getItem;
+  Storage.prototype.getItem = () => {
+    throw new Error("denied");
+  };
+  try {
+    setup();
+    expect(await lanes()).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Fonctionnalités" }).getAttribute("aria-checked")).toBe("true");
+  } finally {
+    Storage.prototype.getItem = getItem;
+  }
+});
+
 test("a delivered feature is folded, even with the former config key, and its title opens it", async () => {
   const m = setup(seedSprintGraph, { collapseDelivered: false });
   const region = await lanes();
@@ -115,55 +172,6 @@ test("footers: late slips to the next sprint, blocked names its question", () =>
   expect(f5.getAttribute("data-late")).toBe("true");
   const f6 = screen.getByRole("article", { name: /^F6 / });
   expect(within(f6).getByText("bloquée par Q14")).toBeTruthy();
-});
-
-test("the legend names the mode", () => {
-  render(<SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />);
-  const legend = screen.getByRole("list", { name: "Légende" });
-  expect(
-    within(legend)
-      .getAllByRole("listitem")
-      .map((i) => i.textContent),
-  ).toEqual([
-    "À faire",
-    "En cours",
-    "En review",
-    "Bloqué",
-    "Fonctionnalité",
-    "Colonne = sprint",
-    "Session active",
-  ]);
-});
-
-test("the Légende button folds the legend and the choice is remembered", async () => {
-  localStorage.removeItem("kibo.graph.legend");
-  const first = render(
-    <SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />,
-  );
-  const toggle = screen.getByRole("button", { name: "Légende" });
-  expect(toggle.getAttribute("aria-expanded")).toBe("true");
-  await userEvent.click(toggle);
-  expect(screen.queryByRole("list", { name: "Légende" })).toBeNull();
-  expect(screen.getByRole("button", { name: "Légende" }).getAttribute("aria-expanded")).toBe("false");
-  first.unmount();
-  render(<SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />);
-  expect(screen.queryByRole("list", { name: "Légende" })).toBeNull();
-  await userEvent.click(screen.getByRole("button", { name: "Légende" }));
-  expect(screen.getByRole("list", { name: "Légende" })).toBeTruthy();
-  localStorage.removeItem("kibo.graph.legend");
-});
-
-test("the legend opens when the storage cannot be read", () => {
-  const getItem = Storage.prototype.getItem;
-  Storage.prototype.getItem = () => {
-    throw new Error("denied");
-  };
-  try {
-    render(<SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />);
-    expect(screen.getByRole("list", { name: "Légende" })).toBeTruthy();
-  } finally {
-    Storage.prototype.getItem = getItem;
-  }
 });
 
 test("clicking a frame title or a step opens the ticket", async () => {

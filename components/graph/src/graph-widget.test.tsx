@@ -59,6 +59,7 @@ test("small: three counters of the widget's tickets", async () => {
   expect(Number(await count("Bloqués"))).toBeGreaterThan(0);
   expect(Number(await count("Prêts"))).toBeGreaterThan(0);
   expect(screen.queryByRole("region", { name: "Fonctionnalités par sprint" })).toBeNull();
+  expect(screen.queryByRole("radiogroup", { name: "Vue" })).toBeNull();
 });
 
 test("medium: the chain, the waiting list with the blocked reason, and the link to the view", async () => {
@@ -84,6 +85,7 @@ for (const format of ["large", "half", "full"] as const) {
   test(`${format}: the whole page, columns included`, async () => {
     setup(format, seedSprintGraph);
     expect(await screen.findByRole("region", { name: "Fonctionnalités par sprint" })).toBeTruthy();
+    expect(screen.getByRole("radiogroup", { name: "Vue" })).toBeTruthy();
     expect(screen.queryByRole("list", { name: "En attente" })).toBeNull();
   });
 }
