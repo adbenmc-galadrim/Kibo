@@ -4,11 +4,11 @@ import { SILO_PROJECT } from "./fixtures/silo-maquettes";
 import { FIXED_NOW, PIXEL_WIDTH } from "./pixel-settings";
 import { siloPageUrl } from "./pixel-silo";
 import { kiboCli, loadSilo, type Silo } from "./planning-kit";
+import { field } from "./record-field";
+
+export { field };
 
 export const SUIVI_HEIGHT = 1260;
-
-export const field = (value: unknown, key: string): unknown =>
-  typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined;
 
 export async function openSilo(page: Page): Promise<Silo> {
   await page.setViewportSize({ width: PIXEL_WIDTH, height: SUIVI_HEIGHT });

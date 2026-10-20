@@ -13,8 +13,8 @@ import {
   SILO_PRS_IN_PROGRESS,
   SILO_PRS_REFS,
 } from "./fixtures/silo-prs";
+import { field } from "./record-field";
 import { type SeedOptions, type SeedResult, type SeedRpc, seedSiloMaquettes } from "./seed-silo-maquettes";
-import { field } from "./suivi-kit";
 
 type SeededTicket = { id: string; statusId: unknown; refs: ExternalRef[] };
 

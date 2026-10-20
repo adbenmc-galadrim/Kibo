@@ -3,7 +3,7 @@ import { list, rpc } from "./agents-seed";
 import { siloKey } from "./fixtures/silo-maquettes";
 import { SILO_PRS_COUNTER } from "./fixtures/silo-prs";
 import type { Silo } from "./planning-kit";
-import { field } from "./suivi-kit";
+import { field } from "./record-field";
 
 export const PRS_SCREENS_DIR = "2026-10-20-p30";
 
