@@ -53,7 +53,7 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 33 · Questions : modifier, rouvrir, archiver | 202 à 206 (phase 23 : réponses modifiables, archives et historique, lot de questions, aperçu au survol, question mise en évidence) ; **dessinés** |
 | 34 · Domaines & guidelines | 207 à 209b (phase 23 : arbre de dossiers, état vide, domaine de projet et du workspace, projet partagé en lecture seule, encart, sélecteur groupé, lien du projet) ; **dessinés, ajustés après implémentation** |
 | 35 · Redesign Silo | 210 à 218 (redesign validé le 2026-10-16 : vue d'ensemble, Planning, fiche fonctionnalité, Tickets, Graphe ; états fiche de sprint et report, 3/2 ouvertes, démo facultative, infobulle du nom) ; **dessinés** ; 211, 212 et 214 mis à jour au jalon de la phase 27 |
-| 36 · Suivi seul | 219 à 225b (phase 27 : vue d'ensemble, Pour commencer, en retard au 18 oct., Nouveau projet, Kanban, fiche ticket et Activité, Questions, barre repliée, panneau de l'agent) ; 226 à 231d (phase 29 : étapes en attente) ; 232 à 234 (0.29.0-alpha.2 : menu de la carte, suppression, questions répondues) ; 235 (0.29.0-alpha.3 : panneau de l'agent, réveil sur réponse) ; **dessinés** |
+| 36 · Suivi seul | 219 à 225b (phase 27 : vue d'ensemble, Pour commencer, en retard au 18 oct., Nouveau projet, Kanban, fiche ticket et Activité, Questions, barre repliée, panneau de l'agent) ; 226 à 231d (phase 29 : étapes en attente) ; 232 à 234 (0.29.0-alpha.2 : menu de la carte, suppression, questions répondues) ; 235 (0.29.0-alpha.3 : panneau de l'agent, réveil sur réponse) ; 236 à 238b (phase 30 : Graphe, Fonctionnalités et PRs, aucune PR, fiche ticket, Maquettes, maquette en plein écran) ; **dessinés** |
 
 Pages 00 à 27 et 29 à 36 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 36.
 
@@ -347,15 +347,17 @@ copié de la même façon (collé en (0, 0), puis déplacé à y = 34 500, sous 
 - 36 · Suivi seul (0.29.0-alpha.3) : 235 panneau de l'agent de projet après une réponse à Q16 : ligne de réveil « Q16 répondue : « 5 Go » »
   (14:52) à la place de la bulle d'Adam, texte de l'agent, lot n° 8 « après réveil » à une action (« Modifier SILO-34 »).
 
-Phase 30 (2026-10-20, à copier au jalon) : les boards P5b, P5c et P5e de « Kibo · Redesign » (rangées à partir de y = 44 000, voir
-`design/redesign/README.md`) copiés de la même façon sous 235, sombre et clair, et renommés ; P5d est écartée et n'est pas copiée.
+Phase 30 (2026-10-20) : les boards P5b, P5c et P5e de « Kibo · Redesign » (rangées à partir de y = 44 000, voir
+`design/redesign/README.md`) copiés de la même façon (collés en (0, 0), puis déplacés de 36 000 px vers le bas, sous 235), sombre et clair,
+et renommés ; P5d est écartée et n'est pas copiée.
 
 - 36 · Suivi seul (phase 30) : 236 Graphe, Fonctionnalités (sélecteur « Fonctionnalités | PRs » et compteur seuls, colonnes par sprint) ·
   237 Graphe, PRs (piles #22 → #24 → #25, #20, #23 de bas en haut sur le rail « dev · branche de base », « session » sur #24 et #20,
   légende avec « Approuvée ») · 237b Graphe, aucune PR (« Aucune PR ouverte », « 0 PR ouverte · 0 pile »).
 
-Phase 30, plein écran des maquettes (2026-10-20, à copier au jalon avec 236 à 237b) : les boards P8f et P8g de « Kibo · Redesign » (rangées
-y = 48 500 et 50 000, voir `design/redesign/README.md`, « Aperçu de maquette ») copiés de la même façon sous 237b, sombre et clair, et renommés.
+Phase 30, plein écran des maquettes (2026-10-20) : les boards P8f et P8g de « Kibo · Redesign » (rangées y = 48 500 et 50 000, voir
+`design/redesign/README.md`, « Aperçu de maquette ») copiés avec 236 à 237b dans le même collage, donc sous 237b (y = 40 500 et 42 000),
+sombre et clair, et renommés.
 
 - 36 · Suivi seul (phase 30, plein écran) : 238 Fiche ticket, Maquettes (SILO-45 défilée jusqu'à la section « Maquettes » ouverte,
   propriété « Maquette · Conflit de saisie », vignette du cadre, « Plein écran » en tête des actions, champ « Lier un cadre ») ·
@@ -368,7 +370,7 @@ y = 48 500 et 50 000, voir `design/redesign/README.md`, « Aperçu de maquette �
    `scripts/build-pdf.sh` → `design/pdf/kibo-design-{sombre,clair}.pdf`. Pour ne changer que quelques boards, remplacer leurs pages et ajouter
    les nouvelles dans le PDF existant avec `pypdf` (`add_page`, puis `compress_identical_objects`) : `pdfseparate` et `pdfunite` doublent la taille
    du fichier (polices recopiées à chaque page), au-delà de la limite de 100 Mo de GitHub.
-   Boards ajoutés en fin de page 36 (232 à 234 en 0.29.0-alpha.2, 235 en 0.29.0-alpha.3) : exporter seulement ces boards (`board.export({ type: "pdf" })`, sombre puis
+   Boards ajoutés en fin de page 36 (232 à 234 en 0.29.0-alpha.2, 235 en 0.29.0-alpha.3, 236 à 238b en phase 30) : exporter seulement ces boards (`board.export({ type: "pdf" })`, sombre puis
    clair, dans l'ordre des rangées) et les ajouter en fin de chaque PDF, les pages existantes restant inchangées.
 2. Source : menu du fichier → Exporter (.penpot) (ou, depuis l'onglet headless, la méthode `export-binfile` de l'API, dont l'événement `end` donne
    l'adresse du fichier à télécharger), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
