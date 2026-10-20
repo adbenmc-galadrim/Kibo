@@ -23,6 +23,10 @@ export const fr = {
     next: "Cadre suivant",
     position: (i: number, n: number) => `${i} / ${n}`,
   },
+  fullscreen: {
+    exit: "Quitter le plein écran (Échap)",
+    hint: "Plein écran de la maquette : Ctrl ou ⌘ et molette pour zoomer, glisser pour déplacer, flèches pour changer de cadre, Échap pour quitter",
+  },
   linked: "Tickets liés",
   noLinked: "Aucun ticket lié à ce cadre.",
   noLinkedStory: "Aucun ticket lié à une story.",

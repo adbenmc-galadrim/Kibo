@@ -15,11 +15,11 @@ import { FrameProblem } from "./FrameProblem";
 import type { Surface } from "./FrameSurface";
 import { FrameViewer } from "./FrameViewer";
 import { fr } from "./fr";
+import { sizeOf } from "./frame-size";
 import { OriginMenu } from "./OriginMenu";
 import type { Comparison } from "./use-compare";
 import { type FrameView, useFrame } from "./use-frame";
 import { useStorybooks } from "./use-storybooks";
-import type { Size } from "./zoom";
 
 type Fit = "contain" | "width";
 type Props = { url: string | null; frameKey: DesignFrameKey | null; fit: Fit; compare: Comparison };
@@ -27,9 +27,6 @@ type Props = { url: string | null; frameKey: DesignFrameKey | null; fit: Fit; co
 function Message({ text }: { text: string }) {
   return <output className="m-auto p-4 text-center text-sm text-muted-foreground">{text}</output>;
 }
-
-const sizeOf = (frame: DesignFrame): Size | null =>
-  frame.width !== null && frame.height !== null ? { width: frame.width, height: frame.height } : null;
 
 function useSeen(url: string | null, view: FrameView, seen: Comparison["seen"]) {
   const last = useRef(view);
