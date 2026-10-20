@@ -6,6 +6,13 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.30.0-alpha.1 — 2026-10-20
+
+- Le Graphe n'a plus qu'un sélecteur Fonctionnalités | PRs : les colonnes par sprint, les fonctionnalités livrées repliées, et c'est tout.
+- La vue PRs empile les PR ouvertes de bas en haut sur leur branche de base, avec le ticket, sa fonctionnalité, la review, la CI et la session ; un clic ouvre la fiche.
+- Les vagues, le regroupement par étiquette, les filtres et la mini-carte du Graphe sont retirés.
+- Les maquettes de la fiche ticket s'ouvrent en plein écran depuis la section « Maquettes » : zoom, déplacement, passage d'un cadre à l'autre, Échap pour quitter.
+
 ## 0.29.0-alpha.3 — 2026-10-19
 
 - Quand tu réponds à une question, l'agent de projet se réveille, lit la réponse et propose un lot si une action est utile (débloquer, ajuster une étape, prévenir le client) ; les réponses données à la suite (30 s) sont lues en un seul tour.
