@@ -361,3 +361,34 @@ P5c (`silo-prs`) ; P5e a une capture seulement. À copier en page « 36 · Suivi
 
 Piège vu : `Date.now()` lève une erreur dans le compartiment du plugin piloté depuis Chromium headless ; `00-charger.js` s'en sert pour
 contourner le cache, il faut alors un compteur à la place pour charger les scripts.
+
+### Aperçu de maquette
+
+Spec §44.8 : les maquettes de la fiche ticket s'ouvrent en plein écran de Kibo (vue qui couvre la fenêtre, jamais l'API Fullscreen du
+navigateur). Données : sous-section « Phase 30 · Aperçu de maquette » du projet Silo (`design/donnees-fictives.md`, scénario
+`silo-apercu`) : SILO-45 lié au cadre Figma « Conflit de saisie » (444 × 960, écran mobile de l'app Silo). Page « Proposition »,
+`scripts/59b-apercu-maquette.js` (après `59-graphe-prs`), rangées à partir de `S.Y_AP` = 48 500 (après P5e, pas de 1 500 px), sombre à
+x = 0 et clair à x = 1 540.
+
+| Board | Contenu | Export | Taille |
+|---|---|---|---|
+| P8f · Fiche ticket, Maquettes | clone de « P8 · Fiche ticket » ; section « Maquettes » ouverte (« 1 ») : propriété « Maquette · Conflit de saisie » (icône `frame`), vignette 512 × 288 (`muted`, bord, rayon 6) avec le cadre réduit (`S.frameAP(p, 133.2, 288)`, échelle 0,3, centré), ligne d'actions « Plein écran » (`maximize-2`, 28 × 28, en tête) · « Conflit de saisie » · « Actualiser » · « Ouvrir dans Figma » · « Retirer », champ « Colle l'URL d'un cadre Figma ou d'un board Penpot » et « Lier un cadre » (désactivé) ; corps de la feuille sorti du flux et remonté jusqu'à ce que la section touche le bas (386 px en sombre, 383 en clair), en-tête de la feuille au-dessus | `proposition-fiche-ticket-maquettes` | 1 440 × 1 000 |
+| P8g · Maquette en plein écran | fond `card` ; barre de 40 px (bord bas `border`) : puce « SILO-45 » (mono 11), « Conflit de saisie » (13, 500), badge « Figma », puis « Actualiser » et « Ouvrir dans Figma » (icônes 14 dans 24 × 24) et « Quitter le plein écran (Échap) » (`x`, 12,5, 500) ; visualiseur `muted` 1 440 × 960 ; **cadre** (forme « cadre », 444 × 960, échelle 1) en (498, 40) sur une ombre `shadow-sm` portée par une forme à part (« cadre-ombre ») ; barre de zoom en bas à droite (8 px des bords) : « − », « 100 % » (mono 11), « + », « Ajuster » (grisé) | `proposition-apercu-maquette` | 1 440 × 1 000 |
+
+Le cadre « Conflit de saisie » (`S.frameAP(p, w, h)`, dessiné à l'échelle `w / 444`) a les couleurs de l'app Silo, identiques en sombre et
+en clair : barre d'état « 14:02 », titre, « Deux saisies du constat du box B-114 », cartes « Version hors ligne · 14:02 » (bord bleu
+`#2563EB`, « Occupé », 3 photos, « Cadenas changé ») et « Version du serveur · 13:47 » (« Libre », 2 photos, note vide), boutons
+« Garder la plus récente » (plein) et « Comparer » (contour).
+
+Dessin : `await storage.drawAP("ap-fiche", "dark")` (clés `ap-fiche`, `ap-plein-ecran`), un écran et un mode par appel ; attendre que
+les formes côté serveur (`get-page`) égalent les formes locales. Export : `await storage.exportAP(["fiche-ticket-maquettes",
+"apercu-maquette"])` (depuis un clone, après 10 s) ⇒ `exports/proposition-<fiche-ticket-maquettes|apercu-maquette>-<dark|light>.png`.
+Export du cadre seul : `await storage.exportFrameAP()` ⇒ `exports/proposition-apercu-maquette-cadre.png` (444 × 960, forme « cadre »
+du board sombre, échelle 1), l'image que le faux Figma sert pour le nœud `45:1` ; ses pixels égalent la zone (498, 40, 444 × 960) de
+`proposition-apercu-maquette-dark.png` à l'anticrénelage près (34 pixels, écart ≤ 7 / 255). Cotes : `_dump-30` et `_dump-31`, dans la
+partie « Phase 30 » de `cotes.md` (`--phase30`). Comparaison au pixel : « apercu-maquette » sur P8g (`silo-apercu`, aucun masque) ; P8f a une
+capture seulement. À copier en page « 36 · Suivi seul » du fichier « Kibo » (238, 238b, voir `design/penpot/README.md`).
+
+Pièges vus : dans un board sans flex, une forme ajoutée par `appendChild` passe sous les précédentes ; `S.stackAP` les remet dans l'ordre
+du dessin (`bringToFront`). Un enfant absolu d'un flex reste au-dessus des autres : l'en-tête de la feuille reçoit `layoutChild.zIndex = 2`.
+Les formes du plugin se comparent par `id`, jamais par `===`.

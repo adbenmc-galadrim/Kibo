@@ -354,6 +354,14 @@ Phase 30 (2026-10-20, à copier au jalon) : les boards P5b, P5c et P5e de « Kib
   237 Graphe, PRs (piles #22 → #24 → #25, #20, #23 de bas en haut sur le rail « dev · branche de base », « session » sur #24 et #20,
   légende avec « Approuvée ») · 237b Graphe, aucune PR (« Aucune PR ouverte », « 0 PR ouverte · 0 pile »).
 
+Phase 30, plein écran des maquettes (2026-10-20, à copier au jalon avec 236 à 237b) : les boards P8f et P8g de « Kibo · Redesign » (rangées
+y = 48 500 et 50 000, voir `design/redesign/README.md`, « Aperçu de maquette ») copiés de la même façon sous 237b, sombre et clair, et renommés.
+
+- 36 · Suivi seul (phase 30, plein écran) : 238 Fiche ticket, Maquettes (SILO-45 défilée jusqu'à la section « Maquettes » ouverte,
+  propriété « Maquette · Conflit de saisie », vignette du cadre, « Plein écran » en tête des actions, champ « Lier un cadre ») ·
+  238b Maquette en plein écran (barre « SILO-45 · Conflit de saisie · Figma », « Actualiser », « Ouvrir dans Figma », « Quitter le plein
+  écran (Échap) », cadre à l'échelle 1 sur fond `muted`, barre de zoom « 100 % »).
+
 ## Exporter
 
 1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("36")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis

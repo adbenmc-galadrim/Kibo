@@ -107,7 +107,8 @@ MARK_A2 = "\n## 0.29.0-alpha.2\n"
 SCREENS_A3 = [(26, "Agent · réveil sur réponse", "proposition-agent-reveil")]
 MARK_A3 = "\n## 0.29.0-alpha.3\n"
 SCREENS30 = [(27, "P5b · Graphe, Fonctionnalités", "proposition-graphe-fonctionnalites"), (28, "P5c · Graphe, PRs", "proposition-graphe-prs"),
-    (29, "P5e · Graphe, aucune PR", "proposition-graphe-prs-vide")]
+    (29, "P5e · Graphe, aucune PR", "proposition-graphe-prs-vide"), (30, "P8f · Fiche ticket, Maquettes", "proposition-fiche-ticket-maquettes"),
+    (31, "P8g · Maquette en plein écran", "proposition-apercu-maquette")]
 MARK30 = "\n## Phase 30\n"
 if "--sections" in sys.argv:
     wanted = sys.argv[sys.argv.index("--sections") + 1].split(",")
@@ -124,7 +125,7 @@ if "--sections" in sys.argv:
 if "--phase30" in sys.argv:
     cur = open(W + "/cotes.md").read()
     cur = cur.split(MARK30)[0].rstrip("\n") + "\n"
-    intro = ["## Phase 30", "", "Graphe simplifié et vue des PR (spec §44), données de la sous-section « Phase 30 · PR empilées » du projet Silo (`design/donnees-fictives.md`). Les trois boards clonent « P5 · Graphe » (`scripts/59-graphe-prs.js`) : la barre ne garde que le sélecteur « Fonctionnalités | PRs » et le compteur ; P5b garde les colonnes par sprint, P5c dessine les piles de PR de bas en haut sur le rail « dev · branche de base », P5e l'état vide « Aucune PR ouverte ». La variante P5d (PR par fonctionnalité) est écartée. Rangées à partir de y = 44 000 (pas de 1 500 px), sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` par board (`_dump-27` à `_dump-29`), puis `python3 scripts/cotes.py <dossier des JSON> --phase30`, qui remplace cette partie seulement. Comparaison au pixel sur P5b (« graphe », `silo-maquettes`) et P5c (« graphe-prs », `silo-prs`) ; P5e a une capture seulement."]
+    intro = ["## Phase 30", "", "Graphe simplifié et vue des PR (spec §44), données de la sous-section « Phase 30 · PR empilées » du projet Silo (`design/donnees-fictives.md`). Les trois boards clonent « P5 · Graphe » (`scripts/59-graphe-prs.js`) : la barre ne garde que le sélecteur « Fonctionnalités | PRs » et le compteur ; P5b garde les colonnes par sprint, P5c dessine les piles de PR de bas en haut sur le rail « dev · branche de base », P5e l'état vide « Aucune PR ouverte ». La variante P5d (PR par fonctionnalité) est écartée. Rangées à partir de y = 44 000 (pas de 1 500 px), sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` par board (`_dump-27` à `_dump-29`), puis `python3 scripts/cotes.py <dossier des JSON> --phase30`, qui remplace cette partie seulement. Comparaison au pixel sur P5b (« graphe », `silo-maquettes`) et P5c (« graphe-prs », `silo-prs`) ; P5e a une capture seulement.", "", "Plein écran des maquettes de la fiche ticket (spec §44.8), données de la sous-section « Phase 30 · Aperçu de maquette » (`scripts/59b-apercu-maquette.js`, rangées à y = 48 500 et 50 000) : P8f clone « P8 · Fiche ticket », ouvre la section « Maquettes » (propriété « Maquette », vignette du cadre « Conflit de saisie », « Plein écran » en tête des actions, champ « Lier un cadre ») et défile le corps de la feuille jusqu'à elle ; P8g est la vue plein écran (barre de 40 px, visualiseur `muted`, cadre de 444 × 960 à l'échelle 1 en (498, 40), barre de zoom « 100 % »). Relevé `_dump-30` et `_dump-31`. Comparaison au pixel sur P8g (« apercu-maquette », `silo-apercu`, aucun masque) ; P8f a une capture seulement ; le cadre seul est exporté dans `proposition-apercu-maquette-cadre.png`, image du faux Figma."]
     parts = [screen_md(i, name, png, "") for i, name, png in SCREENS30]
     open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
     print(sum(1 for _ in open(W + "/cotes.md")))
