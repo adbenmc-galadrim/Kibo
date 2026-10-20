@@ -2773,7 +2773,7 @@ Le composant `graph` ne garde que ce que les deux vues et le widget emploient. S
 ### 44.4 Données fictives et scénario `silo-prs`
 
 - `design/donnees-fictives.md` gagne « Phase 30 · PR empilées » : **PR #24** sur SILO-33 (brouillon, CI en cours, `head feat/envoi-hors-ligne`, `base feat/silo-32`, session) et **PR #25** sur SILO-34 (brouillon, CI verte, `head feat/silo-34`, `base feat/envoi-hors-ligne`) ; SILO-34 passe **en cours** avec sa branche `feat/silo-34` (base `feat/envoi-hors-ligne`) et SILO-33 déclare sa branche sur `feat/silo-32` ; #22, #20, #23 gardent `base dev` et leur `head` (`feat/silo-32`, `feat/silo-45`, `chore/expo-54`). Piles : #22 → #24 → #25 (F5), #20 (F4), #23 (hors fonctionnalité) ; rail « dev » ; compteur « 5 PR ouvertes · 3 piles · 2 en attente de review · 1 à corriger ». Au 16 oct. aucune fonctionnalité n'est en retard et SILO-45 a une session T3 Code (§38.3) : **#20 porte « session », pas « en retard »** (la maquette P5c est corrigée sur ces deux points, et sa légende gagne « Approuvée »).
-- Ces données ne touchent pas `silo-maquettes` (les neuf écrans existants et P5b restent au pixel) : elles forment le scénario **`silo-prs`** = `silo-maquettes` puis les deux PR, la branche et le statut posés après le semis (comme `silo-attente`), démons **`prs-dark` 4483 / `prs-light` 4484**.
+- Ces données ne touchent pas `silo-maquettes` (les neuf écrans existants et P5b restent au pixel) : elles forment le scénario **`silo-prs`** = `silo-maquettes` puis les deux PR, la branche et le statut posés après le semis (comme `silo-attente`), démons **`prs-dark` 4485 / `prs-light` 4486**.
 
 ### 44.5 Maquettes et acceptation au pixel près (§37.11)
 
