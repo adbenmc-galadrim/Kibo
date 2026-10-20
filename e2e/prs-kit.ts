@@ -10,7 +10,7 @@ export const PRS_SCREENS_DIR = "2026-10-20-p30";
 export const prsCounter = (page: Page): Locator => page.getByText(SILO_PRS_COUNTER, { exact: true });
 
 export async function selectPrs(page: Page): Promise<void> {
-  await page.getByRole("group", { name: "Vue" }).getByRole("radio", { name: "PRs" }).click();
+  await page.getByRole("radiogroup", { name: "Vue" }).getByRole("radio", { name: "PRs" }).click();
 }
 
 export async function showPrs(page: Page): Promise<void> {
