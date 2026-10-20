@@ -3,6 +3,7 @@ import {
   assertFixedNow,
   FIXED_NOW,
   isSiloScenario,
+  SILO_APERCU,
   SILO_ATTENTE,
   SILO_MAQUETTES,
   SILO_PRS,
@@ -35,10 +36,12 @@ test("an answer that is not an object is refused", () => {
   expect(() => assertFixedNow(null)).toThrow("getAppInfo");
 });
 
-test("the three Silo scenarios are seeded under the frozen clock, no other one", () => {
+test("the four Silo scenarios are seeded under the frozen clock, no other one", () => {
   expect(isSiloScenario(SILO_MAQUETTES)).toBe(true);
   expect(isSiloScenario(SILO_ATTENTE)).toBe(true);
   expect(isSiloScenario(SILO_PRS)).toBe(true);
+  expect(isSiloScenario(SILO_APERCU)).toBe(true);
+  expect(SILO_APERCU).toBe("silo-apercu");
   expect(SILO_ATTENTE).toBe("silo-attente");
   expect(SILO_PRS).toBe("silo-prs");
   expect(isSiloScenario("question")).toBe(false);

@@ -16,7 +16,7 @@ import {
 import { field } from "./record-field";
 import { type SeedOptions, type SeedResult, type SeedRpc, seedSiloMaquettes } from "./seed-silo-maquettes";
 
-type SeededTicket = { id: string; statusId: unknown; refs: ExternalRef[] };
+export type SeededTicket = { id: string; statusId: unknown; refs: ExternalRef[] };
 
 const refsOf = (ticket: unknown): ExternalRef[] => {
   const raw = field(ticket, "externalRefs");
@@ -26,7 +26,7 @@ const refsOf = (ticket: unknown): ExternalRef[] => {
   });
 };
 
-async function ticketsByKey(rpc: SeedRpc, projectId: string): Promise<Map<string, SeededTicket>> {
+export async function ticketsByKey(rpc: SeedRpc, projectId: string): Promise<Map<string, SeededTicket>> {
   const tickets = field(await rpc({ method: "getProject", projectId }), "tickets");
   if (!Array.isArray(tickets)) throw new Error("the Silo project has no ticket list");
   const byKey = new Map<string, SeededTicket>();

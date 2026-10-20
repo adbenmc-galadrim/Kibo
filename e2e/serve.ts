@@ -4,6 +4,7 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
+  readFileSync,
   renameSync,
   rmSync,
   writeFileSync,
@@ -16,11 +17,13 @@ import { startFakeMcpHttp } from "../packages/daemon/src/testing/fake-mcp";
 import { PENPOT_IDS, startFakePenpot } from "../packages/daemon/src/testing/fake-penpot";
 import { startFakeStorybook } from "../packages/daemon/src/testing/fake-storybook";
 import { e2eHome } from "./e2e-home";
+import { SILO_APERCU_FRAME } from "./fixtures/silo-apercu";
 import { siloGhState } from "./fixtures/silo-gh";
 import { SILO_SCENARIO } from "./fixtures/silo-suivi";
 import { createE2eRepo, fakeGhDir, GIT_IDENTITY } from "./git-repo";
-import { FIXED_NOW, isSiloScenario, SILO_ATTENTE, SILO_PRS } from "./pixel-settings";
+import { FIXED_NOW, isSiloScenario, SILO_APERCU, SILO_ATTENTE, SILO_PRS } from "./pixel-settings";
 import { connectSeedRpc, waitForDaemon } from "./seed-client";
+import { seedSiloApercu } from "./seed-silo-apercu";
 import { seedSiloAttente } from "./seed-silo-attente";
 import { seedSiloMaquettes } from "./seed-silo-maquettes";
 import { seedSiloPrs, siloPrsGhState } from "./seed-silo-prs";
@@ -108,22 +111,26 @@ if (withGh) {
   copyFileSync(join(root, "packages/daemon/src/code/testing/fake-gh.ts"), gh);
   chmodSync(gh, 0o755);
 }
-async function startFakes() {
+type Fakes = { origins: string[]; stop(): void | Promise<void> };
+async function startFakes(): Promise<Fakes> {
   const github = startFakeGithub({ token: E2E_GH_TOKEN, port: fakeGithubPort(Number(port)) });
   github.addRepo("adam/kibo");
   const mcp = await startFakeMcpHttp({ port: fakeMcpPort(Number(port)) });
   return {
-    args: ["--test-origins", `api.github.com=${github.url},${LOGS_HOST}=${github.url}`, "--memory-secrets"],
+    origins: [`api.github.com=${github.url}`, `${LOGS_HOST}=${github.url}`],
     stop: async () => {
       github.stop();
       await mcp.stop();
     },
   };
 }
-function startDesignFakes() {
+function startDesignFakes(): Fakes {
   const figma = startFakeFigma({ token: E2E_FIGMA_TOKEN, port: fakeFigmaPort(Number(port)) });
   figma.addFile("AbC123xyz", "Kibo");
   figma.addNode("AbC123xyz", "12:34", { name: "Tickets", width: 1440, height: 900 });
+  const { fileKey, nodeId, name, width, height } = SILO_APERCU_FRAME;
+  const png = Uint8Array.from(readFileSync(join(root, SILO_APERCU_FRAME.png)));
+  figma.addNode(fileKey, nodeId, { name, width, height, png });
   const penpot = startFakePenpot({ token: E2E_PENPOT_TOKEN, port: fakePenpotPort(Number(port)) });
   penpot.addBoard(PENPOT_IDS.file, PENPOT_IDS.page, PENPOT_IDS.board, {
     name: "Accueil",
@@ -132,11 +139,7 @@ function startDesignFakes() {
   });
   penpot.addBoard(PENPOT_IDS.file, PENPOT_IDS.page, PENPOT_IDS.bare, { name: "Brouillon", mediaId: null });
   return {
-    args: [
-      "--test-origins",
-      `api.figma.com=${figma.url},${FAKE_FIGMA_IMAGE_HOST}=${figma.url}`,
-      "--memory-secrets",
-    ],
+    origins: [`api.figma.com=${figma.url}`, `${FAKE_FIGMA_IMAGE_HOST}=${figma.url}`],
     stop: async () => {
       figma.stop();
       penpot.stop();
@@ -149,7 +152,7 @@ function startStorybook(storybookPort: number) {
   storybook.addStory("screens-login--default", "Screens", "Login");
   return storybook;
 }
-function startEmbedFakes() {
+function startEmbedFakes(): Fakes {
   const storybook = startStorybook(fakeStorybookPort(Number(port)));
   const branch = startStorybook(fakeBranchStorybookPort(Number(port)));
   const penpot = startFakePenpot({ token: E2E_PENPOT_TOKEN, port: fakePenpotPort(Number(port)) });
@@ -159,7 +162,7 @@ function startEmbedFakes() {
     height: 900,
   });
   return {
-    args: ["--test-origins", `design.penpot.app=${penpot.url}`, "--memory-secrets"],
+    origins: [`design.penpot.app=${penpot.url}`],
     stop: async () => {
       storybook.stop();
       branch.stop();
@@ -167,13 +170,15 @@ function startEmbedFakes() {
     },
   };
 }
-function startFakesFor() {
-  if (integrations) return startFakes();
-  if (design) return startDesignFakes();
-  if (embeds) return startEmbedFakes();
-  return null;
+async function startFakesFor(): Promise<Fakes[]> {
+  const started = integrations ? [await startFakes()] : [];
+  if (design) started.push(startDesignFakes());
+  if (embeds) started.push(startEmbedFakes());
+  return started;
 }
 const fakes = await startFakesFor();
+const origins = fakes.flatMap((f) => f.origins);
+const fakeArgs = origins.length === 0 ? [] : ["--test-origins", origins.join(","), "--memory-secrets"];
 const syncServer: TestSyncServer | null = siloScenario
   ? await startTestSyncServer({ dataDir: join(home, "sync-server") })
   : null;
@@ -196,7 +201,7 @@ const proc = Bun.spawn(
     join(agents, "fake-claude.ts"),
     "--host-load",
     "62,70",
-    ...(fakes?.args ?? []),
+    ...fakeArgs,
     ...(answerGrace === null ? [] : [ANSWER_GRACE_FLAG, answerGrace]),
   ],
   {
@@ -222,6 +227,7 @@ process.on("SIGINT", forward("SIGINT"));
 const SILO_SEEDS = new Map([
   [SILO_ATTENTE, seedSiloAttente],
   [SILO_PRS, seedSiloPrs],
+  [SILO_APERCU, seedSiloApercu],
 ]);
 async function seedScenario(): Promise<void> {
   if (!siloScenario) return;
@@ -256,7 +262,7 @@ const ready = seeded && siloScenario ? openReadyPort() : null;
 const exited = await proc.exited;
 ready?.stop(true);
 const code = seeded ? exited : 1;
-await fakes?.stop();
+for (const f of fakes) await f.stop();
 await syncServer?.stop();
 rmSync(home, { recursive: true, force: true });
 rmSync(ghDir, { recursive: true, force: true });
