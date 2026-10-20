@@ -121,8 +121,8 @@ test("a storage that cannot be read keeps « Fonctionnalités »", async () => {
   }
 });
 
-test("a delivered feature is folded, even with the former config key, and its title opens it", async () => {
-  const m = setup(seedSprintGraph, { collapseDelivered: false });
+test("a delivered feature is folded, even with the former config keys, and its title opens it", async () => {
+  const m = setup(seedSprintGraph, { collapseDelivered: false, showDone: true, columns: "waves" });
   const region = await lanes();
   const f1 = within(region).getByRole("article", { name: /^F1 / });
   expect(within(f1).queryAllByRole("listitem")).toHaveLength(0);
