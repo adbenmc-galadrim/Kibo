@@ -19,10 +19,11 @@ import { e2eHome } from "./e2e-home";
 import { siloGhState } from "./fixtures/silo-gh";
 import { SILO_SCENARIO } from "./fixtures/silo-suivi";
 import { createE2eRepo, fakeGhDir, GIT_IDENTITY } from "./git-repo";
-import { FIXED_NOW, isSiloScenario, SILO_ATTENTE } from "./pixel-settings";
+import { FIXED_NOW, isSiloScenario, SILO_ATTENTE, SILO_PRS } from "./pixel-settings";
 import { connectSeedRpc, waitForDaemon } from "./seed-client";
 import { seedSiloAttente } from "./seed-silo-attente";
 import { seedSiloMaquettes } from "./seed-silo-maquettes";
+import { seedSiloPrs, siloPrsGhState } from "./seed-silo-prs";
 import { type SyncSeed, shareSilo } from "./seed-silo-sync";
 import {
   E2E_FIGMA_TOKEN,
@@ -88,7 +89,8 @@ rmSync(ghDir, { recursive: true, force: true });
 mkdirSync(ghDir, { recursive: true });
 const gh = join(ghDir, "gh");
 const ghState = join(ghDir, "state.json");
-const writeSiloGh = (merged: boolean) => writeFileSync(ghState, JSON.stringify(siloGhState({ merged })));
+const ghStateOf = scenario === SILO_PRS ? siloPrsGhState : siloGhState;
+const writeSiloGh = (merged: boolean) => writeFileSync(ghState, JSON.stringify(ghStateOf({ merged })));
 if (siloScenario) writeSiloGh(false);
 const siloRepo = siloScenario ? createE2eRepo("silo") : null;
 if (withGh) {
@@ -206,12 +208,16 @@ const proc = Bun.spawn(
 const forward = (signal: NodeJS.Signals) => () => proc.kill(signal);
 process.on("SIGTERM", forward("SIGTERM"));
 process.on("SIGINT", forward("SIGINT"));
+const SILO_SEEDS = new Map([
+  [SILO_ATTENTE, seedSiloAttente],
+  [SILO_PRS, seedSiloPrs],
+]);
 async function seedScenario(): Promise<void> {
   if (!siloScenario) return;
   const base = `http://127.0.0.1:${port}`;
   await waitForDaemon(base, 30_000);
   const rpc = await connectSeedRpc(base, E2E_TOKEN);
-  const seed = scenario === SILO_ATTENTE ? seedSiloAttente : seedSiloMaquettes;
+  const seed = SILO_SEEDS.get(scenario) ?? seedSiloMaquettes;
   await seed(rpc, { folder: siloRepo?.repo ?? null, mergePr: () => writeSiloGh(true) });
   if (syncServer) await shareSilo(rpc, await syncSeed(syncServer));
 }

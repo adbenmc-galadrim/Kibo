@@ -1,5 +1,12 @@
 import { expect, test } from "bun:test";
-import { assertFixedNow, FIXED_NOW, isSiloScenario, SILO_ATTENTE, SILO_MAQUETTES } from "./pixel-settings";
+import {
+  assertFixedNow,
+  FIXED_NOW,
+  isSiloScenario,
+  SILO_ATTENTE,
+  SILO_MAQUETTES,
+  SILO_PRS,
+} from "./pixel-settings";
 
 const info = { version: "0.25.0-alpha.1", platform: "darwin" };
 
@@ -28,9 +35,11 @@ test("an answer that is not an object is refused", () => {
   expect(() => assertFixedNow(null)).toThrow("getAppInfo");
 });
 
-test("both Silo scenarios are seeded under the frozen clock, no other one", () => {
+test("the three Silo scenarios are seeded under the frozen clock, no other one", () => {
   expect(isSiloScenario(SILO_MAQUETTES)).toBe(true);
   expect(isSiloScenario(SILO_ATTENTE)).toBe(true);
+  expect(isSiloScenario(SILO_PRS)).toBe(true);
   expect(SILO_ATTENTE).toBe("silo-attente");
+  expect(SILO_PRS).toBe("silo-prs");
   expect(isSiloScenario("question")).toBe(false);
 });
