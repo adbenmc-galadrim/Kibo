@@ -47,8 +47,3 @@ export async function askQuestion(v: Visibility, n: number, title: string, recip
   if (recipient)
     await command(v, { method: "setQuestionRecipient", questionId: text(question, "id"), recipient });
 }
-
-export async function labelChapters(v: Visibility, chapters: readonly (readonly [number, string])[]) {
-  for (const [n, chapter] of chapters)
-    await command(v, { method: "updateTicket", ticketId: ticketOf(v, n), labels: [`chapitre:${chapter}`] });
-}
