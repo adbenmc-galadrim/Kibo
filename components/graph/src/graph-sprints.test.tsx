@@ -89,7 +89,7 @@ test("« PRs » swaps the columns for the PR view and is remembered for this ins
   const m = setup();
   await lanes();
   await userEvent.click(screen.getByRole("radio", { name: "PRs" }));
-  expect(await screen.findByTestId("prs-view")).toBeTruthy();
+  expect(await screen.findByRole("region", { name: "PR ouvertes" })).toBeTruthy();
   expect(screen.queryByRole("region", { name: "Fonctionnalités par sprint" })).toBeNull();
   expect(screen.getByRole("radio", { name: "PRs" }).getAttribute("aria-checked")).toBe("true");
   expect(localStorage.getItem(`kibo.graph.view.${m.sdk.instanceId}`)).toBe("prs");
@@ -102,7 +102,7 @@ test("« PRs » swaps the columns for the PR view and is remembered for this ins
 test("a stored « prs » opens the PR view", async () => {
   localStorage.setItem("kibo.graph.view.mock-instance", "prs");
   setup();
-  expect(await screen.findByTestId("prs-view")).toBeTruthy();
+  expect(await screen.findByRole("region", { name: "PR ouvertes" })).toBeTruthy();
   expect(screen.getByRole("radio", { name: "PRs" }).getAttribute("aria-checked")).toBe("true");
   localStorage.clear();
 });

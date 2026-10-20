@@ -10,6 +10,7 @@ import { useSprintLanes } from "./use-sprint-lanes";
 export function GraphView() {
   const sdk = useSdk();
   const [view, setView] = useState<GraphViewKind>(() => readView(sdk.instanceId));
+  const [prsCounter, setPrsCounter] = useState<string | null>(null);
   const lanes = useSprintLanes();
   const onView = (next: GraphViewKind) => {
     writeView(sdk.instanceId, next);
@@ -22,12 +23,14 @@ export function GraphView() {
         view={view}
         onView={onView}
         counter={
-          view === "prs" ? null : fr.sprints.counter(lanes.features, lanes.stepLinks, lanes.featureLinks)
+          view === "prs"
+            ? prsCounter
+            : fr.sprints.counter(lanes.features, lanes.stepLinks, lanes.featureLinks)
         }
       />
       <div className="min-h-0 flex-1">
         {view === "prs" ? (
-          <PrsView />
+          <PrsView onCounter={setPrsCounter} />
         ) : (
           <SprintLanes model={lanes} onOpen={(id) => sdk.openTicket(id)} onNewFeature={onNewFeature} />
         )}
