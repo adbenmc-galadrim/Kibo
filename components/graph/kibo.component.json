@@ -12,7 +12,6 @@
   "configSchema": {
     "filter": { "enum": ["mine-and-agents", "all"], "default": "mine-and-agents" },
     "showDone": { "type": "boolean", "default": false, "label": "Afficher les terminés" },
-    "columns": { "enum": ["sprints", "waves"], "default": "sprints", "label": "Colonnes" },
-    "collapseDelivered": { "type": "boolean", "default": true, "label": "Livrées repliées" }
+    "columns": { "enum": ["sprints", "waves"], "default": "sprints", "label": "Colonnes" }
   }
 }

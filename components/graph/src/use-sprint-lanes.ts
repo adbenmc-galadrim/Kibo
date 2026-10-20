@@ -4,7 +4,7 @@ import { useProject } from "@kibo/sdk/hooks/use-project";
 import { useMemo } from "react";
 import { type SprintLanesModel, sprintLanes } from "./sprint-lanes";
 
-export function useSprintLanes(collapseDelivered: boolean): SprintLanesModel | null {
+export function useSprintLanes(): SprintLanesModel {
   const tickets = useEntities("ticket");
   const links = useEntities("link");
   const sprints = useEntities("sprint");
@@ -25,9 +25,8 @@ export function useSprintLanes(collapseDelivered: boolean): SprintLanesModel | n
         sprints: sprints.data,
         questions: questions.data,
         live,
-        collapseDelivered,
         today,
       }),
-    [tickets.data, links.data, sprints.data, questions.data, live, collapseDelivered, today],
+    [tickets.data, links.data, sprints.data, questions.data, live, today],
   );
 }

@@ -25,9 +25,8 @@ export function GraphView() {
   const [filter, setFilter] = useState<GraphFilter>(() => initialFilter(sdk.config));
   const [display, setDisplay] = useState<GraphDisplay>(DEFAULT_DISPLAY);
   const [columns, setColumns] = useState<GraphColumns>(() => initialColumns(sdk.config));
-  const [collapseDelivered, setCollapseDelivered] = useState(() => sdk.config.collapseDelivered !== false);
   const data = useGraphData(filter, display);
-  const lanes = useSprintLanes(collapseDelivered);
+  const lanes = useSprintLanes();
   const { input, path, counts } = data;
   const critical = useMemo(() => new Set(showCritical ? path : []), [path, showCritical]);
   const blocked = input.tickets.filter((t) => path.includes(t.id) && t.statusId === "blocked").length;
@@ -35,14 +34,13 @@ export function GraphView() {
   const onToggleCritical = () => setShowCritical((v) => !v);
   const onNewFeature = () => sdk.openView("planning", { intent: { kind: "newFeature" } });
 
-  if (effectiveColumns(columns, lanes !== null) === "sprints" && lanes !== null) {
+  const hasSprints = lanes.lanes.some((l) => l.code !== null);
+  if (effectiveColumns(columns, hasSprints) === "sprints") {
     return (
       <div className="flex h-full flex-col">
         <SprintToolbar
           model={lanes}
           prefixes={data.prefixes}
-          collapseDelivered={collapseDelivered}
-          onToggleCollapse={() => setCollapseDelivered((v) => !v)}
           onColumns={setColumns}
           onGroupBy={(groupBy) => {
             setColumns("waves");
@@ -67,7 +65,7 @@ export function GraphView() {
   return (
     <div className="flex h-full flex-col">
       <div className="flex flex-wrap items-center gap-2 border-b px-4 py-2">
-        <ColumnsMenu value="waves" disabled={lanes === null} className="h-7 text-xs" onChange={setColumns} />
+        <ColumnsMenu value="waves" disabled={!hasSprints} className="h-7 text-xs" onChange={setColumns} />
         <GraphToolbar
           tickets={data.allTickets}
           filter={filter}

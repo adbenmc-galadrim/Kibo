@@ -31,16 +31,13 @@ const setup = (seed = seedSprintGraph, config: Record<string, unknown> = {}, age
 };
 
 const lanes = () => screen.findByRole("region", { name: "Fonctionnalités par sprint" });
-const kitModel = (today?: string) => {
-  const model = sprintLanes(kitInput(today === undefined ? {} : { tickets: kitTickets(today) }));
-  if (model === null) throw new Error("expected lanes");
-  return model;
-};
+const kitModel = (today?: string) =>
+  sprintLanes(kitInput(today === undefined ? {} : { tickets: kitTickets(today) }));
 
 test("the manifest reads sprints and questions and declares the columns", () => {
   expect(manifest.reads).toEqual(expect.arrayContaining(["sprint", "question"]));
   expect(manifest.configSchema?.columns).toMatchObject({ enum: ["sprints", "waves"], default: "sprints" });
-  expect(manifest.configSchema?.collapseDelivered).toMatchObject({ type: "boolean", default: true });
+  expect(manifest.configSchema?.collapseDelivered).toBeUndefined();
 });
 
 test("sprints mode: toolbar, counter, one column per sprint and the reserve", async () => {
@@ -48,7 +45,7 @@ test("sprints mode: toolbar, counter, one column per sprint and the reserve", as
   const region = await lanes();
   expect(screen.getByRole("button", { name: "Regrouper : Fonctionnalités" })).toBeTruthy();
   expect(screen.getByRole("button", { name: "Colonnes : Sprints" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Livrées repliées" }).getAttribute("aria-pressed")).toBe("true");
+  expect(screen.queryByRole("button", { name: "Livrées repliées" })).toBeNull();
   expect(
     screen.getByText("9 fonctionnalités · 2 dépendances entre étapes, 8 entre fonctionnalités"),
   ).toBeTruthy();
@@ -69,15 +66,15 @@ test("sprints mode: toolbar, counter, one column per sprint and the reserve", as
   expect(screen.getByRole("list", { name: "Légende" }).textContent).toContain("Colonne = sprint");
 });
 
-test("« Livrées repliées » unfolds delivered features", async () => {
-  setup();
+test("a delivered feature is folded, even with the former config key, and its title opens it", async () => {
+  const m = setup(seedSprintGraph, { collapseDelivered: false });
   const region = await lanes();
   const f1 = within(region).getByRole("article", { name: /^F1 / });
   expect(within(f1).queryAllByRole("listitem")).toHaveLength(0);
-  await userEvent.click(screen.getByRole("button", { name: "Livrées repliées" }));
-  expect(within(within(region).getByRole("article", { name: /^F1 / })).getAllByRole("listitem")).toHaveLength(
-    4,
-  );
+  await userEvent.click(within(f1).getByRole("button", { name: "Se connecter avec Microsoft" }));
+  const root = m.snapshot().tickets.find((t) => t.title === "Se connecter avec Microsoft");
+  if (root === undefined) throw new Error("missing F1");
+  expect(m.opened).toEqual([root.id]);
 });
 
 test("the former controls live in « Options »", async () => {
