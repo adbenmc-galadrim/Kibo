@@ -6,7 +6,7 @@ import { useMemo } from "react";
 import { compareKeys, criticalPath, type GraphEdge } from "./critical-path";
 import { graphInput } from "./filter";
 import { fr } from "./fr";
-import { GraphFramed, GraphView } from "./lazy-panels";
+import { GraphView } from "./lazy-panels";
 import { readyTickets, waitingOn } from "./waiting";
 
 const MAX_WAITING_ROWS = 6;
@@ -168,7 +168,6 @@ function SummaryWidget({ small }: { small: boolean }) {
 
 export function GraphWidget() {
   const { format } = useSdk();
-  if (format === "full") return <GraphView />;
-  if (format === "large" || format === "half") return <GraphFramed />;
-  return <SummaryWidget small={format === "small"} />;
+  if (format === "small" || format === "medium") return <SummaryWidget small={format === "small"} />;
+  return <GraphView />;
 }
