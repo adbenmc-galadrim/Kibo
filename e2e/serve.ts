@@ -89,9 +89,17 @@ rmSync(ghDir, { recursive: true, force: true });
 mkdirSync(ghDir, { recursive: true });
 const gh = join(ghDir, "gh");
 const ghState = join(ghDir, "state.json");
-const ghStateOf = scenario === SILO_PRS ? siloPrsGhState : siloGhState;
-const writeSiloGh = (merged: boolean) => writeFileSync(ghState, JSON.stringify(ghStateOf({ merged })));
-if (siloScenario) writeSiloGh(false);
+const siloGh = { merged: false, stateOf: siloGhState };
+const writeSiloGh = () => writeFileSync(ghState, JSON.stringify(siloGh.stateOf({ merged: siloGh.merged })));
+const mergeSiloPr = () => {
+  siloGh.merged = true;
+  writeSiloGh();
+};
+const stackSiloPrs = () => {
+  siloGh.stateOf = siloPrsGhState;
+  writeSiloGh();
+};
+if (siloScenario) writeSiloGh();
 const siloRepo = siloScenario ? createE2eRepo("silo") : null;
 if (withGh) {
   copyFileSync(join(root, "packages/daemon/src/code/testing/fake-gh.ts"), gh);
@@ -218,7 +226,7 @@ async function seedScenario(): Promise<void> {
   await waitForDaemon(base, 30_000);
   const rpc = await connectSeedRpc(base, E2E_TOKEN);
   const seed = SILO_SEEDS.get(scenario) ?? seedSiloMaquettes;
-  await seed(rpc, { folder: siloRepo?.repo ?? null, mergePr: () => writeSiloGh(true) });
+  await seed(rpc, { folder: siloRepo?.repo ?? null, mergePr: mergeSiloPr, stackPrs: stackSiloPrs });
   if (syncServer) await shareSilo(rpc, await syncSeed(syncServer));
 }
 const seeded = await seedScenario().then(

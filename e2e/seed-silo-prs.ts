@@ -76,7 +76,19 @@ function seeded(tickets: Map<string, SeededTicket>, n: number): SeededTicket {
   return ticket;
 }
 
-export async function seedSiloPrs(rpc: SeedRpc, options: SeedOptions): Promise<SeedResult> {
+export type PrsSeedOptions = SeedOptions & { stackPrs(): void | Promise<void> };
+
+type PrWrite = { ticketId: string; previous: GithubPrRef | null; seed: PrSeed };
+
+function prWrites(tickets: Map<string, SeededTicket>): PrWrite[] {
+  return SILO_PRS_REFS.flatMap((seed) => {
+    const ticket = seeded(tickets, seed.n);
+    const previous = prOf(ticket.refs, seed);
+    return previous !== null && samePr(previous, seed) ? [] : [{ ticketId: ticket.id, previous, seed }];
+  });
+}
+
+export async function seedSiloPrs(rpc: SeedRpc, options: PrsSeedOptions): Promise<SeedResult> {
   const result = await seedSiloMaquettes(rpc, options);
   const { projectId } = result;
   const tickets = await ticketsByKey(rpc, projectId);
@@ -91,12 +103,12 @@ export async function seedSiloPrs(rpc: SeedRpc, options: SeedOptions): Promise<S
     if (!ticket.refs.some((r) => sameBranch(r, seed)))
       await command({ method: "upsertExternalRef", ticketId: ticket.id, ref: branchRef(seed) });
   }
-  for (const seed of SILO_PRS_REFS) {
-    const ticket = seeded(tickets, seed.n);
-    const previous = prOf(ticket.refs, seed);
-    if (previous === null || !samePr(previous, seed))
-      await command({ method: "upsertExternalRef", ticketId: ticket.id, ref: prRef(previous, seed) });
-  }
+  const writes = prWrites(tickets);
+  const write = ({ ticketId, previous, seed }: PrWrite) =>
+    command({ method: "upsertExternalRef", ticketId, ref: prRef(previous, seed) });
+  for (const w of writes.filter((x) => x.previous === null)) await write(w);
+  await options.stackPrs();
+  for (const w of writes.filter((x) => x.previous !== null)) await write(w);
   return result;
 }
 

@@ -15,9 +15,13 @@ import { seedSiloPrs, siloPrsGhState } from "./seed-silo-prs";
 const TODAY = "2026-10-16";
 const SEED_WRITES = SILO_PRS_IN_PROGRESS.length + SILO_PRS_BRANCHES.length + SILO_PRS_REFS.length;
 
+const STACKED = "stackPrs";
+const SILO_PRS_NEW: readonly number[] = [24, 25];
+
 let daemon: MemoryDaemon;
-let sent: RpcRequest[];
+let sent: (RpcRequest | typeof STACKED)[];
 let snapshot: ProjectSnapshot;
+let atStacking: ProjectSnapshot | null = null;
 
 beforeAll(async () => {
   daemon = createMemoryDaemon("adam", TODAY);
@@ -26,7 +30,11 @@ beforeAll(async () => {
     sent.push(req);
     return daemon.rpc(req);
   };
-  await seedSiloPrs(recorded, memorySeed(daemon));
+  const stackPrs = () => {
+    sent.push(STACKED);
+    atStacking = daemon.snapshot(SILO_PROJECT.key, TODAY);
+  };
+  await seedSiloPrs(recorded, { ...memorySeed(daemon), stackPrs });
   snapshot = daemon.snapshot(SILO_PROJECT.key, TODAY);
 });
 
@@ -43,16 +51,45 @@ const livePrs = (): GithubPrRef[] =>
   );
 const branchOf = (n: number) => ticket(n).externalRefs.find((r) => r.kind === "git_branch");
 
+function prNumberOf(r: RpcRequest | typeof STACKED): number | null {
+  if (r === STACKED || r.method !== "command" || r.command.method !== "upsertExternalRef") return null;
+  return r.command.ref.kind === "github_pr" ? r.command.ref.number : null;
+}
+
 test("the stacked data are the last writes, sent after the whole Silo seed", () => {
-  const writes = sent.filter((r) => r.method !== "getProject" && r.method !== "listProjects");
+  const writes = sent.filter(
+    (r) => r === STACKED || (r.method !== "getProject" && r.method !== "listProjects"),
+  );
   const last: string[] = writes
-    .slice(-SEED_WRITES)
-    .map((r) => (r.method === "command" ? r.command.method : r.method));
+    .slice(-(SEED_WRITES + 1))
+    .map((r) => (r === STACKED ? r : r.method === "command" ? r.command.method : r.method));
   expect(last).toEqual([
     "setStatus",
     ...SILO_PRS_BRANCHES.map(() => "upsertExternalRef"),
-    ...SILO_PRS_REFS.map(() => "upsertExternalRef"),
+    ...SILO_PRS_NEW.map(() => "upsertExternalRef"),
+    STACKED,
+    ...SILO_PRS_REFS.filter((s) => !SILO_PRS_NEW.includes(s.number)).map(() => "upsertExternalRef"),
   ]);
+  const stackedAt = writes.indexOf(STACKED);
+  expect(writes.slice(stackedAt - SILO_PRS_NEW.length, stackedAt).map(prNumberOf)).toEqual([...SILO_PRS_NEW]);
+});
+
+test("the fake gh lists the stacked heads only once no branch can discover a pull request", () => {
+  if (atStacking === null) throw new Error("the seed never stacked the pull requests");
+  const tickets = atStacking.tickets;
+  for (const pr of siloPrsGhState({ merged: true })) {
+    const owner = tickets.find((t) =>
+      t.externalRefs.some((r) => r.kind === "git_branch" && r.branch === pr.head),
+    );
+    if (owner === undefined) continue;
+    expect(owner.externalRefs.some((r) => r.kind === "github_pr" && r.url === pr.url)).toBe(true);
+  }
+  const rootsBefore = tickets.flatMap((t) =>
+    t.externalRefs.flatMap((r) =>
+      r.kind === "github_pr" && !SILO_PRS_NEW.includes(r.number) ? [r.base] : [],
+    ),
+  );
+  expect(rootsBefore.every((base) => base === null)).toBe(true);
 });
 
 test("SILO-34 starts on its branch and SILO-33 declares its branch on feat/silo-32", () => {
@@ -114,6 +151,6 @@ test("the fake gh lists the five pull requests with their branches, the merged o
 
 test("a second seed sends nothing again", async () => {
   const before = daemon.writes();
-  await seedSiloPrs(daemon.rpc, memorySeed(daemon));
+  await seedSiloPrs(daemon.rpc, { ...memorySeed(daemon), stackPrs: () => undefined });
   expect(daemon.writes()).toBe(before);
 });
