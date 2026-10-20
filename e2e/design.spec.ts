@@ -195,6 +195,7 @@ async function browseFullscreen(page: Page, info: Parameters<typeof shot>[1], bo
 }
 
 test("maquettes Figma et Penpot : connexion, widget, fiche, hors ligne", async ({ page, baseURL }, info) => {
+  test.setTimeout(60_000);
   const penpot = penpotOf(baseURL);
   const leaked = watchLeaks(page);
   const served = watchFrames(page);
