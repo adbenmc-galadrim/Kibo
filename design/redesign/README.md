@@ -328,3 +328,36 @@ pas encore enregistré côté serveur fait échouer l'exporteur, « http error �
 `95-cotes.js` (`_dump-26`), puis `python3 scripts/cotes.py <JSON> --alpha3`, qui remplace seulement la partie « 0.29.0-alpha.3 » de
 `cotes.md` (`--alpha2` la garde). Pas de spec pixel (panneau, capturé en E2E). Copié en page « 36 · Suivi seul » du fichier « Kibo »
 (235, voir `design/penpot/README.md`).
+
+## Phase 30 (2026-10-20)
+
+Spec §44 : la page Graphe n'a plus qu'un sélecteur « Fonctionnalités | PRs » et un compteur ; « Regrouper », « Colonnes », « Livrées
+repliées » et « Options » disparaissent. La vue PRs dessine chaque PR vivante en carte, empilée de bas en haut sur la PR dont elle part,
+une colonne par pile, au-dessus du rail « dev · branche de base ». Données : sous-section « Phase 30 · PR empilées » du projet Silo
+(`design/donnees-fictives.md`, scénario `silo-prs`). Page « Proposition », `scripts/59-graphe-prs.js` (après `58-alpha3-reveil`), rangées à
+partir de `S.Y_GR` = 44 000 (après la rangée de l'alpha 3, pas de 1 500 px), sombre à x = 0 et clair à x = 1 540.
+
+Chaque board **clone « P5 · Graphe »** puis remplace la barre (`S.toolbarGR`) ; P5 reste au fichier, sa référence `proposition-graphe-*`
+est retirée des exports avec le changement de référence pixel.
+
+| Board | Contenu | Export | Taille |
+|---|---|---|---|
+| P5b · Graphe, Fonctionnalités | colonnes par sprint de P5, barre réduite au sélecteur (« Fonctionnalités » actif) et au compteur « 9 fonctionnalités · 13 dépendances entre étapes, 7 entre fonctionnalités » | `proposition-graphe-fonctionnalites` | 1 440 × 1 000 |
+| P5c · Graphe, PRs | « PRs » actif, compteur « 5 PR ouvertes · 3 piles · 2 en attente de review · 1 à corriger », trois colonnes (#22 → #24 → #25 F5, #20 F4, #23 hors fonctionnalité) avec leur en-tête, cartes 364 × 92 (icône, numéro, titre du ticket, « session » sur #24 et #20, clé et fonctionnalité, puces de review et de CI, branche `head`), traits « sur feat/… », rail « dev · branche de base », légende (dont « Approuvée ») | `proposition-graphe-prs` | 1 440 × 1 000 |
+| P5e · Graphe, aucune PR | « PRs » actif, compteur « 0 PR ouverte · 0 pile », canevas vide : « Aucune PR ouverte » (14 px, 500, `mfg`) et « Les PR ouvertes des étapes apparaissent ici, empilées sur leur branche de base. » (13 px, `dim`) centrés, ni rail ni légende | `proposition-graphe-prs-vide` | 1 440 × 1 000 |
+
+Correction de P5c (2026-10-20) : #20 porte « session » (session T3 Code de SILO-45) et non « en retard » (« en retard » ne vient que d'une
+fonctionnalité en retard, et aucune ne l'est au 16 oct.) ; la légende gagne « Approuvée » (point vert) après « Changements demandés ».
+La variante **P5d « PRs par fonctionnalité »** (un cadre par fonctionnalité, la pile dedans) est **écartée** : boards supprimés du fichier,
+dessin (`miniGR`, `stemGR`, `frameGR`, `alignFramesGR`) et exports `proposition-graphe-prs-variante-*` retirés ; P5e occupe sa rangée (y = 47 000).
+
+Dessin : `await storage.drawGR("g-prs", "dark")` (clés `g-fonctionnalites`, `g-prs`, `g-prs-vide`), un écran et un mode par appel. Avant
+d'exporter, attendre que le nombre de formes côté serveur (`get-page`) égale le nombre local. Export : `await storage.exportGR(["graphe-prs",
+"graphe-prs-vide"])` (depuis un clone, après 10 s d'attente) ⇒ `exports/proposition-graphe-<fonctionnalites|prs|prs-vide>-<dark|light>.png`.
+Cotes : `95-cotes.js` par board (`_dump-27` à `_dump-29`), puis `python3 scripts/cotes.py <JSON> --phase30`, qui remplace seulement la
+partie « Phase 30 » de `cotes.md` (`--alpha3` la garde). Comparaison au pixel : « graphe » sur P5b (`silo-maquettes`) et « graphe-prs » sur
+P5c (`silo-prs`) ; P5e a une capture seulement. À copier en page « 36 · Suivi seul » du fichier « Kibo » (236, 237, 237b, voir
+`design/penpot/README.md`).
+
+Piège vu : `Date.now()` lève une erreur dans le compartiment du plugin piloté depuis Chromium headless ; `00-charger.js` s'en sert pour
+contourner le cache, il faut alors un compteur à la place pour charger les scripts.

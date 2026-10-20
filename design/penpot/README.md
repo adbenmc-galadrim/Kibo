@@ -347,6 +347,13 @@ copié de la même façon (collé en (0, 0), puis déplacé à y = 34 500, sous 
 - 36 · Suivi seul (0.29.0-alpha.3) : 235 panneau de l'agent de projet après une réponse à Q16 : ligne de réveil « Q16 répondue : « 5 Go » »
   (14:52) à la place de la bulle d'Adam, texte de l'agent, lot n° 8 « après réveil » à une action (« Modifier SILO-34 »).
 
+Phase 30 (2026-10-20, à copier au jalon) : les boards P5b, P5c et P5e de « Kibo · Redesign » (rangées à partir de y = 44 000, voir
+`design/redesign/README.md`) copiés de la même façon sous 235, sombre et clair, et renommés ; P5d est écartée et n'est pas copiée.
+
+- 36 · Suivi seul (phase 30) : 236 Graphe, Fonctionnalités (sélecteur « Fonctionnalités | PRs » et compteur seuls, colonnes par sprint) ·
+  237 Graphe, PRs (piles #22 → #24 → #25, #20, #23 de bas en haut sur le rail « dev · branche de base », « session » sur #24 et #20,
+  légende avec « Approuvée ») · 237b Graphe, aucune PR (« Aucune PR ouverte », « 0 PR ouverte · 0 pile »).
+
 ## Exporter
 
 1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("36")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
