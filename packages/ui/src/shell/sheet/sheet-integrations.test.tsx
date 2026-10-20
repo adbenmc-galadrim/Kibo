@@ -395,11 +395,7 @@ test("the CI section opens the logs, filterable to errors", async () => {
 });
 
 const frameCalls = () => calls.filter((c) => c.method === "getDesignFrame");
-const mockups = () => {
-  const section = screen.getByRole("heading", { name: "Maquettes" }).closest("section");
-  if (!section) throw new Error("the mockups section");
-  return within(section);
-};
+const mockups = () => within(screen.getByRole("region", { name: "Maquettes" }));
 
 test("Mockups: each frame is a thumbnail served by the daemon, with its badges", async () => {
   await show();
