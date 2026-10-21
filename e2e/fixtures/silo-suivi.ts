@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { type SprintCode, siloKey } from "./silo-maquettes";
 
 export type SessionSpec = { n: number; tool: string };
@@ -7,7 +7,9 @@ export type BatchActionSpec =
   | { id: number; type: "remindQuestion"; question: string; why: string };
 export type BatchSpec = { seq: number; summary: string; actions: readonly BatchActionSpec[] };
 
-export const SILO_SCENARIO = join(import.meta.dir, "..", "agents", "scenarios", "silo-maquettes.json");
+export const SILO_SCENARIO = fileURLToPath(
+  new URL("../agents/scenarios/silo-maquettes.json", import.meta.url),
+);
 
 export const SILO_DESCRIPTION = "Location de box";
 

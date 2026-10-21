@@ -1,5 +1,5 @@
 import { defineConfig, type PlaywrightTestConfig, type Project } from "@playwright/test";
-import { ALL_DAEMONS, serveCommand } from "./daemons";
+import { ALL_DAEMONS, agentConversationProjects, serveCommand } from "./daemons";
 import {
   pixelKitProject,
   pixelProjectOptions,
@@ -53,6 +53,7 @@ export default defineConfig({
     ),
     ...(inTheme("dark") ? [pixelKitProject()] : []),
     ...trackingProjects(daemons.map((d) => d.name)),
+    ...agentConversationProjects(daemons.map((d) => d.name)),
     ...THEMES.filter(inTheme).flatMap(scenarioProjectsOf),
     ...syncProjects.map(
       (p): Project => ({

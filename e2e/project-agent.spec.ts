@@ -3,6 +3,7 @@ import { list, pairBrowser, rpc, text } from "./agents-seed";
 import { addComponent, createPage, createSidebarPage, pairAndCreateProject } from "./helpers";
 import { capture, hoverBadge, questionArticle, seedAnswered, seedQuestion } from "./questions-kit";
 import { shot } from "./repo-project";
+import { openAgentList, sayToAgent as say, userBubbles } from "./suivi-kit";
 
 test.describe.configure({ mode: "serial" });
 test.use({ viewport: { width: 1440, height: 900 } });
@@ -26,22 +27,12 @@ async function seed(page: Page, projectId: string): Promise<void> {
 
 const panelOf = (page: Page): Locator => page.getByRole("dialog", { name: `Agent de projet · ${PROJECT}` });
 
-async function toView(page: Page, panel: Locator, view: "Conversation" | "Suivi"): Promise<void> {
-  await panel.getByRole("button", { name: "Actions de l'agent de projet" }).click();
-  await page.getByRole("menuitem", { name: view, exact: true }).click();
-  if (view === "Suivi") await expect(panel.getByRole("heading", { name: "Résumé du jour" })).toBeVisible();
-  else await expect(panel.getByRole("tab", { name: view })).toHaveAttribute("aria-selected", "true");
-}
-
-const toConversation = (page: Page, panel: Locator) => toView(page, panel, "Conversation");
-
 async function openProjectPanel(page: Page, projectId: string): Promise<Locator> {
   await page.goto(`/#/p/${encodeURIComponent(projectId)}/`);
   await expect(page.getByRole("button", { name: /^Agent de projet/ })).toBeVisible();
   await page.keyboard.press("ControlOrMeta+j");
   const panel = panelOf(page);
   await expect(panel).toBeVisible();
-  await toConversation(page, panel);
   return panel;
 }
 
@@ -52,11 +43,6 @@ async function expectDocked(panel: Locator, header: Locator): Promise<void> {
   expect(panelBox.y).toBeLessThanOrEqual(headerBox.y);
   expect(headerBox.x + headerBox.width).toBeLessThanOrEqual(panelBox.x);
   expect(panelBox.width).toBe(341);
-}
-
-async function say(panel: Locator, message: string): Promise<void> {
-  await panel.getByRole("combobox", { name: "Message à l'agent de projet" }).fill(message);
-  await panel.getByRole("button", { name: "Envoyer" }).click();
 }
 
 test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d'un clic", async ({
@@ -91,7 +77,6 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
   await expect(panel).toBeHidden();
   await page.keyboard.press("ControlOrMeta+j");
   await expect(panel).toBeVisible();
-  await toConversation(page, panel);
 
   await say(panel, "Où en est-on ?");
   await expect(panel.getByText("J'ai proposé un lot de 5 actions.")).toBeVisible({ timeout: 30_000 });
@@ -115,19 +100,15 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
     kanban.getByRole("region", { name: "En cours" }).getByText("KIB-1", { exact: true }),
   ).toBeVisible();
 
-  await toView(page, panel, "Suivi");
   await say(panel, "Propose un lot invalide");
   await expect(panel.getByText("Lot corrigé.")).toBeVisible({ timeout: 30_000 });
-  const exchange = panel.getByRole("list", { name: "Dernière question" });
-  await expect(exchange.getByText("Propose un lot invalide")).toBeVisible();
-  await expect(panel.getByText("épinglé", { exact: true })).toBeVisible();
+  await expect(userBubbles(panel, "Propose un lot invalide")).toHaveCount(1);
   const second = panel.getByRole("region", { name: "Lot n° 2" });
   await second.getByRole("button", { name: /^Valider/ }).click();
-  const recap = panel.getByRole("region", { name: "Lot n° 2 validé" });
-  await expect(recap.getByText("1 appliquée · 0 échouée · 0 ignorée")).toBeVisible();
+  await expect(second.getByText("Appliquée", { exact: true })).toHaveCount(1);
+  await expect(second.getByRole("button", { name: /^Valider/ })).toHaveCount(0);
   await shot(page, info, "ecran-175c");
 
-  await toConversation(page, panel);
   await say(panel, "Propose encore un lot invalide");
   await expect(panel.getByText("Lot corrigé.")).toHaveCount(2, { timeout: 30_000 });
   const third = panel.getByRole("region", { name: "Lot n° 3" });
@@ -138,16 +119,15 @@ test("l'agent de projet lit le projet, propose un lot, et l'éditeur le valide d
   await expect(third.getByText("Refusé", { exact: true })).toBeVisible();
   await expect(panel.getByText("Compris, je retire la proposition.")).toBeVisible({ timeout: 30_000 });
 
-  await panel.getByRole("button", { name: "Actions de l'agent de projet" }).click();
-  await page.getByRole("menuitem", { name: "Nouvel agent de projet" }).click();
-  await page.getByRole("alertdialog").getByRole("button", { name: "Nouvel agent" }).click();
+  await panel.getByRole("button", { name: "Nouvel agent", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Nouvel agent", exact: true }).click();
   await expect(panel.getByRole("region", { name: /^Lot n° / })).toHaveCount(0);
-  await panel.getByRole("button", { name: "Actions de l'agent de projet" }).click();
-  await page.getByRole("menuitem", { name: "Anciens agents" }).click();
-  await expect(panel.getByRole("button", { name: /^Session du / })).toHaveCount(1);
+  const list = await openAgentList(panel);
+  const past = list.getByRole("button", { name: /^Où en est-on \?/ });
+  await expect(past).toHaveCount(1);
   await shot(page, info, "ecran-176");
-  await panel.getByRole("button", { name: /^Session du / }).click();
-  await expect(panel.getByText("Ancien agent · lecture seule")).toBeVisible();
+  await past.click();
+  await expect(panel.getByText(/^Ancien agent · /)).toBeVisible();
   await expect(panel.getByRole("region", { name: "Lot n° 1" })).toBeVisible();
 });
 

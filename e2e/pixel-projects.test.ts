@@ -210,6 +210,20 @@ test("only the Graphe on hold pixel projects pick its spec, and they pick no oth
   expect(owners("/e2e/attente.spec.ts")).toEqual(["attente-dark", "attente-light"]);
 });
 
+test("the agent conversation runs on the Suivi daemons after their journeys, a new agent closing their batch", () => {
+  expect(owners("/e2e/agent-conversation.spec.ts")).toEqual([
+    "agent-conversation-dark",
+    "agent-conversation-light",
+  ]);
+  for (const scheme of ["dark", "light"] as const) {
+    const journey = projectNamed(`agent-conversation-${scheme}`);
+    const suivi = projectNamed(`suivi-${scheme}`);
+    expect(journey?.use?.baseURL).toBe(suivi?.use?.baseURL);
+    expect(journey?.use?.colorScheme).toBe(scheme);
+    expect(journey?.dependencies).toEqual([`suivi-${scheme}`]);
+  }
+});
+
 const DERIVED = [
   fakeGithubPort,
   fakeMcpPort,
