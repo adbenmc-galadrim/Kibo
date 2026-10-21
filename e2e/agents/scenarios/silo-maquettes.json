@@ -3,13 +3,16 @@
     {
       "steps": [
         {
-          "mcp": "project_overview"
+          "mcp": "list_sprints"
         },
         {
-          "mcp": "list_questions",
+          "mcp": "get_ticket",
           "input": {
-            "state": "open"
+            "key": "SILO-30"
           }
+        },
+        {
+          "mcp": "project_changes"
         },
         {
           "mcp": "propose_batch",
