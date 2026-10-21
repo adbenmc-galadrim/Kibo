@@ -124,7 +124,7 @@ export function CurrentSprintCard({ card, onOpenTicket, onOpenSprint }: Props) {
       {card.note !== null && (
         <p
           className={cn(
-            "flex h-[35px] items-center gap-[8px] bg-(--tracking-panel) px-[16px] text-(--tracking-mfg) text-[12px] leading-[15px]",
+            "flex h-[36px] items-center gap-[8px] bg-(--tracking-panel) px-[16px] text-(--tracking-mfg) text-[12px] leading-[15px]",
             ROW_LINE,
           )}
         >
