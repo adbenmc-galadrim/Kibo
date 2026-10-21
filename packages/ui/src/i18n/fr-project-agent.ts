@@ -179,6 +179,12 @@ export const frProjectAgent = {
     cancelled: "Tour annulé",
     retry: "Réessayer",
   },
+  outbox: {
+    sending: "envoi…",
+    failed: "Non envoyé",
+    retry: "Réessayer",
+    label: { sending: "Toi · envoi…", failed: "Toi · non envoyé" },
+  },
   batch: {
     region: (seq: number) => `Lot n° ${seq}`,
     lastRun: "Dernier run",

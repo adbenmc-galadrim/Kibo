@@ -23,6 +23,7 @@ export function PanelConversation({ projectId, projectName, chat, onNew }: Props
           signals={chat.signals}
           onTicket={chat.openTicket}
           onRetry={chat.retry}
+          onResend={chat.resend}
           onDecide={chat.decide}
         />
       </QuestionLinksContext.Provider>

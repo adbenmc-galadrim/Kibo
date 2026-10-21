@@ -76,6 +76,7 @@ test("the project agent chat shows tables with ticket keys that open the ticket"
       signals={[]}
       onTicket={(key) => opened.push(key)}
       onRetry={() => {}}
+      onResend={() => {}}
       onDecide={async () => {}}
     />,
   );

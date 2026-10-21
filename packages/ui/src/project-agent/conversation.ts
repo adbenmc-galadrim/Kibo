@@ -11,9 +11,10 @@ import {
 import { errorText } from "../agents/format";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { frSignals } from "../i18n/fr-signals";
+import type { OutboxState } from "./outbox";
 
 export type ConversationItem =
-  | { kind: "user"; id: string; at: number; text: string }
+  | { kind: "user"; id: string; at: number; text: string; pending?: OutboxState }
   | { kind: "agent"; id: string; at: number; text: string }
   | { kind: "reading"; id: string; at: number; tools: string[] }
   | { kind: "batch"; id: string; at: number; batch: Batch; afterWakeup: boolean }

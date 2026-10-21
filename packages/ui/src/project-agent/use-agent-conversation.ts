@@ -1,4 +1,4 @@
-import type { ProjectSnapshot } from "@kibo/schema";
+import type { ProjectSnapshot, RunLogEntry } from "@kibo/schema";
 import { useEffect, useMemo, useState } from "react";
 import { useAgentList } from "../agents/catalog/use-agent-list";
 import { client } from "../api";
@@ -10,12 +10,15 @@ import { agentListItems } from "./agent-list";
 import type { Decision } from "./BatchCard";
 import { projectLabels } from "./batch-groups";
 import { buildConversation, lastUserMessage, type PanelStatus, panelStatus } from "./conversation";
+import { mergeOutbox } from "./outbox";
 import { useSignals } from "./signals/use-signals";
+import { useOutbox } from "./use-outbox";
 import { useProjectAgent } from "./use-project-agent";
 
 type Mode = { kind: "current" } | { kind: "past"; runId: string };
 
 const CURRENT: Mode = { kind: "current" };
+const NO_ENTRIES: RunLogEntry[] = [];
 
 export function useAgentConversation(project: ProjectSnapshot, open: boolean) {
   const host = useHost();
@@ -30,11 +33,16 @@ export function useAgentConversation(project: ProjectSnapshot, open: boolean) {
   const shown = mode.kind === "past" ? past : current;
   const view = shown.view;
   const readOnly = mode.kind === "past";
-  const { log } = useRunLog(view?.run?.id ?? view?.session?.runId ?? null);
-  const items = useMemo(
-    () => buildConversation(log ?? [], view?.batches ?? [], view?.run ?? null),
-    [log, view],
-  );
+  const log = useRunLog(view?.run?.id ?? view?.session?.runId ?? null).log ?? NO_ENTRIES;
+  const deliver = async (text: string) => {
+    await client.rpc({ method: "sendProjectAgentMessage", projectId, text });
+    current.reload();
+  };
+  const outbox = useOutbox(deliver, log);
+  const items = useMemo(() => {
+    const logged = buildConversation(log, view?.batches ?? [], view?.run ?? null);
+    return readOnly ? logged : mergeOutbox(logged, outbox.outbox);
+  }, [log, view, readOnly, outbox.outbox]);
   const agentList = useAgentList(projectId);
   const labels = useMemo(() => projectLabels(project, agentList.agents ?? []), [project, agentList.agents]);
   const runs = useAgentsState()?.runs;
@@ -49,10 +57,6 @@ export function useAgentConversation(project: ProjectSnapshot, open: boolean) {
   const status: PanelStatus = readOnly ? "ready" : panelStatus(view?.run ?? null, null);
   const agents = useMemo(() => (current.view ? agentListItems(current.view) : []), [current.view]);
 
-  const send = async (text: string) => {
-    await client.rpc({ method: "sendProjectAgentMessage", projectId, text });
-    current.reload();
-  };
   const decide = async (batchId: string, d: Decision) => {
     const batch = await client.rpc({ method: "decideBatch", projectId, batchId, ...d });
     current.reload();
@@ -64,8 +68,8 @@ export function useAgentConversation(project: ProjectSnapshot, open: boolean) {
     setMode(CURRENT);
   };
   const retry = () => {
-    const text = lastUserMessage(log ?? []);
-    if (text) void send(text).catch((e: unknown) => console.error(e));
+    const text = lastUserMessage(log);
+    if (text) outbox.send(text).catch((e: unknown) => console.error(e));
   };
   const openTicket = (key: string) => {
     const ticket = project.tickets.find((t) => t.key === key);
@@ -90,7 +94,8 @@ export function useAgentConversation(project: ProjectSnapshot, open: boolean) {
     hasSession: view?.session != null,
     openAgent,
     back: () => setMode(CURRENT),
-    send,
+    send: outbox.send,
+    resend: outbox.retry,
     decide,
     reset,
     retry,

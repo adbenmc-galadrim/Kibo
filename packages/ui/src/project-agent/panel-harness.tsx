@@ -16,6 +16,8 @@ export const harness = {
   past: viewFixture(),
   log: CONVERSATION_LOG as RunLogEntry[],
   signals: signalsView() as SignalsView,
+  send: null as ((req: RpcRequest) => Promise<unknown>) | null,
+  listeners: new Set<() => void>(),
 };
 
 const answer = (req: RpcRequest): Promise<unknown> => {
@@ -26,6 +28,7 @@ const answer = (req: RpcRequest): Promise<unknown> => {
   if (req.method === "resetProjectAgent") return Promise.resolve(emptyView());
   if (req.method === "agents.list") return Promise.resolve({ agents: [], notices: [], partialWatch: false });
   if (req.method === "skills.suggest") return Promise.resolve({ skills: [] });
+  if (req.method === "sendProjectAgentMessage" && harness.send) return harness.send(req);
   return Promise.resolve(projectRun({ state: "queued" }));
 };
 
@@ -37,7 +40,10 @@ export function mockPanelApi(): void {
           harness.calls.push(req);
           return answer(req);
         },
-        subscribeTopic: () => () => {},
+        subscribeTopic: (_topic: string, listener: () => void) => {
+          harness.listeners.add(listener);
+          return () => harness.listeners.delete(listener);
+        },
       },
     }),
   );
@@ -56,6 +62,11 @@ export function resetHarness(): void {
   });
   harness.log = CONVERSATION_LOG;
   harness.signals = signalsView();
+  harness.send = null;
+}
+
+export function emitTopic(): void {
+  for (const listener of harness.listeners) listener();
 }
 
 const host: Host = {
