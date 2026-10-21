@@ -58,8 +58,21 @@ jobs:
           MATRIX='{"os":"macos-latest","target":"aarch64-apple-darwin"},{"os":"ubuntu-22.04","target":"x86_64-unknown-linux-gnu"}'
           if [ "$SKIP_INTEL" != "true" ]; then MATRIX="$MATRIX,"'{"os":"macos-15-intel","target":"x86_64-apple-darwin"}'; fi
           echo "matrix={\"include\":[$MATRIX]}" >> "$GITHUB_OUTPUT"
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.2 }
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd packages/ui build
+      - uses: actions/upload-artifact@v5
+        with:
+          name: ui-dist
+          path: packages/ui/dist
+          if-no-files-found: error
   build:
-    needs: version
+    needs: [version, ui]
     permissions: { contents: write }
     strategy:
       fail-fast: false
@@ -73,11 +86,15 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with: { targets: "${{ matrix.target }}" }
       - uses: Swatinem/rust-cache@v2
-        with: { workspaces: apps/desktop/src-tauri }
+        with:
+          workspaces: apps/desktop/src-tauri
+          shared-key: release-${{ matrix.target }}
+          save-if: false
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev patchelf
       - run: bun install --frozen-lockfile
-      - run: bun run --cwd packages/ui build
+      - uses: actions/download-artifact@v5
+        with: { name: ui-dist, path: packages/ui/dist }
       - run: bun apps/desktop/scripts/build-sidecar.ts
       - run: bun apps/desktop/scripts/build-toolchain.ts
       - uses: tauri-apps/tauri-action@v0
