@@ -21,8 +21,8 @@ afterEach(() => {
   window.matchMedia = original;
 });
 
-function Probe({ open }: { open: boolean }) {
-  const { overlay } = usePanelDock(open, 340);
+function Probe({ open, cover = false }: { open: boolean; cover?: boolean }) {
+  const { overlay } = usePanelDock(open, cover ? 720 : 340, cover);
   return <span data-overlay={overlay} />;
 }
 
@@ -43,6 +43,14 @@ test("under 1180 px the panel covers the content without squeezing it; toasts st
   expect(container.querySelector("span")?.dataset.overlay).toBe("true");
   expect(root.getPropertyValue("--project-agent-w")).toBe("");
   expect(root.getPropertyValue("--project-agent-edge")).toBe("341px");
+});
+
+test("a panel that covers the page never squeezes it, even on a wide screen; toasts still avoid it", () => {
+  narrowScreen(false);
+  const { container } = render(<Probe open cover />);
+  expect(container.querySelector("span")?.dataset.overlay).toBe("true");
+  expect(root.getPropertyValue("--project-agent-w")).toBe("");
+  expect(root.getPropertyValue("--project-agent-edge")).toBe("721px");
 });
 
 test("a closed panel takes no room", () => {

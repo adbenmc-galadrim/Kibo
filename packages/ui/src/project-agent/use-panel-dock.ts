@@ -5,8 +5,8 @@ const DOCK_VAR = "--project-agent-w";
 const EDGE_VAR = "--project-agent-edge";
 const DOCK_RULE = 1;
 
-export function usePanelDock(open: boolean, width: number): { overlay: boolean } {
-  const overlay = useNarrowScreen();
+export function usePanelDock(open: boolean, width: number, cover = false): { overlay: boolean } {
+  const overlay = useNarrowScreen() || cover;
   const edge = `${width + DOCK_RULE}px`;
   useEffect(() => {
     if (!open) return;
