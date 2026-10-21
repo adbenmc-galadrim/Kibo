@@ -200,13 +200,13 @@ test("the sprint sheet carries the report of F5 to S43, and the batch turns part
   await expect(page.locator("[data-pending]")).toHaveText("2");
 });
 
-test("after the sprint sheet, the Suivi panel still offers the rest of the batch", async ({ page }) => {
+test("after the sprint sheet, the agent panel still offers the rest of the batch", async ({ page }) => {
   await openSiloPage(page, "Vue d'ensemble");
   await expect(page.locator("[data-pending]")).toHaveText("2");
   const panel = await openProjectAgent(page);
   const batch = panel.getByRole("region", { name: "Lot n° 7" });
   await expect(batch).toBeVisible();
-  await expect(batch.getByText("2 actions")).toBeVisible();
+  await expect(batch.getByRole("listitem").filter({ hasText: "Reporter F5" })).toContainText("Appliquée");
   await expect(batch.getByRole("checkbox")).toHaveCount(2);
   await expect(batch.getByRole("checkbox", { name: /Planifier F9/ })).toBeVisible();
   await expect(batch.getByRole("checkbox", { name: /Relancer le client sur Q14/ })).toBeVisible();
@@ -214,7 +214,7 @@ test("after the sprint sheet, the Suivi panel still offers the rest of the batch
   await expect(batch.getByRole("button", { name: "Valider (2)" })).toBeEnabled();
 });
 
-test("the Suivi panel applies the checked actions only, and Q14 is reminded", async ({ page }) => {
+test("the agent panel applies the checked actions only, and Q14 is reminded", async ({ page }) => {
   await openSiloPage(page, "Vue d'ensemble");
   const panel = await openProjectAgent(page);
   const batch = panel.getByRole("region", { name: "Lot n° 7" });
