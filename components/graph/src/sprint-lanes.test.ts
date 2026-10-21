@@ -112,6 +112,19 @@ test("frames stack by rank with 30 px between them", () => {
   expect(frame("F1").x).toBe(12);
 });
 
+test("a three-line title makes its frame 96 high and pushes the next one down", () => {
+  const tickets = kitTickets().map((t) =>
+    t.title === "Se connecter avec Microsoft"
+      ? { ...t, title: "Connexion, environnements et hébergement" }
+      : t,
+  );
+  const s41 = sprintLanes(kitInput({ tickets })).lanes[0]?.frames ?? [];
+  expect(s41.map((f) => [f.shortKey, f.titleLines, f.height, f.y])).toEqual([
+    ["F1", 3, 96, 70],
+    ["F2", 2, 81, 196],
+  ]);
+});
+
 test("edges link feature roots only, step links are counted", () => {
   const m = model();
   expect(m.features).toBe(9);

@@ -182,6 +182,24 @@ test("clicking a frame title or a step opens the ticket", async () => {
   expect(opened).toEqual(["SILO-40", "SILO-45"]);
 });
 
+test("a long title is clamped to its reserved lines inside the button", () => {
+  const title = "Connexion, environnements et hébergement";
+  const tickets = kitTickets().map((t) => (t.title === "Se connecter avec Microsoft" ? { ...t, title } : t));
+  render(
+    <SprintLanes
+      model={sprintLanes(kitInput({ tickets }))}
+      onOpen={() => undefined}
+      onNewFeature={() => undefined}
+    />,
+  );
+  const f1 = screen.getByRole("article", { name: `F1 ${title}` });
+  expect(f1.getAttribute("data-title-lines")).toBe("3");
+  expect(f1.style.height).toBe("96px");
+  const button = within(f1).getByRole("button", { name: title });
+  expect(button.getAttribute("title")).toBe(title);
+  expect(within(button).getByText(title).className).toContain("line-clamp-3");
+});
+
 const TESTS_STEP = "Envoyer les photos d'un constat · étape 4";
 
 async function withLiveRun(agentExecution: Execution) {

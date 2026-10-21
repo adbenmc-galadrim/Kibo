@@ -20,6 +20,7 @@ import {
   frameWidth,
   laneMargin,
   STACK_GAP,
+  type TitleLines,
   titleLines,
 } from "./frame-geometry";
 import { lanePhase, sprintStateLabel } from "./sprint-label";
@@ -55,7 +56,7 @@ export type LaneFrame = {
   segments: FrameSegment[];
   steps: LaneStep[];
   footer: FrameFooter | null;
-  titleLines: 1 | 2;
+  titleLines: TitleLines;
   x: number;
   y: number;
   width: number;
