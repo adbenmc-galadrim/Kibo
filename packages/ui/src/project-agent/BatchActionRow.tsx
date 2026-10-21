@@ -105,11 +105,11 @@ export function BatchActionRow(props: Props) {
       )}
       <div className="grid min-w-0 flex-1 gap-[3px]">
         {questionId === null ? (
-          <label htmlFor={selectable ? id : undefined} className="text-[13px] leading-[1.2] font-medium">
+          <label htmlFor={selectable ? id : undefined} className="text-[13px] leading-[16px] font-medium">
             {title}
           </label>
         ) : (
-          <p className="text-[13px] leading-[1.2] font-medium">
+          <p className="text-[13px] leading-[16px] font-medium">
             <QuestionText questionId={questionId} text={title} />
           </p>
         )}
@@ -124,7 +124,7 @@ export function BatchActionRow(props: Props) {
         ))}
         {run && <RunMention run={run} label={action.type === "cancelRun" ? t.run : t.lastRun} />}
         {action.why && (
-          <p className="text-xs text-(--tracking-mfg)" title={t.why}>
+          <p className="text-xs leading-[15px] text-(--tracking-mfg)" title={t.why}>
             {action.why}
           </p>
         )}
