@@ -90,3 +90,21 @@ test("Retour leaves a past agent for the current conversation; Fermer la liste c
   expect(await panel().findByRole("combobox", { name: "Message à l'agent de projet" })).toBeTruthy();
   expect(panel().queryByText(/^Ancien agent/)).toBeNull();
 });
+
+test("in the narrow panel the open list makes the conversation inert, and closing it gives focus back to its button", async () => {
+  show();
+  const user = userEvent.setup();
+  const toggle = await panel().findByRole("button", { name: "Liste des agents" });
+  const box = await panel().findByRole("combobox", { name: "Message à l'agent de projet" });
+  expect(box.closest("[inert]")).toBeNull();
+  await user.click(toggle);
+  expect(box.closest("[inert]")).not.toBeNull();
+  expect(panel().getByRole("navigation", { name: "Agents" }).closest("[inert]")).toBeNull();
+  await user.click(panel().getByRole("button", { name: "Fermer la liste" }));
+  expect(document.activeElement).toBe(toggle);
+  expect(box.closest("[inert]")).toBeNull();
+  await user.click(toggle);
+  await user.click(panel().getByRole("button", { name: /^Relances client/ }));
+  expect(await panel().findByText("Ancien agent · 2 oct. 10:05")).toBeTruthy();
+  expect(document.activeElement).toBe(panel().getByRole("button", { name: "Liste des agents" }));
+});

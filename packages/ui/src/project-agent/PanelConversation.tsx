@@ -6,11 +6,17 @@ import { NewAgentButton } from "./NewAgentButton";
 import { PastBanner } from "./PastBanner";
 import type { AgentConversation } from "./use-agent-conversation";
 
-type Props = { projectId: string; projectName: string; chat: AgentConversation; onNew(): void };
+type Props = {
+  projectId: string;
+  projectName: string;
+  chat: AgentConversation;
+  inert?: boolean;
+  onNew(): void;
+};
 
-export function PanelConversation({ projectId, projectName, chat, onNew }: Props) {
+export function PanelConversation({ projectId, projectName, chat, inert, onNew }: Props) {
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <div inert={inert} className="flex min-h-0 min-w-0 flex-1 flex-col">
       {chat.readOnly && chat.pastStartedAt !== null && (
         <PastBanner startedAt={chat.pastStartedAt} onBack={chat.back} />
       )}

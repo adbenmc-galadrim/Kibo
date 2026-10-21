@@ -1,7 +1,7 @@
 import type { ProjectSnapshot } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Sheet, SheetContent } from "@kibo/sdk/ui/sheet";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { keepLayerOnSkillEscape } from "../skill-complete/use-skill-complete";
 import { AgentList } from "./AgentList";
@@ -22,6 +22,7 @@ export function ProjectAgentPanel({ open, project, onClose }: Props) {
   const effectiveWidth = layout.wide ? WIDE_WIDTH : width;
   const { overlay } = usePanelDock(open, effectiveWidth, layout.wide);
   const [listOpen, setListOpen] = useState(false);
+  const listButton = useRef<HTMLButtonElement>(null);
   const [confirming, setConfirming] = useState(false);
   useEffect(() => {
     if (open) setListOpen(false);
@@ -34,8 +35,13 @@ export function ProjectAgentPanel({ open, project, onClose }: Props) {
     setListOpen(false);
     layout.setWide(!layout.wide);
   };
-  const openAgent = (runId: string) => {
+  const closeList = () => {
+    if (!listOpen) return;
     setListOpen(false);
+    listButton.current?.focus();
+  };
+  const openAgent = (runId: string) => {
+    closeList();
     chat.openAgent(runId);
   };
   const reset = async () => {
@@ -57,6 +63,7 @@ export function ProjectAgentPanel({ open, project, onClose }: Props) {
       projectId={project.meta.id}
       projectName={project.meta.name}
       chat={chat}
+      inert={!layout.wide && listOpen}
       onNew={() => setConfirming(true)}
     />
   );
@@ -79,6 +86,7 @@ export function ProjectAgentPanel({ open, project, onClose }: Props) {
           wide={layout.wide}
           listShown={listShown}
           canReset={chat.canReset}
+          listRef={listButton}
           onList={toggleList}
           onNew={() => setConfirming(true)}
           onWide={toggleWide}
@@ -103,9 +111,7 @@ export function ProjectAgentPanel({ open, project, onClose }: Props) {
           <div className="relative flex min-h-0 flex-1 flex-col">
             {conversation}
             {listOpen && (
-              <div className="absolute inset-0 z-10 flex flex-col bg-background">
-                {list(() => setListOpen(false))}
-              </div>
+              <div className="absolute inset-0 z-10 flex flex-col bg-background">{list(closeList)}</div>
             )}
           </div>
         )}

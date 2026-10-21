@@ -1,7 +1,7 @@
 import { Button } from "@kibo/sdk/ui/button";
 import { SheetDescription, SheetTitle } from "@kibo/sdk/ui/sheet";
 import { Bot, List, Maximize2, Minimize2, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
-import type { ReactNode } from "react";
+import type { ReactNode, Ref } from "react";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { HEADER_ICON, NewAgentButton } from "./NewAgentButton";
 
@@ -10,6 +10,7 @@ type Props = {
   wide: boolean;
   listShown: boolean;
   canReset: boolean;
+  listRef: Ref<HTMLButtonElement>;
   onList(): void;
   onNew(): void;
   onWide(): void;
@@ -21,16 +22,19 @@ const t = frProjectAgent.header;
 function IconButton({
   label,
   pressed,
+  buttonRef,
   onClick,
   children,
 }: {
   label: string;
   pressed?: boolean;
+  buttonRef?: Ref<HTMLButtonElement>;
   onClick(): void;
   children: ReactNode;
 }) {
   return (
     <Button
+      ref={buttonRef}
       variant="ghost"
       size="icon"
       className={HEADER_ICON}
@@ -43,10 +47,15 @@ function IconButton({
   );
 }
 
-function ListButton({ wide, listShown, onList }: Pick<Props, "wide" | "listShown" | "onList">) {
+function ListButton({
+  wide,
+  listShown,
+  listRef,
+  onList,
+}: Pick<Props, "wide" | "listShown" | "listRef" | "onList">) {
   if (!wide)
     return (
-      <IconButton label={t.list} pressed={listShown} onClick={onList}>
+      <IconButton label={t.list} pressed={listShown} buttonRef={listRef} onClick={onList}>
         <List />
       </IconButton>
     );
@@ -57,7 +66,17 @@ function ListButton({ wide, listShown, onList }: Pick<Props, "wide" | "listShown
   );
 }
 
-export function PanelHeader({ project, wide, listShown, canReset, onList, onNew, onWide, onClose }: Props) {
+export function PanelHeader({
+  project,
+  wide,
+  listShown,
+  canReset,
+  listRef,
+  onList,
+  onNew,
+  onWide,
+  onClose,
+}: Props) {
   return (
     <header className="flex h-[56px] shrink-0 items-center gap-[10px] border-b border-(--tracking-soft) pr-[10px] pl-[16px]">
       <span className="flex size-[28px] shrink-0 items-center justify-center rounded-full border border-(--tracking-brand-line) bg-(--tracking-brand-soft)">
@@ -68,7 +87,7 @@ export function PanelHeader({ project, wide, listShown, canReset, onList, onNew,
       </SheetTitle>
       <SheetDescription className="sr-only">{frProjectAgent.conversation.label}</SheetDescription>
       <div className="flex shrink-0 items-center gap-[2px]">
-        <ListButton wide={wide} listShown={listShown} onList={onList} />
+        <ListButton wide={wide} listShown={listShown} listRef={listRef} onList={onList} />
         <NewAgentButton variant="icon" canReset={canReset} onNew={onNew} />
         <IconButton label={wide ? t.shrink : t.expand} onClick={onWide}>
           {wide ? <Minimize2 /> : <Maximize2 />}
