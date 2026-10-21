@@ -2874,6 +2874,24 @@ Les boards touchés (P5b pour sa légende, et les boards « en attente » de la 
 
 **Décision du chef d'équipe (jalon, 2026-10-21)** : dans la conversation, la carte de lot suit la maquette validée par Adam (P1 bis v3, volet, agrandi) et non plus `BatchCard` telle quelle : en-tête « Lot n° N · n actions » sans résumé (le résumé répétait la réponse de l'agent juste au-dessus), une ligne cochable par action (titre, pourquoi), sans groupes « Sprints » / « Questions » ni « Tout décocher », puis « Valider (n) » et « Refuser » à gauche ; états appliquée / échouée / ignorée inchangés. Remplace sur ce point l'amendement du lead « BatchCard inchangée ». Aussi : ligne « Lu : … » sous la réponse de l'agent, bulle d'Adam à la largeur de la maquette.
 
+**Décision d'Adam (2026-10-21) : la ligne « Lu : … » nomme des objets, pas des outils.** La maquette montre « Lu : Planning, F5, journal des étapes » ; le code affichait « Lu : projet, questions state=open » (paramètre brut). La ligne nomme désormais, en français, l'objet lu par chaque outil de lecture de l'agent de projet (§24, §27), dans l'ordre des appels, sans doublon, **sans jamais afficher de paramètre brut** (`state=…`, `status=…`, chemin) :
+
+| Outil | Libellé |
+|---|---|
+| `project_overview` | « Vue d'ensemble » |
+| `list_sprints` | « Planning » (sprints et fonctionnalités, ce que montre la page Planning) |
+| `list_tickets` | « Tickets » (filtres ignorés) |
+| `get_ticket` | la clé courte de la fonctionnalité (« F5 »), sinon la clé du ticket (« SILO-45 ») |
+| `list_questions` | « questions ouvertes » (`state` absent ou `open`), « questions répondues », « questions archivées », « questions » (`all`) ; suivi de « de F5 » quand l'appel filtre un ticket |
+| `list_runs` | « runs des agents » |
+| `list_notes` | « notes » |
+| `read_note` | « note mémoire » pour la note mémoire, sinon « note » et le nom du fichier sans `.md` (« note plan ») |
+| `list_profiles` | « agents assignables » |
+| `project_changes` | « journal des étapes » |
+| `list_signals` | « signaux » |
+
+« Planning » et « journal des étapes » reprennent les mots de la maquette. Aucun outil ne lit le journal d'activité (`project_events`) lui-même : `project_changes` (ce qui a changé depuis le tour précédent, d'abord les étapes qui avancent) est le plus proche, il prend donc le libellé « journal des étapes » **(choix du chef d'équipe)**. `propose_batch` et les questions posées ne sont pas des lectures. Le scénario `silo-maquettes` lit `list_sprints`, `get_ticket SILO-30` (F5) et `project_changes` pour « Fais le point du jour » ⇒ « Lu : Planning, F5, journal des étapes ».
+
 ### 46.2 Volet agrandissable et liste des agents rétractable (proposition C)
 
 - **Étroit** (volet à droite, 380 px par défaut, 340 à 720) : en-tête « Agent de projet · <projet> », bouton « Liste des agents » (ouvre la liste par-dessus la conversation), « Nouvel agent » (+), « Agrandir », « Fermer ».
