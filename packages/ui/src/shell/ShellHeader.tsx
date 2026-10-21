@@ -14,7 +14,7 @@ type Props = {
   branch: string | null;
   gitError: string | null;
   agents: AgentsState | null;
-  agentPanel: { available: boolean; open: boolean; toggle(): void; show(tab: "signals"): void };
+  agentPanel: { available: boolean; open: boolean; toggle(): void; show(): void };
   notifications: Session["notifications"];
   now: number;
   onNewAgent: () => void;
@@ -64,7 +64,7 @@ export function ShellHeader({
           agents={agents}
           open={agentPanel.open}
           onToggle={agentPanel.toggle}
-          onOpenSignals={() => agentPanel.show("signals")}
+          onOpen={agentPanel.show}
         />
       )}
       <ExecutionGate>

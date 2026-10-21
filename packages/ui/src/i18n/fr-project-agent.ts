@@ -172,6 +172,7 @@ export const frProjectAgent = {
     provisional: "Choix provisoire",
   },
   button: "Agent de projet",
+  open: "Ouvrir l'agent de projet",
   buttonTitle: (shortcut: string) => `Agent de projet (${shortcut})`,
   pending: (n: number) => (n > 0 ? `${plural(n, "action")} à valider` : "Un lot attend ta validation"),
   resize: "Redimensionner le panneau",

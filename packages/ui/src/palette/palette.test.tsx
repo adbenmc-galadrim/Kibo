@@ -286,7 +286,7 @@ const paletteWithHost = (opened: unknown[]) => {
     openFile: noop,
     openView: noop,
     openTarget: noop,
-    openProjectAgent: (opts) => opened.push(opts),
+    openProjectAgent: () => opened.push("agent"),
   };
   render(
     <HostProvider host={host}>
@@ -309,7 +309,7 @@ test("⌘K « Agent de projet » opens the panel of the current project", async 
   const dialog = paletteWithHost(opened);
   await userEvent.type(dialog.getByRole("combobox"), "agent de projet");
   await userEvent.keyboard("{Enter}");
-  expect(opened).toEqual([{ tab: "conversation" }]);
+  expect(opened).toEqual(["agent"]);
 });
 
 test("⌘K « Copier /full-delivery KIB-12 » copies the command of the open ticket", async () => {

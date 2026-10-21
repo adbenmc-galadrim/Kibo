@@ -846,7 +846,7 @@ test("the signal badge of the header opens the project agent conversation", asyn
   await go("#/p/p1/");
   const user = userEvent.setup();
   expect(await screen.findByRole("button", { name: "Agent de projet · 3 signaux en boîte" })).toBeTruthy();
-  await user.click(screen.getByRole("button", { name: "Ouvrir la boîte à signaux" }));
+  await user.click(screen.getByRole("button", { name: "Ouvrir l'agent de projet" }));
   const panel = await screen.findByRole("dialog", { name: "Agent de projet · Kibo" });
   expect(within(panel).queryByRole("tab")).toBeNull();
 });

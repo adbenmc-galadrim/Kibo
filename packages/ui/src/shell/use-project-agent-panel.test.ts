@@ -21,19 +21,20 @@ afterEach(() => {
   window.matchMedia = realMatchMedia;
 });
 
-test("the badge opens the panel on Signaux, the button on Conversation", () => {
+test("show() opens the panel; there is no tab", () => {
   const { result } = renderHook(() => useProjectAgentPanel(kiboProject()));
-  act(() => result.current.show("signals"));
-  expect([result.current.open, result.current.tab]).toEqual([true, "signals"]);
+  expect("tab" in result.current).toBe(false);
+  act(() => result.current.show());
+  expect(result.current.open).toBe(true);
+  act(() => result.current.show());
+  expect(result.current.open).toBe(true);
   act(() => result.current.toggle());
   expect(result.current.open).toBe(false);
-  act(() => result.current.toggle());
-  expect([result.current.open, result.current.tab]).toEqual([true, "conversation"]);
 });
 
 test("a read-only project never opens the panel nor touches the preference", () => {
   const { result } = renderHook(() => useProjectAgentPanel(siloProject("read-only")));
-  act(() => result.current.show("signals"));
+  act(() => result.current.show());
   act(() => result.current.toggle());
   expect(result.current.open).toBe(false);
   expect(localStorage.getItem(PANEL_OPEN_KEY)).toBeNull();

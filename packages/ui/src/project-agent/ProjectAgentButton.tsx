@@ -10,7 +10,7 @@ type Props = {
   agents: AgentsState | null;
   open: boolean;
   onToggle(): void;
-  onOpenSignals(): void;
+  onOpen(): void;
 };
 
 const PENDING =
@@ -30,7 +30,7 @@ function buttonLabel(signals: number, batch: string | null, pending: number): st
     : `${frProjectAgent.button} · ${frProjectAgent.pending(pending)}`;
 }
 
-export function ProjectAgentButton({ projectId, agents, open, onToggle, onOpenSignals }: Props) {
+export function ProjectAgentButton({ projectId, agents, open, onToggle, onOpen }: Props) {
   const batch = pendingBatchId(agents, projectId);
   const pending = usePendingCount(projectId, batch);
   const signals = signalCount(agents, projectId);
@@ -51,9 +51,9 @@ export function ProjectAgentButton({ projectId, agents, open, onToggle, onOpenSi
         <button
           type="button"
           className="k-focus"
-          aria-label={frSignals.button.open}
+          aria-label={frProjectAgent.open}
           title={frSignals.button.signals(signals)}
-          onClick={onOpenSignals}
+          onClick={onOpen}
         >
           {signals}
         </button>

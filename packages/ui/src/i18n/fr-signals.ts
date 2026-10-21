@@ -16,7 +16,6 @@ export const frSignals = {
   },
   button: {
     signals: (n: number) => `${signals(n)} en boîte`,
-    open: "Ouvrir la boîte à signaux",
   },
   provenance: (kind: string, run: string) => `signal ${kind} de ${run}`,
   provenancePrefix: (kind: string) => `signal ${kind} de`,
