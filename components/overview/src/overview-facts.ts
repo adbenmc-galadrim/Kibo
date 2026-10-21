@@ -10,7 +10,7 @@ import {
   type TicketView,
   type TrackingSettings,
 } from "@kibo/schema";
-import { type CaseTone, caseTone } from "@kibo/sdk/tracking";
+import { type CaseTone, stepCaseTone } from "@kibo/sdk/tracking";
 import { fr } from "./fr";
 
 export type FeatureFacts = {
@@ -22,25 +22,27 @@ export type FeatureFacts = {
   rank: number;
   state: FeatureState;
   steps: FeatureStep[];
+  allSteps: FeatureStep[];
 };
 
 export function featureFacts(tickets: readonly TicketView[], links: readonly Link[]): FeatureFacts[] {
-  return tickets.flatMap((ticket, rank) =>
-    ticket.feature === null || ticket.parentId !== null
-      ? []
-      : [
-          {
-            id: ticket.id,
-            ticket,
-            shortKey: ticket.shortKey ?? ticket.keyLabel,
-            title: ticket.title,
-            sprintId: ticket.sprintId,
-            rank,
-            state: ticket.feature,
-            steps: featureSteps({ feature: ticket.id, tickets, links }).filter((s) => s.onHold === null),
-          },
-        ],
-  );
+  return tickets.flatMap((ticket, rank) => {
+    if (ticket.feature === null || ticket.parentId !== null) return [];
+    const allSteps = featureSteps({ feature: ticket.id, tickets, links });
+    return [
+      {
+        id: ticket.id,
+        ticket,
+        shortKey: ticket.shortKey ?? ticket.keyLabel,
+        title: ticket.title,
+        sprintId: ticket.sprintId,
+        rank,
+        state: ticket.feature,
+        steps: allSteps.filter((s) => s.onHold === null),
+        allSteps,
+      },
+    ];
+  });
 }
 
 export function rootOf(ticketId: string, byId: ReadonlyMap<string, TicketView>): TicketView | null {
@@ -68,9 +70,9 @@ export function blockingRefs(questions: readonly Question[]): Map<string, string
 }
 
 export const stepTone = (
-  step: Pick<FeatureStep, "ticketId" | "statusId">,
+  step: Pick<FeatureStep, "ticketId" | "statusId" | "onHold">,
   blocking: ReadonlyMap<string, string>,
-): CaseTone => caseTone({ statusId: step.statusId, blocked: blocking.has(step.ticketId), slipped: false });
+): CaseTone => stepCaseTone(step, blocking.has(step.ticketId));
 
 export const metaOf = (tracking: TrackingSettings | null): ProjectMeta => ({
   id: "",

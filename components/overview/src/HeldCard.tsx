@@ -12,7 +12,7 @@ function Row({ row, onOpen }: { row: HeldRow; onOpen(): void }) {
         className="group flex h-[38px] w-full cursor-pointer items-center gap-[10px] px-[16px] text-left"
         onClick={onOpen}
       >
-        <Pause absoluteStrokeWidth size={13} aria-hidden className="shrink-0 text-(--tracking-mfg)" />
+        <Pause absoluteStrokeWidth size={13} aria-hidden className="shrink-0 text-(--tracking-hold)" />
         <span className="min-w-0 flex-1 truncate font-medium text-(--tracking-fg) text-[13px] leading-[16px] group-hover:underline">
           {row.reason}
         </span>

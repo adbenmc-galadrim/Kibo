@@ -42,7 +42,7 @@ function HeldMark({ count }: { count: number }) {
     <span
       role="img"
       aria-label={fr.held.steps(count)}
-      className="flex shrink-0 items-center gap-[3px] pl-[6px] font-mono text-(--tracking-dim) text-[11.5px] leading-[14px]"
+      className="flex shrink-0 items-center gap-[3px] pl-[6px] font-mono text-(--tracking-hold) text-[11.5px] leading-[14px]"
     >
       <Pause absoluteStrokeWidth size={11} aria-hidden />
       {count}
@@ -69,7 +69,7 @@ function FeatureRow({ row, onOpen }: { row: SprintRow; onOpen(id: string): void 
         >
           {row.title}
         </button>
-        {row.state === "delivered" && row.held > 0 && <HeldMark count={row.held} />}
+        {row.held > 0 && <HeldMark count={row.held} />}
       </span>
       <span className="flex w-[86px] shrink-0 items-center">
         <StatePill state={row.state} risk={row.risk} />

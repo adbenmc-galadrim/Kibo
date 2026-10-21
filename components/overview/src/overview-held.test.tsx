@@ -51,7 +51,9 @@ test("the « En attente » card lists one line per reason, with its steps and th
   expect(m.viewRequests).toEqual([{ componentId: "planning", question: null }]);
 });
 
-test("a delivered feature with steps on hold says how many in the sprint card", async () => {
+const HOLD = "text-(--tracking-hold)";
+
+test("every feature with steps on hold says how many in the sprint card, in cyan", async () => {
   setup(true);
   const sprint = await screen.findByRole("region", { name: "Sprint S42 · Saisie hors ligne" });
   const row = (title: string) => {
@@ -61,9 +63,26 @@ test("a delivered feature with steps on hold says how many in the sprint card", 
   };
   const f4 = row("Saisir un constat hors ligne");
   expect(within(f4).getByText("livrée")).toBeTruthy();
-  expect(within(f4).getByRole("img", { name: "1 étape en attente" })).toBeTruthy();
+  expect(within(f4).getByRole("img", { name: "1 étape en attente" }).className).toContain(HOLD);
   const f5 = row("Envoyer les photos d'un constat");
-  expect(within(f5).queryByRole("img", { name: /en attente/ })).toBeNull();
+  expect(within(f5).getByRole("img", { name: "3 étapes en attente" }).className).toContain(HOLD);
+  const tones = Array.from(f5.querySelectorAll('[data-slot="segments"] > span')).map((s) =>
+    s.getAttribute("data-tone"),
+  );
+  expect(tones).toEqual(["done", "review", "hold", "hold", "hold"]);
+  expect(within(row("Réaffecter un box")).queryByRole("img", { name: /en attente/ })).toBeNull();
+});
+
+test("the held sub-line and the held rows wear the hold color", async () => {
+  setup(true);
+  const indicators = await screen.findByRole("region", { name: "Indicateurs du projet" });
+  expect(within(indicators).getByRole("button", { name: "3 en attente" }).className).toContain(HOLD);
+  const card = await screen.findByRole("region", { name: "En attente" });
+  const icons = within(card)
+    .getAllByRole("listitem")
+    .map((li) => li.querySelector("svg")?.getAttribute("class") ?? "");
+  expect(icons).toHaveLength(2);
+  for (const icon of icons) expect(icon).toContain(HOLD);
 });
 
 test("without any hold there is neither a sub-line nor a card", async () => {
