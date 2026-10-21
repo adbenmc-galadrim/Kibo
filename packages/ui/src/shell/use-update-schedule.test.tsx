@@ -2,7 +2,9 @@ import { expect, mock, test } from "bun:test";
 import { render, waitFor } from "@testing-library/react";
 
 const calls = { started: 0, stopped: 0 };
+const actual = await import("../updates/use-update");
 mock.module("../updates/use-update", () => ({
+  ...actual,
   startUpdateSchedule: () => {
     calls.started++;
     return () => calls.stopped++;
