@@ -2824,3 +2824,32 @@ Détail par tâche dans la section « Écarts » du plan `2026-10-20-kibo-phase-
 14. **Chargement** : `FrameFullscreen` n'est rendu et chargé qu'à l'ouverture ; `FrameFullscreen.tsx`, `LinkedFrame.tsx`, `use-design-thumbs.ts` et `lazy-fullscreen.ts` sont interdits à l'entrée.
 15. **E2E** : `serve.ts` compose `--integrations`, `--design` et `--embeds` en un seul `--test-origins` et un seul `--memory-secrets` ; le nœud `45:1` est servi par le faux Figma de tout démon `--design` ; `apercu-*` sur 4487 / 4488. La zone de contenu du pixel « apercu-maquette » est le visualiseur (y = 40), le dialogue couvrant la fenêtre.
 16. **P8f / P8g** : corps de la feuille remonté de 386 px (sombre) et 383 (clair) pour que la section touche le bas ; puce et « 100 % » en mono 11 ; P8f est comparée à l'œil.
+
+## 45. Phase 31 : cadres du Graphe sans débordement, étapes en attente visibles en couleur (demande d'Adam du 2026-10-21)
+
+**Demande** (verbatim) : « Fix ce probleme dans le graph [capture : cadre F1 « Socle, environnements et hébergement » replié, titre sur trois lignes, segments de progression coupés par la bordure basse]. De plus je veux pouvoir voir les etapes mise en pause dans la barre de progression et les tickets des fonctionnalités, choisis une couleur approprié, ne les cache pas ». Amende §38.7, §41 et §44.1.
+
+### 45.1 Débordement d'un cadre de fonctionnalité
+
+Cause : `titleLines` estime la largeur du titre en bloc et plafonne à deux lignes, alors que le navigateur coupe par mots ; `line-clamp-2` posé sur le `button` ne s'applique pas. Un titre qui tient sur trois lignes réelles pousse les segments sous la bordure du cadre, dont la hauteur est fixe.
+
+- Le nombre de lignes du titre est calculé **par mots** (retour à la ligne glouton sur la largeur intérieure, même table de glyphes), **plafonné à trois** ; la hauteur du cadre suit.
+- Le titre est coupé à ce plafond par un élément interne qui accepte `line-clamp` (le bouton l'enveloppe) ; le titre entier reste dans `title` et le nom accessible.
+- Propriété testée (fast-check) : pour tout titre et toute largeur, segments et dernière ligne tiennent dans le cadre.
+
+### 45.2 Couleur de l'attente
+
+Nouveau jeton **`--tracking-hold`** : cyan, `#0891b2` en clair, `#22d3ee` en sombre ; fond `--tracking-hold-soft` (`#ecfeff` / `#082f35`). Pourquoi le cyan : le rouge dit « bloqué », l'ambre « à corriger » et « à risque », l'orange est réservé aux agents, le bleu « en cours », le violet « en review », le vert « livré » ; le cyan est libre et se lit comme « gelé ». L'icône reste `Pause` (⏸).
+
+### 45.3 Les étapes en attente ne sont plus cachées
+
+Une étape en attente (propre ou par dépendance, §41) est **montrée à sa place**, en cyan, partout où une fonctionnalité affiche ses étapes ; les règles de calcul de §41 ne changent pas (livrée, à risque, en retard, démarrable : l'attente reste hors calcul ; compteur « n/m » sur les étapes hors attente).
+
+- **Barres de progression** (Graphe, fiche fonctionnalité, Vue d'ensemble, Accueil, Planning et toute autre barre d'étapes) : un segment cyan par étape en attente, dans l'ordre des étapes, au lieu de gris, de rouge ou de rien ; le texte qui suit la barre ajoute « · n en attente » s'il ne le dit pas déjà.
+- **Graphe, cadre** : point cyan et icône ⏸ cyan sur la ligne de l'étape, raison en infobulle ; une étape en attente par dépendance n'est plus rouge. Un cadre **livré avec des étapes en attente** n'est plus replié entièrement : il garde ses étapes en attente visibles (les étapes terminées restent repliées) ; l'en-tête ajoute « ⏸ n » en cyan après « n/m ».
+- **Fiche fonctionnalité** (groupe « En attente »), **Kanban** (puce ⏸), **Planning** (section « En attente ») et **Vue d'ensemble** (indicateur « En attente ») : icône et puce en cyan au lieu du gris.
+- Sombre et clair ; contraste AA du texte cyan sur `--tracking-bg` et `--tracking-card`.
+
+### 45.4 Maquettes et acceptation
+
+Les boards touchés (P5b, et les boards « en attente » de la phase 29) sont mis à jour dans Penpot en sombre et en clair **avant le code**, montrés à Adam ; le semis Silo du Graphe gagne une fonctionnalité livrée avec une étape en attente et un titre long sur trois lignes. Pixel ≤ 2 % sur l'écran entier, sans masque ajouté ; budget UI inchangé (exigence 224 000 octets gzip, plafond 230 000).
