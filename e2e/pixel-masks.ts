@@ -20,6 +20,7 @@ export const ATTENTE_SCREENS = [
   "attente-fonctionnalite",
   "attente-kanban",
   "attente-fiche-ticket",
+  "attente-graphe",
 ] as const;
 type AttenteScreen = (typeof ATTENTE_SCREENS)[number];
 export type MaskedScreen = OriginScreen | AttenteScreen;
@@ -30,6 +31,7 @@ export const ATTENTE_ORIGINS: Record<AttenteScreen, OriginScreen> = {
   "attente-fonctionnalite": "fonctionnalite",
   "attente-kanban": "kanban",
   "attente-fiche-ticket": "fiche-ticket",
+  "attente-graphe": "graphe",
 };
 
 export const MASK_COLOR = "#FF00FF";
@@ -57,6 +59,7 @@ export const PIXEL_HEIGHTS: Record<MaskedScreen, number> = {
   "attente-fonctionnalite": ORIGIN_HEIGHTS.fonctionnalite,
   "attente-kanban": ORIGIN_HEIGHTS.kanban,
   "attente-fiche-ticket": ORIGIN_HEIGHTS["fiche-ticket"],
+  "attente-graphe": ORIGIN_HEIGHTS.graphe,
 };
 
 const DIALOGS = {
@@ -197,6 +200,7 @@ export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
   "attente-fonctionnalite": ATTENTE_FEATURE_MASKS,
   "attente-kanban": ORIGIN_MASKS.kanban,
   "attente-fiche-ticket": ORIGIN_MASKS["fiche-ticket"],
+  "attente-graphe": ORIGIN_MASKS.graphe,
 };
 
 const isMaskedScreen = (screen: string): screen is MaskedScreen => Object.hasOwn(PIXEL_MASKS, screen);

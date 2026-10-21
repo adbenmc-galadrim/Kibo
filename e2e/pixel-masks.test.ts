@@ -35,6 +35,7 @@ test("every mask stays inside its screen and says why", () => {
     "attente-fonctionnalite",
     "attente-kanban",
     "attente-fiche-ticket",
+    "attente-graphe",
   ]);
   for (const screen of screens)
     for (const m of PIXEL_MASKS[screen]) {
@@ -98,6 +99,7 @@ test("each on-hold screen keeps the height, the masks and the dialog of the scre
     "attente-fonctionnalite": "fonctionnalite",
     "attente-kanban": "kanban",
     "attente-fiche-ticket": "fiche-ticket",
+    "attente-graphe": "graphe",
   });
   for (const screen of ATTENTE_SCREENS) {
     const origin = ATTENTE_ORIGINS[screen];
@@ -150,4 +152,10 @@ test("the full-screen mockup compares against P8g on 1000 px, without a single m
   expect(referenceOf("apercu-maquette")).toBe("apercu-maquette");
   expect(PIXEL_HEIGHTS["apercu-maquette"]).toBe(1000);
   expect(PIXEL_MASKS["apercu-maquette"]).toEqual([]);
+});
+
+test("the Graphe on hold compares against its own board on 1000 px, with the masks of the Graphe", () => {
+  expect(PIXEL_HEIGHTS["attente-graphe"]).toBe(1000);
+  expect(masksOf("attente-graphe")).toEqual(PIXEL_MASKS.graphe);
+  expect(referenceOf("attente-graphe")).toBe("attente-graphe");
 });

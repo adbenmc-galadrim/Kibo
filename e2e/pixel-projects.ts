@@ -6,6 +6,7 @@ import {
   REFERENCES_TEMPLATE,
   SILO_APERCU,
   SILO_ATTENTE,
+  SILO_GRAPHE,
   SILO_MAQUETTES,
   SILO_PRS,
 } from "./pixel-settings";
@@ -18,7 +19,10 @@ const PRS_DARK_PORT = 4485;
 const PRS_LIGHT_PORT = 4486;
 const APERCU_DARK_PORT = 4487;
 const APERCU_LIGHT_PORT = 4488;
+const GRAPHE_DARK_PORT = 4489;
+const GRAPHE_LIGHT_PORT = 4490;
 const APERCU_PIXEL_SPEC = /pixel-apercu\.spec\.ts$/;
+const GRAPHE_PIXEL_SPEC = /pixel-graphe-attente\.spec\.ts$/;
 const PRS_PIXEL_SPEC = /pixel-prs\.spec\.ts$/;
 const PRS_SPEC = /\/prs\.spec\.ts$/;
 const ATTENTE_PIXEL_SPEC = /pixel-attente\.spec\.ts$/;
@@ -88,7 +92,23 @@ export const APERCU_DAEMONS = [
   },
 ] as const;
 
-export const SCENARIO_DAEMONS = [...ATTENTE_DAEMONS, ...PRS_DAEMONS, ...APERCU_DAEMONS] as const;
+export const GRAPHE_DAEMONS = [
+  { name: "graphe-dark", scheme: "dark", port: GRAPHE_DARK_PORT, scenario: SILO_GRAPHE, integrations: true },
+  {
+    name: "graphe-light",
+    scheme: "light",
+    port: GRAPHE_LIGHT_PORT,
+    scenario: SILO_GRAPHE,
+    integrations: true,
+  },
+] as const;
+
+export const SCENARIO_DAEMONS = [
+  ...ATTENTE_DAEMONS,
+  ...PRS_DAEMONS,
+  ...APERCU_DAEMONS,
+  ...GRAPHE_DAEMONS,
+] as const;
 
 const screenshotOptions = (sources: string): Partial<Project> => ({
   snapshotPathTemplate: REFERENCES_TEMPLATE,
@@ -175,8 +195,12 @@ export const prsProjects = (scheme: Scheme): Project[] =>
 export const apercuProjects = (scheme: Scheme): Project[] =>
   scenarioProjects(APERCU_DAEMONS, { prefix: "apercu", pixel: APERCU_PIXEL_SPEC }, scheme);
 
+export const grapheProjects = (scheme: Scheme): Project[] =>
+  scenarioProjects(GRAPHE_DAEMONS, { prefix: "graphe", pixel: GRAPHE_PIXEL_SPEC }, scheme);
+
 export const scenarioProjectsOf = (scheme: Scheme): Project[] => [
   ...attenteProjects(scheme),
   ...prsProjects(scheme),
   ...apercuProjects(scheme),
+  ...grapheProjects(scheme),
 ];

@@ -32,6 +32,17 @@ test("the on-hold scenario is seeded", async ({ page }, info) => {
   expect(await onHoldOf(page, silo, "SILO-34")).toMatchObject({ source: "dependency", key: "SILO-33" });
 });
 
+test("the Graphe shows the held steps in cyan and keeps F4 half-folded", async ({ page }) => {
+  await openAttentePage(page, "Graphe");
+  const f4 = page.getByRole("article", { name: /^F4 / });
+  await expect(f4.getByRole("listitem")).toHaveCount(1);
+  await expect(f4.getByRole("img", { name: "1 en attente" })).toBeVisible();
+  await expect.poll(() => f4.locator('[data-tone="hold"]').count()).toBeGreaterThanOrEqual(2);
+  const f5 = page.getByRole("article", { name: /^F5 / });
+  await expect(f5.getByRole("img", { name: "En attente de SILO-33" })).toHaveCount(2);
+  await expect(f5.getByRole("img", { name: `En attente : ${MINIO}` })).toBeVisible();
+});
+
 test("SILO-82 resumes from its banner, and the activity says « Reprise »", async ({ page }) => {
   const main = await openTicketByKey(page, silo, "SILO-82");
   const banner = main.getByRole("status", { name: "Étape en attente" });
