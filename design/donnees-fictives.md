@@ -684,6 +684,35 @@ Maquette : board « P5b · Graphe · en attente » de la page « Proposition » 
 - Restent gris : bandeau « En attente · … » de la fiche SILO-45 (230), événements « Mise en attente » de l'Activité, menus et
   dialogue (231 à 231d).
 
+### Phase 31 · Agent de projet en conversation
+
+Spec §46 : le volet de l'agent de projet ne montre plus que la conversation de l'agent choisi. Maquettes : boards « P1 bis · Agent
+agrandi », « Agent de projet, volet » et « Agent de projet, agrandi, liste rétractée » de la page « Proposition »
+(`design/redesign/scripts/59d-agent-conversation.js`), et le volet redessiné de P1 bis v3, « En retard », P6 et « en attente ».
+
+Conversation de l'agent en cours, vendredi 16 octobre (volet au repos, l'état « L'agent lit le projet… » n'est pas montré) :
+- Bulle d'Adam, à droite : « Fais le point du jour », heure « 14:38 ».
+- Réponse de l'agent : « F3 est livrée : 3 fonctionnalités sur 9. » puis « S42 finit ce soir et F5 n'y tiendra pas : il lui reste
+  4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. »
+- Ligne de lecture : « Lu : Planning, F5, journal des étapes ».
+- Lot n° 7, « 3 actions » (les trois actions de « Suivi et agent de projet »), « Valider (3) » et « Refuser ».
+- Saisie : « Écris à l'agent de projet… ».
+
+En-tête : « Agent de projet · Silo », boutons « Liste des agents », « Nouvel agent », « Agrandir », « Fermer ».
+
+Liste des agents (agent en cours en tête, puis les anciens du plus récent au plus ancien) :
+
+| Agent | Date | Messages | État |
+|---|---|---|---|
+| Fais le point du jour | 14:38 | 4 messages | en cours |
+| Point de sprint S41 | 9 oct. | 6 messages | |
+| Relances client | 2 oct. | 3 messages | |
+
+Un agent commencé le jour même montre son heure de début (« 14:38 »), les autres leur date. « + Nouvel agent » en tête de la
+liste. Les deux anciens agents remplacent « Session du 6 octobre » et « Session du 29 septembre »
+de la phase 18 (désormais nommés par leur première question). Agrandi : volet de 720 px, liste de 210 px, colonne de lecture de
+520 px ; en étroit (340 px), la liste s'ouvre par-dessus la conversation (titre « Agents », bouton « Fermer la liste »).
+
 ### Pistes A, B, C (`design/redesign/scripts/02-data.js`)
 
 Ce jeu est indépendant de celui des fonctionnalités : les mêmes numéros de tickets y portent d'autres titres et d'autres statuts.
