@@ -43,7 +43,7 @@ S.D = {
   activity: [
     { t: "15:04", src: "git", icon: "pr", color: "purple", text: "PR #22 ouverte", tk: "SILO-32", set: "C4", res: "En review", day: "Aujourd'hui" },
     { t: "14:51", src: "step", icon: "flag", text: "Étape 7 · Porte qualité", tk: "SILO-33", set: "C4", day: "Aujourd'hui" },
-    { t: "14:40", src: "agent", icon: "bot", text: "Suivi mis à jour · lot n° 6 proposé", tk: null, day: "Aujourd'hui" },
+    { t: "14:40", src: "agent", icon: "bot", text: "Agent de projet · lot n° 6 proposé", tk: null, day: "Aujourd'hui" },
     { t: "14:36", src: "git", icon: "merge", color: "green", text: "PR #18 fusionnée dans dev", tk: "SILO-21", set: "C2", res: "Terminé", day: "Aujourd'hui" },
     { t: "14:20", src: "git", icon: "branch", color: "blue", text: "Branche feat/perimetre-404 poussée", tk: "SILO-23", set: "C2", res: "En cours", day: "Aujourd'hui" },
     { t: "13:47", src: "step", icon: "flag", text: "Étape 9 · Review · 2 commentaires à traiter", tk: "SILO-22", set: "C2", day: "Aujourd'hui" },

@@ -240,7 +240,7 @@ Exports : `exports/proposition-vue-ensemble-v2-dark.png` et `exports/proposition
 135. « SILO-33 » (x 643, y 1114,5)
 136. « F5 » (x 722, y 1114,5)
 137. « 14:40 » (x 281, y 1153,5)
-138. « Suivi mis à jour · lot n° 7 proposé » (x 355, y 1153)
+138. « Agent de projet · lot n° 7 proposé » (x 355, y 1153)
 139. « Agent de projet » (x 658, y 1153,5)
 140. « 14:36 » (x 281, y 1192,5)
 141. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
@@ -759,7 +759,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                   - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1153,5, 36 × 15
                 - icône `bot` 14 px, `brand` — x 331, y 1154, 14 × 14
                 - **box** (bloc) · x 355, y 1153, 268 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-                  - « Suivi mis à jour · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1153, 192 × 16
+                  - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1153, 194 × 16
                 - **box** (bloc) · x 633, y 1153,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
                   - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 658, y 1153,5, 85 × 15
               - **line** (bloc) · x 265, y 1180, 494 × 1 · fond `soft` · dimension remplit/fixe
@@ -3087,7 +3087,7 @@ Exports : `exports/proposition-vue-ensemble-v3-dark.png` et `exports/proposition
 136. « SILO-33 » (x 643, y 1115)
 137. « F5 » (x 722, y 1115)
 138. « 14:40 » (x 281, y 1154)
-139. « Suivi mis à jour · lot n° 7 proposé » (x 355, y 1153)
+139. « Agent de projet · lot n° 7 proposé » (x 355, y 1153)
 140. « Agent de projet » (x 658, y 1153,5)
 141. « 14:36 » (x 281, y 1193)
 142. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
@@ -3601,7 +3601,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                   - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1154, 37 × 14
                 - icône `bot` 14 px, `brand` — x 331, y 1154, 14 × 14
                 - **box** (bloc) · x 355, y 1153, 268 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-                  - « Suivi mis à jour · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1153, 192 × 16
+                  - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1153, 194 × 16
                 - **box** (bloc) · x 633, y 1153,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
                   - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 658, y 1153,5, 85 × 15
               - **line** (bloc) · x 265, y 1180, 494 × 1 · fond `soft` · dimension remplit/fixe
@@ -3920,7 +3920,7 @@ Exports : `exports/proposition-vue-ensemble-v3-retard-dark.png` et `exports/prop
 146. « SILO-33 » (x 643, y 1211,5)
 147. « F5 » (x 722, y 1211,5)
 148. « 14:40 » (x 281, y 1250,5)
-149. « Suivi mis à jour · lot n° 7 proposé » (x 355, y 1250)
+149. « Agent de projet · lot n° 7 proposé » (x 355, y 1250)
 150. « Agent de projet » (x 658, y 1250,5)
 151. « 14:36 » (x 281, y 1289,5)
 152. « PR #18 fusionnée · F3 livrée » (x 355, y 1289)
@@ -4461,7 +4461,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                   - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1250,5, 36 × 15
                 - icône `bot` 14 px, `brand` — x 331, y 1251, 14 × 14
                 - **box** (bloc) · x 355, y 1250, 268 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-                  - « Suivi mis à jour · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1250, 192 × 16
+                  - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1250, 194 × 16
                 - **box** (bloc) · x 633, y 1250,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
                   - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 658, y 1250,5, 85 × 15
               - **line** (bloc) · x 265, y 1277, 494 × 1 · fond `soft` · dimension remplit/fixe
@@ -5079,7 +5079,7 @@ Exports : `exports/proposition-nouveau-projet-dark.png` et `exports/proposition-
 136. « SILO-33 » (x 643, y 1115)
 137. « F5 » (x 722, y 1115)
 138. « 14:40 » (x 281, y 1154)
-139. « Suivi mis à jour · lot n° 7 proposé » (x 355, y 1153)
+139. « Agent de projet · lot n° 7 proposé » (x 355, y 1153)
 140. « Agent de projet » (x 658, y 1153,5)
 141. « 14:36 » (x 281, y 1193)
 142. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
@@ -5629,7 +5629,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                   - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1154, 37 × 14
                 - icône `bot` 14 px, `brand` — x 331, y 1154, 14 × 14
                 - **box** (bloc) · x 355, y 1153, 268 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-                  - « Suivi mis à jour · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1153, 192 × 16
+                  - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1153, 194 × 16
                 - **box** (bloc) · x 633, y 1153,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
                   - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 658, y 1153,5, 85 × 15
               - **line** (bloc) · x 265, y 1180, 494 × 1 · fond `soft` · dimension remplit/fixe
@@ -18065,7 +18065,7 @@ Exports : `exports/proposition-agent-agrandi-dark.png` et `exports/proposition-a
 136. « SILO-33 » (x 984, y 1114,5)
 137. « F5 » (x 1063, y 1114,5)
 138. « 14:40 » (x 281, y 1154)
-139. « Suivi mis à jour · lot n° 7 proposé » (x 355, y 1153)
+139. « Agent de projet · lot n° 7 proposé » (x 355, y 1153)
 140. « Agent de projet » (x 999, y 1153,5)
 141. « 14:36 » (x 281, y 1193)
 142. « PR #18 fusionnée · F3 livrée » (x 355, y 1192)
@@ -18587,7 +18587,7 @@ Coordonnées relatives au coin haut gauche de l'écran, en px. Couleurs en token
                   - « 14:40 » — Geist Mono 12 / 400, interligne 1,2, couleur `mfg` — x 281, y 1154, 37 × 14
                 - icône `bot` 14 px, `brand` — x 331, y 1154, 14 × 14
                 - **box** (bloc) · x 355, y 1153, 609 × 16 · flex ligne, espacement 0, marges internes 0, alignement center/start · dimension remplit/auto
-                  - « Suivi mis à jour · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1153, 192 × 16
+                  - « Agent de projet · lot n° 7 proposé » — Geist 13 / 400, interligne 1,2, couleur `brandText` — x 355, y 1153, 194 × 16
                 - **box** (bloc) · x 974, y 1153,5, 110 × 15 · flex ligne, espacement 6, marges internes 0, alignement center/end · dimension fixe/auto
                   - « Agent de projet » — Geist 12 / 400, interligne 1,2, couleur `brandText` — x 999, y 1153,5, 85 × 15
               - **line** (bloc) · x 265, y 1180, 835 × 1 · fond `soft` · dimension remplit/fixe

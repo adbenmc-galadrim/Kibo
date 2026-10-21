@@ -49,7 +49,7 @@ S.P = {
   activity: [
     { t: "15:04", icon: "pr", color: "purple", text: "PR #22 ouverte", tk: "SILO-32", f: "F5", res: "En review" },
     { t: "14:51", icon: "flag", text: "Étape 7 · Porte qualité", tk: "SILO-33", f: "F5" },
-    { t: "14:40", src: "agent", icon: "bot", text: "Suivi mis à jour · lot n° 7 proposé" },
+    { t: "14:40", src: "agent", icon: "bot", text: "Agent de projet · lot n° 7 proposé" },
     { t: "14:36", icon: "merge", color: "green", text: "PR #18 fusionnée · F3 livrée", tk: "SILO-21", f: "F3", res: "Terminé" },
     { t: "13:47", icon: "pr", color: "amber", text: "Changements demandés sur PR #20", tk: "SILO-45", f: "F4" },
     { t: "11:58", icon: "circleX", color: "red", text: "CI rouge sur PR #20", tk: "SILO-45", f: "F4" } ],
