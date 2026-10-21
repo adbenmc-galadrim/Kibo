@@ -238,6 +238,8 @@ export function partialBatch(): Batch {
   });
 }
 
+export const PAST_STARTED_AT = new Date(2026, 9, 2, 10, 5).getTime();
+
 export const session = (p: Partial<ProjectAgentSessionView> = {}): ProjectAgentSessionView => ({
   projectId: "silo",
   runId: "pa1",
@@ -252,15 +254,18 @@ export const session = (p: Partial<ProjectAgentSessionView> = {}): ProjectAgentS
 
 export function viewFixture(p: Partial<ProjectAgentView> = {}): ProjectAgentView {
   return {
-    session: session(),
+    session: session({ title: "Fais le point du jour", messages: 2 }),
     run: projectRun({ state: "failed" }),
     batches: [pendingBatch()],
     past: [
       session({
-        runId: "pa0",
-        sessionId: "s-pa0",
-        startedAt: NOW - 3 * 24 * 60 * MIN,
-        closedAt: NOW - 2 * 24 * 60 * MIN,
+        runId: "r1",
+        sessionId: "s-r1",
+        title: "Relances client",
+        messages: 3,
+        startedAt: PAST_STARTED_AT,
+        closedAt: PAST_STARTED_AT + 60 * MIN,
+        lastTurnAt: PAST_STARTED_AT + 30 * MIN,
       }),
     ],
     memoryPath: MEMORY_NOTE_PATH,

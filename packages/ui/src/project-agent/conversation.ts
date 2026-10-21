@@ -11,7 +11,6 @@ import {
 import { errorText } from "../agents/format";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { frSignals } from "../i18n/fr-signals";
-import { relativeTime } from "../lib/relative-time";
 
 export type ConversationItem =
   | { kind: "user"; id: string; at: number; text: string }
@@ -246,11 +245,4 @@ export function panelStatus(run: RunView | null, pending: Batch | null): PanelSt
   if (run?.state === "queued") return "queued";
   if (run?.state === "starting" || run?.state === "running") return "thinking";
   return "ready";
-}
-
-const BUSY: ReadonlySet<PanelStatus> = new Set(["thinking", "queued"]);
-
-export function headerLine(status: PanelStatus, lastTurnAt: number | null, now = Date.now()): string {
-  if (BUSY.has(status) || lastTurnAt === null) return frProjectAgent.status[status];
-  return frProjectAgent.tracking.upToDate(relativeTime(lastTurnAt, now));
 }

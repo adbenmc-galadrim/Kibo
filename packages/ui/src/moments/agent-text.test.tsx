@@ -70,6 +70,7 @@ test("the project agent chat shows tables with ticket keys that open the ticket"
   const { container } = render(
     <ConversationView
       items={[{ kind: "agent", id: "a", at: 0, text: TABLE }]}
+      status="ready"
       readOnly={false}
       labels={LABELS}
       signals={[]}

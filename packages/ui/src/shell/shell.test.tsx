@@ -840,7 +840,7 @@ test("the project agent docks beside the content under the tab bar, its button s
   restore();
 });
 
-test("the signal badge of the header opens the project agent on its signal box", async () => {
+test("the signal badge of the header opens the project agent conversation", async () => {
   agents = { ...agentsFixture(), signals: [{ projectId: "p1", open: 3, unread: 3 }] };
   renderShell();
   await go("#/p/p1/");
@@ -848,6 +848,5 @@ test("the signal badge of the header opens the project agent on its signal box",
   expect(await screen.findByRole("button", { name: "Agent de projet · 3 signaux en boîte" })).toBeTruthy();
   await user.click(screen.getByRole("button", { name: "Ouvrir la boîte à signaux" }));
   const panel = await screen.findByRole("dialog", { name: "Agent de projet · Kibo" });
-  const tab = within(panel).getByRole("tab", { name: /^Signaux/ });
-  expect(tab.getAttribute("aria-selected")).toBe("true");
+  expect(within(panel).queryByRole("tab")).toBeNull();
 });

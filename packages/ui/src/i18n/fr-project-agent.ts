@@ -60,6 +60,7 @@ export const frProjectAgent = {
   titleSuffix: (project: string) => ` · ${project}`,
   close: "Fermer le panneau",
   header: {
+    title: (project: string) => `Agent de projet · ${project}`,
     list: "Liste des agents",
     showList: "Afficher la liste",
     hideList: "Masquer la liste",
@@ -140,7 +141,7 @@ export const frProjectAgent = {
   reset: {
     title: "Nouvel agent de projet ?",
     description:
-      "La conversation actuelle est fermée et reste lisible dans « Anciens agents ». Un lot en attente est abandonné. La note mémoire est gardée.",
+      "La conversation actuelle est fermée et reste lisible dans la liste des agents. Un lot en attente est abandonné. La note mémoire est gardée.",
     confirm: "Nouvel agent",
     cancel: "Annuler",
   },
@@ -148,7 +149,7 @@ export const frProjectAgent = {
     title: "Anciens agents",
     empty: "Aucun ancien agent pour ce projet.",
     item: (date: string) => `Session du ${date}`,
-    banner: "Ancien agent · lecture seule",
+    banner: (date: string) => `Ancien agent · ${date}`,
     back: "Retour",
   },
   compose: {

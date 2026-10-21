@@ -1,31 +1,29 @@
 import { PROJECT_AGENT_REF } from "@kibo/schema";
-import { Button } from "@kibo/sdk/ui/button";
+import { cn } from "@kibo/sdk/lib/utils";
 import { Textarea } from "@kibo/sdk/ui/textarea";
-import { Send, SendHorizontal } from "lucide-react";
+import { Send } from "lucide-react";
 import { type KeyboardEvent, useId, useState } from "react";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { useSkillComplete } from "../skill-complete/use-skill-complete";
+import { READING_COLUMN } from "./reading-column";
 
 type Props = {
   projectId: string;
   placeholder: string;
-  compact?: boolean;
   onSend(text: string): Promise<void>;
 };
 
 const t = frProjectAgent.compose;
 
-const COMPACT_BOX =
-  "flex h-[42px] items-center gap-[8px] rounded-[8px] border border-(--tracking-border) bg-(--tracking-bg) px-[12px]";
-const COMPACT_INPUT =
+const BOX =
+  "relative flex h-[42px] items-center gap-[8px] rounded-[8px] border border-(--tracking-border) bg-(--tracking-bg) px-[12px]";
+const INPUT =
   "h-auto min-h-0 flex-1 resize-none border-0 bg-transparent p-0 text-[13px] leading-[1.2] shadow-none placeholder:text-(--tracking-mfg) focus-visible:ring-0 dark:bg-transparent";
 
-const sendKey = (
-  e: { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean },
-  compact: boolean,
-) => e.key === "Enter" && (e.metaKey || e.ctrlKey || (compact && !e.shiftKey));
+const sendKey = (e: { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }) =>
+  e.key === "Enter" && (e.metaKey || e.ctrlKey || !e.shiftKey);
 
-export function ComposeBox({ projectId, placeholder, compact = false, onSend }: Props) {
+export function ComposeBox({ projectId, placeholder, onSend }: Props) {
   const id = useId();
   const [text, setText] = useState("");
   const complete = useSkillComplete({
@@ -55,26 +53,20 @@ export function ComposeBox({ projectId, placeholder, compact = false, onSend }: 
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     complete.inputProps.onKeyDown(e);
-    if (e.defaultPrevented || !sendKey(e, compact)) return;
+    if (e.defaultPrevented || !sendKey(e)) return;
     e.preventDefault();
     void send();
   };
 
-  const alert = error && (
-    <p role="alert" className="text-xs text-destructive">
-      {error}
-    </p>
-  );
-
-  if (compact)
-    return (
-      <div className="grid gap-2 border-t border-(--tracking-soft) px-[18px] py-[14px]">
-        <div className={`relative ${COMPACT_BOX}`}>
+  return (
+    <div className="shrink-0 border-t border-(--tracking-soft) px-[18px] py-[14px]">
+      <div className={cn(READING_COLUMN, "grid gap-2")}>
+        <div className={BOX}>
           <Textarea
             id={id}
             rows={1}
             aria-label={t.label}
-            className={COMPACT_INPUT}
+            className={INPUT}
             placeholder={placeholder}
             {...complete.inputProps}
             onKeyDown={onKeyDown}
@@ -90,36 +82,12 @@ export function ComposeBox({ projectId, placeholder, compact = false, onSend }: 
           </button>
           {complete.list}
         </div>
-        {alert}
+        {error && (
+          <p role="alert" className="text-xs text-destructive">
+            {error}
+          </p>
+        )}
       </div>
-    );
-
-  return (
-    <div className="grid gap-2 border-t p-3">
-      <div className="relative">
-        <Textarea
-          id={id}
-          aria-label={t.label}
-          className="max-h-48 min-h-20 resize-none text-sm"
-          placeholder={placeholder}
-          {...complete.inputProps}
-          onKeyDown={onKeyDown}
-        />
-        {complete.list}
-      </div>
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-2xs text-muted-foreground">{t.hint}</span>
-        <Button
-          size="sm"
-          className="h-7 bg-brand-strong text-white hover:bg-brand-strong/90"
-          disabled={!ready}
-          onClick={() => void send()}
-        >
-          <SendHorizontal />
-          {t.send}
-        </Button>
-      </div>
-      {alert}
     </div>
   );
 }

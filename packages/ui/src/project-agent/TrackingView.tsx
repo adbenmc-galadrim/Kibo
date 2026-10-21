@@ -136,7 +136,7 @@ export function TrackingView({
           </p>
         </div>
       </div>
-      <ComposeBox projectId={projectId} placeholder={t.ask} compact onSend={onSend} />
+      <ComposeBox projectId={projectId} placeholder={t.ask} onSend={onSend} />
     </div>
   );
 }

@@ -13,7 +13,7 @@ export type AgentListItem = {
 const t = frProjectAgent.list;
 const DAY = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
 
-const shortDay = (at: number): string => DAY.format(at);
+export const shortDay = (at: number): string => DAY.format(at);
 
 const sameDay = (a: number, b: number): boolean => new Date(a).toDateString() === new Date(b).toDateString();
 
