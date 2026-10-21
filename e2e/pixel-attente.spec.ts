@@ -11,7 +11,7 @@ import {
   settlePointer,
 } from "./pixel-screen";
 import { PIXEL_WIDTH } from "./pixel-settings";
-import { siloComponentUrl, siloFeatureUrl, siloPageUrl } from "./pixel-silo";
+import { openSiloOverviewAgent, siloComponentUrl, siloFeatureUrl, siloPageUrl } from "./pixel-silo";
 
 const OUT = screensDir(ATTENTE_SCREENS_DIR);
 const DROP_INSET_X = 40;
@@ -58,11 +58,7 @@ test("the Vue d'ensemble of Silo with three steps on hold matches the mockup on 
 }) => {
   const height = PIXEL_HEIGHTS["attente-vue-ensemble"];
   await page.setViewportSize({ width: PIXEL_WIDTH, height });
-  await pairBrowser(page);
-  await openPixelPage(page, await siloPageUrl(page, "Vue d'ensemble"), height);
-  await expect(page.getByText("2 sessions T3 Code")).toBeVisible();
-  await page.getByRole("button", { name: /^Agent de projet/ }).click();
-  await expect(page.getByRole("region", { name: "Lot n° 7" })).toBeVisible();
+  await openSiloOverviewAgent(page, height);
   await expect(page.getByText("3 en attente", { exact: true })).toBeVisible();
   await expect(page.getByText("Étape suivante")).toHaveCount(0);
   await settlePointer(page, height);

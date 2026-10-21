@@ -210,6 +210,10 @@ test("only the Graphe on hold pixel projects pick its spec, and they pick no oth
   expect(owners("/e2e/attente.spec.ts")).toEqual(["attente-dark", "attente-light"]);
 });
 
+test("the widened agent is measured by the pixel daemons alone", () => {
+  expect(owners("/e2e/pixel-agent.spec.ts")).toEqual(["pixel-dark", "pixel-light"]);
+});
+
 test("the agent conversation runs on the Suivi daemons after their journeys, a new agent closing their batch", () => {
   expect(owners("/e2e/agent-conversation.spec.ts")).toEqual([
     "agent-conversation-dark",
