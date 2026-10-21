@@ -2,15 +2,7 @@ import { expect, test } from "bun:test";
 import { type RunLogEntry, WAKEUP_PREFIX } from "@kibo/schema";
 import fc from "fast-check";
 import { NOW } from "../agents/fixtures";
-import {
-  buildConversation,
-  type ConversationItem,
-  lastAgentText,
-  lastUserMessage,
-  panelStatus,
-  supersededCount,
-  trackingThread,
-} from "./conversation";
+import { buildConversation, type ConversationItem, lastUserMessage, panelStatus } from "./conversation";
 import { CONVERSATION_LOG, partialBatch, pendingBatch, projectRun } from "./fixtures";
 
 const MIN = 60_000;
@@ -135,13 +127,12 @@ test("lastUserMessage returns the latest message, or null", () => {
   expect(lastUserMessage([])).toBeNull();
 });
 
-test("panelStatus: ready without run, queued, thinking, and a pending batch first", () => {
-  expect(panelStatus(null, null)).toBe("ready");
-  expect(panelStatus(projectRun({ state: "queued" }), null)).toBe("queued");
-  expect(panelStatus(projectRun({ state: "starting" }), null)).toBe("thinking");
-  expect(panelStatus(projectRun({ state: "running" }), null)).toBe("thinking");
-  expect(panelStatus(projectRun({ state: "done" }), null)).toBe("ready");
-  expect(panelStatus(projectRun({ state: "running" }), pendingBatch())).toBe("batch");
+test("panelStatus: ready without run, queued, thinking", () => {
+  expect(panelStatus(null)).toBe("ready");
+  expect(panelStatus(projectRun({ state: "queued" }))).toBe("queued");
+  expect(panelStatus(projectRun({ state: "starting" }))).toBe("thinking");
+  expect(panelStatus(projectRun({ state: "running" }))).toBe("thinking");
+  expect(panelStatus(projectRun({ state: "done" }))).toBe("ready");
 });
 
 const WAKEUP =
@@ -226,103 +217,13 @@ test("lastUserMessage skips wakeups: Réessayer never replays one", () => {
   expect(lastUserMessage(wakeLog.slice(2))).toBeNull();
 });
 
-test("lastAgentText is the agent's latest answer, or null", () => {
-  const items = buildConversation(CONVERSATION_LOG, [], projectRun({ state: "failed" }));
-  expect(lastAgentText(items)).toBe("**SILO-11** avance ; je propose de le passer en review.");
-  expect(lastAgentText([])).toBeNull();
-});
-
-test("superseded batches are left out unless asked for, and counted", () => {
+test("superseded batches are left out of the conversation", () => {
   const batches = [
     pendingBatch({ id: "b-old", createdAt: 15, status: "superseded" }),
     pendingBatch({ id: "b-new", createdAt: 35 }),
   ];
   const ids = (items: ConversationItem[]) => items.flatMap((i) => (i.kind === "batch" ? [i.batch.id] : []));
   expect(ids(buildConversation(wakeLog, batches, projectRun()))).toEqual(["b-new"]);
-  expect(ids(buildConversation(wakeLog, batches, projectRun(), { superseded: true }))).toEqual([
-    "b-old",
-    "b-new",
-  ]);
-  expect(supersededCount(batches)).toBe(1);
-});
-
-const user = (id: string, text: string): ConversationItem => ({ kind: "user", id, at: 1, text });
-const agent = (id: string, text: string): ConversationItem => ({ kind: "agent", id, at: 1, text });
-const wakeup = (id: string, text: string): ConversationItem => ({ kind: "wakeup", id, at: 1, text });
-
-test("the question asked after the summary is the exchange, the summary stays", () => {
-  const items = [user("u1", "Fais le point"), agent("a1", "F3 est livrée."), user("u2", "Où en est F5 ?")];
-  expect(trackingThread(items)).toEqual({
-    summary: "F3 est livrée.",
-    summaryAt: 1,
-    exchange: items.slice(2),
-  });
-  const answered = [...items, agent("a2", "Il reste 4 étapes.")];
-  expect(trackingThread(answered)).toEqual({
-    summary: "F3 est livrée.",
-    summaryAt: 1,
-    exchange: answered.slice(2),
-  });
-});
-
-test("a turn without an earlier agent text is an exchange, not a summary", () => {
-  const point = [user("u1", "Fais le point"), agent("a1", "F3 est livrée.")];
-  expect(trackingThread(point)).toEqual({ summary: null, summaryAt: null, exchange: point });
-  const first = [user("u1", "Où en est F5 ?")];
-  expect(trackingThread(first)).toEqual({ summary: null, summaryAt: null, exchange: first });
-  expect(trackingThread([])).toEqual({ summary: null, summaryAt: null, exchange: [] });
-});
-
-test("the exchange keeps a failed turn but drops muted session lines", () => {
-  const event = (id: string, tone: "muted" | "red"): ConversationItem => ({
-    kind: "event",
-    id,
-    at: 1,
-    text: id,
-    tone,
-    retry: false,
-  });
-  const items = [
-    agent("a1", "F3 est livrée."),
-    user("u1", "Et F5 ?"),
-    event("reprise", "muted"),
-    event("échec", "red"),
-  ];
-  expect(trackingThread(items).exchange.map((i) => i.id)).toEqual(["u1", "échec"]);
-});
-
-test("a wakeup opens the exchange like a question from Adam", () => {
-  const w1 = wakeup("w1", "Q16 répondue : « 5 Go »");
-  const said = "Q16 répondue : le quota est de 5 Go par client.";
-  const a1 = agent("a1", "F3 est livrée.");
-  const a2 = agent("a2", said);
-  expect(trackingThread([a1, w1, a2])).toEqual({
-    summary: "F3 est livrée.",
-    summaryAt: 1,
-    exchange: [w1, a2],
-  });
-  expect(trackingThread([w1, a2])).toEqual({ summary: said, summaryAt: 1, exchange: [] });
-  expect(trackingThread([user("u1", "Et F5 ?"), a1, w1]).exchange).toEqual([w1]);
-});
-
-test("the exchange starts at the first line of a wakeup with several answers", () => {
-  const lines = [wakeup("w1-a0", "Q16 répondue : « 5 Go »"), wakeup("w1-a1", "Q17 répondue : « Oui »")];
-  const a2 = agent("a2", "Je propose :");
-  expect(trackingThread([agent("a1", "F3 est livrée."), ...lines, a2]).exchange).toEqual([...lines, a2]);
-});
-
-test("a first question and its answer both show: the question is never hidden behind a summary", () => {
-  const first = [user("u1", "Où en est F5 ?"), agent("a1", "Il reste 4 étapes.")];
-  expect(trackingThread(first)).toEqual({ summary: null, summaryAt: null, exchange: first });
-  const twice = [user("u1", "Où en est F5 ?"), user("u2", "Et F4 ?")];
-  expect(trackingThread(twice).exchange.map((i) => i.id)).toEqual(["u1", "u2"]);
-  const queuedAfterAnswer = [
-    user("u1", "Fais le point"),
-    agent("a1", "F3 est livrée."),
-    user("u2", "Et F4 ?"),
-    user("u3", "Et F5 ?"),
-  ];
-  expect(trackingThread(queuedAfterAnswer).exchange.map((i) => i.id)).toEqual(["u2", "u3"]);
 });
 
 test("every message from Adam in the log is a user item, even one sent while the run is queued", () => {

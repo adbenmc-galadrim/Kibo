@@ -5,7 +5,7 @@ import type { ComponentType } from "react";
 import { apiMock } from "../api-mock";
 import { type Host, HostProvider } from "../shell/Host";
 import { CONVERSATION_LOG, emptyView, pendingBatch, projectRun, siloProject, viewFixture } from "./fixtures";
-import { signalsView } from "./signals/fixtures";
+import { signalsView } from "./signal-fixtures";
 
 type PanelProps = { open: boolean; project: ReturnType<typeof siloProject>; onClose(): void };
 

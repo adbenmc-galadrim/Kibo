@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import type { ProposedAction } from "@kibo/schema";
 import { actionTitle, groupActions, projectLabels } from "./batch-groups";
-import { trackingProject } from "./tracking-fixtures";
+import { sprintProject } from "./sprint-fixtures";
 
 test("sprint actions form the Sprints group, right after Tickets", () => {
   const actions: ProposedAction[] = [
@@ -26,7 +26,7 @@ test("sprint actions form the Sprints group, right after Tickets", () => {
 });
 
 test("sprint and reminder actions are named with the short key, the sprint codes and the recipient", () => {
-  const labels = projectLabels(trackingProject());
+  const labels = projectLabels(sprintProject());
   const title = (action: ProposedAction) => actionTitle(action, labels);
   expect(title({ id: 1, type: "setSprint", ticket: "SILO-30", sprint: "S43", why: "" })).toBe(
     "Reporter F5 en S43",
@@ -63,7 +63,7 @@ test("sprint and reminder actions are named with the short key, the sprint codes
 });
 
 test("the generic Client recipient is written « le client », a named recipient keeps its name", () => {
-  const project = trackingProject();
+  const project = sprintProject();
   const named = {
     ...project,
     questions: project.questions.map((q) => (q.id === "q-logo" ? { ...q, recipient: "galadrim" } : q)),

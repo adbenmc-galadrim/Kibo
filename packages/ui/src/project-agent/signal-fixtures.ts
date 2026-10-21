@@ -1,5 +1,5 @@
 import { type Signal, type SignalsView, signalRef } from "@kibo/schema";
-import { NOW } from "../../agents/fixtures";
+import { NOW } from "../agents/fixtures";
 
 const MIN = 60_000;
 
@@ -82,9 +82,4 @@ export const signalsView = (p: Partial<SignalsView> = {}): SignalsView => ({
   signals: [...OPEN_SIGNALS, CLOSED_SIGNAL],
   wakeup: { projectId: "kibo", lastAt: NOW - 14 * MIN, dueAt: NOW - 4 * MIN },
   ...p,
-});
-
-export const emptySignals = (): SignalsView => ({
-  signals: [],
-  wakeup: { projectId: "kibo", lastAt: null, dueAt: null },
 });

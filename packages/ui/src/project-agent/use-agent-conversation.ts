@@ -11,9 +11,9 @@ import type { Decision } from "./BatchCard";
 import { projectLabels } from "./batch-groups";
 import { buildConversation, lastUserMessage, type PanelStatus, panelStatus } from "./conversation";
 import { mergeOutbox } from "./outbox";
-import { useSignals } from "./signals/use-signals";
 import { useOutbox } from "./use-outbox";
 import { useProjectAgent } from "./use-project-agent";
+import { useSignals } from "./use-signals";
 
 type Mode = { kind: "current" } | { kind: "past"; runId: string };
 
@@ -54,7 +54,7 @@ export function useAgentConversation(project: ProjectSnapshot, open: boolean) {
     [project, runs, host, projectId],
   );
   const signals = useSignals(projectId);
-  const status: PanelStatus = readOnly ? "ready" : panelStatus(view?.run ?? null, null);
+  const status: PanelStatus = readOnly ? "ready" : panelStatus(view?.run ?? null);
   const agents = useMemo(() => (current.view ? agentListItems(current.view) : []), [current.view]);
 
   const decide = async (batchId: string, d: Decision) => {

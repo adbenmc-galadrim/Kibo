@@ -22,7 +22,7 @@ export type ConversationItem =
   | { kind: "event"; id: string; at: number; text: string; tone: "muted" | "red"; retry: boolean };
 
 type Reading = Extract<ConversationItem, { kind: "reading" }>;
-export type PanelStatus = "ready" | "queued" | "thinking" | "batch";
+export type PanelStatus = "ready" | "queued" | "thinking";
 
 const KIBO_PREFIX = "mcp__kibo__";
 const NOT_READS: ReadonlySet<string> = new Set(["propose_batch", "ask_user", "ask_question"]);
@@ -162,15 +162,12 @@ function apply(b: Builder, entry: RunLogEntry): void {
   }
 }
 
-export type ConversationOptions = { superseded?: boolean };
-
 export function buildConversation(
   log: readonly RunLogEntry[],
   batches: readonly Batch[],
   run: RunView | null,
-  { superseded = false }: ConversationOptions = {},
 ): ConversationItem[] {
-  const builder = new Builder(superseded ? batches : batches.filter((b) => b.status !== "superseded"));
+  const builder = new Builder(batches.filter((b) => b.status !== "superseded"));
   for (const entry of log) apply(builder, entry);
   return builder.finish(run);
 }
@@ -183,66 +180,7 @@ export function lastUserMessage(log: readonly RunLogEntry[]): string | null {
   return null;
 }
 
-type AgentItem = Extract<ConversationItem, { kind: "agent" }>;
-
-function lastAgent(items: readonly ConversationItem[]): AgentItem | null {
-  for (let i = items.length - 1; i >= 0; i--) {
-    const item = items[i];
-    if (item?.kind === "agent") return item;
-  }
-  return null;
-}
-
-export const lastAgentText = (items: readonly ConversationItem[]): string | null =>
-  lastAgent(items)?.text ?? null;
-
-export function supersededCount(batches: readonly Batch[]): number {
-  return batches.filter((b) => b.status === "superseded").length;
-}
-
-export type TrackingThread = {
-  summary: string | null;
-  summaryAt: number | null;
-  exchange: ConversationItem[];
-};
-const inExchange = (item: ConversationItem): boolean =>
-  item.kind === "event" ? item.tone === "red" : item.kind !== "batch";
-
-const isAsk = (item: ConversationItem | undefined): boolean =>
-  item?.kind === "user" || item?.kind === "wakeup";
-const isPending = (item: ConversationItem | undefined): boolean =>
-  isAsk(item) || item?.kind === "event" || item?.kind === "reading";
-
-function lastAskedIndex(items: readonly ConversationItem[]): number {
-  let i = items.length - 1;
-  while (i >= 0 && !isAsk(items[i])) i--;
-  return i;
-}
-
-function firstUnansweredIndex(items: readonly ConversationItem[]): number {
-  let asked = lastAskedIndex(items);
-  for (let i = asked - 1; i >= 0 && isPending(items[i]); i--) if (isAsk(items[i])) asked = i;
-  return asked;
-}
-
-const thread = (summary: AgentItem | null, exchange: ConversationItem[]): TrackingThread => ({
-  summary: summary?.text ?? null,
-  summaryAt: summary?.at ?? null,
-  exchange,
-});
-
-export function trackingThread(items: readonly ConversationItem[]): TrackingThread {
-  const asked = firstUnansweredIndex(items);
-  if (asked < 0) return thread(lastAgent(items), []);
-  const before = lastAgent(items.slice(0, asked));
-  const exchange = items.slice(asked).filter(inExchange);
-  if (before !== null || exchange.some((item) => item.kind === "user")) return thread(before, exchange);
-  const reply = lastAgent(items);
-  return reply ? thread(reply, []) : thread(null, exchange);
-}
-
-export function panelStatus(run: RunView | null, pending: Batch | null): PanelStatus {
-  if (pending) return "batch";
+export function panelStatus(run: RunView | null): PanelStatus {
   if (run?.state === "queued") return "queued";
   if (run?.state === "starting" || run?.state === "running") return "thinking";
   return "ready";

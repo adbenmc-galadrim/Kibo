@@ -1,6 +1,6 @@
 import { KiboError, type SignalsView } from "@kibo/schema";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { client } from "../../api";
+import { client } from "../api";
 
 export type SignalsState = { view: SignalsView | null; error: KiboError | null; reload(): void };
 

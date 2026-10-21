@@ -17,7 +17,7 @@ import userEvent from "@testing-library/user-event";
 import { agentsFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
-import { signalsView } from "../project-agent/signals/fixtures";
+import { signalsView } from "../project-agent/signal-fixtures";
 import { targetToHash } from "../tabs/target-hash";
 
 const project: ProjectSnapshot = {

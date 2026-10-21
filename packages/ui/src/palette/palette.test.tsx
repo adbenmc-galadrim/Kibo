@@ -9,7 +9,7 @@ import {
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { agentsFixture, projectsFixture, runFixture } from "../agents/fixtures";
-import { trackingProject } from "../project-agent/tracking-fixtures";
+import { sprintProject } from "../project-agent/sprint-fixtures";
 import { type Host, HostProvider } from "../shell/Host";
 import { CommandPalette } from "./CommandPalette";
 import { buildItems, type PaletteContext, searchItems } from "./palette-items";
@@ -328,7 +328,7 @@ test("⌘K « Copier /full-delivery KIB-12 » copies the command of the open tic
 });
 
 test("⌘K « Nouvelle fonctionnalité » opens Planning with the newFeature intent, a sprint opens its sheet", async () => {
-  const silo = trackingProject();
+  const silo = sprintProject();
   const counts = projectsFixture[0]?.counts;
   if (!counts) throw new Error("fixture without counts");
   const views: string[] = [];

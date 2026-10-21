@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
 import type { ProjectSnapshot, ProjectSummary } from "@kibo/schema";
 import { kiboProject, projectsFixture } from "../agents/fixtures";
-import { trackingProject } from "../project-agent/tracking-fixtures";
+import { sprintProject } from "../project-agent/sprint-fixtures";
 import { buildItems, type PaletteContext, searchItems } from "./palette-items";
 
-const silo = trackingProject();
+const silo = sprintProject();
 const counts = projectsFixture[0]?.counts;
 if (!counts) throw new Error("fixture without counts");
 const summary = (p: ProjectSnapshot): ProjectSummary => ({ ...p.meta, counts });
