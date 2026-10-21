@@ -33,7 +33,7 @@
     ],
     "linux": {
       "deb": { "depends": ["bubblewrap"], "desktopTemplate": "linux/kibo.desktop.hbs" },
-      "rpm": { "depends": ["bubblewrap"] }
+      "rpm": { "depends": ["bubblewrap"], "compression": { "type": "zstd", "level": 3 } }
     },
     "macOS": {
       "signingIdentity": "-",

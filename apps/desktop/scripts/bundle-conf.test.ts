@@ -51,6 +51,10 @@ test("Linux gets the desktop template and the four icon sizes", () => {
   expect(desktop).toMatch(/^Comment=.+/m);
 });
 
+test("the rpm payload is compressed with zstd", () => {
+  expect(conf.bundle.linux.rpm.compression).toEqual({ type: "zstd", level: 3 });
+});
+
 test("three external binaries ship with the app: the daemon, the hook and the demo agent", () => {
   expect(conf.bundle.externalBin).toEqual([
     "binaries/kibo-daemon",
