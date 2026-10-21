@@ -222,11 +222,11 @@ x = 0 et clair à x = 1 540. Données `silo-maquettes` au vendredi 16 octobre (S
 | P8b · Fiche ticket, Activité | même fiche, onglet Activité : chronologie du journal (session, review, CI, étape, PR, branche) puis « Anciens runs » replié | `proposition-fiche-ticket-activite` | 1 440 × 1 000 |
 | P9 · Questions | `Qn`, badge « bloquante », bloquantes en tête, groupes sans vide, texte exporté (« bloque F6, prévue en S43 »), toast « 2 questions marquées envoyées · Annuler » | `proposition-questions` | 1 440 × 1 000 |
 | Barre repliée · Kanban à 1 180 px | rail de 48 px (bascule, recherche, Accueil, Mes tickets, Boîte de réception, pastille d'initiales par projet), menu des pages de Silo au survol, clés entières, ombres de défilement en bas et à droite | `proposition-barre-repliee` | 1 180 × 1 000 |
-| Agent · question | panneau de 340 px : résumé du jour épinglé et daté (14:40), question d'Adam, réponse, lot n° 7, « Afficher les lots remplacés » | `proposition-agent-question` | 340 × 1 000 |
-| Agent · récapitulatif | après « Valider » : 3 appliquées, 0 échouée, 0 ignorée, « F5 glissée de S42 », « Copier la relance » sur la relance de Q14 | `proposition-agent-recap` | 340 × 1 000 |
+| Agent · question (retiré en phase 31) | panneau de 340 px : résumé du jour épinglé et daté (14:40), question d'Adam, réponse, lot n° 7, « Afficher les lots remplacés » | `proposition-agent-question` | 340 × 1 000 |
+| Agent · récapitulatif (retiré en phase 31) | après « Valider » : 3 appliquées, 0 échouée, 0 ignorée, « F5 glissée de S42 », « Copier la relance » sur la relance de Q14 | `proposition-agent-recap` | 340 × 1 000 |
 
 Dessin : `await storage.draw27("p-vue3", "dark")` (clés `p-vue3`, `p-vue3-retard`, `p-commencer`, `p-nouveau`, `p-kanban`, `p-fiche`, `p-fiche-act`,
-`p-questions`, `p-barre`, `p-agent-q`, `p-agent-recap`), un écran et un mode par appel. `p-nouveau` clone `p-vue3` et `p-fiche` clone
+`p-questions`, `p-barre`, `p-agent-q` et `p-agent-recap` retirés en phase 31), un écran et un mode par appel. `p-nouveau` clone `p-vue3` et `p-fiche` clone
 `p-kanban` du même mode : les dessiner après. Avant de recharger l'onglet, attendre que le nombre de formes côté serveur (`get-page`)
 égale le nombre local, sinon les derniers écrans sont perdus. Export : `await storage.export27()` (`90-export.js`) ⇒
 `exports/proposition-<écran>-<dark|light>.png`. Cotes : `95-cotes.js` par board, puis `python3 scripts/cotes.py <JSON> --phase27`, qui
@@ -316,7 +316,7 @@ réveil « Q16 répondue : « 5 Go » » ouvre le dernier échange comme une que
 Silo (`design/donnees-fictives.md`). Page « Proposition », `scripts/58-alpha3-reveil.js` (après `57-alpha2-questions`), rangée `S.Y_A3`
 = 42 500 (après les rangées de l'alpha 2), sombre à x = 0 et clair à x = 1 540.
 
-Le board **clone « Agent · question »** ; ce board et sa référence (`proposition-agent-question-*`) ne changent pas.
+**Retiré en phase 31** (agent de projet en conversation, §46) : le board, ses exports `proposition-agent-reveil-*` et ceux d'« Agent · question » sont supprimés ; la section ne sert plus que d'historique.
 
 | Board | Contenu | Export | Taille |
 |---|---|---|---|
