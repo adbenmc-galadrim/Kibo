@@ -20,13 +20,14 @@ import {
   sprintPhase,
   type TicketView,
 } from "@kibo/schema";
+import { type CaseTone, stepCaseTone } from "@kibo/sdk/tracking";
 import { type HeldGroup, heldGroups } from "./held-model";
 import { sprintDates } from "./sprint-label";
 import { type SprintLoad, sprintLoad } from "./sprint-load";
 
 export { sprintDates } from "./sprint-label";
 
-export type StepTone = "done" | "review" | "progress" | "blocked" | "todo";
+export type StepTone = CaseTone;
 export type CardBadge =
   | { kind: "delivered"; demo: boolean; held: number }
   | { kind: "open" }
@@ -101,12 +102,8 @@ function blockingQuestions(questions: readonly Question[]): Map<string, string |
   return blocking;
 }
 
-function toneOf(step: FeatureStep, blocking: ReadonlyMap<string, string | null>): StepTone {
-  if (step.statusId === "done") return "done";
-  if (step.statusId === "blocked" || blocking.has(step.ticketId)) return "blocked";
-  if (step.statusId === "in_review") return "review";
-  return step.statusId === "in_progress" ? "progress" : "todo";
-}
+const toneOf = (step: FeatureStep, blocking: ReadonlyMap<string, string | null>): StepTone =>
+  stepCaseTone(step, blocking.has(step.ticketId));
 
 function sessionOf(
   steps: readonly FeatureStep[],
@@ -149,7 +146,7 @@ function cardOf(f: Feature, facts: Facts): FeatureCard {
     badge: badgeOf(state, nextStep === null ? null : (blocking.get(nextStep.ticketId) ?? null), risk),
     late: state.status === "late",
     atRisk: risk,
-    steps: active.map((s) => ({ ticketId: s.ticketId, key: s.key, tone: toneOf(s, blocking) })),
+    steps: steps.map((s) => ({ ticketId: s.ticketId, key: s.key, tone: toneOf(s, blocking) })),
     done: state.steps.done,
     total: state.steps.total,
     remaining: state.remaining,

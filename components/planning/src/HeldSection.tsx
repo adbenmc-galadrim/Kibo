@@ -108,7 +108,7 @@ export function HeldSection({ groups, readOnly, ...handlers }: Props) {
   return (
     <section aria-label={title} className="mt-auto flex shrink-0 flex-col gap-3 px-0.5 pt-2.5 pb-0.5">
       <div className="flex h-4 items-center gap-1.5">
-        <Pause absoluteStrokeWidth size={14} aria-hidden className="text-(--tracking-mfg)" />
+        <Pause absoluteStrokeWidth size={14} aria-hidden className="text-(--tracking-hold)" />
         <span className="font-semibold text-(--tracking-fg) text-[13px] leading-[16px]">{title}</span>
       </div>
       {groups.map((g) => (

@@ -1,5 +1,6 @@
 import type { SprintView } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
+import { CASE_BG } from "@kibo/sdk/tracking";
 import { BacklogColumn } from "./BacklogColumn";
 import type { BandsTimeline } from "./bands-model";
 import { cardEntries, type PlanTarget } from "./card-menu";
@@ -11,14 +12,14 @@ import { PlanningBands } from "./PlanningBands";
 import { AddButton, PlanningHeader, type PlanningLayout } from "./PlanningHeader";
 import type { FeatureCard as Card, PlanningModel } from "./planning-model";
 import { SprintColumn, Warning } from "./SprintColumn";
-import { TONE_BG, TONES } from "./tones";
+import { TONES } from "./tones";
 
 function Legend({ error }: { error: string | null }) {
   return (
     <footer className="flex h-[14px] shrink-0 items-center gap-3.5 text-(--tracking-dim) text-[11.5px] leading-[14px]">
       {TONES.map((tone) => (
         <span key={tone} className="flex items-center gap-1.5">
-          <span aria-hidden className={cn("h-2 w-3 rounded-[2px]", TONE_BG[tone])} />
+          <span aria-hidden className={cn("h-2 w-3 rounded-[2px]", CASE_BG[tone])} />
           {fr.legend[tone]}
         </span>
       ))}

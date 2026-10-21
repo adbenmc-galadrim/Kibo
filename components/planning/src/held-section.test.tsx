@@ -46,6 +46,7 @@ test("the section counts the steps on hold and groups them by reason", () => {
   renderSection();
   const section = screen.getByRole("region", { name: "En attente (3)" });
   expect(within(section).getByText("En attente (3)")).toBeTruthy();
+  expect(section.querySelector("svg")?.getAttribute("class")).toContain("text-(--tracking-hold)");
   const rule = within(section).getByRole("group", { name: "Règle de fusion à valider par le client" });
   expect(within(rule).getByText("Règle de fusion à valider par le client")).toBeTruthy();
   const server = within(section).getByRole("group", { name: "Serveur MinIO de recette indisponible" });

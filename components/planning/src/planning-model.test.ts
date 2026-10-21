@@ -188,18 +188,28 @@ test("sprint dates are short and French", () => {
   expect(sprintDates("2026-12-28", "2027-01-01")).toBe("28 déc.–1 janv.");
 });
 
-test("steps on hold leave the cards and the risk of their feature", () => {
+test("the step cases keep every step in order, held ones in cyan", () => {
   const m = createMockSdk(manifest, { today: TODAY, seed: seedPlanningHeld });
   const s = m.snapshot();
   const model = planningModel({ ...s, today: TODAY });
   const [, s42, , s44] = model.sprints;
   const f5 = card(s42?.cards ?? [], "F5");
-  expect(f5.steps.map((c) => c.tone)).toEqual(["done", "review"]);
+  const f4 = card(s42?.cards ?? [], "F4");
+  expect(f4.steps.map((c) => c.tone)).toEqual(["done", "done", "done", "hold", "todo"]);
+  expect(f5.steps.map((c) => c.tone)).toEqual(["done", "review", "hold", "hold", "hold"]);
+  expect([f4.done, f4.total, f4.remaining, f4.next]).toEqual([3, 4, 0, null]);
+  expect([f5.done, f5.total, f5.remaining, f5.next]).toEqual([1, 2, 1, "KIB-20"]);
   expect(f5.atRisk).toBe(false);
   expect(f5.badge).toEqual({ kind: "open" });
   expect(s42?.warnings.map((w) => w.shortKey)).toEqual([]);
   expect(card(s42?.cards ?? [], "F4").badge).toEqual({ kind: "delivered", demo: true, held: 1 });
   expect(card(s42?.cards ?? [], "F4").session).toBe("KIB-16");
-  expect(card(s44?.cards ?? [], "F7").steps).toHaveLength(4);
+  expect(card(s44?.cards ?? [], "F7").steps.map((c) => c.tone)).toEqual([
+    "todo",
+    "hold",
+    "todo",
+    "todo",
+    "todo",
+  ]);
   expect(model.held.map((g) => g.steps.length)).toEqual([1, 2]);
 });
