@@ -5,7 +5,7 @@ import {
   EMPTY_PROGRESS,
   type HookPayload,
   MEMORY_NOTE_PATH,
-  type ProjectAgentSession,
+  type ProjectAgentSessionView,
   type ProjectAgentView,
   type ProjectSnapshot,
   type ProposedAction,
@@ -238,13 +238,15 @@ export function partialBatch(): Batch {
   });
 }
 
-export const session = (p: Partial<ProjectAgentSession> = {}): ProjectAgentSession => ({
+export const session = (p: Partial<ProjectAgentSessionView> = {}): ProjectAgentSessionView => ({
   projectId: "silo",
   runId: "pa1",
   sessionId: "s-pa1",
   startedAt: NOW - 30 * MIN,
   closedAt: null,
   lastTurnAt: NOW - 8 * MIN,
+  title: "Où en est-on ?",
+  messages: 2,
   ...p,
 });
 

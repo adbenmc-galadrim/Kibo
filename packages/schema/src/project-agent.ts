@@ -226,10 +226,12 @@ export type ProjectAgentSession = {
   lastTurnAt: number | null;
 };
 
+export type ProjectAgentSessionView = ProjectAgentSession & { title: string | null; messages: number };
+
 export type ProjectAgentView = {
-  session: ProjectAgentSession | null;
+  session: ProjectAgentSessionView | null;
   run: RunView | null;
   batches: Batch[];
-  past: ProjectAgentSession[];
+  past: ProjectAgentSessionView[];
   memoryPath: string;
 };

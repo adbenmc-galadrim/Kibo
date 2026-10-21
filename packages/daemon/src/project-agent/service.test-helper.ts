@@ -8,6 +8,7 @@ import {
   type AgentsState,
   KiboError,
   type ProjectSnapshot,
+  type RunLogEntry,
   type RunView,
 } from "@kibo/schema";
 import type { Notice } from "../agents/notifier";
@@ -41,6 +42,7 @@ export type Kit = {
   notices: Notice[];
   emits: () => number;
   runs: Map<string, RunView>;
+  logs: Map<string, RunLogEntry[]>;
   notes: Map<string, string>;
   dir: string;
   setProject(next: ProjectSnapshot): void;
@@ -53,10 +55,18 @@ export type Kit = {
   cleanup(): void;
 };
 
-function fakeAgents(runs: Map<string, RunView>, calls: string[]): ProjectAgentAgents {
-  const update = (id: string, patch: Partial<RunView>): RunView => {
+function fakeAgents(
+  runs: Map<string, RunView>,
+  logs: Map<string, RunLogEntry[]>,
+  calls: string[],
+): ProjectAgentAgents {
+  const known = (id: string): RunView => {
     const current = runs.get(id);
     if (!current) throw new KiboError("NOT_FOUND", `run ${id} not found`);
+    return current;
+  };
+  const update = (id: string, patch: Partial<RunView>): RunView => {
+    const current = known(id);
     const next = { ...current, ...patch };
     runs.set(id, next);
     return next;
@@ -88,7 +98,10 @@ function fakeAgents(runs: Map<string, RunView>, calls: string[]): ProjectAgentAg
     ticketExecution: () => "removed",
     assign: refuse("assign"),
     deliverAnswers: refuse("deliverAnswers"),
-    log: () => [],
+    log: (runId) => {
+      known(runId);
+      return logs.get(runId) ?? [];
+    },
     state: () => ({
       runs: [...runs.values()],
       queue: [],
@@ -133,6 +146,7 @@ export function serviceKit(): Kit {
   const calls: string[] = [];
   const notices: Notice[] = [];
   const runs = new Map<string, RunView>();
+  const logs = new Map<string, RunLogEntry[]>();
   const notes = new Map<string, string>();
   const data: ProjectAgentDataPort = {
     project(projectId) {
@@ -158,7 +172,7 @@ export function serviceKit(): Kit {
       throw new KiboError("INTERNAL", "runCommand is not faked");
     },
   };
-  const agents = fakeAgents(runs, calls);
+  const agents = fakeAgents(runs, logs, calls);
   const signals = fakeSignals();
   const svc = createProjectAgentService({
     store,
@@ -192,6 +206,7 @@ export function serviceKit(): Kit {
     notices,
     emits: () => emitted,
     runs,
+    logs,
     notes,
     dir,
     setProject: (next) => {

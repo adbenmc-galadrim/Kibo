@@ -5,6 +5,7 @@ import {
   KiboError,
   MEMORY_NOTE_PATH,
   PROJECT_AGENT_TOOLS,
+  type ProjectAgentSession,
   type ProjectAgentSummary,
   type ProjectAgentTool,
   type ProjectAgentView,
@@ -18,7 +19,7 @@ import type { AgentContext, ProjectAgentDeps } from "./context";
 import { type DecideInput, decideBatch } from "./decide";
 import { proposeBatch } from "./propose";
 import { projectAgentRpc } from "./rpc";
-import { currentRun, pastSessions, projectOfRun, summaryOf } from "./sessions";
+import { currentRun, pastSessions, projectOfRun, safeLog, summaryOf, withDigest } from "./sessions";
 import { createTurnPort } from "./turns";
 import type { AgentMcpSink, ProjectAgentSignalsPort } from "./types";
 
@@ -45,11 +46,13 @@ function view(ctx: AgentContext, projectId: string, runId?: string): ProjectAgen
   const session =
     runId === undefined ? ctx.store.openSession(projectId) : sessions.find((s) => s.runId === runId);
   if (session === undefined) throw new KiboError("NOT_FOUND", `project agent session ${runId} not found`);
+  const agents = ctx.agents();
+  const digested = (s: ProjectAgentSession) => withDigest(s, safeLog(agents, s.runId));
   return {
-    session,
-    run: currentRun(session, ctx.agents().state().runs),
+    session: session ? digested(session) : null,
+    run: currentRun(session, agents.state().runs),
     batches: session ? ctx.store.batches(session.runId) : [],
-    past: pastSessions(sessions),
+    past: pastSessions(sessions).map(digested),
     memoryPath: MEMORY_NOTE_PATH,
   };
 }
