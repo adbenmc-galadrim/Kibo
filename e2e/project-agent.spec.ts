@@ -181,17 +181,16 @@ test("l'agent de projet renomme, réassigne, rouvre et archive des questions", a
     timeout: 30_000,
   });
   const card = lastBatch(panel);
-  const group = card.getByRole("group", { name: "Questions" });
-  await expect(group.getByText("Ajouter le destinataire « Galadrim »")).toBeVisible();
-  await expect(group.getByText(/^Question sur KIB-1 pour Galadrim : « Quel hébergeur \? »$/)).toBeVisible();
-  await expect(group.getByText("Question sur KIB-2 pour Client : « Quelle licence ? »")).toBeVisible();
-  const rename = group.getByRole("button", { name: `Modifier la question « ${COLOR} »` });
+  await expect(card.getByText("Ajouter le destinataire « Galadrim »")).toBeVisible();
+  await expect(card.getByText(/^Question sur KIB-1 pour Galadrim : « Quel hébergeur \? »$/)).toBeVisible();
+  await expect(card.getByText("Question sur KIB-2 pour Client : « Quelle licence ? »")).toBeVisible();
+  const rename = card.getByRole("button", { name: `Modifier la question « ${COLOR} »` });
   await expect(rename).toBeVisible();
-  await expect(group.getByText("Titre :")).toBeVisible();
-  await expect(group.getByText("Destinataire :")).toBeVisible();
-  const reopen = group.getByRole("button", { name: `Rouvrir « ${LOGO} » (réponse retirée)` });
+  await expect(card.getByText("Titre :")).toBeVisible();
+  await expect(card.getByText("Destinataire :")).toBeVisible();
+  const reopen = card.getByRole("button", { name: `Rouvrir « ${LOGO} » (réponse retirée)` });
   await expect(reopen).toBeVisible();
-  await expect(group.getByRole("button", { name: `Archiver « ${FONT} »` })).toBeVisible();
+  await expect(card.getByRole("button", { name: `Archiver « ${FONT} »` })).toBeVisible();
   await card.scrollIntoViewIfNeeded();
   await shot(page, info, "204");
   const preview = await hoverBadge(page, reopen);

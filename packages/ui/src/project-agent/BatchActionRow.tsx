@@ -93,23 +93,23 @@ export function BatchActionRow(props: Props) {
   const questionId = questionOf(action);
   const run = runOf(action, useAgentsState());
   return (
-    <li className="flex gap-2 py-1.5">
+    <li className="flex gap-[10px] px-3.5 py-2.5">
       {selectable && (
         <Checkbox
           id={id}
-          className="mt-0.5"
+          className="data-[state=checked]:border-(--tracking-brand-btn) data-[state=checked]:bg-(--tracking-brand-btn) data-[state=checked]:text-white dark:data-[state=checked]:bg-(--tracking-brand-btn) [&_svg]:size-[11px]"
           aria-label={title}
           checked={checked}
           onCheckedChange={(v) => onCheck(v === true)}
         />
       )}
-      <div className="grid min-w-0 flex-1 gap-0.5">
+      <div className="grid min-w-0 flex-1 gap-[3px]">
         {questionId === null ? (
-          <label htmlFor={selectable ? id : undefined} className="text-sm leading-snug">
+          <label htmlFor={selectable ? id : undefined} className="text-[13px] leading-[1.2] font-medium">
             {title}
           </label>
         ) : (
-          <p className="text-sm leading-snug">
+          <p className="text-[13px] leading-[1.2] font-medium">
             <QuestionText questionId={questionId} text={title} />
           </p>
         )}
@@ -124,7 +124,7 @@ export function BatchActionRow(props: Props) {
         ))}
         {run && <RunMention run={run} label={action.type === "cancelRun" ? t.run : t.lastRun} />}
         {action.why && (
-          <p className="text-xs text-muted-foreground" title={t.why}>
+          <p className="text-xs text-(--tracking-mfg)" title={t.why}>
             {action.why}
           </p>
         )}
