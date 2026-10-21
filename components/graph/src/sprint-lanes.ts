@@ -6,6 +6,7 @@ import {
   isOpen,
   type Link,
   liveReview,
+  type OnHold,
   type Question,
   type SprintState,
   type SprintView,
@@ -13,6 +14,7 @@ import {
   sprintState,
   type TicketView,
 } from "@kibo/schema";
+import { type CaseTone, stepCaseTone } from "@kibo/sdk/tracking";
 import {
   FIRST_FRAME_Y,
   FRAME_MIN_W,
@@ -27,7 +29,7 @@ import { lanePhase, sprintStateLabel } from "./sprint-label";
 
 export { frameWidth } from "./frame-geometry";
 
-export type StepTone = "done" | "review" | "progress" | "blocked" | "todo";
+export type StepTone = CaseTone;
 export type GitMark = {
   kind: "merged" | "pr" | "branch";
   tone: "green" | "purple" | "amber" | "blue" | "dim";
@@ -39,6 +41,7 @@ export type LaneStep = {
   tone: StepTone;
   git: GitMark | null;
   session: boolean;
+  hold: OnHold | null;
 };
 export type FrameSegment = { ticketId: string; tone: StepTone };
 export type FrameFooter =
@@ -51,6 +54,7 @@ export type LaneFrame = {
   done: number;
   total: number;
   delivered: boolean;
+  held: number;
   late: boolean;
   collapsed: boolean;
   segments: FrameSegment[];
@@ -110,12 +114,8 @@ function blockingQuestions(questions: readonly Question[]): Map<string, string |
   return blocking;
 }
 
-function toneOf(step: FeatureStep, blocking: ReadonlyMap<string, string | null>): StepTone {
-  if (step.statusId === "done") return "done";
-  if (step.statusId === "blocked" || blocking.has(step.ticketId)) return "blocked";
-  if (step.statusId === "in_review") return "review";
-  return step.statusId === "in_progress" ? "progress" : "todo";
-}
+const toneOf = (step: FeatureStep, blocking: ReadonlyMap<string, string | null>): StepTone =>
+  stepCaseTone(step, step.statusId === "blocked" || blocking.has(step.ticketId));
 
 function gitOf(step: FeatureStep): GitMark | null {
   const pr = step.pr;
@@ -138,6 +138,7 @@ function draftOf(f: Feature, facts: Facts, sorted: readonly SprintView[]): Draft
   const { input, blocking, byId } = facts;
   const steps = featureSteps({ feature: f.id, tickets: input.tickets, links: input.links });
   const delivered = f.feature.status === "delivered";
+  const heldSteps = steps.filter((s) => s.onHold !== null);
   return {
     id: f.id,
     shortKey: f.shortKey ?? f.keyLabel,
@@ -145,16 +146,18 @@ function draftOf(f: Feature, facts: Facts, sorted: readonly SprintView[]): Draft
     done: f.feature.steps.done,
     total: f.feature.steps.total,
     delivered,
+    held: heldSteps.length,
     late: f.feature.status === "late",
     collapsed: delivered,
     segments: steps.map((s) => ({ ticketId: s.ticketId, tone: toneOf(s, blocking) })),
-    steps: steps.map((s) => ({
+    steps: (delivered ? heldSteps : steps).map((s) => ({
       ticketId: s.ticketId,
       key: s.key,
       title: s.title,
       tone: toneOf(s, blocking),
       git: gitOf(s),
       session: byId.get(s.ticketId)?.session != null || input.live.has(s.ticketId),
+      hold: s.onHold,
     })),
     footer: footerOf(f, facts, sorted),
   };
@@ -163,16 +166,17 @@ function draftOf(f: Feature, facts: Facts, sorted: readonly SprintView[]): Draft
 type LaneSeed = Pick<Lane, "id" | "code" | "name" | "state" | "label"> & { drafts: Draft[] };
 
 function placeLane(seed: LaneSeed, index: number, x: number): Lane {
-  const widths = seed.drafts.map((d) => (d.collapsed ? FRAME_MIN_W : frameWidth(d.title, d.steps)));
+  const widths = seed.drafts.map((d) =>
+    d.collapsed && d.steps.length === 0 ? FRAME_MIN_W : frameWidth(d.title, d.steps),
+  );
   const width = Math.max(FRAME_MIN_W, ...widths);
   const margin = laneMargin(width);
   let y = FIRST_FRAME_Y;
   const frames = seed.drafts.map((d): LaneFrame => {
     const lines = titleLines(d.title, width);
-    const height = frameHeight({ lines, steps: d.collapsed ? 0 : d.steps.length, footer: d.footer !== null });
+    const height = frameHeight({ lines, steps: d.steps.length, footer: d.footer !== null });
     const frame = {
       ...d,
-      steps: d.collapsed ? [] : d.steps,
       titleLines: lines,
       x: x + margin,
       y,

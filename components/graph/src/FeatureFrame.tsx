@@ -1,5 +1,5 @@
 import { cn } from "@kibo/sdk/lib/utils";
-import { CircleCheck, ClockAlert, Lock } from "lucide-react";
+import { CircleCheck, ClockAlert, Lock, Pause } from "lucide-react";
 import { FrameStepRow } from "./FrameStepRow";
 import { fr } from "./fr";
 import { FRAME_PAD, type TitleLines } from "./frame-geometry";
@@ -15,6 +15,7 @@ const SEGMENT_BG: Record<StepTone, string> = {
   review: "bg-(--tracking-purple)",
   progress: "bg-(--tracking-blue)",
   blocked: "bg-(--tracking-red)",
+  hold: "bg-(--tracking-hold)",
   todo: "bg-(--tracking-border)",
 };
 
@@ -74,6 +75,19 @@ function Footer({ footer }: { footer: FrameFooter }) {
   );
 }
 
+function HeldCount({ held }: { held: number }) {
+  return (
+    <span
+      role="img"
+      aria-label={fr.sprints.held(held)}
+      className="flex shrink-0 items-center gap-0.5 text-(--tracking-hold)"
+    >
+      <Pause size={11} absoluteStrokeWidth aria-hidden className="shrink-0" />
+      {held}
+    </span>
+  );
+}
+
 type Props = { frame: LaneFrame; onOpen(id: string): void };
 
 export function FeatureFrame({ frame, onOpen }: Props) {
@@ -95,6 +109,7 @@ export function FeatureFrame({ frame, onOpen }: Props) {
       <div className="flex h-[14px] shrink-0 items-center gap-1.5 font-mono text-[11px] leading-[14px]">
         <span className="text-(--tracking-dim)">{frame.shortKey}</span>
         <span className="ml-auto text-(--tracking-mfg)">{`${frame.done}/${frame.total}`}</span>
+        {frame.held > 0 && <HeldCount held={frame.held} />}
         {frame.delivered && (
           <CircleCheck
             size={12}
@@ -113,7 +128,7 @@ export function FeatureFrame({ frame, onOpen }: Props) {
         <span className={cn("block", TITLE_CLAMP[frame.titleLines])}>{frame.title}</span>
       </button>
       <Segments segments={frame.segments} inner={frame.width - 2 * FRAME_PAD} />
-      {!frame.collapsed && (
+      {frame.steps.length > 0 && (
         <ul className="flex flex-col gap-1.5">
           {frame.steps.map((s) => (
             <FrameStepRow key={s.ticketId} step={s} onOpen={onOpen} />

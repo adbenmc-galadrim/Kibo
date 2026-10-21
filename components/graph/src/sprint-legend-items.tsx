@@ -12,6 +12,7 @@ export const SPRINT_LEGEND: readonly LegendItem[] = [
   { key: "progress", label: L.progress, mark: <span className={cn(DOT, "bg-(--tracking-blue)")} /> },
   { key: "review", label: L.review, mark: <span className={cn(DOT, "bg-(--tracking-purple)")} /> },
   { key: "blocked", label: L.blocked, mark: <span className={cn(DOT, "bg-(--tracking-red)")} /> },
+  { key: "hold", label: L.hold, mark: <span className={cn(DOT, "bg-(--tracking-hold)")} /> },
   {
     key: "feature",
     label: L.feature,

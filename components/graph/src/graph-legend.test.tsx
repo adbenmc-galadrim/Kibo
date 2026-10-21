@@ -18,6 +18,7 @@ test("the legend names the mode", () => {
     "En cours",
     "En review",
     "Bloqué",
+    "En attente",
     "Fonctionnalité",
     "Colonne = sprint",
     "Session active",

@@ -1,8 +1,9 @@
 import { afterEach, expect, setSystemTime, test } from "bun:test";
 import { SdkProvider } from "@kibo/sdk";
-import { createMockSdk } from "@kibo/sdk/mock";
+import { createMockSdk, type MockSdkOptions } from "@kibo/sdk/mock";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { SeedRun } from "./graph-seed";
 import { SEED_TODAY, seedSprintGraph } from "./graph-sprints-seed";
 import { Component, manifest } from "./index";
 import { SprintLanes } from "./SprintLanes";
@@ -12,14 +13,18 @@ import { KIT_DAY_AFTER, kitInput, kitTickets } from "./sprint-lanes-kit";
 afterEach(cleanup);
 
 type Execution = "hidden" | "shown";
+type MockHold = NonNullable<MockSdkOptions["holds"]>[number];
 
-const setup = (seed = seedSprintGraph, config: Record<string, unknown> = {}, agentExecution?: Execution) => {
+type Options = { config?: Record<string, unknown>; agentExecution?: Execution; holds?: MockHold[] };
+
+const setup = (seed = seedSprintGraph, { config = {}, agentExecution, holds = [] }: Options = {}) => {
   const m = createMockSdk(manifest, {
     seed,
     surface: "view",
     viewer: "adam",
     today: SEED_TODAY,
     config,
+    holds,
     ...(agentExecution === undefined ? {} : { agentExecution }),
   });
   render(
@@ -122,7 +127,9 @@ test("a storage that cannot be read keeps « Fonctionnalités »", async () => {
 });
 
 test("a delivered feature is folded, even with the former config keys, and its title opens it", async () => {
-  const m = setup(seedSprintGraph, { collapseDelivered: false, showDone: true, columns: "waves" });
+  const m = setup(seedSprintGraph, {
+    config: { collapseDelivered: false, showDone: true, columns: "waves" },
+  });
   const region = await lanes();
   const f1 = within(region).getByRole("article", { name: /^F1 / });
   expect(within(f1).queryAllByRole("listitem")).toHaveLength(0);
@@ -203,7 +210,7 @@ test("a long title is clamped to its reserved lines inside the button", () => {
 const TESTS_STEP = "Envoyer les photos d'un constat · étape 4";
 
 async function withLiveRun(agentExecution: Execution) {
-  const m = setup(seedSprintGraph, {}, agentExecution);
+  const m = setup(seedSprintGraph, { agentExecution });
   await lanes();
   const step = m.snapshot().tickets.find((t) => t.title === TESTS_STEP);
   if (step === undefined) throw new Error("missing step");
@@ -253,4 +260,57 @@ test("an empty project says what the Graphe is for and opens a new feature on th
   expect(m.viewRequests).toEqual([
     { componentId: "planning", question: null, intent: { kind: "newFeature" } },
   ]);
+});
+
+const MINIO = "Serveur MinIO de recette indisponible";
+const hold = (ticketId: string, reason = MINIO): MockHold => ({ ticketId, reason, since: SEED_TODAY });
+
+test("a held step shows a cyan dot and a pause icon with its reason, the dependency says which step it waits for", async () => {
+  setup(seedSprintGraph, { holds: [hold("KIB-26")] });
+  const region = await lanes();
+  const f5 = within(region).getByRole("article", { name: /^F5 / });
+  const segments = f5.querySelector('[data-slot="frame-segments"]');
+  expect(segments?.querySelectorAll('[data-tone="hold"]')).toHaveLength(3);
+  const rows = within(f5).getAllByRole("listitem");
+  expect(rows.map((r) => r.querySelector("[data-tone]")?.getAttribute("data-tone"))).toEqual([
+    "done",
+    "review",
+    "hold",
+    "hold",
+    "hold",
+  ]);
+  const own = within(f5).getByRole("img", { name: `En attente : ${MINIO}` });
+  expect(own.getAttribute("class")).toContain("text-(--tracking-hold)");
+  expect(within(f5).getAllByRole("img", { name: /^En attente de KIB-26$/ })).toHaveLength(2);
+  expect(within(f5).getByRole("img", { name: "3 en attente" }).textContent).toBe("3");
+});
+
+test("the legend lists « En attente » after « Bloqué »", async () => {
+  setup();
+  await lanes();
+  const items = within(screen.getByRole("list", { name: "Légende" }))
+    .getAllByRole("listitem")
+    .map((i) => i.textContent);
+  expect(items.indexOf("En attente")).toBe(items.indexOf("Bloqué") + 1);
+});
+
+const LAST_F4_STEP = "Saisir un constat hors ligne · étape 5";
+const lastF4StepDone = (run: SeedRun) =>
+  seedSprintGraph((cmd) =>
+    run(cmd.method === "createTicket" && cmd.title === LAST_F4_STEP ? { ...cmd, statusId: "done" } : cmd),
+  );
+
+test("a delivered feature with a held step lists it under its header", async () => {
+  const m = setup(lastF4StepDone, { holds: [hold("KIB-21", "Règle de fusion à valider par le client")] });
+  const region = await lanes();
+  const f4 = within(region).getByRole("article", { name: /^F4 / });
+  const rows = within(f4).getAllByRole("listitem");
+  expect(rows.map((r) => within(r).getByRole("button").textContent)).toEqual([
+    "Saisir un constat hors ligne · étape 4",
+  ]);
+  expect(within(f4).getByRole("img", { name: "1 en attente" })).toBeTruthy();
+  expect(within(f4).getByLabelText("Livrée")).toBeTruthy();
+  await userEvent.click(within(f4).getByRole("button", { name: "Saisir un constat hors ligne" }));
+  const root = m.snapshot().tickets.find((t) => t.title === "Saisir un constat hors ligne");
+  expect(m.opened).toEqual([root?.id ?? ""]);
 });

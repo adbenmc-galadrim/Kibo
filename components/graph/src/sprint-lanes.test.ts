@@ -1,17 +1,27 @@
 import { expect, test } from "bun:test";
 import fc from "fast-check";
-import { frameWidth, sprintLanes } from "./sprint-lanes";
-import { KIT_DAY_AFTER, KIT_LINKS, kitInput, kitTickets, kitView } from "./sprint-lanes-kit";
+import { frameHeight } from "./frame-geometry";
+import { frameWidth, type SprintLanesModel, sprintLanes } from "./sprint-lanes";
+import {
+  KIT_DAY_AFTER,
+  KIT_HOLDS,
+  KIT_LINKS,
+  KIT_SPRINTS,
+  KIT_TODAY,
+  kitInput,
+  kitTickets,
+  kitView,
+} from "./sprint-lanes-kit";
 
 const model = (today?: string) =>
   sprintLanes(kitInput(today === undefined ? {} : { tickets: kitTickets(today) }));
-const frame = (shortKey: string, today?: string) => {
-  const f = model(today)
-    .lanes.flatMap((l) => l.frames)
-    .find((x) => x.shortKey === shortKey);
+const frameOf = (m: SprintLanesModel, shortKey: string) => {
+  const f = m.lanes.flatMap((l) => l.frames).find((x) => x.shortKey === shortKey);
   if (f === undefined) throw new Error(`missing ${shortKey}`);
   return f;
 };
+const frame = (shortKey: string, today?: string) => frameOf(model(today), shortKey);
+const held = () => sprintLanes(kitInput({ tickets: kitTickets(KIT_TODAY, KIT_HOLDS) }));
 
 test("one column per sorted sprint, then « À planifier »", () => {
   const lanes = model().lanes;
@@ -186,4 +196,33 @@ test("each sprint column says its state with the overview's words", () => {
   expect(at("2026-10-14")).toEqual(["terminé le 9 oct.", "en cours", "prévu", "prévu", null]);
   expect(at("2026-10-16")).toEqual(["terminé le 9 oct.", "se termine aujourd'hui", "prévu", "prévu", null]);
   expect(at(KIT_DAY_AFTER)?.[1]).toBe("terminé le 16 oct. · reste 2");
+});
+
+test("held steps are cyan at their place, a dependency hold is no longer blocked", () => {
+  const f5 = frameOf(held(), "F5");
+  expect(f5.segments.map((s) => s.tone)).toEqual(["done", "review", "hold", "hold", "hold"]);
+  expect(f5.steps.map((s) => s.tone)).toEqual(["done", "review", "hold", "hold", "hold"]);
+  expect(f5.steps[2]?.hold).toMatchObject({ source: "own", reason: "Serveur MinIO de recette indisponible" });
+  expect(f5.steps[3]?.hold).toMatchObject({ source: "dependency", key: "SILO-33" });
+  expect(f5.steps[0]?.hold).toBeNull();
+  expect(f5.held).toBe(3);
+  expect(f5.collapsed).toBe(false);
+});
+
+test("a delivered feature with a held step keeps that step only, its header counts it", () => {
+  const f4 = frameOf(held(), "F4");
+  expect(f4.delivered).toBe(true);
+  expect(f4.steps.map((s) => s.key)).toEqual(["SILO-45"]);
+  expect(f4.held).toBe(1);
+  expect(f4.segments).toHaveLength(5);
+  expect(f4.height).toBe(frameHeight({ lines: f4.titleLines, steps: 1, footer: false }));
+  const alone = KIT_SPRINTS.map((s) => (s.code === "S42" ? { ...s, features: ["SILO-40"] } : s));
+  const tickets = kitTickets(KIT_TODAY, KIT_HOLDS);
+  const f4Alone = frameOf(sprintLanes(kitInput({ tickets, sprints: alone })), "F4");
+  expect(f4Alone.width).toBe(frameWidth("Saisir un constat hors ligne", f4.steps));
+  expect(f4Alone.width).toBeGreaterThan(126);
+  const f1 = frame("F1");
+  expect(f1.steps).toEqual([]);
+  expect(f1.held).toBe(0);
+  expect(f1.width).toBe(126);
 });
