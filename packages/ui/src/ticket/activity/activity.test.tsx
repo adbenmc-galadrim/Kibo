@@ -53,8 +53,15 @@ const { AgentsProvider } = await import("../../state/agents-context");
 let width = 1_200;
 const observers = new Set<() => void>();
 const originalObserver = globalThis.ResizeObserver;
-const originalRect = HTMLElement.prototype.getBoundingClientRect;
-const originalScroll = HTMLElement.prototype.scrollIntoView;
+const ownElementMethods = ["getBoundingClientRect", "scrollIntoView"].map(
+  (name) => [name, Object.getOwnPropertyDescriptor(HTMLElement.prototype, name)] as const,
+);
+const restoreElementMethods = () => {
+  for (const [name, own] of ownElementMethods) {
+    if (own) Object.defineProperty(HTMLElement.prototype, name, own);
+    else Reflect.deleteProperty(HTMLElement.prototype, name);
+  }
+};
 
 class FakeObserver implements ResizeObserver {
   private readonly notify: () => void;
@@ -88,8 +95,7 @@ beforeEach(() => {
 
 afterEach(() => {
   globalThis.ResizeObserver = originalObserver;
-  HTMLElement.prototype.getBoundingClientRect = originalRect;
-  HTMLElement.prototype.scrollIntoView = originalScroll;
+  restoreElementMethods();
 });
 
 const show = (node: ReactNode, agents: AgentsState = dockState()) =>
