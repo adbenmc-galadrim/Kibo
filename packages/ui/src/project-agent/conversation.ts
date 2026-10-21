@@ -208,22 +208,37 @@ export type TrackingThread = {
 const inExchange = (item: ConversationItem): boolean =>
   item.kind === "event" ? item.tone === "red" : item.kind !== "batch";
 
-const isWakeup = (item: ConversationItem | undefined): boolean => item?.kind === "wakeup";
+const isAsk = (item: ConversationItem | undefined): boolean =>
+  item?.kind === "user" || item?.kind === "wakeup";
+const isPending = (item: ConversationItem | undefined): boolean =>
+  isAsk(item) || item?.kind === "event" || item?.kind === "reading";
 
 function lastAskedIndex(items: readonly ConversationItem[]): number {
   let i = items.length - 1;
-  while (i >= 0 && items[i]?.kind !== "user" && !isWakeup(items[i])) i--;
-  while (i > 0 && isWakeup(items[i]) && isWakeup(items[i - 1])) i--;
+  while (i >= 0 && !isAsk(items[i])) i--;
   return i;
 }
 
+function firstUnansweredIndex(items: readonly ConversationItem[]): number {
+  let asked = lastAskedIndex(items);
+  for (let i = asked - 1; i >= 0 && isPending(items[i]); i--) if (isAsk(items[i])) asked = i;
+  return asked;
+}
+
+const thread = (summary: AgentItem | null, exchange: ConversationItem[]): TrackingThread => ({
+  summary: summary?.text ?? null,
+  summaryAt: summary?.at ?? null,
+  exchange,
+});
+
 export function trackingThread(items: readonly ConversationItem[]): TrackingThread {
-  const asked = lastAskedIndex(items);
-  const before = asked < 0 ? null : lastAgent(items.slice(0, asked));
-  const after = asked < 0 ? null : lastAgent(items.slice(asked));
-  const summary = asked < 0 || (before === null && after !== null) ? lastAgent(items) : before;
-  const exchange = summary === before && asked >= 0 ? items.slice(asked).filter(inExchange) : [];
-  return { summary: summary?.text ?? null, summaryAt: summary?.at ?? null, exchange };
+  const asked = firstUnansweredIndex(items);
+  if (asked < 0) return thread(lastAgent(items), []);
+  const before = lastAgent(items.slice(0, asked));
+  const exchange = items.slice(asked).filter(inExchange);
+  if (before !== null || exchange.some((item) => item.kind === "user")) return thread(before, exchange);
+  const reply = lastAgent(items);
+  return reply ? thread(reply, []) : thread(null, exchange);
 }
 
 export function panelStatus(run: RunView | null, pending: Batch | null): PanelStatus {

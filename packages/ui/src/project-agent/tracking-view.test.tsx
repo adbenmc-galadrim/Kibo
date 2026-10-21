@@ -174,3 +174,12 @@ test("the summary is dated: its time today, its day and time before", () => {
   show();
   expect(screen.getByRole("region", { name: "Résumé du jour" })).toBeTruthy();
 });
+
+test("a first question and its answer both show, under the invitation instead of a summary", async () => {
+  show({ items: [user("u1", "Où en est F5 ?"), agent("a1", "Il reste 4 étapes.")], withBatch: false });
+  const region = within(screen.getByRole("region", { name: "Résumé du jour" }));
+  expect(region.getByText("Pose une question sur Silo ou attends la fin du sprint.")).toBeTruthy();
+  expect(region.getByText("épinglé")).toBeTruthy();
+  expect(screen.getByText("Où en est F5 ?")).toBeTruthy();
+  expect(await screen.findByText("Il reste 4 étapes.")).toBeTruthy();
+});

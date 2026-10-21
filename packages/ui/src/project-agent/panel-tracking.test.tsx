@@ -171,3 +171,32 @@ test("a wakeup on an answer shows in Suivi and in the conversation, never as a b
   expect(await panel().findByText("Q16 répondue : « 5 Go »")).toBeTruthy();
   expect(panel().queryByText(ANSWER_WAKEUP)).toBeNull();
 });
+
+test("the first question of a new agent and its answer both show in Suivi", async () => {
+  runLog = [
+    { id: 1, at: NOW - 3_000, event: { type: "answered", text: "Où en est F5 ?", rank: 0 } },
+    {
+      id: 2,
+      at: NOW - 2_000,
+      event: { type: "spawned", pid: 7, resume: false, workspace: "/tmp/silo", guidelines: 0 },
+    },
+    {
+      id: 3,
+      at: NOW - 1_000,
+      event: {
+        type: "exited",
+        code: 0,
+        isError: false,
+        result: "Il reste 4 étapes.",
+        tokens: 0,
+        costUsd: 0,
+        denied: [],
+      },
+    },
+  ];
+  show();
+  expect(await panel().findByText("Où en est F5 ?")).toBeTruthy();
+  expect(await panel().findByText("Il reste 4 étapes.")).toBeTruthy();
+  const summary = within(panel().getByRole("region", { name: "Résumé du jour" }));
+  expect(summary.getByText("Pose une question sur Silo ou attends la fin du sprint.")).toBeTruthy();
+});

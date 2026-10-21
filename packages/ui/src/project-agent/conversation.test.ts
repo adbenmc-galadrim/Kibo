@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
 import { type RunLogEntry, WAKEUP_PREFIX } from "@kibo/schema";
+import fc from "fast-check";
 import { NOW } from "../agents/fixtures";
 import {
   buildConversation,
@@ -12,6 +13,8 @@ import {
   trackingThread,
 } from "./conversation";
 import { CONVERSATION_LOG, partialBatch, pendingBatch, projectRun } from "./fixtures";
+
+const MIN = 60_000;
 
 const shape = (items: ReturnType<typeof buildConversation>) =>
   items.map((i) => {
@@ -272,9 +275,9 @@ test("the question asked after the summary is the exchange, the summary stays", 
   });
 });
 
-test("the turn that wrote the summary shows no exchange, a first question does until answered", () => {
+test("a turn without an earlier agent text is an exchange, not a summary", () => {
   const point = [user("u1", "Fais le point"), agent("a1", "F3 est livrée.")];
-  expect(trackingThread(point)).toEqual({ summary: "F3 est livrée.", summaryAt: 1, exchange: [] });
+  expect(trackingThread(point)).toEqual({ summary: null, summaryAt: null, exchange: point });
   const first = [user("u1", "Où en est F5 ?")];
   expect(trackingThread(first)).toEqual({ summary: null, summaryAt: null, exchange: first });
   expect(trackingThread([])).toEqual({ summary: null, summaryAt: null, exchange: [] });
@@ -316,4 +319,43 @@ test("the exchange starts at the first line of a wakeup with several answers", (
   const lines = [wakeup("w1-a0", "Q16 répondue : « 5 Go »"), wakeup("w1-a1", "Q17 répondue : « Oui »")];
   const a2 = agent("a2", "Je propose :");
   expect(trackingThread([agent("a1", "F3 est livrée."), ...lines, a2]).exchange).toEqual([...lines, a2]);
+});
+
+test("a first question and its answer both show: the question is never hidden behind a summary", () => {
+  const first = [user("u1", "Où en est F5 ?"), agent("a1", "Il reste 4 étapes.")];
+  expect(trackingThread(first)).toEqual({ summary: null, summaryAt: null, exchange: first });
+  const twice = [user("u1", "Où en est F5 ?"), user("u2", "Et F4 ?")];
+  expect(trackingThread(twice).exchange.map((i) => i.id)).toEqual(["u1", "u2"]);
+  const queuedAfterAnswer = [
+    user("u1", "Fais le point"),
+    agent("a1", "F3 est livrée."),
+    user("u2", "Et F4 ?"),
+    user("u3", "Et F5 ?"),
+  ];
+  expect(trackingThread(queuedAfterAnswer).exchange.map((i) => i.id)).toEqual(["u2", "u3"]);
+});
+
+test("every message from Adam in the log is a user item, even one sent while the run is queued", () => {
+  const log: RunLogEntry[] = [
+    { id: 1, at: NOW - 3 * MIN, event: { type: "answered", text: "Fais le point", rank: 0 } },
+    { id: 2, at: NOW - 2 * MIN, event: { type: "answered", text: "Et F5 ?", rank: 0 } },
+  ];
+  const items = buildConversation(log, [], projectRun({ state: "queued" }));
+  expect(items.filter((i) => i.kind === "user").map((i) => i.text)).toEqual(["Fais le point", "Et F5 ?"]);
+  fc.assert(
+    fc.property(
+      fc.array(
+        fc.string({ minLength: 1, maxLength: 40 }).filter((s) => s.trim() !== ""),
+        { maxLength: 8 },
+      ),
+      (texts) => {
+        const entries = texts.map(
+          (text, k): RunLogEntry => ({ id: k + 1, at: NOW + k, event: { type: "answered", text, rank: 0 } }),
+        );
+        expect(buildConversation(entries, [], null).filter((i) => i.kind === "user")).toHaveLength(
+          texts.length,
+        );
+      },
+    ),
+  );
 });
