@@ -131,6 +131,7 @@ async function main(): Promise<number> {
   const transcript = openTranscript(transcriptPath, sessionId, process.cwd());
   const { playAll } = createPlayer({
     argv,
+    prompt,
     stateDir,
     sessionId,
     launcher,

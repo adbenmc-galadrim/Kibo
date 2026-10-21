@@ -165,31 +165,45 @@ function profileId(name: string, calls: readonly McpCallLog[]): string {
   return profile.id;
 }
 
-function questionId(title: string, calls: readonly McpCallLog[]): string {
+const PROMPT_QUESTION = /^- (\S+) · \S+ · (.+?)(?: \(bloquante\))?$/;
+
+function promptQuestionId(title: string, prompt: string): string | null {
+  for (const line of prompt.split("\n")) {
+    const found = PROMPT_QUESTION.exec(line);
+    if (found?.[2] === title && found[1] !== undefined) return found[1];
+  }
+  return null;
+}
+
+function questionId(title: string, calls: readonly McpCallLog[], prompt: string): string {
+  const listed = calls.some((c) => c.tool === "list_questions" && !c.isError);
+  const fromPrompt = listed ? null : promptQuestionId(title, prompt);
+  if (fromPrompt !== null) return fromPrompt;
   const text = lastReply("list_questions", calls, `question ${title}`);
   const question = ListedQuestions.parse(JSON.parse(text)).find((q) => q.title === title);
   if (!question) throw new Error(`no question titled ${title}`);
   return question.id;
 }
 
-function bindText(value: string, calls: readonly McpCallLog[]): string {
+function bindText(value: string, calls: readonly McpCallLog[], prompt: string): string {
   const profile = PROFILE_REF.exec(value)?.[1];
   if (profile !== undefined) return profileId(profile, calls);
   const question = QUESTION_REF.exec(value)?.[1];
-  return question === undefined ? value : questionId(question, calls);
+  return question === undefined ? value : questionId(question, calls, prompt);
 }
 
-function bindValue(value: unknown, calls: readonly McpCallLog[]): unknown {
-  if (typeof value === "string") return bindText(value, calls);
-  if (Array.isArray(value)) return value.map((v) => bindValue(v, calls));
+function bindValue(value: unknown, calls: readonly McpCallLog[], prompt: string): unknown {
+  if (typeof value === "string") return bindText(value, calls, prompt);
+  if (Array.isArray(value)) return value.map((v) => bindValue(v, calls, prompt));
   if (typeof value === "object" && value !== null)
-    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, bindValue(v, calls)]));
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, bindValue(v, calls, prompt)]));
   return value;
 }
 
 export function bindPlaceholders(
   input: Record<string, unknown>,
   calls: readonly McpCallLog[],
+  prompt = "",
 ): Record<string, unknown> {
-  return Object.fromEntries(Object.entries(input).map(([k, v]) => [k, bindValue(v, calls)]));
+  return Object.fromEntries(Object.entries(input).map(([k, v]) => [k, bindValue(v, calls, prompt)]));
 }

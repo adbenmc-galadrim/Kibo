@@ -95,6 +95,22 @@ test("question placeholders resolve by title from the turn's list_questions repl
   expect(() => bindPlaceholders({ q: "{{question:Autre}}" }, calls)).toThrow("no question titled Autre");
 });
 
+test("without list_questions, a question placeholder resolves from the open questions of the prompt", () => {
+  const prompt = [
+    "## Questions ouvertes",
+    "- q-7 · SILO-51 · Un box réaffecté garde-t-il ses photos ? (bloquante)",
+    "- q-8 · SILO-34 · Quota par client : 2 Go ou 5 Go ?",
+  ].join("\n");
+  const input = {
+    q: "{{question:Un box réaffecté garde-t-il ses photos ?}}",
+    r: "{{question:Quota par client : 2 Go ou 5 Go ?}}",
+  };
+  expect(bindPlaceholders(input, [], prompt)).toEqual({ q: "q-7", r: "q-8" });
+  expect(() => bindPlaceholders({ q: "{{question:Autre}}" }, [], prompt)).toThrow(
+    "no list_questions reply to resolve question Autre",
+  );
+});
+
 test("routes never match the work in progress of the other runs", () => {
   const routes = scenarioPath("routes");
   const section = [

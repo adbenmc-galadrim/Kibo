@@ -32,6 +32,7 @@ import {
 export type HookRun = { code: number; stdout: string };
 export type PlayContext = {
   argv: string[];
+  prompt: string;
   stateDir: string;
   sessionId: string;
   launcher: number;
@@ -82,7 +83,10 @@ export function createPlayer(ctx: PlayContext): Player {
 
   async function mcp(step: { mcp: string; input: Record<string, unknown> }): Promise<void> {
     const server = mcpServerFrom(ctx.argv);
-    const call = { tool_name: mcpToolName(step.mcp), tool_input: bindPlaceholders(step.input, ctx.mcpCalls) };
+    const call = {
+      tool_name: mcpToolName(step.mcp),
+      tool_input: bindPlaceholders(step.input, ctx.mcpCalls, ctx.prompt),
+    };
     const { refused } = await toolHooks("PreToolUse", call, () => mcpOutcome("", false));
     logUse(call.tool_name, call.tool_input, refused);
     if (refused) {
