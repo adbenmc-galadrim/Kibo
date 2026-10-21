@@ -1,5 +1,5 @@
 // Phase 31 (spec §46) : l'agent de projet devient une conversation. « P1 bis · Agent agrandi » clone « P1 bis v3 · Vue d'ensemble » et
-// passe le volet à 720 px (liste des agents à gauche, colonne de lecture) ; « Agent de projet, volet » (340 × 1 000, liste ouverte
+// pose le volet de 720 px en calque par-dessus (liste des agents à gauche, colonne de lecture) ; « Agent de projet, volet » (340 × 1 000, liste ouverte
 // par-dessus la conversation) et « Agent de projet, agrandi, liste rétractée » (720 × 1 000) sont des références visuelles.
 // Rangées après « P5b · Graphe · en attente », sombre à x = 0, clair à x = 1 540. Conversation et carte de lot : 50-proposition.js.
 const S = storage;
@@ -42,9 +42,21 @@ S.agentWideAC = (root, list) => { const C = S.C, W = S.WIDE_AC;
 
 // ---------- Boards ----------
 S.drawACk = {};
-S.drawACk["ac-agrandi"] = (x, y) => {
+// Agrandi, le volet recouvre la page (décision d'Adam du 2026-10-21, spec §46.2) : la Vue d'ensemble reprend sa pleine largeur
+// sans volet étroit (grille des échéances étirée, colonne des libellés fixe) et le calque de 720 px se pose à droite, ombre vers la gauche.
+S.stretchGridAC = (grid, w) => { const LW = 250, k = (w - LW) / (grid.width - LW), x0 = grid.x;
+  for (const c of [...grid.children]) { const rx = c.x - x0; if (rx < LW - 0.5) continue;
+    const nx = LW + (rx - LW) * k; if (c.type === "board" && !(c.children || []).length && c.width > 2) c.resize(c.width * k, c.height); c.x = x0 + nx; }
+  grid.resize(w, grid.height); };
+S.drawACk["ac-agrandi"] = (x, y) => { const C = S.C, W = S.WIDE_AC;
   const f = S.rename(S.cloneScreen("P1 bis v3 · Vue d'ensemble", x, y), S.NAMES_AC["ac-agrandi"]);
-  const panel = S.named(f, "agent-panel"), root = S.parentOf(f, panel); panel.remove(); S.agentWideAC(root, true);
+  const panel = S.named(f, "agent-panel"), root = S.parentOf(f, panel), shown = S.shown(root), i = shown.findIndex(c => c.id === panel.id);
+  shown[i - 1].remove(); panel.remove();
+  const grid = S.named(f, "grid"); S.stretchGridAC(grid, grid.width + root.width - 1100 + 1);
+  const layer = S.box(f, { name: "agent-overlay", x: f.width - W.panel, y: 0, w: W.panel, h: f.height, dir: "row", align: "stretch", fill: C.panel });
+  layer.shadows = [{ style: "drop-shadow", offsetX: -8, offsetY: 0, blur: 32, spread: 0, color: { color: "#000000", opacity: S.mode === "dark" ? 0.5 : 0.12 } }];
+  S.vline(layer, C.border); const ap = S.agentWideAC(layer, true); ap.layoutChild.horizontalSizing = "fill";
+  layer.bringToFront();
   return f; };
 S.drawACk["ac-volet"] = (x, y) => { const C = S.C;
   const f = S.screen(S.NAMES_AC["ac-volet"], x, y, 340, 1000);

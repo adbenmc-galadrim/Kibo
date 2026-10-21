@@ -373,8 +373,8 @@ attente » est ajouté (rangée y = 51 500, voir `design/redesign/README.md`, «
 Phase 31, agent de projet en conversation (spec §46) : le volet de P1 bis v3, « En retard », P6 et « Vue d'ensemble · en attente » est
 redessiné en conversation, et trois boards sont ajoutés (rangées à partir de y = 53 000, voir `design/redesign/README.md`, « Agent de
 projet en conversation »). En page 36 : **219**, **221**, **222** et **226** à refaire (volet en conversation) ; **225**, **225b** et
-**235** (panneau Suivi : question, récapitulatif, réveil) retirés et remplacés par **240** « Agent agrandi » (vue d'ensemble, volet de
-720 px, liste ouverte), **241** « Agent de projet, volet » (340 px, liste ouverte par-dessus) et **242** « Agent de projet, agrandi, liste
+**235** (panneau Suivi : question, récapitulatif, réveil) retirés et remplacés par **240** « Agent agrandi » (vue d'ensemble en pleine
+largeur, volet de 720 px en calque par-dessus, liste ouverte), **241** « Agent de projet, volet » (340 px, liste ouverte par-dessus) et **242** « Agent de projet, agrandi, liste
 rétractée ».
 
 ## Exporter
