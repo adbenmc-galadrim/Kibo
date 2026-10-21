@@ -647,6 +647,43 @@ Contenu du cadre (écran mobile de l'app Silo, mêmes couleurs en sombre et en c
 - Plein écran (P8g) : barre « SILO-45 · Conflit de saisie · Figma · Actualiser · Ouvrir dans Figma · Quitter le plein écran
   (Échap) » ; un seul cadre, donc aucune navigation « 1 / 1 » ; cadre à l'échelle 1, centré ; zoom « 100 % ».
 
+### Phase 31 · Graphe en attente et couleur de l'attente
+
+Couleur de l'attente (spec §45.2) : jeton `--tracking-hold`, cyan `#0e7490` en clair et `#22d3ee` en sombre, fond
+`--tracking-hold-soft` `#ecfeff` / `#082f35` ; icône ⏸ (`Pause`). Une étape en attente, propre ou par dépendance, est montrée à sa
+place, en cyan, partout où une fonctionnalité affiche ses étapes (§45.3) ; les comptes ne changent pas.
+
+Scénario `silo-graphe` (spec §45.4) = `silo-attente`, puis F1 renommée « Connexion, environnements et hébergement » (36 caractères,
+trois lignes à 126 px) ; les étapes SILO-2 à SILO-5 gardent leurs titres ; `silo-maquettes` et `silo-attente` ne sont pas modifiés.
+Maquette : board « P5b · Graphe · en attente » de la page « Proposition » (`design/redesign/scripts/59c-graphe-attente.js`, clone de
+« P5b · Graphe, Fonctionnalités »), exports `proposition-attente-graphe-*`.
+
+États attendus (Graphe, vue « Fonctionnalités », 16 oct.) :
+- S41 : F1 repliée (livrée), titre « Connexion, environnements et hébergement » sur **trois lignes**, cadre 126 × 96 (81 + 15) ; F2
+  à y = 70 + 96 + 30 = 196.
+- S42 : F3 repliée ; **F4 « 3/4 ⏸ 1 ✓ »**, livrée avec une attente : seule la ligne SILO-45 « Conflits de saisie » reste visible
+  (point cyan, ⏸ cyan, infobulle « En attente : Règle de fusion à valider par le client », icône PR ambre), segments terminé ×3,
+  **cyan**, à faire ; **F5 « 1/2 ⏸ 3 »** : 31 (terminé), 32 (en review, PR violette), 33 (cyan, ⏸ « En attente : Serveur MinIO de
+  recette indisponible », bordure orange de session, icône branche), 34 et 35 (cyan, ⏸ « En attente de SILO-33 ») ; segments
+  terminé, review, cyan ×3.
+- S44 : **F7 « 0/4 ⏸ 1 »**, ligne SILO-82 cyan, segments à faire, **cyan**, à faire ×3.
+- Légende : « À faire · En cours · En review · Bloqué · **En attente** · Fonctionnalité · Colonne = sprint · Session active » ;
+  compteur inchangé (masqué au pixel).
+
+États attendus (scénario `silo-attente`, boards 226 à 229 refaits) :
+- Vue d'ensemble : sous-ligne « ⏸ 3 en attente » en cyan sous Fonctionnalités ; carte Sprint : F4 cases ■■■◆□ et « ⏸ 1 », F5 cases
+  ■■◆◆◆ et « ⏸ 3 » (◆ = case cyan) ; Prochaine à finir : F5 cases ■■◆◆◆ ; carte « En attente » : ⏸ cyan devant chaque ligne (⏸
+  du titre en gris) ; Activité inchangée (⏸ gris).
+- Planning : F4 cases ■■■◆□, F5 ■■◆◆◆, F7 □◆□□□ ; textes inchangés (« livrée · 1 en attente », « 1/2 étapes », « 0/4 étapes ») ;
+  « En attente (3) » avec ⏸ cyan.
+- Fiche F5 : barre ■■◆◆◆ « 1 étape livrée sur 2 · 3 en attente » ; section « En attente · 3 » : ⏸ cyan en titre, pastilles
+  `hold-soft` avec ⏸ cyan, ⏸ cyan devant « Serveur MinIO de recette indisponible · depuis le 16 oct. » (le lien de « attend
+  SILO-33 » reste gris).
+- Kanban : puces pleines cyan, sans bordure, « ⏸ Règle de fusion à valide… », « ⏸ Serveur MinIO de recette… », « ⏸ attend
+  SILO-33 » ; filtre « En attente 5 » avec ⏸ cyan.
+- Restent gris : bandeau « En attente · … » de la fiche SILO-45 (230), événements « Mise en attente » de l'Activité, menus et
+  dialogue (231 à 231d).
+
 ### Pistes A, B, C (`design/redesign/scripts/02-data.js`)
 
 Ce jeu est indépendant de celui des fonctionnalités : les mêmes numéros de tickets y portent d'autres titres et d'autres statuts.
