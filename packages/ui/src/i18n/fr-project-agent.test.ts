@@ -5,7 +5,17 @@ import { frSignals } from "./fr-signals";
 const keys = (o: object) => Object.keys(o);
 
 test("the panel texts keep nothing of the Suivi, the tabs, the menu nor the past list", () => {
-  for (const gone of ["titleSuffix", "tabs", "status", "tracking", "menu", "recap", "reminder", "profile"])
+  for (const gone of [
+    "titleSuffix",
+    "tabs",
+    "status",
+    "tracking",
+    "menu",
+    "recap",
+    "reminder",
+    "profile",
+    "sendFailed",
+  ])
     expect(keys(frProjectAgent)).not.toContain(gone);
   expect(keys(frProjectAgent.compose)).not.toContain("hint");
   expect(keys(frProjectAgent.past)).toEqual(["banner", "back"]);

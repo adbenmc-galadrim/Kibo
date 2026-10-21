@@ -69,7 +69,7 @@ export function useAgentConversation(project: ProjectSnapshot, open: boolean) {
   };
   const retry = () => {
     const text = lastUserMessage(log);
-    if (text) outbox.send(text).catch((e: unknown) => console.error(e));
+    if (text) void outbox.send(text);
   };
   const openTicket = (key: string) => {
     const ticket = project.tickets.find((t) => t.key === key);

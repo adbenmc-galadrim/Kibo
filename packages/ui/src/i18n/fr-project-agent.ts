@@ -177,7 +177,6 @@ export const frProjectAgent = {
   pending: (n: number) => (n > 0 ? `${plural(n, "action")} à valider` : "Un lot attend ta validation"),
   resize: "Redimensionner le panneau",
   loadFailed: "Impossible de charger l'agent de projet.",
-  sendFailed: "Message non envoyé.",
   decideFailed: "Décision non enregistrée.",
   resetFailed: "Impossible de repartir de zéro.",
 } as const;

@@ -53,16 +53,35 @@ test("the message shows with « envoi… » before the daemon answers, then once
   expect(panel().getAllByText("Et F5 ?")).toHaveLength(1);
 });
 
-test("a failed send keeps the bubble with Non envoyé and Réessayer, which sends the same text again", async () => {
+test("a failed send empties the box, keeps the bubble with Non envoyé and Réessayer, which sends the same text again", async () => {
   showPanel(ProjectAgentPanel);
   const { user, box } = await sendText("Et F5 ?");
+  expect((box as HTMLTextAreaElement).value).toBe("");
   await settle((p) => p.reject(new Error("boom")));
   const bubble = await panel().findByRole("listitem", { name: "Toi · non envoyé" });
   expect(within(bubble).getByText("Non envoyé")).toBeTruthy();
-  expect((box as HTMLTextAreaElement).value).toBe("Et F5 ?");
+  expect(panel().queryByRole("alert")).toBeNull();
+  expect(panel().queryByText("Message non envoyé.")).toBeNull();
   await user.click(within(bubble).getByRole("button", { name: "Réessayer" }));
   await waitFor(() => expect(rpcs("sendProjectAgentMessage")).toHaveLength(2));
   expect(rpcs("sendProjectAgentMessage").at(-1)).toMatchObject({ text: "Et F5 ?" });
   expect(await panel().findByRole("listitem", { name: "Toi · envoi…" })).toBeTruthy();
   expect(panel().queryByRole("listitem", { name: "Toi · non envoyé" })).toBeNull();
+});
+
+test("a message sent again by Réessayer leaves once the log carries it", async () => {
+  showPanel(ProjectAgentPanel);
+  const { user } = await sendText("Et F5 ?");
+  await settle((p) => p.reject(new Error("boom")));
+  const bubble = await panel().findByRole("listitem", { name: "Toi · non envoyé" });
+  await user.click(within(bubble).getByRole("button", { name: "Réessayer" }));
+  await panel().findByRole("listitem", { name: "Toi · envoi…" });
+  const at = Date.now() + 1_000;
+  harness.log = [...CONVERSATION_LOG, { id: 11, at, event: { type: "answered", text: "Et F5 ?", rank: 0 } }];
+  await settle((p) => p.resolve());
+  act(emitTopic);
+  expect(await panel().findByRole("listitem", { name: `Toi · ${formatClock(at)}` })).toBeTruthy();
+  expect(panel().queryByRole("listitem", { name: "Toi · envoi…" })).toBeNull();
+  expect(panel().queryByRole("listitem", { name: "Toi · non envoyé" })).toBeNull();
+  expect(panel().getAllByText("Et F5 ?")).toHaveLength(1);
 });

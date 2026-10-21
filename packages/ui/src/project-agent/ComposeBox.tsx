@@ -1,5 +1,4 @@
 import { PROJECT_AGENT_REF } from "@kibo/schema";
-import { cn } from "@kibo/sdk/lib/utils";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { Send } from "lucide-react";
 import { type KeyboardEvent, useId, useState } from "react";
@@ -32,35 +31,24 @@ export function ComposeBox({ projectId, placeholder, onSend }: Props) {
     value: text,
     onValueChange: setText,
   });
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const ready = text.trim() !== "" && !busy;
+  const ready = text.trim() !== "";
 
-  const send = async () => {
+  const send = () => {
     if (!ready) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await onSend(text.trim());
-      setText("");
-    } catch (e) {
-      console.error(e);
-      setError(frProjectAgent.sendFailed);
-    } finally {
-      setBusy(false);
-    }
+    setText("");
+    void onSend(text.trim());
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     complete.inputProps.onKeyDown(e);
     if (e.defaultPrevented || !sendKey(e)) return;
     e.preventDefault();
-    void send();
+    send();
   };
 
   return (
     <div className="shrink-0 border-t border-(--tracking-soft) px-[18px] py-[14px]">
-      <div className={cn(READING_COLUMN, "grid gap-2")}>
+      <div className={READING_COLUMN}>
         <div className={BOX}>
           <Textarea
             id={id}
@@ -76,17 +64,12 @@ export function ComposeBox({ projectId, placeholder, onSend }: Props) {
             aria-label={t.send}
             className="k-focus text-(--tracking-mfg) disabled:opacity-50"
             disabled={!ready}
-            onClick={() => void send()}
+            onClick={send}
           >
             <Send className="size-[15px]" />
           </button>
           {complete.list}
         </div>
-        {error && (
-          <p role="alert" className="text-xs text-destructive">
-            {error}
-          </p>
-        )}
       </div>
     </div>
   );

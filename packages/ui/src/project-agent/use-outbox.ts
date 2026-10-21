@@ -12,12 +12,16 @@ export function useOutbox(deliver: (text: string) => Promise<void>, log: readonl
     });
   }, [log]);
 
+  const inFlight = useRef(new Set<string>());
   const attempt = async (item: OutboxItem) => {
+    inFlight.current.add(item.id);
     try {
       await deliver(item.text);
     } catch (e) {
+      console.error(e);
       setItems((prev) => prev.map((o) => (o.id === item.id ? { ...o, state: "failed" } : o)));
-      throw e;
+    } finally {
+      inFlight.current.delete(item.id);
     }
   };
   const send = (text: string) => {
@@ -28,10 +32,10 @@ export function useOutbox(deliver: (text: string) => Promise<void>, log: readonl
   };
   const retry = (id: string) => {
     const failed = items.find((o) => o.id === id);
-    if (!failed) return;
+    if (!failed || inFlight.current.has(id)) return;
     const item: OutboxItem = { ...failed, at: Date.now(), state: "sending" };
     setItems((prev) => prev.map((o) => (o.id === id ? item : o)));
-    attempt(item).catch((e: unknown) => console.error(e));
+    void attempt(item);
   };
 
   const outbox = useMemo(() => settleOutbox(items, log), [items, log]);
