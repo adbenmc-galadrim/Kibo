@@ -2890,7 +2890,7 @@ Les boards touchés (P5b pour sa légende, et les boards « en attente » de la 
 | `project_changes` | « journal des étapes » |
 | `list_signals` | « signaux » |
 
-« Planning » et « journal des étapes » reprennent les mots de la maquette. Aucun outil ne lit le journal d'activité (`project_events`) lui-même : `project_changes` (ce qui a changé depuis le tour précédent, d'abord les étapes qui avancent) est le plus proche, il prend donc le libellé « journal des étapes » **(choix du chef d'équipe)**. `propose_batch` et les questions posées ne sont pas des lectures. Le scénario `silo-maquettes` lit `list_sprints`, `get_ticket SILO-30` (F5) et `project_changes` pour « Fais le point du jour » ⇒ « Lu : Planning, F5, journal des étapes ».
+« Planning » et « journal des étapes » reprennent les mots de la maquette. Aucun outil ne lit le journal d'activité (`project_events`) lui-même : `project_changes` (ce qui a changé depuis le tour précédent, d'abord les étapes qui avancent) est le plus proche, il prend donc le libellé « journal des étapes » **(choix du chef d'équipe)**. `propose_batch` et les questions posées ne sont pas des lectures. Le scénario `silo-maquettes` lit `list_sprints`, `get_ticket SILO-30` (F5) et `project_changes` pour « Fais le point du jour » ⇒ « Lu : Planning, F5, journal des étapes ». Sans `list_questions`, le faux `claude` résout `{{question:<titre>}}` depuis les questions ouvertes du prompt du tour (que le vrai agent reçoit aussi), comme l'agent qui relance Q14 sans relister les questions.
 
 ### 46.2 Volet agrandissable et liste des agents rétractable (proposition C)
 
