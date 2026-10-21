@@ -1,4 +1,5 @@
 import type { StatusId } from "@kibo/schema";
+import type { CaseTone } from "@kibo/sdk/tracking";
 
 export const STROKE = "shadow-[0_0_0_0.5px_var(--tracking-border),inset_0_0_0_0.5px_var(--tracking-border)]";
 export const STROKE_MFG = "shadow-[0_0_0_0.5px_var(--tracking-mfg),inset_0_0_0_0.5px_var(--tracking-mfg)]";
@@ -14,11 +15,13 @@ export const STATUS_FILL: Partial<Record<StatusId, string>> = {
   blocked: "bg-(--tracking-red)",
 };
 
-export const STEP_SEGMENT: Partial<Record<StatusId, string>> = {
+export const CASE_SEGMENT: Record<CaseTone, string> = {
   done: "bg-(--tracking-fg)",
-  in_review: "bg-(--tracking-purple)",
-  in_progress: "bg-(--tracking-blue)",
+  review: "bg-(--tracking-purple)",
+  progress: "bg-(--tracking-blue)",
   blocked: "bg-(--tracking-red)",
+  hold: "bg-(--tracking-hold)",
+  todo: "bg-(--tracking-border)",
 };
 
 export const STEP_CIRCLE: Partial<Record<StatusId, string>> = {

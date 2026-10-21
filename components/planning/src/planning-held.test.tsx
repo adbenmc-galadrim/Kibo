@@ -16,19 +16,19 @@ const tones = (card: HTMLElement) =>
 const heldSection = async () =>
   within(await column("À planifier")).findByRole("region", { name: /^En attente/ });
 
-test("À planifier ends with the steps on hold, and feature cards leave them out", async () => {
+test("À planifier ends with the steps on hold, and feature cards show them in cyan", async () => {
   setupPlanning(TODAY, { seedWith: seedPlanningHeld });
   expect((await heldSection()).getAttribute("aria-label")).toBe("En attente (3)");
   const f4 = await cardIn(/^S42 /, "F4");
   expect(within(f4).getByText("livrée · 1 en attente")).toBeTruthy();
-  expect(tones(f4)).toEqual(["done", "done", "done", "todo"]);
+  expect(tones(f4)).toEqual(["done", "done", "done", "hold", "todo"]);
   expect(within(f4).getByText("3/4 étapes")).toBeTruthy();
   expect(within(f4).getByText("KIB-16")).toBeTruthy();
   const f5 = await cardIn(/^S42 /, "F5");
-  expect(tones(f5)).toEqual(["done", "review"]);
+  expect(tones(f5)).toEqual(["done", "review", "hold", "hold", "hold"]);
   expect(within(f5).getByText("1/2 étapes")).toBeTruthy();
   expect(within(f5).getByText("KIB-21")).toBeTruthy();
-  expect(tones(await cardIn(/^S44 /, "F7"))).toEqual(["todo", "todo", "todo", "todo"]);
+  expect(tones(await cardIn(/^S44 /, "F7"))).toEqual(["todo", "hold", "todo", "todo", "todo"]);
 });
 
 test("without a step on hold, À planifier has no section En attente", async () => {
@@ -87,4 +87,18 @@ test("read only, the steps on hold have no menu", async () => {
   act(() => m.setAccess("read-only"));
   const section = await heldSection();
   await waitFor(() => expect(within(section).queryByRole("button", { name: /^Actions de / })).toBeNull());
+});
+
+test("the legend names the held case, in cyan, right after the blocked one", async () => {
+  setupPlanning();
+  const legend = (await screen.findByText("étape livrée")).closest("footer");
+  if (!(legend instanceof HTMLElement)) throw new Error("no legend");
+  const entries = Array.from(legend.querySelectorAll("span > span[aria-hidden]")).map((swatch) => [
+    swatch.parentElement?.textContent,
+    swatch.className.includes("bg-(--tracking-hold)"),
+  ]);
+  expect(entries.slice(3, 5)).toEqual([
+    ["bloquée", false],
+    ["en attente", true],
+  ]);
 });

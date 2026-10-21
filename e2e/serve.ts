@@ -21,10 +21,18 @@ import { SILO_APERCU_FRAME } from "./fixtures/silo-apercu";
 import { siloGhState } from "./fixtures/silo-gh";
 import { SILO_SCENARIO } from "./fixtures/silo-suivi";
 import { createE2eRepo, fakeGhDir, GIT_IDENTITY } from "./git-repo";
-import { FIXED_NOW, isSiloScenario, SILO_APERCU, SILO_ATTENTE, SILO_PRS } from "./pixel-settings";
+import {
+  FIXED_NOW,
+  isSiloScenario,
+  SILO_APERCU,
+  SILO_ATTENTE,
+  SILO_GRAPHE,
+  SILO_PRS,
+} from "./pixel-settings";
 import { connectSeedRpc, waitForDaemon } from "./seed-client";
 import { seedSiloApercu } from "./seed-silo-apercu";
 import { seedSiloAttente } from "./seed-silo-attente";
+import { seedSiloGraphe } from "./seed-silo-graphe";
 import { seedSiloMaquettes } from "./seed-silo-maquettes";
 import { seedSiloPrs, siloPrsGhState } from "./seed-silo-prs";
 import { type SyncSeed, shareSilo } from "./seed-silo-sync";
@@ -228,6 +236,7 @@ const SILO_SEEDS = new Map([
   [SILO_ATTENTE, seedSiloAttente],
   [SILO_PRS, seedSiloPrs],
   [SILO_APERCU, seedSiloApercu],
+  [SILO_GRAPHE, seedSiloGraphe],
 ]);
 async function seedScenario(): Promise<void> {
   if (!siloScenario) return;

@@ -1,15 +1,6 @@
-import type { ActionGroup, ActionOutcome, BatchStatus, SessionFreshReason } from "@kibo/schema";
+import type { ActionOutcome, BatchStatus, SessionFreshReason } from "@kibo/schema";
 
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
-const pluralWord = (n: number, word: string) => `${word}${n > 1 ? "s" : ""}`;
-
-export type RecapOutcome = "applied" | "failed" | "skipped";
-
-const RECAP_OUTCOMES: Record<RecapOutcome, string> = {
-  applied: "appliquée",
-  failed: "échouée",
-  skipped: "ignorée",
-};
 
 const FRESH_REASONS: Record<SessionFreshReason, string> = {
   no_previous: "première session",
@@ -17,15 +8,6 @@ const FRESH_REASONS: Record<SessionFreshReason, string> = {
   transcript_missing: "transcript introuvable",
   workspace_changed: "autre dossier de travail",
   user_reset: "repartie de zéro",
-};
-
-const GROUPS: Record<ActionGroup, string> = {
-  tickets: "Tickets",
-  sprints: "Sprints",
-  agents: "Agents",
-  questions: "Questions",
-  notes: "Notes",
-  signals: "Signaux",
 };
 
 const OUTCOMES: Record<ActionOutcome, string> = {
@@ -45,93 +27,46 @@ const BATCH_STATUS: Record<BatchStatus, string> = {
 };
 
 const TOOLS: Record<string, string> = {
-  project_overview: "lit le projet",
-  list_tickets: "lit les tickets",
-  get_ticket: "lit",
-  list_questions: "lit les questions",
-  list_runs: "lit les runs",
-  list_notes: "lit les notes",
-  read_note: "lit",
-  list_profiles: "lit les profils",
-  project_changes: "lit les changements",
+  project_overview: "projet",
+  list_tickets: "tickets",
+  get_ticket: "",
+  list_questions: "questions",
+  list_runs: "runs",
+  list_notes: "notes",
+  read_note: "",
+  list_profiles: "profils",
+  project_changes: "changements",
 };
 
 export const frProjectAgent = {
-  titleSuffix: (project: string) => ` · ${project}`,
   close: "Fermer le panneau",
-  tabs: {
-    label: "Vues de l'agent de projet",
-    conversation: "Conversation",
-    signals: (n: number) => (n > 0 ? `Signaux · ${n}` : "Signaux"),
+  header: {
+    title: (project: string) => `Agent de projet · ${project}`,
+    list: "Liste des agents",
+    showList: "Afficher la liste",
+    hideList: "Masquer la liste",
+    newAgent: "Nouvel agent",
+    expand: "Agrandir",
+    shrink: "Réduire",
   },
-  status: {
-    ready: "Prêt",
-    queued: "En file",
-    thinking: "Réfléchit…",
-    batch: "Lot à valider",
-  },
-  tracking: {
-    title: "Agent de projet",
-    upToDate: (age: string) => `Suivi à jour · ${age}`,
-    summary: "Résumé du jour",
-    earlierSummary: "Dernier résumé",
-    summaryDay: (day: string, time: string) => `${day} · ${time}`,
-    noSummary: (project: string) => `Pose une question sur ${project} ou attends la fin du sprint.`,
-    toValidate: "À valider",
-    footer: "Les états avancent seuls (git, PR, étapes full-delivery). L'agent propose, tu valides.",
-    ask: "Demander à l'agent de projet…",
-    pinned: "épinglé",
-    exchange: "Dernière question",
-    asked: (time: string) => `Toi · ${time}`,
-    superseded: (n: number) =>
-      `${n} ${pluralWord(n, "lot")} ${pluralWord(n, "remplacé")} ${pluralWord(n, "masqué")}`,
-    showSuperseded: "Afficher les lots remplacés",
-    show: "Afficher",
-  },
-  reminder: {
-    greeting: "Bonjour,",
-    about: (question: string) => `Je reviens vers vous au sujet de « ${question} »`,
-    blocks: (impact: string) => `Elle ${impact}`,
-    concerns: (impact: string) => `Elle est posée ${impact}`,
-    closing: "Pourriez-vous nous répondre ? Merci.",
-    copy: "Copier la relance",
-  },
-  recap: {
-    title: (seq: number) => `Lot n° ${seq} validé`,
-    close: "Fermer",
-    word: (outcome: RecapOutcome, n: number) => pluralWord(n, RECAP_OUTCOMES[outcome]),
-    counts: (applied: number, failed: number, skipped: number) =>
-      [
-        `${applied} ${pluralWord(applied, RECAP_OUTCOMES.applied)}`,
-        `${failed} ${pluralWord(failed, RECAP_OUTCOMES.failed)}`,
-        `${skipped} ${pluralWord(skipped, RECAP_OUTCOMES.skipped)}`,
-      ].join(" · "),
-    outcome: (outcome: RecapOutcome) => RECAP_OUTCOMES[outcome],
-    slipped: (feature: string, sprint: string) => `${feature} glissée de ${sprint}`,
-  },
-  menu: {
-    label: "Actions de l'agent de projet",
-    tracking: "Suivi",
-    conversation: "Conversation",
-    signals: (n: number) => (n > 0 ? `Signaux · ${n}` : "Signaux"),
-    reset: "Nouvel agent de projet",
-    past: "Anciens agents",
-    memory: "Ouvrir la mémoire",
-    showSuperseded: "Afficher les lots remplacés",
-    hideSuperseded: "Masquer les lots remplacés",
+  list: {
+    title: "Agents",
+    newAgent: "Nouvel agent",
+    untitled: (date: string) => `Agent du ${date}`,
+    messages: (n: number) => plural(n, "message"),
+    current: "en cours",
+    close: "Fermer la liste",
+    empty: "Aucun agent pour ce projet.",
   },
   reset: {
     title: "Nouvel agent de projet ?",
     description:
-      "La conversation actuelle est fermée et reste lisible dans « Anciens agents ». Un lot en attente est abandonné. La note mémoire est gardée.",
+      "La conversation actuelle est fermée et reste lisible dans la liste des agents. Un lot en attente est abandonné. La note mémoire est gardée.",
     confirm: "Nouvel agent",
     cancel: "Annuler",
   },
   past: {
-    title: "Anciens agents",
-    empty: "Aucun ancien agent pour ce projet.",
-    item: (date: string) => `Session du ${date}`,
-    banner: "Ancien agent · lecture seule",
+    banner: (date: string) => `Ancien agent · ${date}`,
     back: "Retour",
   },
   compose: {
@@ -139,18 +74,17 @@ export const frProjectAgent = {
     empty: (project: string) => `Demande quelque chose sur ${project}…`,
     placeholder: "Écris à l'agent de projet…",
     send: "Envoyer",
-    hint: "⌘↵ pour envoyer",
   },
   conversation: {
     label: "Conversation avec l'agent de projet",
     empty: "Aucun message pour l'instant.",
-    you: "Toi",
+    youAt: (time: string) => `Toi · ${time}`,
+    thinking: "L'agent lit le projet…",
+    queued: "En file",
     agent: "Agent de projet",
-    reading: (parts: string[]) => parts.join(", "),
-    tool: (name: string, detail: string | null) => {
-      const verb = TOOLS[name] ?? name;
-      return detail ? `${verb} ${detail}` : verb;
-    },
+    reading: (parts: string[]) => `Lu : ${parts.join(", ")}`,
+    tool: (name: string, detail: string | null) =>
+      [TOOLS[name] ?? name, detail ?? ""].filter((part) => part !== "").join(" "),
     resumed: "Session reprise",
     fresh: (reason: SessionFreshReason) => `Session : nouvelle (${FRESH_REASONS[reason]})`,
     retried: "Nouvelle tentative",
@@ -158,13 +92,16 @@ export const frProjectAgent = {
     cancelled: "Tour annulé",
     retry: "Réessayer",
   },
+  outbox: {
+    sending: "envoi…",
+    failed: "Non envoyé",
+    retry: "Réessayer",
+    label: { sending: "Toi · envoi…", failed: "Toi · non envoyé" },
+  },
   batch: {
     region: (seq: number) => `Lot n° ${seq}`,
     lastRun: "Dernier run",
     run: "Run",
-    group: (group: ActionGroup) => GROUPS[group],
-    checkAll: "Tout cocher",
-    uncheckAll: "Tout décocher",
     apply: (n: number) => `Valider (${n})`,
     reject: "Refuser",
     rejectConfirm: "Confirmer le refus",
@@ -215,26 +152,17 @@ export const frProjectAgent = {
   },
   field: {
     title: "Titre",
-    description: "Description",
-    labels: "Étiquettes",
-    parent: "Parent",
-    status: "Statut",
     recipient: "Destinataire",
     ticket: "Ticket",
     options: "Options",
     provisional: "Choix provisoire",
   },
   button: "Agent de projet",
+  open: "Ouvrir l'agent de projet",
   buttonTitle: (shortcut: string) => `Agent de projet (${shortcut})`,
   pending: (n: number) => (n > 0 ? `${plural(n, "action")} à valider` : "Un lot attend ta validation"),
   resize: "Redimensionner le panneau",
   loadFailed: "Impossible de charger l'agent de projet.",
-  sendFailed: "Message non envoyé.",
   decideFailed: "Décision non enregistrée.",
   resetFailed: "Impossible de repartir de zéro.",
-  profile: {
-    name: "Agent de projet",
-    parallel: "1 tour à la fois par projet",
-    guidelines: "Consignes : guidelines du profil",
-  },
 } as const;

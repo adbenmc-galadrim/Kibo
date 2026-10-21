@@ -31,6 +31,23 @@ export async function openProjectAgent(page: Page): Promise<Locator> {
   return panel;
 }
 
+export const agentList = (panel: Locator): Locator => panel.getByRole("navigation", { name: "Agents" });
+
+export async function openAgentList(panel: Locator): Promise<Locator> {
+  await panel.getByRole("button", { name: "Liste des agents", exact: true }).click();
+  const nav = agentList(panel);
+  await expect(nav).toBeVisible();
+  return nav;
+}
+
+export async function sayToAgent(panel: Locator, message: string): Promise<void> {
+  await panel.getByRole("combobox", { name: "Message à l'agent de projet" }).fill(message);
+  await panel.getByRole("button", { name: "Envoyer" }).click();
+}
+
+export const userBubbles = (panel: Locator, text: string): Locator =>
+  panel.getByRole("listitem", { name: /^Toi · / }).filter({ hasText: text });
+
 export const ticketRow = (page: Page, keyLabel: string): Locator =>
   page
     .getByRole("listitem")

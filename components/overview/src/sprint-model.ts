@@ -69,7 +69,7 @@ export const lineOf = (f: FeatureFacts, blocking: ReadonlyMap<string, string>): 
   shortKey: f.shortKey,
   title: f.title,
   state: f.state.status,
-  tones: f.steps.map((s) => stepTone(s, blocking)),
+  tones: f.allSteps.map((s) => stepTone(s, blocking)),
   steps: fr.steps(f.state.steps.done, f.state.steps.total),
 });
 

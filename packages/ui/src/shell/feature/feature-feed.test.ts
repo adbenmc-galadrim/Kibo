@@ -36,7 +36,7 @@ test("the journal gives the activity lines, with the key of the step", () => {
   expect(items.map((i) => [i.kind, i.text])).toEqual([
     ["pr_opened", "PR #22 ouverte · SILO-32"],
     ["step", "Phase 7/12 · Porte qualité · SILO-33"],
-    ["agent", "Suivi mis à jour · lot n° 7 proposé"],
+    ["agent", "Agent de projet · lot n° 7 proposé"],
     ["pr_merged", "PR #19 fusionnée · F5 livrée · SILO-31"],
     ["sprint", "F5 reportée en S43"],
   ]);

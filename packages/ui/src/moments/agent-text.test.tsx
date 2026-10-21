@@ -69,12 +69,14 @@ test("the project agent chat shows tables with ticket keys that open the ticket"
   const opened: string[] = [];
   const { container } = render(
     <ConversationView
-      items={[{ kind: "agent", id: "a", at: 0, text: TABLE }]}
+      items={[{ kind: "agent", id: "a", at: 0, text: TABLE, read: [] }]}
+      status="ready"
       readOnly={false}
       labels={LABELS}
       signals={[]}
       onTicket={(key) => opened.push(key)}
       onRetry={() => {}}
+      onResend={() => {}}
       onDecide={async () => {}}
     />,
   );

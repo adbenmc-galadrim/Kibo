@@ -103,6 +103,7 @@ S.inProgress27 = (f, late) => { const C = S.C;
 S.vue3 = (x, y, late) => { const C = S.C, sec = C.mfg;
   const f5 = S.feat("F5"), wasLate = f5.late; if (!late) f5.late = false;
   let f; S.V3 = true; try { f = S.rename(S.draw["p-vue2"](x, y), late ? "P1 bis v3 · En retard au 18 oct." : "P1 bis v3 · Vue d'ensemble"); } finally { f5.late = wasLate; S.V3 = false; }
+  const panel = penpotUtils.findShapes(s => s.name === "agent-panel", f)[0], root = S.parentOf(f, panel); panel.remove(); S.agentPanelP(root);
   const kpis = S.inProgress27(f, late);
   if (!late) return f;
   S.resizeScreen(f, 1360);
@@ -112,7 +113,7 @@ S.vue3 = (x, y, late) => { const C = S.C, sec = C.mfg;
   S.setText(f, "S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo.",
     "S42 est terminé depuis vendredi et F5 n'y a pas tenu : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo.");
   S.setText(f, "4 étapes restantes, S42 finit aujourd'hui", "4 étapes restantes, S42 terminé le 16 oct.");
-  const ap = penpotUtils.findShapes(s => s.name === "agent-panel", f)[0]; S.setText(ap, "Résumé du jour", "Dernier résumé"); S.setText(ap, "14:40", "16 oct. · 14:40");
+  S.setText(penpotUtils.findShapes(s => s.name === "agent-panel", f)[0], "14:38", "16 oct. · 14:38");
   const grid = penpotUtils.findShapes(s => s.name === "grid", f)[0], today = penpotUtils.findShapes(s => s.name === "today", grid)[0], tl = S.parentOf(grid, S.byText(grid, "aujourd'hui"));
   const dx = 2 / 7 * (806 - 250) / 4; today.x += dx; tl.x += dx; for (const e of S.placed) if (e[0].id === today.id || e[0].id === tl.id) e[2] += dx;
   const band = penpotUtils.findShapes(s => s.name === "card / Échéances", f)[0], body = S.parentOf(f, band);
@@ -347,57 +348,17 @@ S.draw["p-questions"] = (x, y) => { const C = S.C, sec = C.mfg;
   S.toast(f, "2 questions marquées envoyées", "Annuler", { x: 1440 - 24 - 340, y: 1000 - 24 - 54 });
   return f; };
 
-// ---------- Panneau de l'agent de projet (340 px) : question visible, résumé épinglé, récapitulatif ----------
-S.agentHead27 = (ap) => { const C = S.C, sec = C.mfg;
-  const h = S.row(ap, { fx: true, h: 60, pad: [0, 18], gap: 10 }); S.agentMark(h, 30);
-  const ht = S.col(h, { gap: 2 }); S.txt(ht, "Agent de projet", { size: 14, weight: 600 }); S.txt(ht, "Suivi à jour · il y a 4 min", { size: 12, color: sec });
-  S.spacer(h); S.icon(h, "more", 16, sec); S.icon(h, "x", 16, sec); S.hline(ap, C.soft);
-  const sm = S.col(ap, { name: "pinned-summary", fx: true, pad: [14, 18], gap: 6, fill: C.panel });
-  const l = S.row(sm, { fx: true, gap: 6 }); S.icon(l, "pin", 12, sec); S.txt(l, "Résumé du jour", { size: 12, weight: 600, color: sec, upper: true, ls: 0.5 }); S.spacer(l); S.txt(l, "14:40", { size: 12, color: sec }); S.txt(l, "épinglé", { size: 12, color: sec });
-  S.txt(sm, "F3 est livrée : 3 fonctionnalités sur 9. S42 finit ce soir, F5 n'y tiendra pas.", { size: 13, lh: 1.5, fill: true });
-  S.box(ap, { name: "pin-shadow", w: 10, h: 1, fx: true, fill: C.border }); };
-S.agentFoot27 = (ap, text) => { const C = S.C; S.box(ap, { w: 4, h: 4, fy: true }); S.hline(ap, C.soft);
-  const ft = S.col(ap, { fx: true, pad: [14, 18] }); const inp = S.row(ft, { fx: true, h: 42, pad: [0, 12], gap: 8, radius: 8, stroke: C.border, fill: C.bg });
-  S.txt(inp, text || "Demander à l'agent de projet…", { size: 13, color: C.mfg }); S.spacer(inp); S.icon(inp, "send", 15, C.mfg); };
-S.agentBoard27 = (name, x, y) => { const f = S.screen(name, x, y, 340, 1000);
-  const ap = S.col(f, { name: "agent-panel", x: 0, y: 0, w: 340, h: 1000, fill: S.C.panel }); S.agentHead27(ap); return { f, ap }; };
-S.draw["p-agent-q"] = (x, y) => { const C = S.C, sec = C.mfg; const { f, ap } = S.agentBoard27("Agent · question", x, y);
-  const b = S.col(ap, { fx: true, pad: [16, 18], gap: 14, fill: C.bg, fy: true });
-  const qr = S.row(b, { fx: true, justify: "end" }); const q = S.col(qr, { name: "user-question", w: 240, pad: [10, 12], gap: 4, radius: 10, fill: C.muted });
-  S.txt(q, "Pourquoi F5 glisse en S43 ?", { size: 13, fill: true, lh: 1.45 }); S.txt(q, "Adam · 14:48", { size: 12, color: C.dim });
-  const ar = S.row(b, { fx: true, gap: 10, align: "start" }); S.agentMark(ar, 24); const ac = S.col(ar, { fx: true, gap: 8 });
-  S.txt(ac, "Il reste 4 étapes à F5 et S42 finit ce soir. SILO-32 attend sa review, SILO-33 est en porte qualité depuis 42 min, SILO-34 et SILO-35 n'ont pas commencé.", { size: 13, lh: 1.55, fill: true });
-  S.txt(ac, "Je propose de la reporter en S43 : c'est la première action du lot n° 7.", { size: 13, lh: 1.55, fill: true });
-  S.txt(ac, "Lu : Planning, F5, journal des étapes", { size: 12, color: C.dim });
-  const lot = S.col(b, { fx: true, stroke: C.brandLine, radius: 10, clip: true, fill: C.card });
-  const lh = S.row(lot, { fx: true, pad: [10, 14], gap: 8, fill: C.brandSoft }); S.txt(lh, "Lot n° 7", { size: 13, weight: 600, color: C.brandText }); S.spacer(lh); S.txt(lh, "3 actions", { size: 12, color: sec });
-  for (const it of S.P.lot) { S.hline(lot, C.soft); const r = S.row(lot, { fx: true, pad: [10, 14], gap: 10, align: "start" });
-    const cb = S.box(r, { w: 16, h: 16, radius: 4, fill: C.brandBtn, dir: "row", align: "center", justify: "center" }); S.icon(cb, "check", 11, "#FFFFFF", 3);
-    const tc = S.col(r, { fx: true, gap: 3 }); S.txt(tc, it.text, { size: 13, weight: 500, fill: true }); S.txt(tc, it.meta, { size: 12, color: sec, fill: true }); }
-  S.hline(lot, C.soft); const lf = S.row(lot, { fx: true, pad: [12, 14], gap: 8 }); S.btn(lf, "Valider (3)", "brand", { sm: true }); S.btn(lf, "Refuser", "outline", { sm: true });
-  const hid = S.row(b, { fx: true, gap: 8 }); S.icon(hid, "history", 13, C.dim); S.txt(hid, "1 lot remplacé masqué", { size: 12, color: C.dim }); S.spacer(hid); S.txt(hid, "Afficher les lots remplacés", { size: 12, weight: 500, color: sec });
-  S.agentFoot27(ap); return f; };
-S.draw["p-agent-recap"] = (x, y) => { const C = S.C, sec = C.mfg; const { f, ap } = S.agentBoard27("Agent · récapitulatif", x, y);
-  const b = S.col(ap, { fx: true, pad: [16, 18], gap: 14, fill: C.bg, fy: true });
-  const qr = S.row(b, { fx: true, justify: "end" }); const q = S.col(qr, { name: "user-question", w: 240, pad: [10, 12], gap: 4, radius: 10, fill: C.muted });
-  S.txt(q, "Pourquoi F5 glisse en S43 ?", { size: 13, fill: true, lh: 1.45 }); S.txt(q, "Adam · 14:48", { size: 12, color: C.dim });
-  const rc = S.col(b, { name: "batch-recap", fx: true, stroke: C.border, radius: 10, clip: true, fill: C.card });
-  const rh = S.row(rc, { fx: true, pad: [10, 14], gap: 8, fill: C.panel }); S.icon(rh, "circleCheck", 14, C.green); S.txt(rh, "Lot n° 7 validé", { size: 13, weight: 600 }); S.spacer(rh); S.txt(rh, "14:52", { size: 12, color: sec }); S.icon(rh, "x", 13, sec);
-  const sum = S.row(rc, { fx: true, pad: [10, 14], gap: 14 });
-  for (const [n, l, col] of [["3", "appliquées", C.green], ["0", "échouée", C.red], ["0", "ignorée", C.dim]]) { const s = S.row(sum, { gap: 5 }); S.dot(s, col, 7); S.txt(s, n, { size: 13, weight: 600, mono: true }); S.txt(s, l, { size: 12.5, color: sec }); }
-  const rows = [["check", C.green, "Reporter F5 en S43", "appliquée · F5 glissée de S42"], ["check", C.green, "Planifier F9 en S44", "appliquée"], ["check", C.green, "Relancer le client sur Q14", "appliquée", true]];
-  for (const [ic, col, t, m, relance] of rows) { S.hline(rc, C.soft); const r = S.row(rc, { fx: true, pad: [10, 14], gap: 10, align: "start" }); S.icon(r, ic, 14, col, 2.5);
-    const tc = S.col(r, { fx: true, gap: 3 }); S.txt(tc, t, { size: 13, weight: 500, fill: true }); S.txt(tc, m, { size: 12, color: ic === "x" ? C.red : sec, fill: true });
-    if (relance) { S.box(tc, { w: 4, h: 3 }); S.btn(tc, "Copier la relance", "outline", { sm: true, icon: "copy" }); } }
-  const note = S.row(b, { fx: true, gap: 8, align: "start" }); S.icon(note, "refresh", 13, sec);
-  S.txt(note, "Les états avancent seuls (git, PR, étapes full-delivery). L'agent propose, tu valides.", { size: 12, color: sec, lh: 1.5, fill: true });
-  S.agentFoot27(ap); return f; };
+// ---------- Panneau de l'agent de projet : boards retirés (spec §46.3), rangées gardées ----------
+// « Agent · question » : remplacé par « Agent de projet, volet » (59d-agent-conversation.js).
+S.draw["p-agent-q"] = () => null;
+// « Agent · récapitulatif » : remplacé par « Agent de projet, volet » (59d-agent-conversation.js).
+S.draw["p-agent-recap"] = () => null;
 
 // ---------- Dessin (export : 90-export.js, S.export27) ----------
 S.draw27 = async (key, mode) => { await S.page("Proposition"); S.setMode(mode);
   const i = S.ROWS27.indexOf(key), x = mode === "light" ? 1540 : 0, y = S.Y27 + i * S.STEP27;
   for (const b of penpot.currentPage.root.children.filter(c => c.y === y && (c.x === x))) b.remove();
-  S.placed = []; const f = await S.draw[key](x, y); await S.wait(400); const moved = S.replace();
+  S.placed = []; const f = await S.draw[key](x, y); if (!f) return { board: null }; await S.wait(400); const moved = S.replace();
   const d = f.children.find(c => c.name === "dialog"); if (d) { await S.wait(1500); d.y = f.y + Math.round((f.height - d.height) / 2); }
   return { board: f.name, shapes: S.count(f), moved, dialog: d ? d.height : null }; };
 return "phase 27 ok";

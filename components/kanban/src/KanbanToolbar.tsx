@@ -117,7 +117,9 @@ function BoardFilters({ filters, onFilters, onClear, total, counts, sprintCode }
           className={SEGMENT}
         >
           {f === "toFix" && <RotateCcw absoluteStrokeWidth size={12} aria-hidden className="size-3" />}
-          {f === "held" && <Pause absoluteStrokeWidth size={12} aria-hidden className="size-3" />}
+          {f === "held" && (
+            <Pause absoluteStrokeWidth size={12} aria-hidden className="size-3 text-(--tracking-hold)" />
+          )}
           {filterLabel(f, sprintCode)}
           <span className={COUNT}>{counts[f]}</span>
         </ToggleGroupItem>

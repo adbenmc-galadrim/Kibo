@@ -53,7 +53,7 @@ function show(state: AgentsState | null) {
       agents={state}
       open={false}
       onToggle={() => calls.push("toggle")}
-      onOpenSignals={() => calls.push("signals")}
+      onOpen={() => calls.push("open")}
     />,
   );
   return calls;
@@ -69,7 +69,7 @@ test("open signals show a numbered badge and are said in the label", async () =>
   show(agents(2, "b1"));
   await waitFor(() => expect(calls).toEqual([{ method: "getProjectAgent", projectId: "kibo" }]));
   expect(screen.getByRole("button", { name: "Agent de projet · 2 signaux en boîte" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Ouvrir la boîte à signaux" }).textContent).toBe("2");
+  expect(screen.getByRole("button", { name: "Ouvrir l'agent de projet" }).textContent).toBe("2");
 });
 
 test("a pending batch without open signal shows the number of its actions", async () => {
@@ -77,7 +77,7 @@ test("a pending batch without open signal shows the number of its actions", asyn
   const main = await screen.findByRole("button", { name: "Agent de projet · 3 actions à valider" });
   expect(main.textContent).toBe("Agent de projet");
   expect(document.querySelector("[data-pending]")?.textContent).toBe("3");
-  expect(screen.queryByRole("button", { name: "Ouvrir la boîte à signaux" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Ouvrir l'agent de projet" })).toBeNull();
   expect(calls).toEqual([{ method: "getProjectAgent", projectId: "kibo" }]);
 });
 
@@ -95,7 +95,7 @@ test("the count is hidden while the panel is open, the button keeps its text", a
       agents={agents(0, "b1")}
       open
       onToggle={() => {}}
-      onOpenSignals={() => {}}
+      onOpen={() => {}}
     />,
   );
   const main = await screen.findByRole("button", { name: "Agent de projet · 3 actions à valider" });
@@ -103,12 +103,12 @@ test("the count is hidden while the panel is open, the button keeps its text", a
   expect(document.querySelector("[data-pending]")).toBeNull();
 });
 
-test("a click on the badge opens the signals, elsewhere it toggles the panel", async () => {
+test("a click on the badge opens the conversation, elsewhere it toggles the panel", async () => {
   const calls = show(agents(1));
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Ouvrir la boîte à signaux" }));
+  await user.click(screen.getByRole("button", { name: "Ouvrir l'agent de projet" }));
   await user.click(screen.getByRole("button", { name: "Agent de projet · 1 signal en boîte" }));
-  expect(calls).toEqual(["signals", "toggle"]);
+  expect(calls).toEqual(["open", "toggle"]);
 });
 
 test("the count follows a partial decision of the pending batch", async () => {

@@ -74,8 +74,28 @@ test("a feature delivered without its step on hold says so in its badge and its 
   expect(await screen.findByText("livrée · 1 en attente")).toBeTruthy();
   expect(screen.getByText("3 étapes livrées sur 3 · 1 en attente")).toBeTruthy();
   const bar = screen.getByRole("img", { name: "Étapes de la fonctionnalité" });
-  expect(bar.children).toHaveLength(3);
+  expect(Array.from(bar.children, (c) => c.getAttribute("data-tone"))).toEqual([
+    "done",
+    "done",
+    "done",
+    "hold",
+  ]);
   expect(screen.getByRole("region", { name: "En attente · 1" })).toBeTruthy();
+});
+
+test("the steps bar keeps the held steps at their place, in cyan, and still says « · 3 en attente »", async () => {
+  renderFeature("f5");
+  expect(await screen.findByText("1 étape livrée sur 2 · 3 en attente")).toBeTruthy();
+  const bar = screen.getByRole("img", { name: "Étapes de la fonctionnalité" });
+  const segments = Array.from(bar.children);
+  expect(segments.map((c) => c.getAttribute("data-tone"))).toEqual([
+    "done",
+    "review",
+    "hold",
+    "hold",
+    "hold",
+  ]);
+  expect(segments[2]?.className).toContain("bg-(--tracking-hold)");
 });
 
 test("the journey of F5 numbers its active steps and leaves the steps on hold below", async () => {

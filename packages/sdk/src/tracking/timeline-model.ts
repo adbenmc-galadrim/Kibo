@@ -1,4 +1,4 @@
-import type { DeadlineCell, DeadlineColumn, DeadlineRow } from "@kibo/schema";
+import type { DeadlineCell, DeadlineColumn, DeadlineRow, FeatureStep } from "@kibo/schema";
 
 export type UnplannedColumn = { kind: "unplanned"; label: string };
 export type TimelineColumnInput = DeadlineColumn | UnplannedColumn;
@@ -8,7 +8,7 @@ export type TimelineInput<C extends TimelineColumnInput = DeadlineColumn> = {
   today: number | null;
   collapsed?: { label: string; rows: DeadlineRow[] };
 };
-export type CaseTone = "done" | "review" | "progress" | "blocked" | "todo";
+export type CaseTone = "done" | "review" | "progress" | "blocked" | "hold" | "todo";
 export type TimelineGeometry = {
   label: number;
   column: number;
@@ -64,6 +64,11 @@ export function caseTone(cell: DeadlineCell): CaseTone {
   if (cell.statusId === "in_review") return "review";
   if (cell.statusId === "in_progress") return "progress";
   return "todo";
+}
+
+export function stepCaseTone(step: Pick<FeatureStep, "statusId" | "onHold">, blocked: boolean): CaseTone {
+  if (step.onHold !== null) return "hold";
+  return caseTone({ statusId: step.statusId, blocked, slipped: false });
 }
 
 const columnX = (index: number, g: TimelineGeometry): number => g.label + index * g.column;

@@ -65,6 +65,7 @@ export const fr = {
     review: "en review",
     progress: "en cours",
     blocked: "bloquée",
+    hold: "en attente",
     todo: "à faire",
     hint: "· une case par étape, dans l'ordre des dépendances",
   },

@@ -112,7 +112,7 @@ function HeldSub({ text, onOpen }: { text: string; onOpen(): void }) {
   return (
     <button
       type="button"
-      className="flex min-w-0 shrink-0 cursor-pointer items-center gap-[6px] font-medium hover:underline"
+      className="flex min-w-0 shrink-0 cursor-pointer items-center gap-[6px] font-medium text-(--tracking-hold) hover:underline"
       onClick={onOpen}
     >
       <Pause absoluteStrokeWidth size={12} aria-hidden className="shrink-0" />

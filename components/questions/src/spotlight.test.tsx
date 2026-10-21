@@ -26,7 +26,7 @@ const seed = (run: (cmd: ProjectCommand) => unknown) => {
 
 const scrolls: ScrollIntoViewOptions[] = [];
 const realMatchMedia = window.matchMedia;
-const realScroll = HTMLElement.prototype.scrollIntoView;
+const ownScroll = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
 
 const reduceMotion = (reduce: boolean) => {
   window.matchMedia = ((query: string) => ({
@@ -46,7 +46,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  HTMLElement.prototype.scrollIntoView = realScroll;
+  if (ownScroll) Object.defineProperty(HTMLElement.prototype, "scrollIntoView", ownScroll);
+  else Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
   window.matchMedia = realMatchMedia;
 });
 

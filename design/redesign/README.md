@@ -222,11 +222,11 @@ x = 0 et clair à x = 1 540. Données `silo-maquettes` au vendredi 16 octobre (S
 | P8b · Fiche ticket, Activité | même fiche, onglet Activité : chronologie du journal (session, review, CI, étape, PR, branche) puis « Anciens runs » replié | `proposition-fiche-ticket-activite` | 1 440 × 1 000 |
 | P9 · Questions | `Qn`, badge « bloquante », bloquantes en tête, groupes sans vide, texte exporté (« bloque F6, prévue en S43 »), toast « 2 questions marquées envoyées · Annuler » | `proposition-questions` | 1 440 × 1 000 |
 | Barre repliée · Kanban à 1 180 px | rail de 48 px (bascule, recherche, Accueil, Mes tickets, Boîte de réception, pastille d'initiales par projet), menu des pages de Silo au survol, clés entières, ombres de défilement en bas et à droite | `proposition-barre-repliee` | 1 180 × 1 000 |
-| Agent · question | panneau de 340 px : résumé du jour épinglé et daté (14:40), question d'Adam, réponse, lot n° 7, « Afficher les lots remplacés » | `proposition-agent-question` | 340 × 1 000 |
-| Agent · récapitulatif | après « Valider » : 3 appliquées, 0 échouée, 0 ignorée, « F5 glissée de S42 », « Copier la relance » sur la relance de Q14 | `proposition-agent-recap` | 340 × 1 000 |
+| Agent · question (retiré en phase 31) | panneau de 340 px : résumé du jour épinglé et daté (14:40), question d'Adam, réponse, lot n° 7, « Afficher les lots remplacés » | `proposition-agent-question` | 340 × 1 000 |
+| Agent · récapitulatif (retiré en phase 31) | après « Valider » : 3 appliquées, 0 échouée, 0 ignorée, « F5 glissée de S42 », « Copier la relance » sur la relance de Q14 | `proposition-agent-recap` | 340 × 1 000 |
 
 Dessin : `await storage.draw27("p-vue3", "dark")` (clés `p-vue3`, `p-vue3-retard`, `p-commencer`, `p-nouveau`, `p-kanban`, `p-fiche`, `p-fiche-act`,
-`p-questions`, `p-barre`, `p-agent-q`, `p-agent-recap`), un écran et un mode par appel. `p-nouveau` clone `p-vue3` et `p-fiche` clone
+`p-questions`, `p-barre`, `p-agent-q` et `p-agent-recap` retirés en phase 31), un écran et un mode par appel. `p-nouveau` clone `p-vue3` et `p-fiche` clone
 `p-kanban` du même mode : les dessiner après. Avant de recharger l'onglet, attendre que le nombre de formes côté serveur (`get-page`)
 égale le nombre local, sinon les derniers écrans sont perdus. Export : `await storage.export27()` (`90-export.js`) ⇒
 `exports/proposition-<écran>-<dark|light>.png`. Cotes : `95-cotes.js` par board, puis `python3 scripts/cotes.py <JSON> --phase27`, qui
@@ -316,7 +316,7 @@ réveil « Q16 répondue : « 5 Go » » ouvre le dernier échange comme une que
 Silo (`design/donnees-fictives.md`). Page « Proposition », `scripts/58-alpha3-reveil.js` (après `57-alpha2-questions`), rangée `S.Y_A3`
 = 42 500 (après les rangées de l'alpha 2), sombre à x = 0 et clair à x = 1 540.
 
-Le board **clone « Agent · question »** ; ce board et sa référence (`proposition-agent-question-*`) ne changent pas.
+**Retiré en phase 31** (agent de projet en conversation, §46) : le board, ses exports `proposition-agent-reveil-*` et ceux d'« Agent · question » sont supprimés ; la section ne sert plus que d'historique.
 
 | Board | Contenu | Export | Taille |
 |---|---|---|---|
@@ -327,7 +327,8 @@ Dessin : `await storage.drawA3("p-agent-reveil", "dark")` puis `"light"`. Avant 
 pas encore enregistré côté serveur fait échouer l'exporteur, « http error ») ⇒ `exports/proposition-agent-reveil-<dark|light>.png`. Cotes :
 `95-cotes.js` (`_dump-26`), puis `python3 scripts/cotes.py <JSON> --alpha3`, qui remplace seulement la partie « 0.29.0-alpha.3 » de
 `cotes.md` (`--alpha2` la garde). Pas de spec pixel (panneau, capturé en E2E). Copié en page « 36 · Suivi seul » du fichier « Kibo »
-(235, voir `design/penpot/README.md`).
+(235, voir `design/penpot/README.md`). **Retiré en phase 31** (spec §46.3) avec « Agent · question » et « Agent · récapitulatif » : boards et exports
+supprimés, voir « Agent de projet en conversation ».
 
 ## Phase 30 (2026-10-20)
 
@@ -392,3 +393,75 @@ capture seulement. À copier en page « 36 · Suivi seul » du fichier « Kibo �
 Pièges vus : dans un board sans flex, une forme ajoutée par `appendChild` passe sous les précédentes ; `S.stackAP` les remet dans l'ordre
 du dessin (`bringToFront`). Un enfant absolu d'un flex reste au-dessus des autres : l'en-tête de la feuille reçoit `layoutChild.zIndex = 2`.
 Les formes du plugin se comparent par `id`, jamais par `===`.
+
+## Phase 31 (2026-10-21)
+
+Spec §45 : un cadre du Graphe ne déborde plus (titre sur trois lignes au plus, hauteur qui suit) et les étapes en attente (§41) ne
+sont plus cachées : elles restent à leur place, en cyan, partout où une fonctionnalité affiche ses étapes. Données : sous-section
+« Phase 31 · Graphe en attente et couleur de l'attente » du projet Silo (`design/donnees-fictives.md`, scénario `silo-graphe` =
+`silo-attente` puis F1 renommée « Connexion, environnements et hébergement »).
+
+Jeton de l'attente (`scripts/01-base.js`, `S.PAL`) : `hold` `#22D3EE` en sombre et `#0E7490` en clair (texte AA sur le fond et les
+cartes), fond `holdSoft` `#082F35` / `#ECFEFF` ; icône `pause`. Côté code : `--tracking-hold` et `--tracking-hold-soft`.
+
+| Board | Script | Changement | Export | Taille |
+|---|---|---|---|---|
+| P5b · Graphe, Fonctionnalités | `59-graphe-prs.js` (`S.legendHoldGR`) | légende : « En attente » (point `hold`) après « Bloqué » | `proposition-graphe-fonctionnalites` | 1 440 × 1 000 |
+| P5b · Graphe · en attente (nouveau) | `59c-graphe-attente.js` | clone de P5b : F1 sur trois lignes (cadre de 96 px, F2 descendue de 15) ; F4 livrée ne garde que SILO-45 (point et ⏸ `hold`, cadre de 212 × 96, « 3/4 ⏸ 1 ✓ », segments ■■■◆□) ; F5 « 1/2 ⏸ 3 », lignes 33 à 35 en `hold` (33 garde sa bordure et son point de session), sans pied « en retard », remontée sous F4 ; F7 « 0/4 ⏸ 1 », ligne 82 en `hold` ; flèches recalculées | `proposition-attente-graphe` | 1 440 × 1 000 |
+| P1 bis · Vue d'ensemble · en attente | `56-phase-29.js` | « ⏸ 3 en attente » en `hold` ; carte Sprint : F4 ■■■◆□ « ⏸ 1 », F5 ■■◆◆◆ « ⏸ 3 » ; Prochaine à finir F5 ■■◆◆◆ ; ⏸ `hold` sur les lignes de la carte « En attente » ; Échéances et Activité inchangées | `proposition-attente-vue-ensemble` | 1 440 × 1 260 |
+| P2 · Planning · en attente | `56-phase-29.js` | cases F4 ■■■◆□, F5 ■■◆◆◆, F7 □◆□□□ (toutes les étapes, dans leur ordre) ; ⏸ `hold` du titre « En attente (3) » | `proposition-attente-planning` | 1 440 × 1 000 |
+| P3 · Fonctionnalité · en attente | `56-phase-29.js` | barre de cinq segments (2 à 4 en `hold`), texte inchangé ; ⏸ `hold` du titre, pastilles `holdSoft` sans bordure avec ⏸ `hold`, ⏸ `hold` devant la raison de SILO-33 (le lien de « attend SILO-33 » reste gris) | `proposition-attente-fonctionnalite` | 1 440 × 1 000 |
+| P7 · Kanban · en attente | `56-phase-29.js` (`S.holdBadge`) | puces pleines `holdSoft`, sans bordure, ⏸ et texte `hold` ; ⏸ `hold` du filtre « En attente » | `proposition-attente-kanban` | 1 440 × 1 000 |
+
+Restent gris (spec §45.3) : le bandeau de la fiche SILO-45 (P8 · Fiche ticket · en attente), l'Activité, les menus et le dialogue
+(P8c à P8e, P2b) ; ces boards ne sont pas redessinés.
+
+Dessin, un écran et un mode par appel : `await storage.drawGR("g-fonctionnalites", mode)`, `await storage.drawGA("g-attente", mode)` puis,
+dans un second appel, `await storage.edgesDrawGA("g-attente", mode)` (flèches sur la mise en page calculée), et
+`await storage.draw29(clé, mode)` pour `a-vue`, `a-planning`, `a-fonctionnalite`, `a-kanban`. Rangée du nouveau board : `S.Y_GA` = 51 500
+(après P8g), sombre à x = 0, clair à x = 1 540. Export : `await storage.exportGR(["graphe-fonctionnalites"])`, `await storage.exportGA()`
+(depuis un clone, après 10 s) et `await storage.export29([fichier])` par board. Cotes : `95-cotes.js` (`_dump-14` à `_dump-17`, `_dump-27`,
+`_dump-32`), puis `python3 scripts/cotes.py <JSON> --sections 14,15,16,17,27` et `--phase31`. Comparaison au pixel : « graphe » (P5b),
+« attente-graphe » (nouveau board, `silo-graphe`), « attente-vue-ensemble », « attente-planning », « attente-fonctionnalite »,
+« attente-kanban ».
+
+Piège vu : l'onglet headless finit par planter (« Target crashed ») après plusieurs redessins d'une page chargée, et les boards dessinés
+juste avant sont perdus. Garder la vue hors des boards (`penpot.viewport.center` loin à gauche, zoom 0,25), lancer Chromium avec
+`--js-flags=--max-old-space-size=6144`, et vérifier l'enregistrement après chaque board en lisant `get-page` hors de l'onglet (requête du
+contexte Playwright) : le `get-page` lancé depuis l'onglet charge des dizaines de Mo dans le tas et précipite le plantage.
+
+
+### Agent de projet en conversation
+
+Spec §46 : le volet de l'agent de projet ne montre plus que la conversation de l'agent choisi (plus de Suivi, de « Résumé du jour »
+épinglé, de lots remplacés, de menu « ⋯ » ni de phrase de pied). Données : sous-section « Phase 31 · Agent de projet en conversation »
+de `design/donnees-fictives.md`.
+
+Volet étroit (`S.agentPanelP`, `scripts/50-proposition.js`, 340 px) : en-tête de 56 px (`S.agentMark` 28, « Agent de projet · Silo »
+13/600, boutons de 28 px `list`, `plus`, `maximize2`, `x` à icône de 15 px `dim`) ; conversation (`pad` 16 × 18, `gap` 14) : bulle
+d'Adam à droite (240 px, rayon 10, `muted`, « Fais le point du jour » 13, « 14:38 » 12 `dim`), réponse de l'agent (`S.agentMark` 24, deux
+paragraphes 13 / 1,55, « Lu : Planning, F5, journal des étapes » 12 `dim`), carte du lot n° 7 (celle de l'ancien « Agent · question ») ;
+saisie de 40 px « Écris à l'agent de projet… » en pied. Briques réutilisées : `S.agentHeadP`, `S.conversationP`, `S.lotCardP`, `S.composeP`.
+
+| Board | Script | Contenu | Export | Taille |
+|---|---|---|---|---|
+| P1 bis v3 · Vue d'ensemble, En retard au 18 oct., P6 · Nouveau projet, P1 bis · Vue d'ensemble · en attente | `55-phase-27.js` (`S.vue3`), `59d-agent-conversation.js` (`S.swapPanelAC`) | volet redessiné en conversation ; « En retard » : « 16 oct. · 14:38 » dans la bulle, texte et pourquoi au passé | inchangés (régénérés) | inchangées |
+| P1 bis · Agent agrandi (nouveau) | `59d-agent-conversation.js` | clone de P1 bis v3 rendu à sa pleine largeur sans volet étroit (`S.stretchGridAC` : colonnes des semaines étirées, libellés fixes), puis volet de 720 px en **calque** à droite (`agent-overlay`, ombre portée vers la gauche, bord gauche `border`), qui recouvre la page sans la compresser (décision d'Adam du 2026-10-21, spec §46.2) : en-tête (`panelLeftClose`, `plus`, `minimize2`, `x`), liste des agents de 210 px (fond `bg`, bord droit `border`, « Nouvel agent » de 32 px, items de 56 px : titre 13/500, « 14:38 · 4 messages » 12 `dim`, en cours sur `panel` avec « en cours » 11 `brandText`), conversation et saisie dans la colonne de lecture | `proposition-agent-agrandi` | 1 440 × 1 260 |
+| Agent de projet, volet (nouveau) | `59d-agent-conversation.js` | volet étroit, bouton `list` enfoncé, liste en calque sous l'en-tête (« Nouvel agent » et « Fermer la liste ») | `proposition-agent-volet` | 340 × 1 000 |
+| Agent de projet, agrandi, liste rétractée (nouveau) | `59d-agent-conversation.js` | volet de 720 px sans liste, bouton `panelLeftOpen`, colonne de lecture de 520 px centrée | `proposition-agent-agrandi-liste-retractee` | 720 × 1 000 |
+
+Boards retirés de la page « Proposition » : « Agent · question », « Agent · récapitulatif », « Agent · réveil sur réponse » (sombre et
+clair) et leurs exports ; leurs rangées restent vides (`S.draw["p-agent-q"]`, `["p-agent-recap"]` et `S.drawA3k["p-agent-reveil"]`
+rendent `null`).
+
+Dessin : `await storage.drawAC(clé, mode)` pour `ac-agrandi`, `ac-volet`, `ac-retractee` (rangées à `S.Y_AC` = 53 000, pas de 1 500) ;
+le volet des quatre boards existants se redessine en place par `await storage.swapPanelAC(nom, mode, retard)` (équivaut à rejouer
+`S.draw27` et `S.draw29`). Export : `await storage.exportAC()` (depuis un clone, après 10 s), `export27` et `export29` pour les autres.
+Cotes : `_dump-6`, `_dump-13`, `_dump-8`, `_dump-14` (`--sections 6,13,8,14`) et `_dump-33` (`--phase31`). Comparaison au pixel : le
+mode étroit reste comparé sur « vue-ensemble », « attente-vue-ensemble » et « nouveau-projet » ; le mode agrandi sur « agent-agrandi ».
+
+Pièges vus : un redessin complet de P1 bis v3 (`S.draw27("p-vue3")`, environ 1 000 formes) fait planter l'onglet headless (« Target
+crashed », rendu à 2,3 Go) sur la page « Proposition » chargée ; d'où le volet redessiné en place. Le board sombre « P1 bis v3 · En retard
+au 18 oct. » manquait au fichier : il est refait depuis son clair par `S.darkFromLightAC` (couleur du nœud de même chemin dans la paire
+P1 bis v3, sinon la table des jetons), à l'identique de l'ancien export hors du volet. Un nom avec `/` devient `a / b` : chercher
+`icon-button / list` en retirant les espaces.

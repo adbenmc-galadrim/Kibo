@@ -6,6 +6,7 @@ import { fr } from "./fr";
 
 export const CARD =
   "flex w-full flex-col overflow-hidden rounded-[10px] border border-(--tracking-border) bg-(--tracking-card)";
+export const FLUSH_CARD = `${CARD} [&>:last-child]:-mb-px`;
 export const ROW_LINE = "border-(--tracking-soft) border-t";
 export const MONO_KEY = "font-mono text-[12px] leading-[15px] text-(--tracking-mfg)";
 

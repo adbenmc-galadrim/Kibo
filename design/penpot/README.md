@@ -53,7 +53,7 @@ Premier lancement : créer un compte local. Secret par défaut : définir `PENPO
 | 33 · Questions : modifier, rouvrir, archiver | 202 à 206 (phase 23 : réponses modifiables, archives et historique, lot de questions, aperçu au survol, question mise en évidence) ; **dessinés** |
 | 34 · Domaines & guidelines | 207 à 209b (phase 23 : arbre de dossiers, état vide, domaine de projet et du workspace, projet partagé en lecture seule, encart, sélecteur groupé, lien du projet) ; **dessinés, ajustés après implémentation** |
 | 35 · Redesign Silo | 210 à 218 (redesign validé le 2026-10-16 : vue d'ensemble, Planning, fiche fonctionnalité, Tickets, Graphe ; états fiche de sprint et report, 3/2 ouvertes, démo facultative, infobulle du nom) ; **dessinés** ; 211, 212 et 214 mis à jour au jalon de la phase 27 |
-| 36 · Suivi seul | 219 à 225b (phase 27 : vue d'ensemble, Pour commencer, en retard au 18 oct., Nouveau projet, Kanban, fiche ticket et Activité, Questions, barre repliée, panneau de l'agent) ; 226 à 231d (phase 29 : étapes en attente) ; 232 à 234 (0.29.0-alpha.2 : menu de la carte, suppression, questions répondues) ; 235 (0.29.0-alpha.3 : panneau de l'agent, réveil sur réponse) ; 236 à 238b (phase 30 : Graphe, Fonctionnalités et PRs, aucune PR, fiche ticket, Maquettes, maquette en plein écran) ; **dessinés** |
+| 36 · Suivi seul | 219 à 225b (phase 27 : vue d'ensemble, Pour commencer, en retard au 18 oct., Nouveau projet, Kanban, fiche ticket et Activité, Questions, barre repliée, panneau de l'agent ; 225 et 225b retirés en phase 31) ; 226 à 231d (phase 29 : étapes en attente) ; 232 à 234 (0.29.0-alpha.2 : menu de la carte, suppression, questions répondues) ; 235 (0.29.0-alpha.3, retiré en phase 31) ; 236 à 238b (phase 30 : Graphe, Fonctionnalités et PRs, aucune PR, fiche ticket, Maquettes, maquette en plein écran) ; 239 à 242 (phase 31 : Graphe en attente, agent de projet en volet, agrandi, liste rétractée ; 219, 219c, 220, 226 à 229 et 236 refaits) ; **dessinés** |
 
 Pages 00 à 27 et 29 à 36 dessinées ; les PDF de `design/pdf/` et `kibo.penpot.xz` sont à jour jusqu'à la page 36.
 
@@ -364,6 +364,21 @@ sombre et clair, et renommés.
   238b Maquette en plein écran (barre « SILO-45 · Conflit de saisie · Figma », « Actualiser », « Ouvrir dans Figma », « Quitter le plein
   écran (Échap) », cadre à l'échelle 1 sur fond `muted`, barre de zoom « 100 % »).
 
+Phase 31 (2026-10-21) : copiés de « Kibo · Redesign » (page « Proposition ») dans la page 36 au jalon, de la même façon (collés en
+(0, 0) par ⌘C / ⌘V dans le Chromium headless, déplacés à la rangée de l'ancien board, renommés), sombre et clair. Étapes en attente en
+cyan (spec §45, `design/redesign/README.md`, « Phase 31 ») : P5b, les quatre boards « … · en attente » qui montrent des étapes ou des
+puces et le nouveau « P5b · Graphe · en attente ». Agent de projet en conversation (spec §46, « Agent de projet en conversation ») : le
+volet de P1 bis v3, « En retard au 18 oct. », P6 et « Vue d'ensemble · en attente » redessiné en conversation, et trois boards ajoutés.
+225, 225b et 235 (panneau Suivi : question, récapitulatif, réveil) sont **retirés** de la page et des PDF ; leurs rangées restent vides.
+
+- 36 · Suivi seul (phase 31) : 219 vue d'ensemble, 219c en retard au 18 oct. et 220 Nouveau projet **refaits phase 31, volet en
+  conversation** (« Fais le point du jour », lot n° 7, saisie ; Activité « Agent de projet · lot n° 7 proposé ») · 226 vue d'ensemble en
+  attente **refait phase 31** (cyan et volet en conversation) · 227 Planning, 228 fiche F5, 229 Kanban **refaits phase 31** (étapes et
+  puces en cyan) · 236 Graphe, Fonctionnalités **refait phase 31** (légende « En attente ») · 239 Graphe · en attente (F1 sur trois
+  lignes, étapes en attente en cyan ; y = 43 500) · 240 Agent de projet, volet (340 px, liste ouverte par-dessus ; y = 45 000) ·
+  241 Agent de projet, agrandi (écran entier P1 bis · Agent agrandi : volet de 720 px en calque, liste ouverte ; y = 46 500) ·
+  242 Agent de projet, agrandi, liste rétractée (720 px ; y = 48 000).
+
 ## Exporter
 
 1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("36")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
@@ -372,6 +387,7 @@ sombre et clair, et renommés.
    du fichier (polices recopiées à chaque page), au-delà de la limite de 100 Mo de GitHub.
    Boards ajoutés en fin de page 36 (232 à 234 en 0.29.0-alpha.2, 235 en 0.29.0-alpha.3, 236 à 238b en phase 30) : exporter seulement ces boards (`board.export({ type: "pdf" })`, sombre puis
    clair, dans l'ordre des rangées) et les ajouter en fin de chaque PDF, les pages existantes restant inchangées.
+   Phase 31 : pages de 219, 219c, 220, 226 à 229 et 236 remplacées sur place, celles de 225, 225b et 235 retirées, 239 à 242 ajoutés en fin.
 2. Source : menu du fichier → Exporter (.penpot) (ou, depuis l'onglet headless, la méthode `export-binfile` de l'API, dont l'événement `end` donne
    l'adresse du fichier à télécharger), puis `scripts/pack-penpot.sh <fichier>` → `kibo.penpot.xz` (sans les vignettes des boards,
    que Penpot régénère : l'archive reste sous la limite de 100 Mo de GitHub).

@@ -1,9 +1,9 @@
 import {
   type FeatureStatus,
+  type FeatureStep,
   featureSteps,
   type ProjectSnapshot,
   type SprintView,
-  type StatusId,
 } from "@kibo/schema";
 
 export type SprintFeature = {
@@ -11,7 +11,7 @@ export type SprintFeature = {
   shortKey: string;
   title: string;
   status: FeatureStatus;
-  steps: { ticketId: string; statusId: StatusId }[];
+  steps: Pick<FeatureStep, "ticketId" | "statusId" | "onHold">[];
 };
 
 export type SprintTiming =
@@ -37,7 +37,7 @@ export function sprintFeatures(
             title: t.title,
             status: t.feature.status,
             steps: featureSteps({ feature: t.id, tickets: project.tickets, links: project.links }).map(
-              (s) => ({ ticketId: s.ticketId, statusId: s.statusId }),
+              (s) => ({ ticketId: s.ticketId, statusId: s.statusId, onHold: s.onHold }),
             ),
           },
         ],

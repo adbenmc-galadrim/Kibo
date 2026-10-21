@@ -230,8 +230,6 @@ export function Workspace({ viewer, notifications, projects, tabs, agents }: Wor
                 key={project.meta.id}
                 open={agentPanel.open}
                 project={project}
-                tab={agentPanel.tab}
-                onTab={agentPanel.setTab}
                 onClose={agentPanel.close}
               />
             )}

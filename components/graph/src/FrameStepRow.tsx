@@ -1,5 +1,6 @@
+import type { OnHold } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
-import { GitBranch, GitMerge, GitPullRequest, type LucideIcon } from "lucide-react";
+import { GitBranch, GitMerge, GitPullRequest, type LucideIcon, Pause } from "lucide-react";
 import { fr } from "./fr";
 import type { GitMark, LaneStep, StepTone } from "./sprint-lanes";
 
@@ -8,6 +9,7 @@ export const DOT_BG: Record<Exclude<StepTone, "todo">, string> = {
   review: "bg-(--tracking-purple)",
   progress: "bg-(--tracking-blue)",
   blocked: "bg-(--tracking-red)",
+  hold: "bg-(--tracking-hold)",
 };
 
 export const RING_CLASS = "rounded-full border-[1.5px] border-(--tracking-dim)";
@@ -33,6 +35,22 @@ export function StepDot({ tone }: { tone: StepTone }) {
       data-tone={tone}
       className={cn("size-[7px] shrink-0", tone === "todo" ? RING_CLASS : cn("rounded-full", DOT_BG[tone]))}
     />
+  );
+}
+
+function HoldMark({ hold }: { hold: OnHold }) {
+  const label =
+    hold.source === "own" ? fr.sprints.hold.own(hold.reason) : fr.sprints.hold.dependency(hold.key);
+  return (
+    <Pause
+      size={11}
+      absoluteStrokeWidth
+      role="img"
+      aria-label={label}
+      className="shrink-0 text-(--tracking-hold)"
+    >
+      <title>{label}</title>
+    </Pause>
   );
 }
 
@@ -67,6 +85,7 @@ export function FrameStepRow({ step, onOpen }: Props) {
           className="size-1.5 shrink-0 rounded-full bg-(--tracking-brand)"
         />
       )}
+      {step.hold !== null && <HoldMark hold={step.hold} />}
       {Icon !== null && step.git !== null && (
         <Icon
           size={11}

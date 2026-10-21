@@ -1,7 +1,7 @@
 import { afterEach, expect, test } from "bun:test";
 import { type CiRun, EMPTY_PROGRESS, type GithubPrRef, type TicketView } from "@kibo/schema";
 import { cleanup, render, screen } from "@testing-library/react";
-import { BlockedBadge, CardBadges } from "./CardBadges";
+import { BlockedBadge, CardBadges, HeldBadge } from "./CardBadges";
 
 afterEach(cleanup);
 
@@ -133,4 +133,21 @@ test("the blocked badge names the blocking question, or just says blocked", () =
   cleanup();
   render(<BlockedBadge question={null} />);
   expect(screen.getByText("bloqué")).toBeTruthy();
+});
+
+test("the hold chip is full cyan like the blocked one, its label and text unchanged", () => {
+  render(
+    <HeldBadge
+      hold={{
+        source: "own",
+        key: "SILO-33",
+        reason: "Serveur MinIO de recette indisponible",
+        since: "2026-10-16",
+      }}
+    />,
+  );
+  const badge = screen.getByRole("note", { name: "En attente : Serveur MinIO de recette indisponible" });
+  expect(badge.textContent).toBe("Serveur MinIO de recette…");
+  expect(badge.className).toContain("bg-(--tracking-hold-soft) text-(--tracking-hold)");
+  expect(badge.className).not.toContain("border-dashed");
 });

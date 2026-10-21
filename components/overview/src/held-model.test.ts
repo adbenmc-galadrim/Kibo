@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { heldRows } from "./held-model";
 import { indicatorTexts } from "./indicator-texts";
 import { build } from "./model-test-kit";
+import { featureFacts } from "./overview-facts";
 import { TODAY } from "./test-seed";
 
 const keys = (model: ReturnType<typeof build>["model"], title: string) =>
@@ -26,14 +27,27 @@ test("the indicator counts the steps put on hold, not the ones waiting on them",
   expect(indicatorTexts(model.indicators).features).toMatchObject({ value: "4", held: "3 en attente" });
 });
 
-test("a step on hold leaves the counts, the segments and the risk of its feature", () => {
+test("the sprint card bars keep the held steps in order, in cyan", () => {
   const { model } = build(TODAY, true);
   const f4 = keys(model, "Saisir un constat hors ligne");
   expect(f4).toMatchObject({ state: "delivered", steps: "3/4", held: 1, risk: false });
-  expect(f4?.tones).toHaveLength(4);
+  expect(f4?.tones).toEqual(["done", "done", "done", "hold", "todo"]);
   const f5 = keys(model, "Envoyer les photos d'un constat");
   expect(f5).toMatchObject({ state: "open", steps: "1/2", held: 3, risk: false });
-  expect(f5?.tones).toHaveLength(2);
+  expect(f5?.tones).toEqual(["done", "review", "hold", "hold", "hold"]);
+  expect(model.next?.tones).toEqual(["done", "review", "hold", "hold", "hold"]);
+});
+
+test("risk, deadlines and the next feature's remaining steps still leave held steps out", () => {
+  const { model, input } = build(TODAY, true);
+  const f5 = featureFacts(input.tickets, input.links).find(
+    (f) => f.title === "Envoyer les photos d'un constat",
+  );
+  expect(f5?.steps.map((s) => s.title)).toEqual([
+    "Stockage des photos sur MinIO",
+    "Route d'envoi des photos",
+  ]);
+  expect(f5?.allSteps).toHaveLength(5);
   expect(model.next?.remaining.map((s) => s.title)).toEqual(["Route d'envoi des photos"]);
   const f5Row = model.deadlines.rows.find((r) => r.title === "Envoyer les photos d'un constat");
   expect(f5Row?.cells).toHaveLength(2);

@@ -35,6 +35,8 @@ test("every mask stays inside its screen and says why", () => {
     "attente-fonctionnalite",
     "attente-kanban",
     "attente-fiche-ticket",
+    "attente-graphe",
+    "agent-agrandi",
   ]);
   for (const screen of screens)
     for (const m of PIXEL_MASKS[screen]) {
@@ -98,6 +100,7 @@ test("each on-hold screen keeps the height, the masks and the dialog of the scre
     "attente-fonctionnalite": "fonctionnalite",
     "attente-kanban": "kanban",
     "attente-fiche-ticket": "fiche-ticket",
+    "attente-graphe": "graphe",
   });
   for (const screen of ATTENTE_SCREENS) {
     const origin = ATTENTE_ORIGINS[screen];
@@ -150,4 +153,30 @@ test("the full-screen mockup compares against P8g on 1000 px, without a single m
   expect(referenceOf("apercu-maquette")).toBe("apercu-maquette");
   expect(PIXEL_HEIGHTS["apercu-maquette"]).toBe(1000);
   expect(PIXEL_MASKS["apercu-maquette"]).toEqual([]);
+});
+
+test("the Graphe on hold compares against its own board on 1000 px, with the masks of the Graphe", () => {
+  expect(PIXEL_HEIGHTS["attente-graphe"]).toBe(1000);
+  expect(masksOf("attente-graphe")).toEqual(PIXEL_MASKS.graphe);
+  expect(referenceOf("attente-graphe")).toBe("attente-graphe");
+});
+
+test("the widened agent covers the Vue d'ensemble from x 720 and keeps only the masks left of it", () => {
+  expect(PIXEL_HEIGHTS["agent-agrandi"]).toBe(PIXEL_HEIGHTS["vue-ensemble"]);
+  expect(referenceOf("agent-agrandi")).toBe("agent-agrandi");
+  expect(DIALOG_SCREENS["agent-agrandi"]).toEqual({ x: 720, y: 0, w: 720, h: 1260 });
+  const kept = masksOf("agent-agrandi");
+  expect(kept.map((m) => [m.x, m.y])).toEqual([
+    [16, 1216],
+    [279, 1074],
+    [279, 1113],
+    [279, 1152],
+    [279, 1191],
+  ]);
+  for (const m of kept) expect(masksOf("vue-ensemble")).toContainEqual(m);
+});
+
+test("no Vue d'ensemble mask hides the header of the narrow panel", () => {
+  for (const screen of ["vue-ensemble", "attente-vue-ensemble"])
+    expect(masksOf(screen).filter((m) => m.x + m.w > 1100 && m.y < 56)).toEqual([]);
 });

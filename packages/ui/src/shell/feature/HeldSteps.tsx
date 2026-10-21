@@ -53,7 +53,7 @@ function OwnHold({
           absoluteStrokeWidth
           size={12}
           aria-hidden
-          className="size-[12px] shrink-0 text-(--tracking-mfg)"
+          className="size-[12px] shrink-0 text-(--tracking-hold)"
         />
         <span className={`min-w-0 truncate ${MFG}`}>{t.since(hold.reason, holdDay(hold.since))}</span>
         {editable && (
@@ -95,10 +95,8 @@ function HeldRow({ step, ...p }: Omit<Props, "steps"> & { step: StepModel }) {
   if (hold === null) return null;
   return (
     <li data-ticket={step.key} className="flex w-full gap-[14px]">
-      <span
-        className={`flex size-[28px] shrink-0 items-center justify-center rounded-full bg-(--tracking-muted) ${STROKE}`}
-      >
-        <Pause absoluteStrokeWidth size={13} aria-hidden className="size-[13px] text-(--tracking-mfg)" />
+      <span className="flex size-[28px] shrink-0 items-center justify-center rounded-full bg-(--tracking-hold-soft)">
+        <Pause absoluteStrokeWidth size={13} aria-hidden className="size-[13px] text-(--tracking-hold)" />
       </span>
       <div className={`flex min-w-0 flex-1 flex-col gap-[7px] rounded-[8px] px-[14px] py-[10px] ${STROKE}`}>
         <div className="flex w-full items-center gap-[8px]">
@@ -133,7 +131,7 @@ export function HeldSteps({ steps, ...p }: Props) {
           absoluteStrokeWidth
           size={15}
           aria-hidden
-          className="size-[15px] shrink-0 text-(--tracking-fg)"
+          className="size-[15px] shrink-0 text-(--tracking-hold)"
         />
         <h2 id={title} className="text-[15px] leading-[18px] font-semibold text-(--tracking-fg)">
           {frFeature.heldSection(steps.length)}

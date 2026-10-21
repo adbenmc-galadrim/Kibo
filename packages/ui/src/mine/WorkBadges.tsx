@@ -10,6 +10,7 @@ const BADGE =
   "inline-flex h-[18px] shrink-0 items-center gap-1 rounded-[4px] px-1.5 text-[11px] font-medium leading-none whitespace-nowrap";
 const OUTLINED = cn(BADGE, "border border-(--tracking-border) text-(--tracking-mfg)");
 const RED = cn(BADGE, "bg-(--tracking-red-soft) text-(--tracking-red)");
+const HOLD = cn(BADGE, "bg-(--tracking-hold-soft) text-(--tracking-hold)");
 
 function waitingText(item: WorkItem): string | null {
   const { ticket } = item;
@@ -42,6 +43,18 @@ function PhaseChip({ ticket }: { ticket: WorkItem["ticket"] }) {
   return (
     <span data-delivery-step="" className={cn(DELIVERY_STEP_CHIP, "shrink-0 whitespace-nowrap")}>
       {stepLine(ticket.delivery)}
+    </span>
+  );
+}
+
+function ReasonBadge({ item, reason }: { item: WorkItem; reason: string }) {
+  const blocked = item.blockedBy !== null || item.ticket.statusId === "blocked";
+  const held = !blocked && item.ticket.onHold !== null;
+  return (
+    <span className={blocked ? RED : held ? HOLD : OUTLINED}>
+      {blocked && <Lock aria-hidden absoluteStrokeWidth size={11} className="size-[11px]" />}
+      {held && <Pause aria-hidden absoluteStrokeWidth size={11} className="size-[11px]" />}
+      {reason}
     </span>
   );
 }
@@ -79,17 +92,7 @@ export function WorkBadges({ item, waiting }: { item: WorkItem; waiting: boolean
         </span>
       )}
       {item.ci && <CiBadge tone={item.ci} />}
-      {reason && (
-        <span className={item.blockedBy !== null || item.ticket.statusId === "blocked" ? RED : OUTLINED}>
-          {(item.blockedBy !== null || item.ticket.statusId === "blocked") && (
-            <Lock aria-hidden absoluteStrokeWidth size={11} className="size-[11px]" />
-          )}
-          {item.blockedBy === null && item.ticket.statusId !== "blocked" && item.ticket.onHold !== null && (
-            <Pause aria-hidden absoluteStrokeWidth size={11} className="size-[11px]" />
-          )}
-          {reason}
-        </span>
-      )}
+      {reason && <ReasonBadge item={item} reason={reason} />}
     </span>
   );
 }

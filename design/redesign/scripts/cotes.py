@@ -7,7 +7,7 @@ def pal(mode):
     m = re.search(mode + r": \{(.*?)\}", base, re.S).group(1)
     return dict(re.findall(r"(\w+): \"(#[0-9A-Fa-f]{6})\"", m))
 PD, PL = pal("dark"), pal("light")
-ORDER = ["bg","panel","card","muted","hover","border","soft","fg","mfg","dim","faint","primary","pfg","brand","brandBtn","brandSoft","brandLine","brandText","blue","purple","green","red","amber","blueSoft","purpleSoft","greenSoft","redSoft","amberSoft","track","grid","canvas"]
+ORDER = ["bg","panel","card","muted","hover","border","soft","fg","mfg","dim","faint","primary","pfg","brand","brandBtn","brandSoft","brandLine","brandText","blue","purple","green","red","amber","blueSoft","purpleSoft","greenSoft","redSoft","amberSoft","hold","holdSoft","track","grid","canvas"]
 def tok(hd, hl):
     if hd is None: return "—"
     a, op = (hd.split("@") + [None])[:2]
@@ -104,37 +104,48 @@ MARK29 = "\n## Phase 29\n"
 SCREENS_A2 = [(23, "P9b · Questions, menu", "proposition-questions-menu"), (24, "P9c · Supprimer la question", "proposition-questions-supprimer"),
     (25, "P9d · Questions, répondues", "proposition-questions-repondues")]
 MARK_A2 = "\n## 0.29.0-alpha.2\n"
-SCREENS_A3 = [(26, "Agent · réveil sur réponse", "proposition-agent-reveil")]
+SCREENS_A3 = []
 MARK_A3 = "\n## 0.29.0-alpha.3\n"
 SCREENS30 = [(27, "P5b · Graphe, Fonctionnalités", "proposition-graphe-fonctionnalites"), (28, "P5c · Graphe, PRs", "proposition-graphe-prs"),
     (29, "P5e · Graphe, aucune PR", "proposition-graphe-prs-vide"), (30, "P8f · Fiche ticket, Maquettes", "proposition-fiche-ticket-maquettes"),
     (31, "P8g · Maquette en plein écran", "proposition-apercu-maquette")]
 MARK30 = "\n## Phase 30\n"
+SCREENS31 = [(32, "P5b · Graphe · en attente", "proposition-attente-graphe"), (33, "P1 bis · Agent agrandi", "proposition-agent-agrandi")]
+MARK31 = "\n## Phase 31\n"
 if "--sections" in sys.argv:
     wanted = sys.argv[sys.argv.index("--sections") + 1].split(",")
     cur = open(W + "/cotes.md").read()
-    for i, name, png in SCREENS + SCREENS27 + SCREENS29 + SCREENS_A2 + SCREENS_A3 + SCREENS30:
+    for i, name, png in SCREENS + SCREENS27 + SCREENS29 + SCREENS_A2 + SCREENS_A3 + SCREENS30 + SCREENS31:
         if str(i) not in wanted: continue
-        where = "" if (i, name, png) in SCREENS27 + SCREENS29 + SCREENS_A2 + SCREENS_A3 + SCREENS30 else f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Silo » du fichier « Kibo »"
+        where = "" if (i, name, png) in SCREENS27 + SCREENS29 + SCREENS_A2 + SCREENS_A3 + SCREENS30 + SCREENS31 else f" ; écran 2{10 + i - 1 if i > 1 else 10} de la page « 35 · Redesign Silo » du fichier « Kibo »"
         start = cur.index(f"\n## {name}\n") + 1
         nxt = re.search(r"\n## ", cur[start + 3:]); end = start + 3 + nxt.start() + 1 if nxt else len(cur)
         cur = cur[:start] + screen_md(i, name, png, where) + ("\n\n" if nxt else "\n") + cur[end:]
     open(W + "/cotes.md", "w").write(cur)
     print(sum(1 for _ in open(W + "/cotes.md")))
     sys.exit(0)
+if "--phase31" in sys.argv:
+    cur = open(W + "/cotes.md").read()
+    cur = cur.split(MARK31)[0].rstrip("\n") + "\n"
+    intro = ["## Phase 31", "", "Étapes en attente visibles en cyan (spec §45), données de la sous-section « Phase 31 · Graphe en attente et couleur de l'attente » du projet Silo (`design/donnees-fictives.md`, scénario `silo-graphe`). Jeton `hold` (`#22D3EE` / `#0E7490`) et `holdSoft` (`#082F35` / `#ECFEFF`) dans `scripts/01-base.js`. Le board clone « P5b · Graphe, Fonctionnalités » (`scripts/59c-graphe-attente.js`) : F1 renommée « Connexion, environnements et hébergement » sur trois lignes (cadre de 96 px, F2 descendue de 15 px) ; F4 livrée ne garde que la ligne SILO-45 en attente (cadre de 212 × 96, « 3/4 ⏸ 1 ✓ ») ; F5 « 1/2 ⏸ 3 » sans pied « en retard » ; F7 « 0/4 ⏸ 1 » ; points, ⏸ et segments en `hold` ; flèches recalculées (ancre à 38 px du haut des cadres). Rangée à y = 51 500 (après P8g), sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` (`_dump-32`), puis `python3 scripts/cotes.py <dossier des JSON> --phase31`, qui remplace cette partie seulement. Comparaison au pixel : « attente-graphe » (`silo-graphe`, masques de « graphe »). Agent de projet en conversation (spec §46), données de la sous-section « Phase 31 · Agent de projet en conversation » : « P1 bis · Agent agrandi » clone « P1 bis v3 · Vue d'ensemble », lui rend sa pleine largeur sans volet étroit (grille des échéances étirée) et pose par-dessus le volet de 720 px en calque à droite, ombre portée vers la gauche (décision d'Adam du 2026-10-21, `scripts/59d-agent-conversation.js`) : en-tête de 56 px (« Agent de projet · Silo », boutons `panelLeftClose`, `plus`, `minimize2`, `x`), liste des agents de 210 px (fond `bg`, bord droit `border`, « Nouvel agent » de 32 px, items de 56 px, agent en cours sur `panel` avec « en cours » en `brandText`), conversation dans la colonne de lecture (bulle d'Adam de 240 px à droite, réponse de l'agent, « Lu : … », lot n° 7) et saisie en pied ; la page n'est jamais compressée. Rangée à y = 53 000 (après P5b · en attente). Relevé `_dump-33`. Comparaison au pixel : « agent-agrandi » (`silo-maquettes`). « Agent de projet, volet » (340 × 1 000, liste ouverte par-dessus la conversation) et « Agent de projet, agrandi, liste rétractée » (720 × 1 000) sont des références visuelles sans cotes. Le volet étroit de P1 bis v3, « En retard », P6 et « Vue d'ensemble · en attente » est redessiné en conversation et relevé à sa place (`--sections 6,13,8,14`). P5b (légende « En attente ») et les quatre boards « … · en attente » de la phase 29 (Vue d'ensemble, Planning, Fonctionnalité, Kanban) sont redessinés par leurs scripts et relevés à leur place (`--sections 14,15,16,17,27`)."]
+    parts = [screen_md(i, name, png, "") for i, name, png in SCREENS31]
+    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
+    print(sum(1 for _ in open(W + "/cotes.md")))
+    sys.exit(0)
 if "--phase30" in sys.argv:
     cur = open(W + "/cotes.md").read()
-    cur = cur.split(MARK30)[0].rstrip("\n") + "\n"
+    tail31 = (MARK31 + cur.split(MARK31)[1]) if MARK31 in cur else ""
+    cur = cur.split(MARK31)[0].split(MARK30)[0].rstrip("\n") + "\n"
     intro = ["## Phase 30", "", "Graphe simplifié et vue des PR (spec §44), données de la sous-section « Phase 30 · PR empilées » du projet Silo (`design/donnees-fictives.md`). Les trois boards clonent « P5 · Graphe » (`scripts/59-graphe-prs.js`) : la barre ne garde que le sélecteur « Fonctionnalités | PRs » et le compteur ; P5b garde les colonnes par sprint, P5c dessine les piles de PR de bas en haut sur le rail « dev · branche de base », P5e l'état vide « Aucune PR ouverte ». La variante P5d (PR par fonctionnalité) est écartée. Rangées à partir de y = 44 000 (pas de 1 500 px), sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` par board (`_dump-27` à `_dump-29`), puis `python3 scripts/cotes.py <dossier des JSON> --phase30`, qui remplace cette partie seulement. Comparaison au pixel sur P5b (« graphe », `silo-maquettes`) et P5c (« graphe-prs », `silo-prs`) ; P5e a une capture seulement.", "", "Plein écran des maquettes de la fiche ticket (spec §44.8), données de la sous-section « Phase 30 · Aperçu de maquette » (`scripts/59b-apercu-maquette.js`, rangées à y = 48 500 et 50 000) : P8f clone « P8 · Fiche ticket », ouvre la section « Maquettes » (propriété « Maquette », vignette du cadre « Conflit de saisie », « Plein écran » en tête des actions, champ « Lier un cadre ») et défile le corps de la feuille jusqu'à elle ; P8g est la vue plein écran (barre de 40 px, visualiseur `muted`, cadre de 444 × 960 à l'échelle 1 en (498, 40), barre de zoom « 100 % »). Relevé `_dump-30` et `_dump-31`. Comparaison au pixel sur P8g (« apercu-maquette », `silo-apercu`, aucun masque) ; P8f a une capture seulement ; le cadre seul est exporté dans `proposition-apercu-maquette-cadre.png`, image du faux Figma."]
     parts = [screen_md(i, name, png, "") for i, name, png in SCREENS30]
-    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n")
+    open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n" + tail31)
     print(sum(1 for _ in open(W + "/cotes.md")))
     sys.exit(0)
 if "--alpha3" in sys.argv:
     cur = open(W + "/cotes.md").read()
     tail30 = (MARK30 + cur.split(MARK30)[1]) if MARK30 in cur else ""
     cur = cur.split(MARK30)[0].split(MARK_A3)[0].rstrip("\n") + "\n"
-    intro = ["## 0.29.0-alpha.3", "", "Réveil de l'agent de projet sur une réponse (spec §43), données de la sous-section « 0.29.0-alpha.3 » du projet Silo (`design/donnees-fictives.md`). Le board clone « Agent · question » (`scripts/58-alpha3-reveil.js`) : la bulle de la question d'Adam devient la ligne de réveil « Q16 répondue : « 5 Go » » (icône `alarm-clock`, heure à droite), suivie du texte de l'agent et du lot n° 8 « après réveil » à une action. Rangée à y = 42 500 (après les rangées de l'alpha 2), sombre à x = 0, clair à x = 1 540. Relevé : `scripts/95-cotes.js` (`_dump-26`), puis `python3 scripts/cotes.py <dossier des JSON> --alpha3`, qui remplace cette partie seulement. Pas de comparaison au pixel (panneau, capture en E2E) ; « Agent · question » et sa référence ne changent pas."]
+    intro = ["## 0.29.0-alpha.3", "", "Réveil de l'agent de projet sur une réponse (spec §43). Le board « Agent · réveil sur réponse » est retiré avec la vue Suivi (spec §46.3) : un réveil est une ligne discrète de la conversation (voir « Phase 31 »). Sa rangée (y = 42 500) reste réservée ; `python3 scripts/cotes.py <dossier des JSON> --alpha3` réécrit cette partie seulement."]
     parts = [screen_md(i, name, png, "") for i, name, png in SCREENS_A3]
     open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n" + tail30)
     print(sum(1 for _ in open(W + "/cotes.md")))
@@ -161,7 +172,7 @@ if "--phase27" in sys.argv:
     cur = open(W + "/cotes.md").read()
     tail29 = (MARK29 + cur.split(MARK29)[1]) if MARK29 in cur else ""
     cur = cur.split(MARK27)[0].rstrip("\n") + "\n"
-    intro = ["## Phase 27", "", "Boards de la phase 27 (spec §39, §39.6), relevés comme les précédents : `scripts/95-cotes.js` par board, puis `python3 scripts/cotes.py <dossier des JSON> --phase27`, qui remplace cette partie seulement. Rangées à partir de y = 8 000 (pas de 1 500 px). Mêmes tokens, polices et règles qu'en tête ; horloge figée au vendredi 16 octobre (S42), sauf la variante « En retard au 18 oct. » (dimanche, S42 terminé), données `silo-maquettes`. La barre repliée (`exports/proposition-barre-repliee-*.png`, 1 180 × 1 000) et le panneau de l'agent (`exports/proposition-agent-{question,recap}-*.png`, 340 × 1 000) servent de référence visuelle, sans cotes ni comparaison au pixel."]
+    intro = ["## Phase 27", "", "Boards de la phase 27 (spec §39, §39.6), relevés comme les précédents : `scripts/95-cotes.js` par board, puis `python3 scripts/cotes.py <dossier des JSON> --phase27`, qui remplace cette partie seulement. Rangées à partir de y = 8 000 (pas de 1 500 px). Mêmes tokens, polices et règles qu'en tête ; horloge figée au vendredi 16 octobre (S42), sauf la variante « En retard au 18 oct. » (dimanche, S42 terminé), données `silo-maquettes`. La barre repliée (`exports/proposition-barre-repliee-*.png`, 1 180 × 1 000) sert de référence visuelle, sans cotes ni comparaison au pixel. Le volet de l'agent de projet de P1 bis v3, de « En retard » et de P6 est la conversation de la phase 31 (spec §46, voir « Phase 31 ») ; les boards « Agent · question » et « Agent · récapitulatif » sont retirés."]
     parts = [screen_md(i, name, png, "") for i, name, png in SCREENS27]
     open(W + "/cotes.md", "w").write(cur + "\n" + "\n".join(intro) + "\n\n" + "\n\n".join(parts) + "\n" + tail29)
     print(sum(1 for _ in open(W + "/cotes.md")))

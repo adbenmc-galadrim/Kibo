@@ -1,3 +1,4 @@
+import type { Project } from "@playwright/test";
 import { PIXEL_DAEMONS } from "./pixel-projects";
 import { SILO_MAQUETTES } from "./pixel-settings";
 
@@ -246,6 +247,16 @@ export const ALL_DAEMONS = [
   },
   ...PIXEL_DAEMONS,
 ] as const;
+
+const AGENT_CONVERSATION_SPEC = /agent-conversation\.spec\.ts$/;
+
+export const agentConversationProjects = (daemons: readonly string[]): Project[] =>
+  ALL_DAEMONS.filter((d) => d.name.startsWith("suivi-") && daemons.includes(d.name)).map((d) => ({
+    name: `agent-conversation-${d.scheme}`,
+    testMatch: AGENT_CONVERSATION_SPEC,
+    dependencies: [d.name],
+    use: { browserName: "chromium", colorScheme: d.scheme, baseURL: `http://127.0.0.1:${d.port}` },
+  }));
 
 type ServedDaemon = {
   port: number;

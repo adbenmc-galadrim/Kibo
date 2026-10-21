@@ -158,7 +158,7 @@ export function HeldBadge({ hold }: { hold: OnHold }) {
       role="note"
       aria-label={own ? fr.hold.own(hold.reason) : fr.hold.dependency(hold.key)}
       title={own ? hold.reason : undefined}
-      className={cn(BADGE_CLASS, "border border-dashed border-(--tracking-border) text-(--tracking-mfg)")}
+      className={cn(BADGE_CLASS, "bg-(--tracking-hold-soft) text-(--tracking-hold)")}
     >
       <Pause absoluteStrokeWidth size={12} aria-hidden className="size-3 shrink-0" />
       <span className="truncate">{own ? fr.hold.short(hold.reason) : fr.hold.by(hold.key)}</span>

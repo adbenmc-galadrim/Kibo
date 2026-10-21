@@ -46,6 +46,11 @@ export const fr = {
       question ? `bloquée par ${question}` : "bloquée par une question",
     late: (slipTo: string | null) => (slipTo ? `en retard · glisse en ${slipTo}` : "en retard"),
     delivered: "Livrée",
+    held: (n: number) => `${n} en attente`,
+    hold: {
+      own: (reason: string) => `En attente : ${reason}`,
+      dependency: (key: string) => `En attente de ${key}`,
+    },
     session: "Session en cours",
     git: { merged: "PR fusionnée", pr: "PR ouverte", branch: "Branche en cours" },
     legend: {
@@ -54,6 +59,7 @@ export const fr = {
       progress: "En cours",
       review: "En review",
       blocked: "Bloqué",
+      hold: "En attente",
       feature: "Fonctionnalité",
       column: "Colonne = sprint",
       session: "Session active",

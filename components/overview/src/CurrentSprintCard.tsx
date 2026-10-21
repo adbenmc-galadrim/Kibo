@@ -11,7 +11,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { fr } from "./fr";
-import { CARD, CardHeader, MONO_KEY, Pill, type PillTone, ROW_LINE, Segments } from "./parts";
+import { CARD, CardHeader, FLUSH_CARD, MONO_KEY, Pill, type PillTone, ROW_LINE, Segments } from "./parts";
 import type { SprintCard, SprintRow } from "./sprint-model";
 
 const STATE_PILL: Record<FeatureStatus, { tone: PillTone; icon?: LucideIcon }> = {
@@ -42,7 +42,7 @@ function HeldMark({ count }: { count: number }) {
     <span
       role="img"
       aria-label={fr.held.steps(count)}
-      className="flex shrink-0 items-center gap-[3px] pl-[6px] font-mono text-(--tracking-dim) text-[11.5px] leading-[14px]"
+      className="flex shrink-0 items-center gap-[3px] pl-[6px] font-mono text-(--tracking-hold) text-[11.5px] leading-[14px]"
     >
       <Pause absoluteStrokeWidth size={11} aria-hidden />
       {count}
@@ -69,7 +69,7 @@ function FeatureRow({ row, onOpen }: { row: SprintRow; onOpen(id: string): void 
         >
           {row.title}
         </button>
-        {row.state === "delivered" && row.held > 0 && <HeldMark count={row.held} />}
+        {row.held > 0 && <HeldMark count={row.held} />}
       </span>
       <span className="flex w-[86px] shrink-0 items-center">
         <StatePill state={row.state} risk={row.risk} />
@@ -104,7 +104,7 @@ export function CurrentSprintCard({ card, onOpenTicket, onOpenSprint }: Props) {
       </section>
     );
   return (
-    <section aria-label={card.title} className={CARD}>
+    <section aria-label={card.title} className={FLUSH_CARD}>
       <CardHeader
         icon={CalendarRange}
         title={card.title}
@@ -124,7 +124,7 @@ export function CurrentSprintCard({ card, onOpenTicket, onOpenSprint }: Props) {
       {card.note !== null && (
         <p
           className={cn(
-            "flex h-[35px] items-center gap-[8px] bg-(--tracking-panel) px-[16px] text-(--tracking-mfg) text-[12px] leading-[15px]",
+            "flex h-[36px] items-center gap-[8px] bg-(--tracking-panel) px-[16px] text-(--tracking-mfg) text-[12px] leading-[15px]",
             ROW_LINE,
           )}
         >

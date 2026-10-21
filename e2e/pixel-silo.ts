@@ -1,6 +1,7 @@
-import type { Page } from "@playwright/test";
-import { list, rpc, text } from "./agents-seed";
+import { expect, type Page } from "@playwright/test";
+import { list, pairBrowser, rpc, text } from "./agents-seed";
 import { SILO_PROJECT } from "./fixtures/silo-maquettes";
+import { openPixelPage } from "./pixel-screen";
 
 const field = (value: unknown, key: string): unknown =>
   typeof value === "object" && value !== null ? Reflect.get(value, key) : undefined;
@@ -36,4 +37,12 @@ export async function siloFeatureUrl(page: Page, shortKey: string): Promise<stri
   const found = list(snapshot, "tickets").find((t) => field(t, "shortKey") === shortKey);
   if (found === undefined) throw new Error(`Silo has no ${shortKey} feature`);
   return route(projectId, `t/${encodeURIComponent(text(found, "id"))}`);
+}
+
+export async function openSiloOverviewAgent(page: Page, height: number): Promise<void> {
+  await pairBrowser(page);
+  await openPixelPage(page, await siloPageUrl(page, "Vue d'ensemble"), height);
+  await expect(page.getByText("2 sessions T3 Code")).toBeVisible();
+  await page.getByRole("button", { name: /^Agent de projet/ }).click();
+  await expect(page.getByRole("region", { name: "Lot n° 7" })).toBeVisible();
 }

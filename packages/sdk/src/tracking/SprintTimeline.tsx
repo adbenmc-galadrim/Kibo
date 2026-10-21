@@ -39,7 +39,7 @@ const MARK_TEXT: Record<NonNullable<RowMark["tone"]>, string> = {
 };
 
 const LABEL_X = 16;
-const LEGEND: readonly CaseTone[] = ["done", "review", "progress", "blocked", "todo"];
+const LEGEND: readonly Exclude<CaseTone, "hold">[] = ["done", "review", "progress", "blocked", "todo"];
 
 function RowLabel({ row, mark, onOpen }: Pick<RowProps, "row" | "mark" | "onOpen">) {
   const tone = mark?.tone === undefined ? null : MARK_TEXT[mark.tone];

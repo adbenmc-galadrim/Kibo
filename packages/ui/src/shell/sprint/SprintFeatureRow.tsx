@@ -1,6 +1,7 @@
 import type { FeatureStatus } from "@kibo/schema";
+import { stepCaseTone } from "@kibo/sdk/tracking";
 import { frSprint } from "../../i18n/fr-sprint";
-import { STEP_SEGMENT } from "../feature/styles";
+import { CASE_SEGMENT } from "../feature/styles";
 import type { SprintFeature } from "./sprint-facts";
 
 const BADGE: Record<FeatureStatus, string | null> = {
@@ -32,13 +33,16 @@ export function SprintFeatureRow({ feature, onOpen }: { feature: SprintFeature; 
           </span>
         )}
         <span role="img" aria-label={frSprint.steps(feature.shortKey)} className="flex shrink-0 gap-[3px]">
-          {feature.steps.map((step) => (
-            <span
-              key={step.ticketId}
-              data-status={step.statusId}
-              className={`h-[6px] w-[10px] rounded-[1.5px] ${STEP_SEGMENT[step.statusId] ?? "bg-(--tracking-border)"}`}
-            />
-          ))}
+          {feature.steps.map((step) => {
+            const tone = stepCaseTone(step, false);
+            return (
+              <span
+                key={step.ticketId}
+                data-tone={tone}
+                className={`h-[6px] w-[10px] rounded-[1.5px] ${CASE_SEGMENT[tone]}`}
+              />
+            );
+          })}
         </span>
       </button>
     </li>

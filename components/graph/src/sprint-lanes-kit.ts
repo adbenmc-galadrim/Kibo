@@ -4,6 +4,7 @@ import {
   featureSteps,
   type GithubPrRef,
   type Link,
+  type OnHold,
   type PrReview,
   Question,
   type SprintView,
@@ -27,6 +28,7 @@ const done = (n: number, title: string, pr?: number): Step => ({
   ...(pr === undefined ? {} : { pr: [pr, "merged"] }),
 });
 const todo = (n: number, title: string, optional = false): Step => ({ n, title, status: "todo", optional });
+const todos = (first: number, titles: readonly string[]): Step[] => titles.map((t, i) => todo(first + i, t));
 
 const SPRINTS = [
   ["S41", "Accès", "2026-10-05", "2026-10-09"],
@@ -88,44 +90,34 @@ const FEATURES: readonly Feature[] = [
     n: 50,
     title: "Importer les box depuis Excel",
     sprint: "S43",
-    steps: [
-      todo(51, "Lecture du fichier Excel"),
-      todo(52, "Contrôle des numéros"),
-      todo(53, "Écran d'import"),
-      todo(54, "Démo client"),
-    ],
+    steps: todos(51, ["Lecture du fichier Excel", "Contrôle des numéros", "Écran d'import", "Démo client"]),
   },
   {
     shortKey: "F7",
     n: 80,
     title: "Rapport de centre journalier",
     sprint: "S44",
-    steps: [
-      todo(81, "Modèle du rapport"),
-      todo(82, "Génération PDF"),
-      todo(83, "Photos dans le rapport"),
-      todo(84, "Envoi le soir"),
-      todo(85, "Démo client"),
-    ],
+    steps: todos(81, [
+      "Modèle du rapport",
+      "Génération PDF",
+      "Photos dans le rapport",
+      "Envoi le soir",
+      "Démo client",
+    ]),
   },
   {
     shortKey: "F8",
     n: 70,
     title: "Valider les contrats par lot",
     sprint: "S43",
-    steps: [
-      todo(71, "Statuts de contrat"),
-      todo(72, "Sélection multiple"),
-      todo(73, "Validation par lot"),
-      todo(74, "Démo client"),
-    ],
+    steps: todos(71, ["Statuts de contrat", "Sélection multiple", "Validation par lot", "Démo client"]),
   },
   {
     shortKey: "F9",
     n: 90,
     title: "Exporter le dossier client",
     sprint: null,
-    steps: [todo(91, "Format du dossier"), todo(92, "Archive ZIP"), todo(93, "Démo client")],
+    steps: todos(91, ["Format du dossier", "Archive ZIP", "Démo client"]),
   },
 ];
 
@@ -146,6 +138,22 @@ const FEATURE_LINKS: readonly [string, string][] = [
 const SESSIONS = new Set(["SILO-33", "SILO-45"]);
 
 const key = (n: number) => `SILO-${n}`;
+
+export type KitHold = { n: number; reason: string } | { n: number; waits: number };
+export const KIT_HOLDS: readonly KitHold[] = [
+  { n: 45, reason: "Règle de fusion à valider par le client" },
+  { n: 33, reason: "Serveur MinIO de recette indisponible" },
+  { n: 34, waits: 33 },
+  { n: 35, waits: 33 },
+];
+
+function onHoldOf(n: number, holds: readonly KitHold[]): OnHold | null {
+  const hold = holds.find((h) => h.n === n);
+  if (hold === undefined) return null;
+  if ("reason" in hold) return { source: "own", key: key(n), reason: hold.reason, since: KIT_TODAY };
+  const source = onHoldOf(hold.waits, holds);
+  return source === null ? null : { ...source, source: "dependency", key: key(hold.waits) };
+}
 const sprintIdOf = (code: string | null) => (code === null ? null : code.toLowerCase());
 
 export function kitView(over: Partial<TicketView> & Pick<TicketView, "id" | "title">): TicketView {
@@ -192,13 +200,14 @@ const prRef = ([number, state, review = "none"]: Pr): GithubPrRef => ({
   checks: null,
 });
 
-const stepView = (s: Step, f: Feature): TicketView =>
+const stepView = (s: Step, f: Feature, holds: readonly KitHold[]): TicketView =>
   kitView({
     id: key(s.n),
     title: s.title,
     statusId: s.status,
     parentId: key(f.n),
     optional: s.optional ?? false,
+    onHold: onHoldOf(s.n, holds),
     effectiveSprintId: sprintIdOf(f.sprint),
     session: SESSIONS.has(key(s.n)) ? { tool: "T3 Code", startedAt: 1 } : null,
     externalRefs: [
@@ -247,7 +256,7 @@ export const KIT_LINKS: Link[] = [
   ...FEATURE_LINKS.map(([from, to]) => [rootOf(from), rootOf(to)] as const),
 ].map(([from, to], i) => ({ id: `l${i}`, from, to, type: "blocks" as const }));
 
-export function kitTickets(today: string = KIT_TODAY): TicketView[] {
+export function kitTickets(today: string = KIT_TODAY, holds: readonly KitHold[] = []): TicketView[] {
   const rows = FEATURES.flatMap((f) => [
     kitView({
       id: key(f.n),
@@ -257,7 +266,7 @@ export function kitTickets(today: string = KIT_TODAY): TicketView[] {
       effectiveSprintId: sprintIdOf(f.sprint),
       progress: { done: f.steps.filter((s) => s.status === "done").length, total: f.steps.length },
     }),
-    ...f.steps.map((s) => stepView(s, f)),
+    ...f.steps.map((s) => stepView(s, f, holds)),
   ]);
   const tickets = [...rows, kitView({ id: key(61), title: "Passage à Expo SDK 54", sprintId: "s42" })];
   const sprints = new Map(KIT_SPRINTS.map((s) => [s.id, s]));

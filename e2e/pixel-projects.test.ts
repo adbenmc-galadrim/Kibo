@@ -3,6 +3,7 @@ import { ALL_DAEMONS } from "./daemons";
 import {
   APERCU_DAEMONS,
   ATTENTE_DAEMONS,
+  GRAPHE_DAEMONS,
   PIXEL_DAEMONS,
   PRS_DAEMONS,
   SCENARIO_DAEMONS,
@@ -13,6 +14,7 @@ import {
   DESIGN_REFERENCES,
   SILO_APERCU,
   SILO_ATTENTE,
+  SILO_GRAPHE,
   SILO_PRS,
 } from "./pixel-settings";
 import config from "./playwright.config";
@@ -149,6 +151,28 @@ test("no other project picks the stacked pull request specs", () => {
   }
 });
 
+type PixelOnlyDaemon = { scheme: "dark" | "light"; port: number };
+
+function expectPixelOnly(prefix: string, daemon: PixelOnlyDaemon, command: string): void {
+  const pixel = projectNamed(`${prefix}-pixel-${daemon.scheme}`);
+  expect(pixel?.use?.baseURL).toBe(`http://127.0.0.1:${daemon.port}`);
+  expect(pixel?.use?.colorScheme).toBe(daemon.scheme);
+  expect(pixel?.snapshotPathTemplate?.startsWith(`${COMPARED_REFERENCES}/`)).toBe(true);
+  expect(pixel?.metadata?.pixelSources).toBe(DESIGN_REFERENCES);
+  expect(pixel?.dependencies ?? []).toEqual([]);
+  expect(projectNamed(`${prefix}-${daemon.scheme}`)).toBeUndefined();
+  const servers = Array.isArray(config.webServer) ? config.webServer : [];
+  const server = servers.find((w) => w.command.startsWith(`bun serve.ts ${daemon.port} `));
+  expect(server?.command).toBe(command);
+  expect(server?.url).toBe(`http://127.0.0.1:${seedReadyPort(daemon.port)}/`);
+  expect(server?.timeout).toBe(120_000);
+}
+
+const owners = (spec: string): string[] =>
+  (config.projects ?? [])
+    .filter((p) => p.testMatch instanceof RegExp && p.testMatch.test(spec))
+    .map((p) => p.name ?? "");
+
 test("the full-screen mockup runs on its own daemons 4487 and 4488, with GitHub and Figma faked together", () => {
   expect(APERCU_DAEMONS.map((d) => [d.name, d.scheme, d.port, d.scenario, d.integrations, d.design])).toEqual(
     [
@@ -156,20 +180,8 @@ test("the full-screen mockup runs on its own daemons 4487 and 4488, with GitHub 
       ["apercu-light", "light", 4488, SILO_APERCU, true, true],
     ],
   );
-  const servers = Array.isArray(config.webServer) ? config.webServer : [];
-  for (const daemon of APERCU_DAEMONS) {
-    const pixel = projectNamed(`apercu-pixel-${daemon.scheme}`);
-    expect(pixel?.use?.baseURL).toBe(`http://127.0.0.1:${daemon.port}`);
-    expect(pixel?.use?.colorScheme).toBe(daemon.scheme);
-    expect(pixel?.snapshotPathTemplate?.startsWith(`${COMPARED_REFERENCES}/`)).toBe(true);
-    expect(pixel?.metadata?.pixelSources).toBe(DESIGN_REFERENCES);
-    expect(pixel?.dependencies ?? []).toEqual([]);
-    expect(projectNamed(`apercu-${daemon.scheme}`)).toBeUndefined();
-    const server = servers.find((w) => w.command.startsWith(`bun serve.ts ${daemon.port} `));
-    expect(server?.command).toBe(`bun serve.ts ${daemon.port} ${SILO_APERCU} --integrations --design`);
-    expect(server?.url).toBe(`http://127.0.0.1:${seedReadyPort(daemon.port)}/`);
-    expect(server?.timeout).toBe(120_000);
-  }
+  for (const daemon of APERCU_DAEMONS)
+    expectPixelOnly("apercu", daemon, `bun serve.ts ${daemon.port} ${SILO_APERCU} --integrations --design`);
 });
 
 test("only the full-screen pixel projects pick its spec", () => {
@@ -179,6 +191,40 @@ test("only the full-screen pixel projects pick its spec", () => {
     const owner = project.name?.startsWith("apercu-pixel-") === true;
     expect(match.test("/e2e/pixel-apercu.spec.ts")).toBe(owner);
     if (owner) expect(match.test("/e2e/design.spec.ts")).toBe(false);
+  }
+});
+
+test("the Graphe on hold runs on its own daemons 4489 and 4490, pixel only", () => {
+  expect(GRAPHE_DAEMONS.map((d) => [d.name, d.scheme, d.port, d.scenario, d.integrations])).toEqual([
+    ["graphe-dark", "dark", 4489, SILO_GRAPHE, true],
+    ["graphe-light", "light", 4490, SILO_GRAPHE, true],
+  ]);
+  for (const daemon of GRAPHE_DAEMONS)
+    expectPixelOnly("graphe", daemon, `bun serve.ts ${daemon.port} ${SILO_GRAPHE} --integrations`);
+});
+
+test("only the Graphe on hold pixel projects pick its spec, and they pick no other", () => {
+  expect(owners("/e2e/pixel-graphe-attente.spec.ts")).toEqual(["graphe-pixel-dark", "graphe-pixel-light"]);
+  expect(owners("/e2e/pixel-graphe.spec.ts")).toEqual(["pixel-dark", "pixel-light"]);
+  expect(owners("/e2e/pixel-attente.spec.ts")).toEqual(["attente-pixel-dark", "attente-pixel-light"]);
+  expect(owners("/e2e/attente.spec.ts")).toEqual(["attente-dark", "attente-light"]);
+});
+
+test("the widened agent is measured by the pixel daemons alone", () => {
+  expect(owners("/e2e/pixel-agent.spec.ts")).toEqual(["pixel-dark", "pixel-light"]);
+});
+
+test("the agent conversation runs on the Suivi daemons after their journeys, a new agent closing their batch", () => {
+  expect(owners("/e2e/agent-conversation.spec.ts")).toEqual([
+    "agent-conversation-dark",
+    "agent-conversation-light",
+  ]);
+  for (const scheme of ["dark", "light"] as const) {
+    const journey = projectNamed(`agent-conversation-${scheme}`);
+    const suivi = projectNamed(`suivi-${scheme}`);
+    expect(journey?.use?.baseURL).toBe(suivi?.use?.baseURL);
+    expect(journey?.use?.colorScheme).toBe(scheme);
+    expect(journey?.dependencies).toEqual([`suivi-${scheme}`]);
   }
 });
 
@@ -193,7 +239,12 @@ const DERIVED = [
 ];
 
 test("every scenario daemon is in the port check", () => {
-  expect(SCENARIO_DAEMONS).toEqual([...ATTENTE_DAEMONS, ...PRS_DAEMONS, ...APERCU_DAEMONS]);
+  expect(SCENARIO_DAEMONS).toEqual([
+    ...ATTENTE_DAEMONS,
+    ...PRS_DAEMONS,
+    ...APERCU_DAEMONS,
+    ...GRAPHE_DAEMONS,
+  ]);
 });
 
 test("no port of a daemon or of its fake services is taken twice", () => {

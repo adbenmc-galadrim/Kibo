@@ -34,8 +34,8 @@ S.showLast = (parent, shape) => { parent.insertChild(parent.children.length, sha
 
 // ---------- Puce d'attente (Kanban) et filtre « En attente » ----------
 S.holdBadge = (text) => { const C = S.C;
-  const b = S.row(null, { name: "badge hold", pad: [2, 6], gap: 4, radius: 4, stroke: C.border, dashed: true });
-  S.icon(b, "pause", 12, C.mfg); S.txt(b, text, { size: 11, weight: 500, color: C.mfg }); return b; };
+  const b = S.row(null, { name: "badge hold", pad: [2, 6], gap: 4, radius: 4, fill: C.holdSoft });
+  S.icon(b, "pause", 12, C.hold); S.txt(b, text, { size: 11, weight: 500, color: C.hold }); return b; };
 S.kanbanHolds = (f) => { const C = S.C, sec = C.mfg;
   for (const h of S.HOLDS) { const card = S.find29(f, s => s.name === "card " + h.key); if (!card) continue;
     const badges = card.children.find(c => c.name === "badges"); S.showFirst(badges, S.holdBadge(S.shortReason(h.reason))); }
@@ -44,7 +44,7 @@ S.kanbanHolds = (f) => { const C = S.C, sec = C.mfg;
     S.showLast(badges, S.holdBadge("attend " + src)); }
   const seg = S.named(f, "filter"), last = S.parentOf(seg, S.byText(seg, "À reprendre"));
   const s = S.row(null, { name: "filter held", pad: [4, 10], gap: 6, radius: 5 });
-  S.icon(s, "pause", 12, sec); S.txt(s, "En attente", { size: 12.5, weight: 500, color: sec }); S.txt(s, "5", { size: 11, mono: true, color: C.dim });
+  S.icon(s, "pause", 12, C.hold); S.txt(s, "En attente", { size: 12.5, weight: 500, color: sec }); S.txt(s, "5", { size: 11, mono: true, color: C.dim });
   S.showAfter(seg, last, s); return f; };
 S.MINE29 = ["SILO-46", "SILO-34", "SILO-35", "SILO-33", "SILO-45", "SILO-32"];
 S.DONE29 = [["SILO-2", "F1", "Application Azure"], ["SILO-3", "F1", "Route de connexion"], ["SILO-4", "F1", "Écran de connexion"], ["SILO-5", "F1", "Démo · F1"],
@@ -123,6 +123,10 @@ S.draw29k["a-kanban"] = async (f) => S.kanbanGabarit29(S.kanbanSeed29(S.kanbanHo
 S.shown = (parent) => [...parent.children].reverse();
 S.keepCases = (card, keep, total) => { const segs = S.named(card, "segs"), all = S.shown(segs), gap = segs.flex.columnGap, w = total ? Math.floor((total - (keep.length - 1) * gap) / keep.length) : null;
   all.forEach((c, i) => { if (!keep.includes(i)) c.remove(); else if (w) c.resize(w, c.height); }); return segs; };
+S.paint = (s, color) => { s.fills = [{ fillColor: color, fillOpacity: 1 }]; return s; };
+S.holdCases = (card, held) => { const all = S.shown(S.named(card, "segs")); for (const i of held) S.paint(all[i], S.C.hold); return all; };
+S.heldMark = (parent, n) => { const hb = S.row(parent, { name: "held", gap: 3, pad: [0, 0, 0, 6] }); S.icon(hb, "pause", 11, S.C.hold);
+  S.txt(hb, String(n), { size: 11.5, mono: true, color: S.C.hold }); return hb; };
 S.rowOf = (scope, chars) => { let s = S.byText(scope, chars); while (s && !(s.type === "board" && Math.round(s.width) === Math.round(scope.width))) s = S.parentOf(scope, s); return s; };
 S.delivered29 = (card, label) => { const C = S.C, head = S.shown(card)[0], chip = head.children.find(c => c.name === "chip"); if (chip) chip.remove();
   S.icon(head, "circleCheck", 13, C.green); S.txt(head, label, { size: 11.5, color: C.green });
@@ -131,7 +135,7 @@ S.delivered29 = (card, label) => { const C = S.C, head = S.shown(card)[0], chip 
 // ---------- P2 · Planning : « En attente (3) » en pied de « À planifier » ----------
 S.heldSection = () => { const C = S.C, sec = C.mfg, groups = S.heldGroups();
   const s = S.col(null, { name: "held", gap: 12, pad: [10, 2, 2, 2] });
-  const h = S.row(s, { fx: true, gap: 6 }); S.icon(h, "pause", 14, sec); S.txt(h, `En attente (${S.HOLDS.length})`, { size: 13, weight: 600 });
+  const h = S.row(s, { fx: true, gap: 6 }); S.icon(h, "pause", 14, C.hold); S.txt(h, `En attente (${S.HOLDS.length})`, { size: 13, weight: 600 });
   for (const g of groups) { const gc = S.col(s, { name: "held group", fx: true, gap: 6 });
     S.txt(gc, g.reason, { size: 13, color: sec, fill: true, lh: 1.35 });
     for (const st of g.steps) { const r = S.col(gc, { name: "held " + st.key, fx: true, pad: [7, 10], gap: 3, radius: 6, fill: C.card, stroke: C.border });
@@ -147,9 +151,9 @@ S.draw29k["a-planning"] = (f) => { const C = S.C;
   S.setText(s42, "14 étapes prévues · capacité 5", "10 étapes prévues · capacité 5");
   S.setText(s44, "5 étapes prévues · capacité 5", "4 étapes prévues · capacité 5");
   const f4 = S.named(s42, "feature F4"), f5 = S.named(s42, "feature F5"), f7 = S.named(s44, "feature F7");
-  S.keepCases(f4, [0, 1, 2, 4], 170); S.setText(f4, "3/5 étapes", "3/4 étapes"); S.delivered29(f4, "livrée · 1 en attente");
-  S.keepCases(f5, [0, 1], 170); S.setText(f5, "1/5 étapes", "1/2 étapes");
-  S.keepCases(f7, [0, 1, 2, 3], 170); S.setText(f7, "0/5 étapes", "0/4 étapes");
+  S.holdCases(f4, [3]); S.setText(f4, "3/5 étapes", "3/4 étapes"); S.delivered29(f4, "livrée · 1 en attente");
+  S.holdCases(f5, [2, 3, 4]); S.setText(f5, "1/5 étapes", "1/2 étapes");
+  S.holdCases(f7, [1]); S.setText(f7, "0/5 étapes", "0/4 étapes");
   S.parentOf(s42, S.byText(s42, "F4 ne tiendra pas : 1 étape restante")).remove();
   S.parentOf(s42, S.byText(s42, "F5 ne tiendra pas : 4 étapes restantes")).remove();
   const risk = S.find29(f5, z => z.name === "chip"), rh = S.parentOf(f5, risk); risk.remove(); S.chip(rh, "en cours", { color: C.blue, stroke: null, fill: C.blueSoft, size: 10.5 });
@@ -160,12 +164,12 @@ S.draw29k["a-planning"] = (f) => { const C = S.C;
 // ---------- P3 · Fonctionnalité F5 : étapes actives, puis « En attente · 3 » ----------
 S.heldStep = (p, st, own) => { const C = S.C, sec = C.mfg;
   const r = S.row(p, { name: "held step " + st.key, fx: true, gap: 14, align: "start" });
-  const n = S.box(r, { w: 28, h: 28, radius: 14, fill: C.muted, stroke: C.border, dir: "row", align: "center", justify: "center" }); S.icon(n, "pause", 13, sec);
+  const n = S.box(r, { w: 28, h: 28, radius: 14, fill: C.holdSoft, dir: "row", align: "center", justify: "center" }); S.icon(n, "pause", 13, C.hold);
   const c = S.col(r, { fx: true, pad: [10, 14], gap: 7, radius: 8, stroke: C.border });
   const a = S.row(c, { fx: true, gap: 8 }); S.txt(a, st.title, { size: 14, weight: 500, color: C.mfg }); S.txt(a, st.key, { size: 12, mono: true, color: C.dim });
   S.spacer(a); const stt = S.row(a, { gap: 6 }); S.status(stt, st.status, 8); S.txt(stt, st.status, { size: 12.5, color: sec });
   const b = S.row(c, { fx: true, gap: 6 });
-  if (own) { S.icon(b, "pause", 12, sec); S.txt(b, `${own.reason} · depuis le ${S.HOLD_DAY}`, { size: 12.5, color: sec }); S.spacer(b); S.btn(b, "Reprendre", "outline", { sm: true }); }
+  if (own) { S.icon(b, "pause", 12, C.hold); S.txt(b, `${own.reason} · depuis le ${S.HOLD_DAY}`, { size: 12.5, color: sec }); S.spacer(b); S.btn(b, "Reprendre", "outline", { sm: true }); }
   else { S.icon(b, "link", 12, sec); S.txt(b, "attend " + st.waits, { size: 12.5, color: sec }); }
   return r; };
 S.activityRow = (icon, color, text, time) => { const C = S.C;
@@ -173,7 +177,7 @@ S.activityRow = (icon, color, text, time) => { const C = S.C;
   S.txt(r, text, { size: 12, fill: true }); S.txt(r, time, { size: 11, mono: true, color: C.dim }); return r; };
 S.draw29k["a-fonctionnalite"] = (f) => { const C = S.C, sec = C.mfg;
   const bar = S.parentOf(f, S.byText(f, "1 étape livrée sur 5")); const segs = bar.children.find(c => c.name === "segs");
-  S.shown(segs).forEach((c, i) => { if (i > 1) c.remove(); }); S.setText(bar, "1 étape livrée sur 5", "1 étape livrée sur 2 · 3 en attente");
+  S.shown(segs).forEach((c, i) => { if (i > 1) S.paint(c, C.hold); }); S.setText(bar, "1 étape livrée sur 5", "1 étape livrée sur 2 · 3 en attente");
   S.byText(f, "4 étapes restantes : ne tiendra pas dans S42.").remove();
   const tl = S.find29(f, z => z.type === "board" && Math.round(z.x - f.x) === 269 && Math.round(z.y - f.y) === 351 && Math.round(z.width) === 795);
   const rows = S.shown(tl); for (const r of rows.slice(2)) r.remove();
@@ -181,7 +185,7 @@ S.draw29k["a-fonctionnalite"] = (f) => { const C = S.C, sec = C.mfg;
   const content = S.parentOf(f, tl);
   const sec29 = S.col(null, { name: "held steps", gap: 12, pad: [6, 0, 0, 0] });
   const steps = [{ key: "SILO-33", title: "Écran d'envoi hors ligne", status: "En cours" }, { key: "SILO-34", title: "Tests E2E de l'envoi", status: "À faire" }, { key: "SILO-35", title: "Démo client", status: "À faire" }];
-  const h = S.row(sec29, { fx: true, gap: 10, h: 25 }); S.icon(h, "pause", 15, C.fg); S.txt(h, `En attente · ${steps.length}`, { size: 15, weight: 600 });
+  const h = S.row(sec29, { fx: true, gap: 10, h: 25 }); S.icon(h, "pause", 15, C.hold); S.txt(h, `En attente · ${steps.length}`, { size: 15, weight: 600 });
   S.txt(h, "la fonctionnalité avance sans elles", { size: 12.5, color: C.dim });
   for (const st of steps) S.heldStep(sec29, { ...st, waits: S.HELD_BY[st.key] }, S.holdOf(st.key));
   S.showAfter(content, tl, sec29); sec29.layoutChild.horizontalSizing = "fill";
@@ -198,7 +202,7 @@ S.heldCard = () => { const C = S.C, sec = C.mfg;
   const h = S.row(card, { fx: true, h: 44, pad: [0, 16], gap: 8 }); S.icon(h, "pause", 15, sec); S.txt(h, "En attente", { size: 14, weight: 600 });
   const k = S.row(h, { pad: [0, 7], radius: 9, fill: C.muted }); S.txt(k, String(S.HOLDS.length), { size: 12, weight: 500, mono: true, color: sec });
   S.spacer(h); S.txt(h, "étapes mises de côté, par raison · à reprendre depuis le Planning", { size: 12.5, color: sec });
-  for (const g of S.heldGroups()) { const r = S.row2(card, { h: 38, gap: 10 }); S.icon(r, "pause", 13, sec);
+  for (const g of S.heldGroups()) { const r = S.row2(card, { h: 38, gap: 10 }); S.icon(r, "pause", 13, C.hold);
     const b = S.row(r, { fx: true }); S.txt(b, g.reason, { size: 13, weight: 500 });
     S.txt(r, g.steps.map(x => x.key).join(", "), { size: 12, mono: true, color: sec });
     if (g.dependents) S.txt(r, `· ${g.dependents} en dépendent`, { size: 12, color: sec });
@@ -210,16 +214,16 @@ S.draw29k["a-vue"] = (f) => { const C = S.C, sec = C.mfg;
   const kpis = S.named(f, "kpis"), cells = S.shown(kpis).filter(c => c.name !== "vline"), fc = cells[0], oc = cells[2];
   S.setText(fc, "3", "4");
   const sub = S.parentOf(fc, S.byText(fc, "2 à risque")); for (const c of [...sub.children]) c.remove();
-  S.icon(sub, "pause", 12, sec); S.txt(sub, `${S.HOLDS.length} en attente`, { size: 12, weight: 500, color: sec });
+  S.icon(sub, "pause", 12, C.hold); S.txt(sub, `${S.HOLDS.length} en attente`, { size: 12, weight: 500, color: C.hold });
   S.setText(oc, "2", "1"); S.setText(oc, "limite · bloquée : F6", "bloquée : F6");
   const sp = S.named(f, "card / Sprint S42 · Saisie hors ligne");
   const note = S.rowOf(sp, "Limite de 2 en cours atteinte : F6 attendra la fin de F4 ou de F5."), shown = S.shown(sp), ni = shown.findIndex(c => c.id === note.id);
   shown[ni - 1].remove(); note.remove();
   const r4 = S.rowOf(sp, "Saisir un constat hors ligne"), r5 = S.rowOf(sp, "Envoyer les photos d'un constat");
-  S.keepCases(r4, [0, 1, 2, 4]); S.setText(r4, "3/5", "3/4");
+  S.holdCases(r4, [3]); S.setText(r4, "3/5", "3/4");
   const pill = S.find29(r4, z => z.name === "pill"), pb = S.parentOf(r4, pill); pill.remove(); S.pill(pb, "livrée", C.green, C.greenSoft, "circleCheck");
-  const tb = S.parentOf(r4, S.byText(r4, "Saisir un constat hors ligne")); const hb = S.row(tb, { name: "held", gap: 3, pad: [0, 0, 0, 6] }); S.icon(hb, "pause", 11, C.dim); S.txt(hb, "1", { size: 11.5, mono: true, color: C.dim });
-  S.keepCases(r5, [0, 1]); S.setText(r5, "1/5", "1/2");
+  S.heldMark(S.parentOf(r4, S.byText(r4, "Saisir un constat hors ligne")), 1);
+  S.holdCases(r5, [2, 3, 4]); S.setText(r5, "1/5", "1/2"); S.heldMark(S.parentOf(r5, S.byText(r5, "Envoyer les photos d'un constat")), 3);
   const p5 = S.find29(r5, z => z.name === "pill"), pb5 = S.parentOf(r5, p5); p5.remove(); S.pill(pb5, "en cours", C.blue, C.blueSoft);
   const grid = S.named(f, "grid"), f6 = S.byText(grid, "F6");
   S.byText(grid, "F5").fills = f6.fills;
@@ -233,7 +237,8 @@ S.draw29k["a-vue"] = (f) => { const C = S.C, sec = C.mfg;
   for (const z of [...grid.children]) { if (z.name === "today" || Math.round(z.height) === full) z.resize(z.width, z.height - 30); else if (at(z) > 60) z.y -= 30; }
   grid.resize(grid.width, grid.height - 30);
   const nx = S.named(f, "card / Prochaine à finir");
-  const head = S.rowOf(nx, "Saisir un constat hors ligne"); S.setText(head, "F4", "F5"); S.setText(head, "Saisir un constat hors ligne", "Envoyer les photos d'un constat"); S.setText(head, "3/5", "1/2"); S.keepCases(head, [0, 3], 122);
+  const head = S.rowOf(nx, "Saisir un constat hors ligne"); S.setText(head, "F4", "F5"); S.setText(head, "Saisir un constat hors ligne", "Envoyer les photos d'un constat"); S.setText(head, "3/5", "1/2");
+  const nc = S.holdCases(head, []); S.paint(nc[1], nc[3].fills[0].fillColor); S.holdCases(head, [2, 3, 4]);
   const l1 = S.parentOf(nx, S.byText(nx, "Conflits de saisie")), l2 = S.parentOf(nx, S.byText(nx, "Démo client"));
   S.setText(l1, "SILO-45", "SILO-32"); S.setText(l1, "Conflits de saisie", "Route d'envoi des photos"); S.byText(l1, "changements demandés").remove(); l2.remove();
   S.parentOf(nx, S.byText(nx, "Étape suivante")).remove();

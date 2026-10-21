@@ -27,19 +27,17 @@ function show(batch: Batch, readOnly = false) {
   return { decisions, card };
 }
 
-test("a pending batch shows its summary, four groups, every box checked and Valider (7)", () => {
+test("a pending batch is compact: header, one checked line per action, no summary or group", () => {
   const { card } = show(pendingBatch());
-  expect(card.getByText("Passer SILO-11 en review et lancer l'export")).toBeTruthy();
-  expect(card.getAllByRole("group").map((g) => g.getAttribute("aria-label"))).toEqual([
-    "Tickets",
-    "Agents",
-    "Questions",
-    "Notes",
-  ]);
+  expect(card.getByRole("heading", { name: "Lot n° 1" })).toBeTruthy();
+  expect(card.getByText("7 actions")).toBeTruthy();
+  expect(card.queryByText("Passer SILO-11 en review et lancer l'export")).toBeNull();
+  expect(card.queryAllByRole("group")).toHaveLength(0);
+  expect(card.queryByRole("button", { name: /Tout (dé)?cocher/ })).toBeNull();
   const boxes = card.getAllByRole("checkbox");
   expect(boxes).toHaveLength(7);
   expect(boxes.every((b) => b.getAttribute("aria-checked") === "true")).toBe(true);
-  expect(card.getByRole("button", { name: "Valider (7)" })).toBeTruthy();
+  expect(card.getAllByRole("button").map((b) => b.textContent)).toEqual(["Valider (7)", "Refuser"]);
   expect(card.getByText("En cours")).toBeTruthy();
   expect(card.getByText("En review")).toBeTruthy();
   expect(card.getByText("Export CSV")).toBeTruthy();
@@ -56,18 +54,10 @@ test("Valider counts the checked boxes and sends only them, in order", async () 
   expect(decisions).toEqual([{ decision: "apply", actionIds: [1, 2, 3, 6, 7] }]);
 });
 
-test("each group checks or unchecks all its actions; nothing checked disables Valider", async () => {
+test("unchecking every line disables Valider", async () => {
   const { card } = show(pendingBatch());
   const user = userEvent.setup();
-  const tickets = within(card.getByRole("group", { name: "Tickets" }));
-  await user.click(tickets.getByRole("button", { name: "Tout décocher" }));
-  expect(card.getByRole("button", { name: "Valider (4)" })).toBeTruthy();
-  await user.click(tickets.getByRole("button", { name: "Tout cocher" }));
-  expect(card.getByRole("button", { name: "Valider (7)" })).toBeTruthy();
-  for (const group of ["Tickets", "Agents", "Questions", "Notes"])
-    await user.click(
-      within(card.getByRole("group", { name: group })).getByRole("button", { name: "Tout décocher" }),
-    );
+  for (const box of card.getAllByRole("checkbox")) await user.click(box);
   expect((card.getByRole("button", { name: "Valider (0)" }) as HTMLButtonElement).disabled).toBe(true);
 });
 
@@ -167,7 +157,7 @@ test("an agent action names the existing run of its ticket, and a cancel names i
       />
     </AgentsProvider>,
   );
-  const agentsGroup = within(screen.getByRole("group", { name: "Agents" }));
+  const agentsGroup = within(screen.getByRole("region", { name: "Lot n° 1" }));
   expect(agentsGroup.getByText("Assigner SILO-12 à opus")).toBeTruthy();
   expect(agentsGroup.getByRole("button", { name: "opus-dev-5" })).toBeTruthy();
   expect(agentsGroup.getByRole("button", { name: "opus-dev-4" })).toBeTruthy();
@@ -204,7 +194,7 @@ test("a question line names its question, previews it and opens it", async () =>
       />
     </QuestionLinksContext.Provider>,
   );
-  const group = within(screen.getByRole("group", { name: "Questions" }));
+  const group = within(screen.getByRole("region", { name: "Lot n° 1" }));
   expect(group.getByText("Ajouter le destinataire « Galadrim »")).toBeTruthy();
   expect(group.getByText("Question sur SILO-11 pour Client : « Police ? »")).toBeTruthy();
   expect(group.getByText("Titre :")).toBeTruthy();

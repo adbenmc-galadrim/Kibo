@@ -12,7 +12,6 @@ import {
 } from "@kibo/schema";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { frSignals } from "../i18n/fr-signals";
-import { reminderText } from "./reminder-text";
 
 export type BatchGroup = { group: ActionGroup; actions: ProposedAction[] };
 export type ActionDiff = { field?: string; before: string; after: string };
@@ -24,7 +23,6 @@ export type DiffLabels = {
   recipient(recipient: string): string;
   feature?(ticket: string): FeatureLabel;
   reminder?(questionId: string): Reminder | null;
-  reminderText?(questionId: string): string | null;
 };
 export type FeatureLabel = { label: string; sprint: string | null };
 export type Reminder = { recipient: string; ref: string };
@@ -55,7 +53,6 @@ export function projectLabels(
     recipient: (raw) => findRecipient(project.questionRecipients, raw)?.name ?? raw,
     feature: (key) => featureLabel(project, key),
     reminder: (id) => reminderOf(project, id),
-    reminderText: (id) => reminderText(project, id),
   };
 }
 

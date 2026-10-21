@@ -1,105 +1,60 @@
-import { beforeEach, expect, mock, test } from "bun:test";
-import type { ProjectAgentView, RpcRequest, RunLogEntry, SignalsView } from "@kibo/schema";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { beforeEach, expect, test } from "bun:test";
+import { WAKEUP_PREFIX } from "@kibo/schema";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useState } from "react";
-import { apiMock } from "../api-mock";
-import { type Host, HostProvider } from "../shell/Host";
-import type { ProjectAgentTab } from "../shell/use-project-agent-panel";
-import { CONVERSATION_LOG, emptyView, pendingBatch, projectRun, siloProject, viewFixture } from "./fixtures";
-import { emptySignals, signalsView } from "./signals/fixtures";
+import { NOW } from "../agents/fixtures";
+import { formatClock } from "../agents/format";
+import { CONVERSATION_LOG, emptyView, pendingBatch, projectRun, viewFixture } from "./fixtures";
+import { harness, mockPanelApi, panel, resetHarness, rpcs, showPanel } from "./panel-harness";
 
-const calls: RpcRequest[] = [];
-let current: ProjectAgentView = viewFixture();
-let past: ProjectAgentView = viewFixture();
-let log: RunLogEntry[] = CONVERSATION_LOG;
-let signals: SignalsView = signalsView();
-
-mock.module("../api", () =>
-  apiMock({
-    client: {
-      rpc: (req: RpcRequest) => {
-        calls.push(req);
-        if (req.method === "getProjectAgent") return Promise.resolve(req.runId ? past : current);
-        if (req.method === "getRunLog") return Promise.resolve(log);
-        if (req.method === "listSignals") return Promise.resolve(signals);
-        if (req.method === "decideBatch") return Promise.resolve(pendingBatch({ status: "rejected" }));
-        if (req.method === "resetProjectAgent") return Promise.resolve(emptyView());
-        if (req.method === "agents.list")
-          return Promise.resolve({ agents: [], notices: [], partialWatch: false });
-        return Promise.resolve(projectRun({ state: "queued" }));
-      },
-      subscribeTopic: () => () => {},
-    },
-  }),
-);
-
+mockPanelApi();
 const { ProjectAgentPanel } = await import("./ProjectAgentPanel");
 
-const opened: string[] = [];
-const views: string[] = [];
-const host: Host = {
-  openTicket: (id) => opened.push(id),
-  openNewTicket: () => {},
-  openAssign: () => {},
-  openFile: () => {},
-  openView: (id) => views.push(id),
-  openTarget: () => {},
-};
+const MIN = 60_000;
+const show = () => showPanel(ProjectAgentPanel);
+const you = (at: number) => `Toi · ${formatClock(at)}`;
 
-beforeEach(() => {
-  localStorage.clear();
-  calls.length = 0;
-  opened.length = 0;
-  views.length = 0;
-  current = viewFixture();
-  past = viewFixture({
-    session: viewFixture().past[0] ?? null,
-    run: projectRun({ id: "pa0", state: "done" }),
-    batches: [pendingBatch({ id: "b-old", status: "abandoned", runId: "pa0" })],
-    past: [],
-  });
-  log = CONVERSATION_LOG;
-  signals = signalsView();
+beforeEach(resetHarness);
+
+test("the panel is one conversation: Adam's bubbles with their time, the agent's answers, the batch card, no tabs nor menu", async () => {
+  show();
+  const p = panel();
+  expect((await p.findByRole("listitem", { name: you(NOW - 30 * MIN) })).textContent).toContain(
+    "Où en est-on ?",
+  );
+  expect(p.getByRole("listitem", { name: you(NOW - 10 * MIN) }).textContent).toContain("Et l'export ?");
+  expect(p.getByRole("region", { name: "Lot n° 1" })).toBeTruthy();
+  expect(p.getByRole("heading", { name: "Agent de projet · Silo" })).toBeTruthy();
+  expect(p.queryByRole("tab")).toBeNull();
+  expect(p.queryByRole("button", { name: "Actions de l'agent de projet" })).toBeNull();
+  expect(p.queryByRole("heading", { name: "Résumé du jour" })).toBeNull();
+  expect(p.queryByText(/Les états avancent seuls/)).toBeNull();
+  expect(p.getByRole("button", { name: "Liste des agents" })).toBeTruthy();
+  expect(p.getByRole("button", { name: "Nouvel agent" })).toBeTruthy();
+  expect(p.getByRole("button", { name: "Agrandir" })).toBeTruthy();
+  expect(p.getByRole("button", { name: "Fermer le panneau" })).toBeTruthy();
 });
 
-function Panel({ initial }: { initial: ProjectAgentTab }) {
-  const [tab, setTab] = useState(initial);
-  return <ProjectAgentPanel open project={siloProject()} tab={tab} onTab={setTab} onClose={() => {}} />;
-}
-
-const show = (initial: ProjectAgentTab = "conversation") =>
-  render(
-    <HostProvider host={host}>
-      <Panel initial={initial} />
-    </HostProvider>,
-  );
-const panel = () => within(screen.getByRole("dialog"));
-const rpcs = (method: string) => calls.filter((c) => c.method === method);
-
-async function choose(item: string) {
-  const user = userEvent.setup();
-  await user.click(await panel().findByRole("button", { name: "Actions de l'agent de projet" }));
-  await user.click(await screen.findByRole("menuitem", { name: item }));
-}
-
-const toConversation = async () => {
-  await choose("Conversation");
-  await panel().findByRole("tablist");
-};
+test("while a turn runs the conversation says so in orange, « En file » when queued", async () => {
+  harness.current = viewFixture({ run: projectRun({ state: "running" }) });
+  show();
+  expect((await panel().findByRole("status")).textContent).toContain("L'agent lit le projet…");
+  cleanup();
+  harness.current = viewFixture({ run: projectRun({ state: "queued" }) });
+  show();
+  expect((await panel().findByRole("status")).textContent).toContain("En file");
+});
 
 test("the conversation is rendered with its batch card", async () => {
   show();
-  await toConversation();
   expect(await panel().findByText("Où en est-on ?")).toBeTruthy();
-  expect(panel().getByText("lit les tickets, lit SILO-11")).toBeTruthy();
-  expect(panel().getByRole("region", { name: /Lot n° 1/ })).toBeTruthy();
+  expect(panel().getByText("Lu : tickets, SILO-11")).toBeTruthy();
   await userEvent.setup().click(await panel().findByRole("button", { name: "SILO-11" }));
-  expect(opened).toEqual(["t11"]);
+  expect(harness.opened).toEqual(["t11"]);
 });
 
 test("the agent's markdown never injects HTML", async () => {
-  log = [
+  harness.log = [
     {
       id: 1,
       at: 1,
@@ -114,44 +69,45 @@ test("the agent's markdown never injects HTML", async () => {
       },
     },
   ];
-  current = viewFixture({ run: projectRun({ state: "done" }), batches: [] });
+  harness.current = viewFixture({ run: projectRun({ state: "done" }), batches: [] });
   show();
   expect(await panel().findByText("<script>alert(1)</script>")).toBeTruthy();
   expect(document.querySelector("[role=dialog] script")).toBeNull();
 });
 
-test("Enter adds a line, ⌘↵ sends the message", async () => {
+test("Shift+Enter adds a line, Enter and ⌘↵ send the message", async () => {
   show();
-  await toConversation();
   const box = await panel().findByRole("combobox", { name: "Message à l'agent de projet" });
   expect(box.getAttribute("placeholder")).toBe("Écris à l'agent de projet…");
   const user = userEvent.setup();
-  await user.type(box, "Bonjour{Enter}la suite");
+  await user.type(box, "Bonjour{Shift>}{Enter}{/Shift}la suite");
   expect(rpcs("sendProjectAgentMessage")).toHaveLength(0);
-  await user.keyboard("{Meta>}{Enter}{/Meta}");
+  await user.keyboard("{Enter}");
   await waitFor(() =>
     expect(rpcs("sendProjectAgentMessage")).toEqual([
       { method: "sendProjectAgentMessage", projectId: "silo", text: "Bonjour\nla suite" },
     ]),
   );
   await waitFor(() => expect((box as HTMLTextAreaElement).value).toBe(""));
+  await user.type(box, "Et F5 ?");
+  await user.keyboard("{Meta>}{Enter}{/Meta}");
+  await waitFor(() => expect(rpcs("sendProjectAgentMessage")).toHaveLength(2));
 });
 
-test("without a session the box invites to ask about the project and the state is Prêt", async () => {
-  current = emptyView();
-  log = [];
+test("without a session the box invites to ask about the project, with no state line", async () => {
+  harness.current = emptyView();
+  harness.log = [];
   show();
-  await toConversation();
   const box = await panel().findByRole("combobox", { name: "Message à l'agent de projet" });
   await waitFor(() => expect(box.getAttribute("placeholder")).toBe("Demande quelque chose sur Silo…"));
-  expect(panel().getByText("Prêt")).toBeTruthy();
   expect(panel().getByText("Aucun message pour l'instant.")).toBeTruthy();
+  expect(panel().queryByRole("status")).toBeNull();
+  expect(panel().getByRole("button", { name: "Nouvel agent" }).hasAttribute("disabled")).toBe(true);
 });
 
 test("Réessayer sends the last message again", async () => {
-  current = viewFixture({ batches: [] });
+  harness.current = viewFixture({ batches: [] });
   show();
-  await toConversation();
   await userEvent.setup().click(await panel().findByRole("button", { name: "Réessayer" }));
   await waitFor(() =>
     expect(rpcs("sendProjectAgentMessage")).toEqual([
@@ -162,7 +118,6 @@ test("Réessayer sends the last message again", async () => {
 
 test("deciding a batch calls decideBatch for this project", async () => {
   show();
-  await toConversation();
   const user = userEvent.setup();
   const card = within(await panel().findByRole("region", { name: /Lot n° 1/ }));
   await user.click(card.getByRole("button", { name: "Refuser" }));
@@ -174,57 +129,16 @@ test("deciding a batch calls decideBatch for this project", async () => {
   );
 });
 
-test("Nouvel agent de projet asks for confirmation, then resets", async () => {
+test("Nouvel agent in the header asks for confirmation, then resets", async () => {
   show();
   const user = userEvent.setup();
-  await choose("Nouvel agent de projet");
+  await user.click(await panel().findByRole("button", { name: "Nouvel agent" }));
   const confirm = await screen.findByRole("alertdialog");
   expect(rpcs("resetProjectAgent")).toHaveLength(0);
   await user.click(within(confirm).getByRole("button", { name: "Nouvel agent" }));
   await waitFor(() =>
     expect(rpcs("resetProjectAgent")).toEqual([{ method: "resetProjectAgent", projectId: "silo" }]),
   );
-});
-
-test("the recap of a validated batch goes away with a new project agent", async () => {
-  show();
-  const user = userEvent.setup();
-  await panel().findByText("Mettre à jour la note agent-de-projet/memoire.md");
-  await user.click(panel().getByRole("button", { name: /^Valider/ }));
-  await waitFor(() => expect(rpcs("decideBatch")).toHaveLength(1));
-  expect(await panel().findByRole("region", { name: /validé$/ })).toBeTruthy();
-  current = emptyView();
-  await choose("Nouvel agent de projet");
-  await user.click(
-    within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Nouvel agent" }),
-  );
-  await waitFor(() => expect(panel().queryByRole("region", { name: /validé$/ })).toBeNull());
-});
-
-test("Anciens agents lists past sessions, opens one read-only, then goes back", async () => {
-  show();
-  const user = userEvent.setup();
-  await user.click(await panel().findByRole("button", { name: "Actions de l'agent de projet" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Anciens agents" }));
-  await user.click(await panel().findByRole("button", { name: /^Session du/ }));
-  expect(await panel().findByText("Ancien agent · lecture seule")).toBeTruthy();
-  expect(rpcs("getProjectAgent").at(-1)).toEqual({
-    method: "getProjectAgent",
-    projectId: "silo",
-    runId: "pa0",
-  });
-  expect(panel().queryByRole("combobox", { name: "Message à l'agent de projet" })).toBeNull();
-  expect(await panel().findByText("Abandonné")).toBeTruthy();
-  await user.click(panel().getByRole("button", { name: "Retour" }));
-  expect(await panel().findByRole("combobox", { name: "Message à l'agent de projet" })).toBeTruthy();
-});
-
-test("Ouvrir la mémoire opens the Notes view", async () => {
-  show();
-  const user = userEvent.setup();
-  await user.click(await panel().findByRole("button", { name: "Actions de l'agent de projet" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Ouvrir la mémoire" }));
-  expect(views).toEqual(["notes"]);
 });
 
 test("the panel is 340 px wide by default", async () => {
@@ -252,26 +166,21 @@ test("the width is bounded, remembered, and the edge resizes with Shift+arrows",
   await waitFor(() => expect(screen.getByRole("dialog").style.width).toBe("340px"));
 });
 
-test("two tabs: Conversation, and Signaux with the open count; the compose box stays under Conversation", async () => {
-  show();
-  await toConversation();
-  const user = userEvent.setup();
-  expect(await panel().findByRole("tab", { name: "Signaux · 3" })).toBeTruthy();
-  expect(panel().getByRole("tab", { name: "Conversation", selected: true })).toBeTruthy();
-  await user.click(panel().getByRole("tab", { name: "Signaux · 3" }));
-  expect(await panel().findByRole("region", { name: "En boîte · 3" })).toBeTruthy();
-  expect(panel().queryByRole("combobox", { name: "Message à l'agent de projet" })).toBeNull();
-});
+const ANSWER_WAKEUP = `${WAKEUP_PREFIX}1 réponse à lire.\n- Q16 répondue : « 5 Go »\nLis chaque réponse.`;
 
-test("tab signals opens the box directly, and an empty box has no zero count", async () => {
-  signals = emptySignals();
-  show("signals");
-  expect(await panel().findByText(/^Aucun signal\./)).toBeTruthy();
-  expect(panel().getByRole("tab", { name: "Signaux", selected: true })).toBeTruthy();
+test("a wakeup on an answer shows as a discreet line, never as a bubble from Adam", async () => {
+  harness.log = [
+    ...CONVERSATION_LOG.slice(0, 6),
+    { id: 90, at: NOW - 2_000, event: { type: "answered", text: ANSWER_WAKEUP, rank: 0 } },
+  ];
+  show();
+  expect(await panel().findByText("Q16 répondue : « 5 Go »")).toBeTruthy();
+  expect(panel().queryByText(ANSWER_WAKEUP)).toBeNull();
+  expect(panel().getAllByRole("listitem", { name: /^Toi · / })).toHaveLength(1);
 });
 
 test("a batch after a wakeup says so, names the source of each action and groups dismissals", async () => {
-  log = [
+  harness.log = [
     {
       id: 1,
       at: 1,
@@ -282,14 +191,12 @@ test("a batch after a wakeup says so, names the source of each action and groups
     { id: 1, type: "createTicket" as const, ref: "new:1", title: "Tests", why: "", signals: ["sig:1"] },
     { id: 2, type: "dismissSignal" as const, signal: "sig:3", why: "Déjà connu" },
   ];
-  current = viewFixture({ batches: [pendingBatch({ createdAt: 2, actions, expected: [] })] });
+  harness.current = viewFixture({ batches: [pendingBatch({ createdAt: 2, actions, expected: [] })] });
   show();
-  await toConversation();
   expect(await panel().findByText("Réveil automatique · 3 signaux")).toBeTruthy();
   const card = within(await panel().findByRole("region", { name: /Lot n° 1/ }));
   expect(card.getByText("2 actions · après réveil")).toBeTruthy();
   expect(await card.findByText("signal Ticket à créer de")).toBeTruthy();
   expect(card.getByRole("button", { name: /opus-dev-2/ })).toBeTruthy();
-  const group = within(card.getByRole("group", { name: "Signaux" }));
-  expect(group.getByText("Signal sig:3 : sans suite")).toBeTruthy();
+  expect(card.getByText("Signal sig:3 : sans suite")).toBeTruthy();
 });

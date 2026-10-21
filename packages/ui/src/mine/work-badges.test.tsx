@@ -34,3 +34,14 @@ test("a step waiting on a held one names the held step", () => {
   render(<WorkBadges item={item({ statusId: "todo", onHold: { ...hold, source: "dependency" } })} waiting />);
   expect(screen.getByText("en attente de KIB-33")).toBeTruthy();
 });
+
+test("a step on hold wears the full cyan chip, a blocked one keeps the red one", () => {
+  render(<WorkBadges item={item({ onHold: { ...hold, source: "own" } })} waiting />);
+  const held = screen.getByText("en attente : Serveur MinIO de recette indisponible");
+  expect(held.className).toContain("bg-(--tracking-hold-soft) text-(--tracking-hold)");
+  cleanup();
+  render(<WorkBadges item={item({ statusId: "blocked", onHold: { ...hold, source: "own" } })} waiting />);
+  expect(screen.getByText(/en attente/).className).toContain(
+    "bg-(--tracking-red-soft) text-(--tracking-red)",
+  );
+});

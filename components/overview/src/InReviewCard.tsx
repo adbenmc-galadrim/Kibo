@@ -1,7 +1,7 @@
 import { cn } from "@kibo/sdk/lib/utils";
 import { CircleCheck, CircleX, GitPullRequest } from "lucide-react";
 import { fr } from "./fr";
-import { CARD, CardHeader, FeatureChip, MONO_KEY, ROW_LINE } from "./parts";
+import { CardHeader, FeatureChip, FLUSH_CARD, MONO_KEY, ROW_LINE } from "./parts";
 import type { ReviewRow, ReviewState } from "./review-model";
 
 function StateLine({ state }: { state: ReviewState }) {
@@ -51,7 +51,7 @@ function PrRow({ row, onOpen }: { row: ReviewRow; onOpen(id: string): void }) {
           <span className="font-mono font-semibold">#{row.number}</span>
           <span className="truncate">{row.title}</span>
         </button>
-        <span className="flex h-[17px] items-center gap-[6px]">
+        <span className="flex items-center gap-[6px]">
           <span className={MONO_KEY}>{row.key}</span>
           {row.feature !== null && <FeatureChip shortKey={row.feature} />}
         </span>
@@ -69,7 +69,7 @@ export function InReviewCard({
   onOpenTicket(id: string): void;
 }) {
   return (
-    <section aria-label={fr.review.title} className={CARD}>
+    <section aria-label={fr.review.title} className={FLUSH_CARD}>
       <CardHeader icon={GitPullRequest} title={fr.review.title} count={rows.length} />
       {rows.length === 0 ? (
         <p className={cn("px-[16px] py-[12px] text-(--tracking-mfg) text-[12.5px]", ROW_LINE)}>

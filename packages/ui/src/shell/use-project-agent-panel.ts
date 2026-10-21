@@ -7,16 +7,12 @@ import { useOpened } from "./use-opened";
 
 export const PANEL_OPEN_KEY = "kibo.projectAgent.open";
 
-export type ProjectAgentTab = "conversation" | "signals";
-
 export type ProjectAgentPanelState = {
   available: boolean;
   open: boolean;
   opened: boolean;
-  tab: ProjectAgentTab;
-  setTab(tab: ProjectAgentTab): void;
   toggle(): void;
-  show(tab: ProjectAgentTab): void;
+  show(): void;
   close(): void;
 };
 
@@ -26,22 +22,15 @@ export function useProjectAgentPanel(project: ProjectSnapshot | null): ProjectAg
   const narrow = useNarrowScreen();
   const pref = narrow ? overlay : wide;
   const setPref = narrow ? setOverlay : setWide;
-  const [tab, setTab] = useState<ProjectAgentTab>("conversation");
   const available = project !== null && !isInbox(project.meta.id) && canEdit(project);
-  const show = useCallback(
-    (next: ProjectAgentTab) => {
-      if (!available) return;
-      setTab(next);
-      setPref("1");
-    },
-    [available, setPref],
-  );
+  const show = useCallback(() => {
+    if (available) setPref("1");
+  }, [available, setPref]);
   const toggle = useCallback(() => {
     if (!available) return;
-    if (pref === "1") setPref("0");
-    else show("conversation");
-  }, [available, pref, setPref, show]);
+    setPref(pref === "1" ? "0" : "1");
+  }, [available, pref, setPref]);
   const close = useCallback(() => setPref("0"), [setPref]);
   const open = available && pref === "1";
-  return { available, open, opened: useOpened(open), tab, setTab, toggle, show, close };
+  return { available, open, opened: useOpened(open), toggle, show, close };
 }

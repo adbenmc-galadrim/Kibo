@@ -1,137 +1,71 @@
 import type { ProjectSnapshot } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Sheet, SheetContent } from "@kibo/sdk/ui/sheet";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useAgentList } from "../agents/catalog/use-agent-list";
-import { client } from "../api";
+import { useEffect, useRef, useState } from "react";
 import { frProjectAgent } from "../i18n/fr-project-agent";
-import { projectQuestionLinks, QuestionLinksContext } from "../moments/QuestionText";
-import { useHost } from "../shell/Host";
-import type { ProjectAgentTab } from "../shell/use-project-agent-panel";
 import { keepLayerOnSkillEscape } from "../skill-complete/use-skill-complete";
-import { useAgentsState } from "../state/agents-context";
-import { useRunLog } from "../state/use-run-log";
-import type { Decision } from "./BatchCard";
-import { projectLabels } from "./batch-groups";
-import { ComposeBox } from "./ComposeBox";
-import { ConversationView } from "./ConversationView";
-import { buildConversation, lastUserMessage, panelStatus, supersededCount } from "./conversation";
+import { AgentList } from "./AgentList";
+import { NewAgentConfirm } from "./NewAgentButton";
+import { PanelConversation } from "./PanelConversation";
 import { PanelHeader } from "./PanelHeader";
-import { PanelMenu } from "./PanelMenu";
-import { PanelTabs } from "./PanelTabs";
-import { PastBanner, PastSessions } from "./PastSessions";
 import { ResizeEdge } from "./ResizeEdge";
-import { SignalBox } from "./signals/SignalBox";
-import { boxSections } from "./signals/signal-sections";
-import { useSignals } from "./signals/use-signals";
-import { TrackingView } from "./TrackingView";
+import { useAgentConversation } from "./use-agent-conversation";
 import { usePanelDock } from "./use-panel-dock";
+import { usePanelLayout, WIDE_WIDTH } from "./use-panel-layout";
 import { usePanelWidth } from "./use-panel-width";
-import { useProjectAgent } from "./use-project-agent";
 
-type Props = {
-  open: boolean;
-  project: ProjectSnapshot;
-  tab: ProjectAgentTab;
-  onTab(tab: ProjectAgentTab): void;
-  onClose(): void;
-};
-type Mode = { kind: "tracking" } | { kind: "current" } | { kind: "list" } | { kind: "past"; runId: string };
+type Props = { open: boolean; project: ProjectSnapshot; onClose(): void };
 
-const TRACKING: Mode = { kind: "tracking" };
-const CURRENT: Mode = { kind: "current" };
-
-export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props) {
-  const host = useHost();
-  const projectId = project.meta.id;
+export function ProjectAgentPanel({ open, project, onClose }: Props) {
   const [width, setWidth] = usePanelWidth();
-  const { overlay } = usePanelDock(open, width);
-  const [mode, setMode] = useState<Mode>(tab === "signals" ? CURRENT : TRACKING);
-  const tabNow = useRef(tab);
-  tabNow.current = tab;
+  const layout = usePanelLayout();
+  const effectiveWidth = layout.wide ? WIDE_WIDTH : width;
+  const { overlay } = usePanelDock(open, effectiveWidth, layout.wide);
+  const [listOpen, setListOpen] = useState(false);
+  const listButton = useRef<HTMLButtonElement>(null);
+  const [confirming, setConfirming] = useState(false);
   useEffect(() => {
-    if (open && tab === "signals") setMode(CURRENT);
-  }, [open, tab]);
-  useEffect(() => {
-    if (open && tabNow.current !== "signals") setMode(TRACKING);
+    if (open) setListOpen(false);
   }, [open]);
-  const pastRunId = mode.kind === "past" ? mode.runId : undefined;
-  const { view, error, reload } = useProjectAgent(projectId, pastRunId);
-  const { log } = useRunLog(view?.run?.id ?? view?.session?.runId ?? null);
-  const signals = useSignals(projectId);
-  const openSignals = signals.view ? boxSections(signals.view).open.length : 0;
-  const readOnly = mode.kind === "past";
-  const pending = view?.batches.find((b) => b.status === "pending") ?? null;
-  const [showSuperseded, setShowSuperseded] = useState(false);
-  const superseded = supersededCount(view?.batches ?? []);
-  const items = useMemo(
-    () => buildConversation(log ?? [], view?.batches ?? [], view?.run ?? null),
-    [log, view],
-  );
-  const shownItems = useMemo(
-    () =>
-      showSuperseded
-        ? buildConversation(log ?? [], view?.batches ?? [], view?.run ?? null, { superseded: true })
-        : items,
-    [log, view, items, showSuperseded],
-  );
-  const agentList = useAgentList(projectId);
-  const labels = useMemo(() => projectLabels(project, agentList.agents ?? []), [project, agentList.agents]);
-  const runs = useAgentsState()?.runs;
-  const links = useMemo(
-    () =>
-      projectQuestionLinks(project, runs ?? [], (id) =>
-        host.openView("questions", projectId, { kind: "question", id }),
-      ),
-    [project, runs, host, projectId],
-  );
+  const chat = useAgentConversation(project, open);
+  const listShown = layout.wide ? layout.list : listOpen;
 
-  const send = async (text: string) => {
-    await client.rpc({ method: "sendProjectAgentMessage", projectId, text });
-    reload();
+  const toggleList = () => (layout.wide ? layout.setList(!layout.list) : setListOpen(!listOpen));
+  const toggleWide = () => {
+    setListOpen(false);
+    layout.setWide(!layout.wide);
   };
-  const decide = async (batchId: string, d: Decision) => {
-    const batch = await client.rpc({ method: "decideBatch", projectId, batchId, ...d });
-    reload();
-    return batch;
+  const closeList = () => {
+    if (!listOpen) return;
+    setListOpen(false);
+    listButton.current?.focus();
+  };
+  const openAgent = (runId: string) => {
+    closeList();
+    chat.openAgent(runId);
   };
   const reset = async () => {
-    await client.rpc({ method: "resetProjectAgent", projectId });
-    reload();
+    await chat.reset();
+    setListOpen(false);
   };
-  const openTicket = (key: string) => {
-    const ticket = project.tickets.find((t) => t.key === key);
-    if (ticket) host.openTicket(ticket.id);
-  };
-  const retry = () => {
-    const text = lastUserMessage(log ?? []);
-    if (text) void send(text).catch((e: unknown) => console.error(e));
-  };
-  const back = () => setMode(TRACKING);
-  const show = (next: ProjectAgentTab) => {
-    setMode(CURRENT);
-    onTab(next);
-  };
-  const showReplaced = () => {
-    setShowSuperseded(true);
-    show("conversation");
-  };
-  const tracking = () => {
-    setMode(TRACKING);
-    onTab("conversation");
-  };
+  const list = (onCloseList?: () => void) => (
+    <AgentList
+      items={chat.agents}
+      selected={chat.selected}
+      canReset={chat.canReset}
+      onOpen={openAgent}
+      onNew={() => setConfirming(true)}
+      {...(onCloseList ? { onClose: onCloseList } : {})}
+    />
+  );
   const conversation = (
-    <QuestionLinksContext.Provider value={links}>
-      <ConversationView
-        items={shownItems}
-        readOnly={readOnly}
-        labels={labels}
-        signals={signals.view?.signals ?? []}
-        onTicket={openTicket}
-        onRetry={retry}
-        onDecide={decide}
-      />
-    </QuestionLinksContext.Provider>
+    <PanelConversation
+      projectId={project.meta.id}
+      projectName={project.meta.name}
+      chat={chat}
+      inert={!layout.wide && listOpen}
+      onNew={() => setConfirming(true)}
+    />
   );
 
   return (
@@ -141,96 +75,47 @@ export function ProjectAgentPanel({ open, project, tab, onTab, onClose }: Props)
         showCloseButton={false}
         data-overlay={overlay}
         className={cn("box-content gap-0 bg-(--tracking-panel) p-0 sm:max-w-none", overlay && "shadow-2xl")}
-        style={{ width, top: "var(--tabbar-h)", height: "auto" }}
+        style={{ width: effectiveWidth, top: "var(--tabbar-h)", height: "auto" }}
         onInteractOutside={(e) => e.preventDefault()}
         onOpenAutoFocus={(e) => e.preventDefault()}
         onEscapeKeyDown={keepLayerOnSkillEscape}
       >
-        <ResizeEdge width={width} onResize={setWidth} />
+        {!layout.wide && <ResizeEdge width={width} onResize={setWidth} />}
         <PanelHeader
           project={project.meta.name}
-          status={panelStatus(readOnly ? null : (view?.run ?? null), readOnly ? null : pending)}
-          lastTurnAt={readOnly ? null : (view?.session?.lastTurnAt ?? null)}
-          menu={
-            <PanelMenu
-              signals={openSignals}
-              superseded={{
-                count: superseded,
-                shown: showSuperseded,
-                onToggle: () => setShowSuperseded((on) => !on),
-              }}
-              {...(mode.kind === "tracking" ? {} : { onTracking: tracking })}
-              onConversation={() => show("conversation")}
-              onSignals={() => show("signals")}
-              onReset={reset}
-              onPast={() => setMode({ kind: "list" })}
-              onMemory={() => host.openView("notes")}
-            />
-          }
+          wide={layout.wide}
+          listShown={listShown}
+          canReset={chat.canReset}
+          listRef={listButton}
+          onList={toggleList}
+          onNew={() => setConfirming(true)}
+          onWide={toggleWide}
           onClose={onClose}
         />
-        {error && (
+        {chat.error && (
           <p role="alert" className="border-b px-3 py-2 text-xs text-destructive">
             {frProjectAgent.loadFailed}
           </p>
         )}
-        {mode.kind === "tracking" && (
-          <TrackingView
-            key={view?.session?.runId ?? null}
-            projectId={projectId}
-            projectName={project.meta.name}
-            items={items}
-            batch={pending}
-            superseded={superseded}
-            labels={labels}
-            onTicket={openTicket}
-            onDecide={decide}
-            onSend={send}
-            onShowSuperseded={showReplaced}
-          />
-        )}
-        {mode.kind === "list" && (
-          <PastSessions
-            sessions={view?.past ?? []}
-            onOpen={(runId) => setMode({ kind: "past", runId })}
-            onBack={back}
-          />
-        )}
-        {mode.kind === "past" && (
-          <>
-            <PastBanner onBack={back} />
+        {layout.wide ? (
+          <div
+            className={cn(
+              "grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)]",
+              layout.list && "grid-cols-[210px_minmax(0,1fr)]",
+            )}
+          >
+            {layout.list && list()}
             {conversation}
-          </>
+          </div>
+        ) : (
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            {conversation}
+            {listOpen && (
+              <div className="absolute inset-0 z-10 flex flex-col bg-background">{list(closeList)}</div>
+            )}
+          </div>
         )}
-        {mode.kind === "current" && (
-          <PanelTabs
-            tab={tab}
-            open={openSignals}
-            onTab={onTab}
-            conversation={
-              <>
-                {conversation}
-                <ComposeBox
-                  projectId={projectId}
-                  placeholder={
-                    view?.session
-                      ? frProjectAgent.compose.placeholder
-                      : frProjectAgent.compose.empty(project.meta.name)
-                  }
-                  onSend={send}
-                />
-              </>
-            }
-            signals={
-              <SignalBox
-                projectId={projectId}
-                signals={signals}
-                batches={view?.batches ?? []}
-                onTicket={openTicket}
-              />
-            }
-          />
-        )}
+        <NewAgentConfirm open={confirming} onOpenChange={setConfirming} onReset={reset} />
       </SheetContent>
     </Sheet>
   );

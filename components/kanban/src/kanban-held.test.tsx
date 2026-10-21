@@ -55,6 +55,7 @@ test("the « En attente » filter counts own and dependency holds and keeps only
   const user = userEvent.setup();
   const held = await screen.findByRole("button", { name: "En attente" });
   expect(within(held).getByText("4")).toBeTruthy();
+  expect(held.querySelector(".lucide-pause")?.getAttribute("class")).toContain("text-(--tracking-hold)");
   await user.click(held);
   expect(await screen.findByText("4 tickets · En attente")).toBeTruthy();
   expect(screen.getByText("Conflits de saisie")).toBeTruthy();

@@ -1,7 +1,17 @@
 import { expect, test } from "bun:test";
 import { run } from "@kibo/core/project-agent/test-kit";
-import type { ProjectAgentSession } from "@kibo/schema";
-import { currentRun, memoryText, pastSessions, projectOfRun, rejectionMessage, summaryOf } from "./sessions";
+import { ASK_TOOL, type ProjectAgentSession, type RunLogEntry, WAKEUP_PREFIX } from "@kibo/schema";
+import { answered, asked, exited } from "./run-log.test-helper";
+import {
+  currentRun,
+  memoryText,
+  pastSessions,
+  projectOfRun,
+  rejectionMessage,
+  sessionDigest,
+  summaryOf,
+  withDigest,
+} from "./sessions";
 
 const session = (runId: string, closedAt: number | null = null): ProjectAgentSession => ({
   projectId: "p1",
@@ -43,4 +53,41 @@ test("only a project run with a project names its project", () => {
   expect(() => projectOfRun(run({ id: "r3", kind: "project", projectId: null }))).toThrow(
     expect.objectContaining({ code: "INVALID_INPUT" }),
   );
+});
+
+test("the digest names the agent by Adam's first question and counts the exchange", () => {
+  const log: RunLogEntry[] = [
+    answered(1, `${WAKEUP_PREFIX} 1 réponse à lire.`),
+    exited(2, "Je propose :"),
+    answered(3, "  Fais le point du jour  "),
+    exited(4, "F3 est livrée."),
+    answered(5, "Et F5 ?"),
+    { id: 6, at: 6, event: { type: "failed", error: "INTERRUPTED" } },
+  ];
+  expect(sessionDigest(log)).toEqual({ title: "Fais le point du jour", messages: 4 });
+  expect(sessionDigest([])).toEqual({ title: null, messages: 0 });
+  expect(
+    sessionDigest([answered(1, `${WAKEUP_PREFIX} 2 signaux à traiter.`), exited(2, "Je propose :")]),
+  ).toEqual({ title: null, messages: 1 });
+  expect(sessionDigest([answered(1, "x".repeat(200))]).title).toBe(`${"x".repeat(119)}…`);
+});
+
+test("an agent question counts once; a failed or empty exit and another tool do not count", () => {
+  const log = [
+    answered(1, "Où en est-on ?"),
+    asked(2, ASK_TOOL, "Quel sprint ?"),
+    asked(3, ASK_TOOL, null),
+    asked(4, "mcp__kibo__list_tickets", "ignored"),
+    exited(5, null),
+    exited(6, "boom", 1),
+  ];
+  expect(sessionDigest(log)).toEqual({ title: "Où en est-on ?", messages: 2 });
+});
+
+test("a session view adds the digest of its log to the stored session", () => {
+  expect(withDigest(session("r1"), [answered(1, "Relances client")])).toEqual({
+    ...session("r1"),
+    title: "Relances client",
+    messages: 1,
+  });
 });

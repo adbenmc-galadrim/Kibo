@@ -2,7 +2,7 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { ChevronRight, Pause } from "lucide-react";
 import { fr } from "./fr";
 import { type HeldRow, heldCount } from "./held-model";
-import { CARD, CardHeader, MONO_KEY, ROW_LINE } from "./parts";
+import { CardHeader, FLUSH_CARD, MONO_KEY, ROW_LINE } from "./parts";
 
 function Row({ row, onOpen }: { row: HeldRow; onOpen(): void }) {
   return (
@@ -12,7 +12,7 @@ function Row({ row, onOpen }: { row: HeldRow; onOpen(): void }) {
         className="group flex h-[38px] w-full cursor-pointer items-center gap-[10px] px-[16px] text-left"
         onClick={onOpen}
       >
-        <Pause absoluteStrokeWidth size={13} aria-hidden className="shrink-0 text-(--tracking-mfg)" />
+        <Pause absoluteStrokeWidth size={13} aria-hidden className="shrink-0 text-(--tracking-hold)" />
         <span className="min-w-0 flex-1 truncate font-medium text-(--tracking-fg) text-[13px] leading-[16px] group-hover:underline">
           {row.reason}
         </span>
@@ -31,7 +31,7 @@ function Row({ row, onOpen }: { row: HeldRow; onOpen(): void }) {
 export function HeldCard({ rows, onOpenPlanning }: { rows: readonly HeldRow[]; onOpenPlanning(): void }) {
   if (rows.length === 0) return null;
   return (
-    <section aria-label={fr.held.title} className={CARD}>
+    <section aria-label={fr.held.title} className={FLUSH_CARD}>
       <CardHeader
         icon={Pause}
         title={fr.held.title}

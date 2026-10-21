@@ -20,9 +20,11 @@ export const ATTENTE_SCREENS = [
   "attente-fonctionnalite",
   "attente-kanban",
   "attente-fiche-ticket",
+  "attente-graphe",
 ] as const;
 type AttenteScreen = (typeof ATTENTE_SCREENS)[number];
-export type MaskedScreen = OriginScreen | AttenteScreen;
+type AgentScreen = "agent-agrandi";
+export type MaskedScreen = OriginScreen | AttenteScreen | AgentScreen;
 
 export const ATTENTE_ORIGINS: Record<AttenteScreen, OriginScreen> = {
   "attente-vue-ensemble": "vue-ensemble",
@@ -30,6 +32,7 @@ export const ATTENTE_ORIGINS: Record<AttenteScreen, OriginScreen> = {
   "attente-fonctionnalite": "fonctionnalite",
   "attente-kanban": "kanban",
   "attente-fiche-ticket": "fiche-ticket",
+  "attente-graphe": "graphe",
 };
 
 export const MASK_COLOR = "#FF00FF";
@@ -57,7 +60,11 @@ export const PIXEL_HEIGHTS: Record<MaskedScreen, number> = {
   "attente-fonctionnalite": ORIGIN_HEIGHTS.fonctionnalite,
   "attente-kanban": ORIGIN_HEIGHTS.kanban,
   "attente-fiche-ticket": ORIGIN_HEIGHTS["fiche-ticket"],
+  "attente-graphe": ORIGIN_HEIGHTS.graphe,
+  "agent-agrandi": ORIGIN_HEIGHTS["vue-ensemble"],
 };
+
+const WIDE_PANEL: Box = { x: 720, y: 0, w: 720, h: ORIGIN_HEIGHTS["vue-ensemble"] };
 
 const DIALOGS = {
   "nouveau-projet": { x: 460, y: 170, w: 520, h: 660 },
@@ -68,6 +75,7 @@ const DIALOGS = {
 export const DIALOG_SCREENS: Partial<Record<MaskedScreen, Box>> = {
   ...DIALOGS,
   "attente-fiche-ticket": DIALOGS["fiche-ticket"],
+  "agent-agrandi": WIDE_PANEL,
 };
 
 const user = (y: number): PixelMask => ({
@@ -132,7 +140,6 @@ const ORIGIN_MASKS: Record<OriginScreen, readonly PixelMask[]> = {
   "vue-ensemble": [
     user(1216),
     syncAge(671),
-    clockTime(1225, 30, 62, 17, "« il y a 4 min », âge du dernier tour de suivi"),
     clockTime(1018, 251, 42, 16, "« 42 min », durée en cours de SILO-33"),
     clockTime(1021, 288, 38, 16, "« 18 min », durée en cours de SILO-45"),
     clockTime(279, 1074, 40, 16, "« 15:04 » de l'activité"),
@@ -190,6 +197,10 @@ const ATTENTE_FEATURE_MASKS: readonly PixelMask[] = [
   clockTime(1376, 537, 24, 15, "« hier » de l'activité"),
 ];
 
+const AGENT_WIDE_MASKS: readonly PixelMask[] = ORIGIN_MASKS["vue-ensemble"].filter(
+  (m) => m.x + m.w <= WIDE_PANEL.x,
+);
+
 export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
   ...ORIGIN_MASKS,
   "attente-vue-ensemble": ATTENTE_VUE_MASKS,
@@ -197,6 +208,8 @@ export const PIXEL_MASKS: Record<MaskedScreen, readonly PixelMask[]> = {
   "attente-fonctionnalite": ATTENTE_FEATURE_MASKS,
   "attente-kanban": ORIGIN_MASKS.kanban,
   "attente-fiche-ticket": ORIGIN_MASKS["fiche-ticket"],
+  "attente-graphe": ORIGIN_MASKS.graphe,
+  "agent-agrandi": AGENT_WIDE_MASKS,
 };
 
 const isMaskedScreen = (screen: string): screen is MaskedScreen => Object.hasOwn(PIXEL_MASKS, screen);

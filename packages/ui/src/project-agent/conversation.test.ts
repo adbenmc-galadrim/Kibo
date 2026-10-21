@@ -1,23 +1,24 @@
 import { expect, test } from "bun:test";
 import { type RunLogEntry, WAKEUP_PREFIX } from "@kibo/schema";
+import fc from "fast-check";
 import { NOW } from "../agents/fixtures";
 import {
   buildConversation,
   type ConversationItem,
-  headerLine,
-  lastAgentText,
   lastUserMessage,
   panelStatus,
-  supersededCount,
-  trackingThread,
+  readingText,
 } from "./conversation";
-import { CONVERSATION_LOG, partialBatch, pendingBatch, projectRun } from "./fixtures";
+import { CONVERSATION_LOG, hook, partialBatch, pendingBatch, projectRun } from "./fixtures";
+
+const MIN = 60_000;
 
 const shape = (items: ReturnType<typeof buildConversation>) =>
   items.map((i) => {
     if (i.kind === "reading") return ["reading", i.tools];
     if (i.kind === "event") return ["event", i.tone, i.retry];
     if (i.kind === "batch") return ["batch", i.batch.id];
+    if (i.kind === "agent") return ["agent", i.text, i.read];
     return [i.kind, i.text];
   });
 
@@ -25,8 +26,11 @@ test("a real log becomes messages, grouped reads, the answer and a red retryable
   const items = buildConversation(CONVERSATION_LOG, [], projectRun({ state: "failed" }));
   expect(shape(items)).toEqual([
     ["user", "Où en est-on ?"],
-    ["reading", ["list_tickets", "get_ticket SILO-11"]],
-    ["agent", "**SILO-11** avance ; je propose de le passer en review."],
+    [
+      "agent",
+      "**SILO-11** avance ; je propose de le passer en review.",
+      ["list_tickets", "get_ticket SILO-11"],
+    ],
     ["user", "Et l'export ?"],
     ["event", "red", true],
   ]);
@@ -36,19 +40,30 @@ test("a real log becomes messages, grouped reads, the answer and a red retryable
 
 test("batches come after the turn that produced them, in creation order", () => {
   const items = buildConversation(CONVERSATION_LOG, [pendingBatch(), partialBatch()], projectRun());
-  expect(shape(items).map((s) => s[0])).toEqual([
-    "batch",
-    "user",
-    "reading",
-    "agent",
-    "batch",
-    "user",
-    "event",
-  ]);
+  expect(shape(items).map((s) => s[0])).toEqual(["batch", "user", "agent", "batch", "user", "event"]);
   expect(items.filter((i) => i.kind === "batch").map((i) => i.kind === "batch" && i.batch.id)).toEqual([
     "b0",
     "b1",
   ]);
+});
+
+test("reads before any answer stay a reading line, said as « Lu : »", () => {
+  const log: RunLogEntry[] = [
+    { id: 1, at: 1, event: { type: "answered", text: "Plan ?", rank: 0 } },
+    {
+      id: 2,
+      at: 2,
+      event: { type: "hook", payload: hook("PostToolUse", "mcp__kibo__project_overview", null) },
+    },
+  ];
+  const items = buildConversation(log, [], projectRun({ state: "running" }));
+  expect(shape(items)).toEqual([
+    ["user", "Plan ?"],
+    ["reading", ["project_overview"]],
+  ]);
+  expect(readingText(["project_overview", "list_questions", "read_note plan.md"])).toBe(
+    "Lu : projet, questions, plan.md",
+  );
 });
 
 test("a batch proposed in the running turn stays at the end", () => {
@@ -124,7 +139,7 @@ test("a question asked through ask_user is shown as an agent message", () => {
     },
   ];
   expect(shape(buildConversation(log, [], projectRun({ state: "waiting_input" })))).toEqual([
-    ["agent", "Quel ticket d'abord ?"],
+    ["agent", "Quel ticket d'abord ?", []],
   ]);
 });
 
@@ -133,13 +148,12 @@ test("lastUserMessage returns the latest message, or null", () => {
   expect(lastUserMessage([])).toBeNull();
 });
 
-test("panelStatus: ready without run, queued, thinking, and a pending batch first", () => {
-  expect(panelStatus(null, null)).toBe("ready");
-  expect(panelStatus(projectRun({ state: "queued" }), null)).toBe("queued");
-  expect(panelStatus(projectRun({ state: "starting" }), null)).toBe("thinking");
-  expect(panelStatus(projectRun({ state: "running" }), null)).toBe("thinking");
-  expect(panelStatus(projectRun({ state: "done" }), null)).toBe("ready");
-  expect(panelStatus(projectRun({ state: "running" }), pendingBatch())).toBe("batch");
+test("panelStatus: ready without run, queued, thinking", () => {
+  expect(panelStatus(null)).toBe("ready");
+  expect(panelStatus(projectRun({ state: "queued" }))).toBe("queued");
+  expect(panelStatus(projectRun({ state: "starting" }))).toBe("thinking");
+  expect(panelStatus(projectRun({ state: "running" }))).toBe("thinking");
+  expect(panelStatus(projectRun({ state: "done" }))).toBe("ready");
 });
 
 const WAKEUP =
@@ -224,96 +238,36 @@ test("lastUserMessage skips wakeups: Réessayer never replays one", () => {
   expect(lastUserMessage(wakeLog.slice(2))).toBeNull();
 });
 
-test("lastAgentText is the agent's latest answer, or null", () => {
-  const items = buildConversation(CONVERSATION_LOG, [], projectRun({ state: "failed" }));
-  expect(lastAgentText(items)).toBe("**SILO-11** avance ; je propose de le passer en review.");
-  expect(lastAgentText([])).toBeNull();
-});
-
-test("headerLine says the last turn while idle, the state while busy", () => {
-  const now = 1_000_000_000_000;
-  expect(headerLine("ready", now - 4 * 60_000, now)).toBe("Suivi à jour · il y a 4 min");
-  expect(headerLine("batch", now - 4 * 60_000, now)).toBe("Suivi à jour · il y a 4 min");
-  expect(headerLine("thinking", now - 4 * 60_000, now)).toBe("Réfléchit…");
-  expect(headerLine("queued", null, now)).toBe("En file");
-  expect(headerLine("ready", null, now)).toBe("Prêt");
-});
-
-test("superseded batches are left out unless asked for, and counted", () => {
+test("superseded batches are left out of the conversation", () => {
   const batches = [
     pendingBatch({ id: "b-old", createdAt: 15, status: "superseded" }),
     pendingBatch({ id: "b-new", createdAt: 35 }),
   ];
   const ids = (items: ConversationItem[]) => items.flatMap((i) => (i.kind === "batch" ? [i.batch.id] : []));
   expect(ids(buildConversation(wakeLog, batches, projectRun()))).toEqual(["b-new"]);
-  expect(ids(buildConversation(wakeLog, batches, projectRun(), { superseded: true }))).toEqual([
-    "b-old",
-    "b-new",
-  ]);
-  expect(supersededCount(batches)).toBe(1);
 });
 
-const user = (id: string, text: string): ConversationItem => ({ kind: "user", id, at: 1, text });
-const agent = (id: string, text: string): ConversationItem => ({ kind: "agent", id, at: 1, text });
-const wakeup = (id: string, text: string): ConversationItem => ({ kind: "wakeup", id, at: 1, text });
-
-test("the question asked after the summary is the exchange, the summary stays", () => {
-  const items = [user("u1", "Fais le point"), agent("a1", "F3 est livrée."), user("u2", "Où en est F5 ?")];
-  expect(trackingThread(items)).toEqual({
-    summary: "F3 est livrée.",
-    summaryAt: 1,
-    exchange: items.slice(2),
-  });
-  const answered = [...items, agent("a2", "Il reste 4 étapes.")];
-  expect(trackingThread(answered)).toEqual({
-    summary: "F3 est livrée.",
-    summaryAt: 1,
-    exchange: answered.slice(2),
-  });
-});
-
-test("the turn that wrote the summary shows no exchange, a first question does until answered", () => {
-  const point = [user("u1", "Fais le point"), agent("a1", "F3 est livrée.")];
-  expect(trackingThread(point)).toEqual({ summary: "F3 est livrée.", summaryAt: 1, exchange: [] });
-  const first = [user("u1", "Où en est F5 ?")];
-  expect(trackingThread(first)).toEqual({ summary: null, summaryAt: null, exchange: first });
-  expect(trackingThread([])).toEqual({ summary: null, summaryAt: null, exchange: [] });
-});
-
-test("the exchange keeps a failed turn but drops muted session lines", () => {
-  const event = (id: string, tone: "muted" | "red"): ConversationItem => ({
-    kind: "event",
-    id,
-    at: 1,
-    text: id,
-    tone,
-    retry: false,
-  });
-  const items = [
-    agent("a1", "F3 est livrée."),
-    user("u1", "Et F5 ?"),
-    event("reprise", "muted"),
-    event("échec", "red"),
+test("every message from Adam in the log is a user item, even one sent while the run is queued", () => {
+  const log: RunLogEntry[] = [
+    { id: 1, at: NOW - 3 * MIN, event: { type: "answered", text: "Fais le point", rank: 0 } },
+    { id: 2, at: NOW - 2 * MIN, event: { type: "answered", text: "Et F5 ?", rank: 0 } },
   ];
-  expect(trackingThread(items).exchange.map((i) => i.id)).toEqual(["u1", "échec"]);
-});
-
-test("a wakeup opens the exchange like a question from Adam", () => {
-  const w1 = wakeup("w1", "Q16 répondue : « 5 Go »");
-  const said = "Q16 répondue : le quota est de 5 Go par client.";
-  const a1 = agent("a1", "F3 est livrée.");
-  const a2 = agent("a2", said);
-  expect(trackingThread([a1, w1, a2])).toEqual({
-    summary: "F3 est livrée.",
-    summaryAt: 1,
-    exchange: [w1, a2],
-  });
-  expect(trackingThread([w1, a2])).toEqual({ summary: said, summaryAt: 1, exchange: [] });
-  expect(trackingThread([user("u1", "Et F5 ?"), a1, w1]).exchange).toEqual([w1]);
-});
-
-test("the exchange starts at the first line of a wakeup with several answers", () => {
-  const lines = [wakeup("w1-a0", "Q16 répondue : « 5 Go »"), wakeup("w1-a1", "Q17 répondue : « Oui »")];
-  const a2 = agent("a2", "Je propose :");
-  expect(trackingThread([agent("a1", "F3 est livrée."), ...lines, a2]).exchange).toEqual([...lines, a2]);
+  const items = buildConversation(log, [], projectRun({ state: "queued" }));
+  expect(items.filter((i) => i.kind === "user").map((i) => i.text)).toEqual(["Fais le point", "Et F5 ?"]);
+  fc.assert(
+    fc.property(
+      fc.array(
+        fc.string({ minLength: 1, maxLength: 40 }).filter((s) => s.trim() !== ""),
+        { maxLength: 8 },
+      ),
+      (texts) => {
+        const entries = texts.map(
+          (text, k): RunLogEntry => ({ id: k + 1, at: NOW + k, event: { type: "answered", text, rank: 0 } }),
+        );
+        expect(buildConversation(entries, [], null).filter((i) => i.kind === "user")).toHaveLength(
+          texts.length,
+        );
+      },
+    ),
+  );
 });

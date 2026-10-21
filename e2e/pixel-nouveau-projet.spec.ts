@@ -1,9 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { pairBrowser } from "./agents-seed";
 import { openNewProject } from "./helpers";
 import { PIXEL_HEIGHTS, PIXEL_MASKS } from "./pixel-masks";
-import { contentBox, measureScreen, openPixelPage, screensDir, settlePointer } from "./pixel-screen";
-import { siloPageUrl } from "./pixel-silo";
+import { contentBox, measureScreen, screensDir, settlePointer } from "./pixel-screen";
+import { openSiloOverviewAgent } from "./pixel-silo";
 
 const HEIGHT = PIXEL_HEIGHTS["nouveau-projet"];
 
@@ -12,11 +11,7 @@ test.use({ locale: "fr-FR", launchOptions: { args: ["--lang=fr-FR"] } });
 test("the Nouveau projet dialog over the Vue d'ensemble matches the mockup on the whole screen", async ({
   page,
 }) => {
-  await pairBrowser(page);
-  await openPixelPage(page, await siloPageUrl(page, "Vue d'ensemble"), HEIGHT);
-  await expect(page.getByText("2 sessions T3 Code")).toBeVisible();
-  await page.getByRole("button", { name: /^Agent de projet/ }).click();
-  await expect(page.getByRole("region", { name: "Lot n° 7" })).toBeVisible();
+  await openSiloOverviewAgent(page, HEIGHT);
   await openNewProject(page);
   const dialog = page.getByRole("dialog", { name: "Nouveau projet" });
   await dialog.getByLabel("Nom", { exact: true }).fill("Silo");

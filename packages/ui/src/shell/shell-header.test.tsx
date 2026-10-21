@@ -127,7 +127,7 @@ test("the project agent button toggles the panel and carries a dot while a batch
           available: true,
           open: false,
           toggle: () => toggled.push("toggle"),
-          show: () => toggled.push("signals"),
+          show: () => toggled.push("show"),
         }}
         notifications="browser"
         now={NOW}
@@ -148,8 +148,8 @@ test("the project agent button toggles the panel and carries a dot while a batch
   expect(screen.getByRole("button", { name: "Agent de projet · Un lot attend ta validation" })).toBeTruthy();
   view.rerender(props({ ...waiting("b1"), signals: [{ projectId: "kibo", open: 2, unread: 1 }] }));
   expect(screen.getByRole("button", { name: "Agent de projet · 2 signaux en boîte" })).toBeTruthy();
-  await userEvent.setup().click(screen.getByRole("button", { name: "Ouvrir la boîte à signaux" }));
-  expect(toggled).toEqual(["toggle", "signals"]);
+  await userEvent.setup().click(screen.getByRole("button", { name: "Ouvrir l'agent de projet" }));
+  expect(toggled).toEqual(["toggle", "show"]);
 });
 
 test("the creations indicator loads on demand: nothing shows while loading, then the button", async () => {

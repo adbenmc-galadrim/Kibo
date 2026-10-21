@@ -6,6 +6,7 @@ export const CASE_BG: Record<CaseTone, string> = {
   review: "bg-(--tracking-purple)",
   progress: "bg-(--tracking-blue)",
   blocked: "bg-(--tracking-red)",
+  hold: "bg-(--tracking-hold)",
   todo: "bg-(--tracking-border)",
 };
 export const SLIPPED_CASE = "border border-(--tracking-red) bg-(--tracking-red-soft)";

@@ -574,7 +574,8 @@ exports `proposition-questions-{menu,supprimer,repondues}-*`.
 
 Jeu des questions ci-dessus, vendredi 16 octobre : Adam répond à Q16 à 14:52 et l'agent de projet se réveille. Maquette : board
 « Agent · réveil sur réponse » de la page « Proposition » (`design/redesign/scripts/58-alpha3-reveil.js`, clone de « Agent · question »),
-exports `proposition-agent-reveil-*` ; page « 36 · Suivi seul » du fichier « Kibo », écran 235.
+exports `proposition-agent-reveil-*` ; page « 36 · Suivi seul » du fichier « Kibo », écran 235. Board, exports et écran retirés en
+phase 31 avec la vue Suivi (spec §46.3, voir « Phase 31 · Agent de projet en conversation »).
 
 | Question | Ticket | Réponse | Répondue par | Quand | Lot | Action | Pourquoi |
 |---|---|---|---|---|---|---|---|
@@ -646,6 +647,72 @@ Contenu du cadre (écran mobile de l'app Silo, mêmes couleurs en sombre et en c
   champ « Colle l'URL d'un cadre Figma ou d'un board Penpot » et bouton « Lier un cadre ».
 - Plein écran (P8g) : barre « SILO-45 · Conflit de saisie · Figma · Actualiser · Ouvrir dans Figma · Quitter le plein écran
   (Échap) » ; un seul cadre, donc aucune navigation « 1 / 1 » ; cadre à l'échelle 1, centré ; zoom « 100 % ».
+
+### Phase 31 · Graphe en attente et couleur de l'attente
+
+Couleur de l'attente (spec §45.2) : jeton `--tracking-hold`, cyan `#0e7490` en clair et `#22d3ee` en sombre, fond
+`--tracking-hold-soft` `#ecfeff` / `#082f35` ; icône ⏸ (`Pause`). Une étape en attente, propre ou par dépendance, est montrée à sa
+place, en cyan, partout où une fonctionnalité affiche ses étapes (§45.3) ; les comptes ne changent pas.
+
+Scénario `silo-graphe` (spec §45.4) = `silo-attente`, puis F1 renommée « Connexion, environnements et hébergement » (36 caractères,
+trois lignes à 126 px) ; les étapes SILO-2 à SILO-5 gardent leurs titres ; `silo-maquettes` et `silo-attente` ne sont pas modifiés.
+Maquette : board « P5b · Graphe · en attente » de la page « Proposition » (`design/redesign/scripts/59c-graphe-attente.js`, clone de
+« P5b · Graphe, Fonctionnalités »), exports `proposition-attente-graphe-*`.
+
+États attendus (Graphe, vue « Fonctionnalités », 16 oct.) :
+- S41 : F1 repliée (livrée), titre « Connexion, environnements et hébergement » sur **trois lignes**, cadre 126 × 96 (81 + 15) ; F2
+  à y = 70 + 96 + 30 = 196.
+- S42 : F3 repliée ; **F4 « 3/4 ⏸ 1 ✓ »**, livrée avec une attente : seule la ligne SILO-45 « Conflits de saisie » reste visible
+  (point cyan, ⏸ cyan, infobulle « En attente : Règle de fusion à valider par le client », icône PR ambre), segments terminé ×3,
+  **cyan**, à faire ; **F5 « 1/2 ⏸ 3 »** : 31 (terminé), 32 (en review, PR violette), 33 (cyan, ⏸ « En attente : Serveur MinIO de
+  recette indisponible », bordure orange de session, icône branche), 34 et 35 (cyan, ⏸ « En attente de SILO-33 ») ; segments
+  terminé, review, cyan ×3.
+- S44 : **F7 « 0/4 ⏸ 1 »**, ligne SILO-82 cyan, segments à faire, **cyan**, à faire ×3.
+- Légende : « À faire · En cours · En review · Bloqué · **En attente** · Fonctionnalité · Colonne = sprint · Session active » ;
+  compteur inchangé (masqué au pixel).
+
+États attendus (scénario `silo-attente`, boards 226 à 229 refaits) :
+- Vue d'ensemble : sous-ligne « ⏸ 3 en attente » en cyan sous Fonctionnalités ; carte Sprint : F4 cases ■■■◆□ et « ⏸ 1 », F5 cases
+  ■■◆◆◆ et « ⏸ 3 » (◆ = case cyan) ; Prochaine à finir : F5 cases ■■◆◆◆ ; carte « En attente » : ⏸ cyan devant chaque ligne (⏸
+  du titre en gris) ; Activité inchangée (⏸ gris).
+- Planning : F4 cases ■■■◆□, F5 ■■◆◆◆, F7 □◆□□□ ; textes inchangés (« livrée · 1 en attente », « 1/2 étapes », « 0/4 étapes ») ;
+  « En attente (3) » avec ⏸ cyan.
+- Fiche F5 : barre ■■◆◆◆ « 1 étape livrée sur 2 · 3 en attente » ; section « En attente · 3 » : ⏸ cyan en titre, pastilles
+  `hold-soft` avec ⏸ cyan, ⏸ cyan devant « Serveur MinIO de recette indisponible · depuis le 16 oct. » (le lien de « attend
+  SILO-33 » reste gris).
+- Kanban : puces pleines cyan, sans bordure, « ⏸ Règle de fusion à valide… », « ⏸ Serveur MinIO de recette… », « ⏸ attend
+  SILO-33 » ; filtre « En attente 5 » avec ⏸ cyan.
+- Restent gris : bandeau « En attente · … » de la fiche SILO-45 (230), événements « Mise en attente » de l'Activité, menus et
+  dialogue (231 à 231d).
+
+### Phase 31 · Agent de projet en conversation
+
+Spec §46 : le volet de l'agent de projet ne montre plus que la conversation de l'agent choisi. Maquettes : boards « P1 bis · Agent
+agrandi », « Agent de projet, volet » et « Agent de projet, agrandi, liste rétractée » de la page « Proposition »
+(`design/redesign/scripts/59d-agent-conversation.js`), et le volet redessiné de P1 bis v3, « En retard », P6 et « en attente ».
+
+Conversation de l'agent en cours, vendredi 16 octobre (volet au repos, l'état « L'agent lit le projet… » n'est pas montré) :
+- Bulle d'Adam, à droite : « Fais le point du jour », heure « 14:38 ».
+- Réponse de l'agent : « F3 est livrée : 3 fonctionnalités sur 9. » puis « S42 finit ce soir et F5 n'y tiendra pas : il lui reste
+  4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo. »
+- Ligne de lecture : « Lu : Planning, F5, journal des étapes ».
+- Lot n° 7, « 3 actions » (les trois actions de « Suivi et agent de projet »), « Valider (3) » et « Refuser ».
+- Saisie : « Écris à l'agent de projet… ».
+
+En-tête : « Agent de projet · Silo », boutons « Liste des agents », « Nouvel agent », « Agrandir », « Fermer ».
+
+Liste des agents (agent en cours en tête, puis les anciens du plus récent au plus ancien) :
+
+| Agent | Date | Messages | État |
+|---|---|---|---|
+| Fais le point du jour | 14:38 | 4 messages | en cours |
+| Point de sprint S41 | 9 oct. | 6 messages | |
+| Relances client | 2 oct. | 3 messages | |
+
+Un agent commencé le jour même montre son heure de début (« 14:38 »), les autres leur date. « + Nouvel agent » en tête de la
+liste. Les deux anciens agents remplacent « Session du 6 octobre » et « Session du 29 septembre »
+de la phase 18 (désormais nommés par leur première question). Agrandi : volet de 720 px, liste de 210 px, colonne de lecture de
+520 px ; en étroit (340 px), la liste s'ouvre par-dessus la conversation (titre « Agents », bouton « Fermer la liste »).
 
 ### Pistes A, B, C (`design/redesign/scripts/02-data.js`)
 

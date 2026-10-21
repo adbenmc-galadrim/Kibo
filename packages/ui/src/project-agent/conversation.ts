@@ -11,18 +11,18 @@ import {
 import { errorText } from "../agents/format";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { frSignals } from "../i18n/fr-signals";
-import { relativeTime } from "../lib/relative-time";
+import type { OutboxState } from "./outbox";
 
 export type ConversationItem =
-  | { kind: "user"; id: string; at: number; text: string }
-  | { kind: "agent"; id: string; at: number; text: string }
+  | { kind: "user"; id: string; at: number; text: string; pending?: OutboxState }
+  | { kind: "agent"; id: string; at: number; text: string; read: string[] }
   | { kind: "reading"; id: string; at: number; tools: string[] }
   | { kind: "batch"; id: string; at: number; batch: Batch; afterWakeup: boolean }
   | { kind: "wakeup"; id: string; at: number; text: string }
   | { kind: "event"; id: string; at: number; text: string; tone: "muted" | "red"; retry: boolean };
 
 type Reading = Extract<ConversationItem, { kind: "reading" }>;
-export type PanelStatus = "ready" | "queued" | "thinking" | "batch";
+export type PanelStatus = "ready" | "queued" | "thinking";
 
 const KIBO_PREFIX = "mcp__kibo__";
 const NOT_READS: ReadonlySet<string> = new Set(["propose_batch", "ask_user", "ask_question"]);
@@ -80,6 +80,12 @@ class Builder {
     }
   }
 
+  agent(entry: RunLogEntry, text: string): void {
+    const reading = this.reading;
+    if (reading && this.items.at(-1) === reading) this.items.pop();
+    this.push({ kind: "agent", id: `log-${entry.id}`, at: entry.at, text, read: reading?.tools ?? [] });
+  }
+
   read(entry: RunLogEntry, tool: string): void {
     if (this.reading) {
       this.reading.tools.push(tool);
@@ -133,7 +139,7 @@ function applyHook(b: Builder, entry: RunLogEntry, payload: HookPayload): void {
   const tool = readingTool(payload);
   if (tool) b.read(entry, tool);
   else if (payload.event === "PostToolUse" && payload.tool === ASK_TOOL && payload.question)
-    b.push({ kind: "agent", id: `log-${entry.id}`, at: entry.at, text: payload.question });
+    b.agent(entry, payload.question);
 }
 
 function sessionText(e: Extract<RunLogEntry["event"], { type: "session" }>): string | null {
@@ -147,7 +153,7 @@ function apply(b: Builder, entry: RunLogEntry): void {
   else if (e.type === "hook") applyHook(b, entry, e.payload);
   else if (e.type === "exited") {
     const clean = e.code === 0 && !e.isError;
-    if (clean && e.result) b.push({ kind: "agent", id: `log-${entry.id}`, at: entry.at, text: e.result });
+    if (clean && e.result) b.agent(entry, e.result);
     if (!clean) b.event(entry, t.failed(errorText(e.result ?? `exit code ${e.code}`)), "red");
     b.endTurn(entry, !clean);
   } else if (e.type === "failed") {
@@ -162,15 +168,12 @@ function apply(b: Builder, entry: RunLogEntry): void {
   }
 }
 
-export type ConversationOptions = { superseded?: boolean };
-
 export function buildConversation(
   log: readonly RunLogEntry[],
   batches: readonly Batch[],
   run: RunView | null,
-  { superseded = false }: ConversationOptions = {},
 ): ConversationItem[] {
-  const builder = new Builder(superseded ? batches : batches.filter((b) => b.status !== "superseded"));
+  const builder = new Builder(batches.filter((b) => b.status !== "superseded"));
   for (const entry of log) apply(builder, entry);
   return builder.finish(run);
 }
@@ -183,59 +186,8 @@ export function lastUserMessage(log: readonly RunLogEntry[]): string | null {
   return null;
 }
 
-type AgentItem = Extract<ConversationItem, { kind: "agent" }>;
-
-function lastAgent(items: readonly ConversationItem[]): AgentItem | null {
-  for (let i = items.length - 1; i >= 0; i--) {
-    const item = items[i];
-    if (item?.kind === "agent") return item;
-  }
-  return null;
-}
-
-export const lastAgentText = (items: readonly ConversationItem[]): string | null =>
-  lastAgent(items)?.text ?? null;
-
-export function supersededCount(batches: readonly Batch[]): number {
-  return batches.filter((b) => b.status === "superseded").length;
-}
-
-export type TrackingThread = {
-  summary: string | null;
-  summaryAt: number | null;
-  exchange: ConversationItem[];
-};
-const inExchange = (item: ConversationItem): boolean =>
-  item.kind === "event" ? item.tone === "red" : item.kind !== "batch";
-
-const isWakeup = (item: ConversationItem | undefined): boolean => item?.kind === "wakeup";
-
-function lastAskedIndex(items: readonly ConversationItem[]): number {
-  let i = items.length - 1;
-  while (i >= 0 && items[i]?.kind !== "user" && !isWakeup(items[i])) i--;
-  while (i > 0 && isWakeup(items[i]) && isWakeup(items[i - 1])) i--;
-  return i;
-}
-
-export function trackingThread(items: readonly ConversationItem[]): TrackingThread {
-  const asked = lastAskedIndex(items);
-  const before = asked < 0 ? null : lastAgent(items.slice(0, asked));
-  const after = asked < 0 ? null : lastAgent(items.slice(asked));
-  const summary = asked < 0 || (before === null && after !== null) ? lastAgent(items) : before;
-  const exchange = summary === before && asked >= 0 ? items.slice(asked).filter(inExchange) : [];
-  return { summary: summary?.text ?? null, summaryAt: summary?.at ?? null, exchange };
-}
-
-export function panelStatus(run: RunView | null, pending: Batch | null): PanelStatus {
-  if (pending) return "batch";
+export function panelStatus(run: RunView | null): PanelStatus {
   if (run?.state === "queued") return "queued";
   if (run?.state === "starting" || run?.state === "running") return "thinking";
   return "ready";
-}
-
-const BUSY: ReadonlySet<PanelStatus> = new Set(["thinking", "queued"]);
-
-export function headerLine(status: PanelStatus, lastTurnAt: number | null, now = Date.now()): string {
-  if (BUSY.has(status) || lastTurnAt === null) return frProjectAgent.status[status];
-  return frProjectAgent.tracking.upToDate(relativeTime(lastTurnAt, now));
 }

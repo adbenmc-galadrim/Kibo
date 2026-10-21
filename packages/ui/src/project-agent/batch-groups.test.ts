@@ -11,7 +11,7 @@ import {
   signalProvenance,
 } from "./batch-groups";
 import { pendingBatch, questionsProject, siloProject } from "./fixtures";
-import { OPEN_SIGNALS } from "./signals/fixtures";
+import { OPEN_SIGNALS } from "./signal-fixtures";
 
 test("groupActions keeps Tickets, Agents, Questions, Notes and the id order inside each group", () => {
   const shuffled = [...pendingBatch().actions].reverse();

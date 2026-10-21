@@ -6,13 +6,13 @@ S.PAL = {
     fg: "#FAFAFA", mfg: "#A1A1AA", dim: "#71717A", faint: "#52525B", primary: "#FAFAFA", pfg: "#18181B",
     brand: "#F97316", brandBtn: "#C2410C", brandSoft: "#2A1406", brandLine: "#7C2D12", brandText: "#FB923C",
     blue: "#3B82F6", purple: "#A855F7", green: "#22C55E", red: "#EF4444", amber: "#F59E0B",
-    blueSoft: "#0B1426", purpleSoft: "#1A1024", greenSoft: "#0D1F12", redSoft: "#2A0F0F", amberSoft: "#1F1608",
+    blueSoft: "#0B1426", purpleSoft: "#1A1024", greenSoft: "#0D1F12", redSoft: "#2A0F0F", amberSoft: "#1F1608", hold: "#22D3EE", holdSoft: "#082F35",
     track: "#27272A", grid: "#1A1A1D", canvas: "#0B0B0D" },
   light: { bg: "#FFFFFF", panel: "#FAFAFA", card: "#FFFFFF", muted: "#F4F4F5", hover: "#F4F4F5", border: "#E4E4E7", soft: "#EEEEF0",
     fg: "#09090B", mfg: "#52525B", dim: "#71717A", faint: "#A1A1AA", primary: "#18181B", pfg: "#FAFAFA",
     brand: "#EA580C", brandBtn: "#C2410C", brandSoft: "#FFF7ED", brandLine: "#FDBA74", brandText: "#C2410C",
     blue: "#2563EB", purple: "#9333EA", green: "#16A34A", red: "#DC2626", amber: "#D97706",
-    blueSoft: "#EFF6FF", purpleSoft: "#FAF5FF", greenSoft: "#F0FDF4", redSoft: "#FEF2F2", amberSoft: "#FFFBEB",
+    blueSoft: "#EFF6FF", purpleSoft: "#FAF5FF", greenSoft: "#F0FDF4", redSoft: "#FEF2F2", amberSoft: "#FFFBEB", hold: "#0E7490", holdSoft: "#ECFEFF",
     track: "#E4E4E7", grid: "#EDEDEF", canvas: "#FAFAFA" },
 };
 S.C = S.C || {};

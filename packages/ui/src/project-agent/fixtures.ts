@@ -5,7 +5,7 @@ import {
   EMPTY_PROGRESS,
   type HookPayload,
   MEMORY_NOTE_PATH,
-  type ProjectAgentSession,
+  type ProjectAgentSessionView,
   type ProjectAgentView,
   type ProjectSnapshot,
   type ProposedAction,
@@ -107,7 +107,11 @@ export function projectRun(p: Partial<RunView> = {}): RunView {
   });
 }
 
-const hook = (event: HookPayload["event"], tool: string | null, detail: string | null): HookPayload => ({
+export const hook = (
+  event: HookPayload["event"],
+  tool: string | null,
+  detail: string | null,
+): HookPayload => ({
   event,
   sessionId: "s-pa1",
   transcriptPath: null,
@@ -238,27 +242,34 @@ export function partialBatch(): Batch {
   });
 }
 
-export const session = (p: Partial<ProjectAgentSession> = {}): ProjectAgentSession => ({
+export const PAST_STARTED_AT = new Date(2026, 9, 2, 10, 5).getTime();
+
+export const session = (p: Partial<ProjectAgentSessionView> = {}): ProjectAgentSessionView => ({
   projectId: "silo",
   runId: "pa1",
   sessionId: "s-pa1",
   startedAt: NOW - 30 * MIN,
   closedAt: null,
   lastTurnAt: NOW - 8 * MIN,
+  title: "Où en est-on ?",
+  messages: 2,
   ...p,
 });
 
 export function viewFixture(p: Partial<ProjectAgentView> = {}): ProjectAgentView {
   return {
-    session: session(),
+    session: session({ title: "Fais le point du jour", messages: 2 }),
     run: projectRun({ state: "failed" }),
     batches: [pendingBatch()],
     past: [
       session({
-        runId: "pa0",
-        sessionId: "s-pa0",
-        startedAt: NOW - 3 * 24 * 60 * MIN,
-        closedAt: NOW - 2 * 24 * 60 * MIN,
+        runId: "r1",
+        sessionId: "s-r1",
+        title: "Relances client",
+        messages: 3,
+        startedAt: PAST_STARTED_AT,
+        closedAt: PAST_STARTED_AT + 60 * MIN,
+        lastTurnAt: PAST_STARTED_AT + 30 * MIN,
       }),
     ],
     memoryPath: MEMORY_NOTE_PATH,

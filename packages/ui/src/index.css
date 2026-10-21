@@ -98,6 +98,8 @@
   --tracking-green-soft: #f0fdf4;
   --tracking-red-soft: #fef2f2;
   --tracking-amber-soft: #fffbeb;
+  --tracking-hold: #0e7490;
+  --tracking-hold-soft: #ecfeff;
   --tracking-canvas: #fafafa;
   --tracking-grid: #ededef;
 }
@@ -138,6 +140,8 @@
   --tracking-green-soft: #0d1f12;
   --tracking-red-soft: #2a0f0f;
   --tracking-amber-soft: #1f1608;
+  --tracking-hold: #22d3ee;
+  --tracking-hold-soft: #082f35;
   --tracking-canvas: #0b0b0d;
   --tracking-grid: #1a1a1d;
 }

@@ -47,10 +47,27 @@ export function frameWidth(title: string, steps: readonly SizedStep[]): number {
   return Math.min(FRAME_MAX_W, Math.max(FRAME_MIN_W, snapped));
 }
 
-export const titleLines = (title: string, width: number): 1 | 2 =>
-  titleWidth(title) > width - 2 * FRAME_PAD ? 2 : 1;
+export type TitleLines = 1 | 2 | 3;
+export const TITLE_MAX_LINES = 3;
 
-export function frameHeight(input: { lines: 1 | 2; steps: number; footer: boolean }): number {
+export function wrapTitle(title: string, width: number): string[] {
+  const inner = width - 2 * FRAME_PAD;
+  const lines: string[] = [];
+  for (const word of title.split(" ").filter((w) => w !== "")) {
+    const last = lines.at(-1);
+    const joined = last === undefined ? word : `${last} ${word}`;
+    if (last !== undefined && titleWidth(joined) <= inner) lines[lines.length - 1] = joined;
+    else lines.push(word);
+  }
+  return lines.length === 0 ? [title] : lines;
+}
+
+export function titleLines(title: string, width: number): TitleLines {
+  const count = wrapTitle(title, width).length;
+  return count >= TITLE_MAX_LINES ? TITLE_MAX_LINES : count === 2 ? 2 : 1;
+}
+
+export function frameHeight(input: { lines: TitleLines; steps: number; footer: boolean }): number {
   const head = FRAME_HEAD_H + FRAME_GAP + input.lines * TITLE_LINE_H + FRAME_GAP + SEGMENT_H;
   const rows = input.steps * (FRAME_GAP + STEP_ROW_H);
   const footer = input.footer ? FRAME_GAP + FOOTER_H : 0;
