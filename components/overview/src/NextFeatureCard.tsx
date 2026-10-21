@@ -19,6 +19,7 @@ const DOT: Record<CaseTone, string> = {
   review: "bg-(--tracking-purple)",
   progress: "bg-(--tracking-blue)",
   blocked: "bg-(--tracking-red)",
+  hold: "bg-(--tracking-hold)",
   todo: "border-[1.5px] border-(--tracking-dim)",
 };
 const SEGMENTS_WIDTH = 122;

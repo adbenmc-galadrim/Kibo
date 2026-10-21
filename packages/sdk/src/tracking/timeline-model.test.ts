@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { DeadlineCell, DeadlineColumn, DeadlineRow, StatusId } from "@kibo/schema";
-import { caseTone, caseWidth, TIMELINE_GEOMETRY, timelineLayout } from "./timeline-model";
+import { caseTone, caseWidth, stepCaseTone, TIMELINE_GEOMETRY, timelineLayout } from "./timeline-model";
 
 const COLUMNS: DeadlineColumn[] = [
   { start: "2026-10-12", sprint: { id: "s42", code: "S42" } },
@@ -151,4 +151,15 @@ test("an unplanned column has a label, no date, and never holds today", () => {
     current: false,
   });
   expect(built.columns[0]?.label).toBeNull();
+});
+
+test("a step on hold is « hold » before any status, a blocked one stays « blocked »", () => {
+  const held = { source: "own", key: "SILO-33", reason: "Serveur MinIO", since: "2026-10-16" } as const;
+  expect(stepCaseTone({ statusId: "in_progress", onHold: held }, false)).toBe("hold");
+  expect(stepCaseTone({ statusId: "blocked", onHold: held }, false)).toBe("hold");
+  expect(stepCaseTone({ statusId: "todo", onHold: { ...held, source: "dependency" } }, true)).toBe("hold");
+  expect(stepCaseTone({ statusId: "done", onHold: held }, false)).toBe("hold");
+  expect(stepCaseTone({ statusId: "todo", onHold: null }, true)).toBe("blocked");
+  expect(stepCaseTone({ statusId: "in_review", onHold: null }, false)).toBe("review");
+  expect(stepCaseTone({ statusId: "backlog", onHold: null }, false)).toBe("todo");
 });

@@ -77,6 +77,8 @@ const COLORS: Record<string, [light: string, dark: string]> = {
   "--tracking-green-soft": ["#f0fdf4", "#0d1f12"],
   "--tracking-red-soft": ["#fef2f2", "#2a0f0f"],
   "--tracking-amber-soft": ["#fffbeb", "#1f1608"],
+  "--tracking-hold": ["#0e7490", "#22d3ee"],
+  "--tracking-hold-soft": ["#ecfeff", "#082f35"],
   "--tracking-canvas": ["#fafafa", "#0b0b0d"],
   "--tracking-grid": ["#ededef", "#1a1a1d"],
 };
