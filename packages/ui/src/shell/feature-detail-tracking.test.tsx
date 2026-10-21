@@ -76,7 +76,7 @@ test("the activity card reads the journal of the feature when it has facts", asy
   );
   renderFeature();
   expect(await aside("Activité").findByText("PR #22 ouverte · SILO-32")).toBeTruthy();
-  expect(aside("Activité").getByText("Suivi mis à jour · lot n° 7 proposé")).toBeTruthy();
+  expect(aside("Activité").getByText("Agent de projet · lot n° 7 proposé")).toBeTruthy();
   expect(calls).toContainEqual({ method: "listProjectEvents", projectId: "silo", featureId: "f5", limit: 5 });
 });
 

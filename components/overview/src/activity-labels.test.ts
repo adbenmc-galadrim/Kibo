@@ -47,7 +47,7 @@ test("steps, sessions and statuses read with their label", () => {
 
 test("batches, sprints and questions read as the agent and the plan say", () => {
   expect(label(event("batch_proposed", { seq: 7 }, "project-agent"))).toBe(
-    "Suivi mis à jour · lot n° 7 proposé",
+    "Agent de projet · lot n° 7 proposé",
   );
   expect(label(event("batch_decided", { seq: 7, decision: "apply", actions: 3 }, "user"))).toBe(
     "Lot n° 7 validé",
@@ -97,7 +97,7 @@ test("a missing key gives a plain label, never an error", () => {
   expect(label(event("pr_opened", {}))).toBe("PR ouverte");
   expect(label(event("branch_created", {}))).toBe("Branche créée");
   expect(label(event("sprint_created", {}))).toBe("Sprint créé");
-  expect(label(event("batch_proposed", {}))).toBe("Suivi mis à jour · lot proposé");
+  expect(label(event("batch_proposed", {}))).toBe("Agent de projet · lot proposé");
   expect(label(event("question_created", {}))).toBe("Question posée");
   expect(label(event("question_deleted", {}))).toBe("Question supprimée");
 });

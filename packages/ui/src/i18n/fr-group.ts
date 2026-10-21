@@ -91,7 +91,7 @@ export const frFeature = {
     postponed: (feature: string, sprint: string) => `${feature} reportée en ${sprint}`,
     planned: (feature: string, sprint: string) => `${feature} planifiée en ${sprint}`,
     unplanned: (feature: string) => `${feature} retirée du planning`,
-    batchProposed: (seq: number) => `Suivi mis à jour · lot n° ${seq} proposé`,
+    batchProposed: (seq: number) => `Agent de projet · lot n° ${seq} proposé`,
     batchApplied: (seq: number) => `Lot n° ${seq} validé`,
     batchRejected: (seq: number) => `Lot n° ${seq} refusé`,
   },

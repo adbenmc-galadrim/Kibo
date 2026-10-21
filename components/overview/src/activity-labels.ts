@@ -80,7 +80,7 @@ const LABELS: Record<ProjectEventKind, Labeler> = {
   session_stopped: sessionStopped,
   sprint_created: (d) => `Sprint${spaced(text(d, "code"))} créé`,
   sprint_set: sprintSet,
-  batch_proposed: (d) => `Suivi mis à jour · ${lot(d)} proposé`,
+  batch_proposed: (d) => `Agent de projet · ${lot(d)} proposé`,
   batch_decided: (d) => {
     const label = `Lot${num(d, "seq") === null ? "" : ` n° ${num(d, "seq")}`}`;
     return `${label} ${DECISION[text(d, "decision") ?? ""] ?? "décidé"}`;
