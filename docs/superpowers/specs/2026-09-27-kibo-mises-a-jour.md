@@ -136,7 +136,7 @@ sa CSP (les seuls schémas de l'IPC Tauri, inertes dans un navigateur) ; il ne c
 
 - **Signature ad hoc** sur macOS (`bundle.macOS.signingIdentity: "-"`, `hardenedRuntime: false`, sans `entitlements`), décision d'Adam du 2026-10-04 : ni certificat ni notarisation pour l'instant ; la signature minisign de l'updater est inchangée et indépendante.
 - **Première ouverture** (amende §3.2, ordre de la spec de conception §20.1, repris par la page des releases, `README.md` et `docs/installation.md`) : ouvrir Kibo une première fois (macOS refuse), puis Réglages Système ▸ Confidentialité et sécurité ▸ « Ouvrir quand même » ; le clic droit ▸ Ouvrir ▸ Ouvrir ne suffit que sur macOS 14 et avant ; pour les avancés, `xattr -d com.apple.quarantine /Applications/Kibo.app`. Les mises à jour de l'updater ne reçoivent pas l'attribut de quarantaine et se relancent sans question (§3.2 reste vrai sur ce point).
-- **macOS Intel construit à chaque tag** (amende §3.6) ; l'entrée `workflow_dispatch` devient `skipIntel`.
+- **macOS Intel construit à chaque tag** (amende §3.6) ; l'entrée `workflow_dispatch` devient `skipIntel`. **Amendé le 2026-10-21** (spec de conception §46.4) : macOS Intel n'est plus construit du tout, `skipIntel` disparaît et `latest.json` n'a plus d'entrée `darwin-x86_64`.
 - La release publie en plus `SHA256SUMS` et `install.sh` ; son corps commence par l'encart d'installation puis la section du `CHANGELOG.md` de la version (le tag est refusé si elle manque).
 - Avant `downloadAndInstall`, l'interface demande au démon une sauvegarde (`createBackup { reason: "update" }`, §20.5) ; un échec de sauvegarde bloque l'installation et l'explique.
 
