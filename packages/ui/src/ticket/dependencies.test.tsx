@@ -40,6 +40,7 @@ mock.module("../api", () =>
 );
 
 const { TicketSheet } = await import("../shell/TicketSheet");
+const { TICKET_TAB_KEY } = await import("./activity/TicketTabs");
 
 const ticket = (patch: Partial<TicketView> = {}): TicketView => ({
   id: "12@1",
@@ -158,6 +159,7 @@ const openSelect = async (user: ReturnType<typeof userEvent.setup>, name: string
 beforeEach(() => {
   calls.length = 0;
   answer = () => null;
+  sessionStorage.removeItem(TICKET_TAB_KEY);
 });
 
 test("the three groups list the linked tickets, done ones greyed, and open them", async () => {
