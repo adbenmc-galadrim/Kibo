@@ -4,6 +4,13 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 ## Non publié
 
+-
+
+## 0.31.0-alpha.2 — 2026-10-22
+
+- Agent de projet : la ligne « Lu : … » sous chaque réponse nomme ce que l'agent a lu (Planning, F5, journal des étapes…), sans paramètre technique.
+- Le Planning n'affiche plus une colonne vide ou « Planning vide » le temps du chargement.
+- Une ancienne adresse d'écran retiré ramène toujours à l'Accueil.
 - macOS : Kibo n'est plus publié que pour les Mac Apple Silicon. Sur un Mac Intel, la `0.31.0-alpha.1` reste la dernière application de bureau : elle continue de fonctionner mais ne reçoit plus de mise à jour (la carte « Mises à jour » peut afficher une erreur, sans conséquence) ; Kibo se lance toujours dans un navigateur depuis les sources.
 - Linux : le paquet `.rpm` est compressé en zstd, plus léger à télécharger ; il demande rpm 4.14 ou plus récent (Fedora 31, RHEL 8 et suivants).
 
