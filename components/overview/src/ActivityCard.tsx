@@ -24,7 +24,7 @@ import {
   activityRows,
 } from "./activity-model";
 import { fr } from "./fr";
-import { CARD, CardHeader, FeatureChip, MONO_KEY, ROW_LINE } from "./parts";
+import { CardHeader, FeatureChip, FLUSH_CARD, MONO_KEY, ROW_LINE } from "./parts";
 
 const ICONS: Record<ProjectEventKind, [LucideIcon, string]> = {
   branch_created: [GitBranch, "text-(--tracking-mfg)"],
@@ -104,7 +104,7 @@ export function ActivityCard({ input, onOpenTicket }: Props) {
     </div>
   );
   return (
-    <section aria-label={fr.activity.title} className={CARD}>
+    <section aria-label={fr.activity.title} className={FLUSH_CARD}>
       <CardHeader
         icon={Activity}
         title={<span title={long ? fr.activity.collapse : fr.activity.expand}>{fr.activity.title}</span>}

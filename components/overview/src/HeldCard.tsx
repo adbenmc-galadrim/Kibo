@@ -2,7 +2,7 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { ChevronRight, Pause } from "lucide-react";
 import { fr } from "./fr";
 import { type HeldRow, heldCount } from "./held-model";
-import { CARD, CardHeader, MONO_KEY, ROW_LINE } from "./parts";
+import { CardHeader, FLUSH_CARD, MONO_KEY, ROW_LINE } from "./parts";
 
 function Row({ row, onOpen }: { row: HeldRow; onOpen(): void }) {
   return (
@@ -31,7 +31,7 @@ function Row({ row, onOpen }: { row: HeldRow; onOpen(): void }) {
 export function HeldCard({ rows, onOpenPlanning }: { rows: readonly HeldRow[]; onOpenPlanning(): void }) {
   if (rows.length === 0) return null;
   return (
-    <section aria-label={fr.held.title} className={CARD}>
+    <section aria-label={fr.held.title} className={FLUSH_CARD}>
       <CardHeader
         icon={Pause}
         title={fr.held.title}

@@ -11,7 +11,7 @@ import {
   TriangleAlert,
 } from "lucide-react";
 import { fr } from "./fr";
-import { CARD, CardHeader, MONO_KEY, Pill, type PillTone, ROW_LINE, Segments } from "./parts";
+import { CARD, CardHeader, FLUSH_CARD, MONO_KEY, Pill, type PillTone, ROW_LINE, Segments } from "./parts";
 import type { SprintCard, SprintRow } from "./sprint-model";
 
 const STATE_PILL: Record<FeatureStatus, { tone: PillTone; icon?: LucideIcon }> = {
@@ -104,7 +104,7 @@ export function CurrentSprintCard({ card, onOpenTicket, onOpenSprint }: Props) {
       </section>
     );
   return (
-    <section aria-label={card.title} className={CARD}>
+    <section aria-label={card.title} className={FLUSH_CARD}>
       <CardHeader
         icon={CalendarRange}
         title={card.title}

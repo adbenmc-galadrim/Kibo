@@ -4,7 +4,7 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Copy, Flag, Truck } from "lucide-react";
 import { useState } from "react";
 import { fr } from "./fr";
-import { CARD, CardHeader, MONO_KEY, Segments } from "./parts";
+import { CardHeader, FLUSH_CARD, MONO_KEY, Segments } from "./parts";
 import type { NextCard, RemainingStep } from "./sprint-model";
 
 export type NextActions = {
@@ -87,7 +87,7 @@ export function NextFeatureCard({ card, actions }: { card: NextCard | null; acti
   const width =
     card === null ? 0 : (SEGMENTS_WIDTH - 3 * (card.tones.length - 1)) / Math.max(1, card.tones.length);
   return (
-    <section aria-label={fr.next.title} className={CARD}>
+    <section aria-label={fr.next.title} className={FLUSH_CARD}>
       <CardHeader
         icon={Flag}
         title={fr.next.title}
