@@ -2839,7 +2839,7 @@ Cause : `titleLines` estime la largeur du titre en bloc et plafonne à deux lign
 
 ### 45.2 Couleur de l'attente
 
-Nouveau jeton **`--tracking-hold`** : cyan, `#0891b2` en clair, `#22d3ee` en sombre ; fond `--tracking-hold-soft` (`#ecfeff` / `#082f35`). Pourquoi le cyan : le rouge dit « bloqué », l'ambre « à corriger » et « à risque », l'orange est réservé aux agents, le bleu « en cours », le violet « en review », le vert « livré » ; le cyan est libre et se lit comme « gelé ». L'icône reste `Pause` (⏸).
+Nouveau jeton **`--tracking-hold`** : cyan, `#0e7490` en clair (contraste 5,4:1 sur blanc ; `#0891b2` échoue à 3,7:1), `#22d3ee` en sombre ; fond `--tracking-hold-soft` (`#ecfeff` / `#082f35`). Pourquoi le cyan : le rouge dit « bloqué », l'ambre « à corriger » et « à risque », l'orange est réservé aux agents, le bleu « en cours », le violet « en review », le vert « livré » ; le cyan est libre et se lit comme « gelé ». L'icône reste `Pause` (⏸).
 
 ### 45.3 Les étapes en attente ne sont plus cachées
 
