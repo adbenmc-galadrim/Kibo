@@ -5,6 +5,7 @@ import {
   isSiloScenario,
   SILO_APERCU,
   SILO_ATTENTE,
+  SILO_GRAPHE,
   SILO_MAQUETTES,
   SILO_PRS,
 } from "./pixel-settings";
@@ -36,13 +37,15 @@ test("an answer that is not an object is refused", () => {
   expect(() => assertFixedNow(null)).toThrow("getAppInfo");
 });
 
-test("the four Silo scenarios are seeded under the frozen clock, no other one", () => {
+test("the five Silo scenarios are seeded under the frozen clock, no other one", () => {
   expect(isSiloScenario(SILO_MAQUETTES)).toBe(true);
   expect(isSiloScenario(SILO_ATTENTE)).toBe(true);
   expect(isSiloScenario(SILO_PRS)).toBe(true);
   expect(isSiloScenario(SILO_APERCU)).toBe(true);
+  expect(isSiloScenario(SILO_GRAPHE)).toBe(true);
   expect(SILO_APERCU).toBe("silo-apercu");
   expect(SILO_ATTENTE).toBe("silo-attente");
   expect(SILO_PRS).toBe("silo-prs");
+  expect(SILO_GRAPHE).toBe("silo-graphe");
   expect(isSiloScenario("question")).toBe(false);
 });
