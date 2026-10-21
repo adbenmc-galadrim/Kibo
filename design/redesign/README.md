@@ -392,3 +392,39 @@ capture seulement. À copier en page « 36 · Suivi seul » du fichier « Kibo �
 Pièges vus : dans un board sans flex, une forme ajoutée par `appendChild` passe sous les précédentes ; `S.stackAP` les remet dans l'ordre
 du dessin (`bringToFront`). Un enfant absolu d'un flex reste au-dessus des autres : l'en-tête de la feuille reçoit `layoutChild.zIndex = 2`.
 Les formes du plugin se comparent par `id`, jamais par `===`.
+
+## Phase 31 (2026-10-21)
+
+Spec §45 : un cadre du Graphe ne déborde plus (titre sur trois lignes au plus, hauteur qui suit) et les étapes en attente (§41) ne
+sont plus cachées : elles restent à leur place, en cyan, partout où une fonctionnalité affiche ses étapes. Données : sous-section
+« Phase 31 · Graphe en attente et couleur de l'attente » du projet Silo (`design/donnees-fictives.md`, scénario `silo-graphe` =
+`silo-attente` puis F1 renommée « Connexion, environnements et hébergement »).
+
+Jeton de l'attente (`scripts/01-base.js`, `S.PAL`) : `hold` `#22D3EE` en sombre et `#0E7490` en clair (texte AA sur le fond et les
+cartes), fond `holdSoft` `#082F35` / `#ECFEFF` ; icône `pause`. Côté code : `--tracking-hold` et `--tracking-hold-soft`.
+
+| Board | Script | Changement | Export | Taille |
+|---|---|---|---|---|
+| P5b · Graphe, Fonctionnalités | `59-graphe-prs.js` (`S.legendHoldGR`) | légende : « En attente » (point `hold`) après « Bloqué » | `proposition-graphe-fonctionnalites` | 1 440 × 1 000 |
+| P5b · Graphe · en attente (nouveau) | `59c-graphe-attente.js` | clone de P5b : F1 sur trois lignes (cadre de 96 px, F2 descendue de 15) ; F4 livrée ne garde que SILO-45 (point et ⏸ `hold`, cadre de 212 × 96, « 3/4 ⏸ 1 ✓ », segments ■■■◆□) ; F5 « 1/2 ⏸ 3 », lignes 33 à 35 en `hold` (33 garde sa bordure et son point de session), sans pied « en retard », remontée sous F4 ; F7 « 0/4 ⏸ 1 », ligne 82 en `hold` ; flèches recalculées | `proposition-attente-graphe` | 1 440 × 1 000 |
+| P1 bis · Vue d'ensemble · en attente | `56-phase-29.js` | « ⏸ 3 en attente » en `hold` ; carte Sprint : F4 ■■■◆□ « ⏸ 1 », F5 ■■◆◆◆ « ⏸ 3 » ; Prochaine à finir F5 ■■◆◆◆ ; ⏸ `hold` sur les lignes de la carte « En attente » ; Échéances et Activité inchangées | `proposition-attente-vue-ensemble` | 1 440 × 1 260 |
+| P2 · Planning · en attente | `56-phase-29.js` | cases F4 ■■■◆□, F5 ■■◆◆◆, F7 □◆□□□ (toutes les étapes, dans leur ordre) ; ⏸ `hold` du titre « En attente (3) » | `proposition-attente-planning` | 1 440 × 1 000 |
+| P3 · Fonctionnalité · en attente | `56-phase-29.js` | barre de cinq segments (2 à 4 en `hold`), texte inchangé ; ⏸ `hold` du titre, pastilles `holdSoft` sans bordure avec ⏸ `hold`, ⏸ `hold` devant la raison de SILO-33 (le lien de « attend SILO-33 » reste gris) | `proposition-attente-fonctionnalite` | 1 440 × 1 000 |
+| P7 · Kanban · en attente | `56-phase-29.js` (`S.holdBadge`) | puces pleines `holdSoft`, sans bordure, ⏸ et texte `hold` ; ⏸ `hold` du filtre « En attente » | `proposition-attente-kanban` | 1 440 × 1 000 |
+
+Restent gris (spec §45.3) : le bandeau de la fiche SILO-45 (P8 · Fiche ticket · en attente), l'Activité, les menus et le dialogue
+(P8c à P8e, P2b) ; ces boards ne sont pas redessinés.
+
+Dessin, un écran et un mode par appel : `await storage.drawGR("g-fonctionnalites", mode)`, `await storage.drawGA("g-attente", mode)` puis,
+dans un second appel, `await storage.edgesDrawGA("g-attente", mode)` (flèches sur la mise en page calculée), et
+`await storage.draw29(clé, mode)` pour `a-vue`, `a-planning`, `a-fonctionnalite`, `a-kanban`. Rangée du nouveau board : `S.Y_GA` = 51 500
+(après P8g), sombre à x = 0, clair à x = 1 540. Export : `await storage.exportGR(["graphe-fonctionnalites"])`, `await storage.exportGA()`
+(depuis un clone, après 10 s) et `await storage.export29([fichier])` par board. Cotes : `95-cotes.js` (`_dump-14` à `_dump-17`, `_dump-27`,
+`_dump-32`), puis `python3 scripts/cotes.py <JSON> --sections 14,15,16,17,27` et `--phase31`. Comparaison au pixel : « graphe » (P5b),
+« attente-graphe » (nouveau board, `silo-graphe`), « attente-vue-ensemble », « attente-planning », « attente-fonctionnalite »,
+« attente-kanban ».
+
+Piège vu : l'onglet headless finit par planter (« Target crashed ») après plusieurs redessins d'une page chargée, et les boards dessinés
+juste avant sont perdus. Garder la vue hors des boards (`penpot.viewport.center` loin à gauche, zoom 0,25), lancer Chromium avec
+`--js-flags=--max-old-space-size=6144`, et vérifier l'enregistrement après chaque board en lisant `get-page` hors de l'onglet (requête du
+contexte Playwright) : le `get-page` lancé depuis l'onglet charge des dizaines de Mo dans le tas et précipite le plantage.

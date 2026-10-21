@@ -96,8 +96,10 @@ S.drawGRk["g-prs-vide"] = (f) => { const C = S.C;
   S.txt(e, S.EMPTY_GR.title, { size: 14, weight: 500, color: C.mfg }); S.txt(e, S.EMPTY_GR.hint, { size: 13, color: C.dim });
   return f; };
 
-// ---------- P5b : Graphe par fonctionnalités, barre réduite au sélecteur ----------
-S.drawGRk["g-fonctionnalites"] = (f) => { S.toolbarGR(f, "Fonctionnalités"); return f; };
+// ---------- P5b : Graphe par fonctionnalités, barre réduite au sélecteur, légende « En attente » après « Bloqué » (phase 31) ----------
+S.legendHoldGR = (f) => { const lg = S.named(f, "legend"), blocked = S.parentOf(lg, S.byText(lg, "Bloqué")), item = S.showAfter(lg, blocked, blocked.clone());
+  S.setText(item, "Bloqué", "En attente"); S.paint(item.children.find(c => c.type === "ellipse"), S.C.hold); return item; };
+S.drawGRk["g-fonctionnalites"] = (f) => { S.toolbarGR(f, "Fonctionnalités"); S.legendHoldGR(f); return f; };
 
 // ---------- Dessin (export : S.exportGR) ----------
 S.drawGR = async (key, mode) => { await S.page("Proposition"); S.setMode(mode);

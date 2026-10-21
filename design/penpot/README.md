@@ -364,6 +364,12 @@ sombre et clair, et renommés.
   238b Maquette en plein écran (barre « SILO-45 · Conflit de saisie · Figma », « Actualiser », « Ouvrir dans Figma », « Quitter le plein
   écran (Échap) », cadre à l'échelle 1 sur fond `muted`, barre de zoom « 100 % »).
 
+Phase 31 (2026-10-21), à reporter au jalon (tâche « fichier Kibo ») : dans « Kibo · Redesign », P5b (légende « En attente ») et les quatre
+boards « … · en attente » de la phase 29 qui montrent des étapes ou des puces sont redessinés en cyan, et le board « P5b · Graphe · en
+attente » est ajouté (rangée y = 51 500, voir `design/redesign/README.md`, « Phase 31 »). En page 36 : **236** à refaire (P5b),
+**226** à **229** à refaire (vue d'ensemble, Planning, fiche F5, Kanban), **239** « Graphe · en attente » à ajouter sous 238b ; 230 et
+231 à 231d inchangés.
+
 ## Exporter
 
 1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("36")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
