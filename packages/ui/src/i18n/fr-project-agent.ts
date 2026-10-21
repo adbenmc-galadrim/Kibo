@@ -59,6 +59,23 @@ const TOOLS: Record<string, string> = {
 export const frProjectAgent = {
   titleSuffix: (project: string) => ` · ${project}`,
   close: "Fermer le panneau",
+  header: {
+    list: "Liste des agents",
+    showList: "Afficher la liste",
+    hideList: "Masquer la liste",
+    newAgent: "Nouvel agent",
+    expand: "Agrandir",
+    shrink: "Réduire",
+  },
+  list: {
+    title: "Agents",
+    newAgent: "Nouvel agent",
+    untitled: (date: string) => `Agent du ${date}`,
+    messages: (n: number) => plural(n, "message"),
+    current: "en cours",
+    close: "Fermer la liste",
+    empty: "Aucun agent pour ce projet.",
+  },
   tabs: {
     label: "Vues de l'agent de projet",
     conversation: "Conversation",
@@ -145,6 +162,9 @@ export const frProjectAgent = {
     label: "Conversation avec l'agent de projet",
     empty: "Aucun message pour l'instant.",
     you: "Toi",
+    youAt: (time: string) => `Toi · ${time}`,
+    thinking: "L'agent lit le projet…",
+    queued: "En file",
     agent: "Agent de projet",
     reading: (parts: string[]) => parts.join(", "),
     tool: (name: string, detail: string | null) => {
