@@ -107,7 +107,11 @@ export function projectRun(p: Partial<RunView> = {}): RunView {
   });
 }
 
-const hook = (event: HookPayload["event"], tool: string | null, detail: string | null): HookPayload => ({
+export const hook = (
+  event: HookPayload["event"],
+  tool: string | null,
+  detail: string | null,
+): HookPayload => ({
   event,
   sessionId: "s-pa1",
   transcriptPath: null,

@@ -2,8 +2,14 @@ import { expect, test } from "bun:test";
 import { type RunLogEntry, WAKEUP_PREFIX } from "@kibo/schema";
 import fc from "fast-check";
 import { NOW } from "../agents/fixtures";
-import { buildConversation, type ConversationItem, lastUserMessage, panelStatus } from "./conversation";
-import { CONVERSATION_LOG, partialBatch, pendingBatch, projectRun } from "./fixtures";
+import {
+  buildConversation,
+  type ConversationItem,
+  lastUserMessage,
+  panelStatus,
+  readingText,
+} from "./conversation";
+import { CONVERSATION_LOG, hook, partialBatch, pendingBatch, projectRun } from "./fixtures";
 
 const MIN = 60_000;
 
@@ -12,6 +18,7 @@ const shape = (items: ReturnType<typeof buildConversation>) =>
     if (i.kind === "reading") return ["reading", i.tools];
     if (i.kind === "event") return ["event", i.tone, i.retry];
     if (i.kind === "batch") return ["batch", i.batch.id];
+    if (i.kind === "agent") return ["agent", i.text, i.read];
     return [i.kind, i.text];
   });
 
@@ -19,8 +26,11 @@ test("a real log becomes messages, grouped reads, the answer and a red retryable
   const items = buildConversation(CONVERSATION_LOG, [], projectRun({ state: "failed" }));
   expect(shape(items)).toEqual([
     ["user", "Où en est-on ?"],
-    ["reading", ["list_tickets", "get_ticket SILO-11"]],
-    ["agent", "**SILO-11** avance ; je propose de le passer en review."],
+    [
+      "agent",
+      "**SILO-11** avance ; je propose de le passer en review.",
+      ["list_tickets", "get_ticket SILO-11"],
+    ],
     ["user", "Et l'export ?"],
     ["event", "red", true],
   ]);
@@ -30,19 +40,30 @@ test("a real log becomes messages, grouped reads, the answer and a red retryable
 
 test("batches come after the turn that produced them, in creation order", () => {
   const items = buildConversation(CONVERSATION_LOG, [pendingBatch(), partialBatch()], projectRun());
-  expect(shape(items).map((s) => s[0])).toEqual([
-    "batch",
-    "user",
-    "reading",
-    "agent",
-    "batch",
-    "user",
-    "event",
-  ]);
+  expect(shape(items).map((s) => s[0])).toEqual(["batch", "user", "agent", "batch", "user", "event"]);
   expect(items.filter((i) => i.kind === "batch").map((i) => i.kind === "batch" && i.batch.id)).toEqual([
     "b0",
     "b1",
   ]);
+});
+
+test("reads before any answer stay a reading line, said as « Lu : »", () => {
+  const log: RunLogEntry[] = [
+    { id: 1, at: 1, event: { type: "answered", text: "Plan ?", rank: 0 } },
+    {
+      id: 2,
+      at: 2,
+      event: { type: "hook", payload: hook("PostToolUse", "mcp__kibo__project_overview", null) },
+    },
+  ];
+  const items = buildConversation(log, [], projectRun({ state: "running" }));
+  expect(shape(items)).toEqual([
+    ["user", "Plan ?"],
+    ["reading", ["project_overview"]],
+  ]);
+  expect(readingText(["project_overview", "list_questions", "read_note plan.md"])).toBe(
+    "Lu : projet, questions, plan.md",
+  );
 });
 
 test("a batch proposed in the running turn stays at the end", () => {
@@ -118,7 +139,7 @@ test("a question asked through ask_user is shown as an agent message", () => {
     },
   ];
   expect(shape(buildConversation(log, [], projectRun({ state: "waiting_input" })))).toEqual([
-    ["agent", "Quel ticket d'abord ?"],
+    ["agent", "Quel ticket d'abord ?", []],
   ]);
 });
 

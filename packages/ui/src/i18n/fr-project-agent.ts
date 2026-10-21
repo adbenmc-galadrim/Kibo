@@ -1,4 +1,4 @@
-import type { ActionGroup, ActionOutcome, BatchStatus, SessionFreshReason } from "@kibo/schema";
+import type { ActionOutcome, BatchStatus, SessionFreshReason } from "@kibo/schema";
 
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
 
@@ -8,15 +8,6 @@ const FRESH_REASONS: Record<SessionFreshReason, string> = {
   transcript_missing: "transcript introuvable",
   workspace_changed: "autre dossier de travail",
   user_reset: "repartie de zéro",
-};
-
-const GROUPS: Record<ActionGroup, string> = {
-  tickets: "Tickets",
-  sprints: "Sprints",
-  agents: "Agents",
-  questions: "Questions",
-  notes: "Notes",
-  signals: "Signaux",
 };
 
 const OUTCOMES: Record<ActionOutcome, string> = {
@@ -36,15 +27,15 @@ const BATCH_STATUS: Record<BatchStatus, string> = {
 };
 
 const TOOLS: Record<string, string> = {
-  project_overview: "lit le projet",
-  list_tickets: "lit les tickets",
-  get_ticket: "lit",
-  list_questions: "lit les questions",
-  list_runs: "lit les runs",
-  list_notes: "lit les notes",
-  read_note: "lit",
-  list_profiles: "lit les profils",
-  project_changes: "lit les changements",
+  project_overview: "projet",
+  list_tickets: "tickets",
+  get_ticket: "",
+  list_questions: "questions",
+  list_runs: "runs",
+  list_notes: "notes",
+  read_note: "",
+  list_profiles: "profils",
+  project_changes: "changements",
 };
 
 export const frProjectAgent = {
@@ -91,11 +82,9 @@ export const frProjectAgent = {
     thinking: "L'agent lit le projet…",
     queued: "En file",
     agent: "Agent de projet",
-    reading: (parts: string[]) => parts.join(", "),
-    tool: (name: string, detail: string | null) => {
-      const verb = TOOLS[name] ?? name;
-      return detail ? `${verb} ${detail}` : verb;
-    },
+    reading: (parts: string[]) => `Lu : ${parts.join(", ")}`,
+    tool: (name: string, detail: string | null) =>
+      [TOOLS[name] ?? name, detail ?? ""].filter((part) => part !== "").join(" "),
     resumed: "Session reprise",
     fresh: (reason: SessionFreshReason) => `Session : nouvelle (${FRESH_REASONS[reason]})`,
     retried: "Nouvelle tentative",
@@ -113,9 +102,6 @@ export const frProjectAgent = {
     region: (seq: number) => `Lot n° ${seq}`,
     lastRun: "Dernier run",
     run: "Run",
-    group: (group: ActionGroup) => GROUPS[group],
-    checkAll: "Tout cocher",
-    uncheckAll: "Tout décocher",
     apply: (n: number) => `Valider (${n})`,
     reject: "Refuser",
     rejectConfirm: "Confirmer le refus",

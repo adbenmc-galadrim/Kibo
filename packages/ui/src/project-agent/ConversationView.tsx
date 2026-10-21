@@ -52,8 +52,13 @@ function Item({
           <span className="flex size-6 shrink-0 items-center justify-center rounded-full border border-(--tracking-brand-line) bg-(--tracking-brand-soft)">
             <Bot aria-hidden className="size-[13px] text-(--tracking-brand)" />
           </span>
-          <div className="min-w-0 flex-1 text-[13px] leading-[1.55]">
-            <AgentText text={item.text} onTicket={onTicket} />
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="text-[13px] leading-[1.55]">
+              <AgentText text={item.text} onTicket={onTicket} />
+            </div>
+            {item.read.length > 0 && (
+              <p className="truncate text-xs text-(--tracking-dim)">{readingText(item.read)}</p>
+            )}
           </div>
         </li>
       );
@@ -112,7 +117,7 @@ function Item({
 function Bubble({ label, text, children }: { label: string; text: string; children: ReactNode }) {
   return (
     <li
-      className="flex max-w-[85%] flex-col gap-1 self-end rounded-[10px] bg-muted px-3 py-2.5"
+      className="flex w-[240px] max-w-full flex-col gap-1 self-end rounded-[10px] bg-muted px-3 py-2.5"
       aria-label={label}
     >
       <span className="text-[13px] leading-[1.45] break-words whitespace-pre-wrap">{text}</span>

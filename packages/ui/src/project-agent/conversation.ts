@@ -15,7 +15,7 @@ import type { OutboxState } from "./outbox";
 
 export type ConversationItem =
   | { kind: "user"; id: string; at: number; text: string; pending?: OutboxState }
-  | { kind: "agent"; id: string; at: number; text: string }
+  | { kind: "agent"; id: string; at: number; text: string; read: string[] }
   | { kind: "reading"; id: string; at: number; tools: string[] }
   | { kind: "batch"; id: string; at: number; batch: Batch; afterWakeup: boolean }
   | { kind: "wakeup"; id: string; at: number; text: string }
@@ -80,6 +80,12 @@ class Builder {
     }
   }
 
+  agent(entry: RunLogEntry, text: string): void {
+    const reading = this.reading;
+    if (reading && this.items.at(-1) === reading) this.items.pop();
+    this.push({ kind: "agent", id: `log-${entry.id}`, at: entry.at, text, read: reading?.tools ?? [] });
+  }
+
   read(entry: RunLogEntry, tool: string): void {
     if (this.reading) {
       this.reading.tools.push(tool);
@@ -133,7 +139,7 @@ function applyHook(b: Builder, entry: RunLogEntry, payload: HookPayload): void {
   const tool = readingTool(payload);
   if (tool) b.read(entry, tool);
   else if (payload.event === "PostToolUse" && payload.tool === ASK_TOOL && payload.question)
-    b.push({ kind: "agent", id: `log-${entry.id}`, at: entry.at, text: payload.question });
+    b.agent(entry, payload.question);
 }
 
 function sessionText(e: Extract<RunLogEntry["event"], { type: "session" }>): string | null {
@@ -147,7 +153,7 @@ function apply(b: Builder, entry: RunLogEntry): void {
   else if (e.type === "hook") applyHook(b, entry, e.payload);
   else if (e.type === "exited") {
     const clean = e.code === 0 && !e.isError;
-    if (clean && e.result) b.push({ kind: "agent", id: `log-${entry.id}`, at: entry.at, text: e.result });
+    if (clean && e.result) b.agent(entry, e.result);
     if (!clean) b.event(entry, t.failed(errorText(e.result ?? `exit code ${e.code}`)), "red");
     b.endTurn(entry, !clean);
   } else if (e.type === "failed") {

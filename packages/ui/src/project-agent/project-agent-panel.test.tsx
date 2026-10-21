@@ -48,7 +48,7 @@ test("while a turn runs the conversation says so in orange, « En file » when q
 test("the conversation is rendered with its batch card", async () => {
   show();
   expect(await panel().findByText("Où en est-on ?")).toBeTruthy();
-  expect(panel().getByText("lit les tickets, lit SILO-11")).toBeTruthy();
+  expect(panel().getByText("Lu : tickets, SILO-11")).toBeTruthy();
   await userEvent.setup().click(await panel().findByRole("button", { name: "SILO-11" }));
   expect(harness.opened).toEqual(["t11"]);
 });
@@ -198,6 +198,5 @@ test("a batch after a wakeup says so, names the source of each action and groups
   expect(card.getByText("2 actions · après réveil")).toBeTruthy();
   expect(await card.findByText("signal Ticket à créer de")).toBeTruthy();
   expect(card.getByRole("button", { name: /opus-dev-2/ })).toBeTruthy();
-  const group = within(card.getByRole("group", { name: "Signaux" }));
-  expect(group.getByText("Signal sig:3 : sans suite")).toBeTruthy();
+  expect(card.getByText("Signal sig:3 : sans suite")).toBeTruthy();
 });
