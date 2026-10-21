@@ -2,9 +2,10 @@ name: ci
 on:
   push: { branches: [main] }
   pull_request:
+  workflow_dispatch:
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   check:
     runs-on: ubuntu-latest
@@ -25,9 +26,18 @@ jobs:
       - run: bun run budget
       - run: bun apps/desktop/scripts/cli-smoke.ts
   unit:
+    name: unit (${{ matrix.group }} ${{ matrix.shard }}/${{ matrix.of }})
     strategy:
       fail-fast: false
-      matrix: { group: [daemon, reste] }
+      matrix:
+        include:
+          - { group: daemon, shard: 1, of: 4 }
+          - { group: daemon, shard: 2, of: 4 }
+          - { group: daemon, shard: 3, of: 4 }
+          - { group: daemon, shard: 4, of: 4 }
+          - { group: reste, shard: 1, of: 3 }
+          - { group: reste, shard: 2, of: 3 }
+          - { group: reste, shard: 3, of: 3 }
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -37,11 +47,15 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y bubblewrap && sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: bun install --frozen-lockfile
       - if: matrix.group == 'daemon'
-        run: bun test ./packages/daemon
+        run: bun test --shard=${{ matrix.shard }}/${{ matrix.of }} ./packages/daemon
       - if: matrix.group == 'reste'
         shell: bash
-        run: bun test $(ls -d packages/*/ | grep -v '^packages/daemon/$' | sed 's|^|./|') ./components ./scripts
+        run: bun test --shard=${{ matrix.shard }}/${{ matrix.of }} $(ls -d packages/*/ | grep -v '^packages/daemon/$' | sed 's|^|./|') ./components ./scripts
   e2e:
+    name: e2e (${{ matrix.shard }}/4)
+    strategy:
+      fail-fast: false
+      matrix: { shard: [1, 2, 3, 4] }
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env: { KIBO_E2E_THEME: dark }
@@ -53,11 +67,11 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: cd e2e && bunx playwright install --with-deps chromium
       - run: bun run --cwd packages/ui build
-      - run: bun run --cwd e2e test
+      - run: bun run --cwd e2e test --shard=${{ matrix.shard }}/4
       - if: failure()
         uses: actions/upload-artifact@v5
         with:
-          name: playwright-ubuntu
+          name: playwright-ubuntu-${{ matrix.shard }}
           path: e2e/test-results
   desktop-smoke:
     strategy:
