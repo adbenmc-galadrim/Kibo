@@ -2,11 +2,6 @@ name: release
 on:
   push: { tags: ["v*"] }
   workflow_dispatch:
-    inputs:
-      skipIntel:
-        description: "Ne pas construire macOS Intel (essai)"
-        type: boolean
-        default: false
 permissions: { contents: read }
 concurrency: { group: "release-${{ github.ref }}", cancel-in-progress: false }
 jobs:
@@ -17,7 +12,6 @@ jobs:
       tag: ${{ steps.tag.outputs.tag }}
       alpha: ${{ steps.tag.outputs.alpha }}
       notes: ${{ steps.notes.outputs.body }}
-      matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
@@ -51,13 +45,6 @@ jobs:
             echo "$GENERATED"
             echo 'KIBO_NOTES'
           } >> "$GITHUB_OUTPUT"
-      - id: matrix
-        shell: bash
-        env: { SKIP_INTEL: "${{ inputs.skipIntel }}" }
-        run: |
-          MATRIX='{"os":"macos-latest","target":"aarch64-apple-darwin"},{"os":"ubuntu-22.04","target":"x86_64-unknown-linux-gnu"}'
-          if [ "$SKIP_INTEL" != "true" ]; then MATRIX="$MATRIX,"'{"os":"macos-15-intel","target":"x86_64-apple-darwin"}'; fi
-          echo "matrix={\"include\":[$MATRIX]}" >> "$GITHUB_OUTPUT"
   ui:
     runs-on: ubuntu-latest
     steps:
@@ -76,7 +63,10 @@ jobs:
     permissions: { contents: write }
     strategy:
       fail-fast: false
-      matrix: ${{ fromJSON(needs.version.outputs.matrix) }}
+      matrix:
+        include:
+          - { os: macos-latest, target: aarch64-apple-darwin }
+          - { os: ubuntu-22.04, target: x86_64-unknown-linux-gnu }
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:

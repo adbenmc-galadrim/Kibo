@@ -28,7 +28,7 @@ Toutes les commandes courantes sont des recettes du [`justfile`](justfile) : ins
 
 ## Installer l'application de bureau
 
-Les versions sont publiées sur la [page des releases](https://github.com/adbenmc-galadrim/Kibo/releases) : `.dmg` pour macOS Apple Silicon et Intel, `.AppImage`, `.deb` et `.rpm` pour Linux x86_64. Le guide complet (première ouverture, vérification, sauvegardes, désinstallation) est dans [`docs/installation.md`](docs/installation.md).
+Les versions sont publiées sur la [page des releases](https://github.com/adbenmc-galadrim/Kibo/releases) : `.dmg` pour macOS Apple Silicon (plus de version Intel), `.AppImage`, `.deb` et `.rpm` pour Linux x86_64. Le guide complet (première ouverture, vérification, sauvegardes, désinstallation) est dans [`docs/installation.md`](docs/installation.md).
 
 Kibo est en alpha (`0.<phase>.0-alpha.N`) jusqu'au lancement ; les releases sont marquées pré-release et le canal de mise à jour est la release `alpha`.
 

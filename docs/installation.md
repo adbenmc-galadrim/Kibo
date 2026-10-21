@@ -1,6 +1,6 @@
 # Installer Kibo
 
-Kibo s'installe comme une application de bureau sur macOS (Apple Silicon et Intel) et sur Linux x86_64, ou se lance dans un navigateur depuis les sources. Toutes les versions sont sur la [page des releases](https://github.com/adbenmc-galadrim/Kibo/releases).
+Kibo s'installe comme une application de bureau sur macOS Apple Silicon et sur Linux x86_64, ou se lance dans un navigateur depuis les sources (y compris sur un Mac Intel). Toutes les versions sont sur la [page des releases](https://github.com/adbenmc-galadrim/Kibo/releases).
 
 <!-- release-start -->
 ## Installer
@@ -9,12 +9,14 @@ Kibo est en alpha (`0.<phase>.0-alpha.N`) jusqu'au lancement ; les releases sont
 
 ### macOS
 
-1. Télécharge le `.dmg` de ton Mac : `aarch64` pour Apple Silicon, `x64` pour Intel. Ouvre-le et glisse Kibo dans Applications.
+1. Télécharge le `.dmg` (`aarch64`, Mac Apple Silicon seulement). Ouvre-le et glisse Kibo dans Applications.
 2. L'application est signée par Kibo, pas par Apple. Ouvre Kibo une première fois : macOS refuse. Réglages Système ▸ Confidentialité et sécurité ▸ « Ouvrir quand même ».
 3. Sur macOS 14 et avant, clic droit sur Kibo ▸ Ouvrir ▸ Ouvrir suffit.
 4. Avancé : `xattr -d com.apple.quarantine /Applications/Kibo.app`.
 
 Ensuite, les mises à jour s'installent depuis Paramètres › Général, sans question.
+
+Mac Intel : plus d'application de bureau après la `0.31.0-alpha.1`, qui reste installable depuis sa release mais ne reçoit plus de mise à jour. Kibo se lance toujours dans un navigateur depuis les sources (ci-dessous).
 
 ### Linux (x86_64)
 
