@@ -2855,3 +2855,27 @@ Une étape en attente (propre ou par dépendance, §41) est **montrée à sa pla
 ### 45.4 Maquettes et acceptation
 
 Les boards touchés (P5b pour sa légende, et les boards « en attente » de la phase 29 qui montrent des étapes ou des puces : 226 Vue d'ensemble, 227 Planning, 228 fiche F5, 229 Kanban ; 230 et 231 à 231d inchangés) sont mis à jour dans Penpot en sombre et en clair **avant le code**, montrés à Adam. Le semis `silo-maquettes` **n'est pas modifié** (ses neuf écrans et P5b restent au pixel) : un scénario **`silo-graphe`** = `silo-attente` (F4 « livrée · 1 en attente », F5 trois attentes, F7 une) puis F1 renommée « Connexion, environnements et hébergement » (36 caractères, trois lignes à 126 px, repliée car livrée) sert le nouveau board **« P5b · Graphe · en attente »** et l'écran pixel **« attente-graphe »** (démons `graphe-dark` 4489 / `graphe-light` 4490, masques de « graphe ») **(amendement du lead, 2026-10-21)**. Pixel ≤ 2 % sur l'écran entier, sans masque ajouté ; budget UI inchangé (exigence 224 000 octets gzip, plafond 230 000) ; aucun agent, aucun token.
+
+## 46. Phase 31 (suite) : l'agent de projet devient une conversation (demande d'Adam du 2026-10-21)
+
+**Demande** (verbatim) : « Dans l'agent de projet, je ne comprends pas toujours ou va ma discussion, parfois j'envoie un message que je ne vois pas, et je suis forcer de raffraichir l'agent. […] Je ne veux pas de Suivi mais uniquement une conversations. Et pouvoir ouvrir un nouvel agent et voir les anciens agent. Enleve le reste. Et ameliore le visuel de l'agent de projet, je le trouve pas adapter dans le volet a droite qui est souvent trop petit ». Puis, sur trois propositions visuelles (A sélecteur, B tiroir, C volet agrandissable) : « Go C avec le volet nouvel agent qui peut se rettracter ». Amende §24.7, §27.7 et §38.5 (« Agent de projet en panneau »).
+
+**Cause du message invisible** : la vue « Suivi » (`trackingThread`) choisit entre un résumé et un échange ; quand l'agent n'avait rien écrit avant la question, elle n'affiche que sa réponse et masque le message d'Adam. Un message envoyé pendant qu'un tour tourne ou attend dans la file n'apparaît qu'au rechargement suivant.
+
+### 46.1 Une seule conversation
+
+- La vue « Suivi », le « Résumé du jour » épinglé, l'onglet « Signaux », l'affichage des lots remplacés, le menu « ⋯ » et la phrase de pied « Les états avancent seuls… » sont **retirés** de l'interface (les signaux restent reçus par l'agent, §27 ; seule leur boîte disparaît du volet).
+- Le volet montre **la conversation** de l'agent choisi, du plus ancien au plus récent, défilée en bas : messages d'Adam (bulle à droite, heure), réponses de l'agent (texte Markdown pleine largeur), lots (carte compacte inline, cochable, « Valider (n) » / « Refuser »), réveils (ligne discrète). Indicateur « L'agent lit le projet… » (orange) pendant un tour, « En file » si le tour attend un créneau.
+- **Envoi visible tout de suite** : le message s'affiche dès l'envoi (« envoi… » puis « envoyé ») sans attendre le rechargement ; échec ⇒ « Non envoyé · Réessayer » sur la bulle. La conversation se met à jour d'elle-même à chaque événement du run (sujet `agents` et journal du run), sans rafraîchir le volet.
+- Un ancien agent s'ouvre en lecture seule : bandeau « Ancien agent · <date> » et saisie remplacée par « Nouvel agent ».
+
+### 46.2 Volet agrandissable et liste des agents rétractable (proposition C)
+
+- **Étroit** (volet à droite, 380 px par défaut, 340 à 720) : en-tête « Agent de projet · <projet> », bouton « Liste des agents » (ouvre la liste par-dessus la conversation), « Nouvel agent » (+), « Agrandir », « Fermer ».
+- **Agrandi** (« Agrandir », 720 px ou plus) : à gauche la **liste des agents** (≈ 210 px) avec « Nouvel agent » en tête, puis chaque agent nommé par sa première question, sa date et son nombre de messages, l'agent en cours marqué ; à droite la conversation en colonne de lecture centrée (≈ 520 px). La liste **se rétracte** et se rouvre par un bouton ; son état et le mode agrandi sont mémorisés localement (jamais dans le CRDT).
+- « Nouvel agent » ferme l'agent en cours (comme « Nouvel agent de projet » aujourd'hui) et ouvre une conversation vide prête à la saisie.
+- Sombre et clair ; la conversation ne déborde jamais horizontalement dans un volet de 340 px.
+
+### 46.3 Maquettes et acceptation
+
+Boards nouveaux « Agent de projet, volet » (étroit, liste ouverte) et « Agent de projet, agrandi » (liste ouverte et rétractée), sombre et clair, dans Penpot **avant le code**, montrés à Adam ; données Silo (« Fais le point du jour », lot n° 7). Les boards de l'ancien panneau (récap, réveil, question) sont remplacés. Pixel ≤ 2 % sur l'écran entier ; budget UI inchangé (le code retiré doit compenser).
