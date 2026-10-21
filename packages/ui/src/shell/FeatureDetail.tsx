@@ -1,4 +1,10 @@
-import type { AgentExecution, FileRef, ProjectSnapshot, TicketView } from "@kibo/schema";
+import {
+  type AgentExecution,
+  type FileRef,
+  featureSteps,
+  type ProjectSnapshot,
+  type TicketView,
+} from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
 import type { MenuEntry } from "@kibo/sdk/ui/menu-entries";
 import { Lock, Plus, Truck } from "lucide-react";
@@ -93,7 +99,7 @@ export function FeatureDetail({
             feature={f}
             sprintCode={facts.sprint?.code ?? null}
             badge={featureBadge(f.feature)}
-            steps={active}
+            steps={featureSteps({ feature: f.id, tickets: project.tickets, links: project.links })}
             held={held.length}
             editable={editable}
             command={titleCommand}

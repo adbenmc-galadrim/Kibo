@@ -110,10 +110,10 @@ test("the header names the feature, its sprint, its state and its progress", () 
   expect(screen.getByText("ouverte")).toBeTruthy();
   expect(screen.getByText("1 étape livrée sur 5")).toBeTruthy();
   const bar = screen.getByRole("img", { name: "Étapes de la fonctionnalité" });
-  expect(Array.from(bar.children, (c) => c.getAttribute("data-step"))).toEqual([
+  expect(Array.from(bar.children, (c) => c.getAttribute("data-tone"))).toEqual([
     "done",
-    "in_review",
-    "in_progress",
+    "review",
+    "progress",
     "todo",
     "todo",
   ]);

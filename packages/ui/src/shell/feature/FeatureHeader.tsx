@@ -1,19 +1,22 @@
-import type { TicketView } from "@kibo/schema";
+import type { FeatureStep, TicketView } from "@kibo/schema";
+import { stepCaseTone } from "@kibo/sdk/tracking";
 import { CircleCheck, ClockAlert, type LucideIcon, Package } from "lucide-react";
 import type { ReactNode } from "react";
 import { frFeature as t } from "../../i18n/fr-group";
 import { frHold } from "../../i18n/fr-hold";
 import { TicketTitle } from "../../ticket/TicketTitle";
 import type { TicketCommand } from "../../ticket/use-ticket-command";
-import type { FeatureBadge, StepModel } from "./feature-model";
+import type { FeatureBadge } from "./feature-model";
 import { SprintChip } from "./SprintChip";
-import { STEP_SEGMENT } from "./styles";
+import { CASE_SEGMENT } from "./styles";
+
+type BarStep = Pick<FeatureStep, "ticketId" | "statusId" | "onHold">;
 
 type Props = {
   feature: TicketView;
   sprintCode: string | null;
   badge: FeatureBadge;
-  steps: readonly StepModel[];
+  steps: readonly BarStep[];
   held: number;
   editable: boolean;
   command: TicketCommand;
@@ -42,19 +45,22 @@ function Badge({ badge, held }: { badge: FeatureBadge; held: number }) {
   );
 }
 
-function StepsBar({ steps, held }: { steps: readonly StepModel[]; held: number }) {
-  const done = steps.filter((s) => s.statusId === "done").length;
-  const delivered = t.stepsDelivered(done, steps.length);
+function StepsBar({ steps, held }: { steps: readonly BarStep[]; held: number }) {
+  const done = steps.filter((s) => s.onHold === null && s.statusId === "done").length;
+  const delivered = t.stepsDelivered(done, steps.length - held);
   return (
     <div className="flex h-[16px] items-center gap-[12px]">
       <span role="img" aria-label={t.stepsBar} className="flex items-center gap-[4px]">
-        {steps.map((s) => (
-          <span
-            key={s.ticketId}
-            data-step={s.statusId}
-            className={`h-[8px] w-[40px] rounded-[1.5px] ${STEP_SEGMENT[s.statusId] ?? "bg-(--tracking-border)"}`}
-          />
-        ))}
+        {steps.map((s) => {
+          const tone = stepCaseTone(s, false);
+          return (
+            <span
+              key={s.ticketId}
+              data-tone={tone}
+              className={`h-[8px] w-[40px] rounded-[1.5px] ${CASE_SEGMENT[tone]}`}
+            />
+          );
+        })}
       </span>
       <span className="text-[13px] leading-[16px] text-(--tracking-mfg)">
         {held > 0 ? `${delivered} · ${frHold.feature.bar(held)}` : delivered}

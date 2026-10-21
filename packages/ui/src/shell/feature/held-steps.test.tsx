@@ -74,3 +74,21 @@ test("a reader cannot resume a step", () => {
   draw(false);
   expect(screen.queryByRole("button", { name: "Reprendre" })).toBeNull();
 });
+
+test("the pause marks of the title, the dots and the own reason are cyan, the status dot keeps its status", () => {
+  draw();
+  const section = screen.getByRole("region", { name: "En attente · 3" });
+  const title = section.querySelector("div > .lucide-pause");
+  expect(title?.getAttribute("class")).toContain("text-(--tracking-hold)");
+  const rows = within(section).getAllByRole("listitem");
+  for (const row of rows) {
+    const dot = row.firstElementChild;
+    expect(dot?.className).toContain("bg-(--tracking-hold-soft)");
+    expect(dot?.querySelector(".lucide-pause")?.getAttribute("class")).toContain("text-(--tracking-hold)");
+  }
+  const reason = within(rows[0] as HTMLElement).getByText(/Serveur MinIO/).previousElementSibling;
+  expect(reason?.getAttribute("class")).toContain("text-(--tracking-hold)");
+  expect(within(rows[0] as HTMLElement).getByText("En cours").previousElementSibling?.className).toContain(
+    "bg-(--tracking-blue)",
+  );
+});
