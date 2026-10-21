@@ -6,6 +6,14 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.31.0-alpha.1 — 2026-10-21
+
+- Les étapes en attente ne sont plus cachées : elles apparaissent en cyan, à leur place, dans les barres de progression et les listes d'étapes (Graphe, Vue d'ensemble, Planning, fiche fonctionnalité, Kanban, Mes tickets) ; la légende du Planning gagne « en attente ».
+- Graphe : un titre de fonctionnalité tient sur trois lignes sans que la barre déborde du cadre ; une fonctionnalité livrée garde ses étapes en attente visibles et l'en-tête de chaque cadre compte ses attentes.
+- L'agent de projet devient une simple conversation : ton message s'affiche dès l'envoi (« Non envoyé · Réessayer » en cas d'échec) et la conversation se met à jour seule, sans rafraîchir.
+- Le volet de l'agent s'agrandit à 720 px par-dessus la page, avec la liste des agents à gauche (rétractable) ; « Nouvel agent » en ouvre un, les anciens se relisent depuis la liste.
+- Le Suivi, le résumé épinglé, la boîte à signaux et le menu « ⋯ » du volet sont retirés ; la note de l'agent reste dans Notes.
+
 ## 0.30.0-alpha.1 — 2026-10-20
 
 - Le Graphe n'a plus qu'un sélecteur Fonctionnalités | PRs : les colonnes par sprint, les fonctionnalités livrées repliées, et c'est tout.
