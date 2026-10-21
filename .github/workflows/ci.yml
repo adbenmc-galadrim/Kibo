@@ -96,5 +96,12 @@ jobs:
       - name: smoke
         timeout-minutes: 3
         run: bun run --cwd apps/desktop smoke
-      - if: runner.os == 'macOS'
-        run: bun apps/desktop/scripts/cli-smoke.ts
+  cli-smoke-macos:
+    runs-on: macos-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: oven-sh/setup-bun@v2
+        with: { bun-version: 1.4.2 }
+      - run: bun install --frozen-lockfile
+      - run: bun apps/desktop/scripts/cli-smoke.ts
