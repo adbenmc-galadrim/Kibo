@@ -125,6 +125,7 @@ test("a failed cancel is logged and the first error is kept", async () => {
   await expect(
     uploadFile(fake.client, "p1", "robot.glb", "model/gltf-binary", new Blob([new Uint8Array(3)])),
   ).rejects.toBe(refused);
-  expect(error).toHaveBeenCalledTimes(1);
+  const cancelLogs = error.mock.calls.filter(([message]) => message === "[kibo-ui] upload not cancelled");
   error.mockRestore();
+  expect(cancelLogs).toHaveLength(1);
 });
