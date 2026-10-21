@@ -32,3 +32,8 @@ test("the tracking screens stay where they are", () => {
   expect(homes({ kind: "screen", screen: "inbox" }, "#/inbox")).toBe(0);
   expect(homes({ kind: "ticket", projectId: "p1", ticketId: "t1" }, "#/p/p1/t/t1")).toBe(0);
 });
+
+test("an old URL gives way to the home URL even when home is already shown", () => {
+  homes(null, "#/code");
+  expect(location.hash).toBe("#/");
+});

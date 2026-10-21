@@ -9,7 +9,7 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { openLimitOf, type SprintView } from "@kibo/schema";
-import { useEntities, useReadOnly, useSdk } from "@kibo/sdk";
+import { type EntityMap, useEntities, useReadOnly, useSdk } from "@kibo/sdk";
 import { useComponentSettings } from "@kibo/sdk/hooks/use-component-settings";
 import { useProject } from "@kibo/sdk/hooks/use-project";
 import { useState } from "react";
@@ -42,19 +42,40 @@ const initialLayout = (config: Record<string, unknown>): PlanningLayout =>
 
 type Dialog = { kind: "sprint"; sprint: SprintView | null } | { kind: "feature" } | null;
 
-export function Planning() {
-  const today = useProject()?.today;
-  return today === undefined ? null : <PlanningBoard today={today} />;
+type PlanningData = {
+  tickets: EntityMap["ticket"][];
+  links: EntityMap["link"][];
+  sprints: EntityMap["sprint"][];
+  questions: EntityMap["question"][];
+  events: EntityMap["project_event"][];
+};
+
+function usePlanningData(): PlanningData | null {
+  const tickets = useEntities("ticket");
+  const links = useEntities("link");
+  const sprints = useEntities("sprint");
+  const questions = useEntities("question");
+  const events = useEntities("project_event");
+  if ([tickets, links, sprints, questions, events].some((list) => list.loading)) return null;
+  return {
+    tickets: tickets.data,
+    links: links.data,
+    sprints: sprints.data,
+    questions: questions.data,
+    events: events.data,
+  };
 }
 
-function PlanningBoard({ today }: { today: string }) {
+export function Planning() {
+  const today = useProject()?.today;
+  const data = usePlanningData();
+  return today === undefined || data === null ? null : <PlanningBoard today={today} data={data} />;
+}
+
+function PlanningBoard({ today, data }: { today: string; data: PlanningData }) {
   const sdk = useSdk();
   const readOnly = useReadOnly();
-  const { data: tickets } = useEntities("ticket");
-  const { data: links } = useEntities("link");
-  const { data: sprints } = useEntities("sprint");
-  const { data: questions } = useEntities("question");
-  const { data: events } = useEntities("project_event");
+  const { tickets, links, sprints, questions, events } = data;
   const { tracking } = useComponentSettings();
   const model = planningModel({
     tickets,
