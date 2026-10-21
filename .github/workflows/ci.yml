@@ -52,10 +52,10 @@ jobs:
         shell: bash
         run: bun test --shard=${{ matrix.shard }}/${{ matrix.of }} $(ls -d packages/*/ | grep -v '^packages/daemon/$' | sed 's|^|./|') ./components ./scripts
   e2e:
-    name: e2e (${{ matrix.shard }}/4)
+    name: e2e (${{ matrix.shard }}/6)
     strategy:
       fail-fast: false
-      matrix: { shard: [1, 2, 3, 4] }
+      matrix: { shard: [1, 2, 3, 4, 5, 6] }
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env: { KIBO_E2E_THEME: dark }
@@ -67,7 +67,7 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: cd e2e && bunx playwright install --with-deps chromium
       - run: bun run --cwd packages/ui build
-      - run: bun run --cwd e2e test --shard=${{ matrix.shard }}/4
+      - run: bun run --cwd e2e test --shard=${{ matrix.shard }}/6
       - if: failure()
         uses: actions/upload-artifact@v5
         with:
