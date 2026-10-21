@@ -46,7 +46,7 @@ Object.assign(S.NAMES, { "p-vue3": "P1 bis v3 · ", "p-commencer": "P1 bis v3 ·
   "p-fiche-act": "P8b · ", "p-questions": "P9 · ", "p-barre": "Barre repliée · ", "p-agent-q": "Agent · question", "p-agent-recap": "Agent · récapitulatif", "p-vue3-retard": "P1 bis v3 · En retard" });
 S.FILES27 = { "P1 bis v3 · Vue d'ensemble": "vue-ensemble-v3", "P1 bis v3 · En retard au 18 oct.": "vue-ensemble-v3-retard", "P1 bis v3 · Pour commencer": "vue-ensemble-v3-pour-commencer", "P6 · Nouveau projet": "nouveau-projet",
   "P7 · Kanban": "kanban", "P8 · Fiche ticket": "fiche-ticket", "P8b · Fiche ticket, Activité": "fiche-ticket-activite", "P9 · Questions": "questions",
-  "Barre repliée · Kanban à 1 180 px": "barre-repliee", "Agent · question": "agent-question", "Agent · récapitulatif": "agent-recap" };
+  "Barre repliée · Kanban à 1 180 px": "barre-repliee" };
 S.export27 = async (only) => { await S.page("Proposition"); await S.wait(800); const out = [];
   for (const b of penpot.currentPage.root.children.filter(c => c.type === "board" && c.y >= S.Y27)) { const base = b.name.replace(/ \(clair\)$/, ""), file = S.FILES27[base];
     if (!file || (only && !only.includes(file))) continue; out.push(await S.exportPng(b, `proposition-${file}-${/\(clair\)$/.test(b.name) ? "light" : "dark"}.png`)); }
@@ -67,8 +67,8 @@ S.exportA2 = async (only) => { await S.page("Proposition"); await S.wait(800); c
     if (!file || (only && !only.includes(file))) continue; const c = b.clone(); c.x = -5000; c.y = b.y;
     try { out.push(await S.exportPng(c, `proposition-${file}-${/\(clair\)$/.test(b.name) ? "light" : "dark"}.png`)); } finally { c.remove(); } }
   return out; };
-// 0.29.0-alpha.3 : board « Agent · réveil sur réponse » à partir de S.Y_A3 ⇒ proposition-agent-reveil-<dark|light>.png, exporté depuis un clone enregistré côté serveur.
-S.FILES_A3 = { "Agent · réveil sur réponse": "agent-reveil" };
+// 0.29.0-alpha.3 : rangée S.Y_A3 sans board exporté (« Agent · réveil sur réponse » retiré, spec §46.3).
+S.FILES_A3 = {};
 S.exportA3 = async (only) => { await S.page("Proposition"); await S.wait(800); const out = [];
   for (const b of penpot.currentPage.root.children.filter(c => c.type === "board" && c.y >= S.Y_A3)) { const base = b.name.replace(/ \(clair\)$/, ""), file = S.FILES_A3[base];
     if (!file || (only && !only.includes(file))) continue; const c = b.clone(); c.x = -5000; c.y = b.y; await S.wait(10000);

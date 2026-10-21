@@ -327,7 +327,8 @@ Dessin : `await storage.drawA3("p-agent-reveil", "dark")` puis `"light"`. Avant 
 pas encore enregistré côté serveur fait échouer l'exporteur, « http error ») ⇒ `exports/proposition-agent-reveil-<dark|light>.png`. Cotes :
 `95-cotes.js` (`_dump-26`), puis `python3 scripts/cotes.py <JSON> --alpha3`, qui remplace seulement la partie « 0.29.0-alpha.3 » de
 `cotes.md` (`--alpha2` la garde). Pas de spec pixel (panneau, capturé en E2E). Copié en page « 36 · Suivi seul » du fichier « Kibo »
-(235, voir `design/penpot/README.md`).
+(235, voir `design/penpot/README.md`). **Retiré en phase 31** (spec §46.3) avec « Agent · question » et « Agent · récapitulatif » : boards et exports
+supprimés, voir « Agent de projet en conversation ».
 
 ## Phase 30 (2026-10-20)
 
@@ -428,3 +429,39 @@ Piège vu : l'onglet headless finit par planter (« Target crashed ») après pl
 juste avant sont perdus. Garder la vue hors des boards (`penpot.viewport.center` loin à gauche, zoom 0,25), lancer Chromium avec
 `--js-flags=--max-old-space-size=6144`, et vérifier l'enregistrement après chaque board en lisant `get-page` hors de l'onglet (requête du
 contexte Playwright) : le `get-page` lancé depuis l'onglet charge des dizaines de Mo dans le tas et précipite le plantage.
+
+
+### Agent de projet en conversation
+
+Spec §46 : le volet de l'agent de projet ne montre plus que la conversation de l'agent choisi (plus de Suivi, de « Résumé du jour »
+épinglé, de lots remplacés, de menu « ⋯ » ni de phrase de pied). Données : sous-section « Phase 31 · Agent de projet en conversation »
+de `design/donnees-fictives.md`.
+
+Volet étroit (`S.agentPanelP`, `scripts/50-proposition.js`, 340 px) : en-tête de 56 px (`S.agentMark` 28, « Agent de projet · Silo »
+13/600, boutons de 28 px `list`, `plus`, `maximize2`, `x` à icône de 15 px `dim`) ; conversation (`pad` 16 × 18, `gap` 14) : bulle
+d'Adam à droite (240 px, rayon 10, `muted`, « Fais le point du jour » 13, « 14:38 » 12 `dim`), réponse de l'agent (`S.agentMark` 24, deux
+paragraphes 13 / 1,55, « Lu : Planning, F5, journal des étapes » 12 `dim`), carte du lot n° 7 (celle de l'ancien « Agent · question ») ;
+saisie de 40 px « Écris à l'agent de projet… » en pied. Briques réutilisées : `S.agentHeadP`, `S.conversationP`, `S.lotCardP`, `S.composeP`.
+
+| Board | Script | Contenu | Export | Taille |
+|---|---|---|---|---|
+| P1 bis v3 · Vue d'ensemble, En retard au 18 oct., P6 · Nouveau projet, P1 bis · Vue d'ensemble · en attente | `55-phase-27.js` (`S.vue3`), `59d-agent-conversation.js` (`S.swapPanelAC`) | volet redessiné en conversation ; « En retard » : « 16 oct. · 14:38 » dans la bulle, texte et pourquoi au passé | inchangés (régénérés) | inchangées |
+| P1 bis · Agent agrandi (nouveau) | `59d-agent-conversation.js` | clone de P1 bis v3, volet de 720 px : en-tête (`panelLeftClose`, `plus`, `minimize2`, `x`), liste des agents de 210 px (fond `bg`, bord droit `border`, « Nouvel agent » de 32 px, items de 56 px : titre 13/500, « 14:38 · 4 messages » 12 `dim`, en cours sur `panel` avec « en cours » 11 `brandText`), conversation et saisie dans la colonne de lecture ; le contenu principal se resserre à 478 px | `proposition-agent-agrandi` | 1 440 × 1 260 |
+| Agent de projet, volet (nouveau) | `59d-agent-conversation.js` | volet étroit, bouton `list` enfoncé, liste en calque sous l'en-tête (« Nouvel agent » et « Fermer la liste ») | `proposition-agent-volet` | 340 × 1 000 |
+| Agent de projet, agrandi, liste rétractée (nouveau) | `59d-agent-conversation.js` | volet de 720 px sans liste, bouton `panelLeftOpen`, colonne de lecture de 520 px centrée | `proposition-agent-agrandi-liste-retractee` | 720 × 1 000 |
+
+Boards retirés de la page « Proposition » : « Agent · question », « Agent · récapitulatif », « Agent · réveil sur réponse » (sombre et
+clair) et leurs exports ; leurs rangées restent vides (`S.draw["p-agent-q"]`, `["p-agent-recap"]` et `S.drawA3k["p-agent-reveil"]`
+rendent `null`).
+
+Dessin : `await storage.drawAC(clé, mode)` pour `ac-agrandi`, `ac-volet`, `ac-retractee` (rangées à `S.Y_AC` = 53 000, pas de 1 500) ;
+le volet des quatre boards existants se redessine en place par `await storage.swapPanelAC(nom, mode, retard)` (équivaut à rejouer
+`S.draw27` et `S.draw29`). Export : `await storage.exportAC()` (depuis un clone, après 10 s), `export27` et `export29` pour les autres.
+Cotes : `_dump-6`, `_dump-13`, `_dump-8`, `_dump-14` (`--sections 6,13,8,14`) et `_dump-33` (`--phase31`). Comparaison au pixel : le
+mode étroit reste comparé sur « vue-ensemble », « attente-vue-ensemble » et « nouveau-projet » ; le mode agrandi sur « agent-agrandi ».
+
+Pièges vus : un redessin complet de P1 bis v3 (`S.draw27("p-vue3")`, environ 1 000 formes) fait planter l'onglet headless (« Target
+crashed », rendu à 2,3 Go) sur la page « Proposition » chargée ; d'où le volet redessiné en place. Le board sombre « P1 bis v3 · En retard
+au 18 oct. » manquait au fichier : il est refait depuis son clair par `S.darkFromLightAC` (couleur du nœud de même chemin dans la paire
+P1 bis v3, sinon la table des jetons), à l'identique de l'ancien export hors du volet. Un nom avec `/` devient `a / b` : chercher
+`icon-button / list` en retirant les espaces.

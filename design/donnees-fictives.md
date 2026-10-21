@@ -574,7 +574,8 @@ exports `proposition-questions-{menu,supprimer,repondues}-*`.
 
 Jeu des questions ci-dessus, vendredi 16 octobre : Adam répond à Q16 à 14:52 et l'agent de projet se réveille. Maquette : board
 « Agent · réveil sur réponse » de la page « Proposition » (`design/redesign/scripts/58-alpha3-reveil.js`, clone de « Agent · question »),
-exports `proposition-agent-reveil-*` ; page « 36 · Suivi seul » du fichier « Kibo », écran 235.
+exports `proposition-agent-reveil-*` ; page « 36 · Suivi seul » du fichier « Kibo », écran 235. Board, exports et écran retirés en
+phase 31 avec la vue Suivi (spec §46.3, voir « Phase 31 · Agent de projet en conversation »).
 
 | Question | Ticket | Réponse | Répondue par | Quand | Lot | Action | Pourquoi |
 |---|---|---|---|---|---|---|---|

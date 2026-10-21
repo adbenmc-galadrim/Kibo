@@ -163,26 +163,45 @@ S.bandP = (p) => { const C = S.C, P = S.P;
   const tx = LW + 4.5 / 7 * cw; S.box(g, { name: "today", x: tx, y: 22, w: 1.5, h: H - 22, fill: C.fg });
   return card; };
 
+// Agent de projet en conversation (spec §46) : en-tête à quatre boutons, conversation de l'agent choisi, saisie en pied.
+Object.assign(S.ICONS, {
+  maximize2: S.ICONS.maximize2 || '<path d="M15 3h6v6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/><path d="M9 21H3v-6"/>',
+  minimize2: '<path d="m14 10 7-7"/><path d="M20 10h-6V4"/><path d="m3 21 7-7"/><path d="M4 14h6v6"/>',
+  panelLeftOpen: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m14 9 3 3-3 3"/>',
+  panelLeftClose: '<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/>' });
+S.CONV_P = { title: "Agent de projet · Silo", ask: "Fais le point du jour", at: "14:38", read: "Lu : Planning, F5, journal des étapes", compose: "Écris à l'agent de projet…",
+  said: ["F3 est livrée : 3 fonctionnalités sur 9.", "S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo."] };
+S.iconBtnP = (p, icon) => { const b = S.box(p, { name: "icon-button/" + icon, w: 28, h: 28, radius: 6, dir: "row", align: "center", justify: "center" }); S.icon(b, icon, 15, S.C.dim); return b; };
+S.agentHeadP = (ap, icons = ["list", "plus", "maximize2", "x"]) => { const C = S.C;
+  const h = S.row(ap, { name: "agent-header", fx: true, h: 56, pad: [0, 10, 0, 16], gap: 10 }); S.agentMark(h, 28);
+  S.txt(h, S.CONV_P.title, { size: 13, weight: 600 }); S.spacer(h);
+  const tools = S.row(h, { name: "agent-tools", gap: 2 }); for (const ic of icons) S.iconBtnP(tools, ic);
+  S.hline(ap, C.soft); return h; };
+S.lotCardP = (p) => { const C = S.C, sec = C.mfg;
+  const lot = S.col(p, { name: "batch", fx: true, stroke: C.brandLine, radius: 10, clip: true, fill: C.card });
+  const lh = S.row(lot, { fx: true, pad: [10, 14], gap: 8, fill: C.brandSoft }); S.txt(lh, "Lot n° 7", { size: 13, weight: 600, color: C.brandText }); S.spacer(lh); S.txt(lh, "3 actions", { size: 12, color: sec });
+  for (const it of S.P.lot) { S.hline(lot, C.soft); const r = S.row(lot, { fx: true, pad: [10, 14], gap: 10, align: "start" });
+    const cb = S.box(r, { w: 16, h: 16, radius: 4, fill: C.brandBtn, dir: "row", align: "center", justify: "center" }); S.icon(cb, "check", 11, "#FFFFFF", 3);
+    const tc = S.col(r, { fx: true, gap: 3 }); S.txt(tc, it.text, { size: 13, weight: 500, fill: true }); S.txt(tc, it.meta, { size: 12, color: sec, fill: true }); }
+  S.hline(lot, C.soft); const lf = S.row(lot, { fx: true, pad: [12, 14], gap: 8 }); S.btn(lf, "Valider (3)", "brand", { sm: true }); S.btn(lf, "Refuser", "outline", { sm: true });
+  return lot; };
+S.conversationP = (b) => { const C = S.C, A = S.CONV_P;
+  const qr = S.row(b, { name: "user-row", fx: true, justify: "end" });
+  const q = S.col(qr, { name: "user-message", w: 240, pad: [10, 12], gap: 4, radius: 10, fill: C.muted });
+  S.txt(q, A.ask, { size: 13, lh: 1.45, fill: true }); S.txt(q, A.at, { size: 12, color: C.dim });
+  const ar = S.row(b, { name: "agent-message", fx: true, gap: 10, align: "start" }); S.agentMark(ar, 24);
+  const ac = S.col(ar, { fx: true, gap: 8 }); for (const t of A.said) S.txt(ac, t, { size: 13, lh: 1.55, fill: true });
+  S.txt(ac, A.read, { size: 12, color: C.dim });
+  S.lotCardP(b); return b; };
+S.composeP = (p) => { const C = S.C;
+  const ft = S.col(p, { name: "compose", fx: true, pad: [14, 18] });
+  const inp = S.row(ft, { fx: true, h: 40, pad: [0, 12], gap: 8, radius: 8, stroke: C.border, fill: C.bg });
+  S.txt(inp, S.CONV_P.compose, { size: 13, color: C.mfg }); S.spacer(inp); S.icon(inp, "send", 15, C.mfg); return ft; };
 S.agentPanelP = (root) => { const C = S.C;
-  const ap = S.col(root, { name: "agent-panel", w: 330, fy: true, fill: C.panel });
-  const h = S.row(ap, { fx: true, h: 56, pad: [0, 16], gap: 10 }); S.agentMark(h, 28);
-  const ht = S.col(h, { gap: 1 }); S.txt(ht, "Agent de projet", { size: 13, weight: 600 }); S.txt(ht, "Suivi à jour · il y a 4 min", { size: 11.5, color: C.dim });
-  S.spacer(h); S.icon(h, "more", 15, C.dim); S.icon(h, "x", 15, C.dim);
-  S.hline(ap, C.soft);
-  const b = S.col(ap, { fx: true, fy: true, pad: 16, gap: 14 });
-  S.txt(b, "Aujourd'hui", { size: 11, weight: 500, color: C.dim, upper: true, ls: 0.4 });
-  S.txt(b, "F3 est livrée : 3 fonctionnalités sur 9. S42 finit ce soir et F5 n'y tiendra pas : il lui reste 4 étapes sur 5. F4 n'attend plus que la correction de la PR #20 et sa démo.", { size: 13, lh: 1.5, fill: true });
-  const lot = S.col(b, { fx: true, stroke: C.brandLine, radius: 8, clip: true, fill: C.card });
-  const lh = S.row(lot, { fx: true, pad: [9, 12], gap: 8, fill: C.brandSoft }); S.txt(lh, "Lot n° 7 · à valider", { size: 12.5, weight: 600, color: C.brandText }); S.spacer(lh); S.txt(lh, "3 actions", { size: 11.5, color: C.dim });
-  for (const it of S.P.lot) { S.hline(lot, C.soft); const r = S.row(lot, { fx: true, pad: [9, 12], gap: 10, align: "start" });
-    const cb = S.box(r, { w: 15, h: 15, radius: 4, fill: C.brandBtn, dir: "row", align: "center", justify: "center" }); S.icon(cb, "check", 11, "#FFFFFF", 3);
-    const tc = S.col(r, { fx: true, gap: 2 }); S.txt(tc, it.text, { size: 12.5, fill: true }); S.txt(tc, it.meta, { size: 11, color: C.dim, fill: true }); }
-  S.hline(lot, C.soft);
-  const lf = S.row(lot, { fx: true, pad: [10, 12], gap: 8 }); S.btn(lf, "Valider (3)", "brand", { sm: true }); S.btn(lf, "Refuser", "outline", { sm: true });
-  const note = S.row(b, { fx: true, gap: 8, align: "start" }); S.icon(note, "refresh", 13, C.dim);
-  S.txt(note, "Les états avancent seuls (git, PR, étapes full-delivery). L'agent propose, tu valides.", { size: 11.5, color: C.dim, lh: 1.45, fill: true });
-  S.box(b, { w: 4, h: 4, fy: true });
-  const inp = S.row(b, { fx: true, h: 40, pad: [0, 12], gap: 8, radius: 8, stroke: C.border, fill: C.bg }); S.txt(inp, "Demander à l'agent de projet…", { size: 12.5, color: C.dim }); S.spacer(inp); S.icon(inp, "send", 14, C.dim);
+  const ap = S.col(root, { name: "agent-panel", w: 340, fy: true, fill: C.panel });
+  S.agentHeadP(ap);
+  S.conversationP(S.col(ap, { name: "conversation", fx: true, fy: true, pad: [16, 18], gap: 14 }));
+  S.hline(ap, C.soft); S.composeP(ap);
   return ap; };
 
 // ---------- P2 · Planning ----------

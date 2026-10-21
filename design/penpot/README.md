@@ -370,6 +370,13 @@ attente » est ajouté (rangée y = 51 500, voir `design/redesign/README.md`, «
 **226** à **229** à refaire (vue d'ensemble, Planning, fiche F5, Kanban), **239** « Graphe · en attente » à ajouter sous 238b ; 230 et
 231 à 231d inchangés.
 
+Phase 31, agent de projet en conversation (spec §46) : le volet de P1 bis v3, « En retard », P6 et « Vue d'ensemble · en attente » est
+redessiné en conversation, et trois boards sont ajoutés (rangées à partir de y = 53 000, voir `design/redesign/README.md`, « Agent de
+projet en conversation »). En page 36 : **219**, **221**, **222** et **226** à refaire (volet en conversation) ; **225**, **225b** et
+**235** (panneau Suivi : question, récapitulatif, réveil) retirés et remplacés par **240** « Agent agrandi » (vue d'ensemble, volet de
+720 px, liste ouverte), **241** « Agent de projet, volet » (340 px, liste ouverte par-dessus) et **242** « Agent de projet, agrandi, liste
+rétractée ».
+
 ## Exporter
 
 1. PDF : dans le plugin, `await storage.exportPage("00")` … jusqu'à la dernière page dessinée, `("27")`, puis `("29")` à `("36")` aujourd'hui (les pistes 28 à 28d restent hors PDF) (une page par appel ; pour une page chargée, `await storage.exportPart("12", 0, 4)` par tranches), puis
