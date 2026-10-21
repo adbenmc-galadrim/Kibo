@@ -2,13 +2,7 @@ import { expect, test } from "bun:test";
 import { type RunLogEntry, WAKEUP_PREFIX } from "@kibo/schema";
 import fc from "fast-check";
 import { NOW } from "../agents/fixtures";
-import {
-  buildConversation,
-  type ConversationItem,
-  lastUserMessage,
-  panelStatus,
-  readingText,
-} from "./conversation";
+import { buildConversation, type ConversationItem, lastUserMessage, panelStatus } from "./conversation";
 import { CONVERSATION_LOG, hook, partialBatch, pendingBatch, projectRun } from "./fixtures";
 
 const MIN = 60_000;
@@ -47,7 +41,7 @@ test("batches come after the turn that produced them, in creation order", () => 
   ]);
 });
 
-test("reads before any answer stay a reading line, said as « Lu : »", () => {
+test("reads before any answer stay a reading line", () => {
   const log: RunLogEntry[] = [
     { id: 1, at: 1, event: { type: "answered", text: "Plan ?", rank: 0 } },
     {
@@ -61,9 +55,6 @@ test("reads before any answer stay a reading line, said as « Lu : »", () => {
     ["user", "Plan ?"],
     ["reading", ["project_overview"]],
   ]);
-  expect(readingText(["project_overview", "list_questions", "read_note plan.md"])).toBe(
-    "Lu : projet, questions, plan.md",
-  );
 });
 
 test("a batch proposed in the running turn stays at the end", () => {

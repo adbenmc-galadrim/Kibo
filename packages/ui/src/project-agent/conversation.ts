@@ -32,15 +32,6 @@ export function wakeupText(text: string): string {
   return count === null ? frSignals.wakeup.label : frSignals.wakeup.event(count);
 }
 
-export function readingText(tools: readonly string[]): string {
-  return t.reading(
-    tools.map((tool) => {
-      const [name = "", ...rest] = tool.split(" ");
-      return t.tool(name, rest.length > 0 ? rest.join(" ") : null);
-    }),
-  );
-}
-
 export function readingTool(payload: HookPayload): string | null {
   if (payload.event !== "PostToolUse" || !payload.tool?.startsWith(KIBO_PREFIX)) return null;
   const name = payload.tool.slice(KIBO_PREFIX.length);

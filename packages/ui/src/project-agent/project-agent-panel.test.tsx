@@ -48,7 +48,7 @@ test("while a turn runs the conversation says so in orange, « En file » when q
 test("the conversation is rendered with its batch card", async () => {
   show();
   expect(await panel().findByText("Où en est-on ?")).toBeTruthy();
-  expect(panel().getByText("Lu : tickets, SILO-11")).toBeTruthy();
+  expect(panel().getByText("Lu : Tickets, SILO-11")).toBeTruthy();
   await userEvent.setup().click(await panel().findByRole("button", { name: "SILO-11" }));
   expect(harness.opened).toEqual(["t11"]);
 });

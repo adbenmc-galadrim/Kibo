@@ -9,9 +9,10 @@ import { frProjectAgent } from "../i18n/fr-project-agent";
 import { AgentText } from "../moments/AgentText";
 import { BatchCard, type Decision } from "./BatchCard";
 import type { DiffLabels } from "./batch-groups";
-import { type ConversationItem, type PanelStatus, readingText } from "./conversation";
+import type { ConversationItem, PanelStatus } from "./conversation";
 import type { OutboxState } from "./outbox";
 import { READING_COLUMN } from "./reading-column";
+import { readingText } from "./reading-text";
 
 type Props = {
   items: ConversationItem[];
@@ -57,7 +58,7 @@ function Item({
               <AgentText text={item.text} onTicket={onTicket} />
             </div>
             {item.read.length > 0 && (
-              <p className="truncate text-xs text-(--tracking-dim)">{readingText(item.read)}</p>
+              <p className="truncate text-xs text-(--tracking-dim)">{readingText(item.read, labels)}</p>
             )}
           </div>
         </li>
@@ -66,7 +67,7 @@ function Item({
       return (
         <li className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <BookSearch className="size-3.5 shrink-0" aria-hidden />
-          <span className="truncate">{readingText(item.tools)}</span>
+          <span className="truncate">{readingText(item.tools, labels)}</span>
         </li>
       );
     case "batch":

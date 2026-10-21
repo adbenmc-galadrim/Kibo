@@ -1,4 +1,4 @@
-import { beforeEach, expect, mock, test } from "bun:test";
+import { afterAll, beforeEach, expect, mock, test } from "bun:test";
 import type { RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -23,10 +23,18 @@ let members = [
   { userId: "u-adam", name: "Adam", role: "editor" as const },
 ];
 
+const unmockedProjects = "../state/use-projects?unmocked";
+const realProjects: typeof import("../state/use-projects") = await import(unmockedProjects);
 mock.module("../state/use-projects", () => ({
   useProject: () => ({ sync: { members } }),
   useProjects: () => ({ projects: [], error: null, retry: () => {} }),
 }));
+afterAll(() => {
+  mock.module("../state/use-projects", () => ({
+    useProject: realProjects.useProject,
+    useProjects: realProjects.useProjects,
+  }));
+});
 
 const { MissingComponent } = await import("./MissingComponent");
 const HASH = "c".repeat(64);

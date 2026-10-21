@@ -1,4 +1,6 @@
-import type { ActionOutcome, BatchStatus, SessionFreshReason } from "@kibo/schema";
+import type { ActionOutcome, BatchStatus, ListQuestionsInput, SessionFreshReason } from "@kibo/schema";
+
+type QuestionsState = ListQuestionsInput["state"];
 
 const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? "s" : ""}`;
 
@@ -24,18 +26,6 @@ const BATCH_STATUS: Record<BatchStatus, string> = {
   rejected: "Refusé",
   superseded: "Remplacé par un lot plus récent",
   abandoned: "Abandonné",
-};
-
-const TOOLS: Record<string, string> = {
-  project_overview: "projet",
-  list_tickets: "tickets",
-  get_ticket: "",
-  list_questions: "questions",
-  list_runs: "runs",
-  list_notes: "notes",
-  read_note: "",
-  list_profiles: "profils",
-  project_changes: "changements",
 };
 
 export const frProjectAgent = {
@@ -83,8 +73,26 @@ export const frProjectAgent = {
     queued: "En file",
     agent: "Agent de projet",
     reading: (parts: string[]) => `Lu : ${parts.join(", ")}`,
-    tool: (name: string, detail: string | null) =>
-      [TOOLS[name] ?? name, detail ?? ""].filter((part) => part !== "").join(" "),
+    read: {
+      overview: "Vue d'ensemble",
+      planning: "Planning",
+      tickets: "Tickets",
+      ticket: "ticket",
+      runs: "runs des agents",
+      notes: "notes",
+      note: (name: string) => `note ${name}`.trim(),
+      memoryNote: "note mémoire",
+      profiles: "agents assignables",
+      changes: "journal des étapes",
+      signals: "signaux",
+      questions: {
+        open: "questions ouvertes",
+        answered: "questions répondues",
+        archived: "questions archivées",
+        all: "questions",
+      } satisfies Record<QuestionsState, string>,
+      questionsOf: (questions: string, ticket: string) => `${questions} de ${ticket}`,
+    },
     resumed: "Session reprise",
     fresh: (reason: SessionFreshReason) => `Session : nouvelle (${FRESH_REASONS[reason]})`,
     retried: "Nouvelle tentative",
