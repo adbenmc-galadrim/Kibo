@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import type { TicketView } from "@kibo/schema";
 import fc from "fast-check";
 import { frameHeight } from "./frame-geometry";
 import { frameWidth, type SprintLanesModel, sprintLanes } from "./sprint-lanes";
@@ -239,4 +240,27 @@ test("a step is startable when its ticket is startable", () => {
 test("a startable step stays off while its feature waits on an undelivered feature", () => {
   const tickets = kitTickets().map((t) => (t.title === "Modèle du rapport" ? { ...t, startable: true } : t));
   expect(startableSteps(sprintLanes(kitInput({ tickets })))).not.toContain("F7 Modèle du rapport");
+});
+
+test("a step held back only by its sprint date or the feature limit stays startable", () => {
+  const later = (t: TicketView): TicketView =>
+    t.title === "Contrôle des numéros"
+      ? { ...t, startable: false, startReason: { kind: "sprint", code: "S3" } }
+      : t.title === "Écran d'import"
+        ? { ...t, startable: false, startReason: { kind: "limit", limit: 2, count: 2 } }
+        : t;
+  expect(startableSteps(sprintLanes(kitInput({ tickets: kitTickets().map(later) })))).toEqual([
+    "F6 Contrôle des numéros",
+    "F6 Écran d'import",
+  ]);
+});
+
+test("a step refused for an open dependency is not startable", () => {
+  const blocked = (t: TicketView): TicketView =>
+    t.title === "Contrôle des numéros"
+      ? { ...t, startable: false, startReason: { kind: "dependency", keys: ["SILO-9"] } }
+      : t;
+  expect(startableSteps(sprintLanes(kitInput({ tickets: kitTickets().map(blocked) })))).toEqual([
+    "F6 Écran d'import",
+  ]);
 });

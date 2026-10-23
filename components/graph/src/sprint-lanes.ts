@@ -159,7 +159,7 @@ function draftOf(f: Feature, facts: Facts, sorted: readonly SprintView[], waitin
       git: gitOf(s),
       session: byId.get(s.ticketId)?.session != null || input.live.has(s.ticketId),
       hold: s.onHold,
-      startable: !waiting && byId.get(s.ticketId)?.startable === true,
+      startable: !waiting && unblocked(byId.get(s.ticketId)),
     })),
     footer: footerOf(f, facts, sorted),
   };
@@ -219,6 +219,10 @@ function linksOf(
   }
   return { edges: [...edges.values()], stepLinks };
 }
+
+const SCHEDULE_ONLY: ReadonlySet<string> = new Set(["sprint", "unplanned", "limit"]);
+const unblocked = (t: TicketView | undefined): boolean =>
+  t !== undefined && (t.startable || (t.startReason !== null && SCHEDULE_ONLY.has(t.startReason.kind)));
 
 const isDelivered = (id: string, byId: ReadonlyMap<string, TicketView>): boolean =>
   byId.get(id)?.feature?.status === "delivered";
