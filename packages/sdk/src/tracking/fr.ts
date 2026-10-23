@@ -4,6 +4,7 @@ export const trackingFr = {
   slip: (code: string) => `glisse en ${code}`,
   blocked: (ref: string) => `bloquée · ${ref}`,
   timeline: "Frise des fonctionnalités par sprint",
+  legendLabel: "Légende",
   legend: {
     done: "étape livrée",
     review: "en review",

@@ -54,7 +54,6 @@ export const fr = {
     session: "Session en cours",
     git: { merged: "PR fusionnée", pr: "PR ouverte", branch: "Branche en cours" },
     legend: {
-      label: "Légende",
       todo: "À faire",
       progress: "En cours",
       review: "En review",

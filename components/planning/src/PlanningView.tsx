@@ -1,6 +1,6 @@
 import type { SprintView } from "@kibo/schema";
 import { cn } from "@kibo/sdk/lib/utils";
-import { CASE_BG } from "@kibo/sdk/tracking";
+import { CASE_BG, type LegendEntry, LegendToggle } from "@kibo/sdk/tracking";
 import { BacklogColumn } from "./BacklogColumn";
 import type { BandsTimeline } from "./bands-model";
 import { cardEntries, type PlanTarget } from "./card-menu";
@@ -14,16 +14,19 @@ import type { FeatureCard as Card, PlanningModel } from "./planning-model";
 import { SprintColumn, Warning } from "./SprintColumn";
 import { TONES } from "./tones";
 
+const LEGEND: readonly LegendEntry[] = [
+  ...TONES.map((tone) => ({
+    key: tone,
+    label: fr.legend[tone],
+    mark: <span className={cn("h-2 w-3 rounded-[2px]", CASE_BG[tone])} />,
+  })),
+  { key: "hint", label: fr.legend.hint, mark: null },
+];
+
 function Legend({ error }: { error: string | null }) {
   return (
-    <footer className="flex h-[14px] shrink-0 items-center gap-3.5 text-(--tracking-dim) text-[11.5px] leading-[14px]">
-      {TONES.map((tone) => (
-        <span key={tone} className="flex items-center gap-1.5">
-          <span aria-hidden className={cn("h-2 w-3 rounded-[2px]", CASE_BG[tone])} />
-          {fr.legend[tone]}
-        </span>
-      ))}
-      <span>{fr.legend.hint}</span>
+    <footer className="flex h-5 shrink-0 items-center gap-3.5 text-[11.5px] leading-[14px]">
+      <LegendToggle items={LEGEND} />
       {error && (
         <span role="alert" className="ml-auto text-(--tracking-red)">
           {error}

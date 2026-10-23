@@ -67,7 +67,7 @@ export const fr = {
     blocked: "bloquée",
     hold: "en attente",
     todo: "à faire",
-    hint: "· une case par étape, dans l'ordre des dépendances",
+    hint: "une case par étape, dans l'ordre des dépendances",
   },
   addFeature: "Fonctionnalité",
   addSprint: "Sprint",

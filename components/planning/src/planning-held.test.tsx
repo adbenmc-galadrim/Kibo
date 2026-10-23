@@ -89,14 +89,15 @@ test("read only, the steps on hold have no menu", async () => {
   await waitFor(() => expect(within(section).queryByRole("button", { name: /^Actions de / })).toBeNull());
 });
 
-test("the legend names the held case, in cyan, right after the blocked one", async () => {
+test("the legend is folded until clicked, then names the held case in cyan right after the blocked one", async () => {
   setupPlanning();
-  const legend = (await screen.findByText("étape livrée")).closest("footer");
-  if (!(legend instanceof HTMLElement)) throw new Error("no legend");
-  const entries = Array.from(legend.querySelectorAll("span > span[aria-hidden]")).map((swatch) => [
-    swatch.parentElement?.textContent,
-    swatch.className.includes("bg-(--tracking-hold)"),
-  ]);
+  const toggle = await screen.findByRole("button", { name: "Légende" });
+  expect(screen.queryByText("étape livrée")).toBeNull();
+  await userEvent.click(toggle);
+  const legend = screen.getByRole("list", { name: "Légende" });
+  const entries = within(legend)
+    .getAllByRole("listitem")
+    .map((item) => [item.textContent, item.querySelector(".bg-\\(--tracking-hold\\)") !== null]);
   expect(entries.slice(3, 5)).toEqual([
     ["bloquée", false],
     ["en attente", true],
