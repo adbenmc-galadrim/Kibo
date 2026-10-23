@@ -1,6 +1,6 @@
 [package]
 name = "kibo"
-version = "0.31.0-alpha.4"
+version = "0.31.0-alpha.5"
 edition = "2021"
 
 [build-dependencies]
