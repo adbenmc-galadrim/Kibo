@@ -6,6 +6,12 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.31.0-alpha.3 — 2026-10-23
+
+- Graphe : les flèches entre fonctionnalités ne sont plus dessinées (les dépendances restent comptées dans la barre).
+- Graphe : une étape qui peut démarrer tout de suite, sans rien qui la bloque, a une bordure verte ; la légende l'explique (« Peut commencer »).
+- Les légendes du Graphe, du Planning et des échéances de la Vue d'ensemble sont repliées par défaut : un clic sur ⓘ les affiche.
+
 ## 0.31.0-alpha.2 — 2026-10-22
 
 - Agent de projet : la ligne « Lu : … » sous chaque réponse nomme ce que l'agent a lu (Planning, F5, journal des étapes…), sans paramètre technique.
