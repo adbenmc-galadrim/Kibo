@@ -5,7 +5,6 @@ import { FeatureFrame } from "./FeatureFrame";
 import { fr } from "./fr";
 import { LANE_MARGIN } from "./frame-geometry";
 import { GraphLegend } from "./GraphLegend";
-import { LaneEdges } from "./LaneEdges";
 import type { Lane, SprintLanesModel } from "./sprint-lanes";
 import { SPRINT_LEGEND } from "./sprint-legend-items";
 
@@ -63,7 +62,6 @@ export function SprintLanes({ model, onOpen, onNewFeature }: Props) {
             </fieldset>
           ))}
           <div aria-hidden className="absolute inset-x-0 top-[50px] h-px bg-(--tracking-border)" />
-          <LaneEdges model={model} />
           {model.lanes.flatMap((lane) =>
             lane.frames.map((frame) => <FeatureFrame key={frame.id} frame={frame} onOpen={onOpen} />),
           )}

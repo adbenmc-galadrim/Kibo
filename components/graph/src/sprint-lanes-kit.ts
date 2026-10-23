@@ -136,6 +136,7 @@ const FEATURE_LINKS: readonly [string, string][] = [
   ["F7", "F9"],
 ];
 const SESSIONS = new Set(["SILO-33", "SILO-45"]);
+export const KIT_STARTABLE = new Set(["SILO-52", "SILO-53"]);
 
 const key = (n: number) => `SILO-${n}`;
 
@@ -210,6 +211,7 @@ const stepView = (s: Step, f: Feature, holds: readonly KitHold[]): TicketView =>
     onHold: onHoldOf(s.n, holds),
     effectiveSprintId: sprintIdOf(f.sprint),
     session: SESSIONS.has(key(s.n)) ? { tool: "T3 Code", startedAt: 1 } : null,
+    startable: KIT_STARTABLE.has(key(s.n)),
     externalRefs: [
       ...(s.branch === undefined ? [] : [{ kind: "git_branch" as const, branch: s.branch, base: null }]),
       ...(s.pr === undefined ? [] : [prRef(s.pr)]),

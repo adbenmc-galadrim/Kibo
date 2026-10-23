@@ -66,6 +66,8 @@ test("sprints mode: toolbar, counter, one column per sprint and the reserve", as
   const s42 = within(region).getByRole("group", { name: "S42 Saisie hors ligne" });
   expect(within(s42).getByText("se termine aujourd'hui")).toBeTruthy();
   expect(within(region).getByRole("group", { name: "S41 Accès" }).textContent).toContain("terminé le 9 oct.");
+  expect(screen.queryByRole("list", { name: "Légende" })).toBeNull();
+  await userEvent.click(screen.getByRole("button", { name: "Légende" }));
   expect(screen.getByRole("list", { name: "Légende" }).textContent).toContain("Colonne = sprint");
 });
 
@@ -288,6 +290,7 @@ test("a held step shows a cyan dot and a pause icon with its reason, the depende
 test("the legend lists « En attente » after « Bloqué »", async () => {
   setup();
   await lanes();
+  await userEvent.click(screen.getByRole("button", { name: "Légende" }));
   const items = within(screen.getByRole("list", { name: "Légende" }))
     .getAllByRole("listitem")
     .map((i) => i.textContent);
@@ -313,4 +316,17 @@ test("a delivered feature with a held step lists it under its header", async () 
   await userEvent.click(within(f4).getByRole("button", { name: "Saisir un constat hors ligne" }));
   const root = m.snapshot().tickets.find((t) => t.title === "Saisir un constat hors ligne");
   expect(m.opened).toEqual([root?.id ?? ""]);
+});
+
+test("no arrow is drawn behind the frames, a startable step has a solid green outline", () => {
+  const { container } = render(
+    <SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />,
+  );
+  expect(container.querySelector("[data-edge]")).toBeNull();
+  expect(container.querySelector("marker")).toBeNull();
+  const rows = within(screen.getByRole("article", { name: /^F6 / })).getAllByRole("listitem");
+  expect(rows.map((r) => r.getAttribute("data-startable"))).toEqual([null, "true", "true", null]);
+  expect(rows[1]?.className).toContain("border-(--tracking-green)");
+  const f7 = within(screen.getByRole("article", { name: /^F7 / })).getAllByRole("listitem");
+  expect(f7.every((r) => r.getAttribute("data-startable") === null)).toBe(true);
 });

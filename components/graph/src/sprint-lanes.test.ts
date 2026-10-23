@@ -226,3 +226,17 @@ test("a delivered feature with a held step keeps that step only, its header coun
   expect(f1.held).toBe(0);
   expect(f1.width).toBe(126);
 });
+
+const startableSteps = (m: SprintLanesModel) =>
+  m.lanes.flatMap((l) =>
+    l.frames.flatMap((f) => f.steps.filter((s) => s.startable).map((s) => `${f.shortKey} ${s.title}`)),
+  );
+
+test("a step is startable when its ticket is startable", () => {
+  expect(startableSteps(model())).toEqual(["F6 Contrôle des numéros", "F6 Écran d'import"]);
+});
+
+test("a startable step stays off while its feature waits on an undelivered feature", () => {
+  const tickets = kitTickets().map((t) => (t.title === "Modèle du rapport" ? { ...t, startable: true } : t));
+  expect(startableSteps(sprintLanes(kitInput({ tickets })))).not.toContain("F7 Modèle du rapport");
+});

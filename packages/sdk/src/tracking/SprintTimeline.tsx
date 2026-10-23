@@ -2,6 +2,7 @@ import type { DeadlineRow } from "@kibo/schema";
 import { ClockAlert, Lock } from "lucide-react";
 import { useState } from "react";
 import { trackingFr as t } from "./fr";
+import { type LegendEntry, LegendToggle } from "./LegendToggle";
 import { CASE_BG, SLIPPED_CASE, StepCases } from "./StepCases";
 import { TimelineHeader } from "./TimelineHeader";
 import {
@@ -198,21 +199,19 @@ function Grid({
   );
 }
 
+const swatch = (bg: string) => <span className={`h-[10px] w-[12px] rounded-[2px] ${bg}`} />;
+
+const LEGEND_ENTRIES: readonly LegendEntry[] = [
+  ...LEGEND.map((tone) => ({ key: tone, label: t.legend[tone], mark: swatch(CASE_BG[tone]) })),
+  { key: "slipped", label: t.legend.slipped, mark: swatch(SLIPPED_CASE) },
+];
+
 function Legend() {
-  const item = "flex items-center gap-[6px] text-[12px] leading-[15px] text-(--tracking-mfg)";
   return (
-    <div className="flex h-[35px] items-center gap-[16px] border-(--tracking-soft) border-t bg-(--tracking-panel) px-[16px]">
-      {LEGEND.map((tone) => (
-        <span key={tone} className={item}>
-          <span aria-hidden className={`h-[10px] w-[12px] rounded-[2px] ${CASE_BG[tone]}`} />
-          {t.legend[tone]}
-        </span>
-      ))}
-      <span className={item}>
-        <span aria-hidden className={`h-[10px] w-[12px] rounded-[2px] ${SLIPPED_CASE}`} />
-        {t.legend.slipped}
-      </span>
-    </div>
+    <LegendToggle
+      items={LEGEND_ENTRIES}
+      className="h-[35px] border-(--tracking-soft) border-t bg-(--tracking-panel) px-[14px]"
+    />
   );
 }
 

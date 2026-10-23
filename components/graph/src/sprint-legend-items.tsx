@@ -32,6 +32,13 @@ export const SPRINT_LEGEND: readonly LegendItem[] = [
     ),
   },
   {
+    key: "ready",
+    label: L.ready,
+    mark: (
+      <span className="h-2.5 w-3.5 shrink-0 rounded-[3px] border border-(--tracking-green) bg-(--tracking-card)" />
+    ),
+  },
+  {
     key: "column",
     label: L.column,
     mark: <CalendarRange size={12} absoluteStrokeWidth className="shrink-0 text-(--tracking-mfg)" />,

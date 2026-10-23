@@ -6,8 +6,11 @@ import { SPRINT_LEGEND } from "./sprint-legend-items";
 
 afterEach(cleanup);
 
-test("the legend names the mode", () => {
+const openLegend = () => userEvent.click(screen.getByRole("button", { name: "Légende" }));
+
+test("the legend names the mode", async () => {
   render(<GraphLegend items={SPRINT_LEGEND} />);
+  await openLegend();
   const legend = screen.getByRole("list", { name: "Légende" });
   expect(
     within(legend)
@@ -20,41 +23,26 @@ test("the legend names the mode", () => {
     "Bloqué",
     "En attente",
     "Fonctionnalité",
+    "Peut commencer",
     "Colonne = sprint",
     "Session active",
   ]);
 });
 
-test("the Légende button folds the legend and the choice is remembered", async () => {
-  localStorage.removeItem("kibo.graph.legend");
+test("the legend is folded on every opening and the Légende button unfolds it", async () => {
   const first = render(<GraphLegend items={SPRINT_LEGEND} />);
   const toggle = screen.getByRole("button", { name: "Légende" });
-  expect(toggle.getAttribute("aria-expanded")).toBe("true");
-  await userEvent.click(toggle);
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
   expect(screen.queryByRole("list", { name: "Légende" })).toBeNull();
-  expect(screen.getByRole("button", { name: "Légende" }).getAttribute("aria-expanded")).toBe("false");
+  await userEvent.click(toggle);
+  expect(screen.getByRole("list", { name: "Légende" })).toBeTruthy();
+  expect(toggle.getAttribute("aria-expanded")).toBe("true");
   first.unmount();
   render(<GraphLegend items={SPRINT_LEGEND} />);
   expect(screen.queryByRole("list", { name: "Légende" })).toBeNull();
-  await userEvent.click(screen.getByRole("button", { name: "Légende" }));
-  expect(screen.getByRole("list", { name: "Légende" })).toBeTruthy();
-  localStorage.removeItem("kibo.graph.legend");
 });
 
-test("the legend opens when the storage cannot be read", () => {
-  const getItem = Storage.prototype.getItem;
-  Storage.prototype.getItem = () => {
-    throw new Error("denied");
-  };
-  try {
-    render(<GraphLegend items={SPRINT_LEGEND} />);
-    expect(screen.getByRole("list", { name: "Légende" })).toBeTruthy();
-  } finally {
-    Storage.prototype.getItem = getItem;
-  }
-});
-
-test("a separator item opens a new group of marks", () => {
+test("a separator item opens a new group of marks", async () => {
   render(
     <GraphLegend
       items={[
@@ -63,6 +51,7 @@ test("a separator item opens a new group of marks", () => {
       ]}
     />,
   );
+  await openLegend();
   const items = within(screen.getByRole("list", { name: "Légende" })).getAllByRole("listitem");
   expect(items.map((i) => [i.textContent, i.getAttribute("data-separator")])).toEqual([
     ["Brouillon", null],

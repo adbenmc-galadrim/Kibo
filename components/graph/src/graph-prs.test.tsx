@@ -92,6 +92,7 @@ test("a click on a card opens its ticket", async () => {
 test("the legend lists the ten marks, « Approuvée » included", async () => {
   setup();
   await region();
+  await userEvent.click(screen.getByRole("button", { name: "Légende" }));
   const items = within(screen.getByRole("list", { name: "Légende" })).getAllByRole("listitem");
   expect(items.map((i) => i.textContent)).toEqual([
     "Brouillon",

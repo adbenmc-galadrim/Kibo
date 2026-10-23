@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import type { DeadlineCell, DeadlineColumn, DeadlineRow } from "@kibo/schema";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SprintTimeline } from "./SprintTimeline";
 
@@ -39,7 +39,6 @@ test("the timeline shows the week headers, the rows, today, the slip and the leg
   expect(screen.getByText("glisse en S43")).toBeTruthy();
   expect(screen.getByText("bloquée · Q14")).toBeTruthy();
   expect(screen.getByText("aujourd'hui")).toBeTruthy();
-  expect(screen.getByText("glissement prévu")).toBeTruthy();
   expect(container.querySelectorAll('[data-tone="slipped"]').length).toBe(1);
   expect(container.querySelectorAll('[data-tone="blocked"]').length).toBe(1);
   expect(container.querySelector("[data-current]")?.textContent).toContain("S42");
@@ -133,4 +132,21 @@ test("over an empty end of the last row, the today label keeps its place and the
   if (!grid) throw new Error("timeline missing");
   expect(Number.parseFloat(grid.style.height)).toBe(30 + 2 * 30 + 6);
   expect(top(label)).toBe(30 + 2 * 30 + 6 - 24);
+});
+
+test("the legend stays folded until its button is clicked", async () => {
+  render(<SprintTimeline columns={COLUMNS} rows={[row("f5")]} today={4 / 21} legend />);
+  const toggle = screen.getByRole("button", { name: "Légende" });
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  expect(screen.queryByText("glissement prévu")).toBeNull();
+  await userEvent.click(toggle);
+  const items = within(screen.getByRole("list", { name: "Légende" })).getAllByRole("listitem");
+  expect(items.map((i) => i.textContent)).toEqual([
+    "étape livrée",
+    "en review",
+    "en cours",
+    "bloquée",
+    "à faire",
+    "glissement prévu",
+  ]);
 });

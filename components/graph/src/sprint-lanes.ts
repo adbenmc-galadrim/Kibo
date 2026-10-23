@@ -42,6 +42,7 @@ export type LaneStep = {
   git: GitMark | null;
   session: boolean;
   hold: OnHold | null;
+  startable: boolean;
 };
 export type FrameSegment = { ticketId: string; tone: StepTone };
 export type FrameFooter =
@@ -134,7 +135,7 @@ function footerOf(f: Feature, facts: Facts, sorted: readonly SprintView[]): Fram
   return { kind: "late", slipTo: index < 0 ? null : (sorted[index + 1]?.code ?? null) };
 }
 
-function draftOf(f: Feature, facts: Facts, sorted: readonly SprintView[]): Draft {
+function draftOf(f: Feature, facts: Facts, sorted: readonly SprintView[], waiting: boolean): Draft {
   const { input, blocking, byId } = facts;
   const steps = featureSteps({ feature: f.id, tickets: input.tickets, links: input.links });
   const delivered = f.feature.status === "delivered";
@@ -158,6 +159,7 @@ function draftOf(f: Feature, facts: Facts, sorted: readonly SprintView[]): Draft
       git: gitOf(s),
       session: byId.get(s.ticketId)?.session != null || input.live.has(s.ticketId),
       hold: s.onHold,
+      startable: !waiting && byId.get(s.ticketId)?.startable === true,
     })),
     footer: footerOf(f, facts, sorted),
   };
@@ -218,6 +220,12 @@ function linksOf(
   return { edges: [...edges.values()], stepLinks };
 }
 
+const isDelivered = (id: string, byId: ReadonlyMap<string, TicketView>): boolean =>
+  byId.get(id)?.feature?.status === "delivered";
+
+const waitingFeatures = (edges: readonly LaneEdge[], byId: ReadonlyMap<string, TicketView>): Set<string> =>
+  new Set(edges.filter((e) => !isDelivered(e.from, byId)).map((e) => e.to));
+
 const unfinished = (ids: readonly string[], byId: ReadonlyMap<string, TicketView>): number =>
   ids.filter((id) => {
     const status = byId.get(id)?.feature?.status;
@@ -229,7 +237,9 @@ export function sprintLanes(input: SprintLanesInput): SprintLanesModel {
   const facts: Facts = { input, blocking: blockingQuestions(input.questions), byId };
   const sorted = sortSprints(input.sprints);
   const features = input.tickets.filter((t): t is Feature => isFeature(t) && t.feature !== null);
-  const drafts = new Map(features.map((f) => [f.id, draftOf(f, facts, sorted)]));
+  const { edges, stepLinks } = linksOf(input, byId, new Set(features.map((f) => f.id)));
+  const waiting = waitingFeatures(edges, byId);
+  const drafts = new Map(features.map((f) => [f.id, draftOf(f, facts, sorted, waiting.has(f.id))]));
   const planned = new Set(sorted.flatMap((s) => s.features));
   const seeds: LaneSeed[] = [
     ...sorted.map((s) => ({
@@ -254,7 +264,6 @@ export function sprintLanes(input: SprintLanesInput): SprintLanesModel {
     const last = lanes.at(-1);
     lanes.push(placeLane(seed, i, last === undefined ? 0 : last.x + last.width));
   }
-  const { edges, stepLinks } = linksOf(input, byId, new Set(drafts.keys()));
   const frames = lanes.flatMap((l) => l.frames);
   const end = lanes.at(-1);
   return {
