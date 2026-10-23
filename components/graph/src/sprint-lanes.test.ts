@@ -226,3 +226,15 @@ test("a delivered feature with a held step keeps that step only, its header coun
   expect(f1.held).toBe(0);
   expect(f1.width).toBe(126);
 });
+
+test("a feature is ready when it is neither delivered nor blocked and every blocking feature is delivered", () => {
+  const m = model();
+  const ready = m.lanes.flatMap((l) => l.frames.filter((f) => f.ready).map((f) => f.shortKey));
+  expect(ready).toEqual(["F4", "F5"]);
+});
+
+test("a step link from an unfinished feature keeps its target not ready", () => {
+  const extra = { id: "lx", from: "SILO-54", to: "SILO-32", type: "blocks" as const };
+  const m = sprintLanes(kitInput({ links: [...KIT_LINKS, extra] }));
+  expect(frameOf(m, "F5").ready).toBe(false);
+});

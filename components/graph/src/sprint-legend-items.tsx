@@ -32,6 +32,15 @@ export const SPRINT_LEGEND: readonly LegendItem[] = [
     ),
   },
   {
+    key: "ready",
+    label: L.ready,
+    mark: (
+      <svg aria-hidden="true" width={14} height={10} className="shrink-0">
+        <rect x={0.5} y={0.5} width={13} height={9} rx={2.5} fill="none" stroke="var(--tracking-green)" />
+      </svg>
+    ),
+  },
+  {
     key: "column",
     label: L.column,
     mark: <CalendarRange size={12} absoluteStrokeWidth className="shrink-0 text-(--tracking-mfg)" />,

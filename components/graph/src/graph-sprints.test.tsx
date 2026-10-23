@@ -314,3 +314,18 @@ test("a delivered feature with a held step lists it under its header", async () 
   const root = m.snapshot().tickets.find((t) => t.title === "Saisir un constat hors ligne");
   expect(m.opened).toEqual([root?.id ?? ""]);
 });
+
+test("no arrow is drawn behind the frames, a ready feature has a solid green outline", () => {
+  const { container } = render(
+    <SprintLanes model={kitModel()} onOpen={() => undefined} onNewFeature={() => undefined} />,
+  );
+  expect(container.querySelector("[data-edge]")).toBeNull();
+  expect(container.querySelector("marker")).toBeNull();
+  const f4 = screen.getByRole("article", { name: /^F4 / });
+  expect(f4.getAttribute("data-ready")).toBe("true");
+  expect(f4.querySelector("rect")?.getAttribute("stroke")).toBe("var(--tracking-green)");
+  expect(f4.querySelector("rect")?.getAttribute("stroke-dasharray")).toBeNull();
+  const f7 = screen.getByRole("article", { name: /^F7 / });
+  expect(f7.getAttribute("data-ready")).toBeNull();
+  expect(f7.querySelector("rect")?.getAttribute("stroke-dasharray")).toBe("11 11");
+});

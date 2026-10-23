@@ -61,6 +61,7 @@ export const fr = {
       blocked: "Bloqué",
       hold: "En attente",
       feature: "Fonctionnalité",
+      ready: "Peut commencer",
       column: "Colonne = sprint",
       session: "Session active",
     },

@@ -20,6 +20,7 @@ test("the legend names the mode", () => {
     "Bloqué",
     "En attente",
     "Fonctionnalité",
+    "Peut commencer",
     "Colonne = sprint",
     "Session active",
   ]);

@@ -20,7 +20,6 @@ export const STACK_GAP = 30;
 export const FIRST_FRAME_Y = 70;
 export const LANE_MARGIN = 14;
 export const NARROW_LANE_MARGIN = 12;
-export const TITLE_ANCHOR_Y = 38;
 
 const TITLE_PX = 12.5;
 const STEP_PX = 11.5;
