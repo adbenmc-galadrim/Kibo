@@ -56,14 +56,20 @@ function HoldMark({ hold }: { hold: OnHold }) {
 
 type Props = { step: LaneStep; onOpen(id: string): void };
 
+const rowBorder = (step: LaneStep): string => {
+  if (step.session) return "border-(--tracking-brand-line)";
+  return step.startable ? "border-(--tracking-green)" : "border-(--tracking-border)";
+};
+
 export function FrameStepRow({ step, onOpen }: Props) {
   const Icon = step.git === null ? null : GIT_ICON[step.git.kind];
   return (
     <li
       data-session={step.session ? "true" : undefined}
+      data-startable={step.startable ? "true" : undefined}
       className={cn(
         "flex h-6 items-center gap-1.5 rounded-[6px] border bg-(--tracking-card) px-2",
-        step.session ? "border-(--tracking-brand-line)" : "border-(--tracking-border)",
+        rowBorder(step),
       )}
     >
       <StepDot tone={step.tone} />

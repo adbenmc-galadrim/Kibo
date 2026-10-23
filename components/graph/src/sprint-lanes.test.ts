@@ -227,14 +227,16 @@ test("a delivered feature with a held step keeps that step only, its header coun
   expect(f1.width).toBe(126);
 });
 
-test("a feature is ready when it is neither delivered nor blocked and every blocking feature is delivered", () => {
-  const m = model();
-  const ready = m.lanes.flatMap((l) => l.frames.filter((f) => f.ready).map((f) => f.shortKey));
-  expect(ready).toEqual(["F4", "F5"]);
+const startableSteps = (m: SprintLanesModel) =>
+  m.lanes.flatMap((l) =>
+    l.frames.flatMap((f) => f.steps.filter((s) => s.startable).map((s) => `${f.shortKey} ${s.title}`)),
+  );
+
+test("a step is startable when its ticket is startable", () => {
+  expect(startableSteps(model())).toEqual(["F6 Contrôle des numéros", "F6 Écran d'import"]);
 });
 
-test("a step link from an unfinished feature keeps its target not ready", () => {
-  const extra = { id: "lx", from: "SILO-54", to: "SILO-32", type: "blocks" as const };
-  const m = sprintLanes(kitInput({ links: [...KIT_LINKS, extra] }));
-  expect(frameOf(m, "F5").ready).toBe(false);
+test("a startable step stays off while its feature waits on an undelivered feature", () => {
+  const tickets = kitTickets().map((t) => (t.title === "Modèle du rapport" ? { ...t, startable: true } : t));
+  expect(startableSteps(sprintLanes(kitInput({ tickets })))).not.toContain("F7 Modèle du rapport");
 });

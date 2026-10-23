@@ -19,18 +19,16 @@ const SEGMENT_BG: Record<StepTone, string> = {
   todo: "bg-(--tracking-border)",
 };
 
-export function FrameOutline({
+export function DashedOutline({
   width,
   height,
   radius,
   color,
-  dashed,
 }: {
   width: number;
   height: number;
   radius: number;
   color: string;
-  dashed: boolean;
 }) {
   return (
     <svg aria-hidden="true" className="pointer-events-none absolute inset-0" width={width} height={height}>
@@ -42,7 +40,7 @@ export function FrameOutline({
         rx={radius - 0.5}
         fill="none"
         stroke={color}
-        strokeDasharray={dashed ? DASH : undefined}
+        strokeDasharray={DASH}
       />
     </svg>
   );
@@ -90,11 +88,6 @@ function HeldCount({ held }: { held: number }) {
   );
 }
 
-const outlineColor = (frame: LaneFrame): string => {
-  if (frame.late) return "var(--tracking-red)";
-  return frame.ready ? "var(--tracking-green)" : "var(--tracking-mfg)";
-};
-
 type Props = { frame: LaneFrame; onOpen(id: string): void };
 
 export function FeatureFrame({ frame, onOpen }: Props) {
@@ -103,17 +96,15 @@ export function FeatureFrame({ frame, onOpen }: Props) {
       aria-label={`${frame.shortKey} ${frame.title}`}
       data-key={frame.shortKey}
       data-late={frame.late ? "true" : undefined}
-      data-ready={frame.ready ? "true" : undefined}
       data-title-lines={frame.titleLines}
       className="absolute flex flex-col gap-1.5 rounded-[10px] bg-(--tracking-bg) p-2.5"
       style={{ left: frame.x, top: frame.y, width: frame.width, height: frame.height }}
     >
-      <FrameOutline
+      <DashedOutline
         width={frame.width}
         height={frame.height}
         radius={10}
-        color={outlineColor(frame)}
-        dashed={!frame.ready}
+        color={frame.late ? "var(--tracking-red)" : "var(--tracking-mfg)"}
       />
       <div className="flex h-[14px] shrink-0 items-center gap-1.5 font-mono text-[11px] leading-[14px]">
         <span className="text-(--tracking-dim)">{frame.shortKey}</span>
