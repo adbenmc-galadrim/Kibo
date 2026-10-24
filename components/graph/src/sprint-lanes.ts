@@ -227,8 +227,20 @@ const unblocked = (t: TicketView | undefined): boolean =>
 const isDelivered = (id: string, byId: ReadonlyMap<string, TicketView>): boolean =>
   byId.get(id)?.feature?.status === "delivered";
 
-const waitingFeatures = (edges: readonly LaneEdge[], byId: ReadonlyMap<string, TicketView>): Set<string> =>
-  new Set(edges.filter((e) => !isDelivered(e.from, byId)).map((e) => e.to));
+const waitingFeatures = (
+  links: readonly Link[],
+  byId: ReadonlyMap<string, TicketView>,
+  features: ReadonlySet<string>,
+): Set<string> =>
+  new Set(
+    links
+      .filter((l) => l.type === "blocks" && features.has(l.to))
+      .filter((l) => {
+        const from = rootOf(l.from, byId);
+        return from !== l.to && features.has(from) && !isDelivered(from, byId);
+      })
+      .map((l) => l.to),
+  );
 
 const unfinished = (ids: readonly string[], byId: ReadonlyMap<string, TicketView>): number =>
   ids.filter((id) => {
@@ -241,8 +253,9 @@ export function sprintLanes(input: SprintLanesInput): SprintLanesModel {
   const facts: Facts = { input, blocking: blockingQuestions(input.questions), byId };
   const sorted = sortSprints(input.sprints);
   const features = input.tickets.filter((t): t is Feature => isFeature(t) && t.feature !== null);
-  const { edges, stepLinks } = linksOf(input, byId, new Set(features.map((f) => f.id)));
-  const waiting = waitingFeatures(edges, byId);
+  const featureIds = new Set(features.map((f) => f.id));
+  const { edges, stepLinks } = linksOf(input, byId, featureIds);
+  const waiting = waitingFeatures(input.links, byId, featureIds);
   const drafts = new Map(features.map((f) => [f.id, draftOf(f, facts, sorted, waiting.has(f.id))]));
   const planned = new Set(sorted.flatMap((s) => s.features));
   const seeds: LaneSeed[] = [

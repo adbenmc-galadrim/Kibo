@@ -6,6 +6,10 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.31.0-alpha.5 — 2026-10-24
+
+- Graphe : une étape n'est plus éteinte parce qu'une autre étape de sa fonctionnalité attend une autre fonctionnalité ; seul ce qui la bloque elle compte.
+
 ## 0.31.0-alpha.4 — 2026-10-24
 
 - Graphe : la bordure verte ne dépend plus de la date du sprint ni de la limite de fonctionnalités en cours ; une étape est verte dès que plus rien ne la bloque.

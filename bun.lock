@@ -29,7 +29,7 @@
     },
     "apps/desktop": {
       "name": "@kibo/desktop",
-      "version": "0.31.0-alpha.4",
+      "version": "0.31.0-alpha.5",
       "devDependencies": {
         "@kibo/devkit": "workspace:*",
         "@kibo/schema": "workspace:*",

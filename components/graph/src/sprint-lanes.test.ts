@@ -264,3 +264,16 @@ test("a step refused for an open dependency is not startable", () => {
     "F6 Écran d'import",
   ]);
 });
+
+test("a step stays startable when only a sibling step waits on another feature", () => {
+  const links = [...KIT_LINKS, { id: "sibling", from: "SILO-41", to: "SILO-54", type: "blocks" as const }];
+  expect(startableSteps(sprintLanes(kitInput({ links })))).toEqual([
+    "F6 Contrôle des numéros",
+    "F6 Écran d'import",
+  ]);
+});
+
+test("every step goes off when its feature itself waits on an undelivered feature", () => {
+  const links = [...KIT_LINKS, { id: "root", from: "SILO-40", to: "SILO-50", type: "blocks" as const }];
+  expect(startableSteps(sprintLanes(kitInput({ links })))).toEqual([]);
+});
