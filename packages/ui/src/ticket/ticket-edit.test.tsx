@@ -151,6 +151,7 @@ test("the sheet title stays a heading named after the ticket, and names the dial
   await show();
   const dialog = screen.getByRole("dialog", { name: "Schéma Loro des tickets" });
   expect(dialog.className).toContain("w-full sm:max-w-[min(90vw,560px)]");
+  expect(dialog.className).toContain("overflow-x-hidden");
   const heading = within(dialog).getByRole("heading", { name: "Schéma Loro des tickets" });
   expect(heading.textContent).toBe("Schéma Loro des tickets");
   // Chromium names the heading after the button's aria-label, dom-accessibility-api does not.
