@@ -6,6 +6,11 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.31.0-alpha.6 — 2026-10-26
+
+- Volet d'un ticket : il ne défile plus en largeur ; un titre ou une description longs passent à la ligne.
+- Agent de projet : la zone de saisie grandit avec le texte jusqu'à 10 lignes, puis défile.
+
 ## 0.31.0-alpha.5 — 2026-10-24
 
 - Graphe : une étape n'est plus éteinte parce qu'une autre étape de sa fonctionnalité attend une autre fonctionnalité ; seul ce qui la bloque elle compte.
