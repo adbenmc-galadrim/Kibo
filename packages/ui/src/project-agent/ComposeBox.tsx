@@ -15,9 +15,9 @@ type Props = {
 const t = frProjectAgent.compose;
 
 const BOX =
-  "relative flex h-[42px] items-center gap-[8px] rounded-[8px] border border-(--tracking-border) bg-(--tracking-bg) px-[12px]";
+  "relative flex min-h-[42px] items-end gap-[8px] rounded-[8px] border border-(--tracking-border) bg-(--tracking-bg) px-[12px] py-[13px]";
 const INPUT =
-  "h-auto min-h-0 flex-1 resize-none border-0 bg-transparent p-0 text-[13px] leading-[1.2] shadow-none placeholder:text-(--tracking-mfg) focus-visible:ring-0 dark:bg-transparent";
+  "h-auto max-h-[10lh] min-h-0 flex-1 resize-none overflow-y-auto border-0 bg-transparent p-0 text-[13px] leading-[1.2] shadow-none placeholder:text-(--tracking-mfg) focus-visible:ring-0 dark:bg-transparent";
 
 const sendKey = (e: { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }) =>
   e.key === "Enter" && (e.metaKey || e.ctrlKey || !e.shiftKey);

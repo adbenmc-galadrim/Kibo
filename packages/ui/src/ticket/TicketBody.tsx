@@ -52,7 +52,7 @@ export function TicketBody({
   const host = useOptionalHost();
   const label = stepTitle(t, project.tickets.find((x) => x.id === t.parentId) ?? null);
   return (
-    <div className="grid gap-4 px-6 pt-[18px] pb-6">
+    <div className="grid grid-cols-1 gap-4 px-6 pt-[18px] pb-6">
       {notice}
       <BlockedBanner
         ticket={t}

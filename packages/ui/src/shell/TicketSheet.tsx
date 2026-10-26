@@ -77,7 +77,7 @@ export function TicketSheet({
   if (isFeature(t))
     return (
       <Sheet open onOpenChange={(o) => !o && onClose()}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-[min(90vw,560px)]">
+        <SheetContent className="w-full overflow-x-hidden overflow-y-auto sm:max-w-[min(90vw,560px)]">
           <SheetHeader className="sr-only">
             <SheetTitle>{t.title}</SheetTitle>
             <SheetDescription>{frFeature.kicker(t.shortKey, t.keyLabel)}</SheetDescription>
@@ -100,7 +100,7 @@ export function TicketSheet({
   if (isGroup(t))
     return (
       <Sheet open onOpenChange={(o) => !o && onClose()}>
-        <SheetContent className="w-full sm:max-w-[min(90vw,560px)] overflow-y-auto">
+        <SheetContent className="w-full overflow-x-hidden overflow-y-auto sm:max-w-[min(90vw,560px)]">
           <SheetHeader>
             {notice}
             <div className="flex items-center gap-2">
@@ -127,7 +127,7 @@ export function TicketSheet({
     <Sheet open onOpenChange={(o) => !o && onClose()}>
       <SheetContent
         showCloseButton={false}
-        className="w-full sm:max-w-[min(90vw,560px)] gap-0 overflow-y-auto"
+        className="w-full sm:max-w-[min(90vw,560px)] gap-0 overflow-x-hidden overflow-y-auto"
       >
         <SheetDescription className="sr-only">{`${t.keyLabel} · ${t.title}`}</SheetDescription>
         <TicketTopBar
