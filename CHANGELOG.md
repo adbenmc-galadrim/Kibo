@@ -6,6 +6,11 @@ Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus
 
 -
 
+## 0.31.0-alpha.7 — 2026-10-27
+
+- Graphe : seul ce qui est posé sur l'étape retire son encadré vert (ses dépendances et ses propres questions) ; la dernière étape n'attend plus ses sœurs et la question de la fonctionnalité ne l'éteint plus.
+- Volet d'un ticket : les titres de question et de dépendance, l'activité et les noms de branche passent à la ligne au lieu d'être coupés.
+
 ## 0.31.0-alpha.6 — 2026-10-26
 
 - Volet d'un ticket : il ne défile plus en largeur ; un titre ou une description longs passent à la ligne.
