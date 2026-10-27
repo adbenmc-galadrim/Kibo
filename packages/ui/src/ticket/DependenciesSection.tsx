@@ -38,18 +38,18 @@ function Group({ name, items, editable, onOpen, onRemove, badge }: GroupProps) {
       </legend>
       <ul className="grid gap-0.5">
         {items.map(({ link, ticket }) => (
-          <li key={link.id} className="flex items-center gap-1">
+          <li key={link.id} className="flex items-start gap-1">
             <button
               type="button"
               className={cn(
-                "flex min-w-0 flex-1 items-center gap-2 rounded-md px-1 py-0.5 text-left hover:bg-accent",
+                "flex min-w-0 flex-1 items-baseline gap-2 rounded-md px-1 py-0.5 text-left hover:bg-accent",
                 ticket.statusId === "done" && "text-muted-foreground",
               )}
               onClick={() => onOpen(ticket.id)}
             >
               <StatusDot statusId={ticket.statusId} />
-              <span className="font-mono text-2xs">{ticket.keyLabel}</span>{" "}
-              <span className="truncate">{ticket.title}</span>
+              <span className="shrink-0 font-mono text-2xs">{ticket.keyLabel}</span>{" "}
+              <span className="min-w-0 wrap-anywhere">{ticket.title}</span>
             </button>
             {badge({ link, ticket })}
             {editable && (

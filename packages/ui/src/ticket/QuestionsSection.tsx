@@ -31,7 +31,7 @@ export function QuestionsSection({ ticket, questions, onOpen }: Props) {
                 onClick={() => onOpen(q.id)}
               >
                 <span className="shrink-0 font-mono text-xs text-muted-foreground">{questionLabel(q)}</span>
-                <span className="min-w-0 truncate">{q.title}</span>
+                <span className="min-w-0 wrap-anywhere">{q.title}</span>
               </button>
             </li>
           ))}

@@ -196,3 +196,10 @@ test("the search field suggests a key of the current project", async () => {
   await userEvent.setup().click(screen.getByRole("button", { name: "Ajouter une dépendance" }));
   expect(screen.getByRole("textbox", { name: "Ticket" }).getAttribute("placeholder")).toBe("BOU-2…");
 });
+
+test("a long dependency title wraps instead of being cut", () => {
+  draw();
+  const title = screen.getByText("Format des dates de livraison");
+  expect(title.className).toContain("wrap-anywhere");
+  expect(title.className).not.toContain("truncate");
+});
