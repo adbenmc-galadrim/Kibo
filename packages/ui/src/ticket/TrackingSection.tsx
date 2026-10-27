@@ -191,11 +191,11 @@ export function TrackingSection({ ticket, ciRuns, events, now, repo = true }: Pr
           {branch && (
             <Row label={t.branch}>
               <GitBranch aria-hidden className="size-3.5 text-(--tracking-blue)" />
-              <span className="font-mono">{branch.branch}</span>
+              <span className="font-mono wrap-anywhere">{branch.branch}</span>
               {branch.base && (
                 <>
                   <span className={DIM}>{t.on}</span>
-                  <span className="font-mono">{branch.base}</span>
+                  <span className="font-mono wrap-anywhere">{branch.base}</span>
                 </>
               )}
               {isDeclared(events, branch.branch) && <span className={DIM}>{t.declared}</span>}

@@ -59,7 +59,7 @@ function Entry({ line, last }: { line: TimelineLine; last: boolean }) {
         <span className="flex items-center gap-2">
           <span
             className={cn(
-              "min-w-0 flex-1 truncate text-[13px] font-medium",
+              "min-w-0 flex-1 wrap-anywhere text-[13px] font-medium",
               line.kind === "session" && "text-(--tracking-brand-text)",
             )}
           >

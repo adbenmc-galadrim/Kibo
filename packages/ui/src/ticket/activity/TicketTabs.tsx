@@ -34,8 +34,12 @@ export function TicketTabs({ tab, onTab, details, activity }: Props) {
           {t.activity}
         </TabsTrigger>
       </TabsList>
-      <TabsContent value="details">{details}</TabsContent>
-      <TabsContent value="activity">{activity}</TabsContent>
+      <TabsContent value="details" className="min-w-0">
+        {details}
+      </TabsContent>
+      <TabsContent value="activity" className="min-w-0">
+        {activity}
+      </TabsContent>
     </Tabs>
   );
 }

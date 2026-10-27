@@ -7,6 +7,7 @@ import {
   KIT_DAY_AFTER,
   KIT_HOLDS,
   KIT_LINKS,
+  KIT_QUESTIONS,
   KIT_SPRINTS,
   KIT_TODAY,
   kitInput,
@@ -258,11 +259,62 @@ test("a step held back only by its sprint date or the feature limit stays starta
 test("a step refused for an open dependency is not startable", () => {
   const blocked = (t: TicketView): TicketView =>
     t.title === "Contrôle des numéros"
-      ? { ...t, startable: false, startReason: { kind: "dependency", keys: ["SILO-9"] } }
+      ? {
+          ...t,
+          startable: false,
+          startReason: { kind: "dependency", keys: ["SILO-9"] },
+          waitingOn: ["SILO-9"],
+        }
       : t;
   expect(startableSteps(sprintLanes(kitInput({ tickets: kitTickets().map(blocked) })))).toEqual([
     "F6 Écran d'import",
   ]);
+});
+
+const refused =
+  (title: string, over: Partial<TicketView>) =>
+  (t: TicketView): TicketView =>
+    t.title === title ? { ...t, startable: false, ...over } : t;
+
+test("a last step waiting only on its sibling steps stays startable", () => {
+  const last = refused("Contrôle des numéros", { startReason: { kind: "dependency", keys: ["SILO-51"] } });
+  expect(startableSteps(sprintLanes(kitInput({ tickets: kitTickets().map(last) })))).toEqual([
+    "F6 Contrôle des numéros",
+    "F6 Écran d'import",
+  ]);
+});
+
+test("a step refused only for its feature's blocking question stays startable", () => {
+  const asked = refused("Contrôle des numéros", { startReason: { kind: "question", label: "Q2" } });
+  expect(startableSteps(sprintLanes(kitInput({ tickets: kitTickets().map(asked) })))).toEqual([
+    "F6 Contrôle des numéros",
+    "F6 Écran d'import",
+  ]);
+});
+
+test("a step with its own open blocking question is not startable", () => {
+  const tickets = kitTickets().map(
+    refused("Contrôle des numéros", { startReason: { kind: "dependency", keys: ["SILO-51"] } }),
+  );
+  const own = tickets.find((t) => t.title === "Contrôle des numéros")?.id ?? "";
+  const [base] = KIT_QUESTIONS;
+  if (base === undefined) throw new Error("missing question");
+  const questions = [...KIT_QUESTIONS, { ...base, id: "q-own", ticketId: own }];
+  expect(startableSteps(sprintLanes(kitInput({ tickets, questions })))).toEqual(["F6 Écran d'import"]);
+});
+
+test("a step refused for its status or its hold is not startable", () => {
+  const tickets = kitTickets()
+    .map(refused("Contrôle des numéros", { startReason: { kind: "status" } }))
+    .map(
+      refused("Écran d'import", {
+        startReason: {
+          kind: "onHold",
+          hold: { source: "own", key: "SILO-53", reason: "Théo", since: "2026-10-16" },
+        },
+      }),
+    );
+  expect(startableSteps(sprintLanes(kitInput({ tickets })))).toEqual([]);
 });
 
 test("a step stays startable when only a sibling step waits on another feature", () => {

@@ -56,7 +56,7 @@ export function TicketDetail({
       origin: t.keyLabel,
     });
   return (
-    <div className="grid gap-4">
+    <div className="grid grid-cols-1 gap-4">
       <div className="-mx-4 empty:hidden">
         <SyncStatus projectId={project.meta.id} ticket={t} />
       </div>
