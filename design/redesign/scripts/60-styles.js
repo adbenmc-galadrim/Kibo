@@ -182,8 +182,8 @@ S.barC2 = (root, active) => { const K = S.K;
   const b = S.row(root, { fx: true, h: 44, pad: [0, 24], gap: 18 });
   S.T(b, "KIBO", { mono: true, size: 12, weight: 600 }); S.T(b, "/", { mono: true, size: 12, color: K.faint }); S.T(b, "SILO", { mono: true, size: 12, weight: 600 });
   S.box(b, { w: 8, h: 4 });
-  for (const n of ["VUE", "PLANNING", "TICKETS", "GRAPHE", "NOTES", "QUESTIONS"]) { const on = n === active; const t = S.row(b, { pad: [3, 7], fill: on ? K.ink : null }); S.T(t, n, { mono: true, size: 11, weight: 500, color: on ? K.bg : K.ink2, ls: 0.6 }); }
-  S.spacer(b); S.T(b, "15.01.2027 · S1 J5/5", { mono: true, size: 11.5, color: K.ink2 }); const sy = S.row(b, { gap: 6 }); S.dot(sy, K.sig, 6); S.T(sy, "SYNC 14:58", { mono: true, size: 11.5, color: K.ink2 });
+  for (const n of ["VUE", "PLANNING", "KANBAN", "GRAPHE", "QUESTIONS"]) { const on = n === active; const t = S.row(b, { pad: [3, 7], fill: on ? K.ink : null }); S.T(t, n, { mono: true, size: 11, weight: 500, color: on ? K.bg : K.ink2, ls: 0.6 }); }
+  S.spacer(b); S.T(b, "15.01.2027 · S1 J5/5", { mono: true, size: 11.5, color: K.ink2 });
   S.box(root, { h: 1, w: 10, fx: true, fill: K.grid2 }); };
 S.panelC2 = (p, code, title, right, o = {}) => { const K = S.K;
   const c = S.col(p, { name: "panel " + code, fx: !o.w, w: o.w, fy: o.fy, stroke: K.grid2, fill: K.panel });

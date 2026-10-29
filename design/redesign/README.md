@@ -105,7 +105,7 @@ et « En ce moment » de la piste C, et « une case par étape » de la piste B.
 | P1 · Vue d'ensemble | fonctionnalités livrées 3/9 (une case par fonctionnalité), sprint en cours, ouvertes 2/2, PR en review, questions ; « En ce moment » (sessions T3 Code) ; échéances par sprint avec glissement de F5 ; carte du sprint S42 ; « Prochaine à finir » avec `/full-delivery SILO-45` ; activité ; agent de projet (lot n° 7 : reporter F5, planifier F9, relancer Q14) |
 | P2 · Planning | sprints S41 à S44 en colonnes et réserve « À planifier » ; cartes de fonctionnalité avec leurs étapes en cases ; F5 en retard ; F9 glissée vers la zone de dépôt de S44 ; limite d'ouvertes dans l'en-tête |
 | P3 · Fonctionnalité | F5 « Envoyer les photos d'un constat » : résultat attendu, parcours A→Z en frise verticale (ticket, état git et PR, étape full-delivery, session), « Livrer la prochaine étape » (`/full-delivery SILO-34`), sprint et proposition de report, dépendances, questions, activité |
-| P4 · Tickets | liste à plat filtrée par sprint (S42), puce de fonctionnalité, terminés du sprint repliables, « Hors fonctionnalité » |
+| P4 · Tickets | retiré en phase 33 (composant `tickets` retiré) |
 | P5 · Graphe | fonctionnalités en cadres placés dans la colonne de leur sprint, étapes listées, dépendances entre fonctionnalités, retard et blocage |
 
 Données : 9 fonctionnalités F1 à F9 (SILO-1 à SILO-93), sprints S41 « Accès », S42 « Saisie hors ligne » (en cours, finit
