@@ -64,7 +64,7 @@ describe("kibo component", () => {
       "kibo questions list <clé> [--all] [--project <p>] [--json]",
       'kibo questions add <clé> "<titre>" --option "A" [--option "B"…] [--context …] [--recipient <nom|id>] [--provisional "A"] [--blocking] [--project <p>] [--json]',
       'kibo questions answer <id|n°> "<réponse>" --project <p> [--json]',
-      "kibo plan apply <fichier.yaml|json> [--dry-run] --project <p> [--json]",
+      "kibo plan apply <fichier.yaml|json> [--dry-run] [--project <p>] [--json]",
       "kibo plan export [--md] --project <p>",
       "kibo rpc '<json>' | @fichier | @-",
     ];

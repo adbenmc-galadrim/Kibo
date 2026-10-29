@@ -3,7 +3,7 @@ import type { FrError } from "./fr-errors";
 import { DAEMON_HELP, usageText } from "./fr-usage";
 
 export const PLAN_USAGE = [
-  "  kibo plan apply <fichier.yaml|json> [--dry-run] --project <p> [--json]",
+  "  kibo plan apply <fichier.yaml|json> [--dry-run] [--project <p>] [--json]",
   "  kibo plan export [--md] --project <p>",
 ];
 
