@@ -64,12 +64,8 @@ describe("bundle report", () => {
       pkg("@shikijs/langs", "dist/tsx.mjs"),
       pkg("sonner", "dist/index.mjs"),
       pkg("next-themes", "dist/index.mjs"),
-      "/Kibo/packages/ui/src/agents/AgentsPage.tsx",
-      "/Kibo/packages/ui/src/agents/QueuePage.tsx",
-      "/Kibo/packages/ui/src/settings/DomainsPage.tsx",
       "/Kibo/packages/ui/src/components-page/ComponentsPage.tsx",
       "/Kibo/packages/ui/src/mine/MyTicketsPage.tsx",
-      "/Kibo/packages/ui/src/code/ChangesView.tsx",
       "/Kibo/packages/ui/src/files/FileTabView.tsx",
       "/Kibo/packages/ui/src/files/FilePreviewSheet.tsx",
       "/Kibo/packages/ui/src/shell/IntegrationNotices.tsx",
@@ -81,8 +77,6 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/dialogs/NewProjectDialog.tsx",
       "/Kibo/packages/ui/src/dialogs/NewPageDialog.tsx",
       "/Kibo/packages/ui/src/dialogs/NewTicketDialog.tsx",
-      "/Kibo/packages/ui/src/agents/AssignDialog.tsx",
-      "/Kibo/packages/ui/src/agents/ProfileSheet.tsx",
       "/Kibo/packages/ui/src/shell/TicketSheet.tsx",
       "/Kibo/packages/ui/src/palette/CommandPalette.tsx",
       "/Kibo/packages/ui/src/components-page/PublishDialog.tsx",
@@ -90,7 +84,6 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/shell/TicketDetail.tsx",
       "/Kibo/packages/ui/src/shell/PresenceAvatars.tsx",
       "/Kibo/packages/ui/src/shell/ProjectPresence.tsx",
-      "/Kibo/packages/ui/src/shell/KeyRequired.tsx",
       "/Kibo/packages/ui/src/i18n/fr-presence.ts",
       pkg("@tauri-apps/plugin-updater", "dist-js/index.js"),
       pkg("@tauri-apps/api", "app.js"),
@@ -114,14 +107,11 @@ describe("bundle report", () => {
       "/Kibo/packages/ui/src/i18n/fr-files.ts",
       "/Kibo/packages/ui/src/settings/SyncEmptyState.tsx",
       "/Kibo/packages/ui/src/i18n/fr-sync-page.ts",
-      "/Kibo/packages/ui/src/agents/RunHistory.tsx",
-      "/Kibo/packages/ui/src/i18n/fr-agents-page.ts",
     ];
     for (const id of forbidden) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(id))).toBe(true);
     for (const id of [
       "/Kibo/components/notes/src/NotesWidget.tsx",
       "/Kibo/components/graph/src/GraphWidget.tsx",
-      "/Kibo/packages/ui/src/agents/AgentPanel.tsx",
       "/Kibo/packages/ui/src/shell/use-update-schedule.ts",
       "/Kibo/components/mcp-source/src/config.ts",
       "/Kibo/packages/ui/src/shell/Startup.tsx",
@@ -137,10 +127,7 @@ describe("bundle report", () => {
       "/x/packages/ui/src/pages/LayoutToolbar.tsx",
       "/x/packages/ui/src/pages/FormatMenu.tsx",
       "/x/packages/ui/src/i18n/fr-layout.ts",
-      "/x/packages/ui/src/creations/CreationsPage.tsx",
-      "/x/packages/ui/src/creations/creation-status.ts",
       "/x/packages/ui/src/i18n/fr-creations.ts",
-      "/x/packages/ui/src/ai/DraftPreviewFrame.tsx",
       "/x/packages/sdk/src/mock.ts",
       "/x/packages/sdk/src/mock-calls.ts",
       "/x/packages/sdk/src/mock-notes.ts",
@@ -196,13 +183,8 @@ describe("bundle report", () => {
     }
   });
 
-  test("the draft preview host and its demo project are forbidden in the entry", () => {
+  test("core and loro are forbidden in the entry", () => {
     const paths = [
-      "/x/packages/ui/src/ai/worker-backend.ts",
-      "/x/packages/ui/src/ai/preview-protocol.ts",
-      "/x/packages/ui/src/ai/preview-backend.ts",
-      "/x/packages/ui/src/ai/draft-preview-worker.ts",
-      "/x/packages/ui/src/ai/revise-escape.ts",
       "/x/packages/core/src/index.ts",
       "/x/node_modules/.bun/loro-crdt@1.16.3/node_modules/loro-crdt/browser/index.js",
     ];
@@ -249,19 +231,6 @@ describe("bundle report", () => {
     ).toBe(false);
   });
 
-  test("the preview worker must be emitted under workers/", () => {
-    const chunks = [chunk("assets/index.js", { isEntry: true })];
-    expect(reportGraph(chunks, ["assets/index.js", "workers/draft-preview-worker-Ab1_c.js"])).toEqual({
-      previewWorker: "workers/draft-preview-worker-Ab1_c.js",
-      forbidden: [],
-      ok: true,
-    });
-    expect(reportGraph(chunks, ["assets/index.js", "assets/draft-preview-worker-Ab1.js"])).toMatchObject({
-      previewWorker: null,
-      ok: false,
-    });
-  });
-
   test("core and loro fail the build in any chunk of the main graph, initial or lazy", () => {
     const core = "/x/packages/core/src/index.ts";
     const loro = pkg("loro-crdt", "browser/index.js");
@@ -270,7 +239,7 @@ describe("bundle report", () => {
       chunk("assets/DraftPreviewFrame.js", { moduleIds: [core] }),
       chunk("assets/lazy.js", { moduleIds: [loro, "/x/packages/ui/src/App.tsx"] }),
     ];
-    const report = reportGraph(chunks, ["workers/draft-preview-worker-1.js"]);
+    const report = reportGraph(chunks);
     expect(report.ok).toBe(false);
     expect(report.forbidden).toEqual([
       { file: "assets/DraftPreviewFrame.js", module: core },
@@ -299,24 +268,11 @@ describe("bundle report", () => {
       "/x/packages/ui/src/i18n/fr-project-agent.ts",
       "/x/packages/ui/src/pages/PendingTrust.tsx",
       "/x/packages/ui/src/pages/OtherVersionMenu.tsx",
-      "/x/packages/ui/src/shell/CreationsIndicator.tsx",
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
     expect(
       FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/shell/use-project-agent-panel.ts")),
     ).toBe(false);
-  });
-
-  test("the whole tutorial and its texts are forbidden in the entry", () => {
-    const paths = [
-      "/x/packages/ui/src/tutorial/TutorialSlot.tsx",
-      "/x/packages/ui/src/tutorial/use-tutorial.ts",
-      "/x/packages/ui/src/tutorial/TutorialOffer.tsx",
-      "/x/packages/ui/src/tutorial/TutorialPanel.tsx",
-      "/x/packages/ui/src/tutorial/tutorial-steps.ts",
-      "/x/packages/ui/src/i18n/fr-tutorial.ts",
-    ];
-    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });
 
   test("the design dialogs, their problems and texts are forbidden in the entry", () => {
@@ -357,14 +313,6 @@ describe("bundle report", () => {
   });
   test("the agents dock, the feed, their texts, the mention and the hover card are forbidden in the entry", () => {
     const paths = [
-      "/x/packages/ui/src/agents/mention/Mention.tsx",
-      "/x/packages/ui/src/agents/mention/RunSidePanel.tsx",
-      "/x/packages/ui/src/agents/mention/RunPage.tsx",
-      "/x/packages/ui/src/agents/mention/use-run-peek.ts",
-      "/x/packages/ui/src/agents/dock/AgentDock.tsx",
-      "/x/packages/ui/src/agents/dock/use-dock-height.ts",
-      "/x/packages/ui/src/moments/Feed.tsx",
-      "/x/packages/ui/src/moments/use-run-moments.ts",
       "/x/packages/ui/src/i18n/fr-moments.ts",
       "/x/packages/sdk/src/ui/hover-card.tsx",
       "/x/packages/sdk/src/agent-mention.tsx",
@@ -382,21 +330,17 @@ describe("bundle report", () => {
   });
   test("the activity tab of a ticket is forbidden in the entry", () => {
     const paths = [
-      "/x/packages/ui/src/ticket/activity/ActivityTab.tsx",
-      "/x/packages/ui/src/ticket/activity/ChronologyWide.tsx",
-      "/x/packages/ui/src/ticket/activity/timeline.ts",
-      "/x/packages/ui/src/ticket/activity/use-runs-moments.ts",
+      "/x/packages/ui/src/ticket/activity/TicketTimeline.tsx",
+      "/x/packages/ui/src/ticket/activity/ticket-timeline.ts",
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
   });
-  test("the signal box, the signal moment and their texts are forbidden in the entry, not the panel hook", () => {
+  test("the signal box and its texts are forbidden in the entry, not the panel hook", () => {
     const paths = [
       "/x/packages/ui/src/project-agent/signals/SignalBox.tsx",
       "/x/packages/ui/src/project-agent/signals/SignalRow.tsx",
       "/x/packages/ui/src/project-agent/signals/use-signals.ts",
       "/x/packages/ui/src/project-agent/PanelTabs.tsx",
-      "/x/packages/ui/src/moments/SignalMoment.tsx",
-      "/x/packages/ui/src/moments/use-open-signal.ts",
       "/x/packages/ui/src/i18n/fr-signals.ts",
     ];
     for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
@@ -404,47 +348,9 @@ describe("bundle report", () => {
       FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/shell/use-project-agent-panel.ts")),
     ).toBe(false);
   });
-  test("the agents catalogue, the agent sheet, the file editor, skills and their texts stay out of the entry", () => {
-    const paths = [
-      "/x/packages/ui/src/agents/catalog/AgentCard.tsx",
-      "/x/packages/ui/src/agents/catalog/NewAgentDialog.tsx",
-      "/x/packages/ui/src/agents/catalog/use-agent-list.ts",
-      "/x/packages/ui/src/agents/sheet/AgentSheet.tsx",
-      "/x/packages/ui/src/agents/sheet/use-agent-sheet.ts",
-      "/x/packages/ui/src/file-editor/MarkdownPane.tsx",
-      "/x/packages/ui/src/file-editor/use-file-editor.ts",
-      "/x/packages/ui/src/skills/SkillsPage.tsx",
-      "/x/packages/ui/src/i18n/fr-agents-skills.ts",
-      "/x/packages/ui/src/i18n/fr-skills.ts",
-    ];
-    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
-    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/tabs/screens.ts"))).toBe(false);
-  });
-  test("vague 23", () => {
-    const paths = [
-      "/x/packages/ui/src/overlaps/use-overlaps.ts",
-      "/x/packages/ui/src/overlaps/use-auto-links.ts",
-      "/x/packages/ui/src/overlaps/OverlapFilesDialog.tsx",
-      "/x/packages/ui/src/overlaps/ParallelWorkSection.tsx",
-      "/x/packages/ui/src/overlaps/overlap-labels.ts",
-      "/x/packages/ui/src/overlaps/OverlapCounts.tsx",
-      "/x/packages/ui/src/overlaps/use-open-overlap.ts",
-      "/x/packages/ui/src/moments/OverlapMoment.tsx",
-      "/x/packages/ui/src/moments/AutoLinkMoment.tsx",
-      "/x/packages/ui/src/overlaps/DuplicationFields.tsx",
-      "/x/packages/ui/src/overlaps/IgnoredOverlaps.tsx",
-      "/x/packages/ui/src/overlaps/GenericExportsField.tsx",
-      "/x/packages/ui/src/overlaps/AutoLinkBadge.tsx",
-      "/x/packages/ui/src/i18n/fr-overlaps.ts",
-    ];
-    for (const p of paths) expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(p))).toBe(true);
-    for (const p of ["agents/bar-summary.ts", "agents/AgentBar.tsx", "i18n/fr.ts"])
-      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`))).toBe(false);
-  });
+
   test("vague 23, repli des questions", () => {
-    for (const p of ["agents/run-state-text.ts", "i18n/fr-agent-bar.ts"])
-      expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`))).toBe(true);
-    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/agents/format.ts"))).toBe(false);
+    expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/i18n/fr-agent-bar.ts"))).toBe(true);
   });
   test("vague 23, repli des textes de fr.ts", () => {
     for (const p of ["fr-domains.ts", "fr-integrations.ts"])
@@ -453,20 +359,7 @@ describe("bundle report", () => {
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/i18n/${p}`))).toBe(false);
   });
   test("vague 23, dossiers de guidelines", () => {
-    const paths = [
-      "settings/FolderTree.tsx",
-      "settings/NodeHeader.tsx",
-      "settings/EmptyNode.tsx",
-      "settings/HowAgentsAreConfigured.tsx",
-      "settings/DomainHeader.tsx",
-      "settings/domains-tree.ts",
-      "settings/domains-entries.tsx",
-      "settings/folder-tree-keys.ts",
-      "settings/use-domains-page.ts",
-      "dialogs/GuidelinesField.tsx",
-      "ticket/DomainSelect.tsx",
-      "i18n/fr-domains.ts",
-    ];
+    const paths = ["dialogs/GuidelinesField.tsx", "ticket/DomainSelect.tsx", "i18n/fr-domains.ts"];
     for (const p of paths)
       expect(FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`))).toBe(true);
     expect(FORBIDDEN_IN_ENTRY.some((r) => r.test("/x/packages/ui/src/tabs/target-hash.ts"))).toBe(false);
@@ -476,18 +369,7 @@ describe("bundle report", () => {
     expect(sdk("question-preview-content.tsx")).toBe(true);
     expect(sdk("question-preview.tsx")).toBe(false);
   });
-  test("phase 24, the sub-agent screens and texts stay out of the entry, not the bar summary", () => {
-    const ui = (p: string) => FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`));
-    for (const p of [
-      "moments/SubagentMoment.tsx",
-      "moments/SubagentFeed.tsx",
-      "agents/dock/SubagentLines.tsx",
-      "agents/mention/SubagentsSection.tsx",
-      "i18n/fr-subagents.ts",
-    ])
-      expect(ui(p)).toBe(true);
-    expect(ui("agents/bar-summary.ts")).toBe(false);
-  });
+
   test("phase 24, component management texts stay out of the entry, not the instance texts", () => {
     const i18n = (p: string) => FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/i18n/${p}`));
     expect(i18n("fr-components-manage.ts")).toBe(true);

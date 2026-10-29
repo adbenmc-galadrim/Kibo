@@ -2,8 +2,8 @@ import { expect, mock, test } from "bun:test";
 import type { Page, ProjectSnapshot, RpcRequest } from "@kibo/schema";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { kiboProject } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { kiboProject } from "../lib/fixtures";
 
 const LOCAL = { shared: false, keyAllocator: "local", role: null, access: "write", members: [] };
 mock.module("../api", () =>
@@ -30,7 +30,6 @@ const { PageActionsProvider, PageActionsSlot } = await import("../shell/page-act
 const host = {
   openTicket: () => undefined,
   openNewTicket: () => undefined,
-  openAssign: () => undefined,
   openFile: () => undefined,
   openView: () => undefined,
   openTarget: () => undefined,

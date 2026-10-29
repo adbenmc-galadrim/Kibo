@@ -1,7 +1,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@kibo/sdk/ui/tabs";
 import { type ReactNode, useState } from "react";
-import { readSessionPref, writeSessionPref } from "../../agents/session-pref";
 import { frMoments } from "../../i18n/fr-moments";
+import { readSessionPref, writeSessionPref } from "../../lib/session-pref";
 
 export const TICKET_TAB_KEY = "kibo.ticket.tab";
 export type TicketTabId = "details" | "activity";

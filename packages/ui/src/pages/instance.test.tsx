@@ -87,7 +87,6 @@ await loadTrusted("probe", "1.0.0", H, async () => ({
 const host = {
   openTicket: () => undefined,
   openNewTicket: () => undefined,
-  openAssign: () => undefined,
   openFile: () => undefined,
   openView: () => undefined,
   openTarget: () => undefined,
@@ -421,7 +420,6 @@ test("D1: update to a higher version, remove from the page", async () => {
   expect(items.map((i) => i.textContent)).toEqual([
     "Mettre à jour vers 0.5.0",
     "Mettre à jour vers 0.4.0",
-    "Modifier avec l'IA",
     "Retirer de la page…",
   ]);
   await user.click(items[0] as HTMLElement);
@@ -524,7 +522,7 @@ test("D6: the notes folder dialog shows and saves the folder", async () => {
   expect(calls.at(-1)).toEqual({ method: "setNotesDir", projectId: "p1", dir: "/vault" });
 });
 
-test("modify with AI: offered on an ai instance, not on a marketplace one", async () => {
+test("no instance offers to modify it with AI", async () => {
   components = [
     { id: "burndown", title: "Burndown", builtin: false, versions: [version("0.1.0")] },
     {
@@ -545,9 +543,7 @@ test("modify with AI: offered on an ai instance, not on a marketplace one", asyn
   expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Retirer de la page…"]);
   await user.keyboard("{Escape}");
   await user.click(screen.getByRole("button", { name: "Actions Burndown" }));
-  await user.click(await screen.findByRole("menuitem", { name: "Modifier avec l'IA" }));
-  expect(await screen.findByRole("dialog", { name: "Modifier « Burndown » avec l'IA" })).toBeTruthy();
-  expect(screen.getByText("Version actuelle 0.1.0 · Créé par l'IA")).toBeTruthy();
+  expect((await screen.findAllByRole("menuitem")).map((i) => i.textContent)).toEqual(["Retirer de la page…"]);
 });
 
 test("the trust request loads on demand without a visible loading flash", async () => {

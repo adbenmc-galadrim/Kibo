@@ -64,18 +64,17 @@ test("without a sync account only the name shows", async () => {
   expect(within(menu).queryByText(/·/)).toBeNull();
 });
 
-test("the help group lists its five entries and opens the chosen dialog", async () => {
+test("the help group lists its four entries and opens the chosen dialog", async () => {
   const asked: string[] = [];
   render(<UserMenu viewer="adam" onOpen={() => {}} onHelp={(key) => asked.push(key)} />);
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: "Menu de adam" }));
   await user.click(await screen.findByRole("menuitem", { name: "Aide" }));
   const entries = await screen.findAllByRole("menuitem", {
-    name: /^(Raccourcis clavier|Didacticiel|Quoi de neuf|Signaler un problème|À propos de Kibo)/,
+    name: /^(Raccourcis clavier|Quoi de neuf|Signaler un problème|À propos de Kibo)/,
   });
   expect(entries.map((e) => e.textContent)).toEqual([
     "Raccourcis clavierCtrl+/",
-    "Didacticiel",
     "Quoi de neuf",
     "Signaler un problème",
     "À propos de Kibo",

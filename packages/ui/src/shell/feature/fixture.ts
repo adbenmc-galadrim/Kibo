@@ -223,14 +223,6 @@ export function siloFeatureProject(): ProjectSnapshot {
   };
 }
 
-export const SESSION_RUN = {
-  ticketId: "e33",
-  state: "running" as const,
-  agentName: "T3 Code",
-  startedAt: NOW - 42 * 60_000,
-  createdAt: NOW - 45 * 60_000,
-};
-
 export const MINIO = "Serveur MinIO de recette indisponible";
 export const MERGE_RULE = "Règle de fusion à valider par le client";
 const ownHold = (key: string, reason: string) => ({

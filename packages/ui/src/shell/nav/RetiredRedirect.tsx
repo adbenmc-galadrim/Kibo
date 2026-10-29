@@ -1,7 +1,8 @@
 import type { TabTarget } from "@kibo/schema";
 import { useEffect } from "react";
 import { replaceRoute } from "../../route";
-import { isRetiredTarget, retiredRoute } from "../retired-routes";
+import { targetToHash } from "../../tabs/target-hash";
+import { retiredRoute } from "../retired-routes";
 
 type Props = { target: TabTarget | null; onHome(): void };
 
@@ -12,7 +13,7 @@ export function RetiredRedirect({ target, onHome }: Props) {
     onHome();
   }, [onHome]);
   useEffect(() => {
-    if (target !== null && isRetiredTarget(target)) onHome();
+    if (target !== null && retiredRoute(targetToHash(target)) !== null) onHome();
   }, [target, onHome]);
   return null;
 }

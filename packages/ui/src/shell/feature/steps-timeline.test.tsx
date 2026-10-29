@@ -8,12 +8,7 @@ import { StepsTimeline } from "./StepsTimeline";
 
 afterEach(cleanup);
 
-const steps = stepModels(siloFeatureProject(), "f5", {
-  runs: [],
-  ciRuns: [],
-  now: NOW,
-  execution: "hidden",
-});
+const steps = stepModels(siloFeatureProject(), "f5", { ciRuns: [], now: NOW });
 
 const renderTimeline = (opened: string[] = []) =>
   render(

@@ -10,13 +10,11 @@ type Deps = {
   set(patch: Partial<DialogsState>): void;
   go(target: TabTarget | null, newTab?: boolean, keep?: boolean): void;
   openView: Host["openView"];
-  openRun(runId: string): void;
-  answerRun(runId: string): void;
   showProjectAgent(): void;
 };
 
 export function useWorkspaceHost(d: Deps): Host {
-  const { activeProjectId, projectRef, set, go, openView, openRun, answerRun, showProjectAgent } = d;
+  const { activeProjectId, projectRef, set, go, openView, showProjectAgent } = d;
   return useMemo<Host>(
     () => ({
       openTicket: (ticketId) => {
@@ -32,15 +30,12 @@ export function useWorkspaceHost(d: Deps): Host {
         if (projectRef.current && !canEdit(projectRef.current)) return;
         set({ newTicket: activeProjectId ? { ...nt, projectId: activeProjectId } : nt });
       },
-      openAssign: (ticketId) => set({ assign: { projectId: null, ticketId } }),
       openFile: (ref) => set({ preview: ref }),
       openTarget: (target, opts) => go(target, opts?.newTab, opts?.keep),
       openView,
-      openRun,
-      answerRun,
       openProjectAgent: showProjectAgent,
       projectId: activeProjectId,
     }),
-    [activeProjectId, projectRef, set, go, openView, openRun, answerRun, showProjectAgent],
+    [activeProjectId, projectRef, set, go, openView, showProjectAgent],
   );
 }

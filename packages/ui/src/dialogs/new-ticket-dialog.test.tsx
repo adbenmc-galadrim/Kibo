@@ -98,7 +98,6 @@ const silo: ProjectSnapshot = {
 const host: Host & { openTicket: ReturnType<typeof mock> } = {
   openTicket: mock((_id: string) => {}),
   openNewTicket: () => {},
-  openAssign: () => {},
   openFile: () => {},
   openView: () => {},
   openTarget: () => {},

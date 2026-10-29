@@ -3,12 +3,8 @@ import { StatusDot } from "@kibo/sdk";
 import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { X } from "lucide-react";
-import type { ReactNode } from "react";
-import { frOverlaps } from "../i18n/fr-overlaps";
 import { frTicketEdit as t } from "../i18n/fr-ticket-edit";
 import { frTicketTracking } from "../i18n/fr-ticket-tracking";
-import { AutoLinkBadge } from "../overlaps/AutoLinkBadge";
-import { useAutoLinks } from "../overlaps/use-auto-links";
 import { AddLinkForm } from "./AddLinkForm";
 import { type LinkedTicket, linksOf } from "./links";
 import { useTicketCommand } from "./use-ticket-command";
@@ -26,10 +22,9 @@ type GroupProps = {
   editable: boolean;
   onOpen(ticketId: string): void;
   onRemove(linkId: string): void;
-  badge(item: LinkedTicket): ReactNode;
 };
 
-function Group({ name, items, editable, onOpen, onRemove, badge }: GroupProps) {
+function Group({ name, items, editable, onOpen, onRemove }: GroupProps) {
   if (items.length === 0) return null;
   return (
     <fieldset className="m-0 grid min-w-0 gap-1 border-0 p-0">
@@ -51,7 +46,6 @@ function Group({ name, items, editable, onOpen, onRemove, badge }: GroupProps) {
               <span className="shrink-0 font-mono text-2xs">{ticket.keyLabel}</span>{" "}
               <span className="min-w-0 wrap-anywhere">{ticket.title}</span>
             </button>
-            {badge({ link, ticket })}
             {editable && (
               <Button
                 size="icon"
@@ -73,25 +67,11 @@ function Group({ name, items, editable, onOpen, onRemove, badge }: GroupProps) {
 export function DependenciesSection({ project, ticket, editable, onOpenTicket }: Props) {
   const command = useTicketCommand(project.meta.id);
   const links = linksOf(project, ticket.id);
-  const blocking = [...links.blockedBy, ...links.blocks].map((l) => l.link.id).join(",");
-  const auto = useAutoLinks(project.meta.id, blocking);
-  const badge = ({ link, ticket: other }: LinkedTicket) => {
-    const added = auto.byLinkId.get(link.id);
-    if (added?.status !== "added") return null;
-    return <AutoLinkBadge link={added} otherKey={other.keyLabel} canEdit={editable} onCancel={auto.cancel} />;
-  };
   const remove = (linkId: string) => void command.run({ method: "removeLink", linkId });
   const empty = links.blockedBy.length + links.blocks.length + links.related.length === 0;
   if (empty && !editable) return null;
   const group = (name: string, items: LinkedTicket[]) => (
-    <Group
-      name={name}
-      items={items}
-      editable={editable}
-      onOpen={onOpenTicket}
-      onRemove={remove}
-      badge={badge}
-    />
+    <Group name={name} items={items} editable={editable} onOpen={onOpenTicket} onRemove={remove} />
   );
   return (
     <section aria-label={t.deps.title} className="grid gap-3 text-xs">
@@ -100,7 +80,6 @@ export function DependenciesSection({ project, ticket, editable, onOpenTicket }:
       {group(t.deps.blockedBy, links.blockedBy)}
       {group(t.deps.blocks, links.blocks)}
       {group(t.deps.related, links.related)}
-      {auto.error && <p className="text-2xs text-muted-foreground">{frOverlaps.badge.unavailable}</p>}
       {command.error && (
         <p role="alert" className="text-destructive">
           {command.error}

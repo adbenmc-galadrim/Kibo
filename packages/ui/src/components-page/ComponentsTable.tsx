@@ -2,7 +2,6 @@ import { Button } from "@kibo/sdk/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@kibo/sdk/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { frComponentsList } from "../i18n/fr-components-list";
 import { frComponentsManage } from "../i18n/fr-components-manage";
 import { frMarket } from "../i18n/fr-market";
@@ -99,7 +98,6 @@ export type ComponentsTableProps = {
   onReview(row: ComponentRow): void;
   onUpdate(row: ComponentRow, to: string): void;
   onDone(m: string, t: FlashTone): void;
-  onModifyWithAi(target: ModifyTarget): void;
   onPublishToMarket(row: ComponentRow): void;
 };
 

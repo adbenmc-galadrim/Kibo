@@ -1,6 +1,6 @@
 import type { Environment } from "@kibo/schema";
 import { Button } from "@kibo/sdk/ui/button";
-import { Check, Folder, GraduationCap, Plus, RotateCw, TriangleAlert } from "lucide-react";
+import { Check, Folder, Plus, RotateCw, TriangleAlert } from "lucide-react";
 import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
@@ -111,10 +111,9 @@ type Props = {
   onCreate: () => void;
   onImport: () => void;
   onConnectGithub: () => void;
-  onTutorial: () => void;
 };
 
-export function Welcome({ onCreate, onImport, onConnectGithub, onTutorial }: Props) {
+export function Welcome({ onCreate, onImport, onConnectGithub }: Props) {
   const { env, error, reload } = useEnvironment();
   const checks = env ? welcomeChecks(env) : [];
   return (
@@ -130,9 +129,6 @@ export function Welcome({ onCreate, onImport, onConnectGithub, onTutorial }: Pro
         {error && <p className="text-sm text-destructive">{error}</p>}
         {env && <EnvironmentChecks checks={checks} onRetry={reload} onConnectGithub={onConnectGithub} />}
         <div className="flex flex-wrap justify-center gap-3">
-          <Button variant="secondary" onClick={onTutorial}>
-            <GraduationCap className="size-4" /> {frAi.welcome.tutorial}
-          </Button>
           <Button variant="outline" onClick={onImport}>
             <Folder className="size-4" /> {frAi.welcome.importFolder}
           </Button>

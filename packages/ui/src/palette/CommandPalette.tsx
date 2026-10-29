@@ -1,6 +1,5 @@
 import type { TabTarget } from "@kibo/schema";
 import { copyDeliveryCommand, StatusDot } from "@kibo/sdk";
-import { cn } from "@kibo/sdk/lib/utils";
 import {
   Command,
   CommandEmpty,
@@ -11,7 +10,6 @@ import {
 } from "@kibo/sdk/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@kibo/sdk/ui/dialog";
 import {
-  Bell,
   Bot,
   Bug,
   CalendarRange,
@@ -19,7 +17,6 @@ import {
   FileText,
   FolderKanban,
   GitCommitHorizontal,
-  GraduationCap,
   Info,
   Keyboard,
   Plus,
@@ -34,6 +31,8 @@ import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { useOptionalHost } from "../shell/Host";
 import { SCREENS } from "../tabs/screens";
 import {
+  buildItems,
+  FILTERS,
   type PaletteAction,
   type PaletteContext,
   type PaletteFilter,
@@ -41,7 +40,6 @@ import {
   searchItems,
 } from "./palette-items";
 import type { LocalAction } from "./tracking-items";
-import { paletteFilters, paletteItems } from "./visible-items";
 
 type Props = {
   open: boolean;
@@ -60,13 +58,10 @@ const ICONS = {
   changes: GitCommitHorizontal,
   new: Plus,
   theme: SunMoon,
-  reply: Bell,
-  assign: Bot,
   projectAgent: Bot,
   copy: Copy,
   sprint: CalendarRange,
   shortcutsHelp: Keyboard,
-  tutorial: GraduationCap,
   whatsNew: Sparkles,
   report: Bug,
   about: Info,
@@ -87,16 +82,12 @@ const ICONS = {
   workspace: SCREENS.workspace.icon,
   creations: SCREENS.creations.icon,
 };
-const ICON_CLASS: Partial<Record<PaletteItem["icon"], string>> = {
-  reply: "text-orange-600 dark:text-orange-400",
-};
 const FILTER_LABEL: Record<PaletteFilter, string> = {
   all: fr.palette.all,
   tickets: fr.palette.tickets,
   pages: fr.palette.pages,
   projects: fr.palette.projects,
   actions: fr.palette.actions,
-  agents: fr.palette.agents,
 };
 
 function Kbd({ children }: { children: string }) {
@@ -116,7 +107,7 @@ function Row({ item }: { item: PaletteItem }) {
       ) : item.color ? (
         <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: item.color }} />
       ) : (
-        <Icon aria-hidden className={cn("size-4", ICON_CLASS[item.icon])} />
+        <Icon aria-hidden className="size-4" />
       )}
       <span className="truncate">{item.label}</span>
       {item.detail && <span className="ml-auto text-xs text-muted-foreground">{item.detail}</span>}
@@ -136,8 +127,8 @@ export function CommandPalette({
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PaletteFilter>("all");
   const [value, setValue] = useState("");
-  const items = useMemo(() => paletteItems(context), [context]);
-  const filters = paletteFilters(context.executionShown);
+  const items = useMemo(() => buildItems(context), [context]);
+  const filters = FILTERS;
   const sections = useMemo(() => searchItems(items, query, filter), [items, query, filter]);
   const byId = useMemo(() => new Map(sections.flatMap((s) => s.items).map((i) => [i.id, i])), [sections]);
   const host = useOptionalHost();

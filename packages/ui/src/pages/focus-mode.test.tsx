@@ -4,8 +4,8 @@ import { type KiboSdk, useSdk } from "@kibo/sdk";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useEffect } from "react";
-import { kiboProject } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { kiboProject } from "../lib/fixtures";
 
 const H = "d".repeat(64);
 const calls: RpcRequest[] = [];
@@ -91,7 +91,6 @@ for (const id of ["arcade", "plain"])
 const host = {
   openTicket: () => undefined,
   openNewTicket: () => undefined,
-  openAssign: () => undefined,
   openFile: () => undefined,
   openView: () => undefined,
   openTarget: () => undefined,

@@ -2,7 +2,7 @@ import { expect, mock, test } from "bun:test";
 import type { TabTarget } from "@kibo/schema";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { configFixture, projectsFixture } from "../agents/fixtures";
+import { configFixture, projectsFixture } from "../lib/fixtures";
 import { GuidelinesField } from "./GuidelinesField";
 
 const [kibo, fac] = projectsFixture;

@@ -33,12 +33,10 @@ const project = (access: ProjectSnapshot["sync"]["access"]): ProjectSnapshot => 
 });
 
 test("an empty read-only project offers no page creation", () => {
-  const { unmount } = render(
-    <ProjectHome project={project("write")} onNewPage={() => {}} onSuggest={() => {}} />,
-  );
+  const { unmount } = render(<ProjectHome project={project("write")} onNewPage={() => {}} />);
   expect(screen.getByRole("button", { name: "Nouvelle page" })).toBeTruthy();
   unmount();
-  render(<ProjectHome project={project("read-only")} onNewPage={() => {}} onSuggest={() => {}} />);
+  render(<ProjectHome project={project("read-only")} onNewPage={() => {}} />);
   expect(screen.queryByRole("button", { name: "Nouvelle page" })).toBeNull();
   expect(screen.queryByRole("button", { name: /Proposer/ })).toBeNull();
 });

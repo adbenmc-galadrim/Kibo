@@ -3,8 +3,8 @@ import type { Screen } from "@kibo/schema";
 import { SidebarProvider, SidebarTrigger } from "@kibo/sdk/ui/sidebar";
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { kiboProject, projectsFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { kiboProject, projectsFixture } from "../lib/fixtures";
 
 mock.module("../api", () =>
   apiMock({

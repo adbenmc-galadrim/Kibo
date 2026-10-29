@@ -25,9 +25,7 @@ import { BUILTIN_COMPONENTS, findBuiltin } from "../registry";
 import { navigateTo } from "../route";
 import { useComponents } from "../state/use-components";
 import { AddComponentList } from "./AddComponentList";
-import { ApprovalScope, useApprovalScope } from "./approval-scope";
 import { Details } from "./ComponentDetails";
-import { CreateComponentDialog } from "./CreateComponentDialog";
 import { builtinChoices, type Choice, matches, mineChoices, offeredBuiltins } from "./catalog-choices";
 import { FirstSyncStatus } from "./sync/FirstSyncStatus";
 import { type LinkedRepos, repoKey } from "./sync/linked-repos";
@@ -76,8 +74,6 @@ export function AddComponentDialog({
   const [ref, setRef] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [trust, setTrust] = useState<TrustTarget | null>(null);
-  const [creating, setCreating] = useState(false);
-  const scope = useApprovalScope();
 
   const mine = mineChoices(components ?? []);
   const shown = (c: Choice) => matches(`${c.title} ${c.description ?? ""}`, query);
@@ -154,10 +150,7 @@ export function AddComponentDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent
-          hidden={scope.hidden}
-          className="flex h-[min(46rem,calc(100dvh-2rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl"
-        >
+        <DialogContent className="flex h-[min(46rem,calc(100dvh-2rem))] flex-col gap-0 overflow-hidden p-0 sm:max-w-4xl">
           <DialogHeader className="gap-3 border-b px-6 pt-6 pb-4">
             <DialogTitle>{a.title}</DialogTitle>
             <div className="relative">
@@ -184,7 +177,6 @@ export function AddComponentDialog({
                 setRef(null);
                 setTrust(trustTargetOfInstall(r));
               }}
-              onCreate={() => setCreating(true)}
               loadFailed={error}
             />
             <section
@@ -269,14 +261,6 @@ export function AddComponentDialog({
           onApproved={(v) => void addInstance(`${trust.id}@${v.version}`)}
         />
       )}
-      <ApprovalScope scope={scope}>
-        <CreateComponentDialog
-          open={creating}
-          onOpenChange={setCreating}
-          target={{ projectId, pageId: page.id }}
-          onAdded={() => onOpenChange(false)}
-        />
-      </ApprovalScope>
     </>
   );
 }

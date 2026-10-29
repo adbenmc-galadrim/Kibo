@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { type RunLogEntry, WAKEUP_PREFIX } from "@kibo/schema";
 import fc from "fast-check";
-import { NOW } from "../agents/fixtures";
+import { NOW } from "../lib/fixtures";
 import { buildConversation, type ConversationItem, lastUserMessage, panelStatus } from "./conversation";
 import { CONVERSATION_LOG, hook, partialBatch, pendingBatch, projectRun } from "./fixtures";
 

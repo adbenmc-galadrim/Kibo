@@ -41,7 +41,6 @@ mock.module("../api", () =>
 
 const { PresenceAvatars } = await import("./PresenceAvatars");
 const { TicketSheet } = await import("./TicketSheet");
-const { KeyRequired } = await import("./KeyRequired");
 const { TicketTab } = await import("../pages/TicketTab");
 const { usePresenceReporter } = await import("../state/use-presence");
 
@@ -188,32 +187,6 @@ test("the ticket tab shows the provisional key and offers no command to copy yet
   render(<TicketTab project={project} ticketId="t1" viewer="adam" onOpenFile={noop} onOpenTicket={noop} />);
   expect(screen.getByText("KIB-…").className).toContain("italic");
   expect(screen.queryByRole("button", { name: /^Copier \/full-delivery/ })).toBeNull();
-});
-
-test("actions that need a key are disabled with an explanation", () => {
-  const ticket = project.tickets[0];
-  if (!ticket) throw new Error("no ticket");
-  render(
-    <KeyRequired ticket={ticket}>
-      <button type="button">Assigner à un agent</button>
-    </KeyRequired>,
-  );
-  const button = screen.getByRole("button", { name: "Assigner à un agent" }) as HTMLButtonElement;
-  expect(button.disabled).toBe(true);
-  expect(button.closest("[data-key-required]")?.getAttribute("title")).toBe(
-    "Clé attribuée à la prochaine synchronisation",
-  );
-});
-
-test("a ticket with a key keeps its actions", () => {
-  render(
-    <KeyRequired ticket={{ key: "KIB-7" }}>
-      <button type="button">Assigner à un agent</button>
-    </KeyRequired>,
-  );
-  const button = screen.getByRole("button", { name: "Assigner à un agent" }) as HTMLButtonElement;
-  expect(button.disabled).toBe(false);
-  expect(button.closest("[data-key-required]")).toBeNull();
 });
 
 function Reporter(props: Parameters<typeof usePresenceReporter>[0]) {

@@ -2,7 +2,6 @@ import { afterEach, expect, mock, test } from "bun:test";
 import type { RpcRequest } from "@kibo/schema";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { configFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
 import { AppSettingsProvider, fixedStore } from "../state/use-app-settings";
 import { fac, kib, mineSnapshots, mineTicket, por } from "./fixtures";
@@ -31,10 +30,7 @@ function page(onOpenTicket: (p: string, t: string) => void = noop, snapshots = m
         viewer="adam"
         projects={[kib, por, fac]}
         snapshots={snapshots}
-        config={configFixture()}
         onOpenTicket={onOpenTicket}
-        onAssign={noop}
-        onFile={noop}
       />
     </AppSettingsProvider>,
   );

@@ -19,7 +19,7 @@ mock.module("../api", () =>
 );
 const { Welcome } = await import("./Welcome");
 
-const noop = { onCreate() {}, onImport() {}, onConnectGithub() {}, onTutorial() {} };
+const noop = { onCreate() {}, onImport() {}, onConnectGithub() {} };
 
 const base: Environment = {
   daemon: { address: "127.0.0.1:47831", home: "/Users/adam/.kibo" },
@@ -115,12 +115,4 @@ test("Réessayer refetches the environment", async () => {
   expect(await screen.findByText("git 2.51 détecté")).toBeTruthy();
   expect(environmentCalls).toBe(2);
   expect(screen.queryByRole("button", { name: "Réessayer" })).toBeNull();
-});
-
-test("the tutorial button calls onTutorial", async () => {
-  env = base;
-  const onTutorial = mock(() => {});
-  render(<Welcome {...noop} onTutorial={onTutorial} />);
-  await userEvent.setup().click(await screen.findByRole("button", { name: "Suivre le didacticiel (5 min)" }));
-  expect(onTutorial).toHaveBeenCalledTimes(1);
 });

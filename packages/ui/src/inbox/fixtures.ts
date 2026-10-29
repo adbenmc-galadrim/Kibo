@@ -6,7 +6,7 @@ import {
   type StatusId,
   type TicketView,
 } from "@kibo/schema";
-import { kiboProject } from "../agents/fixtures";
+import { kiboProject } from "../lib/fixtures";
 
 const base = kiboProject();
 

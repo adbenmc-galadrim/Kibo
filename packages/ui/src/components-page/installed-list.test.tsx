@@ -186,12 +186,6 @@ test("no match offers to clear the filters", async () => {
   expect(screen.queryByText("Aucun composant ne correspond.")).toBeNull();
 });
 
-test("Créer un composant opens the creation dialog", async () => {
-  render(<ComponentsPage onOpen={noop} />);
-  fireEvent.click(await screen.findByRole("button", { name: "Créer un composant" }));
-  expect(await screen.findByRole("dialog", { name: "Créer un composant" })).toBeTruthy();
-});
-
 test("the usages sheet lists project › page and opens the page", async () => {
   const opened: TabTarget[] = [];
   render(<ComponentsPage onOpen={(t) => opened.push(t)} />);

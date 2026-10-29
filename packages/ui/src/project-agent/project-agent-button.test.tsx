@@ -2,8 +2,8 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import type { AgentsState, RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { agentsFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { agentsFixture } from "../lib/fixtures";
 import { pendingBatch, viewFixture } from "./fixtures";
 
 const calls: RpcRequest[] = [];

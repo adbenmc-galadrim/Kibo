@@ -1,20 +1,19 @@
 import { frProjectAgent } from "../i18n/fr-project-agent";
-import { QuestionLinksContext } from "../moments/QuestionText";
 import { ComposeBox } from "./ComposeBox";
 import { ConversationView } from "./ConversationView";
 import { NewAgentButton } from "./NewAgentButton";
 import { PastBanner } from "./PastBanner";
+import { QuestionLinksContext } from "./QuestionText";
 import type { AgentConversation } from "./use-agent-conversation";
 
 type Props = {
-  projectId: string;
   projectName: string;
   chat: AgentConversation;
   inert?: boolean;
   onNew(): void;
 };
 
-export function PanelConversation({ projectId, projectName, chat, inert, onNew }: Props) {
+export function PanelConversation({ projectName, chat, inert, onNew }: Props) {
   return (
     <div inert={inert} className="flex min-h-0 min-w-0 flex-1 flex-col">
       {chat.readOnly && chat.pastStartedAt !== null && (
@@ -37,7 +36,6 @@ export function PanelConversation({ projectId, projectName, chat, inert, onNew }
         <NewAgentButton variant="block" canReset={chat.canReset} onNew={onNew} />
       ) : (
         <ComposeBox
-          projectId={projectId}
           placeholder={
             chat.hasSession ? frProjectAgent.compose.placeholder : frProjectAgent.compose.empty(projectName)
           }

@@ -1,11 +1,9 @@
-import type { AgentsState, ProjectSnapshot, Screen, Session, TabTarget } from "@kibo/schema";
+import type { AgentsState, ProjectSnapshot, Screen, TabTarget } from "@kibo/schema";
 import { Breadcrumb, crumbsFor } from "./Breadcrumb";
-import { CreationsIndicator, ProjectAgentButton, ScreenActions } from "./lazy-screens";
-import { ExecutionGate } from "./nav/ExecutionGate";
+import { ProjectAgentButton } from "./lazy-screens";
 import { SidebarToggle } from "./nav/SidebarToggle";
 import { SyncChip } from "./nav/SyncChip";
 import { PageActionsSlot, PagePresenceSlot } from "./page-actions";
-import { RunHistoryButton } from "./RunHistoryButton";
 
 type Props = {
   active: TabTarget | null;
@@ -15,15 +13,10 @@ type Props = {
   gitError: string | null;
   agents: AgentsState | null;
   agentPanel: { available: boolean; open: boolean; toggle(): void; show(): void };
-  notifications: Session["notifications"];
-  now: number;
-  onNewAgent: () => void;
-  onNewSkill: () => void;
-  onOpenRun(runId: string): void;
   onOpen(target: TabTarget, keep?: boolean): void;
 };
 
-const HEADING_SCREENS: ReadonlySet<Screen> = new Set(["agents", "queue", "skills", "mine"]);
+const HEADING_SCREENS: ReadonlySet<Screen> = new Set(["mine"]);
 
 export function ShellHeader({
   active,
@@ -33,11 +26,6 @@ export function ShellHeader({
   gitError,
   agents,
   agentPanel,
-  notifications,
-  now,
-  onNewAgent,
-  onNewSkill,
-  onOpenRun,
   onOpen,
 }: Props) {
   return (
@@ -57,7 +45,6 @@ export function ShellHeader({
       <SyncChip project={project} />
       <PagePresenceSlot />
       <PageActionsSlot />
-      <ScreenActions screen={screen} agents={agents} onNewAgent={onNewAgent} onNewSkill={onNewSkill} />
       {project && agentPanel.available && (
         <ProjectAgentButton
           projectId={project.meta.id}
@@ -67,10 +54,6 @@ export function ShellHeader({
           onOpen={agentPanel.show}
         />
       )}
-      <ExecutionGate>
-        <CreationsIndicator agents={agents} onOpen={() => onOpen({ kind: "screen", screen: "creations" })} />
-        <RunHistoryButton agents={agents} notifications={notifications} now={now} onOpenRun={onOpenRun} />
-      </ExecutionGate>
     </header>
   );
 }

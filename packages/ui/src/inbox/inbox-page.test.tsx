@@ -117,7 +117,3 @@ function agentRow(agentExecution: "hidden" | "shown") {
 test("hidden execution: an agent assignee is not shown in the inbox", () => {
   expect(agentRow("hidden")).not.toContain("full-delivery");
 });
-
-test("shown execution: the inbox shows the agent assignee", () => {
-  expect(agentRow("shown")).toContain("full-delivery");
-});

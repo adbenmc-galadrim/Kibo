@@ -26,7 +26,6 @@ type Props = {
   snapshots: ReadonlyMap<string, ProjectSnapshot>;
   config: WorkspaceConfig | null;
   onOpenTicket(projectId: string, ticketId: string): void;
-  onAssign(projectId: string, ticketId: string): void;
   onFile(ticketId: string): void;
   onOpen(target: TabTarget): void;
   onShare(projectId: string): void;
@@ -52,7 +51,14 @@ export function ScreenView(props: Props) {
     );
   if (screen === "shortcuts") return <ShortcutsPage />;
   if (screen === "mine")
-    return <MyTicketsPage projects={withInbox(projects, p.snapshots)} config={config} {...p} />;
+    return (
+      <MyTicketsPage
+        viewer={p.viewer}
+        projects={withInbox(projects, p.snapshots)}
+        snapshots={p.snapshots}
+        onOpenTicket={p.onOpenTicket}
+      />
+    );
   if (screen === "inbox")
     return (
       <InboxPage

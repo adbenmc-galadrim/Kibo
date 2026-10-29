@@ -1,5 +1,4 @@
 import {
-  type AgentsState,
   isInbox,
   type ProjectMeta,
   type ProjectSnapshot,
@@ -12,23 +11,21 @@ import { fr } from "../i18n/fr";
 import { withInbox } from "../lib/inbox";
 import { HELP_DIALOGS, type HelpDialog } from "../shell/help-dialogs";
 import { helpLabel } from "../shell/help-labels";
-import { isRetiredScreen, isRetiredTarget } from "../shell/retired-routes";
+import { isRetiredScreen, retiredRoute } from "../shell/retired-routes";
 import { canEdit } from "../state/access";
 import { SCREENS } from "../tabs/screens";
-import { findTicket } from "../tabs/target-hash";
+import { findTicket, targetToHash } from "../tabs/target-hash";
 import { isTracked, type LocalAction, sprintItems, trackingItems } from "./tracking-items";
 
-export type PaletteGroup = "recents" | "tickets" | "actions" | "agents" | "pages" | "projects";
-export type PaletteFilter = "all" | "tickets" | "pages" | "projects" | "actions" | "agents";
-export const FILTERS: PaletteFilter[] = ["all", "tickets", "pages", "projects", "actions", "agents"];
+export type PaletteGroup = "recents" | "tickets" | "actions" | "pages" | "projects";
+export type PaletteFilter = "all" | "tickets" | "pages" | "projects" | "actions";
+export const FILTERS: PaletteFilter[] = ["all", "tickets", "pages", "projects", "actions"];
 
 export type PaletteAction =
   | { kind: "newTicket"; projectId: string; parentId: string | null }
   | { kind: "newPage"; projectId: string }
   | { kind: "newProject" }
   | { kind: "toggleTheme" }
-  | { kind: "reply"; runId: string }
-  | { kind: "assign"; projectId: string; ticketId: string }
   | { kind: HelpDialog };
 
 export type PaletteItem = {
@@ -46,8 +43,6 @@ export type PaletteItem = {
     | "changes"
     | "new"
     | "theme"
-    | "reply"
-    | "assign"
     | "projectAgent"
     | "copy"
     | "sprint"
@@ -66,8 +61,6 @@ export type PaletteContext = {
   recents: TabTarget[];
   activeProjectId: string | null;
   activeTicketId: string | null;
-  agents: AgentsState | null;
-  executionShown: boolean;
 };
 
 const TICKET_CAP = 4;
@@ -80,23 +73,6 @@ export const normalize = (s: string): string =>
     .toLowerCase();
 
 const base = { detail: null, statusId: null, color: null, ticket: null };
-
-function queuePositions(agents: AgentsState | null): Map<string, number> {
-  const runs = new Map((agents?.runs ?? []).map((r) => [r.id, r]));
-  const positions = new Map<string, number>();
-  for (const entry of agents?.queue ?? []) {
-    const run = runs.get(entry.runId);
-    const key = run?.ticketId ? `${run.projectId}:${run.ticketId}` : null;
-    if (key && !positions.has(key)) positions.set(key, entry.position);
-  }
-  return positions;
-}
-
-export function activeTicket(ctx: PaletteContext): PaletteItem["ticket"] {
-  if (!ctx.activeProjectId || !ctx.activeTicketId) return null;
-  const t = findTicket(ctx.snapshots.get(ctx.activeProjectId)?.tickets ?? [], ctx.activeTicketId);
-  return t ? { projectId: ctx.activeProjectId, ticketId: t.id, keyLabel: t.keyLabel } : null;
-}
 
 const screenItems = (): PaletteItem[] =>
   Screen.options
@@ -124,7 +100,6 @@ const projectItem = (project: ProjectMeta): PaletteItem => ({
 
 function targets(ctx: PaletteContext): PaletteItem[] {
   const out: PaletteItem[] = screenItems();
-  const queued = queuePositions(ctx.executionShown ? ctx.agents : null);
   for (const project of withInbox(ctx.projects, ctx.snapshots)) {
     const snapshot = ctx.snapshots.get(project.id);
     if (!isInbox(project.id)) out.push(projectItem(project));
@@ -141,17 +116,13 @@ function targets(ctx: PaletteContext): PaletteItem[] {
     }
     if (project.id === ctx.activeProjectId) out.push(...sprintItems(project, snapshot));
     for (const t of snapshot?.tickets ?? []) {
-      const position = queued.get(`${project.id}:${t.id}`);
       out.push({
         ...base,
         id: `ticket:${project.id}:${t.id}`,
         group: "tickets",
         label: `${t.shortKey ?? t.keyLabel} · ${t.title}`,
         keywords: normalize(`${t.shortKey ?? ""} ${t.keyLabel} ${t.title} ${project.name}`),
-        detail:
-          position !== undefined
-            ? fr.agents.position(position)
-            : (snapshot?.workflow.find((s) => s.id === t.statusId)?.label ?? null),
+        detail: snapshot?.workflow.find((s) => s.id === t.statusId)?.label ?? null,
         statusId: t.statusId,
         icon: "ticket",
         run: { kind: "target", target: { kind: "ticket", projectId: project.id, ticketId: t.id } },
@@ -225,14 +196,14 @@ export function buildItems(ctx: PaletteContext): PaletteItem[] {
     all.flatMap((i) => (i.run.kind === "target" ? [[targetKey(i.run.target), i] as const] : [])),
   );
   const recents = ctx.recents.flatMap((r) => {
-    if (isRetiredTarget(r)) return [];
+    if (retiredRoute(targetToHash(r)) !== null) return [];
     const item = byKey.get(targetKey(r));
     return item ? [{ ...item, id: `recent:${item.id}`, group: "recents" as const }] : [];
   });
   return [...recents, ...all];
 }
 
-const ORDER: PaletteGroup[] = ["recents", "tickets", "actions", "agents", "pages", "projects"];
+const ORDER: PaletteGroup[] = ["recents", "tickets", "actions", "pages", "projects"];
 
 export function searchItems(items: PaletteItem[], query: string, filter: PaletteFilter): PaletteSection[] {
   const tokens = normalize(query).split(/\s+/).filter(Boolean);

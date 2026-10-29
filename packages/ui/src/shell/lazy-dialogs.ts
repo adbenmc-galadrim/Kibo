@@ -13,11 +13,6 @@ export const NewPageDialog = lazyPanel(
   fr.lazy,
   hidden,
 );
-export const StarterDialog = lazyPanel(
-  () => import("../onboarding/StarterDialog").then((m) => m.StarterDialog),
-  fr.lazy,
-  hidden,
-);
 export const NewTicketDialog = lazyPanel(
   () => import("../dialogs/NewTicketDialog").then((m) => m.NewTicketDialog),
   fr.lazy,
@@ -28,21 +23,6 @@ export const FileTicketDialog = lazyPanel(
   fr.lazy,
   hidden,
 );
-export const AssignDialog = lazyPanel(
-  () => import("../agents/AssignDialog").then((m) => m.AssignDialog),
-  fr.lazy,
-  hidden,
-);
-export const NewAgentDialog = lazyPanel(
-  () => import("../agents/catalog/NewAgentDialog").then((m) => m.NewAgentDialog),
-  fr.lazy,
-  hidden,
-);
-export const NewSkillDialog = lazyPanel(
-  () => import("../skills/NewSkillDialog").then((m) => m.NewSkillDialog),
-  fr.lazy,
-  hidden,
-);
 export const TicketSheet = lazyPanel(
   () => import("./TicketSheet").then((m) => m.TicketSheet),
   fr.lazy,
@@ -50,11 +30,6 @@ export const TicketSheet = lazyPanel(
 );
 export const CommandPalette = lazyPanel(
   () => import("../palette/CommandPalette").then((m) => m.CommandPalette),
-  fr.lazy,
-  hidden,
-);
-export const ModifyWithAiDialog = lazyPanel(
-  () => import("../ai/ModifyWithAiDialog").then((m) => m.ModifyWithAiDialog),
   fr.lazy,
   hidden,
 );
@@ -100,11 +75,6 @@ export const DeleteProjectDialog = lazyPanel(
 );
 export const HelpDialogs = lazyPanel(
   () => import("./HelpDialogs").then((m) => m.HelpDialogs),
-  fr.lazy,
-  hidden,
-);
-export const TutorialSlot = lazyPanel(
-  () => import("../tutorial/TutorialSlot").then((m) => m.TutorialSlot),
   fr.lazy,
   hidden,
 );

@@ -2,9 +2,9 @@ import { beforeEach, expect, test } from "bun:test";
 import { WAKEUP_PREFIX } from "@kibo/schema";
 import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { NOW } from "../agents/fixtures";
-import { formatClock } from "../agents/format";
+import { NOW } from "../lib/fixtures";
 import { CONVERSATION_LOG, emptyView, pendingBatch, projectRun, viewFixture } from "./fixtures";
+import { formatClock } from "./format";
 import { harness, mockPanelApi, panel, resetHarness, rpcs, showPanel } from "./panel-harness";
 
 mockPanelApi();
@@ -77,7 +77,7 @@ test("the agent's markdown never injects HTML", async () => {
 
 test("Shift+Enter adds a line, Enter and ⌘↵ send the message", async () => {
   show();
-  const box = await panel().findByRole("combobox", { name: "Message à l'agent de projet" });
+  const box = await panel().findByRole("textbox", { name: "Message à l'agent de projet" });
   expect(box.getAttribute("placeholder")).toBe("Écris à l'agent de projet…");
   const user = userEvent.setup();
   await user.type(box, "Bonjour{Shift>}{Enter}{/Shift}la suite");
@@ -98,7 +98,7 @@ test("without a session the box invites to ask about the project, with no state 
   harness.current = emptyView();
   harness.log = [];
   show();
-  const box = await panel().findByRole("combobox", { name: "Message à l'agent de projet" });
+  const box = await panel().findByRole("textbox", { name: "Message à l'agent de projet" });
   await waitFor(() => expect(box.getAttribute("placeholder")).toBe("Demande quelque chose sur Silo…"));
   expect(panel().getByText("Aucun message pour l'instant.")).toBeTruthy();
   expect(panel().queryByRole("status")).toBeNull();

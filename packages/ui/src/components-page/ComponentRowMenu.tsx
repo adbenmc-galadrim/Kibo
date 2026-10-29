@@ -8,11 +8,9 @@ import {
   DropdownMenuTrigger,
 } from "@kibo/sdk/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@kibo/sdk/ui/tooltip";
-import { Ellipsis, ScanSearch, ShieldOff, Sparkles, Trash2, Upload } from "lucide-react";
+import { Ellipsis, ScanSearch, ShieldOff, Trash2, Upload } from "lucide-react";
 import { useState } from "react";
-import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { client } from "../api";
-import { frAi } from "../i18n/fr-ai";
 import { frComponentsManage } from "../i18n/fr-components-manage";
 import { frMarket } from "../i18n/fr-market";
 import { marketErrorText } from "../lib/market-errors";
@@ -23,7 +21,6 @@ import { type ComponentRow, modifiable } from "./rows";
 type Props = {
   row: ComponentRow;
   onDone(message: string, tone: FlashTone): void;
-  onModifyWithAi(target: ModifyTarget): void;
   onPublishToMarket(row: ComponentRow): void;
 };
 
@@ -89,11 +86,10 @@ function ConfirmAction({
   );
 }
 
-export function ComponentRowMenu({ row, onDone, onModifyWithAi, onPublishToMarket }: Props) {
+export function ComponentRowMenu({ row, onDone, onPublishToMarket }: Props) {
   const c = frComponentsManage.components;
   const [confirming, setConfirming] = useState<Confirming | null>(null);
   const ref = { id: row.id, version: row.version };
-  const origin = row.origin;
   const rehash = async () => {
     try {
       await client.rpc({ method: "rehashComponent", ...ref });
@@ -126,12 +122,6 @@ export function ComponentRowMenu({ row, onDone, onModifyWithAi, onPublishToMarke
             <DropdownMenuItem onSelect={() => setConfirming("revoke")}>
               <ShieldOff aria-hidden />
               {c.revoke}
-            </DropdownMenuItem>
-          )}
-          {modifiable(origin) && (
-            <DropdownMenuItem onSelect={() => onModifyWithAi({ ...ref, title: row.title, origin })}>
-              <Sparkles aria-hidden />
-              {frAi.ai.modify}
             </DropdownMenuItem>
           )}
           {publishable(row) && (

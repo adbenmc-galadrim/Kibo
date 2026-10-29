@@ -39,7 +39,6 @@ const views: (Spotlight | undefined)[] = [];
 const host: Host = {
   openTicket: () => undefined,
   openNewTicket: (d) => void created.push(d),
-  openAssign: () => undefined,
   openFile: () => undefined,
   openView: (_id, _project, question) => void views.push(question),
   openTarget: () => undefined,
@@ -61,7 +60,6 @@ const renderFeature = (featureId: string, project: ProjectSnapshot = siloHeldPro
         project={project}
         ticket={feature}
         now={NOW}
-        execution="hidden"
         onOpenFile={() => undefined}
         onOpenTicket={() => undefined}
       />

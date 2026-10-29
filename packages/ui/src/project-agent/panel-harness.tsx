@@ -72,7 +72,6 @@ export function emitTopic(): void {
 const host: Host = {
   openTicket: (id) => harness.opened.push(id),
   openNewTicket: () => {},
-  openAssign: () => {},
   openFile: () => {},
   openView: () => {},
   openTarget: () => {},

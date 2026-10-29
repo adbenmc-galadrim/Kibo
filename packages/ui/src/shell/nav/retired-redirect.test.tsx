@@ -37,3 +37,9 @@ test("an old URL gives way to the home URL even when home is already shown", () 
   homes(null, "#/code");
   expect(location.hash).toBe("#/");
 });
+
+test("an old run or changes URL sends back home", () => {
+  expect(homes(null, "#/runs/r1")).toBeGreaterThan(0);
+  expect(homes(null, "#/p/p1/changes")).toBeGreaterThan(0);
+  expect(homes(null, "#/p/p1/changes?wt=%2Ftmp%2Fwt")).toBeGreaterThan(0);
+});

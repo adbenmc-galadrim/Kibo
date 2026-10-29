@@ -2,8 +2,8 @@ import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type ProjectSnapshot, type ProjectSummary, type RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { kiboProject } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { kiboProject } from "../lib/fixtures";
 
 const calls: RpcRequest[] = [];
 let fail: KiboError | null = null;

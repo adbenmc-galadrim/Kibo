@@ -119,15 +119,7 @@ export function TicketBody({
             onOpenTicket={onOpenTicket}
           />
         }
-        activity={
-          <TicketTimeline
-            project={project}
-            ticket={t}
-            journal={journal}
-            ciRuns={ciRuns}
-            onOpenFile={onOpenFile}
-          />
-        }
+        activity={<TicketTimeline project={project} ticket={t} journal={journal} ciRuns={ciRuns} />}
       />
     </div>
   );

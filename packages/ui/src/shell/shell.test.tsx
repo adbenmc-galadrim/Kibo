@@ -14,8 +14,8 @@ import {
 } from "@kibo/schema";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { agentsFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { agentsFixture } from "../lib/fixtures";
 import { isMac, shortcutLabel } from "../lib/shortcut-label";
 import { signalsView } from "../project-agent/signal-fixtures";
 import { targetToHash } from "../tabs/target-hash";

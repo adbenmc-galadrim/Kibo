@@ -2,12 +2,12 @@ import { expect, test } from "bun:test";
 import type { Batch } from "@kibo/schema";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { agentsFixture, runFixture } from "../agents/fixtures";
-import { projectQuestionLinks, QuestionLinksContext } from "../moments/QuestionText";
+import { agentsFixture, runFixture } from "../lib/fixtures";
 import { AgentsProvider } from "../state/agents-context";
 import { BatchCard, type Decision } from "./BatchCard";
 import { defaultLabels, projectLabels } from "./batch-groups";
 import { partialBatch, pendingBatch, questionsProject, siloProject } from "./fixtures";
+import { projectQuestionLinks, QuestionLinksContext } from "./QuestionText";
 
 function show(batch: Batch, readOnly = false) {
   const decisions: Decision[] = [];

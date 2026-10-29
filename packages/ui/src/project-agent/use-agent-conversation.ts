@@ -1,8 +1,6 @@
 import type { ProjectSnapshot, RunLogEntry } from "@kibo/schema";
 import { useEffect, useMemo, useState } from "react";
-import { useAgentList } from "../agents/catalog/use-agent-list";
 import { client } from "../api";
-import { projectQuestionLinks } from "../moments/QuestionText";
 import { useHost } from "../shell/Host";
 import { useAgentsState } from "../state/agents-context";
 import { useRunLog } from "../state/use-run-log";
@@ -11,6 +9,8 @@ import type { Decision } from "./BatchCard";
 import { projectLabels } from "./batch-groups";
 import { buildConversation, lastUserMessage, type PanelStatus, panelStatus } from "./conversation";
 import { mergeOutbox } from "./outbox";
+import { projectQuestionLinks } from "./QuestionText";
+import { useAgentList } from "./use-agent-list";
 import { useOutbox } from "./use-outbox";
 import { useProjectAgent } from "./use-project-agent";
 import { useSignals } from "./use-signals";

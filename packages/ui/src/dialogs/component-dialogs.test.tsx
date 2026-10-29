@@ -52,7 +52,6 @@ mock.module("../api", () =>
 
 const { AddComponentDialog } = await import("./AddComponentDialog");
 const { TrustDialog } = await import("./TrustDialog");
-const { CreateComponentDialog } = await import("./CreateComponentDialog");
 const { findBuiltin } = await import("../registry");
 const kanbanManifest = () => {
   const found = findBuiltin("kanban");
@@ -180,8 +179,7 @@ test("header and footer stay outside the two scrolling panes, whatever the list 
   }
   const scroller = within(list).getByRole("radiogroup").closest(".overflow-y-auto");
   expect(scroller && list.contains(scroller)).toBe(true);
-  const create = within(list).getByRole("button", { name: "Créer un composant (code ou IA)" });
-  expect(scroller?.contains(create)).toBe(false);
+  expect(within(list).queryByRole("button", { name: "Créer un composant (code ou IA)" })).toBeNull();
   expect(details.className).toContain("overflow-y-auto");
   expect(details.textContent).toBe("Choisis un composant pour voir ce qu'il lit et modifie.");
   await userEvent.setup().click(within(list).getByRole("radio", { name: "Composant 39" }));
@@ -434,29 +432,4 @@ test("a failure to load or add is shown, never swallowed", async () => {
   } finally {
     console.error = original;
   }
-});
-
-test("screen 29: the AI column explains a blocked agent, commands can be copied", async () => {
-  render(<CreateComponentDialog open onOpenChange={() => {}} target={null} />);
-  const user = userEvent.setup();
-  const writes: string[] = [];
-  Object.defineProperty(navigator, "clipboard", {
-    value: { writeText: async (t: string) => writes.push(t) },
-    configurable: true,
-  });
-  expect(await screen.findByText("claude introuvable")).toBeTruthy();
-  expect(screen.getByRole("button", { name: /Générer avec un agent/ }).hasAttribute("disabled")).toBe(true);
-  expect(screen.queryByText("Bientôt")).toBeNull();
-  await user.click(screen.getByRole("button", { name: "Copier les commandes" }));
-  expect(writes).toEqual([
-    "kibo component new burndown\nkibo component test burndown\nkibo component dev burndown",
-  ]);
-  expect(await screen.findByText("Commandes copiées.")).toBeTruthy();
-  expect(screen.getAllByText(/^\d · /).map((e) => e.textContent)).toEqual([
-    "1 · Décrire",
-    "2 · Générer (agent)",
-    "3 · Tests de conformité",
-    "4 · Permissions",
-    "5 · Ajouter à la page",
-  ]);
 });

@@ -1,23 +1,14 @@
 import { type ComponentSummary, compareSemver, type Instance, isBuiltinId, splitRef } from "@kibo/schema";
 import { DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from "@kibo/sdk/ui/dropdown-menu";
-import { ArrowUpCircle, FolderOpen, Settings2, Sparkles, Trash2 } from "lucide-react";
+import { ArrowUpCircle, FolderOpen, Settings2, Trash2 } from "lucide-react";
 import { type ReactNode, useState } from "react";
-import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
 import { client } from "../api";
-import { modifiable } from "../components-page/rows";
 import { fr } from "../i18n/fr";
-import { frAi } from "../i18n/fr-ai";
 import { configSchemaOf } from "../lib/config-form";
 import { errorMessage } from "../lib/error-message";
 import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
 import type { Flash } from "../lib/use-flash";
-import {
-  ConfirmDialog,
-  InstanceSettingsDialog,
-  ModifyWithAiDialog,
-  NotesDirDialog,
-  TrustDialog,
-} from "../shell/lazy-dialogs";
+import { ConfirmDialog, InstanceSettingsDialog, NotesDirDialog, TrustDialog } from "../shell/lazy-dialogs";
 import { useComponents } from "../state/use-components";
 
 export type InstanceMenuContentProps = {
@@ -50,16 +41,12 @@ export function InstanceMenuContent({
   const { components } = useComponents();
   const [notesDir, setNotesDir] = useState(false);
   const [pending, setPending] = useState<PendingUpdate | null>(null);
-  const [modifying, setModifying] = useState<ModifyTarget | null>(null);
   const [settings, setSettings] = useState(false);
   const [removing, setRemoving] = useState(false);
   const schema = configSchemaOf(instance, components);
   const summary = components?.find((c) => c.id === id && !c.builtin);
   const higher = higherVersions(summary, id, version);
   const isNotes = id === "notes";
-  const origin = summary?.versions.find((v) => v.version === version)?.origin ?? null;
-  const target: ModifyTarget | null =
-    summary && origin !== null && modifiable(origin) ? { id, version, origin, title: summary.title } : null;
 
   const update = async (to: string) => {
     try {
@@ -106,13 +93,7 @@ export function InstanceMenuContent({
             {i.settings}
           </DropdownMenuItem>
         )}
-        {target && (
-          <DropdownMenuItem onSelect={() => setModifying(target)}>
-            <Sparkles aria-hidden />
-            {frAi.ai.modify}
-          </DropdownMenuItem>
-        )}
-        {(higher.length > 0 || isNotes || target || schema) && <DropdownMenuSeparator />}
+        {(higher.length > 0 || isNotes || schema) && <DropdownMenuSeparator />}
         <DropdownMenuItem variant="destructive" onSelect={() => setRemoving(true)}>
           <Trash2 aria-hidden />
           {i.remove}
@@ -138,14 +119,6 @@ export function InstanceMenuContent({
           cancelLabel={fr.common.cancel}
           onConfirm={remove}
           describeError={errorMessage}
-        />
-      )}
-      {modifying && (
-        <ModifyWithAiDialog
-          component={modifying}
-          projectId={projectId}
-          open
-          onOpenChange={(o) => !o && setModifying(null)}
         />
       )}
       {pending && (

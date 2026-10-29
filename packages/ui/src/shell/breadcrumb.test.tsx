@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { INBOX_ID, type ProjectSnapshot, type TabTarget } from "@kibo/schema";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { kiboProject } from "../agents/fixtures";
+import { kiboProject } from "../lib/fixtures";
 import { Breadcrumb, crumbsFor } from "./Breadcrumb";
 
 const kibo: ProjectSnapshot = {

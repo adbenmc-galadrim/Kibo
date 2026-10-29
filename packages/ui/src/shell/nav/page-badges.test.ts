@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { Instance, ProjectSnapshot, Question, SprintView, TicketView } from "@kibo/schema";
-import { kiboProject } from "../../agents/fixtures";
+import { kiboProject } from "../../lib/fixtures";
 import { pageBadge } from "./page-badges";
 
 const instance = (pageId: string, component: string): Instance => ({

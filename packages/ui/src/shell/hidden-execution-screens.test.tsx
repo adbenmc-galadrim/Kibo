@@ -2,8 +2,8 @@ import { afterEach, expect, mock, test } from "bun:test";
 import { type AgentExecution, EMPTY_TABS, type RpcRequest, type Screen } from "@kibo/schema";
 import { cleanup, render, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { configFixture, projectsFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { configFixture, projectsFixture } from "../lib/fixtures";
 
 const REPLIES: Partial<Record<RpcRequest["method"], unknown>> = {
   getTabs: EMPTY_TABS,
@@ -42,7 +42,6 @@ const screenView = (execution: AgentExecution, current: Screen) =>
       snapshots={new Map()}
       config={configFixture()}
       onOpenTicket={noop}
-      onAssign={noop}
       onFile={noop}
       onOpen={noop}
       onShare={noop}

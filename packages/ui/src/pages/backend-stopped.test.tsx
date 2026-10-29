@@ -49,7 +49,6 @@ const APIS: InstanceApis = {
 const host = {
   openTicket: () => undefined,
   openNewTicket: () => undefined,
-  openAssign: () => undefined,
   openFile: () => undefined,
   openView: () => undefined,
   openTarget: () => undefined,

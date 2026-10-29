@@ -120,7 +120,6 @@ const views: string[] = [];
 const host = {
   openTicket: () => undefined,
   openNewTicket: () => undefined,
-  openAssign: () => undefined,
   openFile: () => undefined,
   openView: (id: string) => views.push(id),
   openTarget: () => undefined,

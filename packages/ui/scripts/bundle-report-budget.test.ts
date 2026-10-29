@@ -44,8 +44,6 @@ describe("phase budget", () => {
   test("phase 29, the git client texts stay out of the entry", () => {
     const forbidden = (p: string) => FORBIDDEN_IN_ENTRY.some((r) => r.test(`/x/packages/ui/src/${p}`));
     expect(forbidden("i18n/fr-changes.ts")).toBe(true);
-    expect(forbidden("code/AgentWorkingBanner.tsx")).toBe(true);
-    expect(forbidden("code/agent-slots.ts")).toBe(false);
     expect(forbidden("i18n/fr-code.ts")).toBe(false);
   });
 });

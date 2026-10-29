@@ -14,7 +14,7 @@ import {
   type RunView,
   type TicketView,
 } from "@kibo/schema";
-import { NOW, runFixture } from "../agents/fixtures";
+import { NOW, runFixture } from "../lib/fixtures";
 
 const MIN = 60_000;
 

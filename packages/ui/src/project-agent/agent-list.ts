@@ -1,6 +1,6 @@
 import type { ProjectAgentSessionView, ProjectAgentView } from "@kibo/schema";
-import { formatClock } from "../agents/format";
 import { frProjectAgent } from "../i18n/fr-project-agent";
+import { formatClock } from "./format";
 
 export type AgentListItem = {
   runId: string;

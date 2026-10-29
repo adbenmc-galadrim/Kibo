@@ -1,6 +1,5 @@
 import { describe, expect, test } from "bun:test";
 import { type Instance, layoutFor } from "@kibo/schema";
-import { formatBox } from "./format-box";
 import {
   cellMetrics,
   compactInstances,
@@ -20,10 +19,9 @@ const inst = (id: string, layout: Instance["layout"]): Instance => ({
 });
 
 describe("format grid", () => {
-  test("cellMetrics and formatBox at 1200 px", () => {
+  test("cellMetrics at 1200 px", () => {
     const m = cellMetrics(1200);
     expect(m).toEqual({ column: (1200 - 16 * 11) / 12, row: 80, gap: 16 });
-    expect(formatBox("small", 1200)).toEqual({ width: 3 * m.column + 2 * 16, height: 3 * 80 + 2 * 16 });
   });
 
   test("readingOrder sorts by y, x then id", () => {

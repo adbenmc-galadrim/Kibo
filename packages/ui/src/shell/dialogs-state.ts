@@ -9,14 +9,10 @@ export type DialogsState = {
   newProject: boolean;
   newProjectFocus: "name" | "folder";
   newPageParent: string | null | undefined;
-  suggestFor: string | null;
   sheet: SheetTicket | null;
   sprintSheet: SheetSprint | null;
   newTicket: NewTicketRequest | null;
   fileTicket: { ticketId: string } | null;
-  assign: { projectId: string | null; ticketId: string | null } | null;
-  newAgent: boolean;
-  newSkill: boolean;
   preview: FileRef | null;
   share: string | null;
   join: boolean;
@@ -25,7 +21,6 @@ export type DialogsState = {
   editProject: string | null;
   editFocus: ProjectEditField | null;
   deleteProject: string | null;
-  tutorial: boolean;
   about: boolean;
   whatsNew: boolean;
   shortcutsHelp: boolean;
@@ -36,14 +31,10 @@ export const NO_DIALOG: DialogsState = {
   newProject: false,
   newProjectFocus: "name",
   newPageParent: undefined,
-  suggestFor: null,
   sheet: null,
   sprintSheet: null,
   newTicket: null,
   fileTicket: null,
-  assign: null,
-  newAgent: false,
-  newSkill: false,
   preview: null,
   share: null,
   join: false,
@@ -52,7 +43,6 @@ export const NO_DIALOG: DialogsState = {
   editProject: null,
   editFocus: null,
   deleteProject: null,
-  tutorial: false,
   about: false,
   whatsNew: false,
   shortcutsHelp: false,

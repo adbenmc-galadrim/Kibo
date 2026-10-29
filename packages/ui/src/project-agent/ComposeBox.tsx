@@ -1,13 +1,10 @@
-import { PROJECT_AGENT_REF } from "@kibo/schema";
 import { Textarea } from "@kibo/sdk/ui/textarea";
 import { Send } from "lucide-react";
 import { type KeyboardEvent, useId, useState } from "react";
 import { frProjectAgent } from "../i18n/fr-project-agent";
-import { useSkillComplete } from "../skill-complete/use-skill-complete";
 import { READING_COLUMN } from "./reading-column";
 
 type Props = {
-  projectId: string;
   placeholder: string;
   onSend(text: string): Promise<void>;
 };
@@ -22,15 +19,9 @@ const INPUT =
 const sendKey = (e: { key: string; metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }) =>
   e.key === "Enter" && (e.metaKey || e.ctrlKey || !e.shiftKey);
 
-export function ComposeBox({ projectId, placeholder, onSend }: Props) {
+export function ComposeBox({ placeholder, onSend }: Props) {
   const id = useId();
   const [text, setText] = useState("");
-  const complete = useSkillComplete({
-    agentRef: PROJECT_AGENT_REF,
-    projectId,
-    value: text,
-    onValueChange: setText,
-  });
   const ready = text.trim() !== "";
 
   const send = () => {
@@ -40,8 +31,7 @@ export function ComposeBox({ projectId, placeholder, onSend }: Props) {
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    complete.inputProps.onKeyDown(e);
-    if (e.defaultPrevented || !sendKey(e)) return;
+    if (!sendKey(e)) return;
     e.preventDefault();
     send();
   };
@@ -56,7 +46,8 @@ export function ComposeBox({ projectId, placeholder, onSend }: Props) {
             aria-label={t.label}
             className={INPUT}
             placeholder={placeholder}
-            {...complete.inputProps}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
             onKeyDown={onKeyDown}
           />
           <button
@@ -68,7 +59,6 @@ export function ComposeBox({ projectId, placeholder, onSend }: Props) {
           >
             <Send className="size-[15px]" />
           </button>
-          {complete.list}
         </div>
       </div>
     </div>

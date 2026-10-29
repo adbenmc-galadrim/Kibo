@@ -29,5 +29,3 @@ export function useAppSettings(): AppSettings {
   const store = useAppSettingsStore();
   return useSyncExternalStore(store.subscribe, store.get);
 }
-
-export const useExecutionShown = (): boolean => useAppSettings().agentExecution === "shown";

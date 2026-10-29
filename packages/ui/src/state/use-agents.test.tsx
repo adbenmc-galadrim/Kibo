@@ -1,8 +1,8 @@
 import { beforeEach, expect, mock, test } from "bun:test";
 import { KiboError, type RpcRequest, type Topic } from "@kibo/schema";
 import { act, render } from "@testing-library/react";
-import { agentsFixture, configFixture } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { agentsFixture, configFixture } from "../lib/fixtures";
 
 const calls: string[] = [];
 const topics = new Map<Topic, Set<() => void>>();

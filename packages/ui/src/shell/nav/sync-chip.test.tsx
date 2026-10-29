@@ -1,7 +1,7 @@
 import { afterEach, expect, mock, test } from "bun:test";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { useSyncExternalStore } from "react";
-import { kiboProject } from "../../agents/fixtures";
+import { kiboProject } from "../../lib/fixtures";
 
 let online = true;
 const listeners = new Set<() => void>();

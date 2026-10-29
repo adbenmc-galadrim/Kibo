@@ -10,19 +10,13 @@ import {
   sprintFacts,
   stepModels,
 } from "./feature-model";
-import { NOW, SESSION_RUN, siloFeatureProject } from "./fixture";
+import { NOW, siloFeatureProject } from "./fixture";
 
 const project = siloFeatureProject();
 const facts = (patch: Partial<StepFacts> = {}): StepFacts => ({
-  runs: [],
   ciRuns: [],
   now: NOW,
-  execution: "hidden",
   ...patch,
-});
-const withoutSessions = (p: ProjectSnapshot): ProjectSnapshot => ({
-  ...p,
-  tickets: p.tickets.map((t) => ({ ...t, session: null })),
 });
 const ciRun = (prNumber: number, conclusion: string): CiRun => ({
   repo: "silo-labs/silo-location",
@@ -56,17 +50,6 @@ test("the steps follow the dependency order and carry their T3 Code session", ()
   expect(steps[2]?.session).toEqual({ agent: "T3 Code", minutes: 42 });
   expect(steps.filter((s) => s.session !== null)).toHaveLength(1);
   expect(steps[3]?.blockedBy).toEqual(["SILO-33"]);
-});
-
-test("a live run is a session only when the execution is shown", () => {
-  const bare = withoutSessions(project);
-  expect(stepModels(bare, "f5", facts({ runs: [SESSION_RUN], execution: "shown" }))[2]?.session).toEqual({
-    agent: "T3 Code",
-    minutes: 42,
-  });
-  expect(stepModels(bare, "f5", facts({ runs: [SESSION_RUN] })).every((s) => s.session === null)).toBe(true);
-  const finished = facts({ runs: [{ ...SESSION_RUN, state: "done" }], execution: "shown" });
-  expect(stepModels(bare, "f5", finished).every((s) => s.session === null)).toBe(true);
 });
 
 test("the CI mark of a step comes from the runs of its PR, else from the PR checks", () => {

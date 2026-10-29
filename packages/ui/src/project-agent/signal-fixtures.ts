@@ -1,5 +1,5 @@
 import { type Signal, type SignalsView, signalRef } from "@kibo/schema";
-import { NOW } from "../agents/fixtures";
+import { NOW } from "../lib/fixtures";
 
 const MIN = 60_000;
 

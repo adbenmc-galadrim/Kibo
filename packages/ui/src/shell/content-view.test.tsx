@@ -1,10 +1,7 @@
 import { expect, mock, test } from "bun:test";
 import { DEFAULT_WORKFLOW, type ProjectSnapshot, type RpcRequest } from "@kibo/schema";
-import { render as renderPlain, screen } from "@testing-library/react";
-import type { ReactElement, ReactNode } from "react";
-import { agentsFixture } from "../agents/fixtures";
+import { render, screen } from "@testing-library/react";
 import { apiMock } from "../api-mock";
-import type { Host } from "./Host";
 
 const LISTS: ReadonlySet<string> = new Set(["listCiRuns", "autoLinks.list"]);
 
@@ -29,16 +26,7 @@ mock.module("../api", () =>
   }),
 );
 
-const { AgentsProvider } = await import("../state/agents-context");
-const { AppSettingsProvider, fixedStore } = await import("../state/use-app-settings");
 const { ContentView } = await import("./ContentView");
-const { HostProvider } = await import("./Host");
-
-const shownExecution = fixedStore({ agentExecution: "shown" });
-const ShownExecution = ({ children }: { children: ReactNode }) => (
-  <AppSettingsProvider store={shownExecution}>{children}</AppSettingsProvider>
-);
-const render = (ui: ReactElement) => renderPlain(ui, { wrapper: ShownExecution });
 
 const summary = {
   id: "p1",
@@ -85,51 +73,13 @@ test("a reopened tab whose page was deleted shows « Page introuvable »", () =>
       startEditing={false}
       onNewProject={noop}
       onImportProject={noop}
-      onTutorial={noop}
       onNewPage={noop}
-      onSuggestPages={noop}
       onOpen={noop}
       onOpenFile={noop}
       onOpenTicket={noop}
     />,
   );
   expect(screen.getByText("Page introuvable")).toBeTruthy();
-});
-
-test("a run target shows the run's own page, even without an open project", async () => {
-  const host: Host = {
-    openTicket: noop,
-    openNewTicket: noop,
-    openAssign: noop,
-    openFile: noop,
-    openView: noop,
-    openTarget: noop,
-  };
-  render(
-    <HostProvider host={host}>
-      <AgentsProvider agents={agentsFixture()}>
-        <ContentView
-          target={{ kind: "run", runId: "gone" }}
-          viewer="me"
-          projects={[summary]}
-          snapshots={new Map()}
-          inboxCount={0}
-          project={null}
-          domains={[]}
-          startEditing={false}
-          onNewProject={noop}
-          onImportProject={noop}
-          onTutorial={noop}
-          onNewPage={noop}
-          onSuggestPages={noop}
-          onOpen={noop}
-          onOpenFile={noop}
-          onOpenTicket={noop}
-        />
-      </AgentsProvider>
-    </HostProvider>,
-  );
-  expect(await screen.findByText("Run introuvable")).toBeTruthy();
 });
 
 const contentAt = (target: Parameters<typeof ContentView>[0]["target"], snapshot: ProjectSnapshot | null) => {
@@ -146,9 +96,7 @@ const contentAt = (target: Parameters<typeof ContentView>[0]["target"], snapshot
       startEditing={false}
       onNewProject={noop}
       onImportProject={noop}
-      onTutorial={noop}
       onNewPage={noop}
-      onSuggestPages={noop}
       onOpen={(t) => opened.push(t)}
       onOpenFile={noop}
       onOpenTicket={noop}

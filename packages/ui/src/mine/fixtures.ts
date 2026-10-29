@@ -1,6 +1,6 @@
 import type { Assignee, ProjectMeta, ProjectSnapshot, StatusId, TicketView } from "@kibo/schema";
 import { EMPTY_PROGRESS } from "@kibo/schema";
-import { kiboProject } from "../agents/fixtures";
+import { kiboProject } from "../lib/fixtures";
 
 let seq = 0;
 

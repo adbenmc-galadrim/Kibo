@@ -26,14 +26,12 @@ const chunks: BuiltChunk[] = outputs.flatMap((o) =>
       : [],
   ),
 );
-const emitted = outputs.flatMap((o) => o.output.map((c) => c.fileName));
-const graph = reportGraph(chunks, emitted);
+const graph = reportGraph(chunks);
 const report = reportEntry(chunks);
 console.log(`Chargement initial : ${report.files.join(", ")}`);
 console.log(`gzip : ${formatGzip(report.gzipBytes)}`);
 console.log(`Exigence de phase : ${formatGzip(report.phaseBudget)}, plafond : ${formatGzip(report.budget)}`);
 for (const f of report.forbidden)
   console.error(`Module interdit au chargement initial : ${f.module} (${f.file})`);
-console.log(`Worker de l'aperçu : ${graph.previewWorker ?? "absent de workers/"}`);
 for (const f of graph.forbidden) console.error(`Module interdit hors du worker : ${f.module} (${f.file})`);
 if (!report.ok || !graph.ok) process.exit(1);

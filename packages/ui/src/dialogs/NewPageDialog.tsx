@@ -11,11 +11,10 @@ import {
 import { Input } from "@kibo/sdk/ui/input";
 import { Label } from "@kibo/sdk/ui/label";
 import { RadioGroup } from "@kibo/sdk/ui/radio-group";
-import { AppWindow, LayoutDashboard, Sparkles } from "lucide-react";
+import { AppWindow, LayoutDashboard } from "lucide-react";
 import { type FormEvent, useId, useState } from "react";
 import { client } from "../api";
 import { fr } from "../i18n/fr";
-import { frAi } from "../i18n/fr-ai";
 import { navigate } from "../route";
 import { ChoiceCard } from "./ChoiceCard";
 
@@ -25,10 +24,9 @@ type Props = {
   parentId: string | null;
   open: boolean;
   onOpenChange: (o: boolean) => void;
-  onSuggest?: () => void;
 };
 
-export function NewPageDialog({ projectId, projectName, parentId, open, onOpenChange, onSuggest }: Props) {
+export function NewPageDialog({ projectId, projectName, parentId, open, onOpenChange }: Props) {
   const titleId = useId();
   const [title, setTitle] = useState("");
   const [kind, setKind] = useState<Page["kind"]>("dashboard");
@@ -86,20 +84,6 @@ export function NewPageDialog({ projectId, projectName, parentId, open, onOpenCh
               />
             </RadioGroup>
           </fieldset>
-          {onSuggest && (
-            <Button
-              type="button"
-              variant="link"
-              size="sm"
-              className="justify-self-start px-0"
-              onClick={() => {
-                onOpenChange(false);
-                onSuggest();
-              }}
-            >
-              <Sparkles aria-hidden /> {frAi.onboarding.suggestPages}
-            </Button>
-          )}
           {failed && (
             <p role="alert" className="text-sm text-destructive">
               {fr.newPage.failed}

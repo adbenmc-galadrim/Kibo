@@ -1,5 +1,4 @@
 import {
-  type AgentExecution,
   atRisk,
   type CiRun,
   type CiTone,
@@ -7,26 +6,21 @@ import {
   type FeatureStep,
   featureSteps,
   isSprintOver,
-  isTerminal,
   liveReview,
   nextDeliverableStep,
   type ProjectSnapshot,
   prCiTone,
-  type RunView,
   type SprintView,
   type StartReason,
   sortSprints,
   type TicketView,
 } from "@kibo/schema";
 
-export type StepRun = Pick<RunView, "ticketId" | "state" | "agentName" | "startedAt" | "createdAt">;
 export type StepSession = { agent: string; minutes: number };
 export type StepModel = FeatureStep & { index: number; session: StepSession | null; ci: CiTone | null };
 export type StepFacts = {
-  runs: readonly StepRun[];
   ciRuns: readonly CiRun[];
   now: number;
-  execution: AgentExecution;
 };
 
 const minutesSince = (since: number, now: number): number => Math.max(0, Math.floor((now - since) / 60_000));
@@ -34,11 +28,7 @@ const minutesSince = (since: number, now: number): number => Math.max(0, Math.fl
 function sessionOf(ticket: Pick<TicketView, "id" | "session">, facts: StepFacts): StepSession | null {
   if (ticket.session)
     return { agent: ticket.session.tool, minutes: minutesSince(ticket.session.startedAt, facts.now) };
-  if (facts.execution !== "shown") return null;
-  const run = facts.runs.find((r) => r.ticketId === ticket.id && !isTerminal(r.state));
-  return run
-    ? { agent: run.agentName, minutes: minutesSince(run.startedAt ?? run.createdAt, facts.now) }
-    : null;
+  return null;
 }
 
 export function stepModels(

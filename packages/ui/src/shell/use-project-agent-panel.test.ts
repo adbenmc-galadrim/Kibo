@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { act, renderHook } from "@testing-library/react";
-import { kiboProject } from "../agents/fixtures";
+import { kiboProject } from "../lib/fixtures";
 import { siloProject } from "../project-agent/fixtures";
 import { PANEL_OPEN_KEY, useProjectAgentPanel } from "./use-project-agent-panel";
 

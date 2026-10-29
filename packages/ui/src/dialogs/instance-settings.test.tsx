@@ -353,7 +353,3 @@ const filterChoice = async (execution: "hidden" | "shown") => {
 test("hidden execution: the widget filter reads Moi, not Moi + agents", async () => {
   expect(await filterChoice("hidden")).toBe("Moi");
 });
-
-test("shown execution: the widget filter reads Moi + agents again", async () => {
-  expect(await filterChoice("shown")).toBe("Moi + agents");
-});

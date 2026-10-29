@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import type { ProjectCommand } from "@kibo/schema";
-import { kiboProject } from "../../agents/fixtures";
+import { kiboProject } from "../../lib/fixtures";
 import { overviewMissing } from "./overview-missing";
 import { addOverviewPage, OVERVIEW_REF } from "./overview-page";
 

@@ -5,10 +5,6 @@ export const GeneralPage = lazyPanel(
   () => import("../settings/GeneralPage").then((m) => m.GeneralPage),
   fr.lazy,
 );
-export const DomainsPage = lazyPanel(
-  () => import("../settings/DomainsPage").then((m) => m.DomainsPage),
-  fr.lazy,
-);
 export const IntegrationsPage = lazyPanel(
   () => import("../settings/IntegrationsPage").then((m) => m.IntegrationsPage),
   fr.lazy,
@@ -41,10 +37,6 @@ export const ComponentsPage = lazyPanel(
   () => import("../components-page/ComponentsPage").then((m) => m.ComponentsPage),
   fr.lazy,
 );
-export const CreationsPage = lazyPanel(
-  () => import("../creations/CreationsPage").then((m) => m.CreationsPage),
-  fr.lazy,
-);
 export const MyTicketsPage = lazyPanel(
   () => import("../mine/MyTicketsPage").then((m) => m.MyTicketsPage),
   fr.lazy,
@@ -52,7 +44,6 @@ export const MyTicketsPage = lazyPanel(
 export const InboxPage = lazyPanel(() => import("../inbox/InboxPage").then((m) => m.InboxPage), fr.lazy);
 export const TicketTab = lazyPanel(() => import("../pages/TicketTab").then((m) => m.TicketTab), fr.lazy);
 export const Welcome = lazyPanel(() => import("./Welcome").then((m) => m.Welcome), fr.lazy);
-export const ChangesView = lazyPanel(() => import("../code/ChangesView").then((m) => m.ChangesView), fr.lazy);
 export const FileTabView = lazyPanel(
   () => import("../files/FileTabView").then((m) => m.FileTabView),
   fr.lazy,
@@ -71,14 +62,6 @@ export const IntegrationNotices = lazyPanel(
   () => import("./IntegrationNotices").then((m) => m.IntegrationNotices),
   fr.lazy,
   { fallback: "sr-only" },
-);
-export const AgentsEntry = lazyPanel(() => import("./nav/AgentsEntry").then((m) => m.AgentsEntry), fr.lazy, {
-  fallback: "children",
-});
-export const HiddenScreenNotice = lazyPanel(
-  () => import("./nav/HiddenScreenNotice").then((m) => m.HiddenScreenNotice),
-  fr.lazy,
-  { fallback: "children" },
 );
 export const WorkspaceMenuItems = lazyPanel(
   () => import("./nav/WorkspaceMenuItems").then((m) => m.WorkspaceMenuItems),
@@ -120,28 +103,6 @@ export const PresenceAvatars = lazyPanel(
   hidden,
 );
 export const PairingScreen = lazyPanel(() => import("./PairingScreen").then((m) => m.PairingScreen), fr.lazy);
-export const BarRuns = lazyPanel(() => import("../agents/dock/BarRuns").then((m) => m.BarRuns), fr.lazy, {
-  fallback: "children",
-});
-const agentsEntry = () => import("../agents/mention/agents-entry");
-
-export const AgentsPage = lazyPanel(() => agentsEntry().then((m) => m.AgentsPage), fr.lazy);
-export const QueuePage = lazyPanel(() => agentsEntry().then((m) => m.QueuePage), fr.lazy);
-export const AgentDock = lazyPanel(() => agentsEntry().then((m) => m.AgentDock), fr.lazy);
-export const ActivityTab = lazyPanel(() => agentsEntry().then((m) => m.ActivityTab), fr.lazy);
-export const RunSidePanel = lazyPanel(() => agentsEntry().then((m) => m.RunSidePanel), fr.lazy, hidden);
-export const RunPage = lazyPanel(() => agentsEntry().then((m) => m.RunPage), fr.lazy);
-export const SkillsPage = lazyPanel(() => import("../skills/SkillsPage").then((m) => m.SkillsPage), fr.lazy);
-export const ScreenActions = lazyPanel(
-  () => import("./ScreenActions").then((m) => m.ScreenActions),
-  fr.lazy,
-  { fallback: "sr-only" },
-);
-export const RunHistoryList = lazyPanel(
-  () => import("./RunHistoryList").then((m) => m.RunHistoryList),
-  fr.lazy,
-  hidden,
-);
 export const UserMenuContent = lazyPanel(
   () => import("./UserMenuContent").then((m) => m.UserMenuContent),
   fr.lazy,
@@ -151,11 +112,6 @@ const daemonUnreachable = () => import("./DaemonUnreachable").then((m) => m.Daem
 
 export const preloadDaemonUnreachable = daemonUnreachable;
 export const DaemonUnreachable = lazyPanel(daemonUnreachable, fr.lazy);
-export const CreationsIndicator = lazyPanel(
-  () => import("./CreationsIndicator").then((m) => m.CreationsIndicator),
-  fr.lazy,
-  { fallback: "children" },
-);
 const agentEntry = () => import("../project-agent/project-agent-entry");
 
 export const ProjectAgentButton = lazyPanel(() => agentEntry().then((m) => m.ProjectAgentButton), fr.lazy, {
@@ -163,12 +119,6 @@ export const ProjectAgentButton = lazyPanel(() => agentEntry().then((m) => m.Pro
 });
 export const ProjectAgentPanel = lazyPanel(
   () => agentEntry().then((m) => m.ProjectAgentPanel),
-  fr.lazy,
-  hidden,
-);
-
-export const AgentPanel = lazyPanel(
-  () => import("../agents/AgentPanel").then((m) => m.AgentPanel),
   fr.lazy,
   hidden,
 );

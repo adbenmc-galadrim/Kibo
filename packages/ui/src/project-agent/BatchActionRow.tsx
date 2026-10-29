@@ -3,11 +3,8 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { Checkbox } from "@kibo/sdk/ui/checkbox";
 import { ArrowRight } from "lucide-react";
 import { useId } from "react";
-import { Mention } from "../agents/mention/Mention";
-import { newestFirst } from "../agents/mention/use-run-view";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { frSignals } from "../i18n/fr-signals";
-import { QuestionText } from "../moments/QuestionText";
 import { useAgentsState } from "../state/agents-context";
 import {
   type ActionDiff,
@@ -18,6 +15,8 @@ import {
   questionOf,
   replacesContent,
 } from "./batch-groups";
+import { Mention } from "./Mention";
+import { QuestionText } from "./QuestionText";
 
 type Props = {
   action: ProposedAction;
@@ -48,6 +47,9 @@ function Outcome({ result }: { result: ActionResult }) {
     </p>
   );
 }
+
+const newestFirst = (runs: readonly RunView[]): RunView[] =>
+  [...runs].sort((a, b) => b.createdAt - a.createdAt || b.seq - a.seq);
 
 function runOf(action: ProposedAction, agents: AgentsState | null): RunView | null {
   const runs = agents?.runs ?? [];

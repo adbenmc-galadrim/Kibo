@@ -13,7 +13,6 @@ import {
 import {
   Bug,
   CircleHelp,
-  GraduationCap,
   Info,
   Keyboard,
   type LucideIcon,
@@ -33,7 +32,6 @@ import { helpLabel } from "./help-labels";
 type Props = { viewer: string; onOpen(target: TabTarget): void; onHelp(key: HelpDialog): void };
 const HELP_ICONS: Record<HelpDialog, LucideIcon> = {
   shortcutsHelp: Keyboard,
-  tutorial: GraduationCap,
   whatsNew: Sparkles,
   report: Bug,
   about: Info,

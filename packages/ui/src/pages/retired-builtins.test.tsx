@@ -2,8 +2,8 @@ import { expect, mock, test } from "bun:test";
 import type { Instance, Page, ProjectSnapshot, RpcRequest } from "@kibo/schema";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { kiboProject } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { kiboProject } from "../lib/fixtures";
 
 const calls: RpcRequest[] = [];
 mock.module("../api", () =>
@@ -31,7 +31,6 @@ const { PageActionsProvider } = await import("../shell/page-actions");
 const host = {
   openTicket: () => undefined,
   openNewTicket: () => undefined,
-  openAssign: () => undefined,
   openFile: () => undefined,
   openView: () => undefined,
   openTarget: () => undefined,

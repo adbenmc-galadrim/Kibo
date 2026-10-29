@@ -2,8 +2,8 @@ import { expect, mock, test } from "bun:test";
 import { Domain, type RpcRequest } from "@kibo/schema";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { kiboProject } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { kiboProject } from "../lib/fixtures";
 
 const calls: RpcRequest[] = [];
 mock.module("../api", () =>

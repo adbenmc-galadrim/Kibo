@@ -3,16 +3,16 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { Button } from "@kibo/sdk/ui/button";
 import { AlarmClock, BookSearch, Bot, Clock, Loader2, RotateCcw } from "lucide-react";
 import type { ReactNode } from "react";
-import { formatClock } from "../agents/format";
-import { useFollowBottom } from "../agents/use-follow-bottom";
 import { frProjectAgent } from "../i18n/fr-project-agent";
-import { AgentText } from "../moments/AgentText";
+import { AgentText } from "./AgentText";
 import { BatchCard, type Decision } from "./BatchCard";
 import type { DiffLabels } from "./batch-groups";
 import type { ConversationItem, PanelStatus } from "./conversation";
+import { formatClock } from "./format";
 import type { OutboxState } from "./outbox";
 import { READING_COLUMN } from "./reading-column";
 import { readingText } from "./reading-text";
+import { useFollowBottom } from "./use-follow-bottom";
 
 type Props = {
   items: ConversationItem[];

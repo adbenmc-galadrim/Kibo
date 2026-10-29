@@ -20,7 +20,6 @@ mock.module("../api", () =>
 );
 
 const { SyncSettingsPage } = await import("./SyncSettingsPage");
-const { SyncIndicator } = await import("../shell/SyncIndicator");
 const { groupByFour } = await import("../dialogs/AddDeviceDialog");
 
 const NOW = Date.now();
@@ -328,23 +327,6 @@ test("connection errors are translated in the server card", async () => {
     results.getSyncStatus = () => Promise.resolve({ ...online, state: "offline", lastError: code });
     const { unmount } = page();
     expect(await screen.findByText(text)).toBeTruthy();
-    unmount();
-  }
-});
-
-test("the agent bar indicator follows the daemon and the connection", async () => {
-  const cases: [SyncStatus, boolean, string][] = [
-    [unconfigured, true, "Kibo · connecté"],
-    [unconfigured, false, "Kibo · hors ligne"],
-    [online, true, "Kibo · synchronisé"],
-    [{ ...online, state: "connecting" }, true, "Kibo · synchronisation…"],
-    [{ ...online, state: "offline", retryAt: NOW + 12_000 }, true, "Kibo · sync hors ligne"],
-    [{ ...online, state: "offline", lastError: "DEVICE_REVOKED" }, true, "Kibo · erreur de sync"],
-  ];
-  for (const [status, daemonOnline, label] of cases) {
-    results.getSyncStatus = () => Promise.resolve(status);
-    const { unmount } = render(<SyncIndicator online={daemonOnline} />);
-    expect(await screen.findByText(label)).toBeTruthy();
     unmount();
   }
 });

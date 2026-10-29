@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { INBOX_ID, type ProjectSnapshot, type StatusId } from "@kibo/schema";
-import { kiboProject, projectsFixture } from "../agents/fixtures";
+import { kiboProject, projectsFixture } from "./fixtures";
 import {
   displayName,
   fileScope,

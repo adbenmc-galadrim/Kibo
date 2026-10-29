@@ -8,9 +8,9 @@ import {
   wakeupAnswers,
   wakeupCount,
 } from "@kibo/schema";
-import { errorText } from "../agents/format";
 import { frProjectAgent } from "../i18n/fr-project-agent";
 import { frSignals } from "../i18n/fr-signals";
+import { errorText } from "./format";
 import type { OutboxState } from "./outbox";
 
 export type ConversationItem =

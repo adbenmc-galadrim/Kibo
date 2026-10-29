@@ -12,8 +12,6 @@ function host(activeProjectId: string | null) {
       set: (patch) => patches.push(patch),
       go: () => {},
       openView: () => {},
-      openRun: () => {},
-      answerRun: () => {},
       showProjectAgent: () => {},
     }),
   );

@@ -3,7 +3,6 @@ import { cn } from "@kibo/sdk/lib/utils";
 import { Sheet, SheetContent } from "@kibo/sdk/ui/sheet";
 import { useEffect, useRef, useState } from "react";
 import { frProjectAgent } from "../i18n/fr-project-agent";
-import { keepLayerOnSkillEscape } from "../skill-complete/use-skill-complete";
 import { AgentList } from "./AgentList";
 import { NewAgentConfirm } from "./NewAgentButton";
 import { PanelConversation } from "./PanelConversation";
@@ -60,7 +59,6 @@ export function ProjectAgentPanel({ open, project, onClose }: Props) {
   );
   const conversation = (
     <PanelConversation
-      projectId={project.meta.id}
       projectName={project.meta.name}
       chat={chat}
       inert={!layout.wide && listOpen}
@@ -78,7 +76,6 @@ export function ProjectAgentPanel({ open, project, onClose }: Props) {
         style={{ width: effectiveWidth, top: "var(--tabbar-h)", height: "auto" }}
         onInteractOutside={(e) => e.preventDefault()}
         onOpenAutoFocus={(e) => e.preventDefault()}
-        onEscapeKeyDown={keepLayerOnSkillEscape}
       >
         {!layout.wide && <ResizeEdge width={width} onResize={setWidth} />}
         <PanelHeader

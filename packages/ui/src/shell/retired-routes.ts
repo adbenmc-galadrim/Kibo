@@ -1,7 +1,5 @@
-import { hashToTarget } from "../tabs/target-hash";
-import { isRetiredTarget } from "./nav/execution-visibility";
-
-export { isRetiredScreen, isRetiredTarget } from "./nav/execution-visibility";
+import type { Screen } from "@kibo/schema";
+import { targetToHash } from "../tabs/target-hash";
 
 export type RetiredRoute = { kind: "home" };
 
@@ -11,6 +9,7 @@ const RETIRED_ROUTES: readonly string[] = [
   "/agents",
   "/queue",
   "/skills",
+  "/runs",
   "/creations",
   "/components",
   "/settings/sources",
@@ -19,11 +18,15 @@ const RETIRED_ROUTES: readonly string[] = [
   "/code",
 ];
 
+const RETIRED_PROJECT_ROUTE = /^\/p\/[^/]+\/changes$/;
+
 const pathOf = (hash: string): string => (hash.replace(/^#/, "").split("?")[0] ?? "").replace(/\/$/, "");
 
 export function retiredRoute(hash: string): RetiredRoute | null {
   const path = pathOf(hash);
   if (RETIRED_ROUTES.some((route) => path === route || path.startsWith(`${route}/`))) return HOME;
-  const target = hashToTarget(hash);
-  return target !== null && isRetiredTarget(target) ? HOME : null;
+  return RETIRED_PROJECT_ROUTE.test(path) ? HOME : null;
 }
+
+export const isRetiredScreen = (screen: Screen): boolean =>
+  retiredRoute(targetToHash({ kind: "screen", screen })) !== null;

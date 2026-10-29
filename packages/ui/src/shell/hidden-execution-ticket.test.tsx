@@ -2,8 +2,8 @@ import { afterEach, expect, mock, test } from "bun:test";
 import { type AgentExecution, EMPTY_TABS, type RpcRequest } from "@kibo/schema";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { kiboProject } from "../agents/fixtures";
 import { apiMock } from "../api-mock";
+import { kiboProject } from "../lib/fixtures";
 
 const REPLIES: Partial<Record<RpcRequest["method"], unknown>> = {
   deliveryAgent: { ref: "global:full-delivery", name: "full-delivery" },

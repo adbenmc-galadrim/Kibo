@@ -105,7 +105,7 @@ const empty: ProjectSnapshot = {
 };
 
 test("ProjectHome names the created project and its folder", () => {
-  render(<ProjectHome project={empty} onNewPage={() => {}} onSuggest={() => {}} />);
+  render(<ProjectHome project={empty} onNewPage={() => {}} />);
   expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Projet créé : Kibo");
   expect(screen.getByText("~/goinfre/Kibo")).toBeTruthy();
 });
@@ -127,12 +127,9 @@ const contentProps = {
   startEditing: false,
   onNewProject: () => {},
   onImportProject: () => {},
-  onTutorial: () => {},
   onNewPage: () => {},
-  onSuggestPages: () => {},
   onOpen: () => {},
   onOpenFile: () => {},
-  onAssign: () => {},
   onOpenTicket: () => {},
 };
 
@@ -156,20 +153,17 @@ test("ContentView leads from the overview inbox card to the inbox screen", async
   expect(opened).toEqual([{ kind: "screen", screen: "inbox" }]);
 });
 
-test("the empty project home suggests pages for its project", async () => {
-  const asked: string[] = [];
+test("the empty project home no longer proposes starter pages", () => {
   render(
     <ContentView
       {...contentProps}
       target={{ kind: "project", projectId: "p1" }}
       project={empty}
       projects={[kibo]}
-      onSuggestPages={(id) => asked.push(id)}
     />,
   );
-  expect(screen.getByText("Pages de départ selon ton rôle")).toBeTruthy();
-  screen.getByRole("button", { name: "Proposer" }).click();
-  expect(asked).toEqual(["p1"]);
+  expect(screen.queryByText("Pages de départ selon ton rôle")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Proposer" })).toBeNull();
 });
 
 test("NewProjectDialog focuses the folder when importing", async () => {

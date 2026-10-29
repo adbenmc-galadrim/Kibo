@@ -1,20 +1,13 @@
 import { grantedOf, type TabTarget } from "@kibo/schema";
-import { Button } from "@kibo/sdk/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@kibo/sdk/ui/tabs";
 import { TooltipProvider } from "@kibo/sdk/ui/tooltip";
-import { Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
-import type { ModifyTarget } from "../ai/ModifyWithAiDialog";
-import { CreateComponentDialog } from "../dialogs/CreateComponentDialog";
 import { TrustDialog, trustTargetOfInstall } from "../dialogs/TrustDialog";
 import { frComponentsList } from "../i18n/fr-components-list";
 import { frComponentsManage } from "../i18n/fr-components-manage";
 import { frMarket } from "../i18n/fr-market";
 import { type TrustTarget, trustTargetOf } from "../lib/trust-target";
 import { type FlashTone, useFlash } from "../lib/use-flash";
-import { ModifyWithAiDialog } from "../shell/lazy-dialogs";
-import { isActiveDraft } from "../state/draft-activity";
-import { useComponentDrafts } from "../state/use-component-drafts";
 import { useComponents } from "../state/use-components";
 import { useMarketStatus } from "../state/use-market-status";
 import { ComponentsFilters } from "./ComponentsFilters";
@@ -47,27 +40,13 @@ function publishTarget(row: ComponentRow): PublishTarget | null {
   };
 }
 
-type HeaderProps = { creations: number; onCreate(): void; onCreations(): void };
-
-function PageHeader({ creations, onCreate, onCreations }: HeaderProps) {
+function PageHeader() {
   const t = frComponentsList;
   return (
     <header className="flex flex-wrap items-start justify-between gap-4">
       <div className="grid max-w-2xl gap-1">
         <h1 className="text-xl font-semibold">{t.title}</h1>
         <p className="text-sm text-muted-foreground">{t.subtitle}</p>
-      </div>
-      <div className="flex items-center gap-2">
-        {creations > 0 && (
-          <Button variant="ghost" onClick={onCreations}>
-            <Sparkles aria-hidden />
-            {t.creations(creations)}
-          </Button>
-        )}
-        <Button onClick={onCreate}>
-          <Plus aria-hidden />
-          {t.create}
-        </Button>
       </div>
     </header>
   );
@@ -81,16 +60,12 @@ export function ComponentsPage({ onOpen }: ComponentsPageProps) {
   const { message, tone, flash } = useFlash();
   const [publishing, setPublishing] = useState<string | null>(null);
   const [trust, setTrust] = useState<TrustTarget | null>(null);
-  const [modifying, setModifying] = useState<ModifyTarget | null>(null);
   const [updating, setUpdating] = useState<Updating | null>(null);
   const [toMarket, setToMarket] = useState<PublishTarget | null>(null);
   const [filters, setFilters] = useState<ComponentsQuery>(DEFAULT_QUERY);
   const [sort, setSort] = useComponentsSort();
   const query: ComponentsQuery = { ...filters, ...sort };
   const [usages, setUsages] = useState<UsagesTarget | null>(null);
-  const [creating, setCreating] = useState(false);
-  const activeCreations = useComponentDrafts().drafts?.filter(isActiveDraft).length ?? 0;
-  const openCreations = () => onOpen({ kind: "screen", screen: "creations" });
   const { statuses, reload: reloadMarket } = useMarketStatus();
   const rows = components ? componentRows(components, statuses) : null;
   const shown = rows ? filterComponents(rows, query) : [];
@@ -112,11 +87,7 @@ export function ComponentsPage({ onOpen }: ComponentsPageProps) {
   return (
     <TooltipProvider>
       <div className="grid content-start gap-4 p-6">
-        <PageHeader
-          creations={activeCreations}
-          onCreate={() => setCreating(true)}
-          onCreations={openCreations}
-        />
+        <PageHeader />
         <Tabs defaultValue="installed" className="gap-4">
           <TabsList className="h-auto gap-1 bg-transparent p-0">
             <TabsTrigger value="installed" className={TAB}>
@@ -141,7 +112,6 @@ export function ComponentsPage({ onOpen }: ComponentsPageProps) {
                 onReview={review}
                 onUpdate={(row, to) => setUpdating({ row, to })}
                 onDone={done}
-                onModifyWithAi={setModifying}
                 onPublishToMarket={(row) => setToMarket(publishTarget(row))}
               />
               {rows === null && !error && (
@@ -203,17 +173,6 @@ export function ComponentsPage({ onOpen }: ComponentsPageProps) {
           {toMarket && (
             <PublishToMarketDialog target={toMarket} open onOpenChange={(o) => !o && setToMarket(null)} />
           )}
-          {modifying && (
-            <ModifyWithAiDialog
-              component={modifying}
-              open
-              onOpenChange={(o) => {
-                if (o) return;
-                setModifying(null);
-                reload();
-              }}
-            />
-          )}
           {trust && (
             <TrustDialog
               target={trust}
@@ -229,16 +188,6 @@ export function ComponentsPage({ onOpen }: ComponentsPageProps) {
         </Tabs>
       </div>
       <UsagesSheet row={usages} onClose={() => setUsages(null)} onOpenPage={openPage} />
-      <CreateComponentDialog
-        open={creating}
-        onOpenChange={setCreating}
-        target={null}
-        onAdded={reload}
-        onOpenCreations={() => {
-          setCreating(false);
-          openCreations();
-        }}
-      />
     </TooltipProvider>
   );
 }

@@ -7,8 +7,6 @@ const context: PaletteContext = {
   recents: [{ kind: "screen", screen: "inbox" }],
   activeProjectId: null,
   activeTicketId: null,
-  agents: null,
-  executionShown: true,
 };
 
 test("the tracking screens are pages of the palette and open as targets", () => {

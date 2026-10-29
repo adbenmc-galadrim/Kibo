@@ -1,6 +1,6 @@
 import type { DraftSummary, MarketInstallResult } from "@kibo/schema";
 import { RadioGroup } from "@kibo/sdk/ui/radio-group";
-import { Blocks, Sparkles } from "lucide-react";
+import { Blocks } from "lucide-react";
 import { useState } from "react";
 import { frComponentsManage } from "../i18n/fr-components-manage";
 import { componentIcon } from "../registry";
@@ -18,7 +18,6 @@ type Props = {
   onSelect(ref: string): void;
   onPublishDraft: ((id: string) => void) | undefined;
   onMarketInstalled(result: MarketInstallResult): void;
-  onCreate(): void;
   loadFailed: boolean;
 };
 
@@ -63,14 +62,6 @@ export function AddComponentList(p: Props) {
         {empty && <p className="py-6 text-center text-sm text-muted-foreground">{a.noResult}</p>}
       </div>
       <div className="grid gap-2 border-t px-4 py-3">
-        <button
-          type="button"
-          onClick={p.onCreate}
-          className="flex items-center gap-2 rounded-lg border border-dashed px-3 py-2.5 text-sm font-medium hover:bg-accent/60"
-        >
-          <Sparkles aria-hidden className="size-4" />
-          {a.create}
-        </button>
         {p.loadFailed && (
           <p role="alert" className="text-sm text-destructive">
             {a.loadFailed}

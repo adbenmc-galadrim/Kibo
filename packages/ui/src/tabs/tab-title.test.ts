@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { INBOX_ID, type ProjectSnapshot, type TabTarget } from "@kibo/schema";
-import { kiboProject, projectsFixture, runFixture } from "../agents/fixtures";
+import { kiboProject, projectsFixture, runFixture } from "../lib/fixtures";
 import { crumbsFor } from "../shell/Breadcrumb";
 import { describeTarget } from "./tab-title";
 

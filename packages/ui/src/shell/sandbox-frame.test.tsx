@@ -92,7 +92,6 @@ function mount(src = "about:blank", apis: InstanceApis = testApis().apis) {
     openSprint: (id) => sprints.push(id),
     editProject: (opts) => edits.push(opts),
     openNewTicket: (d) => newTickets.push(d),
-    openAssign: () => {},
     openFile: (ref) => opened.push(ref),
     openView: () => {},
     openTarget: () => {},

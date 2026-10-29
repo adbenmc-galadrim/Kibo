@@ -359,23 +359,7 @@ test("NewPageDialog shows an alert when the daemon returns an invalid page", asy
   expect(onOpenChange).not.toHaveBeenCalled();
 });
 
-test("NewPageDialog offers to suggest pages, closing itself first", async () => {
-  const events: string[] = [];
-  render(
-    <NewPageDialog
-      projectId="p1"
-      projectName="Kibo"
-      parentId={null}
-      open
-      onOpenChange={(o) => events.push(`open:${o}`)}
-      onSuggest={() => events.push("suggest")}
-    />,
-  );
-  await userEvent.setup().click(screen.getByRole("button", { name: "Suggérer des pages" }));
-  expect(events).toEqual(["open:false", "suggest"]);
-});
-
-test("NewPageDialog hides the suggestion without a handler", () => {
+test("NewPageDialog offers no page suggestion", () => {
   render(<NewPageDialog projectId="p1" projectName="Kibo" parentId={null} open onOpenChange={() => {}} />);
   expect(screen.queryByRole("button", { name: "Suggérer des pages" })).toBeNull();
 });

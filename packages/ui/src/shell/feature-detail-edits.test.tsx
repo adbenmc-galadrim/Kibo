@@ -34,7 +34,6 @@ const { FeatureDetail } = await import("./FeatureDetail");
 const host: Host = {
   openTicket: () => undefined,
   openNewTicket: () => undefined,
-  openAssign: () => undefined,
   openFile: () => undefined,
   openView: () => undefined,
   openTarget: () => undefined,
@@ -54,7 +53,6 @@ const renderFeature = (project: ProjectSnapshot) => {
         project={project}
         ticket={feature}
         now={NOW}
-        execution="hidden"
         onOpenFile={() => undefined}
         onOpenTicket={() => undefined}
       />

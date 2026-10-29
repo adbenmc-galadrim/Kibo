@@ -25,9 +25,7 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-const { held } = splitHeld(
-  stepModels(siloHeldProject(), "f5", { runs: [], ciRuns: [], now: NOW, execution: "hidden" }),
-);
+const { held } = splitHeld(stepModels(siloHeldProject(), "f5", { ciRuns: [], now: NOW }));
 const opened: string[] = [];
 const draw = (editable = true) =>
   render(
