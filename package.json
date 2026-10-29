@@ -15,7 +15,9 @@
     "start": "bun run --cwd packages/ui build && bun packages/daemon/src/main.ts --ui packages/ui/dist",
     "typecheck": "tsc -b packages/schema packages/trust packages/core packages/sync-server packages/devkit packages/daemon packages/sdk packages/cli packages/ui packages/ui/scripts components/tickets components/kanban components/graph components/notes components/github-issues components/mcp-source components/viewer-3d components/mockup components/questions components/planning components/overview e2e scripts/dogfood scripts/forbidden-terms scripts/install apps/desktop",
     "test": "bun test packages components ./scripts",
-    "budget": "bun packages/ui/scripts/bundle-budget.ts"
+    "budget": "bun packages/ui/scripts/bundle-budget.ts",
+    "knip": "knip --include files,dependencies,devDependencies,unlisted,unresolved",
+    "knip:exports": "knip --include exports,types"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",
@@ -30,6 +32,7 @@
     "@types/bun": "1.4.2",
     "@types/react": "19.1.13",
     "@types/three": "0.186.0",
+    "knip": "5.88.1",
     "lucide-react": "1.48.0",
     "react": "19.1.1",
     "react-dom": "19.1.1",

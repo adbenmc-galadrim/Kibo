@@ -1,0 +1,89 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignore": ["packages/sdk/src/game/index.ts"],
+  "workspaces": {
+    ".": {
+      "entry": ["test/*.ts"],
+      "project": ["test/*.ts"],
+      "ignoreDependencies": [
+        "@kibo/devkit",
+        "@tailwindcss/node",
+        "@tailwindcss/oxide",
+        "lucide-react",
+        "shadcn",
+        "tailwindcss",
+        "tw-animate-css"
+      ]
+    },
+    "apps/desktop": {
+      "entry": ["scripts/*.ts", "sidecar/*.ts"],
+      "project": ["scripts/*.ts", "sidecar/*.ts"]
+    },
+    "packages/daemon": {
+      "entry": [
+        "src/server.ts",
+        "src/daemon.ts",
+        "src/component-runtime.ts",
+        "src/components/net-proxy-direct-child.ts",
+        "src/components/component-worker.ts",
+        "src/**/fake-*.ts",
+        "src/**/*.test.ts",
+        "src/**/*test-helper*.{ts,tsx}",
+        "src/**/*{seed,kit}*.{ts,tsx}",
+        "src/**/fixtures*.{ts,tsx}"
+      ],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/devkit": {
+      "entry": [
+        "src/preload/*.ts",
+        "src/static-check-main.ts",
+        "fixtures/**",
+        "src/**/*.test.ts",
+        "src/**/*test-helper*.{ts,tsx}"
+      ],
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@tailwindcss/node", "@tailwindcss/oxide", "tailwindcss", "tw-animate-css"]
+    },
+    "packages/cli": {
+      "entry": ["src/bin.ts", "src/**/*.test.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/ui": {
+      "entry": ["scripts/*.ts", "src/**/*.test.{ts,tsx}", "src/**/fixtures*.{ts,tsx}"],
+      "project": ["src/**/*.{ts,tsx}", "scripts/*.ts"]
+    },
+    "packages/sync-server": {
+      "entry": ["src/main.ts", "src/**/*.test.ts"],
+      "project": ["src/**/*.ts"]
+    },
+    "packages/*": {
+      "entry": [
+        "src/**/*.test.{ts,tsx}",
+        "src/**/*test-helper*.{ts,tsx}",
+        "src/**/*{seed,kit}*.{ts,tsx}",
+        "src/**/fixtures*.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "components/*": {
+      "entry": [
+        "src/index.ts",
+        "src/server.ts",
+        "src/**/*.test.{ts,tsx}",
+        "src/**/*test-helper*.{ts,tsx}",
+        "src/**/*{seed,kit}*.{ts,tsx}",
+        "src/**/fixtures*.{ts,tsx}"
+      ],
+      "project": ["src/**/*.{ts,tsx}"]
+    },
+    "e2e": {
+      "entry": ["*.ts", "**/*.spec.ts"],
+      "project": ["**/*.ts"]
+    },
+    "scripts/*": {
+      "entry": ["*.ts", "src/**/*.ts"],
+      "project": ["**/*.ts"]
+    }
+  }
+}

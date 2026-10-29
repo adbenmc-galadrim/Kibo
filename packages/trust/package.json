@@ -8,7 +8,6 @@
     "./testing": "./src/testing/fixtures.ts"
   },
   "dependencies": {
-    "@kibo/schema": "workspace:*",
-    "zod": "3.25.76"
+    "@kibo/schema": "workspace:*"
   }
 }
