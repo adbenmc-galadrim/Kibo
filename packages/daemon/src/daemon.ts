@@ -203,6 +203,7 @@ async function assemble(opts: DaemonOptions, { front, back: closers }: Closers):
       declareRefRpc(service),
       tutorial.rpc,
       projectAgent.agent.rpc,
+      projectAgent.plan.rpc,
       visibility.rpc,
       signals.rpc,
       overlaps.rpc,

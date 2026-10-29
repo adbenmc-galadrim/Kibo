@@ -6,6 +6,7 @@ import type {
   Batch,
   DeliveryResult,
   Guideline,
+  KeyForecast,
   ProjectAgentTool,
   ProjectCommand,
   ProjectSnapshot,
@@ -27,6 +28,7 @@ export type ProjectAgentDataPort = {
   readNote(projectId: string, path: string): Promise<string | null>;
   writeNote(projectId: string, path: string, content: string, mode: "create" | "update"): Promise<void>;
   runCommand(projectId: string, command: ProjectCommand): unknown;
+  forecast(projectId: string): KeyForecast;
 };
 
 export type ProjectAgentAgentsPort = Pick<

@@ -171,6 +171,7 @@ export function serviceKit(): Kit {
     runCommand() {
       throw new KiboError("INTERNAL", "runCommand is not faked");
     },
+    forecast: () => ({ nextTicketKey: null, nextFeatureSeq: null, usedShortKeys: [] }),
   };
   const agents = fakeAgents(runs, logs, calls);
   const signals = fakeSignals();
