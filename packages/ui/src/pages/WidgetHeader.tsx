@@ -1,11 +1,4 @@
-import {
-  type Instance,
-  isBuiltinId,
-  type Layout,
-  type Page,
-  type ProjectSnapshot,
-  splitRef,
-} from "@kibo/schema";
+import type { Instance, Layout, Page, ProjectSnapshot } from "@kibo/schema";
 import { lazyPanel } from "@kibo/sdk";
 import type { RefObject } from "react";
 import { fr } from "../i18n/fr";
@@ -30,13 +23,10 @@ export function WidgetHeader({
   fullscreen,
 }: HeaderProps & { title: string; fullscreen: boolean }) {
   const Icon = componentIcon(instance.component);
-  const { id, version } = splitRef(instance.component);
   return (
     <div className="flex h-10 shrink-0 items-center gap-2 border-b px-3">
       <Icon aria-hidden className="size-4 shrink-0 text-muted-foreground" />
-      <span className="min-w-0 flex-1 truncate text-xs font-medium">
-        {isBuiltinId(id) ? title : `${title} · ${version}`}
-      </span>
+      <span className="min-w-0 flex-1 truncate text-xs font-medium">{title}</span>
       {fullscreen && <FullscreenButton instanceId={instance.id} />}
       {editable && <InstanceMenu projectId={projectId} instance={instance} title={title} />}
     </div>

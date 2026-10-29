@@ -29,12 +29,12 @@ const countedPages = (access: ProjectSnapshot["sync"]["access"]) => {
   const counted: ProjectSnapshot = {
     ...silo,
     sync: { ...silo.sync, access },
-    pages: [page("p-tickets", "Tickets", null)],
+    pages: [page("p-questions", "Questions", null)],
     instances: [
       {
-        id: "i-tickets",
-        pageId: "p-tickets",
-        component: "tickets@1.0.0",
+        id: "i-questions",
+        pageId: "p-questions",
+        component: "questions@1.0.0",
         layout: { x: 0, y: 0, w: 12, h: 8 },
         config: {},
         componentHash: null,
@@ -58,9 +58,9 @@ const countedPages = (access: ProjectSnapshot["sync"]["access"]) => {
       </SidebarMenu>
     </SidebarProvider>,
   );
-  const row = screen.getByRole("button", { name: "Tickets" });
+  const row = screen.getByRole("button", { name: "Questions" });
   const count = row.querySelector(".k-count");
-  if (count === null) throw new Error("the Tickets row shows no count");
+  if (count === null) throw new Error("the Questions row shows no count");
   return { row, count };
 };
 
