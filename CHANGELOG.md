@@ -2,7 +2,7 @@
 
 Ce qui change pour toi à chaque version de Kibo, de la plus récente à la plus ancienne. Le détail technique est dans les notes de chaque release.
 
-## Non publié
+## 0.32.0-alpha.1 — 2026-10-29
 
 - CLI : `kibo` écrit enfin : `features create`, `tickets create|update|move|link|unlink`, `sprints create|update|assign`, `questions list|add|answer`. Les textes se lisent dans un fichier (`@fichier`) ou sur l'entrée standard (`@-`) ; `--append` et `--prepend` complètent une description sans la réécrire à la main.
 - CLI : `kibo plan apply <fichier>` applique d'un bloc un plan YAML ou JSON (fonctionnalités, étapes, dépendances, sprints, questions, références `new:<n>`) ; `--dry-run` montre ce qui sera fait et les clés prévues, sans rien écrire. Un plan invalide n'écrit rien ; une erreur en cours de route arrête tout et dit ce qui a été créé.
